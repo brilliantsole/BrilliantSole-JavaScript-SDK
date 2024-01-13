@@ -17,6 +17,7 @@ import { isInDev } from "./environment.js";
  * @property {boolean} log
  * @property {boolean} warn
  * @property {boolean} error
+ * @property {boolean} assert
  * @property {boolean} assertWithWarning
  * @property {boolean} assertWithError
  */
@@ -26,6 +27,7 @@ function emptyFunction() {}
 const log = console.log.bind(console);
 const warn = console.warn.bind(console);
 const error = console.error.bind(console);
+const assert = console.assert.bind(console);
 
 class Console {
     /** @type {Object.<string, Console>} */
@@ -100,6 +102,11 @@ class Console {
     /** @type {LogFunction} */
     get error() {
         return this.#levelFlags.error ? error : emptyFunction;
+    }
+
+    /** @type {AssertLogFunction} */
+    get assert() {
+        return this.#levelFlags.assert ? assert : emptyFunction;
     }
 
     /**

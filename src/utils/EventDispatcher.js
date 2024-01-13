@@ -1,4 +1,5 @@
 import { createConsole } from "./Console.js";
+import { spacesToPascalCase } from "./stringUtils.js";
 
 /**
  * @typedef EventDispatcherEvent
@@ -15,7 +16,7 @@ import { createConsole } from "./Console.js";
 
 /** @typedef {(event: EventDispatcherEvent) => void} EventDispatcherListener */
 
-const _console = createConsole("EventDispatcher");
+const _console = createConsole("EventDispatcher", { log: false });
 
 // based on https://github.com/mrdoob/eventdispatcher.js/
 class EventDispatcher {
@@ -58,6 +59,7 @@ class EventDispatcher {
      * @param {EventDispatcherOptions?} options
      */
     addEventListener(type, listener, options) {
+        _console.log(`adding "${type}" eventListener`, listener);
         this.#assertValidEventType(type);
 
         if (!this.#listeners) this.#listeners = {};
@@ -89,6 +91,7 @@ class EventDispatcher {
      * @throws {Error} if type is not valid
      */
     hasEventListener(type, listener) {
+        _console.log(`has "${type}" eventListener?`, listener);
         this.#assertValidEventType(type);
         return this.#listeners?.[type]?.includes(listener);
     }
@@ -100,6 +103,7 @@ class EventDispatcher {
      * @throws {Error} if type is not valid
      */
     removeEventListener(type, listener) {
+        _console.log(`removing "${type}" eventListener`, listener);
         this.#assertValidEventType(type);
         if (this.hasEventListener(type, listener)) {
             const index = this.#listeners[type].indexOf(listener);
@@ -126,6 +130,20 @@ class EventDispatcher {
             }
         }
     }
+}
+
+/**
+ * @param {string[]} eventTypes
+ * @param {object} object
+ * @param {object} target
+ */
+export function bindEventListeners(eventTypes, object, target) {
+    eventTypes.forEach((eventType) => {
+        const _eventType = `_on${spacesToPascalCase(eventType)}`;
+        const boundEvent = target[_eventType].bind(target);
+        target[_eventType] = boundEvent;
+        object[eventType] = boundEvent;
+    });
 }
 
 export default EventDispatcher;

@@ -37,11 +37,13 @@ class ConnectionManager {
     }
 
     /**
+     * @protected
      * @param {BrilliantSoleConnectionManagerEvent} event
      * @throws {Error} if type is not valid
      */
-    #dispatchEvent(event) {
+    _dispatchEvent(event) {
         this.#eventDispatcher.dispatchEvent(event);
+        this.#eventDispatcher.dispatchEvent({ type: "connection changed" });
     }
 
     /**
@@ -116,12 +118,12 @@ class ConnectionManager {
     /** @throws {Error} if already connected */
     async connect() {
         this.#assertIsNotConnected();
-        this.#dispatchEvent({ type: "connecting" });
+        this._dispatchEvent({ type: "connecting" });
     }
     /** @throws {Error} if not connected */
     async disconnect() {
         this.#assertIsConnected();
-        this.#dispatchEvent({ type: "disconnected" });
+        this._dispatchEvent({ type: "disconnected" });
     }
 }
 

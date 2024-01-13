@@ -1,8 +1,7 @@
 import ConnectionManager from "./connection/ConnectionManager.js";
 import WebBluetoothConnectionManager from "./connection/bluetooth/WebBluetoothConnectionManager.js";
-import EventDispatcher from "./utils/EventDispatcher.js";
+import EventDispatcher, { bindEventListeners } from "./utils/EventDispatcher.js";
 import { createConsole, setAllConsoleLevelFlags, setConsoleLevelFlagsForType } from "./utils/Console.js";
-import { spacesToPascalCase } from "./utils/stringUtils.js";
 
 /** @typedef {import("./utils/EventDispatcher.js").EventDispatcherListener} EventDispatcherListener */
 /** @typedef {import("./utils/EventDispatcher.js").EventDispatcherOptions} EventDispatcherOptions */
@@ -21,21 +20,8 @@ const _console = createConsole("BrilliantSole");
 
 class BrilliantSole {
     constructor() {
+        bindEventListeners(ConnectionManager.EventTypes, this.#boundConnectionManagerEventListeners, this);
         this.connectionManager = new WebBluetoothConnectionManager();
-        this.#bindEventsListeners(ConnectionManager.EventTypes, this.#boundConnectionManagerEventListeners);
-    }
-
-    /**
-     * @param {string[]} eventTypes
-     * @param {object} object
-     */
-    #bindEventsListeners(eventTypes, object) {
-        eventTypes.forEach((eventType) => {
-            const _eventType = `_on${spacesToPascalCase(eventType)}`;
-            const boundEvent = this[_eventType].bind(this);
-            this[_eventType] = boundEvent;
-            object[eventType] = boundEvent;
-        });
     }
 
     /** @type {BrilliantSoleEventType[]} */
@@ -75,8 +61,6 @@ class BrilliantSole {
 
     /** @type {ConnectionManager?} */
     #connectionManager;
-    /** @type {Object.<string, EventDispatcherListener} */
-    #boundConnectionManagerEventListeners = {};
     get connectionManager() {
         return this.#connectionManager;
     }
@@ -96,6 +80,8 @@ class BrilliantSole {
 
         this.#connectionManager = newConnectionManager;
     }
+    /** @type {Object.<string, EventDispatcherListener} */
+    #boundConnectionManagerEventListeners = {};
 
     async connect() {
         // TODO - set connection type?
