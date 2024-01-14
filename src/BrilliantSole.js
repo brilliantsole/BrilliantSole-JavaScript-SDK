@@ -1,6 +1,10 @@
 import ConnectionManager from "./connection/ConnectionManager.js";
 import WebBluetoothConnectionManager from "./connection/bluetooth/WebBluetoothConnectionManager.js";
-import EventDispatcher, { bindEventListeners } from "./utils/EventDispatcher.js";
+import EventDispatcher, {
+    bindEventListeners,
+    addEventListeners,
+    removeEventListeners,
+} from "./utils/EventDispatcher.js";
 import { createConsole, setAllConsoleLevelFlags, setConsoleLevelFlagsForType } from "./utils/Console.js";
 
 /** @typedef {import("./utils/EventDispatcher.js").EventDispatcherListener} EventDispatcherListener */
@@ -84,12 +88,12 @@ class BrilliantSole {
         }
         _console.log("assigning new connectionManager...", newConnectionManager);
 
-        this.connectionManager?.eventTypes.forEach((eventType) => {
-            connectionManager.removeEventListener(eventType, this.#boundConnectionManagerEventListeners[eventType]);
-        });
-        newConnectionManager?.eventTypes.forEach((eventType) => {
-            newConnectionManager.addEventListener(eventType, this.#boundConnectionManagerEventListeners[eventType]);
-        });
+        if (this.connectionManager) {
+            removeEventListeners(this.connectionManager, this.#boundConnectionManagerEventListeners);
+        }
+        if (newConnectionManager) {
+            addEventListeners(newConnectionManager, this.#boundConnectionManagerEventListeners);
+        }
 
         this.#connectionManager = newConnectionManager;
     }

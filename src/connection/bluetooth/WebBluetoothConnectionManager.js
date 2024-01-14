@@ -1,7 +1,7 @@
 import ConnectionManager from "../ConnectionManager.js";
 import { serviceUUIDs, getServiceNameFromUUID, getCharacteristicNameFromUUID } from "./bluetoothUUIDs.js";
 import { createConsole } from "../../utils/Console.js";
-import { bindEventListeners } from "../../utils/EventDispatcher.js";
+import { addEventListeners, bindEventListeners, removeEventListeners } from "../../utils/EventDispatcher.js";
 
 const _console = createConsole("WebBluetoothConnectionManager", { log: false });
 
@@ -12,9 +12,12 @@ class WebBluetoothConnectionManager extends ConnectionManager {
     constructor() {
         super();
         bindEventListeners(["characteristicvaluechanged"], this.#boundBluetoothCharacteristicEventListeners, this);
+        bindEventListeners(["gattserverdisconnected"], this.#boundBluetoothDeviceEventListeners, this);
     }
-    /** @type {Object.<string, EventDispatcherListener} */
+    /** @type {Object.<string, EventListener} */
     #boundBluetoothCharacteristicEventListeners = {};
+    /** @type {Object.<string, EventListener} */
+    #boundBluetoothDeviceEventListeners = {};
 
     static get isSupported() {
         return "bluetooth" in navigator;
@@ -37,9 +40,12 @@ class WebBluetoothConnectionManager extends ConnectionManager {
             _console.warn("assigning the same BluetoothDevice");
             return;
         }
-        this.#device?.addEventListener("");
-        // FILL - remove existing eventListeners
-        // FILL - assign new eventListeners
+        if (this.#device) {
+            removeEventListeners(this.#device, this.#boundBluetoothDeviceEventListeners);
+        }
+        if (newDevice) {
+            addEventListeners(newDevice, this.#boundBluetoothDeviceEventListeners);
+        }
         this.#device = newDevice;
     }
 
@@ -96,10 +102,7 @@ class WebBluetoothConnectionManager extends ConnectionManager {
                     _console.log(`got "${characteristicName}" characteristic in "${serviceName}" service`);
                     characteristic._name = characteristicName;
                     this.#characteristics.set(characteristicName, characteristic);
-                    characteristic.addEventListener(
-                        "characteristicvaluechanged",
-                        this.#boundBluetoothCharacteristicEventListeners["characteristicvaluechanged"]
-                    );
+                    addEventListeners(characteristic, this.#boundBluetoothCharacteristicEventListeners);
                     if (characteristic.properties.read) {
                         await characteristic.readValue();
                     }
@@ -114,7 +117,7 @@ class WebBluetoothConnectionManager extends ConnectionManager {
                 await Promise.all(characteristicPromises);
             });
             await Promise.all(servicePromises);
-            _console.log("got all characteristics");
+            _console.log("fully connected");
 
             this.connectionStatus = "connected";
         } catch (error) {
@@ -126,7 +129,6 @@ class WebBluetoothConnectionManager extends ConnectionManager {
         super.disconnect();
         _console.log("disconnecting from device...");
         this.server.disconnect();
-        this.connectionStatus = "not connected";
     }
 
     /**
@@ -187,6 +189,15 @@ class WebBluetoothConnectionManager extends ConnectionManager {
             default:
                 throw new Error(`uncaught characteristicName "${characteristicName}"`);
         }
+    }
+
+    /**
+     * @private
+     * @param {Event} event
+     */
+    _onGattserverdisconnected(event) {
+        _console.log("gattserverdisconnected", event);
+        this.connectionStatus = "not connected";
     }
 }
 

@@ -134,18 +134,38 @@ class EventDispatcher {
 
 /**
  * @param {string[]} eventTypes
- * @param {object} object
+ * @param {object.<string, EventListener>} boundEventListeners
  * @param {object} target
  */
-export function bindEventListeners(eventTypes, object, target) {
-    _console.log("bindEventListeners", { eventTypes, object, target });
+export function bindEventListeners(eventTypes, boundEventListeners, target) {
+    _console.log("bindEventListeners", { eventTypes, boundEventListeners, target });
     eventTypes.forEach((eventType) => {
         const _eventType = `_on${spacesToPascalCase(eventType)}`;
         _console.assertWithError(target[_eventType], `no event "${_eventType}" found in target`, target);
         _console.log(`binding eventType "${eventType}" as ${_eventType} from target`, target);
         const boundEvent = target[_eventType].bind(target);
         target[_eventType] = boundEvent;
-        object[eventType] = boundEvent;
+        boundEventListeners[eventType] = boundEvent;
+    });
+}
+
+/**
+ * @param {object} target
+ * @param {object.<string, EventListener>} boundEventListeners
+ */
+export function addEventListeners(target, boundEventListeners) {
+    Object.entries(boundEventListeners).forEach(([eventType, eventListener]) => {
+        target.addEventListener(eventType, eventListener);
+    });
+}
+
+/**
+ * @param {object} target
+ * @param {object.<string, EventListener>} boundEventListeners
+ */
+export function removeEventListeners(target, boundEventListeners) {
+    Object.entries(boundEventListeners).forEach(([eventType, eventListener]) => {
+        target.removeEventListener(eventType, eventListener);
     });
 }
 

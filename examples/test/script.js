@@ -39,3 +39,13 @@ brilliantSole.addEventListener("not connected", () => {
     toggleConnectionButton.innerText = "connect";
     toggleConnectionButton.disabled = false;
 });
+
+/** @type {HTMLPreElement} */
+const deviceInformationElement = document.getElementById("deviceInformation");
+
+brilliantSole.addEventListener("deviceInformation", () => {
+    deviceInformationElement.textContent = JSON.stringify(brilliantSole.deviceInformation, null, 2);
+});
+brilliantSole.addEventListener("not connected", () => {
+    deviceInformationElement.textContent = "";
+});
