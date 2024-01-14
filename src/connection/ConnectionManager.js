@@ -6,7 +6,7 @@ import { createConsole } from "../utils/Console.js";
 
 /** @typedef {"web bluetooth" | "noble"} BrilliantSoleConnectionType */
 /** @typedef {"not connected" | "connecting" | "connected" | "disconnecting"} BrilliantSoleConnectionStatus */
-/** @typedef {"connectionStatus" | "isConnected" | "deviceInformation" | "batteryLevel"} BrilliantSoleConnectionManagerEventType */
+/** @typedef {"connectionStatus" | "isConnected" | "deviceInformation" | "batteryLevel" | "data"} BrilliantSoleConnectionManagerEventType */
 
 /**
  * @typedef BrilliantSoleConnectionManagerEvent
@@ -19,7 +19,7 @@ const _console = createConsole("ConnectionManager");
 
 class ConnectionManager {
     /** @type {BrilliantSoleConnectionManagerEventType[]} */
-    static #EventTypes = ["isConnected", "connectionStatus", "deviceInformation", "batteryLevel"];
+    static #EventTypes = ["isConnected", "connectionStatus", "deviceInformation", "batteryLevel", "data"];
     static get EventTypes() {
         return this.#EventTypes;
     }
@@ -109,6 +109,7 @@ class ConnectionManager {
     get connectionStatus() {
         return this.#connectionStatus;
     }
+    /** @protected */
     set connectionStatus(newConnectionStatus) {
         if (this.#connectionStatus == newConnectionStatus) {
             _console.warn("same connection status");

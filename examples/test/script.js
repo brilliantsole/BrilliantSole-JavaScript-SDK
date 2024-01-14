@@ -49,3 +49,9 @@ brilliantSole.addEventListener("deviceInformation", () => {
 brilliantSole.addEventListener("not connected", () => {
     deviceInformationElement.textContent = "";
 });
+
+/** @type {HTMLSpanElement} */
+const batteryLevelSpan = document.getElementById("batteryLevel");
+brilliantSole.addEventListener("batteryLevel", () => {
+    batteryLevelSpan.innerText = `${brilliantSole.batteryLevel}%`;
+});

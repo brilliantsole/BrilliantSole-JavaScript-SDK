@@ -21,7 +21,7 @@ function stringToServiceUUID(identifier) {
 }
 
 /** @typedef {"deviceInformation" | "battery" | "data" | "unknown"} BrilliantSoleBluetoothServiceName */
-/** @typedef { "manufacturerName" | "modelNumber" | "hardwareRevision" | "firmwareRevision" | "softwareRevision" | "batteryLevel" | "dataWrite" | "dataNotify" | "unknown1"} BrilliantSoleBluetoothCharacteristicName */
+/** @typedef { "manufacturerName" | "modelNumber" | "hardwareRevision" | "firmwareRevision" | "softwareRevision" | "batteryLevel" | "command" | "data" | "firmware"} BrilliantSoleBluetoothCharacteristicName */
 
 const bluetoothUUIDs = Object.freeze({
     services: {
@@ -56,14 +56,14 @@ const bluetoothUUIDs = Object.freeze({
         data: {
             uuid: generateBluetoothUUID("1"),
             characteristics: {
-                dataWrite: { uuid: generateBluetoothUUID("2") },
-                dataNotify: { uuid: generateBluetoothUUID("3") },
+                command: { uuid: generateBluetoothUUID("2") },
+                data: { uuid: generateBluetoothUUID("3") },
             },
         },
-        unknown: {
+        firmware: {
             uuid: stringToCharacteristicUUID(0xfe59),
             characteristics: {
-                unknown1: { uuid: "8ec90003-f315-4f60-9fb8-838830daea50" },
+                firmware: { uuid: "8ec90003-f315-4f60-9fb8-838830daea50" },
             },
         },
     },
@@ -74,7 +74,7 @@ const bluetoothUUIDs = Object.freeze({
             this.services.deviceInformation.uuid,
             this.services.battery.uuid,
             this.services.data.uuid,
-            this.services.unknown.uuid,
+            this.services.firmware.uuid,
         ];
     },
 

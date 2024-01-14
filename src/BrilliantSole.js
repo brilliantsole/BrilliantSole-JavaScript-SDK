@@ -6,6 +6,9 @@ import EventDispatcher, {
     removeEventListeners,
 } from "./utils/EventDispatcher.js";
 import { createConsole, setAllConsoleLevelFlags, setConsoleLevelFlagsForType } from "./utils/Console.js";
+import DataManager from "./data/DataManager.js";
+
+const _console = createConsole("BrilliantSole", { log: false });
 
 /** @typedef {import("./utils/EventDispatcher.js").EventDispatcherListener} EventDispatcherListener */
 /** @typedef {import("./utils/EventDispatcher.js").EventDispatcherOptions} EventDispatcherOptions */
@@ -33,11 +36,10 @@ import { createConsole, setAllConsoleLevelFlags, setConsoleLevelFlagsForType } f
  * @property {string?} firmwareRevision
  */
 
-const _console = createConsole("BrilliantSole");
-
 class BrilliantSole {
     constructor() {
         bindEventListeners(ConnectionManager.EventTypes, this.#boundConnectionManagerEventListeners, this);
+        bindEventListeners(DataManager.EventTypes, this.#boundDataManagerEventListeners, this);
         this.connectionManager = new WebBluetoothConnectionManager();
     }
 
@@ -175,6 +177,65 @@ class BrilliantSole {
         _console.log(`batteryLevel: ${batteryLevel}%`);
         this.#batteryLevel = batteryLevel;
         this.#dispatchEvent(event);
+    }
+
+    /** @type {DataManager} */
+    #dataManager = new DataManager();
+    /** @type {Object.<string, EventDispatcherListener} */
+    #boundDataManagerEventListeners = {};
+
+    /**
+     * @private
+     * @param {BrilliantSoleEvent} event
+     */
+    _onData(event) {
+        /** @type {DataView} */
+        const dataView = event.message.data;
+        _console.log("data", dataView);
+        this.#dataManager.parseData(dataView);
+    }
+
+    /**
+     * @private
+     * @param {BrilliantSoleEvent} event
+     */
+    _onLog(event) {
+        /** @type {number[]} */
+        const log = event.message.log;
+        _console.log("log", log);
+    }
+
+    /**
+     * @private
+     * @param {BrilliantSoleEvent} event
+     */
+    _onPressure(event) {
+        const pressure = event.message.pressure;
+        _console.log("pressure", pressure);
+    }
+    /**
+     * @private
+     * @param {BrilliantSoleEvent} event
+     */
+    _onAcceleration(event) {
+        const acceleration = event.message.acceleration;
+        _console.log("acceleration", acceleration);
+    }
+    /**
+     * @private
+     * @param {BrilliantSoleEvent} event
+     */
+    _onLinearAcceleration(event) {
+        const linearAcceleration = event.message.linearAcceleration;
+        _console.log("linearAcceleration", linearAcceleration);
+    }
+    /**
+     * @private
+     * @param {BrilliantSoleEvent} event
+     */
+    _onQuaternion(event) {
+        const quaternion = event.message.quaternion;
+        _console.log("quaternion", quaternion);
     }
 }
 

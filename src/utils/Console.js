@@ -83,7 +83,9 @@ class Console {
      */
     static create(type, levelFlags) {
         const console = this.#consoles[type] || new Console(type);
-        console.setLevelFlags(levelFlags);
+        if (isInDev) {
+            console.setLevelFlags(levelFlags);
+        }
         return console;
     }
 

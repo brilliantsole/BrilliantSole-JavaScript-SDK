@@ -28,7 +28,10 @@ class WebBluetoothConnectionManager extends ConnectionManager {
     }
 
     /** @type {TextDecoder} */
-    #textDecoder = new TextDecoder();
+    static #TextDecoder = new TextDecoder();
+    get #textDecoder() {
+        return WebBluetoothConnectionManager.#TextDecoder;
+    }
 
     /** @type {BluetoothDevice?} */
     #device;
@@ -183,8 +186,10 @@ class WebBluetoothConnectionManager extends ConnectionManager {
                 _console.log(`batteryLevel: ${batteryLevel}`);
                 this._dispatchEvent({ type: "batteryLevel", message: { batteryLevel } });
                 break;
-            case "dataNotify":
-                // FILL
+            case "data":
+                const data = dataView;
+                _console.log("data", data);
+                this._dispatchEvent({ type: "data", message: { data } });
                 break;
             default:
                 throw new Error(`uncaught characteristicName "${characteristicName}"`);
