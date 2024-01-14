@@ -8,12 +8,25 @@ import { createConsole, setAllConsoleLevelFlags, setConsoleLevelFlagsForType } f
 /** @typedef {import("./utils/EventDispatcher.js").EventDispatcherEvent} EventDispatcherEvent */
 
 /** @typedef {import("./connection/ConnectionManager.js").BrilliantSoleConnectionManagerEventType} BrilliantSoleConnectionManagerEventType */
-/** @typedef {BrilliantSoleConnectionManagerEventType} BrilliantSoleEventType */
+/** @typedef {import("./connection/ConnectionManager.js").BrilliantSoleConnectionStatus} BrilliantSoleConnectionStatus */
+
+/** @typedef {BrilliantSoleConnectionStatus|BrilliantSoleConnectionManagerEventType} BrilliantSoleEventType */
 
 /**
  * @typedef BrilliantSoleEvent
  * @type {object}
  * @property {BrilliantSoleEventType} type
+ * @property {object} message
+ */
+
+/**
+ * @typedef BrilliantSoleDeviceInformation
+ * @type {object}
+ * @property {string?} manufacturerName
+ * @property {string?} modelNumber
+ * @property {string?} softwareRevision
+ * @property {string?} hardwareRevision
+ * @property {string?} firmwareRevision
  */
 
 const _console = createConsole("BrilliantSole");
@@ -25,7 +38,7 @@ class BrilliantSole {
     }
 
     /** @type {BrilliantSoleEventType[]} */
-    static #EventTypes = [...ConnectionManager.EventTypes];
+    static #EventTypes = [...ConnectionManager.EventTypes, "connecting", "connected", "disconnecting", "not connected"];
     get #eventTypes() {
         return BrilliantSole.#EventTypes;
     }
@@ -65,10 +78,10 @@ class BrilliantSole {
         return this.#connectionManager;
     }
     set connectionManager(newConnectionManager) {
-        _console.assertWithWarning(
-            this.connectionManager != newConnectionManager,
-            "same connectionManager is already assigned"
-        );
+        if (this.connectionManager == newConnectionManager) {
+            _console.warn("same connectionManager is already assigned");
+            return;
+        }
         _console.log("assigning new connectionManager...", newConnectionManager);
 
         this.connectionManager?.eventTypes.forEach((eventType) => {
@@ -97,31 +110,67 @@ class BrilliantSole {
         return this.connectionManager.disconnect();
     }
 
-    /** @private */
-    _onConnecting() {
-        _console.log(this);
-        _console.log("connecting");
-        this.#dispatchEvent({ type: "connecting" });
+    /**
+     * @private
+     * @param {BrilliantSoleEvent} event
+     */
+    _onIsConnected(event) {
+        /** @type {Boolean} */
+        const isConnected = event.message.isConnected;
+        if (isConnected) {
+            this.#dispatchEvent({ type: "connected" });
+        } else {
+            this.#dispatchEvent({ type: "not connected" });
+        }
+        this.#dispatchEvent(event);
     }
-    /** @private */
-    _onConnected() {
-        _console.log("connected");
-        this.#dispatchEvent({ type: "connected" });
+
+    get connectionStatus() {
+        return this.#connectionManager?.connectionStatus;
     }
-    /** @private */
-    _onDisconnecting() {
-        _console.log("disconnecting");
-        this.#dispatchEvent({ type: "disconnecting" });
+    /**
+     * @private
+     * @param {BrilliantSoleEvent} event
+     */
+    _onConnectionStatus(event) {
+        _console.log(`connectionStatus: "${this.connectionStatus}"`);
+        this.#dispatchEvent(event);
+        this.#dispatchEvent({ type: this.connectionStatus });
     }
-    /** @private */
-    _onDisconnected() {
-        _console.log("disconnected");
-        this.#dispatchEvent({ type: "disconnected" });
+
+    /** @type {BrilliantSoleDeviceInformation} */
+    #deviceInformation = {};
+    get deviceInformation() {
+        return this.#deviceInformation;
     }
-    /** @private */
-    _onConnectionChanged() {
-        _console.log("connection changed");
-        this.#dispatchEvent({ type: "connection changed" });
+
+    /**
+     * @private
+     * @param {BrilliantSoleEvent} event
+     */
+    _onDeviceInformation(event) {
+        /** @type {BrilliantSoleDeviceInformation} */
+        const deviceInformation = event.message;
+        _console.log("partial deviceInformation", deviceInformation);
+        Object.assign(this.#deviceInformation, deviceInformation);
+        _console.log("deviceInformation", this.#deviceInformation);
+        this.#dispatchEvent({ type: "deviceInformation", message: { deviceInformation: this.deviceInformation } });
+    }
+
+    /** @type {number?} */
+    #batteryLevel;
+    get batteryLevel() {
+        return this.#batteryLevel;
+    }
+    /**
+     * @private
+     * @param {BrilliantSoleEvent} event
+     */
+    _onBatteryLevel(event) {
+        const { batteryLevel } = event.message;
+        _console.log(`batteryLevel: ${batteryLevel}%`);
+        this.#batteryLevel = batteryLevel;
+        this.#dispatchEvent(event);
     }
 }
 

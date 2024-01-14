@@ -138,8 +138,11 @@ class EventDispatcher {
  * @param {object} target
  */
 export function bindEventListeners(eventTypes, object, target) {
+    _console.log("bindEventListeners", { eventTypes, object, target });
     eventTypes.forEach((eventType) => {
         const _eventType = `_on${spacesToPascalCase(eventType)}`;
+        _console.assertWithError(target[_eventType], `no event "${_eventType}" found in target`, target);
+        _console.log(`binding eventType "${eventType}" as ${_eventType} from target`, target);
         const boundEvent = target[_eventType].bind(target);
         target[_eventType] = boundEvent;
         object[eventType] = boundEvent;

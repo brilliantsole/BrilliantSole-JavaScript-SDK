@@ -29,8 +29,6 @@
 	 * @property {boolean} warn
 	 * @property {boolean} error
 	 * @property {boolean} assert
-	 * @property {boolean} assertWithWarning
-	 * @property {boolean} assertWithError
 	 */
 
 	function emptyFunction() {}
@@ -130,17 +128,6 @@
 	            throw new Error(message);
 	        }
 	    }
-
-	    /**
-	     * @param {boolean} condition
-	     * @param {...any} data
-	     */
-	    assertWithWarning(condition, ...data) {
-	        if (!condition) {
-	            this.warn(...data);
-	            return;
-	        }
-	    }
 	}
 
 	/**
@@ -196,7 +183,7 @@
 
 	/** @typedef {(event: EventDispatcherEvent) => void} EventDispatcherListener */
 
-	const _console$3 = createConsole("EventDispatcher", { log: false });
+	const _console$3 = createConsole("EventDispatcher", { log: true });
 
 	// based on https://github.com/mrdoob/eventdispatcher.js/
 	class EventDispatcher {
@@ -318,8 +305,10 @@
 	 * @param {object} target
 	 */
 	function bindEventListeners(eventTypes, object, target) {
+	    _console$3.log("bindEventListeners", { eventTypes, object, target });
 	    eventTypes.forEach((eventType) => {
 	        const _eventType = `_on${spacesToPascalCase(eventType)}`;
+	        _console$3.log(`binding eventType "${eventType}" as ${_eventType} from target`, target);
 	        const boundEvent = target[_eventType].bind(target);
 	        target[_eventType] = boundEvent;
 	        object[eventType] = boundEvent;
@@ -330,19 +319,31 @@
 	/** @typedef {import("./utils/EventDispatcher.js").EventDispatcherOptions} EventDispatcherOptions */
 
 	/** @typedef {"web bluetooth" | "noble"} BrilliantSoleConnectionType */
-	/** @typedef {"connecting" | "connected" | "disconnecting" | "disconnected" | "connection changed"} BrilliantSoleConnectionManagerEventType */
+	/** @typedef {"connecting" | "connected" | "disconnecting" | "disconnected" | "manufacturerName" | "modelNumber" | "softwareRevision" | "hardwareRevision" | "firmwareRevision" | "batteryLevel"} BrilliantSoleConnectionManagerEventType */
 
 	/**
 	 * @typedef BrilliantSoleConnectionManagerEvent
 	 * @type {object}
 	 * @property {BrilliantSoleConnectionManagerEventType} type
+	 * @property {object} message
 	 */
 
 	const _console$2 = createConsole("ConnectionManager");
 
 	class ConnectionManager {
 	    /** @type {BrilliantSoleConnectionManagerEventType[]} */
-	    static #EventTypes = ["connecting", "connected", "disconnecting", "disconnected", "connection changed"];
+	    static #EventTypes = [
+	        "connecting",
+	        "connected",
+	        "disconnecting",
+	        "disconnected",
+	        "manufacturerName",
+	        "modelNumber",
+	        "softwareRevision",
+	        "hardwareRevision",
+	        "firmwareRevision",
+	        "batteryLevel",
+	    ];
 	    static get EventTypes() {
 	        return this.#EventTypes;
 	    }
@@ -362,10 +363,11 @@
 	    }
 
 	    /**
+	     * @protected
 	     * @param {BrilliantSoleConnectionManagerEvent} event
 	     * @throws {Error} if type is not valid
 	     */
-	    #dispatchEvent(event) {
+	    _dispatchEvent(event) {
 	        this.#eventDispatcher.dispatchEvent(event);
 	    }
 
@@ -441,12 +443,12 @@
 	    /** @throws {Error} if already connected */
 	    async connect() {
 	        this.#assertIsNotConnected();
-	        this.#dispatchEvent({ type: "connecting" });
+	        this._dispatchEvent({ type: "connecting" });
 	    }
 	    /** @throws {Error} if not connected */
 	    async disconnect() {
 	        this.#assertIsConnected();
-	        this.#dispatchEvent({ type: "disconnected" });
+	        this._dispatchEvent({ type: "disconnected" });
 	    }
 	}
 
@@ -570,7 +572,7 @@
 	    return bluetoothUUIDs.getCharacteristicNameFromUUID(characteristicUUID);
 	}
 
-	const _console$1 = createConsole("WebBluetoothConnectionManager");
+	const _console$1 = createConsole("WebBluetoothConnectionManager", { log: false });
 
 	/** @typedef {import("./bluetoothUUIDs.js").BrilliantSoleBluetoothCharacteristicName} BrilliantSoleBluetoothCharacteristicName */
 	/** @typedef {import("./bluetoothUUIDs.js").BrilliantSoleBluetoothServiceName} BrilliantSoleBluetoothServiceName */
@@ -590,6 +592,9 @@
 	    static get type() {
 	        return "web bluetooth";
 	    }
+
+	    /** @type {TextDecoder} */
+	    #textDecoder = new TextDecoder();
 
 	    /** @type {BluetoothDevice?} */
 	    #device;
@@ -675,6 +680,8 @@
 	        });
 	        await Promise.all(servicePromises);
 	        _console$1.log("got all characteristics");
+
+	        this._dispatchEvent({ type: "connected" });
 	    }
 	    async disconnect() {
 	        super.disconnect();
@@ -704,7 +711,38 @@
 	        _console$1.log(`data for "${characteristicName}" characteristic`, Array.from(new Uint8Array(dataView.buffer)));
 
 	        switch (characteristicName) {
+	            case "manufacturerName":
+	                const manufacturerName = this.#textDecoder.decode(dataView);
+	                _console$1.log(`manufacturerName: "${manufacturerName}"`);
+	                this._dispatchEvent({ type: "manufacturerName", message: { manufacturerName } });
+	                break;
+	            case "modelNumber":
+	                const modelNumber = this.#textDecoder.decode(dataView);
+	                _console$1.log(`modelNumber: "${modelNumber}"`);
+	                this._dispatchEvent({ type: "modelNumber", message: { modelNumber } });
+	                break;
+	            case "softwareRevision":
+	                const softwareRevision = this.#textDecoder.decode(dataView);
+	                _console$1.log(`softwareRevision: "${softwareRevision}"`);
+	                this._dispatchEvent({ type: "softwareRevision", message: { softwareRevision } });
+	                break;
+	            case "hardwareRevision":
+	                const hardwareRevision = this.#textDecoder.decode(dataView);
+	                _console$1.log(`hardwareRevision: "${hardwareRevision}"`);
+	                this._dispatchEvent({ type: "hardwareRevision", message: { hardwareRevision } });
+	                break;
+	            case "firmwareRevision":
+	                const firmwareRevision = this.#textDecoder.decode(dataView);
+	                _console$1.log(`firmwareRevision: "${firmwareRevision}"`);
+	                this._dispatchEvent({ type: "firmwareRevision", message: { firmwareRevision } });
+	                break;
+	            case "batteryLevel":
+	                const batteryLevel = dataView.getUint8(0);
+	                _console$1.log(`batteryLevel: ${batteryLevel}`);
+	                this._dispatchEvent({ type: "batteryLevel", message: { batteryLevel } });
+	                break;
 	            case "dataNotify":
+	                // FILL
 	                break;
 	            default:
 	                throw new Error(`uncaught characteristicName "${characteristicName}"`);
@@ -723,6 +761,17 @@
 	 * @typedef BrilliantSoleEvent
 	 * @type {object}
 	 * @property {BrilliantSoleEventType} type
+	 * @property {object} message
+	 */
+
+	/**
+	 * @typedef BrilliantSoleDeviceInformation
+	 * @type {object}
+	 * @property {string?} manufacturerName
+	 * @property {string?} modelNumber
+	 * @property {string?} softwareRevision
+	 * @property {string?} hardwareRevision
+	 * @property {string?} firmwareRevision
 	 */
 
 	const _console = createConsole("BrilliantSole");
@@ -774,10 +823,10 @@
 	        return this.#connectionManager;
 	    }
 	    set connectionManager(newConnectionManager) {
-	        _console.assertWithWarning(
-	            this.connectionManager != newConnectionManager,
-	            "same connectionManager is already assigned"
-	        );
+	        if (this.connectionManager == newConnectionManager) {
+	            _console.warn("same connectionManager is already assigned");
+	            return;
+	        }
 	        _console.log("assigning new connectionManager...", newConnectionManager);
 
 	        this.connectionManager?.eventTypes.forEach((eventType) => {
@@ -827,10 +876,78 @@
 	        _console.log("disconnected");
 	        this.#dispatchEvent({ type: "disconnected" });
 	    }
-	    /** @private */
-	    _onConnectionChanged() {
-	        _console.log("connection changed");
-	        this.#dispatchEvent({ type: "connection changed" });
+
+	    /** @type {BrilliantSoleDeviceInformation} */
+	    #deviceInformation = {};
+	    get deviceInformation() {
+	        return this.#deviceInformation;
+	    }
+
+	    /**
+	     * @private
+	     * @param {BrilliantSoleEvent} event
+	     */
+	    _onManufacturerName(event) {
+	        const { manufacturerName } = event.message;
+	        _console.log(`manufacturerName: "${manufacturerName}"`);
+	        this.#deviceInformation.manufacturerName = manufacturerName;
+	        this.#dispatchEvent({ type: "manufacturerName", message: { manufacturerName } });
+	    }
+	    /**
+	     * @private
+	     * @param {BrilliantSoleEvent} event
+	     */
+	    _onModelNumber(event) {
+	        const { modelNumber } = event.message;
+	        _console.log(`modelNumber: "${modelNumber}"`);
+	        this.#deviceInformation.modelNumber = modelNumber;
+	        this.#dispatchEvent({ type: "modelNumber", message: { modelNumber } });
+	    }
+	    /**
+	     * @private
+	     * @param {BrilliantSoleEvent} event
+	     */
+	    _onSoftwareRevision(event) {
+	        const { softwareRevision } = event.message;
+	        _console.log(`softwareRevision: "${softwareRevision}"`);
+	        this.#deviceInformation.softwareRevision = softwareRevision;
+	        this.#dispatchEvent({ type: "softwareRevision", message: { softwareRevision } });
+	    }
+	    /**
+	     * @private
+	     * @param {BrilliantSoleEvent} event
+	     */
+	    _onHardwareRevision(event) {
+	        const { hardwareRevision } = event.message;
+	        _console.log(`hardwareRevision: "${hardwareRevision}"`);
+	        this.#deviceInformation.hardwareRevision = hardwareRevision;
+	        this.#dispatchEvent({ type: "hardwareRevision", message: { hardwareRevision } });
+	    }
+	    /**
+	     * @private
+	     * @param {BrilliantSoleEvent} event
+	     */
+	    _onFirmwareRevision(event) {
+	        const { firmwareRevision } = event.message;
+	        _console.log(`firmwareRevision: "${firmwareRevision}"`);
+	        this.#deviceInformation.firmwareRevision = firmwareRevision;
+	        this.#dispatchEvent({ type: "firmwareRevision", message: { firmwareRevision } });
+	    }
+
+	    /** @type {number?} */
+	    #batteryLevel;
+	    get batteryLevel() {
+	        return this.#batteryLevel;
+	    }
+	    /**
+	     * @private
+	     * @param {BrilliantSoleEvent} event
+	     */
+	    _onBatteryLevel(event) {
+	        const { batteryLevel } = event.message;
+	        _console.log(`batteryLevel: ${batteryLevel}%`);
+	        this.#batteryLevel = batteryLevel;
+	        this.#dispatchEvent({ type: "batteryLevel", message: { batteryLevel } });
 	    }
 	}
 

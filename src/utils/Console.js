@@ -18,8 +18,6 @@ import { isInDev } from "./environment.js";
  * @property {boolean} warn
  * @property {boolean} error
  * @property {boolean} assert
- * @property {boolean} assertWithWarning
- * @property {boolean} assertWithError
  */
 
 function emptyFunction() {}
@@ -117,17 +115,6 @@ class Console {
     assertWithError(condition, message) {
         if (!condition) {
             throw new Error(message);
-        }
-    }
-
-    /**
-     * @param {boolean} condition
-     * @param {...any} data
-     */
-    assertWithWarning(condition, ...data) {
-        if (!condition) {
-            this.warn(...data);
-            return;
         }
     }
 }

@@ -5,19 +5,21 @@ import { createConsole } from "../utils/Console.js";
 /** @typedef {import("./utils/EventDispatcher.js").EventDispatcherOptions} EventDispatcherOptions */
 
 /** @typedef {"web bluetooth" | "noble"} BrilliantSoleConnectionType */
-/** @typedef {"connecting" | "connected" | "disconnecting" | "disconnected" | "connection changed"} BrilliantSoleConnectionManagerEventType */
+/** @typedef {"not connected" | "connecting" | "connected" | "disconnecting"} BrilliantSoleConnectionStatus */
+/** @typedef {"connectionStatus" | "isConnected" | "deviceInformation" | "batteryLevel"} BrilliantSoleConnectionManagerEventType */
 
 /**
  * @typedef BrilliantSoleConnectionManagerEvent
  * @type {object}
  * @property {BrilliantSoleConnectionManagerEventType} type
+ * @property {object} message
  */
 
 const _console = createConsole("ConnectionManager");
 
 class ConnectionManager {
     /** @type {BrilliantSoleConnectionManagerEventType[]} */
-    static #EventTypes = ["connecting", "connected", "disconnecting", "disconnected", "connection changed"];
+    static #EventTypes = ["isConnected", "connectionStatus", "deviceInformation", "batteryLevel"];
     static get EventTypes() {
         return this.#EventTypes;
     }
@@ -43,7 +45,6 @@ class ConnectionManager {
      */
     _dispatchEvent(event) {
         this.#eventDispatcher.dispatchEvent(event);
-        this.#eventDispatcher.dispatchEvent({ type: "connection changed" });
     }
 
     /**
@@ -103,27 +104,53 @@ class ConnectionManager {
         this.#assertIsSupported();
     }
 
+    /** @type {BrilliantSoleConnectionStatus} */
+    #connectionStatus = "not connected";
+    get connectionStatus() {
+        return this.#connectionStatus;
+    }
+    set connectionStatus(newConnectionStatus) {
+        if (this.#connectionStatus == newConnectionStatus) {
+            _console.warn("same connection status");
+            return;
+        }
+        _console.log(`new connection status "${newConnectionStatus}"`);
+        this.#connectionStatus = newConnectionStatus;
+        this._dispatchEvent({ type: "connectionStatus", message: { connectionStatus: this.connectionStatus } });
+    }
+
     get isConnected() {
-        return false;
+        return this.connectionStatus == "connected";
+    }
+
+    /** @throws {Error} if connected */
+    #assertIsNotConnected() {
+        _console.assertWithError(!this.isConnected, "device is already connected");
+    }
+    /** @throws {Error} if connecting */
+    #assertIsNotConnecting() {
+        _console.assertWithError(this.connectionStatus != "connecting", "device is already connecting");
     }
     /** @throws {Error} if not connected */
     #assertIsConnected() {
         _console.assertWithError(this.isConnected, "device is not connected");
     }
-    /** @throws {Error} if connected */
-    #assertIsNotConnected() {
-        _console.assertWithError(!this.isConnected, "device is already connected");
+    /** @throws {Error} if disconnecting */
+    #assertIsNotDisconnecting() {
+        _console.assertWithError(this.connectionStatus != "disconnecting", "device is already disconnecting");
     }
 
     /** @throws {Error} if already connected */
     async connect() {
         this.#assertIsNotConnected();
-        this._dispatchEvent({ type: "connecting" });
+        this.#assertIsNotConnecting();
+        this.connectionStatus = "connecting";
     }
     /** @throws {Error} if not connected */
     async disconnect() {
         this.#assertIsConnected();
-        this._dispatchEvent({ type: "disconnected" });
+        this.#assertIsNotDisconnecting();
+        this.connectionStatus = "disconnecting";
     }
 }
 
