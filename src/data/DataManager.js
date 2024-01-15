@@ -5,11 +5,12 @@ import { createConsole } from "../utils/Console.js";
 /** @typedef {import("./utils/EventDispatcher.js").EventDispatcherOptions} EventDispatcherOptions */
 
 /** @typedef {"start" | "sync" | "logging" | "sensor"} BrilliantSoleDataManagerState */
-/** @typedef {"startSync" | "continueSync" | "logHeader" | "sensorHeader"} BrilliantSoleDataManagerMessageType */
-/** @typedef {"pressure" | "acceleration" | "linearAcceleration" | "quaternion" | "magnetometer"} BrilliantSoleSensorType */
+/** @typedef {"padding" | "sync" | "log" | "sensor"} BrilliantSoleDataManagerMessageType */
+/** @typedef {"pressure" | "acceleration" | "linearAcceleration" | "quaternion" | "magneticRotation"} BrilliantSoleSensorType */
 /** @typedef {"log" | BrilliantSoleSensorType} BrilliantSoleDataManagerEventType */
 /** @typedef {"setSensorDataRate" | "setVibrationStrength" | "triggerVibration" | "stopVibration"} BrilliantSoleCommandType */
 /** @typedef {"front" | "back" | "both"} BrilliantSoleVibrationMotor */
+/** @typedef {"hallux" | "digits" | "metatarsal_inner" | "metatarsal_center" | "metatarsal_outer" | "lateral" | "arch" | "heel"} BrilliantSolePessureType */
 
 /**
  * @typedef BrilliantSoleDataManagerEvent
@@ -22,7 +23,7 @@ const _console = createConsole("DataManager", { log: false });
 
 class DataManager {
     /** @type {BrilliantSoleDataManagerEventType[]} */
-    static #EventTypes = ["log", "pressure", "acceleration", "linearAcceleration", "quaternion"];
+    static #EventTypes = ["log", "pressure", "acceleration", "linearAcceleration", "quaternion", "magneticRotation"];
     static get EventTypes() {
         return this.#EventTypes;
     }
@@ -77,10 +78,10 @@ class DataManager {
 
     /** @type {Object.<number, BrilliantSoleDataManagerMessageType?>} */
     static #_MessageType = {
-        0: "startSync",
-        1: "continueSync",
-        2: "logHeader",
-        3: "sensorHeader",
+        0: "padding",
+        1: "sync",
+        2: "log",
+        3: "sensor",
     };
     get #MessageType() {
         return DataManager.#_MessageType;
@@ -92,7 +93,7 @@ class DataManager {
         6: "acceleration",
         32: "linearAcceleration",
         38: "quaternion",
-        41: "magnetometer",
+        41: "magneticRotation",
     };
     get #SensorType() {
         return DataManager.#_SensorType;
@@ -106,7 +107,7 @@ class DataManager {
         acceleration: 6,
         linearAcceleration: 32,
         quaternion: 38,
-        magnetometer: 41,
+        magneticRotation: 41,
     };
     get #SensorId() {
         return DataManager.#_SensorId;

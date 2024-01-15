@@ -218,7 +218,12 @@ class BrilliantSole {
     _onData(event) {
         /** @type {DataView} */
         const dataView = event.message.data;
-        _console.log("data", Array.from(new Uint8Array(dataView.buffer)));
+
+        const array = Array.from(new Uint8Array(dataView.buffer));
+        if (![171, 48, 32, 0].includes(array[0])) {
+            //_console.log(array[0], array.map(String.fromCharCode).join(""));
+            _console.log("data", Array.from(new Uint8Array(dataView.buffer)));
+        }
         this.#dataManager.parseData(dataView);
     }
 
@@ -255,6 +260,14 @@ class BrilliantSole {
     _onLinearAcceleration(event) {
         const linearAcceleration = event.message.linearAcceleration;
         _console.log("linearAcceleration", linearAcceleration);
+    }
+    /**
+     * @private
+     * @param {BrilliantSoleEvent} event
+     */
+    _onMagneticRotation(event) {
+        const magneticRotation = event.message.magneticRotation;
+        _console.log("magneticRotation", magneticRotation);
     }
     /**
      * @private

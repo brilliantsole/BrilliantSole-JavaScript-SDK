@@ -40,7 +40,7 @@ brilliantSole.addEventListener("disconnecting", () => {
 });
 brilliantSole.addEventListener("not connected", () => {
     console.log("not connected");
-    toggleConnectionButton.innerText = "reconnect";
+    toggleConnectionButton.innerText = brilliantSole.canReconnect ? "reconnect" : "connect";
     toggleConnectionButton.disabled = false;
 });
 
@@ -84,4 +84,28 @@ brilliantSole.addEventListener("isConnected", () => {
     triggerVibrationButton.disabled = disabled;
     stopVibrationButton.disabled = disabled;
     setVibrationStrengthButton.disabled = disabled;
+});
+
+var isSendingPressure = false;
+/** @type {HTMLButtonElement} */
+const togglePressureButton = document.getElementById("togglePressure");
+togglePressureButton.addEventListener("click", () => {
+    isSendingPressure = !isSendingPressure;
+    const sensorDataRate = isSendingPressure ? 2 : 0;
+    brilliantSole.setSensorDataRate("pressure", sensorDataRate);
+    togglePressureButton.innerText = isSendingPressure ? "disable pressure" : "enable pressure";
+});
+var isSendingQuaternion = false;
+/** @type {HTMLButtonElement} */
+const toggleQuaternionButton = document.getElementById("toggleQuaternion");
+toggleQuaternionButton.addEventListener("click", () => {
+    isSendingQuaternion = !isSendingQuaternion;
+    const sensorDataRate = isSendingQuaternion ? 2 : 0;
+    brilliantSole.setSensorDataRate("quaternion", sensorDataRate);
+    toggleQuaternionButton.innerText = isSendingQuaternion ? "disable quaternion" : "enable quaternion";
+});
+brilliantSole.addEventListener("isConnected", () => {
+    const disabled = !brilliantSole.isConnected;
+    togglePressureButton.disabled = disabled;
+    toggleQuaternionButton.disabled = disabled;
 });
