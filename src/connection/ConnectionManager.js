@@ -147,11 +147,31 @@ class ConnectionManager {
         this.#assertIsNotConnecting();
         this.connectionStatus = "connecting";
     }
+    /** @type {boolean} */
+    get canReconnect() {
+        return false;
+    }
+    /** @throws {Error} if already connected */
+    async reconnect() {
+        this.#assertIsNotConnected();
+        this.#assertIsNotConnecting();
+        _console.assert(this.canReconnect, "unable to reconnect");
+        this.connectionStatus = "connecting";
+    }
     /** @throws {Error} if not connected */
     async disconnect() {
         this.#assertIsConnected();
         this.#assertIsNotDisconnecting();
         this.connectionStatus = "disconnecting";
+    }
+
+    /**
+     * @throws {Error} if not connected
+     * @param {DataView|ArrayBuffer} message
+     */
+    async send(message) {
+        this.#assertIsConnected();
+        this.#assertIsNotDisconnecting();
     }
 }
 

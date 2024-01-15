@@ -18,6 +18,7 @@ const _console = createConsole("BrilliantSole", { log: false });
 /** @typedef {import("./connection/ConnectionManager.js").BrilliantSoleConnectionStatus} BrilliantSoleConnectionStatus */
 
 /** @typedef {BrilliantSoleConnectionStatus|BrilliantSoleConnectionManagerEventType} BrilliantSoleEventType */
+/** @typedef {import("./data/DataManager.js").BrilliantSoleSensorType} BrilliantSoleSensorType */
 
 /**
  * @typedef BrilliantSoleEvent
@@ -104,11 +105,23 @@ class BrilliantSole {
 
     async connect() {
         // TODO - set connection type?
-        return this.connectionManager.connect();
+        return this.connectionManager?.connect();
     }
     get isConnected() {
-        return this.connectionManager.isConnected;
+        return this.connectionManager?.isConnected;
     }
+    /** @throws {Error} if not connected */
+    #assertIsConnected() {
+        _console.assertWithError(this.isConnected, "not connected");
+    }
+
+    get canReconnect() {
+        return this.connectionManager?.canReconnect;
+    }
+    async reconnect() {
+        return this.connectionManager?.reconnect();
+    }
+
     get connectionType() {
         return this.connectionManager?.type;
     }
@@ -179,6 +192,16 @@ class BrilliantSole {
         this.#dispatchEvent(event);
     }
 
+    /**
+     * @param {BrilliantSoleSensorType} sensorType
+     * @param {number} sensorDataRate a number between 0 and 6
+     */
+    async setSensorDataRate(sensorType, sensorDataRate) {
+        this.#assertIsConnected();
+        const message = this.#dataManager.createSetSensorDataRateMessage(sensorType, sensorDataRate);
+        this.connectionManager?.send(message);
+    }
+
     /** @type {DataManager} */
     #dataManager = new DataManager();
     /** @type {Object.<string, EventDispatcherListener} */
@@ -236,6 +259,23 @@ class BrilliantSole {
     _onQuaternion(event) {
         const quaternion = event.message.quaternion;
         _console.log("quaternion", quaternion);
+    }
+
+    /** @param {number} vibrationStrength */
+    async setSensorDataRate(vibrationStrength) {
+        this.#assertIsConnected();
+        const message = this.#dataManager.createSetVibrationStrengthMessage(vibrationStrength);
+        this.connectionManager?.send(message);
+    }
+    async startVibration() {
+        this.#assertIsConnected();
+        const message = this.#dataManager.startVibrationMessage;
+        this.connectionManager?.send(message);
+    }
+    async stopVibration() {
+        this.#assertIsConnected();
+        const message = this.#dataManager.stopVibrationMessage;
+        this.connectionManager?.send(message);
     }
 }
 

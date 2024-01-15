@@ -8,6 +8,7 @@ import { createConsole } from "../utils/Console.js";
 /** @typedef {"startSync" | "continueSync" | "logHeader" | "sensorHeader"} BrilliantSoleDataManagerMessageType */
 /** @typedef {"pressure" | "acceleration" | "linearAcceleration" | "quaternion"} BrilliantSoleSensorType */
 /** @typedef {"log" | BrilliantSoleSensorType} BrilliantSoleDataManagerEventType */
+/** @typedef {"setSensorDataRate" | "setVibrationStrength" | "startVibration" | "stopVibration"} BrilliantSoleCommandType */
 
 /**
  * @typedef BrilliantSoleDataManagerEvent
@@ -84,12 +85,12 @@ class DataManager {
         return DataManager.#_MessageType;
     }
 
-    /** @type {Object.<number, BrilliantSoleSensorType?>} */
+    /** @type {Object.<number, BrilliantSoleSensorType>} */
     static #_SensorType = {
-        0: "pressure",
-        0: "acceleration",
-        0: "linearAcceleration",
-        0: "quaternion",
+        2: "pressure",
+        6: "acceleration",
+        32: "linearAcceleration",
+        38: "quaternion",
     };
     get #SensorType() {
         return DataManager.#_SensorType;
@@ -97,7 +98,18 @@ class DataManager {
     /** @type {BrilliantSoleSensorType} */
     #sensorType;
 
-    /** @type {Object.<BrilliantSoleSensorType, number>} */
+    /* @type {Object.<BrilliantSoleSensorType, number>} */
+    static #_SensorId = {
+        pressure: 2,
+        acceleration: 6,
+        linearAcceleration: 32,
+        quaternion: 38,
+    };
+    get #SensorId() {
+        return DataManager.#_SensorId;
+    }
+
+    /* @type {Object.<BrilliantSoleSensorType, number>} */
     static #_SensorDataLength = {
         pressure: 16,
         acceleration: 6,
@@ -107,8 +119,7 @@ class DataManager {
     get #SensorDataLength() {
         return DataManager.#_SensorDataLength;
     }
-    /* @type {Object.<BrilliantSoleSensorType, number?>} */
-    /** @type {Object.<string, number?>} */
+    /* @type {Object.<BrilliantSoleSensorType, number>} */
     static #_SensorDataScalar = {
         pressure: 1,
         acceleration: 2 ** -12,
@@ -119,21 +130,35 @@ class DataManager {
         return DataManager.#_SensorDataScalar;
     }
 
+    /* @type {Object.<BrilliantSoleCommandType, number>} */
+    static #_CommandType = {
+        setSensorDataRate: 1,
+        setVibrationStrength: 2,
+        startVibration: 3,
+        stopVibration: 4,
+    };
+    get #CommandType() {
+        return DataManager.#_CommandType;
+    }
+
+    /* @type {Object.<number, number>} */
+    static #_SensorDataRate = {
+        0: 0,
+        1: 1.5625,
+        2: 3.125,
+        3: 6.25,
+        4: 12.5,
+        5: 25.0,
+        6: 50.0,
+    };
+    get #SensorDataRate() {
+        return DataManager.#_SensorDataRate;
+    }
+
     /** @type {number[]} */
     #sensorDataBuffer = [];
     /** @type {number} */
     #sensorDataBufferFinalLength = 0;
-
-    /** @type {Object.<BrilliantSoleSensorType, number>} */
-    static #_SensorTypeLength = {
-        pressure: 16,
-        acceleration: 6,
-        linearAcceleration: 6,
-        quaternion: 8,
-    };
-    get #SensorTypeLength() {
-        return DataManager.#_SensorTypeLength;
-    }
 
     /** @type {number[]} */
     #logBuffer = [];
@@ -147,7 +172,7 @@ class DataManager {
 
         while (byteOffset < dataView.byteLength) {
             const byte = dataView.getUint8(byteOffset++);
-            _console.log(`byte at offset #${byteOffset}: ${byte}`);
+            _console.log(`byte at offset #${byteOffset - 1}: ${byte}`);
             const messageType = this.#MessageType[byte];
             _console.log("messageType?", messageType);
             switch (this.#state) {
@@ -216,6 +241,55 @@ class DataManager {
     }
 
     /**
+     * @param {BrilliantSoleSensorType} sensorType
+     * @throws {Error} if invalid sensorType
+     */
+    #assertValidSensorType(sensorType) {
+        _console.assert(sensorType in this.#SensorId, `invalid sensorType "${sensorType}"`);
+    }
+
+    /**
+     * @param {number} sensorDataRate
+     * @throws {Error} if invalid dataRate
+     */
+    #assertValidSensorDataRate(sensorDataRate) {
+        _console.assert(sensorDataRate in this.#SensorDataRate, `invalid sensor dataRate "${sensorType}"`);
+    }
+
+    /**
+     *
+     * @param {BrilliantSoleSensorType} sensorType
+     * @param {number} dataRate
+     * @returns {ArrayBuffer} message
+     */
+    createSetSensorDataRateMessage(sensorType, sensorDataRate) {
+        this.#assertValidSensorType(sensorType);
+        this.#assertValidSensorDataRate(sensorDataRate);
+        const sensorId = this.#SensorId[sensorType];
+        const message = Uint8Array.from([this.#CommandType.setSensorDataRate, sensorId, dataRate]);
+        return message;
+    }
+
+    /**
+     * @param {number} vibrationStrength
+     * @returns {ArrayBuffer} message
+     */
+    createSetVibrationStrengthMessage(vibrationStrength) {
+        const message = Uint8Array.from([this.#CommandType.setVibrationStrength, vibrationStrength]);
+        return message;
+    }
+
+    #startVibrationMessage = Uint8Array.from([this.#CommandType.startVibration]);
+    get startVibrationMessage() {
+        return this.#startVibrationMessage;
+    }
+
+    #stopVibrationMessage = Uint8Array.from([this.#CommandType.stopVibration]);
+    get stopVibrationMessage() {
+        return this.#stopVibrationMessage;
+    }
+
+    /**
      *
      * @param {BrilliantSoleSensorType} sensorType
      * @param {DataView} sensorData
@@ -226,20 +300,20 @@ class DataManager {
 
         switch (sensorType) {
             case "pressure":
-                // FILL
                 const rawPressureValues = new Uint16Array(sensorData.buffer);
                 _console.log("rawPressureValues", rawPressureValues);
+                // FILL
                 break;
             case "acceleration":
             case "linearAcceleration":
-                // FILL
                 const rawVectorValues = new Int16Array(sensorData.buffer);
                 _console.log("rawVectorValues", rawVectorValues);
+                // FILL
                 break;
             case "quaternion":
-                // FILL
                 const rawQuaternionValues = new Int16Array(sensorData.buffer);
                 _console.log("rawQuaternionValues", rawQuaternionValues);
+                // FILL
                 break;
             default:
                 throw new Error(`uncaught sensorType "${sensorType}"`);

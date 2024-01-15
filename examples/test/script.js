@@ -11,7 +11,11 @@ const toggleConnectionButton = document.getElementById("toggleConnection");
 toggleConnectionButton.addEventListener("click", () => {
     switch (brilliantSole.connectionStatus) {
         case "not connected":
-            brilliantSole.connect();
+            if (false && brilliantSole.canReconnect) {
+                brilliantSole.reconnect();
+            } else {
+                brilliantSole.connect();
+            }
             break;
         case "connected":
             brilliantSole.disconnect();
@@ -36,7 +40,7 @@ brilliantSole.addEventListener("disconnecting", () => {
 });
 brilliantSole.addEventListener("not connected", () => {
     console.log("not connected");
-    toggleConnectionButton.innerText = "connect";
+    toggleConnectionButton.innerText = "reconnect";
     toggleConnectionButton.disabled = false;
 });
 

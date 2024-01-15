@@ -3,7 +3,7 @@ import { serviceUUIDs, getServiceNameFromUUID, getCharacteristicNameFromUUID } f
 import { createConsole } from "../../utils/Console.js";
 import { addEventListeners, bindEventListeners, removeEventListeners } from "../../utils/EventDispatcher.js";
 
-const _console = createConsole("WebBluetoothConnectionManager", { log: false });
+const _console = createConsole("WebBluetoothConnectionManager", { log: true });
 
 /** @typedef {import("./bluetoothUUIDs.js").BrilliantSoleBluetoothCharacteristicName} BrilliantSoleBluetoothCharacteristicName */
 /** @typedef {import("./bluetoothUUIDs.js").BrilliantSoleBluetoothServiceName} BrilliantSoleBluetoothServiceName */
@@ -66,7 +66,7 @@ class WebBluetoothConnectionManager extends ConnectionManager {
     #characteristics = new Map();
 
     async connect() {
-        super.connect();
+        await super.connect();
 
         try {
             const device = await navigator.bluetooth.requestDevice({
@@ -129,7 +129,7 @@ class WebBluetoothConnectionManager extends ConnectionManager {
         }
     }
     async disconnect() {
-        super.disconnect();
+        await super.disconnect();
         _console.log("disconnecting from device...");
         this.server.disconnect();
     }
@@ -203,6 +203,36 @@ class WebBluetoothConnectionManager extends ConnectionManager {
     _onGattserverdisconnected(event) {
         _console.log("gattserverdisconnected", event);
         this.connectionStatus = "not connected";
+    }
+
+    /**
+     * @throws {Error} if not connected
+     * @param {DataView|ArrayBuffer} message
+     */
+    async send(message) {
+        await super.send(...arguments);
+        const dataCharacteristic = this.#characteristics.get("data");
+        _console.assertWithError(dataCharacteristic, "data characteristic not found");
+        _console.log("sending data to data characteristic...", message, dataCharacteristic);
+        await dataCharacteristic.writeValueWithResponse(message);
+        _console.log("successfully sent data");
+    }
+
+    /** @type {boolean} */
+    get canReconnect() {
+        return Boolean(this.server);
+    }
+    async reconnect() {
+        await super.reconnect();
+        _console.log("attempting to reconnect...");
+        await this.server.connect();
+        if (this.isConnected) {
+            _console.log("successfully reconnected!");
+            this.connectionStatus = "connected";
+        } else {
+            _console.log("unable to reconnect");
+            this.connectionStatus = "not connected";
+        }
     }
 }
 
