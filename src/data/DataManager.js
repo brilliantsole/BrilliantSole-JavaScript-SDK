@@ -6,9 +6,10 @@ import { createConsole } from "../utils/Console.js";
 
 /** @typedef {"start" | "sync" | "logging" | "sensor"} BrilliantSoleDataManagerState */
 /** @typedef {"startSync" | "continueSync" | "logHeader" | "sensorHeader"} BrilliantSoleDataManagerMessageType */
-/** @typedef {"pressure" | "acceleration" | "linearAcceleration" | "quaternion"} BrilliantSoleSensorType */
+/** @typedef {"pressure" | "acceleration" | "linearAcceleration" | "quaternion" | "magnetometer"} BrilliantSoleSensorType */
 /** @typedef {"log" | BrilliantSoleSensorType} BrilliantSoleDataManagerEventType */
-/** @typedef {"setSensorDataRate" | "setVibrationStrength" | "startVibration" | "stopVibration"} BrilliantSoleCommandType */
+/** @typedef {"setSensorDataRate" | "setVibrationStrength" | "triggerVibration" | "stopVibration"} BrilliantSoleCommandType */
+/** @typedef {"front" | "back" | "both"} BrilliantSoleVibrationMotor */
 
 /**
  * @typedef BrilliantSoleDataManagerEvent
@@ -17,7 +18,7 @@ import { createConsole } from "../utils/Console.js";
  * @property {object} message
  */
 
-const _console = createConsole("DataManager");
+const _console = createConsole("DataManager", { log: false });
 
 class DataManager {
     /** @type {BrilliantSoleDataManagerEventType[]} */
@@ -91,6 +92,7 @@ class DataManager {
         6: "acceleration",
         32: "linearAcceleration",
         38: "quaternion",
+        41: "magnetometer",
     };
     get #SensorType() {
         return DataManager.#_SensorType;
@@ -104,6 +106,7 @@ class DataManager {
         acceleration: 6,
         linearAcceleration: 32,
         quaternion: 38,
+        magnetometer: 41,
     };
     get #SensorId() {
         return DataManager.#_SensorId;
@@ -134,7 +137,7 @@ class DataManager {
     static #_CommandType = {
         setSensorDataRate: 1,
         setVibrationStrength: 2,
-        startVibration: 3,
+        triggerVibration: 3,
         stopVibration: 4,
     };
     get #CommandType() {
@@ -153,6 +156,18 @@ class DataManager {
     };
     get #SensorDataRate() {
         return DataManager.#_SensorDataRate;
+    }
+
+    /* @type {Object.<BrilliantSoleVibrationMotor, number>} */
+    static #_VibrationMotor = {
+        front: 1 << 0,
+        back: 1 << 1,
+        get both() {
+            return this.front | this.back;
+        },
+    };
+    get #VibrationMotor() {
+        return DataManager.#_VibrationMotor;
     }
 
     /** @type {number[]} */
@@ -180,7 +195,7 @@ class DataManager {
                     if (messageType == "startSync") {
                         this.state = "sync";
                     } else {
-                        _console.error(`uncaught message in "${this.state}" state`, messageType);
+                        //_console.error(`uncaught message in "${this.state}" state`, messageType);
                     }
                     break;
                 case "sync":
@@ -253,7 +268,15 @@ class DataManager {
      * @throws {Error} if invalid dataRate
      */
     #assertValidSensorDataRate(sensorDataRate) {
-        _console.assert(sensorDataRate in this.#SensorDataRate, `invalid sensor dataRate "${sensorType}"`);
+        _console.assert(sensorDataRate in this.#SensorDataRate, `invalid sensorDataRate "${sensorDataRate}"`);
+    }
+
+    /**
+     * @param {BrilliantSoleVibrationMotor} vibrationMotor
+     * @throws {Error} if invalid dataRate
+     */
+    #assertValidVibrationMotor(vibrationMotor) {
+        _console.assert(vibrationMotor in this.#VibrationMotor, `invalid vibrationMotor "${vibrationMotor}"`);
     }
 
     /**
@@ -266,22 +289,51 @@ class DataManager {
         this.#assertValidSensorType(sensorType);
         this.#assertValidSensorDataRate(sensorDataRate);
         const sensorId = this.#SensorId[sensorType];
-        const message = Uint8Array.from([this.#CommandType.setSensorDataRate, sensorId, dataRate]);
+        const message = Uint8Array.from([this.#CommandType.setSensorDataRate, sensorId, sensorDataRate]);
         return message;
     }
 
     /**
+     * @param {BrilliantSoleVibrationMotor} vibrationMotor
      * @param {number} vibrationStrength
-     * @returns {ArrayBuffer} message
+     * @returns {Uint8Array} message
      */
-    createSetVibrationStrengthMessage(vibrationStrength) {
-        const message = Uint8Array.from([this.#CommandType.setVibrationStrength, vibrationStrength]);
+    createSetVibrationStrengthMessage(vibrationMotor, vibrationStrength) {
+        this.#assertValidVibrationMotor(vibrationMotor);
+        const vibrationMotorBitmask = this.#VibrationMotor[vibrationMotor];
+        const message = Uint8Array.from([
+            this.#CommandType.setVibrationStrength,
+            vibrationMotorBitmask,
+            vibrationStrength,
+        ]);
         return message;
     }
 
-    #startVibrationMessage = Uint8Array.from([this.#CommandType.startVibration]);
-    get startVibrationMessage() {
-        return this.#startVibrationMessage;
+    /**
+     * @param {BrilliantSoleVibrationMotor} vibrationMotor
+     * @param {number} duration (ms)
+     * @returns {DataView} message
+     */
+    createTriggerVibrationMessage(vibrationMotor, duration) {
+        this.#assertValidVibrationMotor(vibrationMotor);
+        const vibrationMotorBitmask = this.#VibrationMotor[vibrationMotor];
+
+        const message = new DataView(new ArrayBuffer(4));
+        message.setUint8(0, this.#CommandType.triggerVibration);
+        message.setUint8(1, vibrationMotorBitmask);
+        message.setUint16(2, duration, true);
+        return message;
+    }
+
+    /**
+     * @param {BrilliantSoleVibrationMotor} vibrationMotor
+     * @returns {Uint8Array} message
+     */
+    createStopVibrationMessage(vibrationMotor) {
+        this.#assertValidVibrationMotor(vibrationMotor);
+        const vibrationMotorBitmask = this.#VibrationMotor[vibrationMotor];
+        const message = Uint8Array.from([this.#CommandType.stopVibration, vibrationMotorBitmask]);
+        return message;
     }
 
     #stopVibrationMessage = Uint8Array.from([this.#CommandType.stopVibration]);

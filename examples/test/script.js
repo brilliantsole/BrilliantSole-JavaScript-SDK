@@ -59,3 +59,29 @@ const batteryLevelSpan = document.getElementById("batteryLevel");
 brilliantSole.addEventListener("batteryLevel", () => {
     batteryLevelSpan.innerText = `${brilliantSole.batteryLevel}%`;
 });
+
+/** @type {HTMLButtonElement} */
+const triggerVibrationButton = document.getElementById("triggerVibration");
+/** @type {HTMLButtonElement} */
+const stopVibrationButton = document.getElementById("stopVibration");
+/** @type {HTMLButtonElement} */
+const setVibrationStrengthButton = document.getElementById("setVibrationStrength");
+
+triggerVibrationButton.addEventListener("click", () => {
+    console.log("starting vibration...");
+    brilliantSole.triggerVibration("both", 1000);
+});
+stopVibrationButton.addEventListener("click", () => {
+    console.log("stopping vibration...");
+    brilliantSole.stopVibration("both");
+});
+setVibrationStrengthButton.addEventListener("click", () => {
+    brilliantSole.setVibrationStrength("both", 50);
+});
+brilliantSole.addEventListener("isConnected", () => {
+    console.log("isConnected", brilliantSole.isConnected);
+    const disabled = !brilliantSole.isConnected;
+    triggerVibrationButton.disabled = disabled;
+    stopVibrationButton.disabled = disabled;
+    setVibrationStrengthButton.disabled = disabled;
+});

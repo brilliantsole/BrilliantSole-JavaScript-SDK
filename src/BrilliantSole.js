@@ -8,7 +8,7 @@ import EventDispatcher, {
 import { createConsole, setAllConsoleLevelFlags, setConsoleLevelFlagsForType } from "./utils/Console.js";
 import DataManager from "./data/DataManager.js";
 
-const _console = createConsole("BrilliantSole", { log: false });
+const _console = createConsole("BrilliantSole", { log: true });
 
 /** @typedef {import("./utils/EventDispatcher.js").EventDispatcherListener} EventDispatcherListener */
 /** @typedef {import("./utils/EventDispatcher.js").EventDispatcherOptions} EventDispatcherOptions */
@@ -19,6 +19,7 @@ const _console = createConsole("BrilliantSole", { log: false });
 
 /** @typedef {BrilliantSoleConnectionStatus|BrilliantSoleConnectionManagerEventType} BrilliantSoleEventType */
 /** @typedef {import("./data/DataManager.js").BrilliantSoleSensorType} BrilliantSoleSensorType */
+/** @typedef {import("./data/DataManager.js").BrilliantSoleVibrationMotor} BrilliantSoleVibrationMotor */
 
 /**
  * @typedef BrilliantSoleEvent
@@ -136,6 +137,7 @@ class BrilliantSole {
     _onIsConnected(event) {
         /** @type {Boolean} */
         const isConnected = event.message.isConnected;
+        _console.log("isConnected", isConnected);
         if (isConnected) {
             this.#dispatchEvent({ type: "connected" });
         } else {
@@ -194,12 +196,14 @@ class BrilliantSole {
 
     /**
      * @param {BrilliantSoleSensorType} sensorType
-     * @param {number} sensorDataRate a number between 0 and 6
+     * @param {number} sensorDataRate an integer between 0 and 6
      */
     async setSensorDataRate(sensorType, sensorDataRate) {
         this.#assertIsConnected();
+        _console.log(`setting ${sensorType} sensorDataRate to ${sensorDataRate}...`);
         const message = this.#dataManager.createSetSensorDataRateMessage(sensorType, sensorDataRate);
-        this.connectionManager?.send(message);
+        await this.connectionManager?.sendCommand(message);
+        _console.log("set sensorDataRate");
     }
 
     /** @type {DataManager} */
@@ -214,7 +218,7 @@ class BrilliantSole {
     _onData(event) {
         /** @type {DataView} */
         const dataView = event.message.data;
-        _console.log("data", dataView);
+        _console.log("data", Array.from(new Uint8Array(dataView.buffer)));
         this.#dataManager.parseData(dataView);
     }
 
@@ -261,21 +265,36 @@ class BrilliantSole {
         _console.log("quaternion", quaternion);
     }
 
-    /** @param {number} vibrationStrength */
-    async setSensorDataRate(vibrationStrength) {
+    /**
+     *
+     * @param {BrilliantSoleVibrationMotor} vibrationMotor
+     * @param {number} vibrationStrength
+     */
+    async setVibrationStrength(vibrationMotor, vibrationStrength) {
         this.#assertIsConnected();
-        const message = this.#dataManager.createSetVibrationStrengthMessage(vibrationStrength);
-        this.connectionManager?.send(message);
+        const message = this.#dataManager.createSetVibrationStrengthMessage(...arguments);
+        _console.log(`setting "${vibrationMotor}" vibration strength to ${vibrationStrength}...`, message);
+        await this.connectionManager?.sendCommand(message);
+        _console.log("set vibration strength");
     }
-    async startVibration() {
+    /**
+     * @param {BrilliantSoleVibrationMotor} vibrationMotor
+     * @param {number} duration (ms)
+     */
+    async triggerVibration(vibrationMotor, duration) {
         this.#assertIsConnected();
-        const message = this.#dataManager.startVibrationMessage;
-        this.connectionManager?.send(message);
+        const message = this.#dataManager.createTriggerVibrationMessage(vibrationMotor, duration);
+        _console.log(`triggering "${vibrationMotor}" vibration for ${duration}ms...`, message);
+        await this.connectionManager?.sendCommand(message);
+        _console.log("triggered vibration");
     }
-    async stopVibration() {
+    /** @param {BrilliantSoleVibrationMotor} vibrationMotor */
+    async stopVibration(vibrationMotor) {
         this.#assertIsConnected();
-        const message = this.#dataManager.stopVibrationMessage;
-        this.connectionManager?.send(message);
+        const message = this.#dataManager.createStopVibrationMessage(vibrationMotor);
+        _console.log(`stopping "${vibrationMotor}" vibration...`, message);
+        await this.connectionManager?.sendCommand(message);
+        _console.log("stopped vibration");
     }
 }
 

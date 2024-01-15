@@ -3,7 +3,7 @@ import { serviceUUIDs, getServiceNameFromUUID, getCharacteristicNameFromUUID } f
 import { createConsole } from "../../utils/Console.js";
 import { addEventListeners, bindEventListeners, removeEventListeners } from "../../utils/EventDispatcher.js";
 
-const _console = createConsole("WebBluetoothConnectionManager", { log: true });
+const _console = createConsole("WebBluetoothConnectionManager", { log: false });
 
 /** @typedef {import("./bluetoothUUIDs.js").BrilliantSoleBluetoothCharacteristicName} BrilliantSoleBluetoothCharacteristicName */
 /** @typedef {import("./bluetoothUUIDs.js").BrilliantSoleBluetoothServiceName} BrilliantSoleBluetoothServiceName */
@@ -209,13 +209,13 @@ class WebBluetoothConnectionManager extends ConnectionManager {
      * @throws {Error} if not connected
      * @param {DataView|ArrayBuffer} message
      */
-    async send(message) {
-        await super.send(...arguments);
-        const dataCharacteristic = this.#characteristics.get("data");
-        _console.assertWithError(dataCharacteristic, "data characteristic not found");
-        _console.log("sending data to data characteristic...", message, dataCharacteristic);
-        await dataCharacteristic.writeValueWithResponse(message);
-        _console.log("successfully sent data");
+    async sendCommand(message) {
+        await super.sendCommand(...arguments);
+        const commandCharacteristic = this.#characteristics.get("command");
+        _console.assertWithError(commandCharacteristic, "command characteristic not found");
+        _console.log("sending data to command characteristic...", message, commandCharacteristic);
+        await commandCharacteristic.writeValueWithResponse(message);
+        _console.log("successfully sent command");
     }
 
     /** @type {boolean} */

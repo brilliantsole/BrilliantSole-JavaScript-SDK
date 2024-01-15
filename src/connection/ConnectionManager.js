@@ -118,6 +118,9 @@ class ConnectionManager {
         _console.log(`new connection status "${newConnectionStatus}"`);
         this.#connectionStatus = newConnectionStatus;
         this._dispatchEvent({ type: "connectionStatus", message: { connectionStatus: this.connectionStatus } });
+        if (this.#connectionStatus == "connected" || this.#connectionStatus == "not connected") {
+            this._dispatchEvent({ type: "isConnected", message: { isConnected: this.isConnected } });
+        }
     }
 
     get isConnected() {
@@ -169,7 +172,7 @@ class ConnectionManager {
      * @throws {Error} if not connected
      * @param {DataView|ArrayBuffer} message
      */
-    async send(message) {
+    async sendCommand(message) {
         this.#assertIsConnected();
         this.#assertIsNotDisconnecting();
     }
