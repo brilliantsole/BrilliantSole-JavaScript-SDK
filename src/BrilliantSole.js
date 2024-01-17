@@ -8,7 +8,7 @@ import EventDispatcher, {
 import { createConsole, setAllConsoleLevelFlags, setConsoleLevelFlagsForType } from "./utils/Console.js";
 import DataManager from "./data/DataManager.js";
 
-const _console = createConsole("BrilliantSole", { log: true });
+const _console = createConsole("BrilliantSole", { log: false });
 
 /** @typedef {import("./utils/EventDispatcher.js").EventDispatcherListener} EventDispatcherListener */
 /** @typedef {import("./utils/EventDispatcher.js").EventDispatcherOptions} EventDispatcherOptions */
@@ -17,9 +17,10 @@ const _console = createConsole("BrilliantSole", { log: true });
 /** @typedef {import("./connection/ConnectionManager.js").BrilliantSoleConnectionManagerEventType} BrilliantSoleConnectionManagerEventType */
 /** @typedef {import("./connection/ConnectionManager.js").BrilliantSoleConnectionStatus} BrilliantSoleConnectionStatus */
 
-/** @typedef {BrilliantSoleConnectionStatus|BrilliantSoleConnectionManagerEventType} BrilliantSoleEventType */
+/** @typedef {BrilliantSoleConnectionStatus|BrilliantSoleConnectionManagerEventType|BrilliantSoleDataManagerEventType} BrilliantSoleEventType */
 /** @typedef {import("./data/DataManager.js").BrilliantSoleSensorType} BrilliantSoleSensorType */
 /** @typedef {import("./data/DataManager.js").BrilliantSoleVibrationMotor} BrilliantSoleVibrationMotor */
+/** @typedef {import("./data/DataManager.js").BrilliantSoleDataManagerEventType} BrilliantSoleDataManagerEventType */
 
 /**
  * @typedef BrilliantSoleEvent
@@ -41,12 +42,21 @@ const _console = createConsole("BrilliantSole", { log: true });
 class BrilliantSole {
     constructor() {
         bindEventListeners(ConnectionManager.EventTypes, this.#boundConnectionManagerEventListeners, this);
-        bindEventListeners(DataManager.EventTypes, this.#boundDataManagerEventListeners, this);
         this.connectionManager = new WebBluetoothConnectionManager();
+
+        bindEventListeners(DataManager.EventTypes, this.#boundDataManagerEventListeners, this);
+        addEventListeners(this.#dataManager, this.#boundDataManagerEventListeners);
     }
 
     /** @type {BrilliantSoleEventType[]} */
-    static #EventTypes = [...ConnectionManager.EventTypes, "connecting", "connected", "disconnecting", "not connected"];
+    static #EventTypes = [
+        ...ConnectionManager.EventTypes,
+        ...DataManager.EventTypes,
+        "connecting",
+        "connected",
+        "disconnecting",
+        "not connected",
+    ];
     get #eventTypes() {
         return BrilliantSole.#EventTypes;
     }
@@ -220,9 +230,14 @@ class BrilliantSole {
         const dataView = event.message.data;
 
         const array = Array.from(new Uint8Array(dataView.buffer));
-        if (![171, 48, 32, 0].includes(array[0])) {
-            //_console.log(array[0], array.map(String.fromCharCode).join(""));
-            _console.log("data", Array.from(new Uint8Array(dataView.buffer)));
+        if (true || ![171, 48, 32, 0].includes(array[0])) {
+            //_console.log("data", Array.from(new Uint8Array(dataView.buffer)));
+            _console.log(
+                Array.from(new Uint8Array(dataView.buffer))
+                    .map((value) => value.toString().padStart(3, "0"))
+                    .join(",")
+            );
+            _console.log(array.map(String.fromCharCode).join(""));
         }
         this.#dataManager.parseData(dataView);
     }
@@ -244,6 +259,7 @@ class BrilliantSole {
     _onPressure(event) {
         const pressure = event.message.pressure;
         _console.log("pressure", pressure);
+        this.#dispatchEvent(event);
     }
     /**
      * @private
@@ -252,6 +268,7 @@ class BrilliantSole {
     _onAcceleration(event) {
         const acceleration = event.message.acceleration;
         _console.log("acceleration", acceleration);
+        this.#dispatchEvent(event);
     }
     /**
      * @private
@@ -260,6 +277,7 @@ class BrilliantSole {
     _onLinearAcceleration(event) {
         const linearAcceleration = event.message.linearAcceleration;
         _console.log("linearAcceleration", linearAcceleration);
+        this.#dispatchEvent(event);
     }
     /**
      * @private
@@ -268,6 +286,7 @@ class BrilliantSole {
     _onMagneticRotation(event) {
         const magneticRotation = event.message.magneticRotation;
         _console.log("magneticRotation", magneticRotation);
+        this.#dispatchEvent(event);
     }
     /**
      * @private
@@ -276,6 +295,7 @@ class BrilliantSole {
     _onQuaternion(event) {
         const quaternion = event.message.quaternion;
         _console.log("quaternion", quaternion);
+        this.#dispatchEvent(event);
     }
 
     /**

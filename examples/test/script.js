@@ -69,7 +69,7 @@ const setVibrationStrengthButton = document.getElementById("setVibrationStrength
 
 triggerVibrationButton.addEventListener("click", () => {
     console.log("starting vibration...");
-    brilliantSole.triggerVibration("both", 1000);
+    brilliantSole.triggerVibration("both", 2000);
 });
 stopVibrationButton.addEventListener("click", () => {
     console.log("stopping vibration...");
@@ -95,17 +95,56 @@ togglePressureButton.addEventListener("click", () => {
     brilliantSole.setSensorDataRate("pressure", sensorDataRate);
     togglePressureButton.innerText = isSendingPressure ? "disable pressure" : "enable pressure";
 });
+
 var isSendingQuaternion = false;
-/** @type {HTMLButtonElement} */
 const toggleQuaternionButton = document.getElementById("toggleQuaternion");
 toggleQuaternionButton.addEventListener("click", () => {
     isSendingQuaternion = !isSendingQuaternion;
-    const sensorDataRate = isSendingQuaternion ? 2 : 0;
+    const sensorDataRate = isSendingQuaternion ? 1 : 0;
     brilliantSole.setSensorDataRate("quaternion", sensorDataRate);
     toggleQuaternionButton.innerText = isSendingQuaternion ? "disable quaternion" : "enable quaternion";
 });
+
+var isSendingAcceleration = false;
+const toggleAccelerationButton = document.getElementById("toggleAcceleration");
+toggleAccelerationButton.addEventListener("click", () => {
+    isSendingAcceleration = !isSendingAcceleration;
+    const sensorDataRate = isSendingAcceleration ? 1 : 0;
+    brilliantSole.setSensorDataRate("acceleration", sensorDataRate);
+    toggleAccelerationButton.innerText = isSendingQuaternion ? "disable acceleration" : "enable acceleration";
+});
+
+var isSendingLinearAcceleration = false;
+const toggleLinearAccelerationButton = document.getElementById("toggleLinearAcceleration");
+toggleLinearAccelerationButton.addEventListener("click", () => {
+    isSendingLinearAcceleration = !isSendingLinearAcceleration;
+    const sensorDataRate = isSendingLinearAcceleration ? 1 : 0;
+    brilliantSole.setSensorDataRate("linearAcceleration", sensorDataRate);
+    toggleLinearAccelerationButton.innerText = isSendingQuaternion
+        ? "disable linearAcceleration"
+        : "enable linearAcceleration";
+});
+
 brilliantSole.addEventListener("isConnected", () => {
     const disabled = !brilliantSole.isConnected;
     togglePressureButton.disabled = disabled;
-    toggleQuaternionButton.disabled = disabled;
+    //toggleQuaternionButton.disabled = disabled;
+    toggleAccelerationButton.disabled = disabled;
+    //toggleLinearAccelerationButton.disabled = disabled;
+});
+
+brilliantSole.addEventListener("pressure", (event) => {
+    console.log("pressure", event.message.pressure);
+});
+
+brilliantSole.addEventListener("acceleration", (event) => {
+    console.log("acceleration", event.message.acceleration);
+});
+
+brilliantSole.addEventListener("linearAcceleration", (event) => {
+    console.log("linearAcceleration", event.message.linearAcceleration);
+});
+
+brilliantSole.addEventListener("quaternion", (event) => {
+    console.log("quaternion", event.message.quaternion);
 });

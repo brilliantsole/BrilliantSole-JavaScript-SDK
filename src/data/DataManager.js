@@ -19,7 +19,7 @@ import { createConsole } from "../utils/Console.js";
  * @property {object} message
  */
 
-const _console = createConsole("DataManager", { log: false });
+const _console = createConsole("DataManager", { log: true });
 
 class DataManager {
     /** @type {BrilliantSoleDataManagerEventType[]} */
@@ -183,41 +183,55 @@ class DataManager {
 
     /** @param {DataView} dataView */
     parseData(dataView) {
-        _console.log(`parsing ${dataView.byteLength} bytes`, dataView);
+        _console.log(`parsing ${dataView.byteLength} bytes`, Array.from(new Uint8Array(dataView.buffer)));
         var byteOffset = 0;
 
         while (byteOffset < dataView.byteLength) {
             const byte = dataView.getUint8(byteOffset++);
-            _console.log(`byte at offset #${byteOffset - 1}: ${byte}`);
             const messageType = this.#MessageType[byte];
-            _console.log("messageType?", messageType);
+            // _console.log({
+            //     state: this.state,
+            //     messageType,
+            //     byteOffset: byteOffset - 1,
+            //     byte,
+            // });
             switch (this.#state) {
                 case "start":
-                    if (messageType == "startSync") {
-                        this.state = "sync";
+                    if (messageType == "sensor") {
+                        const messageSize = dataView.getUint16(byteOffset, true);
+                        byteOffset += 2;
+                        _console.log({ messageSize });
+
+                        const rawSensorType = dataView.getUint8(byteOffset);
+                        byteOffset += 2; // shows up twice
+                        const sensorType = this.#SensorType[rawSensorType];
+                        _console.assertWithError(sensorType, `invalid sensorId ${rawSensorType}`);
+                        _console.log({ sensorType });
+
+                        const timestamp = Number(dataView.getBigUint64(byteOffset, true)) / 1000;
+                        byteOffset += 8;
+                        _console.log({ timestamp });
+
+                        byteOffset += 2; // 2 unused bytes
+
+                        this.#sensorType = sensorType;
+                        this.#sensorDataBuffer.length = 0;
+                        this.#sensorDataBufferFinalLength = this.#SensorDataLength[this.#sensorType];
+                        this.state = "sensor";
                     } else {
                         //_console.error(`uncaught message in "${this.state}" state`, messageType);
                     }
                     break;
                 case "sync":
                     switch (messageType) {
-                        case "continueSync":
+                        case "sync":
                             break;
                         case "logHeader":
-                            this.#logBufferFinalLength = dataView.getUint16(byteOffset);
+                            this.#logBufferFinalLength = dataView.getUint16(byteOffset, true);
                             this.#logBuffer.length = 0;
                             byteOffset += 2;
                             _console.log(`logBufferFinalLength: ${this.#logBufferFinalLength} bytes`);
                             this.state = "logging";
-                            break;
-                        case "sensorHeader":
-                            const sensorType = this.#SensorType[byte];
-                            _console.assertWithError(sensorType, `invalid sensorId ${byte}`);
-                            _console.log(`sensor type: "${sensorType}"`);
-                            this.#sensorType = sensorType;
-                            this.#sensorDataBuffer.length = 0;
-                            this.#sensorDataBufferFinalLength = this.#SensorDataLength[this.#sensorType];
-                            this.state = "sensor";
                             break;
                         default:
                             //_console.error(`uncaught message in "${this.state}" state`, messageType);
@@ -227,7 +241,7 @@ class DataManager {
                     break;
                 case "logging":
                     this.#logBuffer.push(byte);
-                    _console.log(`log buffer length: ${this.#logBuffer.length}/${this.#logBufferFinalLength} bytes`);
+                    //_console.log(`log buffer length: ${this.#logBuffer.length}/${this.#logBufferFinalLength} bytes`);
                     if (this.#logBuffer.length == this.#logBufferFinalLength) {
                         const log = this.#logBuffer.slice();
                         _console.log("log completed", log);
@@ -237,17 +251,19 @@ class DataManager {
                     break;
                 case "sensor":
                     this.#sensorDataBuffer.push(byte);
-                    _console.log(
-                        `sensor buffer length: ${this.#sensorDataBuffer.length}/${
-                            this.#sensorDataBufferFinalLength
-                        } bytes`
-                    );
+                    // _console.log(
+                    //     `sensor buffer length: ${this.#sensorDataBuffer.length}/${
+                    //         this.#sensorDataBufferFinalLength
+                    //     } bytes`
+                    // );
                     if (this.#sensorDataBuffer.length == this.#sensorDataBufferFinalLength) {
                         const sensorDataBuffer = this.#sensorDataBuffer.slice();
                         _console.log("sensorDataBuffer completed", sensorDataBuffer);
                         const sensorData = new DataView(Uint8Array.from(sensorDataBuffer).buffer);
                         _console.log("sensorData", sensorData);
-                        this.#parseSensorData(this.#sensorType, sensorDataBuffer);
+                        this.#parseSensorData(this.#sensorType, sensorData);
+                        this.state = "start";
+                        this.#sensorDataBuffer.length = 0;
                     }
                     break;
                 default:
@@ -353,15 +369,23 @@ class DataManager {
 
         switch (sensorType) {
             case "pressure":
-                const rawPressureValues = new Uint16Array(sensorData.buffer);
-                _console.log("rawPressureValues", rawPressureValues);
-                // FILL
+                const pressure = [];
+                for (var byteOffset = 0; byteOffset < sensorData.byteLength; byteOffset += 2) {
+                    const pressureValue = sensorData.getUint16(byteOffset);
+                    pressure.push(pressureValue);
+                }
+                _console.log("pressure", pressure);
+                this.#dispatchEvent({ type: "pressure", message: { pressure } });
                 break;
             case "acceleration":
             case "linearAcceleration":
-                const rawVectorValues = new Int16Array(sensorData.buffer);
-                _console.log("rawVectorValues", rawVectorValues);
-                // FILL
+                const vector = [];
+                for (var byteOffset = 0; byteOffset < sensorData.byteLength; byteOffset += 2) {
+                    const value = sensorData.getInt16(byteOffset, true);
+                    vector.push(value);
+                }
+                _console.log("vector", vector);
+                this.#dispatchEvent({ type: sensorType, message: { [sensorType]: vector } });
                 break;
             case "quaternion":
                 const rawQuaternionValues = new Int16Array(sensorData.buffer);
