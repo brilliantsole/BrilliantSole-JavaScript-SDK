@@ -69,14 +69,14 @@ const setVibrationStrengthButton = document.getElementById("setVibrationStrength
 
 triggerVibrationButton.addEventListener("click", () => {
     console.log("starting vibration...");
-    brilliantSole.triggerVibration("both", 2000);
+    brilliantSole.triggerVibration("both", 200);
 });
 stopVibrationButton.addEventListener("click", () => {
     console.log("stopping vibration...");
     brilliantSole.stopVibration("both");
 });
 setVibrationStrengthButton.addEventListener("click", () => {
-    brilliantSole.setVibrationStrength("both", 50);
+    brilliantSole.setVibrationStrength("both", 100);
 });
 brilliantSole.addEventListener("isConnected", () => {
     console.log("isConnected", brilliantSole.isConnected);

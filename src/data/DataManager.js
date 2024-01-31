@@ -19,7 +19,7 @@ import { createConsole } from "../utils/Console.js";
  * @property {object} message
  */
 
-const _console = createConsole("DataManager", { log: true });
+const _console = createConsole("DataManager", { log: false });
 
 class DataManager {
     /** @type {BrilliantSoleDataManagerEventType[]} */
