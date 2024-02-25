@@ -17,10 +17,8 @@ const _console = createConsole("BrilliantSole", { log: false });
 /** @typedef {import("./connection/ConnectionManager.js").BrilliantSoleConnectionStatus} BrilliantSoleConnectionStatus */
 /** @typedef {import("./connection/ConnectionManager.js").BrilliantSoleConnectionMessageType} BrilliantSoleConnectionMessageType */
 
-/** @typedef {BrilliantSoleConnectionStatus|BrilliantSoleConnectionMessageType|BrilliantSoleSensorDataManagerEventType} BrilliantSoleEventType */
 /** @typedef {import("./sensorData/SensorDataManager.js").BrilliantSoleSensorType} BrilliantSoleSensorType */
-/** @typedef {import("./sensorData/SensorDataManager.js").BrilliantSoleVibrationMotor} BrilliantSoleVibrationMotor */
-/** @typedef {import("./sensorData/SensorDataManager.js").BrilliantSoleSensorDataManagerEventType} BrilliantSoleSensorDataManagerEventType */
+/** @typedef {"connectionStatus" | BrilliantSoleConnectionStatus | "isConnected" | BrilliantSoleConnectionMessageType | BrilliantSoleSensorType} BrilliantSoleEventType */
 
 /**
  * @typedef BrilliantSoleEvent
@@ -51,20 +49,33 @@ const _console = createConsole("BrilliantSole", { log: false });
 class BrilliantSole {
     constructor() {
         this.connectionManager = new WebBluetoothConnectionManager();
+        this.#sensorDataManager.onDataReceived = this.#onSensorDataReceived.bind(this);
     }
 
     // EVENT DISPATCHER
 
     /** @type {BrilliantSoleEventType[]} */
     static #EventTypes = [
+        "connectionStatus",
         "connecting",
         "connected",
         "disconnecting",
         "not connected",
+        "isConnected",
 
         "deviceInformation",
 
         "batteryLevel",
+
+        "pressure",
+        "accelerometer",
+        "gravity",
+        "linearAcceleration",
+        "gyroscope",
+        "magnetometer",
+        "gameRotation",
+        "rotation",
+        "barometer",
     ];
     get #eventTypes() {
         return BrilliantSole.#EventTypes;
@@ -152,7 +163,7 @@ class BrilliantSole {
     }
 
     get connectionStatus() {
-        return this.#connectionManager?.connectionStatus;
+        return this.#connectionManager?.status;
     }
 
     /** @param {BrilliantSoleConnectionStatus} connectionStatus */
@@ -160,6 +171,13 @@ class BrilliantSole {
         _console.log({ connectionStatus });
         this.#dispatchEvent({ type: "connectionStatus", message: { connectionStatus } });
         this.#dispatchEvent({ type: this.connectionStatus });
+
+        switch (connectionStatus) {
+            case "connected":
+            case "not connected":
+                this.#dispatchEvent({ type: "isConnected", message: { isConnected: this.isConnected } });
+                break;
+        }
     }
 
     /**
@@ -289,27 +307,8 @@ class BrilliantSole {
     }
 
     // SENSOR DATA
-    /** @type {SensorDataManager?} */
-    #sensorDataManager;
-    get sensorDataManager() {
-        return this.#sensorDataManager;
-    }
-    set sensorDataManager(newSensorDataManager) {
-        if (this.sensorDataManager == newSensorDataManager) {
-            _console.warn("same sensorDataManager is already assigned");
-            return;
-        }
-
-        if (this.sensorDataManager) {
-            this.sensorDataManager.onDataReceived = null;
-        }
-        if (newSensorDataManager) {
-            newSensorDataManager.onDataReceived = this.#onSensorDataReceived.bind(this);
-        }
-
-        this.#sensorDataManager = newSensorDataManager;
-        _console.log("assigned new sensorDataManager", this.#sensorDataManager);
-    }
+    /** @type {SensorDataManager} */
+    #sensorDataManager = new SensorDataManager();
 
     #onSensorDataReceived() {
         // FILL

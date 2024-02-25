@@ -74,7 +74,7 @@ class ConnectionManager {
     }
     /** @protected */
     set status(newConnectionStatus) {
-        _console.assertTypeWithError(newConnectionStatus);
+        _console.assertTypeWithError(newConnectionStatus, "string");
         if (this.#status == newConnectionStatus) {
             _console.warn("same connection status");
             return;

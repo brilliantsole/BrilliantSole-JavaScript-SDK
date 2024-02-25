@@ -137,7 +137,7 @@ brilliantSole.addEventListener("pressure", (event) => {
     console.log("pressure", event.message.pressure);
 });
 
-brilliantSole.addEventListener("acceleration", (event) => {
+brilliantSole.addEventListener("accelerometer", (event) => {
     console.log("acceleration", event.message.acceleration);
 });
 
@@ -145,6 +145,6 @@ brilliantSole.addEventListener("linearAcceleration", (event) => {
     console.log("linearAcceleration", event.message.linearAcceleration);
 });
 
-brilliantSole.addEventListener("quaternion", (event) => {
+brilliantSole.addEventListener("gameRotation", (event) => {
     console.log("quaternion", event.message.quaternion);
 });
