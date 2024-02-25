@@ -6,7 +6,7 @@ import { createConsole } from "../utils/Console.js";
 
 /** @typedef {"web bluetooth" | "noble"} BrilliantSoleConnectionType */
 /** @typedef {"not connected" | "connecting" | "connected" | "disconnecting"} BrilliantSoleConnectionStatus */
-/** @typedef {"connectionStatus" | "isConnected" | "deviceInformation" | "batteryLevel" | "data"} BrilliantSoleConnectionManagerEventType */
+/** @typedef {"connectionStatus" | "isConnected" | "deviceInformation" | "batteryLevel" | "name" | "type" | "sensorConfiguration" | "sensorData"} BrilliantSoleConnectionManagerEventType */
 
 /**
  * @typedef BrilliantSoleConnectionManagerEvent
@@ -19,7 +19,16 @@ const _console = createConsole("ConnectionManager");
 
 class ConnectionManager {
     /** @type {BrilliantSoleConnectionManagerEventType[]} */
-    static #EventTypes = ["isConnected", "connectionStatus", "deviceInformation", "batteryLevel", "data"];
+    static #EventTypes = [
+        "isConnected",
+        "connectionStatus",
+        "deviceInformation",
+        "batteryLevel",
+        "name",
+        "type",
+        "sensorConfiguration",
+        "sensorData",
+    ];
     static get EventTypes() {
         return this.#EventTypes;
     }
@@ -41,7 +50,6 @@ class ConnectionManager {
     /**
      * @protected
      * @param {BrilliantSoleConnectionManagerEvent} event
-     * @throws {Error} if type is not valid
      */
     _dispatchEvent(event) {
         this.#eventDispatcher.dispatchEvent(event);
@@ -51,7 +59,6 @@ class ConnectionManager {
      * @param {BrilliantSoleConnectionManagerEventType} type
      * @param {EventDispatcherListener} listener
      * @returns {boolean}
-     * @throws {Error}
      */
     removeEventListener(type, listener) {
         return this.#eventDispatcher.removeEventListener(...arguments);
@@ -59,14 +66,12 @@ class ConnectionManager {
 
     /**
      * @param {string} name
-     * @throws {Error}
      */
     static #staticThrowNotImplementedError(name) {
         throw new Error(`"${name}" is not implemented by "${this.name}" subclass`);
     }
     /**
      * @param {string} name
-     * @throws {Error}
      */
     #throwNotImplementedError(name) {
         throw new Error(`"${name}" is not implemented by "${this.constructor.name}" subclass`);
@@ -143,8 +148,12 @@ class ConnectionManager {
     #assertIsNotDisconnecting() {
         _console.assertWithError(this.connectionStatus != "disconnecting", "device is already disconnecting");
     }
+    /** @throws {Error} if not connected or is disconnecting */
+    #assertIsConnectedAndNotDisconnecting() {
+        this.#assertIsConnected();
+        this.#assertIsNotDisconnecting();
+    }
 
-    /** @throws {Error} if already connected */
     async connect() {
         this.#assertIsNotConnected();
         this.#assertIsNotConnecting();
@@ -154,27 +163,21 @@ class ConnectionManager {
     get canReconnect() {
         return false;
     }
-    /** @throws {Error} if already connected */
     async reconnect() {
         this.#assertIsNotConnected();
         this.#assertIsNotConnecting();
         _console.assert(this.canReconnect, "unable to reconnect");
         this.connectionStatus = "connecting";
     }
-    /** @throws {Error} if not connected */
     async disconnect() {
         this.#assertIsConnected();
         this.#assertIsNotDisconnecting();
         this.connectionStatus = "disconnecting";
     }
 
-    /**
-     * @throws {Error} if not connected
-     * @param {DataView|ArrayBuffer} message
-     */
-    async sendCommand(message) {
-        this.#assertIsConnected();
-        this.#assertIsNotDisconnecting();
+    /** @param {any} message */
+    async sendMessage(message) {
+        this.#assertIsConnectedAndNotDisconnecting();
     }
 }
 

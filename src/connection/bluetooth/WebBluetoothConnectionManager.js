@@ -1,3 +1,5 @@
+import { createConsole } from "../../utils/Console.js";
+import { addEventListeners, bindEventListeners, removeEventListeners } from "../../utils/EventDispatcher.js";
 import ConnectionManager from "../ConnectionManager.js";
 import {
     serviceUUIDs,
@@ -5,8 +7,6 @@ import {
     getServiceNameFromUUID,
     getCharacteristicNameFromUUID,
 } from "./bluetoothUUIDs.js";
-import { createConsole } from "../../utils/Console.js";
-import { addEventListeners, bindEventListeners, removeEventListeners } from "../../utils/EventDispatcher.js";
 
 const _console = createConsole("WebBluetoothConnectionManager", { log: true });
 
@@ -45,7 +45,7 @@ class WebBluetoothConnectionManager extends ConnectionManager {
     }
     set device(newDevice) {
         if (this.#device == newDevice) {
-            _console.warn("assigning the same BluetoothDevice");
+            _console.warn("tried to assign the same BluetoothDevice");
             return;
         }
         if (this.#device) {
@@ -162,38 +162,50 @@ class WebBluetoothConnectionManager extends ConnectionManager {
         switch (characteristicName) {
             case "manufacturerName":
                 const manufacturerName = this.#textDecoder.decode(dataView);
-                _console.log(`manufacturerName: "${manufacturerName}"`);
+                _console.log({ manufacturerName });
                 this._dispatchEvent({ type: "deviceInformation", message: { manufacturerName } });
                 break;
             case "modelNumber":
                 const modelNumber = this.#textDecoder.decode(dataView);
-                _console.log(`modelNumber: "${modelNumber}"`);
+                _console.log({ modelNumber });
                 this._dispatchEvent({ type: "deviceInformation", message: { modelNumber } });
                 break;
             case "softwareRevision":
                 const softwareRevision = this.#textDecoder.decode(dataView);
-                _console.log(`softwareRevision: "${softwareRevision}"`);
+                _console.log({ softwareRevision });
                 this._dispatchEvent({ type: "deviceInformation", message: { softwareRevision } });
                 break;
             case "hardwareRevision":
                 const hardwareRevision = this.#textDecoder.decode(dataView);
-                _console.log(`hardwareRevision: "${hardwareRevision}"`);
+                _console.log({ firmwareRevision });
                 this._dispatchEvent({ type: "deviceInformation", message: { hardwareRevision } });
                 break;
             case "firmwareRevision":
                 const firmwareRevision = this.#textDecoder.decode(dataView);
-                _console.log(`firmwareRevision: "${firmwareRevision}"`);
+                _console.log({ firmwareRevision });
                 this._dispatchEvent({ type: "deviceInformation", message: { firmwareRevision } });
+                break;
+            case "pnpId":
+                // FILL
                 break;
             case "batteryLevel":
                 const batteryLevel = dataView.getUint8(0);
-                _console.log(`batteryLevel: ${batteryLevel}`);
+                _console.log({ batteryLevel });
                 this._dispatchEvent({ type: "batteryLevel", message: { batteryLevel } });
                 break;
-            case "data":
-                const data = dataView;
-                _console.log("data", data);
-                this._dispatchEvent({ type: "data", message: { data } });
+            case "name":
+                // FILL
+                break;
+            case "type":
+                // FILL
+                break;
+            case "sensorConfiguration":
+                // FILL
+                break;
+            case "sensorData":
+                const sensorData = dataView;
+                _console.log({ sensorData });
+                this._dispatchEvent({ type: "sensorData", message: { sensorData } });
                 break;
             default:
                 throw new Error(`uncaught characteristicName "${characteristicName}"`);
