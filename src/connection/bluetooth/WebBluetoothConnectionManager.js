@@ -1,9 +1,14 @@
 import ConnectionManager from "../ConnectionManager.js";
-import { serviceUUIDs, getServiceNameFromUUID, getCharacteristicNameFromUUID } from "./bluetoothUUIDs.js";
+import {
+    serviceUUIDs,
+    optionalServiceUUIDs,
+    getServiceNameFromUUID,
+    getCharacteristicNameFromUUID,
+} from "./bluetoothUUIDs.js";
 import { createConsole } from "../../utils/Console.js";
 import { addEventListeners, bindEventListeners, removeEventListeners } from "../../utils/EventDispatcher.js";
 
-const _console = createConsole("WebBluetoothConnectionManager", { log: false });
+const _console = createConsole("WebBluetoothConnectionManager", { log: true });
 
 /** @typedef {import("./bluetoothUUIDs.js").BrilliantSoleBluetoothCharacteristicName} BrilliantSoleBluetoothCharacteristicName */
 /** @typedef {import("./bluetoothUUIDs.js").BrilliantSoleBluetoothServiceName} BrilliantSoleBluetoothServiceName */
@@ -70,9 +75,8 @@ class WebBluetoothConnectionManager extends ConnectionManager {
 
         try {
             const device = await navigator.bluetooth.requestDevice({
-                //filters: [{ services: serviceUUIDs }],
-                filters: [{ namePrefix: "Brilliant" }],
-                optionalServices: serviceUUIDs,
+                filters: [{ services: serviceUUIDs }],
+                optionalServices: optionalServiceUUIDs,
             });
 
             _console.log("got BluetoothDevice", device);

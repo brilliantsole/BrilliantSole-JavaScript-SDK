@@ -1,9 +1,9 @@
 /**
- * @param {string|number} value
+ * @param {number} offset
  * @returns {BluetoothServiceUUID}
  */
-function generateBluetoothUUID(value) {
-    return `6e40000${value}-b5a3-f393-e0a9-e50e24dcca9e`;
+function generateBluetoothUUID(offset) {
+    return `ea6da725-2000-4f9b-893d-${(0xc3913e33b3e3 + offset).toString("16")}`;
 }
 
 /**
@@ -43,6 +43,9 @@ const bluetoothUUIDs = Object.freeze({
                 softwareRevision: {
                     uuid: stringToCharacteristicUUID("software_revision_string"),
                 },
+                pnpId: {
+                    uuid: stringToCharacteristicUUID("pnp_id"),
+                },
             },
         },
         battery: {
@@ -53,29 +56,26 @@ const bluetoothUUIDs = Object.freeze({
                 },
             },
         },
-        data: {
-            uuid: generateBluetoothUUID("1"),
+        main: {
+            uuid: generateBluetoothUUID(0),
             characteristics: {
-                command: { uuid: generateBluetoothUUID("2") },
-                data: { uuid: generateBluetoothUUID("3") },
-            },
-        },
-        firmware: {
-            uuid: stringToCharacteristicUUID(0xfe59),
-            characteristics: {
-                firmware: { uuid: "8ec90003-f315-4f60-9fb8-838830daea50" },
+                name: { uuid: generateBluetoothUUID(1) },
+                type: { uuid: generateBluetoothUUID(2) },
+                sensorConfiguration: { uuid: generateBluetoothUUID(3) },
+                sensorData: { uuid: generateBluetoothUUID(4) },
+                haptics: { uuid: generateBluetoothUUID(5) },
             },
         },
     },
 
     /** @type {BluetoothServiceUUID[]} */
     get serviceUUIDs() {
-        return [
-            this.services.deviceInformation.uuid,
-            this.services.battery.uuid,
-            this.services.data.uuid,
-            this.services.firmware.uuid,
-        ];
+        return [this.services.main.uuid];
+    },
+
+    /** @type {BluetoothServiceUUID[]} */
+    get optionalServiceUUIDs() {
+        return [this.services.deviceInformation.uuid, this.services.battery.uuid];
     },
 
     /**
@@ -107,6 +107,7 @@ const bluetoothUUIDs = Object.freeze({
 });
 
 export const serviceUUIDs = bluetoothUUIDs.serviceUUIDs;
+export const optionalServiceUUIDs = bluetoothUUIDs.optionalServiceUUIDs;
 
 /** @param {BluetoothServiceUUID} serviceUUID */
 export function getServiceNameFromUUID(serviceUUID) {
