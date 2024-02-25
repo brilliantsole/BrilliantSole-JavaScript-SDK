@@ -119,6 +119,15 @@ class Console {
             throw new Error(message);
         }
     }
+
+    /**
+     * @param {any} value
+     * @param {string} type
+     * @throws {Error} if value's type doesn't match
+     */
+    assertTypeWithError(value, type) {
+        this.assertWithError(typeof value == type, `value of type "${typeof value}" not of type "${type}"`);
+    }
 }
 
 /**

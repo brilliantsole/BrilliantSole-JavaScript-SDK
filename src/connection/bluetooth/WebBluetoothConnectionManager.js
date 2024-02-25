@@ -1,5 +1,5 @@
 import { createConsole } from "../../utils/Console.js";
-import { addEventListeners, bindEventListeners, removeEventListeners } from "../../utils/EventDispatcher.js";
+import { addEventListeners, removeEventListeners } from "../../utils/EventDispatcher.js";
 import ConnectionManager from "../ConnectionManager.js";
 import {
     serviceUUIDs,
@@ -14,15 +14,14 @@ const _console = createConsole("WebBluetoothConnectionManager", { log: true });
 /** @typedef {import("./bluetoothUUIDs.js").BrilliantSoleBluetoothServiceName} BrilliantSoleBluetoothServiceName */
 
 class WebBluetoothConnectionManager extends ConnectionManager {
-    constructor() {
-        super();
-        bindEventListeners(["characteristicvaluechanged"], this.#boundBluetoothCharacteristicEventListeners, this);
-        bindEventListeners(["gattserverdisconnected"], this.#boundBluetoothDeviceEventListeners, this);
-    }
     /** @type {Object.<string, EventListener} */
-    #boundBluetoothCharacteristicEventListeners = {};
+    #boundBluetoothCharacteristicEventListeners = {
+        characteristicvaluechanged: this.#onCharacteristicvaluechanged.bind(this),
+    };
     /** @type {Object.<string, EventListener} */
-    #boundBluetoothDeviceEventListeners = {};
+    #boundBluetoothDeviceEventListeners = {
+        gattserverdisconnected: this.#onGattserverdisconnected.bind(this),
+    };
 
     static get isSupported() {
         return "bluetooth" in navigator;
@@ -30,12 +29,6 @@ class WebBluetoothConnectionManager extends ConnectionManager {
     /** @type {import("../ConnectionManager.js").BrilliantSoleConnectionType} */
     static get type() {
         return "web bluetooth";
-    }
-
-    /** @type {TextDecoder} */
-    static #TextDecoder = new TextDecoder();
-    get #textDecoder() {
-        return WebBluetoothConnectionManager.#TextDecoder;
     }
 
     /** @type {BluetoothDevice?} */
@@ -138,11 +131,8 @@ class WebBluetoothConnectionManager extends ConnectionManager {
         this.server.disconnect();
     }
 
-    /**
-     * @private
-     * @param {Event} event
-     */
-    _onCharacteristicvaluechanged(event) {
+    /** @param {Event} event */
+    #onCharacteristicvaluechanged(event) {
         _console.log("oncharacteristicvaluechanged", event);
 
         /** @type {BluetoothRemoteGATTCharacteristic} */
@@ -161,62 +151,45 @@ class WebBluetoothConnectionManager extends ConnectionManager {
 
         switch (characteristicName) {
             case "manufacturerName":
-                const manufacturerName = this.#textDecoder.decode(dataView);
-                _console.log({ manufacturerName });
-                this._dispatchEvent({ type: "deviceInformation", message: { manufacturerName } });
+                this.onMessageReceived("manufacturerName", dataView);
                 break;
             case "modelNumber":
-                const modelNumber = this.#textDecoder.decode(dataView);
-                _console.log({ modelNumber });
-                this._dispatchEvent({ type: "deviceInformation", message: { modelNumber } });
+                this.onMessageReceived("modelNumber", dataView);
                 break;
             case "softwareRevision":
-                const softwareRevision = this.#textDecoder.decode(dataView);
-                _console.log({ softwareRevision });
-                this._dispatchEvent({ type: "deviceInformation", message: { softwareRevision } });
+                this.onMessageReceived("softwareRevision", dataView);
                 break;
             case "hardwareRevision":
-                const hardwareRevision = this.#textDecoder.decode(dataView);
-                _console.log({ firmwareRevision });
-                this._dispatchEvent({ type: "deviceInformation", message: { hardwareRevision } });
+                this.onMessageReceived("hardwareRevision", dataView);
                 break;
             case "firmwareRevision":
-                const firmwareRevision = this.#textDecoder.decode(dataView);
-                _console.log({ firmwareRevision });
-                this._dispatchEvent({ type: "deviceInformation", message: { firmwareRevision } });
+                this.onMessageReceived("firmwareRevision", dataView);
                 break;
             case "pnpId":
-                // FILL
+                this.onMessageReceived("pnpId", dataView);
                 break;
             case "batteryLevel":
-                const batteryLevel = dataView.getUint8(0);
-                _console.log({ batteryLevel });
-                this._dispatchEvent({ type: "batteryLevel", message: { batteryLevel } });
+                this.onMessageReceived("batteryLevel", dataView);
                 break;
             case "name":
-                // FILL
+                this.onMessageReceived("getName", dataView);
                 break;
             case "type":
-                // FILL
+                this.onMessageReceived("getType", dataView);
                 break;
             case "sensorConfiguration":
-                // FILL
+                this.onMessageReceived("getSensorConfiguration", dataView);
                 break;
             case "sensorData":
-                const sensorData = dataView;
-                _console.log({ sensorData });
-                this._dispatchEvent({ type: "sensorData", message: { sensorData } });
+                this.onMessageReceived("sensorData", dataView);
                 break;
             default:
                 throw new Error(`uncaught characteristicName "${characteristicName}"`);
         }
     }
 
-    /**
-     * @private
-     * @param {Event} event
-     */
-    _onGattserverdisconnected(event) {
+    /** @param {Event} event */
+    #onGattserverdisconnected(event) {
         _console.log("gattserverdisconnected", event);
         this.connectionStatus = "not connected";
     }

@@ -4,36 +4,36 @@ import { createConsole } from "../utils/Console.js";
 /** @typedef {import("./utils/EventDispatcher.js").EventDispatcherListener} EventDispatcherListener */
 /** @typedef {import("./utils/EventDispatcher.js").EventDispatcherOptions} EventDispatcherOptions */
 
-/** @typedef {"start" | "sync" | "logging" | "sensor"} BrilliantSoleDataManagerState */
-/** @typedef {"padding" | "sync" | "log" | "sensor"} BrilliantSoleDataManagerMessageType */
+/** @typedef {"start" | "sync" | "logging" | "sensor"} BrilliantSoleSensorDataManagerState */
+/** @typedef {"padding" | "sync" | "log" | "sensor"} BrilliantSoleSensorDataManagerMessageType */
 /** @typedef {"pressure" | "acceleration" | "linearAcceleration" | "quaternion" | "magneticRotation"} BrilliantSoleSensorType */
-/** @typedef {"log" | BrilliantSoleSensorType} BrilliantSoleDataManagerEventType */
+/** @typedef {"log" | BrilliantSoleSensorType} BrilliantSoleSensorDataManagerEventType */
 /** @typedef {"setSensorDataRate" | "setVibrationStrength" | "triggerVibration" | "stopVibration"} BrilliantSoleCommandType */
 /** @typedef {"front" | "back" | "both"} BrilliantSoleVibrationMotor */
 /** @typedef {"hallux" | "digits" | "metatarsal_inner" | "metatarsal_center" | "metatarsal_outer" | "lateral" | "arch" | "heel"} BrilliantSolePessureType */
 
 /**
- * @typedef BrilliantSoleDataManagerEvent
+ * @typedef BrilliantSoleSensorDataManagerEvent
  * @type {object}
- * @property {BrilliantSoleDataManagerEventType} type
+ * @property {BrilliantSoleSensorDataManagerEventType} type
  * @property {object} message
  */
 
-const _console = createConsole("DataManager", { log: false });
+const _console = createConsole("SensorDataManager", { log: false });
 
-class DataManager {
-    /** @type {BrilliantSoleDataManagerEventType[]} */
+class SensorDataManager {
+    /** @type {BrilliantSoleSensorDataManagerEventType[]} */
     static #EventTypes = ["log", "pressure", "acceleration", "linearAcceleration", "quaternion", "magneticRotation"];
     static get EventTypes() {
         return this.#EventTypes;
     }
     get eventTypes() {
-        return DataManager.#EventTypes;
+        return SensorDataManager.#EventTypes;
     }
     #eventDispatcher = new EventDispatcher(this.eventTypes);
 
     /**
-     * @param {BrilliantSoleDataManagerEventType} type
+     * @param {BrilliantSoleSensorDataManagerEventType} type
      * @param {EventDispatcherListener} listener
      * @param {EventDispatcherOptions?} options
      * @throws {Error}
@@ -43,7 +43,7 @@ class DataManager {
     }
 
     /**
-     * @param {BrilliantSoleDataManagerEvent} event
+     * @param {BrilliantSoleSensorDataManagerEvent} event
      * @throws {Error} if type is not valid
      */
     #dispatchEvent(event) {
@@ -51,7 +51,7 @@ class DataManager {
     }
 
     /**
-     * @param {BrilliantSoleDataManagerEventType} type
+     * @param {BrilliantSoleSensorDataManagerEventType} type
      * @param {EventDispatcherListener} listener
      * @returns {boolean}
      * @throws {Error}
@@ -60,7 +60,7 @@ class DataManager {
         return this.#eventDispatcher.removeEventListener(...arguments);
     }
 
-    /** @type {BrilliantSoleDataManagerState} */
+    /** @type {BrilliantSoleSensorDataManagerState} */
     #state = "start";
     /** @private */
     get state() {
@@ -76,7 +76,7 @@ class DataManager {
         _console.log(`newState "${this.state}"`);
     }
 
-    /** @type {Object.<number, BrilliantSoleDataManagerMessageType?>} */
+    /** @type {Object.<number, BrilliantSoleSensorDataManagerMessageType?>} */
     static #_MessageType = {
         0: "padding",
         1: "sync",
@@ -84,7 +84,7 @@ class DataManager {
         3: "sensor",
     };
     get #MessageType() {
-        return DataManager.#_MessageType;
+        return SensorDataManager.#_MessageType;
     }
 
     /** @type {Object.<number, BrilliantSoleSensorType>} */
@@ -96,7 +96,7 @@ class DataManager {
         41: "magneticRotation",
     };
     get #SensorType() {
-        return DataManager.#_SensorType;
+        return SensorDataManager.#_SensorType;
     }
     /** @type {BrilliantSoleSensorType} */
     #sensorType;
@@ -110,7 +110,7 @@ class DataManager {
         magneticRotation: 41,
     };
     get #SensorId() {
-        return DataManager.#_SensorId;
+        return SensorDataManager.#_SensorId;
     }
 
     /* @type {Object.<BrilliantSoleSensorType, number>} */
@@ -121,7 +121,7 @@ class DataManager {
         quaternion: 8,
     };
     get #SensorDataLength() {
-        return DataManager.#_SensorDataLength;
+        return SensorDataManager.#_SensorDataLength;
     }
     /* @type {Object.<BrilliantSoleSensorType, number>} */
     static #_SensorDataScalar = {
@@ -131,7 +131,7 @@ class DataManager {
         quaternion: 2 ** -14,
     };
     get #SensorDataScalar() {
-        return DataManager.#_SensorDataScalar;
+        return SensorDataManager.#_SensorDataScalar;
     }
 
     /* @type {Object.<BrilliantSoleCommandType, number>} */
@@ -142,7 +142,7 @@ class DataManager {
         stopVibration: 4,
     };
     get #CommandType() {
-        return DataManager.#_CommandType;
+        return SensorDataManager.#_CommandType;
     }
 
     /* @type {Object.<number, number>} */
@@ -156,7 +156,7 @@ class DataManager {
         6: 50.0,
     };
     get #SensorDataRate() {
-        return DataManager.#_SensorDataRate;
+        return SensorDataManager.#_SensorDataRate;
     }
 
     /* @type {Object.<BrilliantSoleVibrationMotor, number>} */
@@ -168,7 +168,7 @@ class DataManager {
         },
     };
     get #VibrationMotor() {
-        return DataManager.#_VibrationMotor;
+        return SensorDataManager.#_VibrationMotor;
     }
 
     /** @type {number[]} */
@@ -398,4 +398,4 @@ class DataManager {
     }
 }
 
-export default DataManager;
+export default SensorDataManager;

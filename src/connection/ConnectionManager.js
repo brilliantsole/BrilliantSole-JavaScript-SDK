@@ -1,4 +1,3 @@
-import EventDispatcher from "../utils/EventDispatcher.js";
 import { createConsole } from "../utils/Console.js";
 
 /** @typedef {import("./utils/EventDispatcher.js").EventDispatcherListener} EventDispatcherListener */
@@ -6,73 +5,32 @@ import { createConsole } from "../utils/Console.js";
 
 /** @typedef {"web bluetooth" | "noble"} BrilliantSoleConnectionType */
 /** @typedef {"not connected" | "connecting" | "connected" | "disconnecting"} BrilliantSoleConnectionStatus */
-/** @typedef {"connectionStatus" | "isConnected" | "deviceInformation" | "batteryLevel" | "name" | "type" | "sensorConfiguration" | "sensorData"} BrilliantSoleConnectionManagerEventType */
-
-/**
- * @typedef BrilliantSoleConnectionManagerEvent
- * @type {object}
- * @property {BrilliantSoleConnectionManagerEventType} type
- * @property {object} message
- */
+/** @typedef {"manufacturerName" | "modelNumber" | "softwareRevision" | "hardwareRevision" | "firmwareRevision" | "pnpId" | "batteryLevel" | "getName" | "setName" | "getType" | "setType" | "getSensorConfiguration" | "setSensorConfiguration" | "sensorData"} BrilliantSoleConnectionMessageType */
 
 const _console = createConsole("ConnectionManager");
 
+/**
+ * @callback BrilliantSoleConnectionStatusCallback
+ * @param {BrilliantSoleConnectionStatus} status
+ */
+
+/**
+ * @callback BrilliantSoleMessageReceivedCallback
+ * @param {BrilliantSoleConnectionMessageType} messageType
+ * @param {DataView} data
+ */
+
 class ConnectionManager {
-    /** @type {BrilliantSoleConnectionManagerEventType[]} */
-    static #EventTypes = [
-        "isConnected",
-        "connectionStatus",
-        "deviceInformation",
-        "batteryLevel",
-        "name",
-        "type",
-        "sensorConfiguration",
-        "sensorData",
-    ];
-    static get EventTypes() {
-        return this.#EventTypes;
-    }
-    get eventTypes() {
-        return ConnectionManager.#EventTypes;
-    }
-    #eventDispatcher = new EventDispatcher(this.eventTypes);
+    /** @type {BrilliantSoleConnectionStatusCallback?} */
+    onStatusUpdated;
+    /** @type {BrilliantSoleMessageReceivedCallback?} */
+    onMessageReceived;
 
-    /**
-     * @param {BrilliantSoleConnectionManagerEventType} type
-     * @param {EventDispatcherListener} listener
-     * @param {EventDispatcherOptions?} options
-     * @throws {Error}
-     */
-    addEventListener(type, listener, options) {
-        return this.#eventDispatcher.addEventListener(...arguments);
-    }
-
-    /**
-     * @protected
-     * @param {BrilliantSoleConnectionManagerEvent} event
-     */
-    _dispatchEvent(event) {
-        this.#eventDispatcher.dispatchEvent(event);
-    }
-
-    /**
-     * @param {BrilliantSoleConnectionManagerEventType} type
-     * @param {EventDispatcherListener} listener
-     * @returns {boolean}
-     */
-    removeEventListener(type, listener) {
-        return this.#eventDispatcher.removeEventListener(...arguments);
-    }
-
-    /**
-     * @param {string} name
-     */
+    /** @param {string} name */
     static #staticThrowNotImplementedError(name) {
         throw new Error(`"${name}" is not implemented by "${this.name}" subclass`);
     }
-    /**
-     * @param {string} name
-     */
+    /** @param {string} name */
     #throwNotImplementedError(name) {
         throw new Error(`"${name}" is not implemented by "${this.constructor.name}" subclass`);
     }
@@ -110,26 +68,24 @@ class ConnectionManager {
     }
 
     /** @type {BrilliantSoleConnectionStatus} */
-    #connectionStatus = "not connected";
-    get connectionStatus() {
-        return this.#connectionStatus;
+    #status = "not connected";
+    get status() {
+        return this.#status;
     }
     /** @protected */
-    set connectionStatus(newConnectionStatus) {
-        if (this.#connectionStatus == newConnectionStatus) {
+    set status(newConnectionStatus) {
+        _console.assertTypeWithError(newConnectionStatus);
+        if (this.#status == newConnectionStatus) {
             _console.warn("same connection status");
             return;
         }
         _console.log(`new connection status "${newConnectionStatus}"`);
-        this.#connectionStatus = newConnectionStatus;
-        this._dispatchEvent({ type: "connectionStatus", message: { connectionStatus: this.connectionStatus } });
-        if (this.#connectionStatus == "connected" || this.#connectionStatus == "not connected") {
-            this._dispatchEvent({ type: "isConnected", message: { isConnected: this.isConnected } });
-        }
+        this.#status = newConnectionStatus;
+        this.onStatusUpdated?.(this.status);
     }
 
     get isConnected() {
-        return this.connectionStatus == "connected";
+        return this.status == "connected";
     }
 
     /** @throws {Error} if connected */
@@ -138,7 +94,7 @@ class ConnectionManager {
     }
     /** @throws {Error} if connecting */
     #assertIsNotConnecting() {
-        _console.assertWithError(this.connectionStatus != "connecting", "device is already connecting");
+        _console.assertWithError(this.status != "connecting", "device is already connecting");
     }
     /** @throws {Error} if not connected */
     #assertIsConnected() {
@@ -146,7 +102,7 @@ class ConnectionManager {
     }
     /** @throws {Error} if disconnecting */
     #assertIsNotDisconnecting() {
-        _console.assertWithError(this.connectionStatus != "disconnecting", "device is already disconnecting");
+        _console.assertWithError(this.status != "disconnecting", "device is already disconnecting");
     }
     /** @throws {Error} if not connected or is disconnecting */
     #assertIsConnectedAndNotDisconnecting() {
@@ -157,7 +113,7 @@ class ConnectionManager {
     async connect() {
         this.#assertIsNotConnected();
         this.#assertIsNotConnecting();
-        this.connectionStatus = "connecting";
+        this.status = "connecting";
     }
     /** @type {boolean} */
     get canReconnect() {
@@ -167,12 +123,12 @@ class ConnectionManager {
         this.#assertIsNotConnected();
         this.#assertIsNotConnecting();
         _console.assert(this.canReconnect, "unable to reconnect");
-        this.connectionStatus = "connecting";
+        this.status = "connecting";
     }
     async disconnect() {
         this.#assertIsConnected();
         this.#assertIsNotDisconnecting();
-        this.connectionStatus = "disconnecting";
+        this.status = "disconnecting";
     }
 
     /** @param {any} message */
