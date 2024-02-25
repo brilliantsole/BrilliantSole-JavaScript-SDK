@@ -1,7 +1,7 @@
 {
-    "name": "brilliantsole.js",
+    "name": "brilliantsole-javascript-sdk",
     "version": "1.0.0",
-    "description": "javascript SDK for BrilliantSole smart insoles",
+    "description": "JavaScript SDK for BrilliantSole smart insoles",
     "type": "module",
     "main": "build/brilliantsole.js",
     "module": "./build/brilliantsole.module.js",
