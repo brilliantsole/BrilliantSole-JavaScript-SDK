@@ -267,12 +267,11 @@ class BrilliantSole {
                 break;
 
             case "sensorData":
-                // FILL
+                this.#sensorDataManager.parse(dataView);
                 break;
 
             default:
-                _console.error(`uncaught messageType ${messageType}`);
-                break;
+                throw Error(`uncaught messageType ${messageType}`);
         }
     }
 
@@ -437,8 +436,14 @@ class BrilliantSole {
     /** @type {SensorDataManager} */
     #sensorDataManager = new SensorDataManager();
 
-    #onSensorDataReceived() {
-        // FILL
+    /**
+     * @param {BrilliantSoleSensorType} sensorType
+     * @param {Object} data
+     * @param {number} data.timestamp
+     */
+    #onSensorDataReceived(sensorType, data) {
+        _console.log({ sensorType, data });
+        this.#dispatchEvent({ type: sensorType, message: data });
     }
 
     // HAPTICS (FILL)

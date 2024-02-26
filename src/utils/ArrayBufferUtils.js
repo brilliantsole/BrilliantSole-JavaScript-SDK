@@ -20,10 +20,10 @@ export function concatenateArrayBuffers(...arrayBuffers) {
     arrayBuffers = arrayBuffers.filter((arrayBuffer) => arrayBuffer && "byteLength" in arrayBuffer);
     const length = arrayBuffers.reduce((length, arrayBuffer) => length + arrayBuffer.byteLength, 0);
     const uint8Array = new Uint8Array(length);
-    let offset = 0;
+    let byteOffset = 0;
     arrayBuffers.forEach((arrayBuffer) => {
-        uint8Array.set(new Uint8Array(arrayBuffer), offset);
-        offset += arrayBuffer.byteLength;
+        uint8Array.set(new Uint8Array(arrayBuffer), byteOffset);
+        byteOffset += arrayBuffer.byteLength;
     });
     return uint8Array.buffer;
 }

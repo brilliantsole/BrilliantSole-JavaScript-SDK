@@ -19,15 +19,15 @@ const _console = createConsole("SensorConfigurationManager", { log: true });
  */
 
 class SensorConfigurationManager {
-    /** @param {DataView} sensorConfigurationData */
-    parse(sensorConfigurationData) {
+    /** @param {DataView} dataView */
+    parse(dataView) {
         /** @type {BrilliantSoleSensorConfiguration} */
         const parsedSensorConfiguration = {};
-        for (var offset = 0; offset < sensorConfigurationData.byteLength; offset += 3) {
-            const sensorTypeEnum = sensorConfigurationData.getUint8(offset);
+        for (let byteOffset = 0; byteOffset < dataView.byteLength; byteOffset += 3) {
+            const sensorTypeEnum = dataView.getUint8(byteOffset);
             SensorDataManager.assertValidSensorTypeEnum(sensorTypeEnum);
             const sensorType = SensorDataManager.Types[sensorTypeEnum];
-            const sensorDataRate = sensorConfigurationData.getUint16(offset + 1, true);
+            const sensorDataRate = dataView.getUint16(byteOffset + 1, true);
             _console.log({ sensorTypeEnum, sensorType, sensorDataRate });
             parsedSensorConfiguration[sensorType] = sensorDataRate;
         }
@@ -44,16 +44,16 @@ class SensorConfigurationManager {
             SensorDataManager.assertValidSensorType(sensorType);
         });
 
-        const sensorConfigurationData = new DataView(new ArrayBuffer(sensorTypes.length * 3));
-        var offset = 0;
+        const dataView = new DataView(new ArrayBuffer(sensorTypes.length * 3));
+        let byteOffset = 0;
         sensorTypes.forEach((sensorType) => {
             const sensorTypeEnum = SensorDataManager.Types.indexOf(sensorType);
-            sensorConfigurationData.setUint8(offset, sensorTypeEnum);
-            sensorConfigurationData.setUint16(offset + 1, sensorTypeEnum, true);
-            offset += 3;
+            dataView.setUint8(byteOffset, sensorTypeEnum);
+            dataView.setUint16(byteOffset + 1, sensorTypeEnum, true);
+            byteOffset += 3;
         });
-        _console.log({ sensorConfigurationData });
-        return sensorConfigurationData;
+        _console.log({ sensorConfigurationData: dataView });
+        return dataView;
     }
 }
 

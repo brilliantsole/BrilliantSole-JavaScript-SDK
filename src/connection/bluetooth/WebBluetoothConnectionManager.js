@@ -203,9 +203,9 @@ class WebBluetoothConnectionManager extends ConnectionManager {
     async sendMessage(messageType, data) {
         await super.sendCommand(...arguments);
         switch (messageType) {
+            // FILL
             default:
-                _console.error(`uncaught messageType "${messageType}"`);
-                break;
+                throw Error(`uncaught messageType "${messageType}"`);
         }
     }
 
