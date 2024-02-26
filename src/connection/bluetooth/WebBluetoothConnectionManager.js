@@ -13,6 +13,8 @@ const _console = createConsole("WebBluetoothConnectionManager", { log: true });
 /** @typedef {import("./bluetoothUUIDs.js").BrilliantSoleBluetoothCharacteristicName} BrilliantSoleBluetoothCharacteristicName */
 /** @typedef {import("./bluetoothUUIDs.js").BrilliantSoleBluetoothServiceName} BrilliantSoleBluetoothServiceName */
 
+/** @typedef {import("../ConnectionManager.js").BrilliantSoleConnectionMessageType} BrilliantSoleConnectionMessageType */
+
 class WebBluetoothConnectionManager extends ConnectionManager {
     /** @type {Object.<string, EventListener} */
     #boundBluetoothCharacteristicEventListeners = {
@@ -195,16 +197,16 @@ class WebBluetoothConnectionManager extends ConnectionManager {
     }
 
     /**
-     * @throws {Error} if not connected
-     * @param {DataView|ArrayBuffer} message
+     * @param {BrilliantSoleConnectionMessageType} messageType
+     * @param {DataView|ArrayBuffer} data
      */
-    async sendCommand(message) {
+    async sendMessage(messageType, data) {
         await super.sendCommand(...arguments);
-        const commandCharacteristic = this.#characteristics.get("command");
-        _console.assertWithError(commandCharacteristic, "command characteristic not found");
-        _console.log("sending data to command characteristic...", message, commandCharacteristic);
-        await commandCharacteristic.writeValueWithResponse(message);
-        _console.log("successfully sent command");
+        switch (messageType) {
+            default:
+                _console.error(`uncaught messageType "${messageType}"`);
+                break;
+        }
     }
 
     /** @type {boolean} */

@@ -131,9 +131,13 @@ class ConnectionManager {
         this.status = "disconnecting";
     }
 
-    /** @param {any} message */
-    async sendMessage(message) {
+    /**
+     * @param {BrilliantSoleConnectionMessageType} messageType
+     * @param {DataView|ArrayBuffer} data
+     */
+    async sendMessage(messageType, data) {
         this.#assertIsConnectedAndNotDisconnecting();
+        _console.log("sending message", { messageType, data });
     }
 }
 
