@@ -395,6 +395,8 @@ class BrilliantSole {
             return;
         }
         this.#type = updatedType;
+        this.#sensorDataManager.deviceType = this.#type;
+        this.#sensorConfigurationManager.deviceType = this.#type;
         this.#dispatchEvent({ type: "getType", message: { type: this.#type } });
     }
     /** @param {BrilliantSoleDeviceType} newType */

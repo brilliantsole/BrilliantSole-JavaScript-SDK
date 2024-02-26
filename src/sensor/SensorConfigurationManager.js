@@ -2,6 +2,7 @@ import { createConsole } from "../utils/Console.js";
 import SensorDataManager from "./SensorDataManager.js";
 
 /** @typedef {import("./SensorDataManager.js").BrilliantSoleSensorType} BrilliantSoleSensorType */
+/** @typedef {import("../BrilliantSole.js").BrilliantSoleDeviceType} BrilliantSoleDeviceType */
 
 const _console = createConsole("SensorConfigurationManager", { log: true });
 
@@ -19,6 +20,21 @@ const _console = createConsole("SensorConfigurationManager", { log: true });
  */
 
 class SensorConfigurationManager {
+    /** @type {BrilliantSoleDeviceType} */
+    #deviceType;
+    get deviceType() {
+        return this.#deviceType;
+    }
+    set deviceType(newDeviceType) {
+        _console.assertTypeWithError(newDeviceType, "string");
+        if (this.#deviceType == newDeviceType) {
+            _console.warn(`redundant deviceType assignment "${newDeviceType}"`);
+            return;
+        }
+        _console.log({ newDeviceType });
+        this.#deviceType = newDeviceType;
+    }
+
     /** @param {DataView} dataView */
     parse(dataView) {
         /** @type {BrilliantSoleSensorConfiguration} */
