@@ -8,6 +8,7 @@ import ConnectionManager from "./connection/ConnectionManager.js";
 import WebBluetoothConnectionManager from "./connection/bluetooth/WebBluetoothConnectionManager.js";
 import SensorConfigurationManager from "./sensor/SensorConfigurationManager.js";
 import SensorDataManager from "./sensor/SensorDataManager.js";
+import HapticsManager from "./haptics/HapticsManager.js";
 
 const _console = createConsole("BrilliantSole", { log: true });
 
@@ -50,6 +51,9 @@ const _console = createConsole("BrilliantSole", { log: true });
 /** @typedef {"leftInsole" | "rightInsole"} BrilliantSoleDeviceType */
 
 /** @typedef {import("./sensor/SensorConfigurationManager.js").BrilliantSoleSensorConfiguration} BrilliantSoleSensorConfiguration */
+
+/** @typedef {import("./haptics/HapticsManager.js").BrilliantSoleHapticsLocation} BrilliantSoleHapticsLocation */
+/** @typedef {import("./haptics/HapticsManager.js").BrilliantSoleHapticsVibrationType} BrilliantSoleHapticsVibrationType */
 
 class BrilliantSole {
     constructor() {
@@ -448,7 +452,15 @@ class BrilliantSole {
         this.#dispatchEvent({ type: sensorType, message: data });
     }
 
-    // HAPTICS (FILL)
+    // HAPTICS
+    #hapticsManager = new HapticsManager();
+
+    triggerVibrationWaveformEffects() {
+        // FILL
+    }
+    triggerVibrationWaveform() {
+        // FILL
+    }
 }
 BrilliantSole.setConsoleLevelFlagsForType = setConsoleLevelFlagsForType;
 BrilliantSole.setAllConsoleLevelFlags = setAllConsoleLevelFlags;
