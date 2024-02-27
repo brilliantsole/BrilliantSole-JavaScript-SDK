@@ -1,9 +1,11 @@
 import { createConsole } from "../utils/Console.js";
 import HapticsWaveformEffects from "./HapticsWaveformEffects.js";
+import { concatenateArrayBuffers } from "../utils/ArrayBufferUtils.js";
 
 const _console = createConsole("HapticsManager");
 
 /** @typedef {"front" | "rear"} BrilliantSoleHapticsLocation */
+/** @typedef {"waveformEffect" | "waveform"} BrilliantSoleHapticsVibrationType */
 
 /** @typedef {import("./HapticsWaveformEffects.js").BrilliantSoleHapticsVibrationWaveformEffect} BrilliantSoleHapticsVibrationWaveformEffect */
 
@@ -16,7 +18,7 @@ const _console = createConsole("HapticsManager");
 /**
  * @typedef BrilliantSoleHapticsVibrationWaveformSegment
  * @type {Object}
- * @property {number} delay ms int ranging [0, 2550]
+ * @property {number} duration ms int ranging [0, 2550]
  * @property {number} amplitude float ranging [0, 1]
  */
 
@@ -33,9 +35,29 @@ class HapticsManager {
     }
     /** @param {BrilliantSoleHapticsLocation[]} locations */
     #verifyLocations(locations) {
+        this.#assertNonEmptyArray(locations);
         locations.forEach((location) => {
             this.#verifyLocation(location);
         });
+    }
+    /** @param {BrilliantSoleHapticsLocation[]} locations */
+    #createLocationsBitmask(locations) {
+        this.#verifyLocations(locations);
+
+        let locationsBitmask = 0;
+        locations.forEach((location) => {
+            const locationIndex = this.locations.indexOf(location);
+            locationsBitmask |= 1 << locationIndex;
+        });
+        _console.log({ locationsBitmask });
+        _console.assertWithError(locationsBitmask > 0, `locationsBitmask must not be zero`);
+        return locationsBitmask;
+    }
+
+    /** @param {any[]} array */
+    #assertNonEmptyArray(array) {
+        _console.assertWithError(Array.isArray(array), "passed non-array");
+        _console.assertWithError(array.length > 0, "passed empty array");
     }
 
     get waveformEffects() {
@@ -71,6 +93,7 @@ class HapticsManager {
     }
     /** @param {BrilliantSoleHapticsVibrationWaveformEffectSegment[]} waveformEffectSegments */
     #verifyWaveformEffectSegments(waveformEffectSegments) {
+        this.#assertNonEmptyArray(waveformEffectSegments);
         _console.assertWithError(
             waveformEffectSegments.length <= this.maxNumberOfWaveformEffectSegments,
             `must have ${this.maxNumberOfWaveformEffectSegments} waveformEffectSegments or fewer (got ${waveformEffectSegments.length})`
@@ -98,6 +121,7 @@ class HapticsManager {
     }
     /** @param {number[]} waveformEffectSegmentLoopCounts */
     #verifyWaveformEffectSegmentLoopCounts(waveformEffectSegmentLoopCounts) {
+        this.#assertNonEmptyArray(waveformEffectSegmentLoopCounts);
         _console.assertWithError(
             waveformEffectSegmentLoopCounts.length <= this.maxNumberOfWaveformEffectSegments,
             `must have ${this.maxNumberOfWaveformEffectSegments} waveformEffectSegmentLoopCounts or fewer (got ${waveformEffectSegmentLoopCounts.length})`
@@ -136,14 +160,14 @@ class HapticsManager {
             `amplitude must be 1 or less (got ${waveformSegment.amplitude})`
         );
 
-        _console.assertTypeWithError(waveformSegment.delay, "number");
+        _console.assertTypeWithError(waveformSegment.duration, "number");
         _console.assertWithError(
-            waveformSegment.delay > 0,
-            `delay must be greater than 0ms (got ${waveformSegment.delay}ms)`
+            waveformSegment.duration > 0,
+            `duration must be greater than 0ms (got ${waveformSegment.duration}ms)`
         );
         _console.assertWithError(
-            waveformSegment.delay <= 2560,
-            `delay must be 2560ms or less (got ${waveformSegment.delay}ms)`
+            waveformSegment.duration <= 2560,
+            `duration must be 2560ms or less (got ${waveformSegment.duration}ms)`
         );
     }
     static #maxNumberOfWaveformSegments = 20;
@@ -152,6 +176,7 @@ class HapticsManager {
     }
     /** @param {BrilliantSoleHapticsVibrationWaveformSegment[]} waveformSegments */
     #verifyWaveformSegments(waveformSegments) {
+        this.#assertNonEmptyArray(waveformSegments);
         _console.assertWithError(
             waveformSegments.length <= this.maxNumberOfWaveformSegments,
             `must have ${this.maxNumberOfWaveformSegments} waveformSegments or fewer (got ${waveformSegments.length})`
@@ -173,21 +198,94 @@ class HapticsManager {
         waveformEffectSegmentLoopCounts = [],
         waveformEffectSequenceLoopCount = 0
     ) {
-        this.#verifyLocations(locations);
         this.#verifyWaveformEffectSegments(waveformEffectSegments);
         this.#verifyWaveformEffectSegmentLoopCounts(waveformEffectSegmentLoopCounts);
         this.#verifyWaveformEffectSequenceLoopCount(waveformEffectSequenceLoopCount);
 
-        // FILL
+        let dataArray = [];
+        let byteOffset = 0;
+
+        const includeAllWaveformEffectSegments =
+            waveformEffectSegmentLoopCounts.length > 0 || waveformEffectSequenceLoopCount != 0;
+
+        for (
+            let index = 0;
+            index < waveformEffectSegments.length ||
+            (includeAllWaveformEffectSegments && index < this.maxNumberOfWaveformEffectSegments);
+            index++
+        ) {
+            const waveformEffectSegment = waveformEffectSegments[index] || "none";
+
+            if (typeof waveformEffectSegment == "string") {
+                const waveformEffect = waveformEffectSegment;
+                dataArray[byteOffset++] = this.waveformEffects.indexOf(waveformEffect);
+            } else {
+                const delay = waveformEffectSegment;
+                dataArray[byteOffset++] = (1 << 7) | Math.floor(delay); // set most significant bit to 1
+            }
+        }
+
+        const includeAllWaveformEffectSegmentLoopCounts = waveformEffectSequenceLoopCount != 0;
+        for (
+            let index = 0;
+            index < waveformEffectSegmentLoopCounts.length ||
+            (includeAllWaveformEffectSegmentLoopCounts && index < this.maxNumberOfWaveformEffectSegments);
+            index++
+        ) {
+            // FILL
+            // first or second byte?
+            // first or second half of byte?
+        }
+        if (waveformEffectSequenceLoopCount != 0) {
+            dataArray[byteOffset++] = waveformEffectSequenceLoopCount;
+        }
+
+        const dataView = new DataView(Uint8Array.from(dataArray).buffer);
+        _console.log({ dataArray, dataView });
+        this.#createData(locations, "waveformEffect", dataView);
     }
     /**
      * @param {BrilliantSoleHapticsLocation[]} locations
      * @param {BrilliantSoleHapticsVibrationWaveformSegment[]} waveformSegments
      */
     createWaveformData(locations, waveformSegments) {
-        this.#verifyLocations(locations);
         this.#verifyWaveformSegments(waveformSegments);
-        // FILL
+        const dataView = new DataView(new ArrayBuffer(waveformSegments.length * 2));
+        waveformSegments.forEach((waveformSegment, index) => {
+            dataView.setUint8(index * 2, waveformSegment.amplitude);
+            dataView.setUint8(index * 2 + 1, Math.floor(waveformSegment.duration / 10));
+        });
+        _console.log({ dataView });
+        this.#createData(locations, "waveform", dataView);
+    }
+
+    /** @type {BrilliantSoleHapticsVibrationType[]} */
+    static #VibrationTypes = ["waveformEffect", "waveform"];
+    get #vibrationTypes() {
+        return HapticsManager.#VibrationTypes;
+    }
+    /** @param {BrilliantSoleHapticsVibrationType} vibrationType */
+    #verifyVibrationType(vibrationType) {
+        _console.assertTypeWithError(vibrationType, "string");
+        _console.assertWithError(
+            this.#vibrationTypes.includes(vibrationType),
+            `invalid vibrationType "${vibrationType}"`
+        );
+    }
+
+    /**
+     * @param {BrilliantSoleHapticsLocation[]} locations
+     * @param {BrilliantSoleHapticsVibrationType} vibrationType
+     * @param {DataView} dataView
+     */
+    #createData(locations, vibrationType, dataView) {
+        const locationsBitmask = this.#createLocationsBitmask(locations);
+        this.#verifyVibrationType(vibrationType);
+        const vibrationTypeIndex = this.#vibrationTypes.indexOf(vibrationType);
+        _console.log({ locationsBitmask, vibrationTypeIndex, dataView });
+        const data = concatenateArrayBuffers(locationsBitmask, vibrationTypeIndex, dataView.byteLength, dataView);
+        _console.log({ data });
+        return data;
     }
 }
 

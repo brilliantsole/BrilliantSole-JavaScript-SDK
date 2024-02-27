@@ -5,14 +5,16 @@
 export function concatenateArrayBuffers(...arrayBuffers) {
     arrayBuffers = arrayBuffers.filter((arrayBuffer) => arrayBuffer);
     arrayBuffers = arrayBuffers.map((arrayBuffer) => {
-        if (arrayBuffer instanceof ArrayBuffer) {
+        if (typeof arrayBuffer == "number") {
+            return Uint8Array.from([Math.floor(arrayBuffer)]);
+        } else if (arrayBuffer instanceof Array) {
+            return Uint8Array.from(arrayBuffer).buffer;
+        } else if (arrayBuffer instanceof ArrayBuffer) {
             return arrayBuffer;
         } else if ("buffer" in arrayBuffer && arrayBuffer.buffer instanceof ArrayBuffer) {
             return arrayBuffer.buffer;
         } else if (arrayBuffer instanceof DataView) {
             return arrayBuffer.buffer;
-        } else if (arrayBuffer instanceof Array) {
-            return Uint8Array.from(arrayBuffer).buffer;
         } else {
             return arrayBuffer;
         }
