@@ -114,7 +114,7 @@ class SensorDataManager {
                     break;
                 case "gameRotation":
                 case "rotation":
-                    value = this.#parseQuaternion(dataViw, byteOffset, sensorType);
+                    value = this.#parseQuaternion(dataView, byteOffset, sensorType);
                     byteOffset += 10;
                     break;
                 case "barometer":
@@ -127,6 +127,26 @@ class SensorDataManager {
             _console.assertWithError(value, `no value defined for sensorType "${sensorType}"`);
             this.onDataReceived?.(sensorType, { timestamp, [sensorType]: value });
         }
+    }
+
+    static #Scalars = {
+        pressure: 2 ** 16,
+
+        accelerometer: 2 ** -12,
+        gravity: 2 ** -12,
+        linearAcceleration: 2 ** -12,
+
+        gyroscope: 2000 * 2 ** -15,
+
+        magnetometer: 2500 * 2 ** -15,
+
+        gameRotation: 2 ** -14,
+        rotation: 2 ** -14,
+
+        barometer: 100 * 2 ** -7,
+    };
+    get #scalars() {
+        return SensorDataManager.#Scalars;
     }
 
     static #numberOfPressureSensors = 8;
@@ -143,6 +163,7 @@ class SensorDataManager {
         for (let index = 0; index < this.numberOfPressureSensors; index++, byteOffset += 2) {
             pressure[index] = dataView.getUint16(byteOffset, true);
         }
+        // FILL - center of mass, normalized pressure, etc
         _console.log({ pressure });
         return pressure;
     }
@@ -150,17 +171,14 @@ class SensorDataManager {
     /**
      * @param {DataView} dataView
      * @param {number} byteOffset
+     * @param {BrilliantSoleSensorType} sensorType
      */
-    #parseVector3(dataView, byteOffset) {
+    #parseVector3(dataView, byteOffset, sensorType) {
         let [x, y, z] = [
             dataView.getUint16(byteOffset, true),
             dataView.getUint16(byteOffset + 2, true),
             dataView.getUint16(byteOffset + 4, true),
-        ];
-
-        // FILL
-        // arrange values
-        // scalar
+        ].map((value) => value * this.#scalars[sensorType]);
 
         const vector = { x, y, z };
 
@@ -170,18 +188,15 @@ class SensorDataManager {
     /**
      * @param {DataView} dataView
      * @param {number} byteOffset
+     * @param {BrilliantSoleSensorType} sensorType
      */
-    #parseQuaternion(dataView, byteOffset) {
+    #parseQuaternion(dataView, byteOffset, sensorType) {
         let [x, y, z, w] = [
             dataView.getUint16(byteOffset, true),
             dataView.getUint16(byteOffset + 2, true),
             dataView.getUint16(byteOffset + 4, true),
             dataView.getUint16(byteOffset + 6, true),
-        ];
-
-        // FILL
-        // arrange values
-        // scalar
+        ].map((value) => value * this.#scalars[sensorType]);
 
         const quaternion = { x, y, z, w };
 
