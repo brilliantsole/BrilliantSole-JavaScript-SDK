@@ -121,10 +121,10 @@ class WebBluetoothConnectionManager extends ConnectionManager {
             await Promise.all(servicePromises);
             _console.log("fully connected");
 
-            this.connectionStatus = "connected";
+            this.status = "connected";
         } catch (error) {
             _console.error(error);
-            this.connectionStatus = "not connected";
+            this.status = "not connected";
         }
     }
     async disconnect() {
@@ -193,7 +193,7 @@ class WebBluetoothConnectionManager extends ConnectionManager {
     /** @param {Event} event */
     #onGattserverdisconnected(event) {
         _console.log("gattserverdisconnected", event);
-        this.connectionStatus = "not connected";
+        this.status = "not connected";
     }
 
     /**
@@ -201,9 +201,20 @@ class WebBluetoothConnectionManager extends ConnectionManager {
      * @param {DataView|ArrayBuffer} data
      */
     async sendMessage(messageType, data) {
-        await super.sendCommand(...arguments);
+        await super.sendMessage(...arguments);
         switch (messageType) {
-            // FILL
+            case "setName":
+                const nameCharacteristic = this.#characteristics.get("name");
+                await nameCharacteristic.writeValueWithResponse(data);
+                break;
+            case "setType":
+                const typeCharacteristic = this.#characteristics.get("type");
+                await typeCharacteristic.writeValueWithResponse(data);
+                break;
+            case "setSensorConfiguration":
+                const sensorConfigurationCharacteristic = this.#characteristics.get("sensorConfiguration");
+                await sensorConfigurationCharacteristic.writeValueWithResponse(data);
+                break;
             default:
                 throw Error(`uncaught messageType "${messageType}"`);
         }
@@ -219,10 +230,10 @@ class WebBluetoothConnectionManager extends ConnectionManager {
         await this.server.connect();
         if (this.isConnected) {
             _console.log("successfully reconnected!");
-            this.connectionStatus = "connected";
+            this.status = "connected";
         } else {
             _console.log("unable to reconnect");
-            this.connectionStatus = "not connected";
+            this.status = "not connected";
         }
     }
 }

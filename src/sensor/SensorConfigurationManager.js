@@ -39,14 +39,11 @@ class SensorConfigurationManager {
     parse(dataView) {
         /** @type {BrilliantSoleSensorConfiguration} */
         const parsedSensorConfiguration = {};
-        for (let byteOffset = 0; byteOffset < dataView.byteLength; byteOffset += 3) {
-            const sensorTypeEnum = dataView.getUint8(byteOffset);
-            SensorDataManager.assertValidSensorTypeEnum(sensorTypeEnum);
-            const sensorType = SensorDataManager.Types[sensorTypeEnum];
-            const sensorDataRate = dataView.getUint16(byteOffset + 1, true);
-            _console.log({ sensorTypeEnum, sensorType, sensorDataRate });
+        SensorDataManager.Types.forEach((sensorType, index) => {
+            const sensorDataRate = dataView.getUint16(index * 2, true);
+            _console.log({ sensorType, sensorDataRate });
             parsedSensorConfiguration[sensorType] = sensorDataRate;
-        }
+        });
         _console.log({ parsedSensorConfiguration });
         return parsedSensorConfiguration;
     }

@@ -48,12 +48,12 @@ import { concatenateArrayBuffers } from "./utils/ArrayBufferUtils.js";
 /** @typedef {import("./sensor/SensorConfigurationManager.js").BrilliantSoleSensorConfiguration} BrilliantSoleSensorConfiguration */
 
 /** @typedef {import("./haptics/HapticsManager.js").BrilliantSoleHapticsLocation} BrilliantSoleHapticsLocation */
+/** @typedef {import("./haptics/HapticsManager.js").BrilliantSoleHapticsVibrationType} BrilliantSoleHapticsVibrationType */
 
 /** @typedef {import("./haptics/HapticsManager.js").BrilliantSoleHapticsVibrationWaveformEffectSegment} BrilliantSoleHapticsVibrationWaveformEffectSegment */
 /**
  * @typedef BrilliantSoleHapticsVibrationWaveformEffectConfiguration
  * @type {Object}
- * @property {BrilliantSoleHapticsLocation[]} locations
  * @property {BrilliantSoleHapticsVibrationWaveformEffectSegment[]} segments waveform effects or delay (ms int ranging [0, 1270])
  * @property {number[]?} segmentLoopCounts how many times each segment should loop (int ranging [0, 3])
  * @property {number?} sequenceLoopCount how many times the entire sequence should loop (int ranging [0, 6])
@@ -63,8 +63,16 @@ import { concatenateArrayBuffers } from "./utils/ArrayBufferUtils.js";
 /**
  * @typedef BrilliantSoleHapticsVibrationWaveformConfiguration
  * @type {Object}
- * @property {BrilliantSoleHapticsLocation[]} locations
  * @property {BrilliantSoleHapticsVibrationWaveformSegment[]} segments
+ */
+
+/**
+ * @typedef BrilliantSoleHapticsVibrationConfiguration
+ * @type {Object}
+ * @property {BrilliantSoleHapticsLocation[]} locations
+ * @property {BrilliantSoleHapticsVibrationType} type
+ * @property {BrilliantSoleHapticsVibrationWaveformEffectConfiguration?} waveformEffect use if type is "waveformEffect"
+ * @property {BrilliantSoleHapticsVibrationWaveformConfiguration?} waveform use if type is "waveform"
  */
 
 const _console = createConsole("BrilliantSole", { log: true });
@@ -208,7 +216,16 @@ class BrilliantSole {
         }
 
         if (connectionStatus == "not connected") {
-            // clear name/type/config?
+            //this.#clear();
+        }
+    }
+
+    #clear() {
+        this.#name = null;
+        this.#type = null;
+        this.#batteryLevel = null;
+        for (const key in this.#deviceInformation) {
+            this.#deviceInformation[key] = null;
         }
     }
 
@@ -262,7 +279,7 @@ class BrilliantSole {
 
             case "batteryLevel":
                 const batteryLevel = dataView.getUint8(0);
-                _console.log({ batteryLevel });
+                _console.log("received battery level", { batteryLevel });
                 this.#updateBatteryLevel(batteryLevel);
                 break;
 
@@ -342,15 +359,15 @@ class BrilliantSole {
     get batteryLevel() {
         return this.#batteryLevel;
     }
-    /** @param {number} newBatteryLevel */
-    #updateBatteryLevel(newBatteryLevel) {
-        _console.assertTypeWithError(newBatteryLevel, "number");
-        if (this.#batteryLevel == newBatteryLevel) {
-            _console.warn(`duplicate batteryLevel assignment ${newBatteryLevel}`);
+    /** @param {number} updatedBatteryLevel */
+    #updateBatteryLevel(updatedBatteryLevel) {
+        _console.assertTypeWithError(updatedBatteryLevel, "number");
+        if (this.#batteryLevel == updatedBatteryLevel) {
+            _console.warn(`duplicate batteryLevel assignment ${updatedBatteryLevel}`);
             return;
         }
-        _console.log({ newBatteryLevel });
-        this.#batteryLevel = newBatteryLevel;
+        this.#batteryLevel = updatedBatteryLevel;
+        _console.log({ updatedBatteryLevel: this.#batteryLevel });
         this.#dispatchEvent({ type: "batteryLevel", message: { batteryLevel: this.#batteryLevel } });
     }
 
@@ -364,8 +381,8 @@ class BrilliantSole {
     /** @param {string} updatedName */
     #updateName(updatedName) {
         _console.assertTypeWithError(updatedName, "string");
-        _console.log({ updatedName });
         this.#name = updatedName;
+        _console.log({ updatedName: this.#name });
         this.#dispatchEvent({ type: "getName", message: { name: this.#name } });
     }
     get maxNameLength() {
@@ -406,14 +423,16 @@ class BrilliantSole {
     /** @param {BrilliantSoleDeviceType} updatedType */
     #updateType(updatedType) {
         this.#assertValidDeviceType(updatedType);
-        _console.log({ updatedType });
         if (updatedType == this.type) {
             _console.warn("redundant type assignment");
             return;
         }
         this.#type = updatedType;
+        _console.log({ updatedType: this.#type });
+
         this.#sensorDataManager.deviceType = this.#type;
         this.#sensorConfigurationManager.deviceType = this.#type;
+
         this.#dispatchEvent({ type: "getType", message: { type: this.#type } });
     }
     /** @param {BrilliantSoleDeviceType} newType */
@@ -433,10 +452,10 @@ class BrilliantSole {
         return this.#sensorConfiguration;
     }
 
-    /** @param {BrilliantSoleSensorConfiguration} sensorConfiguration */
-    #updateSensorConfiguration(sensorConfiguration) {
-        this.#sensorConfiguration = sensorConfiguration;
-        _console.log({ sensorConfiguration: this.sensorConfiguration });
+    /** @param {BrilliantSoleSensorConfiguration} updatedSensorConfiguration */
+    #updateSensorConfiguration(updatedSensorConfiguration) {
+        this.#sensorConfiguration = updatedSensorConfiguration;
+        _console.log({ updatedSensorConfiguration: this.#sensorConfiguration });
         this.#dispatchEvent({
             type: "getSensorConfiguration",
             message: { sensorConfiguration: this.sensorConfiguration },
@@ -468,28 +487,46 @@ class BrilliantSole {
     // HAPTICS
     #hapticsManager = new HapticsManager();
 
-    /** @param  {...BrilliantSoleHapticsVibrationWaveformEffectConfiguration} configurations */
-    async triggerVibrationWaveformEffects(...configurations) {
+    /** @param  {...BrilliantSoleHapticsVibrationConfiguration} configurations */
+    async triggerVibration(...configurations) {
         /** @type {ArrayBuffer} */
         let triggerVibrationData;
-        configurations.forEach(({ locations, segments, segmentLoopCounts, sequenceLoopCount }) => {
-            const dataView = this.#hapticsManager.createWaveformEffectsData(
-                locations,
-                segments,
-                segmentLoopCounts,
-                sequenceLoopCount
-            );
-            triggerVibrationData = concatenateArrayBuffers(triggerVibrationData, dataView);
-        });
-        await this.#connectionManager.sendMessage("triggerVibration", triggerVibrationData);
-    }
+        configurations.forEach((configuration) => {
+            const { locations, type } = configuration;
 
-    /** @param  {...BrilliantSoleHapticsVibrationWaveformConfiguration} configurations */
-    async triggerVibrationWaveform(...configurations) {
-        /** @type {ArrayBuffer} */
-        let triggerVibrationData;
-        configurations.forEach(({ locations, segments }) => {
-            const dataView = this.#hapticsManager.createWaveformData(locations, segments);
+            /** @type {DataView} */
+            let dataView;
+
+            switch (type) {
+                case "waveformEffect":
+                    {
+                        const { waveformEffect } = configuration;
+                        if (!waveformEffect) {
+                            throw Error("waveformEffect not defined in configuration");
+                        }
+                        const { segments, segmentLoopCounts, sequenceLoopCount } = waveformEffect;
+                        this.#hapticsManager.createWaveformEffectsData(
+                            locations,
+                            segments,
+                            segmentLoopCounts,
+                            sequenceLoopCount
+                        );
+                    }
+                    break;
+                case "waveform":
+                    {
+                        const { waveform } = configuration;
+                        if (!waveform) {
+                            throw Error("waveform not defined in configuration");
+                        }
+                        const { segments } = waveform;
+                        this.#hapticsManager.createWaveformData(locations, segments);
+                    }
+                    break;
+                default:
+                    throw Error(`invalid vibration type "${type}"`);
+            }
+
             triggerVibrationData = concatenateArrayBuffers(triggerVibrationData, dataView);
         });
         await this.#connectionManager.sendMessage("triggerVibration", triggerVibrationData);
