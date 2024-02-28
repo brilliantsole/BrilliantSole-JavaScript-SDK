@@ -43,7 +43,7 @@ import { concatenateArrayBuffers } from "./utils/ArrayBufferUtils.js";
  * @property {number} productVersion
  */
 
-/** @typedef {"leftInsole" | "rightInsole"} BrilliantSoleDeviceType */
+/** @typedef {"left insole" | "right insole"} BrilliantSoleDeviceType */
 
 /** @typedef {import("./sensor/SensorConfigurationManager.js").BrilliantSoleSensorConfiguration} BrilliantSoleSensorConfiguration */
 
@@ -385,13 +385,20 @@ class BrilliantSole {
         _console.log({ updatedName: this.#name });
         this.#dispatchEvent({ type: "getName", message: { name: this.#name } });
     }
+    get minNameLength() {
+        return 2;
+    }
     get maxNameLength() {
-        return 32;
+        return 65;
     }
     /** @param {string} newName */
     async setName(newName) {
         this.#assertIsConnected();
         _console.assertTypeWithError(newName, "string");
+        _console.assertWithError(
+            newName.length >= this.minNameLength,
+            `name must be greater than ${this.minNameLength} characters long ("${newName}" is ${newName.length} characters long)`
+        );
         _console.assertWithError(
             newName.length < this.maxNameLength,
             `name must be less than ${this.maxNameLength} characters long ("${newName}" is ${newName.length} characters long)`
@@ -403,8 +410,8 @@ class BrilliantSole {
 
     // TYPE
     /** @type {BrilliantSoleDeviceType[]} */
-    static #Types = ["leftInsole", "rightInsole"];
-    static Types() {
+    static #Types = ["left insole", "right insole"];
+    static get Types() {
         return this.#Types;
     }
     get #types() {
@@ -439,7 +446,8 @@ class BrilliantSole {
     async setType(newType) {
         this.#assertIsConnected();
         this.#assertValidDeviceType(newType);
-        const setTypeData = Uint8Array.from([newType]);
+        const newTypeEnum = this.#types.indexOf(newType);
+        const setTypeData = Uint8Array.from([newTypeEnum]);
         _console.log({ setTypeData });
         await this.#connectionManager.sendMessage("setType", setTypeData);
     }

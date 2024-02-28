@@ -15,13 +15,32 @@
         <button id="toggleConnection">connect</button>
 
         <p>
+            <label>
+                <b>device information: </b>
+                <pre id="deviceInformation"></pre>
+            </label>
+        </p>
+
+        <p>
             <label><b>battery level:</b> <span id="batteryLevel"></span></label>
         </p>
 
         <p>
+            <label><b>name:</b> <span id="name"></span></label>
+            <br />
+            <label> <b>new name: </b> <input id="setNameInput" type="text" placeholder="new name" disabled /> </label>
+            <button id="setNameButton" disabled>set name</button>
+        </p>
+
+        <p>
+            <label><b>type:</b> <span id="type"></span></label>
+            <br />
             <label>
-                <b>device information: </b>
-                <pre id="deviceInformation"></pre>
+                <b>new type: </b>
+                <select id="setTypeSelect" disabled>
+                    <optgroup label="select type"></optgroup>
+                </select>
+                <button id="setTypeButton" disabled>set type</button>
             </label>
         </p>
     </body>

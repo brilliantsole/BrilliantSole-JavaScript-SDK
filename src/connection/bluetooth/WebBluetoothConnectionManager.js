@@ -202,22 +202,25 @@ class WebBluetoothConnectionManager extends ConnectionManager {
      */
     async sendMessage(messageType, data) {
         await super.sendMessage(...arguments);
+        /** @type {BluetoothRemoteGATTCharacteristic} */
+        let characteristic;
         switch (messageType) {
             case "setName":
-                const nameCharacteristic = this.#characteristics.get("name");
-                await nameCharacteristic.writeValueWithResponse(data);
+                characteristic = this.#characteristics.get("name");
                 break;
             case "setType":
-                const typeCharacteristic = this.#characteristics.get("type");
-                await typeCharacteristic.writeValueWithResponse(data);
+                characteristic = this.#characteristics.get("type");
                 break;
             case "setSensorConfiguration":
-                const sensorConfigurationCharacteristic = this.#characteristics.get("sensorConfiguration");
-                await sensorConfigurationCharacteristic.writeValueWithResponse(data);
+                characteristic = this.#characteristics.get("sensorConfiguration");
                 break;
             default:
                 throw Error(`uncaught messageType "${messageType}"`);
         }
+
+        _console.assert(characteristic, "no characteristic found");
+        await characteristic.writeValueWithResponse(data);
+        await characteristic.readValue();
     }
 
     /** @type {boolean} */
