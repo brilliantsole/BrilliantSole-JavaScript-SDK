@@ -1,33 +1,27 @@
 import { createConsole, setAllConsoleLevelFlags, setConsoleLevelFlagsForType } from "./utils/Console.js";
-import EventDispatcher, {
-    bindEventListeners,
-    addEventListeners,
-    removeEventListeners,
-} from "./utils/EventDispatcher.js";
+import EventDispatcher from "./utils/EventDispatcher.js";
 import ConnectionManager from "./connection/ConnectionManager.js";
 import WebBluetoothConnectionManager from "./connection/bluetooth/WebBluetoothConnectionManager.js";
 import SensorConfigurationManager from "./sensor/SensorConfigurationManager.js";
 import SensorDataManager from "./sensor/SensorDataManager.js";
 import HapticsManager from "./haptics/HapticsManager.js";
+import { concatenateArrayBuffers } from "./utils/ArrayBufferUtils.js";
 
-const _console = createConsole("BrilliantSole", { log: true });
+/** @typedef {import("./connection/ConnectionManager.js").BrilliantSoleConnectionMessageType} BrilliantSoleConnectionMessageType */
+/** @typedef {import("./sensor/SensorDataManager.js").BrilliantSoleSensorType} BrilliantSoleSensorType */
+/** @typedef {"connectionStatus" | BrilliantSoleConnectionStatus | "isConnected" | BrilliantSoleConnectionMessageType | BrilliantSoleSensorType} BrilliantSoleEventType */
 
 /** @typedef {import("./utils/EventDispatcher.js").EventDispatcherListener} EventDispatcherListener */
 /** @typedef {import("./utils/EventDispatcher.js").EventDispatcherOptions} EventDispatcherOptions */
-/** @typedef {import("./utils/EventDispatcher.js").EventDispatcherEvent} EventDispatcherEvent */
 
-/** @typedef {import("./connection/ConnectionManager.js").BrilliantSoleConnectionStatus} BrilliantSoleConnectionStatus */
-/** @typedef {import("./connection/ConnectionManager.js").BrilliantSoleConnectionMessageType} BrilliantSoleConnectionMessageType */
-
-/** @typedef {import("./sensor/SensorDataManager.js").BrilliantSoleSensorType} BrilliantSoleSensorType */
-
-/** @typedef {"connectionStatus" | BrilliantSoleConnectionStatus | "isConnected" | BrilliantSoleConnectionMessageType | BrilliantSoleSensorType} BrilliantSoleEventType */
 /**
  * @typedef BrilliantSoleEvent
  * @type {object}
  * @property {BrilliantSoleEventType} type
  * @property {object} message
  */
+
+/** @typedef {import("./connection/ConnectionManager.js").BrilliantSoleConnectionStatus} BrilliantSoleConnectionStatus */
 
 /**
  * @typedef BrilliantSoleDeviceInformation
@@ -46,14 +40,34 @@ const _console = createConsole("BrilliantSole", { log: true });
  * @property {"Bluetooth"|"USB"} source
  * @property {number} vendorId
  * @property {number} productId
- * @property {number} productVersion */
+ * @property {number} productVersion
+ */
 
 /** @typedef {"leftInsole" | "rightInsole"} BrilliantSoleDeviceType */
 
 /** @typedef {import("./sensor/SensorConfigurationManager.js").BrilliantSoleSensorConfiguration} BrilliantSoleSensorConfiguration */
 
 /** @typedef {import("./haptics/HapticsManager.js").BrilliantSoleHapticsLocation} BrilliantSoleHapticsLocation */
-/** @typedef {import("./haptics/HapticsManager.js").BrilliantSoleHapticsVibrationType} BrilliantSoleHapticsVibrationType */
+
+/** @typedef {import("./haptics/HapticsManager.js").BrilliantSoleHapticsVibrationWaveformEffectSegment} BrilliantSoleHapticsVibrationWaveformEffectSegment */
+/**
+ * @typedef BrilliantSoleHapticsVibrationWaveformEffectConfiguration
+ * @type {Object}
+ * @property {BrilliantSoleHapticsLocation[]} locations
+ * @property {BrilliantSoleHapticsVibrationWaveformEffectSegment[]} segments waveform effects or delay (ms int ranging [0, 1270])
+ * @property {number[]?} segmentLoopCounts how many times each segment should loop (int ranging [0, 3])
+ * @property {number?} sequenceLoopCount how many times the entire sequence should loop (int ranging [0, 6])
+ */
+
+/** @typedef {import("./haptics/HapticsManager.js").BrilliantSoleHapticsVibrationWaveformSegment} BrilliantSoleHapticsVibrationWaveformSegment */
+/**
+ * @typedef BrilliantSoleHapticsVibrationWaveformConfiguration
+ * @type {Object}
+ * @property {BrilliantSoleHapticsLocation[]} locations
+ * @property {BrilliantSoleHapticsVibrationWaveformSegment[]} segments
+ */
+
+const _console = createConsole("BrilliantSole", { log: true });
 
 class BrilliantSole {
     constructor() {
@@ -371,7 +385,6 @@ class BrilliantSole {
     }
 
     // TYPE
-
     /** @type {BrilliantSoleDeviceType[]} */
     static #Types = ["leftInsole", "rightInsole"];
     static Types() {
@@ -432,9 +445,9 @@ class BrilliantSole {
     /** @param {BrilliantSoleSensorConfiguration} newSensorConfiguration */
     async setSensorConfiguration(newSensorConfiguration) {
         this.#assertIsConnected();
-        const setSensorConfigurationMessage = this.#sensorConfigurationManager.createData(newSensorConfiguration);
-        _console.log({ setSensorConfigurationMessage });
-        await this.#connectionManager.sendMessage("setSensorConfiguration", message);
+        const setSensorConfigurationData = this.#sensorConfigurationManager.createData(newSensorConfiguration);
+        _console.log({ setSensorConfigurationData });
+        await this.#connectionManager.sendMessage("setSensorConfiguration", setSensorConfigurationData);
     }
 
     // SENSOR DATA
@@ -455,11 +468,31 @@ class BrilliantSole {
     // HAPTICS
     #hapticsManager = new HapticsManager();
 
-    triggerVibrationWaveformEffects() {
-        // FILL
+    /** @param  {...BrilliantSoleHapticsVibrationWaveformEffectConfiguration} configurations */
+    async triggerVibrationWaveformEffects(...configurations) {
+        /** @type {ArrayBuffer} */
+        let triggerVibrationData;
+        configurations.forEach(({ locations, segments, segmentLoopCounts, sequenceLoopCount }) => {
+            const dataView = this.#hapticsManager.createWaveformEffectsData(
+                locations,
+                segments,
+                segmentLoopCounts,
+                sequenceLoopCount
+            );
+            triggerVibrationData = concatenateArrayBuffers(triggerVibrationData, dataView);
+        });
+        await this.#connectionManager.sendMessage("triggerVibration", triggerVibrationData);
     }
-    triggerVibrationWaveform() {
-        // FILL
+
+    /** @param  {...BrilliantSoleHapticsVibrationWaveformConfiguration} configurations */
+    async triggerVibrationWaveform(...configurations) {
+        /** @type {ArrayBuffer} */
+        let triggerVibrationData;
+        configurations.forEach(({ locations, segments }) => {
+            const dataView = this.#hapticsManager.createWaveformData(locations, segments);
+            triggerVibrationData = concatenateArrayBuffers(triggerVibrationData, dataView);
+        });
+        await this.#connectionManager.sendMessage("triggerVibration", triggerVibrationData);
     }
 }
 BrilliantSole.setConsoleLevelFlagsForType = setConsoleLevelFlagsForType;

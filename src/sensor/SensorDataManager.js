@@ -1,18 +1,11 @@
 import { createConsole } from "../utils/Console.js";
 
+/** @typedef {import("../BrilliantSole.js").BrilliantSoleDeviceType} BrilliantSoleDeviceType */
+
 /** @typedef {"pressure" | "accelerometer" | "gravity" | "linearAcceleration" | "gyroscope" | "magnetometer" | "gameRotation" | "rotation" | "barometer"} BrilliantSoleSensorType */
 /** @typedef {"hallux" | "digits" | "metatarsal_inner" | "metatarsal_center" | "metatarsal_outer" | "lateral" | "arch" | "heel"} BrilliantSolePessureType */
 
-/** @typedef {import("../BrilliantSole.js").BrilliantSoleDeviceType} BrilliantSoleDeviceType */
-
 const _console = createConsole("SensorDataManager", { log: true });
-
-/**
- * @callback BrilliantSoleSensorDataCallback
- * @param {BrilliantSoleSensorType} sensorType
- * @param {Object} data
- * @param {number} data.timestamp
- */
 
 class SensorDataManager {
     /** @type {BrilliantSoleDeviceType} */
@@ -29,7 +22,7 @@ class SensorDataManager {
         _console.log({ newDeviceType });
         this.#deviceType = newDeviceType;
 
-        // FILL
+        // FILL - pressure sensor remapping?
     }
 
     /** @type {BrilliantSoleSensorType[]} */
@@ -61,6 +54,13 @@ class SensorDataManager {
         _console.assertTypeWithError(sensorTypeEnum, "number");
         _console.assertWithError(sensorTypeEnum in this.#Types, `invalid sensorTypeEnum ${sensorTypeEnum}`);
     }
+
+    /**
+     * @callback BrilliantSoleSensorDataCallback
+     * @param {BrilliantSoleSensorType} sensorType
+     * @param {Object} data
+     * @param {number} data.timestamp
+     */
 
     /** @type {BrilliantSoleSensorDataCallback?} */
     onDataReceived;
@@ -163,7 +163,7 @@ class SensorDataManager {
         for (let index = 0; index < this.numberOfPressureSensors; index++, byteOffset += 2) {
             pressure[index] = dataView.getUint16(byteOffset, true);
         }
-        // FILL - center of mass, normalized pressure, etc
+        // FILL - calculate center of mass, normalized pressure, etc
         _console.log({ pressure });
         return pressure;
     }

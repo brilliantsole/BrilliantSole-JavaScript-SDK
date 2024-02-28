@@ -8,7 +8,6 @@ const _console = createConsole("HapticsManager");
 /** @typedef {"waveformEffect" | "waveform"} BrilliantSoleHapticsVibrationType */
 
 /** @typedef {import("./HapticsWaveformEffects.js").BrilliantSoleHapticsVibrationWaveformEffect} BrilliantSoleHapticsVibrationWaveformEffect */
-
 /**
  * @typedef BrilliantSoleHapticsVibrationWaveformEffectSegment
  * a waveform effect segment can be either an effect or a delay (ms int ranging [0, 1270])
@@ -188,7 +187,7 @@ class HapticsManager {
 
     /**
      * @param {BrilliantSoleHapticsLocation[]} locations
-     * @param {BrilliantSoleHapticsVibrationWaveformEffectSegment[]} waveformEffectSegments
+     * @param {BrilliantSoleHapticsVibrationWaveformEffectSegment[]} waveformEffectSegments waveform effects or delay (ms int ranging [0, 1270])
      * @param {number[]?} waveformEffectSegmentLoopCounts how many times each segment should loop (int ranging [0, 3])
      * @param {number?} waveformEffectSequenceLoopCount how many times the entire sequence should loop (int ranging [0, 6])
      */
@@ -232,9 +231,12 @@ class HapticsManager {
             (includeAllWaveformEffectSegmentLoopCounts && index < this.maxNumberOfWaveformEffectSegments);
             index++
         ) {
-            // FILL
-            // first or second byte?
-            // first or second half of byte?
+            const waveformEffectSegmentLoopCount = waveformEffectSegmentLoopCounts[index] || 0;
+            if (index == 0 || index == 4) {
+                dataArray[byteOffset++] = 0;
+            }
+            const bitOffset = 2 * (index % 4);
+            dataArray[byteOffset] |= waveformEffectSegmentLoopCount << bitOffset;
         }
         if (waveformEffectSequenceLoopCount != 0) {
             dataArray[byteOffset++] = waveformEffectSequenceLoopCount;
@@ -279,6 +281,7 @@ class HapticsManager {
      * @param {DataView} dataView
      */
     #createData(locations, vibrationType, dataView) {
+        _console.assertWithError(dataView?.byteLength > 0, "no data received");
         const locationsBitmask = this.#createLocationsBitmask(locations);
         this.#verifyVibrationType(vibrationType);
         const vibrationTypeIndex = this.#vibrationTypes.indexOf(vibrationType);

@@ -1,11 +1,9 @@
 import { createConsole } from "../utils/Console.js";
 import SensorDataManager from "./SensorDataManager.js";
 
-/** @typedef {import("./SensorDataManager.js").BrilliantSoleSensorType} BrilliantSoleSensorType */
 /** @typedef {import("../BrilliantSole.js").BrilliantSoleDeviceType} BrilliantSoleDeviceType */
 
-const _console = createConsole("SensorConfigurationManager", { log: true });
-
+/** @typedef {import("./SensorDataManager.js").BrilliantSoleSensorType} BrilliantSoleSensorType */
 /**
  * @typedef BrilliantSoleSensorConfiguration
  * @type {object}
@@ -18,6 +16,8 @@ const _console = createConsole("SensorConfigurationManager", { log: true });
  * @property {number} rotation
  * @property {number} barometer
  */
+
+const _console = createConsole("SensorConfigurationManager", { log: true });
 
 class SensorConfigurationManager {
     /** @type {BrilliantSoleDeviceType} */
