@@ -508,13 +508,13 @@ class BrilliantSole {
 
     /**
      * @param {BrilliantSoleSensorType} sensorType
-     * @param {Object} data
-     * @param {number} data.timestamp
+     * @param {Object} sensorData
+     * @param {number} sensorData.timestamp
      */
-    #onSensorDataReceived(sensorType, data) {
-        _console.log({ sensorType, data });
-        this.#dispatchEvent({ type: sensorType, message: data });
-        this.#dispatchEvent({ type: "sensorData", message: data });
+    #onSensorDataReceived(sensorType, sensorData) {
+        _console.log({ sensorType, sensorData });
+        this.#dispatchEvent({ type: sensorType, message: sensorData });
+        this.#dispatchEvent({ type: "sensorData", message: sensorData });
     }
 
     // HAPTICS

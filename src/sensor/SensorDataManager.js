@@ -175,9 +175,9 @@ class SensorDataManager {
      */
     #parseVector3(dataView, byteOffset, sensorType) {
         let [x, y, z] = [
-            dataView.getUint16(byteOffset, true),
-            dataView.getUint16(byteOffset + 2, true),
-            dataView.getUint16(byteOffset + 4, true),
+            dataView.getInt16(byteOffset, true),
+            dataView.getInt16(byteOffset + 2, true),
+            dataView.getInt16(byteOffset + 4, true),
         ].map((value) => value * this.#scalars[sensorType]);
 
         const vector = { x, y, z };
@@ -192,10 +192,10 @@ class SensorDataManager {
      */
     #parseQuaternion(dataView, byteOffset, sensorType) {
         let [x, y, z, w] = [
-            dataView.getUint16(byteOffset, true),
-            dataView.getUint16(byteOffset + 2, true),
-            dataView.getUint16(byteOffset + 4, true),
-            dataView.getUint16(byteOffset + 6, true),
+            dataView.getInt16(byteOffset, true),
+            dataView.getInt16(byteOffset + 2, true),
+            dataView.getInt16(byteOffset + 4, true),
+            dataView.getInt16(byteOffset + 6, true),
         ].map((value) => value * this.#scalars[sensorType]);
 
         const quaternion = { x, y, z, w };
