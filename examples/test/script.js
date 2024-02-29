@@ -206,6 +206,7 @@ const vibrationLocationTemplate = document.getElementById("vibrationLocationTemp
 /** @type {HTMLButtonElement} */
 const addVibrationButton = document.getElementById("addVibration");
 addVibrationButton.addEventListener("click", () => {
+    /** @type {HTMLElement} */
     const vibrationContainer = vibrationTemplate.content.cloneNode(true).querySelector(".vibration");
 
     /** @type {HTMLButtonElement} */
@@ -226,6 +227,10 @@ addVibrationButton.addEventListener("click", () => {
         vibrationLocationsContainer.appendChild(vibrationLocationContainer);
     });
 
+    /** @type {HTMLElement} */
+    const waveformContainer = vibrationContainer.querySelector(".waveform");
+    const waveformEffectContainer = vibrationContainer.querySelector(".waveformEffect");
+
     /** @type {HTMLSelectElement} */
     const vibrationTypeSelect = vibrationContainer.querySelector(".type");
     /** @type {HTMLOptGroupElement} */
@@ -235,19 +240,26 @@ addVibrationButton.addEventListener("click", () => {
     });
 
     vibrationTypeSelect.addEventListener("input", () => {
+        let showWaveformContainer = false;
+        let showWaveformEffectContainer = false;
+
         /** @type {import("../../src/BrilliantSole.js").BrilliantSoleVibrationType} */
         const vibrationType = vibrationTypeSelect.value;
         switch (vibrationType) {
             case "waveform":
-                // FILL
+                showWaveformContainer = true;
                 break;
             case "waveformEffect":
-                // FILL
+                showWaveformEffectContainer = true;
                 break;
             default:
                 throw Error(`invalid vibrationType "${vibrationType}"`);
         }
+
+        waveformEffectContainer.style.display = showWaveformEffectContainer ? "" : "none";
+        waveformContainer.style.display = showWaveformContainer ? "" : "none";
     });
+    vibrationTypeSelect.dispatchEvent(new Event("input"));
 
     vibrationTemplate.parentElement.appendChild(vibrationContainer);
 

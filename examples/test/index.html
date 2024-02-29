@@ -89,6 +89,10 @@
                             <optgroup label="vibration type"></optgroup>
                         </select>
                     </label>
+                    <div class="waveformEffect">
+                        <div class="segments"></div>
+                    </div>
+                    <div class="waveform">hey</div>
                     <label>trigger? <input class="shouldTrigger" type="checkbox" /></label>
                     <ul class="locations"></ul>
                     <button class="delete">delete</button>
@@ -97,6 +101,19 @@
             <template id="vibrationLocationTemplate">
                 <li class="vibrationLocation">
                     <label><span></span><input type="checkbox" /></label>
+                </li>
+            </template>
+            <template id="waveformEffectSegmentTemplate">
+                <li class="waveformEffectSegment">
+                    <label>
+                        type
+                        <select class="type">
+                            <optgroup label="type">
+                                <option>waveformEffect</option>
+                                <option>delay</option>
+                            </optgroup>
+                        </select>
+                    </label>
                 </li>
             </template>
         </div>

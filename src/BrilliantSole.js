@@ -9,7 +9,7 @@ import { concatenateArrayBuffers } from "./utils/ArrayBufferUtils.js";
 
 /** @typedef {import("./connection/ConnectionManager.js").BrilliantSoleConnectionMessageType} BrilliantSoleConnectionMessageType */
 /** @typedef {import("./sensor/SensorDataManager.js").BrilliantSoleSensorType} BrilliantSoleSensorType */
-/** @typedef {"connectionStatus" | BrilliantSoleConnectionStatus | "isConnected" | BrilliantSoleConnectionMessageType | BrilliantSoleSensorType} BrilliantSoleEventType */
+/** @typedef {"connectionStatus" | BrilliantSoleConnectionStatus | "isConnected" | BrilliantSoleConnectionMessageType | "deviceInformation" | BrilliantSoleSensorType} BrilliantSoleEventType */
 
 /** @typedef {import("./utils/EventDispatcher.js").EventDispatcherListener} EventDispatcherListener */
 /** @typedef {import("./utils/EventDispatcher.js").EventDispatcherOptions} EventDispatcherOptions */
@@ -94,6 +94,12 @@ class BrilliantSole {
         "not connected",
         "isConnected",
 
+        "manufacturerName",
+        "modelNumber",
+        "softwareRevision",
+        "hardwareRevision",
+        "firmwareRevision",
+        "pnpId",
         "deviceInformation",
 
         "batteryLevel",
@@ -345,6 +351,13 @@ class BrilliantSole {
     /** @param {BrilliantSoleDeviceInformation} partialDeviceInformation */
     #updateDeviceInformation(partialDeviceInformation) {
         _console.log({ partialDeviceInformation });
+        for (const deviceInformationName in partialDeviceInformation) {
+            this.#dispatchEvent({
+                type: deviceInformationName,
+                message: { [deviceInformationName]: partialDeviceInformation[deviceInformationName] },
+            });
+        }
+
         Object.assign(this.#deviceInformation, partialDeviceInformation);
         _console.log({ deviceInformation: this.#deviceInformation });
         if (this.#isDeviceInformationComplete) {
