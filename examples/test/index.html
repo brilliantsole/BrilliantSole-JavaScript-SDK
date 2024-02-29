@@ -12,7 +12,8 @@
         div {
             margin-top: 1rem;
         }
-        ul {
+        ul,
+        ol {
             margin-top: 0;
         }
     </style>
@@ -90,9 +91,17 @@
                         </select>
                     </label>
                     <div class="waveformEffect">
-                        <div class="segments"></div>
+                        <button class="add">add segment</button>
+                        <ol class="segments"></ol>
+                        <label>
+                            sequence loop count
+                            <input class="sequenceLoopCount" type="number" min="0" value="0" step="1" />
+                        </label>
                     </div>
-                    <div class="waveform">hey</div>
+                    <div class="waveform">
+                        <button class="add">add segment</button>
+                        <ol class="segments"></ol>
+                    </div>
                     <label>trigger? <input class="shouldTrigger" type="checkbox" /></label>
                     <ul class="locations"></ul>
                     <button class="delete">delete</button>
@@ -107,13 +116,37 @@
                 <li class="waveformEffectSegment">
                     <label>
                         type
-                        <select class="type">
-                            <optgroup label="type">
+                        <select class="waveformEffectSegmentType">
+                            <optgroup label="waveformEffect segment type">
                                 <option>waveformEffect</option>
                                 <option>delay</option>
                             </optgroup>
                         </select>
                     </label>
+                    <label class="effectContainer">
+                        effect
+                        <select class="effect">
+                            <optgroup label="waveformEffect"></optgroup>
+                        </select>
+                    </label>
+                    <label class="delayContainer">
+                        delay
+                        <input class="delay" type="number" min="0" value="0" step="1" />ms
+                    </label>
+                    <button class="delete">delete</button>
+                </li>
+            </template>
+            <template id="waveformSegmentTemplate">
+                <li class="waveformSegment">
+                    <label>
+                        amplitude
+                        <input class="amplitude" type="number" min="0" max="1" value="0.5" step="0.01" />%
+                    </label>
+                    <label>
+                        duration
+                        <input class="duration" type="number" min="10" value="100" step="10" />ms
+                    </label>
+                    <button class="delete">delete</button>
                 </li>
             </template>
         </div>

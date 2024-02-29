@@ -74,8 +74,8 @@ brilliantSole.addEventListener("getName", () => {
 
 /** @type {HTMLInputElement} */
 const setNameInput = document.getElementById("setNameInput");
-setNameInput.minLength = brilliantSole.minNameLength;
-setNameInput.maxLength = brilliantSole.maxNameLength;
+setNameInput.minLength = BrilliantSole.MinNameLength;
+setNameInput.maxLength = BrilliantSole.MaxNameLength;
 
 /** @type {HTMLButtonElement} */
 const setNameButton = document.getElementById("setNameButton");
@@ -200,8 +200,38 @@ BrilliantSole.SensorTypes.forEach((sensorType) => {
 // VIBRATION
 /** @type {HTMLTemplateElement} */
 const vibrationTemplate = document.getElementById("vibrationTemplate");
+{
+    /** @type {HTMLInputElement} */
+    const waveformEffectSequenceLoopCountInput = vibrationTemplate.content.querySelector(
+        ".waveformEffect .sequenceLoopCount"
+    );
+    waveformEffectSequenceLoopCountInput.max = BrilliantSole.MaxVibrationWaveformEffectSequenceLoopCount;
+}
 /** @type {HTMLTemplateElement} */
 const vibrationLocationTemplate = document.getElementById("vibrationLocationTemplate");
+
+/** @type {HTMLTemplateElement} */
+const waveformEffectSegmentTemplate = document.getElementById("waveformEffectSegmentTemplate");
+{
+    /** @type {HTMLSelectElement} */
+    const waveformEffectSelect = waveformEffectSegmentTemplate.content.querySelector(".effect");
+    const waveformEffectOptgroup = waveformEffectSelect.querySelector("optgroup");
+    BrilliantSole.VibrationWaveformEffects.forEach((waveformEffect) => {
+        waveformEffectOptgroup.appendChild(new Option(waveformEffect));
+    });
+
+    /** @type {HTMLInputElement} */
+    const waveformEffectSegmentDelayInput = waveformEffectSegmentTemplate.content.querySelector(".delay");
+    waveformEffectSegmentDelayInput.max = BrilliantSole.MaxVibrationWaveformEffectSegmentDelay;
+}
+
+/** @type {HTMLTemplateElement} */
+const waveformSegmentTemplate = document.getElementById("waveformSegmentTemplate");
+{
+    /** @type {HTMLInputElement} */
+    const waveformDurationSegmentInput = waveformSegmentTemplate.content.querySelector(".duration");
+    waveformDurationSegmentInput.max = BrilliantSole.MaxVibrationWaveformSegmentDuration;
+}
 
 /** @type {HTMLButtonElement} */
 const addVibrationButton = document.getElementById("addVibration");
@@ -228,8 +258,57 @@ addVibrationButton.addEventListener("click", () => {
     });
 
     /** @type {HTMLElement} */
-    const waveformContainer = vibrationContainer.querySelector(".waveform");
     const waveformEffectContainer = vibrationContainer.querySelector(".waveformEffect");
+    /** @type {HTMLUListElement} */
+    const waveformEffectSegmentsContainer = waveformEffectContainer.querySelector(".segments");
+    // FILL
+    /** @type {HTMLButtonElement} */
+    const addWaveformEffectSegmentButton = waveformEffectContainer.querySelector(".add");
+    const updateAddWaveformEffectSegmentButton = () => {
+        addWaveformEffectSegmentButton.disabled =
+            waveformEffectSegmentsContainer.children.length >= BrilliantSole.MaxNumberOfVibrationWaveformEffectSegments;
+    };
+    addWaveformEffectSegmentButton.addEventListener("click", () => {
+        /** @type {HTMLElement} */
+        const waveformEffectSegmentContainer = waveformEffectSegmentTemplate.content
+            .cloneNode(true)
+            .querySelector(".waveformEffectSegment");
+
+        waveformEffectSegmentContainer.querySelector(".delete").addEventListener("click", () => {
+            waveformEffectSegmentContainer.remove();
+            updateAddWaveformEffectSegmentButton();
+        });
+
+        waveformEffectSegmentsContainer.appendChild(waveformEffectSegmentContainer);
+        updateAddWaveformEffectSegmentButton();
+    });
+
+    /** @type {HTMLElement} */
+    const waveformContainer = vibrationContainer.querySelector(".waveform");
+    /** @type {HTMLUListElement} */
+    const waveformSegmentsContainer = waveformContainer.querySelector(".segments");
+
+    /** @type {HTMLButtonElement} */
+    const addWaveformSegmentButton = waveformContainer.querySelector(".add");
+    const updateAddWaveformSegmentButton = () => {
+        addWaveformSegmentButton.disabled =
+            waveformSegmentsContainer.children.length >= BrilliantSole.MaxNumberOfVibrationWaveformSegments;
+    };
+    addWaveformSegmentButton.addEventListener("click", () => {
+        /** @type {HTMLElement} */
+        const waveformSegmentContainer = waveformSegmentTemplate.content
+            .cloneNode(true)
+            .querySelector(".waveformSegment");
+
+        waveformSegmentContainer.querySelector(".delete").addEventListener("click", () => {
+            waveformSegmentContainer.remove();
+            updateAddWaveformSegmentButton();
+        });
+
+        waveformSegmentsContainer.appendChild(waveformSegmentContainer);
+        updateAddWaveformSegmentButton();
+    });
+    // FILL
 
     /** @type {HTMLSelectElement} */
     const vibrationTypeSelect = vibrationContainer.querySelector(".type");

@@ -10,8 +10,11 @@ const _console = createConsole("VibrationManager");
 /** @typedef {import("./VibrationWaveformEffects.js").BrilliantSoleVibrationWaveformEffect} BrilliantSoleVibrationWaveformEffect */
 /**
  * @typedef BrilliantSoleVibrationWaveformEffectSegment
- * a waveform effect segment can be either an effect or a delay (ms int ranging [0, 1270])
- * @type {BrilliantSoleVibrationWaveformEffect | number}
+ * use either effect or delay but not both (defaults to effect if both are defined)
+ * @type {Object}
+ * @property {BrilliantSoleVibrationWaveformEffect?} effect
+ * @property {number?} delay (ms int ranging [0, 1270])
+ * @property {number?} loopCount how many times each segment should loop (int ranging [0, 3])
  */
 
 /**
@@ -62,36 +65,76 @@ class VibrationManager {
         _console.assertWithError(array.length > 0, "passed empty array");
     }
 
-    get waveformEffects() {
+    static get WaveformEffects() {
         return VibrationWaveformEffects;
+    }
+    get #waveformEffects() {
+        return VibrationManager.WaveformEffects;
     }
     /** @param {BrilliantSoleVibrationWaveformEffect} waveformEffect */
     #verifyWaveformEffect(waveformEffect) {
         _console.assertWithError(
-            this.waveformEffects.includes(waveformEffect),
+            this.#waveformEffects.includes(waveformEffect),
             `invalid waveformEffect "${waveformEffect}"`
         );
     }
 
+    static #MaxWaveformEffectSegmentDelay = 1270;
+    static get MaxWaveformEffectSegmentDelay() {
+        return this.#MaxWaveformEffectSegmentDelay;
+    }
+    get #maxWaveformEffectSegmentDelay() {
+        return VibrationManager.#MaxWaveformEffectSegmentDelay;
+    }
     /** @param {BrilliantSoleVibrationWaveformEffectSegment} waveformEffectSegment */
     #verifyWaveformEffectSegment(waveformEffectSegment) {
-        switch (typeof waveformEffectSegment) {
-            case "string":
-                const waveformEffect = waveformEffectSegment;
-                this.#verifyWaveformEffect(waveformEffect);
-                break;
-            case "number":
-                const delay = waveformEffectSegment;
-                _console.assertWithError(delay >= 0, `delay must be 0ms or greater (got ${delay})`);
-                _console.assertWithError(delay <= 1270, `delay must be 1270ms or less (got ${delay})`);
-                break;
-            default:
-                throw Error(`invalid waveformEffectSegment type "${typeof waveformEffectSegment}"`);
+        if (waveformEffectSegment.effect != undefined) {
+            const waveformEffect = waveformEffectSegment.effect;
+            this.#verifyWaveformEffect(waveformEffect);
+        } else if (waveformEffectSegment.delay != undefined) {
+            const { delay } = waveformEffectSegment;
+            _console.assertWithError(delay >= 0, `delay must be 0ms or greater (got ${delay})`);
+            _console.assertWithError(
+                delay <= this.#maxWaveformEffectSegmentDelay,
+                `delay must be ${this.#maxWaveformEffectSegmentDelay}ms or less (got ${delay})`
+            );
+        } else {
+            throw Error("no effect or delay found in waveformEffectSegment");
+        }
+
+        if (waveformEffectSegment.loopCount != undefined) {
+            const { loopCount } = waveformEffectSegment;
+            this.#verifyWaveformEffectSegmentLoopCount(loopCount);
         }
     }
-    static #maxNumberOfWaveformEffectSegments = 8;
+    static #MaxWaveformEffectSegmentLoopCount = 3;
+    static get MaxWaveformEffectSegmentLoopCount() {
+        return this.#MaxWaveformEffectSegmentLoopCount;
+    }
+    get #maxWaveformEffectSegmentLoopCount() {
+        return VibrationManager.#MaxWaveformEffectSegmentLoopCount;
+    }
+    /** @param {number} waveformEffectSegmentLoopCount */
+    #verifyWaveformEffectSegmentLoopCount(waveformEffectSegmentLoopCount) {
+        _console.assertTypeWithError(waveformEffectSegmentLoopCount, "number");
+        _console.assertWithError(
+            waveformEffectSegmentLoopCount >= 0,
+            `waveformEffectSegmentLoopCount must be 0 or greater (got ${waveformEffectSegmentLoopCount})`
+        );
+        _console.assertWithError(
+            waveformEffectSegmentLoopCount <= this.#maxWaveformEffectSegmentLoopCount,
+            `waveformEffectSegmentLoopCount must be ${
+                this.#maxWaveformEffectSegmentLoopCount
+            } or fewer (got ${waveformEffectSegmentLoopCount})`
+        );
+    }
+
+    static #MaxNumberOfWaveformEffectSegments = 8;
+    static get MaxNumberOfWaveformEffectSegments() {
+        return this.#MaxNumberOfWaveformEffectSegments;
+    }
     get maxNumberOfWaveformEffectSegments() {
-        return VibrationManager.#maxNumberOfWaveformEffectSegments;
+        return VibrationManager.#MaxNumberOfWaveformEffectSegments;
     }
     /** @param {BrilliantSoleVibrationWaveformEffectSegment[]} waveformEffectSegments */
     #verifyWaveformEffectSegments(waveformEffectSegments) {
@@ -105,37 +148,12 @@ class VibrationManager {
         });
     }
 
-    static #maxWaveformEffectSegmentLoopCount = 3;
-    get maxWaveformEffectSegmentLoopCount() {
-        return VibrationManager.#maxWaveformEffectSegmentLoopCount;
+    static #MaxWaveformEffectSequenceLoopCount = 6;
+    static get MaxWaveformEffectSequenceLoopCount() {
+        return this.#MaxWaveformEffectSequenceLoopCount;
     }
-    /** @param {number} waveformEffectSegmentLoopCount */
-    #verifyWaveformEffectSegmentLoopCount(waveformEffectSegmentLoopCount) {
-        _console.assertTypeWithError(waveformEffectSegmentLoopCount, "number");
-        _console.assertWithError(
-            waveformEffectSegmentLoopCount >= 0,
-            `waveformEffectSegmentLoopCount must be 0 or greater (got ${waveformEffectSegmentLoopCount})`
-        );
-        _console.assertWithError(
-            waveformEffectSegmentLoopCount <= this.maxWaveformEffectSegmentLoopCount,
-            `waveformEffectSegmentLoopCount must be ${this.maxWaveformEffectSegmentLoopCount} or fewer (got ${waveformEffectSegmentLoopCount})`
-        );
-    }
-    /** @param {number[]} waveformEffectSegmentLoopCounts */
-    #verifyWaveformEffectSegmentLoopCounts(waveformEffectSegmentLoopCounts) {
-        this.#assertNonEmptyArray(waveformEffectSegmentLoopCounts);
-        _console.assertWithError(
-            waveformEffectSegmentLoopCounts.length <= this.maxNumberOfWaveformEffectSegments,
-            `must have ${this.maxNumberOfWaveformEffectSegments} waveformEffectSegmentLoopCounts or fewer (got ${waveformEffectSegmentLoopCounts.length})`
-        );
-        waveformEffectSegmentLoopCounts.forEach((waveformEffectSegmentLoopCount) => {
-            this.#verifyWaveformEffectSegmentLoopCount(waveformEffectSegmentLoopCount);
-        });
-    }
-
-    static #maxWaveformEffectSequenceLoopCount = 6;
     get maxWaveformEffectSequenceLoopCount() {
-        return VibrationManager.#maxWaveformEffectSequenceLoopCount;
+        return VibrationManager.#MaxWaveformEffectSequenceLoopCount;
     }
     /** @param {number} waveformEffectSequenceLoopCount */
     #verifyWaveformEffectSequenceLoopCount(waveformEffectSequenceLoopCount) {
@@ -150,6 +168,13 @@ class VibrationManager {
         );
     }
 
+    static #MaxWaveformSegmentDuration = 2550;
+    static get MaxWaveformSegmentDuration() {
+        return this.#MaxWaveformSegmentDuration;
+    }
+    get #maxWaveformSegmentDuration() {
+        return VibrationManager.#MaxWaveformSegmentDuration;
+    }
     /** @param {BrilliantSoleVibrationWaveformSegment} waveformSegment */
     #verifyWaveformSegment(waveformSegment) {
         _console.assertTypeWithError(waveformSegment.amplitude, "number");
@@ -168,13 +193,16 @@ class VibrationManager {
             `duration must be greater than 0ms (got ${waveformSegment.duration}ms)`
         );
         _console.assertWithError(
-            waveformSegment.duration <= 2560,
-            `duration must be 2560ms or less (got ${waveformSegment.duration}ms)`
+            waveformSegment.duration <= this.#maxWaveformSegmentDuration,
+            `duration must be ${this.#maxWaveformSegmentDuration}ms or less (got ${waveformSegment.duration}ms)`
         );
     }
-    static #maxNumberOfWaveformSegments = 20;
+    static #MaxNumberOfWaveformSegments = 20;
+    static get MaxNumberOfWaveformSegments() {
+        return this.#MaxNumberOfWaveformSegments;
+    }
     get maxNumberOfWaveformSegments() {
-        return VibrationManager.#maxNumberOfWaveformSegments;
+        return VibrationManager.#MaxNumberOfWaveformSegments;
     }
     /** @param {BrilliantSoleVibrationWaveformSegment[]} waveformSegments */
     #verifyWaveformSegments(waveformSegments) {
@@ -190,25 +218,23 @@ class VibrationManager {
 
     /**
      * @param {BrilliantSoleVibrationLocation[]} locations
-     * @param {BrilliantSoleVibrationWaveformEffectSegment[]} waveformEffectSegments waveform effects or delay (ms int ranging [0, 1270])
-     * @param {number[]?} waveformEffectSegmentLoopCounts how many times each segment should loop (int ranging [0, 3])
+     * @param {BrilliantSoleVibrationWaveformEffectSegment[]} waveformEffectSegments
      * @param {number?} waveformEffectSequenceLoopCount how many times the entire sequence should loop (int ranging [0, 6])
      */
-    createWaveformEffectsData(
-        locations,
-        waveformEffectSegments,
-        waveformEffectSegmentLoopCounts = [],
-        waveformEffectSequenceLoopCount = 0
-    ) {
+    createWaveformEffectsData(locations, waveformEffectSegments, waveformEffectSequenceLoopCount = 0) {
         this.#verifyWaveformEffectSegments(waveformEffectSegments);
-        this.#verifyWaveformEffectSegmentLoopCounts(waveformEffectSegmentLoopCounts);
         this.#verifyWaveformEffectSequenceLoopCount(waveformEffectSequenceLoopCount);
 
         let dataArray = [];
         let byteOffset = 0;
 
+        const hasAtLeast1WaveformEffectWithANonzeroLoopCount = waveformEffectSegments.some((waveformEffectSegment) => {
+            const { loopCount } = waveformEffectSegment;
+            return loopCount != undefined && loopCount > 0;
+        });
+
         const includeAllWaveformEffectSegments =
-            waveformEffectSegmentLoopCounts.length > 0 || waveformEffectSequenceLoopCount != 0;
+            hasAtLeast1WaveformEffectWithANonzeroLoopCount || waveformEffectSequenceLoopCount != 0;
 
         for (
             let index = 0;
@@ -216,31 +242,33 @@ class VibrationManager {
             (includeAllWaveformEffectSegments && index < this.maxNumberOfWaveformEffectSegments);
             index++
         ) {
-            const waveformEffectSegment = waveformEffectSegments[index] || "none";
-
-            if (typeof waveformEffectSegment == "string") {
-                const waveformEffect = waveformEffectSegment;
-                dataArray[byteOffset++] = this.waveformEffects.indexOf(waveformEffect);
-            } else {
-                const delay = waveformEffectSegment;
+            const waveformEffectSegment = waveformEffectSegments[index] || { effect: "none" };
+            if (waveformEffectSegment.effect != undefined) {
+                const waveformEffect = waveformEffectSegment.effect;
+                dataArray[byteOffset++] = this.#waveformEffects.indexOf(waveformEffect);
+            } else if (waveformEffectSegment.delay != undefined) {
+                const { delay } = waveformEffectSegment;
                 dataArray[byteOffset++] = (1 << 7) | Math.floor(delay); // set most significant bit to 1
+            } else {
+                throw Error("invalid waveformEffectSegment");
             }
         }
 
         const includeAllWaveformEffectSegmentLoopCounts = waveformEffectSequenceLoopCount != 0;
         for (
             let index = 0;
-            index < waveformEffectSegmentLoopCounts.length ||
+            index < waveformEffectSegments.length ||
             (includeAllWaveformEffectSegmentLoopCounts && index < this.maxNumberOfWaveformEffectSegments);
             index++
         ) {
-            const waveformEffectSegmentLoopCount = waveformEffectSegmentLoopCounts[index] || 0;
+            const waveformEffectSegmentLoopCount = waveformEffectSegments[index]?.loopCount || 0;
             if (index == 0 || index == 4) {
                 dataArray[byteOffset++] = 0;
             }
             const bitOffset = 2 * (index % 4);
             dataArray[byteOffset] |= waveformEffectSegmentLoopCount << bitOffset;
         }
+
         if (waveformEffectSequenceLoopCount != 0) {
             dataArray[byteOffset++] = waveformEffectSequenceLoopCount;
         }
@@ -257,7 +285,7 @@ class VibrationManager {
         this.#verifyWaveformSegments(waveformSegments);
         const dataView = new DataView(new ArrayBuffer(waveformSegments.length * 2));
         waveformSegments.forEach((waveformSegment, index) => {
-            dataView.setUint8(index * 2, waveformSegment.amplitude);
+            dataView.setUint8(index * 2, Math.floor(waveformSegment.amplitude * 127));
             dataView.setUint8(index * 2 + 1, Math.floor(waveformSegment.duration / 10));
         });
         _console.log({ dataView });

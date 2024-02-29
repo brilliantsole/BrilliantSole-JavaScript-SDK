@@ -43,7 +43,7 @@ import { concatenateArrayBuffers } from "./utils/ArrayBufferUtils.js";
  * @property {number} productVersion
  */
 
-/** @typedef {"left insole" | "right insole"} BrilliantSoleDeviceType */
+/** @typedef {"leftInsole" | "rightInsole"} BrilliantSoleDeviceType */
 
 /** @typedef {import("./sensor/SensorConfigurationManager.js").BrilliantSoleSensorConfiguration} BrilliantSoleSensorConfiguration */
 
@@ -54,9 +54,8 @@ import { concatenateArrayBuffers } from "./utils/ArrayBufferUtils.js";
 /**
  * @typedef BrilliantSoleVibrationWaveformEffectConfiguration
  * @type {Object}
- * @property {BrilliantSoleVibrationWaveformEffectSegment[]} segments waveform effects or delay (ms int ranging [0, 1270])
- * @property {number[]?} segmentLoopCounts how many times each segment should loop (int ranging [0, 3])
- * @property {number?} sequenceLoopCount how many times the entire sequence should loop (int ranging [0, 6])
+ * @property {BrilliantSoleVibrationWaveformEffectSegment[]} segments
+ * @property {number?} loopCount how many times the entire sequence should loop (int ranging [0, 6])
  */
 
 /** @typedef {import("./vibration/VibrationManager.js").BrilliantSoleVibrationWaveformSegment} BrilliantSoleVibrationWaveformSegment */
@@ -399,17 +398,17 @@ class BrilliantSole {
         _console.log({ updatedName: this.#name });
         this.#dispatchEvent({ type: "getName", message: { name: this.#name } });
     }
-    static get minNameLength() {
+    static get MinNameLength() {
         return 2;
     }
     get #minNameLength() {
-        return BrilliantSole.minNameLength;
+        return BrilliantSole.MinNameLength;
     }
-    static get maxNameLength() {
+    static get MaxNameLength() {
         return 65;
     }
     get #maxNameLength() {
-        return BrilliantSole.maxNameLength;
+        return BrilliantSole.MaxNameLength;
     }
     /** @param {string} newName */
     async setName(newName) {
@@ -434,7 +433,7 @@ class BrilliantSole {
 
     // TYPE
     /** @type {BrilliantSoleDeviceType[]} */
-    static #Types = ["left insole", "right insole"];
+    static #Types = ["leftInsole", "rightInsole"];
     static get Types() {
         return this.#Types;
     }
@@ -539,6 +538,29 @@ class BrilliantSole {
         return VibrationManager.Types;
     }
 
+    static get VibrationWaveformEffects() {
+        return VibrationManager.WaveformEffects;
+    }
+    static get MaxVibrationWaveformEffectSegmentDelay() {
+        return VibrationManager.MaxWaveformEffectSegmentDelay;
+    }
+    static get MaxNumberOfVibrationWaveformEffectSegments() {
+        return VibrationManager.MaxNumberOfWaveformEffectSegments;
+    }
+    static get MaxVibrationWaveformEffectSegmentLoopCount() {
+        return VibrationManager.MaxWaveformEffectSegmentLoopCount;
+    }
+    static get MaxVibrationWaveformEffectSequenceLoopCount() {
+        return VibrationManager.MaxWaveformEffectSequenceLoopCount;
+    }
+
+    static get MaxVibrationWaveformSegmentDuration() {
+        return VibrationManager.MaxWaveformSegmentDuration;
+    }
+    static get MaxNumberOfVibrationWaveformSegments() {
+        return VibrationManager.MaxNumberOfWaveformSegments;
+    }
+
     /** @param  {...BrilliantSoleVibrationConfiguration} vibrationConfigurations */
     async triggerVibration(...vibrationConfigurations) {
         /** @type {ArrayBuffer} */
@@ -556,13 +578,8 @@ class BrilliantSole {
                         if (!waveformEffect) {
                             throw Error("waveformEffect not defined in vibrationConfiguration");
                         }
-                        const { segments, segmentLoopCounts, sequenceLoopCount } = waveformEffect;
-                        this.#vibrationManager.createWaveformEffectsData(
-                            locations,
-                            segments,
-                            segmentLoopCounts,
-                            sequenceLoopCount
-                        );
+                        const { segments, loopCount } = waveformEffect;
+                        this.#vibrationManager.createWaveformEffectsData(locations, segments, loopCount);
                     }
                     break;
                 case "waveform":
