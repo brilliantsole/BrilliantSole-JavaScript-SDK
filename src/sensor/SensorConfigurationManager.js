@@ -40,12 +40,39 @@ class SensorConfigurationManager {
         /** @type {BrilliantSoleSensorConfiguration} */
         const parsedSensorConfiguration = {};
         SensorDataManager.Types.forEach((sensorType, index) => {
-            const sensorDataRate = dataView.getUint16(index * 2, true);
-            _console.log({ sensorType, sensorDataRate });
-            parsedSensorConfiguration[sensorType] = sensorDataRate;
+            const sensorRate = dataView.getUint16(index * 2, true);
+            _console.log({ sensorType, sensorRate });
+            parsedSensorConfiguration[sensorType] = sensorRate;
         });
         _console.log({ parsedSensorConfiguration });
         return parsedSensorConfiguration;
+    }
+
+    static get MaxSensorRate() {
+        return 2 ** 16 - 1;
+    }
+    get maxSensorRate() {
+        return SensorConfigurationManager.MaxSensorRate;
+    }
+    static get SensorRateStep() {
+        return 5;
+    }
+    get sensorRateStep() {
+        return SensorConfigurationManager.SensorRateStep;
+    }
+
+    /** @param {sensorRate} number */
+    #assertValidSensorRate(sensorRate) {
+        _console.assertTypeWithError(sensorRate, "number");
+        _console.assertWithError(sensorRate >= 0, `sensorRate must be 0 or greater (got ${sensorRate})`);
+        _console.assertWithError(
+            sensorRate < this.maxSensorRate,
+            `sensorRate must be 0 or greater (got ${sensorRate})`
+        );
+        _console.assertWithError(
+            sensorRate % this.sensorRateStep == 0,
+            `sensorRate must be multiple of ${this.sensorRateStep}`
+        );
     }
 
     /** @param {BrilliantSoleSensorConfiguration} sensorConfiguration */
@@ -53,17 +80,15 @@ class SensorConfigurationManager {
         /** @type {BrilliantSoleSensorType[]} */
         const sensorTypes = Object.keys(sensorConfiguration);
 
-        sensorTypes.forEach((sensorType) => {
-            SensorDataManager.assertValidSensorType(sensorType);
-        });
-
         const dataView = new DataView(new ArrayBuffer(sensorTypes.length * 3));
-        let byteOffset = 0;
-        sensorTypes.forEach((sensorType) => {
+        sensorTypes.forEach((sensorType, index) => {
+            SensorDataManager.assertValidSensorType(sensorType);
             const sensorTypeEnum = SensorDataManager.Types.indexOf(sensorType);
-            dataView.setUint8(byteOffset, sensorTypeEnum);
-            dataView.setUint16(byteOffset + 1, sensorTypeEnum, true);
-            byteOffset += 3;
+            dataView.setUint8(index * 3, sensorTypeEnum);
+
+            const sensorRate = sensorConfiguration[sensorType];
+            this.#assertValidSensorRate(sensorRate);
+            dataView.setUint16(index * 3 + 1, sensorConfiguration[sensorType], true);
         });
         _console.log({ sensorConfigurationData: dataView });
         return dataView;

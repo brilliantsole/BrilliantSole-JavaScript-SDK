@@ -103,6 +103,7 @@ class BrilliantSole {
 
         "getSensorConfiguration",
 
+        "sensorData",
         "pressure",
         "accelerometer",
         "gravity",
@@ -385,23 +386,33 @@ class BrilliantSole {
         _console.log({ updatedName: this.#name });
         this.#dispatchEvent({ type: "getName", message: { name: this.#name } });
     }
-    get minNameLength() {
+    static get minNameLength() {
         return 2;
     }
-    get maxNameLength() {
+    get #minNameLength() {
+        return BrilliantSole.minNameLength;
+    }
+    static get maxNameLength() {
         return 65;
+    }
+    get #maxNameLength() {
+        return BrilliantSole.maxNameLength;
     }
     /** @param {string} newName */
     async setName(newName) {
         this.#assertIsConnected();
         _console.assertTypeWithError(newName, "string");
         _console.assertWithError(
-            newName.length >= this.minNameLength,
-            `name must be greater than ${this.minNameLength} characters long ("${newName}" is ${newName.length} characters long)`
+            newName.length >= this.#minNameLength,
+            `name must be greater than ${this.#minNameLength} characters long ("${newName}" is ${
+                newName.length
+            } characters long)`
         );
         _console.assertWithError(
-            newName.length < this.maxNameLength,
-            `name must be less than ${this.maxNameLength} characters long ("${newName}" is ${newName.length} characters long)`
+            newName.length < this.#maxNameLength,
+            `name must be less than ${this.#maxNameLength} characters long ("${newName}" is ${
+                newName.length
+            } characters long)`
         );
         const setNameData = this.#textEncoder.encode(newName);
         _console.log({ setNameData });
@@ -460,6 +471,13 @@ class BrilliantSole {
         return this.#sensorConfiguration;
     }
 
+    static get MaxSensorRate() {
+        return SensorConfigurationManager.MaxSensorRate;
+    }
+    static get SensorRateStep() {
+        return SensorConfigurationManager.SensorRateStep;
+    }
+
     /** @param {BrilliantSoleSensorConfiguration} updatedSensorConfiguration */
     #updateSensorConfiguration(updatedSensorConfiguration) {
         this.#sensorConfiguration = updatedSensorConfiguration;
@@ -472,12 +490,18 @@ class BrilliantSole {
     /** @param {BrilliantSoleSensorConfiguration} newSensorConfiguration */
     async setSensorConfiguration(newSensorConfiguration) {
         this.#assertIsConnected();
+        _console.log({ newSensorConfiguration });
         const setSensorConfigurationData = this.#sensorConfigurationManager.createData(newSensorConfiguration);
         _console.log({ setSensorConfigurationData });
         await this.#connectionManager.sendMessage("setSensorConfiguration", setSensorConfigurationData);
     }
 
     // SENSOR DATA
+
+    static #SensorTypes = SensorDataManager.Types;
+    static get SensorTypes() {
+        return this.#SensorTypes;
+    }
 
     /** @type {SensorDataManager} */
     #sensorDataManager = new SensorDataManager();
@@ -490,6 +514,7 @@ class BrilliantSole {
     #onSensorDataReceived(sensorType, data) {
         _console.log({ sensorType, data });
         this.#dispatchEvent({ type: sensorType, message: data });
+        this.#dispatchEvent({ type: "sensorData", message: data });
     }
 
     // HAPTICS

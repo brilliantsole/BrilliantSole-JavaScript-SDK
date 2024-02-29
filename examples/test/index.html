@@ -5,6 +5,14 @@
         <link rel="shortcut icon" type="image/x-icon" href="favicon.ico" />
         <script type="module" src="./script.js"></script>
     </head>
+    <style>
+        label {
+            display: block;
+        }
+        div {
+            margin-top: 1rem;
+        }
+    </style>
     <body>
         <nav>
             <a href="../../../">home</a>
@@ -14,27 +22,27 @@
 
         <button id="toggleConnection">connect</button>
 
-        <p>
+        <div>
             <label>
                 <b>device information: </b>
-                <pre id="deviceInformation"></pre>
+                <pre id="deviceInformationPre"></pre>
             </label>
-        </p>
+        </div>
 
-        <p>
+        <div>
             <label><b>battery level:</b> <span id="batteryLevel"></span></label>
-        </p>
+        </div>
 
-        <p>
+        <div>
             <label><b>name:</b> <span id="name"></span></label>
-            <br />
-            <label> <b>new name: </b> <input id="setNameInput" type="text" placeholder="new name" disabled /> </label>
+            <label>
+                <b>new name: </b> <input id="setNameInput" type="text" placeholder="type in a name" disabled />
+            </label>
             <button id="setNameButton" disabled>set name</button>
-        </p>
+        </div>
 
-        <p>
+        <div>
             <label><b>type:</b> <span id="type"></span></label>
-            <br />
             <label>
                 <b>new type: </b>
                 <select id="setTypeSelect" disabled>
@@ -42,6 +50,27 @@
                 </select>
                 <button id="setTypeButton" disabled>set type</button>
             </label>
-        </p>
+        </div>
+
+        <div>
+            <label>
+                <b>sensor configuration: </b>
+                <pre id="sensorConfigurationPre"></pre>
+            </label>
+
+            <template id="sensorTypeConfigurationTemplate">
+                <label class="sensorTypeConfiguration">
+                    <b class="sensorType"></b>
+                    <input class="sensorRate" type="number" min="0" value="" disabled />
+                </label>
+            </template>
+        </div>
+
+        <div>
+            <label>
+                <b>sensor data: </b>
+                <pre id="sensorData"></pre>
+            </label>
+        </div>
     </body>
 </html>

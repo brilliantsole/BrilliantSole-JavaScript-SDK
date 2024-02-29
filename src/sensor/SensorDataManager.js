@@ -92,8 +92,8 @@ class SensorDataManager {
         const timestamp = this.#parseTimestamp(dataView, byteOffset);
         byteOffset += 2;
 
-        while (offset < dataView.byteLength) {
-            const sensorTypeEnum = dataView.getUint8(offset++);
+        while (byteOffset < dataView.byteLength) {
+            const sensorTypeEnum = dataView.getUint8(byteOffset++);
             SensorDataManager.assertValidSensorTypeEnum(sensorTypeEnum);
 
             let value;

@@ -49,9 +49,9 @@ brilliantSole.addEventListener("not connected", () => {
 // DEVICE INFORMATION
 
 /** @type {HTMLPreElement} */
-const deviceInformationElement = document.getElementById("deviceInformation");
+const deviceInformationPre = document.getElementById("deviceInformationPre");
 brilliantSole.addEventListener("deviceInformation", () => {
-    deviceInformationElement.textContent = JSON.stringify(brilliantSole.deviceInformation, null, 2);
+    deviceInformationPre.textContent = JSON.stringify(brilliantSole.deviceInformation, null, 2);
 });
 
 // BATTERY LEVEL
@@ -134,4 +134,56 @@ setTypeButton.addEventListener("click", () => {
     console.log(`setting type to ${setTypeSelect.value}`);
     brilliantSole.setType(setTypeSelect.value);
     setTypeButton.disabled = true;
+});
+
+// SENSOR CONFIGURATION
+
+/** @type {HTMLPreElement} */
+const sensorConfigurationPre = document.getElementById("sensorConfigurationPre");
+brilliantSole.addEventListener("getSensorConfiguration", () => {
+    sensorConfigurationPre.textContent = JSON.stringify(brilliantSole.sensorConfiguration, null, 2);
+});
+
+/** @type {HTMLTemplateElement} */
+const sensorTypeConfigurationTemplate = document.getElementById("sensorTypeConfigurationTemplate");
+BrilliantSole.SensorTypes.forEach((sensorType) => {
+    const sensorTypeConfiguration = sensorTypeConfigurationTemplate.content
+        .cloneNode(true)
+        .querySelector(".sensorTypeConfiguration");
+    sensorTypeConfiguration.querySelector(".sensorType").innerText = sensorType;
+
+    /** @type {HTMLInputElement} */
+    const sensorRateInput = sensorTypeConfiguration.querySelector(".sensorRate");
+    sensorRateInput.value = 0;
+    sensorRateInput.max = BrilliantSole.MaxSensorRate;
+    sensorRateInput.step = BrilliantSole.SensorRateStep;
+    sensorRateInput.addEventListener("input", () => {
+        const sensorRate = Number(sensorRateInput.value);
+        console.log({ sensorType, sensorRate });
+        brilliantSole.setSensorConfiguration({ [sensorType]: sensorRate });
+    });
+
+    sensorTypeConfigurationTemplate.parentElement.appendChild(sensorTypeConfiguration);
+    sensorTypeConfiguration.dataset.sensorType = sensorType;
+});
+brilliantSole.addEventListener("getSensorConfiguration", () => {
+    for (const sensorType in brilliantSole.sensorConfiguration) {
+        document.querySelector(`[data-sensor-type="${sensorType}"] input`).value =
+            brilliantSole.sensorConfiguration[sensorType];
+    }
+});
+brilliantSole.addEventListener("isConnected", () => {
+    for (const sensorType in brilliantSole.sensorConfiguration) {
+        document.querySelector(`[data-sensor-type="${sensorType}"] input`).disabled = !brilliantSole.isConnected;
+    }
+});
+
+// SENSOR DATA
+
+/** @type {HTMLPreElement} */
+const sensorDataElement = document.getElementById("sensorData");
+brilliantSole.addEventListener("sensorData", (event) => {
+    const sensorData = event.message;
+    console.log("received sensor data", sensorData);
+    sensorDataElement.textContent = JSON.stringify(sensorData, null, 2);
 });
