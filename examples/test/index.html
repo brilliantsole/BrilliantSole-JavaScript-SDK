@@ -12,6 +12,9 @@
         div {
             margin-top: 1rem;
         }
+        ul {
+            margin-top: 0;
+        }
     </style>
     <body>
         <nav>
@@ -23,10 +26,8 @@
         <button id="toggleConnection">connect</button>
 
         <div>
-            <label>
-                <b>device information: </b>
-                <pre id="deviceInformationPre"></pre>
-            </label>
+            <h2>device information</h2>
+            <pre id="deviceInformationPre"></pre>
         </div>
 
         <div>
@@ -61,22 +62,42 @@
             <template id="sensorTypeConfigurationTemplate">
                 <label class="sensorTypeConfiguration">
                     <b class="sensorType"></b>
-                    <input class="sensorRate" type="number" min="0" value="" disabled />
+                    <input class="sensorRate" type="number" min="0" value="" disabled />ms
                 </label>
             </template>
         </div>
 
         <div>
-            <label>
-                <b>sensor data: </b>
-                <pre id="sensorData"></pre>
-            </label>
-
+            <h2>sensor data</h2>
             <template id="sensorTypeDataTemplate">
-                <label class="sensorTypeData">
-                    <b class="sensorType"></b>
+                <div class="sensorTypeData">
+                    <b><span class="sensorType"></span></b>
                     <pre class="sensorData"></pre>
-                </label>
+                </div>
+            </template>
+        </div>
+
+        <div>
+            <h2>vibration</h2>
+            <button id="addVibration">add vibration</button>
+            <button disabled id="triggerVibrations">trigger vibrations</button>
+            <template id="vibrationTemplate">
+                <div class="vibration">
+                    <label>
+                        type
+                        <select class="type">
+                            <optgroup label="vibration type"></optgroup>
+                        </select>
+                    </label>
+                    <label>trigger? <input class="shouldTrigger" type="checkbox" /></label>
+                    <ul class="locations"></ul>
+                    <button class="delete">delete</button>
+                </div>
+            </template>
+            <template id="vibrationLocationTemplate">
+                <li class="vibrationLocation">
+                    <label><span></span><input type="checkbox" /></label>
+                </li>
             </template>
         </div>
     </body>

@@ -4,7 +4,7 @@ import ConnectionManager from "./connection/ConnectionManager.js";
 import WebBluetoothConnectionManager from "./connection/bluetooth/WebBluetoothConnectionManager.js";
 import SensorConfigurationManager from "./sensor/SensorConfigurationManager.js";
 import SensorDataManager from "./sensor/SensorDataManager.js";
-import HapticsManager from "./haptics/HapticsManager.js";
+import VibrationManager from "./vibration/VibrationManager.js";
 import { concatenateArrayBuffers } from "./utils/ArrayBufferUtils.js";
 
 /** @typedef {import("./connection/ConnectionManager.js").BrilliantSoleConnectionMessageType} BrilliantSoleConnectionMessageType */
@@ -47,32 +47,32 @@ import { concatenateArrayBuffers } from "./utils/ArrayBufferUtils.js";
 
 /** @typedef {import("./sensor/SensorConfigurationManager.js").BrilliantSoleSensorConfiguration} BrilliantSoleSensorConfiguration */
 
-/** @typedef {import("./haptics/HapticsManager.js").BrilliantSoleHapticsLocation} BrilliantSoleHapticsLocation */
-/** @typedef {import("./haptics/HapticsManager.js").BrilliantSoleHapticsVibrationType} BrilliantSoleHapticsVibrationType */
+/** @typedef {import("./vibration/VibrationManager.js").BrilliantSoleVibrationLocation} BrilliantSoleVibrationLocation */
+/** @typedef {import("./vibration/VibrationManager.js").BrilliantSoleVibrationType} BrilliantSoleVibrationType */
 
-/** @typedef {import("./haptics/HapticsManager.js").BrilliantSoleHapticsVibrationWaveformEffectSegment} BrilliantSoleHapticsVibrationWaveformEffectSegment */
+/** @typedef {import("./vibration/VibrationManager.js").BrilliantSoleVibrationWaveformEffectSegment} BrilliantSoleVibrationWaveformEffectSegment */
 /**
- * @typedef BrilliantSoleHapticsVibrationWaveformEffectConfiguration
+ * @typedef BrilliantSoleVibrationWaveformEffectConfiguration
  * @type {Object}
- * @property {BrilliantSoleHapticsVibrationWaveformEffectSegment[]} segments waveform effects or delay (ms int ranging [0, 1270])
+ * @property {BrilliantSoleVibrationWaveformEffectSegment[]} segments waveform effects or delay (ms int ranging [0, 1270])
  * @property {number[]?} segmentLoopCounts how many times each segment should loop (int ranging [0, 3])
  * @property {number?} sequenceLoopCount how many times the entire sequence should loop (int ranging [0, 6])
  */
 
-/** @typedef {import("./haptics/HapticsManager.js").BrilliantSoleHapticsVibrationWaveformSegment} BrilliantSoleHapticsVibrationWaveformSegment */
+/** @typedef {import("./vibration/VibrationManager.js").BrilliantSoleVibrationWaveformSegment} BrilliantSoleVibrationWaveformSegment */
 /**
- * @typedef BrilliantSoleHapticsVibrationWaveformConfiguration
+ * @typedef BrilliantSoleVibrationWaveformConfiguration
  * @type {Object}
- * @property {BrilliantSoleHapticsVibrationWaveformSegment[]} segments
+ * @property {BrilliantSoleVibrationWaveformSegment[]} segments
  */
 
 /**
- * @typedef BrilliantSoleHapticsVibrationConfiguration
+ * @typedef BrilliantSoleVibrationConfiguration
  * @type {Object}
- * @property {BrilliantSoleHapticsLocation[]} locations
- * @property {BrilliantSoleHapticsVibrationType} type
- * @property {BrilliantSoleHapticsVibrationWaveformEffectConfiguration?} waveformEffect use if type is "waveformEffect"
- * @property {BrilliantSoleHapticsVibrationWaveformConfiguration?} waveform use if type is "waveform"
+ * @property {BrilliantSoleVibrationLocation[]} locations
+ * @property {BrilliantSoleVibrationType} type
+ * @property {BrilliantSoleVibrationWaveformEffectConfiguration?} waveformEffect use if type is "waveformEffect"
+ * @property {BrilliantSoleVibrationWaveformConfiguration?} waveform use if type is "waveform"
  */
 
 const _console = createConsole("BrilliantSole", { log: true });
@@ -517,15 +517,21 @@ class BrilliantSole {
         this.#dispatchEvent({ type: "sensorData", message: sensorData });
     }
 
-    // HAPTICS
-    #hapticsManager = new HapticsManager();
+    // VIBRATION
+    #vibrationManager = new VibrationManager();
+    static get VibrationLocations() {
+        return VibrationManager.Locations;
+    }
+    static get VibrationTypes() {
+        return VibrationManager.Types;
+    }
 
-    /** @param  {...BrilliantSoleHapticsVibrationConfiguration} configurations */
-    async triggerVibration(...configurations) {
+    /** @param  {...BrilliantSoleVibrationConfiguration} vibrationConfigurations */
+    async triggerVibration(...vibrationConfigurations) {
         /** @type {ArrayBuffer} */
         let triggerVibrationData;
-        configurations.forEach((configuration) => {
-            const { locations, type } = configuration;
+        vibrationConfigurations.forEach((vibrationConfiguration) => {
+            const { locations, type } = vibrationConfiguration;
 
             /** @type {DataView} */
             let dataView;
@@ -533,12 +539,12 @@ class BrilliantSole {
             switch (type) {
                 case "waveformEffect":
                     {
-                        const { waveformEffect } = configuration;
+                        const { waveformEffect } = vibrationConfiguration;
                         if (!waveformEffect) {
-                            throw Error("waveformEffect not defined in configuration");
+                            throw Error("waveformEffect not defined in vibrationConfiguration");
                         }
                         const { segments, segmentLoopCounts, sequenceLoopCount } = waveformEffect;
-                        this.#hapticsManager.createWaveformEffectsData(
+                        this.#vibrationManager.createWaveformEffectsData(
                             locations,
                             segments,
                             segmentLoopCounts,
@@ -548,12 +554,12 @@ class BrilliantSole {
                     break;
                 case "waveform":
                     {
-                        const { waveform } = configuration;
+                        const { waveform } = vibrationConfiguration;
                         if (!waveform) {
-                            throw Error("waveform not defined in configuration");
+                            throw Error("waveform not defined in vibrationConfiguration");
                         }
                         const { segments } = waveform;
-                        this.#hapticsManager.createWaveformData(locations, segments);
+                        this.#vibrationManager.createWaveformData(locations, segments);
                     }
                     break;
                 default:

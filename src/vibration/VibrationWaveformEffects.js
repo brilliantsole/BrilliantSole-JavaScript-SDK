@@ -123,11 +123,11 @@
  * "smoothHum30" |
  * "smoothHum20" |
  * "smoothHum10"
- * } BrilliantSoleHapticsVibrationWaveformEffect
+ * } BrilliantSoleVibrationWaveformEffect
  */
 
-/** @type {BrilliantSoleHapticsVibrationWaveformEffect[]} */
-const HapticsWaveformEffects = [
+/** @type {BrilliantSoleVibrationWaveformEffect[]} */
+const VibrationWaveformEffects = [
     "none",
     "strongClick100",
     "strongClick60",
@@ -254,4 +254,4 @@ const HapticsWaveformEffects = [
     "smoothHum10",
 ];
 
-export default HapticsWaveformEffects;
+export default VibrationWaveformEffects;

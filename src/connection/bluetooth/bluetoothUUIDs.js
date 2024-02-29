@@ -21,7 +21,7 @@ function stringToServiceUUID(identifier) {
 }
 
 /** @typedef {"deviceInformation" | "battery" | "data" | "unknown"} BrilliantSoleBluetoothServiceName */
-/** @typedef { "manufacturerName" | "modelNumber" | "hardwareRevision" | "firmwareRevision" | "softwareRevision" | "pnpId" | "batteryLevel" | "name" | "type" | "sensorConfiguration" | "sensorData" | "haptics"} BrilliantSoleBluetoothCharacteristicName */
+/** @typedef { "manufacturerName" | "modelNumber" | "hardwareRevision" | "firmwareRevision" | "softwareRevision" | "pnpId" | "batteryLevel" | "name" | "type" | "sensorConfiguration" | "sensorData" | "vibration"} BrilliantSoleBluetoothCharacteristicName */
 
 const bluetoothUUIDs = Object.freeze({
     services: {
@@ -63,7 +63,7 @@ const bluetoothUUIDs = Object.freeze({
                 type: { uuid: generateBluetoothUUID(2) },
                 sensorConfiguration: { uuid: generateBluetoothUUID(3) },
                 sensorData: { uuid: generateBluetoothUUID(4) },
-                haptics: { uuid: generateBluetoothUUID(5) },
+                vibration: { uuid: generateBluetoothUUID(5) },
             },
         },
     },

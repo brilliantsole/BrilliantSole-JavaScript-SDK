@@ -196,3 +196,103 @@ BrilliantSole.SensorTypes.forEach((sensorType) => {
     sensorTypeDataTemplate.parentElement.appendChild(sensorTypeDataContainer);
     sensorTypeDataContainer.dataset.sensorType = sensorType;
 });
+
+// VIBRATION
+/** @type {HTMLTemplateElement} */
+const vibrationTemplate = document.getElementById("vibrationTemplate");
+/** @type {HTMLTemplateElement} */
+const vibrationLocationTemplate = document.getElementById("vibrationLocationTemplate");
+
+/** @type {HTMLButtonElement} */
+const addVibrationButton = document.getElementById("addVibration");
+addVibrationButton.addEventListener("click", () => {
+    const vibrationContainer = vibrationTemplate.content.cloneNode(true).querySelector(".vibration");
+
+    /** @type {HTMLButtonElement} */
+    const deleteButton = vibrationContainer.querySelector(".delete");
+    deleteButton.addEventListener("click", () => {
+        vibrationContainer.remove();
+        updateTriggerVibrationsButtonDisabled();
+    });
+
+    /** @type {HTMLUListElement} */
+    const vibrationLocationsContainer = vibrationContainer.querySelector(".locations");
+    BrilliantSole.VibrationLocations.forEach((vibrationLocation) => {
+        const vibrationLocationContainer = vibrationLocationTemplate.content
+            .cloneNode(true)
+            .querySelector(".vibrationLocation");
+        vibrationLocationContainer.querySelector("span").innerText = vibrationLocation;
+        vibrationLocationContainer.querySelector("input").dataset.vibrationLocation = vibrationLocation;
+        vibrationLocationsContainer.appendChild(vibrationLocationContainer);
+    });
+
+    /** @type {HTMLSelectElement} */
+    const vibrationTypeSelect = vibrationContainer.querySelector(".type");
+    /** @type {HTMLOptGroupElement} */
+    const vibrationTypeSelectOptgroup = vibrationTypeSelect.querySelector("optgroup");
+    BrilliantSole.VibrationTypes.forEach((vibrationType) => {
+        vibrationTypeSelectOptgroup.appendChild(new Option(vibrationType));
+    });
+
+    vibrationTypeSelect.addEventListener("input", () => {
+        /** @type {import("../../src/BrilliantSole.js").BrilliantSoleVibrationType} */
+        const vibrationType = vibrationTypeSelect.value;
+        switch (vibrationType) {
+            case "waveform":
+                // FILL
+                break;
+            case "waveformEffect":
+                // FILL
+                break;
+            default:
+                throw Error(`invalid vibrationType "${vibrationType}"`);
+        }
+    });
+
+    vibrationTemplate.parentElement.appendChild(vibrationContainer);
+
+    updateTriggerVibrationsButtonDisabled();
+});
+
+const triggerVibrationsButton = document.getElementById("triggerVibrations");
+triggerVibrationsButton.addEventListener("click", () => {
+    /** @type {import("../../src/BrilliantSole.js").BrilliantSoleVibrationConfiguration[]} */
+    let vibrationConfigurations = [];
+    vibrationTemplate.parentElement
+        .querySelectorAll(".vibration")
+        .filter((vibrationContainer) => vibrationContainer.querySelector(".shouldTrigger").checked)
+        .forEach((vibrationContainer) => {
+            /** @type {import("../../src/BrilliantSole.js").BrilliantSoleVibrationConfiguration} */
+            const vibrationConfiguration = {
+                locations: [],
+            };
+            vibrationContainer
+                .querySelectorAll(`[data-vibration-location]`)
+                .filter((input) => input.checked)
+                .forEach((input) => {
+                    vibrationConfiguration.locations.push(input.dataset.vibrationLocation);
+                });
+            vibrationConfiguration.type = vibrationContainer.querySelector("select.type").value;
+            switch (vibrationConfiguration.type) {
+                case "waveformEffect":
+                    // FILL
+                    break;
+                case "waveform":
+                    // FILL
+                    break;
+                default:
+                    throw Error(`invalid vibrationType "${vibrationConfiguration.type}"`);
+            }
+            vibrationConfigurations.push(vibrationConfiguration);
+        });
+    console.log({ vibrationConfigurations });
+    brilliantSole.triggerVibration(...vibrationConfigurations);
+});
+brilliantSole.addEventListener("isConnected", () => {
+    updateTriggerVibrationsButtonDisabled();
+});
+
+function updateTriggerVibrationsButtonDisabled() {
+    triggerVibrationsButton.disabled =
+        !brilliantSole.isConnected || vibrationTemplate.parentElement.querySelectorAll(".vibration").length == 0;
+}
