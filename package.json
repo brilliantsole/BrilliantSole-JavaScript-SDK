@@ -5,6 +5,7 @@
     "type": "module",
     "main": "build/brilliantsole.js",
     "module": "./build/brilliantsole.module.js",
+    "browser": "build/brilliantsole.js",
     "exports": {
         ".": {
             "import": "./build/brilliantsole.module.js"
@@ -12,18 +13,24 @@
         "./src/*": "./src/*"
     },
     "scripts": {
-        "build": "rollup -c rollup.config.mjs"
+        "build": "rollup -c",
+        "dev": "rollup -c -w"
     },
     "repository": "https://github.com/zakaton/BrilliantSole.js.git",
     "author": "Zack <zack@ukaton.com>",
     "license": "MIT",
     "private": true,
     "devDependencies": {
+        "@rollup/plugin-commonjs": "^25.0.7",
+        "@rollup/plugin-node-resolve": "^15.2.3",
         "@rollup/plugin-replace": "^5.0.5",
         "@rollup/plugin-terser": "^0.4.4",
         "@types/web-bluetooth": "^0.0.20",
         "magic-string": "^0.30.5",
         "rollup": "^4.9.1"
     },
-    "dependencies": {}
+    "dependencies": {},
+    "files": [
+        "build"
+    ]
 }
