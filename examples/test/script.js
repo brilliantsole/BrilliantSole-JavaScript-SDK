@@ -1,4 +1,4 @@
-import BrilliantSole from "../../src/BrilliantSole.js";
+import BrilliantSole from "../../build/brilliantsole.module.js";
 window.BrilliantSole = BrilliantSole;
 console.log({ BrilliantSole });
 
@@ -349,7 +349,7 @@ addVibrationButton.addEventListener("click", () => {
         let showWaveformContainer = false;
         let showWaveformEffectContainer = false;
 
-        /** @type {import("../../src/BrilliantSole.js").BrilliantSoleVibrationType} */
+        /** @type {import("../../build/brilliantsole.module.js").BrilliantSoleVibrationType} */
         const vibrationType = vibrationTypeSelect.value;
         switch (vibrationType) {
             case "waveform":
@@ -374,12 +374,12 @@ addVibrationButton.addEventListener("click", () => {
 
 const triggerVibrationsButton = document.getElementById("triggerVibrations");
 triggerVibrationsButton.addEventListener("click", () => {
-    /** @type {import("../../src/BrilliantSole.js").BrilliantSoleVibrationConfiguration[]} */
+    /** @type {import("../../build/brilliantsole.module.js").BrilliantSoleVibrationConfiguration[]} */
     let vibrationConfigurations = [];
     Array.from(vibrationTemplate.parentElement.querySelectorAll(".vibration"))
         .filter((vibrationContainer) => vibrationContainer.querySelector(".shouldTrigger").checked)
         .forEach((vibrationContainer) => {
-            /** @type {import("../../src/BrilliantSole.js").BrilliantSoleVibrationConfiguration} */
+            /** @type {import("../../build/brilliantsole.module.js").BrilliantSoleVibrationConfiguration} */
             const vibrationConfiguration = {
                 locations: [],
             };
@@ -399,7 +399,7 @@ triggerVibrationsButton.addEventListener("click", () => {
                         segments: Array.from(
                             vibrationContainer.querySelectorAll(".waveformEffect .waveformEffectSegment")
                         ).map((waveformEffectSegmentContainer) => {
-                            /** @type {import("../../src/BrilliantSole.js").BrilliantSoleVibrationWaveformEffectSegment} */
+                            /** @type {import("../../build/brilliantsole.module.js").BrilliantSoleVibrationWaveformEffectSegment} */
                             const waveformEffectSegment = {
                                 loopCount: Number(waveformEffectSegmentContainer.querySelector(".loopCount").value),
                             };
