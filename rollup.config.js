@@ -31,10 +31,12 @@ function replaceEnvironment() {
     });
 }
 
+const _plugins = [replaceEnvironment(), header(), commonjs()];
+
 const builds = [
     {
         input: "src/BrilliantSole.js",
-        plugins: [replaceEnvironment(), header()],
+        plugins: [..._plugins],
         output: [
             {
                 format: "esm",
@@ -44,7 +46,7 @@ const builds = [
     },
     {
         input: "src/BrilliantSole.js",
-        plugins: [replaceEnvironment(), header(), terser()],
+        plugins: [..._plugins, terser()],
         output: [
             {
                 format: "esm",
@@ -55,7 +57,7 @@ const builds = [
 
     {
         input: "src/BrilliantSole.js",
-        plugins: [replaceEnvironment(), header()],
+        plugins: [..._plugins],
         output: [
             {
                 format: "umd",
@@ -67,7 +69,7 @@ const builds = [
     },
     {
         input: "src/BrilliantSole.js",
-        plugins: [replaceEnvironment(), header(), terser()],
+        plugins: [..._plugins, terser()],
         output: [
             {
                 format: "umd",
@@ -79,7 +81,8 @@ const builds = [
 
     {
         input: "src/BrilliantSole.js",
-        plugins: [replaceEnvironment(), header()],
+        plugins: [..._plugins],
+        external: ["webbluetooth"],
         output: [
             {
                 format: "cjs",

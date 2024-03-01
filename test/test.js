@@ -1,2 +1,2 @@
-import BrilliantSole from "../build/brilliantsole.module.js";
-const b = new BrilliantSole();
+import BrilliantSole from "../build/brilliantsole.cjs";
+//const b = new BrilliantSole();

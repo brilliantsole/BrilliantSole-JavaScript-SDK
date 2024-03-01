@@ -1,3 +1,10 @@
+import { isInNode } from "../../utils/environment";
+
+if (isInNode) {
+    const webbluetooth = require("webbluetooth");
+    var BluetoothUUID = webbluetooth.BluetoothUUID;
+}
+
 /**
  * @param {number} offset
  * @returns {BluetoothServiceUUID}

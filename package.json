@@ -31,7 +31,10 @@
         "magic-string": "^0.30.5",
         "rollup": "^4.9.1"
     },
-    "dependencies": {},
+    "dependencies": {
+        "noble": "^1.9.1",
+        "webbluetooth": "^3.2.1"
+    },
     "files": [
         "package.json",
         "README.md",

@@ -1,6 +1,7 @@
 import { createConsole, setAllConsoleLevelFlags, setConsoleLevelFlagsForType } from "./utils/Console.js";
 import EventDispatcher from "./utils/EventDispatcher.js";
 import ConnectionManager from "./connection/ConnectionManager.js";
+import { isInBrowser, isInNode } from "./utils/environment.js";
 import WebBluetoothConnectionManager from "./connection/bluetooth/WebBluetoothConnectionManager.js";
 import SensorConfigurationManager from "./sensor/SensorConfigurationManager.js";
 import SensorDataManager from "./sensor/SensorDataManager.js";
@@ -78,8 +79,18 @@ const _console = createConsole("BrilliantSole", { log: true });
 
 class BrilliantSole {
     constructor() {
-        this.connectionManager = ConnectionManager.Default();
+        this.connectionManager = new BrilliantSole.#DefaultConnectionManager();
         this.#sensorDataManager.onDataReceived = this.#onSensorDataReceived.bind(this);
+    }
+
+    /** @returns {ConnectionManager} */
+    static get #DefaultConnectionManager() {
+        if (isInBrowser) {
+            return WebBluetoothConnectionManager;
+        }
+        if (isInNode) {
+            return null;
+        }
     }
 
     // EVENT DISPATCHER

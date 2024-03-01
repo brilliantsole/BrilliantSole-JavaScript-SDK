@@ -11,6 +11,10 @@
 	/** @type {"__BRILLIANTSOLE__DEV__" | "__BRILLIANTSOLE__PROD__"} */
 	const isInDev = "__BRILLIANTSOLE__PROD__" == "__BRILLIANTSOLE__DEV__";
 
+	// https://github.com/flexdinesh/browser-or-node/blob/master/src/index.ts
+	const isInBrowser = typeof window !== "undefined" && window?.document !== "undefined";
+	const isInNode = typeof process !== "undefined" && process?.versions?.node != null;
+
 	/**
 	 * @callback LogFunction
 	 * @param {...any} data
@@ -455,6 +459,11 @@
 	    }
 	}
 
+	if (isInNode) {
+	    const webbluetooth = require("webbluetooth");
+	    var BluetoothUUID = webbluetooth.BluetoothUUID;
+	}
+
 	/**
 	 * @param {number} offset
 	 * @returns {BluetoothServiceUUID}
@@ -575,6 +584,8 @@
 	function getCharacteristicNameFromUUID(characteristicUUID) {
 	    return bluetoothUUIDs.getCharacteristicNameFromUUID(characteristicUUID);
 	}
+
+	console.log(bluetoothUUIDs.services.deviceInformation);
 
 	const _console$4 = createConsole("WebBluetoothConnectionManager", { log: true });
 
@@ -1788,8 +1799,18 @@
 
 	class BrilliantSole {
 	    constructor() {
-	        this.connectionManager = new WebBluetoothConnectionManager();
+	        this.connectionManager = new BrilliantSole.#DefaultConnectionManager();
 	        this.#sensorDataManager.onDataReceived = this.#onSensorDataReceived.bind(this);
+	    }
+
+	    /** @returns {ConnectionManager} */
+	    static get #DefaultConnectionManager() {
+	        if (isInBrowser) {
+	            return WebBluetoothConnectionManager;
+	        }
+	        if (isInNode) {
+	            return null;
+	        }
 	    }
 
 	    // EVENT DISPATCHER
