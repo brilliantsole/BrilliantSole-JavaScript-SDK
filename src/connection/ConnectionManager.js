@@ -1,4 +1,6 @@
 import { createConsole } from "../utils/Console.js";
+import { isInNode, isInBrowser } from "../utils/environment.js";
+import WebBluetoothConnectionManager from "./bluetooth/WebBluetoothConnectionManager.js";
 
 /** @typedef {import("./utils/EventDispatcher.js").EventDispatcherListener} EventDispatcherListener */
 /** @typedef {import("./utils/EventDispatcher.js").EventDispatcherOptions} EventDispatcherOptions */
@@ -21,6 +23,15 @@ const _console = createConsole("ConnectionManager");
  */
 
 class ConnectionManager {
+    static Default() {
+        if (isInBrowser) {
+            return WebBluetoothConnectionManager;
+        }
+        if (isInNode) {
+            return null;
+        }
+    }
+
     /** @type {BrilliantSoleConnectionStatusCallback?} */
     onStatusUpdated;
     /** @type {BrilliantSoleMessageReceivedCallback?} */

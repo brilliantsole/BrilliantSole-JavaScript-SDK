@@ -4,4 +4,8 @@ const __BRILLIANTSOLE__ENVIRONMENT__ = "__BRILLIANTSOLE__DEV__";
 const isInProduction = __BRILLIANTSOLE__ENVIRONMENT__ == "__BRILLIANTSOLE__PROD__";
 const isInDev = __BRILLIANTSOLE__ENVIRONMENT__ == "__BRILLIANTSOLE__DEV__";
 
-export { isInDev, isInProduction };
+// https://github.com/flexdinesh/browser-or-node/blob/master/src/index.ts
+const isInBrowser = typeof window?.document !== "undefined";
+const isInNode = process?.versions?.node != null;
+
+export { isInDev, isInProduction, isInBrowser, isInNode };

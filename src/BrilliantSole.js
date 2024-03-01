@@ -78,7 +78,7 @@ const _console = createConsole("BrilliantSole", { log: true });
 
 class BrilliantSole {
     constructor() {
-        this.connectionManager = new WebBluetoothConnectionManager();
+        this.connectionManager = ConnectionManager.Default();
         this.#sensorDataManager.onDataReceived = this.#onSensorDataReceived.bind(this);
     }
 

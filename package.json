@@ -1,7 +1,7 @@
 {
     "name": "brilliantsole-javascript-sdk",
     "version": "1.0.0",
-    "description": "JavaScript SDK for BrilliantSole smart insoles",
+    "description": "JavaScript SDK for BrilliantSole Smart Insoles",
     "type": "module",
     "main": "build/brilliantsole.js",
     "module": "./build/brilliantsole.module.js",
@@ -14,9 +14,11 @@
     },
     "scripts": {
         "build": "rollup -c",
-        "dev": "rollup -c -w"
+        "dev": "rollup -c -w",
+        "test": "node test/test.js"
     },
     "repository": "https://github.com/zakaton/BrilliantSole.js.git",
+    "homepage": "https://www.runonbrilliantsole.com/",
     "author": "Zack Qattan <zack@brilliantsole.com>",
     "license": "MIT",
     "private": true,
@@ -31,6 +33,14 @@
     },
     "dependencies": {},
     "files": [
-        "build"
-    ]
+        "package.json",
+        "README.md",
+        "LICENSE",
+        "src",
+        "build",
+        "examples"
+    ],
+    "directories": {
+        "example": "examples"
+    }
 }

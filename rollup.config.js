@@ -52,6 +52,7 @@ const builds = [
             },
         ],
     },
+
     {
         input: "src/BrilliantSole.js",
         plugins: [replaceEnvironment(), header()],
@@ -72,6 +73,18 @@ const builds = [
                 format: "umd",
                 name: "BrilliantSole",
                 file: "build/brilliantsole.min.js",
+            },
+        ],
+    },
+
+    {
+        input: "src/BrilliantSole.js",
+        plugins: [replaceEnvironment(), header()],
+        output: [
+            {
+                format: "cjs",
+                name: "BrilliantSole",
+                file: "build/brilliantsole.cjs",
             },
         ],
     },
