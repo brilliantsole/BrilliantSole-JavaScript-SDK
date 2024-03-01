@@ -116,22 +116,26 @@
                 <li class="waveformEffectSegment">
                     <label>
                         type
-                        <select class="waveformEffectSegmentType">
-                            <optgroup label="waveformEffect segment type">
-                                <option>waveformEffect</option>
+                        <select class="type">
+                            <optgroup label="segment type">
+                                <option>effect</option>
                                 <option>delay</option>
                             </optgroup>
                         </select>
                     </label>
-                    <label class="effectContainer">
+                    <label>
                         effect
                         <select class="effect">
                             <optgroup label="waveformEffect"></optgroup>
                         </select>
                     </label>
-                    <label class="delayContainer">
+                    <label>
                         delay
-                        <input class="delay" type="number" min="0" value="0" step="1" />ms
+                        <input class="delay" type="number" min="0" value="0" step="10" />ms
+                    </label>
+                    <label>
+                        loop count
+                        <input class="loopCount" type="number" min="0" value="0" step="1" />
                     </label>
                     <button class="delete">delete</button>
                 </li>

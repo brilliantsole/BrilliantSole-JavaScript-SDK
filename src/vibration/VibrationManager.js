@@ -248,7 +248,7 @@ class VibrationManager {
                 dataArray[byteOffset++] = this.#waveformEffects.indexOf(waveformEffect);
             } else if (waveformEffectSegment.delay != undefined) {
                 const { delay } = waveformEffectSegment;
-                dataArray[byteOffset++] = (1 << 7) | Math.floor(delay); // set most significant bit to 1
+                dataArray[byteOffset++] = (1 << 7) | Math.floor(delay / 10); // set most significant bit to 1
             } else {
                 throw Error("invalid waveformEffectSegment");
             }

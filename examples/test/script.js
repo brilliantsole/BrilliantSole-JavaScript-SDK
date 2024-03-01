@@ -223,6 +223,10 @@ const waveformEffectSegmentTemplate = document.getElementById("waveformEffectSeg
     /** @type {HTMLInputElement} */
     const waveformEffectSegmentDelayInput = waveformEffectSegmentTemplate.content.querySelector(".delay");
     waveformEffectSegmentDelayInput.max = BrilliantSole.MaxVibrationWaveformEffectSegmentDelay;
+
+    /** @type {HTMLInputElement} */
+    const waveformEffectLoopCountInput = waveformEffectSegmentTemplate.content.querySelector(".loopCount");
+    waveformEffectLoopCountInput.max = BrilliantSole.MaxVibrationWaveformEffectSegmentLoopCount;
 }
 
 /** @type {HTMLTemplateElement} */
@@ -261,7 +265,6 @@ addVibrationButton.addEventListener("click", () => {
     const waveformEffectContainer = vibrationContainer.querySelector(".waveformEffect");
     /** @type {HTMLUListElement} */
     const waveformEffectSegmentsContainer = waveformEffectContainer.querySelector(".segments");
-    // FILL
     /** @type {HTMLButtonElement} */
     const addWaveformEffectSegmentButton = waveformEffectContainer.querySelector(".add");
     const updateAddWaveformEffectSegmentButton = () => {
@@ -273,6 +276,31 @@ addVibrationButton.addEventListener("click", () => {
         const waveformEffectSegmentContainer = waveformEffectSegmentTemplate.content
             .cloneNode(true)
             .querySelector(".waveformEffectSegment");
+
+        const effectContainer = waveformEffectSegmentContainer.querySelector(".effect").parentElement;
+        const delayContainer = waveformEffectSegmentContainer.querySelector(".delay").parentElement;
+
+        /** @type {HTMLSelectElement} */
+        const waveformEffectTypeSelect = waveformEffectSegmentContainer.querySelector(".type");
+        waveformEffectTypeSelect.addEventListener("input", () => {
+            let shouldShowEffectContainer = false;
+            let shouldShowDelayContainer = false;
+
+            switch (waveformEffectTypeSelect.value) {
+                case "effect":
+                    shouldShowEffectContainer = true;
+                    break;
+                case "delay":
+                    shouldShowDelayContainer = true;
+                    break;
+                default:
+                    throw Error(`uncaught waveformEffectTypeSelect value "${waveformEffectTypeSelect.value}"`);
+            }
+
+            effectContainer.style.display = shouldShowEffectContainer ? "" : "none";
+            delayContainer.style.display = shouldShowDelayContainer ? "" : "none";
+        });
+        waveformEffectTypeSelect.dispatchEvent(new Event("input"));
 
         waveformEffectSegmentContainer.querySelector(".delete").addEventListener("click", () => {
             waveformEffectSegmentContainer.remove();
@@ -308,7 +336,6 @@ addVibrationButton.addEventListener("click", () => {
         waveformSegmentsContainer.appendChild(waveformSegmentContainer);
         updateAddWaveformSegmentButton();
     });
-    // FILL
 
     /** @type {HTMLSelectElement} */
     const vibrationTypeSelect = vibrationContainer.querySelector(".type");
