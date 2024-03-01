@@ -17,7 +17,7 @@
         "dev": "rollup -c -w"
     },
     "repository": "https://github.com/zakaton/BrilliantSole.js.git",
-    "author": "Zack <zack@ukaton.com>",
+    "author": "Zack Qattan <zack@brilliantsole.com>",
     "license": "MIT",
     "private": true,
     "devDependencies": {
