@@ -376,27 +376,57 @@ const triggerVibrationsButton = document.getElementById("triggerVibrations");
 triggerVibrationsButton.addEventListener("click", () => {
     /** @type {import("../../src/BrilliantSole.js").BrilliantSoleVibrationConfiguration[]} */
     let vibrationConfigurations = [];
-    vibrationTemplate.parentElement
-        .querySelectorAll(".vibration")
+    Array.from(vibrationTemplate.parentElement.querySelectorAll(".vibration"))
         .filter((vibrationContainer) => vibrationContainer.querySelector(".shouldTrigger").checked)
         .forEach((vibrationContainer) => {
             /** @type {import("../../src/BrilliantSole.js").BrilliantSoleVibrationConfiguration} */
             const vibrationConfiguration = {
                 locations: [],
             };
-            vibrationContainer
-                .querySelectorAll(`[data-vibration-location]`)
+            Array.from(vibrationContainer.querySelectorAll(`[data-vibration-location]`))
                 .filter((input) => input.checked)
                 .forEach((input) => {
                     vibrationConfiguration.locations.push(input.dataset.vibrationLocation);
                 });
+            if (vibrationConfiguration.locations.length == 0) {
+                return;
+            }
+
             vibrationConfiguration.type = vibrationContainer.querySelector("select.type").value;
             switch (vibrationConfiguration.type) {
                 case "waveformEffect":
-                    // FILL
+                    vibrationConfiguration.waveformEffect = {
+                        segments: Array.from(
+                            vibrationContainer.querySelectorAll(".waveformEffect .waveformEffectSegment")
+                        ).map((waveformEffectSegmentContainer) => {
+                            /** @type {import("../../src/BrilliantSole.js").BrilliantSoleVibrationWaveformEffectSegment} */
+                            const waveformEffectSegment = {
+                                loopCount: Number(waveformEffectSegmentContainer.querySelector(".loopCount").value),
+                            };
+                            if (waveformEffectSegmentContainer.querySelector(".type").value == "effect") {
+                                waveformEffectSegment.effect =
+                                    waveformEffectSegmentContainer.querySelector(".effect").value;
+                            } else {
+                                waveformEffectSegment.delay = Number(
+                                    waveformEffectSegmentContainer.querySelector(".delay").value
+                                );
+                            }
+                            return waveformEffectSegment;
+                        }),
+                        loopCount: Number(vibrationContainer.querySelector(".waveformEffect .sequenceLoopCount").value),
+                    };
                     break;
                 case "waveform":
-                    // FILL
+                    vibrationConfiguration.waveform = {
+                        segments: Array.from(vibrationContainer.querySelectorAll(".waveform .waveformSegment")).map(
+                            (waveformSegmentContainer) => {
+                                return {
+                                    amplitude: Number(waveformSegmentContainer.querySelector(".amplitude").value),
+                                    duration: Number(waveformSegmentContainer.querySelector(".duration").value),
+                                };
+                            }
+                        ),
+                    };
                     break;
                 default:
                     throw Error(`invalid vibrationType "${vibrationConfiguration.type}"`);
