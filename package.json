@@ -5,6 +5,7 @@
     "main": "build/brilliantsole.cjs",
     "module": "./build/brilliantsole.module.js",
     "browser": "build/brilliantsole.js",
+    "type": "module",
     "exports": {
         ".": {
             "import": "./build/brilliantsole.module.js"
@@ -15,7 +16,7 @@
         "build": "rollup -c",
         "dev": "rollup -c -w",
         "test": "node test/test.js",
-        "server": "node server.js"
+        "server": "node server.cjs"
     },
     "repository": "https://github.com/zakaton/BrilliantSole.js.git",
     "homepage": "https://www.runonbrilliantsole.com/",
