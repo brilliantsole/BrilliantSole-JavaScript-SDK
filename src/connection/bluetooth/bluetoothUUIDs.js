@@ -1,8 +1,11 @@
-import { isInNode } from "../../utils/environment";
+import { isInBrowser, isInNode } from "../../utils/environment.js";
 
 if (isInNode) {
     const webbluetooth = require("webbluetooth");
     var BluetoothUUID = webbluetooth.BluetoothUUID;
+}
+if (isInBrowser) {
+    var BluetoothUUID = window.BluetoothUUID;
 }
 
 /**

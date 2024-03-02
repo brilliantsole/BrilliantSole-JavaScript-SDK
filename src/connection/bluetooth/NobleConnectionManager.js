@@ -60,6 +60,9 @@ class NobleConnectionManager extends ConnectionManager {
             case "setSensorConfiguration":
                 // FILL
                 break;
+            case "triggerVibration":
+                // FILL
+                break;
             default:
                 throw Error(`uncaught messageType "${messageType}"`);
         }

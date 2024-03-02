@@ -31,7 +31,7 @@ function replaceEnvironment() {
     });
 }
 
-const _plugins = [replaceEnvironment(), header(), commonjs()];
+const _plugins = [replaceEnvironment(), header()];
 
 const builds = [
     {

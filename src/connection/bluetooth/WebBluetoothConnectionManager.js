@@ -1,5 +1,5 @@
 import { createConsole } from "../../utils/Console.js";
-import { isInNode } from "../../utils/environment.js";
+import { isInNode, isInBrowser } from "../../utils/environment.js";
 import { addEventListeners, removeEventListeners } from "../../utils/EventDispatcher.js";
 import ConnectionManager from "../ConnectionManager.js";
 import {
@@ -20,6 +20,9 @@ if (isInNode) {
     const webbluetooth = require("webbluetooth");
     const { bluetooth } = webbluetooth;
     var navigator = { bluetooth };
+}
+if (isInBrowser) {
+    var navigator = window.navigator;
 }
 
 class WebBluetoothConnectionManager extends ConnectionManager {
@@ -221,13 +224,18 @@ class WebBluetoothConnectionManager extends ConnectionManager {
             case "setSensorConfiguration":
                 characteristic = this.#characteristics.get("sensorConfiguration");
                 break;
+            case "triggerVibration":
+                characteristic = this.#characteristics.get("vibration");
+                break;
             default:
                 throw Error(`uncaught messageType "${messageType}"`);
         }
 
         _console.assert(characteristic, "no characteristic found");
         await characteristic.writeValueWithResponse(data);
-        await characteristic.readValue();
+        if (characteristic.properties.read) {
+            await characteristic.readValue();
+        }
     }
 
     /** @type {boolean} */

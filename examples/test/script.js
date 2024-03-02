@@ -1,4 +1,5 @@
-import BrilliantSole from "../../build/brilliantsole.module.js";
+//import BrilliantSole from "../../build/brilliantsole.module.js";
+import BrilliantSole from "../../src/BrilliantSole.js";
 window.BrilliantSole = BrilliantSole;
 console.log({ BrilliantSole });
 
@@ -434,7 +435,9 @@ triggerVibrationsButton.addEventListener("click", () => {
             vibrationConfigurations.push(vibrationConfiguration);
         });
     console.log({ vibrationConfigurations });
-    brilliantSole.triggerVibration(...vibrationConfigurations);
+    if (vibrationConfigurations.length > 0) {
+        brilliantSole.triggerVibration(...vibrationConfigurations);
+    }
 });
 brilliantSole.addEventListener("isConnected", () => {
     updateTriggerVibrationsButtonDisabled();

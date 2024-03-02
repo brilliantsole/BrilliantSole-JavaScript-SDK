@@ -463,6 +463,9 @@
 	    const webbluetooth = require("webbluetooth");
 	    var BluetoothUUID = webbluetooth.BluetoothUUID;
 	}
+	if (isInBrowser) {
+	    var BluetoothUUID = window.BluetoothUUID;
+	}
 
 	/**
 	 * @param {number} offset
@@ -596,6 +599,9 @@
 	    const webbluetooth = require("webbluetooth");
 	    const { bluetooth } = webbluetooth;
 	    var navigator = { bluetooth };
+	}
+	if (isInBrowser) {
+	    var navigator = window.navigator;
 	}
 
 	class WebBluetoothConnectionManager extends ConnectionManager {
@@ -797,13 +803,18 @@
 	            case "setSensorConfiguration":
 	                characteristic = this.#characteristics.get("sensorConfiguration");
 	                break;
+	            case "triggerVibration":
+	                characteristic = this.#characteristics.get("vibration");
+	                break;
 	            default:
 	                throw Error(`uncaught messageType "${messageType}"`);
 	        }
 
 	        _console$5.assert(characteristic, "no characteristic found");
 	        await characteristic.writeValueWithResponse(data);
-	        await characteristic.readValue();
+	        if (characteristic.properties.read) {
+	            await characteristic.readValue();
+	        }
 	    }
 
 	    /** @type {boolean} */
@@ -873,6 +884,9 @@
 	                // FILL
 	                break;
 	            case "setSensorConfiguration":
+	                // FILL
+	                break;
+	            case "triggerVibration":
 	                // FILL
 	                break;
 	            default:
