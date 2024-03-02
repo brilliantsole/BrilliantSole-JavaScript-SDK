@@ -1,4 +1,5 @@
 import { createConsole } from "../../utils/Console.js";
+import { isInNode } from "../../utils/environment.js";
 import { addEventListeners, removeEventListeners } from "../../utils/EventDispatcher.js";
 import ConnectionManager from "../ConnectionManager.js";
 import {
@@ -14,6 +15,12 @@ const _console = createConsole("WebBluetoothConnectionManager", { log: true });
 /** @typedef {import("./bluetoothUUIDs.js").BrilliantSoleBluetoothServiceName} BrilliantSoleBluetoothServiceName */
 
 /** @typedef {import("../ConnectionManager.js").BrilliantSoleConnectionMessageType} BrilliantSoleConnectionMessageType */
+
+if (isInNode) {
+    const webbluetooth = require("webbluetooth");
+    const { bluetooth } = webbluetooth;
+    var navigator = { bluetooth };
+}
 
 class WebBluetoothConnectionManager extends ConnectionManager {
     /** @type {Object.<string, EventListener} */

@@ -1,2 +1,3 @@
 import BrilliantSole from "../build/brilliantsole.cjs";
-//const b = new BrilliantSole();
+const brilliantSole = new BrilliantSole();
+brilliantSole.connect();

@@ -3,6 +3,7 @@ import EventDispatcher from "./utils/EventDispatcher.js";
 import ConnectionManager from "./connection/ConnectionManager.js";
 import { isInBrowser, isInNode } from "./utils/environment.js";
 import WebBluetoothConnectionManager from "./connection/bluetooth/WebBluetoothConnectionManager.js";
+import NobleConnectionManager from "./connection/bluetooth/NobleConnectionManager.js";
 import SensorConfigurationManager from "./sensor/SensorConfigurationManager.js";
 import SensorDataManager from "./sensor/SensorDataManager.js";
 import VibrationManager from "./vibration/VibrationManager.js";
@@ -89,7 +90,7 @@ class BrilliantSole {
             return WebBluetoothConnectionManager;
         }
         if (isInNode) {
-            return null;
+            return NobleConnectionManager;
         }
     }
 

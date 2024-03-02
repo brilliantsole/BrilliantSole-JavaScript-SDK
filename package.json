@@ -32,7 +32,7 @@
         "rollup": "^4.9.1"
     },
     "dependencies": {
-        "noble": "^1.9.1",
+        "@abandonware/noble": "^1.9.2-24",
         "webbluetooth": "^3.2.1"
     },
     "files": [
