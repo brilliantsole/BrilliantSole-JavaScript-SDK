@@ -591,7 +591,7 @@ class BrilliantSole {
                             throw Error("waveformEffect not defined in vibrationConfiguration");
                         }
                         const { segments, loopCount } = waveformEffect;
-                        this.#vibrationManager.createWaveformEffectsData(locations, segments, loopCount);
+                        dataView = this.#vibrationManager.createWaveformEffectsData(locations, segments, loopCount);
                     }
                     break;
                 case "waveform":
@@ -601,13 +601,13 @@ class BrilliantSole {
                             throw Error("waveform not defined in vibrationConfiguration");
                         }
                         const { segments } = waveform;
-                        this.#vibrationManager.createWaveformData(locations, segments);
+                        dataView = this.#vibrationManager.createWaveformData(locations, segments);
                     }
                     break;
                 default:
                     throw Error(`invalid vibration type "${type}"`);
             }
-
+            _console.log({ type, dataView });
             triggerVibrationData = concatenateArrayBuffers(triggerVibrationData, dataView);
         });
         await this.#connectionManager.sendMessage("triggerVibration", triggerVibrationData);

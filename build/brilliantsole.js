@@ -1466,7 +1466,7 @@
 	 * @returns {ArrayBuffer}
 	 */
 	function concatenateArrayBuffers(...arrayBuffers) {
-	    arrayBuffers = arrayBuffers.filter((arrayBuffer) => arrayBuffer);
+	    arrayBuffers = arrayBuffers.filter((arrayBuffer) => arrayBuffer != undefined || arrayBuffer != null);
 	    arrayBuffers = arrayBuffers.map((arrayBuffer) => {
 	        if (typeof arrayBuffer == "number") {
 	            return Uint8Array.from([Math.floor(arrayBuffer)]);
@@ -1766,7 +1766,7 @@
 
 	        const dataView = new DataView(Uint8Array.from(dataArray).buffer);
 	        _console$1.log({ dataArray, dataView });
-	        this.#createData(locations, "waveformEffect", dataView);
+	        return this.#createData(locations, "waveformEffect", dataView);
 	    }
 	    /**
 	     * @param {BrilliantSoleVibrationLocation[]} locations
@@ -1780,7 +1780,7 @@
 	            dataView.setUint8(index * 2 + 1, Math.floor(waveformSegment.duration / 10));
 	        });
 	        _console$1.log({ dataView });
-	        this.#createData(locations, "waveform", dataView);
+	        return this.#createData(locations, "waveform", dataView);
 	    }
 
 	    /** @type {BrilliantSoleVibrationType[]} */
@@ -2390,7 +2390,7 @@
 	                            throw Error("waveformEffect not defined in vibrationConfiguration");
 	                        }
 	                        const { segments, loopCount } = waveformEffect;
-	                        this.#vibrationManager.createWaveformEffectsData(locations, segments, loopCount);
+	                        dataView = this.#vibrationManager.createWaveformEffectsData(locations, segments, loopCount);
 	                    }
 	                    break;
 	                case "waveform":
@@ -2400,13 +2400,13 @@
 	                            throw Error("waveform not defined in vibrationConfiguration");
 	                        }
 	                        const { segments } = waveform;
-	                        this.#vibrationManager.createWaveformData(locations, segments);
+	                        dataView = this.#vibrationManager.createWaveformData(locations, segments);
 	                    }
 	                    break;
 	                default:
 	                    throw Error(`invalid vibration type "${type}"`);
 	            }
-
+	            _console.log({ type, dataView });
 	            triggerVibrationData = concatenateArrayBuffers(triggerVibrationData, dataView);
 	        });
 	        await this.#connectionManager.sendMessage("triggerVibration", triggerVibrationData);

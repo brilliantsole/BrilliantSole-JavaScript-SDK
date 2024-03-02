@@ -275,7 +275,7 @@ class VibrationManager {
 
         const dataView = new DataView(Uint8Array.from(dataArray).buffer);
         _console.log({ dataArray, dataView });
-        this.#createData(locations, "waveformEffect", dataView);
+        return this.#createData(locations, "waveformEffect", dataView);
     }
     /**
      * @param {BrilliantSoleVibrationLocation[]} locations
@@ -289,7 +289,7 @@ class VibrationManager {
             dataView.setUint8(index * 2 + 1, Math.floor(waveformSegment.duration / 10));
         });
         _console.log({ dataView });
-        this.#createData(locations, "waveform", dataView);
+        return this.#createData(locations, "waveform", dataView);
     }
 
     /** @type {BrilliantSoleVibrationType[]} */

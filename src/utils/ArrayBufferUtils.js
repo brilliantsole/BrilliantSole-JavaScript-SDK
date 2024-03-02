@@ -3,7 +3,7 @@
  * @returns {ArrayBuffer}
  */
 export function concatenateArrayBuffers(...arrayBuffers) {
-    arrayBuffers = arrayBuffers.filter((arrayBuffer) => arrayBuffer);
+    arrayBuffers = arrayBuffers.filter((arrayBuffer) => arrayBuffer != undefined || arrayBuffer != null);
     arrayBuffers = arrayBuffers.map((arrayBuffer) => {
         if (typeof arrayBuffer == "number") {
             return Uint8Array.from([Math.floor(arrayBuffer)]);
