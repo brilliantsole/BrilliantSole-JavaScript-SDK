@@ -371,7 +371,10 @@ class ConnectionManager {
 
     /** @throws {Error} if abstract class */
     #assertIsSubclass() {
-        _console$6.assertWithError(this.constructor != ConnectionManager, `${this.constructor.name} must be subclassed`);
+        _console$6.assertWithError(
+            this.constructor != ConnectionManager,
+            `${this.constructor.name} must be subclassed`
+        );
     }
 
     constructor() {
@@ -483,7 +486,7 @@ function stringToServiceUUID(identifier) {
     return BluetoothUUID.getService(identifier);
 }
 
-/** @typedef {"deviceInformation" | "battery" | "data" | "unknown"} BrilliantSoleBluetoothServiceName */
+/** @typedef {"deviceInformation" | "battery" | "main" | "unknown"} BrilliantSoleBluetoothServiceName */
 /** @typedef { "manufacturerName" | "modelNumber" | "hardwareRevision" | "firmwareRevision" | "softwareRevision" | "pnpId" | "batteryLevel" | "name" | "type" | "sensorConfiguration" | "sensorData" | "vibration"} BrilliantSoleBluetoothCharacteristicName */
 
 const bluetoothUUIDs = Object.freeze({
