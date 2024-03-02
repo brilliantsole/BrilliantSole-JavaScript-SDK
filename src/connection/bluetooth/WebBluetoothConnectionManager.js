@@ -1,7 +1,6 @@
 import { createConsole } from "../../utils/Console.js";
 import { isInNode, isInBrowser } from "../../utils/environment.js";
 import { addEventListeners, removeEventListeners } from "../../utils/EventDispatcher.js";
-import { waitIfAndroid } from "../../utils/misc.js";
 import ConnectionManager from "../ConnectionManager.js";
 import {
     serviceUUIDs,
@@ -121,7 +120,6 @@ class WebBluetoothConnectionManager extends ConnectionManager {
                     if (characteristic.properties.read) {
                         _console.log(`reading "${characteristicName}" characteristic...`);
                         await characteristic.readValue();
-                        // await waitIfAndroid();
                     }
                     if (characteristic.properties.notify) {
                         _console.log(
@@ -129,7 +127,6 @@ class WebBluetoothConnectionManager extends ConnectionManager {
                             characteristic
                         );
                         await characteristic.startNotifications();
-                        // await waitIfAndroid();
                     }
                 }
             }
@@ -237,10 +234,8 @@ class WebBluetoothConnectionManager extends ConnectionManager {
 
         _console.assert(characteristic, "no characteristic found");
         await characteristic.writeValueWithResponse(data);
-        // await waitIfAndroid();
         if (characteristic.properties.read) {
             await characteristic.readValue();
-            // await waitIfAndroid();
         }
     }
 
