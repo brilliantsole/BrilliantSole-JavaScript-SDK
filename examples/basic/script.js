@@ -14,11 +14,7 @@ const toggleConnectionButton = document.getElementById("toggleConnection");
 toggleConnectionButton.addEventListener("click", () => {
     switch (brilliantSole.connectionStatus) {
         case "not connected":
-            if (brilliantSole.canReconnect) {
-                brilliantSole.reconnect();
-            } else {
-                brilliantSole.connect();
-            }
+            brilliantSole.connect();
             break;
         case "connected":
             brilliantSole.disconnect();
@@ -26,10 +22,21 @@ toggleConnectionButton.addEventListener("click", () => {
     }
 });
 
+/** @type {HTMLButtonElement} */
+const reconnectButton = document.getElementById("reconnect");
+reconnectButton.addEventListener("click", () => {
+    brilliantSole.reconnect();
+});
+brilliantSole.addEventListener("connectionStatus", () => {
+    reconnectButton.disabled = !brilliantSole.canReconnect;
+});
+
 brilliantSole.addEventListener("connecting", () => {
     console.log("connecting");
     toggleConnectionButton.innerText = "connecting...";
     toggleConnectionButton.disabled = true;
+
+    reconnectButton.disabled = true;
 });
 brilliantSole.addEventListener("connected", () => {
     console.log("connected");
@@ -40,10 +47,11 @@ brilliantSole.addEventListener("disconnecting", () => {
     console.log("disconnecting");
     toggleConnectionButton.innerText = "disconnecting...";
     toggleConnectionButton.disabled = true;
+    reconnectButton.disabled = true;
 });
 brilliantSole.addEventListener("not connected", () => {
     console.log("not connected");
-    toggleConnectionButton.innerText = brilliantSole.canReconnect ? "reconnect" : "connect";
+    toggleConnectionButton.innerText = "connect";
     toggleConnectionButton.disabled = false;
 });
 

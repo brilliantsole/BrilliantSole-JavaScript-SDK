@@ -91,45 +91,8 @@ class WebBluetoothConnectionManager extends ConnectionManager {
             const server = await this.device.gatt.connect();
             _console.log(`connected to device? ${server.connected}`);
 
-            _console.log("getting services...");
-            const services = await server.getPrimaryServices();
-            _console.log("got services", services);
+            await this.#getServicesAndCharacteristics();
 
-            _console.log("getting characteristics...");
-            for (const serviceIndex in services) {
-                const service = services[serviceIndex];
-                const serviceName = getServiceNameFromUUID(service.uuid);
-                _console.assertWithError(serviceName, `no name found for service uuid "${service.uuid}"`);
-                _console.log(`got "${serviceName}" service`);
-                service._name = serviceName;
-                this.#services.set(serviceName, service);
-                _console.log("getting characteristics for service", service);
-                const characteristics = await service.getCharacteristics();
-                _console.log("got characteristics for service", service, characteristics);
-                for (const characteristicIndex in characteristics) {
-                    const characteristic = characteristics[characteristicIndex];
-                    const characteristicName = getCharacteristicNameFromUUID(characteristic.uuid);
-                    _console.assertWithError(
-                        characteristicName,
-                        `no name found for characteristic uuid "${characteristic.uuid}" in "${serviceName}" service`
-                    );
-                    _console.log(`got "${characteristicName}" characteristic in "${serviceName}" service`);
-                    characteristic._name = characteristicName;
-                    this.#characteristics.set(characteristicName, characteristic);
-                    addEventListeners(characteristic, this.#boundBluetoothCharacteristicEventListeners);
-                    if (characteristic.properties.read) {
-                        _console.log(`reading "${characteristicName}" characteristic...`);
-                        await characteristic.readValue();
-                    }
-                    if (characteristic.properties.notify) {
-                        _console.log(
-                            `starting notifications for "${characteristicName}" characteristic`,
-                            characteristic
-                        );
-                        await characteristic.startNotifications();
-                    }
-                }
-            }
             _console.log("fully connected");
 
             this.status = "connected";
@@ -137,6 +100,44 @@ class WebBluetoothConnectionManager extends ConnectionManager {
             _console.error(error);
             this.status = "not connected";
             this.server?.disconnect();
+        }
+    }
+    async #getServicesAndCharacteristics() {
+        _console.log("getting services...");
+        const services = await this.server.getPrimaryServices();
+        _console.log("got services", services);
+
+        _console.log("getting characteristics...");
+        for (const serviceIndex in services) {
+            const service = services[serviceIndex];
+            const serviceName = getServiceNameFromUUID(service.uuid);
+            _console.assertWithError(serviceName, `no name found for service uuid "${service.uuid}"`);
+            _console.log(`got "${serviceName}" service`);
+            service._name = serviceName;
+            this.#services.set(serviceName, service);
+            _console.log("getting characteristics for service", service);
+            const characteristics = await service.getCharacteristics();
+            _console.log("got characteristics for service", service, characteristics);
+            for (const characteristicIndex in characteristics) {
+                const characteristic = characteristics[characteristicIndex];
+                const characteristicName = getCharacteristicNameFromUUID(characteristic.uuid);
+                _console.assertWithError(
+                    characteristicName,
+                    `no name found for characteristic uuid "${characteristic.uuid}" in "${serviceName}" service`
+                );
+                _console.log(`got "${characteristicName}" characteristic in "${serviceName}" service`);
+                characteristic._name = characteristicName;
+                this.#characteristics.set(characteristicName, characteristic);
+                addEventListeners(characteristic, this.#boundBluetoothCharacteristicEventListeners);
+                if (characteristic.properties.read) {
+                    _console.log(`reading "${characteristicName}" characteristic...`);
+                    await characteristic.readValue();
+                }
+                if (characteristic.properties.notify) {
+                    _console.log(`starting notifications for "${characteristicName}" characteristic`, characteristic);
+                    await characteristic.startNotifications();
+                }
+            }
         }
     }
     async disconnect() {
@@ -242,7 +243,7 @@ class WebBluetoothConnectionManager extends ConnectionManager {
 
     /** @type {boolean} */
     get canReconnect() {
-        return Boolean(this.server);
+        return this.server && !this.server.connected;
     }
     async reconnect() {
         await super.reconnect();
@@ -250,6 +251,7 @@ class WebBluetoothConnectionManager extends ConnectionManager {
         await this.server.connect();
         if (this.isConnected) {
             _console.log("successfully reconnected!");
+            await this.#getServicesAndCharacteristics();
             this.status = "connected";
         } else {
             _console.log("unable to reconnect");
