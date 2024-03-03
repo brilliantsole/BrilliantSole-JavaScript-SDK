@@ -29,7 +29,7 @@ const warn = console.warn.bind(console);
 /** @type {LogFunction} */
 const error = console.error.bind(console);
 /** @type {AssertLogFunction} */
-const assert = console.assert?.bind(console);
+const assert = console.assert.bind(console);
 
 class Console {
     /** @type {Object.<string, Console>} */

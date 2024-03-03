@@ -42,7 +42,7 @@ const warn = console.warn.bind(console);
 /** @type {LogFunction} */
 const error = console.error.bind(console);
 /** @type {AssertLogFunction} */
-const assert = console.assert?.bind(console);
+const assert = console.assert.bind(console);
 
 class Console {
     /** @type {Object.<string, Console>} */
@@ -716,13 +716,14 @@ class WebBluetoothConnectionManager extends ConnectionManager {
             this.status = "connected";
         } catch (error) {
             _console$5.error(error);
+            await this.disconnect();
             this.status = "not connected";
         }
     }
     async disconnect() {
         await super.disconnect();
         _console$5.log("disconnecting from device...");
-        this.server.disconnect();
+        this.server?.disconnect();
     }
 
     /** @param {Event} event */

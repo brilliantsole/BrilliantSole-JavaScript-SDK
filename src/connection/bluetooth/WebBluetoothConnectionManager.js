@@ -117,11 +117,11 @@ class WebBluetoothConnectionManager extends ConnectionManager {
                     characteristic._name = characteristicName;
                     this.#characteristics.set(characteristicName, characteristic);
                     addEventListeners(characteristic, this.#boundBluetoothCharacteristicEventListeners);
-                    if (characteristic.properties?.read) {
+                    if (characteristic.properties.read) {
                         _console.log(`reading "${characteristicName}" characteristic...`);
                         await characteristic.readValue();
                     }
-                    if (characteristic.properties?.notify) {
+                    if (characteristic.properties.notify) {
                         _console.log(
                             `starting notifications for "${characteristicName}" characteristic`,
                             characteristic
