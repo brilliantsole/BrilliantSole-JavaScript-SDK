@@ -110,12 +110,12 @@ class SensorDataManager {
                 case "gyroscope":
                 case "magnetometer":
                     value = this.#parseVector3(dataView, byteOffset, sensorType);
-                    byteOffset += 7;
+                    byteOffset += 6;
                     break;
                 case "gameRotation":
                 case "rotation":
                     value = this.#parseQuaternion(dataView, byteOffset, sensorType);
-                    byteOffset += 10;
+                    byteOffset += 8;
                     break;
                 case "barometer":
                     // FILL
