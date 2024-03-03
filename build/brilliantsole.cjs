@@ -11,6 +11,8 @@ const isInDev = "__BRILLIANTSOLE__PROD__" == "__BRILLIANTSOLE__DEV__";
 const isInBrowser = typeof window !== "undefined" && window?.document !== "undefined";
 const isInNode = typeof process !== "undefined" && process?.versions?.node != null;
 
+isInBrowser && navigator.userAgent.includes("Android");
+
 /**
  * @callback LogFunction
  * @param {...any} data
@@ -33,10 +35,14 @@ const isInNode = typeof process !== "undefined" && process?.versions?.node != nu
 
 function emptyFunction() {}
 
+/** @type {LogFunction} */
 const log = console.log.bind(console);
+/** @type {LogFunction} */
 const warn = console.warn.bind(console);
+/** @type {LogFunction} */
 const error = console.error.bind(console);
-const assert = console.assert.bind(console);
+/** @type {AssertLogFunction} */
+const assert = console.assert?.bind(console);
 
 class Console {
     /** @type {Object.<string, Console>} */
@@ -485,7 +491,7 @@ function stringToServiceUUID(identifier) {
     return BluetoothUUID.getService(identifier);
 }
 
-/** @typedef {"deviceInformation" | "battery" | "data" | "unknown"} BrilliantSoleBluetoothServiceName */
+/** @typedef {"deviceInformation" | "battery" | "main"} BrilliantSoleBluetoothServiceName */
 /** @typedef { "manufacturerName" | "modelNumber" | "hardwareRevision" | "firmwareRevision" | "softwareRevision" | "pnpId" | "batteryLevel" | "name" | "type" | "sensorConfiguration" | "sensorData" | "vibration"} BrilliantSoleBluetoothCharacteristicName */
 
 const bluetoothUUIDs = Object.freeze({
@@ -594,10 +600,10 @@ const _console$5 = createConsole("WebBluetoothConnectionManager", { log: true })
 if (isInNode) {
     const webbluetooth = require("webbluetooth");
     const { bluetooth } = webbluetooth;
-    var navigator = { bluetooth };
+    var navigator$1 = { bluetooth };
 }
 if (isInBrowser) {
-    var navigator = window.navigator;
+    var navigator$1 = window.navigator;
 }
 
 class WebBluetoothConnectionManager extends ConnectionManager {
@@ -611,7 +617,7 @@ class WebBluetoothConnectionManager extends ConnectionManager {
     };
 
     static get isSupported() {
-        return "bluetooth" in navigator;
+        return "bluetooth" in navigator$1;
     }
     /** @type {import("../ConnectionManager.js").BrilliantSoleConnectionType} */
     static get type() {
@@ -654,7 +660,7 @@ class WebBluetoothConnectionManager extends ConnectionManager {
         await super.connect();
 
         try {
-            const device = await navigator.bluetooth.requestDevice({
+            const device = await navigator$1.bluetooth.requestDevice({
                 filters: [{ services: serviceUUIDs }],
                 optionalServices: optionalServiceUUIDs,
             });
@@ -671,7 +677,8 @@ class WebBluetoothConnectionManager extends ConnectionManager {
             _console$5.log("got services", services);
 
             _console$5.log("getting characteristics...");
-            const servicePromises = services.map(async (service) => {
+            for (const serviceIndex in services) {
+                const service = services[serviceIndex];
                 const serviceName = getServiceNameFromUUID(service.uuid);
                 _console$5.assertWithError(serviceName, `no name found for service uuid "${service.uuid}"`);
                 _console$5.log(`got "${serviceName}" service`);
@@ -680,7 +687,8 @@ class WebBluetoothConnectionManager extends ConnectionManager {
                 _console$5.log("getting characteristics for service", service);
                 const characteristics = await service.getCharacteristics();
                 _console$5.log("got characteristics for service", service, characteristics);
-                const characteristicPromises = characteristics.map(async (characteristic) => {
+                for (const characteristicIndex in characteristics) {
+                    const characteristic = characteristics[characteristicIndex];
                     const characteristicName = getCharacteristicNameFromUUID(characteristic.uuid);
                     _console$5.assertWithError(
                         characteristicName,
@@ -691,6 +699,7 @@ class WebBluetoothConnectionManager extends ConnectionManager {
                     this.#characteristics.set(characteristicName, characteristic);
                     addEventListeners(characteristic, this.#boundBluetoothCharacteristicEventListeners);
                     if (characteristic.properties.read) {
+                        _console$5.log(`reading "${characteristicName}" characteristic...`);
                         await characteristic.readValue();
                     }
                     if (characteristic.properties.notify) {
@@ -700,10 +709,8 @@ class WebBluetoothConnectionManager extends ConnectionManager {
                         );
                         await characteristic.startNotifications();
                     }
-                });
-                await Promise.all(characteristicPromises);
-            });
-            await Promise.all(servicePromises);
+                }
+            }
             _console$5.log("fully connected");
 
             this.status = "connected";
