@@ -98,6 +98,10 @@ class WebBluetoothConnectionManager extends ConnectionManager {
             _console.log("getting characteristics...");
             for (const serviceIndex in services) {
                 const service = services[serviceIndex];
+                if (!service) {
+                    _console.error("service not found");
+                    continue;
+                }
                 const serviceName = getServiceNameFromUUID(service.uuid);
                 _console.assertWithError(serviceName, `no name found for service uuid "${service.uuid}"`);
                 _console.log(`got "${serviceName}" service`);
@@ -108,6 +112,10 @@ class WebBluetoothConnectionManager extends ConnectionManager {
                 _console.log("got characteristics for service", service, characteristics);
                 for (const characteristicIndex in characteristics) {
                     const characteristic = characteristics[characteristicIndex];
+                    if (!characteristic) {
+                        _console.error("characteristic not found");
+                        continue;
+                    }
                     const characteristicName = getCharacteristicNameFromUUID(characteristic.uuid);
                     _console.assertWithError(
                         characteristicName,
@@ -135,13 +143,14 @@ class WebBluetoothConnectionManager extends ConnectionManager {
             this.status = "connected";
         } catch (error) {
             _console.error(error);
+            await this.disconnect();
             this.status = "not connected";
         }
     }
     async disconnect() {
         await super.disconnect();
         _console.log("disconnecting from device...");
-        this.server.disconnect();
+        this.server?.disconnect();
     }
 
     /** @param {Event} event */
