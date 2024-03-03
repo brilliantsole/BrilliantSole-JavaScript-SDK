@@ -209,10 +209,33 @@ class BrilliantSole {
         return this.connectionManager?.reconnect();
     }
 
+    #reconnectOnDisconnection = false;
+    get reconnectOnDisconnection() {
+        return this.#reconnectOnDisconnection;
+    }
+    set reconnectOnDisconnection(newReconnectOnDisconnection) {
+        _console.assertTypeWithError(newReconnectOnDisconnection, "boolean");
+        this.#reconnectOnDisconnection = newReconnectOnDisconnection;
+    }
+    /** @type {number?} */
+    #reconnectIntervalId;
+
     get connectionType() {
         return this.connectionManager?.type;
     }
     async disconnect() {
+        this.#assertIsConnected();
+        if (this.reconnectOnDisconnection) {
+            this.reconnectOnDisconnection = false;
+            this.addEventListener(
+                "isConnected",
+                () => {
+                    this.reconnectOnDisconnection = true;
+                },
+                { once: true }
+            );
+        }
+
         return this.connectionManager.disconnect();
     }
 
@@ -223,6 +246,25 @@ class BrilliantSole {
     /** @param {BrilliantSoleConnectionStatus} connectionStatus */
     #onConnectionStatusUpdated(connectionStatus) {
         _console.log({ connectionStatus });
+
+        if (connectionStatus == "not connected") {
+            //this.#clear();
+
+            if (this.canReconnect && this.reconnectOnDisconnection) {
+                _console.log("starting reconnect interval...");
+                this.#reconnectIntervalId = setInterval(() => {
+                    _console.log("attempting reconnect...");
+                    this.reconnect();
+                }, 1000);
+            }
+        } else {
+            if (this.#reconnectIntervalId != undefined) {
+                _console.log("clearing reconnect interval");
+                clearInterval(this.#reconnectIntervalId);
+                this.#reconnectIntervalId = undefined;
+            }
+        }
+
         this.#dispatchEvent({ type: "connectionStatus", message: { connectionStatus } });
         this.#dispatchEvent({ type: this.connectionStatus });
 
@@ -231,10 +273,6 @@ class BrilliantSole {
             case "not connected":
                 this.#dispatchEvent({ type: "isConnected", message: { isConnected: this.isConnected } });
                 break;
-        }
-
-        if (connectionStatus == "not connected") {
-            //this.#clear();
         }
     }
 

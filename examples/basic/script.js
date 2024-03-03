@@ -55,6 +55,12 @@ brilliantSole.addEventListener("not connected", () => {
     toggleConnectionButton.disabled = false;
 });
 
+/** @type {HTMLInputElement} */
+const reconnectOnDisconnectionCheckbox = document.getElementById("reconnectOnDisconnection");
+reconnectOnDisconnectionCheckbox.addEventListener("input", () => {
+    brilliantSole.reconnectOnDisconnection = reconnectOnDisconnectionCheckbox.checked;
+});
+
 // DEVICE INFORMATION
 
 /** @type {HTMLPreElement} */
