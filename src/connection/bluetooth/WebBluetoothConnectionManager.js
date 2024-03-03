@@ -135,8 +135,8 @@ class WebBluetoothConnectionManager extends ConnectionManager {
             this.status = "connected";
         } catch (error) {
             _console.error(error);
-            await this.disconnect();
             this.status = "not connected";
+            await this.disconnect();
         }
     }
     async disconnect() {
