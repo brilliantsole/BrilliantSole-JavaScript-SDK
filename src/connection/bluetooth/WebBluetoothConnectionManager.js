@@ -98,10 +98,6 @@ class WebBluetoothConnectionManager extends ConnectionManager {
             _console.log("getting characteristics...");
             for (const serviceIndex in services) {
                 const service = services[serviceIndex];
-                if (!service) {
-                    _console.error("service not found");
-                    continue;
-                }
                 const serviceName = getServiceNameFromUUID(service.uuid);
                 _console.assertWithError(serviceName, `no name found for service uuid "${service.uuid}"`);
                 _console.log(`got "${serviceName}" service`);
@@ -112,10 +108,6 @@ class WebBluetoothConnectionManager extends ConnectionManager {
                 _console.log("got characteristics for service", service, characteristics);
                 for (const characteristicIndex in characteristics) {
                     const characteristic = characteristics[characteristicIndex];
-                    if (!characteristic) {
-                        _console.error("characteristic not found");
-                        continue;
-                    }
                     const characteristicName = getCharacteristicNameFromUUID(characteristic.uuid);
                     _console.assertWithError(
                         characteristicName,
@@ -125,11 +117,11 @@ class WebBluetoothConnectionManager extends ConnectionManager {
                     characteristic._name = characteristicName;
                     this.#characteristics.set(characteristicName, characteristic);
                     addEventListeners(characteristic, this.#boundBluetoothCharacteristicEventListeners);
-                    if (characteristic.properties.read) {
+                    if (characteristic.properties?.read) {
                         _console.log(`reading "${characteristicName}" characteristic...`);
                         await characteristic.readValue();
                     }
-                    if (characteristic.properties.notify) {
+                    if (characteristic.properties?.notify) {
                         _console.log(
                             `starting notifications for "${characteristicName}" characteristic`,
                             characteristic
