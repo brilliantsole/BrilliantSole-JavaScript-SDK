@@ -7,6 +7,7 @@ import SensorDataManager from "./SensorDataManager.js";
 /**
  * @typedef BrilliantSoleSensorConfiguration
  * @type {object}
+ * @property {number} pressure
  * @property {number} accelerometer
  * @property {number} gravity
  * @property {number} linearAcceleration

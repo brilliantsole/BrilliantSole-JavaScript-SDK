@@ -90,8 +90,9 @@ class BrilliantSole {
             return WebBluetoothConnectionManager;
         }
         if (isInNode) {
-            return NobleConnectionManager;
+            //return NobleConnectionManager;
         }
+        return WebBluetoothConnectionManager;
     }
 
     // EVENT DISPATCHER
@@ -331,6 +332,11 @@ class BrilliantSole {
                 }
                 _console.log({ pnpId });
                 this.#updateDeviceInformation({ pnpId });
+                break;
+            case "serialNumber":
+                const serialNumber = this.#textDecoder.decode(dataView);
+                _console.log({ serialNumber });
+                // will only be used for node.js
                 break;
 
             case "batteryLevel":

@@ -49,7 +49,8 @@ class Console {
     #levelFlags = {
         log: isInDev,
         warn: isInDev,
-        error: isInDev,
+        assert: true,
+        error: true,
     };
 
     /**

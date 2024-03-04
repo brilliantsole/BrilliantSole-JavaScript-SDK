@@ -81,10 +81,10 @@ class WebBluetoothConnectionManager extends ConnectionManager {
         try {
             const device = await navigator.bluetooth.requestDevice({
                 filters: [{ services: serviceUUIDs }],
-                optionalServices: optionalServiceUUIDs,
+                optionalServices: isInBrowser ? optionalServiceUUIDs : [],
             });
 
-            _console.log("got BluetoothDevice", device);
+            _console.log("got BluetoothDevice");
             this.device = device;
 
             _console.log("connecting to device...");
@@ -105,7 +105,7 @@ class WebBluetoothConnectionManager extends ConnectionManager {
     async #getServicesAndCharacteristics() {
         _console.log("getting services...");
         const services = await this.server.getPrimaryServices();
-        _console.log("got services", services);
+        _console.log("got services", services.length);
 
         _console.log("getting characteristics...");
         for (const serviceIndex in services) {
@@ -113,11 +113,15 @@ class WebBluetoothConnectionManager extends ConnectionManager {
             const serviceName = getServiceNameFromUUID(service.uuid);
             _console.assertWithError(serviceName, `no name found for service uuid "${service.uuid}"`);
             _console.log(`got "${serviceName}" service`);
+            if (serviceName == "dfu") {
+                _console.log("skipping dfu service");
+                continue;
+            }
             service._name = serviceName;
             this.#services.set(serviceName, service);
-            _console.log("getting characteristics for service", service);
+            _console.log(`getting characteristics for "${serviceName}" service`);
             const characteristics = await service.getCharacteristics();
-            _console.log("got characteristics for service", service, characteristics);
+            _console.log(`got characteristics for "${serviceName}" service`);
             for (const characteristicIndex in characteristics) {
                 const characteristic = characteristics[characteristicIndex];
                 const characteristicName = getCharacteristicNameFromUUID(characteristic.uuid);
@@ -134,7 +138,7 @@ class WebBluetoothConnectionManager extends ConnectionManager {
                     await characteristic.readValue();
                 }
                 if (characteristic.properties.notify) {
-                    _console.log(`starting notifications for "${characteristicName}" characteristic`, characteristic);
+                    _console.log(`starting notifications for "${characteristicName}" characteristic`);
                     await characteristic.startNotifications();
                 }
             }
@@ -148,7 +152,7 @@ class WebBluetoothConnectionManager extends ConnectionManager {
 
     /** @param {Event} event */
     #onCharacteristicvaluechanged(event) {
-        _console.log("oncharacteristicvaluechanged", event);
+        _console.log("oncharacteristicvaluechanged");
 
         /** @type {BluetoothRemoteGATTCharacteristic} */
         const characteristic = event.target;
@@ -159,7 +163,7 @@ class WebBluetoothConnectionManager extends ConnectionManager {
             `no name found for characteristic with uuid "${characteristic.uuid}"`
         );
 
-        _console.log(`oncharacteristicvaluechanged for "${characteristicName}" characteristic`, event);
+        _console.log(`oncharacteristicvaluechanged for "${characteristicName}" characteristic`);
         const dataView = characteristic.value;
         _console.assertWithError(dataView, `no data found for "${characteristicName}" characteristic`);
         _console.log(`data for "${characteristicName}" characteristic`, Array.from(new Uint8Array(dataView.buffer)));
@@ -183,6 +187,9 @@ class WebBluetoothConnectionManager extends ConnectionManager {
             case "pnpId":
                 this.onMessageReceived("pnpId", dataView);
                 break;
+            case "serialNumber":
+                this.onMessageReceived("serialNumber", dataView);
+                break;
             case "batteryLevel":
                 this.onMessageReceived("batteryLevel", dataView);
                 break;
@@ -205,7 +212,7 @@ class WebBluetoothConnectionManager extends ConnectionManager {
 
     /** @param {Event} event */
     #onGattserverdisconnected(event) {
-        _console.log("gattserverdisconnected", event);
+        _console.log("gattserverdisconnected");
         this.status = "not connected";
     }
 

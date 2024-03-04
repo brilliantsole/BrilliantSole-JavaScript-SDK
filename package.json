@@ -15,7 +15,6 @@
     "scripts": {
         "build": "rollup -c",
         "dev": "rollup -c -w",
-        "test": "node test/test.js",
         "server": "node server.cjs"
     },
     "repository": "https://github.com/zakaton/BrilliantSole.js.git",

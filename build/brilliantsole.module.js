@@ -60,7 +60,8 @@ class Console {
     #levelFlags = {
         log: isInDev,
         warn: isInDev,
-        error: isInDev,
+        assert: true,
+        error: true,
     };
 
     /**
@@ -167,7 +168,7 @@ function setAllConsoleLevelFlags(levelFlags) {
     Console.setAllLevelFlags(levelFlags);
 }
 
-const _console$7 = createConsole("EventDispatcher", { log: false });
+const _console$6 = createConsole("EventDispatcher", { log: false });
 
 /**
  * @typedef EventDispatcherEvent
@@ -190,7 +191,7 @@ class EventDispatcher {
      * @param {string[]?} eventTypes
      */
     constructor(eventTypes) {
-        _console$7.assertWithError(Array.isArray(eventTypes) || eventTypes == undefined, "eventTypes must be an array");
+        _console$6.assertWithError(Array.isArray(eventTypes) || eventTypes == undefined, "eventTypes must be an array");
         this.#eventTypes = eventTypes;
     }
 
@@ -213,7 +214,7 @@ class EventDispatcher {
      * @throws {Error}
      */
     #assertValidEventType(type) {
-        _console$7.assertWithError(this.#isValidEventType(type), `invalid event type "${type}"`);
+        _console$6.assertWithError(this.#isValidEventType(type), `invalid event type "${type}"`);
     }
 
     /** @type {Object.<string, [function]?>?} */
@@ -225,7 +226,7 @@ class EventDispatcher {
      * @param {EventDispatcherOptions?} options
      */
     addEventListener(type, listener, options) {
-        _console$7.log(`adding "${type}" eventListener`, listener);
+        _console$6.log(`adding "${type}" eventListener`, listener);
         this.#assertValidEventType(type);
 
         if (!this.#listeners) this.#listeners = {};
@@ -257,7 +258,7 @@ class EventDispatcher {
      * @throws {Error} if type is not valid
      */
     hasEventListener(type, listener) {
-        _console$7.log(`has "${type}" eventListener?`, listener);
+        _console$6.log(`has "${type}" eventListener?`, listener);
         this.#assertValidEventType(type);
         return this.#listeners?.[type]?.includes(listener);
     }
@@ -269,7 +270,7 @@ class EventDispatcher {
      * @throws {Error} if type is not valid
      */
     removeEventListener(type, listener) {
-        _console$7.log(`removing "${type}" eventListener`, listener);
+        _console$6.log(`removing "${type}" eventListener`, listener);
         this.#assertValidEventType(type);
         if (this.hasEventListener(type, listener)) {
             const index = this.#listeners[type].indexOf(listener);
@@ -323,9 +324,9 @@ function removeEventListeners(target, boundEventListeners) {
 
 /** @typedef {"web bluetooth" | "noble"} BrilliantSoleConnectionType */
 /** @typedef {"not connected" | "connecting" | "connected" | "disconnecting"} BrilliantSoleConnectionStatus */
-/** @typedef {"manufacturerName" | "modelNumber" | "softwareRevision" | "hardwareRevision" | "firmwareRevision" | "pnpId" | "batteryLevel" | "getName" | "setName" | "getType" | "setType" | "getSensorConfiguration" | "setSensorConfiguration" | "sensorData" | "triggerVibration"} BrilliantSoleConnectionMessageType */
+/** @typedef {"manufacturerName" | "modelNumber" | "softwareRevision" | "hardwareRevision" | "firmwareRevision" | "pnpId" | "serialNumber" | "batteryLevel" | "getName" | "setName" | "getType" | "setType" | "getSensorConfiguration" | "setSensorConfiguration" | "sensorData" | "triggerVibration"} BrilliantSoleConnectionMessageType */
 
-const _console$6 = createConsole("ConnectionManager");
+const _console$5 = createConsole("ConnectionManager");
 
 /**
  * @callback BrilliantSoleConnectionStatusCallback
@@ -372,12 +373,12 @@ class ConnectionManager {
 
     /** @throws {Error} if not supported */
     #assertIsSupported() {
-        _console$6.assertWithError(this.isSupported, `${this.constructor.name} is not supported`);
+        _console$5.assertWithError(this.isSupported, `${this.constructor.name} is not supported`);
     }
 
     /** @throws {Error} if abstract class */
     #assertIsSubclass() {
-        _console$6.assertWithError(this.constructor != ConnectionManager, `${this.constructor.name} must be subclassed`);
+        _console$5.assertWithError(this.constructor != ConnectionManager, `${this.constructor.name} must be subclassed`);
     }
 
     constructor() {
@@ -392,12 +393,12 @@ class ConnectionManager {
     }
     /** @protected */
     set status(newConnectionStatus) {
-        _console$6.assertTypeWithError(newConnectionStatus, "string");
+        _console$5.assertTypeWithError(newConnectionStatus, "string");
         if (this.#status == newConnectionStatus) {
-            _console$6.warn("same connection status");
+            _console$5.warn("same connection status");
             return;
         }
-        _console$6.log(`new connection status "${newConnectionStatus}"`);
+        _console$5.log(`new connection status "${newConnectionStatus}"`);
         this.#status = newConnectionStatus;
         this.onStatusUpdated?.(this.status);
     }
@@ -408,19 +409,19 @@ class ConnectionManager {
 
     /** @throws {Error} if connected */
     #assertIsNotConnected() {
-        _console$6.assertWithError(!this.isConnected, "device is already connected");
+        _console$5.assertWithError(!this.isConnected, "device is already connected");
     }
     /** @throws {Error} if connecting */
     #assertIsNotConnecting() {
-        _console$6.assertWithError(this.status != "connecting", "device is already connecting");
+        _console$5.assertWithError(this.status != "connecting", "device is already connecting");
     }
     /** @throws {Error} if not connected */
     #assertIsConnected() {
-        _console$6.assertWithError(this.isConnected, "device is not connected");
+        _console$5.assertWithError(this.isConnected, "device is not connected");
     }
     /** @throws {Error} if disconnecting */
     #assertIsNotDisconnecting() {
-        _console$6.assertWithError(this.status != "disconnecting", "device is already disconnecting");
+        _console$5.assertWithError(this.status != "disconnecting", "device is already disconnecting");
     }
     /** @throws {Error} if not connected or is disconnecting */
     #assertIsConnectedAndNotDisconnecting() {
@@ -440,7 +441,7 @@ class ConnectionManager {
     async reconnect() {
         this.#assertIsNotConnected();
         this.#assertIsNotConnecting();
-        _console$6.assert(this.canReconnect, "unable to reconnect");
+        _console$5.assert(this.canReconnect, "unable to reconnect");
         this.status = "connecting";
     }
     async disconnect() {
@@ -455,7 +456,7 @@ class ConnectionManager {
      */
     async sendMessage(messageType, data) {
         this.#assertIsConnectedAndNotDisconnecting();
-        _console$6.log("sending message", { messageType, data });
+        _console$5.log("sending message", { messageType, data });
     }
 }
 
@@ -489,8 +490,8 @@ function stringToServiceUUID(identifier) {
     return BluetoothUUID.getService(identifier);
 }
 
-/** @typedef {"deviceInformation" | "battery" | "main"} BrilliantSoleBluetoothServiceName */
-/** @typedef { "manufacturerName" | "modelNumber" | "hardwareRevision" | "firmwareRevision" | "softwareRevision" | "pnpId" | "batteryLevel" | "name" | "type" | "sensorConfiguration" | "sensorData" | "vibration"} BrilliantSoleBluetoothCharacteristicName */
+/** @typedef {"deviceInformation" | "battery" | "main" | "dfu"} BrilliantSoleBluetoothServiceName */
+/** @typedef { "manufacturerName" | "modelNumber" | "hardwareRevision" | "firmwareRevision" | "softwareRevision" | "pnpId" | "serialNumber" | "batteryLevel" | "name" | "type" | "sensorConfiguration" | "sensorData" | "vibration"} BrilliantSoleBluetoothCharacteristicName */
 
 const bluetoothUUIDs = Object.freeze({
     services: {
@@ -515,6 +516,9 @@ const bluetoothUUIDs = Object.freeze({
                 pnpId: {
                     uuid: stringToCharacteristicUUID("pnp_id"),
                 },
+                serialNumber: {
+                    uuid: stringToCharacteristicUUID("serial_number_string"),
+                },
             },
         },
         battery: {
@@ -534,6 +538,9 @@ const bluetoothUUIDs = Object.freeze({
                 sensorData: { uuid: generateBluetoothUUID(4) },
                 vibration: { uuid: generateBluetoothUUID(5) },
             },
+        },
+        dfu: {
+            uuid: "8d53dc1d-1db7-4cd3-868b-8a527460aa84",
         },
     },
 
@@ -588,7 +595,7 @@ function getCharacteristicNameFromUUID(characteristicUUID) {
     return bluetoothUUIDs.getCharacteristicNameFromUUID(characteristicUUID);
 }
 
-const _console$5 = createConsole("WebBluetoothConnectionManager", { log: true });
+const _console$4 = createConsole("WebBluetoothConnectionManager", { log: true });
 
 /** @typedef {import("./bluetoothUUIDs.js").BrilliantSoleBluetoothCharacteristicName} BrilliantSoleBluetoothCharacteristicName */
 /** @typedef {import("./bluetoothUUIDs.js").BrilliantSoleBluetoothServiceName} BrilliantSoleBluetoothServiceName */
@@ -629,7 +636,7 @@ class WebBluetoothConnectionManager extends ConnectionManager {
     }
     set device(newDevice) {
         if (this.#device == newDevice) {
-            _console$5.warn("tried to assign the same BluetoothDevice");
+            _console$4.warn("tried to assign the same BluetoothDevice");
             return;
         }
         if (this.#device) {
@@ -660,87 +667,92 @@ class WebBluetoothConnectionManager extends ConnectionManager {
         try {
             const device = await navigator$1.bluetooth.requestDevice({
                 filters: [{ services: serviceUUIDs }],
-                optionalServices: optionalServiceUUIDs,
+                optionalServices: isInBrowser ? optionalServiceUUIDs : [],
             });
 
-            _console$5.log("got BluetoothDevice", device);
+            _console$4.log("got BluetoothDevice");
             this.device = device;
 
-            _console$5.log("connecting to device...");
+            _console$4.log("connecting to device...");
             const server = await this.device.gatt.connect();
-            _console$5.log(`connected to device? ${server.connected}`);
+            _console$4.log(`connected to device? ${server.connected}`);
 
-            _console$5.log("getting services...");
-            const services = await server.getPrimaryServices();
-            _console$5.log("got services", services);
+            await this.#getServicesAndCharacteristics();
 
-            _console$5.log("getting characteristics...");
-            for (const serviceIndex in services) {
-                const service = services[serviceIndex];
-                const serviceName = getServiceNameFromUUID(service.uuid);
-                _console$5.assertWithError(serviceName, `no name found for service uuid "${service.uuid}"`);
-                _console$5.log(`got "${serviceName}" service`);
-                service._name = serviceName;
-                this.#services.set(serviceName, service);
-                _console$5.log("getting characteristics for service", service);
-                const characteristics = await service.getCharacteristics();
-                _console$5.log("got characteristics for service", service, characteristics);
-                for (const characteristicIndex in characteristics) {
-                    const characteristic = characteristics[characteristicIndex];
-                    const characteristicName = getCharacteristicNameFromUUID(characteristic.uuid);
-                    _console$5.assertWithError(
-                        characteristicName,
-                        `no name found for characteristic uuid "${characteristic.uuid}" in "${serviceName}" service`
-                    );
-                    _console$5.log(`got "${characteristicName}" characteristic in "${serviceName}" service`);
-                    characteristic._name = characteristicName;
-                    this.#characteristics.set(characteristicName, characteristic);
-                    addEventListeners(characteristic, this.#boundBluetoothCharacteristicEventListeners);
-                    if (characteristic.properties.read) {
-                        _console$5.log(`reading "${characteristicName}" characteristic...`);
-                        await characteristic.readValue();
-                    }
-                    if (characteristic.properties.notify) {
-                        _console$5.log(
-                            `starting notifications for "${characteristicName}" characteristic`,
-                            characteristic
-                        );
-                        await characteristic.startNotifications();
-                    }
-                }
-            }
-            _console$5.log("fully connected");
+            _console$4.log("fully connected");
 
             this.status = "connected";
         } catch (error) {
-            _console$5.error(error);
-            await this.disconnect();
+            _console$4.error(error);
             this.status = "not connected";
+            this.server?.disconnect();
+        }
+    }
+    async #getServicesAndCharacteristics() {
+        _console$4.log("getting services...");
+        const services = await this.server.getPrimaryServices();
+        _console$4.log("got services", services.length);
+
+        _console$4.log("getting characteristics...");
+        for (const serviceIndex in services) {
+            const service = services[serviceIndex];
+            const serviceName = getServiceNameFromUUID(service.uuid);
+            _console$4.assertWithError(serviceName, `no name found for service uuid "${service.uuid}"`);
+            _console$4.log(`got "${serviceName}" service`);
+            if (serviceName == "dfu") {
+                _console$4.log("skipping dfu service");
+                continue;
+            }
+            service._name = serviceName;
+            this.#services.set(serviceName, service);
+            _console$4.log(`getting characteristics for "${serviceName}" service`);
+            const characteristics = await service.getCharacteristics();
+            _console$4.log(`got characteristics for "${serviceName}" service`);
+            for (const characteristicIndex in characteristics) {
+                const characteristic = characteristics[characteristicIndex];
+                const characteristicName = getCharacteristicNameFromUUID(characteristic.uuid);
+                _console$4.assertWithError(
+                    characteristicName,
+                    `no name found for characteristic uuid "${characteristic.uuid}" in "${serviceName}" service`
+                );
+                _console$4.log(`got "${characteristicName}" characteristic in "${serviceName}" service`);
+                characteristic._name = characteristicName;
+                this.#characteristics.set(characteristicName, characteristic);
+                addEventListeners(characteristic, this.#boundBluetoothCharacteristicEventListeners);
+                if (characteristic.properties.read) {
+                    _console$4.log(`reading "${characteristicName}" characteristic...`);
+                    await characteristic.readValue();
+                }
+                if (characteristic.properties.notify) {
+                    _console$4.log(`starting notifications for "${characteristicName}" characteristic`);
+                    await characteristic.startNotifications();
+                }
+            }
         }
     }
     async disconnect() {
         await super.disconnect();
-        _console$5.log("disconnecting from device...");
+        _console$4.log("disconnecting from device...");
         this.server?.disconnect();
     }
 
     /** @param {Event} event */
     #onCharacteristicvaluechanged(event) {
-        _console$5.log("oncharacteristicvaluechanged", event);
+        _console$4.log("oncharacteristicvaluechanged");
 
         /** @type {BluetoothRemoteGATTCharacteristic} */
         const characteristic = event.target;
         /** @type {BrilliantSoleBluetoothCharacteristicName} */
         const characteristicName = characteristic._name;
-        _console$5.assertWithError(
+        _console$4.assertWithError(
             characteristicName,
             `no name found for characteristic with uuid "${characteristic.uuid}"`
         );
 
-        _console$5.log(`oncharacteristicvaluechanged for "${characteristicName}" characteristic`, event);
+        _console$4.log(`oncharacteristicvaluechanged for "${characteristicName}" characteristic`);
         const dataView = characteristic.value;
-        _console$5.assertWithError(dataView, `no data found for "${characteristicName}" characteristic`);
-        _console$5.log(`data for "${characteristicName}" characteristic`, Array.from(new Uint8Array(dataView.buffer)));
+        _console$4.assertWithError(dataView, `no data found for "${characteristicName}" characteristic`);
+        _console$4.log(`data for "${characteristicName}" characteristic`, Array.from(new Uint8Array(dataView.buffer)));
 
         switch (characteristicName) {
             case "manufacturerName":
@@ -760,6 +772,9 @@ class WebBluetoothConnectionManager extends ConnectionManager {
                 break;
             case "pnpId":
                 this.onMessageReceived("pnpId", dataView);
+                break;
+            case "serialNumber":
+                this.onMessageReceived("serialNumber", dataView);
                 break;
             case "batteryLevel":
                 this.onMessageReceived("batteryLevel", dataView);
@@ -783,7 +798,7 @@ class WebBluetoothConnectionManager extends ConnectionManager {
 
     /** @param {Event} event */
     #onGattserverdisconnected(event) {
-        _console$5.log("gattserverdisconnected", event);
+        _console$4.log("gattserverdisconnected");
         this.status = "not connected";
     }
 
@@ -812,7 +827,7 @@ class WebBluetoothConnectionManager extends ConnectionManager {
                 throw Error(`uncaught messageType "${messageType}"`);
         }
 
-        _console$5.assert(characteristic, "no characteristic found");
+        _console$4.assert(characteristic, "no characteristic found");
         await characteristic.writeValueWithResponse(data);
         if (characteristic.properties.read) {
             await characteristic.readValue();
@@ -821,91 +836,27 @@ class WebBluetoothConnectionManager extends ConnectionManager {
 
     /** @type {boolean} */
     get canReconnect() {
-        return Boolean(this.server);
+        return this.server && !this.server.connected;
     }
     async reconnect() {
         await super.reconnect();
-        _console$5.log("attempting to reconnect...");
+        _console$4.log("attempting to reconnect...");
         await this.server.connect();
         if (this.isConnected) {
-            _console$5.log("successfully reconnected!");
+            _console$4.log("successfully reconnected!");
+            await this.#getServicesAndCharacteristics();
             this.status = "connected";
         } else {
-            _console$5.log("unable to reconnect");
+            _console$4.log("unable to reconnect");
             this.status = "not connected";
         }
     }
 }
 
-const _console$4 = createConsole("NobleConnectionManager", { log: true });
+createConsole("NobleConnectionManager", { log: true });
 
 if (isInNode) {
     require("@abandonware/noble");
-}
-
-/** @typedef {import("./bluetoothUUIDs.js").BrilliantSoleBluetoothCharacteristicName} BrilliantSoleBluetoothCharacteristicName */
-/** @typedef {import("./bluetoothUUIDs.js").BrilliantSoleBluetoothServiceName} BrilliantSoleBluetoothServiceName */
-
-/** @typedef {import("../ConnectionManager.js").BrilliantSoleConnectionMessageType} BrilliantSoleConnectionMessageType */
-
-class NobleConnectionManager extends ConnectionManager {
-    static get isSupported() {
-        return isInNode;
-    }
-    /** @type {import("../ConnectionManager.js").BrilliantSoleConnectionType} */
-    static get type() {
-        return "noble";
-    }
-
-    get isConnected() {
-        // FILL
-        return false;
-    }
-
-    async connect() {
-        await super.connect();
-        // FILL
-    }
-    async disconnect() {
-        await super.disconnect();
-        _console$4.log("disconnecting from device...");
-        // FILL
-    }
-
-    /**
-     * @param {BrilliantSoleConnectionMessageType} messageType
-     * @param {DataView|ArrayBuffer} data
-     */
-    async sendMessage(messageType, data) {
-        await super.sendMessage(...arguments);
-        switch (messageType) {
-            case "setName":
-                // FILL
-                break;
-            case "setType":
-                // FILL
-                break;
-            case "setSensorConfiguration":
-                // FILL
-                break;
-            case "triggerVibration":
-                // FILL
-                break;
-            default:
-                throw Error(`uncaught messageType "${messageType}"`);
-        }
-    }
-
-    /** @type {boolean} */
-    get canReconnect() {
-        // FILL
-        return false;
-    }
-    async reconnect() {
-        await super.reconnect();
-        _console$4.log("attempting to reconnect...");
-        // FILL
-    }
 }
 
 /** @typedef {import("../BrilliantSole.js").BrilliantSoleDeviceType} BrilliantSoleDeviceType */
@@ -1018,12 +969,12 @@ class SensorDataManager {
                 case "gyroscope":
                 case "magnetometer":
                     value = this.#parseVector3(dataView, byteOffset, sensorType);
-                    byteOffset += 7;
+                    byteOffset += 6;
                     break;
                 case "gameRotation":
                 case "rotation":
                     value = this.#parseQuaternion(dataView, byteOffset, sensorType);
-                    byteOffset += 10;
+                    byteOffset += 8;
                     break;
                 case "barometer":
                     // FILL
@@ -1119,6 +1070,7 @@ class SensorDataManager {
 /**
  * @typedef BrilliantSoleSensorConfiguration
  * @type {object}
+ * @property {number} pressure
  * @property {number} accelerometer
  * @property {number} gravity
  * @property {number} linearAcceleration
@@ -1896,9 +1848,7 @@ class BrilliantSole {
         if (isInBrowser) {
             return WebBluetoothConnectionManager;
         }
-        if (isInNode) {
-            return NobleConnectionManager;
-        }
+        return WebBluetoothConnectionManager;
     }
 
     // EVENT DISPATCHER
@@ -2016,10 +1966,33 @@ class BrilliantSole {
         return this.connectionManager?.reconnect();
     }
 
+    #reconnectOnDisconnection = false;
+    get reconnectOnDisconnection() {
+        return this.#reconnectOnDisconnection;
+    }
+    set reconnectOnDisconnection(newReconnectOnDisconnection) {
+        _console.assertTypeWithError(newReconnectOnDisconnection, "boolean");
+        this.#reconnectOnDisconnection = newReconnectOnDisconnection;
+    }
+    /** @type {number?} */
+    #reconnectIntervalId;
+
     get connectionType() {
         return this.connectionManager?.type;
     }
     async disconnect() {
+        this.#assertIsConnected();
+        if (this.reconnectOnDisconnection) {
+            this.reconnectOnDisconnection = false;
+            this.addEventListener(
+                "isConnected",
+                () => {
+                    this.reconnectOnDisconnection = true;
+                },
+                { once: true }
+            );
+        }
+
         return this.connectionManager.disconnect();
     }
 
@@ -2030,6 +2003,25 @@ class BrilliantSole {
     /** @param {BrilliantSoleConnectionStatus} connectionStatus */
     #onConnectionStatusUpdated(connectionStatus) {
         _console.log({ connectionStatus });
+
+        if (connectionStatus == "not connected") {
+            //this.#clear();
+
+            if (this.canReconnect && this.reconnectOnDisconnection) {
+                _console.log("starting reconnect interval...");
+                this.#reconnectIntervalId = setInterval(() => {
+                    _console.log("attempting reconnect...");
+                    this.reconnect();
+                }, 1000);
+            }
+        } else {
+            if (this.#reconnectIntervalId != undefined) {
+                _console.log("clearing reconnect interval");
+                clearInterval(this.#reconnectIntervalId);
+                this.#reconnectIntervalId = undefined;
+            }
+        }
+
         this.#dispatchEvent({ type: "connectionStatus", message: { connectionStatus } });
         this.#dispatchEvent({ type: this.connectionStatus });
 
@@ -2094,6 +2086,11 @@ class BrilliantSole {
                 }
                 _console.log({ pnpId });
                 this.#updateDeviceInformation({ pnpId });
+                break;
+            case "serialNumber":
+                const serialNumber = this.#textDecoder.decode(dataView);
+                _console.log({ serialNumber });
+                // will only be used for node.js
                 break;
 
             case "batteryLevel":

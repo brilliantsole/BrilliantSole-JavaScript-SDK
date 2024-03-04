@@ -30,8 +30,8 @@ function stringToServiceUUID(identifier) {
     return BluetoothUUID.getService(identifier);
 }
 
-/** @typedef {"deviceInformation" | "battery" | "main"} BrilliantSoleBluetoothServiceName */
-/** @typedef { "manufacturerName" | "modelNumber" | "hardwareRevision" | "firmwareRevision" | "softwareRevision" | "pnpId" | "batteryLevel" | "name" | "type" | "sensorConfiguration" | "sensorData" | "vibration"} BrilliantSoleBluetoothCharacteristicName */
+/** @typedef {"deviceInformation" | "battery" | "main" | "dfu"} BrilliantSoleBluetoothServiceName */
+/** @typedef { "manufacturerName" | "modelNumber" | "hardwareRevision" | "firmwareRevision" | "softwareRevision" | "pnpId" | "serialNumber" | "batteryLevel" | "name" | "type" | "sensorConfiguration" | "sensorData" | "vibration"} BrilliantSoleBluetoothCharacteristicName */
 
 const bluetoothUUIDs = Object.freeze({
     services: {
@@ -56,6 +56,9 @@ const bluetoothUUIDs = Object.freeze({
                 pnpId: {
                     uuid: stringToCharacteristicUUID("pnp_id"),
                 },
+                serialNumber: {
+                    uuid: stringToCharacteristicUUID("serial_number_string"),
+                },
             },
         },
         battery: {
@@ -75,6 +78,9 @@ const bluetoothUUIDs = Object.freeze({
                 sensorData: { uuid: generateBluetoothUUID(4) },
                 vibration: { uuid: generateBluetoothUUID(5) },
             },
+        },
+        dfu: {
+            uuid: "8d53dc1d-1db7-4cd3-868b-8a527460aa84",
         },
     },
 
