@@ -1728,16 +1728,18 @@
 	        ) {
 	            const waveformEffectSegmentLoopCount = waveformEffectSegments[index]?.loopCount || 0;
 	            if (index == 0 || index == 4) {
-	                dataArray[byteOffset++] = 0;
+	                dataArray[byteOffset] = 0;
 	            }
 	            const bitOffset = 2 * (index % 4);
 	            dataArray[byteOffset] |= waveformEffectSegmentLoopCount << bitOffset;
+	            if (index == 3 || index == 7) {
+	                byteOffset++;
+	            }
 	        }
 
 	        if (waveformEffectSequenceLoopCount != 0) {
 	            dataArray[byteOffset++] = waveformEffectSequenceLoopCount;
 	        }
-
 	        const dataView = new DataView(Uint8Array.from(dataArray).buffer);
 	        _console$1.log({ dataArray, dataView });
 	        return this.#createData(locations, "waveformEffect", dataView);

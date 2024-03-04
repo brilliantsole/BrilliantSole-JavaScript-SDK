@@ -1,5 +1,5 @@
-//import BrilliantSole from "../../build/brilliantsole.module.js";
-import BrilliantSole from "../../src/BrilliantSole.js";
+import BrilliantSole from "../../build/brilliantsole.module.js";
+//import BrilliantSole from "../../src/BrilliantSole.js";
 window.BrilliantSole = BrilliantSole;
 console.log({ BrilliantSole });
 
