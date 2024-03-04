@@ -35,7 +35,7 @@ brilliantSole.addEventListener("connectionStatus", () => {
         brilliantSole.setSensorConfiguration({ pressure: 20 });
     }
 });
-brilliantSole.connect();
+//brilliantSole.connect();
 brilliantSole.addEventListener("pressure", (event) => {
     console.log(event.message);
 });

@@ -5,7 +5,8 @@
 'use strict';
 
 /** @type {"__BRILLIANTSOLE__DEV__" | "__BRILLIANTSOLE__PROD__"} */
-const isInDev = "__BRILLIANTSOLE__PROD__" == "__BRILLIANTSOLE__DEV__";
+const __BRILLIANTSOLE__ENVIRONMENT__ = "__BRILLIANTSOLE__DEV__";
+const isInDev = __BRILLIANTSOLE__ENVIRONMENT__ == "__BRILLIANTSOLE__DEV__";
 
 // https://github.com/flexdinesh/browser-or-node/blob/master/src/index.ts
 const isInBrowser = typeof window !== "undefined" && window?.document !== "undefined";
@@ -101,6 +102,9 @@ class Console {
      */
     static create(type, levelFlags) {
         const console = this.#consoles[type] || new Console(type);
+        {
+            console.setLevelFlags(levelFlags);
+        }
         return console;
     }
 
@@ -928,6 +932,11 @@ class SensorDataManager {
 
     #timestampOffset = 0;
     #lastRawTimestamp = 0;
+    clearTimestamp() {
+        _console$3.log("clearing sensorDataManager timestamp data");
+        this.#timestampOffset = 0;
+        this.#lastRawTimestamp = 0;
+    }
 
     static #Uint16Max = 2 ** 16;
     get Uint16Max() {
@@ -1158,6 +1167,11 @@ class SensorConfigurationManager {
         });
         _console$2.log({ sensorConfigurationData: dataView });
         return dataView;
+    }
+
+    /** @param {BrilliantSoleSensorConfiguration} sensorConfiguration */
+    hasAtLeastOneNonZeroSensorRate(sensorConfiguration) {
+        return Object.values(sensorConfiguration).some((value) => value > 0);
     }
 }
 
@@ -2306,6 +2320,10 @@ class BrilliantSole {
     #updateSensorConfiguration(updatedSensorConfiguration) {
         this.#sensorConfiguration = updatedSensorConfiguration;
         _console.log({ updatedSensorConfiguration: this.#sensorConfiguration });
+        if (!this.#sensorConfigurationManager.hasAtLeastOneNonZeroSensorRate(this.sensorConfiguration)) {
+            _console.log("clearing sensorDataManager timestamp...");
+            this.#sensorDataManager.clearTimestamp();
+        }
         this.#dispatchEvent({
             type: "getSensorConfiguration",
             message: { sensorConfiguration: this.sensorConfiguration },

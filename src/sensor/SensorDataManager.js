@@ -67,6 +67,11 @@ class SensorDataManager {
 
     #timestampOffset = 0;
     #lastRawTimestamp = 0;
+    clearTimestamp() {
+        _console.log("clearing sensorDataManager timestamp data");
+        this.#timestampOffset = 0;
+        this.#lastRawTimestamp = 0;
+    }
 
     static #Uint16Max = 2 ** 16;
     get Uint16Max() {

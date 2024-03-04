@@ -550,6 +550,10 @@ class BrilliantSole {
     #updateSensorConfiguration(updatedSensorConfiguration) {
         this.#sensorConfiguration = updatedSensorConfiguration;
         _console.log({ updatedSensorConfiguration: this.#sensorConfiguration });
+        if (!this.#sensorConfigurationManager.hasAtLeastOneNonZeroSensorRate(this.sensorConfiguration)) {
+            _console.log("clearing sensorDataManager timestamp...");
+            this.#sensorDataManager.clearTimestamp();
+        }
         this.#dispatchEvent({
             type: "getSensorConfiguration",
             message: { sensorConfiguration: this.sensorConfiguration },

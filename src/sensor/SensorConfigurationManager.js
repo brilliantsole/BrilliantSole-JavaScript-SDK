@@ -94,6 +94,11 @@ class SensorConfigurationManager {
         _console.log({ sensorConfigurationData: dataView });
         return dataView;
     }
+
+    /** @param {BrilliantSoleSensorConfiguration} sensorConfiguration */
+    hasAtLeastOneNonZeroSensorRate(sensorConfiguration) {
+        return Object.values(sensorConfiguration).some((value) => value > 0);
+    }
 }
 
 export default SensorConfigurationManager;
