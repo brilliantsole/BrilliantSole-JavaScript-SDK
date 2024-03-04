@@ -4,6 +4,8 @@ import replace from "@rollup/plugin-replace";
 import resolve from "@rollup/plugin-node-resolve";
 import commonjs from "@rollup/plugin-commonjs";
 
+const production = !process.env.ROLLUP_WATCH;
+
 function header() {
     return {
         renderChunk(code) {
@@ -31,7 +33,11 @@ function replaceEnvironment() {
     });
 }
 
-const _plugins = [replaceEnvironment(), header()];
+const _plugins = [header()];
+
+if (production) {
+    _plugins.push(replaceEnvironment());
+}
 
 const builds = [
     {
