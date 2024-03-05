@@ -1,9 +1,9 @@
-import BrilliantSole from "../../build/brilliantsole.module.js";
-//import BrilliantSole from "../../src/BrilliantSole.js";
-window.BrilliantSole = BrilliantSole;
-console.log({ BrilliantSole });
+import { BrilliantSoleDevice } from "../../build/brilliantsole.module.js";
+//import BrilliantSoleDevice from "../../src/BrilliantSoleDevice.js";
+window.BrilliantSoleDevice = BrilliantSoleDevice;
+console.log(BrilliantSoleDevice);
 
-const brilliantSole = new BrilliantSole();
+const brilliantSole = new BrilliantSoleDevice();
 console.log({ brilliantSole });
 window.brilliantSole = brilliantSole;
 
@@ -89,8 +89,8 @@ brilliantSole.addEventListener("getName", () => {
 
 /** @type {HTMLInputElement} */
 const setNameInput = document.getElementById("setNameInput");
-setNameInput.minLength = BrilliantSole.MinNameLength;
-setNameInput.maxLength = BrilliantSole.MaxNameLength;
+setNameInput.minLength = BrilliantSoleDevice.MinNameLength;
+setNameInput.maxLength = BrilliantSoleDevice.MaxNameLength;
 
 /** @type {HTMLButtonElement} */
 const setNameButton = document.getElementById("setNameButton");
@@ -129,7 +129,7 @@ const setTypeButton = document.getElementById("setTypeButton");
 const setTypeSelect = document.getElementById("setTypeSelect");
 /** @type {HTMLOptGroupElement} */
 const setTypeSelectOptgroup = setTypeSelect.querySelector("optgroup");
-BrilliantSole.Types.forEach((type) => {
+BrilliantSoleDevice.Types.forEach((type) => {
     setTypeSelectOptgroup.appendChild(new Option(type));
 });
 
@@ -161,7 +161,7 @@ brilliantSole.addEventListener("getSensorConfiguration", () => {
 
 /** @type {HTMLTemplateElement} */
 const sensorTypeConfigurationTemplate = document.getElementById("sensorTypeConfigurationTemplate");
-BrilliantSole.SensorTypes.forEach((sensorType) => {
+BrilliantSoleDevice.SensorTypes.forEach((sensorType) => {
     const sensorTypeConfigurationContainer = sensorTypeConfigurationTemplate.content
         .cloneNode(true)
         .querySelector(".sensorTypeConfiguration");
@@ -170,8 +170,8 @@ BrilliantSole.SensorTypes.forEach((sensorType) => {
     /** @type {HTMLInputElement} */
     const sensorRateInput = sensorTypeConfigurationContainer.querySelector(".sensorRate");
     sensorRateInput.value = 0;
-    sensorRateInput.max = BrilliantSole.MaxSensorRate;
-    sensorRateInput.step = BrilliantSole.SensorRateStep;
+    sensorRateInput.max = BrilliantSoleDevice.MaxSensorRate;
+    sensorRateInput.step = BrilliantSoleDevice.SensorRateStep;
     sensorRateInput.addEventListener("input", () => {
         const sensorRate = Number(sensorRateInput.value);
         console.log({ sensorType, sensorRate });
@@ -197,7 +197,7 @@ brilliantSole.addEventListener("isConnected", () => {
 
 /** @type {HTMLTemplateElement} */
 const sensorTypeDataTemplate = document.getElementById("sensorTypeDataTemplate");
-BrilliantSole.SensorTypes.forEach((sensorType) => {
+BrilliantSoleDevice.SensorTypes.forEach((sensorType) => {
     const sensorTypeDataContainer = sensorTypeDataTemplate.content.cloneNode(true).querySelector(".sensorTypeData");
     sensorTypeDataContainer.querySelector(".sensorType").innerText = sensorType;
 
@@ -220,7 +220,7 @@ const vibrationTemplate = document.getElementById("vibrationTemplate");
     const waveformEffectSequenceLoopCountInput = vibrationTemplate.content.querySelector(
         ".waveformEffect .sequenceLoopCount"
     );
-    waveformEffectSequenceLoopCountInput.max = BrilliantSole.MaxVibrationWaveformEffectSequenceLoopCount;
+    waveformEffectSequenceLoopCountInput.max = BrilliantSoleDevice.MaxVibrationWaveformEffectSequenceLoopCount;
 }
 /** @type {HTMLTemplateElement} */
 const vibrationLocationTemplate = document.getElementById("vibrationLocationTemplate");
@@ -231,17 +231,17 @@ const waveformEffectSegmentTemplate = document.getElementById("waveformEffectSeg
     /** @type {HTMLSelectElement} */
     const waveformEffectSelect = waveformEffectSegmentTemplate.content.querySelector(".effect");
     const waveformEffectOptgroup = waveformEffectSelect.querySelector("optgroup");
-    BrilliantSole.VibrationWaveformEffects.forEach((waveformEffect) => {
+    BrilliantSoleDevice.VibrationWaveformEffects.forEach((waveformEffect) => {
         waveformEffectOptgroup.appendChild(new Option(waveformEffect));
     });
 
     /** @type {HTMLInputElement} */
     const waveformEffectSegmentDelayInput = waveformEffectSegmentTemplate.content.querySelector(".delay");
-    waveformEffectSegmentDelayInput.max = BrilliantSole.MaxVibrationWaveformEffectSegmentDelay;
+    waveformEffectSegmentDelayInput.max = BrilliantSoleDevice.MaxVibrationWaveformEffectSegmentDelay;
 
     /** @type {HTMLInputElement} */
     const waveformEffectLoopCountInput = waveformEffectSegmentTemplate.content.querySelector(".loopCount");
-    waveformEffectLoopCountInput.max = BrilliantSole.MaxVibrationWaveformEffectSegmentLoopCount;
+    waveformEffectLoopCountInput.max = BrilliantSoleDevice.MaxVibrationWaveformEffectSegmentLoopCount;
 }
 
 /** @type {HTMLTemplateElement} */
@@ -249,7 +249,7 @@ const waveformSegmentTemplate = document.getElementById("waveformSegmentTemplate
 {
     /** @type {HTMLInputElement} */
     const waveformDurationSegmentInput = waveformSegmentTemplate.content.querySelector(".duration");
-    waveformDurationSegmentInput.max = BrilliantSole.MaxVibrationWaveformSegmentDuration;
+    waveformDurationSegmentInput.max = BrilliantSoleDevice.MaxVibrationWaveformSegmentDuration;
 }
 
 /** @type {HTMLButtonElement} */
@@ -267,7 +267,7 @@ addVibrationButton.addEventListener("click", () => {
 
     /** @type {HTMLUListElement} */
     const vibrationLocationsContainer = vibrationContainer.querySelector(".locations");
-    BrilliantSole.VibrationLocations.forEach((vibrationLocation) => {
+    BrilliantSoleDevice.VibrationLocations.forEach((vibrationLocation) => {
         const vibrationLocationContainer = vibrationLocationTemplate.content
             .cloneNode(true)
             .querySelector(".vibrationLocation");
@@ -284,7 +284,8 @@ addVibrationButton.addEventListener("click", () => {
     const addWaveformEffectSegmentButton = waveformEffectContainer.querySelector(".add");
     const updateAddWaveformEffectSegmentButton = () => {
         addWaveformEffectSegmentButton.disabled =
-            waveformEffectSegmentsContainer.children.length >= BrilliantSole.MaxNumberOfVibrationWaveformEffectSegments;
+            waveformEffectSegmentsContainer.children.length >=
+            BrilliantSoleDevice.MaxNumberOfVibrationWaveformEffectSegments;
     };
     addWaveformEffectSegmentButton.addEventListener("click", () => {
         /** @type {HTMLElement} */
@@ -335,7 +336,7 @@ addVibrationButton.addEventListener("click", () => {
     const addWaveformSegmentButton = waveformContainer.querySelector(".add");
     const updateAddWaveformSegmentButton = () => {
         addWaveformSegmentButton.disabled =
-            waveformSegmentsContainer.children.length >= BrilliantSole.MaxNumberOfVibrationWaveformSegments;
+            waveformSegmentsContainer.children.length >= BrilliantSoleDevice.MaxNumberOfVibrationWaveformSegments;
     };
     addWaveformSegmentButton.addEventListener("click", () => {
         /** @type {HTMLElement} */
@@ -356,7 +357,7 @@ addVibrationButton.addEventListener("click", () => {
     const vibrationTypeSelect = vibrationContainer.querySelector(".type");
     /** @type {HTMLOptGroupElement} */
     const vibrationTypeSelectOptgroup = vibrationTypeSelect.querySelector("optgroup");
-    BrilliantSole.VibrationTypes.forEach((vibrationType) => {
+    BrilliantSoleDevice.VibrationTypes.forEach((vibrationType) => {
         vibrationTypeSelectOptgroup.appendChild(new Option(vibrationType));
     });
 
@@ -364,7 +365,7 @@ addVibrationButton.addEventListener("click", () => {
         let showWaveformContainer = false;
         let showWaveformEffectContainer = false;
 
-        /** @type {import("../../build/brilliantsole.module.js").BrilliantSoleVibrationType} */
+        /** @type {import("../../build/brilliantsole.module.js").BrilliantSoleDeviceVibrationType} */
         const vibrationType = vibrationTypeSelect.value;
         switch (vibrationType) {
             case "waveform":
@@ -389,12 +390,12 @@ addVibrationButton.addEventListener("click", () => {
 
 const triggerVibrationsButton = document.getElementById("triggerVibrations");
 triggerVibrationsButton.addEventListener("click", () => {
-    /** @type {import("../../build/brilliantsole.module.js").BrilliantSoleVibrationConfiguration[]} */
+    /** @type {import("../../build/brilliantsole.module.js").BrilliantSoleDeviceVibrationConfiguration[]} */
     let vibrationConfigurations = [];
     Array.from(vibrationTemplate.parentElement.querySelectorAll(".vibration"))
         .filter((vibrationContainer) => vibrationContainer.querySelector(".shouldTrigger").checked)
         .forEach((vibrationContainer) => {
-            /** @type {import("../../build/brilliantsole.module.js").BrilliantSoleVibrationConfiguration} */
+            /** @type {import("../../build/brilliantsole.module.js").BrilliantSoleDeviceVibrationConfiguration} */
             const vibrationConfiguration = {
                 locations: [],
             };
@@ -414,7 +415,7 @@ triggerVibrationsButton.addEventListener("click", () => {
                         segments: Array.from(
                             vibrationContainer.querySelectorAll(".waveformEffect .waveformEffectSegment")
                         ).map((waveformEffectSegmentContainer) => {
-                            /** @type {import("../../build/brilliantsole.module.js").BrilliantSoleVibrationWaveformEffectSegment} */
+                            /** @type {import("../../build/brilliantsole.module.js").BrilliantSoleDeviceVibrationWaveformEffectSegment} */
                             const waveformEffectSegment = {
                                 loopCount: Number(waveformEffectSegmentContainer.querySelector(".loopCount").value),
                             };

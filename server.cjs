@@ -5,7 +5,7 @@ const app = express();
 const fs = require("fs");
 const _ = require("lodash");
 const ip = require("ip");
-const BrilliantSole = require("./");
+const { BrilliantSoleDevice } = require("./");
 //BrilliantSole.setAllConsoleLevelFlags({ log: true, warn: true });
 
 app.use(function (req, res, next) {
@@ -28,7 +28,7 @@ httpsServer.listen(443, () => {
     console.log(`server listening on https://${ip.address()}`);
 });
 
-const brilliantSole = new BrilliantSole();
+const brilliantSole = new BrilliantSoleDevice();
 brilliantSole.addEventListener("connectionStatus", () => {
     console.log("connectionStastus", brilliantSole.connectionStatus);
     if (brilliantSole.isConnected) {
