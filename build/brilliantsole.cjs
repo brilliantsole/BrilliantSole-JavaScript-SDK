@@ -170,7 +170,7 @@ function setAllConsoleLevelFlags(levelFlags) {
     Console.setAllLevelFlags(levelFlags);
 }
 
-const _console$6 = createConsole("EventDispatcher", { log: false });
+const _console$8 = createConsole("EventDispatcher", { log: false });
 
 /**
  * @typedef EventDispatcherEvent
@@ -193,7 +193,7 @@ class EventDispatcher {
      * @param {string[]?} eventTypes
      */
     constructor(eventTypes) {
-        _console$6.assertWithError(Array.isArray(eventTypes) || eventTypes == undefined, "eventTypes must be an array");
+        _console$8.assertWithError(Array.isArray(eventTypes) || eventTypes == undefined, "eventTypes must be an array");
         this.#eventTypes = eventTypes;
     }
 
@@ -216,7 +216,7 @@ class EventDispatcher {
      * @throws {Error}
      */
     #assertValidEventType(type) {
-        _console$6.assertWithError(this.#isValidEventType(type), `invalid event type "${type}"`);
+        _console$8.assertWithError(this.#isValidEventType(type), `invalid event type "${type}"`);
     }
 
     /** @type {Object.<string, [function]?>?} */
@@ -228,7 +228,7 @@ class EventDispatcher {
      * @param {EventDispatcherOptions?} options
      */
     addEventListener(type, listener, options) {
-        _console$6.log(`adding "${type}" eventListener`, listener);
+        _console$8.log(`adding "${type}" eventListener`, listener);
         this.#assertValidEventType(type);
 
         if (!this.#listeners) this.#listeners = {};
@@ -260,7 +260,7 @@ class EventDispatcher {
      * @throws {Error} if type is not valid
      */
     hasEventListener(type, listener) {
-        _console$6.log(`has "${type}" eventListener?`, listener);
+        _console$8.log(`has "${type}" eventListener?`, listener);
         this.#assertValidEventType(type);
         return this.#listeners?.[type]?.includes(listener);
     }
@@ -272,7 +272,7 @@ class EventDispatcher {
      * @throws {Error} if type is not valid
      */
     removeEventListener(type, listener) {
-        _console$6.log(`removing "${type}" eventListener`, listener);
+        _console$8.log(`removing "${type}" eventListener`, listener);
         this.#assertValidEventType(type);
         if (this.hasEventListener(type, listener)) {
             const index = this.#listeners[type].indexOf(listener);
@@ -328,7 +328,7 @@ function removeEventListeners(target, boundEventListeners) {
 /** @typedef {"not connected" | "connecting" | "connected" | "disconnecting"} BrilliantSoleConnectionStatus */
 /** @typedef {"manufacturerName" | "modelNumber" | "softwareRevision" | "hardwareRevision" | "firmwareRevision" | "pnpId" | "serialNumber" | "batteryLevel" | "getName" | "setName" | "getType" | "setType" | "getSensorConfiguration" | "setSensorConfiguration" | "sensorData" | "triggerVibration"} BrilliantSoleConnectionMessageType */
 
-const _console$5 = createConsole("ConnectionManager");
+const _console$7 = createConsole("ConnectionManager");
 
 /**
  * @callback BrilliantSoleConnectionStatusCallback
@@ -375,12 +375,12 @@ class ConnectionManager {
 
     /** @throws {Error} if not supported */
     #assertIsSupported() {
-        _console$5.assertWithError(this.isSupported, `${this.constructor.name} is not supported`);
+        _console$7.assertWithError(this.isSupported, `${this.constructor.name} is not supported`);
     }
 
     /** @throws {Error} if abstract class */
     #assertIsSubclass() {
-        _console$5.assertWithError(this.constructor != ConnectionManager, `${this.constructor.name} must be subclassed`);
+        _console$7.assertWithError(this.constructor != ConnectionManager, `${this.constructor.name} must be subclassed`);
     }
 
     constructor() {
@@ -395,12 +395,12 @@ class ConnectionManager {
     }
     /** @protected */
     set status(newConnectionStatus) {
-        _console$5.assertTypeWithError(newConnectionStatus, "string");
+        _console$7.assertTypeWithError(newConnectionStatus, "string");
         if (this.#status == newConnectionStatus) {
-            _console$5.warn("same connection status");
+            _console$7.warn("same connection status");
             return;
         }
-        _console$5.log(`new connection status "${newConnectionStatus}"`);
+        _console$7.log(`new connection status "${newConnectionStatus}"`);
         this.#status = newConnectionStatus;
         this.onStatusUpdated?.(this.status);
     }
@@ -411,19 +411,19 @@ class ConnectionManager {
 
     /** @throws {Error} if connected */
     #assertIsNotConnected() {
-        _console$5.assertWithError(!this.isConnected, "device is already connected");
+        _console$7.assertWithError(!this.isConnected, "device is already connected");
     }
     /** @throws {Error} if connecting */
     #assertIsNotConnecting() {
-        _console$5.assertWithError(this.status != "connecting", "device is already connecting");
+        _console$7.assertWithError(this.status != "connecting", "device is already connecting");
     }
     /** @throws {Error} if not connected */
     #assertIsConnected() {
-        _console$5.assertWithError(this.isConnected, "device is not connected");
+        _console$7.assertWithError(this.isConnected, "device is not connected");
     }
     /** @throws {Error} if disconnecting */
     #assertIsNotDisconnecting() {
-        _console$5.assertWithError(this.status != "disconnecting", "device is already disconnecting");
+        _console$7.assertWithError(this.status != "disconnecting", "device is already disconnecting");
     }
     /** @throws {Error} if not connected or is disconnecting */
     #assertIsConnectedAndNotDisconnecting() {
@@ -443,7 +443,7 @@ class ConnectionManager {
     async reconnect() {
         this.#assertIsNotConnected();
         this.#assertIsNotConnecting();
-        _console$5.assert(this.canReconnect, "unable to reconnect");
+        _console$7.assert(this.canReconnect, "unable to reconnect");
         this.status = "connecting";
     }
     async disconnect() {
@@ -458,7 +458,7 @@ class ConnectionManager {
      */
     async sendMessage(messageType, data) {
         this.#assertIsConnectedAndNotDisconnecting();
-        _console$5.log("sending message", { messageType, data });
+        _console$7.log("sending message", { messageType, data });
     }
 }
 
@@ -597,7 +597,7 @@ function getCharacteristicNameFromUUID(characteristicUUID) {
     return bluetoothUUIDs.getCharacteristicNameFromUUID(characteristicUUID);
 }
 
-const _console$4 = createConsole("WebBluetoothConnectionManager", { log: true });
+const _console$6 = createConsole("WebBluetoothConnectionManager", { log: true });
 
 /** @typedef {import("./bluetoothUUIDs.js").BrilliantSoleBluetoothCharacteristicName} BrilliantSoleBluetoothCharacteristicName */
 /** @typedef {import("./bluetoothUUIDs.js").BrilliantSoleBluetoothServiceName} BrilliantSoleBluetoothServiceName */
@@ -638,7 +638,7 @@ class WebBluetoothConnectionManager extends ConnectionManager {
     }
     set device(newDevice) {
         if (this.#device == newDevice) {
-            _console$4.warn("tried to assign the same BluetoothDevice");
+            _console$6.warn("tried to assign the same BluetoothDevice");
             return;
         }
         if (this.#device) {
@@ -672,61 +672,61 @@ class WebBluetoothConnectionManager extends ConnectionManager {
                 optionalServices: isInBrowser ? optionalServiceUUIDs : [],
             });
 
-            _console$4.log("got BluetoothDevice");
+            _console$6.log("got BluetoothDevice");
             this.device = device;
 
-            _console$4.log("connecting to device...");
+            _console$6.log("connecting to device...");
             const server = await this.device.gatt.connect();
-            _console$4.log(`connected to device? ${server.connected}`);
+            _console$6.log(`connected to device? ${server.connected}`);
 
             await this.#getServicesAndCharacteristics();
 
-            _console$4.log("fully connected");
+            _console$6.log("fully connected");
 
             this.status = "connected";
         } catch (error) {
-            _console$4.error(error);
+            _console$6.error(error);
             this.status = "not connected";
             this.server?.disconnect();
         }
     }
     async #getServicesAndCharacteristics() {
-        _console$4.log("getting services...");
+        _console$6.log("getting services...");
         const services = await this.server.getPrimaryServices();
-        _console$4.log("got services", services.length);
+        _console$6.log("got services", services.length);
 
-        _console$4.log("getting characteristics...");
+        _console$6.log("getting characteristics...");
         for (const serviceIndex in services) {
             const service = services[serviceIndex];
             const serviceName = getServiceNameFromUUID(service.uuid);
-            _console$4.assertWithError(serviceName, `no name found for service uuid "${service.uuid}"`);
-            _console$4.log(`got "${serviceName}" service`);
+            _console$6.assertWithError(serviceName, `no name found for service uuid "${service.uuid}"`);
+            _console$6.log(`got "${serviceName}" service`);
             if (serviceName == "dfu") {
-                _console$4.log("skipping dfu service");
+                _console$6.log("skipping dfu service");
                 continue;
             }
             service._name = serviceName;
             this.#services.set(serviceName, service);
-            _console$4.log(`getting characteristics for "${serviceName}" service`);
+            _console$6.log(`getting characteristics for "${serviceName}" service`);
             const characteristics = await service.getCharacteristics();
-            _console$4.log(`got characteristics for "${serviceName}" service`);
+            _console$6.log(`got characteristics for "${serviceName}" service`);
             for (const characteristicIndex in characteristics) {
                 const characteristic = characteristics[characteristicIndex];
                 const characteristicName = getCharacteristicNameFromUUID(characteristic.uuid);
-                _console$4.assertWithError(
+                _console$6.assertWithError(
                     characteristicName,
                     `no name found for characteristic uuid "${characteristic.uuid}" in "${serviceName}" service`
                 );
-                _console$4.log(`got "${characteristicName}" characteristic in "${serviceName}" service`);
+                _console$6.log(`got "${characteristicName}" characteristic in "${serviceName}" service`);
                 characteristic._name = characteristicName;
                 this.#characteristics.set(characteristicName, characteristic);
                 addEventListeners(characteristic, this.#boundBluetoothCharacteristicEventListeners);
                 if (characteristic.properties.read) {
-                    _console$4.log(`reading "${characteristicName}" characteristic...`);
+                    _console$6.log(`reading "${characteristicName}" characteristic...`);
                     await characteristic.readValue();
                 }
                 if (characteristic.properties.notify) {
-                    _console$4.log(`starting notifications for "${characteristicName}" characteristic`);
+                    _console$6.log(`starting notifications for "${characteristicName}" characteristic`);
                     await characteristic.startNotifications();
                 }
             }
@@ -734,27 +734,27 @@ class WebBluetoothConnectionManager extends ConnectionManager {
     }
     async disconnect() {
         await super.disconnect();
-        _console$4.log("disconnecting from device...");
+        _console$6.log("disconnecting from device...");
         this.server?.disconnect();
     }
 
     /** @param {Event} event */
     #onCharacteristicvaluechanged(event) {
-        _console$4.log("oncharacteristicvaluechanged");
+        _console$6.log("oncharacteristicvaluechanged");
 
         /** @type {BluetoothRemoteGATTCharacteristic} */
         const characteristic = event.target;
         /** @type {BrilliantSoleBluetoothCharacteristicName} */
         const characteristicName = characteristic._name;
-        _console$4.assertWithError(
+        _console$6.assertWithError(
             characteristicName,
             `no name found for characteristic with uuid "${characteristic.uuid}"`
         );
 
-        _console$4.log(`oncharacteristicvaluechanged for "${characteristicName}" characteristic`);
+        _console$6.log(`oncharacteristicvaluechanged for "${characteristicName}" characteristic`);
         const dataView = characteristic.value;
-        _console$4.assertWithError(dataView, `no data found for "${characteristicName}" characteristic`);
-        _console$4.log(`data for "${characteristicName}" characteristic`, Array.from(new Uint8Array(dataView.buffer)));
+        _console$6.assertWithError(dataView, `no data found for "${characteristicName}" characteristic`);
+        _console$6.log(`data for "${characteristicName}" characteristic`, Array.from(new Uint8Array(dataView.buffer)));
 
         switch (characteristicName) {
             case "manufacturerName":
@@ -800,7 +800,7 @@ class WebBluetoothConnectionManager extends ConnectionManager {
 
     /** @param {Event} event */
     #onGattserverdisconnected(event) {
-        _console$4.log("gattserverdisconnected");
+        _console$6.log("gattserverdisconnected");
         this.status = "not connected";
     }
 
@@ -829,7 +829,7 @@ class WebBluetoothConnectionManager extends ConnectionManager {
                 throw Error(`uncaught messageType "${messageType}"`);
         }
 
-        _console$4.assert(characteristic, "no characteristic found");
+        _console$6.assert(characteristic, "no characteristic found");
         await characteristic.writeValueWithResponse(data);
         if (characteristic.properties.read) {
             await characteristic.readValue();
@@ -842,14 +842,14 @@ class WebBluetoothConnectionManager extends ConnectionManager {
     }
     async reconnect() {
         await super.reconnect();
-        _console$4.log("attempting to reconnect...");
+        _console$6.log("attempting to reconnect...");
         await this.server.connect();
         if (this.isConnected) {
-            _console$4.log("successfully reconnected!");
+            _console$6.log("successfully reconnected!");
             await this.#getServicesAndCharacteristics();
             this.status = "connected";
         } else {
-            _console$4.log("unable to reconnect");
+            _console$6.log("unable to reconnect");
             this.status = "not connected";
         }
     }
@@ -861,10 +861,341 @@ if (isInNode) {
     require("@abandonware/noble");
 }
 
-/** @typedef {import("../BS.js").BrilliantSoleDeviceType} BrilliantSoleDeviceType */
+/**
+ * @param {number} value
+ * @param {number} min
+ * @param {number} max
+ */
+function getInterpolation(value, min, max) {
+    return (value - min) / (max - min);
+}
 
-/** @typedef {"pressure" | "accelerometer" | "gravity" | "linearAcceleration" | "gyroscope" | "magnetometer" | "gameRotation" | "rotation" | "barometer"} BrilliantSoleSensorType */
-/** @typedef {"hallux" | "digits" | "metatarsal_inner" | "metatarsal_center" | "metatarsal_outer" | "lateral" | "arch" | "heel"} BrilliantSolePessureType */
+const Uint16Max = 2 ** 16;
+
+/** @typedef {import("../Device.js").BrilliantSoleDeviceType} BrilliantSoleDeviceType */
+
+/** @typedef {"hallux" | "digits" | "metatarsal_inner" | "metatarsal_center" | "metatarsal_outer" | "arch" | "lateral" | "heel"} BrilliantSolePessureSensorType */
+/** @typedef {"pressure"} BrilliantSolePressureSensorType */
+
+/**
+ * @typedef Vector2
+ * @type {Object}
+ * @property {number} x
+ * @property {number} y
+ */
+
+/** @typedef {Vector2} BrilliantSolePressureSensorPosition */
+/** @typedef {Vector2} BrilliantSoleCenterOfPressure */
+/**
+ * @typedef BrilliantSoleCenterOfPressureRange
+ * @type {Object}
+ * @property {Vector2} min
+ * @property {Vector2} max
+ */
+
+/**
+ * @typedef BrilliantSolePressureSensorValue
+ * @type {Object}
+ * @property {BrilliantSolePessureSensorType} name
+ * @property {BrilliantSolePressureSensorPosition} position
+ * @property {number} rawValue
+ * @property {number} normalizedValue
+ * @property {number?} weightedValue
+ */
+
+/**
+ * @typedef BrilliantSolePessureData
+ * @type {Object}
+ * @property {BrilliantSolePressureSensorValue[]} sensors
+ *
+ * @property {number} rawSum
+ * @property {number} normalizedSum
+ *
+ * @property {BrilliantSoleCenterOfPressure?} center
+ * @property {BrilliantSoleCenterOfPressure?} calibratedCenter
+ */
+
+const _console$5 = createConsole("PressureSensorDataManager", { log: true });
+
+class PressureSensorDataManager {
+    /** @type {BrilliantSoleDeviceType} */
+    #deviceType;
+    get deviceType() {
+        return this.#deviceType;
+    }
+    set deviceType(newDeviceType) {
+        _console$5.assertTypeWithError(newDeviceType, "string");
+        if (this.#deviceType == newDeviceType) {
+            _console$5.warn(`redundant deviceType assignment "${newDeviceType}"`);
+            return;
+        }
+        _console$5.log({ newDeviceType });
+        this.#deviceType = newDeviceType;
+
+        this.#updatePressureSensorPositions();
+        this.resetCenterOfPressureRange();
+    }
+
+    /** @type {BrilliantSolePessureSensorType[]} */
+    static #Types = [
+        "hallux",
+        "digits",
+        "metatarsal_inner",
+        "metatarsal_center",
+        "metatarsal_outer",
+        "arch",
+        "lateral",
+        "heel",
+    ];
+    static get Types() {
+        return this.#Types;
+    }
+    get types() {
+        return PressureSensorDataManager.#Types;
+    }
+
+    static #Scalars = {
+        pressure: 2 ** -16,
+    };
+    static get Scalars() {
+        return this.#Scalars;
+    }
+    get scalars() {
+        return PressureSensorDataManager.#Scalars;
+    }
+
+    static #NumberOfPressureSensors = 8;
+    static get NumberOfPressureSensors() {
+        return this.#NumberOfPressureSensors;
+    }
+    get numberOfPressureSensors() {
+        return PressureSensorDataManager.#NumberOfPressureSensors;
+    }
+
+    /**
+     * positions the right insole (top to bottom) - mirror horizontally for the left insole.
+     *
+     * xy positions are the centers of each sensor in the .svg file (y is from the top)
+     * @type {BrilliantSolePressureSensorPosition[]}
+     */
+    static #PressureSensorPositions = [
+        { x: 109, y: 74 },
+        { x: 249, y: 154 },
+        { x: 56, y: 236 },
+        { x: 185, y: 277 },
+        { x: 305, y: 337 },
+        { x: 69, y: 584 },
+        { x: 285, y: 635 },
+        { x: 162, y: 914 },
+    ].map(({ x, y }) => ({ x: x / 362, y: 1 - y / 1000 }));
+    static get PressureSensorPositions() {
+        console.log(this.#PressureSensorPositions);
+        return this.#PressureSensorPositions;
+    }
+    /** @type {BrilliantSolePressureSensorPosition[]} */
+    #pressureSensorPositions;
+    get pressureSensorPositions() {
+        return this.#pressureSensorPositions;
+    }
+    #updatePressureSensorPositions() {
+        const pressureSensorPositions = PressureSensorDataManager.PressureSensorPositions.map(({ x, y }) => {
+            if (this.deviceType == "leftInsole") {
+                x = 1 - x;
+            }
+            return { x, y };
+        });
+        _console$5.log({ pressureSensorPositions });
+        this.#pressureSensorPositions = pressureSensorPositions;
+    }
+
+    /** @type {BrilliantSoleCenterOfPressureRange} */
+    #centerOfPressureRange;
+    resetCenterOfPressureRange() {
+        this.#centerOfPressureRange = {
+            min: { x: Infinity, y: Infinity },
+            max: { x: -Infinity, y: -Infinity },
+        };
+    }
+    /** @param {BrilliantSoleCenterOfPressure} centerOfPressure  */
+    #updateCenterOfPressureRange(centerOfPressure) {
+        this.#centerOfPressureRange.min.x = Math.min(centerOfPressure.x, this.#centerOfPressureRange.min.x);
+        this.#centerOfPressureRange.min.y = Math.min(centerOfPressure.y, this.#centerOfPressureRange.min.y);
+
+        this.#centerOfPressureRange.max.x = Math.max(centerOfPressure.x, this.#centerOfPressureRange.max.x);
+        this.#centerOfPressureRange.max.y = Math.max(centerOfPressure.y, this.#centerOfPressureRange.max.y);
+    }
+    /** @param {BrilliantSoleCenterOfPressure} centerOfPressure  */
+    #getCalibratedCenterOfPressure(centerOfPressure) {
+        /** @type {BrilliantSoleCenterOfPressure} */
+        const calibratedCenterOfPressure = {
+            x: getInterpolation(
+                centerOfPressure.x,
+                this.#centerOfPressureRange.min.x,
+                this.#centerOfPressureRange.max.x
+            ),
+            y: getInterpolation(
+                centerOfPressure.y,
+                this.#centerOfPressureRange.min.y,
+                this.#centerOfPressureRange.max.y
+            ),
+        };
+        return calibratedCenterOfPressure;
+    }
+
+    /**
+     * @param {DataView} dataView
+     * @param {number} byteOffset
+     */
+    parsePressure(dataView, byteOffset) {
+        const scalar = this.scalars.pressure;
+
+        /** @type {BrilliantSolePessureData} */
+        const pressure = { sensors: [], rawSum: 0, normalizedSum: 0 };
+        for (let index = 0; index < this.numberOfPressureSensors; index++, byteOffset += 2) {
+            const rawValue = dataView.getUint16(byteOffset, true);
+            const normalizedValue = rawValue * scalar;
+            const position = this.pressureSensorPositions[index];
+            const name = this.types[index];
+            pressure.sensors[index] = { rawValue, normalizedValue, position, name };
+
+            pressure.rawSum += rawValue;
+            pressure.normalizedSum = normalizedValue / this.numberOfPressureSensors;
+        }
+
+        if (pressure.rawSum > 0) {
+            pressure.center = { x: 0, y: 0 };
+            pressure.sensors.forEach((sensor) => {
+                sensor.weightedValue = sensor.rawValue / pressure.rawSum;
+                pressure.center.x += sensor.position.x * sensor.weightedValue;
+                pressure.center.y += sensor.position.y * sensor.weightedValue;
+            });
+            this.#updateCenterOfPressureRange(pressure.center);
+            pressure.calibratedCenter = this.#getCalibratedCenterOfPressure(pressure.center);
+        }
+
+        _console$5.log({ pressure });
+        return pressure;
+    }
+}
+
+/** @typedef {import("../Device.js").BrilliantSoleDeviceType} BrilliantSoleDeviceType */
+
+/** @typedef {"accelerometer" | "gravity" | "linearAcceleration" | "gyroscope" | "magnetometer" | "gameRotation" | "rotation"} BrilliantSoleMotionSensorType */
+
+const _console$4 = createConsole("MotionSensorDataManager", { log: true });
+
+class MotionSensorDataManager {
+    /** @type {BrilliantSoleDeviceType} */
+    #deviceType;
+    get deviceType() {
+        return this.#deviceType;
+    }
+    set deviceType(newDeviceType) {
+        _console$4.assertTypeWithError(newDeviceType, "string");
+        if (this.#deviceType == newDeviceType) {
+            _console$4.warn(`redundant deviceType assignment "${newDeviceType}"`);
+            return;
+        }
+        _console$4.log({ newDeviceType });
+        this.#deviceType = newDeviceType;
+    }
+
+    static #Scalars = {
+        accelerometer: 2 ** -12,
+        gravity: 2 ** -12,
+        linearAcceleration: 2 ** -12,
+
+        gyroscope: 2000 * 2 ** -15,
+
+        magnetometer: 2500 * 2 ** -15,
+
+        gameRotation: 2 ** -14,
+        rotation: 2 ** -14,
+    };
+    static get Scalars() {
+        return this.#Scalars;
+    }
+    get scalars() {
+        return MotionSensorDataManager.#Scalars;
+    }
+
+    static #Vector3Size = 3 * 2;
+    static get Vector3Size() {
+        return this.#Vector3Size;
+    }
+    get vector3Size() {
+        return MotionSensorDataManager.Vector3Size;
+    }
+
+    /**
+     * @param {DataView} dataView
+     * @param {number} byteOffset
+     * @param {BrilliantSoleMotionSensorType} sensorType
+     */
+    parseVector3(dataView, byteOffset, sensorType) {
+        let [x, y, z] = [
+            dataView.getInt16(byteOffset, true),
+            dataView.getInt16(byteOffset + 2, true),
+            dataView.getInt16(byteOffset + 4, true),
+        ].map((value) => value * this.scalars[sensorType]);
+
+        const vector = { x, y, z };
+
+        _console$4.log({ vector });
+        return vector;
+    }
+
+    static #QuaternionSize = 4 * 2;
+    static get QuaternionSize() {
+        return this.#QuaternionSize;
+    }
+    get quaternionSize() {
+        return MotionSensorDataManager.QuaternionSize;
+    }
+
+    /**
+     * @param {DataView} dataView
+     * @param {number} byteOffset
+     * @param {BrilliantSoleMotionSensorType} sensorType
+     */
+    parseQuaternion(dataView, byteOffset, sensorType) {
+        let [x, y, z, w] = [
+            dataView.getInt16(byteOffset, true),
+            dataView.getInt16(byteOffset + 2, true),
+            dataView.getInt16(byteOffset + 4, true),
+            dataView.getInt16(byteOffset + 6, true),
+        ].map((value) => value * this.scalars[sensorType]);
+
+        const quaternion = { x, y, z, w };
+
+        _console$4.log({ quaternion });
+        return quaternion;
+    }
+}
+
+/** @typedef {"barometer"} BrilliantSoleBarometerSensorType */
+
+createConsole("BarometerSensorDataManager", { log: true });
+
+class BarometerSensorDataManager {
+    static #Scalars = {
+        barometer: 100 * 2 ** -7,
+    };
+    static get Scalars() {
+        return this.#Scalars;
+    }
+    get scalars() {
+        return BarometerSensorDataManager.#Scalars;
+    }
+}
+
+/** @typedef {import("../Device.js").BrilliantSoleDeviceType} BrilliantSoleDeviceType */
+
+/** @typedef {import("./MotionSensorDataManager.js").BrilliantSoleMotionSensorType} BrilliantSoleMotionSensorType */
+/** @typedef {import("./PressureSensorDataManager.js").BrilliantSolePressureSensorType} BrilliantSolePressureSensorType */
+/** @typedef {import("./BarometerSensorDataManager.js").BrilliantSoleBarometerSensorType} BrilliantSoleBarometerSensorType */
+
+/** @typedef {BrilliantSoleMotionSensorType | BrilliantSolePressureSensorType | BrilliantSoleBarometerSensorType} BrilliantSoleSensorType */
 
 const _console$3 = createConsole("SensorDataManager", { log: true });
 
@@ -883,8 +1214,13 @@ class SensorDataManager {
         _console$3.log({ newDeviceType });
         this.#deviceType = newDeviceType;
 
-        // FILL - pressure sensor remapping?
+        this.#pressureSensorDataManager.deviceType = newDeviceType;
+        this.#motionSensorDataManager.deviceType = newDeviceType;
     }
+
+    #pressureSensorDataManager = new PressureSensorDataManager();
+    #motionSensorDataManager = new MotionSensorDataManager();
+    #barometerSensorDataManager = new BarometerSensorDataManager();
 
     /** @type {BrilliantSoleSensorType[]} */
     static #Types = [
@@ -906,12 +1242,12 @@ class SensorDataManager {
     }
 
     /** @param {string} sensorType */
-    static assertValidSensorType(sensorType) {
+    static AssertValidSensorType(sensorType) {
         _console$3.assertTypeWithError(sensorType, "string");
         _console$3.assertWithError(this.#Types.includes(sensorType), `invalid sensorType "${sensorType}"`);
     }
     /** @param {number} sensorTypeEnum */
-    static assertValidSensorTypeEnum(sensorTypeEnum) {
+    static AssertValidSensorTypeEnum(sensorTypeEnum) {
         _console$3.assertTypeWithError(sensorTypeEnum, "number");
         _console$3.assertWithError(sensorTypeEnum in this.#Types, `invalid sensorTypeEnum ${sensorTypeEnum}`);
     }
@@ -934,16 +1270,11 @@ class SensorDataManager {
         this.#lastRawTimestamp = 0;
     }
 
-    static #Uint16Max = 2 ** 16;
-    get Uint16Max() {
-        return SensorDataManager.#Uint16Max;
-    }
-
     /** @param {DataView} dataView */
     #parseTimestamp(dataView, byteOffset) {
         const rawTimestamp = dataView.getUint16(byteOffset, true);
         if (rawTimestamp < this.#lastRawTimestamp) {
-            this.#timestampOffset += this.Uint16Max;
+            this.#timestampOffset += Uint16Max;
         }
         this.#lastRawTimestamp = rawTimestamp;
         const timestamp = rawTimestamp + this.#timestampOffset;
@@ -960,14 +1291,14 @@ class SensorDataManager {
 
         while (byteOffset < dataView.byteLength) {
             const sensorTypeEnum = dataView.getUint8(byteOffset++);
-            SensorDataManager.assertValidSensorTypeEnum(sensorTypeEnum);
+            SensorDataManager.AssertValidSensorTypeEnum(sensorTypeEnum);
 
             let value;
 
             const sensorType = this.#types[sensorTypeEnum];
             switch (sensorType) {
                 case "pressure":
-                    value = this.#parsePressure(dataView, byteOffset);
+                    value = this.#pressureSensorDataManager.parsePressure(dataView, byteOffset);
                     byteOffset += this.numberOfPressureSensors * 2;
                     break;
                 case "accelerometer":
@@ -975,13 +1306,13 @@ class SensorDataManager {
                 case "linearAcceleration":
                 case "gyroscope":
                 case "magnetometer":
-                    value = this.#parseVector3(dataView, byteOffset, sensorType);
-                    byteOffset += 6;
+                    value = this.#motionSensorDataManager.parseVector3(dataView, byteOffset, sensorType);
+                    byteOffset += this.#motionSensorDataManager.vector3Size;
                     break;
                 case "gameRotation":
                 case "rotation":
-                    value = this.#parseQuaternion(dataView, byteOffset, sensorType);
-                    byteOffset += 8;
+                    value = this.#motionSensorDataManager.parseQuaternion(dataView, byteOffset, sensorType);
+                    byteOffset += this.#motionSensorDataManager.quaternionSize;
                     break;
                 case "barometer":
                     // FILL
@@ -995,79 +1326,11 @@ class SensorDataManager {
         }
     }
 
-    static #Scalars = {
-        pressure: 2 ** 16,
-
-        accelerometer: 2 ** -12,
-        gravity: 2 ** -12,
-        linearAcceleration: 2 ** -12,
-
-        gyroscope: 2000 * 2 ** -15,
-
-        magnetometer: 2500 * 2 ** -15,
-
-        gameRotation: 2 ** -14,
-        rotation: 2 ** -14,
-
-        barometer: 100 * 2 ** -7,
-    };
-    get #scalars() {
-        return SensorDataManager.#Scalars;
+    static get NumberOfPressureSensors() {
+        return PressureSensorDataManager.NumberOfPressureSensors;
     }
-
-    static #numberOfPressureSensors = 8;
     get numberOfPressureSensors() {
-        return SensorDataManager.#numberOfPressureSensors;
-    }
-
-    /**
-     * @param {DataView} dataView
-     * @param {number} byteOffset
-     */
-    #parsePressure(dataView, byteOffset) {
-        const pressure = [];
-        for (let index = 0; index < this.numberOfPressureSensors; index++, byteOffset += 2) {
-            pressure[index] = dataView.getUint16(byteOffset, true);
-        }
-        // FILL - calculate center of mass, normalized pressure, etc
-        _console$3.log({ pressure });
-        return pressure;
-    }
-
-    /**
-     * @param {DataView} dataView
-     * @param {number} byteOffset
-     * @param {BrilliantSoleSensorType} sensorType
-     */
-    #parseVector3(dataView, byteOffset, sensorType) {
-        let [x, y, z] = [
-            dataView.getInt16(byteOffset, true),
-            dataView.getInt16(byteOffset + 2, true),
-            dataView.getInt16(byteOffset + 4, true),
-        ].map((value) => value * this.#scalars[sensorType]);
-
-        const vector = { x, y, z };
-
-        _console$3.log({ vector });
-        return vector;
-    }
-    /**
-     * @param {DataView} dataView
-     * @param {number} byteOffset
-     * @param {BrilliantSoleSensorType} sensorType
-     */
-    #parseQuaternion(dataView, byteOffset, sensorType) {
-        let [x, y, z, w] = [
-            dataView.getInt16(byteOffset, true),
-            dataView.getInt16(byteOffset + 2, true),
-            dataView.getInt16(byteOffset + 4, true),
-            dataView.getInt16(byteOffset + 6, true),
-        ].map((value) => value * this.#scalars[sensorType]);
-
-        const quaternion = { x, y, z, w };
-
-        _console$3.log({ quaternion });
-        return quaternion;
+        return SensorDataManager.NumberOfPressureSensors;
     }
 }
 
@@ -1153,7 +1416,7 @@ class SensorConfigurationManager {
 
         const dataView = new DataView(new ArrayBuffer(sensorTypes.length * 3));
         sensorTypes.forEach((sensorType, index) => {
-            SensorDataManager.assertValidSensorType(sensorType);
+            SensorDataManager.AssertValidSensorType(sensorType);
             const sensorTypeEnum = SensorDataManager.Types.indexOf(sensorType);
             dataView.setUint8(index * 3, sensorTypeEnum);
 
@@ -1525,13 +1788,13 @@ class VibrationManager {
     static get WaveformEffects() {
         return VibrationWaveformEffects;
     }
-    get #waveformEffects() {
+    get waveformEffects() {
         return VibrationManager.WaveformEffects;
     }
     /** @param {BrilliantSoleVibrationWaveformEffect} waveformEffect */
     #verifyWaveformEffect(waveformEffect) {
         _console$1.assertWithError(
-            this.#waveformEffects.includes(waveformEffect),
+            this.waveformEffects.includes(waveformEffect),
             `invalid waveformEffect "${waveformEffect}"`
         );
     }
@@ -1540,7 +1803,7 @@ class VibrationManager {
     static get MaxWaveformEffectSegmentDelay() {
         return this.#MaxWaveformEffectSegmentDelay;
     }
-    get #maxWaveformEffectSegmentDelay() {
+    get maxWaveformEffectSegmentDelay() {
         return VibrationManager.#MaxWaveformEffectSegmentDelay;
     }
     /** @param {BrilliantSoleVibrationWaveformEffectSegment} waveformEffectSegment */
@@ -1552,8 +1815,8 @@ class VibrationManager {
             const { delay } = waveformEffectSegment;
             _console$1.assertWithError(delay >= 0, `delay must be 0ms or greater (got ${delay})`);
             _console$1.assertWithError(
-                delay <= this.#maxWaveformEffectSegmentDelay,
-                `delay must be ${this.#maxWaveformEffectSegmentDelay}ms or less (got ${delay})`
+                delay <= this.maxWaveformEffectSegmentDelay,
+                `delay must be ${this.maxWaveformEffectSegmentDelay}ms or less (got ${delay})`
             );
         } else {
             throw Error("no effect or delay found in waveformEffectSegment");
@@ -1568,7 +1831,7 @@ class VibrationManager {
     static get MaxWaveformEffectSegmentLoopCount() {
         return this.#MaxWaveformEffectSegmentLoopCount;
     }
-    get #maxWaveformEffectSegmentLoopCount() {
+    get maxWaveformEffectSegmentLoopCount() {
         return VibrationManager.#MaxWaveformEffectSegmentLoopCount;
     }
     /** @param {number} waveformEffectSegmentLoopCount */
@@ -1579,10 +1842,8 @@ class VibrationManager {
             `waveformEffectSegmentLoopCount must be 0 or greater (got ${waveformEffectSegmentLoopCount})`
         );
         _console$1.assertWithError(
-            waveformEffectSegmentLoopCount <= this.#maxWaveformEffectSegmentLoopCount,
-            `waveformEffectSegmentLoopCount must be ${
-                this.#maxWaveformEffectSegmentLoopCount
-            } or fewer (got ${waveformEffectSegmentLoopCount})`
+            waveformEffectSegmentLoopCount <= this.maxWaveformEffectSegmentLoopCount,
+            `waveformEffectSegmentLoopCount must be ${this.maxWaveformEffectSegmentLoopCount} or fewer (got ${waveformEffectSegmentLoopCount})`
         );
     }
 
@@ -1629,7 +1890,7 @@ class VibrationManager {
     static get MaxWaveformSegmentDuration() {
         return this.#MaxWaveformSegmentDuration;
     }
-    get #maxWaveformSegmentDuration() {
+    get maxWaveformSegmentDuration() {
         return VibrationManager.#MaxWaveformSegmentDuration;
     }
     /** @param {BrilliantSoleVibrationWaveformSegment} waveformSegment */
@@ -1650,8 +1911,8 @@ class VibrationManager {
             `duration must be greater than 0ms (got ${waveformSegment.duration}ms)`
         );
         _console$1.assertWithError(
-            waveformSegment.duration <= this.#maxWaveformSegmentDuration,
-            `duration must be ${this.#maxWaveformSegmentDuration}ms or less (got ${waveformSegment.duration}ms)`
+            waveformSegment.duration <= this.maxWaveformSegmentDuration,
+            `duration must be ${this.maxWaveformSegmentDuration}ms or less (got ${waveformSegment.duration}ms)`
         );
     }
     static #MaxNumberOfWaveformSegments = 20;
@@ -1702,7 +1963,7 @@ class VibrationManager {
             const waveformEffectSegment = waveformEffectSegments[index] || { effect: "none" };
             if (waveformEffectSegment.effect != undefined) {
                 const waveformEffect = waveformEffectSegment.effect;
-                dataArray[byteOffset++] = this.#waveformEffects.indexOf(waveformEffect);
+                dataArray[byteOffset++] = this.waveformEffects.indexOf(waveformEffect);
             } else if (waveformEffectSegment.delay != undefined) {
                 const { delay } = waveformEffectSegment;
                 dataArray[byteOffset++] = (1 << 7) | Math.floor(delay / 10); // set most significant bit to 1
@@ -1851,9 +2112,9 @@ class VibrationManager {
 
 const _console = createConsole("BrilliantSole", { log: true });
 
-class BrilliantSoleDevice {
+class Device {
     constructor() {
-        this.connectionManager = new BrilliantSoleDevice.#DefaultConnectionManager();
+        this.connectionManager = new Device.#DefaultConnectionManager();
         this.#sensorDataManager.onDataReceived = this.#onSensorDataReceived.bind(this);
     }
 
@@ -1903,7 +2164,7 @@ class BrilliantSoleDevice {
         "barometer",
     ];
     get #eventTypes() {
-        return BrilliantSoleDevice.#EventTypes;
+        return Device.#EventTypes;
     }
     #eventDispatcher = new EventDispatcher(this.#eventTypes);
 
@@ -2145,12 +2406,12 @@ class BrilliantSoleDevice {
     /** @type {TextEncoder} */
     static #TextEncoder = new TextEncoder();
     get #textEncoder() {
-        return BrilliantSole.#TextEncoder;
+        return Device.#TextEncoder;
     }
     /** @type {TextDecoder} */
     static #TextDecoder = new TextDecoder();
     get #textDecoder() {
-        return BrilliantSole.#TextDecoder;
+        return Device.#TextDecoder;
     }
 
     // DEVICE INFORMATION
@@ -2225,30 +2486,26 @@ class BrilliantSoleDevice {
     static get MinNameLength() {
         return 2;
     }
-    get #minNameLength() {
-        return BrilliantSole.MinNameLength;
+    get minNameLength() {
+        return Device.MinNameLength;
     }
     static get MaxNameLength() {
         return 65;
     }
-    get #maxNameLength() {
-        return BrilliantSole.MaxNameLength;
+    get maxNameLength() {
+        return Device.MaxNameLength;
     }
     /** @param {string} newName */
     async setName(newName) {
         this.#assertIsConnected();
         _console.assertTypeWithError(newName, "string");
         _console.assertWithError(
-            newName.length >= this.#minNameLength,
-            `name must be greater than ${this.#minNameLength} characters long ("${newName}" is ${
-                newName.length
-            } characters long)`
+            newName.length >= this.minNameLength,
+            `name must be greater than ${this.minNameLength} characters long ("${newName}" is ${newName.length} characters long)`
         );
         _console.assertWithError(
-            newName.length < this.#maxNameLength,
-            `name must be less than ${this.#maxNameLength} characters long ("${newName}" is ${
-                newName.length
-            } characters long)`
+            newName.length < this.maxNameLength,
+            `name must be less than ${this.maxNameLength} characters long ("${newName}" is ${newName.length} characters long)`
         );
         const setNameData = this.#textEncoder.encode(newName);
         _console.log({ setNameData });
@@ -2262,7 +2519,7 @@ class BrilliantSoleDevice {
         return this.#Types;
     }
     get #types() {
-        return BrilliantSole.#Types;
+        return Device.#Types;
     }
     /** @type {BrilliantSoleDeviceType?} */
     #type;
@@ -2433,7 +2690,7 @@ class BrilliantSoleDevice {
 var BS = {
     setAllConsoleLevelFlags,
     setConsoleLevelFlagsForType,
-    Device: BrilliantSoleDevice,
+    Device,
 };
 
 module.exports = BS;

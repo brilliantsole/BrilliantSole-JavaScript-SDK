@@ -1,9 +1,16 @@
 import { createConsole } from "../utils/Console.js";
+import { Uint16Max } from "../utils/MathUtils.js";
+import PressureSensorDataManager from "./PressureSensorDataManager.js";
+import MotionSensorDataManager from "./MotionSensorDataManager.js";
+import BarometerSensorDataManager from "./BarometerSensorDataManager.js";
 
-/** @typedef {import("../BS.js").BrilliantSoleDeviceType} BrilliantSoleDeviceType */
+/** @typedef {import("../Device.js").BrilliantSoleDeviceType} BrilliantSoleDeviceType */
 
-/** @typedef {"pressure" | "accelerometer" | "gravity" | "linearAcceleration" | "gyroscope" | "magnetometer" | "gameRotation" | "rotation" | "barometer"} BrilliantSoleSensorType */
-/** @typedef {"hallux" | "digits" | "metatarsal_inner" | "metatarsal_center" | "metatarsal_outer" | "lateral" | "arch" | "heel"} BrilliantSolePessureType */
+/** @typedef {import("./MotionSensorDataManager.js").BrilliantSoleMotionSensorType} BrilliantSoleMotionSensorType */
+/** @typedef {import("./PressureSensorDataManager.js").BrilliantSolePressureSensorType} BrilliantSolePressureSensorType */
+/** @typedef {import("./BarometerSensorDataManager.js").BrilliantSoleBarometerSensorType} BrilliantSoleBarometerSensorType */
+
+/** @typedef {BrilliantSoleMotionSensorType | BrilliantSolePressureSensorType | BrilliantSoleBarometerSensorType} BrilliantSoleSensorType */
 
 const _console = createConsole("SensorDataManager", { log: true });
 
@@ -22,8 +29,13 @@ class SensorDataManager {
         _console.log({ newDeviceType });
         this.#deviceType = newDeviceType;
 
-        // FILL - pressure sensor remapping?
+        this.#pressureSensorDataManager.deviceType = newDeviceType;
+        this.#motionSensorDataManager.deviceType = newDeviceType;
     }
+
+    #pressureSensorDataManager = new PressureSensorDataManager();
+    #motionSensorDataManager = new MotionSensorDataManager();
+    #barometerSensorDataManager = new BarometerSensorDataManager();
 
     /** @type {BrilliantSoleSensorType[]} */
     static #Types = [
@@ -45,12 +57,12 @@ class SensorDataManager {
     }
 
     /** @param {string} sensorType */
-    static assertValidSensorType(sensorType) {
+    static AssertValidSensorType(sensorType) {
         _console.assertTypeWithError(sensorType, "string");
         _console.assertWithError(this.#Types.includes(sensorType), `invalid sensorType "${sensorType}"`);
     }
     /** @param {number} sensorTypeEnum */
-    static assertValidSensorTypeEnum(sensorTypeEnum) {
+    static AssertValidSensorTypeEnum(sensorTypeEnum) {
         _console.assertTypeWithError(sensorTypeEnum, "number");
         _console.assertWithError(sensorTypeEnum in this.#Types, `invalid sensorTypeEnum ${sensorTypeEnum}`);
     }
@@ -73,16 +85,11 @@ class SensorDataManager {
         this.#lastRawTimestamp = 0;
     }
 
-    static #Uint16Max = 2 ** 16;
-    get Uint16Max() {
-        return SensorDataManager.#Uint16Max;
-    }
-
     /** @param {DataView} dataView */
     #parseTimestamp(dataView, byteOffset) {
         const rawTimestamp = dataView.getUint16(byteOffset, true);
         if (rawTimestamp < this.#lastRawTimestamp) {
-            this.#timestampOffset += this.Uint16Max;
+            this.#timestampOffset += Uint16Max;
         }
         this.#lastRawTimestamp = rawTimestamp;
         const timestamp = rawTimestamp + this.#timestampOffset;
@@ -99,14 +106,14 @@ class SensorDataManager {
 
         while (byteOffset < dataView.byteLength) {
             const sensorTypeEnum = dataView.getUint8(byteOffset++);
-            SensorDataManager.assertValidSensorTypeEnum(sensorTypeEnum);
+            SensorDataManager.AssertValidSensorTypeEnum(sensorTypeEnum);
 
             let value;
 
             const sensorType = this.#types[sensorTypeEnum];
             switch (sensorType) {
                 case "pressure":
-                    value = this.#parsePressure(dataView, byteOffset);
+                    value = this.#pressureSensorDataManager.parsePressure(dataView, byteOffset);
                     byteOffset += this.numberOfPressureSensors * 2;
                     break;
                 case "accelerometer":
@@ -114,13 +121,13 @@ class SensorDataManager {
                 case "linearAcceleration":
                 case "gyroscope":
                 case "magnetometer":
-                    value = this.#parseVector3(dataView, byteOffset, sensorType);
-                    byteOffset += 6;
+                    value = this.#motionSensorDataManager.parseVector3(dataView, byteOffset, sensorType);
+                    byteOffset += this.#motionSensorDataManager.vector3Size;
                     break;
                 case "gameRotation":
                 case "rotation":
-                    value = this.#parseQuaternion(dataView, byteOffset, sensorType);
-                    byteOffset += 8;
+                    value = this.#motionSensorDataManager.parseQuaternion(dataView, byteOffset, sensorType);
+                    byteOffset += this.#motionSensorDataManager.quaternionSize;
                     break;
                 case "barometer":
                     // FILL
@@ -134,79 +141,11 @@ class SensorDataManager {
         }
     }
 
-    static #Scalars = {
-        pressure: 2 ** 16,
-
-        accelerometer: 2 ** -12,
-        gravity: 2 ** -12,
-        linearAcceleration: 2 ** -12,
-
-        gyroscope: 2000 * 2 ** -15,
-
-        magnetometer: 2500 * 2 ** -15,
-
-        gameRotation: 2 ** -14,
-        rotation: 2 ** -14,
-
-        barometer: 100 * 2 ** -7,
-    };
-    get #scalars() {
-        return SensorDataManager.#Scalars;
+    static get NumberOfPressureSensors() {
+        return PressureSensorDataManager.NumberOfPressureSensors;
     }
-
-    static #numberOfPressureSensors = 8;
     get numberOfPressureSensors() {
-        return SensorDataManager.#numberOfPressureSensors;
-    }
-
-    /**
-     * @param {DataView} dataView
-     * @param {number} byteOffset
-     */
-    #parsePressure(dataView, byteOffset) {
-        const pressure = [];
-        for (let index = 0; index < this.numberOfPressureSensors; index++, byteOffset += 2) {
-            pressure[index] = dataView.getUint16(byteOffset, true);
-        }
-        // FILL - calculate center of mass, normalized pressure, etc
-        _console.log({ pressure });
-        return pressure;
-    }
-
-    /**
-     * @param {DataView} dataView
-     * @param {number} byteOffset
-     * @param {BrilliantSoleSensorType} sensorType
-     */
-    #parseVector3(dataView, byteOffset, sensorType) {
-        let [x, y, z] = [
-            dataView.getInt16(byteOffset, true),
-            dataView.getInt16(byteOffset + 2, true),
-            dataView.getInt16(byteOffset + 4, true),
-        ].map((value) => value * this.#scalars[sensorType]);
-
-        const vector = { x, y, z };
-
-        _console.log({ vector });
-        return vector;
-    }
-    /**
-     * @param {DataView} dataView
-     * @param {number} byteOffset
-     * @param {BrilliantSoleSensorType} sensorType
-     */
-    #parseQuaternion(dataView, byteOffset, sensorType) {
-        let [x, y, z, w] = [
-            dataView.getInt16(byteOffset, true),
-            dataView.getInt16(byteOffset + 2, true),
-            dataView.getInt16(byteOffset + 4, true),
-            dataView.getInt16(byteOffset + 6, true),
-        ].map((value) => value * this.#scalars[sensorType]);
-
-        const quaternion = { x, y, z, w };
-
-        _console.log({ quaternion });
-        return quaternion;
+        return SensorDataManager.NumberOfPressureSensors;
     }
 }
 

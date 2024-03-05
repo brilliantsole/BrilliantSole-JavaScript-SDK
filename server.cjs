@@ -5,8 +5,8 @@ const app = express();
 const fs = require("fs");
 const _ = require("lodash");
 const ip = require("ip");
-const { BrilliantSoleDevice } = require("./");
-//BrilliantSole.setAllConsoleLevelFlags({ log: true, warn: true });
+const BS = require("./");
+//BS.setAllConsoleLevelFlags({ log: true, warn: true });
 
 app.use(function (req, res, next) {
     res.header("Cross-Origin-Opener-Policy", "same-origin");
@@ -28,14 +28,14 @@ httpsServer.listen(443, () => {
     console.log(`server listening on https://${ip.address()}`);
 });
 
-const brilliantSole = new BrilliantSoleDevice();
-brilliantSole.addEventListener("connectionStatus", () => {
-    console.log("connectionStastus", brilliantSole.connectionStatus);
-    if (brilliantSole.isConnected) {
-        brilliantSole.setSensorConfiguration({ pressure: 20 });
+const insole = new BS.Device();
+insole.addEventListener("connectionStatus", () => {
+    console.log("connectionStastus", insole.connectionStatus);
+    if (insole.isConnected) {
+        insole.setSensorConfiguration({ pressure: 20 });
     }
 });
-//brilliantSole.connect();
-brilliantSole.addEventListener("pressure", (event) => {
+//insole.connect();
+insole.addEventListener("pressure", (event) => {
     console.log(event.message);
 });

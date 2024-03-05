@@ -68,13 +68,13 @@ class VibrationManager {
     static get WaveformEffects() {
         return VibrationWaveformEffects;
     }
-    get #waveformEffects() {
+    get waveformEffects() {
         return VibrationManager.WaveformEffects;
     }
     /** @param {BrilliantSoleVibrationWaveformEffect} waveformEffect */
     #verifyWaveformEffect(waveformEffect) {
         _console.assertWithError(
-            this.#waveformEffects.includes(waveformEffect),
+            this.waveformEffects.includes(waveformEffect),
             `invalid waveformEffect "${waveformEffect}"`
         );
     }
@@ -83,7 +83,7 @@ class VibrationManager {
     static get MaxWaveformEffectSegmentDelay() {
         return this.#MaxWaveformEffectSegmentDelay;
     }
-    get #maxWaveformEffectSegmentDelay() {
+    get maxWaveformEffectSegmentDelay() {
         return VibrationManager.#MaxWaveformEffectSegmentDelay;
     }
     /** @param {BrilliantSoleVibrationWaveformEffectSegment} waveformEffectSegment */
@@ -95,8 +95,8 @@ class VibrationManager {
             const { delay } = waveformEffectSegment;
             _console.assertWithError(delay >= 0, `delay must be 0ms or greater (got ${delay})`);
             _console.assertWithError(
-                delay <= this.#maxWaveformEffectSegmentDelay,
-                `delay must be ${this.#maxWaveformEffectSegmentDelay}ms or less (got ${delay})`
+                delay <= this.maxWaveformEffectSegmentDelay,
+                `delay must be ${this.maxWaveformEffectSegmentDelay}ms or less (got ${delay})`
             );
         } else {
             throw Error("no effect or delay found in waveformEffectSegment");
@@ -111,7 +111,7 @@ class VibrationManager {
     static get MaxWaveformEffectSegmentLoopCount() {
         return this.#MaxWaveformEffectSegmentLoopCount;
     }
-    get #maxWaveformEffectSegmentLoopCount() {
+    get maxWaveformEffectSegmentLoopCount() {
         return VibrationManager.#MaxWaveformEffectSegmentLoopCount;
     }
     /** @param {number} waveformEffectSegmentLoopCount */
@@ -122,10 +122,8 @@ class VibrationManager {
             `waveformEffectSegmentLoopCount must be 0 or greater (got ${waveformEffectSegmentLoopCount})`
         );
         _console.assertWithError(
-            waveformEffectSegmentLoopCount <= this.#maxWaveformEffectSegmentLoopCount,
-            `waveformEffectSegmentLoopCount must be ${
-                this.#maxWaveformEffectSegmentLoopCount
-            } or fewer (got ${waveformEffectSegmentLoopCount})`
+            waveformEffectSegmentLoopCount <= this.maxWaveformEffectSegmentLoopCount,
+            `waveformEffectSegmentLoopCount must be ${this.maxWaveformEffectSegmentLoopCount} or fewer (got ${waveformEffectSegmentLoopCount})`
         );
     }
 
@@ -172,7 +170,7 @@ class VibrationManager {
     static get MaxWaveformSegmentDuration() {
         return this.#MaxWaveformSegmentDuration;
     }
-    get #maxWaveformSegmentDuration() {
+    get maxWaveformSegmentDuration() {
         return VibrationManager.#MaxWaveformSegmentDuration;
     }
     /** @param {BrilliantSoleVibrationWaveformSegment} waveformSegment */
@@ -193,8 +191,8 @@ class VibrationManager {
             `duration must be greater than 0ms (got ${waveformSegment.duration}ms)`
         );
         _console.assertWithError(
-            waveformSegment.duration <= this.#maxWaveformSegmentDuration,
-            `duration must be ${this.#maxWaveformSegmentDuration}ms or less (got ${waveformSegment.duration}ms)`
+            waveformSegment.duration <= this.maxWaveformSegmentDuration,
+            `duration must be ${this.maxWaveformSegmentDuration}ms or less (got ${waveformSegment.duration}ms)`
         );
     }
     static #MaxNumberOfWaveformSegments = 20;
@@ -245,7 +243,7 @@ class VibrationManager {
             const waveformEffectSegment = waveformEffectSegments[index] || { effect: "none" };
             if (waveformEffectSegment.effect != undefined) {
                 const waveformEffect = waveformEffectSegment.effect;
-                dataArray[byteOffset++] = this.#waveformEffects.indexOf(waveformEffect);
+                dataArray[byteOffset++] = this.waveformEffects.indexOf(waveformEffect);
             } else if (waveformEffectSegment.delay != undefined) {
                 const { delay } = waveformEffectSegment;
                 dataArray[byteOffset++] = (1 << 7) | Math.floor(delay / 10); // set most significant bit to 1

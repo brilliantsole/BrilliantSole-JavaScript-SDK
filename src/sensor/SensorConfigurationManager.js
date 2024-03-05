@@ -83,7 +83,7 @@ class SensorConfigurationManager {
 
         const dataView = new DataView(new ArrayBuffer(sensorTypes.length * 3));
         sensorTypes.forEach((sensorType, index) => {
-            SensorDataManager.assertValidSensorType(sensorType);
+            SensorDataManager.AssertValidSensorType(sensorType);
             const sensorTypeEnum = SensorDataManager.Types.indexOf(sensorType);
             dataView.setUint8(index * 3, sensorTypeEnum);
 

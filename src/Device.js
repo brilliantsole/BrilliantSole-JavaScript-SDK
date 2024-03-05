@@ -78,9 +78,9 @@ import { concatenateArrayBuffers } from "./utils/ArrayBufferUtils.js";
 
 const _console = createConsole("BrilliantSole", { log: true });
 
-class BrilliantSoleDevice {
+class Device {
     constructor() {
-        this.connectionManager = new BrilliantSoleDevice.#DefaultConnectionManager();
+        this.connectionManager = new Device.#DefaultConnectionManager();
         this.#sensorDataManager.onDataReceived = this.#onSensorDataReceived.bind(this);
     }
 
@@ -133,7 +133,7 @@ class BrilliantSoleDevice {
         "barometer",
     ];
     get #eventTypes() {
-        return BrilliantSoleDevice.#EventTypes;
+        return Device.#EventTypes;
     }
     #eventDispatcher = new EventDispatcher(this.#eventTypes);
 
@@ -377,12 +377,12 @@ class BrilliantSoleDevice {
     /** @type {TextEncoder} */
     static #TextEncoder = new TextEncoder();
     get #textEncoder() {
-        return BrilliantSole.#TextEncoder;
+        return Device.#TextEncoder;
     }
     /** @type {TextDecoder} */
     static #TextDecoder = new TextDecoder();
     get #textDecoder() {
-        return BrilliantSole.#TextDecoder;
+        return Device.#TextDecoder;
     }
 
     // DEVICE INFORMATION
@@ -457,30 +457,26 @@ class BrilliantSoleDevice {
     static get MinNameLength() {
         return 2;
     }
-    get #minNameLength() {
-        return BrilliantSole.MinNameLength;
+    get minNameLength() {
+        return Device.MinNameLength;
     }
     static get MaxNameLength() {
         return 65;
     }
-    get #maxNameLength() {
-        return BrilliantSole.MaxNameLength;
+    get maxNameLength() {
+        return Device.MaxNameLength;
     }
     /** @param {string} newName */
     async setName(newName) {
         this.#assertIsConnected();
         _console.assertTypeWithError(newName, "string");
         _console.assertWithError(
-            newName.length >= this.#minNameLength,
-            `name must be greater than ${this.#minNameLength} characters long ("${newName}" is ${
-                newName.length
-            } characters long)`
+            newName.length >= this.minNameLength,
+            `name must be greater than ${this.minNameLength} characters long ("${newName}" is ${newName.length} characters long)`
         );
         _console.assertWithError(
-            newName.length < this.#maxNameLength,
-            `name must be less than ${this.#maxNameLength} characters long ("${newName}" is ${
-                newName.length
-            } characters long)`
+            newName.length < this.maxNameLength,
+            `name must be less than ${this.maxNameLength} characters long ("${newName}" is ${newName.length} characters long)`
         );
         const setNameData = this.#textEncoder.encode(newName);
         _console.log({ setNameData });
@@ -494,7 +490,7 @@ class BrilliantSoleDevice {
         return this.#Types;
     }
     get #types() {
-        return BrilliantSole.#Types;
+        return Device.#Types;
     }
     /** @type {BrilliantSoleDeviceType?} */
     #type;
@@ -662,4 +658,4 @@ class BrilliantSoleDevice {
     }
 }
 
-export default BrilliantSoleDevice;
+export default Device;
