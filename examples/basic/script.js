@@ -1,23 +1,23 @@
-import { BrilliantSoleDevice } from "../../build/brilliantsole.module.js";
-//import BrilliantSoleDevice from "../../src/BrilliantSoleDevice.js";
-window.BrilliantSoleDevice = BrilliantSoleDevice;
-console.log(BrilliantSoleDevice);
+import BS from "../../build/brilliantsole.module.js";
+//import BS.Device from "../../src/BS.Device.js";
+window.BS = BS;
+console.log(BS);
 
-const brilliantSole = new BrilliantSoleDevice();
-console.log({ brilliantSole });
-window.brilliantSole = brilliantSole;
+const insole = new BS.Device();
+console.log({ insole });
+window.insole = insole;
 
 // CONNECTION
 
 /** @type {HTMLButtonElement} */
 const toggleConnectionButton = document.getElementById("toggleConnection");
 toggleConnectionButton.addEventListener("click", () => {
-    switch (brilliantSole.connectionStatus) {
+    switch (insole.connectionStatus) {
         case "not connected":
-            brilliantSole.connect();
+            insole.connect();
             break;
         case "connected":
-            brilliantSole.disconnect();
+            insole.disconnect();
             break;
     }
 });
@@ -25,31 +25,31 @@ toggleConnectionButton.addEventListener("click", () => {
 /** @type {HTMLButtonElement} */
 const reconnectButton = document.getElementById("reconnect");
 reconnectButton.addEventListener("click", () => {
-    brilliantSole.reconnect();
+    insole.reconnect();
 });
-brilliantSole.addEventListener("connectionStatus", () => {
-    reconnectButton.disabled = !brilliantSole.canReconnect;
+insole.addEventListener("connectionStatus", () => {
+    reconnectButton.disabled = !insole.canReconnect;
 });
 
-brilliantSole.addEventListener("connecting", () => {
+insole.addEventListener("connecting", () => {
     console.log("connecting");
     toggleConnectionButton.innerText = "connecting...";
     toggleConnectionButton.disabled = true;
 
     reconnectButton.disabled = true;
 });
-brilliantSole.addEventListener("connected", () => {
+insole.addEventListener("connected", () => {
     console.log("connected");
     toggleConnectionButton.innerText = "disconnect";
     toggleConnectionButton.disabled = false;
 });
-brilliantSole.addEventListener("disconnecting", () => {
+insole.addEventListener("disconnecting", () => {
     console.log("disconnecting");
     toggleConnectionButton.innerText = "disconnecting...";
     toggleConnectionButton.disabled = true;
     reconnectButton.disabled = true;
 });
-brilliantSole.addEventListener("not connected", () => {
+insole.addEventListener("not connected", () => {
     console.log("not connected");
     toggleConnectionButton.innerText = "connect";
     toggleConnectionButton.disabled = false;
@@ -58,57 +58,57 @@ brilliantSole.addEventListener("not connected", () => {
 /** @type {HTMLInputElement} */
 const reconnectOnDisconnectionCheckbox = document.getElementById("reconnectOnDisconnection");
 reconnectOnDisconnectionCheckbox.addEventListener("input", () => {
-    brilliantSole.reconnectOnDisconnection = reconnectOnDisconnectionCheckbox.checked;
+    insole.reconnectOnDisconnection = reconnectOnDisconnectionCheckbox.checked;
 });
 
 // DEVICE INFORMATION
 
 /** @type {HTMLPreElement} */
 const deviceInformationPre = document.getElementById("deviceInformationPre");
-brilliantSole.addEventListener("deviceInformation", () => {
-    deviceInformationPre.textContent = JSON.stringify(brilliantSole.deviceInformation, null, 2);
+insole.addEventListener("deviceInformation", () => {
+    deviceInformationPre.textContent = JSON.stringify(insole.deviceInformation, null, 2);
 });
 
 // BATTERY LEVEL
 
 /** @type {HTMLSpanElement} */
 const batteryLevelSpan = document.getElementById("batteryLevel");
-brilliantSole.addEventListener("batteryLevel", () => {
-    console.log(`batteryLevel updated to ${brilliantSole.batteryLevel}%`);
-    batteryLevelSpan.innerText = `${brilliantSole.batteryLevel}%`;
+insole.addEventListener("batteryLevel", () => {
+    console.log(`batteryLevel updated to ${insole.batteryLevel}%`);
+    batteryLevelSpan.innerText = `${insole.batteryLevel}%`;
 });
 
 // NAME
 
 /** @type {HTMLSpanElement} */
 const nameSpan = document.getElementById("name");
-brilliantSole.addEventListener("getName", () => {
-    console.log(`name updated to ${brilliantSole.name}`);
-    nameSpan.innerText = brilliantSole.name;
+insole.addEventListener("getName", () => {
+    console.log(`name updated to ${insole.name}`);
+    nameSpan.innerText = insole.name;
 });
 
 /** @type {HTMLInputElement} */
 const setNameInput = document.getElementById("setNameInput");
-setNameInput.minLength = BrilliantSoleDevice.MinNameLength;
-setNameInput.maxLength = BrilliantSoleDevice.MaxNameLength;
+setNameInput.minLength = BS.Device.MinNameLength;
+setNameInput.maxLength = BS.Device.MaxNameLength;
 
 /** @type {HTMLButtonElement} */
 const setNameButton = document.getElementById("setNameButton");
 
-brilliantSole.addEventListener("isConnected", () => {
-    setNameInput.disabled = !brilliantSole.isConnected;
+insole.addEventListener("isConnected", () => {
+    setNameInput.disabled = !insole.isConnected;
 });
-brilliantSole.addEventListener("not connected", () => {
+insole.addEventListener("not connected", () => {
     setNameInput.value = "";
 });
 
 setNameInput.addEventListener("input", () => {
-    setNameButton.disabled = setNameInput.value.length < brilliantSole.minNameLength;
+    setNameButton.disabled = setNameInput.value.length < insole.minNameLength;
 });
 
 setNameButton.addEventListener("click", () => {
     console.log(`setting name to ${setNameInput.value}`);
-    brilliantSole.setName(setNameInput.value);
+    insole.setName(setNameInput.value);
     setNameInput.value = "";
     setNameButton.disabled = true;
 });
@@ -117,9 +117,9 @@ setNameButton.addEventListener("click", () => {
 
 /** @type {HTMLSpanElement} */
 const typeSpan = document.getElementById("type");
-brilliantSole.addEventListener("getType", () => {
-    console.log(`type updated to ${brilliantSole.type}`);
-    typeSpan.innerText = brilliantSole.type;
+insole.addEventListener("getType", () => {
+    console.log(`type updated to ${insole.type}`);
+    typeSpan.innerText = insole.type;
 });
 
 /** @type {HTMLButtonElement} */
@@ -129,25 +129,25 @@ const setTypeButton = document.getElementById("setTypeButton");
 const setTypeSelect = document.getElementById("setTypeSelect");
 /** @type {HTMLOptGroupElement} */
 const setTypeSelectOptgroup = setTypeSelect.querySelector("optgroup");
-BrilliantSoleDevice.Types.forEach((type) => {
+BS.Device.Types.forEach((type) => {
     setTypeSelectOptgroup.appendChild(new Option(type));
 });
 
-brilliantSole.addEventListener("isConnected", () => {
-    setTypeSelect.disabled = !brilliantSole.isConnected;
+insole.addEventListener("isConnected", () => {
+    setTypeSelect.disabled = !insole.isConnected;
 });
 
-brilliantSole.addEventListener("getType", () => {
-    setTypeSelect.value = brilliantSole.type;
+insole.addEventListener("getType", () => {
+    setTypeSelect.value = insole.type;
 });
 
 setTypeSelect.addEventListener("input", () => {
-    setTypeButton.disabled = setTypeSelect.value == brilliantSole.type;
+    setTypeButton.disabled = setTypeSelect.value == insole.type;
 });
 
 setTypeButton.addEventListener("click", () => {
     console.log(`setting type to ${setTypeSelect.value}`);
-    brilliantSole.setType(setTypeSelect.value);
+    insole.setType(setTypeSelect.value);
     setTypeButton.disabled = true;
 });
 
@@ -155,13 +155,13 @@ setTypeButton.addEventListener("click", () => {
 
 /** @type {HTMLPreElement} */
 const sensorConfigurationPre = document.getElementById("sensorConfigurationPre");
-brilliantSole.addEventListener("getSensorConfiguration", () => {
-    sensorConfigurationPre.textContent = JSON.stringify(brilliantSole.sensorConfiguration, null, 2);
+insole.addEventListener("getSensorConfiguration", () => {
+    sensorConfigurationPre.textContent = JSON.stringify(insole.sensorConfiguration, null, 2);
 });
 
 /** @type {HTMLTemplateElement} */
 const sensorTypeConfigurationTemplate = document.getElementById("sensorTypeConfigurationTemplate");
-BrilliantSoleDevice.SensorTypes.forEach((sensorType) => {
+BS.Device.SensorTypes.forEach((sensorType) => {
     const sensorTypeConfigurationContainer = sensorTypeConfigurationTemplate.content
         .cloneNode(true)
         .querySelector(".sensorTypeConfiguration");
@@ -170,26 +170,26 @@ BrilliantSoleDevice.SensorTypes.forEach((sensorType) => {
     /** @type {HTMLInputElement} */
     const sensorRateInput = sensorTypeConfigurationContainer.querySelector(".sensorRate");
     sensorRateInput.value = 0;
-    sensorRateInput.max = BrilliantSoleDevice.MaxSensorRate;
-    sensorRateInput.step = BrilliantSoleDevice.SensorRateStep;
+    sensorRateInput.max = BS.Device.MaxSensorRate;
+    sensorRateInput.step = BS.Device.SensorRateStep;
     sensorRateInput.addEventListener("input", () => {
         const sensorRate = Number(sensorRateInput.value);
         console.log({ sensorType, sensorRate });
-        brilliantSole.setSensorConfiguration({ [sensorType]: sensorRate });
+        insole.setSensorConfiguration({ [sensorType]: sensorRate });
     });
 
     sensorTypeConfigurationTemplate.parentElement.appendChild(sensorTypeConfigurationContainer);
     sensorTypeConfigurationContainer.dataset.sensorType = sensorType;
 });
-brilliantSole.addEventListener("getSensorConfiguration", () => {
-    for (const sensorType in brilliantSole.sensorConfiguration) {
+insole.addEventListener("getSensorConfiguration", () => {
+    for (const sensorType in insole.sensorConfiguration) {
         document.querySelector(`.sensorTypeConfiguration[data-sensor-type="${sensorType}"] input`).value =
-            brilliantSole.sensorConfiguration[sensorType];
+            insole.sensorConfiguration[sensorType];
     }
 });
-brilliantSole.addEventListener("isConnected", () => {
-    for (const sensorType in brilliantSole.sensorConfiguration) {
-        document.querySelector(`[data-sensor-type="${sensorType}"] input`).disabled = !brilliantSole.isConnected;
+insole.addEventListener("isConnected", () => {
+    for (const sensorType in insole.sensorConfiguration) {
+        document.querySelector(`[data-sensor-type="${sensorType}"] input`).disabled = !insole.isConnected;
     }
 });
 
@@ -197,13 +197,13 @@ brilliantSole.addEventListener("isConnected", () => {
 
 /** @type {HTMLTemplateElement} */
 const sensorTypeDataTemplate = document.getElementById("sensorTypeDataTemplate");
-BrilliantSoleDevice.SensorTypes.forEach((sensorType) => {
+BS.Device.SensorTypes.forEach((sensorType) => {
     const sensorTypeDataContainer = sensorTypeDataTemplate.content.cloneNode(true).querySelector(".sensorTypeData");
     sensorTypeDataContainer.querySelector(".sensorType").innerText = sensorType;
 
     /** @type {HTMLPreElement} */
     const sensorDataPre = sensorTypeDataContainer.querySelector(".sensorData");
-    brilliantSole.addEventListener(sensorType, (event) => {
+    insole.addEventListener(sensorType, (event) => {
         const sensorData = event.message;
         sensorDataPre.textContent = JSON.stringify(sensorData, null, 2);
     });
@@ -220,7 +220,7 @@ const vibrationTemplate = document.getElementById("vibrationTemplate");
     const waveformEffectSequenceLoopCountInput = vibrationTemplate.content.querySelector(
         ".waveformEffect .sequenceLoopCount"
     );
-    waveformEffectSequenceLoopCountInput.max = BrilliantSoleDevice.MaxVibrationWaveformEffectSequenceLoopCount;
+    waveformEffectSequenceLoopCountInput.max = BS.Device.MaxVibrationWaveformEffectSequenceLoopCount;
 }
 /** @type {HTMLTemplateElement} */
 const vibrationLocationTemplate = document.getElementById("vibrationLocationTemplate");
@@ -231,17 +231,17 @@ const waveformEffectSegmentTemplate = document.getElementById("waveformEffectSeg
     /** @type {HTMLSelectElement} */
     const waveformEffectSelect = waveformEffectSegmentTemplate.content.querySelector(".effect");
     const waveformEffectOptgroup = waveformEffectSelect.querySelector("optgroup");
-    BrilliantSoleDevice.VibrationWaveformEffects.forEach((waveformEffect) => {
+    BS.Device.VibrationWaveformEffects.forEach((waveformEffect) => {
         waveformEffectOptgroup.appendChild(new Option(waveformEffect));
     });
 
     /** @type {HTMLInputElement} */
     const waveformEffectSegmentDelayInput = waveformEffectSegmentTemplate.content.querySelector(".delay");
-    waveformEffectSegmentDelayInput.max = BrilliantSoleDevice.MaxVibrationWaveformEffectSegmentDelay;
+    waveformEffectSegmentDelayInput.max = BS.Device.MaxVibrationWaveformEffectSegmentDelay;
 
     /** @type {HTMLInputElement} */
     const waveformEffectLoopCountInput = waveformEffectSegmentTemplate.content.querySelector(".loopCount");
-    waveformEffectLoopCountInput.max = BrilliantSoleDevice.MaxVibrationWaveformEffectSegmentLoopCount;
+    waveformEffectLoopCountInput.max = BS.Device.MaxVibrationWaveformEffectSegmentLoopCount;
 }
 
 /** @type {HTMLTemplateElement} */
@@ -249,7 +249,7 @@ const waveformSegmentTemplate = document.getElementById("waveformSegmentTemplate
 {
     /** @type {HTMLInputElement} */
     const waveformDurationSegmentInput = waveformSegmentTemplate.content.querySelector(".duration");
-    waveformDurationSegmentInput.max = BrilliantSoleDevice.MaxVibrationWaveformSegmentDuration;
+    waveformDurationSegmentInput.max = BS.Device.MaxVibrationWaveformSegmentDuration;
 }
 
 /** @type {HTMLButtonElement} */
@@ -267,7 +267,7 @@ addVibrationButton.addEventListener("click", () => {
 
     /** @type {HTMLUListElement} */
     const vibrationLocationsContainer = vibrationContainer.querySelector(".locations");
-    BrilliantSoleDevice.VibrationLocations.forEach((vibrationLocation) => {
+    BS.Device.VibrationLocations.forEach((vibrationLocation) => {
         const vibrationLocationContainer = vibrationLocationTemplate.content
             .cloneNode(true)
             .querySelector(".vibrationLocation");
@@ -284,8 +284,7 @@ addVibrationButton.addEventListener("click", () => {
     const addWaveformEffectSegmentButton = waveformEffectContainer.querySelector(".add");
     const updateAddWaveformEffectSegmentButton = () => {
         addWaveformEffectSegmentButton.disabled =
-            waveformEffectSegmentsContainer.children.length >=
-            BrilliantSoleDevice.MaxNumberOfVibrationWaveformEffectSegments;
+            waveformEffectSegmentsContainer.children.length >= BS.Device.MaxNumberOfVibrationWaveformEffectSegments;
     };
     addWaveformEffectSegmentButton.addEventListener("click", () => {
         /** @type {HTMLElement} */
@@ -336,7 +335,7 @@ addVibrationButton.addEventListener("click", () => {
     const addWaveformSegmentButton = waveformContainer.querySelector(".add");
     const updateAddWaveformSegmentButton = () => {
         addWaveformSegmentButton.disabled =
-            waveformSegmentsContainer.children.length >= BrilliantSoleDevice.MaxNumberOfVibrationWaveformSegments;
+            waveformSegmentsContainer.children.length >= BS.Device.MaxNumberOfVibrationWaveformSegments;
     };
     addWaveformSegmentButton.addEventListener("click", () => {
         /** @type {HTMLElement} */
@@ -357,7 +356,7 @@ addVibrationButton.addEventListener("click", () => {
     const vibrationTypeSelect = vibrationContainer.querySelector(".type");
     /** @type {HTMLOptGroupElement} */
     const vibrationTypeSelectOptgroup = vibrationTypeSelect.querySelector("optgroup");
-    BrilliantSoleDevice.VibrationTypes.forEach((vibrationType) => {
+    BS.Device.VibrationTypes.forEach((vibrationType) => {
         vibrationTypeSelectOptgroup.appendChild(new Option(vibrationType));
     });
 
@@ -365,7 +364,7 @@ addVibrationButton.addEventListener("click", () => {
         let showWaveformContainer = false;
         let showWaveformEffectContainer = false;
 
-        /** @type {import("../../build/brilliantsole.module.js").BrilliantSoleDeviceVibrationType} */
+        /** @type {import("../../build/brilliantsole.module.js").BS.DeviceVibrationType} */
         const vibrationType = vibrationTypeSelect.value;
         switch (vibrationType) {
             case "waveform":
@@ -390,12 +389,12 @@ addVibrationButton.addEventListener("click", () => {
 
 const triggerVibrationsButton = document.getElementById("triggerVibrations");
 triggerVibrationsButton.addEventListener("click", () => {
-    /** @type {import("../../build/brilliantsole.module.js").BrilliantSoleDeviceVibrationConfiguration[]} */
+    /** @type {import("../../build/brilliantsole.module.js").BS.DeviceVibrationConfiguration[]} */
     let vibrationConfigurations = [];
     Array.from(vibrationTemplate.parentElement.querySelectorAll(".vibration"))
         .filter((vibrationContainer) => vibrationContainer.querySelector(".shouldTrigger").checked)
         .forEach((vibrationContainer) => {
-            /** @type {import("../../build/brilliantsole.module.js").BrilliantSoleDeviceVibrationConfiguration} */
+            /** @type {import("../../build/brilliantsole.module.js").BS.DeviceVibrationConfiguration} */
             const vibrationConfiguration = {
                 locations: [],
             };
@@ -415,7 +414,7 @@ triggerVibrationsButton.addEventListener("click", () => {
                         segments: Array.from(
                             vibrationContainer.querySelectorAll(".waveformEffect .waveformEffectSegment")
                         ).map((waveformEffectSegmentContainer) => {
-                            /** @type {import("../../build/brilliantsole.module.js").BrilliantSoleDeviceVibrationWaveformEffectSegment} */
+                            /** @type {import("../../build/brilliantsole.module.js").BS.DeviceVibrationWaveformEffectSegment} */
                             const waveformEffectSegment = {
                                 loopCount: Number(waveformEffectSegmentContainer.querySelector(".loopCount").value),
                             };
@@ -451,14 +450,14 @@ triggerVibrationsButton.addEventListener("click", () => {
         });
     console.log({ vibrationConfigurations });
     if (vibrationConfigurations.length > 0) {
-        brilliantSole.triggerVibration(...vibrationConfigurations);
+        insole.triggerVibration(...vibrationConfigurations);
     }
 });
-brilliantSole.addEventListener("isConnected", () => {
+insole.addEventListener("isConnected", () => {
     updateTriggerVibrationsButtonDisabled();
 });
 
 function updateTriggerVibrationsButtonDisabled() {
     triggerVibrationsButton.disabled =
-        !brilliantSole.isConnected || vibrationTemplate.parentElement.querySelectorAll(".vibration").length == 0;
+        !insole.isConnected || vibrationTemplate.parentElement.querySelectorAll(".vibration").length == 0;
 }

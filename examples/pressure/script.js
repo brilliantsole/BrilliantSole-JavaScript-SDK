@@ -1,7 +1,7 @@
-import BrilliantSole from "../../build/brilliantsole.module.js";
-window.BrilliantSole = BrilliantSole;
-console.log({ BrilliantSole });
+import BS from "../../build/brilliantsole.module.js";
+window.BS = BS;
+console.log({ BS });
 
-const brilliantSole = new BrilliantSole();
-console.log({ brilliantSole });
-window.brilliantSole = brilliantSole;
+const insole = new BS.Device();
+console.log({ insole });
+window.insole = insole;

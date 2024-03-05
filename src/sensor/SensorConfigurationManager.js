@@ -1,7 +1,7 @@
 import { createConsole } from "../utils/Console.js";
 import SensorDataManager from "./SensorDataManager.js";
 
-/** @typedef {import("../BrilliantSole.js").BrilliantSoleDeviceType} BrilliantSoleDeviceType */
+/** @typedef {import("../BS.js").BrilliantSoleDeviceType} BrilliantSoleDeviceType */
 
 /** @typedef {import("./SensorDataManager.js").BrilliantSoleSensorType} BrilliantSoleSensorType */
 /**

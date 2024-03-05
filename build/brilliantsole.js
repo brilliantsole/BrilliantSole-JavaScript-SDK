@@ -3,10 +3,10 @@
  * @license MIT
  */
 (function (global, factory) {
-	typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports) :
-	typeof define === 'function' && define.amd ? define(['exports'], factory) :
-	(global = typeof globalThis !== 'undefined' ? globalThis : global || self, factory(global.BrilliantSole = {}));
-})(this, (function (exports) { 'use strict';
+	typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory() :
+	typeof define === 'function' && define.amd ? define(factory) :
+	(global = typeof globalThis !== 'undefined' ? globalThis : global || self, global.BS = factory());
+})(this, (function () { 'use strict';
 
 	/** @type {"__BRILLIANTSOLE__DEV__" | "__BRILLIANTSOLE__PROD__"} */
 	const isInDev = "__BRILLIANTSOLE__PROD__" == "__BRILLIANTSOLE__DEV__";
@@ -865,7 +865,7 @@
 	    require("@abandonware/noble");
 	}
 
-	/** @typedef {import("../BrilliantSole.js").BrilliantSoleDeviceType} BrilliantSoleDeviceType */
+	/** @typedef {import("../BS.js").BrilliantSoleDeviceType} BrilliantSoleDeviceType */
 
 	/** @typedef {"pressure" | "accelerometer" | "gravity" | "linearAcceleration" | "gyroscope" | "magnetometer" | "gameRotation" | "rotation" | "barometer"} BrilliantSoleSensorType */
 	/** @typedef {"hallux" | "digits" | "metatarsal_inner" | "metatarsal_center" | "metatarsal_outer" | "lateral" | "arch" | "heel"} BrilliantSolePessureType */
@@ -1075,7 +1075,7 @@
 	    }
 	}
 
-	/** @typedef {import("../BrilliantSole.js").BrilliantSoleDeviceType} BrilliantSoleDeviceType */
+	/** @typedef {import("../BS.js").BrilliantSoleDeviceType} BrilliantSoleDeviceType */
 
 	/** @typedef {import("./SensorDataManager.js").BrilliantSoleSensorType} BrilliantSoleSensorType */
 	/**
@@ -1786,24 +1786,24 @@
 	    }
 	}
 
-	/** @typedef {import("./connection/ConnectionManager.js").BrilliantSoleDeviceConnectionMessageType} BrilliantSoleDeviceConnectionMessageType */
-	/** @typedef {import("./sensor/SensorDataManager.js").BrilliantSoleDeviceSensorType} BrilliantSoleDeviceSensorType */
-	/** @typedef {"connectionStatus" | BrilliantSoleDeviceConnectionStatus | "isConnected" | BrilliantSoleDeviceConnectionMessageType | "deviceInformation" | BrilliantSoleDeviceSensorType} BrilliantSoleDeviceEventType */
+	/** @typedef {import("./connection/ConnectionManager.js").BrilliantSoleConnectionMessageType} BrilliantSoleConnectionMessageType */
+	/** @typedef {import("./sensor/SensorDataManager.js").BrilliantSoleSensorType} BrilliantSoleSensorType */
+	/** @typedef {"connectionStatus" | BrilliantSoleConnectionStatus | "isConnected" | BrilliantSoleConnectionMessageType | "deviceInformation" | BrilliantSoleSensorType} BrilliantSoleEventType */
 
 	/** @typedef {import("./utils/EventDispatcher.js").EventDispatcherListener} EventDispatcherListener */
 	/** @typedef {import("./utils/EventDispatcher.js").EventDispatcherOptions} EventDispatcherOptions */
 
 	/**
-	 * @typedef BrilliantSoleDeviceEvent
+	 * @typedef BrilliantSoleEvent
 	 * @type {object}
-	 * @property {BrilliantSoleDeviceEventType} type
+	 * @property {BrilliantSoleEventType} type
 	 * @property {object} message
 	 */
 
-	/** @typedef {import("./connection/ConnectionManager.js").BrilliantSoleDeviceConnectionStatus} BrilliantSoleDeviceConnectionStatus */
+	/** @typedef {import("./connection/ConnectionManager.js").BrilliantSoleConnectionStatus} BrilliantSoleConnectionStatus */
 
 	/**
-	 * @typedef BrilliantSoleDeviceDeviceInformation
+	 * @typedef BrilliantSoleDeviceInformation
 	 * @type {object}
 	 * @property {string?} manufacturerName
 	 * @property {string?} modelNumber
@@ -1822,38 +1822,38 @@
 	 * @property {number} productVersion
 	 */
 
-	/** @typedef {"leftInsole" | "rightInsole"} BrilliantSoleDeviceDeviceType */
+	/** @typedef {"leftInsole" | "rightInsole"} BrilliantSoleDeviceType */
 
-	/** @typedef {import("./sensor/SensorConfigurationManager.js").BrilliantSoleDeviceSensorConfiguration} BrilliantSoleDeviceSensorConfiguration */
+	/** @typedef {import("./sensor/SensorConfigurationManager.js").BrilliantSoleSensorConfiguration} BrilliantSoleSensorConfiguration */
 
-	/** @typedef {import("./vibration/VibrationManager.js").BrilliantSoleDeviceVibrationLocation} BrilliantSoleDeviceVibrationLocation */
-	/** @typedef {import("./vibration/VibrationManager.js").BrilliantSoleDeviceVibrationType} BrilliantSoleDeviceVibrationType */
+	/** @typedef {import("./vibration/VibrationManager.js").BrilliantSoleVibrationLocation} BrilliantSoleVibrationLocation */
+	/** @typedef {import("./vibration/VibrationManager.js").BrilliantSoleVibrationType} BrilliantSoleVibrationType */
 
-	/** @typedef {import("./vibration/VibrationManager.js").BrilliantSoleDeviceVibrationWaveformEffectSegment} BrilliantSoleDeviceVibrationWaveformEffectSegment */
+	/** @typedef {import("./vibration/VibrationManager.js").BrilliantSoleVibrationWaveformEffectSegment} BrilliantSoleVibrationWaveformEffectSegment */
 	/**
-	 * @typedef BrilliantSoleDeviceVibrationWaveformEffectConfiguration
+	 * @typedef BrilliantSoleVibrationWaveformEffectConfiguration
 	 * @type {Object}
-	 * @property {BrilliantSoleDeviceVibrationWaveformEffectSegment[]} segments
+	 * @property {BrilliantSoleVibrationWaveformEffectSegment[]} segments
 	 * @property {number?} loopCount how many times the entire sequence should loop (int ranging [0, 6])
 	 */
 
-	/** @typedef {import("./vibration/VibrationManager.js").BrilliantSoleDeviceVibrationWaveformSegment} BrilliantSoleDeviceVibrationWaveformSegment */
+	/** @typedef {import("./vibration/VibrationManager.js").BrilliantSoleVibrationWaveformSegment} BrilliantSoleVibrationWaveformSegment */
 	/**
-	 * @typedef BrilliantSoleDeviceVibrationWaveformConfiguration
+	 * @typedef BrilliantSoleVibrationWaveformConfiguration
 	 * @type {Object}
-	 * @property {BrilliantSoleDeviceVibrationWaveformSegment[]} segments
+	 * @property {BrilliantSoleVibrationWaveformSegment[]} segments
 	 */
 
 	/**
-	 * @typedef BrilliantSoleDeviceVibrationConfiguration
+	 * @typedef BrilliantSoleVibrationConfiguration
 	 * @type {Object}
-	 * @property {BrilliantSoleDeviceVibrationLocation[]} locations
-	 * @property {BrilliantSoleDeviceVibrationType} type
-	 * @property {BrilliantSoleDeviceVibrationWaveformEffectConfiguration?} waveformEffect use if type is "waveformEffect"
-	 * @property {BrilliantSoleDeviceVibrationWaveformConfiguration?} waveform use if type is "waveform"
+	 * @property {BrilliantSoleVibrationLocation[]} locations
+	 * @property {BrilliantSoleVibrationType} type
+	 * @property {BrilliantSoleVibrationWaveformEffectConfiguration?} waveformEffect use if type is "waveformEffect"
+	 * @property {BrilliantSoleVibrationWaveformConfiguration?} waveform use if type is "waveform"
 	 */
 
-	const _console = createConsole("BrilliantSoleDevice", { log: true });
+	const _console = createConsole("BrilliantSole", { log: true });
 
 	class BrilliantSoleDevice {
 	    constructor() {
@@ -1871,7 +1871,7 @@
 
 	    // EVENT DISPATCHER
 
-	    /** @type {BrilliantSoleDeviceEventType[]} */
+	    /** @type {BrilliantSoleEventType[]} */
 	    static #EventTypes = [
 	        "connectionStatus",
 	        "connecting",
@@ -1912,7 +1912,7 @@
 	    #eventDispatcher = new EventDispatcher(this.#eventTypes);
 
 	    /**
-	     * @param {BrilliantSoleDeviceEventType} type
+	     * @param {BrilliantSoleEventType} type
 	     * @param {EventDispatcherListener} listener
 	     * @param {EventDispatcherOptions} options
 	     * @throws {Error}
@@ -1922,7 +1922,7 @@
 	    }
 
 	    /**
-	     * @param {BrilliantSoleDeviceEvent} event
+	     * @param {BrilliantSoleEvent} event
 	     * @throws {Error} if type is not valid
 	     */
 	    #dispatchEvent(event) {
@@ -1930,7 +1930,7 @@
 	    }
 
 	    /**
-	     * @param {BrilliantSoleDeviceEventType} type
+	     * @param {BrilliantSoleEventType} type
 	     * @param {EventDispatcherListener} listener
 	     * @returns {boolean}
 	     * @throws {Error}
@@ -2018,7 +2018,7 @@
 	        return this.#connectionManager?.status;
 	    }
 
-	    /** @param {BrilliantSoleDeviceConnectionStatus} connectionStatus */
+	    /** @param {BrilliantSoleConnectionStatus} connectionStatus */
 	    #onConnectionStatusUpdated(connectionStatus) {
 	        _console.log({ connectionStatus });
 
@@ -2061,7 +2061,7 @@
 	    }
 
 	    /**
-	     * @param {BrilliantSoleDeviceConnectionMessageType} messageType
+	     * @param {BrilliantSoleConnectionMessageType} messageType
 	     * @param {DataView} dataView
 	     */
 	    #onConnectionMessageReceived(messageType, dataView) {
@@ -2149,17 +2149,17 @@
 	    /** @type {TextEncoder} */
 	    static #TextEncoder = new TextEncoder();
 	    get #textEncoder() {
-	        return BrilliantSoleDevice.#TextEncoder;
+	        return BrilliantSole.#TextEncoder;
 	    }
 	    /** @type {TextDecoder} */
 	    static #TextDecoder = new TextDecoder();
 	    get #textDecoder() {
-	        return BrilliantSoleDevice.#TextDecoder;
+	        return BrilliantSole.#TextDecoder;
 	    }
 
 	    // DEVICE INFORMATION
 
-	    /** @type {BrilliantSoleDeviceDeviceInformation} */
+	    /** @type {BrilliantSoleDeviceInformation} */
 	    #deviceInformation = {
 	        manufacturerName: null,
 	        modelNumber: null,
@@ -2175,7 +2175,7 @@
 	        return Object.values(this.#deviceInformation).every((value) => value != null);
 	    }
 
-	    /** @param {BrilliantSoleDeviceDeviceInformation} partialDeviceInformation */
+	    /** @param {BrilliantSoleDeviceInformation} partialDeviceInformation */
 	    #updateDeviceInformation(partialDeviceInformation) {
 	        _console.log({ partialDeviceInformation });
 	        for (const deviceInformationName in partialDeviceInformation) {
@@ -2230,13 +2230,13 @@
 	        return 2;
 	    }
 	    get #minNameLength() {
-	        return BrilliantSoleDevice.MinNameLength;
+	        return BrilliantSole.MinNameLength;
 	    }
 	    static get MaxNameLength() {
 	        return 65;
 	    }
 	    get #maxNameLength() {
-	        return BrilliantSoleDevice.MaxNameLength;
+	        return BrilliantSole.MaxNameLength;
 	    }
 	    /** @param {string} newName */
 	    async setName(newName) {
@@ -2260,25 +2260,25 @@
 	    }
 
 	    // TYPE
-	    /** @type {BrilliantSoleDeviceDeviceType[]} */
+	    /** @type {BrilliantSoleDeviceType[]} */
 	    static #Types = ["leftInsole", "rightInsole"];
 	    static get Types() {
 	        return this.#Types;
 	    }
 	    get #types() {
-	        return BrilliantSoleDevice.#Types;
+	        return BrilliantSole.#Types;
 	    }
-	    /** @type {BrilliantSoleDeviceDeviceType?} */
+	    /** @type {BrilliantSoleDeviceType?} */
 	    #type;
 	    get type() {
 	        return this.#type;
 	    }
-	    /** @param {BrilliantSoleDeviceDeviceType} newType */
+	    /** @param {BrilliantSoleDeviceType} newType */
 	    #assertValidDeviceType(type) {
 	        _console.assertTypeWithError(type, "string");
 	        _console.assertWithError(this.#types.includes(type), `invalid type "${type}"`);
 	    }
-	    /** @param {BrilliantSoleDeviceDeviceType} updatedType */
+	    /** @param {BrilliantSoleDeviceType} updatedType */
 	    #updateType(updatedType) {
 	        this.#assertValidDeviceType(updatedType);
 	        if (updatedType == this.type) {
@@ -2293,7 +2293,7 @@
 
 	        this.#dispatchEvent({ type: "getType", message: { type: this.#type } });
 	    }
-	    /** @param {BrilliantSoleDeviceDeviceType} newType */
+	    /** @param {BrilliantSoleDeviceType} newType */
 	    async setType(newType) {
 	        this.#assertIsConnected();
 	        this.#assertValidDeviceType(newType);
@@ -2305,7 +2305,7 @@
 
 	    // SENSOR CONFIGURATION
 	    #sensorConfigurationManager = new SensorConfigurationManager();
-	    /** @type {BrilliantSoleDeviceSensorConfiguration?} */
+	    /** @type {BrilliantSoleSensorConfiguration?} */
 	    #sensorConfiguration;
 	    get sensorConfiguration() {
 	        return this.#sensorConfiguration;
@@ -2318,7 +2318,7 @@
 	        return SensorConfigurationManager.SensorRateStep;
 	    }
 
-	    /** @param {BrilliantSoleDeviceSensorConfiguration} updatedSensorConfiguration */
+	    /** @param {BrilliantSoleSensorConfiguration} updatedSensorConfiguration */
 	    #updateSensorConfiguration(updatedSensorConfiguration) {
 	        this.#sensorConfiguration = updatedSensorConfiguration;
 	        _console.log({ updatedSensorConfiguration: this.#sensorConfiguration });
@@ -2331,7 +2331,7 @@
 	            message: { sensorConfiguration: this.sensorConfiguration },
 	        });
 	    }
-	    /** @param {BrilliantSoleDeviceSensorConfiguration} newSensorConfiguration */
+	    /** @param {BrilliantSoleSensorConfiguration} newSensorConfiguration */
 	    async setSensorConfiguration(newSensorConfiguration) {
 	        this.#assertIsConnected();
 	        _console.log({ newSensorConfiguration });
@@ -2351,7 +2351,7 @@
 	    #sensorDataManager = new SensorDataManager();
 
 	    /**
-	     * @param {BrilliantSoleDeviceSensorType} sensorType
+	     * @param {BrilliantSoleSensorType} sensorType
 	     * @param {Object} sensorData
 	     * @param {number} sensorData.timestamp
 	     */
@@ -2393,7 +2393,7 @@
 	        return VibrationManager.MaxNumberOfWaveformSegments;
 	    }
 
-	    /** @param  {...BrilliantSoleDeviceVibrationConfiguration} vibrationConfigurations */
+	    /** @param  {...BrilliantSoleVibrationConfiguration} vibrationConfigurations */
 	    async triggerVibration(...vibrationConfigurations) {
 	        /** @type {ArrayBuffer} */
 	        let triggerVibrationData;
@@ -2434,8 +2434,12 @@
 	    }
 	}
 
-	exports.BrilliantSoleDevice = BrilliantSoleDevice;
-	exports.setAllConsoleLevelFlags = setAllConsoleLevelFlags;
-	exports.setConsoleLevelFlagsForType = setConsoleLevelFlagsForType;
+	var BS = {
+	    setAllConsoleLevelFlags,
+	    setConsoleLevelFlagsForType,
+	    Device: BrilliantSoleDevice,
+	};
+
+	return BS;
 
 }));

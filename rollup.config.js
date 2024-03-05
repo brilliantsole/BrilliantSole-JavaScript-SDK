@@ -39,9 +39,12 @@ if (production) {
     _plugins.push(replaceEnvironment());
 }
 
+const name = "BS";
+const input = "src/BS.js";
+
 const builds = [
     {
-        input: "src/BrilliantSole.js",
+        input,
         plugins: [..._plugins],
         output: [
             {
@@ -51,7 +54,7 @@ const builds = [
         ],
     },
     {
-        input: "src/BrilliantSole.js",
+        input,
         plugins: [..._plugins, terser()],
         output: [
             {
@@ -62,37 +65,37 @@ const builds = [
     },
 
     {
-        input: "src/BrilliantSole.js",
+        input,
         plugins: [..._plugins],
         output: [
             {
                 format: "umd",
-                name: "BrilliantSole",
+                name,
                 file: "build/brilliantsole.js",
                 indent: "\t",
             },
         ],
     },
     {
-        input: "src/BrilliantSole.js",
+        input,
         plugins: [..._plugins, terser()],
         output: [
             {
                 format: "umd",
-                name: "BrilliantSole",
+                name,
                 file: "build/brilliantsole.min.js",
             },
         ],
     },
 
     {
-        input: "src/BrilliantSole.js",
+        input,
         plugins: [..._plugins],
         external: ["webbluetooth"],
         output: [
             {
                 format: "cjs",
-                name: "BrilliantSole",
+                name,
                 file: "build/brilliantsole.cjs",
             },
         ],

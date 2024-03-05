@@ -1,6 +1,6 @@
 import { createConsole } from "../utils/Console.js";
 
-/** @typedef {import("../BrilliantSole.js").BrilliantSoleDeviceType} BrilliantSoleDeviceType */
+/** @typedef {import("../BS.js").BrilliantSoleDeviceType} BrilliantSoleDeviceType */
 
 /** @typedef {"pressure" | "accelerometer" | "gravity" | "linearAcceleration" | "gyroscope" | "magnetometer" | "gameRotation" | "rotation" | "barometer"} BrilliantSoleSensorType */
 /** @typedef {"hallux" | "digits" | "metatarsal_inner" | "metatarsal_center" | "metatarsal_outer" | "lateral" | "arch" | "heel"} BrilliantSolePessureType */
