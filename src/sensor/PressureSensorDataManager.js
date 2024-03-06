@@ -3,7 +3,7 @@ import { getInterpolation } from "../utils/MathUtils.js";
 
 /** @typedef {import("../Device.js").BrilliantSoleDeviceType} BrilliantSoleDeviceType */
 
-/** @typedef {"hallux" | "digits" | "metatarsal_inner" | "metatarsal_center" | "metatarsal_outer" | "arch" | "lateral" | "heel"} BrilliantSolePessureSensorType */
+/** @typedef {"hallux" | "digits" | "metatarsal_inner" | "metatarsal_center" | "metatarsal_outer" | "arch" | "lateral" | "heel"} BrilliantSolePressureSensorType */
 /** @typedef {"pressure"} BrilliantSolePressureSensorType */
 
 /**
@@ -25,7 +25,7 @@ import { getInterpolation } from "../utils/MathUtils.js";
 /**
  * @typedef BrilliantSolePressureSensorValue
  * @type {Object}
- * @property {BrilliantSolePessureSensorType} name
+ * @property {BrilliantSolePressureSensorType} name
  * @property {BrilliantSolePressureSensorPosition} position
  * @property {number} rawValue
  * @property {number} normalizedValue
@@ -33,7 +33,7 @@ import { getInterpolation } from "../utils/MathUtils.js";
  */
 
 /**
- * @typedef BrilliantSolePessureData
+ * @typedef BrilliantSolePressureData
  * @type {Object}
  * @property {BrilliantSolePressureSensorValue[]} sensors
  *
@@ -65,7 +65,7 @@ class PressureSensorDataManager {
         this.resetCenterOfPressureRange();
     }
 
-    /** @type {BrilliantSolePessureSensorType[]} */
+    /** @type {BrilliantSolePressureSensorType[]} */
     static #Types = [
         "hallux",
         "digits",
@@ -80,7 +80,7 @@ class PressureSensorDataManager {
         return this.#Types;
     }
     get types() {
-        return PressureSensorDataManager.#Types;
+        return PressureSensorDataManager.Types;
     }
 
     static #Scalars = {
@@ -90,7 +90,7 @@ class PressureSensorDataManager {
         return this.#Scalars;
     }
     get scalars() {
-        return PressureSensorDataManager.#Scalars;
+        return PressureSensorDataManager.Scalars;
     }
 
     static #NumberOfPressureSensors = 8;
@@ -98,7 +98,7 @@ class PressureSensorDataManager {
         return this.#NumberOfPressureSensors;
     }
     get numberOfPressureSensors() {
-        return PressureSensorDataManager.#NumberOfPressureSensors;
+        return PressureSensorDataManager.NumberOfPressureSensors;
     }
 
     /**
@@ -108,17 +108,16 @@ class PressureSensorDataManager {
      * @type {BrilliantSolePressureSensorPosition[]}
      */
     static #PressureSensorPositions = [
-        { x: 109, y: 74 },
-        { x: 249, y: 154 },
+        { x: 110, y: 73 },
+        { x: 250, y: 155 },
         { x: 56, y: 236 },
         { x: 185, y: 277 },
         { x: 305, y: 337 },
         { x: 69, y: 584 },
         { x: 285, y: 635 },
         { x: 162, y: 914 },
-    ].map(({ x, y }) => ({ x: x / 362, y: 1 - y / 1000 }));
+    ].map(({ x, y }) => ({ x: x / 365, y: 1 - y / 1000 }));
     static get PressureSensorPositions() {
-        console.log(this.#PressureSensorPositions);
         return this.#PressureSensorPositions;
     }
     /** @type {BrilliantSolePressureSensorPosition[]} */
@@ -178,7 +177,7 @@ class PressureSensorDataManager {
     parsePressure(dataView, byteOffset) {
         const scalar = this.scalars.pressure;
 
-        /** @type {BrilliantSolePessureData} */
+        /** @type {BrilliantSolePressureData} */
         const pressure = { sensors: [], rawSum: 0, normalizedSum: 0 };
         for (let index = 0; index < this.numberOfPressureSensors; index++, byteOffset += 2) {
             const rawValue = dataView.getUint16(byteOffset, true);

@@ -38,7 +38,7 @@ class MotionSensorDataManager {
         return this.#Scalars;
     }
     get scalars() {
-        return MotionSensorDataManager.#Scalars;
+        return MotionSensorDataManager.Scalars;
     }
 
     static #Vector3Size = 3 * 2;

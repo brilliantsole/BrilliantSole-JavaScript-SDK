@@ -5,12 +5,126 @@
         <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico" />
         <script type="module" src="./script.js"></script>
     </head>
+    <style>
+        #insoles {
+            display: flex;
+            flex-direction: row;
+            height: 600px;
+        }
+        .insole {
+            position: relative;
+            height: 100%;
+        }
+        img:not(.overlay) {
+            position: relative;
+        }
+        img.overlay {
+            position: absolute;
+        }
+        .insole.left {
+            -webkit-transform: scaleX(-1);
+            transform: scaleX(-1);
+        }
+        .insole img {
+            height: 100%;
+        }
 
+        [data-pressure],
+        [data-haptics] {
+            -webkit-mask-repeat: no-repeat;
+            mask-repeat: no-repeat;
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            mask-size: 100%;
+            z-index: 1;
+        }
+        [data-pressure] {
+            background-color: red;
+        }
+        [data-haptics] {
+            background-color: blue;
+        }
+        [data-pressure="0"] {
+            -webkit-mask-image: url(../../assets/images/pressure-0.svg);
+            mask-image: url(../../assets/images/pressure-0.svg);
+        }
+        [data-pressure="1"] {
+            -webkit-mask-image: url(../../assets/images/pressure-1.svg);
+            mask-image: url(../../assets/images/pressure-1.svg);
+        }
+        [data-pressure="2"] {
+            -webkit-mask-image: url(../../assets/images/pressure-2.svg);
+            mask-image: url(../../assets/images/pressure-2.svg);
+        }
+        [data-pressure="3"] {
+            -webkit-mask-image: url(../../assets/images/pressure-3.svg);
+            mask-image: url(../../assets/images/pressure-3.svg);
+        }
+        [data-pressure="4"] {
+            -webkit-mask-image: url(../../assets/images/pressure-4.svg);
+            mask-image: url(../../assets/images/pressure-4.svg);
+        }
+        [data-pressure="5"] {
+            -webkit-mask-image: url(../../assets/images/pressure-5.svg);
+            mask-image: url(../../assets/images/pressure-5.svg);
+        }
+        [data-pressure="6"] {
+            -webkit-mask-image: url(../../assets/images/pressure-6.svg);
+            mask-image: url(../../assets/images/pressure-6.svg);
+        }
+        [data-pressure="7"] {
+            -webkit-mask-image: url(../../assets/images/pressure-7.svg);
+            mask-image: url(../../assets/images/pressure-7.svg);
+        }
+
+        [data-haptics="front"] {
+            -webkit-mask-image: url(../../assets/images/haptics-front.svg);
+            mask-image: url(../../assets/images/haptics-front.svg);
+        }
+        [data-haptics="rear"] {
+            -webkit-mask-image: url(../../assets/images/haptics-rear.svg);
+            mask-image: url(../../assets/images/haptics-rear.svg);
+        }
+    </style>
     <body>
         <nav>
             <a href="../../../">home</a>
         </nav>
 
         <h1>Pressure | BrilliantSole JavaScript SDK</h1>
+
+        <div id="insoles">
+            <div class="insole left">
+                <div data-pressure="0"></div>
+                <div data-pressure="1"></div>
+                <div data-pressure="2"></div>
+                <div data-pressure="3"></div>
+                <div data-pressure="4"></div>
+                <div data-pressure="5"></div>
+                <div data-pressure="6"></div>
+                <div data-pressure="7"></div>
+
+                <div data-haptics="front"></div>
+                <div data-haptics="rear"></div>
+
+                <img src="../../assets/images/right-insole.svg" />
+            </div>
+            <div class="insole right">
+                <div data-pressure="0"></div>
+                <div data-pressure="1"></div>
+                <div data-pressure="2"></div>
+                <div data-pressure="3"></div>
+                <div data-pressure="4"></div>
+                <div data-pressure="5"></div>
+                <div data-pressure="6"></div>
+                <div data-pressure="7"></div>
+
+                <div data-haptics="front"></div>
+                <div data-haptics="rear"></div>
+
+                <img src="../../assets/images/right-insole.svg" />
+            </div>
+        </div>
     </body>
 </html>

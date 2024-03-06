@@ -53,7 +53,7 @@ class SensorDataManager {
         return this.#Types;
     }
     get #types() {
-        return SensorDataManager.#Types;
+        return SensorDataManager.Types;
     }
 
     /** @param {string} sensorType */

@@ -31,7 +31,7 @@ class VibrationManager {
         return this.#Locations;
     }
     get locations() {
-        return VibrationManager.#Locations;
+        return VibrationManager.Locations;
     }
     /** @param {BrilliantSoleVibrationLocation} location */
     #verifyLocation(location) {
@@ -84,7 +84,7 @@ class VibrationManager {
         return this.#MaxWaveformEffectSegmentDelay;
     }
     get maxWaveformEffectSegmentDelay() {
-        return VibrationManager.#MaxWaveformEffectSegmentDelay;
+        return VibrationManager.MaxWaveformEffectSegmentDelay;
     }
     /** @param {BrilliantSoleVibrationWaveformEffectSegment} waveformEffectSegment */
     #verifyWaveformEffectSegment(waveformEffectSegment) {
@@ -112,7 +112,7 @@ class VibrationManager {
         return this.#MaxWaveformEffectSegmentLoopCount;
     }
     get maxWaveformEffectSegmentLoopCount() {
-        return VibrationManager.#MaxWaveformEffectSegmentLoopCount;
+        return VibrationManager.MaxWaveformEffectSegmentLoopCount;
     }
     /** @param {number} waveformEffectSegmentLoopCount */
     #verifyWaveformEffectSegmentLoopCount(waveformEffectSegmentLoopCount) {
@@ -132,7 +132,7 @@ class VibrationManager {
         return this.#MaxNumberOfWaveformEffectSegments;
     }
     get maxNumberOfWaveformEffectSegments() {
-        return VibrationManager.#MaxNumberOfWaveformEffectSegments;
+        return VibrationManager.MaxNumberOfWaveformEffectSegments;
     }
     /** @param {BrilliantSoleVibrationWaveformEffectSegment[]} waveformEffectSegments */
     #verifyWaveformEffectSegments(waveformEffectSegments) {
@@ -151,7 +151,7 @@ class VibrationManager {
         return this.#MaxWaveformEffectSequenceLoopCount;
     }
     get maxWaveformEffectSequenceLoopCount() {
-        return VibrationManager.#MaxWaveformEffectSequenceLoopCount;
+        return VibrationManager.MaxWaveformEffectSequenceLoopCount;
     }
     /** @param {number} waveformEffectSequenceLoopCount */
     #verifyWaveformEffectSequenceLoopCount(waveformEffectSequenceLoopCount) {
@@ -171,7 +171,7 @@ class VibrationManager {
         return this.#MaxWaveformSegmentDuration;
     }
     get maxWaveformSegmentDuration() {
-        return VibrationManager.#MaxWaveformSegmentDuration;
+        return VibrationManager.MaxWaveformSegmentDuration;
     }
     /** @param {BrilliantSoleVibrationWaveformSegment} waveformSegment */
     #verifyWaveformSegment(waveformSegment) {
@@ -200,7 +200,7 @@ class VibrationManager {
         return this.#MaxNumberOfWaveformSegments;
     }
     get maxNumberOfWaveformSegments() {
-        return VibrationManager.#MaxNumberOfWaveformSegments;
+        return VibrationManager.MaxNumberOfWaveformSegments;
     }
     /** @param {BrilliantSoleVibrationWaveformSegment[]} waveformSegments */
     #verifyWaveformSegments(waveformSegments) {
@@ -298,7 +298,7 @@ class VibrationManager {
         return this.#Types;
     }
     get #types() {
-        return VibrationManager.#Types;
+        return VibrationManager.Types;
     }
     /** @param {BrilliantSoleVibrationType} vibrationType */
     #verifyVibrationType(vibrationType) {

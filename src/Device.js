@@ -46,6 +46,7 @@ import { concatenateArrayBuffers } from "./utils/ArrayBufferUtils.js";
  */
 
 /** @typedef {"leftInsole" | "rightInsole"} BrilliantSoleDeviceType */
+/** @typedef {"left" | "right"} BrilliantSoleInsoleSide */
 
 /** @typedef {import("./sensor/SensorConfigurationManager.js").BrilliantSoleSensorConfiguration} BrilliantSoleSensorConfiguration */
 
@@ -490,7 +491,7 @@ class Device {
         return this.#Types;
     }
     get #types() {
-        return Device.#Types;
+        return Device.Types;
     }
     /** @type {BrilliantSoleDeviceType?} */
     #type;
@@ -525,6 +526,34 @@ class Device {
         const setTypeData = Uint8Array.from([newTypeEnum]);
         _console.log({ setTypeData });
         await this.#connectionManager.sendMessage("setType", setTypeData);
+    }
+
+    get isInsole() {
+        switch (this.type) {
+            case "leftInsole":
+            case "rightInsole":
+                return true;
+            default:
+                // for future non-insole BrilliantSole device types
+                return false;
+        }
+    }
+    /** @type {BrilliantSoleInsoleSide[]} */
+    static #InsoleSides = ["left", "right"];
+    static get InsoleSides() {
+        return this.#InsoleSides;
+    }
+    get insoleSides() {
+        return Device.InsoleSides;
+    }
+    /** @type {BrilliantSoleInsoleSide} */
+    get insoleSide() {
+        switch (this.type) {
+            case "leftInsole":
+                return "left";
+            case "rightInsole":
+                return "right";
+        }
     }
 
     // SENSOR CONFIGURATION
@@ -569,6 +598,9 @@ class Device {
     static #SensorTypes = SensorDataManager.Types;
     static get SensorTypes() {
         return this.#SensorTypes;
+    }
+    get sensorTypes() {
+        return Device.SensorTypes;
     }
 
     /** @type {SensorDataManager} */

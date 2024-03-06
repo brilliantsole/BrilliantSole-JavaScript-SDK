@@ -3,8 +3,44 @@
         <title>3D | BrilliantSole JavaScript SDK</title>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico" />
+        <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+        <!-- required to get aframe-orbit-controls-component to work -->
+        <script>
+            THREE.Quaternion.prototype.inverse = THREE.Quaternion.prototype.invert;
+            THREE.Math = THREE.MathUtils;
+        </script>
+        <!-- https://github.com/tizzle/aframe-orbit-controls-component -->
+        <script src="https://cdn.rawgit.com/tizzle/aframe-orbit-controls-component/v0.1.14/dist/aframe-orbit-controls-component.min.js"></script>
         <script type="module" src="./script.js"></script>
     </head>
+
+    <style>
+        a-scene {
+            width: 350px;
+            height: 350px;
+            margin: auto;
+            border-radius: 40px;
+            overflow: hidden;
+            border: solid black;
+        }
+
+        #controls {
+            margin: auto;
+            width: fit-content;
+            display: flex;
+            flex-direction: column;
+        }
+        #controls > div {
+            display: flex;
+            flex-direction: row;
+            gap: 0.5rem;
+            justify-content: space-evenly;
+        }
+
+        label {
+            display: block;
+        }
+    </style>
 
     <body>
         <nav>
@@ -12,5 +48,38 @@
         </nav>
 
         <h1>3D | BrilliantSole JavaScript SDK</h1>
+
+        <a-scene embedded xr-mode-ui="enabled: false;" device-orientation-permission-ui="enabled: false">
+            <a-assets>
+                <a-asset-item id="leftInsoleAsset" src="../../assets/3d/leftInsole.glb"></a-asset-item>
+            </a-assets>
+
+            <a-light type="directional" position="2 2 -2" target="#target"></a-light>
+            <a-light type="directional" position="-2 2 2" target="#target"></a-light>
+
+            <a-camera
+                id="camera"
+                camera="fov: 50; zoom: 2;"
+                position="0 0 1"
+                orbit-controls="
+                    enableZoom: true;
+                    autoRotate: false;
+                    target: #target;
+                    enableDamping: true;
+                    dampingFactor: 0.125;
+                    rotateSpeed:0.25;
+                    minDistance:0.1;
+                    maxDistance:1;
+                "
+            ></a-camera>
+
+            <a-entity id="target">
+                <a-entity id="targetPositionOffset">
+                    <a-entity id="targetRotationOffset">
+                        <a-entity id="insole" gltf-model="#leftInsoleAsset" visible="true"></a-entity>
+                    </a-entity>
+                </a-entity>
+            </a-entity>
+        </a-scene>
     </body>
 </html>

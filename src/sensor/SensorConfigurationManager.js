@@ -49,14 +49,16 @@ class SensorConfigurationManager {
         return parsedSensorConfiguration;
     }
 
+    static #MaxSensorRate = 2 ** 16 - 1;
     static get MaxSensorRate() {
-        return 2 ** 16 - 1;
+        return this.#MaxSensorRate;
     }
     get maxSensorRate() {
         return SensorConfigurationManager.MaxSensorRate;
     }
+    static #SensorRateStep = 5;
     static get SensorRateStep() {
-        return 5;
+        return this.#SensorRateStep;
     }
     get sensorRateStep() {
         return SensorConfigurationManager.SensorRateStep;

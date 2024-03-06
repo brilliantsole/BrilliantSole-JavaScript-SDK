@@ -874,7 +874,7 @@ const Uint16Max = 2 ** 16;
 
 /** @typedef {import("../Device.js").BrilliantSoleDeviceType} BrilliantSoleDeviceType */
 
-/** @typedef {"hallux" | "digits" | "metatarsal_inner" | "metatarsal_center" | "metatarsal_outer" | "arch" | "lateral" | "heel"} BrilliantSolePessureSensorType */
+/** @typedef {"hallux" | "digits" | "metatarsal_inner" | "metatarsal_center" | "metatarsal_outer" | "arch" | "lateral" | "heel"} BrilliantSolePressureSensorType */
 /** @typedef {"pressure"} BrilliantSolePressureSensorType */
 
 /**
@@ -896,7 +896,7 @@ const Uint16Max = 2 ** 16;
 /**
  * @typedef BrilliantSolePressureSensorValue
  * @type {Object}
- * @property {BrilliantSolePessureSensorType} name
+ * @property {BrilliantSolePressureSensorType} name
  * @property {BrilliantSolePressureSensorPosition} position
  * @property {number} rawValue
  * @property {number} normalizedValue
@@ -904,7 +904,7 @@ const Uint16Max = 2 ** 16;
  */
 
 /**
- * @typedef BrilliantSolePessureData
+ * @typedef BrilliantSolePressureData
  * @type {Object}
  * @property {BrilliantSolePressureSensorValue[]} sensors
  *
@@ -936,7 +936,7 @@ class PressureSensorDataManager {
         this.resetCenterOfPressureRange();
     }
 
-    /** @type {BrilliantSolePessureSensorType[]} */
+    /** @type {BrilliantSolePressureSensorType[]} */
     static #Types = [
         "hallux",
         "digits",
@@ -951,7 +951,7 @@ class PressureSensorDataManager {
         return this.#Types;
     }
     get types() {
-        return PressureSensorDataManager.#Types;
+        return PressureSensorDataManager.Types;
     }
 
     static #Scalars = {
@@ -961,7 +961,7 @@ class PressureSensorDataManager {
         return this.#Scalars;
     }
     get scalars() {
-        return PressureSensorDataManager.#Scalars;
+        return PressureSensorDataManager.Scalars;
     }
 
     static #NumberOfPressureSensors = 8;
@@ -969,7 +969,7 @@ class PressureSensorDataManager {
         return this.#NumberOfPressureSensors;
     }
     get numberOfPressureSensors() {
-        return PressureSensorDataManager.#NumberOfPressureSensors;
+        return PressureSensorDataManager.NumberOfPressureSensors;
     }
 
     /**
@@ -979,17 +979,16 @@ class PressureSensorDataManager {
      * @type {BrilliantSolePressureSensorPosition[]}
      */
     static #PressureSensorPositions = [
-        { x: 109, y: 74 },
-        { x: 249, y: 154 },
+        { x: 110, y: 73 },
+        { x: 250, y: 155 },
         { x: 56, y: 236 },
         { x: 185, y: 277 },
         { x: 305, y: 337 },
         { x: 69, y: 584 },
         { x: 285, y: 635 },
         { x: 162, y: 914 },
-    ].map(({ x, y }) => ({ x: x / 362, y: 1 - y / 1000 }));
+    ].map(({ x, y }) => ({ x: x / 365, y: 1 - y / 1000 }));
     static get PressureSensorPositions() {
-        console.log(this.#PressureSensorPositions);
         return this.#PressureSensorPositions;
     }
     /** @type {BrilliantSolePressureSensorPosition[]} */
@@ -1049,7 +1048,7 @@ class PressureSensorDataManager {
     parsePressure(dataView, byteOffset) {
         const scalar = this.scalars.pressure;
 
-        /** @type {BrilliantSolePessureData} */
+        /** @type {BrilliantSolePressureData} */
         const pressure = { sensors: [], rawSum: 0, normalizedSum: 0 };
         for (let index = 0; index < this.numberOfPressureSensors; index++, byteOffset += 2) {
             const rawValue = dataView.getUint16(byteOffset, true);
@@ -1116,7 +1115,7 @@ class MotionSensorDataManager {
         return this.#Scalars;
     }
     get scalars() {
-        return MotionSensorDataManager.#Scalars;
+        return MotionSensorDataManager.Scalars;
     }
 
     static #Vector3Size = 3 * 2;
@@ -1185,7 +1184,7 @@ class BarometerSensorDataManager {
         return this.#Scalars;
     }
     get scalars() {
-        return BarometerSensorDataManager.#Scalars;
+        return BarometerSensorDataManager.Scalars;
     }
 }
 
@@ -1238,7 +1237,7 @@ class SensorDataManager {
         return this.#Types;
     }
     get #types() {
-        return SensorDataManager.#Types;
+        return SensorDataManager.Types;
     }
 
     /** @param {string} sensorType */
@@ -1382,14 +1381,16 @@ class SensorConfigurationManager {
         return parsedSensorConfiguration;
     }
 
+    static #MaxSensorRate = 2 ** 16 - 1;
     static get MaxSensorRate() {
-        return 2 ** 16 - 1;
+        return this.#MaxSensorRate;
     }
     get maxSensorRate() {
         return SensorConfigurationManager.MaxSensorRate;
     }
+    static #SensorRateStep = 5;
     static get SensorRateStep() {
-        return 5;
+        return this.#SensorRateStep;
     }
     get sensorRateStep() {
         return SensorConfigurationManager.SensorRateStep;
@@ -1751,7 +1752,7 @@ class VibrationManager {
         return this.#Locations;
     }
     get locations() {
-        return VibrationManager.#Locations;
+        return VibrationManager.Locations;
     }
     /** @param {BrilliantSoleVibrationLocation} location */
     #verifyLocation(location) {
@@ -1804,7 +1805,7 @@ class VibrationManager {
         return this.#MaxWaveformEffectSegmentDelay;
     }
     get maxWaveformEffectSegmentDelay() {
-        return VibrationManager.#MaxWaveformEffectSegmentDelay;
+        return VibrationManager.MaxWaveformEffectSegmentDelay;
     }
     /** @param {BrilliantSoleVibrationWaveformEffectSegment} waveformEffectSegment */
     #verifyWaveformEffectSegment(waveformEffectSegment) {
@@ -1832,7 +1833,7 @@ class VibrationManager {
         return this.#MaxWaveformEffectSegmentLoopCount;
     }
     get maxWaveformEffectSegmentLoopCount() {
-        return VibrationManager.#MaxWaveformEffectSegmentLoopCount;
+        return VibrationManager.MaxWaveformEffectSegmentLoopCount;
     }
     /** @param {number} waveformEffectSegmentLoopCount */
     #verifyWaveformEffectSegmentLoopCount(waveformEffectSegmentLoopCount) {
@@ -1852,7 +1853,7 @@ class VibrationManager {
         return this.#MaxNumberOfWaveformEffectSegments;
     }
     get maxNumberOfWaveformEffectSegments() {
-        return VibrationManager.#MaxNumberOfWaveformEffectSegments;
+        return VibrationManager.MaxNumberOfWaveformEffectSegments;
     }
     /** @param {BrilliantSoleVibrationWaveformEffectSegment[]} waveformEffectSegments */
     #verifyWaveformEffectSegments(waveformEffectSegments) {
@@ -1871,7 +1872,7 @@ class VibrationManager {
         return this.#MaxWaveformEffectSequenceLoopCount;
     }
     get maxWaveformEffectSequenceLoopCount() {
-        return VibrationManager.#MaxWaveformEffectSequenceLoopCount;
+        return VibrationManager.MaxWaveformEffectSequenceLoopCount;
     }
     /** @param {number} waveformEffectSequenceLoopCount */
     #verifyWaveformEffectSequenceLoopCount(waveformEffectSequenceLoopCount) {
@@ -1891,7 +1892,7 @@ class VibrationManager {
         return this.#MaxWaveformSegmentDuration;
     }
     get maxWaveformSegmentDuration() {
-        return VibrationManager.#MaxWaveformSegmentDuration;
+        return VibrationManager.MaxWaveformSegmentDuration;
     }
     /** @param {BrilliantSoleVibrationWaveformSegment} waveformSegment */
     #verifyWaveformSegment(waveformSegment) {
@@ -1920,7 +1921,7 @@ class VibrationManager {
         return this.#MaxNumberOfWaveformSegments;
     }
     get maxNumberOfWaveformSegments() {
-        return VibrationManager.#MaxNumberOfWaveformSegments;
+        return VibrationManager.MaxNumberOfWaveformSegments;
     }
     /** @param {BrilliantSoleVibrationWaveformSegment[]} waveformSegments */
     #verifyWaveformSegments(waveformSegments) {
@@ -2018,7 +2019,7 @@ class VibrationManager {
         return this.#Types;
     }
     get #types() {
-        return VibrationManager.#Types;
+        return VibrationManager.Types;
     }
     /** @param {BrilliantSoleVibrationType} vibrationType */
     #verifyVibrationType(vibrationType) {
@@ -2080,6 +2081,7 @@ class VibrationManager {
  */
 
 /** @typedef {"leftInsole" | "rightInsole"} BrilliantSoleDeviceType */
+/** @typedef {"left" | "right"} BrilliantSoleInsoleSide */
 
 /** @typedef {import("./sensor/SensorConfigurationManager.js").BrilliantSoleSensorConfiguration} BrilliantSoleSensorConfiguration */
 
@@ -2519,7 +2521,7 @@ class Device {
         return this.#Types;
     }
     get #types() {
-        return Device.#Types;
+        return Device.Types;
     }
     /** @type {BrilliantSoleDeviceType?} */
     #type;
@@ -2554,6 +2556,34 @@ class Device {
         const setTypeData = Uint8Array.from([newTypeEnum]);
         _console.log({ setTypeData });
         await this.#connectionManager.sendMessage("setType", setTypeData);
+    }
+
+    get isInsole() {
+        switch (this.type) {
+            case "leftInsole":
+            case "rightInsole":
+                return true;
+            default:
+                // for future non-insole BrilliantSole device types
+                return false;
+        }
+    }
+    /** @type {BrilliantSoleInsoleSide[]} */
+    static #InsoleSides = ["left", "right"];
+    static get InsoleSides() {
+        return this.#InsoleSides;
+    }
+    get insoleSides() {
+        return Device.InsoleSides;
+    }
+    /** @type {BrilliantSoleInsoleSide} */
+    get insoleSide() {
+        switch (this.type) {
+            case "leftInsole":
+                return "left";
+            case "rightInsole":
+                return "right";
+        }
     }
 
     // SENSOR CONFIGURATION
@@ -2598,6 +2628,9 @@ class Device {
     static #SensorTypes = SensorDataManager.Types;
     static get SensorTypes() {
         return this.#SensorTypes;
+    }
+    get sensorTypes() {
+        return Device.SensorTypes;
     }
 
     /** @type {SensorDataManager} */

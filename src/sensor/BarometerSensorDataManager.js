@@ -12,7 +12,7 @@ class BarometerSensorDataManager {
         return this.#Scalars;
     }
     get scalars() {
-        return BarometerSensorDataManager.#Scalars;
+        return BarometerSensorDataManager.Scalars;
     }
 }
 
