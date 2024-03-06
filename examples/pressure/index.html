@@ -21,7 +21,7 @@
         img.overlay {
             position: absolute;
         }
-        .insole.left {
+        .insole.left .viz {
             -webkit-transform: scaleX(-1);
             transform: scaleX(-1);
         }
@@ -41,9 +41,10 @@
         }
         [data-pressure] {
             background-color: red;
+            opacity: 0;
         }
         [data-haptics] {
-            background-color: blue;
+            /* background-color: blue;*/
         }
         [data-pressure="0"] {
             -webkit-mask-image: url(../../assets/images/pressure-0.svg);
@@ -96,34 +97,48 @@
 
         <div id="insoles">
             <div class="insole left">
-                <div data-pressure="0"></div>
-                <div data-pressure="1"></div>
-                <div data-pressure="2"></div>
-                <div data-pressure="3"></div>
-                <div data-pressure="4"></div>
-                <div data-pressure="5"></div>
-                <div data-pressure="6"></div>
-                <div data-pressure="7"></div>
+                <p>
+                    <button class="toggleConnection">connect</button>
+                    <br />
+                    <button class="togglePressureData" disabled>enable pressure data</button>
+                </p>
+                <div class="viz">
+                    <div data-pressure="0"></div>
+                    <div data-pressure="1"></div>
+                    <div data-pressure="2"></div>
+                    <div data-pressure="3"></div>
+                    <div data-pressure="4"></div>
+                    <div data-pressure="5"></div>
+                    <div data-pressure="6"></div>
+                    <div data-pressure="7"></div>
 
-                <div data-haptics="front"></div>
-                <div data-haptics="rear"></div>
+                    <div data-haptics="front"></div>
+                    <div data-haptics="rear"></div>
 
-                <img src="../../assets/images/right-insole.svg" />
+                    <img src="../../assets/images/right-insole.svg" />
+                </div>
             </div>
             <div class="insole right">
-                <div data-pressure="0"></div>
-                <div data-pressure="1"></div>
-                <div data-pressure="2"></div>
-                <div data-pressure="3"></div>
-                <div data-pressure="4"></div>
-                <div data-pressure="5"></div>
-                <div data-pressure="6"></div>
-                <div data-pressure="7"></div>
+                <p>
+                    <button class="toggleConnection">connect</button>
+                    <br />
+                    <button class="togglePressureData" disabled>enable pressure data</button>
+                </p>
+                <div class="viz">
+                    <div data-pressure="0"></div>
+                    <div data-pressure="1"></div>
+                    <div data-pressure="2"></div>
+                    <div data-pressure="3"></div>
+                    <div data-pressure="4"></div>
+                    <div data-pressure="5"></div>
+                    <div data-pressure="6"></div>
+                    <div data-pressure="7"></div>
 
-                <div data-haptics="front"></div>
-                <div data-haptics="rear"></div>
+                    <div data-haptics="front"></div>
+                    <div data-haptics="rear"></div>
 
-                <img src="../../assets/images/right-insole.svg" />
+                    <img src="../../assets/images/right-insole.svg" />
+                </div>
             </div>
         </div>
     </body>
