@@ -89,6 +89,16 @@ BS.Device.InsoleSides.forEach((side) => {
 
         insole.setSensorConfiguration(configuration);
     });
+
+    /** @type {HTMLButtonElement} */
+    const resetOrientationButton = insoleContainer.querySelector(".resetOrientation");
+    resetOrientationButton.addEventListener("click", () => {
+        resetOrientation();
+    });
+    insole.addEventListener("isConnected", () => {
+        resetOrientationButton.disabled = !insole.isConnected;
+    });
+
     /** @type {HTMLSelectElement} */
     const positionSelect = insoleContainer.querySelector(".position");
     positionSelect.addEventListener("input", () => {
@@ -187,22 +197,33 @@ BS.Device.InsoleSides.forEach((side) => {
         updatePosition(linearAcceleration);
     });
 
+    const offsetQuaternion = new THREE.Quaternion();
+    const resetOrientation = () => {
+        offsetQuaternion.copy(_quaternion).invert();
+    };
+
     const _quaternion = new THREE.Quaternion();
     /** @typedef {import("../../build/brilliantsole.module.js").Quaternion} Quaternion */
-    /** @param {Quaternion} quaternion */
-    const updateQuaternion = (quaternion) => {
+    /**
+     * @param {Quaternion} quaternion
+     * @param {boolean} applyOffset
+     */
+    const updateQuaternion = (quaternion, applyOffset = false) => {
         _quaternion.copy(quaternion);
+        if (applyOffset) {
+            _quaternion.multiply(offsetQuaternion); // premultiply?
+        }
         insoleEntity.object3D.quaternion.slerp(_quaternion, window.interpolationSmoothing);
     };
     insole.addEventListener("gameRotation", (event) => {
         /** @type {Quaternion} */
         const gameRotation = event.message.gameRotation;
-        updateQuaternion(gameRotation);
+        updateQuaternion(gameRotation, true);
     });
     insole.addEventListener("rotation", (event) => {
         /** @type {Quaternion} */
         const rotation = event.message.rotation;
-        updateQuaternion(rotation);
+        updateQuaternion(rotation, true);
     });
 
     const gyroscopeVector3 = new THREE.Vector3();

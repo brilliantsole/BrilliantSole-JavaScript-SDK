@@ -100,9 +100,12 @@ class WebBluetoothConnectionManager extends ConnectionManager {
             _console.error(error);
             this.status = "not connected";
             this.server?.disconnect();
+            this.#removeEventListeners();
         }
     }
     async #getServicesAndCharacteristics() {
+        this.#removeEventListeners();
+
         _console.log("getting services...");
         const services = await this.server.getPrimaryServices();
         _console.log("got services", services.length);
@@ -144,10 +147,19 @@ class WebBluetoothConnectionManager extends ConnectionManager {
             }
         }
     }
+    #removeEventListeners() {
+        if (this.device) {
+            removeEventListeners(this.device, this.#boundBluetoothDeviceEventListeners);
+        }
+        this.#characteristics.forEach((characteristic) => {
+            removeEventListeners(characteristic, this.#boundBluetoothCharacteristicEventListeners);
+        });
+    }
     async disconnect() {
         await super.disconnect();
         _console.log("disconnecting from device...");
         this.server?.disconnect();
+        this.#removeEventListeners();
     }
 
     /** @param {Event} event */
