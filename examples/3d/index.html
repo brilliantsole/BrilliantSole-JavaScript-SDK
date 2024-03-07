@@ -15,6 +15,16 @@
     </head>
 
     <style>
+        #insoles {
+            display: flex;
+            flex-direction: row;
+            height: 500px;
+        }
+        .insole {
+            position: relative;
+            height: 100%;
+        }
+
         a-scene {
             width: 350px;
             height: 350px;
@@ -22,23 +32,6 @@
             border-radius: 40px;
             overflow: hidden;
             border: solid black;
-        }
-
-        #controls {
-            margin: auto;
-            width: fit-content;
-            display: flex;
-            flex-direction: column;
-        }
-        #controls > div {
-            display: flex;
-            flex-direction: row;
-            gap: 0.5rem;
-            justify-content: space-evenly;
-        }
-
-        label {
-            display: block;
         }
     </style>
 
@@ -49,37 +42,69 @@
 
         <h1>3D | BrilliantSole JavaScript SDK</h1>
 
-        <a-scene embedded xr-mode-ui="enabled: false;" device-orientation-permission-ui="enabled: false">
-            <a-assets>
-                <a-asset-item id="leftInsoleAsset" src="../../assets/3d/leftInsole.glb"></a-asset-item>
-            </a-assets>
+        <div id="insoles"></div>
 
-            <a-light type="directional" position="2 2 -2" target="#target"></a-light>
-            <a-light type="directional" position="-2 2 2" target="#target"></a-light>
+        <template id="insoleTemplate">
+            <div class="insole">
+                <p>
+                    <button class="toggleConnection">connect</button>
+                    <br />
+                    <select class="orientation" disabled>
+                        <optgroup label="orientation">
+                            <option value="none">no orientation</option>
+                            <option>gameRotation</option>
+                            <option disabled>rotation</option>
+                            <option>gyroscope</option>
+                        </optgroup>
+                    </select>
+                    <select class="position" disabled>
+                        <optgroup label="position">
+                            <option value="none">no position</option>
+                            <option>acceleration</option>
+                            <option>gravity</option>
+                            <option>linearAcceleration</option>
+                        </optgroup>
+                    </select>
+                </p>
+                <a-scene
+                    embedded
+                    xr-mode-ui="enabled: false;"
+                    device-orientation-permission-ui="enabled: false"
+                    renderer="colorManagement: true;"
+                >
+                    <a-light type="directional" position="2 2 -2" target=".target"></a-light>
+                    <a-light type="directional" position="-2 2 2" target=".target"></a-light>
+                    <a-light type="directional" position="2 -2 2" target=".target"></a-light>
 
-            <a-camera
-                id="camera"
-                camera="fov: 50; zoom: 2;"
-                position="1 1 1"
-                orbit-controls="
-                    enableZoom: true;
-                    autoRotate: false;
-                    target: #target;
-                    enableDamping: true;
-                    dampingFactor: 0.125;
-                    rotateSpeed:0.25;
-                    minDistance:0.1;
-                    maxDistance:1;
-                "
-            ></a-camera>
+                    <a-camera
+                        class="camera"
+                        camera="fov: 50; zoom: 2;"
+                        position="0 1 0"
+                        orbit-controls="
+                            enableZoom: true;
+                            autoRotate: false;
+                            target: .target;
+                            enableDamping: true;
+                            dampingFactor: 0.125;
+                            rotateSpeed:0.25;
+                            minDistance:0.75;
+                            maxDistance:2;
+                        "
+                    ></a-camera>
 
-            <a-entity id="target">
-                <a-entity id="targetPositionOffset">
-                    <a-entity id="targetRotationOffset">
-                        <a-entity id="insole" gltf-model="#leftInsoleAsset" visible="true"></a-entity>
+                    <a-entity class="target">
+                        <a-entity class="targetPositionOffset">
+                            <a-entity class="targetRotationOffset">
+                                <a-entity
+                                    class="insole"
+                                    gltf-model="../../assets/3d/leftInsole.glb"
+                                    visible="true"
+                                ></a-entity>
+                            </a-entity>
+                        </a-entity>
                     </a-entity>
-                </a-entity>
-            </a-entity>
-        </a-scene>
+                </a-scene>
+            </div>
+        </template>
     </body>
 </html>

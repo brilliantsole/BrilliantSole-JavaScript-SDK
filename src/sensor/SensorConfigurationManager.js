@@ -1,14 +1,14 @@
 import { createConsole } from "../utils/Console.js";
 import SensorDataManager from "./SensorDataManager.js";
 
-/** @typedef {import("../BS.js").BrilliantSoleDeviceType} BrilliantSoleDeviceType */
+/** @typedef {import("../Device.js").BrilliantSoleDeviceType} BrilliantSoleDeviceType */
 
 /** @typedef {import("./SensorDataManager.js").BrilliantSoleSensorType} BrilliantSoleSensorType */
 /**
  * @typedef BrilliantSoleSensorConfiguration
  * @type {object}
  * @property {number} pressure
- * @property {number} accelerometer
+ * @property {number} acceleration
  * @property {number} gravity
  * @property {number} linearAcceleration
  * @property {number} gyroscope

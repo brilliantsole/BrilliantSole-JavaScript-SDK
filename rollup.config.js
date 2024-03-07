@@ -33,7 +33,23 @@ function replaceEnvironment() {
     });
 }
 
-const _plugins = [header()];
+function removeJSDocImports() {
+    return {
+        transform(code) {
+            code = new MagicString(code);
+
+            // removes /** @typedef {import("./SomeModule.js").SomeType} SomeType */ (thanks ChatGPT)
+            code.replace(/\/\*\* @typedef \{import\((?:"|')(.*?)("|')\)(?:\.(\w+))?\.(.*?)\} (\w+) \*\//gs, "");
+
+            return {
+                code: code.toString(),
+                map: code.generateMap(),
+            };
+        },
+    };
+}
+
+const _plugins = [header(), removeJSDocImports()];
 
 if (production) {
     _plugins.push(replaceEnvironment());

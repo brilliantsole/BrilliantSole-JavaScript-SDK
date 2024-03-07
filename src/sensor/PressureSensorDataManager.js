@@ -3,7 +3,7 @@ import { getInterpolation } from "../utils/MathUtils.js";
 
 /** @typedef {import("../Device.js").BrilliantSoleDeviceType} BrilliantSoleDeviceType */
 
-/** @typedef {"hallux" | "digits" | "metatarsal_inner" | "metatarsal_center" | "metatarsal_outer" | "arch" | "lateral" | "heel"} BrilliantSolePressureSensorType */
+/** @typedef {"hallux" | "digits" | "metatarsal_inner" | "metatarsal_center" | "metatarsal_outer" | "arch" | "lateral" | "heel"} BrilliantSolePressureSensorName */
 /** @typedef {"pressure"} BrilliantSolePressureSensorType */
 
 /**
@@ -25,7 +25,7 @@ import { getInterpolation } from "../utils/MathUtils.js";
 /**
  * @typedef BrilliantSolePressureSensorValue
  * @type {Object}
- * @property {BrilliantSolePressureSensorType} name
+ * @property {BrilliantSolePressureSensorName} name
  * @property {BrilliantSolePressureSensorPosition} position
  * @property {number} rawValue
  * @property {number} normalizedValue
@@ -66,7 +66,7 @@ class PressureSensorDataManager {
     }
 
     /** @type {BrilliantSolePressureSensorType[]} */
-    static #Types = [
+    static #Names = [
         "hallux",
         "digits",
         "metatarsal_inner",
@@ -76,11 +76,11 @@ class PressureSensorDataManager {
         "lateral",
         "heel",
     ];
-    static get Types() {
-        return this.#Types;
+    static get Names() {
+        return this.#Names;
     }
-    get types() {
-        return PressureSensorDataManager.Types;
+    get names() {
+        return PressureSensorDataManager.Names;
     }
 
     static #Scalars = {
@@ -183,7 +183,7 @@ class PressureSensorDataManager {
             const rawValue = dataView.getUint16(byteOffset, true);
             const normalizedValue = rawValue * scalar;
             const position = this.pressureSensorPositions[index];
-            const name = this.types[index];
+            const name = this.names[index];
             pressure.sensors[index] = { rawValue, normalizedValue, position, name };
 
             pressure.rawSum += rawValue;

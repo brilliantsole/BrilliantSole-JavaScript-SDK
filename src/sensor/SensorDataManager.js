@@ -40,7 +40,7 @@ class SensorDataManager {
     /** @type {BrilliantSoleSensorType[]} */
     static #Types = [
         "pressure",
-        "accelerometer",
+        "acceleration",
         "gravity",
         "linearAcceleration",
         "gyroscope",
@@ -110,31 +110,33 @@ class SensorDataManager {
 
             let value;
 
+            const sensorTypeDataSize = dataView.getUint8(byteOffset++);
             const sensorType = this.#types[sensorTypeEnum];
+
+            _console.log({ sensorTypeEnum, sensorType, sensorTypeDataSize });
             switch (sensorType) {
                 case "pressure":
                     value = this.#pressureSensorDataManager.parsePressure(dataView, byteOffset);
-                    byteOffset += this.numberOfPressureSensors * 2;
                     break;
-                case "accelerometer":
+                case "acceleration":
                 case "gravity":
                 case "linearAcceleration":
                 case "gyroscope":
                 case "magnetometer":
                     value = this.#motionSensorDataManager.parseVector3(dataView, byteOffset, sensorType);
-                    byteOffset += this.#motionSensorDataManager.vector3Size;
                     break;
                 case "gameRotation":
                 case "rotation":
                     value = this.#motionSensorDataManager.parseQuaternion(dataView, byteOffset, sensorType);
-                    byteOffset += this.#motionSensorDataManager.quaternionSize;
                     break;
                 case "barometer":
                     // FILL
                     break;
                 default:
-                    throw Error(`uncaught sensorType "${sensorType}"`);
+                    _console.error(`uncaught sensorType "${sensorType}"`);
             }
+
+            byteOffset += sensorTypeDataSize;
 
             _console.assertWithError(value, `no value defined for sensorType "${sensorType}"`);
             this.onDataReceived?.(sensorType, { timestamp, [sensorType]: value });

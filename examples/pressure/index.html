@@ -9,7 +9,7 @@
         #insoles {
             display: flex;
             flex-direction: row;
-            height: 600px;
+            height: 500px;
         }
         .insole {
             position: relative;
@@ -95,8 +95,10 @@
 
         <h1>Pressure | BrilliantSole JavaScript SDK</h1>
 
-        <div id="insoles">
-            <div class="insole left">
+        <div id="insoles"></div>
+
+        <template id="insoleTemplate">
+            <div class="insole">
                 <p>
                     <button class="toggleConnection">connect</button>
                     <br />
@@ -118,28 +120,6 @@
                     <img src="../../assets/images/right-insole.svg" />
                 </div>
             </div>
-            <div class="insole right">
-                <p>
-                    <button class="toggleConnection">connect</button>
-                    <br />
-                    <button class="togglePressureData" disabled>enable pressure data</button>
-                </p>
-                <div class="viz">
-                    <div data-pressure="0"></div>
-                    <div data-pressure="1"></div>
-                    <div data-pressure="2"></div>
-                    <div data-pressure="3"></div>
-                    <div data-pressure="4"></div>
-                    <div data-pressure="5"></div>
-                    <div data-pressure="6"></div>
-                    <div data-pressure="7"></div>
-
-                    <div data-haptics="front"></div>
-                    <div data-haptics="rear"></div>
-
-                    <img src="../../assets/images/right-insole.svg" />
-                </div>
-            </div>
-        </div>
+        </template>
     </body>
 </html>

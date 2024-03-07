@@ -1,10 +1,17 @@
 import BS from "../../build/brilliantsole.module.js";
 window.BS = BS;
 console.log({ BS });
-BS.setAllConsoleLevelFlags({ log: false });
+BS.setAllConsoleLevelFlags({ log: true });
+
+const insolesContainer = document.getElementById("insoles");
+/** @type {HTMLTemplateElement} */
+const insoleTemplate = document.getElementById("insoleTemplate");
 
 BS.Device.InsoleSides.forEach((side) => {
-    const insoleContainer = document.querySelector(`.insole.${side}`);
+    /** @type {HTMLElement} */
+    const insoleContainer = insoleTemplate.content.cloneNode(true).querySelector(".insole");
+    insoleContainer.classList.add(side);
+    insolesContainer.appendChild(insoleContainer);
 
     /** @type {HTMLElement[]} */
     const pressureSensorElements = Array.from(insoleContainer.querySelectorAll("[data-pressure]"));

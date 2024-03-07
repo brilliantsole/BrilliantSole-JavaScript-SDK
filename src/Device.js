@@ -83,6 +83,22 @@ class Device {
     constructor() {
         this.connectionManager = new Device.#DefaultConnectionManager();
         this.#sensorDataManager.onDataReceived = this.#onSensorDataReceived.bind(this);
+
+        if (isInBrowser) {
+            window.addEventListener("beforeunload", () => {
+                if (this.isConnected && this.clearSensorConfigurationOnLeave) {
+                    this.clearSensorConfiguration();
+                }
+            });
+        }
+        if (isInNode) {
+            /** can add more node.js leave handlers https://gist.github.com/hyrious/30a878f6e6a057f09db87638567cb11a */
+            process.on("exit", () => {
+                if (this.isConnected && this.clearSensorConfigurationOnLeave) {
+                    this.clearSensorConfiguration();
+                }
+            });
+        }
     }
 
     /** @returns {ConnectionManager} */
@@ -124,7 +140,7 @@ class Device {
 
         "sensorData",
         "pressure",
-        "accelerometer",
+        "acceleration",
         "gravity",
         "linearAcceleration",
         "gyroscope",
@@ -556,6 +572,15 @@ class Device {
         }
     }
 
+    // SENSOR TYPES
+    static #SensorTypes = SensorDataManager.Types;
+    static get SensorTypes() {
+        return this.#SensorTypes;
+    }
+    get sensorTypes() {
+        return Device.SensorTypes;
+    }
+
     // SENSOR CONFIGURATION
     #sensorConfigurationManager = new SensorConfigurationManager();
     /** @type {BrilliantSoleSensorConfiguration?} */
@@ -593,15 +618,42 @@ class Device {
         await this.#connectionManager.sendMessage("setSensorConfiguration", setSensorConfigurationData);
     }
 
-    // SENSOR DATA
+    static #ClearSensorConfigurationOnLeave = true;
+    static get ClearSensorConfigurationOnLeave() {
+        return this.#ClearSensorConfigurationOnLeave;
+    }
+    static set ClearSensorConfigurationOnLeave(newclearSensorConfigurationOnLeave) {
+        _console.assertTypeWithError(newclearSensorConfigurationOnLeave, "boolean");
+        this.#ClearSensorConfigurationOnLeave = newclearSensorConfigurationOnLeave;
+    }
 
-    static #SensorTypes = SensorDataManager.Types;
-    static get SensorTypes() {
-        return this.#SensorTypes;
+    #clearSensorConfigurationOnLeave = Device.ClearSensorConfigurationOnLeave;
+    get clearSensorConfigurationOnLeave() {
+        return this.#clearSensorConfigurationOnLeave;
     }
-    get sensorTypes() {
-        return Device.SensorTypes;
+    set clearSensorConfigurationOnLeave(newclearSensorConfigurationOnLeave) {
+        _console.assertTypeWithError(newclearSensorConfigurationOnLeave, "boolean");
+        this.#clearSensorConfigurationOnLeave = newclearSensorConfigurationOnLeave;
     }
+
+    /** @type {BrilliantSoleSensorConfiguration} */
+    static #ZeroSensorConfiguration = {};
+    static get ZeroSensorConfiguration() {
+        return this.#ZeroSensorConfiguration;
+    }
+    static {
+        this.SensorTypes.forEach((sensorType) => {
+            this.#ZeroSensorConfiguration[sensorType] = 0;
+        });
+    }
+    get zeroSensorConfiguration() {
+        return Device.ZeroSensorConfiguration;
+    }
+    async clearSensorConfiguration() {
+        return this.setSensorConfiguration(this.zeroSensorConfiguration);
+    }
+
+    // SENSOR DATA
 
     /** @type {SensorDataManager} */
     #sensorDataManager = new SensorDataManager();

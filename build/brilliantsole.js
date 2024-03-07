@@ -325,9 +325,6 @@
 	    });
 	}
 
-	/** @typedef {import("./utils/EventDispatcher.js").EventDispatcherListener} EventDispatcherListener */
-	/** @typedef {import("./utils/EventDispatcher.js").EventDispatcherOptions} EventDispatcherOptions */
-
 	/** @typedef {"web bluetooth" | "noble"} BrilliantSoleConnectionType */
 	/** @typedef {"not connected" | "connecting" | "connected" | "disconnecting"} BrilliantSoleConnectionStatus */
 	/** @typedef {"manufacturerName" | "modelNumber" | "softwareRevision" | "hardwareRevision" | "firmwareRevision" | "pnpId" | "serialNumber" | "batteryLevel" | "getName" | "setName" | "getType" | "setType" | "getSensorConfiguration" | "setSensorConfiguration" | "sensorData" | "triggerVibration"} BrilliantSoleConnectionMessageType */
@@ -603,10 +600,10 @@
 
 	const _console$6 = createConsole("WebBluetoothConnectionManager", { log: true });
 
-	/** @typedef {import("./bluetoothUUIDs.js").BrilliantSoleBluetoothCharacteristicName} BrilliantSoleBluetoothCharacteristicName */
-	/** @typedef {import("./bluetoothUUIDs.js").BrilliantSoleBluetoothServiceName} BrilliantSoleBluetoothServiceName */
 
-	/** @typedef {import("../ConnectionManager.js").BrilliantSoleConnectionMessageType} BrilliantSoleConnectionMessageType */
+
+
+
 
 	if (isInNode) {
 	    const webbluetooth = require("webbluetooth");
@@ -876,9 +873,7 @@
 
 	const Uint16Max = 2 ** 16;
 
-	/** @typedef {import("../Device.js").BrilliantSoleDeviceType} BrilliantSoleDeviceType */
-
-	/** @typedef {"hallux" | "digits" | "metatarsal_inner" | "metatarsal_center" | "metatarsal_outer" | "arch" | "lateral" | "heel"} BrilliantSolePressureSensorType */
+	/** @typedef {"hallux" | "digits" | "metatarsal_inner" | "metatarsal_center" | "metatarsal_outer" | "arch" | "lateral" | "heel"} BrilliantSolePressureSensorName */
 	/** @typedef {"pressure"} BrilliantSolePressureSensorType */
 
 	/**
@@ -900,7 +895,7 @@
 	/**
 	 * @typedef BrilliantSolePressureSensorValue
 	 * @type {Object}
-	 * @property {BrilliantSolePressureSensorType} name
+	 * @property {BrilliantSolePressureSensorName} name
 	 * @property {BrilliantSolePressureSensorPosition} position
 	 * @property {number} rawValue
 	 * @property {number} normalizedValue
@@ -941,7 +936,7 @@
 	    }
 
 	    /** @type {BrilliantSolePressureSensorType[]} */
-	    static #Types = [
+	    static #Names = [
 	        "hallux",
 	        "digits",
 	        "metatarsal_inner",
@@ -951,11 +946,11 @@
 	        "lateral",
 	        "heel",
 	    ];
-	    static get Types() {
-	        return this.#Types;
+	    static get Names() {
+	        return this.#Names;
 	    }
-	    get types() {
-	        return PressureSensorDataManager.Types;
+	    get names() {
+	        return PressureSensorDataManager.Names;
 	    }
 
 	    static #Scalars = {
@@ -1058,7 +1053,7 @@
 	            const rawValue = dataView.getUint16(byteOffset, true);
 	            const normalizedValue = rawValue * scalar;
 	            const position = this.pressureSensorPositions[index];
-	            const name = this.types[index];
+	            const name = this.names[index];
 	            pressure.sensors[index] = { rawValue, normalizedValue, position, name };
 
 	            pressure.rawSum += rawValue;
@@ -1081,11 +1076,26 @@
 	    }
 	}
 
-	/** @typedef {import("../Device.js").BrilliantSoleDeviceType} BrilliantSoleDeviceType */
-
-	/** @typedef {"accelerometer" | "gravity" | "linearAcceleration" | "gyroscope" | "magnetometer" | "gameRotation" | "rotation"} BrilliantSoleMotionSensorType */
+	/** @typedef {"acceleration" | "gravity" | "linearAcceleration" | "gyroscope" | "magnetometer" | "gameRotation" | "rotation"} BrilliantSoleMotionSensorType */
 
 	const _console$4 = createConsole("MotionSensorDataManager", { log: true });
+
+	/**
+	 * @typedef Vector3
+	 * @type {Object}
+	 * @property {number} x
+	 * @property {number} y
+	 * @property {number} z
+	 */
+
+	/**
+	 * @typedef Quaternion
+	 * @type {Object}
+	 * @property {number} x
+	 * @property {number} y
+	 * @property {number} z
+	 * @property {number} w
+	 */
 
 	class MotionSensorDataManager {
 	    /** @type {BrilliantSoleDeviceType} */
@@ -1104,7 +1114,7 @@
 	    }
 
 	    static #Scalars = {
-	        accelerometer: 2 ** -12,
+	        acceleration: 2 ** -12,
 	        gravity: 2 ** -12,
 	        linearAcceleration: 2 ** -12,
 
@@ -1134,6 +1144,7 @@
 	     * @param {DataView} dataView
 	     * @param {number} byteOffset
 	     * @param {BrilliantSoleMotionSensorType} sensorType
+	     * @returns {Vector3}
 	     */
 	    parseVector3(dataView, byteOffset, sensorType) {
 	        let [x, y, z] = [
@@ -1160,6 +1171,7 @@
 	     * @param {DataView} dataView
 	     * @param {number} byteOffset
 	     * @param {BrilliantSoleMotionSensorType} sensorType
+	     * @returns {Quaternion}
 	     */
 	    parseQuaternion(dataView, byteOffset, sensorType) {
 	        let [x, y, z, w] = [
@@ -1192,12 +1204,6 @@
 	    }
 	}
 
-	/** @typedef {import("../Device.js").BrilliantSoleDeviceType} BrilliantSoleDeviceType */
-
-	/** @typedef {import("./MotionSensorDataManager.js").BrilliantSoleMotionSensorType} BrilliantSoleMotionSensorType */
-	/** @typedef {import("./PressureSensorDataManager.js").BrilliantSolePressureSensorType} BrilliantSolePressureSensorType */
-	/** @typedef {import("./BarometerSensorDataManager.js").BrilliantSoleBarometerSensorType} BrilliantSoleBarometerSensorType */
-
 	/** @typedef {BrilliantSoleMotionSensorType | BrilliantSolePressureSensorType | BrilliantSoleBarometerSensorType} BrilliantSoleSensorType */
 
 	const _console$3 = createConsole("SensorDataManager", { log: true });
@@ -1228,7 +1234,7 @@
 	    /** @type {BrilliantSoleSensorType[]} */
 	    static #Types = [
 	        "pressure",
-	        "accelerometer",
+	        "acceleration",
 	        "gravity",
 	        "linearAcceleration",
 	        "gyroscope",
@@ -1298,31 +1304,33 @@
 
 	            let value;
 
+	            const sensorTypeDataSize = dataView.getUint8(byteOffset++);
 	            const sensorType = this.#types[sensorTypeEnum];
+
+	            _console$3.log({ sensorTypeEnum, sensorType, sensorTypeDataSize });
 	            switch (sensorType) {
 	                case "pressure":
 	                    value = this.#pressureSensorDataManager.parsePressure(dataView, byteOffset);
-	                    byteOffset += this.numberOfPressureSensors * 2;
 	                    break;
-	                case "accelerometer":
+	                case "acceleration":
 	                case "gravity":
 	                case "linearAcceleration":
 	                case "gyroscope":
 	                case "magnetometer":
 	                    value = this.#motionSensorDataManager.parseVector3(dataView, byteOffset, sensorType);
-	                    byteOffset += this.#motionSensorDataManager.vector3Size;
 	                    break;
 	                case "gameRotation":
 	                case "rotation":
 	                    value = this.#motionSensorDataManager.parseQuaternion(dataView, byteOffset, sensorType);
-	                    byteOffset += this.#motionSensorDataManager.quaternionSize;
 	                    break;
 	                case "barometer":
 	                    // FILL
 	                    break;
 	                default:
-	                    throw Error(`uncaught sensorType "${sensorType}"`);
+	                    _console$3.error(`uncaught sensorType "${sensorType}"`);
 	            }
+
+	            byteOffset += sensorTypeDataSize;
 
 	            _console$3.assertWithError(value, `no value defined for sensorType "${sensorType}"`);
 	            this.onDataReceived?.(sensorType, { timestamp, [sensorType]: value });
@@ -1337,14 +1345,11 @@
 	    }
 	}
 
-	/** @typedef {import("../BS.js").BrilliantSoleDeviceType} BrilliantSoleDeviceType */
-
-	/** @typedef {import("./SensorDataManager.js").BrilliantSoleSensorType} BrilliantSoleSensorType */
 	/**
 	 * @typedef BrilliantSoleSensorConfiguration
 	 * @type {object}
 	 * @property {number} pressure
-	 * @property {number} accelerometer
+	 * @property {number} acceleration
 	 * @property {number} gravity
 	 * @property {number} linearAcceleration
 	 * @property {number} gyroscope
@@ -1732,7 +1737,7 @@
 	/** @typedef {"front" | "rear"} BrilliantSoleVibrationLocation */
 	/** @typedef {"waveformEffect" | "waveform"} BrilliantSoleVibrationType */
 
-	/** @typedef {import("./VibrationWaveformEffects.js").BrilliantSoleVibrationWaveformEffect} BrilliantSoleVibrationWaveformEffect */
+
 	/**
 	 * @typedef BrilliantSoleVibrationWaveformEffectSegment
 	 * use either effect or delay but not both (defaults to effect if both are defined)
@@ -2048,12 +2053,10 @@
 	    }
 	}
 
-	/** @typedef {import("./connection/ConnectionManager.js").BrilliantSoleConnectionMessageType} BrilliantSoleConnectionMessageType */
-	/** @typedef {import("./sensor/SensorDataManager.js").BrilliantSoleSensorType} BrilliantSoleSensorType */
 	/** @typedef {"connectionStatus" | BrilliantSoleConnectionStatus | "isConnected" | BrilliantSoleConnectionMessageType | "deviceInformation" | BrilliantSoleSensorType} BrilliantSoleEventType */
 
-	/** @typedef {import("./utils/EventDispatcher.js").EventDispatcherListener} EventDispatcherListener */
-	/** @typedef {import("./utils/EventDispatcher.js").EventDispatcherOptions} EventDispatcherOptions */
+
+
 
 	/**
 	 * @typedef BrilliantSoleEvent
@@ -2062,7 +2065,7 @@
 	 * @property {object} message
 	 */
 
-	/** @typedef {import("./connection/ConnectionManager.js").BrilliantSoleConnectionStatus} BrilliantSoleConnectionStatus */
+
 
 	/**
 	 * @typedef BrilliantSoleDeviceInformation
@@ -2087,12 +2090,12 @@
 	/** @typedef {"leftInsole" | "rightInsole"} BrilliantSoleDeviceType */
 	/** @typedef {"left" | "right"} BrilliantSoleInsoleSide */
 
-	/** @typedef {import("./sensor/SensorConfigurationManager.js").BrilliantSoleSensorConfiguration} BrilliantSoleSensorConfiguration */
 
-	/** @typedef {import("./vibration/VibrationManager.js").BrilliantSoleVibrationLocation} BrilliantSoleVibrationLocation */
-	/** @typedef {import("./vibration/VibrationManager.js").BrilliantSoleVibrationType} BrilliantSoleVibrationType */
 
-	/** @typedef {import("./vibration/VibrationManager.js").BrilliantSoleVibrationWaveformEffectSegment} BrilliantSoleVibrationWaveformEffectSegment */
+
+
+
+
 	/**
 	 * @typedef BrilliantSoleVibrationWaveformEffectConfiguration
 	 * @type {Object}
@@ -2100,7 +2103,7 @@
 	 * @property {number?} loopCount how many times the entire sequence should loop (int ranging [0, 6])
 	 */
 
-	/** @typedef {import("./vibration/VibrationManager.js").BrilliantSoleVibrationWaveformSegment} BrilliantSoleVibrationWaveformSegment */
+
 	/**
 	 * @typedef BrilliantSoleVibrationWaveformConfiguration
 	 * @type {Object}
@@ -2122,6 +2125,22 @@
 	    constructor() {
 	        this.connectionManager = new Device.#DefaultConnectionManager();
 	        this.#sensorDataManager.onDataReceived = this.#onSensorDataReceived.bind(this);
+
+	        if (isInBrowser) {
+	            window.addEventListener("beforeunload", () => {
+	                if (this.isConnected && this.clearSensorConfigurationOnLeave) {
+	                    this.clearSensorConfiguration();
+	                }
+	            });
+	        }
+	        if (isInNode) {
+	            /** can add more node.js leave handlers https://gist.github.com/hyrious/30a878f6e6a057f09db87638567cb11a */
+	            process.on("exit", () => {
+	                if (this.isConnected && this.clearSensorConfigurationOnLeave) {
+	                    this.clearSensorConfiguration();
+	                }
+	            });
+	        }
 	    }
 
 	    /** @returns {ConnectionManager} */
@@ -2160,7 +2179,7 @@
 
 	        "sensorData",
 	        "pressure",
-	        "accelerometer",
+	        "acceleration",
 	        "gravity",
 	        "linearAcceleration",
 	        "gyroscope",
@@ -2590,6 +2609,15 @@
 	        }
 	    }
 
+	    // SENSOR TYPES
+	    static #SensorTypes = SensorDataManager.Types;
+	    static get SensorTypes() {
+	        return this.#SensorTypes;
+	    }
+	    get sensorTypes() {
+	        return Device.SensorTypes;
+	    }
+
 	    // SENSOR CONFIGURATION
 	    #sensorConfigurationManager = new SensorConfigurationManager();
 	    /** @type {BrilliantSoleSensorConfiguration?} */
@@ -2627,15 +2655,42 @@
 	        await this.#connectionManager.sendMessage("setSensorConfiguration", setSensorConfigurationData);
 	    }
 
-	    // SENSOR DATA
+	    static #ClearSensorConfigurationOnLeave = true;
+	    static get ClearSensorConfigurationOnLeave() {
+	        return this.#ClearSensorConfigurationOnLeave;
+	    }
+	    static set ClearSensorConfigurationOnLeave(newclearSensorConfigurationOnLeave) {
+	        _console.assertTypeWithError(newclearSensorConfigurationOnLeave, "boolean");
+	        this.#ClearSensorConfigurationOnLeave = newclearSensorConfigurationOnLeave;
+	    }
 
-	    static #SensorTypes = SensorDataManager.Types;
-	    static get SensorTypes() {
-	        return this.#SensorTypes;
+	    #clearSensorConfigurationOnLeave = Device.ClearSensorConfigurationOnLeave;
+	    get clearSensorConfigurationOnLeave() {
+	        return this.#clearSensorConfigurationOnLeave;
 	    }
-	    get sensorTypes() {
-	        return Device.SensorTypes;
+	    set clearSensorConfigurationOnLeave(newclearSensorConfigurationOnLeave) {
+	        _console.assertTypeWithError(newclearSensorConfigurationOnLeave, "boolean");
+	        this.#clearSensorConfigurationOnLeave = newclearSensorConfigurationOnLeave;
 	    }
+
+	    /** @type {BrilliantSoleSensorConfiguration} */
+	    static #ZeroSensorConfiguration = {};
+	    static get ZeroSensorConfiguration() {
+	        return this.#ZeroSensorConfiguration;
+	    }
+	    static {
+	        this.SensorTypes.forEach((sensorType) => {
+	            this.#ZeroSensorConfiguration[sensorType] = 0;
+	        });
+	    }
+	    get zeroSensorConfiguration() {
+	        return Device.ZeroSensorConfiguration;
+	    }
+	    async clearSensorConfiguration() {
+	        return this.setSensorConfiguration(this.zeroSensorConfiguration);
+	    }
+
+	    // SENSOR DATA
 
 	    /** @type {SensorDataManager} */
 	    #sensorDataManager = new SensorDataManager();
