@@ -65,7 +65,7 @@ BS.Device.InsoleSides.forEach((side) => {
     /** @type {HTMLSelectElement} */
     const orientationSelect = insoleContainer.querySelector(".orientation");
     orientationSelect.addEventListener("input", () => {
-        /** @type {import("../../build/brilliantsole.module.js").BrilliantSoleSensorConfiguration} */
+        /** @type {import("../../build/brilliantsole.module.js").SensorConfiguration} */
         const configuration = { gameRotation: 0, rotation: 0, gyroscope: 0 };
 
         switch (orientationSelect.value) {
@@ -102,7 +102,7 @@ BS.Device.InsoleSides.forEach((side) => {
     /** @type {HTMLSelectElement} */
     const positionSelect = insoleContainer.querySelector(".position");
     positionSelect.addEventListener("input", () => {
-        /** @type {import("../../build/brilliantsole.module.js").BrilliantSoleSensorConfiguration} */
+        /** @type {import("../../build/brilliantsole.module.js").SensorConfiguration} */
         const configuration = { acceleration: 0, gravity: 0, linearAcceleration: 0 };
 
         switch (positionSelect.value) {
@@ -131,14 +131,14 @@ BS.Device.InsoleSides.forEach((side) => {
         positionSelect.disabled = !insole.isConnected;
     });
 
-    /** @typedef {import("../../build/brilliantsole.module.js").BrilliantSoleSensorType} BrilliantSoleSensorType */
+    /** @typedef {import("../../build/brilliantsole.module.js").SensorType} SensorType */
 
     insole.addEventListener("getSensorConfiguration", () => {
         let newOrientationSelectValue = "none";
         let newPositionSelectValue = "none";
 
         for (const key in insole.sensorConfiguration) {
-            /** @type {BrilliantSoleSensorType} */
+            /** @type {SensorType} */
             const sensorType = key;
             if (insole.sensorConfiguration[sensorType] > 0) {
                 switch (sensorType) {

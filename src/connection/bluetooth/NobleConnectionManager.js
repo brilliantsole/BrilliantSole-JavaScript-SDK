@@ -15,16 +15,16 @@ if (isInNode) {
     var noble = require("@abandonware/noble");
 }
 
-/** @typedef {import("./bluetoothUUIDs.js").BrilliantSoleBluetoothCharacteristicName} BrilliantSoleBluetoothCharacteristicName */
-/** @typedef {import("./bluetoothUUIDs.js").BrilliantSoleBluetoothServiceName} BrilliantSoleBluetoothServiceName */
+/** @typedef {import("./bluetoothUUIDs.js").BluetoothCharacteristicName} BluetoothCharacteristicName */
+/** @typedef {import("./bluetoothUUIDs.js").BluetoothServiceName} BluetoothServiceName */
 
-/** @typedef {import("../ConnectionManager.js").BrilliantSoleConnectionMessageType} BrilliantSoleConnectionMessageType */
+/** @typedef {import("../ConnectionManager.js").ConnectionMessageType} ConnectionMessageType */
 
 class NobleConnectionManager extends ConnectionManager {
     static get isSupported() {
         return isInNode;
     }
-    /** @type {import("../ConnectionManager.js").BrilliantSoleConnectionType} */
+    /** @type {import("../ConnectionManager.js").ConnectionType} */
     static get type() {
         return "noble";
     }
@@ -45,7 +45,7 @@ class NobleConnectionManager extends ConnectionManager {
     }
 
     /**
-     * @param {BrilliantSoleConnectionMessageType} messageType
+     * @param {ConnectionMessageType} messageType
      * @param {DataView|ArrayBuffer} data
      */
     async sendMessage(messageType, data) {

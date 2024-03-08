@@ -1,7 +1,8 @@
-import BrilliantSole from "../../build/brilliantsole.module.js";
-window.BrilliantSole = BrilliantSole;
-console.log({ BrilliantSole });
+import BS from "../../build/brilliantsole.module.js";
+window.BS = BS;
+console.log({ BS });
+BS.setAllConsoleLevelFlags({ log: true });
 
-const brilliantSole = new BrilliantSole();
-console.log({ brilliantSole });
-window.brilliantSole = brilliantSole;
+const devicePair = new BS.DevicePair();
+console.log({ devicePair });
+window.devicePair = devicePair;

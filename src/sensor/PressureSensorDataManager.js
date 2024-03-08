@@ -1,10 +1,10 @@
 import { createConsole } from "../utils/Console.js";
 import { getInterpolation } from "../utils/MathUtils.js";
 
-/** @typedef {import("../Device.js").BrilliantSoleDeviceType} BrilliantSoleDeviceType */
+/** @typedef {import("../Device.js").DeviceType} DeviceType */
 
-/** @typedef {"hallux" | "digits" | "metatarsal_inner" | "metatarsal_center" | "metatarsal_outer" | "arch" | "lateral" | "heel"} BrilliantSolePressureSensorName */
-/** @typedef {"pressure"} BrilliantSolePressureSensorType */
+/** @typedef {"hallux" | "digits" | "metatarsal_inner" | "metatarsal_center" | "metatarsal_outer" | "arch" | "lateral" | "heel"} PressureSensorName */
+/** @typedef {"pressure"} PressureSensorType */
 
 /**
  * @typedef Vector2
@@ -13,41 +13,41 @@ import { getInterpolation } from "../utils/MathUtils.js";
  * @property {number} y
  */
 
-/** @typedef {Vector2} BrilliantSolePressureSensorPosition */
-/** @typedef {Vector2} BrilliantSoleCenterOfPressure */
+/** @typedef {Vector2} PressureSensorPosition */
+/** @typedef {Vector2} CenterOfPressure */
 /**
- * @typedef BrilliantSoleCenterOfPressureRange
+ * @typedef CenterOfPressureRange
  * @type {Object}
  * @property {Vector2} min
  * @property {Vector2} max
  */
 
 /**
- * @typedef BrilliantSolePressureSensorValue
+ * @typedef PressureSensorValue
  * @type {Object}
- * @property {BrilliantSolePressureSensorName} name
- * @property {BrilliantSolePressureSensorPosition} position
+ * @property {PressureSensorName} name
+ * @property {PressureSensorPosition} position
  * @property {number} rawValue
  * @property {number} normalizedValue
  * @property {number?} weightedValue
  */
 
 /**
- * @typedef BrilliantSolePressureData
+ * @typedef PressureData
  * @type {Object}
- * @property {BrilliantSolePressureSensorValue[]} sensors
+ * @property {PressureSensorValue[]} sensors
  *
  * @property {number} rawSum
  * @property {number} normalizedSum
  *
- * @property {BrilliantSoleCenterOfPressure?} center
- * @property {BrilliantSoleCenterOfPressure?} calibratedCenter
+ * @property {CenterOfPressure?} center
+ * @property {CenterOfPressure?} calibratedCenter
  */
 
 const _console = createConsole("PressureSensorDataManager", { log: true });
 
 class PressureSensorDataManager {
-    /** @type {BrilliantSoleDeviceType} */
+    /** @type {DeviceType} */
     #deviceType;
     get deviceType() {
         return this.#deviceType;
@@ -65,7 +65,7 @@ class PressureSensorDataManager {
         this.resetCenterOfPressureRange();
     }
 
-    /** @type {BrilliantSolePressureSensorType[]} */
+    /** @type {PressureSensorType[]} */
     static #Names = [
         "hallux",
         "digits",
@@ -105,7 +105,7 @@ class PressureSensorDataManager {
      * positions the right insole (top to bottom) - mirror horizontally for the left insole.
      *
      * xy positions are the centers of each sensor in the .svg file (y is from the top)
-     * @type {BrilliantSolePressureSensorPosition[]}
+     * @type {PressureSensorPosition[]}
      */
     static #PressureSensorPositions = [
         { x: 110, y: 73 },
@@ -120,7 +120,7 @@ class PressureSensorDataManager {
     static get PressureSensorPositions() {
         return this.#PressureSensorPositions;
     }
-    /** @type {BrilliantSolePressureSensorPosition[]} */
+    /** @type {PressureSensorPosition[]} */
     #pressureSensorPositions;
     get pressureSensorPositions() {
         return this.#pressureSensorPositions;
@@ -136,7 +136,7 @@ class PressureSensorDataManager {
         this.#pressureSensorPositions = pressureSensorPositions;
     }
 
-    /** @type {BrilliantSoleCenterOfPressureRange} */
+    /** @type {CenterOfPressureRange} */
     #centerOfPressureRange;
     resetCenterOfPressureRange() {
         this.#centerOfPressureRange = {
@@ -144,7 +144,7 @@ class PressureSensorDataManager {
             max: { x: -Infinity, y: -Infinity },
         };
     }
-    /** @param {BrilliantSoleCenterOfPressure} centerOfPressure  */
+    /** @param {CenterOfPressure} centerOfPressure  */
     #updateCenterOfPressureRange(centerOfPressure) {
         this.#centerOfPressureRange.min.x = Math.min(centerOfPressure.x, this.#centerOfPressureRange.min.x);
         this.#centerOfPressureRange.min.y = Math.min(centerOfPressure.y, this.#centerOfPressureRange.min.y);
@@ -152,9 +152,9 @@ class PressureSensorDataManager {
         this.#centerOfPressureRange.max.x = Math.max(centerOfPressure.x, this.#centerOfPressureRange.max.x);
         this.#centerOfPressureRange.max.y = Math.max(centerOfPressure.y, this.#centerOfPressureRange.max.y);
     }
-    /** @param {BrilliantSoleCenterOfPressure} centerOfPressure  */
+    /** @param {CenterOfPressure} centerOfPressure  */
     #getCalibratedCenterOfPressure(centerOfPressure) {
-        /** @type {BrilliantSoleCenterOfPressure} */
+        /** @type {CenterOfPressure} */
         const calibratedCenterOfPressure = {
             x: getInterpolation(
                 centerOfPressure.x,
@@ -177,7 +177,7 @@ class PressureSensorDataManager {
     parsePressure(dataView, byteOffset) {
         const scalar = this.scalars.pressure;
 
-        /** @type {BrilliantSolePressureData} */
+        /** @type {PressureData} */
         const pressure = { sensors: [], rawSum: 0, normalizedSum: 0 };
         for (let index = 0; index < this.numberOfPressureSensors; index++, byteOffset += 2) {
             const rawValue = dataView.getUint16(byteOffset, true);

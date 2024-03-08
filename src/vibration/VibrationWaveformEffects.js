@@ -123,10 +123,10 @@
  * "smoothHum30" |
  * "smoothHum20" |
  * "smoothHum10"
- * } BrilliantSoleVibrationWaveformEffect
+ * } VibrationWaveformEffect
  */
 
-/** @type {BrilliantSoleVibrationWaveformEffect[]} */
+/** @type {VibrationWaveformEffect[]} */
 const VibrationWaveformEffects = [
     "none",
     "strongClick100",

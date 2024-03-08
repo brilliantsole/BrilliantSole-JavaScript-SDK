@@ -30,8 +30,8 @@ function stringToServiceUUID(identifier) {
     return BluetoothUUID.getService(identifier);
 }
 
-/** @typedef {"deviceInformation" | "battery" | "main" | "dfu"} BrilliantSoleBluetoothServiceName */
-/** @typedef { "manufacturerName" | "modelNumber" | "hardwareRevision" | "firmwareRevision" | "softwareRevision" | "pnpId" | "serialNumber" | "batteryLevel" | "name" | "type" | "sensorConfiguration" | "sensorData" | "vibration"} BrilliantSoleBluetoothCharacteristicName */
+/** @typedef {"deviceInformation" | "battery" | "main" | "dfu"} BluetoothServiceName */
+/** @typedef { "manufacturerName" | "modelNumber" | "hardwareRevision" | "firmwareRevision" | "softwareRevision" | "pnpId" | "serialNumber" | "batteryLevel" | "name" | "type" | "sensorConfiguration" | "sensorData" | "vibration"} BluetoothCharacteristicName */
 
 const bluetoothUUIDs = Object.freeze({
     services: {
@@ -96,7 +96,7 @@ const bluetoothUUIDs = Object.freeze({
 
     /**
      * @param {BluetoothServiceUUID} serviceUUID
-     * @returns {BrilliantSoleBluetoothServiceName?}
+     * @returns {BluetoothServiceName?}
      */
     getServiceNameFromUUID(serviceUUID) {
         return Object.entries(this.services).find(([serviceName, serviceInfo]) => {
@@ -106,7 +106,7 @@ const bluetoothUUIDs = Object.freeze({
 
     /**
      * @param {BluetoothCharacteristicUUID} characteristicUUID
-     * @returns {BrilliantSoleBluetoothCharacteristicName?}
+     * @returns {BluetoothCharacteristicName?}
      */
     getCharacteristicNameFromUUID(characteristicUUID) {
         var characteristicName;

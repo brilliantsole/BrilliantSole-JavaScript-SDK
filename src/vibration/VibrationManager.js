@@ -4,28 +4,28 @@ import { concatenateArrayBuffers } from "../utils/ArrayBufferUtils.js";
 
 const _console = createConsole("VibrationManager");
 
-/** @typedef {"front" | "rear"} BrilliantSoleVibrationLocation */
-/** @typedef {"waveformEffect" | "waveform"} BrilliantSoleVibrationType */
+/** @typedef {"front" | "rear"} VibrationLocation */
+/** @typedef {"waveformEffect" | "waveform"} VibrationType */
 
-/** @typedef {import("./VibrationWaveformEffects.js").BrilliantSoleVibrationWaveformEffect} BrilliantSoleVibrationWaveformEffect */
+/** @typedef {import("./VibrationWaveformEffects.js").VibrationWaveformEffect} VibrationWaveformEffect */
 /**
- * @typedef BrilliantSoleVibrationWaveformEffectSegment
+ * @typedef VibrationWaveformEffectSegment
  * use either effect or delay but not both (defaults to effect if both are defined)
  * @type {Object}
- * @property {BrilliantSoleVibrationWaveformEffect?} effect
+ * @property {VibrationWaveformEffect?} effect
  * @property {number?} delay (ms int ranging [0, 1270])
  * @property {number?} loopCount how many times each segment should loop (int ranging [0, 3])
  */
 
 /**
- * @typedef BrilliantSoleVibrationWaveformSegment
+ * @typedef VibrationWaveformSegment
  * @type {Object}
  * @property {number} duration ms int ranging [0, 2550]
  * @property {number} amplitude float ranging [0, 1]
  */
 
 class VibrationManager {
-    /** @type {BrilliantSoleVibrationLocation[]} */
+    /** @type {VibrationLocation[]} */
     static #Locations = ["front", "rear"];
     static get Locations() {
         return this.#Locations;
@@ -33,19 +33,19 @@ class VibrationManager {
     get locations() {
         return VibrationManager.Locations;
     }
-    /** @param {BrilliantSoleVibrationLocation} location */
+    /** @param {VibrationLocation} location */
     #verifyLocation(location) {
         _console.assertTypeWithError(location, "string");
         _console.assertWithError(this.locations.includes(location), `invalid location "${location}"`);
     }
-    /** @param {BrilliantSoleVibrationLocation[]} locations */
+    /** @param {VibrationLocation[]} locations */
     #verifyLocations(locations) {
         this.#assertNonEmptyArray(locations);
         locations.forEach((location) => {
             this.#verifyLocation(location);
         });
     }
-    /** @param {BrilliantSoleVibrationLocation[]} locations */
+    /** @param {VibrationLocation[]} locations */
     #createLocationsBitmask(locations) {
         this.#verifyLocations(locations);
 
@@ -71,7 +71,7 @@ class VibrationManager {
     get waveformEffects() {
         return VibrationManager.WaveformEffects;
     }
-    /** @param {BrilliantSoleVibrationWaveformEffect} waveformEffect */
+    /** @param {VibrationWaveformEffect} waveformEffect */
     #verifyWaveformEffect(waveformEffect) {
         _console.assertWithError(
             this.waveformEffects.includes(waveformEffect),
@@ -86,7 +86,7 @@ class VibrationManager {
     get maxWaveformEffectSegmentDelay() {
         return VibrationManager.MaxWaveformEffectSegmentDelay;
     }
-    /** @param {BrilliantSoleVibrationWaveformEffectSegment} waveformEffectSegment */
+    /** @param {VibrationWaveformEffectSegment} waveformEffectSegment */
     #verifyWaveformEffectSegment(waveformEffectSegment) {
         if (waveformEffectSegment.effect != undefined) {
             const waveformEffect = waveformEffectSegment.effect;
@@ -134,7 +134,7 @@ class VibrationManager {
     get maxNumberOfWaveformEffectSegments() {
         return VibrationManager.MaxNumberOfWaveformEffectSegments;
     }
-    /** @param {BrilliantSoleVibrationWaveformEffectSegment[]} waveformEffectSegments */
+    /** @param {VibrationWaveformEffectSegment[]} waveformEffectSegments */
     #verifyWaveformEffectSegments(waveformEffectSegments) {
         this.#assertNonEmptyArray(waveformEffectSegments);
         _console.assertWithError(
@@ -173,7 +173,7 @@ class VibrationManager {
     get maxWaveformSegmentDuration() {
         return VibrationManager.MaxWaveformSegmentDuration;
     }
-    /** @param {BrilliantSoleVibrationWaveformSegment} waveformSegment */
+    /** @param {VibrationWaveformSegment} waveformSegment */
     #verifyWaveformSegment(waveformSegment) {
         _console.assertTypeWithError(waveformSegment.amplitude, "number");
         _console.assertWithError(
@@ -202,7 +202,7 @@ class VibrationManager {
     get maxNumberOfWaveformSegments() {
         return VibrationManager.MaxNumberOfWaveformSegments;
     }
-    /** @param {BrilliantSoleVibrationWaveformSegment[]} waveformSegments */
+    /** @param {VibrationWaveformSegment[]} waveformSegments */
     #verifyWaveformSegments(waveformSegments) {
         this.#assertNonEmptyArray(waveformSegments);
         _console.assertWithError(
@@ -215,8 +215,8 @@ class VibrationManager {
     }
 
     /**
-     * @param {BrilliantSoleVibrationLocation[]} locations
-     * @param {BrilliantSoleVibrationWaveformEffectSegment[]} waveformEffectSegments
+     * @param {VibrationLocation[]} locations
+     * @param {VibrationWaveformEffectSegment[]} waveformEffectSegments
      * @param {number?} waveformEffectSequenceLoopCount how many times the entire sequence should loop (int ranging [0, 6])
      */
     createWaveformEffectsData(locations, waveformEffectSegments, waveformEffectSequenceLoopCount = 0) {
@@ -278,8 +278,8 @@ class VibrationManager {
         return this.#createData(locations, "waveformEffect", dataView);
     }
     /**
-     * @param {BrilliantSoleVibrationLocation[]} locations
-     * @param {BrilliantSoleVibrationWaveformSegment[]} waveformSegments
+     * @param {VibrationLocation[]} locations
+     * @param {VibrationWaveformSegment[]} waveformSegments
      */
     createWaveformData(locations, waveformSegments) {
         this.#verifyWaveformSegments(waveformSegments);
@@ -292,7 +292,7 @@ class VibrationManager {
         return this.#createData(locations, "waveform", dataView);
     }
 
-    /** @type {BrilliantSoleVibrationType[]} */
+    /** @type {VibrationType[]} */
     static #Types = ["waveformEffect", "waveform"];
     static get Types() {
         return this.#Types;
@@ -300,15 +300,15 @@ class VibrationManager {
     get #types() {
         return VibrationManager.Types;
     }
-    /** @param {BrilliantSoleVibrationType} vibrationType */
+    /** @param {VibrationType} vibrationType */
     #verifyVibrationType(vibrationType) {
         _console.assertTypeWithError(vibrationType, "string");
         _console.assertWithError(this.#types.includes(vibrationType), `invalid vibrationType "${vibrationType}"`);
     }
 
     /**
-     * @param {BrilliantSoleVibrationLocation[]} locations
-     * @param {BrilliantSoleVibrationType} vibrationType
+     * @param {VibrationLocation[]} locations
+     * @param {VibrationType} vibrationType
      * @param {DataView} dataView
      */
     #createData(locations, vibrationType, dataView) {

@@ -2,22 +2,22 @@ import { createConsole } from "./utils/Console.js";
 import EventDispatcher, { addEventListeners, removeEventListeners } from "./utils/EventDispatcher.js";
 import Device from "./Device.js";
 
-/** @typedef {import("./Device.js").BrilliantSoleInsoleSide} BrilliantSoleInsoleSide */
-/** @typedef {import("./Device.js").BrilliantSoleDeviceEvent} BrilliantSoleDeviceEvent */
+/** @typedef {import("./Device.js").InsoleSide} InsoleSide */
+/** @typedef {import("./Device.js").DeviceEvent} DeviceEvent */
 
-/** @typedef {"pressure"} BrilliantSoleDevicePairEventType */
+/** @typedef {"pressure"} DevicePairEventType */
 
 /** @typedef {import("./utils/EventDispatcher.js").EventDispatcherListener} EventDispatcherListener */
 /** @typedef {import("./utils/EventDispatcher.js").EventDispatcherOptions} EventDispatcherOptions */
 
-/** @typedef {import("./sensor/PressureSensorDataManager.js").BrilliantSoleCenterOfPressure} BrilliantSoleCenterOfPressure */
-/** @typedef {import("./sensor/PressureSensorDataManager.js").BrilliantSoleCenterOfPressureRange} BrilliantSoleCenterOfPressureRange */
+/** @typedef {import("./sensor/PressureSensorDataManager.js").CenterOfPressure} CenterOfPressure */
+/** @typedef {import("./sensor/PressureSensorDataManager.js").CenterOfPressureRange} CenterOfPressureRange */
 
 /**
- * @typedef BrilliantSoleDevicePairEvent
+ * @typedef DevicePairEvent
  * @type {Object}
  * @property {DevicePair} target
- * @property {BrilliantSoleDevicePairEventType} type
+ * @property {DevicePairEventType} type
  * @property {Object} message
  */
 
@@ -26,7 +26,7 @@ const _console = createConsole("DevicePair", { log: true });
 class DevicePair {
     // EVENT DISPATCHER
 
-    /** @type {BrilliantSoleDevicePairEventType[]} */
+    /** @type {DevicePairEventType[]} */
     static #EventTypes = ["pressure"];
     get #eventTypes() {
         return DevicePair.#EventTypes;
@@ -34,7 +34,7 @@ class DevicePair {
     #eventDispatcher = new EventDispatcher(this.#eventTypes);
 
     /**
-     * @param {BrilliantSoleDevicePairEventType} type
+     * @param {DevicePairEventType} type
      * @param {EventDispatcherListener} listener
      * @param {EventDispatcherOptions} options
      * @throws {Error}
@@ -44,7 +44,7 @@ class DevicePair {
     }
 
     /**
-     * @param {BrilliantSoleDevicePairEvent} event
+     * @param {DevicePairEvent} event
      * @throws {Error} if type is not valid
      */
     #dispatchEvent(event) {
@@ -52,7 +52,7 @@ class DevicePair {
     }
 
     /**
-     * @param {BrilliantSoleDevicePairEventType} type
+     * @param {DevicePairEventType} type
      * @param {EventDispatcherListener} listener
      * @returns {boolean}
      * @throws {Error}
@@ -90,7 +90,7 @@ class DevicePair {
 
     /**
      * @param {Device} device
-     * @param {BrilliantSoleInsoleSide} side
+     * @param {InsoleSide} side
      */
     #assignInsole(device, side) {
         _console.assertWithError(device.isInsole, "device must be an insole");
@@ -125,7 +125,7 @@ class DevicePair {
         pressure: this.#onDevicePressure.bind(this),
     };
 
-    /** @param {BrilliantSoleDeviceEvent} event  */
+    /** @param {DeviceEvent} event  */
     #onDevicePressure() {
         if (this.isConnected) {
             this.#updatePressureData();

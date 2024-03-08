@@ -1,8 +1,8 @@
 import { createConsole } from "../utils/Console.js";
 
-/** @typedef {import("../Device.js").BrilliantSoleDeviceType} BrilliantSoleDeviceType */
+/** @typedef {import("../Device.js").DeviceType} DeviceType */
 
-/** @typedef {"acceleration" | "gravity" | "linearAcceleration" | "gyroscope" | "magnetometer" | "gameRotation" | "rotation"} BrilliantSoleMotionSensorType */
+/** @typedef {"acceleration" | "gravity" | "linearAcceleration" | "gyroscope" | "magnetometer" | "gameRotation" | "rotation"} MotionSensorType */
 
 const _console = createConsole("MotionSensorDataManager", { log: true });
 
@@ -24,7 +24,7 @@ const _console = createConsole("MotionSensorDataManager", { log: true });
  */
 
 class MotionSensorDataManager {
-    /** @type {BrilliantSoleDeviceType} */
+    /** @type {DeviceType} */
     #deviceType;
     get deviceType() {
         return this.#deviceType;
@@ -69,7 +69,7 @@ class MotionSensorDataManager {
     /**
      * @param {DataView} dataView
      * @param {number} byteOffset
-     * @param {BrilliantSoleMotionSensorType} sensorType
+     * @param {MotionSensorType} sensorType
      * @returns {Vector3}
      */
     parseVector3(dataView, byteOffset, sensorType) {
@@ -96,7 +96,7 @@ class MotionSensorDataManager {
     /**
      * @param {DataView} dataView
      * @param {number} byteOffset
-     * @param {BrilliantSoleMotionSensorType} sensorType
+     * @param {MotionSensorType} sensorType
      * @returns {Quaternion}
      */
     parseQuaternion(dataView, byteOffset, sensorType) {

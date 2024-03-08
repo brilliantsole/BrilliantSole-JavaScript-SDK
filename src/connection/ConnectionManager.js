@@ -3,27 +3,27 @@ import { createConsole } from "../utils/Console.js";
 /** @typedef {import("./utils/EventDispatcher.js").EventDispatcherListener} EventDispatcherListener */
 /** @typedef {import("./utils/EventDispatcher.js").EventDispatcherOptions} EventDispatcherOptions */
 
-/** @typedef {"web bluetooth" | "noble"} BrilliantSoleConnectionType */
-/** @typedef {"not connected" | "connecting" | "connected" | "disconnecting"} BrilliantSoleConnectionStatus */
-/** @typedef {"manufacturerName" | "modelNumber" | "softwareRevision" | "hardwareRevision" | "firmwareRevision" | "pnpId" | "serialNumber" | "batteryLevel" | "getName" | "setName" | "getType" | "setType" | "getSensorConfiguration" | "setSensorConfiguration" | "sensorData" | "triggerVibration"} BrilliantSoleConnectionMessageType */
+/** @typedef {"web bluetooth" | "noble"} ConnectionType */
+/** @typedef {"not connected" | "connecting" | "connected" | "disconnecting"} ConnectionStatus */
+/** @typedef {"manufacturerName" | "modelNumber" | "softwareRevision" | "hardwareRevision" | "firmwareRevision" | "pnpId" | "serialNumber" | "batteryLevel" | "getName" | "setName" | "getType" | "setType" | "getSensorConfiguration" | "setSensorConfiguration" | "sensorData" | "triggerVibration"} ConnectionMessageType */
 
 const _console = createConsole("ConnectionManager");
 
 /**
- * @callback BrilliantSoleConnectionStatusCallback
- * @param {BrilliantSoleConnectionStatus} status
+ * @callback ConnectionStatusCallback
+ * @param {ConnectionStatus} status
  */
 
 /**
- * @callback BrilliantSoleMessageReceivedCallback
- * @param {BrilliantSoleConnectionMessageType} messageType
+ * @callback MessageReceivedCallback
+ * @param {ConnectionMessageType} messageType
  * @param {DataView} data
  */
 
 class ConnectionManager {
-    /** @type {BrilliantSoleConnectionStatusCallback?} */
+    /** @type {ConnectionStatusCallback?} */
     onStatusUpdated;
-    /** @type {BrilliantSoleMessageReceivedCallback?} */
+    /** @type {MessageReceivedCallback?} */
     onMessageReceived;
 
     /** @param {string} name */
@@ -43,11 +43,11 @@ class ConnectionManager {
         return this.constructor.isSupported;
     }
 
-    /** @type {BrilliantSoleConnectionType} */
+    /** @type {ConnectionType} */
     static get type() {
         this.#staticThrowNotImplementedError("type");
     }
-    /** @type {BrilliantSoleConnectionType} */
+    /** @type {ConnectionType} */
     get type() {
         return this.constructor.type;
     }
@@ -67,7 +67,7 @@ class ConnectionManager {
         this.#assertIsSupported();
     }
 
-    /** @type {BrilliantSoleConnectionStatus} */
+    /** @type {ConnectionStatus} */
     #status = "not connected";
     get status() {
         return this.#status;
@@ -132,7 +132,7 @@ class ConnectionManager {
     }
 
     /**
-     * @param {BrilliantSoleConnectionMessageType} messageType
+     * @param {ConnectionMessageType} messageType
      * @param {DataView|ArrayBuffer} data
      */
     async sendMessage(messageType, data) {

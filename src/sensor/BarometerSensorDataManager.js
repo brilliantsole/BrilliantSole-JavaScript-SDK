@@ -1,6 +1,6 @@
 import { createConsole } from "../utils/Console.js";
 
-/** @typedef {"barometer"} BrilliantSoleBarometerSensorType */
+/** @typedef {"barometer"} BarometerSensorType */
 
 const _console = createConsole("BarometerSensorDataManager", { log: true });
 

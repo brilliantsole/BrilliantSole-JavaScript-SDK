@@ -11,10 +11,10 @@ import {
 
 const _console = createConsole("WebBluetoothConnectionManager", { log: true });
 
-/** @typedef {import("./bluetoothUUIDs.js").BrilliantSoleBluetoothCharacteristicName} BrilliantSoleBluetoothCharacteristicName */
-/** @typedef {import("./bluetoothUUIDs.js").BrilliantSoleBluetoothServiceName} BrilliantSoleBluetoothServiceName */
+/** @typedef {import("./bluetoothUUIDs.js").BluetoothCharacteristicName} BluetoothCharacteristicName */
+/** @typedef {import("./bluetoothUUIDs.js").BluetoothServiceName} BluetoothServiceName */
 
-/** @typedef {import("../ConnectionManager.js").BrilliantSoleConnectionMessageType} BrilliantSoleConnectionMessageType */
+/** @typedef {import("../ConnectionManager.js").ConnectionMessageType} ConnectionMessageType */
 
 if (isInNode) {
     const webbluetooth = require("webbluetooth");
@@ -38,7 +38,7 @@ class WebBluetoothConnectionManager extends ConnectionManager {
     static get isSupported() {
         return "bluetooth" in navigator;
     }
-    /** @type {import("../ConnectionManager.js").BrilliantSoleConnectionType} */
+    /** @type {import("../ConnectionManager.js").ConnectionType} */
     static get type() {
         return "web bluetooth";
     }
@@ -70,9 +70,9 @@ class WebBluetoothConnectionManager extends ConnectionManager {
         return this.server?.connected;
     }
 
-    /** @type {Map.<BrilliantSoleBluetoothServiceName, BluetoothRemoteGATTService} */
+    /** @type {Map.<BluetoothServiceName, BluetoothRemoteGATTService} */
     #services = new Map();
-    /** @type {Map.<BrilliantSoleBluetoothCharacteristicName, BluetoothRemoteGATTCharacteristic} */
+    /** @type {Map.<BluetoothCharacteristicName, BluetoothRemoteGATTCharacteristic} */
     #characteristics = new Map();
 
     async connect() {
@@ -168,7 +168,7 @@ class WebBluetoothConnectionManager extends ConnectionManager {
 
         /** @type {BluetoothRemoteGATTCharacteristic} */
         const characteristic = event.target;
-        /** @type {BrilliantSoleBluetoothCharacteristicName} */
+        /** @type {BluetoothCharacteristicName} */
         const characteristicName = characteristic._name;
         _console.assertWithError(
             characteristicName,
@@ -229,7 +229,7 @@ class WebBluetoothConnectionManager extends ConnectionManager {
     }
 
     /**
-     * @param {BrilliantSoleConnectionMessageType} messageType
+     * @param {ConnectionMessageType} messageType
      * @param {DataView|ArrayBuffer} data
      */
     async sendMessage(messageType, data) {

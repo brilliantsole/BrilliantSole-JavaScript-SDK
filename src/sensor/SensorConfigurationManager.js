@@ -1,11 +1,11 @@
 import { createConsole } from "../utils/Console.js";
 import SensorDataManager from "./SensorDataManager.js";
 
-/** @typedef {import("../Device.js").BrilliantSoleDeviceType} BrilliantSoleDeviceType */
+/** @typedef {import("../Device.js").DeviceType} DeviceType */
 
-/** @typedef {import("./SensorDataManager.js").BrilliantSoleSensorType} BrilliantSoleSensorType */
+/** @typedef {import("./SensorDataManager.js").SensorType} SensorType */
 /**
- * @typedef BrilliantSoleSensorConfiguration
+ * @typedef SensorConfiguration
  * @type {Object}
  * @property {number} pressure
  * @property {number} acceleration
@@ -21,7 +21,7 @@ import SensorDataManager from "./SensorDataManager.js";
 const _console = createConsole("SensorConfigurationManager", { log: true });
 
 class SensorConfigurationManager {
-    /** @type {BrilliantSoleDeviceType} */
+    /** @type {DeviceType} */
     #deviceType;
     get deviceType() {
         return this.#deviceType;
@@ -38,7 +38,7 @@ class SensorConfigurationManager {
 
     /** @param {DataView} dataView */
     parse(dataView) {
-        /** @type {BrilliantSoleSensorConfiguration} */
+        /** @type {SensorConfiguration} */
         const parsedSensorConfiguration = {};
         SensorDataManager.Types.forEach((sensorType, index) => {
             const sensorRate = dataView.getUint16(index * 2, true);
@@ -78,9 +78,9 @@ class SensorConfigurationManager {
         );
     }
 
-    /** @param {BrilliantSoleSensorConfiguration} sensorConfiguration */
+    /** @param {SensorConfiguration} sensorConfiguration */
     createData(sensorConfiguration) {
-        /** @type {BrilliantSoleSensorType[]} */
+        /** @type {SensorType[]} */
         const sensorTypes = Object.keys(sensorConfiguration);
 
         const dataView = new DataView(new ArrayBuffer(sensorTypes.length * 3));
@@ -97,7 +97,7 @@ class SensorConfigurationManager {
         return dataView;
     }
 
-    /** @param {BrilliantSoleSensorConfiguration} sensorConfiguration */
+    /** @param {SensorConfiguration} sensorConfiguration */
     hasAtLeastOneNonZeroSensorRate(sensorConfiguration) {
         return Object.values(sensorConfiguration).some((value) => value > 0);
     }

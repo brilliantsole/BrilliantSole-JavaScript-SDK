@@ -4,18 +4,18 @@ import PressureSensorDataManager from "./PressureSensorDataManager.js";
 import MotionSensorDataManager from "./MotionSensorDataManager.js";
 import BarometerSensorDataManager from "./BarometerSensorDataManager.js";
 
-/** @typedef {import("../Device.js").BrilliantSoleDeviceType} BrilliantSoleDeviceType */
+/** @typedef {import("../Device.js").DeviceType} DeviceType */
 
-/** @typedef {import("./MotionSensorDataManager.js").BrilliantSoleMotionSensorType} BrilliantSoleMotionSensorType */
-/** @typedef {import("./PressureSensorDataManager.js").BrilliantSolePressureSensorType} BrilliantSolePressureSensorType */
-/** @typedef {import("./BarometerSensorDataManager.js").BrilliantSoleBarometerSensorType} BrilliantSoleBarometerSensorType */
+/** @typedef {import("./MotionSensorDataManager.js").MotionSensorType} MotionSensorType */
+/** @typedef {import("./PressureSensorDataManager.js").PressureSensorType} PressureSensorType */
+/** @typedef {import("./BarometerSensorDataManager.js").BarometerSensorType} BarometerSensorType */
 
-/** @typedef {BrilliantSoleMotionSensorType | BrilliantSolePressureSensorType | BrilliantSoleBarometerSensorType} BrilliantSoleSensorType */
+/** @typedef {MotionSensorType | PressureSensorType | BarometerSensorType} SensorType */
 
 const _console = createConsole("SensorDataManager", { log: true });
 
 class SensorDataManager {
-    /** @type {BrilliantSoleDeviceType} */
+    /** @type {DeviceType} */
     #deviceType;
     get deviceType() {
         return this.#deviceType;
@@ -37,7 +37,7 @@ class SensorDataManager {
     #motionSensorDataManager = new MotionSensorDataManager();
     #barometerSensorDataManager = new BarometerSensorDataManager();
 
-    /** @type {BrilliantSoleSensorType[]} */
+    /** @type {SensorType[]} */
     static #Types = [
         "pressure",
         "acceleration",
@@ -68,13 +68,13 @@ class SensorDataManager {
     }
 
     /**
-     * @callback BrilliantSoleSensorDataCallback
-     * @param {BrilliantSoleSensorType} sensorType
+     * @callback SensorDataCallback
+     * @param {SensorType} sensorType
      * @param {Object} data
      * @param {number} data.timestamp
      */
 
-    /** @type {BrilliantSoleSensorDataCallback?} */
+    /** @type {SensorDataCallback?} */
     onDataReceived;
 
     #timestampOffset = 0;
