@@ -11,23 +11,24 @@ import { concatenateArrayBuffers } from "./utils/ArrayBufferUtils.js";
 
 /** @typedef {import("./connection/ConnectionManager.js").BrilliantSoleConnectionMessageType} BrilliantSoleConnectionMessageType */
 /** @typedef {import("./sensor/SensorDataManager.js").BrilliantSoleSensorType} BrilliantSoleSensorType */
-/** @typedef {"connectionStatus" | BrilliantSoleConnectionStatus | "isConnected" | BrilliantSoleConnectionMessageType | "deviceInformation" | BrilliantSoleSensorType} BrilliantSoleEventType */
+/** @typedef {"connectionStatus" | BrilliantSoleConnectionStatus | "isConnected" | BrilliantSoleConnectionMessageType | "deviceInformation" | BrilliantSoleSensorType} BrilliantSoleDeviceEventType */
 
 /** @typedef {import("./utils/EventDispatcher.js").EventDispatcherListener} EventDispatcherListener */
 /** @typedef {import("./utils/EventDispatcher.js").EventDispatcherOptions} EventDispatcherOptions */
 
 /**
- * @typedef BrilliantSoleEvent
- * @type {object}
- * @property {BrilliantSoleEventType} type
- * @property {object} message
+ * @typedef BrilliantSoleDeviceEvent
+ * @type {Object}
+ * @property {Device} target
+ * @property {BrilliantSoleDeviceEventType} type
+ * @property {Object} message
  */
 
 /** @typedef {import("./connection/ConnectionManager.js").BrilliantSoleConnectionStatus} BrilliantSoleConnectionStatus */
 
 /**
  * @typedef BrilliantSoleDeviceInformation
- * @type {object}
+ * @type {Object}
  * @property {string?} manufacturerName
  * @property {string?} modelNumber
  * @property {string?} softwareRevision
@@ -38,7 +39,7 @@ import { concatenateArrayBuffers } from "./utils/ArrayBufferUtils.js";
 
 /**
  * @typedef PnpId
- * @type {object}
+ * @type {Object}
  * @property {"Bluetooth"|"USB"} source
  * @property {number} vendorId
  * @property {number} productId
@@ -77,7 +78,7 @@ import { concatenateArrayBuffers } from "./utils/ArrayBufferUtils.js";
  * @property {BrilliantSoleVibrationWaveformConfiguration?} waveform use if type is "waveform"
  */
 
-const _console = createConsole("BrilliantSole", { log: true });
+const _console = createConsole("Device", { log: true });
 
 class Device {
     constructor() {
@@ -114,7 +115,7 @@ class Device {
 
     // EVENT DISPATCHER
 
-    /** @type {BrilliantSoleEventType[]} */
+    /** @type {BrilliantSoleDeviceEventType[]} */
     static #EventTypes = [
         "connectionStatus",
         "connecting",
@@ -155,17 +156,17 @@ class Device {
     #eventDispatcher = new EventDispatcher(this.#eventTypes);
 
     /**
-     * @param {BrilliantSoleEventType} type
+     * @param {BrilliantSoleDeviceEventType} type
      * @param {EventDispatcherListener} listener
      * @param {EventDispatcherOptions} options
      * @throws {Error}
      */
     addEventListener(type, listener, options) {
-        this.#eventDispatcher.addEventListener(...arguments);
+        this.#eventDispatcher.addEventListener(type, listener, options);
     }
 
     /**
-     * @param {BrilliantSoleEvent} event
+     * @param {BrilliantSoleDeviceEvent} event
      * @throws {Error} if type is not valid
      */
     #dispatchEvent(event) {
@@ -173,13 +174,13 @@ class Device {
     }
 
     /**
-     * @param {BrilliantSoleEventType} type
+     * @param {BrilliantSoleDeviceEventType} type
      * @param {EventDispatcherListener} listener
      * @returns {boolean}
      * @throws {Error}
      */
     removeEventListener(type, listener) {
-        return this.#eventDispatcher.removeEventListener(...arguments);
+        return this.#eventDispatcher.removeEventListener(type, listener);
     }
 
     // CONNECTION MANAGER

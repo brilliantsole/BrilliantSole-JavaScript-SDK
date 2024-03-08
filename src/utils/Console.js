@@ -13,7 +13,7 @@ import { isInDev } from "./environment.js";
 
 /**
  * @typedef ConsoleLevelFlags
- * @type {object}
+ * @type {Object}
  * @property {boolean} log
  * @property {boolean} warn
  * @property {boolean} error

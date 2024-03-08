@@ -5,14 +5,15 @@ const _console = createConsole("EventDispatcher", { log: false });
 
 /**
  * @typedef EventDispatcherEvent
- * @type {object}
+ * @type {Object}
+ * @property {any} target
  * @property {string} type
  * @property {object} message
  */
 
 /**
  * @typedef EventDispatcherOptions
- * @type {object}
+ * @type {Object}
  * @property {boolean?} once
  */
 
