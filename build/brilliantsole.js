@@ -9,7 +9,8 @@
 })(this, (function () { 'use strict';
 
 	/** @type {"__BRILLIANTSOLE__DEV__" | "__BRILLIANTSOLE__PROD__"} */
-	const isInDev = "__BRILLIANTSOLE__PROD__" == "__BRILLIANTSOLE__DEV__";
+	const __BRILLIANTSOLE__ENVIRONMENT__ = "__BRILLIANTSOLE__DEV__";
+	const isInDev = __BRILLIANTSOLE__ENVIRONMENT__ == "__BRILLIANTSOLE__DEV__";
 
 	// https://github.com/flexdinesh/browser-or-node/blob/master/src/index.ts
 	const isInBrowser = typeof window !== "undefined" && window?.document !== "undefined";
@@ -105,6 +106,9 @@
 	     */
 	    static create(type, levelFlags) {
 	        const console = this.#consoles[type] || new Console(type);
+	        {
+	            console.setLevelFlags(levelFlags);
+	        }
 	        return console;
 	    }
 
@@ -886,6 +890,62 @@
 
 	const Uint16Max = 2 ** 16;
 
+	/**
+	 * @typedef Vector2
+	 * @type {Object}
+	 * @property {number} x
+	 * @property {number} y
+	 */
+
+	/** @typedef {Vector2} CenterOfPressure */
+	/**
+	 * @typedef CenterOfPressureRange
+	 * @type {Object}
+	 * @property {Vector2} min
+	 * @property {Vector2} max
+	 */
+
+	class CenterOfPressureHelper {
+	    /** @type {CenterOfPressure} */
+	    #centerOfPressureRange;
+	    resetCenterOfPressureRange() {
+	        this.#centerOfPressureRange = {
+	            min: { x: Infinity, y: Infinity },
+	            max: { x: -Infinity, y: -Infinity },
+	        };
+	    }
+
+	    constructor() {
+	        this.resetCenterOfPressureRange();
+	    }
+
+	    /** @param {CenterOfPressure} centerOfPressure  */
+	    updateCenterOfPressureRange(centerOfPressure) {
+	        this.#centerOfPressureRange.min.x = Math.min(centerOfPressure.x, this.#centerOfPressureRange.min.x);
+	        this.#centerOfPressureRange.min.y = Math.min(centerOfPressure.y, this.#centerOfPressureRange.min.y);
+
+	        this.#centerOfPressureRange.max.x = Math.max(centerOfPressure.x, this.#centerOfPressureRange.max.x);
+	        this.#centerOfPressureRange.max.y = Math.max(centerOfPressure.y, this.#centerOfPressureRange.max.y);
+	    }
+	    /** @param {CenterOfPressure} centerOfPressure  */
+	    getCalibratedCenterOfPressure(centerOfPressure) {
+	        /** @type {CenterOfPressure} */
+	        const calibratedCenterOfPressure = {
+	            x: getInterpolation(
+	                centerOfPressure.x,
+	                this.#centerOfPressureRange.min.x,
+	                this.#centerOfPressureRange.max.x
+	            ),
+	            y: getInterpolation(
+	                centerOfPressure.y,
+	                this.#centerOfPressureRange.min.y,
+	                this.#centerOfPressureRange.max.y
+	            ),
+	        };
+	        return calibratedCenterOfPressure;
+	    }
+	}
+
 	/** @typedef {"hallux" | "digits" | "metatarsal_inner" | "metatarsal_center" | "metatarsal_outer" | "arch" | "lateral" | "heel"} PressureSensorName */
 	/** @typedef {"pressure"} PressureSensorType */
 
@@ -897,13 +957,8 @@
 	 */
 
 	/** @typedef {Vector2} PressureSensorPosition */
-	/** @typedef {Vector2} CenterOfPressure */
-	/**
-	 * @typedef CenterOfPressureRange
-	 * @type {Object}
-	 * @property {Vector2} min
-	 * @property {Vector2} max
-	 */
+
+
 
 	/**
 	 * @typedef PressureSensorValue
@@ -1019,38 +1074,9 @@
 	        this.#pressureSensorPositions = pressureSensorPositions;
 	    }
 
-	    /** @type {CenterOfPressureRange} */
-	    #centerOfPressureRange;
+	    #centerOfPressureHelper = new CenterOfPressureHelper();
 	    resetCenterOfPressureRange() {
-	        this.#centerOfPressureRange = {
-	            min: { x: Infinity, y: Infinity },
-	            max: { x: -Infinity, y: -Infinity },
-	        };
-	    }
-	    /** @param {CenterOfPressure} centerOfPressure  */
-	    #updateCenterOfPressureRange(centerOfPressure) {
-	        this.#centerOfPressureRange.min.x = Math.min(centerOfPressure.x, this.#centerOfPressureRange.min.x);
-	        this.#centerOfPressureRange.min.y = Math.min(centerOfPressure.y, this.#centerOfPressureRange.min.y);
-
-	        this.#centerOfPressureRange.max.x = Math.max(centerOfPressure.x, this.#centerOfPressureRange.max.x);
-	        this.#centerOfPressureRange.max.y = Math.max(centerOfPressure.y, this.#centerOfPressureRange.max.y);
-	    }
-	    /** @param {CenterOfPressure} centerOfPressure  */
-	    #getCalibratedCenterOfPressure(centerOfPressure) {
-	        /** @type {CenterOfPressure} */
-	        const calibratedCenterOfPressure = {
-	            x: getInterpolation(
-	                centerOfPressure.x,
-	                this.#centerOfPressureRange.min.x,
-	                this.#centerOfPressureRange.max.x
-	            ),
-	            y: getInterpolation(
-	                centerOfPressure.y,
-	                this.#centerOfPressureRange.min.y,
-	                this.#centerOfPressureRange.max.y
-	            ),
-	        };
-	        return calibratedCenterOfPressure;
+	        this.#centerOfPressureHelper.resetCenterOfPressureRange();
 	    }
 
 	    /**
@@ -1080,8 +1106,8 @@
 	                pressure.center.x += sensor.position.x * sensor.weightedValue;
 	                pressure.center.y += sensor.position.y * sensor.weightedValue;
 	            });
-	            this.#updateCenterOfPressureRange(pressure.center);
-	            pressure.calibratedCenter = this.#getCalibratedCenterOfPressure(pressure.center);
+	            this.#centerOfPressureHelper.updateCenterOfPressureRange(pressure.center);
+	            pressure.calibratedCenter = this.#centerOfPressureHelper.getCalibratedCenterOfPressure(pressure.center);
 	        }
 
 	        _console$6.log({ pressure });
@@ -2066,6 +2092,10 @@
 	    }
 	}
 
+	const _console$1 = createConsole("Device", { log: false });
+
+
+
 	/** @typedef {"connectionStatus" | ConnectionStatus | "isConnected" | ConnectionMessageType | "deviceInformation" | SensorType} DeviceEventType */
 
 
@@ -2132,8 +2162,6 @@
 	 * @property {VibrationWaveformEffectConfiguration?} waveformEffect use if type is "waveformEffect"
 	 * @property {VibrationWaveformConfiguration?} waveform use if type is "waveform"
 	 */
-
-	const _console$1 = createConsole("Device", { log: true });
 
 	class Device {
 	    constructor() {
@@ -2800,13 +2828,39 @@
 
 
 
-
 	/**
 	 * @typedef DevicePairEvent
 	 * @type {Object}
 	 * @property {DevicePair} target
 	 * @property {DevicePairEventType} type
 	 * @property {Object} message
+	 */
+
+
+
+	/**
+	 * @typedef TimestampedPressureData
+	 * @type {Object}
+	 * @property {PressureData} data
+	 * @property {number} timestamp
+	 */
+
+	/**
+	 * @typedef DevicePairRawPressureData
+	 * @type {Object}
+	 * @property {TimestampedPressureData} left
+	 * @property {TimestampedPressureData} right
+	 */
+
+	/**
+	 * @typedef DevicePairPressureData
+	 * @type {Object}
+	 *
+	 * @property {number} rawSum
+	 * @property {number} normalizedSum
+	 *
+	 * @property {CenterOfPressure?} center
+	 * @property {CenterOfPressure?} calibratedCenter
 	 */
 
 	const _console = createConsole("DevicePair", { log: true });
@@ -2854,7 +2908,7 @@
 	    static get Sides() {
 	        return Device.InsoleSides;
 	    }
-	    static get sides() {
+	    get sides() {
 	        return DevicePair.Sides;
 	    }
 
@@ -2874,6 +2928,10 @@
 	    }
 	    set right(newDevice) {
 	        this.#assignInsole(newDevice, "right");
+	    }
+
+	    get isConnected() {
+	        this.sides.every((side) => this[side]?.isConnected);
 	    }
 
 	    /**
@@ -2906,6 +2964,8 @@
 	        }
 
 	        _console.log(`assigned ${side} insole`, device);
+
+	        this.resetCenterOfPressureRange();
 	    }
 
 	    /** @type {Object.<string, EventListener} */
@@ -2913,19 +2973,73 @@
 	        pressure: this.#onDevicePressure.bind(this),
 	    };
 
+	    // PRESSURE DATA
+
+	    /** @type {DevicePairRawPressureData} */
+	    #pressureData = {};
+
+	    #centerOfPressureHelper = new CenterOfPressureHelper();
+
+	    resetCenterOfPressureRange() {
+	        this.#centerOfPressureHelper.resetCenterOfPressureRange();
+	    }
+
 	    /** @param {DeviceEvent} event  */
-	    #onDevicePressure() {
-	        if (this.isConnected) {
+	    #onDevicePressure(event) {
+	        const { timestamp, pressure } = event.message;
+	        this.#pressureData[event.target.insoleSide] = {
+	            timestamp,
+	            pressure,
+	        };
+	        if (this.isConnected && this.#hasAllPressureData) {
 	            this.#updatePressureData();
 	        }
 	    }
 
-	    get isConnected() {
-	        return this.left?.isConnected && this.right?.isConnected;
+	    get #hasAllPressureData() {
+	        this.sides.every((side) => side in this.#pressureData);
+	    }
+
+	    static #Scalars = {
+	        pressure: PressureSensorDataManager.Scalars.pressure / this.Sides.length,
+	    };
+	    static get Scalars() {
+	        return this.#Scalars;
+	    }
+	    get scalars() {
+	        return DevicePair.Scalars;
 	    }
 
 	    #updatePressureData() {
-	        // FILL - caculate centerOdMaa
+	        const scalar = this.scalars.pressure;
+
+	        /** @type {DevicePairPressureData} */
+	        const pressure = { rawSum: 0, normalizedSum: 0 };
+
+	        this.#pressureData.left.data.rawSum;
+	        this.sides.forEach((side) => {
+	            pressure.rawSum += this.#pressureData[side].data.rawSum;
+	        });
+
+	        if (pressure.rawSum > 0) {
+	            pressure.normalizedSum = pressure.rawSum * scalar;
+
+	            pressure.center = { x: 0, y: 0 };
+	            this.sides.forEach((side) => {
+	                const sidePressureData = this.#pressureData[side].data;
+	                const rawPressureSumWeight = sidePressureData.rawSum / rawPressureSum;
+	                pressure.center.y += sidePressureData.center.y * rawPressureSumWeight;
+	                if (side == "right") {
+	                    pressure.center.x = rawPressureSumWeight;
+	                }
+	            });
+
+	            this.#centerOfPressureHelper.updateCenterOfPressureRange(pressure.center);
+	            pressure.calibratedCenter = this.#centerOfPressureHelper.getCalibratedCenterOfPressure(pressure.center);
+	        }
+
+	        _console.log({ pressure });
+	        this.#dispatchEvent({ type: "pressure", message: { pressure } });
 	    }
 	}
 

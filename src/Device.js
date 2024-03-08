@@ -9,6 +9,8 @@ import SensorDataManager from "./sensor/SensorDataManager.js";
 import VibrationManager from "./vibration/VibrationManager.js";
 import { concatenateArrayBuffers } from "./utils/ArrayBufferUtils.js";
 
+const _console = createConsole("Device", { log: false });
+
 /** @typedef {import("./connection/ConnectionManager.js").ConnectionMessageType} ConnectionMessageType */
 /** @typedef {import("./sensor/SensorDataManager.js").SensorType} SensorType */
 /** @typedef {"connectionStatus" | ConnectionStatus | "isConnected" | ConnectionMessageType | "deviceInformation" | SensorType} DeviceEventType */
@@ -77,8 +79,6 @@ import { concatenateArrayBuffers } from "./utils/ArrayBufferUtils.js";
  * @property {VibrationWaveformEffectConfiguration?} waveformEffect use if type is "waveformEffect"
  * @property {VibrationWaveformConfiguration?} waveform use if type is "waveform"
  */
-
-const _console = createConsole("Device", { log: true });
 
 class Device {
     constructor() {

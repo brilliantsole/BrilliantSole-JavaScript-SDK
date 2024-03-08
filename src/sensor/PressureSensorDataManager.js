@@ -1,5 +1,5 @@
 import { createConsole } from "../utils/Console.js";
-import { getInterpolation } from "../utils/MathUtils.js";
+import CenterOfPressureHelper from "../utils/CenterOfPressureHelper.js";
 
 /** @typedef {import("../Device.js").DeviceType} DeviceType */
 
@@ -14,13 +14,8 @@ import { getInterpolation } from "../utils/MathUtils.js";
  */
 
 /** @typedef {Vector2} PressureSensorPosition */
-/** @typedef {Vector2} CenterOfPressure */
-/**
- * @typedef CenterOfPressureRange
- * @type {Object}
- * @property {Vector2} min
- * @property {Vector2} max
- */
+
+/** @typedef {import("../utils/CenterOfPressureHelper.js").CenterOfPressure} CenterOfPressure */
 
 /**
  * @typedef PressureSensorValue
@@ -136,38 +131,9 @@ class PressureSensorDataManager {
         this.#pressureSensorPositions = pressureSensorPositions;
     }
 
-    /** @type {CenterOfPressureRange} */
-    #centerOfPressureRange;
+    #centerOfPressureHelper = new CenterOfPressureHelper();
     resetCenterOfPressureRange() {
-        this.#centerOfPressureRange = {
-            min: { x: Infinity, y: Infinity },
-            max: { x: -Infinity, y: -Infinity },
-        };
-    }
-    /** @param {CenterOfPressure} centerOfPressure  */
-    #updateCenterOfPressureRange(centerOfPressure) {
-        this.#centerOfPressureRange.min.x = Math.min(centerOfPressure.x, this.#centerOfPressureRange.min.x);
-        this.#centerOfPressureRange.min.y = Math.min(centerOfPressure.y, this.#centerOfPressureRange.min.y);
-
-        this.#centerOfPressureRange.max.x = Math.max(centerOfPressure.x, this.#centerOfPressureRange.max.x);
-        this.#centerOfPressureRange.max.y = Math.max(centerOfPressure.y, this.#centerOfPressureRange.max.y);
-    }
-    /** @param {CenterOfPressure} centerOfPressure  */
-    #getCalibratedCenterOfPressure(centerOfPressure) {
-        /** @type {CenterOfPressure} */
-        const calibratedCenterOfPressure = {
-            x: getInterpolation(
-                centerOfPressure.x,
-                this.#centerOfPressureRange.min.x,
-                this.#centerOfPressureRange.max.x
-            ),
-            y: getInterpolation(
-                centerOfPressure.y,
-                this.#centerOfPressureRange.min.y,
-                this.#centerOfPressureRange.max.y
-            ),
-        };
-        return calibratedCenterOfPressure;
+        this.#centerOfPressureHelper.resetCenterOfPressureRange();
     }
 
     /**
@@ -197,8 +163,8 @@ class PressureSensorDataManager {
                 pressure.center.x += sensor.position.x * sensor.weightedValue;
                 pressure.center.y += sensor.position.y * sensor.weightedValue;
             });
-            this.#updateCenterOfPressureRange(pressure.center);
-            pressure.calibratedCenter = this.#getCalibratedCenterOfPressure(pressure.center);
+            this.#centerOfPressureHelper.updateCenterOfPressureRange(pressure.center);
+            pressure.calibratedCenter = this.#centerOfPressureHelper.getCalibratedCenterOfPressure(pressure.center);
         }
 
         _console.log({ pressure });
