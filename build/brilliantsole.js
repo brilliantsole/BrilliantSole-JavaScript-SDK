@@ -9,8 +9,7 @@
 })(this, (function () { 'use strict';
 
 	/** @type {"__BRILLIANTSOLE__DEV__" | "__BRILLIANTSOLE__PROD__"} */
-	const __BRILLIANTSOLE__ENVIRONMENT__ = "__BRILLIANTSOLE__DEV__";
-	const isInDev = __BRILLIANTSOLE__ENVIRONMENT__ == "__BRILLIANTSOLE__DEV__";
+	const isInDev = "__BRILLIANTSOLE__PROD__" == "__BRILLIANTSOLE__DEV__";
 
 	// https://github.com/flexdinesh/browser-or-node/blob/master/src/index.ts
 	const isInBrowser = typeof window !== "undefined" && window?.document !== "undefined";
@@ -106,9 +105,6 @@
 	     */
 	    static create(type, levelFlags) {
 	        const console = this.#consoles[type] || new Console(type);
-	        {
-	            console.setLevelFlags(levelFlags);
-	        }
 	        return console;
 	    }
 
@@ -908,7 +904,7 @@
 	class CenterOfPressureHelper {
 	    /** @type {CenterOfPressure} */
 	    #centerOfPressureRange;
-	    resetCenterOfPressureRange() {
+	    resetRange() {
 	        this.#centerOfPressureRange = {
 	            min: { x: Infinity, y: Infinity },
 	            max: { x: -Infinity, y: -Infinity },
@@ -916,7 +912,7 @@
 	    }
 
 	    constructor() {
-	        this.resetCenterOfPressureRange();
+	        this.resetRange();
 	    }
 
 	    /** @param {CenterOfPressure} centerOfPressure  */
@@ -1000,7 +996,7 @@
 	        this.#deviceType = newDeviceType;
 
 	        this.#updatePressureSensorPositions();
-	        this.resetCenterOfPressureRange();
+	        this.resetPressureRange();
 	    }
 
 	    /** @type {PressureSensorType[]} */
@@ -1075,8 +1071,8 @@
 	    }
 
 	    #centerOfPressureHelper = new CenterOfPressureHelper();
-	    resetCenterOfPressureRange() {
-	        this.#centerOfPressureHelper.resetCenterOfPressureRange();
+	    resetRange() {
+	        this.#centerOfPressureHelper.resetRange();
 	    }
 
 	    /**
@@ -1262,13 +1258,13 @@
 	        _console$4.log({ newDeviceType });
 	        this.#deviceType = newDeviceType;
 
-	        this.#pressureSensorDataManager.deviceType = newDeviceType;
-	        this.#motionSensorDataManager.deviceType = newDeviceType;
+	        this.pressureSensorDataManager.deviceType = newDeviceType;
+	        this.motionSensorDataManager.deviceType = newDeviceType;
 	    }
 
-	    #pressureSensorDataManager = new PressureSensorDataManager();
-	    #motionSensorDataManager = new MotionSensorDataManager();
-	    #barometerSensorDataManager = new BarometerSensorDataManager();
+	    pressureSensorDataManager = new PressureSensorDataManager();
+	    motionSensorDataManager = new MotionSensorDataManager();
+	    barometerSensorDataManager = new BarometerSensorDataManager();
 
 	    /** @type {SensorType[]} */
 	    static #Types = [
@@ -1349,18 +1345,18 @@
 	            _console$4.log({ sensorTypeEnum, sensorType, sensorTypeDataSize });
 	            switch (sensorType) {
 	                case "pressure":
-	                    value = this.#pressureSensorDataManager.parsePressure(dataView, byteOffset);
+	                    value = this.pressureSensorDataManager.parsePressure(dataView, byteOffset);
 	                    break;
 	                case "acceleration":
 	                case "gravity":
 	                case "linearAcceleration":
 	                case "gyroscope":
 	                case "magnetometer":
-	                    value = this.#motionSensorDataManager.parseVector3(dataView, byteOffset, sensorType);
+	                    value = this.motionSensorDataManager.parseVector3(dataView, byteOffset, sensorType);
 	                    break;
 	                case "gameRotation":
 	                case "rotation":
-	                    value = this.#motionSensorDataManager.parseQuaternion(dataView, byteOffset, sensorType);
+	                    value = this.motionSensorDataManager.parseQuaternion(dataView, byteOffset, sensorType);
 	                    break;
 	                case "barometer":
 	                    // FILL
@@ -2308,7 +2304,16 @@
 	        return this.connectionManager?.reconnect();
 	    }
 
-	    #reconnectOnDisconnection = false;
+	    static #ReconnectOnDisconnection = false;
+	    static get ReconnectOnDisconnection() {
+	        return this.#ReconnectOnDisconnection;
+	    }
+	    static set ReconnectOnDisconnection(newReconnectOnDisconnection) {
+	        _console$1.assertTypeWithError(newReconnectOnDisconnection, "boolean");
+	        this.#ReconnectOnDisconnection = newReconnectOnDisconnection;
+	    }
+
+	    #reconnectOnDisconnection = Device.ReconnectOnDisconnection;
 	    get reconnectOnDisconnection() {
 	        return this.#reconnectOnDisconnection;
 	    }
@@ -2748,6 +2753,10 @@
 	        this.#dispatchEvent({ type: "sensorData", message: sensorData });
 	    }
 
+	    resetPressureRange() {
+	        this.#sensorDataManager.pressureSensorDataManager.resetRange();
+	    }
+
 	    // VIBRATION
 	    #vibrationManager = new VibrationManager();
 	    static get VibrationLocations() {
@@ -2821,7 +2830,9 @@
 	    }
 	}
 
-	/** @typedef {"pressure"} DevicePairEventType */
+	/** @typedef {"pressure" | "isConnected"} DevicePairEventType */
+
+
 
 
 
@@ -2869,7 +2880,7 @@
 	    // EVENT DISPATCHER
 
 	    /** @type {DevicePairEventType[]} */
-	    static #EventTypes = ["pressure"];
+	    static #EventTypes = ["pressure", "isConnected"];
 	    get #eventTypes() {
 	        return DevicePair.#EventTypes;
 	    }
@@ -2917,40 +2928,26 @@
 	    get left() {
 	        return this.#left;
 	    }
-	    set left(newDevice) {
-	        this.#assignInsole(newDevice, "left");
-	    }
 
 	    /** @type {Device?} */
 	    #right;
 	    get right() {
 	        return this.#right;
 	    }
-	    set right(newDevice) {
-	        this.#assignInsole(newDevice, "right");
-	    }
 
 	    get isConnected() {
-	        this.sides.every((side) => this[side]?.isConnected);
+	        return this.sides.every((side) => this[side]?.isConnected);
 	    }
 
-	    /**
-	     * @param {Device} device
-	     * @param {InsoleSide} side
-	     */
-	    #assignInsole(device, side) {
+	    /** @param {Device} device */
+	    assignInsole(device) {
 	        _console.assertWithError(device.isInsole, "device must be an insole");
-	        _console.assertWithError(
-	            device.insoleSide == side,
-	            `attempted to assign ${device.insoleSide} insole to ${side} side`
-	        );
-	        if (device == this[side]) {
-	            _console.warn("attempted to assign the same insole");
-	            return;
-	        }
+	        const side = device.insoleSide;
 
-	        if (this[side]) {
-	            removeEventListeners(this[side], this.#boundDeviceEventListeners);
+	        const currentDevice = this[side];
+
+	        if (currentDevice) {
+	            removeEventListeners(currentDevice, this.#boundDeviceEventListeners);
 	        }
 	        addEventListeners(device, this.#boundDeviceEventListeners);
 
@@ -2965,29 +2962,61 @@
 
 	        _console.log(`assigned ${side} insole`, device);
 
-	        this.resetCenterOfPressureRange();
+	        this.resetPressureRange();
+
+	        this.#dispatchEvent({ type: "isConnected", message: { isConnected: this.isConnected } });
+
+	        return currentDevice;
 	    }
 
 	    /** @type {Object.<string, EventListener} */
 	    #boundDeviceEventListeners = {
 	        pressure: this.#onDevicePressure.bind(this),
+	        isConnected: this.#onIsDeviceConnected.bind(this),
 	    };
+
+	    /** @param {DeviceEvent} event  */
+	    #onIsDeviceConnected(event) {
+	        this.#dispatchEvent({ type: "isConnected", message: { isConnected: this.isConnected } });
+	    }
+
+	    // SENSOR CONFIGURATION
+
+	    /** @param {SensorConfiguration} sensorConfiguration */
+	    setSensorConfiguration(sensorConfiguration) {
+	        if (this.isConnected) {
+	            this.sides.forEach((side) => {
+	                this[side].setSensorConfiguration(sensorConfiguration);
+	            });
+	        }
+	    }
 
 	    // PRESSURE DATA
 
 	    /** @type {DevicePairRawPressureData} */
-	    #pressureData = {};
+	    #rawPressureData = {};
+	    /** @type {Object<InsoleSide, number>} */
+	    get #rawPressureDataTimestamps() {
+	        const timestamps = {};
+	        this.sides.forEach((side) => {
+	            timestamps[side] = this.#rawPressureData[side].timestamp;
+	        });
+	        return timestamps;
+	    }
 
 	    #centerOfPressureHelper = new CenterOfPressureHelper();
 
-	    resetCenterOfPressureRange() {
-	        this.#centerOfPressureHelper.resetCenterOfPressureRange();
+	    resetPressureRange() {
+	        this.sides.forEach((side) => {
+	            this[side].resetPressureRange();
+	        });
+	        this.#centerOfPressureHelper.resetRange();
 	    }
 
 	    /** @param {DeviceEvent} event  */
 	    #onDevicePressure(event) {
 	        const { timestamp, pressure } = event.message;
-	        this.#pressureData[event.target.insoleSide] = {
+	        this.#rawPressureData[event.target.insoleSide] = {
 	            timestamp,
 	            pressure,
 	        };
@@ -2997,7 +3026,7 @@
 	    }
 
 	    get #hasAllPressureData() {
-	        this.sides.every((side) => side in this.#pressureData);
+	        this.sides.every((side) => side in this.#rawPressureData);
 	    }
 
 	    static #Scalars = {
@@ -3016,9 +3045,9 @@
 	        /** @type {DevicePairPressureData} */
 	        const pressure = { rawSum: 0, normalizedSum: 0 };
 
-	        this.#pressureData.left.data.rawSum;
+	        this.#rawPressureData.left.data.rawSum;
 	        this.sides.forEach((side) => {
-	            pressure.rawSum += this.#pressureData[side].data.rawSum;
+	            pressure.rawSum += this.#rawPressureData[side].data.rawSum;
 	        });
 
 	        if (pressure.rawSum > 0) {
@@ -3026,7 +3055,7 @@
 
 	            pressure.center = { x: 0, y: 0 };
 	            this.sides.forEach((side) => {
-	                const sidePressureData = this.#pressureData[side].data;
+	                const sidePressureData = this.#rawPressureData[side].data;
 	                const rawPressureSumWeight = sidePressureData.rawSum / rawPressureSum;
 	                pressure.center.y += sidePressureData.center.y * rawPressureSumWeight;
 	                if (side == "right") {
@@ -3039,7 +3068,7 @@
 	        }
 
 	        _console.log({ pressure });
-	        this.#dispatchEvent({ type: "pressure", message: { pressure } });
+	        this.#dispatchEvent({ type: "pressure", message: { pressure, timestamps: this.#rawPressureDataTimestamps() } });
 	    }
 	}
 

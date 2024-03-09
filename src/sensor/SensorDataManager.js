@@ -29,13 +29,13 @@ class SensorDataManager {
         _console.log({ newDeviceType });
         this.#deviceType = newDeviceType;
 
-        this.#pressureSensorDataManager.deviceType = newDeviceType;
-        this.#motionSensorDataManager.deviceType = newDeviceType;
+        this.pressureSensorDataManager.deviceType = newDeviceType;
+        this.motionSensorDataManager.deviceType = newDeviceType;
     }
 
-    #pressureSensorDataManager = new PressureSensorDataManager();
-    #motionSensorDataManager = new MotionSensorDataManager();
-    #barometerSensorDataManager = new BarometerSensorDataManager();
+    pressureSensorDataManager = new PressureSensorDataManager();
+    motionSensorDataManager = new MotionSensorDataManager();
+    barometerSensorDataManager = new BarometerSensorDataManager();
 
     /** @type {SensorType[]} */
     static #Types = [
@@ -116,18 +116,18 @@ class SensorDataManager {
             _console.log({ sensorTypeEnum, sensorType, sensorTypeDataSize });
             switch (sensorType) {
                 case "pressure":
-                    value = this.#pressureSensorDataManager.parsePressure(dataView, byteOffset);
+                    value = this.pressureSensorDataManager.parsePressure(dataView, byteOffset);
                     break;
                 case "acceleration":
                 case "gravity":
                 case "linearAcceleration":
                 case "gyroscope":
                 case "magnetometer":
-                    value = this.#motionSensorDataManager.parseVector3(dataView, byteOffset, sensorType);
+                    value = this.motionSensorDataManager.parseVector3(dataView, byteOffset, sensorType);
                     break;
                 case "gameRotation":
                 case "rotation":
-                    value = this.#motionSensorDataManager.parseQuaternion(dataView, byteOffset, sensorType);
+                    value = this.motionSensorDataManager.parseQuaternion(dataView, byteOffset, sensorType);
                     break;
                 case "barometer":
                     // FILL

@@ -18,7 +18,7 @@ import { getInterpolation } from "./MathUtils";
 class CenterOfPressureHelper {
     /** @type {CenterOfPressure} */
     #centerOfPressureRange;
-    resetCenterOfPressureRange() {
+    resetRange() {
         this.#centerOfPressureRange = {
             min: { x: Infinity, y: Infinity },
             max: { x: -Infinity, y: -Infinity },
@@ -26,7 +26,7 @@ class CenterOfPressureHelper {
     }
 
     constructor() {
-        this.resetCenterOfPressureRange();
+        this.resetRange();
     }
 
     /** @param {CenterOfPressure} centerOfPressure  */

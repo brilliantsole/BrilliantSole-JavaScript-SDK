@@ -57,7 +57,7 @@ class PressureSensorDataManager {
         this.#deviceType = newDeviceType;
 
         this.#updatePressureSensorPositions();
-        this.resetCenterOfPressureRange();
+        this.resetPressureRange();
     }
 
     /** @type {PressureSensorType[]} */
@@ -132,8 +132,8 @@ class PressureSensorDataManager {
     }
 
     #centerOfPressureHelper = new CenterOfPressureHelper();
-    resetCenterOfPressureRange() {
-        this.#centerOfPressureHelper.resetCenterOfPressureRange();
+    resetRange() {
+        this.#centerOfPressureHelper.resetRange();
     }
 
     /**

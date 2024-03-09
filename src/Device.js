@@ -228,7 +228,16 @@ class Device {
         return this.connectionManager?.reconnect();
     }
 
-    #reconnectOnDisconnection = false;
+    static #ReconnectOnDisconnection = false;
+    static get ReconnectOnDisconnection() {
+        return this.#ReconnectOnDisconnection;
+    }
+    static set ReconnectOnDisconnection(newReconnectOnDisconnection) {
+        _console.assertTypeWithError(newReconnectOnDisconnection, "boolean");
+        this.#ReconnectOnDisconnection = newReconnectOnDisconnection;
+    }
+
+    #reconnectOnDisconnection = Device.ReconnectOnDisconnection;
     get reconnectOnDisconnection() {
         return this.#reconnectOnDisconnection;
     }
@@ -668,6 +677,10 @@ class Device {
         _console.log({ sensorType, sensorData });
         this.#dispatchEvent({ type: sensorType, message: sensorData });
         this.#dispatchEvent({ type: "sensorData", message: sensorData });
+    }
+
+    resetPressureRange() {
+        this.#sensorDataManager.pressureSensorDataManager.resetRange();
     }
 
     // VIBRATION
