@@ -6,11 +6,112 @@
         <script type="module" src="./script.js"></script>
     </head>
 
+    <style>
+        #balanceContainer {
+            width: 500px;
+            height: 80%;
+            margin: 1rem auto;
+            display: flex;
+            flex-direction: row;
+            justify-content: space-evenly;
+            gap: 50px;
+        }
+
+        .balanceSide {
+            height: 100%;
+            width: 40%;
+            position: relative;
+            display: flex;
+            justify-content: center;
+        }
+        .balanceSide .meter {
+            height: 100%;
+            width: 100%;
+            border-radius: 40px;
+            border: solid black thick;
+            overflow: hidden;
+            box-sizing: border-box;
+            position: relative;
+        }
+
+        .balanceSide .meter .fill {
+            background-color: red;
+            width: 100%;
+            bottom: 0;
+            position: absolute;
+            height: 0%;
+        }
+
+        .balanceSide .target {
+            width: calc(100% + 50px);
+            position: absolute;
+            background-color: yellow;
+            margin: auto;
+            z-index: 1;
+            opacity: 0.5;
+            border-radius: 15px;
+            height: 20%;
+            bottom: 50%;
+            display: flex;
+        }
+        #balanceContainer.hover .balanceSide .target {
+            background-color: limegreen;
+        }
+        #balanceContainer:not(.game) .balanceSide .target {
+            display: none;
+        }
+        .balanceSide .target .ring {
+            margin: auto;
+            box-sizing: border-box;
+            border: solid thick blue;
+            width: 100%;
+            height: 100%;
+            border-radius: 15px;
+        }
+        #balanceContainer:not(.hover) .balanceSide .target .ring {
+            display: none;
+        }
+
+        @keyframes shrink {
+            from {
+                width: 100%;
+                height: 100%;
+            }
+            to {
+                width: 0%;
+                height: 0%;
+            }
+        }
+        #balanceContainer.hover .balanceSide .target .ring {
+            animation-name: shrink;
+            animation-duration: 3s;
+            animation-timing-function: linear;
+        }
+    </style>
+
     <body>
         <nav>
             <a href="../../../">home</a>
         </nav>
 
         <h1>Balance | BrilliantSole JavaScript SDK</h1>
+
+        <button id="addDevice">add device</button>
+        <button id="togglePressureData" disabled>enable pressure data</button>
+        <button id="resetPressureRange" disabled>recalibrate</button>
+        <button id="toggleGame">start game</button>
+
+        <div id="balanceContainer">
+            <template id="balanceSideTemplate">
+                <div class="balanceSide">
+                    <div class="target">
+                        <div class="ring"></div>
+                    </div>
+                    <div class="meter">
+                        <div class="fill"></div>
+                    </div>
+                </div>
+            </template>
+        </div>
     </body>
 </html>

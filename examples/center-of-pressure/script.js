@@ -7,7 +7,7 @@ const devicePair = new BS.DevicePair();
 console.log({ devicePair });
 window.devicePair = devicePair;
 
-const devices = BS.DevicePair.Sides.map((side) => {
+const devices = BS.DevicePair.Sides.map(() => {
     const device = new BS.Device();
 
     device.addEventListener("connected", () => {
@@ -80,7 +80,7 @@ toggleGameButton.addEventListener("click", () => {
     isPlayingGame = !isPlayingGame;
     toggleGameButton.innerText = isPlayingGame ? "stop game" : "start game";
     if (isPlayingGame) {
-        target.resetPosition();
+        target.reset();
         target.element.style.display = "block";
     } else {
         target.element.style.display = "none";
@@ -106,12 +106,6 @@ const target = {
 
     /** @param {CenterOfPressure} center  */
     isInside(center) {
-        console.log({
-            isRight: center.x >= this.left,
-            isLeft: center.x <= this.left + this.width,
-            isBelow: center.y <= this.bottom,
-            isAbove: center.y >= this.bottom - this.height,
-        });
         return (
             center.x >= this.left &&
             center.x <= this.left + this.width &&
@@ -120,7 +114,7 @@ const target = {
         );
     },
 
-    resetPosition() {
+    reset() {
         this.element.classList.remove("hover");
 
         this.width = randomValueBetween(0.1, 0.3);
@@ -163,7 +157,7 @@ function onCenterOfPressure(center) {
             if (insideTargetTimeoutId == undefined) {
                 target.element.classList.add("hover");
                 insideTargetTimeoutId = setTimeout(() => {
-                    target.resetPosition();
+                    target.reset();
                 }, 3000);
             }
         } else {
