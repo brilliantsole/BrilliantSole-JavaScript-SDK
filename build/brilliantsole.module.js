@@ -1372,6 +1372,13 @@ class SensorDataManager {
     get numberOfPressureSensors() {
         return SensorDataManager.NumberOfPressureSensors;
     }
+
+    static get PressureSensorNames() {
+        return PressureSensorDataManager.Names;
+    }
+    get pressureSensorNames() {
+        return SensorDataManager.PressureSensorNames;
+    }
 }
 
 /**
@@ -2651,12 +2658,25 @@ class Device {
     }
 
     // SENSOR TYPES
-    static #SensorTypes = SensorDataManager.Types;
     static get SensorTypes() {
-        return this.#SensorTypes;
+        return SensorDataManager.Types;
     }
     get sensorTypes() {
         return Device.SensorTypes;
+    }
+
+    static get PressureSensorNames() {
+        return SensorDataManager.PressureSensorNames;
+    }
+    get pressureSensorNames() {
+        return Device.PressureSensorNames;
+    }
+
+    static get NumberOfPressureSensors() {
+        return SensorDataManager.NumberOfPressureSensors;
+    }
+    get numberOfPressureSensors() {
+        return Device.NumberOfPressureSensors;
     }
 
     // SENSOR CONFIGURATION

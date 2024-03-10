@@ -149,6 +149,13 @@ class SensorDataManager {
     get numberOfPressureSensors() {
         return SensorDataManager.NumberOfPressureSensors;
     }
+
+    static get PressureSensorNames() {
+        return PressureSensorDataManager.Names;
+    }
+    get pressureSensorNames() {
+        return SensorDataManager.PressureSensorNames;
+    }
 }
 
 export default SensorDataManager;
