@@ -1,4 +1,6 @@
 import BS from "../../build/brilliantsole.module.js";
+import * as THREE from "https://cdnjs.cloudflare.com/ajax/libs/three.js/0.162.0/three.module.min.js";
+
 window.BS = BS;
 console.log({ BS });
 //BS.setAllConsoleLevelFlags({ log: true });
@@ -82,45 +84,20 @@ insole.addEventListener("isConnected", () => {
 
 /** @typedef {import("../../build/brilliantsole.module.js").SensorType} SensorType */
 
-const charts = [];
+const charts = {};
+window.charts = charts;
 
 window.maxTicks = 500;
 /**
  * @param {HTMLCanvasElement} canvas
- * @param {SensorType} sensorType
+ * @param {string} title
+ * @param {string[]} axesLabels
  */
-function createChart(canvas, sensorType) {
+function createChart(canvas, title, axesLabels) {
     const data = {
         labels: new Array(window.maxTicks).fill(0),
         datasets: [],
     };
-    let axesLabels;
-    switch (sensorType) {
-        case "acceleration":
-        case "gravity":
-        case "linearAcceleration":
-        case "magnetometer":
-            axesLabels = ["x", "y", "z"];
-            break;
-        case "gyroscope":
-            axesLabels = ["x", "y", "z"];
-            break;
-        case "gameRotation":
-        case "rotation":
-            axesLabels = ["x", "y", "z", "w"];
-            break;
-        case "pressure":
-            axesLabels = BS.Device.PressureSensorNames.slice();
-            break;
-        default:
-            console.warn(`uncaught sensorType "${sensorType}"`);
-            return;
-    }
-
-    if (!axesLabels) {
-        console.warn(`no axesLabels defined for sensorType "${sensorType}"`);
-        return;
-    }
 
     axesLabels.forEach((label) => {
         data.datasets.push({
@@ -147,7 +124,7 @@ function createChart(canvas, sensorType) {
                 },
                 title: {
                     display: true,
-                    text: sensorType,
+                    text: title,
                     font: {
                         //size: 20,
                     },
@@ -161,11 +138,9 @@ function createChart(canvas, sensorType) {
     };
 
     const chart = new Chart(canvas, config);
-    charts.push(chart);
+    charts[title] = chart;
 
-    const appendData = (sensorDataEvent) => {
-        const { timestamp, [sensorType]: data } = sensorDataEvent.message;
-
+    const appendData = (timestamp, data) => {
         chart.data.labels.push(timestamp);
         chart.data.datasets.forEach((dataset) => {
             dataset.data.push(data[dataset.label]);
@@ -190,10 +165,93 @@ const chartsContainer = document.getElementById("charts");
 const chartTemplate = document.getElementById("chartTemplate");
 BS.Device.SensorTypes.forEach((sensorType) => {
     const chartContainer = chartTemplate.content.cloneNode(true).querySelector(".chart");
-    chartContainer.dataset.sensorType = sensorType;
     chartsContainer.appendChild(chartContainer);
-    const appendData = createChart(chartContainer.querySelector("canvas"), sensorType);
-    insole.addEventListener(sensorType, (event) => appendData(event));
+
+    let axesLabels;
+    switch (sensorType) {
+        case "acceleration":
+        case "gravity":
+        case "linearAcceleration":
+        case "magnetometer":
+            axesLabels = ["x", "y", "z"];
+            break;
+        case "gyroscope":
+            axesLabels = ["x", "y", "z"];
+            //axesLabels = ["pitch", "yaw", "roll"];
+            break;
+        case "gameRotation":
+        case "rotation":
+            axesLabels = ["x", "y", "z", "w"];
+            break;
+        case "pressure":
+            axesLabels = BS.Device.PressureSensorNames.slice();
+            break;
+        default:
+            console.warn(`uncaught sensorType "${sensorType}"`);
+            return;
+    }
+
+    switch (sensorType) {
+        case "gameRotation":
+        case "rotation":
+            {
+                const eulerChartContainer = chartTemplate.content.cloneNode(true).querySelector(".chart");
+                chartsContainer.appendChild(eulerChartContainer);
+                createChart(eulerChartContainer.querySelector("canvas"), sensorType + "Euler", [
+                    "yaw",
+                    "pitch",
+                    "roll",
+                ]);
+            }
+            break;
+        case "pressure":
+            {
+                const pressureMetadataChartContainer = chartTemplate.content.cloneNode(true).querySelector(".chart");
+                chartsContainer.appendChild(pressureMetadataChartContainer);
+                createChart(pressureMetadataChartContainer.querySelector("canvas"), "pressureMetadata", [
+                    "sum",
+                    "x",
+                    "y",
+                ]);
+            }
+            break;
+    }
+
+    const quaternion = new THREE.Quaternion();
+    const euler = new THREE.Euler();
+    euler.reorder("YXZ");
+
+    const appendData = createChart(chartContainer.querySelector("canvas"), sensorType, axesLabels);
+    insole.addEventListener(sensorType, (event) => {
+        let { timestamp, [sensorType]: data } = event;
+        if (sensorType == "pressure") {
+            data = data.sensors;
+        }
+        appendData(timestamp, data);
+
+        switch (sensorType) {
+            case "gameRotation":
+            case "rotation":
+                quaternion.copy(data);
+                euler.setFromQuaternion(quaternion);
+                charts[sensorType + "Euler"].appendData(timestamp, {
+                    pitch: euler.x,
+                    yaw: euler.y,
+                    roll: euler.z,
+                });
+                break;
+            case "pressure":
+                /** @type {import("../../build/brilliantsole.module.js").PressureData} */
+                const pressure = data;
+
+                charts.pressureMetadata.appendData(timestamp, {
+                    sum: pressure.rawSum,
+                    x: pressure.center.x,
+                    y: pressure.center.y,
+                });
+                break;
+        }
+    });
 });
 
 // TESTING
@@ -211,15 +269,10 @@ let interval = 10;
 let timestamp = 0;
 if (false)
     window.setInterval(() => {
-        charts[1]._appendData({
-            message: {
-                timestamp,
-                acceleration: {
-                    x: randomValueBetween(-1, 1),
-                    y: randomValueBetween(-1, 1),
-                    z: randomValueBetween(-1, 1),
-                },
-            },
+        charts.acceleration._appendData(timestamp, {
+            x: randomValueBetween(-1, 1),
+            y: randomValueBetween(-1, 1),
+            z: randomValueBetween(-1, 1),
         });
 
         timestamp += interval;

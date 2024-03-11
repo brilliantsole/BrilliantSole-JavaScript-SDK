@@ -942,7 +942,7 @@
 	    }
 	}
 
-	/** @typedef {"hallux" | "digits" | "metatarsal_inner" | "metatarsal_center" | "metatarsal_outer" | "arch" | "lateral" | "heel"} PressureSensorName */
+	/** @typedef {"hallux" | "digits" | "innerMetatarsal" | "centerMetatarsal" | "outerMetatarsal" | "arch" | "lateral" | "heel"} PressureSensorName */
 	/** @typedef {"pressure"} PressureSensorType */
 
 	/**
@@ -999,13 +999,13 @@
 	        this.resetPressureRange();
 	    }
 
-	    /** @type {PressureSensorType[]} */
+	    /** @type {PressureSensorName[]} */
 	    static #Names = [
 	        "hallux",
 	        "digits",
-	        "metatarsal_inner",
-	        "metatarsal_center",
-	        "metatarsal_outer",
+	        "innerMetatarsal",
+	        "centerMetatarsal",
+	        "outerMetatarsal",
 	        "arch",
 	        "lateral",
 	        "heel",
