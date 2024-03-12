@@ -15,6 +15,8 @@ const _console = createConsole("Device", { log: false });
 /** @typedef {import("./sensor/SensorDataManager.js").SensorType} SensorType */
 /** @typedef {"connectionStatus" | ConnectionStatus | "isConnected" | ConnectionMessageType | "deviceInformation" | SensorType} DeviceEventType */
 
+/** @typedef {"deviceConnected" | "deviceDisconnected"} StaticDeviceEventType */
+
 /** @typedef {import("./utils/EventDispatcher.js").EventDispatcherListener} EventDispatcherListener */
 /** @typedef {import("./utils/EventDispatcher.js").EventDispatcherOptions} EventDispatcherOptions */
 
@@ -23,6 +25,13 @@ const _console = createConsole("Device", { log: false });
  * @type {Object}
  * @property {Device} target
  * @property {DeviceEventType} type
+ * @property {Object} message
+ */
+
+/**
+ * @typedef StaticDeviceEvent
+ * @type {Object}
+ * @property {StaticDeviceEventType} type
  * @property {Object} message
  */
 
@@ -100,6 +109,10 @@ class Device {
                 }
             });
         }
+
+        this.addEventListener("isConnected", () => {
+            Device.#OnDeviceIsConnected(this);
+        });
     }
 
     /** @returns {ConnectionManager} */
@@ -150,10 +163,13 @@ class Device {
         "rotation",
         "barometer",
     ];
-    get #eventTypes() {
+    static get EventTypes() {
+        return this.#EventTypes;
+    }
+    get eventTypes() {
         return Device.#EventTypes;
     }
-    #eventDispatcher = new EventDispatcher(this.#eventTypes);
+    #eventDispatcher = new EventDispatcher(this.eventTypes);
 
     /**
      * @param {DeviceEventType} type
@@ -766,6 +782,174 @@ class Device {
             triggerVibrationData = concatenateArrayBuffers(triggerVibrationData, dataView);
         });
         await this.#connectionManager.sendMessage("triggerVibration", triggerVibrationData);
+    }
+
+    // CONNECTED DEVICES
+
+    /** @type {Device[]} */
+    static #ConnectedDevices = [];
+    static get ConnectedDevices() {
+        return this.#ConnectedDevices;
+    }
+
+    static #UseLocalStorage = false;
+    static get UseLocalStorage() {
+        return this.#UseLocalStorage;
+    }
+    static set UseLocalStorage(newUseLocalStorage) {
+        this.#AssertLocalStorage();
+        _console.assertTypeWithError(newUseLocalStorage, "boolean");
+        this.#UseLocalStorage = newUseLocalStorage;
+        if (this.#UseLocalStorage && !this.#LocalStorageConfiguration) {
+            this.#LoadFromLocalStorage();
+        }
+    }
+
+    /**
+     * @typedef LocalStorageConfiguration
+     * @type {Object}
+     * @property {string[]?} bluetoothDeviceIds
+     */
+
+    /** @type {LocalStorageConfiguration} */
+    static #DefaultLocalStorageConfiguration = {};
+    /** @type {LocalStorageConfiguration?} */
+    static #LocalStorageConfiguration;
+
+    static #AssertLocalStorage() {
+        _console.assertWithError(isInBrowser, "localStorage is only available in the browser");
+    }
+    static #LocalStorageKey = "BS.Device";
+    static #SaveToLocalStorage() {
+        this.#AssertLocalStorage();
+        localStorage.setItem(this.#LocalStorageKey, JSON.stringify(this.#LocalStorageConfiguration));
+    }
+    static #LoadFromLocalStorage() {
+        this.#AssertLocalStorage();
+        let localStorageString = localStorage.getItem(this.#LocalStorageKey);
+        if (typeof localStorageString != "string") {
+            _console.warn("no info found in localStorage");
+            this.#LocalStorageConfiguration = Object.assign({}, this.#DefaultLocalStorageConfiguration);
+            this.#SaveToLocalStorage();
+            return;
+        }
+        try {
+            const configuration = JSON.parse(localStorageString);
+            _console.log({ configuration });
+            return configuration;
+        } catch (error) {
+            _console.error(error);
+        }
+    }
+
+    /**
+     * retrieves devices already connected via web bluetooth in other tabs/windows
+     *
+     * _only available on web-bluetooth enabled browsers_
+     */
+    static async GetDevices() {
+        if (!isInBrowser) {
+            _console.warn("GetDevices is only available in the browser");
+            return;
+        }
+
+        if (!navigator.bluetooth) {
+            _console.warn("bluetooth is not available in this browser");
+            return;
+        }
+
+        if (!this.#LocalStorageConfiguration) {
+            _console.warn("localStorageConfiguration not found");
+            return;
+        }
+
+        const configuration = this.#LocalStorageConfiguration;
+        if (!configuration.bluetoothDeviceIds || configuration.bluetoothDeviceIds.length == 0) {
+            _console.log("no bluetoothDeviceIds found in configuration");
+            return;
+        }
+
+        const bluetoothDevices = await navigator.bluetooth.getDevices();
+
+        _console.log({ bluetoothDevices });
+
+        const devices = bluetoothDevices
+            .map((bluetoothDevice) => {
+                if (bluetoothDevice.gatt && configuration.bluetoothDeviceIds.includes(bluetoothDevice.id)) {
+                    const device = new Device();
+                    device.connectionManager = new WebBluetoothConnectionManager();
+                    /** @type {WebBluetoothConnectionManager} */
+                    const connectionManager = device.connectionManager;
+                    connectionManager.device = bluetoothDevice;
+                    return device;
+                }
+            })
+            .filter(Boolean);
+        return devices;
+    }
+
+    // STATIC EVENTLISTENERS
+
+    /** @type {StaticDeviceEventType[]} */
+    static #StaticEventTypes = ["deviceConnected", "deviceDisconnected"];
+    static get StaticEventTypes() {
+        return this.#StaticEventTypes;
+    }
+    static #EventDispatcher = new EventDispatcher(this.#StaticEventTypes);
+
+    /**
+     * @param {StaticDeviceEventType} type
+     * @param {EventDispatcherListener} listener
+     * @param {EventDispatcherOptions} options
+     * @throws {Error}
+     */
+    static AddEventListener(type, listener, options) {
+        this.#EventDispatcher.addEventListener(type, listener, options);
+    }
+
+    /**
+     * @param {StaticDeviceEvent} event
+     * @throws {Error} if type is not valid
+     */
+    static #DispatchEvent(event) {
+        this.#EventDispatcher.dispatchEvent(event);
+    }
+
+    /**
+     * @param {StaticDeviceEventType} type
+     * @param {EventDispatcherListener} listener
+     * @returns {boolean}
+     * @throws {Error}
+     */
+    static RemoveEventListener(type, listener) {
+        return this.#EventDispatcher.removeEventListener(type, listener);
+    }
+
+    /** @param {Device} device */
+    static #OnDeviceIsConnected(device) {
+        if (device.isConnected) {
+            if (!this.#ConnectedDevices.includes(device)) {
+                _console.log("adding device", device);
+                this.#ConnectedDevices.push(device);
+                if (this.UseLocalStorage && device.connectionType == "webBluetooth") {
+                    /** @type {WebBluetoothConnectionManager} */
+                    const connectionManager = device.connectionManager;
+                    this.#LocalStorageConfiguration.bluetoothDeviceIds.push(connectionManager.device.id);
+                    this.#SaveToLocalStorage();
+                }
+                this.#DispatchEvent({ type: "deviceConnected", message: { device } });
+            } else {
+                _console.warn("device already included");
+            }
+        } else {
+            if (this.#ConnectedDevices.includes(device)) {
+                _console.log("removing device", device);
+                this.#ConnectedDevices.splice(this.#ConnectedDevices.indexOf(device), 1);
+                this.#DispatchEvent({ type: "deviceDisconnected", message: { device } });
+            } else {
+                _console.warn("device already not included");
+            }
+        }
     }
 }
 

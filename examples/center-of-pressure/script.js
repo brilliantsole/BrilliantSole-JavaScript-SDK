@@ -7,6 +7,7 @@ const devicePair = new BS.DevicePair();
 console.log({ devicePair });
 window.devicePair = devicePair;
 
+// CONNECTION
 const devices = BS.DevicePair.Sides.map(() => {
     const device = new BS.Device();
 
@@ -36,6 +37,8 @@ addDeviceButton.addEventListener("click", () => {
         console.warn("all devices are connected");
     }
 });
+
+// PRESSURE DATA
 
 let isPressureDataEnabled = false;
 
@@ -162,7 +165,7 @@ function onCenterOfPressure(center) {
             }
         } else {
             if (insideTargetTimeoutId != undefined) {
-                this.element.classList.remove("hover");
+                target.element.classList.remove("hover");
                 clearTimeout(insideTargetTimeoutId);
                 insideTargetTimeoutId = undefined;
             }

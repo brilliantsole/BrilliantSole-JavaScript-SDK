@@ -40,7 +40,7 @@ class WebBluetoothConnectionManager extends ConnectionManager {
     }
     /** @type {import("../ConnectionManager.js").ConnectionType} */
     static get type() {
-        return "web bluetooth";
+        return "webBluetooth";
     }
 
     /** @type {BluetoothDevice?} */
@@ -79,7 +79,7 @@ class WebBluetoothConnectionManager extends ConnectionManager {
         await super.connect();
 
         try {
-            const device = await navigator.bluetooth.requestDevice({
+            device = await navigator.bluetooth.requestDevice({
                 filters: [{ services: serviceUUIDs }],
                 optionalServices: isInBrowser ? optionalServiceUUIDs : [],
             });

@@ -4,6 +4,8 @@ import Device from "../Device.js";
 import CenterOfPressureHelper from "../utils/CenterOfPressureHelper.js";
 import PressureSensorDataManager from "../sensor/PressureSensorDataManager.js";
 
+const _console = createConsole("DevicePair", { log: true });
+
 /** @typedef {import("../Device.js").InsoleSide} InsoleSide */
 /** @typedef {import("../Device.js").DeviceEvent} DeviceEvent */
 
@@ -51,17 +53,18 @@ import PressureSensorDataManager from "../sensor/PressureSensorDataManager.js";
  * @property {CenterOfPressure?} calibratedCenter
  */
 
-const _console = createConsole("DevicePair", { log: true });
-
 class DevicePair {
     // EVENT DISPATCHER
 
     /** @type {DevicePairEventType[]} */
     static #EventTypes = ["pressure", "isConnected"];
-    get #eventTypes() {
+    static get EventTypes() {
+        return this.#EventTypes;
+    }
+    get eventTypes() {
         return DevicePair.#EventTypes;
     }
-    #eventDispatcher = new EventDispatcher(this.#eventTypes);
+    #eventDispatcher = new EventDispatcher(this.eventTypes);
 
     /**
      * @param {DevicePairEventType} type
@@ -118,10 +121,18 @@ class DevicePair {
 
     /** @param {Device} device */
     assignInsole(device) {
-        _console.assertWithError(device.isInsole, "device must be an insole");
+        if (device.isInsole) {
+            _console.warn("device is not an insole");
+            return;
+        }
         const side = device.insoleSide;
 
         const currentDevice = this[side];
+
+        if (device == currentDevice) {
+            _console.warn("device already assigned");
+            return;
+        }
 
         if (currentDevice) {
             removeEventListeners(currentDevice, this.#boundDeviceEventListeners);
@@ -246,6 +257,22 @@ class DevicePair {
 
         _console.log({ pressure });
         this.#dispatchEvent({ type: "pressure", message: { pressure, timestamps: this.#rawPressureDataTimestamps() } });
+    }
+
+    // SHARED INSTANCE
+
+    static #shared = new DevicePair();
+    static get shared() {
+        return this.#shared;
+    }
+    static {
+        Device.AddEventListener("deviceConnected", (event) => {
+            /** @type {Device} */
+            const device = event.message.device;
+            if (device.isInsole) {
+                this.#shared.assignInsole(device);
+            }
+        });
     }
 }
 
