@@ -1,8 +1,7 @@
 import { createConsole } from "../utils/Console.js";
 import EventDispatcher, { addEventListeners, removeEventListeners } from "../utils/EventDispatcher.js";
 import Device from "../Device.js";
-import CenterOfPressureHelper from "../utils/CenterOfPressureHelper.js";
-import PressureSensorDataManager from "../sensor/PressureSensorDataManager.js";
+import DevicePairSensorDataManager from "./DevicePairSensorDataManager.js";
 
 const _console = createConsole("DevicePair", { log: true });
 
@@ -26,34 +25,11 @@ const _console = createConsole("DevicePair", { log: true });
  * @property {Object} message
  */
 
-/** @typedef {import("../sensor/PressureSensorDataManager.js").PressureData} PressureData */
-
-/**
- * @typedef TimestampedPressureData
- * @type {Object}
- * @property {PressureData} data
- * @property {number} timestamp
- */
-
-/**
- * @typedef DevicePairRawPressureData
- * @type {Object}
- * @property {TimestampedPressureData} left
- * @property {TimestampedPressureData} right
- */
-
-/**
- * @typedef DevicePairPressureData
- * @type {Object}
- *
- * @property {number} rawSum
- * @property {number} normalizedSum
- *
- * @property {CenterOfPressure?} center
- * @property {CenterOfPressure?} calibratedCenter
- */
-
 class DevicePair {
+    constructor() {
+        this.#sensorDataManager.onDataReceived = this.#onSensorDataReceived.bind(this);
+    }
+
     // EVENT DISPATCHER
 
     /** @type {DevicePairEventType[]} */
@@ -159,7 +135,8 @@ class DevicePair {
 
     /** @type {Object.<string, EventListener} */
     #boundDeviceEventListeners = {
-        pressure: this.#onDevicePressure.bind(this),
+        //sensorData: this.#onDeviceSensorData.bind(this),
+        pressure: this.#onDeviceSensorData.bind(this),
         isConnected: this.#onIsDeviceConnected.bind(this),
     };
 
@@ -179,84 +156,25 @@ class DevicePair {
         }
     }
 
-    // PRESSURE DATA
-
-    /** @type {DevicePairRawPressureData} */
-    #rawPressureData = {};
-    /** @type {Object<InsoleSide, number>} */
-    get #rawPressureDataTimestamps() {
-        const timestamps = {};
-        this.sides.forEach((side) => {
-            timestamps[side] = this.#rawPressureData[side].timestamp;
-        });
-        return timestamps;
+    // SENSOR DATA
+    #sensorDataManager = new DevicePairSensorDataManager();
+    #onDeviceSensorData(event) {
+        if (this.isConnected) {
+            this.#sensorDataManager.onDeviceSensorData(event);
+        }
     }
-
-    #centerOfPressureHelper = new CenterOfPressureHelper();
+    /**
+     * @param {SensorType} sensorType
+     * @param {Object} sensorData
+     * @param {number} sensorData.timestamp
+     */
+    #onSensorDataReceived(sensorType, sensorData) {
+        _console.log({ sensorType, sensorData });
+        this.#dispatchEvent({ type: sensorType, message: sensorData });
+    }
 
     resetPressureRange() {
-        this.sides.forEach((side) => {
-            this[side].resetPressureRange();
-        });
-        this.#centerOfPressureHelper.resetRange();
-    }
-
-    /** @param {DeviceEvent} event  */
-    #onDevicePressure(event) {
-        const { timestamp, pressure } = event.message;
-        this.#rawPressureData[event.target.insoleSide] = {
-            timestamp,
-            pressure,
-        };
-        if (this.isConnected && this.#hasAllPressureData) {
-            this.#updatePressureData();
-        }
-    }
-
-    get #hasAllPressureData() {
-        this.sides.every((side) => side in this.#rawPressureData);
-    }
-
-    static #Scalars = {
-        pressure: PressureSensorDataManager.Scalars.pressure / this.Sides.length,
-    };
-    static get Scalars() {
-        return this.#Scalars;
-    }
-    get scalars() {
-        return DevicePair.Scalars;
-    }
-
-    #updatePressureData() {
-        const scalar = this.scalars.pressure;
-
-        /** @type {DevicePairPressureData} */
-        const pressure = { rawSum: 0, normalizedSum: 0 };
-
-        this.#rawPressureData.left.data.rawSum;
-        this.sides.forEach((side) => {
-            pressure.rawSum += this.#rawPressureData[side].data.rawSum;
-        });
-
-        if (pressure.rawSum > 0) {
-            pressure.normalizedSum = pressure.rawSum * scalar;
-
-            pressure.center = { x: 0, y: 0 };
-            this.sides.forEach((side) => {
-                const sidePressureData = this.#rawPressureData[side].data;
-                const rawPressureSumWeight = sidePressureData.rawSum / rawPressureSum;
-                pressure.center.y += sidePressureData.center.y * rawPressureSumWeight;
-                if (side == "right") {
-                    pressure.center.x = rawPressureSumWeight;
-                }
-            });
-
-            this.#centerOfPressureHelper.updateCenterOfPressureRange(pressure.center);
-            pressure.calibratedCenter = this.#centerOfPressureHelper.getCalibratedCenterOfPressure(pressure.center);
-        }
-
-        _console.log({ pressure });
-        this.#dispatchEvent({ type: "pressure", message: { pressure, timestamps: this.#rawPressureDataTimestamps() } });
+        this.#sensorDataManager.resetPressureRange();
     }
 
     // SHARED INSTANCE

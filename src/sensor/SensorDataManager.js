@@ -4,6 +4,8 @@ import PressureSensorDataManager from "./PressureSensorDataManager.js";
 import MotionSensorDataManager from "./MotionSensorDataManager.js";
 import BarometerSensorDataManager from "./BarometerSensorDataManager.js";
 
+const _console = createConsole("SensorDataManager", { log: true });
+
 /** @typedef {import("../Device.js").DeviceType} DeviceType */
 
 /** @typedef {import("./MotionSensorDataManager.js").MotionSensorType} MotionSensorType */
@@ -12,7 +14,12 @@ import BarometerSensorDataManager from "./BarometerSensorDataManager.js";
 
 /** @typedef {MotionSensorType | PressureSensorType | BarometerSensorType} SensorType */
 
-const _console = createConsole("SensorDataManager", { log: true });
+/**
+ * @callback SensorDataCallback
+ * @param {SensorType} sensorType
+ * @param {Object} data
+ * @param {number} data.timestamp
+ */
 
 class SensorDataManager {
     /** @type {DeviceType} */
@@ -66,13 +73,6 @@ class SensorDataManager {
         _console.assertTypeWithError(sensorTypeEnum, "number");
         _console.assertWithError(sensorTypeEnum in this.#Types, `invalid sensorTypeEnum ${sensorTypeEnum}`);
     }
-
-    /**
-     * @callback SensorDataCallback
-     * @param {SensorType} sensorType
-     * @param {Object} data
-     * @param {number} data.timestamp
-     */
 
     /** @type {SensorDataCallback?} */
     onDataReceived;

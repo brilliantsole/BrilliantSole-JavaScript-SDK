@@ -1,4 +1,4 @@
-import { getInterpolation } from "./MathUtils";
+import { getInterpolation } from "./MathUtils.js";
 
 /**
  * @typedef Vector2

@@ -1,4 +1,5 @@
-import BS from "../../build/brilliantsole.module.js";
+//import BS from "../../build/brilliantsole.module.js";
+import BS from "../../src/BS.js";
 
 window.BS = BS;
 console.log({ BS });

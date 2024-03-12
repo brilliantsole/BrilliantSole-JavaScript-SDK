@@ -34,18 +34,40 @@ class SensorConfigurationManager {
         }
         _console.log({ newDeviceType });
         this.#deviceType = newDeviceType;
+
+        // can later use for non-insole deviceTypes that ignore sensorTypes like "pressure"
+    }
+
+    /** @type {SensorType[]} */
+    #availableSensorTypes;
+    /** @param {SensorType} sensorType */
+    #assertAvailableSensorType(sensorType) {
+        _console.assertWithError(this.#availableSensorTypes, "must get initial sensorConfiguration");
+        const isSensorTypeAvailable = this.#availableSensorTypes?.includes(sensorType);
+        _console.assert(isSensorTypeAvailable, `unavailable sensor type "${sensorType}"`);
+        return isSensorTypeAvailable;
     }
 
     /** @param {DataView} dataView */
     parse(dataView) {
         /** @type {SensorConfiguration} */
         const parsedSensorConfiguration = {};
-        SensorDataManager.Types.forEach((sensorType, index) => {
-            const sensorRate = dataView.getUint16(index * 2, true);
+        for (
+            let byteOffset = 0, sensorTypeIndex = 0;
+            byteOffset < dataView.byteLength;
+            byteOffset += 2, sensorTypeIndex++
+        ) {
+            const sensorType = SensorDataManager.Types[sensorTypeIndex];
+            if (!sensorType) {
+                _console.warn(`unknown sensorType index ${sensorTypeIndex}`);
+                break;
+            }
+            const sensorRate = dataView.getUint16(byteOffset * 2, true);
             _console.log({ sensorType, sensorRate });
             parsedSensorConfiguration[sensorType] = sensorRate;
-        });
+        }
         _console.log({ parsedSensorConfiguration });
+        this.#availableSensorTypes = Object.keys(parsedSensorConfiguration);
         return parsedSensorConfiguration;
     }
 
@@ -81,7 +103,8 @@ class SensorConfigurationManager {
     /** @param {SensorConfiguration} sensorConfiguration */
     createData(sensorConfiguration) {
         /** @type {SensorType[]} */
-        const sensorTypes = Object.keys(sensorConfiguration);
+        let sensorTypes = Object.keys(sensorConfiguration);
+        sensorTypes = sensorTypes.filter((sensorType) => this.#assertAvailableSensorType(sensorType));
 
         const dataView = new DataView(new ArrayBuffer(sensorTypes.length * 3));
         sensorTypes.forEach((sensorType, index) => {

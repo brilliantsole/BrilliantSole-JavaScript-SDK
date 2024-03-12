@@ -1,5 +1,5 @@
 import { createConsole } from "./Console.js";
-import { spacesToPascalCase } from "./stringUtils.js";
+import { spacesToPascalCase } from "./StringUtils.js";
 
 const _console = createConsole("EventDispatcher", { log: false });
 
