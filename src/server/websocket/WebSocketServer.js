@@ -2,17 +2,73 @@ import { createConsole } from "../../utils/Console.js";
 import { isInNode } from "../../utils/environment.js";
 import { addListeners, removeListeners } from "../../utils/ListenerUtils.js";
 import { addEventListeners, removeEventListeners } from "../../utils/EventDispatcher.js";
-import { pingTimeout, pingMessage, MessageTypes, pongMessage } from "../ServerUtils.js";
+import { pingTimeout, pingMessage, ServerMessageTypes, pongMessage } from "../ServerUtils.js";
 import { dataToArrayBuffer } from "../../utils/ArrayBufferUtils.js";
 import IntervalManager from "../../utils/IntervalManager.js";
+import EventDispatcher from "../../utils/EventDispatcher.js";
 
 const _console = createConsole("WebSocketServer", { log: true });
+
+/** @typedef {import("../../utils/EventDispatcher.js").EventDispatcherListener} EventDispatcherListener */
+/** @typedef {import("../../utils/EventDispatcher.js").EventDispatcherOptions} EventDispatcherOptions */
+
+/** @typedef {"clientConnected" | "clientDisconnected"} ServerEventType */
+
+/**
+ * @typedef ServerEvent
+ * @type {Object}
+ * @property {WebSocketServer} target
+ * @property {ServerEventType} type
+ * @property {Object} message
+ */
 
 if (isInNode) {
     var ws = require("ws");
 }
 
 class WebSocketServer {
+    // EVENT DISPATCHER
+
+    /** @type {ServerEventType[]} */
+    static #EventTypes = ["clientConnected", "clientDisconnected"];
+    static get EventTypes() {
+        return this.#EventTypes;
+    }
+    get eventTypes() {
+        return WebSocketServer.#EventTypes;
+    }
+    #eventDispatcher = new EventDispatcher(this.eventTypes);
+
+    /**
+     * @param {ServerEventType} type
+     * @param {EventDispatcherListener} listener
+     * @param {EventDispatcherOptions} options
+     * @throws {Error}
+     */
+    addEventListener(type, listener, options) {
+        this.#eventDispatcher.addEventListener(type, listener, options);
+    }
+
+    /**
+     * @param {ServerEvent} event
+     * @throws {Error} if type is not valid
+     */
+    #dispatchEvent(event) {
+        this.#eventDispatcher.dispatchEvent(event);
+    }
+
+    /**
+     * @param {ServerEventType} type
+     * @param {EventDispatcherListener} listener
+     * @returns {boolean}
+     * @throws {Error}
+     */
+    removeEventListener(type, listener) {
+        return this.#eventDispatcher.removeEventListener(type, listener);
+    }
+
+    // SERVER
+
     /** @type {ws.WebSocketServer?} */
     #server;
     get server() {
@@ -55,6 +111,7 @@ class WebSocketServer {
         client.pingClientIntervalManager = new IntervalManager(() => this.#pingClient(client), pingTimeout);
         client.pingClientIntervalManager.start();
         addEventListeners(client, this.#boundClientListeners);
+        this.#dispatchEvent({ type: "clientConnected", message: { client } });
     }
     /** @param {Error} error */
     #onServerError(error) {
@@ -93,6 +150,7 @@ class WebSocketServer {
         const client = event.target;
         client.pingClientIntervalManager.stop();
         removeEventListeners(client, this.#boundClientListeners);
+        this.#dispatchEvent({ type: "clientDisconnected", message: { client } });
     }
     /** @param {ws.ErrorEvent} event */
     #onClientError(event) {
@@ -107,7 +165,7 @@ class WebSocketServer {
         let byteOffset = 0;
         while (byteOffset < dataView.byteLength) {
             const messageTypeEnum = dataView.getUint8(byteOffset++);
-            const messageType = MessageTypes[messageTypeEnum];
+            const messageType = ServerMessageTypes[messageTypeEnum];
 
             _console.log({ messageTypeEnum, messageType });
             _console.assertWithError(messageType, `invalid messageTypeEnum ${messageTypeEnum}`);

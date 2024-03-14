@@ -3422,20 +3422,23 @@ const _console$3 = createConsole("ServerUtils");
 const pingTimeout = 30_000_000;
 const reconnectTimeout = 3_000;
 
-/** @typedef {"ping" | "pong"} MessageType */
+/** @typedef {"ping" | "pong"} ServerMessageType */
 
-/** @type {MessageType[]} */
-const MessageTypes = ["ping", "pong"];
+/** @type {ServerMessageType[]} */
+const ServerMessageTypes = ["ping", "pong"];
 
-/** @param {MessageType} messageType */
-function getMessageTypeEnum(messageType) {
-    _console$3.assertTypeWithError(messageType, "string");
-    _console$3.assertWithError(MessageTypes.includes(messageType), `invalid messageType "${messageType}"`);
-    return MessageTypes.indexOf(messageType);
+/** @param {ServerMessageType} serverMessageType */
+function getServerMessageTypeEnum(serverMessageType) {
+    _console$3.assertTypeWithError(serverMessageType, "string");
+    _console$3.assertWithError(
+        ServerMessageTypes.includes(serverMessageType),
+        `invalid serverMessageType "${serverMessageType}"`
+    );
+    return ServerMessageTypes.indexOf(serverMessageType);
 }
 
-const pingMessage = Uint8Array.from([getMessageTypeEnum("ping")]);
-const pongMessage = Uint8Array.from([getMessageTypeEnum("pong")]);
+const pingMessage = Uint8Array.from([getServerMessageTypeEnum("ping")]);
+const pongMessage = Uint8Array.from([getServerMessageTypeEnum("pong")]);
 
 const _console$2 = createConsole("IntervalManager", { log: false });
 
@@ -3509,7 +3512,60 @@ class IntervalManager {
 
 const _console$1 = createConsole("WebSocketClient", { log: true });
 
+
+
+
+/** @typedef {"connected" | "disconnected" | "isConnected"} ClientEventType */
+
+/**
+ * @typedef ClientEvent
+ * @type {Object}
+ * @property {WebSocketClient} target
+ * @property {ClientEventType} type
+ * @property {Object} message
+ */
+
 class WebSocketClient {
+    // EVENT DISPATCHER
+
+    /** @type {ClientEventType[]} */
+    static #EventTypes = ["connected", "disconnected", "isConnected"];
+    static get EventTypes() {
+        return this.#EventTypes;
+    }
+    get eventTypes() {
+        return WebSocketClient.#EventTypes;
+    }
+    #eventDispatcher = new EventDispatcher(this.eventTypes);
+
+    /**
+     * @param {ClientEventType} type
+     * @param {EventDispatcherListener} listener
+     * @param {EventDispatcherOptions} options
+     * @throws {Error}
+     */
+    addEventListener(type, listener, options) {
+        this.#eventDispatcher.addEventListener(type, listener, options);
+    }
+
+    /**
+     * @param {ClientEvent} event
+     * @throws {Error} if type is not valid
+     */
+    #dispatchEvent(event) {
+        this.#eventDispatcher.dispatchEvent(event);
+    }
+
+    /**
+     * @param {ClientEventType} type
+     * @param {EventDispatcherListener} listener
+     * @returns {boolean}
+     * @throws {Error}
+     */
+    removeEventListener(type, listener) {
+        return this.#eventDispatcher.removeEventListener(type, listener);
+    }
+
     /** @param {string | URL} url */
     constructor(url = `wss://${location.host}`) {
         this.webSocket = new WebSocket(url);
@@ -3589,6 +3645,8 @@ class WebSocketClient {
         this.#reconnectOnDisconnection = newReconnectOnDisconnection;
     }
 
+    // WEBSOCKET EVENTS
+
     #boundWebSocketEventListeners = {
         open: this.#onWebSocketOpen.bind(this),
         message: this.#onWebSocketMessage.bind(this),
@@ -3600,6 +3658,8 @@ class WebSocketClient {
     #onWebSocketOpen(event) {
         _console$1.log("webSocket.open", event);
         this.#pingIntervalManager.start();
+        this.#dispatchEvent({ type: "connected" });
+        this.#dispatchEvent({ type: "isConnected", message: { isConnected: this.isConnected } });
     }
     /** @param {import("ws").MessageEvent} event */
     async #onWebSocketMessage(event) {
@@ -3612,6 +3672,9 @@ class WebSocketClient {
     /** @param {import("ws").CloseEvent} event  */
     #onWebSocketClose(event) {
         _console$1.log("webSocket.close", event);
+        this.#dispatchEvent({ type: "disconnected" });
+        this.#dispatchEvent({ type: "isConnected", message: { isConnected: this.isConnected } });
+
         this.#pingIntervalManager.stop();
         if (this.#reconnectOnDisconnection) {
             setTimeout(() => {
@@ -3631,7 +3694,7 @@ class WebSocketClient {
         let byteOffset = 0;
         while (byteOffset < dataView.byteLength) {
             const messageTypeEnum = dataView.getUint8(byteOffset++);
-            const messageType = MessageTypes[messageTypeEnum];
+            const messageType = ServerMessageTypes[messageTypeEnum];
 
             _console$1.log({ messageTypeEnum, messageType });
             _console$1.assertWithError(messageType, `invalid messageTypeEnum ${messageTypeEnum}`);
@@ -3685,11 +3748,66 @@ function removeListeners(target, boundListeners) {
 
 const _console = createConsole("WebSocketServer", { log: true });
 
+
+
+
+/** @typedef {"clientConnected" | "clientDisconnected"} ServerEventType */
+
+/**
+ * @typedef ServerEvent
+ * @type {Object}
+ * @property {WebSocketServer} target
+ * @property {ServerEventType} type
+ * @property {Object} message
+ */
+
 if (isInNode) {
     require("ws");
 }
 
 class WebSocketServer {
+    // EVENT DISPATCHER
+
+    /** @type {ServerEventType[]} */
+    static #EventTypes = ["clientConnected", "clientDisconnected"];
+    static get EventTypes() {
+        return this.#EventTypes;
+    }
+    get eventTypes() {
+        return WebSocketServer.#EventTypes;
+    }
+    #eventDispatcher = new EventDispatcher(this.eventTypes);
+
+    /**
+     * @param {ServerEventType} type
+     * @param {EventDispatcherListener} listener
+     * @param {EventDispatcherOptions} options
+     * @throws {Error}
+     */
+    addEventListener(type, listener, options) {
+        this.#eventDispatcher.addEventListener(type, listener, options);
+    }
+
+    /**
+     * @param {ServerEvent} event
+     * @throws {Error} if type is not valid
+     */
+    #dispatchEvent(event) {
+        this.#eventDispatcher.dispatchEvent(event);
+    }
+
+    /**
+     * @param {ServerEventType} type
+     * @param {EventDispatcherListener} listener
+     * @returns {boolean}
+     * @throws {Error}
+     */
+    removeEventListener(type, listener) {
+        return this.#eventDispatcher.removeEventListener(type, listener);
+    }
+
+    // SERVER
+
     /** @type {ws.WebSocketServer?} */
     #server;
     get server() {
@@ -3732,6 +3850,7 @@ class WebSocketServer {
         client.pingClientIntervalManager = new IntervalManager(() => this.#pingClient(client), pingTimeout);
         client.pingClientIntervalManager.start();
         addEventListeners(client, this.#boundClientListeners);
+        this.#dispatchEvent({ type: "clientConnected", message: { client } });
     }
     /** @param {Error} error */
     #onServerError(error) {
@@ -3770,6 +3889,7 @@ class WebSocketServer {
         const client = event.target;
         client.pingClientIntervalManager.stop();
         removeEventListeners(client, this.#boundClientListeners);
+        this.#dispatchEvent({ type: "clientDisconnected", message: { client } });
     }
     /** @param {ws.ErrorEvent} event */
     #onClientError(event) {
@@ -3784,7 +3904,7 @@ class WebSocketServer {
         let byteOffset = 0;
         while (byteOffset < dataView.byteLength) {
             const messageTypeEnum = dataView.getUint8(byteOffset++);
-            const messageType = MessageTypes[messageTypeEnum];
+            const messageType = ServerMessageTypes[messageTypeEnum];
 
             _console.log({ messageTypeEnum, messageType });
             _console.assertWithError(messageType, `invalid messageTypeEnum ${messageTypeEnum}`);
