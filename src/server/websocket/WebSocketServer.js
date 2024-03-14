@@ -2,7 +2,9 @@ import { createConsole } from "../../utils/Console.js";
 import { isInNode } from "../../utils/environment.js";
 import { addListeners, removeListeners } from "../../utils/ListenerUtils.js";
 import { addEventListeners, removeEventListeners } from "../../utils/EventDispatcher.js";
-import { pingTimeout, pingMessage } from "../ServerUtils.js";
+import { pingTimeout, pingMessage, MessageTypes, pongMessage } from "../ServerUtils.js";
+import { dataToArrayBuffer } from "../../utils/ArrayBufferUtils.js";
+import IntervalManager from "../../utils/IntervalManager.js";
 
 const _console = createConsole("WebSocketServer", { log: true });
 
@@ -49,10 +51,9 @@ class WebSocketServer {
     /** @param {ws.WebSocket} client */
     #onServerConnection(client) {
         _console.log("server.connection");
-        if (!this.#isPingingClients) {
-            this.#startPingingClients();
-        }
         client.isAlive = true;
+        client.pingClientIntervalManager = new IntervalManager(() => this.#pingClient(client), pingTimeout);
+        client.pingClientIntervalManager.start();
         addEventListeners(client, this.#boundClientListeners);
     }
     /** @param {Error} error */
@@ -80,56 +81,58 @@ class WebSocketServer {
     /** @param {ws.MessageEvent} event */
     #onClientMessage(event) {
         _console.log("client.message");
-        _console.log(event.data);
-        // FILL
+        const client = event.target;
+        client.isAlive = true;
+        client.pingClientIntervalManager.restart();
+        const dataView = new DataView(dataToArrayBuffer(event.data));
+        this.#parseClientMessage(client, dataView);
     }
     /** @param {ws.CloseEvent} event */
     #onClientClose(event) {
         _console.log("client.close");
-        removeEventListeners(event.target, this.#boundClientListeners);
+        const client = event.target;
+        client.pingClientIntervalManager.stop();
+        removeEventListeners(client, this.#boundClientListeners);
     }
     /** @param {ws.ErrorEvent} event */
     #onClientError(event) {
         _console.log("client.error");
     }
 
-    // PING
-    /** @type {number?} */
-    #pingIntervalId;
-    get #isPingingClients() {
-        return this.#pingIntervalId != null;
-    }
-    #startPingingClients() {
-        _console.assertWithError(!this.#isPingingClients, "already pinging clients");
-        _console.log("startPingingClients");
-        this.#pingIntervalId = setInterval(this.#pingClients.bind(this), pingTimeout);
-    }
-    #stopPingingClients() {
-        _console.assertWithError(this.#isPingingClients, "already not pinging clients");
-        _console.log("stopPingingClients");
-        clearInterval(this.#pingIntervalId);
-        this.#pingIntervalId = null;
-    }
+    /**
+     * @param {ws.WebSocket} client
+     * @param {DataView} dataView
+     */
+    #parseClientMessage(client, dataView) {
+        let byteOffset = 0;
+        while (byteOffset < dataView.byteLength) {
+            const messageTypeEnum = dataView.getUint8(byteOffset++);
+            const messageType = MessageTypes[messageTypeEnum];
 
-    #pingClients() {
-        _console.log("pingClients");
-        if (!this.server || this.server.clients.size == 0) {
-            this.#stopPingingClients();
-            return;
-        }
-        _console.log("pingingClients...");
-        this.server.clients.forEach((client) => {
-            if (!client.isAlive) {
-                client.terminate();
-                return;
+            _console.log({ messageTypeEnum, messageType });
+            _console.assertWithError(messageType, `invalid messageTypeEnum ${messageTypeEnum}`);
+
+            switch (messageType) {
+                case "ping":
+                    client.send(pongMessage);
+                    break;
+                case "pong":
+                    break;
+                default:
+                    _console.error(`uncaught messageType "${messageType}"`);
+                    break;
             }
-            client.isAlive = false;
-            this.#pingClient(client);
-        });
+        }
     }
 
+    // PING
     /** @param {ws.WebSocket} client */
     #pingClient(client) {
+        if (!client.isAlive) {
+            client.terminate();
+            return;
+        }
+        client.isAlive = false;
         client.send(pingMessage);
     }
 }
