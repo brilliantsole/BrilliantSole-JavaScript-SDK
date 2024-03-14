@@ -3422,10 +3422,10 @@ const _console$3 = createConsole("ServerUtils");
 const pingTimeout = 30_000_000;
 const reconnectTimeout = 3_000;
 
-/** @typedef {"ping" | "pong"} ServerMessageType */
+/** @typedef {"ping" | "pong" | "getScan" | "setScan"} ServerMessageType */
 
 /** @type {ServerMessageType[]} */
-const ServerMessageTypes = ["ping", "pong"];
+const ServerMessageTypes = ["ping", "pong", "getScan", "setScan"];
 
 /** @param {ServerMessageType} serverMessageType */
 function getServerMessageTypeEnum(serverMessageType) {
