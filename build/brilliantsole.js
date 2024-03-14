@@ -1455,7 +1455,7 @@
 	                _console$9.warn(`unknown sensorType index ${sensorTypeIndex}`);
 	                break;
 	            }
-	            const sensorRate = dataView.getUint16(byteOffset * 2, true);
+	            const sensorRate = dataView.getUint16(byteOffset, true);
 	            _console$9.log({ sensorType, sensorRate });
 	            parsedSensorConfiguration[sensorType] = sensorRate;
 	        }
