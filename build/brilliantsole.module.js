@@ -663,7 +663,7 @@ class WebBluetoothConnectionManager extends ConnectionManager {
         await super.connect();
 
         try {
-            device = await navigator$1.bluetooth.requestDevice({
+            const device = await navigator$1.bluetooth.requestDevice({
                 filters: [{ services: serviceUUIDs }],
                 optionalServices: isInBrowser ? optionalServiceUUIDs : [],
             });
