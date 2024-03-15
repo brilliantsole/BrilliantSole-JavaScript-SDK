@@ -9,8 +9,7 @@
 })(this, (function () { 'use strict';
 
 	/** @type {"__BRILLIANTSOLE__DEV__" | "__BRILLIANTSOLE__PROD__"} */
-	const __BRILLIANTSOLE__ENVIRONMENT__ = "__BRILLIANTSOLE__DEV__";
-	const isInDev = __BRILLIANTSOLE__ENVIRONMENT__ == "__BRILLIANTSOLE__DEV__";
+	const isInDev = "__BRILLIANTSOLE__PROD__" == "__BRILLIANTSOLE__DEV__";
 
 	// https://github.com/flexdinesh/browser-or-node/blob/master/src/index.ts
 	const isInBrowser = typeof window !== "undefined" && window?.document !== "undefined";
@@ -106,9 +105,6 @@
 	     */
 	    static create(type, levelFlags) {
 	        const console = this.#consoles[type] || new Console(type);
-	        {
-	            console.setLevelFlags(levelFlags);
-	        }
 	        return console;
 	    }
 
