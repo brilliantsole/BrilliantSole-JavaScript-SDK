@@ -36,7 +36,6 @@ class WebSocketClient {
      * @param {ClientEventType} type
      * @param {EventDispatcherListener} listener
      * @param {EventDispatcherOptions} options
-     * @throws {Error}
      */
     addEventListener(type, listener, options) {
         this.#eventDispatcher.addEventListener(type, listener, options);
@@ -44,7 +43,6 @@ class WebSocketClient {
 
     /**
      * @param {ClientEvent} event
-     * @throws {Error} if type is not valid
      */
     #dispatchEvent(event) {
         this.#eventDispatcher.dispatchEvent(event);
@@ -53,8 +51,6 @@ class WebSocketClient {
     /**
      * @param {ClientEventType} type
      * @param {EventDispatcherListener} listener
-     * @returns {boolean}
-     * @throws {Error}
      */
     removeEventListener(type, listener) {
         return this.#eventDispatcher.removeEventListener(type, listener);

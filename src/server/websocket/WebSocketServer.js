@@ -1,16 +1,18 @@
 import { createConsole } from "../../utils/Console.js";
 import { isInNode } from "../../utils/environment.js";
-import { addListeners, removeListeners } from "../../utils/ListenerUtils.js";
 import { addEventListeners, removeEventListeners } from "../../utils/EventDispatcher.js";
 import { pingTimeout, pingMessage, ServerMessageTypes, pongMessage } from "../ServerUtils.js";
 import { dataToArrayBuffer } from "../../utils/ArrayBufferUtils.js";
 import IntervalManager from "../../utils/IntervalManager.js";
 import EventDispatcher from "../../utils/EventDispatcher.js";
+import scanner from "../../scanner/Scanner.js";
 
 const _console = createConsole("WebSocketServer", { log: true });
 
 /** @typedef {import("../../utils/EventDispatcher.js").EventDispatcherListener} EventDispatcherListener */
 /** @typedef {import("../../utils/EventDispatcher.js").EventDispatcherOptions} EventDispatcherOptions */
+
+/** @typedef {import("../../scanner/BaseScanner.js").ScannerEvent} ScannerEvent */
 
 /** @typedef {"clientConnected" | "clientDisconnected"} ServerEventType */
 
@@ -27,6 +29,12 @@ if (isInNode) {
 }
 
 class WebSocketServer {
+    constructor() {
+        if (scanner) {
+            addEventListeners(scanner, this.#boundScannerListeners);
+        }
+    }
+
     // EVENT DISPATCHER
 
     /** @type {ServerEventType[]} */
@@ -43,7 +51,6 @@ class WebSocketServer {
      * @param {ServerEventType} type
      * @param {EventDispatcherListener} listener
      * @param {EventDispatcherOptions} options
-     * @throws {Error}
      */
     addEventListener(type, listener, options) {
         this.#eventDispatcher.addEventListener(type, listener, options);
@@ -51,7 +58,6 @@ class WebSocketServer {
 
     /**
      * @param {ServerEvent} event
-     * @throws {Error} if type is not valid
      */
     #dispatchEvent(event) {
         this.#eventDispatcher.dispatchEvent(event);
@@ -60,8 +66,6 @@ class WebSocketServer {
     /**
      * @param {ServerEventType} type
      * @param {EventDispatcherListener} listener
-     * @returns {boolean}
-     * @throws {Error}
      */
     removeEventListener(type, listener) {
         return this.#eventDispatcher.removeEventListener(type, listener);
@@ -83,13 +87,20 @@ class WebSocketServer {
 
         if (this.#server) {
             _console.log("clearing existing server...");
-            removeListeners(this.#server, this.#boundServerListeners);
+            removeEventListeners(this.#server, this.#boundServerListeners);
         }
 
-        addListeners(newServer, this.#boundServerListeners);
+        addEventListeners(newServer, this.#boundServerListeners);
         this.#server = newServer;
 
         _console.log("assigned server");
+    }
+
+    /** @param {DataView} data */
+    broadcast(data) {
+        this.server.clients.forEach((client) => {
+            client.send(data);
+        });
     }
 
     // SERVER LISTENERS
@@ -192,6 +203,26 @@ class WebSocketServer {
         }
         client.isAlive = false;
         client.send(pingMessage);
+    }
+
+    // SERVER EVENTS
+    #boundScannerListeners = {
+        isAvailable: this.#onScannerIsAvailable.bind(this),
+        isScanning: this.#onScannerIsScanning.bind(this),
+        discoveredPeripheral: this.#onScannerDiscoveredPeripheral.bind(this),
+    };
+
+    /** @param {ScannerEvent} event */
+    #onScannerIsAvailable(event) {
+        // FILL
+    }
+    /** @param {ScannerEvent} event */
+    #onScannerIsScanning(event) {
+        // FILL
+    }
+    /** @param {ScannerEvent} event */
+    #onScannerDiscoveredPeripheral(event) {
+        // FILL
     }
 }
 

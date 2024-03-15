@@ -175,7 +175,6 @@ class Device {
      * @param {DeviceEventType} type
      * @param {EventDispatcherListener} listener
      * @param {EventDispatcherOptions} options
-     * @throws {Error}
      */
     addEventListener(type, listener, options) {
         this.#eventDispatcher.addEventListener(type, listener, options);
@@ -183,7 +182,6 @@ class Device {
 
     /**
      * @param {DeviceEvent} event
-     * @throws {Error} if type is not valid
      */
     #dispatchEvent(event) {
         this.#eventDispatcher.dispatchEvent(event);
@@ -192,8 +190,6 @@ class Device {
     /**
      * @param {DeviceEventType} type
      * @param {EventDispatcherListener} listener
-     * @returns {boolean}
-     * @throws {Error}
      */
     removeEventListener(type, listener) {
         return this.#eventDispatcher.removeEventListener(type, listener);
@@ -909,7 +905,6 @@ class Device {
 
     /**
      * @param {StaticDeviceEvent} event
-     * @throws {Error} if type is not valid
      */
     static #DispatchEvent(event) {
         this.#EventDispatcher.dispatchEvent(event);
@@ -918,8 +913,6 @@ class Device {
     /**
      * @param {StaticDeviceEventType} type
      * @param {EventDispatcherListener} listener
-     * @returns {boolean}
-     * @throws {Error}
      */
     static RemoveEventListener(type, listener) {
         return this.#EventDispatcher.removeEventListener(type, listener);
