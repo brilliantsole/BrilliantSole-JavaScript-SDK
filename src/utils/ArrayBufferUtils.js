@@ -1,3 +1,5 @@
+const textEncoder = new TextEncoder();
+
 /**
  * @param {...ArrayBuffer} arrayBuffers
  * @returns {ArrayBuffer}
@@ -6,15 +8,28 @@ export function concatenateArrayBuffers(...arrayBuffers) {
     arrayBuffers = arrayBuffers.filter((arrayBuffer) => arrayBuffer != undefined || arrayBuffer != null);
     arrayBuffers = arrayBuffers.map((arrayBuffer) => {
         if (typeof arrayBuffer == "number") {
-            return Uint8Array.from([Math.floor(arrayBuffer)]);
+            const number = arrayBuffer;
+            return Uint8Array.from([Math.floor(number)]);
+        } else if (typeof arrayBuffer == "boolean") {
+            const boolean = arrayBuffer;
+            return Uint8Array.from([boolean ? 1 : 0]);
+        } else if (typeof arrayBuffer == "string") {
+            const string = arrayBuffer;
+            return stringToArrayBuffer(string);
         } else if (arrayBuffer instanceof Array) {
-            return Uint8Array.from(arrayBuffer).buffer;
+            const array = arrayBuffer;
+            return Uint8Array.from(array).buffer;
         } else if (arrayBuffer instanceof ArrayBuffer) {
             return arrayBuffer;
         } else if ("buffer" in arrayBuffer && arrayBuffer.buffer instanceof ArrayBuffer) {
-            return arrayBuffer.buffer;
+            const bufferContainer = arrayBuffer;
+            return bufferContainer.buffer;
         } else if (arrayBuffer instanceof DataView) {
-            return arrayBuffer.buffer;
+            const dataView = arrayBuffer;
+            return dataView.buffer;
+        } else if (typeof arrayBuffer == "object") {
+            const object = arrayBuffer;
+            return objectToArrayBuffer(object);
         } else {
             return arrayBuffer;
         }
@@ -33,4 +48,14 @@ export function concatenateArrayBuffers(...arrayBuffers) {
 /** @param {Data} data */
 export function dataToArrayBuffer(data) {
     return data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength);
+}
+
+/** @param {String} string */
+export function stringToArrayBuffer(string) {
+    return concatenateArrayBuffers(string.length, textEncoder.encode(string));
+}
+
+/** @param {Object} object */
+export function objectToArrayBuffer(object) {
+    return stringToArrayBuffer(JSON.stringify(object));
 }

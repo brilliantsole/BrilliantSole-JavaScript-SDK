@@ -1781,6 +1781,8 @@ const VibrationWaveformEffects = [
     "smoothHum10",
 ];
 
+const textEncoder = new TextEncoder();
+
 /**
  * @param {...ArrayBuffer} arrayBuffers
  * @returns {ArrayBuffer}
@@ -1789,15 +1791,28 @@ function concatenateArrayBuffers(...arrayBuffers) {
     arrayBuffers = arrayBuffers.filter((arrayBuffer) => arrayBuffer != undefined || arrayBuffer != null);
     arrayBuffers = arrayBuffers.map((arrayBuffer) => {
         if (typeof arrayBuffer == "number") {
-            return Uint8Array.from([Math.floor(arrayBuffer)]);
+            const number = arrayBuffer;
+            return Uint8Array.from([Math.floor(number)]);
+        } else if (typeof arrayBuffer == "boolean") {
+            const boolean = arrayBuffer;
+            return Uint8Array.from([boolean ? 1 : 0]);
+        } else if (typeof arrayBuffer == "string") {
+            const string = arrayBuffer;
+            return stringToArrayBuffer(string);
         } else if (arrayBuffer instanceof Array) {
-            return Uint8Array.from(arrayBuffer).buffer;
+            const array = arrayBuffer;
+            return Uint8Array.from(array).buffer;
         } else if (arrayBuffer instanceof ArrayBuffer) {
             return arrayBuffer;
         } else if ("buffer" in arrayBuffer && arrayBuffer.buffer instanceof ArrayBuffer) {
-            return arrayBuffer.buffer;
+            const bufferContainer = arrayBuffer;
+            return bufferContainer.buffer;
         } else if (arrayBuffer instanceof DataView) {
-            return arrayBuffer.buffer;
+            const dataView = arrayBuffer;
+            return dataView.buffer;
+        } else if (typeof arrayBuffer == "object") {
+            const object = arrayBuffer;
+            return objectToArrayBuffer(object);
         } else {
             return arrayBuffer;
         }
@@ -1816,6 +1831,16 @@ function concatenateArrayBuffers(...arrayBuffers) {
 /** @param {Data} data */
 function dataToArrayBuffer(data) {
     return data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength);
+}
+
+/** @param {String} string */
+function stringToArrayBuffer(string) {
+    return concatenateArrayBuffers(string.length, textEncoder.encode(string));
+}
+
+/** @param {Object} object */
+function objectToArrayBuffer(object) {
+    return stringToArrayBuffer(JSON.stringify(object));
 }
 
 const _console$b = createConsole("VibrationManager");
@@ -3089,6 +3114,7 @@ const _console$9 = createConsole("BaseScanner");
 /**
  * @typedef DiscoveredPeripheral
  * @type {Object}
+ * @property {string} id
  * @property {string} name
  */
 
@@ -3189,7 +3215,7 @@ class BaseScanner {
     }
 }
 
-const _console$8 = createConsole("NobleScanner");
+const _console$8 = createConsole("NobleScanner", { log: false });
 
 let isSupported = false;
 
@@ -3262,10 +3288,16 @@ class NobleScanner extends BaseScanner {
         _console$8.log("OnNobleScateChange", state);
         this.#nobleState = state;
     }
-    /** @param {noble.Peripheral} peripheral */
-    #onNobleDiscover(peripheral) {
-        _console$8.log("onNobleDiscover", peripheral);
-        // FILL
+    /** @param {noble.Peripheral} noblePeripheral */
+    #onNobleDiscover(noblePeripheral) {
+        _console$8.log("onNobleDiscover", noblePeripheral);
+        /** @type {DiscoveredPeripheral} */
+        const discoveredPeripheral = {
+            name: noblePeripheral.advertisement.localName,
+            id: noblePeripheral.id,
+            // FILL
+        };
+        this.dispatchEvent({ type: "discoveredPeripheral", message: { discoveredPeripheral } });
     }
 
     // CONSTRUCTOR
@@ -3282,7 +3314,9 @@ class NobleScanner extends BaseScanner {
     // SCANNING
     startScan() {
         super.startScan();
-        noble.startScanningAsync(serviceUUIDs, false);
+        // REMOVE WHEN TESTING
+        //noble.startScanningAsync(serviceUUIDs, true);
+        noble.startScanningAsync([], true);
     }
     stopScan() {
         super.stopScan();
@@ -3683,7 +3717,15 @@ const reconnectTimeout = 3_000;
  */
 
 /** @type {ServerMessageType[]} */
-const ServerMessageTypes = ["ping", "pong", "isScanningAvailable", "isScanning", "startScan", "stopScan"];
+const ServerMessageTypes = [
+    "ping",
+    "pong",
+    "isScanningAvailable",
+    "isScanning",
+    "startScan",
+    "stopScan",
+    "discoveredPeripheral",
+];
 
 /** @param {ServerMessageType} serverMessageType */
 function getServerMessageTypeEnum(serverMessageType) {
@@ -4143,6 +4185,8 @@ const _console = createConsole("WebSocketServer", { log: true });
  * @property {Object} message
  */
 
+
+
 if (isInNode) {
     require("ws");
 }
@@ -4327,10 +4371,10 @@ class WebSocketServer {
 
     // CLIENT MESSAGING
     get #isScanningAvailableMessage() {
-        return createServerMessage("isScanningAvailable", Scanner.isAvailable ? 1 : 0);
+        return createServerMessage("isScanningAvailable", Scanner.isAvailable);
     }
     get #isScanningMessage() {
-        return createServerMessage("isScanning", Scanner.isScanning ? 1 : 0);
+        return createServerMessage("isScanning", Scanner.isScanning);
     }
 
     /** @param {ws.BufferLike} message */
@@ -4351,7 +4395,7 @@ class WebSocketServer {
         client.send(pingMessage);
     }
 
-    // SERVER EVENTS
+    // SCANNER
     #boundScannerListeners = {
         isAvailable: this.#onScannerIsAvailable.bind(this),
         isScanning: this.#onScannerIsScanning.bind(this),
@@ -4368,7 +4412,22 @@ class WebSocketServer {
     }
     /** @param {ScannerEvent} event */
     #onScannerDiscoveredPeripheral(event) {
-        // FILL
+        /** @type {DiscoveredPeripheral} */
+        const discoveredPeripheral = event.message.discoveredPeripheral;
+        console.log(discoveredPeripheral);
+
+        this.#discoveredPeripherals[discoveredPeripheral.id] = discoveredPeripheral;
+        this.#broadcastMessage(this.#createDiscoveredPeripheralMessage(discoveredPeripheral));
+    }
+
+    /** @type {Object.<string,DiscoveredPeripheral>} */
+    #discoveredPeripherals = {};
+    get discoveredPeripherals() {
+        return this.#discoveredPeripherals;
+    }
+    /** @param {DiscoveredPeripheral} discoveredPeripheral */
+    #createDiscoveredPeripheralMessage(discoveredPeripheral) {
+        return createServerMessage("discoveredPeripheral", discoveredPeripheral);
     }
 }
 

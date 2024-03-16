@@ -4,7 +4,7 @@ import { isInNode } from "../utils/environment.js";
 import { addEventListeners, removeEventListeners } from "../utils/EventDispatcher.js";
 import { serviceUUIDs } from "../connection/bluetooth/bluetoothUUIDs.js";
 
-const _console = createConsole("NobleScanner");
+const _console = createConsole("NobleScanner", { log: false });
 
 let isSupported = false;
 
@@ -77,10 +77,16 @@ class NobleScanner extends BaseScanner {
         _console.log("OnNobleScateChange", state);
         this.#nobleState = state;
     }
-    /** @param {noble.Peripheral} peripheral */
-    #onNobleDiscover(peripheral) {
-        _console.log("onNobleDiscover", peripheral);
-        // FILL
+    /** @param {noble.Peripheral} noblePeripheral */
+    #onNobleDiscover(noblePeripheral) {
+        _console.log("onNobleDiscover", noblePeripheral);
+        /** @type {DiscoveredPeripheral} */
+        const discoveredPeripheral = {
+            name: noblePeripheral.advertisement.localName,
+            id: noblePeripheral.id,
+            // FILL
+        };
+        this.dispatchEvent({ type: "discoveredPeripheral", message: { discoveredPeripheral } });
     }
 
     // CONSTRUCTOR
@@ -97,7 +103,9 @@ class NobleScanner extends BaseScanner {
     // SCANNING
     startScan() {
         super.startScan();
-        noble.startScanningAsync(serviceUUIDs, false);
+        // REMOVE WHEN TESTING
+        //noble.startScanningAsync(serviceUUIDs, true);
+        noble.startScanningAsync([], true);
     }
     stopScan() {
         super.stopScan();

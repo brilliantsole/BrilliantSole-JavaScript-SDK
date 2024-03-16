@@ -27,7 +27,15 @@ export const reconnectTimeout = 3_000;
  */
 
 /** @type {ServerMessageType[]} */
-export const ServerMessageTypes = ["ping", "pong", "isScanningAvailable", "isScanning", "startScan", "stopScan"];
+export const ServerMessageTypes = [
+    "ping",
+    "pong",
+    "isScanningAvailable",
+    "isScanning",
+    "startScan",
+    "stopScan",
+    "discoveredPeripheral",
+];
 
 /** @param {ServerMessageType} serverMessageType */
 export function getServerMessageTypeEnum(serverMessageType) {

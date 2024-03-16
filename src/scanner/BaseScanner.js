@@ -19,6 +19,7 @@ const _console = createConsole("BaseScanner");
 /**
  * @typedef DiscoveredPeripheral
  * @type {Object}
+ * @property {string} id
  * @property {string} name
  */
 

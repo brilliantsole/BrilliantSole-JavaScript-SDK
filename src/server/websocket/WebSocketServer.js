@@ -24,6 +24,8 @@ const _console = createConsole("WebSocketServer", { log: true });
  * @property {Object} message
  */
 
+/** @typedef {import("../../scanner/BaseScanner.js").DiscoveredPeripheral} DiscoveredPeripheral */
+
 if (isInNode) {
     var ws = require("ws");
 }
@@ -208,10 +210,10 @@ class WebSocketServer {
 
     // CLIENT MESSAGING
     get #isScanningAvailableMessage() {
-        return createServerMessage("isScanningAvailable", scanner.isAvailable ? 1 : 0);
+        return createServerMessage("isScanningAvailable", scanner.isAvailable);
     }
     get #isScanningMessage() {
-        return createServerMessage("isScanning", scanner.isScanning ? 1 : 0);
+        return createServerMessage("isScanning", scanner.isScanning);
     }
 
     /** @param {ws.BufferLike} message */
@@ -232,7 +234,7 @@ class WebSocketServer {
         client.send(pingMessage);
     }
 
-    // SERVER EVENTS
+    // SCANNER
     #boundScannerListeners = {
         isAvailable: this.#onScannerIsAvailable.bind(this),
         isScanning: this.#onScannerIsScanning.bind(this),
@@ -249,7 +251,22 @@ class WebSocketServer {
     }
     /** @param {ScannerEvent} event */
     #onScannerDiscoveredPeripheral(event) {
-        // FILL
+        /** @type {DiscoveredPeripheral} */
+        const discoveredPeripheral = event.message.discoveredPeripheral;
+        console.log(discoveredPeripheral);
+
+        this.#discoveredPeripherals[discoveredPeripheral.id] = discoveredPeripheral;
+        this.#broadcastMessage(this.#createDiscoveredPeripheralMessage(discoveredPeripheral));
+    }
+
+    /** @type {Object.<string,DiscoveredPeripheral>} */
+    #discoveredPeripherals = {};
+    get discoveredPeripherals() {
+        return this.#discoveredPeripherals;
+    }
+    /** @param {DiscoveredPeripheral} discoveredPeripheral */
+    #createDiscoveredPeripheralMessage(discoveredPeripheral) {
+        return createServerMessage("discoveredPeripheral", discoveredPeripheral);
     }
 }
 
