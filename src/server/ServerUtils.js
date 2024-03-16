@@ -52,3 +52,6 @@ export function createServerMessage(messageType, ...data) {
 export const pingMessage = createServerMessage("ping");
 export const pongMessage = createServerMessage("pong");
 export const isScanningAvailableRequestMessage = createServerMessage("isScanningAvailable");
+export const isScanningRequestMessage = createServerMessage("isScanning");
+export const startScanRequestMessage = createServerMessage("startScan");
+export const stopScanRequestMessage = createServerMessage("stopScan");

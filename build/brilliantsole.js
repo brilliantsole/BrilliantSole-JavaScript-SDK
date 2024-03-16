@@ -3712,6 +3712,9 @@
 	const pingMessage = createServerMessage("ping");
 	const pongMessage = createServerMessage("pong");
 	const isScanningAvailableRequestMessage = createServerMessage("isScanningAvailable");
+	const isScanningRequestMessage = createServerMessage("isScanning");
+	const startScanRequestMessage = createServerMessage("startScan");
+	const stopScanRequestMessage = createServerMessage("stopScan");
 
 	const _console$2 = createConsole("IntervalManager", { log: false });
 
@@ -3993,14 +3996,13 @@
 	            case "connected":
 	            case "not connected":
 	                this.#dispatchEvent({ type: "isConnected", message: { isConnected: this.isConnected } });
+	                if (this.isConnected) {
+	                    this.#requestIsScanningAvailable();
+	                } else {
+	                    this.#isScanningAvailable = false;
+	                    this.#isScanning = false;
+	                }
 	                break;
-	        }
-
-	        if (this.isConnected) {
-	            this.webSocket.send(isScanningAvailableRequestMessage);
-	        } else {
-	            this.#isScanningAvailable = false;
-	            this.#isScanning = false;
 	        }
 	    }
 	    get connectionStatus() {
@@ -4069,9 +4071,20 @@
 	            type: "isScanningAvailable",
 	            message: { isScanningAvailable: this.isScanningAvailable },
 	        });
+	        if (this.isScanningAvailable) {
+	            this.#requestIsScanning();
+	        }
 	    }
 	    get isScanningAvailable() {
 	        return this.#isScanningAvailable;
+	    }
+	    #assertIsScanningAvailable() {
+	        this.#assertConnection();
+	        _console$1.assertWithError(this.isScanningAvailable, "scanning is not available");
+	    }
+	    #requestIsScanningAvailable() {
+	        this.#assertConnection();
+	        this.webSocket.send(isScanningAvailableRequestMessage);
 	    }
 
 	    #_isScanning = false;
@@ -4085,6 +4098,35 @@
 	    }
 	    get isScanning() {
 	        return this.#isScanning;
+	    }
+	    #requestIsScanning() {
+	        this.#assertConnection();
+	        this.webSocket.send(isScanningRequestMessage);
+	    }
+
+	    #assertIsScanning() {
+	        _console$1.assertWithError(this.isScanning, "is not scanning");
+	    }
+	    #assertIsNotScanning() {
+	        _console$1.assertWithError(!this.isScanning, "is already scanning");
+	    }
+
+	    startScan() {
+	        this.#assertIsNotScanning();
+	        this.webSocket.send(startScanRequestMessage);
+	    }
+	    stopScan() {
+	        this.#assertIsScanning();
+	        this.webSocket.send(stopScanRequestMessage);
+	    }
+	    toggleScan() {
+	        this.#assertIsScanningAvailable();
+
+	        if (this.isScanning) {
+	            this.stopScan();
+	        } else {
+	            this.startScan();
+	        }
 	    }
 	}
 

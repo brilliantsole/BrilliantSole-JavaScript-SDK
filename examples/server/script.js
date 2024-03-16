@@ -89,9 +89,9 @@ client.addEventListener("isScanningAvailable", () => {
 const toggleScanButton = document.getElementById("toggleScan");
 toggleScanButton.addEventListener("click", () => {
     if (client.isScanning) {
-        // FILL
+        client.stopScan();
     } else {
-        // FILL
+        client.startScan();
     }
 });
 client.addEventListener("isScanningAvailable", () => {
