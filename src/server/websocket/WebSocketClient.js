@@ -1,5 +1,12 @@
 import { createConsole } from "../../utils/Console.js";
-import { ServerMessageTypes, pingMessage, pingTimeout, pongMessage, reconnectTimeout } from "../ServerUtils.js";
+import {
+    ServerMessageTypes,
+    pingMessage,
+    pingTimeout,
+    pongMessage,
+    reconnectTimeout,
+    isScanningAvailableRequestMessage,
+} from "../ServerUtils.js";
 import { addEventListeners, removeEventListeners } from "../../utils/EventDispatcher.js";
 import IntervalManager from "../../utils/IntervalManager.js";
 import EventDispatcher from "../../utils/EventDispatcher.js";
@@ -9,7 +16,9 @@ const _console = createConsole("WebSocketClient", { log: true });
 /** @typedef {import("../../utils/EventDispatcher.js").EventDispatcherListener} EventDispatcherListener */
 /** @typedef {import("../../utils/EventDispatcher.js").EventDispatcherOptions} EventDispatcherOptions */
 
-/** @typedef {"connected" | "disconnected" | "isConnected"} ClientEventType */
+/** @typedef {"not connected" | "connecting" | "connected" | "disconnecting"} ClientConnectionStatus */
+
+/** @typedef {ClientConnectionStatus | "connectionStatus" |  "isConnected" | "isScanningAvailable" | "isScanning"} ClientEventType */
 
 /**
  * @typedef ClientEvent
@@ -23,7 +32,16 @@ class WebSocketClient {
     // EVENT DISPATCHER
 
     /** @type {ClientEventType[]} */
-    static #EventTypes = ["connected", "disconnected", "isConnected"];
+    static #EventTypes = [
+        "connectionStatus",
+        "connecting",
+        "connected",
+        "disconnecting",
+        "not connected",
+        "isConnected",
+        "isScanningAvailable",
+        "isScanning",
+    ];
     static get EventTypes() {
         return this.#EventTypes;
     }
@@ -56,12 +74,9 @@ class WebSocketClient {
         return this.#eventDispatcher.removeEventListener(type, listener);
     }
 
-    /** @param {string | URL} url */
-    constructor(url = `wss://${location.host}`) {
-        this.webSocket = new WebSocket(url);
-    }
+    // WEBSOCKET
 
-    /** @type {WebSocket} */
+    /** @type {WebSocket?} */
     #webSocket;
     get webSocket() {
         return this.#webSocket;
@@ -98,6 +113,15 @@ class WebSocketClient {
         _console.assertWithError(this.isDisconnected, "not disconnected");
     }
 
+    /** @param {string | URL} url */
+    connect(url = `wss://${location.host}`) {
+        if (this.webSocket) {
+            this.#assertDisconnection();
+        }
+        this.#connectionStatus = "connecting";
+        this.webSocket = new WebSocket(url);
+    }
+
     disconnect() {
         this.#assertConnection();
         if (this.reconnectOnDisconnection) {
@@ -110,8 +134,10 @@ class WebSocketClient {
                 { once: true }
             );
         }
+        this.#connectionStatus = "disconnecting";
         this.webSocket.close();
     }
+
     reconnect() {
         this.#assertDisconnection();
         this.webSocket = new WebSocket(this.webSocket.url);
@@ -148,8 +174,7 @@ class WebSocketClient {
     #onWebSocketOpen(event) {
         _console.log("webSocket.open", event);
         this.#pingIntervalManager.start();
-        this.#dispatchEvent({ type: "connected" });
-        this.#dispatchEvent({ type: "isConnected", message: { isConnected: this.isConnected } });
+        this.#connectionStatus = "connected";
     }
     /** @param {import("ws").MessageEvent} event */
     async #onWebSocketMessage(event) {
@@ -162,8 +187,8 @@ class WebSocketClient {
     /** @param {import("ws").CloseEvent} event  */
     #onWebSocketClose(event) {
         _console.log("webSocket.close", event);
-        this.#dispatchEvent({ type: "disconnected" });
-        this.#dispatchEvent({ type: "isConnected", message: { isConnected: this.isConnected } });
+
+        this.#connectionStatus = "not connected";
 
         this.#pingIntervalManager.stop();
         if (this.#reconnectOnDisconnection) {
@@ -175,6 +200,39 @@ class WebSocketClient {
     /** @param {Event} event */
     #onWebSocketError(event) {
         _console.log("webSocket.error", event);
+    }
+
+    // CONNECTION STATUS
+
+    /** @type {ClientConnectionStatus} */
+    #_connectionStatus = "not connected";
+    get #connectionStatus() {
+        return this.#_connectionStatus;
+    }
+    set #connectionStatus(newConnectionStatus) {
+        _console.assertTypeWithError(newConnectionStatus, "string");
+        _console.log({ newConnectionStatus });
+        this.#_connectionStatus = newConnectionStatus;
+
+        this.#dispatchEvent({ type: "connectionStatus", message: { connectionStatus: this.connectionStatus } });
+        this.#dispatchEvent({ type: this.connectionStatus });
+
+        switch (newConnectionStatus) {
+            case "connected":
+            case "not connected":
+                this.#dispatchEvent({ type: "isConnected", message: { isConnected: this.isConnected } });
+                break;
+        }
+
+        if (this.isConnected) {
+            this.webSocket.send(isScanningAvailableRequestMessage);
+        } else {
+            this.#isScanningAvailable = false;
+            this.#isScanning = false;
+        }
+    }
+    get connectionStatus() {
+        return this.#connectionStatus;
     }
 
     // PARSING
@@ -195,6 +253,20 @@ class WebSocketClient {
                     break;
                 case "pong":
                     break;
+                case "isScanningAvailable":
+                    {
+                        const isScanningAvailable = Boolean(dataView.getUint8(byteOffset++));
+                        _console.log({ isScanningAvailable });
+                        this.#isScanningAvailable = isScanningAvailable;
+                    }
+                    break;
+                case "isScanning":
+                    {
+                        const isScanning = Boolean(dataView.getUint8(byteOffset++));
+                        _console.log({ isScanning });
+                        this.#isScanning = isScanning;
+                    }
+                    break;
                 default:
                     _console.error(`uncaught messageType "${messageType}"`);
                     break;
@@ -211,6 +283,36 @@ class WebSocketClient {
     #pong() {
         this.#assertConnection();
         this.webSocket.send(pongMessage);
+    }
+
+    // SCANNING
+    #_isScanningAvailable = false;
+    get #isScanningAvailable() {
+        return this.#_isScanningAvailable;
+    }
+    set #isScanningAvailable(newIsAvailable) {
+        _console.assertTypeWithError(newIsAvailable, "boolean");
+        this.#_isScanningAvailable = newIsAvailable;
+        this.#dispatchEvent({
+            type: "isScanningAvailable",
+            message: { isScanningAvailable: this.isScanningAvailable },
+        });
+    }
+    get isScanningAvailable() {
+        return this.#isScanningAvailable;
+    }
+
+    #_isScanning = false;
+    get #isScanning() {
+        return this.#_isScanning;
+    }
+    set #isScanning(newIsScanning) {
+        _console.assertTypeWithError(newIsScanning, "boolean");
+        this.#_isScanning = newIsScanning;
+        this.#dispatchEvent({ type: "isScanning", message: { isScanning: this.isScanning } });
+    }
+    get isScanning() {
+        return this.#isScanning;
     }
 }
 

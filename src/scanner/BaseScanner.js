@@ -85,7 +85,7 @@ class BaseScanner {
         return this.#eventDispatcher.removeEventListener(type, listener);
     }
 
-    // AVAILABLE
+    // AVAILABILITY
     get isAvailable() {
         return false;
     }

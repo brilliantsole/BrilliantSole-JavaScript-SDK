@@ -6,11 +6,34 @@
         <script type="module" src="./script.js"></script>
     </head>
 
+    <style>
+        .block {
+            display: block;
+        }
+        div {
+            margin-top: 1rem;
+        }
+        ul,
+        ol {
+            margin-top: 0;
+        }
+    </style>
+
     <body>
         <nav>
             <a href="../../">home</a>
         </nav>
 
         <h1>Server | BrilliantSole JavaScript SDK</h1>
+
+        <div>
+            <label>webSocket url <input id="webSocketUrl" type="url" placeholder="localhost" /></label>
+            <button id="toggleConnection">connect</button>
+        </div>
+
+        <div>
+            <label> is scanning available? <input id="isScanningAvailable" type="checkbox" readonly disabled /> </label>
+            <button id="toggleScan" disabled>scan</button>
+        </div>
     </body>
 </html>

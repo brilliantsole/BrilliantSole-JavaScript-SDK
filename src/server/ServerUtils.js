@@ -1,14 +1,33 @@
+import { concatenateArrayBuffers } from "../utils/ArrayBufferUtils";
 import { createConsole } from "../utils/Console";
 
-const _console = createConsole("ServerUtils");
+const _console = createConsole("ServerUtils", { log: true });
 
 export const pingTimeout = 30_000_000;
 export const reconnectTimeout = 3_000;
 
-/** @typedef {"ping" | "pong" | "getScan" | "setScan"} ServerMessageType */
+/**
+ * @typedef { "ping"
+ * | "pong"
+ * | "isScanningAvailable"
+ * | "isScanning"
+ * | "startScan"
+ * | "stopScan"
+ * | "discoveredPeripheral"
+ * | "discoveredPeripherals"
+ * | "connect"
+ * | "disconnect"
+ * | "disconnectAll"
+ * | "peripheralConnectionState"
+ * | "connectedPeripherals"
+ * | "disconnectedPeripherals"
+ * | "getRSSI"
+ * | "readRSSI"
+ * } ServerMessageType
+ */
 
 /** @type {ServerMessageType[]} */
-export const ServerMessageTypes = ["ping", "pong", "getScan", "setScan"];
+export const ServerMessageTypes = ["ping", "pong", "isScanningAvailable", "isScanning", "startScan", "stopScan"];
 
 /** @param {ServerMessageType} serverMessageType */
 export function getServerMessageTypeEnum(serverMessageType) {
@@ -20,5 +39,16 @@ export function getServerMessageTypeEnum(serverMessageType) {
     return ServerMessageTypes.indexOf(serverMessageType);
 }
 
-export const pingMessage = Uint8Array.from([getServerMessageTypeEnum("ping")]);
-export const pongMessage = Uint8Array.from([getServerMessageTypeEnum("pong")]);
+/** @typedef {Number | Number[] | ArrayBufferLike | DataView} MessageLike */
+
+/**
+ * @param {ServerMessageType} messageType
+ * @param {...MessageLike} data
+ */
+export function createServerMessage(messageType, ...data) {
+    return concatenateArrayBuffers(getServerMessageTypeEnum(messageType), ...data);
+}
+
+export const pingMessage = createServerMessage("ping");
+export const pongMessage = createServerMessage("pong");
+export const isScanningAvailableRequestMessage = createServerMessage("isScanningAvailable");

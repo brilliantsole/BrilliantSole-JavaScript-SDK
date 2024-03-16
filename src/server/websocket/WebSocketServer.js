@@ -1,7 +1,7 @@
 import { createConsole } from "../../utils/Console.js";
 import { isInNode } from "../../utils/environment.js";
 import { addEventListeners, removeEventListeners } from "../../utils/EventDispatcher.js";
-import { pingTimeout, pingMessage, ServerMessageTypes, pongMessage } from "../ServerUtils.js";
+import { pingTimeout, pingMessage, ServerMessageTypes, pongMessage, createServerMessage } from "../ServerUtils.js";
 import { dataToArrayBuffer } from "../../utils/ArrayBufferUtils.js";
 import IntervalManager from "../../utils/IntervalManager.js";
 import EventDispatcher from "../../utils/EventDispatcher.js";
@@ -187,11 +187,38 @@ class WebSocketServer {
                     break;
                 case "pong":
                     break;
+                case "isScanningAvailable":
+                    client.send(this.#isScanningAvailableMessage);
+                    break;
+                case "isScanning":
+                    client.send(this.#isScanningMessage);
+                    break;
+                case "startScan":
+                    scanner.startScan();
+                    break;
+                case "stopScan":
+                    scanner.stopScan();
+                    break;
                 default:
                     _console.error(`uncaught messageType "${messageType}"`);
                     break;
             }
         }
+    }
+
+    // CLIENT MESSAGING
+    get #isScanningAvailableMessage() {
+        return createServerMessage("isScanningAvailable", scanner.isAvailable ? 1 : 0);
+    }
+    get #isScanningMessage() {
+        return createServerMessage("isScanning", scanner.isScanning ? 1 : 0);
+    }
+
+    /** @param {ws.BufferLike} message */
+    #broadcastMessage(message) {
+        this.server.clients.forEach((client) => {
+            client.send(message);
+        });
     }
 
     // PING
@@ -214,11 +241,11 @@ class WebSocketServer {
 
     /** @param {ScannerEvent} event */
     #onScannerIsAvailable(event) {
-        // FILL
+        this.#broadcastMessage(this.#isScanningAvailableMessage);
     }
     /** @param {ScannerEvent} event */
     #onScannerIsScanning(event) {
-        // FILL
+        this.#broadcastMessage(this.#isScanningMessage);
     }
     /** @param {ScannerEvent} event */
     #onScannerDiscoveredPeripheral(event) {

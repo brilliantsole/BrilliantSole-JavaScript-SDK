@@ -89,7 +89,7 @@ class NobleScanner extends BaseScanner {
         addEventListeners(noble, this.#boundNobleListeners);
     }
 
-    // AVAILABLE
+    // AVAILABILITY
     get isAvailable() {
         return this.#nobleState == "poweredOn";
     }
@@ -97,7 +97,7 @@ class NobleScanner extends BaseScanner {
     // SCANNING
     startScan() {
         super.startScan();
-        noble.startScanningAsync(serviceUUIDs, true);
+        noble.startScanningAsync(serviceUUIDs, false);
     }
     stopScan() {
         super.stopScan();

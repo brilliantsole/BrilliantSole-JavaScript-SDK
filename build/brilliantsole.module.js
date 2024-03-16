@@ -145,6 +145,15 @@ class Console {
     assertTypeWithError(value, type) {
         this.assertWithError(typeof value == type, `value ${value} of type "${typeof value}" not of type "${type}"`);
     }
+
+    /**
+     * @param {any} value
+     * @param {string[]} enumeration
+     * @throws {Error} if value's type doesn't match
+     */
+    assertEnumWithError(value, enumeration) {
+        this.assertWithError(enumeration.includes(value), `invalid enum "${value}"`);
+    }
 }
 
 /**
@@ -3144,7 +3153,7 @@ class BaseScanner {
         return this.#eventDispatcher.removeEventListener(type, listener);
     }
 
-    // AVAILABLE
+    // AVAILABILITY
     get isAvailable() {
         return false;
     }
@@ -3263,7 +3272,7 @@ class NobleScanner extends BaseScanner {
         addEventListeners(noble, this.#boundNobleListeners);
     }
 
-    // AVAILABLE
+    // AVAILABILITY
     get isAvailable() {
         return this.#nobleState == "poweredOn";
     }
@@ -3271,7 +3280,7 @@ class NobleScanner extends BaseScanner {
     // SCANNING
     startScan() {
         super.startScan();
-        noble.startScanningAsync(serviceUUIDs, true);
+        noble.startScanningAsync(serviceUUIDs, false);
     }
     stopScan() {
         super.stopScan();
@@ -3646,15 +3655,33 @@ let DevicePair$1 = class DevicePair {
     }
 };
 
-const _console$3 = createConsole("ServerUtils");
+const _console$3 = createConsole("ServerUtils", { log: true });
 
 const pingTimeout = 30_000_000;
 const reconnectTimeout = 3_000;
 
-/** @typedef {"ping" | "pong" | "getScan" | "setScan"} ServerMessageType */
+/**
+ * @typedef { "ping"
+ * | "pong"
+ * | "isScanningAvailable"
+ * | "isScanning"
+ * | "startScan"
+ * | "stopScan"
+ * | "discoveredPeripheral"
+ * | "discoveredPeripherals"
+ * | "connect"
+ * | "disconnect"
+ * | "disconnectAll"
+ * | "peripheralConnectionState"
+ * | "connectedPeripherals"
+ * | "disconnectedPeripherals"
+ * | "getRSSI"
+ * | "readRSSI"
+ * } ServerMessageType
+ */
 
 /** @type {ServerMessageType[]} */
-const ServerMessageTypes = ["ping", "pong", "getScan", "setScan"];
+const ServerMessageTypes = ["ping", "pong", "isScanningAvailable", "isScanning", "startScan", "stopScan"];
 
 /** @param {ServerMessageType} serverMessageType */
 function getServerMessageTypeEnum(serverMessageType) {
@@ -3666,8 +3693,19 @@ function getServerMessageTypeEnum(serverMessageType) {
     return ServerMessageTypes.indexOf(serverMessageType);
 }
 
-const pingMessage = Uint8Array.from([getServerMessageTypeEnum("ping")]);
-const pongMessage = Uint8Array.from([getServerMessageTypeEnum("pong")]);
+/** @typedef {Number | Number[] | ArrayBufferLike | DataView} MessageLike */
+
+/**
+ * @param {ServerMessageType} messageType
+ * @param {...MessageLike} data
+ */
+function createServerMessage(messageType, ...data) {
+    return concatenateArrayBuffers(getServerMessageTypeEnum(messageType), ...data);
+}
+
+const pingMessage = createServerMessage("ping");
+const pongMessage = createServerMessage("pong");
+const isScanningAvailableRequestMessage = createServerMessage("isScanningAvailable");
 
 const _console$2 = createConsole("IntervalManager", { log: false });
 
@@ -3744,7 +3782,9 @@ const _console$1 = createConsole("WebSocketClient", { log: true });
 
 
 
-/** @typedef {"connected" | "disconnected" | "isConnected"} ClientEventType */
+/** @typedef {"not connected" | "connecting" | "connected" | "disconnecting"} ClientConnectionStatus */
+
+/** @typedef {ClientConnectionStatus | "connectionStatus" |  "isConnected" | "isScanningAvailable" | "isScanning"} ClientEventType */
 
 /**
  * @typedef ClientEvent
@@ -3758,7 +3798,16 @@ class WebSocketClient {
     // EVENT DISPATCHER
 
     /** @type {ClientEventType[]} */
-    static #EventTypes = ["connected", "disconnected", "isConnected"];
+    static #EventTypes = [
+        "connectionStatus",
+        "connecting",
+        "connected",
+        "disconnecting",
+        "not connected",
+        "isConnected",
+        "isScanningAvailable",
+        "isScanning",
+    ];
     static get EventTypes() {
         return this.#EventTypes;
     }
@@ -3791,12 +3840,9 @@ class WebSocketClient {
         return this.#eventDispatcher.removeEventListener(type, listener);
     }
 
-    /** @param {string | URL} url */
-    constructor(url = `wss://${location.host}`) {
-        this.webSocket = new WebSocket(url);
-    }
+    // WEBSOCKET
 
-    /** @type {WebSocket} */
+    /** @type {WebSocket?} */
     #webSocket;
     get webSocket() {
         return this.#webSocket;
@@ -3833,6 +3879,15 @@ class WebSocketClient {
         _console$1.assertWithError(this.isDisconnected, "not disconnected");
     }
 
+    /** @param {string | URL} url */
+    connect(url = `wss://${location.host}`) {
+        if (this.webSocket) {
+            this.#assertDisconnection();
+        }
+        this.#connectionStatus = "connecting";
+        this.webSocket = new WebSocket(url);
+    }
+
     disconnect() {
         this.#assertConnection();
         if (this.reconnectOnDisconnection) {
@@ -3845,8 +3900,10 @@ class WebSocketClient {
                 { once: true }
             );
         }
+        this.#connectionStatus = "disconnecting";
         this.webSocket.close();
     }
+
     reconnect() {
         this.#assertDisconnection();
         this.webSocket = new WebSocket(this.webSocket.url);
@@ -3883,8 +3940,7 @@ class WebSocketClient {
     #onWebSocketOpen(event) {
         _console$1.log("webSocket.open", event);
         this.#pingIntervalManager.start();
-        this.#dispatchEvent({ type: "connected" });
-        this.#dispatchEvent({ type: "isConnected", message: { isConnected: this.isConnected } });
+        this.#connectionStatus = "connected";
     }
     /** @param {import("ws").MessageEvent} event */
     async #onWebSocketMessage(event) {
@@ -3897,8 +3953,8 @@ class WebSocketClient {
     /** @param {import("ws").CloseEvent} event  */
     #onWebSocketClose(event) {
         _console$1.log("webSocket.close", event);
-        this.#dispatchEvent({ type: "disconnected" });
-        this.#dispatchEvent({ type: "isConnected", message: { isConnected: this.isConnected } });
+
+        this.#connectionStatus = "not connected";
 
         this.#pingIntervalManager.stop();
         if (this.#reconnectOnDisconnection) {
@@ -3910,6 +3966,39 @@ class WebSocketClient {
     /** @param {Event} event */
     #onWebSocketError(event) {
         _console$1.log("webSocket.error", event);
+    }
+
+    // CONNECTION STATUS
+
+    /** @type {ClientConnectionStatus} */
+    #_connectionStatus = "not connected";
+    get #connectionStatus() {
+        return this.#_connectionStatus;
+    }
+    set #connectionStatus(newConnectionStatus) {
+        _console$1.assertTypeWithError(newConnectionStatus, "string");
+        _console$1.log({ newConnectionStatus });
+        this.#_connectionStatus = newConnectionStatus;
+
+        this.#dispatchEvent({ type: "connectionStatus", message: { connectionStatus: this.connectionStatus } });
+        this.#dispatchEvent({ type: this.connectionStatus });
+
+        switch (newConnectionStatus) {
+            case "connected":
+            case "not connected":
+                this.#dispatchEvent({ type: "isConnected", message: { isConnected: this.isConnected } });
+                break;
+        }
+
+        if (this.isConnected) {
+            this.webSocket.send(isScanningAvailableRequestMessage);
+        } else {
+            this.#isScanningAvailable = false;
+            this.#isScanning = false;
+        }
+    }
+    get connectionStatus() {
+        return this.#connectionStatus;
     }
 
     // PARSING
@@ -3930,6 +4019,20 @@ class WebSocketClient {
                     break;
                 case "pong":
                     break;
+                case "isScanningAvailable":
+                    {
+                        const isScanningAvailable = Boolean(dataView.getUint8(byteOffset++));
+                        _console$1.log({ isScanningAvailable });
+                        this.#isScanningAvailable = isScanningAvailable;
+                    }
+                    break;
+                case "isScanning":
+                    {
+                        const isScanning = Boolean(dataView.getUint8(byteOffset++));
+                        _console$1.log({ isScanning });
+                        this.#isScanning = isScanning;
+                    }
+                    break;
                 default:
                     _console$1.error(`uncaught messageType "${messageType}"`);
                     break;
@@ -3946,6 +4049,36 @@ class WebSocketClient {
     #pong() {
         this.#assertConnection();
         this.webSocket.send(pongMessage);
+    }
+
+    // SCANNING
+    #_isScanningAvailable = false;
+    get #isScanningAvailable() {
+        return this.#_isScanningAvailable;
+    }
+    set #isScanningAvailable(newIsAvailable) {
+        _console$1.assertTypeWithError(newIsAvailable, "boolean");
+        this.#_isScanningAvailable = newIsAvailable;
+        this.#dispatchEvent({
+            type: "isScanningAvailable",
+            message: { isScanningAvailable: this.isScanningAvailable },
+        });
+    }
+    get isScanningAvailable() {
+        return this.#isScanningAvailable;
+    }
+
+    #_isScanning = false;
+    get #isScanning() {
+        return this.#_isScanning;
+    }
+    set #isScanning(newIsScanning) {
+        _console$1.assertTypeWithError(newIsScanning, "boolean");
+        this.#_isScanning = newIsScanning;
+        this.#dispatchEvent({ type: "isScanning", message: { isScanning: this.isScanning } });
+    }
+    get isScanning() {
+        return this.#isScanning;
     }
 }
 
@@ -4129,11 +4262,38 @@ class WebSocketServer {
                     break;
                 case "pong":
                     break;
+                case "isScanningAvailable":
+                    client.send(this.#isScanningAvailableMessage);
+                    break;
+                case "isScanning":
+                    client.send(this.#isScanningMessage);
+                    break;
+                case "startScan":
+                    Scanner.startScan();
+                    break;
+                case "stopScan":
+                    Scanner.stopScan();
+                    break;
                 default:
                     _console.error(`uncaught messageType "${messageType}"`);
                     break;
             }
         }
+    }
+
+    // CLIENT MESSAGING
+    get #isScanningAvailableMessage() {
+        return createServerMessage("isScanningAvailable", Scanner.isAvailable ? 1 : 0);
+    }
+    get #isScanningMessage() {
+        return createServerMessage("isScanning", Scanner.isScanning ? 1 : 0);
+    }
+
+    /** @param {ws.BufferLike} message */
+    #broadcastMessage(message) {
+        this.server.clients.forEach((client) => {
+            client.send(message);
+        });
     }
 
     // PING
@@ -4156,11 +4316,11 @@ class WebSocketServer {
 
     /** @param {ScannerEvent} event */
     #onScannerIsAvailable(event) {
-        // FILL
+        this.#broadcastMessage(this.#isScanningAvailableMessage);
     }
     /** @param {ScannerEvent} event */
     #onScannerIsScanning(event) {
-        // FILL
+        this.#broadcastMessage(this.#isScanningMessage);
     }
     /** @param {ScannerEvent} event */
     #onScannerDiscoveredPeripheral(event) {
