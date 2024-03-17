@@ -3879,8 +3879,8 @@
 	 * | "peripheralConnectionState"
 	 * | "connectedPeripherals"
 	 * | "disconnectedPeripherals"
-	 * | "getRSSI"
-	 * | "readRSSI"
+	 * | "peripheralRSSI"
+	 * | "getPeripheralRSSI"
 	 * } ServerMessageType
 	 */
 
@@ -3902,6 +3902,7 @@
 	    "discoveredPeripheral",
 	    "discoveredPeripherals",
 	    "expiredDiscoveredPeripheral",
+	    "peripheralRSSI",
 	];
 
 	/** @param {ServerMessageType} serverMessageType */
@@ -3954,7 +3955,7 @@
 
 	/** @typedef {"not connected" | "connecting" | "connected" | "disconnecting"} ClientConnectionStatus */
 
-	/** @typedef {ClientConnectionStatus | "connectionStatus" |  "isConnected" | "isScanningAvailable" | "isScanning"} ClientEventType */
+	/** @typedef {ClientConnectionStatus | "connectionStatus" |  "isConnected" | "isScanningAvailable" | "isScanning" | "discoveredPeripheral"} ClientEventType */
 
 	/**
 	 * @typedef ClientEvent
@@ -3979,6 +3980,7 @@
 	        "isConnected",
 	        "isScanningAvailable",
 	        "isScanning",
+	        "discoveredPeripheral",
 	    ];
 	    static get EventTypes() {
 	        return this.#EventTypes;
@@ -4318,6 +4320,7 @@
 	    /** @param {DiscoveredPeripheral} discoveredPeripheral */
 	    #onDiscoveredPeripheral(discoveredPeripheral) {
 	        console.log({ discoveredPeripheral });
+	        this.#dispatchEvent({ type: "discoveredPeripheral", message: { discoveredPeripheral } });
 	    }
 	    #requestDiscoveredPeripherals() {
 	        this.#assertConnection();

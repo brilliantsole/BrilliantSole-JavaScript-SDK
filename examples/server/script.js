@@ -100,3 +100,36 @@ client.addEventListener("isScanningAvailable", () => {
 client.addEventListener("isScanning", () => {
     toggleScanButton.innerText = client.isScanning ? "stop scanning" : "scan";
 });
+
+// DISCOVERED PERIPHERALS
+
+/** @typedef {import("../../build/brilliantsole.module.js").DiscoveredPeripheral} DiscoveredPeripheral */
+
+/** @type {HTMLTemplateElement} */
+const discoveredPeripheralTemplate = document.getElementById("discoveredPeripheralTemplate");
+const discoveredPeripheralsContainer = document.getElementById("discoveredPeripherals");
+client.addEventListener("discoveredPeripheral", (event) => {
+    /** @type {DiscoveredPeripheral} */
+    const discoveredPeripheral = event.message.discoveredPeripheral;
+
+    const discoveredPeripheralContainer = discoveredPeripheralTemplate.content
+        .cloneNode(true)
+        .querySelector(".discoveredPeripheral");
+
+    discoveredPeripheralContainer.dataset.discoveredPeripheralId = discoveredPeripheral.id;
+    updateDiscoveredPeripheralContainer(discoveredPeripheralContainer, discoveredPeripheral);
+
+    discoveredPeripheralsContainer.appendChild(discoveredPeripheralContainer);
+});
+client.addEventListener("not connected", () => {
+    discoveredPeripheralsContainer.innerHTML = "";
+});
+/**
+ * @param {HTMLElement} discoveredPeripheralContainer
+ * @param {DiscoveredPeripheral} discoveredPeripheral
+ */
+function updateDiscoveredPeripheralContainer(discoveredPeripheralContainer, discoveredPeripheral) {
+    discoveredPeripheralContainer.querySelector(".name").innerText = discoveredPeripheral.name;
+    discoveredPeripheralContainer.querySelector(".rssi").innerText = discoveredPeripheral.rssi;
+    discoveredPeripheralContainer.querySelector(".deviceType").innerText = discoveredPeripheral.deviceType;
+}

@@ -22,8 +22,8 @@ export const reconnectTimeout = 3_000;
  * | "peripheralConnectionState"
  * | "connectedPeripherals"
  * | "disconnectedPeripherals"
- * | "getRSSI"
- * | "readRSSI"
+ * | "peripheralRSSI"
+ * | "getPeripheralRSSI"
  * } ServerMessageType
  */
 
@@ -45,6 +45,7 @@ export const ServerMessageTypes = [
     "discoveredPeripheral",
     "discoveredPeripherals",
     "expiredDiscoveredPeripheral",
+    "peripheralRSSI",
 ];
 
 /** @param {ServerMessageType} serverMessageType */

@@ -3875,8 +3875,8 @@ const reconnectTimeout = 3_000;
  * | "peripheralConnectionState"
  * | "connectedPeripherals"
  * | "disconnectedPeripherals"
- * | "getRSSI"
- * | "readRSSI"
+ * | "peripheralRSSI"
+ * | "getPeripheralRSSI"
  * } ServerMessageType
  */
 
@@ -3898,6 +3898,7 @@ const ServerMessageTypes = [
     "discoveredPeripheral",
     "discoveredPeripherals",
     "expiredDiscoveredPeripheral",
+    "peripheralRSSI",
 ];
 
 /** @param {ServerMessageType} serverMessageType */
@@ -3950,7 +3951,7 @@ const _console$1 = createConsole("WebSocketClient", { log: true });
 
 /** @typedef {"not connected" | "connecting" | "connected" | "disconnecting"} ClientConnectionStatus */
 
-/** @typedef {ClientConnectionStatus | "connectionStatus" |  "isConnected" | "isScanningAvailable" | "isScanning"} ClientEventType */
+/** @typedef {ClientConnectionStatus | "connectionStatus" |  "isConnected" | "isScanningAvailable" | "isScanning" | "discoveredPeripheral"} ClientEventType */
 
 /**
  * @typedef ClientEvent
@@ -3975,6 +3976,7 @@ class WebSocketClient {
         "isConnected",
         "isScanningAvailable",
         "isScanning",
+        "discoveredPeripheral",
     ];
     static get EventTypes() {
         return this.#EventTypes;
@@ -4314,6 +4316,7 @@ class WebSocketClient {
     /** @param {DiscoveredPeripheral} discoveredPeripheral */
     #onDiscoveredPeripheral(discoveredPeripheral) {
         console.log({ discoveredPeripheral });
+        this.#dispatchEvent({ type: "discoveredPeripheral", message: { discoveredPeripheral } });
     }
     #requestDiscoveredPeripherals() {
         this.#assertConnection();
