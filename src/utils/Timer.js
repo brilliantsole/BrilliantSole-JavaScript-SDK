@@ -1,8 +1,8 @@
 import { createConsole } from "./Console.js";
 
-const _console = createConsole("IntervalManager", { log: false });
+const _console = createConsole("Timer", { log: false });
 
-class IntervalManager {
+class Timer {
     /** @type {function} */
     #callback;
     get callback() {
@@ -69,4 +69,4 @@ class IntervalManager {
         this.start();
     }
 }
-export default IntervalManager;
+export default Timer;

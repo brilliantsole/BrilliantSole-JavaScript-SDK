@@ -3,6 +3,7 @@ import { createConsole } from "../utils/Console.js";
 import { isInNode } from "../utils/environment.js";
 import { addEventListeners, removeEventListeners } from "../utils/EventDispatcher.js";
 import { serviceUUIDs } from "../connection/bluetooth/bluetoothUUIDs.js";
+import Device from "../Device.js";
 
 const _console = createConsole("NobleScanner", { log: false });
 
@@ -16,6 +17,7 @@ if (isInNode) {
 /** @typedef {"unknown" | "resetting" | "unsupported" | "unauthorized" | "poweredOff" | "poweredOn"} NobleState */
 
 /** @typedef {import("./BaseScanner.js").DiscoveredPeripheral} DiscoveredPeripheral */
+/** @typedef {import("./BaseScanner.js").ScannerEvent} ScannerEvent */
 
 class NobleScanner extends BaseScanner {
     // IS SUPPORTED
@@ -54,6 +56,7 @@ class NobleScanner extends BaseScanner {
             return;
         }
         this.#_nobleState = newNobleState;
+        _console.log({ newNobleState });
         this.dispatchEvent({ type: "isAvailable", message: { isAvailable: this.isAvailable } });
     }
 
@@ -61,7 +64,7 @@ class NobleScanner extends BaseScanner {
     #boundNobleListeners = {
         scanStart: this.#onNobleScanStart.bind(this),
         scanStop: this.#onNobleScanStop.bind(this),
-        stateChange: this.#onNobleScateChange.bind(this),
+        stateChange: this.#onNobleStateChange.bind(this),
         discover: this.#onNobleDiscover.bind(this),
     };
     #onNobleScanStart() {
@@ -73,8 +76,8 @@ class NobleScanner extends BaseScanner {
         this.#isScanning = false;
     }
     /** @param {NobleState} state */
-    #onNobleScateChange(state) {
-        _console.log("OnNobleScateChange", state);
+    #onNobleStateChange(state) {
+        _console.log("onNobleStateChange", state);
         this.#nobleState = state;
     }
     /** @param {noble.Peripheral} noblePeripheral */
@@ -84,8 +87,10 @@ class NobleScanner extends BaseScanner {
         const discoveredPeripheral = {
             name: noblePeripheral.advertisement.localName,
             id: noblePeripheral.id,
-            // FILL
+            //deviceType: Device.Types[noblePeripheral.advertisement.serviceData[serviceUUIDs[0]]],
+            rssi: noblePeripheral.rssi,
         };
+        this.#noblePeripherals[noblePeripheral.id] = noblePeripheral;
         this.dispatchEvent({ type: "discoveredPeripheral", message: { discoveredPeripheral } });
     }
 
@@ -93,6 +98,7 @@ class NobleScanner extends BaseScanner {
     constructor() {
         super();
         addEventListeners(noble, this.#boundNobleListeners);
+        addEventListeners(this, this.#boundBaseScannerListeners);
     }
 
     // AVAILABILITY
@@ -117,6 +123,25 @@ class NobleScanner extends BaseScanner {
         super.reset();
         noble.reset();
     }
+
+    // BASESCANNER LISTENERS
+    #boundBaseScannerListeners = {
+        expiredDiscoveredPeripheral: this.#onExpiredDiscoveredPeripheral.bind(this),
+    };
+    /** @param {ScannerEvent} event */
+    #onExpiredDiscoveredPeripheral(event) {
+        /** @type {DiscoveredPeripheral} */
+        const discoveredPeripheral = event.message.discoveredPeripheral;
+        const noblePeripheral = this.#noblePeripherals[discoveredPeripheral.id];
+        if (noblePeripheral) {
+            // disconnect?
+            delete this.#noblePeripherals[discoveredPeripheral.id];
+        }
+    }
+
+    // DISCOVERED PERIPHERALS
+    /** @type {Object.<string, noble.Peripheral>} */
+    #noblePeripherals = {};
 }
 
 export default NobleScanner;

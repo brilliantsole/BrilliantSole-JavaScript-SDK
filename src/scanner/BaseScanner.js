@@ -1,9 +1,12 @@
-import EventDispatcher from "../utils/EventDispatcher.js";
+import EventDispatcher, { addEventListeners } from "../utils/EventDispatcher.js";
 import { createConsole } from "../utils/Console.js";
+import Timer from "../utils/Timer.js";
 
 const _console = createConsole("BaseScanner");
 
-/** @typedef {"isAvailable" | "isScanning" | "discoveredPeripheral"} ScannerEventType */
+/** @typedef {import("../Device.js").DeviceType} DeviceType */
+
+/** @typedef {"isAvailable" | "isScanning" | "discoveredPeripheral" | "expiredDiscoveredPeripheral" | "connectedPeripheral" | "disconnectedPeripheral"} ScannerEventType */
 
 /** @typedef {import("../utils/EventDispatcher.js").EventDispatcherListener} EventDispatcherListener */
 /** @typedef {import("../utils/EventDispatcher.js").EventDispatcherOptions} EventDispatcherOptions */
@@ -21,6 +24,8 @@ const _console = createConsole("BaseScanner");
  * @type {Object}
  * @property {string} id
  * @property {string} name
+ * @property {DeviceType} deviceType
+ * @property {number} rssi
  */
 
 class BaseScanner {
@@ -47,12 +52,18 @@ class BaseScanner {
     constructor() {
         this.#assertIsSubclass();
         this.#assertIsSupported();
+        addEventListeners(this, this.#boundEventListeners);
     }
+
+    #boundEventListeners = {
+        discoveredPeripheral: this.#onDiscoveredPeripheral.bind(this),
+        isScanning: this.#onIsScanning.bind(this),
+    };
 
     // EVENT DISPATCHER
 
     /** @type {ScannerEventType[]} */
-    static #EventTypes = ["isAvailable", "isScanning", "discoveredPeripheral"];
+    static #EventTypes = ["isAvailable", "isScanning", "discoveredPeripheral", "expiredDiscoveredPeripheral"];
     static get EventTypes() {
         return this.#EventTypes;
     }
@@ -111,6 +122,64 @@ class BaseScanner {
     }
     stopScan() {
         this.#assertIsScanning();
+    }
+    #onIsScanning() {
+        if (this.isScanning) {
+            this.#discoveredPeripherals = {};
+            this.#discoveredPeripheralTimestamps = {};
+        } else {
+            this.#checkDiscoveredPeripheralsExpirationTimer.stop();
+        }
+    }
+
+    // DISCOVERED PERIPHERALS
+    /** @type {Object.<string, DiscoveredPeripheral>} */
+    #discoveredPeripherals = {};
+    get discoveredPeripherals() {
+        return this.#discoveredPeripherals;
+    }
+    get discoveredPeripheralsArray() {
+        return Object.values(this.#discoveredPeripherals).sort((a, b) => {
+            return this.#discoveredPeripheralTimestamps[a.id] - this.#discoveredPeripheralTimestamps[b.id];
+        });
+    }
+
+    /** @param {ScannerEvent} event */
+    #onDiscoveredPeripheral(event) {
+        /** @type {DiscoveredPeripheral} */
+        const discoveredPeripheral = event.message.discoveredPeripheral;
+        this.#discoveredPeripherals[discoveredPeripheral.id] = discoveredPeripheral;
+        this.#discoveredPeripheralTimestamps[discoveredPeripheral.id] = Date.now();
+        this.#checkDiscoveredPeripheralsExpirationTimer.start();
+    }
+
+    /** @type {Object.<string, number>} */
+    #discoveredPeripheralTimestamps = {};
+
+    static #DiscoveredPeripheralExpirationTimeout = 5000;
+    static get DiscoveredPeripheralExpirationTimeout() {
+        return this.#DiscoveredPeripheralExpirationTimeout;
+    }
+    get #discoveredPeripheralExpirationTimeout() {
+        return BaseScanner.DiscoveredPeripheralExpirationTimeout;
+    }
+    #checkDiscoveredPeripheralsExpirationTimer = new Timer(this.#checkDiscoveredPeripheralsExpiration.bind(this), 1000);
+    #checkDiscoveredPeripheralsExpiration() {
+        const entries = Object.entries(this.#discoveredPeripherals);
+        if ((entries.length = 0)) {
+            this.#checkDiscoveredPeripheralsExpirationTimer.stop();
+            return;
+        }
+        const now = Date.now();
+        entries.forEach(([id, discoveredPeripheral]) => {
+            const timestamp = this.#discoveredPeripheralTimestamps[id];
+            if (now - timestamp > this.#discoveredPeripheralExpirationTimeout) {
+                _console.log("discovered peripheral timeout");
+                delete this.#discoveredPeripherals[id];
+                delete this.#discoveredPeripheralTimestamps[id];
+                this.dispatchEvent({ type: "expiredDiscoveredPeripheral", message: { discoveredPeripheral } });
+            }
+        });
     }
 
     // MISC

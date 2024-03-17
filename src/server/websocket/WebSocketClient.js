@@ -9,9 +9,10 @@ import {
     isScanningRequestMessage,
     startScanRequestMessage,
     stopScanRequestMessage,
+    discoveredPeripheralsMessage,
 } from "../ServerUtils.js";
 import { addEventListeners, removeEventListeners } from "../../utils/EventDispatcher.js";
-import IntervalManager from "../../utils/IntervalManager.js";
+import Timer from "../../utils/Timer.js";
 import EventDispatcher from "../../utils/EventDispatcher.js";
 
 const _console = createConsole("WebSocketClient", { log: true });
@@ -30,6 +31,8 @@ const _console = createConsole("WebSocketClient", { log: true });
  * @property {ClientEventType} type
  * @property {Object} message
  */
+
+/** @typedef {import("./WebSocketServer.js").DiscoveredPeripheral} DiscoveredPeripheral */
 
 class WebSocketClient {
     // EVENT DISPATCHER
@@ -176,13 +179,13 @@ class WebSocketClient {
     /** @param {Event} event */
     #onWebSocketOpen(event) {
         _console.log("webSocket.open", event);
-        this.#pingIntervalManager.start();
+        this.#pingTimer.start();
         this.#connectionStatus = "connected";
     }
     /** @param {import("ws").MessageEvent} event */
     async #onWebSocketMessage(event) {
         _console.log("webSocket.message", event);
-        this.#pingIntervalManager.restart();
+        this.#pingTimer.restart();
         const arrayBuffer = await event.data.arrayBuffer();
         const dataView = new DataView(arrayBuffer);
         this.#parseMessage(dataView);
@@ -193,7 +196,7 @@ class WebSocketClient {
 
         this.#connectionStatus = "not connected";
 
-        this.#pingIntervalManager.stop();
+        this.#pingTimer.stop();
         if (this.#reconnectOnDisconnection) {
             setTimeout(() => {
                 this.reconnect();
@@ -226,6 +229,7 @@ class WebSocketClient {
                 this.#dispatchEvent({ type: "isConnected", message: { isConnected: this.isConnected } });
                 if (this.isConnected) {
                     this.#requestIsScanningAvailable();
+                    this.#requestDiscoveredPeripherals();
                 } else {
                     this.#isScanningAvailable = false;
                     this.#isScanning = false;
@@ -238,6 +242,10 @@ class WebSocketClient {
     }
 
     // PARSING
+    static #TextDecoder = new TextDecoder();
+    get #textDecoder() {
+        return WebSocketClient.#TextDecoder;
+    }
     /** @param {DataView} dataView */
     #parseMessage(dataView) {
         _console.log("parseMessage", { dataView });
@@ -269,6 +277,23 @@ class WebSocketClient {
                         this.#isScanning = isScanning;
                     }
                     break;
+                case "discoveredPeripheral":
+                    {
+                        const discoveredPeripheralStringLength = dataView.getUint8(byteOffset++);
+                        console.log({ discoveredPeripheralStringLength });
+                        const discoveredPeripheralString = this.#textDecoder.decode(
+                            dataView.buffer.slice(byteOffset, byteOffset + discoveredPeripheralStringLength)
+                        );
+                        console.log({ discoveredPeripheralString });
+                        byteOffset += discoveredPeripheralStringLength;
+
+                        /** @type {DiscoveredPeripheral} */
+                        const discoveredPeripheral = JSON.parse(discoveredPeripheralString);
+                        console.log({ discoveredPeripheral });
+
+                        this.#onDiscoveredPeripheral(discoveredPeripheral);
+                    }
+                    break;
                 default:
                     _console.error(`uncaught messageType "${messageType}"`);
                     break;
@@ -277,7 +302,7 @@ class WebSocketClient {
     }
 
     // PING
-    #pingIntervalManager = new IntervalManager(this.#ping.bind(this), pingTimeout);
+    #pingTimer = new Timer(this.#ping.bind(this), pingTimeout);
     #ping() {
         this.#assertConnection();
         this.webSocket.send(pingMessage);
@@ -355,6 +380,16 @@ class WebSocketClient {
         } else {
             this.startScan();
         }
+    }
+
+    // PERIPHERALS
+    /** @param {DiscoveredPeripheral} discoveredPeripheral */
+    #onDiscoveredPeripheral(discoveredPeripheral) {
+        console.log({ discoveredPeripheral });
+    }
+    #requestDiscoveredPeripherals() {
+        this.#assertConnection();
+        this.webSocket.send(discoveredPeripheralsMessage);
     }
 }
 

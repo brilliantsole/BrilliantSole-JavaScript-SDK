@@ -1,7 +1,7 @@
 import { concatenateArrayBuffers } from "../utils/ArrayBufferUtils";
 import { createConsole } from "../utils/Console";
 
-const _console = createConsole("ServerUtils", { log: true });
+const _console = createConsole("ServerUtils", { log: false });
 
 export const pingTimeout = 30_000_000;
 export const reconnectTimeout = 3_000;
@@ -14,6 +14,7 @@ export const reconnectTimeout = 3_000;
  * | "startScan"
  * | "stopScan"
  * | "discoveredPeripheral"
+ * | "expiredDiscoveredPeripheral"
  * | "discoveredPeripherals"
  * | "connect"
  * | "disconnect"
@@ -26,6 +27,13 @@ export const reconnectTimeout = 3_000;
  * } ServerMessageType
  */
 
+/**
+ * @typedef ServerMessage
+ * @type {Object}
+ * @property {ServerMessageType} type
+ * @property {MessageLike|MessageLike[]?} data
+ */
+
 /** @type {ServerMessageType[]} */
 export const ServerMessageTypes = [
     "ping",
@@ -35,6 +43,8 @@ export const ServerMessageTypes = [
     "startScan",
     "stopScan",
     "discoveredPeripheral",
+    "discoveredPeripherals",
+    "expiredDiscoveredPeripheral",
 ];
 
 /** @param {ServerMessageType} serverMessageType */
@@ -49,12 +59,27 @@ export function getServerMessageTypeEnum(serverMessageType) {
 
 /** @typedef {Number | Number[] | ArrayBufferLike | DataView} MessageLike */
 
-/**
- * @param {ServerMessageType} messageType
- * @param {...MessageLike} data
- */
-export function createServerMessage(messageType, ...data) {
-    return concatenateArrayBuffers(getServerMessageTypeEnum(messageType), ...data);
+/** @param {...ServerMessage|ServerMessageType} messages */
+export function createServerMessage(...messages) {
+    _console.log("createServerMessage", ...messages);
+
+    const messageBuffers = messages.map((message) => {
+        if (typeof message == "string") {
+            message = { type: message };
+        }
+
+        if ("data" in message) {
+            if (!Array.isArray(message.data)) {
+                message.data = [message.data];
+            }
+        } else {
+            message.data = [];
+        }
+
+        return concatenateArrayBuffers(getServerMessageTypeEnum(message.type), ...message.data);
+    });
+    _console.log("messageBuffers", ...messageBuffers);
+    return concatenateArrayBuffers(...messageBuffers);
 }
 
 export const pingMessage = createServerMessage("ping");
@@ -63,3 +88,4 @@ export const isScanningAvailableRequestMessage = createServerMessage("isScanning
 export const isScanningRequestMessage = createServerMessage("isScanning");
 export const startScanRequestMessage = createServerMessage("startScan");
 export const stopScanRequestMessage = createServerMessage("stopScan");
+export const discoveredPeripheralsMessage = createServerMessage("discoveredPeripherals");

@@ -2,8 +2,8 @@ import { createConsole } from "../../utils/Console.js";
 import { isInNode } from "../../utils/environment.js";
 import { addEventListeners, removeEventListeners } from "../../utils/EventDispatcher.js";
 import { pingTimeout, pingMessage, ServerMessageTypes, pongMessage, createServerMessage } from "../ServerUtils.js";
-import { dataToArrayBuffer } from "../../utils/ArrayBufferUtils.js";
-import IntervalManager from "../../utils/IntervalManager.js";
+import { concatenateArrayBuffers, dataToArrayBuffer } from "../../utils/ArrayBufferUtils.js";
+import Timer from "../../utils/Timer.js";
 import EventDispatcher from "../../utils/EventDispatcher.js";
 import scanner from "../../scanner/Scanner.js";
 
@@ -121,8 +121,8 @@ class WebSocketServer {
     #onServerConnection(client) {
         _console.log("server.connection");
         client.isAlive = true;
-        client.pingClientIntervalManager = new IntervalManager(() => this.#pingClient(client), pingTimeout);
-        client.pingClientIntervalManager.start();
+        client.pingClientTimer = new Timer(() => this.#pingClient(client), pingTimeout);
+        client.pingClientTimer.start();
         addEventListeners(client, this.#boundClientListeners);
         this.#dispatchEvent({ type: "clientConnected", message: { client } });
     }
@@ -153,7 +153,7 @@ class WebSocketServer {
         _console.log("client.message");
         const client = event.target;
         client.isAlive = true;
-        client.pingClientIntervalManager.restart();
+        client.pingClientTimer.restart();
         const dataView = new DataView(dataToArrayBuffer(event.data));
         this.#parseClientMessage(client, dataView);
     }
@@ -161,7 +161,7 @@ class WebSocketServer {
     #onClientClose(event) {
         _console.log("client.close");
         const client = event.target;
-        client.pingClientIntervalManager.stop();
+        client.pingClientTimer.stop();
         removeEventListeners(client, this.#boundClientListeners);
         this.#dispatchEvent({ type: "clientDisconnected", message: { client } });
     }
@@ -185,7 +185,7 @@ class WebSocketServer {
 
             switch (messageType) {
                 case "ping":
-                    client.send(pongMessage);
+                    client.send(pongMessageBuffer);
                     break;
                 case "pong":
                     break;
@@ -201,6 +201,9 @@ class WebSocketServer {
                 case "stopScan":
                     scanner.stopScan();
                     break;
+                case "discoveredPeripherals":
+                    client.send(this.#discoveredPeripheralsMessage);
+                    break;
                 default:
                     _console.error(`uncaught messageType "${messageType}"`);
                     break;
@@ -210,10 +213,10 @@ class WebSocketServer {
 
     // CLIENT MESSAGING
     get #isScanningAvailableMessage() {
-        return createServerMessage("isScanningAvailable", scanner.isAvailable);
+        return createServerMessage({ type: "isScanningAvailable", data: scanner.isAvailable });
     }
     get #isScanningMessage() {
-        return createServerMessage("isScanning", scanner.isScanning);
+        return createServerMessage({ type: "isScanning", data: scanner.isScanning });
     }
 
     /** @param {ws.BufferLike} message */
@@ -255,18 +258,19 @@ class WebSocketServer {
         const discoveredPeripheral = event.message.discoveredPeripheral;
         console.log(discoveredPeripheral);
 
-        this.#discoveredPeripherals[discoveredPeripheral.id] = discoveredPeripheral;
         this.#broadcastMessage(this.#createDiscoveredPeripheralMessage(discoveredPeripheral));
     }
 
-    /** @type {Object.<string,DiscoveredPeripheral>} */
-    #discoveredPeripherals = {};
-    get discoveredPeripherals() {
-        return this.#discoveredPeripherals;
-    }
     /** @param {DiscoveredPeripheral} discoveredPeripheral */
     #createDiscoveredPeripheralMessage(discoveredPeripheral) {
-        return createServerMessage("discoveredPeripheral", discoveredPeripheral);
+        return createServerMessage({ type: "discoveredPeripheral", data: discoveredPeripheral });
+    }
+    get #discoveredPeripheralsMessage() {
+        return createServerMessage(
+            ...scanner.discoveredPeripheralsArray.map((discoveredPeripheral) => {
+                return { type: "discoveredPeripheral", data: discoveredPeripheral };
+            })
+        );
     }
 }
 

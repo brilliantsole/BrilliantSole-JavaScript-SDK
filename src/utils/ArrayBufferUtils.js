@@ -52,7 +52,8 @@ export function dataToArrayBuffer(data) {
 
 /** @param {String} string */
 export function stringToArrayBuffer(string) {
-    return concatenateArrayBuffers(string.length, textEncoder.encode(string));
+    const encoding = textEncoder.encode(string);
+    return concatenateArrayBuffers(encoding.byteLength, encoding);
 }
 
 /** @param {Object} object */

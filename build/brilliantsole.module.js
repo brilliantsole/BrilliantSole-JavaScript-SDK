@@ -1833,7 +1833,8 @@ function dataToArrayBuffer(data) {
 
 /** @param {String} string */
 function stringToArrayBuffer(string) {
-    return concatenateArrayBuffers(string.length, textEncoder.encode(string));
+    const encoding = textEncoder.encode(string);
+    return concatenateArrayBuffers(encoding.byteLength, encoding);
 }
 
 /** @param {Object} object */
@@ -3094,9 +3095,81 @@ class Device {
     }
 }
 
-const _console$9 = createConsole("BaseScanner");
+const _console$9 = createConsole("Timer", { log: false });
 
-/** @typedef {"isAvailable" | "isScanning" | "discoveredPeripheral"} ScannerEventType */
+class Timer {
+    /** @type {function} */
+    #callback;
+    get callback() {
+        return this.#callback;
+    }
+    set callback(newCallback) {
+        _console$9.assertTypeWithError(newCallback, "function");
+        _console$9.log({ newCallback });
+        this.#callback = newCallback;
+        if (this.isRunning) {
+            this.restart();
+        }
+    }
+
+    /** @type {number} */
+    #interval;
+    get interval() {
+        return this.#interval;
+    }
+    set interval(newInterval) {
+        _console$9.assertTypeWithError(newInterval, "number");
+        _console$9.assertWithError(newInterval > 0, "interval must be above 0");
+        _console$9.log({ newInterval });
+        this.#interval = newInterval;
+        if (this.isRunning) {
+            this.restart();
+        }
+    }
+
+    /**
+     * @param {function} callback
+     * @param {number} interval
+     */
+    constructor(callback, interval) {
+        this.interval = interval;
+        this.callback = callback;
+    }
+
+    /** @type {number?} */
+    #intervalId = null;
+    get isRunning() {
+        return this.#intervalId != null;
+    }
+
+    start() {
+        if (this.isRunning) {
+            _console$9.log("interval already running");
+            return;
+        }
+        _console$9.log("starting interval");
+        this.#intervalId = setInterval(this.#callback, this.#interval);
+    }
+    stop() {
+        if (!this.isRunning) {
+            _console$9.log("interval already not running");
+            return;
+        }
+        _console$9.log("stopping interval");
+        clearInterval(this.#intervalId);
+        this.#intervalId = null;
+    }
+    restart() {
+        this.stop();
+        this.start();
+    }
+}
+
+const _console$8 = createConsole("BaseScanner");
+
+
+
+/** @typedef {"isAvailable" | "isScanning" | "discoveredPeripheral" | "expiredDiscoveredPeripheral" | "connectedPeripheral" | "disconnectedPeripheral"} ScannerEventType */
 
 
 
@@ -3114,6 +3187,8 @@ const _console$9 = createConsole("BaseScanner");
  * @type {Object}
  * @property {string} id
  * @property {string} name
+ * @property {DeviceType} deviceType
+ * @property {number} rssi
  */
 
 class BaseScanner {
@@ -3128,24 +3203,30 @@ class BaseScanner {
     }
 
     #assertIsSupported() {
-        _console$9.assertWithError(this.isSupported, `${this.constructor.name} is not supported`);
+        _console$8.assertWithError(this.isSupported, `${this.constructor.name} is not supported`);
     }
 
     // CONSTRUCTOR
 
     #assertIsSubclass() {
-        _console$9.assertWithError(this.constructor != BaseScanner, `${this.constructor.name} must be subclassed`);
+        _console$8.assertWithError(this.constructor != BaseScanner, `${this.constructor.name} must be subclassed`);
     }
 
     constructor() {
         this.#assertIsSubclass();
         this.#assertIsSupported();
+        addEventListeners(this, this.#boundEventListeners);
     }
+
+    #boundEventListeners = {
+        discoveredPeripheral: this.#onDiscoveredPeripheral.bind(this),
+        isScanning: this.#onIsScanning.bind(this),
+    };
 
     // EVENT DISPATCHER
 
     /** @type {ScannerEventType[]} */
-    static #EventTypes = ["isAvailable", "isScanning", "discoveredPeripheral"];
+    static #EventTypes = ["isAvailable", "isScanning", "discoveredPeripheral", "expiredDiscoveredPeripheral"];
     static get EventTypes() {
         return this.#EventTypes;
     }
@@ -3184,7 +3265,7 @@ class BaseScanner {
         return false;
     }
     #assertIsAvailable() {
-        _console$9.assertWithError(this.isAvailable, "not available");
+        _console$8.assertWithError(this.isAvailable, "not available");
     }
 
     // SCANNING
@@ -3192,10 +3273,10 @@ class BaseScanner {
         return false;
     }
     #assertIsScanning() {
-        _console$9.assertWithError(this.isScanning, "not scanning");
+        _console$8.assertWithError(this.isScanning, "not scanning");
     }
     #assertIsNotScanning() {
-        _console$9.assertWithError(!this.isScanning, "already scanning");
+        _console$8.assertWithError(!this.isScanning, "already scanning");
     }
 
     startScan() {
@@ -3205,15 +3286,73 @@ class BaseScanner {
     stopScan() {
         this.#assertIsScanning();
     }
+    #onIsScanning() {
+        if (this.isScanning) {
+            this.#discoveredPeripherals = {};
+            this.#discoveredPeripheralTimestamps = {};
+        } else {
+            this.#checkDiscoveredPeripheralsExpirationTimer.stop();
+        }
+    }
+
+    // DISCOVERED PERIPHERALS
+    /** @type {Object.<string, DiscoveredPeripheral>} */
+    #discoveredPeripherals = {};
+    get discoveredPeripherals() {
+        return this.#discoveredPeripherals;
+    }
+    get discoveredPeripheralsArray() {
+        return Object.values(this.#discoveredPeripherals).sort((a, b) => {
+            return this.#discoveredPeripheralTimestamps[a.id] - this.#discoveredPeripheralTimestamps[b.id];
+        });
+    }
+
+    /** @param {ScannerEvent} event */
+    #onDiscoveredPeripheral(event) {
+        /** @type {DiscoveredPeripheral} */
+        const discoveredPeripheral = event.message.discoveredPeripheral;
+        this.#discoveredPeripherals[discoveredPeripheral.id] = discoveredPeripheral;
+        this.#discoveredPeripheralTimestamps[discoveredPeripheral.id] = Date.now();
+        this.#checkDiscoveredPeripheralsExpirationTimer.start();
+    }
+
+    /** @type {Object.<string, number>} */
+    #discoveredPeripheralTimestamps = {};
+
+    static #DiscoveredPeripheralExpirationTimeout = 5000;
+    static get DiscoveredPeripheralExpirationTimeout() {
+        return this.#DiscoveredPeripheralExpirationTimeout;
+    }
+    get #discoveredPeripheralExpirationTimeout() {
+        return BaseScanner.DiscoveredPeripheralExpirationTimeout;
+    }
+    #checkDiscoveredPeripheralsExpirationTimer = new Timer(this.#checkDiscoveredPeripheralsExpiration.bind(this), 1000);
+    #checkDiscoveredPeripheralsExpiration() {
+        const entries = Object.entries(this.#discoveredPeripherals);
+        if ((entries.length = 0)) {
+            this.#checkDiscoveredPeripheralsExpirationTimer.stop();
+            return;
+        }
+        const now = Date.now();
+        entries.forEach(([id, discoveredPeripheral]) => {
+            const timestamp = this.#discoveredPeripheralTimestamps[id];
+            if (now - timestamp > this.#discoveredPeripheralExpirationTimeout) {
+                _console$8.log("discovered peripheral timeout");
+                delete this.#discoveredPeripherals[id];
+                delete this.#discoveredPeripheralTimestamps[id];
+                this.dispatchEvent({ type: "expiredDiscoveredPeripheral", message: { discoveredPeripheral } });
+            }
+        });
+    }
 
     // MISC
 
     reset() {
-        _console$9.log("resetting...");
+        _console$8.log("resetting...");
     }
 }
 
-const _console$8 = createConsole("NobleScanner", { log: false });
+const _console$7 = createConsole("NobleScanner", { log: false });
 
 let isSupported = false;
 
@@ -3223,6 +3362,7 @@ if (isInNode) {
 }
 
 /** @typedef {"unknown" | "resetting" | "unsupported" | "unauthorized" | "poweredOff" | "poweredOn"} NobleState */
+
 
 
 
@@ -3238,9 +3378,9 @@ class NobleScanner extends BaseScanner {
         return this.#_isScanning;
     }
     set #isScanning(newIsScanning) {
-        _console$8.assertTypeWithError(newIsScanning, "boolean");
+        _console$7.assertTypeWithError(newIsScanning, "boolean");
         if (this.isScanning == newIsScanning) {
-            _console$8.log("duplicate isScanning assignment");
+            _console$7.log("duplicate isScanning assignment");
             return;
         }
         this.#_isScanning = newIsScanning;
@@ -3257,12 +3397,13 @@ class NobleScanner extends BaseScanner {
         return this.#_nobleState;
     }
     set #nobleState(newNobleState) {
-        _console$8.assertTypeWithError(newNobleState, "string");
+        _console$7.assertTypeWithError(newNobleState, "string");
         if (this.#nobleState == newNobleState) {
-            _console$8.log("duplicate nobleState assignment");
+            _console$7.log("duplicate nobleState assignment");
             return;
         }
         this.#_nobleState = newNobleState;
+        _console$7.log({ newNobleState });
         this.dispatchEvent({ type: "isAvailable", message: { isAvailable: this.isAvailable } });
     }
 
@@ -3270,31 +3411,33 @@ class NobleScanner extends BaseScanner {
     #boundNobleListeners = {
         scanStart: this.#onNobleScanStart.bind(this),
         scanStop: this.#onNobleScanStop.bind(this),
-        stateChange: this.#onNobleScateChange.bind(this),
+        stateChange: this.#onNobleStateChange.bind(this),
         discover: this.#onNobleDiscover.bind(this),
     };
     #onNobleScanStart() {
-        _console$8.log("OnNobleScanStart");
+        _console$7.log("OnNobleScanStart");
         this.#isScanning = true;
     }
     #onNobleScanStop() {
-        _console$8.log("OnNobleScanStop");
+        _console$7.log("OnNobleScanStop");
         this.#isScanning = false;
     }
     /** @param {NobleState} state */
-    #onNobleScateChange(state) {
-        _console$8.log("OnNobleScateChange", state);
+    #onNobleStateChange(state) {
+        _console$7.log("onNobleStateChange", state);
         this.#nobleState = state;
     }
     /** @param {noble.Peripheral} noblePeripheral */
     #onNobleDiscover(noblePeripheral) {
-        _console$8.log("onNobleDiscover", noblePeripheral);
+        _console$7.log("onNobleDiscover", noblePeripheral);
         /** @type {DiscoveredPeripheral} */
         const discoveredPeripheral = {
             name: noblePeripheral.advertisement.localName,
             id: noblePeripheral.id,
-            // FILL
+            //deviceType: Device.Types[noblePeripheral.advertisement.serviceData[serviceUUIDs[0]]],
+            rssi: noblePeripheral.rssi,
         };
+        this.#noblePeripherals[noblePeripheral.id] = noblePeripheral;
         this.dispatchEvent({ type: "discoveredPeripheral", message: { discoveredPeripheral } });
     }
 
@@ -3302,6 +3445,7 @@ class NobleScanner extends BaseScanner {
     constructor() {
         super();
         addEventListeners(noble, this.#boundNobleListeners);
+        addEventListeners(this, this.#boundBaseScannerListeners);
     }
 
     // AVAILABILITY
@@ -3326,23 +3470,42 @@ class NobleScanner extends BaseScanner {
         super.reset();
         noble.reset();
     }
+
+    // BASESCANNER LISTENERS
+    #boundBaseScannerListeners = {
+        expiredDiscoveredPeripheral: this.#onExpiredDiscoveredPeripheral.bind(this),
+    };
+    /** @param {ScannerEvent} event */
+    #onExpiredDiscoveredPeripheral(event) {
+        /** @type {DiscoveredPeripheral} */
+        const discoveredPeripheral = event.message.discoveredPeripheral;
+        const noblePeripheral = this.#noblePeripherals[discoveredPeripheral.id];
+        if (noblePeripheral) {
+            // disconnect?
+            delete this.#noblePeripherals[discoveredPeripheral.id];
+        }
+    }
+
+    // DISCOVERED PERIPHERALS
+    /** @type {Object.<string, noble.Peripheral>} */
+    #noblePeripherals = {};
 }
 
-const _console$7 = createConsole("Scanner", { log: false });
+const _console$6 = createConsole("Scanner", { log: false });
 
 /** @type {BaseScanner?} */
 let scanner;
 
 if (NobleScanner.isSupported) {
-    _console$7.log("using NobleScanner");
+    _console$6.log("using NobleScanner");
     scanner = new NobleScanner();
 } else {
-    _console$7.log("Scanner not available");
+    _console$6.log("Scanner not available");
 }
 
 var Scanner = scanner;
 
-const _console$6 = createConsole("DevicePairPressureSensorDataManager", { log: true });
+const _console$5 = createConsole("DevicePairPressureSensorDataManager", { log: true });
 
 
 
@@ -3436,13 +3599,13 @@ class DevicePairPressureSensorDataManager {
             pressure.calibratedCenter = this.#centerOfPressureHelper.getCalibratedCenterOfPressure(pressure.center);
         }
 
-        _console$6.log({ pressure });
+        _console$5.log({ pressure });
 
         return pressure;
     }
 }
 
-const _console$5 = createConsole("DevicePairSensorDataManager", { log: true });
+const _console$4 = createConsole("DevicePairSensorDataManager", { log: true });
 
 
 
@@ -3486,7 +3649,7 @@ class DevicePairSensorDataManager {
                 value = this.pressureSensorDataManager.onDevicePressureData(event);
                 break;
             default:
-                _console$5.warn(`uncaught sensorType "${sensorType}"`);
+                _console$4.warn(`uncaught sensorType "${sensorType}"`);
                 break;
         }
 
@@ -3494,7 +3657,7 @@ class DevicePairSensorDataManager {
             const timestamps = Object.assign({}, this.#timestamps[sensorType]);
             this.onDataReceived?.(sensorType, { timestamps, [sensorType]: value });
         } else {
-            _console$5.warn("no value received");
+            _console$4.warn("no value received");
         }
     }
 
@@ -3502,7 +3665,7 @@ class DevicePairSensorDataManager {
     onDataReceived;
 }
 
-const _console$4 = createConsole("DevicePair", { log: true });
+const _console$3 = createConsole("DevicePair", { log: true });
 
 
 
@@ -3593,7 +3756,7 @@ let DevicePair$1 = class DevicePair {
     /** @param {Device} device */
     assignInsole(device) {
         if (device.isInsole) {
-            _console$4.warn("device is not an insole");
+            _console$3.warn("device is not an insole");
             return;
         }
         const side = device.insoleSide;
@@ -3601,7 +3764,7 @@ let DevicePair$1 = class DevicePair {
         const currentDevice = this[side];
 
         if (device == currentDevice) {
-            _console$4.warn("device already assigned");
+            _console$3.warn("device already assigned");
             return;
         }
 
@@ -3619,7 +3782,7 @@ let DevicePair$1 = class DevicePair {
                 break;
         }
 
-        _console$4.log(`assigned ${side} insole`, device);
+        _console$3.log(`assigned ${side} insole`, device);
 
         this.resetPressureRange();
 
@@ -3664,7 +3827,7 @@ let DevicePair$1 = class DevicePair {
      * @param {number} sensorData.timestamp
      */
     #onSensorDataReceived(sensorType, sensorData) {
-        _console$4.log({ sensorType, sensorData });
+        _console$3.log({ sensorType, sensorData });
         this.#dispatchEvent({ type: sensorType, message: sensorData });
     }
 
@@ -3689,7 +3852,7 @@ let DevicePair$1 = class DevicePair {
     }
 };
 
-const _console$3 = createConsole("ServerUtils", { log: true });
+const _console$2 = createConsole("ServerUtils", { log: false });
 
 const pingTimeout = 30_000_000;
 const reconnectTimeout = 3_000;
@@ -3702,6 +3865,7 @@ const reconnectTimeout = 3_000;
  * | "startScan"
  * | "stopScan"
  * | "discoveredPeripheral"
+ * | "expiredDiscoveredPeripheral"
  * | "discoveredPeripherals"
  * | "connect"
  * | "disconnect"
@@ -3714,6 +3878,13 @@ const reconnectTimeout = 3_000;
  * } ServerMessageType
  */
 
+/**
+ * @typedef ServerMessage
+ * @type {Object}
+ * @property {ServerMessageType} type
+ * @property {MessageLike|MessageLike[]?} data
+ */
+
 /** @type {ServerMessageType[]} */
 const ServerMessageTypes = [
     "ping",
@@ -3723,12 +3894,14 @@ const ServerMessageTypes = [
     "startScan",
     "stopScan",
     "discoveredPeripheral",
+    "discoveredPeripherals",
+    "expiredDiscoveredPeripheral",
 ];
 
 /** @param {ServerMessageType} serverMessageType */
 function getServerMessageTypeEnum(serverMessageType) {
-    _console$3.assertTypeWithError(serverMessageType, "string");
-    _console$3.assertWithError(
+    _console$2.assertTypeWithError(serverMessageType, "string");
+    _console$2.assertWithError(
         ServerMessageTypes.includes(serverMessageType),
         `invalid serverMessageType "${serverMessageType}"`
     );
@@ -3737,12 +3910,27 @@ function getServerMessageTypeEnum(serverMessageType) {
 
 /** @typedef {Number | Number[] | ArrayBufferLike | DataView} MessageLike */
 
-/**
- * @param {ServerMessageType} messageType
- * @param {...MessageLike} data
- */
-function createServerMessage(messageType, ...data) {
-    return concatenateArrayBuffers(getServerMessageTypeEnum(messageType), ...data);
+/** @param {...ServerMessage|ServerMessageType} messages */
+function createServerMessage(...messages) {
+    _console$2.log("createServerMessage", ...messages);
+
+    const messageBuffers = messages.map((message) => {
+        if (typeof message == "string") {
+            message = { type: message };
+        }
+
+        if ("data" in message) {
+            if (!Array.isArray(message.data)) {
+                message.data = [message.data];
+            }
+        } else {
+            message.data = [];
+        }
+
+        return concatenateArrayBuffers(getServerMessageTypeEnum(message.type), ...message.data);
+    });
+    _console$2.log("messageBuffers", ...messageBuffers);
+    return concatenateArrayBuffers(...messageBuffers);
 }
 
 const pingMessage = createServerMessage("ping");
@@ -3751,76 +3939,7 @@ const isScanningAvailableRequestMessage = createServerMessage("isScanningAvailab
 const isScanningRequestMessage = createServerMessage("isScanning");
 const startScanRequestMessage = createServerMessage("startScan");
 const stopScanRequestMessage = createServerMessage("stopScan");
-
-const _console$2 = createConsole("IntervalManager", { log: false });
-
-class IntervalManager {
-    /** @type {function} */
-    #callback;
-    get callback() {
-        return this.#callback;
-    }
-    set callback(newCallback) {
-        _console$2.assertTypeWithError(newCallback, "function");
-        _console$2.log({ newCallback });
-        this.#callback = newCallback;
-        if (this.isRunning) {
-            this.restart();
-        }
-    }
-
-    /** @type {number} */
-    #interval;
-    get interval() {
-        return this.#interval;
-    }
-    set interval(newInterval) {
-        _console$2.assertTypeWithError(newInterval, "number");
-        _console$2.assertWithError(newInterval > 0, "interval must be above 0");
-        _console$2.log({ newInterval });
-        this.#interval = newInterval;
-        if (this.isRunning) {
-            this.restart();
-        }
-    }
-
-    /**
-     * @param {function} callback
-     * @param {number} interval
-     */
-    constructor(callback, interval) {
-        this.interval = interval;
-        this.callback = callback;
-    }
-
-    /** @type {number?} */
-    #intervalId = null;
-    get isRunning() {
-        return this.#intervalId != null;
-    }
-
-    start() {
-        if (this.isRunning) {
-            _console$2.log("interval already running");
-            return;
-        }
-        _console$2.log("starting interval");
-        this.#intervalId = setInterval(this.#callback, this.#interval);
-    }
-    stop() {
-        if (!this.isRunning) {
-            _console$2.log("interval already not running");
-            return;
-        }
-        _console$2.log("stopping interval");
-        clearInterval(this.#intervalId);
-        this.#intervalId = null;
-    }
-    restart() {
-        this.stop();
-        this.start();
-    }
-}
+const discoveredPeripheralsMessage = createServerMessage("discoveredPeripherals");
 
 const _console$1 = createConsole("WebSocketClient", { log: true });
 
@@ -3838,6 +3957,8 @@ const _console$1 = createConsole("WebSocketClient", { log: true });
  * @property {ClientEventType} type
  * @property {Object} message
  */
+
+
 
 class WebSocketClient {
     // EVENT DISPATCHER
@@ -3984,13 +4105,13 @@ class WebSocketClient {
     /** @param {Event} event */
     #onWebSocketOpen(event) {
         _console$1.log("webSocket.open", event);
-        this.#pingIntervalManager.start();
+        this.#pingTimer.start();
         this.#connectionStatus = "connected";
     }
     /** @param {import("ws").MessageEvent} event */
     async #onWebSocketMessage(event) {
         _console$1.log("webSocket.message", event);
-        this.#pingIntervalManager.restart();
+        this.#pingTimer.restart();
         const arrayBuffer = await event.data.arrayBuffer();
         const dataView = new DataView(arrayBuffer);
         this.#parseMessage(dataView);
@@ -4001,7 +4122,7 @@ class WebSocketClient {
 
         this.#connectionStatus = "not connected";
 
-        this.#pingIntervalManager.stop();
+        this.#pingTimer.stop();
         if (this.#reconnectOnDisconnection) {
             setTimeout(() => {
                 this.reconnect();
@@ -4034,6 +4155,7 @@ class WebSocketClient {
                 this.#dispatchEvent({ type: "isConnected", message: { isConnected: this.isConnected } });
                 if (this.isConnected) {
                     this.#requestIsScanningAvailable();
+                    this.#requestDiscoveredPeripherals();
                 } else {
                     this.#isScanningAvailable = false;
                     this.#isScanning = false;
@@ -4046,6 +4168,10 @@ class WebSocketClient {
     }
 
     // PARSING
+    static #TextDecoder = new TextDecoder();
+    get #textDecoder() {
+        return WebSocketClient.#TextDecoder;
+    }
     /** @param {DataView} dataView */
     #parseMessage(dataView) {
         _console$1.log("parseMessage", { dataView });
@@ -4077,6 +4203,23 @@ class WebSocketClient {
                         this.#isScanning = isScanning;
                     }
                     break;
+                case "discoveredPeripheral":
+                    {
+                        const discoveredPeripheralStringLength = dataView.getUint8(byteOffset++);
+                        console.log({ discoveredPeripheralStringLength });
+                        const discoveredPeripheralString = this.#textDecoder.decode(
+                            dataView.buffer.slice(byteOffset, byteOffset + discoveredPeripheralStringLength)
+                        );
+                        console.log({ discoveredPeripheralString });
+                        byteOffset += discoveredPeripheralStringLength;
+
+                        /** @type {DiscoveredPeripheral} */
+                        const discoveredPeripheral = JSON.parse(discoveredPeripheralString);
+                        console.log({ discoveredPeripheral });
+
+                        this.#onDiscoveredPeripheral(discoveredPeripheral);
+                    }
+                    break;
                 default:
                     _console$1.error(`uncaught messageType "${messageType}"`);
                     break;
@@ -4085,7 +4228,7 @@ class WebSocketClient {
     }
 
     // PING
-    #pingIntervalManager = new IntervalManager(this.#ping.bind(this), pingTimeout);
+    #pingTimer = new Timer(this.#ping.bind(this), pingTimeout);
     #ping() {
         this.#assertConnection();
         this.webSocket.send(pingMessage);
@@ -4163,6 +4306,16 @@ class WebSocketClient {
         } else {
             this.startScan();
         }
+    }
+
+    // PERIPHERALS
+    /** @param {DiscoveredPeripheral} discoveredPeripheral */
+    #onDiscoveredPeripheral(discoveredPeripheral) {
+        console.log({ discoveredPeripheral });
+    }
+    #requestDiscoveredPeripherals() {
+        this.#assertConnection();
+        this.webSocket.send(discoveredPeripheralsMessage);
     }
 }
 
@@ -4280,8 +4433,8 @@ class WebSocketServer {
     #onServerConnection(client) {
         _console.log("server.connection");
         client.isAlive = true;
-        client.pingClientIntervalManager = new IntervalManager(() => this.#pingClient(client), pingTimeout);
-        client.pingClientIntervalManager.start();
+        client.pingClientTimer = new Timer(() => this.#pingClient(client), pingTimeout);
+        client.pingClientTimer.start();
         addEventListeners(client, this.#boundClientListeners);
         this.#dispatchEvent({ type: "clientConnected", message: { client } });
     }
@@ -4312,7 +4465,7 @@ class WebSocketServer {
         _console.log("client.message");
         const client = event.target;
         client.isAlive = true;
-        client.pingClientIntervalManager.restart();
+        client.pingClientTimer.restart();
         const dataView = new DataView(dataToArrayBuffer(event.data));
         this.#parseClientMessage(client, dataView);
     }
@@ -4320,7 +4473,7 @@ class WebSocketServer {
     #onClientClose(event) {
         _console.log("client.close");
         const client = event.target;
-        client.pingClientIntervalManager.stop();
+        client.pingClientTimer.stop();
         removeEventListeners(client, this.#boundClientListeners);
         this.#dispatchEvent({ type: "clientDisconnected", message: { client } });
     }
@@ -4344,7 +4497,7 @@ class WebSocketServer {
 
             switch (messageType) {
                 case "ping":
-                    client.send(pongMessage);
+                    client.send(pongMessageBuffer);
                     break;
                 case "pong":
                     break;
@@ -4360,6 +4513,9 @@ class WebSocketServer {
                 case "stopScan":
                     Scanner.stopScan();
                     break;
+                case "discoveredPeripherals":
+                    client.send(this.#discoveredPeripheralsMessage);
+                    break;
                 default:
                     _console.error(`uncaught messageType "${messageType}"`);
                     break;
@@ -4369,10 +4525,10 @@ class WebSocketServer {
 
     // CLIENT MESSAGING
     get #isScanningAvailableMessage() {
-        return createServerMessage("isScanningAvailable", Scanner.isAvailable);
+        return createServerMessage({ type: "isScanningAvailable", data: Scanner.isAvailable });
     }
     get #isScanningMessage() {
-        return createServerMessage("isScanning", Scanner.isScanning);
+        return createServerMessage({ type: "isScanning", data: Scanner.isScanning });
     }
 
     /** @param {ws.BufferLike} message */
@@ -4414,18 +4570,19 @@ class WebSocketServer {
         const discoveredPeripheral = event.message.discoveredPeripheral;
         console.log(discoveredPeripheral);
 
-        this.#discoveredPeripherals[discoveredPeripheral.id] = discoveredPeripheral;
         this.#broadcastMessage(this.#createDiscoveredPeripheralMessage(discoveredPeripheral));
     }
 
-    /** @type {Object.<string,DiscoveredPeripheral>} */
-    #discoveredPeripherals = {};
-    get discoveredPeripherals() {
-        return this.#discoveredPeripherals;
-    }
     /** @param {DiscoveredPeripheral} discoveredPeripheral */
     #createDiscoveredPeripheralMessage(discoveredPeripheral) {
-        return createServerMessage("discoveredPeripheral", discoveredPeripheral);
+        return createServerMessage({ type: "discoveredPeripheral", data: discoveredPeripheral });
+    }
+    get #discoveredPeripheralsMessage() {
+        return createServerMessage(
+            ...Scanner.discoveredPeripheralsArray.map((discoveredPeripheral) => {
+                return { type: "discoveredPeripheral", data: discoveredPeripheral };
+            })
+        );
     }
 }
 
