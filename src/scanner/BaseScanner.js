@@ -143,6 +143,13 @@ class BaseScanner {
             return this.#discoveredPeripheralTimestamps[a.id] - this.#discoveredPeripheralTimestamps[b.id];
         });
     }
+    /** @param {string} discoveredPeripheralId */
+    #assertValidDiscoveredPeripheralId(discoveredPeripheralId) {
+        _console.assertWithError(
+            this.#discoveredPeripherals[discoveredPeripheralId],
+            `no discovered peripheral with id "${discoveredPeripheralId}"`
+        );
+    }
 
     /** @param {ScannerEvent} event */
     #onDiscoveredPeripheral(event) {
@@ -156,7 +163,7 @@ class BaseScanner {
     /** @type {Object.<string, number>} */
     #discoveredPeripheralTimestamps = {};
 
-    static #DiscoveredPeripheralExpirationTimeout = 1000;
+    static #DiscoveredPeripheralExpirationTimeout = 5000;
     static get DiscoveredPeripheralExpirationTimeout() {
         return this.#DiscoveredPeripheralExpirationTimeout;
     }
@@ -181,6 +188,18 @@ class BaseScanner {
                 this.dispatchEvent({ type: "expiredDiscoveredPeripheral", message: { discoveredPeripheral } });
             }
         });
+    }
+
+    // PERIPHERALS
+    /** @param {string} discoveredPeripheralId */
+    connectToDiscoveredPeripheral(discoveredPeripheralId) {
+        this.#assertIsAvailable();
+        this.#assertValidDiscoveredPeripheralId(discoveredPeripheralId);
+    }
+    /** @param {string} discoveredPeripheralId */
+    disconnectFromDiscoveredPeripheral(discoveredPeripheralId) {
+        this.#assertIsAvailable();
+        this.#assertValidDiscoveredPeripheralId(discoveredPeripheralId);
     }
 
     // MISC

@@ -10,10 +10,12 @@ import {
     startScanRequestMessage,
     stopScanRequestMessage,
     discoveredPeripheralsMessage,
+    createServerMessage,
 } from "../ServerUtils.js";
 import { addEventListeners, removeEventListeners } from "../../utils/EventDispatcher.js";
 import Timer from "../../utils/Timer.js";
 import EventDispatcher from "../../utils/EventDispatcher.js";
+import Device from "../../Device.js";
 
 const _console = createConsole("WebSocketClient", { log: true });
 
@@ -255,9 +257,12 @@ class WebSocketClient {
         while (byteOffset < dataView.byteLength) {
             const messageTypeEnum = dataView.getUint8(byteOffset++);
             const messageType = ServerMessageTypes[messageTypeEnum];
+            const messageByteLength = dataView.getUint8(byteOffset++);
 
-            _console.log({ messageTypeEnum, messageType });
+            _console.log({ messageTypeEnum, messageType, messageByteLength });
             _console.assertWithError(messageType, `invalid messageTypeEnum ${messageTypeEnum}`);
+
+            let _byteOffset = byteOffset;
 
             switch (messageType) {
                 case "ping":
@@ -267,27 +272,27 @@ class WebSocketClient {
                     break;
                 case "isScanningAvailable":
                     {
-                        const isScanningAvailable = Boolean(dataView.getUint8(byteOffset++));
+                        const isScanningAvailable = Boolean(dataView.getUint8(_byteOffset++));
                         _console.log({ isScanningAvailable });
                         this.#isScanningAvailable = isScanningAvailable;
                     }
                     break;
                 case "isScanning":
                     {
-                        const isScanning = Boolean(dataView.getUint8(byteOffset++));
+                        const isScanning = Boolean(dataView.getUint8(_byteOffset++));
                         _console.log({ isScanning });
                         this.#isScanning = isScanning;
                     }
                     break;
                 case "discoveredPeripheral":
                     {
-                        const discoveredPeripheralStringLength = dataView.getUint8(byteOffset++);
+                        const discoveredPeripheralStringLength = dataView.getUint8(_byteOffset++);
                         _console.log({ discoveredPeripheralStringLength });
                         const discoveredPeripheralString = this.#textDecoder.decode(
-                            dataView.buffer.slice(byteOffset, byteOffset + discoveredPeripheralStringLength)
+                            dataView.buffer.slice(_byteOffset, _byteOffset + discoveredPeripheralStringLength)
                         );
                         _console.log({ discoveredPeripheralString });
-                        byteOffset += discoveredPeripheralStringLength;
+                        _byteOffset += discoveredPeripheralStringLength;
 
                         /** @type {DiscoveredPeripheral} */
                         const discoveredPeripheral = JSON.parse(discoveredPeripheralString);
@@ -298,11 +303,11 @@ class WebSocketClient {
                     break;
                 case "expiredDiscoveredPeripheral":
                     {
-                        const discoveredPeripheralIdStringLength = dataView.getUint8(byteOffset++);
+                        const discoveredPeripheralIdStringLength = dataView.getUint8(_byteOffset++);
                         const discoveredPeripheralId = this.#textDecoder.decode(
-                            dataView.buffer.slice(byteOffset, byteOffset + discoveredPeripheralIdStringLength)
+                            dataView.buffer.slice(_byteOffset, _byteOffset + discoveredPeripheralIdStringLength)
                         );
-                        byteOffset += discoveredPeripheralIdStringLength;
+                        _byteOffset += discoveredPeripheralIdStringLength;
                         this.#onExpiredDiscoveredPeripheral(discoveredPeripheralId);
                     }
                     break;
@@ -310,6 +315,7 @@ class WebSocketClient {
                     _console.error(`uncaught messageType "${messageType}"`);
                     break;
             }
+            byteOffset += messageByteLength;
         }
     }
 
@@ -400,6 +406,14 @@ class WebSocketClient {
     get discoveredPeripherals() {
         return this.#discoveredPeripherals;
     }
+    /** @param {string} discoveredPeripheralId */
+    #assertValidDiscoveredPeripheralId(discoveredPeripheralId) {
+        _console.assertTypeWithError(discoveredPeripheralId, "string");
+        _console.assertWithError(
+            this.#discoveredPeripherals[discoveredPeripheralId],
+            `no discoveredPeripheral found with id "${discoveredPeripheralId}"`
+        );
+    }
 
     /** @param {DiscoveredPeripheral} discoveredPeripheral */
     #onDiscoveredPeripheral(discoveredPeripheral) {
@@ -424,15 +438,44 @@ class WebSocketClient {
         }
     }
 
+    // PERIPHERAL CONNECTION
+
     /** @param {string} peripheralId */
     connectToPeripheral(peripheralId) {
-        this.#assertConnection();
-        _console.assertTypeWithError(peripheralId, "string");
+        this.#requestConnectionToPeripheral(peripheralId);
     }
     /** @param {string} peripheralId */
     disconnectFromPeripheral(peripheralId) {
+        this.#requestDisconnectionFromPeripheral(peripheralId);
+    }
+
+    /** @param {string} peripheralId */
+    #requestConnectionToPeripheral(peripheralId) {
         this.#assertConnection();
         _console.assertTypeWithError(peripheralId, "string");
+        this.webSocket.send(this.#createConnectionToPeripheralMessage(peripheralId));
+    }
+    /** @param {string} peripheralId */
+    #requestDisconnectionFromPeripheral(peripheralId) {
+        this.#assertConnection();
+        _console.assertTypeWithError(peripheralId, "string");
+        this.webSocket.send(this.#createDisconnectFromPeripheralMessage(peripheralId));
+    }
+
+    /** @param {string} peripheralId */
+    #createConnectionToPeripheralMessage(peripheralId) {
+        return createServerMessage({ type: "connectToPeripheral", data: peripheralId });
+    }
+    /** @param {string} peripheralId */
+    #createDisconnectFromPeripheralMessage(peripheralId) {
+        return createServerMessage({ type: "disconnectFromPeripheral", data: peripheralId });
+    }
+
+    // DEVICES
+    /** @type {Object.<string, Device>} */
+    #devices = {};
+    get devices() {
+        return this.#devices;
     }
 }
 

@@ -88,11 +88,7 @@ client.addEventListener("isScanningAvailable", () => {
 /** @type {HTMLButtonElement} */
 const toggleScanButton = document.getElementById("toggleScan");
 toggleScanButton.addEventListener("click", () => {
-    if (client.isScanning) {
-        client.stopScan();
-    } else {
-        client.startScan();
-    }
+    client.toggleScan();
 });
 client.addEventListener("isScanningAvailable", () => {
     toggleScanButton.disabled = !client.isScanningAvailable;
@@ -123,7 +119,18 @@ client.addEventListener("discoveredPeripheral", (event) => {
         discoveredPeripheralContainer = discoveredPeripheralTemplate.content
             .cloneNode(true)
             .querySelector(".discoveredPeripheral");
-        discoveredPeripheralContainer.dataset.discoveredPeripheralId = discoveredPeripheral.id;
+
+        /** @type {HTMLButtonElement} */
+        const toggleConnectionButton = discoveredPeripheralContainer.querySelector(".toggleConnection");
+        toggleConnectionButton.addEventListener("click", () => {
+            const device = client.devices[discoveredPeripheral.id];
+            if (device) {
+                device.toggleConnection();
+            } else {
+                client.connectToPeripheral(discoveredPeripheral.id);
+            }
+        });
+
         discoveredPeripheralContainers[discoveredPeripheral.id] = discoveredPeripheralContainer;
         discoveredPeripheralsContainer.appendChild(discoveredPeripheralContainer);
     }

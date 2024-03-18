@@ -179,8 +179,9 @@ class WebSocketServer {
         while (byteOffset < dataView.byteLength) {
             const messageTypeEnum = dataView.getUint8(byteOffset++);
             const messageType = ServerMessageTypes[messageTypeEnum];
+            const messageByteLength = dataView.getUint8(byteOffset++);
 
-            _console.log({ messageTypeEnum, messageType });
+            _console.log({ messageTypeEnum, messageType, messageByteLength });
             _console.assertWithError(messageType, `invalid messageTypeEnum ${messageTypeEnum}`);
 
             switch (messageType) {
@@ -204,10 +205,22 @@ class WebSocketServer {
                 case "discoveredPeripherals":
                     client.send(this.#discoveredPeripheralsMessage);
                     break;
+                case "connectToPeripheral":
+                    // FILL
+
+                    break;
+                case "disconnectFromPeripheral":
+                    // FILL
+                    break;
+                case "disconnectFromAllPeripherals":
+                    // FILL
+                    break;
                 default:
                     _console.error(`uncaught messageType "${messageType}"`);
                     break;
             }
+
+            byteOffset += messageByteLength;
         }
     }
 

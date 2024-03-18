@@ -16,9 +16,9 @@ export const reconnectTimeout = 3_000;
  * | "discoveredPeripheral"
  * | "expiredDiscoveredPeripheral"
  * | "discoveredPeripherals"
- * | "connect"
- * | "disconnect"
- * | "disconnectAll"
+ * | "connectToPeripheral"
+ * | "disconnectFromPeripheral"
+ * | "disconnectFromAllPeripherals"
  * | "peripheralConnectionState"
  * | "connectedPeripherals"
  * | "disconnectedPeripherals"
@@ -46,6 +46,8 @@ export const ServerMessageTypes = [
     "discoveredPeripherals",
     "expiredDiscoveredPeripheral",
     "peripheralRSSI",
+    "connectToPeripheral",
+    "disconnectFromPeripheral",
 ];
 
 /** @param {ServerMessageType} serverMessageType */
@@ -77,7 +79,14 @@ export function createServerMessage(...messages) {
             message.data = [];
         }
 
-        return concatenateArrayBuffers(getServerMessageTypeEnum(message.type), ...message.data);
+        const messageDataArrayBuffer = concatenateArrayBuffers(...message.data);
+        const messageDataArrayBufferByteLength = messageDataArrayBuffer.byteLength;
+
+        return concatenateArrayBuffers(
+            getServerMessageTypeEnum(message.type),
+            messageDataArrayBufferByteLength,
+            messageDataArrayBuffer
+        );
     });
     _console.log("messageBuffers", ...messageBuffers);
     return concatenateArrayBuffers(...messageBuffers);

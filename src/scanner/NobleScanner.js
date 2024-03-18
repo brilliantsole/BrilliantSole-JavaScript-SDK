@@ -148,6 +148,14 @@ class NobleScanner extends BaseScanner {
     // DISCOVERED PERIPHERALS
     /** @type {Object.<string, noble.Peripheral>} */
     #noblePeripherals = {};
+    /** @param {string} noblePeripheralId */
+    #assertValidNoblePeripheralId(noblePeripheralId) {
+        _console.assertTypeWithError(noblePeripheralId, "string");
+        _console.assertWithError(
+            this.#noblePeripherals[noblePeripheralId],
+            `no noblePeripheral found with id "${noblePeripheralId}"`
+        );
+    }
 
     // NOBLE PERIPHERAL LISTENERS
     #boundNoblePeripheralListeners = {
@@ -172,6 +180,24 @@ class NobleScanner extends BaseScanner {
     #onNoblePeripheralServicesDiscover() {
         // FILL
         console.log(...arguments);
+    }
+
+    // PERIPHERALS
+    /** @param {string} discoveredPeripheralId */
+    connectToDiscoveredPeripheral(discoveredPeripheralId) {
+        super.connectToDiscoveredPeripheral(discoveredPeripheralId);
+        this.#assertValidNoblePeripheralId(discoveredPeripheralId);
+        const noblePeripheral = this.#noblePeripherals[discoveredPeripheralId];
+        _console.log("connecting to discoveredPeripheral...", discoveredPeripheralId);
+        noblePeripheral.connectAsync();
+    }
+    /** @param {string} discoveredPeripheralId */
+    disconnectFromDiscoveredPeripheral(discoveredPeripheralId) {
+        super.disconnectFromDiscoveredPeripheral(discoveredPeripheralId);
+        this.#assertValidNoblePeripheralId(discoveredPeripheralId);
+        const noblePeripheral = this.#noblePeripherals[discoveredPeripheralId];
+        _console.log("disconnecting from discoveredPeripheral...", discoveredPeripheralId);
+        noblePeripheral.disconnectAsync();
     }
 }
 

@@ -279,6 +279,16 @@ class Device {
         return this.connectionManager.disconnect();
     }
 
+    toggleConnection() {
+        if (this.isConnected) {
+            this.disconnect();
+        } else if (this.canReconnect) {
+            this.reconnect();
+        } else {
+            this.connect();
+        }
+    }
+
     get connectionStatus() {
         return this.#connectionManager?.status;
     }
