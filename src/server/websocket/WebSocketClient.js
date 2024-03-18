@@ -11,6 +11,7 @@ import {
     stopScanRequestMessage,
     discoveredPeripheralsMessage,
     createServerMessage,
+    parseStringFromDataView,
 } from "../ServerUtils.js";
 import { addEventListeners, removeEventListeners } from "../../utils/EventDispatcher.js";
 import Timer from "../../utils/Timer.js";
@@ -286,13 +287,9 @@ class WebSocketClient {
                     break;
                 case "discoveredPeripheral":
                     {
-                        const discoveredPeripheralStringLength = dataView.getUint8(_byteOffset++);
-                        _console.log({ discoveredPeripheralStringLength });
-                        const discoveredPeripheralString = this.#textDecoder.decode(
-                            dataView.buffer.slice(_byteOffset, _byteOffset + discoveredPeripheralStringLength)
-                        );
+                        const discoveredPeripheralString = parseStringFromDataView(dataView, _byteOffset);
                         _console.log({ discoveredPeripheralString });
-                        _byteOffset += discoveredPeripheralStringLength;
+                        _byteOffset += discoveredPeripheralString.length;
 
                         /** @type {DiscoveredPeripheral} */
                         const discoveredPeripheral = JSON.parse(discoveredPeripheralString);
@@ -303,11 +300,8 @@ class WebSocketClient {
                     break;
                 case "expiredDiscoveredPeripheral":
                     {
-                        const discoveredPeripheralIdStringLength = dataView.getUint8(_byteOffset++);
-                        const discoveredPeripheralId = this.#textDecoder.decode(
-                            dataView.buffer.slice(_byteOffset, _byteOffset + discoveredPeripheralIdStringLength)
-                        );
-                        _byteOffset += discoveredPeripheralIdStringLength;
+                        const discoveredPeripheralId = parseStringFromDataView(dataView, _byteOffset);
+                        _byteOffset += discoveredPeripheralId.length;
                         this.#onExpiredDiscoveredPeripheral(discoveredPeripheralId);
                     }
                     break;

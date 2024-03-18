@@ -92,6 +92,19 @@ export function createServerMessage(...messages) {
     return concatenateArrayBuffers(...messageBuffers);
 }
 
+const textDecoder = new TextDecoder();
+
+/**
+ * @param {DataView} dataView
+ * @param {number} byteOffset
+ */
+export function parseStringFromDataView(dataView, byteOffset) {
+    const stringLength = dataView.getUint8(byteOffset++);
+    const string = textDecoder.decode(dataView.buffer.slice(byteOffset, byteOffset + stringLength));
+    byteOffset += stringLength;
+    return string;
+}
+
 export const pingMessage = createServerMessage("ping");
 export const pongMessage = createServerMessage("pong");
 export const isScanningAvailableRequestMessage = createServerMessage("isScanningAvailable");

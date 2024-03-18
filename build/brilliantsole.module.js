@@ -3363,16 +3363,14 @@ class BaseScanner {
         });
     }
 
-    // PERIPHERALS
-    /** @param {string} discoveredPeripheralId */
-    connectToDiscoveredPeripheral(discoveredPeripheralId) {
+    // PERIPHERAL CONNECTION
+    /** @param {string} peripheralId */
+    connectToPeripheral(peripheralId) {
         this.#assertIsAvailable();
-        this.#assertValidDiscoveredPeripheralId(discoveredPeripheralId);
     }
-    /** @param {string} discoveredPeripheralId */
-    disconnectFromDiscoveredPeripheral(discoveredPeripheralId) {
+    /** @param {string} peripheralId */
+    disconnectFromPeripheral(peripheralId) {
         this.#assertIsAvailable();
-        this.#assertValidDiscoveredPeripheralId(discoveredPeripheralId);
     }
 
     // MISC
@@ -3382,7 +3380,7 @@ class BaseScanner {
     }
 }
 
-const _console$7 = createConsole("NobleScanner", { log: false });
+const _console$7 = createConsole("NobleScanner", { log: true });
 
 let isSupported = false;
 
@@ -3461,8 +3459,9 @@ class NobleScanner extends BaseScanner {
     #onNobleDiscover(noblePeripheral) {
         _console$7.log("onNobleDiscover", noblePeripheral);
         if (!this.#noblePeripherals[noblePeripheral.id]) {
+            noblePeripheral._scanner = this;
             this.#noblePeripherals[noblePeripheral.id] = noblePeripheral;
-            addEventListeners(noblePeripheral, this.#boundNoblePeripheralListeners);
+            addEventListeners(noblePeripheral, this.#unboundNoblePeripheralListeners);
         }
 
         /** @type {DiscoveredPeripheral} */
@@ -3518,7 +3517,7 @@ class NobleScanner extends BaseScanner {
         if (noblePeripheral) {
             // disconnect?
             delete this.#noblePeripherals[discoveredPeripheral.id];
-            removeEventListeners(noblePeripheral, this.#boundNoblePeripheralListeners);
+            removeEventListeners(noblePeripheral, this.#unboundNoblePeripheralListeners);
         }
     }
 
@@ -3535,45 +3534,69 @@ class NobleScanner extends BaseScanner {
     }
 
     // NOBLE PERIPHERAL LISTENERS
-    #boundNoblePeripheralListeners = {
-        connect: this.#onNoblePeripheralConnect.bind(this),
-        disconnect: this.#onNoblePeripheralDisconnect.bind(this),
-        rssiUpdate: this.#onNoblePeripheralRssiUpdate.bind(this),
-        servicesDiscover: this.#onNoblePeripheralServicesDiscover.bind(this),
+    #unboundNoblePeripheralListeners = {
+        connect: this.#onNoblePeripheralConnect,
+        disconnect: this.#onNoblePeripheralDisconnect,
+        rssiUpdate: this.#onNoblePeripheralRssiUpdate,
+        servicesDiscover: this.#onNoblePeripheralServicesDiscover,
     };
 
     #onNoblePeripheralConnect() {
-        // FILL
-        console.log(...arguments);
+        this._scanner.onNoblePeripheralConnect(this);
     }
+    /** @param {noble.Peripheral} noblePeripheral */
+    onNoblePeripheralConnect(noblePeripheral) {
+        _console$7.log("onNoblePeripheralConnect", noblePeripheral);
+    }
+
     #onNoblePeripheralDisconnect() {
-        // FILL
-        console.log(...arguments);
+        this._scanner.onNoblePeripheralConnect(this);
     }
-    #onNoblePeripheralRssiUpdate() {
-        // FILL
-        console.log(...arguments);
+    /** @param {noble.Peripheral} noblePeripheral */
+    onNoblePeripheralDisconnect(noblePeripheral) {
+        _console$7.log("onNoblePeripheralConnect", noblePeripheral);
     }
-    #onNoblePeripheralServicesDiscover() {
-        // FILL
-        console.log(...arguments);
+
+    /** @param {number} rssi */
+    #onNoblePeripheralRssiUpdate(rssi) {
+        this._scanner.onNoblePeripheralRssiUpdate(this, rssi);
+    }
+    /**
+     * @param {noble.Peripheral} noblePeripheral
+     * @param {number} rssi
+     */
+    onNoblePeripheralRssiUpdate(noblePeripheral, rssi) {
+        _console$7.log("onNoblePeripheralConnect", noblePeripheral, rssi);
+    }
+
+    /** @param {noble.Service[]} services */
+    #onNoblePeripheralServicesDiscover(services) {
+        this._scanner.onNoblePeripheralServicesDiscover(this, services);
+    }
+    /**
+     *
+     * @param {noble.Peripheral} noblePeripheral
+     * @param {noble.Service[]} services
+     */
+    onNoblePeripheralServicesDiscover(noblePeripheral, services) {
+        _console$7.log("onNoblePeripheralConnect", noblePeripheral, services);
     }
 
     // PERIPHERALS
-    /** @param {string} discoveredPeripheralId */
-    connectToDiscoveredPeripheral(discoveredPeripheralId) {
-        super.connectToDiscoveredPeripheral(discoveredPeripheralId);
-        this.#assertValidNoblePeripheralId(discoveredPeripheralId);
-        const noblePeripheral = this.#noblePeripherals[discoveredPeripheralId];
-        _console$7.log("connecting to discoveredPeripheral...", discoveredPeripheralId);
+    /** @param {string} peripheralId */
+    connectToPeripheral(peripheralId) {
+        super.connectToPeripheral(peripheralId);
+        this.#assertValidNoblePeripheralId(peripheralId);
+        const noblePeripheral = this.#noblePeripherals[peripheralId];
+        _console$7.log("connecting to discoveredPeripheral...", peripheralId);
         noblePeripheral.connectAsync();
     }
-    /** @param {string} discoveredPeripheralId */
-    disconnectFromDiscoveredPeripheral(discoveredPeripheralId) {
-        super.disconnectFromDiscoveredPeripheral(discoveredPeripheralId);
-        this.#assertValidNoblePeripheralId(discoveredPeripheralId);
-        const noblePeripheral = this.#noblePeripherals[discoveredPeripheralId];
-        _console$7.log("disconnecting from discoveredPeripheral...", discoveredPeripheralId);
+    /** @param {string} peripheralId */
+    disconnectFromPeripheral(peripheralId) {
+        super.disconnectFromPeripheral(peripheralId);
+        this.#assertValidNoblePeripheralId(peripheralId);
+        const noblePeripheral = this.#noblePeripherals[peripheralId];
+        _console$7.log("disconnecting from discoveredPeripheral...", peripheralId);
         noblePeripheral.disconnectAsync();
     }
 }
@@ -4030,6 +4053,19 @@ function createServerMessage(...messages) {
     return concatenateArrayBuffers(...messageBuffers);
 }
 
+const textDecoder = new TextDecoder();
+
+/**
+ * @param {DataView} dataView
+ * @param {number} byteOffset
+ */
+function parseStringFromDataView(dataView, byteOffset) {
+    const stringLength = dataView.getUint8(byteOffset++);
+    const string = textDecoder.decode(dataView.buffer.slice(byteOffset, byteOffset + stringLength));
+    byteOffset += stringLength;
+    return string;
+}
+
 const pingMessage = createServerMessage("ping");
 const pongMessage = createServerMessage("pong");
 const isScanningAvailableRequestMessage = createServerMessage("isScanningAvailable");
@@ -4307,13 +4343,9 @@ class WebSocketClient {
                     break;
                 case "discoveredPeripheral":
                     {
-                        const discoveredPeripheralStringLength = dataView.getUint8(_byteOffset++);
-                        _console$1.log({ discoveredPeripheralStringLength });
-                        const discoveredPeripheralString = this.#textDecoder.decode(
-                            dataView.buffer.slice(_byteOffset, _byteOffset + discoveredPeripheralStringLength)
-                        );
+                        const discoveredPeripheralString = parseStringFromDataView(dataView, _byteOffset);
                         _console$1.log({ discoveredPeripheralString });
-                        _byteOffset += discoveredPeripheralStringLength;
+                        _byteOffset += discoveredPeripheralString.length;
 
                         /** @type {DiscoveredPeripheral} */
                         const discoveredPeripheral = JSON.parse(discoveredPeripheralString);
@@ -4324,11 +4356,8 @@ class WebSocketClient {
                     break;
                 case "expiredDiscoveredPeripheral":
                     {
-                        const discoveredPeripheralIdStringLength = dataView.getUint8(_byteOffset++);
-                        const discoveredPeripheralId = this.#textDecoder.decode(
-                            dataView.buffer.slice(_byteOffset, _byteOffset + discoveredPeripheralIdStringLength)
-                        );
-                        _byteOffset += discoveredPeripheralIdStringLength;
+                        const discoveredPeripheralId = parseStringFromDataView(dataView, _byteOffset);
+                        _byteOffset += discoveredPeripheralId.length;
                         this.#onExpiredDiscoveredPeripheral(discoveredPeripheralId);
                     }
                     break;
@@ -4663,6 +4692,13 @@ class WebSocketServer {
         _console.log("client.error");
     }
 
+    // PARSING
+
+    static #TextDecoder = new TextDecoder();
+    get #textDecoder() {
+        return WebSocketServer.#TextDecoder;
+    }
+
     /**
      * @param {ws.WebSocket} client
      * @param {DataView} dataView
@@ -4676,6 +4712,8 @@ class WebSocketServer {
 
             _console.log({ messageTypeEnum, messageType, messageByteLength });
             _console.assertWithError(messageType, `invalid messageTypeEnum ${messageTypeEnum}`);
+
+            let _byteOffset = byteOffset;
 
             switch (messageType) {
                 case "ping":
@@ -4699,11 +4737,18 @@ class WebSocketServer {
                     client.send(this.#discoveredPeripheralsMessage);
                     break;
                 case "connectToPeripheral":
-                    // FILL
-
+                    {
+                        const peripheralId = parseStringFromDataView(dataView, _byteOffset);
+                        _byteOffset += peripheralId.length;
+                        Scanner.connectToPeripheral(peripheralId);
+                    }
                     break;
                 case "disconnectFromPeripheral":
-                    // FILL
+                    {
+                        const peripheralId = parseStringFromDataView(dataView, _byteOffset);
+                        _byteOffset += peripheralId.length;
+                        Scanner.disconnectFromPeripheral(peripheralId);
+                    }
                     break;
                 case "disconnectFromAllPeripherals":
                     // FILL

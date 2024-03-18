@@ -190,16 +190,14 @@ class BaseScanner {
         });
     }
 
-    // PERIPHERALS
-    /** @param {string} discoveredPeripheralId */
-    connectToDiscoveredPeripheral(discoveredPeripheralId) {
+    // PERIPHERAL CONNECTION
+    /** @param {string} peripheralId */
+    connectToPeripheral(peripheralId) {
         this.#assertIsAvailable();
-        this.#assertValidDiscoveredPeripheralId(discoveredPeripheralId);
     }
-    /** @param {string} discoveredPeripheralId */
-    disconnectFromDiscoveredPeripheral(discoveredPeripheralId) {
+    /** @param {string} peripheralId */
+    disconnectFromPeripheral(peripheralId) {
         this.#assertIsAvailable();
-        this.#assertValidDiscoveredPeripheralId(discoveredPeripheralId);
     }
 
     // MISC

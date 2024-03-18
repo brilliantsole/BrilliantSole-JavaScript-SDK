@@ -5,7 +5,7 @@ import { addEventListeners, removeEventListeners } from "../utils/EventDispatche
 import { serviceUUIDs } from "../connection/bluetooth/bluetoothUUIDs.js";
 import Device from "../Device.js";
 
-const _console = createConsole("NobleScanner", { log: false });
+const _console = createConsole("NobleScanner", { log: true });
 
 let isSupported = false;
 
@@ -84,8 +84,9 @@ class NobleScanner extends BaseScanner {
     #onNobleDiscover(noblePeripheral) {
         _console.log("onNobleDiscover", noblePeripheral);
         if (!this.#noblePeripherals[noblePeripheral.id]) {
+            noblePeripheral._scanner = this;
             this.#noblePeripherals[noblePeripheral.id] = noblePeripheral;
-            addEventListeners(noblePeripheral, this.#boundNoblePeripheralListeners);
+            addEventListeners(noblePeripheral, this.#unboundNoblePeripheralListeners);
         }
 
         /** @type {DiscoveredPeripheral} */
@@ -141,7 +142,7 @@ class NobleScanner extends BaseScanner {
         if (noblePeripheral) {
             // disconnect?
             delete this.#noblePeripherals[discoveredPeripheral.id];
-            removeEventListeners(noblePeripheral, this.#boundNoblePeripheralListeners);
+            removeEventListeners(noblePeripheral, this.#unboundNoblePeripheralListeners);
         }
     }
 
@@ -158,45 +159,69 @@ class NobleScanner extends BaseScanner {
     }
 
     // NOBLE PERIPHERAL LISTENERS
-    #boundNoblePeripheralListeners = {
-        connect: this.#onNoblePeripheralConnect.bind(this),
-        disconnect: this.#onNoblePeripheralDisconnect.bind(this),
-        rssiUpdate: this.#onNoblePeripheralRssiUpdate.bind(this),
-        servicesDiscover: this.#onNoblePeripheralServicesDiscover.bind(this),
+    #unboundNoblePeripheralListeners = {
+        connect: this.#onNoblePeripheralConnect,
+        disconnect: this.#onNoblePeripheralDisconnect,
+        rssiUpdate: this.#onNoblePeripheralRssiUpdate,
+        servicesDiscover: this.#onNoblePeripheralServicesDiscover,
     };
 
     #onNoblePeripheralConnect() {
-        // FILL
-        console.log(...arguments);
+        this._scanner.onNoblePeripheralConnect(this);
     }
+    /** @param {noble.Peripheral} noblePeripheral */
+    onNoblePeripheralConnect(noblePeripheral) {
+        _console.log("onNoblePeripheralConnect", noblePeripheral);
+    }
+
     #onNoblePeripheralDisconnect() {
-        // FILL
-        console.log(...arguments);
+        this._scanner.onNoblePeripheralConnect(this);
     }
-    #onNoblePeripheralRssiUpdate() {
-        // FILL
-        console.log(...arguments);
+    /** @param {noble.Peripheral} noblePeripheral */
+    onNoblePeripheralDisconnect(noblePeripheral) {
+        _console.log("onNoblePeripheralConnect", noblePeripheral);
     }
-    #onNoblePeripheralServicesDiscover() {
-        // FILL
-        console.log(...arguments);
+
+    /** @param {number} rssi */
+    #onNoblePeripheralRssiUpdate(rssi) {
+        this._scanner.onNoblePeripheralRssiUpdate(this, rssi);
+    }
+    /**
+     * @param {noble.Peripheral} noblePeripheral
+     * @param {number} rssi
+     */
+    onNoblePeripheralRssiUpdate(noblePeripheral, rssi) {
+        _console.log("onNoblePeripheralConnect", noblePeripheral, rssi);
+    }
+
+    /** @param {noble.Service[]} services */
+    #onNoblePeripheralServicesDiscover(services) {
+        this._scanner.onNoblePeripheralServicesDiscover(this, services);
+    }
+    /**
+     *
+     * @param {noble.Peripheral} noblePeripheral
+     * @param {noble.Service[]} services
+     */
+    onNoblePeripheralServicesDiscover(noblePeripheral, services) {
+        _console.log("onNoblePeripheralConnect", noblePeripheral, services);
     }
 
     // PERIPHERALS
-    /** @param {string} discoveredPeripheralId */
-    connectToDiscoveredPeripheral(discoveredPeripheralId) {
-        super.connectToDiscoveredPeripheral(discoveredPeripheralId);
-        this.#assertValidNoblePeripheralId(discoveredPeripheralId);
-        const noblePeripheral = this.#noblePeripherals[discoveredPeripheralId];
-        _console.log("connecting to discoveredPeripheral...", discoveredPeripheralId);
+    /** @param {string} peripheralId */
+    connectToPeripheral(peripheralId) {
+        super.connectToPeripheral(peripheralId);
+        this.#assertValidNoblePeripheralId(peripheralId);
+        const noblePeripheral = this.#noblePeripherals[peripheralId];
+        _console.log("connecting to discoveredPeripheral...", peripheralId);
         noblePeripheral.connectAsync();
     }
-    /** @param {string} discoveredPeripheralId */
-    disconnectFromDiscoveredPeripheral(discoveredPeripheralId) {
-        super.disconnectFromDiscoveredPeripheral(discoveredPeripheralId);
-        this.#assertValidNoblePeripheralId(discoveredPeripheralId);
-        const noblePeripheral = this.#noblePeripherals[discoveredPeripheralId];
-        _console.log("disconnecting from discoveredPeripheral...", discoveredPeripheralId);
+    /** @param {string} peripheralId */
+    disconnectFromPeripheral(peripheralId) {
+        super.disconnectFromPeripheral(peripheralId);
+        this.#assertValidNoblePeripheralId(peripheralId);
+        const noblePeripheral = this.#noblePeripherals[peripheralId];
+        _console.log("disconnecting from discoveredPeripheral...", peripheralId);
         noblePeripheral.disconnectAsync();
     }
 }

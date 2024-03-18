@@ -1,7 +1,14 @@
 import { createConsole } from "../../utils/Console.js";
 import { isInNode } from "../../utils/environment.js";
 import { addEventListeners, removeEventListeners } from "../../utils/EventDispatcher.js";
-import { pingTimeout, pingMessage, ServerMessageTypes, pongMessage, createServerMessage } from "../ServerUtils.js";
+import {
+    pingTimeout,
+    pingMessage,
+    ServerMessageTypes,
+    pongMessage,
+    createServerMessage,
+    parseStringFromDataView,
+} from "../ServerUtils.js";
 import { concatenateArrayBuffers, dataToArrayBuffer } from "../../utils/ArrayBufferUtils.js";
 import Timer from "../../utils/Timer.js";
 import EventDispatcher from "../../utils/EventDispatcher.js";
@@ -170,6 +177,13 @@ class WebSocketServer {
         _console.log("client.error");
     }
 
+    // PARSING
+
+    static #TextDecoder = new TextDecoder();
+    get #textDecoder() {
+        return WebSocketServer.#TextDecoder;
+    }
+
     /**
      * @param {ws.WebSocket} client
      * @param {DataView} dataView
@@ -183,6 +197,8 @@ class WebSocketServer {
 
             _console.log({ messageTypeEnum, messageType, messageByteLength });
             _console.assertWithError(messageType, `invalid messageTypeEnum ${messageTypeEnum}`);
+
+            let _byteOffset = byteOffset;
 
             switch (messageType) {
                 case "ping":
@@ -206,11 +222,18 @@ class WebSocketServer {
                     client.send(this.#discoveredPeripheralsMessage);
                     break;
                 case "connectToPeripheral":
-                    // FILL
-
+                    {
+                        const peripheralId = parseStringFromDataView(dataView, _byteOffset);
+                        _byteOffset += peripheralId.length;
+                        scanner.connectToPeripheral(peripheralId);
+                    }
                     break;
                 case "disconnectFromPeripheral":
-                    // FILL
+                    {
+                        const peripheralId = parseStringFromDataView(dataView, _byteOffset);
+                        _byteOffset += peripheralId.length;
+                        scanner.disconnectFromPeripheral(peripheralId);
+                    }
                     break;
                 case "disconnectFromAllPeripherals":
                     // FILL
