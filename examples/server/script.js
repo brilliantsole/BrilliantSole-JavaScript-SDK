@@ -108,22 +108,57 @@ client.addEventListener("isScanning", () => {
 /** @type {HTMLTemplateElement} */
 const discoveredPeripheralTemplate = document.getElementById("discoveredPeripheralTemplate");
 const discoveredPeripheralsContainer = document.getElementById("discoveredPeripherals");
+/** @type {Object.<string, HTMLElement>} */
+let discoveredPeripheralContainers = {};
+
 client.addEventListener("discoveredPeripheral", (event) => {
     /** @type {DiscoveredPeripheral} */
     const discoveredPeripheral = event.message.discoveredPeripheral;
+    if (!discoveredPeripheral.name) {
+        return;
+    }
 
-    const discoveredPeripheralContainer = discoveredPeripheralTemplate.content
-        .cloneNode(true)
-        .querySelector(".discoveredPeripheral");
+    let discoveredPeripheralContainer = discoveredPeripheralContainers[discoveredPeripheral.id];
+    if (!discoveredPeripheralContainer) {
+        discoveredPeripheralContainer = discoveredPeripheralTemplate.content
+            .cloneNode(true)
+            .querySelector(".discoveredPeripheral");
+        discoveredPeripheralContainer.dataset.discoveredPeripheralId = discoveredPeripheral.id;
+        discoveredPeripheralContainers[discoveredPeripheral.id] = discoveredPeripheralContainer;
+        discoveredPeripheralsContainer.appendChild(discoveredPeripheralContainer);
+    }
 
-    discoveredPeripheralContainer.dataset.discoveredPeripheralId = discoveredPeripheral.id;
     updateDiscoveredPeripheralContainer(discoveredPeripheralContainer, discoveredPeripheral);
-
-    discoveredPeripheralsContainer.appendChild(discoveredPeripheralContainer);
 });
-client.addEventListener("not connected", () => {
+function clearDiscoveredPeripherals() {
     discoveredPeripheralsContainer.innerHTML = "";
+    discoveredPeripheralContainers = {};
+}
+client.addEventListener("not connected", () => {
+    clearDiscoveredPeripherals();
 });
+client.addEventListener("isScanning", () => {
+    if (client.isScanning) {
+        clearDiscoveredPeripherals();
+    }
+});
+
+client.addEventListener("expiredDiscoveredPeripheral", (event) => {
+    /** @type {DiscoveredPeripheral} */
+    const discoveredPeripheral = event.message.discoveredPeripheral;
+    if (!discoveredPeripheral.name) {
+        return;
+    }
+
+    let discoveredPeripheralContainer = discoveredPeripheralContainers[discoveredPeripheral.id];
+    if (discoveredPeripheralContainer) {
+        discoveredPeripheralContainer.remove();
+        delete discoveredPeripheralContainers[discoveredPeripheral.id];
+    } else {
+        console.warn(`no discoveredPeripheral container found with id "${discoveredPeripheral.id}"`);
+    }
+});
+
 /**
  * @param {HTMLElement} discoveredPeripheralContainer
  * @param {DiscoveredPeripheral} discoveredPeripheral

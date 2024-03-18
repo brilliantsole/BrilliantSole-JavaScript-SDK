@@ -3325,7 +3325,7 @@
 	    /** @type {Object.<string, number>} */
 	    #discoveredPeripheralTimestamps = {};
 
-	    static #DiscoveredPeripheralExpirationTimeout = 5000;
+	    static #DiscoveredPeripheralExpirationTimeout = 1000;
 	    static get DiscoveredPeripheralExpirationTimeout() {
 	        return this.#DiscoveredPeripheralExpirationTimeout;
 	    }
@@ -3335,13 +3335,14 @@
 	    #checkDiscoveredPeripheralsExpirationTimer = new Timer(this.#checkDiscoveredPeripheralsExpiration.bind(this), 1000);
 	    #checkDiscoveredPeripheralsExpiration() {
 	        const entries = Object.entries(this.#discoveredPeripherals);
-	        if ((entries.length = 0)) {
+	        if (entries.length == 0) {
 	            this.#checkDiscoveredPeripheralsExpirationTimer.stop();
 	            return;
 	        }
 	        const now = Date.now();
 	        entries.forEach(([id, discoveredPeripheral]) => {
 	            const timestamp = this.#discoveredPeripheralTimestamps[id];
+	            console.log(now - timestamp);
 	            if (now - timestamp > this.#discoveredPeripheralExpirationTimeout) {
 	                _console$8.log("discovered peripheral timeout");
 	                delete this.#discoveredPeripherals[id];
@@ -3436,6 +3437,11 @@
 	    /** @param {noble.Peripheral} noblePeripheral */
 	    #onNobleDiscover(noblePeripheral) {
 	        _console$7.log("onNobleDiscover", noblePeripheral);
+	        if (!this.#noblePeripherals[noblePeripheral.id]) {
+	            this.#noblePeripherals[noblePeripheral.id] = noblePeripheral;
+	            addEventListeners(noblePeripheral, this.#boundNoblePeripheralListeners);
+	        }
+
 	        /** @type {DiscoveredPeripheral} */
 	        const discoveredPeripheral = {
 	            name: noblePeripheral.advertisement.localName,
@@ -3443,7 +3449,6 @@
 	            //deviceType: Device.Types[noblePeripheral.advertisement.serviceData[serviceUUIDs[0]]],
 	            rssi: noblePeripheral.rssi,
 	        };
-	        this.#noblePeripherals[noblePeripheral.id] = noblePeripheral;
 	        this.dispatchEvent({ type: "discoveredPeripheral", message: { discoveredPeripheral } });
 	    }
 
@@ -3481,6 +3486,7 @@
 	    #boundBaseScannerListeners = {
 	        expiredDiscoveredPeripheral: this.#onExpiredDiscoveredPeripheral.bind(this),
 	    };
+
 	    /** @param {ScannerEvent} event */
 	    #onExpiredDiscoveredPeripheral(event) {
 	        /** @type {DiscoveredPeripheral} */
@@ -3489,12 +3495,38 @@
 	        if (noblePeripheral) {
 	            // disconnect?
 	            delete this.#noblePeripherals[discoveredPeripheral.id];
+	            removeEventListeners(noblePeripheral, this.#boundNoblePeripheralListeners);
 	        }
 	    }
 
 	    // DISCOVERED PERIPHERALS
 	    /** @type {Object.<string, noble.Peripheral>} */
 	    #noblePeripherals = {};
+
+	    // NOBLE PERIPHERAL LISTENERS
+	    #boundNoblePeripheralListeners = {
+	        connect: this.#onNoblePeripheralConnect.bind(this),
+	        disconnect: this.#onNoblePeripheralDisconnect.bind(this),
+	        rssiUpdate: this.#onNoblePeripheralRssiUpdate.bind(this),
+	        servicesDiscover: this.#onNoblePeripheralServicesDiscover.bind(this),
+	    };
+
+	    #onNoblePeripheralConnect() {
+	        // FILL
+	        console.log(...arguments);
+	    }
+	    #onNoblePeripheralDisconnect() {
+	        // FILL
+	        console.log(...arguments);
+	    }
+	    #onNoblePeripheralRssiUpdate() {
+	        // FILL
+	        console.log(...arguments);
+	    }
+	    #onNoblePeripheralServicesDiscover() {
+	        // FILL
+	        console.log(...arguments);
+	    }
 	}
 
 	const _console$6 = createConsole("Scanner", { log: false });
@@ -3955,7 +3987,7 @@
 
 	/** @typedef {"not connected" | "connecting" | "connected" | "disconnecting"} ClientConnectionStatus */
 
-	/** @typedef {ClientConnectionStatus | "connectionStatus" |  "isConnected" | "isScanningAvailable" | "isScanning" | "discoveredPeripheral"} ClientEventType */
+	/** @typedef {ClientConnectionStatus | "connectionStatus" |  "isConnected" | "isScanningAvailable" | "isScanning" | "discoveredPeripheral" | "expiredDiscoveredPeripheral"} ClientEventType */
 
 	/**
 	 * @typedef ClientEvent
@@ -3981,6 +4013,7 @@
 	        "isScanningAvailable",
 	        "isScanning",
 	        "discoveredPeripheral",
+	        "expiredDiscoveredPeripheral",
 	    ];
 	    static get EventTypes() {
 	        return this.#EventTypes;
@@ -4214,18 +4247,28 @@
 	                case "discoveredPeripheral":
 	                    {
 	                        const discoveredPeripheralStringLength = dataView.getUint8(byteOffset++);
-	                        console.log({ discoveredPeripheralStringLength });
+	                        _console$1.log({ discoveredPeripheralStringLength });
 	                        const discoveredPeripheralString = this.#textDecoder.decode(
 	                            dataView.buffer.slice(byteOffset, byteOffset + discoveredPeripheralStringLength)
 	                        );
-	                        console.log({ discoveredPeripheralString });
+	                        _console$1.log({ discoveredPeripheralString });
 	                        byteOffset += discoveredPeripheralStringLength;
 
 	                        /** @type {DiscoveredPeripheral} */
 	                        const discoveredPeripheral = JSON.parse(discoveredPeripheralString);
-	                        console.log({ discoveredPeripheral });
+	                        _console$1.log({ discoveredPeripheral });
 
 	                        this.#onDiscoveredPeripheral(discoveredPeripheral);
+	                    }
+	                    break;
+	                case "expiredDiscoveredPeripheral":
+	                    {
+	                        const discoveredPeripheralIdStringLength = dataView.getUint8(byteOffset++);
+	                        const discoveredPeripheralId = this.#textDecoder.decode(
+	                            dataView.buffer.slice(byteOffset, byteOffset + discoveredPeripheralIdStringLength)
+	                        );
+	                        byteOffset += discoveredPeripheralIdStringLength;
+	                        this.#onExpiredDiscoveredPeripheral(discoveredPeripheralId);
 	                    }
 	                    break;
 	                default:
@@ -4317,14 +4360,44 @@
 	    }
 
 	    // PERIPHERALS
+	    /** @type {Object.<string, DiscoveredPeripheral>} */
+	    #discoveredPeripherals = {};
+	    get discoveredPeripherals() {
+	        return this.#discoveredPeripherals;
+	    }
+
 	    /** @param {DiscoveredPeripheral} discoveredPeripheral */
 	    #onDiscoveredPeripheral(discoveredPeripheral) {
-	        console.log({ discoveredPeripheral });
+	        _console$1.log({ discoveredPeripheral });
+	        this.#discoveredPeripherals[discoveredPeripheral.id] = discoveredPeripheral;
 	        this.#dispatchEvent({ type: "discoveredPeripheral", message: { discoveredPeripheral } });
 	    }
 	    #requestDiscoveredPeripherals() {
 	        this.#assertConnection();
 	        this.webSocket.send(discoveredPeripheralsMessage);
+	    }
+	    /** @param {string} discoveredPeripheralId */
+	    #onExpiredDiscoveredPeripheral(discoveredPeripheralId) {
+	        _console$1.log({ discoveredPeripheralId });
+	        let discoveredPeripheral = this.#discoveredPeripherals[discoveredPeripheralId];
+	        if (discoveredPeripheral) {
+	            _console$1.log({ expiredDiscoveredPeripheral: discoveredPeripheral });
+	            delete this.#discoveredPeripherals[discoveredPeripheralId];
+	            this.#dispatchEvent({ type: "expiredDiscoveredPeripheral", message: { discoveredPeripheral } });
+	        } else {
+	            _console$1.warn(`no discoveredPeripheral found with id "${discoveredPeripheralId}"`);
+	        }
+	    }
+
+	    /** @param {string} peripheralId */
+	    connectToPeripheral(peripheralId) {
+	        this.#assertConnection();
+	        _console$1.assertTypeWithError(peripheralId, "string");
+	    }
+	    /** @param {string} peripheralId */
+	    disconnectFromPeripheral(peripheralId) {
+	        this.#assertConnection();
+	        _console$1.assertTypeWithError(peripheralId, "string");
 	    }
 	}
 
@@ -4563,6 +4636,7 @@
 	        isAvailable: this.#onScannerIsAvailable.bind(this),
 	        isScanning: this.#onScannerIsScanning.bind(this),
 	        discoveredPeripheral: this.#onScannerDiscoveredPeripheral.bind(this),
+	        expiredDiscoveredPeripheral: this.#onExpiredDiscoveredPeripheral.bind(this),
 	    };
 
 	    /** @param {ScannerEvent} event */
@@ -4581,6 +4655,14 @@
 
 	        this.#broadcastMessage(this.#createDiscoveredPeripheralMessage(discoveredPeripheral));
 	    }
+	    /** @param {ScannerEvent} event */
+	    #onExpiredDiscoveredPeripheral(event) {
+	        /** @type {DiscoveredPeripheral} */
+	        const discoveredPeripheral = event.message.discoveredPeripheral;
+	        console.log("expired", discoveredPeripheral);
+
+	        this.#broadcastMessage(this.#createExpiredDiscoveredPeripheralMessage(discoveredPeripheral));
+	    }
 
 	    /** @param {DiscoveredPeripheral} discoveredPeripheral */
 	    #createDiscoveredPeripheralMessage(discoveredPeripheral) {
@@ -4592,6 +4674,11 @@
 	                return { type: "discoveredPeripheral", data: discoveredPeripheral };
 	            })
 	        );
+	    }
+
+	    /** @param {DiscoveredPeripheral} discoveredPeripheral */
+	    #createExpiredDiscoveredPeripheralMessage(discoveredPeripheral) {
+	        return createServerMessage({ type: "expiredDiscoveredPeripheral", data: discoveredPeripheral.id });
 	    }
 	}
 

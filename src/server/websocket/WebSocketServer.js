@@ -242,6 +242,7 @@ class WebSocketServer {
         isAvailable: this.#onScannerIsAvailable.bind(this),
         isScanning: this.#onScannerIsScanning.bind(this),
         discoveredPeripheral: this.#onScannerDiscoveredPeripheral.bind(this),
+        expiredDiscoveredPeripheral: this.#onExpiredDiscoveredPeripheral.bind(this),
     };
 
     /** @param {ScannerEvent} event */
@@ -260,6 +261,14 @@ class WebSocketServer {
 
         this.#broadcastMessage(this.#createDiscoveredPeripheralMessage(discoveredPeripheral));
     }
+    /** @param {ScannerEvent} event */
+    #onExpiredDiscoveredPeripheral(event) {
+        /** @type {DiscoveredPeripheral} */
+        const discoveredPeripheral = event.message.discoveredPeripheral;
+        console.log("expired", discoveredPeripheral);
+
+        this.#broadcastMessage(this.#createExpiredDiscoveredPeripheralMessage(discoveredPeripheral));
+    }
 
     /** @param {DiscoveredPeripheral} discoveredPeripheral */
     #createDiscoveredPeripheralMessage(discoveredPeripheral) {
@@ -271,6 +280,11 @@ class WebSocketServer {
                 return { type: "discoveredPeripheral", data: discoveredPeripheral };
             })
         );
+    }
+
+    /** @param {DiscoveredPeripheral} discoveredPeripheral */
+    #createExpiredDiscoveredPeripheralMessage(discoveredPeripheral) {
+        return createServerMessage({ type: "expiredDiscoveredPeripheral", data: discoveredPeripheral.id });
     }
 }
 

@@ -22,7 +22,7 @@ const _console = createConsole("WebSocketClient", { log: true });
 
 /** @typedef {"not connected" | "connecting" | "connected" | "disconnecting"} ClientConnectionStatus */
 
-/** @typedef {ClientConnectionStatus | "connectionStatus" |  "isConnected" | "isScanningAvailable" | "isScanning" | "discoveredPeripheral"} ClientEventType */
+/** @typedef {ClientConnectionStatus | "connectionStatus" |  "isConnected" | "isScanningAvailable" | "isScanning" | "discoveredPeripheral" | "expiredDiscoveredPeripheral"} ClientEventType */
 
 /**
  * @typedef ClientEvent
@@ -48,6 +48,7 @@ class WebSocketClient {
         "isScanningAvailable",
         "isScanning",
         "discoveredPeripheral",
+        "expiredDiscoveredPeripheral",
     ];
     static get EventTypes() {
         return this.#EventTypes;
@@ -281,18 +282,28 @@ class WebSocketClient {
                 case "discoveredPeripheral":
                     {
                         const discoveredPeripheralStringLength = dataView.getUint8(byteOffset++);
-                        console.log({ discoveredPeripheralStringLength });
+                        _console.log({ discoveredPeripheralStringLength });
                         const discoveredPeripheralString = this.#textDecoder.decode(
                             dataView.buffer.slice(byteOffset, byteOffset + discoveredPeripheralStringLength)
                         );
-                        console.log({ discoveredPeripheralString });
+                        _console.log({ discoveredPeripheralString });
                         byteOffset += discoveredPeripheralStringLength;
 
                         /** @type {DiscoveredPeripheral} */
                         const discoveredPeripheral = JSON.parse(discoveredPeripheralString);
-                        console.log({ discoveredPeripheral });
+                        _console.log({ discoveredPeripheral });
 
                         this.#onDiscoveredPeripheral(discoveredPeripheral);
+                    }
+                    break;
+                case "expiredDiscoveredPeripheral":
+                    {
+                        const discoveredPeripheralIdStringLength = dataView.getUint8(byteOffset++);
+                        const discoveredPeripheralId = this.#textDecoder.decode(
+                            dataView.buffer.slice(byteOffset, byteOffset + discoveredPeripheralIdStringLength)
+                        );
+                        byteOffset += discoveredPeripheralIdStringLength;
+                        this.#onExpiredDiscoveredPeripheral(discoveredPeripheralId);
                     }
                     break;
                 default:
@@ -384,14 +395,44 @@ class WebSocketClient {
     }
 
     // PERIPHERALS
+    /** @type {Object.<string, DiscoveredPeripheral>} */
+    #discoveredPeripherals = {};
+    get discoveredPeripherals() {
+        return this.#discoveredPeripherals;
+    }
+
     /** @param {DiscoveredPeripheral} discoveredPeripheral */
     #onDiscoveredPeripheral(discoveredPeripheral) {
-        console.log({ discoveredPeripheral });
+        _console.log({ discoveredPeripheral });
+        this.#discoveredPeripherals[discoveredPeripheral.id] = discoveredPeripheral;
         this.#dispatchEvent({ type: "discoveredPeripheral", message: { discoveredPeripheral } });
     }
     #requestDiscoveredPeripherals() {
         this.#assertConnection();
         this.webSocket.send(discoveredPeripheralsMessage);
+    }
+    /** @param {string} discoveredPeripheralId */
+    #onExpiredDiscoveredPeripheral(discoveredPeripheralId) {
+        _console.log({ discoveredPeripheralId });
+        let discoveredPeripheral = this.#discoveredPeripherals[discoveredPeripheralId];
+        if (discoveredPeripheral) {
+            _console.log({ expiredDiscoveredPeripheral: discoveredPeripheral });
+            delete this.#discoveredPeripherals[discoveredPeripheralId];
+            this.#dispatchEvent({ type: "expiredDiscoveredPeripheral", message: { discoveredPeripheral } });
+        } else {
+            _console.warn(`no discoveredPeripheral found with id "${discoveredPeripheralId}"`);
+        }
+    }
+
+    /** @param {string} peripheralId */
+    connectToPeripheral(peripheralId) {
+        this.#assertConnection();
+        _console.assertTypeWithError(peripheralId, "string");
+    }
+    /** @param {string} peripheralId */
+    disconnectFromPeripheral(peripheralId) {
+        this.#assertConnection();
+        _console.assertTypeWithError(peripheralId, "string");
     }
 }
 

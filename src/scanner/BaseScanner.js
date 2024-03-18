@@ -156,7 +156,7 @@ class BaseScanner {
     /** @type {Object.<string, number>} */
     #discoveredPeripheralTimestamps = {};
 
-    static #DiscoveredPeripheralExpirationTimeout = 5000;
+    static #DiscoveredPeripheralExpirationTimeout = 1000;
     static get DiscoveredPeripheralExpirationTimeout() {
         return this.#DiscoveredPeripheralExpirationTimeout;
     }
@@ -166,13 +166,14 @@ class BaseScanner {
     #checkDiscoveredPeripheralsExpirationTimer = new Timer(this.#checkDiscoveredPeripheralsExpiration.bind(this), 1000);
     #checkDiscoveredPeripheralsExpiration() {
         const entries = Object.entries(this.#discoveredPeripherals);
-        if ((entries.length = 0)) {
+        if (entries.length == 0) {
             this.#checkDiscoveredPeripheralsExpirationTimer.stop();
             return;
         }
         const now = Date.now();
         entries.forEach(([id, discoveredPeripheral]) => {
             const timestamp = this.#discoveredPeripheralTimestamps[id];
+            console.log(now - timestamp);
             if (now - timestamp > this.#discoveredPeripheralExpirationTimeout) {
                 _console.log("discovered peripheral timeout");
                 delete this.#discoveredPeripherals[id];

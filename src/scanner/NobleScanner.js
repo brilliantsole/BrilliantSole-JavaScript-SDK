@@ -83,6 +83,11 @@ class NobleScanner extends BaseScanner {
     /** @param {noble.Peripheral} noblePeripheral */
     #onNobleDiscover(noblePeripheral) {
         _console.log("onNobleDiscover", noblePeripheral);
+        if (!this.#noblePeripherals[noblePeripheral.id]) {
+            this.#noblePeripherals[noblePeripheral.id] = noblePeripheral;
+            addEventListeners(noblePeripheral, this.#boundNoblePeripheralListeners);
+        }
+
         /** @type {DiscoveredPeripheral} */
         const discoveredPeripheral = {
             name: noblePeripheral.advertisement.localName,
@@ -90,7 +95,6 @@ class NobleScanner extends BaseScanner {
             //deviceType: Device.Types[noblePeripheral.advertisement.serviceData[serviceUUIDs[0]]],
             rssi: noblePeripheral.rssi,
         };
-        this.#noblePeripherals[noblePeripheral.id] = noblePeripheral;
         this.dispatchEvent({ type: "discoveredPeripheral", message: { discoveredPeripheral } });
     }
 
@@ -128,6 +132,7 @@ class NobleScanner extends BaseScanner {
     #boundBaseScannerListeners = {
         expiredDiscoveredPeripheral: this.#onExpiredDiscoveredPeripheral.bind(this),
     };
+
     /** @param {ScannerEvent} event */
     #onExpiredDiscoveredPeripheral(event) {
         /** @type {DiscoveredPeripheral} */
@@ -136,12 +141,38 @@ class NobleScanner extends BaseScanner {
         if (noblePeripheral) {
             // disconnect?
             delete this.#noblePeripherals[discoveredPeripheral.id];
+            removeEventListeners(noblePeripheral, this.#boundNoblePeripheralListeners);
         }
     }
 
     // DISCOVERED PERIPHERALS
     /** @type {Object.<string, noble.Peripheral>} */
     #noblePeripherals = {};
+
+    // NOBLE PERIPHERAL LISTENERS
+    #boundNoblePeripheralListeners = {
+        connect: this.#onNoblePeripheralConnect.bind(this),
+        disconnect: this.#onNoblePeripheralDisconnect.bind(this),
+        rssiUpdate: this.#onNoblePeripheralRssiUpdate.bind(this),
+        servicesDiscover: this.#onNoblePeripheralServicesDiscover.bind(this),
+    };
+
+    #onNoblePeripheralConnect() {
+        // FILL
+        console.log(...arguments);
+    }
+    #onNoblePeripheralDisconnect() {
+        // FILL
+        console.log(...arguments);
+    }
+    #onNoblePeripheralRssiUpdate() {
+        // FILL
+        console.log(...arguments);
+    }
+    #onNoblePeripheralServicesDiscover() {
+        // FILL
+        console.log(...arguments);
+    }
 }
 
 export default NobleScanner;
