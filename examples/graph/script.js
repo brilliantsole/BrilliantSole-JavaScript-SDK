@@ -281,12 +281,11 @@ BS.Device.SensorTypes.forEach((sensorType) => {
                 break;
             case "pressure":
                 /** @type {import("../../build/brilliantsole.module.js").PressureData} */
-                const pressure = data;
-
+                const pressure = event.message.pressure;
                 charts.pressureMetadata._appendData(timestamp, {
-                    sum: pressure.rawSum,
-                    x: pressure.center.x,
-                    y: pressure.center.y,
+                    sum: pressure.normalizedSum,
+                    x: pressure.calibratedCenter.x,
+                    y: pressure.calibratedCenter.y,
                 });
                 break;
         }
