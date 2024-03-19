@@ -8,10 +8,7 @@ console.log({ devicePair });
 window.devicePair = devicePair;
 
 // CONNECTION
-const devices = BS.DevicePair.Sides.map(() => {
-    const device = new BS.Device();
-    return device;
-});
+const devices = BS.DevicePair.Sides.map(() => new BS.Device());
 
 /** @type {HTMLButtonElement} */
 const addDeviceButton = document.getElementById("addDevice");
@@ -67,7 +64,7 @@ let isPlayingGame = false;
 /** @type {HTMLButtonElement} */
 const toggleGameButton = document.getElementById("toggleGame");
 devicePair.addEventListener("isConnected", () => {
-    toggleGameButton.disabled = devicePair.isConnected;
+    //toggleGameButton.disabled = !devicePair.isConnected;
 });
 toggleGameButton.addEventListener("click", () => {
     isPlayingGame = !isPlayingGame;
