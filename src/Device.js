@@ -91,7 +91,7 @@ const _console = createConsole("Device", { log: false });
 
 class Device {
     constructor() {
-        this.connectionManager = new Device.#DefaultConnectionManager();
+        //this.connectionManager = new Device.#DefaultConnectionManager();
         this.#sensorDataManager.onDataReceived = this.#onSensorDataReceived.bind(this);
 
         if (isInBrowser) {
@@ -117,12 +117,6 @@ class Device {
 
     /** @returns {ConnectionManager} */
     static get #DefaultConnectionManager() {
-        if (isInBrowser) {
-            return WebBluetoothConnectionManager;
-        }
-        if (isInNode) {
-            //return NobleConnectionManager;
-        }
         return WebBluetoothConnectionManager;
     }
 
@@ -222,8 +216,10 @@ class Device {
     }
 
     async connect() {
-        // TODO - set connection type?
-        return this.connectionManager?.connect();
+        if (!this.connectionManager) {
+            this.connectionManager = new Device.#DefaultConnectionManager();
+        }
+        return this.connectionManager.connect();
     }
     get isConnected() {
         return this.connectionManager?.isConnected;
@@ -290,7 +286,7 @@ class Device {
     }
 
     get connectionStatus() {
-        return this.#connectionManager?.status;
+        return this.#connectionManager?.status || "not connected";
     }
 
     /** @param {ConnectionStatus} connectionStatus */

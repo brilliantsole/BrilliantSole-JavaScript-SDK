@@ -6,7 +6,7 @@ const _console = createConsole("BaseScanner");
 
 /** @typedef {import("../Device.js").DeviceType} DeviceType */
 
-/** @typedef {"isAvailable" | "isScanning" | "discoveredPeripheral" | "expiredDiscoveredPeripheral" | "connectedPeripheral" | "disconnectedPeripheral"} ScannerEventType */
+/** @typedef {"isAvailable" | "isScanning" | "discoveredPeripheral" | "expiredDiscoveredPeripheral"} ScannerEventType */
 
 /** @typedef {import("../utils/EventDispatcher.js").EventDispatcherListener} EventDispatcherListener */
 /** @typedef {import("../utils/EventDispatcher.js").EventDispatcherOptions} EventDispatcherOptions */

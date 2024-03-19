@@ -79,7 +79,7 @@ class WebBluetoothConnectionManager extends ConnectionManager {
         await super.connect();
 
         try {
-            device = await navigator.bluetooth.requestDevice({
+            const device = await navigator.bluetooth.requestDevice({
                 filters: [{ services: serviceUUIDs }],
                 optionalServices: isInBrowser ? optionalServiceUUIDs : [],
             });
@@ -160,6 +160,7 @@ class WebBluetoothConnectionManager extends ConnectionManager {
         _console.log("disconnecting from device...");
         this.server?.disconnect();
         this.#removeEventListeners();
+        this.status = "not connected";
     }
 
     /** @param {Event} event */

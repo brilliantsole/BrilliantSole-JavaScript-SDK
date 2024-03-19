@@ -78,6 +78,87 @@ class NobleConnectionManager extends ConnectionManager {
         _console.log("attempting to reconnect...");
         // FILL
     }
+
+    // NOBLE
+    /** @type {noble.Peripheral?} */
+    #noblePeripheral;
+    get noblePeripheral() {
+        return this.#noblePeripheral;
+    }
+    set noblePeripheral(newNoblePeripheral) {
+        _console.assertTypeWithError(newNoblePeripheral, "object");
+        if (this.noblePeripheral == newNoblePeripheral) {
+            _console.log("attempted to assign duplicate noblePeripheral");
+            return;
+        }
+
+        _console.log({ newNoblePeripheral });
+
+        if (this.#noblePeripheral) {
+            removeEventListeners(this.#noblePeripheral, this.#unboundNoblePeripheralListeners);
+            delete this.#noblePeripheral._device;
+        }
+
+        if (newNoblePeripheral) {
+            newNoblePeripheral._device = this;
+            addEventListeners(newNoblePeripheral, this.#unboundNoblePeripheralListeners);
+        }
+
+        this.#noblePeripheral = newNoblePeripheral;
+    }
+
+    // NOBLE EVENTLISTENERS
+    #unboundNoblePeripheralListeners = {
+        connect: this.#onNoblePeripheralConnect,
+        disconnect: this.#onNoblePeripheralDisconnect,
+        rssiUpdate: this.#onNoblePeripheralRssiUpdate,
+        servicesDiscover: this.#onNoblePeripheralServicesDiscover,
+    };
+
+    #onNoblePeripheralConnect() {
+        this._device.onNoblePeripheralConnect(this);
+    }
+    /** @param {noble.Peripheral} noblePeripheral */
+    onNoblePeripheralConnect(noblePeripheral) {
+        _console.log("onNoblePeripheralConnect", noblePeripheral);
+    }
+
+    #onNoblePeripheralDisconnect() {
+        this._device.onNoblePeripheralConnect(this);
+    }
+    /** @param {noble.Peripheral} noblePeripheral */
+    onNoblePeripheralDisconnect(noblePeripheral) {
+        _console.log("onNoblePeripheralDisconnect", noblePeripheral);
+        // FILL
+    }
+
+    /** @param {number} rssi */
+    #onNoblePeripheralRssiUpdate(rssi) {
+        this._device.onNoblePeripheralRssiUpdate(this, rssi);
+        // FILL
+    }
+    /**
+     * @param {noble.Peripheral} noblePeripheral
+     * @param {number} rssi
+     */
+    onNoblePeripheralRssiUpdate(noblePeripheral, rssi) {
+        _console.log("onNoblePeripheralRssiUpdate", noblePeripheral, rssi);
+        // FILL
+    }
+
+    /** @param {noble.Service[]} services */
+    #onNoblePeripheralServicesDiscover(services) {
+        this._device.onNoblePeripheralServicesDiscover(this, services);
+    }
+    /**
+     *
+     * @param {noble.Peripheral} noblePeripheral
+     * @param {noble.Service[]} services
+     */
+    onNoblePeripheralServicesDiscover(noblePeripheral, services) {
+        _console.log("onNoblePeripheralServicesDiscover", noblePeripheral, services);
+        // FILL
+    }
 }
 
 export default NobleConnectionManager;

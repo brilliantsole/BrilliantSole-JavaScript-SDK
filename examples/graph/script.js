@@ -40,12 +40,6 @@ insole.addEventListener("connectionStatus", () => {
 
 // SENSOR CONFIGURATION
 
-/** @type {HTMLPreElement} */
-const sensorConfigurationPre = document.getElementById("sensorConfigurationPre");
-insole.addEventListener("getSensorConfiguration", () => {
-    sensorConfigurationPre.textContent = JSON.stringify(insole.sensorConfiguration, null, 2);
-});
-
 /** @type {HTMLTemplateElement} */
 const sensorTypeConfigurationTemplate = document.getElementById("sensorTypeConfigurationTemplate");
 BS.Device.SensorTypes.forEach((sensorType) => {
@@ -87,7 +81,7 @@ insole.addEventListener("isConnected", () => {
 const charts = {};
 window.charts = charts;
 
-window.maxTicks = 500;
+window.maxTicks = 100;
 /**
  * @param {HTMLCanvasElement} canvas
  * @param {string} title
@@ -141,6 +135,7 @@ function createChart(canvas, title, axesLabels) {
     charts[title] = chart;
 
     const appendData = (timestamp, data) => {
+        console.log({ timestamp, data });
         chart.data.labels.push(timestamp);
         chart.data.datasets.forEach((dataset) => {
             dataset.data.push(data[dataset.label]);
@@ -223,7 +218,7 @@ BS.Device.SensorTypes.forEach((sensorType) => {
 
     const appendData = createChart(chartContainer.querySelector("canvas"), sensorType, axesLabels);
     insole.addEventListener(sensorType, (event) => {
-        let { timestamp, [sensorType]: data } = event;
+        let { timestamp, [sensorType]: data } = event.message;
         if (sensorType == "pressure") {
             data = data.sensors;
         }

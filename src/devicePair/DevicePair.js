@@ -93,7 +93,7 @@ class DevicePair {
 
     /** @param {Device} device */
     assignInsole(device) {
-        if (device.isInsole) {
+        if (!device.isInsole) {
             _console.warn("device is not an insole");
             return;
         }

@@ -4,6 +4,7 @@ import { isInNode } from "../utils/environment.js";
 import { addEventListeners, removeEventListeners } from "../utils/EventDispatcher.js";
 import { serviceUUIDs } from "../connection/bluetooth/bluetoothUUIDs.js";
 import Device from "../Device.js";
+import NobleConnectionManager from "../connection/bluetooth/NobleConnectionManager.js";
 
 const _console = createConsole("NobleScanner", { log: true });
 
@@ -179,19 +180,22 @@ class NobleScanner extends BaseScanner {
     }
     /** @param {noble.Peripheral} noblePeripheral */
     onNoblePeripheralDisconnect(noblePeripheral) {
-        _console.log("onNoblePeripheralConnect", noblePeripheral);
+        _console.log("onNoblePeripheralDisconnect", noblePeripheral);
+        // FILL
     }
 
     /** @param {number} rssi */
     #onNoblePeripheralRssiUpdate(rssi) {
         this._scanner.onNoblePeripheralRssiUpdate(this, rssi);
+        // FILL
     }
     /**
      * @param {noble.Peripheral} noblePeripheral
      * @param {number} rssi
      */
     onNoblePeripheralRssiUpdate(noblePeripheral, rssi) {
-        _console.log("onNoblePeripheralConnect", noblePeripheral, rssi);
+        _console.log("onNoblePeripheralRssiUpdate", noblePeripheral, rssi);
+        // FILL
     }
 
     /** @param {noble.Service[]} services */
@@ -204,7 +208,8 @@ class NobleScanner extends BaseScanner {
      * @param {noble.Service[]} services
      */
     onNoblePeripheralServicesDiscover(noblePeripheral, services) {
-        _console.log("onNoblePeripheralConnect", noblePeripheral, services);
+        _console.log("onNoblePeripheralServicesDiscover", noblePeripheral, services);
+        // FILL
     }
 
     // PERIPHERALS
@@ -214,7 +219,12 @@ class NobleScanner extends BaseScanner {
         this.#assertValidNoblePeripheralId(peripheralId);
         const noblePeripheral = this.#noblePeripherals[peripheralId];
         _console.log("connecting to discoveredPeripheral...", peripheralId);
-        noblePeripheral.connectAsync();
+
+        const device = new Device();
+        const nobleConnectionManager = new NobleConnectionManager();
+        device.noblePeripheral = noblePeripheral;
+        device.connectionManager = nobleConnectionManager;
+        device.connect();
     }
     /** @param {string} peripheralId */
     disconnectFromPeripheral(peripheralId) {
@@ -222,7 +232,9 @@ class NobleScanner extends BaseScanner {
         this.#assertValidNoblePeripheralId(peripheralId);
         const noblePeripheral = this.#noblePeripherals[peripheralId];
         _console.log("disconnecting from discoveredPeripheral...", peripheralId);
-        noblePeripheral.disconnectAsync();
+
+        // FILL - retrieve device
+        // FILL - device.disconnect()
     }
 }
 
