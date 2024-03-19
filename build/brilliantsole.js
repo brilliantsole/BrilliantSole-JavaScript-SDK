@@ -1613,7 +1613,7 @@
 	                break;
 	            }
 	            const sensorRate = dataView.getUint16(byteOffset, true);
-	            _console$c.log({ sensorType, sensorRate });
+_console$5.log({ sensorType, sensorRate });
 	            parsedSensorConfiguration[sensorType] = sensorRate;
 	        }
 	        _console$c.log({ parsedSensorConfiguration });
