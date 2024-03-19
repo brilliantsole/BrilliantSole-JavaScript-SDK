@@ -1,5 +1,7 @@
 import { createConsole } from "../utils/Console.js";
 import CenterOfPressureHelper from "../utils/CenterOfPressureHelper.js";
+import RangeHelper from "../utils/RangeHelper.js";
+import { createArray } from "../utils/ArrayUtils.js";
 
 /** @typedef {import("../Device.js").DeviceType} DeviceType */
 
@@ -131,8 +133,13 @@ class PressureSensorDataManager {
         this.#pressureSensorPositions = pressureSensorPositions;
     }
 
+    /** @type {RangeHelper[]} */
+    #pressureSensorRangeHelpers = createArray(this.numberOfPressureSensors, () => new RangeHelper());
+    // FILL -
+
     #centerOfPressureHelper = new CenterOfPressureHelper();
     resetRange() {
+        this.#pressureSensorRangeHelpers.forEach((rangeHelper) => rangeHelper.reset());
         this.#centerOfPressureHelper.resetRange();
     }
 
@@ -147,7 +154,8 @@ class PressureSensorDataManager {
         const pressure = { sensors: [], rawSum: 0, normalizedSum: 0 };
         for (let index = 0; index < this.numberOfPressureSensors; index++, byteOffset += 2) {
             const rawValue = dataView.getUint16(byteOffset, true);
-            const normalizedValue = rawValue * scalar;
+            const rangeHelper = this.#pressureSensorRangeHelpers[index];
+            const normalizedValue = rangeHelper.updateAndGetNormalization(rawValue);
             const position = this.pressureSensorPositions[index];
             const name = this.names[index];
             pressure.sensors[index] = { rawValue, normalizedValue, position, name };

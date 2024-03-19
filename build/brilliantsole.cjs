@@ -1040,6 +1040,47 @@ function getInterpolation(value, min, max) {
 const Uint16Max = 2 ** 16;
 
 /**
+ * @typedef Range
+ * @type {Object}
+ * @property {number} min
+ * @property {number} max
+ */
+
+/** @type {Range} */
+const initialRange = { min: Infinity, max: -Infinity };
+
+class RangeHelper {
+    /** @type {Range} */
+    #range = Object.assign({}, initialRange);
+    get range() {
+        return this.#range;
+    }
+
+    reset() {
+        Object.assign(this.#range, initialRange);
+    }
+
+    /** @param {number} value */
+    update(value) {
+        this.#range.min = Math.min(value, this.range.min);
+        this.#range.max = Math.max(value, this.range.max);
+    }
+
+    /** @param {number} value */
+    getNormalization(value) {
+        return getInterpolation(value, this.range.min, this.range.max);
+    }
+
+    /** @param {number} value */
+    updateAndGetNormalization(value) {
+        this.update(value);
+        return this.getNormalization(value);
+    }
+}
+
+// TODO: - replace with RangeHelper
+
+/**
  * @typedef Vector2
  * @type {Object}
  * @property {number} x
@@ -1093,6 +1134,22 @@ class CenterOfPressureHelper {
         };
         return calibratedCenterOfPressure;
     }
+}
+
+/**
+ * @param {number} arrayLength
+ * @param {((index:number) => any) | object} objectOrCallback
+ */
+function createArray(arrayLength, objectOrCallback) {
+    return new Array(arrayLength).fill(1).map((_, index) => {
+        if (typeof objectOrCallback == "function") {
+            const callback = objectOrCallback;
+            return callback(index);
+        } else {
+            const object = objectOrCallback;
+            return Object.assign({}, object);
+        }
+    });
 }
 
 /** @typedef {"hallux" | "digits" | "innerMetatarsal" | "centerMetatarsal" | "outerMetatarsal" | "arch" | "lateral" | "heel"} PressureSensorName */
@@ -1223,8 +1280,13 @@ class PressureSensorDataManager {
         this.#pressureSensorPositions = pressureSensorPositions;
     }
 
+    /** @type {RangeHelper[]} */
+    #pressureSensorRangeHelpers = createArray(this.numberOfPressureSensors, () => new RangeHelper());
+    // FILL -
+
     #centerOfPressureHelper = new CenterOfPressureHelper();
     resetRange() {
+        this.#pressureSensorRangeHelpers.forEach((rangeHelper) => rangeHelper.reset());
         this.#centerOfPressureHelper.resetRange();
     }
 
@@ -1233,13 +1295,14 @@ class PressureSensorDataManager {
      * @param {number} byteOffset
      */
     parsePressure(dataView, byteOffset) {
-        const scalar = this.scalars.pressure;
+        this.scalars.pressure;
 
         /** @type {PressureData} */
         const pressure = { sensors: [], rawSum: 0, normalizedSum: 0 };
         for (let index = 0; index < this.numberOfPressureSensors; index++, byteOffset += 2) {
             const rawValue = dataView.getUint16(byteOffset, true);
-            const normalizedValue = rawValue * scalar;
+            const rangeHelper = this.#pressureSensorRangeHelpers[index];
+            const normalizedValue = rangeHelper.updateAndGetNormalization(rawValue);
             const position = this.pressureSensorPositions[index];
             const name = this.names[index];
             pressure.sensors[index] = { rawValue, normalizedValue, position, name };
@@ -3243,7 +3306,7 @@ class Device {
                 this.#ConnectedDevices.splice(this.#ConnectedDevices.indexOf(device), 1);
                 this.#DispatchEvent({ type: "deviceDisconnected", message: { device } });
             } else {
-                _console$a.warn("device already not included");
+                _console$a.log("device already not included");
             }
         }
     }

@@ -946,7 +946,7 @@ class Device {
                 this.#ConnectedDevices.splice(this.#ConnectedDevices.indexOf(device), 1);
                 this.#DispatchEvent({ type: "deviceDisconnected", message: { device } });
             } else {
-                _console.warn("device already not included");
+                _console.log("device already not included");
             }
         }
     }
