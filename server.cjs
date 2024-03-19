@@ -6,6 +6,7 @@ const fs = require("fs");
 const _ = require("lodash");
 const ip = require("ip");
 const BS = require("./");
+const ws = require("ws");
 //BS.setAllConsoleLevelFlags({ log: true, warn: true });
 
 app.use(function (req, res, next) {
@@ -28,14 +29,7 @@ httpsServer.listen(443, () => {
     console.log(`server listening on https://${ip.address()}`);
 });
 
-const insole = new BS.Device();
-insole.addEventListener("connectionStatus", () => {
-    console.log("connectionStastus", insole.connectionStatus);
-    if (insole.isConnected) {
-        insole.setSensorConfiguration({ pressure: 20 });
-    }
-});
-//insole.connect();
-insole.addEventListener("pressure", (event) => {
-    console.log(event.message);
-});
+const wss = new ws.WebSocketServer({ server: httpsServer });
+
+const webSocketServer = new BS.WebSocketServer();
+webSocketServer.server = wss;

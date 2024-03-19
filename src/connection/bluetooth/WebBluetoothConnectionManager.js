@@ -160,6 +160,7 @@ class WebBluetoothConnectionManager extends ConnectionManager {
         _console.log("disconnecting from device...");
         this.server?.disconnect();
         this.#removeEventListeners();
+        this.status = "not connected";
     }
 
     /** @param {Event} event */

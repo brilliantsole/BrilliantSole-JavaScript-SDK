@@ -23,7 +23,7 @@ class DevicePairSensorDataManager {
     pressureSensorDataManager = new DevicePairPressureSensorDataManager();
     resetPressureRange() {
         this.sides.forEach((side) => {
-            this[side].resetPressureRange();
+            this[side]?.resetPressureRange();
         });
         this.pressureSensorDataManager.resetPressureRange();
     }

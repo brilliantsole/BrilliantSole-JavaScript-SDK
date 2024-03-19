@@ -57,7 +57,7 @@ class PressureSensorDataManager {
         this.#deviceType = newDeviceType;
 
         this.#updatePressureSensorPositions();
-        this.resetPressureRange();
+        this.resetRange();
     }
 
     /** @type {PressureSensorName[]} */

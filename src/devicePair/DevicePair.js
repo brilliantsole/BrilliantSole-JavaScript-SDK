@@ -46,7 +46,6 @@ class DevicePair {
      * @param {DevicePairEventType} type
      * @param {EventDispatcherListener} listener
      * @param {EventDispatcherOptions} options
-     * @throws {Error}
      */
     addEventListener(type, listener, options) {
         this.#eventDispatcher.addEventListener(type, listener, options);
@@ -54,7 +53,6 @@ class DevicePair {
 
     /**
      * @param {DevicePairEvent} event
-     * @throws {Error} if type is not valid
      */
     #dispatchEvent(event) {
         this.#eventDispatcher.dispatchEvent(event);
@@ -63,8 +61,6 @@ class DevicePair {
     /**
      * @param {DevicePairEventType} type
      * @param {EventDispatcherListener} listener
-     * @returns {boolean}
-     * @throws {Error}
      */
     removeEventListener(type, listener) {
         return this.#eventDispatcher.removeEventListener(type, listener);
@@ -97,7 +93,7 @@ class DevicePair {
 
     /** @param {Device} device */
     assignInsole(device) {
-        if (device.isInsole) {
+        if (!device.isInsole) {
             _console.warn("device is not an insole");
             return;
         }

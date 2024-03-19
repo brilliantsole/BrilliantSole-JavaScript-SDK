@@ -88,7 +88,7 @@ class Console {
      */
     static create(type, levelFlags) {
         const console = this.#consoles[type] || new Console(type);
-        if (isInDev) {
+        if (isInDev && levelFlags) {
             console.setLevelFlags(levelFlags);
         }
         return console;
@@ -132,6 +132,15 @@ class Console {
      */
     assertTypeWithError(value, type) {
         this.assertWithError(typeof value == type, `value ${value} of type "${typeof value}" not of type "${type}"`);
+    }
+
+    /**
+     * @param {any} value
+     * @param {string[]} enumeration
+     * @throws {Error} if value's type doesn't match
+     */
+    assertEnumWithError(value, enumeration) {
+        this.assertWithError(enumeration.includes(value), `invalid enum "${value}"`);
     }
 }
 

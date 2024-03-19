@@ -55,13 +55,15 @@ if (production) {
     _plugins.push(replaceEnvironment());
 }
 
+const _browserPlugins = [commonjs(), resolve({ browser: true })];
+
 const name = "BS";
 const input = "src/BS.js";
 
 const builds = [
     {
         input,
-        plugins: [..._plugins],
+        plugins: [..._plugins, ..._browserPlugins],
         output: [
             {
                 format: "esm",
@@ -71,7 +73,7 @@ const builds = [
     },
     {
         input,
-        plugins: [..._plugins, terser()],
+        plugins: [..._plugins, ..._browserPlugins, terser()],
         output: [
             {
                 format: "esm",
@@ -82,7 +84,7 @@ const builds = [
 
     {
         input,
-        plugins: [..._plugins],
+        plugins: [..._plugins, ..._browserPlugins],
         output: [
             {
                 format: "umd",
@@ -94,7 +96,7 @@ const builds = [
     },
     {
         input,
-        plugins: [..._plugins, terser()],
+        plugins: [..._plugins, ..._browserPlugins, terser()],
         output: [
             {
                 format: "umd",
@@ -107,7 +109,7 @@ const builds = [
     {
         input,
         plugins: [..._plugins],
-        external: ["webbluetooth"],
+        external: ["webbluetooth", "debounce"],
         output: [
             {
                 format: "cjs",

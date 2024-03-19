@@ -91,7 +91,7 @@ const _console = createConsole("Device", { log: false });
 
 class Device {
     constructor() {
-        this.connectionManager = new Device.#DefaultConnectionManager();
+        //this.connectionManager = new Device.#DefaultConnectionManager();
         this.#sensorDataManager.onDataReceived = this.#onSensorDataReceived.bind(this);
 
         if (isInBrowser) {
@@ -117,12 +117,6 @@ class Device {
 
     /** @returns {ConnectionManager} */
     static get #DefaultConnectionManager() {
-        if (isInBrowser) {
-            return WebBluetoothConnectionManager;
-        }
-        if (isInNode) {
-            //return NobleConnectionManager;
-        }
         return WebBluetoothConnectionManager;
     }
 
@@ -175,7 +169,6 @@ class Device {
      * @param {DeviceEventType} type
      * @param {EventDispatcherListener} listener
      * @param {EventDispatcherOptions} options
-     * @throws {Error}
      */
     addEventListener(type, listener, options) {
         this.#eventDispatcher.addEventListener(type, listener, options);
@@ -183,7 +176,6 @@ class Device {
 
     /**
      * @param {DeviceEvent} event
-     * @throws {Error} if type is not valid
      */
     #dispatchEvent(event) {
         this.#eventDispatcher.dispatchEvent(event);
@@ -192,8 +184,6 @@ class Device {
     /**
      * @param {DeviceEventType} type
      * @param {EventDispatcherListener} listener
-     * @returns {boolean}
-     * @throws {Error}
      */
     removeEventListener(type, listener) {
         return this.#eventDispatcher.removeEventListener(type, listener);
@@ -226,8 +216,10 @@ class Device {
     }
 
     async connect() {
-        // TODO - set connection type?
-        return this.connectionManager?.connect();
+        if (!this.connectionManager) {
+            this.connectionManager = new Device.#DefaultConnectionManager();
+        }
+        return this.connectionManager.connect();
     }
     get isConnected() {
         return this.connectionManager?.isConnected;
@@ -283,8 +275,18 @@ class Device {
         return this.connectionManager.disconnect();
     }
 
+    toggleConnection() {
+        if (this.isConnected) {
+            this.disconnect();
+        } else if (this.canReconnect) {
+            this.reconnect();
+        } else {
+            this.connect();
+        }
+    }
+
     get connectionStatus() {
-        return this.#connectionManager?.status;
+        return this.#connectionManager?.status || "not connected";
     }
 
     /** @param {ConnectionStatus} connectionStatus */
@@ -909,7 +911,6 @@ class Device {
 
     /**
      * @param {StaticDeviceEvent} event
-     * @throws {Error} if type is not valid
      */
     static #DispatchEvent(event) {
         this.#EventDispatcher.dispatchEvent(event);
@@ -918,8 +919,6 @@ class Device {
     /**
      * @param {StaticDeviceEventType} type
      * @param {EventDispatcherListener} listener
-     * @returns {boolean}
-     * @throws {Error}
      */
     static RemoveEventListener(type, listener) {
         return this.#EventDispatcher.removeEventListener(type, listener);
