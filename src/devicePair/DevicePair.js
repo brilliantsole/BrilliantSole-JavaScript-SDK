@@ -40,7 +40,7 @@ class DevicePair {
     get eventTypes() {
         return DevicePair.#EventTypes;
     }
-    #eventDispatcher = new EventDispatcher(this.eventTypes);
+    #eventDispatcher = new EventDispatcher(this, this.eventTypes);
 
     /**
      * @param {DevicePairEventType} type
@@ -89,6 +89,9 @@ class DevicePair {
 
     get isConnected() {
         return this.sides.every((side) => this[side]?.isConnected);
+    }
+    #assertIsConnected() {
+        _console.assertWithError(this.isConnected, "devicePair must be connected");
     }
 
     /** @param {Device} device */
@@ -154,6 +157,7 @@ class DevicePair {
 
     // SENSOR DATA
     #sensorDataManager = new DevicePairSensorDataManager();
+    /** @param {DeviceEvent} event */
     #onDeviceSensorData(event) {
         if (this.isConnected) {
             this.#sensorDataManager.onDeviceSensorData(event);

@@ -9,6 +9,8 @@ const _console = createConsole("DevicePairPressureSensorDataManager", { log: tru
 
 /** @typedef {import("../sensor/PressureSensorDataManager.js").PressureData} PressureData */
 
+/** @typedef {import("../utils/CenterOfPressureHelper.js").CenterOfPressure} CenterOfPressure */
+
 /**
  * @typedef DevicePairRawPressureData
  * @type {Object}
@@ -27,6 +29,8 @@ const _console = createConsole("DevicePairPressureSensorDataManager", { log: tru
  * @property {CenterOfPressure?} normalizedCenter
  */
 
+/** @typedef {import("../Device.js").DeviceEvent} DeviceEvent */
+
 class DevicePairPressureSensorDataManager {
     static get Sides() {
         return Device.InsoleSides;
@@ -38,7 +42,7 @@ class DevicePairPressureSensorDataManager {
     // PRESSURE DATA
 
     /** @type {DevicePairRawPressureData} */
-    #rawPressureData = {};
+    #rawPressure = {};
 
     #centerOfPressureHelper = new CenterOfPressureHelper();
 
@@ -49,14 +53,18 @@ class DevicePairPressureSensorDataManager {
     /** @param {DeviceEvent} event  */
     onDevicePressureData(event) {
         const { pressure } = event.message;
-        this.#rawPressureData[event.target.insoleSide] = pressure;
+        const insoleSide = event.target.insoleSide;
+        _console.log({ pressure, insoleSide });
+        this.#rawPressure[insoleSide] = pressure;
         if (this.#hasAllPressureData) {
             return this.#updatePressureData();
+        } else {
+            _console.log("doesn't have all pressure data yet...");
         }
     }
 
     get #hasAllPressureData() {
-        this.sides.every((side) => side in this.#rawPressureData);
+        return this.sides.every((side) => side in this.#rawPressure);
     }
 
     static #Scalars = {
@@ -66,37 +74,39 @@ class DevicePairPressureSensorDataManager {
         return this.#Scalars;
     }
     get scalars() {
-        return DevicePair.Scalars;
+        return DevicePairPressureSensorDataManager.Scalars;
     }
 
     #updatePressureData() {
         const scalar = this.scalars.pressure;
 
+        // FIX
+
         /** @type {DevicePairPressureData} */
         const pressure = { rawSum: 0, normalizedSum: 0 };
 
-        this.#rawPressureData.left.data.rawSum;
         this.sides.forEach((side) => {
-            pressure.rawSum += this.#rawPressureData[side].data.rawSum;
+            pressure.rawSum += this.#rawPressure[side].rawSum;
+            pressure.normalizedSum += this.#rawPressure[side].normalizedSum;
         });
 
-        if (pressure.rawSum > 0) {
-            pressure.normalizedSum = pressure.rawSum * scalar;
-
+        if (pressure.normalizedSum > 0) {
             pressure.center = { x: 0, y: 0 };
             this.sides.forEach((side) => {
-                const sidePressureData = this.#rawPressureData[side].data;
-                const rawPressureSumWeight = sidePressureData.rawSum / rawPressureSum;
-                pressure.center.y += sidePressureData.center.y * rawPressureSumWeight;
-                if (side == "right") {
-                    pressure.center.x = rawPressureSumWeight;
+                const sidePressure = this.#rawPressure[side];
+                const normalizedPressureSumWeight = sidePressure.normalizedSum / pressure.normalizedSum;
+                if (normalizedPressureSumWeight > 0) {
+                    pressure.center.y += sidePressure.normalizedCenter.y * normalizedPressureSumWeight;
+                    if (side == "right") {
+                        pressure.center.x = normalizedPressureSumWeight;
+                    }
                 }
             });
 
             pressure.normalizedCenter = this.#centerOfPressureHelper.updateAndGetNormalization(pressure.center);
         }
 
-        _console.log({ pressure });
+        _console.log({ devicePairPressure: pressure });
 
         return pressure;
     }

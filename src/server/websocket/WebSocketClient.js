@@ -59,7 +59,7 @@ class WebSocketClient {
     get eventTypes() {
         return WebSocketClient.#EventTypes;
     }
-    #eventDispatcher = new EventDispatcher(this.eventTypes);
+    #eventDispatcher = new EventDispatcher(this, this.eventTypes);
 
     /**
      * @param {ClientEventType} type

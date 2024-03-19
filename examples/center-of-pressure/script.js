@@ -3,24 +3,13 @@ window.BS = BS;
 console.log({ BS });
 //BS.setAllConsoleLevelFlags({ log: true });
 
-const devicePair = new BS.DevicePair();
+const devicePair = BS.DevicePair.shared;
 console.log({ devicePair });
 window.devicePair = devicePair;
 
 // CONNECTION
 const devices = BS.DevicePair.Sides.map(() => {
     const device = new BS.Device();
-
-    device.addEventListener("connected", () => {
-        console.log("connected to device", device);
-        if (device.isInsole) {
-            const oldDevice = devicePair.assignInsole(device);
-            oldDevice?.disconnect();
-        } else {
-            console.warn("device is not an insole. disconnecting now...");
-            device.disconnect();
-        }
-    });
     return device;
 });
 
@@ -30,7 +19,7 @@ devicePair.addEventListener("isConnected", () => {
     addDeviceButton.disabled = devicePair.isConnected;
 });
 addDeviceButton.addEventListener("click", () => {
-    const device = devices.find((device) => !device.isConnected);
+    const device = devices.find((device) => device.connectionStatus == "not connected");
     if (device) {
         device.connect();
     } else {
@@ -45,18 +34,19 @@ let isPressureDataEnabled = false;
 /** @type {HTMLButtonElement} */
 const togglePressureDataButton = document.getElementById("togglePressureData");
 devicePair.addEventListener("isConnected", () => {
-    togglePressureDataButton.disabled = devicePair.isConnected;
+    togglePressureDataButton.disabled = !devicePair.isConnected;
 });
 togglePressureDataButton.addEventListener("click", () => {
     isPressureDataEnabled = !isPressureDataEnabled;
     console.log({ isPressureDataEnabled });
+    togglePressureDataButton.innerText = isPressureDataEnabled ? "disable pressure data" : "enable pressure data";
     devicePair.setSensorConfiguration({ pressure: isPressureDataEnabled ? 20 : 0 });
 });
 
 /** @type {HTMLButtonElement} */
 const resetPressureRangeButton = document.getElementById("resetPressureRange");
 devicePair.addEventListener("isConnected", () => {
-    resetPressureRangeButton.disabled = devicePair.isConnected;
+    resetPressureRangeButton.disabled = !devicePair.isConnected;
 });
 resetPressureRangeButton.addEventListener("click", () => {
     devicePair.resetPressureRange();
@@ -146,7 +136,9 @@ devicePair.addEventListener("pressure", (event) => {
     /** @type {DevicePairPressureData} */
     const pressure = event.message.pressure;
     console.log({ pressure });
-    onCenterOfPressure(pressure.normalizedCenter);
+    if (pressure.normalizedCenter) {
+        onCenterOfPressure(pressure.normalizedCenter);
+    }
 });
 
 /** @param {CenterOfPressure} center */

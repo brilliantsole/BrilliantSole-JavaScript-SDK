@@ -30,7 +30,10 @@ class DevicePairSensorDataManager {
 
     /** @param {DeviceEvent} event  */
     onDeviceSensorData(event) {
-        const { type, timestamp } = event.message;
+        const { type } = event;
+        const { timestamp } = event.message;
+
+        _console.log({ type, timestamp, event });
 
         /** @type {SensorType} */
         const sensorType = type;
@@ -54,7 +57,7 @@ class DevicePairSensorDataManager {
             const timestamps = Object.assign({}, this.#timestamps[sensorType]);
             this.onDataReceived?.(sensorType, { timestamps, [sensorType]: value });
         } else {
-            _console.warn("no value received");
+            _console.log("no value received");
         }
     }
 

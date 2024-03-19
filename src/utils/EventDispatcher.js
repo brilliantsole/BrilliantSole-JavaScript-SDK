@@ -22,13 +22,18 @@ const _console = createConsole("EventDispatcher", { log: false });
 // based on https://github.com/mrdoob/eventdispatcher.js/
 class EventDispatcher {
     /**
+     * @param {object} target
      * @param {string[]?} eventTypes
      */
-    constructor(eventTypes) {
+    constructor(target, eventTypes) {
+        _console.assertWithError(target, "target is required");
+        this.#target = target;
         _console.assertWithError(Array.isArray(eventTypes) || eventTypes == undefined, "eventTypes must be an array");
         this.#eventTypes = eventTypes;
     }
 
+    /** @type {any} */
+    #target;
     /** @type {string[]?} */
     #eventTypes;
 
@@ -116,7 +121,7 @@ class EventDispatcher {
     dispatchEvent(event) {
         this.#assertValidEventType(event.type);
         if (this.#listeners?.[event.type]) {
-            event.target = this;
+            event.target = this.#target;
 
             // Make a copy, in case listeners are removed while iterating.
             const array = this.#listeners[event.type].slice(0);

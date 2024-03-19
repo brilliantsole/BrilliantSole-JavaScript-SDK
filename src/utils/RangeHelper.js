@@ -26,7 +26,7 @@ class RangeHelper {
 
     /** @param {number} value */
     getNormalization(value) {
-        return getInterpolation(value, this.#range.min, this.#range.max);
+        return getInterpolation(value, this.#range.min, this.#range.max) || 0;
     }
 
     /** @param {number} value */

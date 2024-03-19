@@ -163,7 +163,7 @@ class Device {
     get eventTypes() {
         return Device.#EventTypes;
     }
-    #eventDispatcher = new EventDispatcher(this.eventTypes);
+    #eventDispatcher = new EventDispatcher(this, this.eventTypes);
 
     /**
      * @param {DeviceEventType} type
@@ -897,7 +897,7 @@ class Device {
     static get StaticEventTypes() {
         return this.#StaticEventTypes;
     }
-    static #EventDispatcher = new EventDispatcher(this.#StaticEventTypes);
+    static #EventDispatcher = new EventDispatcher(this, this.#StaticEventTypes);
 
     /**
      * @param {StaticDeviceEventType} type

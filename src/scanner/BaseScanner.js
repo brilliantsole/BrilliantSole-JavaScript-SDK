@@ -70,7 +70,7 @@ class BaseScanner {
     get eventTypes() {
         return BaseScanner.#EventTypes;
     }
-    #eventDispatcher = new EventDispatcher(this.eventTypes);
+    #eventDispatcher = new EventDispatcher(this, this.eventTypes);
 
     /**
      * @param {ScannerEventType} type

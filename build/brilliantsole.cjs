@@ -200,13 +200,18 @@ const _console$j = createConsole("EventDispatcher", { log: false });
 // based on https://github.com/mrdoob/eventdispatcher.js/
 class EventDispatcher {
     /**
+     * @param {object} target
      * @param {string[]?} eventTypes
      */
-    constructor(eventTypes) {
+    constructor(target, eventTypes) {
+        _console$j.assertWithError(target, "target is required");
+        this.#target = target;
         _console$j.assertWithError(Array.isArray(eventTypes) || eventTypes == undefined, "eventTypes must be an array");
         this.#eventTypes = eventTypes;
     }
 
+    /** @type {any} */
+    #target;
     /** @type {string[]?} */
     #eventTypes;
 
@@ -294,7 +299,7 @@ class EventDispatcher {
     dispatchEvent(event) {
         this.#assertValidEventType(event.type);
         if (this.#listeners?.[event.type]) {
-            event.target = this;
+            event.target = this.#target;
 
             // Make a copy, in case listeners are removed while iterating.
             const array = this.#listeners[event.type].slice(0);
@@ -605,7 +610,7 @@ function getCharacteristicNameFromUUID(characteristicUUID) {
     return bluetoothUUIDs.getCharacteristicNameFromUUID(characteristicUUID);
 }
 
-const _console$h = createConsole("WebBluetoothConnectionManager", { log: true });
+const _console$h = createConsole("WebBluetoothConnectionManager", { log: false });
 
 
 
@@ -1065,7 +1070,7 @@ class RangeHelper {
 
     /** @param {number} value */
     getNormalization(value) {
-        return getInterpolation(value, this.#range.min, this.#range.max);
+        return getInterpolation(value, this.#range.min, this.#range.max) || 0;
     }
 
     /** @param {number} value */
@@ -1074,8 +1079,6 @@ class RangeHelper {
         return this.getNormalization(value);
     }
 }
-
-// TODO: - replace with RangeHelper
 
 /**
  * @typedef Vector2
@@ -2515,7 +2518,7 @@ class Device {
     get eventTypes() {
         return Device.#EventTypes;
     }
-    #eventDispatcher = new EventDispatcher(this.eventTypes);
+    #eventDispatcher = new EventDispatcher(this, this.eventTypes);
 
     /**
      * @param {DeviceEventType} type
@@ -3247,7 +3250,7 @@ class Device {
     static get StaticEventTypes() {
         return this.#StaticEventTypes;
     }
-    static #EventDispatcher = new EventDispatcher(this.#StaticEventTypes);
+    static #EventDispatcher = new EventDispatcher(this, this.#StaticEventTypes);
 
     /**
      * @param {StaticDeviceEventType} type
@@ -3440,7 +3443,7 @@ class BaseScanner {
     get eventTypes() {
         return BaseScanner.#EventTypes;
     }
-    #eventDispatcher = new EventDispatcher(this.eventTypes);
+    #eventDispatcher = new EventDispatcher(this, this.eventTypes);
 
     /**
      * @param {ScannerEventType} type
@@ -3829,6 +3832,8 @@ const _console$5 = createConsole("DevicePairPressureSensorDataManager", { log: t
 
 
 
+
+
 /**
  * @typedef DevicePairRawPressureData
  * @type {Object}
@@ -3847,6 +3852,8 @@ const _console$5 = createConsole("DevicePairPressureSensorDataManager", { log: t
  * @property {CenterOfPressure?} normalizedCenter
  */
 
+
+
 class DevicePairPressureSensorDataManager {
     static get Sides() {
         return Device.InsoleSides;
@@ -3858,7 +3865,7 @@ class DevicePairPressureSensorDataManager {
     // PRESSURE DATA
 
     /** @type {DevicePairRawPressureData} */
-    #rawPressureData = {};
+    #rawPressure = {};
 
     #centerOfPressureHelper = new CenterOfPressureHelper();
 
@@ -3869,14 +3876,18 @@ class DevicePairPressureSensorDataManager {
     /** @param {DeviceEvent} event  */
     onDevicePressureData(event) {
         const { pressure } = event.message;
-        this.#rawPressureData[event.target.insoleSide] = pressure;
+        const insoleSide = event.target.insoleSide;
+        _console$5.log({ pressure, insoleSide });
+        this.#rawPressure[insoleSide] = pressure;
         if (this.#hasAllPressureData) {
             return this.#updatePressureData();
+        } else {
+            _console$5.log("doesn't have all pressure data yet...");
         }
     }
 
     get #hasAllPressureData() {
-        this.sides.every((side) => side in this.#rawPressureData);
+        return this.sides.every((side) => side in this.#rawPressure);
     }
 
     static #Scalars = {
@@ -3886,37 +3897,39 @@ class DevicePairPressureSensorDataManager {
         return this.#Scalars;
     }
     get scalars() {
-        return DevicePair.Scalars;
+        return DevicePairPressureSensorDataManager.Scalars;
     }
 
     #updatePressureData() {
-        const scalar = this.scalars.pressure;
+        this.scalars.pressure;
+
+        // FIX
 
         /** @type {DevicePairPressureData} */
         const pressure = { rawSum: 0, normalizedSum: 0 };
 
-        this.#rawPressureData.left.data.rawSum;
         this.sides.forEach((side) => {
-            pressure.rawSum += this.#rawPressureData[side].data.rawSum;
+            pressure.rawSum += this.#rawPressure[side].rawSum;
+            pressure.normalizedSum += this.#rawPressure[side].normalizedSum;
         });
 
-        if (pressure.rawSum > 0) {
-            pressure.normalizedSum = pressure.rawSum * scalar;
-
+        if (pressure.normalizedSum > 0) {
             pressure.center = { x: 0, y: 0 };
             this.sides.forEach((side) => {
-                const sidePressureData = this.#rawPressureData[side].data;
-                const rawPressureSumWeight = sidePressureData.rawSum / rawPressureSum;
-                pressure.center.y += sidePressureData.center.y * rawPressureSumWeight;
-                if (side == "right") {
-                    pressure.center.x = rawPressureSumWeight;
+                const sidePressure = this.#rawPressure[side];
+                const normalizedPressureSumWeight = sidePressure.normalizedSum / pressure.normalizedSum;
+                if (normalizedPressureSumWeight > 0) {
+                    pressure.center.y += sidePressure.normalizedCenter.y * normalizedPressureSumWeight;
+                    if (side == "right") {
+                        pressure.center.x = normalizedPressureSumWeight;
+                    }
                 }
             });
 
             pressure.normalizedCenter = this.#centerOfPressureHelper.updateAndGetNormalization(pressure.center);
         }
 
-        _console$5.log({ pressure });
+        _console$5.log({ devicePairPressure: pressure });
 
         return pressure;
     }
@@ -3950,7 +3963,10 @@ class DevicePairSensorDataManager {
 
     /** @param {DeviceEvent} event  */
     onDeviceSensorData(event) {
-        const { type, timestamp } = event.message;
+        const { type } = event;
+        const { timestamp } = event.message;
+
+        _console$4.log({ type, timestamp, event });
 
         /** @type {SensorType} */
         const sensorType = type;
@@ -3974,7 +3990,7 @@ class DevicePairSensorDataManager {
             const timestamps = Object.assign({}, this.#timestamps[sensorType]);
             this.onDataReceived?.(sensorType, { timestamps, [sensorType]: value });
         } else {
-            _console$4.warn("no value received");
+            _console$4.log("no value received");
         }
     }
 
@@ -4004,7 +4020,7 @@ const _console$3 = createConsole("DevicePair", { log: true });
  * @property {Object} message
  */
 
-let DevicePair$1 = class DevicePair {
+class DevicePair {
     constructor() {
         this.#sensorDataManager.onDataReceived = this.#onSensorDataReceived.bind(this);
     }
@@ -4019,7 +4035,7 @@ let DevicePair$1 = class DevicePair {
     get eventTypes() {
         return DevicePair.#EventTypes;
     }
-    #eventDispatcher = new EventDispatcher(this.eventTypes);
+    #eventDispatcher = new EventDispatcher(this, this.eventTypes);
 
     /**
      * @param {DevicePairEventType} type
@@ -4068,6 +4084,9 @@ let DevicePair$1 = class DevicePair {
 
     get isConnected() {
         return this.sides.every((side) => this[side]?.isConnected);
+    }
+    #assertIsConnected() {
+        _console$3.assertWithError(this.isConnected, "devicePair must be connected");
     }
 
     /** @param {Device} device */
@@ -4133,6 +4152,7 @@ let DevicePair$1 = class DevicePair {
 
     // SENSOR DATA
     #sensorDataManager = new DevicePairSensorDataManager();
+    /** @param {DeviceEvent} event */
     #onDeviceSensorData(event) {
         if (this.isConnected) {
             this.#sensorDataManager.onDeviceSensorData(event);
@@ -4167,7 +4187,7 @@ let DevicePair$1 = class DevicePair {
             }
         });
     }
-};
+}
 
 const _console$2 = createConsole("ServerUtils", { log: false });
 
@@ -4322,7 +4342,7 @@ class WebSocketClient {
     get eventTypes() {
         return WebSocketClient.#EventTypes;
     }
-    #eventDispatcher = new EventDispatcher(this.eventTypes);
+    #eventDispatcher = new EventDispatcher(this, this.eventTypes);
 
     /**
      * @param {ClientEventType} type
@@ -4776,7 +4796,7 @@ class WebSocketServer {
     get eventTypes() {
         return WebSocketServer.#EventTypes;
     }
-    #eventDispatcher = new EventDispatcher(this.eventTypes);
+    #eventDispatcher = new EventDispatcher(this, this.eventTypes);
 
     /**
      * @param {ServerEventType} type
@@ -5050,7 +5070,7 @@ var BS = {
     setAllConsoleLevelFlags,
     setConsoleLevelFlagsForType,
     Device,
-    DevicePair: DevicePair$1,
+    DevicePair,
     WebSocketClient,
     WebSocketServer,
     Scanner,
