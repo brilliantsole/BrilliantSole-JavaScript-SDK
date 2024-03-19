@@ -81,13 +81,21 @@ insole.addEventListener("isConnected", () => {
 const charts = {};
 window.charts = charts;
 
+/**
+ * @typedef range
+ * @type {object}
+ * @property {number} min
+ * @property {number} max
+ */
+
 window.maxTicks = 100;
 /**
  * @param {HTMLCanvasElement} canvas
  * @param {string} title
  * @param {string[]} axesLabels
+ * @param {range} yRange
  */
-function createChart(canvas, title, axesLabels) {
+function createChart(canvas, title, axesLabels, yRange) {
     const data = {
         labels: new Array(window.maxTicks).fill(0),
         datasets: [],
@@ -101,6 +109,18 @@ function createChart(canvas, title, axesLabels) {
             borderWidth: 2,
         });
     });
+
+    const scales = {
+        y: {
+            display: false,
+        },
+        x: {
+            display: false,
+        },
+    };
+    if (yRange) {
+        Object.assign(scales.y, yRange);
+    }
 
     const config = {
         type: "line",
@@ -124,10 +144,7 @@ function createChart(canvas, title, axesLabels) {
                     },
                 },
             },
-            scales: {
-                y: { display: false },
-                x: { display: false },
-            },
+            scales,
         },
     };
 
@@ -162,6 +179,7 @@ BS.Device.SensorTypes.forEach((sensorType) => {
     const chartContainer = chartTemplate.content.cloneNode(true).querySelector(".chart");
     chartsContainer.appendChild(chartContainer);
 
+    /** @type {string[]} */
     let axesLabels;
     switch (sensorType) {
         case "acceleration":
@@ -186,28 +204,54 @@ BS.Device.SensorTypes.forEach((sensorType) => {
             return;
     }
 
+    /** @type {range?} */
+    let yRange;
+    switch (sensorType) {
+        case "acceleration":
+            yRange = { min: -2, max: 2 };
+            break;
+        case "gravity":
+            yRange = { min: -1, max: 1 };
+            break;
+        case "linearAcceleration":
+            yRange = { min: -1, max: 1 };
+            break;
+        case "gyroscope":
+            yRange = { min: -360, max: 360 };
+            break;
+        case "magnetometer":
+            // FILL
+            break;
+        case "gameRotation":
+        case "rotation":
+            yRange = { min: -1, max: 1 };
+            break;
+    }
+
     switch (sensorType) {
         case "gameRotation":
         case "rotation":
             {
                 const eulerChartContainer = chartTemplate.content.cloneNode(true).querySelector(".chart");
                 chartsContainer.appendChild(eulerChartContainer);
-                createChart(eulerChartContainer.querySelector("canvas"), sensorType + "Euler", [
-                    "yaw",
-                    "pitch",
-                    "roll",
-                ]);
+                createChart(
+                    eulerChartContainer.querySelector("canvas"),
+                    sensorType + "Euler",
+                    ["yaw", "pitch", "roll"],
+                    { min: -Math.PI, max: Math.PI }
+                );
             }
             break;
         case "pressure":
             {
                 const pressureMetadataChartContainer = chartTemplate.content.cloneNode(true).querySelector(".chart");
                 chartsContainer.appendChild(pressureMetadataChartContainer);
-                createChart(pressureMetadataChartContainer.querySelector("canvas"), "pressureMetadata", [
-                    "sum",
-                    "x",
-                    "y",
-                ]);
+                createChart(
+                    pressureMetadataChartContainer.querySelector("canvas"),
+                    "pressureMetadata",
+                    ["sum", "x", "y"],
+                    { min: 0, max: 1 }
+                );
             }
             break;
     }
@@ -216,7 +260,7 @@ BS.Device.SensorTypes.forEach((sensorType) => {
     const euler = new THREE.Euler();
     euler.reorder("YXZ");
 
-    const appendData = createChart(chartContainer.querySelector("canvas"), sensorType, axesLabels);
+    const appendData = createChart(chartContainer.querySelector("canvas"), sensorType, axesLabels, yRange);
     insole.addEventListener(sensorType, (event) => {
         let { timestamp, [sensorType]: data } = event.message;
         if (sensorType == "pressure") {
@@ -229,7 +273,7 @@ BS.Device.SensorTypes.forEach((sensorType) => {
             case "rotation":
                 quaternion.copy(data);
                 euler.setFromQuaternion(quaternion);
-                charts[sensorType + "Euler"].appendData(timestamp, {
+                charts[sensorType + "Euler"]._appendData(timestamp, {
                     pitch: euler.x,
                     yaw: euler.y,
                     roll: euler.z,
@@ -239,7 +283,7 @@ BS.Device.SensorTypes.forEach((sensorType) => {
                 /** @type {import("../../build/brilliantsole.module.js").PressureData} */
                 const pressure = data;
 
-                charts.pressureMetadata.appendData(timestamp, {
+                charts.pressureMetadata._appendData(timestamp, {
                     sum: pressure.rawSum,
                     x: pressure.center.x,
                     y: pressure.center.y,
