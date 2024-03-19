@@ -70,7 +70,12 @@ BS.Device.InsoleSides.forEach((side) => {
         } else {
             togglePressureDataButton.innerText = "enable pressure data";
         }
-        togglePressureDataButton.disabled = false;
+        if (insole.isConnected) {
+            togglePressureDataButton.disabled = false;
+        }
+    });
+    insole.addEventListener("isConnected", () => {
+        togglePressureDataButton.disabled = !insole.isConnected;
     });
 
     insole.addEventListener("pressure", (event) => {
