@@ -24,7 +24,7 @@ const _console = createConsole("DevicePairPressureSensorDataManager", { log: tru
  * @property {number} normalizedSum
  *
  * @property {CenterOfPressure?} center
- * @property {CenterOfPressure?} calibratedCenter
+ * @property {CenterOfPressure?} normalizedCenter
  */
 
 class DevicePairPressureSensorDataManager {
@@ -43,7 +43,7 @@ class DevicePairPressureSensorDataManager {
     #centerOfPressureHelper = new CenterOfPressureHelper();
 
     resetPressureRange() {
-        this.#centerOfPressureHelper.resetRange();
+        this.#centerOfPressureHelper.reset();
     }
 
     /** @param {DeviceEvent} event  */
@@ -93,8 +93,7 @@ class DevicePairPressureSensorDataManager {
                 }
             });
 
-            this.#centerOfPressureHelper.updateCenterOfPressureRange(pressure.center);
-            pressure.calibratedCenter = this.#centerOfPressureHelper.getCalibratedCenterOfPressure(pressure.center);
+            pressure.normalizedCenter = this.#centerOfPressureHelper.updateAndGetNormalization(pressure.center);
         }
 
         _console.log({ pressure });

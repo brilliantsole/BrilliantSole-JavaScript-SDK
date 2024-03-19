@@ -13,9 +13,6 @@ const initialRange = { min: Infinity, max: -Infinity };
 class RangeHelper {
     /** @type {Range} */
     #range = Object.assign({}, initialRange);
-    get range() {
-        return this.#range;
-    }
 
     reset() {
         Object.assign(this.#range, initialRange);
@@ -23,13 +20,13 @@ class RangeHelper {
 
     /** @param {number} value */
     update(value) {
-        this.#range.min = Math.min(value, this.range.min);
-        this.#range.max = Math.max(value, this.range.max);
+        this.#range.min = Math.min(value, this.#range.min);
+        this.#range.max = Math.max(value, this.#range.max);
     }
 
     /** @param {number} value */
     getNormalization(value) {
-        return getInterpolation(value, this.range.min, this.range.max);
+        return getInterpolation(value, this.#range.min, this.#range.max);
     }
 
     /** @param {number} value */

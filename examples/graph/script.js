@@ -284,8 +284,8 @@ BS.Device.SensorTypes.forEach((sensorType) => {
                 const pressure = event.message.pressure;
                 charts.pressureMetadata._appendData(timestamp, {
                     sum: pressure.normalizedSum,
-                    x: pressure.calibratedCenter.x,
-                    y: pressure.calibratedCenter.y,
+                    x: pressure.normalizedCenter.x,
+                    y: pressure.normalizedCenter.y,
                 });
                 break;
         }

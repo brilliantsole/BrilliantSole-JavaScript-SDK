@@ -77,9 +77,7 @@ BS.Device.InsoleSides.forEach((side) => {
         /** @type {import("../../build/brilliantsole.module.js").PressureData} */
         const pressure = event.message.pressure;
         pressure.sensors.forEach((sensor, index) => {
-            pressureSensorElements[index].style.opacity = sensor.normalizedValue * window.normalizedValueScalar;
+            pressureSensorElements[index].style.opacity = sensor.normalizedValue;
         });
     });
 });
-
-window.normalizedValueScalar = 15;

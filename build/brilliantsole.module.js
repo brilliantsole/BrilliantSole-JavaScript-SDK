@@ -1050,9 +1050,6 @@ const initialRange = { min: Infinity, max: -Infinity };
 class RangeHelper {
     /** @type {Range} */
     #range = Object.assign({}, initialRange);
-    get range() {
-        return this.#range;
-    }
 
     reset() {
         Object.assign(this.#range, initialRange);
@@ -1060,13 +1057,13 @@ class RangeHelper {
 
     /** @param {number} value */
     update(value) {
-        this.#range.min = Math.min(value, this.range.min);
-        this.#range.max = Math.max(value, this.range.max);
+        this.#range.min = Math.min(value, this.#range.min);
+        this.#range.max = Math.max(value, this.#range.max);
     }
 
     /** @param {number} value */
     getNormalization(value) {
-        return getInterpolation(value, this.range.min, this.range.max);
+        return getInterpolation(value, this.#range.min, this.#range.max);
     }
 
     /** @param {number} value */
@@ -1086,51 +1083,45 @@ class RangeHelper {
  */
 
 /** @typedef {Vector2} CenterOfPressure */
+
 /**
  * @typedef CenterOfPressureRange
  * @type {Object}
- * @property {Vector2} min
- * @property {Vector2} max
+ * @property {RangeHelper} x
+ * @property {RangeHelper} y
  */
 
 class CenterOfPressureHelper {
-    /** @type {CenterOfPressure} */
-    #centerOfPressureRange;
-    resetRange() {
-        this.#centerOfPressureRange = {
-            min: { x: Infinity, y: Infinity },
-            max: { x: -Infinity, y: -Infinity },
-        };
-    }
-
-    constructor() {
-        this.resetRange();
+    /** @type {CenterOfPressureRange} */
+    #range = {
+        x: new RangeHelper(),
+        y: new RangeHelper(),
+    };
+    reset() {
+        this.#range.x.reset();
+        this.#range.y.reset();
     }
 
     /** @param {CenterOfPressure} centerOfPressure  */
-    updateCenterOfPressureRange(centerOfPressure) {
-        this.#centerOfPressureRange.min.x = Math.min(centerOfPressure.x, this.#centerOfPressureRange.min.x);
-        this.#centerOfPressureRange.min.y = Math.min(centerOfPressure.y, this.#centerOfPressureRange.min.y);
-
-        this.#centerOfPressureRange.max.x = Math.max(centerOfPressure.x, this.#centerOfPressureRange.max.x);
-        this.#centerOfPressureRange.max.y = Math.max(centerOfPressure.y, this.#centerOfPressureRange.max.y);
+    update(centerOfPressure) {
+        this.#range.x.update(centerOfPressure.x);
+        this.#range.y.update(centerOfPressure.y);
     }
-    /** @param {CenterOfPressure} centerOfPressure  */
-    getCalibratedCenterOfPressure(centerOfPressure) {
-        /** @type {CenterOfPressure} */
-        const calibratedCenterOfPressure = {
-            x: getInterpolation(
-                centerOfPressure.x,
-                this.#centerOfPressureRange.min.x,
-                this.#centerOfPressureRange.max.x
-            ),
-            y: getInterpolation(
-                centerOfPressure.y,
-                this.#centerOfPressureRange.min.y,
-                this.#centerOfPressureRange.max.y
-            ),
+    /**
+     * @param {CenterOfPressure} centerOfPressure
+     * @returns {CenterOfPressure}
+     */
+    getNormalization(centerOfPressure) {
+        return {
+            x: this.#range.x.getNormalization(centerOfPressure.x),
+            y: this.#range.y.getNormalization(centerOfPressure.y),
         };
-        return calibratedCenterOfPressure;
+    }
+
+    /** @param {CenterOfPressure} centerOfPressure  */
+    updateAndGetNormalization(centerOfPressure) {
+        this.update(centerOfPressure);
+        return this.getNormalization(centerOfPressure);
     }
 }
 
@@ -1183,7 +1174,7 @@ function createArray(arrayLength, objectOrCallback) {
  * @property {number} normalizedSum
  *
  * @property {CenterOfPressure?} center
- * @property {CenterOfPressure?} calibratedCenter
+ * @property {CenterOfPressure?} normalizedCenter
  */
 
 const _console$f = createConsole("PressureSensorDataManager", { log: true });
@@ -1285,7 +1276,7 @@ class PressureSensorDataManager {
     #centerOfPressureHelper = new CenterOfPressureHelper();
     resetRange() {
         this.#pressureSensorRangeHelpers.forEach((rangeHelper) => rangeHelper.reset());
-        this.#centerOfPressureHelper.resetRange();
+        this.#centerOfPressureHelper.reset();
     }
 
     /**
@@ -1316,8 +1307,7 @@ class PressureSensorDataManager {
                 pressure.center.x += sensor.position.x * sensor.weightedValue;
                 pressure.center.y += sensor.position.y * sensor.weightedValue;
             });
-            this.#centerOfPressureHelper.updateCenterOfPressureRange(pressure.center);
-            pressure.calibratedCenter = this.#centerOfPressureHelper.getCalibratedCenterOfPressure(pressure.center);
+            pressure.normalizedCenter = this.#centerOfPressureHelper.updateAndGetNormalization(pressure.center);
         }
 
         _console$f.log({ pressure });
@@ -3852,7 +3842,7 @@ const _console$5 = createConsole("DevicePairPressureSensorDataManager", { log: t
  * @property {number} normalizedSum
  *
  * @property {CenterOfPressure?} center
- * @property {CenterOfPressure?} calibratedCenter
+ * @property {CenterOfPressure?} normalizedCenter
  */
 
 class DevicePairPressureSensorDataManager {
@@ -3871,7 +3861,7 @@ class DevicePairPressureSensorDataManager {
     #centerOfPressureHelper = new CenterOfPressureHelper();
 
     resetPressureRange() {
-        this.#centerOfPressureHelper.resetRange();
+        this.#centerOfPressureHelper.reset();
     }
 
     /** @param {DeviceEvent} event  */
@@ -3921,8 +3911,7 @@ class DevicePairPressureSensorDataManager {
                 }
             });
 
-            this.#centerOfPressureHelper.updateCenterOfPressureRange(pressure.center);
-            pressure.calibratedCenter = this.#centerOfPressureHelper.getCalibratedCenterOfPressure(pressure.center);
+            pressure.normalizedCenter = this.#centerOfPressureHelper.updateAndGetNormalization(pressure.center);
         }
 
         _console$5.log({ pressure });

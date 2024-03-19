@@ -38,7 +38,7 @@ import { createArray } from "../utils/ArrayUtils.js";
  * @property {number} normalizedSum
  *
  * @property {CenterOfPressure?} center
- * @property {CenterOfPressure?} calibratedCenter
+ * @property {CenterOfPressure?} normalizedCenter
  */
 
 const _console = createConsole("PressureSensorDataManager", { log: true });
@@ -140,7 +140,7 @@ class PressureSensorDataManager {
     #centerOfPressureHelper = new CenterOfPressureHelper();
     resetRange() {
         this.#pressureSensorRangeHelpers.forEach((rangeHelper) => rangeHelper.reset());
-        this.#centerOfPressureHelper.resetRange();
+        this.#centerOfPressureHelper.reset();
     }
 
     /**
@@ -171,8 +171,7 @@ class PressureSensorDataManager {
                 pressure.center.x += sensor.position.x * sensor.weightedValue;
                 pressure.center.y += sensor.position.y * sensor.weightedValue;
             });
-            this.#centerOfPressureHelper.updateCenterOfPressureRange(pressure.center);
-            pressure.calibratedCenter = this.#centerOfPressureHelper.getCalibratedCenterOfPressure(pressure.center);
+            pressure.normalizedCenter = this.#centerOfPressureHelper.updateAndGetNormalization(pressure.center);
         }
 
         _console.log({ pressure });

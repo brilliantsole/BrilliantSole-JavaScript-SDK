@@ -11,51 +11,45 @@ import RangeHelper from "./RangeHelper.js";
  */
 
 /** @typedef {Vector2} CenterOfPressure */
+
 /**
  * @typedef CenterOfPressureRange
  * @type {Object}
- * @property {Vector2} min
- * @property {Vector2} max
+ * @property {RangeHelper} x
+ * @property {RangeHelper} y
  */
 
 class CenterOfPressureHelper {
-    /** @type {CenterOfPressure} */
-    #centerOfPressureRange;
-    resetRange() {
-        this.#centerOfPressureRange = {
-            min: { x: Infinity, y: Infinity },
-            max: { x: -Infinity, y: -Infinity },
-        };
-    }
-
-    constructor() {
-        this.resetRange();
+    /** @type {CenterOfPressureRange} */
+    #range = {
+        x: new RangeHelper(),
+        y: new RangeHelper(),
+    };
+    reset() {
+        this.#range.x.reset();
+        this.#range.y.reset();
     }
 
     /** @param {CenterOfPressure} centerOfPressure  */
-    updateCenterOfPressureRange(centerOfPressure) {
-        this.#centerOfPressureRange.min.x = Math.min(centerOfPressure.x, this.#centerOfPressureRange.min.x);
-        this.#centerOfPressureRange.min.y = Math.min(centerOfPressure.y, this.#centerOfPressureRange.min.y);
-
-        this.#centerOfPressureRange.max.x = Math.max(centerOfPressure.x, this.#centerOfPressureRange.max.x);
-        this.#centerOfPressureRange.max.y = Math.max(centerOfPressure.y, this.#centerOfPressureRange.max.y);
+    update(centerOfPressure) {
+        this.#range.x.update(centerOfPressure.x);
+        this.#range.y.update(centerOfPressure.y);
     }
-    /** @param {CenterOfPressure} centerOfPressure  */
-    getCalibratedCenterOfPressure(centerOfPressure) {
-        /** @type {CenterOfPressure} */
-        const calibratedCenterOfPressure = {
-            x: getInterpolation(
-                centerOfPressure.x,
-                this.#centerOfPressureRange.min.x,
-                this.#centerOfPressureRange.max.x
-            ),
-            y: getInterpolation(
-                centerOfPressure.y,
-                this.#centerOfPressureRange.min.y,
-                this.#centerOfPressureRange.max.y
-            ),
+    /**
+     * @param {CenterOfPressure} centerOfPressure
+     * @returns {CenterOfPressure}
+     */
+    getNormalization(centerOfPressure) {
+        return {
+            x: this.#range.x.getNormalization(centerOfPressure.x),
+            y: this.#range.y.getNormalization(centerOfPressure.y),
         };
-        return calibratedCenterOfPressure;
+    }
+
+    /** @param {CenterOfPressure} centerOfPressure  */
+    updateAndGetNormalization(centerOfPressure) {
+        this.update(centerOfPressure);
+        return this.getNormalization(centerOfPressure);
     }
 }
 
