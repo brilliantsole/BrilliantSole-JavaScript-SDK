@@ -203,6 +203,7 @@ BS.Device.InsoleSides.forEach((side) => {
     };
 
     const _quaternion = new THREE.Quaternion();
+    const targetQuaternion = new THREE.Quaternion();
     /** @typedef {import("../../build/brilliantsole.module.js").Quaternion} Quaternion */
     /**
      * @param {Quaternion} quaternion
@@ -210,10 +211,11 @@ BS.Device.InsoleSides.forEach((side) => {
      */
     const updateQuaternion = (quaternion, applyOffset = false) => {
         _quaternion.copy(quaternion);
+        targetQuaternion.copy(_quaternion);
         if (applyOffset) {
-            _quaternion.multiply(offsetQuaternion); // premultiply?
+            targetQuaternion.premultiply(offsetQuaternion); // premultiply?
         }
-        insoleEntity.object3D.quaternion.slerp(_quaternion, window.interpolationSmoothing);
+        insoleEntity.object3D.quaternion.slerp(targetQuaternion, window.interpolationSmoothing);
     };
     insole.addEventListener("gameRotation", (event) => {
         /** @type {Quaternion} */
