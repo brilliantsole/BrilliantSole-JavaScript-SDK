@@ -144,3 +144,52 @@ export function getServiceNameFromUUID(serviceUUID) {
 export function getCharacteristicNameFromUUID(characteristicUUID) {
     return bluetoothUUIDs.getCharacteristicNameFromUUID(characteristicUUID);
 }
+
+/**
+ * @param {BluetoothCharacteristicName} characteristicName
+ * @returns {BluetoothCharacteristicProperties}
+ */
+export function getCharacteristicProperties(characteristicName) {
+    /** @type {BluetoothCharacteristicProperties} */
+    const properties = {
+        broadcast: false,
+        read: true,
+        writeWithoutResponse: false,
+        write: false,
+        notify: false,
+        indicate: false,
+        authenticatedSignedWrites: false,
+        reliableWrite: false,
+        writableAuxiliaries: false,
+    };
+
+    // read
+    switch (characteristicName) {
+        case "vibration":
+        case "sensorData":
+            properties.read = false;
+            break;
+    }
+
+    // notify
+    switch (characteristicName) {
+        case "batteryLevel":
+        case "sensorData":
+            properties.notify = true;
+            break;
+    }
+
+    // write
+    switch (characteristicName) {
+        case "name":
+        case "type":
+        case "sensorConfiguration":
+        case "vibration":
+            properties.write = true;
+            properties.writeWithoutResponse = true;
+            properties.reliableWrite = true;
+            break;
+    }
+
+    return properties;
+}

@@ -1,5 +1,5 @@
 import { createConsole } from "../../utils/Console.js";
-import { isInNode, isInBrowser, isInBluefy } from "../../utils/environment.js";
+import { isInNode, isInBrowser, isInBluefy, isInWebBLE } from "../../utils/environment.js";
 import { addEventListeners, removeEventListeners } from "../../utils/EventDispatcher.js";
 import ConnectionManager from "../ConnectionManager.js";
 import {
@@ -7,6 +7,7 @@ import {
     optionalServiceUUIDs,
     getServiceNameFromUUID,
     getCharacteristicNameFromUUID,
+    getCharacteristicProperties,
 } from "./bluetoothUUIDs.js";
 
 const _console = createConsole("WebBluetoothConnectionManager", { log: false });
@@ -136,14 +137,19 @@ class WebBluetoothConnectionManager extends ConnectionManager {
                 characteristic._name = characteristicName;
                 this.#characteristics.set(characteristicName, characteristic);
                 addEventListeners(characteristic, this.#boundBluetoothCharacteristicEventListeners);
-                if (characteristic.properties.read) {
+                let characteristicProperties = characteristic.properties;
+                if (!characteristicProperties) {
+                    // characteristic.properties is not supported in WebBLE
+                    characteristicProperties = getCharacteristicProperties(characteristicName);
+                }
+                if (characteristicProperties.read) {
                     _console.log(`reading "${characteristicName}" characteristic...`);
                     await characteristic.readValue();
-                    if (isInBluefy) {
+                    if (isInBluefy || isInWebBLE) {
                         this.#onCharacteristicValueChanged(characteristic);
                     }
                 }
-                if (characteristic.properties.notify) {
+                if (characteristicProperties.notify) {
                     _console.log(`starting notifications for "${characteristicName}" characteristic`);
                     await characteristic.startNotifications();
                 }

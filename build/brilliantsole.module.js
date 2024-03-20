@@ -10,9 +10,23 @@ const isInBrowser = typeof window !== "undefined" && window?.document !== "undef
 const isInNode = typeof process !== "undefined" && process?.versions?.node != null;
 
 const isInBluefy = isInBrowser && navigator.userAgent.includes("Bluefy");
-isInBrowser && navigator.userAgent.includes("WebBLE");
+const isInWebBLE = isInBrowser && navigator.userAgent.includes("WebBLE");
 
 isInBrowser && navigator.userAgent.includes("Android");
+
+// console.assert not supported in WebBLE
+if (!console.assert) {
+    /**
+     * @param {boolean} condition
+     * @param  {...any} data
+     */
+    const assert = (condition, ...data) => {
+        if (condition) {
+            console.warn(...data);
+        }
+    };
+    console.assert = assert;
+}
 
 /**
  * @callback LogFunction
@@ -621,6 +635,55 @@ function getCharacteristicNameFromUUID(characteristicUUID) {
     return bluetoothUUIDs.getCharacteristicNameFromUUID(characteristicUUID);
 }
 
+/**
+ * @param {BluetoothCharacteristicName} characteristicName
+ * @returns {BluetoothCharacteristicProperties}
+ */
+function getCharacteristicProperties(characteristicName) {
+    /** @type {BluetoothCharacteristicProperties} */
+    const properties = {
+        broadcast: false,
+        read: true,
+        writeWithoutResponse: false,
+        write: false,
+        notify: false,
+        indicate: false,
+        authenticatedSignedWrites: false,
+        reliableWrite: false,
+        writableAuxiliaries: false,
+    };
+
+    // read
+    switch (characteristicName) {
+        case "vibration":
+        case "sensorData":
+            properties.read = false;
+            break;
+    }
+
+    // notify
+    switch (characteristicName) {
+        case "batteryLevel":
+        case "sensorData":
+            properties.notify = true;
+            break;
+    }
+
+    // write
+    switch (characteristicName) {
+        case "name":
+        case "type":
+        case "sensorConfiguration":
+        case "vibration":
+            properties.write = true;
+            properties.writeWithoutResponse = true;
+            properties.reliableWrite = true;
+            break;
+    }
+
+    return properties;
+}
+
 const _console$h = createConsole("WebBluetoothConnectionManager", { log: false });
 
 
@@ -748,14 +811,19 @@ class WebBluetoothConnectionManager extends ConnectionManager {
                 characteristic._name = characteristicName;
                 this.#characteristics.set(characteristicName, characteristic);
                 addEventListeners(characteristic, this.#boundBluetoothCharacteristicEventListeners);
-                if (characteristic.properties.read) {
+                let characteristicProperties = characteristic.properties;
+                if (!characteristicProperties) {
+                    // characteristic.properties is not supported in WebBLE
+                    characteristicProperties = getCharacteristicProperties(characteristicName);
+                }
+                if (characteristicProperties.read) {
                     _console$h.log(`reading "${characteristicName}" characteristic...`);
                     await characteristic.readValue();
-                    if (isInBluefy) {
+                    if (isInBluefy || isInWebBLE) {
                         this.#onCharacteristicValueChanged(characteristic);
                     }
                 }
-                if (characteristic.properties.notify) {
+                if (characteristicProperties.notify) {
                     _console$h.log(`starting notifications for "${characteristicName}" characteristic`);
                     await characteristic.startNotifications();
                 }

@@ -1,5 +1,19 @@
 import { isInDev } from "./environment.js";
 
+// console.assert not supported in WebBLE
+if (!console.assert) {
+    /**
+     * @param {boolean} condition
+     * @param  {...any} data
+     */
+    const assert = (condition, ...data) => {
+        if (condition) {
+            console.warn(...data);
+        }
+    };
+    console.assert = assert;
+}
+
 /**
  * @callback LogFunction
  * @param {...any} data
