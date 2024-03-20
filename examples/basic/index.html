@@ -15,6 +15,7 @@
         ul,
         ol {
             margin-top: 0;
+            list-style: none;
         }
     </style>
     <body>
@@ -24,9 +25,28 @@
 
         <h1>Basic | BrilliantSole JavaScript SDK</h1>
 
-        <button id="toggleConnection">connect</button>
-        <button id="reconnect" disabled>reconnect</button>
-        <label>reconnect on disconnection? <input id="reconnectOnDisconnection" type="checkbox" /></label>
+        <div>
+            <h2>available devices</h2>
+            <button id="getDevices">get devices</button>
+            <div id="availableDevices">
+                <template id="availableDeviceTemplate">
+                    <div class="availableDevice">
+                        <ul>
+                            <li><b>name: </b> <span class="name"></span></li>
+                            <li><b>type: </b> <span class="type"></span></li>
+                            <li><button class="toggleConnection">connect</button></li>
+                        </ul>
+                    </div>
+                </template>
+            </div>
+        </div>
+
+        <div>
+            <h2>connection</h2>
+            <button id="toggleConnection">connect</button>
+            <button id="reconnect" disabled>reconnect</button>
+            <label>reconnect on disconnection? <input id="reconnectOnDisconnection" type="checkbox" /></label>
+        </div>
 
         <div>
             <h2>device information</h2>

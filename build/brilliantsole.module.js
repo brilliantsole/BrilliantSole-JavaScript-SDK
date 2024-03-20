@@ -2461,7 +2461,7 @@ class VibrationManager {
     }
 }
 
-const _console$a = createConsole("Device", { log: false });
+const _console$a = createConsole("Device", { log: true });
 
 
 
@@ -2543,7 +2543,6 @@ const _console$a = createConsole("Device", { log: false });
 
 class Device {
     constructor() {
-        //this.connectionManager = new Device.#DefaultConnectionManager();
         this.#sensorDataManager.onDataReceived = this.#onSensorDataReceived.bind(this);
 
         if (isInBrowser) {
@@ -3258,18 +3257,28 @@ class Device {
     }
 
     /**
+     * @typedef LocalStorageDeviceInformation
+     * @type {Object}
+     * @property {string} bluetoothId
+     * @property {DeviceType} type
+     */
+
+    /**
      * @typedef LocalStorageConfiguration
      * @type {Object}
-     * @property {string[]?} bluetoothDeviceIds
+     * @property {LocalStorageDeviceInformation[]} devices
      */
 
     /** @type {LocalStorageConfiguration} */
-    static #DefaultLocalStorageConfiguration = {};
+    static #DefaultLocalStorageConfiguration = {
+        devices: [],
+    };
     /** @type {LocalStorageConfiguration?} */
     static #LocalStorageConfiguration;
 
     static #AssertLocalStorage() {
         _console$a.assertWithError(isInBrowser, "localStorage is only available in the browser");
+        _console$a.assertWithError(window.localStorage, "localStorage not found");
     }
     static #LocalStorageKey = "BS.Device";
     static #SaveToLocalStorage() {
@@ -3280,7 +3289,7 @@ class Device {
         this.#AssertLocalStorage();
         let localStorageString = localStorage.getItem(this.#LocalStorageKey);
         if (typeof localStorageString != "string") {
-            _console$a.warn("no info found in localStorage");
+            _console$a.log("no info found in localStorage");
             this.#LocalStorageConfiguration = Object.assign({}, this.#DefaultLocalStorageConfiguration);
             this.#SaveToLocalStorage();
             return;
@@ -3288,7 +3297,7 @@ class Device {
         try {
             const configuration = JSON.parse(localStorageString);
             _console$a.log({ configuration });
-            return configuration;
+            this.#LocalStorageConfiguration = configuration;
         } catch (error) {
             _console$a.error(error);
         }
@@ -3298,6 +3307,8 @@ class Device {
      * retrieves devices already connected via web bluetooth in other tabs/windows
      *
      * _only available on web-bluetooth enabled browsers_
+     *
+     * @returns {Promise<Device[]?>}
      */
     static async GetDevices() {
         if (!isInBrowser) {
@@ -3316,8 +3327,8 @@ class Device {
         }
 
         const configuration = this.#LocalStorageConfiguration;
-        if (!configuration.bluetoothDeviceIds || configuration.bluetoothDeviceIds.length == 0) {
-            _console$a.log("no bluetoothDeviceIds found in configuration");
+        if (!configuration.devices || configuration.devices.length == 0) {
+            _console$a.log("no devices found in configuration");
             return;
         }
 
@@ -3327,14 +3338,24 @@ class Device {
 
         const devices = bluetoothDevices
             .map((bluetoothDevice) => {
-                if (bluetoothDevice.gatt && configuration.bluetoothDeviceIds.includes(bluetoothDevice.id)) {
-                    const device = new Device();
-                    device.connectionManager = new WebBluetoothConnectionManager();
-                    /** @type {WebBluetoothConnectionManager} */
-                    const connectionManager = device.connectionManager;
-                    connectionManager.device = bluetoothDevice;
-                    return device;
+                if (!bluetoothDevice.gatt) {
+                    return;
                 }
+                let deviceInformation = configuration.devices.find(
+                    (deviceInformation) => bluetoothDevice.id == deviceInformation.bluetoothId
+                );
+                if (!deviceInformation) {
+                    return;
+                }
+                const device = new Device();
+                const connectionManager = new WebBluetoothConnectionManager();
+                connectionManager.device = bluetoothDevice;
+                if (bluetoothDevice.name) {
+                    device.#updateName(bluetoothDevice.name);
+                }
+                device.#updateType(deviceInformation.type);
+                device.connectionManager = connectionManager;
+                return device;
             })
             .filter(Boolean);
         return devices;
@@ -3383,7 +3404,10 @@ class Device {
                 if (this.UseLocalStorage && device.connectionType == "webBluetooth") {
                     /** @type {WebBluetoothConnectionManager} */
                     const connectionManager = device.connectionManager;
-                    this.#LocalStorageConfiguration.bluetoothDeviceIds.push(connectionManager.device.id);
+                    this.#LocalStorageConfiguration.devices.push({
+                        type: device.type,
+                        bluetoothId: connectionManager.device.id,
+                    });
                     this.#SaveToLocalStorage();
                 }
                 this.#DispatchEvent({ type: "deviceConnected", message: { device } });
