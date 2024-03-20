@@ -36,22 +36,8 @@ getDevicesButton.addEventListener("click", async () => {
                 device.connectionManager = availableDevice.connectionManager;
                 device.reconnect();
             });
-            availableDevice.addEventListener("connectionStatus", () => {
-                switch (availableDevice.connectionStatus) {
-                    case "connected":
-                    case "not connected":
-                        toggleConnectionButton.disabled = false;
-                        toggleConnectionButton.innerText = availableDevice.isConnected ? "disconnect" : "connect";
-                        break;
-                    case "connecting":
-                    case "disconnecting":
-                        toggleConnectionButton.disabled = true;
-                        toggleConnectionButton.innerText = availableDevice.connectionStatus;
-                        break;
-                }
-            });
-            device.addEventListener("isConnected", () => {
-                toggleConnectionButton.disabled = device.isConnected;
+            device.addEventListener("connectionStatus", () => {
+                toggleConnectionButton.disabled = device.connectionStatus != "not connected";
             });
 
             availableDevicesContainer.appendChild(availableDeviceContainer);
