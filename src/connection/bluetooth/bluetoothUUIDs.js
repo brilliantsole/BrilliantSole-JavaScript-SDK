@@ -99,8 +99,13 @@ const bluetoothUUIDs = Object.freeze({
      * @returns {BluetoothServiceName?}
      */
     getServiceNameFromUUID(serviceUUID) {
+        serviceUUID = serviceUUID.toLowerCase();
         return Object.entries(this.services).find(([serviceName, serviceInfo]) => {
-            return serviceUUID == serviceInfo.uuid;
+            let serviceInfoUUID = serviceInfo.uuid;
+            if (serviceUUID.length == 4) {
+                serviceInfoUUID = serviceInfoUUID.slice(4, 8);
+            }
+            return serviceUUID == serviceInfoUUID;
         })?.[0];
     },
 
@@ -109,11 +114,16 @@ const bluetoothUUIDs = Object.freeze({
      * @returns {BluetoothCharacteristicName?}
      */
     getCharacteristicNameFromUUID(characteristicUUID) {
+        characteristicUUID = characteristicUUID.toLowerCase();
         var characteristicName;
         Object.values(this.services).some((serviceInfo) => {
             characteristicName = Object.entries(serviceInfo.characteristics).find(
                 ([characteristicName, characteristicInfo]) => {
-                    return characteristicUUID == characteristicInfo.uuid;
+                    let characteristicInfoUUID = characteristicInfo.uuid;
+                    if (characteristicUUID.length == 4) {
+                        characteristicInfoUUID = characteristicInfoUUID.slice(4, 8);
+                    }
+                    return characteristicUUID == characteristicInfoUUID;
                 }
             )?.[0];
             return characteristicName;

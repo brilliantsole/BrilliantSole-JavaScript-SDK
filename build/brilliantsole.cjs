@@ -11,6 +11,9 @@ const isInDev = "__BRILLIANTSOLE__PROD__" == "__BRILLIANTSOLE__DEV__";
 const isInBrowser = typeof window !== "undefined" && window?.document !== "undefined";
 const isInNode = typeof process !== "undefined" && process?.versions?.node != null;
 
+const isInBluefy = isInBrowser && navigator.userAgent.includes("Bluefy");
+isInBrowser && navigator.userAgent.includes("WebBLE");
+
 isInBrowser && navigator.userAgent.includes("Android");
 
 /**
@@ -574,8 +577,13 @@ const bluetoothUUIDs = Object.freeze({
      * @returns {BluetoothServiceName?}
      */
     getServiceNameFromUUID(serviceUUID) {
+        serviceUUID = serviceUUID.toLowerCase();
         return Object.entries(this.services).find(([serviceName, serviceInfo]) => {
-            return serviceUUID == serviceInfo.uuid;
+            let serviceInfoUUID = serviceInfo.uuid;
+            if (serviceUUID.length == 4) {
+                serviceInfoUUID = serviceInfoUUID.slice(4, 8);
+            }
+            return serviceUUID == serviceInfoUUID;
         })?.[0];
     },
 
@@ -584,11 +592,16 @@ const bluetoothUUIDs = Object.freeze({
      * @returns {BluetoothCharacteristicName?}
      */
     getCharacteristicNameFromUUID(characteristicUUID) {
+        characteristicUUID = characteristicUUID.toLowerCase();
         var characteristicName;
         Object.values(this.services).some((serviceInfo) => {
             characteristicName = Object.entries(serviceInfo.characteristics).find(
                 ([characteristicName, characteristicInfo]) => {
-                    return characteristicUUID == characteristicInfo.uuid;
+                    let characteristicInfoUUID = characteristicInfo.uuid;
+                    if (characteristicUUID.length == 4) {
+                        characteristicInfoUUID = characteristicInfoUUID.slice(4, 8);
+                    }
+                    return characteristicUUID == characteristicInfoUUID;
                 }
             )?.[0];
             return characteristicName;
@@ -740,6 +753,9 @@ class WebBluetoothConnectionManager extends ConnectionManager {
                 if (characteristic.properties.read) {
                     _console$h.log(`reading "${characteristicName}" characteristic...`);
                     await characteristic.readValue();
+                    if (isInBluefy) {
+                        this.#onCharacteristicValueChanged(characteristic);
+                    }
                 }
                 if (characteristic.properties.notify) {
                     _console$h.log(`starting notifications for "${characteristicName}" characteristic`);
@@ -770,6 +786,14 @@ class WebBluetoothConnectionManager extends ConnectionManager {
 
         /** @type {BluetoothRemoteGATTCharacteristic} */
         const characteristic = event.target;
+
+        this.#onCharacteristicValueChanged(characteristic);
+    }
+
+    /** @param {BluetoothRemoteGATTCharacteristic} characteristic */
+    #onCharacteristicValueChanged(characteristic) {
+        _console$h.log("onCharacteristicValue");
+
         /** @type {BluetoothCharacteristicName} */
         const characteristicName = characteristic._name;
         _console$h.assertWithError(

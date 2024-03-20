@@ -1,5 +1,5 @@
 import { createConsole } from "../../utils/Console.js";
-import { isInNode, isInBrowser } from "../../utils/environment.js";
+import { isInNode, isInBrowser, isInBluefy } from "../../utils/environment.js";
 import { addEventListeners, removeEventListeners } from "../../utils/EventDispatcher.js";
 import ConnectionManager from "../ConnectionManager.js";
 import {
@@ -139,6 +139,9 @@ class WebBluetoothConnectionManager extends ConnectionManager {
                 if (characteristic.properties.read) {
                     _console.log(`reading "${characteristicName}" characteristic...`);
                     await characteristic.readValue();
+                    if (isInBluefy) {
+                        this.#onCharacteristicValueChanged(characteristic);
+                    }
                 }
                 if (characteristic.properties.notify) {
                     _console.log(`starting notifications for "${characteristicName}" characteristic`);
@@ -169,6 +172,14 @@ class WebBluetoothConnectionManager extends ConnectionManager {
 
         /** @type {BluetoothRemoteGATTCharacteristic} */
         const characteristic = event.target;
+
+        this.#onCharacteristicValueChanged(characteristic);
+    }
+
+    /** @param {BluetoothRemoteGATTCharacteristic} characteristic */
+    #onCharacteristicValueChanged(characteristic) {
+        _console.log("onCharacteristicValue");
+
         /** @type {BluetoothCharacteristicName} */
         const characteristicName = characteristic._name;
         _console.assertWithError(
