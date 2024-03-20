@@ -27,7 +27,7 @@
 	     * @param  {...any} data
 	     */
 	    const assert = (condition, ...data) => {
-	        if (condition) {
+	        if (!condition) {
 	            console.warn(...data);
 	        }
 	    };
