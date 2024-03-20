@@ -955,6 +955,9 @@
 	        }
 
 	        _console$h.assert(characteristic, "no characteristic found");
+	        if (data instanceof DataView) {
+	            data = data.buffer;
+	        }
 	        await characteristic.writeValueWithResponse(data);
 	        const characteristicProperties = characteristic.properties || getCharacteristicProperties(characteristicName);
 	        if (characteristicProperties.read) {
