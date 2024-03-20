@@ -182,6 +182,9 @@ BS.Device.SensorTypes.forEach((sensorType) => {
     /** @type {string[]} */
     let axesLabels;
     switch (sensorType) {
+        case "pressure":
+            axesLabels = BS.Device.PressureSensorNames.slice();
+            break;
         case "acceleration":
         case "gravity":
         case "linearAcceleration":
@@ -196,9 +199,6 @@ BS.Device.SensorTypes.forEach((sensorType) => {
         case "rotation":
             axesLabels = ["x", "y", "z", "w"];
             break;
-        case "pressure":
-            axesLabels = BS.Device.PressureSensorNames.slice();
-            break;
         default:
             console.warn(`uncaught sensorType "${sensorType}"`);
             return;
@@ -207,6 +207,9 @@ BS.Device.SensorTypes.forEach((sensorType) => {
     /** @type {range?} */
     let yRange;
     switch (sensorType) {
+        case "pressure":
+            yRange = { min: 0, max: 1 };
+            break;
         case "acceleration":
             yRange = { min: -2, max: 2 };
             break;
@@ -263,8 +266,15 @@ BS.Device.SensorTypes.forEach((sensorType) => {
     const appendData = createChart(chartContainer.querySelector("canvas"), sensorType, axesLabels, yRange);
     insole.addEventListener(sensorType, (event) => {
         let { timestamp, [sensorType]: data } = event.message;
+
+        /** @typedef {import("../../build/brilliantsole.module.js").PressureData} PressureData */
         if (sensorType == "pressure") {
-            data = data.sensors;
+            /** @type {PressureData} */
+            let pressure = data;
+            data = {};
+            pressure.sensors.forEach((sensor) => {
+                data[sensor.name] = sensor.normalizedValue;
+            });
         }
         appendData(timestamp, data);
 
@@ -280,13 +290,15 @@ BS.Device.SensorTypes.forEach((sensorType) => {
                 });
                 break;
             case "pressure":
-                /** @type {import("../../build/brilliantsole.module.js").PressureData} */
-                const pressure = event.message.pressure;
-                charts.pressureMetadata._appendData(timestamp, {
-                    sum: pressure.normalizedSum,
-                    x: pressure.normalizedCenter.x,
-                    y: pressure.normalizedCenter.y,
-                });
+                {
+                    /** @type {PressureData} */
+                    let pressure = event.message.pressure;
+                    charts.pressureMetadata._appendData(timestamp, {
+                        sum: pressure.normalizedSum,
+                        x: pressure.normalizedCenter?.x || 0,
+                        y: pressure.normalizedCenter?.y || 0,
+                    });
+                }
                 break;
         }
     });
