@@ -817,11 +817,8 @@
 	                characteristic._name = characteristicName;
 	                this.#characteristics.set(characteristicName, characteristic);
 	                addEventListeners(characteristic, this.#boundBluetoothCharacteristicEventListeners);
-	                let characteristicProperties = characteristic.properties;
-	                if (!characteristicProperties) {
-	                    // characteristic.properties is not supported in WebBLE
-	                    characteristicProperties = getCharacteristicProperties(characteristicName);
-	                }
+	                const characteristicProperties =
+	                    characteristic.properties || getCharacteristicProperties(characteristicName);
 	                if (characteristicProperties.read) {
 	                    _console$h.log(`reading "${characteristicName}" characteristic...`);
 	                    await characteristic.readValue();
@@ -934,18 +931,24 @@
 	        await super.sendMessage(...arguments);
 	        /** @type {BluetoothRemoteGATTCharacteristic} */
 	        let characteristic;
+	        /** @type {BluetoothCharacteristicName} */
+	        let characteristicName;
 	        switch (messageType) {
 	            case "setName":
-	                characteristic = this.#characteristics.get("name");
+	                characteristicName = "name";
+	                characteristic = this.#characteristics.get(characteristicName);
 	                break;
 	            case "setType":
-	                characteristic = this.#characteristics.get("type");
+	                characteristicName = "type";
+	                characteristic = this.#characteristics.get(characteristicName);
 	                break;
 	            case "setSensorConfiguration":
-	                characteristic = this.#characteristics.get("sensorConfiguration");
+	                characteristicName = "sensorConfiguration";
+	                characteristic = this.#characteristics.get(characteristicName);
 	                break;
 	            case "triggerVibration":
-	                characteristic = this.#characteristics.get("vibration");
+	                characteristicName = "vibration";
+	                characteristic = this.#characteristics.get(characteristicName);
 	                break;
 	            default:
 	                throw Error(`uncaught messageType "${messageType}"`);
@@ -953,7 +956,8 @@
 
 	        _console$h.assert(characteristic, "no characteristic found");
 	        await characteristic.writeValueWithResponse(data);
-	        if (characteristic.properties.read) {
+	        const characteristicProperties = characteristic.properties || getCharacteristicProperties(characteristicName);
+	        if (characteristicProperties.read) {
 	            await characteristic.readValue();
 	        }
 	    }
