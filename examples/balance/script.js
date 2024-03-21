@@ -36,7 +36,7 @@ addDeviceButton.addEventListener("click", () => {
     if (device) {
         device.connect();
     } else {
-        console.warn("all devices are connected");
+        console.log("all devices are connected");
     }
 });
 

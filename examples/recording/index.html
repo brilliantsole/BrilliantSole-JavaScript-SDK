@@ -6,6 +6,20 @@
         <script type="module" src="./script.js"></script>
     </head>
 
+    <style>
+        label {
+            display: block;
+        }
+        div {
+            margin-top: 1rem;
+        }
+        ul,
+        ol {
+            margin-top: 0;
+            list-style: none;
+        }
+    </style>
+
     <body>
         <nav>
             <a href="../../">home</a>
@@ -13,6 +27,76 @@
 
         <h1>Recording | BrilliantSole JavaScript SDK</h1>
 
-        <button id="addDevice">add device</button>
+        <div>
+            <h2>available devices</h2>
+            <button id="getDevices" disabled hidden>get available devices</button>
+            <div id="availableDevices">
+                <template id="availableDeviceTemplate">
+                    <div class="availableDevice">
+                        <ul>
+                            <li><b>name: </b> <span class="name"></span></li>
+                            <li><b>type: </b> <span class="type"></span></li>
+                            <li><button class="toggleConnection">connect</button></li>
+                        </ul>
+                    </div>
+                </template>
+            </div>
+        </div>
+
+        <div>
+            <h2>connection</h2>
+            <button id="addDevice">add device</button>
+        </div>
+
+        <div>
+            <h2>connected devices</h2>
+            <div id="connectedDevices">
+                <template id="connectedDeviceTemplate">
+                    <div class="connectedDevice">
+                        <ul>
+                            <li><b>name: </b> <span class="name"></span></li>
+                            <li><b>type: </b> <span class="type"></span></li>
+                            <li>
+                                <b>sensor configuration:</b>
+                                <pre class="sensorConfiguration"></pre>
+                            </li>
+                            <li><button class="disconnect">disconnect</button></li>
+                        </ul>
+                    </div>
+                </template>
+            </div>
+        </div>
+
+        <div>
+            <h2>sensor configuration</h2>
+
+            <div id="sensorConfiguration">
+                <template id="sensorTypeConfigurationTemplate">
+                    <label class="sensorTypeConfiguration">
+                        <b class="sensorType"></b>
+                        <input class="sensorRate" type="number" min="0" value="" />ms
+                    </label>
+                </template>
+            </div>
+
+            <div>
+                <label>enable sensors <input id="toggleSensorConfiguration" type="checkbox" /></label>
+            </div>
+        </div>
+
+        <div>
+            <h2>recording configuration</h2>
+
+            <label>manual? <input id="manualRecording" type="checkbox" /></label>
+        </div>
+
+        <div>
+            <h2>recording</h2>
+            <button id="toggleRecording">record</button>
+        </div>
+
+        <div>
+            <h2>load/save</h2>
+        </div>
     </body>
 </html>

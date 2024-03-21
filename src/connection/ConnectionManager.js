@@ -76,7 +76,7 @@ class ConnectionManager {
     set status(newConnectionStatus) {
         _console.assertTypeWithError(newConnectionStatus, "string");
         if (this.#status == newConnectionStatus) {
-            _console.warn("same connection status");
+            _console.log("tried to assign same connection status");
             return;
         }
         _console.log(`new connection status "${newConnectionStatus}"`);

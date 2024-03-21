@@ -51,7 +51,7 @@ class WebBluetoothConnectionManager extends ConnectionManager {
     }
     set device(newDevice) {
         if (this.#device == newDevice) {
-            _console.warn("tried to assign the same BluetoothDevice");
+            _console.log("tried to assign the same BluetoothDevice");
             return;
         }
         if (this.#device) {

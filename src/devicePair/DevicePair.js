@@ -105,7 +105,7 @@ class DevicePair {
         const currentDevice = this[side];
 
         if (device == currentDevice) {
-            _console.warn("device already assigned");
+            _console.log("device already assigned");
             return;
         }
 

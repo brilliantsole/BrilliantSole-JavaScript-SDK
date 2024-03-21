@@ -30,7 +30,7 @@ class SensorDataManager {
     set deviceType(newDeviceType) {
         _console.assertTypeWithError(newDeviceType, "string");
         if (this.#deviceType == newDeviceType) {
-            _console.warn(`redundant deviceType assignment "${newDeviceType}"`);
+            _console.log(`redundant deviceType assignment "${newDeviceType}"`);
             return;
         }
         _console.log({ newDeviceType });

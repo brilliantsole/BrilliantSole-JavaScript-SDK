@@ -8,6 +8,7 @@ console.log({ device });
 window.device = device;
 
 // GET DEVICES
+
 BS.Device.UseLocalStorage = true;
 /** @type {HTMLButtonElement} */
 const getDevicesButton = document.getElementById("getDevices");

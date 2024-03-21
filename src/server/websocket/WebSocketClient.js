@@ -94,7 +94,7 @@ class WebSocketClient {
     }
     set webSocket(newWebSocket) {
         if (this.#webSocket == newWebSocket) {
-            _console.warn("redundant webSocket assignment");
+            _console.log("redundant webSocket assignment");
             return;
         }
 

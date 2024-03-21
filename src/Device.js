@@ -15,7 +15,7 @@ const _console = createConsole("Device", { log: true });
 /** @typedef {import("./sensor/SensorDataManager.js").SensorType} SensorType */
 /** @typedef {"connectionStatus" | ConnectionStatus | "isConnected" | ConnectionMessageType | "deviceInformation" | SensorType} DeviceEventType */
 
-/** @typedef {"deviceConnected" | "deviceDisconnected"} StaticDeviceEventType */
+/** @typedef {"deviceConnected" | "deviceDisconnected" | "availableDevices"} StaticDeviceEventType */
 
 /** @typedef {import("./utils/EventDispatcher.js").EventDispatcherListener} EventDispatcherListener */
 /** @typedef {import("./utils/EventDispatcher.js").EventDispatcherOptions} EventDispatcherOptions */
@@ -197,7 +197,7 @@ class Device {
     }
     set connectionManager(newConnectionManager) {
         if (this.connectionManager == newConnectionManager) {
-            _console.warn("same connectionManager is already assigned");
+            _console.log("same connectionManager is already assigned");
             return;
         }
 
@@ -476,7 +476,7 @@ class Device {
     #updateBatteryLevel(updatedBatteryLevel) {
         _console.assertTypeWithError(updatedBatteryLevel, "number");
         if (this.#batteryLevel == updatedBatteryLevel) {
-            _console.warn(`duplicate batteryLevel assignment ${updatedBatteryLevel}`);
+            _console.log(`duplicate batteryLevel assignment ${updatedBatteryLevel}`);
             return;
         }
         this.#batteryLevel = updatedBatteryLevel;
@@ -550,7 +550,7 @@ class Device {
     #updateType(updatedType) {
         this.#assertValidDeviceType(updatedType);
         if (updatedType == this.type) {
-            _console.warn("redundant type assignment");
+            _console.log("redundant type assignment");
             return;
         }
         this.#type = updatedType;
@@ -835,7 +835,7 @@ class Device {
         this.#AssertLocalStorage();
         localStorage.setItem(this.#LocalStorageKey, JSON.stringify(this.#LocalStorageConfiguration));
     }
-    static #LoadFromLocalStorage() {
+    static async #LoadFromLocalStorage() {
         this.#AssertLocalStorage();
         let localStorageString = localStorage.getItem(this.#LocalStorageKey);
         if (typeof localStorageString != "string") {
@@ -848,11 +848,24 @@ class Device {
             const configuration = JSON.parse(localStorageString);
             _console.log({ configuration });
             this.#LocalStorageConfiguration = configuration;
+            if (this.CanGetDevices) {
+                await this.GetDevices();
+            }
         } catch (error) {
             _console.error(error);
         }
     }
 
+    // AVAILABLE DEVICES
+    /** @type {Device[]} */
+    static #AvailableDevices = [];
+    static get AvailableDevices() {
+        return this.#AvailableDevices;
+    }
+
+    static get CanGetDevices() {
+        return isInBrowser && navigator.bluetooth?.getDevices;
+    }
     /**
      * retrieves devices already connected via web bluetooth in other tabs/windows
      *
@@ -871,9 +884,13 @@ class Device {
             return;
         }
 
-        if (!this.#LocalStorageConfiguration) {
-            _console.warn("localStorageConfiguration not found");
+        if (!navigator.bluetooth.getDevices) {
+            _console.warn("bluetooth.getDevices() is not available in this browser");
             return;
+        }
+
+        if (!this.#LocalStorageConfiguration) {
+            this.#LoadFromLocalStorage();
         }
 
         const configuration = this.#LocalStorageConfiguration;
@@ -886,35 +903,42 @@ class Device {
 
         _console.log({ bluetoothDevices });
 
-        const devices = bluetoothDevices
-            .map((bluetoothDevice) => {
-                if (!bluetoothDevice.gatt) {
-                    return;
-                }
-                let deviceInformation = configuration.devices.find(
-                    (deviceInformation) => bluetoothDevice.id == deviceInformation.bluetoothId
-                );
-                if (!deviceInformation) {
-                    return;
-                }
-                const device = new Device();
-                const connectionManager = new WebBluetoothConnectionManager();
-                connectionManager.device = bluetoothDevice;
-                if (bluetoothDevice.name) {
-                    device.#updateName(bluetoothDevice.name);
-                }
-                device.#updateType(deviceInformation.type);
-                device.connectionManager = connectionManager;
-                return device;
-            })
-            .filter(Boolean);
-        return devices;
+        bluetoothDevices.forEach((bluetoothDevice) => {
+            if (!bluetoothDevice.gatt) {
+                return;
+            }
+            let deviceInformation = configuration.devices.find(
+                (deviceInformation) => bluetoothDevice.id == deviceInformation.bluetoothId
+            );
+            if (!deviceInformation) {
+                return;
+            }
+            const existingDevice = this.AvailableDevices.filter(
+                (device) => device.connectionType == "webBluetooth"
+            ).find((device) => device.connectionManager.device?.id == bluetoothDevice.id);
+            if (existingDevice) {
+                return;
+            }
+
+            const device = new Device();
+            const connectionManager = new WebBluetoothConnectionManager();
+            connectionManager.device = bluetoothDevice;
+            if (bluetoothDevice.name) {
+                device.#updateName(bluetoothDevice.name);
+            }
+            device.#updateType(deviceInformation.type);
+            device.connectionManager = connectionManager;
+
+            this.AvailableDevices.push(device);
+        });
+        this.#DispatchEvent({ type: "availableDevices", message: { devices: this.AvailableDevices } });
+        return this.AvailableDevices;
     }
 
     // STATIC EVENTLISTENERS
 
     /** @type {StaticDeviceEventType[]} */
-    static #StaticEventTypes = ["deviceConnected", "deviceDisconnected"];
+    static #StaticEventTypes = ["deviceConnected", "deviceDisconnected", "availableDevices"];
     static get StaticEventTypes() {
         return this.#StaticEventTypes;
     }
@@ -962,7 +986,7 @@ class Device {
                 }
                 this.#DispatchEvent({ type: "deviceConnected", message: { device } });
             } else {
-                _console.warn("device already included");
+                _console.log("device already included");
             }
         } else {
             if (this.#ConnectedDevices.includes(device)) {
@@ -972,6 +996,9 @@ class Device {
             } else {
                 _console.log("device already not included");
             }
+        }
+        if (this.CanGetDevices) {
+            this.GetDevices();
         }
     }
 }

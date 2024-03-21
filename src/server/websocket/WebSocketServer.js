@@ -89,7 +89,7 @@ class WebSocketServer {
     }
     set server(newServer) {
         if (this.#server == newServer) {
-            _console.warn("redundant WebSocket assignment");
+            _console.log("redundant WebSocket assignment");
             return;
         }
         _console.log("assigning server...");
