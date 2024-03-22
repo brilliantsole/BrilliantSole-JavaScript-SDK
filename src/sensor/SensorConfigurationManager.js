@@ -52,17 +52,14 @@ class SensorConfigurationManager {
     parse(dataView) {
         /** @type {SensorConfiguration} */
         const parsedSensorConfiguration = {};
-        for (
-            let byteOffset = 0, sensorTypeIndex = 0;
-            byteOffset < dataView.byteLength;
-            byteOffset += 2, sensorTypeIndex++
-        ) {
+        for (let byteOffset = 0; byteOffset < dataView.byteLength; byteOffset += 3) {
+            const sensorTypeIndex = dataView.getUint8(byteOffset);
             const sensorType = SensorDataManager.Types[sensorTypeIndex];
             if (!sensorType) {
                 _console.warn(`unknown sensorType index ${sensorTypeIndex}`);
-                break;
+                continue;
             }
-            const sensorRate = dataView.getUint16(byteOffset, true);
+            const sensorRate = dataView.getUint16(byteOffset + 1, true);
             _console.log({ sensorType, sensorRate });
             parsedSensorConfiguration[sensorType] = sensorRate;
         }

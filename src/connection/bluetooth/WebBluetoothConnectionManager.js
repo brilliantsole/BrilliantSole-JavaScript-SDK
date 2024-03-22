@@ -10,7 +10,7 @@ import {
     getCharacteristicProperties,
 } from "./bluetoothUUIDs.js";
 
-const _console = createConsole("WebBluetoothConnectionManager", { log: false });
+const _console = createConsole("WebBluetoothConnectionManager", { log: true });
 
 /** @typedef {import("./bluetoothUUIDs.js").BluetoothCharacteristicName} BluetoothCharacteristicName */
 /** @typedef {import("./bluetoothUUIDs.js").BluetoothServiceName} BluetoothServiceName */
@@ -114,6 +114,7 @@ class WebBluetoothConnectionManager extends ConnectionManager {
         _console.log("getting characteristics...");
         for (const serviceIndex in services) {
             const service = services[serviceIndex];
+            _console.log({ service });
             const serviceName = getServiceNameFromUUID(service.uuid);
             _console.assertWithError(serviceName, `no name found for service uuid "${service.uuid}"`);
             _console.log(`got "${serviceName}" service`);
@@ -128,6 +129,7 @@ class WebBluetoothConnectionManager extends ConnectionManager {
             _console.log(`got characteristics for "${serviceName}" service`);
             for (const characteristicIndex in characteristics) {
                 const characteristic = characteristics[characteristicIndex];
+                _console.log({ characteristic });
                 const characteristicName = getCharacteristicNameFromUUID(characteristic.uuid);
                 _console.assertWithError(
                     characteristicName,

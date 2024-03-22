@@ -13,7 +13,7 @@ if (isInBrowser) {
  * @returns {BluetoothServiceUUID}
  */
 function generateBluetoothUUID(offset) {
-    return `ea6da725-2000-4f9b-893d-${(0xc3913e33b3e3 + offset).toString("16")}`;
+    return `ea6da725-2000-4f9b-893d-c3913e33b3e${offset}`;
 }
 
 /**

@@ -560,6 +560,10 @@ class Device {
         this.#sensorConfigurationManager.deviceType = this.#type;
 
         this.#dispatchEvent({ type: "getType", message: { type: this.#type } });
+
+        if (Device.#UseLocalStorage) {
+            Device.#UpdateLocalStorageConfigurationForDevice(this);
+        }
     }
     /** @param {DeviceType} newType */
     async setType(newType) {
@@ -662,18 +666,18 @@ class Device {
     static get ClearSensorConfigurationOnLeave() {
         return this.#ClearSensorConfigurationOnLeave;
     }
-    static set ClearSensorConfigurationOnLeave(newclearSensorConfigurationOnLeave) {
-        _console.assertTypeWithError(newclearSensorConfigurationOnLeave, "boolean");
-        this.#ClearSensorConfigurationOnLeave = newclearSensorConfigurationOnLeave;
+    static set ClearSensorConfigurationOnLeave(newClearSensorConfigurationOnLeave) {
+        _console.assertTypeWithError(newClearSensorConfigurationOnLeave, "boolean");
+        this.#ClearSensorConfigurationOnLeave = newClearSensorConfigurationOnLeave;
     }
 
     #clearSensorConfigurationOnLeave = Device.ClearSensorConfigurationOnLeave;
     get clearSensorConfigurationOnLeave() {
         return this.#clearSensorConfigurationOnLeave;
     }
-    set clearSensorConfigurationOnLeave(newclearSensorConfigurationOnLeave) {
-        _console.assertTypeWithError(newclearSensorConfigurationOnLeave, "boolean");
-        this.#clearSensorConfigurationOnLeave = newclearSensorConfigurationOnLeave;
+    set clearSensorConfigurationOnLeave(newClearSensorConfigurationOnLeave) {
+        _console.assertTypeWithError(newClearSensorConfigurationOnLeave, "boolean");
+        this.#clearSensorConfigurationOnLeave = newClearSensorConfigurationOnLeave;
     }
 
     /** @type {SensorConfiguration} */
@@ -706,7 +710,7 @@ class Device {
     #onSensorDataReceived(sensorType, sensorData) {
         _console.log({ sensorType, sensorData });
         this.#dispatchEvent({ type: sensorType, message: sensorData });
-        this.#dispatchEvent({ type: "sensorData", message: sensorData });
+        this.#dispatchEvent({ type: "sensorData", message: { ...sensorData, sensorType } });
     }
 
     resetPressureRange() {
@@ -856,6 +860,23 @@ class Device {
         }
     }
 
+    /** @param {Device} device */
+    static #UpdateLocalStorageConfigurationForDevice(device) {
+        if (device.connectionType != "webBluetooth") {
+            _console.log("localStorage is only for webBluetooth devices");
+            return;
+        }
+        this.#AssertLocalStorage();
+        const deviceInformationIndex = this.#LocalStorageConfiguration.devices.findIndex((deviceInformation) => {
+            return deviceInformation.bluetoothId == device.connectionManager.device.id;
+        });
+        if (deviceInformationIndex == -1) {
+            return;
+        }
+        this.#LocalStorageConfiguration.devices[deviceInformationIndex].type = device.type;
+        this.#SaveToLocalStorage();
+    }
+
     // AVAILABLE DEVICES
     /** @type {Device[]} */
     static #AvailableDevices = [];
@@ -978,10 +999,18 @@ class Device {
                 if (this.UseLocalStorage && device.connectionType == "webBluetooth") {
                     /** @type {WebBluetoothConnectionManager} */
                     const connectionManager = device.connectionManager;
-                    this.#LocalStorageConfiguration.devices.push({
+                    const deviceInformation = {
                         type: device.type,
                         bluetoothId: connectionManager.device.id,
-                    });
+                    };
+                    const deviceInformationIndex = this.#LocalStorageConfiguration.devices.findIndex(
+                        (_deviceInformation) => _deviceInformation.bluetoothId == deviceInformation.bluetoothId
+                    );
+                    if (deviceInformationIndex == -1) {
+                        this.#LocalStorageConfiguration.devices.push(deviceInformation);
+                    } else {
+                        this.#LocalStorageConfiguration.devices[deviceInformationIndex] = deviceInformation;
+                    }
                     this.#SaveToLocalStorage();
                 }
                 this.#DispatchEvent({ type: "deviceConnected", message: { device } });
@@ -1000,6 +1029,10 @@ class Device {
         if (this.CanGetDevices) {
             this.GetDevices();
         }
+    }
+
+    static {
+        this.UseLocalStorage = true;
     }
 }
 

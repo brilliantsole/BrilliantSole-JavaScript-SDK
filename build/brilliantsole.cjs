@@ -505,7 +505,7 @@ if (isInBrowser) {
  * @returns {BluetoothServiceUUID}
  */
 function generateBluetoothUUID(offset) {
-    return `ea6da725-2000-4f9b-893d-${(0xc3913e33b3e3 + offset).toString("16")}`;
+    return `ea6da725-2000-4f9b-893d-c3913e33b3e${offset}`;
 }
 
 /**
@@ -686,7 +686,7 @@ function getCharacteristicProperties(characteristicName) {
     return properties;
 }
 
-const _console$h = createConsole("WebBluetoothConnectionManager", { log: false });
+const _console$h = createConsole("WebBluetoothConnectionManager", { log: true });
 
 
 
@@ -790,6 +790,7 @@ class WebBluetoothConnectionManager extends ConnectionManager {
         _console$h.log("getting characteristics...");
         for (const serviceIndex in services) {
             const service = services[serviceIndex];
+            _console$h.log({ service });
             const serviceName = getServiceNameFromUUID(service.uuid);
             _console$h.assertWithError(serviceName, `no name found for service uuid "${service.uuid}"`);
             _console$h.log(`got "${serviceName}" service`);
@@ -804,6 +805,7 @@ class WebBluetoothConnectionManager extends ConnectionManager {
             _console$h.log(`got characteristics for "${serviceName}" service`);
             for (const characteristicIndex in characteristics) {
                 const characteristic = characteristics[characteristicIndex];
+                _console$h.log({ characteristic });
                 const characteristicName = getCharacteristicNameFromUUID(characteristic.uuid);
                 _console$h.assertWithError(
                     characteristicName,
@@ -1749,17 +1751,14 @@ class SensorConfigurationManager {
     parse(dataView) {
         /** @type {SensorConfiguration} */
         const parsedSensorConfiguration = {};
-        for (
-            let byteOffset = 0, sensorTypeIndex = 0;
-            byteOffset < dataView.byteLength;
-            byteOffset += 2, sensorTypeIndex++
-        ) {
+        for (let byteOffset = 0; byteOffset < dataView.byteLength; byteOffset += 3) {
+            const sensorTypeIndex = dataView.getUint8(byteOffset);
             const sensorType = SensorDataManager.Types[sensorTypeIndex];
             if (!sensorType) {
                 _console$c.warn(`unknown sensorType index ${sensorTypeIndex}`);
-                break;
+                continue;
             }
-            const sensorRate = dataView.getUint16(byteOffset, true);
+            const sensorRate = dataView.getUint16(byteOffset + 1, true);
             _console$c.log({ sensorType, sensorRate });
             parsedSensorConfiguration[sensorType] = sensorRate;
         }
@@ -3012,6 +3011,10 @@ class Device {
         this.#sensorConfigurationManager.deviceType = this.#type;
 
         this.#dispatchEvent({ type: "getType", message: { type: this.#type } });
+
+        if (Device.#UseLocalStorage) {
+            Device.#UpdateLocalStorageConfigurationForDevice(this);
+        }
     }
     /** @param {DeviceType} newType */
     async setType(newType) {
@@ -3114,18 +3117,18 @@ class Device {
     static get ClearSensorConfigurationOnLeave() {
         return this.#ClearSensorConfigurationOnLeave;
     }
-    static set ClearSensorConfigurationOnLeave(newclearSensorConfigurationOnLeave) {
-        _console$a.assertTypeWithError(newclearSensorConfigurationOnLeave, "boolean");
-        this.#ClearSensorConfigurationOnLeave = newclearSensorConfigurationOnLeave;
+    static set ClearSensorConfigurationOnLeave(newClearSensorConfigurationOnLeave) {
+        _console$a.assertTypeWithError(newClearSensorConfigurationOnLeave, "boolean");
+        this.#ClearSensorConfigurationOnLeave = newClearSensorConfigurationOnLeave;
     }
 
     #clearSensorConfigurationOnLeave = Device.ClearSensorConfigurationOnLeave;
     get clearSensorConfigurationOnLeave() {
         return this.#clearSensorConfigurationOnLeave;
     }
-    set clearSensorConfigurationOnLeave(newclearSensorConfigurationOnLeave) {
-        _console$a.assertTypeWithError(newclearSensorConfigurationOnLeave, "boolean");
-        this.#clearSensorConfigurationOnLeave = newclearSensorConfigurationOnLeave;
+    set clearSensorConfigurationOnLeave(newClearSensorConfigurationOnLeave) {
+        _console$a.assertTypeWithError(newClearSensorConfigurationOnLeave, "boolean");
+        this.#clearSensorConfigurationOnLeave = newClearSensorConfigurationOnLeave;
     }
 
     /** @type {SensorConfiguration} */
@@ -3158,7 +3161,7 @@ class Device {
     #onSensorDataReceived(sensorType, sensorData) {
         _console$a.log({ sensorType, sensorData });
         this.#dispatchEvent({ type: sensorType, message: sensorData });
-        this.#dispatchEvent({ type: "sensorData", message: sensorData });
+        this.#dispatchEvent({ type: "sensorData", message: { ...sensorData, sensorType } });
     }
 
     resetPressureRange() {
@@ -3308,6 +3311,23 @@ class Device {
         }
     }
 
+    /** @param {Device} device */
+    static #UpdateLocalStorageConfigurationForDevice(device) {
+        if (device.connectionType != "webBluetooth") {
+            _console$a.log("localStorage is only for webBluetooth devices");
+            return;
+        }
+        this.#AssertLocalStorage();
+        const deviceInformationIndex = this.#LocalStorageConfiguration.devices.findIndex((deviceInformation) => {
+            return deviceInformation.bluetoothId == device.connectionManager.device.id;
+        });
+        if (deviceInformationIndex == -1) {
+            return;
+        }
+        this.#LocalStorageConfiguration.devices[deviceInformationIndex].type = device.type;
+        this.#SaveToLocalStorage();
+    }
+
     // AVAILABLE DEVICES
     /** @type {Device[]} */
     static #AvailableDevices = [];
@@ -3430,10 +3450,18 @@ class Device {
                 if (this.UseLocalStorage && device.connectionType == "webBluetooth") {
                     /** @type {WebBluetoothConnectionManager} */
                     const connectionManager = device.connectionManager;
-                    this.#LocalStorageConfiguration.devices.push({
+                    const deviceInformation = {
                         type: device.type,
                         bluetoothId: connectionManager.device.id,
-                    });
+                    };
+                    const deviceInformationIndex = this.#LocalStorageConfiguration.devices.findIndex(
+                        (_deviceInformation) => _deviceInformation.bluetoothId == deviceInformation.bluetoothId
+                    );
+                    if (deviceInformationIndex == -1) {
+                        this.#LocalStorageConfiguration.devices.push(deviceInformation);
+                    } else {
+                        this.#LocalStorageConfiguration.devices[deviceInformationIndex] = deviceInformation;
+                    }
                     this.#SaveToLocalStorage();
                 }
                 this.#DispatchEvent({ type: "deviceConnected", message: { device } });
@@ -3452,6 +3480,10 @@ class Device {
         if (this.CanGetDevices) {
             this.GetDevices();
         }
+    }
+
+    static {
+        this.UseLocalStorage = true;
     }
 }
 

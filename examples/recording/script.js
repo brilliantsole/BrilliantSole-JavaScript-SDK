@@ -5,20 +5,8 @@ BS.setAllConsoleLevelFlags({ log: false });
 
 /** @typedef {import("../../build/brilliantsole.module.js").Device} Device */
 
-/*
- TODO
-    sensor config
-    sensor data
-    toggle sensor data
-    record length (manual vs auto)
-    visualize data (chart.js)
-    save as json or csv
-    load json/csv
- */
-
 // GET DEVICES
 
-BS.Device.UseLocalStorage = true;
 /** @type {HTMLButtonElement} */
 const getDevicesButton = document.getElementById("getDevices");
 getDevicesButton.disabled = !BS.Device.CanGetDevices;
@@ -38,6 +26,8 @@ async function getDevices() {
     }
     onAvailableDevices(availableDevices);
 }
+
+getDevices();
 
 /** @param {Device[]} availableDevices */
 function onAvailableDevices(availableDevices) {
@@ -132,8 +122,13 @@ BS.Device.AddEventListener("deviceConnected", (event) => {
     });
     updateSensorConfigurationPre();
 
-    // FILL - sensor config
-    // FILL - sensor data
+    device.addEventListener("sensorData", (event) => {
+        console.log(event);
+        const { sensorType, timestamp } = event.message;
+        const { [sensorType]: data } = event.message;
+        console.log({ name: device.name, sensorType, timestamp, data });
+    });
+
     connectedDevicesContainer.appendChild(connectedDeviceContainer);
 });
 
@@ -164,4 +159,18 @@ BS.Device.SensorTypes.forEach((sensorType) => {
 
     sensorConfigurationContainer.appendChild(sensorTypeConfigurationContainer);
     sensorTypeConfigurationContainer.dataset.sensorType = sensorType;
+});
+
+/** @type {HTMLInputElement} */
+const toggleSensorDataCheckbox = document.getElementById("toggleSensorData");
+toggleSensorDataCheckbox.addEventListener("input", () => {
+    BS.Device.ConnectedDevices.forEach((device) => {
+        if (toggleSensorDataCheckbox.checked) {
+            console.log(device, sensorConfiguration);
+            device.setSensorConfiguration(sensorConfiguration);
+        } else {
+            console.log("clear", device);
+            device.clearSensorConfiguration();
+        }
+    });
 });

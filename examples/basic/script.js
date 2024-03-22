@@ -7,19 +7,20 @@ const device = new BS.Device();
 console.log({ device });
 window.device = device;
 
+/** @typedef {import("../../build/brilliantsole.module.js").Device} Device */
+
 // GET DEVICES
 
-BS.Device.UseLocalStorage = true;
 /** @type {HTMLButtonElement} */
 const getDevicesButton = document.getElementById("getDevices");
 /** @type {HTMLTemplateElement} */
 const availableDeviceTemplate = document.getElementById("availableDeviceTemplate");
 const availableDevicesContainer = document.getElementById("availableDevices");
 getDevicesButton.addEventListener("click", async () => {
-    const availableDevices = await BS.Device.GetDevices();
-    if (!availableDevices) {
-        return;
-    }
+    getDevices();
+});
+/** @param {Device[]} */
+function onAvailableDevices(availableDevices) {
     availableDevicesContainer.innerHTML = "";
     if (availableDevices.length == 0) {
         availableDevicesContainer.innerText = "no devices available";
@@ -40,14 +41,28 @@ getDevicesButton.addEventListener("click", async () => {
             device.addEventListener("connectionStatus", () => {
                 toggleConnectionButton.disabled = device.connectionStatus != "not connected";
             });
+            toggleConnectionButton.disabled = device.connectionStatus != "not connected";
 
             availableDevicesContainer.appendChild(availableDeviceContainer);
         });
     }
-});
+}
+async function getDevices() {
+    const availableDevices = await BS.Device.GetDevices();
+    if (!availableDevices) {
+        return;
+    }
+    onAvailableDevices(availableDevices);
+}
 device.addEventListener("isConnected", () => {
     getDevicesButton.disabled = device.isConnected;
 });
+
+BS.Device.AddEventListener("availableDevices", (event) => {
+    const devices = event.message.devices;
+    onAvailableDevices(devices);
+});
+getDevices();
 
 // CONNECTION
 
@@ -84,19 +99,6 @@ device.addEventListener("connectionStatus", () => {
         case "disconnecting":
             toggleConnectionButton.disabled = true;
             toggleConnectionButton.innerText = device.connectionStatus;
-            break;
-    }
-});
-
-device.addEventListener("connectionStatus", () => {
-    switch (device.connectionStatus) {
-        case "connected":
-        case "not connected":
-            reconnectButton.disabled = false;
-            break;
-        case "connecting":
-        case "disconnecting":
-            reconnectButton.disabled = true;
             break;
     }
 });
