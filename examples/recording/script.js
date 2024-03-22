@@ -50,7 +50,7 @@ function onAvailableDevices(availableDevices) {
                     availableDevice.toggleConnection();
                 });
 
-                availableDevice.addEventListener("connectionStatus", () => {
+                const updateToggleConnectonButton = () => {
                     switch (availableDevice.connectionStatus) {
                         case "connected":
                         case "not connected":
@@ -63,7 +63,17 @@ function onAvailableDevices(availableDevices) {
                             toggleConnectionButton.innerText = availableDevice.connectionStatus;
                             break;
                     }
+
+                    if (isSensorDataEnabled) {
+                        toggleConnectionButton.disabled = true;
+                    }
+                };
+
+                window.addEventListener("isSensorDataEnabled", () => {
+                    updateToggleConnectonButton();
                 });
+
+                availableDevice.addEventListener("connectionStatus", () => updateToggleConnectonButton());
 
                 availableDeviceContainers[availableDevice.connectionManager.device.id] = availableDeviceContainer;
             }
@@ -85,6 +95,9 @@ const addDeviceButton = document.getElementById("addDevice");
 addDeviceButton.addEventListener("click", () => {
     const device = new BS.Device();
     device.connect();
+});
+window.addEventListener("isSensorDataEnabled", () => {
+    addDeviceButton.disabled = isSensorDataEnabled;
 });
 
 // CONNECTED DEVICES
@@ -110,6 +123,10 @@ BS.Device.AddEventListener("deviceConnected", (event) => {
     });
     device.addEventListener("not connected", () => {
         connectedDeviceContainer.remove();
+    });
+
+    window.addEventListener("isSensorDataEnabled", () => {
+        disconnectButton.disabled = isSensorDataEnabled;
     });
 
     /** @type {HTMLPreElement} */
@@ -139,6 +156,8 @@ const sensorConfiguration = {};
 const sensorConfigurationContainer = document.getElementById("sensorConfiguration");
 /** @type {HTMLTemplateElement} */
 const sensorTypeConfigurationTemplate = document.getElementById("sensorTypeConfigurationTemplate");
+/** @type {Object.<string, HTMLElement>} */
+const sensorTypeConfigurationContainers = {};
 BS.Device.SensorTypes.forEach((sensorType) => {
     sensorConfiguration[sensorType] = 0;
 
@@ -155,17 +174,29 @@ BS.Device.SensorTypes.forEach((sensorType) => {
     sensorRateInput.addEventListener("input", () => {
         sensorConfiguration[sensorType] = Number(sensorRateInput.value);
         console.log({ sensorConfiguration });
+        window.dispatchEvent(new CustomEvent("sensorConfiguration", { detail: { sensorConfiguration } }));
     });
 
+    window.addEventListener("isSensorDataEnabled", () => {
+        sensorRateInput.disabled = isSensorDataEnabled;
+    });
+
+    sensorTypeConfigurationContainers[sensorType] = sensorTypeConfigurationContainer;
+
     sensorConfigurationContainer.appendChild(sensorTypeConfigurationContainer);
-    sensorTypeConfigurationContainer.dataset.sensorType = sensorType;
 });
 
-/** @type {HTMLInputElement} */
-const toggleSensorDataCheckbox = document.getElementById("toggleSensorData");
-toggleSensorDataCheckbox.addEventListener("input", () => {
+let isSensorDataEnabled = false;
+/** @param {boolean} newIsSensorDataEnabled */
+function setIsSensorDataEnabled(newIsSensorDataEnabled) {
+    if (newIsSensorDataEnabled == isSensorDataEnabled) {
+        console.log("redundant isSensorDataEnabled assignment");
+        return;
+    }
+    isSensorDataEnabled = newIsSensorDataEnabled;
+
     BS.Device.ConnectedDevices.forEach((device) => {
-        if (toggleSensorDataCheckbox.checked) {
+        if (isSensorDataEnabled) {
             console.log(device, sensorConfiguration);
             device.setSensorConfiguration(sensorConfiguration);
         } else {
@@ -173,4 +204,25 @@ toggleSensorDataCheckbox.addEventListener("input", () => {
             device.clearSensorConfiguration();
         }
     });
+
+    window.dispatchEvent(new CustomEvent("isSensorDataEnabled", { detail: isSensorDataEnabled }));
+}
+/** @type {HTMLInputElement} */
+const toggleSensorDataCheckbox = document.getElementById("toggleSensorData");
+toggleSensorDataCheckbox.addEventListener("input", () => {
+    setIsSensorDataEnabled(toggleSensorDataCheckbox.checked);
+});
+function updateToggleSensorDataCheckbox() {
+    const isSensorConfigurationZero = Object.values(sensorConfiguration).every((sensorRate) => sensorRate == 0);
+    toggleSensorDataCheckbox.disabled = isSensorConfigurationZero || BS.Device.ConnectedDevices.length == 0;
+}
+window.addEventListener("sensorConfiguration", (event) => {
+    updateToggleSensorDataCheckbox();
+});
+
+BS.Device.AddEventListener("deviceConnected", () => {
+    updateToggleSensorDataCheckbox();
+});
+BS.Device.AddEventListener("deviceDisconnected", () => {
+    updateToggleSensorDataCheckbox();
 });
