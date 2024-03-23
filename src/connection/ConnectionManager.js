@@ -21,6 +21,11 @@ const _console = createConsole("ConnectionManager");
  */
 
 class ConnectionManager {
+    /** @type {string?} */
+    get id() {
+        this.#throwNotImplementedError("id");
+    }
+
     /** @type {ConnectionStatusCallback?} */
     onStatusUpdated;
     /** @type {MessageReceivedCallback?} */

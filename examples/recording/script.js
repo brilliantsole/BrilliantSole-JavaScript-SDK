@@ -36,7 +36,7 @@ function onAvailableDevices(availableDevices) {
         availableDevicesContainer.innerText = "no devices available";
     } else {
         availableDevices.forEach((availableDevice) => {
-            let availableDeviceContainer = availableDeviceContainers[availableDevice.connectionManager.device.id];
+            let availableDeviceContainer = availableDeviceContainers[availableDevice.id];
             if (!availableDeviceContainer) {
                 availableDeviceContainer = availableDeviceTemplate.content
                     .cloneNode(true)
@@ -75,7 +75,7 @@ function onAvailableDevices(availableDevices) {
 
                 availableDevice.addEventListener("connectionStatus", () => updateToggleConnectonButton());
 
-                availableDeviceContainers[availableDevice.connectionManager.device.id] = availableDeviceContainer;
+                availableDeviceContainers[availableDevice.id] = availableDeviceContainer;
             }
             availableDevicesContainer.appendChild(availableDeviceContainer);
         });
@@ -140,10 +140,44 @@ BS.Device.AddEventListener("deviceConnected", (event) => {
     updateSensorConfigurationPre();
 
     device.addEventListener("sensorData", (event) => {
-        console.log(event);
-        const { sensorType, timestamp } = event.message;
+        /** @type {SensorType} */
+        const sensorType = event.message.sensorType;
+        /** @type {number} */
+        const timestamp = event.message.timestamp;
+
         const { [sensorType]: data } = event.message;
-        console.log({ name: device.name, sensorType, timestamp, data });
+        //console.log({ name: device.name, sensorType, timestamp, data });
+        if (isRecording && currentRecording) {
+            let deviceRecording = currentRecording.find((_deviceRecording) => _deviceRecording.id == device.id);
+            if (!deviceRecording) {
+                deviceRecording = { id: device.id, sensorData: [] };
+                currentRecording.push(deviceRecording);
+            }
+            let sensorTypeData = deviceRecording.sensorData.find(
+                (_sensorTypeData) => _sensorTypeData.sensorType == sensorType
+            );
+            if (!sensorTypeData) {
+                sensorTypeData = {
+                    sensorType,
+                    initialTimestamp: Date.now(),
+                    data: [],
+                    dataRate: device.sensorConfiguration[sensorType],
+                };
+                deviceRecording.sensorData.push(sensorTypeData);
+            }
+
+            if (sensorType == "pressure") {
+                /** @type {import("../../build/brilliantsole.module.js").PressureData} */
+                const pressure = data;
+                const pressureSensors = pressure.sensors.map((sensor) => {
+                    const { name, rawValue, normalizedValue } = sensor;
+                    return { name, rawValue, normalizedValue };
+                });
+                sensorTypeData.data.push(pressureSensors);
+            } else {
+                sensorTypeData.data.push(data);
+            }
+        }
     });
 
     connectedDevicesContainer.appendChild(connectedDeviceContainer);
@@ -220,9 +254,196 @@ window.addEventListener("sensorConfiguration", (event) => {
     updateToggleSensorDataCheckbox();
 });
 
-BS.Device.AddEventListener("deviceConnected", () => {
+BS.Device.AddEventListener("deviceIsConnectedUpdated", () => {
     updateToggleSensorDataCheckbox();
 });
-BS.Device.AddEventListener("deviceDisconnected", () => {
-    updateToggleSensorDataCheckbox();
+
+// RECORDING SETTINGS
+
+let recordingCountdown = 0;
+/** @type {HTMLInputElement} */
+const recordingCountdownInput = document.getElementById("recordingCountdownInput");
+recordingCountdownInput.addEventListener("input", () => {
+    recordingCountdown = Number(recordingCountdownInput.value);
+    console.log({ recordingCountdown });
 });
+
+let isRecordingFixedDuration = false;
+/** @type {HTMLInputElement} */
+const isRecordingFixedDurationCheckbox = document.getElementById("isRecordingFixedDuration");
+isRecordingFixedDurationCheckbox.addEventListener("input", () => {
+    isRecordingFixedDuration = !isRecordingFixedDuration;
+    console.log({ isRecordingFixedDuration });
+    recordingDurationInput.disabled = !isRecordingFixedDuration;
+});
+
+let recordingDuration = 0;
+/** @type {HTMLInputElement} */
+const recordingDurationInput = document.getElementById("recordingDuration");
+recordingDurationInput.addEventListener("input", () => {
+    recordingDuration = Number(recordingDurationInput.value);
+    console.log({ recordingDuration });
+});
+
+// RECORDING
+
+/** @typedef {import("../../build/brilliantsole.module.js").SensorType} SensorType */
+
+let isRecording = false;
+
+/**
+ * @typedef DevicesSensorData
+ * @type {DeviceSensorData[]}
+ */
+
+/**
+ * @typedef DeviceSensorData
+ * @type {Object}
+ * @property {string} id
+ * @property {SensorTypeData[]} sensorData
+ */
+
+/**
+ * @typedef SensorTypeData
+ * @type {Object}
+ * @property {SensorType} sensorType
+ * @property {number} initialTimestamp ms
+ * @property {number} dataRate ms
+ * @property {Object[]} data
+ */
+
+/** @type {DevicesSensorData[]} */
+let recordings = [];
+
+/** @type {DevicesSensorData?} */
+let currentRecording;
+
+/** @type {HTMLButtonElement} */
+const toggleRecordingButton = document.getElementById("toggleRecording");
+toggleRecordingButton.addEventListener("click", () => {
+    toggleRecording();
+});
+
+const recordingCountdownTimer = {
+    /** @param {number} countdown seconds */
+    start(countdown) {
+        if (this.isRunning) {
+            this.stop();
+        }
+        this.countdown = countdown;
+        this.intervalId = setInterval(() => {
+            this.countdown--;
+            this.onCountdown?.(this.countdown);
+            console.log({ countdown: this.countdown });
+            if (this.countdown == 0) {
+                this.stop();
+                this.onEnd();
+            }
+        }, 1000);
+        console.log("starting countdown");
+        this.onStart?.(this.countdown);
+        this.onCountdown?.(this.countdown);
+    },
+    /** @type {number} */
+    countdown: null,
+    stop() {
+        if (this.isRunning) {
+            console.log("stopping countdown");
+            clearInterval(this.intervalId);
+            this.intervalId = null;
+            this.onStop?.();
+        }
+    },
+    /** @type {(countdown: number)} */
+    onCountdown: null,
+    /** @type {(countdown: number)} */
+    onStart: null,
+    /** @type {function} */
+    onStop: null,
+    /** @type {function} */
+    onEnd: null,
+    intervalId: null,
+    get isRunning() {
+        return this.intervalId != null;
+    },
+};
+recordingCountdownTimer.onCountdown = (countdown) => updateRecordingCountdown(countdown);
+recordingCountdownTimer.onStop = () => updateRecordingCountdown(0);
+recordingCountdownTimer.onEnd = () => startRecording();
+
+async function toggleRecording() {
+    if (recordingCountdownTimer.isRunning) {
+        recordingCountdownTimer.stop();
+        toggleRecordingButton.innerText = "record";
+        return;
+    }
+
+    if (isRecording) {
+        stopRecording();
+    } else {
+        if (recordingCountdown > 0) {
+            recordingCountdownTimer.start(recordingCountdown);
+            toggleRecordingButton.innerText = "cancel countdown";
+        } else {
+            startRecording();
+        }
+    }
+}
+function startRecording() {
+    if (isRecording) {
+        console.log("already recording");
+        return;
+    }
+
+    currentRecording = [];
+    isRecording = true;
+
+    vibrate("strongClick100");
+
+    toggleRecordingButton.innerText = "stop recording";
+}
+function stopRecording() {
+    if (!isRecording) {
+        console.log("already not recording");
+        return;
+    }
+
+    if (currentRecording) {
+        console.log({ currentRecording });
+        recordings.push(currentRecording);
+        currentRecording = null;
+    }
+    isRecording = false;
+
+    vibrate("tripleClick100");
+
+    toggleRecordingButton.innerText = "record";
+}
+
+window.addEventListener("isSensorDataEnabled", () => {
+    toggleRecordingButton.disabled = !isSensorDataEnabled;
+});
+
+/** @type {HTMLSpanElement} */
+const recordingCountdownSpan = document.getElementById("recordingCountdownSpan");
+
+/** @param {number} recordingCountdown */
+function updateRecordingCountdown(recordingCountdown) {
+    console.log({ recordingCountdown });
+    if (recordingCountdown == 0) {
+        recordingCountdownSpan.innerText = "";
+    } else {
+        recordingCountdownSpan.innerText = recordingCountdown;
+    }
+}
+
+/** @param {import("../../build/brilliantsole.module.js").VibrationWaveformEffect} effect */
+function vibrate(effect) {
+    BS.Device.ConnectedDevices.forEach((device) => {
+        device.triggerVibration({
+            type: "waveformEffect",
+            locations: ["front", "rear"],
+            waveformEffect: { segments: [{ effect }] },
+        });
+    });
+}

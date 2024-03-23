@@ -21,6 +21,10 @@ if (isInNode) {
 /** @typedef {import("../ConnectionManager.js").ConnectionMessageType} ConnectionMessageType */
 
 class NobleConnectionManager extends ConnectionManager {
+    get id() {
+        return this.#noblePeripheral?.id;
+    }
+
     static get isSupported() {
         return isInNode;
     }

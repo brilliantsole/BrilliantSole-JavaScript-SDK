@@ -3,6 +3,7 @@
         <title>Recording | BrilliantSole JavaScript SDK</title>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico" />
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
         <script type="module" src="./script.js"></script>
     </head>
 
@@ -86,13 +87,22 @@
 
         <div>
             <h2>recording configuration</h2>
+            <label>
+                countdown (seconds)
+                <input type="number" min="0" value="0" max="10" step="1" id="recordingCountdownInput" />
+            </label>
 
-            <label>manual? <input id="manualRecording" type="checkbox" /></label>
+            <label>fixed duration? <input id="isRecordingFixedDuration" type="checkbox" /></label>
+            <label>
+                duration (seconds)
+                <input type="number" min="1" value="1" max="30" step="1" id="recordingDuration" disabled />
+            </label>
         </div>
 
         <div>
             <h2>recording</h2>
-            <button id="toggleRecording">record</button>
+            <button id="toggleRecording" disabled>record</button>
+            <h2><span id="recordingCountdownSpan"></span></h2>
         </div>
 
         <div>

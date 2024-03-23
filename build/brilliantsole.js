@@ -376,6 +376,11 @@
 	 */
 
 	class ConnectionManager {
+	    /** @type {string?} */
+	    get id() {
+	        this.#throwNotImplementedError("id");
+	    }
+
 	    /** @type {ConnectionStatusCallback?} */
 	    onStatusUpdated;
 	    /** @type {MessageReceivedCallback?} */
@@ -707,6 +712,10 @@
 	}
 
 	class WebBluetoothConnectionManager extends ConnectionManager {
+	    get id() {
+	        return this.device?.id;
+	    }
+
 	    /** @type {Object.<string, EventListener} */
 	    #boundBluetoothCharacteristicEventListeners = {
 	        characteristicvaluechanged: this.#onCharacteristicvaluechanged.bind(this),
@@ -998,6 +1007,10 @@
 
 
 	class NobleConnectionManager extends ConnectionManager {
+	    get id() {
+	        return this.#noblePeripheral?.id;
+	    }
+
 	    static get isSupported() {
 	        return isInNode;
 	    }
@@ -2472,7 +2485,7 @@
 
 	/** @typedef {"connectionStatus" | ConnectionStatus | "isConnected" | ConnectionMessageType | "deviceInformation" | SensorType} DeviceEventType */
 
-	/** @typedef {"deviceConnected" | "deviceDisconnected" | "availableDevices"} StaticDeviceEventType */
+	/** @typedef {"deviceConnected" | "deviceDisconnected" | "deviceIsConnectedUpdated" | "availableDevices"} StaticDeviceEventType */
 
 
 
@@ -2547,6 +2560,10 @@
 	 */
 
 	class Device {
+	    get id() {
+	        return this.#connectionManager?.id;
+	    }
+
 	    constructor() {
 	        this.#sensorDataManager.onDataReceived = this.#onSensorDataReceived.bind(this);
 
@@ -3323,7 +3340,7 @@
 	        }
 	        this.#AssertLocalStorage();
 	        const deviceInformationIndex = this.#LocalStorageConfiguration.devices.findIndex((deviceInformation) => {
-	            return deviceInformation.bluetoothId == device.connectionManager.device.id;
+	            return deviceInformation.bluetoothId == device.id;
 	        });
 	        if (deviceInformationIndex == -1) {
 	            return;
@@ -3391,7 +3408,7 @@
 	            }
 	            const existingDevice = this.AvailableDevices.filter(
 	                (device) => device.connectionType == "webBluetooth"
-	            ).find((device) => device.connectionManager.device?.id == bluetoothDevice.id);
+	            ).find((device) => device.id == bluetoothDevice.id);
 	            if (existingDevice) {
 	                return;
 	            }
@@ -3414,7 +3431,12 @@
 	    // STATIC EVENTLISTENERS
 
 	    /** @type {StaticDeviceEventType[]} */
-	    static #StaticEventTypes = ["deviceConnected", "deviceDisconnected", "availableDevices"];
+	    static #StaticEventTypes = [
+	        "deviceConnected",
+	        "deviceDisconnected",
+	        "deviceIsConnectedUpdated",
+	        "availableDevices",
+	    ];
 	    static get StaticEventTypes() {
 	        return this.#StaticEventTypes;
 	    }
@@ -3452,11 +3474,9 @@
 	                _console$a.log("adding device", device);
 	                this.#ConnectedDevices.push(device);
 	                if (this.UseLocalStorage && device.connectionType == "webBluetooth") {
-	                    /** @type {WebBluetoothConnectionManager} */
-	                    const connectionManager = device.connectionManager;
 	                    const deviceInformation = {
 	                        type: device.type,
-	                        bluetoothId: connectionManager.device.id,
+	                        bluetoothId: device.id,
 	                    };
 	                    const deviceInformationIndex = this.#LocalStorageConfiguration.devices.findIndex(
 	                        (_deviceInformation) => _deviceInformation.bluetoothId == deviceInformation.bluetoothId
@@ -3469,6 +3489,7 @@
 	                    this.#SaveToLocalStorage();
 	                }
 	                this.#DispatchEvent({ type: "deviceConnected", message: { device } });
+	                this.#DispatchEvent({ type: "deviceIsConnectedUpdated", message: { device } });
 	            } else {
 	                _console$a.log("device already included");
 	            }
@@ -3477,6 +3498,7 @@
 	                _console$a.log("removing device", device);
 	                this.#ConnectedDevices.splice(this.#ConnectedDevices.indexOf(device), 1);
 	                this.#DispatchEvent({ type: "deviceDisconnected", message: { device } });
+	                this.#DispatchEvent({ type: "deviceIsConnectedUpdated", message: { device } });
 	            } else {
 	                _console$a.log("device already not included");
 	            }

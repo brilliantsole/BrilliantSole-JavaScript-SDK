@@ -27,6 +27,10 @@ if (isInBrowser) {
 }
 
 class WebBluetoothConnectionManager extends ConnectionManager {
+    get id() {
+        return this.device?.id;
+    }
+
     /** @type {Object.<string, EventListener} */
     #boundBluetoothCharacteristicEventListeners = {
         characteristicvaluechanged: this.#onCharacteristicvaluechanged.bind(this),
