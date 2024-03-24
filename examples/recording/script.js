@@ -148,10 +148,10 @@ BS.Device.AddEventListener("deviceConnected", (event) => {
         const { [sensorType]: data } = event.message;
         //console.log({ name: device.name, sensorType, timestamp, data });
         if (isRecording && currentRecording) {
-            let deviceRecording = currentRecording.find((_deviceRecording) => _deviceRecording.id == device.id);
+            let deviceRecording = currentRecording.devices.find((_deviceRecording) => _deviceRecording.id == device.id);
             if (!deviceRecording) {
-                deviceRecording = { id: device.id, sensorData: [] };
-                currentRecording.push(deviceRecording);
+                deviceRecording = { id: device.id, type: device.type, name: device.name, sensorData: [] };
+                currentRecording.devices.push(deviceRecording);
             }
             let sensorTypeData = deviceRecording.sensorData.find(
                 (_sensorTypeData) => _sensorTypeData.sensorType == sensorType
@@ -269,6 +269,7 @@ recordingCountdownInput.addEventListener("input", () => {
 });
 
 let isRecordingFixedDuration = false;
+
 /** @type {HTMLInputElement} */
 const isRecordingFixedDurationCheckbox = document.getElementById("isRecordingFixedDuration");
 isRecordingFixedDurationCheckbox.addEventListener("input", () => {
@@ -277,6 +278,7 @@ isRecordingFixedDurationCheckbox.addEventListener("input", () => {
     recordingDurationInput.disabled = !isRecordingFixedDuration;
 });
 
+/** (in seconds) */
 let recordingDuration = 0;
 /** @type {HTMLInputElement} */
 const recordingDurationInput = document.getElementById("recordingDuration");
@@ -284,6 +286,7 @@ recordingDurationInput.addEventListener("input", () => {
     recordingDuration = Number(recordingDurationInput.value);
     console.log({ recordingDuration });
 });
+recordingDurationInput.dispatchEvent(new Event("input"));
 
 // RECORDING
 
@@ -293,13 +296,17 @@ let isRecording = false;
 
 /**
  * @typedef DevicesSensorData
- * @type {DeviceSensorData[]}
+ * @type {Object}
+ * @property {number} timestamp
+ * @property {DeviceSensorData[]} devices
  */
 
 /**
  * @typedef DeviceSensorData
  * @type {Object}
  * @property {string} id
+ * @property {string} name
+ * @property {import("../../build/brilliantsole.module.js").DeviceType} type
  * @property {SensorTypeData[]} sensorData
  */
 
@@ -389,18 +396,38 @@ async function toggleRecording() {
         }
     }
 }
+/** @type {number?} */
+let recordingTimeoutId = null;
+function startRecordingTimeout() {
+    clearRecordingTimeout();
+    if (recordingDuration <= 0) {
+        console.warn("recording duration must be greater than 0");
+        return;
+    }
+    recordingTimeoutId = setTimeout(() => stopRecording(), recordingDuration * 1_000);
+}
+function clearRecordingTimeout() {
+    if (recordingTimeoutId != null) {
+        clearTimeout(recordingTimeoutId);
+        recordingTimeoutId = null;
+    }
+}
 function startRecording() {
     if (isRecording) {
         console.log("already recording");
         return;
     }
 
-    currentRecording = [];
+    currentRecording = { timestamp: Date.now(), devices: [] };
     isRecording = true;
 
     vibrate("strongClick100");
 
     toggleRecordingButton.innerText = "stop recording";
+
+    if (isRecordingFixedDuration) {
+        startRecordingTimeout();
+    }
 }
 function stopRecording() {
     if (!isRecording) {
@@ -408,9 +435,11 @@ function stopRecording() {
         return;
     }
 
+    clearRecordingTimeout();
+
     if (currentRecording) {
         console.log({ currentRecording });
-        recordings.push(currentRecording);
+        onRecording(currentRecording);
         currentRecording = null;
     }
     isRecording = false;
@@ -437,7 +466,10 @@ function updateRecordingCountdown(recordingCountdown) {
     }
 }
 
-/** @param {import("../../build/brilliantsole.module.js").VibrationWaveformEffect} effect */
+/**
+ * vibrates all connected insoles with a single waveformEffect
+ * @param {import("../../build/brilliantsole.module.js").VibrationWaveformEffect} effect
+ */
 function vibrate(effect) {
     BS.Device.ConnectedDevices.forEach((device) => {
         device.triggerVibration({
@@ -447,3 +479,186 @@ function vibrate(effect) {
         });
     });
 }
+
+/** @type {HTMLTemplateElement} */
+const recordingTemplate = document.getElementById("recordingTemplate");
+/** @type {HTMLTemplateElement} */
+const deviceRecordingTemplate = document.getElementById("deviceRecordingTemplate");
+/** @type {HTMLTemplateElement} */
+const sensorTypeRecordingTemplate = document.getElementById("sensorTypeRecordingTemplate");
+const recordingsContainer = document.getElementById("recordings");
+
+/**
+ * @param {DevicesSensorData} recording
+ * @param {boolean} saveRecordings
+ */
+function onRecording(recording, saveRecordings = true) {
+    recordings.push(recording);
+    console.log({ recordings });
+
+    const recordingContainer = recordingTemplate.content.cloneNode(true).querySelector(".recording");
+    const deviceRecordingsContainer = recordingContainer.querySelector(".devices");
+    const date = new Date(recording.timestamp);
+    recordingContainer.querySelector(".timestamp").innerText = dateToString(date);
+    recording.devices.forEach((deviceRecording) => {
+        const deviceRecordingContainer = deviceRecordingTemplate.content
+            .cloneNode(true)
+            .querySelector(".deviceRecording");
+
+        deviceRecordingContainer.querySelector(".name").innerText = deviceRecording.name;
+        deviceRecordingContainer.querySelector(".id").innerText = deviceRecording.id;
+        deviceRecordingContainer.querySelector(".type").innerText = deviceRecording.type;
+        const sensorTypesContainer = deviceRecordingContainer.querySelector(".sensorTypes");
+        deviceRecording.sensorData.forEach((sensorTypeData) => {
+            const sensorTypeRecordingContainer = sensorTypeRecordingTemplate.content
+                .cloneNode(true)
+                .querySelector(".sensorTypeRecording");
+            sensorTypeRecordingContainer.querySelector(".sensorType").innerText = sensorTypeData.sensorType;
+            sensorTypeRecordingContainer.querySelector(".dataRate").innerText = sensorTypeData.dataRate;
+            const date = new Date(sensorTypeData.initialTimestamp);
+            sensorTypeRecordingContainer.querySelector(".initialTimestamp").innerText = dateToString(date);
+            sensorTypesContainer.appendChild(sensorTypeRecordingContainer);
+        });
+
+        deviceRecordingsContainer.appendChild(deviceRecordingContainer);
+    });
+
+    /** @type {HTMLButtonElement} */
+    const deleteButton = recordingContainer.querySelector(".delete");
+    deleteButton.addEventListener("click", () => {
+        const confirmDeletion = window.confirm("are you sure you want to delete this recording?");
+        if (!confirmDeletion) {
+            return;
+        }
+        recordingContainer.remove();
+        recordings.splice(recordings.indexOf(recording), 1);
+        saveRecordingsToLocalStorage();
+        window.dispatchEvent(new CustomEvent("recordingsUpdate"));
+    });
+
+    /** @type {HTMLButtonElement} */
+    const saveAsJSONButton = recordingContainer.querySelector(".saveAsJSON");
+    saveAsJSONButton.addEventListener("click", () => {
+        saveRecordingAsJSON(recording);
+    });
+
+    /** @type {HTMLButtonElement} */
+    const saveAsCSVButton = recordingContainer.querySelector(".saveAsCSV");
+    saveAsCSVButton.addEventListener("click", () => {
+        console.log("save as CSV");
+    });
+
+    recordingsContainer.appendChild(recordingContainer);
+
+    if (saveRecordings) {
+        saveRecordingsToLocalStorage();
+    }
+    window.dispatchEvent(new CustomEvent("recordingsUpdate"));
+}
+
+/** @type {HTMLButtonElement} */
+const deleteAllRecordingsButton = document.getElementById("deleteAllRecordings");
+deleteAllRecordingsButton.addEventListener("click", () => {
+    const confirmDeletion = window.confirm("are you sure you want to delete all recordings?");
+    if (!confirmDeletion) {
+        return;
+    }
+    recordings.length = 0;
+    recordingsContainer.querySelectorAll(".recording").forEach((recordingContainer) => recordingContainer.remove());
+    saveRecordingsToLocalStorage();
+    window.dispatchEvent(new CustomEvent("recordingsUpdate"));
+});
+/** @type {HTMLButtonElement} */
+const saveAllAsCSVButton = document.getElementById("saveAllAsCSV");
+saveAllAsCSVButton.addEventListener("click", () => {
+    console.log("saveAllAsCSV");
+});
+/** @type {HTMLButtonElement} */
+const saveAllAsJSONButton = document.getElementById("saveAllAsJSON");
+saveAllAsJSONButton.addEventListener("click", () => {
+    console.log("saveAllAsJSONButton");
+    recordings.forEach((recording) => {
+        saveRecordingAsJSON(recording);
+    });
+});
+
+window.addEventListener("recordingsUpdate", () => {
+    console.log("recordingsUpdate");
+    const disabled = recordings.length == 0;
+    deleteAllRecordingsButton.disabled = disabled;
+    saveAllAsJSONButton.disabled = disabled;
+    saveAllAsCSVButton.disabled = disabled;
+});
+
+let localStorageKey = "BS.Recordings";
+
+function loadRecordingsFromLocalStorage() {
+    const recordingsString = localStorage.getItem(localStorageKey);
+    if (!recordingsString) {
+        return;
+    }
+    const loadedRecordings = JSON.parse(recordingsString);
+    console.log("loaded recordings", loadedRecordings);
+    loadedRecordings.forEach((recording) => {
+        onRecording(recording, false);
+    });
+}
+loadRecordingsFromLocalStorage();
+
+function saveRecordingsToLocalStorage() {
+    console.log("saving recordings", recordings);
+    localStorage.setItem(localStorageKey, JSON.stringify(recordings));
+}
+
+/** @param {DevicesSensorData} recording */
+function saveRecordingAsJSON(recording) {
+    console.log("saveRecordingAsJSON", recording);
+
+    const json = JSON.stringify(recording, null, 2);
+    const blob = new Blob([json], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    const date = new Date(recording.timestamp);
+    a.download = `${dateToString(date).replaceAll(":", "")}.json`;
+    a.style.display = "none";
+    document.body.appendChild(a);
+    a.click();
+
+    setTimeout(() => {
+        URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+    }, 0);
+}
+
+/** @param {Date} date */
+function dateToString(date) {
+    return date.toISOString();
+}
+
+const textDecoder = new TextDecoder();
+
+/** @type {HTMLInputElement} */
+const loadAsJSONInput = document.getElementById("loadAsJSON");
+loadAsJSONInput.addEventListener("input", async () => {
+    const files = loadAsJSONInput.files;
+    console.log({ files });
+    if (!files) {
+        return;
+    }
+
+    for (let index = 0; index < files.length; index++) {
+        const file = files[index];
+        const arrayBuffer = await file.arrayBuffer();
+        const json = textDecoder.decode(arrayBuffer);
+        console.log({ json });
+        try {
+            const recording = JSON.parse(json);
+            console.log({ recording });
+            onRecording(recording, false);
+        } catch (error) {
+            console.error("unable to parse json", error);
+        }
+    }
+    saveRecordingsToLocalStorage();
+});

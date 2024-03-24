@@ -3296,6 +3296,10 @@ class Device {
     /** @type {LocalStorageConfiguration?} */
     static #LocalStorageConfiguration;
 
+    static get CanUseLocalStorage() {
+        return isInBrowser && window.localStorage;
+    }
+
     static #AssertLocalStorage() {
         _console$a.assertWithError(isInBrowser, "localStorage is only available in the browser");
         _console$a.assertWithError(window.localStorage, "localStorage not found");
@@ -3503,7 +3507,9 @@ class Device {
     }
 
     static {
-        this.UseLocalStorage = true;
+        if (this.CanUseLocalStorage) {
+            this.UseLocalStorage = true;
+        }
     }
 }
 

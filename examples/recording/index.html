@@ -14,10 +14,16 @@
         div {
             margin-top: 1rem;
         }
-        ul,
-        ol {
+        .noListStyle {
             margin-top: 0;
             list-style: none;
+            padding-left: 0;
+        }
+        .gap:not(:last-of-type) {
+            padding-bottom: 1rem;
+        }
+        .recording {
+            max-width: fit-content;
         }
     </style>
 
@@ -34,7 +40,7 @@
             <div id="availableDevices">
                 <template id="availableDeviceTemplate">
                     <div class="availableDevice">
-                        <ul>
+                        <ul class="noListStyle">
                             <li><b>name: </b> <span class="name"></span></li>
                             <li><b>type: </b> <span class="type"></span></li>
                             <li><button class="toggleConnection">connect</button></li>
@@ -54,7 +60,7 @@
             <div id="connectedDevices">
                 <template id="connectedDeviceTemplate">
                     <div class="connectedDevice">
-                        <ul>
+                        <ul class="noListStyle">
                             <li><b>name: </b> <span class="name"></span></li>
                             <li><b>type: </b> <span class="type"></span></li>
                             <li>
@@ -106,7 +112,51 @@
         </div>
 
         <div>
-            <h2>load/save</h2>
+            <h2>recordings</h2>
+            <button id="saveAllAsJSON" disabled>save all as json</button>
+            <button id="saveAllAsCSV" disabled hidden>save all as CSV</button>
+            <button id="deleteAllRecordings" disabled>delete all</button>
+
+            <div id="recordings">
+                <template id="recordingTemplate">
+                    <div class="recording">
+                        <h3><span class="timestamp"></span></h3>
+
+                        <ol class="devices noListStyle"></ol>
+                        <button class="saveAsCSV" hidden>save as csv</button>
+                        <button class="saveAsJSON">save as json</button>
+                        <button class="delete">delete</button>
+                        <hr />
+                    </div>
+                </template>
+                <template id="deviceRecordingTemplate">
+                    <li class="deviceRecording gap">
+                        <ul class="noListStyle">
+                            <li><b>id:</b> <span class="id"></span></li>
+                            <li><b>name:</b> <span class="name"></span></li>
+                            <li><b>type:</b> <span class="type"></span></li>
+                            <li><b>sensor types:</b> <span class="sensorTypes"></span></li>
+                        </ul>
+                    </li>
+                </template>
+                <template id="sensorTypeRecordingTemplate">
+                    <li class="sensorTypeRecording gap">
+                        <ul>
+                            <li><b>sensor type:</b> <span class="sensorType"></span></li>
+                            <li><b>data rate:</b> <span class="dataRate"></span></li>
+                            <li><b>initial timestamp:</b> <span class="initialTimestamp"></span></li>
+                        </ul>
+                    </li>
+                </template>
+            </div>
+        </div>
+
+        <div>
+            <h2>load</h2>
+
+            <label>
+                load recording (json) <input id="loadAsJSON" type="file" multiple accept="application/json" />
+            </label>
         </div>
     </body>
 </html>
