@@ -526,13 +526,14 @@ function onRecording(recording, saveRecordings = true) {
 
             /** @type {HTMLCanvasElement} */
             const visualizationCanvas = sensorTypeRecordingContainer.querySelector(".visualization canvas");
+            const visualizationContainer = visualizationCanvas.closest(".visualization");
 
             /** @type {HTMLButtonElement} */
             const toggleVisualizationButton = sensorTypeRecordingContainer.querySelector(".toggleVisualization");
             toggleVisualizationButton.addEventListener("click", () => {
-                const showVisualization = visualizationCanvas.parentElement.classList.contains("hidden");
-                visualizationCanvas.parentElement.classList.toggle("hidden");
-                console.log({ showVisualization });
+                const showVisualization = visualizationContainer.classList.contains("hidden");
+                visualizationContainer.classList.toggle("hidden");
+                console.log({ showVisualization, visualizationCanvas });
                 if (showVisualization) {
                     visualizeSensorTypeData(sensorTypeData, visualizationCanvas);
                 }
@@ -744,6 +745,7 @@ function visualizeSensorTypeData(sensorTypeData, canvas) {
         },
         options: {
             responsive: true,
+            maintainAspectRatio: false,
             plugins: {
                 legend: {
                     position: "top",

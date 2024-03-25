@@ -23,15 +23,23 @@
             padding-bottom: 1rem;
         }
         .recording {
-            max-width: fit-content;
         }
 
         .hidden {
             display: none;
         }
 
-        .visualization canvas {
+        .visualization {
+            overflow-x: auto;
+            width: 100%;
+        }
+
+        .visualization2 {
+            width: 3000px;
             height: 300px;
+        }
+
+        .visualization canvas {
         }
     </style>
 
@@ -166,7 +174,9 @@
                             <li><b>initial timestamp:</b> <span class="initialTimestamp"></span></li>
                             <button class="toggleVisualization">visualize</button>
                             <div class="hidden visualization">
-                                <canvas></canvas>
+                                <div class="visualization2">
+                                    <canvas></canvas>
+                                </div>
                             </div>
                         </ul>
                     </li>
