@@ -72,6 +72,7 @@ function onAvailableDevices(availableDevices) {
                 window.addEventListener("isSensorDataEnabled", () => {
                     updateToggleConnectonButton();
                 });
+                updateToggleConnectonButton();
 
                 availableDevice.addEventListener("connectionStatus", () => updateToggleConnectonButton());
 
@@ -298,6 +299,7 @@ let isRecording = false;
  * @typedef DevicesSensorData
  * @type {Object}
  * @property {number} timestamp
+ * @property {number} finalTimestamp
  * @property {DeviceSensorData[]} devices
  */
 
@@ -439,6 +441,8 @@ function stopRecording() {
 
     if (currentRecording) {
         console.log({ currentRecording });
+        currentRecording.timestamp;
+        currentRecording.finalTimestamp = Date.now();
         onRecording(currentRecording);
         currentRecording = null;
     }
@@ -498,8 +502,10 @@ function onRecording(recording, saveRecordings = true) {
 
     const recordingContainer = recordingTemplate.content.cloneNode(true).querySelector(".recording");
     const deviceRecordingsContainer = recordingContainer.querySelector(".devices");
-    const date = new Date(recording.timestamp);
-    recordingContainer.querySelector(".timestamp").innerText = dateToString(date);
+    const initialDate = new Date(recording.timestamp);
+    const duration = recording.finalTimestamp - recording.timestamp;
+    recordingContainer.querySelector(".timestamp").innerText = dateToString(initialDate);
+    recordingContainer.querySelector(".duration").innerText = (duration / 1000).toFixed(2);
     recording.devices.forEach((deviceRecording) => {
         const deviceRecordingContainer = deviceRecordingTemplate.content
             .cloneNode(true)
@@ -517,6 +523,22 @@ function onRecording(recording, saveRecordings = true) {
             sensorTypeRecordingContainer.querySelector(".dataRate").innerText = sensorTypeData.dataRate;
             const date = new Date(sensorTypeData.initialTimestamp);
             sensorTypeRecordingContainer.querySelector(".initialTimestamp").innerText = dateToString(date);
+
+            /** @type {HTMLCanvasElement} */
+            const visualizationCanvas = sensorTypeRecordingContainer.querySelector(".visualization canvas");
+
+            /** @type {HTMLButtonElement} */
+            const toggleVisualizationButton = sensorTypeRecordingContainer.querySelector(".toggleVisualization");
+            toggleVisualizationButton.addEventListener("click", () => {
+                const showVisualization = visualizationCanvas.parentElement.classList.contains("hidden");
+                visualizationCanvas.parentElement.classList.toggle("hidden");
+                console.log({ showVisualization });
+                if (showVisualization) {
+                    visualizeSensorTypeData(sensorTypeData, visualizationCanvas);
+                }
+                toggleVisualizationButton.innerText = showVisualization ? "hide visualization" : "show visualization";
+            });
+
             sensorTypesContainer.appendChild(sensorTypeRecordingContainer);
         });
 
@@ -590,6 +612,8 @@ window.addEventListener("recordingsUpdate", () => {
     saveAllAsCSVButton.disabled = disabled;
 });
 
+// LOCAL STORAGE
+
 let localStorageKey = "BS.Recordings";
 
 function loadRecordingsFromLocalStorage() {
@@ -609,6 +633,8 @@ function saveRecordingsToLocalStorage() {
     console.log("saving recordings", recordings);
     localStorage.setItem(localStorageKey, JSON.stringify(recordings));
 }
+
+// SAVE
 
 /** @param {DevicesSensorData} recording */
 function saveRecordingAsJSON(recording) {
@@ -636,6 +662,8 @@ function dateToString(date) {
     return date.toISOString();
 }
 
+// LOAD
+
 const textDecoder = new TextDecoder();
 
 /** @type {HTMLInputElement} */
@@ -662,3 +690,87 @@ loadAsJSONInput.addEventListener("input", async () => {
     }
     saveRecordingsToLocalStorage();
 });
+
+// VISUALIZATION
+
+/**
+ * @param {SensorTypeData} sensorTypeData
+ * @param {HTMLCanvasElement} canvas
+ */
+function visualizeSensorTypeData(sensorTypeData, canvas) {
+    console.log("visualize");
+    if (canvas.chart) {
+        console.log("already visualized");
+        return;
+    }
+    console.log({ sensorTypeData, canvas });
+
+    const { sensorType } = sensorTypeData;
+
+    const scales = {
+        y: {
+            display: false,
+        },
+        x: {
+            display: false,
+        },
+    };
+    if (sensorType == "pressure") {
+        Object.assign(scales.y, {
+            min: 0,
+            max: 1,
+        });
+    }
+
+    const config = {
+        type: "line",
+        data: {
+            labels: sensorTypeData.data.map((_, index) => index),
+            datasets: Object.keys(sensorTypeData.data[0]).map((key) => {
+                let label = key;
+                if (sensorType == "pressure") {
+                    label = sensorTypeData.data[0][key].name;
+                }
+                let data = sensorTypeData.data.map((value) => {
+                    if (sensorType == "pressure") {
+                        return value[key].normalizedValue;
+                    }
+                    return value[key];
+                });
+                return {
+                    label,
+                    data,
+                    radius: 0,
+                    borderWidth: 2,
+                };
+            }),
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: "top",
+                    labels: {
+                        font: {
+                            //size: 20,
+                        },
+                    },
+                },
+                title: {
+                    display: true,
+                    text: sensorTypeData.sensorType,
+                    font: {
+                        //size: 20,
+                    },
+                },
+            },
+            scales,
+        },
+    };
+
+    console.log({ config });
+
+    // FILL - config
+    const chart = new Chart(canvas, config);
+    canvas.chart = chart;
+}

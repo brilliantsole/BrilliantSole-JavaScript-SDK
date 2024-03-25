@@ -25,6 +25,14 @@
         .recording {
             max-width: fit-content;
         }
+
+        .hidden {
+            display: none;
+        }
+
+        .visualization canvas {
+            height: 300px;
+        }
     </style>
 
     <body>
@@ -113,19 +121,30 @@
 
         <div>
             <h2>recordings</h2>
-            <button id="saveAllAsJSON" disabled>save all as json</button>
-            <button id="saveAllAsCSV" disabled hidden>save all as CSV</button>
-            <button id="deleteAllRecordings" disabled>delete all</button>
+
+            <div>
+                <label>
+                    load recording (json) <input id="loadAsJSON" type="file" multiple accept="application/json" />
+                </label>
+            </div>
+
+            <div>
+                <button id="saveAllAsJSON" disabled>save all as json</button>
+                <button id="saveAllAsCSV" disabled hidden>save all as CSV</button>
+                <button id="deleteAllRecordings" disabled>delete all</button>
+            </div>
 
             <div id="recordings">
                 <template id="recordingTemplate">
                     <div class="recording">
-                        <h3><span class="timestamp"></span></h3>
-
+                        <h3><span class="timestamp"></span> (<span class="duration"></span> seconds)</h3>
+                        <div>
+                            <button class="saveAsCSV" hidden>save as csv</button>
+                            <button class="saveAsJSON">save as json</button>
+                            <button class="delete">delete</button>
+                        </div>
+                        <br />
                         <ol class="devices noListStyle"></ol>
-                        <button class="saveAsCSV" hidden>save as csv</button>
-                        <button class="saveAsJSON">save as json</button>
-                        <button class="delete">delete</button>
                         <hr />
                     </div>
                 </template>
@@ -143,20 +162,16 @@
                     <li class="sensorTypeRecording gap">
                         <ul>
                             <li><b>sensor type:</b> <span class="sensorType"></span></li>
-                            <li><b>data rate:</b> <span class="dataRate"></span></li>
+                            <li><b>data rate:</b> <span class="dataRate"></span>ms</li>
                             <li><b>initial timestamp:</b> <span class="initialTimestamp"></span></li>
+                            <button class="toggleVisualization">visualize</button>
+                            <div class="hidden visualization">
+                                <canvas></canvas>
+                            </div>
                         </ul>
                     </li>
                 </template>
             </div>
-        </div>
-
-        <div>
-            <h2>load</h2>
-
-            <label>
-                load recording (json) <input id="loadAsJSON" type="file" multiple accept="application/json" />
-            </label>
         </div>
     </body>
 </html>
