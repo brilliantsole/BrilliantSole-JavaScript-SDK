@@ -748,6 +748,7 @@ function visualizeSensorTypeData(sensorTypeData, canvas) {
             maintainAspectRatio: false,
             plugins: {
                 legend: {
+                    align: "start",
                     position: "top",
                     labels: {
                         font: {
@@ -757,6 +758,7 @@ function visualizeSensorTypeData(sensorTypeData, canvas) {
                 },
                 title: {
                     display: true,
+                    align: "start",
                     text: sensorTypeData.sensorType,
                     font: {
                         //size: 20,
