@@ -170,10 +170,9 @@ BS.Device.AddEventListener("deviceConnected", (event) => {
             if (sensorType == "pressure") {
                 /** @type {import("../../build/brilliantsole.module.js").PressureData} */
                 const pressure = data;
-                const pressureSensorData = {};
-                pressure.sensors.forEach((sensor) => {
+                const pressureSensorData = pressure.sensors.map((sensor) => {
                     const { name, normalizedValue } = sensor;
-                    pressureSensorData[name] = normalizedValue;
+                    return normalizedValue;
                 });
                 sensorTypeData.data.push(pressureSensorData);
             } else {
@@ -729,6 +728,9 @@ function visualizeSensorTypeData(sensorTypeData, canvas) {
             labels: sensorTypeData.data.map((_, index) => index * sensorTypeData.dataRate),
             datasets: Object.keys(sensorTypeData.data[0]).map((key) => {
                 let label = key;
+                if (sensorType == "pressure") {
+                    label = BS.Device.PressureSensorNames[key];
+                }
                 let data = sensorTypeData.data.map((value) => {
                     return value[key];
                 });
