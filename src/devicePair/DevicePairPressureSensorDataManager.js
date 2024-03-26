@@ -96,7 +96,6 @@ class DevicePairPressureSensorDataManager {
                 const sidePressure = this.#rawPressure[side];
                 const normalizedPressureSumWeight = sidePressure.normalizedSum / pressure.normalizedSum;
                 if (normalizedPressureSumWeight > 0) {
-                    console.log(side, normalizedPressureSumWeight, sidePressure.normalizedCenter.y);
                     pressure.center.y += sidePressure.normalizedCenter.y * normalizedPressureSumWeight;
                     if (side == "right") {
                         pressure.center.x = normalizedPressureSumWeight;
