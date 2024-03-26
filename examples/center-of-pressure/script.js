@@ -134,6 +134,7 @@ devicePair.addEventListener("pressure", (event) => {
     const pressure = event.message.pressure;
     console.log({ pressure });
     if (pressure.normalizedCenter) {
+        //console.log(pressure.normalizedCenter);
         onCenterOfPressure(pressure.normalizedCenter);
     }
 });

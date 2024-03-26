@@ -28,15 +28,14 @@ class DevicePairSensorDataManager {
         this.pressureSensorDataManager.resetPressureRange();
     }
 
-    /** @param {DeviceEvent} event  */
+    /** @param {import("../Device.js").DeviceEvent} event  */
     onDeviceSensorData(event) {
-        const { type } = event;
         const { timestamp } = event.message;
 
-        _console.log({ type, timestamp, event });
-
         /** @type {SensorType} */
-        const sensorType = type;
+        const sensorType = event.message.sensorType;
+
+        _console.log({ sensorType, timestamp, event });
 
         if (!this.#timestamps[sensorType]) {
             this.#timestamps[sensorType] = {};
@@ -49,7 +48,7 @@ class DevicePairSensorDataManager {
                 value = this.pressureSensorDataManager.onDevicePressureData(event);
                 break;
             default:
-                _console.warn(`uncaught sensorType "${sensorType}"`);
+                _console.log(`uncaught sensorType "${sensorType}"`);
                 break;
         }
 

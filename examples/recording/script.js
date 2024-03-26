@@ -255,7 +255,7 @@ window.addEventListener("sensorConfiguration", (event) => {
     updateToggleSensorDataCheckbox();
 });
 
-BS.Device.AddEventListener("deviceIsConnectedUpdated", () => {
+BS.Device.AddEventListener("deviceIsConnected", () => {
     updateToggleSensorDataCheckbox();
 });
 

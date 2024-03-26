@@ -19,7 +19,7 @@ const availableDevicesContainer = document.getElementById("availableDevices");
 getDevicesButton.addEventListener("click", async () => {
     getDevices();
 });
-/** @param {Device[]} */
+/** @param {Device[]} availableDevices */
 function onAvailableDevices(availableDevices) {
     availableDevicesContainer.innerHTML = "";
     if (availableDevices.length == 0) {

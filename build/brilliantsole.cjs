@@ -196,6 +196,16 @@ function setAllConsoleLevelFlags(levelFlags) {
     Console.setAllLevelFlags(levelFlags);
 }
 
+/**
+ * made with ChatGPT
+ * @param {string} string
+ */
+
+/** @param {string} string */
+function capitalizeFirstCharacter(string) {
+    return string[0].toUpperCase() + string.slice(1);
+}
+
 const _console$j = createConsole("EventDispatcher", { log: false });
 
 /**
@@ -1416,7 +1426,7 @@ class PressureSensorDataManager {
             pressure.sensors[index] = { rawValue, normalizedValue, position, name };
 
             pressure.rawSum += rawValue;
-            pressure.normalizedSum = normalizedValue / this.numberOfPressureSensors;
+            pressure.normalizedSum += normalizedValue / this.numberOfPressureSensors;
         }
 
         if (pressure.rawSum > 0) {
@@ -1436,7 +1446,7 @@ class PressureSensorDataManager {
 
 /** @typedef {"acceleration" | "gravity" | "linearAcceleration" | "gyroscope" | "magnetometer" | "gameRotation" | "rotation"} MotionSensorType */
 
-const _console$e = createConsole("MotionSensorDataManager", { log: true });
+const _console$e = createConsole("MotionSensorDataManager", { log: false });
 
 /**
  * @typedef Vector3
@@ -1562,7 +1572,7 @@ class BarometerSensorDataManager {
     }
 }
 
-const _console$d = createConsole("SensorDataManager", { log: true });
+const _console$d = createConsole("SensorDataManager", { log: false });
 
 
 
@@ -1730,7 +1740,7 @@ class SensorDataManager {
  * @property {number} barometer
  */
 
-const _console$c = createConsole("SensorConfigurationManager", { log: true });
+const _console$c = createConsole("SensorConfigurationManager", { log: false });
 
 class SensorConfigurationManager {
     /** @type {DeviceType} */
@@ -2481,7 +2491,7 @@ const _console$a = createConsole("Device", { log: true });
 
 /** @typedef {"connectionStatus" | ConnectionStatus | "isConnected" | ConnectionMessageType | "deviceInformation" | SensorType} DeviceEventType */
 
-/** @typedef {"deviceConnected" | "deviceDisconnected" | "deviceIsConnectedUpdated" | "availableDevices"} StaticDeviceEventType */
+/** @typedef {"deviceConnected" | "deviceDisconnected" | "deviceIsConnected" | "availableDevices"} StaticDeviceEventType */
 
 
 
@@ -3431,12 +3441,7 @@ class Device {
     // STATIC EVENTLISTENERS
 
     /** @type {StaticDeviceEventType[]} */
-    static #StaticEventTypes = [
-        "deviceConnected",
-        "deviceDisconnected",
-        "deviceIsConnectedUpdated",
-        "availableDevices",
-    ];
+    static #StaticEventTypes = ["deviceConnected", "deviceDisconnected", "deviceIsConnected", "availableDevices"];
     static get StaticEventTypes() {
         return this.#StaticEventTypes;
     }
@@ -3489,7 +3494,7 @@ class Device {
                     this.#SaveToLocalStorage();
                 }
                 this.#DispatchEvent({ type: "deviceConnected", message: { device } });
-                this.#DispatchEvent({ type: "deviceIsConnectedUpdated", message: { device } });
+                this.#DispatchEvent({ type: "deviceIsConnected", message: { device } });
             } else {
                 _console$a.log("device already included");
             }
@@ -3498,7 +3503,7 @@ class Device {
                 _console$a.log("removing device", device);
                 this.#ConnectedDevices.splice(this.#ConnectedDevices.indexOf(device), 1);
                 this.#DispatchEvent({ type: "deviceDisconnected", message: { device } });
-                this.#DispatchEvent({ type: "deviceIsConnectedUpdated", message: { device } });
+                this.#DispatchEvent({ type: "deviceIsConnected", message: { device } });
             } else {
                 _console$a.log("device already not included");
             }
@@ -3506,6 +3511,12 @@ class Device {
         if (this.CanGetDevices) {
             this.GetDevices();
         }
+    }
+
+    static async Connect() {
+        const device = new Device();
+        await device.connect();
+        return device;
     }
 
     static {
@@ -4129,6 +4140,7 @@ class DevicePairPressureSensorDataManager {
                 const sidePressure = this.#rawPressure[side];
                 const normalizedPressureSumWeight = sidePressure.normalizedSum / pressure.normalizedSum;
                 if (normalizedPressureSumWeight > 0) {
+                    console.log(side, normalizedPressureSumWeight, sidePressure.normalizedCenter.y);
                     pressure.center.y += sidePressure.normalizedCenter.y * normalizedPressureSumWeight;
                     if (side == "right") {
                         pressure.center.x = normalizedPressureSumWeight;
@@ -4171,15 +4183,14 @@ class DevicePairSensorDataManager {
         this.pressureSensorDataManager.resetPressureRange();
     }
 
-    /** @param {DeviceEvent} event  */
+    /** @param {import("../Device.js").DeviceEvent} event  */
     onDeviceSensorData(event) {
-        const { type } = event;
         const { timestamp } = event.message;
 
-        _console$4.log({ type, timestamp, event });
-
         /** @type {SensorType} */
-        const sensorType = type;
+        const sensorType = event.message.sensorType;
+
+        _console$4.log({ sensorType, timestamp, event });
 
         if (!this.#timestamps[sensorType]) {
             this.#timestamps[sensorType] = {};
@@ -4192,7 +4203,7 @@ class DevicePairSensorDataManager {
                 value = this.pressureSensorDataManager.onDevicePressureData(event);
                 break;
             default:
-                _console$4.warn(`uncaught sensorType "${sensorType}"`);
+                _console$4.log(`uncaught sensorType "${sensorType}"`);
                 break;
         }
 
@@ -4213,7 +4224,25 @@ const _console$3 = createConsole("DevicePair", { log: true });
 
 
 
-/** @typedef {"pressure" | "isConnected"} DevicePairEventType */
+
+
+
+/** @typedef {"deviceIsConnected" | "deviceConnectionStatus"} DevicePairDeviceEventType */
+/**
+ * @typedef { "deviceSensorData" |
+ * "devicePressure" |
+ * "deviceAcceleration" |
+ * "deviceGravity" |
+ * "deviceLinearAcceleration" |
+ * "deviceGyroscope" |
+ * "deviceMagnetometer" |
+ * "deviceGameRotation" |
+ * "deviceRotation" |
+ * "deviceBarometer"
+ * } DevicePairDeviceSensorEventType
+ */
+/** @typedef {"pressure"} DevicePairSensorType */
+/** @typedef {"isConnected" | DevicePairDeviceEventType | DevicePairDeviceSensorEventType | DevicePairSensorType | "deviceGetSensorConfiguration"} DevicePairEventType */
 
 
 
@@ -4238,7 +4267,11 @@ class DevicePair {
     // EVENT DISPATCHER
 
     /** @type {DevicePairEventType[]} */
-    static #EventTypes = ["pressure", "isConnected"];
+    static #EventTypes = [
+        "isConnected",
+        "pressure",
+        ...Device.EventTypes.map((sensorType) => `device${capitalizeFirstCharacter(sensorType)}`),
+    ];
     static get EventTypes() {
         return this.#EventTypes;
     }
@@ -4333,19 +4366,30 @@ class DevicePair {
         this.resetPressureRange();
 
         this.#dispatchEvent({ type: "isConnected", message: { isConnected: this.isConnected } });
+        this.#dispatchEvent({ type: "deviceIsConnected", message: { device, isConnected: device.isConnected } });
 
         return currentDevice;
     }
 
     /** @type {Object.<string, EventListener} */
     #boundDeviceEventListeners = {
-        //sensorData: this.#onDeviceSensorData.bind(this),
-        pressure: this.#onDeviceSensorData.bind(this),
-        isConnected: this.#onIsDeviceConnected.bind(this),
+        connectionStatus: this.#redispatchDeviceEvent.bind(this),
+        isConnected: this.#onDeviceIsConnected.bind(this),
+        sensorData: this.#onDeviceSensorData.bind(this),
+        getSensorConfiguration: this.#redispatchDeviceEvent.bind(this),
     };
 
-    /** @param {DeviceEvent} event  */
-    #onIsDeviceConnected(event) {
+    /** @param {DeviceEvent} deviceEvent */
+    #redispatchDeviceEvent(deviceEvent) {
+        this.#dispatchEvent({
+            type: `device${capitalizeFirstCharacter(deviceEvent.type)}`,
+            message: { ...deviceEvent.message, device: deviceEvent.target },
+        });
+    }
+
+    /** @param {DeviceEvent} deviceEvent */
+    #onDeviceIsConnected(deviceEvent) {
+        this.#redispatchDeviceEvent(deviceEvent);
         this.#dispatchEvent({ type: "isConnected", message: { isConnected: this.isConnected } });
     }
 
@@ -4361,11 +4405,18 @@ class DevicePair {
     }
 
     // SENSOR DATA
+
     #sensorDataManager = new DevicePairSensorDataManager();
-    /** @param {DeviceEvent} event */
-    #onDeviceSensorData(event) {
+    /** @param {DeviceEvent} deviceEvent */
+    #onDeviceSensorData(deviceEvent) {
+        this.#redispatchDeviceEvent(deviceEvent);
+        this.#dispatchEvent({
+            type: `device${capitalizeFirstCharacter(deviceEvent.message.sensorType)}`,
+            message: { ...deviceEvent.message, device: deviceEvent.target },
+        });
+
         if (this.isConnected) {
-            this.#sensorDataManager.onDeviceSensorData(event);
+            this.#sensorDataManager.onDeviceSensorData(deviceEvent);
         }
     }
     /**

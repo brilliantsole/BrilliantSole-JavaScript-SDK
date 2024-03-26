@@ -3,6 +3,85 @@ window.BS = BS;
 console.log({ BS });
 //BS.setAllConsoleLevelFlags({ log: false });
 
+/** @typedef {import("../../build/brilliantsole.module.js").Device} Device */
+
+// GET DEVICES
+
+/** @type {HTMLTemplateElement} */
+const availableDeviceTemplate = document.getElementById("availableDeviceTemplate");
+const availableDevicesContainer = document.getElementById("availableDevices");
+/** @type {Object.<string, HTMLElement>} */
+const availableDeviceContainers = {};
+/** @param {Device[]} availableDevices */
+function onAvailableDevices(availableDevices) {
+    availableDevicesContainer.innerHTML = "";
+    if (availableDevices.length == 0) {
+        availableDevicesContainer.innerText = "no devices available";
+    } else {
+        availableDevices.forEach((availableDevice) => {
+            let availableDeviceContainer = availableDeviceContainers[availableDevice.id];
+            if (!availableDeviceContainer) {
+                availableDeviceContainer = availableDeviceTemplate.content
+                    .cloneNode(true)
+                    .querySelector(".availableDevice");
+                availableDeviceContainers[availableDevice.id] = availableDeviceContainer;
+                availableDeviceContainer.querySelector(".name").innerText = availableDevice.name;
+                availableDeviceContainer.querySelector(".type").innerText = availableDevice.type;
+
+                /** @type {HTMLButtonElement} */
+                const toggleConnectionButton = availableDeviceContainer.querySelector(".toggleConnection");
+                toggleConnectionButton.addEventListener("click", () => {
+                    availableDevice.toggleConnection();
+                });
+                availableDevice.addEventListener("connectionStatus", () => {
+                    switch (availableDevice.connectionStatus) {
+                        case "connected":
+                        case "not connected":
+                            toggleConnectionButton.disabled = false;
+                            toggleConnectionButton.innerText = availableDevice.isConnected ? "disconnect" : "reconnect";
+                            break;
+                        case "connecting":
+                        case "disconnecting":
+                            toggleConnectionButton.disabled = true;
+                            toggleConnectionButton.innerText = availableDevice.connectionStatus;
+                            break;
+                    }
+                });
+                toggleConnectionButton.disabled = availableDevice.connectionStatus != "not connected";
+            }
+            availableDevicesContainer.appendChild(availableDeviceContainer);
+        });
+    }
+}
+async function getDevices() {
+    const availableDevices = await BS.Device.GetDevices();
+    if (!availableDevices) {
+        return;
+    }
+    onAvailableDevices(availableDevices);
+}
+
+BS.Device.AddEventListener("availableDevices", (event) => {
+    const devices = event.message.devices;
+    onAvailableDevices(devices);
+});
+getDevices();
+
+// ADD DEVICE
+
+/** @type {HTMLButtonElement} */
+const addDeviceButton = document.getElementById("addDevice");
+addDeviceButton.addEventListener("click", () => {
+    BS.Device.Connect();
+});
+
+const devicePair = BS.DevicePair.shared;
+devicePair.addEventListener("isConnected", () => {
+    addDeviceButton.disabled = devicePair.isConnected;
+});
+
+// 3D VISUALIZATION
+
 const insolesContainer = document.getElementById("insoles");
 /** @type {HTMLTemplateElement} */
 const insoleTemplate = document.getElementById("insoleTemplate");
@@ -11,9 +90,7 @@ window.sensorRate = 20;
 window.interpolationSmoothing = 0.4;
 window.positionScalar = 0.4;
 
-window.insoles = {};
-
-BS.Device.InsoleSides.forEach((side) => {
+devicePair.sides.forEach((side) => {
     /** @type {HTMLElement} */
     const insoleContainer = insoleTemplate.content.cloneNode(true).querySelector(".insole");
     insoleContainer.classList.add(side);
@@ -26,38 +103,41 @@ BS.Device.InsoleSides.forEach((side) => {
     });
     insolesContainer.appendChild(insoleContainer);
 
-    const insole = new BS.Device();
-    window.insoles[side] = insole;
-
     /** @type {HTMLButtonElement} */
     const toggleConnectionButton = insoleContainer.querySelector(".toggleConnection");
     toggleConnectionButton.addEventListener("click", () => {
-        if (insole.isConnected) {
-            insole.disconnect();
-        } else {
-            insole.connect();
-        }
+        devicePair[side].toggleConnection();
     });
-    insole.addEventListener("connected", () => {
-        if (insole.insoleSide != side) {
-            console.error(`wrong insole side - insole must be "${side}", got "${insole.insoleSide}"`);
-            insole.disconnect();
+    devicePair.addEventListener("deviceIsConnected", (event) => {
+        /** @type {Device} */
+        const device = event.message.device;
+        if (device.insoleSide != side) {
+            return;
         }
+
+        if (device.isConnected) {
+            toggleConnectionButton.disabled = false;
+        }
+        toggleConnectionButton.innerText = device.isConnected ? "disconnect" : "reconnect";
     });
-    insole.addEventListener("connectionStatus", () => {
-        switch (insole.connectionStatus) {
+
+    devicePair.addEventListener("deviceConnectionStatus", (event) => {
+        /** @type {Device} */
+        const device = event.message.device;
+        if (device.insoleSide != side) {
+            return;
+        }
+
+        switch (device.connectionStatus) {
             case "connected":
-                toggleConnectionButton.innerHTML = "disconnect";
-                toggleConnectionButton.disabled = false;
-                break;
             case "not connected":
-                toggleConnectionButton.innerHTML = "connect";
                 toggleConnectionButton.disabled = false;
+                toggleConnectionButton.innerText = device.isConnected ? "disconnect" : "reconnect";
                 break;
             case "connecting":
             case "disconnecting":
-                toggleConnectionButton.innerHTML = insole.connectionStatus;
                 toggleConnectionButton.disabled = true;
+                toggleConnectionButton.innerText = device.connectionStatus;
                 break;
         }
     });
@@ -85,9 +165,7 @@ BS.Device.InsoleSides.forEach((side) => {
                 break;
         }
 
-        console.log({ configuration });
-
-        insole.setSensorConfiguration(configuration);
+        devicePair[side].setSensorConfiguration(configuration);
     });
 
     /** @type {HTMLButtonElement} */
@@ -95,8 +173,13 @@ BS.Device.InsoleSides.forEach((side) => {
     resetOrientationButton.addEventListener("click", () => {
         resetOrientation();
     });
-    insole.addEventListener("isConnected", () => {
-        resetOrientationButton.disabled = !insole.isConnected;
+    devicePair.addEventListener("deviceIsConnected", (event) => {
+        const device = event.message.device;
+        if (device.insoleSide != side) {
+            return;
+        }
+
+        resetOrientationButton.disabled = !device.isConnected;
     });
 
     /** @type {HTMLSelectElement} */
@@ -124,23 +207,33 @@ BS.Device.InsoleSides.forEach((side) => {
 
         console.log({ configuration });
 
-        insole.setSensorConfiguration(configuration);
+        devicePair[side].setSensorConfiguration(configuration);
     });
-    insole.addEventListener("isConnected", () => {
-        orientationSelect.disabled = !insole.isConnected;
-        positionSelect.disabled = !insole.isConnected;
+    devicePair.addEventListener("deviceIsConnected", (event) => {
+        const device = event.message.device;
+        if (device.insoleSide != side) {
+            return;
+        }
+
+        orientationSelect.disabled = !device.isConnected;
+        positionSelect.disabled = !device.isConnected;
     });
 
     /** @typedef {import("../../build/brilliantsole.module.js").SensorType} SensorType */
 
-    insole.addEventListener("getSensorConfiguration", () => {
+    devicePair.addEventListener("deviceGetSensorConfiguration", (event) => {
+        const device = event.message.device;
+        if (device.insoleSide != side) {
+            return;
+        }
+
         let newOrientationSelectValue = "none";
         let newPositionSelectValue = "none";
 
-        for (const key in insole.sensorConfiguration) {
+        for (const key in device.sensorConfiguration) {
             /** @type {SensorType} */
             const sensorType = key;
-            if (insole.sensorConfiguration[sensorType] > 0) {
+            if (device.sensorConfiguration[sensorType] > 0) {
                 switch (sensorType) {
                     case "gameRotation":
                     case "rotation":
@@ -170,21 +263,34 @@ BS.Device.InsoleSides.forEach((side) => {
         insoleEntity.object3D.position.lerp(_position, window.interpolationSmoothing);
     };
 
-    insole.addEventListener("acceleration", (event) => {
+    devicePair.addEventListener("deviceAcceleration", (event) => {
+        const device = event.message.device;
+        if (device.insoleSide != side) {
+            return;
+        }
         /** @type {Vector3} */
         const acceleration = event.message.acceleration;
         updatePosition(acceleration);
     });
-    insole.addEventListener("gravity", (event) => {
+    devicePair.addEventListener("deviceGravity", (event) => {
+        const device = event.message.device;
+        if (device.insoleSide != side) {
+            return;
+        }
+
         /** @type {Vector3} */
         const gravity = event.message.gravity;
         updatePosition(gravity);
     });
-    insole.addEventListener("linearAcceleration", (event) => {
+    devicePair.addEventListener("deviceLinearAcceleration", (event) => {
+        const device = event.message.device;
+        if (device.insoleSide != side) {
+            return;
+        }
+
         /** @type {Vector3} */
         const linearAcceleration = event.message.linearAcceleration;
         linearAcceleration;
-        let x, y, z;
         if (insole.type == "leftInsole") {
             x = linearAcceleration.y;
             y = linearAcceleration.z;
@@ -217,12 +323,22 @@ BS.Device.InsoleSides.forEach((side) => {
         }
         insoleEntity.object3D.quaternion.slerp(targetQuaternion, window.interpolationSmoothing);
     };
-    insole.addEventListener("gameRotation", (event) => {
+    devicePair.addEventListener("deviceGameRotation", (event) => {
+        const device = event.message.device;
+        if (device.insoleSide != side) {
+            return;
+        }
+
         /** @type {Quaternion} */
         const gameRotation = event.message.gameRotation;
         updateQuaternion(gameRotation, true);
     });
-    insole.addEventListener("rotation", (event) => {
+    devicePair.addEventListener("deviceRotation", (event) => {
+        const device = event.message.device;
+        if (device.insoleSide != side) {
+            return;
+        }
+
         /** @type {Quaternion} */
         const rotation = event.message.rotation;
         updateQuaternion(rotation, true);
@@ -231,7 +347,12 @@ BS.Device.InsoleSides.forEach((side) => {
     const gyroscopeVector3 = new THREE.Vector3();
     const gyroscopeEuler = new THREE.Euler();
     const gyroscopeQuaternion = new THREE.Quaternion();
-    insole.addEventListener("gyroscope", (event) => {
+    devicePair.addEventListener("deviceGyroscope", (event) => {
+        const device = event.message.device;
+        if (device.insoleSide != side) {
+            return;
+        }
+
         /** @type {Vector3} */
         const gyroscope = event.message.gyroscope;
         gyroscopeVector3.copy(gyroscope).multiplyScalar(Math.PI / 180);

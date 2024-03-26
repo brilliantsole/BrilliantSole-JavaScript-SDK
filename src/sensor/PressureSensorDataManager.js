@@ -161,7 +161,7 @@ class PressureSensorDataManager {
             pressure.sensors[index] = { rawValue, normalizedValue, position, name };
 
             pressure.rawSum += rawValue;
-            pressure.normalizedSum = normalizedValue / this.numberOfPressureSensors;
+            pressure.normalizedSum += normalizedValue / this.numberOfPressureSensors;
         }
 
         if (pressure.rawSum > 0) {

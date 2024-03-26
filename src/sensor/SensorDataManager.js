@@ -4,7 +4,7 @@ import PressureSensorDataManager from "./PressureSensorDataManager.js";
 import MotionSensorDataManager from "./MotionSensorDataManager.js";
 import BarometerSensorDataManager from "./BarometerSensorDataManager.js";
 
-const _console = createConsole("SensorDataManager", { log: true });
+const _console = createConsole("SensorDataManager", { log: false });
 
 /** @typedef {import("../Device.js").DeviceType} DeviceType */
 

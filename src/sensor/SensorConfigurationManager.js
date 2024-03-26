@@ -18,7 +18,7 @@ import SensorDataManager from "./SensorDataManager.js";
  * @property {number} barometer
  */
 
-const _console = createConsole("SensorConfigurationManager", { log: true });
+const _console = createConsole("SensorConfigurationManager", { log: false });
 
 class SensorConfigurationManager {
     /** @type {DeviceType} */

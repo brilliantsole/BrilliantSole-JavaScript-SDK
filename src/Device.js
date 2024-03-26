@@ -15,7 +15,7 @@ const _console = createConsole("Device", { log: true });
 /** @typedef {import("./sensor/SensorDataManager.js").SensorType} SensorType */
 /** @typedef {"connectionStatus" | ConnectionStatus | "isConnected" | ConnectionMessageType | "deviceInformation" | SensorType} DeviceEventType */
 
-/** @typedef {"deviceConnected" | "deviceDisconnected" | "deviceIsConnectedUpdated" | "availableDevices"} StaticDeviceEventType */
+/** @typedef {"deviceConnected" | "deviceDisconnected" | "deviceIsConnected" | "availableDevices"} StaticDeviceEventType */
 
 /** @typedef {import("./utils/EventDispatcher.js").EventDispatcherListener} EventDispatcherListener */
 /** @typedef {import("./utils/EventDispatcher.js").EventDispatcherOptions} EventDispatcherOptions */
@@ -967,12 +967,7 @@ class Device {
     // STATIC EVENTLISTENERS
 
     /** @type {StaticDeviceEventType[]} */
-    static #StaticEventTypes = [
-        "deviceConnected",
-        "deviceDisconnected",
-        "deviceIsConnectedUpdated",
-        "availableDevices",
-    ];
+    static #StaticEventTypes = ["deviceConnected", "deviceDisconnected", "deviceIsConnected", "availableDevices"];
     static get StaticEventTypes() {
         return this.#StaticEventTypes;
     }
@@ -1025,7 +1020,7 @@ class Device {
                     this.#SaveToLocalStorage();
                 }
                 this.#DispatchEvent({ type: "deviceConnected", message: { device } });
-                this.#DispatchEvent({ type: "deviceIsConnectedUpdated", message: { device } });
+                this.#DispatchEvent({ type: "deviceIsConnected", message: { device } });
             } else {
                 _console.log("device already included");
             }
@@ -1034,7 +1029,7 @@ class Device {
                 _console.log("removing device", device);
                 this.#ConnectedDevices.splice(this.#ConnectedDevices.indexOf(device), 1);
                 this.#DispatchEvent({ type: "deviceDisconnected", message: { device } });
-                this.#DispatchEvent({ type: "deviceIsConnectedUpdated", message: { device } });
+                this.#DispatchEvent({ type: "deviceIsConnected", message: { device } });
             } else {
                 _console.log("device already not included");
             }
@@ -1042,6 +1037,12 @@ class Device {
         if (this.CanGetDevices) {
             this.GetDevices();
         }
+    }
+
+    static async Connect() {
+        const device = new Device();
+        await device.connect();
+        return device;
     }
 
     static {

@@ -4,7 +4,7 @@ import { createConsole } from "../utils/Console.js";
 
 /** @typedef {"acceleration" | "gravity" | "linearAcceleration" | "gyroscope" | "magnetometer" | "gameRotation" | "rotation"} MotionSensorType */
 
-const _console = createConsole("MotionSensorDataManager", { log: true });
+const _console = createConsole("MotionSensorDataManager", { log: false });
 
 /**
  * @typedef Vector3

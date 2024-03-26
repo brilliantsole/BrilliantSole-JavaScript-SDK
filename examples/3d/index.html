@@ -42,12 +42,31 @@
 
         <h1>3D | BrilliantSole JavaScript SDK</h1>
 
+        <div>
+            <h2>available devices</h2>
+            <div id="availableDevices">
+                <template id="availableDeviceTemplate">
+                    <div class="availableDevice">
+                        <ul>
+                            <li><b>name: </b> <span class="name"></span></li>
+                            <li><b>type: </b> <span class="type"></span></li>
+                            <li><button class="toggleConnection">connect</button></li>
+                        </ul>
+                    </div>
+                </template>
+            </div>
+        </div>
+
+        <p>
+            <button id="addDevice">add device</button>
+        </p>
+
         <div id="insoles"></div>
 
         <template id="insoleTemplate">
             <div class="insole">
                 <p>
-                    <button class="toggleConnection">connect</button>
+                    <button class="toggleConnection" disabled>disconnect</button>
                     <br />
                     <select class="orientation" disabled>
                         <optgroup label="orientation">

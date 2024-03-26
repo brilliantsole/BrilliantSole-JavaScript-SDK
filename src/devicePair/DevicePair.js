@@ -2,13 +2,32 @@ import { createConsole } from "../utils/Console.js";
 import EventDispatcher, { addEventListeners, removeEventListeners } from "../utils/EventDispatcher.js";
 import Device from "../Device.js";
 import DevicePairSensorDataManager from "./DevicePairSensorDataManager.js";
+import { capitalizeFirstCharacter } from "../utils/StringUtils.js";
 
 const _console = createConsole("DevicePair", { log: true });
 
 /** @typedef {import("../Device.js").InsoleSide} InsoleSide */
 /** @typedef {import("../Device.js").DeviceEvent} DeviceEvent */
+/** @typedef {import("../Device.js").DeviceEventType} DeviceEventType */
 
-/** @typedef {"pressure" | "isConnected"} DevicePairEventType */
+/** @typedef {import("../sensor/SensorDataManager.js").SensorType} SensorType */
+
+/** @typedef {"deviceIsConnected" | "deviceConnectionStatus"} DevicePairDeviceEventType */
+/**
+ * @typedef { "deviceSensorData" |
+ * "devicePressure" |
+ * "deviceAcceleration" |
+ * "deviceGravity" |
+ * "deviceLinearAcceleration" |
+ * "deviceGyroscope" |
+ * "deviceMagnetometer" |
+ * "deviceGameRotation" |
+ * "deviceRotation" |
+ * "deviceBarometer"
+ * } DevicePairDeviceSensorEventType
+ */
+/** @typedef {"pressure"} DevicePairSensorType */
+/** @typedef {"isConnected" | DevicePairDeviceEventType | DevicePairDeviceSensorEventType | DevicePairSensorType | "deviceGetSensorConfiguration"} DevicePairEventType */
 
 /** @typedef {import("../utils/EventDispatcher.js").EventDispatcherListener} EventDispatcherListener */
 /** @typedef {import("../utils/EventDispatcher.js").EventDispatcherOptions} EventDispatcherOptions */
@@ -33,7 +52,11 @@ class DevicePair {
     // EVENT DISPATCHER
 
     /** @type {DevicePairEventType[]} */
-    static #EventTypes = ["pressure", "isConnected"];
+    static #EventTypes = [
+        "isConnected",
+        "pressure",
+        ...Device.EventTypes.map((sensorType) => `device${capitalizeFirstCharacter(sensorType)}`),
+    ];
     static get EventTypes() {
         return this.#EventTypes;
     }
@@ -128,19 +151,30 @@ class DevicePair {
         this.resetPressureRange();
 
         this.#dispatchEvent({ type: "isConnected", message: { isConnected: this.isConnected } });
+        this.#dispatchEvent({ type: "deviceIsConnected", message: { device, isConnected: device.isConnected } });
 
         return currentDevice;
     }
 
     /** @type {Object.<string, EventListener} */
     #boundDeviceEventListeners = {
-        //sensorData: this.#onDeviceSensorData.bind(this),
-        pressure: this.#onDeviceSensorData.bind(this),
-        isConnected: this.#onIsDeviceConnected.bind(this),
+        connectionStatus: this.#redispatchDeviceEvent.bind(this),
+        isConnected: this.#onDeviceIsConnected.bind(this),
+        sensorData: this.#onDeviceSensorData.bind(this),
+        getSensorConfiguration: this.#redispatchDeviceEvent.bind(this),
     };
 
-    /** @param {DeviceEvent} event  */
-    #onIsDeviceConnected(event) {
+    /** @param {DeviceEvent} deviceEvent */
+    #redispatchDeviceEvent(deviceEvent) {
+        this.#dispatchEvent({
+            type: `device${capitalizeFirstCharacter(deviceEvent.type)}`,
+            message: { ...deviceEvent.message, device: deviceEvent.target },
+        });
+    }
+
+    /** @param {DeviceEvent} deviceEvent */
+    #onDeviceIsConnected(deviceEvent) {
+        this.#redispatchDeviceEvent(deviceEvent);
         this.#dispatchEvent({ type: "isConnected", message: { isConnected: this.isConnected } });
     }
 
@@ -156,11 +190,18 @@ class DevicePair {
     }
 
     // SENSOR DATA
+
     #sensorDataManager = new DevicePairSensorDataManager();
-    /** @param {DeviceEvent} event */
-    #onDeviceSensorData(event) {
+    /** @param {DeviceEvent} deviceEvent */
+    #onDeviceSensorData(deviceEvent) {
+        this.#redispatchDeviceEvent(deviceEvent);
+        this.#dispatchEvent({
+            type: `device${capitalizeFirstCharacter(deviceEvent.message.sensorType)}`,
+            message: { ...deviceEvent.message, device: deviceEvent.target },
+        });
+
         if (this.isConnected) {
-            this.#sensorDataManager.onDeviceSensorData(event);
+            this.#sensorDataManager.onDeviceSensorData(deviceEvent);
         }
     }
     /**
