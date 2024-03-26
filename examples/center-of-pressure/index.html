@@ -92,10 +92,29 @@
 
         <h1>Center of Pressure | BrilliantSole JavaScript SDK</h1>
 
-        <button id="addDevice">add device</button>
-        <button id="togglePressureData" disabled>enable pressure data</button>
-        <button id="resetPressureRange" disabled>recalibrate</button>
-        <button id="toggleGame">start game</button>
+        <div>
+            <h2>available devices</h2>
+            <div id="availableDevices">
+                <template id="availableDeviceTemplate">
+                    <div class="availableDevice">
+                        <ul>
+                            <li><b>name: </b> <span class="name"></span></li>
+                            <li><b>type: </b> <span class="type"></span></li>
+                            <li><button class="toggleConnection">connect</button></li>
+                        </ul>
+                    </div>
+                </template>
+            </div>
+        </div>
+
+        <br />
+
+        <div>
+            <button id="addDevice">add device</button>
+            <button id="togglePressureData" disabled>enable pressure data</button>
+            <button id="resetPressureRange" disabled>recalibrate</button>
+            <button id="toggleGame">start game</button>
+        </div>
 
         <div id="centerOfPressureContainer">
             <div id="centerOfPressureRange">

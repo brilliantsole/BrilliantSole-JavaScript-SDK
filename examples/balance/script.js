@@ -3,28 +3,70 @@ window.BS = BS;
 console.log({ BS });
 //BS.setAllConsoleLevelFlags({ log: true });
 
-const balanceContainer = document.getElementById("balanceContainer");
+// GET DEVICES
+
 /** @type {HTMLTemplateElement} */
-const balanceSideTemplate = document.getElementById("balanceSideTemplate");
+const availableDeviceTemplate = document.getElementById("availableDeviceTemplate");
+const availableDevicesContainer = document.getElementById("availableDevices");
+/** @type {Object.<string, HTMLElement>} */
+const availableDeviceContainers = {};
+/** @param {Device[]} availableDevices */
+function onAvailableDevices(availableDevices) {
+    availableDevicesContainer.innerHTML = "";
+    if (availableDevices.length == 0) {
+        availableDevicesContainer.innerText = "no devices available";
+    } else {
+        availableDevices.forEach((availableDevice) => {
+            let availableDeviceContainer = availableDeviceContainers[availableDevice.id];
+            if (!availableDeviceContainer) {
+                availableDeviceContainer = availableDeviceTemplate.content
+                    .cloneNode(true)
+                    .querySelector(".availableDevice");
+                availableDeviceContainers[availableDevice.id] = availableDeviceContainer;
+                availableDeviceContainer.querySelector(".name").innerText = availableDevice.name;
+                availableDeviceContainer.querySelector(".type").innerText = availableDevice.type;
 
-const balanceSideElements = {};
-window.balanceSideElements = balanceSideElements;
+                /** @type {HTMLButtonElement} */
+                const toggleConnectionButton = availableDeviceContainer.querySelector(".toggleConnection");
+                toggleConnectionButton.addEventListener("click", () => {
+                    availableDevice.toggleConnection();
+                });
+                availableDevice.addEventListener("connectionStatus", () => {
+                    switch (availableDevice.connectionStatus) {
+                        case "connected":
+                        case "not connected":
+                            toggleConnectionButton.disabled = false;
+                            toggleConnectionButton.innerText = availableDevice.isConnected ? "disconnect" : "reconnect";
+                            break;
+                        case "connecting":
+                        case "disconnecting":
+                            toggleConnectionButton.disabled = true;
+                            toggleConnectionButton.innerText = availableDevice.connectionStatus;
+                            break;
+                    }
+                });
+                toggleConnectionButton.disabled = availableDevice.connectionStatus != "not connected";
+            }
+            availableDevicesContainer.appendChild(availableDeviceContainer);
+        });
+    }
+}
+async function getDevices() {
+    const availableDevices = await BS.Device.GetDevices();
+    if (!availableDevices) {
+        return;
+    }
+    onAvailableDevices(availableDevices);
+}
 
-BS.Device.InsoleSides.forEach((side) => {
-    /** @type {HTMLElement} */
-    const balanceSideContainer = balanceSideTemplate.content.cloneNode(true).querySelector(".balanceSide");
-    balanceSideContainer.classList.add(side);
-    balanceContainer.appendChild(balanceSideContainer);
-    const target = balanceSideContainer.querySelector(".target");
-    const fill = balanceSideContainer.querySelector(".fill");
-    balanceSideElements[side] = { target, fill };
+BS.Device.AddEventListener("availableDevices", (event) => {
+    const devices = event.message.devices;
+    onAvailableDevices(devices);
 });
+getDevices();
 
+// CONNECTION
 const devicePair = BS.DevicePair.shared;
-console.log({ devicePair });
-window.devicePair = devicePair;
-
-const devices = BS.DevicePair.Sides.map(() => new BS.Device());
 
 /** @type {HTMLButtonElement} */
 const addDeviceButton = document.getElementById("addDevice");
@@ -32,12 +74,26 @@ devicePair.addEventListener("isConnected", () => {
     addDeviceButton.disabled = devicePair.isConnected;
 });
 addDeviceButton.addEventListener("click", () => {
-    const device = devices.find((device) => device.connectionStatus == "not connected");
-    if (device) {
-        device.connect();
-    } else {
-        console.log("all devices are connected");
-    }
+    BS.Device.Connect();
+});
+
+// BALANCE VISUALIZATION
+
+const balanceContainer = document.getElementById("balanceContainer");
+/** @type {HTMLTemplateElement} */
+const balanceSideTemplate = document.getElementById("balanceSideTemplate");
+
+const balanceSideElements = {};
+window.balanceSideElements = balanceSideElements;
+
+devicePair.sides.forEach((side) => {
+    /** @type {HTMLElement} */
+    const balanceSideContainer = balanceSideTemplate.content.cloneNode(true).querySelector(".balanceSide");
+    balanceSideContainer.classList.add(side);
+    balanceContainer.appendChild(balanceSideContainer);
+    const target = balanceSideContainer.querySelector(".target");
+    const fill = balanceSideContainer.querySelector(".fill");
+    balanceSideElements[side] = { target, fill };
 });
 
 let isPressureDataEnabled = false;

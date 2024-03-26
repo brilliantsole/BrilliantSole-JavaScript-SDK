@@ -11,14 +11,9 @@ window.device = device;
 
 // GET DEVICES
 
-/** @type {HTMLButtonElement} */
-const getDevicesButton = document.getElementById("getDevices");
 /** @type {HTMLTemplateElement} */
 const availableDeviceTemplate = document.getElementById("availableDeviceTemplate");
 const availableDevicesContainer = document.getElementById("availableDevices");
-getDevicesButton.addEventListener("click", async () => {
-    getDevices();
-});
 /** @param {Device[]} availableDevices */
 function onAvailableDevices(availableDevices) {
     availableDevicesContainer.innerHTML = "";
@@ -54,9 +49,6 @@ async function getDevices() {
     }
     onAvailableDevices(availableDevices);
 }
-device.addEventListener("isConnected", () => {
-    getDevicesButton.disabled = device.isConnected;
-});
 
 BS.Device.AddEventListener("availableDevices", (event) => {
     const devices = event.message.devices;
