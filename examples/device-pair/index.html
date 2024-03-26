@@ -1,0 +1,41 @@
+<html>
+    <head>
+        <title>Device Pair | BrilliantSole JavaScript SDK</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico" />
+        <script type="module" src="./script.js"></script>
+    </head>
+
+    <style></style>
+
+    <body>
+        <nav>
+            <a href="../../">home</a>
+        </nav>
+
+        <h1>Device Pair | BrilliantSole JavaScript SDK</h1>
+
+        <div>
+            <h2>available devices</h2>
+            <div id="availableDevices">
+                <template id="availableDeviceTemplate">
+                    <div class="availableDevice">
+                        <ul>
+                            <li><b>name: </b> <span class="name"></span></li>
+                            <li><b>type: </b> <span class="type"></span></li>
+                            <li><button class="toggleConnection">connect</button></li>
+                        </ul>
+                    </div>
+                </template>
+            </div>
+        </div>
+
+        <br />
+
+        <div>
+            <button id="addDevice">add device</button>
+            <button id="togglePressureData" disabled>enable pressure data</button>
+            <button id="resetPressureRange" disabled>recalibrate</button>
+        </div>
+    </body>
+</html>

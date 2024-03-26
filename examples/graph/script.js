@@ -5,6 +5,8 @@ window.BS = BS;
 console.log({ BS });
 //BS.setAllConsoleLevelFlags({ log: true });
 
+/** @typedef {import("../../build/brilliantsole.module.js").Device} Device */
+
 const device = new BS.Device();
 console.log({ device });
 window.device = device;

@@ -1,24 +1,53 @@
 import BS from "../../build/brilliantsole.module.js";
 window.BS = BS;
 console.log({ BS });
-BS.setAllConsoleLevelFlags({ log: false });
+//BS.setAllConsoleLevelFlags({ log: false });
 
 /** @typedef {import("../../build/brilliantsole.module.js").Device} Device */
 
 // GET DEVICES
 
-/** @type {HTMLButtonElement} */
-const getDevicesButton = document.getElementById("getDevices");
-getDevicesButton.disabled = !BS.Device.CanGetDevices;
 /** @type {HTMLTemplateElement} */
 const availableDeviceTemplate = document.getElementById("availableDeviceTemplate");
 const availableDevicesContainer = document.getElementById("availableDevices");
-/** @type {Object.<string, HTMLElement>} */
-const availableDeviceContainers = {};
-getDevicesButton.addEventListener("click", () => {
-    getDevices();
-});
+/** @param {Device[]} availableDevices */
+function onAvailableDevices(availableDevices) {
+    availableDevicesContainer.innerHTML = "";
+    if (availableDevices.length == 0) {
+        availableDevicesContainer.innerText = "no devices available";
+    } else {
+        availableDevices.forEach((availableDevice) => {
+            let availableDeviceContainer = availableDeviceTemplate.content
+                .cloneNode(true)
+                .querySelector(".availableDevice");
+            availableDeviceContainer.querySelector(".name").innerText = availableDevice.name;
+            availableDeviceContainer.querySelector(".type").innerText = availableDevice.type;
 
+            /** @type {HTMLButtonElement} */
+            const toggleConnectionButton = availableDeviceContainer.querySelector(".toggleConnection");
+            toggleConnectionButton.addEventListener("click", () => {
+                availableDevice.toggleConnection();
+            });
+            const onConnectionStatusUpdate = () => {
+                switch (availableDevice.connectionStatus) {
+                    case "connected":
+                    case "not connected":
+                        toggleConnectionButton.disabled = false;
+                        toggleConnectionButton.innerText = availableDevice.isConnected ? "disconnect" : "connect";
+                        break;
+                    case "connecting":
+                    case "disconnecting":
+                        toggleConnectionButton.disabled = true;
+                        toggleConnectionButton.innerText = availableDevice.connectionStatus;
+                        break;
+                }
+            };
+            availableDevice.addEventListener("connectionStatus", () => onConnectionStatusUpdate());
+            onConnectionStatusUpdate();
+            availableDevicesContainer.appendChild(availableDeviceContainer);
+        });
+    }
+}
 async function getDevices() {
     const availableDevices = await BS.Device.GetDevices();
     if (!availableDevices) {
@@ -27,67 +56,11 @@ async function getDevices() {
     onAvailableDevices(availableDevices);
 }
 
-getDevices();
-
-/** @param {Device[]} availableDevices */
-function onAvailableDevices(availableDevices) {
-    availableDevicesContainer.innerHTML = "";
-    if (availableDevices.length == 0) {
-        availableDevicesContainer.innerText = "no devices available";
-    } else {
-        availableDevices.forEach((availableDevice) => {
-            let availableDeviceContainer = availableDeviceContainers[availableDevice.id];
-            if (!availableDeviceContainer) {
-                availableDeviceContainer = availableDeviceTemplate.content
-                    .cloneNode(true)
-                    .querySelector(".availableDevice");
-                availableDeviceContainer.querySelector(".name").innerText = availableDevice.name;
-                availableDeviceContainer.querySelector(".type").innerText = availableDevice.type;
-
-                /** @type {HTMLButtonElement} */
-                const toggleConnectionButton = availableDeviceContainer.querySelector(".toggleConnection");
-                toggleConnectionButton.addEventListener("click", () => {
-                    availableDevice.toggleConnection();
-                });
-
-                const updateToggleConnectonButton = () => {
-                    switch (availableDevice.connectionStatus) {
-                        case "connected":
-                        case "not connected":
-                            toggleConnectionButton.disabled = false;
-                            toggleConnectionButton.innerText = availableDevice.isConnected ? "disconnect" : "connect";
-                            break;
-                        case "connecting":
-                        case "disconnecting":
-                            toggleConnectionButton.disabled = true;
-                            toggleConnectionButton.innerText = availableDevice.connectionStatus;
-                            break;
-                    }
-
-                    if (isSensorDataEnabled) {
-                        toggleConnectionButton.disabled = true;
-                    }
-                };
-
-                window.addEventListener("isSensorDataEnabled", () => {
-                    updateToggleConnectonButton();
-                });
-                updateToggleConnectonButton();
-
-                availableDevice.addEventListener("connectionStatus", () => updateToggleConnectonButton());
-
-                availableDeviceContainers[availableDevice.id] = availableDeviceContainer;
-            }
-            availableDevicesContainer.appendChild(availableDeviceContainer);
-        });
-    }
-}
-
 BS.Device.AddEventListener("availableDevices", (event) => {
-    /** @type {Device[]} */
     const devices = event.message.devices;
     onAvailableDevices(devices);
 });
+getDevices();
 
 // ADD DEVICE
 

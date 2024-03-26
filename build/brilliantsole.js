@@ -3420,10 +3420,27 @@
 	            if (!deviceInformation) {
 	                return;
 	            }
-	            const existingDevice = this.AvailableDevices.filter(
+
+	            let existingConnectedDevice = this.ConnectedDevices.filter(
 	                (device) => device.connectionType == "webBluetooth"
 	            ).find((device) => device.id == bluetoothDevice.id);
-	            if (existingDevice) {
+
+	            const existingAvailableDevice = this.AvailableDevices.filter(
+	                (device) => device.connectionType == "webBluetooth"
+	            ).find((device) => device.id == bluetoothDevice.id);
+	            if (existingAvailableDevice) {
+	                if (
+	                    existingConnectedDevice?.id == existingAvailableDevice.id &&
+	                    existingConnectedDevice != existingAvailableDevice
+	                ) {
+	                    this.AvailableDevices[this.#AvailableDevices.indexOf(existingAvailableDevice)] =
+	                        existingConnectedDevice;
+	                }
+	                return;
+	            }
+
+	            if (existingConnectedDevice) {
+	                this.AvailableDevices.push(existingConnectedDevice);
 	                return;
 	            }
 
@@ -3439,6 +3456,7 @@
 	            this.AvailableDevices.push(device);
 	        });
 	        this.#DispatchEvent({ type: "availableDevices", message: { devices: this.AvailableDevices } });
+	        _console$a.log({ AvailableDevices: this.AvailableDevices });
 	        return this.AvailableDevices;
 	    }
 
