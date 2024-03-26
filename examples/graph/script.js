@@ -5,35 +5,82 @@ window.BS = BS;
 console.log({ BS });
 //BS.setAllConsoleLevelFlags({ log: true });
 
-const insole = new BS.Device();
-console.log({ insole });
-window.insole = insole;
+const device = new BS.Device();
+console.log({ device });
+window.device = device;
+
+// GET DEVICES
+
+/** @type {HTMLTemplateElement} */
+const availableDeviceTemplate = document.getElementById("availableDeviceTemplate");
+const availableDevicesContainer = document.getElementById("availableDevices");
+/** @param {Device[]} availableDevices */
+function onAvailableDevices(availableDevices) {
+    availableDevicesContainer.innerHTML = "";
+    if (availableDevices.length == 0) {
+        availableDevicesContainer.innerText = "no devices available";
+    } else {
+        availableDevices.forEach((availableDevice) => {
+            const availableDeviceContainer = availableDeviceTemplate.content
+                .cloneNode(true)
+                .querySelector(".availableDevice");
+            availableDeviceContainer.querySelector(".name").innerText = availableDevice.name;
+            availableDeviceContainer.querySelector(".type").innerText = availableDevice.type;
+
+            /** @type {HTMLButtonElement} */
+            const toggleConnectionButton = availableDeviceContainer.querySelector(".toggleConnection");
+            toggleConnectionButton.addEventListener("click", () => {
+                device.connectionManager = availableDevice.connectionManager;
+                device.reconnect();
+            });
+            device.addEventListener("connectionStatus", () => {
+                toggleConnectionButton.disabled = device.connectionStatus != "not connected";
+            });
+            toggleConnectionButton.disabled = device.connectionStatus != "not connected";
+
+            availableDevicesContainer.appendChild(availableDeviceContainer);
+        });
+    }
+}
+async function getDevices() {
+    const availableDevices = await BS.Device.GetDevices();
+    if (!availableDevices) {
+        return;
+    }
+    onAvailableDevices(availableDevices);
+}
+
+BS.Device.AddEventListener("availableDevices", (event) => {
+    const devices = event.message.devices;
+    onAvailableDevices(devices);
+});
+getDevices();
 
 // CONNECTION
 
 /** @type {HTMLButtonElement} */
 const toggleConnectionButton = document.getElementById("toggleConnection");
 toggleConnectionButton.addEventListener("click", () => {
-    switch (insole.connectionStatus) {
+    switch (device.connectionStatus) {
         case "not connected":
-            insole.connect();
+            device.connect();
             break;
         case "connected":
-            insole.disconnect();
+            device.disconnect();
             break;
     }
 });
-insole.addEventListener("connectionStatus", () => {
-    switch (insole.connectionStatus) {
+device.addEventListener("connectionStatus", () => {
+    switch (device.connectionStatus) {
         case "connected":
         case "not connected":
             toggleConnectionButton.disabled = false;
-            toggleConnectionButton.innerText = insole.isConnected ? "disconnect" : "connect";
+            toggleConnectionButton.innerText = device.isConnected ? "disconnect" : "connect";
             break;
         case "connecting":
         case "disconnecting":
             toggleConnectionButton.disabled = true;
-            toggleConnectionButton.innerText = insole.connectionStatus;
+            toggleConnectionButton.innerText = device.connectionStatus;
             break;
     }
 });
@@ -56,21 +103,21 @@ BS.Device.SensorTypes.forEach((sensorType) => {
     sensorRateInput.addEventListener("input", () => {
         const sensorRate = Number(sensorRateInput.value);
         console.log({ sensorType, sensorRate });
-        insole.setSensorConfiguration({ [sensorType]: sensorRate });
+        device.setSensorConfiguration({ [sensorType]: sensorRate });
     });
 
     sensorTypeConfigurationTemplate.parentElement.appendChild(sensorTypeConfigurationContainer);
     sensorTypeConfigurationContainer.dataset.sensorType = sensorType;
 });
-insole.addEventListener("getSensorConfiguration", () => {
-    for (const sensorType in insole.sensorConfiguration) {
+device.addEventListener("getSensorConfiguration", () => {
+    for (const sensorType in device.sensorConfiguration) {
         document.querySelector(`.sensorTypeConfiguration[data-sensor-type="${sensorType}"] input`).value =
-            insole.sensorConfiguration[sensorType];
+            device.sensorConfiguration[sensorType];
     }
 });
-insole.addEventListener("isConnected", () => {
-    for (const sensorType in insole.sensorConfiguration) {
-        document.querySelector(`[data-sensor-type="${sensorType}"] input`).disabled = !insole.isConnected;
+device.addEventListener("isConnected", () => {
+    for (const sensorType in device.sensorConfiguration) {
+        document.querySelector(`[data-sensor-type="${sensorType}"] input`).disabled = !device.isConnected;
     }
 });
 
@@ -264,7 +311,7 @@ BS.Device.SensorTypes.forEach((sensorType) => {
     euler.reorder("YXZ");
 
     const appendData = createChart(chartContainer.querySelector("canvas"), sensorType, axesLabels, yRange);
-    insole.addEventListener(sensorType, (event) => {
+    device.addEventListener(sensorType, (event) => {
         let { timestamp, [sensorType]: data } = event.message;
 
         /** @typedef {import("../../build/brilliantsole.module.js").PressureData} PressureData */
