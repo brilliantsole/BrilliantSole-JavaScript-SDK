@@ -3901,11 +3901,27 @@ class NobleScanner extends BaseScanner {
             addEventListeners(noblePeripheral, this.#unboundNoblePeripheralListeners);
         }
 
+        let deviceType;
+        const serviceData = noblePeripheral.advertisement.serviceData;
+        if (serviceData) {
+            //_console.log("serviceData", serviceData);
+            const deviceTypeServiceUUID = serviceUUIDs[0].replaceAll("-", "");
+            //_console.log("deviceTypeServiceUUID", deviceTypeServiceUUID);
+            const deviceTypeServiceData = serviceData.find((serviceDatum) => {
+                return serviceDatum.uuid == deviceTypeServiceUUID;
+            });
+            //_console.log("deviceTypeServiceData", deviceTypeServiceData);
+            if (deviceTypeServiceData) {
+                const deviceTypeEnum = deviceTypeServiceData.data.readUint8(0);
+                deviceType = Device.Types[deviceTypeEnum];
+            }
+        }
+
         /** @type {DiscoveredPeripheral} */
         const discoveredPeripheral = {
             name: noblePeripheral.advertisement.localName,
             id: noblePeripheral.id,
-            //deviceType: Device.Types[noblePeripheral.advertisement.serviceData[serviceUUIDs[0]]],
+            deviceType,
             rssi: noblePeripheral.rssi,
         };
         this.dispatchEvent({ type: "discoveredPeripheral", message: { discoveredPeripheral } });
@@ -3926,9 +3942,7 @@ class NobleScanner extends BaseScanner {
     // SCANNING
     startScan() {
         super.startScan();
-        // REMOVE WHEN TESTING
-        //noble.startScanningAsync(serviceUUIDs, true);
-        noble.startScanningAsync([], true);
+        noble.startScanningAsync(serviceUUIDs, true);
     }
     stopScan() {
         super.stopScan();
