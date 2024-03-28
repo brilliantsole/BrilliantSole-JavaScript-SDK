@@ -5,14 +5,14 @@ import {
     pingTimeout,
     pingMessage,
     ServerMessageTypes,
-    pongMessage,
     createServerMessage,
     parseStringFromDataView,
 } from "../ServerUtils.js";
-import { concatenateArrayBuffers, dataToArrayBuffer } from "../../utils/ArrayBufferUtils.js";
+import { dataToArrayBuffer } from "../../utils/ArrayBufferUtils.js";
 import Timer from "../../utils/Timer.js";
 import EventDispatcher from "../../utils/EventDispatcher.js";
 import scanner from "../../scanner/Scanner.js";
+import Device from "../../Device.js";
 
 const _console = createConsole("WebSocketServer", { log: true });
 
@@ -31,7 +31,7 @@ const _console = createConsole("WebSocketServer", { log: true });
  * @property {Object} message
  */
 
-/** @typedef {import("../../scanner/BaseScanner.js").DiscoveredPeripheral} DiscoveredPeripheral */
+/** @typedef {import("../../scanner/BaseScanner.js").DiscoveredDevice} DiscoveredDevice */
 
 if (isInNode) {
     var ws = require("ws");
@@ -39,9 +39,9 @@ if (isInNode) {
 
 class WebSocketServer {
     constructor() {
-        if (scanner) {
-            addEventListeners(scanner, this.#boundScannerListeners);
-        }
+        _console.assertWithError(scanner, "no scanner defined");
+        addEventListeners(scanner, this.#boundScannerListeners);
+        addEventListeners(Device, this.#boundDeviceListeners);
     }
 
     // EVENT DISPATCHER
@@ -218,24 +218,24 @@ class WebSocketServer {
                 case "stopScan":
                     scanner.stopScan();
                     break;
-                case "discoveredPeripherals":
-                    client.send(this.#discoveredPeripheralsMessage);
+                case "discoveredDevices":
+                    client.send(this.#discoveredDevicesMessage);
                     break;
-                case "connectToPeripheral":
+                case "connectToDevice":
                     {
-                        const peripheralId = parseStringFromDataView(dataView, _byteOffset);
-                        _byteOffset += peripheralId.length;
-                        scanner.connectToPeripheral(peripheralId);
+                        const deviceId = parseStringFromDataView(dataView, _byteOffset);
+                        _byteOffset += deviceId.length;
+                        scanner.connectToDevice(deviceId);
                     }
                     break;
-                case "disconnectFromPeripheral":
+                case "disconnectFromDevice":
                     {
-                        const peripheralId = parseStringFromDataView(dataView, _byteOffset);
-                        _byteOffset += peripheralId.length;
-                        scanner.disconnectFromPeripheral(peripheralId);
+                        const deviceId = parseStringFromDataView(dataView, _byteOffset);
+                        _byteOffset += deviceId.length;
+                        scanner.disconnectFromDevice(deviceId);
                     }
                     break;
-                case "disconnectFromAllPeripherals":
+                case "disconnectFromAllDevices":
                     // FILL
                     break;
                 default:
@@ -277,8 +277,8 @@ class WebSocketServer {
     #boundScannerListeners = {
         isAvailable: this.#onScannerIsAvailable.bind(this),
         isScanning: this.#onScannerIsScanning.bind(this),
-        discoveredPeripheral: this.#onScannerDiscoveredPeripheral.bind(this),
-        expiredDiscoveredPeripheral: this.#onExpiredDiscoveredPeripheral.bind(this),
+        discoveredDevice: this.#onScannerDiscoveredDevice.bind(this),
+        expiredDiscoveredDevice: this.#onExpiredDiscoveredDevice.bind(this),
     };
 
     /** @param {ScannerEvent} event */
@@ -290,37 +290,55 @@ class WebSocketServer {
         this.#broadcastMessage(this.#isScanningMessage);
     }
     /** @param {ScannerEvent} event */
-    #onScannerDiscoveredPeripheral(event) {
-        /** @type {DiscoveredPeripheral} */
-        const discoveredPeripheral = event.message.discoveredPeripheral;
-        console.log(discoveredPeripheral);
+    #onScannerDiscoveredDevice(event) {
+        /** @type {DiscoveredDevice} */
+        const discoveredDevice = event.message.discoveredDevice;
+        console.log(discoveredDevice);
 
-        this.#broadcastMessage(this.#createDiscoveredPeripheralMessage(discoveredPeripheral));
+        this.#broadcastMessage(this.#createDiscoveredDeviceMessage(discoveredDevice));
     }
     /** @param {ScannerEvent} event */
-    #onExpiredDiscoveredPeripheral(event) {
-        /** @type {DiscoveredPeripheral} */
-        const discoveredPeripheral = event.message.discoveredPeripheral;
-        console.log("expired", discoveredPeripheral);
+    #onExpiredDiscoveredDevice(event) {
+        /** @type {DiscoveredDevice} */
+        const discoveredDevice = event.message.discoveredDevice;
+        console.log("expired", discoveredDevice);
 
-        this.#broadcastMessage(this.#createExpiredDiscoveredPeripheralMessage(discoveredPeripheral));
+        this.#broadcastMessage(this.#createExpiredDiscoveredDeviceMessage(discoveredDevice));
     }
 
-    /** @param {DiscoveredPeripheral} discoveredPeripheral */
-    #createDiscoveredPeripheralMessage(discoveredPeripheral) {
-        return createServerMessage({ type: "discoveredPeripheral", data: discoveredPeripheral });
+    /** @param {DiscoveredDevice} discoveredDevice */
+    #createDiscoveredDeviceMessage(discoveredDevice) {
+        return createServerMessage({ type: "discoveredDevice", data: discoveredDevice });
     }
-    get #discoveredPeripheralsMessage() {
+    get #discoveredDevicesMessage() {
         return createServerMessage(
-            ...scanner.discoveredPeripheralsArray.map((discoveredPeripheral) => {
-                return { type: "discoveredPeripheral", data: discoveredPeripheral };
+            ...scanner.discoveredDevicesArray.map((discoveredDevice) => {
+                return { type: "discoveredDevice", data: discoveredDevice };
             })
         );
     }
 
-    /** @param {DiscoveredPeripheral} discoveredPeripheral */
-    #createExpiredDiscoveredPeripheralMessage(discoveredPeripheral) {
-        return createServerMessage({ type: "expiredDiscoveredPeripheral", data: discoveredPeripheral.id });
+    /** @param {DiscoveredDevice} discoveredDevice */
+    #createExpiredDiscoveredDeviceMessage(discoveredDevice) {
+        return createServerMessage({ type: "expiredDiscoveredDevice", data: discoveredDevice.id });
+    }
+
+    // DEVICE LISTENERS
+    #boundDeviceListeners = {
+        deviceConnected: this.#onDeviceConnected.bind(this),
+        deviceDisconnected: this.#onDeviceDisconnected.bind(this),
+    };
+
+    /** @typedef {import("../../Device.js").StaticDeviceEvent} StaticDeviceEvent */
+
+    /** @param {StaticDeviceEvent} deviceEvent */
+    #onDeviceConnected(deviceEvent) {
+        _console.log("onDeviceConnected", deviceEvent.message.device);
+    }
+
+    /** @param {StaticDeviceEvent} deviceEvent */
+    #onDeviceDisconnected(deviceEvent) {
+        _console.log("onDeviceDisconnected", deviceEvent.message.device);
     }
 }
 

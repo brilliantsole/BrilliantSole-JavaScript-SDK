@@ -155,8 +155,8 @@ export function bindEventListeners(eventTypes, boundEventListeners, target) {
  * @param {object.<string, EventListener>} boundEventListeners
  */
 export function addEventListeners(target, boundEventListeners) {
-    let addEventListener = target.addEventListener || target.addListener || target.on;
-    _console.assertWithError(addEventListener, "no add listener function found tor target");
+    let addEventListener = target.addEventListener || target.addListener || target.on || target.AddEventListener;
+    _console.assertWithError(addEventListener, "no add listener function found for target");
     addEventListener = addEventListener.bind(target);
     Object.entries(boundEventListeners).forEach(([eventType, eventListener]) => {
         addEventListener(eventType, eventListener);
@@ -168,8 +168,8 @@ export function addEventListeners(target, boundEventListeners) {
  * @param {object.<string, EventListener>} boundEventListeners
  */
 export function removeEventListeners(target, boundEventListeners) {
-    let removeEventListener = target.removeEventListener || target.removeListener;
-    _console.assertWithError(removeEventListener, "no remove listener function found tor target");
+    let removeEventListener = target.removeEventListener || target.removeListener || target.RemoveEventListener;
+    _console.assertWithError(removeEventListener, "no remove listener function found for target");
     removeEventListener = removeEventListener.bind(target);
     Object.entries(boundEventListeners).forEach(([eventType, eventListener]) => {
         removeEventListener(eventType, eventListener);

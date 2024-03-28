@@ -6,7 +6,7 @@ const _console = createConsole("BaseScanner");
 
 /** @typedef {import("../Device.js").DeviceType} DeviceType */
 
-/** @typedef {"isAvailable" | "isScanning" | "discoveredPeripheral" | "expiredDiscoveredPeripheral"} ScannerEventType */
+/** @typedef {"isAvailable" | "isScanning" | "discoveredDevice" | "expiredDiscoveredDevice"} ScannerEventType */
 
 /** @typedef {import("../utils/EventDispatcher.js").EventDispatcherListener} EventDispatcherListener */
 /** @typedef {import("../utils/EventDispatcher.js").EventDispatcherOptions} EventDispatcherOptions */
@@ -20,7 +20,7 @@ const _console = createConsole("BaseScanner");
  */
 
 /**
- * @typedef DiscoveredPeripheral
+ * @typedef DiscoveredDevice
  * @type {Object}
  * @property {string} id
  * @property {string} name
@@ -56,14 +56,14 @@ class BaseScanner {
     }
 
     #boundEventListeners = {
-        discoveredPeripheral: this.#onDiscoveredPeripheral.bind(this),
+        discoveredDevice: this.#onDiscoveredDevice.bind(this),
         isScanning: this.#onIsScanning.bind(this),
     };
 
     // EVENT DISPATCHER
 
     /** @type {ScannerEventType[]} */
-    static #EventTypes = ["isAvailable", "isScanning", "discoveredPeripheral", "expiredDiscoveredPeripheral"];
+    static #EventTypes = ["isAvailable", "isScanning", "discoveredDevice", "expiredDiscoveredDevice"];
     static get EventTypes() {
         return this.#EventTypes;
     }
@@ -125,78 +125,78 @@ class BaseScanner {
     }
     #onIsScanning() {
         if (this.isScanning) {
-            this.#discoveredPeripherals = {};
-            this.#discoveredPeripheralTimestamps = {};
+            this.#discoveredDevices = {};
+            this.#discoveredDeviceTimestamps = {};
         } else {
-            this.#checkDiscoveredPeripheralsExpirationTimer.stop();
+            this.#checkDiscoveredDevicesExpirationTimer.stop();
         }
     }
 
     // DISCOVERED PERIPHERALS
-    /** @type {Object.<string, DiscoveredPeripheral>} */
-    #discoveredPeripherals = {};
-    get discoveredPeripherals() {
-        return this.#discoveredPeripherals;
+    /** @type {Object.<string, DiscoveredDevice>} */
+    #discoveredDevices = {};
+    get discoveredDevices() {
+        return this.#discoveredDevices;
     }
-    get discoveredPeripheralsArray() {
-        return Object.values(this.#discoveredPeripherals).sort((a, b) => {
-            return this.#discoveredPeripheralTimestamps[a.id] - this.#discoveredPeripheralTimestamps[b.id];
+    get discoveredDevicesArray() {
+        return Object.values(this.#discoveredDevices).sort((a, b) => {
+            return this.#discoveredDeviceTimestamps[a.id] - this.#discoveredDeviceTimestamps[b.id];
         });
     }
-    /** @param {string} discoveredPeripheralId */
-    #assertValidDiscoveredPeripheralId(discoveredPeripheralId) {
+    /** @param {string} discoveredDeviceId */
+    #assertValidDiscoveredDeviceId(discoveredDeviceId) {
         _console.assertWithError(
-            this.#discoveredPeripherals[discoveredPeripheralId],
-            `no discovered peripheral with id "${discoveredPeripheralId}"`
+            this.#discoveredDevices[discoveredDeviceId],
+            `no discovered device with id "${discoveredDeviceId}"`
         );
     }
 
     /** @param {ScannerEvent} event */
-    #onDiscoveredPeripheral(event) {
-        /** @type {DiscoveredPeripheral} */
-        const discoveredPeripheral = event.message.discoveredPeripheral;
-        this.#discoveredPeripherals[discoveredPeripheral.id] = discoveredPeripheral;
-        this.#discoveredPeripheralTimestamps[discoveredPeripheral.id] = Date.now();
-        this.#checkDiscoveredPeripheralsExpirationTimer.start();
+    #onDiscoveredDevice(event) {
+        /** @type {DiscoveredDevice} */
+        const discoveredDevice = event.message.discoveredDevice;
+        this.#discoveredDevices[discoveredDevice.id] = discoveredDevice;
+        this.#discoveredDeviceTimestamps[discoveredDevice.id] = Date.now();
+        this.#checkDiscoveredDevicesExpirationTimer.start();
     }
 
     /** @type {Object.<string, number>} */
-    #discoveredPeripheralTimestamps = {};
+    #discoveredDeviceTimestamps = {};
 
-    static #DiscoveredPeripheralExpirationTimeout = 5000;
-    static get DiscoveredPeripheralExpirationTimeout() {
-        return this.#DiscoveredPeripheralExpirationTimeout;
+    static #DiscoveredDeviceExpirationTimeout = 5000;
+    static get DiscoveredDeviceExpirationTimeout() {
+        return this.#DiscoveredDeviceExpirationTimeout;
     }
-    get #discoveredPeripheralExpirationTimeout() {
-        return BaseScanner.DiscoveredPeripheralExpirationTimeout;
+    get #discoveredDeviceExpirationTimeout() {
+        return BaseScanner.DiscoveredDeviceExpirationTimeout;
     }
-    #checkDiscoveredPeripheralsExpirationTimer = new Timer(this.#checkDiscoveredPeripheralsExpiration.bind(this), 1000);
-    #checkDiscoveredPeripheralsExpiration() {
-        const entries = Object.entries(this.#discoveredPeripherals);
+    #checkDiscoveredDevicesExpirationTimer = new Timer(this.#checkDiscoveredDevicesExpiration.bind(this), 1000);
+    #checkDiscoveredDevicesExpiration() {
+        const entries = Object.entries(this.#discoveredDevices);
         if (entries.length == 0) {
-            this.#checkDiscoveredPeripheralsExpirationTimer.stop();
+            this.#checkDiscoveredDevicesExpirationTimer.stop();
             return;
         }
         const now = Date.now();
-        entries.forEach(([id, discoveredPeripheral]) => {
-            const timestamp = this.#discoveredPeripheralTimestamps[id];
+        entries.forEach(([id, discoveredDevice]) => {
+            const timestamp = this.#discoveredDeviceTimestamps[id];
             console.log(now - timestamp);
-            if (now - timestamp > this.#discoveredPeripheralExpirationTimeout) {
-                _console.log("discovered peripheral timeout");
-                delete this.#discoveredPeripherals[id];
-                delete this.#discoveredPeripheralTimestamps[id];
-                this.dispatchEvent({ type: "expiredDiscoveredPeripheral", message: { discoveredPeripheral } });
+            if (now - timestamp > this.#discoveredDeviceExpirationTimeout) {
+                _console.log("discovered device timeout");
+                delete this.#discoveredDevices[id];
+                delete this.#discoveredDeviceTimestamps[id];
+                this.dispatchEvent({ type: "expiredDiscoveredDevice", message: { discoveredDevice } });
             }
         });
     }
 
     // PERIPHERAL CONNECTION
-    /** @param {string} peripheralId */
-    connectToPeripheral(peripheralId) {
+    /** @param {string} deviceId */
+    connectToDevice(deviceId) {
         this.#assertIsAvailable();
     }
-    /** @param {string} peripheralId */
-    disconnectFromPeripheral(peripheralId) {
+    /** @param {string} deviceId */
+    disconnectFromDevice(deviceId) {
         this.#assertIsAvailable();
     }
 

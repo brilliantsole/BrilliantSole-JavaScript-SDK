@@ -9,7 +9,7 @@ import {
     isScanningRequestMessage,
     startScanRequestMessage,
     stopScanRequestMessage,
-    discoveredPeripheralsMessage,
+    discoveredDevicesMessage,
     createServerMessage,
     parseStringFromDataView,
 } from "../ServerUtils.js";
@@ -25,7 +25,7 @@ const _console = createConsole("WebSocketClient", { log: true });
 
 /** @typedef {"not connected" | "connecting" | "connected" | "disconnecting"} ClientConnectionStatus */
 
-/** @typedef {ClientConnectionStatus | "connectionStatus" |  "isConnected" | "isScanningAvailable" | "isScanning" | "discoveredPeripheral" | "expiredDiscoveredPeripheral"} ClientEventType */
+/** @typedef {ClientConnectionStatus | "connectionStatus" |  "isConnected" | "isScanningAvailable" | "isScanning" | "discoveredDevice" | "expiredDiscoveredDevice"} ClientEventType */
 
 /**
  * @typedef ClientEvent
@@ -35,7 +35,7 @@ const _console = createConsole("WebSocketClient", { log: true });
  * @property {Object} message
  */
 
-/** @typedef {import("./WebSocketServer.js").DiscoveredPeripheral} DiscoveredPeripheral */
+/** @typedef {import("./WebSocketServer.js").DiscoveredDevice} DiscoveredDevice */
 
 class WebSocketClient {
     // EVENT DISPATCHER
@@ -50,8 +50,8 @@ class WebSocketClient {
         "isConnected",
         "isScanningAvailable",
         "isScanning",
-        "discoveredPeripheral",
-        "expiredDiscoveredPeripheral",
+        "discoveredDevice",
+        "expiredDiscoveredDevice",
     ];
     static get EventTypes() {
         return this.#EventTypes;
@@ -234,7 +234,7 @@ class WebSocketClient {
                 this.#dispatchEvent({ type: "isConnected", message: { isConnected: this.isConnected } });
                 if (this.isConnected) {
                     this.#requestIsScanningAvailable();
-                    this.#requestDiscoveredPeripherals();
+                    this.#requestDiscoveredDevices();
                 } else {
                     this.#isScanningAvailable = false;
                     this.#isScanning = false;
@@ -285,24 +285,24 @@ class WebSocketClient {
                         this.#isScanning = isScanning;
                     }
                     break;
-                case "discoveredPeripheral":
+                case "discoveredDevice":
                     {
-                        const discoveredPeripheralString = parseStringFromDataView(dataView, _byteOffset);
-                        _console.log({ discoveredPeripheralString });
-                        _byteOffset += discoveredPeripheralString.length;
+                        const discoveredDeviceString = parseStringFromDataView(dataView, _byteOffset);
+                        _console.log({ discoveredDeviceString });
+                        _byteOffset += discoveredDeviceString.length;
 
-                        /** @type {DiscoveredPeripheral} */
-                        const discoveredPeripheral = JSON.parse(discoveredPeripheralString);
-                        _console.log({ discoveredPeripheral });
+                        /** @type {DiscoveredDevice} */
+                        const discoveredDevice = JSON.parse(discoveredDeviceString);
+                        _console.log({ discoveredDevice });
 
-                        this.#onDiscoveredPeripheral(discoveredPeripheral);
+                        this.#onDiscoveredDevice(discoveredDevice);
                     }
                     break;
-                case "expiredDiscoveredPeripheral":
+                case "expiredDiscoveredDevice":
                     {
-                        const discoveredPeripheralId = parseStringFromDataView(dataView, _byteOffset);
-                        _byteOffset += discoveredPeripheralId.length;
-                        this.#onExpiredDiscoveredPeripheral(discoveredPeripheralId);
+                        const discoveredDeviceId = parseStringFromDataView(dataView, _byteOffset);
+                        _byteOffset += discoveredDeviceId.length;
+                        this.#onExpiredDiscoveredDevice(discoveredDeviceId);
                     }
                     break;
                 default:
@@ -395,74 +395,74 @@ class WebSocketClient {
     }
 
     // PERIPHERALS
-    /** @type {Object.<string, DiscoveredPeripheral>} */
-    #discoveredPeripherals = {};
-    get discoveredPeripherals() {
-        return this.#discoveredPeripherals;
+    /** @type {Object.<string, DiscoveredDevice>} */
+    #discoveredDevices = {};
+    get discoveredDevices() {
+        return this.#discoveredDevices;
     }
-    /** @param {string} discoveredPeripheralId */
-    #assertValidDiscoveredPeripheralId(discoveredPeripheralId) {
-        _console.assertTypeWithError(discoveredPeripheralId, "string");
+    /** @param {string} discoveredDeviceId */
+    #assertValidDiscoveredDeviceId(discoveredDeviceId) {
+        _console.assertTypeWithError(discoveredDeviceId, "string");
         _console.assertWithError(
-            this.#discoveredPeripherals[discoveredPeripheralId],
-            `no discoveredPeripheral found with id "${discoveredPeripheralId}"`
+            this.#discoveredDevices[discoveredDeviceId],
+            `no discoveredDevice found with id "${discoveredDeviceId}"`
         );
     }
 
-    /** @param {DiscoveredPeripheral} discoveredPeripheral */
-    #onDiscoveredPeripheral(discoveredPeripheral) {
-        _console.log({ discoveredPeripheral });
-        this.#discoveredPeripherals[discoveredPeripheral.id] = discoveredPeripheral;
-        this.#dispatchEvent({ type: "discoveredPeripheral", message: { discoveredPeripheral } });
+    /** @param {DiscoveredDevice} discoveredDevice */
+    #onDiscoveredDevice(discoveredDevice) {
+        _console.log({ discoveredDevice });
+        this.#discoveredDevices[discoveredDevice.id] = discoveredDevice;
+        this.#dispatchEvent({ type: "discoveredDevice", message: { discoveredDevice } });
     }
-    #requestDiscoveredPeripherals() {
+    #requestDiscoveredDevices() {
         this.#assertConnection();
-        this.webSocket.send(discoveredPeripheralsMessage);
+        this.webSocket.send(discoveredDevicesMessage);
     }
-    /** @param {string} discoveredPeripheralId */
-    #onExpiredDiscoveredPeripheral(discoveredPeripheralId) {
-        _console.log({ discoveredPeripheralId });
-        let discoveredPeripheral = this.#discoveredPeripherals[discoveredPeripheralId];
-        if (discoveredPeripheral) {
-            _console.log({ expiredDiscoveredPeripheral: discoveredPeripheral });
-            delete this.#discoveredPeripherals[discoveredPeripheralId];
-            this.#dispatchEvent({ type: "expiredDiscoveredPeripheral", message: { discoveredPeripheral } });
+    /** @param {string} discoveredDeviceId */
+    #onExpiredDiscoveredDevice(discoveredDeviceId) {
+        _console.log({ discoveredDeviceId });
+        let discoveredDevice = this.#discoveredDevices[discoveredDeviceId];
+        if (discoveredDevice) {
+            _console.log({ expiredDiscoveredDevice: discoveredDevice });
+            delete this.#discoveredDevices[discoveredDeviceId];
+            this.#dispatchEvent({ type: "expiredDiscoveredDevice", message: { discoveredDevice } });
         } else {
-            _console.warn(`no discoveredPeripheral found with id "${discoveredPeripheralId}"`);
+            _console.warn(`no discoveredDevice found with id "${discoveredDeviceId}"`);
         }
     }
 
     // PERIPHERAL CONNECTION
 
-    /** @param {string} peripheralId */
-    connectToPeripheral(peripheralId) {
-        this.#requestConnectionToPeripheral(peripheralId);
+    /** @param {string} deviceId */
+    connectToDevice(deviceId) {
+        this.#requestConnectionToDevice(deviceId);
     }
-    /** @param {string} peripheralId */
-    disconnectFromPeripheral(peripheralId) {
-        this.#requestDisconnectionFromPeripheral(peripheralId);
-    }
-
-    /** @param {string} peripheralId */
-    #requestConnectionToPeripheral(peripheralId) {
-        this.#assertConnection();
-        _console.assertTypeWithError(peripheralId, "string");
-        this.webSocket.send(this.#createConnectionToPeripheralMessage(peripheralId));
-    }
-    /** @param {string} peripheralId */
-    #requestDisconnectionFromPeripheral(peripheralId) {
-        this.#assertConnection();
-        _console.assertTypeWithError(peripheralId, "string");
-        this.webSocket.send(this.#createDisconnectFromPeripheralMessage(peripheralId));
+    /** @param {string} deviceId */
+    disconnectFromDevice(deviceId) {
+        this.#requestDisconnectionFromDevice(deviceId);
     }
 
-    /** @param {string} peripheralId */
-    #createConnectionToPeripheralMessage(peripheralId) {
-        return createServerMessage({ type: "connectToPeripheral", data: peripheralId });
+    /** @param {string} deviceId */
+    #requestConnectionToDevice(deviceId) {
+        this.#assertConnection();
+        _console.assertTypeWithError(deviceId, "string");
+        this.webSocket.send(this.#createConnectionToDeviceMessage(deviceId));
     }
-    /** @param {string} peripheralId */
-    #createDisconnectFromPeripheralMessage(peripheralId) {
-        return createServerMessage({ type: "disconnectFromPeripheral", data: peripheralId });
+    /** @param {string} deviceId */
+    #requestDisconnectionFromDevice(deviceId) {
+        this.#assertConnection();
+        _console.assertTypeWithError(deviceId, "string");
+        this.webSocket.send(this.#createDisconnectFromDeviceMessage(deviceId));
+    }
+
+    /** @param {string} deviceId */
+    #createConnectionToDeviceMessage(deviceId) {
+        return createServerMessage({ type: "connectToDevice", data: deviceId });
+    }
+    /** @param {string} deviceId */
+    #createDisconnectFromDeviceMessage(deviceId) {
+        return createServerMessage({ type: "disconnectFromDevice", data: deviceId });
     }
 
     // DEVICES

@@ -13,17 +13,17 @@ export const reconnectTimeout = 3_000;
  * | "isScanning"
  * | "startScan"
  * | "stopScan"
- * | "discoveredPeripheral"
- * | "expiredDiscoveredPeripheral"
- * | "discoveredPeripherals"
- * | "connectToPeripheral"
- * | "disconnectFromPeripheral"
- * | "disconnectFromAllPeripherals"
- * | "peripheralConnectionState"
- * | "connectedPeripherals"
- * | "disconnectedPeripherals"
- * | "peripheralRSSI"
- * | "getPeripheralRSSI"
+ * | "discoveredDevice"
+ * | "expiredDiscoveredDevice"
+ * | "discoveredDevices"
+ * | "connectToDevice"
+ * | "disconnectFromDevice"
+ * | "disconnectFromAllDevices"
+ * | "deviceConnectionState"
+ * | "connectedDevices"
+ * | "disconnectedDevices"
+ * | "deviceRSSI"
+ * | "getDeviceRSSI"
  * } ServerMessageType
  */
 
@@ -42,12 +42,12 @@ export const ServerMessageTypes = [
     "isScanning",
     "startScan",
     "stopScan",
-    "discoveredPeripheral",
-    "discoveredPeripherals",
-    "expiredDiscoveredPeripheral",
-    "peripheralRSSI",
-    "connectToPeripheral",
-    "disconnectFromPeripheral",
+    "discoveredDevice",
+    "discoveredDevices",
+    "expiredDiscoveredDevice",
+    "deviceRSSI",
+    "connectToDevice",
+    "disconnectFromDevice",
 ];
 
 /** @param {ServerMessageType} serverMessageType */
@@ -111,4 +111,4 @@ export const isScanningAvailableRequestMessage = createServerMessage("isScanning
 export const isScanningRequestMessage = createServerMessage("isScanning");
 export const startScanRequestMessage = createServerMessage("startScan");
 export const stopScanRequestMessage = createServerMessage("stopScan");
-export const discoveredPeripheralsMessage = createServerMessage("discoveredPeripherals");
+export const discoveredDevicesMessage = createServerMessage("discoveredDevices");

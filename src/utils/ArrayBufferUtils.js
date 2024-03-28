@@ -45,7 +45,7 @@ export function concatenateArrayBuffers(...arrayBuffers) {
     return uint8Array.buffer;
 }
 
-/** @param {Data} data */
+/** @param {Buffer} data */
 export function dataToArrayBuffer(data) {
     return data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength);
 }

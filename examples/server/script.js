@@ -1,7 +1,7 @@
 import BS from "../../build/brilliantsole.module.js";
 window.BS = BS;
 console.log({ BS });
-//BS.setAllConsoleLevelFlags({ log: true });
+BS.setAllConsoleLevelFlags({ log: true });
 
 const client = new BS.WebSocketClient();
 console.log({ client });
@@ -99,79 +99,77 @@ client.addEventListener("isScanning", () => {
 
 // DISCOVERED PERIPHERALS
 
-/** @typedef {import("../../build/brilliantsole.module.js").DiscoveredPeripheral} DiscoveredPeripheral */
+/** @typedef {import("../../build/brilliantsole.module.js").DiscoveredDevice} DiscoveredDevice */
 
 /** @type {HTMLTemplateElement} */
-const discoveredPeripheralTemplate = document.getElementById("discoveredPeripheralTemplate");
-const discoveredPeripheralsContainer = document.getElementById("discoveredPeripherals");
+const discoveredDeviceTemplate = document.getElementById("discoveredDeviceTemplate");
+const discoveredDevicesContainer = document.getElementById("discoveredDevices");
 /** @type {Object.<string, HTMLElement>} */
-let discoveredPeripheralContainers = {};
+let discoveredDeviceContainers = {};
 
-client.addEventListener("discoveredPeripheral", (event) => {
-    /** @type {DiscoveredPeripheral} */
-    const discoveredPeripheral = event.message.discoveredPeripheral;
-    if (!discoveredPeripheral.name) {
+client.addEventListener("discoveredDevice", (event) => {
+    /** @type {DiscoveredDevice} */
+    const discoveredDevice = event.message.discoveredDevice;
+    if (!discoveredDevice.name) {
         return;
     }
 
-    let discoveredPeripheralContainer = discoveredPeripheralContainers[discoveredPeripheral.id];
-    if (!discoveredPeripheralContainer) {
-        discoveredPeripheralContainer = discoveredPeripheralTemplate.content
-            .cloneNode(true)
-            .querySelector(".discoveredPeripheral");
+    let discoveredDeviceContainer = discoveredDeviceContainers[discoveredDevice.id];
+    if (!discoveredDeviceContainer) {
+        discoveredDeviceContainer = discoveredDeviceTemplate.content.cloneNode(true).querySelector(".discoveredDevice");
 
         /** @type {HTMLButtonElement} */
-        const toggleConnectionButton = discoveredPeripheralContainer.querySelector(".toggleConnection");
+        const toggleConnectionButton = discoveredDeviceContainer.querySelector(".toggleConnection");
         toggleConnectionButton.addEventListener("click", () => {
-            const device = client.devices[discoveredPeripheral.id];
+            const device = client.devices[discoveredDevice.id];
             if (device) {
                 device.toggleConnection();
             } else {
-                client.connectToPeripheral(discoveredPeripheral.id);
+                client.connectToDevice(discoveredDevice.id);
             }
         });
 
-        discoveredPeripheralContainers[discoveredPeripheral.id] = discoveredPeripheralContainer;
-        discoveredPeripheralsContainer.appendChild(discoveredPeripheralContainer);
+        discoveredDeviceContainers[discoveredDevice.id] = discoveredDeviceContainer;
+        discoveredDevicesContainer.appendChild(discoveredDeviceContainer);
     }
 
-    updateDiscoveredPeripheralContainer(discoveredPeripheralContainer, discoveredPeripheral);
+    updateDiscoveredDeviceContainer(discoveredDeviceContainer, discoveredDevice);
 });
-function clearDiscoveredPeripherals() {
-    discoveredPeripheralsContainer.innerHTML = "";
-    discoveredPeripheralContainers = {};
+function clearDiscoveredDevices() {
+    discoveredDevicesContainer.innerHTML = "";
+    discoveredDeviceContainers = {};
 }
 client.addEventListener("not connected", () => {
-    clearDiscoveredPeripherals();
+    clearDiscoveredDevices();
 });
 client.addEventListener("isScanning", () => {
     if (client.isScanning) {
-        clearDiscoveredPeripherals();
+        clearDiscoveredDevices();
     }
 });
 
-client.addEventListener("expiredDiscoveredPeripheral", (event) => {
-    /** @type {DiscoveredPeripheral} */
-    const discoveredPeripheral = event.message.discoveredPeripheral;
-    if (!discoveredPeripheral.name) {
+client.addEventListener("expiredDiscoveredDevice", (event) => {
+    /** @type {DiscoveredDevice} */
+    const discoveredDevice = event.message.discoveredDevice;
+    if (!discoveredDevice.name) {
         return;
     }
 
-    let discoveredPeripheralContainer = discoveredPeripheralContainers[discoveredPeripheral.id];
-    if (discoveredPeripheralContainer) {
-        discoveredPeripheralContainer.remove();
-        delete discoveredPeripheralContainers[discoveredPeripheral.id];
+    let discoveredDeviceContainer = discoveredDeviceContainers[discoveredDevice.id];
+    if (discoveredDeviceContainer) {
+        discoveredDeviceContainer.remove();
+        delete discoveredDeviceContainers[discoveredDevice.id];
     } else {
-        console.warn(`no discoveredPeripheral container found with id "${discoveredPeripheral.id}"`);
+        console.warn(`no discoveredDevice container found with id "${discoveredDevice.id}"`);
     }
 });
 
 /**
- * @param {HTMLElement} discoveredPeripheralContainer
- * @param {DiscoveredPeripheral} discoveredPeripheral
+ * @param {HTMLElement} discoveredDeviceContainer
+ * @param {DiscoveredDevice} discoveredDevice
  */
-function updateDiscoveredPeripheralContainer(discoveredPeripheralContainer, discoveredPeripheral) {
-    discoveredPeripheralContainer.querySelector(".name").innerText = discoveredPeripheral.name;
-    discoveredPeripheralContainer.querySelector(".rssi").innerText = discoveredPeripheral.rssi;
-    discoveredPeripheralContainer.querySelector(".deviceType").innerText = discoveredPeripheral.deviceType;
+function updateDiscoveredDeviceContainer(discoveredDeviceContainer, discoveredDevice) {
+    discoveredDeviceContainer.querySelector(".name").innerText = discoveredDevice.name;
+    discoveredDeviceContainer.querySelector(".rssi").innerText = discoveredDevice.rssi;
+    discoveredDeviceContainer.querySelector(".deviceType").innerText = discoveredDevice.deviceType;
 }

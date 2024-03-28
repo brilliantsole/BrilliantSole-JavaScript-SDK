@@ -341,8 +341,8 @@ class EventDispatcher {
  * @param {object.<string, EventListener>} boundEventListeners
  */
 function addEventListeners(target, boundEventListeners) {
-    let addEventListener = target.addEventListener || target.addListener || target.on;
-    _console$j.assertWithError(addEventListener, "no add listener function found tor target");
+    let addEventListener = target.addEventListener || target.addListener || target.on || target.AddEventListener;
+    _console$j.assertWithError(addEventListener, "no add listener function found for target");
     addEventListener = addEventListener.bind(target);
     Object.entries(boundEventListeners).forEach(([eventType, eventListener]) => {
         addEventListener(eventType, eventListener);
@@ -354,8 +354,8 @@ function addEventListeners(target, boundEventListeners) {
  * @param {object.<string, EventListener>} boundEventListeners
  */
 function removeEventListeners(target, boundEventListeners) {
-    let removeEventListener = target.removeEventListener || target.removeListener;
-    _console$j.assertWithError(removeEventListener, "no remove listener function found tor target");
+    let removeEventListener = target.removeEventListener || target.removeListener || target.RemoveEventListener;
+    _console$j.assertWithError(removeEventListener, "no remove listener function found for target");
     removeEventListener = removeEventListener.bind(target);
     Object.entries(boundEventListeners).forEach(([eventType, eventListener]) => {
         removeEventListener(eventType, eventListener);
@@ -610,6 +610,9 @@ const bluetoothUUIDs = Object.freeze({
             if (serviceUUID.length == 4) {
                 serviceInfoUUID = serviceInfoUUID.slice(4, 8);
             }
+            if (!serviceUUID.includes("-")) {
+                serviceInfoUUID = serviceInfoUUID.replaceAll("-", "");
+            }
             return serviceUUID == serviceInfoUUID;
         })?.[0];
     },
@@ -628,6 +631,9 @@ const bluetoothUUIDs = Object.freeze({
                     if (characteristicUUID.length == 4) {
                         characteristicInfoUUID = characteristicInfoUUID.slice(4, 8);
                     }
+                    if (!characteristicUUID.includes("-")) {
+                        characteristicInfoUUID = characteristicInfoUUID.replaceAll("-", "");
+                    }
                     return characteristicUUID == characteristicInfoUUID;
                 }
             )?.[0];
@@ -639,11 +645,34 @@ const bluetoothUUIDs = Object.freeze({
 
 const serviceUUIDs = bluetoothUUIDs.serviceUUIDs;
 const optionalServiceUUIDs = bluetoothUUIDs.optionalServiceUUIDs;
+const allServiceUUIDs = [...serviceUUIDs, ...optionalServiceUUIDs];
 
 /** @param {BluetoothServiceUUID} serviceUUID */
 function getServiceNameFromUUID(serviceUUID) {
     return bluetoothUUIDs.getServiceNameFromUUID(serviceUUID);
 }
+
+/** @type {BluetoothCharacteristicUUID[]} */
+const characteristicUUIDs = [];
+/** @type {BluetoothCharacteristicUUID[]} */
+const allCharacteristicUUIDs = [];
+/** @type {BluetoothCharacteristicName[]} */
+const allCharacteristicNames = [];
+
+Object.entries(bluetoothUUIDs.services).forEach(([serviceName, serviceInfo]) => {
+    if (!serviceInfo.characteristics) {
+        return;
+    }
+    Object.entries(serviceInfo.characteristics).forEach(([characteristicName, characteristicInfo]) => {
+        if (serviceUUIDs.includes(serviceInfo.uuid)) {
+            characteristicUUIDs.push(characteristicInfo.uuid);
+        }
+        allCharacteristicUUIDs.push(characteristicInfo.uuid);
+        allCharacteristicNames.push(characteristicName);
+    });
+}, []);
+
+//_console.log({ characteristicUUIDs, allCharacteristicUUIDs });
 
 /** @param {BluetoothCharacteristicUUID} characteristicUUID */
 function getCharacteristicNameFromUUID(characteristicUUID) {
@@ -999,6 +1028,69 @@ class WebBluetoothConnectionManager extends ConnectionManager {
     }
 }
 
+const textEncoder = new TextEncoder();
+
+/**
+ * @param {...ArrayBuffer} arrayBuffers
+ * @returns {ArrayBuffer}
+ */
+function concatenateArrayBuffers(...arrayBuffers) {
+    arrayBuffers = arrayBuffers.filter((arrayBuffer) => arrayBuffer != undefined || arrayBuffer != null);
+    arrayBuffers = arrayBuffers.map((arrayBuffer) => {
+        if (typeof arrayBuffer == "number") {
+            const number = arrayBuffer;
+            return Uint8Array.from([Math.floor(number)]);
+        } else if (typeof arrayBuffer == "boolean") {
+            const boolean = arrayBuffer;
+            return Uint8Array.from([boolean ? 1 : 0]);
+        } else if (typeof arrayBuffer == "string") {
+            const string = arrayBuffer;
+            return stringToArrayBuffer(string);
+        } else if (arrayBuffer instanceof Array) {
+            const array = arrayBuffer;
+            return Uint8Array.from(array).buffer;
+        } else if (arrayBuffer instanceof ArrayBuffer) {
+            return arrayBuffer;
+        } else if ("buffer" in arrayBuffer && arrayBuffer.buffer instanceof ArrayBuffer) {
+            const bufferContainer = arrayBuffer;
+            return bufferContainer.buffer;
+        } else if (arrayBuffer instanceof DataView) {
+            const dataView = arrayBuffer;
+            return dataView.buffer;
+        } else if (typeof arrayBuffer == "object") {
+            const object = arrayBuffer;
+            return objectToArrayBuffer(object);
+        } else {
+            return arrayBuffer;
+        }
+    });
+    arrayBuffers = arrayBuffers.filter((arrayBuffer) => arrayBuffer && "byteLength" in arrayBuffer);
+    const length = arrayBuffers.reduce((length, arrayBuffer) => length + arrayBuffer.byteLength, 0);
+    const uint8Array = new Uint8Array(length);
+    let byteOffset = 0;
+    arrayBuffers.forEach((arrayBuffer) => {
+        uint8Array.set(new Uint8Array(arrayBuffer), byteOffset);
+        byteOffset += arrayBuffer.byteLength;
+    });
+    return uint8Array.buffer;
+}
+
+/** @param {Buffer} data */
+function dataToArrayBuffer(data) {
+    return data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength);
+}
+
+/** @param {String} string */
+function stringToArrayBuffer(string) {
+    const encoding = textEncoder.encode(string);
+    return concatenateArrayBuffers(encoding.byteLength, encoding);
+}
+
+/** @param {Object} object */
+function objectToArrayBuffer(object) {
+    return stringToArrayBuffer(JSON.stringify(object));
+}
+
 const _console$g = createConsole("NobleConnectionManager", { log: true });
 
 if (isInNode) {
@@ -1012,7 +1104,7 @@ if (isInNode) {
 
 class NobleConnectionManager extends ConnectionManager {
     get id() {
-        return this.#noblePeripheral?.id;
+        return this.#nobleDevice?.id;
     }
 
     static get isSupported() {
@@ -1024,18 +1116,17 @@ class NobleConnectionManager extends ConnectionManager {
     }
 
     get isConnected() {
-        // FILL
-        return false;
+        return this.#nobleDevice?._isConnected;
     }
 
     async connect() {
         await super.connect();
-        // FILL
+        await this.#nobleDevice.connectAsync();
     }
     async disconnect() {
         await super.disconnect();
         _console$g.log("disconnecting from device...");
-        // FILL
+        await this.#nobleDevice.disconnectAsync();
     }
 
     /**
@@ -1064,94 +1155,267 @@ class NobleConnectionManager extends ConnectionManager {
 
     /** @type {boolean} */
     get canReconnect() {
-        // FILL
-        return false;
+        return this.#nobleDevice.connectable;
     }
     async reconnect() {
         await super.reconnect();
         _console$g.log("attempting to reconnect...");
-        // FILL
+        this.connect();
     }
 
     // NOBLE
-    /** @type {noble.Peripheral?} */
-    #noblePeripheral;
-    get noblePeripheral() {
-        return this.#noblePeripheral;
+    /** @type {noble.Device?} */
+    #nobleDevice;
+    get nobleDevice() {
+        return this.#nobleDevice;
     }
-    set noblePeripheral(newNoblePeripheral) {
-        _console$g.assertTypeWithError(newNoblePeripheral, "object");
-        if (this.noblePeripheral == newNoblePeripheral) {
-            _console$g.log("attempted to assign duplicate noblePeripheral");
+    set nobleDevice(newNobleDevice) {
+        _console$g.assertTypeWithError(newNobleDevice, "object");
+        if (this.nobleDevice == newNobleDevice) {
+            _console$g.log("attempted to assign duplicate nobleDevice");
             return;
         }
 
-        _console$g.log({ newNoblePeripheral });
+        _console$g.log({ newNobleDevice });
 
-        if (this.#noblePeripheral) {
-            removeEventListeners(this.#noblePeripheral, this.#unboundNoblePeripheralListeners);
-            delete this.#noblePeripheral._device;
+        if (this.#nobleDevice) {
+            removeEventListeners(this.#nobleDevice, this.#unboundNobleDeviceListeners);
+            delete this.#nobleDevice._connectionManager;
         }
 
-        if (newNoblePeripheral) {
-            newNoblePeripheral._device = this;
-            addEventListeners(newNoblePeripheral, this.#unboundNoblePeripheralListeners);
+        if (newNobleDevice) {
+            newNobleDevice._connectionManager = this;
+            addEventListeners(newNobleDevice, this.#unboundNobleDeviceListeners);
         }
 
-        this.#noblePeripheral = newNoblePeripheral;
+        this.#nobleDevice = newNobleDevice;
     }
 
     // NOBLE EVENTLISTENERS
-    #unboundNoblePeripheralListeners = {
-        connect: this.#onNoblePeripheralConnect,
-        disconnect: this.#onNoblePeripheralDisconnect,
-        rssiUpdate: this.#onNoblePeripheralRssiUpdate,
-        servicesDiscover: this.#onNoblePeripheralServicesDiscover,
+    #unboundNobleDeviceListeners = {
+        connect: this.#onNobleDeviceConnect,
+        disconnect: this.#onNobleDeviceDisconnect,
+        rssiUpdate: this.#onNobleDeviceRssiUpdate,
+        servicesDiscover: this.#onNobleDeviceServicesDiscover,
     };
 
-    #onNoblePeripheralConnect() {
-        this._device.onNoblePeripheralConnect(this);
+    async #onNobleDeviceConnect() {
+        await this._connectionManager.onNobleDeviceConnect(this);
     }
-    /** @param {noble.Peripheral} noblePeripheral */
-    onNoblePeripheralConnect(noblePeripheral) {
-        _console$g.log("onNoblePeripheralConnect", noblePeripheral);
+    /** @param {noble.Device} nobleDevice */
+    async onNobleDeviceConnect(nobleDevice) {
+        _console$g.log("onNobleDeviceConnect", nobleDevice.id);
+        nobleDevice._isConnected = true;
+        await this.#nobleDevice.discoverServicesAsync(allServiceUUIDs);
     }
 
-    #onNoblePeripheralDisconnect() {
-        this._device.onNoblePeripheralConnect(this);
+    async #onNobleDeviceDisconnect() {
+        await this._connectionManager.onNobleDeviceConnect(this);
     }
-    /** @param {noble.Peripheral} noblePeripheral */
-    onNoblePeripheralDisconnect(noblePeripheral) {
-        _console$g.log("onNoblePeripheralDisconnect", noblePeripheral);
-        // FILL
+    /** @param {noble.Device} nobleDevice */
+    async onNobleDeviceDisconnect(nobleDevice) {
+        _console$g.log("onNobleDeviceDisconnect", nobleDevice.id);
+
+        this.#services.forEach((service) => {
+            removeEventListeners(service, this.#unboundNobleServiceListeners);
+        });
+        this.#services.clear();
+
+        this.#characteristics.forEach((characteristic) => {
+            removeEventListeners(characteristic, this.#unboundNobleCharacteristicListeners);
+        });
+        this.#characteristics.clear();
+
+        nobleDevice._isConnected = false;
+        this.status = "not connected";
     }
 
     /** @param {number} rssi */
-    #onNoblePeripheralRssiUpdate(rssi) {
-        this._device.onNoblePeripheralRssiUpdate(this, rssi);
-        // FILL
+    async #onNobleDeviceRssiUpdate(rssi) {
+        await this._connectionManager.onNobleDeviceRssiUpdate(this, rssi);
     }
     /**
-     * @param {noble.Peripheral} noblePeripheral
+     * @param {noble.Device} nobleDevice
      * @param {number} rssi
      */
-    onNoblePeripheralRssiUpdate(noblePeripheral, rssi) {
-        _console$g.log("onNoblePeripheralRssiUpdate", noblePeripheral, rssi);
+    async onNobleDeviceRssiUpdate(nobleDevice, rssi) {
+        _console$g.log("onNobleDeviceRssiUpdate", nobleDevice.id, rssi);
         // FILL
     }
 
     /** @param {noble.Service[]} services */
-    #onNoblePeripheralServicesDiscover(services) {
-        this._device.onNoblePeripheralServicesDiscover(this, services);
+    async #onNobleDeviceServicesDiscover(services) {
+        await this._connectionManager.onNobleDeviceServicesDiscover(this, services);
+    }
+    /**
+     * @param {noble.Device} nobleDevice
+     * @param {noble.Service[]} services
+     */
+    async onNobleDeviceServicesDiscover(nobleDevice, services) {
+        _console$g.log("onNobleDeviceServicesDiscover", nobleDevice.id, services);
+        for (const index in services) {
+            const service = services[index];
+            _console$g.log("service", service);
+            const serviceName = getServiceNameFromUUID(service.uuid);
+            _console$g.assertWithError(serviceName, `no name found for service uuid "${service.uuid}"`);
+            _console$g.log({ serviceName });
+            this.#services.set(serviceName, service);
+            service._name = serviceName;
+            service._connectionManager = this;
+            addEventListeners(service, this.#unboundNobleServiceListeners);
+            await service.discoverCharacteristicsAsync();
+        }
+    }
+
+    // NOBLE SERVICE
+    /** @type {Map.<BluetoothServiceName, BluetoothRemoteGATTService} */
+    #services = new Map();
+
+    #unboundNobleServiceListeners = {
+        characteristicsDiscover: this.#onNobleServiceCharacteristicsDiscover,
+    };
+
+    /** @param {noble.Characteristic[]} characteristics */
+    async #onNobleServiceCharacteristicsDiscover(characteristics) {
+        await this._connectionManager.onNobleServiceCharacteristicsDiscover(this, characteristics);
+    }
+    /**
+     * @param {noble.Service} service
+     * @param {noble.Characteristic[]} characteristics
+     */
+    async onNobleServiceCharacteristicsDiscover(service, characteristics) {
+        _console$g.log(
+            "onNobleServiceCharacteristicsDiscover",
+            service.uuid,
+            characteristics.map((characteristic) => characteristic.uuid)
+        );
+
+        for (const index in characteristics) {
+            const characteristic = characteristics[index];
+            _console$g.log("characteristic", characteristic);
+            const characteristicName = getCharacteristicNameFromUUID(characteristic.uuid);
+            _console$g.assertWithError(
+                characteristicName,
+                `no name found for characteristic uuid "${characteristic.uuid}"`
+            );
+            _console$g.log({ characteristicName });
+            this.#characteristics.set(characteristicName, characteristic);
+            characteristic._name = characteristicName;
+            characteristic._connectionManager = this;
+            addEventListeners(characteristic, this.#unboundNobleCharacteristicListeners);
+            if (characteristic.properties.includes("read")) {
+                await characteristic.readAsync();
+            }
+            if (characteristic.properties.includes("notify")) {
+                await characteristic.subscribeAsync();
+            }
+        }
+
+        if (this.#hasAllCharacteristics) {
+            this.status = "connected";
+        }
+    }
+
+    // NOBLE CHARACTERISRTIC
+    #unboundNobleCharacteristicListeners = {
+        data: this.#onNobleCharacteristicData,
+        write: this.#onNobleCharacteristicWrite,
+        notify: this.#onNobleCharacteristicNotify,
+    };
+
+    /** @type {Map.<BluetoothCharacteristicName, BluetoothRemoteGATTCharacteristic} */
+    #characteristics = new Map();
+
+    get #hasAllCharacteristics() {
+        return allCharacteristicNames.every((characteristicName) => {
+            return this.#characteristics.has(characteristicName);
+        });
+    }
+
+    /**
+     * @param {Buffer} data
+     * @param {boolean} isNotification
+     */
+    #onNobleCharacteristicData(data, isNotification) {
+        this._connectionManager.onNobleCharacteristicData(this, data, isNotification);
     }
     /**
      *
-     * @param {noble.Peripheral} noblePeripheral
-     * @param {noble.Service[]} services
+     * @param {noble.Characteristic} characteristic
+     * @param {Buffer} data
+     * @param {boolean} isNotification
      */
-    onNoblePeripheralServicesDiscover(noblePeripheral, services) {
-        _console$g.log("onNoblePeripheralServicesDiscover", noblePeripheral, services);
-        // FILL
+    onNobleCharacteristicData(characteristic, data, isNotification) {
+        _console$g.log("onNobleCharacteristicData", characteristic.uuid, data, isNotification);
+        const dataView = new DataView(dataToArrayBuffer(data));
+
+        /** @type {BluetoothCharacteristicName} */
+        const characteristicName = characteristic._name;
+        _console$g.assertWithError(
+            characteristicName,
+            `no name found for characteristic with uuid "${characteristic.uuid}"`
+        );
+
+        switch (characteristicName) {
+            case "manufacturerName":
+                this.onMessageReceived("manufacturerName", dataView);
+                break;
+            case "modelNumber":
+                this.onMessageReceived("modelNumber", dataView);
+                break;
+            case "softwareRevision":
+                this.onMessageReceived("softwareRevision", dataView);
+                break;
+            case "hardwareRevision":
+                this.onMessageReceived("hardwareRevision", dataView);
+                break;
+            case "firmwareRevision":
+                this.onMessageReceived("firmwareRevision", dataView);
+                break;
+            case "pnpId":
+                this.onMessageReceived("pnpId", dataView);
+                break;
+            case "serialNumber":
+                this.onMessageReceived("serialNumber", dataView);
+                break;
+            case "batteryLevel":
+                this.onMessageReceived("batteryLevel", dataView);
+                break;
+            case "name":
+                this.onMessageReceived("getName", dataView);
+                break;
+            case "type":
+                this.onMessageReceived("getType", dataView);
+                break;
+            case "sensorConfiguration":
+                this.onMessageReceived("getSensorConfiguration", dataView);
+                break;
+            case "sensorData":
+                this.onMessageReceived("sensorData", dataView);
+                break;
+            default:
+                throw new Error(`uncaught characteristicName "${characteristicName}"`);
+        }
+    }
+
+    #onNobleCharacteristicWrite() {
+        _console$g.log("onNobleCharacteristicWrite", ...arguments);
+        //this._connectionManager.onNobleCharacteristicWrite();
+    }
+    onNobleCharacteristicWrite() {
+        //_console.log("onNobleCharacteristicWrite");
+    }
+
+    /** @param {boolean} isSubscribed */
+    #onNobleCharacteristicNotify(isSubscribed) {
+        this._connectionManager.onNobleCharacteristicNotify(this, isSubscribed);
+    }
+    /**
+     * @param {noble.Characteristic} characteristic
+     * @param {boolean} isSubscribed
+     */
+    onNobleCharacteristicNotify(characteristic, isSubscribed) {
+        _console$g.log("onNobleCharacteristicNotify", characteristic.uuid, isSubscribed);
     }
 }
 
@@ -2098,69 +2362,6 @@ const VibrationWaveformEffects = [
     "smoothHum20",
     "smoothHum10",
 ];
-
-const textEncoder = new TextEncoder();
-
-/**
- * @param {...ArrayBuffer} arrayBuffers
- * @returns {ArrayBuffer}
- */
-function concatenateArrayBuffers(...arrayBuffers) {
-    arrayBuffers = arrayBuffers.filter((arrayBuffer) => arrayBuffer != undefined || arrayBuffer != null);
-    arrayBuffers = arrayBuffers.map((arrayBuffer) => {
-        if (typeof arrayBuffer == "number") {
-            const number = arrayBuffer;
-            return Uint8Array.from([Math.floor(number)]);
-        } else if (typeof arrayBuffer == "boolean") {
-            const boolean = arrayBuffer;
-            return Uint8Array.from([boolean ? 1 : 0]);
-        } else if (typeof arrayBuffer == "string") {
-            const string = arrayBuffer;
-            return stringToArrayBuffer(string);
-        } else if (arrayBuffer instanceof Array) {
-            const array = arrayBuffer;
-            return Uint8Array.from(array).buffer;
-        } else if (arrayBuffer instanceof ArrayBuffer) {
-            return arrayBuffer;
-        } else if ("buffer" in arrayBuffer && arrayBuffer.buffer instanceof ArrayBuffer) {
-            const bufferContainer = arrayBuffer;
-            return bufferContainer.buffer;
-        } else if (arrayBuffer instanceof DataView) {
-            const dataView = arrayBuffer;
-            return dataView.buffer;
-        } else if (typeof arrayBuffer == "object") {
-            const object = arrayBuffer;
-            return objectToArrayBuffer(object);
-        } else {
-            return arrayBuffer;
-        }
-    });
-    arrayBuffers = arrayBuffers.filter((arrayBuffer) => arrayBuffer && "byteLength" in arrayBuffer);
-    const length = arrayBuffers.reduce((length, arrayBuffer) => length + arrayBuffer.byteLength, 0);
-    const uint8Array = new Uint8Array(length);
-    let byteOffset = 0;
-    arrayBuffers.forEach((arrayBuffer) => {
-        uint8Array.set(new Uint8Array(arrayBuffer), byteOffset);
-        byteOffset += arrayBuffer.byteLength;
-    });
-    return uint8Array.buffer;
-}
-
-/** @param {Data} data */
-function dataToArrayBuffer(data) {
-    return data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength);
-}
-
-/** @param {String} string */
-function stringToArrayBuffer(string) {
-    const encoding = textEncoder.encode(string);
-    return concatenateArrayBuffers(encoding.byteLength, encoding);
-}
-
-/** @param {Object} object */
-function objectToArrayBuffer(object) {
-    return stringToArrayBuffer(JSON.stringify(object));
-}
 
 const _console$b = createConsole("VibrationManager");
 
@@ -3616,7 +3817,7 @@ const _console$8 = createConsole("BaseScanner");
 
 
 
-/** @typedef {"isAvailable" | "isScanning" | "discoveredPeripheral" | "expiredDiscoveredPeripheral"} ScannerEventType */
+/** @typedef {"isAvailable" | "isScanning" | "discoveredDevice" | "expiredDiscoveredDevice"} ScannerEventType */
 
 
 
@@ -3630,7 +3831,7 @@ const _console$8 = createConsole("BaseScanner");
  */
 
 /**
- * @typedef DiscoveredPeripheral
+ * @typedef DiscoveredDevice
  * @type {Object}
  * @property {string} id
  * @property {string} name
@@ -3666,14 +3867,14 @@ class BaseScanner {
     }
 
     #boundEventListeners = {
-        discoveredPeripheral: this.#onDiscoveredPeripheral.bind(this),
+        discoveredDevice: this.#onDiscoveredDevice.bind(this),
         isScanning: this.#onIsScanning.bind(this),
     };
 
     // EVENT DISPATCHER
 
     /** @type {ScannerEventType[]} */
-    static #EventTypes = ["isAvailable", "isScanning", "discoveredPeripheral", "expiredDiscoveredPeripheral"];
+    static #EventTypes = ["isAvailable", "isScanning", "discoveredDevice", "expiredDiscoveredDevice"];
     static get EventTypes() {
         return this.#EventTypes;
     }
@@ -3735,78 +3936,78 @@ class BaseScanner {
     }
     #onIsScanning() {
         if (this.isScanning) {
-            this.#discoveredPeripherals = {};
-            this.#discoveredPeripheralTimestamps = {};
+            this.#discoveredDevices = {};
+            this.#discoveredDeviceTimestamps = {};
         } else {
-            this.#checkDiscoveredPeripheralsExpirationTimer.stop();
+            this.#checkDiscoveredDevicesExpirationTimer.stop();
         }
     }
 
     // DISCOVERED PERIPHERALS
-    /** @type {Object.<string, DiscoveredPeripheral>} */
-    #discoveredPeripherals = {};
-    get discoveredPeripherals() {
-        return this.#discoveredPeripherals;
+    /** @type {Object.<string, DiscoveredDevice>} */
+    #discoveredDevices = {};
+    get discoveredDevices() {
+        return this.#discoveredDevices;
     }
-    get discoveredPeripheralsArray() {
-        return Object.values(this.#discoveredPeripherals).sort((a, b) => {
-            return this.#discoveredPeripheralTimestamps[a.id] - this.#discoveredPeripheralTimestamps[b.id];
+    get discoveredDevicesArray() {
+        return Object.values(this.#discoveredDevices).sort((a, b) => {
+            return this.#discoveredDeviceTimestamps[a.id] - this.#discoveredDeviceTimestamps[b.id];
         });
     }
-    /** @param {string} discoveredPeripheralId */
-    #assertValidDiscoveredPeripheralId(discoveredPeripheralId) {
+    /** @param {string} discoveredDeviceId */
+    #assertValidDiscoveredDeviceId(discoveredDeviceId) {
         _console$8.assertWithError(
-            this.#discoveredPeripherals[discoveredPeripheralId],
-            `no discovered peripheral with id "${discoveredPeripheralId}"`
+            this.#discoveredDevices[discoveredDeviceId],
+            `no discovered device with id "${discoveredDeviceId}"`
         );
     }
 
     /** @param {ScannerEvent} event */
-    #onDiscoveredPeripheral(event) {
-        /** @type {DiscoveredPeripheral} */
-        const discoveredPeripheral = event.message.discoveredPeripheral;
-        this.#discoveredPeripherals[discoveredPeripheral.id] = discoveredPeripheral;
-        this.#discoveredPeripheralTimestamps[discoveredPeripheral.id] = Date.now();
-        this.#checkDiscoveredPeripheralsExpirationTimer.start();
+    #onDiscoveredDevice(event) {
+        /** @type {DiscoveredDevice} */
+        const discoveredDevice = event.message.discoveredDevice;
+        this.#discoveredDevices[discoveredDevice.id] = discoveredDevice;
+        this.#discoveredDeviceTimestamps[discoveredDevice.id] = Date.now();
+        this.#checkDiscoveredDevicesExpirationTimer.start();
     }
 
     /** @type {Object.<string, number>} */
-    #discoveredPeripheralTimestamps = {};
+    #discoveredDeviceTimestamps = {};
 
-    static #DiscoveredPeripheralExpirationTimeout = 5000;
-    static get DiscoveredPeripheralExpirationTimeout() {
-        return this.#DiscoveredPeripheralExpirationTimeout;
+    static #DiscoveredDeviceExpirationTimeout = 5000;
+    static get DiscoveredDeviceExpirationTimeout() {
+        return this.#DiscoveredDeviceExpirationTimeout;
     }
-    get #discoveredPeripheralExpirationTimeout() {
-        return BaseScanner.DiscoveredPeripheralExpirationTimeout;
+    get #discoveredDeviceExpirationTimeout() {
+        return BaseScanner.DiscoveredDeviceExpirationTimeout;
     }
-    #checkDiscoveredPeripheralsExpirationTimer = new Timer(this.#checkDiscoveredPeripheralsExpiration.bind(this), 1000);
-    #checkDiscoveredPeripheralsExpiration() {
-        const entries = Object.entries(this.#discoveredPeripherals);
+    #checkDiscoveredDevicesExpirationTimer = new Timer(this.#checkDiscoveredDevicesExpiration.bind(this), 1000);
+    #checkDiscoveredDevicesExpiration() {
+        const entries = Object.entries(this.#discoveredDevices);
         if (entries.length == 0) {
-            this.#checkDiscoveredPeripheralsExpirationTimer.stop();
+            this.#checkDiscoveredDevicesExpirationTimer.stop();
             return;
         }
         const now = Date.now();
-        entries.forEach(([id, discoveredPeripheral]) => {
-            const timestamp = this.#discoveredPeripheralTimestamps[id];
+        entries.forEach(([id, discoveredDevice]) => {
+            const timestamp = this.#discoveredDeviceTimestamps[id];
             console.log(now - timestamp);
-            if (now - timestamp > this.#discoveredPeripheralExpirationTimeout) {
-                _console$8.log("discovered peripheral timeout");
-                delete this.#discoveredPeripherals[id];
-                delete this.#discoveredPeripheralTimestamps[id];
-                this.dispatchEvent({ type: "expiredDiscoveredPeripheral", message: { discoveredPeripheral } });
+            if (now - timestamp > this.#discoveredDeviceExpirationTimeout) {
+                _console$8.log("discovered device timeout");
+                delete this.#discoveredDevices[id];
+                delete this.#discoveredDeviceTimestamps[id];
+                this.dispatchEvent({ type: "expiredDiscoveredDevice", message: { discoveredDevice } });
             }
         });
     }
 
     // PERIPHERAL CONNECTION
-    /** @param {string} peripheralId */
-    connectToPeripheral(peripheralId) {
+    /** @param {string} deviceId */
+    connectToDevice(deviceId) {
         this.#assertIsAvailable();
     }
-    /** @param {string} peripheralId */
-    disconnectFromPeripheral(peripheralId) {
+    /** @param {string} deviceId */
+    disconnectFromDevice(deviceId) {
         this.#assertIsAvailable();
     }
 
@@ -3892,17 +4093,17 @@ class NobleScanner extends BaseScanner {
         _console$7.log("onNobleStateChange", state);
         this.#nobleState = state;
     }
-    /** @param {noble.Peripheral} noblePeripheral */
-    #onNobleDiscover(noblePeripheral) {
-        _console$7.log("onNobleDiscover", noblePeripheral);
-        if (!this.#noblePeripherals[noblePeripheral.id]) {
-            noblePeripheral._scanner = this;
-            this.#noblePeripherals[noblePeripheral.id] = noblePeripheral;
-            addEventListeners(noblePeripheral, this.#unboundNoblePeripheralListeners);
+    /** @param {noble.Device} nobleDevice */
+    #onNobleDiscover(nobleDevice) {
+        _console$7.log("onNobleDiscover", nobleDevice);
+        if (!this.#nobleDevices[nobleDevice.id]) {
+            nobleDevice._scanner = this;
+            this.#nobleDevices[nobleDevice.id] = nobleDevice;
+            addEventListeners(nobleDevice, this.#unboundNobleDeviceListeners);
         }
 
         let deviceType;
-        const serviceData = noblePeripheral.advertisement.serviceData;
+        const serviceData = nobleDevice.advertisement.serviceData;
         if (serviceData) {
             //_console.log("serviceData", serviceData);
             const deviceTypeServiceUUID = serviceUUIDs[0].replaceAll("-", "");
@@ -3917,14 +4118,14 @@ class NobleScanner extends BaseScanner {
             }
         }
 
-        /** @type {DiscoveredPeripheral} */
-        const discoveredPeripheral = {
-            name: noblePeripheral.advertisement.localName,
-            id: noblePeripheral.id,
+        /** @type {DiscoveredDevice} */
+        const discoveredDevice = {
+            name: nobleDevice.advertisement.localName,
+            id: nobleDevice.id,
             deviceType,
-            rssi: noblePeripheral.rssi,
+            rssi: nobleDevice.rssi,
         };
-        this.dispatchEvent({ type: "discoveredPeripheral", message: { discoveredPeripheral } });
+        this.dispatchEvent({ type: "discoveredDevice", message: { discoveredDevice } });
     }
 
     // CONSTRUCTOR
@@ -3957,106 +4158,104 @@ class NobleScanner extends BaseScanner {
 
     // BASESCANNER LISTENERS
     #boundBaseScannerListeners = {
-        expiredDiscoveredPeripheral: this.#onExpiredDiscoveredPeripheral.bind(this),
+        expiredDiscoveredDevice: this.#onExpiredDiscoveredDevice.bind(this),
     };
 
     /** @param {ScannerEvent} event */
-    #onExpiredDiscoveredPeripheral(event) {
-        /** @type {DiscoveredPeripheral} */
-        const discoveredPeripheral = event.message.discoveredPeripheral;
-        const noblePeripheral = this.#noblePeripherals[discoveredPeripheral.id];
-        if (noblePeripheral) {
+    #onExpiredDiscoveredDevice(event) {
+        /** @type {DiscoveredDevice} */
+        const discoveredDevice = event.message.discoveredDevice;
+        const nobleDevice = this.#nobleDevices[discoveredDevice.id];
+        if (nobleDevice) {
             // disconnect?
-            delete this.#noblePeripherals[discoveredPeripheral.id];
-            removeEventListeners(noblePeripheral, this.#unboundNoblePeripheralListeners);
+            delete this.#nobleDevices[discoveredDevice.id];
+            removeEventListeners(nobleDevice, this.#unboundNobleDeviceListeners);
         }
     }
 
     // DISCOVERED PERIPHERALS
-    /** @type {Object.<string, noble.Peripheral>} */
-    #noblePeripherals = {};
-    /** @param {string} noblePeripheralId */
-    #assertValidNoblePeripheralId(noblePeripheralId) {
-        _console$7.assertTypeWithError(noblePeripheralId, "string");
-        _console$7.assertWithError(
-            this.#noblePeripherals[noblePeripheralId],
-            `no noblePeripheral found with id "${noblePeripheralId}"`
-        );
+    /** @type {Object.<string, noble.Device>} */
+    #nobleDevices = {};
+    /** @param {string} nobleDeviceId */
+    #assertValidNobleDeviceId(nobleDeviceId) {
+        _console$7.assertTypeWithError(nobleDeviceId, "string");
+        _console$7.assertWithError(this.#nobleDevices[nobleDeviceId], `no nobleDevice found with id "${nobleDeviceId}"`);
     }
 
+    // DELETE?
     // NOBLE PERIPHERAL LISTENERS
-    #unboundNoblePeripheralListeners = {
-        connect: this.#onNoblePeripheralConnect,
-        disconnect: this.#onNoblePeripheralDisconnect,
-        rssiUpdate: this.#onNoblePeripheralRssiUpdate,
-        servicesDiscover: this.#onNoblePeripheralServicesDiscover,
+    #unboundNobleDeviceListeners = {
+        //connect: this.#onNobleDeviceConnect,
+        //disconnect: this.#onNobleDeviceDisconnect,
+        //rssiUpdate: this.#onNobleDeviceRssiUpdate,
+        //servicesDiscover: this.#onNobleDeviceServicesDiscover,
     };
 
-    #onNoblePeripheralConnect() {
-        this._scanner.onNoblePeripheralConnect(this);
+    #onNobleDeviceConnect() {
+        this._scanner.onNobleDeviceConnect(this);
     }
-    /** @param {noble.Peripheral} noblePeripheral */
-    onNoblePeripheralConnect(noblePeripheral) {
-        _console$7.log("onNoblePeripheralConnect", noblePeripheral);
+    /** @param {noble.Device} nobleDevice */
+    onNobleDeviceConnect(nobleDevice) {
+        _console$7.log("onNobleDeviceConnect", nobleDevice.id);
     }
 
-    #onNoblePeripheralDisconnect() {
-        this._scanner.onNoblePeripheralConnect(this);
+    #onNobleDeviceDisconnect() {
+        this._scanner.onNobleDeviceConnect(this);
     }
-    /** @param {noble.Peripheral} noblePeripheral */
-    onNoblePeripheralDisconnect(noblePeripheral) {
-        _console$7.log("onNoblePeripheralDisconnect", noblePeripheral);
+    /** @param {noble.Device} nobleDevice */
+    onNobleDeviceDisconnect(nobleDevice) {
+        _console$7.log("onNobleDeviceDisconnect", nobleDevice.id);
         // FILL
     }
 
     /** @param {number} rssi */
-    #onNoblePeripheralRssiUpdate(rssi) {
-        this._scanner.onNoblePeripheralRssiUpdate(this, rssi);
+    #onNobleDeviceRssiUpdate(rssi) {
+        this._scanner.onNobleDeviceRssiUpdate(this, rssi);
         // FILL
     }
     /**
-     * @param {noble.Peripheral} noblePeripheral
+     * @param {noble.Device} nobleDevice
      * @param {number} rssi
      */
-    onNoblePeripheralRssiUpdate(noblePeripheral, rssi) {
-        _console$7.log("onNoblePeripheralRssiUpdate", noblePeripheral, rssi);
+    onNobleDeviceRssiUpdate(nobleDevice, rssi) {
+        _console$7.log("onNobleDeviceRssiUpdate", nobleDevice, rssi);
         // FILL
     }
 
     /** @param {noble.Service[]} services */
-    #onNoblePeripheralServicesDiscover(services) {
-        this._scanner.onNoblePeripheralServicesDiscover(this, services);
+    #onNobleDeviceServicesDiscover(services) {
+        this._scanner.onNobleDeviceServicesDiscover(this, services);
     }
     /**
      *
-     * @param {noble.Peripheral} noblePeripheral
+     * @param {noble.Device} nobleDevice
      * @param {noble.Service[]} services
      */
-    onNoblePeripheralServicesDiscover(noblePeripheral, services) {
-        _console$7.log("onNoblePeripheralServicesDiscover", noblePeripheral, services);
+    onNobleDeviceServicesDiscover(nobleDevice, services) {
+        _console$7.log("onNobleDeviceServicesDiscover", nobleDevice, services);
         // FILL
     }
 
     // PERIPHERALS
-    /** @param {string} peripheralId */
-    connectToPeripheral(peripheralId) {
-        super.connectToPeripheral(peripheralId);
-        this.#assertValidNoblePeripheralId(peripheralId);
-        const noblePeripheral = this.#noblePeripherals[peripheralId];
-        _console$7.log("connecting to discoveredPeripheral...", peripheralId);
+    /** @param {string} deviceId */
+    connectToDevice(deviceId) {
+        super.connectToDevice(deviceId);
+        this.#assertValidNobleDeviceId(deviceId);
+        const nobleDevice = this.#nobleDevices[deviceId];
+        _console$7.log("connecting to discoveredDevice...", deviceId);
 
         const device = new Device();
         const nobleConnectionManager = new NobleConnectionManager();
-        device.noblePeripheral = noblePeripheral;
+        nobleConnectionManager.nobleDevice = nobleDevice;
         device.connectionManager = nobleConnectionManager;
         device.connect();
     }
-    /** @param {string} peripheralId */
-    disconnectFromPeripheral(peripheralId) {
-        super.disconnectFromPeripheral(peripheralId);
-        this.#assertValidNoblePeripheralId(peripheralId);
-        this.#noblePeripherals[peripheralId];
-        _console$7.log("disconnecting from discoveredPeripheral...", peripheralId);
+    /** @param {string} deviceId */
+    disconnectFromDevice(deviceId) {
+        super.disconnectFromDevice(deviceId);
+        this.#assertValidNobleDeviceId(deviceId);
+        this.#nobleDevices[deviceId];
+        _console$7.log("disconnecting from discoveredDevice...", deviceId);
 
         // FILL - retrieve device
         // FILL - device.disconnect()
@@ -4491,17 +4690,17 @@ const reconnectTimeout = 3_000;
  * | "isScanning"
  * | "startScan"
  * | "stopScan"
- * | "discoveredPeripheral"
- * | "expiredDiscoveredPeripheral"
- * | "discoveredPeripherals"
- * | "connectToPeripheral"
- * | "disconnectFromPeripheral"
- * | "disconnectFromAllPeripherals"
- * | "peripheralConnectionState"
- * | "connectedPeripherals"
- * | "disconnectedPeripherals"
- * | "peripheralRSSI"
- * | "getPeripheralRSSI"
+ * | "discoveredDevice"
+ * | "expiredDiscoveredDevice"
+ * | "discoveredDevices"
+ * | "connectToDevice"
+ * | "disconnectFromDevice"
+ * | "disconnectFromAllDevices"
+ * | "deviceConnectionState"
+ * | "connectedDevices"
+ * | "disconnectedDevices"
+ * | "deviceRSSI"
+ * | "getDeviceRSSI"
  * } ServerMessageType
  */
 
@@ -4520,12 +4719,12 @@ const ServerMessageTypes = [
     "isScanning",
     "startScan",
     "stopScan",
-    "discoveredPeripheral",
-    "discoveredPeripherals",
-    "expiredDiscoveredPeripheral",
-    "peripheralRSSI",
-    "connectToPeripheral",
-    "disconnectFromPeripheral",
+    "discoveredDevice",
+    "discoveredDevices",
+    "expiredDiscoveredDevice",
+    "deviceRSSI",
+    "connectToDevice",
+    "disconnectFromDevice",
 ];
 
 /** @param {ServerMessageType} serverMessageType */
@@ -4589,7 +4788,7 @@ const isScanningAvailableRequestMessage = createServerMessage("isScanningAvailab
 const isScanningRequestMessage = createServerMessage("isScanning");
 const startScanRequestMessage = createServerMessage("startScan");
 const stopScanRequestMessage = createServerMessage("stopScan");
-const discoveredPeripheralsMessage = createServerMessage("discoveredPeripherals");
+const discoveredDevicesMessage = createServerMessage("discoveredDevices");
 
 const _console$1 = createConsole("WebSocketClient", { log: true });
 
@@ -4598,7 +4797,7 @@ const _console$1 = createConsole("WebSocketClient", { log: true });
 
 /** @typedef {"not connected" | "connecting" | "connected" | "disconnecting"} ClientConnectionStatus */
 
-/** @typedef {ClientConnectionStatus | "connectionStatus" |  "isConnected" | "isScanningAvailable" | "isScanning" | "discoveredPeripheral" | "expiredDiscoveredPeripheral"} ClientEventType */
+/** @typedef {ClientConnectionStatus | "connectionStatus" |  "isConnected" | "isScanningAvailable" | "isScanning" | "discoveredDevice" | "expiredDiscoveredDevice"} ClientEventType */
 
 /**
  * @typedef ClientEvent
@@ -4623,8 +4822,8 @@ class WebSocketClient {
         "isConnected",
         "isScanningAvailable",
         "isScanning",
-        "discoveredPeripheral",
-        "expiredDiscoveredPeripheral",
+        "discoveredDevice",
+        "expiredDiscoveredDevice",
     ];
     static get EventTypes() {
         return this.#EventTypes;
@@ -4807,7 +5006,7 @@ class WebSocketClient {
                 this.#dispatchEvent({ type: "isConnected", message: { isConnected: this.isConnected } });
                 if (this.isConnected) {
                     this.#requestIsScanningAvailable();
-                    this.#requestDiscoveredPeripherals();
+                    this.#requestDiscoveredDevices();
                 } else {
                     this.#isScanningAvailable = false;
                     this.#isScanning = false;
@@ -4858,24 +5057,24 @@ class WebSocketClient {
                         this.#isScanning = isScanning;
                     }
                     break;
-                case "discoveredPeripheral":
+                case "discoveredDevice":
                     {
-                        const discoveredPeripheralString = parseStringFromDataView(dataView, _byteOffset);
-                        _console$1.log({ discoveredPeripheralString });
-                        _byteOffset += discoveredPeripheralString.length;
+                        const discoveredDeviceString = parseStringFromDataView(dataView, _byteOffset);
+                        _console$1.log({ discoveredDeviceString });
+                        _byteOffset += discoveredDeviceString.length;
 
-                        /** @type {DiscoveredPeripheral} */
-                        const discoveredPeripheral = JSON.parse(discoveredPeripheralString);
-                        _console$1.log({ discoveredPeripheral });
+                        /** @type {DiscoveredDevice} */
+                        const discoveredDevice = JSON.parse(discoveredDeviceString);
+                        _console$1.log({ discoveredDevice });
 
-                        this.#onDiscoveredPeripheral(discoveredPeripheral);
+                        this.#onDiscoveredDevice(discoveredDevice);
                     }
                     break;
-                case "expiredDiscoveredPeripheral":
+                case "expiredDiscoveredDevice":
                     {
-                        const discoveredPeripheralId = parseStringFromDataView(dataView, _byteOffset);
-                        _byteOffset += discoveredPeripheralId.length;
-                        this.#onExpiredDiscoveredPeripheral(discoveredPeripheralId);
+                        const discoveredDeviceId = parseStringFromDataView(dataView, _byteOffset);
+                        _byteOffset += discoveredDeviceId.length;
+                        this.#onExpiredDiscoveredDevice(discoveredDeviceId);
                     }
                     break;
                 default:
@@ -4968,74 +5167,74 @@ class WebSocketClient {
     }
 
     // PERIPHERALS
-    /** @type {Object.<string, DiscoveredPeripheral>} */
-    #discoveredPeripherals = {};
-    get discoveredPeripherals() {
-        return this.#discoveredPeripherals;
+    /** @type {Object.<string, DiscoveredDevice>} */
+    #discoveredDevices = {};
+    get discoveredDevices() {
+        return this.#discoveredDevices;
     }
-    /** @param {string} discoveredPeripheralId */
-    #assertValidDiscoveredPeripheralId(discoveredPeripheralId) {
-        _console$1.assertTypeWithError(discoveredPeripheralId, "string");
+    /** @param {string} discoveredDeviceId */
+    #assertValidDiscoveredDeviceId(discoveredDeviceId) {
+        _console$1.assertTypeWithError(discoveredDeviceId, "string");
         _console$1.assertWithError(
-            this.#discoveredPeripherals[discoveredPeripheralId],
-            `no discoveredPeripheral found with id "${discoveredPeripheralId}"`
+            this.#discoveredDevices[discoveredDeviceId],
+            `no discoveredDevice found with id "${discoveredDeviceId}"`
         );
     }
 
-    /** @param {DiscoveredPeripheral} discoveredPeripheral */
-    #onDiscoveredPeripheral(discoveredPeripheral) {
-        _console$1.log({ discoveredPeripheral });
-        this.#discoveredPeripherals[discoveredPeripheral.id] = discoveredPeripheral;
-        this.#dispatchEvent({ type: "discoveredPeripheral", message: { discoveredPeripheral } });
+    /** @param {DiscoveredDevice} discoveredDevice */
+    #onDiscoveredDevice(discoveredDevice) {
+        _console$1.log({ discoveredDevice });
+        this.#discoveredDevices[discoveredDevice.id] = discoveredDevice;
+        this.#dispatchEvent({ type: "discoveredDevice", message: { discoveredDevice } });
     }
-    #requestDiscoveredPeripherals() {
+    #requestDiscoveredDevices() {
         this.#assertConnection();
-        this.webSocket.send(discoveredPeripheralsMessage);
+        this.webSocket.send(discoveredDevicesMessage);
     }
-    /** @param {string} discoveredPeripheralId */
-    #onExpiredDiscoveredPeripheral(discoveredPeripheralId) {
-        _console$1.log({ discoveredPeripheralId });
-        let discoveredPeripheral = this.#discoveredPeripherals[discoveredPeripheralId];
-        if (discoveredPeripheral) {
-            _console$1.log({ expiredDiscoveredPeripheral: discoveredPeripheral });
-            delete this.#discoveredPeripherals[discoveredPeripheralId];
-            this.#dispatchEvent({ type: "expiredDiscoveredPeripheral", message: { discoveredPeripheral } });
+    /** @param {string} discoveredDeviceId */
+    #onExpiredDiscoveredDevice(discoveredDeviceId) {
+        _console$1.log({ discoveredDeviceId });
+        let discoveredDevice = this.#discoveredDevices[discoveredDeviceId];
+        if (discoveredDevice) {
+            _console$1.log({ expiredDiscoveredDevice: discoveredDevice });
+            delete this.#discoveredDevices[discoveredDeviceId];
+            this.#dispatchEvent({ type: "expiredDiscoveredDevice", message: { discoveredDevice } });
         } else {
-            _console$1.warn(`no discoveredPeripheral found with id "${discoveredPeripheralId}"`);
+            _console$1.warn(`no discoveredDevice found with id "${discoveredDeviceId}"`);
         }
     }
 
     // PERIPHERAL CONNECTION
 
-    /** @param {string} peripheralId */
-    connectToPeripheral(peripheralId) {
-        this.#requestConnectionToPeripheral(peripheralId);
+    /** @param {string} deviceId */
+    connectToDevice(deviceId) {
+        this.#requestConnectionToDevice(deviceId);
     }
-    /** @param {string} peripheralId */
-    disconnectFromPeripheral(peripheralId) {
-        this.#requestDisconnectionFromPeripheral(peripheralId);
-    }
-
-    /** @param {string} peripheralId */
-    #requestConnectionToPeripheral(peripheralId) {
-        this.#assertConnection();
-        _console$1.assertTypeWithError(peripheralId, "string");
-        this.webSocket.send(this.#createConnectionToPeripheralMessage(peripheralId));
-    }
-    /** @param {string} peripheralId */
-    #requestDisconnectionFromPeripheral(peripheralId) {
-        this.#assertConnection();
-        _console$1.assertTypeWithError(peripheralId, "string");
-        this.webSocket.send(this.#createDisconnectFromPeripheralMessage(peripheralId));
+    /** @param {string} deviceId */
+    disconnectFromDevice(deviceId) {
+        this.#requestDisconnectionFromDevice(deviceId);
     }
 
-    /** @param {string} peripheralId */
-    #createConnectionToPeripheralMessage(peripheralId) {
-        return createServerMessage({ type: "connectToPeripheral", data: peripheralId });
+    /** @param {string} deviceId */
+    #requestConnectionToDevice(deviceId) {
+        this.#assertConnection();
+        _console$1.assertTypeWithError(deviceId, "string");
+        this.webSocket.send(this.#createConnectionToDeviceMessage(deviceId));
     }
-    /** @param {string} peripheralId */
-    #createDisconnectFromPeripheralMessage(peripheralId) {
-        return createServerMessage({ type: "disconnectFromPeripheral", data: peripheralId });
+    /** @param {string} deviceId */
+    #requestDisconnectionFromDevice(deviceId) {
+        this.#assertConnection();
+        _console$1.assertTypeWithError(deviceId, "string");
+        this.webSocket.send(this.#createDisconnectFromDeviceMessage(deviceId));
+    }
+
+    /** @param {string} deviceId */
+    #createConnectionToDeviceMessage(deviceId) {
+        return createServerMessage({ type: "connectToDevice", data: deviceId });
+    }
+    /** @param {string} deviceId */
+    #createDisconnectFromDeviceMessage(deviceId) {
+        return createServerMessage({ type: "disconnectFromDevice", data: deviceId });
     }
 
     // DEVICES
@@ -5071,9 +5270,9 @@ if (isInNode) {
 
 class WebSocketServer {
     constructor() {
-        if (Scanner) {
-            addEventListeners(Scanner, this.#boundScannerListeners);
-        }
+        _console.assertWithError(Scanner, "no scanner defined");
+        addEventListeners(Scanner, this.#boundScannerListeners);
+        addEventListeners(Device, this.#boundDeviceListeners);
     }
 
     // EVENT DISPATCHER
@@ -5250,24 +5449,24 @@ class WebSocketServer {
                 case "stopScan":
                     Scanner.stopScan();
                     break;
-                case "discoveredPeripherals":
-                    client.send(this.#discoveredPeripheralsMessage);
+                case "discoveredDevices":
+                    client.send(this.#discoveredDevicesMessage);
                     break;
-                case "connectToPeripheral":
+                case "connectToDevice":
                     {
-                        const peripheralId = parseStringFromDataView(dataView, _byteOffset);
-                        _byteOffset += peripheralId.length;
-                        Scanner.connectToPeripheral(peripheralId);
+                        const deviceId = parseStringFromDataView(dataView, _byteOffset);
+                        _byteOffset += deviceId.length;
+                        Scanner.connectToDevice(deviceId);
                     }
                     break;
-                case "disconnectFromPeripheral":
+                case "disconnectFromDevice":
                     {
-                        const peripheralId = parseStringFromDataView(dataView, _byteOffset);
-                        _byteOffset += peripheralId.length;
-                        Scanner.disconnectFromPeripheral(peripheralId);
+                        const deviceId = parseStringFromDataView(dataView, _byteOffset);
+                        _byteOffset += deviceId.length;
+                        Scanner.disconnectFromDevice(deviceId);
                     }
                     break;
-                case "disconnectFromAllPeripherals":
+                case "disconnectFromAllDevices":
                     // FILL
                     break;
                 default:
@@ -5309,8 +5508,8 @@ class WebSocketServer {
     #boundScannerListeners = {
         isAvailable: this.#onScannerIsAvailable.bind(this),
         isScanning: this.#onScannerIsScanning.bind(this),
-        discoveredPeripheral: this.#onScannerDiscoveredPeripheral.bind(this),
-        expiredDiscoveredPeripheral: this.#onExpiredDiscoveredPeripheral.bind(this),
+        discoveredDevice: this.#onScannerDiscoveredDevice.bind(this),
+        expiredDiscoveredDevice: this.#onExpiredDiscoveredDevice.bind(this),
     };
 
     /** @param {ScannerEvent} event */
@@ -5322,37 +5521,55 @@ class WebSocketServer {
         this.#broadcastMessage(this.#isScanningMessage);
     }
     /** @param {ScannerEvent} event */
-    #onScannerDiscoveredPeripheral(event) {
-        /** @type {DiscoveredPeripheral} */
-        const discoveredPeripheral = event.message.discoveredPeripheral;
-        console.log(discoveredPeripheral);
+    #onScannerDiscoveredDevice(event) {
+        /** @type {DiscoveredDevice} */
+        const discoveredDevice = event.message.discoveredDevice;
+        console.log(discoveredDevice);
 
-        this.#broadcastMessage(this.#createDiscoveredPeripheralMessage(discoveredPeripheral));
+        this.#broadcastMessage(this.#createDiscoveredDeviceMessage(discoveredDevice));
     }
     /** @param {ScannerEvent} event */
-    #onExpiredDiscoveredPeripheral(event) {
-        /** @type {DiscoveredPeripheral} */
-        const discoveredPeripheral = event.message.discoveredPeripheral;
-        console.log("expired", discoveredPeripheral);
+    #onExpiredDiscoveredDevice(event) {
+        /** @type {DiscoveredDevice} */
+        const discoveredDevice = event.message.discoveredDevice;
+        console.log("expired", discoveredDevice);
 
-        this.#broadcastMessage(this.#createExpiredDiscoveredPeripheralMessage(discoveredPeripheral));
+        this.#broadcastMessage(this.#createExpiredDiscoveredDeviceMessage(discoveredDevice));
     }
 
-    /** @param {DiscoveredPeripheral} discoveredPeripheral */
-    #createDiscoveredPeripheralMessage(discoveredPeripheral) {
-        return createServerMessage({ type: "discoveredPeripheral", data: discoveredPeripheral });
+    /** @param {DiscoveredDevice} discoveredDevice */
+    #createDiscoveredDeviceMessage(discoveredDevice) {
+        return createServerMessage({ type: "discoveredDevice", data: discoveredDevice });
     }
-    get #discoveredPeripheralsMessage() {
+    get #discoveredDevicesMessage() {
         return createServerMessage(
-            ...Scanner.discoveredPeripheralsArray.map((discoveredPeripheral) => {
-                return { type: "discoveredPeripheral", data: discoveredPeripheral };
+            ...Scanner.discoveredDevicesArray.map((discoveredDevice) => {
+                return { type: "discoveredDevice", data: discoveredDevice };
             })
         );
     }
 
-    /** @param {DiscoveredPeripheral} discoveredPeripheral */
-    #createExpiredDiscoveredPeripheralMessage(discoveredPeripheral) {
-        return createServerMessage({ type: "expiredDiscoveredPeripheral", data: discoveredPeripheral.id });
+    /** @param {DiscoveredDevice} discoveredDevice */
+    #createExpiredDiscoveredDeviceMessage(discoveredDevice) {
+        return createServerMessage({ type: "expiredDiscoveredDevice", data: discoveredDevice.id });
+    }
+
+    // DEVICE LISTENERS
+    #boundDeviceListeners = {
+        deviceConnected: this.#onDeviceConnected.bind(this),
+        deviceDisconnected: this.#onDeviceDisconnected.bind(this),
+    };
+
+    
+
+    /** @param {StaticDeviceEvent} deviceEvent */
+    #onDeviceConnected(deviceEvent) {
+        _console.log("onDeviceConnected", deviceEvent.message.device);
+    }
+
+    /** @param {StaticDeviceEvent} deviceEvent */
+    #onDeviceDisconnected(deviceEvent) {
+        _console.log("onDeviceDisconnected", deviceEvent.message.device);
     }
 }
 
