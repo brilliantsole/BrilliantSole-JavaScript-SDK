@@ -83,7 +83,7 @@ class NobleScanner extends BaseScanner {
     }
     /** @param {noble.Peripheral} noblePeripheral */
     #onNobleDiscover(noblePeripheral) {
-        _console.log("onNobleDiscover", noblePeripheral);
+        _console.log("onNobleDiscover", noblePeripheral.id);
         if (!this.#noblePeripherals[noblePeripheral.id]) {
             noblePeripheral._scanner = this;
             this.#noblePeripherals[noblePeripheral.id] = noblePeripheral;

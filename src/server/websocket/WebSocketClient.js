@@ -413,14 +413,6 @@ class WebSocketClient {
     get discoveredDevices() {
         return this.#discoveredDevices;
     }
-    /** @param {string} discoveredDeviceId */
-    #assertValidDiscoveredDeviceId(discoveredDeviceId) {
-        _console.assertTypeWithError(discoveredDeviceId, "string");
-        _console.assertWithError(
-            this.#discoveredDevices[discoveredDeviceId],
-            `no discoveredDevice found with id "${discoveredDeviceId}"`
-        );
-    }
 
     /** @param {DiscoveredDevice} discoveredDevice */
     #onDiscoveredDevice(discoveredDevice) {
@@ -432,24 +424,24 @@ class WebSocketClient {
         this.#assertConnection();
         this.webSocket.send(discoveredDevicesMessage);
     }
-    /** @param {string} discoveredDeviceId */
-    #onExpiredDiscoveredDevice(discoveredDeviceId) {
-        _console.log({ discoveredDeviceId });
-        let discoveredDevice = this.#discoveredDevices[discoveredDeviceId];
-        if (discoveredDevice) {
-            _console.log({ expiredDiscoveredDevice: discoveredDevice });
-            delete this.#discoveredDevices[discoveredDeviceId];
-            this.#dispatchEvent({ type: "expiredDiscoveredDevice", message: { discoveredDevice } });
-        } else {
-            _console.warn(`no discoveredDevice found with id "${discoveredDeviceId}"`);
+    /** @param {string} deviceId */
+    #onExpiredDiscoveredDevice(deviceId) {
+        _console.log({ expiredDeviceId: deviceId });
+        const discoveredDevice = this.#discoveredDevices[deviceId];
+        if (!discoveredDevice) {
+            _console.warn(`no discoveredDevice found with id "${deviceId}"`);
+            return;
         }
+        _console.log({ expiredDiscoveredDevice: discoveredDevice });
+        delete this.#discoveredDevices[deviceId];
+        this.#dispatchEvent({ type: "expiredDiscoveredDevice", message: { discoveredDevice } });
     }
 
     // DEVICE CONNECTION
 
     /** @param {string} deviceId */
     connectToDevice(deviceId) {
-        this.#requestConnectionToDevice(deviceId);
+        return this.#requestConnectionToDevice(deviceId);
     }
     /** @param {string} deviceId */
     #requestConnectionToDevice(deviceId) {
@@ -461,6 +453,7 @@ class WebSocketClient {
             this.devices[deviceId] = device;
         }
         this.webSocket.send(this.#createConnectionToDeviceMessage(deviceId));
+        return device;
     }
     /** @param {string} deviceId */
     #createConnectionToDeviceMessage(deviceId) {

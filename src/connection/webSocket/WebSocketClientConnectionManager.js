@@ -122,14 +122,17 @@ class WebSocketClientConnectionManager extends ConnectionManager {
             const messageTypeEnum = dataView.getUint8(byteOffset++);
             /** @type {DeviceEventType} */
             const messageType = Device.EventTypes[messageTypeEnum];
+            const messageByteLength = dataView.getUint8(byteOffset++);
 
-            _console.log({ messageTypeEnum, messageType });
+            _console.log({ messageTypeEnum, messageType, messageByteLength });
             _console.assertEnumWithError(messageType, Device.EventTypes);
+
+            let _byteOffset = byteOffset;
 
             // FILL
             switch (messageType) {
                 case "isConnected":
-                    const isConnected = dataView.getUint8(byteOffset++);
+                    const isConnected = dataView.getUint8(_byteOffset++);
                     this.#isConnected = isConnected;
                     this.status = isConnected ? "connected" : "not connected";
                     break;
@@ -137,6 +140,7 @@ class WebSocketClientConnectionManager extends ConnectionManager {
                     _console.error(`uncaught messageType "${messageType}"`);
                     break;
             }
+            byteOffset += messageByteLength;
         }
     }
 }

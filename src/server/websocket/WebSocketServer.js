@@ -7,6 +7,7 @@ import {
     ServerMessageTypes,
     createServerMessage,
     parseStringFromDataView,
+    createServerDeviceMessage,
 } from "../ServerUtils.js";
 import { dataToArrayBuffer } from "../../utils/ArrayBufferUtils.js";
 import Timer from "../../utils/Timer.js";
@@ -368,19 +369,20 @@ class WebSocketServer {
 
     /** @param {Device} device */
     #createDeviceIsConnectedMessage(device) {
-        return this.#createDeviceMessage(device, "isConnected", device.isConnected);
+        return this.#createDeviceMessage(device, { type: "isConnected", data: device.isConnected });
     }
+
+    /** @typedef {import("../ServerUtils.js").ServerDeviceMessage} ServerDeviceMessage */
 
     /**
      * @param {Device} device
-     * @param {DeviceEventType} messageType
-     * @param {...any} messageData
+     * @param {...ServerDeviceMessage} messages
      */
-    #createDeviceMessage(device, messageType, ...messageData) {
-        device.addEventListener("deviceInformation");
-        _console.assertEnumWithError(messageType, Device.EventTypes);
-        const messageTypeEnum = Device.EventTypes.indexOf(messageType);
-        return createServerMessage({ type: "deviceMessage", data: [device.id, messageTypeEnum, ...messageData] });
+    #createDeviceMessage(device, ...messages) {
+        return createServerMessage({
+            type: "deviceMessage",
+            data: [device.id, createServerDeviceMessage(...messages)],
+        });
     }
 
     // DEVICE LISTENERS
@@ -400,7 +402,7 @@ class WebSocketServer {
 
     /** @param {Device} device */
     #createDeviceInformationMessage(device) {
-        return this.#createDeviceMessage(device, "deviceInformation", device.deviceInformation);
+        return this.#createDeviceMessage(device, { type: "deviceInformation", data: device.deviceInformation });
     }
 }
 

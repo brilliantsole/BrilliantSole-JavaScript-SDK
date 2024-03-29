@@ -162,7 +162,7 @@ class Console {
     }
 
     /**
-     * @param {any} value
+     * @param {string} value
      * @param {string[]} enumeration
      * @throws {Error} if value's type doesn't match
      */
@@ -1141,7 +1141,7 @@ class NobleConnectionManager extends ConnectionManager {
     }
 
     get isConnected() {
-        return this.#noblePeripheral?._isConnected;
+        return this.#noblePeripheral?.state == "connected";
     }
 
     async connect() {
@@ -1228,9 +1228,12 @@ class NobleConnectionManager extends ConnectionManager {
     }
     /** @param {noble.Peripheral} noblePeripheral */
     async onNoblePeripheralConnect(noblePeripheral) {
-        _console$h.log("onNoblePeripheralConnect", noblePeripheral.id);
-        noblePeripheral._isConnected = true;
-        await this.#noblePeripheral.discoverServicesAsync(allServiceUUIDs);
+        _console$h.log("onNoblePeripheralConnect", noblePeripheral.id, noblePeripheral.state);
+        if (noblePeripheral.state == "connected") {
+            await this.#noblePeripheral.discoverServicesAsync(allServiceUUIDs);
+        }
+        // this gets called when it connects and disconnects, so we use the noblePeripheral's "state" property instead
+        await this.#onNoblePeripheralState();
     }
 
     async #onNoblePeripheralDisconnect() {
@@ -1239,19 +1242,42 @@ class NobleConnectionManager extends ConnectionManager {
     /** @param {noble.Peripheral} noblePeripheral */
     async onNoblePeripheralDisconnect(noblePeripheral) {
         _console$h.log("onNoblePeripheralDisconnect", noblePeripheral.id);
+        await this.#onNoblePeripheralState();
+    }
 
-        this.#services.forEach((service) => {
-            removeEventListeners(service, this.#unboundNobleServiceListeners);
-        });
-        this.#services.clear();
+    async #onNoblePeripheralState() {
+        _console$h.log(`noblePeripheral ${this.id} state ${this.#noblePeripheral.state}`);
 
-        this.#characteristics.forEach((characteristic) => {
-            removeEventListeners(characteristic, this.#unboundNobleCharacteristicListeners);
-        });
-        this.#characteristics.clear();
+        switch (this.#noblePeripheral.state) {
+            case "connected":
+                //this.status = "connected";
+                break;
+            case "connecting":
+                //this.status = "connecting";
+                break;
+            case "disconnected":
+                this.#services.forEach((service) => {
+                    removeEventListeners(service, this.#unboundNobleServiceListeners);
+                });
+                this.#services.clear();
 
-        noblePeripheral._isConnected = false;
-        this.status = "not connected";
+                this.#characteristics.forEach((characteristic) => {
+                    removeEventListeners(characteristic, this.#unboundNobleCharacteristicListeners);
+                });
+                this.#characteristics.clear();
+
+                this.status = "not connected";
+                break;
+            case "disconnecting":
+                this.status = "disconnecting";
+                break;
+            case "error":
+                _console$h.error("noblePeripheral error");
+                break;
+            default:
+                _console$h.log(`uncaught noblePeripheral state ${this.#noblePeripheral.state}`);
+                break;
+        }
     }
 
     /** @param {number} rssi */
@@ -1276,10 +1302,14 @@ class NobleConnectionManager extends ConnectionManager {
      * @param {noble.Service[]} services
      */
     async onNoblePeripheralServicesDiscover(noblePeripheral, services) {
-        _console$h.log("onNoblePeripheralServicesDiscover", noblePeripheral.id, services);
+        _console$h.log(
+            "onNoblePeripheralServicesDiscover",
+            noblePeripheral.id,
+            services.map((service) => service.uuid)
+        );
         for (const index in services) {
             const service = services[index];
-            _console$h.log("service", service);
+            _console$h.log("service", service.uuid);
             const serviceName = getServiceNameFromUUID(service.uuid);
             _console$h.assertWithError(serviceName, `no name found for service uuid "${service.uuid}"`);
             _console$h.log({ serviceName });
@@ -1316,7 +1346,7 @@ class NobleConnectionManager extends ConnectionManager {
 
         for (const index in characteristics) {
             const characteristic = characteristics[index];
-            _console$h.log("characteristic", characteristic);
+            _console$h.log("characteristic", characteristic.uuid);
             const characteristicName = getCharacteristicNameFromUUID(characteristic.uuid);
             _console$h.assertWithError(
                 characteristicName,
@@ -4118,7 +4148,7 @@ class NobleScanner extends BaseScanner {
     }
     /** @param {noble.Peripheral} noblePeripheral */
     #onNobleDiscover(noblePeripheral) {
-        _console$8.log("onNobleDiscover", noblePeripheral);
+        _console$8.log("onNobleDiscover", noblePeripheral.id);
         if (!this.#noblePeripherals[noblePeripheral.id]) {
             noblePeripheral._scanner = this;
             this.#noblePeripherals[noblePeripheral.id] = noblePeripheral;
@@ -4687,16 +4717,6 @@ const ServerMessageTypes = [
     "deviceMessage",
 ];
 
-/** @param {ServerMessageType} serverMessageType */
-function getServerMessageTypeEnum(serverMessageType) {
-    _console$3.assertTypeWithError(serverMessageType, "string");
-    _console$3.assertWithError(
-        ServerMessageTypes.includes(serverMessageType),
-        `invalid serverMessageType "${serverMessageType}"`
-    );
-    return ServerMessageTypes.indexOf(serverMessageType);
-}
-
 /** @typedef {Number | Number[] | ArrayBufferLike | DataView} MessageLike */
 
 /** @param {...ServerMessage|ServerMessageType} messages */
@@ -4719,11 +4739,50 @@ function createServerMessage(...messages) {
         const messageDataArrayBuffer = concatenateArrayBuffers(...message.data);
         const messageDataArrayBufferByteLength = messageDataArrayBuffer.byteLength;
 
-        return concatenateArrayBuffers(
-            getServerMessageTypeEnum(message.type),
-            messageDataArrayBufferByteLength,
-            messageDataArrayBuffer
-        );
+        _console$3.assertEnumWithError(message.type, ServerMessageTypes);
+        const messageTypeEnum = ServerMessageTypes.indexOf(message.type);
+
+        return concatenateArrayBuffers(messageTypeEnum, messageDataArrayBufferByteLength, messageDataArrayBuffer);
+    });
+    _console$3.log("messageBuffers", ...messageBuffers);
+    return concatenateArrayBuffers(...messageBuffers);
+}
+
+
+
+/**
+ * @typedef ServerDeviceMessage
+ * @type {Object}
+ * @property {DeviceEventType} type
+ * @property {MessageLike|MessageLike[]?} data
+ */
+
+/** @param {...DeviceEventType|ServerDeviceMessage} messages */
+function createServerDeviceMessage(...messages) {
+    _console$3.log("createServerDeviceMessage", ...messages);
+
+    const messageBuffers = messages.map((message) => {
+        if (typeof message == "string") {
+            message = { type: message };
+        }
+
+        if ("data" in message) {
+            if (!Array.isArray(message.data)) {
+                message.data = [message.data];
+            }
+        } else {
+            message.data = [];
+        }
+
+        const messageDataArrayBuffer = concatenateArrayBuffers(...message.data);
+        const messageDataArrayBufferByteLength = messageDataArrayBuffer.byteLength;
+
+        _console$3.assertEnumWithError(message.type, Device.EventTypes);
+        const messageTypeEnum = Device.EventTypes.indexOf(message.type);
+
+        _console$3.log({ messageTypeEnum, messageDataArrayBufferByteLength });
+
+        return concatenateArrayBuffers(messageTypeEnum, messageDataArrayBufferByteLength, messageDataArrayBuffer);
     });
     _console$3.log("messageBuffers", ...messageBuffers);
     return concatenateArrayBuffers(...messageBuffers);
@@ -4869,14 +4928,17 @@ class WebSocketClientConnectionManager extends ConnectionManager {
             const messageTypeEnum = dataView.getUint8(byteOffset++);
             /** @type {DeviceEventType} */
             const messageType = Device.EventTypes[messageTypeEnum];
+            const messageByteLength = dataView.getUint8(byteOffset++);
 
-            _console$2.log({ messageTypeEnum, messageType });
+            _console$2.log({ messageTypeEnum, messageType, messageByteLength });
             _console$2.assertEnumWithError(messageType, Device.EventTypes);
+
+            let _byteOffset = byteOffset;
 
             // FILL
             switch (messageType) {
                 case "isConnected":
-                    const isConnected = dataView.getUint8(byteOffset++);
+                    const isConnected = dataView.getUint8(_byteOffset++);
                     this.#isConnected = isConnected;
                     this.status = isConnected ? "connected" : "not connected";
                     break;
@@ -4884,6 +4946,7 @@ class WebSocketClientConnectionManager extends ConnectionManager {
                     _console$2.error(`uncaught messageType "${messageType}"`);
                     break;
             }
+            byteOffset += messageByteLength;
         }
     }
 }
@@ -5282,14 +5345,6 @@ class WebSocketClient {
     get discoveredDevices() {
         return this.#discoveredDevices;
     }
-    /** @param {string} discoveredDeviceId */
-    #assertValidDiscoveredDeviceId(discoveredDeviceId) {
-        _console$1.assertTypeWithError(discoveredDeviceId, "string");
-        _console$1.assertWithError(
-            this.#discoveredDevices[discoveredDeviceId],
-            `no discoveredDevice found with id "${discoveredDeviceId}"`
-        );
-    }
 
     /** @param {DiscoveredDevice} discoveredDevice */
     #onDiscoveredDevice(discoveredDevice) {
@@ -5301,24 +5356,24 @@ class WebSocketClient {
         this.#assertConnection();
         this.webSocket.send(discoveredDevicesMessage);
     }
-    /** @param {string} discoveredDeviceId */
-    #onExpiredDiscoveredDevice(discoveredDeviceId) {
-        _console$1.log({ discoveredDeviceId });
-        let discoveredDevice = this.#discoveredDevices[discoveredDeviceId];
-        if (discoveredDevice) {
-            _console$1.log({ expiredDiscoveredDevice: discoveredDevice });
-            delete this.#discoveredDevices[discoveredDeviceId];
-            this.#dispatchEvent({ type: "expiredDiscoveredDevice", message: { discoveredDevice } });
-        } else {
-            _console$1.warn(`no discoveredDevice found with id "${discoveredDeviceId}"`);
+    /** @param {string} deviceId */
+    #onExpiredDiscoveredDevice(deviceId) {
+        _console$1.log({ expiredDeviceId: deviceId });
+        const discoveredDevice = this.#discoveredDevices[deviceId];
+        if (!discoveredDevice) {
+            _console$1.warn(`no discoveredDevice found with id "${deviceId}"`);
+            return;
         }
+        _console$1.log({ expiredDiscoveredDevice: discoveredDevice });
+        delete this.#discoveredDevices[deviceId];
+        this.#dispatchEvent({ type: "expiredDiscoveredDevice", message: { discoveredDevice } });
     }
 
     // DEVICE CONNECTION
 
     /** @param {string} deviceId */
     connectToDevice(deviceId) {
-        this.#requestConnectionToDevice(deviceId);
+        return this.#requestConnectionToDevice(deviceId);
     }
     /** @param {string} deviceId */
     #requestConnectionToDevice(deviceId) {
@@ -5330,6 +5385,7 @@ class WebSocketClient {
             this.devices[deviceId] = device;
         }
         this.webSocket.send(this.#createConnectionToDeviceMessage(deviceId));
+        return device;
     }
     /** @param {string} deviceId */
     #createConnectionToDeviceMessage(deviceId) {
@@ -5748,19 +5804,20 @@ class WebSocketServer {
 
     /** @param {Device} device */
     #createDeviceIsConnectedMessage(device) {
-        return this.#createDeviceMessage(device, "isConnected", device.isConnected);
+        return this.#createDeviceMessage(device, { type: "isConnected", data: device.isConnected });
     }
+
+    
 
     /**
      * @param {Device} device
-     * @param {DeviceEventType} messageType
-     * @param {...any} messageData
+     * @param {...ServerDeviceMessage} messages
      */
-    #createDeviceMessage(device, messageType, ...messageData) {
-        device.addEventListener("deviceInformation");
-        _console.assertEnumWithError(messageType, Device.EventTypes);
-        const messageTypeEnum = Device.EventTypes.indexOf(messageType);
-        return createServerMessage({ type: "deviceMessage", data: [device.id, messageTypeEnum, ...messageData] });
+    #createDeviceMessage(device, ...messages) {
+        return createServerMessage({
+            type: "deviceMessage",
+            data: [device.id, createServerDeviceMessage(...messages)],
+        });
     }
 
     // DEVICE LISTENERS
@@ -5780,7 +5837,7 @@ class WebSocketServer {
 
     /** @param {Device} device */
     #createDeviceInformationMessage(device) {
-        return this.#createDeviceMessage(device, "deviceInformation", device.deviceInformation);
+        return this.#createDeviceMessage(device, { type: "deviceInformation", data: device.deviceInformation });
     }
 }
 

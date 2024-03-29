@@ -149,7 +149,7 @@ class Console {
     }
 
     /**
-     * @param {any} value
+     * @param {string} value
      * @param {string[]} enumeration
      * @throws {Error} if value's type doesn't match
      */

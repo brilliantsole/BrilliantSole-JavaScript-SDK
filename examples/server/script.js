@@ -8,6 +8,10 @@ console.log({ client });
 
 window.client = client;
 
+/** @typedef {import("../../build/brilliantsole.module.js").Device} Device */
+
+// SEARCH PARAMS
+
 const url = new URL(location);
 function setUrlParam(key, value) {
     if (history.pushState) {
@@ -27,12 +31,6 @@ function setUrlParam(key, value) {
         window.history.pushState({ path: newUrl }, "", newUrl);
     }
 }
-
-// CONNECTION
-
-/** @type {HTMLInputElement} */
-const webSocketUrlInput = document.getElementById("webSocketUrl");
-webSocketUrlInput.value = url.searchParams.get("webSocketUrl") || "";
 client.addEventListener("isConnected", () => {
     if (client.isConnected) {
         setUrlParam("webSocketUrl", client.webSocket.url);
@@ -41,6 +39,12 @@ client.addEventListener("isConnected", () => {
         setUrlParam("webSocketUrl");
     }
 });
+
+// CONNECTION
+
+/** @type {HTMLInputElement} */
+const webSocketUrlInput = document.getElementById("webSocketUrl");
+webSocketUrlInput.value = url.searchParams.get("webSocketUrl") || "";
 client.addEventListener("isConnected", () => {
     webSocketUrlInput.disabled = client.isConnected;
 });
@@ -97,7 +101,7 @@ client.addEventListener("isScanning", () => {
     toggleScanButton.innerText = client.isScanning ? "stop scanning" : "scan";
 });
 
-// DISCOVERED PERIPHERALS
+// DISCOVERED DEVICES
 
 /** @typedef {import("../../build/brilliantsole.module.js").DiscoveredDevice} DiscoveredDevice */
 
@@ -110,66 +114,94 @@ let discoveredDeviceContainers = {};
 client.addEventListener("discoveredDevice", (event) => {
     /** @type {DiscoveredDevice} */
     const discoveredDevice = event.message.discoveredDevice;
-    if (!discoveredDevice.name) {
-        return;
-    }
 
     let discoveredDeviceContainer = discoveredDeviceContainers[discoveredDevice.id];
     if (!discoveredDeviceContainer) {
         discoveredDeviceContainer = discoveredDeviceTemplate.content.cloneNode(true).querySelector(".discoveredDevice");
 
+        /** @type {Device?} */
+        let device;
+
         /** @type {HTMLButtonElement} */
         const toggleConnectionButton = discoveredDeviceContainer.querySelector(".toggleConnection");
         toggleConnectionButton.addEventListener("click", () => {
-            const device = client.devices[discoveredDevice.id];
             if (device) {
                 device.toggleConnection();
             } else {
-                client.connectToDevice(discoveredDevice.id);
+                device = client.connectToDevice(discoveredDevice.id);
+                device.addEventListener("connectionStatus", () => {
+                    updateToggleConnectionButton();
+                });
+                updateToggleConnectionButton();
             }
         });
+
+        const updateToggleConnectionButton = () => {
+            console.log(device.connectionStatus);
+            switch (device.connectionStatus) {
+                case "connected":
+                case "not connected":
+                    toggleConnectionButton.innerText = device.isConnected ? "disconnect" : "connect";
+                    toggleConnectionButton.disabled = false;
+                    break;
+                case "connecting":
+                case "disconnecting":
+                    toggleConnectionButton.innerText = device.connectionStatus;
+                    toggleConnectionButton.disabled = true;
+                    break;
+            }
+        };
 
         discoveredDeviceContainers[discoveredDevice.id] = discoveredDeviceContainer;
         discoveredDevicesContainer.appendChild(discoveredDeviceContainer);
     }
 
-    updateDiscoveredDeviceContainer(discoveredDeviceContainer, discoveredDevice);
+    updateDiscoveredDeviceContainer(discoveredDevice);
 });
+
+/** @param {DiscoveredDevice} discoveredDevice */
+function updateDiscoveredDeviceContainer(discoveredDevice) {
+    const discoveredDeviceContainer = discoveredDeviceContainers[discoveredDevice.id];
+    if (!discoveredDeviceContainer) {
+        console.warn(`no discoveredDeviceContainer for device id ${discoveredDevice.id}`);
+        return;
+    }
+    discoveredDeviceContainer.querySelector(".name").innerText = discoveredDevice.name;
+    discoveredDeviceContainer.querySelector(".rssi").innerText = discoveredDevice.rssi;
+    discoveredDeviceContainer.querySelector(".deviceType").innerText = discoveredDevice.deviceType;
+}
+
+/** @param {DiscoveredDevice} discoveredDevice */
+function removeDiscoveredDeviceContainer(discoveredDevice) {
+    const discoveredDeviceContainer = discoveredDeviceContainers[discoveredDevice.id];
+    if (!discoveredDeviceContainer) {
+        console.warn(`no discoveredDeviceContainer for device id ${discoveredDevice.id}`);
+        return;
+    }
+
+    discoveredDeviceContainer.remove();
+    delete discoveredDeviceContainers[discoveredDevice.id];
+}
+
+client.addEventListener("expiredDiscoveredDevice", (event) => {
+    /** @type {DiscoveredDevice} */
+    const discoveredDevice = event.message.discoveredDevice;
+    removeDiscoveredDeviceContainer(discoveredDevice);
+});
+
 function clearDiscoveredDevices() {
     discoveredDevicesContainer.innerHTML = "";
     discoveredDeviceContainers = {};
 }
+
 client.addEventListener("not connected", () => {
     clearDiscoveredDevices();
 });
+
 client.addEventListener("isScanning", () => {
     if (client.isScanning) {
         clearDiscoveredDevices();
     }
 });
 
-client.addEventListener("expiredDiscoveredDevice", (event) => {
-    /** @type {DiscoveredDevice} */
-    const discoveredDevice = event.message.discoveredDevice;
-    if (!discoveredDevice.name) {
-        return;
-    }
-
-    let discoveredDeviceContainer = discoveredDeviceContainers[discoveredDevice.id];
-    if (discoveredDeviceContainer) {
-        discoveredDeviceContainer.remove();
-        delete discoveredDeviceContainers[discoveredDevice.id];
-    } else {
-        console.warn(`no discoveredDevice container found with id "${discoveredDevice.id}"`);
-    }
-});
-
-/**
- * @param {HTMLElement} discoveredDeviceContainer
- * @param {DiscoveredDevice} discoveredDevice
- */
-function updateDiscoveredDeviceContainer(discoveredDeviceContainer, discoveredDevice) {
-    discoveredDeviceContainer.querySelector(".name").innerText = discoveredDevice.name;
-    discoveredDeviceContainer.querySelector(".rssi").innerText = discoveredDevice.rssi;
-    discoveredDeviceContainer.querySelector(".deviceType").innerText = discoveredDevice.deviceType;
-}
+// CONNECTED DEVICES

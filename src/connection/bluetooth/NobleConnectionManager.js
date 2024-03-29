@@ -39,7 +39,7 @@ class NobleConnectionManager extends ConnectionManager {
     }
 
     get isConnected() {
-        return this.#noblePeripheral?._isConnected;
+        return this.#noblePeripheral?.state == "connected";
     }
 
     async connect() {
@@ -126,9 +126,12 @@ class NobleConnectionManager extends ConnectionManager {
     }
     /** @param {noble.Peripheral} noblePeripheral */
     async onNoblePeripheralConnect(noblePeripheral) {
-        _console.log("onNoblePeripheralConnect", noblePeripheral.id);
-        noblePeripheral._isConnected = true;
-        await this.#noblePeripheral.discoverServicesAsync(allServiceUUIDs);
+        _console.log("onNoblePeripheralConnect", noblePeripheral.id, noblePeripheral.state);
+        if (noblePeripheral.state == "connected") {
+            await this.#noblePeripheral.discoverServicesAsync(allServiceUUIDs);
+        }
+        // this gets called when it connects and disconnects, so we use the noblePeripheral's "state" property instead
+        await this.#onNoblePeripheralState();
     }
 
     async #onNoblePeripheralDisconnect() {
@@ -137,19 +140,42 @@ class NobleConnectionManager extends ConnectionManager {
     /** @param {noble.Peripheral} noblePeripheral */
     async onNoblePeripheralDisconnect(noblePeripheral) {
         _console.log("onNoblePeripheralDisconnect", noblePeripheral.id);
+        await this.#onNoblePeripheralState();
+    }
 
-        this.#services.forEach((service) => {
-            removeEventListeners(service, this.#unboundNobleServiceListeners);
-        });
-        this.#services.clear();
+    async #onNoblePeripheralState() {
+        _console.log(`noblePeripheral ${this.id} state ${this.#noblePeripheral.state}`);
 
-        this.#characteristics.forEach((characteristic) => {
-            removeEventListeners(characteristic, this.#unboundNobleCharacteristicListeners);
-        });
-        this.#characteristics.clear();
+        switch (this.#noblePeripheral.state) {
+            case "connected":
+                //this.status = "connected";
+                break;
+            case "connecting":
+                //this.status = "connecting";
+                break;
+            case "disconnected":
+                this.#services.forEach((service) => {
+                    removeEventListeners(service, this.#unboundNobleServiceListeners);
+                });
+                this.#services.clear();
 
-        noblePeripheral._isConnected = false;
-        this.status = "not connected";
+                this.#characteristics.forEach((characteristic) => {
+                    removeEventListeners(characteristic, this.#unboundNobleCharacteristicListeners);
+                });
+                this.#characteristics.clear();
+
+                this.status = "not connected";
+                break;
+            case "disconnecting":
+                this.status = "disconnecting";
+                break;
+            case "error":
+                _console.error("noblePeripheral error");
+                break;
+            default:
+                _console.log(`uncaught noblePeripheral state ${this.#noblePeripheral.state}`);
+                break;
+        }
     }
 
     /** @param {number} rssi */
@@ -174,10 +200,14 @@ class NobleConnectionManager extends ConnectionManager {
      * @param {noble.Service[]} services
      */
     async onNoblePeripheralServicesDiscover(noblePeripheral, services) {
-        _console.log("onNoblePeripheralServicesDiscover", noblePeripheral.id, services);
+        _console.log(
+            "onNoblePeripheralServicesDiscover",
+            noblePeripheral.id,
+            services.map((service) => service.uuid)
+        );
         for (const index in services) {
             const service = services[index];
-            _console.log("service", service);
+            _console.log("service", service.uuid);
             const serviceName = getServiceNameFromUUID(service.uuid);
             _console.assertWithError(serviceName, `no name found for service uuid "${service.uuid}"`);
             _console.log({ serviceName });
@@ -214,7 +244,7 @@ class NobleConnectionManager extends ConnectionManager {
 
         for (const index in characteristics) {
             const characteristic = characteristics[index];
-            _console.log("characteristic", characteristic);
+            _console.log("characteristic", characteristic.uuid);
             const characteristicName = getCharacteristicNameFromUUID(characteristic.uuid);
             _console.assertWithError(
                 characteristicName,

@@ -1,3 +1,4 @@
+import Device from "../Device";
 import { concatenateArrayBuffers } from "../utils/ArrayBufferUtils";
 import { createConsole } from "../utils/Console";
 
@@ -47,16 +48,6 @@ export const ServerMessageTypes = [
     "deviceMessage",
 ];
 
-/** @param {ServerMessageType} serverMessageType */
-export function getServerMessageTypeEnum(serverMessageType) {
-    _console.assertTypeWithError(serverMessageType, "string");
-    _console.assertWithError(
-        ServerMessageTypes.includes(serverMessageType),
-        `invalid serverMessageType "${serverMessageType}"`
-    );
-    return ServerMessageTypes.indexOf(serverMessageType);
-}
-
 /** @typedef {Number | Number[] | ArrayBufferLike | DataView} MessageLike */
 
 /** @param {...ServerMessage|ServerMessageType} messages */
@@ -79,11 +70,50 @@ export function createServerMessage(...messages) {
         const messageDataArrayBuffer = concatenateArrayBuffers(...message.data);
         const messageDataArrayBufferByteLength = messageDataArrayBuffer.byteLength;
 
-        return concatenateArrayBuffers(
-            getServerMessageTypeEnum(message.type),
-            messageDataArrayBufferByteLength,
-            messageDataArrayBuffer
-        );
+        _console.assertEnumWithError(message.type, ServerMessageTypes);
+        const messageTypeEnum = ServerMessageTypes.indexOf(message.type);
+
+        return concatenateArrayBuffers(messageTypeEnum, messageDataArrayBufferByteLength, messageDataArrayBuffer);
+    });
+    _console.log("messageBuffers", ...messageBuffers);
+    return concatenateArrayBuffers(...messageBuffers);
+}
+
+/** @typedef {import("../Device").DeviceEventType} DeviceEventType */
+
+/**
+ * @typedef ServerDeviceMessage
+ * @type {Object}
+ * @property {DeviceEventType} type
+ * @property {MessageLike|MessageLike[]?} data
+ */
+
+/** @param {...DeviceEventType|ServerDeviceMessage} messages */
+export function createServerDeviceMessage(...messages) {
+    _console.log("createServerDeviceMessage", ...messages);
+
+    const messageBuffers = messages.map((message) => {
+        if (typeof message == "string") {
+            message = { type: message };
+        }
+
+        if ("data" in message) {
+            if (!Array.isArray(message.data)) {
+                message.data = [message.data];
+            }
+        } else {
+            message.data = [];
+        }
+
+        const messageDataArrayBuffer = concatenateArrayBuffers(...message.data);
+        const messageDataArrayBufferByteLength = messageDataArrayBuffer.byteLength;
+
+        _console.assertEnumWithError(message.type, Device.EventTypes);
+        const messageTypeEnum = Device.EventTypes.indexOf(message.type);
+
+        _console.log({ messageTypeEnum, messageDataArrayBufferByteLength });
+
+        return concatenateArrayBuffers(messageTypeEnum, messageDataArrayBufferByteLength, messageDataArrayBuffer);
     });
     _console.log("messageBuffers", ...messageBuffers);
     return concatenateArrayBuffers(...messageBuffers);
