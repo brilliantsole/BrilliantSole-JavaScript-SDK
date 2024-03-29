@@ -14,16 +14,12 @@ export const reconnectTimeout = 3_000;
  * | "startScan"
  * | "stopScan"
  * | "discoveredDevice"
- * | "expiredDiscoveredDevice"
  * | "discoveredDevices"
+ * | "expiredDiscoveredDevice"
  * | "connectToDevice"
  * | "disconnectFromDevice"
- * | "disconnectFromAllDevices"
- * | "deviceConnectionState"
  * | "connectedDevices"
- * | "disconnectedDevices"
- * | "deviceRSSI"
- * | "getDeviceRSSI"
+ * | "deviceMessage"
  * } ServerMessageType
  */
 
@@ -45,9 +41,10 @@ export const ServerMessageTypes = [
     "discoveredDevice",
     "discoveredDevices",
     "expiredDiscoveredDevice",
-    "deviceRSSI",
     "connectToDevice",
     "disconnectFromDevice",
+    "connectedDevices",
+    "deviceMessage",
 ];
 
 /** @param {ServerMessageType} serverMessageType */
@@ -102,7 +99,7 @@ export function parseStringFromDataView(dataView, byteOffset) {
     const stringLength = dataView.getUint8(byteOffset++);
     const string = textDecoder.decode(dataView.buffer.slice(byteOffset, byteOffset + stringLength));
     byteOffset += stringLength;
-    return string;
+    return { string, byteOffset };
 }
 
 export const pingMessage = createServerMessage("ping");

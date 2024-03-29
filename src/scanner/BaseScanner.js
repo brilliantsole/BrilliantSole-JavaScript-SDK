@@ -132,7 +132,7 @@ class BaseScanner {
         }
     }
 
-    // DISCOVERED PERIPHERALS
+    // DISCOVERED DEVICES
     /** @type {Object.<string, DiscoveredDevice>} */
     #discoveredDevices = {};
     get discoveredDevices() {
@@ -190,18 +190,17 @@ class BaseScanner {
         });
     }
 
-    // PERIPHERAL CONNECTION
+    // DEVICE CONNECTION
     /** @param {string} deviceId */
-    connectToDevice(deviceId) {
-        this.#assertIsAvailable();
-    }
-    /** @param {string} deviceId */
-    disconnectFromDevice(deviceId) {
+    async connectToDevice(deviceId) {
         this.#assertIsAvailable();
     }
 
-    // MISC
+    // RESET
 
+    get canReset() {
+        return false;
+    }
     reset() {
         _console.log("resetting...");
     }

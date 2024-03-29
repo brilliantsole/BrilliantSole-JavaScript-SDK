@@ -23,6 +23,8 @@ const _console = createConsole("WebSocketServer", { log: true });
 
 /** @typedef {"clientConnected" | "clientDisconnected"} ServerEventType */
 
+/** @typedef {import("../../Device.js").DeviceEventType} DeviceEventType */
+
 /**
  * @typedef ServerEvent
  * @type {Object}
@@ -41,7 +43,7 @@ class WebSocketServer {
     constructor() {
         _console.assertWithError(scanner, "no scanner defined");
         addEventListeners(scanner, this.#boundScannerListeners);
-        addEventListeners(Device, this.#boundDeviceListeners);
+        addEventListeners(Device, this.#boundDeviceClassListeners);
     }
 
     // EVENT DISPATCHER
@@ -103,13 +105,6 @@ class WebSocketServer {
         this.#server = newServer;
 
         _console.log("assigned server");
-    }
-
-    /** @param {DataView} data */
-    broadcast(data) {
-        this.server.clients.forEach((client) => {
-            client.send(data);
-        });
     }
 
     // SERVER LISTENERS
@@ -223,20 +218,34 @@ class WebSocketServer {
                     break;
                 case "connectToDevice":
                     {
-                        const deviceId = parseStringFromDataView(dataView, _byteOffset);
-                        _byteOffset += deviceId.length;
+                        const { string: deviceId } = parseStringFromDataView(dataView, _byteOffset);
                         scanner.connectToDevice(deviceId);
                     }
                     break;
                 case "disconnectFromDevice":
                     {
-                        const deviceId = parseStringFromDataView(dataView, _byteOffset);
-                        _byteOffset += deviceId.length;
-                        scanner.disconnectFromDevice(deviceId);
+                        const { string: deviceId } = parseStringFromDataView(dataView, _byteOffset);
+                        const device = Device.ConnectedDevices.find((device) => device.id == deviceId);
+                        if (device) {
+                            device.disconnect();
+                        } else {
+                            _console.error(`no device found with id ${deviceId}`);
+                        }
                     }
                     break;
-                case "disconnectFromAllDevices":
-                    // FILL
+                case "connectedDevices":
+                    // FILL - include deviceType, deviceInformation, batteryLevel...
+                    break;
+                case "deviceMessage":
+                    {
+                        const { string: deviceId } = parseStringFromDataView(dataView, _byteOffset);
+                        const device = Device.ConnectedDevices.find((device) => device.id == deviceId);
+                        if (device) {
+                            // FILL
+                        } else {
+                            _console.error(`no device found with id ${deviceId}`);
+                        }
+                    }
                     break;
                 default:
                     _console.error(`uncaught messageType "${messageType}"`);
@@ -257,6 +266,7 @@ class WebSocketServer {
 
     /** @param {ws.BufferLike} message */
     #broadcastMessage(message) {
+        _console.log("broadcasting", message);
         this.server.clients.forEach((client) => {
             client.send(message);
         });
@@ -323,22 +333,74 @@ class WebSocketServer {
         return createServerMessage({ type: "expiredDiscoveredDevice", data: discoveredDevice.id });
     }
 
-    // DEVICE LISTENERS
-    #boundDeviceListeners = {
+    // DEVICE CLASS LISTENERS
+    #boundDeviceClassListeners = {
         deviceConnected: this.#onDeviceConnected.bind(this),
         deviceDisconnected: this.#onDeviceDisconnected.bind(this),
+        deviceIsConnected: this.#onDeviceIsConnected.bind(this),
     };
 
     /** @typedef {import("../../Device.js").StaticDeviceEvent} StaticDeviceEvent */
 
-    /** @param {StaticDeviceEvent} deviceEvent */
-    #onDeviceConnected(deviceEvent) {
-        _console.log("onDeviceConnected", deviceEvent.message.device);
+    /** @param {StaticDeviceEvent} staticDeviceEvent */
+    #onDeviceConnected(staticDeviceEvent) {
+        /** @type {Device} */
+        const device = staticDeviceEvent.message.device;
+        _console.log("onDeviceConnected", device.id);
+        addEventListeners(device, this.#boundDeviceListeners);
     }
 
-    /** @param {StaticDeviceEvent} deviceEvent */
-    #onDeviceDisconnected(deviceEvent) {
-        _console.log("onDeviceDisconnected", deviceEvent.message.device);
+    /** @param {StaticDeviceEvent} staticDeviceEvent */
+    #onDeviceDisconnected(staticDeviceEvent) {
+        /** @type {Device} */
+        const device = staticDeviceEvent.message.device;
+        _console.log("onDeviceDisconnected", device.id);
+        removeEventListeners(device, this.#boundDeviceListeners);
+    }
+
+    /** @param {StaticDeviceEvent} staticDeviceEvent */
+    #onDeviceIsConnected(staticDeviceEvent) {
+        /** @type {Device} */
+        const device = staticDeviceEvent.message.device;
+        _console.log("onDeviceIsConnected", device.id);
+        this.#broadcastMessage(this.#createDeviceIsConnectedMessage(device));
+    }
+
+    /** @param {Device} device */
+    #createDeviceIsConnectedMessage(device) {
+        return this.#createDeviceMessage(device, "isConnected", device.isConnected);
+    }
+
+    /**
+     * @param {Device} device
+     * @param {DeviceEventType} messageType
+     * @param {...any} messageData
+     */
+    #createDeviceMessage(device, messageType, ...messageData) {
+        device.addEventListener("deviceInformation");
+        _console.assertEnumWithError(messageType, Device.EventTypes);
+        const messageTypeEnum = Device.EventTypes.indexOf(messageType);
+        return createServerMessage({ type: "deviceMessage", data: [device.id, messageTypeEnum, ...messageData] });
+    }
+
+    // DEVICE LISTENERS
+    #boundDeviceListeners = {
+        deviceInformation: this.#onDeviceInformation.bind(this),
+    };
+
+    /** @typedef {import("../../Device.js").DeviceEvent} DeviceEvent */
+
+    /** @param {DeviceEvent} deviceEvent */
+    #onDeviceInformation(deviceEvent) {
+        /** @type {Device} */
+        const device = deviceEvent.target;
+        _console.log("onDeviceInformation", device.deviceInformation);
+        this.#broadcastMessage(this.#createDeviceInformationMessage(device));
+    }
+
+    /** @param {Device} device */
+    #createDeviceInformationMessage(device) {
+        return this.#createDeviceMessage(device, "deviceInformation", device.deviceInformation);
     }
 }
 

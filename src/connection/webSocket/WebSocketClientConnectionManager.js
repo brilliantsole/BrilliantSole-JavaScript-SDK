@@ -1,11 +1,20 @@
 import { createConsole } from "../../utils/Console.js";
 import { isInBrowser } from "../../utils/environment.js";
-import { addEventListeners, removeEventListeners } from "../../utils/EventDispatcher.js";
 import ConnectionManager from "../ConnectionManager.js";
+import Device from "../../Device.js";
 
 const _console = createConsole("WebSocketClientConnectionManager", { log: true });
 
 /** @typedef {import("../ConnectionManager.js").ConnectionMessageType} ConnectionMessageType */
+
+/** @typedef {import("../../server/websocket/WebSocketClient.js").WebSocketClient} WebSocketClient */
+/** @typedef {import("../../Device.js").DeviceEventType} DeviceEventType */
+
+/**
+ * @callback SendWebSocketMessageCallback
+ * @param {ConnectionMessageType} messageType
+ * @param {DataView|ArrayBuffer} data
+ */
 
 class WebSocketClientConnectionManager extends ConnectionManager {
     static get isSupported() {
@@ -16,19 +25,34 @@ class WebSocketClientConnectionManager extends ConnectionManager {
         return "webSocketClient";
     }
 
+    /** @type {string?} */
+    #id;
+    get id() {
+        return this.#id;
+    }
+    set id(newId) {
+        _console.assertTypeWithError(newId, "string");
+        if (this.#id == newId) {
+            _console.log("redundant id assignment");
+            return;
+        }
+        this.#id = newId;
+    }
+
+    #isConnected = false;
     get isConnected() {
-        // FILL
-        return false;
+        return this.#isConnected;
     }
 
     async connect() {
         await super.connect();
-        // FILL
+        this.#assertWebSocketClient();
+        this.webSocketClient.connectToDevice(this.id);
     }
     async disconnect() {
         await super.disconnect();
-        _console.log("disconnecting from device...");
-        // FILL
+        this.#assertWebSocketClient();
+        this.webSocketClient.disconnectFromDevice(this.id);
     }
 
     /**
@@ -57,13 +81,63 @@ class WebSocketClientConnectionManager extends ConnectionManager {
 
     /** @type {boolean} */
     get canReconnect() {
-        // FILL
-        return false;
+        return true;
     }
     async reconnect() {
         await super.reconnect();
         _console.log("attempting to reconnect...");
-        // FILL
+        this.connect();
+    }
+
+    // WebSocket Client
+
+    /** @type {WebSocketClient?} */
+    #webSocketClient;
+    get webSocketClient() {
+        return this.#webSocketClient;
+    }
+    set webSocketClient(newWebSocketClient) {
+        _console.assertTypeWithError(newWebSocketClient, "object");
+        if (this.webSocketClient == newWebSocketClient) {
+            _console.log("redundant webSocketClient assignment");
+            return;
+        }
+        _console.log({ newWebSocketClient });
+        this.#webSocketClient = newWebSocketClient;
+    }
+
+    #assertWebSocketClient() {
+        _console.assertWithError(this.#webSocketClient, "webSocketClient not defined");
+    }
+
+    /** @type {SendWebSocketMessageCallback?} */
+    sendWebSocketMessage;
+    /** @param {DataView} dataView */
+    onWebSocketMessage(dataView) {
+        _console.log({ dataView });
+
+        let byteOffset = 0;
+
+        while (byteOffset < dataView.byteLength) {
+            const messageTypeEnum = dataView.getUint8(byteOffset++);
+            /** @type {DeviceEventType} */
+            const messageType = Device.EventTypes[messageTypeEnum];
+
+            _console.log({ messageTypeEnum, messageType });
+            _console.assertEnumWithError(messageType, Device.EventTypes);
+
+            // FILL
+            switch (messageType) {
+                case "isConnected":
+                    const isConnected = dataView.getUint8(byteOffset++);
+                    this.#isConnected = isConnected;
+                    this.status = isConnected ? "connected" : "not connected";
+                    break;
+                default:
+                    _console.error(`uncaught messageType "${messageType}"`);
+                    break;
+            }
+        }
     }
 }
 

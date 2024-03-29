@@ -17,6 +17,7 @@ import { addEventListeners, removeEventListeners } from "../../utils/EventDispat
 import Timer from "../../utils/Timer.js";
 import EventDispatcher from "../../utils/EventDispatcher.js";
 import Device from "../../Device.js";
+import WebSocketClientConnectionManager from "../../connection/webSocket/WebSocketClientConnectionManager.js";
 
 const _console = createConsole("WebSocketClient", { log: true });
 
@@ -246,11 +247,6 @@ class WebSocketClient {
         return this.#connectionStatus;
     }
 
-    // PARSING
-    static #TextDecoder = new TextDecoder();
-    get #textDecoder() {
-        return WebSocketClient.#TextDecoder;
-    }
     /** @param {DataView} dataView */
     #parseMessage(dataView) {
         _console.log("parseMessage", { dataView });
@@ -261,7 +257,7 @@ class WebSocketClient {
             const messageByteLength = dataView.getUint8(byteOffset++);
 
             _console.log({ messageTypeEnum, messageType, messageByteLength });
-            _console.assertWithError(messageType, `invalid messageTypeEnum ${messageTypeEnum}`);
+            _console.assertEnumWithError(messageType, ServerMessageTypes);
 
             let _byteOffset = byteOffset;
 
@@ -287,9 +283,8 @@ class WebSocketClient {
                     break;
                 case "discoveredDevice":
                     {
-                        const discoveredDeviceString = parseStringFromDataView(dataView, _byteOffset);
+                        const { string: discoveredDeviceString } = parseStringFromDataView(dataView, _byteOffset);
                         _console.log({ discoveredDeviceString });
-                        _byteOffset += discoveredDeviceString.length;
 
                         /** @type {DiscoveredDevice} */
                         const discoveredDevice = JSON.parse(discoveredDeviceString);
@@ -300,9 +295,27 @@ class WebSocketClient {
                     break;
                 case "expiredDiscoveredDevice":
                     {
-                        const discoveredDeviceId = parseStringFromDataView(dataView, _byteOffset);
-                        _byteOffset += discoveredDeviceId.length;
-                        this.#onExpiredDiscoveredDevice(discoveredDeviceId);
+                        const { string: deviceId } = parseStringFromDataView(dataView, _byteOffset);
+                        this.#onExpiredDiscoveredDevice(deviceId);
+                    }
+                    break;
+                case "deviceMessage":
+                    {
+                        const { string: deviceId, byteOffset: _newByteOffset } = parseStringFromDataView(
+                            dataView,
+                            _byteOffset
+                        );
+                        _byteOffset = _newByteOffset;
+                        const device = this.#devices[deviceId];
+                        _console.assertWithError(device, `no device found for id ${deviceId}`);
+                        /** @type {WebSocketClientConnectionManager} */
+                        const connectionManager = device.connectionManager;
+                        const _dataView = new DataView(
+                            dataView.buffer,
+                            _byteOffset,
+                            messageByteLength - (_byteOffset - byteOffset)
+                        );
+                        connectionManager.onWebSocketMessage(_dataView);
                     }
                     break;
                 default:
@@ -432,37 +445,78 @@ class WebSocketClient {
         }
     }
 
-    // PERIPHERAL CONNECTION
+    // DEVICE CONNECTION
 
     /** @param {string} deviceId */
     connectToDevice(deviceId) {
         this.#requestConnectionToDevice(deviceId);
     }
     /** @param {string} deviceId */
-    disconnectFromDevice(deviceId) {
-        this.#requestDisconnectionFromDevice(deviceId);
-    }
-
-    /** @param {string} deviceId */
     #requestConnectionToDevice(deviceId) {
         this.#assertConnection();
         _console.assertTypeWithError(deviceId, "string");
+        let device = this.devices[deviceId];
+        if (!device) {
+            device = this.#createDevice(deviceId);
+            this.devices[deviceId] = device;
+        }
         this.webSocket.send(this.#createConnectionToDeviceMessage(deviceId));
+    }
+    /** @param {string} deviceId */
+    #createConnectionToDeviceMessage(deviceId) {
+        return createServerMessage({ type: "connectToDevice", data: deviceId });
+    }
+
+    /** @param {string} deviceId */
+    #createDevice(deviceId) {
+        const device = new Device();
+        const clientConnectionManager = new WebSocketClientConnectionManager();
+        clientConnectionManager.id = deviceId;
+        clientConnectionManager.sendWebSocketMessage = this.#sendDeviceMessage.bind(this, deviceId);
+        clientConnectionManager.webSocketClient = this;
+        device.connectionManager = clientConnectionManager;
+        return device;
+    }
+
+    /** @param {string} deviceId */
+    disconnectFromDevice(deviceId) {
+        this.#requestDisconnectionFromDevice(deviceId);
     }
     /** @param {string} deviceId */
     #requestDisconnectionFromDevice(deviceId) {
         this.#assertConnection();
         _console.assertTypeWithError(deviceId, "string");
+        const device = this.devices[deviceId];
+        _console.assertWithError(device, `no device found with id ${deviceId}`);
         this.webSocket.send(this.#createDisconnectFromDeviceMessage(deviceId));
-    }
-
-    /** @param {string} deviceId */
-    #createConnectionToDeviceMessage(deviceId) {
-        return createServerMessage({ type: "connectToDevice", data: deviceId });
     }
     /** @param {string} deviceId */
     #createDisconnectFromDeviceMessage(deviceId) {
         return createServerMessage({ type: "disconnectFromDevice", data: deviceId });
+    }
+
+    /** @typedef {import("../../connection/ConnectionManager.js").ConnectionMessageType} ConnectionMessageType */
+
+    /**
+     * @param {string} deviceId
+     * @param {ConnectionMessageType} messageType
+     * @param {DataView|ArrayBuffer} data
+     */
+    #sendDeviceMessage(deviceId, messageType, data) {
+        this.#assertConnection();
+        this.webSocket.send(this.#createDeviceMessage(deviceId, messageType, data));
+    }
+
+    /**
+     * @param {string} deviceId
+     * @param {ConnectionMessageType} messageType
+     * @param {DataView|ArrayBuffer} data
+     */
+    #createDeviceMessage(deviceId, messageType, data) {
+        _console.assertTypeWithError(deviceId, "string");
+        _console.assertEnumWithError(messageType, WebSocketClientConnectionManager.MessageTypes);
+        const messageTypeEnum = WebSocketClientConnectionManager.MessageTypes.indexOf(messageType);
+        return createServerMessage({ type: "deviceMessage", data: [deviceId, messageTypeEnum, data] });
     }
 
     // DEVICES
@@ -472,5 +526,7 @@ class WebSocketClient {
         return this.#devices;
     }
 }
+
+/** @typedef {WebSocketClient} WebSocketClient */
 
 export default WebSocketClient;

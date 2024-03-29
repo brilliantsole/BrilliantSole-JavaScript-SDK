@@ -27,7 +27,7 @@ if (isInNode) {
 
 class NobleConnectionManager extends ConnectionManager {
     get id() {
-        return this.#nobleDevice?.id;
+        return this.#noblePeripheral?.id;
     }
 
     static get isSupported() {
@@ -39,17 +39,16 @@ class NobleConnectionManager extends ConnectionManager {
     }
 
     get isConnected() {
-        return this.#nobleDevice?._isConnected;
+        return this.#noblePeripheral?._isConnected;
     }
 
     async connect() {
         await super.connect();
-        await this.#nobleDevice.connectAsync();
+        await this.#noblePeripheral.connectAsync();
     }
     async disconnect() {
         await super.disconnect();
-        _console.log("disconnecting from device...");
-        await this.#nobleDevice.disconnectAsync();
+        await this.#noblePeripheral.disconnectAsync();
     }
 
     /**
@@ -78,7 +77,7 @@ class NobleConnectionManager extends ConnectionManager {
 
     /** @type {boolean} */
     get canReconnect() {
-        return this.#nobleDevice.connectable;
+        return this.#noblePeripheral.connectable;
     }
     async reconnect() {
         await super.reconnect();
@@ -87,57 +86,57 @@ class NobleConnectionManager extends ConnectionManager {
     }
 
     // NOBLE
-    /** @type {noble.Device?} */
-    #nobleDevice;
-    get nobleDevice() {
-        return this.#nobleDevice;
+    /** @type {noble.Peripheral?} */
+    #noblePeripheral;
+    get noblePeripheral() {
+        return this.#noblePeripheral;
     }
-    set nobleDevice(newNobleDevice) {
-        _console.assertTypeWithError(newNobleDevice, "object");
-        if (this.nobleDevice == newNobleDevice) {
-            _console.log("attempted to assign duplicate nobleDevice");
+    set noblePeripheral(newNoblePeripheral) {
+        _console.assertTypeWithError(newNoblePeripheral, "object");
+        if (this.noblePeripheral == newNoblePeripheral) {
+            _console.log("attempted to assign duplicate noblePeripheral");
             return;
         }
 
-        _console.log({ newNobleDevice });
+        _console.log({ newNoblePeripheral });
 
-        if (this.#nobleDevice) {
-            removeEventListeners(this.#nobleDevice, this.#unboundNobleDeviceListeners);
-            delete this.#nobleDevice._connectionManager;
+        if (this.#noblePeripheral) {
+            removeEventListeners(this.#noblePeripheral, this.#unboundNoblePeripheralListeners);
+            delete this.#noblePeripheral._connectionManager;
         }
 
-        if (newNobleDevice) {
-            newNobleDevice._connectionManager = this;
-            addEventListeners(newNobleDevice, this.#unboundNobleDeviceListeners);
+        if (newNoblePeripheral) {
+            newNoblePeripheral._connectionManager = this;
+            addEventListeners(newNoblePeripheral, this.#unboundNoblePeripheralListeners);
         }
 
-        this.#nobleDevice = newNobleDevice;
+        this.#noblePeripheral = newNoblePeripheral;
     }
 
     // NOBLE EVENTLISTENERS
-    #unboundNobleDeviceListeners = {
-        connect: this.#onNobleDeviceConnect,
-        disconnect: this.#onNobleDeviceDisconnect,
-        rssiUpdate: this.#onNobleDeviceRssiUpdate,
-        servicesDiscover: this.#onNobleDeviceServicesDiscover,
+    #unboundNoblePeripheralListeners = {
+        connect: this.#onNoblePeripheralConnect,
+        disconnect: this.#onNoblePeripheralDisconnect,
+        rssiUpdate: this.#onNoblePeripheralRssiUpdate,
+        servicesDiscover: this.#onNoblePeripheralServicesDiscover,
     };
 
-    async #onNobleDeviceConnect() {
-        await this._connectionManager.onNobleDeviceConnect(this);
+    async #onNoblePeripheralConnect() {
+        await this._connectionManager.onNoblePeripheralConnect(this);
     }
-    /** @param {noble.Device} nobleDevice */
-    async onNobleDeviceConnect(nobleDevice) {
-        _console.log("onNobleDeviceConnect", nobleDevice.id);
-        nobleDevice._isConnected = true;
-        await this.#nobleDevice.discoverServicesAsync(allServiceUUIDs);
+    /** @param {noble.Peripheral} noblePeripheral */
+    async onNoblePeripheralConnect(noblePeripheral) {
+        _console.log("onNoblePeripheralConnect", noblePeripheral.id);
+        noblePeripheral._isConnected = true;
+        await this.#noblePeripheral.discoverServicesAsync(allServiceUUIDs);
     }
 
-    async #onNobleDeviceDisconnect() {
-        await this._connectionManager.onNobleDeviceConnect(this);
+    async #onNoblePeripheralDisconnect() {
+        await this._connectionManager.onNoblePeripheralConnect(this);
     }
-    /** @param {noble.Device} nobleDevice */
-    async onNobleDeviceDisconnect(nobleDevice) {
-        _console.log("onNobleDeviceDisconnect", nobleDevice.id);
+    /** @param {noble.Peripheral} noblePeripheral */
+    async onNoblePeripheralDisconnect(noblePeripheral) {
+        _console.log("onNoblePeripheralDisconnect", noblePeripheral.id);
 
         this.#services.forEach((service) => {
             removeEventListeners(service, this.#unboundNobleServiceListeners);
@@ -149,33 +148,33 @@ class NobleConnectionManager extends ConnectionManager {
         });
         this.#characteristics.clear();
 
-        nobleDevice._isConnected = false;
+        noblePeripheral._isConnected = false;
         this.status = "not connected";
     }
 
     /** @param {number} rssi */
-    async #onNobleDeviceRssiUpdate(rssi) {
-        await this._connectionManager.onNobleDeviceRssiUpdate(this, rssi);
+    async #onNoblePeripheralRssiUpdate(rssi) {
+        await this._connectionManager.onNoblePeripheralRssiUpdate(this, rssi);
     }
     /**
-     * @param {noble.Device} nobleDevice
+     * @param {noble.Peripheral} noblePeripheral
      * @param {number} rssi
      */
-    async onNobleDeviceRssiUpdate(nobleDevice, rssi) {
-        _console.log("onNobleDeviceRssiUpdate", nobleDevice.id, rssi);
+    async onNoblePeripheralRssiUpdate(noblePeripheral, rssi) {
+        _console.log("onNoblePeripheralRssiUpdate", noblePeripheral.id, rssi);
         // FILL
     }
 
     /** @param {noble.Service[]} services */
-    async #onNobleDeviceServicesDiscover(services) {
-        await this._connectionManager.onNobleDeviceServicesDiscover(this, services);
+    async #onNoblePeripheralServicesDiscover(services) {
+        await this._connectionManager.onNoblePeripheralServicesDiscover(this, services);
     }
     /**
-     * @param {noble.Device} nobleDevice
+     * @param {noble.Peripheral} noblePeripheral
      * @param {noble.Service[]} services
      */
-    async onNobleDeviceServicesDiscover(nobleDevice, services) {
-        _console.log("onNobleDeviceServicesDiscover", nobleDevice.id, services);
+    async onNoblePeripheralServicesDiscover(noblePeripheral, services) {
+        _console.log("onNoblePeripheralServicesDiscover", noblePeripheral.id, services);
         for (const index in services) {
             const service = services[index];
             _console.log("service", service);

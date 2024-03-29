@@ -21,6 +21,29 @@ const _console = createConsole("ConnectionManager");
  */
 
 class ConnectionManager {
+    /** @type {ConnectionMessageType[]} */
+    static #MessageTypes = [
+        "manufacturerName",
+        "modelNumber",
+        "softwareRevision",
+        "hardwareRevision",
+        "firmwareRevision",
+        "pnpId",
+        "serialNumber",
+        "batteryLevel",
+        "getName",
+        "setName",
+        "getType",
+        "setType",
+        "getSensorConfiguration",
+        "setSensorConfiguration",
+        "sensorData",
+        "triggerVibration",
+    ];
+    static get MessageTypes() {
+        return this.#MessageTypes;
+    }
+
     /** @type {string?} */
     get id() {
         this.#throwNotImplementedError("id");
@@ -134,6 +157,7 @@ class ConnectionManager {
         this.#assertIsConnected();
         this.#assertIsNotDisconnecting();
         this.status = "disconnecting";
+        _console.log("disconnecting from device...");
     }
 
     /**
