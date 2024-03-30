@@ -98,7 +98,7 @@ class NobleConnectionManager extends ConnectionManager {
             return;
         }
 
-        _console.log({ newNoblePeripheral });
+        _console.log("newNoblePeripheral", newNoblePeripheral.id);
 
         if (this.#noblePeripheral) {
             removeEventListeners(this.#noblePeripheral, this.#unboundNoblePeripheralListeners);
@@ -154,16 +154,7 @@ class NobleConnectionManager extends ConnectionManager {
                 //this.status = "connecting";
                 break;
             case "disconnected":
-                this.#services.forEach((service) => {
-                    removeEventListeners(service, this.#unboundNobleServiceListeners);
-                });
-                this.#services.clear();
-
-                this.#characteristics.forEach((characteristic) => {
-                    removeEventListeners(characteristic, this.#unboundNobleCharacteristicListeners);
-                });
-                this.#characteristics.clear();
-
+                this.#removeEventListeners();
                 this.status = "not connected";
                 break;
             case "disconnecting":
@@ -176,6 +167,19 @@ class NobleConnectionManager extends ConnectionManager {
                 _console.log(`uncaught noblePeripheral state ${this.#noblePeripheral.state}`);
                 break;
         }
+    }
+
+    #removeEventListeners() {
+        _console.log("removing noblePeripheral eventListeners");
+        this.#services.forEach((service) => {
+            removeEventListeners(service, this.#unboundNobleServiceListeners);
+        });
+        this.#services.clear();
+
+        this.#characteristics.forEach((characteristic) => {
+            removeEventListeners(characteristic, this.#unboundNobleCharacteristicListeners);
+        });
+        this.#characteristics.clear();
     }
 
     /** @param {number} rssi */

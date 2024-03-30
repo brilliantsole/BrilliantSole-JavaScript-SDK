@@ -182,11 +182,24 @@ class NobleScanner extends BaseScanner {
         const noblePeripheral = this.#noblePeripherals[deviceId];
         _console.log("connecting to discoveredDevice...", deviceId);
 
+        let device = Device.AvailableDevices.filter((device) => device.connectionType == "noble").find(
+            (device) => device.id == deviceId
+        );
+        if (!device) {
+            device = this.#createDevice(noblePeripheral);
+            await device.connect();
+        } else {
+            await device.reconnect();
+        }
+    }
+
+    /** @param {noble.Peripheral} noblePeripheral */
+    #createDevice(noblePeripheral) {
         const device = new Device();
         const nobleConnectionManager = new NobleConnectionManager();
         nobleConnectionManager.noblePeripheral = noblePeripheral;
         device.connectionManager = nobleConnectionManager;
-        await device.connect();
+        return device;
     }
 }
 

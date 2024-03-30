@@ -104,7 +104,7 @@ class ConnectionManager {
     set status(newConnectionStatus) {
         _console.assertTypeWithError(newConnectionStatus, "string");
         if (this.#status == newConnectionStatus) {
-            _console.log("tried to assign same connection status");
+            _console.log(`tried to assign same connection status "${newConnectionStatus}"`);
             return;
         }
         _console.log(`new connection status "${newConnectionStatus}"`);
@@ -151,7 +151,6 @@ class ConnectionManager {
         this.#assertIsNotConnected();
         this.#assertIsNotConnecting();
         _console.assert(this.canReconnect, "unable to reconnect");
-        this.status = "connecting";
     }
     async disconnect() {
         this.#assertIsConnected();

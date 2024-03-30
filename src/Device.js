@@ -222,6 +222,7 @@ class Device {
         if (!this.connectionManager) {
             this.connectionManager = new Device.#DefaultConnectionManager();
         }
+        this.#clear();
         return this.connectionManager.connect();
     }
     get isConnected() {
@@ -236,6 +237,7 @@ class Device {
         return this.connectionManager?.canReconnect;
     }
     async reconnect() {
+        this.#clear();
         return this.connectionManager?.reconnect();
     }
 
@@ -339,7 +341,7 @@ class Device {
      * @param {DataView} dataView
      */
     #onConnectionMessageReceived(messageType, dataView) {
-        _console.log({ messageType, dataView });
+        //_console.log({ messageType, dataView });
         switch (messageType) {
             case "manufacturerName":
                 const manufacturerName = this.#textDecoder.decode(dataView);
@@ -977,8 +979,7 @@ class Device {
 
             this.AvailableDevices.push(device);
         });
-        this.#DispatchEvent({ type: "availableDevices", message: { devices: this.AvailableDevices } });
-        _console.log({ AvailableDevices: this.AvailableDevices });
+        this.#DispatchAvailableDevices();
         return this.AvailableDevices;
     }
 
@@ -1055,6 +1056,15 @@ class Device {
         if (this.CanGetDevices) {
             this.GetDevices();
         }
+        if (device.isConnected && !this.AvailableDevices.includes(device)) {
+            this.AvailableDevices.push(device);
+            this.#DispatchAvailableDevices();
+        }
+    }
+
+    static #DispatchAvailableDevices() {
+        _console.log({ AvailableDevices: this.AvailableDevices });
+        this.#DispatchEvent({ type: "availableDevices", message: { devices: this.AvailableDevices } });
     }
 
     static async Connect() {

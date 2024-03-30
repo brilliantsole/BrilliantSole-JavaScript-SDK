@@ -46,13 +46,11 @@ class WebSocketClientConnectionManager extends ConnectionManager {
 
     async connect() {
         await super.connect();
-        this.#assertWebSocketClient();
-        this.webSocketClient.connectToDevice(this.id);
+        this.sendWebSocketConnectMessage();
     }
     async disconnect() {
         await super.disconnect();
-        this.#assertWebSocketClient();
-        this.webSocketClient.disconnectFromDevice(this.id);
+        this.sendWebSocketDisconnectMessage();
     }
 
     /**
@@ -91,27 +89,31 @@ class WebSocketClientConnectionManager extends ConnectionManager {
 
     // WebSocket Client
 
-    /** @type {WebSocketClient?} */
-    #webSocketClient;
-    get webSocketClient() {
-        return this.#webSocketClient;
-    }
-    set webSocketClient(newWebSocketClient) {
-        _console.assertTypeWithError(newWebSocketClient, "object");
-        if (this.webSocketClient == newWebSocketClient) {
-            _console.log("redundant webSocketClient assignment");
-            return;
-        }
-        _console.log({ newWebSocketClient });
-        this.#webSocketClient = newWebSocketClient;
-    }
+    // /** @type {WebSocketClient?} */
+    // #webSocketClient;
+    // get webSocketClient() {
+    //     return this.#webSocketClient;
+    // }
+    // set webSocketClient(newWebSocketClient) {
+    //     _console.assertTypeWithError(newWebSocketClient, "object");
+    //     if (this.webSocketClient == newWebSocketClient) {
+    //         _console.log("redundant webSocketClient assignment");
+    //         return;
+    //     }
+    //     _console.log({ newWebSocketClient });
+    //     this.#webSocketClient = newWebSocketClient;
+    // }
 
-    #assertWebSocketClient() {
-        _console.assertWithError(this.#webSocketClient, "webSocketClient not defined");
-    }
+    // #assertWebSocketClient() {
+    //     _console.assertWithError(this.#webSocketClient, "webSocketClient not defined");
+    // }
 
     /** @type {SendWebSocketMessageCallback?} */
     sendWebSocketMessage;
+    /** @type {function?} */
+    sendWebSocketConnectMessage;
+    /** @type {function?} */
+    sendWebSocketDisconnectMessage;
     /** @param {DataView} dataView */
     onWebSocketMessage(dataView) {
         _console.log({ dataView });

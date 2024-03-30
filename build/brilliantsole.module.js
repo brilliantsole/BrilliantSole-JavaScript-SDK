@@ -463,7 +463,7 @@ class ConnectionManager {
     set status(newConnectionStatus) {
         _console$j.assertTypeWithError(newConnectionStatus, "string");
         if (this.#status == newConnectionStatus) {
-            _console$j.log("tried to assign same connection status");
+            _console$j.log(`tried to assign same connection status "${newConnectionStatus}"`);
             return;
         }
         _console$j.log(`new connection status "${newConnectionStatus}"`);
@@ -510,7 +510,6 @@ class ConnectionManager {
         this.#assertIsNotConnected();
         this.#assertIsNotConnecting();
         _console$j.assert(this.canReconnect, "unable to reconnect");
-        this.status = "connecting";
     }
     async disconnect() {
         this.#assertIsConnected();
@@ -1039,6 +1038,7 @@ class WebBluetoothConnectionManager extends ConnectionManager {
     async reconnect() {
         await super.reconnect();
         _console$i.log("attempting to reconnect...");
+        this.status = "connecting";
         await this.server.connect();
         if (this.isConnected) {
             _console$i.log("successfully reconnected!");
@@ -1198,7 +1198,7 @@ class NobleConnectionManager extends ConnectionManager {
             return;
         }
 
-        _console$h.log({ newNoblePeripheral });
+        _console$h.log("newNoblePeripheral", newNoblePeripheral.id);
 
         if (this.#noblePeripheral) {
             removeEventListeners(this.#noblePeripheral, this.#unboundNoblePeripheralListeners);
@@ -1254,16 +1254,7 @@ class NobleConnectionManager extends ConnectionManager {
                 //this.status = "connecting";
                 break;
             case "disconnected":
-                this.#services.forEach((service) => {
-                    removeEventListeners(service, this.#unboundNobleServiceListeners);
-                });
-                this.#services.clear();
-
-                this.#characteristics.forEach((characteristic) => {
-                    removeEventListeners(characteristic, this.#unboundNobleCharacteristicListeners);
-                });
-                this.#characteristics.clear();
-
+                this.#removeEventListeners();
                 this.status = "not connected";
                 break;
             case "disconnecting":
@@ -1276,6 +1267,19 @@ class NobleConnectionManager extends ConnectionManager {
                 _console$h.log(`uncaught noblePeripheral state ${this.#noblePeripheral.state}`);
                 break;
         }
+    }
+
+    #removeEventListeners() {
+        _console$h.log("removing noblePeripheral eventListeners");
+        this.#services.forEach((service) => {
+            removeEventListeners(service, this.#unboundNobleServiceListeners);
+        });
+        this.#services.clear();
+
+        this.#characteristics.forEach((characteristic) => {
+            removeEventListeners(characteristic, this.#unboundNobleCharacteristicListeners);
+        });
+        this.#characteristics.clear();
     }
 
     /** @param {number} rssi */
@@ -2949,6 +2953,7 @@ class Device {
         if (!this.connectionManager) {
             this.connectionManager = new Device.#DefaultConnectionManager();
         }
+        this.#clear();
         return this.connectionManager.connect();
     }
     get isConnected() {
@@ -2963,6 +2968,7 @@ class Device {
         return this.connectionManager?.canReconnect;
     }
     async reconnect() {
+        this.#clear();
         return this.connectionManager?.reconnect();
     }
 
@@ -3066,7 +3072,7 @@ class Device {
      * @param {DataView} dataView
      */
     #onConnectionMessageReceived(messageType, dataView) {
-        _console$b.log({ messageType, dataView });
+        //_console.log({ messageType, dataView });
         switch (messageType) {
             case "manufacturerName":
                 const manufacturerName = this.#textDecoder.decode(dataView);
@@ -3702,8 +3708,7 @@ class Device {
 
             this.AvailableDevices.push(device);
         });
-        this.#DispatchEvent({ type: "availableDevices", message: { devices: this.AvailableDevices } });
-        _console$b.log({ AvailableDevices: this.AvailableDevices });
+        this.#DispatchAvailableDevices();
         return this.AvailableDevices;
     }
 
@@ -3780,6 +3785,15 @@ class Device {
         if (this.CanGetDevices) {
             this.GetDevices();
         }
+        if (device.isConnected && !this.AvailableDevices.includes(device)) {
+            this.AvailableDevices.push(device);
+            this.#DispatchAvailableDevices();
+        }
+    }
+
+    static #DispatchAvailableDevices() {
+        _console$b.log({ AvailableDevices: this.AvailableDevices });
+        this.#DispatchEvent({ type: "availableDevices", message: { devices: this.AvailableDevices } });
     }
 
     static async Connect() {
@@ -4245,11 +4259,24 @@ class NobleScanner extends BaseScanner {
         const noblePeripheral = this.#noblePeripherals[deviceId];
         _console$8.log("connecting to discoveredDevice...", deviceId);
 
+        let device = Device.AvailableDevices.filter((device) => device.connectionType == "noble").find(
+            (device) => device.id == deviceId
+        );
+        if (!device) {
+            device = this.#createDevice(noblePeripheral);
+            await device.connect();
+        } else {
+            await device.reconnect();
+        }
+    }
+
+    /** @param {noble.Peripheral} noblePeripheral */
+    #createDevice(noblePeripheral) {
         const device = new Device();
         const nobleConnectionManager = new NobleConnectionManager();
         nobleConnectionManager.noblePeripheral = noblePeripheral;
         device.connectionManager = nobleConnectionManager;
-        await device.connect();
+        return device;
     }
 }
 
@@ -4850,13 +4877,11 @@ class WebSocketClientConnectionManager extends ConnectionManager {
 
     async connect() {
         await super.connect();
-        this.#assertWebSocketClient();
-        this.webSocketClient.connectToDevice(this.id);
+        this.sendWebSocketConnectMessage();
     }
     async disconnect() {
         await super.disconnect();
-        this.#assertWebSocketClient();
-        this.webSocketClient.disconnectFromDevice(this.id);
+        this.sendWebSocketDisconnectMessage();
     }
 
     /**
@@ -4895,27 +4920,31 @@ class WebSocketClientConnectionManager extends ConnectionManager {
 
     // WebSocket Client
 
-    /** @type {WebSocketClient?} */
-    #webSocketClient;
-    get webSocketClient() {
-        return this.#webSocketClient;
-    }
-    set webSocketClient(newWebSocketClient) {
-        _console$2.assertTypeWithError(newWebSocketClient, "object");
-        if (this.webSocketClient == newWebSocketClient) {
-            _console$2.log("redundant webSocketClient assignment");
-            return;
-        }
-        _console$2.log({ newWebSocketClient });
-        this.#webSocketClient = newWebSocketClient;
-    }
+    // /** @type {WebSocketClient?} */
+    // #webSocketClient;
+    // get webSocketClient() {
+    //     return this.#webSocketClient;
+    // }
+    // set webSocketClient(newWebSocketClient) {
+    //     _console.assertTypeWithError(newWebSocketClient, "object");
+    //     if (this.webSocketClient == newWebSocketClient) {
+    //         _console.log("redundant webSocketClient assignment");
+    //         return;
+    //     }
+    //     _console.log({ newWebSocketClient });
+    //     this.#webSocketClient = newWebSocketClient;
+    // }
 
-    #assertWebSocketClient() {
-        _console$2.assertWithError(this.#webSocketClient, "webSocketClient not defined");
-    }
+    // #assertWebSocketClient() {
+    //     _console.assertWithError(this.#webSocketClient, "webSocketClient not defined");
+    // }
 
     /** @type {SendWebSocketMessageCallback?} */
     sendWebSocketMessage;
+    /** @type {function?} */
+    sendWebSocketConnectMessage;
+    /** @type {function?} */
+    sendWebSocketDisconnectMessage;
     /** @param {DataView} dataView */
     onWebSocketMessage(dataView) {
         _console$2.log({ dataView });
@@ -5382,11 +5411,15 @@ class WebSocketClient {
             device = this.#createDevice(deviceId);
             this.devices[deviceId] = device;
         }
-        this.webSocket.send(this.#createConnectionToDeviceMessage(deviceId));
+        device.connect();
         return device;
     }
     /** @param {string} deviceId */
-    #createConnectionToDeviceMessage(deviceId) {
+    #sendConnectToDeviceMessage(deviceId) {
+        this.webSocket.send(this.#createConnectToDeviceMessage(deviceId));
+    }
+    /** @param {string} deviceId */
+    #createConnectToDeviceMessage(deviceId) {
         return createServerMessage({ type: "connectToDevice", data: deviceId });
     }
 
@@ -5396,7 +5429,11 @@ class WebSocketClient {
         const clientConnectionManager = new WebSocketClientConnectionManager();
         clientConnectionManager.id = deviceId;
         clientConnectionManager.sendWebSocketMessage = this.#sendDeviceMessage.bind(this, deviceId);
-        clientConnectionManager.webSocketClient = this;
+        clientConnectionManager.sendWebSocketConnectMessage = this.#sendConnectToDeviceMessage.bind(this, deviceId);
+        clientConnectionManager.sendWebSocketDisconnectMessage = this.#sendDisconnectFromDeviceMessage.bind(
+            this,
+            deviceId
+        );
         device.connectionManager = clientConnectionManager;
         return device;
     }
@@ -5411,6 +5448,11 @@ class WebSocketClient {
         _console$1.assertTypeWithError(deviceId, "string");
         const device = this.devices[deviceId];
         _console$1.assertWithError(device, `no device found with id ${deviceId}`);
+        device.disconnect();
+        return device;
+    }
+    /** @param {string} deviceId */
+    #sendDisconnectFromDeviceMessage(deviceId) {
         this.webSocket.send(this.#createDisconnectFromDeviceMessage(deviceId));
     }
     /** @param {string} deviceId */
@@ -5820,17 +5862,17 @@ class WebSocketServer {
 
     // DEVICE LISTENERS
     #boundDeviceListeners = {
-        deviceInformation: this.#onDeviceInformation.bind(this),
+        sensorData: this.#onDeviceSensorData.bind(this),
     };
 
     
 
     /** @param {DeviceEvent} deviceEvent */
-    #onDeviceInformation(deviceEvent) {
+    #onDeviceSensorData(deviceEvent) {
         /** @type {Device} */
-        const device = deviceEvent.target;
-        _console.log("onDeviceInformation", device.deviceInformation);
-        this.#broadcastMessage(this.#createDeviceInformationMessage(device));
+        deviceEvent.target;
+        _console.log("onDeviceSensorData", deviceEvent.message);
+        // FILL
     }
 
     /** @param {Device} device */

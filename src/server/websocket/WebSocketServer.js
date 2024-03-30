@@ -387,17 +387,17 @@ class WebSocketServer {
 
     // DEVICE LISTENERS
     #boundDeviceListeners = {
-        deviceInformation: this.#onDeviceInformation.bind(this),
+        sensorData: this.#onDeviceSensorData.bind(this),
     };
 
     /** @typedef {import("../../Device.js").DeviceEvent} DeviceEvent */
 
     /** @param {DeviceEvent} deviceEvent */
-    #onDeviceInformation(deviceEvent) {
+    #onDeviceSensorData(deviceEvent) {
         /** @type {Device} */
         const device = deviceEvent.target;
-        _console.log("onDeviceInformation", device.deviceInformation);
-        this.#broadcastMessage(this.#createDeviceInformationMessage(device));
+        _console.log("onDeviceSensorData", deviceEvent.message);
+        // FILL
     }
 
     /** @param {Device} device */

@@ -452,11 +452,15 @@ class WebSocketClient {
             device = this.#createDevice(deviceId);
             this.devices[deviceId] = device;
         }
-        this.webSocket.send(this.#createConnectionToDeviceMessage(deviceId));
+        device.connect();
         return device;
     }
     /** @param {string} deviceId */
-    #createConnectionToDeviceMessage(deviceId) {
+    #sendConnectToDeviceMessage(deviceId) {
+        this.webSocket.send(this.#createConnectToDeviceMessage(deviceId));
+    }
+    /** @param {string} deviceId */
+    #createConnectToDeviceMessage(deviceId) {
         return createServerMessage({ type: "connectToDevice", data: deviceId });
     }
 
@@ -466,7 +470,11 @@ class WebSocketClient {
         const clientConnectionManager = new WebSocketClientConnectionManager();
         clientConnectionManager.id = deviceId;
         clientConnectionManager.sendWebSocketMessage = this.#sendDeviceMessage.bind(this, deviceId);
-        clientConnectionManager.webSocketClient = this;
+        clientConnectionManager.sendWebSocketConnectMessage = this.#sendConnectToDeviceMessage.bind(this, deviceId);
+        clientConnectionManager.sendWebSocketDisconnectMessage = this.#sendDisconnectFromDeviceMessage.bind(
+            this,
+            deviceId
+        );
         device.connectionManager = clientConnectionManager;
         return device;
     }
@@ -481,6 +489,11 @@ class WebSocketClient {
         _console.assertTypeWithError(deviceId, "string");
         const device = this.devices[deviceId];
         _console.assertWithError(device, `no device found with id ${deviceId}`);
+        device.disconnect();
+        return device;
+    }
+    /** @param {string} deviceId */
+    #sendDisconnectFromDeviceMessage(deviceId) {
         this.webSocket.send(this.#createDisconnectFromDeviceMessage(deviceId));
     }
     /** @param {string} deviceId */

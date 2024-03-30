@@ -137,7 +137,7 @@ client.addEventListener("discoveredDevice", (event) => {
         });
 
         const updateToggleConnectionButton = () => {
-            console.log(device.connectionStatus);
+            console.log({ deviceConnectionStatus: device.connectionStatus });
             switch (device.connectionStatus) {
                 case "connected":
                 case "not connected":

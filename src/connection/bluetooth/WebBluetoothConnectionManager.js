@@ -297,6 +297,7 @@ class WebBluetoothConnectionManager extends ConnectionManager {
     async reconnect() {
         await super.reconnect();
         _console.log("attempting to reconnect...");
+        this.status = "connecting";
         await this.server.connect();
         if (this.isConnected) {
             _console.log("successfully reconnected!");
