@@ -28,7 +28,9 @@ class DevicePairSensorDataManager {
         this.pressureSensorDataManager.resetPressureRange();
     }
 
-    /** @param {import("../Device.js").DeviceEvent} event  */
+    /** @typedef {import("../Device.js").DeviceEvent} DeviceEvent */
+
+    /** @param {DeviceEvent} event */
     onDeviceSensorData(event) {
         const { timestamp } = event.message;
 

@@ -24,6 +24,7 @@ if (isInNode) {
 /** @typedef {import("./bluetoothUUIDs.js").BluetoothServiceName} BluetoothServiceName */
 
 /** @typedef {import("../ConnectionManager.js").ConnectionMessageType} ConnectionMessageType */
+/** @typedef {import("../ConnectionManager.js").ConnectionMessageType} ConnectionType */
 
 class NobleConnectionManager extends ConnectionManager {
     get id() {
@@ -33,7 +34,7 @@ class NobleConnectionManager extends ConnectionManager {
     static get isSupported() {
         return isInNode;
     }
-    /** @type {import("../ConnectionManager.js").ConnectionType} */
+    /** @type {ConnectionType} */
     static get type() {
         return "noble";
     }

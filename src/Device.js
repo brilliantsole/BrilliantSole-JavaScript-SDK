@@ -7,7 +7,7 @@ import NobleConnectionManager from "./connection/bluetooth/NobleConnectionManage
 import SensorConfigurationManager from "./sensor/SensorConfigurationManager.js";
 import SensorDataManager from "./sensor/SensorDataManager.js";
 import VibrationManager from "./vibration/VibrationManager.js";
-import { concatenateArrayBuffers } from "./utils/ArrayBufferUtils.js";
+import { concatenateArrayBuffers, parseStringFromDataView } from "./utils/ArrayBufferUtils.js";
 
 const _console = createConsole("Device", { log: true });
 
@@ -343,6 +343,13 @@ class Device {
     #onConnectionMessageReceived(messageType, dataView) {
         //_console.log({ messageType, dataView });
         switch (messageType) {
+            case "deviceInformation":
+                const { string: deviceInformationString } = parseStringFromDataView(dataView);
+                _console.log({ deviceInformationString });
+                const deviceInformation = JSON.parse(deviceInformationString);
+                _console.log({ deviceInformation });
+                this.#updateDeviceInformation(deviceInformation);
+                break;
             case "manufacturerName":
                 const manufacturerName = this.#textDecoder.decode(dataView);
                 _console.log({ manufacturerName });

@@ -16,6 +16,7 @@ const _console = createConsole("WebBluetoothConnectionManager", { log: true });
 /** @typedef {import("./bluetoothUUIDs.js").BluetoothServiceName} BluetoothServiceName */
 
 /** @typedef {import("../ConnectionManager.js").ConnectionMessageType} ConnectionMessageType */
+/** @typedef {import("../ConnectionManager.js").ConnectionType} ConnectionType */
 
 if (isInNode) {
     const webbluetooth = require("webbluetooth");
@@ -43,7 +44,7 @@ class WebBluetoothConnectionManager extends ConnectionManager {
     static get isSupported() {
         return "bluetooth" in navigator;
     }
-    /** @type {import("../ConnectionManager.js").ConnectionType} */
+    /** @type {ConnectionType} */
     static get type() {
         return "webBluetooth";
     }

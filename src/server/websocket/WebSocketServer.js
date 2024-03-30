@@ -6,14 +6,15 @@ import {
     pingMessage,
     ServerMessageTypes,
     createServerMessage,
-    parseStringFromDataView,
     createServerDeviceMessage,
 } from "../ServerUtils.js";
+import { parseStringFromDataView } from "../../utils/ArrayBufferUtils.js";
 import { dataToArrayBuffer } from "../../utils/ArrayBufferUtils.js";
 import Timer from "../../utils/Timer.js";
 import EventDispatcher from "../../utils/EventDispatcher.js";
 import scanner from "../../scanner/Scanner.js";
 import Device from "../../Device.js";
+import ConnectionManager from "../../connection/ConnectionManager.js";
 
 const _console = createConsole("WebSocketServer", { log: true });
 
@@ -189,7 +190,8 @@ class WebSocketServer {
         while (byteOffset < dataView.byteLength) {
             const messageTypeEnum = dataView.getUint8(byteOffset++);
             const messageType = ServerMessageTypes[messageTypeEnum];
-            const messageByteLength = dataView.getUint8(byteOffset++);
+            const messageByteLength = dataView.getUint16(byteOffset, true);
+            byteOffset += 2;
 
             _console.log({ messageTypeEnum, messageType, messageByteLength });
             _console.assertWithError(messageType, `invalid messageTypeEnum ${messageTypeEnum}`);
@@ -227,11 +229,11 @@ class WebSocketServer {
                     {
                         const { string: deviceId } = parseStringFromDataView(dataView, _byteOffset);
                         const device = Device.ConnectedDevices.find((device) => device.id == deviceId);
-                        if (device) {
-                            device.disconnect();
-                        } else {
+                        if (!device) {
                             _console.error(`no device found with id ${deviceId}`);
+                            break;
                         }
+                        device.disconnect();
                     }
                     break;
                 case "connectedDevices":
@@ -239,13 +241,22 @@ class WebSocketServer {
                     break;
                 case "deviceMessage":
                     {
-                        const { string: deviceId } = parseStringFromDataView(dataView, _byteOffset);
+                        const { string: deviceId, byteOffset: _newByteOffset } = parseStringFromDataView(
+                            dataView,
+                            _byteOffset
+                        );
+                        _byteOffset = _newByteOffset;
                         const device = Device.ConnectedDevices.find((device) => device.id == deviceId);
-                        if (device) {
-                            // FILL
-                        } else {
+                        if (!device) {
                             _console.error(`no device found with id ${deviceId}`);
+                            break;
                         }
+                        const _dataView = new DataView(
+                            dataView.buffer,
+                            _byteOffset,
+                            messageByteLength - (_byteOffset - byteOffset)
+                        );
+                        this.#onDeviceMessage(device, _dataView, client);
                     }
                     break;
                 default:
@@ -376,7 +387,7 @@ class WebSocketServer {
 
     /**
      * @param {Device} device
-     * @param {...ServerDeviceMessage} messages
+     * @param {...DeviceEventType|ServerDeviceMessage} messages
      */
     #createDeviceMessage(device, ...messages) {
         return createServerMessage({
@@ -387,22 +398,113 @@ class WebSocketServer {
 
     // DEVICE LISTENERS
     #boundDeviceListeners = {
+        batteryLevel: this.#onDeviceBatteryLevel.bind(this),
         sensorData: this.#onDeviceSensorData.bind(this),
     };
-
-    /** @typedef {import("../../Device.js").DeviceEvent} DeviceEvent */
-
-    /** @param {DeviceEvent} deviceEvent */
-    #onDeviceSensorData(deviceEvent) {
-        /** @type {Device} */
-        const device = deviceEvent.target;
-        _console.log("onDeviceSensorData", deviceEvent.message);
-        // FILL
-    }
 
     /** @param {Device} device */
     #createDeviceInformationMessage(device) {
         return this.#createDeviceMessage(device, { type: "deviceInformation", data: device.deviceInformation });
+    }
+
+    /** @typedef {import("../../Device.js").DeviceEvent} DeviceEvent */
+
+    /** @param {DeviceEvent} deviceEvent */
+    #onDeviceBatteryLevel(deviceEvent) {
+        const device = deviceEvent.target;
+        _console.log("onDeviceBatteryLevel", deviceEvent.message);
+        this.#broadcastMessage(this.#createDeviceBatteryLevelMessage(device));
+    }
+    /** @param {Device} device */
+    #createDeviceBatteryLevelMessage(device) {
+        return this.#createDeviceMessage(device, { type: "batteryLevel", data: device.batteryLevel });
+    }
+
+    /** @param {DeviceEvent} deviceEvent */
+    #onDeviceSensorData(deviceEvent) {
+        const device = deviceEvent.target;
+        _console.log("onDeviceSensorData", deviceEvent.message);
+        this.#broadcastMessage(this.#createDeviceSensorDataMessage(device));
+    }
+    /**
+     * @param {Device} device
+     * @param {DeviceEvent} deviceEvent
+     */
+    #createDeviceSensorDataMessage(device, deviceEvent) {
+        return this.#createDeviceMessage(device, { type: "sensorData", data: deviceEvent.message });
+    }
+
+    /** @param {Device} device */
+    #createDeviceGetNameMessage(device) {
+        return this.#createDeviceMessage(device, { type: "getName", data: device.name });
+    }
+
+    // DEVICE MESSAGING
+
+    /**
+     * @param {Device} device
+     * @param {DataView} dataView
+     * @param {ws.WebSocket} client
+     */
+    #onDeviceMessage(device, dataView, client) {
+        _console.log("onDeviceMessage", device.id, dataView);
+        let byteOffset = 0;
+
+        /** @type {(DeviceEventType | ServerDeviceMessage)[]} */
+        let responseMessages = [];
+
+        while (byteOffset < dataView.byteLength) {
+            const messageTypeEnum = dataView.getUint8(byteOffset++);
+            const messageType = ConnectionManager.MessageTypes[messageTypeEnum];
+            const messageByteLength = dataView.getUint16(byteOffset, true);
+            byteOffset += 2;
+
+            _console.log({ messageTypeEnum, messageType, messageByteLength });
+            _console.assertWithError(messageType, `invalid messageTypeEnum ${messageTypeEnum}`);
+
+            let _byteOffset = byteOffset;
+
+            switch (messageType) {
+                case "batteryLevel":
+                    responseMessages.push({ type: "batteryLevel", data: device.batteryLevel });
+                    break;
+                case "deviceInformation":
+                    responseMessages.push({ type: "deviceInformation", data: device.deviceInformation });
+                    break;
+                case "getName":
+                    responseMessages.push({ type: "getName", data: device.name });
+                    break;
+                case "setName":
+                    // FILL
+                    break;
+                case "getType":
+                    responseMessages.push({ type: "getType", data: device.type });
+                    break;
+                case "setType":
+                    // FILL
+
+                    break;
+                case "getSensorConfiguration":
+                    responseMessages.push({ type: "getSensorConfiguration", data: device.sensorConfiguration });
+                    break;
+                case "setSensorConfiguration":
+                    // FILL
+                    break;
+                case "triggerVibration":
+                    // FILL
+                    break;
+                default:
+                    _console.error(`uncaught messageType "${messageType}"`);
+                    break;
+            }
+
+            byteOffset += messageByteLength;
+        }
+
+        _console.log({ responseMessages });
+        if (responseMessages.length > 0) {
+            client.send(this.#createDeviceMessage(device, ...responseMessages));
+        }
     }
 }
 

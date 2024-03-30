@@ -2,25 +2,23 @@ import { createConsole } from "../../utils/Console.js";
 import { isInBrowser } from "../../utils/environment.js";
 import ConnectionManager from "../ConnectionManager.js";
 import Device from "../../Device.js";
+import { parseStringFromDataView } from "../../utils/ArrayBufferUtils.js";
 
 const _console = createConsole("WebSocketClientConnectionManager", { log: true });
 
 /** @typedef {import("../ConnectionManager.js").ConnectionMessageType} ConnectionMessageType */
+/** @typedef {import("../ConnectionManager.js").ConnectionType} ConnectionType */
 
 /** @typedef {import("../../server/websocket/WebSocketClient.js").WebSocketClient} WebSocketClient */
 /** @typedef {import("../../Device.js").DeviceEventType} DeviceEventType */
 
-/**
- * @callback SendWebSocketMessageCallback
- * @param {ConnectionMessageType} messageType
- * @param {DataView|ArrayBuffer} data
- */
+/** @typedef {import("../../server/ServerUtils.js").ClientDeviceMessage} ClientDeviceMessage */
 
 class WebSocketClientConnectionManager extends ConnectionManager {
     static get isSupported() {
         return isInBrowser;
     }
-    /** @type {import("../ConnectionManager.js").ConnectionType} */
+    /** @type {ConnectionType} */
     static get type() {
         return "webSocketClient";
     }
@@ -59,18 +57,19 @@ class WebSocketClientConnectionManager extends ConnectionManager {
      */
     async sendMessage(messageType, data) {
         await super.sendMessage(...arguments);
+        // TEST
         switch (messageType) {
             case "setName":
-                // FILL
+                this.sendWebSocketMessage({ type: "setName", data });
                 break;
             case "setType":
-                // FILL
+                this.sendWebSocketMessage({ type: "setType", data });
                 break;
             case "setSensorConfiguration":
-                // FILL
+                this.sendWebSocketMessage({ type: "setSensorConfiguration", data });
                 break;
             case "triggerVibration":
-                // FILL
+                this.sendWebSocketMessage({ type: "triggerVibration", data });
                 break;
             default:
                 throw Error(`uncaught messageType "${messageType}"`);
@@ -87,26 +86,10 @@ class WebSocketClientConnectionManager extends ConnectionManager {
         this.connect();
     }
 
-    // WebSocket Client
-
-    // /** @type {WebSocketClient?} */
-    // #webSocketClient;
-    // get webSocketClient() {
-    //     return this.#webSocketClient;
-    // }
-    // set webSocketClient(newWebSocketClient) {
-    //     _console.assertTypeWithError(newWebSocketClient, "object");
-    //     if (this.webSocketClient == newWebSocketClient) {
-    //         _console.log("redundant webSocketClient assignment");
-    //         return;
-    //     }
-    //     _console.log({ newWebSocketClient });
-    //     this.#webSocketClient = newWebSocketClient;
-    // }
-
-    // #assertWebSocketClient() {
-    //     _console.assertWithError(this.#webSocketClient, "webSocketClient not defined");
-    // }
+    /**
+     * @callback SendWebSocketMessageCallback
+     * @param {...(ConnectionMessageType|ClientDeviceMessage)} messages
+     */
 
     /** @type {SendWebSocketMessageCallback?} */
     sendWebSocketMessage;
@@ -124,19 +107,38 @@ class WebSocketClientConnectionManager extends ConnectionManager {
             const messageTypeEnum = dataView.getUint8(byteOffset++);
             /** @type {DeviceEventType} */
             const messageType = Device.EventTypes[messageTypeEnum];
-            const messageByteLength = dataView.getUint8(byteOffset++);
+            const messageByteLength = dataView.getUint16(byteOffset, true);
+            byteOffset += 2;
 
             _console.log({ messageTypeEnum, messageType, messageByteLength });
             _console.assertEnumWithError(messageType, Device.EventTypes);
 
             let _byteOffset = byteOffset;
 
-            // FILL
             switch (messageType) {
                 case "isConnected":
                     const isConnected = dataView.getUint8(_byteOffset++);
                     this.#isConnected = isConnected;
                     this.status = isConnected ? "connected" : "not connected";
+                    if (this.isConnected) {
+                        this.#requestAllDeviceInformation();
+                    }
+                    break;
+                case "deviceInformation":
+                    const _dataView = new DataView(dataView.buffer, _byteOffset + dataView.byteOffset);
+                    this.onMessageReceived("deviceInformation", _dataView);
+                    break;
+                case "batteryLevel":
+                    // FILL
+                    break;
+                case "getName":
+                    // FILL
+                    break;
+                case "getType":
+                    // FILL
+                    break;
+                case "getSensorConfiguration":
+                    // FILL
                     break;
                 default:
                     _console.error(`uncaught messageType "${messageType}"`);
@@ -144,6 +146,10 @@ class WebSocketClientConnectionManager extends ConnectionManager {
             }
             byteOffset += messageByteLength;
         }
+    }
+
+    #requestAllDeviceInformation() {
+        this.sendWebSocketMessage("deviceInformation", "batteryLevel", "getName", "getType", "getSensorConfiguration");
     }
 }
 

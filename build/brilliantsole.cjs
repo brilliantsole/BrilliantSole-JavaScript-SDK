@@ -366,7 +366,7 @@ function removeEventListeners(target, boundEventListeners) {
 
 /** @typedef {"webBluetooth" | "noble" | "webSocketClient"} ConnectionType */
 /** @typedef {"not connected" | "connecting" | "connected" | "disconnecting"} ConnectionStatus */
-/** @typedef {"manufacturerName" | "modelNumber" | "softwareRevision" | "hardwareRevision" | "firmwareRevision" | "pnpId" | "serialNumber" | "batteryLevel" | "getName" | "setName" | "getType" | "setType" | "getSensorConfiguration" | "setSensorConfiguration" | "sensorData" | "triggerVibration"} ConnectionMessageType */
+/** @typedef {"deviceInformation" | "manufacturerName" | "modelNumber" | "softwareRevision" | "hardwareRevision" | "firmwareRevision" | "pnpId" | "serialNumber" | "batteryLevel" | "getName" | "setName" | "getType" | "setType" | "getSensorConfiguration" | "setSensorConfiguration" | "sensorData" | "triggerVibration"} ConnectionMessageType */
 
 const _console$j = createConsole("ConnectionManager");
 
@@ -384,6 +384,7 @@ const _console$j = createConsole("ConnectionManager");
 class ConnectionManager {
     /** @type {ConnectionMessageType[]} */
     static #MessageTypes = [
+        "deviceInformation",
         "manufacturerName",
         "modelNumber",
         "softwareRevision",
@@ -760,6 +761,7 @@ const _console$i = createConsole("WebBluetoothConnectionManager", { log: true })
 
 
 
+
 if (isInNode) {
     const webbluetooth = require("webbluetooth");
     const { bluetooth } = webbluetooth;
@@ -786,7 +788,7 @@ class WebBluetoothConnectionManager extends ConnectionManager {
     static get isSupported() {
         return "bluetooth" in navigator$1;
     }
-    /** @type {import("../ConnectionManager.js").ConnectionType} */
+    /** @type {ConnectionType} */
     static get type() {
         return "webBluetooth";
     }
@@ -1116,11 +1118,29 @@ function objectToArrayBuffer(object) {
     return stringToArrayBuffer(JSON.stringify(object));
 }
 
+// PARSING
+
+const textDecoder = new TextDecoder();
+
+/**
+ * @param {DataView} dataView
+ * @param {number} byteOffset
+ */
+function parseStringFromDataView(dataView, byteOffset = 0) {
+    const stringLength = dataView.getUint8(byteOffset++);
+    const string = textDecoder.decode(
+        dataView.buffer.slice(dataView.byteOffset + byteOffset, dataView.byteOffset + byteOffset + stringLength)
+    );
+    byteOffset += stringLength;
+    return { string, byteOffset };
+}
+
 const _console$h = createConsole("NobleConnectionManager", { log: true });
 
 if (isInNode) {
     require("@abandonware/noble");
 }
+
 
 
 
@@ -1135,7 +1155,7 @@ class NobleConnectionManager extends ConnectionManager {
     static get isSupported() {
         return isInNode;
     }
-    /** @type {import("../ConnectionManager.js").ConnectionType} */
+    /** @type {ConnectionType} */
     static get type() {
         return "noble";
     }
@@ -3076,6 +3096,13 @@ class Device {
     #onConnectionMessageReceived(messageType, dataView) {
         //_console.log({ messageType, dataView });
         switch (messageType) {
+            case "deviceInformation":
+                const { string: deviceInformationString } = parseStringFromDataView(dataView);
+                _console$b.log({ deviceInformationString });
+                const deviceInformation = JSON.parse(deviceInformationString);
+                _console$b.log({ deviceInformation });
+                this.#updateDeviceInformation(deviceInformation);
+                break;
             case "manufacturerName":
                 const manufacturerName = this.#textDecoder.decode(dataView);
                 _console$b.log({ manufacturerName });
@@ -4431,7 +4458,9 @@ class DevicePairSensorDataManager {
         this.pressureSensorDataManager.resetPressureRange();
     }
 
-    /** @param {import("../Device.js").DeviceEvent} event  */
+    
+
+    /** @param {DeviceEvent} event */
     onDeviceSensorData(event) {
         const { timestamp } = event.message;
 
@@ -4703,6 +4732,53 @@ const _console$3 = createConsole("ServerUtils", { log: false });
 const pingTimeout = 30_000_000;
 const reconnectTimeout = 3_000;
 
+// MESSAGING
+
+/** @typedef {Number | Number[] | ArrayBufferLike | DataView} MessageLike */
+
+/**
+ * @typedef Message
+ * @type {Object}
+ * @property {string} type
+ * @property {MessageLike|MessageLike[]?} data
+ */
+
+/**
+ * @param {string[]} enumeration
+ * @param  {...(Message|string)} messages
+ */
+function createMessage(enumeration, ...messages) {
+    _console$3.log("createMessage", ...messages);
+
+    const messageBuffers = messages.map((message) => {
+        if (typeof message == "string") {
+            message = { type: message };
+        }
+
+        if ("data" in message) {
+            if (!Array.isArray(message.data)) {
+                message.data = [message.data];
+            }
+        } else {
+            message.data = [];
+        }
+
+        const messageDataArrayBuffer = concatenateArrayBuffers(...message.data);
+        const messageDataArrayBufferByteLength = messageDataArrayBuffer.byteLength;
+
+        _console$3.assertEnumWithError(message.type, enumeration);
+        const messageTypeEnum = enumeration.indexOf(message.type);
+
+        return concatenateArrayBuffers(
+            messageTypeEnum,
+            Uint16Array.from([messageDataArrayBufferByteLength]),
+            messageDataArrayBuffer
+        );
+    });
+    _console$3.log("messageBuffers", ...messageBuffers);
+    return concatenateArrayBuffers(...messageBuffers);
+}
+
 /**
  * @typedef { "ping"
  * | "pong"
@@ -4744,35 +4820,9 @@ const ServerMessageTypes = [
     "deviceMessage",
 ];
 
-/** @typedef {Number | Number[] | ArrayBufferLike | DataView} MessageLike */
-
 /** @param {...ServerMessage|ServerMessageType} messages */
 function createServerMessage(...messages) {
-    _console$3.log("createServerMessage", ...messages);
-
-    const messageBuffers = messages.map((message) => {
-        if (typeof message == "string") {
-            message = { type: message };
-        }
-
-        if ("data" in message) {
-            if (!Array.isArray(message.data)) {
-                message.data = [message.data];
-            }
-        } else {
-            message.data = [];
-        }
-
-        const messageDataArrayBuffer = concatenateArrayBuffers(...message.data);
-        const messageDataArrayBufferByteLength = messageDataArrayBuffer.byteLength;
-
-        _console$3.assertEnumWithError(message.type, ServerMessageTypes);
-        const messageTypeEnum = ServerMessageTypes.indexOf(message.type);
-
-        return concatenateArrayBuffers(messageTypeEnum, messageDataArrayBufferByteLength, messageDataArrayBuffer);
-    });
-    _console$3.log("messageBuffers", ...messageBuffers);
-    return concatenateArrayBuffers(...messageBuffers);
+    return createMessage(ServerMessageTypes, ...messages);
 }
 
 
@@ -4786,47 +4836,24 @@ function createServerMessage(...messages) {
 
 /** @param {...DeviceEventType|ServerDeviceMessage} messages */
 function createServerDeviceMessage(...messages) {
-    _console$3.log("createServerDeviceMessage", ...messages);
-
-    const messageBuffers = messages.map((message) => {
-        if (typeof message == "string") {
-            message = { type: message };
-        }
-
-        if ("data" in message) {
-            if (!Array.isArray(message.data)) {
-                message.data = [message.data];
-            }
-        } else {
-            message.data = [];
-        }
-
-        const messageDataArrayBuffer = concatenateArrayBuffers(...message.data);
-        const messageDataArrayBufferByteLength = messageDataArrayBuffer.byteLength;
-
-        _console$3.assertEnumWithError(message.type, Device.EventTypes);
-        const messageTypeEnum = Device.EventTypes.indexOf(message.type);
-
-        _console$3.log({ messageTypeEnum, messageDataArrayBufferByteLength });
-
-        return concatenateArrayBuffers(messageTypeEnum, messageDataArrayBufferByteLength, messageDataArrayBuffer);
-    });
-    _console$3.log("messageBuffers", ...messageBuffers);
-    return concatenateArrayBuffers(...messageBuffers);
+    return createMessage(Device.EventTypes, ...messages);
 }
 
-const textDecoder = new TextDecoder();
+
 
 /**
- * @param {DataView} dataView
- * @param {number} byteOffset
+ * @typedef ClientDeviceMessage
+ * @type {Object}
+ * @property {ConnectionMessageType} type
+ * @property {MessageLike|MessageLike[]?} data
  */
-function parseStringFromDataView(dataView, byteOffset) {
-    const stringLength = dataView.getUint8(byteOffset++);
-    const string = textDecoder.decode(dataView.buffer.slice(byteOffset, byteOffset + stringLength));
-    byteOffset += stringLength;
-    return { string, byteOffset };
+
+/** @param {...ConnectionMessageType|ClientDeviceMessage} messages */
+function createClientDeviceMessage(...messages) {
+    return createMessage(ConnectionManager.MessageTypes, ...messages);
 }
+
+// STATIC MESSAGES
 
 const pingMessage = createServerMessage("ping");
 const pongMessage = createServerMessage("pong");
@@ -4843,17 +4870,14 @@ const _console$2 = createConsole("WebSocketClientConnectionManager", { log: true
 
 
 
-/**
- * @callback SendWebSocketMessageCallback
- * @param {ConnectionMessageType} messageType
- * @param {DataView|ArrayBuffer} data
- */
+
+
 
 class WebSocketClientConnectionManager extends ConnectionManager {
     static get isSupported() {
         return isInBrowser;
     }
-    /** @type {import("../ConnectionManager.js").ConnectionType} */
+    /** @type {ConnectionType} */
     static get type() {
         return "webSocketClient";
     }
@@ -4892,18 +4916,19 @@ class WebSocketClientConnectionManager extends ConnectionManager {
      */
     async sendMessage(messageType, data) {
         await super.sendMessage(...arguments);
+        // TEST
         switch (messageType) {
             case "setName":
-                // FILL
+                this.sendWebSocketMessage({ type: "setName", data });
                 break;
             case "setType":
-                // FILL
+                this.sendWebSocketMessage({ type: "setType", data });
                 break;
             case "setSensorConfiguration":
-                // FILL
+                this.sendWebSocketMessage({ type: "setSensorConfiguration", data });
                 break;
             case "triggerVibration":
-                // FILL
+                this.sendWebSocketMessage({ type: "triggerVibration", data });
                 break;
             default:
                 throw Error(`uncaught messageType "${messageType}"`);
@@ -4920,26 +4945,10 @@ class WebSocketClientConnectionManager extends ConnectionManager {
         this.connect();
     }
 
-    // WebSocket Client
-
-    // /** @type {WebSocketClient?} */
-    // #webSocketClient;
-    // get webSocketClient() {
-    //     return this.#webSocketClient;
-    // }
-    // set webSocketClient(newWebSocketClient) {
-    //     _console.assertTypeWithError(newWebSocketClient, "object");
-    //     if (this.webSocketClient == newWebSocketClient) {
-    //         _console.log("redundant webSocketClient assignment");
-    //         return;
-    //     }
-    //     _console.log({ newWebSocketClient });
-    //     this.#webSocketClient = newWebSocketClient;
-    // }
-
-    // #assertWebSocketClient() {
-    //     _console.assertWithError(this.#webSocketClient, "webSocketClient not defined");
-    // }
+    /**
+     * @callback SendWebSocketMessageCallback
+     * @param {...(ConnectionMessageType|ClientDeviceMessage)} messages
+     */
 
     /** @type {SendWebSocketMessageCallback?} */
     sendWebSocketMessage;
@@ -4957,19 +4966,38 @@ class WebSocketClientConnectionManager extends ConnectionManager {
             const messageTypeEnum = dataView.getUint8(byteOffset++);
             /** @type {DeviceEventType} */
             const messageType = Device.EventTypes[messageTypeEnum];
-            const messageByteLength = dataView.getUint8(byteOffset++);
+            const messageByteLength = dataView.getUint16(byteOffset, true);
+            byteOffset += 2;
 
             _console$2.log({ messageTypeEnum, messageType, messageByteLength });
             _console$2.assertEnumWithError(messageType, Device.EventTypes);
 
             let _byteOffset = byteOffset;
 
-            // FILL
             switch (messageType) {
                 case "isConnected":
                     const isConnected = dataView.getUint8(_byteOffset++);
                     this.#isConnected = isConnected;
                     this.status = isConnected ? "connected" : "not connected";
+                    if (this.isConnected) {
+                        this.#requestAllDeviceInformation();
+                    }
+                    break;
+                case "deviceInformation":
+                    const _dataView = new DataView(dataView.buffer, _byteOffset + dataView.byteOffset);
+                    this.onMessageReceived("deviceInformation", _dataView);
+                    break;
+                case "batteryLevel":
+                    // FILL
+                    break;
+                case "getName":
+                    // FILL
+                    break;
+                case "getType":
+                    // FILL
+                    break;
+                case "getSensorConfiguration":
+                    // FILL
                     break;
                 default:
                     _console$2.error(`uncaught messageType "${messageType}"`);
@@ -4977,6 +5005,10 @@ class WebSocketClientConnectionManager extends ConnectionManager {
             }
             byteOffset += messageByteLength;
         }
+    }
+
+    #requestAllDeviceInformation() {
+        this.sendWebSocketMessage("deviceInformation", "batteryLevel", "getName", "getType", "getSensorConfiguration");
     }
 }
 
@@ -5215,7 +5247,8 @@ class WebSocketClient {
         while (byteOffset < dataView.byteLength) {
             const messageTypeEnum = dataView.getUint8(byteOffset++);
             const messageType = ServerMessageTypes[messageTypeEnum];
-            const messageByteLength = dataView.getUint8(byteOffset++);
+            const messageByteLength = dataView.getUint16(byteOffset, true);
+            byteOffset += 2;
 
             _console$1.log({ messageTypeEnum, messageType, messageByteLength });
             _console$1.assertEnumWithError(messageType, ServerMessageTypes);
@@ -5408,11 +5441,7 @@ class WebSocketClient {
     #requestConnectionToDevice(deviceId) {
         this.#assertConnection();
         _console$1.assertTypeWithError(deviceId, "string");
-        let device = this.devices[deviceId];
-        if (!device) {
-            device = this.#createDevice(deviceId);
-            this.devices[deviceId] = device;
-        }
+        const device = this.#getOrCreateDevice(deviceId);
         device.connect();
         return device;
     }
@@ -5441,6 +5470,16 @@ class WebSocketClient {
     }
 
     /** @param {string} deviceId */
+    #getOrCreateDevice(deviceId) {
+        let device = this.#devices[deviceId];
+        if (!device) {
+            device = this.#createDevice(deviceId);
+            this.#devices[deviceId] = device;
+        }
+        return device;
+    }
+
+    /** @param {string} deviceId */
     disconnectFromDevice(deviceId) {
         this.#requestDisconnectionFromDevice(deviceId);
     }
@@ -5463,27 +5502,26 @@ class WebSocketClient {
     }
 
     
+    
 
     /**
      * @param {string} deviceId
-     * @param {ConnectionMessageType} messageType
-     * @param {DataView|ArrayBuffer} data
+     * @param {...(ConnectionMessageType|ClientDeviceMessage)} messages
      */
-    #sendDeviceMessage(deviceId, messageType, data) {
+    #sendDeviceMessage(deviceId, ...messages) {
         this.#assertConnection();
-        this.webSocket.send(this.#createDeviceMessage(deviceId, messageType, data));
+        this.webSocket.send(this.#createDeviceMessage(deviceId, ...messages));
     }
 
     /**
      * @param {string} deviceId
-     * @param {ConnectionMessageType} messageType
-     * @param {DataView|ArrayBuffer} data
+     * @param {...(ConnectionMessageType|ClientDeviceMessage)} messages
      */
-    #createDeviceMessage(deviceId, messageType, data) {
-        _console$1.assertTypeWithError(deviceId, "string");
-        _console$1.assertEnumWithError(messageType, WebSocketClientConnectionManager.MessageTypes);
-        const messageTypeEnum = WebSocketClientConnectionManager.MessageTypes.indexOf(messageType);
-        return createServerMessage({ type: "deviceMessage", data: [deviceId, messageTypeEnum, data] });
+    #createDeviceMessage(deviceId, ...messages) {
+        return createServerMessage({
+            type: "deviceMessage",
+            data: [deviceId, createClientDeviceMessage(...messages)],
+        });
     }
 
     // DEVICES
@@ -5668,7 +5706,8 @@ class WebSocketServer {
         while (byteOffset < dataView.byteLength) {
             const messageTypeEnum = dataView.getUint8(byteOffset++);
             const messageType = ServerMessageTypes[messageTypeEnum];
-            const messageByteLength = dataView.getUint8(byteOffset++);
+            const messageByteLength = dataView.getUint16(byteOffset, true);
+            byteOffset += 2;
 
             _console.log({ messageTypeEnum, messageType, messageByteLength });
             _console.assertWithError(messageType, `invalid messageTypeEnum ${messageTypeEnum}`);
@@ -5706,11 +5745,11 @@ class WebSocketServer {
                     {
                         const { string: deviceId } = parseStringFromDataView(dataView, _byteOffset);
                         const device = Device.ConnectedDevices.find((device) => device.id == deviceId);
-                        if (device) {
-                            device.disconnect();
-                        } else {
+                        if (!device) {
                             _console.error(`no device found with id ${deviceId}`);
+                            break;
                         }
+                        device.disconnect();
                     }
                     break;
                 case "connectedDevices":
@@ -5718,11 +5757,22 @@ class WebSocketServer {
                     break;
                 case "deviceMessage":
                     {
-                        const { string: deviceId } = parseStringFromDataView(dataView, _byteOffset);
+                        const { string: deviceId, byteOffset: _newByteOffset } = parseStringFromDataView(
+                            dataView,
+                            _byteOffset
+                        );
+                        _byteOffset = _newByteOffset;
                         const device = Device.ConnectedDevices.find((device) => device.id == deviceId);
-                        if (device) ; else {
+                        if (!device) {
                             _console.error(`no device found with id ${deviceId}`);
+                            break;
                         }
+                        const _dataView = new DataView(
+                            dataView.buffer,
+                            _byteOffset,
+                            messageByteLength - (_byteOffset - byteOffset)
+                        );
+                        this.#onDeviceMessage(device, _dataView, client);
                     }
                     break;
                 default:
@@ -5853,7 +5903,7 @@ class WebSocketServer {
 
     /**
      * @param {Device} device
-     * @param {...ServerDeviceMessage} messages
+     * @param {...DeviceEventType|ServerDeviceMessage} messages
      */
     #createDeviceMessage(device, ...messages) {
         return createServerMessage({
@@ -5864,22 +5914,111 @@ class WebSocketServer {
 
     // DEVICE LISTENERS
     #boundDeviceListeners = {
+        batteryLevel: this.#onDeviceBatteryLevel.bind(this),
         sensorData: this.#onDeviceSensorData.bind(this),
     };
-
-    
-
-    /** @param {DeviceEvent} deviceEvent */
-    #onDeviceSensorData(deviceEvent) {
-        /** @type {Device} */
-        deviceEvent.target;
-        _console.log("onDeviceSensorData", deviceEvent.message);
-        // FILL
-    }
 
     /** @param {Device} device */
     #createDeviceInformationMessage(device) {
         return this.#createDeviceMessage(device, { type: "deviceInformation", data: device.deviceInformation });
+    }
+
+    
+
+    /** @param {DeviceEvent} deviceEvent */
+    #onDeviceBatteryLevel(deviceEvent) {
+        const device = deviceEvent.target;
+        _console.log("onDeviceBatteryLevel", deviceEvent.message);
+        this.#broadcastMessage(this.#createDeviceBatteryLevelMessage(device));
+    }
+    /** @param {Device} device */
+    #createDeviceBatteryLevelMessage(device) {
+        return this.#createDeviceMessage(device, { type: "batteryLevel", data: device.batteryLevel });
+    }
+
+    /** @param {DeviceEvent} deviceEvent */
+    #onDeviceSensorData(deviceEvent) {
+        const device = deviceEvent.target;
+        _console.log("onDeviceSensorData", deviceEvent.message);
+        this.#broadcastMessage(this.#createDeviceSensorDataMessage(device));
+    }
+    /**
+     * @param {Device} device
+     * @param {DeviceEvent} deviceEvent
+     */
+    #createDeviceSensorDataMessage(device, deviceEvent) {
+        return this.#createDeviceMessage(device, { type: "sensorData", data: deviceEvent.message });
+    }
+
+    /** @param {Device} device */
+    #createDeviceGetNameMessage(device) {
+        return this.#createDeviceMessage(device, { type: "getName", data: device.name });
+    }
+
+    // DEVICE MESSAGING
+
+    /**
+     * @param {Device} device
+     * @param {DataView} dataView
+     * @param {ws.WebSocket} client
+     */
+    #onDeviceMessage(device, dataView, client) {
+        _console.log("onDeviceMessage", device.id, dataView);
+        let byteOffset = 0;
+
+        /** @type {(DeviceEventType | ServerDeviceMessage)[]} */
+        let responseMessages = [];
+
+        while (byteOffset < dataView.byteLength) {
+            const messageTypeEnum = dataView.getUint8(byteOffset++);
+            const messageType = ConnectionManager.MessageTypes[messageTypeEnum];
+            const messageByteLength = dataView.getUint16(byteOffset, true);
+            byteOffset += 2;
+
+            _console.log({ messageTypeEnum, messageType, messageByteLength });
+            _console.assertWithError(messageType, `invalid messageTypeEnum ${messageTypeEnum}`);
+
+            switch (messageType) {
+                case "batteryLevel":
+                    responseMessages.push({ type: "batteryLevel", data: device.batteryLevel });
+                    break;
+                case "deviceInformation":
+                    responseMessages.push({ type: "deviceInformation", data: device.deviceInformation });
+                    break;
+                case "getName":
+                    responseMessages.push({ type: "getName", data: device.name });
+                    break;
+                case "setName":
+                    // FILL
+                    break;
+                case "getType":
+                    responseMessages.push({ type: "getType", data: device.type });
+                    break;
+                case "setType":
+                    // FILL
+
+                    break;
+                case "getSensorConfiguration":
+                    responseMessages.push({ type: "getSensorConfiguration", data: device.sensorConfiguration });
+                    break;
+                case "setSensorConfiguration":
+                    // FILL
+                    break;
+                case "triggerVibration":
+                    // FILL
+                    break;
+                default:
+                    _console.error(`uncaught messageType "${messageType}"`);
+                    break;
+            }
+
+            byteOffset += messageByteLength;
+        }
+
+        _console.log({ responseMessages });
+        if (responseMessages.length > 0) {
+            client.send(this.#createDeviceMessage(device, ...responseMessages));
+        }
     }
 }
 

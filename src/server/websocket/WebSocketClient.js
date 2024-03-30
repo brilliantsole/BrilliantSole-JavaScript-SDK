@@ -11,8 +11,10 @@ import {
     stopScanRequestMessage,
     discoveredDevicesMessage,
     createServerMessage,
-    parseStringFromDataView,
+    createServerDeviceMessage,
+    createClientDeviceMessage,
 } from "../ServerUtils.js";
+import { parseStringFromDataView } from "../../utils/ArrayBufferUtils.js";
 import { addEventListeners, removeEventListeners } from "../../utils/EventDispatcher.js";
 import Timer from "../../utils/Timer.js";
 import EventDispatcher from "../../utils/EventDispatcher.js";
@@ -254,7 +256,8 @@ class WebSocketClient {
         while (byteOffset < dataView.byteLength) {
             const messageTypeEnum = dataView.getUint8(byteOffset++);
             const messageType = ServerMessageTypes[messageTypeEnum];
-            const messageByteLength = dataView.getUint8(byteOffset++);
+            const messageByteLength = dataView.getUint16(byteOffset, true);
+            byteOffset += 2;
 
             _console.log({ messageTypeEnum, messageType, messageByteLength });
             _console.assertEnumWithError(messageType, ServerMessageTypes);
@@ -447,11 +450,7 @@ class WebSocketClient {
     #requestConnectionToDevice(deviceId) {
         this.#assertConnection();
         _console.assertTypeWithError(deviceId, "string");
-        let device = this.devices[deviceId];
-        if (!device) {
-            device = this.#createDevice(deviceId);
-            this.devices[deviceId] = device;
-        }
+        const device = this.#getOrCreateDevice(deviceId);
         device.connect();
         return device;
     }
@@ -480,6 +479,16 @@ class WebSocketClient {
     }
 
     /** @param {string} deviceId */
+    #getOrCreateDevice(deviceId) {
+        let device = this.#devices[deviceId];
+        if (!device) {
+            device = this.#createDevice(deviceId);
+            this.#devices[deviceId] = device;
+        }
+        return device;
+    }
+
+    /** @param {string} deviceId */
     disconnectFromDevice(deviceId) {
         this.#requestDisconnectionFromDevice(deviceId);
     }
@@ -502,27 +511,26 @@ class WebSocketClient {
     }
 
     /** @typedef {import("../../connection/ConnectionManager.js").ConnectionMessageType} ConnectionMessageType */
+    /** @typedef {import("../ServerUtils.js").ClientDeviceMessage} ClientDeviceMessage */
 
     /**
      * @param {string} deviceId
-     * @param {ConnectionMessageType} messageType
-     * @param {DataView|ArrayBuffer} data
+     * @param {...(ConnectionMessageType|ClientDeviceMessage)} messages
      */
-    #sendDeviceMessage(deviceId, messageType, data) {
+    #sendDeviceMessage(deviceId, ...messages) {
         this.#assertConnection();
-        this.webSocket.send(this.#createDeviceMessage(deviceId, messageType, data));
+        this.webSocket.send(this.#createDeviceMessage(deviceId, ...messages));
     }
 
     /**
      * @param {string} deviceId
-     * @param {ConnectionMessageType} messageType
-     * @param {DataView|ArrayBuffer} data
+     * @param {...(ConnectionMessageType|ClientDeviceMessage)} messages
      */
-    #createDeviceMessage(deviceId, messageType, data) {
-        _console.assertTypeWithError(deviceId, "string");
-        _console.assertEnumWithError(messageType, WebSocketClientConnectionManager.MessageTypes);
-        const messageTypeEnum = WebSocketClientConnectionManager.MessageTypes.indexOf(messageType);
-        return createServerMessage({ type: "deviceMessage", data: [deviceId, messageTypeEnum, data] });
+    #createDeviceMessage(deviceId, ...messages) {
+        return createServerMessage({
+            type: "deviceMessage",
+            data: [deviceId, createClientDeviceMessage(...messages)],
+        });
     }
 
     // DEVICES
