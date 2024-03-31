@@ -119,26 +119,30 @@ class WebSocketClientConnectionManager extends ConnectionManager {
                             this.#requestAllDeviceInformation();
                         }
                         break;
-                    case "deviceInformation":
-                        this.onMessageReceived("deviceInformation", dataView, true);
+                    case "manufacturerName":
+                    case "modelNumber":
+                    case "softwareRevision":
+                    case "hardwareRevision":
+                    case "firmwareRevision":
+                        this.onMessageReceived(messageType, sliceDataView(dataView, byteOffset + 1));
+                        break;
+                    case "pnpId":
+                        this.onMessageReceived("pnpId", dataView);
                         break;
                     case "batteryLevel":
                         this.onMessageReceived("batteryLevel", dataView);
                         break;
                     case "getName":
-                        {
-                            const _dataView = sliceDataView(dataView, byteOffset + 1);
-                            this.onMessageReceived("getName", _dataView);
-                        }
+                        this.onMessageReceived("getName", sliceDataView(dataView, byteOffset + 1));
                         break;
                     case "getType":
                         this.onMessageReceived("getType", dataView);
                         break;
                     case "getSensorConfiguration":
-                        this.onMessageReceived("getSensorConfiguration", dataView, true);
+                        this.onMessageReceived("getSensorConfiguration", dataView);
                         break;
                     case "sensorData":
-                        this.onMessageReceived("sensorData", dataView, true);
+                        this.onMessageReceived("sensorData", dataView);
                         break;
                     default:
                         _console.error(`uncaught messageType "${messageType}"`);

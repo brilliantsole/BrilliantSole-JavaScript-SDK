@@ -7,6 +7,7 @@ import {
     ServerMessageTypes,
     createServerMessage,
     createServerDeviceMessage,
+    pongMessage,
 } from "../ServerUtils.js";
 import { dataToArrayBuffer } from "../../utils/ArrayBufferUtils.js";
 import Timer from "../../utils/Timer.js";
@@ -196,7 +197,7 @@ class WebSocketServer {
                 const messageType = _messageType;
                 switch (messageType) {
                     case "ping":
-                        client.send(pongMessageBuffer);
+                        client.send(pongMessage);
                         break;
                     case "pong":
                         break;
@@ -233,7 +234,7 @@ class WebSocketServer {
                         }
                         break;
                     case "connectedDevices":
-                        // FILL - include deviceType, deviceInformation, batteryLevel...
+                        client.send(this.#connectedDevicesMessage);
                         break;
                     case "deviceMessage":
                         {
@@ -333,6 +334,13 @@ class WebSocketServer {
         return createServerMessage({ type: "expiredDiscoveredDevice", data: discoveredDevice.id });
     }
 
+    get #connectedDevicesMessage() {
+        return createServerMessage({
+            type: "connectedDevices",
+            data: Device.ConnectedDevices.map((device) => device.id),
+        });
+    }
+
     // DEVICE CLASS LISTENERS
     #boundDeviceClassListeners = {
         deviceConnected: this.#onDeviceConnected.bind(this),
@@ -387,12 +395,39 @@ class WebSocketServer {
     // DEVICE LISTENERS
     #boundDeviceListeners = {
         batteryLevel: this.#onDeviceBatteryLevel.bind(this),
-        sensorData: this.#onDeviceSensorData.bind(this),
+        connectionMessage: this.#onDeviceConnectionMessage.bind(this),
     };
 
-    /** @param {Device} device */
-    #createDeviceInformationMessage(device) {
-        return this.#createDeviceMessage(device, { type: "deviceInformation", data: device.deviceInformation });
+    /**
+     * @param {Device} device
+     * @returns {ServerDeviceMessage[]}
+     */
+    #createDeviceInformationMessages(device) {
+        const { manufacturerName, modelNumber, softwareRevision, hardwareRevision, firmwareRevision, pnpId } =
+            device.deviceInformation;
+
+        const pnpIdData = new DataView(new ArrayBuffer(7));
+        pnpIdData.setUint8(0, pnpId.source == "Bluetooth" ? 1 : 0);
+        pnpIdData.setUint16(1, pnpId.vendorId, true);
+        pnpIdData.setUint16(3, pnpId.productId, true);
+        pnpIdData.setUint16(5, pnpId.productVersion, true);
+
+        return [
+            { type: "manufacturerName", data: manufacturerName },
+            { type: "modelNumber", data: modelNumber },
+            { type: "softwareRevision", data: softwareRevision },
+            { type: "hardwareRevision", data: hardwareRevision },
+            { type: "firmwareRevision", data: firmwareRevision },
+            { type: "pnpId", data: pnpIdData },
+        ];
+    }
+
+    /**
+     * @param {Device} device
+     * @returns {ServerDeviceMessage}
+     */
+    #createDeviceSensorConfigurationMessage(device) {
+        return { type: "getSensorConfiguration", data: device.sensorConfigurationData };
     }
 
     /** @typedef {import("../../Device.js").DeviceEvent} DeviceEvent */
@@ -408,23 +443,33 @@ class WebSocketServer {
         return this.#createDeviceMessage(device, { type: "batteryLevel", data: device.batteryLevel });
     }
 
+    /** @typedef {import("../../connection/ConnectionManager.js").ConnectionMessageType} ConnectionMessageType */
+
     /** @param {DeviceEvent} deviceEvent */
-    #onDeviceSensorData(deviceEvent) {
+    #onDeviceConnectionMessage(deviceEvent) {
         const device = deviceEvent.target;
-        _console.log("onDeviceSensorData", deviceEvent.message);
-        this.#broadcastMessage(this.#createDeviceSensorDataMessage(device));
-    }
-    /**
-     * @param {Device} device
-     * @param {DeviceEvent} deviceEvent
-     */
-    #createDeviceSensorDataMessage(device, deviceEvent) {
-        return this.#createDeviceMessage(device, { type: "sensorData", data: deviceEvent.message });
+        _console.log("onDeviceConnectionMessage", deviceEvent.message);
+
+        /** @type {ConnectionMessageType} */
+        const messageType = deviceEvent.message.messageType;
+        /** @type {DataView} */
+        const dataView = deviceEvent.message.dataView;
+
+        switch (messageType) {
+            case "sensorData":
+                this.#broadcastMessage(this.#createDeviceSensorDataMessage(device, dataView));
+                break;
+            default:
+                break;
+        }
     }
 
-    /** @param {Device} device */
-    #createDeviceGetNameMessage(device) {
-        return this.#createDeviceMessage(device, { type: "getName", data: device.name });
+    /**
+     * @param {Device} device
+     * @param {DataView} dataView
+     */
+    #createDeviceSensorDataMessage(device, dataView) {
+        return this.#createDeviceMessage(device, { type: "sensorData", data: dataView });
     }
 
     // DEVICE MESSAGING
@@ -451,7 +496,7 @@ class WebSocketServer {
                         responseMessages.push({ type: "batteryLevel", data: device.batteryLevel });
                         break;
                     case "deviceInformation":
-                        responseMessages.push({ type: "deviceInformation", data: device.deviceInformation });
+                        responseMessages.push(...this.#createDeviceInformationMessages(device));
                         break;
                     case "getName":
                         responseMessages.push({ type: "getName", data: device.name });
@@ -466,7 +511,7 @@ class WebSocketServer {
                         // FILL
                         break;
                     case "getSensorConfiguration":
-                        responseMessages.push({ type: "getSensorConfiguration", data: device.sensorConfiguration });
+                        responseMessages.push(this.#createDeviceSensorConfigurationMessage(device));
                         break;
                     case "setSensorConfiguration":
                         // FILL

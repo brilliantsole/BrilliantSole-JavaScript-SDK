@@ -204,4 +204,16 @@ client.addEventListener("isScanning", () => {
     }
 });
 
-// CONNECTED DEVICES
+// AVAILABLE DEVICES
+
+/** @type {HTMLTemplateElement} */
+const availableDeviceTemplate = document.getElementById("availableDeviceTemplate");
+const availableDevicesContainer = document.getElementById("availableDevices");
+/** @type {Object.<string, HTMLElement>} */
+let availableDeviceContainers = {};
+
+BS.Device.AddEventListener("availableDevices", (event) => {
+    /** @type {Device[]} */
+    const availableDevices = event.message.devices;
+    console.log({ availableDevices });
+});

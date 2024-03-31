@@ -84,17 +84,22 @@ class SensorConfigurationManager {
     }
 
     /** @param {sensorRate} number */
-    #assertValidSensorRate(sensorRate) {
+    static #AssertValidSensorRate(sensorRate) {
         _console.assertTypeWithError(sensorRate, "number");
         _console.assertWithError(sensorRate >= 0, `sensorRate must be 0 or greater (got ${sensorRate})`);
         _console.assertWithError(
-            sensorRate < this.maxSensorRate,
+            sensorRate < this.MaxSensorRate,
             `sensorRate must be 0 or greater (got ${sensorRate})`
         );
         _console.assertWithError(
-            sensorRate % this.sensorRateStep == 0,
-            `sensorRate must be multiple of ${this.sensorRateStep}`
+            sensorRate % this.SensorRateStep == 0,
+            `sensorRate must be multiple of ${this.SensorRateStep}`
         );
+    }
+
+    /** @param {sensorRate} number */
+    #assertValidSensorRate(sensorRate) {
+        SensorConfigurationManager.#AssertValidSensorRate(sensorRate);
     }
 
     /** @param {SensorConfiguration} sensorConfiguration */

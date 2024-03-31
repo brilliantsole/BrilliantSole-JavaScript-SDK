@@ -14,7 +14,7 @@ const _console = createConsole("Device", { log: true });
 
 /** @typedef {import("./connection/ConnectionManager.js").ConnectionMessageType} ConnectionMessageType */
 /** @typedef {import("./sensor/SensorDataManager.js").SensorType} SensorType */
-/** @typedef {"connectionStatus" | ConnectionStatus | "isConnected" | ConnectionMessageType | "deviceInformation" | SensorType} DeviceEventType */
+/** @typedef {"connectionStatus" | ConnectionStatus | "isConnected" | ConnectionMessageType | "deviceInformation" | SensorType | "connectionMessage"} DeviceEventType */
 
 /** @typedef {"deviceConnected" | "deviceDisconnected" | "deviceIsConnected" | "availableDevices"} StaticDeviceEventType */
 
@@ -160,6 +160,8 @@ class Device {
         "gameRotation",
         "rotation",
         "barometer",
+
+        "connectionMessage",
     ];
     static get EventTypes() {
         return this.#EventTypes;
@@ -340,18 +342,10 @@ class Device {
     /**
      * @param {ConnectionMessageType} messageType
      * @param {DataView} dataView
-     * @param {boolean} isJSON for pre-parsed messages, e.g. WebSocketClientConnectionManager
      */
-    #onConnectionMessageReceived(messageType, dataView, isJSON = false) {
+    #onConnectionMessageReceived(messageType, dataView) {
         //_console.log({ messageType, dataView });
         switch (messageType) {
-            case "deviceInformation":
-                const { string: deviceInformationString } = parseStringFromDataView(dataView);
-                _console.log({ deviceInformationString });
-                const deviceInformation = JSON.parse(deviceInformationString);
-                _console.log({ deviceInformation });
-                this.#updateDeviceInformation(deviceInformation);
-                break;
             case "manufacturerName":
                 const manufacturerName = this.#textDecoder.decode(dataView);
                 _console.log({ manufacturerName });
@@ -381,11 +375,11 @@ class Device {
                 /** @type {PnpId} */
                 const pnpId = {
                     source: dataView.getUint8(0) === 1 ? "Bluetooth" : "USB",
-                    productId: dataView.getUint8(3) | (dataView.getUint8(4) << 8),
-                    productVersion: dataView.getUint8(5) | (dataView.getUint8(6) << 8),
+                    productId: dataView.getUint16(3, true),
+                    productVersion: dataView.getUint16(5, true),
                 };
                 if (pnpId.source == "Bluetooth") {
-                    pnpId.vendorId = dataView.getUint8(1) | (dataView.getUint8(2) << 8);
+                    pnpId.vendorId = dataView.getUint16(1, true);
                 } else {
                     // no need to implement
                 }
@@ -417,34 +411,20 @@ class Device {
                 break;
 
             case "getSensorConfiguration":
-                if (isJSON) {
-                    const { string: sensorConfigurationString } = parseStringFromDataView(dataView);
-                    _console.log({ sensorConfigurationString });
-                    const sensorConfiguration = JSON.parse(sensorConfigurationString);
-                    _console.log({ sensorConfiguration });
-                    this.#updateSensorConfiguration(sensorConfiguration);
-                } else {
-                    const sensorConfiguration = this.#sensorConfigurationManager.parse(dataView);
-                    _console.log({ sensorConfiguration });
-                    this.#updateSensorConfiguration(sensorConfiguration);
-                }
+                const sensorConfiguration = this.#sensorConfigurationManager.parse(dataView);
+                _console.log({ sensorConfiguration });
+                this.#updateSensorConfiguration(sensorConfiguration);
                 break;
 
             case "sensorData":
-                if (isJSON) {
-                    const { string: sensorDataString } = parseStringFromDataView(dataView);
-                    _console.log({ sensorDataString });
-                    const sensorData = JSON.parse(sensorDataString);
-                    _console.log({ sensorData });
-                    // FILL
-                } else {
-                    this.#sensorDataManager.parse(dataView);
-                }
+                this.#sensorDataManager.parse(dataView);
                 break;
 
             default:
                 throw Error(`uncaught messageType ${messageType}`);
         }
+
+        this.#dispatchEvent({ type: "connectionMessage", message: { messageType, dataView } });
     }
 
     // TEXT ENCODER/DECODER
@@ -665,6 +645,9 @@ class Device {
     #sensorConfiguration;
     get sensorConfiguration() {
         return this.#sensorConfiguration;
+    }
+    get sensorConfigurationData() {
+        return this.#sensorConfigurationManager.createData(this.sensorConfiguration);
     }
 
     static get MaxSensorRate() {
