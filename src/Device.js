@@ -344,7 +344,7 @@ class Device {
      * @param {DataView} dataView
      */
     #onConnectionMessageReceived(messageType, dataView) {
-        //_console.log({ messageType, dataView });
+        _console.log({ messageType, dataView });
         switch (messageType) {
             case "manufacturerName":
                 const manufacturerName = this.#textDecoder.decode(dataView);
@@ -424,8 +424,12 @@ class Device {
                 throw Error(`uncaught messageType ${messageType}`);
         }
 
+        this.latestConnectionMessage.set(messageType, dataView);
         this.#dispatchEvent({ type: "connectionMessage", message: { messageType, dataView } });
     }
+
+    /** @type {Map.<ConnectionMessageType, DataView>} */
+    latestConnectionMessage = new Map();
 
     // TEXT ENCODER/DECODER
 

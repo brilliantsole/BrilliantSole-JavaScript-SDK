@@ -403,23 +403,29 @@ class WebSocketServer {
      * @returns {ServerDeviceMessage[]}
      */
     #createDeviceInformationMessages(device) {
-        const { manufacturerName, modelNumber, softwareRevision, hardwareRevision, firmwareRevision, pnpId } =
-            device.deviceInformation;
+        /** @type {ServerDeviceMessage[]} */
+        const deviceInformationMessages = [];
+        for (const type in device.deviceInformation) {
+            deviceInformationMessages.push({ type, data: device.latestConnectionMessage.get(type) });
+        }
+        _console.log("deviceInformationMessages", deviceInformationMessages);
+        return deviceInformationMessages;
+    }
 
-        const pnpIdData = new DataView(new ArrayBuffer(7));
-        pnpIdData.setUint8(0, pnpId.source == "Bluetooth" ? 1 : 0);
-        pnpIdData.setUint16(1, pnpId.vendorId, true);
-        pnpIdData.setUint16(3, pnpId.productId, true);
-        pnpIdData.setUint16(5, pnpId.productVersion, true);
+    /**
+     * @param {Device} device
+     * @returns {ServerDeviceMessage}
+     */
+    #createDeviceNameMessage(device) {
+        return { type: "getName", data: device.latestConnectionMessage.get("getName") };
+    }
 
-        return [
-            { type: "manufacturerName", data: manufacturerName },
-            { type: "modelNumber", data: modelNumber },
-            { type: "softwareRevision", data: softwareRevision },
-            { type: "hardwareRevision", data: hardwareRevision },
-            { type: "firmwareRevision", data: firmwareRevision },
-            { type: "pnpId", data: pnpIdData },
-        ];
+    /**
+     * @param {Device} device
+     * @returns {ServerDeviceMessage}
+     */
+    #createDeviceTypeMessage(device) {
+        return { type: "getType", data: device.latestConnectionMessage.get("getType") };
     }
 
     /**
@@ -427,7 +433,7 @@ class WebSocketServer {
      * @returns {ServerDeviceMessage}
      */
     #createDeviceSensorConfigurationMessage(device) {
-        return { type: "getSensorConfiguration", data: device.sensorConfigurationData };
+        return { type: "getSensorConfiguration", data: device.latestConnectionMessage.get("getSensorConfiguration") };
     }
 
     /** @typedef {import("../../Device.js").DeviceEvent} DeviceEvent */
@@ -440,7 +446,10 @@ class WebSocketServer {
     }
     /** @param {Device} device */
     #createDeviceBatteryLevelMessage(device) {
-        return this.#createDeviceMessage(device, { type: "batteryLevel", data: device.batteryLevel });
+        return this.#createDeviceMessage(device, {
+            type: "batteryLevel",
+            data: device.latestConnectionMessage.get("batteryLevel"),
+        });
     }
 
     /** @typedef {import("../../connection/ConnectionManager.js").ConnectionMessageType} ConnectionMessageType */
@@ -499,13 +508,13 @@ class WebSocketServer {
                         responseMessages.push(...this.#createDeviceInformationMessages(device));
                         break;
                     case "getName":
-                        responseMessages.push({ type: "getName", data: device.name });
+                        responseMessages.push(this.#createDeviceNameMessage(device));
                         break;
                     case "setName":
                         // FILL
                         break;
                     case "getType":
-                        responseMessages.push({ type: "getType", data: device.typeEnum });
+                        responseMessages.push(this.#createDeviceTypeMessage(device));
                         break;
                     case "setType":
                         // FILL

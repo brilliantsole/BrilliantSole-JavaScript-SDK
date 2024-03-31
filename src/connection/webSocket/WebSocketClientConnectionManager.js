@@ -124,25 +124,13 @@ class WebSocketClientConnectionManager extends ConnectionManager {
                     case "softwareRevision":
                     case "hardwareRevision":
                     case "firmwareRevision":
-                        this.onMessageReceived(messageType, sliceDataView(dataView, byteOffset + 1));
-                        break;
                     case "pnpId":
-                        this.onMessageReceived("pnpId", dataView);
-                        break;
                     case "batteryLevel":
-                        this.onMessageReceived("batteryLevel", dataView);
-                        break;
                     case "getName":
-                        this.onMessageReceived("getName", sliceDataView(dataView, byteOffset + 1));
-                        break;
                     case "getType":
-                        this.onMessageReceived("getType", dataView);
-                        break;
                     case "getSensorConfiguration":
-                        this.onMessageReceived("getSensorConfiguration", dataView);
-                        break;
                     case "sensorData":
-                        this.onMessageReceived("sensorData", dataView);
+                        this.onMessageReceived(messageType, dataView);
                         break;
                     default:
                         _console.error(`uncaught messageType "${messageType}"`);
