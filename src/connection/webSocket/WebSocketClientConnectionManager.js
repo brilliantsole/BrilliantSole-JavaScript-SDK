@@ -2,7 +2,7 @@ import { createConsole } from "../../utils/Console.js";
 import { isInBrowser } from "../../utils/environment.js";
 import ConnectionManager from "../ConnectionManager.js";
 import Device from "../../Device.js";
-import { parseStringFromDataView } from "../../utils/ArrayBufferUtils.js";
+import { parseMessage } from "../../utils/ParseUtils.js";
 
 const _console = createConsole("WebSocketClientConnectionManager", { log: true });
 
@@ -101,51 +101,47 @@ class WebSocketClientConnectionManager extends ConnectionManager {
     onWebSocketMessage(dataView) {
         _console.log({ dataView });
 
-        let byteOffset = 0;
+        parseMessage(
+            dataView,
+            Device.EventTypes,
+            (_messageType, dataView) => {
+                /** @type {DeviceEventType} */
+                const messageType = _messageType;
 
-        while (byteOffset < dataView.byteLength) {
-            const messageTypeEnum = dataView.getUint8(byteOffset++);
-            /** @type {DeviceEventType} */
-            const messageType = Device.EventTypes[messageTypeEnum];
-            const messageByteLength = dataView.getUint16(byteOffset, true);
-            byteOffset += 2;
+                let byteOffset = 0;
 
-            _console.log({ messageTypeEnum, messageType, messageByteLength });
-            _console.assertEnumWithError(messageType, Device.EventTypes);
-
-            let _byteOffset = byteOffset;
-
-            switch (messageType) {
-                case "isConnected":
-                    const isConnected = dataView.getUint8(_byteOffset++);
-                    this.#isConnected = isConnected;
-                    this.status = isConnected ? "connected" : "not connected";
-                    if (this.isConnected) {
-                        this.#requestAllDeviceInformation();
-                    }
-                    break;
-                case "deviceInformation":
-                    const _dataView = new DataView(dataView.buffer, _byteOffset + dataView.byteOffset);
-                    this.onMessageReceived("deviceInformation", _dataView);
-                    break;
-                case "batteryLevel":
-                    // FILL
-                    break;
-                case "getName":
-                    // FILL
-                    break;
-                case "getType":
-                    // FILL
-                    break;
-                case "getSensorConfiguration":
-                    // FILL
-                    break;
-                default:
-                    _console.error(`uncaught messageType "${messageType}"`);
-                    break;
-            }
-            byteOffset += messageByteLength;
-        }
+                switch (messageType) {
+                    case "isConnected":
+                        const isConnected = dataView.getUint8(byteOffset++);
+                        this.#isConnected = isConnected;
+                        this.status = isConnected ? "connected" : "not connected";
+                        if (this.isConnected) {
+                            this.#requestAllDeviceInformation();
+                        }
+                        break;
+                    case "deviceInformation":
+                        const _dataView = new DataView(dataView.buffer, byteOffset + dataView.byteOffset);
+                        this.onMessageReceived("deviceInformation", _dataView);
+                        break;
+                    case "batteryLevel":
+                        // FILL
+                        break;
+                    case "getName":
+                        // FILL
+                        break;
+                    case "getType":
+                        // FILL
+                        break;
+                    case "getSensorConfiguration":
+                        // FILL
+                        break;
+                    default:
+                        _console.error(`uncaught messageType "${messageType}"`);
+                        break;
+                }
+            },
+            true
+        );
     }
 
     #requestAllDeviceInformation() {

@@ -14,7 +14,7 @@ import {
     createServerDeviceMessage,
     createClientDeviceMessage,
 } from "../ServerUtils.js";
-import { parseStringFromDataView } from "../../utils/ArrayBufferUtils.js";
+import { parseStringFromDataView } from "../../utils/ParseUtils.js";
 import { addEventListeners, removeEventListeners } from "../../utils/EventDispatcher.js";
 import Timer from "../../utils/Timer.js";
 import EventDispatcher from "../../utils/EventDispatcher.js";

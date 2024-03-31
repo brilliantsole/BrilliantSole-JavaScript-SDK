@@ -3,6 +3,7 @@ import { Uint16Max } from "../utils/MathUtils.js";
 import PressureSensorDataManager from "./PressureSensorDataManager.js";
 import MotionSensorDataManager from "./MotionSensorDataManager.js";
 import BarometerSensorDataManager from "./BarometerSensorDataManager.js";
+import { parseMessage } from "../utils/ParseUtils.js";
 
 const _console = createConsole("SensorDataManager", { log: false });
 
@@ -104,16 +105,15 @@ class SensorDataManager {
         const timestamp = this.#parseTimestamp(dataView, byteOffset);
         byteOffset += 2;
 
-        while (byteOffset < dataView.byteLength) {
-            const sensorTypeEnum = dataView.getUint8(byteOffset++);
-            SensorDataManager.AssertValidSensorTypeEnum(sensorTypeEnum);
+        const _dataView = new DataView(dataView.buffer, byteOffset);
+
+        parseMessage(_dataView, SensorDataManager.Types, (messageType, dataView) => {
+            /** @type {SensorType} */
+            const sensorType = messageType;
+
+            let byteOffset = 0;
 
             let value;
-
-            const sensorTypeDataSize = dataView.getUint8(byteOffset++);
-            const sensorType = this.#types[sensorTypeEnum];
-
-            _console.log({ sensorTypeEnum, sensorType, sensorTypeDataSize });
             switch (sensorType) {
                 case "pressure":
                     value = this.pressureSensorDataManager.parsePressure(dataView, byteOffset);
@@ -136,11 +136,9 @@ class SensorDataManager {
                     _console.error(`uncaught sensorType "${sensorType}"`);
             }
 
-            byteOffset += sensorTypeDataSize;
-
             _console.assertWithError(value, `no value defined for sensorType "${sensorType}"`);
             this.onDataReceived?.(sensorType, { timestamp, [sensorType]: value });
-        }
+        });
     }
 
     static get NumberOfPressureSensors() {

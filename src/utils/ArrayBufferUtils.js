@@ -60,20 +60,3 @@ export function stringToArrayBuffer(string) {
 export function objectToArrayBuffer(object) {
     return stringToArrayBuffer(JSON.stringify(object));
 }
-
-// PARSING
-
-const textDecoder = new TextDecoder();
-
-/**
- * @param {DataView} dataView
- * @param {number} byteOffset
- */
-export function parseStringFromDataView(dataView, byteOffset = 0) {
-    const stringLength = dataView.getUint8(byteOffset++);
-    const string = textDecoder.decode(
-        dataView.buffer.slice(dataView.byteOffset + byteOffset, dataView.byteOffset + byteOffset + stringLength)
-    );
-    byteOffset += stringLength;
-    return { string, byteOffset };
-}

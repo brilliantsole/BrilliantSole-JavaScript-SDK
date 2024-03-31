@@ -7,7 +7,8 @@ import NobleConnectionManager from "./connection/bluetooth/NobleConnectionManage
 import SensorConfigurationManager from "./sensor/SensorConfigurationManager.js";
 import SensorDataManager from "./sensor/SensorDataManager.js";
 import VibrationManager from "./vibration/VibrationManager.js";
-import { concatenateArrayBuffers, parseStringFromDataView } from "./utils/ArrayBufferUtils.js";
+import { concatenateArrayBuffers } from "./utils/ArrayBufferUtils.js";
+import { parseStringFromDataView } from "./utils/ParseUtils.js";
 
 const _console = createConsole("Device", { log: true });
 

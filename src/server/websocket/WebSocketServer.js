@@ -8,13 +8,13 @@ import {
     createServerMessage,
     createServerDeviceMessage,
 } from "../ServerUtils.js";
-import { parseStringFromDataView } from "../../utils/ArrayBufferUtils.js";
 import { dataToArrayBuffer } from "../../utils/ArrayBufferUtils.js";
 import Timer from "../../utils/Timer.js";
 import EventDispatcher from "../../utils/EventDispatcher.js";
 import scanner from "../../scanner/Scanner.js";
 import Device from "../../Device.js";
 import ConnectionManager from "../../connection/ConnectionManager.js";
+import { parseMessage, parseStringFromDataView } from "../../utils/ParseUtils.js";
 
 const _console = createConsole("WebSocketServer", { log: true });
 
@@ -181,91 +181,79 @@ class WebSocketServer {
         return WebSocketServer.#TextDecoder;
     }
 
+    /** @typedef {import("../ServerUtils.js").ServerMessageType} ServerMessageType */
+
     /**
      * @param {ws.WebSocket} client
      * @param {DataView} dataView
      */
     #parseClientMessage(client, dataView) {
-        let byteOffset = 0;
-        while (byteOffset < dataView.byteLength) {
-            const messageTypeEnum = dataView.getUint8(byteOffset++);
-            const messageType = ServerMessageTypes[messageTypeEnum];
-            const messageByteLength = dataView.getUint16(byteOffset, true);
-            byteOffset += 2;
-
-            _console.log({ messageTypeEnum, messageType, messageByteLength });
-            _console.assertWithError(messageType, `invalid messageTypeEnum ${messageTypeEnum}`);
-
-            let _byteOffset = byteOffset;
-
-            switch (messageType) {
-                case "ping":
-                    client.send(pongMessageBuffer);
-                    break;
-                case "pong":
-                    break;
-                case "isScanningAvailable":
-                    client.send(this.#isScanningAvailableMessage);
-                    break;
-                case "isScanning":
-                    client.send(this.#isScanningMessage);
-                    break;
-                case "startScan":
-                    scanner.startScan();
-                    break;
-                case "stopScan":
-                    scanner.stopScan();
-                    break;
-                case "discoveredDevices":
-                    client.send(this.#discoveredDevicesMessage);
-                    break;
-                case "connectToDevice":
-                    {
-                        const { string: deviceId } = parseStringFromDataView(dataView, _byteOffset);
-                        scanner.connectToDevice(deviceId);
-                    }
-                    break;
-                case "disconnectFromDevice":
-                    {
-                        const { string: deviceId } = parseStringFromDataView(dataView, _byteOffset);
-                        const device = Device.ConnectedDevices.find((device) => device.id == deviceId);
-                        if (!device) {
-                            _console.error(`no device found with id ${deviceId}`);
-                            break;
+        parseMessage(
+            dataView,
+            ServerMessageTypes,
+            (_messageType, dataView) => {
+                /** @type {ServerMessageType} */
+                const messageType = _messageType;
+                switch (messageType) {
+                    case "ping":
+                        client.send(pongMessageBuffer);
+                        break;
+                    case "pong":
+                        break;
+                    case "isScanningAvailable":
+                        client.send(this.#isScanningAvailableMessage);
+                        break;
+                    case "isScanning":
+                        client.send(this.#isScanningMessage);
+                        break;
+                    case "startScan":
+                        scanner.startScan();
+                        break;
+                    case "stopScan":
+                        scanner.stopScan();
+                        break;
+                    case "discoveredDevices":
+                        client.send(this.#discoveredDevicesMessage);
+                        break;
+                    case "connectToDevice":
+                        {
+                            const { string: deviceId } = parseStringFromDataView(dataView);
+                            scanner.connectToDevice(deviceId);
                         }
-                        device.disconnect();
-                    }
-                    break;
-                case "connectedDevices":
-                    // FILL - include deviceType, deviceInformation, batteryLevel...
-                    break;
-                case "deviceMessage":
-                    {
-                        const { string: deviceId, byteOffset: _newByteOffset } = parseStringFromDataView(
-                            dataView,
-                            _byteOffset
-                        );
-                        _byteOffset = _newByteOffset;
-                        const device = Device.ConnectedDevices.find((device) => device.id == deviceId);
-                        if (!device) {
-                            _console.error(`no device found with id ${deviceId}`);
-                            break;
+                        break;
+                    case "disconnectFromDevice":
+                        {
+                            const { string: deviceId } = parseStringFromDataView(dataView);
+                            const device = Device.ConnectedDevices.find((device) => device.id == deviceId);
+                            if (!device) {
+                                _console.error(`no device found with id ${deviceId}`);
+                                break;
+                            }
+                            device.disconnect();
                         }
-                        const _dataView = new DataView(
-                            dataView.buffer,
-                            _byteOffset,
-                            messageByteLength - (_byteOffset - byteOffset)
-                        );
-                        this.#onDeviceMessage(device, _dataView, client);
-                    }
-                    break;
-                default:
-                    _console.error(`uncaught messageType "${messageType}"`);
-                    break;
-            }
-
-            byteOffset += messageByteLength;
-        }
+                        break;
+                    case "connectedDevices":
+                        // FILL - include deviceType, deviceInformation, batteryLevel...
+                        break;
+                    case "deviceMessage":
+                        {
+                            const { string: deviceId, byteOffset } = parseStringFromDataView(dataView);
+                            const device = Device.ConnectedDevices.find((device) => device.id == deviceId);
+                            if (!device) {
+                                _console.error(`no device found with id ${deviceId}`);
+                                break;
+                            }
+                            const _dataView = new DataView(dataView.buffer, dataView.byteOffset + byteOffset);
+                            this.#onDeviceMessage(device, _dataView, client);
+                        }
+                        break;
+                    default:
+                        _console.error(`uncaught messageType "${messageType}"`);
+                        break;
+                }
+            },
+            true
+        );
     }
 
     // CLIENT MESSAGING
@@ -448,58 +436,52 @@ class WebSocketServer {
      */
     #onDeviceMessage(device, dataView, client) {
         _console.log("onDeviceMessage", device.id, dataView);
-        let byteOffset = 0;
 
         /** @type {(DeviceEventType | ServerDeviceMessage)[]} */
         let responseMessages = [];
 
-        while (byteOffset < dataView.byteLength) {
-            const messageTypeEnum = dataView.getUint8(byteOffset++);
-            const messageType = ConnectionManager.MessageTypes[messageTypeEnum];
-            const messageByteLength = dataView.getUint16(byteOffset, true);
-            byteOffset += 2;
+        parseMessage(
+            dataView,
+            ConnectionManager.MessageTypes,
+            (_messageType, dataView) => {
+                /** @type {ConnectionMessageType} */
+                const messageType = _messageType;
+                switch (messageType) {
+                    case "batteryLevel":
+                        responseMessages.push({ type: "batteryLevel", data: device.batteryLevel });
+                        break;
+                    case "deviceInformation":
+                        responseMessages.push({ type: "deviceInformation", data: device.deviceInformation });
+                        break;
+                    case "getName":
+                        responseMessages.push({ type: "getName", data: device.name });
+                        break;
+                    case "setName":
+                        // FILL
+                        break;
+                    case "getType":
+                        responseMessages.push({ type: "getType", data: device.type });
+                        break;
+                    case "setType":
+                        // FILL
 
-            _console.log({ messageTypeEnum, messageType, messageByteLength });
-            _console.assertWithError(messageType, `invalid messageTypeEnum ${messageTypeEnum}`);
-
-            let _byteOffset = byteOffset;
-
-            switch (messageType) {
-                case "batteryLevel":
-                    responseMessages.push({ type: "batteryLevel", data: device.batteryLevel });
-                    break;
-                case "deviceInformation":
-                    responseMessages.push({ type: "deviceInformation", data: device.deviceInformation });
-                    break;
-                case "getName":
-                    responseMessages.push({ type: "getName", data: device.name });
-                    break;
-                case "setName":
-                    // FILL
-                    break;
-                case "getType":
-                    responseMessages.push({ type: "getType", data: device.type });
-                    break;
-                case "setType":
-                    // FILL
-
-                    break;
-                case "getSensorConfiguration":
-                    responseMessages.push({ type: "getSensorConfiguration", data: device.sensorConfiguration });
-                    break;
-                case "setSensorConfiguration":
-                    // FILL
-                    break;
-                case "triggerVibration":
-                    // FILL
-                    break;
-                default:
-                    _console.error(`uncaught messageType "${messageType}"`);
-                    break;
-            }
-
-            byteOffset += messageByteLength;
-        }
+                        break;
+                    case "getSensorConfiguration":
+                        responseMessages.push({ type: "getSensorConfiguration", data: device.sensorConfiguration });
+                        break;
+                    case "setSensorConfiguration":
+                        // FILL
+                        break;
+                    case "triggerVibration":
+                        // FILL
+                        break;
+                    default:
+                        _console.error(`uncaught messageType "${messageType}"`);
+                        break;
+                }
+            },
+            true
+        );
 
         _console.log({ responseMessages });
         if (responseMessages.length > 0) {
