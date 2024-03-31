@@ -460,11 +460,10 @@ class WebSocketServer {
                         // FILL
                         break;
                     case "getType":
-                        responseMessages.push({ type: "getType", data: device.type });
+                        responseMessages.push({ type: "getType", data: device.typeEnum });
                         break;
                     case "setType":
                         // FILL
-
                         break;
                     case "getSensorConfiguration":
                         responseMessages.push({ type: "getSensorConfiguration", data: device.sensorConfiguration });

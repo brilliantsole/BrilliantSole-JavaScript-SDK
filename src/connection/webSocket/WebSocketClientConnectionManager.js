@@ -3,6 +3,7 @@ import { isInBrowser } from "../../utils/environment.js";
 import ConnectionManager from "../ConnectionManager.js";
 import Device from "../../Device.js";
 import { parseMessage } from "../../utils/ParseUtils.js";
+import { sliceDataView } from "../../utils/ArrayBufferUtils.js";
 
 const _console = createConsole("WebSocketClientConnectionManager", { log: true });
 
@@ -57,7 +58,6 @@ class WebSocketClientConnectionManager extends ConnectionManager {
      */
     async sendMessage(messageType, data) {
         await super.sendMessage(...arguments);
-        // TEST
         switch (messageType) {
             case "setName":
                 this.sendWebSocketMessage({ type: "setName", data });
@@ -120,20 +120,25 @@ class WebSocketClientConnectionManager extends ConnectionManager {
                         }
                         break;
                     case "deviceInformation":
-                        const _dataView = new DataView(dataView.buffer, byteOffset + dataView.byteOffset);
-                        this.onMessageReceived("deviceInformation", _dataView);
+                        this.onMessageReceived("deviceInformation", dataView, true);
                         break;
                     case "batteryLevel":
-                        // FILL
+                        this.onMessageReceived("batteryLevel", dataView);
                         break;
                     case "getName":
-                        // FILL
+                        {
+                            const _dataView = sliceDataView(dataView, byteOffset + 1);
+                            this.onMessageReceived("getName", _dataView);
+                        }
                         break;
                     case "getType":
-                        // FILL
+                        this.onMessageReceived("getType", dataView);
                         break;
                     case "getSensorConfiguration":
-                        // FILL
+                        this.onMessageReceived("getSensorConfiguration", dataView, true);
+                        break;
+                    case "sensorData":
+                        this.onMessageReceived("sensorData", dataView, true);
                         break;
                     default:
                         _console.error(`uncaught messageType "${messageType}"`);

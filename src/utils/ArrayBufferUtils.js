@@ -1,3 +1,7 @@
+import { createConsole } from "./Console";
+
+const _console = createConsole("ArrayBufferUtils", { log: false });
+
 const textEncoder = new TextEncoder();
 
 /**
@@ -59,4 +63,18 @@ export function stringToArrayBuffer(string) {
 /** @param {Object} object */
 export function objectToArrayBuffer(object) {
     return stringToArrayBuffer(JSON.stringify(object));
+}
+
+/**
+ * @param {DataView} dataView
+ * @param {number} begin
+ * @param {number?} length
+ */
+export function sliceDataView(dataView, begin, length) {
+    let end;
+    if (length) {
+        end = dataView.byteOffset + begin + length;
+    }
+    _console.log({ dataView, begin, end, length });
+    return new DataView(dataView.buffer.slice(dataView.byteOffset + begin, end));
 }

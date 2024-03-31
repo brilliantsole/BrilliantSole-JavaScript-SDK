@@ -1,3 +1,4 @@
+import { sliceDataView } from "./ArrayBufferUtils";
 import { createConsole } from "./Console";
 
 const _console = createConsole("ParseUtils", { log: true });
@@ -21,7 +22,6 @@ export function parseStringFromDataView(dataView, byteOffset = 0) {
  * @callback ParseMessageCallback
  * @param {string} messageType
  * @param {DataView} dataView
- * @param {number} messageLength
  */
 
 /**
@@ -48,9 +48,10 @@ export function parseMessage(dataView, enumeration, callback, parseMessageLength
         _console.log({ messageTypeEnum, messageType, messageLength, dataView });
         _console.assertWithError(messageType, `invalid messageTypeEnum ${messageTypeEnum}`);
 
-        const _dataView = new DataView(dataView.buffer, dataView.byteOffset + byteOffset, messageLength);
+        const _dataView = sliceDataView(dataView, byteOffset, messageLength);
+        _console.log({ _dataView });
 
-        callback(messageType, _dataView, messageLength);
+        callback(messageType, _dataView);
 
         byteOffset += messageLength;
     }

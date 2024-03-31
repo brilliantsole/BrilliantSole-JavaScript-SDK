@@ -340,8 +340,9 @@ class Device {
     /**
      * @param {ConnectionMessageType} messageType
      * @param {DataView} dataView
+     * @param {boolean} isJSON for pre-parsed messages, e.g. WebSocketClientConnectionManager
      */
-    #onConnectionMessageReceived(messageType, dataView) {
+    #onConnectionMessageReceived(messageType, dataView, isJSON = false) {
         //_console.log({ messageType, dataView });
         switch (messageType) {
             case "deviceInformation":
@@ -416,13 +417,29 @@ class Device {
                 break;
 
             case "getSensorConfiguration":
-                const sensorConfiguration = this.#sensorConfigurationManager.parse(dataView);
-                _console.log({ sensorConfiguration });
-                this.#updateSensorConfiguration(sensorConfiguration);
+                if (isJSON) {
+                    const { string: sensorConfigurationString } = parseStringFromDataView(dataView);
+                    _console.log({ sensorConfigurationString });
+                    const sensorConfiguration = JSON.parse(sensorConfigurationString);
+                    _console.log({ sensorConfiguration });
+                    this.#updateSensorConfiguration(sensorConfiguration);
+                } else {
+                    const sensorConfiguration = this.#sensorConfigurationManager.parse(dataView);
+                    _console.log({ sensorConfiguration });
+                    this.#updateSensorConfiguration(sensorConfiguration);
+                }
                 break;
 
             case "sensorData":
-                this.#sensorDataManager.parse(dataView);
+                if (isJSON) {
+                    const { string: sensorDataString } = parseStringFromDataView(dataView);
+                    _console.log({ sensorDataString });
+                    const sensorData = JSON.parse(sensorDataString);
+                    _console.log({ sensorData });
+                    // FILL
+                } else {
+                    this.#sensorDataManager.parse(dataView);
+                }
                 break;
 
             default:
@@ -554,6 +571,9 @@ class Device {
     #type;
     get type() {
         return this.#type;
+    }
+    get typeEnum() {
+        return Device.Types.indexOf(this.type);
     }
     /** @param {DeviceType} newType */
     #assertValidDeviceType(type) {
