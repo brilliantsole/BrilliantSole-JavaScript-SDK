@@ -42,6 +42,19 @@ class WebSocketClientConnectionManager extends ConnectionManager {
     get isConnected() {
         return this.#isConnected;
     }
+    set isConnected(newIsConnected) {
+        _console.assertTypeWithError(newIsConnected, "boolean");
+        if (this.#isConnected == newIsConnected) {
+            _console.log("redundant isConnected assignment", newIsConnected);
+            return;
+        }
+        this.#isConnected = newIsConnected;
+
+        this.status = this.#isConnected ? "connected" : "not connected";
+        if (this.#isConnected) {
+            this.#requestAllDeviceInformation();
+        }
+    }
 
     async connect() {
         await super.connect();
@@ -112,12 +125,8 @@ class WebSocketClientConnectionManager extends ConnectionManager {
 
                 switch (messageType) {
                     case "isConnected":
-                        const isConnected = dataView.getUint8(byteOffset++);
-                        this.#isConnected = isConnected;
-                        this.status = isConnected ? "connected" : "not connected";
-                        if (this.isConnected) {
-                            this.#requestAllDeviceInformation();
-                        }
+                        const isConnected = Boolean(dataView.getUint8(byteOffset++));
+                        this.isConnected = isConnected;
                         break;
                     case "manufacturerName":
                     case "modelNumber":

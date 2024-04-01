@@ -9,7 +9,7 @@ import {
     createServerDeviceMessage,
     pongMessage,
 } from "../ServerUtils.js";
-import { dataToArrayBuffer, sliceDataView } from "../../utils/ArrayBufferUtils.js";
+import { concatenateArrayBuffers, dataToArrayBuffer, sliceDataView } from "../../utils/ArrayBufferUtils.js";
 import Timer from "../../utils/Timer.js";
 import EventDispatcher from "../../utils/EventDispatcher.js";
 import scanner from "../../scanner/Scanner.js";

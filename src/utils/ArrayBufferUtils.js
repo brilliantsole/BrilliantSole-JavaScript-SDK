@@ -22,7 +22,7 @@ export function concatenateArrayBuffers(...arrayBuffers) {
             return stringToArrayBuffer(string);
         } else if (arrayBuffer instanceof Array) {
             const array = arrayBuffer;
-            return Uint8Array.from(array).buffer;
+            return concatenateArrayBuffers(...array);
         } else if (arrayBuffer instanceof ArrayBuffer) {
             return arrayBuffer;
         } else if ("buffer" in arrayBuffer && arrayBuffer.buffer instanceof ArrayBuffer) {
