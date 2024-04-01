@@ -8,7 +8,6 @@ import SensorConfigurationManager from "./sensor/SensorConfigurationManager.js";
 import SensorDataManager from "./sensor/SensorDataManager.js";
 import VibrationManager from "./vibration/VibrationManager.js";
 import { concatenateArrayBuffers } from "./utils/ArrayBufferUtils.js";
-import { parseStringFromDataView } from "./utils/ParseUtils.js";
 
 const _console = createConsole("Device", { log: true });
 
@@ -559,10 +558,14 @@ class Device {
     get typeEnum() {
         return Device.Types.indexOf(this.type);
     }
-    /** @param {DeviceType} newType */
+    /** @param {DeviceType} type */
     #assertValidDeviceType(type) {
-        _console.assertTypeWithError(type, "string");
-        _console.assertWithError(this.#types.includes(type), `invalid type "${type}"`);
+        _console.assertEnumWithError(type, this.#types);
+    }
+    /** @param {number} typeEnum */
+    #assertValidDeviceTypeEnum(typeEnum) {
+        _console.assertTypeWithError(typeEnum, "number");
+        _console.assertWithError(this.#types[typeEnum], `invalid typeEnum ${typeEnum}`);
     }
     /** @param {DeviceType} updatedType */
     #updateType(updatedType) {
@@ -583,14 +586,19 @@ class Device {
             Device.#UpdateLocalStorageConfigurationForDevice(this);
         }
     }
+    /** @param {number} newTypeEnum */
+    async #setTypeEnum(newTypeEnum) {
+        this.#assertValidDeviceTypeEnum(newTypeEnum);
+        const setTypeData = Uint8Array.from([newTypeEnum]);
+        _console.log({ setTypeData });
+        await this.#connectionManager.sendMessage("setType", setTypeData);
+    }
     /** @param {DeviceType} newType */
     async setType(newType) {
         this.#assertIsConnected();
         this.#assertValidDeviceType(newType);
         const newTypeEnum = this.#types.indexOf(newType);
-        const setTypeData = Uint8Array.from([newTypeEnum]);
-        _console.log({ setTypeData });
-        await this.#connectionManager.sendMessage("setType", setTypeData);
+        this.#setTypeEnum(newTypeEnum);
     }
 
     get isInsole() {

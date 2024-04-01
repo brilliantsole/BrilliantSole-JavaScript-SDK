@@ -112,6 +112,7 @@ export function createServerMessage(...messages) {
 
 /** @param {...DeviceEventType|ServerDeviceMessage} messages */
 export function createServerDeviceMessage(...messages) {
+    _console.log("createServerDeviceMessage", ...messages);
     return createMessage(Device.EventTypes, ...messages);
 }
 

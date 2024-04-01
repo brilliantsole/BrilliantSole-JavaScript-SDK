@@ -313,8 +313,16 @@ class WebSocketClient {
                         }
                         break;
                     case "connectedDevices":
-                        // FILL
-                        console.log("CON");
+                        {
+                            if (dataView.byteLength == 0) {
+                                break;
+                            }
+                            const { string: connectedDeviceIdStrings } = parseStringFromDataView(dataView, byteOffset);
+                            _console.log({ connectedDeviceIdStrings });
+                            const connectedDeviceIds = JSON.parse(connectedDeviceIdStrings);
+                            _console.log({ connectedDeviceIds });
+                            this.#onConnectedDeviceIds(connectedDeviceIds);
+                        }
                         break;
                     case "deviceMessage":
                         {
@@ -492,6 +500,16 @@ class WebSocketClient {
             this.#devices[deviceId] = device;
         }
         return device;
+    }
+    /** @param {string[]} deviceIds */
+    #onConnectedDeviceIds(deviceIds) {
+        _console.log({ deviceIds });
+        deviceIds.forEach((deviceId) => {
+            const device = this.#getOrCreateDevice(deviceId);
+            /** @type {WebSocketClientConnectionManager} */
+            const connectionManager = device.connectionManager;
+            connectionManager.status = "connected"; // FIX
+        });
     }
 
     /** @param {string} deviceId */
