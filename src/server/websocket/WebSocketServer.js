@@ -462,8 +462,6 @@ class WebSocketServer {
                         responseMessages.push(this.#createServerDeviceMessage(device, messageType));
                         break;
                     case "setName":
-                        device.connectionManager.sendMessage("setType", sliceDataView(dataView, 1));
-                        break;
                     case "setType":
                     case "setSensorConfiguration":
                     case "triggerVibration":

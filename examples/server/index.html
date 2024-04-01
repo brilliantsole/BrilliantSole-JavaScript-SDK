@@ -55,9 +55,53 @@
             <div id="availableDevices">
                 <template id="availableDeviceTemplate">
                     <div class="availableDevice">
+                        <label class="block">
+                            <b>device information: </b>
+                            <pre class="deviceInformation"></pre>
+                        </label>
+
+                        <label class="block"><b>battery level:</b> <span class="batteryLevel"></span>%</label>
+
                         <label class="block"><b>name:</b> <span class="name"></span></label>
+                        <label>
+                            <b>new name: </b>
+                            <input class="setNameInput" type="text" placeholder="type in a name" disabled />
+                        </label>
+                        <button class="setNameButton" disabled>set name</button>
+
                         <label class="block"><b>device type:</b> <span class="deviceType"></span></label>
-                        <button class="toggleConnection">connect</button>
+                        <label class="block">
+                            <b>new type: </b>
+                            <select class="setTypeSelect" disabled>
+                                <optgroup label="select type"></optgroup>
+                            </select>
+                            <button class="setTypeButton" disabled>set type</button>
+                        </label>
+
+                        <label class="block">
+                            <b>sensor configuration: </b>
+                            <pre class="sensorConfiguration"></pre>
+                        </label>
+
+                        <template class="sensorTypeConfigurationTemplate">
+                            <label class="sensorTypeConfiguration block">
+                                <b class="sensorType"></b>
+                                <input class="sensorRate" type="number" min="0" value="" disabled />ms
+                            </label>
+                        </template>
+
+                        <label class="block">
+                            <b>sensor data: </b>
+                            <pre class="sensorData"></pre>
+                        </label>
+
+                        <div>
+                            <button class="triggerVibration" disabled>triggerVibration</button>
+                        </div>
+
+                        <div>
+                            <button class="toggleConnection">connect</button>
+                        </div>
                     </div>
                 </template>
             </div>

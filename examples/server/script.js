@@ -75,9 +75,6 @@ client.addEventListener("connectionStatus", () => {
             toggleConnectionButton.innerText = client.connectionStatus;
             toggleConnectionButton.disabled = true;
             break;
-        default:
-            console.error(`uncaught connectionStatus "${client.connectionStatus}"`);
-            break;
     }
 });
 
@@ -233,4 +230,192 @@ BS.Device.AddEventListener("availableDevices", (event) => {
     /** @type {Device[]} */
     const availableDevices = event.message.devices;
     console.log({ availableDevices });
+
+    availableDevices.forEach((device) => {
+        /** @type {HTMLElement} */
+        let availableDeviceContainer;
+        availableDeviceContainer = availableDeviceContainers[device.id];
+        if (!availableDeviceContainer) {
+            availableDeviceContainer = availableDeviceTemplate.content
+                .cloneNode(true)
+                .querySelector(".availableDevice");
+            availableDeviceContainers[device.id] = availableDeviceContainer;
+
+            /** @type {HTMLPreElement} */
+            const deviceInformationPre = availableDeviceContainer.querySelector(".deviceInformation");
+            const setDeviceInformationPre = () =>
+                (deviceInformationPre.textContent = JSON.stringify(device.deviceInformation, null, 2));
+            setDeviceInformationPre();
+            device.addEventListener("deviceInformation", () => setDeviceInformationPre());
+
+            /** @type {HTMLSpanElement} */
+            const batteryLevelSpan = availableDeviceContainer.querySelector(".batteryLevel");
+            const setBatteryLevelSpan = () => (batteryLevelSpan.innerText = device.batteryLevel);
+            setBatteryLevelSpan();
+            device.addEventListener("batteryLevel", () => setBatteryLevelSpan());
+
+            /** @type {HTMLSpanElement} */
+            const nameSpan = availableDeviceContainer.querySelector(".name");
+            const setNameSpan = () => (nameSpan.innerText = device.name);
+            setNameSpan();
+            device.addEventListener("getName", () => setNameSpan());
+
+            /** @type {HTMLInputElement} */
+            const setNameInput = availableDeviceContainer.querySelector(".setNameInput");
+            setNameInput.minLength = BS.Device.MinNameLength;
+            setNameInput.maxLength = BS.Device.MaxNameLength;
+            setNameInput.disabled = !device.isConnected;
+
+            /** @type {HTMLButtonElement} */
+            const setNameButton = availableDeviceContainer.querySelector(".setNameButton");
+            setNameButton.disabled = !device.isConnected;
+
+            device.addEventListener("isConnected", () => {
+                setNameInput.disabled = !device.isConnected;
+            });
+            device.addEventListener("not connected", () => {
+                setNameInput.value = "";
+            });
+
+            setNameInput.addEventListener("input", () => {
+                setNameButton.disabled = setNameInput.value.length < device.minNameLength;
+            });
+
+            setNameButton.addEventListener("click", () => {
+                console.log(`setting name to ${setNameInput.value}`);
+                device.setName(setNameInput.value);
+                setNameInput.value = "";
+                setNameButton.disabled = true;
+            });
+
+            /** @type {HTMLSpanElement} */
+            const deviceTypeSpan = availableDeviceContainer.querySelector(".deviceType");
+            const setDeviceTypeSpan = () => (deviceTypeSpan.innerText = device.type);
+            setDeviceTypeSpan();
+            device.addEventListener("getType", () => setDeviceTypeSpan());
+
+            /** @type {HTMLButtonElement} */
+            const setTypeButton = availableDeviceContainer.querySelector(".setTypeButton");
+
+            /** @type {HTMLSelectElement} */
+            const setTypeSelect = availableDeviceContainer.querySelector(".setTypeSelect");
+            /** @type {HTMLOptGroupElement} */
+            const setTypeSelectOptgroup = setTypeSelect.querySelector("optgroup");
+            BS.Device.Types.forEach((type) => {
+                setTypeSelectOptgroup.appendChild(new Option(type));
+            });
+
+            device.addEventListener("isConnected", () => {
+                setTypeSelect.disabled = !device.isConnected;
+            });
+            setTypeSelect.disabled = !device.isConnected;
+
+            device.addEventListener("getType", () => {
+                setTypeSelect.value = device.type;
+            });
+
+            setTypeSelect.addEventListener("input", () => {
+                setTypeButton.disabled = setTypeSelect.value == device.type;
+            });
+            setTypeSelect.value = device.type;
+
+            setTypeButton.addEventListener("click", () => {
+                device.setType(setTypeSelect.value);
+                setTypeButton.disabled = true;
+            });
+
+            /** @type {HTMLPreElement} */
+            const sensorConfigurationPre = availableDeviceContainer.querySelector(".sensorConfiguration");
+            const setSensorConfigurationPre = () =>
+                (sensorConfigurationPre.textContent = JSON.stringify(device.sensorConfiguration, null, 2));
+            setSensorConfigurationPre();
+            device.addEventListener("getSensorConfiguration", () => setSensorConfigurationPre());
+
+            /** @type {HTMLTemplateElement} */
+            const sensorTypeConfigurationTemplate = availableDeviceContainer.querySelector(
+                ".sensorTypeConfigurationTemplate"
+            );
+            device.sensorTypes.forEach((sensorType) => {
+                const sensorTypeConfigurationContainer = sensorTypeConfigurationTemplate.content
+                    .cloneNode(true)
+                    .querySelector(".sensorTypeConfiguration");
+                sensorTypeConfigurationContainer.querySelector(".sensorType").innerText = sensorType;
+
+                /** @type {HTMLInputElement} */
+                const sensorRateInput = sensorTypeConfigurationContainer.querySelector(".sensorRate");
+                sensorRateInput.value = 0;
+                sensorRateInput.max = BS.Device.MaxSensorRate;
+                sensorRateInput.step = BS.Device.SensorRateStep;
+                sensorRateInput.addEventListener("input", () => {
+                    const sensorRate = Number(sensorRateInput.value);
+                    console.log({ sensorType, sensorRate });
+                    device.setSensorConfiguration({ [sensorType]: sensorRate });
+                });
+                sensorRateInput.disabled = !device.isConnected;
+
+                sensorTypeConfigurationTemplate.parentElement.insertBefore(
+                    sensorTypeConfigurationContainer,
+                    sensorTypeConfigurationTemplate
+                );
+                sensorTypeConfigurationContainer.dataset.sensorType = sensorType;
+            });
+
+            device.addEventListener("isConnected", () => {
+                availableDeviceContainer
+                    .querySelectorAll("input")
+                    .forEach((input) => (input.disabled = !device.isConnected));
+            });
+
+            device.addEventListener("getSensorConfiguration", () => {
+                for (const sensorType in device.sensorConfiguration) {
+                    availableDeviceContainer.querySelector(
+                        `.sensorTypeConfiguration[data-sensor-type="${sensorType}"] input`
+                    ).value = device.sensorConfiguration[sensorType];
+                }
+            });
+
+            /** @type {HTMLPreElement} */
+            const sensorDataPre = availableDeviceContainer.querySelector(".sensorData");
+            const setSensorDataPre = (event) => (sensorDataPre.textContent = JSON.stringify(event.message, null, 2));
+            device.addEventListener("sensorData", (event) => setSensorDataPre(event));
+
+            /** @type {HTMLButtonElement} */
+            const triggerVibrationButton = availableDeviceContainer.querySelector(".triggerVibration");
+            triggerVibrationButton.addEventListener("click", () => {
+                device.triggerVibration({
+                    type: "waveformEffect",
+                    locations: ["front", "rear"],
+                    waveformEffect: { segments: [{ effect: "doubleClick100" }] },
+                });
+            });
+            device.addEventListener("isConnected", () => {
+                triggerVibrationButton.disabled = !device.isConnected;
+            });
+            triggerVibrationButton.disabled = !device.isConnected;
+
+            /** @type {HTMLButtonElement} */
+            const toggleConnectionButton = availableDeviceContainer.querySelector(".toggleConnection");
+            toggleConnectionButton.addEventListener("click", () => {
+                device.toggleConnection();
+            });
+            const updateToggleConnectionButton = () => {
+                switch (device.connectionStatus) {
+                    case "connected":
+                    case "not connected":
+                        toggleConnectionButton.disabled = false;
+                        toggleConnectionButton.innerText = device.isConnected ? "disconnect" : "connect";
+                        break;
+                    case "connecting":
+                    case "disconnecting":
+                        toggleConnectionButton.innerText = device.connectionStatus;
+                        toggleConnectionButton.disabled = true;
+                        break;
+                }
+            };
+            updateToggleConnectionButton();
+            device.addEventListener("connectionStatus", () => updateToggleConnectionButton());
+
+            availableDevicesContainer.appendChild(availableDeviceContainer);
+        }
+    });
 });

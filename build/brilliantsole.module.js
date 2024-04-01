@@ -997,32 +997,36 @@ class WebBluetoothConnectionManager extends ConnectionManager {
      */
     async sendMessage(messageType, data) {
         await super.sendMessage(...arguments);
-        /** @type {BluetoothRemoteGATTCharacteristic} */
-        let characteristic;
+
         /** @type {BluetoothCharacteristicName} */
         let characteristicName;
+        /** @type {BluetoothRemoteGATTCharacteristic} */
+        let characteristic;
+
         switch (messageType) {
             case "setName":
                 characteristicName = "name";
-                characteristic = this.#characteristics.get(characteristicName);
                 break;
             case "setType":
                 characteristicName = "type";
-                characteristic = this.#characteristics.get(characteristicName);
                 break;
             case "setSensorConfiguration":
                 characteristicName = "sensorConfiguration";
-                characteristic = this.#characteristics.get(characteristicName);
                 break;
             case "triggerVibration":
                 characteristicName = "vibration";
-                characteristic = this.#characteristics.get(characteristicName);
                 break;
             default:
                 throw Error(`uncaught messageType "${messageType}"`);
         }
 
-        _console$k.assert(characteristic, "no characteristic found");
+        if (!characteristicName) {
+            _console$k.log("no characteristicName found");
+            return;
+        }
+
+        characteristic = this.#characteristics.get(characteristicName);
+        _console$k.assertWithError(characteristic, `no characteristic found with name "${characteristicName}"`);
         if (data instanceof DataView) {
             data = data.buffer;
         }
@@ -1176,21 +1180,46 @@ class NobleConnectionManager extends ConnectionManager {
      */
     async sendMessage(messageType, data) {
         await super.sendMessage(...arguments);
+
+        /** @type {BluetoothCharacteristicName} */
+        let characteristicName;
+        /** @type {noble.Characteristic} */
+        let characteristic;
+
         switch (messageType) {
             case "setName":
-                // FILL
+                characteristicName = "name";
                 break;
             case "setType":
-                // FILL
+                characteristicName = "type";
                 break;
             case "setSensorConfiguration":
-                // FILL
+                characteristicName = "sensorConfiguration";
                 break;
             case "triggerVibration":
-                // FILL
+                characteristicName = "vibration";
                 break;
             default:
                 throw Error(`uncaught messageType "${messageType}"`);
+        }
+
+        _console$i.log("characteristicName", characteristicName);
+
+        if (!characteristicName) {
+            _console$i.log("no characteristicName found");
+            return;
+        }
+
+        characteristic = this.#characteristics.get(characteristicName);
+        _console$i.assertWithError(characteristic, `no characteristic found with name "${characteristicName}"`);
+        if (data instanceof DataView) {
+            data = data.buffer;
+        }
+        const buffer = Buffer.from(data);
+        _console$i.log("writing data", buffer);
+        await characteristic.writeAsync(buffer, false);
+        if (characteristic.properties.includes("read")) {
+            await characteristic.readAsync();
         }
     }
 
@@ -1398,7 +1427,7 @@ class NobleConnectionManager extends ConnectionManager {
         notify: this.#onNobleCharacteristicNotify,
     };
 
-    /** @type {Map.<BluetoothCharacteristicName, BluetoothRemoteGATTCharacteristic} */
+    /** @type {Map.<BluetoothCharacteristicName, noble.Characteristic} */
     #characteristics = new Map();
 
     get #hasAllCharacteristics() {
@@ -1474,11 +1503,14 @@ class NobleConnectionManager extends ConnectionManager {
     }
 
     #onNobleCharacteristicWrite() {
-        _console$i.log("onNobleCharacteristicWrite", ...arguments);
-        //this._connectionManager.onNobleCharacteristicWrite();
+        this._connectionManager.onNobleCharacteristicWrite(this);
     }
-    onNobleCharacteristicWrite() {
-        //_console.log("onNobleCharacteristicWrite");
+    /**
+     * @param {noble.Characteristic} characteristic
+     */
+    onNobleCharacteristicWrite(characteristic) {
+        _console$i.log("onNobleCharacteristicWrite", characteristic.uuid);
+        // FILL
     }
 
     /** @param {boolean} isSubscribed */
@@ -2119,15 +2151,15 @@ class SensorDataManager {
 /**
  * @typedef SensorConfiguration
  * @type {Object}
- * @property {number} pressure
- * @property {number} acceleration
- * @property {number} gravity
- * @property {number} linearAcceleration
- * @property {number} gyroscope
- * @property {number} magnetometer
- * @property {number} gameRotation
- * @property {number} rotation
- * @property {number} barometer
+ * @property {number?} pressure
+ * @property {number?} acceleration
+ * @property {number?} gravity
+ * @property {number?} linearAcceleration
+ * @property {number?} gyroscope
+ * @property {number?} magnetometer
+ * @property {number?} gameRotation
+ * @property {number?} rotation
+ * @property {number?} barometer
  */
 
 const _console$d = createConsole("SensorConfigurationManager", { log: false });
@@ -3439,8 +3471,9 @@ class Device {
     static get SensorTypes() {
         return SensorDataManager.Types;
     }
+    /** @type {SensorType[]} */
     get sensorTypes() {
-        return Device.SensorTypes;
+        return Object.keys(this.sensorConfiguration);
     }
 
     static get PressureSensorNames() {
@@ -3526,7 +3559,12 @@ class Device {
         });
     }
     get zeroSensorConfiguration() {
-        return Device.ZeroSensorConfiguration;
+        /** @type {SensorConfiguration} */
+        const zeroSensorConfiguration = {};
+        this.sensorTypes.forEach((sensorType) => {
+            zeroSensorConfiguration[sensorType] = 0;
+        });
+        return zeroSensorConfiguration;
     }
     async clearSensorConfiguration() {
         return this.setSensorConfiguration(this.zeroSensorConfiguration);
@@ -6133,8 +6171,6 @@ class WebSocketServer {
                         responseMessages.push(this.#createServerDeviceMessage(device, messageType));
                         break;
                     case "setName":
-                        device.connectionManager.sendMessage("setType", sliceDataView(dataView, 1));
-                        break;
                     case "setType":
                     case "setSensorConfiguration":
                     case "triggerVibration":

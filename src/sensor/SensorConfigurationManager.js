@@ -7,15 +7,15 @@ import SensorDataManager from "./SensorDataManager.js";
 /**
  * @typedef SensorConfiguration
  * @type {Object}
- * @property {number} pressure
- * @property {number} acceleration
- * @property {number} gravity
- * @property {number} linearAcceleration
- * @property {number} gyroscope
- * @property {number} magnetometer
- * @property {number} gameRotation
- * @property {number} rotation
- * @property {number} barometer
+ * @property {number?} pressure
+ * @property {number?} acceleration
+ * @property {number?} gravity
+ * @property {number?} linearAcceleration
+ * @property {number?} gyroscope
+ * @property {number?} magnetometer
+ * @property {number?} gameRotation
+ * @property {number?} rotation
+ * @property {number?} barometer
  */
 
 const _console = createConsole("SensorConfigurationManager", { log: false });

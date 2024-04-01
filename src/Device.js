@@ -633,8 +633,9 @@ class Device {
     static get SensorTypes() {
         return SensorDataManager.Types;
     }
+    /** @type {SensorType[]} */
     get sensorTypes() {
-        return Device.SensorTypes;
+        return Object.keys(this.sensorConfiguration);
     }
 
     static get PressureSensorNames() {
@@ -720,7 +721,12 @@ class Device {
         });
     }
     get zeroSensorConfiguration() {
-        return Device.ZeroSensorConfiguration;
+        /** @type {SensorConfiguration} */
+        const zeroSensorConfiguration = {};
+        this.sensorTypes.forEach((sensorType) => {
+            zeroSensorConfiguration[sensorType] = 0;
+        });
+        return zeroSensorConfiguration;
     }
     async clearSensorConfiguration() {
         return this.setSensorConfiguration(this.zeroSensorConfiguration);

@@ -58,21 +58,46 @@ class NobleConnectionManager extends ConnectionManager {
      */
     async sendMessage(messageType, data) {
         await super.sendMessage(...arguments);
+
+        /** @type {BluetoothCharacteristicName} */
+        let characteristicName;
+        /** @type {noble.Characteristic} */
+        let characteristic;
+
         switch (messageType) {
             case "setName":
-                // FILL
+                characteristicName = "name";
                 break;
             case "setType":
-                // FILL
+                characteristicName = "type";
                 break;
             case "setSensorConfiguration":
-                // FILL
+                characteristicName = "sensorConfiguration";
                 break;
             case "triggerVibration":
-                // FILL
+                characteristicName = "vibration";
                 break;
             default:
                 throw Error(`uncaught messageType "${messageType}"`);
+        }
+
+        _console.log("characteristicName", characteristicName);
+
+        if (!characteristicName) {
+            _console.log("no characteristicName found");
+            return;
+        }
+
+        characteristic = this.#characteristics.get(characteristicName);
+        _console.assertWithError(characteristic, `no characteristic found with name "${characteristicName}"`);
+        if (data instanceof DataView) {
+            data = data.buffer;
+        }
+        const buffer = Buffer.from(data);
+        _console.log("writing data", buffer);
+        await characteristic.writeAsync(buffer, false);
+        if (characteristic.properties.includes("read")) {
+            await characteristic.readAsync();
         }
     }
 
@@ -280,7 +305,7 @@ class NobleConnectionManager extends ConnectionManager {
         notify: this.#onNobleCharacteristicNotify,
     };
 
-    /** @type {Map.<BluetoothCharacteristicName, BluetoothRemoteGATTCharacteristic} */
+    /** @type {Map.<BluetoothCharacteristicName, noble.Characteristic} */
     #characteristics = new Map();
 
     get #hasAllCharacteristics() {
@@ -356,11 +381,14 @@ class NobleConnectionManager extends ConnectionManager {
     }
 
     #onNobleCharacteristicWrite() {
-        _console.log("onNobleCharacteristicWrite", ...arguments);
-        //this._connectionManager.onNobleCharacteristicWrite();
+        this._connectionManager.onNobleCharacteristicWrite(this);
     }
-    onNobleCharacteristicWrite() {
-        //_console.log("onNobleCharacteristicWrite");
+    /**
+     * @param {noble.Characteristic} characteristic
+     */
+    onNobleCharacteristicWrite(characteristic) {
+        _console.log("onNobleCharacteristicWrite", characteristic.uuid);
+        // FILL
     }
 
     /** @param {boolean} isSubscribed */
