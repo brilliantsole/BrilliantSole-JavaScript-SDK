@@ -3,7 +3,6 @@ import { isInBrowser } from "../../utils/environment.js";
 import ConnectionManager from "../ConnectionManager.js";
 import Device from "../../Device.js";
 import { parseMessage } from "../../utils/ParseUtils.js";
-import { sliceDataView } from "../../utils/ArrayBufferUtils.js";
 
 const _console = createConsole("WebSocketClientConnectionManager", { log: true });
 
@@ -38,22 +37,38 @@ class WebSocketClientConnectionManager extends ConnectionManager {
         this.#id = newId;
     }
 
-    #isConnected = false;
-    get isConnected() {
-        return this.#isConnected;
+    #isConnectedToServer = false;
+    get isConnectedToServer() {
+        return this.#isConnectedToServer;
     }
-    set isConnected(newIsConnected) {
-        _console.assertTypeWithError(newIsConnected, "boolean");
-        if (this.#isConnected == newIsConnected) {
-            _console.log("redundant isConnected assignment", newIsConnected);
+    set isConnectedToServer(newIsConnectedToServer) {
+        _console.assertTypeWithError(newIsConnectedToServer, "boolean");
+        if (this.#isConnectedToServer == newIsConnectedToServer) {
+            _console.log("redundant isConnectedToServer assignment", newIsConnectedToServer);
             return;
         }
-        this.#isConnected = newIsConnected;
+        this.#isConnectedToServer = newIsConnectedToServer;
 
-        this.status = this.#isConnected ? "connected" : "not connected";
-        if (this.#isConnected) {
+        if (this.#isConnectedToServer) {
             this.#requestAllDeviceInformation();
         }
+    }
+
+    #_isConnected = false;
+    get #isConnected() {
+        return this.#_isConnected;
+    }
+    set #isConnected(newIsConnected) {
+        _console.assertTypeWithError(newIsConnected, "boolean");
+        if (this.#_isConnected == newIsConnected) {
+            _console.log("redundant newIsConnected assignment", newIsConnected);
+            return;
+        }
+        this.#_isConnected = newIsConnected;
+        this.status = this.#_isConnected ? "connected" : "not connected";
+    }
+    get isConnected() {
+        return this.#isConnected;
     }
 
     async connect() {
@@ -125,8 +140,8 @@ class WebSocketClientConnectionManager extends ConnectionManager {
 
                 switch (messageType) {
                     case "isConnected":
-                        const isConnected = Boolean(dataView.getUint8(byteOffset++));
-                        this.isConnected = isConnected;
+                        const isConnectedToServer = Boolean(dataView.getUint8(byteOffset++));
+                        this.isConnectedToServer = isConnectedToServer;
                         break;
                     case "manufacturerName":
                     case "modelNumber":
@@ -145,13 +160,48 @@ class WebSocketClientConnectionManager extends ConnectionManager {
                         _console.error(`uncaught messageType "${messageType}"`);
                         break;
                 }
+
+                if (this.#allDeviceInformationConnectionMessageTypes.includes(messageType)) {
+                    this.#didReceiveConnectionMessage.set(messageType, true);
+                    if (!this.#isConnected && this.#didReceiveAllDeviceInformationMessages) {
+                        this.#isConnected = true;
+                    }
+                }
             },
             true
         );
     }
 
+    /** @type {Map.<ConnectionMessageType, boolean>} */
+    #didReceiveConnectionMessage = new Map();
+
+    /** @type {ConnectionMessageType[]} */
+    static #AllDeviceInformationConnectionMessageTypes = [
+        "manufacturerName",
+        "modelNumber",
+        "softwareRevision",
+        "hardwareRevision",
+        "firmwareRevision",
+        "pnpId",
+        "batteryLevel",
+        "getName",
+        "getType",
+        "getSensorConfiguration",
+    ];
+    get #allDeviceInformationConnectionMessageTypes() {
+        return WebSocketClientConnectionManager.#AllDeviceInformationConnectionMessageTypes;
+    }
+    get #didReceiveAllDeviceInformationMessages() {
+        return this.#allDeviceInformationConnectionMessageTypes.every((messageType) => {
+            return this.#didReceiveConnectionMessage.get(messageType);
+        });
+    }
+
     #requestAllDeviceInformation() {
-        this.sendWebSocketMessage("deviceInformation", "batteryLevel", "getName", "getType", "getSensorConfiguration");
+        this.#allDeviceInformationConnectionMessageTypes.forEach((messageType) => {
+            this.#didReceiveConnectionMessage.set(messageType, false);
+        });
+        this.sendWebSocketMessage(...this.#allDeviceInformationConnectionMessageTypes);
     }
 }
 

@@ -399,56 +399,12 @@ class WebSocketServer {
 
     /**
      * @param {Device} device
+     * @param {DeviceEventType} messageType
+     * @param {DataView?} dataView
      * @returns {ServerDeviceMessage}
      */
-    #createDeviceBatteryLevelMessage(device) {
-        return { type: "batteryLevel", data: device.latestConnectionMessage.get("batteryLevel") };
-    }
-
-    /**
-     * @param {Device} device
-     * @returns {ServerDeviceMessage[]}
-     */
-    #createDeviceInformationMessages(device) {
-        /** @type {ServerDeviceMessage[]} */
-        const deviceInformationMessages = [];
-        for (const type in device.deviceInformation) {
-            deviceInformationMessages.push({ type, data: device.latestConnectionMessage.get(type) });
-        }
-        _console.log("deviceInformationMessages", deviceInformationMessages);
-        return deviceInformationMessages;
-    }
-
-    /**
-     * @param {Device} device
-     * @returns {ServerDeviceMessage}
-     */
-    #createDeviceNameMessage(device) {
-        return { type: "getName", data: device.latestConnectionMessage.get("getName") };
-    }
-
-    /**
-     * @param {Device} device
-     * @returns {ServerDeviceMessage}
-     */
-    #createDeviceTypeMessage(device) {
-        return { type: "getType", data: device.latestConnectionMessage.get("getType") };
-    }
-
-    /**
-     * @param {Device} device
-     * @returns {ServerDeviceMessage}
-     */
-    #createDeviceSensorConfigurationMessage(device) {
-        return { type: "getSensorConfiguration", data: device.latestConnectionMessage.get("getSensorConfiguration") };
-    }
-
-    /**
-     * @param {Device} device
-     * @param {DataView} dataView
-     */
-    #createDeviceSensorDataMessage(device, dataView) {
-        return this.#createDeviceMessage(device, { type: "sensorData", data: dataView });
+    #createServerDeviceMessage(device, messageType, dataView) {
+        return { type: messageType, data: dataView || device.latestConnectionMessage.get(messageType) };
     }
 
     /** @typedef {import("../../Device.js").DeviceEvent} DeviceEvent */
@@ -468,34 +424,9 @@ class WebSocketServer {
         /** @type {DataView} */
         const dataView = deviceEvent.message.dataView;
 
-        /** @type {(DeviceEventType | ServerDeviceMessage)[]} */
-        let broadcastMessages = [];
-
-        switch (messageType) {
-            case "batteryLevel":
-                broadcastMessages.push(this.#createDeviceBatteryLevelMessage(device, dataView));
-                break;
-            case "getType":
-                broadcastMessages.push(this.#createDeviceTypeMessage(device, dataView));
-                break;
-            case "getName":
-                broadcastMessages.push(this.#createDeviceNameMessage(device, dataView));
-                break;
-            case "getSensorConfiguration":
-                broadcastMessages.push(this.#createDeviceSensorConfigurationMessage(device, dataView));
-                break;
-            case "sensorData":
-                broadcastMessages.push(this.#createDeviceSensorDataMessage(device, dataView));
-                break;
-            default:
-                _console.log(`uncaught messageType "${messageType}"`);
-                break;
-        }
-
-        _console.log({ broadcastMessages });
-        if (broadcastMessages.length > 0) {
-            this.#broadcastMessage(this.#createDeviceMessage(device, ...responseMessages));
-        }
+        this.#broadcastMessage(
+            this.#createDeviceMessage(device, this.#createServerDeviceMessage(device, messageType, dataView))
+        );
     }
 
     // DEVICE MESSAGING
@@ -518,32 +449,25 @@ class WebSocketServer {
                 /** @type {ConnectionMessageType} */
                 const messageType = _messageType;
                 switch (messageType) {
+                    case "manufacturerName":
+                    case "modelNumber":
+                    case "softwareRevision":
+                    case "hardwareRevision":
+                    case "firmwareRevision":
+                    case "pnpId":
                     case "batteryLevel":
-                        responseMessages.push(this.#createDeviceBatteryLevelMessage(device));
-                        break;
-                    case "deviceInformation":
-                        responseMessages.push(...this.#createDeviceInformationMessages(device));
-                        break;
                     case "getName":
-                        responseMessages.push(this.#createDeviceNameMessage(device));
+                    case "getType":
+                    case "getSensorConfiguration":
+                        responseMessages.push(this.#createServerDeviceMessage(device, messageType));
                         break;
                     case "setName":
                         device.connectionManager.sendMessage("setType", sliceDataView(dataView, 1));
                         break;
-                    case "getType":
-                        responseMessages.push(this.#createDeviceTypeMessage(device));
-                        break;
                     case "setType":
-                        device.connectionManager.sendMessage("setType", dataView);
-                        break;
-                    case "getSensorConfiguration":
-                        responseMessages.push(this.#createDeviceSensorConfigurationMessage(device));
-                        break;
                     case "setSensorConfiguration":
-                        device.connectionManager.sendMessage("setSensorConfiguration", dataView);
-                        break;
                     case "triggerVibration":
-                        device.connectionManager.sendMessage("triggerVibration", dataView);
+                        device.connectionManager.sendMessage(messageType, dataView);
                         break;
                     default:
                         _console.error(`uncaught messageType "${messageType}"`);

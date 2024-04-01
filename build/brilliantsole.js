@@ -4974,22 +4974,38 @@
 	        this.#id = newId;
 	    }
 
-	    #isConnected = false;
-	    get isConnected() {
-	        return this.#isConnected;
+	    #isConnectedToServer = false;
+	    get isConnectedToServer() {
+	        return this.#isConnectedToServer;
 	    }
-	    set isConnected(newIsConnected) {
-	        _console$2.assertTypeWithError(newIsConnected, "boolean");
-	        if (this.#isConnected == newIsConnected) {
-	            _console$2.log("redundant isConnected assignment", newIsConnected);
+	    set isConnectedToServer(newIsConnectedToServer) {
+	        _console$2.assertTypeWithError(newIsConnectedToServer, "boolean");
+	        if (this.#isConnectedToServer == newIsConnectedToServer) {
+	            _console$2.log("redundant isConnectedToServer assignment", newIsConnectedToServer);
 	            return;
 	        }
-	        this.#isConnected = newIsConnected;
+	        this.#isConnectedToServer = newIsConnectedToServer;
 
-	        this.status = this.#isConnected ? "connected" : "not connected";
-	        if (this.#isConnected) {
+	        if (this.#isConnectedToServer) {
 	            this.#requestAllDeviceInformation();
 	        }
+	    }
+
+	    #_isConnected = false;
+	    get #isConnected() {
+	        return this.#_isConnected;
+	    }
+	    set #isConnected(newIsConnected) {
+	        _console$2.assertTypeWithError(newIsConnected, "boolean");
+	        if (this.#_isConnected == newIsConnected) {
+	            _console$2.log("redundant newIsConnected assignment", newIsConnected);
+	            return;
+	        }
+	        this.#_isConnected = newIsConnected;
+	        this.status = this.#_isConnected ? "connected" : "not connected";
+	    }
+	    get isConnected() {
+	        return this.#isConnected;
 	    }
 
 	    async connect() {
@@ -5061,8 +5077,8 @@
 
 	                switch (messageType) {
 	                    case "isConnected":
-	                        const isConnected = Boolean(dataView.getUint8(byteOffset++));
-	                        this.isConnected = isConnected;
+	                        const isConnectedToServer = Boolean(dataView.getUint8(byteOffset++));
+	                        this.isConnectedToServer = isConnectedToServer;
 	                        break;
 	                    case "manufacturerName":
 	                    case "modelNumber":
@@ -5081,13 +5097,48 @@
 	                        _console$2.error(`uncaught messageType "${messageType}"`);
 	                        break;
 	                }
+
+	                if (this.#allDeviceInformationConnectionMessageTypes.includes(messageType)) {
+	                    this.#didReceiveConnectionMessage.set(messageType, true);
+	                    if (!this.#isConnected && this.#didReceiveAllDeviceInformationMessages) {
+	                        this.#isConnected = true;
+	                    }
+	                }
 	            },
 	            true
 	        );
 	    }
 
+	    /** @type {Map.<ConnectionMessageType, boolean>} */
+	    #didReceiveConnectionMessage = new Map();
+
+	    /** @type {ConnectionMessageType[]} */
+	    static #AllDeviceInformationConnectionMessageTypes = [
+	        "manufacturerName",
+	        "modelNumber",
+	        "softwareRevision",
+	        "hardwareRevision",
+	        "firmwareRevision",
+	        "pnpId",
+	        "batteryLevel",
+	        "getName",
+	        "getType",
+	        "getSensorConfiguration",
+	    ];
+	    get #allDeviceInformationConnectionMessageTypes() {
+	        return WebSocketClientConnectionManager.#AllDeviceInformationConnectionMessageTypes;
+	    }
+	    get #didReceiveAllDeviceInformationMessages() {
+	        return this.#allDeviceInformationConnectionMessageTypes.every((messageType) => {
+	            return this.#didReceiveConnectionMessage.get(messageType);
+	        });
+	    }
+
 	    #requestAllDeviceInformation() {
-	        this.sendWebSocketMessage("deviceInformation", "batteryLevel", "getName", "getType", "getSensorConfiguration");
+	        this.#allDeviceInformationConnectionMessageTypes.forEach((messageType) => {
+	            this.#didReceiveConnectionMessage.set(messageType, false);
+	        });
+	        this.sendWebSocketMessage(...this.#allDeviceInformationConnectionMessageTypes);
 	    }
 	}
 
@@ -5584,7 +5635,7 @@
 	            const device = this.#getOrCreateDevice(deviceId);
 	            /** @type {WebSocketClientConnectionManager} */
 	            const connectionManager = device.connectionManager;
-	            connectionManager.isConnected = true;
+	            connectionManager.isConnectedToServer = true;
 	        });
 	    }
 
@@ -6022,56 +6073,12 @@
 
 	    /**
 	     * @param {Device} device
+	     * @param {DeviceEventType} messageType
+	     * @param {DataView?} dataView
 	     * @returns {ServerDeviceMessage}
 	     */
-	    #createDeviceBatteryLevelMessage(device) {
-	        return { type: "batteryLevel", data: device.latestConnectionMessage.get("batteryLevel") };
-	    }
-
-	    /**
-	     * @param {Device} device
-	     * @returns {ServerDeviceMessage[]}
-	     */
-	    #createDeviceInformationMessages(device) {
-	        /** @type {ServerDeviceMessage[]} */
-	        const deviceInformationMessages = [];
-	        for (const type in device.deviceInformation) {
-	            deviceInformationMessages.push({ type, data: device.latestConnectionMessage.get(type) });
-	        }
-	        _console.log("deviceInformationMessages", deviceInformationMessages);
-	        return deviceInformationMessages;
-	    }
-
-	    /**
-	     * @param {Device} device
-	     * @returns {ServerDeviceMessage}
-	     */
-	    #createDeviceNameMessage(device) {
-	        return { type: "getName", data: device.latestConnectionMessage.get("getName") };
-	    }
-
-	    /**
-	     * @param {Device} device
-	     * @returns {ServerDeviceMessage}
-	     */
-	    #createDeviceTypeMessage(device) {
-	        return { type: "getType", data: device.latestConnectionMessage.get("getType") };
-	    }
-
-	    /**
-	     * @param {Device} device
-	     * @returns {ServerDeviceMessage}
-	     */
-	    #createDeviceSensorConfigurationMessage(device) {
-	        return { type: "getSensorConfiguration", data: device.latestConnectionMessage.get("getSensorConfiguration") };
-	    }
-
-	    /**
-	     * @param {Device} device
-	     * @param {DataView} dataView
-	     */
-	    #createDeviceSensorDataMessage(device, dataView) {
-	        return this.#createDeviceMessage(device, { type: "sensorData", data: dataView });
+	    #createServerDeviceMessage(device, messageType, dataView) {
+	        return { type: messageType, data: dataView || device.latestConnectionMessage.get(messageType) };
 	    }
 
 	    
@@ -6091,34 +6098,9 @@
 	        /** @type {DataView} */
 	        const dataView = deviceEvent.message.dataView;
 
-	        /** @type {(DeviceEventType | ServerDeviceMessage)[]} */
-	        let broadcastMessages = [];
-
-	        switch (messageType) {
-	            case "batteryLevel":
-	                broadcastMessages.push(this.#createDeviceBatteryLevelMessage(device, dataView));
-	                break;
-	            case "getType":
-	                broadcastMessages.push(this.#createDeviceTypeMessage(device, dataView));
-	                break;
-	            case "getName":
-	                broadcastMessages.push(this.#createDeviceNameMessage(device, dataView));
-	                break;
-	            case "getSensorConfiguration":
-	                broadcastMessages.push(this.#createDeviceSensorConfigurationMessage(device, dataView));
-	                break;
-	            case "sensorData":
-	                broadcastMessages.push(this.#createDeviceSensorDataMessage(device, dataView));
-	                break;
-	            default:
-	                _console.log(`uncaught messageType "${messageType}"`);
-	                break;
-	        }
-
-	        _console.log({ broadcastMessages });
-	        if (broadcastMessages.length > 0) {
-	            this.#broadcastMessage(this.#createDeviceMessage(device, ...responseMessages));
-	        }
+	        this.#broadcastMessage(
+	            this.#createDeviceMessage(device, this.#createServerDeviceMessage(device, messageType, dataView))
+	        );
 	    }
 
 	    // DEVICE MESSAGING
@@ -6141,32 +6123,25 @@
 	                /** @type {ConnectionMessageType} */
 	                const messageType = _messageType;
 	                switch (messageType) {
+	                    case "manufacturerName":
+	                    case "modelNumber":
+	                    case "softwareRevision":
+	                    case "hardwareRevision":
+	                    case "firmwareRevision":
+	                    case "pnpId":
 	                    case "batteryLevel":
-	                        responseMessages.push(this.#createDeviceBatteryLevelMessage(device));
-	                        break;
-	                    case "deviceInformation":
-	                        responseMessages.push(...this.#createDeviceInformationMessages(device));
-	                        break;
 	                    case "getName":
-	                        responseMessages.push(this.#createDeviceNameMessage(device));
+	                    case "getType":
+	                    case "getSensorConfiguration":
+	                        responseMessages.push(this.#createServerDeviceMessage(device, messageType));
 	                        break;
 	                    case "setName":
 	                        device.connectionManager.sendMessage("setType", sliceDataView(dataView, 1));
 	                        break;
-	                    case "getType":
-	                        responseMessages.push(this.#createDeviceTypeMessage(device));
-	                        break;
 	                    case "setType":
-	                        device.connectionManager.sendMessage("setType", dataView);
-	                        break;
-	                    case "getSensorConfiguration":
-	                        responseMessages.push(this.#createDeviceSensorConfigurationMessage(device));
-	                        break;
 	                    case "setSensorConfiguration":
-	                        device.connectionManager.sendMessage("setSensorConfiguration", dataView);
-	                        break;
 	                    case "triggerVibration":
-	                        device.connectionManager.sendMessage("triggerVibration", dataView);
+	                        device.connectionManager.sendMessage(messageType, dataView);
 	                        break;
 	                    default:
 	                        _console.error(`uncaught messageType "${messageType}"`);
