@@ -119,24 +119,30 @@ client.addEventListener("discoveredDevice", (event) => {
     if (!discoveredDeviceContainer) {
         discoveredDeviceContainer = discoveredDeviceTemplate.content.cloneNode(true).querySelector(".discoveredDevice");
 
-        /** @type {Device?} */
-        let device;
-
         /** @type {HTMLButtonElement} */
         const toggleConnectionButton = discoveredDeviceContainer.querySelector(".toggleConnection");
         toggleConnectionButton.addEventListener("click", () => {
+            let device = client.devices[discoveredDevice.id];
             if (device) {
                 device.toggleConnection();
             } else {
                 device = client.connectToDevice(discoveredDevice.id);
-                device.addEventListener("connectionStatus", () => {
-                    updateToggleConnectionButton();
-                });
-                updateToggleConnectionButton();
+                onDevice(device);
             }
         });
 
-        const updateToggleConnectionButton = () => {
+        /** @param {Device} device */
+        const onDevice = (device) => {
+            device.addEventListener("connectionStatus", () => {
+                updateToggleConnectionButton(device);
+            });
+            updateToggleConnectionButton(device);
+        };
+
+        discoveredDeviceContainer._onDevice = onDevice;
+
+        /** @param {Device} device */
+        const updateToggleConnectionButton = (device) => {
             console.log({ deviceConnectionStatus: device.connectionStatus });
             switch (device.connectionStatus) {
                 case "connected":
@@ -202,6 +208,17 @@ client.addEventListener("isScanning", () => {
     if (client.isScanning) {
         clearDiscoveredDevices();
     }
+});
+
+BS.Device.AddEventListener("deviceIsConnected", (event) => {
+    /** @type {Device} */
+    const device = event.message.device;
+    console.log("deviceIsConnected", device);
+    const discoveredDeviceContainer = discoveredDeviceContainers[device.id];
+    if (!discoveredDeviceContainer) {
+        return;
+    }
+    discoveredDeviceContainer._onDevice(device);
 });
 
 // AVAILABLE DEVICES

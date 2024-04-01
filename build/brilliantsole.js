@@ -4988,6 +4988,8 @@
 
 	        if (this.#isConnectedToServer) {
 	            this.#requestAllDeviceInformation();
+	        } else {
+	            this.#isConnected = false;
 	        }
 	    }
 
@@ -5078,6 +5080,7 @@
 	                switch (messageType) {
 	                    case "isConnected":
 	                        const isConnectedToServer = Boolean(dataView.getUint8(byteOffset++));
+	                        _console$2.log({ isConnectedToServer });
 	                        this.isConnectedToServer = isConnectedToServer;
 	                        break;
 	                    case "manufacturerName":
