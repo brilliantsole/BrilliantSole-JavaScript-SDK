@@ -232,6 +232,9 @@ BS.Device.AddEventListener("availableDevices", (event) => {
     console.log({ availableDevices });
 
     availableDevices.forEach((device) => {
+        if (device.connectionType != "webSocketClient") {
+            return;
+        }
         /** @type {HTMLElement} */
         let availableDeviceContainer;
         availableDeviceContainer = availableDeviceContainers[device.id];
