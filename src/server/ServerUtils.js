@@ -127,7 +127,7 @@ export function createServerDeviceMessage(...messages) {
 
 /** @param {...ConnectionMessageType|ClientDeviceMessage} messages */
 export function createClientDeviceMessage(...messages) {
-    return createMessage(ConnectionManager.MessageTypes, ...messages);
+    return createMessage(BaseConnectionManager.MessageTypes, ...messages);
 }
 
 // STATIC MESSAGES

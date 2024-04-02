@@ -5012,7 +5012,7 @@
 
 	/** @param {...ConnectionMessageType|ClientDeviceMessage} messages */
 	function createClientDeviceMessage(...messages) {
-	    return createMessage(ConnectionManager.MessageTypes, ...messages);
+	    return createMessage(BaseConnectionManager.MessageTypes, ...messages);
 	}
 
 	// STATIC MESSAGES
