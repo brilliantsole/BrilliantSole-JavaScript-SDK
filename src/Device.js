@@ -227,12 +227,24 @@ class Device {
         this.#clear();
         return this.connectionManager.connect();
     }
+    #isConnected = false;
     get isConnected() {
-        return this.connectionManager?.isConnected;
+        return this.#isConnected;
+        //return this.connectionManager?.isConnected && this.#hasAllInformation;
     }
     /** @throws {Error} if not connected */
     #assertIsConnected() {
         _console.assertWithError(this.isConnected, "not connected");
+    }
+
+    get #hasAllInformation() {
+        return (
+            this.#isDeviceInformationComplete != null &&
+            this.batteryLevel != null &&
+            this.name != null &&
+            this.type != null &&
+            this.#sensorConfiguration != null
+        );
     }
 
     get canReconnect() {
@@ -292,8 +304,18 @@ class Device {
         }
     }
 
+    /** @returns {ConnectionStatus} */
     get connectionStatus() {
-        return this.#connectionManager?.status || "not connected";
+        switch (this.#connectionManager?.status) {
+            case "connected":
+                return this.isConnected ? "connected" : "connecting";
+            case "not connected":
+            case "connecting":
+            case "disconnecting":
+                return this.#connectionManager.status;
+            default:
+                return "not connected";
+        }
     }
 
     /** @param {ConnectionStatus} connectionStatus */
@@ -318,13 +340,32 @@ class Device {
             }
         }
 
-        this.#dispatchEvent({ type: "connectionStatus", message: { connectionStatus } });
-        this.#dispatchEvent({ type: this.connectionStatus });
+        this.#checkConnection();
+    }
 
-        switch (connectionStatus) {
-            case "connected":
-            case "not connected":
+    #checkConnection() {
+        this.#isConnected = this.connectionManager?.isConnected && this.#hasAllInformation;
+
+        /** @param {boolean} includeIsConnected */
+        const dispatchEvent = (includeIsConnected) => {
+            this.#dispatchEvent({ type: "connectionStatus", message: { connectionStatus: this.connectionStatus } });
+            this.#dispatchEvent({ type: this.connectionStatus });
+            if (includeIsConnected) {
                 this.#dispatchEvent({ type: "isConnected", message: { isConnected: this.isConnected } });
+            }
+        };
+
+        switch (this.connectionStatus) {
+            case "connected":
+                if (this.#isConnected) {
+                    dispatchEvent(true);
+                }
+                break;
+            case "not connected":
+                dispatchEvent(true);
+                break;
+            default:
+                dispatchEvent(false);
                 break;
         }
     }
@@ -425,6 +466,10 @@ class Device {
 
         this.latestConnectionMessage.set(messageType, dataView);
         this.#dispatchEvent({ type: "connectionMessage", message: { messageType, dataView } });
+
+        if (!this.isConnected && this.#hasAllInformation) {
+            this.#checkConnection();
+        }
     }
 
     /** @type {Map.<ConnectionMessageType, DataView>} */

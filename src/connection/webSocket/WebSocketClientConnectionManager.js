@@ -37,40 +37,23 @@ class WebSocketClientConnectionManager extends ConnectionManager {
         this.#id = newId;
     }
 
-    #isConnectedToServer = false;
-    get isConnectedToServer() {
-        return this.#isConnectedToServer;
+    #isConnected = false;
+    get isConnected() {
+        return this.#isConnected;
     }
-    set isConnectedToServer(newIsConnectedToServer) {
-        _console.assertTypeWithError(newIsConnectedToServer, "boolean");
-        if (this.#isConnectedToServer == newIsConnectedToServer) {
-            _console.log("redundant isConnectedToServer assignment", newIsConnectedToServer);
-            return;
-        }
-        this.#isConnectedToServer = newIsConnectedToServer;
-
-        if (this.#isConnectedToServer) {
-            this.#requestAllDeviceInformation();
-        } else {
-            this.#isConnected = false;
-        }
-    }
-
-    #_isConnected = false;
-    get #isConnected() {
-        return this.#_isConnected;
-    }
-    set #isConnected(newIsConnected) {
+    set isConnected(newIsConnected) {
         _console.assertTypeWithError(newIsConnected, "boolean");
-        if (this.#_isConnected == newIsConnected) {
+        if (this.#isConnected == newIsConnected) {
             _console.log("redundant newIsConnected assignment", newIsConnected);
             return;
         }
-        this.#_isConnected = newIsConnected;
-        this.status = this.#_isConnected ? "connected" : "not connected";
-    }
-    get isConnected() {
-        return this.#isConnected;
+        this.#isConnected = newIsConnected;
+
+        this.status = this.#isConnected ? "connected" : "not connected";
+
+        if (this.#isConnected) {
+            this.#requestAllDeviceInformation();
+        }
     }
 
     async connect() {
@@ -90,16 +73,10 @@ class WebSocketClientConnectionManager extends ConnectionManager {
         await super.sendMessage(...arguments);
         switch (messageType) {
             case "setName":
-                this.sendWebSocketMessage({ type: "setName", data });
-                break;
             case "setType":
-                this.sendWebSocketMessage({ type: "setType", data });
-                break;
             case "setSensorConfiguration":
-                this.sendWebSocketMessage({ type: "setSensorConfiguration", data });
-                break;
             case "triggerVibration":
-                this.sendWebSocketMessage({ type: "triggerVibration", data });
+                this.sendWebSocketMessage({ type: messageType, data });
                 break;
             default:
                 throw Error(`uncaught messageType "${messageType}"`);
@@ -142,9 +119,9 @@ class WebSocketClientConnectionManager extends ConnectionManager {
 
                 switch (messageType) {
                     case "isConnected":
-                        const isConnectedToServer = Boolean(dataView.getUint8(byteOffset++));
-                        _console.log({ isConnectedToServer });
-                        this.isConnectedToServer = isConnectedToServer;
+                        const isConnected = Boolean(dataView.getUint8(byteOffset++));
+                        _console.log({ isConnected });
+                        this.isConnected = isConnected;
                         break;
                     case "manufacturerName":
                     case "modelNumber":
@@ -163,20 +140,10 @@ class WebSocketClientConnectionManager extends ConnectionManager {
                         _console.error(`uncaught messageType "${messageType}"`);
                         break;
                 }
-
-                if (this.#allDeviceInformationConnectionMessageTypes.includes(messageType)) {
-                    this.#didReceiveConnectionMessage.set(messageType, true);
-                    if (!this.#isConnected && this.#didReceiveAllDeviceInformationMessages) {
-                        this.#isConnected = true;
-                    }
-                }
             },
             true
         );
     }
-
-    /** @type {Map.<ConnectionMessageType, boolean>} */
-    #didReceiveConnectionMessage = new Map();
 
     /** @type {ConnectionMessageType[]} */
     static #AllDeviceInformationConnectionMessageTypes = [
@@ -194,16 +161,7 @@ class WebSocketClientConnectionManager extends ConnectionManager {
     get #allDeviceInformationConnectionMessageTypes() {
         return WebSocketClientConnectionManager.#AllDeviceInformationConnectionMessageTypes;
     }
-    get #didReceiveAllDeviceInformationMessages() {
-        return this.#allDeviceInformationConnectionMessageTypes.every((messageType) => {
-            return this.#didReceiveConnectionMessage.get(messageType);
-        });
-    }
-
     #requestAllDeviceInformation() {
-        this.#allDeviceInformationConnectionMessageTypes.forEach((messageType) => {
-            this.#didReceiveConnectionMessage.set(messageType, false);
-        });
         this.sendWebSocketMessage(...this.#allDeviceInformationConnectionMessageTypes);
     }
 }

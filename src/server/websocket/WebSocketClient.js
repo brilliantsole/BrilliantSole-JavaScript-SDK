@@ -508,7 +508,7 @@ class WebSocketClient {
             const device = this.#getOrCreateDevice(deviceId);
             /** @type {WebSocketClientConnectionManager} */
             const connectionManager = device.connectionManager;
-            connectionManager.isConnectedToServer = true;
+            connectionManager.isConnected = true;
         });
     }
 

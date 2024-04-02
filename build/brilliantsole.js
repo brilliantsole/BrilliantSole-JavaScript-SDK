@@ -370,7 +370,7 @@
 
 	/** @typedef {"webBluetooth" | "noble" | "webSocketClient"} ConnectionType */
 	/** @typedef {"not connected" | "connecting" | "connected" | "disconnecting"} ConnectionStatus */
-	/** @typedef {"deviceInformation" | "manufacturerName" | "modelNumber" | "softwareRevision" | "hardwareRevision" | "firmwareRevision" | "pnpId" | "serialNumber" | "batteryLevel" | "getName" | "setName" | "getType" | "setType" | "getSensorConfiguration" | "setSensorConfiguration" | "sensorData" | "triggerVibration"} ConnectionMessageType */
+	/** @typedef {"manufacturerName" | "modelNumber" | "softwareRevision" | "hardwareRevision" | "firmwareRevision" | "pnpId" | "serialNumber" | "batteryLevel" | "getName" | "setName" | "getType" | "setType" | "getSensorConfiguration" | "setSensorConfiguration" | "sensorData" | "triggerVibration"} ConnectionMessageType */
 
 	const _console$l = createConsole("ConnectionManager");
 
@@ -388,7 +388,6 @@
 	class ConnectionManager {
 	    /** @type {ConnectionMessageType[]} */
 	    static #MessageTypes = [
-	        "deviceInformation",
 	        "manufacturerName",
 	        "modelNumber",
 	        "softwareRevision",
@@ -3073,12 +3072,24 @@
 	        this.#clear();
 	        return this.connectionManager.connect();
 	    }
+	    #isConnected = false;
 	    get isConnected() {
-	        return this.connectionManager?.isConnected;
+	        return this.#isConnected;
+	        //return this.connectionManager?.isConnected && this.#hasAllInformation;
 	    }
 	    /** @throws {Error} if not connected */
 	    #assertIsConnected() {
 	        _console$b.assertWithError(this.isConnected, "not connected");
+	    }
+
+	    get #hasAllInformation() {
+	        return (
+	            this.#isDeviceInformationComplete != null &&
+	            this.batteryLevel != null &&
+	            this.name != null &&
+	            this.type != null &&
+	            this.#sensorConfiguration != null
+	        );
 	    }
 
 	    get canReconnect() {
@@ -3138,8 +3149,18 @@
 	        }
 	    }
 
+	    /** @returns {ConnectionStatus} */
 	    get connectionStatus() {
-	        return this.#connectionManager?.status || "not connected";
+	        switch (this.#connectionManager?.status) {
+	            case "connected":
+	                return this.isConnected ? "connected" : "connecting";
+	            case "not connected":
+	            case "connecting":
+	            case "disconnecting":
+	                return this.#connectionManager.status;
+	            default:
+	                return "not connected";
+	        }
 	    }
 
 	    /** @param {ConnectionStatus} connectionStatus */
@@ -3164,13 +3185,32 @@
 	            }
 	        }
 
-	        this.#dispatchEvent({ type: "connectionStatus", message: { connectionStatus } });
-	        this.#dispatchEvent({ type: this.connectionStatus });
+	        this.#checkConnection();
+	    }
 
-	        switch (connectionStatus) {
-	            case "connected":
-	            case "not connected":
+	    #checkConnection() {
+	        this.#isConnected = this.connectionManager?.isConnected && this.#hasAllInformation;
+
+	        /** @param {boolean} includeIsConnected */
+	        const dispatchEvent = (includeIsConnected) => {
+	            this.#dispatchEvent({ type: "connectionStatus", message: { connectionStatus: this.connectionStatus } });
+	            this.#dispatchEvent({ type: this.connectionStatus });
+	            if (includeIsConnected) {
 	                this.#dispatchEvent({ type: "isConnected", message: { isConnected: this.isConnected } });
+	            }
+	        };
+
+	        switch (this.connectionStatus) {
+	            case "connected":
+	                if (this.#isConnected) {
+	                    dispatchEvent(true);
+	                }
+	                break;
+	            case "not connected":
+	                dispatchEvent(true);
+	                break;
+	            default:
+	                dispatchEvent(false);
 	                break;
 	        }
 	    }
@@ -3269,6 +3309,10 @@
 
 	        this.latestConnectionMessage.set(messageType, dataView);
 	        this.#dispatchEvent({ type: "connectionMessage", message: { messageType, dataView } });
+
+	        if (!this.isConnected && this.#hasAllInformation) {
+	            this.#checkConnection();
+	        }
 	    }
 
 	    /** @type {Map.<ConnectionMessageType, DataView>} */
@@ -5012,40 +5056,23 @@
 	        this.#id = newId;
 	    }
 
-	    #isConnectedToServer = false;
-	    get isConnectedToServer() {
-	        return this.#isConnectedToServer;
+	    #isConnected = false;
+	    get isConnected() {
+	        return this.#isConnected;
 	    }
-	    set isConnectedToServer(newIsConnectedToServer) {
-	        _console$2.assertTypeWithError(newIsConnectedToServer, "boolean");
-	        if (this.#isConnectedToServer == newIsConnectedToServer) {
-	            _console$2.log("redundant isConnectedToServer assignment", newIsConnectedToServer);
-	            return;
-	        }
-	        this.#isConnectedToServer = newIsConnectedToServer;
-
-	        if (this.#isConnectedToServer) {
-	            this.#requestAllDeviceInformation();
-	        } else {
-	            this.#isConnected = false;
-	        }
-	    }
-
-	    #_isConnected = false;
-	    get #isConnected() {
-	        return this.#_isConnected;
-	    }
-	    set #isConnected(newIsConnected) {
+	    set isConnected(newIsConnected) {
 	        _console$2.assertTypeWithError(newIsConnected, "boolean");
-	        if (this.#_isConnected == newIsConnected) {
+	        if (this.#isConnected == newIsConnected) {
 	            _console$2.log("redundant newIsConnected assignment", newIsConnected);
 	            return;
 	        }
-	        this.#_isConnected = newIsConnected;
-	        this.status = this.#_isConnected ? "connected" : "not connected";
-	    }
-	    get isConnected() {
-	        return this.#isConnected;
+	        this.#isConnected = newIsConnected;
+
+	        this.status = this.#isConnected ? "connected" : "not connected";
+
+	        if (this.#isConnected) {
+	            this.#requestAllDeviceInformation();
+	        }
 	    }
 
 	    async connect() {
@@ -5065,16 +5092,10 @@
 	        await super.sendMessage(...arguments);
 	        switch (messageType) {
 	            case "setName":
-	                this.sendWebSocketMessage({ type: "setName", data });
-	                break;
 	            case "setType":
-	                this.sendWebSocketMessage({ type: "setType", data });
-	                break;
 	            case "setSensorConfiguration":
-	                this.sendWebSocketMessage({ type: "setSensorConfiguration", data });
-	                break;
 	            case "triggerVibration":
-	                this.sendWebSocketMessage({ type: "triggerVibration", data });
+	                this.sendWebSocketMessage({ type: messageType, data });
 	                break;
 	            default:
 	                throw Error(`uncaught messageType "${messageType}"`);
@@ -5117,9 +5138,9 @@
 
 	                switch (messageType) {
 	                    case "isConnected":
-	                        const isConnectedToServer = Boolean(dataView.getUint8(byteOffset++));
-	                        _console$2.log({ isConnectedToServer });
-	                        this.isConnectedToServer = isConnectedToServer;
+	                        const isConnected = Boolean(dataView.getUint8(byteOffset++));
+	                        _console$2.log({ isConnected });
+	                        this.isConnected = isConnected;
 	                        break;
 	                    case "manufacturerName":
 	                    case "modelNumber":
@@ -5138,20 +5159,10 @@
 	                        _console$2.error(`uncaught messageType "${messageType}"`);
 	                        break;
 	                }
-
-	                if (this.#allDeviceInformationConnectionMessageTypes.includes(messageType)) {
-	                    this.#didReceiveConnectionMessage.set(messageType, true);
-	                    if (!this.#isConnected && this.#didReceiveAllDeviceInformationMessages) {
-	                        this.#isConnected = true;
-	                    }
-	                }
 	            },
 	            true
 	        );
 	    }
-
-	    /** @type {Map.<ConnectionMessageType, boolean>} */
-	    #didReceiveConnectionMessage = new Map();
 
 	    /** @type {ConnectionMessageType[]} */
 	    static #AllDeviceInformationConnectionMessageTypes = [
@@ -5169,16 +5180,7 @@
 	    get #allDeviceInformationConnectionMessageTypes() {
 	        return WebSocketClientConnectionManager.#AllDeviceInformationConnectionMessageTypes;
 	    }
-	    get #didReceiveAllDeviceInformationMessages() {
-	        return this.#allDeviceInformationConnectionMessageTypes.every((messageType) => {
-	            return this.#didReceiveConnectionMessage.get(messageType);
-	        });
-	    }
-
 	    #requestAllDeviceInformation() {
-	        this.#allDeviceInformationConnectionMessageTypes.forEach((messageType) => {
-	            this.#didReceiveConnectionMessage.set(messageType, false);
-	        });
 	        this.sendWebSocketMessage(...this.#allDeviceInformationConnectionMessageTypes);
 	    }
 	}
@@ -5676,7 +5678,7 @@
 	            const device = this.#getOrCreateDevice(deviceId);
 	            /** @type {WebSocketClientConnectionManager} */
 	            const connectionManager = device.connectionManager;
-	            connectionManager.isConnectedToServer = true;
+	            connectionManager.isConnected = true;
 	        });
 	    }
 
