@@ -3182,29 +3182,28 @@ class Device {
         this.#checkConnection();
     }
 
+    /** @param {boolean} includeIsConnected */
+    #dispatchConnectionEvents(includeIsConnected = false) {
+        this.#dispatchEvent({ type: "connectionStatus", message: { connectionStatus: this.connectionStatus } });
+        this.#dispatchEvent({ type: this.connectionStatus });
+        if (includeIsConnected) {
+            this.#dispatchEvent({ type: "isConnected", message: { isConnected: this.isConnected } });
+        }
+    }
     #checkConnection() {
         this.#isConnected = this.connectionManager?.isConnected && this.#hasAllInformation;
-
-        /** @param {boolean} includeIsConnected */
-        const dispatchEvent = (includeIsConnected) => {
-            this.#dispatchEvent({ type: "connectionStatus", message: { connectionStatus: this.connectionStatus } });
-            this.#dispatchEvent({ type: this.connectionStatus });
-            if (includeIsConnected) {
-                this.#dispatchEvent({ type: "isConnected", message: { isConnected: this.isConnected } });
-            }
-        };
 
         switch (this.connectionStatus) {
             case "connected":
                 if (this.#isConnected) {
-                    dispatchEvent(true);
+                    this.#dispatchConnectionEvents(true);
                 }
                 break;
             case "not connected":
-                dispatchEvent(true);
+                this.#dispatchConnectionEvents(true);
                 break;
             default:
-                dispatchEvent(false);
+                this.#dispatchConnectionEvents(false);
                 break;
         }
     }
