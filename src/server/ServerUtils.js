@@ -104,15 +104,15 @@ export function createServerMessage(...messages) {
 /** @typedef {import("../Device").DeviceEventType} DeviceEventType */
 
 /**
- * @typedef ServerDeviceMessage
+ * @typedef DeviceMessage
  * @type {Object}
  * @property {DeviceEventType} type
  * @property {MessageLike|MessageLike[]?} data
  */
 
-/** @param {...DeviceEventType|ServerDeviceMessage} messages */
-export function createServerDeviceMessage(...messages) {
-    _console.log("createServerDeviceMessage", ...messages);
+/** @param {...DeviceEventType|DeviceMessage} messages */
+export function createDeviceMessage(...messages) {
+    _console.log("createDeviceMessage", ...messages);
     return createMessage(Device.EventTypes, ...messages);
 }
 

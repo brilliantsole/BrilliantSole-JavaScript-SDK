@@ -206,7 +206,7 @@ function capitalizeFirstCharacter(string) {
     return string[0].toUpperCase() + string.slice(1);
 }
 
-const _console$m = createConsole("EventDispatcher", { log: false });
+const _console$n = createConsole("EventDispatcher", { log: false });
 
 /**
  * @typedef EventDispatcherEvent
@@ -231,9 +231,9 @@ class EventDispatcher {
      * @param {string[]?} eventTypes
      */
     constructor(target, eventTypes) {
-        _console$m.assertWithError(target, "target is required");
+        _console$n.assertWithError(target, "target is required");
         this.#target = target;
-        _console$m.assertWithError(Array.isArray(eventTypes) || eventTypes == undefined, "eventTypes must be an array");
+        _console$n.assertWithError(Array.isArray(eventTypes) || eventTypes == undefined, "eventTypes must be an array");
         this.#eventTypes = eventTypes;
     }
 
@@ -258,7 +258,7 @@ class EventDispatcher {
      * @throws {Error}
      */
     #assertValidEventType(type) {
-        _console$m.assertWithError(this.#isValidEventType(type), `invalid event type "${type}"`);
+        _console$n.assertWithError(this.#isValidEventType(type), `invalid event type "${type}"`);
     }
 
     /** @type {Object.<string, [function]?>?} */
@@ -270,7 +270,7 @@ class EventDispatcher {
      * @param {EventDispatcherOptions?} options
      */
     addEventListener(type, listener, options) {
-        _console$m.log(`adding "${type}" eventListener`, listener);
+        _console$n.log(`adding "${type}" eventListener`, listener);
         this.#assertValidEventType(type);
 
         if (!this.#listeners) this.#listeners = {};
@@ -300,7 +300,7 @@ class EventDispatcher {
      * @param {EventDispatcherListener} listener
      */
     hasEventListener(type, listener) {
-        _console$m.log(`has "${type}" eventListener?`, listener);
+        _console$n.log(`has "${type}" eventListener?`, listener);
         this.#assertValidEventType(type);
         return this.#listeners?.[type]?.includes(listener);
     }
@@ -310,7 +310,7 @@ class EventDispatcher {
      * @param {EventDispatcherListener} listener
      */
     removeEventListener(type, listener) {
-        _console$m.log(`removing "${type}" eventListener`, listener);
+        _console$n.log(`removing "${type}" eventListener`, listener);
         this.#assertValidEventType(type);
         if (this.hasEventListener(type, listener)) {
             const index = this.#listeners[type].indexOf(listener);
@@ -344,7 +344,7 @@ class EventDispatcher {
  */
 function addEventListeners(target, boundEventListeners) {
     let addEventListener = target.addEventListener || target.addListener || target.on || target.AddEventListener;
-    _console$m.assertWithError(addEventListener, "no add listener function found for target");
+    _console$n.assertWithError(addEventListener, "no add listener function found for target");
     addEventListener = addEventListener.bind(target);
     Object.entries(boundEventListeners).forEach(([eventType, eventListener]) => {
         addEventListener(eventType, eventListener);
@@ -357,7 +357,7 @@ function addEventListeners(target, boundEventListeners) {
  */
 function removeEventListeners(target, boundEventListeners) {
     let removeEventListener = target.removeEventListener || target.removeListener || target.RemoveEventListener;
-    _console$m.assertWithError(removeEventListener, "no remove listener function found for target");
+    _console$n.assertWithError(removeEventListener, "no remove listener function found for target");
     removeEventListener = removeEventListener.bind(target);
     Object.entries(boundEventListeners).forEach(([eventType, eventListener]) => {
         removeEventListener(eventType, eventListener);
@@ -368,7 +368,7 @@ function removeEventListeners(target, boundEventListeners) {
 /** @typedef {"not connected" | "connecting" | "connected" | "disconnecting"} ConnectionStatus */
 /** @typedef {"manufacturerName" | "modelNumber" | "softwareRevision" | "hardwareRevision" | "firmwareRevision" | "pnpId" | "serialNumber" | "batteryLevel" | "getName" | "setName" | "getType" | "setType" | "getSensorConfiguration" | "setSensorConfiguration" | "sensorData" | "triggerVibration"} ConnectionMessageType */
 
-const _console$l = createConsole("ConnectionManager");
+const _console$m = createConsole("ConnectionManager");
 
 /**
  * @callback ConnectionStatusCallback
@@ -443,12 +443,12 @@ class BaseConnectionManager {
 
     /** @throws {Error} if not supported */
     #assertIsSupported() {
-        _console$l.assertWithError(this.isSupported, `${this.constructor.name} is not supported`);
+        _console$m.assertWithError(this.isSupported, `${this.constructor.name} is not supported`);
     }
 
     /** @throws {Error} if abstract class */
     #assertIsSubclass() {
-        _console$l.assertWithError(
+        _console$m.assertWithError(
             this.constructor != BaseConnectionManager,
             `${this.constructor.name} must be subclassed`
         );
@@ -466,12 +466,12 @@ class BaseConnectionManager {
     }
     /** @protected */
     set status(newConnectionStatus) {
-        _console$l.assertTypeWithError(newConnectionStatus, "string");
+        _console$m.assertTypeWithError(newConnectionStatus, "string");
         if (this.#status == newConnectionStatus) {
-            _console$l.log(`tried to assign same connection status "${newConnectionStatus}"`);
+            _console$m.log(`tried to assign same connection status "${newConnectionStatus}"`);
             return;
         }
-        _console$l.log(`new connection status "${newConnectionStatus}"`);
+        _console$m.log(`new connection status "${newConnectionStatus}"`);
         this.#status = newConnectionStatus;
         this.onStatusUpdated?.(this.status);
     }
@@ -482,19 +482,19 @@ class BaseConnectionManager {
 
     /** @throws {Error} if connected */
     #assertIsNotConnected() {
-        _console$l.assertWithError(!this.isConnected, "device is already connected");
+        _console$m.assertWithError(!this.isConnected, "device is already connected");
     }
     /** @throws {Error} if connecting */
     #assertIsNotConnecting() {
-        _console$l.assertWithError(this.status != "connecting", "device is already connecting");
+        _console$m.assertWithError(this.status != "connecting", "device is already connecting");
     }
     /** @throws {Error} if not connected */
     #assertIsConnected() {
-        _console$l.assertWithError(this.isConnected, "device is not connected");
+        _console$m.assertWithError(this.isConnected, "device is not connected");
     }
     /** @throws {Error} if disconnecting */
     #assertIsNotDisconnecting() {
-        _console$l.assertWithError(this.status != "disconnecting", "device is already disconnecting");
+        _console$m.assertWithError(this.status != "disconnecting", "device is already disconnecting");
     }
     /** @throws {Error} if not connected or is disconnecting */
     #assertIsConnectedAndNotDisconnecting() {
@@ -514,13 +514,13 @@ class BaseConnectionManager {
     async reconnect() {
         this.#assertIsNotConnected();
         this.#assertIsNotConnecting();
-        _console$l.assert(this.canReconnect, "unable to reconnect");
+        _console$m.assert(this.canReconnect, "unable to reconnect");
     }
     async disconnect() {
         this.#assertIsConnected();
         this.#assertIsNotDisconnecting();
         this.status = "disconnecting";
-        _console$l.log("disconnecting from device...");
+        _console$m.log("disconnecting from device...");
     }
 
     /**
@@ -529,7 +529,7 @@ class BaseConnectionManager {
      */
     async sendMessage(messageType, data) {
         this.#assertIsConnectedAndNotDisconnecting();
-        _console$l.log("sending message", { messageType, data });
+        _console$m.log("sending message", { messageType, data });
     }
 }
 
@@ -756,7 +756,7 @@ function getCharacteristicProperties(characteristicName) {
     return properties;
 }
 
-const _console$k = createConsole("WebBluetoothConnectionManager", { log: true });
+const _console$l = createConsole("WebBluetoothConnectionManager", { log: true });
 
 
 
@@ -802,7 +802,7 @@ class WebBluetoothConnectionManager extends BaseConnectionManager {
     }
     set device(newDevice) {
         if (this.#device == newDevice) {
-            _console$k.log("tried to assign the same BluetoothDevice");
+            _console$l.log("tried to assign the same BluetoothDevice");
             return;
         }
         if (this.#device) {
@@ -836,20 +836,20 @@ class WebBluetoothConnectionManager extends BaseConnectionManager {
                 optionalServices: isInBrowser ? optionalServiceUUIDs : [],
             });
 
-            _console$k.log("got BluetoothDevice");
+            _console$l.log("got BluetoothDevice");
             this.device = device;
 
-            _console$k.log("connecting to device...");
+            _console$l.log("connecting to device...");
             const server = await this.device.gatt.connect();
-            _console$k.log(`connected to device? ${server.connected}`);
+            _console$l.log(`connected to device? ${server.connected}`);
 
             await this.#getServicesAndCharacteristics();
 
-            _console$k.log("fully connected");
+            _console$l.log("fully connected");
 
             this.status = "connected";
         } catch (error) {
-            _console$k.error(error);
+            _console$l.error(error);
             this.status = "not connected";
             this.server?.disconnect();
             this.#removeEventListeners();
@@ -858,49 +858,49 @@ class WebBluetoothConnectionManager extends BaseConnectionManager {
     async #getServicesAndCharacteristics() {
         this.#removeEventListeners();
 
-        _console$k.log("getting services...");
+        _console$l.log("getting services...");
         const services = await this.server.getPrimaryServices();
-        _console$k.log("got services", services.length);
+        _console$l.log("got services", services.length);
 
-        _console$k.log("getting characteristics...");
+        _console$l.log("getting characteristics...");
         for (const serviceIndex in services) {
             const service = services[serviceIndex];
-            _console$k.log({ service });
+            _console$l.log({ service });
             const serviceName = getServiceNameFromUUID(service.uuid);
-            _console$k.assertWithError(serviceName, `no name found for service uuid "${service.uuid}"`);
-            _console$k.log(`got "${serviceName}" service`);
+            _console$l.assertWithError(serviceName, `no name found for service uuid "${service.uuid}"`);
+            _console$l.log(`got "${serviceName}" service`);
             if (serviceName == "dfu") {
-                _console$k.log("skipping dfu service");
+                _console$l.log("skipping dfu service");
                 continue;
             }
             service._name = serviceName;
             this.#services.set(serviceName, service);
-            _console$k.log(`getting characteristics for "${serviceName}" service`);
+            _console$l.log(`getting characteristics for "${serviceName}" service`);
             const characteristics = await service.getCharacteristics();
-            _console$k.log(`got characteristics for "${serviceName}" service`);
+            _console$l.log(`got characteristics for "${serviceName}" service`);
             for (const characteristicIndex in characteristics) {
                 const characteristic = characteristics[characteristicIndex];
-                _console$k.log({ characteristic });
+                _console$l.log({ characteristic });
                 const characteristicName = getCharacteristicNameFromUUID(characteristic.uuid);
-                _console$k.assertWithError(
+                _console$l.assertWithError(
                     characteristicName,
                     `no name found for characteristic uuid "${characteristic.uuid}" in "${serviceName}" service`
                 );
-                _console$k.log(`got "${characteristicName}" characteristic in "${serviceName}" service`);
+                _console$l.log(`got "${characteristicName}" characteristic in "${serviceName}" service`);
                 characteristic._name = characteristicName;
                 this.#characteristics.set(characteristicName, characteristic);
                 addEventListeners(characteristic, this.#boundBluetoothCharacteristicEventListeners);
                 const characteristicProperties =
                     characteristic.properties || getCharacteristicProperties(characteristicName);
                 if (characteristicProperties.read) {
-                    _console$k.log(`reading "${characteristicName}" characteristic...`);
+                    _console$l.log(`reading "${characteristicName}" characteristic...`);
                     await characteristic.readValue();
                     if (isInBluefy || isInWebBLE) {
                         this.#onCharacteristicValueChanged(characteristic);
                     }
                 }
                 if (characteristicProperties.notify) {
-                    _console$k.log(`starting notifications for "${characteristicName}" characteristic`);
+                    _console$l.log(`starting notifications for "${characteristicName}" characteristic`);
                     await characteristic.startNotifications();
                 }
             }
@@ -923,7 +923,7 @@ class WebBluetoothConnectionManager extends BaseConnectionManager {
 
     /** @param {Event} event */
     #onCharacteristicvaluechanged(event) {
-        _console$k.log("oncharacteristicvaluechanged");
+        _console$l.log("oncharacteristicvaluechanged");
 
         /** @type {BluetoothRemoteGATTCharacteristic} */
         const characteristic = event.target;
@@ -933,19 +933,19 @@ class WebBluetoothConnectionManager extends BaseConnectionManager {
 
     /** @param {BluetoothRemoteGATTCharacteristic} characteristic */
     #onCharacteristicValueChanged(characteristic) {
-        _console$k.log("onCharacteristicValue");
+        _console$l.log("onCharacteristicValue");
 
         /** @type {BluetoothCharacteristicName} */
         const characteristicName = characteristic._name;
-        _console$k.assertWithError(
+        _console$l.assertWithError(
             characteristicName,
             `no name found for characteristic with uuid "${characteristic.uuid}"`
         );
 
-        _console$k.log(`oncharacteristicvaluechanged for "${characteristicName}" characteristic`);
+        _console$l.log(`oncharacteristicvaluechanged for "${characteristicName}" characteristic`);
         const dataView = characteristic.value;
-        _console$k.assertWithError(dataView, `no data found for "${characteristicName}" characteristic`);
-        _console$k.log(`data for "${characteristicName}" characteristic`, Array.from(new Uint8Array(dataView.buffer)));
+        _console$l.assertWithError(dataView, `no data found for "${characteristicName}" characteristic`);
+        _console$l.log(`data for "${characteristicName}" characteristic`, Array.from(new Uint8Array(dataView.buffer)));
 
         switch (characteristicName) {
             case "manufacturerName":
@@ -991,7 +991,7 @@ class WebBluetoothConnectionManager extends BaseConnectionManager {
 
     /** @param {Event} event */
     #onGattserverdisconnected(event) {
-        _console$k.log("gattserverdisconnected");
+        _console$l.log("gattserverdisconnected");
         this.status = "not connected";
     }
 
@@ -1025,12 +1025,12 @@ class WebBluetoothConnectionManager extends BaseConnectionManager {
         }
 
         if (!characteristicName) {
-            _console$k.log("no characteristicName found");
+            _console$l.log("no characteristicName found");
             return;
         }
 
         characteristic = this.#characteristics.get(characteristicName);
-        _console$k.assertWithError(characteristic, `no characteristic found with name "${characteristicName}"`);
+        _console$l.assertWithError(characteristic, `no characteristic found with name "${characteristicName}"`);
         if (data instanceof DataView) {
             data = data.buffer;
         }
@@ -1047,21 +1047,21 @@ class WebBluetoothConnectionManager extends BaseConnectionManager {
     }
     async reconnect() {
         await super.reconnect();
-        _console$k.log("attempting to reconnect...");
+        _console$l.log("attempting to reconnect...");
         this.status = "connecting";
         await this.server.connect();
         if (this.isConnected) {
-            _console$k.log("successfully reconnected!");
+            _console$l.log("successfully reconnected!");
             await this.#getServicesAndCharacteristics();
             this.status = "connected";
         } else {
-            _console$k.log("unable to reconnect");
+            _console$l.log("unable to reconnect");
             this.status = "not connected";
         }
     }
 }
 
-const _console$j = createConsole("ArrayBufferUtils", { log: false });
+const _console$k = createConsole("ArrayBufferUtils", { log: false });
 
 const textEncoder = new TextEncoder();
 
@@ -1136,11 +1136,11 @@ function sliceDataView(dataView, begin, length) {
     if (length) {
         end = dataView.byteOffset + begin + length;
     }
-    _console$j.log({ dataView, begin, end, length });
+    _console$k.log({ dataView, begin, end, length });
     return new DataView(dataView.buffer.slice(dataView.byteOffset + begin, end));
 }
 
-const _console$i = createConsole("NobleConnectionManager", { log: true });
+const _console$j = createConsole("NobleConnectionManager", { log: true });
 
 if (isInNode) {
     require("@abandonware/noble");
@@ -1207,20 +1207,20 @@ class NobleConnectionManager extends BaseConnectionManager {
                 throw Error(`uncaught messageType "${messageType}"`);
         }
 
-        _console$i.log("characteristicName", characteristicName);
+        _console$j.log("characteristicName", characteristicName);
 
         if (!characteristicName) {
-            _console$i.log("no characteristicName found");
+            _console$j.log("no characteristicName found");
             return;
         }
 
         characteristic = this.#characteristics.get(characteristicName);
-        _console$i.assertWithError(characteristic, `no characteristic found with name "${characteristicName}"`);
+        _console$j.assertWithError(characteristic, `no characteristic found with name "${characteristicName}"`);
         if (data instanceof DataView) {
             data = data.buffer;
         }
         const buffer = Buffer.from(data);
-        _console$i.log("writing data", buffer);
+        _console$j.log("writing data", buffer);
         await characteristic.writeAsync(buffer, false);
         if (characteristic.properties.includes("read")) {
             await characteristic.readAsync();
@@ -1233,7 +1233,7 @@ class NobleConnectionManager extends BaseConnectionManager {
     }
     async reconnect() {
         await super.reconnect();
-        _console$i.log("attempting to reconnect...");
+        _console$j.log("attempting to reconnect...");
         this.connect();
     }
 
@@ -1244,13 +1244,13 @@ class NobleConnectionManager extends BaseConnectionManager {
         return this.#noblePeripheral;
     }
     set noblePeripheral(newNoblePeripheral) {
-        _console$i.assertTypeWithError(newNoblePeripheral, "object");
+        _console$j.assertTypeWithError(newNoblePeripheral, "object");
         if (this.noblePeripheral == newNoblePeripheral) {
-            _console$i.log("attempted to assign duplicate noblePeripheral");
+            _console$j.log("attempted to assign duplicate noblePeripheral");
             return;
         }
 
-        _console$i.log("newNoblePeripheral", newNoblePeripheral.id);
+        _console$j.log("newNoblePeripheral", newNoblePeripheral.id);
 
         if (this.#noblePeripheral) {
             removeEventListeners(this.#noblePeripheral, this.#unboundNoblePeripheralListeners);
@@ -1278,7 +1278,7 @@ class NobleConnectionManager extends BaseConnectionManager {
     }
     /** @param {noble.Peripheral} noblePeripheral */
     async onNoblePeripheralConnect(noblePeripheral) {
-        _console$i.log("onNoblePeripheralConnect", noblePeripheral.id, noblePeripheral.state);
+        _console$j.log("onNoblePeripheralConnect", noblePeripheral.id, noblePeripheral.state);
         if (noblePeripheral.state == "connected") {
             await this.#noblePeripheral.discoverServicesAsync(allServiceUUIDs);
         }
@@ -1291,12 +1291,12 @@ class NobleConnectionManager extends BaseConnectionManager {
     }
     /** @param {noble.Peripheral} noblePeripheral */
     async onNoblePeripheralDisconnect(noblePeripheral) {
-        _console$i.log("onNoblePeripheralDisconnect", noblePeripheral.id);
+        _console$j.log("onNoblePeripheralDisconnect", noblePeripheral.id);
         await this.#onNoblePeripheralState();
     }
 
     async #onNoblePeripheralState() {
-        _console$i.log(`noblePeripheral ${this.id} state ${this.#noblePeripheral.state}`);
+        _console$j.log(`noblePeripheral ${this.id} state ${this.#noblePeripheral.state}`);
 
         switch (this.#noblePeripheral.state) {
             case "connected":
@@ -1313,16 +1313,16 @@ class NobleConnectionManager extends BaseConnectionManager {
                 this.status = "disconnecting";
                 break;
             case "error":
-                _console$i.error("noblePeripheral error");
+                _console$j.error("noblePeripheral error");
                 break;
             default:
-                _console$i.log(`uncaught noblePeripheral state ${this.#noblePeripheral.state}`);
+                _console$j.log(`uncaught noblePeripheral state ${this.#noblePeripheral.state}`);
                 break;
         }
     }
 
     #removeEventListeners() {
-        _console$i.log("removing noblePeripheral eventListeners");
+        _console$j.log("removing noblePeripheral eventListeners");
         this.#services.forEach((service) => {
             removeEventListeners(service, this.#unboundNobleServiceListeners);
         });
@@ -1343,7 +1343,7 @@ class NobleConnectionManager extends BaseConnectionManager {
      * @param {number} rssi
      */
     async onNoblePeripheralRssiUpdate(noblePeripheral, rssi) {
-        _console$i.log("onNoblePeripheralRssiUpdate", noblePeripheral.id, rssi);
+        _console$j.log("onNoblePeripheralRssiUpdate", noblePeripheral.id, rssi);
         // FILL
     }
 
@@ -1356,17 +1356,17 @@ class NobleConnectionManager extends BaseConnectionManager {
      * @param {noble.Service[]} services
      */
     async onNoblePeripheralServicesDiscover(noblePeripheral, services) {
-        _console$i.log(
+        _console$j.log(
             "onNoblePeripheralServicesDiscover",
             noblePeripheral.id,
             services.map((service) => service.uuid)
         );
         for (const index in services) {
             const service = services[index];
-            _console$i.log("service", service.uuid);
+            _console$j.log("service", service.uuid);
             const serviceName = getServiceNameFromUUID(service.uuid);
-            _console$i.assertWithError(serviceName, `no name found for service uuid "${service.uuid}"`);
-            _console$i.log({ serviceName });
+            _console$j.assertWithError(serviceName, `no name found for service uuid "${service.uuid}"`);
+            _console$j.log({ serviceName });
             this.#services.set(serviceName, service);
             service._name = serviceName;
             service._connectionManager = this;
@@ -1392,7 +1392,7 @@ class NobleConnectionManager extends BaseConnectionManager {
      * @param {noble.Characteristic[]} characteristics
      */
     async onNobleServiceCharacteristicsDiscover(service, characteristics) {
-        _console$i.log(
+        _console$j.log(
             "onNobleServiceCharacteristicsDiscover",
             service.uuid,
             characteristics.map((characteristic) => characteristic.uuid)
@@ -1400,13 +1400,13 @@ class NobleConnectionManager extends BaseConnectionManager {
 
         for (const index in characteristics) {
             const characteristic = characteristics[index];
-            _console$i.log("characteristic", characteristic.uuid);
+            _console$j.log("characteristic", characteristic.uuid);
             const characteristicName = getCharacteristicNameFromUUID(characteristic.uuid);
-            _console$i.assertWithError(
+            _console$j.assertWithError(
                 characteristicName,
                 `no name found for characteristic uuid "${characteristic.uuid}"`
             );
-            _console$i.log({ characteristicName });
+            _console$j.log({ characteristicName });
             this.#characteristics.set(characteristicName, characteristic);
             characteristic._name = characteristicName;
             characteristic._connectionManager = this;
@@ -1454,12 +1454,12 @@ class NobleConnectionManager extends BaseConnectionManager {
      * @param {boolean} isNotification
      */
     onNobleCharacteristicData(characteristic, data, isNotification) {
-        _console$i.log("onNobleCharacteristicData", characteristic.uuid, data, isNotification);
+        _console$j.log("onNobleCharacteristicData", characteristic.uuid, data, isNotification);
         const dataView = new DataView(dataToArrayBuffer(data));
 
         /** @type {BluetoothCharacteristicName} */
         const characteristicName = characteristic._name;
-        _console$i.assertWithError(
+        _console$j.assertWithError(
             characteristicName,
             `no name found for characteristic with uuid "${characteristic.uuid}"`
         );
@@ -1513,7 +1513,7 @@ class NobleConnectionManager extends BaseConnectionManager {
      * @param {noble.Characteristic} characteristic
      */
     onNobleCharacteristicWrite(characteristic) {
-        _console$i.log("onNobleCharacteristicWrite", characteristic.uuid);
+        _console$j.log("onNobleCharacteristicWrite", characteristic.uuid);
         // FILL
     }
 
@@ -1526,7 +1526,7 @@ class NobleConnectionManager extends BaseConnectionManager {
      * @param {boolean} isSubscribed
      */
     onNobleCharacteristicNotify(characteristic, isSubscribed) {
-        _console$i.log("onNobleCharacteristicNotify", characteristic.uuid, isSubscribed);
+        _console$j.log("onNobleCharacteristicNotify", characteristic.uuid, isSubscribed);
     }
 }
 
@@ -1679,7 +1679,7 @@ function createArray(arrayLength, objectOrCallback) {
  * @property {CenterOfPressure?} normalizedCenter
  */
 
-const _console$h = createConsole("PressureSensorDataManager", { log: true });
+const _console$i = createConsole("PressureSensorDataManager", { log: true });
 
 class PressureSensorDataManager {
     /** @type {DeviceType} */
@@ -1688,12 +1688,12 @@ class PressureSensorDataManager {
         return this.#deviceType;
     }
     set deviceType(newDeviceType) {
-        _console$h.assertTypeWithError(newDeviceType, "string");
+        _console$i.assertTypeWithError(newDeviceType, "string");
         if (this.#deviceType == newDeviceType) {
-            _console$h.log(`redundant deviceType assignment "${newDeviceType}"`);
+            _console$i.log(`redundant deviceType assignment "${newDeviceType}"`);
             return;
         }
-        _console$h.log({ newDeviceType });
+        _console$i.log({ newDeviceType });
         this.#deviceType = newDeviceType;
 
         this.#updatePressureSensorPositions();
@@ -1767,7 +1767,7 @@ class PressureSensorDataManager {
             }
             return { x, y };
         });
-        _console$h.log({ pressureSensorPositions });
+        _console$i.log({ pressureSensorPositions });
         this.#pressureSensorPositions = pressureSensorPositions;
     }
 
@@ -1812,14 +1812,14 @@ class PressureSensorDataManager {
             pressure.normalizedCenter = this.#centerOfPressureHelper.updateAndGetNormalization(pressure.center);
         }
 
-        _console$h.log({ pressure });
+        _console$i.log({ pressure });
         return pressure;
     }
 }
 
 /** @typedef {"acceleration" | "gravity" | "linearAcceleration" | "gyroscope" | "magnetometer" | "gameRotation" | "rotation"} MotionSensorType */
 
-const _console$g = createConsole("MotionSensorDataManager", { log: false });
+const _console$h = createConsole("MotionSensorDataManager", { log: false });
 
 /**
  * @typedef Vector3
@@ -1845,12 +1845,12 @@ class MotionSensorDataManager {
         return this.#deviceType;
     }
     set deviceType(newDeviceType) {
-        _console$g.assertTypeWithError(newDeviceType, "string");
+        _console$h.assertTypeWithError(newDeviceType, "string");
         if (this.#deviceType == newDeviceType) {
-            _console$g.log(`redundant deviceType assignment "${newDeviceType}"`);
+            _console$h.log(`redundant deviceType assignment "${newDeviceType}"`);
             return;
         }
-        _console$g.log({ newDeviceType });
+        _console$h.log({ newDeviceType });
         this.#deviceType = newDeviceType;
     }
 
@@ -1896,7 +1896,7 @@ class MotionSensorDataManager {
 
         const vector = { x, y, z };
 
-        _console$g.log({ vector });
+        _console$h.log({ vector });
         return vector;
     }
 
@@ -1924,7 +1924,7 @@ class MotionSensorDataManager {
 
         const quaternion = { x, y, z, w };
 
-        _console$g.log({ quaternion });
+        _console$h.log({ quaternion });
         return quaternion;
     }
 }
@@ -1945,7 +1945,7 @@ class BarometerSensorDataManager {
     }
 }
 
-const _console$f = createConsole("ParseUtils", { log: true });
+const _console$g = createConsole("ParseUtils", { log: true });
 
 const textDecoder = new TextDecoder();
 
@@ -1989,11 +1989,11 @@ function parseMessage(dataView, enumeration, callback, parseMessageLengthAsUint1
             messageLength = dataView.getUint8(byteOffset++);
         }
 
-        _console$f.log({ messageTypeEnum, messageType, messageLength, dataView });
-        _console$f.assertWithError(messageType, `invalid messageTypeEnum ${messageTypeEnum}`);
+        _console$g.log({ messageTypeEnum, messageType, messageLength, dataView });
+        _console$g.assertWithError(messageType, `invalid messageTypeEnum ${messageTypeEnum}`);
 
         const _dataView = sliceDataView(dataView, byteOffset, messageLength);
-        _console$f.log({ _dataView });
+        _console$g.log({ _dataView });
 
         callback(messageType, _dataView);
 
@@ -2001,7 +2001,7 @@ function parseMessage(dataView, enumeration, callback, parseMessageLengthAsUint1
     }
 }
 
-const _console$e = createConsole("SensorDataManager", { log: false });
+const _console$f = createConsole("SensorDataManager", { log: false });
 
 
 
@@ -2025,12 +2025,12 @@ class SensorDataManager {
         return this.#deviceType;
     }
     set deviceType(newDeviceType) {
-        _console$e.assertTypeWithError(newDeviceType, "string");
+        _console$f.assertTypeWithError(newDeviceType, "string");
         if (this.#deviceType == newDeviceType) {
-            _console$e.log(`redundant deviceType assignment "${newDeviceType}"`);
+            _console$f.log(`redundant deviceType assignment "${newDeviceType}"`);
             return;
         }
-        _console$e.log({ newDeviceType });
+        _console$f.log({ newDeviceType });
         this.#deviceType = newDeviceType;
 
         this.pressureSensorDataManager.deviceType = newDeviceType;
@@ -2062,13 +2062,13 @@ class SensorDataManager {
 
     /** @param {string} sensorType */
     static AssertValidSensorType(sensorType) {
-        _console$e.assertTypeWithError(sensorType, "string");
-        _console$e.assertWithError(this.#Types.includes(sensorType), `invalid sensorType "${sensorType}"`);
+        _console$f.assertTypeWithError(sensorType, "string");
+        _console$f.assertWithError(this.#Types.includes(sensorType), `invalid sensorType "${sensorType}"`);
     }
     /** @param {number} sensorTypeEnum */
     static AssertValidSensorTypeEnum(sensorTypeEnum) {
-        _console$e.assertTypeWithError(sensorTypeEnum, "number");
-        _console$e.assertWithError(sensorTypeEnum in this.#Types, `invalid sensorTypeEnum ${sensorTypeEnum}`);
+        _console$f.assertTypeWithError(sensorTypeEnum, "number");
+        _console$f.assertWithError(sensorTypeEnum in this.#Types, `invalid sensorTypeEnum ${sensorTypeEnum}`);
     }
 
     /** @type {SensorDataCallback?} */
@@ -2077,7 +2077,7 @@ class SensorDataManager {
     #timestampOffset = 0;
     #lastRawTimestamp = 0;
     clearTimestamp() {
-        _console$e.log("clearing sensorDataManager timestamp data");
+        _console$f.log("clearing sensorDataManager timestamp data");
         this.#timestampOffset = 0;
         this.#lastRawTimestamp = 0;
     }
@@ -2095,7 +2095,7 @@ class SensorDataManager {
 
     /** @param {DataView} dataView */
     parse(dataView) {
-        _console$e.log("sensorData", Array.from(new Uint8Array(dataView.buffer)));
+        _console$f.log("sensorData", Array.from(new Uint8Array(dataView.buffer)));
 
         let byteOffset = 0;
         const timestamp = this.#parseTimestamp(dataView, byteOffset);
@@ -2129,10 +2129,10 @@ class SensorDataManager {
                     // FILL
                     break;
                 default:
-                    _console$e.error(`uncaught sensorType "${sensorType}"`);
+                    _console$f.error(`uncaught sensorType "${sensorType}"`);
             }
 
-            _console$e.assertWithError(value, `no value defined for sensorType "${sensorType}"`);
+            _console$f.assertWithError(value, `no value defined for sensorType "${sensorType}"`);
             this.onDataReceived?.(sensorType, { timestamp, [sensorType]: value });
         });
     }
@@ -2166,7 +2166,7 @@ class SensorDataManager {
  * @property {number?} barometer
  */
 
-const _console$d = createConsole("SensorConfigurationManager", { log: false });
+const _console$e = createConsole("SensorConfigurationManager", { log: false });
 
 class SensorConfigurationManager {
     /** @type {DeviceType} */
@@ -2175,12 +2175,12 @@ class SensorConfigurationManager {
         return this.#deviceType;
     }
     set deviceType(newDeviceType) {
-        _console$d.assertTypeWithError(newDeviceType, "string");
+        _console$e.assertTypeWithError(newDeviceType, "string");
         if (this.#deviceType == newDeviceType) {
-            _console$d.log(`redundant deviceType assignment "${newDeviceType}"`);
+            _console$e.log(`redundant deviceType assignment "${newDeviceType}"`);
             return;
         }
-        _console$d.log({ newDeviceType });
+        _console$e.log({ newDeviceType });
         this.#deviceType = newDeviceType;
 
         // can later use for non-insole deviceTypes that ignore sensorTypes like "pressure"
@@ -2190,9 +2190,9 @@ class SensorConfigurationManager {
     #availableSensorTypes;
     /** @param {SensorType} sensorType */
     #assertAvailableSensorType(sensorType) {
-        _console$d.assertWithError(this.#availableSensorTypes, "must get initial sensorConfiguration");
+        _console$e.assertWithError(this.#availableSensorTypes, "must get initial sensorConfiguration");
         const isSensorTypeAvailable = this.#availableSensorTypes?.includes(sensorType);
-        _console$d.assert(isSensorTypeAvailable, `unavailable sensor type "${sensorType}"`);
+        _console$e.assert(isSensorTypeAvailable, `unavailable sensor type "${sensorType}"`);
         return isSensorTypeAvailable;
     }
 
@@ -2204,14 +2204,14 @@ class SensorConfigurationManager {
             const sensorTypeIndex = dataView.getUint8(byteOffset);
             const sensorType = SensorDataManager.Types[sensorTypeIndex];
             if (!sensorType) {
-                _console$d.warn(`unknown sensorType index ${sensorTypeIndex}`);
+                _console$e.warn(`unknown sensorType index ${sensorTypeIndex}`);
                 continue;
             }
             const sensorRate = dataView.getUint16(byteOffset + 1, true);
-            _console$d.log({ sensorType, sensorRate });
+            _console$e.log({ sensorType, sensorRate });
             parsedSensorConfiguration[sensorType] = sensorRate;
         }
-        _console$d.log({ parsedSensorConfiguration });
+        _console$e.log({ parsedSensorConfiguration });
         this.#availableSensorTypes = Object.keys(parsedSensorConfiguration);
         return parsedSensorConfiguration;
     }
@@ -2233,13 +2233,13 @@ class SensorConfigurationManager {
 
     /** @param {sensorRate} number */
     static #AssertValidSensorRate(sensorRate) {
-        _console$d.assertTypeWithError(sensorRate, "number");
-        _console$d.assertWithError(sensorRate >= 0, `sensorRate must be 0 or greater (got ${sensorRate})`);
-        _console$d.assertWithError(
+        _console$e.assertTypeWithError(sensorRate, "number");
+        _console$e.assertWithError(sensorRate >= 0, `sensorRate must be 0 or greater (got ${sensorRate})`);
+        _console$e.assertWithError(
             sensorRate < this.MaxSensorRate,
             `sensorRate must be 0 or greater (got ${sensorRate})`
         );
-        _console$d.assertWithError(
+        _console$e.assertWithError(
             sensorRate % this.SensorRateStep == 0,
             `sensorRate must be multiple of ${this.SensorRateStep}`
         );
@@ -2266,7 +2266,7 @@ class SensorConfigurationManager {
             this.#assertValidSensorRate(sensorRate);
             dataView.setUint16(index * 3 + 1, sensorConfiguration[sensorType], true);
         });
-        _console$d.log({ sensorConfigurationData: dataView });
+        _console$e.log({ sensorConfigurationData: dataView });
         return dataView;
     }
 
@@ -2532,7 +2532,7 @@ const VibrationWaveformEffects = [
     "smoothHum10",
 ];
 
-const _console$c = createConsole("VibrationManager");
+const _console$d = createConsole("VibrationManager");
 
 /** @typedef {"front" | "rear"} VibrationLocation */
 /** @typedef {"waveformEffect" | "waveform"} VibrationType */
@@ -2565,8 +2565,8 @@ class VibrationManager {
     }
     /** @param {VibrationLocation} location */
     #verifyLocation(location) {
-        _console$c.assertTypeWithError(location, "string");
-        _console$c.assertWithError(this.locations.includes(location), `invalid location "${location}"`);
+        _console$d.assertTypeWithError(location, "string");
+        _console$d.assertWithError(this.locations.includes(location), `invalid location "${location}"`);
     }
     /** @param {VibrationLocation[]} locations */
     #verifyLocations(locations) {
@@ -2584,15 +2584,15 @@ class VibrationManager {
             const locationIndex = this.locations.indexOf(location);
             locationsBitmask |= 1 << locationIndex;
         });
-        _console$c.log({ locationsBitmask });
-        _console$c.assertWithError(locationsBitmask > 0, `locationsBitmask must not be zero`);
+        _console$d.log({ locationsBitmask });
+        _console$d.assertWithError(locationsBitmask > 0, `locationsBitmask must not be zero`);
         return locationsBitmask;
     }
 
     /** @param {any[]} array */
     #assertNonEmptyArray(array) {
-        _console$c.assertWithError(Array.isArray(array), "passed non-array");
-        _console$c.assertWithError(array.length > 0, "passed empty array");
+        _console$d.assertWithError(Array.isArray(array), "passed non-array");
+        _console$d.assertWithError(array.length > 0, "passed empty array");
     }
 
     static get WaveformEffects() {
@@ -2603,7 +2603,7 @@ class VibrationManager {
     }
     /** @param {VibrationWaveformEffect} waveformEffect */
     #verifyWaveformEffect(waveformEffect) {
-        _console$c.assertWithError(
+        _console$d.assertWithError(
             this.waveformEffects.includes(waveformEffect),
             `invalid waveformEffect "${waveformEffect}"`
         );
@@ -2623,8 +2623,8 @@ class VibrationManager {
             this.#verifyWaveformEffect(waveformEffect);
         } else if (waveformEffectSegment.delay != undefined) {
             const { delay } = waveformEffectSegment;
-            _console$c.assertWithError(delay >= 0, `delay must be 0ms or greater (got ${delay})`);
-            _console$c.assertWithError(
+            _console$d.assertWithError(delay >= 0, `delay must be 0ms or greater (got ${delay})`);
+            _console$d.assertWithError(
                 delay <= this.maxWaveformEffectSegmentDelay,
                 `delay must be ${this.maxWaveformEffectSegmentDelay}ms or less (got ${delay})`
             );
@@ -2646,12 +2646,12 @@ class VibrationManager {
     }
     /** @param {number} waveformEffectSegmentLoopCount */
     #verifyWaveformEffectSegmentLoopCount(waveformEffectSegmentLoopCount) {
-        _console$c.assertTypeWithError(waveformEffectSegmentLoopCount, "number");
-        _console$c.assertWithError(
+        _console$d.assertTypeWithError(waveformEffectSegmentLoopCount, "number");
+        _console$d.assertWithError(
             waveformEffectSegmentLoopCount >= 0,
             `waveformEffectSegmentLoopCount must be 0 or greater (got ${waveformEffectSegmentLoopCount})`
         );
-        _console$c.assertWithError(
+        _console$d.assertWithError(
             waveformEffectSegmentLoopCount <= this.maxWaveformEffectSegmentLoopCount,
             `waveformEffectSegmentLoopCount must be ${this.maxWaveformEffectSegmentLoopCount} or fewer (got ${waveformEffectSegmentLoopCount})`
         );
@@ -2667,7 +2667,7 @@ class VibrationManager {
     /** @param {VibrationWaveformEffectSegment[]} waveformEffectSegments */
     #verifyWaveformEffectSegments(waveformEffectSegments) {
         this.#assertNonEmptyArray(waveformEffectSegments);
-        _console$c.assertWithError(
+        _console$d.assertWithError(
             waveformEffectSegments.length <= this.maxNumberOfWaveformEffectSegments,
             `must have ${this.maxNumberOfWaveformEffectSegments} waveformEffectSegments or fewer (got ${waveformEffectSegments.length})`
         );
@@ -2685,12 +2685,12 @@ class VibrationManager {
     }
     /** @param {number} waveformEffectSequenceLoopCount */
     #verifyWaveformEffectSequenceLoopCount(waveformEffectSequenceLoopCount) {
-        _console$c.assertTypeWithError(waveformEffectSequenceLoopCount, "number");
-        _console$c.assertWithError(
+        _console$d.assertTypeWithError(waveformEffectSequenceLoopCount, "number");
+        _console$d.assertWithError(
             waveformEffectSequenceLoopCount >= 0,
             `waveformEffectSequenceLoopCount must be 0 or greater (got ${waveformEffectSequenceLoopCount})`
         );
-        _console$c.assertWithError(
+        _console$d.assertWithError(
             waveformEffectSequenceLoopCount <= this.maxWaveformEffectSequenceLoopCount,
             `waveformEffectSequenceLoopCount must be ${this.maxWaveformEffectSequenceLoopCount} or fewer (got ${waveformEffectSequenceLoopCount})`
         );
@@ -2705,22 +2705,22 @@ class VibrationManager {
     }
     /** @param {VibrationWaveformSegment} waveformSegment */
     #verifyWaveformSegment(waveformSegment) {
-        _console$c.assertTypeWithError(waveformSegment.amplitude, "number");
-        _console$c.assertWithError(
+        _console$d.assertTypeWithError(waveformSegment.amplitude, "number");
+        _console$d.assertWithError(
             waveformSegment.amplitude >= 0,
             `amplitude must be 0 or greater (got ${waveformSegment.amplitude})`
         );
-        _console$c.assertWithError(
+        _console$d.assertWithError(
             waveformSegment.amplitude <= 1,
             `amplitude must be 1 or less (got ${waveformSegment.amplitude})`
         );
 
-        _console$c.assertTypeWithError(waveformSegment.duration, "number");
-        _console$c.assertWithError(
+        _console$d.assertTypeWithError(waveformSegment.duration, "number");
+        _console$d.assertWithError(
             waveformSegment.duration > 0,
             `duration must be greater than 0ms (got ${waveformSegment.duration}ms)`
         );
-        _console$c.assertWithError(
+        _console$d.assertWithError(
             waveformSegment.duration <= this.maxWaveformSegmentDuration,
             `duration must be ${this.maxWaveformSegmentDuration}ms or less (got ${waveformSegment.duration}ms)`
         );
@@ -2735,7 +2735,7 @@ class VibrationManager {
     /** @param {VibrationWaveformSegment[]} waveformSegments */
     #verifyWaveformSegments(waveformSegments) {
         this.#assertNonEmptyArray(waveformSegments);
-        _console$c.assertWithError(
+        _console$d.assertWithError(
             waveformSegments.length <= this.maxNumberOfWaveformSegments,
             `must have ${this.maxNumberOfWaveformSegments} waveformSegments or fewer (got ${waveformSegments.length})`
         );
@@ -2804,7 +2804,7 @@ class VibrationManager {
             dataArray[byteOffset++] = waveformEffectSequenceLoopCount;
         }
         const dataView = new DataView(Uint8Array.from(dataArray).buffer);
-        _console$c.log({ dataArray, dataView });
+        _console$d.log({ dataArray, dataView });
         return this.#createData(locations, "waveformEffect", dataView);
     }
     /**
@@ -2818,7 +2818,7 @@ class VibrationManager {
             dataView.setUint8(index * 2, Math.floor(waveformSegment.amplitude * 127));
             dataView.setUint8(index * 2 + 1, Math.floor(waveformSegment.duration / 10));
         });
-        _console$c.log({ dataView });
+        _console$d.log({ dataView });
         return this.#createData(locations, "waveform", dataView);
     }
 
@@ -2832,8 +2832,8 @@ class VibrationManager {
     }
     /** @param {VibrationType} vibrationType */
     #verifyVibrationType(vibrationType) {
-        _console$c.assertTypeWithError(vibrationType, "string");
-        _console$c.assertWithError(this.#types.includes(vibrationType), `invalid vibrationType "${vibrationType}"`);
+        _console$d.assertTypeWithError(vibrationType, "string");
+        _console$d.assertWithError(this.#types.includes(vibrationType), `invalid vibrationType "${vibrationType}"`);
     }
 
     /**
@@ -2842,18 +2842,18 @@ class VibrationManager {
      * @param {DataView} dataView
      */
     #createData(locations, vibrationType, dataView) {
-        _console$c.assertWithError(dataView?.byteLength > 0, "no data received");
+        _console$d.assertWithError(dataView?.byteLength > 0, "no data received");
         const locationsBitmask = this.#createLocationsBitmask(locations);
         this.#verifyVibrationType(vibrationType);
         const vibrationTypeIndex = this.#types.indexOf(vibrationType);
-        _console$c.log({ locationsBitmask, vibrationTypeIndex, dataView });
+        _console$d.log({ locationsBitmask, vibrationTypeIndex, dataView });
         const data = concatenateArrayBuffers(locationsBitmask, vibrationTypeIndex, dataView.byteLength, dataView);
-        _console$c.log({ data });
+        _console$d.log({ data });
         return data;
     }
 }
 
-const _console$b = createConsole("Device", { log: true });
+const _console$c = createConsole("Device", { log: true });
 
 
 
@@ -3047,7 +3047,7 @@ class Device {
     }
     set connectionManager(newConnectionManager) {
         if (this.connectionManager == newConnectionManager) {
-            _console$b.log("same connectionManager is already assigned");
+            _console$c.log("same connectionManager is already assigned");
             return;
         }
 
@@ -3061,7 +3061,7 @@ class Device {
         }
 
         this.#connectionManager = newConnectionManager;
-        _console$b.log("assigned new connectionManager", this.#connectionManager);
+        _console$c.log("assigned new connectionManager", this.#connectionManager);
     }
 
     async connect() {
@@ -3078,7 +3078,7 @@ class Device {
     }
     /** @throws {Error} if not connected */
     #assertIsConnected() {
-        _console$b.assertWithError(this.isConnected, "not connected");
+        _console$c.assertWithError(this.isConnected, "not connected");
     }
 
     get #hasAllInformation() {
@@ -3104,7 +3104,7 @@ class Device {
         return this.#ReconnectOnDisconnection;
     }
     static set ReconnectOnDisconnection(newReconnectOnDisconnection) {
-        _console$b.assertTypeWithError(newReconnectOnDisconnection, "boolean");
+        _console$c.assertTypeWithError(newReconnectOnDisconnection, "boolean");
         this.#ReconnectOnDisconnection = newReconnectOnDisconnection;
     }
 
@@ -3113,7 +3113,7 @@ class Device {
         return this.#reconnectOnDisconnection;
     }
     set reconnectOnDisconnection(newReconnectOnDisconnection) {
-        _console$b.assertTypeWithError(newReconnectOnDisconnection, "boolean");
+        _console$c.assertTypeWithError(newReconnectOnDisconnection, "boolean");
         this.#reconnectOnDisconnection = newReconnectOnDisconnection;
     }
     /** @type {number?} */
@@ -3164,21 +3164,21 @@ class Device {
 
     /** @param {ConnectionStatus} connectionStatus */
     #onConnectionStatusUpdated(connectionStatus) {
-        _console$b.log({ connectionStatus });
+        _console$c.log({ connectionStatus });
 
         if (connectionStatus == "not connected") {
             //this.#clear();
 
             if (this.canReconnect && this.reconnectOnDisconnection) {
-                _console$b.log("starting reconnect interval...");
+                _console$c.log("starting reconnect interval...");
                 this.#reconnectIntervalId = setInterval(() => {
-                    _console$b.log("attempting reconnect...");
+                    _console$c.log("attempting reconnect...");
                     this.reconnect();
                 }, 1000);
             }
         } else {
             if (this.#reconnectIntervalId != undefined) {
-                _console$b.log("clearing reconnect interval");
+                _console$c.log("clearing reconnect interval");
                 clearInterval(this.#reconnectIntervalId);
                 this.#reconnectIntervalId = undefined;
             }
@@ -3227,31 +3227,31 @@ class Device {
      * @param {DataView} dataView
      */
     #onConnectionMessageReceived(messageType, dataView) {
-        _console$b.log({ messageType, dataView });
+        _console$c.log({ messageType, dataView });
         switch (messageType) {
             case "manufacturerName":
                 const manufacturerName = this.#textDecoder.decode(dataView);
-                _console$b.log({ manufacturerName });
+                _console$c.log({ manufacturerName });
                 this.#updateDeviceInformation({ manufacturerName });
                 break;
             case "modelNumber":
                 const modelNumber = this.#textDecoder.decode(dataView);
-                _console$b.log({ modelNumber });
+                _console$c.log({ modelNumber });
                 this.#updateDeviceInformation({ modelNumber });
                 break;
             case "softwareRevision":
                 const softwareRevision = this.#textDecoder.decode(dataView);
-                _console$b.log({ softwareRevision });
+                _console$c.log({ softwareRevision });
                 this.#updateDeviceInformation({ softwareRevision });
                 break;
             case "hardwareRevision":
                 const hardwareRevision = this.#textDecoder.decode(dataView);
-                _console$b.log({ hardwareRevision });
+                _console$c.log({ hardwareRevision });
                 this.#updateDeviceInformation({ hardwareRevision });
                 break;
             case "firmwareRevision":
                 const firmwareRevision = this.#textDecoder.decode(dataView);
-                _console$b.log({ firmwareRevision });
+                _console$c.log({ firmwareRevision });
                 this.#updateDeviceInformation({ firmwareRevision });
                 break;
             case "pnpId":
@@ -3264,36 +3264,36 @@ class Device {
                 if (pnpId.source == "Bluetooth") {
                     pnpId.vendorId = dataView.getUint16(1, true);
                 }
-                _console$b.log({ pnpId });
+                _console$c.log({ pnpId });
                 this.#updateDeviceInformation({ pnpId });
                 break;
             case "serialNumber":
                 const serialNumber = this.#textDecoder.decode(dataView);
-                _console$b.log({ serialNumber });
+                _console$c.log({ serialNumber });
                 // will only be used for node.js
                 break;
 
             case "batteryLevel":
                 const batteryLevel = dataView.getUint8(0);
-                _console$b.log("received battery level", { batteryLevel });
+                _console$c.log("received battery level", { batteryLevel });
                 this.#updateBatteryLevel(batteryLevel);
                 break;
 
             case "getName":
                 const name = this.#textDecoder.decode(dataView);
-                _console$b.log({ name });
+                _console$c.log({ name });
                 this.#updateName(name);
                 break;
             case "getType":
                 const typeEnum = dataView.getUint8(0);
                 const type = this.#types[typeEnum];
-                _console$b.log({ typeEnum, type });
+                _console$c.log({ typeEnum, type });
                 this.#updateType(type);
                 break;
 
             case "getSensorConfiguration":
                 const sensorConfiguration = this.#sensorConfigurationManager.parse(dataView);
-                _console$b.log({ sensorConfiguration });
+                _console$c.log({ sensorConfiguration });
                 this.#updateSensorConfiguration(sensorConfiguration);
                 break;
 
@@ -3349,7 +3349,7 @@ class Device {
 
     /** @param {DeviceInformation} partialDeviceInformation */
     #updateDeviceInformation(partialDeviceInformation) {
-        _console$b.log({ partialDeviceInformation });
+        _console$c.log({ partialDeviceInformation });
         for (const deviceInformationName in partialDeviceInformation) {
             this.#dispatchEvent({
                 type: deviceInformationName,
@@ -3358,9 +3358,9 @@ class Device {
         }
 
         Object.assign(this.#deviceInformation, partialDeviceInformation);
-        _console$b.log({ deviceInformation: this.#deviceInformation });
+        _console$c.log({ deviceInformation: this.#deviceInformation });
         if (this.#isDeviceInformationComplete) {
-            _console$b.log("completed deviceInformation");
+            _console$c.log("completed deviceInformation");
             this.#dispatchEvent({ type: "deviceInformation", message: { deviceInformation: this.#deviceInformation } });
         }
     }
@@ -3374,13 +3374,13 @@ class Device {
     }
     /** @param {number} updatedBatteryLevel */
     #updateBatteryLevel(updatedBatteryLevel) {
-        _console$b.assertTypeWithError(updatedBatteryLevel, "number");
+        _console$c.assertTypeWithError(updatedBatteryLevel, "number");
         if (this.#batteryLevel == updatedBatteryLevel) {
-            _console$b.log(`duplicate batteryLevel assignment ${updatedBatteryLevel}`);
+            _console$c.log(`duplicate batteryLevel assignment ${updatedBatteryLevel}`);
             return;
         }
         this.#batteryLevel = updatedBatteryLevel;
-        _console$b.log({ updatedBatteryLevel: this.#batteryLevel });
+        _console$c.log({ updatedBatteryLevel: this.#batteryLevel });
         this.#dispatchEvent({ type: "batteryLevel", message: { batteryLevel: this.#batteryLevel } });
     }
 
@@ -3393,9 +3393,9 @@ class Device {
 
     /** @param {string} updatedName */
     #updateName(updatedName) {
-        _console$b.assertTypeWithError(updatedName, "string");
+        _console$c.assertTypeWithError(updatedName, "string");
         this.#name = updatedName;
-        _console$b.log({ updatedName: this.#name });
+        _console$c.log({ updatedName: this.#name });
         this.#dispatchEvent({ type: "getName", message: { name: this.#name } });
     }
     static get MinNameLength() {
@@ -3413,17 +3413,17 @@ class Device {
     /** @param {string} newName */
     async setName(newName) {
         this.#assertIsConnected();
-        _console$b.assertTypeWithError(newName, "string");
-        _console$b.assertWithError(
+        _console$c.assertTypeWithError(newName, "string");
+        _console$c.assertWithError(
             newName.length >= this.minNameLength,
             `name must be greater than ${this.minNameLength} characters long ("${newName}" is ${newName.length} characters long)`
         );
-        _console$b.assertWithError(
+        _console$c.assertWithError(
             newName.length < this.maxNameLength,
             `name must be less than ${this.maxNameLength} characters long ("${newName}" is ${newName.length} characters long)`
         );
         const setNameData = this.#textEncoder.encode(newName);
-        _console$b.log({ setNameData });
+        _console$c.log({ setNameData });
         await this.#connectionManager.sendMessage("setName", setNameData);
     }
 
@@ -3446,22 +3446,22 @@ class Device {
     }
     /** @param {DeviceType} type */
     #assertValidDeviceType(type) {
-        _console$b.assertEnumWithError(type, this.#types);
+        _console$c.assertEnumWithError(type, this.#types);
     }
     /** @param {number} typeEnum */
     #assertValidDeviceTypeEnum(typeEnum) {
-        _console$b.assertTypeWithError(typeEnum, "number");
-        _console$b.assertWithError(this.#types[typeEnum], `invalid typeEnum ${typeEnum}`);
+        _console$c.assertTypeWithError(typeEnum, "number");
+        _console$c.assertWithError(this.#types[typeEnum], `invalid typeEnum ${typeEnum}`);
     }
     /** @param {DeviceType} updatedType */
     #updateType(updatedType) {
         this.#assertValidDeviceType(updatedType);
         if (updatedType == this.type) {
-            _console$b.log("redundant type assignment");
+            _console$c.log("redundant type assignment");
             return;
         }
         this.#type = updatedType;
-        _console$b.log({ updatedType: this.#type });
+        _console$c.log({ updatedType: this.#type });
 
         this.#sensorDataManager.deviceType = this.#type;
         this.#sensorConfigurationManager.deviceType = this.#type;
@@ -3476,7 +3476,7 @@ class Device {
     async #setTypeEnum(newTypeEnum) {
         this.#assertValidDeviceTypeEnum(newTypeEnum);
         const setTypeData = Uint8Array.from([newTypeEnum]);
-        _console$b.log({ setTypeData });
+        _console$c.log({ setTypeData });
         await this.#connectionManager.sendMessage("setType", setTypeData);
     }
     /** @param {DeviceType} newType */
@@ -3559,9 +3559,9 @@ class Device {
     /** @param {SensorConfiguration} updatedSensorConfiguration */
     #updateSensorConfiguration(updatedSensorConfiguration) {
         this.#sensorConfiguration = updatedSensorConfiguration;
-        _console$b.log({ updatedSensorConfiguration: this.#sensorConfiguration });
+        _console$c.log({ updatedSensorConfiguration: this.#sensorConfiguration });
         if (!this.#sensorConfigurationManager.hasAtLeastOneNonZeroSensorRate(this.sensorConfiguration)) {
-            _console$b.log("clearing sensorDataManager timestamp...");
+            _console$c.log("clearing sensorDataManager timestamp...");
             this.#sensorDataManager.clearTimestamp();
         }
         this.#dispatchEvent({
@@ -3572,9 +3572,9 @@ class Device {
     /** @param {SensorConfiguration} newSensorConfiguration */
     async setSensorConfiguration(newSensorConfiguration) {
         this.#assertIsConnected();
-        _console$b.log({ newSensorConfiguration });
+        _console$c.log({ newSensorConfiguration });
         const setSensorConfigurationData = this.#sensorConfigurationManager.createData(newSensorConfiguration);
-        _console$b.log({ setSensorConfigurationData });
+        _console$c.log({ setSensorConfigurationData });
         await this.#connectionManager.sendMessage("setSensorConfiguration", setSensorConfigurationData);
     }
 
@@ -3583,7 +3583,7 @@ class Device {
         return this.#ClearSensorConfigurationOnLeave;
     }
     static set ClearSensorConfigurationOnLeave(newClearSensorConfigurationOnLeave) {
-        _console$b.assertTypeWithError(newClearSensorConfigurationOnLeave, "boolean");
+        _console$c.assertTypeWithError(newClearSensorConfigurationOnLeave, "boolean");
         this.#ClearSensorConfigurationOnLeave = newClearSensorConfigurationOnLeave;
     }
 
@@ -3592,7 +3592,7 @@ class Device {
         return this.#clearSensorConfigurationOnLeave;
     }
     set clearSensorConfigurationOnLeave(newClearSensorConfigurationOnLeave) {
-        _console$b.assertTypeWithError(newClearSensorConfigurationOnLeave, "boolean");
+        _console$c.assertTypeWithError(newClearSensorConfigurationOnLeave, "boolean");
         this.#clearSensorConfigurationOnLeave = newClearSensorConfigurationOnLeave;
     }
 
@@ -3629,7 +3629,7 @@ class Device {
      * @param {number} sensorData.timestamp
      */
     #onSensorDataReceived(sensorType, sensorData) {
-        _console$b.log({ sensorType, sensorData });
+        _console$c.log({ sensorType, sensorData });
         this.#dispatchEvent({ type: sensorType, message: sensorData });
         this.#dispatchEvent({ type: "sensorData", message: { ...sensorData, sensorType } });
     }
@@ -3704,7 +3704,7 @@ class Device {
                 default:
                     throw Error(`invalid vibration type "${type}"`);
             }
-            _console$b.log({ type, dataView });
+            _console$c.log({ type, dataView });
             triggerVibrationData = concatenateArrayBuffers(triggerVibrationData, dataView);
         });
         await this.#connectionManager.sendMessage("triggerVibration", triggerVibrationData);
@@ -3724,7 +3724,7 @@ class Device {
     }
     static set UseLocalStorage(newUseLocalStorage) {
         this.#AssertLocalStorage();
-        _console$b.assertTypeWithError(newUseLocalStorage, "boolean");
+        _console$c.assertTypeWithError(newUseLocalStorage, "boolean");
         this.#UseLocalStorage = newUseLocalStorage;
         if (this.#UseLocalStorage && !this.#LocalStorageConfiguration) {
             this.#LoadFromLocalStorage();
@@ -3756,8 +3756,8 @@ class Device {
     }
 
     static #AssertLocalStorage() {
-        _console$b.assertWithError(isInBrowser, "localStorage is only available in the browser");
-        _console$b.assertWithError(window.localStorage, "localStorage not found");
+        _console$c.assertWithError(isInBrowser, "localStorage is only available in the browser");
+        _console$c.assertWithError(window.localStorage, "localStorage not found");
     }
     static #LocalStorageKey = "BS.Device";
     static #SaveToLocalStorage() {
@@ -3768,27 +3768,27 @@ class Device {
         this.#AssertLocalStorage();
         let localStorageString = localStorage.getItem(this.#LocalStorageKey);
         if (typeof localStorageString != "string") {
-            _console$b.log("no info found in localStorage");
+            _console$c.log("no info found in localStorage");
             this.#LocalStorageConfiguration = Object.assign({}, this.#DefaultLocalStorageConfiguration);
             this.#SaveToLocalStorage();
             return;
         }
         try {
             const configuration = JSON.parse(localStorageString);
-            _console$b.log({ configuration });
+            _console$c.log({ configuration });
             this.#LocalStorageConfiguration = configuration;
             if (this.CanGetDevices) {
                 await this.GetDevices();
             }
         } catch (error) {
-            _console$b.error(error);
+            _console$c.error(error);
         }
     }
 
     /** @param {Device} device */
     static #UpdateLocalStorageConfigurationForDevice(device) {
         if (device.connectionType != "webBluetooth") {
-            _console$b.log("localStorage is only for webBluetooth devices");
+            _console$c.log("localStorage is only for webBluetooth devices");
             return;
         }
         this.#AssertLocalStorage();
@@ -3821,17 +3821,17 @@ class Device {
      */
     static async GetDevices() {
         if (!isInBrowser) {
-            _console$b.warn("GetDevices is only available in the browser");
+            _console$c.warn("GetDevices is only available in the browser");
             return;
         }
 
         if (!navigator.bluetooth) {
-            _console$b.warn("bluetooth is not available in this browser");
+            _console$c.warn("bluetooth is not available in this browser");
             return;
         }
 
         if (!navigator.bluetooth.getDevices) {
-            _console$b.warn("bluetooth.getDevices() is not available in this browser");
+            _console$c.warn("bluetooth.getDevices() is not available in this browser");
             return;
         }
 
@@ -3841,13 +3841,13 @@ class Device {
 
         const configuration = this.#LocalStorageConfiguration;
         if (!configuration.devices || configuration.devices.length == 0) {
-            _console$b.log("no devices found in configuration");
+            _console$c.log("no devices found in configuration");
             return;
         }
 
         const bluetoothDevices = await navigator.bluetooth.getDevices();
 
-        _console$b.log({ bluetoothDevices });
+        _console$c.log({ bluetoothDevices });
 
         bluetoothDevices.forEach((bluetoothDevice) => {
             if (!bluetoothDevice.gatt) {
@@ -3936,7 +3936,7 @@ class Device {
     static #OnDeviceIsConnected(device) {
         if (device.isConnected) {
             if (!this.#ConnectedDevices.includes(device)) {
-                _console$b.log("adding device", device);
+                _console$c.log("adding device", device);
                 this.#ConnectedDevices.push(device);
                 if (this.UseLocalStorage && device.connectionType == "webBluetooth") {
                     const deviceInformation = {
@@ -3956,16 +3956,16 @@ class Device {
                 this.#DispatchEvent({ type: "deviceConnected", message: { device } });
                 this.#DispatchEvent({ type: "deviceIsConnected", message: { device } });
             } else {
-                _console$b.log("device already included");
+                _console$c.log("device already included");
             }
         } else {
             if (this.#ConnectedDevices.includes(device)) {
-                _console$b.log("removing device", device);
+                _console$c.log("removing device", device);
                 this.#ConnectedDevices.splice(this.#ConnectedDevices.indexOf(device), 1);
                 this.#DispatchEvent({ type: "deviceDisconnected", message: { device } });
                 this.#DispatchEvent({ type: "deviceIsConnected", message: { device } });
             } else {
-                _console$b.log("device already not included");
+                _console$c.log("device already not included");
             }
         }
         if (this.CanGetDevices) {
@@ -3978,7 +3978,7 @@ class Device {
     }
 
     static #DispatchAvailableDevices() {
-        _console$b.log({ AvailableDevices: this.AvailableDevices });
+        _console$c.log({ AvailableDevices: this.AvailableDevices });
         this.#DispatchEvent({ type: "availableDevices", message: { devices: this.AvailableDevices } });
     }
 
@@ -3995,7 +3995,7 @@ class Device {
     }
 }
 
-const _console$a = createConsole("Timer", { log: false });
+const _console$b = createConsole("Timer", { log: false });
 
 class Timer {
     /** @type {function} */
@@ -4004,8 +4004,8 @@ class Timer {
         return this.#callback;
     }
     set callback(newCallback) {
-        _console$a.assertTypeWithError(newCallback, "function");
-        _console$a.log({ newCallback });
+        _console$b.assertTypeWithError(newCallback, "function");
+        _console$b.log({ newCallback });
         this.#callback = newCallback;
         if (this.isRunning) {
             this.restart();
@@ -4018,9 +4018,9 @@ class Timer {
         return this.#interval;
     }
     set interval(newInterval) {
-        _console$a.assertTypeWithError(newInterval, "number");
-        _console$a.assertWithError(newInterval > 0, "interval must be above 0");
-        _console$a.log({ newInterval });
+        _console$b.assertTypeWithError(newInterval, "number");
+        _console$b.assertWithError(newInterval > 0, "interval must be above 0");
+        _console$b.log({ newInterval });
         this.#interval = newInterval;
         if (this.isRunning) {
             this.restart();
@@ -4044,18 +4044,18 @@ class Timer {
 
     start() {
         if (this.isRunning) {
-            _console$a.log("interval already running");
+            _console$b.log("interval already running");
             return;
         }
-        _console$a.log("starting interval");
+        _console$b.log("starting interval");
         this.#intervalId = setInterval(this.#callback, this.#interval);
     }
     stop() {
         if (!this.isRunning) {
-            _console$a.log("interval already not running");
+            _console$b.log("interval already not running");
             return;
         }
-        _console$a.log("stopping interval");
+        _console$b.log("stopping interval");
         clearInterval(this.#intervalId);
         this.#intervalId = null;
     }
@@ -4065,7 +4065,7 @@ class Timer {
     }
 }
 
-const _console$9 = createConsole("BaseScanner");
+const _console$a = createConsole("BaseScanner");
 
 
 
@@ -4103,13 +4103,13 @@ class BaseScanner {
     }
 
     #assertIsSupported() {
-        _console$9.assertWithError(this.isSupported, `${this.constructor.name} is not supported`);
+        _console$a.assertWithError(this.isSupported, `${this.constructor.name} is not supported`);
     }
 
     // CONSTRUCTOR
 
     #assertIsSubclass() {
-        _console$9.assertWithError(this.constructor != BaseScanner, `${this.constructor.name} must be subclassed`);
+        _console$a.assertWithError(this.constructor != BaseScanner, `${this.constructor.name} must be subclassed`);
     }
 
     constructor() {
@@ -4165,7 +4165,7 @@ class BaseScanner {
         return false;
     }
     #assertIsAvailable() {
-        _console$9.assertWithError(this.isAvailable, "not available");
+        _console$a.assertWithError(this.isAvailable, "not available");
     }
 
     // SCANNING
@@ -4173,10 +4173,10 @@ class BaseScanner {
         return false;
     }
     #assertIsScanning() {
-        _console$9.assertWithError(this.isScanning, "not scanning");
+        _console$a.assertWithError(this.isScanning, "not scanning");
     }
     #assertIsNotScanning() {
-        _console$9.assertWithError(!this.isScanning, "already scanning");
+        _console$a.assertWithError(!this.isScanning, "already scanning");
     }
 
     startScan() {
@@ -4208,7 +4208,7 @@ class BaseScanner {
     }
     /** @param {string} discoveredDeviceId */
     #assertValidDiscoveredDeviceId(discoveredDeviceId) {
-        _console$9.assertWithError(
+        _console$a.assertWithError(
             this.#discoveredDevices[discoveredDeviceId],
             `no discovered device with id "${discoveredDeviceId}"`
         );
@@ -4245,7 +4245,7 @@ class BaseScanner {
             const timestamp = this.#discoveredDeviceTimestamps[id];
             console.log(now - timestamp);
             if (now - timestamp > this.#discoveredDeviceExpirationTimeout) {
-                _console$9.log("discovered device timeout");
+                _console$a.log("discovered device timeout");
                 delete this.#discoveredDevices[id];
                 delete this.#discoveredDeviceTimestamps[id];
                 this.dispatchEvent({ type: "expiredDiscoveredDevice", message: { discoveredDevice } });
@@ -4265,11 +4265,11 @@ class BaseScanner {
         return false;
     }
     reset() {
-        _console$9.log("resetting...");
+        _console$a.log("resetting...");
     }
 }
 
-const _console$8 = createConsole("NobleScanner", { log: true });
+const _console$9 = createConsole("NobleScanner", { log: true });
 
 let isSupported = false;
 
@@ -4295,9 +4295,9 @@ class NobleScanner extends BaseScanner {
         return this.#_isScanning;
     }
     set #isScanning(newIsScanning) {
-        _console$8.assertTypeWithError(newIsScanning, "boolean");
+        _console$9.assertTypeWithError(newIsScanning, "boolean");
         if (this.isScanning == newIsScanning) {
-            _console$8.log("duplicate isScanning assignment");
+            _console$9.log("duplicate isScanning assignment");
             return;
         }
         this.#_isScanning = newIsScanning;
@@ -4314,13 +4314,13 @@ class NobleScanner extends BaseScanner {
         return this.#_nobleState;
     }
     set #nobleState(newNobleState) {
-        _console$8.assertTypeWithError(newNobleState, "string");
+        _console$9.assertTypeWithError(newNobleState, "string");
         if (this.#nobleState == newNobleState) {
-            _console$8.log("duplicate nobleState assignment");
+            _console$9.log("duplicate nobleState assignment");
             return;
         }
         this.#_nobleState = newNobleState;
-        _console$8.log({ newNobleState });
+        _console$9.log({ newNobleState });
         this.dispatchEvent({ type: "isAvailable", message: { isAvailable: this.isAvailable } });
     }
 
@@ -4332,21 +4332,21 @@ class NobleScanner extends BaseScanner {
         discover: this.#onNobleDiscover.bind(this),
     };
     #onNobleScanStart() {
-        _console$8.log("OnNobleScanStart");
+        _console$9.log("OnNobleScanStart");
         this.#isScanning = true;
     }
     #onNobleScanStop() {
-        _console$8.log("OnNobleScanStop");
+        _console$9.log("OnNobleScanStop");
         this.#isScanning = false;
     }
     /** @param {NobleState} state */
     #onNobleStateChange(state) {
-        _console$8.log("onNobleStateChange", state);
+        _console$9.log("onNobleStateChange", state);
         this.#nobleState = state;
     }
     /** @param {noble.Peripheral} noblePeripheral */
     #onNobleDiscover(noblePeripheral) {
-        _console$8.log("onNobleDiscover", noblePeripheral.id);
+        _console$9.log("onNobleDiscover", noblePeripheral.id);
         if (!this.#noblePeripherals[noblePeripheral.id]) {
             noblePeripheral._scanner = this;
             this.#noblePeripherals[noblePeripheral.id] = noblePeripheral;
@@ -4430,8 +4430,8 @@ class NobleScanner extends BaseScanner {
     #noblePeripherals = {};
     /** @param {string} noblePeripheralId */
     #assertValidNoblePeripheralId(noblePeripheralId) {
-        _console$8.assertTypeWithError(noblePeripheralId, "string");
-        _console$8.assertWithError(
+        _console$9.assertTypeWithError(noblePeripheralId, "string");
+        _console$9.assertWithError(
             this.#noblePeripherals[noblePeripheralId],
             `no noblePeripheral found with id "${noblePeripheralId}"`
         );
@@ -4443,7 +4443,7 @@ class NobleScanner extends BaseScanner {
         super.connectToDevice(deviceId);
         this.#assertValidNoblePeripheralId(deviceId);
         const noblePeripheral = this.#noblePeripherals[deviceId];
-        _console$8.log("connecting to discoveredDevice...", deviceId);
+        _console$9.log("connecting to discoveredDevice...", deviceId);
 
         let device = Device.AvailableDevices.filter((device) => device.connectionType == "noble").find(
             (device) => device.id == deviceId
@@ -4466,21 +4466,21 @@ class NobleScanner extends BaseScanner {
     }
 }
 
-const _console$7 = createConsole("Scanner", { log: false });
+const _console$8 = createConsole("Scanner", { log: false });
 
 /** @type {BaseScanner?} */
 let scanner;
 
 if (NobleScanner.isSupported) {
-    _console$7.log("using NobleScanner");
+    _console$8.log("using NobleScanner");
     scanner = new NobleScanner();
 } else {
-    _console$7.log("Scanner not available");
+    _console$8.log("Scanner not available");
 }
 
 var Scanner = scanner;
 
-const _console$6 = createConsole("DevicePairPressureSensorDataManager", { log: true });
+const _console$7 = createConsole("DevicePairPressureSensorDataManager", { log: true });
 
 
 
@@ -4531,12 +4531,12 @@ class DevicePairPressureSensorDataManager {
     onDevicePressureData(event) {
         const { pressure } = event.message;
         const insoleSide = event.target.insoleSide;
-        _console$6.log({ pressure, insoleSide });
+        _console$7.log({ pressure, insoleSide });
         this.#rawPressure[insoleSide] = pressure;
         if (this.#hasAllPressureData) {
             return this.#updatePressureData();
         } else {
-            _console$6.log("doesn't have all pressure data yet...");
+            _console$7.log("doesn't have all pressure data yet...");
         }
     }
 
@@ -4583,13 +4583,13 @@ class DevicePairPressureSensorDataManager {
             pressure.normalizedCenter = this.#centerOfPressureHelper.updateAndGetNormalization(pressure.center);
         }
 
-        _console$6.log({ devicePairPressure: pressure });
+        _console$7.log({ devicePairPressure: pressure });
 
         return pressure;
     }
 }
 
-const _console$5 = createConsole("DevicePairSensorDataManager", { log: true });
+const _console$6 = createConsole("DevicePairSensorDataManager", { log: true });
 
 
 
@@ -4624,7 +4624,7 @@ class DevicePairSensorDataManager {
         /** @type {SensorType} */
         const sensorType = event.message.sensorType;
 
-        _console$5.log({ sensorType, timestamp, event });
+        _console$6.log({ sensorType, timestamp, event });
 
         if (!this.#timestamps[sensorType]) {
             this.#timestamps[sensorType] = {};
@@ -4637,7 +4637,7 @@ class DevicePairSensorDataManager {
                 value = this.pressureSensorDataManager.onDevicePressureData(event);
                 break;
             default:
-                _console$5.log(`uncaught sensorType "${sensorType}"`);
+                _console$6.log(`uncaught sensorType "${sensorType}"`);
                 break;
         }
 
@@ -4645,7 +4645,7 @@ class DevicePairSensorDataManager {
             const timestamps = Object.assign({}, this.#timestamps[sensorType]);
             this.onDataReceived?.(sensorType, { timestamps, [sensorType]: value });
         } else {
-            _console$5.log("no value received");
+            _console$6.log("no value received");
         }
     }
 
@@ -4653,7 +4653,7 @@ class DevicePairSensorDataManager {
     onDataReceived;
 }
 
-const _console$4 = createConsole("DevicePair", { log: true });
+const _console$5 = createConsole("DevicePair", { log: true });
 
 
 
@@ -4763,13 +4763,13 @@ class DevicePair {
         return this.sides.every((side) => this[side]?.isConnected);
     }
     #assertIsConnected() {
-        _console$4.assertWithError(this.isConnected, "devicePair must be connected");
+        _console$5.assertWithError(this.isConnected, "devicePair must be connected");
     }
 
     /** @param {Device} device */
     assignInsole(device) {
         if (!device.isInsole) {
-            _console$4.warn("device is not an insole");
+            _console$5.warn("device is not an insole");
             return;
         }
         const side = device.insoleSide;
@@ -4777,7 +4777,7 @@ class DevicePair {
         const currentDevice = this[side];
 
         if (device == currentDevice) {
-            _console$4.log("device already assigned");
+            _console$5.log("device already assigned");
             return;
         }
 
@@ -4795,7 +4795,7 @@ class DevicePair {
                 break;
         }
 
-        _console$4.log(`assigned ${side} insole`, device);
+        _console$5.log(`assigned ${side} insole`, device);
 
         this.resetPressureRange();
 
@@ -4859,7 +4859,7 @@ class DevicePair {
      * @param {number} sensorData.timestamp
      */
     #onSensorDataReceived(sensorType, sensorData) {
-        _console$4.log({ sensorType, sensorData });
+        _console$5.log({ sensorType, sensorData });
         this.#dispatchEvent({ type: sensorType, message: sensorData });
     }
 
@@ -4884,7 +4884,7 @@ class DevicePair {
     }
 }
 
-const _console$3 = createConsole("ServerUtils", { log: false });
+const _console$4 = createConsole("ServerUtils", { log: false });
 
 const pingTimeout = 30_000_000;
 const reconnectTimeout = 3_000;
@@ -4905,7 +4905,7 @@ const reconnectTimeout = 3_000;
  * @param  {...(Message|string)} messages
  */
 function createMessage(enumeration, ...messages) {
-    _console$3.log("createMessage", ...messages);
+    _console$4.log("createMessage", ...messages);
 
     const messageBuffers = messages.map((message) => {
         if (typeof message == "string") {
@@ -4923,7 +4923,7 @@ function createMessage(enumeration, ...messages) {
         const messageDataArrayBuffer = concatenateArrayBuffers(...message.data);
         const messageDataArrayBufferByteLength = messageDataArrayBuffer.byteLength;
 
-        _console$3.assertEnumWithError(message.type, enumeration);
+        _console$4.assertEnumWithError(message.type, enumeration);
         const messageTypeEnum = enumeration.indexOf(message.type);
 
         return concatenateArrayBuffers(
@@ -4932,7 +4932,7 @@ function createMessage(enumeration, ...messages) {
             messageDataArrayBuffer
         );
     });
-    _console$3.log("messageBuffers", ...messageBuffers);
+    _console$4.log("messageBuffers", ...messageBuffers);
     return concatenateArrayBuffers(...messageBuffers);
 }
 
@@ -4985,15 +4985,15 @@ function createServerMessage(...messages) {
 
 
 /**
- * @typedef ServerDeviceMessage
+ * @typedef DeviceMessage
  * @type {Object}
  * @property {DeviceEventType} type
  * @property {MessageLike|MessageLike[]?} data
  */
 
-/** @param {...DeviceEventType|ServerDeviceMessage} messages */
-function createServerDeviceMessage(...messages) {
-    _console$3.log("createServerDeviceMessage", ...messages);
+/** @param {...DeviceEventType|DeviceMessage} messages */
+function createDeviceMessage(...messages) {
+    _console$4.log("createDeviceMessage", ...messages);
     return createMessage(Device.EventTypes, ...messages);
 }
 
@@ -5021,7 +5021,7 @@ createServerMessage("startScan");
 createServerMessage("stopScan");
 const discoveredDevicesMessage = createServerMessage("discoveredDevices");
 
-const _console$2 = createConsole("WebSocketClientConnectionManager", { log: true });
+const _console$3 = createConsole("WebSocketClientConnectionManager", { log: true });
 
 
 
@@ -5046,9 +5046,9 @@ class WebSocketClientConnectionManager extends BaseConnectionManager {
         return this.#id;
     }
     set id(newId) {
-        _console$2.assertTypeWithError(newId, "string");
+        _console$3.assertTypeWithError(newId, "string");
         if (this.#id == newId) {
-            _console$2.log("redundant id assignment");
+            _console$3.log("redundant id assignment");
             return;
         }
         this.#id = newId;
@@ -5059,9 +5059,9 @@ class WebSocketClientConnectionManager extends BaseConnectionManager {
         return this.#isConnected;
     }
     set isConnected(newIsConnected) {
-        _console$2.assertTypeWithError(newIsConnected, "boolean");
+        _console$3.assertTypeWithError(newIsConnected, "boolean");
         if (this.#isConnected == newIsConnected) {
-            _console$2.log("redundant newIsConnected assignment", newIsConnected);
+            _console$3.log("redundant newIsConnected assignment", newIsConnected);
             return;
         }
         this.#isConnected = newIsConnected;
@@ -5106,7 +5106,7 @@ class WebSocketClientConnectionManager extends BaseConnectionManager {
     }
     async reconnect() {
         await super.reconnect();
-        _console$2.log("attempting to reconnect...");
+        _console$3.log("attempting to reconnect...");
         this.connect();
     }
 
@@ -5123,7 +5123,7 @@ class WebSocketClientConnectionManager extends BaseConnectionManager {
     sendWebSocketDisconnectMessage;
     /** @param {DataView} dataView */
     onWebSocketMessage(dataView) {
-        _console$2.log({ dataView });
+        _console$3.log({ dataView });
 
         parseMessage(
             dataView,
@@ -5137,7 +5137,7 @@ class WebSocketClientConnectionManager extends BaseConnectionManager {
                 switch (messageType) {
                     case "isConnected":
                         const isConnected = Boolean(dataView.getUint8(byteOffset++));
-                        _console$2.log({ isConnected });
+                        _console$3.log({ isConnected });
                         this.isConnected = isConnected;
                         break;
                     case "manufacturerName":
@@ -5154,7 +5154,7 @@ class WebSocketClientConnectionManager extends BaseConnectionManager {
                         this.onMessageReceived(messageType, dataView);
                         break;
                     default:
-                        _console$2.error(`uncaught messageType "${messageType}"`);
+                        _console$3.error(`uncaught messageType "${messageType}"`);
                         break;
                 }
             },
@@ -5183,7 +5183,7 @@ class WebSocketClientConnectionManager extends BaseConnectionManager {
     }
 }
 
-const _console$1 = createConsole("WebSocketClient", { log: true });
+const _console$2 = createConsole("WebSocketClient", { log: true });
 
 
 
@@ -5259,11 +5259,11 @@ class WebSocketClient {
     }
     set webSocket(newWebSocket) {
         if (this.#webSocket == newWebSocket) {
-            _console$1.log("redundant webSocket assignment");
+            _console$2.log("redundant webSocket assignment");
             return;
         }
 
-        _console$1.log("assigning webSocket", newWebSocket);
+        _console$2.log("assigning webSocket", newWebSocket);
 
         if (this.#webSocket) {
             removeEventListeners(this.#webSocket, this.#boundWebSocketEventListeners);
@@ -5272,21 +5272,21 @@ class WebSocketClient {
         addEventListeners(newWebSocket, this.#boundWebSocketEventListeners);
         this.#webSocket = newWebSocket;
 
-        _console$1.log("assigned webSocket");
+        _console$2.log("assigned webSocket");
     }
 
     get isConnected() {
         return this.webSocket?.readyState == WebSocket.OPEN;
     }
     #assertConnection() {
-        _console$1.assertWithError(this.isConnected, "not connected");
+        _console$2.assertWithError(this.isConnected, "not connected");
     }
 
     get isDisconnected() {
         return this.webSocket?.readyState == WebSocket.CLOSED;
     }
     #assertDisconnection() {
-        _console$1.assertWithError(this.isDisconnected, "not disconnected");
+        _console$2.assertWithError(this.isDisconnected, "not disconnected");
     }
 
     /** @param {string | URL} url */
@@ -5324,7 +5324,7 @@ class WebSocketClient {
         return this.#ReconnectOnDisconnection;
     }
     static set ReconnectOnDisconnection(newReconnectOnDisconnection) {
-        _console$1.assertTypeWithError(newReconnectOnDisconnection, "boolean");
+        _console$2.assertTypeWithError(newReconnectOnDisconnection, "boolean");
         this.#ReconnectOnDisconnection = newReconnectOnDisconnection;
     }
 
@@ -5333,7 +5333,7 @@ class WebSocketClient {
         return this.#reconnectOnDisconnection;
     }
     set reconnectOnDisconnection(newReconnectOnDisconnection) {
-        _console$1.assertTypeWithError(newReconnectOnDisconnection, "boolean");
+        _console$2.assertTypeWithError(newReconnectOnDisconnection, "boolean");
         this.#reconnectOnDisconnection = newReconnectOnDisconnection;
     }
 
@@ -5366,13 +5366,13 @@ class WebSocketClient {
 
     /** @param {Event} event */
     #onWebSocketOpen(event) {
-        _console$1.log("webSocket.open", event);
+        _console$2.log("webSocket.open", event);
         this.#pingTimer.start();
         this.#connectionStatus = "connected";
     }
     /** @param {import("ws").MessageEvent} event */
     async #onWebSocketMessage(event) {
-        _console$1.log("webSocket.message", event);
+        _console$2.log("webSocket.message", event);
         this.#pingTimer.restart();
         const arrayBuffer = await event.data.arrayBuffer();
         const dataView = new DataView(arrayBuffer);
@@ -5380,9 +5380,13 @@ class WebSocketClient {
     }
     /** @param {import("ws").CloseEvent} event  */
     #onWebSocketClose(event) {
-        _console$1.log("webSocket.close", event);
+        _console$2.log("webSocket.close", event);
 
         this.#connectionStatus = "not connected";
+
+        Object.entries(this.devices).forEach(([id, device]) => {
+            device.isConnected = false;
+        });
 
         this.#pingTimer.stop();
         if (this.#reconnectOnDisconnection) {
@@ -5393,7 +5397,7 @@ class WebSocketClient {
     }
     /** @param {Event} event */
     #onWebSocketError(event) {
-        _console$1.log("webSocket.error", event);
+        _console$2.log("webSocket.error", event);
     }
 
     // CONNECTION STATUS
@@ -5404,8 +5408,8 @@ class WebSocketClient {
         return this.#_connectionStatus;
     }
     set #connectionStatus(newConnectionStatus) {
-        _console$1.assertTypeWithError(newConnectionStatus, "string");
-        _console$1.log({ newConnectionStatus });
+        _console$2.assertTypeWithError(newConnectionStatus, "string");
+        _console$2.log({ newConnectionStatus });
         this.#_connectionStatus = newConnectionStatus;
 
         this.#dispatchEvent({ type: "connectionStatus", message: { connectionStatus: this.connectionStatus } });
@@ -5432,7 +5436,7 @@ class WebSocketClient {
 
     /** @param {DataView} dataView */
     #parseMessage(dataView) {
-        _console$1.log("parseMessage", { dataView });
+        _console$2.log("parseMessage", { dataView });
         parseMessage(
             dataView,
             ServerMessageTypes,
@@ -5451,25 +5455,25 @@ class WebSocketClient {
                     case "isScanningAvailable":
                         {
                             const isScanningAvailable = Boolean(dataView.getUint8(byteOffset++));
-                            _console$1.log({ isScanningAvailable });
+                            _console$2.log({ isScanningAvailable });
                             this.#isScanningAvailable = isScanningAvailable;
                         }
                         break;
                     case "isScanning":
                         {
                             const isScanning = Boolean(dataView.getUint8(byteOffset++));
-                            _console$1.log({ isScanning });
+                            _console$2.log({ isScanning });
                             this.#isScanning = isScanning;
                         }
                         break;
                     case "discoveredDevice":
                         {
                             const { string: discoveredDeviceString } = parseStringFromDataView(dataView, byteOffset);
-                            _console$1.log({ discoveredDeviceString });
+                            _console$2.log({ discoveredDeviceString });
 
                             /** @type {DiscoveredDevice} */
                             const discoveredDevice = JSON.parse(discoveredDeviceString);
-                            _console$1.log({ discoveredDevice });
+                            _console$2.log({ discoveredDevice });
 
                             this.#onDiscoveredDevice(discoveredDevice);
                         }
@@ -5486,9 +5490,9 @@ class WebSocketClient {
                                 break;
                             }
                             const { string: connectedDeviceIdStrings } = parseStringFromDataView(dataView, byteOffset);
-                            _console$1.log({ connectedDeviceIdStrings });
+                            _console$2.log({ connectedDeviceIdStrings });
                             const connectedDeviceIds = JSON.parse(connectedDeviceIdStrings);
-                            _console$1.log({ connectedDeviceIds });
+                            _console$2.log({ connectedDeviceIds });
                             this.#onConnectedDeviceIds(connectedDeviceIds);
                         }
                         break;
@@ -5500,7 +5504,7 @@ class WebSocketClient {
                             );
                             byteOffset = _byteOffset;
                             const device = this.#devices[deviceId];
-                            _console$1.assertWithError(device, `no device found for id ${deviceId}`);
+                            _console$2.assertWithError(device, `no device found for id ${deviceId}`);
                             /** @type {WebSocketClientConnectionManager} */
                             const connectionManager = device.connectionManager;
                             const _dataView = sliceDataView(dataView, byteOffset);
@@ -5508,7 +5512,7 @@ class WebSocketClient {
                         }
                         break;
                     default:
-                        _console$1.error(`uncaught messageType "${messageType}"`);
+                        _console$2.error(`uncaught messageType "${messageType}"`);
                         break;
                 }
             },
@@ -5531,7 +5535,7 @@ class WebSocketClient {
         return this.#_isScanningAvailable;
     }
     set #isScanningAvailable(newIsAvailable) {
-        _console$1.assertTypeWithError(newIsAvailable, "boolean");
+        _console$2.assertTypeWithError(newIsAvailable, "boolean");
         this.#_isScanningAvailable = newIsAvailable;
         this.#dispatchEvent({
             type: "isScanningAvailable",
@@ -5546,7 +5550,7 @@ class WebSocketClient {
     }
     #assertIsScanningAvailable() {
         this.#assertConnection();
-        _console$1.assertWithError(this.isScanningAvailable, "scanning is not available");
+        _console$2.assertWithError(this.isScanningAvailable, "scanning is not available");
     }
     #requestIsScanningAvailable() {
         this.#sendServerMessage("isScanningAvailable");
@@ -5557,7 +5561,7 @@ class WebSocketClient {
         return this.#_isScanning;
     }
     set #isScanning(newIsScanning) {
-        _console$1.assertTypeWithError(newIsScanning, "boolean");
+        _console$2.assertTypeWithError(newIsScanning, "boolean");
         this.#_isScanning = newIsScanning;
         this.#dispatchEvent({ type: "isScanning", message: { isScanning: this.isScanning } });
     }
@@ -5569,10 +5573,10 @@ class WebSocketClient {
     }
 
     #assertIsScanning() {
-        _console$1.assertWithError(this.isScanning, "is not scanning");
+        _console$2.assertWithError(this.isScanning, "is not scanning");
     }
     #assertIsNotScanning() {
-        _console$1.assertWithError(!this.isScanning, "is already scanning");
+        _console$2.assertWithError(!this.isScanning, "is already scanning");
     }
 
     startScan() {
@@ -5602,7 +5606,7 @@ class WebSocketClient {
 
     /** @param {DiscoveredDevice} discoveredDevice */
     #onDiscoveredDevice(discoveredDevice) {
-        _console$1.log({ discoveredDevice });
+        _console$2.log({ discoveredDevice });
         this.#discoveredDevices[discoveredDevice.id] = discoveredDevice;
         this.#dispatchEvent({ type: "discoveredDevice", message: { discoveredDevice } });
     }
@@ -5611,13 +5615,13 @@ class WebSocketClient {
     }
     /** @param {string} deviceId */
     #onExpiredDiscoveredDevice(deviceId) {
-        _console$1.log({ expiredDeviceId: deviceId });
+        _console$2.log({ expiredDeviceId: deviceId });
         const discoveredDevice = this.#discoveredDevices[deviceId];
         if (!discoveredDevice) {
-            _console$1.warn(`no discoveredDevice found with id "${deviceId}"`);
+            _console$2.warn(`no discoveredDevice found with id "${deviceId}"`);
             return;
         }
-        _console$1.log({ expiredDiscoveredDevice: discoveredDevice });
+        _console$2.log({ expiredDiscoveredDevice: discoveredDevice });
         delete this.#discoveredDevices[deviceId];
         this.#dispatchEvent({ type: "expiredDiscoveredDevice", message: { discoveredDevice } });
     }
@@ -5631,7 +5635,7 @@ class WebSocketClient {
     /** @param {string} deviceId */
     #requestConnectionToDevice(deviceId) {
         this.#assertConnection();
-        _console$1.assertTypeWithError(deviceId, "string");
+        _console$2.assertTypeWithError(deviceId, "string");
         const device = this.#getOrCreateDevice(deviceId);
         device.connect();
         return device;
@@ -5671,7 +5675,7 @@ class WebSocketClient {
     }
     /** @param {string[]} deviceIds */
     #onConnectedDeviceIds(deviceIds) {
-        _console$1.log({ deviceIds });
+        _console$2.log({ deviceIds });
         deviceIds.forEach((deviceId) => {
             const device = this.#getOrCreateDevice(deviceId);
             /** @type {WebSocketClientConnectionManager} */
@@ -5687,9 +5691,9 @@ class WebSocketClient {
     /** @param {string} deviceId */
     #requestDisconnectionFromDevice(deviceId) {
         this.#assertConnection();
-        _console$1.assertTypeWithError(deviceId, "string");
+        _console$2.assertTypeWithError(deviceId, "string");
         const device = this.devices[deviceId];
-        _console$1.assertWithError(device, `no device found with id ${deviceId}`);
+        _console$2.assertWithError(device, `no device found with id ${deviceId}`);
         device.disconnect();
         return device;
     }
@@ -5732,11 +5736,12 @@ class WebSocketClient {
     }
 }
 
-createConsole("BaseServer", { log: true });
+const _console$1 = createConsole("BaseServer", { log: true });
 
-class BaseServer {}
 
-const _console = createConsole("WebSocketServer", { log: true });
+
+
+
 
 
 
@@ -5744,30 +5749,18 @@ const _console = createConsole("WebSocketServer", { log: true });
 
 
 /** @typedef {"clientConnected" | "clientDisconnected"} ServerEventType */
-
-
-
 /**
  * @typedef ServerEvent
  * @type {Object}
- * @property {WebSocketServer} target
+ * @property {BaseServer} target
  * @property {ServerEventType} type
  * @property {Object} message
  */
 
-
-
-if (isInNode) {
-    require("ws");
-}
-
-class WebSocketServer extends BaseServer {
-    constructor() {
-        super();
-
-        _console.assertWithError(Scanner, "no scanner defined");
-        addEventListeners(Scanner, this.#boundScannerListeners);
-        addEventListeners(Device, this.#boundDeviceClassListeners);
+class BaseServer {
+    /** @throws {Error} if abstract class */
+    #assertIsSubclass() {
+        _console$1.assertWithError(this.constructor != BaseServer, `${this.constructor.name} must be subclassed`);
     }
 
     // EVENT DISPATCHER
@@ -5778,7 +5771,7 @@ class WebSocketServer extends BaseServer {
         return this.#EventTypes;
     }
     get eventTypes() {
-        return WebSocketServer.#EventTypes;
+        return BaseServer.#EventTypes;
     }
     #eventDispatcher = new EventDispatcher(this, this.eventTypes);
 
@@ -5792,9 +5785,10 @@ class WebSocketServer extends BaseServer {
     }
 
     /**
+     * @protected
      * @param {ServerEvent} event
      */
-    #dispatchEvent(event) {
+    dispatchEvent(event) {
         this.#eventDispatcher.dispatchEvent(event);
     }
 
@@ -5806,7 +5800,370 @@ class WebSocketServer extends BaseServer {
         return this.#eventDispatcher.removeEventListener(type, listener);
     }
 
-    // SERVER
+    // CONSTRUCTOR
+
+    constructor() {
+        this.#assertIsSubclass();
+
+        _console$1.assertWithError(Scanner, "no scanner defined");
+
+        addEventListeners(Scanner, this.#boundScannerListeners);
+        addEventListeners(Device, this.#boundDeviceClassListeners);
+        addEventListeners(this, this.#boundServerListeners);
+    }
+
+    get numberOfClients() {
+        return 0;
+    }
+
+    static #ClearSensorConfigurationsWhenNoClients = true;
+    static get ClearSensorConfigurationsWhenNoClients() {
+        return this.#ClearSensorConfigurationsWhenNoClients;
+    }
+    static set ClearSensorConfigurationsWhenNoClients(newValue) {
+        _console$1.assertTypeWithError(newValue, "boolean");
+        this.#ClearSensorConfigurationsWhenNoClients = newValue;
+    }
+
+    #clearSensorConfigurationsWhenNoClients = BaseServer.#ClearSensorConfigurationsWhenNoClients;
+    get clearSensorConfigurationsWhenNoClients() {
+        return this.#clearSensorConfigurationsWhenNoClients;
+    }
+    set clearSensorConfigurationsWhenNoClients(newValue) {
+        _console$1.assertTypeWithError(newValue, "boolean");
+        this.#clearSensorConfigurationsWhenNoClients = newValue;
+    }
+
+    // SERVER LISTENERS
+    #boundServerListeners = {
+        clientConnected: this.#onClientConnected.bind(this),
+        clientDisconnected: this.#onClientDisconnected.bind(this),
+    };
+
+    /** @param {ServerEvent} event */
+    #onClientConnected(event) {
+        event.message.client;
+        _console$1.log("onClientConnected");
+    }
+    /** @param {ServerEvent} event */
+    #onClientDisconnected(event) {
+        event.message.client;
+        _console$1.log("onClientDisconnected");
+        if (this.numberOfClients == 0 && this.clearSensorConfigurationsWhenNoClients) {
+            Device.ConnectedDevices.forEach((device) => device.clearSensorConfiguration());
+        }
+    }
+
+    // CLIENT MESSAGING
+
+    /**
+     * @protected
+     * @param {ArrayBuffer} message
+     */
+    broadcastMessage(message) {
+        _console$1.log("broadcasting", message);
+    }
+
+    // SCANNER
+
+    #boundScannerListeners = {
+        isAvailable: this.#onScannerIsAvailable.bind(this),
+        isScanning: this.#onScannerIsScanning.bind(this),
+        discoveredDevice: this.#onScannerDiscoveredDevice.bind(this),
+        expiredDiscoveredDevice: this.#onExpiredDiscoveredDevice.bind(this),
+    };
+
+    /** @param {ScannerEvent} event */
+    #onScannerIsAvailable(event) {
+        this.broadcastMessage(this.#isScanningAvailableMessage);
+    }
+    get #isScanningAvailableMessage() {
+        return createServerMessage({ type: "isScanningAvailable", data: Scanner.isAvailable });
+    }
+
+    /** @param {ScannerEvent} event */
+    #onScannerIsScanning(event) {
+        this.broadcastMessage(this.#isScanningMessage);
+    }
+    get #isScanningMessage() {
+        return createServerMessage({ type: "isScanning", data: Scanner.isScanning });
+    }
+
+    /** @param {ScannerEvent} event */
+    #onScannerDiscoveredDevice(event) {
+        /** @type {DiscoveredDevice} */
+        const discoveredDevice = event.message.discoveredDevice;
+        console.log(discoveredDevice);
+
+        this.broadcastMessage(this.#createDiscoveredDeviceMessage(discoveredDevice));
+    }
+    /** @param {DiscoveredDevice} discoveredDevice */
+    #createDiscoveredDeviceMessage(discoveredDevice) {
+        return createServerMessage({ type: "discoveredDevice", data: discoveredDevice });
+    }
+
+    /** @param {ScannerEvent} event */
+    #onExpiredDiscoveredDevice(event) {
+        /** @type {DiscoveredDevice} */
+        const discoveredDevice = event.message.discoveredDevice;
+        console.log("expired", discoveredDevice);
+        this.broadcastMessage(this.#createExpiredDiscoveredDeviceMessage(discoveredDevice));
+    }
+    /** @param {DiscoveredDevice} discoveredDevice */
+    #createExpiredDiscoveredDeviceMessage(discoveredDevice) {
+        return createServerMessage({ type: "expiredDiscoveredDevice", data: discoveredDevice.id });
+    }
+
+    get #discoveredDevicesMessage() {
+        return createServerMessage(
+            ...Scanner.discoveredDevicesArray.map((discoveredDevice) => {
+                return { type: "discoveredDevice", data: discoveredDevice };
+            })
+        );
+    }
+
+    get #connectedDevicesMessage() {
+        return createServerMessage({
+            type: "connectedDevices",
+            data: JSON.stringify(Device.ConnectedDevices.map((device) => device.id)),
+        });
+    }
+
+    // DEVICE LISTENERS
+
+    #boundDeviceListeners = {
+        connectionMessage: this.#onDeviceConnectionMessage.bind(this),
+    };
+
+    /**
+     * @param {Device} device
+     * @param {DeviceEventType} messageType
+     * @param {DataView?} dataView
+     * @returns {DeviceMessage}
+     */
+    #createDeviceMessage(device, messageType, dataView) {
+        return { type: messageType, data: dataView || device.latestConnectionMessage.get(messageType) };
+    }
+
+    
+    
+
+    /** @param {DeviceEvent} deviceEvent */
+    #onDeviceConnectionMessage(deviceEvent) {
+        const device = deviceEvent.target;
+        _console$1.log("onDeviceConnectionMessage", deviceEvent.message);
+
+        if (!device.isConnected) {
+            return;
+        }
+
+        /** @type {ConnectionMessageType} */
+        const messageType = deviceEvent.message.messageType;
+        /** @type {DataView} */
+        const dataView = deviceEvent.message.dataView;
+
+        this.broadcastMessage(
+            this.#createDeviceServerMessage(device, this.#createDeviceMessage(device, messageType, dataView))
+        );
+    }
+
+    // DEVICE CLASS LISTENERS
+
+    #boundDeviceClassListeners = {
+        deviceConnected: this.#onDeviceConnected.bind(this),
+        deviceDisconnected: this.#onDeviceDisconnected.bind(this),
+        deviceIsConnected: this.#onDeviceIsConnected.bind(this),
+    };
+
+    
+
+    /** @param {StaticDeviceEvent} staticDeviceEvent */
+    #onDeviceConnected(staticDeviceEvent) {
+        /** @type {Device} */
+        const device = staticDeviceEvent.message.device;
+        _console$1.log("onDeviceConnected", device.id);
+        addEventListeners(device, this.#boundDeviceListeners);
+    }
+
+    /** @param {StaticDeviceEvent} staticDeviceEvent */
+    #onDeviceDisconnected(staticDeviceEvent) {
+        /** @type {Device} */
+        const device = staticDeviceEvent.message.device;
+        _console$1.log("onDeviceDisconnected", device.id);
+        removeEventListeners(device, this.#boundDeviceListeners);
+    }
+
+    /** @param {StaticDeviceEvent} staticDeviceEvent */
+    #onDeviceIsConnected(staticDeviceEvent) {
+        /** @type {Device} */
+        const device = staticDeviceEvent.message.device;
+        _console$1.log("onDeviceIsConnected", device.id);
+        this.broadcastMessage(this.#createDeviceIsConnectedMessage(device));
+    }
+    /** @param {Device} device */
+    #createDeviceIsConnectedMessage(device) {
+        return this.#createDeviceServerMessage(device, { type: "isConnected", data: device.isConnected });
+    }
+
+    /**
+     * @param {Device} device
+     * @param {...DeviceEventType|DeviceMessage} messages
+     */
+    #createDeviceServerMessage(device, ...messages) {
+        return createServerMessage({
+            type: "deviceMessage",
+            data: [device.id, createDeviceMessage(...messages)],
+        });
+    }
+
+    // PARSING
+
+    
+
+    /**
+     * @protected
+     * @param {DataView} dataView
+     */
+    parseClientMessage(dataView) {
+        /** @type {ArrayBuffer[]} */
+        let responseMessages = [];
+
+        parseMessage(
+            dataView,
+            ServerMessageTypes,
+            (_messageType, dataView) => {
+                /** @type {ServerMessageType} */
+                const messageType = _messageType;
+                switch (messageType) {
+                    case "ping":
+                        responseMessages.push(pongMessage);
+                        break;
+                    case "pong":
+                        break;
+                    case "isScanningAvailable":
+                        responseMessages.push(this.#isScanningAvailableMessage);
+                        break;
+                    case "isScanning":
+                        responseMessages.push(this.#isScanningMessage);
+                        break;
+                    case "startScan":
+                        Scanner.startScan();
+                        break;
+                    case "stopScan":
+                        Scanner.stopScan();
+                        break;
+                    case "discoveredDevices":
+                        responseMessages.push(this.#discoveredDevicesMessage);
+                        break;
+                    case "connectToDevice":
+                        {
+                            const { string: deviceId } = parseStringFromDataView(dataView);
+                            Scanner.connectToDevice(deviceId);
+                        }
+                        break;
+                    case "disconnectFromDevice":
+                        {
+                            const { string: deviceId } = parseStringFromDataView(dataView);
+                            const device = Device.ConnectedDevices.find((device) => device.id == deviceId);
+                            if (!device) {
+                                _console$1.error(`no device found with id ${deviceId}`);
+                                break;
+                            }
+                            device.disconnect();
+                        }
+                        break;
+                    case "connectedDevices":
+                        responseMessages.push(this.#connectedDevicesMessage);
+                        break;
+                    case "deviceMessage":
+                        {
+                            const { string: deviceId, byteOffset } = parseStringFromDataView(dataView);
+                            const device = Device.ConnectedDevices.find((device) => device.id == deviceId);
+                            if (!device) {
+                                _console$1.error(`no device found with id ${deviceId}`);
+                                break;
+                            }
+                            const _dataView = new DataView(dataView.buffer, dataView.byteOffset + byteOffset);
+                            responseMessages.push(this.parseClientDeviceMessage(device, _dataView));
+                        }
+                        break;
+                    default:
+                        _console$1.error(`uncaught messageType "${messageType}"`);
+                        break;
+                }
+            },
+            true
+        );
+
+        responseMessages = responseMessages.filter(Boolean);
+
+        if (responseMessages.length > 0) {
+            return concatenateArrayBuffers(responseMessages);
+        }
+    }
+
+    /**
+     * @protected
+     * @param {Device} device
+     * @param {DataView} dataView
+     */
+    parseClientDeviceMessage(device, dataView) {
+        _console$1.log("onDeviceMessage", device.id, dataView);
+
+        /** @type {(DeviceEventType | DeviceMessage)[]} */
+        let responseMessages = [];
+
+        parseMessage(
+            dataView,
+            BaseConnectionManager.MessageTypes,
+            (_messageType, dataView) => {
+                /** @type {ConnectionMessageType} */
+                const messageType = _messageType;
+                switch (messageType) {
+                    case "manufacturerName":
+                    case "modelNumber":
+                    case "softwareRevision":
+                    case "hardwareRevision":
+                    case "firmwareRevision":
+                    case "pnpId":
+                    case "batteryLevel":
+                    case "getName":
+                    case "getType":
+                    case "getSensorConfiguration":
+                        responseMessages.push(this.#createDeviceMessage(device, messageType));
+                        break;
+                    case "setName":
+                    case "setType":
+                    case "setSensorConfiguration":
+                    case "triggerVibration":
+                        device.connectionManager.sendMessage(messageType, dataView);
+                        break;
+                    default:
+                        _console$1.error(`uncaught messageType "${messageType}"`);
+                        break;
+                }
+            },
+            true
+        );
+
+        if (responseMessages.length > 0) {
+            return this.#createDeviceServerMessage(device, ...responseMessages);
+        }
+    }
+}
+
+const _console = createConsole("WebSocketServer", { log: true });
+
+if (isInNode) {
+    require("ws");
+}
+
+class WebSocketServer extends BaseServer {
+    get numberOfClients() {
+        return this.#server?.clients.size || 0;
+    }
+
+    // WEBSOCKET SERVER
 
     /** @type {ws.WebSocketServer?} */
     #server;
@@ -5831,7 +6188,8 @@ class WebSocketServer extends BaseServer {
         _console.log("assigned server");
     }
 
-    // SERVER LISTENERS
+    // WEBSOCKET SERVER LISTENERS
+
     #boundServerListeners = {
         close: this.#onServerClose.bind(this),
         connection: this.#onServerConnection.bind(this),
@@ -5850,7 +6208,7 @@ class WebSocketServer extends BaseServer {
         client.pingClientTimer = new Timer(() => this.#pingClient(client), pingTimeout);
         client.pingClientTimer.start();
         addEventListeners(client, this.#boundClientListeners);
-        this.#dispatchEvent({ type: "clientConnected", message: { client } });
+        this.dispatchEvent({ type: "clientConnected", message: { client } });
     }
     /** @param {Error} error */
     #onServerError(error) {
@@ -5863,7 +6221,8 @@ class WebSocketServer extends BaseServer {
         _console.log("server.listening");
     }
 
-    // CLIENT LISTENERS
+    // WEBSOCKET CLIENT LISTENERS
+
     #boundClientListeners = {
         open: this.#onClientOpen.bind(this),
         message: this.#onClientMessage.bind(this),
@@ -5889,7 +6248,7 @@ class WebSocketServer extends BaseServer {
         const client = event.target;
         client.pingClientTimer.stop();
         removeEventListeners(client, this.#boundClientListeners);
-        this.#dispatchEvent({ type: "clientDisconnected", message: { client } });
+        this.dispatchEvent({ type: "clientDisconnected", message: { client } });
     }
     /** @param {ws.ErrorEvent} event */
     #onClientError(event) {
@@ -5898,103 +6257,29 @@ class WebSocketServer extends BaseServer {
 
     // PARSING
 
-    static #TextDecoder = new TextDecoder();
-    get #textDecoder() {
-        return WebSocketServer.#TextDecoder;
-    }
-
-    
-
     /**
      * @param {ws.WebSocket} client
      * @param {DataView} dataView
      */
     #parseClientMessage(client, dataView) {
-        parseMessage(
-            dataView,
-            ServerMessageTypes,
-            (_messageType, dataView) => {
-                /** @type {ServerMessageType} */
-                const messageType = _messageType;
-                switch (messageType) {
-                    case "ping":
-                        client.send(pongMessage);
-                        break;
-                    case "pong":
-                        break;
-                    case "isScanningAvailable":
-                        client.send(this.#isScanningAvailableMessage);
-                        break;
-                    case "isScanning":
-                        client.send(this.#isScanningMessage);
-                        break;
-                    case "startScan":
-                        Scanner.startScan();
-                        break;
-                    case "stopScan":
-                        Scanner.stopScan();
-                        break;
-                    case "discoveredDevices":
-                        client.send(this.#discoveredDevicesMessage);
-                        break;
-                    case "connectToDevice":
-                        {
-                            const { string: deviceId } = parseStringFromDataView(dataView);
-                            Scanner.connectToDevice(deviceId);
-                        }
-                        break;
-                    case "disconnectFromDevice":
-                        {
-                            const { string: deviceId } = parseStringFromDataView(dataView);
-                            const device = Device.ConnectedDevices.find((device) => device.id == deviceId);
-                            if (!device) {
-                                _console.error(`no device found with id ${deviceId}`);
-                                break;
-                            }
-                            device.disconnect();
-                        }
-                        break;
-                    case "connectedDevices":
-                        client.send(this.#connectedDevicesMessage);
-                        break;
-                    case "deviceMessage":
-                        {
-                            const { string: deviceId, byteOffset } = parseStringFromDataView(dataView);
-                            const device = Device.ConnectedDevices.find((device) => device.id == deviceId);
-                            if (!device) {
-                                _console.error(`no device found with id ${deviceId}`);
-                                break;
-                            }
-                            const _dataView = new DataView(dataView.buffer, dataView.byteOffset + byteOffset);
-                            this.#onDeviceMessage(device, _dataView, client);
-                        }
-                        break;
-                    default:
-                        _console.error(`uncaught messageType "${messageType}"`);
-                        break;
-                }
-            },
-            true
-        );
+        const responseMessage = this.parseClientMessage(dataView);
+        if (responseMessage) {
+            client.send(responseMessage);
+        }
     }
 
     // CLIENT MESSAGING
-    get #isScanningAvailableMessage() {
-        return createServerMessage({ type: "isScanningAvailable", data: Scanner.isAvailable });
-    }
-    get #isScanningMessage() {
-        return createServerMessage({ type: "isScanning", data: Scanner.isScanning });
-    }
 
-    /** @param {ws.BufferLike} message */
-    #broadcastMessage(message) {
-        _console.log("broadcasting", message);
+    /** @param {ArrayBuffer} message */
+    broadcastMessage(message) {
+        super.broadcastMessage(message);
         this.server.clients.forEach((client) => {
             client.send(message);
         });
     }
 
     // PING
+
     /** @param {ws.WebSocket} client */
     #pingClient(client) {
         if (!client.isAlive) {
@@ -6003,203 +6288,6 @@ class WebSocketServer extends BaseServer {
         }
         client.isAlive = false;
         client.send(pingMessage);
-    }
-
-    // SCANNER
-    #boundScannerListeners = {
-        isAvailable: this.#onScannerIsAvailable.bind(this),
-        isScanning: this.#onScannerIsScanning.bind(this),
-        discoveredDevice: this.#onScannerDiscoveredDevice.bind(this),
-        expiredDiscoveredDevice: this.#onExpiredDiscoveredDevice.bind(this),
-    };
-
-    /** @param {ScannerEvent} event */
-    #onScannerIsAvailable(event) {
-        this.#broadcastMessage(this.#isScanningAvailableMessage);
-    }
-    /** @param {ScannerEvent} event */
-    #onScannerIsScanning(event) {
-        this.#broadcastMessage(this.#isScanningMessage);
-    }
-    /** @param {ScannerEvent} event */
-    #onScannerDiscoveredDevice(event) {
-        /** @type {DiscoveredDevice} */
-        const discoveredDevice = event.message.discoveredDevice;
-        console.log(discoveredDevice);
-
-        this.#broadcastMessage(this.#createDiscoveredDeviceMessage(discoveredDevice));
-    }
-    /** @param {ScannerEvent} event */
-    #onExpiredDiscoveredDevice(event) {
-        /** @type {DiscoveredDevice} */
-        const discoveredDevice = event.message.discoveredDevice;
-        console.log("expired", discoveredDevice);
-
-        this.#broadcastMessage(this.#createExpiredDiscoveredDeviceMessage(discoveredDevice));
-    }
-
-    /** @param {DiscoveredDevice} discoveredDevice */
-    #createDiscoveredDeviceMessage(discoveredDevice) {
-        return createServerMessage({ type: "discoveredDevice", data: discoveredDevice });
-    }
-    get #discoveredDevicesMessage() {
-        return createServerMessage(
-            ...Scanner.discoveredDevicesArray.map((discoveredDevice) => {
-                return { type: "discoveredDevice", data: discoveredDevice };
-            })
-        );
-    }
-
-    /** @param {DiscoveredDevice} discoveredDevice */
-    #createExpiredDiscoveredDeviceMessage(discoveredDevice) {
-        return createServerMessage({ type: "expiredDiscoveredDevice", data: discoveredDevice.id });
-    }
-
-    get #connectedDevicesMessage() {
-        return createServerMessage({
-            type: "connectedDevices",
-            data: JSON.stringify(Device.ConnectedDevices.map((device) => device.id)),
-        });
-    }
-
-    // DEVICE CLASS LISTENERS
-    #boundDeviceClassListeners = {
-        deviceConnected: this.#onDeviceConnected.bind(this),
-        deviceDisconnected: this.#onDeviceDisconnected.bind(this),
-        deviceIsConnected: this.#onDeviceIsConnected.bind(this),
-    };
-
-    
-
-    /** @param {StaticDeviceEvent} staticDeviceEvent */
-    #onDeviceConnected(staticDeviceEvent) {
-        /** @type {Device} */
-        const device = staticDeviceEvent.message.device;
-        _console.log("onDeviceConnected", device.id);
-        addEventListeners(device, this.#boundDeviceListeners);
-    }
-
-    /** @param {StaticDeviceEvent} staticDeviceEvent */
-    #onDeviceDisconnected(staticDeviceEvent) {
-        /** @type {Device} */
-        const device = staticDeviceEvent.message.device;
-        _console.log("onDeviceDisconnected", device.id);
-        removeEventListeners(device, this.#boundDeviceListeners);
-    }
-
-    /** @param {StaticDeviceEvent} staticDeviceEvent */
-    #onDeviceIsConnected(staticDeviceEvent) {
-        /** @type {Device} */
-        const device = staticDeviceEvent.message.device;
-        _console.log("onDeviceIsConnected", device.id);
-        this.#broadcastMessage(this.#createDeviceIsConnectedMessage(device));
-    }
-
-    /** @param {Device} device */
-    #createDeviceIsConnectedMessage(device) {
-        return this.#createDeviceMessage(device, { type: "isConnected", data: device.isConnected });
-    }
-
-    
-
-    /**
-     * @param {Device} device
-     * @param {...DeviceEventType|ServerDeviceMessage} messages
-     */
-    #createDeviceMessage(device, ...messages) {
-        return createServerMessage({
-            type: "deviceMessage",
-            data: [device.id, createServerDeviceMessage(...messages)],
-        });
-    }
-
-    // DEVICE LISTENERS
-    #boundDeviceListeners = {
-        connectionMessage: this.#onDeviceConnectionMessage.bind(this),
-    };
-
-    /**
-     * @param {Device} device
-     * @param {DeviceEventType} messageType
-     * @param {DataView?} dataView
-     * @returns {ServerDeviceMessage}
-     */
-    #createServerDeviceMessage(device, messageType, dataView) {
-        return { type: messageType, data: dataView || device.latestConnectionMessage.get(messageType) };
-    }
-
-    
-    
-
-    /** @param {DeviceEvent} deviceEvent */
-    #onDeviceConnectionMessage(deviceEvent) {
-        const device = deviceEvent.target;
-        _console.log("onDeviceConnectionMessage", deviceEvent.message);
-
-        if (!device.isConnected) {
-            return;
-        }
-
-        /** @type {ConnectionMessageType} */
-        const messageType = deviceEvent.message.messageType;
-        /** @type {DataView} */
-        const dataView = deviceEvent.message.dataView;
-
-        this.#broadcastMessage(
-            this.#createDeviceMessage(device, this.#createServerDeviceMessage(device, messageType, dataView))
-        );
-    }
-
-    // DEVICE MESSAGING
-
-    /**
-     * @param {Device} device
-     * @param {DataView} dataView
-     * @param {ws.WebSocket} client
-     */
-    #onDeviceMessage(device, dataView, client) {
-        _console.log("onDeviceMessage", device.id, dataView);
-
-        /** @type {(DeviceEventType | ServerDeviceMessage)[]} */
-        let responseMessages = [];
-
-        parseMessage(
-            dataView,
-            BaseConnectionManager.MessageTypes,
-            (_messageType, dataView) => {
-                /** @type {ConnectionMessageType} */
-                const messageType = _messageType;
-                switch (messageType) {
-                    case "manufacturerName":
-                    case "modelNumber":
-                    case "softwareRevision":
-                    case "hardwareRevision":
-                    case "firmwareRevision":
-                    case "pnpId":
-                    case "batteryLevel":
-                    case "getName":
-                    case "getType":
-                    case "getSensorConfiguration":
-                        responseMessages.push(this.#createServerDeviceMessage(device, messageType));
-                        break;
-                    case "setName":
-                    case "setType":
-                    case "setSensorConfiguration":
-                    case "triggerVibration":
-                        device.connectionManager.sendMessage(messageType, dataView);
-                        break;
-                    default:
-                        _console.error(`uncaught messageType "${messageType}"`);
-                        break;
-                }
-            },
-            true
-        );
-
-        _console.log({ responseMessages });
-        if (responseMessages.length > 0) {
-            client.send(this.#createDeviceMessage(device, ...responseMessages));
-        }
     }
 }
 

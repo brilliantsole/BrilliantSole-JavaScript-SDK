@@ -216,6 +216,10 @@ class WebSocketClient {
 
         this.#connectionStatus = "not connected";
 
+        Object.entries(this.devices).forEach(([id, device]) => {
+            device.isConnected = false;
+        });
+
         this.#pingTimer.stop();
         if (this.#reconnectOnDisconnection) {
             setTimeout(() => {
