@@ -1,6 +1,6 @@
 import { createConsole } from "./utils/Console.js";
 import EventDispatcher from "./utils/EventDispatcher.js";
-import ConnectionManager from "./connection/ConnectionManager.js";
+import BaseConnectionManager from "./connection/BaseConnectionManager.js";
 import { isInBrowser, isInNode } from "./utils/environment.js";
 import WebBluetoothConnectionManager from "./connection/bluetooth/WebBluetoothConnectionManager.js";
 import NobleConnectionManager from "./connection/bluetooth/NobleConnectionManager.js";
@@ -11,7 +11,7 @@ import { concatenateArrayBuffers } from "./utils/ArrayBufferUtils.js";
 
 const _console = createConsole("Device", { log: true });
 
-/** @typedef {import("./connection/ConnectionManager.js").ConnectionMessageType} ConnectionMessageType */
+/** @typedef {import("./connection/BaseConnectionManager.js").ConnectionMessageType} ConnectionMessageType */
 /** @typedef {import("./sensor/SensorDataManager.js").SensorType} SensorType */
 /** @typedef {"connectionStatus" | ConnectionStatus | "isConnected" | ConnectionMessageType | "deviceInformation" | SensorType | "connectionMessage"} DeviceEventType */
 
@@ -35,7 +35,7 @@ const _console = createConsole("Device", { log: true });
  * @property {Object} message
  */
 
-/** @typedef {import("./connection/ConnectionManager.js").ConnectionStatus} ConnectionStatus */
+/** @typedef {import("./connection/BaseConnectionManager.js").ConnectionStatus} ConnectionStatus */
 
 /**
  * @typedef DeviceInformation
@@ -118,7 +118,7 @@ class Device {
         });
     }
 
-    /** @returns {ConnectionManager} */
+    /** @returns {BaseConnectionManager} */
     static get #DefaultConnectionManager() {
         return WebBluetoothConnectionManager;
     }
@@ -196,7 +196,7 @@ class Device {
 
     // CONNECTION MANAGER
 
-    /** @type {ConnectionManager?} */
+    /** @type {BaseConnectionManager?} */
     #connectionManager;
     get connectionManager() {
         return this.#connectionManager;

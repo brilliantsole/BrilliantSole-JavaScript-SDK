@@ -385,7 +385,7 @@
 	 * @param {DataView} data
 	 */
 
-	class ConnectionManager {
+	class BaseConnectionManager {
 	    /** @type {ConnectionMessageType[]} */
 	    static #MessageTypes = [
 	        "manufacturerName",
@@ -452,7 +452,10 @@
 
 	    /** @throws {Error} if abstract class */
 	    #assertIsSubclass() {
-	        _console$l.assertWithError(this.constructor != ConnectionManager, `${this.constructor.name} must be subclassed`);
+	        _console$l.assertWithError(
+	            this.constructor != BaseConnectionManager,
+	            `${this.constructor.name} must be subclassed`
+	        );
 	    }
 
 	    constructor() {
@@ -774,7 +777,7 @@
 	    var navigator$1 = window.navigator;
 	}
 
-	class WebBluetoothConnectionManager extends ConnectionManager {
+	class WebBluetoothConnectionManager extends BaseConnectionManager {
 	    get id() {
 	        return this.device?.id;
 	    }
@@ -1153,7 +1156,7 @@
 
 
 
-	class NobleConnectionManager extends ConnectionManager {
+	class NobleConnectionManager extends BaseConnectionManager {
 	    get id() {
 	        return this.#noblePeripheral?.id;
 	    }
@@ -2963,7 +2966,7 @@
 	        });
 	    }
 
-	    /** @returns {ConnectionManager} */
+	    /** @returns {BaseConnectionManager} */
 	    static get #DefaultConnectionManager() {
 	        return WebBluetoothConnectionManager;
 	    }
@@ -3041,7 +3044,7 @@
 
 	    // CONNECTION MANAGER
 
-	    /** @type {ConnectionManager?} */
+	    /** @type {BaseConnectionManager?} */
 	    #connectionManager;
 	    get connectionManager() {
 	        return this.#connectionManager;
@@ -5032,7 +5035,7 @@
 
 
 
-	class WebSocketClientConnectionManager extends ConnectionManager {
+	class WebSocketClientConnectionManager extends BaseConnectionManager {
 	    static get isSupported() {
 	        return isInBrowser;
 	    }
@@ -5733,6 +5736,10 @@
 	    }
 	}
 
+	createConsole("BaseServer", { log: true });
+
+	class BaseServer {}
+
 	const _console = createConsole("WebSocketServer", { log: true });
 
 
@@ -5758,8 +5765,10 @@
 	    require("ws");
 	}
 
-	class WebSocketServer {
+	class WebSocketServer extends BaseServer {
 	    constructor() {
+	        super();
+
 	        _console.assertWithError(Scanner, "no scanner defined");
 	        addEventListeners(Scanner, this.#boundScannerListeners);
 	        addEventListeners(Device, this.#boundDeviceClassListeners);
@@ -6160,7 +6169,7 @@
 
 	        parseMessage(
 	            dataView,
-	            ConnectionManager.MessageTypes,
+	            BaseConnectionManager.MessageTypes,
 	            (_messageType, dataView) => {
 	                /** @type {ConnectionMessageType} */
 	                const messageType = _messageType;

@@ -1,7 +1,7 @@
 import { createConsole } from "../../utils/Console.js";
 import { isInNode, isInBrowser, isInBluefy, isInWebBLE } from "../../utils/environment.js";
 import { addEventListeners, removeEventListeners } from "../../utils/EventDispatcher.js";
-import ConnectionManager from "../ConnectionManager.js";
+import BaseConnectionManager from "../BaseConnectionManager.js";
 import {
     serviceUUIDs,
     optionalServiceUUIDs,
@@ -15,8 +15,8 @@ const _console = createConsole("WebBluetoothConnectionManager", { log: true });
 /** @typedef {import("./bluetoothUUIDs.js").BluetoothCharacteristicName} BluetoothCharacteristicName */
 /** @typedef {import("./bluetoothUUIDs.js").BluetoothServiceName} BluetoothServiceName */
 
-/** @typedef {import("../ConnectionManager.js").ConnectionMessageType} ConnectionMessageType */
-/** @typedef {import("../ConnectionManager.js").ConnectionType} ConnectionType */
+/** @typedef {import("../BaseConnectionManager.js").ConnectionMessageType} ConnectionMessageType */
+/** @typedef {import("../BaseConnectionManager.js").ConnectionType} ConnectionType */
 
 if (isInNode) {
     const webbluetooth = require("webbluetooth");
@@ -27,7 +27,7 @@ if (isInBrowser) {
     var navigator = window.navigator;
 }
 
-class WebBluetoothConnectionManager extends ConnectionManager {
+class WebBluetoothConnectionManager extends BaseConnectionManager {
     get id() {
         return this.device?.id;
     }

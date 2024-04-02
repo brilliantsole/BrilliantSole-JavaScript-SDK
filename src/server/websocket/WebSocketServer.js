@@ -9,13 +9,14 @@ import {
     createServerDeviceMessage,
     pongMessage,
 } from "../ServerUtils.js";
-import { concatenateArrayBuffers, dataToArrayBuffer, sliceDataView } from "../../utils/ArrayBufferUtils.js";
+import { dataToArrayBuffer } from "../../utils/ArrayBufferUtils.js";
 import Timer from "../../utils/Timer.js";
 import EventDispatcher from "../../utils/EventDispatcher.js";
 import scanner from "../../scanner/Scanner.js";
 import Device from "../../Device.js";
-import ConnectionManager from "../../connection/ConnectionManager.js";
+import BaseConnectionManager from "../../connection/BaseConnectionManager.js";
 import { parseMessage, parseStringFromDataView } from "../../utils/ParseUtils.js";
+import BaseServer from "../BaseServer.js";
 
 const _console = createConsole("WebSocketServer", { log: true });
 
@@ -42,8 +43,10 @@ if (isInNode) {
     var ws = require("ws");
 }
 
-class WebSocketServer {
+class WebSocketServer extends BaseServer {
     constructor() {
+        super();
+
         _console.assertWithError(scanner, "no scanner defined");
         addEventListeners(scanner, this.#boundScannerListeners);
         addEventListeners(Device, this.#boundDeviceClassListeners);
@@ -408,7 +411,7 @@ class WebSocketServer {
     }
 
     /** @typedef {import("../../Device.js").DeviceEvent} DeviceEvent */
-    /** @typedef {import("../../connection/ConnectionManager.js").ConnectionMessageType} ConnectionMessageType */
+    /** @typedef {import("../../connection/BaseConnectionManager.js").ConnectionMessageType} ConnectionMessageType */
 
     /** @param {DeviceEvent} deviceEvent */
     #onDeviceConnectionMessage(deviceEvent) {
@@ -444,7 +447,7 @@ class WebSocketServer {
 
         parseMessage(
             dataView,
-            ConnectionManager.MessageTypes,
+            BaseConnectionManager.MessageTypes,
             (_messageType, dataView) => {
                 /** @type {ConnectionMessageType} */
                 const messageType = _messageType;

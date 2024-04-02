@@ -1,20 +1,20 @@
 import { createConsole } from "../../utils/Console.js";
 import { isInBrowser } from "../../utils/environment.js";
-import ConnectionManager from "../ConnectionManager.js";
+import BaseConnectionManager from "../BaseConnectionManager.js";
 import Device from "../../Device.js";
 import { parseMessage } from "../../utils/ParseUtils.js";
 
 const _console = createConsole("WebSocketClientConnectionManager", { log: true });
 
-/** @typedef {import("../ConnectionManager.js").ConnectionMessageType} ConnectionMessageType */
-/** @typedef {import("../ConnectionManager.js").ConnectionType} ConnectionType */
+/** @typedef {import("../BaseConnectionManager.js").ConnectionMessageType} ConnectionMessageType */
+/** @typedef {import("../BaseConnectionManager.js").ConnectionType} ConnectionType */
 
 /** @typedef {import("../../server/websocket/WebSocketClient.js").WebSocketClient} WebSocketClient */
 /** @typedef {import("../../Device.js").DeviceEventType} DeviceEventType */
 
 /** @typedef {import("../../server/ServerUtils.js").ClientDeviceMessage} ClientDeviceMessage */
 
-class WebSocketClientConnectionManager extends ConnectionManager {
+class WebSocketClientConnectionManager extends BaseConnectionManager {
     static get isSupported() {
         return isInBrowser;
     }

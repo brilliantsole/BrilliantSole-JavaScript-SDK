@@ -1,5 +1,5 @@
 import Device from "../Device";
-import ConnectionManager from "../connection/ConnectionManager";
+import BaseConnectionManager from "../connection/BaseConnectionManager";
 import { concatenateArrayBuffers } from "../utils/ArrayBufferUtils";
 import { createConsole } from "../utils/Console";
 
@@ -116,7 +116,7 @@ export function createServerDeviceMessage(...messages) {
     return createMessage(Device.EventTypes, ...messages);
 }
 
-/** @typedef {import("../connection/ConnectionManager").ConnectionMessageType} ConnectionMessageType */
+/** @typedef {import("../connection/BaseConnectionManager").ConnectionMessageType} ConnectionMessageType */
 
 /**
  * @typedef ClientDeviceMessage

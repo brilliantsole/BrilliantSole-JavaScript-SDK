@@ -20,7 +20,7 @@ const _console = createConsole("ConnectionManager");
  * @param {DataView} data
  */
 
-class ConnectionManager {
+class BaseConnectionManager {
     /** @type {ConnectionMessageType[]} */
     static #MessageTypes = [
         "manufacturerName",
@@ -87,7 +87,10 @@ class ConnectionManager {
 
     /** @throws {Error} if abstract class */
     #assertIsSubclass() {
-        _console.assertWithError(this.constructor != ConnectionManager, `${this.constructor.name} must be subclassed`);
+        _console.assertWithError(
+            this.constructor != BaseConnectionManager,
+            `${this.constructor.name} must be subclassed`
+        );
     }
 
     constructor() {
@@ -169,4 +172,4 @@ class ConnectionManager {
     }
 }
 
-export default ConnectionManager;
+export default BaseConnectionManager;

@@ -2,7 +2,7 @@ import { dataToArrayBuffer } from "../../utils/ArrayBufferUtils.js";
 import { createConsole } from "../../utils/Console.js";
 import { isInNode } from "../../utils/environment.js";
 import { addEventListeners, removeEventListeners } from "../../utils/EventDispatcher.js";
-import ConnectionManager from "../ConnectionManager.js";
+import BaseConnectionManager from "../BaseConnectionManager.js";
 import {
     allServiceUUIDs,
     serviceUUIDs,
@@ -23,10 +23,10 @@ if (isInNode) {
 /** @typedef {import("./bluetoothUUIDs.js").BluetoothCharacteristicName} BluetoothCharacteristicName */
 /** @typedef {import("./bluetoothUUIDs.js").BluetoothServiceName} BluetoothServiceName */
 
-/** @typedef {import("../ConnectionManager.js").ConnectionMessageType} ConnectionMessageType */
-/** @typedef {import("../ConnectionManager.js").ConnectionMessageType} ConnectionType */
+/** @typedef {import("../BaseConnectionManager.js").ConnectionMessageType} ConnectionMessageType */
+/** @typedef {import("../BaseConnectionManager.js").ConnectionMessageType} ConnectionType */
 
-class NobleConnectionManager extends ConnectionManager {
+class NobleConnectionManager extends BaseConnectionManager {
     get id() {
         return this.#noblePeripheral?.id;
     }

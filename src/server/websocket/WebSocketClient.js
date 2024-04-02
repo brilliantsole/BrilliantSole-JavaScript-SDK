@@ -534,7 +534,7 @@ class WebSocketClient {
         return createServerMessage({ type: "disconnectFromDevice", data: deviceId });
     }
 
-    /** @typedef {import("../../connection/ConnectionManager.js").ConnectionMessageType} ConnectionMessageType */
+    /** @typedef {import("../../connection/BaseConnectionManager.js").ConnectionMessageType} ConnectionMessageType */
     /** @typedef {import("../ServerUtils.js").ClientDeviceMessage} ClientDeviceMessage */
 
     /**
