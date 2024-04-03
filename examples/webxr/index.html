@@ -1,0 +1,59 @@
+<html>
+    <head>
+        <title>WebXR | BrilliantSole JavaScript SDK</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico" />
+        <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+        <script type="module" src="./script.js"></script>
+    </head>
+
+    <style>
+        a-scene {
+            height: calc(100% - 8rem);
+            margin: auto;
+            border-radius: 20px;
+            overflow: hidden;
+            border: solid black;
+        }
+    </style>
+
+    <body>
+        <nav>
+            <a href="../../">home</a>
+        </nav>
+
+        <h1>WebXR | BrilliantSole JavaScript SDK</h1>
+
+        <a-scene
+            embedded
+            xr-mode-ui="enabled: true; XRMode: ar"
+            device-orientation-permission-ui="enabled: false"
+            renderer="colorManagement: true;"
+            webxr="optionalFeatures: hit-test;"
+            ar-hit-test="target: #desktop;"
+        >
+            <a-assets>
+                <a-asset-item id="insoleModel" src="../../assets/3d/leftInsole.glb"></a-asset-item>
+            </a-assets>
+
+            <a-entity class="left hand" hand-tracking-controls="hand: left;" visible="true"></a-entity>
+            <a-entity class="right hand" hand-tracking-controls="hand: right;" visible="true"></a-entity>
+
+            <template id="insoleMotionTemplate">
+                <a-entity class="insole motion">
+                    <a-entity class="positionOffset">
+                        <a-entity class="rotationOffset">
+                            <a-entity class="model" gltf-model="#insoleModel"></a-entity>
+                        </a-entity>
+                    </a-entity>
+                </a-entity>
+            </template>
+
+            <template id="insolePressureTemplate">
+                <a-entity class="insole pressure"></a-entity>
+            </template>
+
+            <a-entity id="desktop" hide-on-enter-ar position="0 1 -1"></a-entity>
+        </a-scene>
+    </body>
+</html>
