@@ -26,6 +26,17 @@ const handTrackingControllers = {
 /** @type {HTMLElement} */
 const scene = document.querySelector("a-scene");
 
+// HAND TRACKING
+
+Object.entries(handTrackingControllers).forEach(([side, handTrackingController]) => {
+    handTrackingController.addEventListener("fingertiptouchstarted", (event) => {
+        const { fingerName, withEl, withFinger, onSameHand } = event.detail;
+    });
+    handTrackingController.addEventListener("fingertiptouchended", (event) => {
+        const { fingerName, withEl, withFinger, onSameHand } = event.detail;
+    });
+});
+
 // DOUBLE PINCH
 
 class DebouncedFunction {
@@ -70,7 +81,10 @@ Object.entries(handTrackingControllers).forEach(([side, handTrackingController])
     };
     const debouncedResetNumberOfPinches = new DebouncedFunction(resetNumberOfPinches, 1000);
     console.log({ side, handTrackingController });
-    handTrackingController.addEventListener("pinchstarted", () => {
+
+    const onPinchStarted = () => {
+        console.log("THROTTLED PINCH");
+
         numberOfPinches++;
         console.log({ side, numberOfPinches });
         if (numberOfPinches == 1) {
@@ -80,29 +94,50 @@ Object.entries(handTrackingControllers).forEach(([side, handTrackingController])
             numberOfPinches = 0;
             debouncedResetNumberOfPinches.cancel();
         }
+    };
+
+    const throttledOnPinchStarted = AFRAME.utils.throttle(onPinchStarted, 300);
+
+    handTrackingController.addEventListener("fingertiptouchstarted", (event) => {
+        const { fingerName, withEl, withFinger, onSameHand } = event.detail;
+
+        //console.log({ fingerName, withEl, withFinger, onSameHand });
+
+        const isPinch = fingerName == "index" && onSameHand && withFinger == "thumb";
+        if (!isPinch) {
+            return;
+        }
+        throttledOnPinchStarted();
     });
 });
 
 // DESKTOP PLACEMENT
 
 let didSetInitialHitTest = false;
-scene.addEventListener("ar-hit-test-select", () => {
+scene.addEventListener("ar-hit-test-select", (event) => {
+    //console.log(event);
     if (!didSetInitialHitTest) {
-        toggleARHitTest();
+        setARHitTest(false);
         didSetInitialHitTest = true;
     }
 });
-
-handTrackingControllers.right.addEventListener("doublepinch", () => {
-    console.log("DOUBLE PINCH");
-    ///toggleARHitTest();
-});
-
+function getIsARHitTestEnabled() {
+    return scene.getAttribute("ar-hit-test").enabled;
+}
 const toggleARHitTest = () => {
-    const enabled = !scene.getAttribute("ar-hit-test").enabled;
+    const isARHitTestEnabled = getIsARHitTestEnabled();
+    setARHitTest(!isARHitTestEnabled);
+};
+/** @param {boolean} enabled */
+const setARHitTest = (enabled) => {
     console.log("ar-hit-test", enabled);
     scene.setAttribute("ar-hit-test", "enabled", enabled);
 };
+
+handTrackingControllers.right.addEventListener("doublepinch", () => {
+    console.log("DOUBLE PINCH");
+    //toggleARHitTest();
+});
 
 // MOTION
 
