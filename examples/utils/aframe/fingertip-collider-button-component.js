@@ -7,14 +7,14 @@ AFRAME.registerComponent("fingertip-collider-button", {
 
         text: { type: "string", default: "hello world!" },
         textColor: { type: "color", default: "black" },
-        subtitle: { type: "string", default: "subtitle" },
+        subtitle: { type: "string", default: "" },
 
         disabled: { default: false },
         disabledColor: { type: "color", default: "grey" },
 
         scale: { default: 0.15 },
 
-        height: { type: "number", default: 0.3 },
+        height: { type: "number", default: 0.2 },
         width: { type: "number", default: 1.4 },
         depth: { type: "number", default: 0.3 },
     },
@@ -23,10 +23,10 @@ AFRAME.registerComponent("fingertip-collider-button", {
         this.box3 = new THREE.Box3();
 
         this.container = document.createElement("a-entity");
-        this.container.setAttribute("scale", new Array(3).fill(this.data.scale).join(" "));
         this.el.appendChild(this.container);
 
         this.box = document.createElement("a-box");
+        this.box.setAttribute("obb-collider", "");
         this.container.appendChild(this.box);
 
         this.text = document.createElement("a-text");
@@ -46,10 +46,8 @@ AFRAME.registerComponent("fingertip-collider-button", {
             hands: this.data.hands,
             fingers: this.data.fingers,
             maxTouches: 1,
+            disabled: this.data.disabled,
         });
-
-        console.log(this);
-        window.b = this;
     },
 
     calculateTextWidth: function (textEntity) {
@@ -100,15 +98,7 @@ AFRAME.registerComponent("fingertip-collider-button", {
                     this.box.setAttribute("color", this.data.disabledColor);
                     break;
                 case "disabled":
-                    if (this.data.disabled) {
-                        // obb-collider system calls el.hideCollider instead of el.components["obb-collider"].hideCollider
-                        if (!this.box.hideCollider) {
-                            this.box.hideCollider = this.box.components["obb-collider"]?.hideCollider;
-                        }
-                        this.box.removeAttribute("obb-collider");
-                    } else {
-                        this.box.setAttribute("obb-collider", "");
-                    }
+                    this.el.setAttribute("fingertip-collider-target", { disabled: this.data.disabled });
                     this.box.setAttribute("color", this.data.disabled ? this.data.disabledColor : this.data.color);
                     break;
                 case "width":
@@ -119,9 +109,12 @@ AFRAME.registerComponent("fingertip-collider-button", {
                     break;
                 case "height":
                     this.box.setAttribute("height", this.data.height);
-                    this.box.setAttribute("position", `0 ${this.data.height / 2} 0`);
+                    this.box.setAttribute("position", `0 ${(this.data.height * this.data.scale) / 2} 0`);
                     this.text.setAttribute("position", `0 ${this.data.height / 2} 0`);
                     this.subtitle.setAttribute("position", `0 ${-this.data.height / 2} ${this.data.depth / 2}`);
+                    break;
+                case "scale":
+                    this.box.setAttribute("scale", new Array(3).fill(this.data.scale).join(" "));
                     break;
             }
         });

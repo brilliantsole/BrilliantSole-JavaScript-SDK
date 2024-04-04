@@ -37,7 +37,7 @@
             renderer="colorManagement: true;"
             webxr="optionalFeatures: hit-test;"
             ar-hit-test="target: #desktop;"
-            obb-collider="showColliders: false;"
+            obb-collider="showColliders: true;"
         >
             <a-assets>
                 <a-asset-item id="insoleModel" src="../../assets/3d/leftInsole.glb"></a-asset-item>
@@ -73,67 +73,23 @@
             </template>
 
             <a-entity id="desktop" hide-on-enter-ar position="0 1 -0.75">
-                <a-entity fingertip-collider-button="hands: right; fingers: index;"></a-entity>
-
                 <a-entity
                     id="toggleSetWebSocketServerUrl"
-                    position="0.5 0 0"
-                    scale="0.75 0.75 0.75"
-                    fingertip-collider-target="hands: right; fingers: index; max-touches: 1;"
-                >
-                    <a-text
-                        class="url"
-                        value="localhost"
-                        color="black"
-                        align="center"
-                        rotation="-90 0 0"
-                        width="0.8"
-                        position="0 0.04 0"
-                    ></a-text>
-                    <a-text
-                        value="websocket url"
-                        color="black"
-                        align="center"
-                        rotation="0 0 0"
-                        width="0.5"
-                        position="0 0.02 0.035"
-                    ></a-text>
-                    <a-box obb-collider color="white" scale="0.3 0.04 0.07" position="0 0.02 0"></a-box>
-                </a-entity>
+                    position="0.4 0 0.1"
+                    fingertip-collider-button="hands: right; fingers: index; text: localhost; subtitle: url;"
+                ></a-entity>
 
                 <a-entity
                     id="toggleWebSocketServerConnection"
-                    position="0.5 0 0.1"
-                    scale="0.75 0.75 0.75"
-                    fingertip-collider-target="hands: right; fingers: index; max-touches: 1;"
-                >
-                    <a-text
-                        value="connect"
-                        color="black"
-                        align="center"
-                        rotation="-90 0 0"
-                        width="1"
-                        position="0 0.04 0"
-                    ></a-text>
-                    <a-box obb-collider color="white" scale="0.22 0.04 0.07" position="0 0.02 0"></a-box>
-                </a-entity>
+                    position="0.4 0 0"
+                    fingertip-collider-button="hands: right; fingers: index; text: connect;"
+                ></a-entity>
 
                 <a-entity
                     id="toggleARHitTest"
                     position="-0.4 0 0"
-                    scale="0.75 0.75 0.75"
-                    fingertip-collider-target="hands: left; fingers: index; max-touches: 1;"
-                >
-                    <a-text
-                        value="move"
-                        color="black"
-                        align="center"
-                        rotation="-90 0 0"
-                        width="1"
-                        position="0 0.04 0"
-                    ></a-text>
-                    <a-box obb-collider color="white" scale="0.13 0.04 0.07" position="0 0.02 0"></a-box>
-                </a-entity>
+                    fingertip-collider-button="hands: left; fingers: index; text: move;"
+                ></a-entity>
             </a-entity>
         </a-scene>
     </body>

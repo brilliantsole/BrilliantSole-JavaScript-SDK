@@ -3,6 +3,7 @@ AFRAME.registerComponent("fingertip-collider-target", {
         hands: { default: ["left", "right"] },
         fingers: { default: ["index"] },
         maxTouches: { default: 1 },
+        disabled: { default: false },
     },
 
     init: function () {
@@ -16,6 +17,10 @@ AFRAME.registerComponent("fingertip-collider-target", {
     },
 
     onFingertipTouch: function (event) {
+        if (this.data.disabled) {
+            return;
+        }
+
         //console.log(event);
         const isTouchStart = event.type == "fingertiptouchstarted";
         const { target } = event;
@@ -58,6 +63,19 @@ AFRAME.registerComponent("fingertip-collider-target", {
             const position = getJointAPI().getPosition();
             //console.log(position);
             this.el.emit("touchmove", { hand, finger, position, target });
+        });
+    },
+
+    update: function (oldData) {
+        const diff = AFRAME.utils.diff(oldData, this.data);
+
+        const diffKeys = Object.keys(diff);
+
+        diffKeys.forEach((diffKey) => {
+            switch (diffKey) {
+                case "disabled":
+                    break;
+            }
         });
     },
 });

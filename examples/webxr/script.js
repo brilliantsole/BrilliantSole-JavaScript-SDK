@@ -143,20 +143,23 @@ handTrackingControllers.right.addEventListener("doublepinch", () => {
 });
 
 const toggleARHitTestButton = document.getElementById("toggleARHitTest");
-const toggleARHitTestText = toggleARHitTestButton.querySelector("a-text");
-const toggleARHitTestBox = toggleARHitTestButton.querySelector("a-box");
 toggleARHitTestButton.addEventListener("touchstart", () => {
     toggleARHitTest();
 });
 window.addEventListener("ar-hit-test", (event) => {
     const { enabled } = event.detail;
+    let text, color;
     if (enabled) {
-        toggleARHitTestText.setAttribute("value", "cancel");
-        toggleARHitTestBox.setAttribute("color", "red");
+        text = "cancel";
+        color = "red";
     } else {
-        toggleARHitTestText.setAttribute("value", "move");
-        toggleARHitTestBox.setAttribute("color", "white");
+        text = "move";
+        color = "white";
     }
+    toggleARHitTestButton.setAttribute("fingertip-collider-button", {
+        text,
+        color,
+    });
 });
 
 // WEBSOCKET URL SEARCH PARAMS
@@ -194,91 +197,56 @@ client.addEventListener("isConnected", () => {
 
 /** @type {HTMLInputElement} */
 const webSocketUrlInput = document.getElementById("webSocketUrl");
+webSocketUrlInput.value = url.searchParams.get("webSocketUrl") || "";
 
 const toggleSetWebSocketServerUrlButton = document.getElementById("toggleSetWebSocketServerUrl");
-const toggleSetWebSocketServerUrlBox = toggleSetWebSocketServerUrlButton.querySelector("a-box");
-const toggleSetWebSocketServerUrlText = toggleSetWebSocketServerUrlButton.querySelector("a-text.url");
+client.addEventListener("isConnected", () => {
+    toggleSetWebSocketServerUrlButton.setAttribute("fingertip-collider-button", {
+        disabled: client.isConnected,
+    });
+});
 toggleSetWebSocketServerUrlButton.addEventListener("touchstart", () => {
-    if (client.isConnected) {
-        return;
-    }
     webSocketUrlInput.focus();
 });
-client.addEventListener("connectionStatus", () => {
-    /** @type {string} */
-    let color;
-
-    switch (client.connectionStatus) {
-        case "connected":
-        case "not connected":
-            color = "white";
-            break;
-        case "connecting":
-        case "disconnecting":
-            color = "grey";
-            break;
-    }
-
-    if (color) {
-        toggleSetWebSocketServerUrlBox.setAttribute("color", color);
-    }
-});
 webSocketUrlInput.addEventListener("input", () => {
-    toggleSetWebSocketServerUrlText.setAttribute("value", webSocketUrlInput.value);
+    toggleSetWebSocketServerUrlButton.setAttribute("fingertip-collider-button", { text: webSocketUrlInput.value });
 });
 webSocketUrlInput.addEventListener("focusin", () => {
-    toggleSetWebSocketServerUrlBox.setAttribute("color", "yellow");
+    toggleSetWebSocketServerUrlButton.setAttribute("fingertip-collider-button", { color: "yellow" });
 });
 webSocketUrlInput.addEventListener("focusout", () => {
-    toggleSetWebSocketServerUrlBox.setAttribute("color", "white");
+    toggleSetWebSocketServerUrlButton.setAttribute("fingertip-collider-button", { color: "white" });
 });
 
 // WEBSOCKET CONNECTION
 
 const toggleWebSocketConnectionButton = document.getElementById("toggleWebSocketServerConnection");
-const toggleWebSocketConnectionBox = toggleWebSocketConnectionButton.querySelector("a-box");
-const toggleWebSocketConnectionText = toggleWebSocketConnectionButton.querySelector("a-text");
+client.addEventListener("connectionStatus", (event) => {
+    let disabled;
+    let text;
 
-toggleWebSocketConnectionButton.addEventListener("touchstart", () => {
     switch (client.connectionStatus) {
+        case "connected":
+        case "not connected":
+            text = client.isConnected ? "disconnect" : "connect";
+            disabled = false;
+            break;
         case "connecting":
         case "disconnecting":
-            return;
+            text = client.connectionStatus;
+            disabled = true;
+            break;
     }
 
+    toggleWebSocketConnectionButton.setAttribute("fingertip-collider-button", { disabled, text });
+});
+toggleWebSocketConnectionButton.addEventListener("touchstart", () => {
     /** @type {string?} */
     let webSocketUrl;
     if (webSocketUrlInput.value.length > 0) {
         webSocketUrl = webSocketUrlInput.value;
     }
     client.toggleConnection(webSocketUrl);
-});
-
-client.addEventListener("connectionStatus", () => {
-    /** @type {string} */
-    let text;
-    /** @type {string} */
-    let color;
-
-    switch (client.connectionStatus) {
-        case "connected":
-        case "not connected":
-            text = client.isConnected ? "disconnect" : "connect";
-            color = "white";
-            break;
-        case "connecting":
-        case "disconnecting":
-            text = client.connectionStatus;
-            color = "gray";
-            break;
-    }
-
-    if (text) {
-        toggleWebSocketConnectionText.setAttribute("value", text);
-    }
-    if (color) {
-        toggleWebSocketConnectionBox.setAttribute("color", color);
-    }
 });
 
 // MOTION
