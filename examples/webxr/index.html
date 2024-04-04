@@ -6,6 +6,7 @@
         <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
         <script src="https://gftruj.github.io/hand.tracking.controls.extras/dist/aframe-hand-tracking-controls-extras.js"></script>
         <script src="../utils/aframe/fingertip-colliders-component.js"></script>
+        <script src="../utils/aframe/fingertip-button-component.js"></script>
         <script type="module" src="./script.js"></script>
     </head>
 
@@ -33,7 +34,7 @@
             renderer="colorManagement: true;"
             webxr="optionalFeatures: hit-test;"
             ar-hit-test="target: #desktop;"
-            obb-collider="showColliders: true"
+            obb-collider="showColliders: false;"
         >
             <a-assets>
                 <a-asset-item id="insoleModel" src="../../assets/3d/leftInsole.glb"></a-asset-item>
@@ -43,7 +44,7 @@
                 class="left hand"
                 hand-tracking-controls="hand: left;"
                 hand-tracking-extras
-                finger-colliders
+                fingertip-colliders
                 visible="true"
             ></a-entity>
             <a-entity
@@ -69,7 +70,21 @@
             </template>
 
             <a-entity id="desktop" hide-on-enter-ar position="0 1 -1">
-                <a-sphere radius="0.05" position="0 0.05 0" color="red" obb-collider></a-sphere>
+                <a-entity
+                    id="toggleARHitTest"
+                    position="-0.5 0 0"
+                    fingertip-button="hands: left; fingers: index; max-touches: 1;"
+                >
+                    <a-text
+                        value="move"
+                        color="black"
+                        align="center"
+                        rotation="-90 0 0"
+                        width="1"
+                        position="0 0.04 0"
+                    ></a-text>
+                    <a-box obb-collider color="white" scale="0.13 0.04 0.07" position="0 0.02 0"></a-box>
+                </a-entity>
             </a-entity>
         </a-scene>
     </body>

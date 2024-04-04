@@ -83,10 +83,10 @@ Object.entries(handTrackingControllers).forEach(([side, handTrackingController])
     console.log({ side, handTrackingController });
 
     const onPinchStarted = () => {
-        console.log("THROTTLED PINCH");
+        //console.log("throttled pinch");
 
         numberOfPinches++;
-        console.log({ side, numberOfPinches });
+        //console.log({ side, numberOfPinches });
         if (numberOfPinches == 1) {
             debouncedResetNumberOfPinches.trigger();
         } else if (numberOfPinches == 2) {
@@ -99,27 +99,24 @@ Object.entries(handTrackingControllers).forEach(([side, handTrackingController])
     const throttledOnPinchStarted = AFRAME.utils.throttle(onPinchStarted, 300);
 
     handTrackingController.addEventListener("fingertiptouchstarted", (event) => {
-        const { fingerName, withEl, withFinger, onSameHand } = event.detail;
+        const { finger, withEl, withFinger, onSameHand } = event.detail;
 
-        //console.log({ fingerName, withEl, withFinger, onSameHand });
+        //console.log({ finger, withEl, withFinger, onSameHand });
 
-        const isPinch = fingerName == "index" && onSameHand && withFinger == "thumb";
+        const isPinch = finger == "index" && onSameHand && withFinger == "thumb";
         if (!isPinch) {
             return;
         }
+
         throttledOnPinchStarted();
     });
 });
 
 // DESKTOP PLACEMENT
 
-let didSetInitialHitTest = false;
 scene.addEventListener("ar-hit-test-select", (event) => {
     //console.log(event);
-    if (!didSetInitialHitTest) {
-        setARHitTest(false);
-        didSetInitialHitTest = true;
-    }
+    setARHitTest(false);
 });
 function getIsARHitTestEnabled() {
     return scene.getAttribute("ar-hit-test").enabled;
@@ -130,13 +127,35 @@ const toggleARHitTest = () => {
 };
 /** @param {boolean} enabled */
 const setARHitTest = (enabled) => {
+    if (getIsARHitTestEnabled() == enabled) {
+        return;
+    }
     console.log("ar-hit-test", enabled);
     scene.setAttribute("ar-hit-test", "enabled", enabled);
+    window.dispatchEvent(new CustomEvent("ar-hit-test", { detail: { enabled } }));
 };
+window.setARHitTest = setARHitTest;
 
 handTrackingControllers.right.addEventListener("doublepinch", () => {
-    console.log("DOUBLE PINCH");
+    console.log("double pinch");
     //toggleARHitTest();
+});
+
+const toggleARHitTestButton = document.getElementById("toggleARHitTest");
+const toggleARHitTestText = toggleARHitTestButton.querySelector("a-text");
+const toggleARHitTestBox = toggleARHitTestButton.querySelector("a-box");
+toggleARHitTestButton.addEventListener("touchstart", () => {
+    toggleARHitTest();
+});
+window.addEventListener("ar-hit-test", (event) => {
+    const { enabled } = event.detail;
+    if (enabled) {
+        toggleARHitTestText.setAttribute("value", "cancel");
+        toggleARHitTestBox.setAttribute("color", "red");
+    } else {
+        toggleARHitTestText.setAttribute("value", "move");
+        toggleARHitTestBox.setAttribute("color", "white");
+    }
 });
 
 // MOTION

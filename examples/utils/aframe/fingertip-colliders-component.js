@@ -1,10 +1,18 @@
 // requires hand-tracking-controls-extras (https://github.com/gftruj/aframe-hand-tracking-controls-extras)
 
 AFRAME.registerComponent("fingertip-colliders", {
-    schema: {},
+    schema: {
+        fingers: { default: ["thumb", "index"] }, // ["thumb", "index", "middle", "ring", "little"]
+    },
 
     init: function () {
         console.log(this);
+
+        if (!this.el.hasAttribute("hand-tracking-extras")) {
+            this.el.setAttribute("hand-tracking-extras", "");
+        }
+
+        this.isHandVisible = false;
 
         this.isInVR = false;
         this.el.sceneEl.addEventListener("enter-vr", () => {
@@ -14,16 +22,16 @@ AFRAME.registerComponent("fingertip-colliders", {
             this.isInVR = false;
         });
 
-        this.handSide = this.el.components["hand-tracking-controls"].data.hand;
+        this.hand = this.el.components["hand-tracking-controls"].data.hand;
 
-        this.fingerNames = ["thumb", "index", "middle", "ring", "little"];
         /** @type {Object.<string, HTMLElement>} */
         this.fingertipEntities = {};
 
         this.boundOnOBBCollision = this.onOBBCollision.bind(this);
+        this.obbColliderAttributeValue = "size: 0.015 0.015 0.015;";
 
         const onHandTrackingExtrasReady = () => {
-            console.log(this.jointsAPI);
+            console.log("jointsAPI", this.hand, this.jointsAPI);
             const clearHand = () => {
                 const material = this.el.components["hand-tracking-controls"]?.skinnedMesh?.material;
                 if (material) {
@@ -36,15 +44,22 @@ AFRAME.registerComponent("fingertip-colliders", {
                 clearHand();
             }, 1000);
 
-            this.fingerNames.forEach((fingerName) => {
+            this.data.fingers.forEach((finger) => {
+                const capitalizedfinger = this.capitalizeFirstLetter(finger);
+
                 const fingertipEntity = document.createElement("a-entity");
-                fingertipEntity.dataset.fingerName = fingerName;
-                fingertipEntity.dataset.handSide = this.handSide;
-                this.el.sceneEl.appendChild(fingertipEntity);
-                this.fingertipEntities[fingerName] = fingertipEntity;
-                fingertipEntity.setAttribute("obb-collider", "size: 0.015 0.015 0.015; centerModel: true;");
+
+                fingertipEntity.dataset.finger = finger;
+                fingertipEntity.dataset.hand = this.hand;
+
+                fingertipEntity.getJointAPI = () => this.jointsAPI[`get${capitalizedfinger}Tip`]();
+                //fingertipEntity.setAttribute("obb-collider", this.obbColliderAttributeValue);
+
                 fingertipEntity.addEventListener("obbcollisionstarted", this.boundOnOBBCollision);
                 fingertipEntity.addEventListener("obbcollisionended", this.boundOnOBBCollision);
+
+                this.fingertipEntities[finger] = fingertipEntity;
+                this.el.sceneEl.appendChild(fingertipEntity);
             });
             clearHand();
         };
@@ -70,15 +85,19 @@ AFRAME.registerComponent("fingertip-colliders", {
         //console.log(event);
         const isCollisionStart = event.type == "obbcollisionstarted";
         const fingerTipEntity = event.target;
-        const fingerName = fingerTipEntity.dataset.fingerName;
+        const finger = fingerTipEntity.dataset.finger;
         const withEl = event.detail.withEl;
-        const withFinger = withEl.dataset.fingerName;
-        const onSameHand = withFinger && withEl.dataset.handSide == this.handSide;
+        const withFinger = withEl.dataset.finger;
+        const onSameHand = withFinger && withEl.dataset.hand == this.hand;
 
-        //console.log({ fingerName, withEl, withFinger, onSameHand });
+        //console.log({ finger, withEl, withFinger, onSameHand });
 
         const eventType = `fingertiptouch${isCollisionStart ? "started" : "ended"}`;
-        this.el.emit(eventType, { fingerName, withEl, withFinger, onSameHand });
+        this.el.emit(eventType, { finger, withEl, withFinger, onSameHand });
+        if (!withFinger) {
+            const { getJointAPI } = fingerTipEntity;
+            withEl.emit(eventType, { finger, hand: this.hand, getJointAPI });
+        }
     },
 
     /** @param {string} string */
@@ -93,14 +112,35 @@ AFRAME.registerComponent("fingertip-colliders", {
         this.updateFingertipEntities(time, timeDelta);
     },
 
+    checkIfHandIsVisible: function () {
+        const isHandVisible = this.getIsHandVisible();
+        if (this.isHandVisible != isHandVisible) {
+            this.isHandVisible = isHandVisible;
+            Object.entries(this.fingertipEntities).forEach(([finger, fingertipEntity]) => {
+                if (this.isHandVisible) {
+                    fingertipEntity.setAttribute("obb-collider", this.obbColliderAttributeValue);
+                } else {
+                    //fingertipEntity.removeAttribute("obb-collider");
+                }
+            });
+        }
+    },
+    getIsHandVisible: function () {
+        return this.el.components["hand-tracking-controls"]?.mesh?.visible;
+    },
+
     updateFingertipEntities: function (time, timeDelta) {
         if (!this.jointsAPI) {
             return;
         }
+        this.checkIfHandIsVisible();
+        if (!this.isHandVisible) {
+            return;
+        }
 
-        Object.entries(this.fingertipEntities).forEach(([fingerName, fingertipEntity]) => {
-            const capitalizedFingerName = this.capitalizeFirstLetter(fingerName);
-            const fingertipPosition = this.jointsAPI[`get${capitalizedFingerName}Tip`]().getPosition();
+        Object.entries(this.fingertipEntities).forEach(([finger, fingertipEntity]) => {
+            const jointAPI = fingertipEntity.getJointAPI();
+            const fingertipPosition = jointAPI.getPosition();
             fingertipEntity.object3D.position.copy(fingertipPosition);
         });
     },

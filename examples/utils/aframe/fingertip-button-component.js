@@ -1,0 +1,63 @@
+AFRAME.registerComponent("fingertip-button", {
+    schema: {
+        hands: { default: ["left", "right"] },
+        fingers: { default: ["index"] },
+        maxTouches: { default: 1 },
+    },
+
+    init: function () {
+        this.touches = []; // [...{hand, finger}]
+
+        this.checkTouches = AFRAME.utils.throttle(this.checkTouches, 10, this);
+
+        this.boundOnFingertipTouch = this.onFingertipTouch.bind(this);
+        this.el.addEventListener("fingertiptouchstarted", this.boundOnFingertipTouch);
+        this.el.addEventListener("fingertiptouchended", this.boundOnFingertipTouch);
+    },
+
+    onFingertipTouch: function (event) {
+        //console.log(event);
+        const isTouchStart = event.type == "fingertiptouchstarted";
+        const { target } = event;
+        const { hand, finger, getJointAPI } = event.detail;
+
+        const touch = { hand, finger, getJointAPI, target };
+        //console.log(touch);
+
+        if (!this.data.hands.includes(hand)) {
+            return;
+        }
+        if (!this.data.fingers.includes(finger)) {
+            return;
+        }
+
+        let existingTouch = this.touches.find(({ hand: _hand, finger: _finger }) => hand == _hand && finger == _finger);
+
+        if (isTouchStart) {
+            if (!existingTouch && this.touches.length < this.data.maxTouches) {
+                this.touches.push(Object.assign({}, touch));
+                this.el.emit("touchstart", touch);
+            }
+        } else {
+            if (existingTouch) {
+                this.touches.splice(this.touches.indexOf(existingTouch), 1);
+                this.el.emit("touchend", touch);
+            }
+        }
+
+        event.stopPropagation();
+    },
+
+    tick: function (time, timeDelta) {
+        this.checkTouches(time, timeDelta);
+    },
+
+    checkTouches: function (time, timeDelta) {
+        this.touches.forEach((touch) => {
+            const { hand, finger, getJointAPI, target } = touch;
+            const position = getJointAPI().getPosition();
+            //console.log(position);
+            this.el.emit("touchmove", { hand, finger, position, target });
+        });
+    },
+});
