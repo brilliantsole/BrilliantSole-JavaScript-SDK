@@ -7,6 +7,7 @@
         <script src="https://gftruj.github.io/hand.tracking.controls.extras/dist/aframe-hand-tracking-controls-extras.js"></script>
         <script src="../utils/aframe/fingertip-colliders-component.js"></script>
         <script src="../utils/aframe/fingertip-collider-target-component.js"></script>
+        <script src="../utils/aframe/fingertip-collider-button-component.js"></script>
         <script type="module" src="./script.js"></script>
     </head>
 
@@ -72,6 +73,8 @@
             </template>
 
             <a-entity id="desktop" hide-on-enter-ar position="0 1 -0.75">
+                <a-entity fingertip-collider-button="hands: right; fingers: index;"></a-entity>
+
                 <a-entity
                     id="toggleSetWebSocketServerUrl"
                     position="0.5 0 0"
