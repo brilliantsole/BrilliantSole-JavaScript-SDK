@@ -5289,7 +5289,7 @@ class WebSocketClient {
         _console$2.assertWithError(this.isDisconnected, "not disconnected");
     }
 
-    /** @param {string | URL} url */
+    /** @param {(string | URL)?} url */
     connect(url = `wss://${location.host}`) {
         if (this.webSocket) {
             this.#assertDisconnection();
@@ -5317,6 +5317,17 @@ class WebSocketClient {
     reconnect() {
         this.#assertDisconnection();
         this.webSocket = new WebSocket(this.webSocket.url);
+    }
+
+    /** @param {(string | URL)?} url */
+    toggleConnection(url) {
+        if (this.isConnected) {
+            this.disconnect();
+        } else if (this.webSocket) {
+            this.reconnect();
+        } else {
+            this.connect(url);
+        }
     }
 
     static #ReconnectOnDisconnection = true;

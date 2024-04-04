@@ -6,7 +6,7 @@
         <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
         <script src="https://gftruj.github.io/hand.tracking.controls.extras/dist/aframe-hand-tracking-controls-extras.js"></script>
         <script src="../utils/aframe/fingertip-colliders-component.js"></script>
-        <script src="../utils/aframe/fingertip-button-component.js"></script>
+        <script src="../utils/aframe/fingertip-collider-target-component.js"></script>
         <script type="module" src="./script.js"></script>
     </head>
 
@@ -26,6 +26,8 @@
         </nav>
 
         <h1>WebXR | BrilliantSole JavaScript SDK</h1>
+
+        <label>webSocket url <input id="webSocketUrl" type="url" placeholder="localhost" /></label>
 
         <a-scene
             embedded
@@ -69,11 +71,55 @@
                 <a-entity class="insole pressure"></a-entity>
             </template>
 
-            <a-entity id="desktop" hide-on-enter-ar position="0 1 -1">
+            <a-entity id="desktop" hide-on-enter-ar position="0 1 -0.75">
+                <a-entity
+                    id="toggleSetWebSocketServerUrl"
+                    position="0.5 0 0"
+                    scale="0.75 0.75 0.75"
+                    fingertip-collider-target="hands: right; fingers: index; max-touches: 1;"
+                >
+                    <a-text
+                        class="url"
+                        value="localhost"
+                        color="black"
+                        align="center"
+                        rotation="-90 0 0"
+                        width="0.8"
+                        position="0 0.04 0"
+                    ></a-text>
+                    <a-text
+                        value="websocket url"
+                        color="black"
+                        align="center"
+                        rotation="0 0 0"
+                        width="0.5"
+                        position="0 0.02 0.035"
+                    ></a-text>
+                    <a-box obb-collider color="white" scale="0.3 0.04 0.07" position="0 0.02 0"></a-box>
+                </a-entity>
+
+                <a-entity
+                    id="toggleWebSocketServerConnection"
+                    position="0.5 0 0.1"
+                    scale="0.75 0.75 0.75"
+                    fingertip-collider-target="hands: right; fingers: index; max-touches: 1;"
+                >
+                    <a-text
+                        value="connect"
+                        color="black"
+                        align="center"
+                        rotation="-90 0 0"
+                        width="1"
+                        position="0 0.04 0"
+                    ></a-text>
+                    <a-box obb-collider color="white" scale="0.22 0.04 0.07" position="0 0.02 0"></a-box>
+                </a-entity>
+
                 <a-entity
                     id="toggleARHitTest"
-                    position="-0.5 0 0"
-                    fingertip-button="hands: left; fingers: index; max-touches: 1;"
+                    position="-0.4 0 0"
+                    scale="0.75 0.75 0.75"
+                    fingertip-collider-target="hands: left; fingers: index; max-touches: 1;"
                 >
                     <a-text
                         value="move"

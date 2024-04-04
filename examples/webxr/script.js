@@ -9,6 +9,7 @@ console.log({ client });
 window.client = client;
 
 /** @typedef {import("../../build/brilliantsole.module.js").Device} Device */
+/** @typedef {import("../../build/brilliantsole.module.js").SensorType} SensorType */
 
 const devicePair = BS.DevicePair.shared;
 
@@ -158,6 +159,128 @@ window.addEventListener("ar-hit-test", (event) => {
     }
 });
 
+// WEBSOCKET URL SEARCH PARAMS
+
+const url = new URL(location);
+function setUrlParam(key, value) {
+    if (history.pushState) {
+        let searchParams = new URLSearchParams(window.location.search);
+        if (value) {
+            searchParams.set(key, value);
+        } else {
+            searchParams.delete(key);
+        }
+        let newUrl =
+            window.location.protocol +
+            "//" +
+            window.location.host +
+            window.location.pathname +
+            "?" +
+            searchParams.toString();
+        window.history.pushState({ path: newUrl }, "", newUrl);
+    }
+}
+client.addEventListener("isConnected", () => {
+    if (client.isConnected) {
+        setUrlParam("webSocketUrl", client.webSocket.url);
+        webSocketUrlInput.value = client.webSocket.url;
+        webSocketUrlInput.dispatchEvent(new Event("input"));
+    } else {
+        setUrlParam("webSocketUrl");
+    }
+});
+
+// WEBSOCKET SERVER URL
+
+/** @type {HTMLInputElement} */
+const webSocketUrlInput = document.getElementById("webSocketUrl");
+
+const toggleSetWebSocketServerUrlButton = document.getElementById("toggleSetWebSocketServerUrl");
+const toggleSetWebSocketServerUrlBox = toggleSetWebSocketServerUrlButton.querySelector("a-box");
+const toggleSetWebSocketServerUrlText = toggleSetWebSocketServerUrlButton.querySelector("a-text.url");
+toggleSetWebSocketServerUrlButton.addEventListener("touchstart", () => {
+    if (client.isConnected) {
+        return;
+    }
+    webSocketUrlInput.focus();
+});
+client.addEventListener("connectionStatus", () => {
+    /** @type {string} */
+    let color;
+
+    switch (client.connectionStatus) {
+        case "connected":
+        case "not connected":
+            color = "white";
+            break;
+        case "connecting":
+        case "disconnecting":
+            color = "grey";
+            break;
+    }
+
+    if (color) {
+        toggleSetWebSocketServerUrlBox.setAttribute("color", color);
+    }
+});
+webSocketUrlInput.addEventListener("input", () => {
+    toggleSetWebSocketServerUrlText.setAttribute("value", webSocketUrlInput.value);
+});
+webSocketUrlInput.addEventListener("focusin", () => {
+    toggleSetWebSocketServerUrlBox.setAttribute("color", "yellow");
+});
+webSocketUrlInput.addEventListener("focusout", () => {
+    toggleSetWebSocketServerUrlBox.setAttribute("color", "white");
+});
+
+// WEBSOCKET CONNECTION
+
+const toggleWebSocketConnectionButton = document.getElementById("toggleWebSocketServerConnection");
+const toggleWebSocketConnectionBox = toggleWebSocketConnectionButton.querySelector("a-box");
+const toggleWebSocketConnectionText = toggleWebSocketConnectionButton.querySelector("a-text");
+
+toggleWebSocketConnectionButton.addEventListener("touchstart", () => {
+    switch (client.connectionStatus) {
+        case "connecting":
+        case "disconnecting":
+            return;
+    }
+
+    /** @type {string?} */
+    let webSocketUrl;
+    if (webSocketUrlInput.value.length > 0) {
+        webSocketUrl = webSocketUrlInput.value;
+    }
+    client.toggleConnection(webSocketUrl);
+});
+
+client.addEventListener("connectionStatus", () => {
+    /** @type {string} */
+    let text;
+    /** @type {string} */
+    let color;
+
+    switch (client.connectionStatus) {
+        case "connected":
+        case "not connected":
+            text = client.isConnected ? "disconnect" : "connect";
+            color = "white";
+            break;
+        case "connecting":
+        case "disconnecting":
+            text = client.connectionStatus;
+            color = "gray";
+            break;
+    }
+
+    if (text) {
+        toggleWebSocketConnectionText.setAttribute("value", text);
+    }
+    if (color) {
+        toggleWebSocketConnectionBox.setAttribute("color", color);
+    }
+});
+
 // MOTION
 
 /** @type {HTMLElement} */
@@ -186,6 +309,31 @@ devicePair.sides.forEach((side) => {
     desktopEntity.appendChild(insoleMotionEntity);
 });
 
+devicePair.addEventListener("deviceSensorData", (event) => {
+    /** @type {Device} */
+    const device = event.message.device;
+
+    /** @type {SensorType} */
+    const sensorType = event.message.sensorType;
+
+    // FILL
+
+    switch (sensorType) {
+        case "acceleration":
+            break;
+        case "gravity":
+            break;
+        case "linearAcceleration":
+            break;
+        case "gyroscope":
+            break;
+        case "gameRotation":
+            break;
+        case "rotation":
+            break;
+    }
+});
+
 // PRESSURE
 
 /** @type {HTMLElement} */
@@ -199,4 +347,18 @@ devicePair.sides.forEach((side) => {
     // FILL
 
     desktopEntity.appendChild(insolePressureEntity);
+});
+
+devicePair.addEventListener("devicePressure", (event) => {
+    /** @type {Device} */
+    const device = event.message.device;
+
+    /** @type {import("../../build/brilliantsole.module.js").PressureData} */
+    const pressure = event.message.pressure;
+
+    // FILL
+
+    pressure.sensors.forEach((sensor, index) => {
+        //pressureSensorElementsContainers[device.insoleSide][index].style.opacity = sensor.normalizedValue;
+    });
 });

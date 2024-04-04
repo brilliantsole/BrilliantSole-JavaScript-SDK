@@ -1,4 +1,4 @@
-AFRAME.registerComponent("fingertip-button", {
+AFRAME.registerComponent("fingertip-collider-target", {
     schema: {
         hands: { default: ["left", "right"] },
         fingers: { default: ["index"] },
