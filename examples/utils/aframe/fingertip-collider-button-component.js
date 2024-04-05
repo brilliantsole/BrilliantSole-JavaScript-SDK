@@ -70,6 +70,8 @@ AFRAME.registerComponent("fingertip-collider-button", {
 
         const diffKeys = Object.keys(diff);
 
+        //console.log({ diffKeys });
+
         diffKeys.forEach((diffKey) => {
             switch (diffKey) {
                 case "text":
@@ -139,7 +141,7 @@ AFRAME.registerComponent("fingertip-collider-button", {
 
     updateCollider: function () {
         setTimeout(() => {
-            this.colliderBox.components["obb-collider"].updateCollider();
+            this.colliderBox.components["obb-collider"]?.updateCollider();
         }, 0);
     },
 
