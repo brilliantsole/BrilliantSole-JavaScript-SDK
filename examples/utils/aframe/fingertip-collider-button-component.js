@@ -26,8 +26,13 @@ AFRAME.registerComponent("fingertip-collider-button", {
         this.el.appendChild(this.container);
 
         this.box = document.createElement("a-box");
-        this.box.setAttribute("obb-collider", "");
         this.container.appendChild(this.box);
+
+        // causes an error if the box with text notes is used for obb-collider
+        this.colliderBox = document.createElement("a-box");
+        this.colliderBox.setAttribute("obb-collider", "");
+        this.colliderBox.setAttribute("material", "opacity: 0;");
+        this.container.appendChild(this.colliderBox);
 
         this.text = document.createElement("a-text");
         this.text.setAttribute("rotation", "-90 0 0");
@@ -39,7 +44,6 @@ AFRAME.registerComponent("fingertip-collider-button", {
         this.subtitle.setAttribute("align", "center");
         this.subtitle.setAttribute("scale", "0.7 0.7 0.7");
         this.subtitle.setAttribute("baseline", "bottom");
-
         this.box.appendChild(this.subtitle);
 
         this.el.setAttribute("fingertip-collider-target", {
@@ -75,6 +79,7 @@ AFRAME.registerComponent("fingertip-collider-button", {
                         if (textWidth) {
                             clearInterval(timeoutId);
                             this.el.setAttribute("fingertip-collider-button", "width", textWidth);
+                            this.updateCollider();
                         }
                     }, 10);
                     break;
@@ -103,21 +108,39 @@ AFRAME.registerComponent("fingertip-collider-button", {
                     break;
                 case "width":
                     this.box.setAttribute("width", this.data.width);
+                    this.colliderBox.setAttribute("width", this.data.width);
+                    this.updateCollider();
                     break;
                 case "depth":
                     this.box.setAttribute("depth", this.data.depth);
+                    this.colliderBox.setAttribute("depth", this.data.depth);
+                    this.updateCollider();
                     break;
                 case "height":
                     this.box.setAttribute("height", this.data.height);
+                    this.colliderBox.setAttribute("height", this.data.height);
+
                     this.box.setAttribute("position", `0 ${(this.data.height * this.data.scale) / 2} 0`);
+                    this.colliderBox.setAttribute("position", `0 ${(this.data.height * this.data.scale) / 2} 0`);
+
                     this.text.setAttribute("position", `0 ${this.data.height / 2} 0`);
                     this.subtitle.setAttribute("position", `0 ${-this.data.height / 2} ${this.data.depth / 2}`);
+
+                    this.updateCollider();
                     break;
                 case "scale":
                     this.box.setAttribute("scale", new Array(3).fill(this.data.scale).join(" "));
+                    this.colliderBox.setAttribute("scale", new Array(3).fill(this.data.scale).join(" "));
+                    this.updateCollider();
                     break;
             }
         });
+    },
+
+    updateCollider: function () {
+        setTimeout(() => {
+            this.colliderBox.components["obb-collider"].updateCollider();
+        }, 0);
     },
 
     remove: function () {
