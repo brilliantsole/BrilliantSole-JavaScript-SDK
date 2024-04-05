@@ -1,4 +1,4 @@
-AFRAME.registerComponent("fingertip-collider-button", {
+AFRAME.registerComponent("fingertip-button", {
     schema: {
         hands: { default: ["left", "right"] },
         fingers: { default: ["index"] },
@@ -80,7 +80,7 @@ AFRAME.registerComponent("fingertip-collider-button", {
                         const textWidth = this.calculateTextWidth(this.text);
                         if (textWidth) {
                             clearInterval(timeoutId);
-                            this.el.setAttribute("fingertip-collider-button", "width", textWidth);
+                            this.el.setAttribute("fingertip-button", "width", textWidth);
                             this.updateCollider();
                         }
                     }, 10);

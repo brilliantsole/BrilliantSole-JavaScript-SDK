@@ -7,7 +7,7 @@
         <script src="https://gftruj.github.io/hand.tracking.controls.extras/dist/aframe-hand-tracking-controls-extras.js"></script>
         <script src="../utils/aframe/fingertip-colliders-component.js"></script>
         <script src="../utils/aframe/fingertip-collider-target-component.js"></script>
-        <script src="../utils/aframe/fingertip-collider-button-component.js"></script>
+        <script src="../utils/aframe/fingertip-button-component.js"></script>
         <script type="module" src="./script.js"></script>
     </head>
 
@@ -28,7 +28,15 @@
 
         <h1>WebXR | BrilliantSole JavaScript SDK</h1>
 
-        <label>webSocket url <input id="webSocketUrl" type="url" placeholder="localhost" /></label>
+        <div>
+            <label>webSocket url <input id="webSocketUrl" type="url" placeholder="localhost" /></label>
+            <button id="toggleConnection">connect</button>
+        </div>
+
+        <div>
+            <label> is scanning available? <input id="isScanningAvailable" type="checkbox" readonly disabled /> </label>
+            <button id="toggleScan" disabled>scan</button>
+        </div>
 
         <a-scene
             embedded
@@ -74,21 +82,27 @@
 
             <a-entity id="desktop" hide-on-enter-ar position="0 1 -0.75">
                 <a-entity
-                    id="toggleSetWebSocketServerUrl"
-                    position="0.4 0 0.1"
-                    fingertip-collider-button="hands: right; fingers: index; text: localhost; subtitle: url;"
-                ></a-entity>
-
-                <a-entity
-                    id="toggleWebSocketServerConnection"
-                    position="0.4 0 0"
-                    fingertip-collider-button="hands: right; fingers: index; text: connect;"
-                ></a-entity>
-
-                <a-entity
-                    id="toggleARHitTest"
+                    class="toggleARHitTest"
                     position="-0.4 0 0"
-                    fingertip-collider-button="hands: left; fingers: index; text: move;"
+                    fingertip-button="hands: left; fingers: index; text: move;"
+                ></a-entity>
+
+                <a-entity
+                    class="toggleSetWebSocketUrl"
+                    position="0.4 0 0.1"
+                    fingertip-button="hands: right; fingers: index; text: localhost; subtitle: url;"
+                ></a-entity>
+
+                <a-entity
+                    class="toggleConnection"
+                    position="0.4 0 0"
+                    fingertip-button="hands: right; fingers: index; text: connect;"
+                ></a-entity>
+
+                <a-entity
+                    class="toggleScan"
+                    position="0.4 0 -0.1"
+                    fingertip-button="hands: right; fingers: index; text: scan; disabled: true;"
                 ></a-entity>
             </a-entity>
         </a-scene>

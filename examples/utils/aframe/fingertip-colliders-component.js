@@ -2,7 +2,7 @@
 
 AFRAME.registerComponent("fingertip-colliders", {
     schema: {
-        fingers: { default: ["thumb", "index"] }, // ["thumb", "index", "middle", "ring", "little"]
+        fingers: { default: ["index"] }, // ["thumb", "index", "middle", "ring", "little"]
     },
 
     init: function () {
