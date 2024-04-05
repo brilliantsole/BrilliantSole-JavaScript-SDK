@@ -90,9 +90,10 @@
             </template>
 
             <a-entity id="desktop" hide-on-enter-ar position="0 1 -0.75">
-                <a-entity class="discoveredDevicesContainer" visible="true" position="0 0.5 -0.25">
+                <a-entity class="screen" position="0 0.3 -0.25">
                     <a-text
-                        value="discovered devices"
+                        class="title"
+                        value=""
                         color="black"
                         align="center"
                         baseline="top"
@@ -108,7 +109,21 @@
                         <template class="discoveredDeviceTemplate">
                             <a-entity
                                 class="discoveredDevice"
-                                fingertip-button="hands: right; fingers: index; text: discoveredDevice; rotation: 90 0 0"
+                                fingertip-button="hands: right; fingers: index; text: discovered\ndevice; rotation: 90 0 0"
+                            >
+                            </a-entity>
+                        </template>
+                    </a-entity>
+
+                    <a-entity
+                        class="availableDevices"
+                        layout="marginColumn: 0.3; marginRow: 0.15; columns: 3; align: center; type: box; "
+                        position="0 0.05 0"
+                    >
+                        <template class="availableDeviceTemplate">
+                            <a-entity
+                                class="availableDevice"
+                                fingertip-button="hands: right; fingers: index; text: available\ndevice; rotation: 90 0 0"
                             >
                             </a-entity>
                         </template>
@@ -145,6 +160,12 @@
                     class="toggleShowDiscoveredDevices"
                     position="0.4 0 -0.22"
                     fingertip-button="hands: right; fingers: index; text: show\ndiscovered\ndevices; disabled: true;"
+                ></a-entity>
+
+                <a-entity
+                    class="toggleShowAvailableDevices"
+                    position="0.7 0 -0.1"
+                    fingertip-button="hands: right; fingers: index; text: show\navailable\ndevices; disabled: true;"
                 ></a-entity>
             </a-entity>
         </a-scene>

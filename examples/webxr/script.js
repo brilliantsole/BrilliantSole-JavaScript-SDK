@@ -316,11 +316,49 @@ client.addEventListener("isConnected", () => {
     });
 });
 
+// SCREEN
+
+const screenEntity = scene.querySelector(".screen");
+const screenTitle = screenEntity.querySelector(".title");
+
+/** @typedef {"none" | "discoveredDevices" | "availableDevices"} ScreenMode */
+/** @type {ScreenMode} */
+let screenMode;
+/** @param {ScreenMode} newScreenMode */
+function setScreenMode(newScreenMode) {
+    if (screenMode == newScreenMode) {
+        console.log("redundant screenMode assignment", newScreenMode);
+        return;
+    }
+    screenMode = newScreenMode;
+    window.dispatchEvent(new CustomEvent("screenMode", { detail: { screenMode } }));
+}
+
+window.addEventListener("screenMode", () => {
+    let showScreen = screenMode != "none";
+    screenEntity.object3D.visible = showScreen;
+});
+setScreenMode("none");
+
+window.addEventListener("screenMode", () => {
+    let text = "";
+
+    switch (screenMode) {
+        case "availableDevices":
+            text = "available devices";
+            break;
+        case "discoveredDevices":
+            text = "discovered devices";
+            break;
+    }
+
+    screenTitle.setAttribute("value", text);
+});
+
 // DISCOVERED DEVICES
 
 /** @typedef {import("../../build/brilliantsole.module.js").DiscoveredDevice} DiscoveredDevice */
 
-const discoveredDevicesContainerEntity = scene.querySelector(".discoveredDevicesContainer");
 const discoveredDevicesEntity = scene.querySelector(".discoveredDevices");
 /** @type {HTMLTemplateElement} */
 const discoveredDeviceEntityTemplate = discoveredDevicesEntity.querySelector(".discoveredDeviceTemplate");
@@ -335,15 +373,11 @@ client.addEventListener("isConnected", () => {
 });
 
 toggleShowDiscoveredDevicesEntity.addEventListener("click", () => {
-    const showDiscoveredDevices = !discoveredDevicesContainerEntity.object3D.visible;
-    const text = [showDiscoveredDevices ? "hide" : "show", "discovered", "devices"].join("\n");
-    toggleShowDiscoveredDevicesEntity.setAttribute("fingertip-button", {
-        text,
-    });
-    discoveredDevicesContainerEntity.object3D.visible = showDiscoveredDevices;
-    Object.entries(client.discoveredDevices).forEach(([deviceId, discoveredDevice]) => {
-        updateDiscoveredDeviceEntity(discoveredDevice);
-    });
+    if (screenMode == "discoveredDevices") {
+        setScreenMode("none");
+    } else {
+        setScreenMode("discoveredDevices");
+    }
 });
 
 client.addEventListener("discoveredDevice", (event) => {
@@ -398,7 +432,7 @@ client.addEventListener("discoveredDevice", (event) => {
 function updateDiscoveredDeviceEntity(discoveredDevice) {
     const discoveredDeviceEntity = discoveredDeviceEntities[discoveredDevice.id];
     if (!discoveredDeviceEntity) {
-        console.warn(`no discoveredDeviceEntity for device id ${discoveredDevice.id}`);
+        //console.warn(`no discoveredDeviceEntity for device id ${discoveredDevice.id}`);
         return;
     }
 
@@ -419,11 +453,9 @@ function updateDiscoveredDeviceEntity(discoveredDevice) {
             break;
     }
 
-    if (!discoveredDevicesContainerEntity.object3D.visible) {
+    if (screenMode != "discoveredDevices") {
         disabled = true;
     }
-
-    console.log("test", device, discoveredDevice);
 
     const text = [
         device?.name || discoveredDevice.name,
@@ -434,6 +466,18 @@ function updateDiscoveredDeviceEntity(discoveredDevice) {
 
     discoveredDeviceEntity.setAttribute("fingertip-button", { text, disabled });
 }
+
+window.addEventListener("screenMode", () => {
+    const isDiscoveredDevicesMode = screenMode == "discoveredDevices";
+    const text = [isDiscoveredDevicesMode ? "hide" : "show", "discovered", "devices"].join("\n");
+    toggleShowDiscoveredDevicesEntity.setAttribute("fingertip-button", {
+        text,
+    });
+    discoveredDevicesEntity.object3D.visible = isDiscoveredDevicesMode;
+    Object.entries(client.discoveredDevices).forEach(([deviceId, discoveredDevice]) => {
+        updateDiscoveredDeviceEntity(discoveredDevice);
+    });
+});
 
 /** @param {DiscoveredDevice} discoveredDevice */
 function removeDiscoveredDeviceEntity(discoveredDevice) {
@@ -468,9 +512,113 @@ client.addEventListener("isScanning", () => {
     }
 });
 
-// CONNECTED DEVICES
-
 // AVAILABLE DEVICES
+
+const availableDevicesEntity = scene.querySelector(".availableDevices");
+/** @type {HTMLTemplateElement} */
+const availableDeviceEntityTemplate = availableDevicesEntity.querySelector(".availableDeviceTemplate");
+/** @type {Object.<string, HTMLElement>} */
+let availableDeviceEntities = {};
+
+const toggleShowAvailableDevicesEntity = scene.querySelector(".toggleShowAvailableDevices");
+client.addEventListener("isConnected", () => {
+    toggleShowAvailableDevicesEntity.setAttribute("fingertip-button", {
+        disabled: !client.isConnected,
+    });
+});
+
+toggleShowAvailableDevicesEntity.addEventListener("click", () => {
+    if (screenMode == "availableDevices") {
+        setScreenMode("none");
+    } else {
+        setScreenMode("availableDevices");
+    }
+});
+
+BS.Device.AddEventListener("availableDevices", (event) => {
+    /** @type {Device[]} */
+    const availableDevices = event.message.devices;
+    console.log({ availableDevices });
+
+    availableDevices.forEach((device) => {
+        if (device.connectionType != "webSocketClient" || !device.id) {
+            return;
+        }
+
+        let availableDeviceEntity = availableDeviceEntities[device.id];
+        if (!availableDeviceEntity) {
+            availableDeviceEntity = availableDeviceEntityTemplate.content
+                .cloneNode(true)
+                .querySelector(".availableDevice");
+
+            availableDeviceEntity.addEventListener("click", () => {
+                device.toggleConnection();
+            });
+
+            device.addEventListener("connectionStatus", () => {
+                updateAvailableDeviceEntity(device);
+            });
+
+            availableDeviceEntities[device.id] = availableDeviceEntity;
+            availableDevicesEntity.appendChild(availableDeviceEntity);
+        }
+
+        updateAvailableDeviceEntity(device);
+    });
+});
+
+/** @param {Device} device */
+function updateAvailableDeviceEntity(device) {
+    const availableDeviceEntity = availableDeviceEntities[device.id];
+    if (!availableDeviceEntity) {
+        console.warn(`no availableDeviceEntity for device id ${device.id}`);
+        return;
+    }
+
+    let connectMessage;
+    let disabled;
+    switch (device.connectionStatus) {
+        case "connected":
+        case "not connected":
+            connectMessage = device.isConnected ? "disconnect" : "connect";
+            disabled = false;
+            break;
+        case "connecting":
+        case "disconnecting":
+            connectMessage = device.connectionStatus;
+            disabled = true;
+            break;
+    }
+
+    if (screenMode != "availableDevices") {
+        disabled = true;
+    }
+
+    const text = [device.name, device.type, connectMessage].filter(Boolean).join("\n");
+
+    availableDeviceEntity.setAttribute("fingertip-button", { text, disabled });
+}
+
+window.addEventListener("screenMode", () => {
+    const isAvailableDevicesMode = screenMode == "availableDevices";
+    const text = [isAvailableDevicesMode ? "hide" : "show", "available", "devices"].join("\n");
+    toggleShowAvailableDevicesEntity.setAttribute("fingertip-button", {
+        text,
+    });
+    availableDevicesEntity.object3D.visible = isAvailableDevicesMode;
+    BS.Device.AvailableDevices.forEach((availableDevice) => {
+        updateAvailableDeviceEntity(availableDevice);
+    });
+});
+
+function clearAvailableDevices() {
+    availableDevicesEntity.querySelectorAll(".availableDevice").forEach((entity) => entity.remove());
+    availableDeviceEntities = {};
+}
+
+client.addEventListener("not connected", () => {
+    clearAvailableDevices();
+});
 
 // MOTION
 

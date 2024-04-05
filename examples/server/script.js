@@ -232,12 +232,10 @@ BS.Device.AddEventListener("availableDevices", (event) => {
     console.log({ availableDevices });
 
     availableDevices.forEach((device) => {
-        if (device.connectionType != "webSocketClient") {
+        if (device.connectionType != "webSocketClient" || !device.id) {
             return;
         }
-        /** @type {HTMLElement} */
-        let availableDeviceContainer;
-        availableDeviceContainer = availableDeviceContainers[device.id];
+        let availableDeviceContainer = availableDeviceContainers[device.id];
         if (!availableDeviceContainer) {
             availableDeviceContainer = availableDeviceTemplate.content
                 .cloneNode(true)

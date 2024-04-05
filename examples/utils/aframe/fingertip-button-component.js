@@ -28,7 +28,6 @@ AFRAME.registerComponent("fingertip-button", {
         this.el.appendChild(this.container);
 
         this.box = document.createElement("a-box");
-        this.box.classList.add("clickable");
         this.container.appendChild(this.box);
 
         // causes an error if the box with text nodes is used for obb-collider
@@ -135,8 +134,10 @@ AFRAME.registerComponent("fingertip-button", {
                 case "disabled":
                     if (this.data.disabled) {
                         this.colliderBox.removeAttribute("obb-collider");
+                        this.box.classList.remove("clickable");
                     } else {
                         this.colliderBox.setAttribute("obb-collider", "");
+                        this.box.classList.add("clickable");
                     }
 
                     this.el.setAttribute("fingertip-collider-target", { disabled: this.data.disabled });
