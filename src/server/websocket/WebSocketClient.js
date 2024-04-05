@@ -14,6 +14,7 @@ import EventDispatcher from "../../utils/EventDispatcher.js";
 import Device from "../../Device.js";
 import WebSocketClientConnectionManager from "../../connection/webSocket/WebSocketClientConnectionManager.js";
 import { sliceDataView } from "../../utils/ArrayBufferUtils.js";
+import WebBluetoothConnectionManager from "../../connection/bluetooth/WebBluetoothConnectionManager.js";
 
 const _console = createConsole("WebSocketClient", { log: true });
 
@@ -228,7 +229,9 @@ class WebSocketClient {
         this.#connectionStatus = "not connected";
 
         Object.entries(this.devices).forEach(([id, device]) => {
-            device.isConnected = false;
+            /** @type {WebSocketClientConnectionManager} */
+            const connectionManager = device.connectionManager;
+            connectionManager.isConnected = false;
         });
 
         this.#pingTimer.stop();

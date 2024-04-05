@@ -143,7 +143,7 @@ handTrackingControllers.right.addEventListener("doublepinch", () => {
 });
 
 const toggleARHitTestEntity = scene.querySelector(".toggleARHitTest");
-toggleARHitTestEntity.addEventListener("touchstart", () => {
+toggleARHitTestEntity.addEventListener("click", () => {
     toggleARHitTest();
 });
 window.addEventListener("ar-hit-test", (event) => {
@@ -205,7 +205,7 @@ client.addEventListener("isConnected", () => {
         disabled: client.isConnected,
     });
 });
-toggleSetWebSocketUrlButton.addEventListener("touchstart", () => {
+toggleSetWebSocketUrlButton.addEventListener("click", () => {
     webSocketUrlInput.focus();
 });
 webSocketUrlInput.addEventListener("input", () => {
@@ -272,7 +272,7 @@ client.addEventListener("connectionStatus", (event) => {
 
     toggleConnectionEntity.setAttribute("fingertip-button", { disabled, text });
 });
-toggleConnectionEntity.addEventListener("touchstart", () => {
+toggleConnectionEntity.addEventListener("click", () => {
     /** @type {string?} */
     let webSocketUrl;
     if (webSocketUrlInput.value.length > 0) {
@@ -302,13 +302,8 @@ client.addEventListener("isScanning", () => {
 });
 
 const toggleScanEntity = scene.querySelector(".toggleScan");
-toggleConnectionEntity.addEventListener("touchstart", () => {
-    /** @type {string?} */
-    let webSocketUrl;
-    if (webSocketUrlInput.value.length > 0) {
-        webSocketUrl = webSocketUrlInput.value;
-    }
-    client.toggleConnection(webSocketUrl);
+toggleScanEntity.addEventListener("click", () => {
+    client.toggleScan();
 });
 client.addEventListener("isScanning", () => {
     toggleScanEntity.setAttribute("fingertip-button", {
@@ -320,6 +315,162 @@ client.addEventListener("isConnected", () => {
         disabled: !client.isConnected,
     });
 });
+
+// DISCOVERED DEVICES
+
+/** @typedef {import("../../build/brilliantsole.module.js").DiscoveredDevice} DiscoveredDevice */
+
+const discoveredDevicesContainerEntity = scene.querySelector(".discoveredDevicesContainer");
+const discoveredDevicesEntity = scene.querySelector(".discoveredDevices");
+/** @type {HTMLTemplateElement} */
+const discoveredDeviceEntityTemplate = discoveredDevicesEntity.querySelector(".discoveredDeviceTemplate");
+/** @type {Object.<string, HTMLElement>} */
+let discoveredDeviceEntities = {};
+
+const toggleShowDiscoveredDevicesEntity = scene.querySelector(".toggleShowDiscoveredDevices");
+client.addEventListener("isConnected", () => {
+    toggleShowDiscoveredDevicesEntity.setAttribute("fingertip-button", {
+        disabled: !client.isConnected,
+    });
+});
+
+toggleShowDiscoveredDevicesEntity.addEventListener("click", () => {
+    const showDiscoveredDevices = !discoveredDevicesContainerEntity.object3D.visible;
+    const text = [showDiscoveredDevices ? "hide" : "show", "discovered", "devices"].join("\n");
+    toggleShowDiscoveredDevicesEntity.setAttribute("fingertip-button", {
+        text,
+    });
+    discoveredDevicesContainerEntity.object3D.visible = showDiscoveredDevices;
+    Object.entries(client.discoveredDevices).forEach(([deviceId, discoveredDevice]) => {
+        updateDiscoveredDeviceEntity(discoveredDevice);
+    });
+});
+
+client.addEventListener("discoveredDevice", (event) => {
+    /** @type {DiscoveredDevice} */
+    const discoveredDevice = event.message.discoveredDevice;
+    let discoveredDeviceEntity = discoveredDeviceEntities[discoveredDevice.id];
+    if (!discoveredDeviceEntity) {
+        discoveredDeviceEntity = discoveredDeviceEntityTemplate.content
+            .cloneNode(true)
+            .querySelector(".discoveredDevice");
+
+        discoveredDeviceEntity.addEventListener("click", () => {
+            let device = client.devices[discoveredDevice.id];
+            if (device) {
+                device.toggleConnection();
+            } else {
+                device = client.connectToDevice(discoveredDevice.id);
+                onDevice(device);
+            }
+        });
+
+        /** @param {Device} device */
+        const onDevice = (device) => {
+            device.addEventListener("connectionStatus", () => {
+                updateDiscoveredDeviceEntity(discoveredDevice);
+            });
+            updateDiscoveredDeviceEntity(discoveredDevice);
+            BS.Device.RemoveEventListener("deviceIsConnected", deviceIsConnectedListener);
+        };
+
+        const deviceIsConnectedListener = (event) => {
+            /** @type {Device} */
+            const device = event.message.device;
+            console.log("deviceIsConnected", device);
+            const discoveredDeviceEntity = discoveredDeviceEntities[device.id];
+            if (!discoveredDeviceEntity) {
+                return;
+            }
+
+            onDevice(device);
+        };
+        BS.Device.AddEventListener("deviceIsConnected", deviceIsConnectedListener);
+
+        discoveredDeviceEntities[discoveredDevice.id] = discoveredDeviceEntity;
+        discoveredDevicesEntity.appendChild(discoveredDeviceEntity);
+    }
+
+    updateDiscoveredDeviceEntity(discoveredDevice);
+});
+
+/** @param {DiscoveredDevice} discoveredDevice */
+function updateDiscoveredDeviceEntity(discoveredDevice) {
+    const discoveredDeviceEntity = discoveredDeviceEntities[discoveredDevice.id];
+    if (!discoveredDeviceEntity) {
+        console.warn(`no discoveredDeviceEntity for device id ${discoveredDevice.id}`);
+        return;
+    }
+
+    const device = client.devices[discoveredDevice.id];
+    const connectionStatus = device?.connectionStatus || "not connected";
+    let connectMessage;
+    let disabled;
+    switch (connectionStatus) {
+        case "connected":
+        case "not connected":
+            connectMessage = device?.isConnected ? "disconnect" : "connect";
+            disabled = false;
+            break;
+        case "connecting":
+        case "disconnecting":
+            connectMessage = connectionStatus;
+            disabled = true;
+            break;
+    }
+
+    if (!discoveredDevicesContainerEntity.object3D.visible) {
+        disabled = true;
+    }
+
+    console.log("test", device, discoveredDevice);
+
+    const text = [
+        device?.name || discoveredDevice.name,
+        device?.type || discoveredDevice.deviceType,
+        `rssi: ${discoveredDevice.rssi}`,
+        connectMessage,
+    ].join("\n");
+
+    discoveredDeviceEntity.setAttribute("fingertip-button", { text, disabled });
+}
+
+/** @param {DiscoveredDevice} discoveredDevice */
+function removeDiscoveredDeviceEntity(discoveredDevice) {
+    const discoveredDeviceEntity = discoveredDeviceEntities[discoveredDevice.id];
+    if (!discoveredDeviceEntity) {
+        console.warn(`no discoveredDeviceEntity for device id ${discoveredDevice.id}`);
+        return;
+    }
+
+    discoveredDeviceEntity.remove();
+    delete discoveredDeviceEntities[discoveredDevice.id];
+}
+
+client.addEventListener("expiredDiscoveredDevice", (event) => {
+    /** @type {DiscoveredDevice} */
+    const discoveredDevice = event.message.discoveredDevice;
+    removeDiscoveredDeviceEntity(discoveredDevice);
+});
+
+function clearDiscoveredDevices() {
+    discoveredDevicesEntity.querySelectorAll(".discoveredDevice").forEach((entity) => entity.remove());
+    discoveredDeviceEntities = {};
+}
+
+client.addEventListener("not connected", () => {
+    clearDiscoveredDevices();
+});
+
+client.addEventListener("isScanning", () => {
+    if (client.isScanning) {
+        clearDiscoveredDevices();
+    }
+});
+
+// CONNECTED DEVICES
+
+// AVAILABLE DEVICES
 
 // MOTION
 

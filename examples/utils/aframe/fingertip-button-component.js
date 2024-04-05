@@ -13,6 +13,7 @@ AFRAME.registerComponent("fingertip-button", {
         disabledColor: { type: "color", default: "grey" },
 
         scale: { default: 0.15 },
+        rotation: { type: "vec3" },
 
         height: { type: "number", default: 0.2 },
         width: { type: "number", default: 1.4 },
@@ -21,16 +22,19 @@ AFRAME.registerComponent("fingertip-button", {
 
     init: function () {
         this.box3 = new THREE.Box3();
+        this.matrix4 = new THREE.Matrix4();
 
         this.container = document.createElement("a-entity");
         this.el.appendChild(this.container);
 
         this.box = document.createElement("a-box");
+        this.box.classList.add("clickable");
         this.container.appendChild(this.box);
 
-        // causes an error if the box with text notes is used for obb-collider
+        // causes an error if the box with text nodes is used for obb-collider
         this.colliderBox = document.createElement("a-box");
-        this.colliderBox.setAttribute("obb-collider", "");
+        //this.colliderBox.setAttribute("obb-collider", "");
+        this.colliderBox.hideCollider = () => this.colliderBox?.components?.["obb-collider"]?.hideCollider?.();
         this.colliderBox.setAttribute("material", "opacity: 0;");
         this.container.appendChild(this.colliderBox);
 
@@ -52,17 +56,33 @@ AFRAME.registerComponent("fingertip-button", {
             maxTouches: 1,
             disabled: this.data.disabled,
         });
+
+        this.el.addEventListener("touchstarted", () => {
+            this.el.dispatchEvent(new Event("click"));
+        });
     },
 
-    calculateTextWidth: function (textEntity) {
+    calculateTextSize: function (textEntity) {
         const mesh = textEntity.components?.text?.mesh;
         if (!mesh) {
             return;
         }
         const box3 = this.box3;
         box3.setFromObject(mesh);
-        const width = box3.max.x - box3.min.x;
-        return width * 7;
+        this.matrix4.makeRotationFromQuaternion(this.box.object3D.quaternion);
+        this.matrix4.invert();
+        box3.applyMatrix4(this.matrix4);
+
+        let width = box3.max.x - box3.min.x;
+        width *= 8;
+
+        let height = box3.max.z - box3.min.z;
+        height *= 8;
+
+        return {
+            width,
+            height,
+        };
     },
 
     update: function (oldData) {
@@ -76,11 +96,19 @@ AFRAME.registerComponent("fingertip-button", {
             switch (diffKey) {
                 case "text":
                     this.text.setAttribute("value", this.data.text);
+                    let text = this.data.text;
                     let timeoutId = setInterval(() => {
-                        const textWidth = this.calculateTextWidth(this.text);
-                        if (textWidth) {
+                        if (this.data.text != text) {
                             clearInterval(timeoutId);
-                            this.el.setAttribute("fingertip-button", "width", textWidth);
+                            return;
+                        }
+
+                        const textSize = this.calculateTextSize(this.text);
+                        if (textSize) {
+                            const { width, height } = textSize;
+                            clearInterval(timeoutId);
+                            this.el.setAttribute("fingertip-button", "width", width);
+                            this.el.setAttribute("fingertip-button", "depth", height);
                             this.updateCollider();
                         }
                     }, 10);
@@ -105,6 +133,12 @@ AFRAME.registerComponent("fingertip-button", {
                     this.box.setAttribute("color", this.data.disabledColor);
                     break;
                 case "disabled":
+                    if (this.data.disabled) {
+                        this.colliderBox.removeAttribute("obb-collider");
+                    } else {
+                        this.colliderBox.setAttribute("obb-collider", "");
+                    }
+
                     this.el.setAttribute("fingertip-collider-target", { disabled: this.data.disabled });
                     this.box.setAttribute("color", this.data.disabled ? this.data.disabledColor : this.data.color);
                     break;
@@ -131,9 +165,20 @@ AFRAME.registerComponent("fingertip-button", {
                     this.updateCollider();
                     break;
                 case "scale":
-                    this.box.setAttribute("scale", new Array(3).fill(this.data.scale).join(" "));
-                    this.colliderBox.setAttribute("scale", new Array(3).fill(this.data.scale).join(" "));
-                    this.updateCollider();
+                    {
+                        const scaleString = new Array(3).fill(this.data.scale).join(" ");
+                        this.box.setAttribute("scale", scaleString);
+                        this.colliderBox.setAttribute("scale", scaleString);
+                        this.updateCollider();
+                    }
+                    break;
+                case "rotation":
+                    {
+                        const rotationString = AFRAME.utils.coordinates.stringify(this.data.rotation);
+                        this.box.setAttribute("rotation", rotationString);
+                        this.colliderBox.setAttribute("rotation", rotationString);
+                        this.updateCollider();
+                    }
                     break;
             }
         });

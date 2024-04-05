@@ -54,11 +54,11 @@ AFRAME.registerComponent("fingertip-collider-target", {
 
     onFingertipTouchStarted: function (touch) {
         this.touches.push(Object.assign({}, touch));
-        this.el.emit("touchstart", touch);
+        this.el.emit("touchstarted", touch);
     },
     onFingertipTouchEnded: function (touch) {
         this.touches.splice(this.touches.indexOf(touch), 1);
-        this.el.emit("touchend", touch);
+        this.el.emit("touchended", touch);
     },
 
     tick: function (time, timeDelta) {
@@ -69,8 +69,9 @@ AFRAME.registerComponent("fingertip-collider-target", {
         this.touches.forEach((touch) => {
             const { hand, finger, getJointAPI, target } = touch;
             const position = getJointAPI().getPosition();
+            // FILL - get normalized position within collider
             //console.log(position);
-            this.el.emit("touchmove", { hand, finger, position, target });
+            this.el.emit("touchmoved", { hand, finger, position, target });
         });
     },
 

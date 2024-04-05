@@ -5,6 +5,7 @@
         <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico" />
         <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
         <script src="https://gftruj.github.io/hand.tracking.controls.extras/dist/aframe-hand-tracking-controls-extras.js"></script>
+        <script src="https://unpkg.com/aframe-layout-component@5.3.0/dist/aframe-layout-component.min.js"></script>
         <script src="../utils/aframe/fingertip-colliders-component.js"></script>
         <script src="../utils/aframe/fingertip-collider-target-component.js"></script>
         <script src="../utils/aframe/fingertip-button-component.js"></script>
@@ -45,11 +46,19 @@
             renderer="colorManagement: true;"
             webxr="optionalFeatures: hit-test;"
             ar-hit-test="target: #desktop;"
-            obb-collider="showColliders: false;"
+            obb-collider="showColliders: true;"
         >
             <a-assets>
                 <a-asset-item id="insoleModel" src="../../assets/3d/leftInsole.glb"></a-asset-item>
             </a-assets>
+
+            <a-camera position="0 1.6 0">
+                <a-entity
+                    cursor="rayOrigin: mouse; fuseTimeout: 500"
+                    raycaster="objects: .clickable"
+                    position="0 0 -0.1"
+                ></a-entity>
+            </a-camera>
 
             <a-entity
                 class="left hand"
@@ -81,6 +90,33 @@
             </template>
 
             <a-entity id="desktop" hide-on-enter-ar position="0 1 -0.75">
+                <a-entity class="discoveredDevicesContainer" visible="true" position="0 0.5 -0.25">
+                    <a-text
+                        value="discovered devices"
+                        color="black"
+                        align="center"
+                        baseline="top"
+                        width="1"
+                        position="0 0.21 0"
+                    ></a-text>
+
+                    <a-entity
+                        class="discoveredDevices"
+                        layout="marginColumn: 0.3; marginRow: 0.15; columns: 3; align: center; type: box; "
+                        position="0 0.05 0"
+                    >
+                        <template class="discoveredDeviceTemplate">
+                            <a-entity
+                                class="discoveredDevice"
+                                fingertip-button="hands: right; fingers: index; text: discoveredDevice; rotation: 90 0 0"
+                            >
+                            </a-entity>
+                        </template>
+                    </a-entity>
+
+                    <a-plane color="white" width="1" height="0.5" position="0 0 -0.02"></a-plane>
+                </a-entity>
+
                 <a-entity
                     class="toggleARHitTest"
                     position="-0.4 0 0"
@@ -103,6 +139,12 @@
                     class="toggleScan"
                     position="0.4 0 -0.1"
                     fingertip-button="hands: right; fingers: index; text: scan; disabled: true;"
+                ></a-entity>
+
+                <a-entity
+                    class="toggleShowDiscoveredDevices"
+                    position="0.4 0 -0.22"
+                    fingertip-button="hands: right; fingers: index; text: show\ndiscovered\ndevices; disabled: true;"
                 ></a-entity>
             </a-entity>
         </a-scene>

@@ -5394,7 +5394,9 @@ class WebSocketClient {
         this.#connectionStatus = "not connected";
 
         Object.entries(this.devices).forEach(([id, device]) => {
-            device.isConnected = false;
+            /** @type {WebSocketClientConnectionManager} */
+            const connectionManager = device.connectionManager;
+            connectionManager.isConnected = false;
         });
 
         this.#pingTimer.stop();
