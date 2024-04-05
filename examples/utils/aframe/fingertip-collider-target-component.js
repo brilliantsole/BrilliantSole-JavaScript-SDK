@@ -10,6 +10,7 @@ AFRAME.registerComponent("fingertip-collider-target", {
         this.touches = []; // [...{hand, finger}]
 
         this.checkTouches = AFRAME.utils.throttle(this.checkTouches, 20, this);
+        this.onFingertipTouchStarted = AFRAME.utils.throttle(this.onFingertipTouchStarted, 500, this);
 
         this.boundOnFingertipTouch = this.onFingertipTouch.bind(this);
         this.el.addEventListener("fingertiptouchstarted", this.boundOnFingertipTouch);
@@ -40,17 +41,24 @@ AFRAME.registerComponent("fingertip-collider-target", {
 
         if (isTouchStart) {
             if (!existingTouch && this.touches.length < this.data.maxTouches) {
-                this.touches.push(Object.assign({}, touch));
-                this.el.emit("touchstart", touch);
+                this.onFingertipTouchStarted(touch);
             }
         } else {
             if (existingTouch) {
-                this.touches.splice(this.touches.indexOf(existingTouch), 1);
-                this.el.emit("touchend", touch);
+                this.onFingertipTouchEnded(existingTouch);
             }
         }
 
         event.stopPropagation();
+    },
+
+    onFingertipTouchStarted: function (touch) {
+        this.touches.push(Object.assign({}, touch));
+        this.el.emit("touchstart", touch);
+    },
+    onFingertipTouchEnded: function (touch) {
+        this.touches.splice(this.touches.indexOf(touch), 1);
+        this.el.emit("touchend", touch);
     },
 
     tick: function (time, timeDelta) {
