@@ -10,7 +10,7 @@ AFRAME.registerComponent("fingertip-collider-target", {
         this.touches = []; // [...{hand, finger}]
 
         this.checkTouches = AFRAME.utils.throttle(this.checkTouches, 20, this);
-        this.onFingertipTouchStarted = AFRAME.utils.throttle(this.onFingertipTouchStarted, 500, this);
+        this.onFingertipTouchStarted = AFRAME.utils.throttle(this.onFingertipTouchStarted, 300, this);
 
         this.boundOnFingertipTouch = this.onFingertipTouch.bind(this);
         this.el.addEventListener("fingertiptouchstarted", this.boundOnFingertipTouch);

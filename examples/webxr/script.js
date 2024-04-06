@@ -391,16 +391,37 @@ client.addEventListener("discoveredDevice", (event) => {
 
         discoveredDeviceEntity.addEventListener("click", () => {
             let device = client.devices[discoveredDevice.id];
+            console.log("discoveredDeviceEntity touch");
             if (device) {
+                console.log("toggle connection", device);
                 device.toggleConnection();
             } else {
                 device = client.connectToDevice(discoveredDevice.id);
-                onDevice(device);
+                console.log("created", device);
             }
+            onDevice(device);
         });
 
+        const deviceIsConnectedListener = (event) => {
+            /** @type {Device} */
+            const device = event.message.device;
+            console.log("deviceIsConnected", device);
+            if (device.id != discoveredDevice.id) {
+                return;
+            }
+            onDevice(device);
+        };
+        BS.Device.AddEventListener("deviceIsConnected", deviceIsConnectedListener);
+
+        let addedEventListeners = false;
         /** @param {Device} device */
         const onDevice = (device) => {
+            if (addedEventListeners) {
+                return;
+            }
+            addedEventListeners = true;
+
+            console.log("onDevice", device);
             device.addEventListener("connectionStatus", () => {
                 updateDiscoveredDeviceEntity(discoveredDevice);
             });
@@ -408,18 +429,10 @@ client.addEventListener("discoveredDevice", (event) => {
             BS.Device.RemoveEventListener("deviceIsConnected", deviceIsConnectedListener);
         };
 
-        const deviceIsConnectedListener = (event) => {
-            /** @type {Device} */
-            const device = event.message.device;
-            console.log("deviceIsConnected", device);
-            const discoveredDeviceEntity = discoveredDeviceEntities[device.id];
-            if (!discoveredDeviceEntity) {
-                return;
-            }
-
+        let device = client.devices[discoveredDevice.id];
+        if (device) {
             onDevice(device);
-        };
-        BS.Device.AddEventListener("deviceIsConnected", deviceIsConnectedListener);
+        }
 
         discoveredDeviceEntities[discoveredDevice.id] = discoveredDeviceEntity;
         discoveredDevicesEntity.appendChild(discoveredDeviceEntity);
@@ -432,7 +445,7 @@ client.addEventListener("discoveredDevice", (event) => {
 function updateDiscoveredDeviceEntity(discoveredDevice) {
     const discoveredDeviceEntity = discoveredDeviceEntities[discoveredDevice.id];
     if (!discoveredDeviceEntity) {
-        //console.warn(`no discoveredDeviceEntity for device id ${discoveredDevice.id}`);
+        console.warn(`no discoveredDeviceEntity for device id ${discoveredDevice.id}`);
         return;
     }
 
@@ -552,6 +565,7 @@ BS.Device.AddEventListener("availableDevices", (event) => {
                 .querySelector(".availableDevice");
 
             availableDeviceEntity.addEventListener("click", () => {
+                console.log("availableDeviceEntity", "click", device);
                 device.toggleConnection();
             });
 
@@ -574,6 +588,8 @@ function updateAvailableDeviceEntity(device) {
         console.warn(`no availableDeviceEntity for device id ${device.id}`);
         return;
     }
+
+    console.log("updateAvailableDeviceEntity", device);
 
     let connectMessage;
     let disabled;
