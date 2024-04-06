@@ -37,28 +37,37 @@ AFRAME.registerComponent("fingertip-collider-target", {
             return;
         }
 
-        let existingTouch = this.touches.find(({ hand: _hand, finger: _finger }) => hand == _hand && finger == _finger);
-
         if (isTouchStart) {
-            if (!existingTouch && this.touches.length < this.data.maxTouches) {
-                this.onFingertipTouchStarted(touch);
-            }
+            this.onFingertipTouchStarted(touch);
         } else {
-            if (existingTouch) {
-                this.onFingertipTouchEnded(existingTouch);
-            }
+            this.onFingertipTouchEnded(touch);
         }
 
         event.stopPropagation();
     },
 
+    getExistingTouch: function (touch) {
+        return this.touches.find(({ hand, finger }) => touch.hand == hand && touch.finger == finger);
+    },
+
     onFingertipTouchStarted: function (touch) {
+        const existingTouch = this.getExistingTouch(touch);
+        if (existingTouch) {
+            return;
+        }
+        if (this.touches.length >= this.data.maxTouches) {
+            return;
+        }
         this.touches.push(Object.assign({}, touch));
         this.el.emit("touchstarted", touch);
     },
     onFingertipTouchEnded: function (touch) {
-        this.touches.splice(this.touches.indexOf(touch), 1);
-        this.el.emit("touchended", touch);
+        const existingTouch = this.getExistingTouch(touch);
+        if (!existingTouch) {
+            return;
+        }
+        this.touches.splice(this.touches.indexOf(existingTouch), 1);
+        this.el.emit("touchended", existingTouch);
     },
 
     tick: function (time, timeDelta) {
@@ -83,6 +92,9 @@ AFRAME.registerComponent("fingertip-collider-target", {
         diffKeys.forEach((diffKey) => {
             switch (diffKey) {
                 case "disabled":
+                    if (this.data.disabled) {
+                        this.touches.forEach((touch) => this.onFingertipTouchEnded(touch));
+                    }
                     break;
             }
         });
