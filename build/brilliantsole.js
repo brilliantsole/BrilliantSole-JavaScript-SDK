@@ -3085,14 +3085,30 @@
 	        _console$c.assertWithError(this.isConnected, "not connected");
 	    }
 
+	    /** @type {ConnectionMessageType[]} */
+	    static #AllInformationConnectionMessages = [
+	        "manufacturerName",
+	        "modelNumber",
+	        "softwareRevision",
+	        "hardwareRevision",
+	        "firmwareRevision",
+	        "pnpId",
+	        "batteryLevel",
+	        "getName",
+	        "getType",
+	        "getSensorConfiguration",
+	    ];
+	    static get AllInformationConnectionMessages() {
+	        return this.#AllInformationConnectionMessages;
+	    }
+	    get #allInformationConnectionMessages() {
+	        return Device.#AllInformationConnectionMessages;
+	    }
 	    get #hasAllInformation() {
-	        return (
-	            this.#isDeviceInformationComplete != null &&
-	            this.batteryLevel != null &&
-	            this.name != null &&
-	            this.type != null &&
-	            this.#sensorConfiguration != null
-	        );
+	        console.log("check");
+	        return this.#allInformationConnectionMessages.every((messageType) => {
+	            return this.latestConnectionMessage.has(messageType);
+	        });
 	    }
 
 	    get canReconnect() {
@@ -3218,12 +3234,7 @@
 	    }
 
 	    #clear() {
-	        this.#name = null;
-	        this.#type = null;
-	        this.#batteryLevel = null;
-	        for (const key in this.#deviceInformation) {
-	            this.#deviceInformation[key] = null;
-	        }
+	        this.latestConnectionMessage.clear();
 	    }
 
 	    /**
@@ -5166,24 +5177,8 @@
 	        );
 	    }
 
-	    /** @type {ConnectionMessageType[]} */
-	    static #AllDeviceInformationConnectionMessageTypes = [
-	        "manufacturerName",
-	        "modelNumber",
-	        "softwareRevision",
-	        "hardwareRevision",
-	        "firmwareRevision",
-	        "pnpId",
-	        "batteryLevel",
-	        "getName",
-	        "getType",
-	        "getSensorConfiguration",
-	    ];
-	    get #allDeviceInformationConnectionMessageTypes() {
-	        return WebSocketClientConnectionManager.#AllDeviceInformationConnectionMessageTypes;
-	    }
 	    #requestAllDeviceInformation() {
-	        this.sendWebSocketMessage(...this.#allDeviceInformationConnectionMessageTypes);
+	        this.sendWebSocketMessage(...Device.AllInformationConnectionMessages);
 	    }
 	}
 

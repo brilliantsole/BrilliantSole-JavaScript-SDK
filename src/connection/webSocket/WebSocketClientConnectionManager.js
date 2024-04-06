@@ -145,24 +145,8 @@ class WebSocketClientConnectionManager extends BaseConnectionManager {
         );
     }
 
-    /** @type {ConnectionMessageType[]} */
-    static #AllDeviceInformationConnectionMessageTypes = [
-        "manufacturerName",
-        "modelNumber",
-        "softwareRevision",
-        "hardwareRevision",
-        "firmwareRevision",
-        "pnpId",
-        "batteryLevel",
-        "getName",
-        "getType",
-        "getSensorConfiguration",
-    ];
-    get #allDeviceInformationConnectionMessageTypes() {
-        return WebSocketClientConnectionManager.#AllDeviceInformationConnectionMessageTypes;
-    }
     #requestAllDeviceInformation() {
-        this.sendWebSocketMessage(...this.#allDeviceInformationConnectionMessageTypes);
+        this.sendWebSocketMessage(...Device.AllInformationConnectionMessages);
     }
 }
 
