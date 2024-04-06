@@ -129,6 +129,13 @@
                         </template>
                     </a-entity>
 
+                    <a-entity
+                        class="sensorData"
+                        layout="marginColumn: 0.3; marginRow: 0.15; columns: 3; align: center; type: box; "
+                        position="0 0.05 0"
+                    >
+                    </a-entity>
+
                     <a-plane color="white" width="1" height="0.5" position="0 0 -0.02"></a-plane>
                 </a-entity>
 
@@ -166,6 +173,12 @@
                     class="toggleShowAvailableDevices"
                     position="0.7 0 -0.1"
                     fingertip-button="hands: right; fingers: index; text: show\navailable\ndevices; disabled: true;"
+                ></a-entity>
+
+                <a-entity
+                    class="toggleShowSensorData"
+                    position="0.7 0 0.05"
+                    fingertip-button="hands: right; fingers: index; text: show\nsensor\ndata; disabled: true;"
                 ></a-entity>
             </a-entity>
         </a-scene>

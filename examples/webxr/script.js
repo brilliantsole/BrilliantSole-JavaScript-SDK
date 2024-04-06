@@ -321,7 +321,7 @@ client.addEventListener("isConnected", () => {
 const screenEntity = scene.querySelector(".screen");
 const screenTitle = screenEntity.querySelector(".title");
 
-/** @typedef {"none" | "discoveredDevices" | "availableDevices"} ScreenMode */
+/** @typedef {"none" | "discoveredDevices" | "availableDevices" | "sensorData"} ScreenMode */
 /** @type {ScreenMode} */
 let screenMode;
 /** @param {ScreenMode} newScreenMode */
@@ -349,6 +349,9 @@ window.addEventListener("screenMode", () => {
             break;
         case "discoveredDevices":
             text = "discovered devices";
+            break;
+        case "sensorData":
+            text = "sensor data";
             break;
     }
 
@@ -634,6 +637,39 @@ function clearAvailableDevices() {
 
 client.addEventListener("not connected", () => {
     clearAvailableDevices();
+});
+
+// SENSOR DATA
+
+const sensorDataEntity = scene.querySelector(".sensorData");
+
+// FILL
+
+const toggleShowSensorDataEntity = scene.querySelector(".toggleShowSensorData");
+client.addEventListener("isConnected", () => {
+    toggleShowSensorDataEntity.setAttribute("fingertip-button", {
+        disabled: !client.isConnected,
+    });
+});
+
+toggleShowSensorDataEntity.addEventListener("click", () => {
+    if (screenMode == "sensorData") {
+        setScreenMode("none");
+    } else {
+        setScreenMode("sensorData");
+    }
+});
+
+window.addEventListener("screenMode", () => {
+    const isSensorDataMode = screenMode == "sensorData";
+    const text = [isSensorDataMode ? "hide" : "show", "sensor", "daat"].join("\n");
+    toggleShowSensorDataEntity.setAttribute("fingertip-button", {
+        text,
+    });
+    sensorDataEntity.object3D.visible = isSensorDataMode;
+    BS.Device.AvailableDevices.forEach((availableDevice) => {
+        updateAvailableDeviceEntity(availableDevice);
+    });
 });
 
 // MOTION
