@@ -3690,7 +3690,10 @@
 	        /** @type {ArrayBuffer} */
 	        let triggerVibrationData;
 	        vibrationConfigurations.forEach((vibrationConfiguration) => {
-	            const { locations, type } = vibrationConfiguration;
+	            const { type } = vibrationConfiguration;
+
+	            let { locations } = vibrationConfiguration;
+	            locations = locations || this.#vibrationManager.locations.slice();
 
 	            /** @type {DataView} */
 	            let dataView;
@@ -4777,6 +4780,12 @@
 	    get isConnected() {
 	        return this.sides.every((side) => this[side]?.isConnected);
 	    }
+	    get isPartiallyConnected() {
+	        return this.sides.some((side) => this[side]?.isConnected);
+	    }
+	    get isHalfConnected() {
+	        return this.isPartiallyConnected && !this.isConnected;
+	    }
 	    #assertIsConnected() {
 	        _console$5.assertWithError(this.isConnected, "devicePair must be connected");
 	    }
@@ -4846,11 +4855,9 @@
 
 	    /** @param {SensorConfiguration} sensorConfiguration */
 	    setSensorConfiguration(sensorConfiguration) {
-	        if (this.isConnected) {
-	            this.sides.forEach((side) => {
-	                this[side].setSensorConfiguration(sensorConfiguration);
-	            });
-	        }
+	        this.sides.forEach((side) => {
+	            this[side]?.setSensorConfiguration(sensorConfiguration);
+	        });
 	    }
 
 	    // SENSOR DATA
@@ -4880,6 +4887,20 @@
 
 	    resetPressureRange() {
 	        this.#sensorDataManager.resetPressureRange();
+	    }
+
+	    // VIBRATION
+
+	    
+
+	    /** @param  {...VibrationConfiguration} vibrationConfigurations */
+	    async triggerVibration(...vibrationConfigurations) {
+	        const promises = this.sides
+	            .map((side) => {
+	                return this[side]?.triggerVibration(...vibrationConfigurations);
+	            })
+	            .filter(Boolean);
+	        return Promise.allSettled(promises);
 	    }
 
 	    // SHARED INSTANCE

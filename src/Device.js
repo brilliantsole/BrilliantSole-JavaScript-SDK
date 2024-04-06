@@ -844,7 +844,10 @@ class Device {
         /** @type {ArrayBuffer} */
         let triggerVibrationData;
         vibrationConfigurations.forEach((vibrationConfiguration) => {
-            const { locations, type } = vibrationConfiguration;
+            const { type } = vibrationConfiguration;
+
+            let { locations } = vibrationConfiguration;
+            locations = locations || this.#vibrationManager.locations.slice();
 
             /** @type {DataView} */
             let dataView;

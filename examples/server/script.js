@@ -385,7 +385,6 @@ BS.Device.AddEventListener("availableDevices", (event) => {
             triggerVibrationButton.addEventListener("click", () => {
                 device.triggerVibration({
                     type: "waveformEffect",
-                    locations: ["front", "rear"],
                     waveformEffect: { segments: [{ effect: "doubleClick100" }] },
                 });
             });

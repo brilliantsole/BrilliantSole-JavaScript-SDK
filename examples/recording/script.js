@@ -451,7 +451,6 @@ function vibrate(effect) {
     BS.Device.ConnectedDevices.forEach((device) => {
         device.triggerVibration({
             type: "waveformEffect",
-            locations: ["front", "rear"],
             waveformEffect: { segments: [{ effect }] },
         });
     });

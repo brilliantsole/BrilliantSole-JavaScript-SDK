@@ -89,7 +89,7 @@
                 <a-entity class="insole pressure"></a-entity>
             </template>
 
-            <a-entity id="desktop" hide-on-enter-ar position="0 1 -0.75">
+            <a-entity id="desktop" hide-on-enter-ar position="0 1.1 -0.75">
                 <a-entity class="screen" position="0 0.3 -0.25">
                     <a-text
                         class="title"
@@ -103,13 +103,13 @@
 
                     <a-entity
                         class="discoveredDevices"
-                        layout="marginColumn: 0.3; marginRow: 0.15; columns: 3; align: center; type: box; "
+                        layout="marginColumn: 0.3; marginRow: 0.15; columns: 3; align: center; type: box;"
                         position="0 0.05 0"
                     >
                         <template class="discoveredDeviceTemplate">
                             <a-entity
                                 class="discoveredDevice"
-                                fingertip-button="hands: right; fingers: index; text: discovered\ndevice; rotation: 90 0 0"
+                                fingertip-button="text: discovered\ndevice; rotation: 90 0 0; disabled: true;"
                             >
                             </a-entity>
                         </template>
@@ -117,68 +117,70 @@
 
                     <a-entity
                         class="availableDevices"
-                        layout="marginColumn: 0.3; marginRow: 0.15; columns: 3; align: center; type: box; "
+                        layout="marginColumn: 0.3; marginRow: 0.15; columns: 3; align: center; type: box;"
                         position="0 0.05 0"
                     >
                         <template class="availableDeviceTemplate">
                             <a-entity
                                 class="availableDevice"
-                                fingertip-button="hands: right; fingers: index; text: available\ndevice; rotation: 90 0 0"
+                                fingertip-button="text: available\ndevice; rotation: 90 0 0; disabled: true;"
                             >
                             </a-entity>
                         </template>
                     </a-entity>
 
                     <a-entity
-                        class="sensorData"
-                        layout="marginColumn: 0.3; marginRow: 0.15; columns: 3; align: center; type: box; "
-                        position="0 0.05 0"
+                        class="devicePair"
+                        layout="marginColumn: 0.3; marginRow: 0.18; columns: 3; align: center; type: box; order: order;"
+                        position="0 -0.03 0"
                     >
+                        <a-entity class="vibrate" fingertip-button="text: vibrate; rotation: 90 0 0; disabled: true;">
+                        </a-entity>
+
+                        <template class="toggleSensorTypeTemplate">
+                            <a-entity
+                                class="toggleSensorType"
+                                fingertip-button="text: toggle\nsensor\ntype; rotation: 90 0 0; disabled: true;"
+                            >
+                            </a-entity>
+                        </template>
                     </a-entity>
 
                     <a-plane color="white" width="1" height="0.5" position="0 0 -0.02"></a-plane>
                 </a-entity>
 
-                <a-entity
-                    class="toggleARHitTest"
-                    position="-0.4 0 0"
-                    fingertip-button="hands: left; fingers: index; text: move;"
-                ></a-entity>
+                <a-entity class="toggleARHitTest" position="-0.4 0 0" fingertip-button="text: move;"></a-entity>
 
                 <a-entity
                     class="toggleSetWebSocketUrl"
                     position="0.4 0 0.1"
-                    fingertip-button="hands: right; fingers: index; text: localhost; subtitle: url;"
+                    fingertip-button="text: localhost; subtitle: url;"
                 ></a-entity>
 
-                <a-entity
-                    class="toggleConnection"
-                    position="0.4 0 0"
-                    fingertip-button="hands: right; fingers: index; text: connect;"
-                ></a-entity>
+                <a-entity class="toggleConnection" position="0.4 0 0" fingertip-button="text: connect;"></a-entity>
 
                 <a-entity
                     class="toggleScan"
                     position="0.4 0 -0.1"
-                    fingertip-button="hands: right; fingers: index; text: scan; disabled: true;"
+                    fingertip-button="text: scan; disabled: true;"
                 ></a-entity>
 
                 <a-entity
                     class="toggleShowDiscoveredDevices"
                     position="0.4 0 -0.22"
-                    fingertip-button="hands: right; fingers: index; text: show\ndiscovered\ndevices; disabled: true;"
+                    fingertip-button="text: show\ndiscovered\ndevices; disabled: true;"
                 ></a-entity>
 
                 <a-entity
                     class="toggleShowAvailableDevices"
                     position="0.7 0 -0.1"
-                    fingertip-button="hands: right; fingers: index; text: show\navailable\ndevices; disabled: true;"
+                    fingertip-button="text: show\navailable\ndevices; disabled: true;"
                 ></a-entity>
 
                 <a-entity
-                    class="toggleShowSensorData"
+                    class="toggleShowDevicePair"
                     position="0.7 0 0.05"
-                    fingertip-button="hands: right; fingers: index; text: show\nsensor\ndata; disabled: true;"
+                    fingertip-button="text: show\ndevice\npair; disabled: true;"
                 ></a-entity>
             </a-entity>
         </a-scene>

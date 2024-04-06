@@ -12,6 +12,7 @@ window.client = client;
 /** @typedef {import("../../build/brilliantsole.module.js").SensorType} SensorType */
 
 const devicePair = BS.DevicePair.shared;
+window.devicePair = devicePair;
 
 // SCENE SETUP
 
@@ -321,7 +322,7 @@ client.addEventListener("isConnected", () => {
 const screenEntity = scene.querySelector(".screen");
 const screenTitle = screenEntity.querySelector(".title");
 
-/** @typedef {"none" | "discoveredDevices" | "availableDevices" | "sensorData"} ScreenMode */
+/** @typedef {"none" | "discoveredDevices" | "availableDevices" | "devicePair"} ScreenMode */
 /** @type {ScreenMode} */
 let screenMode;
 /** @param {ScreenMode} newScreenMode */
@@ -340,6 +341,12 @@ window.addEventListener("screenMode", () => {
 });
 setScreenMode("none");
 
+client.addEventListener("isConnected", () => {
+    if (!client.isConnected) {
+        setScreenMode("none");
+    }
+});
+
 window.addEventListener("screenMode", () => {
     let text = "";
 
@@ -350,8 +357,8 @@ window.addEventListener("screenMode", () => {
         case "discoveredDevices":
             text = "discovered devices";
             break;
-        case "sensorData":
-            text = "sensor data";
+        case "devicePair":
+            text = "device pair";
             break;
     }
 
@@ -480,7 +487,13 @@ function updateDiscoveredDeviceEntity(discoveredDevice) {
         connectMessage,
     ].join("\n");
 
-    discoveredDeviceEntity.setAttribute("fingertip-button", { text, disabled });
+    if (discoveredDeviceEntity.hasLoaded) {
+        discoveredDeviceEntity.setAttribute("fingertip-button", { text, disabled });
+    } else {
+        discoveredDeviceEntity.addEventListener("loaded", () => updateDiscoveredDeviceEntity(discoveredDevice), {
+            once: true,
+        });
+    }
 }
 
 window.addEventListener("screenMode", () => {
@@ -615,7 +628,11 @@ function updateAvailableDeviceEntity(device) {
 
     const text = [device.name, device.type, connectMessage].filter(Boolean).join("\n");
 
-    availableDeviceEntity.setAttribute("fingertip-button", { text, disabled });
+    if (availableDeviceEntity.hasLoaded) {
+        availableDeviceEntity.setAttribute("fingertip-button", { text, disabled });
+    } else {
+        availableDeviceEntity.addEventListener("loaded", () => updateAvailableDeviceEntity(device), { once: true });
+    }
 }
 
 window.addEventListener("screenMode", () => {
@@ -639,37 +656,102 @@ client.addEventListener("not connected", () => {
     clearAvailableDevices();
 });
 
-// SENSOR DATA
+// DEVICE PAIR
 
-const sensorDataEntity = scene.querySelector(".sensorData");
+const devicePairEntity = scene.querySelector(".devicePair");
 
-// FILL
+/** @type {SensorType[]} */
+const sensorTypes = ["pressure", "acceleration", "gravity", "linearAcceleration", "gameRotation"];
+/** @type {HTMLTemplateElement} */
+const toggleSensorTypeEntityTemplate = devicePairEntity.querySelector(".toggleSensorTypeTemplate");
 
-const toggleShowSensorDataEntity = scene.querySelector(".toggleShowSensorData");
+/** @type {Map.<SensorType, HTMLElement>} */
+const toggleSensorTypeEntities = new Map();
+
+const vibrateDevicePairEntity = devicePairEntity.querySelector(".vibrate");
+vibrateDevicePairEntity.addEventListener("click", () => {
+    devicePair.triggerVibration({
+        type: "waveformEffect",
+        waveformEffect: { segments: [{ effect: "strongBuzz100" }] },
+    });
+});
+
+sensorTypes.forEach((sensorType) => {
+    const toggleSensorTypeEntity = toggleSensorTypeEntityTemplate.content
+        .cloneNode(true)
+        .querySelector(".toggleSensorType");
+    toggleSensorTypeEntities.set(sensorType, toggleSensorTypeEntity);
+    updateToggleSensorTypeEntity(sensorType);
+    devicePairEntity.appendChild(toggleSensorTypeEntity);
+});
+
+function updateToggleSensorTypeEntity(sensorType) {
+    const toggleSensorTypeEntity = toggleSensorTypeEntities.get(sensorType);
+    if (!toggleSensorTypeEntity) {
+        console.log(`no toggleSensorTypeEntity found for sensorType "${sensorType}"`);
+        return;
+    }
+
+    const isSensorTypeEnabled = false; // FILL
+    const sensorTypeStrings = sensorType.split(/(?=[A-Z])/g).map((string) => string.toLowerCase());
+    const text = [isSensorTypeEnabled ? "disable" : "enable", ...sensorTypeStrings].join("\n");
+
+    const disabled = screenMode != "devicePair" || !devicePair.isPartiallyConnected;
+
+    console.log({ sensorType, disabled });
+
+    if (toggleSensorTypeEntity.hasLoaded) {
+        toggleSensorTypeEntity.setAttribute("fingertip-button", {
+            text,
+            disabled,
+        });
+    } else {
+        toggleSensorTypeEntity.addEventListener("loaded", () => updateToggleSensorTypeEntity(sensorType), {
+            once: true,
+        });
+    }
+}
+
+function updateToggleSensorTypeEntities() {
+    toggleSensorTypeEntities.forEach((toggleSensorTypeEntity, sensorType) => {
+        updateToggleSensorTypeEntity(sensorType);
+    });
+}
+function updateVibrateEntity() {
+    vibrateDevicePairEntity.setAttribute("fingertip-button", {
+        disabled: screenMode != "devicePair" || !devicePair.isPartiallyConnected,
+    });
+}
+
+devicePair.addEventListener("deviceIsConnected", () => {
+    updateToggleSensorTypeEntities();
+    updateVibrateEntity();
+});
+
+const toggleShowDevicePairEntity = scene.querySelector(".toggleShowDevicePair");
 client.addEventListener("isConnected", () => {
-    toggleShowSensorDataEntity.setAttribute("fingertip-button", {
+    toggleShowDevicePairEntity.setAttribute("fingertip-button", {
         disabled: !client.isConnected,
     });
 });
 
-toggleShowSensorDataEntity.addEventListener("click", () => {
-    if (screenMode == "sensorData") {
+toggleShowDevicePairEntity.addEventListener("click", () => {
+    if (screenMode == "devicePair") {
         setScreenMode("none");
     } else {
-        setScreenMode("sensorData");
+        setScreenMode("devicePair");
     }
 });
 
 window.addEventListener("screenMode", () => {
-    const isSensorDataMode = screenMode == "sensorData";
-    const text = [isSensorDataMode ? "hide" : "show", "sensor", "daat"].join("\n");
-    toggleShowSensorDataEntity.setAttribute("fingertip-button", {
+    const isDevicePairMode = screenMode == "devicePair";
+    const text = [isDevicePairMode ? "hide" : "show", "device", "pair"].join("\n");
+    toggleShowDevicePairEntity.setAttribute("fingertip-button", {
         text,
     });
-    sensorDataEntity.object3D.visible = isSensorDataMode;
-    BS.Device.AvailableDevices.forEach((availableDevice) => {
-        updateAvailableDeviceEntity(availableDevice);
-    });
+    devicePairEntity.object3D.visible = isDevicePairMode;
+    updateToggleSensorTypeEntities();
+    updateVibrateEntity();
 });
 
 // MOTION

@@ -186,6 +186,9 @@ AFRAME.registerComponent("fingertip-button", {
     },
 
     updateCollider: function () {
+        if (this.data.disabled) {
+            return;
+        }
         setTimeout(() => {
             this.colliderBox.components["obb-collider"]?.updateCollider();
         }, 0);
