@@ -12,5 +12,6 @@ const isInBluefy = isInBrowser && navigator.userAgent.includes("Bluefy");
 const isInWebBLE = isInBrowser && navigator.userAgent.includes("WebBLE");
 
 const isAndroid = isInBrowser && navigator.userAgent.includes("Android");
+const isSafari = isInBrowser && navigator.userAgent.includes("Safari");
 
 export { isInDev, isInProduction, isInBrowser, isInNode, isAndroid, isInBluefy, isInWebBLE };

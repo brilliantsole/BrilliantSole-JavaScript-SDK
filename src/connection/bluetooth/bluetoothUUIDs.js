@@ -16,18 +16,14 @@ function generateBluetoothUUID(offset) {
     return `ea6da725-2000-4f9b-893d-c3913e33b3e${offset}`;
 }
 
-/**
- * @param {string} identifier
- */
+/** @param {string} identifier */
 function stringToCharacteristicUUID(identifier) {
-    return BluetoothUUID.getCharacteristic(identifier);
+    return BluetoothUUID?.getCharacteristic?.(identifier);
 }
 
-/**
- * @param {string} identifier
- */
+/** @param {string} identifier */
 function stringToServiceUUID(identifier) {
-    return BluetoothUUID.getService(identifier);
+    return BluetoothUUID?.getService?.(identifier);
 }
 
 /** @typedef {"deviceInformation" | "battery" | "main" | "dfu"} BluetoothServiceName */

@@ -1090,7 +1090,7 @@ devicePair.sides.forEach((side) => {
 
                 const { width, height } = image;
                 const imageRatio = width / height;
-                imageEntity.setAttribute("width", imageRatio);
+                imageEntity.setAttribute("scale", `${imageRatio} 1 1`);
             }, 1);
         };
         if (imageEntity.hasLoaded) {

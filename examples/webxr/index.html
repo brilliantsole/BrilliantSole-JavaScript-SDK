@@ -47,7 +47,7 @@
             renderer="colorManagement: true;"
             webxr="optionalFeatures: hit-test;"
             ar-hit-test="target: #desktop;"
-            obb-collider="showColliders: true;"
+            obb-collider="showColliders: false;"
         >
             <a-assets>
                 <a-asset-item id="insoleModel" src="../../assets/3d/leftInsole.glb"></a-asset-item>
@@ -101,7 +101,9 @@
                 <a-entity class="insole pressure" rotation="-90 0 0">
                     <a-entity class="imagesScale" scale="0.25 0.25 0.25">
                         <a-entity class="images">
-                            <a-image class="base" src="#insoleImage" position="0 0 -0.001"></a-image>
+                            <a-image class="base" src="#insoleImage" position="0 0 -0.001">
+                                <a-plane opacity="0.2" position="0 0 -0.001"></a-plane>
+                            </a-image>
                         </a-entity>
                     </a-entity>
                 </a-entity>
@@ -179,7 +181,7 @@
                         </template>
                     </a-entity>
 
-                    <a-plane color="white" width="1" height="0.5" position="0 0 -0.02"></a-plane>
+                    <a-plane color="#ddd" width="1" height="0.5" position="0 0 -0.02"></a-plane>
                 </a-entity>
 
                 <a-entity class="toggleARHitTest" position="-0.4 0 0" fingertip-button="text: move;"></a-entity>
@@ -216,6 +218,8 @@
                     fingertip-button="text: show\ndevice\npair; disabled: true;"
                 ></a-entity>
             </a-entity>
+
+            <a-sky hide-on-enter-ar></a-sky>
         </a-scene>
     </body>
 </html>
