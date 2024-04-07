@@ -1037,8 +1037,11 @@
 	        }
 	        await characteristic.writeValueWithResponse(data);
 	        const characteristicProperties = characteristic.properties || getCharacteristicProperties(characteristicName);
-	        if (characteristicProperties.read) {
+	        if (characteristicProperties.read && !characteristicProperties.notify) {
 	            await characteristic.readValue();
+	            if (isInBluefy || isInWebBLE) {
+	                this.#onCharacteristicValueChanged(characteristic);
+	            }
 	        }
 	    }
 
@@ -3986,7 +3989,14 @@
 	            this.GetDevices();
 	        }
 	        if (device.isConnected && !this.AvailableDevices.includes(device)) {
-	            this.AvailableDevices.push(device);
+	            const existingAvailableDevice = this.AvailableDevices.find((_device) => _device.id == device.id);
+
+	            if (existingAvailableDevice) {
+	                this.AvailableDevices[this.AvailableDevices.indexOf(existingAvailableDevice)] = device;
+	            } else {
+	                this.AvailableDevices.push(device);
+	            }
+
 	            this.#DispatchAvailableDevices();
 	        }
 	    }

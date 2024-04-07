@@ -290,8 +290,11 @@ class WebBluetoothConnectionManager extends BaseConnectionManager {
         }
         await characteristic.writeValueWithResponse(data);
         const characteristicProperties = characteristic.properties || getCharacteristicProperties(characteristicName);
-        if (characteristicProperties.read) {
+        if (characteristicProperties.read && !characteristicProperties.notify) {
             await characteristic.readValue();
+            if (isInBluefy || isInWebBLE) {
+                this.#onCharacteristicValueChanged(characteristic);
+            }
         }
     }
 
