@@ -656,31 +656,149 @@ client.addEventListener("not connected", () => {
     clearAvailableDevices();
 });
 
+// SENSOR DATA
+
+/** @typedef {import("../../build/brilliantsole.module.js").SensorConfiguration} SensorConfiguration */
+
+let sensorDataRate = 20;
+
+// POSITION MODE
+
+/** @typedef {"none" | "linearAcceleration" | "gravity" | "acceleration"} PositionMode */
+/** @type {PositionMode[]} */
+const positionModes = ["none", "acceleration", "gravity", "linearAcceleration"];
+/** @type {PositionMode} */
+let positionMode = "none";
+
+/** @param {PositionMode} newPositionMode */
+function setPositionMode(newPositionMode) {
+    if (positionMode == newPositionMode) {
+        console.log("redundant positionMode assignment", newPositionMode);
+        return;
+    }
+    if (!positionModes.includes(newPositionMode)) {
+        console.error(`invalid positionMode ${newPositionMode}`);
+        return;
+    }
+    positionMode = newPositionMode;
+
+    /** @type {SensorConfiguration} */
+    const sensorConfiguration = {
+        linearAcceleration: 0,
+        acceleration: 0,
+        gravity: 0,
+    };
+    if (positionMode != "none") {
+        sensorConfiguration[positionMode] = sensorDataRate;
+    }
+
+    console.log(sensorConfiguration);
+    devicePair.setSensorConfiguration(sensorConfiguration);
+
+    window.dispatchEvent(new CustomEvent("positionMode", { detail: { positionMode } }));
+}
+
+// ROTATION MODE
+
+/** @typedef {"none" | "rotation" | "gameRotation" | "gyroscope"} OrientationMode */
+/** @type {OrientationMode[]} */
+const orientationModes = ["none", "rotation", "gameRotation", "gyroscope"];
+/** @type {OrientationMode} */
+let orientationMode = "none";
+
+/** @param {OrientationMode} newOrientationMode */
+function setOrientationMode(newOrientationMode) {
+    if (orientationMode == newOrientationMode) {
+        console.log("redundant orientationMode assignment", newOrientationMode);
+        return;
+    }
+    if (!orientationModes.includes(newOrientationMode)) {
+        console.error(`invalid orientationMode ${newOrientationMode}`);
+        return;
+    }
+    orientationMode = newOrientationMode;
+
+    /** @type {SensorConfiguration} */
+    const sensorConfiguration = {
+        gameRotation: 0,
+        rotation: 0,
+        gyroscope: 0,
+    };
+    if (orientationMode != "none") {
+        sensorConfiguration[orientationMode] = sensorDataRate;
+    }
+
+    console.log(sensorConfiguration);
+    devicePair.setSensorConfiguration(sensorConfiguration);
+
+    window.dispatchEvent(new CustomEvent("orientationMode", { detail: { orientationMode } }));
+}
+
+// PRESSURE MODE
+
+/** @typedef {"none" | "pressure"} PressureMode */
+/** @type {PressureMode[]} */
+const pressureModes = ["none", "pressure"];
+/** @type {PressureMode} */
+let pressureMode = "none";
+
+/** @param {PressureMode} newPressureMode */
+function setPressureMode(newPressureMode) {
+    if (pressureMode == newPressureMode) {
+        console.log("redundant pressureMode assignment", newPressureMode);
+        return;
+    }
+    if (!pressureModes.includes(newPressureMode)) {
+        console.error(`invalid pressureMode ${newPressureMode}`);
+        return;
+    }
+    pressureMode = newPressureMode;
+
+    /** @type {SensorConfiguration} */
+    const sensorConfiguration = {
+        pressure: 0,
+    };
+    if (pressureMode != "none") {
+        sensorConfiguration[pressureMode] = sensorDataRate;
+    }
+
+    console.log(sensorConfiguration);
+    devicePair.setSensorConfiguration(sensorConfiguration);
+
+    window.dispatchEvent(new CustomEvent("pressureMode", { detail: { pressureMode } }));
+}
+
 // DEVICE PAIR
 
 const devicePairEntity = scene.querySelector(".devicePair");
 
 /** @type {SensorType[]} */
-const sensorTypes = ["pressure", "acceleration", "gravity", "linearAcceleration", "gameRotation"];
+const sensorTypes = ["pressure", "linearAcceleration", "gameRotation", "gyroscope"];
 /** @type {HTMLTemplateElement} */
 const toggleSensorTypeEntityTemplate = devicePairEntity.querySelector(".toggleSensorTypeTemplate");
 
 /** @type {Map.<SensorType, HTMLElement>} */
 const toggleSensorTypeEntities = new Map();
 
-const vibrateDevicePairEntity = devicePairEntity.querySelector(".vibrate");
-vibrateDevicePairEntity.addEventListener("click", () => {
-    devicePair.triggerVibration({
-        type: "waveformEffect",
-        waveformEffect: { segments: [{ effect: "strongBuzz100" }] },
-    });
-});
-
-sensorTypes.forEach((sensorType) => {
+sensorTypes.forEach((sensorType, index) => {
+    /** @type {HTMLElement} */
     const toggleSensorTypeEntity = toggleSensorTypeEntityTemplate.content
         .cloneNode(true)
         .querySelector(".toggleSensorType");
     toggleSensorTypeEntities.set(sensorType, toggleSensorTypeEntity);
+
+    toggleSensorTypeEntity.addEventListener("click", () => {
+        if (positionModes.includes(sensorType)) {
+            setPositionMode(positionMode == sensorType ? "none" : sensorType);
+        }
+        if (orientationModes.includes(sensorType)) {
+            setOrientationMode(orientationMode == sensorType ? "none" : sensorType);
+        }
+        if (pressureModes.includes(sensorType)) {
+            setPressureMode(pressureMode == sensorType ? "none" : sensorType);
+        }
+    });
+
     updateToggleSensorTypeEntity(sensorType);
     devicePairEntity.appendChild(toggleSensorTypeEntity);
 });
@@ -692,13 +810,21 @@ function updateToggleSensorTypeEntity(sensorType) {
         return;
     }
 
-    const isSensorTypeEnabled = false; // FILL
+    let isSensorTypeEnabled = false;
+    if (positionModes.includes(sensorType)) {
+        isSensorTypeEnabled = positionMode == sensorType;
+    }
+    if (orientationModes.includes(sensorType)) {
+        isSensorTypeEnabled = orientationMode == sensorType;
+    }
+    if (pressureModes.includes(sensorType)) {
+        isSensorTypeEnabled = pressureMode == sensorType;
+    }
+
     const sensorTypeStrings = sensorType.split(/(?=[A-Z])/g).map((string) => string.toLowerCase());
     const text = [isSensorTypeEnabled ? "disable" : "enable", ...sensorTypeStrings].join("\n");
 
     const disabled = screenMode != "devicePair" || !devicePair.isPartiallyConnected;
-
-    console.log({ sensorType, disabled });
 
     if (toggleSensorTypeEntity.hasLoaded) {
         toggleSensorTypeEntity.setAttribute("fingertip-button", {
@@ -717,15 +843,9 @@ function updateToggleSensorTypeEntities() {
         updateToggleSensorTypeEntity(sensorType);
     });
 }
-function updateVibrateEntity() {
-    vibrateDevicePairEntity.setAttribute("fingertip-button", {
-        disabled: screenMode != "devicePair" || !devicePair.isPartiallyConnected,
-    });
-}
 
 devicePair.addEventListener("deviceIsConnected", () => {
     updateToggleSensorTypeEntities();
-    updateVibrateEntity();
 });
 
 const toggleShowDevicePairEntity = scene.querySelector(".toggleShowDevicePair");
@@ -751,13 +871,28 @@ window.addEventListener("screenMode", () => {
     });
     devicePairEntity.object3D.visible = isDevicePairMode;
     updateToggleSensorTypeEntities();
-    updateVibrateEntity();
+});
+
+window.addEventListener("orientationMode", () => {
+    updateToggleSensorTypeEntities();
+});
+window.addEventListener("positionMode", () => {
+    updateToggleSensorTypeEntities();
+});
+window.addEventListener("pressureMode", () => {
+    updateToggleSensorTypeEntities();
 });
 
 // MOTION
 
-/** @type {HTMLElement} */
+/** @type {HTMLTemplateElement} */
 const insoleMotionTemplate = document.getElementById("insoleMotionTemplate");
+
+let positionInterpolationSmoothing = 0.4;
+let orientationInterpolationSmoothing = 0.4;
+
+let positionScalar = 0.4;
+
 devicePair.sides.forEach((side) => {
     /** @type {HTMLElement} */
     const insoleMotionEntity = insoleMotionTemplate.content.cloneNode(true).querySelector(".insole.motion");
@@ -775,36 +910,127 @@ devicePair.sides.forEach((side) => {
             scale = "-1 1 1";
             break;
     }
+    insoleMotionEntity.setAttribute("position", position);
 
-    insoleMotionEntity.querySelector(".model").setAttribute("scale", scale);
-    insoleMotionEntity.querySelector(".positionOffset").setAttribute("position", position);
+    const insoleModelEntity = insoleMotionEntity.querySelector(".model");
+    insoleModelEntity.setAttribute("scale", scale);
+
+    const insolePositionEntity = insoleMotionEntity.querySelector(".position");
+
+    const insoleOrientationEntity = insoleMotionEntity.querySelector(".orientation");
+
+    // POSITION
+
+    /** @typedef {import("../../build/brilliantsole.module.js").Vector3} Vector3 */
+
+    const interpolatedPosition = new THREE.Vector3();
+
+    /** @param {Vector3} position */
+    const updatePosition = (position) => {
+        interpolatedPosition.copy(position).multiplyScalar(positionScalar);
+        insolePositionEntity.object3D.position.lerp(interpolatedPosition, positionInterpolationSmoothing);
+    };
+
+    // ORIENATION
+
+    const latestQuaternion = new THREE.Quaternion();
+    const offsetQuaternion = new THREE.Quaternion();
+    const resetOrientation = () => {
+        offsetQuaternion.copy(latestQuaternion).invert();
+    };
+    window.addEventListener("resetOrientation", () => resetOrientation());
+
+    /** @typedef {import("../../build/brilliantsole.module.js").Quaternion} Quaternion */
+
+    const targetQuaternion = new THREE.Quaternion();
+    /**
+     * @param {Quaternion} quaternion
+     * @param {boolean} applyOffset
+     */
+    const updateOrientation = (quaternion, applyOffset = false) => {
+        latestQuaternion.copy(quaternion);
+        targetQuaternion.copy(quaternion);
+        if (applyOffset) {
+            targetQuaternion.premultiply(offsetQuaternion);
+        }
+        insoleOrientationEntity.object3D.quaternion.slerp(targetQuaternion, orientationInterpolationSmoothing);
+    };
+
+    // DEVICE SENSOR DATA
+
+    const gyroscopeVector3 = new THREE.Vector3();
+    const gyroscopeEuler = new THREE.Euler();
+    const gyroscopeQuaternion = new THREE.Quaternion();
+
+    devicePair.addEventListener("deviceSensorData", (event) => {
+        /** @type {Device} */
+        const device = event.message.device;
+
+        if (device.insoleSide != side) {
+            return;
+        }
+
+        /** @type {SensorType} */
+        const sensorType = event.message.sensorType;
+
+        if (sensorType == positionMode) {
+            switch (sensorType) {
+                case "acceleration":
+                case "gravity":
+                case "linearAcceleration":
+                    {
+                        /** @type {Vector3} */
+                        const position = event.message[sensorType];
+                        updatePosition(position);
+                    }
+                    break;
+            }
+        }
+
+        if (sensorType == orientationMode) {
+            switch (sensorType) {
+                case "gyroscope":
+                    {
+                        const vector = event.message.gyroscope;
+                        gyroscopeVector3.copy(vector).multiplyScalar(Math.PI / 180);
+                        gyroscopeEuler.setFromVector3(gyroscopeVector3);
+                        gyroscopeQuaternion.setFromEuler(gyroscopeEuler);
+                        updateOrientation(gyroscopeQuaternion, false);
+                    }
+                    break;
+                case "gameRotation":
+                case "rotation":
+                    {
+                        const quaternion = event.message[sensorType];
+                        updateOrientation(quaternion, true);
+                    }
+                    break;
+            }
+        }
+    });
 
     desktopEntity.appendChild(insoleMotionEntity);
 });
 
-devicePair.addEventListener("deviceSensorData", (event) => {
-    /** @type {Device} */
-    const device = event.message.device;
+// RESET ORIENTATION
 
-    /** @type {SensorType} */
-    const sensorType = event.message.sensorType;
+const resetOrientationEntity = devicePairEntity.querySelector(".resetOrientation");
+resetOrientationEntity.addEventListener("click", () => {
+    window.dispatchEvent(new CustomEvent("resetOrientation"));
+});
 
-    // FILL
+function updateResetOrientationEntity() {
+    resetOrientationEntity.setAttribute("fingertip-button", {
+        disabled: screenMode != "devicePair" || !devicePair.isPartiallyConnected,
+    });
+}
 
-    switch (sensorType) {
-        case "acceleration":
-            break;
-        case "gravity":
-            break;
-        case "linearAcceleration":
-            break;
-        case "gyroscope":
-            break;
-        case "gameRotation":
-            break;
-        case "rotation":
-            break;
-    }
+window.addEventListener("screenMode", () => {
+    updateResetOrientationEntity();
+});
+
+devicePair.addEventListener("deviceIsConnected", () => {
+    updateResetOrientationEntity();
 });
 
 // PRESSURE
@@ -834,4 +1060,28 @@ devicePair.addEventListener("devicePressure", (event) => {
     pressure.sensors.forEach((sensor, index) => {
         //pressureSensorElementsContainers[device.insoleSide][index].style.opacity = sensor.normalizedValue;
     });
+});
+
+// VIBRATION
+
+const vibrateDevicePairEntity = devicePairEntity.querySelector(".vibrate");
+vibrateDevicePairEntity.addEventListener("click", () => {
+    devicePair.triggerVibration({
+        type: "waveformEffect",
+        waveformEffect: { segments: [{ effect: "strongBuzz100" }] },
+    });
+});
+
+function updateVibrateEntity() {
+    vibrateDevicePairEntity.setAttribute("fingertip-button", {
+        disabled: screenMode != "devicePair" || !devicePair.isPartiallyConnected,
+    });
+}
+
+window.addEventListener("screenMode", () => {
+    updateVibrateEntity();
+});
+
+devicePair.addEventListener("deviceIsConnected", () => {
+    updateVibrateEntity();
 });

@@ -285,16 +285,6 @@ devicePair.sides.forEach((side) => {
 
         /** @type {Vector3} */
         const linearAcceleration = event.message.linearAcceleration;
-        linearAcceleration;
-        if (insole.type == "leftInsole") {
-            x = linearAcceleration.y;
-            y = linearAcceleration.z;
-            z = linearAcceleration.x;
-        } else {
-            x = -linearAcceleration.y;
-            y = -linearAcceleration.z;
-            z = linearAcceleration.x;
-        }
         updatePosition(linearAcceleration);
     });
 
@@ -314,7 +304,7 @@ devicePair.sides.forEach((side) => {
         _quaternion.copy(quaternion);
         targetQuaternion.copy(_quaternion);
         if (applyOffset) {
-            targetQuaternion.premultiply(offsetQuaternion); // premultiply?
+            targetQuaternion.premultiply(offsetQuaternion);
         }
         insoleEntity.object3D.quaternion.slerp(targetQuaternion, window.interpolationSmoothing);
     };

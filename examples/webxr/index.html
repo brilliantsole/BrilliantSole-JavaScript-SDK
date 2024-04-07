@@ -77,8 +77,8 @@
 
             <template id="insoleMotionTemplate">
                 <a-entity class="insole motion">
-                    <a-entity class="positionOffset">
-                        <a-entity class="rotationOffset">
+                    <a-entity class="position">
+                        <a-entity class="orientation">
                             <a-entity class="model" gltf-model="#insoleModel"></a-entity>
                         </a-entity>
                     </a-entity>
@@ -131,10 +131,16 @@
 
                     <a-entity
                         class="devicePair"
-                        layout="marginColumn: 0.3; marginRow: 0.18; columns: 3; align: center; type: box; order: order;"
+                        layout="marginColumn: 0.3; marginRow: 0.18; columns: 3; align: center; type: box;"
                         position="0 -0.03 0"
                     >
                         <a-entity class="vibrate" fingertip-button="text: vibrate; rotation: 90 0 0; disabled: true;">
+                        </a-entity>
+
+                        <a-entity
+                            class="resetOrientation"
+                            fingertip-button="text: reset\norientation; rotation: 90 0 0; disabled: true;"
+                        >
                         </a-entity>
 
                         <template class="toggleSensorTypeTemplate">
