@@ -180,7 +180,6 @@ class BaseScanner {
         const now = Date.now();
         entries.forEach(([id, discoveredDevice]) => {
             const timestamp = this.#discoveredDeviceTimestamps[id];
-            console.log(now - timestamp);
             if (now - timestamp > this.#discoveredDeviceExpirationTimeout) {
                 _console.log("discovered device timeout");
                 delete this.#discoveredDevices[id];
