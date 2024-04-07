@@ -3099,7 +3099,6 @@ class Device {
         return Device.#AllInformationConnectionMessages;
     }
     get #hasAllInformation() {
-        console.log("check");
         return this.#allInformationConnectionMessages.every((messageType) => {
             return this.latestConnectionMessage.has(messageType);
         });

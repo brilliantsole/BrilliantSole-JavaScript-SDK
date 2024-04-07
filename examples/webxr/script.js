@@ -1035,31 +1035,86 @@ devicePair.addEventListener("deviceIsConnected", () => {
 
 // PRESSURE
 
-/** @type {HTMLElement} */
-const insolePressureTemplate = document.getElementById("insolePressureTemplate");
+/** @type {HTMLTemplateElement} */
+const insolePressureEntityTemplate = document.getElementById("insolePressureTemplate");
+/** @type {HTMLTemplateElement} */
+const insolePressureSensorEntityTemplate = document.getElementById("insolePressureSensorTemplate");
+
+const numberOfPressureSensors = 8;
 
 devicePair.sides.forEach((side) => {
     /** @type {HTMLElement} */
-    const insolePressureEntity = insolePressureTemplate.content.cloneNode(true).querySelector(".insole.pressure");
+    const insolePressureEntity = insolePressureEntityTemplate.content.cloneNode(true).querySelector(".insole.pressure");
     insolePressureEntity.classList.add(side);
 
-    // FILL
+    let scale = "1 1 1";
+    let position = "0 0 0";
+
+    switch (side) {
+        case "left":
+            position = "-0.2 0 0";
+            scale = "-1 1 1";
+            break;
+        case "right":
+            position = "0.2 0 0";
+            break;
+    }
+    insolePressureEntity.setAttribute("position", position);
+
+    const insoleImagesEntity = insolePressureEntity.querySelector(".images");
+    insoleImagesEntity.setAttribute("scale", scale);
+
+    const pressureSensorEntities = [];
+    for (let index = 0; index < numberOfPressureSensors; index++) {
+        /** @type {HTMLElement} */
+        const insolePressureSensorEntity = insolePressureSensorEntityTemplate.content
+            .cloneNode(true)
+            .querySelector(".insolePressureSensor");
+        insolePressureSensorEntity.setAttribute("src", `#pressureSensorImage${index}`);
+        insoleImagesEntity.appendChild(insolePressureSensorEntity);
+        pressureSensorEntities[index] = insolePressureSensorEntity;
+    }
+
+    insoleImagesEntity.querySelectorAll("a-image").forEach((imageEntity) => {
+        const updateSize = () => {
+            let intervalId = setInterval(() => {
+                const image = imageEntity.components?.["material"]?.material?.map?.source?.data;
+                if (!image) {
+                    return;
+                }
+                clearInterval(intervalId);
+
+                const { width, height } = image;
+                const imageRatio = width / height;
+                imageEntity.setAttribute("width", imageRatio);
+            }, 1);
+        };
+        if (imageEntity.hasLoaded) {
+            updateSize();
+        } else {
+            imageEntity.addEventListener("loaded", () => updateSize());
+        }
+    });
+
+    /** @typedef {import("../../build/brilliantsole.module.js").PressureData} PressureData */
+
+    devicePair.addEventListener("devicePressure", (event) => {
+        /** @type {Device} */
+        const device = event.message.device;
+
+        if (device.insoleSide != side) {
+            return;
+        }
+
+        /** @type {PressureData} */
+        const pressure = event.message.pressure;
+
+        pressure.sensors.forEach((sensor, index) => {
+            pressureSensorEntities[index].components["material"].material.opacity = sensor.normalizedValue;
+        });
+    });
 
     desktopEntity.appendChild(insolePressureEntity);
-});
-
-devicePair.addEventListener("devicePressure", (event) => {
-    /** @type {Device} */
-    const device = event.message.device;
-
-    /** @type {import("../../build/brilliantsole.module.js").PressureData} */
-    const pressure = event.message.pressure;
-
-    // FILL
-
-    pressure.sensors.forEach((sensor, index) => {
-        //pressureSensorElementsContainers[device.insoleSide][index].style.opacity = sensor.normalizedValue;
-    });
 });
 
 // VIBRATION
