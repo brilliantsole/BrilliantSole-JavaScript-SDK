@@ -892,7 +892,7 @@ let positionInterpolationSmoothing = 0.4;
 let orientationInterpolationSmoothing = 0.4;
 let gyroscopeScalar = 0.5;
 
-let positionScalar = 0.4;
+let positionScalar = 0.1;
 
 devicePair.sides.forEach((side) => {
     /** @type {HTMLElement} */
