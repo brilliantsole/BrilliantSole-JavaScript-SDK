@@ -890,6 +890,7 @@ const insoleMotionTemplate = document.getElementById("insoleMotionTemplate");
 
 let positionInterpolationSmoothing = 0.4;
 let orientationInterpolationSmoothing = 0.4;
+let gyroscopeScalar = 0.5;
 
 let positionScalar = 0.4;
 
@@ -992,7 +993,10 @@ devicePair.sides.forEach((side) => {
                 case "gyroscope":
                     {
                         const vector = event.message.gyroscope;
-                        gyroscopeVector3.copy(vector).multiplyScalar(Math.PI / 180);
+                        gyroscopeVector3
+                            .copy(vector)
+                            .multiplyScalar(Math.PI / 180)
+                            .multiplyScalar(gyroscopeScalar);
                         gyroscopeEuler.setFromVector3(gyroscopeVector3);
                         gyroscopeQuaternion.setFromEuler(gyroscopeEuler);
                         updateOrientation(gyroscopeQuaternion, false);
