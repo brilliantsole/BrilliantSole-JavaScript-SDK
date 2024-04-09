@@ -222,3 +222,5 @@ export function getCharacteristicProperties(characteristicName) {
 
     return properties;
 }
+
+export const serviceDataUUID = "0000";

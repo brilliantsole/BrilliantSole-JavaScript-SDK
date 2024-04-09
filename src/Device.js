@@ -573,7 +573,7 @@ class Device {
         return Device.MinNameLength;
     }
     static get MaxNameLength() {
-        return 65;
+        return 30;
     }
     get maxNameLength() {
         return Device.MaxNameLength;
@@ -1144,7 +1144,7 @@ class Device {
         }
         if (device.isConnected && !this.AvailableDevices.includes(device)) {
             const existingAvailableDevice = this.AvailableDevices.find((_device) => _device.id == device.id);
-
+            console.log({ existingAvailableDevice });
             if (existingAvailableDevice) {
                 this.AvailableDevices[this.AvailableDevices.indexOf(existingAvailableDevice)] = device;
             } else {

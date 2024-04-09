@@ -757,6 +757,8 @@
 	    return properties;
 	}
 
+	const serviceDataUUID = "0000";
+
 	const _console$l = createConsole("WebBluetoothConnectionManager", { log: true });
 
 
@@ -3419,7 +3421,7 @@
 	        return Device.MinNameLength;
 	    }
 	    static get MaxNameLength() {
-	        return 65;
+	        return 30;
 	    }
 	    get maxNameLength() {
 	        return Device.MaxNameLength;
@@ -3990,7 +3992,7 @@
 	        }
 	        if (device.isConnected && !this.AvailableDevices.includes(device)) {
 	            const existingAvailableDevice = this.AvailableDevices.find((_device) => _device.id == device.id);
-
+	            console.log({ existingAvailableDevice });
 	            if (existingAvailableDevice) {
 	                this.AvailableDevices[this.AvailableDevices.indexOf(existingAvailableDevice)] = device;
 	            } else {
@@ -4379,10 +4381,8 @@
 	        const serviceData = noblePeripheral.advertisement.serviceData;
 	        if (serviceData) {
 	            //_console.log("serviceData", serviceData);
-	            const deviceTypeServiceUUID = serviceUUIDs[0].replaceAll("-", "");
-	            //_console.log("deviceTypeServiceUUID", deviceTypeServiceUUID);
 	            const deviceTypeServiceData = serviceData.find((serviceDatum) => {
-	                return serviceDatum.uuid == deviceTypeServiceUUID;
+	                return serviceDatum.uuid == serviceDataUUID;
 	            });
 	            //_console.log("deviceTypeServiceData", deviceTypeServiceData);
 	            if (deviceTypeServiceData) {

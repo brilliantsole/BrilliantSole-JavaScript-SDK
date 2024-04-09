@@ -2,7 +2,7 @@ import BaseScanner from "./BaseScanner.js";
 import { createConsole } from "../utils/Console.js";
 import { isInNode } from "../utils/environment.js";
 import { addEventListeners, removeEventListeners } from "../utils/EventDispatcher.js";
-import { serviceUUIDs } from "../connection/bluetooth/bluetoothUUIDs.js";
+import { serviceDataUUID, serviceUUIDs } from "../connection/bluetooth/bluetoothUUIDs.js";
 import Device from "../Device.js";
 import NobleConnectionManager from "../connection/bluetooth/NobleConnectionManager.js";
 
@@ -93,10 +93,8 @@ class NobleScanner extends BaseScanner {
         const serviceData = noblePeripheral.advertisement.serviceData;
         if (serviceData) {
             //_console.log("serviceData", serviceData);
-            const deviceTypeServiceUUID = serviceUUIDs[0].replaceAll("-", "");
-            //_console.log("deviceTypeServiceUUID", deviceTypeServiceUUID);
             const deviceTypeServiceData = serviceData.find((serviceDatum) => {
-                return serviceDatum.uuid == deviceTypeServiceUUID;
+                return serviceDatum.uuid == serviceDataUUID;
             });
             //_console.log("deviceTypeServiceData", deviceTypeServiceData);
             if (deviceTypeServiceData) {
