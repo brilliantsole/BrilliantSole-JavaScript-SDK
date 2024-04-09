@@ -291,6 +291,7 @@ class WebBluetoothConnectionManager extends BaseConnectionManager {
         await characteristic.writeValueWithResponse(data);
         const characteristicProperties = characteristic.properties || getCharacteristicProperties(characteristicName);
         if (characteristicProperties.read && !characteristicProperties.notify) {
+            _console.log("reading value after write...");
             await characteristic.readValue();
             if (isInBluefy || isInWebBLE) {
                 this.#onCharacteristicValueChanged(characteristic);

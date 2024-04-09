@@ -203,6 +203,9 @@ export function getCharacteristicProperties(characteristicName) {
     // notify
     switch (characteristicName) {
         case "batteryLevel":
+        case "name":
+        case "type":
+        case "sensorConfiguration":
         case "sensorData":
             properties.notify = true;
             break;

@@ -737,6 +737,9 @@
 	    // notify
 	    switch (characteristicName) {
 	        case "batteryLevel":
+	        case "name":
+	        case "type":
+	        case "sensorConfiguration":
 	        case "sensorData":
 	            properties.notify = true;
 	            break;
@@ -1040,6 +1043,7 @@
 	        await characteristic.writeValueWithResponse(data);
 	        const characteristicProperties = characteristic.properties || getCharacteristicProperties(characteristicName);
 	        if (characteristicProperties.read && !characteristicProperties.notify) {
+	            _console$l.log("reading value after write...");
 	            await characteristic.readValue();
 	            if (isInBluefy || isInWebBLE) {
 	                this.#onCharacteristicValueChanged(characteristic);
