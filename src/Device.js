@@ -3,7 +3,6 @@ import EventDispatcher from "./utils/EventDispatcher.js";
 import BaseConnectionManager from "./connection/BaseConnectionManager.js";
 import { isInBrowser, isInNode } from "./utils/environment.js";
 import WebBluetoothConnectionManager from "./connection/bluetooth/WebBluetoothConnectionManager.js";
-import NobleConnectionManager from "./connection/bluetooth/NobleConnectionManager.js";
 import SensorConfigurationManager from "./sensor/SensorConfigurationManager.js";
 import SensorDataManager from "./sensor/SensorDataManager.js";
 import VibrationManager from "./vibration/VibrationManager.js";
@@ -148,6 +147,8 @@ class Device {
         "getType",
 
         "getSensorConfiguration",
+        "pressurePositions",
+        "sensorScalars",
 
         "sensorData",
         "pressure",
@@ -230,7 +231,6 @@ class Device {
     #isConnected = false;
     get isConnected() {
         return this.#isConnected;
-        //return this.connectionManager?.isConnected && this.#hasAllInformation;
     }
     /** @throws {Error} if not connected */
     #assertIsConnected() {
@@ -249,6 +249,8 @@ class Device {
         "getName",
         "getType",
         "getSensorConfiguration",
+        "sensorScalars",
+        "pressurePositions",
     ];
     static get AllInformationConnectionMessages() {
         return this.#AllInformationConnectionMessages;
@@ -465,8 +467,15 @@ class Device {
                 this.#updateSensorConfiguration(sensorConfiguration);
                 break;
 
+            case "sensorScalars":
+                this.#sensorDataManager.parseScalars(dataView);
+                break;
+            case "pressurePositions":
+                this.#sensorDataManager.pressureSensorDataManager.parsePositions(dataView);
+                break;
+
             case "sensorData":
-                this.#sensorDataManager.parse(dataView);
+                this.#sensorDataManager.parseData(dataView);
                 break;
 
             default:
@@ -631,9 +640,6 @@ class Device {
         this.#type = updatedType;
         _console.log({ updatedType: this.#type });
 
-        this.#sensorDataManager.deviceType = this.#type;
-        this.#sensorConfigurationManager.deviceType = this.#type;
-
         this.#dispatchEvent({ type: "getType", message: { type: this.#type } });
 
         if (Device.#UseLocalStorage) {
@@ -690,20 +696,6 @@ class Device {
     /** @type {SensorType[]} */
     get sensorTypes() {
         return Object.keys(this.sensorConfiguration);
-    }
-
-    static get PressureSensorNames() {
-        return SensorDataManager.PressureSensorNames;
-    }
-    get pressureSensorNames() {
-        return Device.PressureSensorNames;
-    }
-
-    static get NumberOfPressureSensors() {
-        return SensorDataManager.NumberOfPressureSensors;
-    }
-    get numberOfPressureSensors() {
-        return Device.NumberOfPressureSensors;
     }
 
     // SENSOR CONFIGURATION

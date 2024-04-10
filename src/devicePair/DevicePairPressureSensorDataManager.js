@@ -67,21 +67,7 @@ class DevicePairPressureSensorDataManager {
         return this.sides.every((side) => side in this.#rawPressure);
     }
 
-    static #Scalars = {
-        pressure: PressureSensorDataManager.Scalars.pressure / this.Sides.length,
-    };
-    static get Scalars() {
-        return this.#Scalars;
-    }
-    get scalars() {
-        return DevicePairPressureSensorDataManager.Scalars;
-    }
-
     #updatePressureData() {
-        const scalar = this.scalars.pressure;
-
-        // FIX
-
         /** @type {DevicePairPressureData} */
         const pressure = { rawSum: 0, normalizedSum: 0 };
 

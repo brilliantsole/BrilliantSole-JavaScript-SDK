@@ -1,8 +1,6 @@
 import { createConsole } from "../utils/Console.js";
 import SensorDataManager from "./SensorDataManager.js";
 
-/** @typedef {import("../Device.js").DeviceType} DeviceType */
-
 /** @typedef {import("./SensorDataManager.js").SensorType} SensorType */
 /**
  * @typedef SensorConfiguration
@@ -21,23 +19,6 @@ import SensorDataManager from "./SensorDataManager.js";
 const _console = createConsole("SensorConfigurationManager", { log: false });
 
 class SensorConfigurationManager {
-    /** @type {DeviceType} */
-    #deviceType;
-    get deviceType() {
-        return this.#deviceType;
-    }
-    set deviceType(newDeviceType) {
-        _console.assertTypeWithError(newDeviceType, "string");
-        if (this.#deviceType == newDeviceType) {
-            _console.log(`redundant deviceType assignment "${newDeviceType}"`);
-            return;
-        }
-        _console.log({ newDeviceType });
-        this.#deviceType = newDeviceType;
-
-        // can later use for non-insole deviceTypes that ignore sensorTypes like "pressure"
-    }
-
     /** @type {SensorType[]} */
     #availableSensorTypes;
     /** @param {SensorType} sensorType */

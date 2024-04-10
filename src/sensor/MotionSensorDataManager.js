@@ -1,7 +1,5 @@
 import { createConsole } from "../utils/Console.js";
 
-/** @typedef {import("../Device.js").DeviceType} DeviceType */
-
 /** @typedef {"acceleration" | "gravity" | "linearAcceleration" | "gyroscope" | "magnetometer" | "gameRotation" | "rotation"} MotionSensorType */
 
 const _console = createConsole("MotionSensorDataManager", { log: false });
@@ -24,40 +22,6 @@ const _console = createConsole("MotionSensorDataManager", { log: false });
  */
 
 class MotionSensorDataManager {
-    /** @type {DeviceType} */
-    #deviceType;
-    get deviceType() {
-        return this.#deviceType;
-    }
-    set deviceType(newDeviceType) {
-        _console.assertTypeWithError(newDeviceType, "string");
-        if (this.#deviceType == newDeviceType) {
-            _console.log(`redundant deviceType assignment "${newDeviceType}"`);
-            return;
-        }
-        _console.log({ newDeviceType });
-        this.#deviceType = newDeviceType;
-    }
-
-    static #Scalars = {
-        acceleration: 2 ** -12,
-        gravity: 2 ** -12,
-        linearAcceleration: 2 ** -12,
-
-        gyroscope: 2000 * 2 ** -15,
-
-        magnetometer: 2500 * 2 ** -15,
-
-        gameRotation: 2 ** -14,
-        rotation: 2 ** -14,
-    };
-    static get Scalars() {
-        return this.#Scalars;
-    }
-    get scalars() {
-        return MotionSensorDataManager.Scalars;
-    }
-
     static #Vector3Size = 3 * 2;
     static get Vector3Size() {
         return this.#Vector3Size;
@@ -68,16 +32,13 @@ class MotionSensorDataManager {
 
     /**
      * @param {DataView} dataView
-     * @param {number} byteOffset
-     * @param {MotionSensorType} sensorType
+     * @param {number} scalar
      * @returns {Vector3}
      */
-    parseVector3(dataView, byteOffset, sensorType) {
-        let [x, y, z] = [
-            dataView.getInt16(byteOffset, true),
-            dataView.getInt16(byteOffset + 2, true),
-            dataView.getInt16(byteOffset + 4, true),
-        ].map((value) => value * this.scalars[sensorType]);
+    parseVector3(dataView, scalar) {
+        let [x, y, z] = [dataView.getInt16(0, true), dataView.getInt16(2, true), dataView.getInt16(4, true)].map(
+            (value) => value * scalar
+        );
 
         const vector = { x, y, z };
 
@@ -95,17 +56,16 @@ class MotionSensorDataManager {
 
     /**
      * @param {DataView} dataView
-     * @param {number} byteOffset
-     * @param {MotionSensorType} sensorType
+     * @param {number} scalar
      * @returns {Quaternion}
      */
-    parseQuaternion(dataView, byteOffset, sensorType) {
+    parseQuaternion(dataView, scalar) {
         let [x, y, z, w] = [
-            dataView.getInt16(byteOffset, true),
-            dataView.getInt16(byteOffset + 2, true),
-            dataView.getInt16(byteOffset + 4, true),
-            dataView.getInt16(byteOffset + 6, true),
-        ].map((value) => value * this.scalars[sensorType]);
+            dataView.getInt16(0, true),
+            dataView.getInt16(2, true),
+            dataView.getInt16(4, true),
+            dataView.getInt16(6, true),
+        ].map((value) => value * scalar);
 
         const quaternion = { x, y, z, w };
 

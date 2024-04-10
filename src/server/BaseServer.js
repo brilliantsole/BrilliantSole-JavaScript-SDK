@@ -217,8 +217,8 @@ class BaseServer {
         return { type: messageType, data: dataView || device.latestConnectionMessage.get(messageType) };
     }
 
-    /** @typedef {import("../../Device.js").DeviceEvent} DeviceEvent */
-    /** @typedef {import("../../connection/BaseConnectionManager.js").ConnectionMessageType} ConnectionMessageType */
+    /** @typedef {import("../Device.js").DeviceEvent} DeviceEvent */
+    /** @typedef {import("../connection/BaseConnectionManager.js").ConnectionMessageType} ConnectionMessageType */
 
     /** @param {DeviceEvent} deviceEvent */
     #onDeviceConnectionMessage(deviceEvent) {
@@ -402,6 +402,8 @@ class BaseServer {
                     case "getName":
                     case "getType":
                     case "getSensorConfiguration":
+                    case "pressurePositions":
+                    case "sensorScalars":
                         responseMessages.push(this.#createDeviceMessage(device, messageType));
                         break;
                     case "setName":

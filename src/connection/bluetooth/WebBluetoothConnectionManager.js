@@ -203,28 +203,17 @@ class WebBluetoothConnectionManager extends BaseConnectionManager {
 
         switch (characteristicName) {
             case "manufacturerName":
-                this.onMessageReceived("manufacturerName", dataView);
-                break;
             case "modelNumber":
-                this.onMessageReceived("modelNumber", dataView);
-                break;
             case "softwareRevision":
-                this.onMessageReceived("softwareRevision", dataView);
-                break;
             case "hardwareRevision":
-                this.onMessageReceived("hardwareRevision", dataView);
-                break;
             case "firmwareRevision":
-                this.onMessageReceived("firmwareRevision", dataView);
-                break;
             case "pnpId":
-                this.onMessageReceived("pnpId", dataView);
-                break;
             case "serialNumber":
-                this.onMessageReceived("serialNumber", dataView);
-                break;
             case "batteryLevel":
-                this.onMessageReceived("batteryLevel", dataView);
+            case "sensorData":
+            case "pressurePositions":
+            case "sensorScalars":
+                this.onMessageReceived(characteristicName, dataView);
                 break;
             case "name":
                 this.onMessageReceived("getName", dataView);
@@ -234,9 +223,6 @@ class WebBluetoothConnectionManager extends BaseConnectionManager {
                 break;
             case "sensorConfiguration":
                 this.onMessageReceived("getSensorConfiguration", dataView);
-                break;
-            case "sensorData":
-                this.onMessageReceived("sensorData", dataView);
                 break;
             default:
                 throw new Error(`uncaught characteristicName "${characteristicName}"`);

@@ -5,9 +5,7 @@ import MotionSensorDataManager from "./MotionSensorDataManager.js";
 import BarometerSensorDataManager from "./BarometerSensorDataManager.js";
 import { parseMessage } from "../utils/ParseUtils.js";
 
-const _console = createConsole("SensorDataManager", { log: false });
-
-/** @typedef {import("../Device.js").DeviceType} DeviceType */
+const _console = createConsole("SensorDataManager", { log: true });
 
 /** @typedef {import("./MotionSensorDataManager.js").MotionSensorType} MotionSensorType */
 /** @typedef {import("./PressureSensorDataManager.js").PressureSensorType} PressureSensorType */
@@ -23,24 +21,6 @@ const _console = createConsole("SensorDataManager", { log: false });
  */
 
 class SensorDataManager {
-    /** @type {DeviceType} */
-    #deviceType;
-    get deviceType() {
-        return this.#deviceType;
-    }
-    set deviceType(newDeviceType) {
-        _console.assertTypeWithError(newDeviceType, "string");
-        if (this.#deviceType == newDeviceType) {
-            _console.log(`redundant deviceType assignment "${newDeviceType}"`);
-            return;
-        }
-        _console.log({ newDeviceType });
-        this.#deviceType = newDeviceType;
-
-        this.pressureSensorDataManager.deviceType = newDeviceType;
-        this.motionSensorDataManager.deviceType = newDeviceType;
-    }
-
     pressureSensorDataManager = new PressureSensorDataManager();
     motionSensorDataManager = new MotionSensorDataManager();
     barometerSensorDataManager = new BarometerSensorDataManager();
@@ -60,9 +40,12 @@ class SensorDataManager {
     static get Types() {
         return this.#Types;
     }
-    get #types() {
+    get types() {
         return SensorDataManager.Types;
     }
+
+    /** @type {Map.<SensorType, number>} */
+    #scalars = new Map();
 
     /** @param {string} sensorType */
     static AssertValidSensorType(sensorType) {
@@ -86,7 +69,10 @@ class SensorDataManager {
         this.#lastRawTimestamp = 0;
     }
 
-    /** @param {DataView} dataView */
+    /**
+     * @param {DataView} dataView
+     * @param {number} byteOffset
+     */
     #parseTimestamp(dataView, byteOffset) {
         const rawTimestamp = dataView.getUint16(byteOffset, true);
         if (rawTimestamp < this.#lastRawTimestamp) {
@@ -98,7 +84,7 @@ class SensorDataManager {
     }
 
     /** @param {DataView} dataView */
-    parse(dataView) {
+    parseData(dataView) {
         _console.log("sensorData", Array.from(new Uint8Array(dataView.buffer)));
 
         let byteOffset = 0;
@@ -111,23 +97,23 @@ class SensorDataManager {
             /** @type {SensorType} */
             const sensorType = messageType;
 
-            let byteOffset = 0;
+            const scalar = this.#scalars.get(sensorType);
 
             let value;
             switch (sensorType) {
                 case "pressure":
-                    value = this.pressureSensorDataManager.parsePressure(dataView, byteOffset);
+                    value = this.pressureSensorDataManager.parseData(dataView);
                     break;
                 case "acceleration":
                 case "gravity":
                 case "linearAcceleration":
                 case "gyroscope":
                 case "magnetometer":
-                    value = this.motionSensorDataManager.parseVector3(dataView, byteOffset, sensorType);
+                    value = this.motionSensorDataManager.parseVector3(dataView, scalar);
                     break;
                 case "gameRotation":
                 case "rotation":
-                    value = this.motionSensorDataManager.parseQuaternion(dataView, byteOffset, sensorType);
+                    value = this.motionSensorDataManager.parseQuaternion(dataView, scalar);
                     break;
                 case "barometer":
                     // FILL
@@ -141,18 +127,19 @@ class SensorDataManager {
         });
     }
 
-    static get NumberOfPressureSensors() {
-        return PressureSensorDataManager.NumberOfPressureSensors;
-    }
-    get numberOfPressureSensors() {
-        return SensorDataManager.NumberOfPressureSensors;
-    }
-
-    static get PressureSensorNames() {
-        return PressureSensorDataManager.Names;
-    }
-    get pressureSensorNames() {
-        return SensorDataManager.PressureSensorNames;
+    /** @param {DataView} dataView */
+    parseScalars(dataView) {
+        for (let byteOffset = 0; byteOffset < dataView.byteLength; byteOffset += 5) {
+            const sensorTypeIndex = dataView.getUint8(byteOffset);
+            const sensorType = SensorDataManager.Types[sensorTypeIndex];
+            if (!sensorType) {
+                _console.warn(`unknown sensorType index ${sensorTypeIndex}`);
+                continue;
+            }
+            const sensorScalar = dataView.getFloat32(byteOffset + 1, true);
+            _console.log({ sensorType, sensorScalar });
+            this.#scalars.set(sensorType, sensorScalar);
+        }
     }
 }
 

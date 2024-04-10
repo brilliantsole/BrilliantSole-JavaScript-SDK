@@ -5,7 +5,7 @@ import { createConsole } from "../utils/Console.js";
 
 /** @typedef {"webBluetooth" | "noble" | "webSocketClient"} ConnectionType */
 /** @typedef {"not connected" | "connecting" | "connected" | "disconnecting"} ConnectionStatus */
-/** @typedef {"manufacturerName" | "modelNumber" | "softwareRevision" | "hardwareRevision" | "firmwareRevision" | "pnpId" | "serialNumber" | "batteryLevel" | "getName" | "setName" | "getType" | "setType" | "getSensorConfiguration" | "setSensorConfiguration" | "sensorData" | "triggerVibration"} ConnectionMessageType */
+/** @typedef {"manufacturerName" | "modelNumber" | "softwareRevision" | "hardwareRevision" | "firmwareRevision" | "pnpId" | "serialNumber" | "batteryLevel" | "getName" | "setName" | "getType" | "setType" | "getSensorConfiguration" | "setSensorConfiguration" | "sensorScalars" | "pressurePositions" | "sensorData" | "triggerVibration"} ConnectionMessageType */
 
 const _console = createConsole("ConnectionManager");
 
@@ -37,6 +37,8 @@ class BaseConnectionManager {
         "setType",
         "getSensorConfiguration",
         "setSensorConfiguration",
+        "sensorScalars",
+        "pressurePositions",
         "sensorData",
         "triggerVibration",
     ];

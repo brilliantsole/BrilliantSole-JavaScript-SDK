@@ -133,6 +133,8 @@ class WebSocketClientConnectionManager extends BaseConnectionManager {
                     case "getName":
                     case "getType":
                     case "getSensorConfiguration":
+                    case "pressurePositions":
+                    case "sensorScalars":
                     case "sensorData":
                         this.onMessageReceived(messageType, dataView);
                         break;

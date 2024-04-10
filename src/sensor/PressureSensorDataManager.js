@@ -3,9 +3,6 @@ import CenterOfPressureHelper from "../utils/CenterOfPressureHelper.js";
 import RangeHelper from "../utils/RangeHelper.js";
 import { createArray } from "../utils/ArrayUtils.js";
 
-/** @typedef {import("../Device.js").DeviceType} DeviceType */
-
-/** @typedef {"hallux" | "digits" | "innerMetatarsal" | "centerMetatarsal" | "outerMetatarsal" | "arch" | "lateral" | "heel"} PressureSensorName */
 /** @typedef {"pressure"} PressureSensorType */
 
 /**
@@ -22,7 +19,6 @@ import { createArray } from "../utils/ArrayUtils.js";
 /**
  * @typedef PressureSensorValue
  * @type {Object}
- * @property {PressureSensorName} name
  * @property {PressureSensorPosition} position
  * @property {number} rawValue
  * @property {number} normalizedValue
@@ -44,124 +40,64 @@ import { createArray } from "../utils/ArrayUtils.js";
 const _console = createConsole("PressureSensorDataManager", { log: true });
 
 class PressureSensorDataManager {
-    /** @type {DeviceType} */
-    #deviceType;
-    get deviceType() {
-        return this.#deviceType;
+    /** @type {PressureSensorPosition[]} */
+    #positions = [];
+    get positions() {
+        return this.#positions;
     }
-    set deviceType(newDeviceType) {
-        _console.assertTypeWithError(newDeviceType, "string");
-        if (this.#deviceType == newDeviceType) {
-            _console.log(`redundant deviceType assignment "${newDeviceType}"`);
-            return;
-        }
-        _console.log({ newDeviceType });
-        this.#deviceType = newDeviceType;
 
-        this.#updatePressureSensorPositions();
+    get numberOfSensors() {
+        return this.positions.length;
+    }
+
+    /** @param {DataView} dataView */
+    parsePositions(dataView) {
+        /** @type {PressureSensorPosition[]} */
+        const positions = [];
+
+        for (
+            let pressureSensorIndex = 0, byteOffset = 0;
+            byteOffset < dataView.byteLength;
+            pressureSensorIndex++, byteOffset += 2
+        ) {
+            positions.push({
+                x: dataView.getUint8(byteOffset) / 2 ** 8,
+                y: dataView.getUint8(byteOffset + 1) / 2 ** 8,
+            });
+        }
+
+        _console.log({ positions });
+
+        this.#positions = positions;
+
+        this.#sensorRangeHelpers = createArray(this.numberOfSensors, () => new RangeHelper());
+
         this.resetRange();
     }
 
-    /** @type {PressureSensorName[]} */
-    static #Names = [
-        "hallux",
-        "digits",
-        "innerMetatarsal",
-        "centerMetatarsal",
-        "outerMetatarsal",
-        "arch",
-        "lateral",
-        "heel",
-    ];
-    static get Names() {
-        return this.#Names;
-    }
-    get names() {
-        return PressureSensorDataManager.Names;
-    }
-
-    static #Scalars = {
-        pressure: 2 ** -16,
-    };
-    static get Scalars() {
-        return this.#Scalars;
-    }
-    get scalars() {
-        return PressureSensorDataManager.Scalars;
-    }
-
-    static #NumberOfPressureSensors = 8;
-    static get NumberOfPressureSensors() {
-        return this.#NumberOfPressureSensors;
-    }
-    get numberOfPressureSensors() {
-        return PressureSensorDataManager.NumberOfPressureSensors;
-    }
-
-    /**
-     * positions the right insole (top to bottom) - mirror horizontally for the left insole.
-     *
-     * xy positions are the centers of each sensor in the .svg file (y is from the top)
-     * @type {PressureSensorPosition[]}
-     */
-    static #PressureSensorPositions = [
-        { x: 110, y: 73 },
-        { x: 250, y: 155 },
-        { x: 56, y: 236 },
-        { x: 185, y: 277 },
-        { x: 305, y: 337 },
-        { x: 69, y: 584 },
-        { x: 285, y: 635 },
-        { x: 162, y: 914 },
-    ].map(({ x, y }) => ({ x: x / 365, y: 1 - y / 1000 }));
-    static get PressureSensorPositions() {
-        return this.#PressureSensorPositions;
-    }
-    /** @type {PressureSensorPosition[]} */
-    #pressureSensorPositions;
-    get pressureSensorPositions() {
-        return this.#pressureSensorPositions;
-    }
-    #updatePressureSensorPositions() {
-        const pressureSensorPositions = PressureSensorDataManager.PressureSensorPositions.map(({ x, y }) => {
-            if (this.deviceType == "leftInsole") {
-                x = 1 - x;
-            }
-            return { x, y };
-        });
-        _console.log({ pressureSensorPositions });
-        this.#pressureSensorPositions = pressureSensorPositions;
-    }
-
-    /** @type {RangeHelper[]} */
-    #pressureSensorRangeHelpers = createArray(this.numberOfPressureSensors, () => new RangeHelper());
-    // FILL -
+    /** @type {RangeHelper[]?} */
+    #sensorRangeHelpers;
 
     #centerOfPressureHelper = new CenterOfPressureHelper();
+
     resetRange() {
-        this.#pressureSensorRangeHelpers.forEach((rangeHelper) => rangeHelper.reset());
+        this.#sensorRangeHelpers.forEach((rangeHelper) => rangeHelper.reset());
         this.#centerOfPressureHelper.reset();
     }
 
-    /**
-     * @param {DataView} dataView
-     * @param {number} byteOffset
-     */
-    parsePressure(dataView, byteOffset) {
-        const scalar = this.scalars.pressure;
-
+    /** @param {DataView} dataView */
+    parseData(dataView) {
         /** @type {PressureData} */
         const pressure = { sensors: [], rawSum: 0, normalizedSum: 0 };
-        for (let index = 0; index < this.numberOfPressureSensors; index++, byteOffset += 2) {
+        for (let index = 0, byteOffset = 0; byteOffset < dataView.byteLength; index++, byteOffset += 2) {
             const rawValue = dataView.getUint16(byteOffset, true);
-            const rangeHelper = this.#pressureSensorRangeHelpers[index];
+            const rangeHelper = this.#sensorRangeHelpers[index];
             const normalizedValue = rangeHelper.updateAndGetNormalization(rawValue);
-            const position = this.pressureSensorPositions[index];
-            const name = this.names[index];
-            pressure.sensors[index] = { rawValue, normalizedValue, position, name };
+            const position = this.positions[index];
+            pressure.sensors[index] = { rawValue, normalizedValue, position };
 
             pressure.rawSum += rawValue;
-            pressure.normalizedSum += normalizedValue / this.numberOfPressureSensors;
+            pressure.normalizedSum += normalizedValue / this.numberOfSensors;
         }
 
         if (pressure.rawSum > 0) {

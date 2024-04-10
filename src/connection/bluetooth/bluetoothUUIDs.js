@@ -27,7 +27,7 @@ function stringToServiceUUID(identifier) {
 }
 
 /** @typedef {"deviceInformation" | "battery" | "main" | "dfu"} BluetoothServiceName */
-/** @typedef { "manufacturerName" | "modelNumber" | "hardwareRevision" | "firmwareRevision" | "softwareRevision" | "pnpId" | "serialNumber" | "batteryLevel" | "name" | "type" | "sensorConfiguration" | "sensorData" | "vibration"} BluetoothCharacteristicName */
+/** @typedef { "manufacturerName" | "modelNumber" | "hardwareRevision" | "firmwareRevision" | "softwareRevision" | "pnpId" | "serialNumber" | "batteryLevel" | "name" | "type" | "sensorConfiguration" | "pressurePositions" | "sensorScalars" | "sensorData" | "vibration"} BluetoothCharacteristicName */
 
 const bluetoothUUIDs = Object.freeze({
     services: {
@@ -71,8 +71,10 @@ const bluetoothUUIDs = Object.freeze({
                 name: { uuid: generateBluetoothUUID(1) },
                 type: { uuid: generateBluetoothUUID(2) },
                 sensorConfiguration: { uuid: generateBluetoothUUID(3) },
-                sensorData: { uuid: generateBluetoothUUID(4) },
-                vibration: { uuid: generateBluetoothUUID(5) },
+                pressurePositions: { uuid: generateBluetoothUUID(4) },
+                sensorScalars: { uuid: generateBluetoothUUID(5) },
+                sensorData: { uuid: generateBluetoothUUID(6) },
+                vibration: { uuid: generateBluetoothUUID(7) },
             },
         },
         dfu: {
@@ -207,6 +209,7 @@ export function getCharacteristicProperties(characteristicName) {
         case "type":
         case "sensorConfiguration":
         case "sensorData":
+        case "pressurePositions":
             properties.notify = true;
             break;
     }
