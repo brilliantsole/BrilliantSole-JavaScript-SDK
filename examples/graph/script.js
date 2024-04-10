@@ -141,7 +141,7 @@ window.maxTicks = 100;
 /**
  * @param {HTMLCanvasElement} canvas
  * @param {string} title
- * @param {string[]} axesLabels
+ * @param {string[]?} axesLabels
  * @param {range} yRange
  */
 function createChart(canvas, title, axesLabels, yRange) {
@@ -150,7 +150,7 @@ function createChart(canvas, title, axesLabels, yRange) {
         datasets: [],
     };
 
-    axesLabels.forEach((label) => {
+    axesLabels?.forEach((label) => {
         data.datasets.push({
             label,
             data: new Array(window.maxTicks).fill(0),
@@ -203,6 +203,18 @@ function createChart(canvas, title, axesLabels, yRange) {
     const appendData = (timestamp, data) => {
         console.log({ timestamp, data });
         chart.data.labels.push(timestamp);
+
+        if (chart.data.datasets.length == 0) {
+            data.forEach((_, index) => {
+                chart.data.datasets.push({
+                    label: index,
+                    data: new Array(window.maxTicks).fill(0),
+                    radius: 0,
+                    borderWidth: 2,
+                });
+            });
+        }
+
         chart.data.datasets.forEach((dataset) => {
             dataset.data.push(data[dataset.label]);
         });
@@ -228,11 +240,10 @@ BS.Device.SensorTypes.forEach((sensorType) => {
     const chartContainer = chartTemplate.content.cloneNode(true).querySelector(".chart");
     chartsContainer.appendChild(chartContainer);
 
-    /** @type {string[]} */
+    /** @type {string[]?} */
     let axesLabels;
     switch (sensorType) {
         case "pressure":
-            axesLabels = BS.Device.PressureSensorNames.slice();
             break;
         case "acceleration":
         case "gravity":
@@ -320,10 +331,7 @@ BS.Device.SensorTypes.forEach((sensorType) => {
         if (sensorType == "pressure") {
             /** @type {PressureData} */
             let pressure = data;
-            data = {};
-            pressure.sensors.forEach((sensor) => {
-                data[sensor.name] = sensor.normalizedValue;
-            });
+            data = pressure.sensors.map((sensor) => sensor.normalizedValue);
         }
         appendData(timestamp, data);
 
