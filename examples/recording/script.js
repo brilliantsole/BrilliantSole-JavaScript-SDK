@@ -587,7 +587,7 @@ window.addEventListener("recordingsUpdate", () => {
 
 // LOCAL STORAGE
 
-let localStorageKey = "BS.Recordings";
+const localStorageKey = "BS.Recordings";
 
 function loadRecordingsFromLocalStorage() {
     const recordingsString = localStorage.getItem(localStorageKey);
