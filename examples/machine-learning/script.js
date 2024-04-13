@@ -85,8 +85,8 @@ addDeviceButton.addEventListener("click", () => {
     const device = new BS.Device();
     device.connect();
 });
-window.addEventListener("isSensorDataEnabled", () => {
-    addDeviceButton.disabled = isSensorDataEnabled;
+window.addEventListener("createNeuralNetwork", () => {
+    addDeviceButton.disabled = true;
 });
 
 // CONNECTED DEVICES
@@ -128,8 +128,8 @@ BS.Device.AddEventListener("deviceConnected", (event) => {
         toggleSelectonButton.disabled = false;
     });
 
-    window.addEventListener("isSensorDataEnabled", () => {
-        disconnectButton.disabled = isSensorDataEnabled;
+    window.addEventListener("createNeuralNetwork", () => {
+        disconnectButton.disabled = true;
     });
 
     connectedDevicesContainer.appendChild(connectedDeviceContainer);
@@ -183,19 +183,6 @@ function selectDevice(device) {
             deselectDevice(device);
         });
 
-        device.addEventListener("sensorData", (event) => {
-            /** @type {SensorType} */
-            const sensorType = event.message.sensorType;
-            /** @type {number} */
-            const timestamp = event.message.timestamp;
-
-            const { [sensorType]: data } = event.message;
-            //console.log({ name: device.name, sensorType, timestamp, data });
-
-            // FILL
-        });
-
-        // FILL
         selectedDeviceContainers[device.id] = selectedDeviceContainer;
     }
 
@@ -567,12 +554,229 @@ window.addEventListener("createNeuralNetwork", () => {
 
 // ADD DATA
 
+/** @typedef {import("../../build/brilliantsole.module.js").SensorConfiguration} SensorConfiguration */
+
+let isSensorDataEnabled = false;
+
+/** @type {HTMLButtonElement} */
+const toggleSensorDataButton = document.getElementById("toggleSensorData");
+toggleSensorDataButton.addEventListener("click", () => {
+    isSensorDataEnabled = !isSensorDataEnabled;
+    console.log({ isSensorDataEnabled });
+    // FILL - get sensorConfiguration based on sampleRate and inputs
+});
+
+/** @param {SensorConfiguration} sensorConfiguration */
+function setSensorConfiguration(sensorConfiguration) {
+    selectedDevices.forEach((device) => {
+        device.setSensorConfiguration(sensorConfiguration);
+    });
+}
+
+/** @type {HTMLButtonElement} */
+const addDataButton = document.getElementById("addData");
+addDataButton.addEventListener("click", () => {
+    // FILL
+});
+
+let addDataContinuously = false;
+
+/** @type {HTMLButtonElement} */
+const toggleAddDataContinuouslyInput = document.getElementById("toggleAddDataContinuously");
+toggleAddDataContinuouslyInput.addEventListener("input", () => {
+    addDataContinuously = toggleAddDataContinuouslyInput.checked;
+    console.log({ addDataContinuously });
+});
+
+async function collectData() {
+    // FILL
+}
+
+window.addEventListener(
+    "createNeuralNetwork",
+    () => {
+        toggleSensorDataButton.disabled = false;
+
+        selectedDevices.forEach((device, index) => {
+            device.addEventListener("getSensorConfiguration", () => {
+                // FILL - check if all devices have sensor data enabled
+            });
+
+            device.addEventListener("sensorData", (event) => {
+                /** @type {SensorType} */
+                const sensorType = event.message.sensorType;
+                /** @type {number} */
+                const timestamp = event.message.timestamp;
+
+                const { [sensorType]: data } = event.message;
+                //console.log({ name: device.name, sensorType, timestamp, data });
+
+                // FILL
+
+                if (index == 0) {
+                    // FILL - check thresholds
+                }
+            });
+        });
+    },
+    { once: true }
+);
+
 // TRAIN NEURAL NETWORK
+
+/** @type {number} */
+let epochs;
+/** @type {number} */
+let batchSize;
+
+/** @type {HTMLInputElement} */
+const epochsInput = document.getElementById("epochs");
+epochsInput.addEventListener("input", () => {
+    epochs = Number(epochsInput.value);
+    console.log({ epochs });
+});
+
+/** @type {HTMLInputElement} */
+const batchSizeInput = document.getElementById("batchSize");
+batchSizeInput.addEventListener("input", () => {
+    batchSize = Number(batchSizeInput.value);
+    console.log({ batchSize });
+});
+
+let isTraining = false;
+
+/** @type {HTMLButtonElement} */
+const trainButton = document.getElementById("train");
+trainButton.addEventListener("click", () => {
+    neuralNetwork.normalizeData();
+    neuralNetwork.train(
+        {
+            epochs,
+            batchSize,
+        },
+        () => window.dispatchEvent(new CustomEvent("finishedTraining"))
+    );
+    isTraining = true;
+    window.dispatchEvent(new CustomEvent("train", { detail: { isTraining } }));
+});
+
+window.addEventListener("train", () => {
+    batchSizeInput.disabled = true;
+    epochsInput.disabled = true;
+
+    trainButton.disabled = true;
+});
+
+window.addEventListener("finishedTraining", () => {
+    batchSizeInput.disabled = false;
+    epochsInput.disabled = false;
+
+    trainButton.disabled = false;
+});
 
 // CLASSIFY & PREDICT
 
+let testContinuously = false;
+/** @type {HTMLInputElement} */
+const toggleTestContinuouslyInput = document.getElementById("toggleTestContinuously");
+toggleTestContinuouslyInput.addEventListener("input", () => {
+    testContinuously = toggleTestContinuouslyInput.checked;
+    console.log({ testContinuously });
+});
+
+/** @type {HTMLButtonElement} */
+const testButton = document.getElementById("test");
+testButton.addEventListener("click", () => {
+    // FILL
+});
+
+/** @type {HTMLElement} */
+const resultsElement = document.getElementById("results");
+
+function test() {
+    // FILL
+}
+
+window.addEventListener("train", () => {
+    testButton.disabled = true;
+    toggleTestContinuouslyInput.disabled = true;
+});
+window.addEventListener("finishedTraining", () => {
+    testButton.disabled = false;
+    toggleTestContinuouslyInput.disabled = false;
+});
+
 // SAVE
+
+/** @type {HTMLButtonElement} */
+const saveDataButton = document.getElementById("saveData");
+saveDataButton.addEventListener("click", () => {
+    // FILL
+});
+
+/** @type {HTMLButtonElement} */
+const saveModelButton = document.getElementById("saveModel");
+saveModelButton.addEventListener("click", () => {
+    // FILL
+});
+
+window.addEventListener("finishedTraining", () => {
+    saveDataButton.disabled = false;
+    saveModelButton.disabled = false;
+});
 
 // LOAD
 
+/** @type {HTMLInputElement} */
+const loadDataInput = document.getElementById("loadData");
+loadDataInput.addEventListener("input", () => {
+    // FILL
+});
+
+/** @type {HTMLInputElement} */
+const loadModelInput = document.getElementById("loadModel");
+loadModelInput.addEventListener("input", () => {
+    // FILL
+});
+
+window.addEventListener("createNeuralNetwork", () => {
+    loadDataInput.disabled = false;
+    loadModelInput.disabled = false;
+});
+
 // TENSORFLOW LITE
+
+/** @type {HTMLButtonElement} */
+const convertModelToTfliteButton = document.getElementById("convertModelToTflite");
+convertModelToTfliteButton.addEventListener("click", () => {
+    // FILL
+});
+
+let quantizeModel = false;
+/** @type {HTMLInputElement} */
+const toggleQuantizeModelInput = document.getElementById("toggleQuantizeModel");
+toggleQuantizeModelInput.addEventListener("input", () => {
+    quantizeModel = toggleQuantizeModelInput.checked;
+    console.log({ quantizeModel });
+});
+
+/** @type {HTMLButtonElement} */
+const toggleTfliteModelButton = document.getElementById("toggleTfliteModel");
+toggleTfliteModelButton.addEventListener("click", () => {
+    // FILL
+});
+
+/** @type {HTMLButtonElement} */
+const makeTfliteInferenceButton = document.getElementById("makeTfliteInference");
+makeTfliteInferenceButton.addEventListener("click", () => {
+    // FILL
+});
+
+const tfliteResultsElement = document.getElementById("tfliteResults");
+
+window.addEventListener("finishedTraining", () => {
+    if (selectedDevices.length != 1) {
+        return;
+    }
+    convertModelToTfliteButton.disabled = false;
+});

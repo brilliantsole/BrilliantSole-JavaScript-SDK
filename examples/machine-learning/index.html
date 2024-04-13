@@ -259,7 +259,9 @@
         <div>
             <h3>Add Data</h3>
 
-            <button id="addData" disabled>Add Data</button>
+            <button id="toggleSensorData" disabled>enable data</button>
+
+            <button id="addData" disabled>add data</button>
 
             <label>
                 Continuous:
@@ -332,19 +334,16 @@
         <div>
             <h3>Tensorflow Lite</h3>
 
-            <label style="display: none">
+            <label>
                 quantize model
-                <input id="quantizeModel" disabled type="checkbox" />
+                <input id="toggleQuantizeModel" type="checkbox" />
             </label>
 
-            <button id="convertToTflite" disabled>Convert Model</button>
+            <button id="convertModelToTflite" disabled>Convert Model to tflite</button>
 
             <button id="downloadTfliteModel" disabled>Download tflite model</button>
 
-            <label>
-                enabled
-                <input id="toggleTfliteModel" checked disabled type="checkbox" />
-            </label>
+            <button id="toggleTfliteModel">use tflite model</button>
 
             <button id="makeTfliteInference" disabled>Make Inference</button>
 
