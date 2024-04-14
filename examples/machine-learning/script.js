@@ -1,4 +1,5 @@
 import BS from "../../build/brilliantsole.module.js";
+import * as THREE from "../utils/three/three.module.min.js";
 window.BS = BS;
 console.log({ BS });
 BS.setAllConsoleLevelFlags({ log: false });
@@ -418,7 +419,7 @@ window.addEventListener("task", () => {
     if (task == "classification" && numberOfOutputs < 2) {
         setNumberOfOutputs(2);
     }
-    numberOfOutputsInput.setAttribute("min", task == "classification" ? 2 : 1);
+    numberOfOutputsInput.min = task == "classification" ? 2 : 1;
 });
 
 // SAMPLING
@@ -461,89 +462,6 @@ updateSamplingPeriod();
 window.addEventListener("createNeuralNetwork", () => {
     numberOfSamplesInput.disabled = true;
     samplingRateInput.disabled = true;
-});
-
-// THRESHOLDS
-
-let thresholdsEnabled = true;
-/** @param {boolean} newThresholdsEnabled */
-function setThresholdsEnabled(newThresholdsEnabled) {
-    thresholdsEnabled = newThresholdsEnabled;
-    console.log({ thresholdsEnabled });
-    window.dispatchEvent(new CustomEvent("thresholdsEnabled", { detail: { thresholdsEnabled } }));
-}
-
-/** @type {HTMLInputElement} */
-const toggleThresholdsInput = document.getElementById("toggleThresholds");
-toggleThresholdsInput.addEventListener("input", () => {
-    setThresholdsEnabled(toggleThresholdsInput.checked);
-});
-
-let captureDelay = 0;
-
-/** @type {HTMLInputElement} */
-const captureDelayInput = document.getElementById("captureDelay");
-captureDelayInput.addEventListener("input", () => {
-    captureDelay = Number(captureDelayInput.value);
-    console.log({ captureDelay });
-});
-captureDelayInput.dispatchEvent(new Event("input"));
-
-/** @type {SensorType[]} */
-const thresholdSensorTypes = ["linearAcceleration", "gyroscope"];
-
-const thresholdsContainer = document.getElementById("thresholds");
-const thresholdTemplate = document.getElementById("thresholdTemplate");
-/** @type {Object.<string, HTMLElement>} */
-const thresholdContainers = {};
-
-thresholdSensorTypes.forEach((sensorType) => {
-    const thresholdContainer = thresholdTemplate.content.cloneNode(true).querySelector(".threshold");
-
-    let enabled = false;
-
-    /** @type {HTMLInputElement} */
-    const toggleThresholdInput = thresholdContainer.querySelector(".toggle");
-    toggleThresholdInput.addEventListener("input", () => {
-        enabled = toggleThresholdInput.checked;
-        console.log({ sensorType, enabled });
-        thresholdInput.disabled = !enabled;
-        meterElement.disabled = !enabled;
-    });
-
-    // FILL - update thresholds for input and meter based on sensorType
-
-    let threshold = 0;
-    /** @type {HTMLInputElement} */
-    const thresholdInput = thresholdContainer.querySelector(".threshold");
-    thresholdInput.addEventListener("input", () => {
-        threshold = thresholdInput.value;
-        meterElement.low = threshold;
-        console.log({ sensorType, threshold });
-    });
-
-    /** @type {HTMLMeterElement} */
-    const meterElement = thresholdContainer.querySelector(".meter");
-
-    thresholdContainer.querySelector(".sensorType").innerText = sensorType;
-
-    window.addEventListener("thresholdsEnabled", () => {
-        toggleThresholdInput.disabled = !thresholdsEnabled;
-
-        const disabled = toggleThresholdInput.disabled || !toggleThresholdInput.checked;
-        thresholdInput.disabled = disabled;
-        meterElement.disabled = disabled;
-    });
-
-    // FILL - update meter
-
-    // FILL - check thresholds
-    let reachedThreshold = false;
-
-    // FILL - listen for primary device sensorData
-
-    thresholdContainers[sensorType] = thresholdContainer;
-    thresholdsContainer.appendChild(thresholdContainer);
 });
 
 // NEURAL NETWORK PARAMETERS
@@ -590,20 +508,10 @@ function checkIfCanCreateNeuralNetwork() {
     createNeuralNetworkButton.disabled = !canCreateNeuralNetwork();
 }
 
-window.addEventListener("task", () => {
-    checkIfCanCreateNeuralNetwork();
-});
-window.addEventListener("sensorTypes", () => {
-    checkIfCanCreateNeuralNetwork();
-});
-window.addEventListener("outputLabels", () => {
-    checkIfCanCreateNeuralNetwork();
-});
-window.addEventListener("deviceSelection", () => {
-    checkIfCanCreateNeuralNetwork();
-});
-window.addEventListener("createNeuralNetwork", () => {
-    checkIfCanCreateNeuralNetwork();
+["task", "sensorTypes", "outputLabels", "deviceSelection", "createNeuralNetwork"].forEach((eventType) => {
+    window.addEventListener(eventType, () => {
+        checkIfCanCreateNeuralNetwork();
+    });
 });
 
 /** @type {HTMLButtonElement} */
@@ -774,7 +682,7 @@ function flattenDeviceData(deviceData) {
             }
         });
     }
-    return flattenedDeviceData;
+    return flattenedDeviceData.map((value) => (value == 0 ? 0.000001 * Math.random() : 0));
 }
 
 /** @returns {Promise<number[]>} */
@@ -825,19 +733,211 @@ async function collectData() {
     });
 }
 
+// THROTTLED FUNCTION
+
+class ThrottledFunction {
+    /**
+     * @param {()=>{}} callback
+     * @param {number} interval
+     */
+    constructor(callback, interval = 0) {
+        this.callback = callback;
+        this.interval = interval;
+    }
+
+    interval = 0;
+
+    /** @type {()=>{}} */
+    callback;
+
+    #lastTimeTriggered = 0;
+
+    trigger() {
+        const now = Date.now();
+        const timeSinceLastTimeTriggered = now - this.#lastTimeTriggered;
+        if (timeSinceLastTimeTriggered < this.interval) {
+            return;
+        }
+        this.callback();
+        this.#lastTimeTriggered = now;
+    }
+}
+
+// THRESHOLDS
+
+const onThresholdReached = () => {
+    if (!neuralNetwork) {
+        return;
+    }
+
+    if (!neuralNetwork.neuralNetwork.isTrained) {
+        if (!isTraining) {
+            addData();
+        }
+    } else {
+        test(false);
+    }
+};
+const throttledOnThresholdReached = new ThrottledFunction(onThresholdReached);
+
+let thresholdsEnabled = true;
+/** @param {boolean} newThresholdsEnabled */
+function setThresholdsEnabled(newThresholdsEnabled) {
+    thresholdsEnabled = newThresholdsEnabled;
+    console.log({ thresholdsEnabled });
+    window.dispatchEvent(new CustomEvent("thresholdsEnabled", { detail: { thresholdsEnabled } }));
+}
+
+/** @type {HTMLInputElement} */
+const toggleThresholdsInput = document.getElementById("toggleThresholds");
+toggleThresholdsInput.addEventListener("input", () => {
+    setThresholdsEnabled(toggleThresholdsInput.checked);
+});
+
+let captureDelay = 0;
+
+/** @type {HTMLInputElement} */
+const captureDelayInput = document.getElementById("captureDelay");
+captureDelayInput.addEventListener("input", () => {
+    captureDelay = Number(captureDelayInput.value);
+    console.log({ captureDelay });
+    throttledOnThresholdReached.interval = captureDelay;
+});
+captureDelayInput.dispatchEvent(new Event("input"));
+
+/** @type {SensorType[]} */
+const thresholdSensorTypes = ["linearAcceleration", "gyroscope"];
+
+const thresholdsContainer = document.getElementById("thresholds");
+const thresholdTemplate = document.getElementById("thresholdTemplate");
+/** @type {Object.<string, HTMLElement>} */
+const thresholdContainers = {};
+
+thresholdSensorTypes.forEach((sensorType) => {
+    const thresholdContainer = thresholdTemplate.content.cloneNode(true).querySelector(".threshold");
+
+    thresholdContainer.querySelector(".sensorType").innerText = sensorType;
+
+    /** @type {HTMLMeterElement} */
+    const meterElement = thresholdContainer.querySelector(".meter");
+
+    let enabled = false;
+    /** @type {HTMLInputElement} */
+    const toggleThresholdInput = thresholdContainer.querySelector(".toggle");
+    toggleThresholdInput.addEventListener("input", () => {
+        enabled = toggleThresholdInput.checked;
+        console.log({ sensorType, enabled });
+        thresholdInput.disabled = !enabled;
+        meterElement.disabled = !enabled;
+    });
+
+    let threshold = 0;
+    /** @type {HTMLInputElement} */
+    const thresholdInput = thresholdContainer.querySelector(".threshold");
+    thresholdInput.addEventListener("input", () => {
+        threshold = Number(thresholdInput.value);
+        meterElement.low = threshold;
+        console.log({ sensorType, threshold });
+    });
+
+    let min = 0;
+    let max = 0;
+    switch (sensorType) {
+        case "linearAcceleration":
+            min = 0.01;
+            max = 0.5;
+            break;
+        case "gyroscope":
+            min = 0.5;
+            max = 1.5;
+            break;
+    }
+    thresholdInput.min = min;
+    thresholdInput.max = max;
+    thresholdInput.value = max;
+
+    meterElement.min = min;
+    meterElement.max = max;
+    meterElement.value = min;
+    meterElement.low = Number(thresholdInput.value);
+
+    window.addEventListener("thresholdsEnabled", () => {
+        toggleThresholdInput.disabled = !thresholdsEnabled;
+
+        const disabled = toggleThresholdInput.disabled || !toggleThresholdInput.checked;
+        thresholdInput.disabled = disabled;
+        meterElement.disabled = disabled;
+    });
+
+    window.addEventListener(`threshold.${sensorType}`, (event) => {
+        if (!enabled) {
+            return;
+        }
+
+        /** @type {number} */
+        const value = event.detail.value;
+        meterElement.value = value;
+
+        //console.log({ sensorType, value });
+
+        const reachedThreshold = value >= threshold;
+        if (reachedThreshold) {
+            //console.log(`reached ${sensorType} threshold`);
+            throttledOnThresholdReached.trigger();
+        }
+    });
+
+    thresholdContainers[sensorType] = thresholdContainer;
+    thresholdsContainer.appendChild(thresholdContainer);
+});
+
+const thresholdVector = new THREE.Vector3();
+/** @param {import("../../build/brilliantsole.module.js").Vector3} vector */
+function getVectorMagnitude(vector) {
+    const { x, y, z } = vector;
+    thresholdVector.set(x, y, z);
+    return thresholdVector.length();
+}
+
+const thresholdEuler = new THREE.Euler();
+const thresholdQuaternion = new THREE.Quaternion();
+const identityQuaternion = new THREE.Quaternion();
+/** @param {import("../../build/brilliantsole.module.js").Vector3} euler */
+function getEulerMagnitude(euler) {
+    const { x, y, z } = euler;
+    thresholdEuler.set(...[x, y, z].map((value) => THREE.MathUtils.degToRad(value)));
+    thresholdQuaternion.setFromEuler(thresholdEuler);
+    return thresholdQuaternion.angleTo(identityQuaternion);
+}
+
 window.addEventListener(
     "createNeuralNetwork",
     () => {
         if (selectedDevices.length == 1) {
             selectedDevices[0].addEventListener("sensorData", (event) => {
+                if (!thresholdsEnabled) {
+                    return;
+                }
+
                 /** @type {SensorType} */
                 const sensorType = event.message.sensorType;
-                /** @type {number} */
-                const timestamp = event.message.timestamp;
+                if (!thresholdSensorTypes.includes(sensorType)) {
+                    return;
+                }
 
                 const { [sensorType]: data } = event.message;
-
-                // FILL - check thresholds
+                let value = 0;
+                switch (sensorType) {
+                    case "linearAcceleration":
+                        value = getVectorMagnitude(data);
+                        break;
+                    case "gyroscope":
+                        value = getEulerMagnitude(data);
+                        break;
+                    default:
+                        throw Error(`uncaught sensorType ${sensorType}`);
+                }
+                window.dispatchEvent(new CustomEvent(`threshold.${sensorType}`, { detail: { value } }));
             });
         }
     },
@@ -876,7 +976,10 @@ trainButton.addEventListener("click", () => {
             epochs,
             batchSize,
         },
-        () => window.dispatchEvent(new CustomEvent("finishedTraining"))
+        () => {
+            isTraining = false;
+            window.dispatchEvent(new CustomEvent("finishedTraining"));
+        }
     );
     isTraining = true;
     window.dispatchEvent(new CustomEvent("train", { detail: { isTraining } }));
@@ -915,7 +1018,8 @@ testButton.addEventListener("click", () => {
 /** @type {HTMLElement} */
 const resultsElement = document.getElementById("results");
 
-function test() {
+let isTesting = false;
+function test(allowOverlapping = true) {
     // FILL
 }
 

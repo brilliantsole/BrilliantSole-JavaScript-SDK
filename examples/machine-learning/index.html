@@ -4,7 +4,6 @@
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico" />
         <script src="https://unpkg.com/ml5@latest/dist/ml5.min.js"></script>
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
         <script type="module" src="./script.js"></script>
     </head>
 
@@ -198,35 +197,6 @@
         <hr />
 
         <div>
-            <h3>Thresholds</h3>
-
-            <label>
-                Toggle Thresholds
-                <input id="toggleThresholds" type="checkbox" checked />
-            </label>
-
-            <label>
-                capture delay (ms)
-                <input id="captureDelay" type="number" step="100" value="200" min="0" max="5000" />
-            </label>
-
-            <div id="thresholds">
-                <template id="thresholdTemplate">
-                    <div class="threshold">
-                        <label>
-                            <b><span class="sensorType"></span></b>
-                            <input type="checkbox" class="toggle" />
-                        </label>
-                        <input class="threshold" disabled type="range" value="0" step="0.01" max="1" />
-                        <meter class="meter" max="80"></meter>
-                    </div>
-                </template>
-            </div>
-        </div>
-
-        <hr />
-
-        <div>
             <h3>Neural Network Parameters</h3>
 
             <label>
@@ -264,6 +234,35 @@
                 add data continuously:
                 <input id="toggleAddDataContinuously" disabled type="checkbox" />
             </label>
+        </div>
+
+        <hr />
+
+        <div>
+            <h3>Thresholds</h3>
+
+            <label>
+                enable thresholds
+                <input id="toggleThresholds" type="checkbox" checked />
+            </label>
+
+            <label>
+                capture delay (ms)
+                <input id="captureDelay" type="number" step="100" value="200" min="0" max="5000" />
+            </label>
+
+            <div id="thresholds">
+                <template id="thresholdTemplate">
+                    <div class="threshold">
+                        <label>
+                            <b><span class="sensorType"></span></b>
+                            <input type="checkbox" class="toggle" />
+                        </label>
+                        <input class="threshold" disabled type="range" value="0" step="0.01" max="1" />
+                        <meter class="meter" max="80"></meter>
+                    </div>
+                </template>
+            </div>
         </div>
 
         <hr />
