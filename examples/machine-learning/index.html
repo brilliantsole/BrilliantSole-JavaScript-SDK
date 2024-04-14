@@ -142,11 +142,11 @@
         <hr />
 
         <div>
-            <h3>Inputs</h3>
+            <h3>Sensor Types</h3>
 
-            <div id="sensorInputs">
-                <template id="sensorInputTemplate">
-                    <label class="sensorInput">
+            <div id="sensorTypes">
+                <template id="sensorTypeTemplate">
+                    <label class="sensorType">
                         <b class="name"></b>
                         <input class="enabled" type="checkbox" />
                     </label>
@@ -205,6 +205,11 @@
                 <input id="toggleThresholds" type="checkbox" checked />
             </label>
 
+            <label>
+                capture delay (ms)
+                <input id="captureDelay" type="number" step="100" value="200" min="0" max="5000" />
+            </label>
+
             <div id="thresholds">
                 <template id="thresholdTemplate">
                     <div class="threshold">
@@ -217,17 +222,6 @@
                     </div>
                 </template>
             </div>
-        </div>
-
-        <hr />
-
-        <div>
-            <h3>Capture Delay</h3>
-
-            <label>
-                capture delay (ms)
-                <input id="captureDelay" type="number" step="100" value="0" min="0" max="5000" />
-            </label>
         </div>
 
         <hr />
@@ -259,12 +253,15 @@
         <div>
             <h3>Add Data</h3>
 
-            <button id="toggleSensorData" disabled>enable data</button>
+            <label>
+                enable data:
+                <input id="toggleSensorData" disabled type="checkbox" />
+            </label>
 
             <button id="addData" disabled>add data</button>
 
             <label>
-                Continuous:
+                add data continuously:
                 <input id="toggleAddDataContinuously" disabled type="checkbox" />
             </label>
         </div>
@@ -343,7 +340,7 @@
 
             <button id="downloadTfliteModel" disabled>Download tflite model</button>
 
-            <button id="toggleTfliteModel">use tflite model</button>
+            <button id="toggleTfliteModel" disabled>use tflite model</button>
 
             <button id="makeTfliteInference" disabled>Make Inference</button>
 

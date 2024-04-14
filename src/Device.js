@@ -27,12 +27,16 @@ const _console = createConsole("Device", { log: true });
  * @property {Object} message
  */
 
+/** @typedef {(event: DeviceEvent) => void} DeviceEventListener */
+
 /**
  * @typedef StaticDeviceEvent
  * @type {Object}
  * @property {StaticDeviceEventType} type
  * @property {Object} message
  */
+
+/** @typedef {(event: StaticDeviceEvent) => void} StaticDeviceEventListener */
 
 /** @typedef {import("./connection/BaseConnectionManager.js").ConnectionStatus} ConnectionStatus */
 
@@ -173,7 +177,7 @@ class Device {
 
     /**
      * @param {DeviceEventType} type
-     * @param {EventDispatcherListener} listener
+     * @param {DeviceEventListener} listener
      * @param {EventDispatcherOptions} options
      */
     addEventListener(type, listener, options) {
@@ -189,7 +193,7 @@ class Device {
 
     /**
      * @param {DeviceEventType} type
-     * @param {EventDispatcherListener} listener
+     * @param {DeviceEventListener} listener
      */
     removeEventListener(type, listener) {
         return this.#eventDispatcher.removeEventListener(type, listener);
@@ -778,6 +782,12 @@ class Device {
         return this.setSensorConfiguration(this.zeroSensorConfiguration);
     }
 
+    // PRESSURE
+    static #DefaultNumberOfPressureSensors = 8;
+    static get DefaultNumberOfPressureSensors() {
+        return this.#DefaultNumberOfPressureSensors;
+    }
+
     // SENSOR DATA
 
     /** @type {SensorDataManager} */
@@ -1072,7 +1082,7 @@ class Device {
 
     /**
      * @param {StaticDeviceEventType} type
-     * @param {EventDispatcherListener} listener
+     * @param {StaticDeviceEventListener} listener
      * @param {EventDispatcherOptions} options
      * @throws {Error}
      */
@@ -1089,7 +1099,7 @@ class Device {
 
     /**
      * @param {StaticDeviceEventType} type
-     * @param {EventDispatcherListener} listener
+     * @param {StaticDeviceEventListener} listener
      */
     static RemoveEventListener(type, listener) {
         return this.#EventDispatcher.removeEventListener(type, listener);

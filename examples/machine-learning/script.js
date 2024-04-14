@@ -1,7 +1,7 @@
 import BS from "../../build/brilliantsole.module.js";
 window.BS = BS;
 console.log({ BS });
-//BS.setAllConsoleLevelFlags({ log: false });
+BS.setAllConsoleLevelFlags({ log: false });
 
 // VIBRATION
 
@@ -42,6 +42,9 @@ function onAvailableDevices(availableDevices) {
             const toggleConnectionButton = availableDeviceContainer.querySelector(".toggleConnection");
             toggleConnectionButton.addEventListener("click", () => {
                 availableDevice.toggleConnection();
+            });
+            window.addEventListener("createNeuralNetwork", () => {
+                toggleConnectionButton.disabled = true;
             });
             const onConnectionStatusUpdate = () => {
                 switch (availableDevice.connectionStatus) {
@@ -120,6 +123,9 @@ BS.Device.AddEventListener("deviceConnected", (event) => {
         toggleSelectonButton.disabled = true;
         toggleDeviceSelection(device);
     });
+    window.addEventListener("createNeuralNetwork", () => {
+        toggleSelectonButton.disabled = true;
+    });
     window.addEventListener("deviceSelection", (event) => {
         if (device != event.detail.device) {
             return;
@@ -182,6 +188,9 @@ function selectDevice(device) {
         deselectButton.addEventListener("click", () => {
             deselectDevice(device);
         });
+        window.addEventListener("createNeuralNetwork", () => {
+            deselectButton.disabled = true;
+        });
 
         selectedDeviceContainers[device.id] = selectedDeviceContainer;
     }
@@ -241,38 +250,79 @@ window.addEventListener("createNeuralNetwork", () => {
 /** @typedef {import("../../build/brilliantsole.module.js").SensorType} SensorType */
 
 /** @type {SensorType[]} */
-let inputs = [];
+let sensorTypes = [];
+function getInputs() {
+    /** @type {string[]} */
+    const _inputs = [];
+    sensorTypes.forEach((sensorType) => {
+        switch (sensorType) {
+            case "pressure":
+                for (let index = 0; index < BS.Device.DefaultNumberOfPressureSensors; index++) {
+                    _inputs.push(`${sensorType}.${index}`);
+                }
+                break;
+            case "acceleration":
+            case "gravity":
+            case "linearAcceleration":
+            case "gyroscope":
+            case "magnetometer":
+                ["x", "y", "z"].forEach((component) => {
+                    _inputs.push(`${sensorType}.${component}`);
+                });
+                break;
+            case "gameRotation":
+            case "rotation":
+                ["x", "y", "z", "w"].forEach((component) => {
+                    _inputs.push(`${sensorType}.${component}`);
+                });
+                break;
+            case "barometer":
+                // FILL
+                break;
+        }
+    });
 
-const sensorInputsContainer = document.getElementById("sensorInputs");
+    /** @type {string[]} */
+    let inputs = [];
+
+    for (let index = 0; index < selectedDevices.length; index++) {
+        inputs.push(..._inputs.map((input) => `${index}.${input}`));
+    }
+
+    console.log({ inputs });
+    return inputs;
+}
+
+const sensorTypesContainer = document.getElementById("sensorTypes");
 /** @type {HTMLTemplateElement} */
-const sensorInputTemplate = document.getElementById("sensorInputTemplate");
+const sensorTypeTemplate = document.getElementById("sensorTypeTemplate");
 /** @type {Object.<string, HTMLElement>} */
-const sensorInputContainers = {};
+const sensorTypeContainers = {};
 
 BS.Device.SensorTypes.forEach((sensorType) => {
-    const sensorInputContainer = sensorInputTemplate.content.cloneNode(true).querySelector(".sensorInput");
-    sensorInputContainer.querySelector(".name").innerText = sensorType;
+    const sensorTypeContainer = sensorTypeTemplate.content.cloneNode(true).querySelector(".sensorType");
+    sensorTypeContainer.querySelector(".name").innerText = sensorType;
 
     /** @type {HTMLInputElement} */
-    const isSensorEnabledInput = sensorInputContainer.querySelector(".enabled");
+    const isSensorEnabledInput = sensorTypeContainer.querySelector(".enabled");
     isSensorEnabledInput.addEventListener("input", () => {
         if (isSensorEnabledInput.checked) {
-            inputs.push(sensorType);
+            sensorTypes.push(sensorType);
         } else {
-            inputs.splice(inputs.indexOf(sensorType), 1);
+            sensorTypes.splice(sensorTypes.indexOf(sensorType), 1);
         }
-        inputs.sort((a, b) => BS.Device.SensorTypes.indexOf(a) - BS.Device.SensorTypes.indexOf(b));
-        console.log("inputs", inputs);
-        window.dispatchEvent(new CustomEvent("inputs", { detail: { inputs } }));
+        sensorTypes.sort((a, b) => BS.Device.SensorTypes.indexOf(a) - BS.Device.SensorTypes.indexOf(b));
+        console.log("sensorTypes", sensorTypes);
+        window.dispatchEvent(new CustomEvent("sensorTypes", { detail: { sensorTypes } }));
     });
 
     window.addEventListener("createNeuralNetwork", () => {
         isSensorEnabledInput.disabled = true;
     });
 
-    sensorInputContainers[sensorType] = sensorInputContainer;
+    sensorTypeContainers[sensorType] = sensorTypeContainer;
 
-    sensorInputsContainer.appendChild(sensorInputContainer);
+    sensorTypesContainer.appendChild(sensorTypeContainer);
 });
 
 // OUTPUTS
@@ -286,20 +336,32 @@ const outputsContainer = document.getElementById("outputs");
 
 let numberOfOutputs = 0;
 /** @type {string[]} */
-let outputs = [];
-function updateOutputs() {
+let outputLabels = [];
+function updateOutputLabels() {
     /** @type {string[]} */
-    const updatedOutputs = [];
+    const updatedOutputsLabels = [];
 
     outputContainers.some((container) => {
-        updatedOutputs.push(container.querySelector(".label").value);
-        return updatedOutputs.length == numberOfOutputs;
+        updatedOutputsLabels.push(container.querySelector(".label").value);
+        return updatedOutputsLabels.length == numberOfOutputs;
     });
 
-    outputs = updatedOutputs;
-    console.log({ outputs });
+    outputLabels = updatedOutputsLabels;
+    console.log({ outputLabels });
 
-    window.dispatchEvent(new CustomEvent("outputs", { detail: { outputs } }));
+    window.dispatchEvent(new CustomEvent("outputLabels", { detail: { outputLabels } }));
+}
+
+function getOutputValues() {
+    /** @type {number[]} */
+    const outputValues = [];
+    outputContainers.some((container) => {
+        const outputValue = Number(container.querySelector(".value").value);
+        outputValues.push(outputValue);
+        return outputValues.length == numberOfOutputs;
+    });
+    console.log({ outputValues });
+    return outputValues;
 }
 
 /** @type {HTMLInputElement} */
@@ -328,14 +390,13 @@ function setNumberOfOutputs(newNumberOfOutputs) {
         /** @type {HTMLInputElement} */
         const labelInput = outputContainer.querySelector(".label");
         labelInput.value = `output${index}`;
-        labelInput.addEventListener("input", () => updateOutputs());
+        labelInput.addEventListener("input", () => updateOutputLabels());
 
         /** @type {HTMLInputElement} */
         const valueInput = outputContainer.querySelector(".value");
 
         window.addEventListener("createNeuralNetwork", () => {
             labelInput.disabled = true;
-            valueInput.disabled = true;
         });
 
         outputsContainer.appendChild(outputContainer);
@@ -350,7 +411,7 @@ function setNumberOfOutputs(newNumberOfOutputs) {
         }
     });
 
-    updateOutputs();
+    updateOutputLabels();
 }
 
 window.addEventListener("task", () => {
@@ -418,6 +479,16 @@ toggleThresholdsInput.addEventListener("input", () => {
     setThresholdsEnabled(toggleThresholdsInput.checked);
 });
 
+let captureDelay = 0;
+
+/** @type {HTMLInputElement} */
+const captureDelayInput = document.getElementById("captureDelay");
+captureDelayInput.addEventListener("input", () => {
+    captureDelay = Number(captureDelayInput.value);
+    console.log({ captureDelay });
+});
+captureDelayInput.dispatchEvent(new Event("input"));
+
 /** @type {SensorType[]} */
 const thresholdSensorTypes = ["linearAcceleration", "gyroscope"];
 
@@ -475,17 +546,6 @@ thresholdSensorTypes.forEach((sensorType) => {
     thresholdsContainer.appendChild(thresholdContainer);
 });
 
-// CAPTURE DELAY
-
-let captureDelay = 0;
-
-/** @type {HTMLInputElement} */
-const captureDelayInput = document.getElementById("captureDelay");
-captureDelayInput.addEventListener("input", () => {
-    captureDelay = Number(captureDelayInput.value);
-    console.log({ captureDelay });
-});
-
 // NEURAL NETWORK PARAMETERS
 
 /** @type {number} */
@@ -509,12 +569,22 @@ learningRateInput.addEventListener("input", () => {
 });
 learningRateInput.dispatchEvent(new Event("input"));
 
+window.addEventListener("createNeuralNetwork", () => {
+    hiddenUnitsInput.disabled = true;
+    learningRateInput.disabled = true;
+});
+
 // CREATE NEURAL NETWORK
 
 let neuralNetwork;
 
 function canCreateNeuralNetwork() {
-    return !neuralNetwork && inputs.length > 0 && outputs.length >= (task == "classification" ? 2 : 1);
+    return (
+        !neuralNetwork &&
+        selectedDevices.length > 0 &&
+        sensorTypes.length > 0 &&
+        outputLabels.length >= (task == "classification" ? 2 : 1)
+    );
 }
 function checkIfCanCreateNeuralNetwork() {
     createNeuralNetworkButton.disabled = !canCreateNeuralNetwork();
@@ -523,10 +593,13 @@ function checkIfCanCreateNeuralNetwork() {
 window.addEventListener("task", () => {
     checkIfCanCreateNeuralNetwork();
 });
-window.addEventListener("inputs", () => {
+window.addEventListener("sensorTypes", () => {
     checkIfCanCreateNeuralNetwork();
 });
-window.addEventListener("outputs", () => {
+window.addEventListener("outputLabels", () => {
+    checkIfCanCreateNeuralNetwork();
+});
+window.addEventListener("deviceSelection", () => {
     checkIfCanCreateNeuralNetwork();
 });
 window.addEventListener("createNeuralNetwork", () => {
@@ -541,8 +614,10 @@ createNeuralNetworkButton.addEventListener("click", () => {
     }
     neuralNetwork = ml5.neuralNetwork({
         task,
-        inputs: inputs.length,
-        outputs,
+        inputs: getInputs().length,
+        outputs: outputLabels.length,
+        hiddenUnits,
+        learningRate,
     });
     console.log({ neuralNetwork });
     window.dispatchEvent(new CustomEvent("createNeuralNetwork", { detail: { neuralNetwork } }));
@@ -556,14 +631,28 @@ window.addEventListener("createNeuralNetwork", () => {
 
 /** @typedef {import("../../build/brilliantsole.module.js").SensorConfiguration} SensorConfiguration */
 
+/** @type {SensorConfiguration} */
+const sensorConfiguration = {};
+window.addEventListener("createNeuralNetwork", () => {
+    sensorTypes.forEach((sensorType) => {
+        sensorConfiguration[sensorType] = samplingRate;
+    });
+    console.log({ sensorConfiguration });
+});
+
 let isSensorDataEnabled = false;
 
 /** @type {HTMLButtonElement} */
-const toggleSensorDataButton = document.getElementById("toggleSensorData");
-toggleSensorDataButton.addEventListener("click", () => {
-    isSensorDataEnabled = !isSensorDataEnabled;
+const toggleSensorDataInput = document.getElementById("toggleSensorData");
+toggleSensorDataInput.addEventListener("input", () => {
+    isSensorDataEnabled = toggleSensorDataInput.checked;
     console.log({ isSensorDataEnabled });
-    // FILL - get sensorConfiguration based on sampleRate and inputs
+    if (isSensorDataEnabled) {
+        setSensorConfiguration(sensorConfiguration);
+    } else {
+        clearSensorConfiguration();
+    }
+    window.dispatchEvent(new CustomEvent("isSensorDataEnabled", { detail: { isSensorDataEnabled } }));
 });
 
 /** @param {SensorConfiguration} sensorConfiguration */
@@ -572,11 +661,22 @@ function setSensorConfiguration(sensorConfiguration) {
         device.setSensorConfiguration(sensorConfiguration);
     });
 }
+function clearSensorConfiguration() {
+    selectedDevices.forEach((device) => {
+        device.clearSensorConfiguration();
+    });
+}
 
 /** @type {HTMLButtonElement} */
 const addDataButton = document.getElementById("addData");
 addDataButton.addEventListener("click", () => {
-    // FILL
+    addData();
+});
+window.addEventListener("isSensorDataEnabled", () => {
+    addDataButton.disabled = !isSensorDataEnabled;
+});
+window.addEventListener("createNeuralNetwork", () => {
+    toggleSensorDataInput.disabled = false;
 });
 
 let addDataContinuously = false;
@@ -587,37 +687,159 @@ toggleAddDataContinuouslyInput.addEventListener("input", () => {
     addDataContinuously = toggleAddDataContinuouslyInput.checked;
     console.log({ addDataContinuously });
 });
+window.addEventListener("createNeuralNetwork", () => {
+    toggleAddDataContinuouslyInput.disabled = false;
+});
 
+async function addData() {
+    addDataButton.disabled = true;
+    addDataButton.innerText = "collecting data...";
+
+    const xs = await collectData();
+    const ys = getOutputValues();
+    console.log({ xs, ys });
+    neuralNetwork.addData(xs, ys);
+
+    addDataButton.innerText = "add data";
+    addDataButton.disabled = false;
+
+    if (addDataContinuously) {
+        addData();
+    }
+}
+
+/** @typedef {Object.<string, number>} SensorData */
+/** @typedef {Object.<string, SensorData[]>} DeviceData */
+/** @typedef {DeviceData[]} DevicesData */
+
+/** @param {DeviceData} deviceData */
+function didFinishCollectingDeviceData(deviceData) {
+    return Object.values(deviceData).every((sensorData) => sensorData.length >= numberOfSamples);
+}
+/** @param {DevicesData} devicesData */
+function didFinishCollectingDevicesData(devicesData) {
+    return devicesData.every((deviceData) => {
+        return didFinishCollectingDeviceData(deviceData);
+    });
+}
+/** @param {DevicesData} devicesData */
+function flattenDevicesData(devicesData) {
+    /** @type {number[]} */
+    const flattenedDevicesData = [];
+    devicesData.forEach((deviceData) => {
+        flattenedDevicesData.push(...flattenDeviceData(deviceData));
+    });
+    console.log({ flattenedDevicesData });
+    return flattenedDevicesData;
+}
+/** @param {DeviceData} deviceData */
+function flattenDeviceData(deviceData) {
+    /** @type {number[]} */
+    const flattenedDeviceData = [];
+    for (let sampleIndex = 0; sampleIndex < numberOfSamples; sampleIndex++) {
+        sensorTypes.forEach((sensorType) => {
+            const sensorData = deviceData[sensorType][sampleIndex];
+            switch (sensorType) {
+                case "acceleration":
+                case "gravity":
+                case "linearAcceleration":
+                case "gyroscope":
+                case "magnetometer":
+                    {
+                        /** @type {import("../../build/brilliantsole.module.js").Vector3} */
+                        const vector3 = sensorData;
+                        const { x, y, z } = vector3;
+                        flattenedDeviceData.push(x, y, z);
+                    }
+                    break;
+                case "gameRotation":
+                case "rotation":
+                    {
+                        /** @type {import("../../build/brilliantsole.module.js").Quaternion} */
+                        const quaternion = sensorData;
+                        const { x, y, z, w } = quaternion;
+                        flattenedDeviceData.push(x, y, z, w);
+                    }
+                    break;
+                case "pressure":
+                    {
+                        /** @type {import("../../build/brilliantsole.module.js").PressureData} */
+                        const pressure = sensorData;
+                        flattenedDeviceData.push(...pressure.sensors.map((sensor) => sensor.rawValue));
+                    }
+                    break;
+                case "barometer":
+                    // FILL
+                    break;
+            }
+        });
+    }
+    return flattenedDeviceData;
+}
+
+/** @returns {Promise<number[]>} */
 async function collectData() {
-    // FILL
+    return new Promise((resolve) => {
+        /** @type {DevicesData} */
+        const devicesData = [];
+
+        selectedDevices.forEach((device, index) => {
+            /** @type {DeviceData} */
+            const deviceData = {};
+            sensorTypes.forEach((sensorType) => {
+                deviceData[sensorType] = [];
+            });
+            devicesData[index] = deviceData;
+
+            const onDeviceSensorData = (event) => {
+                /** @type {SensorType} */
+                const sensorType = event.message.sensorType;
+
+                if (!(sensorType in deviceData)) {
+                    return;
+                }
+
+                if (didFinishCollectingDeviceData(deviceData)) {
+                    console.log(`finished collecting data for device #${index}`);
+                    device.removeEventListener("sensorData", onDeviceSensorData);
+
+                    if (didFinishCollectingDevicesData(devicesData)) {
+                        console.log(`finished collecting devices data`);
+                        const flattenedDevicesData = flattenDevicesData(devicesData);
+                        resolve(flattenedDevicesData);
+                    }
+                    return;
+                }
+
+                if (deviceData[sensorType].length == numberOfSamples) {
+                    console.log(`finished collecting ${sensorType} data for device #${index}`);
+                    return;
+                }
+
+                const { [sensorType]: data } = event.message;
+                deviceData[sensorType].push(data);
+            };
+
+            device.addEventListener("sensorData", onDeviceSensorData);
+        });
+    });
 }
 
 window.addEventListener(
     "createNeuralNetwork",
     () => {
-        toggleSensorDataButton.disabled = false;
-
-        selectedDevices.forEach((device, index) => {
-            device.addEventListener("getSensorConfiguration", () => {
-                // FILL - check if all devices have sensor data enabled
-            });
-
-            device.addEventListener("sensorData", (event) => {
+        if (selectedDevices.length == 1) {
+            selectedDevices[0].addEventListener("sensorData", (event) => {
                 /** @type {SensorType} */
                 const sensorType = event.message.sensorType;
                 /** @type {number} */
                 const timestamp = event.message.timestamp;
 
                 const { [sensorType]: data } = event.message;
-                //console.log({ name: device.name, sensorType, timestamp, data });
 
-                // FILL
-
-                if (index == 0) {
-                    // FILL - check thresholds
-                }
+                // FILL - check thresholds
             });
-        });
+        }
     },
     { once: true }
 );
