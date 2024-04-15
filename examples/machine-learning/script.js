@@ -355,12 +355,27 @@ function updateOutputLabels() {
 
 function getOutputValues() {
     /** @type {number[]} */
-    const outputValues = [];
+    let outputValues = [];
     outputContainers.some((container) => {
         const outputValue = Number(container.querySelector(".value").value);
         outputValues.push(outputValue);
         return outputValues.length == numberOfOutputs;
     });
+
+    if (task == "classification") {
+        outputValues = outputValues.reduce((_outputValues, outputValue, index) => {
+            if (outputValue) {
+                _outputValues.push(outputLabels[index]);
+            }
+            return _outputValues;
+        }, []);
+    } else {
+        outputValues = outputValues.reduce((_outputValues, outputValue, index) => {
+            _outputValues[outputLabels[index]] = outputValue;
+            return _outputValues;
+        }, {});
+    }
+
     console.log({ outputValues });
     return outputValues;
 }
@@ -523,7 +538,7 @@ createNeuralNetworkButton.addEventListener("click", () => {
     neuralNetwork = ml5.neuralNetwork({
         task,
         inputs: getInputs().length,
-        outputs: outputLabels.length,
+        outputs: outputLabels,
         hiddenUnits,
         learningRate,
         debug: true,
@@ -1062,9 +1077,45 @@ window.addEventListener("finishedTraining", () => {
 /** @type {HTMLElement} */
 const resultsElement = document.getElementById("results");
 
+/**
+ * @typedef Result
+ * @type {Object}
+ * @property {string} label
+ * @property {number} confidence
+ */
+
+/**
+ * @param {string} error
+ * @param {Result[]} results
+ */
+const handleResults = (error, results) => {
+    isTesting = false;
+
+    if (error) {
+        console.error(error);
+        return;
+    }
+
+    console.log({ results });
+
+    if (testContinuously) {
+        test();
+    }
+};
+
 let isTesting = false;
-function test(allowOverlapping = true) {
-    // FILL
+async function test(allowOverlapping = true) {
+    if (isTesting && !allowOverlapping) {
+        return;
+    }
+
+    const data = await collectData();
+    console.log({ data });
+    if (task == "classification") {
+        neuralNetwork.classify(data, handleResults);
+    } else {
+        neuralNetwork.predict(data, handleResults);
+    }
 }
 
 // SAVE
