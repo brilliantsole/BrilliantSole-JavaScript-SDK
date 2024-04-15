@@ -348,7 +348,7 @@ function updateOutputLabels() {
     });
 
     outputLabels = updatedOutputsLabels;
-    console.log({ outputLabels });
+    //console.log({ outputLabels });
 
     window.dispatchEvent(new CustomEvent("outputLabels", { detail: { outputLabels } }));
 }
@@ -526,6 +526,7 @@ createNeuralNetworkButton.addEventListener("click", () => {
         outputs: outputLabels.length,
         hiddenUnits,
         learningRate,
+        debug: true,
     });
     console.log({ neuralNetwork });
     window.dispatchEvent(new CustomEvent("createNeuralNetwork", { detail: { neuralNetwork } }));
@@ -562,6 +563,9 @@ toggleSensorDataInput.addEventListener("input", () => {
     }
     window.dispatchEvent(new CustomEvent("isSensorDataEnabled", { detail: { isSensorDataEnabled } }));
 });
+window.addEventListener("createNeuralNetwork", () => {
+    toggleSensorDataInput.disabled = false;
+});
 
 /** @param {SensorConfiguration} sensorConfiguration */
 function setSensorConfiguration(sensorConfiguration) {
@@ -580,11 +584,13 @@ const addDataButton = document.getElementById("addData");
 addDataButton.addEventListener("click", () => {
     addData();
 });
-window.addEventListener("isSensorDataEnabled", () => {
-    addDataButton.disabled = !isSensorDataEnabled;
-});
-window.addEventListener("createNeuralNetwork", () => {
-    toggleSensorDataInput.disabled = false;
+const updateAddDataButton = () => {
+    addDataButton.disabled = !isSensorDataEnabled || isTraining || neuralNetwork.neuralNetwork.isTrained;
+};
+["isSensorDataEnabled", "training"].forEach((eventType) => {
+    window.addEventListener(eventType, () => {
+        updateAddDataButton();
+    });
 });
 
 let addDataContinuously = false;
@@ -610,6 +616,8 @@ async function addData() {
 
     addDataButton.innerText = "add data";
     addDataButton.disabled = false;
+
+    window.dispatchEvent(new CustomEvent("addData", { detail: { xs, ys } }));
 
     if (addDataContinuously) {
         addData();
@@ -682,7 +690,7 @@ function flattenDeviceData(deviceData) {
             }
         });
     }
-    return flattenedDeviceData.map((value) => (value == 0 ? 0.000001 * Math.random() : 0));
+    return flattenedDeviceData.map((value) => (value == 0 ? 0.000001 * Math.random() : value));
 }
 
 /** @returns {Promise<number[]>} */
@@ -957,6 +965,7 @@ epochsInput.addEventListener("input", () => {
     epochs = Number(epochsInput.value);
     console.log({ epochs });
 });
+epochsInput.dispatchEvent(new Event("input"));
 
 /** @type {HTMLInputElement} */
 const batchSizeInput = document.getElementById("batchSize");
@@ -964,32 +973,54 @@ batchSizeInput.addEventListener("input", () => {
     batchSize = Number(batchSizeInput.value);
     console.log({ batchSize });
 });
+batchSizeInput.dispatchEvent(new Event("input"));
 
 let isTraining = false;
 
 /** @type {HTMLButtonElement} */
 const trainButton = document.getElementById("train");
 trainButton.addEventListener("click", () => {
-    neuralNetwork.normalizeData();
-    neuralNetwork.train(
-        {
-            epochs,
-            batchSize,
-        },
-        () => {
-            isTraining = false;
-            window.dispatchEvent(new CustomEvent("finishedTraining"));
-        }
-    );
-    isTraining = true;
-    window.dispatchEvent(new CustomEvent("train", { detail: { isTraining } }));
+    train();
 });
 
-window.addEventListener("train", () => {
+let didNormalizeData = false;
+function train() {
+    if (!didNormalizeData) {
+        neuralNetwork.normalizeData();
+        didNormalizeData = true;
+    }
+
+    isTraining = true;
+    window.dispatchEvent(new CustomEvent("training", { detail: { isTraining } }));
+
+    setTimeout(() => {
+        neuralNetwork.train(
+            {
+                epochs,
+                batchSize,
+            },
+            () => {
+                isTraining = false;
+                window.dispatchEvent(new CustomEvent("finishedTraining"));
+            }
+        );
+    }, 0);
+}
+
+window.addEventListener(
+    "addData",
+    () => {
+        trainButton.disabled = false;
+    },
+    { once: true }
+);
+
+window.addEventListener("training", () => {
     batchSizeInput.disabled = true;
     epochsInput.disabled = true;
 
     trainButton.disabled = true;
+    trainButton.innerText = "training...";
 });
 
 window.addEventListener("finishedTraining", () => {
@@ -997,6 +1028,7 @@ window.addEventListener("finishedTraining", () => {
     epochsInput.disabled = false;
 
     trainButton.disabled = false;
+    trainButton.innerText = "train";
 });
 
 // CLASSIFY & PREDICT
@@ -1008,11 +1040,23 @@ toggleTestContinuouslyInput.addEventListener("input", () => {
     testContinuously = toggleTestContinuouslyInput.checked;
     console.log({ testContinuously });
 });
+window.addEventListener("training", () => {
+    toggleAddDataContinuouslyInput.disabled = true;
+});
+window.addEventListener("finishedTraining", () => {
+    toggleAddDataContinuouslyInput.disabled = false;
+});
 
 /** @type {HTMLButtonElement} */
 const testButton = document.getElementById("test");
 testButton.addEventListener("click", () => {
-    // FILL
+    test();
+});
+window.addEventListener("training", () => {
+    testButton.disabled = true;
+});
+window.addEventListener("finishedTraining", () => {
+    testButton.disabled = false;
 });
 
 /** @type {HTMLElement} */
@@ -1023,31 +1067,25 @@ function test(allowOverlapping = true) {
     // FILL
 }
 
-window.addEventListener("train", () => {
-    testButton.disabled = true;
-    toggleTestContinuouslyInput.disabled = true;
-});
-window.addEventListener("finishedTraining", () => {
-    testButton.disabled = false;
-    toggleTestContinuouslyInput.disabled = false;
-});
-
 // SAVE
 
 /** @type {HTMLButtonElement} */
 const saveDataButton = document.getElementById("saveData");
 saveDataButton.addEventListener("click", () => {
-    // FILL
+    console.log("saveData");
+    neuralNetwork.saveData();
+});
+window.addEventListener("finishedTraining", () => {
+    saveDataButton.disabled = false;
 });
 
 /** @type {HTMLButtonElement} */
 const saveModelButton = document.getElementById("saveModel");
 saveModelButton.addEventListener("click", () => {
-    // FILL
+    console.log("saveModel");
+    neuralNetwork.save();
 });
-
 window.addEventListener("finishedTraining", () => {
-    saveDataButton.disabled = false;
     saveModelButton.disabled = false;
 });
 
@@ -1056,17 +1094,24 @@ window.addEventListener("finishedTraining", () => {
 /** @type {HTMLInputElement} */
 const loadDataInput = document.getElementById("loadData");
 loadDataInput.addEventListener("input", () => {
-    // FILL
+    neuralNetwork.loadData(loadDataInput.files, () => {
+        console.log("loaded data");
+        window.dispatchEvent(new CustomEvent("loadData"));
+    });
+});
+window.addEventListener("createNeuralNetwork", () => {
+    loadDataInput.disabled = false;
 });
 
 /** @type {HTMLInputElement} */
 const loadModelInput = document.getElementById("loadModel");
 loadModelInput.addEventListener("input", () => {
-    // FILL
+    neuralNetwork.load(loadModelInput.files, () => {
+        console.log("loaded model");
+        window.dispatchEvent(new CustomEvent("loadModel"));
+    });
 });
-
 window.addEventListener("createNeuralNetwork", () => {
-    loadDataInput.disabled = false;
     loadModelInput.disabled = false;
 });
 
