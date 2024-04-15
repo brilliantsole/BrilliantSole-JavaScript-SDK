@@ -167,7 +167,7 @@
                 <template id="outputTemplate">
                     <div class="output">
                         <input type="text" class="label" placeholder="output label" />:
-                        <input type="number" class="value" value="0" min="0" max="1" step="1" />
+                        <input type="number" class="value" value="0" min="0" max="1" step="1" disabled />
                     </div>
                 </template>
             </div>
@@ -287,16 +287,16 @@
         <div>
             <h3>Classify & Predict</h3>
 
-            <button id="test" disabled>Test</button>
+            <button id="test" disabled>test</button>
             <label>
-                Test Continuously
-                <input id="toggleTestContinuously" type="checkbox" disabled />
+                test continuously
+                <input id="toggleTestContinuously" type="checkbox" />
             </label>
 
             <div>
-                <h4>Results</h4>
+                <h4>results</h4>
 
-                <h1 id="results"></h1>
+                <pre id="results"></pre>
             </div>
         </div>
 
@@ -321,7 +321,7 @@
 
             <label>
                 Load Model
-                <input disabled id="loadModel" type="file" multiple accept=".json,.bin" />
+                <input disbled id="loadModel" type="file" multiple accept=".json,.bin" />
             </label>
         </div>
 

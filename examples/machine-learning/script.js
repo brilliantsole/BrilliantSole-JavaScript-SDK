@@ -413,6 +413,7 @@ function setNumberOfOutputs(newNumberOfOutputs) {
 
         window.addEventListener("createNeuralNetwork", () => {
             labelInput.disabled = true;
+            valueInput.disabled = false;
         });
 
         outputsContainer.appendChild(outputContainer);
@@ -446,14 +447,14 @@ let samplingRate = 0;
 function updateSamplingPeriod() {
     samplingPeriod = (numberOfSamples - 1) * samplingRate;
     samplingPeriodInput.value = samplingPeriod;
-    console.log({ samplingPeriod });
+    //console.log({ samplingPeriod });
 }
 
 /** @type {HTMLInputElement} */
 const numberOfSamplesInput = document.getElementById("numberOfSamples");
 numberOfSamplesInput.addEventListener("input", () => {
     numberOfSamples = Number(numberOfSamplesInput.value);
-    console.log({ numberOfSamples });
+    //console.log({ numberOfSamples });
     updateSamplingPeriod();
 });
 numberOfSamples = Number(numberOfSamplesInput.value);
@@ -466,7 +467,7 @@ const samplingRateInput = document.getElementById("samplingRate");
 
 samplingRateInput.addEventListener("input", () => {
     samplingRate = Number(samplingRateInput.value);
-    console.log({ samplingRate });
+    //console.log({ samplingRate });
     samplingPeriodInput.step = samplingRate;
     updateSamplingPeriod();
 });
@@ -544,6 +545,7 @@ createNeuralNetworkButton.addEventListener("click", () => {
         debug: true,
     });
     console.log({ neuralNetwork });
+    window.neuralNetwork = neuralNetwork;
     window.dispatchEvent(new CustomEvent("createNeuralNetwork", { detail: { neuralNetwork } }));
 });
 
@@ -1029,6 +1031,9 @@ window.addEventListener(
     },
     { once: true }
 );
+window.addEventListener("loadData", () => {
+    trainButton.disabled = false;
+});
 
 window.addEventListener("training", () => {
     batchSizeInput.disabled = true;
@@ -1067,15 +1072,18 @@ const testButton = document.getElementById("test");
 testButton.addEventListener("click", () => {
     test();
 });
-window.addEventListener("training", () => {
-    testButton.disabled = true;
-});
-window.addEventListener("finishedTraining", () => {
-    testButton.disabled = false;
+const updateTestButton = () => {
+    const enabled = neuralNetwork?.neuralNetwork?.isTrained && isSensorDataEnabled && !isTesting;
+    testButton.disabled = !enabled;
+};
+["training", "loadModel", "finishedTraining"].forEach((eventType) => {
+    window.addEventListener(eventType, () => {
+        updateTestButton();
+    });
 });
 
-/** @type {HTMLElement} */
-const resultsElement = document.getElementById("results");
+/** @type {HTMLPreElement} */
+const resultsPreElement = document.getElementById("results");
 
 /**
  * @typedef Result
@@ -1091,12 +1099,16 @@ const resultsElement = document.getElementById("results");
 const handleResults = (error, results) => {
     isTesting = false;
 
+    testButton.disabled = false;
+    testButton.innerText = "test";
+
     if (error) {
         console.error(error);
         return;
     }
 
     console.log({ results });
+    resultsPreElement.textContent = JSON.stringify(results, null, 2);
 
     if (testContinuously) {
         test();
@@ -1108,6 +1120,9 @@ async function test(allowOverlapping = true) {
     if (isTesting && !allowOverlapping) {
         return;
     }
+
+    testButton.disabled = true;
+    testButton.innerText = "testing...";
 
     const data = await collectData();
     console.log({ data });
@@ -1147,6 +1162,7 @@ const loadDataInput = document.getElementById("loadData");
 loadDataInput.addEventListener("input", () => {
     neuralNetwork.loadData(loadDataInput.files, () => {
         console.log("loaded data");
+        loadDataInput.value = "";
         window.dispatchEvent(new CustomEvent("loadData"));
     });
 });
@@ -1159,6 +1175,7 @@ const loadModelInput = document.getElementById("loadModel");
 loadModelInput.addEventListener("input", () => {
     neuralNetwork.load(loadModelInput.files, () => {
         console.log("loaded model");
+        loadModelInput.value = "";
         window.dispatchEvent(new CustomEvent("loadModel"));
     });
 });
