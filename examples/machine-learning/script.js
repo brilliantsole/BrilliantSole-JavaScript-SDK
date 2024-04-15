@@ -417,7 +417,7 @@ function setNumberOfOutputs(newNumberOfOutputs) {
 
         /** @type {HTMLInputElement} */
         const labelInput = outputContainer.querySelector(".label");
-        labelInput.value = config.outputLabels[index] || `output${index}`;
+        labelInput.value = window.config?.outputLabels[index] || `output${index}`;
         labelInput.addEventListener("input", () => updateOutputLabels());
 
         /** @type {HTMLInputElement} */
@@ -480,6 +480,7 @@ const numberOfSamplesInput = document.getElementById("numberOfSamples");
 numberOfSamplesInput.addEventListener("input", () => {
     numberOfSamples = Number(numberOfSamplesInput.value);
     //console.log({ numberOfSamples });
+    window.dispatchEvent(new CustomEvent("numberOfSamples", { detail: { numberOfSamples } }));
     updateSamplingPeriod();
 });
 numberOfSamples = Number(numberOfSamplesInput.value);
@@ -494,6 +495,7 @@ samplingRateInput.addEventListener("input", () => {
     samplingRate = Number(samplingRateInput.value);
     //console.log({ samplingRate });
     samplingPeriodInput.step = samplingRate;
+    window.dispatchEvent(new CustomEvent("samplingRate", { detail: { samplingRate } }));
     updateSamplingPeriod();
 });
 samplingRate = Number(samplingRateInput.value);
@@ -503,6 +505,14 @@ updateSamplingPeriod();
 window.addEventListener("createNeuralNetwork", () => {
     numberOfSamplesInput.disabled = true;
     samplingRateInput.disabled = true;
+});
+
+window.addEventListener("loadConfig", () => {
+    numberOfSamplesInput.value = config.numberOfSamples;
+    numberOfSamplesInput.dispatchEvent(new Event("input"));
+
+    samplingRateInput.value = config.samplingRate;
+    samplingRateInput.dispatchEvent(new Event("input"));
 });
 
 // NEURAL NETWORK PARAMETERS
@@ -517,6 +527,7 @@ const hiddenUnitsInput = document.getElementById("hiddenUnits");
 hiddenUnitsInput.addEventListener("input", () => {
     hiddenUnits = Number(hiddenUnitsInput.value);
     console.log({ hiddenUnits });
+    window.dispatchEvent(new CustomEvent("hiddenUnits", { detail: { hiddenUnits } }));
 });
 hiddenUnitsInput.dispatchEvent(new Event("input"));
 
@@ -525,12 +536,21 @@ const learningRateInput = document.getElementById("learningRate");
 learningRateInput.addEventListener("input", () => {
     learningRate = Number(learningRateInput.value);
     console.log({ learningRate });
+    window.dispatchEvent(new CustomEvent("learningRate", { detail: { learningRate } }));
 });
 learningRateInput.dispatchEvent(new Event("input"));
 
 window.addEventListener("createNeuralNetwork", () => {
     hiddenUnitsInput.disabled = true;
     learningRateInput.disabled = true;
+});
+
+window.addEventListener("loadConfig", () => {
+    hiddenUnitsInput.value = config.hiddenUnits;
+    hiddenUnitsInput.dispatchEvent(new Event("input"));
+
+    learningRateInput.value = config.learningRate;
+    learningRateInput.dispatchEvent(new Event("input"));
 });
 
 // CREATE NEURAL NETWORK
@@ -856,8 +876,13 @@ captureDelayInput.addEventListener("input", () => {
     captureDelay = Number(captureDelayInput.value);
     console.log({ captureDelay });
     throttledOnThresholdReached.interval = captureDelay;
+    window.dispatchEvent(new CustomEvent("captureDelay", { detail: { captureDelay } }));
 });
 captureDelayInput.dispatchEvent(new Event("input"));
+window.addEventListener("loadConfig", () => {
+    captureDelayInput.value = config.captureDelay;
+    captureDelayInput.dispatchEvent(new Event("input"));
+});
 
 /** @type {SensorType[]} */
 const thresholdSensorTypes = ["linearAcceleration", "gyroscope"];
@@ -911,6 +936,8 @@ thresholdSensorTypes.forEach((sensorType) => {
             max = 1.5;
             break;
     }
+    threshold = min;
+
     thresholdInput.min = min;
     thresholdInput.max = max;
     thresholdInput.value = max;
@@ -919,6 +946,21 @@ thresholdSensorTypes.forEach((sensorType) => {
     meterElement.max = max;
     meterElement.value = min;
     meterElement.low = Number(thresholdInput.value);
+
+    window.addEventListener("loadConfig", () => {
+        const thresholdInfo = config.thresholds[sensorType];
+        if (!thresholdInfo) {
+            return;
+        }
+
+        const { enabled, threshold } = thresholdInfo;
+
+        thresholdInput.value = threshold;
+        thresholdInput.dispatchEvent(new Event("input"));
+
+        toggleThresholdInput.checked = enabled;
+        toggleThresholdInput.dispatchEvent(new Event("input"));
+    });
 
     window.addEventListener("thresholdsEnabled", () => {
         toggleThresholdInput.disabled = !thresholdsEnabled;
@@ -1015,6 +1057,7 @@ const epochsInput = document.getElementById("epochs");
 epochsInput.addEventListener("input", () => {
     epochs = Number(epochsInput.value);
     console.log({ epochs });
+    window.dispatchEvent(new CustomEvent("epochs", { detail: { epochs } }));
 });
 epochsInput.dispatchEvent(new Event("input"));
 
@@ -1023,8 +1066,17 @@ const batchSizeInput = document.getElementById("batchSize");
 batchSizeInput.addEventListener("input", () => {
     batchSize = Number(batchSizeInput.value);
     console.log({ batchSize });
+    window.dispatchEvent(new CustomEvent("batchSize", { detail: { batchSize } }));
 });
 batchSizeInput.dispatchEvent(new Event("input"));
+
+window.addEventListener("loadConfig", () => {
+    batchSizeInput.value = config.batchSize;
+    batchSizeInput.dispatchEvent(new Event("input"));
+
+    epochsInput.value = config.epochs;
+    epochsInput.dispatchEvent(new Event("input"));
+});
 
 let isTraining = false;
 
@@ -1266,19 +1318,20 @@ const config = {
     numberOfOutputs,
     outputLabels,
 
-    numberOfSamples, // FILL
-    samplingRate, // FILL
+    numberOfSamples,
+    samplingRate,
 
-    learningRate, // FILL
-    hiddenUnits, // FILL
+    learningRate,
+    hiddenUnits,
 
     thresholdsEnabled,
-    captureDelay, // FILL
-    thresholds: [], // FILL
+    captureDelay,
+    thresholds: {},
 
-    epochs, // FILL
-    batchSize, // FILL
+    epochs,
+    batchSize,
 };
+window.config = config;
 
 function loadConfigFromLocalStorage() {
     const configString = localStorage.getItem(configLocalStorageKey);
@@ -1296,24 +1349,60 @@ Object.keys(config).forEach((type) => {
     let eventType = type;
 
     switch (type) {
+        case "thresholds":
+            eventType = "threshold";
+            break;
     }
 
-    window.addEventListener(eventType, () => {
+    window.addEventListener(eventType, (event) => {
         switch (type) {
             case "task":
                 config.task = task;
                 break;
+
             case "sensorTypes":
                 config.sensorTypes = sensorTypes;
                 break;
+
             case "numberOfOutputs":
                 config.numberOfOutputs = numberOfOutputs;
                 break;
             case "outputLabels":
                 config.outputLabels = outputLabels;
                 break;
+
+            case "numberOfSamples":
+                config.numberOfSamples = numberOfSamples;
+                break;
+            case "samplingRate":
+                config.samplingRate = samplingRate;
+                break;
+
+            case "learningRate":
+                config.learningRate = learningRate;
+                break;
+            case "hiddenUnits":
+                config.hiddenUnits = hiddenUnits;
+                break;
+
             case "thresholdsEnabled":
                 config.thresholdsEnabled = thresholdsEnabled;
+                break;
+            case "captureDelay":
+                config.captureDelay = captureDelay;
+                break;
+            case "thresholds":
+                {
+                    const { sensorType, threshold, enabled } = event.detail;
+                    config.thresholds[sensorType] = { threshold, enabled };
+                }
+                break;
+
+            case "batchSize":
+                config.batchSize = batchSize;
+                break;
+            case "epochs":
+                config.epochs = epochs;
                 break;
         }
 
