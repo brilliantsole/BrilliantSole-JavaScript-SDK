@@ -246,6 +246,11 @@ window.addEventListener("createNeuralNetwork", () => {
     taskSelect.disabled = true;
 });
 
+window.addEventListener("loadConfig", () => {
+    taskSelect.value = config.task;
+    taskSelect.dispatchEvent(new Event("input"));
+});
+
 // INPUTS
 
 /** @typedef {import("../../build/brilliantsole.module.js").SensorType} SensorType */
@@ -319,6 +324,13 @@ BS.Device.SensorTypes.forEach((sensorType) => {
 
     window.addEventListener("createNeuralNetwork", () => {
         isSensorEnabledInput.disabled = true;
+    });
+
+    window.addEventListener("loadConfig", () => {
+        if (config.sensorTypes.includes(sensorType)) {
+            isSensorEnabledInput.checked = true;
+            isSensorEnabledInput.dispatchEvent(new Event("input"));
+        }
     });
 
     sensorTypeContainers[sensorType] = sensorTypeContainer;
@@ -405,7 +417,7 @@ function setNumberOfOutputs(newNumberOfOutputs) {
 
         /** @type {HTMLInputElement} */
         const labelInput = outputContainer.querySelector(".label");
-        labelInput.value = `output${index}`;
+        labelInput.value = config.outputLabels[index] || `output${index}`;
         labelInput.addEventListener("input", () => updateOutputLabels());
 
         /** @type {HTMLInputElement} */
@@ -414,6 +426,12 @@ function setNumberOfOutputs(newNumberOfOutputs) {
         window.addEventListener("createNeuralNetwork", () => {
             labelInput.disabled = true;
             valueInput.disabled = false;
+
+            if (task == "classification") {
+                valueInput.step = 1;
+            } else {
+                valueInput.step = 0.01;
+            }
         });
 
         outputsContainer.appendChild(outputContainer);
@@ -428,8 +446,15 @@ function setNumberOfOutputs(newNumberOfOutputs) {
         }
     });
 
+    window.dispatchEvent(new CustomEvent("numberOfOutputs", { detail: { numberOfOutputs } }));
+
     updateOutputLabels();
 }
+
+window.addEventListener("loadConfig", () => {
+    numberOfOutputsInput.value = config.numberOfOutputs;
+    numberOfOutputsInput.dispatchEvent(new Event("input"));
+});
 
 window.addEventListener("task", () => {
     if (task == "classification" && numberOfOutputs < 2) {
@@ -812,6 +837,10 @@ function setThresholdsEnabled(newThresholdsEnabled) {
     console.log({ thresholdsEnabled });
     window.dispatchEvent(new CustomEvent("thresholdsEnabled", { detail: { thresholdsEnabled } }));
 }
+window.addEventListener("loadConfig", () => {
+    toggleThresholdsInput.checked = config.thresholdsEnabled;
+    toggleThresholdsInput.dispatchEvent(new Event("input"));
+});
 
 /** @type {HTMLInputElement} */
 const toggleThresholdsInput = document.getElementById("toggleThresholds");
@@ -846,6 +875,9 @@ thresholdSensorTypes.forEach((sensorType) => {
     /** @type {HTMLMeterElement} */
     const meterElement = thresholdContainer.querySelector(".meter");
 
+    const dispatchEvent = () =>
+        window.dispatchEvent(new CustomEvent("threshold", { detail: { sensorType, enabled, threshold } }));
+
     let enabled = false;
     /** @type {HTMLInputElement} */
     const toggleThresholdInput = thresholdContainer.querySelector(".toggle");
@@ -854,6 +886,7 @@ thresholdSensorTypes.forEach((sensorType) => {
         console.log({ sensorType, enabled });
         thresholdInput.disabled = !enabled;
         meterElement.disabled = !enabled;
+        dispatchEvent();
     });
 
     let threshold = 0;
@@ -863,6 +896,7 @@ thresholdSensorTypes.forEach((sensorType) => {
         threshold = Number(thresholdInput.value);
         meterElement.low = threshold;
         console.log({ sensorType, threshold });
+        dispatchEvent();
     });
 
     let min = 0;
@@ -1219,3 +1253,75 @@ window.addEventListener("finishedTraining", () => {
     }
     convertModelToTfliteButton.disabled = false;
 });
+
+// CONFIGU
+
+const configLocalStorageKey = "BS.MachineLearning.Config";
+
+const config = {
+    task,
+
+    sensorTypes,
+
+    numberOfOutputs,
+    outputLabels,
+
+    numberOfSamples, // FILL
+    samplingRate, // FILL
+
+    learningRate, // FILL
+    hiddenUnits, // FILL
+
+    thresholdsEnabled,
+    captureDelay, // FILL
+    thresholds: [], // FILL
+
+    epochs, // FILL
+    batchSize, // FILL
+};
+
+function loadConfigFromLocalStorage() {
+    const configString = localStorage.getItem(configLocalStorageKey);
+    if (!configString) {
+        return;
+    }
+    const loadedConfig = JSON.parse(configString);
+    console.log("loaded config", loadedConfig);
+    Object.assign(config, loadedConfig);
+    window.dispatchEvent(new CustomEvent("loadConfig", { detail: { config } }));
+}
+loadConfigFromLocalStorage();
+
+Object.keys(config).forEach((type) => {
+    let eventType = type;
+
+    switch (type) {
+    }
+
+    window.addEventListener(eventType, () => {
+        switch (type) {
+            case "task":
+                config.task = task;
+                break;
+            case "sensorTypes":
+                config.sensorTypes = sensorTypes;
+                break;
+            case "numberOfOutputs":
+                config.numberOfOutputs = numberOfOutputs;
+                break;
+            case "outputLabels":
+                config.outputLabels = outputLabels;
+                break;
+            case "thresholdsEnabled":
+                config.thresholdsEnabled = thresholdsEnabled;
+                break;
+        }
+
+        saveConfigToLocalStorage();
+    });
+});
+
+function saveConfigToLocalStorage() {
+    console.log("saving config", config);
+    localStorage.setItem(configLocalStorageKey, JSON.stringify(config));
+}
