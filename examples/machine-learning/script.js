@@ -1428,7 +1428,6 @@ async function convertModelToTflite() {
         .save(
             ml5.tf.io.browserHTTPRequest(`${pythonServerUrl}/convert?${quantizeModel ? "quantize=true" : ""}`, {
                 fetchFunc: (url, req) => {
-                    req.mode = "no-cors";
                     if (quantizeModel) {
                         const [, , test_x] = shuffleAndSplitDataSet(prepareDataSet(), 1 - trainTestSplit);
                         req.body.append("quantize_data", JSON.stringify(test_x));
