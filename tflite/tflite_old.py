@@ -26,26 +26,18 @@ CORS(app, resources={r"/*": {"origins": "*"}})
 
 def tfjs_to_keras(json_file):
     base_path = os.path.splitext(json_file)[0]
-    out_file = base_path + ".hdf5"
-    result = subprocess.check_output(
-        [
-            "tensorflowjs_converter",
-            "--input_format=tfjs_layers_model",
-            "--output_format=keras",
-            json_file,
-            out_file,
-        ]
-    )
+    out_file = base_path + '.hdf5'
+    result = subprocess.check_output(['tensorflowjs_converter', '--input_format=tfjs_layers_model',
+                                      '--output_format=keras', json_file, out_file])
     print(result)
     return out_file
 
-
-def keras_to_tflite(keras_path, quantize=False, quantize_data=None):
+def keras_to_tflite(bin_file, quantize=False, quantize_data=None):
     # Convert the model.
-    model = tf.keras.models.load_model(keras_path)
-    converter = tf.lite.TFLiteConverter.from_saved_model(keras_path)
+    model = tf.keras.models.load_model(bin_file)
+    converter = tf.lite.TFLiteConverter.from_keras_model(model)
     if quantize:
-        print("QUANTIZE: TRUE")
+        print('QUANTIZE: TRUE')
         print(quantize_data)
 
         def representative_dataset_generator():
@@ -59,36 +51,36 @@ def keras_to_tflite(keras_path, quantize=False, quantize_data=None):
         # converter.inference_input_type = tf.uint8
         # converter.inference_output_type = tf.uint8
     else:
-        print("QUANTIZE: FALSE")
+        print('QUANTIZE: FALSE')
     tflite_model = converter.convert()
 
-    base_path = os.path.splitext(keras_path)[0]
+    base_path = os.path.splitext(bin_file)[0]
     out_file = base_path + ".tflite"
 
     # Save the TF Lite model.
-    with tf.io.gfile.GFile(out_file, "wb") as f:
+    with tf.io.gfile.GFile(out_file, 'wb') as f:
         f.write(tflite_model)
     return out_file
 
 
 def tflite_to_c(tflite_file, out_folder):
     base_path = os.path.splitext(tflite_file)[0]
-    out_path = os.path.join(out_folder, "tfLite_model.cpp")
+    out_path = os.path.join(out_folder, 'tfLite_model.cpp')
 
-    c_array = '#include "tfLite_model.h"\n\n'
+    c_array = "#include \"tfLite_model.h\"\n\n"
     c_array += "unsigned char tfLite_model[] = {\n"
 
-    ps = subprocess.Popen(("cat", tflite_file), stdout=subprocess.PIPE)
-    output = subprocess.check_output(("xxd", "-i"), stdin=ps.stdout)
+    ps = subprocess.Popen(('cat', tflite_file), stdout=subprocess.PIPE)
+    output = subprocess.check_output(('xxd', '-i'), stdin=ps.stdout)
     ps.wait()
 
-    output_string = output.decode().rstrip("\n")
+    output_string = output.decode().rstrip('\n')
     c_array += output_string
     c_array += "\n};\n\n"
 
     c_array += f"const unsigned int tfLite_model_length = {output_string.count(',')+1};"
 
-    with open(out_path, "w") as f:
+    with open(out_path, 'w') as f:
         f.write(c_array)
 
     return c_array
@@ -96,7 +88,7 @@ def tflite_to_c(tflite_file, out_folder):
 
 def make_tarfile(tmp_dir):
     timestr = time.strftime("%Y%m%d-%H%M%S")
-    output_filename = os.path.join(tmp_dir, "final.tgz")
+    output_filename = os.path.join(tmp_dir, 'final.tgz')
     with tarfile.open(output_filename, "w:gz") as tar:
         tar.add(tmp_dir, arcname=os.path.sep)
     return output_filename
@@ -104,7 +96,7 @@ def make_tarfile(tmp_dir):
 
 def get_and_remove_file(file_path):
     return_data = io.BytesIO()
-    with open(file_path, "rb") as fo:
+    with open(file_path, 'rb') as fo:
         return_data.write(fo.read())
 
     # (after writing, cursor will be at last byte, so move it to start)
@@ -114,37 +106,37 @@ def get_and_remove_file(file_path):
     return return_data
 
 
-@app.route("/")
+@ app.route('/')
 def hello_world():
-    return "Hello, World!"
+    return 'Hello, World!'
 
-
-@app.route("/convert", methods=["POST"])
+@ app.route('/convert', methods=['POST'])
 def upload_file():
 
-    if not os.path.exists(app.config["UPLOAD_FOLDER"]):
-        os.makedirs(app.config["UPLOAD_FOLDER"])
+    if not os.path.exists(app.config['UPLOAD_FOLDER']):
+        os.makedirs(app.config['UPLOAD_FOLDER'])
 
-    tmp_dir = app.config["UPLOAD_FOLDER"] + shortuuid.uuid() + "/"
+    tmp_dir = app.config['UPLOAD_FOLDER'] + shortuuid.uuid() + '/'
     os.mkdir(tmp_dir)
 
     error = None
     file_data = None
-    if request.method == "POST":
+    if request.method == 'POST':
         # try:
         print(request.files)
-        f = request.files["model.weights.bin"]
+        f = request.files['model.weights.bin']
         weights_path = tmp_dir + secure_filename(f.filename)
         f.save(weights_path)
-        f = request.files["model.json"]
+        f = request.files['model.json']
         json_path = tmp_dir + secure_filename(f.filename)
         f.save(json_path)
 
         # convert to keras
         keras_path = tfjs_to_keras(json_path)
 
-        quantize = request.args.get("quantize", type=bool, default=False)
-        quantize_data_str = request.form.get("quantize_data", type=str, default=None)
+        quantize = request.args.get('quantize', type=bool, default=False)
+        quantize_data_str = request.form.get(
+            'quantize_data', type=str, default=None)
         quantize_data = None
 
         if quantize_data_str:
@@ -161,12 +153,9 @@ def upload_file():
             return sys.exc_info()[0]
         else:
             timestr = time.strftime("%Y%m%d-%H%M%S")
-            output_filename = "conversion-" + timestr + ".tgz"
-            return send_file(
-                file_data,
-                mimetype="application/tar+gzip",
-                attachment_filename=output_filename,
-            )
+            output_filename = 'conversion-' + timestr + '.tgz'
+            return send_file(file_data, mimetype='application/tar+gzip', attachment_filename=output_filename)
+
 
 
 @app.errorhandler(500)
