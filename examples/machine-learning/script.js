@@ -1391,6 +1391,12 @@ const pythonServerUrlInput = document.getElementById("pythonServerUrl");
 pythonServerUrlInput.addEventListener("input", () => {
     pythonServerUrl = pythonServerUrlInput.value || defaultPythonServerUrl;
     console.log({ pythonServerUrl });
+    window.dispatchEvent(new CustomEvent("pythonServerUrl", { detail: { pythonServerUrl } }));
+});
+
+window.addEventListener("loadConfig", () => {
+    pythonServerUrlInput.value = config.pythonServerUrl;
+    pythonServerUrlInput.dispatchEvent(new Event("input"));
 });
 
 let quantizeModel = false;
@@ -1403,7 +1409,10 @@ toggleQuantizeModelInput.addEventListener("input", () => {
 
 let trainTestSplit = 0.2;
 let isConvertingModel = false;
-const tfLiteFiles = {};
+const tfLiteFiles = {
+    tfLite_model_cpp: null,
+    model_tflite: null,
+};
 
 /** @type {HTMLButtonElement} */
 const convertModelToTfliteButton = document.getElementById("convertModelToTflite");
@@ -1423,7 +1432,6 @@ async function convertModelToTflite() {
     }
     isConvertingModel = true;
 
-    // TEST
     neuralNetwork.neuralNetwork.model
         .save(
             ml5.tf.io.browserHTTPRequest(`${pythonServerUrl}/convert?${quantizeModel ? "quantize=true" : ""}`, {
@@ -1454,7 +1462,6 @@ async function convertModelToTflite() {
                     console.log({ tfLite_model_cpp, model_tflite });
                     isConvertingModel = false;
                     Object.assign(tfLiteFiles, { tfLite_model_cpp, model_tflite });
-                    window.files = files;
                     window.dispatchEvent(new CustomEvent("convertModelToTflite", { detail: { tfLiteFiles, files } }));
                 });
         })
@@ -1468,15 +1475,25 @@ async function convertModelToTflite() {
 }
 
 /** @type {HTMLButtonElement} */
+const downloadTfliteModelButton = document.getElementById("downloadTfliteModel");
+downloadTfliteModelButton.addEventListener("click", () => {
+    downloadBlob(tfLiteFiles.model_tflite.blob, "model.tflite");
+    downloadBlob(tfLiteFiles.tfLite_model_cpp.blob, "tflite_model.cpp");
+});
+window.addEventListener("convertModelToTflite", () => {
+    downloadTfliteModelButton.disabled = false;
+});
+
+/** @type {HTMLButtonElement} */
 const toggleTfliteModelButton = document.getElementById("toggleTfliteModel");
 toggleTfliteModelButton.addEventListener("click", () => {
-    // FILL 2
+    // FILL
 });
 
 /** @type {HTMLButtonElement} */
 const makeTfliteInferenceButton = document.getElementById("makeTfliteInference");
 makeTfliteInferenceButton.addEventListener("click", () => {
-    // FILL 3
+    // FILL
 });
 
 const tfliteResultsElement = document.getElementById("tfliteResults");
@@ -1512,6 +1529,8 @@ const config = {
 
     epochs,
     batchSize,
+
+    pythonServerUrl,
 };
 window.config = config;
 
@@ -1585,6 +1604,10 @@ Object.keys(config).forEach((type) => {
                 break;
             case "epochs":
                 config.epochs = epochs;
+                break;
+
+            case "pythonServerUrl":
+                config.pythonServerUrl = pythonServerUrl;
                 break;
         }
 
