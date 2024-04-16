@@ -3,7 +3,9 @@
         <title>Machine Learning | BrilliantSole JavaScript SDK</title>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico" />
-        <script src="https://unpkg.com/ml5@latest/dist/ml5.min.js"></script>
+        <script src="https://unpkg.com/ml5@0.12.2/dist/ml5.min.js" type="text/javascript"></script>
+        <script src="https://unpkg.com/js-untar@2.0.0/build/dist/untar.js"></script>
+        <script src="https://unpkg.com/pako@2.0.3/dist/pako.min.js"></script>
         <script type="module" src="./script.js"></script>
     </head>
 
@@ -321,27 +323,29 @@
 
             <label>
                 Load Model
-                <input disbled id="loadModel" type="file" multiple accept=".json,.bin" />
+                <input disabled id="loadModel" type="file" multiple accept=".json,.bin" />
             </label>
         </div>
 
         <hr />
 
         <div>
-            <h3>Tensorflow Lite</h3>
+            <h3>Tensorflow Lite (requires python server)</h3>
+
+            <label> python server <input type="url" id="pythonServerUrl" placeholder="localhost:8080" /> </label>
 
             <label>
                 quantize model
                 <input id="toggleQuantizeModel" type="checkbox" />
             </label>
 
-            <button id="convertModelToTflite" disabled>Convert Model to tflite</button>
+            <button id="convertModelToTflite" disabled>convert model to tflite</button>
 
-            <button id="downloadTfliteModel" disabled>Download tflite model</button>
+            <button id="downloadTfliteModel" disabled>download tflite model</button>
 
             <button id="toggleTfliteModel" disabled>use tflite model</button>
 
-            <button id="makeTfliteInference" disabled>Make Inference</button>
+            <button id="makeTfliteInference" disabled>make inference</button>
 
             <div>
                 <h4>Results</h4>

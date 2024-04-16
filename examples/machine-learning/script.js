@@ -417,8 +417,12 @@ function setNumberOfOutputs(newNumberOfOutputs) {
 
         /** @type {HTMLInputElement} */
         const labelInput = outputContainer.querySelector(".label");
-        labelInput.value = window.config?.outputLabels[index] || `output${index}`;
+        labelInput.value = `output${index}`;
         labelInput.addEventListener("input", () => updateOutputLabels());
+
+        window.addEventListener("loadConfig", () => {
+            labelInput.value = config.outputLabels[index];
+        });
 
         /** @type {HTMLInputElement} */
         const valueInput = outputContainer.querySelector(".value");
@@ -1162,7 +1166,7 @@ const updateTestButton = () => {
     const enabled = neuralNetwork?.neuralNetwork?.isTrained && isSensorDataEnabled && !isTesting;
     testButton.disabled = !enabled;
 };
-["training", "loadModel", "finishedTraining"].forEach((eventType) => {
+["training", "loadModel", "finishedTraining", "isSensorDataEnabled"].forEach((eventType) => {
     window.addEventListener(eventType, () => {
         updateTestButton();
     });
@@ -1271,10 +1275,122 @@ window.addEventListener("createNeuralNetwork", () => {
 
 // TENSORFLOW LITE
 
-/** @type {HTMLButtonElement} */
-const convertModelToTfliteButton = document.getElementById("convertModelToTflite");
-convertModelToTfliteButton.addEventListener("click", () => {
-    // FILL
+/** @param {()=>{}} callback */
+function getModel(callback) {
+    if (selectedDevices.length == 1 && neuralNetwork?.neuralNetwork.isTrained) {
+        neuralNetwork.neuralNetwork.model.save(
+            ml5.tf.io.withSaveHandler(async (data) => {
+                const weightsManifest = {
+                    modelTopology: data.modelTopology,
+                    weightsManifest: [
+                        {
+                            paths: [`./model.weights.bin`],
+                            weights: data.weightSpecs,
+                        },
+                    ],
+                };
+                callback(data.weightData, weightsManifest);
+            })
+        );
+    }
+}
+
+const { seedrandom } = Math;
+const SEED = "brilliantsole";
+
+/**
+ * @param {number[]} inputs
+ * @param {number[]} outputs
+ */
+function shuffleData(inputs, outputs) {
+    const rand = new seedrandom(SEED);
+
+    const indexes = inputs.map((_, i) => i);
+    indexes.sort(() => rand() - 0.5);
+
+    const shuffledInputs = [];
+    const shuffledOutputs = [];
+
+    indexes.forEach((i, j) => {
+        shuffledInputs[j] = inputs[i];
+        shuffledOutputs[j] = outputs[i];
+    });
+
+    return [shuffledInputs, shuffledOutputs];
+}
+
+function splitArray(data, fract) {
+    const splitPoint = Math.round(data.length * fract);
+    const a = data.slice(0, splitPoint);
+    const b = data.slice(splitPoint, data.length);
+    return [a, b];
+}
+
+function shuffleAndSplitDataSet([X, Y], splitRatio = 0.8) {
+    const [shuffled_X, shuffled_Y] = shuffleData(X, Y);
+    const [train_X, test_X] = splitArray(shuffled_X, splitRatio);
+    const [train_Y, test_Y] = splitArray(shuffled_Y, splitRatio);
+
+    return [train_X, train_Y, test_X, test_Y];
+}
+
+function rescale(minIn, maxIn, minOut, maxOut, [X, Y]) {
+    const rescaledX = [];
+    const a = minOut - minIn;
+    const scaleRatio = (maxOut - minOut) / (maxIn - minIn);
+
+    X.forEach((row) => {
+        rescaledX.push(row.map((v) => (v + a) * scaleRatio));
+    });
+    return [rescaledX, Y];
+}
+
+function prepareDataSet() {
+    const inputs = [];
+    const outputs = [];
+
+    neuralNetwork.data.training.forEach(({ xs, ys }, index) => {
+        const input = [];
+        for (const key in xs) {
+            input.push(xs[key]);
+        }
+        inputs.push(input);
+
+        const output = [];
+        for (const key in ys) {
+            const value = ys[key];
+            if (value instanceof Array) {
+                output.push(...ys[key]);
+            } else {
+                output.push(ys[key]);
+            }
+        }
+        outputs.push(output);
+    });
+
+    return [inputs, outputs];
+}
+
+function downloadBlob(blob, fileName) {
+    const a = document.createElement("a");
+    document.body.appendChild(a);
+    a.style = "display: none";
+    const url = window.URL.createObjectURL(blob);
+    a.href = url;
+    a.download = fileName;
+    a.click();
+    window.URL.revokeObjectURL(url);
+}
+
+const defaultPythonServerUrl = `${location.origin}:8080`;
+/** @type {string} */
+let pythonServerUrl = defaultPythonServerUrl;
+
+/** @type {HTMLInputElement} */
+const pythonServerUrlInput = document.getElementById("pythonServerUrl");
+pythonServerUrlInput.addEventListener("input", () => {
+    pythonServerUrl = pythonServerUrlInput.value || defaultPythonServerUrl;
+    console.log({ pythonServerUrl });
 });
 
 let quantizeModel = false;
@@ -1285,16 +1401,83 @@ toggleQuantizeModelInput.addEventListener("input", () => {
     console.log({ quantizeModel });
 });
 
+let trainTestSplit = 0.2;
+let isConvertingModel = false;
+const tfLiteFiles = {};
+
+/** @type {HTMLButtonElement} */
+const convertModelToTfliteButton = document.getElementById("convertModelToTflite");
+convertModelToTfliteButton.addEventListener("click", () => {
+    convertModelToTfliteButton.disabled = true;
+    convertModelToTfliteButton.innerText = "converting model to tflite...";
+    convertModelToTflite();
+});
+window.addEventListener("convertModelToTflite", () => {
+    convertModelToTfliteButton.disabled = false;
+    convertModelToTfliteButton.innerText = "convert model to tflite";
+});
+
+async function convertModelToTflite() {
+    if (isConvertingModel) {
+        return;
+    }
+    isConvertingModel = true;
+
+    // TEST
+    neuralNetwork.neuralNetwork.model
+        .save(
+            ml5.tf.io.browserHTTPRequest(`${pythonServerUrl}/convert?${quantizeModel ? "quantize=true" : ""}`, {
+                fetchFunc: (url, req) => {
+                    req.mode = "no-cors";
+                    if (quantizeModel) {
+                        const [, , test_x] = shuffleAndSplitDataSet(prepareDataSet(), 1 - trainTestSplit);
+                        req.body.append("quantize_data", JSON.stringify(test_x));
+                    }
+
+                    console.log({ url, req });
+
+                    return fetch(url, req);
+                },
+            })
+        )
+        .then((result) => {
+            console.log({ result });
+            const res = result.responses[0];
+            res.arrayBuffer() // Download gzipped tar file and get ArrayBuffer
+                .then(pako.inflate) // Decompress gzip using pako
+                .then((arr) => arr.buffer) // Get ArrayBuffer from the Uint8Array pako returns
+                .then(untar) // Untar
+                .then((files) => {
+                    // js-untar returns a list of files (See https://github.com/InvokIT/js-untar#file-object for details)
+                    console.log("received files", files);
+                    const tfLite_model_cpp = files.find((file) => file.name === "tfLite_model.cpp");
+                    const model_tflite = files.find((file) => file.name === "model.tflite");
+                    console.log({ tfLite_model_cpp, model_tflite });
+                    isConvertingModel = false;
+                    Object.assign(tfLiteFiles, { tfLite_model_cpp, model_tflite });
+                    window.files = files;
+                    window.dispatchEvent(new CustomEvent("convertModelToTflite", { detail: { tfLiteFiles, files } }));
+                });
+        })
+        .catch((error) => {
+            console.log(error);
+            isConvertingModel = false;
+
+            convertModelToTfliteButton.disabled = false;
+            convertModelToTfliteButton.innerText = "convert model to tflite";
+        });
+}
+
 /** @type {HTMLButtonElement} */
 const toggleTfliteModelButton = document.getElementById("toggleTfliteModel");
 toggleTfliteModelButton.addEventListener("click", () => {
-    // FILL
+    // FILL 2
 });
 
 /** @type {HTMLButtonElement} */
 const makeTfliteInferenceButton = document.getElementById("makeTfliteInference");
 makeTfliteInferenceButton.addEventListener("click", () => {
-    // FILL
+    // FILL 3
 });
 
 const tfliteResultsElement = document.getElementById("tfliteResults");
@@ -1306,7 +1489,7 @@ window.addEventListener("finishedTraining", () => {
     convertModelToTfliteButton.disabled = false;
 });
 
-// CONFIGU
+// CONFIG
 
 const configLocalStorageKey = "BS.MachineLearning.Config";
 

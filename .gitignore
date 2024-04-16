@@ -130,3 +130,7 @@ dist
 sec
 TODO.txt
 .DS_Store
+
+tflite/uploads
+model.json
+model.weights.bin
