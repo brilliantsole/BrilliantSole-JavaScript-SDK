@@ -70,6 +70,26 @@ def tflite_to_c(tflite_file, out_folder):
     c_array = "#include \"tfLite_model.h\"\n\n"
     c_array += "unsigned char tfLite_model[] = {\n"
 
+    with open(tflite_file, 'rb') as file:
+        bytes_data = file.read()
+        hex_data = ', '.join([hex(byte) for byte in bytes_data])
+        c_array += hex_data
+
+    c_array += "\n};\n\n"
+    c_array += f"const unsigned int tfLite_model_length = {len(bytes_data)};"
+
+    with open(out_path, 'w') as f:
+        f.write(c_array)
+
+    return c_array
+
+def tflite_to_c_unix(tflite_file, out_folder):
+    base_path = os.path.splitext(tflite_file)[0]
+    out_path = os.path.join(out_folder, 'tfLite_model.cpp')
+
+    c_array = "#include \"tfLite_model.h\"\n\n"
+    c_array += "unsigned char tfLite_model[] = {\n"
+
     ps = subprocess.Popen(('cat', tflite_file), stdout=subprocess.PIPE)
     output = subprocess.check_output(('xxd', '-i'), stdin=ps.stdout)
     ps.wait()
@@ -144,7 +164,7 @@ def upload_file():
         tflite_path = keras_to_tflite(keras_path, quantize, quantize_data)
 
         # doesn't work on windows...
-        # c_header_path = tflite_to_c(tflite_path, tmp_dir)
+        c_header_path = tflite_to_c(tflite_path, tmp_dir)
 
         tar_file = make_tarfile(tmp_dir)
         file_data = get_and_remove_file(tar_file)
