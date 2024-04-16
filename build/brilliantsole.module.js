@@ -543,11 +543,11 @@ if (isInBrowser) {
 }
 
 /**
- * @param {number} offset
+ * @param {string} offset
  * @returns {BluetoothServiceUUID}
  */
 function generateBluetoothUUID(offset) {
-    return `ea6da725-2000-4f9b-893d-c3913e33b3e${offset}`;
+    return `ea6da725-2000-4f9b-893d-c3913e33b3${offset}`;
 }
 
 /** @param {string} identifier */
@@ -600,15 +600,15 @@ const bluetoothUUIDs = Object.freeze({
             },
         },
         main: {
-            uuid: generateBluetoothUUID(0),
+            uuid: generateBluetoothUUID("00"),
             characteristics: {
-                name: { uuid: generateBluetoothUUID(1) },
-                type: { uuid: generateBluetoothUUID(2) },
-                sensorConfiguration: { uuid: generateBluetoothUUID(3) },
-                pressurePositions: { uuid: generateBluetoothUUID(4) },
-                sensorScalars: { uuid: generateBluetoothUUID(5) },
-                sensorData: { uuid: generateBluetoothUUID(6) },
-                vibration: { uuid: generateBluetoothUUID(7) },
+                name: { uuid: generateBluetoothUUID("01") },
+                type: { uuid: generateBluetoothUUID("02") },
+                sensorConfiguration: { uuid: generateBluetoothUUID("10") },
+                pressurePositions: { uuid: generateBluetoothUUID("11") },
+                sensorScalars: { uuid: generateBluetoothUUID("12") },
+                sensorData: { uuid: generateBluetoothUUID("13") },
+                vibration: { uuid: generateBluetoothUUID("20") },
             },
         },
         dfu: {
