@@ -1,4 +1,7 @@
 import { isInBrowser, isInNode } from "../../utils/environment.js";
+import { createConsole } from "../../utils/Console.js";
+
+const _console = createConsole("bluetoothUUIDs", { log: true });
 
 if (isInNode) {
     const webbluetooth = require("webbluetooth");
@@ -9,11 +12,13 @@ if (isInBrowser) {
 }
 
 /**
- * @param {string} offset
+ * @param {string} value
  * @returns {BluetoothServiceUUID}
  */
-function generateBluetoothUUID(offset) {
-    return `ea6da725-2000-4f9b-893d-c3913e33b3${offset}`;
+function generateBluetoothUUID(value) {
+    _console.assertTypeWithError(value, "string");
+    _console.assertWithError(value.length == 4, "value must be 4 characters long");
+    return `ea6da725-${value}-4f9b-893d-c3913e33b39f`;
 }
 
 /** @param {string} identifier */
@@ -66,20 +71,29 @@ const bluetoothUUIDs = Object.freeze({
             },
         },
         main: {
-            uuid: generateBluetoothUUID("00"),
+            uuid: generateBluetoothUUID("0000"),
             characteristics: {
-                name: { uuid: generateBluetoothUUID("01") },
-                type: { uuid: generateBluetoothUUID("02") },
-                sensorConfiguration: { uuid: generateBluetoothUUID("10") },
-                pressurePositions: { uuid: generateBluetoothUUID("11") },
-                sensorScalars: { uuid: generateBluetoothUUID("12") },
-                sensorData: { uuid: generateBluetoothUUID("13") },
-                currentTime: { uuid: generateBluetoothUUID("14") },
-                vibration: { uuid: generateBluetoothUUID("20") },
+                name: { uuid: generateBluetoothUUID("1000") },
+                type: { uuid: generateBluetoothUUID("1001") },
+
+                sensorConfiguration: { uuid: generateBluetoothUUID("2000") },
+                pressurePositions: { uuid: generateBluetoothUUID("2001") },
+                sensorScalars: { uuid: generateBluetoothUUID("2002") },
+                currentTime: { uuid: generateBluetoothUUID("2003") },
+                sensorData: { uuid: generateBluetoothUUID("2004") },
+
+                vibration: { uuid: generateBluetoothUUID("3000") },
+
+                // FILL - file transfer
+
+                // FILL - tflite
             },
         },
         dfu: {
             uuid: "8d53dc1d-1db7-4cd3-868b-8a527460aa84",
+            characteristics: {
+                // FILL
+            },
         },
     },
 
@@ -116,6 +130,7 @@ const bluetoothUUIDs = Object.freeze({
      * @returns {BluetoothCharacteristicName?}
      */
     getCharacteristicNameFromUUID(characteristicUUID) {
+        _console.log({ characteristicUUID });
         characteristicUUID = characteristicUUID.toLowerCase();
         var characteristicName;
         Object.values(this.services).some((serviceInfo) => {

@@ -5,7 +5,8 @@
 'use strict';
 
 /** @type {"__BRILLIANTSOLE__DEV__" | "__BRILLIANTSOLE__PROD__"} */
-const isInDev = "__BRILLIANTSOLE__PROD__" == "__BRILLIANTSOLE__DEV__";
+const __BRILLIANTSOLE__ENVIRONMENT__ = "__BRILLIANTSOLE__DEV__";
+const isInDev = __BRILLIANTSOLE__ENVIRONMENT__ == "__BRILLIANTSOLE__DEV__";
 
 // https://github.com/flexdinesh/browser-or-node/blob/master/src/index.ts
 const isInBrowser = typeof window !== "undefined" && window?.document !== "undefined";
@@ -119,6 +120,9 @@ class Console {
      */
     static create(type, levelFlags) {
         const console = this.#consoles[type] || new Console(type);
+        if (levelFlags) {
+            console.setLevelFlags(levelFlags);
+        }
         return console;
     }
 
@@ -207,7 +211,7 @@ function capitalizeFirstCharacter(string) {
     return string[0].toUpperCase() + string.slice(1);
 }
 
-const _console$n = createConsole("EventDispatcher", { log: false });
+const _console$o = createConsole("EventDispatcher", { log: false });
 
 /**
  * @typedef EventDispatcherEvent
@@ -232,9 +236,9 @@ class EventDispatcher {
      * @param {string[]?} eventTypes
      */
     constructor(target, eventTypes) {
-        _console$n.assertWithError(target, "target is required");
+        _console$o.assertWithError(target, "target is required");
         this.#target = target;
-        _console$n.assertWithError(Array.isArray(eventTypes) || eventTypes == undefined, "eventTypes must be an array");
+        _console$o.assertWithError(Array.isArray(eventTypes) || eventTypes == undefined, "eventTypes must be an array");
         this.#eventTypes = eventTypes;
     }
 
@@ -259,7 +263,7 @@ class EventDispatcher {
      * @throws {Error}
      */
     #assertValidEventType(type) {
-        _console$n.assertWithError(this.#isValidEventType(type), `invalid event type "${type}"`);
+        _console$o.assertWithError(this.#isValidEventType(type), `invalid event type "${type}"`);
     }
 
     /** @type {Object.<string, [function]?>?} */
@@ -271,7 +275,7 @@ class EventDispatcher {
      * @param {EventDispatcherOptions?} options
      */
     addEventListener(type, listener, options) {
-        _console$n.log(`adding "${type}" eventListener`, listener);
+        _console$o.log(`adding "${type}" eventListener`, listener);
         this.#assertValidEventType(type);
 
         if (!this.#listeners) this.#listeners = {};
@@ -301,7 +305,7 @@ class EventDispatcher {
      * @param {EventDispatcherListener} listener
      */
     hasEventListener(type, listener) {
-        _console$n.log(`has "${type}" eventListener?`, listener);
+        _console$o.log(`has "${type}" eventListener?`, listener);
         this.#assertValidEventType(type);
         return this.#listeners?.[type]?.includes(listener);
     }
@@ -311,7 +315,7 @@ class EventDispatcher {
      * @param {EventDispatcherListener} listener
      */
     removeEventListener(type, listener) {
-        _console$n.log(`removing "${type}" eventListener`, listener);
+        _console$o.log(`removing "${type}" eventListener`, listener);
         this.#assertValidEventType(type);
         if (this.hasEventListener(type, listener)) {
             const index = this.#listeners[type].indexOf(listener);
@@ -345,7 +349,7 @@ class EventDispatcher {
  */
 function addEventListeners(target, boundEventListeners) {
     let addEventListener = target.addEventListener || target.addListener || target.on || target.AddEventListener;
-    _console$n.assertWithError(addEventListener, "no add listener function found for target");
+    _console$o.assertWithError(addEventListener, "no add listener function found for target");
     addEventListener = addEventListener.bind(target);
     Object.entries(boundEventListeners).forEach(([eventType, eventListener]) => {
         addEventListener(eventType, eventListener);
@@ -358,7 +362,7 @@ function addEventListeners(target, boundEventListeners) {
  */
 function removeEventListeners(target, boundEventListeners) {
     let removeEventListener = target.removeEventListener || target.removeListener || target.RemoveEventListener;
-    _console$n.assertWithError(removeEventListener, "no remove listener function found for target");
+    _console$o.assertWithError(removeEventListener, "no remove listener function found for target");
     removeEventListener = removeEventListener.bind(target);
     Object.entries(boundEventListeners).forEach(([eventType, eventListener]) => {
         removeEventListener(eventType, eventListener);
@@ -369,7 +373,7 @@ function removeEventListeners(target, boundEventListeners) {
 /** @typedef {"not connected" | "connecting" | "connected" | "disconnecting"} ConnectionStatus */
 /** @typedef {"manufacturerName" | "modelNumber" | "softwareRevision" | "hardwareRevision" | "firmwareRevision" | "pnpId" | "serialNumber" | "batteryLevel" | "getName" | "setName" | "getType" | "setType" | "getSensorConfiguration" | "setSensorConfiguration" | "sensorScalars" | "pressurePositions" | "sensorData" | "setCurrentTime" | "getCurrentTime" | "triggerVibration"} ConnectionMessageType */
 
-const _console$m = createConsole("ConnectionManager");
+const _console$n = createConsole("ConnectionManager");
 
 /**
  * @callback ConnectionStatusCallback
@@ -448,12 +452,12 @@ class BaseConnectionManager {
 
     /** @throws {Error} if not supported */
     #assertIsSupported() {
-        _console$m.assertWithError(this.isSupported, `${this.constructor.name} is not supported`);
+        _console$n.assertWithError(this.isSupported, `${this.constructor.name} is not supported`);
     }
 
     /** @throws {Error} if abstract class */
     #assertIsSubclass() {
-        _console$m.assertWithError(
+        _console$n.assertWithError(
             this.constructor != BaseConnectionManager,
             `${this.constructor.name} must be subclassed`
         );
@@ -471,12 +475,12 @@ class BaseConnectionManager {
     }
     /** @protected */
     set status(newConnectionStatus) {
-        _console$m.assertTypeWithError(newConnectionStatus, "string");
+        _console$n.assertTypeWithError(newConnectionStatus, "string");
         if (this.#status == newConnectionStatus) {
-            _console$m.log(`tried to assign same connection status "${newConnectionStatus}"`);
+            _console$n.log(`tried to assign same connection status "${newConnectionStatus}"`);
             return;
         }
-        _console$m.log(`new connection status "${newConnectionStatus}"`);
+        _console$n.log(`new connection status "${newConnectionStatus}"`);
         this.#status = newConnectionStatus;
         this.onStatusUpdated?.(this.status);
     }
@@ -487,19 +491,19 @@ class BaseConnectionManager {
 
     /** @throws {Error} if connected */
     #assertIsNotConnected() {
-        _console$m.assertWithError(!this.isConnected, "device is already connected");
+        _console$n.assertWithError(!this.isConnected, "device is already connected");
     }
     /** @throws {Error} if connecting */
     #assertIsNotConnecting() {
-        _console$m.assertWithError(this.status != "connecting", "device is already connecting");
+        _console$n.assertWithError(this.status != "connecting", "device is already connecting");
     }
     /** @throws {Error} if not connected */
     #assertIsConnected() {
-        _console$m.assertWithError(this.isConnected, "device is not connected");
+        _console$n.assertWithError(this.isConnected, "device is not connected");
     }
     /** @throws {Error} if disconnecting */
     #assertIsNotDisconnecting() {
-        _console$m.assertWithError(this.status != "disconnecting", "device is already disconnecting");
+        _console$n.assertWithError(this.status != "disconnecting", "device is already disconnecting");
     }
     /** @throws {Error} if not connected or is disconnecting */
     #assertIsConnectedAndNotDisconnecting() {
@@ -519,13 +523,13 @@ class BaseConnectionManager {
     async reconnect() {
         this.#assertIsNotConnected();
         this.#assertIsNotConnecting();
-        _console$m.assert(this.canReconnect, "unable to reconnect");
+        _console$n.assert(this.canReconnect, "unable to reconnect");
     }
     async disconnect() {
         this.#assertIsConnected();
         this.#assertIsNotDisconnecting();
         this.status = "disconnecting";
-        _console$m.log("disconnecting from device...");
+        _console$n.log("disconnecting from device...");
     }
 
     /**
@@ -534,9 +538,11 @@ class BaseConnectionManager {
      */
     async sendMessage(messageType, data) {
         this.#assertIsConnectedAndNotDisconnecting();
-        _console$m.log("sending message", { messageType, data });
+        _console$n.log("sending message", { messageType, data });
     }
 }
+
+const _console$m = createConsole("bluetoothUUIDs", { log: true });
 
 if (isInNode) {
     const webbluetooth = require("webbluetooth");
@@ -547,11 +553,13 @@ if (isInBrowser) {
 }
 
 /**
- * @param {string} offset
+ * @param {string} value
  * @returns {BluetoothServiceUUID}
  */
-function generateBluetoothUUID(offset) {
-    return `ea6da725-2000-4f9b-893d-c3913e33b3${offset}`;
+function generateBluetoothUUID(value) {
+    _console$m.assertTypeWithError(value, "string");
+    _console$m.assertWithError(value.length == 4, "value must be 4 characters long");
+    return `ea6da725-${value}-4f9b-893d-c3913e33b39f`;
 }
 
 /** @param {string} identifier */
@@ -604,20 +612,29 @@ const bluetoothUUIDs = Object.freeze({
             },
         },
         main: {
-            uuid: generateBluetoothUUID("00"),
+            uuid: generateBluetoothUUID("0000"),
             characteristics: {
-                name: { uuid: generateBluetoothUUID("01") },
-                type: { uuid: generateBluetoothUUID("02") },
-                sensorConfiguration: { uuid: generateBluetoothUUID("10") },
-                pressurePositions: { uuid: generateBluetoothUUID("11") },
-                sensorScalars: { uuid: generateBluetoothUUID("12") },
-                sensorData: { uuid: generateBluetoothUUID("13") },
-                currentTime: { uuid: generateBluetoothUUID("14") },
-                vibration: { uuid: generateBluetoothUUID("20") },
+                name: { uuid: generateBluetoothUUID("1000") },
+                type: { uuid: generateBluetoothUUID("1001") },
+
+                sensorConfiguration: { uuid: generateBluetoothUUID("2000") },
+                pressurePositions: { uuid: generateBluetoothUUID("2001") },
+                sensorScalars: { uuid: generateBluetoothUUID("2002") },
+                currentTime: { uuid: generateBluetoothUUID("2003") },
+                sensorData: { uuid: generateBluetoothUUID("2004") },
+
+                vibration: { uuid: generateBluetoothUUID("3000") },
+
+                // FILL - file transfer
+
+                // FILL - tflite
             },
         },
         dfu: {
             uuid: "8d53dc1d-1db7-4cd3-868b-8a527460aa84",
+            characteristics: {
+                // FILL
+            },
         },
     },
 
@@ -654,6 +671,7 @@ const bluetoothUUIDs = Object.freeze({
      * @returns {BluetoothCharacteristicName?}
      */
     getCharacteristicNameFromUUID(characteristicUUID) {
+        _console$m.log({ characteristicUUID });
         characteristicUUID = characteristicUUID.toLowerCase();
         var characteristicName;
         Object.values(this.services).some((serviceInfo) => {
