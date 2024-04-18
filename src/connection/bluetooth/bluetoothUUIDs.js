@@ -27,7 +27,7 @@ function stringToServiceUUID(identifier) {
 }
 
 /** @typedef {"deviceInformation" | "battery" | "main" | "dfu"} BluetoothServiceName */
-/** @typedef { "manufacturerName" | "modelNumber" | "hardwareRevision" | "firmwareRevision" | "softwareRevision" | "pnpId" | "serialNumber" | "batteryLevel" | "name" | "type" | "sensorConfiguration" | "pressurePositions" | "sensorScalars" | "sensorData" | "vibration"} BluetoothCharacteristicName */
+/** @typedef { "manufacturerName" | "modelNumber" | "hardwareRevision" | "firmwareRevision" | "softwareRevision" | "pnpId" | "serialNumber" | "batteryLevel" | "name" | "type" | "sensorConfiguration" | "pressurePositions" | "sensorScalars" | "sensorData" | "currentTime" | "vibration"} BluetoothCharacteristicName */
 
 const bluetoothUUIDs = Object.freeze({
     services: {
@@ -74,6 +74,7 @@ const bluetoothUUIDs = Object.freeze({
                 pressurePositions: { uuid: generateBluetoothUUID("11") },
                 sensorScalars: { uuid: generateBluetoothUUID("12") },
                 sensorData: { uuid: generateBluetoothUUID("13") },
+                currentTime: { uuid: generateBluetoothUUID("14") },
                 vibration: { uuid: generateBluetoothUUID("20") },
             },
         },
@@ -210,6 +211,7 @@ export function getCharacteristicProperties(characteristicName) {
         case "sensorConfiguration":
         case "sensorData":
         case "pressurePositions":
+        case "currentTime":
             properties.notify = true;
             break;
     }

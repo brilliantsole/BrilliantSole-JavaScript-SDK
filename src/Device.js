@@ -154,6 +154,8 @@ class Device {
         "pressurePositions",
         "sensorScalars",
 
+        "getCurrentTime",
+
         "sensorData",
         "pressure",
         "acceleration",
@@ -255,6 +257,7 @@ class Device {
         "getSensorConfiguration",
         "sensorScalars",
         "pressurePositions",
+        "getCurrentTime",
     ];
     static get AllInformationConnectionMessages() {
         return this.#AllInformationConnectionMessages;
@@ -373,7 +376,7 @@ class Device {
         }
     }
     #checkConnection() {
-        this.#isConnected = this.connectionManager?.isConnected && this.#hasAllInformation;
+        this.#isConnected = this.connectionManager?.isConnected && this.#hasAllInformation && this.#isCurrentTimeSet;
 
         switch (this.connectionStatus) {
             case "connected":
@@ -392,6 +395,7 @@ class Device {
 
     #clear() {
         this.latestConnectionMessage.clear();
+        this.#isCurrentTimeSet = false;
     }
 
     /**
@@ -478,6 +482,11 @@ class Device {
                 this.#sensorDataManager.pressureSensorDataManager.parsePositions(dataView);
                 break;
 
+            case "getCurrentTime":
+                const currentTime = Number(dataView.getBigUint64(0, true));
+                this.#onCurrentTime(currentTime);
+                break;
+
             case "sensorData":
                 this.#sensorDataManager.parseData(dataView);
                 break;
@@ -508,6 +517,24 @@ class Device {
     static #TextDecoder = new TextDecoder();
     get #textDecoder() {
         return Device.#TextDecoder;
+    }
+
+    // CURRENT TIME
+
+    #isCurrentTimeSet = false;
+    /** @param {number} currentTime */
+    #onCurrentTime(currentTime) {
+        _console.log({ currentTime });
+        this.#isCurrentTimeSet = currentTime != 0;
+        if (!this.#isCurrentTimeSet) {
+            this.#setCurrentTime();
+        }
+    }
+    #setCurrentTime() {
+        _console.log("setting current time...");
+        const dataView = new DataView(new ArrayBuffer(8));
+        dataView.setBigUint64(0, BigInt(Date.now()), true);
+        this.#connectionManager.sendMessage("setCurrentTime", dataView);
     }
 
     // DEVICE INFORMATION
@@ -671,7 +698,7 @@ class Device {
             case "rightInsole":
                 return true;
             default:
-                // for future non-insole  device types
+                // for future non-insole device types
                 return false;
         }
     }
@@ -724,10 +751,6 @@ class Device {
     #updateSensorConfiguration(updatedSensorConfiguration) {
         this.#sensorConfiguration = updatedSensorConfiguration;
         _console.log({ updatedSensorConfiguration: this.#sensorConfiguration });
-        if (!this.#sensorConfigurationManager.hasAtLeastOneNonZeroSensorRate(this.sensorConfiguration)) {
-            _console.log("clearing sensorDataManager timestamp...");
-            this.#sensorDataManager.clearTimestamp();
-        }
         this.#dispatchEvent({
             type: "getSensorConfiguration",
             message: { sensorConfiguration: this.sensorConfiguration },

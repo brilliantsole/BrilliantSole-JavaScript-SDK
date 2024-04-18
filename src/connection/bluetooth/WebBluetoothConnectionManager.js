@@ -146,16 +146,16 @@ class WebBluetoothConnectionManager extends BaseConnectionManager {
                 addEventListeners(characteristic, this.#boundBluetoothCharacteristicEventListeners);
                 const characteristicProperties =
                     characteristic.properties || getCharacteristicProperties(characteristicName);
+                if (characteristicProperties.notify) {
+                    _console.log(`starting notifications for "${characteristicName}" characteristic`);
+                    await characteristic.startNotifications();
+                }
                 if (characteristicProperties.read) {
                     _console.log(`reading "${characteristicName}" characteristic...`);
                     await characteristic.readValue();
                     if (isInBluefy || isInWebBLE) {
                         this.#onCharacteristicValueChanged(characteristic);
                     }
-                }
-                if (characteristicProperties.notify) {
-                    _console.log(`starting notifications for "${characteristicName}" characteristic`);
-                    await characteristic.startNotifications();
                 }
             }
         }
@@ -224,6 +224,9 @@ class WebBluetoothConnectionManager extends BaseConnectionManager {
             case "sensorConfiguration":
                 this.onMessageReceived("getSensorConfiguration", dataView);
                 break;
+            case "currentTime":
+                this.onMessageReceived("getCurrentTime", dataView);
+                break;
             default:
                 throw new Error(`uncaught characteristicName "${characteristicName}"`);
         }
@@ -256,6 +259,9 @@ class WebBluetoothConnectionManager extends BaseConnectionManager {
                 break;
             case "setSensorConfiguration":
                 characteristicName = "sensorConfiguration";
+                break;
+            case "setCurrentTime":
+                characteristicName = "currentTime";
                 break;
             case "triggerVibration":
                 characteristicName = "vibration";

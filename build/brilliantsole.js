@@ -371,7 +371,7 @@
 
 	/** @typedef {"webBluetooth" | "noble" | "webSocketClient"} ConnectionType */
 	/** @typedef {"not connected" | "connecting" | "connected" | "disconnecting"} ConnectionStatus */
-	/** @typedef {"manufacturerName" | "modelNumber" | "softwareRevision" | "hardwareRevision" | "firmwareRevision" | "pnpId" | "serialNumber" | "batteryLevel" | "getName" | "setName" | "getType" | "setType" | "getSensorConfiguration" | "setSensorConfiguration" | "sensorScalars" | "pressurePositions" | "sensorData" | "triggerVibration"} ConnectionMessageType */
+	/** @typedef {"manufacturerName" | "modelNumber" | "softwareRevision" | "hardwareRevision" | "firmwareRevision" | "pnpId" | "serialNumber" | "batteryLevel" | "getName" | "setName" | "getType" | "setType" | "getSensorConfiguration" | "setSensorConfiguration" | "sensorScalars" | "pressurePositions" | "sensorData" | "setCurrentTime" | "getCurrentTime" | "triggerVibration"} ConnectionMessageType */
 
 	const _console$m = createConsole("ConnectionManager");
 
@@ -406,6 +406,8 @@
 	        "sensorScalars",
 	        "pressurePositions",
 	        "sensorData",
+	        "getCurrentTime",
+	        "setCurrentTime",
 	        "triggerVibration",
 	    ];
 	    static get MessageTypes() {
@@ -567,7 +569,7 @@
 	}
 
 	/** @typedef {"deviceInformation" | "battery" | "main" | "dfu"} BluetoothServiceName */
-	/** @typedef { "manufacturerName" | "modelNumber" | "hardwareRevision" | "firmwareRevision" | "softwareRevision" | "pnpId" | "serialNumber" | "batteryLevel" | "name" | "type" | "sensorConfiguration" | "pressurePositions" | "sensorScalars" | "sensorData" | "vibration"} BluetoothCharacteristicName */
+	/** @typedef { "manufacturerName" | "modelNumber" | "hardwareRevision" | "firmwareRevision" | "softwareRevision" | "pnpId" | "serialNumber" | "batteryLevel" | "name" | "type" | "sensorConfiguration" | "pressurePositions" | "sensorScalars" | "sensorData" | "currentTime" | "vibration"} BluetoothCharacteristicName */
 
 	const bluetoothUUIDs = Object.freeze({
 	    services: {
@@ -614,6 +616,7 @@
 	                pressurePositions: { uuid: generateBluetoothUUID("11") },
 	                sensorScalars: { uuid: generateBluetoothUUID("12") },
 	                sensorData: { uuid: generateBluetoothUUID("13") },
+	                currentTime: { uuid: generateBluetoothUUID("14") },
 	                vibration: { uuid: generateBluetoothUUID("20") },
 	            },
 	        },
@@ -746,6 +749,7 @@
 	        case "sensorConfiguration":
 	        case "sensorData":
 	        case "pressurePositions":
+	        case "currentTime":
 	            properties.notify = true;
 	            break;
 	    }
@@ -903,16 +907,16 @@
 	                addEventListeners(characteristic, this.#boundBluetoothCharacteristicEventListeners);
 	                const characteristicProperties =
 	                    characteristic.properties || getCharacteristicProperties(characteristicName);
+	                if (characteristicProperties.notify) {
+	                    _console$l.log(`starting notifications for "${characteristicName}" characteristic`);
+	                    await characteristic.startNotifications();
+	                }
 	                if (characteristicProperties.read) {
 	                    _console$l.log(`reading "${characteristicName}" characteristic...`);
 	                    await characteristic.readValue();
 	                    if (isInBluefy || isInWebBLE) {
 	                        this.#onCharacteristicValueChanged(characteristic);
 	                    }
-	                }
-	                if (characteristicProperties.notify) {
-	                    _console$l.log(`starting notifications for "${characteristicName}" characteristic`);
-	                    await characteristic.startNotifications();
 	                }
 	            }
 	        }
@@ -981,6 +985,9 @@
 	            case "sensorConfiguration":
 	                this.onMessageReceived("getSensorConfiguration", dataView);
 	                break;
+	            case "currentTime":
+	                this.onMessageReceived("getCurrentTime", dataView);
+	                break;
 	            default:
 	                throw new Error(`uncaught characteristicName "${characteristicName}"`);
 	        }
@@ -1013,6 +1020,9 @@
 	                break;
 	            case "setSensorConfiguration":
 	                characteristicName = "sensorConfiguration";
+	                break;
+	            case "setCurrentTime":
+	                characteristicName = "currentTime";
 	                break;
 	            case "triggerVibration":
 	                characteristicName = "vibration";
@@ -1568,25 +1578,15 @@
 	    /** @type {SensorDataCallback?} */
 	    onDataReceived;
 
-	    #timestampOffset = 0;
-	    #lastRawTimestamp = 0;
-	    clearTimestamp() {
-	        _console$g.log("clearing sensorDataManager timestamp data");
-	        this.#timestampOffset = 0;
-	        this.#lastRawTimestamp = 0;
-	    }
-
 	    /**
 	     * @param {DataView} dataView
 	     * @param {number} byteOffset
 	     */
 	    #parseTimestamp(dataView, byteOffset) {
-	        const rawTimestamp = dataView.getUint16(byteOffset, true);
-	        if (rawTimestamp < this.#lastRawTimestamp) {
-	            this.#timestampOffset += Uint16Max;
-	        }
-	        this.#lastRawTimestamp = rawTimestamp;
-	        const timestamp = rawTimestamp + this.#timestampOffset;
+	        let now = Date.now();
+	        now -= now % Uint16Max;
+	        const lowerUint16 = dataView.getUint16(byteOffset, true);
+	        const timestamp = now + lowerUint16;
 	        return timestamp;
 	    }
 
@@ -2480,6 +2480,8 @@
 	        "pressurePositions",
 	        "sensorScalars",
 
+	        "getCurrentTime",
+
 	        "sensorData",
 	        "pressure",
 	        "acceleration",
@@ -2581,6 +2583,7 @@
 	        "getSensorConfiguration",
 	        "sensorScalars",
 	        "pressurePositions",
+	        "getCurrentTime",
 	    ];
 	    static get AllInformationConnectionMessages() {
 	        return this.#AllInformationConnectionMessages;
@@ -2699,7 +2702,7 @@
 	        }
 	    }
 	    #checkConnection() {
-	        this.#isConnected = this.connectionManager?.isConnected && this.#hasAllInformation;
+	        this.#isConnected = this.connectionManager?.isConnected && this.#hasAllInformation && this.#isCurrentTimeSet;
 
 	        switch (this.connectionStatus) {
 	            case "connected":
@@ -2718,6 +2721,7 @@
 
 	    #clear() {
 	        this.latestConnectionMessage.clear();
+	        this.#isCurrentTimeSet = false;
 	    }
 
 	    /**
@@ -2802,6 +2806,11 @@
 	                this.#sensorDataManager.pressureSensorDataManager.parsePositions(dataView);
 	                break;
 
+	            case "getCurrentTime":
+	                const currentTime = Number(dataView.getBigUint64(0, true));
+	                this.#onCurrentTime(currentTime);
+	                break;
+
 	            case "sensorData":
 	                this.#sensorDataManager.parseData(dataView);
 	                break;
@@ -2832,6 +2841,24 @@
 	    static #TextDecoder = new TextDecoder();
 	    get #textDecoder() {
 	        return Device.#TextDecoder;
+	    }
+
+	    // CURRENT TIME
+
+	    #isCurrentTimeSet = false;
+	    /** @param {number} currentTime */
+	    #onCurrentTime(currentTime) {
+	        _console$d.log({ currentTime });
+	        this.#isCurrentTimeSet = currentTime != 0;
+	        if (!this.#isCurrentTimeSet) {
+	            this.#setCurrentTime();
+	        }
+	    }
+	    #setCurrentTime() {
+	        _console$d.log("setting current time...");
+	        const dataView = new DataView(new ArrayBuffer(8));
+	        dataView.setBigUint64(0, BigInt(Date.now()), true);
+	        this.#connectionManager.sendMessage("setCurrentTime", dataView);
 	    }
 
 	    // DEVICE INFORMATION
@@ -2995,7 +3022,7 @@
 	            case "rightInsole":
 	                return true;
 	            default:
-	                // for future non-insole  device types
+	                // for future non-insole device types
 	                return false;
 	        }
 	    }
@@ -3048,10 +3075,6 @@
 	    #updateSensorConfiguration(updatedSensorConfiguration) {
 	        this.#sensorConfiguration = updatedSensorConfiguration;
 	        _console$d.log({ updatedSensorConfiguration: this.#sensorConfiguration });
-	        if (!this.#sensorConfigurationManager.hasAtLeastOneNonZeroSensorRate(this.sensorConfiguration)) {
-	            _console$d.log("clearing sensorDataManager timestamp...");
-	            this.#sensorDataManager.clearTimestamp();
-	        }
 	        this.#dispatchEvent({
 	            type: "getSensorConfiguration",
 	            message: { sensorConfiguration: this.sensorConfiguration },
@@ -3832,6 +3855,9 @@
 	            case "setSensorConfiguration":
 	                characteristicName = "sensorConfiguration";
 	                break;
+	            case "setCurrentTime":
+	                characteristicName = "currentTime";
+	                break;
 	            case "triggerVibration":
 	                characteristicName = "vibration";
 	                break;
@@ -4118,6 +4144,9 @@
 	                break;
 	            case "sensorConfiguration":
 	                this.onMessageReceived("getSensorConfiguration", dataView);
+	                break;
+	            case "currentTime":
+	                this.onMessageReceived("getCurrentTime", dataView);
 	                break;
 	            default:
 	                throw new Error(`uncaught characteristicName "${characteristicName}"`);
@@ -4976,6 +5005,9 @@
 	            case "triggerVibration":
 	                this.sendWebSocketMessage({ type: messageType, data });
 	                break;
+	            case "setCurrentTime":
+	                _console$3.log("setCurrentTime request ignored - reserved for direct device connections");
+	                break;
 	            default:
 	                throw Error(`uncaught messageType "${messageType}"`);
 	        }
@@ -5034,6 +5066,7 @@
 	                    case "pressurePositions":
 	                    case "sensorScalars":
 	                    case "sensorData":
+	                    case "getCurrentTime":
 	                        this.onMessageReceived(messageType, dataView);
 	                        break;
 	                    default:
@@ -6012,6 +6045,7 @@
 	                    case "getSensorConfiguration":
 	                    case "pressurePositions":
 	                    case "sensorScalars":
+	                    case "getCurrentTime":
 	                        responseMessages.push(this.#createDeviceMessage(device, messageType));
 	                        break;
 	                    case "setName":

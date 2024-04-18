@@ -404,6 +404,7 @@ class BaseServer {
                     case "getSensorConfiguration":
                     case "pressurePositions":
                     case "sensorScalars":
+                    case "getCurrentTime":
                         responseMessages.push(this.#createDeviceMessage(device, messageType));
                         break;
                     case "setName":

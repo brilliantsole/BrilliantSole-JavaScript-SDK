@@ -78,6 +78,9 @@ class WebSocketClientConnectionManager extends BaseConnectionManager {
             case "triggerVibration":
                 this.sendWebSocketMessage({ type: messageType, data });
                 break;
+            case "setCurrentTime":
+                _console.log("setCurrentTime request ignored - reserved for direct device connections");
+                break;
             default:
                 throw Error(`uncaught messageType "${messageType}"`);
         }
@@ -136,6 +139,7 @@ class WebSocketClientConnectionManager extends BaseConnectionManager {
                     case "pressurePositions":
                     case "sensorScalars":
                     case "sensorData":
+                    case "getCurrentTime":
                         this.onMessageReceived(messageType, dataView);
                         break;
                     default:

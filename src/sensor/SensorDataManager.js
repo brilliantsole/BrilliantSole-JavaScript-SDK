@@ -61,25 +61,15 @@ class SensorDataManager {
     /** @type {SensorDataCallback?} */
     onDataReceived;
 
-    #timestampOffset = 0;
-    #lastRawTimestamp = 0;
-    clearTimestamp() {
-        _console.log("clearing sensorDataManager timestamp data");
-        this.#timestampOffset = 0;
-        this.#lastRawTimestamp = 0;
-    }
-
     /**
      * @param {DataView} dataView
      * @param {number} byteOffset
      */
     #parseTimestamp(dataView, byteOffset) {
-        const rawTimestamp = dataView.getUint16(byteOffset, true);
-        if (rawTimestamp < this.#lastRawTimestamp) {
-            this.#timestampOffset += Uint16Max;
-        }
-        this.#lastRawTimestamp = rawTimestamp;
-        const timestamp = rawTimestamp + this.#timestampOffset;
+        let now = Date.now();
+        now -= now % Uint16Max;
+        const lowerUint16 = dataView.getUint16(byteOffset, true);
+        const timestamp = now + lowerUint16;
         return timestamp;
     }
 

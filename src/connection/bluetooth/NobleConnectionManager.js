@@ -74,6 +74,9 @@ class NobleConnectionManager extends BaseConnectionManager {
             case "setSensorConfiguration":
                 characteristicName = "sensorConfiguration";
                 break;
+            case "setCurrentTime":
+                characteristicName = "currentTime";
+                break;
             case "triggerVibration":
                 characteristicName = "vibration";
                 break;
@@ -360,6 +363,9 @@ class NobleConnectionManager extends BaseConnectionManager {
                 break;
             case "sensorConfiguration":
                 this.onMessageReceived("getSensorConfiguration", dataView);
+                break;
+            case "currentTime":
+                this.onMessageReceived("getCurrentTime", dataView);
                 break;
             default:
                 throw new Error(`uncaught characteristicName "${characteristicName}"`);
