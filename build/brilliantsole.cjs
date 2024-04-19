@@ -625,9 +625,24 @@ const bluetoothUUIDs = Object.freeze({
 
                 vibration: { uuid: generateBluetoothUUID("3000") },
 
-                // FILL - file transfer
+                maxFileLength: { uuid: generateBluetoothUUID("4000") },
+                fileType: { uuid: generateBluetoothUUID("4001") },
+                fileLength: { uuid: generateBluetoothUUID("4002") },
+                fileChecksum: { uuid: generateBluetoothUUID("4003") },
+                fileTransferCommand: { uuid: generateBluetoothUUID("4004") },
+                fileTransferStatus: { uuid: generateBluetoothUUID("4005") },
+                fileTransferBlock: { uuid: generateBluetoothUUID("4006") },
 
-                // FILL - tflite
+                tfliteModelName: { uuid: generateBluetoothUUID("5000") },
+                tfliteModelTask: { uuid: generateBluetoothUUID("5001") },
+                tfliteModelSampleRate: { uuid: generateBluetoothUUID("5002") },
+                tfliteModelSensorTypes: { uuid: generateBluetoothUUID("5003") },
+                tfliteModelNumberOfClasses: { uuid: generateBluetoothUUID("5004") },
+                tfliteModelIsReady: { uuid: generateBluetoothUUID("5005") },
+                tfliteCaptureDelay: { uuid: generateBluetoothUUID("5006") },
+                tfliteThreshold: { uuid: generateBluetoothUUID("5007") },
+                tfliteEnableInferencing: { uuid: generateBluetoothUUID("5008") },
+                tfliteModelInference: { uuid: generateBluetoothUUID("5009") },
             },
         },
         dfu: {
