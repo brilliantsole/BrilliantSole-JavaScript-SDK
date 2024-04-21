@@ -1,7 +1,7 @@
 import { isInBrowser, isInNode } from "../../utils/environment.js";
 import { createConsole } from "../../utils/Console.js";
 
-const _console = createConsole("bluetoothUUIDs", { log: true });
+const _console = createConsole("bluetoothUUIDs", { log: false });
 
 if (isInNode) {
     const webbluetooth = require("webbluetooth");
@@ -32,7 +32,43 @@ function stringToServiceUUID(identifier) {
 }
 
 /** @typedef {"deviceInformation" | "battery" | "main" | "dfu"} BluetoothServiceName */
-/** @typedef { "manufacturerName" | "modelNumber" | "hardwareRevision" | "firmwareRevision" | "softwareRevision" | "pnpId" | "serialNumber" | "batteryLevel" | "name" | "type" | "sensorConfiguration" | "pressurePositions" | "sensorScalars" | "sensorData" | "currentTime" | "vibration"} BluetoothCharacteristicName */
+/**
+ * @typedef { "manufacturerName" |
+ * "modelNumber" |
+ * "hardwareRevision" |
+ * "firmwareRevision" |
+ * "softwareRevision" |
+ * "pnpId" |
+ * "serialNumber" |
+ * "batteryLevel" |
+ * "name" |
+ * "type" |
+ * "sensorConfiguration" |
+ * "pressurePositions" |
+ * "sensorScalars" |
+ * "sensorData" |
+ * "currentTime" |
+ * "vibration" |
+ * "maxFileLength" |
+ * "fileTransferType" |
+ * "fileLength" |
+ * "fileChecksum" |
+ * "fileTransferCommand" |
+ * "fileTransferStatus" |
+ * "fileTransferBlock" |
+ * "tfliteModelName" |
+ * "tfliteModelTask" |
+ * "tfliteModelSampleRate" |
+ * "tfliteModelSensorTypes" |
+ * "tfliteModelNumberOfClasses" |
+ * "tfliteModelIsReady" |
+ * "tfliteCaptureDelay" |
+ * "tfliteThreshold" |
+ * "tfliteEnableInferencing" |
+ * "tfliteModelInference" |
+ * "dfu"
+ * } BluetoothCharacteristicName
+ */
 
 const bluetoothUUIDs = Object.freeze({
     services: {
@@ -85,7 +121,7 @@ const bluetoothUUIDs = Object.freeze({
                 vibration: { uuid: generateBluetoothUUID("3000") },
 
                 maxFileLength: { uuid: generateBluetoothUUID("4000") },
-                fileType: { uuid: generateBluetoothUUID("4001") },
+                fileTransferType: { uuid: generateBluetoothUUID("4001") },
                 fileLength: { uuid: generateBluetoothUUID("4002") },
                 fileChecksum: { uuid: generateBluetoothUUID("4003") },
                 fileTransferCommand: { uuid: generateBluetoothUUID("4004") },
@@ -107,7 +143,7 @@ const bluetoothUUIDs = Object.freeze({
         dfu: {
             uuid: "8d53dc1d-1db7-4cd3-868b-8a527460aa84",
             characteristics: {
-                // FILL
+                dfu: { uuid: "da2e7828-fbce-4e01-ae9e-261174997c48" },
             },
         },
     },
@@ -119,7 +155,7 @@ const bluetoothUUIDs = Object.freeze({
 
     /** @type {BluetoothServiceUUID[]} */
     get optionalServiceUUIDs() {
-        return [this.services.deviceInformation.uuid, this.services.battery.uuid];
+        return [this.services.deviceInformation.uuid, this.services.battery.uuid, this.services.dfu.uuid];
     },
 
     /**
@@ -145,7 +181,7 @@ const bluetoothUUIDs = Object.freeze({
      * @returns {BluetoothCharacteristicName?}
      */
     getCharacteristicNameFromUUID(characteristicUUID) {
-        _console.log({ characteristicUUID });
+        //_console.log({ characteristicUUID });
         characteristicUUID = characteristicUUID.toLowerCase();
         var characteristicName;
         Object.values(this.services).some((serviceInfo) => {
@@ -229,6 +265,8 @@ export function getCharacteristicProperties(characteristicName) {
     switch (characteristicName) {
         case "vibration":
         case "sensorData":
+        case "fileTransferCommand":
+        case "fileTransferBlock":
             properties.read = false;
             break;
     }
@@ -242,6 +280,11 @@ export function getCharacteristicProperties(characteristicName) {
         case "sensorData":
         case "pressurePositions":
         case "currentTime":
+        case "fileLength":
+        case "fileChecksum":
+        case "fileTransferType":
+        case "fileTransferStatus":
+        case "fileTransferBlock":
             properties.notify = true;
             break;
     }
@@ -252,6 +295,11 @@ export function getCharacteristicProperties(characteristicName) {
         case "type":
         case "sensorConfiguration":
         case "vibration":
+        case "fileLength":
+        case "fileChecksum":
+        case "fileTransferType":
+        case "fileTransferCommand":
+        case "fileTransferBlock":
             properties.write = true;
             properties.writeWithoutResponse = true;
             properties.reliableWrite = true;

@@ -7,8 +7,10 @@ import SensorConfigurationManager from "./sensor/SensorConfigurationManager.js";
 import SensorDataManager from "./sensor/SensorDataManager.js";
 import VibrationManager from "./vibration/VibrationManager.js";
 import { concatenateArrayBuffers } from "./utils/ArrayBufferUtils.js";
+import FileTransferManager from "./FileTransferManager.js";
+import TfliteManager from "./TfliteManager.js";
 
-const _console = createConsole("Device", { log: true });
+const _console = createConsole("Device", { log: false });
 
 /** @typedef {import("./connection/BaseConnectionManager.js").ConnectionMessageType} ConnectionMessageType */
 /** @typedef {import("./sensor/SensorDataManager.js").SensorType} SensorType */
@@ -258,6 +260,22 @@ class Device {
         "sensorScalars",
         "pressurePositions",
         "getCurrentTime",
+
+        "maxFileLength",
+        "getFileLength",
+        "getFileChecksum",
+        "fileTransferStatus",
+
+        "getTfliteModelName",
+        "getTfliteModelTask",
+        "getTfliteModelSampleRate",
+        "getTfliteModelSensorTypes",
+        "getTfliteModelNumberOfClasses",
+        "tfliteModelIsReady",
+        "getTfliteCaptureDelay",
+        "getTfliteThreshold",
+        "getTfliteEnableInferencing",
+        "tfliteModelInference",
     ];
     static get AllInformationConnectionMessages() {
         return this.#AllInformationConnectionMessages;
@@ -489,6 +507,56 @@ class Device {
 
             case "sensorData":
                 this.#sensorDataManager.parseData(dataView);
+                break;
+
+            case "maxFileLength":
+                this.#fileTransferManager.parseMaxLength(dataView);
+                break;
+            case "getFileTransferType":
+                this.#fileTransferManager.parseType(dataView);
+                break;
+            case "getFileLength":
+                this.#fileTransferManager.parseLength(dataView);
+                break;
+            case "getFileChecksum":
+                this.#fileTransferManager.parseChecksum(dataView);
+                break;
+            case "fileTransferStatus":
+                this.#fileTransferManager.parseStatus(dataView);
+                break;
+            case "getFileTransferBlock":
+                this.#fileTransferManager.parseBlock(dataView);
+                break;
+
+            case "getTfliteModelName":
+                this.#tfliteManager.parseName(dataView);
+                break;
+            case "getTfliteModelTask":
+                this.#tfliteManager.parseTask(dataView);
+                break;
+            case "getTfliteModelSampleRate":
+                this.#tfliteManager.parseSampleRate(dataView);
+                break;
+            case "getTfliteModelSensorTypes":
+                this.#tfliteManager.parseSensorTypes(dataView);
+                break;
+            case "getTfliteModelNumberOfClasses":
+                this.#tfliteManager.parseNumberOfClasses(dataView);
+                break;
+            case "tfliteModelIsReady":
+                this.#tfliteManager.parseIsReady(dataView);
+                break;
+            case "getTfliteCaptureDelay":
+                this.#tfliteManager.parseCaptureDelay(dataView);
+                break;
+            case "getTfliteThreshold":
+                this.#tfliteManager.parseThreshold(dataView);
+                break;
+            case "getTfliteEnableInferencing":
+                this.#tfliteManager.parseEnableInferencing(dataView);
+                break;
+            case "tfliteModelInference":
+                this.#tfliteManager.parseInference(dataView);
                 break;
 
             default:
@@ -974,7 +1042,7 @@ class Device {
             _console.log({ configuration });
             this.#LocalStorageConfiguration = configuration;
             if (this.CanGetDevices) {
-                await this.GetDevices();
+                await this.GetDevices(); // redundant?
             }
         } catch (error) {
             _console.error(error);
@@ -1175,7 +1243,6 @@ class Device {
             } else {
                 this.AvailableDevices.push(device);
             }
-
             this.#DispatchAvailableDevices();
         }
     }
@@ -1196,6 +1263,34 @@ class Device {
             this.UseLocalStorage = true;
         }
     }
+
+    // FILE TRANSFER
+
+    #fileTransferManager = new FileTransferManager();
+
+    get maxFileLength() {
+        return this.#fileTransferManager.maxLength;
+    }
+
+    /** @typedef {import("./FileTransferManager.js").FileType} FileType */
+    /** @typedef {import("./FileTransferManager.js").FileLike} FileLike */
+
+    /**
+     * @param {FileType} fileType
+     * @param {FileLike} file
+     */
+    sendFile(fileType, file) {
+        this.#fileTransferManager.sendFile(fileType, file);
+    }
+
+    /** @param {FileType} fileType */
+    receiveFile(fileType) {
+        this.#fileTransferManager.receiveFile(fileType);
+    }
+
+    // TFLITE
+
+    #tfliteManager = new TfliteManager();
 }
 
 export default Device;

@@ -5,9 +5,60 @@ import { createConsole } from "../utils/Console.js";
 
 /** @typedef {"webBluetooth" | "noble" | "webSocketClient"} ConnectionType */
 /** @typedef {"not connected" | "connecting" | "connected" | "disconnecting"} ConnectionStatus */
-/** @typedef {"manufacturerName" | "modelNumber" | "softwareRevision" | "hardwareRevision" | "firmwareRevision" | "pnpId" | "serialNumber" | "batteryLevel" | "getName" | "setName" | "getType" | "setType" | "getSensorConfiguration" | "setSensorConfiguration" | "sensorScalars" | "pressurePositions" | "sensorData" | "setCurrentTime" | "getCurrentTime" | "triggerVibration"} ConnectionMessageType */
+/**
+ * @typedef { "manufacturerName" |
+ * "modelNumber" |
+ * "softwareRevision" |
+ * "hardwareRevision" |
+ * "firmwareRevision" |
+ * "pnpId" |
+ * "serialNumber" |
+ * "batteryLevel" |
+ * "getName" |
+ * "setName" |
+ * "getType" |
+ * "setType" |
+ * "getSensorConfiguration" |
+ * "setSensorConfiguration" |
+ * "sensorScalars" |
+ * "pressurePositions" |
+ * "sensorData" |
+ * "setCurrentTime" |
+ * "getCurrentTime" |
+ * "triggerVibration" |
+ * "maxFileLength" |
+ * "getFileTransferType" |
+ * "setFileTransferType" |
+ * "getFileLength" |
+ * "setFileLength" |
+ * "getFileChecksum" |
+ * "setFileChecksum" |
+ * "setFileTransferCommand" |
+ * "fileTransferStatus" |
+ * "getFileTransferBlock" |
+ * "setFileTransferBlock" |
+ * "getTfliteModelName" |
+ * "setTfliteModelName" |
+ * "getTfliteModelTask" |
+ * "setTfliteModelTask" |
+ * "getTfliteModelSampleRate" |
+ * "setTfliteModelSampleRate" |
+ * "getTfliteModelSensorTypes" |
+ * "setTfliteModelSensorTypes" |
+ * "getTfliteModelNumberOfClasses" |
+ * "setTfliteModelNumberOfClasses" |
+ * "tfliteModelIsReady" |
+ * "getTfliteCaptureDelay" |
+ * "setTfliteCaptureDelay" |
+ * "getTfliteThreshold" |
+ * "setTfliteThreshold" |
+ * "getTfliteEnableInferencing" |
+ * "setTfliteEnableInferencing" |
+ * "tfliteModelInference"
+ * } ConnectionMessageType
+ */
 
-const _console = createConsole("ConnectionManager");
+const _console = createConsole("ConnectionManager", { log: false });
 
 /**
  * @callback ConnectionStatusCallback
@@ -43,6 +94,37 @@ class BaseConnectionManager {
         "getCurrentTime",
         "setCurrentTime",
         "triggerVibration",
+
+        "maxFileLength",
+        "getFileTransferType",
+        "setFileTransferType",
+        "getFileLength",
+        "setFileLength",
+        "getFileChecksum",
+        "setFileChecksum",
+        "setFileTransferCommand",
+        "fileTransferStatus",
+        "getFileTransferBlock",
+        "setFileTransferBlock",
+
+        "getTfliteModelName",
+        "setTfliteModelName",
+        "getTfliteModelTask",
+        "setTfliteModelTask",
+        "getTfliteModelSampleRate",
+        "setTfliteModelSampleRate",
+        "getTfliteModelSensorTypes",
+        "setTfliteModelSensorTypes",
+        "getTfliteModelNumberOfClasses",
+        "setTfliteModelNumberOfClasses",
+        "tfliteModelIsReady",
+        "getTfliteCaptureDelay",
+        "setTfliteCaptureDelay",
+        "getTfliteThreshold",
+        "setTfliteThreshold",
+        "getTfliteEnableInferencing",
+        "setTfliteEnableInferencing",
+        "tfliteModelInference",
     ];
     static get MessageTypes() {
         return this.#MessageTypes;

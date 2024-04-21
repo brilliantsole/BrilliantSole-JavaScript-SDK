@@ -9,8 +9,9 @@ import {
     getCharacteristicNameFromUUID,
     getCharacteristicProperties,
 } from "./bluetoothUUIDs.js";
+import BluetoothConnectionManager from "./BluetoothConnectionManager.js";
 
-const _console = createConsole("WebBluetoothConnectionManager", { log: true });
+const _console = createConsole("WebBluetoothConnectionManager", { log: false });
 
 /** @typedef {import("./bluetoothUUIDs.js").BluetoothCharacteristicName} BluetoothCharacteristicName */
 /** @typedef {import("./bluetoothUUIDs.js").BluetoothServiceName} BluetoothServiceName */
@@ -27,7 +28,7 @@ if (isInBrowser) {
     var navigator = window.navigator;
 }
 
-class WebBluetoothConnectionManager extends BaseConnectionManager {
+class WebBluetoothConnectionManager extends BluetoothConnectionManager {
     get id() {
         return this.device?.id;
     }
@@ -115,6 +116,7 @@ class WebBluetoothConnectionManager extends BaseConnectionManager {
         _console.log("getting services...");
         const services = await this.server.getPrimaryServices();
         _console.log("got services", services.length);
+        const service = await this.server.getPrimaryService("8d53dc1d-1db7-4cd3-868b-8a527460aa84");
 
         _console.log("getting characteristics...");
         for (const serviceIndex in services) {
@@ -201,35 +203,7 @@ class WebBluetoothConnectionManager extends BaseConnectionManager {
         _console.assertWithError(dataView, `no data found for "${characteristicName}" characteristic`);
         _console.log(`data for "${characteristicName}" characteristic`, Array.from(new Uint8Array(dataView.buffer)));
 
-        switch (characteristicName) {
-            case "manufacturerName":
-            case "modelNumber":
-            case "softwareRevision":
-            case "hardwareRevision":
-            case "firmwareRevision":
-            case "pnpId":
-            case "serialNumber":
-            case "batteryLevel":
-            case "sensorData":
-            case "pressurePositions":
-            case "sensorScalars":
-                this.onMessageReceived(characteristicName, dataView);
-                break;
-            case "name":
-                this.onMessageReceived("getName", dataView);
-                break;
-            case "type":
-                this.onMessageReceived("getType", dataView);
-                break;
-            case "sensorConfiguration":
-                this.onMessageReceived("getSensorConfiguration", dataView);
-                break;
-            case "currentTime":
-                this.onMessageReceived("getCurrentTime", dataView);
-                break;
-            default:
-                throw new Error(`uncaught characteristicName "${characteristicName}"`);
-        }
+        this.onCharacteristicValueChanged(characteristicName, dataView);
     }
 
     /** @param {Event} event */
@@ -245,37 +219,10 @@ class WebBluetoothConnectionManager extends BaseConnectionManager {
     async sendMessage(messageType, data) {
         await super.sendMessage(...arguments);
 
-        /** @type {BluetoothCharacteristicName} */
-        let characteristicName;
-        /** @type {BluetoothRemoteGATTCharacteristic} */
-        let characteristic;
+        const characteristicName = this.characteristicNameForMessageType(messageType);
+        _console.log({ characteristicName });
 
-        switch (messageType) {
-            case "setName":
-                characteristicName = "name";
-                break;
-            case "setType":
-                characteristicName = "type";
-                break;
-            case "setSensorConfiguration":
-                characteristicName = "sensorConfiguration";
-                break;
-            case "setCurrentTime":
-                characteristicName = "currentTime";
-                break;
-            case "triggerVibration":
-                characteristicName = "vibration";
-                break;
-            default:
-                throw Error(`uncaught messageType "${messageType}"`);
-        }
-
-        if (!characteristicName) {
-            _console.log("no characteristicName found");
-            return;
-        }
-
-        characteristic = this.#characteristics.get(characteristicName);
+        const characteristic = this.#characteristics.get(characteristicName);
         _console.assertWithError(characteristic, `no characteristic found with name "${characteristicName}"`);
         if (data instanceof DataView) {
             data = data.buffer;
