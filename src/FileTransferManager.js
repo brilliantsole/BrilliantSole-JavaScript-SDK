@@ -2,13 +2,55 @@ import { createConsole } from "./utils/Console";
 
 const _console = createConsole("FileTransferManager", { log: true });
 
+/**
+ * @typedef { "maxFileLength" |
+ * "getFileTransferType" |
+ * "setFileTransferType" |
+ * "getFileLength" |
+ * "setFileLength" |
+ * "getFileChecksum" |
+ * "setFileChecksum" |
+ * "setFileTransferCommand" |
+ * "fileTransferStatus" |
+ * "getFileTransferBlock" |
+ * "setFileTransferBlock"
+ * } FileTransferMessageType
+ */
+
 /** @typedef {"tflite"} FileType */
 /** @typedef {"idle" | "sending" | "receiving"} FileTransferStatus */
 /** @typedef {"startReceive" | "startSend" | "cancel"} FileTransferCommand */
 
 /** @typedef {number[] | ArrayBuffer | DataView | URL | string | File} FileLike */
 
+/**
+ * @callback SendMessageCallback
+ * @param {FileTransferMessageType} messageType
+ * @param {DataView|ArrayBuffer} data
+ */
+
 class FileTransferManager {
+    /** @type {FileTransferMessageType[]} */
+    static #MessageTypes = [
+        "maxFileLength",
+        "getFileTransferType",
+        "setFileTransferType",
+        "getFileLength",
+        "setFileLength",
+        "getFileChecksum",
+        "setFileChecksum",
+        "setFileTransferCommand",
+        "fileTransferStatus",
+        "getFileTransferBlock",
+        "setFileTransferBlock",
+    ];
+    static get MessageTypes() {
+        return this.#MessageTypes;
+    }
+    get messageTypes() {
+        return FileTransferManager.MessageTypes;
+    }
+
     /** @type {FileType[]} */
     static #Types = ["tflite"];
     static get Types() {
@@ -81,7 +123,7 @@ class FileTransferManager {
         return this.#maxLength;
     }
     /** @param {DataView} dataView */
-    parseMaxLength(dataView) {
+    #parseMaxLength(dataView) {
         _console.log("parseFileMaxLength", dataView);
         const maxLength = dataView.getUint32(0, true);
         _console.log(`maxLength: ${maxLength}kB`);
@@ -101,7 +143,7 @@ class FileTransferManager {
         return this.#type;
     }
     /** @param {DataView} dataView */
-    parseType(dataView) {
+    #parseType(dataView) {
         _console.log("parseFileType", dataView);
         const typeEnum = dataView.getUint8(0);
         this.assertValidTypeEnum(typeEnum);
@@ -125,7 +167,7 @@ class FileTransferManager {
         return this.#length;
     }
     /** @param {DataView} dataView */
-    parseLength(dataView) {
+    #parseLength(dataView) {
         _console.log("parseFileLength", dataView);
         const length = dataView.getUint32(0, true);
         _console.log(`length: ${length}kB`);
@@ -148,7 +190,7 @@ class FileTransferManager {
         return this.#checksum;
     }
     /** @param {DataView} dataView */
-    parseChecksum(dataView) {
+    #parseChecksum(dataView) {
         _console.log("checksum", dataView);
         const checksum = dataView.getUint32(0, true);
         _console.log({ checksum });
@@ -178,7 +220,7 @@ class FileTransferManager {
         return this.#status;
     }
     /** @param {DataView} dataView */
-    parseStatus(dataView) {
+    #parseStatus(dataView) {
         _console.log("parseFileStatus", dataView);
         const statusEnum = dataView.getUint8(0);
         this.assertValidStatusEnum(statusEnum);
@@ -188,9 +230,40 @@ class FileTransferManager {
     }
 
     /** @param {DataView} dataView */
-    parseBlock(dataView) {
+    #parseBlock(dataView) {
         _console.log("parseFileBlock", dataView);
         // FILL
+    }
+
+    /**
+     * @param {FileTransferMessageType} messageType
+     * @param {DataView} dataView
+     */
+    parseMessage(messageType, dataView) {
+        _console.log({ messageType });
+
+        switch (messageType) {
+            case "maxFileLength":
+                this.#parseMaxLength(dataView);
+                break;
+            case "getFileTransferType":
+                this.#parseType(dataView);
+                break;
+            case "getFileLength":
+                this.#parseLength(dataView);
+                break;
+            case "getFileChecksum":
+                this.#parseChecksum(dataView);
+                break;
+            case "fileTransferStatus":
+                this.#parseStatus(dataView);
+                break;
+            case "getFileTransferBlock":
+                this.#parseBlock(dataView);
+                break;
+            default:
+                throw Error(`uncaught messageType ${messageType}`);
+        }
     }
 
     /**
@@ -207,6 +280,9 @@ class FileTransferManager {
         this.assertValidType(type);
         // FILL
     }
+
+    /** @type {SendMessageCallback} */
+    sendMessage;
 }
 
 export default FileTransferManager;

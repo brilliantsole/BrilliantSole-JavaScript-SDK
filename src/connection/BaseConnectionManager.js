@@ -1,7 +1,13 @@
 import { createConsole } from "../utils/Console.js";
 
+import FileTransferManager from "../FileTransferManager.js";
+import TfliteManager from "../TfliteManager.js";
+
 /** @typedef {import("./utils/EventDispatcher.js").EventDispatcherListener} EventDispatcherListener */
 /** @typedef {import("./utils/EventDispatcher.js").EventDispatcherOptions} EventDispatcherOptions */
+
+/** @typedef {import("../FileTransferManager.js").FileTransferMessageType} FileTransferMessageType */
+/** @typedef {import("../TfliteManager.js").TfliteMessageType} TfliteMessageType */
 
 /** @typedef {"webBluetooth" | "noble" | "webSocketClient"} ConnectionType */
 /** @typedef {"not connected" | "connecting" | "connected" | "disconnecting"} ConnectionStatus */
@@ -26,35 +32,8 @@ import { createConsole } from "../utils/Console.js";
  * "setCurrentTime" |
  * "getCurrentTime" |
  * "triggerVibration" |
- * "maxFileLength" |
- * "getFileTransferType" |
- * "setFileTransferType" |
- * "getFileLength" |
- * "setFileLength" |
- * "getFileChecksum" |
- * "setFileChecksum" |
- * "setFileTransferCommand" |
- * "fileTransferStatus" |
- * "getFileTransferBlock" |
- * "setFileTransferBlock" |
- * "getTfliteModelName" |
- * "setTfliteModelName" |
- * "getTfliteModelTask" |
- * "setTfliteModelTask" |
- * "getTfliteModelSampleRate" |
- * "setTfliteModelSampleRate" |
- * "getTfliteModelSensorTypes" |
- * "setTfliteModelSensorTypes" |
- * "getTfliteModelNumberOfClasses" |
- * "setTfliteModelNumberOfClasses" |
- * "tfliteModelIsReady" |
- * "getTfliteCaptureDelay" |
- * "setTfliteCaptureDelay" |
- * "getTfliteThreshold" |
- * "setTfliteThreshold" |
- * "getTfliteEnableInferencing" |
- * "setTfliteEnableInferencing" |
- * "tfliteModelInference"
+ * FileTransferMessageType |
+ * TfliteMessageType
  * } ConnectionMessageType
  */
 
@@ -95,36 +74,8 @@ class BaseConnectionManager {
         "setCurrentTime",
         "triggerVibration",
 
-        "maxFileLength",
-        "getFileTransferType",
-        "setFileTransferType",
-        "getFileLength",
-        "setFileLength",
-        "getFileChecksum",
-        "setFileChecksum",
-        "setFileTransferCommand",
-        "fileTransferStatus",
-        "getFileTransferBlock",
-        "setFileTransferBlock",
-
-        "getTfliteModelName",
-        "setTfliteModelName",
-        "getTfliteModelTask",
-        "setTfliteModelTask",
-        "getTfliteModelSampleRate",
-        "setTfliteModelSampleRate",
-        "getTfliteModelSensorTypes",
-        "setTfliteModelSensorTypes",
-        "getTfliteModelNumberOfClasses",
-        "setTfliteModelNumberOfClasses",
-        "tfliteModelIsReady",
-        "getTfliteCaptureDelay",
-        "setTfliteCaptureDelay",
-        "getTfliteThreshold",
-        "setTfliteThreshold",
-        "getTfliteEnableInferencing",
-        "setTfliteEnableInferencing",
-        "tfliteModelInference",
+        ...FileTransferManager.MessageTypes,
+        ...TfliteManager.MessageTypes,
     ];
     static get MessageTypes() {
         return this.#MessageTypes;

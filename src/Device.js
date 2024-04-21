@@ -101,6 +101,8 @@ class Device {
 
     constructor() {
         this.#sensorDataManager.onDataReceived = this.#onSensorDataReceived.bind(this);
+        this.#fileTransferManager.sendMessage = this.#sendMessage.bind(this);
+        this.#tfliteManager.sendMessage = this.#sendMessage.bind(this);
 
         if (isInBrowser) {
             window.addEventListener("beforeunload", () => {
@@ -227,6 +229,13 @@ class Device {
 
         this.#connectionManager = newConnectionManager;
         _console.log("assigned new connectionManager", this.#connectionManager);
+    }
+    /**
+     * @param {ConnectionMessageType} messageType
+     * @param {DataView|ArrayBuffer} data
+     */
+    #sendMessage(messageType, data) {
+        return this.#connectionManager?.sendMessage(messageType, data);
     }
 
     async connect() {
@@ -509,58 +518,14 @@ class Device {
                 this.#sensorDataManager.parseData(dataView);
                 break;
 
-            case "maxFileLength":
-                this.#fileTransferManager.parseMaxLength(dataView);
-                break;
-            case "getFileTransferType":
-                this.#fileTransferManager.parseType(dataView);
-                break;
-            case "getFileLength":
-                this.#fileTransferManager.parseLength(dataView);
-                break;
-            case "getFileChecksum":
-                this.#fileTransferManager.parseChecksum(dataView);
-                break;
-            case "fileTransferStatus":
-                this.#fileTransferManager.parseStatus(dataView);
-                break;
-            case "getFileTransferBlock":
-                this.#fileTransferManager.parseBlock(dataView);
-                break;
-
-            case "getTfliteModelName":
-                this.#tfliteManager.parseName(dataView);
-                break;
-            case "getTfliteModelTask":
-                this.#tfliteManager.parseTask(dataView);
-                break;
-            case "getTfliteModelSampleRate":
-                this.#tfliteManager.parseSampleRate(dataView);
-                break;
-            case "getTfliteModelSensorTypes":
-                this.#tfliteManager.parseSensorTypes(dataView);
-                break;
-            case "getTfliteModelNumberOfClasses":
-                this.#tfliteManager.parseNumberOfClasses(dataView);
-                break;
-            case "tfliteModelIsReady":
-                this.#tfliteManager.parseIsReady(dataView);
-                break;
-            case "getTfliteCaptureDelay":
-                this.#tfliteManager.parseCaptureDelay(dataView);
-                break;
-            case "getTfliteThreshold":
-                this.#tfliteManager.parseThreshold(dataView);
-                break;
-            case "getTfliteEnableInferencing":
-                this.#tfliteManager.parseEnableInferencing(dataView);
-                break;
-            case "tfliteModelInference":
-                this.#tfliteManager.parseInference(dataView);
-                break;
-
             default:
-                throw Error(`uncaught messageType ${messageType}`);
+                if (this.#fileTransferManager.messageTypes.includes(messageType)) {
+                    this.#fileTransferManager.parseMessage(messageType, dataView);
+                } else if (this.#tfliteManager.messageTypes.includes(messageType)) {
+                    this.#tfliteManager.parseMessage(messageType, dataView);
+                } else {
+                    throw Error(`uncaught messageType ${messageType}`);
+                }
         }
 
         this.latestConnectionMessage.set(messageType, dataView);

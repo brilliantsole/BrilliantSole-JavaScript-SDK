@@ -58,7 +58,7 @@ class SensorDataManager {
         _console.assertWithError(sensorTypeEnum in this.#Types, `invalid sensorTypeEnum ${sensorTypeEnum}`);
     }
 
-    /** @type {SensorDataCallback?} */
+    /** @type {SensorDataCallback} */
     onDataReceived;
 
     /**
@@ -113,7 +113,7 @@ class SensorDataManager {
             }
 
             _console.assertWithError(value, `no value defined for sensorType "${sensorType}"`);
-            this.onDataReceived?.(sensorType, { timestamp, [sensorType]: value });
+            this.onDataReceived(sensorType, { timestamp, [sensorType]: value });
         });
     }
 
