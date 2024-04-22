@@ -175,5 +175,27 @@
                 </li>
             </template>
         </div>
+
+        <div>
+            <h2>File Transfer</h2>
+            <label>
+                file transfer type
+                <select id="fileTransferTypes">
+                    <optgroup label="file transfer type"></optgroup>
+                </select>
+            </label>
+            <label>file (max <span id="maxFileLength">50</span>kb)<input id="file" type="file" /></label>
+            <label>
+                file transfer direction
+                <select id="fileTransferDirection">
+                    <optgroup label="file transfer direction">
+                        <option>send</option>
+                        <option>receive</option>
+                    </optgroup>
+                </select>
+            </label>
+            <button disabled id="toggleFileTransfer">send file</button>
+            <progress value="0" id="fileTransferProgress"></progress>
+        </div>
     </body>
 </html>

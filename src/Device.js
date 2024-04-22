@@ -1232,6 +1232,9 @@ class Device {
     // FILE TRANSFER
 
     #fileTransferManager = new FileTransferManager();
+    static get FileTypes() {
+        return FileTransferManager.Types;
+    }
 
     get maxFileLength() {
         return this.#fileTransferManager.maxLength;

@@ -60,11 +60,11 @@ class FileTransferManager {
         return FileTransferManager.Types;
     }
     /** @param {FileType} type */
-    assertValidType(type) {
+    #assertValidType(type) {
         _console.assertEnumWithError(type, this.types);
     }
     /** @param {number} typeEnum */
-    assertValidTypeEnum(typeEnum) {
+    #assertValidTypeEnum(typeEnum) {
         _console.assertWithError(this.types[typeEnum], `invalid typeEnum ${typeEnum}`);
     }
 
@@ -77,7 +77,7 @@ class FileTransferManager {
         return FileTransferManager.Statuses;
     }
     /** @param {number} statusEnum */
-    assertValidStatusEnum(statusEnum) {
+    #assertValidStatusEnum(statusEnum) {
         _console.assertWithError(this.statuses[statusEnum], `invalid statusEnum ${statusEnum}`);
     }
 
@@ -90,7 +90,7 @@ class FileTransferManager {
         return FileTransferManager.Commands;
     }
     /** @param {FileTransferCommand} command */
-    assertValidCommand(command) {
+    #assertValidCommand(command) {
         _console.assertEnumWithError(command, this.commands);
     }
 
@@ -117,7 +117,11 @@ class FileTransferManager {
         return FileTransferManager.GetFileBuffer(file);
     }
 
-    #maxLength = 0;
+    static #MaxLength = 50 * 1024; // 50kB
+    static get MaxLength() {
+        return this.#MaxLength;
+    }
+    #maxLength = FileTransferManager.MaxLength;
     /** kB */
     get maxLength() {
         return this.#maxLength;
@@ -130,7 +134,7 @@ class FileTransferManager {
         this.#maxLength = maxLength;
     }
     /** @param {number} length */
-    assertValidLength(length) {
+    #assertValidLength(length) {
         _console.assertWithError(
             length <= this.maxLength,
             `file length ${length}kB too large - must be ${this.maxLength}kB or less`
@@ -146,14 +150,14 @@ class FileTransferManager {
     #parseType(dataView) {
         _console.log("parseFileType", dataView);
         const typeEnum = dataView.getUint8(0);
-        this.assertValidTypeEnum(typeEnum);
+        this.#assertValidTypeEnum(typeEnum);
         const type = this.types[typeEnum];
         _console.log({ type });
         this.#type = type;
     }
     /** @param {FileType} newType */
     async #setType(newType) {
-        this.assertValidType(newType);
+        this.#assertValidType(newType);
         if (this.type == newType) {
             _console.log(`redundant type assignment ${newType}`);
             return;
@@ -176,7 +180,7 @@ class FileTransferManager {
     /** @param {number} newLength */
     async #setLength(newLength) {
         _console.assertTypeWithError(newLength, "number");
-        this.assertValidLength(newLength);
+        this.#assertValidLength(newLength);
         if (this.length == newLength) {
             _console.log(`redundant length assignment ${newLength}`);
             return;
@@ -209,7 +213,7 @@ class FileTransferManager {
 
     /** @param {FileTransferCommand} command */
     sendCommand(command) {
-        this.assertValidCommand(command);
+        this.#assertValidCommand(command);
 
         // FILL
     }
@@ -223,7 +227,7 @@ class FileTransferManager {
     #parseStatus(dataView) {
         _console.log("parseFileStatus", dataView);
         const statusEnum = dataView.getUint8(0);
-        this.assertValidStatusEnum(statusEnum);
+        this.#assertValidStatusEnum(statusEnum);
         const status = this.statuses[statusEnum];
         _console.log({ status });
         this.#status = status;
@@ -270,14 +274,15 @@ class FileTransferManager {
      * @param {FileType} type
      * @param {FileLike} file
      */
-    sendFile(type, file) {
-        this.assertValidType(type);
-        // FILL
+    async sendFile(type, file) {
+        this.#assertValidType(type);
+        const fileBuffer = await this.getFileBuffer(file);
+        console.log("fileBuffer", fileBuffer);
     }
 
     /** @param {FileType} type */
     receiveFile(type) {
-        this.assertValidType(type);
+        this.#assertValidType(type);
         // FILL
     }
 

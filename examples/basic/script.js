@@ -501,3 +501,78 @@ function updateTriggerVibrationsButtonDisabled() {
     triggerVibrationsButton.disabled =
         !device.isConnected || vibrationTemplate.parentElement.querySelectorAll(".vibration").length == 0;
 }
+
+// FILE TRANSFER
+
+/** @type {File?} */
+let file;
+
+/** @type {HTMLInputElement} */
+const fileInput = document.getElementById("file");
+fileInput.addEventListener("input", () => {
+    if (fileInput.files[0].size > device.maxFileLength) {
+        console.log("file size too large");
+        return;
+    }
+    file = fileInput.files[0];
+    console.log("file", file);
+    updateToggleFileTransferButton();
+});
+
+const maxFileLengthSpan = document.getElementById("maxFileLength");
+const updateMaxFileLengthSpan = () => {
+    maxFileLengthSpan.innerText = device.maxFileLength.toLocaleString();
+};
+updateMaxFileLengthSpan();
+device.addEventListener("isConnected", () => {
+    updateMaxFileLengthSpan();
+});
+
+/** @type {import("../../build/brilliantsole.module.js").FileType} */
+let fileType;
+
+/** @type {HTMLSelectElement} */
+const fileTransferTypesSelect = document.getElementById("fileTransferTypes");
+fileTransferTypesSelect.addEventListener("input", () => {
+    fileType = fileTransferTypesSelect.value;
+    console.log({ fileType });
+    switch (fileType) {
+        case "tflite":
+            fileInput.accept = ".tflite";
+            break;
+    }
+});
+/** @type {HTMLOptGroupElement} */
+const fileTransferTypesOptgroup = fileTransferTypesSelect.querySelector("optgroup");
+BS.Device.FileTypes.forEach((fileType) => {
+    fileTransferTypesOptgroup.appendChild(new Option(fileType));
+});
+fileTransferTypesSelect.dispatchEvent(new Event("input"));
+
+/** @type {HTMLProgressElement} */
+const fileTransferProgress = document.getElementById("fileTransferProgress");
+
+/** @type {HTMLButtonElement} */
+const toggleFileTransferButton = document.getElementById("toggleFileTransfer");
+toggleFileTransferButton.addEventListener("click", () => {
+    // FILL
+});
+const updateToggleFileTransferButton = () => {
+    const enabled = device.isConnected && file;
+    toggleFileTransferButton.disabled = !enabled;
+    toggleFileTransferButton.innerText = `${fileTransferDirection} file`;
+};
+device.addEventListener("isConnected", () => {
+    updateToggleFileTransferButton();
+});
+
+/** @type {"send" | "receive"} */
+let fileTransferDirection;
+/** @type {HTMLSelectElement} */
+const fileTransferDirectionSelect = document.getElementById("fileTransferDirection");
+fileTransferDirectionSelect.addEventListener("input", () => {
+    fileTransferDirection = fileTransferDirectionSelect.value;
+    console.log({ fileTransferDirection });
+    updateToggleFileTransferButton();
+});
+fileTransferDirectionSelect.dispatchEvent(new Event("input"));
