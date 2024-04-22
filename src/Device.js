@@ -1248,12 +1248,20 @@ class Device {
      * @param {FileLike} file
      */
     sendFile(fileType, file) {
-        this.#fileTransferManager.sendFile(fileType, file);
+        this.#fileTransferManager.send(fileType, file);
     }
 
     /** @param {FileType} fileType */
     receiveFile(fileType) {
-        this.#fileTransferManager.receiveFile(fileType);
+        this.#fileTransferManager.receive(fileType);
+    }
+
+    get fileTransferStatus() {
+        return this.#fileTransferManager.status;
+    }
+
+    cancelFileTransfer() {
+        this.#fileTransferManager.cancel();
     }
 
     // TFLITE

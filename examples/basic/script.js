@@ -521,7 +521,7 @@ fileInput.addEventListener("input", () => {
 
 const maxFileLengthSpan = document.getElementById("maxFileLength");
 const updateMaxFileLengthSpan = () => {
-    maxFileLengthSpan.innerText = device.maxFileLength.toLocaleString();
+    maxFileLengthSpan.innerText = (device.maxFileLength / 1024).toLocaleString();
 };
 updateMaxFileLengthSpan();
 device.addEventListener("isConnected", () => {
@@ -555,7 +555,11 @@ const fileTransferProgress = document.getElementById("fileTransferProgress");
 /** @type {HTMLButtonElement} */
 const toggleFileTransferButton = document.getElementById("toggleFileTransfer");
 toggleFileTransferButton.addEventListener("click", () => {
-    // FILL
+    if (fileTransferDirection == "send") {
+        device.sendFile(fileType, file);
+    } else {
+        device.receiveFile(fileType);
+    }
 });
 const updateToggleFileTransferButton = () => {
     const enabled = device.isConnected && file;

@@ -1,4 +1,4 @@
-import { createConsole } from "./utils/Console";
+import { createConsole } from "./utils/Console.js";
 
 const _console = createConsole("TfliteManager", { log: true });
 

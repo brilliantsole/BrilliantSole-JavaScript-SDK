@@ -2,7 +2,6 @@ import { dataToArrayBuffer } from "../../utils/ArrayBufferUtils.js";
 import { createConsole } from "../../utils/Console.js";
 import { isInNode } from "../../utils/environment.js";
 import { addEventListeners, removeEventListeners } from "../../utils/EventDispatcher.js";
-import BaseConnectionManager from "../BaseConnectionManager.js";
 import {
     allServiceUUIDs,
     serviceUUIDs,

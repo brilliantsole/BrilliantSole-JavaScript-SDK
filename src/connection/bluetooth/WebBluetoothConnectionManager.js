@@ -1,7 +1,6 @@
 import { createConsole } from "../../utils/Console.js";
 import { isInNode, isInBrowser, isInBluefy, isInWebBLE } from "../../utils/environment.js";
 import { addEventListeners, removeEventListeners } from "../../utils/EventDispatcher.js";
-import BaseConnectionManager from "../BaseConnectionManager.js";
 import {
     serviceUUIDs,
     optionalServiceUUIDs,
@@ -11,7 +10,7 @@ import {
 } from "./bluetoothUUIDs.js";
 import BluetoothConnectionManager from "./BluetoothConnectionManager.js";
 
-const _console = createConsole("WebBluetoothConnectionManager", { log: false });
+const _console = createConsole("WebBluetoothConnectionManager", { log: true });
 
 /** @typedef {import("./bluetoothUUIDs.js").BluetoothCharacteristicName} BluetoothCharacteristicName */
 /** @typedef {import("./bluetoothUUIDs.js").BluetoothServiceName} BluetoothServiceName */
