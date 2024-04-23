@@ -551,22 +551,53 @@ fileTransferTypesSelect.dispatchEvent(new Event("input"));
 
 /** @type {HTMLProgressElement} */
 const fileTransferProgress = document.getElementById("fileTransferProgress");
+device.addEventListener("fileTransferProgress", (event) => {
+    const progress = event.message.progress;
+    console.log({ progress });
+    fileTransferProgress.value = progress == 1 ? 0 : progress;
+});
+device.addEventListener("fileTransferStatus", () => {
+    if (device.fileTransferStatus == "idle") {
+        fileTransferProgress.value = 0;
+    }
+});
 
 /** @type {HTMLButtonElement} */
 const toggleFileTransferButton = document.getElementById("toggleFileTransfer");
 toggleFileTransferButton.addEventListener("click", () => {
-    if (fileTransferDirection == "send") {
-        device.sendFile(fileType, file);
+    if (device.fileTransferStatus == "idle") {
+        if (fileTransferDirection == "send") {
+            device.sendFile(fileType, file);
+        } else {
+            device.receiveFile(fileType);
+        }
     } else {
-        device.receiveFile(fileType);
+        device.cancelFileTransfer();
     }
 });
 const updateToggleFileTransferButton = () => {
-    const enabled = device.isConnected && file;
+    const enabled = device.isConnected && (file || fileTransferDirection == "receive");
     toggleFileTransferButton.disabled = !enabled;
-    toggleFileTransferButton.innerText = `${fileTransferDirection} file`;
+
+    /** @type {String} */
+    let innerText;
+    switch (device.fileTransferStatus) {
+        case "idle":
+            innerText = `${fileTransferDirection} file`;
+            break;
+        case "sending":
+            innerText = "stop sending file";
+            break;
+        case "receiving":
+            innerText = "stop receiving file";
+            break;
+    }
+    toggleFileTransferButton.innerText = innerText;
 };
 device.addEventListener("isConnected", () => {
+    updateToggleFileTransferButton();
+});
+device.addEventListener("fileTransferStatus", () => {
     updateToggleFileTransferButton();
 });
 
@@ -580,3 +611,20 @@ fileTransferDirectionSelect.addEventListener("input", () => {
     updateToggleFileTransferButton();
 });
 fileTransferDirectionSelect.dispatchEvent(new Event("input"));
+
+/** @param {File} file */
+function downloadFile(file) {
+    const a = document.createElement("a");
+    document.body.appendChild(a);
+    a.style = "display: none";
+    const url = window.URL.createObjectURL(file);
+    a.href = url;
+    a.download = file.name;
+    a.click();
+    window.URL.revokeObjectURL(url);
+}
+
+device.addEventListener("fileReceived", (event) => {
+    const file = event.message.file;
+    downloadFile(file);
+});

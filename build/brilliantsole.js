@@ -436,7 +436,7 @@
 
 
 
-	/** @typedef {FileTransferMessageType | "fileTransferProgress" | "fileTransferComplete"} FileTransferManagerEventType */
+	/** @typedef {FileTransferMessageType | "fileTransferProgress" | "fileTransferComplete" | "fileReceived"} FileTransferManagerEventType */
 
 	/**
 	 * @typedef FileTransferManagerEvent
@@ -475,14 +475,15 @@
 	    // EVENT DISPATCHER
 
 	    /** @type {FileTransferManagerEventType[]} */
-	    static #EventTypes = [...this.#MessageTypes, "fileTransferProgress", "fileTransferComplete"];
+	    static #EventTypes = [...this.#MessageTypes, "fileTransferProgress", "fileTransferComplete", "fileReceived"];
 	    static get EventTypes() {
 	        return this.#EventTypes;
 	    }
 	    get eventTypes() {
 	        return FileTransferManager.#EventTypes;
 	    }
-	    #eventDispatcher = new EventDispatcher(this, this.eventTypes);
+	    /** @type {EventDispatcher} */
+	    eventDispatcher;
 
 	    /**
 	     * @param {FileTransferManagerEventType} type
@@ -490,14 +491,14 @@
 	     * @param {EventDispatcherOptions} options
 	     */
 	    addEventListener(type, listener, options) {
-	        this.#eventDispatcher.addEventListener(type, listener, options);
+	        this.eventDispatcher.addEventListener(type, listener, options);
 	    }
 
 	    /**
 	     * @param {FileTransferManagerEvent} event
 	     */
 	    #dispatchEvent(event) {
-	        this.#eventDispatcher.dispatchEvent(event);
+	        this.eventDispatcher.dispatchEvent(event);
 	    }
 
 	    /**
@@ -505,7 +506,7 @@
 	     * @param {FileTransferManagerEventListener} listener
 	     */
 	    removeEventListener(type, listener) {
-	        return this.#eventDispatcher.removeEventListener(type, listener);
+	        return this.eventDispatcher.removeEventListener(type, listener);
 	    }
 
 	    /** @param {FileTransferManagerEventType} eventType */
@@ -729,7 +730,7 @@
 	    }
 
 	    /** @type {FileTransferStatus} */
-	    #status;
+	    #status = "idle";
 	    get status() {
 	        return this.#status;
 	    }
@@ -756,10 +757,48 @@
 
 	    // BLOCK
 
+	    /** @type {ArrayBuffer[]?} */
+	    #receivedBlocks;
+
 	    /** @param {DataView} dataView */
-	    #parseBlock(dataView) {
+	    async #parseBlock(dataView) {
 	        _console$p.log("parseFileBlock", dataView);
-	        // FILL
+	        this.#receivedBlocks.push(dataView.buffer);
+
+	        const bytesReceived = this.#receivedBlocks.reduce((sum, arrayBuffer) => (sum += arrayBuffer.byteLength), 0);
+	        const progress = bytesReceived / this.#length;
+
+	        _console$p.log(`received ${bytesReceived} of ${this.#length} bytes (${progress * 100}%)`);
+
+	        this.#dispatchEvent({ type: "fileTransferProgress", message: { progress } });
+
+	        if (bytesReceived != this.#length) {
+	            return;
+	        }
+
+	        _console$p.log("file transfer complete");
+
+	        let fileName = new Date().toLocaleString();
+	        switch (this.type) {
+	            case "tflite":
+	                fileName += ".tflite";
+	                break;
+	        }
+	        const file = new File(this.#receivedBlocks, fileName);
+
+	        const arrayBuffer = await file.arrayBuffer();
+	        const checksum = crc32(arrayBuffer);
+	        _console$p.log({ checksum });
+
+	        if (checksum != this.#checksum) {
+	            _console$p.error(`wrong checksum - expected ${this.#checksum}, got ${checksum}`);
+	            return;
+	        }
+
+	        console.log("received file", file);
+
+	        this.#dispatchEvent({ type: "fileTransferComplete", message: { direction: "receiving" } });
+	        this.#dispatchEvent({ type: "fileReceived", message: { file } });
 	    }
 
 	    // MESSAGE
@@ -817,22 +856,33 @@
 	        await this.#send(fileBuffer);
 	    }
 
-	    #blockSize = 256;
-
 	    /** @param {ArrayBuffer} buffer */
 	    async #send(buffer) {
 	        return this.#sendBlock(buffer);
 	    }
 
+	    #blockSize = 256;
 	    /**
 	     * @param {ArrayBuffer} buffer
 	     * @param {number} offset
 	     */
 	    async #sendBlock(buffer, offset = 0) {
+	        if (this.status != "sending") {
+	            return;
+	        }
+
 	        const slicedBuffer = buffer.slice(offset, offset + this.#blockSize);
-	        _console$p.log("sending buffer", slicedBuffer);
+	        const bytesLeft = buffer.byteLength - offset;
+	        const progress = 1 - bytesLeft / buffer.byteLength;
+	        _console$p.log(
+	            `sending bytes ${offset}-${offset + slicedBuffer.byteLength} of ${buffer.byteLength} bytes (${
+                progress * 100
+            }%)`
+	        );
+	        this.#dispatchEvent({ type: "fileTransferProgress", message: { progress } });
 	        if (slicedBuffer.byteLength == 0) {
 	            _console$p.log("finished sending buffer");
+	            this.#dispatchEvent({ type: "fileTransferComplete", message: { direction: "sending" } });
 	        } else {
 	            await this.sendMessage("setFileTransferBlock", slicedBuffer);
 	            return this.#sendBlock(buffer, offset + slicedBuffer.byteLength);
@@ -845,10 +895,10 @@
 
 	        this.#assertValidType(type);
 
+	        this.#receivedBlocks = [];
+
 	        await this.#setType(type);
 	        await this.#setCommand("startReceive");
-
-	        // FILL
 	    }
 
 	    async cancel() {
@@ -3176,7 +3226,7 @@
 
 
 
-	/** @typedef {"connectionStatus" | ConnectionStatus | "isConnected" | ConnectionMessageType | "deviceInformation" | SensorType | "connectionMessage"} DeviceEventType */
+	/** @typedef {"connectionStatus" | ConnectionStatus | "isConnected" | ConnectionMessageType | "deviceInformation" | SensorType | "connectionMessage" | "fileTransferProgress" | "fileTransferComplete" | "fileReceived"} DeviceEventType */
 
 	/** @typedef {"deviceConnected" | "deviceDisconnected" | "deviceIsConnected" | "availableDevices"} StaticDeviceEventType */
 
@@ -3264,7 +3314,9 @@
 	    constructor() {
 	        this.#sensorDataManager.onDataReceived = this.#onSensorDataReceived.bind(this);
 	        this.#fileTransferManager.sendMessage = this.#sendMessage.bind(this);
+	        this.#fileTransferManager.eventDispatcher = this.#eventDispatcher;
 	        this.#tfliteManager.sendMessage = this.#sendMessage.bind(this);
+	        this.#tfliteManager.eventDispatcher = this.#eventDispatcher;
 
 	        if (isInBrowser) {
 	            window.addEventListener("beforeunload", () => {
@@ -3334,6 +3386,9 @@
 	        "barometer",
 
 	        "connectionMessage",
+
+	        ...FileTransferManager.EventTypes,
+	        //...TfliteManager.EventTypes,
 	    ];
 	    static get EventTypes() {
 	        return this.#EventTypes;

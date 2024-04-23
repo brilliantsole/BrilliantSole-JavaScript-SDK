@@ -1,5 +1,5 @@
 import { createConsole } from "./utils/Console.js";
-import EventDispatcher from "./utils/EventDispatcher.js";
+import EventDispatcher, { addEventListeners } from "./utils/EventDispatcher.js";
 import BaseConnectionManager from "./connection/BaseConnectionManager.js";
 import { isInBrowser, isInNode } from "./utils/environment.js";
 import WebBluetoothConnectionManager from "./connection/bluetooth/WebBluetoothConnectionManager.js";
@@ -14,7 +14,7 @@ const _console = createConsole("Device", { log: false });
 
 /** @typedef {import("./connection/BaseConnectionManager.js").ConnectionMessageType} ConnectionMessageType */
 /** @typedef {import("./sensor/SensorDataManager.js").SensorType} SensorType */
-/** @typedef {"connectionStatus" | ConnectionStatus | "isConnected" | ConnectionMessageType | "deviceInformation" | SensorType | "connectionMessage"} DeviceEventType */
+/** @typedef {"connectionStatus" | ConnectionStatus | "isConnected" | ConnectionMessageType | "deviceInformation" | SensorType | "connectionMessage" | "fileTransferProgress" | "fileTransferComplete" | "fileReceived"} DeviceEventType */
 
 /** @typedef {"deviceConnected" | "deviceDisconnected" | "deviceIsConnected" | "availableDevices"} StaticDeviceEventType */
 
@@ -102,7 +102,9 @@ class Device {
     constructor() {
         this.#sensorDataManager.onDataReceived = this.#onSensorDataReceived.bind(this);
         this.#fileTransferManager.sendMessage = this.#sendMessage.bind(this);
+        this.#fileTransferManager.eventDispatcher = this.#eventDispatcher;
         this.#tfliteManager.sendMessage = this.#sendMessage.bind(this);
+        this.#tfliteManager.eventDispatcher = this.#eventDispatcher;
 
         if (isInBrowser) {
             window.addEventListener("beforeunload", () => {
@@ -172,6 +174,9 @@ class Device {
         "barometer",
 
         "connectionMessage",
+
+        ...FileTransferManager.EventTypes,
+        //...TfliteManager.EventTypes,
     ];
     static get EventTypes() {
         return this.#EventTypes;
