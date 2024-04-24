@@ -131,6 +131,21 @@ class EventDispatcher {
             }
         }
     }
+
+    /** @param {string} type */
+    waitForEvent(type) {
+        _console.log(`waiting for event "${type}"`);
+        this.#assertValidEventType(type);
+        return new Promise((resolve) => {
+            this.addEventListener(
+                type,
+                () => {
+                    resolve();
+                },
+                { once: true }
+            );
+        });
+    }
 }
 
 /**

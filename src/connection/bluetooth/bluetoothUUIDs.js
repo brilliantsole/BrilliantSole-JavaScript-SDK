@@ -64,7 +64,7 @@ function stringToServiceUUID(identifier) {
  * "tfliteModelIsReady" |
  * "tfliteCaptureDelay" |
  * "tfliteThreshold" |
- * "tfliteEnableInferencing" |
+ * "tfliteInferencingEnabled" |
  * "tfliteModelInference" |
  * "dfu"
  * } BluetoothCharacteristicName
@@ -136,7 +136,7 @@ const bluetoothUUIDs = Object.freeze({
                 tfliteModelIsReady: { uuid: generateBluetoothUUID("5005") },
                 tfliteCaptureDelay: { uuid: generateBluetoothUUID("5006") },
                 tfliteThreshold: { uuid: generateBluetoothUUID("5007") },
-                tfliteEnableInferencing: { uuid: generateBluetoothUUID("5008") },
+                tfliteInferencingEnabled: { uuid: generateBluetoothUUID("5008") },
                 tfliteModelInference: { uuid: generateBluetoothUUID("5009") },
             },
         },

@@ -37,7 +37,7 @@ import TfliteManager from "../TfliteManager.js";
  * } ConnectionMessageType
  */
 
-const _console = createConsole("ConnectionManager", { log: false });
+const _console = createConsole("ConnectionManager", { log: true });
 
 /**
  * @callback ConnectionStatusCallback

@@ -227,7 +227,7 @@
 
             <label>
                 enable data:
-                <input id="toggleSensorData" disabled type="checkbox" />
+                <input class="toggleSensorData" disabled type="checkbox" />
             </label>
 
             <button id="addData" disabled>add data</button>
@@ -289,6 +289,11 @@
         <div>
             <h3>Classify & Predict</h3>
 
+            <label>
+                enable data:
+                <input class="toggleSensorData" disabled type="checkbox" />
+            </label>
+
             <button id="test" disabled>test</button>
             <label>
                 test continuously
@@ -345,7 +350,15 @@
 
             <button id="downloadTfliteModel" disabled>download tflite model</button>
 
-            <button id="toggleTfliteModel" disabled>use tflite model</button>
+            <label>
+                load tflite model
+                <input id="loadTfliteModel" type="file" accept=".tflite" />
+            </label>
+
+            <button disabled id="transferTfliteModel">send file</button>
+            <progress value="0" id="transferTfliteModelProgress"></progress>
+
+            <button id="toggleTfliteModel" disabled>enable tflite model</button>
 
             <button id="makeTfliteInference" disabled>make inference</button>
 

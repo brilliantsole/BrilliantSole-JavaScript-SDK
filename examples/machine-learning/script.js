@@ -2,7 +2,7 @@ import BS from "../../build/brilliantsole.module.js";
 import * as THREE from "../utils/three/three.module.min.js";
 window.BS = BS;
 console.log({ BS });
-BS.setAllConsoleLevelFlags({ log: false });
+//BS.setAllConsoleLevelFlags({ log: false });
 
 // VIBRATION
 
@@ -617,20 +617,26 @@ window.addEventListener("createNeuralNetwork", () => {
 
 let isSensorDataEnabled = false;
 
-/** @type {HTMLButtonElement} */
-const toggleSensorDataInput = document.getElementById("toggleSensorData");
-toggleSensorDataInput.addEventListener("input", () => {
-    isSensorDataEnabled = toggleSensorDataInput.checked;
-    console.log({ isSensorDataEnabled });
-    if (isSensorDataEnabled) {
-        setSensorConfiguration(sensorConfiguration);
-    } else {
-        clearSensorConfiguration();
-    }
-    window.dispatchEvent(new CustomEvent("isSensorDataEnabled", { detail: { isSensorDataEnabled } }));
-});
-window.addEventListener("createNeuralNetwork", () => {
-    toggleSensorDataInput.disabled = false;
+/** @type {HTMLButtonElement[]} */
+const toggleSensorDataInputs = document.querySelectorAll(".toggleSensorData");
+toggleSensorDataInputs.forEach((toggleSensorDataInput) => {
+    toggleSensorDataInput.addEventListener("input", () => {
+        isSensorDataEnabled = toggleSensorDataInput.checked;
+        console.log({ isSensorDataEnabled });
+        if (isSensorDataEnabled) {
+            setSensorConfiguration(sensorConfiguration);
+        } else {
+            clearSensorConfiguration();
+        }
+        window.dispatchEvent(new CustomEvent("isSensorDataEnabled", { detail: { isSensorDataEnabled } }));
+    });
+
+    window.addEventListener("createNeuralNetwork", () => {
+        toggleSensorDataInput.disabled = false;
+    });
+    window.addEventListener("isSensorDataEnabled", () => {
+        toggleSensorDataInput.checked = isSensorDataEnabled;
+    });
 });
 
 /** @param {SensorConfiguration} sensorConfiguration */
@@ -1410,7 +1416,9 @@ toggleQuantizeModelInput.addEventListener("input", () => {
 let trainTestSplit = 0.2;
 let isConvertingModel = false;
 const tfLiteFiles = {
+    /** @type {File?} */
     tfLite_model_cpp: null,
+    /** @type {File?} */
     model_tflite: null,
 };
 
@@ -1463,6 +1471,7 @@ async function convertModelToTflite() {
                     isConvertingModel = false;
                     Object.assign(tfLiteFiles, { tfLite_model_cpp, model_tflite });
                     window.dispatchEvent(new CustomEvent("convertModelToTflite", { detail: { tfLiteFiles, files } }));
+                    window.dispatchEvent(new CustomEvent("tfliteModel", { detail: { tfliteModel: model_tflite } }));
                 });
         })
         .catch((error) => {
@@ -1483,6 +1492,51 @@ downloadTfliteModelButton.addEventListener("click", () => {
 window.addEventListener("convertModelToTflite", () => {
     downloadTfliteModelButton.disabled = false;
 });
+
+/** @type {HTMLInputElement} */
+const loadTfliteModelInput = document.getElementById("loadTfliteModel");
+loadTfliteModelInput.addEventListener("input", () => {
+    const tfliteModel = loadTfliteModelInput.files[0];
+    if (tfliteModel) {
+        console.log({ tfliteModel });
+        tfLiteFiles.model_tflite = tfliteModel;
+        window.dispatchEvent(new CustomEvent("tfliteModel", { detail: { tfliteModel } }));
+    }
+});
+
+/** @type {HTMLButtonElement} */
+const transferTfliteModelButton = document.getElementById("transferTfliteModel");
+transferTfliteModelButton.addEventListener("click", () => {
+    // FILL - transfer file
+});
+["tfliteModel", "createNeuralNetwork"].forEach((eventType) => {
+    window.addEventListener(eventType, () => {
+        updateTransferTfliteModelButton();
+    });
+});
+const updateTransferTfliteModelButton = () => {
+    const enabled = tfLiteFiles.model_tflite && neuralNetwork && selectedDevices.length == 1;
+    transferTfliteModelButton.disabled = !enabled;
+};
+
+/** @type {HTMLProgressElement} */
+const transferTfliteModelProgress = document.getElementById("transferTfliteModelProgress");
+window.addEventListener(
+    "createNeuralNetwork",
+    () => {
+        if (selectedDevices.length == 1) {
+            const device = selectedDevices[0];
+            // FIX - replace with tflite events
+            device.addEventListener("fileTransferProgress", (event) => {
+                transferTfliteModelProgress.value = event.message.progress;
+            });
+            device.addEventListener("fileTransferComplete", (event) => {
+                transferTfliteModelProgress.value = 0;
+            });
+        }
+    },
+    { once: true }
+);
 
 /** @type {HTMLButtonElement} */
 const toggleTfliteModelButton = document.getElementById("toggleTfliteModel");

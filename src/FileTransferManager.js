@@ -108,16 +108,8 @@ class FileTransferManager {
     }
 
     /** @param {FileTransferManagerEventType} eventType */
-    #waitForEvent(eventType) {
-        return new Promise((resolve) => {
-            this.addEventListener(
-                eventType,
-                () => {
-                    resolve();
-                },
-                { once: true }
-            );
-        });
+    waitForEvent(eventType) {
+        return this.eventDispatcher.waitForEvent(eventType);
     }
 
     // PROPERTIES
@@ -239,7 +231,7 @@ class FileTransferManager {
             return;
         }
 
-        const promise = this.#waitForEvent("getFileTransferType");
+        const promise = this.waitForEvent("getFileTransferType");
 
         const typeEnum = this.types.indexOf(newType);
         this.sendMessage("setFileTransferType", Uint8Array.from([typeEnum]));
@@ -273,7 +265,7 @@ class FileTransferManager {
             return;
         }
 
-        const promise = this.#waitForEvent("getFileLength");
+        const promise = this.waitForEvent("getFileLength");
 
         const dataView = new DataView(new ArrayBuffer(4));
         dataView.setUint32(0, newLength, true);
@@ -306,7 +298,7 @@ class FileTransferManager {
             return;
         }
 
-        const promise = this.#waitForEvent("getFileChecksum");
+        const promise = this.waitForEvent("getFileChecksum");
 
         const dataView = new DataView(new ArrayBuffer(4));
         dataView.setUint32(0, newChecksum, true);
@@ -319,7 +311,7 @@ class FileTransferManager {
     async #setCommand(command) {
         this.#assertValidCommand(command);
 
-        const promise = this.#waitForEvent("fileTransferStatus");
+        const promise = this.waitForEvent("fileTransferStatus");
 
         const commandEnum = this.commands.indexOf(command);
         this.sendMessage("setFileTransferCommand", Uint8Array.from([commandEnum]));

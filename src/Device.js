@@ -9,12 +9,17 @@ import VibrationManager from "./vibration/VibrationManager.js";
 import { concatenateArrayBuffers } from "./utils/ArrayBufferUtils.js";
 import FileTransferManager from "./FileTransferManager.js";
 import TfliteManager from "./TfliteManager.js";
+import { textEncoder, textDecoder } from "./utils/Text.js";
 
 const _console = createConsole("Device", { log: false });
 
 /** @typedef {import("./connection/BaseConnectionManager.js").ConnectionMessageType} ConnectionMessageType */
 /** @typedef {import("./sensor/SensorDataManager.js").SensorType} SensorType */
-/** @typedef {"connectionStatus" | ConnectionStatus | "isConnected" | ConnectionMessageType | "deviceInformation" | SensorType | "connectionMessage" | "fileTransferProgress" | "fileTransferComplete" | "fileReceived"} DeviceEventType */
+
+/** @typedef {import("./FileTransferManager.js").FileTransferManagerEventType} FileTransferManagerEventType */
+/** @typedef {import("./TfliteManager.js").TfliteManagerEventType} TfliteManagerEventType */
+
+/** @typedef {"connectionStatus" | ConnectionStatus | "isConnected" | ConnectionMessageType | "deviceInformation" | SensorType | "connectionMessage" | FileTransferManagerEventType | TfliteManagerEventType} DeviceEventType */
 
 /** @typedef {"deviceConnected" | "deviceDisconnected" | "deviceIsConnected" | "availableDevices"} StaticDeviceEventType */
 
@@ -101,8 +106,10 @@ class Device {
 
     constructor() {
         this.#sensorDataManager.onDataReceived = this.#onSensorDataReceived.bind(this);
+
         this.#fileTransferManager.sendMessage = this.#sendMessage.bind(this);
         this.#fileTransferManager.eventDispatcher = this.#eventDispatcher;
+
         this.#tfliteManager.sendMessage = this.#sendMessage.bind(this);
         this.#tfliteManager.eventDispatcher = this.#eventDispatcher;
 
@@ -176,7 +183,7 @@ class Device {
         "connectionMessage",
 
         ...FileTransferManager.EventTypes,
-        //...TfliteManager.EventTypes,
+        ...TfliteManager.EventTypes,
     ];
     static get EventTypes() {
         return this.#EventTypes;
@@ -288,7 +295,7 @@ class Device {
         "tfliteModelIsReady",
         "getTfliteCaptureDelay",
         "getTfliteThreshold",
-        "getTfliteEnableInferencing",
+        "getTfliteInferencingEnabled",
         "tfliteModelInference",
     ];
     static get AllInformationConnectionMessages() {
@@ -438,27 +445,27 @@ class Device {
         _console.log({ messageType, dataView });
         switch (messageType) {
             case "manufacturerName":
-                const manufacturerName = this.#textDecoder.decode(dataView);
+                const manufacturerName = textDecoder.decode(dataView);
                 _console.log({ manufacturerName });
                 this.#updateDeviceInformation({ manufacturerName });
                 break;
             case "modelNumber":
-                const modelNumber = this.#textDecoder.decode(dataView);
+                const modelNumber = textDecoder.decode(dataView);
                 _console.log({ modelNumber });
                 this.#updateDeviceInformation({ modelNumber });
                 break;
             case "softwareRevision":
-                const softwareRevision = this.#textDecoder.decode(dataView);
+                const softwareRevision = textDecoder.decode(dataView);
                 _console.log({ softwareRevision });
                 this.#updateDeviceInformation({ softwareRevision });
                 break;
             case "hardwareRevision":
-                const hardwareRevision = this.#textDecoder.decode(dataView);
+                const hardwareRevision = textDecoder.decode(dataView);
                 _console.log({ hardwareRevision });
                 this.#updateDeviceInformation({ hardwareRevision });
                 break;
             case "firmwareRevision":
-                const firmwareRevision = this.#textDecoder.decode(dataView);
+                const firmwareRevision = textDecoder.decode(dataView);
                 _console.log({ firmwareRevision });
                 this.#updateDeviceInformation({ firmwareRevision });
                 break;
@@ -478,7 +485,7 @@ class Device {
                 this.#updateDeviceInformation({ pnpId });
                 break;
             case "serialNumber":
-                const serialNumber = this.#textDecoder.decode(dataView);
+                const serialNumber = textDecoder.decode(dataView);
                 _console.log({ serialNumber });
                 // will only be used for node.js
                 break;
@@ -490,7 +497,7 @@ class Device {
                 break;
 
             case "getName":
-                const name = this.#textDecoder.decode(dataView);
+                const name = textDecoder.decode(dataView);
                 _console.log({ name });
                 this.#updateName(name);
                 break;
@@ -543,19 +550,6 @@ class Device {
 
     /** @type {Map.<ConnectionMessageType, DataView>} */
     latestConnectionMessage = new Map();
-
-    // TEXT ENCODER/DECODER
-
-    /** @type {TextEncoder} */
-    static #TextEncoder = new TextEncoder();
-    get #textEncoder() {
-        return Device.#TextEncoder;
-    }
-    /** @type {TextDecoder} */
-    static #TextDecoder = new TextDecoder();
-    get #textDecoder() {
-        return Device.#TextDecoder;
-    }
 
     // CURRENT TIME
 
@@ -668,7 +662,7 @@ class Device {
             newName.length < this.maxNameLength,
             `name must be less than ${this.maxNameLength} characters long ("${newName}" is ${newName.length} characters long)`
         );
-        const setNameData = this.#textEncoder.encode(newName);
+        const setNameData = textEncoder.encode(newName);
         _console.log({ setNameData });
         await this.#connectionManager.sendMessage("setName", setNameData);
     }

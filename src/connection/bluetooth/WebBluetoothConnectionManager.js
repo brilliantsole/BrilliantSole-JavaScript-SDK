@@ -10,7 +10,7 @@ import {
 } from "./bluetoothUUIDs.js";
 import BluetoothConnectionManager from "./BluetoothConnectionManager.js";
 
-const _console = createConsole("WebBluetoothConnectionManager", { log: true });
+const _console = createConsole("WebBluetoothConnectionManager", { log: false });
 
 /** @typedef {import("./bluetoothUUIDs.js").BluetoothCharacteristicName} BluetoothCharacteristicName */
 /** @typedef {import("./bluetoothUUIDs.js").BluetoothServiceName} BluetoothServiceName */

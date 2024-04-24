@@ -345,6 +345,21 @@
 	            }
 	        }
 	    }
+
+	    /** @param {string} type */
+	    waitForEvent(type) {
+	        _console$q.log(`waiting for event "${type}"`);
+	        this.#assertValidEventType(type);
+	        return new Promise((resolve) => {
+	            this.addEventListener(
+	                type,
+	                () => {
+	                    resolve();
+	                },
+	                { once: true }
+	            );
+	        });
+	    }
 	}
 
 	/**
@@ -510,16 +525,8 @@
 	    }
 
 	    /** @param {FileTransferManagerEventType} eventType */
-	    #waitForEvent(eventType) {
-	        return new Promise((resolve) => {
-	            this.addEventListener(
-	                eventType,
-	                () => {
-	                    resolve();
-	                },
-	                { once: true }
-	            );
-	        });
+	    waitForEvent(eventType) {
+	        return this.eventDispatcher.waitForEvent(eventType);
 	    }
 
 	    // PROPERTIES
@@ -641,7 +648,7 @@
 	            return;
 	        }
 
-	        const promise = this.#waitForEvent("getFileTransferType");
+	        const promise = this.waitForEvent("getFileTransferType");
 
 	        const typeEnum = this.types.indexOf(newType);
 	        this.sendMessage("setFileTransferType", Uint8Array.from([typeEnum]));
@@ -675,7 +682,7 @@
 	            return;
 	        }
 
-	        const promise = this.#waitForEvent("getFileLength");
+	        const promise = this.waitForEvent("getFileLength");
 
 	        const dataView = new DataView(new ArrayBuffer(4));
 	        dataView.setUint32(0, newLength, true);
@@ -708,7 +715,7 @@
 	            return;
 	        }
 
-	        const promise = this.#waitForEvent("getFileChecksum");
+	        const promise = this.waitForEvent("getFileChecksum");
 
 	        const dataView = new DataView(new ArrayBuffer(4));
 	        dataView.setUint32(0, newChecksum, true);
@@ -721,7 +728,7 @@
 	    async #setCommand(command) {
 	        this.#assertValidCommand(command);
 
-	        const promise = this.#waitForEvent("fileTransferStatus");
+	        const promise = this.waitForEvent("fileTransferStatus");
 
 	        const commandEnum = this.commands.indexOf(command);
 	        this.sendMessage("setFileTransferCommand", Uint8Array.from([commandEnum]));
@@ -910,7 +917,593 @@
 	    sendMessage;
 	}
 
-	const _console$o = createConsole("TfliteManager", { log: true });
+	const textEncoder$1 = new TextEncoder();
+	const textDecoder$1 = new TextDecoder();
+
+	/**
+	 * @param {number} value
+	 * @param {number} min
+	 * @param {number} max
+	 */
+	function getInterpolation(value, min, max) {
+	    return (value - min) / (max - min);
+	}
+
+	const Uint16Max = 2 ** 16;
+
+	/**
+	 * @typedef Range
+	 * @type {Object}
+	 * @property {number} min
+	 * @property {number} max
+	 */
+
+	/** @type {Range} */
+	const initialRange = { min: Infinity, max: -Infinity };
+
+	class RangeHelper {
+	    /** @type {Range} */
+	    #range = Object.assign({}, initialRange);
+
+	    reset() {
+	        Object.assign(this.#range, initialRange);
+	    }
+
+	    /** @param {number} value */
+	    update(value) {
+	        this.#range.min = Math.min(value, this.#range.min);
+	        this.#range.max = Math.max(value, this.#range.max);
+	    }
+
+	    /** @param {number} value */
+	    getNormalization(value) {
+	        return getInterpolation(value, this.#range.min, this.#range.max) || 0;
+	    }
+
+	    /** @param {number} value */
+	    updateAndGetNormalization(value) {
+	        this.update(value);
+	        return this.getNormalization(value);
+	    }
+	}
+
+	/**
+	 * @typedef Vector2
+	 * @type {Object}
+	 * @property {number} x
+	 * @property {number} y
+	 */
+
+	/** @typedef {Vector2} CenterOfPressure */
+
+	/**
+	 * @typedef CenterOfPressureRange
+	 * @type {Object}
+	 * @property {RangeHelper} x
+	 * @property {RangeHelper} y
+	 */
+
+	class CenterOfPressureHelper {
+	    /** @type {CenterOfPressureRange} */
+	    #range = {
+	        x: new RangeHelper(),
+	        y: new RangeHelper(),
+	    };
+	    reset() {
+	        this.#range.x.reset();
+	        this.#range.y.reset();
+	    }
+
+	    /** @param {CenterOfPressure} centerOfPressure  */
+	    update(centerOfPressure) {
+	        this.#range.x.update(centerOfPressure.x);
+	        this.#range.y.update(centerOfPressure.y);
+	    }
+	    /**
+	     * @param {CenterOfPressure} centerOfPressure
+	     * @returns {CenterOfPressure}
+	     */
+	    getNormalization(centerOfPressure) {
+	        return {
+	            x: this.#range.x.getNormalization(centerOfPressure.x),
+	            y: this.#range.y.getNormalization(centerOfPressure.y),
+	        };
+	    }
+
+	    /** @param {CenterOfPressure} centerOfPressure  */
+	    updateAndGetNormalization(centerOfPressure) {
+	        this.update(centerOfPressure);
+	        return this.getNormalization(centerOfPressure);
+	    }
+	}
+
+	/**
+	 * @param {number} arrayLength
+	 * @param {((index:number) => any) | object} objectOrCallback
+	 */
+	function createArray(arrayLength, objectOrCallback) {
+	    return new Array(arrayLength).fill(1).map((_, index) => {
+	        if (typeof objectOrCallback == "function") {
+	            const callback = objectOrCallback;
+	            return callback(index);
+	        } else {
+	            const object = objectOrCallback;
+	            return Object.assign({}, object);
+	        }
+	    });
+	}
+
+	/** @param {any[]} array */
+	function arrayWithoutDuplicates(array) {
+	    return array.filter((value, index) => array.indexOf(value) == index);
+	}
+
+	/** @typedef {"pressure"} PressureSensorType */
+
+	/**
+	 * @typedef Vector2
+	 * @type {Object}
+	 * @property {number} x
+	 * @property {number} y
+	 */
+
+	/** @typedef {Vector2} PressureSensorPosition */
+
+
+
+	/**
+	 * @typedef PressureSensorValue
+	 * @type {Object}
+	 * @property {PressureSensorPosition} position
+	 * @property {number} rawValue
+	 * @property {number} normalizedValue
+	 * @property {number?} weightedValue
+	 */
+
+	/**
+	 * @typedef PressureData
+	 * @type {Object}
+	 * @property {PressureSensorValue[]} sensors
+	 *
+	 * @property {number} rawSum
+	 * @property {number} normalizedSum
+	 *
+	 * @property {CenterOfPressure?} center
+	 * @property {CenterOfPressure?} normalizedCenter
+	 */
+
+	const _console$o = createConsole("PressureSensorDataManager", { log: true });
+
+	class PressureSensorDataManager {
+	    /** @type {PressureSensorPosition[]} */
+	    #positions = [];
+	    get positions() {
+	        return this.#positions;
+	    }
+
+	    get numberOfSensors() {
+	        return this.positions.length;
+	    }
+
+	    /** @param {DataView} dataView */
+	    parsePositions(dataView) {
+	        /** @type {PressureSensorPosition[]} */
+	        const positions = [];
+
+	        for (
+	            let pressureSensorIndex = 0, byteOffset = 0;
+	            byteOffset < dataView.byteLength;
+	            pressureSensorIndex++, byteOffset += 2
+	        ) {
+	            positions.push({
+	                x: dataView.getUint8(byteOffset) / 2 ** 8,
+	                y: dataView.getUint8(byteOffset + 1) / 2 ** 8,
+	            });
+	        }
+
+	        _console$o.log({ positions });
+
+	        this.#positions = positions;
+
+	        this.#sensorRangeHelpers = createArray(this.numberOfSensors, () => new RangeHelper());
+
+	        this.resetRange();
+	    }
+
+	    /** @type {RangeHelper[]?} */
+	    #sensorRangeHelpers;
+
+	    #centerOfPressureHelper = new CenterOfPressureHelper();
+
+	    resetRange() {
+	        this.#sensorRangeHelpers.forEach((rangeHelper) => rangeHelper.reset());
+	        this.#centerOfPressureHelper.reset();
+	    }
+
+	    /** @param {DataView} dataView */
+	    parseData(dataView) {
+	        /** @type {PressureData} */
+	        const pressure = { sensors: [], rawSum: 0, normalizedSum: 0 };
+	        for (let index = 0, byteOffset = 0; byteOffset < dataView.byteLength; index++, byteOffset += 2) {
+	            const rawValue = dataView.getUint16(byteOffset, true);
+	            const rangeHelper = this.#sensorRangeHelpers[index];
+	            const normalizedValue = rangeHelper.updateAndGetNormalization(rawValue);
+	            const position = this.positions[index];
+	            pressure.sensors[index] = { rawValue, normalizedValue, position };
+
+	            pressure.rawSum += rawValue;
+	            pressure.normalizedSum += normalizedValue / this.numberOfSensors;
+	        }
+
+	        if (pressure.rawSum > 0) {
+	            pressure.center = { x: 0, y: 0 };
+	            pressure.sensors.forEach((sensor) => {
+	                sensor.weightedValue = sensor.rawValue / pressure.rawSum;
+	                pressure.center.x += sensor.position.x * sensor.weightedValue;
+	                pressure.center.y += sensor.position.y * sensor.weightedValue;
+	            });
+	            pressure.normalizedCenter = this.#centerOfPressureHelper.updateAndGetNormalization(pressure.center);
+	        }
+
+	        _console$o.log({ pressure });
+	        return pressure;
+	    }
+	}
+
+	/** @typedef {"acceleration" | "gravity" | "linearAcceleration" | "gyroscope" | "magnetometer" | "gameRotation" | "rotation"} MotionSensorType */
+
+	const _console$n = createConsole("MotionSensorDataManager", { log: false });
+
+	/**
+	 * @typedef Vector3
+	 * @type {Object}
+	 * @property {number} x
+	 * @property {number} y
+	 * @property {number} z
+	 */
+
+	/**
+	 * @typedef Quaternion
+	 * @type {Object}
+	 * @property {number} x
+	 * @property {number} y
+	 * @property {number} z
+	 * @property {number} w
+	 */
+
+	class MotionSensorDataManager {
+	    static #Vector3Size = 3 * 2;
+	    static get Vector3Size() {
+	        return this.#Vector3Size;
+	    }
+	    get vector3Size() {
+	        return MotionSensorDataManager.Vector3Size;
+	    }
+
+	    /**
+	     * @param {DataView} dataView
+	     * @param {number} scalar
+	     * @returns {Vector3}
+	     */
+	    parseVector3(dataView, scalar) {
+	        let [x, y, z] = [dataView.getInt16(0, true), dataView.getInt16(2, true), dataView.getInt16(4, true)].map(
+	            (value) => value * scalar
+	        );
+
+	        const vector = { x, y, z };
+
+	        _console$n.log({ vector });
+	        return vector;
+	    }
+
+	    static #QuaternionSize = 4 * 2;
+	    static get QuaternionSize() {
+	        return this.#QuaternionSize;
+	    }
+	    get quaternionSize() {
+	        return MotionSensorDataManager.QuaternionSize;
+	    }
+
+	    /**
+	     * @param {DataView} dataView
+	     * @param {number} scalar
+	     * @returns {Quaternion}
+	     */
+	    parseQuaternion(dataView, scalar) {
+	        let [x, y, z, w] = [
+	            dataView.getInt16(0, true),
+	            dataView.getInt16(2, true),
+	            dataView.getInt16(4, true),
+	            dataView.getInt16(6, true),
+	        ].map((value) => value * scalar);
+
+	        const quaternion = { x, y, z, w };
+
+	        _console$n.log({ quaternion });
+	        return quaternion;
+	    }
+	}
+
+	/** @typedef {"barometer"} BarometerSensorType */
+
+	createConsole("BarometerSensorDataManager", { log: true });
+
+	class BarometerSensorDataManager {
+	    static #Scalars = {
+	        barometer: 100 * 2 ** -7,
+	    };
+	    static get Scalars() {
+	        return this.#Scalars;
+	    }
+	    get scalars() {
+	        return BarometerSensorDataManager.Scalars;
+	    }
+	}
+
+	const _console$m = createConsole("ArrayBufferUtils", { log: false });
+
+	const textEncoder = new TextEncoder();
+
+	/**
+	 * @param {...ArrayBuffer} arrayBuffers
+	 * @returns {ArrayBuffer}
+	 */
+	function concatenateArrayBuffers(...arrayBuffers) {
+	    arrayBuffers = arrayBuffers.filter((arrayBuffer) => arrayBuffer != undefined || arrayBuffer != null);
+	    arrayBuffers = arrayBuffers.map((arrayBuffer) => {
+	        if (typeof arrayBuffer == "number") {
+	            const number = arrayBuffer;
+	            return Uint8Array.from([Math.floor(number)]);
+	        } else if (typeof arrayBuffer == "boolean") {
+	            const boolean = arrayBuffer;
+	            return Uint8Array.from([boolean ? 1 : 0]);
+	        } else if (typeof arrayBuffer == "string") {
+	            const string = arrayBuffer;
+	            return stringToArrayBuffer(string);
+	        } else if (arrayBuffer instanceof Array) {
+	            const array = arrayBuffer;
+	            return concatenateArrayBuffers(...array);
+	        } else if (arrayBuffer instanceof ArrayBuffer) {
+	            return arrayBuffer;
+	        } else if ("buffer" in arrayBuffer && arrayBuffer.buffer instanceof ArrayBuffer) {
+	            const bufferContainer = arrayBuffer;
+	            return bufferContainer.buffer;
+	        } else if (arrayBuffer instanceof DataView) {
+	            const dataView = arrayBuffer;
+	            return dataView.buffer;
+	        } else if (typeof arrayBuffer == "object") {
+	            const object = arrayBuffer;
+	            return objectToArrayBuffer(object);
+	        } else {
+	            return arrayBuffer;
+	        }
+	    });
+	    arrayBuffers = arrayBuffers.filter((arrayBuffer) => arrayBuffer && "byteLength" in arrayBuffer);
+	    const length = arrayBuffers.reduce((length, arrayBuffer) => length + arrayBuffer.byteLength, 0);
+	    const uint8Array = new Uint8Array(length);
+	    let byteOffset = 0;
+	    arrayBuffers.forEach((arrayBuffer) => {
+	        uint8Array.set(new Uint8Array(arrayBuffer), byteOffset);
+	        byteOffset += arrayBuffer.byteLength;
+	    });
+	    return uint8Array.buffer;
+	}
+
+	/** @param {Buffer} data */
+	function dataToArrayBuffer(data) {
+	    return data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength);
+	}
+
+	/** @param {String} string */
+	function stringToArrayBuffer(string) {
+	    const encoding = textEncoder.encode(string);
+	    return concatenateArrayBuffers(encoding.byteLength, encoding);
+	}
+
+	/** @param {Object} object */
+	function objectToArrayBuffer(object) {
+	    return stringToArrayBuffer(JSON.stringify(object));
+	}
+
+	/**
+	 * @param {DataView} dataView
+	 * @param {number} begin
+	 * @param {number?} length
+	 */
+	function sliceDataView(dataView, begin, length) {
+	    let end;
+	    if (length) {
+	        end = dataView.byteOffset + begin + length;
+	    }
+	    _console$m.log({ dataView, begin, end, length });
+	    return new DataView(dataView.buffer.slice(dataView.byteOffset + begin, end));
+	}
+
+	const _console$l = createConsole("ParseUtils", { log: true });
+
+	const textDecoder = new TextDecoder();
+
+	/**
+	 * @param {DataView} dataView
+	 * @param {number} byteOffset
+	 */
+	function parseStringFromDataView(dataView, byteOffset = 0) {
+	    const stringLength = dataView.getUint8(byteOffset++);
+	    const string = textDecoder.decode(
+	        dataView.buffer.slice(dataView.byteOffset + byteOffset, dataView.byteOffset + byteOffset + stringLength)
+	    );
+	    byteOffset += stringLength;
+	    return { string, byteOffset };
+	}
+
+	/**
+	 * @callback ParseMessageCallback
+	 * @param {string} messageType
+	 * @param {DataView} dataView
+	 */
+
+	/**
+	 * @param {DataView} dataView
+	 * @param {string[]} enumeration
+	 * @param {ParseMessageCallback} callback
+	 * @param {boolean} parseMessageLengthAsUint16
+	 */
+	function parseMessage(dataView, enumeration, callback, parseMessageLengthAsUint16 = false) {
+	    let byteOffset = 0;
+	    while (byteOffset < dataView.byteLength) {
+	        const messageTypeEnum = dataView.getUint8(byteOffset++);
+	        const messageType = enumeration[messageTypeEnum];
+
+	        /** @type {number} */
+	        let messageLength;
+	        if (parseMessageLengthAsUint16) {
+	            messageLength = dataView.getUint16(byteOffset, true);
+	            byteOffset += 2;
+	        } else {
+	            messageLength = dataView.getUint8(byteOffset++);
+	        }
+
+	        _console$l.log({ messageTypeEnum, messageType, messageLength, dataView });
+	        _console$l.assertWithError(messageType, `invalid messageTypeEnum ${messageTypeEnum}`);
+
+	        const _dataView = sliceDataView(dataView, byteOffset, messageLength);
+	        _console$l.log({ _dataView });
+
+	        callback(messageType, _dataView);
+
+	        byteOffset += messageLength;
+	    }
+	}
+
+	const _console$k = createConsole("SensorDataManager", { log: true });
+
+
+
+
+
+	/** @typedef {MotionSensorType | PressureSensorType | BarometerSensorType} SensorType */
+
+	/**
+	 * @callback SensorDataCallback
+	 * @param {SensorType} sensorType
+	 * @param {Object} data
+	 * @param {number} data.timestamp
+	 */
+
+	class SensorDataManager {
+	    pressureSensorDataManager = new PressureSensorDataManager();
+	    motionSensorDataManager = new MotionSensorDataManager();
+	    barometerSensorDataManager = new BarometerSensorDataManager();
+
+	    /** @type {SensorType[]} */
+	    static #Types = [
+	        "pressure",
+	        "acceleration",
+	        "gravity",
+	        "linearAcceleration",
+	        "gyroscope",
+	        "magnetometer",
+	        "gameRotation",
+	        "rotation",
+	        "barometer",
+	    ];
+	    static get Types() {
+	        return this.#Types;
+	    }
+	    get types() {
+	        return SensorDataManager.Types;
+	    }
+
+	    /** @type {Map.<SensorType, number>} */
+	    #scalars = new Map();
+
+	    /** @param {string} sensorType */
+	    static AssertValidSensorType(sensorType) {
+	        _console$k.assertTypeWithError(sensorType, "string");
+	        _console$k.assertWithError(this.#Types.includes(sensorType), `invalid sensorType "${sensorType}"`);
+	    }
+	    /** @param {number} sensorTypeEnum */
+	    static AssertValidSensorTypeEnum(sensorTypeEnum) {
+	        _console$k.assertTypeWithError(sensorTypeEnum, "number");
+	        _console$k.assertWithError(sensorTypeEnum in this.#Types, `invalid sensorTypeEnum ${sensorTypeEnum}`);
+	    }
+
+	    /** @type {SensorDataCallback} */
+	    onDataReceived;
+
+	    /**
+	     * @param {DataView} dataView
+	     * @param {number} byteOffset
+	     */
+	    #parseTimestamp(dataView, byteOffset) {
+	        let now = Date.now();
+	        now -= now % Uint16Max;
+	        const lowerUint16 = dataView.getUint16(byteOffset, true);
+	        const timestamp = now + lowerUint16;
+	        return timestamp;
+	    }
+
+	    /** @param {DataView} dataView */
+	    parseData(dataView) {
+	        _console$k.log("sensorData", Array.from(new Uint8Array(dataView.buffer)));
+
+	        let byteOffset = 0;
+	        const timestamp = this.#parseTimestamp(dataView, byteOffset);
+	        byteOffset += 2;
+
+	        const _dataView = new DataView(dataView.buffer, byteOffset);
+
+	        parseMessage(_dataView, SensorDataManager.Types, (messageType, dataView) => {
+	            /** @type {SensorType} */
+	            const sensorType = messageType;
+
+	            const scalar = this.#scalars.get(sensorType);
+
+	            let value;
+	            switch (sensorType) {
+	                case "pressure":
+	                    value = this.pressureSensorDataManager.parseData(dataView);
+	                    break;
+	                case "acceleration":
+	                case "gravity":
+	                case "linearAcceleration":
+	                case "gyroscope":
+	                case "magnetometer":
+	                    value = this.motionSensorDataManager.parseVector3(dataView, scalar);
+	                    break;
+	                case "gameRotation":
+	                case "rotation":
+	                    value = this.motionSensorDataManager.parseQuaternion(dataView, scalar);
+	                    break;
+	                case "barometer":
+	                    // FILL
+	                    break;
+	                default:
+	                    _console$k.error(`uncaught sensorType "${sensorType}"`);
+	            }
+
+	            _console$k.assertWithError(value, `no value defined for sensorType "${sensorType}"`);
+	            this.onDataReceived(sensorType, { timestamp, [sensorType]: value });
+	        });
+	    }
+
+	    /** @param {DataView} dataView */
+	    parseScalars(dataView) {
+	        for (let byteOffset = 0; byteOffset < dataView.byteLength; byteOffset += 5) {
+	            const sensorTypeIndex = dataView.getUint8(byteOffset);
+	            const sensorType = SensorDataManager.Types[sensorTypeIndex];
+	            if (!sensorType) {
+	                _console$k.warn(`unknown sensorType index ${sensorTypeIndex}`);
+	                continue;
+	            }
+	            const sensorScalar = dataView.getFloat32(byteOffset + 1, true);
+	            _console$k.log({ sensorType, sensorScalar });
+	            this.#scalars.set(sensorType, sensorScalar);
+	        }
+	    }
+	}
+
+	const _console$j = createConsole("TfliteManager", { log: true });
 
 	/**
 	 * @typedef { "getTfliteModelName" |
@@ -928,17 +1521,36 @@
 	 * "setTfliteCaptureDelay" |
 	 * "getTfliteThreshold" |
 	 * "setTfliteThreshold" |
-	 * "getTfliteEnableInferencing" |
-	 * "setTfliteEnableInferencing" |
+	 * "getTfliteInferencingEnabled" |
+	 * "setTfliteInferencingEnabled" |
 	 * "tfliteModelInference"
 	 * } TfliteMessageType
 	 */
+
+	/** @typedef {"classification" | "regression"} TfliteModelTask */
 
 	/**
 	 * @callback SendMessageCallback
 	 * @param {TfliteMessageType} messageType
 	 * @param {DataView|ArrayBuffer} data
 	 */
+
+
+
+
+
+
+	/** @typedef {TfliteMessageType} TfliteManagerEventType */
+
+	/**
+	 * @typedef TfliteManagerEvent
+	 * @type {Object}
+	 * @property {TfliteManager} target
+	 * @property {TfliteManagerEventType} type
+	 * @property {Object} message
+	 */
+
+	/** @typedef {(event: TfliteManagerEvent) => void} TfliteManagerEventListener */
 
 	class TfliteManager {
 	    /** @type {TfliteMessageType[]} */
@@ -958,8 +1570,8 @@
 	        "setTfliteCaptureDelay",
 	        "getTfliteThreshold",
 	        "setTfliteThreshold",
-	        "getTfliteEnableInferencing",
-	        "setTfliteEnableInferencing",
+	        "getTfliteInferencingEnabled",
+	        "setTfliteInferencingEnabled",
 	        "tfliteModelInference",
 	    ];
 	    static get MessageTypes() {
@@ -969,55 +1581,399 @@
 	        return TfliteManager.MessageTypes;
 	    }
 
+	    // TASK
+
+	    /** @type {TfliteModelTask[]} */
+	    static #Tasks = ["classification", "regression"];
+	    static get Tasks() {
+	        return this.#Tasks;
+	    }
+	    get tasks() {
+	        return TfliteManager.Tasks;
+	    }
+	    /** @param {TfliteModelTask} task */
+	    #assertValidTask(task) {
+	        _console$j.assertEnumWithError(task, this.tasks);
+	    }
+	    /** @param {number} taskEnum */
+	    #assertValidTaskEnum(taskEnum) {
+	        _console$j.assertWithError(this.tasks[taskEnum], `invalid taskEnum ${taskEnum}`);
+	    }
+
+	    // EVENT DISPATCHER
+
+	    /** @type {TfliteManagerEventType[]} */
+	    static #EventTypes = [...this.#MessageTypes];
+	    static get EventTypes() {
+	        return this.#EventTypes;
+	    }
+	    get eventTypes() {
+	        return TfliteManager.#EventTypes;
+	    }
+	    /** @type {EventDispatcher} */
+	    eventDispatcher;
+
+	    /**
+	     * @param {TfliteManagerEventType} type
+	     * @param {TfliteManagerEventListener} listener
+	     * @param {EventDispatcherOptions} options
+	     */
+	    addEventListener(type, listener, options) {
+	        this.eventDispatcher.addEventListener(type, listener, options);
+	    }
+
+	    /**
+	     * @param {TfliteManagerEvent} event
+	     */
+	    #dispatchEvent(event) {
+	        this.eventDispatcher.dispatchEvent(event);
+	    }
+
+	    /**
+	     * @param {TfliteManagerEventType} type
+	     * @param {TfliteManagerEventListener} listener
+	     */
+	    removeEventListener(type, listener) {
+	        return this.eventDispatcher.removeEventListener(type, listener);
+	    }
+
+	    /** @param {TfliteManagerEventType} eventType */
+	    waitForEvent(eventType) {
+	        return this.eventDispatcher.waitForEvent(eventType);
+	    }
+
+	    // PROPERTIES
+
+	    /** @type {string} */
+	    #name;
+	    get name() {
+	        return this.#name;
+	    }
 	    /** @param {DataView} dataView */
 	    #parseName(dataView) {
-	        // FILL
-	        _console$o.log("parseName", dataView);
+	        _console$j.log("parseName", dataView);
+	        const name = textDecoder$1.decode(dataView);
+	        this.#updateName(name);
+	    }
+	    /** @param {string} name */
+	    #updateName(name) {
+	        _console$j.log({ name });
+	        this.#name = name;
+	        this.#dispatchEvent({ type: "getTfliteModelName", message: { tfliteModelName: name } });
+	    }
+	    /** @param {string} newName */
+	    async #setName(newName) {
+	        _console$j.assertTypeWithError(newName, "string");
+	        if (this.name == newName) {
+	            _console$j.log(`redundant name assignment ${newName}`);
+	            return;
+	        }
+
+	        const promise = this.waitForEvent("getTfliteModelName");
+
+	        const setNameData = textEncoder$1.encode(newName);
+	        this.sendMessage("setTfliteModelName", setNameData);
+
+	        await promise;
+	    }
+
+	    /** @type {TfliteModelTask} */
+	    #task;
+	    get task() {
+	        return this.#task;
 	    }
 	    /** @param {DataView} dataView */
 	    #parseTask(dataView) {
-	        // FILL
-	        _console$o.log("parseTask", dataView);
+	        _console$j.log("parseTask", dataView);
+	        const taskEnum = dataView.getUint8(0);
+	        this.#assertValidTaskEnum(taskEnum);
+	        const task = this.tasks[taskEnum];
+	        this.#updateTask(task);
+	    }
+	    /** @param {TfliteModelTask} task */
+	    #updateTask(task) {
+	        _console$j.log({ task });
+	        this.#task = task;
+	        this.#dispatchEvent({ type: "getTfliteModelTask", message: { tfliteModelTask: task } });
+	    }
+	    /** @param {TfliteModelTask} newTask */
+	    async #setTask(newTask) {
+	        this.#assertValidTask(newTask);
+	        if (this.task == newTask) {
+	            _console$j.log(`redundant task assignment ${newTask}`);
+	            return;
+	        }
+
+	        const promise = this.waitForEvent("getTfliteModelTask");
+
+	        const taskEnum = this.tasks.indexOf(newTask);
+	        this.sendMessage("setTfliteModelTask", Uint8Array.from([taskEnum]));
+
+	        await promise;
+	    }
+
+	    /** @type {number} */
+	    #sampleRate;
+	    get sampleRate() {
+	        return this.#sampleRate;
 	    }
 	    /** @param {DataView} dataView */
 	    #parseSampleRate(dataView) {
-	        // FILL
-	        _console$o.log("parseSampleRate", dataView);
+	        _console$j.log("parseSampleRate", dataView);
+	        const sampleRate = dataView.getUint16(0, true);
+	        this.#updateSampleRate(sampleRate);
+	    }
+	    #updateSampleRate(sampleRate) {
+	        _console$j.log({ sampleRate });
+	        this.#sampleRate = sampleRate;
+	        this.#dispatchEvent({ type: "getTfliteModelSampleRate", message: { tfliteModelSampleRate: sampleRate } });
+	    }
+	    /** @param {number} newSampleRate */
+	    async #setSampleRate(newSampleRate) {
+	        _console$j.assertTypeWithError(newSampleRate, "number");
+	        if (this.#sampleRate == newSampleRate) {
+	            _console$j.log(`redundant sampleRate assignment ${newSampleRate}`);
+	            return;
+	        }
+
+	        const promise = this.waitForEvent("getTfliteModelSampleRate");
+
+	        const dataView = new DataView(new ArrayBuffer(2));
+	        dataView.setUint16(0, newSampleRate, true);
+	        this.sendMessage("setTfliteModelSampleRate", dataView);
+
+	        await promise;
+	    }
+
+	    /** @type {SensorType[]} */
+	    #sensorTypes;
+	    get sensorTypes() {
+	        return this.#sensorTypes;
 	    }
 	    /** @param {DataView} dataView */
 	    #parseSensorTypes(dataView) {
-	        // FILL
-	        _console$o.log("parseSensorTypes", dataView);
+	        _console$j.log("parseSensorTypes", dataView);
+	        /** @type {SensorType[]} */
+	        const sensorTypes = [];
+	        for (let index = 0; index < dataView.byteLength; index++) {
+	            const sensorTypeEnum = dataView.getUint8(index);
+	            const sensorType = SensorDataManager.Types[sensorTypeEnum];
+	            if (sensorType) {
+	                sensorTypes.push(sensorType);
+	            } else {
+	                _console$j.error(`invalid sensorTypeEnum ${sensorTypeEnum}`);
+	            }
+	        }
+	        this.#updateSensorTypes(sensorTypes);
+	    }
+	    /** @param {SensorType[]} sensorTypes */
+	    #updateSensorTypes(sensorTypes) {
+	        _console$j.log({ sensorTypes });
+	        this.#sensorTypes = sensorTypes;
+	        this.#dispatchEvent({ type: "getTfliteModelSensorTypes", message: { tfliteModelSensorTypes: sensorTypes } });
+	    }
+	    /** @param {...SensorType} newSensorTypes */
+	    async #setSensorTypes(...newSensorTypes) {
+	        newSensorTypes.forEach((sensorType) => {
+	            SensorDataManager.AssertValidSensorType(sensorType);
+	        });
+
+	        const promise = this.waitForEvent("getTfliteModelSensorTypes");
+
+	        newSensorTypes = arrayWithoutDuplicates(newSensorTypes);
+	        const newSensorTypeEnums = newSensorTypes
+	            .map((sensorType) => SensorDataManager.Types.indexOf(sensorType))
+	            .sort();
+	        this.sendMessage("setTfliteModelSensorTypes", Uint8Array.from([newSensorTypeEnums]));
+
+	        await promise;
+	    }
+
+	    /** @type {number} */
+	    #numberOfClasses;
+	    get numberOfClasses() {
+	        return this.#numberOfClasses;
 	    }
 	    /** @param {DataView} dataView */
 	    #parseNumberOfClasses(dataView) {
-	        // FILL
-	        _console$o.log("parseNumberOfClasses", dataView);
+	        _console$j.log("parseNumberOfClasses", dataView);
+	        const numberOfClasses = dataView.getUint8(0);
+	        this.#updateNumberOfClasses(numberOfClasses);
+	    }
+	    /** @param {number} numberOfClasses */
+	    #updateNumberOfClasses(numberOfClasses) {
+	        _console$j.log({ numberOfClasses });
+	        this.#numberOfClasses = numberOfClasses;
+	        this.#dispatchEvent({
+	            type: "getTfliteModelNumberOfClasses",
+	            message: { tfliteModelNumberOfClasses: numberOfClasses },
+	        });
+	    }
+	    /** @param {number} newNumberOfClasses */
+	    async #setNumberOfClasses(newNumberOfClasses) {
+	        _console$j.assertTypeWithError(newNumberOfClasses, "number");
+	        _console$j.assertWithError(
+	            newNumberOfClasses > 1,
+	            `numberOfClasses must be greated than 1 (received ${newNumberOfClasses})`
+	        );
+	        if (this.#numberOfClasses == newNumberOfClasses) {
+	            _console$j.log(`redundant numberOfClasses assignment ${newNumberOfClasses}`);
+	            return;
+	        }
+
+	        const promise = this.waitForEvent("getTfliteModelNumberOfClasses");
+
+	        this.sendMessage("setTfliteModelNumberOfClasses", Uint8Array.from([newNumberOfClasses]));
+
+	        await promise;
+	    }
+
+	    /** @type {boolean} */
+	    #isReady;
+	    get isReady() {
+	        return this.#isReady;
 	    }
 	    /** @param {DataView} dataView */
 	    #parseIsReady(dataView) {
-	        // FILL
-	        _console$o.log("parseIsReady", dataView);
+	        _console$j.log("parseIsReady", dataView);
+	        const isReady = Boolean(dataView.getUint8(0));
+	        this.#updateIsReady(isReady);
+	    }
+	    /** @param {boolean} isReady */
+	    #updateIsReady(isReady) {
+	        _console$j.log({ isReady });
+	        this.#isReady = isReady;
+	        this.#dispatchEvent({
+	            type: "tfliteModelIsReady",
+	            message: { tfliteModelIsReady: isReady },
+	        });
+	    }
+
+	    /** @type {number} */
+	    #captureDelay;
+	    get captureDelay() {
+	        return this.#captureDelay;
 	    }
 	    /** @param {DataView} dataView */
 	    #parseCaptureDelay(dataView) {
-	        // FILL
-	        _console$o.log("parseCaptureDelay", dataView);
+	        _console$j.log("parseCaptureDelay", dataView);
+	        const captureDelay = dataView.getUint16(0, true);
+	        this.#updateCaptueDelay(captureDelay);
+	    }
+	    /** @param {number} captureDelay */
+	    #updateCaptueDelay(captureDelay) {
+	        _console$j.log({ captureDelay });
+	        this.#captureDelay = captureDelay;
+	        this.#dispatchEvent({
+	            type: "getTfliteCaptureDelay",
+	            message: { tfliteCaptureDelay: captureDelay },
+	        });
+	    }
+	    /** @param {number} newCaptureDelay */
+	    async #setCaptureDelay(newCaptureDelay) {
+	        _console$j.assertTypeWithError(newCaptureDelay, "number");
+	        if (this.#captureDelay == newCaptureDelay) {
+	            _console$j.log(`redundant captureDelay assignment ${newCaptureDelay}`);
+	            return;
+	        }
+
+	        const promise = this.waitForEvent("getTfliteCaptureDelay");
+
+	        const dataView = new DataView(new ArrayBuffer(2));
+	        dataView.setUint16(0, newCaptureDelay, true);
+	        this.sendMessage("setTfliteCaptureDelay", dataView);
+
+	        await promise;
+	    }
+
+	    /** @type {number} */
+	    #threshold;
+	    get threshold() {
+	        return this.#threshold;
 	    }
 	    /** @param {DataView} dataView */
 	    #parseThreshold(dataView) {
-	        // FILL
-	        _console$o.log("parseThreshold", dataView);
+	        _console$j.log("parseThreshold", dataView);
+	        const threshold = dataView.getFloat32(0, true);
+	        this.#updateThreshold(threshold);
+	    }
+	    /** @param {number} threshold */
+	    #updateThreshold(threshold) {
+	        _console$j.log({ threshold });
+	        this.#threshold = threshold;
+	        this.#dispatchEvent({
+	            type: "getTfliteThreshold",
+	            message: { tfliteThreshold: threshold },
+	        });
+	    }
+	    /** @param {number} newThreshold */
+	    async #setThreshold(newThreshold) {
+	        _console$j.assertTypeWithError(newThreshold, "number");
+	        if (this.#threshold == newThreshold) {
+	            _console$j.log(`redundant threshold assignment ${newThreshold}`);
+	            return;
+	        }
+
+	        const promise = this.waitForEvent("getTfliteThreshold");
+
+	        const dataView = new DataView(new ArrayBuffer(4));
+	        dataView.setFloat32(0, newThreshold, true);
+	        this.sendMessage("setTfliteThreshold", dataView);
+
+	        await promise;
+	    }
+
+	    /** @type {boolean} */
+	    #inferencingEnabled;
+	    get inferencingEnabled() {
+	        return this.#inferencingEnabled;
 	    }
 	    /** @param {DataView} dataView */
-	    #parseEnableInferencing(dataView) {
-	        // FILL
-	        _console$o.log("parseEnableInferencing", dataView);
+	    #parseInferencingEnabled(dataView) {
+	        _console$j.log("parseInferencingEnabled", dataView);
+	        const inferencingEnabled = Boolean(dataView.getUint8(0));
+	        this.#updateInferencingEnabled(inferencingEnabled);
 	    }
+	    #updateInferencingEnabled(inferencingEnabled) {
+	        _console$j.log({ inferencingEnabled });
+	        this.#inferencingEnabled = inferencingEnabled;
+	        this.#dispatchEvent({
+	            type: "getTfliteInferencingEnabled",
+	            message: { tfliteInferencingEnabled: inferencingEnabled },
+	        });
+	    }
+	    /** @param {boolean} newInferencingEnabled */
+	    async #setInferencingEnabled(newInferencingEnabled) {
+	        _console$j.assertTypeWithError(newInferencingEnabled, "boolean");
+	        if (this.#inferencingEnabled == newInferencingEnabled) {
+	            _console$j.log(`redundant inferencingEnabled assignment ${newInferencingEnabled}`);
+	            return;
+	        }
+
+	        const promise = this.waitForEvent("getTfliteInferencingEnabled");
+
+	        this.sendMessage("setTfliteInferencingEnabled", Uint8Array.from([newInferencingEnabled]));
+
+	        await promise;
+	    }
+
+	    async enableInferencing() {
+	        if (this.inferencingEnabled) {
+	            return;
+	        }
+	        this.#setInferencingEnabled(true);
+	    }
+	    async disableInferencing() {
+	        if (!this.inferencingEnabled) {
+	            return;
+	        }
+	        this.#setInferencingEnabled(false);
+	    }
+
 	    /** @param {DataView} dataView */
 	    #parseInference(dataView) {
 	        // FILL
-	        _console$o.log("parseInference", dataView);
+	        _console$j.log("parseInference", dataView);
 	    }
 
 	    /**
@@ -1025,7 +1981,7 @@
 	     * @param {DataView} dataView
 	     */
 	    parseMessage(messageType, dataView) {
-	        _console$o.log({ messageType });
+	        _console$j.log({ messageType });
 
 	        switch (messageType) {
 	            case "getTfliteModelName":
@@ -1052,8 +2008,8 @@
 	            case "getTfliteThreshold":
 	                this.#parseThreshold(dataView);
 	                break;
-	            case "getTfliteEnableInferencing":
-	                this.#parseEnableInferencing(dataView);
+	            case "getTfliteInferencingEnabled":
+	                this.#parseInferencingEnabled(dataView);
 	                break;
 	            case "tfliteModelInference":
 	                this.#parseInference(dataView);
@@ -1095,7 +2051,7 @@
 	 * } ConnectionMessageType
 	 */
 
-	const _console$n = createConsole("ConnectionManager", { log: false });
+	const _console$i = createConsole("ConnectionManager", { log: true });
 
 	/**
 	 * @callback ConnectionStatusCallback
@@ -1177,12 +2133,12 @@
 
 	    /** @throws {Error} if not supported */
 	    #assertIsSupported() {
-	        _console$n.assertWithError(this.isSupported, `${this.constructor.name} is not supported`);
+	        _console$i.assertWithError(this.isSupported, `${this.constructor.name} is not supported`);
 	    }
 
 	    /** @throws {Error} if abstract class */
 	    #assertIsSubclass() {
-	        _console$n.assertWithError(
+	        _console$i.assertWithError(
 	            this.constructor != BaseConnectionManager,
 	            `${this.constructor.name} must be subclassed`
 	        );
@@ -1200,12 +2156,12 @@
 	    }
 	    /** @protected */
 	    set status(newConnectionStatus) {
-	        _console$n.assertTypeWithError(newConnectionStatus, "string");
+	        _console$i.assertTypeWithError(newConnectionStatus, "string");
 	        if (this.#status == newConnectionStatus) {
-	            _console$n.log(`tried to assign same connection status "${newConnectionStatus}"`);
+	            _console$i.log(`tried to assign same connection status "${newConnectionStatus}"`);
 	            return;
 	        }
-	        _console$n.log(`new connection status "${newConnectionStatus}"`);
+	        _console$i.log(`new connection status "${newConnectionStatus}"`);
 	        this.#status = newConnectionStatus;
 	        this.onStatusUpdated?.(this.status);
 	    }
@@ -1216,19 +2172,19 @@
 
 	    /** @throws {Error} if connected */
 	    #assertIsNotConnected() {
-	        _console$n.assertWithError(!this.isConnected, "device is already connected");
+	        _console$i.assertWithError(!this.isConnected, "device is already connected");
 	    }
 	    /** @throws {Error} if connecting */
 	    #assertIsNotConnecting() {
-	        _console$n.assertWithError(this.status != "connecting", "device is already connecting");
+	        _console$i.assertWithError(this.status != "connecting", "device is already connecting");
 	    }
 	    /** @throws {Error} if not connected */
 	    #assertIsConnected() {
-	        _console$n.assertWithError(this.isConnected, "device is not connected");
+	        _console$i.assertWithError(this.isConnected, "device is not connected");
 	    }
 	    /** @throws {Error} if disconnecting */
 	    #assertIsNotDisconnecting() {
-	        _console$n.assertWithError(this.status != "disconnecting", "device is already disconnecting");
+	        _console$i.assertWithError(this.status != "disconnecting", "device is already disconnecting");
 	    }
 	    /** @throws {Error} if not connected or is disconnecting */
 	    #assertIsConnectedAndNotDisconnecting() {
@@ -1248,13 +2204,13 @@
 	    async reconnect() {
 	        this.#assertIsNotConnected();
 	        this.#assertIsNotConnecting();
-	        _console$n.assert(this.canReconnect, "unable to reconnect");
+	        _console$i.assert(this.canReconnect, "unable to reconnect");
 	    }
 	    async disconnect() {
 	        this.#assertIsConnected();
 	        this.#assertIsNotDisconnecting();
 	        this.status = "disconnecting";
-	        _console$n.log("disconnecting from device...");
+	        _console$i.log("disconnecting from device...");
 	    }
 
 	    /**
@@ -1263,11 +2219,11 @@
 	     */
 	    async sendMessage(messageType, data) {
 	        this.#assertIsConnectedAndNotDisconnecting();
-	        _console$n.log("sending message", { messageType, data });
+	        _console$i.log("sending message", { messageType, data });
 	    }
 	}
 
-	const _console$m = createConsole("bluetoothUUIDs", { log: false });
+	const _console$h = createConsole("bluetoothUUIDs", { log: false });
 
 	if (isInNode) {
 	    const webbluetooth = require("webbluetooth");
@@ -1282,8 +2238,8 @@
 	 * @returns {BluetoothServiceUUID}
 	 */
 	function generateBluetoothUUID(value) {
-	    _console$m.assertTypeWithError(value, "string");
-	    _console$m.assertWithError(value.length == 4, "value must be 4 characters long");
+	    _console$h.assertTypeWithError(value, "string");
+	    _console$h.assertWithError(value.length == 4, "value must be 4 characters long");
 	    return `ea6da725-${value}-4f9b-893d-c3913e33b39f`;
 	}
 
@@ -1330,7 +2286,7 @@
 	 * "tfliteModelIsReady" |
 	 * "tfliteCaptureDelay" |
 	 * "tfliteThreshold" |
-	 * "tfliteEnableInferencing" |
+	 * "tfliteInferencingEnabled" |
 	 * "tfliteModelInference" |
 	 * "dfu"
 	 * } BluetoothCharacteristicName
@@ -1402,7 +2358,7 @@
 	                tfliteModelIsReady: { uuid: generateBluetoothUUID("5005") },
 	                tfliteCaptureDelay: { uuid: generateBluetoothUUID("5006") },
 	                tfliteThreshold: { uuid: generateBluetoothUUID("5007") },
-	                tfliteEnableInferencing: { uuid: generateBluetoothUUID("5008") },
+	                tfliteInferencingEnabled: { uuid: generateBluetoothUUID("5008") },
 	                tfliteModelInference: { uuid: generateBluetoothUUID("5009") },
 	            },
 	        },
@@ -1653,8 +2609,8 @@
 	            case "tfliteThreshold":
 	                this.onMessageReceived("getTfliteThreshold", dataView);
 	                break;
-	            case "tfliteEnableInferencing":
-	                this.onMessageReceived("getTfliteEnableInferencing", dataView);
+	            case "tfliteInferencingEnabled":
+	                this.onMessageReceived("getTfliteInferencingEnabled", dataView);
 	                break;
 	            default:
 	                throw new Error(`uncaught characteristicName "${characteristicName}"`);
@@ -1704,8 +2660,8 @@
 	                return "tfliteCaptureDelay";
 	            case "setTfliteThreshold":
 	                return "tfliteThreshold";
-	            case "setTfliteEnableInferencing":
-	                return "tfliteEnableInferencing";
+	            case "setTfliteInferencingEnabled":
+	                return "tfliteInferencingEnabled";
 
 	            default:
 	                throw Error(`no characteristicName for messageType "${messageType}"`);
@@ -1713,7 +2669,7 @@
 	    }
 	}
 
-	const _console$l = createConsole("WebBluetoothConnectionManager", { log: true });
+	const _console$g = createConsole("WebBluetoothConnectionManager", { log: false });
 
 
 
@@ -1759,7 +2715,7 @@
 	    }
 	    set device(newDevice) {
 	        if (this.#device == newDevice) {
-	            _console$l.log("tried to assign the same BluetoothDevice");
+	            _console$g.log("tried to assign the same BluetoothDevice");
 	            return;
 	        }
 	        if (this.#device) {
@@ -1793,20 +2749,20 @@
 	                optionalServices: isInBrowser ? optionalServiceUUIDs : [],
 	            });
 
-	            _console$l.log("got BluetoothDevice");
+	            _console$g.log("got BluetoothDevice");
 	            this.device = device;
 
-	            _console$l.log("connecting to device...");
+	            _console$g.log("connecting to device...");
 	            const server = await this.device.gatt.connect();
-	            _console$l.log(`connected to device? ${server.connected}`);
+	            _console$g.log(`connected to device? ${server.connected}`);
 
 	            await this.#getServicesAndCharacteristics();
 
-	            _console$l.log("fully connected");
+	            _console$g.log("fully connected");
 
 	            this.status = "connected";
 	        } catch (error) {
-	            _console$l.error(error);
+	            _console$g.error(error);
 	            this.status = "not connected";
 	            this.server?.disconnect();
 	            this.#removeEventListeners();
@@ -1815,47 +2771,47 @@
 	    async #getServicesAndCharacteristics() {
 	        this.#removeEventListeners();
 
-	        _console$l.log("getting services...");
+	        _console$g.log("getting services...");
 	        const services = await this.server.getPrimaryServices();
-	        _console$l.log("got services", services.length);
+	        _console$g.log("got services", services.length);
 	        await this.server.getPrimaryService("8d53dc1d-1db7-4cd3-868b-8a527460aa84");
 
-	        _console$l.log("getting characteristics...");
+	        _console$g.log("getting characteristics...");
 	        for (const serviceIndex in services) {
 	            const service = services[serviceIndex];
-	            _console$l.log({ service });
+	            _console$g.log({ service });
 	            const serviceName = getServiceNameFromUUID(service.uuid);
-	            _console$l.assertWithError(serviceName, `no name found for service uuid "${service.uuid}"`);
-	            _console$l.log(`got "${serviceName}" service`);
+	            _console$g.assertWithError(serviceName, `no name found for service uuid "${service.uuid}"`);
+	            _console$g.log(`got "${serviceName}" service`);
 	            if (serviceName == "dfu") {
-	                _console$l.log("skipping dfu service");
+	                _console$g.log("skipping dfu service");
 	                continue;
 	            }
 	            service._name = serviceName;
 	            this.#services.set(serviceName, service);
-	            _console$l.log(`getting characteristics for "${serviceName}" service`);
+	            _console$g.log(`getting characteristics for "${serviceName}" service`);
 	            const characteristics = await service.getCharacteristics();
-	            _console$l.log(`got characteristics for "${serviceName}" service`);
+	            _console$g.log(`got characteristics for "${serviceName}" service`);
 	            for (const characteristicIndex in characteristics) {
 	                const characteristic = characteristics[characteristicIndex];
-	                _console$l.log({ characteristic });
+	                _console$g.log({ characteristic });
 	                const characteristicName = getCharacteristicNameFromUUID(characteristic.uuid);
-	                _console$l.assertWithError(
+	                _console$g.assertWithError(
 	                    characteristicName,
 	                    `no name found for characteristic uuid "${characteristic.uuid}" in "${serviceName}" service`
 	                );
-	                _console$l.log(`got "${characteristicName}" characteristic in "${serviceName}" service`);
+	                _console$g.log(`got "${characteristicName}" characteristic in "${serviceName}" service`);
 	                characteristic._name = characteristicName;
 	                this.#characteristics.set(characteristicName, characteristic);
 	                addEventListeners(characteristic, this.#boundBluetoothCharacteristicEventListeners);
 	                const characteristicProperties =
 	                    characteristic.properties || getCharacteristicProperties(characteristicName);
 	                if (characteristicProperties.notify) {
-	                    _console$l.log(`starting notifications for "${characteristicName}" characteristic`);
+	                    _console$g.log(`starting notifications for "${characteristicName}" characteristic`);
 	                    await characteristic.startNotifications();
 	                }
 	                if (characteristicProperties.read) {
-	                    _console$l.log(`reading "${characteristicName}" characteristic...`);
+	                    _console$g.log(`reading "${characteristicName}" characteristic...`);
 	                    await characteristic.readValue();
 	                    if (isInBluefy || isInWebBLE) {
 	                        this.#onCharacteristicValueChanged(characteristic);
@@ -1881,7 +2837,7 @@
 
 	    /** @param {Event} event */
 	    #onCharacteristicvaluechanged(event) {
-	        _console$l.log("oncharacteristicvaluechanged");
+	        _console$g.log("oncharacteristicvaluechanged");
 
 	        /** @type {BluetoothRemoteGATTCharacteristic} */
 	        const characteristic = event.target;
@@ -1891,26 +2847,26 @@
 
 	    /** @param {BluetoothRemoteGATTCharacteristic} characteristic */
 	    #onCharacteristicValueChanged(characteristic) {
-	        _console$l.log("onCharacteristicValue");
+	        _console$g.log("onCharacteristicValue");
 
 	        /** @type {BluetoothCharacteristicName} */
 	        const characteristicName = characteristic._name;
-	        _console$l.assertWithError(
+	        _console$g.assertWithError(
 	            characteristicName,
 	            `no name found for characteristic with uuid "${characteristic.uuid}"`
 	        );
 
-	        _console$l.log(`oncharacteristicvaluechanged for "${characteristicName}" characteristic`);
+	        _console$g.log(`oncharacteristicvaluechanged for "${characteristicName}" characteristic`);
 	        const dataView = characteristic.value;
-	        _console$l.assertWithError(dataView, `no data found for "${characteristicName}" characteristic`);
-	        _console$l.log(`data for "${characteristicName}" characteristic`, Array.from(new Uint8Array(dataView.buffer)));
+	        _console$g.assertWithError(dataView, `no data found for "${characteristicName}" characteristic`);
+	        _console$g.log(`data for "${characteristicName}" characteristic`, Array.from(new Uint8Array(dataView.buffer)));
 
 	        this.onCharacteristicValueChanged(characteristicName, dataView);
 	    }
 
 	    /** @param {Event} event */
 	    #onGattserverdisconnected(event) {
-	        _console$l.log("gattserverdisconnected");
+	        _console$g.log("gattserverdisconnected");
 	        this.status = "not connected";
 	    }
 
@@ -1922,17 +2878,17 @@
 	        await super.sendMessage(...arguments);
 
 	        const characteristicName = this.characteristicNameForMessageType(messageType);
-	        _console$l.log({ characteristicName });
+	        _console$g.log({ characteristicName });
 
 	        const characteristic = this.#characteristics.get(characteristicName);
-	        _console$l.assertWithError(characteristic, `no characteristic found with name "${characteristicName}"`);
+	        _console$g.assertWithError(characteristic, `no characteristic found with name "${characteristicName}"`);
 	        if (data instanceof DataView) {
 	            data = data.buffer;
 	        }
 	        await characteristic.writeValueWithResponse(data);
 	        const characteristicProperties = characteristic.properties || getCharacteristicProperties(characteristicName);
 	        if (characteristicProperties.read && !characteristicProperties.notify) {
-	            _console$l.log("reading value after write...");
+	            _console$g.log("reading value after write...");
 	            await characteristic.readValue();
 	            if (isInBluefy || isInWebBLE) {
 	                this.#onCharacteristicValueChanged(characteristic);
@@ -1946,594 +2902,16 @@
 	    }
 	    async reconnect() {
 	        await super.reconnect();
-	        _console$l.log("attempting to reconnect...");
+	        _console$g.log("attempting to reconnect...");
 	        this.status = "connecting";
 	        await this.server.connect();
 	        if (this.isConnected) {
-	            _console$l.log("successfully reconnected!");
+	            _console$g.log("successfully reconnected!");
 	            await this.#getServicesAndCharacteristics();
 	            this.status = "connected";
 	        } else {
-	            _console$l.log("unable to reconnect");
+	            _console$g.log("unable to reconnect");
 	            this.status = "not connected";
-	        }
-	    }
-	}
-
-	/**
-	 * @param {number} value
-	 * @param {number} min
-	 * @param {number} max
-	 */
-	function getInterpolation(value, min, max) {
-	    return (value - min) / (max - min);
-	}
-
-	const Uint16Max = 2 ** 16;
-
-	/**
-	 * @typedef Range
-	 * @type {Object}
-	 * @property {number} min
-	 * @property {number} max
-	 */
-
-	/** @type {Range} */
-	const initialRange = { min: Infinity, max: -Infinity };
-
-	class RangeHelper {
-	    /** @type {Range} */
-	    #range = Object.assign({}, initialRange);
-
-	    reset() {
-	        Object.assign(this.#range, initialRange);
-	    }
-
-	    /** @param {number} value */
-	    update(value) {
-	        this.#range.min = Math.min(value, this.#range.min);
-	        this.#range.max = Math.max(value, this.#range.max);
-	    }
-
-	    /** @param {number} value */
-	    getNormalization(value) {
-	        return getInterpolation(value, this.#range.min, this.#range.max) || 0;
-	    }
-
-	    /** @param {number} value */
-	    updateAndGetNormalization(value) {
-	        this.update(value);
-	        return this.getNormalization(value);
-	    }
-	}
-
-	/**
-	 * @typedef Vector2
-	 * @type {Object}
-	 * @property {number} x
-	 * @property {number} y
-	 */
-
-	/** @typedef {Vector2} CenterOfPressure */
-
-	/**
-	 * @typedef CenterOfPressureRange
-	 * @type {Object}
-	 * @property {RangeHelper} x
-	 * @property {RangeHelper} y
-	 */
-
-	class CenterOfPressureHelper {
-	    /** @type {CenterOfPressureRange} */
-	    #range = {
-	        x: new RangeHelper(),
-	        y: new RangeHelper(),
-	    };
-	    reset() {
-	        this.#range.x.reset();
-	        this.#range.y.reset();
-	    }
-
-	    /** @param {CenterOfPressure} centerOfPressure  */
-	    update(centerOfPressure) {
-	        this.#range.x.update(centerOfPressure.x);
-	        this.#range.y.update(centerOfPressure.y);
-	    }
-	    /**
-	     * @param {CenterOfPressure} centerOfPressure
-	     * @returns {CenterOfPressure}
-	     */
-	    getNormalization(centerOfPressure) {
-	        return {
-	            x: this.#range.x.getNormalization(centerOfPressure.x),
-	            y: this.#range.y.getNormalization(centerOfPressure.y),
-	        };
-	    }
-
-	    /** @param {CenterOfPressure} centerOfPressure  */
-	    updateAndGetNormalization(centerOfPressure) {
-	        this.update(centerOfPressure);
-	        return this.getNormalization(centerOfPressure);
-	    }
-	}
-
-	/**
-	 * @param {number} arrayLength
-	 * @param {((index:number) => any) | object} objectOrCallback
-	 */
-	function createArray(arrayLength, objectOrCallback) {
-	    return new Array(arrayLength).fill(1).map((_, index) => {
-	        if (typeof objectOrCallback == "function") {
-	            const callback = objectOrCallback;
-	            return callback(index);
-	        } else {
-	            const object = objectOrCallback;
-	            return Object.assign({}, object);
-	        }
-	    });
-	}
-
-	/** @typedef {"pressure"} PressureSensorType */
-
-	/**
-	 * @typedef Vector2
-	 * @type {Object}
-	 * @property {number} x
-	 * @property {number} y
-	 */
-
-	/** @typedef {Vector2} PressureSensorPosition */
-
-
-
-	/**
-	 * @typedef PressureSensorValue
-	 * @type {Object}
-	 * @property {PressureSensorPosition} position
-	 * @property {number} rawValue
-	 * @property {number} normalizedValue
-	 * @property {number?} weightedValue
-	 */
-
-	/**
-	 * @typedef PressureData
-	 * @type {Object}
-	 * @property {PressureSensorValue[]} sensors
-	 *
-	 * @property {number} rawSum
-	 * @property {number} normalizedSum
-	 *
-	 * @property {CenterOfPressure?} center
-	 * @property {CenterOfPressure?} normalizedCenter
-	 */
-
-	const _console$k = createConsole("PressureSensorDataManager", { log: true });
-
-	class PressureSensorDataManager {
-	    /** @type {PressureSensorPosition[]} */
-	    #positions = [];
-	    get positions() {
-	        return this.#positions;
-	    }
-
-	    get numberOfSensors() {
-	        return this.positions.length;
-	    }
-
-	    /** @param {DataView} dataView */
-	    parsePositions(dataView) {
-	        /** @type {PressureSensorPosition[]} */
-	        const positions = [];
-
-	        for (
-	            let pressureSensorIndex = 0, byteOffset = 0;
-	            byteOffset < dataView.byteLength;
-	            pressureSensorIndex++, byteOffset += 2
-	        ) {
-	            positions.push({
-	                x: dataView.getUint8(byteOffset) / 2 ** 8,
-	                y: dataView.getUint8(byteOffset + 1) / 2 ** 8,
-	            });
-	        }
-
-	        _console$k.log({ positions });
-
-	        this.#positions = positions;
-
-	        this.#sensorRangeHelpers = createArray(this.numberOfSensors, () => new RangeHelper());
-
-	        this.resetRange();
-	    }
-
-	    /** @type {RangeHelper[]?} */
-	    #sensorRangeHelpers;
-
-	    #centerOfPressureHelper = new CenterOfPressureHelper();
-
-	    resetRange() {
-	        this.#sensorRangeHelpers.forEach((rangeHelper) => rangeHelper.reset());
-	        this.#centerOfPressureHelper.reset();
-	    }
-
-	    /** @param {DataView} dataView */
-	    parseData(dataView) {
-	        /** @type {PressureData} */
-	        const pressure = { sensors: [], rawSum: 0, normalizedSum: 0 };
-	        for (let index = 0, byteOffset = 0; byteOffset < dataView.byteLength; index++, byteOffset += 2) {
-	            const rawValue = dataView.getUint16(byteOffset, true);
-	            const rangeHelper = this.#sensorRangeHelpers[index];
-	            const normalizedValue = rangeHelper.updateAndGetNormalization(rawValue);
-	            const position = this.positions[index];
-	            pressure.sensors[index] = { rawValue, normalizedValue, position };
-
-	            pressure.rawSum += rawValue;
-	            pressure.normalizedSum += normalizedValue / this.numberOfSensors;
-	        }
-
-	        if (pressure.rawSum > 0) {
-	            pressure.center = { x: 0, y: 0 };
-	            pressure.sensors.forEach((sensor) => {
-	                sensor.weightedValue = sensor.rawValue / pressure.rawSum;
-	                pressure.center.x += sensor.position.x * sensor.weightedValue;
-	                pressure.center.y += sensor.position.y * sensor.weightedValue;
-	            });
-	            pressure.normalizedCenter = this.#centerOfPressureHelper.updateAndGetNormalization(pressure.center);
-	        }
-
-	        _console$k.log({ pressure });
-	        return pressure;
-	    }
-	}
-
-	/** @typedef {"acceleration" | "gravity" | "linearAcceleration" | "gyroscope" | "magnetometer" | "gameRotation" | "rotation"} MotionSensorType */
-
-	const _console$j = createConsole("MotionSensorDataManager", { log: false });
-
-	/**
-	 * @typedef Vector3
-	 * @type {Object}
-	 * @property {number} x
-	 * @property {number} y
-	 * @property {number} z
-	 */
-
-	/**
-	 * @typedef Quaternion
-	 * @type {Object}
-	 * @property {number} x
-	 * @property {number} y
-	 * @property {number} z
-	 * @property {number} w
-	 */
-
-	class MotionSensorDataManager {
-	    static #Vector3Size = 3 * 2;
-	    static get Vector3Size() {
-	        return this.#Vector3Size;
-	    }
-	    get vector3Size() {
-	        return MotionSensorDataManager.Vector3Size;
-	    }
-
-	    /**
-	     * @param {DataView} dataView
-	     * @param {number} scalar
-	     * @returns {Vector3}
-	     */
-	    parseVector3(dataView, scalar) {
-	        let [x, y, z] = [dataView.getInt16(0, true), dataView.getInt16(2, true), dataView.getInt16(4, true)].map(
-	            (value) => value * scalar
-	        );
-
-	        const vector = { x, y, z };
-
-	        _console$j.log({ vector });
-	        return vector;
-	    }
-
-	    static #QuaternionSize = 4 * 2;
-	    static get QuaternionSize() {
-	        return this.#QuaternionSize;
-	    }
-	    get quaternionSize() {
-	        return MotionSensorDataManager.QuaternionSize;
-	    }
-
-	    /**
-	     * @param {DataView} dataView
-	     * @param {number} scalar
-	     * @returns {Quaternion}
-	     */
-	    parseQuaternion(dataView, scalar) {
-	        let [x, y, z, w] = [
-	            dataView.getInt16(0, true),
-	            dataView.getInt16(2, true),
-	            dataView.getInt16(4, true),
-	            dataView.getInt16(6, true),
-	        ].map((value) => value * scalar);
-
-	        const quaternion = { x, y, z, w };
-
-	        _console$j.log({ quaternion });
-	        return quaternion;
-	    }
-	}
-
-	/** @typedef {"barometer"} BarometerSensorType */
-
-	createConsole("BarometerSensorDataManager", { log: true });
-
-	class BarometerSensorDataManager {
-	    static #Scalars = {
-	        barometer: 100 * 2 ** -7,
-	    };
-	    static get Scalars() {
-	        return this.#Scalars;
-	    }
-	    get scalars() {
-	        return BarometerSensorDataManager.Scalars;
-	    }
-	}
-
-	const _console$i = createConsole("ArrayBufferUtils", { log: false });
-
-	const textEncoder = new TextEncoder();
-
-	/**
-	 * @param {...ArrayBuffer} arrayBuffers
-	 * @returns {ArrayBuffer}
-	 */
-	function concatenateArrayBuffers(...arrayBuffers) {
-	    arrayBuffers = arrayBuffers.filter((arrayBuffer) => arrayBuffer != undefined || arrayBuffer != null);
-	    arrayBuffers = arrayBuffers.map((arrayBuffer) => {
-	        if (typeof arrayBuffer == "number") {
-	            const number = arrayBuffer;
-	            return Uint8Array.from([Math.floor(number)]);
-	        } else if (typeof arrayBuffer == "boolean") {
-	            const boolean = arrayBuffer;
-	            return Uint8Array.from([boolean ? 1 : 0]);
-	        } else if (typeof arrayBuffer == "string") {
-	            const string = arrayBuffer;
-	            return stringToArrayBuffer(string);
-	        } else if (arrayBuffer instanceof Array) {
-	            const array = arrayBuffer;
-	            return concatenateArrayBuffers(...array);
-	        } else if (arrayBuffer instanceof ArrayBuffer) {
-	            return arrayBuffer;
-	        } else if ("buffer" in arrayBuffer && arrayBuffer.buffer instanceof ArrayBuffer) {
-	            const bufferContainer = arrayBuffer;
-	            return bufferContainer.buffer;
-	        } else if (arrayBuffer instanceof DataView) {
-	            const dataView = arrayBuffer;
-	            return dataView.buffer;
-	        } else if (typeof arrayBuffer == "object") {
-	            const object = arrayBuffer;
-	            return objectToArrayBuffer(object);
-	        } else {
-	            return arrayBuffer;
-	        }
-	    });
-	    arrayBuffers = arrayBuffers.filter((arrayBuffer) => arrayBuffer && "byteLength" in arrayBuffer);
-	    const length = arrayBuffers.reduce((length, arrayBuffer) => length + arrayBuffer.byteLength, 0);
-	    const uint8Array = new Uint8Array(length);
-	    let byteOffset = 0;
-	    arrayBuffers.forEach((arrayBuffer) => {
-	        uint8Array.set(new Uint8Array(arrayBuffer), byteOffset);
-	        byteOffset += arrayBuffer.byteLength;
-	    });
-	    return uint8Array.buffer;
-	}
-
-	/** @param {Buffer} data */
-	function dataToArrayBuffer(data) {
-	    return data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength);
-	}
-
-	/** @param {String} string */
-	function stringToArrayBuffer(string) {
-	    const encoding = textEncoder.encode(string);
-	    return concatenateArrayBuffers(encoding.byteLength, encoding);
-	}
-
-	/** @param {Object} object */
-	function objectToArrayBuffer(object) {
-	    return stringToArrayBuffer(JSON.stringify(object));
-	}
-
-	/**
-	 * @param {DataView} dataView
-	 * @param {number} begin
-	 * @param {number?} length
-	 */
-	function sliceDataView(dataView, begin, length) {
-	    let end;
-	    if (length) {
-	        end = dataView.byteOffset + begin + length;
-	    }
-	    _console$i.log({ dataView, begin, end, length });
-	    return new DataView(dataView.buffer.slice(dataView.byteOffset + begin, end));
-	}
-
-	const _console$h = createConsole("ParseUtils", { log: true });
-
-	const textDecoder = new TextDecoder();
-
-	/**
-	 * @param {DataView} dataView
-	 * @param {number} byteOffset
-	 */
-	function parseStringFromDataView(dataView, byteOffset = 0) {
-	    const stringLength = dataView.getUint8(byteOffset++);
-	    const string = textDecoder.decode(
-	        dataView.buffer.slice(dataView.byteOffset + byteOffset, dataView.byteOffset + byteOffset + stringLength)
-	    );
-	    byteOffset += stringLength;
-	    return { string, byteOffset };
-	}
-
-	/**
-	 * @callback ParseMessageCallback
-	 * @param {string} messageType
-	 * @param {DataView} dataView
-	 */
-
-	/**
-	 * @param {DataView} dataView
-	 * @param {string[]} enumeration
-	 * @param {ParseMessageCallback} callback
-	 * @param {boolean} parseMessageLengthAsUint16
-	 */
-	function parseMessage(dataView, enumeration, callback, parseMessageLengthAsUint16 = false) {
-	    let byteOffset = 0;
-	    while (byteOffset < dataView.byteLength) {
-	        const messageTypeEnum = dataView.getUint8(byteOffset++);
-	        const messageType = enumeration[messageTypeEnum];
-
-	        /** @type {number} */
-	        let messageLength;
-	        if (parseMessageLengthAsUint16) {
-	            messageLength = dataView.getUint16(byteOffset, true);
-	            byteOffset += 2;
-	        } else {
-	            messageLength = dataView.getUint8(byteOffset++);
-	        }
-
-	        _console$h.log({ messageTypeEnum, messageType, messageLength, dataView });
-	        _console$h.assertWithError(messageType, `invalid messageTypeEnum ${messageTypeEnum}`);
-
-	        const _dataView = sliceDataView(dataView, byteOffset, messageLength);
-	        _console$h.log({ _dataView });
-
-	        callback(messageType, _dataView);
-
-	        byteOffset += messageLength;
-	    }
-	}
-
-	const _console$g = createConsole("SensorDataManager", { log: true });
-
-
-
-
-
-	/** @typedef {MotionSensorType | PressureSensorType | BarometerSensorType} SensorType */
-
-	/**
-	 * @callback SensorDataCallback
-	 * @param {SensorType} sensorType
-	 * @param {Object} data
-	 * @param {number} data.timestamp
-	 */
-
-	class SensorDataManager {
-	    pressureSensorDataManager = new PressureSensorDataManager();
-	    motionSensorDataManager = new MotionSensorDataManager();
-	    barometerSensorDataManager = new BarometerSensorDataManager();
-
-	    /** @type {SensorType[]} */
-	    static #Types = [
-	        "pressure",
-	        "acceleration",
-	        "gravity",
-	        "linearAcceleration",
-	        "gyroscope",
-	        "magnetometer",
-	        "gameRotation",
-	        "rotation",
-	        "barometer",
-	    ];
-	    static get Types() {
-	        return this.#Types;
-	    }
-	    get types() {
-	        return SensorDataManager.Types;
-	    }
-
-	    /** @type {Map.<SensorType, number>} */
-	    #scalars = new Map();
-
-	    /** @param {string} sensorType */
-	    static AssertValidSensorType(sensorType) {
-	        _console$g.assertTypeWithError(sensorType, "string");
-	        _console$g.assertWithError(this.#Types.includes(sensorType), `invalid sensorType "${sensorType}"`);
-	    }
-	    /** @param {number} sensorTypeEnum */
-	    static AssertValidSensorTypeEnum(sensorTypeEnum) {
-	        _console$g.assertTypeWithError(sensorTypeEnum, "number");
-	        _console$g.assertWithError(sensorTypeEnum in this.#Types, `invalid sensorTypeEnum ${sensorTypeEnum}`);
-	    }
-
-	    /** @type {SensorDataCallback} */
-	    onDataReceived;
-
-	    /**
-	     * @param {DataView} dataView
-	     * @param {number} byteOffset
-	     */
-	    #parseTimestamp(dataView, byteOffset) {
-	        let now = Date.now();
-	        now -= now % Uint16Max;
-	        const lowerUint16 = dataView.getUint16(byteOffset, true);
-	        const timestamp = now + lowerUint16;
-	        return timestamp;
-	    }
-
-	    /** @param {DataView} dataView */
-	    parseData(dataView) {
-	        _console$g.log("sensorData", Array.from(new Uint8Array(dataView.buffer)));
-
-	        let byteOffset = 0;
-	        const timestamp = this.#parseTimestamp(dataView, byteOffset);
-	        byteOffset += 2;
-
-	        const _dataView = new DataView(dataView.buffer, byteOffset);
-
-	        parseMessage(_dataView, SensorDataManager.Types, (messageType, dataView) => {
-	            /** @type {SensorType} */
-	            const sensorType = messageType;
-
-	            const scalar = this.#scalars.get(sensorType);
-
-	            let value;
-	            switch (sensorType) {
-	                case "pressure":
-	                    value = this.pressureSensorDataManager.parseData(dataView);
-	                    break;
-	                case "acceleration":
-	                case "gravity":
-	                case "linearAcceleration":
-	                case "gyroscope":
-	                case "magnetometer":
-	                    value = this.motionSensorDataManager.parseVector3(dataView, scalar);
-	                    break;
-	                case "gameRotation":
-	                case "rotation":
-	                    value = this.motionSensorDataManager.parseQuaternion(dataView, scalar);
-	                    break;
-	                case "barometer":
-	                    // FILL
-	                    break;
-	                default:
-	                    _console$g.error(`uncaught sensorType "${sensorType}"`);
-	            }
-
-	            _console$g.assertWithError(value, `no value defined for sensorType "${sensorType}"`);
-	            this.onDataReceived(sensorType, { timestamp, [sensorType]: value });
-	        });
-	    }
-
-	    /** @param {DataView} dataView */
-	    parseScalars(dataView) {
-	        for (let byteOffset = 0; byteOffset < dataView.byteLength; byteOffset += 5) {
-	            const sensorTypeIndex = dataView.getUint8(byteOffset);
-	            const sensorType = SensorDataManager.Types[sensorTypeIndex];
-	            if (!sensorType) {
-	                _console$g.warn(`unknown sensorType index ${sensorTypeIndex}`);
-	                continue;
-	            }
-	            const sensorScalar = dataView.getFloat32(byteOffset + 1, true);
-	            _console$g.log({ sensorType, sensorScalar });
-	            this.#scalars.set(sensorType, sensorScalar);
 	        }
 	    }
 	}
@@ -3226,7 +3604,11 @@
 
 
 
-	/** @typedef {"connectionStatus" | ConnectionStatus | "isConnected" | ConnectionMessageType | "deviceInformation" | SensorType | "connectionMessage" | "fileTransferProgress" | "fileTransferComplete" | "fileReceived"} DeviceEventType */
+
+
+
+
+	/** @typedef {"connectionStatus" | ConnectionStatus | "isConnected" | ConnectionMessageType | "deviceInformation" | SensorType | "connectionMessage" | FileTransferManagerEventType | TfliteManagerEventType} DeviceEventType */
 
 	/** @typedef {"deviceConnected" | "deviceDisconnected" | "deviceIsConnected" | "availableDevices"} StaticDeviceEventType */
 
@@ -3313,8 +3695,10 @@
 
 	    constructor() {
 	        this.#sensorDataManager.onDataReceived = this.#onSensorDataReceived.bind(this);
+
 	        this.#fileTransferManager.sendMessage = this.#sendMessage.bind(this);
 	        this.#fileTransferManager.eventDispatcher = this.#eventDispatcher;
+
 	        this.#tfliteManager.sendMessage = this.#sendMessage.bind(this);
 	        this.#tfliteManager.eventDispatcher = this.#eventDispatcher;
 
@@ -3388,7 +3772,7 @@
 	        "connectionMessage",
 
 	        ...FileTransferManager.EventTypes,
-	        //...TfliteManager.EventTypes,
+	        ...TfliteManager.EventTypes,
 	    ];
 	    static get EventTypes() {
 	        return this.#EventTypes;
@@ -3500,7 +3884,7 @@
 	        "tfliteModelIsReady",
 	        "getTfliteCaptureDelay",
 	        "getTfliteThreshold",
-	        "getTfliteEnableInferencing",
+	        "getTfliteInferencingEnabled",
 	        "tfliteModelInference",
 	    ];
 	    static get AllInformationConnectionMessages() {
@@ -3650,27 +4034,27 @@
 	        _console$d.log({ messageType, dataView });
 	        switch (messageType) {
 	            case "manufacturerName":
-	                const manufacturerName = this.#textDecoder.decode(dataView);
+	                const manufacturerName = textDecoder$1.decode(dataView);
 	                _console$d.log({ manufacturerName });
 	                this.#updateDeviceInformation({ manufacturerName });
 	                break;
 	            case "modelNumber":
-	                const modelNumber = this.#textDecoder.decode(dataView);
+	                const modelNumber = textDecoder$1.decode(dataView);
 	                _console$d.log({ modelNumber });
 	                this.#updateDeviceInformation({ modelNumber });
 	                break;
 	            case "softwareRevision":
-	                const softwareRevision = this.#textDecoder.decode(dataView);
+	                const softwareRevision = textDecoder$1.decode(dataView);
 	                _console$d.log({ softwareRevision });
 	                this.#updateDeviceInformation({ softwareRevision });
 	                break;
 	            case "hardwareRevision":
-	                const hardwareRevision = this.#textDecoder.decode(dataView);
+	                const hardwareRevision = textDecoder$1.decode(dataView);
 	                _console$d.log({ hardwareRevision });
 	                this.#updateDeviceInformation({ hardwareRevision });
 	                break;
 	            case "firmwareRevision":
-	                const firmwareRevision = this.#textDecoder.decode(dataView);
+	                const firmwareRevision = textDecoder$1.decode(dataView);
 	                _console$d.log({ firmwareRevision });
 	                this.#updateDeviceInformation({ firmwareRevision });
 	                break;
@@ -3688,7 +4072,7 @@
 	                this.#updateDeviceInformation({ pnpId });
 	                break;
 	            case "serialNumber":
-	                const serialNumber = this.#textDecoder.decode(dataView);
+	                const serialNumber = textDecoder$1.decode(dataView);
 	                _console$d.log({ serialNumber });
 	                // will only be used for node.js
 	                break;
@@ -3700,7 +4084,7 @@
 	                break;
 
 	            case "getName":
-	                const name = this.#textDecoder.decode(dataView);
+	                const name = textDecoder$1.decode(dataView);
 	                _console$d.log({ name });
 	                this.#updateName(name);
 	                break;
@@ -3753,19 +4137,6 @@
 
 	    /** @type {Map.<ConnectionMessageType, DataView>} */
 	    latestConnectionMessage = new Map();
-
-	    // TEXT ENCODER/DECODER
-
-	    /** @type {TextEncoder} */
-	    static #TextEncoder = new TextEncoder();
-	    get #textEncoder() {
-	        return Device.#TextEncoder;
-	    }
-	    /** @type {TextDecoder} */
-	    static #TextDecoder = new TextDecoder();
-	    get #textDecoder() {
-	        return Device.#TextDecoder;
-	    }
 
 	    // CURRENT TIME
 
@@ -3878,7 +4249,7 @@
 	            newName.length < this.maxNameLength,
 	            `name must be less than ${this.maxNameLength} characters long ("${newName}" is ${newName.length} characters long)`
 	        );
-	        const setNameData = this.#textEncoder.encode(newName);
+	        const setNameData = textEncoder$1.encode(newName);
 	        _console$d.log({ setNameData });
 	        await this.#connectionManager.sendMessage("setName", setNameData);
 	    }

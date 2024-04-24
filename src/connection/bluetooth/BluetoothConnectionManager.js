@@ -90,8 +90,8 @@ class BluetoothConnectionManager extends BaseConnectionManager {
             case "tfliteThreshold":
                 this.onMessageReceived("getTfliteThreshold", dataView);
                 break;
-            case "tfliteEnableInferencing":
-                this.onMessageReceived("getTfliteEnableInferencing", dataView);
+            case "tfliteInferencingEnabled":
+                this.onMessageReceived("getTfliteInferencingEnabled", dataView);
                 break;
             default:
                 throw new Error(`uncaught characteristicName "${characteristicName}"`);
@@ -141,8 +141,8 @@ class BluetoothConnectionManager extends BaseConnectionManager {
                 return "tfliteCaptureDelay";
             case "setTfliteThreshold":
                 return "tfliteThreshold";
-            case "setTfliteEnableInferencing":
-                return "tfliteEnableInferencing";
+            case "setTfliteInferencingEnabled":
+                return "tfliteInferencingEnabled";
 
             default:
                 throw Error(`no characteristicName for messageType "${messageType}"`);
