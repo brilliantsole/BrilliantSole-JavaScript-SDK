@@ -14,6 +14,8 @@ const _console = createConsole("TfliteManager", { log: true });
  * "setTfliteModelTask" |
  * "getTfliteModelSampleRate" |
  * "setTfliteModelSampleRate" |
+ * "getTfliteModelNumberOfSamples" |
+ * "setTfliteModelNumberOfSamples" |
  * "getTfliteModelSensorTypes" |
  * "setTfliteModelSensorTypes" |
  * "getTfliteModelNumberOfClasses" |
@@ -63,6 +65,8 @@ class TfliteManager {
         "setTfliteModelTask",
         "getTfliteModelSampleRate",
         "setTfliteModelSampleRate",
+        "getTfliteModelNumberOfSamples",
+        "setTfliteModelNumberOfSamples",
         "getTfliteModelSensorTypes",
         "setTfliteModelSensorTypes",
         "getTfliteModelNumberOfClasses",
@@ -243,6 +247,46 @@ class TfliteManager {
         const dataView = new DataView(new ArrayBuffer(2));
         dataView.setUint16(0, newSampleRate, true);
         this.sendMessage("setTfliteModelSampleRate", dataView);
+
+        await promise;
+    }
+
+    /** @type {number} */
+    #numberOfSamples;
+    get numberOfSamples() {
+        return this.#numberOfSamples;
+    }
+    /** @param {DataView} dataView */
+    #parseNumberOfSamples(dataView) {
+        _console.log("parseNumberOfSamples", dataView);
+        const numberOfSamples = dataView.getUint16(0, true);
+        this.#updateNumberOfSamples(numberOfSamples);
+    }
+    #updateNumberOfSamples(numberOfSamples) {
+        _console.log({ numberOfSamples });
+        this.#numberOfSamples = numberOfSamples;
+        this.#dispatchEvent({
+            type: "getTfliteModelNumberOfSamples",
+            message: { tfliteModelNumberOfSamples: numberOfSamples },
+        });
+    }
+    /** @param {number} newNumberOfSamples */
+    async #setNumberOfSamples(newNumberOfSamples) {
+        _console.assertTypeWithError(newNumberOfSamples, "number");
+        _console.assertWithError(
+            newNumberOfSamples > 0,
+            `numberOfSamples must be greater than 1 (got ${newNumberOfSamples})`
+        );
+        if (this.#numberOfSamples == newNumberOfSamples) {
+            _console.log(`redundant numberOfSamples assignment ${newNumberOfSamples}`);
+            return;
+        }
+
+        const promise = this.waitForEvent("getTfliteModelNumberOfSamples");
+
+        const dataView = new DataView(new ArrayBuffer(2));
+        dataView.setUint16(0, newNumberOfSamples, true);
+        this.sendMessage("setTfliteModelNumberOfSamples", dataView);
 
         await promise;
     }
@@ -479,7 +523,7 @@ class TfliteManager {
     }
 
     /**
-     * @param {TfliteManager} messageType
+     * @param {TfliteMessageType} messageType
      * @param {DataView} dataView
      */
     parseMessage(messageType, dataView) {
@@ -494,6 +538,9 @@ class TfliteManager {
                 break;
             case "getTfliteModelSampleRate":
                 this.#parseSampleRate(dataView);
+                break;
+            case "getTfliteModelNumberOfSamples":
+                this.#parseNumberOfSamples(dataView);
                 break;
             case "getTfliteModelSensorTypes":
                 this.#parseSensorTypes(dataView);

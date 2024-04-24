@@ -1506,6 +1506,8 @@ const _console$j = createConsole("TfliteManager", { log: true });
  * "setTfliteModelTask" |
  * "getTfliteModelSampleRate" |
  * "setTfliteModelSampleRate" |
+ * "getTfliteModelNumberOfSamples" |
+ * "setTfliteModelNumberOfSamples" |
  * "getTfliteModelSensorTypes" |
  * "setTfliteModelSensorTypes" |
  * "getTfliteModelNumberOfClasses" |
@@ -1555,6 +1557,8 @@ class TfliteManager {
         "setTfliteModelTask",
         "getTfliteModelSampleRate",
         "setTfliteModelSampleRate",
+        "getTfliteModelNumberOfSamples",
+        "setTfliteModelNumberOfSamples",
         "getTfliteModelSensorTypes",
         "setTfliteModelSensorTypes",
         "getTfliteModelNumberOfClasses",
@@ -1735,6 +1739,46 @@ class TfliteManager {
         const dataView = new DataView(new ArrayBuffer(2));
         dataView.setUint16(0, newSampleRate, true);
         this.sendMessage("setTfliteModelSampleRate", dataView);
+
+        await promise;
+    }
+
+    /** @type {number} */
+    #numberOfSamples;
+    get numberOfSamples() {
+        return this.#numberOfSamples;
+    }
+    /** @param {DataView} dataView */
+    #parseNumberOfSamples(dataView) {
+        _console$j.log("parseNumberOfSamples", dataView);
+        const numberOfSamples = dataView.getUint16(0, true);
+        this.#updateNumberOfSamples(numberOfSamples);
+    }
+    #updateNumberOfSamples(numberOfSamples) {
+        _console$j.log({ numberOfSamples });
+        this.#numberOfSamples = numberOfSamples;
+        this.#dispatchEvent({
+            type: "getTfliteModelNumberOfSamples",
+            message: { tfliteModelNumberOfSamples: numberOfSamples },
+        });
+    }
+    /** @param {number} newNumberOfSamples */
+    async #setNumberOfSamples(newNumberOfSamples) {
+        _console$j.assertTypeWithError(newNumberOfSamples, "number");
+        _console$j.assertWithError(
+            newNumberOfSamples > 0,
+            `numberOfSamples must be greater than 1 (got ${newNumberOfSamples})`
+        );
+        if (this.#numberOfSamples == newNumberOfSamples) {
+            _console$j.log(`redundant numberOfSamples assignment ${newNumberOfSamples}`);
+            return;
+        }
+
+        const promise = this.waitForEvent("getTfliteModelNumberOfSamples");
+
+        const dataView = new DataView(new ArrayBuffer(2));
+        dataView.setUint16(0, newNumberOfSamples, true);
+        this.sendMessage("setTfliteModelNumberOfSamples", dataView);
 
         await promise;
     }
@@ -1971,7 +2015,7 @@ class TfliteManager {
     }
 
     /**
-     * @param {TfliteManager} messageType
+     * @param {TfliteMessageType} messageType
      * @param {DataView} dataView
      */
     parseMessage(messageType, dataView) {
@@ -1986,6 +2030,9 @@ class TfliteManager {
                 break;
             case "getTfliteModelSampleRate":
                 this.#parseSampleRate(dataView);
+                break;
+            case "getTfliteModelNumberOfSamples":
+                this.#parseNumberOfSamples(dataView);
                 break;
             case "getTfliteModelSensorTypes":
                 this.#parseSensorTypes(dataView);
@@ -2275,6 +2322,7 @@ function stringToServiceUUID(identifier) {
  * "tfliteModelName" |
  * "tfliteModelTask" |
  * "tfliteModelSampleRate" |
+ * "tfliteModelNumberOfSamples" |
  * "tfliteModelSensorTypes" |
  * "tfliteModelNumberOfClasses" |
  * "tfliteModelIsReady" |
@@ -2347,13 +2395,14 @@ const bluetoothUUIDs = Object.freeze({
                 tfliteModelName: { uuid: generateBluetoothUUID("5000") },
                 tfliteModelTask: { uuid: generateBluetoothUUID("5001") },
                 tfliteModelSampleRate: { uuid: generateBluetoothUUID("5002") },
-                tfliteModelSensorTypes: { uuid: generateBluetoothUUID("5003") },
-                tfliteModelNumberOfClasses: { uuid: generateBluetoothUUID("5004") },
-                tfliteModelIsReady: { uuid: generateBluetoothUUID("5005") },
-                tfliteCaptureDelay: { uuid: generateBluetoothUUID("5006") },
-                tfliteThreshold: { uuid: generateBluetoothUUID("5007") },
-                tfliteInferencingEnabled: { uuid: generateBluetoothUUID("5008") },
-                tfliteModelInference: { uuid: generateBluetoothUUID("5009") },
+                tfliteModelNumberOfSamples: { uuid: generateBluetoothUUID("5003") },
+                tfliteModelSensorTypes: { uuid: generateBluetoothUUID("5004") },
+                tfliteModelNumberOfClasses: { uuid: generateBluetoothUUID("5005") },
+                tfliteModelIsReady: { uuid: generateBluetoothUUID("5006") },
+                tfliteCaptureDelay: { uuid: generateBluetoothUUID("5007") },
+                tfliteThreshold: { uuid: generateBluetoothUUID("5008") },
+                tfliteInferencingEnabled: { uuid: generateBluetoothUUID("5009") },
+                tfliteModelInference: { uuid: generateBluetoothUUID("500a") },
             },
         },
         dfu: {
@@ -2497,6 +2546,17 @@ function getCharacteristicProperties(characteristicName) {
         case "fileTransferType":
         case "fileTransferStatus":
         case "fileTransferBlock":
+        case "tfliteModelName":
+        case "tfliteModelTask":
+        case "tfliteModelSampleRate":
+        case "tfliteModelNumberOfSamples":
+        case "tfliteModelSensorTypes":
+        case "tfliteModelNumberOfClasses":
+        case "tfliteModelIsReady":
+        case "tfliteThreshold":
+        case "tfliteCaptureDelay":
+        case "tfliteInferencingEnabled":
+        case "tfliteModelInference":
             properties.notify = true;
             break;
     }
@@ -2512,6 +2572,13 @@ function getCharacteristicProperties(characteristicName) {
         case "fileTransferType":
         case "fileTransferCommand":
         case "fileTransferBlock":
+        case "tfliteModelName":
+        case "tfliteModelTask":
+        case "tfliteModelNumberOfSamples":
+        case "tfliteModelSampleRate":
+        case "tfliteModelSensorTypes":
+        case "tfliteModelNumberOfClasses":
+        case "tfliteInferencingEnabled":
             properties.write = true;
             properties.writeWithoutResponse = true;
             properties.reliableWrite = true;
@@ -2591,6 +2658,9 @@ class BluetoothConnectionManager extends BaseConnectionManager {
             case "tfliteModelSampleRate":
                 this.onMessageReceived("getTfliteModelSampleRate", dataView);
                 break;
+            case "tfliteModelNumberOfSamples":
+                this.onMessageReceived("getTfliteModelNumberOfSamples", dataView);
+                break;
             case "tfliteModelSensorTypes":
                 this.onMessageReceived("getTfliteModelSensorTypes", dataView);
                 break;
@@ -2646,6 +2716,8 @@ class BluetoothConnectionManager extends BaseConnectionManager {
                 return "tfliteModelTask";
             case "setTfliteModelSampleRate":
                 return "tfliteModelSampleRate";
+            case "setTfliteModelNumberOfSamples":
+                return "tfliteModelNumberOfSamples";
             case "setTfliteModelSensorTypes":
                 return "tfliteModelSensorTypes";
             case "setTfliteModelNumberOfClasses":
