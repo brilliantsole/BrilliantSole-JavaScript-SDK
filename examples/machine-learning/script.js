@@ -1484,19 +1484,19 @@ async function convertModelToTflite() {
 }
 
 /** @type {HTMLButtonElement} */
-const downloadTfliteModelButton = document.getElementById("downloadTfliteModel");
-downloadTfliteModelButton.addEventListener("click", () => {
+const downloadTfliteButton = document.getElementById("downloadTflite");
+downloadTfliteButton.addEventListener("click", () => {
     downloadBlob(tfLiteFiles.model_tflite.blob, "model.tflite");
     downloadBlob(tfLiteFiles.tfLite_model_cpp.blob, "tflite_model.cpp");
 });
 window.addEventListener("convertModelToTflite", () => {
-    downloadTfliteModelButton.disabled = false;
+    downloadTfliteButton.disabled = false;
 });
 
 /** @type {HTMLInputElement} */
-const loadTfliteModelInput = document.getElementById("loadTfliteModel");
-loadTfliteModelInput.addEventListener("input", () => {
-    const tfliteModel = loadTfliteModelInput.files[0];
+const loadTfliteInput = document.getElementById("loadTflite");
+loadTfliteInput.addEventListener("input", () => {
+    const tfliteModel = loadTfliteInput.files[0];
     if (tfliteModel) {
         console.log({ tfliteModel });
         tfLiteFiles.model_tflite = tfliteModel;
@@ -1505,22 +1505,22 @@ loadTfliteModelInput.addEventListener("input", () => {
 });
 
 /** @type {HTMLButtonElement} */
-const transferTfliteModelButton = document.getElementById("transferTfliteModel");
-transferTfliteModelButton.addEventListener("click", () => {
+const transferTfliteButton = document.getElementById("transferTflite");
+transferTfliteButton.addEventListener("click", () => {
     // FILL - transfer file
 });
 ["tfliteModel", "createNeuralNetwork"].forEach((eventType) => {
     window.addEventListener(eventType, () => {
-        updateTransferTfliteModelButton();
+        updateTransferTfliteButton();
     });
 });
-const updateTransferTfliteModelButton = () => {
+const updateTransferTfliteButton = () => {
     const enabled = tfLiteFiles.model_tflite && neuralNetwork && selectedDevices.length == 1;
-    transferTfliteModelButton.disabled = !enabled;
+    transferTfliteButton.disabled = !enabled;
 };
 
 /** @type {HTMLProgressElement} */
-const transferTfliteModelProgress = document.getElementById("transferTfliteModelProgress");
+const transferTfliteProgress = document.getElementById("transferTfliteProgress");
 window.addEventListener(
     "createNeuralNetwork",
     () => {
@@ -1528,10 +1528,10 @@ window.addEventListener(
             const device = selectedDevices[0];
             // FIX - replace with tflite events
             device.addEventListener("fileTransferProgress", (event) => {
-                transferTfliteModelProgress.value = event.message.progress;
+                transferTfliteProgress.value = event.message.progress;
             });
             device.addEventListener("fileTransferComplete", (event) => {
-                transferTfliteModelProgress.value = 0;
+                transferTfliteProgress.value = 0;
             });
         }
     },
@@ -1539,8 +1539,8 @@ window.addEventListener(
 );
 
 /** @type {HTMLButtonElement} */
-const toggleTfliteModelButton = document.getElementById("toggleTfliteModel");
-toggleTfliteModelButton.addEventListener("click", () => {
+const toggleTfliteButton = document.getElementById("toggleTflite");
+toggleTfliteButton.addEventListener("click", () => {
     // FILL
 });
 

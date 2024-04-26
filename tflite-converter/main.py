@@ -1,4 +1,5 @@
 # based on https://github.com/googlecreativelab/tiny-motion-trainer/tree/main/backend
+# also https://github.com/espruino/Espruino/blob/master/libs/tensorflow/README.md#actually-using-it
 
 import os
 import shutil
@@ -36,6 +37,8 @@ def keras_to_tflite(bin_file, quantize=False, quantize_data=None):
     # Convert the model.
     model = tf.keras.models.load_model(bin_file)
     converter = tf.lite.TFLiteConverter.from_keras_model(model)
+    # keep in?
+    # converter.optimizations = [tf.lite.Optimize.OPTIMIZE_FOR_SIZE]
     if quantize:
         print('QUANTIZE: TRUE')
         print(quantize_data)

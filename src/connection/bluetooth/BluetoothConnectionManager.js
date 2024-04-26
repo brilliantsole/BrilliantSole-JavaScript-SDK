@@ -70,22 +70,22 @@ class BluetoothConnectionManager extends BaseConnectionManager {
                 this.onMessageReceived("getFileTransferBlock", dataView);
                 break;
             case "tfliteModelName":
-                this.onMessageReceived("getTfliteModelName", dataView);
+                this.onMessageReceived("getTfliteName", dataView);
                 break;
             case "tfliteModelTask":
-                this.onMessageReceived("getTfliteModelTask", dataView);
+                this.onMessageReceived("getTfliteTask", dataView);
                 break;
             case "tfliteModelSampleRate":
-                this.onMessageReceived("getTfliteModelSampleRate", dataView);
+                this.onMessageReceived("getTfliteSampleRate", dataView);
                 break;
             case "tfliteModelNumberOfSamples":
-                this.onMessageReceived("getTfliteModelNumberOfSamples", dataView);
+                this.onMessageReceived("getTfliteNumberOfSamples", dataView);
                 break;
             case "tfliteModelSensorTypes":
-                this.onMessageReceived("getTfliteModelSensorTypes", dataView);
+                this.onMessageReceived("getTfliteSensorTypes", dataView);
                 break;
             case "tfliteModelNumberOfClasses":
-                this.onMessageReceived("getTfliteModelNumberOfClasses", dataView);
+                this.onMessageReceived("getTfliteNumberOfClasses", dataView);
                 break;
             case "tfliteCaptureDelay":
                 this.onMessageReceived("getTfliteCaptureDelay", dataView);
@@ -130,17 +130,17 @@ class BluetoothConnectionManager extends BaseConnectionManager {
             case "setFileTransferBlock":
                 return "fileTransferBlock";
 
-            case "setTfliteModelName":
+            case "setTfliteName":
                 return "tfliteModelName";
-            case "setTfliteModelTask":
+            case "setTfliteTask":
                 return "tfliteModelTask";
-            case "setTfliteModelSampleRate":
+            case "setTfliteSampleRate":
                 return "tfliteModelSampleRate";
-            case "setTfliteModelNumberOfSamples":
+            case "setTfliteNumberOfSamples":
                 return "tfliteModelNumberOfSamples";
-            case "setTfliteModelSensorTypes":
+            case "setTfliteSensorTypes":
                 return "tfliteModelSensorTypes";
-            case "setTfliteModelNumberOfClasses":
+            case "setTfliteNumberOfClasses":
                 return "tfliteModelNumberOfClasses";
             case "setTfliteCaptureDelay":
                 return "tfliteCaptureDelay";

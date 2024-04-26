@@ -337,7 +337,11 @@ class EventDispatcher {
             const array = this.#listeners[event.type].slice(0);
 
             for (let i = 0, l = array.length; i < l; i++) {
-                array[i].call(this, event);
+                try {
+                    array[i].call(this, event);
+                } catch (error) {
+                    _console$q.error(error);
+                }
             }
         }
     }
@@ -593,7 +597,7 @@ class FileTransferManager {
         return FileTransferManager.GetFileBuffer(file);
     }
 
-    static #MaxLength = 50 * 1024; // 50kB
+    static #MaxLength = 0; // kB
     static get MaxLength() {
         return this.#MaxLength;
     }
@@ -909,7 +913,10 @@ class FileTransferManager {
         await this.#setCommand("cancel");
     }
 
-    /** @type {SendMessageCallback} */
+    /**
+     * @private
+     * @type {SendMessageCallback}
+     */
     sendMessage;
 }
 
@@ -1499,21 +1506,128 @@ class SensorDataManager {
     }
 }
 
-const _console$j = createConsole("TfliteManager", { log: true });
+/**
+ * @typedef SensorConfiguration
+ * @type {Object}
+ * @property {number?} pressure
+ * @property {number?} acceleration
+ * @property {number?} gravity
+ * @property {number?} linearAcceleration
+ * @property {number?} gyroscope
+ * @property {number?} magnetometer
+ * @property {number?} gameRotation
+ * @property {number?} rotation
+ * @property {number?} barometer
+ */
+
+const _console$j = createConsole("SensorConfigurationManager", { log: false });
+
+class SensorConfigurationManager {
+    /** @type {SensorType[]} */
+    #availableSensorTypes;
+    /** @param {SensorType} sensorType */
+    #assertAvailableSensorType(sensorType) {
+        _console$j.assertWithError(this.#availableSensorTypes, "must get initial sensorConfiguration");
+        const isSensorTypeAvailable = this.#availableSensorTypes?.includes(sensorType);
+        _console$j.assert(isSensorTypeAvailable, `unavailable sensor type "${sensorType}"`);
+        return isSensorTypeAvailable;
+    }
+
+    /** @param {DataView} dataView */
+    parse(dataView) {
+        /** @type {SensorConfiguration} */
+        const parsedSensorConfiguration = {};
+        for (let byteOffset = 0; byteOffset < dataView.byteLength; byteOffset += 3) {
+            const sensorTypeIndex = dataView.getUint8(byteOffset);
+            const sensorType = SensorDataManager.Types[sensorTypeIndex];
+            if (!sensorType) {
+                _console$j.warn(`unknown sensorType index ${sensorTypeIndex}`);
+                continue;
+            }
+            const sensorRate = dataView.getUint16(byteOffset + 1, true);
+            _console$j.log({ sensorType, sensorRate });
+            parsedSensorConfiguration[sensorType] = sensorRate;
+        }
+        _console$j.log({ parsedSensorConfiguration });
+        this.#availableSensorTypes = Object.keys(parsedSensorConfiguration);
+        return parsedSensorConfiguration;
+    }
+
+    static #MaxSensorRate = 2 ** 16 - 1;
+    static get MaxSensorRate() {
+        return this.#MaxSensorRate;
+    }
+    get maxSensorRate() {
+        return SensorConfigurationManager.MaxSensorRate;
+    }
+    static #SensorRateStep = 5;
+    static get SensorRateStep() {
+        return this.#SensorRateStep;
+    }
+    get sensorRateStep() {
+        return SensorConfigurationManager.SensorRateStep;
+    }
+
+    /** @param {sensorRate} number */
+    static #AssertValidSensorRate(sensorRate) {
+        _console$j.assertTypeWithError(sensorRate, "number");
+        _console$j.assertWithError(sensorRate >= 0, `sensorRate must be 0 or greater (got ${sensorRate})`);
+        _console$j.assertWithError(
+            sensorRate < this.MaxSensorRate,
+            `sensorRate must be 0 or greater (got ${sensorRate})`
+        );
+        _console$j.assertWithError(
+            sensorRate % this.SensorRateStep == 0,
+            `sensorRate must be multiple of ${this.SensorRateStep}`
+        );
+    }
+
+    /** @param {sensorRate} number */
+    #assertValidSensorRate(sensorRate) {
+        SensorConfigurationManager.#AssertValidSensorRate(sensorRate);
+    }
+
+    /** @param {SensorConfiguration} sensorConfiguration */
+    createData(sensorConfiguration) {
+        /** @type {SensorType[]} */
+        let sensorTypes = Object.keys(sensorConfiguration);
+        sensorTypes = sensorTypes.filter((sensorType) => this.#assertAvailableSensorType(sensorType));
+
+        const dataView = new DataView(new ArrayBuffer(sensorTypes.length * 3));
+        sensorTypes.forEach((sensorType, index) => {
+            SensorDataManager.AssertValidSensorType(sensorType);
+            const sensorTypeEnum = SensorDataManager.Types.indexOf(sensorType);
+            dataView.setUint8(index * 3, sensorTypeEnum);
+
+            const sensorRate = sensorConfiguration[sensorType];
+            this.#assertValidSensorRate(sensorRate);
+            dataView.setUint16(index * 3 + 1, sensorConfiguration[sensorType], true);
+        });
+        _console$j.log({ sensorConfigurationData: dataView });
+        return dataView;
+    }
+
+    /** @param {SensorConfiguration} sensorConfiguration */
+    hasAtLeastOneNonZeroSensorRate(sensorConfiguration) {
+        return Object.values(sensorConfiguration).some((value) => value > 0);
+    }
+}
+
+const _console$i = createConsole("TfliteManager", { log: true });
 
 /**
- * @typedef { "getTfliteModelName" |
- * "setTfliteModelName" |
- * "getTfliteModelTask" |
- * "setTfliteModelTask" |
- * "getTfliteModelSampleRate" |
- * "setTfliteModelSampleRate" |
- * "getTfliteModelNumberOfSamples" |
- * "setTfliteModelNumberOfSamples" |
- * "getTfliteModelSensorTypes" |
- * "setTfliteModelSensorTypes" |
- * "getTfliteModelNumberOfClasses" |
- * "setTfliteModelNumberOfClasses" |
+ * @typedef { "getTfliteName" |
+ * "setTfliteName" |
+ * "getTfliteTask" |
+ * "setTfliteTask" |
+ * "getTfliteSampleRate" |
+ * "setTfliteSampleRate" |
+ * "getTfliteNumberOfSamples" |
+ * "setTfliteNumberOfSamples" |
+ * "getTfliteSensorTypes" |
+ * "setTfliteSensorTypes" |
+ * "getTfliteNumberOfClasses" |
+ * "setTfliteNumberOfClasses" |
  * "tfliteModelIsReady" |
  * "getTfliteCaptureDelay" |
  * "setTfliteCaptureDelay" |
@@ -1525,7 +1639,7 @@ const _console$j = createConsole("TfliteManager", { log: true });
  * } TfliteMessageType
  */
 
-/** @typedef {"classification" | "regression"} TfliteModelTask */
+/** @typedef {"classification" | "regression"} TfliteTask */
 
 /**
  * @callback SendMessageCallback
@@ -1553,18 +1667,18 @@ const _console$j = createConsole("TfliteManager", { log: true });
 class TfliteManager {
     /** @type {TfliteMessageType[]} */
     static #MessageTypes = [
-        "getTfliteModelName",
-        "setTfliteModelName",
-        "getTfliteModelTask",
-        "setTfliteModelTask",
-        "getTfliteModelSampleRate",
-        "setTfliteModelSampleRate",
-        "getTfliteModelNumberOfSamples",
-        "setTfliteModelNumberOfSamples",
-        "getTfliteModelSensorTypes",
-        "setTfliteModelSensorTypes",
-        "getTfliteModelNumberOfClasses",
-        "setTfliteModelNumberOfClasses",
+        "getTfliteName",
+        "setTfliteName",
+        "getTfliteTask",
+        "setTfliteTask",
+        "getTfliteSampleRate",
+        "setTfliteSampleRate",
+        "getTfliteNumberOfSamples",
+        "setTfliteNumberOfSamples",
+        "getTfliteSensorTypes",
+        "setTfliteSensorTypes",
+        "getTfliteNumberOfClasses",
+        "setTfliteNumberOfClasses",
         "tfliteModelIsReady",
         "getTfliteCaptureDelay",
         "setTfliteCaptureDelay",
@@ -1583,7 +1697,7 @@ class TfliteManager {
 
     // TASK
 
-    /** @type {TfliteModelTask[]} */
+    /** @type {TfliteTask[]} */
     static #Tasks = ["classification", "regression"];
     static get Tasks() {
         return this.#Tasks;
@@ -1591,13 +1705,13 @@ class TfliteManager {
     get tasks() {
         return TfliteManager.Tasks;
     }
-    /** @param {TfliteModelTask} task */
+    /** @param {TfliteTask} task */
     #assertValidTask(task) {
-        _console$j.assertEnumWithError(task, this.tasks);
+        _console$i.assertEnumWithError(task, this.tasks);
     }
     /** @param {number} taskEnum */
     #assertValidTaskEnum(taskEnum) {
-        _console$j.assertWithError(this.tasks[taskEnum], `invalid taskEnum ${taskEnum}`);
+        _console$i.assertWithError(this.tasks[taskEnum], `invalid taskEnum ${taskEnum}`);
     }
 
     // EVENT DISPATCHER
@@ -1651,63 +1765,63 @@ class TfliteManager {
     }
     /** @param {DataView} dataView */
     #parseName(dataView) {
-        _console$j.log("parseName", dataView);
+        _console$i.log("parseName", dataView);
         const name = textDecoder$1.decode(dataView);
         this.#updateName(name);
     }
     /** @param {string} name */
     #updateName(name) {
-        _console$j.log({ name });
+        _console$i.log({ name });
         this.#name = name;
-        this.#dispatchEvent({ type: "getTfliteModelName", message: { tfliteModelName: name } });
+        this.#dispatchEvent({ type: "getTfliteName", message: { tfliteModelName: name } });
     }
     /** @param {string} newName */
-    async #setName(newName) {
-        _console$j.assertTypeWithError(newName, "string");
+    async setName(newName) {
+        _console$i.assertTypeWithError(newName, "string");
         if (this.name == newName) {
-            _console$j.log(`redundant name assignment ${newName}`);
+            _console$i.log(`redundant name assignment ${newName}`);
             return;
         }
 
-        const promise = this.waitForEvent("getTfliteModelName");
+        const promise = this.waitForEvent("getTfliteName");
 
         const setNameData = textEncoder$1.encode(newName);
-        this.sendMessage("setTfliteModelName", setNameData);
+        this.sendMessage("setTfliteName", setNameData);
 
         await promise;
     }
 
-    /** @type {TfliteModelTask} */
+    /** @type {TfliteTask} */
     #task;
     get task() {
         return this.#task;
     }
     /** @param {DataView} dataView */
     #parseTask(dataView) {
-        _console$j.log("parseTask", dataView);
+        _console$i.log("parseTask", dataView);
         const taskEnum = dataView.getUint8(0);
         this.#assertValidTaskEnum(taskEnum);
         const task = this.tasks[taskEnum];
         this.#updateTask(task);
     }
-    /** @param {TfliteModelTask} task */
+    /** @param {TfliteTask} task */
     #updateTask(task) {
-        _console$j.log({ task });
+        _console$i.log({ task });
         this.#task = task;
-        this.#dispatchEvent({ type: "getTfliteModelTask", message: { tfliteModelTask: task } });
+        this.#dispatchEvent({ type: "getTfliteTask", message: { tfliteModelTask: task } });
     }
-    /** @param {TfliteModelTask} newTask */
-    async #setTask(newTask) {
+    /** @param {TfliteTask} newTask */
+    async setTask(newTask) {
         this.#assertValidTask(newTask);
         if (this.task == newTask) {
-            _console$j.log(`redundant task assignment ${newTask}`);
+            _console$i.log(`redundant task assignment ${newTask}`);
             return;
         }
 
-        const promise = this.waitForEvent("getTfliteModelTask");
+        const promise = this.waitForEvent("getTfliteTask");
 
         const taskEnum = this.tasks.indexOf(newTask);
-        this.sendMessage("setTfliteModelTask", Uint8Array.from([taskEnum]));
+        this.sendMessage("setTfliteTask", Uint8Array.from([taskEnum]));
 
         await promise;
     }
@@ -1719,28 +1833,33 @@ class TfliteManager {
     }
     /** @param {DataView} dataView */
     #parseSampleRate(dataView) {
-        _console$j.log("parseSampleRate", dataView);
+        _console$i.log("parseSampleRate", dataView);
         const sampleRate = dataView.getUint16(0, true);
         this.#updateSampleRate(sampleRate);
     }
     #updateSampleRate(sampleRate) {
-        _console$j.log({ sampleRate });
+        _console$i.log({ sampleRate });
         this.#sampleRate = sampleRate;
-        this.#dispatchEvent({ type: "getTfliteModelSampleRate", message: { tfliteModelSampleRate: sampleRate } });
+        this.#dispatchEvent({ type: "getTfliteSampleRate", message: { tfliteModelSampleRate: sampleRate } });
     }
     /** @param {number} newSampleRate */
-    async #setSampleRate(newSampleRate) {
-        _console$j.assertTypeWithError(newSampleRate, "number");
+    async setSampleRate(newSampleRate) {
+        _console$i.assertTypeWithError(newSampleRate, "number");
+        newSampleRate -= newSampleRate % SensorConfigurationManager.SensorRateStep;
+        _console$i.assertWithError(
+            newSampleRate >= SensorConfigurationManager.SensorRateStep,
+            `sampleRate must be multiple of ${SensorConfigurationManager.SensorRateStep} greater than 0 (got ${newSampleRate})`
+        );
         if (this.#sampleRate == newSampleRate) {
-            _console$j.log(`redundant sampleRate assignment ${newSampleRate}`);
+            _console$i.log(`redundant sampleRate assignment ${newSampleRate}`);
             return;
         }
 
-        const promise = this.waitForEvent("getTfliteModelSampleRate");
+        const promise = this.waitForEvent("getTfliteSampleRate");
 
         const dataView = new DataView(new ArrayBuffer(2));
         dataView.setUint16(0, newSampleRate, true);
-        this.sendMessage("setTfliteModelSampleRate", dataView);
+        this.sendMessage("setTfliteSampleRate", dataView);
 
         await promise;
     }
@@ -1752,47 +1871,47 @@ class TfliteManager {
     }
     /** @param {DataView} dataView */
     #parseNumberOfSamples(dataView) {
-        _console$j.log("parseNumberOfSamples", dataView);
+        _console$i.log("parseNumberOfSamples", dataView);
         const numberOfSamples = dataView.getUint16(0, true);
         this.#updateNumberOfSamples(numberOfSamples);
     }
     #updateNumberOfSamples(numberOfSamples) {
-        _console$j.log({ numberOfSamples });
+        _console$i.log({ numberOfSamples });
         this.#numberOfSamples = numberOfSamples;
         this.#dispatchEvent({
-            type: "getTfliteModelNumberOfSamples",
+            type: "getTfliteNumberOfSamples",
             message: { tfliteModelNumberOfSamples: numberOfSamples },
         });
     }
     /** @param {number} newNumberOfSamples */
-    async #setNumberOfSamples(newNumberOfSamples) {
-        _console$j.assertTypeWithError(newNumberOfSamples, "number");
-        _console$j.assertWithError(
+    async setNumberOfSamples(newNumberOfSamples) {
+        _console$i.assertTypeWithError(newNumberOfSamples, "number");
+        _console$i.assertWithError(
             newNumberOfSamples > 0,
             `numberOfSamples must be greater than 1 (got ${newNumberOfSamples})`
         );
         if (this.#numberOfSamples == newNumberOfSamples) {
-            _console$j.log(`redundant numberOfSamples assignment ${newNumberOfSamples}`);
+            _console$i.log(`redundant numberOfSamples assignment ${newNumberOfSamples}`);
             return;
         }
 
-        const promise = this.waitForEvent("getTfliteModelNumberOfSamples");
+        const promise = this.waitForEvent("getTfliteNumberOfSamples");
 
         const dataView = new DataView(new ArrayBuffer(2));
         dataView.setUint16(0, newNumberOfSamples, true);
-        this.sendMessage("setTfliteModelNumberOfSamples", dataView);
+        this.sendMessage("setTfliteNumberOfSamples", dataView);
 
         await promise;
     }
 
     /** @type {SensorType[]} */
-    #sensorTypes;
+    #sensorTypes = [];
     get sensorTypes() {
-        return this.#sensorTypes;
+        return this.#sensorTypes.slice();
     }
     /** @param {DataView} dataView */
     #parseSensorTypes(dataView) {
-        _console$j.log("parseSensorTypes", dataView);
+        _console$i.log("parseSensorTypes", dataView);
         /** @type {SensorType[]} */
         const sensorTypes = [];
         for (let index = 0; index < dataView.byteLength; index++) {
@@ -1801,30 +1920,31 @@ class TfliteManager {
             if (sensorType) {
                 sensorTypes.push(sensorType);
             } else {
-                _console$j.error(`invalid sensorTypeEnum ${sensorTypeEnum}`);
+                _console$i.error(`invalid sensorTypeEnum ${sensorTypeEnum}`);
             }
         }
         this.#updateSensorTypes(sensorTypes);
     }
     /** @param {SensorType[]} sensorTypes */
     #updateSensorTypes(sensorTypes) {
-        _console$j.log({ sensorTypes });
+        _console$i.log({ sensorTypes });
         this.#sensorTypes = sensorTypes;
-        this.#dispatchEvent({ type: "getTfliteModelSensorTypes", message: { tfliteModelSensorTypes: sensorTypes } });
+        this.#dispatchEvent({ type: "getTfliteSensorTypes", message: { tfliteModelSensorTypes: sensorTypes } });
     }
-    /** @param {...SensorType} newSensorTypes */
-    async #setSensorTypes(...newSensorTypes) {
+    /** @param {SensorType[]} newSensorTypes */
+    async setSensorTypes(newSensorTypes) {
         newSensorTypes.forEach((sensorType) => {
             SensorDataManager.AssertValidSensorType(sensorType);
         });
 
-        const promise = this.waitForEvent("getTfliteModelSensorTypes");
+        const promise = this.waitForEvent("getTfliteSensorTypes");
 
         newSensorTypes = arrayWithoutDuplicates(newSensorTypes);
         const newSensorTypeEnums = newSensorTypes
             .map((sensorType) => SensorDataManager.Types.indexOf(sensorType))
             .sort();
-        this.sendMessage("setTfliteModelSensorTypes", Uint8Array.from([newSensorTypeEnums]));
+        _console$i.log(newSensorTypes, newSensorTypeEnums);
+        this.sendMessage("setTfliteSensorTypes", Uint8Array.from(newSensorTypeEnums));
 
         await promise;
     }
@@ -1836,34 +1956,34 @@ class TfliteManager {
     }
     /** @param {DataView} dataView */
     #parseNumberOfClasses(dataView) {
-        _console$j.log("parseNumberOfClasses", dataView);
+        _console$i.log("parseNumberOfClasses", dataView);
         const numberOfClasses = dataView.getUint8(0);
         this.#updateNumberOfClasses(numberOfClasses);
     }
     /** @param {number} numberOfClasses */
     #updateNumberOfClasses(numberOfClasses) {
-        _console$j.log({ numberOfClasses });
+        _console$i.log({ numberOfClasses });
         this.#numberOfClasses = numberOfClasses;
         this.#dispatchEvent({
-            type: "getTfliteModelNumberOfClasses",
+            type: "getTfliteNumberOfClasses",
             message: { tfliteModelNumberOfClasses: numberOfClasses },
         });
     }
     /** @param {number} newNumberOfClasses */
-    async #setNumberOfClasses(newNumberOfClasses) {
-        _console$j.assertTypeWithError(newNumberOfClasses, "number");
-        _console$j.assertWithError(
+    async setNumberOfClasses(newNumberOfClasses) {
+        _console$i.assertTypeWithError(newNumberOfClasses, "number");
+        _console$i.assertWithError(
             newNumberOfClasses > 1,
             `numberOfClasses must be greated than 1 (received ${newNumberOfClasses})`
         );
         if (this.#numberOfClasses == newNumberOfClasses) {
-            _console$j.log(`redundant numberOfClasses assignment ${newNumberOfClasses}`);
+            _console$i.log(`redundant numberOfClasses assignment ${newNumberOfClasses}`);
             return;
         }
 
-        const promise = this.waitForEvent("getTfliteModelNumberOfClasses");
+        const promise = this.waitForEvent("getTfliteNumberOfClasses");
 
-        this.sendMessage("setTfliteModelNumberOfClasses", Uint8Array.from([newNumberOfClasses]));
+        this.sendMessage("setTfliteNumberOfClasses", Uint8Array.from([newNumberOfClasses]));
 
         await promise;
     }
@@ -1875,18 +1995,21 @@ class TfliteManager {
     }
     /** @param {DataView} dataView */
     #parseIsReady(dataView) {
-        _console$j.log("parseIsReady", dataView);
+        _console$i.log("parseIsReady", dataView);
         const isReady = Boolean(dataView.getUint8(0));
         this.#updateIsReady(isReady);
     }
     /** @param {boolean} isReady */
     #updateIsReady(isReady) {
-        _console$j.log({ isReady });
+        _console$i.log({ isReady });
         this.#isReady = isReady;
         this.#dispatchEvent({
             type: "tfliteModelIsReady",
             message: { tfliteModelIsReady: isReady },
         });
+    }
+    #assertIsReady() {
+        _console$i.assertWithError(this.isReady, `tflite is not ready`);
     }
 
     /** @type {number} */
@@ -1896,13 +2019,13 @@ class TfliteManager {
     }
     /** @param {DataView} dataView */
     #parseCaptureDelay(dataView) {
-        _console$j.log("parseCaptureDelay", dataView);
+        _console$i.log("parseCaptureDelay", dataView);
         const captureDelay = dataView.getUint16(0, true);
         this.#updateCaptueDelay(captureDelay);
     }
     /** @param {number} captureDelay */
     #updateCaptueDelay(captureDelay) {
-        _console$j.log({ captureDelay });
+        _console$i.log({ captureDelay });
         this.#captureDelay = captureDelay;
         this.#dispatchEvent({
             type: "getTfliteCaptureDelay",
@@ -1910,10 +2033,10 @@ class TfliteManager {
         });
     }
     /** @param {number} newCaptureDelay */
-    async #setCaptureDelay(newCaptureDelay) {
-        _console$j.assertTypeWithError(newCaptureDelay, "number");
+    async setCaptureDelay(newCaptureDelay) {
+        _console$i.assertTypeWithError(newCaptureDelay, "number");
         if (this.#captureDelay == newCaptureDelay) {
-            _console$j.log(`redundant captureDelay assignment ${newCaptureDelay}`);
+            _console$i.log(`redundant captureDelay assignment ${newCaptureDelay}`);
             return;
         }
 
@@ -1933,13 +2056,13 @@ class TfliteManager {
     }
     /** @param {DataView} dataView */
     #parseThreshold(dataView) {
-        _console$j.log("parseThreshold", dataView);
+        _console$i.log("parseThreshold", dataView);
         const threshold = dataView.getFloat32(0, true);
         this.#updateThreshold(threshold);
     }
     /** @param {number} threshold */
     #updateThreshold(threshold) {
-        _console$j.log({ threshold });
+        _console$i.log({ threshold });
         this.#threshold = threshold;
         this.#dispatchEvent({
             type: "getTfliteThreshold",
@@ -1947,10 +2070,11 @@ class TfliteManager {
         });
     }
     /** @param {number} newThreshold */
-    async #setThreshold(newThreshold) {
-        _console$j.assertTypeWithError(newThreshold, "number");
+    async setThreshold(newThreshold) {
+        _console$i.assertTypeWithError(newThreshold, "number");
+        _console$i.assertWithError(newThreshold >= 0, `threshold must be positive (got ${newThreshold})`);
         if (this.#threshold == newThreshold) {
-            _console$j.log(`redundant threshold assignment ${newThreshold}`);
+            _console$i.log(`redundant threshold assignment ${newThreshold}`);
             return;
         }
 
@@ -1970,12 +2094,12 @@ class TfliteManager {
     }
     /** @param {DataView} dataView */
     #parseInferencingEnabled(dataView) {
-        _console$j.log("parseInferencingEnabled", dataView);
+        _console$i.log("parseInferencingEnabled", dataView);
         const inferencingEnabled = Boolean(dataView.getUint8(0));
         this.#updateInferencingEnabled(inferencingEnabled);
     }
     #updateInferencingEnabled(inferencingEnabled) {
-        _console$j.log({ inferencingEnabled });
+        _console$i.log({ inferencingEnabled });
         this.#inferencingEnabled = inferencingEnabled;
         this.#dispatchEvent({
             type: "getTfliteInferencingEnabled",
@@ -1983,10 +2107,11 @@ class TfliteManager {
         });
     }
     /** @param {boolean} newInferencingEnabled */
-    async #setInferencingEnabled(newInferencingEnabled) {
-        _console$j.assertTypeWithError(newInferencingEnabled, "boolean");
+    async setInferencingEnabled(newInferencingEnabled) {
+        _console$i.assertTypeWithError(newInferencingEnabled, "boolean");
+        this.#assertIsReady();
         if (this.#inferencingEnabled == newInferencingEnabled) {
-            _console$j.log(`redundant inferencingEnabled assignment ${newInferencingEnabled}`);
+            _console$i.log(`redundant inferencingEnabled assignment ${newInferencingEnabled}`);
             return;
         }
 
@@ -1996,24 +2121,27 @@ class TfliteManager {
 
         await promise;
     }
+    async toggleInferencingEnabled() {
+        return this.setInferencingEnabled(!this.inferencingEnabled);
+    }
 
     async enableInferencing() {
         if (this.inferencingEnabled) {
             return;
         }
-        this.#setInferencingEnabled(true);
+        this.setInferencingEnabled(true);
     }
     async disableInferencing() {
         if (!this.inferencingEnabled) {
             return;
         }
-        this.#setInferencingEnabled(false);
+        this.setInferencingEnabled(false);
     }
 
     /** @param {DataView} dataView */
     #parseInference(dataView) {
         // FILL
-        _console$j.log("parseInference", dataView);
+        _console$i.log("parseInference", dataView);
     }
 
     /**
@@ -2021,25 +2149,25 @@ class TfliteManager {
      * @param {DataView} dataView
      */
     parseMessage(messageType, dataView) {
-        _console$j.log({ messageType });
+        _console$i.log({ messageType });
 
         switch (messageType) {
-            case "getTfliteModelName":
+            case "getTfliteName":
                 this.#parseName(dataView);
                 break;
-            case "getTfliteModelTask":
+            case "getTfliteTask":
                 this.#parseTask(dataView);
                 break;
-            case "getTfliteModelSampleRate":
+            case "getTfliteSampleRate":
                 this.#parseSampleRate(dataView);
                 break;
-            case "getTfliteModelNumberOfSamples":
+            case "getTfliteNumberOfSamples":
                 this.#parseNumberOfSamples(dataView);
                 break;
-            case "getTfliteModelSensorTypes":
+            case "getTfliteSensorTypes":
                 this.#parseSensorTypes(dataView);
                 break;
-            case "getTfliteModelNumberOfClasses":
+            case "getTfliteNumberOfClasses":
                 this.#parseNumberOfClasses(dataView);
                 break;
             case "tfliteModelIsReady":
@@ -2062,7 +2190,10 @@ class TfliteManager {
         }
     }
 
-    /** @type {SendMessageCallback} */
+    /**
+     * @private
+     * @type {SendMessageCallback}
+     */
     sendMessage;
 }
 
@@ -2094,7 +2225,7 @@ class TfliteManager {
  * } ConnectionMessageType
  */
 
-const _console$i = createConsole("ConnectionManager", { log: true });
+const _console$h = createConsole("ConnectionManager", { log: true });
 
 /**
  * @callback ConnectionStatusCallback
@@ -2176,12 +2307,12 @@ class BaseConnectionManager {
 
     /** @throws {Error} if not supported */
     #assertIsSupported() {
-        _console$i.assertWithError(this.isSupported, `${this.constructor.name} is not supported`);
+        _console$h.assertWithError(this.isSupported, `${this.constructor.name} is not supported`);
     }
 
     /** @throws {Error} if abstract class */
     #assertIsSubclass() {
-        _console$i.assertWithError(
+        _console$h.assertWithError(
             this.constructor != BaseConnectionManager,
             `${this.constructor.name} must be subclassed`
         );
@@ -2199,12 +2330,12 @@ class BaseConnectionManager {
     }
     /** @protected */
     set status(newConnectionStatus) {
-        _console$i.assertTypeWithError(newConnectionStatus, "string");
+        _console$h.assertTypeWithError(newConnectionStatus, "string");
         if (this.#status == newConnectionStatus) {
-            _console$i.log(`tried to assign same connection status "${newConnectionStatus}"`);
+            _console$h.log(`tried to assign same connection status "${newConnectionStatus}"`);
             return;
         }
-        _console$i.log(`new connection status "${newConnectionStatus}"`);
+        _console$h.log(`new connection status "${newConnectionStatus}"`);
         this.#status = newConnectionStatus;
         this.onStatusUpdated?.(this.status);
     }
@@ -2215,19 +2346,19 @@ class BaseConnectionManager {
 
     /** @throws {Error} if connected */
     #assertIsNotConnected() {
-        _console$i.assertWithError(!this.isConnected, "device is already connected");
+        _console$h.assertWithError(!this.isConnected, "device is already connected");
     }
     /** @throws {Error} if connecting */
     #assertIsNotConnecting() {
-        _console$i.assertWithError(this.status != "connecting", "device is already connecting");
+        _console$h.assertWithError(this.status != "connecting", "device is already connecting");
     }
     /** @throws {Error} if not connected */
     #assertIsConnected() {
-        _console$i.assertWithError(this.isConnected, "device is not connected");
+        _console$h.assertWithError(this.isConnected, "device is not connected");
     }
     /** @throws {Error} if disconnecting */
     #assertIsNotDisconnecting() {
-        _console$i.assertWithError(this.status != "disconnecting", "device is already disconnecting");
+        _console$h.assertWithError(this.status != "disconnecting", "device is already disconnecting");
     }
     /** @throws {Error} if not connected or is disconnecting */
     #assertIsConnectedAndNotDisconnecting() {
@@ -2247,13 +2378,13 @@ class BaseConnectionManager {
     async reconnect() {
         this.#assertIsNotConnected();
         this.#assertIsNotConnecting();
-        _console$i.assert(this.canReconnect, "unable to reconnect");
+        _console$h.assert(this.canReconnect, "unable to reconnect");
     }
     async disconnect() {
         this.#assertIsConnected();
         this.#assertIsNotDisconnecting();
         this.status = "disconnecting";
-        _console$i.log("disconnecting from device...");
+        _console$h.log("disconnecting from device...");
     }
 
     /**
@@ -2262,11 +2393,11 @@ class BaseConnectionManager {
      */
     async sendMessage(messageType, data) {
         this.#assertIsConnectedAndNotDisconnecting();
-        _console$i.log("sending message", { messageType, data });
+        _console$h.log("sending message", { messageType, data });
     }
 }
 
-const _console$h = createConsole("bluetoothUUIDs", { log: false });
+const _console$g = createConsole("bluetoothUUIDs", { log: false });
 
 if (isInNode) {
     const webbluetooth = require("webbluetooth");
@@ -2281,8 +2412,8 @@ if (isInBrowser) {
  * @returns {BluetoothServiceUUID}
  */
 function generateBluetoothUUID(value) {
-    _console$h.assertTypeWithError(value, "string");
-    _console$h.assertWithError(value.length == 4, "value must be 4 characters long");
+    _console$g.assertTypeWithError(value, "string");
+    _console$g.assertWithError(value.length == 4, "value must be 4 characters long");
     return `ea6da725-${value}-4f9b-893d-c3913e33b39f`;
 }
 
@@ -2652,22 +2783,22 @@ class BluetoothConnectionManager extends BaseConnectionManager {
                 this.onMessageReceived("getFileTransferBlock", dataView);
                 break;
             case "tfliteModelName":
-                this.onMessageReceived("getTfliteModelName", dataView);
+                this.onMessageReceived("getTfliteName", dataView);
                 break;
             case "tfliteModelTask":
-                this.onMessageReceived("getTfliteModelTask", dataView);
+                this.onMessageReceived("getTfliteTask", dataView);
                 break;
             case "tfliteModelSampleRate":
-                this.onMessageReceived("getTfliteModelSampleRate", dataView);
+                this.onMessageReceived("getTfliteSampleRate", dataView);
                 break;
             case "tfliteModelNumberOfSamples":
-                this.onMessageReceived("getTfliteModelNumberOfSamples", dataView);
+                this.onMessageReceived("getTfliteNumberOfSamples", dataView);
                 break;
             case "tfliteModelSensorTypes":
-                this.onMessageReceived("getTfliteModelSensorTypes", dataView);
+                this.onMessageReceived("getTfliteSensorTypes", dataView);
                 break;
             case "tfliteModelNumberOfClasses":
-                this.onMessageReceived("getTfliteModelNumberOfClasses", dataView);
+                this.onMessageReceived("getTfliteNumberOfClasses", dataView);
                 break;
             case "tfliteCaptureDelay":
                 this.onMessageReceived("getTfliteCaptureDelay", dataView);
@@ -2712,17 +2843,17 @@ class BluetoothConnectionManager extends BaseConnectionManager {
             case "setFileTransferBlock":
                 return "fileTransferBlock";
 
-            case "setTfliteModelName":
+            case "setTfliteName":
                 return "tfliteModelName";
-            case "setTfliteModelTask":
+            case "setTfliteTask":
                 return "tfliteModelTask";
-            case "setTfliteModelSampleRate":
+            case "setTfliteSampleRate":
                 return "tfliteModelSampleRate";
-            case "setTfliteModelNumberOfSamples":
+            case "setTfliteNumberOfSamples":
                 return "tfliteModelNumberOfSamples";
-            case "setTfliteModelSensorTypes":
+            case "setTfliteSensorTypes":
                 return "tfliteModelSensorTypes";
-            case "setTfliteModelNumberOfClasses":
+            case "setTfliteNumberOfClasses":
                 return "tfliteModelNumberOfClasses";
             case "setTfliteCaptureDelay":
                 return "tfliteCaptureDelay";
@@ -2737,7 +2868,7 @@ class BluetoothConnectionManager extends BaseConnectionManager {
     }
 }
 
-const _console$g = createConsole("WebBluetoothConnectionManager", { log: false });
+const _console$f = createConsole("WebBluetoothConnectionManager", { log: false });
 
 
 
@@ -2783,7 +2914,7 @@ class WebBluetoothConnectionManager extends BluetoothConnectionManager {
     }
     set device(newDevice) {
         if (this.#device == newDevice) {
-            _console$g.log("tried to assign the same BluetoothDevice");
+            _console$f.log("tried to assign the same BluetoothDevice");
             return;
         }
         if (this.#device) {
@@ -2817,20 +2948,20 @@ class WebBluetoothConnectionManager extends BluetoothConnectionManager {
                 optionalServices: isInBrowser ? optionalServiceUUIDs : [],
             });
 
-            _console$g.log("got BluetoothDevice");
+            _console$f.log("got BluetoothDevice");
             this.device = device;
 
-            _console$g.log("connecting to device...");
+            _console$f.log("connecting to device...");
             const server = await this.device.gatt.connect();
-            _console$g.log(`connected to device? ${server.connected}`);
+            _console$f.log(`connected to device? ${server.connected}`);
 
             await this.#getServicesAndCharacteristics();
 
-            _console$g.log("fully connected");
+            _console$f.log("fully connected");
 
             this.status = "connected";
         } catch (error) {
-            _console$g.error(error);
+            _console$f.error(error);
             this.status = "not connected";
             this.server?.disconnect();
             this.#removeEventListeners();
@@ -2839,47 +2970,47 @@ class WebBluetoothConnectionManager extends BluetoothConnectionManager {
     async #getServicesAndCharacteristics() {
         this.#removeEventListeners();
 
-        _console$g.log("getting services...");
+        _console$f.log("getting services...");
         const services = await this.server.getPrimaryServices();
-        _console$g.log("got services", services.length);
+        _console$f.log("got services", services.length);
         await this.server.getPrimaryService("8d53dc1d-1db7-4cd3-868b-8a527460aa84");
 
-        _console$g.log("getting characteristics...");
+        _console$f.log("getting characteristics...");
         for (const serviceIndex in services) {
             const service = services[serviceIndex];
-            _console$g.log({ service });
+            _console$f.log({ service });
             const serviceName = getServiceNameFromUUID(service.uuid);
-            _console$g.assertWithError(serviceName, `no name found for service uuid "${service.uuid}"`);
-            _console$g.log(`got "${serviceName}" service`);
+            _console$f.assertWithError(serviceName, `no name found for service uuid "${service.uuid}"`);
+            _console$f.log(`got "${serviceName}" service`);
             if (serviceName == "dfu") {
-                _console$g.log("skipping dfu service");
+                _console$f.log("skipping dfu service");
                 continue;
             }
             service._name = serviceName;
             this.#services.set(serviceName, service);
-            _console$g.log(`getting characteristics for "${serviceName}" service`);
+            _console$f.log(`getting characteristics for "${serviceName}" service`);
             const characteristics = await service.getCharacteristics();
-            _console$g.log(`got characteristics for "${serviceName}" service`);
+            _console$f.log(`got characteristics for "${serviceName}" service`);
             for (const characteristicIndex in characteristics) {
                 const characteristic = characteristics[characteristicIndex];
-                _console$g.log({ characteristic });
+                _console$f.log({ characteristic });
                 const characteristicName = getCharacteristicNameFromUUID(characteristic.uuid);
-                _console$g.assertWithError(
+                _console$f.assertWithError(
                     characteristicName,
                     `no name found for characteristic uuid "${characteristic.uuid}" in "${serviceName}" service`
                 );
-                _console$g.log(`got "${characteristicName}" characteristic in "${serviceName}" service`);
+                _console$f.log(`got "${characteristicName}" characteristic in "${serviceName}" service`);
                 characteristic._name = characteristicName;
                 this.#characteristics.set(characteristicName, characteristic);
                 addEventListeners(characteristic, this.#boundBluetoothCharacteristicEventListeners);
                 const characteristicProperties =
                     characteristic.properties || getCharacteristicProperties(characteristicName);
                 if (characteristicProperties.notify) {
-                    _console$g.log(`starting notifications for "${characteristicName}" characteristic`);
+                    _console$f.log(`starting notifications for "${characteristicName}" characteristic`);
                     await characteristic.startNotifications();
                 }
                 if (characteristicProperties.read) {
-                    _console$g.log(`reading "${characteristicName}" characteristic...`);
+                    _console$f.log(`reading "${characteristicName}" characteristic...`);
                     await characteristic.readValue();
                     if (isInBluefy || isInWebBLE) {
                         this.#onCharacteristicValueChanged(characteristic);
@@ -2905,7 +3036,7 @@ class WebBluetoothConnectionManager extends BluetoothConnectionManager {
 
     /** @param {Event} event */
     #onCharacteristicvaluechanged(event) {
-        _console$g.log("oncharacteristicvaluechanged");
+        _console$f.log("oncharacteristicvaluechanged");
 
         /** @type {BluetoothRemoteGATTCharacteristic} */
         const characteristic = event.target;
@@ -2915,26 +3046,26 @@ class WebBluetoothConnectionManager extends BluetoothConnectionManager {
 
     /** @param {BluetoothRemoteGATTCharacteristic} characteristic */
     #onCharacteristicValueChanged(characteristic) {
-        _console$g.log("onCharacteristicValue");
+        _console$f.log("onCharacteristicValue");
 
         /** @type {BluetoothCharacteristicName} */
         const characteristicName = characteristic._name;
-        _console$g.assertWithError(
+        _console$f.assertWithError(
             characteristicName,
             `no name found for characteristic with uuid "${characteristic.uuid}"`
         );
 
-        _console$g.log(`oncharacteristicvaluechanged for "${characteristicName}" characteristic`);
+        _console$f.log(`oncharacteristicvaluechanged for "${characteristicName}" characteristic`);
         const dataView = characteristic.value;
-        _console$g.assertWithError(dataView, `no data found for "${characteristicName}" characteristic`);
-        _console$g.log(`data for "${characteristicName}" characteristic`, Array.from(new Uint8Array(dataView.buffer)));
+        _console$f.assertWithError(dataView, `no data found for "${characteristicName}" characteristic`);
+        _console$f.log(`data for "${characteristicName}" characteristic`, Array.from(new Uint8Array(dataView.buffer)));
 
         this.onCharacteristicValueChanged(characteristicName, dataView);
     }
 
     /** @param {Event} event */
     #onGattserverdisconnected(event) {
-        _console$g.log("gattserverdisconnected");
+        _console$f.log("gattserverdisconnected");
         this.status = "not connected";
     }
 
@@ -2946,17 +3077,17 @@ class WebBluetoothConnectionManager extends BluetoothConnectionManager {
         await super.sendMessage(...arguments);
 
         const characteristicName = this.characteristicNameForMessageType(messageType);
-        _console$g.log({ characteristicName });
+        _console$f.log({ characteristicName });
 
         const characteristic = this.#characteristics.get(characteristicName);
-        _console$g.assertWithError(characteristic, `no characteristic found with name "${characteristicName}"`);
+        _console$f.assertWithError(characteristic, `no characteristic found with name "${characteristicName}"`);
         if (data instanceof DataView) {
             data = data.buffer;
         }
         await characteristic.writeValueWithResponse(data);
         const characteristicProperties = characteristic.properties || getCharacteristicProperties(characteristicName);
         if (characteristicProperties.read && !characteristicProperties.notify) {
-            _console$g.log("reading value after write...");
+            _console$f.log("reading value after write...");
             await characteristic.readValue();
             if (isInBluefy || isInWebBLE) {
                 this.#onCharacteristicValueChanged(characteristic);
@@ -2970,124 +3101,17 @@ class WebBluetoothConnectionManager extends BluetoothConnectionManager {
     }
     async reconnect() {
         await super.reconnect();
-        _console$g.log("attempting to reconnect...");
+        _console$f.log("attempting to reconnect...");
         this.status = "connecting";
         await this.server.connect();
         if (this.isConnected) {
-            _console$g.log("successfully reconnected!");
+            _console$f.log("successfully reconnected!");
             await this.#getServicesAndCharacteristics();
             this.status = "connected";
         } else {
-            _console$g.log("unable to reconnect");
+            _console$f.log("unable to reconnect");
             this.status = "not connected";
         }
-    }
-}
-
-/**
- * @typedef SensorConfiguration
- * @type {Object}
- * @property {number?} pressure
- * @property {number?} acceleration
- * @property {number?} gravity
- * @property {number?} linearAcceleration
- * @property {number?} gyroscope
- * @property {number?} magnetometer
- * @property {number?} gameRotation
- * @property {number?} rotation
- * @property {number?} barometer
- */
-
-const _console$f = createConsole("SensorConfigurationManager", { log: false });
-
-class SensorConfigurationManager {
-    /** @type {SensorType[]} */
-    #availableSensorTypes;
-    /** @param {SensorType} sensorType */
-    #assertAvailableSensorType(sensorType) {
-        _console$f.assertWithError(this.#availableSensorTypes, "must get initial sensorConfiguration");
-        const isSensorTypeAvailable = this.#availableSensorTypes?.includes(sensorType);
-        _console$f.assert(isSensorTypeAvailable, `unavailable sensor type "${sensorType}"`);
-        return isSensorTypeAvailable;
-    }
-
-    /** @param {DataView} dataView */
-    parse(dataView) {
-        /** @type {SensorConfiguration} */
-        const parsedSensorConfiguration = {};
-        for (let byteOffset = 0; byteOffset < dataView.byteLength; byteOffset += 3) {
-            const sensorTypeIndex = dataView.getUint8(byteOffset);
-            const sensorType = SensorDataManager.Types[sensorTypeIndex];
-            if (!sensorType) {
-                _console$f.warn(`unknown sensorType index ${sensorTypeIndex}`);
-                continue;
-            }
-            const sensorRate = dataView.getUint16(byteOffset + 1, true);
-            _console$f.log({ sensorType, sensorRate });
-            parsedSensorConfiguration[sensorType] = sensorRate;
-        }
-        _console$f.log({ parsedSensorConfiguration });
-        this.#availableSensorTypes = Object.keys(parsedSensorConfiguration);
-        return parsedSensorConfiguration;
-    }
-
-    static #MaxSensorRate = 2 ** 16 - 1;
-    static get MaxSensorRate() {
-        return this.#MaxSensorRate;
-    }
-    get maxSensorRate() {
-        return SensorConfigurationManager.MaxSensorRate;
-    }
-    static #SensorRateStep = 5;
-    static get SensorRateStep() {
-        return this.#SensorRateStep;
-    }
-    get sensorRateStep() {
-        return SensorConfigurationManager.SensorRateStep;
-    }
-
-    /** @param {sensorRate} number */
-    static #AssertValidSensorRate(sensorRate) {
-        _console$f.assertTypeWithError(sensorRate, "number");
-        _console$f.assertWithError(sensorRate >= 0, `sensorRate must be 0 or greater (got ${sensorRate})`);
-        _console$f.assertWithError(
-            sensorRate < this.MaxSensorRate,
-            `sensorRate must be 0 or greater (got ${sensorRate})`
-        );
-        _console$f.assertWithError(
-            sensorRate % this.SensorRateStep == 0,
-            `sensorRate must be multiple of ${this.SensorRateStep}`
-        );
-    }
-
-    /** @param {sensorRate} number */
-    #assertValidSensorRate(sensorRate) {
-        SensorConfigurationManager.#AssertValidSensorRate(sensorRate);
-    }
-
-    /** @param {SensorConfiguration} sensorConfiguration */
-    createData(sensorConfiguration) {
-        /** @type {SensorType[]} */
-        let sensorTypes = Object.keys(sensorConfiguration);
-        sensorTypes = sensorTypes.filter((sensorType) => this.#assertAvailableSensorType(sensorType));
-
-        const dataView = new DataView(new ArrayBuffer(sensorTypes.length * 3));
-        sensorTypes.forEach((sensorType, index) => {
-            SensorDataManager.AssertValidSensorType(sensorType);
-            const sensorTypeEnum = SensorDataManager.Types.indexOf(sensorType);
-            dataView.setUint8(index * 3, sensorTypeEnum);
-
-            const sensorRate = sensorConfiguration[sensorType];
-            this.#assertValidSensorRate(sensorRate);
-            dataView.setUint16(index * 3 + 1, sensorConfiguration[sensorType], true);
-        });
-        _console$f.log({ sensorConfigurationData: dataView });
-        return dataView;
-    }
-
-    /** @param {SensorConfiguration} sensorConfiguration */
-    hasAtLeastOneNonZeroSensorRate(sensorConfiguration) {
-        return Object.values(sensorConfiguration).some((value) => value > 0);
     }
 }
 
@@ -3874,6 +3898,11 @@ class Device {
         return this.#eventDispatcher.removeEventListener(type, listener);
     }
 
+    /** @param {DeviceEventType} type */
+    waitForEvent(type) {
+        return this.#eventDispatcher.waitForEvent(type);
+    }
+
     // CONNECTION MANAGER
 
     /** @type {BaseConnectionManager?} */
@@ -3944,11 +3973,11 @@ class Device {
         "getFileChecksum",
         "fileTransferStatus",
 
-        "getTfliteModelName",
-        "getTfliteModelTask",
-        "getTfliteModelSampleRate",
-        "getTfliteModelSensorTypes",
-        "getTfliteModelNumberOfClasses",
+        "getTfliteName",
+        "getTfliteTask",
+        "getTfliteSampleRate",
+        "getTfliteSensorTypes",
+        "getTfliteNumberOfClasses",
         "tfliteModelIsReady",
         "getTfliteCaptureDelay",
         "getTfliteThreshold",
@@ -4901,13 +4930,17 @@ class Device {
      * @param {FileType} fileType
      * @param {FileLike} file
      */
-    sendFile(fileType, file) {
+    async sendFile(fileType, file) {
+        const promise = this.waitForEvent("fileTransferComplete");
         this.#fileTransferManager.send(fileType, file);
+        await promise;
     }
 
     /** @param {FileType} fileType */
-    receiveFile(fileType) {
+    async receiveFile(fileType) {
+        const promise = this.waitForEvent("fileTransferComplete");
         this.#fileTransferManager.receive(fileType);
+        await promise;
     }
 
     get fileTransferStatus() {
@@ -4921,6 +4954,100 @@ class Device {
     // TFLITE
 
     #tfliteManager = new TfliteManager();
+
+    get tfliteName() {
+        return this.#tfliteManager.name;
+    }
+    /** @param {string} newName */
+    setTfliteName(newName) {
+        return this.#tfliteManager.setName(newName);
+    }
+
+    // TFLITE MODEL CONFIG
+
+    static get TfliteTasks() {
+        return TfliteManager.Tasks;
+    }
+
+    get tfliteTask() {
+        return this.#tfliteManager.task;
+    }
+    /** @param {import("./TfliteManager.js").TfliteTask} newTask */
+    setTfliteTask(newTask) {
+        return this.#tfliteManager.setTask(newTask);
+    }
+
+    get tfliteNumberOfSamples() {
+        return this.#tfliteManager.numberOfSamples;
+    }
+    /** @param {number} newNumberOfSamples */
+    setTfliteNumberOfSamples(newNumberOfSamples) {
+        return this.#tfliteManager.setNumberOfSamples(newNumberOfSamples);
+    }
+
+    get tfliteSampleRate() {
+        return this.#tfliteManager.sampleRate;
+    }
+    /** @param {number} newSampleRate */
+    setTfliteSampleRate(newSampleRate) {
+        return this.#tfliteManager.setSampleRate(newSampleRate);
+    }
+
+    get tfliteSensorTypes() {
+        return this.#tfliteManager.sensorTypes;
+    }
+    /** @param {SensorType[]} newSensorTypes */
+    setTfliteSensorTypes(newSensorTypes) {
+        return this.#tfliteManager.setSensorTypes(newSensorTypes);
+    }
+
+    get tfliteNumberOfClasses() {
+        return this.#tfliteManager.numberOfClasses;
+    }
+    /** @param {number} newNumberOfClasses */
+    setTfliteNumberOfClasses(newNumberOfClasses) {
+        return this.#tfliteManager.setNumberOfClasses(newNumberOfClasses);
+    }
+
+    get tfliteIsReady() {
+        return this.#tfliteManager.isReady;
+    }
+
+    // TFLITE INFERENCING
+
+    get tfliteInferencingEnabled() {
+        return this.#tfliteManager.inferencingEnabled;
+    }
+    /** @param {boolean} inferencingEnabled */
+    async setTfliteInferencingEnabled(inferencingEnabled) {
+        return this.#tfliteManager.setInferencingEnabled(inferencingEnabled);
+    }
+    async enableTfliteInferencing() {
+        return this.setTfliteInferencingEnabled(true);
+    }
+    async disableTfliteInferencing() {
+        return this.setTfliteInferencingEnabled(false);
+    }
+    async toggleTfliteInferencing() {
+        return this.#tfliteManager.toggleInferencingEnabled();
+    }
+
+    // TFLITE INFERENCE CONFIG
+
+    get tfliteCaptureDelay() {
+        return this.#tfliteManager.captureDelay;
+    }
+    /** @param {number} newCaptureDelay */
+    async setTfliteCaptureDelay(newCaptureDelay) {
+        return this.#tfliteManager.setCaptureDelay(newCaptureDelay);
+    }
+    get tfliteThreshold() {
+        return this.#tfliteManager.threshold;
+    }
+    /** @param {number} newThreshold */
+    async setTfliteThreshold(newThreshold) {
+        return this.#tfliteManager.setThreshold(newThreshold);
+    }
 }
 
 const _console$c = createConsole("Timer", { log: false });

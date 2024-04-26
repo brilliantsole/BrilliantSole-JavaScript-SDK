@@ -217,6 +217,11 @@ class Device {
         return this.#eventDispatcher.removeEventListener(type, listener);
     }
 
+    /** @param {DeviceEventType} type */
+    waitForEvent(type) {
+        return this.#eventDispatcher.waitForEvent(type);
+    }
+
     // CONNECTION MANAGER
 
     /** @type {BaseConnectionManager?} */
@@ -287,11 +292,11 @@ class Device {
         "getFileChecksum",
         "fileTransferStatus",
 
-        "getTfliteModelName",
-        "getTfliteModelTask",
-        "getTfliteModelSampleRate",
-        "getTfliteModelSensorTypes",
-        "getTfliteModelNumberOfClasses",
+        "getTfliteName",
+        "getTfliteTask",
+        "getTfliteSampleRate",
+        "getTfliteSensorTypes",
+        "getTfliteNumberOfClasses",
         "tfliteModelIsReady",
         "getTfliteCaptureDelay",
         "getTfliteThreshold",
@@ -1246,13 +1251,17 @@ class Device {
      * @param {FileType} fileType
      * @param {FileLike} file
      */
-    sendFile(fileType, file) {
+    async sendFile(fileType, file) {
+        const promise = this.waitForEvent("fileTransferComplete");
         this.#fileTransferManager.send(fileType, file);
+        await promise;
     }
 
     /** @param {FileType} fileType */
-    receiveFile(fileType) {
+    async receiveFile(fileType) {
+        const promise = this.waitForEvent("fileTransferComplete");
         this.#fileTransferManager.receive(fileType);
+        await promise;
     }
 
     get fileTransferStatus() {
@@ -1266,6 +1275,100 @@ class Device {
     // TFLITE
 
     #tfliteManager = new TfliteManager();
+
+    get tfliteName() {
+        return this.#tfliteManager.name;
+    }
+    /** @param {string} newName */
+    setTfliteName(newName) {
+        return this.#tfliteManager.setName(newName);
+    }
+
+    // TFLITE MODEL CONFIG
+
+    static get TfliteTasks() {
+        return TfliteManager.Tasks;
+    }
+
+    get tfliteTask() {
+        return this.#tfliteManager.task;
+    }
+    /** @param {import("./TfliteManager.js").TfliteTask} newTask */
+    setTfliteTask(newTask) {
+        return this.#tfliteManager.setTask(newTask);
+    }
+
+    get tfliteNumberOfSamples() {
+        return this.#tfliteManager.numberOfSamples;
+    }
+    /** @param {number} newNumberOfSamples */
+    setTfliteNumberOfSamples(newNumberOfSamples) {
+        return this.#tfliteManager.setNumberOfSamples(newNumberOfSamples);
+    }
+
+    get tfliteSampleRate() {
+        return this.#tfliteManager.sampleRate;
+    }
+    /** @param {number} newSampleRate */
+    setTfliteSampleRate(newSampleRate) {
+        return this.#tfliteManager.setSampleRate(newSampleRate);
+    }
+
+    get tfliteSensorTypes() {
+        return this.#tfliteManager.sensorTypes;
+    }
+    /** @param {SensorType[]} newSensorTypes */
+    setTfliteSensorTypes(newSensorTypes) {
+        return this.#tfliteManager.setSensorTypes(newSensorTypes);
+    }
+
+    get tfliteNumberOfClasses() {
+        return this.#tfliteManager.numberOfClasses;
+    }
+    /** @param {number} newNumberOfClasses */
+    setTfliteNumberOfClasses(newNumberOfClasses) {
+        return this.#tfliteManager.setNumberOfClasses(newNumberOfClasses);
+    }
+
+    get tfliteIsReady() {
+        return this.#tfliteManager.isReady;
+    }
+
+    // TFLITE INFERENCING
+
+    get tfliteInferencingEnabled() {
+        return this.#tfliteManager.inferencingEnabled;
+    }
+    /** @param {boolean} inferencingEnabled */
+    async setTfliteInferencingEnabled(inferencingEnabled) {
+        return this.#tfliteManager.setInferencingEnabled(inferencingEnabled);
+    }
+    async enableTfliteInferencing() {
+        return this.setTfliteInferencingEnabled(true);
+    }
+    async disableTfliteInferencing() {
+        return this.setTfliteInferencingEnabled(false);
+    }
+    async toggleTfliteInferencing() {
+        return this.#tfliteManager.toggleInferencingEnabled();
+    }
+
+    // TFLITE INFERENCE CONFIG
+
+    get tfliteCaptureDelay() {
+        return this.#tfliteManager.captureDelay;
+    }
+    /** @param {number} newCaptureDelay */
+    async setTfliteCaptureDelay(newCaptureDelay) {
+        return this.#tfliteManager.setCaptureDelay(newCaptureDelay);
+    }
+    get tfliteThreshold() {
+        return this.#tfliteManager.threshold;
+    }
+    /** @param {number} newThreshold */
+    async setTfliteThreshold(newThreshold) {
+        return this.#tfliteManager.setThreshold(newThreshold);
+    }
 }
 
 export default Device;

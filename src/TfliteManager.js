@@ -4,22 +4,23 @@ import { textDecoder, textEncoder } from "./utils/Text.js";
 import SensorDataManager from "./sensor/SensorDataManager.js";
 import { concatenateArrayBuffers } from "./utils/ArrayBufferUtils.js";
 import { arrayWithoutDuplicates } from "./utils/ArrayUtils.js";
+import SensorConfigurationManager from "./sensor/SensorConfigurationManager.js";
 
 const _console = createConsole("TfliteManager", { log: true });
 
 /**
- * @typedef { "getTfliteModelName" |
- * "setTfliteModelName" |
- * "getTfliteModelTask" |
- * "setTfliteModelTask" |
- * "getTfliteModelSampleRate" |
- * "setTfliteModelSampleRate" |
- * "getTfliteModelNumberOfSamples" |
- * "setTfliteModelNumberOfSamples" |
- * "getTfliteModelSensorTypes" |
- * "setTfliteModelSensorTypes" |
- * "getTfliteModelNumberOfClasses" |
- * "setTfliteModelNumberOfClasses" |
+ * @typedef { "getTfliteName" |
+ * "setTfliteName" |
+ * "getTfliteTask" |
+ * "setTfliteTask" |
+ * "getTfliteSampleRate" |
+ * "setTfliteSampleRate" |
+ * "getTfliteNumberOfSamples" |
+ * "setTfliteNumberOfSamples" |
+ * "getTfliteSensorTypes" |
+ * "setTfliteSensorTypes" |
+ * "getTfliteNumberOfClasses" |
+ * "setTfliteNumberOfClasses" |
  * "tfliteModelIsReady" |
  * "getTfliteCaptureDelay" |
  * "setTfliteCaptureDelay" |
@@ -31,7 +32,7 @@ const _console = createConsole("TfliteManager", { log: true });
  * } TfliteMessageType
  */
 
-/** @typedef {"classification" | "regression"} TfliteModelTask */
+/** @typedef {"classification" | "regression"} TfliteTask */
 
 /**
  * @callback SendMessageCallback
@@ -59,18 +60,18 @@ const _console = createConsole("TfliteManager", { log: true });
 class TfliteManager {
     /** @type {TfliteMessageType[]} */
     static #MessageTypes = [
-        "getTfliteModelName",
-        "setTfliteModelName",
-        "getTfliteModelTask",
-        "setTfliteModelTask",
-        "getTfliteModelSampleRate",
-        "setTfliteModelSampleRate",
-        "getTfliteModelNumberOfSamples",
-        "setTfliteModelNumberOfSamples",
-        "getTfliteModelSensorTypes",
-        "setTfliteModelSensorTypes",
-        "getTfliteModelNumberOfClasses",
-        "setTfliteModelNumberOfClasses",
+        "getTfliteName",
+        "setTfliteName",
+        "getTfliteTask",
+        "setTfliteTask",
+        "getTfliteSampleRate",
+        "setTfliteSampleRate",
+        "getTfliteNumberOfSamples",
+        "setTfliteNumberOfSamples",
+        "getTfliteSensorTypes",
+        "setTfliteSensorTypes",
+        "getTfliteNumberOfClasses",
+        "setTfliteNumberOfClasses",
         "tfliteModelIsReady",
         "getTfliteCaptureDelay",
         "setTfliteCaptureDelay",
@@ -89,7 +90,7 @@ class TfliteManager {
 
     // TASK
 
-    /** @type {TfliteModelTask[]} */
+    /** @type {TfliteTask[]} */
     static #Tasks = ["classification", "regression"];
     static get Tasks() {
         return this.#Tasks;
@@ -97,7 +98,7 @@ class TfliteManager {
     get tasks() {
         return TfliteManager.Tasks;
     }
-    /** @param {TfliteModelTask} task */
+    /** @param {TfliteTask} task */
     #assertValidTask(task) {
         _console.assertEnumWithError(task, this.tasks);
     }
@@ -165,25 +166,25 @@ class TfliteManager {
     #updateName(name) {
         _console.log({ name });
         this.#name = name;
-        this.#dispatchEvent({ type: "getTfliteModelName", message: { tfliteModelName: name } });
+        this.#dispatchEvent({ type: "getTfliteName", message: { tfliteModelName: name } });
     }
     /** @param {string} newName */
-    async #setName(newName) {
+    async setName(newName) {
         _console.assertTypeWithError(newName, "string");
         if (this.name == newName) {
             _console.log(`redundant name assignment ${newName}`);
             return;
         }
 
-        const promise = this.waitForEvent("getTfliteModelName");
+        const promise = this.waitForEvent("getTfliteName");
 
         const setNameData = textEncoder.encode(newName);
-        this.sendMessage("setTfliteModelName", setNameData);
+        this.sendMessage("setTfliteName", setNameData);
 
         await promise;
     }
 
-    /** @type {TfliteModelTask} */
+    /** @type {TfliteTask} */
     #task;
     get task() {
         return this.#task;
@@ -196,24 +197,24 @@ class TfliteManager {
         const task = this.tasks[taskEnum];
         this.#updateTask(task);
     }
-    /** @param {TfliteModelTask} task */
+    /** @param {TfliteTask} task */
     #updateTask(task) {
         _console.log({ task });
         this.#task = task;
-        this.#dispatchEvent({ type: "getTfliteModelTask", message: { tfliteModelTask: task } });
+        this.#dispatchEvent({ type: "getTfliteTask", message: { tfliteModelTask: task } });
     }
-    /** @param {TfliteModelTask} newTask */
-    async #setTask(newTask) {
+    /** @param {TfliteTask} newTask */
+    async setTask(newTask) {
         this.#assertValidTask(newTask);
         if (this.task == newTask) {
             _console.log(`redundant task assignment ${newTask}`);
             return;
         }
 
-        const promise = this.waitForEvent("getTfliteModelTask");
+        const promise = this.waitForEvent("getTfliteTask");
 
         const taskEnum = this.tasks.indexOf(newTask);
-        this.sendMessage("setTfliteModelTask", Uint8Array.from([taskEnum]));
+        this.sendMessage("setTfliteTask", Uint8Array.from([taskEnum]));
 
         await promise;
     }
@@ -232,21 +233,26 @@ class TfliteManager {
     #updateSampleRate(sampleRate) {
         _console.log({ sampleRate });
         this.#sampleRate = sampleRate;
-        this.#dispatchEvent({ type: "getTfliteModelSampleRate", message: { tfliteModelSampleRate: sampleRate } });
+        this.#dispatchEvent({ type: "getTfliteSampleRate", message: { tfliteModelSampleRate: sampleRate } });
     }
     /** @param {number} newSampleRate */
-    async #setSampleRate(newSampleRate) {
+    async setSampleRate(newSampleRate) {
         _console.assertTypeWithError(newSampleRate, "number");
+        newSampleRate -= newSampleRate % SensorConfigurationManager.SensorRateStep;
+        _console.assertWithError(
+            newSampleRate >= SensorConfigurationManager.SensorRateStep,
+            `sampleRate must be multiple of ${SensorConfigurationManager.SensorRateStep} greater than 0 (got ${newSampleRate})`
+        );
         if (this.#sampleRate == newSampleRate) {
             _console.log(`redundant sampleRate assignment ${newSampleRate}`);
             return;
         }
 
-        const promise = this.waitForEvent("getTfliteModelSampleRate");
+        const promise = this.waitForEvent("getTfliteSampleRate");
 
         const dataView = new DataView(new ArrayBuffer(2));
         dataView.setUint16(0, newSampleRate, true);
-        this.sendMessage("setTfliteModelSampleRate", dataView);
+        this.sendMessage("setTfliteSampleRate", dataView);
 
         await promise;
     }
@@ -266,12 +272,12 @@ class TfliteManager {
         _console.log({ numberOfSamples });
         this.#numberOfSamples = numberOfSamples;
         this.#dispatchEvent({
-            type: "getTfliteModelNumberOfSamples",
+            type: "getTfliteNumberOfSamples",
             message: { tfliteModelNumberOfSamples: numberOfSamples },
         });
     }
     /** @param {number} newNumberOfSamples */
-    async #setNumberOfSamples(newNumberOfSamples) {
+    async setNumberOfSamples(newNumberOfSamples) {
         _console.assertTypeWithError(newNumberOfSamples, "number");
         _console.assertWithError(
             newNumberOfSamples > 0,
@@ -282,19 +288,19 @@ class TfliteManager {
             return;
         }
 
-        const promise = this.waitForEvent("getTfliteModelNumberOfSamples");
+        const promise = this.waitForEvent("getTfliteNumberOfSamples");
 
         const dataView = new DataView(new ArrayBuffer(2));
         dataView.setUint16(0, newNumberOfSamples, true);
-        this.sendMessage("setTfliteModelNumberOfSamples", dataView);
+        this.sendMessage("setTfliteNumberOfSamples", dataView);
 
         await promise;
     }
 
     /** @type {SensorType[]} */
-    #sensorTypes;
+    #sensorTypes = [];
     get sensorTypes() {
-        return this.#sensorTypes;
+        return this.#sensorTypes.slice();
     }
     /** @param {DataView} dataView */
     #parseSensorTypes(dataView) {
@@ -316,21 +322,22 @@ class TfliteManager {
     #updateSensorTypes(sensorTypes) {
         _console.log({ sensorTypes });
         this.#sensorTypes = sensorTypes;
-        this.#dispatchEvent({ type: "getTfliteModelSensorTypes", message: { tfliteModelSensorTypes: sensorTypes } });
+        this.#dispatchEvent({ type: "getTfliteSensorTypes", message: { tfliteModelSensorTypes: sensorTypes } });
     }
-    /** @param {...SensorType} newSensorTypes */
-    async #setSensorTypes(...newSensorTypes) {
+    /** @param {SensorType[]} newSensorTypes */
+    async setSensorTypes(newSensorTypes) {
         newSensorTypes.forEach((sensorType) => {
             SensorDataManager.AssertValidSensorType(sensorType);
         });
 
-        const promise = this.waitForEvent("getTfliteModelSensorTypes");
+        const promise = this.waitForEvent("getTfliteSensorTypes");
 
         newSensorTypes = arrayWithoutDuplicates(newSensorTypes);
         const newSensorTypeEnums = newSensorTypes
             .map((sensorType) => SensorDataManager.Types.indexOf(sensorType))
             .sort();
-        this.sendMessage("setTfliteModelSensorTypes", Uint8Array.from([newSensorTypeEnums]));
+        _console.log(newSensorTypes, newSensorTypeEnums);
+        this.sendMessage("setTfliteSensorTypes", Uint8Array.from(newSensorTypeEnums));
 
         await promise;
     }
@@ -351,12 +358,12 @@ class TfliteManager {
         _console.log({ numberOfClasses });
         this.#numberOfClasses = numberOfClasses;
         this.#dispatchEvent({
-            type: "getTfliteModelNumberOfClasses",
+            type: "getTfliteNumberOfClasses",
             message: { tfliteModelNumberOfClasses: numberOfClasses },
         });
     }
     /** @param {number} newNumberOfClasses */
-    async #setNumberOfClasses(newNumberOfClasses) {
+    async setNumberOfClasses(newNumberOfClasses) {
         _console.assertTypeWithError(newNumberOfClasses, "number");
         _console.assertWithError(
             newNumberOfClasses > 1,
@@ -367,9 +374,9 @@ class TfliteManager {
             return;
         }
 
-        const promise = this.waitForEvent("getTfliteModelNumberOfClasses");
+        const promise = this.waitForEvent("getTfliteNumberOfClasses");
 
-        this.sendMessage("setTfliteModelNumberOfClasses", Uint8Array.from([newNumberOfClasses]));
+        this.sendMessage("setTfliteNumberOfClasses", Uint8Array.from([newNumberOfClasses]));
 
         await promise;
     }
@@ -394,6 +401,9 @@ class TfliteManager {
             message: { tfliteModelIsReady: isReady },
         });
     }
+    #assertIsReady() {
+        _console.assertWithError(this.isReady, `tflite is not ready`);
+    }
 
     /** @type {number} */
     #captureDelay;
@@ -416,7 +426,7 @@ class TfliteManager {
         });
     }
     /** @param {number} newCaptureDelay */
-    async #setCaptureDelay(newCaptureDelay) {
+    async setCaptureDelay(newCaptureDelay) {
         _console.assertTypeWithError(newCaptureDelay, "number");
         if (this.#captureDelay == newCaptureDelay) {
             _console.log(`redundant captureDelay assignment ${newCaptureDelay}`);
@@ -453,8 +463,9 @@ class TfliteManager {
         });
     }
     /** @param {number} newThreshold */
-    async #setThreshold(newThreshold) {
+    async setThreshold(newThreshold) {
         _console.assertTypeWithError(newThreshold, "number");
+        _console.assertWithError(newThreshold >= 0, `threshold must be positive (got ${newThreshold})`);
         if (this.#threshold == newThreshold) {
             _console.log(`redundant threshold assignment ${newThreshold}`);
             return;
@@ -489,8 +500,9 @@ class TfliteManager {
         });
     }
     /** @param {boolean} newInferencingEnabled */
-    async #setInferencingEnabled(newInferencingEnabled) {
+    async setInferencingEnabled(newInferencingEnabled) {
         _console.assertTypeWithError(newInferencingEnabled, "boolean");
+        this.#assertIsReady();
         if (this.#inferencingEnabled == newInferencingEnabled) {
             _console.log(`redundant inferencingEnabled assignment ${newInferencingEnabled}`);
             return;
@@ -502,18 +514,21 @@ class TfliteManager {
 
         await promise;
     }
+    async toggleInferencingEnabled() {
+        return this.setInferencingEnabled(!this.inferencingEnabled);
+    }
 
     async enableInferencing() {
         if (this.inferencingEnabled) {
             return;
         }
-        this.#setInferencingEnabled(true);
+        this.setInferencingEnabled(true);
     }
     async disableInferencing() {
         if (!this.inferencingEnabled) {
             return;
         }
-        this.#setInferencingEnabled(false);
+        this.setInferencingEnabled(false);
     }
 
     /** @param {DataView} dataView */
@@ -530,22 +545,22 @@ class TfliteManager {
         _console.log({ messageType });
 
         switch (messageType) {
-            case "getTfliteModelName":
+            case "getTfliteName":
                 this.#parseName(dataView);
                 break;
-            case "getTfliteModelTask":
+            case "getTfliteTask":
                 this.#parseTask(dataView);
                 break;
-            case "getTfliteModelSampleRate":
+            case "getTfliteSampleRate":
                 this.#parseSampleRate(dataView);
                 break;
-            case "getTfliteModelNumberOfSamples":
+            case "getTfliteNumberOfSamples":
                 this.#parseNumberOfSamples(dataView);
                 break;
-            case "getTfliteModelSensorTypes":
+            case "getTfliteSensorTypes":
                 this.#parseSensorTypes(dataView);
                 break;
-            case "getTfliteModelNumberOfClasses":
+            case "getTfliteNumberOfClasses":
                 this.#parseNumberOfClasses(dataView);
                 break;
             case "tfliteModelIsReady":
@@ -568,7 +583,10 @@ class TfliteManager {
         }
     }
 
-    /** @type {SendMessageCallback} */
+    /**
+     * @private
+     * @type {SendMessageCallback}
+     */
     sendMessage;
 }
 

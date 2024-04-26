@@ -180,7 +180,7 @@ class FileTransferManager {
         return FileTransferManager.GetFileBuffer(file);
     }
 
-    static #MaxLength = 50 * 1024; // 50kB
+    static #MaxLength = 0; // kB
     static get MaxLength() {
         return this.#MaxLength;
     }
@@ -496,7 +496,10 @@ class FileTransferManager {
         await this.#setCommand("cancel");
     }
 
-    /** @type {SendMessageCallback} */
+    /**
+     * @private
+     * @type {SendMessageCallback}
+     */
     sendMessage;
 }
 

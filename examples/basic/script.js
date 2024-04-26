@@ -628,3 +628,317 @@ device.addEventListener("fileReceived", (event) => {
     const file = event.message.file;
     downloadFile(file);
 });
+
+// TFLITE
+
+/** @type {HTMLSpanElement} */
+const tfliteNameSpan = document.getElementById("tfliteName");
+/** @type {HTMLInputElement} */
+const setTfliteNameInput = document.getElementById("setTfliteNameInput");
+/** @type {HTMLButtonElement} */
+const setTfliteNameButton = document.getElementById("setTfliteNameButton");
+
+device.addEventListener("isConnected", () => {
+    const disabled = !device.isConnected;
+    setTfliteNameInput.disabled = disabled;
+    setTfliteNameButton.disabled = disabled;
+});
+
+device.addEventListener("getTfliteName", () => {
+    tfliteNameSpan.innerText = device.tfliteName;
+
+    setTfliteNameButton.innerText = "set name";
+    setTfliteNameButton.disabled = !device.isConnected;
+
+    setTfliteNameInput.value = "";
+    setTfliteNameInput.disabled = !device.isConnected;
+});
+
+setTfliteNameButton.addEventListener("click", () => {
+    device.setTfliteName(setTfliteNameInput.value);
+
+    setTfliteNameInput.disabled = true;
+
+    setTfliteNameButton.innerText = "setting name...";
+    setTfliteNameButton.disabled = true;
+});
+
+/** @type {HTMLSpanElement} */
+const tfliteModelTaskSpan = document.getElementById("tfliteTask");
+/** @type {HTMLSelectElement} */
+const setTfliteTaskSelect = document.getElementById("setTfliteTaskSelect");
+/** @type {HTMLOptGroupElement} */
+const setTfliteTaskOptgroup = setTfliteTaskSelect.querySelector("optgroup");
+/** @type {HTMLButtonElement} */
+const setTfliteTaskButton = document.getElementById("setTfliteTaskButton");
+
+device.addEventListener("isConnected", () => {
+    const disabled = !device.isConnected;
+    setTfliteTaskSelect.disabled = disabled;
+    setTfliteTaskButton.disabled = disabled;
+});
+
+BS.Device.TfliteTasks.forEach((task) => {
+    setTfliteTaskOptgroup.appendChild(new Option(task));
+});
+
+device.addEventListener("getTfliteTask", () => {
+    const task = device.tfliteTask;
+    setTfliteTaskSelect.value = task;
+    tfliteModelTaskSpan.innerText = task;
+});
+
+setTfliteTaskButton.addEventListener("click", () => {
+    device.setTfliteTask(setTfliteTaskSelect.value);
+});
+device.addEventListener("getTfliteInferencingEnabled", () => {
+    setTfliteTaskButton.disabled = device.tfliteInferencingEnabled;
+});
+
+/** @type {HTMLSpanElement} */
+const tfliteNumberOfSamplesSpan = document.getElementById("tfliteNumberOfSamples");
+/** @type {HTMLInputElement} */
+const setTfliteNumberOfSamplesInput = document.getElementById("setTfliteNumberOfSamplesInput");
+/** @type {HTMLButtonElement} */
+const setTfliteNumberOfSamplesButton = document.getElementById("setTfliteNumberOfSamplesButton");
+
+device.addEventListener("isConnected", () => {
+    const disabled = !device.isConnected;
+    setTfliteNumberOfSamplesInput.disabled = disabled;
+    setTfliteNumberOfSamplesButton.disabled = disabled;
+});
+
+device.addEventListener("getTfliteNumberOfSamples", () => {
+    tfliteNumberOfSamplesSpan.innerText = device.tfliteNumberOfSamples;
+
+    setTfliteNumberOfSamplesInput.value = "";
+    setTfliteNumberOfSamplesInput.disabled = false;
+
+    setTfliteNumberOfSamplesButton.disabled = false;
+    setTfliteNumberOfSamplesButton.innerText = "set number of samples";
+});
+
+setTfliteNumberOfSamplesButton.addEventListener("click", () => {
+    device.setTfliteNumberOfSamples(Number(setTfliteNumberOfSamplesInput.value));
+
+    setTfliteNumberOfSamplesInput.disabled = true;
+
+    setTfliteNumberOfSamplesButton.disabled = true;
+    setTfliteNumberOfSamplesButton.innerText = "setting number of samples...";
+});
+device.addEventListener("getTfliteInferencingEnabled", () => {
+    setTfliteNumberOfSamplesButton.disabled = device.tfliteInferencingEnabled;
+});
+
+/** @type {HTMLSpanElement} */
+const tfliteNumberOfClassesSpan = document.getElementById("tfliteNumberOfClasses");
+/** @type {HTMLInputElement} */
+const setTfliteNumberOfClassesInput = document.getElementById("setTfliteNumberOfClassesInput");
+/** @type {HTMLButtonElement} */
+const setTfliteNumberOfClassesButton = document.getElementById("setTfliteNumberOfClassesButton");
+
+device.addEventListener("isConnected", () => {
+    const disabled = !device.isConnected;
+    setTfliteNumberOfClassesInput.disabled = disabled;
+    setTfliteNumberOfClassesButton.disabled = disabled;
+});
+
+device.addEventListener("getTfliteNumberOfClasses", () => {
+    tfliteNumberOfClassesSpan.innerText = device.tfliteNumberOfClasses;
+
+    setTfliteNumberOfClassesInput.value = "";
+    setTfliteNumberOfClassesInput.disabled = false;
+
+    setTfliteNumberOfClassesButton.disabled = false;
+    setTfliteNumberOfClassesButton.innerText = "set number of classes";
+});
+
+setTfliteNumberOfClassesButton.addEventListener("click", () => {
+    device.setTfliteNumberOfClasses(Number(setTfliteNumberOfClassesInput.value));
+
+    setTfliteNumberOfClassesInput.disabled = true;
+
+    setTfliteNumberOfClassesButton.disabled = true;
+    setTfliteNumberOfClassesButton.innerText = "setting number of classes...";
+});
+device.addEventListener("getTfliteInferencingEnabled", () => {
+    setTfliteNumberOfClassesButton.disabled = device.tfliteInferencingEnabled;
+});
+
+/** @type {HTMLSpanElement} */
+const tfliteSampleRateSpan = document.getElementById("tfliteSampleRate");
+/** @type {HTMLInputElement} */
+const setTfliteSampleRateInput = document.getElementById("setTfliteSampleRateInput");
+/** @type {HTMLButtonElement} */
+const setTfliteSampleRateButton = document.getElementById("setTfliteSampleRateButton");
+
+device.addEventListener("isConnected", () => {
+    const disabled = !device.isConnected;
+    setTfliteSampleRateInput.disabled = disabled;
+    setTfliteSampleRateButton.disabled = disabled;
+});
+
+device.addEventListener("getTfliteSampleRate", () => {
+    tfliteSampleRateSpan.innerText = device.tfliteSampleRate;
+
+    setTfliteSampleRateInput.value = "";
+    setTfliteSampleRateInput.disabled = false;
+
+    setTfliteSampleRateButton.disabled = false;
+    setTfliteSampleRateButton.innerText = "set sample rate";
+});
+
+setTfliteSampleRateButton.addEventListener("click", () => {
+    device.setTfliteSampleRate(Number(setTfliteSampleRateInput.value));
+
+    setTfliteSampleRateInput.disabled = true;
+
+    setTfliteSampleRateButton.disabled = true;
+    setTfliteSampleRateButton.innerText = "setting sample rate...";
+});
+device.addEventListener("getTfliteInferencingEnabled", () => {
+    setTfliteSampleRateButton.disabled = device.tfliteInferencingEnabled;
+});
+
+/** @typedef {import("../../build/brilliantsole.module.js").SensorType} SensorType */
+
+const tfliteSensorTypesContainer = document.getElementById("tfliteSensorTypes");
+/** @type {HTMLTemplateElement} */
+const tfliteSensorTypeTemplate = document.getElementById("tfliteSensorTypeTemplate");
+/** @type {Object.<string, HTMLElement>} */
+const tfliteSensorTypeContainers = {};
+/** @type {SensorType[]} */
+let tfliteSensorTypes = [];
+/** @type {HTMLButtonElement} */
+const setTfliteSensorTypesButton = document.getElementById("setTfliteSensorTypes");
+
+BS.Device.SensorTypes.forEach((sensorType) => {
+    const sensorTypeContainer = tfliteSensorTypeTemplate.content.cloneNode(true).querySelector(".sensorType");
+    sensorTypeContainer.querySelector(".name").innerText = sensorType;
+
+    /** @type {HTMLInputElement} */
+    const isSensorEnabledInput = sensorTypeContainer.querySelector(".enabled");
+    isSensorEnabledInput.addEventListener("input", () => {
+        if (isSensorEnabledInput.checked) {
+            tfliteSensorTypes.push(sensorType);
+        } else {
+            tfliteSensorTypes.splice(tfliteSensorTypes.indexOf(sensorType), 1);
+        }
+        console.log("tfliteSensorTypes", tfliteSensorTypes);
+    });
+
+    device.addEventListener("getTfliteSensorTypes", () => {
+        isSensorEnabledInput.checked = device.tfliteSensorTypes.includes(sensorType);
+    });
+    isSensorEnabledInput.checked = device.tfliteSensorTypes.includes(sensorType);
+
+    tfliteSensorTypeContainers[sensorType] = sensorTypeContainer;
+
+    tfliteSensorTypesContainer.appendChild(sensorTypeContainer);
+});
+
+device.addEventListener("getTfliteSensorTypes", () => {
+    tfliteSensorTypes = device.tfliteSensorTypes;
+});
+
+setTfliteSensorTypesButton.addEventListener("click", () => {
+    setTfliteSensorTypesButton.disabled = true;
+    setTfliteSensorTypesButton.innerText = "setting sensor types...";
+    device.setTfliteSensorTypes(tfliteSensorTypes);
+});
+device.addEventListener("getTfliteSensorTypes", () => {
+    setTfliteSensorTypesButton.disabled = false;
+    setTfliteSensorTypesButton.innerText = "set sensor types";
+});
+device.addEventListener("getTfliteInferencingEnabled", () => {
+    setTfliteSensorTypesButton.disabled = device.tfliteInferencingEnabled;
+});
+
+/** @type {HTMLInputElement} */
+const setTfliteIsReadyInput = document.getElementById("tfliteIsReady");
+device.addEventListener("tfliteModelIsReady", () => {
+    setTfliteIsReadyInput.checked = device.tfliteIsReady;
+});
+
+/** @type {HTMLSpanElement} */
+const tfliteThresholdSpan = document.getElementById("tfliteThreshold");
+/** @type {HTMLInputElement} */
+const setTfliteThresholdInput = document.getElementById("setTfliteThresholdInput");
+/** @type {HTMLButtonElement} */
+const setTfliteThresholdButton = document.getElementById("setTfliteThresholdButton");
+
+device.addEventListener("isConnected", () => {
+    const disabled = !device.isConnected;
+    setTfliteThresholdInput.disabled = disabled;
+    setTfliteThresholdButton.disabled = disabled;
+});
+
+device.addEventListener("getTfliteThreshold", () => {
+    tfliteThresholdSpan.innerText = device.tfliteThreshold;
+
+    setTfliteThresholdInput.value = "";
+    setTfliteThresholdInput.disabled = false;
+
+    setTfliteThresholdButton.disabled = false;
+    setTfliteThresholdButton.innerText = "set threshold";
+});
+
+setTfliteThresholdButton.addEventListener("click", () => {
+    device.setTfliteThreshold(Number(setTfliteThresholdInput.value));
+
+    setTfliteThresholdInput.disabled = true;
+
+    setTfliteThresholdButton.disabled = true;
+    setTfliteThresholdButton.innerText = "setting threshold...";
+});
+
+/** @type {HTMLSpanElement} */
+const tfliteCaptureDelaySpan = document.getElementById("tfliteCaptureDelay");
+/** @type {HTMLInputElement} */
+const setTfliteCaptureDelayInput = document.getElementById("setTfliteCaptureDelayInput");
+/** @type {HTMLButtonElement} */
+const setTfliteCaptureDelayButton = document.getElementById("setTfliteCaptureDelayButton");
+
+device.addEventListener("isConnected", () => {
+    const disabled = !device.isConnected;
+    setTfliteCaptureDelayInput.disabled = disabled;
+    setTfliteCaptureDelayButton.disabled = disabled;
+});
+
+device.addEventListener("getTfliteCaptureDelay", () => {
+    tfliteCaptureDelaySpan.innerText = device.tfliteCaptureDelay;
+
+    setTfliteCaptureDelayInput.value = "";
+    setTfliteCaptureDelayInput.disabled = false;
+
+    setTfliteCaptureDelayButton.disabled = false;
+    setTfliteCaptureDelayButton.innerText = "set capture delay";
+});
+
+setTfliteCaptureDelayButton.addEventListener("click", () => {
+    device.setTfliteCaptureDelay(Number(setTfliteCaptureDelayInput.value));
+
+    setTfliteCaptureDelayInput.disabled = true;
+
+    setTfliteCaptureDelayButton.disabled = true;
+    setTfliteCaptureDelayButton.innerText = "setting capture delay...";
+});
+
+/** @type {HTMLInputElement} */
+const tfliteInferencingEnabledInput = document.getElementById("tfliteInferencingEnabled");
+/** @type {HTMLButtonElement} */
+const toggleTfliteInferencingEnabledButton = document.getElementById("toggleTfliteInferencingEnabled");
+
+device.addEventListener("tfliteModelIsReady", () => {
+    toggleTfliteInferencingEnabledButton.disabled = !device.tfliteIsReady;
+});
+device.addEventListener("getTfliteInferencingEnabled", () => {
+    tfliteInferencingEnabledInput.checked = device.tfliteInferencingEnabled;
+    toggleTfliteInferencingEnabledButton.innerText = device.tfliteInferencingEnabled
+        ? "disable inferencing"
+        : "enable inferencing";
+});
+
+toggleTfliteInferencingEnabledButton.addEventListener("click", () => {
+    device.toggleTfliteInferencing();
+});

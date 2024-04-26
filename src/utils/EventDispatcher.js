@@ -127,7 +127,11 @@ class EventDispatcher {
             const array = this.#listeners[event.type].slice(0);
 
             for (let i = 0, l = array.length; i < l; i++) {
-                array[i].call(this, event);
+                try {
+                    array[i].call(this, event);
+                } catch (error) {
+                    _console.error(error);
+                }
             }
         }
     }
