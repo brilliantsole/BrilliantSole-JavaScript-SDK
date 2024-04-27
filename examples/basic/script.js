@@ -202,6 +202,7 @@ device.addEventListener("getSensorConfiguration", () => {
 /** @type {HTMLTemplateElement} */
 const sensorTypeConfigurationTemplate = document.getElementById("sensorTypeConfigurationTemplate");
 BS.Device.SensorTypes.forEach((sensorType) => {
+    /** @type {HTMLElement} */
     const sensorTypeConfigurationContainer = sensorTypeConfigurationTemplate.content
         .cloneNode(true)
         .querySelector(".sensorTypeConfiguration");
@@ -216,6 +217,14 @@ BS.Device.SensorTypes.forEach((sensorType) => {
         const sensorRate = Number(sensorRateInput.value);
         console.log({ sensorType, sensorRate });
         device.setSensorConfiguration({ [sensorType]: sensorRate });
+    });
+
+    device.addEventListener("isConnected", () => {
+        if (device.sensorTypes.includes(sensorType)) {
+            sensorTypeConfigurationContainer.classList.remove("hidden");
+        } else {
+            sensorTypeConfigurationContainer.classList.add("hidden");
+        }
     });
 
     sensorTypeConfigurationTemplate.parentElement.appendChild(sensorTypeConfigurationContainer);
@@ -812,7 +821,7 @@ let tfliteSensorTypes = [];
 /** @type {HTMLButtonElement} */
 const setTfliteSensorTypesButton = document.getElementById("setTfliteSensorTypes");
 
-BS.Device.SensorTypes.forEach((sensorType) => {
+BS.Device.TfliteSensorTypes.forEach((sensorType) => {
     const sensorTypeContainer = tfliteSensorTypeTemplate.content.cloneNode(true).querySelector(".sensorType");
     sensorTypeContainer.querySelector(".name").innerText = sensorType;
 
@@ -941,4 +950,10 @@ device.addEventListener("getTfliteInferencingEnabled", () => {
 
 toggleTfliteInferencingEnabledButton.addEventListener("click", () => {
     device.toggleTfliteInferencing();
+});
+
+/** @type {HTMLPreElement} */
+const tfliteInferencePre = document.getElementById("tfliteInference");
+device.addEventListener("tfliteModelInference", (event) => {
+    tfliteInferencePre.textContent = JSON.stringify(event.message.tfliteModelInference, null, 2);
 });

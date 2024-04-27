@@ -131,10 +131,7 @@
                 <label>
                     task
                     <select id="task">
-                        <optgroup label="task">
-                            <option value="classification">classification</option>
-                            <option value="regression">regression</option>
-                        </optgroup>
+                        <optgroup label="task"></optgroup>
                     </select>
                 </label>
             </div>
@@ -355,17 +352,15 @@
                 <input id="loadTflite" type="file" accept=".tflite" />
             </label>
 
-            <button disabled id="transferTflite">send file</button>
+            <button disabled id="transferTflite">transfer file</button>
             <progress value="0" id="transferTfliteProgress"></progress>
 
-            <button id="toggleTflite" disabled>enable tflite model</button>
-
-            <button id="makeTfliteInference" disabled>make inference</button>
+            <label><b>is ready?</b> <input type="checkbox" id="tfliteIsReady" disabled /></label>
+            <button id="toggleTfliteInferencingEnabled" disabled>enable inferencing</button>
 
             <div>
-                <h4>Results</h4>
-
-                <h1 id="tfliteResults"></h1>
+                <h4>inference</h4>
+                <pre id="tfliteInference"></pre>
             </div>
         </div>
     </body>

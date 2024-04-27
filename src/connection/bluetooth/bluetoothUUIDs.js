@@ -269,6 +269,7 @@ export function getCharacteristicProperties(characteristicName) {
         case "sensorData":
         case "fileTransferCommand":
         case "fileTransferBlock":
+        case "tfliteModelInference":
             properties.read = false;
             break;
     }

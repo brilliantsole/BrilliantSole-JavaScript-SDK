@@ -301,7 +301,6 @@ class Device {
         "getTfliteCaptureDelay",
         "getTfliteThreshold",
         "getTfliteInferencingEnabled",
-        "tfliteModelInference",
     ];
     static get AllInformationConnectionMessages() {
         return this.#AllInformationConnectionMessages;
@@ -769,7 +768,7 @@ class Device {
     // SENSOR CONFIGURATION
     #sensorConfigurationManager = new SensorConfigurationManager();
     /** @type {SensorConfiguration?} */
-    #sensorConfiguration;
+    #sensorConfiguration = {};
     get sensorConfiguration() {
         return this.#sensorConfiguration;
     }
@@ -1273,6 +1272,10 @@ class Device {
     }
 
     // TFLITE
+
+    static get TfliteSensorTypes() {
+        return TfliteManager.SensorTypes;
+    }
 
     #tfliteManager = new TfliteManager();
 

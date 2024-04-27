@@ -230,11 +230,16 @@ function toggleDeviceSelection(device) {
 
 // TASK
 
-/** @type {"classification" | "regression"} */
+/** @type {import("../../build/brilliantsole.module.js").TfliteTask} */
 let task = "classification";
 
 /** @type {HTMLSelectElement} */
 const taskSelect = document.getElementById("task");
+/** @type {HTMLOptGroupElement} */
+const taskSelectOptgroup = taskSelect.querySelector("optgroup");
+BS.Device.TfliteTasks.forEach((task) => {
+    taskSelectOptgroup.appendChild(new Option(task));
+});
 taskSelect.addEventListener("input", () => {
     task = taskSelect.value;
     console.log({ task });
@@ -305,7 +310,7 @@ const sensorTypeTemplate = document.getElementById("sensorTypeTemplate");
 /** @type {Object.<string, HTMLElement>} */
 const sensorTypeContainers = {};
 
-BS.Device.SensorTypes.forEach((sensorType) => {
+BS.Device.TfliteSensorTypes.forEach((sensorType) => {
     const sensorTypeContainer = sensorTypeTemplate.content.cloneNode(true).querySelector(".sensorType");
     sensorTypeContainer.querySelector(".name").innerText = sensorType;
 
@@ -895,7 +900,7 @@ window.addEventListener("loadConfig", () => {
 });
 
 /** @type {SensorType[]} */
-const thresholdSensorTypes = ["linearAcceleration", "gyroscope"];
+const thresholdSensorTypes = ["linearAcceleration"];
 
 const thresholdsContainer = document.getElementById("thresholds");
 const thresholdTemplate = document.getElementById("thresholdTemplate");
@@ -1374,6 +1379,8 @@ function prepareDataSet() {
         outputs.push(output);
     });
 
+    console.log({ inputs, outputs });
+
     return [inputs, outputs];
 }
 
@@ -1446,6 +1453,7 @@ async function convertModelToTflite() {
                 fetchFunc: (url, req) => {
                     if (quantizeModel) {
                         const [, , test_x] = shuffleAndSplitDataSet(prepareDataSet(), 1 - trainTestSplit);
+                        console.log({ test_x });
                         req.body.append("quantize_data", JSON.stringify(test_x));
                     }
 
@@ -1506,10 +1514,21 @@ loadTfliteInput.addEventListener("input", () => {
 
 /** @type {HTMLButtonElement} */
 const transferTfliteButton = document.getElementById("transferTflite");
-transferTfliteButton.addEventListener("click", () => {
-    // FILL - transfer file
+transferTfliteButton.addEventListener("click", async () => {
+    const device = selectedDevices[0];
+    if (device.fileTransferStatus == "idle") {
+        await device.setTfliteSampleRate(samplingRate);
+        await device.setTfliteTask(task);
+        await device.setTfliteSensorTypes(sensorTypes);
+        await device.setTfliteNumberOfClasses(numberOfOutputs);
+        await device.setTfliteNumberOfSamples(numberOfSamples);
+        device.sendFile("tflite", tfLiteFiles.model_tflite);
+    } else {
+        device.cancelFileTransfer();
+    }
 });
-["tfliteModel", "createNeuralNetwork"].forEach((eventType) => {
+
+["createNeuralNetwork", "tfliteModel"].forEach((eventType) => {
     window.addEventListener(eventType, () => {
         updateTransferTfliteButton();
     });
@@ -1517,6 +1536,22 @@ transferTfliteButton.addEventListener("click", () => {
 const updateTransferTfliteButton = () => {
     const enabled = tfLiteFiles.model_tflite && neuralNetwork && selectedDevices.length == 1;
     transferTfliteButton.disabled = !enabled;
+
+    if (!enabled) {
+        return;
+    }
+
+    /** @type {String} */
+    let innerText;
+    switch (selectedDevices[0].fileTransferStatus) {
+        case "idle":
+            innerText = "transfer file";
+            break;
+        case "sending":
+            innerText = "stop transferring file";
+            break;
+    }
+    transferTfliteButton.innerText = innerText;
 };
 
 /** @type {HTMLProgressElement} */
@@ -1526,12 +1561,22 @@ window.addEventListener(
     () => {
         if (selectedDevices.length == 1) {
             const device = selectedDevices[0];
-            // FIX - replace with tflite events
+            device.addEventListener("fileTransferStatus", (event) => {
+                transferTfliteButton.innerText =
+                    device.fileTransferStatus == "idle" ? "send file" : "stop sending file";
+
+                switch (device.fileTransferStatus) {
+                    case "idle":
+                        transferTfliteButton.innerText = "send file";
+                        transferTfliteProgress.value = 0;
+                        break;
+                    case "sending":
+                        transferTfliteButton.innerText = "stop sending file";
+                        break;
+                }
+            });
             device.addEventListener("fileTransferProgress", (event) => {
                 transferTfliteProgress.value = event.message.progress;
-            });
-            device.addEventListener("fileTransferComplete", (event) => {
-                transferTfliteProgress.value = 0;
             });
         }
     },
@@ -1539,24 +1584,53 @@ window.addEventListener(
 );
 
 /** @type {HTMLButtonElement} */
-const toggleTfliteButton = document.getElementById("toggleTflite");
-toggleTfliteButton.addEventListener("click", () => {
-    // FILL
+const toggleTfliteInferencingEnabledButton = document.getElementById("toggleTfliteInferencingEnabled");
+toggleTfliteInferencingEnabledButton.addEventListener("click", () => {
+    selectedDevices[0].toggleTfliteInferencing();
+    toggleTfliteInferencingEnabledButton.disabled = true;
 });
 
-/** @type {HTMLButtonElement} */
-const makeTfliteInferenceButton = document.getElementById("makeTfliteInference");
-makeTfliteInferenceButton.addEventListener("click", () => {
-    // FILL
-});
+/** @type {HTMLInputElement} */
+const setTfliteIsReadyInput = document.getElementById("tfliteIsReady");
 
-const tfliteResultsElement = document.getElementById("tfliteResults");
+/** @type {HTMLPreElement} */
+const tfliteInferencePre = document.getElementById("tfliteInference");
 
-window.addEventListener("finishedTraining", () => {
-    if (selectedDevices.length != 1) {
-        return;
-    }
-    convertModelToTfliteButton.disabled = false;
+window.addEventListener(
+    "createNeuralNetwork",
+    () => {
+        if (selectedDevices.length == 1) {
+            const device = selectedDevices[0];
+
+            device.addEventListener("tfliteModelIsReady", () => {
+                setTfliteIsReadyInput.checked = device.tfliteIsReady;
+            });
+
+            device.addEventListener("tfliteModelIsReady", () => {
+                toggleTfliteInferencingEnabledButton.disabled = !device.tfliteIsReady;
+            });
+            device.addEventListener("getTfliteInferencingEnabled", () => {
+                toggleTfliteInferencingEnabledButton.innerText = device.tfliteInferencingEnabled
+                    ? "disable inferencing"
+                    : "enable inferencing";
+                toggleTfliteInferencingEnabledButton.disabled = false;
+            });
+
+            device.addEventListener("tfliteModelInference", (event) => {
+                tfliteInferencePre.textContent = JSON.stringify(event.message.tfliteModelInference, null, 2);
+            });
+        }
+    },
+    { once: true }
+);
+
+["finishedTraining", "loadModel"].forEach((eventType) => {
+    window.addEventListener(eventType, () => {
+        if (selectedDevices.length != 1) {
+            return;
+        }
+        convertModelToTfliteButton.disabled = false;
+    });
 });
 
 // CONFIG

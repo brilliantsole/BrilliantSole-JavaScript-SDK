@@ -2,9 +2,9 @@ import { createConsole } from "./utils/Console.js";
 import EventDispatcher from "./utils/EventDispatcher.js";
 import { textDecoder, textEncoder } from "./utils/Text.js";
 import SensorDataManager from "./sensor/SensorDataManager.js";
-import { concatenateArrayBuffers } from "./utils/ArrayBufferUtils.js";
 import { arrayWithoutDuplicates } from "./utils/ArrayUtils.js";
 import SensorConfigurationManager from "./sensor/SensorConfigurationManager.js";
+import { parseTimestamp } from "./utils/MathUtils.js";
 
 const _console = createConsole("TfliteManager", { log: true });
 
@@ -298,6 +298,17 @@ class TfliteManager {
     }
 
     /** @type {SensorType[]} */
+    static #SensorTypes = ["pressure", "linearAcceleration", "gyroscope", "magnetometer"];
+    static get SensorTypes() {
+        return this.#SensorTypes;
+    }
+
+    static AssertValidSensorType(sensorType) {
+        SensorDataManager.AssertValidSensorType(sensorType);
+        _console.assertWithError(this.#SensorTypes.includes(sensorType), `invalid tflite sensorType "${sensorType}"`);
+    }
+
+    /** @type {SensorType[]} */
     #sensorTypes = [];
     get sensorTypes() {
         return this.#sensorTypes.slice();
@@ -327,7 +338,7 @@ class TfliteManager {
     /** @param {SensorType[]} newSensorTypes */
     async setSensorTypes(newSensorTypes) {
         newSensorTypes.forEach((sensorType) => {
-            SensorDataManager.AssertValidSensorType(sensorType);
+            TfliteManager.AssertValidSensorType(sensorType);
         });
 
         const promise = this.waitForEvent("getTfliteSensorTypes");
@@ -531,10 +542,35 @@ class TfliteManager {
         this.setInferencingEnabled(false);
     }
 
+    /**
+     * @typedef TfliteModelInference
+     * @type {object}
+     * @property {number} timestamp
+     * @property {number[]} values
+     */
+
     /** @param {DataView} dataView */
     #parseInference(dataView) {
-        // FILL
         _console.log("parseInference", dataView);
+
+        const timestamp = parseTimestamp(dataView, 0);
+        _console.log({ timestamp });
+
+        /** @type {number[]} */
+        const values = [];
+        for (let index = 0, byteOffset = 2; byteOffset < dataView.byteLength; index++, byteOffset += 4) {
+            const value = dataView.getFloat32(byteOffset, true);
+            values.push(value);
+        }
+        _console.log("values", values);
+
+        /** @type {TfliteModelInference} */
+        const inference = {
+            timestamp,
+            values,
+        };
+
+        this.#dispatchEvent({ type: "tfliteModelInference", message: { tfliteModelInference: inference } });
     }
 
     /**
@@ -584,7 +620,6 @@ class TfliteManager {
     }
 
     /**
-     * @private
      * @type {SendMessageCallback}
      */
     sendMessage;

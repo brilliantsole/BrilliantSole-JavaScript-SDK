@@ -918,7 +918,6 @@
 	    }
 
 	    /**
-	     * @private
 	     * @type {SendMessageCallback}
 	     */
 	    sendMessage;
@@ -937,6 +936,24 @@
 	}
 
 	const Uint16Max = 2 ** 16;
+
+	/** @param {number} number */
+	function removeLower2Bytes(number) {
+	    const lower2Bytes = number % Uint16Max;
+	    return number - lower2Bytes;
+	}
+
+	/**
+	 * @param {DataView} dataView
+	 * @param {number} byteOffset
+	 */
+	function parseTimestamp(dataView, byteOffset) {
+	    const now = Date.now();
+	    const nowWithoutLower2Bytes = removeLower2Bytes(now);
+	    const lower2Bytes = dataView.getUint16(byteOffset, true);
+	    const timestamp = nowWithoutLower2Bytes + lower2Bytes;
+	    return timestamp;
+	}
 
 	/**
 	 * @typedef Range
@@ -1382,7 +1399,7 @@
 	    }
 	}
 
-	const _console$k = createConsole("SensorDataManager", { log: true });
+	const _console$k = createConsole("SensorDataManager", { log: false });
 
 
 
@@ -1438,24 +1455,12 @@
 	    /** @type {SensorDataCallback} */
 	    onDataReceived;
 
-	    /**
-	     * @param {DataView} dataView
-	     * @param {number} byteOffset
-	     */
-	    #parseTimestamp(dataView, byteOffset) {
-	        let now = Date.now();
-	        now -= now % Uint16Max;
-	        const lowerUint16 = dataView.getUint16(byteOffset, true);
-	        const timestamp = now + lowerUint16;
-	        return timestamp;
-	    }
-
 	    /** @param {DataView} dataView */
 	    parseData(dataView) {
 	        _console$k.log("sensorData", Array.from(new Uint8Array(dataView.buffer)));
 
 	        let byteOffset = 0;
-	        const timestamp = this.#parseTimestamp(dataView, byteOffset);
+	        const timestamp = parseTimestamp(dataView, byteOffset);
 	        byteOffset += 2;
 
 	        const _dataView = new DataView(dataView.buffer, byteOffset);
@@ -1909,6 +1914,17 @@
 	    }
 
 	    /** @type {SensorType[]} */
+	    static #SensorTypes = ["pressure", "linearAcceleration", "gyroscope", "magnetometer"];
+	    static get SensorTypes() {
+	        return this.#SensorTypes;
+	    }
+
+	    static AssertValidSensorType(sensorType) {
+	        SensorDataManager.AssertValidSensorType(sensorType);
+	        _console$i.assertWithError(this.#SensorTypes.includes(sensorType), `invalid tflite sensorType "${sensorType}"`);
+	    }
+
+	    /** @type {SensorType[]} */
 	    #sensorTypes = [];
 	    get sensorTypes() {
 	        return this.#sensorTypes.slice();
@@ -1938,7 +1954,7 @@
 	    /** @param {SensorType[]} newSensorTypes */
 	    async setSensorTypes(newSensorTypes) {
 	        newSensorTypes.forEach((sensorType) => {
-	            SensorDataManager.AssertValidSensorType(sensorType);
+	            TfliteManager.AssertValidSensorType(sensorType);
 	        });
 
 	        const promise = this.waitForEvent("getTfliteSensorTypes");
@@ -2142,10 +2158,35 @@
 	        this.setInferencingEnabled(false);
 	    }
 
+	    /**
+	     * @typedef TfliteModelInference
+	     * @type {object}
+	     * @property {number} timestamp
+	     * @property {number[]} values
+	     */
+
 	    /** @param {DataView} dataView */
 	    #parseInference(dataView) {
-	        // FILL
 	        _console$i.log("parseInference", dataView);
+
+	        const timestamp = parseTimestamp(dataView, 0);
+	        _console$i.log({ timestamp });
+
+	        /** @type {number[]} */
+	        const values = [];
+	        for (let index = 0, byteOffset = 2; byteOffset < dataView.byteLength; index++, byteOffset += 4) {
+	            const value = dataView.getFloat32(byteOffset, true);
+	            values.push(value);
+	        }
+	        _console$i.log("values", values);
+
+	        /** @type {TfliteModelInference} */
+	        const inference = {
+	            timestamp,
+	            values,
+	        };
+
+	        this.#dispatchEvent({ type: "tfliteModelInference", message: { tfliteModelInference: inference } });
 	    }
 
 	    /**
@@ -2195,7 +2236,6 @@
 	    }
 
 	    /**
-	     * @private
 	     * @type {SendMessageCallback}
 	     */
 	    sendMessage;
@@ -2665,6 +2705,7 @@
 	        case "sensorData":
 	        case "fileTransferCommand":
 	        case "fileTransferBlock":
+	        case "tfliteModelInference":
 	            properties.read = false;
 	            break;
 	    }
@@ -3986,7 +4027,6 @@
 	        "getTfliteCaptureDelay",
 	        "getTfliteThreshold",
 	        "getTfliteInferencingEnabled",
-	        "tfliteModelInference",
 	    ];
 	    static get AllInformationConnectionMessages() {
 	        return this.#AllInformationConnectionMessages;
@@ -4452,7 +4492,7 @@
 	    // SENSOR CONFIGURATION
 	    #sensorConfigurationManager = new SensorConfigurationManager();
 	    /** @type {SensorConfiguration?} */
-	    #sensorConfiguration;
+	    #sensorConfiguration = {};
 	    get sensorConfiguration() {
 	        return this.#sensorConfiguration;
 	    }
@@ -4956,6 +4996,10 @@
 	    }
 
 	    // TFLITE
+
+	    static get TfliteSensorTypes() {
+	        return TfliteManager.SensorTypes;
+	    }
 
 	    #tfliteManager = new TfliteManager();
 

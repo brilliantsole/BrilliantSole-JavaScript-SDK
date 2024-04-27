@@ -497,7 +497,6 @@ class FileTransferManager {
     }
 
     /**
-     * @private
      * @type {SendMessageCallback}
      */
     sendMessage;
