@@ -14,6 +14,15 @@ if (!console.assert) {
     console.assert = assert;
 }
 
+// console.table not supported in WebBLE
+if (!console.table) {
+    /** @param  {...any} data */
+    const table = (...data) => {
+        console.log(...data);
+    };
+    console.table = table;
+}
+
 /**
  * @callback LogFunction
  * @param {...any} data
@@ -32,6 +41,7 @@ if (!console.assert) {
  * @property {boolean} warn
  * @property {boolean} error
  * @property {boolean} assert
+ * @property {boolean} table
  */
 
 function emptyFunction() {}
@@ -42,6 +52,8 @@ const log = console.log.bind(console);
 const warn = console.warn.bind(console);
 /** @type {LogFunction} */
 const error = console.error.bind(console);
+/** @type {LogFunction} */
+const table = console.table.bind(console);
 /** @type {AssertLogFunction} */
 const assert = console.assert.bind(console);
 
@@ -65,6 +77,7 @@ class Console {
         warn: isInDev,
         assert: true,
         error: true,
+        table: true,
     };
 
     /**
@@ -126,6 +139,11 @@ class Console {
     /** @type {AssertLogFunction} */
     get assert() {
         return this.#levelFlags.assert ? assert : emptyFunction;
+    }
+
+    /** @type {LogFunction} */
+    get table() {
+        return this.#levelFlags.table ? table : emptyFunction;
     }
 
     /**

@@ -10,6 +10,7 @@ import { concatenateArrayBuffers } from "./utils/ArrayBufferUtils.js";
 import FileTransferManager from "./FileTransferManager.js";
 import TfliteManager from "./TfliteManager.js";
 import { textEncoder, textDecoder } from "./utils/Text.js";
+import FirmwareManager from "./FirmwareManager.js";
 
 const _console = createConsole("Device", { log: false });
 
@@ -18,8 +19,9 @@ const _console = createConsole("Device", { log: false });
 
 /** @typedef {import("./FileTransferManager.js").FileTransferManagerEventType} FileTransferManagerEventType */
 /** @typedef {import("./TfliteManager.js").TfliteManagerEventType} TfliteManagerEventType */
+/** @typedef {import("./FirmwareManager.js").FirmwareManagerEventType} FirmwareManagerEventType */
 
-/** @typedef {"connectionStatus" | ConnectionStatus | "isConnected" | ConnectionMessageType | "deviceInformation" | SensorType | "connectionMessage" | FileTransferManagerEventType | TfliteManagerEventType} DeviceEventType */
+/** @typedef {"connectionStatus" | ConnectionStatus | "isConnected" | ConnectionMessageType | "deviceInformation" | SensorType | "connectionMessage" | FileTransferManagerEventType | TfliteManagerEventType | FirmwareManagerEventType} DeviceEventType */
 
 /** @typedef {"deviceConnected" | "deviceDisconnected" | "deviceIsConnected" | "availableDevices"} StaticDeviceEventType */
 
@@ -113,6 +115,9 @@ class Device {
         this.#tfliteManager.sendMessage = this.#sendMessage.bind(this);
         this.#tfliteManager.eventDispatcher = this.#eventDispatcher;
 
+        this.#firmwareManager.sendMessage = this.#sendMessage.bind(this);
+        this.#firmwareManager.eventDispatcher = this.#eventDispatcher;
+
         if (isInBrowser) {
             window.addEventListener("beforeunload", () => {
                 if (this.isConnected && this.clearSensorConfigurationOnLeave) {
@@ -184,6 +189,7 @@ class Device {
 
         ...FileTransferManager.EventTypes,
         ...TfliteManager.EventTypes,
+        ...FirmwareManager.EventTypes,
     ];
     static get EventTypes() {
         return this.#EventTypes;
@@ -539,6 +545,8 @@ class Device {
                     this.#fileTransferManager.parseMessage(messageType, dataView);
                 } else if (this.#tfliteManager.messageTypes.includes(messageType)) {
                     this.#tfliteManager.parseMessage(messageType, dataView);
+                } else if (this.#firmwareManager.messageTypes.includes(messageType)) {
+                    this.#firmwareManager.parseMessage(messageType, dataView);
                 } else {
                     throw Error(`uncaught messageType ${messageType}`);
                 }
@@ -1243,8 +1251,7 @@ class Device {
         return this.#fileTransferManager.maxLength;
     }
 
-    /** @typedef {import("./FileTransferManager.js").FileType} FileType */
-    /** @typedef {import("./FileTransferManager.js").FileLike} FileLike */
+    /** @typedef {import("./utils/ArrayBufferUtils.js").FileLike} */
 
     /**
      * @param {FileType} fileType
@@ -1371,6 +1378,15 @@ class Device {
     /** @param {number} newThreshold */
     async setTfliteThreshold(newThreshold) {
         return this.#tfliteManager.setThreshold(newThreshold);
+    }
+
+    // FIRMWARE MANAGER
+
+    #firmwareManager = new FirmwareManager();
+
+    /** @param {FileLike} file */
+    async updateFirmware(file) {
+        return this.#firmwareManager.updateFirmware(file);
     }
 }
 

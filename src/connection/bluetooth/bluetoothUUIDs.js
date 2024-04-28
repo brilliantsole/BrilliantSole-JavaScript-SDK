@@ -31,7 +31,7 @@ function stringToServiceUUID(identifier) {
     return BluetoothUUID?.getService?.(identifier);
 }
 
-/** @typedef {"deviceInformation" | "battery" | "main" | "dfu"} BluetoothServiceName */
+/** @typedef {"deviceInformation" | "battery" | "main" | "smp"} BluetoothServiceName */
 /**
  * @typedef { "manufacturerName" |
  * "modelNumber" |
@@ -67,7 +67,7 @@ function stringToServiceUUID(identifier) {
  * "tfliteThreshold" |
  * "tfliteInferencingEnabled" |
  * "tfliteModelInference" |
- * "dfu"
+ * "smp"
  * } BluetoothCharacteristicName
  */
 
@@ -142,10 +142,10 @@ const bluetoothUUIDs = Object.freeze({
                 tfliteModelInference: { uuid: generateBluetoothUUID("500a") },
             },
         },
-        dfu: {
+        smp: {
             uuid: "8d53dc1d-1db7-4cd3-868b-8a527460aa84",
             characteristics: {
-                dfu: { uuid: "da2e7828-fbce-4e01-ae9e-261174997c48" },
+                smp: { uuid: "da2e7828-fbce-4e01-ae9e-261174997c48" },
             },
         },
     },
@@ -157,7 +157,7 @@ const bluetoothUUIDs = Object.freeze({
 
     /** @type {BluetoothServiceUUID[]} */
     get optionalServiceUUIDs() {
-        return [this.services.deviceInformation.uuid, this.services.battery.uuid, this.services.dfu.uuid];
+        return [this.services.deviceInformation.uuid, this.services.battery.uuid, this.services.smp.uuid];
     },
 
     /**
@@ -270,6 +270,7 @@ export function getCharacteristicProperties(characteristicName) {
         case "fileTransferCommand":
         case "fileTransferBlock":
         case "tfliteModelInference":
+        case "smp":
             properties.read = false;
             break;
     }
@@ -299,6 +300,7 @@ export function getCharacteristicProperties(characteristicName) {
         case "tfliteCaptureDelay":
         case "tfliteInferencingEnabled":
         case "tfliteModelInference":
+        case "smp":
             properties.notify = true;
             break;
     }

@@ -6,7 +6,7 @@ import { arrayWithoutDuplicates } from "./utils/ArrayUtils.js";
 import SensorConfigurationManager from "./sensor/SensorConfigurationManager.js";
 import { parseTimestamp } from "./utils/MathUtils.js";
 
-const _console = createConsole("TfliteManager", { log: true });
+const _console = createConsole("TfliteManager", { log: false });
 
 /**
  * @typedef { "getTfliteName" |
@@ -33,12 +33,6 @@ const _console = createConsole("TfliteManager", { log: true });
  */
 
 /** @typedef {"classification" | "regression"} TfliteTask */
-
-/**
- * @callback SendMessageCallback
- * @param {TfliteMessageType} messageType
- * @param {DataView|ArrayBuffer} data
- */
 
 /** @typedef {import("./sensor/SensorDataManager.js").SensorType} SensorType */
 
@@ -620,8 +614,12 @@ class TfliteManager {
     }
 
     /**
-     * @type {SendMessageCallback}
+     * @callback SendMessageCallback
+     * @param {TfliteMessageType} messageType
+     * @param {DataView|ArrayBuffer} data
      */
+
+    /** @type {SendMessageCallback} */
     sendMessage;
 }
 

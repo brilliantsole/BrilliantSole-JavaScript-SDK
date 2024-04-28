@@ -36,6 +36,15 @@
 	    console.assert = assert;
 	}
 
+	// console.table not supported in WebBLE
+	if (!console.table) {
+	    /** @param  {...any} data */
+	    const table = (...data) => {
+	        console.log(...data);
+	    };
+	    console.table = table;
+	}
+
 	/**
 	 * @callback LogFunction
 	 * @param {...any} data
@@ -54,6 +63,7 @@
 	 * @property {boolean} warn
 	 * @property {boolean} error
 	 * @property {boolean} assert
+	 * @property {boolean} table
 	 */
 
 	function emptyFunction() {}
@@ -64,6 +74,8 @@
 	const warn = console.warn.bind(console);
 	/** @type {LogFunction} */
 	const error = console.error.bind(console);
+	/** @type {LogFunction} */
+	const table = console.table.bind(console);
 	/** @type {AssertLogFunction} */
 	const assert = console.assert.bind(console);
 
@@ -87,6 +99,7 @@
 	        warn: isInDev,
 	        assert: true,
 	        error: true,
+	        table: true,
 	    };
 
 	    /**
@@ -148,6 +161,11 @@
 	    /** @type {AssertLogFunction} */
 	    get assert() {
 	        return this.#levelFlags.assert ? assert : emptyFunction;
+	    }
+
+	    /** @type {LogFunction} */
+	    get table() {
+	        return this.#levelFlags.table ? table : emptyFunction;
 	    }
 
 	    /**
@@ -215,7 +233,7 @@
 	    return string[0].toUpperCase() + string.slice(1);
 	}
 
-	const _console$q = createConsole("EventDispatcher", { log: false });
+	const _console$s = createConsole("EventDispatcher", { log: false });
 
 	/**
 	 * @typedef EventDispatcherEvent
@@ -240,9 +258,9 @@
 	     * @param {string[]?} eventTypes
 	     */
 	    constructor(target, eventTypes) {
-	        _console$q.assertWithError(target, "target is required");
+	        _console$s.assertWithError(target, "target is required");
 	        this.#target = target;
-	        _console$q.assertWithError(Array.isArray(eventTypes) || eventTypes == undefined, "eventTypes must be an array");
+	        _console$s.assertWithError(Array.isArray(eventTypes) || eventTypes == undefined, "eventTypes must be an array");
 	        this.#eventTypes = eventTypes;
 	    }
 
@@ -267,7 +285,7 @@
 	     * @throws {Error}
 	     */
 	    #assertValidEventType(type) {
-	        _console$q.assertWithError(this.#isValidEventType(type), `invalid event type "${type}"`);
+	        _console$s.assertWithError(this.#isValidEventType(type), `invalid event type "${type}"`);
 	    }
 
 	    /** @type {Object.<string, [function]?>?} */
@@ -279,7 +297,7 @@
 	     * @param {EventDispatcherOptions?} options
 	     */
 	    addEventListener(type, listener, options) {
-	        _console$q.log(`adding "${type}" eventListener`, listener);
+	        _console$s.log(`adding "${type}" eventListener`, listener);
 	        this.#assertValidEventType(type);
 
 	        if (!this.#listeners) this.#listeners = {};
@@ -309,7 +327,7 @@
 	     * @param {EventDispatcherListener} listener
 	     */
 	    hasEventListener(type, listener) {
-	        _console$q.log(`has "${type}" eventListener?`, listener);
+	        _console$s.log(`has "${type}" eventListener?`, listener);
 	        this.#assertValidEventType(type);
 	        return this.#listeners?.[type]?.includes(listener);
 	    }
@@ -319,7 +337,7 @@
 	     * @param {EventDispatcherListener} listener
 	     */
 	    removeEventListener(type, listener) {
-	        _console$q.log(`removing "${type}" eventListener`, listener);
+	        _console$s.log(`removing "${type}" eventListener`, listener);
 	        this.#assertValidEventType(type);
 	        if (this.hasEventListener(type, listener)) {
 	            const index = this.#listeners[type].indexOf(listener);
@@ -344,7 +362,7 @@
 	                try {
 	                    array[i].call(this, event);
 	                } catch (error) {
-	                    _console$q.error(error);
+	                    _console$s.error(error);
 	                }
 	            }
 	        }
@@ -352,13 +370,13 @@
 
 	    /** @param {string} type */
 	    waitForEvent(type) {
-	        _console$q.log(`waiting for event "${type}"`);
+	        _console$s.log(`waiting for event "${type}"`);
 	        this.#assertValidEventType(type);
 	        return new Promise((resolve) => {
 	            this.addEventListener(
 	                type,
-	                () => {
-	                    resolve();
+	                (event) => {
+	                    resolve(event);
 	                },
 	                { once: true }
 	            );
@@ -372,7 +390,7 @@
 	 */
 	function addEventListeners(target, boundEventListeners) {
 	    let addEventListener = target.addEventListener || target.addListener || target.on || target.AddEventListener;
-	    _console$q.assertWithError(addEventListener, "no add listener function found for target");
+	    _console$s.assertWithError(addEventListener, "no add listener function found for target");
 	    addEventListener = addEventListener.bind(target);
 	    Object.entries(boundEventListeners).forEach(([eventType, eventListener]) => {
 	        addEventListener(eventType, eventListener);
@@ -385,7 +403,7 @@
 	 */
 	function removeEventListeners(target, boundEventListeners) {
 	    let removeEventListener = target.removeEventListener || target.removeListener || target.RemoveEventListener;
-	    _console$q.assertWithError(removeEventListener, "no remove listener function found for target");
+	    _console$s.assertWithError(removeEventListener, "no remove listener function found for target");
 	    removeEventListener = removeEventListener.bind(target);
 	    Object.entries(boundEventListeners).forEach(([eventType, eventListener]) => {
 	        removeEventListener(eventType, eventListener);
@@ -423,7 +441,108 @@
 	    return crc;
 	}
 
-	const _console$p = createConsole("FileTransferManager", { log: true });
+	const _console$r = createConsole("ArrayBufferUtils", { log: false });
+
+	const textEncoder$1 = new TextEncoder();
+
+	/**
+	 * @param {...ArrayBuffer} arrayBuffers
+	 * @returns {ArrayBuffer}
+	 */
+	function concatenateArrayBuffers(...arrayBuffers) {
+	    arrayBuffers = arrayBuffers.filter((arrayBuffer) => arrayBuffer != undefined || arrayBuffer != null);
+	    arrayBuffers = arrayBuffers.map((arrayBuffer) => {
+	        if (typeof arrayBuffer == "number") {
+	            const number = arrayBuffer;
+	            return Uint8Array.from([Math.floor(number)]);
+	        } else if (typeof arrayBuffer == "boolean") {
+	            const boolean = arrayBuffer;
+	            return Uint8Array.from([boolean ? 1 : 0]);
+	        } else if (typeof arrayBuffer == "string") {
+	            const string = arrayBuffer;
+	            return stringToArrayBuffer(string);
+	        } else if (arrayBuffer instanceof Array) {
+	            const array = arrayBuffer;
+	            return concatenateArrayBuffers(...array);
+	        } else if (arrayBuffer instanceof ArrayBuffer) {
+	            return arrayBuffer;
+	        } else if ("buffer" in arrayBuffer && arrayBuffer.buffer instanceof ArrayBuffer) {
+	            const bufferContainer = arrayBuffer;
+	            return bufferContainer.buffer;
+	        } else if (arrayBuffer instanceof DataView) {
+	            const dataView = arrayBuffer;
+	            return dataView.buffer;
+	        } else if (typeof arrayBuffer == "object") {
+	            const object = arrayBuffer;
+	            return objectToArrayBuffer(object);
+	        } else {
+	            return arrayBuffer;
+	        }
+	    });
+	    arrayBuffers = arrayBuffers.filter((arrayBuffer) => arrayBuffer && "byteLength" in arrayBuffer);
+	    const length = arrayBuffers.reduce((length, arrayBuffer) => length + arrayBuffer.byteLength, 0);
+	    const uint8Array = new Uint8Array(length);
+	    let byteOffset = 0;
+	    arrayBuffers.forEach((arrayBuffer) => {
+	        uint8Array.set(new Uint8Array(arrayBuffer), byteOffset);
+	        byteOffset += arrayBuffer.byteLength;
+	    });
+	    return uint8Array.buffer;
+	}
+
+	/** @param {Buffer} data */
+	function dataToArrayBuffer(data) {
+	    return data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength);
+	}
+
+	/** @param {String} string */
+	function stringToArrayBuffer(string) {
+	    const encoding = textEncoder$1.encode(string);
+	    return concatenateArrayBuffers(encoding.byteLength, encoding);
+	}
+
+	/** @param {Object} object */
+	function objectToArrayBuffer(object) {
+	    return stringToArrayBuffer(JSON.stringify(object));
+	}
+
+	/**
+	 * @param {DataView} dataView
+	 * @param {number} begin
+	 * @param {number?} length
+	 */
+	function sliceDataView(dataView, begin, length) {
+	    let end;
+	    if (length) {
+	        end = dataView.byteOffset + begin + length;
+	    }
+	    _console$r.log({ dataView, begin, end, length });
+	    return new DataView(dataView.buffer.slice(dataView.byteOffset + begin, end));
+	}
+
+	/** @typedef {number[] | ArrayBuffer | DataView | URL | string | File} FileLike */
+
+	/** @param {FileLike} file */
+	async function getFileBuffer(file) {
+	    let fileBuffer;
+	    if (file instanceof Array) {
+	        fileBuffer = Uint8Array.from(file);
+	    } else if (file instanceof DataView) {
+	        fileBuffer = file.buffer;
+	    } else if (typeof file == "string" || file instanceof URL) {
+	        const response = await fetch(file);
+	        fileBuffer = await response.arrayBuffer();
+	    } else if (file instanceof File) {
+	        fileBuffer = await file.arrayBuffer();
+	    } else if (file instanceof ArrayBuffer) {
+	        fileBuffer = file;
+	    } else {
+	        throw { error: "invalid file type", file };
+	    }
+	    return fileBuffer;
+	}
+
+	const _console$q = createConsole("FileTransferManager", { log: false });
 
 	/**
 	 * @typedef { "maxFileLength" |
@@ -443,14 +562,6 @@
 	/** @typedef {"tflite"} FileType */
 	/** @typedef {"idle" | "sending" | "receiving"} FileTransferStatus */
 	/** @typedef {"startReceive" | "startSend" | "cancel"} FileTransferCommand */
-
-	/** @typedef {number[] | ArrayBuffer | DataView | URL | string | File} FileLike */
-
-	/**
-	 * @callback SendMessageCallback
-	 * @param {FileTransferMessageType} messageType
-	 * @param {DataView|ArrayBuffer} data
-	 */
 
 
 
@@ -545,11 +656,11 @@
 	    }
 	    /** @param {FileType} type */
 	    #assertValidType(type) {
-	        _console$p.assertEnumWithError(type, this.types);
+	        _console$q.assertEnumWithError(type, this.types);
 	    }
 	    /** @param {number} typeEnum */
 	    #assertValidTypeEnum(typeEnum) {
-	        _console$p.assertWithError(this.types[typeEnum], `invalid typeEnum ${typeEnum}`);
+	        _console$q.assertWithError(this.types[typeEnum], `invalid typeEnum ${typeEnum}`);
 	    }
 
 	    /** @type {FileTransferStatus[]} */
@@ -562,7 +673,7 @@
 	    }
 	    /** @param {number} statusEnum */
 	    #assertValidStatusEnum(statusEnum) {
-	        _console$p.assertWithError(this.statuses[statusEnum], `invalid statusEnum ${statusEnum}`);
+	        _console$q.assertWithError(this.statuses[statusEnum], `invalid statusEnum ${statusEnum}`);
 	    }
 
 	    /** @type {FileTransferCommand[]} */
@@ -575,30 +686,7 @@
 	    }
 	    /** @param {FileTransferCommand} command */
 	    #assertValidCommand(command) {
-	        _console$p.assertEnumWithError(command, this.commands);
-	    }
-
-	    /** @param {FileLike} file */
-	    static async GetFileBuffer(file) {
-	        let fileBuffer;
-	        if (file instanceof Array) {
-	            fileBuffer = Uint8Array.from(file);
-	        } else if (file instanceof DataView) {
-	            fileBuffer = file.buffer;
-	        } else if (typeof file == "string" || file instanceof URL) {
-	            const response = await fetch(file);
-	            fileBuffer = await response.arrayBuffer();
-	        } else if (file instanceof File) {
-	            fileBuffer = await file.arrayBuffer();
-	        } else if (file instanceof ArrayBuffer) {
-	            fileBuffer = file;
-	        } else {
-	            throw { error: "invalid file type", file };
-	        }
-	        return fileBuffer;
-	    }
-	    async getFileBuffer(file) {
-	        return FileTransferManager.GetFileBuffer(file);
+	        _console$q.assertEnumWithError(command, this.commands);
 	    }
 
 	    static #MaxLength = 0; // kB
@@ -612,14 +700,14 @@
 	    }
 	    /** @param {DataView} dataView */
 	    #parseMaxLength(dataView) {
-	        _console$p.log("parseFileMaxLength", dataView);
+	        _console$q.log("parseFileMaxLength", dataView);
 	        const maxLength = dataView.getUint32(0, true);
-	        _console$p.log(`maxLength: ${maxLength}kB`);
+	        _console$q.log(`maxLength: ${maxLength}kB`);
 	        this.#maxLength = maxLength;
 	    }
 	    /** @param {number} length */
 	    #assertValidLength(length) {
-	        _console$p.assertWithError(
+	        _console$q.assertWithError(
 	            length <= this.maxLength,
 	            `file length ${length}kB too large - must be ${this.maxLength}kB or less`
 	        );
@@ -632,7 +720,7 @@
 	    }
 	    /** @param {DataView} dataView */
 	    #parseType(dataView) {
-	        _console$p.log("parseFileType", dataView);
+	        _console$q.log("parseFileType", dataView);
 	        const typeEnum = dataView.getUint8(0);
 	        this.#assertValidTypeEnum(typeEnum);
 	        const type = this.types[typeEnum];
@@ -640,7 +728,7 @@
 	    }
 	    /** @param {FileType} type */
 	    #updateType(type) {
-	        _console$p.log({ type });
+	        _console$q.log({ type });
 	        this.#type = type;
 	        this.#dispatchEvent({ type: "getFileTransferType", message: { fileType: type } });
 	    }
@@ -648,7 +736,7 @@
 	    async #setType(newType) {
 	        this.#assertValidType(newType);
 	        if (this.type == newType) {
-	            _console$p.log(`redundant type assignment ${newType}`);
+	            _console$q.log(`redundant type assignment ${newType}`);
 	            return;
 	        }
 
@@ -666,23 +754,23 @@
 	    }
 	    /** @param {DataView} dataView */
 	    #parseLength(dataView) {
-	        _console$p.log("parseFileLength", dataView);
+	        _console$q.log("parseFileLength", dataView);
 	        const length = dataView.getUint32(0, true);
 
 	        this.#updateLength(length);
 	    }
 	    /** @param {number} length */
 	    #updateLength(length) {
-	        _console$p.log(`length: ${length}kB`);
+	        _console$q.log(`length: ${length}kB`);
 	        this.#length = length;
 	        this.#dispatchEvent({ type: "getFileLength", message: { fileLength: length } });
 	    }
 	    /** @param {number} newLength */
 	    async #setLength(newLength) {
-	        _console$p.assertTypeWithError(newLength, "number");
+	        _console$q.assertTypeWithError(newLength, "number");
 	        this.#assertValidLength(newLength);
 	        if (this.length == newLength) {
-	            _console$p.log(`redundant length assignment ${newLength}`);
+	            _console$q.log(`redundant length assignment ${newLength}`);
 	            return;
 	        }
 
@@ -701,21 +789,21 @@
 	    }
 	    /** @param {DataView} dataView */
 	    #parseChecksum(dataView) {
-	        _console$p.log("checksum", dataView);
+	        _console$q.log("checksum", dataView);
 	        const checksum = dataView.getUint32(0, true);
 	        this.#updateChecksum(checksum);
 	    }
 	    /** @param {number} checksum */
 	    #updateChecksum(checksum) {
-	        _console$p.log({ checksum });
+	        _console$q.log({ checksum });
 	        this.#checksum = checksum;
 	        this.#dispatchEvent({ type: "getFileChecksum", message: { fileChecksum: checksum } });
 	    }
 	    /** @param {number} newChecksum */
 	    async #setChecksum(newChecksum) {
-	        _console$p.assertTypeWithError(newChecksum, "number");
+	        _console$q.assertTypeWithError(newChecksum, "number");
 	        if (this.checksum == newChecksum) {
-	            _console$p.log(`redundant checksum assignment ${newChecksum}`);
+	            _console$q.log(`redundant checksum assignment ${newChecksum}`);
 	            return;
 	        }
 
@@ -747,7 +835,7 @@
 	    }
 	    /** @param {DataView} dataView */
 	    #parseStatus(dataView) {
-	        _console$p.log("parseFileStatus", dataView);
+	        _console$q.log("parseFileStatus", dataView);
 	        const statusEnum = dataView.getUint8(0);
 	        this.#assertValidStatusEnum(statusEnum);
 	        const status = this.statuses[statusEnum];
@@ -755,15 +843,15 @@
 	    }
 	    /** @param {FileTransferStatus} status */
 	    #updateStatus(status) {
-	        _console$p.log({ status });
+	        _console$q.log({ status });
 	        this.#status = status;
 	        this.#dispatchEvent({ type: "fileTransferStatus", message: { fileTransferStatus: status } });
 	    }
 	    #assertIsIdle() {
-	        _console$p.assertWithError(this.#status == "idle", "status is not idle");
+	        _console$q.assertWithError(this.#status == "idle", "status is not idle");
 	    }
 	    #assertIsNotIdle() {
-	        _console$p.assertWithError(this.#status != "idle", "status is idle");
+	        _console$q.assertWithError(this.#status != "idle", "status is idle");
 	    }
 
 	    // BLOCK
@@ -773,13 +861,13 @@
 
 	    /** @param {DataView} dataView */
 	    async #parseBlock(dataView) {
-	        _console$p.log("parseFileBlock", dataView);
+	        _console$q.log("parseFileBlock", dataView);
 	        this.#receivedBlocks.push(dataView.buffer);
 
 	        const bytesReceived = this.#receivedBlocks.reduce((sum, arrayBuffer) => (sum += arrayBuffer.byteLength), 0);
 	        const progress = bytesReceived / this.#length;
 
-	        _console$p.log(`received ${bytesReceived} of ${this.#length} bytes (${progress * 100}%)`);
+	        _console$q.log(`received ${bytesReceived} of ${this.#length} bytes (${progress * 100}%)`);
 
 	        this.#dispatchEvent({ type: "fileTransferProgress", message: { progress } });
 
@@ -787,7 +875,7 @@
 	            return;
 	        }
 
-	        _console$p.log("file transfer complete");
+	        _console$q.log("file transfer complete");
 
 	        let fileName = new Date().toLocaleString();
 	        switch (this.type) {
@@ -799,10 +887,10 @@
 
 	        const arrayBuffer = await file.arrayBuffer();
 	        const checksum = crc32(arrayBuffer);
-	        _console$p.log({ checksum });
+	        _console$q.log({ checksum });
 
 	        if (checksum != this.#checksum) {
-	            _console$p.error(`wrong checksum - expected ${this.#checksum}, got ${checksum}`);
+	            _console$q.error(`wrong checksum - expected ${this.#checksum}, got ${checksum}`);
 	            return;
 	        }
 
@@ -819,7 +907,7 @@
 	     * @param {DataView} dataView
 	     */
 	    parseMessage(messageType, dataView) {
-	        _console$p.log({ messageType });
+	        _console$q.log({ messageType });
 
 	        switch (messageType) {
 	            case "maxFileLength":
@@ -855,7 +943,7 @@
 	        this.#assertIsIdle();
 
 	        this.#assertValidType(type);
-	        const fileBuffer = await this.getFileBuffer(file);
+	        const fileBuffer = await getFileBuffer(file);
 
 	        await this.#setType(type);
 	        const fileLength = fileBuffer.byteLength;
@@ -885,14 +973,14 @@
 	        const slicedBuffer = buffer.slice(offset, offset + this.#blockSize);
 	        const bytesLeft = buffer.byteLength - offset;
 	        const progress = 1 - bytesLeft / buffer.byteLength;
-	        _console$p.log(
+	        _console$q.log(
 	            `sending bytes ${offset}-${offset + slicedBuffer.byteLength} of ${buffer.byteLength} bytes (${
                 progress * 100
             }%)`
 	        );
 	        this.#dispatchEvent({ type: "fileTransferProgress", message: { progress } });
 	        if (slicedBuffer.byteLength == 0) {
-	            _console$p.log("finished sending buffer");
+	            _console$q.log("finished sending buffer");
 	            this.#dispatchEvent({ type: "fileTransferComplete", message: { direction: "sending" } });
 	        } else {
 	            await this.sendMessage("setFileTransferBlock", slicedBuffer);
@@ -918,12 +1006,16 @@
 	    }
 
 	    /**
-	     * @type {SendMessageCallback}
+	     * @callback SendMessageCallback
+	     * @param {FileTransferMessageType} messageType
+	     * @param {DataView|ArrayBuffer} data
 	     */
+
+	    /** @type {SendMessageCallback} */
 	    sendMessage;
 	}
 
-	const textEncoder$1 = new TextEncoder();
+	const textEncoder = new TextEncoder();
 	const textDecoder$1 = new TextDecoder();
 
 	/**
@@ -1096,7 +1188,7 @@
 	 * @property {CenterOfPressure?} normalizedCenter
 	 */
 
-	const _console$o = createConsole("PressureSensorDataManager", { log: true });
+	const _console$p = createConsole("PressureSensorDataManager", { log: true });
 
 	class PressureSensorDataManager {
 	    /** @type {PressureSensorPosition[]} */
@@ -1125,7 +1217,7 @@
 	            });
 	        }
 
-	        _console$o.log({ positions });
+	        _console$p.log({ positions });
 
 	        this.#positions = positions;
 
@@ -1169,14 +1261,14 @@
 	            pressure.normalizedCenter = this.#centerOfPressureHelper.updateAndGetNormalization(pressure.center);
 	        }
 
-	        _console$o.log({ pressure });
+	        _console$p.log({ pressure });
 	        return pressure;
 	    }
 	}
 
 	/** @typedef {"acceleration" | "gravity" | "linearAcceleration" | "gyroscope" | "magnetometer" | "gameRotation" | "rotation"} MotionSensorType */
 
-	const _console$n = createConsole("MotionSensorDataManager", { log: false });
+	const _console$o = createConsole("MotionSensorDataManager", { log: false });
 
 	/**
 	 * @typedef Vector3
@@ -1216,7 +1308,7 @@
 
 	        const vector = { x, y, z };
 
-	        _console$n.log({ vector });
+	        _console$o.log({ vector });
 	        return vector;
 	    }
 
@@ -1243,7 +1335,7 @@
 
 	        const quaternion = { x, y, z, w };
 
-	        _console$n.log({ quaternion });
+	        _console$o.log({ quaternion });
 	        return quaternion;
 	    }
 	}
@@ -1264,86 +1356,7 @@
 	    }
 	}
 
-	const _console$m = createConsole("ArrayBufferUtils", { log: false });
-
-	const textEncoder = new TextEncoder();
-
-	/**
-	 * @param {...ArrayBuffer} arrayBuffers
-	 * @returns {ArrayBuffer}
-	 */
-	function concatenateArrayBuffers(...arrayBuffers) {
-	    arrayBuffers = arrayBuffers.filter((arrayBuffer) => arrayBuffer != undefined || arrayBuffer != null);
-	    arrayBuffers = arrayBuffers.map((arrayBuffer) => {
-	        if (typeof arrayBuffer == "number") {
-	            const number = arrayBuffer;
-	            return Uint8Array.from([Math.floor(number)]);
-	        } else if (typeof arrayBuffer == "boolean") {
-	            const boolean = arrayBuffer;
-	            return Uint8Array.from([boolean ? 1 : 0]);
-	        } else if (typeof arrayBuffer == "string") {
-	            const string = arrayBuffer;
-	            return stringToArrayBuffer(string);
-	        } else if (arrayBuffer instanceof Array) {
-	            const array = arrayBuffer;
-	            return concatenateArrayBuffers(...array);
-	        } else if (arrayBuffer instanceof ArrayBuffer) {
-	            return arrayBuffer;
-	        } else if ("buffer" in arrayBuffer && arrayBuffer.buffer instanceof ArrayBuffer) {
-	            const bufferContainer = arrayBuffer;
-	            return bufferContainer.buffer;
-	        } else if (arrayBuffer instanceof DataView) {
-	            const dataView = arrayBuffer;
-	            return dataView.buffer;
-	        } else if (typeof arrayBuffer == "object") {
-	            const object = arrayBuffer;
-	            return objectToArrayBuffer(object);
-	        } else {
-	            return arrayBuffer;
-	        }
-	    });
-	    arrayBuffers = arrayBuffers.filter((arrayBuffer) => arrayBuffer && "byteLength" in arrayBuffer);
-	    const length = arrayBuffers.reduce((length, arrayBuffer) => length + arrayBuffer.byteLength, 0);
-	    const uint8Array = new Uint8Array(length);
-	    let byteOffset = 0;
-	    arrayBuffers.forEach((arrayBuffer) => {
-	        uint8Array.set(new Uint8Array(arrayBuffer), byteOffset);
-	        byteOffset += arrayBuffer.byteLength;
-	    });
-	    return uint8Array.buffer;
-	}
-
-	/** @param {Buffer} data */
-	function dataToArrayBuffer(data) {
-	    return data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength);
-	}
-
-	/** @param {String} string */
-	function stringToArrayBuffer(string) {
-	    const encoding = textEncoder.encode(string);
-	    return concatenateArrayBuffers(encoding.byteLength, encoding);
-	}
-
-	/** @param {Object} object */
-	function objectToArrayBuffer(object) {
-	    return stringToArrayBuffer(JSON.stringify(object));
-	}
-
-	/**
-	 * @param {DataView} dataView
-	 * @param {number} begin
-	 * @param {number?} length
-	 */
-	function sliceDataView(dataView, begin, length) {
-	    let end;
-	    if (length) {
-	        end = dataView.byteOffset + begin + length;
-	    }
-	    _console$m.log({ dataView, begin, end, length });
-	    return new DataView(dataView.buffer.slice(dataView.byteOffset + begin, end));
-	}
-
-	const _console$l = createConsole("ParseUtils", { log: true });
+	const _console$n = createConsole("ParseUtils", { log: true });
 
 	const textDecoder = new TextDecoder();
 
@@ -1387,11 +1400,11 @@
 	            messageLength = dataView.getUint8(byteOffset++);
 	        }
 
-	        _console$l.log({ messageTypeEnum, messageType, messageLength, dataView });
-	        _console$l.assertWithError(messageType, `invalid messageTypeEnum ${messageTypeEnum}`);
+	        _console$n.log({ messageTypeEnum, messageType, messageLength, dataView });
+	        _console$n.assertWithError(messageType, `invalid messageTypeEnum ${messageTypeEnum}`);
 
 	        const _dataView = sliceDataView(dataView, byteOffset, messageLength);
-	        _console$l.log({ _dataView });
+	        _console$n.log({ _dataView });
 
 	        callback(messageType, _dataView);
 
@@ -1399,7 +1412,7 @@
 	    }
 	}
 
-	const _console$k = createConsole("SensorDataManager", { log: false });
+	const _console$m = createConsole("SensorDataManager", { log: false });
 
 
 
@@ -1443,13 +1456,13 @@
 
 	    /** @param {string} sensorType */
 	    static AssertValidSensorType(sensorType) {
-	        _console$k.assertTypeWithError(sensorType, "string");
-	        _console$k.assertWithError(this.#Types.includes(sensorType), `invalid sensorType "${sensorType}"`);
+	        _console$m.assertTypeWithError(sensorType, "string");
+	        _console$m.assertWithError(this.#Types.includes(sensorType), `invalid sensorType "${sensorType}"`);
 	    }
 	    /** @param {number} sensorTypeEnum */
 	    static AssertValidSensorTypeEnum(sensorTypeEnum) {
-	        _console$k.assertTypeWithError(sensorTypeEnum, "number");
-	        _console$k.assertWithError(sensorTypeEnum in this.#Types, `invalid sensorTypeEnum ${sensorTypeEnum}`);
+	        _console$m.assertTypeWithError(sensorTypeEnum, "number");
+	        _console$m.assertWithError(sensorTypeEnum in this.#Types, `invalid sensorTypeEnum ${sensorTypeEnum}`);
 	    }
 
 	    /** @type {SensorDataCallback} */
@@ -1457,7 +1470,7 @@
 
 	    /** @param {DataView} dataView */
 	    parseData(dataView) {
-	        _console$k.log("sensorData", Array.from(new Uint8Array(dataView.buffer)));
+	        _console$m.log("sensorData", Array.from(new Uint8Array(dataView.buffer)));
 
 	        let byteOffset = 0;
 	        const timestamp = parseTimestamp(dataView, byteOffset);
@@ -1491,10 +1504,10 @@
 	                    // FILL
 	                    break;
 	                default:
-	                    _console$k.error(`uncaught sensorType "${sensorType}"`);
+	                    _console$m.error(`uncaught sensorType "${sensorType}"`);
 	            }
 
-	            _console$k.assertWithError(value, `no value defined for sensorType "${sensorType}"`);
+	            _console$m.assertWithError(value, `no value defined for sensorType "${sensorType}"`);
 	            this.onDataReceived(sensorType, { timestamp, [sensorType]: value });
 	        });
 	    }
@@ -1505,11 +1518,11 @@
 	            const sensorTypeIndex = dataView.getUint8(byteOffset);
 	            const sensorType = SensorDataManager.Types[sensorTypeIndex];
 	            if (!sensorType) {
-	                _console$k.warn(`unknown sensorType index ${sensorTypeIndex}`);
+	                _console$m.warn(`unknown sensorType index ${sensorTypeIndex}`);
 	                continue;
 	            }
 	            const sensorScalar = dataView.getFloat32(byteOffset + 1, true);
-	            _console$k.log({ sensorType, sensorScalar });
+	            _console$m.log({ sensorType, sensorScalar });
 	            this.#scalars.set(sensorType, sensorScalar);
 	        }
 	    }
@@ -1529,16 +1542,16 @@
 	 * @property {number?} barometer
 	 */
 
-	const _console$j = createConsole("SensorConfigurationManager", { log: false });
+	const _console$l = createConsole("SensorConfigurationManager", { log: false });
 
 	class SensorConfigurationManager {
 	    /** @type {SensorType[]} */
 	    #availableSensorTypes;
 	    /** @param {SensorType} sensorType */
 	    #assertAvailableSensorType(sensorType) {
-	        _console$j.assertWithError(this.#availableSensorTypes, "must get initial sensorConfiguration");
+	        _console$l.assertWithError(this.#availableSensorTypes, "must get initial sensorConfiguration");
 	        const isSensorTypeAvailable = this.#availableSensorTypes?.includes(sensorType);
-	        _console$j.assert(isSensorTypeAvailable, `unavailable sensor type "${sensorType}"`);
+	        _console$l.assert(isSensorTypeAvailable, `unavailable sensor type "${sensorType}"`);
 	        return isSensorTypeAvailable;
 	    }
 
@@ -1550,14 +1563,14 @@
 	            const sensorTypeIndex = dataView.getUint8(byteOffset);
 	            const sensorType = SensorDataManager.Types[sensorTypeIndex];
 	            if (!sensorType) {
-	                _console$j.warn(`unknown sensorType index ${sensorTypeIndex}`);
+	                _console$l.warn(`unknown sensorType index ${sensorTypeIndex}`);
 	                continue;
 	            }
 	            const sensorRate = dataView.getUint16(byteOffset + 1, true);
-	            _console$j.log({ sensorType, sensorRate });
+	            _console$l.log({ sensorType, sensorRate });
 	            parsedSensorConfiguration[sensorType] = sensorRate;
 	        }
-	        _console$j.log({ parsedSensorConfiguration });
+	        _console$l.log({ parsedSensorConfiguration });
 	        this.#availableSensorTypes = Object.keys(parsedSensorConfiguration);
 	        return parsedSensorConfiguration;
 	    }
@@ -1579,13 +1592,13 @@
 
 	    /** @param {sensorRate} number */
 	    static #AssertValidSensorRate(sensorRate) {
-	        _console$j.assertTypeWithError(sensorRate, "number");
-	        _console$j.assertWithError(sensorRate >= 0, `sensorRate must be 0 or greater (got ${sensorRate})`);
-	        _console$j.assertWithError(
+	        _console$l.assertTypeWithError(sensorRate, "number");
+	        _console$l.assertWithError(sensorRate >= 0, `sensorRate must be 0 or greater (got ${sensorRate})`);
+	        _console$l.assertWithError(
 	            sensorRate < this.MaxSensorRate,
 	            `sensorRate must be 0 or greater (got ${sensorRate})`
 	        );
-	        _console$j.assertWithError(
+	        _console$l.assertWithError(
 	            sensorRate % this.SensorRateStep == 0,
 	            `sensorRate must be multiple of ${this.SensorRateStep}`
 	        );
@@ -1612,7 +1625,7 @@
 	            this.#assertValidSensorRate(sensorRate);
 	            dataView.setUint16(index * 3 + 1, sensorConfiguration[sensorType], true);
 	        });
-	        _console$j.log({ sensorConfigurationData: dataView });
+	        _console$l.log({ sensorConfigurationData: dataView });
 	        return dataView;
 	    }
 
@@ -1622,7 +1635,7 @@
 	    }
 	}
 
-	const _console$i = createConsole("TfliteManager", { log: true });
+	const _console$k = createConsole("TfliteManager", { log: false });
 
 	/**
 	 * @typedef { "getTfliteName" |
@@ -1649,12 +1662,6 @@
 	 */
 
 	/** @typedef {"classification" | "regression"} TfliteTask */
-
-	/**
-	 * @callback SendMessageCallback
-	 * @param {TfliteMessageType} messageType
-	 * @param {DataView|ArrayBuffer} data
-	 */
 
 
 
@@ -1716,11 +1723,11 @@
 	    }
 	    /** @param {TfliteTask} task */
 	    #assertValidTask(task) {
-	        _console$i.assertEnumWithError(task, this.tasks);
+	        _console$k.assertEnumWithError(task, this.tasks);
 	    }
 	    /** @param {number} taskEnum */
 	    #assertValidTaskEnum(taskEnum) {
-	        _console$i.assertWithError(this.tasks[taskEnum], `invalid taskEnum ${taskEnum}`);
+	        _console$k.assertWithError(this.tasks[taskEnum], `invalid taskEnum ${taskEnum}`);
 	    }
 
 	    // EVENT DISPATCHER
@@ -1774,27 +1781,27 @@
 	    }
 	    /** @param {DataView} dataView */
 	    #parseName(dataView) {
-	        _console$i.log("parseName", dataView);
+	        _console$k.log("parseName", dataView);
 	        const name = textDecoder$1.decode(dataView);
 	        this.#updateName(name);
 	    }
 	    /** @param {string} name */
 	    #updateName(name) {
-	        _console$i.log({ name });
+	        _console$k.log({ name });
 	        this.#name = name;
 	        this.#dispatchEvent({ type: "getTfliteName", message: { tfliteModelName: name } });
 	    }
 	    /** @param {string} newName */
 	    async setName(newName) {
-	        _console$i.assertTypeWithError(newName, "string");
+	        _console$k.assertTypeWithError(newName, "string");
 	        if (this.name == newName) {
-	            _console$i.log(`redundant name assignment ${newName}`);
+	            _console$k.log(`redundant name assignment ${newName}`);
 	            return;
 	        }
 
 	        const promise = this.waitForEvent("getTfliteName");
 
-	        const setNameData = textEncoder$1.encode(newName);
+	        const setNameData = textEncoder.encode(newName);
 	        this.sendMessage("setTfliteName", setNameData);
 
 	        await promise;
@@ -1807,7 +1814,7 @@
 	    }
 	    /** @param {DataView} dataView */
 	    #parseTask(dataView) {
-	        _console$i.log("parseTask", dataView);
+	        _console$k.log("parseTask", dataView);
 	        const taskEnum = dataView.getUint8(0);
 	        this.#assertValidTaskEnum(taskEnum);
 	        const task = this.tasks[taskEnum];
@@ -1815,7 +1822,7 @@
 	    }
 	    /** @param {TfliteTask} task */
 	    #updateTask(task) {
-	        _console$i.log({ task });
+	        _console$k.log({ task });
 	        this.#task = task;
 	        this.#dispatchEvent({ type: "getTfliteTask", message: { tfliteModelTask: task } });
 	    }
@@ -1823,7 +1830,7 @@
 	    async setTask(newTask) {
 	        this.#assertValidTask(newTask);
 	        if (this.task == newTask) {
-	            _console$i.log(`redundant task assignment ${newTask}`);
+	            _console$k.log(`redundant task assignment ${newTask}`);
 	            return;
 	        }
 
@@ -1842,25 +1849,25 @@
 	    }
 	    /** @param {DataView} dataView */
 	    #parseSampleRate(dataView) {
-	        _console$i.log("parseSampleRate", dataView);
+	        _console$k.log("parseSampleRate", dataView);
 	        const sampleRate = dataView.getUint16(0, true);
 	        this.#updateSampleRate(sampleRate);
 	    }
 	    #updateSampleRate(sampleRate) {
-	        _console$i.log({ sampleRate });
+	        _console$k.log({ sampleRate });
 	        this.#sampleRate = sampleRate;
 	        this.#dispatchEvent({ type: "getTfliteSampleRate", message: { tfliteModelSampleRate: sampleRate } });
 	    }
 	    /** @param {number} newSampleRate */
 	    async setSampleRate(newSampleRate) {
-	        _console$i.assertTypeWithError(newSampleRate, "number");
+	        _console$k.assertTypeWithError(newSampleRate, "number");
 	        newSampleRate -= newSampleRate % SensorConfigurationManager.SensorRateStep;
-	        _console$i.assertWithError(
+	        _console$k.assertWithError(
 	            newSampleRate >= SensorConfigurationManager.SensorRateStep,
 	            `sampleRate must be multiple of ${SensorConfigurationManager.SensorRateStep} greater than 0 (got ${newSampleRate})`
 	        );
 	        if (this.#sampleRate == newSampleRate) {
-	            _console$i.log(`redundant sampleRate assignment ${newSampleRate}`);
+	            _console$k.log(`redundant sampleRate assignment ${newSampleRate}`);
 	            return;
 	        }
 
@@ -1880,12 +1887,12 @@
 	    }
 	    /** @param {DataView} dataView */
 	    #parseNumberOfSamples(dataView) {
-	        _console$i.log("parseNumberOfSamples", dataView);
+	        _console$k.log("parseNumberOfSamples", dataView);
 	        const numberOfSamples = dataView.getUint16(0, true);
 	        this.#updateNumberOfSamples(numberOfSamples);
 	    }
 	    #updateNumberOfSamples(numberOfSamples) {
-	        _console$i.log({ numberOfSamples });
+	        _console$k.log({ numberOfSamples });
 	        this.#numberOfSamples = numberOfSamples;
 	        this.#dispatchEvent({
 	            type: "getTfliteNumberOfSamples",
@@ -1894,13 +1901,13 @@
 	    }
 	    /** @param {number} newNumberOfSamples */
 	    async setNumberOfSamples(newNumberOfSamples) {
-	        _console$i.assertTypeWithError(newNumberOfSamples, "number");
-	        _console$i.assertWithError(
+	        _console$k.assertTypeWithError(newNumberOfSamples, "number");
+	        _console$k.assertWithError(
 	            newNumberOfSamples > 0,
 	            `numberOfSamples must be greater than 1 (got ${newNumberOfSamples})`
 	        );
 	        if (this.#numberOfSamples == newNumberOfSamples) {
-	            _console$i.log(`redundant numberOfSamples assignment ${newNumberOfSamples}`);
+	            _console$k.log(`redundant numberOfSamples assignment ${newNumberOfSamples}`);
 	            return;
 	        }
 
@@ -1921,7 +1928,7 @@
 
 	    static AssertValidSensorType(sensorType) {
 	        SensorDataManager.AssertValidSensorType(sensorType);
-	        _console$i.assertWithError(this.#SensorTypes.includes(sensorType), `invalid tflite sensorType "${sensorType}"`);
+	        _console$k.assertWithError(this.#SensorTypes.includes(sensorType), `invalid tflite sensorType "${sensorType}"`);
 	    }
 
 	    /** @type {SensorType[]} */
@@ -1931,7 +1938,7 @@
 	    }
 	    /** @param {DataView} dataView */
 	    #parseSensorTypes(dataView) {
-	        _console$i.log("parseSensorTypes", dataView);
+	        _console$k.log("parseSensorTypes", dataView);
 	        /** @type {SensorType[]} */
 	        const sensorTypes = [];
 	        for (let index = 0; index < dataView.byteLength; index++) {
@@ -1940,14 +1947,14 @@
 	            if (sensorType) {
 	                sensorTypes.push(sensorType);
 	            } else {
-	                _console$i.error(`invalid sensorTypeEnum ${sensorTypeEnum}`);
+	                _console$k.error(`invalid sensorTypeEnum ${sensorTypeEnum}`);
 	            }
 	        }
 	        this.#updateSensorTypes(sensorTypes);
 	    }
 	    /** @param {SensorType[]} sensorTypes */
 	    #updateSensorTypes(sensorTypes) {
-	        _console$i.log({ sensorTypes });
+	        _console$k.log({ sensorTypes });
 	        this.#sensorTypes = sensorTypes;
 	        this.#dispatchEvent({ type: "getTfliteSensorTypes", message: { tfliteModelSensorTypes: sensorTypes } });
 	    }
@@ -1963,7 +1970,7 @@
 	        const newSensorTypeEnums = newSensorTypes
 	            .map((sensorType) => SensorDataManager.Types.indexOf(sensorType))
 	            .sort();
-	        _console$i.log(newSensorTypes, newSensorTypeEnums);
+	        _console$k.log(newSensorTypes, newSensorTypeEnums);
 	        this.sendMessage("setTfliteSensorTypes", Uint8Array.from(newSensorTypeEnums));
 
 	        await promise;
@@ -1976,13 +1983,13 @@
 	    }
 	    /** @param {DataView} dataView */
 	    #parseNumberOfClasses(dataView) {
-	        _console$i.log("parseNumberOfClasses", dataView);
+	        _console$k.log("parseNumberOfClasses", dataView);
 	        const numberOfClasses = dataView.getUint8(0);
 	        this.#updateNumberOfClasses(numberOfClasses);
 	    }
 	    /** @param {number} numberOfClasses */
 	    #updateNumberOfClasses(numberOfClasses) {
-	        _console$i.log({ numberOfClasses });
+	        _console$k.log({ numberOfClasses });
 	        this.#numberOfClasses = numberOfClasses;
 	        this.#dispatchEvent({
 	            type: "getTfliteNumberOfClasses",
@@ -1991,13 +1998,13 @@
 	    }
 	    /** @param {number} newNumberOfClasses */
 	    async setNumberOfClasses(newNumberOfClasses) {
-	        _console$i.assertTypeWithError(newNumberOfClasses, "number");
-	        _console$i.assertWithError(
+	        _console$k.assertTypeWithError(newNumberOfClasses, "number");
+	        _console$k.assertWithError(
 	            newNumberOfClasses > 1,
 	            `numberOfClasses must be greated than 1 (received ${newNumberOfClasses})`
 	        );
 	        if (this.#numberOfClasses == newNumberOfClasses) {
-	            _console$i.log(`redundant numberOfClasses assignment ${newNumberOfClasses}`);
+	            _console$k.log(`redundant numberOfClasses assignment ${newNumberOfClasses}`);
 	            return;
 	        }
 
@@ -2015,13 +2022,13 @@
 	    }
 	    /** @param {DataView} dataView */
 	    #parseIsReady(dataView) {
-	        _console$i.log("parseIsReady", dataView);
+	        _console$k.log("parseIsReady", dataView);
 	        const isReady = Boolean(dataView.getUint8(0));
 	        this.#updateIsReady(isReady);
 	    }
 	    /** @param {boolean} isReady */
 	    #updateIsReady(isReady) {
-	        _console$i.log({ isReady });
+	        _console$k.log({ isReady });
 	        this.#isReady = isReady;
 	        this.#dispatchEvent({
 	            type: "tfliteModelIsReady",
@@ -2029,7 +2036,7 @@
 	        });
 	    }
 	    #assertIsReady() {
-	        _console$i.assertWithError(this.isReady, `tflite is not ready`);
+	        _console$k.assertWithError(this.isReady, `tflite is not ready`);
 	    }
 
 	    /** @type {number} */
@@ -2039,13 +2046,13 @@
 	    }
 	    /** @param {DataView} dataView */
 	    #parseCaptureDelay(dataView) {
-	        _console$i.log("parseCaptureDelay", dataView);
+	        _console$k.log("parseCaptureDelay", dataView);
 	        const captureDelay = dataView.getUint16(0, true);
 	        this.#updateCaptueDelay(captureDelay);
 	    }
 	    /** @param {number} captureDelay */
 	    #updateCaptueDelay(captureDelay) {
-	        _console$i.log({ captureDelay });
+	        _console$k.log({ captureDelay });
 	        this.#captureDelay = captureDelay;
 	        this.#dispatchEvent({
 	            type: "getTfliteCaptureDelay",
@@ -2054,9 +2061,9 @@
 	    }
 	    /** @param {number} newCaptureDelay */
 	    async setCaptureDelay(newCaptureDelay) {
-	        _console$i.assertTypeWithError(newCaptureDelay, "number");
+	        _console$k.assertTypeWithError(newCaptureDelay, "number");
 	        if (this.#captureDelay == newCaptureDelay) {
-	            _console$i.log(`redundant captureDelay assignment ${newCaptureDelay}`);
+	            _console$k.log(`redundant captureDelay assignment ${newCaptureDelay}`);
 	            return;
 	        }
 
@@ -2076,13 +2083,13 @@
 	    }
 	    /** @param {DataView} dataView */
 	    #parseThreshold(dataView) {
-	        _console$i.log("parseThreshold", dataView);
+	        _console$k.log("parseThreshold", dataView);
 	        const threshold = dataView.getFloat32(0, true);
 	        this.#updateThreshold(threshold);
 	    }
 	    /** @param {number} threshold */
 	    #updateThreshold(threshold) {
-	        _console$i.log({ threshold });
+	        _console$k.log({ threshold });
 	        this.#threshold = threshold;
 	        this.#dispatchEvent({
 	            type: "getTfliteThreshold",
@@ -2091,10 +2098,10 @@
 	    }
 	    /** @param {number} newThreshold */
 	    async setThreshold(newThreshold) {
-	        _console$i.assertTypeWithError(newThreshold, "number");
-	        _console$i.assertWithError(newThreshold >= 0, `threshold must be positive (got ${newThreshold})`);
+	        _console$k.assertTypeWithError(newThreshold, "number");
+	        _console$k.assertWithError(newThreshold >= 0, `threshold must be positive (got ${newThreshold})`);
 	        if (this.#threshold == newThreshold) {
-	            _console$i.log(`redundant threshold assignment ${newThreshold}`);
+	            _console$k.log(`redundant threshold assignment ${newThreshold}`);
 	            return;
 	        }
 
@@ -2114,12 +2121,12 @@
 	    }
 	    /** @param {DataView} dataView */
 	    #parseInferencingEnabled(dataView) {
-	        _console$i.log("parseInferencingEnabled", dataView);
+	        _console$k.log("parseInferencingEnabled", dataView);
 	        const inferencingEnabled = Boolean(dataView.getUint8(0));
 	        this.#updateInferencingEnabled(inferencingEnabled);
 	    }
 	    #updateInferencingEnabled(inferencingEnabled) {
-	        _console$i.log({ inferencingEnabled });
+	        _console$k.log({ inferencingEnabled });
 	        this.#inferencingEnabled = inferencingEnabled;
 	        this.#dispatchEvent({
 	            type: "getTfliteInferencingEnabled",
@@ -2128,10 +2135,10 @@
 	    }
 	    /** @param {boolean} newInferencingEnabled */
 	    async setInferencingEnabled(newInferencingEnabled) {
-	        _console$i.assertTypeWithError(newInferencingEnabled, "boolean");
+	        _console$k.assertTypeWithError(newInferencingEnabled, "boolean");
 	        this.#assertIsReady();
 	        if (this.#inferencingEnabled == newInferencingEnabled) {
-	            _console$i.log(`redundant inferencingEnabled assignment ${newInferencingEnabled}`);
+	            _console$k.log(`redundant inferencingEnabled assignment ${newInferencingEnabled}`);
 	            return;
 	        }
 
@@ -2167,10 +2174,10 @@
 
 	    /** @param {DataView} dataView */
 	    #parseInference(dataView) {
-	        _console$i.log("parseInference", dataView);
+	        _console$k.log("parseInference", dataView);
 
 	        const timestamp = parseTimestamp(dataView, 0);
-	        _console$i.log({ timestamp });
+	        _console$k.log({ timestamp });
 
 	        /** @type {number[]} */
 	        const values = [];
@@ -2178,7 +2185,7 @@
 	            const value = dataView.getFloat32(byteOffset, true);
 	            values.push(value);
 	        }
-	        _console$i.log("values", values);
+	        _console$k.log("values", values);
 
 	        /** @type {TfliteModelInference} */
 	        const inference = {
@@ -2194,7 +2201,7 @@
 	     * @param {DataView} dataView
 	     */
 	    parseMessage(messageType, dataView) {
-	        _console$i.log({ messageType });
+	        _console$k.log({ messageType });
 
 	        switch (messageType) {
 	            case "getTfliteName":
@@ -2236,8 +2243,12 @@
 	    }
 
 	    /**
-	     * @type {SendMessageCallback}
+	     * @callback SendMessageCallback
+	     * @param {TfliteMessageType} messageType
+	     * @param {DataView|ArrayBuffer} data
 	     */
+
+	    /** @type {SendMessageCallback} */
 	    sendMessage;
 	}
 
@@ -2265,11 +2276,12 @@
 	 * "getCurrentTime" |
 	 * "triggerVibration" |
 	 * FileTransferMessageType |
-	 * TfliteMessageType
+	 * TfliteMessageType |
+	 * FirmwareMessageType
 	 * } ConnectionMessageType
 	 */
 
-	const _console$h = createConsole("ConnectionManager", { log: true });
+	const _console$j = createConsole("ConnectionManager", { log: true });
 
 	/**
 	 * @callback ConnectionStatusCallback
@@ -2351,12 +2363,12 @@
 
 	    /** @throws {Error} if not supported */
 	    #assertIsSupported() {
-	        _console$h.assertWithError(this.isSupported, `${this.constructor.name} is not supported`);
+	        _console$j.assertWithError(this.isSupported, `${this.constructor.name} is not supported`);
 	    }
 
 	    /** @throws {Error} if abstract class */
 	    #assertIsSubclass() {
-	        _console$h.assertWithError(
+	        _console$j.assertWithError(
 	            this.constructor != BaseConnectionManager,
 	            `${this.constructor.name} must be subclassed`
 	        );
@@ -2374,12 +2386,12 @@
 	    }
 	    /** @protected */
 	    set status(newConnectionStatus) {
-	        _console$h.assertTypeWithError(newConnectionStatus, "string");
+	        _console$j.assertTypeWithError(newConnectionStatus, "string");
 	        if (this.#status == newConnectionStatus) {
-	            _console$h.log(`tried to assign same connection status "${newConnectionStatus}"`);
+	            _console$j.log(`tried to assign same connection status "${newConnectionStatus}"`);
 	            return;
 	        }
-	        _console$h.log(`new connection status "${newConnectionStatus}"`);
+	        _console$j.log(`new connection status "${newConnectionStatus}"`);
 	        this.#status = newConnectionStatus;
 	        this.onStatusUpdated?.(this.status);
 	    }
@@ -2390,19 +2402,19 @@
 
 	    /** @throws {Error} if connected */
 	    #assertIsNotConnected() {
-	        _console$h.assertWithError(!this.isConnected, "device is already connected");
+	        _console$j.assertWithError(!this.isConnected, "device is already connected");
 	    }
 	    /** @throws {Error} if connecting */
 	    #assertIsNotConnecting() {
-	        _console$h.assertWithError(this.status != "connecting", "device is already connecting");
+	        _console$j.assertWithError(this.status != "connecting", "device is already connecting");
 	    }
 	    /** @throws {Error} if not connected */
 	    #assertIsConnected() {
-	        _console$h.assertWithError(this.isConnected, "device is not connected");
+	        _console$j.assertWithError(this.isConnected, "device is not connected");
 	    }
 	    /** @throws {Error} if disconnecting */
 	    #assertIsNotDisconnecting() {
-	        _console$h.assertWithError(this.status != "disconnecting", "device is already disconnecting");
+	        _console$j.assertWithError(this.status != "disconnecting", "device is already disconnecting");
 	    }
 	    /** @throws {Error} if not connected or is disconnecting */
 	    #assertIsConnectedAndNotDisconnecting() {
@@ -2422,13 +2434,13 @@
 	    async reconnect() {
 	        this.#assertIsNotConnected();
 	        this.#assertIsNotConnecting();
-	        _console$h.assert(this.canReconnect, "unable to reconnect");
+	        _console$j.assert(this.canReconnect, "unable to reconnect");
 	    }
 	    async disconnect() {
 	        this.#assertIsConnected();
 	        this.#assertIsNotDisconnecting();
 	        this.status = "disconnecting";
-	        _console$h.log("disconnecting from device...");
+	        _console$j.log("disconnecting from device...");
 	    }
 
 	    /**
@@ -2437,11 +2449,11 @@
 	     */
 	    async sendMessage(messageType, data) {
 	        this.#assertIsConnectedAndNotDisconnecting();
-	        _console$h.log("sending message", { messageType, data });
+	        _console$j.log("sending message", { messageType, data });
 	    }
 	}
 
-	const _console$g = createConsole("bluetoothUUIDs", { log: false });
+	const _console$i = createConsole("bluetoothUUIDs", { log: false });
 
 	if (isInNode) {
 	    const webbluetooth = require("webbluetooth");
@@ -2456,8 +2468,8 @@
 	 * @returns {BluetoothServiceUUID}
 	 */
 	function generateBluetoothUUID(value) {
-	    _console$g.assertTypeWithError(value, "string");
-	    _console$g.assertWithError(value.length == 4, "value must be 4 characters long");
+	    _console$i.assertTypeWithError(value, "string");
+	    _console$i.assertWithError(value.length == 4, "value must be 4 characters long");
 	    return `ea6da725-${value}-4f9b-893d-c3913e33b39f`;
 	}
 
@@ -2471,7 +2483,7 @@
 	    return BluetoothUUID?.getService?.(identifier);
 	}
 
-	/** @typedef {"deviceInformation" | "battery" | "main" | "dfu"} BluetoothServiceName */
+	/** @typedef {"deviceInformation" | "battery" | "main" | "smp"} BluetoothServiceName */
 	/**
 	 * @typedef { "manufacturerName" |
 	 * "modelNumber" |
@@ -2507,7 +2519,7 @@
 	 * "tfliteThreshold" |
 	 * "tfliteInferencingEnabled" |
 	 * "tfliteModelInference" |
-	 * "dfu"
+	 * "smp"
 	 * } BluetoothCharacteristicName
 	 */
 
@@ -2582,10 +2594,10 @@
 	                tfliteModelInference: { uuid: generateBluetoothUUID("500a") },
 	            },
 	        },
-	        dfu: {
+	        smp: {
 	            uuid: "8d53dc1d-1db7-4cd3-868b-8a527460aa84",
 	            characteristics: {
-	                dfu: { uuid: "da2e7828-fbce-4e01-ae9e-261174997c48" },
+	                smp: { uuid: "da2e7828-fbce-4e01-ae9e-261174997c48" },
 	            },
 	        },
 	    },
@@ -2597,7 +2609,7 @@
 
 	    /** @type {BluetoothServiceUUID[]} */
 	    get optionalServiceUUIDs() {
-	        return [this.services.deviceInformation.uuid, this.services.battery.uuid, this.services.dfu.uuid];
+	        return [this.services.deviceInformation.uuid, this.services.battery.uuid, this.services.smp.uuid];
 	    },
 
 	    /**
@@ -2706,6 +2718,7 @@
 	        case "fileTransferCommand":
 	        case "fileTransferBlock":
 	        case "tfliteModelInference":
+	        case "smp":
 	            properties.read = false;
 	            break;
 	    }
@@ -2735,6 +2748,7 @@
 	        case "tfliteCaptureDelay":
 	        case "tfliteInferencingEnabled":
 	        case "tfliteModelInference":
+	        case "smp":
 	            properties.notify = true;
 	            break;
 	    }
@@ -2801,6 +2815,8 @@
 
 	            case "tfliteModelIsReady":
 	            case "tfliteModelInference":
+
+	            case "smp":
 	                this.onMessageReceived(characteristicName, dataView);
 	                break;
 	            case "name":
@@ -2907,13 +2923,16 @@
 	            case "setTfliteInferencingEnabled":
 	                return "tfliteInferencingEnabled";
 
+	            case "smp":
+	                return "smp";
+
 	            default:
 	                throw Error(`no characteristicName for messageType "${messageType}"`);
 	        }
 	    }
 	}
 
-	const _console$f = createConsole("WebBluetoothConnectionManager", { log: false });
+	const _console$h = createConsole("WebBluetoothConnectionManager", { log: true });
 
 
 
@@ -2959,7 +2978,7 @@
 	    }
 	    set device(newDevice) {
 	        if (this.#device == newDevice) {
-	            _console$f.log("tried to assign the same BluetoothDevice");
+	            _console$h.log("tried to assign the same BluetoothDevice");
 	            return;
 	        }
 	        if (this.#device) {
@@ -2993,20 +3012,20 @@
 	                optionalServices: isInBrowser ? optionalServiceUUIDs : [],
 	            });
 
-	            _console$f.log("got BluetoothDevice");
+	            _console$h.log("got BluetoothDevice");
 	            this.device = device;
 
-	            _console$f.log("connecting to device...");
+	            _console$h.log("connecting to device...");
 	            const server = await this.device.gatt.connect();
-	            _console$f.log(`connected to device? ${server.connected}`);
+	            _console$h.log(`connected to device? ${server.connected}`);
 
 	            await this.#getServicesAndCharacteristics();
 
-	            _console$f.log("fully connected");
+	            _console$h.log("fully connected");
 
 	            this.status = "connected";
 	        } catch (error) {
-	            _console$f.error(error);
+	            _console$h.error(error);
 	            this.status = "not connected";
 	            this.server?.disconnect();
 	            this.#removeEventListeners();
@@ -3015,47 +3034,43 @@
 	    async #getServicesAndCharacteristics() {
 	        this.#removeEventListeners();
 
-	        _console$f.log("getting services...");
+	        _console$h.log("getting services...");
 	        const services = await this.server.getPrimaryServices();
-	        _console$f.log("got services", services.length);
+	        _console$h.log("got services", services.length);
 	        await this.server.getPrimaryService("8d53dc1d-1db7-4cd3-868b-8a527460aa84");
 
-	        _console$f.log("getting characteristics...");
+	        _console$h.log("getting characteristics...");
 	        for (const serviceIndex in services) {
 	            const service = services[serviceIndex];
-	            _console$f.log({ service });
+	            _console$h.log({ service });
 	            const serviceName = getServiceNameFromUUID(service.uuid);
-	            _console$f.assertWithError(serviceName, `no name found for service uuid "${service.uuid}"`);
-	            _console$f.log(`got "${serviceName}" service`);
-	            if (serviceName == "dfu") {
-	                _console$f.log("skipping dfu service");
-	                continue;
-	            }
+	            _console$h.assertWithError(serviceName, `no name found for service uuid "${service.uuid}"`);
+	            _console$h.log(`got "${serviceName}" service`);
 	            service._name = serviceName;
 	            this.#services.set(serviceName, service);
-	            _console$f.log(`getting characteristics for "${serviceName}" service`);
+	            _console$h.log(`getting characteristics for "${serviceName}" service`);
 	            const characteristics = await service.getCharacteristics();
-	            _console$f.log(`got characteristics for "${serviceName}" service`);
+	            _console$h.log(`got characteristics for "${serviceName}" service`);
 	            for (const characteristicIndex in characteristics) {
 	                const characteristic = characteristics[characteristicIndex];
-	                _console$f.log({ characteristic });
+	                _console$h.log({ characteristic });
 	                const characteristicName = getCharacteristicNameFromUUID(characteristic.uuid);
-	                _console$f.assertWithError(
+	                _console$h.assertWithError(
 	                    characteristicName,
 	                    `no name found for characteristic uuid "${characteristic.uuid}" in "${serviceName}" service`
 	                );
-	                _console$f.log(`got "${characteristicName}" characteristic in "${serviceName}" service`);
+	                _console$h.log(`got "${characteristicName}" characteristic in "${serviceName}" service`);
 	                characteristic._name = characteristicName;
 	                this.#characteristics.set(characteristicName, characteristic);
 	                addEventListeners(characteristic, this.#boundBluetoothCharacteristicEventListeners);
 	                const characteristicProperties =
 	                    characteristic.properties || getCharacteristicProperties(characteristicName);
 	                if (characteristicProperties.notify) {
-	                    _console$f.log(`starting notifications for "${characteristicName}" characteristic`);
+	                    _console$h.log(`starting notifications for "${characteristicName}" characteristic`);
 	                    await characteristic.startNotifications();
 	                }
 	                if (characteristicProperties.read) {
-	                    _console$f.log(`reading "${characteristicName}" characteristic...`);
+	                    _console$h.log(`reading "${characteristicName}" characteristic...`);
 	                    await characteristic.readValue();
 	                    if (isInBluefy || isInWebBLE) {
 	                        this.#onCharacteristicValueChanged(characteristic);
@@ -3081,7 +3096,7 @@
 
 	    /** @param {Event} event */
 	    #onCharacteristicvaluechanged(event) {
-	        _console$f.log("oncharacteristicvaluechanged");
+	        _console$h.log("oncharacteristicvaluechanged");
 
 	        /** @type {BluetoothRemoteGATTCharacteristic} */
 	        const characteristic = event.target;
@@ -3091,26 +3106,26 @@
 
 	    /** @param {BluetoothRemoteGATTCharacteristic} characteristic */
 	    #onCharacteristicValueChanged(characteristic) {
-	        _console$f.log("onCharacteristicValue");
+	        _console$h.log("onCharacteristicValue");
 
 	        /** @type {BluetoothCharacteristicName} */
 	        const characteristicName = characteristic._name;
-	        _console$f.assertWithError(
+	        _console$h.assertWithError(
 	            characteristicName,
 	            `no name found for characteristic with uuid "${characteristic.uuid}"`
 	        );
 
-	        _console$f.log(`oncharacteristicvaluechanged for "${characteristicName}" characteristic`);
+	        _console$h.log(`oncharacteristicvaluechanged for "${characteristicName}" characteristic`);
 	        const dataView = characteristic.value;
-	        _console$f.assertWithError(dataView, `no data found for "${characteristicName}" characteristic`);
-	        _console$f.log(`data for "${characteristicName}" characteristic`, Array.from(new Uint8Array(dataView.buffer)));
+	        _console$h.assertWithError(dataView, `no data found for "${characteristicName}" characteristic`);
+	        _console$h.log(`data for "${characteristicName}" characteristic`, Array.from(new Uint8Array(dataView.buffer)));
 
 	        this.onCharacteristicValueChanged(characteristicName, dataView);
 	    }
 
 	    /** @param {Event} event */
 	    #onGattserverdisconnected(event) {
-	        _console$f.log("gattserverdisconnected");
+	        _console$h.log("gattserverdisconnected");
 	        this.status = "not connected";
 	    }
 
@@ -3122,17 +3137,21 @@
 	        await super.sendMessage(...arguments);
 
 	        const characteristicName = this.characteristicNameForMessageType(messageType);
-	        _console$f.log({ characteristicName });
+	        _console$h.log({ characteristicName });
 
 	        const characteristic = this.#characteristics.get(characteristicName);
-	        _console$f.assertWithError(characteristic, `no characteristic found with name "${characteristicName}"`);
+	        _console$h.assertWithError(characteristic, `no characteristic found with name "${characteristicName}"`);
 	        if (data instanceof DataView) {
 	            data = data.buffer;
 	        }
-	        await characteristic.writeValueWithResponse(data);
+	        if (messageType == "smp") {
+	            await characteristic.writeValueWithoutResponse(data);
+	        } else {
+	            await characteristic.writeValueWithResponse(data);
+	        }
 	        const characteristicProperties = characteristic.properties || getCharacteristicProperties(characteristicName);
 	        if (characteristicProperties.read && !characteristicProperties.notify) {
-	            _console$f.log("reading value after write...");
+	            _console$h.log("reading value after write...");
 	            await characteristic.readValue();
 	            if (isInBluefy || isInWebBLE) {
 	                this.#onCharacteristicValueChanged(characteristic);
@@ -3146,15 +3165,15 @@
 	    }
 	    async reconnect() {
 	        await super.reconnect();
-	        _console$f.log("attempting to reconnect...");
+	        _console$h.log("attempting to reconnect...");
 	        this.status = "connecting";
 	        await this.server.connect();
 	        if (this.isConnected) {
-	            _console$f.log("successfully reconnected!");
+	            _console$h.log("successfully reconnected!");
 	            await this.#getServicesAndCharacteristics();
 	            this.status = "connected";
 	        } else {
-	            _console$f.log("unable to reconnect");
+	            _console$h.log("unable to reconnect");
 	            this.status = "not connected";
 	        }
 	    }
@@ -3416,7 +3435,7 @@
 	    "smoothHum10",
 	];
 
-	const _console$e = createConsole("VibrationManager");
+	const _console$g = createConsole("VibrationManager");
 
 	/** @typedef {"front" | "rear"} VibrationLocation */
 	/** @typedef {"waveformEffect" | "waveform"} VibrationType */
@@ -3449,8 +3468,8 @@
 	    }
 	    /** @param {VibrationLocation} location */
 	    #verifyLocation(location) {
-	        _console$e.assertTypeWithError(location, "string");
-	        _console$e.assertWithError(this.locations.includes(location), `invalid location "${location}"`);
+	        _console$g.assertTypeWithError(location, "string");
+	        _console$g.assertWithError(this.locations.includes(location), `invalid location "${location}"`);
 	    }
 	    /** @param {VibrationLocation[]} locations */
 	    #verifyLocations(locations) {
@@ -3468,15 +3487,15 @@
 	            const locationIndex = this.locations.indexOf(location);
 	            locationsBitmask |= 1 << locationIndex;
 	        });
-	        _console$e.log({ locationsBitmask });
-	        _console$e.assertWithError(locationsBitmask > 0, `locationsBitmask must not be zero`);
+	        _console$g.log({ locationsBitmask });
+	        _console$g.assertWithError(locationsBitmask > 0, `locationsBitmask must not be zero`);
 	        return locationsBitmask;
 	    }
 
 	    /** @param {any[]} array */
 	    #assertNonEmptyArray(array) {
-	        _console$e.assertWithError(Array.isArray(array), "passed non-array");
-	        _console$e.assertWithError(array.length > 0, "passed empty array");
+	        _console$g.assertWithError(Array.isArray(array), "passed non-array");
+	        _console$g.assertWithError(array.length > 0, "passed empty array");
 	    }
 
 	    static get WaveformEffects() {
@@ -3487,7 +3506,7 @@
 	    }
 	    /** @param {VibrationWaveformEffect} waveformEffect */
 	    #verifyWaveformEffect(waveformEffect) {
-	        _console$e.assertWithError(
+	        _console$g.assertWithError(
 	            this.waveformEffects.includes(waveformEffect),
 	            `invalid waveformEffect "${waveformEffect}"`
 	        );
@@ -3507,8 +3526,8 @@
 	            this.#verifyWaveformEffect(waveformEffect);
 	        } else if (waveformEffectSegment.delay != undefined) {
 	            const { delay } = waveformEffectSegment;
-	            _console$e.assertWithError(delay >= 0, `delay must be 0ms or greater (got ${delay})`);
-	            _console$e.assertWithError(
+	            _console$g.assertWithError(delay >= 0, `delay must be 0ms or greater (got ${delay})`);
+	            _console$g.assertWithError(
 	                delay <= this.maxWaveformEffectSegmentDelay,
 	                `delay must be ${this.maxWaveformEffectSegmentDelay}ms or less (got ${delay})`
 	            );
@@ -3530,12 +3549,12 @@
 	    }
 	    /** @param {number} waveformEffectSegmentLoopCount */
 	    #verifyWaveformEffectSegmentLoopCount(waveformEffectSegmentLoopCount) {
-	        _console$e.assertTypeWithError(waveformEffectSegmentLoopCount, "number");
-	        _console$e.assertWithError(
+	        _console$g.assertTypeWithError(waveformEffectSegmentLoopCount, "number");
+	        _console$g.assertWithError(
 	            waveformEffectSegmentLoopCount >= 0,
 	            `waveformEffectSegmentLoopCount must be 0 or greater (got ${waveformEffectSegmentLoopCount})`
 	        );
-	        _console$e.assertWithError(
+	        _console$g.assertWithError(
 	            waveformEffectSegmentLoopCount <= this.maxWaveformEffectSegmentLoopCount,
 	            `waveformEffectSegmentLoopCount must be ${this.maxWaveformEffectSegmentLoopCount} or fewer (got ${waveformEffectSegmentLoopCount})`
 	        );
@@ -3551,7 +3570,7 @@
 	    /** @param {VibrationWaveformEffectSegment[]} waveformEffectSegments */
 	    #verifyWaveformEffectSegments(waveformEffectSegments) {
 	        this.#assertNonEmptyArray(waveformEffectSegments);
-	        _console$e.assertWithError(
+	        _console$g.assertWithError(
 	            waveformEffectSegments.length <= this.maxNumberOfWaveformEffectSegments,
 	            `must have ${this.maxNumberOfWaveformEffectSegments} waveformEffectSegments or fewer (got ${waveformEffectSegments.length})`
 	        );
@@ -3569,12 +3588,12 @@
 	    }
 	    /** @param {number} waveformEffectSequenceLoopCount */
 	    #verifyWaveformEffectSequenceLoopCount(waveformEffectSequenceLoopCount) {
-	        _console$e.assertTypeWithError(waveformEffectSequenceLoopCount, "number");
-	        _console$e.assertWithError(
+	        _console$g.assertTypeWithError(waveformEffectSequenceLoopCount, "number");
+	        _console$g.assertWithError(
 	            waveformEffectSequenceLoopCount >= 0,
 	            `waveformEffectSequenceLoopCount must be 0 or greater (got ${waveformEffectSequenceLoopCount})`
 	        );
-	        _console$e.assertWithError(
+	        _console$g.assertWithError(
 	            waveformEffectSequenceLoopCount <= this.maxWaveformEffectSequenceLoopCount,
 	            `waveformEffectSequenceLoopCount must be ${this.maxWaveformEffectSequenceLoopCount} or fewer (got ${waveformEffectSequenceLoopCount})`
 	        );
@@ -3589,22 +3608,22 @@
 	    }
 	    /** @param {VibrationWaveformSegment} waveformSegment */
 	    #verifyWaveformSegment(waveformSegment) {
-	        _console$e.assertTypeWithError(waveformSegment.amplitude, "number");
-	        _console$e.assertWithError(
+	        _console$g.assertTypeWithError(waveformSegment.amplitude, "number");
+	        _console$g.assertWithError(
 	            waveformSegment.amplitude >= 0,
 	            `amplitude must be 0 or greater (got ${waveformSegment.amplitude})`
 	        );
-	        _console$e.assertWithError(
+	        _console$g.assertWithError(
 	            waveformSegment.amplitude <= 1,
 	            `amplitude must be 1 or less (got ${waveformSegment.amplitude})`
 	        );
 
-	        _console$e.assertTypeWithError(waveformSegment.duration, "number");
-	        _console$e.assertWithError(
+	        _console$g.assertTypeWithError(waveformSegment.duration, "number");
+	        _console$g.assertWithError(
 	            waveformSegment.duration > 0,
 	            `duration must be greater than 0ms (got ${waveformSegment.duration}ms)`
 	        );
-	        _console$e.assertWithError(
+	        _console$g.assertWithError(
 	            waveformSegment.duration <= this.maxWaveformSegmentDuration,
 	            `duration must be ${this.maxWaveformSegmentDuration}ms or less (got ${waveformSegment.duration}ms)`
 	        );
@@ -3619,7 +3638,7 @@
 	    /** @param {VibrationWaveformSegment[]} waveformSegments */
 	    #verifyWaveformSegments(waveformSegments) {
 	        this.#assertNonEmptyArray(waveformSegments);
-	        _console$e.assertWithError(
+	        _console$g.assertWithError(
 	            waveformSegments.length <= this.maxNumberOfWaveformSegments,
 	            `must have ${this.maxNumberOfWaveformSegments} waveformSegments or fewer (got ${waveformSegments.length})`
 	        );
@@ -3688,7 +3707,7 @@
 	            dataArray[byteOffset++] = waveformEffectSequenceLoopCount;
 	        }
 	        const dataView = new DataView(Uint8Array.from(dataArray).buffer);
-	        _console$e.log({ dataArray, dataView });
+	        _console$g.log({ dataArray, dataView });
 	        return this.#createData(locations, "waveformEffect", dataView);
 	    }
 	    /**
@@ -3702,7 +3721,7 @@
 	            dataView.setUint8(index * 2, Math.floor(waveformSegment.amplitude * 127));
 	            dataView.setUint8(index * 2 + 1, Math.floor(waveformSegment.duration / 10));
 	        });
-	        _console$e.log({ dataView });
+	        _console$g.log({ dataView });
 	        return this.#createData(locations, "waveform", dataView);
 	    }
 
@@ -3716,8 +3735,8 @@
 	    }
 	    /** @param {VibrationType} vibrationType */
 	    #verifyVibrationType(vibrationType) {
-	        _console$e.assertTypeWithError(vibrationType, "string");
-	        _console$e.assertWithError(this.#types.includes(vibrationType), `invalid vibrationType "${vibrationType}"`);
+	        _console$g.assertTypeWithError(vibrationType, "string");
+	        _console$g.assertWithError(this.#types.includes(vibrationType), `invalid vibrationType "${vibrationType}"`);
 	    }
 
 	    /**
@@ -3726,14 +3745,1230 @@
 	     * @param {DataView} dataView
 	     */
 	    #createData(locations, vibrationType, dataView) {
-	        _console$e.assertWithError(dataView?.byteLength > 0, "no data received");
+	        _console$g.assertWithError(dataView?.byteLength > 0, "no data received");
 	        const locationsBitmask = this.#createLocationsBitmask(locations);
 	        this.#verifyVibrationType(vibrationType);
 	        const vibrationTypeIndex = this.#types.indexOf(vibrationType);
-	        _console$e.log({ locationsBitmask, vibrationTypeIndex, dataView });
+	        _console$g.log({ locationsBitmask, vibrationTypeIndex, dataView });
 	        const data = concatenateArrayBuffers(locationsBitmask, vibrationTypeIndex, dataView.byteLength, dataView);
-	        _console$e.log({ data });
+	        _console$g.log({ data });
 	        return data;
+	    }
+	}
+
+	/*
+	 * The MIT License (MIT)
+	 *
+	 * Copyright (c) 2014-2016 Patrick Gansterer <paroga@paroga.com>
+	 *
+	 * Permission is hereby granted, free of charge, to any person obtaining a copy
+	 * of this software and associated documentation files (the "Software"), to deal
+	 * in the Software without restriction, including without limitation the rights
+	 * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+	 * copies of the Software, and to permit persons to whom the Software is
+	 * furnished to do so, subject to the following conditions:
+	 *
+	 * The above copyright notice and this permission notice shall be included in all
+	 * copies or substantial portions of the Software.
+	 *
+	 * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+	 * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+	 * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+	 * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+	 * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+	 * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+	 * SOFTWARE.
+	 */
+
+	const POW_2_24 = 5.960464477539063e-8;
+	const POW_2_32 = 4294967296;
+	const POW_2_53 = 9007199254740992;
+
+	function encode(value) {
+	    let data = new ArrayBuffer(256);
+	    let dataView = new DataView(data);
+	    let lastLength;
+	    let offset = 0;
+
+	    function prepareWrite(length) {
+	        let newByteLength = data.byteLength;
+	        const requiredLength = offset + length;
+	        while (newByteLength < requiredLength) {
+	            newByteLength <<= 1;
+	        }
+	        if (newByteLength !== data.byteLength) {
+	            const oldDataView = dataView;
+	            data = new ArrayBuffer(newByteLength);
+	            dataView = new DataView(data);
+	            const uint32count = (offset + 3) >> 2;
+	            for (let i = 0; i < uint32count; ++i) {
+	                dataView.setUint32(i << 2, oldDataView.getUint32(i << 2));
+	            }
+	        }
+
+	        lastLength = length;
+	        return dataView;
+	    }
+	    function commitWrite() {
+	        offset += lastLength;
+	    }
+	    function writeFloat64(value) {
+	        commitWrite(prepareWrite(8).setFloat64(offset, value));
+	    }
+	    function writeUint8(value) {
+	        commitWrite(prepareWrite(1).setUint8(offset, value));
+	    }
+	    function writeUint8Array(value) {
+	        const dataView = prepareWrite(value.length);
+	        for (let i = 0; i < value.length; ++i) {
+	            dataView.setUint8(offset + i, value[i]);
+	        }
+	        commitWrite();
+	    }
+	    function writeUint16(value) {
+	        commitWrite(prepareWrite(2).setUint16(offset, value));
+	    }
+	    function writeUint32(value) {
+	        commitWrite(prepareWrite(4).setUint32(offset, value));
+	    }
+	    function writeUint64(value) {
+	        const low = value % POW_2_32;
+	        const high = (value - low) / POW_2_32;
+	        const dataView = prepareWrite(8);
+	        dataView.setUint32(offset, high);
+	        dataView.setUint32(offset + 4, low);
+	        commitWrite();
+	    }
+	    function writeTypeAndLength(type, length) {
+	        if (length < 24) {
+	            writeUint8((type << 5) | length);
+	        } else if (length < 0x100) {
+	            writeUint8((type << 5) | 24);
+	            writeUint8(length);
+	        } else if (length < 0x10000) {
+	            writeUint8((type << 5) | 25);
+	            writeUint16(length);
+	        } else if (length < 0x100000000) {
+	            writeUint8((type << 5) | 26);
+	            writeUint32(length);
+	        } else {
+	            writeUint8((type << 5) | 27);
+	            writeUint64(length);
+	        }
+	    }
+
+	    function encodeItem(value) {
+	        let i;
+	        const utf8data = [];
+	        let length;
+
+	        if (value === false) {
+	            return writeUint8(0xf4);
+	        }
+	        if (value === true) {
+	            return writeUint8(0xf5);
+	        }
+	        if (value === null) {
+	            return writeUint8(0xf6);
+	        }
+	        if (value === undefined) {
+	            return writeUint8(0xf7);
+	        }
+
+	        switch (typeof value) {
+	            case "number":
+	                if (Math.floor(value) === value) {
+	                    if (value >= 0 && value <= POW_2_53) {
+	                        return writeTypeAndLength(0, value);
+	                    }
+	                    if (-POW_2_53 <= value && value < 0) {
+	                        return writeTypeAndLength(1, -(value + 1));
+	                    }
+	                }
+	                writeUint8(0xfb);
+	                return writeFloat64(value);
+
+	            case "string":
+	                for (i = 0; i < value.length; ++i) {
+	                    let charCode = value.charCodeAt(i);
+	                    if (charCode < 0x80) {
+	                        utf8data.push(charCode);
+	                    } else if (charCode < 0x800) {
+	                        utf8data.push(0xc0 | (charCode >> 6));
+	                        utf8data.push(0x80 | (charCode & 0x3f));
+	                    } else if (charCode < 0xd800) {
+	                        utf8data.push(0xe0 | (charCode >> 12));
+	                        utf8data.push(0x80 | ((charCode >> 6) & 0x3f));
+	                        utf8data.push(0x80 | (charCode & 0x3f));
+	                    } else {
+	                        charCode = (charCode & 0x3ff) << 10;
+	                        charCode |= value.charCodeAt(++i) & 0x3ff;
+	                        charCode += 0x10000;
+
+	                        utf8data.push(0xf0 | (charCode >> 18));
+	                        utf8data.push(0x80 | ((charCode >> 12) & 0x3f));
+	                        utf8data.push(0x80 | ((charCode >> 6) & 0x3f));
+	                        utf8data.push(0x80 | (charCode & 0x3f));
+	                    }
+	                }
+
+	                writeTypeAndLength(3, utf8data.length);
+	                return writeUint8Array(utf8data);
+
+	            default:
+	                if (Array.isArray(value)) {
+	                    length = value.length;
+	                    writeTypeAndLength(4, length);
+	                    for (i = 0; i < length; ++i) {
+	                        encodeItem(value[i]);
+	                    }
+	                } else if (value instanceof Uint8Array) {
+	                    writeTypeAndLength(2, value.length);
+	                    writeUint8Array(value);
+	                } else {
+	                    const keys = Object.keys(value);
+	                    length = keys.length;
+	                    writeTypeAndLength(5, length);
+	                    for (i = 0; i < length; ++i) {
+	                        const key = keys[i];
+	                        encodeItem(key);
+	                        encodeItem(value[key]);
+	                    }
+	                }
+	        }
+	    }
+
+	    encodeItem(value);
+
+	    if ("slice" in data) {
+	        return data.slice(0, offset);
+	    }
+
+	    const ret = new ArrayBuffer(offset);
+	    const retView = new DataView(ret);
+	    for (let i = 0; i < offset; ++i) {
+	        retView.setUint8(i, dataView.getUint8(i));
+	    }
+	    return ret;
+	}
+
+	function decode(data, tagger, simpleValue) {
+	    const dataView = new DataView(data);
+	    let offset = 0;
+
+	    if (typeof tagger !== "function") {
+	        tagger = function (value) {
+	            return value;
+	        };
+	    }
+	    if (typeof simpleValue !== "function") {
+	        simpleValue = function () {
+	            return undefined;
+	        };
+	    }
+
+	    function commitRead(length, value) {
+	        offset += length;
+	        return value;
+	    }
+	    function readArrayBuffer(length) {
+	        return commitRead(length, new Uint8Array(data, offset, length));
+	    }
+	    function readFloat16() {
+	        const tempArrayBuffer = new ArrayBuffer(4);
+	        const tempDataView = new DataView(tempArrayBuffer);
+	        const value = readUint16();
+
+	        const sign = value & 0x8000;
+	        let exponent = value & 0x7c00;
+	        const fraction = value & 0x03ff;
+
+	        if (exponent === 0x7c00) {
+	            exponent = 0xff << 10;
+	        } else if (exponent !== 0) {
+	            exponent += (127 - 15) << 10;
+	        } else if (fraction !== 0) {
+	            return (sign ? -1 : 1) * fraction * POW_2_24;
+	        }
+
+	        tempDataView.setUint32(0, (sign << 16) | (exponent << 13) | (fraction << 13));
+	        return tempDataView.getFloat32(0);
+	    }
+	    function readFloat32() {
+	        return commitRead(4, dataView.getFloat32(offset));
+	    }
+	    function readFloat64() {
+	        return commitRead(8, dataView.getFloat64(offset));
+	    }
+	    function readUint8() {
+	        return commitRead(1, dataView.getUint8(offset));
+	    }
+	    function readUint16() {
+	        return commitRead(2, dataView.getUint16(offset));
+	    }
+	    function readUint32() {
+	        return commitRead(4, dataView.getUint32(offset));
+	    }
+	    function readUint64() {
+	        return readUint32() * POW_2_32 + readUint32();
+	    }
+	    function readBreak() {
+	        if (dataView.getUint8(offset) !== 0xff) {
+	            return false;
+	        }
+	        offset += 1;
+	        return true;
+	    }
+	    function readLength(additionalInformation) {
+	        if (additionalInformation < 24) {
+	            return additionalInformation;
+	        }
+	        if (additionalInformation === 24) {
+	            return readUint8();
+	        }
+	        if (additionalInformation === 25) {
+	            return readUint16();
+	        }
+	        if (additionalInformation === 26) {
+	            return readUint32();
+	        }
+	        if (additionalInformation === 27) {
+	            return readUint64();
+	        }
+	        if (additionalInformation === 31) {
+	            return -1;
+	        }
+	        throw new Error("Invalid length encoding");
+	    }
+	    function readIndefiniteStringLength(majorType) {
+	        const initialByte = readUint8();
+	        if (initialByte === 0xff) {
+	            return -1;
+	        }
+	        const length = readLength(initialByte & 0x1f);
+	        if (length < 0 || initialByte >> 5 !== majorType) {
+	            throw new Error("Invalid indefinite length element");
+	        }
+	        return length;
+	    }
+
+	    function appendUtf16Data(utf16data, length) {
+	        for (let i = 0; i < length; ++i) {
+	            let value = readUint8();
+	            if (value & 0x80) {
+	                if (value < 0xe0) {
+	                    value = ((value & 0x1f) << 6) | (readUint8() & 0x3f);
+	                    length -= 1;
+	                } else if (value < 0xf0) {
+	                    value = ((value & 0x0f) << 12) | ((readUint8() & 0x3f) << 6) | (readUint8() & 0x3f);
+	                    length -= 2;
+	                } else {
+	                    value =
+	                        ((value & 0x0f) << 18) |
+	                        ((readUint8() & 0x3f) << 12) |
+	                        ((readUint8() & 0x3f) << 6) |
+	                        (readUint8() & 0x3f);
+	                    length -= 3;
+	                }
+	            }
+
+	            if (value < 0x10000) {
+	                utf16data.push(value);
+	            } else {
+	                value -= 0x10000;
+	                utf16data.push(0xd800 | (value >> 10));
+	                utf16data.push(0xdc00 | (value & 0x3ff));
+	            }
+	        }
+	    }
+
+	    function decodeItem() {
+	        const initialByte = readUint8();
+	        const majorType = initialByte >> 5;
+	        const additionalInformation = initialByte & 0x1f;
+	        let i;
+	        let length;
+
+	        if (majorType === 7) {
+	            switch (additionalInformation) {
+	                case 25:
+	                    return readFloat16();
+	                case 26:
+	                    return readFloat32();
+	                case 27:
+	                    return readFloat64();
+	            }
+	        }
+
+	        length = readLength(additionalInformation);
+	        if (length < 0 && (majorType < 2 || majorType > 6)) {
+	            throw new Error("Invalid length");
+	        }
+
+	        const utf16data = [];
+	        let retArray;
+	        const retObject = {};
+
+	        switch (majorType) {
+	            case 0:
+	                return length;
+	            case 1:
+	                return -1 - length;
+	            case 2:
+	                if (length < 0) {
+	                    const elements = [];
+	                    let fullArrayLength = 0;
+	                    while ((length = readIndefiniteStringLength(majorType)) >= 0) {
+	                        fullArrayLength += length;
+	                        elements.push(readArrayBuffer(length));
+	                    }
+	                    const fullArray = new Uint8Array(fullArrayLength);
+	                    let fullArrayOffset = 0;
+	                    for (i = 0; i < elements.length; ++i) {
+	                        fullArray.set(elements[i], fullArrayOffset);
+	                        fullArrayOffset += elements[i].length;
+	                    }
+	                    return fullArray;
+	                }
+	                return readArrayBuffer(length);
+	            case 3:
+	                if (length < 0) {
+	                    while ((length = readIndefiniteStringLength(majorType)) >= 0) {
+	                        appendUtf16Data(utf16data, length);
+	                    }
+	                } else {
+	                    appendUtf16Data(utf16data, length);
+	                }
+	                return String.fromCharCode.apply(null, utf16data);
+	            case 4:
+	                if (length < 0) {
+	                    retArray = [];
+	                    while (!readBreak()) {
+	                        retArray.push(decodeItem());
+	                    }
+	                } else {
+	                    retArray = new Array(length);
+	                    for (i = 0; i < length; ++i) {
+	                        retArray[i] = decodeItem();
+	                    }
+	                }
+	                return retArray;
+	            case 5:
+	                for (i = 0; i < length || (length < 0 && !readBreak()); ++i) {
+	                    const key = decodeItem();
+	                    retObject[key] = decodeItem();
+	                }
+	                return retObject;
+	            case 6:
+	                return tagger(decodeItem(), length);
+	            case 7:
+	                switch (length) {
+	                    case 20:
+	                        return false;
+	                    case 21:
+	                        return true;
+	                    case 22:
+	                        return null;
+	                    case 23:
+	                        return undefined;
+	                    default:
+	                        return simpleValue(length);
+	                }
+	        }
+	    }
+
+	    const ret = decodeItem();
+	    if (offset !== data.byteLength) {
+	        throw new Error("Remaining bytes");
+	    }
+	    return ret;
+	}
+
+	const CBOR = {
+	    encode,
+	    decode,
+	};
+
+	/*
+	 * The MIT License (MIT)
+	 *
+	 * Copyright (c) 2023 Laird Connectivity
+	 *
+	 * Permission is hereby granted, free of charge, to any person obtaining a copy
+	 * of this software and associated documentation files (the "Software"), to deal
+	 * in the Software without restriction, including without limitation the rights
+	 * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+	 * copies of the Software, and to permit persons to whom the Software is
+	 * furnished to do so, subject to the following conditions:
+	 *
+	 * The above copyright notice and this permission notice shall be included in all
+	 * copies or substantial portions of the Software.
+	 *
+	 * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+	 * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+	 * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+	 * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+	 * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+	 * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+	 * SOFTWARE.
+	 */
+
+
+	const _console$f = createConsole("mcumgr", { log: true });
+
+	const constants = {
+	    // Opcodes
+	    MGMT_OP_READ: 0,
+	    MGMT_OP_READ_RSP: 1,
+	    MGMT_OP_WRITE: 2,
+	    MGMT_OP_WRITE_RSP: 3,
+
+	    // Groups
+	    MGMT_GROUP_ID_OS: 0,
+	    MGMT_GROUP_ID_IMAGE: 1,
+	    MGMT_GROUP_ID_STAT: 2,
+	    MGMT_GROUP_ID_CONFIG: 3,
+	    MGMT_GROUP_ID_LOG: 4,
+	    MGMT_GROUP_ID_CRASH: 5,
+	    MGMT_GROUP_ID_SPLIT: 6,
+	    MGMT_GROUP_ID_RUN: 7,
+	    MGMT_GROUP_ID_FS: 8,
+	    MGMT_GROUP_ID_SHELL: 9,
+
+	    // OS group
+	    OS_MGMT_ID_ECHO: 0,
+	    OS_MGMT_ID_CONS_ECHO_CTRL: 1,
+	    OS_MGMT_ID_TASKSTAT: 2,
+	    OS_MGMT_ID_MPSTAT: 3,
+	    OS_MGMT_ID_DATETIME_STR: 4,
+	    OS_MGMT_ID_RESET: 5,
+
+	    // Image group
+	    IMG_MGMT_ID_STATE: 0,
+	    IMG_MGMT_ID_UPLOAD: 1,
+	    IMG_MGMT_ID_FILE: 2,
+	    IMG_MGMT_ID_CORELIST: 3,
+	    IMG_MGMT_ID_CORELOAD: 4,
+	    IMG_MGMT_ID_ERASE: 5,
+
+	    // Filesystem group
+	    FS_MGMT_ID_FILE: 0,
+	};
+
+	class MCUManager {
+	    constructor() {
+	        this._mtu = 256;
+	        this._messageCallback = null;
+	        this._imageUploadProgressCallback = null;
+	        this._imageUploadNextCallback = null;
+	        this._fileUploadProgressCallback = null;
+	        this._fileUploadNextCallback = null;
+	        this._uploadIsInProgress = false;
+	        this._downloadIsInProgress = false;
+	        this._buffer = new Uint8Array();
+	        this._seq = 0;
+	    }
+
+	    onMessage(callback) {
+	        this._messageCallback = callback;
+	        return this;
+	    }
+
+	    onImageUploadNext(callback) {
+	        this._imageUploadNextCallback = callback;
+	        return this;
+	    }
+
+	    onImageUploadProgress(callback) {
+	        this._imageUploadProgressCallback = callback;
+	        return this;
+	    }
+
+	    onImageUploadFinished(callback) {
+	        this._imageUploadFinishedCallback = callback;
+	        return this;
+	    }
+
+	    onFileUploadNext(callback) {
+	        this._fileUploadNextCallback = callback;
+	        return this;
+	    }
+
+	    onFileUploadProgress(callback) {
+	        this._fileUploadProgressCallback = callback;
+	        return this;
+	    }
+
+	    onFileUploadFinished(callback) {
+	        this._fileUploadFinishedCallback = callback;
+	        return this;
+	    }
+
+	    onFileDownloadNext(callback) {
+	        this._fileDownloadNextCallback = callback;
+	        return this;
+	    }
+
+	    onFileDownloadProgress(callback) {
+	        this._fileDownloadProgressCallback = callback;
+	        return this;
+	    }
+
+	    onFileDownloadFinished(callback) {
+	        this._fileDownloadFinishedCallback = callback;
+	        return this;
+	    }
+
+	    _getMessage(op, group, id, data) {
+	        const _flags = 0;
+	        let encodedData = [];
+	        if (typeof data !== "undefined") {
+	            encodedData = [...new Uint8Array(CBOR.encode(data))];
+	        }
+	        const lengthLo = encodedData.length & 255;
+	        const lengthHi = encodedData.length >> 8;
+	        const groupLo = group & 255;
+	        const groupHi = group >> 8;
+	        const message = [op, _flags, lengthHi, lengthLo, groupHi, groupLo, this._seq, id, ...encodedData];
+	        this._seq = (this._seq + 1) % 256;
+
+	        return message;
+	    }
+
+	    _notification(buffer) {
+	        _console$f.log("mcumgr - message received");
+	        const message = new Uint8Array(buffer);
+	        this._buffer = new Uint8Array([...this._buffer, ...message]);
+	        const messageLength = this._buffer[2] * 256 + this._buffer[3];
+	        if (this._buffer.length < messageLength + 8) return;
+	        this._processMessage(this._buffer.slice(0, messageLength + 8));
+	        this._buffer = this._buffer.slice(messageLength + 8);
+	    }
+
+	    _processMessage(message) {
+	        const [op, , lengthHi, lengthLo, groupHi, groupLo, , id] = message;
+	        const data = CBOR.decode(message.slice(8).buffer);
+	        const length = lengthHi * 256 + lengthLo;
+	        const group = groupHi * 256 + groupLo;
+
+	        _console$f.log("mcumgr - Process Message - Group: " + group + ", Id: " + id + ", Off: " + data.off);
+	        if (group === constants.MGMT_GROUP_ID_IMAGE && id === constants.IMG_MGMT_ID_UPLOAD && data.off) {
+	            this._uploadOffset = data.off;
+	            this._uploadNext();
+	            return;
+	        }
+	        if (
+	            op === constants.MGMT_OP_WRITE_RSP &&
+	            group === constants.MGMT_GROUP_ID_FS &&
+	            id === constants.FS_MGMT_ID_FILE &&
+	            data.off
+	        ) {
+	            this._uploadFileOffset = data.off;
+	            this._uploadFileNext();
+	            return;
+	        }
+	        if (
+	            op === constants.MGMT_OP_READ_RSP &&
+	            group === constants.MGMT_GROUP_ID_FS &&
+	            id === constants.FS_MGMT_ID_FILE
+	        ) {
+	            this._downloadFileOffset += data.data.length;
+	            if (data.len != undefined) {
+	                this._downloadFileLength = data.len;
+	            }
+	            _console$f.log("downloaded " + this._downloadFileOffset + " bytes of " + this._downloadFileLength);
+	            if (this._downloadFileLength > 0) {
+	                this._fileDownloadProgressCallback({
+	                    percentage: Math.floor((this._downloadFileOffset / this._downloadFileLength) * 100),
+	                });
+	            }
+	            if (this._messageCallback) this._messageCallback({ op, group, id, data, length });
+	            this._downloadFileNext();
+	            return;
+	        }
+
+	        if (this._messageCallback) this._messageCallback({ op, group, id, data, length });
+	    }
+
+	    cmdReset() {
+	        return this._getMessage(constants.MGMT_OP_WRITE, constants.MGMT_GROUP_ID_OS, constants.OS_MGMT_ID_RESET);
+	    }
+
+	    smpEcho(message) {
+	        return this._getMessage(constants.MGMT_OP_WRITE, constants.MGMT_GROUP_ID_OS, constants.OS_MGMT_ID_ECHO, {
+	            d: message,
+	        });
+	    }
+
+	    cmdImageState() {
+	        return this._getMessage(constants.MGMT_OP_READ, constants.MGMT_GROUP_ID_IMAGE, constants.IMG_MGMT_ID_STATE);
+	    }
+
+	    cmdImageErase() {
+	        return this._getMessage(
+	            constants.MGMT_OP_WRITE,
+	            constants.MGMT_GROUP_ID_IMAGE,
+	            constants.IMG_MGMT_ID_ERASE,
+	            {}
+	        );
+	    }
+
+	    cmdImageTest(hash) {
+	        return this._getMessage(constants.MGMT_OP_WRITE, constants.MGMT_GROUP_ID_IMAGE, constants.IMG_MGMT_ID_STATE, {
+	            hash,
+	            confirm: false,
+	        });
+	    }
+
+	    cmdImageConfirm(hash) {
+	        return this._getMessage(constants.MGMT_OP_WRITE, constants.MGMT_GROUP_ID_IMAGE, constants.IMG_MGMT_ID_STATE, {
+	            hash,
+	            confirm: true,
+	        });
+	    }
+
+	    _hash(image) {
+	        return crypto.subtle.digest("SHA-256", image);
+	    }
+
+	    async _uploadNext() {
+	        if (this._uploadOffset >= this._uploadImage.byteLength) {
+	            this._uploadIsInProgress = false;
+	            this._imageUploadFinishedCallback();
+	            return;
+	        }
+
+	        const nmpOverhead = 8;
+	        const message = { data: new Uint8Array(), off: this._uploadOffset };
+	        if (this._uploadOffset === 0) {
+	            message.len = this._uploadImage.byteLength;
+	            message.sha = new Uint8Array(await this._hash(this._uploadImage));
+	        }
+	        this._imageUploadProgressCallback({
+	            percentage: Math.floor((this._uploadOffset / this._uploadImage.byteLength) * 100),
+	        });
+
+	        const length = this._mtu - CBOR.encode(message).byteLength - nmpOverhead;
+
+	        message.data = new Uint8Array(this._uploadImage.slice(this._uploadOffset, this._uploadOffset + length));
+
+	        this._uploadOffset += length;
+
+	        const packet = this._getMessage(
+	            constants.MGMT_OP_WRITE,
+	            constants.MGMT_GROUP_ID_IMAGE,
+	            constants.IMG_MGMT_ID_UPLOAD,
+	            message
+	        );
+
+	        _console$f.log("mcumgr - _uploadNext: Message Length: " + packet.length);
+
+	        this._imageUploadNextCallback({ packet });
+	    }
+	    async reset() {
+	        this._mtu = 256;
+	        this._messageCallback = null;
+	        this._imageUploadProgressCallback = null;
+	        this._imageUploadNextCallback = null;
+	        this._fileUploadProgressCallback = null;
+	        this._fileUploadNextCallback = null;
+	        this._uploadIsInProgress = false;
+	        this._downloadIsInProgress = false;
+	        this._buffer = new Uint8Array();
+	        this._seq = 0;
+	    }
+
+	    async cmdUpload(image, slot = 0) {
+	        if (this._uploadIsInProgress) {
+	            _console$f.error("Upload is already in progress.");
+	            return;
+	        }
+	        this._uploadIsInProgress = true;
+
+	        this._uploadOffset = 0;
+	        this._uploadImage = image;
+	        this._uploadSlot = slot;
+
+	        this._uploadNext();
+	    }
+
+	    async cmdUploadFile(filebuf, destFilename) {
+	        if (this._uploadIsInProgress) {
+	            _console$f.error("Upload is already in progress.");
+	            return;
+	        }
+	        this._uploadIsInProgress = true;
+	        this._uploadFileOffset = 0;
+	        this._uploadFile = filebuf;
+	        this._uploadFilename = destFilename;
+
+	        this._uploadFileNext();
+	    }
+
+	    async _uploadFileNext() {
+	        _console$f.log("uploadFileNext - offset: " + this._uploadFileOffset + ", length: " + this._uploadFile.byteLength);
+
+	        if (this._uploadFileOffset >= this._uploadFile.byteLength) {
+	            this._uploadIsInProgress = false;
+	            this._fileUploadFinishedCallback();
+	            return;
+	        }
+
+	        const nmpOverhead = 8;
+	        const message = { data: new Uint8Array(), off: this._uploadFileOffset };
+	        if (this._uploadFileOffset === 0) {
+	            message.len = this._uploadFile.byteLength;
+	        }
+	        message.name = this._uploadFilename;
+	        this._fileUploadProgressCallback({
+	            percentage: Math.floor((this._uploadFileOffset / this._uploadFile.byteLength) * 100),
+	        });
+
+	        const length = this._mtu - CBOR.encode(message).byteLength - nmpOverhead;
+
+	        message.data = new Uint8Array(this._uploadFile.slice(this._uploadFileOffset, this._uploadFileOffset + length));
+
+	        this._uploadFileOffset += length;
+
+	        const packet = this._getMessage(
+	            constants.MGMT_OP_WRITE,
+	            constants.MGMT_GROUP_ID_FS,
+	            constants.FS_MGMT_ID_FILE,
+	            message
+	        );
+
+	        _console$f.log("mcumgr - _uploadNext: Message Length: " + packet.length);
+
+	        this._fileUploadNextCallback({ packet });
+	    }
+
+	    async cmdDownloadFile(filename, destFilename) {
+	        if (this._downloadIsInProgress) {
+	            _console$f.error("Download is already in progress.");
+	            return;
+	        }
+	        this._downloadIsInProgress = true;
+	        this._downloadFileOffset = 0;
+	        this._downloadFileLength = 0;
+	        this._downloadRemoteFilename = filename;
+	        this._downloadLocalFilename = destFilename;
+
+	        this._downloadFileNext();
+	    }
+
+	    async _downloadFileNext() {
+	        if (this._downloadFileLength > 0) {
+	            if (this._downloadFileOffset >= this._downloadFileLength) {
+	                this._downloadIsInProgress = false;
+	                this._fileDownloadFinishedCallback();
+	                return;
+	            }
+	        }
+
+	        const message = { off: this._downloadFileOffset };
+	        if (this._downloadFileOffset === 0) {
+	            message.name = this._downloadRemoteFilename;
+	        }
+
+	        const packet = this._getMessage(
+	            constants.MGMT_OP_READ,
+	            constants.MGMT_GROUP_ID_FS,
+	            constants.FS_MGMT_ID_FILE,
+	            message
+	        );
+	        _console$f.log("mcumgr - _downloadNext: Message Length: " + packet.length);
+	        this._fileDownloadNextCallback({ packet });
+	    }
+
+	    async imageInfo(image) {
+	        const info = {};
+	        const view = new Uint8Array(image);
+
+	        // check header length
+	        if (view.length < 32) {
+	            throw new Error("Invalid image (too short file)");
+	        }
+
+	        // check MAGIC bytes 0x96f3b83d
+	        if (view[0] !== 0x3d || view[1] !== 0xb8 || view[2] !== 0xf3 || view[3] !== 0x96) {
+	            throw new Error("Invalid image (wrong magic bytes)");
+	        }
+
+	        // check load address is 0x00000000
+	        if (view[4] !== 0x00 || view[5] !== 0x00 || view[6] !== 0x00 || view[7] !== 0x00) {
+	            throw new Error("Invalid image (wrong load address)");
+	        }
+
+	        const headerSize = view[8] + view[9] * 2 ** 8;
+
+	        // check protected TLV area size is 0
+	        if (view[10] !== 0x00 || view[11] !== 0x00) {
+	            throw new Error("Invalid image (wrong protected TLV area size)");
+	        }
+
+	        const imageSize = view[12] + view[13] * 2 ** 8 + view[14] * 2 ** 16 + view[15] * 2 ** 24;
+	        info.imageSize = imageSize;
+
+	        // check image size is correct
+	        if (view.length < imageSize + headerSize) {
+	            throw new Error("Invalid image (wrong image size)");
+	        }
+
+	        // check flags is 0x00000000
+	        if (view[16] !== 0x00 || view[17] !== 0x00 || view[18] !== 0x00 || view[19] !== 0x00) {
+	            throw new Error("Invalid image (wrong flags)");
+	        }
+
+	        const version = `${view[20]}.${view[21]}.${view[22] + view[23] * 2 ** 8}`;
+	        info.version = version;
+
+	        info.hash = [...new Uint8Array(await this._hash(image.slice(0, imageSize + 32)))]
+	            .map((b) => b.toString(16).padStart(2, "0"))
+	            .join("");
+
+	        return info;
+	    }
+	}
+
+	const _console$e = createConsole("FirmwareManager", { log: true });
+
+	/** @typedef {"smp"} FirmwareMessageType */
+
+
+
+
+	/** @typedef {FirmwareMessageType | "firmwareImageState" | "firmwareUpdateProgress" | "firmwareUploadComplete"} FirmwareManagerEventType */
+
+	/**
+	 * @typedef FirmwareManagerEvent
+	 * @type {Object}
+	 * @property {FirmwareManager} target
+	 * @property {FirmwareManagerEventType} type
+	 * @property {Object} message
+	 */
+
+	/** @typedef {(event: FirmwareManagerEvent) => void} FirmwareManagerEventListener */
+
+	class FirmwareManager {
+	    /**
+	     * @callback SendMessageCallback
+	     * @param {FirmwareMessageType} messageType
+	     * @param {DataView|ArrayBuffer} data
+	     */
+
+	    /** @type {SendMessageCallback} */
+	    sendMessage;
+
+	    constructor() {
+	        this.#assignMcuManagerCallbacks();
+	    }
+
+	    /** @type {FirmwareMessageType[]} */
+	    static #MessageTypes = ["smp"];
+	    static get MessageTypes() {
+	        return this.#MessageTypes;
+	    }
+	    get messageTypes() {
+	        return FirmwareManager.MessageTypes;
+	    }
+
+	    // EVENT DISPATCHER
+
+	    /** @type {FirmwareManagerEventType[]} */
+	    static #EventTypes = [
+	        ...this.#MessageTypes,
+	        "firmwareImageState",
+	        "firmwareUpdateProgress",
+	        "firmwareUploadComplete",
+	    ];
+	    static get EventTypes() {
+	        return this.#EventTypes;
+	    }
+	    get eventTypes() {
+	        return FirmwareManager.#EventTypes;
+	    }
+	    /** @type {EventDispatcher} */
+	    eventDispatcher;
+
+	    /**
+	     * @param {FirmwareManagerEventType} type
+	     * @param {FirmwareManagerEventListener} listener
+	     * @param {EventDispatcherOptions} options
+	     */
+	    addEventListener(type, listener, options) {
+	        this.eventDispatcher.addEventListener(type, listener, options);
+	    }
+
+	    /**
+	     * @param {FirmwareManagerEvent} event
+	     */
+	    #dispatchEvent(event) {
+	        this.eventDispatcher.dispatchEvent(event);
+	    }
+
+	    /**
+	     * @param {FirmwareManagerEventType} type
+	     * @param {FirmwareManagerEventListener} listener
+	     */
+	    removeEventListener(type, listener) {
+	        return this.eventDispatcher.removeEventListener(type, listener);
+	    }
+
+	    /** @param {FirmwareManagerEventType} eventType */
+	    waitForEvent(eventType) {
+	        return this.eventDispatcher.waitForEvent(eventType);
+	    }
+
+	    /**
+	     * @param {FirmwareMessageType} messageType
+	     * @param {DataView} dataView
+	     */
+	    parseMessage(messageType, dataView) {
+	        _console$e.log({ messageType });
+
+	        switch (messageType) {
+	            case "smp":
+	                this.#mcuManager._notification(Array.from(new Uint8Array(dataView.buffer)));
+	                this.#dispatchEvent({ type: "smp" });
+	                break;
+	            default:
+	                throw Error(`uncaught messageType ${messageType}`);
+	        }
+	    }
+
+	    
+	    async updateFirmware(file) {
+	        _console$e.log("updateFirmware", file);
+
+	        const promise = this.waitForEvent("firmwareUploadComplete");
+
+	        await this.#getImageState();
+
+	        const arrayBuffer = await getFileBuffer(file);
+	        const imageInfo = await this.#mcuManager.imageInfo(arrayBuffer);
+	        console.log({ imageInfo });
+
+	        this.#mcuManager.cmdUpload(arrayBuffer, 1);
+
+	        await promise;
+	    }
+
+	    // COMMANDS
+
+	    /** @type {any[]?} */
+	    #images;
+	    async #getImageState() {
+	        const promise = this.waitForEvent("firmwareImageState");
+
+	        _console$e.log("getting firmware image state...");
+	        this.sendMessage("smp", Uint8Array.from(this.#mcuManager.cmdImageState()));
+
+	        await promise;
+	    }
+
+	    async #getImageTest() {
+	        if (!this.#images?.[0]) {
+	            _console$e.log("no images found yet...");
+	            return;
+	        }
+
+	        const promise = this.waitForEvent("smp");
+
+	        _console$e.log("getting firmware image test...");
+	        this.sendMessage("smp", Uint8Array.from(this.#mcuManager.cmdImageTest(this.#images[1].hash)));
+
+	        await promise;
+
+	        await this.#getImageState();
+	    }
+
+	    async #eraseImage() {
+	        const promise = this.waitForEvent("smp");
+
+	        _console$e.log("erasing image...");
+	        this.sendMessage("smp", Uint8Array.from(this.#mcuManager.cmdImageErase()));
+
+	        await promise;
+	        await this.#getImageState();
+	    }
+
+	    async #confirmImage() {
+	        if (this.#images?.[1].confirmed === true) {
+	            _console$e.log("image 1 is already confirmed");
+	            return;
+	        }
+
+	        const promise = this.waitForEvent("smp");
+
+	        _console$e.log("confirming image...");
+	        this.sendMessage("smp", Uint8Array.from(this.#mcuManager.cmdImageConfirm(this.#images[1].hash)));
+
+	        await promise;
+	    }
+
+	    /** @param {string} echo */
+	    async #echo(string) {
+	        _console$e.assertTypeWithError(string, "string");
+
+	        const promise = this.waitForEvent("smp");
+
+	        _console$e.log("sending echo...");
+	        this.sendMessage("smp", Uint8Array.from(this.#mcuManager.smpEcho(string)));
+
+	        await promise;
+	    }
+
+	    async #reset() {
+	        const promise = this.waitForEvent("smp");
+
+	        _console$e.log("resetting...");
+	        this.sendMessage("smp", Uint8Array.from(this.#mcuManager.cmdReset()));
+
+	        await promise;
+	    }
+
+	    // MCUManager
+
+	    #mcuManager = new MCUManager();
+
+	    #assignMcuManagerCallbacks() {
+	        this.#mcuManager.onMessage(this.#onMcuMessage.bind(this));
+
+	        this.#mcuManager.onFileDownloadNext(this.#onMcuFileDownloadNext);
+	        this.#mcuManager.onFileDownloadProgress(this.#onMcuFileDownloadProgress.bind(this));
+	        this.#mcuManager.onFileDownloadFinished(this.#onMcuFileDownloadFinished.bind(this));
+
+	        this.#mcuManager.onFileUploadNext(this.#onMcuFileUploadNext.bind(this));
+	        this.#mcuManager.onFileUploadProgress(this.#onMcuFileUploadProgress.bind(this));
+	        this.#mcuManager.onFileUploadFinished(this.#onMcuFileUploadFinished.bind(this));
+
+	        this.#mcuManager.onImageUploadNext(this.#onMcuImageUploadNext.bind(this));
+	        this.#mcuManager.onImageUploadProgress(this.#onMcuImageUploadProgress.bind(this));
+	        this.#mcuManager.onImageUploadFinished(this.#onMcuImageUploadFinished.bind(this));
+	    }
+
+	    #onMcuMessage({ op, group, id, data, length }) {
+	        _console$e.log("onMcuMessage", ...arguments);
+
+	        switch (group) {
+	            case constants.MGMT_GROUP_ID_OS:
+	                switch (id) {
+	                    case constants.OS_MGMT_ID_ECHO:
+	                        _console$e.log(`echo "${data.r}"`);
+	                        break;
+	                    case constants.OS_MGMT_ID_TASKSTAT:
+	                        _console$e.table(data.tasks);
+	                        break;
+	                    case constants.OS_MGMT_ID_MPSTAT:
+	                        _console$e.log(data);
+	                        break;
+	                }
+	                break;
+	            case constants.MGMT_GROUP_ID_IMAGE:
+	                switch (id) {
+	                    case constants.IMG_MGMT_ID_STATE:
+	                        this.#onMcuImageState(data);
+	                }
+	                break;
+	            default:
+	                throw Error(`uncaught mcuMessage group ${group}`);
+	        }
+	    }
+
+	    #onMcuFileDownloadNext() {
+	        _console$e.log("onMcuFileDownloadNext", ...arguments);
+	    }
+	    #onMcuFileDownloadProgress() {
+	        _console$e.log("onMcuFileDownloadProgress", ...arguments);
+	    }
+	    #onMcuFileDownloadFinished() {
+	        _console$e.log("onMcuFileDownloadFinished", ...arguments);
+	    }
+
+	    #onMcuFileUploadNext() {
+	        _console$e.log("onMcuFileUploadNext", ...arguments);
+	    }
+	    #onMcuFileUploadProgress() {
+	        _console$e.log("onMcuFileUploadProgress", ...arguments);
+	    }
+	    #onMcuFileUploadFinished() {
+	        _console$e.log("onMcuFileUploadFinished", ...arguments);
+	    }
+
+	    #onMcuImageUploadNext({ packet }) {
+	        _console$e.log("onMcuImageUploadNext", ...arguments);
+	        this.sendMessage("smp", Uint8Array.from(packet));
+	    }
+	    #onMcuImageUploadProgress({ percentage }) {
+	        const progress = percentage / 100;
+	        _console$e.log("onMcuImageUploadProgress", ...arguments);
+	        this.#dispatchEvent({ type: "firmwareUpdateProgress", message: { firmwareUpdateProgress: progress } });
+	    }
+	    async #onMcuImageUploadFinished() {
+	        _console$e.log("onMcuImageUploadFinished", ...arguments);
+
+	        await this.#getImageTest();
+
+	        this.#dispatchEvent({ type: "firmwareUpdateProgress", message: { firmwareUpdateProgress: 100 } });
+	        this.#dispatchEvent({ type: "firmwareUploadComplete" });
+	    }
+
+	    #onMcuImageState(data) {
+	        if (data.images) {
+	            this.#images = data.images;
+	            _console$e.log("images", this.#images);
+	        } else {
+	            _console$e.log("no images found");
+	            return;
+	        }
+
+	        if (this.#images.length == 2) {
+	            if (!this.#images[1].bootable) {
+	                _console$e.warn(
+	                    'Slot 2 has a invalid image. Click "Erase Image" to erase it or upload a different image'
+	                );
+	                // return this.setState(5)
+	            } else if (this.#images[0].version == this.pendingVersion || !this.#images[0].confirmed) {
+	                if (this.#images[0].confirmed) {
+	                    _console$e.log('Firmware has been updated. Click "Disconnect" to disconnect from the device.');
+	                    // return this.setState(7)
+	                } else {
+	                    _console$e.log(
+	                        'Slot 1 has a valid image. Click "Confirm Image" to confirm it or wait and the device will swap images back.'
+	                    );
+	                    //this.states[6].ready = true;
+	                    // return this.setState(6);
+	                }
+	            }
+	            if (this.#images[1].pending == false) {
+	                // switch to test state to mark as pending
+	                // this.states[3].ready = true;
+	                // return this.setState(3);
+	                _console$e.log('Slot 2 has a valid image. Click "Test Image" to test it or upload a different image.');
+	            } else {
+	                // switch to reset state and indicate ready
+	                this.pendingVersion = this.#images[1].version;
+	                //this.states[4].ready = true;
+	                //return this.setState(4);
+	                _console$e.log("Press the Reset Device button to update to the new firmware image");
+	            }
+	        }
+
+	        if (this.#images.length == 1) {
+	            this.#images.push({
+	                slot: 1,
+	                empty: true,
+	                version: "Empty",
+	                pending: false,
+	                confirmed: false,
+	                bootable: false,
+	            });
+
+	            _console$e.log("Select a firmware update image to upload to slot 2.");
+	            // this.setState(2)
+	        }
+
+	        this.#dispatchEvent({ type: "firmwareImageState", message: { firmwareImages: this.#images } });
 	    }
 	}
 
@@ -3745,7 +4980,8 @@
 
 
 
-	/** @typedef {"connectionStatus" | ConnectionStatus | "isConnected" | ConnectionMessageType | "deviceInformation" | SensorType | "connectionMessage" | FileTransferManagerEventType | TfliteManagerEventType} DeviceEventType */
+
+	/** @typedef {"connectionStatus" | ConnectionStatus | "isConnected" | ConnectionMessageType | "deviceInformation" | SensorType | "connectionMessage" | FileTransferManagerEventType | TfliteManagerEventType | FirmwareManagerEventType} DeviceEventType */
 
 	/** @typedef {"deviceConnected" | "deviceDisconnected" | "deviceIsConnected" | "availableDevices"} StaticDeviceEventType */
 
@@ -3839,6 +5075,9 @@
 	        this.#tfliteManager.sendMessage = this.#sendMessage.bind(this);
 	        this.#tfliteManager.eventDispatcher = this.#eventDispatcher;
 
+	        this.#firmwareManager.sendMessage = this.#sendMessage.bind(this);
+	        this.#firmwareManager.eventDispatcher = this.#eventDispatcher;
+
 	        if (isInBrowser) {
 	            window.addEventListener("beforeunload", () => {
 	                if (this.isConnected && this.clearSensorConfigurationOnLeave) {
@@ -3910,6 +5149,7 @@
 
 	        ...FileTransferManager.EventTypes,
 	        ...TfliteManager.EventTypes,
+	        ...FirmwareManager.EventTypes,
 	    ];
 	    static get EventTypes() {
 	        return this.#EventTypes;
@@ -4263,6 +5503,8 @@
 	                    this.#fileTransferManager.parseMessage(messageType, dataView);
 	                } else if (this.#tfliteManager.messageTypes.includes(messageType)) {
 	                    this.#tfliteManager.parseMessage(messageType, dataView);
+	                } else if (this.#firmwareManager.messageTypes.includes(messageType)) {
+	                    this.#firmwareManager.parseMessage(messageType, dataView);
 	                } else {
 	                    throw Error(`uncaught messageType ${messageType}`);
 	                }
@@ -4390,7 +5632,7 @@
 	            newName.length < this.maxNameLength,
 	            `name must be less than ${this.maxNameLength} characters long ("${newName}" is ${newName.length} characters long)`
 	        );
-	        const setNameData = textEncoder$1.encode(newName);
+	        const setNameData = textEncoder.encode(newName);
 	        _console$d.log({ setNameData });
 	        await this.#connectionManager.sendMessage("setName", setNameData);
 	    }
@@ -4968,19 +6210,6 @@
 	    }
 
 	    
-	    
-
-	    /**
-	     * @param {FileType} fileType
-	     * @param {FileLike} file
-	     */
-	    async sendFile(fileType, file) {
-	        const promise = this.waitForEvent("fileTransferComplete");
-	        this.#fileTransferManager.send(fileType, file);
-	        await promise;
-	    }
-
-	    /** @param {FileType} fileType */
 	    async receiveFile(fileType) {
 	        const promise = this.waitForEvent("fileTransferComplete");
 	        this.#fileTransferManager.receive(fileType);
@@ -5095,6 +6324,15 @@
 	    /** @param {number} newThreshold */
 	    async setTfliteThreshold(newThreshold) {
 	        return this.#tfliteManager.setThreshold(newThreshold);
+	    }
+
+	    // FIRMWARE MANAGER
+
+	    #firmwareManager = new FirmwareManager();
+
+	    /** @param {FileLike} file */
+	    async updateFirmware(file) {
+	        return this.#firmwareManager.updateFirmware(file);
 	    }
 	}
 

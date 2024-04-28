@@ -8,6 +8,7 @@ import TfliteManager from "../TfliteManager.js";
 
 /** @typedef {import("../FileTransferManager.js").FileTransferMessageType} FileTransferMessageType */
 /** @typedef {import("../TfliteManager.js").TfliteMessageType} TfliteMessageType */
+/** @typedef {import("../FirmwareManager.js").FirmwareMessageType} FirmwareMessageType */
 
 /** @typedef {"webBluetooth" | "noble" | "webSocketClient"} ConnectionType */
 /** @typedef {"not connected" | "connecting" | "connected" | "disconnecting"} ConnectionStatus */
@@ -33,7 +34,8 @@ import TfliteManager from "../TfliteManager.js";
  * "getCurrentTime" |
  * "triggerVibration" |
  * FileTransferMessageType |
- * TfliteMessageType
+ * TfliteMessageType |
+ * FirmwareMessageType
  * } ConnectionMessageType
  */
 

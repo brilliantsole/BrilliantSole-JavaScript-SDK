@@ -10,7 +10,7 @@ import {
 } from "./bluetoothUUIDs.js";
 import BluetoothConnectionManager from "./BluetoothConnectionManager.js";
 
-const _console = createConsole("WebBluetoothConnectionManager", { log: false });
+const _console = createConsole("WebBluetoothConnectionManager", { log: true });
 
 /** @typedef {import("./bluetoothUUIDs.js").BluetoothCharacteristicName} BluetoothCharacteristicName */
 /** @typedef {import("./bluetoothUUIDs.js").BluetoothServiceName} BluetoothServiceName */
@@ -124,10 +124,6 @@ class WebBluetoothConnectionManager extends BluetoothConnectionManager {
             const serviceName = getServiceNameFromUUID(service.uuid);
             _console.assertWithError(serviceName, `no name found for service uuid "${service.uuid}"`);
             _console.log(`got "${serviceName}" service`);
-            if (serviceName == "dfu") {
-                _console.log("skipping dfu service");
-                continue;
-            }
             service._name = serviceName;
             this.#services.set(serviceName, service);
             _console.log(`getting characteristics for "${serviceName}" service`);
@@ -226,7 +222,11 @@ class WebBluetoothConnectionManager extends BluetoothConnectionManager {
         if (data instanceof DataView) {
             data = data.buffer;
         }
-        await characteristic.writeValueWithResponse(data);
+        if (messageType == "smp") {
+            await characteristic.writeValueWithoutResponse(data);
+        } else {
+            await characteristic.writeValueWithResponse(data);
+        }
         const characteristicProperties = characteristic.properties || getCharacteristicProperties(characteristicName);
         if (characteristicProperties.read && !characteristicProperties.notify) {
             _console.log("reading value after write...");

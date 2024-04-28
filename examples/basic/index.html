@@ -187,7 +187,9 @@
                     <optgroup label="file transfer type"></optgroup>
                 </select>
             </label>
-            <label>file (max <span id="maxFileLength">0</span>kb) <input id="file" type="file" /></label>
+            <label
+                >file (max <span id="maxFileLength">0</span>kb) <input id="file" type="file" accept=".tflite"
+            /></label>
             <label>
                 file transfer direction
                 <select id="fileTransferDirection">
@@ -318,6 +320,14 @@
                     <pre id="tfliteInference"></pre>
                 </label>
             </div>
+        </div>
+
+        <div>
+            <h2>firmware update</h2>
+
+            <label>firmware <input id="firmwareInput" type="file" accept=".bin" /></label>
+            <button id="toggleFirmwareUpdate" disabled>upload firmware</button>
+            <progress value="0" id="firmwareUpdateProgress"></progress>
         </div>
     </body>
 </html>

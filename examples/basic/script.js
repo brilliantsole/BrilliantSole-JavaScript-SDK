@@ -957,3 +957,36 @@ const tfliteInferencePre = document.getElementById("tfliteInference");
 device.addEventListener("tfliteModelInference", (event) => {
     tfliteInferencePre.textContent = JSON.stringify(event.message.tfliteModelInference, null, 2);
 });
+
+// FIRMWARE
+
+/** @type {File?} */
+let firmware;
+
+/** @type {HTMLInputElement} */
+const firmwareInput = document.getElementById("firmwareInput");
+firmwareInput.addEventListener("input", () => {
+    firmware = firmwareInput.files[0];
+    updateToggleFirmwareUpdateButton();
+});
+/** @type {HTMLButtonElement} */
+const toggleFirmwareUpdateButton = document.getElementById("toggleFirmwareUpdate");
+toggleFirmwareUpdateButton.addEventListener("click", () => {
+    device.updateFirmware(firmware);
+});
+const updateToggleFirmwareUpdateButton = () => {
+    const enabled = device.isConnected && Boolean(firmware);
+    toggleFirmwareUpdateButton.disabled = !enabled;
+};
+device.addEventListener("isConnected", () => {
+    updateToggleFirmwareUpdateButton();
+});
+
+/** @type {HTMLProgressElement} */
+const firmwareUpdateProgress = document.getElementById("firmwareUpdateProgress");
+device.addEventListener("firmwareUpdateProgress", (event) => {
+    firmwareUpdateProgress.value = event.message.firmwareUpdateProgress;
+});
+device.addEventListener("firmwareUploadComplete", () => {
+    firmwareUpdateProgress.value = 0;
+});

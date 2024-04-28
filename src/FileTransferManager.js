@@ -1,8 +1,9 @@
 import { createConsole } from "./utils/Console.js";
 import { crc32 } from "./utils/checksum.js";
 import EventDispatcher from "./utils/EventDispatcher.js";
+import { getFileBuffer } from "./utils/ArrayBufferUtils.js";
 
-const _console = createConsole("FileTransferManager", { log: true });
+const _console = createConsole("FileTransferManager", { log: false });
 
 /**
  * @typedef { "maxFileLength" |
@@ -23,13 +24,7 @@ const _console = createConsole("FileTransferManager", { log: true });
 /** @typedef {"idle" | "sending" | "receiving"} FileTransferStatus */
 /** @typedef {"startReceive" | "startSend" | "cancel"} FileTransferCommand */
 
-/** @typedef {number[] | ArrayBuffer | DataView | URL | string | File} FileLike */
-
-/**
- * @callback SendMessageCallback
- * @param {FileTransferMessageType} messageType
- * @param {DataView|ArrayBuffer} data
- */
+/** @typedef {import("./utils/ArrayBufferUtils.js").FileLike} */
 
 /** @typedef {import("./utils/EventDispatcher.js").EventDispatcherListener} EventDispatcherListener */
 /** @typedef {import("./utils/EventDispatcher.js").EventDispatcherOptions} EventDispatcherOptions */
@@ -155,29 +150,6 @@ class FileTransferManager {
     /** @param {FileTransferCommand} command */
     #assertValidCommand(command) {
         _console.assertEnumWithError(command, this.commands);
-    }
-
-    /** @param {FileLike} file */
-    static async GetFileBuffer(file) {
-        let fileBuffer;
-        if (file instanceof Array) {
-            fileBuffer = Uint8Array.from(file);
-        } else if (file instanceof DataView) {
-            fileBuffer = file.buffer;
-        } else if (typeof file == "string" || file instanceof URL) {
-            const response = await fetch(file);
-            fileBuffer = await response.arrayBuffer();
-        } else if (file instanceof File) {
-            fileBuffer = await file.arrayBuffer();
-        } else if (file instanceof ArrayBuffer) {
-            fileBuffer = file;
-        } else {
-            throw { error: "invalid file type", file };
-        }
-        return fileBuffer;
-    }
-    async getFileBuffer(file) {
-        return FileTransferManager.GetFileBuffer(file);
     }
 
     static #MaxLength = 0; // kB
@@ -434,7 +406,7 @@ class FileTransferManager {
         this.#assertIsIdle();
 
         this.#assertValidType(type);
-        const fileBuffer = await this.getFileBuffer(file);
+        const fileBuffer = await getFileBuffer(file);
 
         await this.#setType(type);
         const fileLength = fileBuffer.byteLength;
@@ -497,8 +469,12 @@ class FileTransferManager {
     }
 
     /**
-     * @type {SendMessageCallback}
+     * @callback SendMessageCallback
+     * @param {FileTransferMessageType} messageType
+     * @param {DataView|ArrayBuffer} data
      */
+
+    /** @type {SendMessageCallback} */
     sendMessage;
 }
 

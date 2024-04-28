@@ -143,8 +143,8 @@ class EventDispatcher {
         return new Promise((resolve) => {
             this.addEventListener(
                 type,
-                () => {
-                    resolve();
+                (event) => {
+                    resolve(event);
                 },
                 { once: true }
             );
