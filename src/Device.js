@@ -1251,7 +1251,7 @@ class Device {
         return this.#fileTransferManager.maxLength;
     }
 
-    /** @typedef {import("./utils/ArrayBufferUtils.js").FileLike} */
+    /** @typedef {import("./utils/ArrayBufferUtils.js").FileLike} FileLike */
 
     /**
      * @param {FileType} fileType
@@ -1385,8 +1385,34 @@ class Device {
     #firmwareManager = new FirmwareManager();
 
     /** @param {FileLike} file */
-    async updateFirmware(file) {
-        return this.#firmwareManager.updateFirmware(file);
+    async uploadFirmware(file) {
+        return this.#firmwareManager.uploadFirmware(file);
+    }
+
+    async reset() {
+        await this.#firmwareManager.reset();
+        return this.#connectionManager.disconnect();
+    }
+
+    get firmwareStatus() {
+        return this.#firmwareManager.status;
+    }
+
+    async getFirmwareImages() {
+        return this.#firmwareManager.getImages();
+    }
+    get firmwareImages() {
+        return this.#firmwareManager.images;
+    }
+
+    async eraseFirmwareImage() {
+        return this.#firmwareManager.eraseImage();
+    }
+    async confirmFirmwareImage() {
+        return this.#firmwareManager.confirmImage();
+    }
+    async testFirmwareImage() {
+        return this.#firmwareManager.testImage();
     }
 }
 

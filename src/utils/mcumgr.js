@@ -76,7 +76,7 @@ export const constants = {
 
 export class MCUManager {
     constructor() {
-        this._mtu = 256;
+        this._mtu = 490;
         this._messageCallback = null;
         this._imageUploadProgressCallback = null;
         this._imageUploadNextCallback = null;

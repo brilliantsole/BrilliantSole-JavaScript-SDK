@@ -1,4 +1,5 @@
 import { createConsole } from "../utils/Console.js";
+import Timer from "../utils/Timer.js";
 
 import FileTransferManager from "../FileTransferManager.js";
 import TfliteManager from "../TfliteManager.js";
@@ -152,6 +153,12 @@ class BaseConnectionManager {
         _console.log(`new connection status "${newConnectionStatus}"`);
         this.#status = newConnectionStatus;
         this.onStatusUpdated?.(this.status);
+
+        if (this.isConnected) {
+            this.#timer.start();
+        } else {
+            this.#timer.stop();
+        }
     }
 
     get isConnected() {
@@ -208,6 +215,15 @@ class BaseConnectionManager {
     async sendMessage(messageType, data) {
         this.#assertIsConnectedAndNotDisconnecting();
         _console.log("sending message", { messageType, data });
+    }
+
+    #timer = new Timer(this.#checkConnection.bind(this), 5000);
+    #checkConnection() {
+        //console.log("checking connection...");
+        if (!this.isConnected) {
+            _console.log("timer detected disconnection");
+            this.status = "not connected";
+        }
     }
 }
 

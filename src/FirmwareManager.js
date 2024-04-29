@@ -10,7 +10,9 @@ const _console = createConsole("FirmwareManager", { log: true });
 /** @typedef {import("./utils/EventDispatcher.js").EventDispatcherListener} EventDispatcherListener */
 /** @typedef {import("./utils/EventDispatcher.js").EventDispatcherOptions} EventDispatcherOptions */
 
-/** @typedef {FirmwareMessageType | "firmwareImageState" | "firmwareUpdateProgress" | "firmwareUploadComplete"} FirmwareManagerEventType */
+/** @typedef {FirmwareMessageType | "firmwareImages" | "firmwareUploadProgress" | "firmwareStatus" | "firmwareUploadComplete"} FirmwareManagerEventType */
+
+/** @typedef {"idle" | "uploading" | "uploaded" | "pending" | "testing" | "erasing"} FirmwareStatus */
 
 /**
  * @typedef FirmwareManagerEvent
@@ -50,9 +52,10 @@ class FirmwareManager {
     /** @type {FirmwareManagerEventType[]} */
     static #EventTypes = [
         ...this.#MessageTypes,
-        "firmwareImageState",
-        "firmwareUpdateProgress",
+        "firmwareImages",
+        "firmwareUploadProgress",
         "firmwareUploadComplete",
+        "firmwareStatus",
     ];
     static get EventTypes() {
         return this.#EventTypes;
@@ -112,12 +115,12 @@ class FirmwareManager {
     /** @typedef {import("./utils/ArrayBufferUtils.js").FileLike} */
 
     /** @param {FileLike} file */
-    async updateFirmware(file) {
-        _console.log("updateFirmware", file);
+    async uploadFirmware(file) {
+        _console.log("uploadFirmware", file);
 
         const promise = this.waitForEvent("firmwareUploadComplete");
 
-        await this.#getImageState();
+        await this.getImages();
 
         const arrayBuffer = await getFileBuffer(file);
         const imageInfo = await this.#mcuManager.imageInfo(arrayBuffer);
@@ -125,15 +128,61 @@ class FirmwareManager {
 
         this.#mcuManager.cmdUpload(arrayBuffer, 1);
 
+        this.#updateStatus("uploading");
+
         await promise;
+    }
+
+    /** @type {FirmwareStatus[]} */
+    static #Statuses = ["idle", "uploading", "uploaded", "pending", "testing", "erasing"];
+    static get Statuses() {
+        return this.#Statuses;
+    }
+
+    /** @type {FirmwareStatus} */
+    #status = "idle";
+    get status() {
+        return this.#status;
+    }
+    /** @param {FirmwareStatus} newStatus */
+    #updateStatus(newStatus) {
+        _console.assertEnumWithError(newStatus, FirmwareManager.Statuses);
+        if (this.#status == newStatus) {
+            _console.log(`redundant firmwareStatus assignment "${newStatus}"`);
+            return;
+        }
+
+        this.#status = newStatus;
+        _console.log({ firmwareStatus: this.#status });
+        this.#dispatchEvent({ type: "firmwareStatus", message: { firmwareStatus: this.#status } });
     }
 
     // COMMANDS
 
-    /** @type {any[]?} */
+    /**
+     * @typedef FirmwareImage
+     * @type {object}
+     * @property {number} slot
+     * @property {boolean} active
+     * @property {boolean} confirmed
+     * @property {boolean} pending
+     * @property {boolean} permanent
+     * @property {boolean} bootable
+     * @property {string} version
+     * @property {Uint8Array?} hash
+     * @property {boolean?} empty
+     */
+
+    /** @type {FirmwareImage[]?} */
     #images;
-    async #getImageState() {
-        const promise = this.waitForEvent("firmwareImageState");
+    get images() {
+        return this.#images;
+    }
+    #assertImages() {
+        _console.assertWithError(this.#images, "didn't get imageState");
+    }
+    async getImages() {
+        const promise = this.waitForEvent("firmwareImages");
 
         _console.log("getting firmware image state...");
         this.sendMessage("smp", Uint8Array.from(this.#mcuManager.cmdImageState()));
@@ -141,48 +190,59 @@ class FirmwareManager {
         await promise;
     }
 
-    async #getImageTest() {
-        if (!this.#images?.[0]) {
-            _console.log("no images found yet...");
+    async testImage() {
+        this.#assertImages();
+        if (this.#images.length < 2) {
+            _console.log("image 1 not found");
+            return;
+        }
+        if (this.#images[1].pending == true) {
+            _console.log("image 1 is already pending");
+            return;
+        }
+        if (this.#images[1].empty) {
+            _console.log("image 1 is empty");
             return;
         }
 
         const promise = this.waitForEvent("smp");
 
-        _console.log("getting firmware image test...");
+        _console.log("testing firmware image...");
         this.sendMessage("smp", Uint8Array.from(this.#mcuManager.cmdImageTest(this.#images[1].hash)));
 
         await promise;
-
-        await this.#getImageState();
     }
 
-    async #eraseImage() {
+    async eraseImage() {
+        this.#assertImages();
         const promise = this.waitForEvent("smp");
 
         _console.log("erasing image...");
         this.sendMessage("smp", Uint8Array.from(this.#mcuManager.cmdImageErase()));
 
+        this.#updateStatus("erasing");
+
         await promise;
-        await this.#getImageState();
+        await this.getImages();
     }
 
-    async #confirmImage() {
-        if (this.#images?.[1].confirmed === true) {
-            _console.log("image 1 is already confirmed");
+    async confirmImage() {
+        this.#assertImages();
+        if (this.#images[0].confirmed === true) {
+            _console.log("image 0 is already confirmed");
             return;
         }
 
         const promise = this.waitForEvent("smp");
 
         _console.log("confirming image...");
-        this.sendMessage("smp", Uint8Array.from(this.#mcuManager.cmdImageConfirm(this.#images[1].hash)));
+        this.sendMessage("smp", Uint8Array.from(this.#mcuManager.cmdImageConfirm(this.#images[0].hash)));
 
         await promise;
     }
 
     /** @param {string} echo */
-    async #echo(string) {
+    async echo(string) {
         _console.assertTypeWithError(string, "string");
 
         const promise = this.waitForEvent("smp");
@@ -193,7 +253,7 @@ class FirmwareManager {
         await promise;
     }
 
-    async #reset() {
+    async reset() {
         const promise = this.waitForEvent("smp");
 
         _console.log("resetting...");
@@ -277,14 +337,14 @@ class FirmwareManager {
     #onMcuImageUploadProgress({ percentage }) {
         const progress = percentage / 100;
         _console.log("onMcuImageUploadProgress", ...arguments);
-        this.#dispatchEvent({ type: "firmwareUpdateProgress", message: { firmwareUpdateProgress: progress } });
+        this.#dispatchEvent({ type: "firmwareUploadProgress", message: { firmwareUploadProgress: progress } });
     }
     async #onMcuImageUploadFinished() {
         _console.log("onMcuImageUploadFinished", ...arguments);
 
-        await this.#getImageTest();
+        await this.getImages();
 
-        this.#dispatchEvent({ type: "firmwareUpdateProgress", message: { firmwareUpdateProgress: 100 } });
+        this.#dispatchEvent({ type: "firmwareUploadProgress", message: { firmwareUploadProgress: 100 } });
         this.#dispatchEvent({ type: "firmwareUploadComplete" });
     }
 
@@ -297,37 +357,31 @@ class FirmwareManager {
             return;
         }
 
+        /** @type {FirmwareStatus} */
+        let newStatus = "idle";
+
         if (this.#images.length == 2) {
             if (!this.#images[1].bootable) {
                 _console.warn(
-                    'Slot 2 has a invalid image. Click "Erase Image" to erase it or upload a different image'
+                    'Slot 1 has a invalid image. Click "Erase Image" to erase it or upload a different image'
                 );
-                // return this.setState(5)
-            } else if (this.#images[0].version == this.pendingVersion || !this.#images[0].confirmed) {
-                if (this.#images[0].confirmed) {
-                    _console.log('Firmware has been updated. Click "Disconnect" to disconnect from the device.');
-                    // return this.setState(7)
+            } else if (!this.#images[0].confirmed) {
+                _console.log(
+                    'Slot 0 has a valid image. Click "Confirm Image" to confirm it or wait and the device will swap images back.'
+                );
+                newStatus = "testing";
+            } else {
+                if (this.#images[1].pending == false) {
+                    _console.log("Slot 1 has a valid image. run testImage() to test it or upload a different image.");
+                    newStatus = "uploaded";
                 } else {
-                    _console.log(
-                        'Slot 1 has a valid image. Click "Confirm Image" to confirm it or wait and the device will swap images back.'
-                    );
-                    //this.states[6].ready = true;
-                    // return this.setState(6);
+                    _console.log("reset to upload to the new firmware image");
+                    newStatus = "pending";
                 }
             }
-            if (this.#images[1].pending == false) {
-                // switch to test state to mark as pending
-                // this.states[3].ready = true;
-                // return this.setState(3);
-                _console.log('Slot 2 has a valid image. Click "Test Image" to test it or upload a different image.');
-            } else {
-                // switch to reset state and indicate ready
-                this.pendingVersion = this.#images[1].version;
-                //this.states[4].ready = true;
-                //return this.setState(4);
-                _console.log("Press the Reset Device button to update to the new firmware image");
-            }
         }
+
+        this.#updateStatus(newStatus);
 
         if (this.#images.length == 1) {
             this.#images.push({
@@ -339,11 +393,11 @@ class FirmwareManager {
                 bootable: false,
             });
 
-            _console.log("Select a firmware update image to upload to slot 2.");
-            // this.setState(2)
+            _console.log("Select a firmware upload image to upload to slot 1.");
+            this.#updateStatus("idle");
         }
 
-        this.#dispatchEvent({ type: "firmwareImageState", message: { firmwareImages: this.#images } });
+        this.#dispatchEvent({ type: "firmwareImages", message: { firmwareImages: this.#images } });
     }
 }
 

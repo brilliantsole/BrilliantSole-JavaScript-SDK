@@ -325,9 +325,23 @@
         <div>
             <h2>firmware update</h2>
 
+            <label><b>status:</b> <span id="firmwareStatus"></span></label>
+
             <label>firmware <input id="firmwareInput" type="file" accept=".bin" /></label>
-            <button id="toggleFirmwareUpdate" disabled>upload firmware</button>
-            <progress value="0" id="firmwareUpdateProgress"></progress>
+            <button id="toggleFirmwareUpload" disabled>upload firmware</button>
+            <progress value="0" id="firmwareUploadProgress"></progress>
+            <span id="firmwareUploadProgressPercentage" style="display: none"></span>
+
+            <label>
+                <b>firmware images: </b>
+                <pre id="firmwareImages"></pre>
+            </label>
+
+            <button id="reset" disabled>reset</button>
+
+            <button id="testFirmwareImage" disabled>test</button>
+            <button id="confirmFirmwareImage" disabled>confirm</button>
+            <button id="eraseFirmwareImage" disabled>erase</button>
         </div>
     </body>
 </html>

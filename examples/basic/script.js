@@ -560,6 +560,7 @@ fileTransferTypesSelect.dispatchEvent(new Event("input"));
 
 /** @type {HTMLProgressElement} */
 const fileTransferProgress = document.getElementById("fileTransferProgress");
+
 device.addEventListener("fileTransferProgress", (event) => {
     const progress = event.message.progress;
     console.log({ progress });
@@ -967,26 +968,103 @@ let firmware;
 const firmwareInput = document.getElementById("firmwareInput");
 firmwareInput.addEventListener("input", () => {
     firmware = firmwareInput.files[0];
-    updateToggleFirmwareUpdateButton();
+    updateToggleFirmwareUploadButton();
 });
 /** @type {HTMLButtonElement} */
-const toggleFirmwareUpdateButton = document.getElementById("toggleFirmwareUpdate");
-toggleFirmwareUpdateButton.addEventListener("click", () => {
-    device.updateFirmware(firmware);
+const toggleFirmwareUploadButton = document.getElementById("toggleFirmwareUpload");
+toggleFirmwareUploadButton.addEventListener("click", () => {
+    device.uploadFirmware(firmware);
 });
-const updateToggleFirmwareUpdateButton = () => {
+const updateToggleFirmwareUploadButton = () => {
     const enabled = device.isConnected && Boolean(firmware);
-    toggleFirmwareUpdateButton.disabled = !enabled;
+    toggleFirmwareUploadButton.disabled = !enabled;
 };
 device.addEventListener("isConnected", () => {
-    updateToggleFirmwareUpdateButton();
+    updateToggleFirmwareUploadButton();
 });
 
 /** @type {HTMLProgressElement} */
-const firmwareUpdateProgress = document.getElementById("firmwareUpdateProgress");
-device.addEventListener("firmwareUpdateProgress", (event) => {
-    firmwareUpdateProgress.value = event.message.firmwareUpdateProgress;
+const firmwareUploadProgress = document.getElementById("firmwareUploadProgress");
+/** @type {HTMLSpanElement} */
+const firmwareUploadProgressPercentageSpan = document.getElementById("firmwareUploadProgressPercentage");
+device.addEventListener("firmwareUploadProgress", (event) => {
+    const progress = event.message.firmwareUploadProgress;
+    firmwareUploadProgress.value = progress;
+    firmwareUploadProgressPercentageSpan.innerText = `${Math.floor(100 * progress)}%`;
 });
 device.addEventListener("firmwareUploadComplete", () => {
-    firmwareUpdateProgress.value = 0;
+    firmwareUploadProgress.value = 0;
 });
+device.addEventListener("firmwareStatus", () => {
+    const isUploading = device.firmwareStatus == "uploading";
+    firmwareUploadProgressPercentageSpan.style.display = isUploading ? "" : "none";
+});
+
+/** @type {HTMLPreElement} */
+const firmwareImagesPre = document.getElementById("firmwareImages");
+device.addEventListener("firmwareImages", () => {
+    firmwareImagesPre.textContent = JSON.stringify(
+        device.firmwareImages,
+        (key, value) => (key == "hash" ? Array.from(value).join(",") : value),
+        2
+    );
+});
+
+device.addEventListener("isConnected", () => {
+    if (device.isConnected) {
+        device.getFirmwareImages();
+    }
+});
+
+/** @type {HTMLSpanElement} */
+const firmwareStatusSpan = document.getElementById("firmwareStatus");
+device.addEventListener("firmwareStatus", () => {
+    firmwareStatusSpan.innerText = device.firmwareStatus;
+
+    updateResetButton();
+    updateTestFirmwareImageButton();
+    updateConfirmFirmwareImageButton();
+    updateEraseFirmwareImageButton();
+});
+
+/** @type {HTMLButtonElement} */
+const resetButton = document.getElementById("reset");
+resetButton.addEventListener("click", () => {
+    device.reset();
+    resetButton.disabled = true;
+});
+const updateResetButton = () => {
+    const status = device.firmwareStatus;
+    const enabled = status == "pending" || status == "testing";
+    resetButton.disabled = !enabled;
+};
+
+/** @type {HTMLButtonElement} */
+const testFirmwareImageButton = document.getElementById("testFirmwareImage");
+testFirmwareImageButton.addEventListener("click", () => {
+    device.testFirmwareImage();
+});
+const updateTestFirmwareImageButton = () => {
+    const enabled = device.firmwareStatus == "uploaded";
+    testFirmwareImageButton.disabled = !enabled;
+};
+
+/** @type {HTMLButtonElement} */
+const confirmFirmwareImageButton = document.getElementById("confirmFirmwareImage");
+confirmFirmwareImageButton.addEventListener("click", () => {
+    device.confirmFirmwareImage();
+});
+const updateConfirmFirmwareImageButton = () => {
+    const enabled = device.firmwareStatus == "testing";
+    confirmFirmwareImageButton.disabled = !enabled;
+};
+
+/** @type {HTMLButtonElement} */
+const eraseFirmwareImageButton = document.getElementById("eraseFirmwareImage");
+eraseFirmwareImageButton.addEventListener("click", () => {
+    device.eraseFirmwareImage();
+});
+const updateEraseFirmwareImageButton = () => {
+    const enabled = device.firmwareStatus == "uploaded";
+    eraseFirmwareImageButton.disabled = !enabled;
+};
