@@ -3,8 +3,7 @@
  * @license MIT
  */
 /** @type {"__BRILLIANTSOLE__DEV__" | "__BRILLIANTSOLE__PROD__"} */
-const __BRILLIANTSOLE__ENVIRONMENT__ = "__BRILLIANTSOLE__DEV__";
-const isInDev = __BRILLIANTSOLE__ENVIRONMENT__ == "__BRILLIANTSOLE__DEV__";
+const isInDev = "__BRILLIANTSOLE__PROD__" == "__BRILLIANTSOLE__DEV__";
 
 // https://github.com/flexdinesh/browser-or-node/blob/master/src/index.ts
 const isInBrowser = typeof window !== "undefined" && window?.document !== "undefined";
@@ -131,9 +130,6 @@ class Console {
      */
     static create(type, levelFlags) {
         const console = this.#consoles[type] || new Console(type);
-        if (levelFlags) {
-            console.setLevelFlags(levelFlags);
-        }
         return console;
     }
 
@@ -4819,6 +4815,8 @@ class FirmwareManager {
     }
 
     
+
+    /** @param {FileLike} file */
     async uploadFirmware(file) {
         _console$d.log("uploadFirmware", file);
 
@@ -5085,8 +5083,6 @@ class FirmwareManager {
             }
         }
 
-        this.#updateStatus(newStatus);
-
         if (this.#images.length == 1) {
             this.#images.push({
                 slot: 1,
@@ -5098,9 +5094,9 @@ class FirmwareManager {
             });
 
             _console$d.log("Select a firmware upload image to upload to slot 1.");
-            this.#updateStatus("idle");
         }
 
+        this.#updateStatus(newStatus);
         this.#dispatchEvent({ type: "firmwareImages", message: { firmwareImages: this.#images } });
     }
 }

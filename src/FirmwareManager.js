@@ -112,7 +112,7 @@ class FirmwareManager {
         }
     }
 
-    /** @typedef {import("./utils/ArrayBufferUtils.js").FileLike} */
+    /** @typedef {import("./utils/ArrayBufferUtils.js").FileLike} FileLike */
 
     /** @param {FileLike} file */
     async uploadFirmware(file) {
@@ -381,8 +381,6 @@ class FirmwareManager {
             }
         }
 
-        this.#updateStatus(newStatus);
-
         if (this.#images.length == 1) {
             this.#images.push({
                 slot: 1,
@@ -394,9 +392,9 @@ class FirmwareManager {
             });
 
             _console.log("Select a firmware upload image to upload to slot 1.");
-            this.#updateStatus("idle");
         }
 
+        this.#updateStatus(newStatus);
         this.#dispatchEvent({ type: "firmwareImages", message: { firmwareImages: this.#images } });
     }
 }
