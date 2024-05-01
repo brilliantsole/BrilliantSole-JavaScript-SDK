@@ -59,9 +59,7 @@ function stringToServiceUUID(identifier) {
  * "tfliteModelName" |
  * "tfliteModelTask" |
  * "tfliteModelSampleRate" |
- * "tfliteModelNumberOfSamples" |
  * "tfliteModelSensorTypes" |
- * "tfliteModelNumberOfClasses" |
  * "tfliteModelIsReady" |
  * "tfliteCaptureDelay" |
  * "tfliteThreshold" |
@@ -132,14 +130,12 @@ const bluetoothUUIDs = Object.freeze({
                 tfliteModelName: { uuid: generateBluetoothUUID("5000") },
                 tfliteModelTask: { uuid: generateBluetoothUUID("5001") },
                 tfliteModelSampleRate: { uuid: generateBluetoothUUID("5002") },
-                tfliteModelNumberOfSamples: { uuid: generateBluetoothUUID("5003") },
-                tfliteModelSensorTypes: { uuid: generateBluetoothUUID("5004") },
-                tfliteModelNumberOfClasses: { uuid: generateBluetoothUUID("5005") },
-                tfliteModelIsReady: { uuid: generateBluetoothUUID("5006") },
-                tfliteCaptureDelay: { uuid: generateBluetoothUUID("5007") },
-                tfliteThreshold: { uuid: generateBluetoothUUID("5008") },
-                tfliteInferencingEnabled: { uuid: generateBluetoothUUID("5009") },
-                tfliteModelInference: { uuid: generateBluetoothUUID("500a") },
+                tfliteModelSensorTypes: { uuid: generateBluetoothUUID("5003") },
+                tfliteModelIsReady: { uuid: generateBluetoothUUID("5004") },
+                tfliteCaptureDelay: { uuid: generateBluetoothUUID("5005") },
+                tfliteThreshold: { uuid: generateBluetoothUUID("5006") },
+                tfliteInferencingEnabled: { uuid: generateBluetoothUUID("5007") },
+                tfliteModelInference: { uuid: generateBluetoothUUID("5008") },
             },
         },
         smp: {
@@ -292,9 +288,7 @@ export function getCharacteristicProperties(characteristicName) {
         case "tfliteModelName":
         case "tfliteModelTask":
         case "tfliteModelSampleRate":
-        case "tfliteModelNumberOfSamples":
         case "tfliteModelSensorTypes":
-        case "tfliteModelNumberOfClasses":
         case "tfliteModelIsReady":
         case "tfliteThreshold":
         case "tfliteCaptureDelay":
@@ -318,10 +312,8 @@ export function getCharacteristicProperties(characteristicName) {
         case "fileTransferBlock":
         case "tfliteModelName":
         case "tfliteModelTask":
-        case "tfliteModelNumberOfSamples":
         case "tfliteModelSampleRate":
         case "tfliteModelSensorTypes":
-        case "tfliteModelNumberOfClasses":
         case "tfliteInferencingEnabled":
             properties.write = true;
             properties.writeWithoutResponse = true;

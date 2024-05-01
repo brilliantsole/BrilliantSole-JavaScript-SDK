@@ -1529,8 +1529,6 @@ transferTfliteButton.addEventListener("click", async () => {
         await device.setTfliteSampleRate(samplingRate);
         await device.setTfliteTask(task);
         await device.setTfliteSensorTypes(sensorTypes);
-        await device.setTfliteNumberOfClasses(numberOfOutputs);
-        await device.setTfliteNumberOfSamples(numberOfSamples);
         device.sendFile("tflite", tfLiteFiles.model_tflite);
     } else {
         device.cancelFileTransfer();

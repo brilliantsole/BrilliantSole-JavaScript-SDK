@@ -7,7 +7,7 @@ const device = new BS.Device();
 console.log({ device });
 window.device = device;
 
-//BS.setAllConsoleLevelFlags({ log: false });
+BS.setAllConsoleLevelFlags({ log: false });
 
 /** @typedef {import("../../build/brilliantsole.module.js").Device} Device */
 
@@ -705,76 +705,6 @@ setTfliteTaskButton.addEventListener("click", () => {
 });
 device.addEventListener("getTfliteInferencingEnabled", () => {
     setTfliteTaskButton.disabled = device.tfliteInferencingEnabled;
-});
-
-/** @type {HTMLSpanElement} */
-const tfliteNumberOfSamplesSpan = document.getElementById("tfliteNumberOfSamples");
-/** @type {HTMLInputElement} */
-const setTfliteNumberOfSamplesInput = document.getElementById("setTfliteNumberOfSamplesInput");
-/** @type {HTMLButtonElement} */
-const setTfliteNumberOfSamplesButton = document.getElementById("setTfliteNumberOfSamplesButton");
-
-device.addEventListener("isConnected", () => {
-    const disabled = !device.isConnected;
-    setTfliteNumberOfSamplesInput.disabled = disabled;
-    setTfliteNumberOfSamplesButton.disabled = disabled;
-});
-
-device.addEventListener("getTfliteNumberOfSamples", () => {
-    tfliteNumberOfSamplesSpan.innerText = device.tfliteNumberOfSamples;
-
-    setTfliteNumberOfSamplesInput.value = "";
-    setTfliteNumberOfSamplesInput.disabled = false;
-
-    setTfliteNumberOfSamplesButton.disabled = false;
-    setTfliteNumberOfSamplesButton.innerText = "set number of samples";
-});
-
-setTfliteNumberOfSamplesButton.addEventListener("click", () => {
-    device.setTfliteNumberOfSamples(Number(setTfliteNumberOfSamplesInput.value));
-
-    setTfliteNumberOfSamplesInput.disabled = true;
-
-    setTfliteNumberOfSamplesButton.disabled = true;
-    setTfliteNumberOfSamplesButton.innerText = "setting number of samples...";
-});
-device.addEventListener("getTfliteInferencingEnabled", () => {
-    setTfliteNumberOfSamplesButton.disabled = device.tfliteInferencingEnabled;
-});
-
-/** @type {HTMLSpanElement} */
-const tfliteNumberOfClassesSpan = document.getElementById("tfliteNumberOfClasses");
-/** @type {HTMLInputElement} */
-const setTfliteNumberOfClassesInput = document.getElementById("setTfliteNumberOfClassesInput");
-/** @type {HTMLButtonElement} */
-const setTfliteNumberOfClassesButton = document.getElementById("setTfliteNumberOfClassesButton");
-
-device.addEventListener("isConnected", () => {
-    const disabled = !device.isConnected;
-    setTfliteNumberOfClassesInput.disabled = disabled;
-    setTfliteNumberOfClassesButton.disabled = disabled;
-});
-
-device.addEventListener("getTfliteNumberOfClasses", () => {
-    tfliteNumberOfClassesSpan.innerText = device.tfliteNumberOfClasses;
-
-    setTfliteNumberOfClassesInput.value = "";
-    setTfliteNumberOfClassesInput.disabled = false;
-
-    setTfliteNumberOfClassesButton.disabled = false;
-    setTfliteNumberOfClassesButton.innerText = "set number of classes";
-});
-
-setTfliteNumberOfClassesButton.addEventListener("click", () => {
-    device.setTfliteNumberOfClasses(Number(setTfliteNumberOfClassesInput.value));
-
-    setTfliteNumberOfClassesInput.disabled = true;
-
-    setTfliteNumberOfClassesButton.disabled = true;
-    setTfliteNumberOfClassesButton.innerText = "setting number of classes...";
-});
-device.addEventListener("getTfliteInferencingEnabled", () => {
-    setTfliteNumberOfClassesButton.disabled = device.tfliteInferencingEnabled;
 });
 
 /** @type {HTMLSpanElement} */

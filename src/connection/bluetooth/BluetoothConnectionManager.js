@@ -80,14 +80,8 @@ class BluetoothConnectionManager extends BaseConnectionManager {
             case "tfliteModelSampleRate":
                 this.onMessageReceived("getTfliteSampleRate", dataView);
                 break;
-            case "tfliteModelNumberOfSamples":
-                this.onMessageReceived("getTfliteNumberOfSamples", dataView);
-                break;
             case "tfliteModelSensorTypes":
                 this.onMessageReceived("getTfliteSensorTypes", dataView);
-                break;
-            case "tfliteModelNumberOfClasses":
-                this.onMessageReceived("getTfliteNumberOfClasses", dataView);
                 break;
             case "tfliteCaptureDelay":
                 this.onMessageReceived("getTfliteCaptureDelay", dataView);
@@ -138,12 +132,8 @@ class BluetoothConnectionManager extends BaseConnectionManager {
                 return "tfliteModelTask";
             case "setTfliteSampleRate":
                 return "tfliteModelSampleRate";
-            case "setTfliteNumberOfSamples":
-                return "tfliteModelNumberOfSamples";
             case "setTfliteSensorTypes":
                 return "tfliteModelSensorTypes";
-            case "setTfliteNumberOfClasses":
-                return "tfliteModelNumberOfClasses";
             case "setTfliteCaptureDelay":
                 return "tfliteCaptureDelay";
             case "setTfliteThreshold":

@@ -302,7 +302,6 @@ class Device {
         "getTfliteTask",
         "getTfliteSampleRate",
         "getTfliteSensorTypes",
-        "getTfliteNumberOfClasses",
         "tfliteModelIsReady",
         "getTfliteCaptureDelay",
         "getTfliteThreshold",
@@ -1308,14 +1307,6 @@ class Device {
         return this.#tfliteManager.setTask(newTask);
     }
 
-    get tfliteNumberOfSamples() {
-        return this.#tfliteManager.numberOfSamples;
-    }
-    /** @param {number} newNumberOfSamples */
-    setTfliteNumberOfSamples(newNumberOfSamples) {
-        return this.#tfliteManager.setNumberOfSamples(newNumberOfSamples);
-    }
-
     get tfliteSampleRate() {
         return this.#tfliteManager.sampleRate;
     }
@@ -1330,14 +1321,6 @@ class Device {
     /** @param {SensorType[]} newSensorTypes */
     setTfliteSensorTypes(newSensorTypes) {
         return this.#tfliteManager.setSensorTypes(newSensorTypes);
-    }
-
-    get tfliteNumberOfClasses() {
-        return this.#tfliteManager.numberOfClasses;
-    }
-    /** @param {number} newNumberOfClasses */
-    setTfliteNumberOfClasses(newNumberOfClasses) {
-        return this.#tfliteManager.setNumberOfClasses(newNumberOfClasses);
     }
 
     get tfliteIsReady() {

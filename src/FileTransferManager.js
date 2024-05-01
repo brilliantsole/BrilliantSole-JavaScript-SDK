@@ -3,7 +3,7 @@ import { crc32 } from "./utils/checksum.js";
 import EventDispatcher from "./utils/EventDispatcher.js";
 import { getFileBuffer } from "./utils/ArrayBufferUtils.js";
 
-const _console = createConsole("FileTransferManager", { log: false });
+const _console = createConsole("FileTransferManager", { log: true });
 
 /**
  * @typedef { "maxFileLength" |
