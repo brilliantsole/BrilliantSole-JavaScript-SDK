@@ -725,6 +725,13 @@ function flattenDevicesData(devicesData) {
     console.log({ flattenedDevicesData });
     return flattenedDevicesData;
 }
+
+const scalars = {
+    pressure: 1 / (2 ** 16 - 1),
+    linearAcceleration: 1 / 4,
+    gyroscope: 1 / 720,
+    magnetometer: 1, // FILL LATER
+};
 /** @param {DeviceData} deviceData */
 function flattenDeviceData(deviceData) {
     /** @type {number[]} */
@@ -732,6 +739,7 @@ function flattenDeviceData(deviceData) {
     for (let sampleIndex = 0; sampleIndex < numberOfSamples; sampleIndex++) {
         sensorTypes.forEach((sensorType) => {
             const sensorData = deviceData[sensorType][sampleIndex];
+            const scalar = scalars[sensorType] || 1;
             switch (sensorType) {
                 case "acceleration":
                 case "gravity":
@@ -742,7 +750,8 @@ function flattenDeviceData(deviceData) {
                         /** @type {import("../../build/brilliantsole.module.js").Vector3} */
                         const vector3 = sensorData;
                         const { x, y, z } = vector3;
-                        flattenedDeviceData.push(x, y, z);
+
+                        flattenedDeviceData.push(...[x, y, z].map((value) => value * scalar));
                     }
                     break;
                 case "gameRotation":
@@ -751,14 +760,14 @@ function flattenDeviceData(deviceData) {
                         /** @type {import("../../build/brilliantsole.module.js").Quaternion} */
                         const quaternion = sensorData;
                         const { x, y, z, w } = quaternion;
-                        flattenedDeviceData.push(x, y, z, w);
+                        flattenedDeviceData.push(...[x, y, z, w].map((value) => value * scalar));
                     }
                     break;
                 case "pressure":
                     {
                         /** @type {import("../../build/brilliantsole.module.js").PressureData} */
                         const pressure = sensorData;
-                        flattenedDeviceData.push(...pressure.sensors.map((sensor) => sensor.rawValue));
+                        flattenedDeviceData.push(...pressure.sensors.map((sensor) => sensor.rawValue * scalar));
                     }
                     break;
                 case "barometer":
@@ -1104,7 +1113,7 @@ trainButton.addEventListener("click", () => {
 let didNormalizeData = false;
 function train() {
     if (!didNormalizeData) {
-        neuralNetwork.normalizeData();
+        //neuralNetwork.normalizeData(); // pre-normalize data
         didNormalizeData = true;
     }
 

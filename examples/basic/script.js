@@ -7,6 +7,8 @@ const device = new BS.Device();
 console.log({ device });
 window.device = device;
 
+//BS.setAllConsoleLevelFlags({ log: false });
+
 /** @typedef {import("../../build/brilliantsole.module.js").Device} Device */
 
 // GET DEVICES
@@ -956,6 +958,7 @@ toggleTfliteInferencingEnabledButton.addEventListener("click", () => {
 /** @type {HTMLPreElement} */
 const tfliteInferencePre = document.getElementById("tfliteInference");
 device.addEventListener("tfliteModelInference", (event) => {
+    console.log("inference", event.message.tfliteModelInference);
     tfliteInferencePre.textContent = JSON.stringify(event.message.tfliteModelInference, null, 2);
 });
 
