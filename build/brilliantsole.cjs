@@ -5,7 +5,8 @@
 'use strict';
 
 /** @type {"__BRILLIANTSOLE__DEV__" | "__BRILLIANTSOLE__PROD__"} */
-const isInDev = "__BRILLIANTSOLE__PROD__" == "__BRILLIANTSOLE__DEV__";
+const __BRILLIANTSOLE__ENVIRONMENT__ = "__BRILLIANTSOLE__DEV__";
+const isInDev = __BRILLIANTSOLE__ENVIRONMENT__ == "__BRILLIANTSOLE__DEV__";
 
 // https://github.com/flexdinesh/browser-or-node/blob/master/src/index.ts
 const isInBrowser = typeof window !== "undefined" && window?.document !== "undefined";
@@ -132,6 +133,9 @@ class Console {
      */
     static create(type, levelFlags) {
         const console = this.#consoles[type] || new Console(type);
+        if (levelFlags) {
+            console.setLevelFlags(levelFlags);
+        }
         return console;
     }
 
@@ -2246,6 +2250,7 @@ class TfliteManager {
  * "triggerVibration" |
  * FileTransferMessageType |
  * TfliteMessageType |
+ * "mtu" |
  * FirmwareMessageType
  * } ConnectionMessageType
  */
@@ -2501,6 +2506,7 @@ function stringToServiceUUID(identifier) {
  * "tfliteThreshold" |
  * "tfliteInferencingEnabled" |
  * "tfliteModelInference" |
+ * "mtu" |
  * "smp"
  * } BluetoothCharacteristicName
  */
@@ -2572,6 +2578,8 @@ const bluetoothUUIDs = Object.freeze({
                 tfliteThreshold: { uuid: generateBluetoothUUID("5006") },
                 tfliteInferencingEnabled: { uuid: generateBluetoothUUID("5007") },
                 tfliteModelInference: { uuid: generateBluetoothUUID("5008") },
+
+                mtu: { uuid: generateBluetoothUUID("6000") },
             },
         },
         smp: {
@@ -2726,6 +2734,7 @@ function getCharacteristicProperties(characteristicName) {
         case "tfliteCaptureDelay":
         case "tfliteInferencingEnabled":
         case "tfliteModelInference":
+        case "mtu":
         case "smp":
             properties.notify = true;
             break;
@@ -2793,8 +2802,11 @@ class BluetoothConnectionManager extends BaseConnectionManager {
             case "tfliteModelInference":
 
             case "smp":
+
+            case "mtu":
                 this.onMessageReceived(characteristicName, dataView);
                 break;
+
             case "name":
                 this.onMessageReceived("getName", dataView);
                 break;
@@ -2891,6 +2903,9 @@ class BluetoothConnectionManager extends BaseConnectionManager {
 
             case "smp":
                 return "smp";
+
+            case "mtu":
+                return "mtu";
 
             default:
                 throw Error(`no characteristicName for messageType "${messageType}"`);
@@ -5167,6 +5182,8 @@ class Device {
 
         "connectionMessage",
 
+        "mtu",
+
         ...FileTransferManager.EventTypes,
         ...TfliteManager.EventTypes,
         ...FirmwareManager.EventTypes,
@@ -5286,6 +5303,8 @@ class Device {
         "getTfliteCaptureDelay",
         "getTfliteThreshold",
         "getTfliteInferencingEnabled",
+
+        "mtu",
     ];
     static get AllInformationConnectionMessages() {
         return this.#AllInformationConnectionMessages;
@@ -5515,6 +5534,12 @@ class Device {
 
             case "sensorData":
                 this.#sensorDataManager.parseData(dataView);
+                break;
+
+            case "mtu":
+                const mtu = dataView.getUint16(0, true);
+                _console$c.log({ mtu });
+                this.#updateMtu(mtu);
                 break;
 
             default:
@@ -6374,6 +6399,27 @@ class Device {
     }
     async testFirmwareImage() {
         return this.#firmwareManager.testImage();
+    }
+
+    // MTU
+
+    #mtu = 0;
+    get mtu() {
+        return this.#mtu;
+    }
+    /** @param {number} newMtu */
+    #updateMtu(newMtu) {
+        _console$c.assertTypeWithError(newMtu, "number");
+        if (this.#mtu == newMtu) {
+            _console$c.log("redundant mtu assignment", newMtu);
+            return;
+        }
+        this.#mtu = newMtu;
+
+        // FILL - update fileTransfer
+        // FILL - update firmwareManager
+
+        this.#dispatchEvent({ type: "mtu", message: { mtu: this.#mtu } });
     }
 }
 

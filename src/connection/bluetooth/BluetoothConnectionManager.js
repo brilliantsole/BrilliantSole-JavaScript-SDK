@@ -45,8 +45,11 @@ class BluetoothConnectionManager extends BaseConnectionManager {
             case "tfliteModelInference":
 
             case "smp":
+
+            case "mtu":
                 this.onMessageReceived(characteristicName, dataView);
                 break;
+
             case "name":
                 this.onMessageReceived("getName", dataView);
                 break;
@@ -143,6 +146,9 @@ class BluetoothConnectionManager extends BaseConnectionManager {
 
             case "smp":
                 return "smp";
+
+            case "mtu":
+                return "mtu";
 
             default:
                 throw Error(`no characteristicName for messageType "${messageType}"`);

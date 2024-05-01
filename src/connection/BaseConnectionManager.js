@@ -36,6 +36,7 @@ import TfliteManager from "../TfliteManager.js";
  * "triggerVibration" |
  * FileTransferMessageType |
  * TfliteMessageType |
+ * "mtu" |
  * FirmwareMessageType
  * } ConnectionMessageType
  */

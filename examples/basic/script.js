@@ -576,9 +576,12 @@ device.addEventListener("fileTransferStatus", () => {
 
 /** @type {HTMLButtonElement} */
 const toggleFileTransferButton = document.getElementById("toggleFileTransfer");
-toggleFileTransferButton.addEventListener("click", () => {
+toggleFileTransferButton.addEventListener("click", async () => {
     if (device.fileTransferStatus == "idle") {
         if (fileTransferDirection == "send") {
+            if (fileType == "tflite") {
+                await device.setTfliteName(file.name.replaceAll(".tflite", ""));
+            }
             device.sendFile(fileType, file);
         } else {
             device.receiveFile(fileType);

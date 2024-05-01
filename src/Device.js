@@ -187,6 +187,8 @@ class Device {
 
         "connectionMessage",
 
+        "mtu",
+
         ...FileTransferManager.EventTypes,
         ...TfliteManager.EventTypes,
         ...FirmwareManager.EventTypes,
@@ -306,6 +308,8 @@ class Device {
         "getTfliteCaptureDelay",
         "getTfliteThreshold",
         "getTfliteInferencingEnabled",
+
+        "mtu",
     ];
     static get AllInformationConnectionMessages() {
         return this.#AllInformationConnectionMessages;
@@ -537,6 +541,12 @@ class Device {
 
             case "sensorData":
                 this.#sensorDataManager.parseData(dataView);
+                break;
+
+            case "mtu":
+                const mtu = dataView.getUint16(0, true);
+                _console.log({ mtu });
+                this.#updateMtu(mtu);
                 break;
 
             default:
@@ -1396,6 +1406,27 @@ class Device {
     }
     async testFirmwareImage() {
         return this.#firmwareManager.testImage();
+    }
+
+    // MTU
+
+    #mtu = 0;
+    get mtu() {
+        return this.#mtu;
+    }
+    /** @param {number} newMtu */
+    #updateMtu(newMtu) {
+        _console.assertTypeWithError(newMtu, "number");
+        if (this.#mtu == newMtu) {
+            _console.log("redundant mtu assignment", newMtu);
+            return;
+        }
+        this.#mtu = newMtu;
+
+        // FILL - update fileTransfer
+        // FILL - update firmwareManager
+
+        this.#dispatchEvent({ type: "mtu", message: { mtu: this.#mtu } });
     }
 }
 
