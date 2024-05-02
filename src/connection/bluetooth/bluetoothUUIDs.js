@@ -319,6 +319,7 @@ export function getCharacteristicProperties(characteristicName) {
         case "tfliteModelSampleRate":
         case "tfliteModelSensorTypes":
         case "tfliteInferencingEnabled":
+        case "smp":
             properties.write = true;
             properties.writeWithoutResponse = true;
             properties.reliableWrite = true;
