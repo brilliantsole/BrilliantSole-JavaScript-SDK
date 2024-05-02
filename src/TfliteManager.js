@@ -6,7 +6,7 @@ import { arrayWithoutDuplicates } from "./utils/ArrayUtils.js";
 import SensorConfigurationManager from "./sensor/SensorConfigurationManager.js";
 import { parseTimestamp } from "./utils/MathUtils.js";
 
-const _console = createConsole("TfliteManager", { log: false });
+const _console = createConsole("TfliteManager", { log: true });
 
 /**
  * @typedef { "getTfliteName" |

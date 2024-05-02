@@ -78,6 +78,9 @@ class BaseConnectionManager {
         "setCurrentTime",
         "triggerVibration",
 
+        "mtu",
+        "smp",
+
         ...FileTransferManager.MessageTypes,
         ...TfliteManager.MessageTypes,
     ];

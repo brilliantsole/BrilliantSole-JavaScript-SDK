@@ -72,7 +72,7 @@ export function objectToArrayBuffer(object) {
  */
 export function sliceDataView(dataView, begin, length) {
     let end;
-    if (length) {
+    if (length != undefined) {
         end = dataView.byteOffset + begin + length;
     }
     _console.log({ dataView, begin, end, length });

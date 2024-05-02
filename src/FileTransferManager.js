@@ -165,7 +165,7 @@ class FileTransferManager {
     #parseMaxLength(dataView) {
         _console.log("parseFileMaxLength", dataView);
         const maxLength = dataView.getUint32(0, true);
-        _console.log(`maxLength: ${maxLength}kB`);
+        _console.log(`maxLength: ${maxLength / 1024}kB`);
         this.#maxLength = maxLength;
     }
     /** @param {number} length */
@@ -224,7 +224,7 @@ class FileTransferManager {
     }
     /** @param {number} length */
     #updateLength(length) {
-        _console.log(`length: ${length}kB`);
+        _console.log(`length: ${length / 1024}kB`);
         this.#length = length;
         this.#dispatchEvent({ type: "getFileLength", message: { fileLength: length } });
     }

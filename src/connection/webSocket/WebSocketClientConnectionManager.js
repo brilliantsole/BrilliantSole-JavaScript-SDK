@@ -76,6 +76,22 @@ class WebSocketClientConnectionManager extends BaseConnectionManager {
             case "setType":
             case "setSensorConfiguration":
             case "triggerVibration":
+
+            case "setFileTransferType":
+            case "setFileLength":
+            case "setFileChecksum":
+            case "setFileTransferCommand":
+            case "setFileTransferBlock":
+
+            case "setTfliteName":
+            case "setTfliteTask":
+            case "setTfliteSensorTypes":
+            case "setTfliteSampleRate":
+            case "setTfliteThreshold":
+            case "setTfliteCaptureDelay":
+            case "setTfliteInferencingEnabled":
+
+            case "smp":
                 this.sendWebSocketMessage({ type: messageType, data });
                 break;
             case "setCurrentTime":
@@ -126,20 +142,45 @@ class WebSocketClientConnectionManager extends BaseConnectionManager {
                         _console.log({ isConnected });
                         this.isConnected = isConnected;
                         break;
+
                     case "manufacturerName":
                     case "modelNumber":
                     case "softwareRevision":
                     case "hardwareRevision":
                     case "firmwareRevision":
                     case "pnpId":
+
                     case "batteryLevel":
+
                     case "getName":
                     case "getType":
+
                     case "getSensorConfiguration":
                     case "pressurePositions":
                     case "sensorScalars":
                     case "sensorData":
                     case "getCurrentTime":
+
+                    case "maxFileLength":
+                    case "getFileChecksum":
+                    case "getFileLength":
+                    case "getFileTransferType":
+                    case "getFileTransferBlock":
+                    case "fileTransferStatus":
+
+                    case "getTfliteName":
+                    case "getTfliteTask":
+                    case "getTfliteSampleRate":
+                    case "getTfliteSensorTypes":
+                    case "tfliteModelIsReady":
+                    case "getTfliteCaptureDelay":
+                    case "getTfliteThreshold":
+                    case "getTfliteInferencingEnabled":
+                    case "tfliteModelInference":
+
+                    case "mtu":
+
+                    case "smp":
                         this.onMessageReceived(messageType, dataView);
                         break;
                     default:

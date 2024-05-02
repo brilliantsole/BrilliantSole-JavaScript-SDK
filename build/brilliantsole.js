@@ -9,8 +9,7 @@
 })(this, (function () { 'use strict';
 
 	/** @type {"__BRILLIANTSOLE__DEV__" | "__BRILLIANTSOLE__PROD__"} */
-	const __BRILLIANTSOLE__ENVIRONMENT__ = "__BRILLIANTSOLE__DEV__";
-	const isInDev = __BRILLIANTSOLE__ENVIRONMENT__ == "__BRILLIANTSOLE__DEV__";
+	const isInDev = "__BRILLIANTSOLE__PROD__" == "__BRILLIANTSOLE__DEV__";
 
 	// https://github.com/flexdinesh/browser-or-node/blob/master/src/index.ts
 	const isInBrowser = typeof window !== "undefined" && window?.document !== "undefined";
@@ -137,9 +136,6 @@
 	     */
 	    static create(type, levelFlags) {
 	        const console = this.#consoles[type] || new Console(type);
-	        if (levelFlags) {
-	            console.setLevelFlags(levelFlags);
-	        }
 	        return console;
 	    }
 
@@ -583,7 +579,7 @@
 	 */
 	function sliceDataView(dataView, begin, length) {
 	    let end;
-	    if (length) {
+	    if (length != undefined) {
 	        end = dataView.byteOffset + begin + length;
 	    }
 	    _console$q.log({ dataView, begin, end, length });
@@ -772,7 +768,7 @@
 	    #parseMaxLength(dataView) {
 	        _console$p.log("parseFileMaxLength", dataView);
 	        const maxLength = dataView.getUint32(0, true);
-	        _console$p.log(`maxLength: ${maxLength}kB`);
+	        _console$p.log(`maxLength: ${maxLength / 1024}kB`);
 	        this.#maxLength = maxLength;
 	    }
 	    /** @param {number} length */
@@ -831,7 +827,7 @@
 	    }
 	    /** @param {number} length */
 	    #updateLength(length) {
-	        _console$p.log(`length: ${length}kB`);
+	        _console$p.log(`length: ${length / 1024}kB`);
 	        this.#length = length;
 	        this.#dispatchEvent({ type: "getFileLength", message: { fileLength: length } });
 	    }
@@ -1715,7 +1711,7 @@
 	    }
 	}
 
-	const _console$j = createConsole("TfliteManager", { log: false });
+	const _console$j = createConsole("TfliteManager", { log: true });
 
 	/**
 	 * @typedef { "getTfliteName" |
@@ -2305,6 +2301,9 @@
 	        "getCurrentTime",
 	        "setCurrentTime",
 	        "triggerVibration",
+
+	        "mtu",
+	        "smp",
 
 	        ...FileTransferManager.MessageTypes,
 	        ...TfliteManager.MessageTypes,
@@ -6705,7 +6704,8 @@
 	        }
 	        const buffer = Buffer.from(data);
 	        _console$a.log("writing data", buffer);
-	        await characteristic.writeAsync(buffer, false);
+	        const withoutResponse = messageType == "smp";
+	        await characteristic.writeAsync(buffer, withoutResponse);
 	        if (characteristic.properties.includes("read")) {
 	            await characteristic.readAsync();
 	        }
@@ -6932,7 +6932,6 @@
 	        this._connectionManager.onNobleCharacteristicData(this, data, isNotification);
 	    }
 	    /**
-	     *
 	     * @param {noble.Characteristic} characteristic
 	     * @param {Buffer} data
 	     * @param {boolean} isNotification
@@ -7801,6 +7800,22 @@
 	            case "setType":
 	            case "setSensorConfiguration":
 	            case "triggerVibration":
+
+	            case "setFileTransferType":
+	            case "setFileLength":
+	            case "setFileChecksum":
+	            case "setFileTransferCommand":
+	            case "setFileTransferBlock":
+
+	            case "setTfliteName":
+	            case "setTfliteTask":
+	            case "setTfliteSensorTypes":
+	            case "setTfliteSampleRate":
+	            case "setTfliteThreshold":
+	            case "setTfliteCaptureDelay":
+	            case "setTfliteInferencingEnabled":
+
+	            case "smp":
 	                this.sendWebSocketMessage({ type: messageType, data });
 	                break;
 	            case "setCurrentTime":
@@ -7851,20 +7866,45 @@
 	                        _console$3.log({ isConnected });
 	                        this.isConnected = isConnected;
 	                        break;
+
 	                    case "manufacturerName":
 	                    case "modelNumber":
 	                    case "softwareRevision":
 	                    case "hardwareRevision":
 	                    case "firmwareRevision":
 	                    case "pnpId":
+
 	                    case "batteryLevel":
+
 	                    case "getName":
 	                    case "getType":
+
 	                    case "getSensorConfiguration":
 	                    case "pressurePositions":
 	                    case "sensorScalars":
 	                    case "sensorData":
 	                    case "getCurrentTime":
+
+	                    case "maxFileLength":
+	                    case "getFileChecksum":
+	                    case "getFileLength":
+	                    case "getFileTransferType":
+	                    case "getFileTransferBlock":
+	                    case "fileTransferStatus":
+
+	                    case "getTfliteName":
+	                    case "getTfliteTask":
+	                    case "getTfliteSampleRate":
+	                    case "getTfliteSensorTypes":
+	                    case "tfliteModelIsReady":
+	                    case "getTfliteCaptureDelay":
+	                    case "getTfliteThreshold":
+	                    case "getTfliteInferencingEnabled":
+	                    case "tfliteModelInference":
+
+	                    case "mtu":
+
+	                    case "smp":
 	                        this.onMessageReceived(messageType, dataView);
 	                        break;
 	                    default:
@@ -8561,7 +8601,10 @@
 	        event.message.client;
 	        _console$1.log("onClientDisconnected");
 	        if (this.numberOfClients == 0 && this.clearSensorConfigurationsWhenNoClients) {
-	            Device.ConnectedDevices.forEach((device) => device.clearSensorConfiguration());
+	            Device.ConnectedDevices.forEach((device) => {
+	                device.clearSensorConfiguration();
+	                device.setTfliteInferencingEnabled(false);
+	            });
 	        }
 	    }
 
@@ -8837,19 +8880,59 @@
 	                    case "hardwareRevision":
 	                    case "firmwareRevision":
 	                    case "pnpId":
+
 	                    case "batteryLevel":
+
 	                    case "getName":
 	                    case "getType":
+
 	                    case "getSensorConfiguration":
 	                    case "pressurePositions":
 	                    case "sensorScalars":
+
 	                    case "getCurrentTime":
+
+	                    case "mtu":
+
+	                    case "maxFileLength":
+	                    case "getFileChecksum":
+	                    case "getFileLength":
+	                    case "getFileTransferType":
+	                    case "getFileTransferBlock":
+	                    case "fileTransferStatus":
+
+	                    case "getTfliteName":
+	                    case "getTfliteTask":
+	                    case "getTfliteSampleRate":
+	                    case "getTfliteSensorTypes":
+	                    case "tfliteModelIsReady":
+	                    case "getTfliteCaptureDelay":
+	                    case "getTfliteThreshold":
+	                    case "getTfliteInferencingEnabled":
+	                    case "tfliteModelInference":
 	                        responseMessages.push(this.#createDeviceMessage(device, messageType));
 	                        break;
+
 	                    case "setName":
 	                    case "setType":
 	                    case "setSensorConfiguration":
 	                    case "triggerVibration":
+
+	                    case "setFileTransferType":
+	                    case "setFileLength":
+	                    case "setFileChecksum":
+	                    case "setFileTransferCommand":
+	                    case "setFileTransferBlock":
+
+	                    case "setTfliteName":
+	                    case "setTfliteTask":
+	                    case "setTfliteSensorTypes":
+	                    case "setTfliteSampleRate":
+	                    case "setTfliteThreshold":
+	                    case "setTfliteCaptureDelay":
+	                    case "setTfliteInferencingEnabled":
+
+	                    case "smp":
 	                        device.connectionManager.sendMessage(messageType, dataView);
 	                        break;
 	                    default:
