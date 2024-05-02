@@ -1423,8 +1423,8 @@ class Device {
         }
         this.#mtu = newMtu;
 
-        // FILL - update fileTransfer
-        // FILL - update firmwareManager
+        this.#firmwareManager.mtu = this.mtu;
+        this.#fileTransferManager.mtu = this.mtu;
 
         this.#dispatchEvent({ type: "mtu", message: { mtu: this.#mtu } });
     }

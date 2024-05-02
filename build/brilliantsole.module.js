@@ -1024,7 +1024,6 @@ class FileTransferManager {
         return this.#sendBlock(buffer);
     }
 
-    #blockSize = 256;
     /**
      * @param {ArrayBuffer} buffer
      * @param {number} offset
@@ -1034,7 +1033,8 @@ class FileTransferManager {
             return;
         }
 
-        const slicedBuffer = buffer.slice(offset, offset + this.#blockSize);
+        const slicedBuffer = buffer.slice(offset, offset + (this.#mtu - 3));
+        console.log("slicedBuffer", slicedBuffer);
         const bytesLeft = buffer.byteLength - offset;
         const progress = 1 - bytesLeft / buffer.byteLength;
         _console$p.log(
@@ -1077,6 +1077,16 @@ class FileTransferManager {
 
     /** @type {SendMessageCallback} */
     sendMessage;
+
+    // MTU
+
+    #mtu;
+    get mtu() {
+        return this.#mtu;
+    }
+    set mtu(newMtu) {
+        this.#mtu = newMtu;
+    }
 }
 
 const textEncoder = new TextEncoder();
@@ -4236,7 +4246,7 @@ const constants = {
 
 class MCUManager {
     constructor() {
-        this._mtu = 490;
+        this._mtu = 256;
         this._messageCallback = null;
         this._imageUploadProgressCallback = null;
         this._imageUploadNextCallback = null;
@@ -4427,7 +4437,7 @@ class MCUManager {
             percentage: Math.floor((this._uploadOffset / this._uploadImage.byteLength) * 100),
         });
 
-        const length = this._mtu - CBOR.encode(message).byteLength - nmpOverhead;
+        const length = this._mtu - CBOR.encode(message).byteLength - nmpOverhead - 3 - 5;
 
         message.data = new Uint8Array(this._uploadImage.slice(this._uploadOffset, this._uploadOffset + length));
 
@@ -4445,7 +4455,6 @@ class MCUManager {
         this._imageUploadNextCallback({ packet });
     }
     async reset() {
-        this._mtu = 256;
         this._messageCallback = null;
         this._imageUploadProgressCallback = null;
         this._imageUploadNextCallback = null;
@@ -4866,6 +4875,17 @@ class FirmwareManager {
         this.sendMessage("smp", Uint8Array.from(this.#mcuManager.cmdReset()));
 
         await promise;
+    }
+
+    // MTU
+
+    #mtu;
+    get mtu() {
+        return this.#mtu;
+    }
+    set mtu(newMtu) {
+        this.#mtu = newMtu;
+        this.#mcuManager._mtu = this.#mtu;
     }
 
     // MCUManager
@@ -6414,8 +6434,8 @@ class Device {
         }
         this.#mtu = newMtu;
 
-        // FILL - update fileTransfer
-        // FILL - update firmwareManager
+        this.#firmwareManager.mtu = this.mtu;
+        this.#fileTransferManager.mtu = this.mtu;
 
         this.#dispatchEvent({ type: "mtu", message: { mtu: this.#mtu } });
     }

@@ -262,6 +262,17 @@ class FirmwareManager {
         await promise;
     }
 
+    // MTU
+
+    #mtu;
+    get mtu() {
+        return this.#mtu;
+    }
+    set mtu(newMtu) {
+        this.#mtu = newMtu;
+        this.#mcuManager._mtu = this.#mtu;
+    }
+
     // MCUManager
 
     #mcuManager = new MCUManager();

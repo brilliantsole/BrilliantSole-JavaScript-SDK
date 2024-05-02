@@ -423,7 +423,6 @@ class FileTransferManager {
         return this.#sendBlock(buffer);
     }
 
-    #blockSize = 256;
     /**
      * @param {ArrayBuffer} buffer
      * @param {number} offset
@@ -433,7 +432,8 @@ class FileTransferManager {
             return;
         }
 
-        const slicedBuffer = buffer.slice(offset, offset + this.#blockSize);
+        const slicedBuffer = buffer.slice(offset, offset + (this.#mtu - 3));
+        console.log("slicedBuffer", slicedBuffer);
         const bytesLeft = buffer.byteLength - offset;
         const progress = 1 - bytesLeft / buffer.byteLength;
         _console.log(
@@ -476,6 +476,16 @@ class FileTransferManager {
 
     /** @type {SendMessageCallback} */
     sendMessage;
+
+    // MTU
+
+    #mtu;
+    get mtu() {
+        return this.#mtu;
+    }
+    set mtu(newMtu) {
+        this.#mtu = newMtu;
+    }
 }
 
 export default FileTransferManager;
