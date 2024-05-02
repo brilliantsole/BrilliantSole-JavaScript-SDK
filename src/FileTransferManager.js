@@ -309,6 +309,7 @@ class FileTransferManager {
         _console.log({ status });
         this.#status = status;
         this.#dispatchEvent({ type: "fileTransferStatus", message: { fileTransferStatus: status } });
+        this.#receivedBlocks.length = 0;
     }
     #assertIsIdle() {
         _console.assertWithError(this.#status == "idle", "status is not idle");
@@ -319,8 +320,8 @@ class FileTransferManager {
 
     // BLOCK
 
-    /** @type {ArrayBuffer[]?} */
-    #receivedBlocks;
+    /** @type {ArrayBuffer[]} */
+    #receivedBlocks = [];
 
     /** @param {DataView} dataView */
     async #parseBlock(dataView) {
@@ -346,7 +347,14 @@ class FileTransferManager {
                 fileName += ".tflite";
                 break;
         }
-        const file = new File(this.#receivedBlocks, fileName);
+
+        /** @type {File|Blob} */
+        let file;
+        if (typeof File !== "undefined") {
+            file = new File(this.#receivedBlocks, fileName);
+        } else {
+            file = new Blob(this.#receivedBlocks);
+        }
 
         const arrayBuffer = await file.arrayBuffer();
         const checksum = crc32(arrayBuffer);
@@ -456,8 +464,6 @@ class FileTransferManager {
         this.#assertIsIdle();
 
         this.#assertValidType(type);
-
-        this.#receivedBlocks = [];
 
         await this.#setType(type);
         await this.#setCommand("startReceive");

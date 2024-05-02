@@ -912,6 +912,7 @@
 	        _console$p.log({ status });
 	        this.#status = status;
 	        this.#dispatchEvent({ type: "fileTransferStatus", message: { fileTransferStatus: status } });
+	        this.#receivedBlocks.length = 0;
 	    }
 	    #assertIsIdle() {
 	        _console$p.assertWithError(this.#status == "idle", "status is not idle");
@@ -922,8 +923,8 @@
 
 	    // BLOCK
 
-	    /** @type {ArrayBuffer[]?} */
-	    #receivedBlocks;
+	    /** @type {ArrayBuffer[]} */
+	    #receivedBlocks = [];
 
 	    /** @param {DataView} dataView */
 	    async #parseBlock(dataView) {
@@ -949,7 +950,14 @@
 	                fileName += ".tflite";
 	                break;
 	        }
-	        const file = new File(this.#receivedBlocks, fileName);
+
+	        /** @type {File|Blob} */
+	        let file;
+	        if (typeof File !== "undefined") {
+	            file = new File(this.#receivedBlocks, fileName);
+	        } else {
+	            file = new Blob(this.#receivedBlocks);
+	        }
 
 	        const arrayBuffer = await file.arrayBuffer();
 	        const checksum = crc32(arrayBuffer);
@@ -1059,8 +1067,6 @@
 	        this.#assertIsIdle();
 
 	        this.#assertValidType(type);
-
-	        this.#receivedBlocks = [];
 
 	        await this.#setType(type);
 	        await this.#setCommand("startReceive");
@@ -6393,8 +6399,16 @@
 
 	    #firmwareManager = new FirmwareManager();
 
+	    get areFirmwareUpdatesSupported() {
+	        return this.connectionType != "webSocketClient";
+	    }
+	    #assertFirmwareUpdatesAreSupported() {
+	        _console$c.assertWithError(this.areFirmwareUpdatesSupported, "firmware updates are not supported");
+	    }
+
 	    /** @param {FileLike} file */
 	    async uploadFirmware(file) {
+	        this.#assertFirmwareUpdatesAreSupported();
 	        return this.#firmwareManager.uploadFirmware(file);
 	    }
 
