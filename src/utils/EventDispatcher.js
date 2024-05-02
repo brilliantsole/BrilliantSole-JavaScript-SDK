@@ -127,9 +127,28 @@ class EventDispatcher {
             const array = this.#listeners[event.type].slice(0);
 
             for (let i = 0, l = array.length; i < l; i++) {
-                array[i].call(this, event);
+                try {
+                    array[i].call(this, event);
+                } catch (error) {
+                    _console.error(error);
+                }
             }
         }
+    }
+
+    /** @param {string} type */
+    waitForEvent(type) {
+        _console.log(`waiting for event "${type}"`);
+        this.#assertValidEventType(type);
+        return new Promise((resolve) => {
+            this.addEventListener(
+                type,
+                (event) => {
+                    resolve(event);
+                },
+                { once: true }
+            );
+        });
     }
 }
 

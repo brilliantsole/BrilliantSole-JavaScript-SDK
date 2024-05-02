@@ -2,7 +2,7 @@ import BS from "../../build/brilliantsole.module.js";
 import * as THREE from "../utils/three/three.module.min.js";
 window.BS = BS;
 console.log({ BS });
-BS.setAllConsoleLevelFlags({ log: false });
+//BS.setAllConsoleLevelFlags({ log: false });
 
 // VIBRATION
 
@@ -230,11 +230,16 @@ function toggleDeviceSelection(device) {
 
 // TASK
 
-/** @type {"classification" | "regression"} */
+/** @type {import("../../build/brilliantsole.module.js").TfliteTask} */
 let task = "classification";
 
 /** @type {HTMLSelectElement} */
 const taskSelect = document.getElementById("task");
+/** @type {HTMLOptGroupElement} */
+const taskSelectOptgroup = taskSelect.querySelector("optgroup");
+BS.Device.TfliteTasks.forEach((task) => {
+    taskSelectOptgroup.appendChild(new Option(task));
+});
 taskSelect.addEventListener("input", () => {
     task = taskSelect.value;
     console.log({ task });
@@ -305,7 +310,7 @@ const sensorTypeTemplate = document.getElementById("sensorTypeTemplate");
 /** @type {Object.<string, HTMLElement>} */
 const sensorTypeContainers = {};
 
-BS.Device.SensorTypes.forEach((sensorType) => {
+BS.Device.TfliteSensorTypes.forEach((sensorType) => {
     const sensorTypeContainer = sensorTypeTemplate.content.cloneNode(true).querySelector(".sensorType");
     sensorTypeContainer.querySelector(".name").innerText = sensorType;
 
@@ -617,20 +622,26 @@ window.addEventListener("createNeuralNetwork", () => {
 
 let isSensorDataEnabled = false;
 
-/** @type {HTMLButtonElement} */
-const toggleSensorDataInput = document.getElementById("toggleSensorData");
-toggleSensorDataInput.addEventListener("input", () => {
-    isSensorDataEnabled = toggleSensorDataInput.checked;
-    console.log({ isSensorDataEnabled });
-    if (isSensorDataEnabled) {
-        setSensorConfiguration(sensorConfiguration);
-    } else {
-        clearSensorConfiguration();
-    }
-    window.dispatchEvent(new CustomEvent("isSensorDataEnabled", { detail: { isSensorDataEnabled } }));
-});
-window.addEventListener("createNeuralNetwork", () => {
-    toggleSensorDataInput.disabled = false;
+/** @type {HTMLButtonElement[]} */
+const toggleSensorDataInputs = document.querySelectorAll(".toggleSensorData");
+toggleSensorDataInputs.forEach((toggleSensorDataInput) => {
+    toggleSensorDataInput.addEventListener("input", () => {
+        isSensorDataEnabled = toggleSensorDataInput.checked;
+        console.log({ isSensorDataEnabled });
+        if (isSensorDataEnabled) {
+            setSensorConfiguration(sensorConfiguration);
+        } else {
+            clearSensorConfiguration();
+        }
+        window.dispatchEvent(new CustomEvent("isSensorDataEnabled", { detail: { isSensorDataEnabled } }));
+    });
+
+    window.addEventListener("createNeuralNetwork", () => {
+        toggleSensorDataInput.disabled = false;
+    });
+    window.addEventListener("isSensorDataEnabled", () => {
+        toggleSensorDataInput.checked = isSensorDataEnabled;
+    });
 });
 
 /** @param {SensorConfiguration} sensorConfiguration */
@@ -714,6 +725,13 @@ function flattenDevicesData(devicesData) {
     console.log({ flattenedDevicesData });
     return flattenedDevicesData;
 }
+
+const scalars = {
+    pressure: 1 / (2 ** 16 - 1),
+    linearAcceleration: 1 / 4,
+    gyroscope: 1 / 720,
+    magnetometer: 1, // FILL LATER
+};
 /** @param {DeviceData} deviceData */
 function flattenDeviceData(deviceData) {
     /** @type {number[]} */
@@ -721,6 +739,7 @@ function flattenDeviceData(deviceData) {
     for (let sampleIndex = 0; sampleIndex < numberOfSamples; sampleIndex++) {
         sensorTypes.forEach((sensorType) => {
             const sensorData = deviceData[sensorType][sampleIndex];
+            const scalar = scalars[sensorType] || 1;
             switch (sensorType) {
                 case "acceleration":
                 case "gravity":
@@ -731,7 +750,8 @@ function flattenDeviceData(deviceData) {
                         /** @type {import("../../build/brilliantsole.module.js").Vector3} */
                         const vector3 = sensorData;
                         const { x, y, z } = vector3;
-                        flattenedDeviceData.push(x, y, z);
+
+                        flattenedDeviceData.push(...[x, y, z].map((value) => value * scalar));
                     }
                     break;
                 case "gameRotation":
@@ -740,14 +760,14 @@ function flattenDeviceData(deviceData) {
                         /** @type {import("../../build/brilliantsole.module.js").Quaternion} */
                         const quaternion = sensorData;
                         const { x, y, z, w } = quaternion;
-                        flattenedDeviceData.push(x, y, z, w);
+                        flattenedDeviceData.push(...[x, y, z, w].map((value) => value * scalar));
                     }
                     break;
                 case "pressure":
                     {
                         /** @type {import("../../build/brilliantsole.module.js").PressureData} */
                         const pressure = sensorData;
-                        flattenedDeviceData.push(...pressure.sensors.map((sensor) => sensor.rawValue));
+                        flattenedDeviceData.push(...pressure.sensors.map((sensor) => sensor.rawValue * scalar));
                     }
                     break;
                 case "barometer":
@@ -889,7 +909,7 @@ window.addEventListener("loadConfig", () => {
 });
 
 /** @type {SensorType[]} */
-const thresholdSensorTypes = ["linearAcceleration", "gyroscope"];
+const thresholdSensorTypes = ["linearAcceleration"];
 
 const thresholdsContainer = document.getElementById("thresholds");
 const thresholdTemplate = document.getElementById("thresholdTemplate");
@@ -1093,7 +1113,7 @@ trainButton.addEventListener("click", () => {
 let didNormalizeData = false;
 function train() {
     if (!didNormalizeData) {
-        neuralNetwork.normalizeData();
+        //neuralNetwork.normalizeData(); // pre-normalize data
         didNormalizeData = true;
     }
 
@@ -1368,6 +1388,8 @@ function prepareDataSet() {
         outputs.push(output);
     });
 
+    console.log({ inputs, outputs });
+
     return [inputs, outputs];
 }
 
@@ -1410,7 +1432,9 @@ toggleQuantizeModelInput.addEventListener("input", () => {
 let trainTestSplit = 0.2;
 let isConvertingModel = false;
 const tfLiteFiles = {
+    /** @type {File?} */
     tfLite_model_cpp: null,
+    /** @type {File?} */
     model_tflite: null,
 };
 
@@ -1438,6 +1462,7 @@ async function convertModelToTflite() {
                 fetchFunc: (url, req) => {
                     if (quantizeModel) {
                         const [, , test_x] = shuffleAndSplitDataSet(prepareDataSet(), 1 - trainTestSplit);
+                        console.log({ test_x });
                         req.body.append("quantize_data", JSON.stringify(test_x));
                     }
 
@@ -1463,6 +1488,7 @@ async function convertModelToTflite() {
                     isConvertingModel = false;
                     Object.assign(tfLiteFiles, { tfLite_model_cpp, model_tflite });
                     window.dispatchEvent(new CustomEvent("convertModelToTflite", { detail: { tfLiteFiles, files } }));
+                    window.dispatchEvent(new CustomEvent("tfliteModel", { detail: { tfliteModel: model_tflite } }));
                 });
         })
         .catch((error) => {
@@ -1475,34 +1501,143 @@ async function convertModelToTflite() {
 }
 
 /** @type {HTMLButtonElement} */
-const downloadTfliteModelButton = document.getElementById("downloadTfliteModel");
-downloadTfliteModelButton.addEventListener("click", () => {
+const downloadTfliteButton = document.getElementById("downloadTflite");
+downloadTfliteButton.addEventListener("click", () => {
     downloadBlob(tfLiteFiles.model_tflite.blob, "model.tflite");
     downloadBlob(tfLiteFiles.tfLite_model_cpp.blob, "tflite_model.cpp");
 });
 window.addEventListener("convertModelToTflite", () => {
-    downloadTfliteModelButton.disabled = false;
+    downloadTfliteButton.disabled = false;
+});
+
+/** @type {HTMLInputElement} */
+const loadTfliteInput = document.getElementById("loadTflite");
+loadTfliteInput.addEventListener("input", () => {
+    const tfliteModel = loadTfliteInput.files[0];
+    if (tfliteModel) {
+        console.log({ tfliteModel });
+        tfLiteFiles.model_tflite = tfliteModel;
+        window.dispatchEvent(new CustomEvent("tfliteModel", { detail: { tfliteModel } }));
+    }
 });
 
 /** @type {HTMLButtonElement} */
-const toggleTfliteModelButton = document.getElementById("toggleTfliteModel");
-toggleTfliteModelButton.addEventListener("click", () => {
-    // FILL
+const transferTfliteButton = document.getElementById("transferTflite");
+transferTfliteButton.addEventListener("click", async () => {
+    const device = selectedDevices[0];
+    if (device.fileTransferStatus == "idle") {
+        await device.setTfliteSampleRate(samplingRate);
+        await device.setTfliteTask(task);
+        await device.setTfliteSensorTypes(sensorTypes);
+        device.sendFile("tflite", tfLiteFiles.model_tflite);
+    } else {
+        device.cancelFileTransfer();
+    }
 });
 
-/** @type {HTMLButtonElement} */
-const makeTfliteInferenceButton = document.getElementById("makeTfliteInference");
-makeTfliteInferenceButton.addEventListener("click", () => {
-    // FILL
+["createNeuralNetwork", "tfliteModel"].forEach((eventType) => {
+    window.addEventListener(eventType, () => {
+        updateTransferTfliteButton();
+    });
 });
+const updateTransferTfliteButton = () => {
+    const enabled = tfLiteFiles.model_tflite && neuralNetwork && selectedDevices.length == 1;
+    transferTfliteButton.disabled = !enabled;
 
-const tfliteResultsElement = document.getElementById("tfliteResults");
-
-window.addEventListener("finishedTraining", () => {
-    if (selectedDevices.length != 1) {
+    if (!enabled) {
         return;
     }
-    convertModelToTfliteButton.disabled = false;
+
+    /** @type {String} */
+    let innerText;
+    switch (selectedDevices[0].fileTransferStatus) {
+        case "idle":
+            innerText = "transfer file";
+            break;
+        case "sending":
+            innerText = "stop transferring file";
+            break;
+    }
+    transferTfliteButton.innerText = innerText;
+};
+
+/** @type {HTMLProgressElement} */
+const transferTfliteProgress = document.getElementById("transferTfliteProgress");
+window.addEventListener(
+    "createNeuralNetwork",
+    () => {
+        if (selectedDevices.length == 1) {
+            const device = selectedDevices[0];
+            device.addEventListener("fileTransferStatus", (event) => {
+                transferTfliteButton.innerText =
+                    device.fileTransferStatus == "idle" ? "send file" : "stop sending file";
+
+                switch (device.fileTransferStatus) {
+                    case "idle":
+                        transferTfliteButton.innerText = "send file";
+                        transferTfliteProgress.value = 0;
+                        break;
+                    case "sending":
+                        transferTfliteButton.innerText = "stop sending file";
+                        break;
+                }
+            });
+            device.addEventListener("fileTransferProgress", (event) => {
+                transferTfliteProgress.value = event.message.progress;
+            });
+        }
+    },
+    { once: true }
+);
+
+/** @type {HTMLButtonElement} */
+const toggleTfliteInferencingEnabledButton = document.getElementById("toggleTfliteInferencingEnabled");
+toggleTfliteInferencingEnabledButton.addEventListener("click", () => {
+    selectedDevices[0].toggleTfliteInferencing();
+    toggleTfliteInferencingEnabledButton.disabled = true;
+});
+
+/** @type {HTMLInputElement} */
+const setTfliteIsReadyInput = document.getElementById("tfliteIsReady");
+
+/** @type {HTMLPreElement} */
+const tfliteInferencePre = document.getElementById("tfliteInference");
+
+window.addEventListener(
+    "createNeuralNetwork",
+    () => {
+        if (selectedDevices.length == 1) {
+            const device = selectedDevices[0];
+
+            device.addEventListener("tfliteModelIsReady", () => {
+                setTfliteIsReadyInput.checked = device.tfliteIsReady;
+            });
+
+            device.addEventListener("tfliteModelIsReady", () => {
+                toggleTfliteInferencingEnabledButton.disabled = !device.tfliteIsReady;
+            });
+            device.addEventListener("getTfliteInferencingEnabled", () => {
+                toggleTfliteInferencingEnabledButton.innerText = device.tfliteInferencingEnabled
+                    ? "disable inferencing"
+                    : "enable inferencing";
+                toggleTfliteInferencingEnabledButton.disabled = false;
+            });
+
+            device.addEventListener("tfliteModelInference", (event) => {
+                tfliteInferencePre.textContent = JSON.stringify(event.message.tfliteModelInference, null, 2);
+            });
+        }
+    },
+    { once: true }
+);
+
+["finishedTraining", "loadModel"].forEach((eventType) => {
+    window.addEventListener(eventType, () => {
+        if (selectedDevices.length != 1) {
+            return;
+        }
+        convertModelToTfliteButton.disabled = false;
+    });
 });
 
 // CONFIG

@@ -13,3 +13,8 @@ export function createArray(arrayLength, objectOrCallback) {
         }
     });
 }
+
+/** @param {any[]} array */
+export function arrayWithoutDuplicates(array) {
+    return array.filter((value, index) => array.indexOf(value) == index);
+}

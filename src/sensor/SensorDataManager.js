@@ -1,11 +1,11 @@
 import { createConsole } from "../utils/Console.js";
-import { Uint16Max } from "../utils/MathUtils.js";
+import { parseTimestamp } from "../utils/MathUtils.js";
 import PressureSensorDataManager from "./PressureSensorDataManager.js";
 import MotionSensorDataManager from "./MotionSensorDataManager.js";
 import BarometerSensorDataManager from "./BarometerSensorDataManager.js";
 import { parseMessage } from "../utils/ParseUtils.js";
 
-const _console = createConsole("SensorDataManager", { log: true });
+const _console = createConsole("SensorDataManager", { log: false });
 
 /** @typedef {import("./MotionSensorDataManager.js").MotionSensorType} MotionSensorType */
 /** @typedef {import("./PressureSensorDataManager.js").PressureSensorType} PressureSensorType */
@@ -58,27 +58,15 @@ class SensorDataManager {
         _console.assertWithError(sensorTypeEnum in this.#Types, `invalid sensorTypeEnum ${sensorTypeEnum}`);
     }
 
-    /** @type {SensorDataCallback?} */
+    /** @type {SensorDataCallback} */
     onDataReceived;
-
-    /**
-     * @param {DataView} dataView
-     * @param {number} byteOffset
-     */
-    #parseTimestamp(dataView, byteOffset) {
-        let now = Date.now();
-        now -= now % Uint16Max;
-        const lowerUint16 = dataView.getUint16(byteOffset, true);
-        const timestamp = now + lowerUint16;
-        return timestamp;
-    }
 
     /** @param {DataView} dataView */
     parseData(dataView) {
         _console.log("sensorData", Array.from(new Uint8Array(dataView.buffer)));
 
         let byteOffset = 0;
-        const timestamp = this.#parseTimestamp(dataView, byteOffset);
+        const timestamp = parseTimestamp(dataView, byteOffset);
         byteOffset += 2;
 
         const _dataView = new DataView(dataView.buffer, byteOffset);
@@ -113,7 +101,7 @@ class SensorDataManager {
             }
 
             _console.assertWithError(value, `no value defined for sensorType "${sensorType}"`);
-            this.onDataReceived?.(sensorType, { timestamp, [sensorType]: value });
+            this.onDataReceived(sensorType, { timestamp, [sensorType]: value });
         });
     }
 

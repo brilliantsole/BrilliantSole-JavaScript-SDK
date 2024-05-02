@@ -2,7 +2,6 @@ import { dataToArrayBuffer } from "../../utils/ArrayBufferUtils.js";
 import { createConsole } from "../../utils/Console.js";
 import { isInNode } from "../../utils/environment.js";
 import { addEventListeners, removeEventListeners } from "../../utils/EventDispatcher.js";
-import BaseConnectionManager from "../BaseConnectionManager.js";
 import {
     allServiceUUIDs,
     serviceUUIDs,
@@ -13,6 +12,7 @@ import {
     characteristicUUIDs,
     allCharacteristicNames,
 } from "./bluetoothUUIDs.js";
+import BluetoothConnectionManager from "./BluetoothConnectionManager.js";
 
 const _console = createConsole("NobleConnectionManager", { log: true });
 
@@ -26,7 +26,7 @@ if (isInNode) {
 /** @typedef {import("../BaseConnectionManager.js").ConnectionMessageType} ConnectionMessageType */
 /** @typedef {import("../BaseConnectionManager.js").ConnectionMessageType} ConnectionType */
 
-class NobleConnectionManager extends BaseConnectionManager {
+class NobleConnectionManager extends BluetoothConnectionManager {
     get id() {
         return this.#noblePeripheral?.id;
     }
@@ -59,46 +59,18 @@ class NobleConnectionManager extends BaseConnectionManager {
     async sendMessage(messageType, data) {
         await super.sendMessage(...arguments);
 
-        /** @type {BluetoothCharacteristicName} */
-        let characteristicName;
-        /** @type {noble.Characteristic} */
-        let characteristic;
+        const characteristicName = this.characteristicNameForMessageType(messageType);
+        _console.log({ characteristicName });
 
-        switch (messageType) {
-            case "setName":
-                characteristicName = "name";
-                break;
-            case "setType":
-                characteristicName = "type";
-                break;
-            case "setSensorConfiguration":
-                characteristicName = "sensorConfiguration";
-                break;
-            case "setCurrentTime":
-                characteristicName = "currentTime";
-                break;
-            case "triggerVibration":
-                characteristicName = "vibration";
-                break;
-            default:
-                throw Error(`uncaught messageType "${messageType}"`);
-        }
-
-        _console.log("characteristicName", characteristicName);
-
-        if (!characteristicName) {
-            _console.log("no characteristicName found");
-            return;
-        }
-
-        characteristic = this.#characteristics.get(characteristicName);
+        const characteristic = this.#characteristics.get(characteristicName);
         _console.assertWithError(characteristic, `no characteristic found with name "${characteristicName}"`);
         if (data instanceof DataView) {
             data = data.buffer;
         }
         const buffer = Buffer.from(data);
         _console.log("writing data", buffer);
-        await characteristic.writeAsync(buffer, false);
+        const withoutResponse = messageType == "smp";
+        await characteristic.writeAsync(buffer, withoutResponse);
         if (characteristic.properties.includes("read")) {
             await characteristic.readAsync();
         }
@@ -325,7 +297,6 @@ class NobleConnectionManager extends BaseConnectionManager {
         this._connectionManager.onNobleCharacteristicData(this, data, isNotification);
     }
     /**
-     *
      * @param {noble.Characteristic} characteristic
      * @param {Buffer} data
      * @param {boolean} isNotification
@@ -341,35 +312,7 @@ class NobleConnectionManager extends BaseConnectionManager {
             `no name found for characteristic with uuid "${characteristic.uuid}"`
         );
 
-        switch (characteristicName) {
-            case "manufacturerName":
-            case "modelNumber":
-            case "softwareRevision":
-            case "hardwareRevision":
-            case "firmwareRevision":
-            case "pnpId":
-            case "serialNumber":
-            case "batteryLevel":
-            case "sensorData":
-            case "pressurePositions":
-            case "sensorScalars":
-                this.onMessageReceived(characteristicName, dataView);
-                break;
-            case "name":
-                this.onMessageReceived("getName", dataView);
-                break;
-            case "type":
-                this.onMessageReceived("getType", dataView);
-                break;
-            case "sensorConfiguration":
-                this.onMessageReceived("getSensorConfiguration", dataView);
-                break;
-            case "currentTime":
-                this.onMessageReceived("getCurrentTime", dataView);
-                break;
-            default:
-                throw new Error(`uncaught characteristicName "${characteristicName}"`);
-        }
+        this.onCharacteristicValueChanged(characteristicName, dataView);
     }
 
     #onNobleCharacteristicWrite() {

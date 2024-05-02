@@ -1,13 +1,47 @@
 import { createConsole } from "../utils/Console.js";
+import Timer from "../utils/Timer.js";
+
+import FileTransferManager from "../FileTransferManager.js";
+import TfliteManager from "../TfliteManager.js";
 
 /** @typedef {import("./utils/EventDispatcher.js").EventDispatcherListener} EventDispatcherListener */
 /** @typedef {import("./utils/EventDispatcher.js").EventDispatcherOptions} EventDispatcherOptions */
 
+/** @typedef {import("../FileTransferManager.js").FileTransferMessageType} FileTransferMessageType */
+/** @typedef {import("../TfliteManager.js").TfliteMessageType} TfliteMessageType */
+/** @typedef {import("../FirmwareManager.js").FirmwareMessageType} FirmwareMessageType */
+
 /** @typedef {"webBluetooth" | "noble" | "webSocketClient"} ConnectionType */
 /** @typedef {"not connected" | "connecting" | "connected" | "disconnecting"} ConnectionStatus */
-/** @typedef {"manufacturerName" | "modelNumber" | "softwareRevision" | "hardwareRevision" | "firmwareRevision" | "pnpId" | "serialNumber" | "batteryLevel" | "getName" | "setName" | "getType" | "setType" | "getSensorConfiguration" | "setSensorConfiguration" | "sensorScalars" | "pressurePositions" | "sensorData" | "setCurrentTime" | "getCurrentTime" | "triggerVibration"} ConnectionMessageType */
+/**
+ * @typedef { "manufacturerName" |
+ * "modelNumber" |
+ * "softwareRevision" |
+ * "hardwareRevision" |
+ * "firmwareRevision" |
+ * "pnpId" |
+ * "serialNumber" |
+ * "batteryLevel" |
+ * "getName" |
+ * "setName" |
+ * "getType" |
+ * "setType" |
+ * "getSensorConfiguration" |
+ * "setSensorConfiguration" |
+ * "sensorScalars" |
+ * "pressurePositions" |
+ * "sensorData" |
+ * "setCurrentTime" |
+ * "getCurrentTime" |
+ * "triggerVibration" |
+ * FileTransferMessageType |
+ * TfliteMessageType |
+ * "mtu" |
+ * FirmwareMessageType
+ * } ConnectionMessageType
+ */
 
-const _console = createConsole("ConnectionManager");
+const _console = createConsole("ConnectionManager", { log: true });
 
 /**
  * @callback ConnectionStatusCallback
@@ -43,6 +77,12 @@ class BaseConnectionManager {
         "getCurrentTime",
         "setCurrentTime",
         "triggerVibration",
+
+        "mtu",
+        "smp",
+
+        ...FileTransferManager.MessageTypes,
+        ...TfliteManager.MessageTypes,
     ];
     static get MessageTypes() {
         return this.#MessageTypes;
@@ -117,6 +157,12 @@ class BaseConnectionManager {
         _console.log(`new connection status "${newConnectionStatus}"`);
         this.#status = newConnectionStatus;
         this.onStatusUpdated?.(this.status);
+
+        if (this.isConnected) {
+            this.#timer.start();
+        } else {
+            this.#timer.stop();
+        }
     }
 
     get isConnected() {
@@ -173,6 +219,15 @@ class BaseConnectionManager {
     async sendMessage(messageType, data) {
         this.#assertIsConnectedAndNotDisconnecting();
         _console.log("sending message", { messageType, data });
+    }
+
+    #timer = new Timer(this.#checkConnection.bind(this), 5000);
+    #checkConnection() {
+        //console.log("checking connection...");
+        if (!this.isConnected) {
+            _console.log("timer detected disconnection");
+            this.status = "not connected";
+        }
     }
 }
 

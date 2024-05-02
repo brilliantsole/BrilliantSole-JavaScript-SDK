@@ -131,10 +131,7 @@
                 <label>
                     task
                     <select id="task">
-                        <optgroup label="task">
-                            <option value="classification">classification</option>
-                            <option value="regression">regression</option>
-                        </optgroup>
+                        <optgroup label="task"></optgroup>
                     </select>
                 </label>
             </div>
@@ -227,7 +224,7 @@
 
             <label>
                 enable data:
-                <input id="toggleSensorData" disabled type="checkbox" />
+                <input class="toggleSensorData" disabled type="checkbox" />
             </label>
 
             <button id="addData" disabled>add data</button>
@@ -289,6 +286,11 @@
         <div>
             <h3>Classify & Predict</h3>
 
+            <label>
+                enable data:
+                <input class="toggleSensorData" disabled type="checkbox" />
+            </label>
+
             <button id="test" disabled>test</button>
             <label>
                 test continuously
@@ -343,16 +345,22 @@
 
             <button id="convertModelToTflite" disabled>convert model to tflite</button>
 
-            <button id="downloadTfliteModel" disabled>download tflite model</button>
+            <button id="downloadTflite" disabled>download tflite model</button>
 
-            <button id="toggleTfliteModel" disabled>use tflite model</button>
+            <label>
+                load tflite model
+                <input id="loadTflite" type="file" accept=".tflite" />
+            </label>
 
-            <button id="makeTfliteInference" disabled>make inference</button>
+            <button disabled id="transferTflite">transfer file</button>
+            <progress value="0" id="transferTfliteProgress"></progress>
+
+            <label><b>is ready?</b> <input type="checkbox" id="tfliteIsReady" disabled /></label>
+            <button id="toggleTfliteInferencingEnabled" disabled>enable inferencing</button>
 
             <div>
-                <h4>Results</h4>
-
-                <h1 id="tfliteResults"></h1>
+                <h4>inference</h4>
+                <pre id="tfliteInference"></pre>
             </div>
         </div>
     </body>

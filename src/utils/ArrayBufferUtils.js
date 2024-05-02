@@ -72,9 +72,31 @@ export function objectToArrayBuffer(object) {
  */
 export function sliceDataView(dataView, begin, length) {
     let end;
-    if (length) {
+    if (length != undefined) {
         end = dataView.byteOffset + begin + length;
     }
     _console.log({ dataView, begin, end, length });
     return new DataView(dataView.buffer.slice(dataView.byteOffset + begin, end));
+}
+
+/** @typedef {number[] | ArrayBuffer | DataView | URL | string | File} FileLike */
+
+/** @param {FileLike} file */
+export async function getFileBuffer(file) {
+    let fileBuffer;
+    if (file instanceof Array) {
+        fileBuffer = Uint8Array.from(file);
+    } else if (file instanceof DataView) {
+        fileBuffer = file.buffer;
+    } else if (typeof file == "string" || file instanceof URL) {
+        const response = await fetch(file);
+        fileBuffer = await response.arrayBuffer();
+    } else if (file instanceof File) {
+        fileBuffer = await file.arrayBuffer();
+    } else if (file instanceof ArrayBuffer) {
+        fileBuffer = file;
+    } else {
+        throw { error: "invalid file type", file };
+    }
+    return fileBuffer;
 }

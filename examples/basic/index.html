@@ -17,6 +17,9 @@
             margin-top: 0;
             list-style: none;
         }
+        .hidden {
+            display: none;
+        }
     </style>
     <body>
         <nav>
@@ -174,6 +177,153 @@
                     <button class="delete">delete segment</button>
                 </li>
             </template>
+        </div>
+
+        <div>
+            <h2>file transfer</h2>
+            <label>
+                file transfer type
+                <select id="fileTransferTypes">
+                    <optgroup label="file transfer type"></optgroup>
+                </select>
+            </label>
+            <label
+                >file (max <span id="maxFileLength">0</span>kb) <input id="file" type="file" accept=".tflite"
+            /></label>
+            <label>
+                file transfer direction
+                <select id="fileTransferDirection">
+                    <optgroup label="file transfer direction">
+                        <option>send</option>
+                        <option>receive</option>
+                    </optgroup>
+                </select>
+            </label>
+            <button disabled id="toggleFileTransfer">send file</button>
+            <progress value="0" id="fileTransferProgress"></progress>
+        </div>
+
+        <div>
+            <h2>tflite</h2>
+
+            <div>
+                <label><b>name:</b> <span id="tfliteName"></span></label>
+                <label>
+                    <b>new name: </b>
+                    <input id="setTfliteNameInput" type="text" placeholder="type in a name" disabled />
+                </label>
+                <button id="setTfliteNameButton" disabled>set name</button>
+            </div>
+
+            <div>
+                <label><b>task:</b> <span id="tfliteTask"></span></label>
+                <label>
+                    <b>new task: </b>
+                    <select id="setTfliteTaskSelect" disabled>
+                        <optgroup label="select task"></optgroup>
+                    </select>
+                    <button id="setTfliteTaskButton" disabled>set task</button>
+                </label>
+            </div>
+
+            <div>
+                <label><b>sample rate:</b> <span id="tfliteSampleRate"></span></label>
+                <label>
+                    <b>new sample rate: </b>
+                    <input
+                        id="setTfliteSampleRateInput"
+                        type="number"
+                        min="5"
+                        value="20"
+                        max="1000"
+                        step="5"
+                        disabled
+                    />
+                </label>
+                <button id="setTfliteSampleRateButton" disabled>set sample rate</button>
+            </div>
+
+            <div>
+                <b>sensor types</b>
+
+                <div id="tfliteSensorTypes">
+                    <template id="tfliteSensorTypeTemplate">
+                        <label class="sensorType">
+                            <b class="name"></b>
+                            <input class="enabled" type="checkbox" />
+                        </label>
+                    </template>
+                </div>
+
+                <button disabled id="setTfliteSensorTypes">set sensor types</button>
+            </div>
+
+            <div>
+                <label><b>is ready?</b> <input type="checkbox" id="tfliteIsReady" disabled /></label>
+            </div>
+
+            <div>
+                <label><b>threshold:</b> <span id="tfliteThreshold"></span></label>
+                <label>
+                    <b>new threshold: </b>
+                    <input id="setTfliteThresholdInput" type="number" min="0" value="0" max="1" step="0.1" disabled />
+                </label>
+                <button id="setTfliteThresholdButton" disabled>set threshold</button>
+            </div>
+
+            <div>
+                <label><b>capture delay:</b> <span id="tfliteCaptureDelay"></span></label>
+                <label>
+                    <b>new capture delay: </b>
+                    <input
+                        id="setTfliteCaptureDelayInput"
+                        type="number"
+                        min="0"
+                        value="0"
+                        max="2000"
+                        step="1"
+                        disabled
+                    />
+                </label>
+                <button id="setTfliteCaptureDelayButton" disabled>set capture delay</button>
+            </div>
+
+            <div>
+                <label>
+                    <b>inferencing enabled? </b>
+                    <input id="tfliteInferencingEnabled" type="checkbox" disabled />
+                </label>
+                <button id="toggleTfliteInferencingEnabled" disabled>enable inferencing</button>
+            </div>
+
+            <div>
+                <label>
+                    <b>inference: </b>
+                    <pre id="tfliteInference"></pre>
+                </label>
+            </div>
+        </div>
+
+        <div>
+            <h2>firmware update</h2>
+
+            <label><b>status:</b> <span id="firmwareStatus"></span></label>
+
+            <label>firmware <input id="firmwareInput" type="file" accept=".bin" /></label>
+            <button id="toggleFirmwareUpload" disabled>upload firmware</button>
+            <progress value="0" id="firmwareUploadProgress"></progress>
+            <span id="firmwareUploadProgressPercentage" style="display: none"></span>
+
+            <label>
+                <b>firmware images: </b>
+                <pre id="firmwareImages"></pre>
+            </label>
+
+            <button id="reset" disabled>reset</button>
+
+            <button id="testFirmwareImage" disabled>test</button>
+            <button id="confirmFirmwareImage" disabled>confirm</button>
+            <button id="eraseFirmwareImage" disabled>erase</button>
         </div>
     </body>
 </html>

@@ -122,7 +122,10 @@ class BaseServer {
         const client = event.message.client;
         _console.log("onClientDisconnected");
         if (this.numberOfClients == 0 && this.clearSensorConfigurationsWhenNoClients) {
-            Device.ConnectedDevices.forEach((device) => device.clearSensorConfiguration());
+            Device.ConnectedDevices.forEach((device) => {
+                device.clearSensorConfiguration();
+                device.setTfliteInferencingEnabled(false);
+            });
         }
     }
 
@@ -398,19 +401,59 @@ class BaseServer {
                     case "hardwareRevision":
                     case "firmwareRevision":
                     case "pnpId":
+
                     case "batteryLevel":
+
                     case "getName":
                     case "getType":
+
                     case "getSensorConfiguration":
                     case "pressurePositions":
                     case "sensorScalars":
+
                     case "getCurrentTime":
+
+                    case "mtu":
+
+                    case "maxFileLength":
+                    case "getFileChecksum":
+                    case "getFileLength":
+                    case "getFileTransferType":
+                    case "getFileTransferBlock":
+                    case "fileTransferStatus":
+
+                    case "getTfliteName":
+                    case "getTfliteTask":
+                    case "getTfliteSampleRate":
+                    case "getTfliteSensorTypes":
+                    case "tfliteModelIsReady":
+                    case "getTfliteCaptureDelay":
+                    case "getTfliteThreshold":
+                    case "getTfliteInferencingEnabled":
+                    case "tfliteModelInference":
                         responseMessages.push(this.#createDeviceMessage(device, messageType));
                         break;
+
                     case "setName":
                     case "setType":
                     case "setSensorConfiguration":
                     case "triggerVibration":
+
+                    case "setFileTransferType":
+                    case "setFileLength":
+                    case "setFileChecksum":
+                    case "setFileTransferCommand":
+                    case "setFileTransferBlock":
+
+                    case "setTfliteName":
+                    case "setTfliteTask":
+                    case "setTfliteSensorTypes":
+                    case "setTfliteSampleRate":
+                    case "setTfliteThreshold":
+                    case "setTfliteCaptureDelay":
+                    case "setTfliteInferencingEnabled":
+
+                    case "smp":
                         device.connectionManager.sendMessage(messageType, dataView);
                         break;
                     default:

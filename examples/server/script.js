@@ -415,6 +415,479 @@ BS.Device.AddEventListener("availableDevices", (event) => {
             updateToggleConnectionButton();
             device.addEventListener("connectionStatus", () => updateToggleConnectionButton());
 
+            /** @type {File?} */
+            let file;
+
+            /** @type {HTMLInputElement} */
+            const fileInput = availableDeviceContainer.querySelector(".file");
+            fileInput.addEventListener("input", () => {
+                if (fileInput.files[0].size > device.maxFileLength) {
+                    console.log("file size too large");
+                    return;
+                }
+                file = fileInput.files[0];
+                console.log("file", file);
+                updateToggleFileTransferButton();
+            });
+
+            const maxFileLengthSpan = availableDeviceContainer.querySelector(".maxFileLength");
+            const updateMaxFileLengthSpan = () => {
+                maxFileLengthSpan.innerText = (device.maxFileLength / 1024).toLocaleString();
+            };
+            updateMaxFileLengthSpan();
+            device.addEventListener("isConnected", () => {
+                updateMaxFileLengthSpan();
+            });
+
+            /** @type {import("../../build/brilliantsole.module.js").FileType} */
+            let fileType;
+
+            /** @type {HTMLSelectElement} */
+            const fileTransferTypesSelect = availableDeviceContainer.querySelector(".fileTransferTypes");
+            fileTransferTypesSelect.addEventListener("input", () => {
+                fileType = fileTransferTypesSelect.value;
+                console.log({ fileType });
+                switch (fileType) {
+                    case "tflite":
+                        fileInput.accept = ".tflite";
+                        break;
+                }
+            });
+            /** @type {HTMLOptGroupElement} */
+            const fileTransferTypesOptgroup = fileTransferTypesSelect.querySelector("optgroup");
+            BS.Device.FileTypes.forEach((fileType) => {
+                fileTransferTypesOptgroup.appendChild(new Option(fileType));
+            });
+            fileTransferTypesSelect.dispatchEvent(new Event("input"));
+
+            /** @type {HTMLProgressElement} */
+            const fileTransferProgress = availableDeviceContainer.querySelector(".fileTransferProgress");
+            console.log("fileTransferProgress", fileTransferProgress);
+
+            device.addEventListener("fileTransferProgress", (event) => {
+                const progress = event.message.progress;
+                console.log("fileTransferProgress", progress, fileTransferProgress);
+                fileTransferProgress.value = progress == 1 ? 0 : progress;
+            });
+            device.addEventListener("fileTransferStatus", () => {
+                if (device.fileTransferStatus == "idle") {
+                    fileTransferProgress.value = 0;
+                }
+            });
+
+            /** @type {HTMLButtonElement} */
+            const toggleFileTransferButton = availableDeviceContainer.querySelector(".toggleFileTransfer");
+            toggleFileTransferButton.addEventListener("click", async () => {
+                if (device.fileTransferStatus == "idle") {
+                    if (fileTransferDirection == "send") {
+                        if (fileType == "tflite") {
+                            await device.setTfliteName(file.name.replaceAll(".tflite", ""));
+                        }
+                        device.sendFile(fileType, file);
+                    } else {
+                        device.receiveFile(fileType);
+                    }
+                } else {
+                    device.cancelFileTransfer();
+                }
+            });
+            const updateToggleFileTransferButton = () => {
+                const enabled = device.isConnected && (file || fileTransferDirection == "receive");
+                toggleFileTransferButton.disabled = !enabled;
+
+                /** @type {String} */
+                let innerText;
+                switch (device.fileTransferStatus) {
+                    case "idle":
+                        innerText = `${fileTransferDirection} file`;
+                        break;
+                    case "sending":
+                        innerText = "stop sending file";
+                        break;
+                    case "receiving":
+                        innerText = "stop receiving file";
+                        break;
+                }
+                toggleFileTransferButton.innerText = innerText;
+            };
+            device.addEventListener("isConnected", () => {
+                updateToggleFileTransferButton();
+            });
+            device.addEventListener("fileTransferStatus", () => {
+                updateToggleFileTransferButton();
+            });
+
+            /** @type {"send" | "receive"} */
+            let fileTransferDirection;
+            /** @type {HTMLSelectElement} */
+            const fileTransferDirectionSelect = availableDeviceContainer.querySelector(".fileTransferDirection");
+            fileTransferDirectionSelect.addEventListener("input", () => {
+                fileTransferDirection = fileTransferDirectionSelect.value;
+                console.log({ fileTransferDirection });
+                updateToggleFileTransferButton();
+            });
+            fileTransferDirectionSelect.dispatchEvent(new Event("input"));
+
+            /** @param {File} file */
+            function downloadFile(file) {
+                const a = document.createElement("a");
+                document.body.appendChild(a);
+                a.style = "display: none";
+                const url = window.URL.createObjectURL(file);
+                a.href = url;
+                a.download = file.name;
+                a.click();
+                window.URL.revokeObjectURL(url);
+            }
+
+            device.addEventListener("fileReceived", (event) => {
+                const file = event.message.file;
+                downloadFile(file);
+            });
+
+            // TFLITE
+
+            /** @type {HTMLSpanElement} */
+            const tfliteNameSpan = availableDeviceContainer.querySelector(".tfliteName");
+            /** @type {HTMLInputElement} */
+            const setTfliteNameInput = availableDeviceContainer.querySelector(".setTfliteNameInput");
+            /** @type {HTMLButtonElement} */
+            const setTfliteNameButton = availableDeviceContainer.querySelector(".setTfliteNameButton");
+
+            device.addEventListener("getTfliteName", () => {
+                tfliteNameSpan.innerText = device.tfliteName;
+
+                setTfliteNameButton.innerText = "set name";
+                setTfliteNameButton.disabled = !device.isConnected;
+
+                setTfliteNameInput.value = "";
+                setTfliteNameInput.disabled = !device.isConnected;
+            });
+            tfliteNameSpan.innerText = device.tfliteName;
+
+            setTfliteNameButton.addEventListener("click", () => {
+                device.setTfliteName(setTfliteNameInput.value);
+
+                setTfliteNameInput.disabled = true;
+
+                setTfliteNameButton.innerText = "setting name...";
+                setTfliteNameButton.disabled = true;
+            });
+
+            /** @type {HTMLSpanElement} */
+            const tfliteModelTaskSpan = availableDeviceContainer.querySelector(".tfliteTask");
+            /** @type {HTMLSelectElement} */
+            const setTfliteTaskSelect = availableDeviceContainer.querySelector(".setTfliteTaskSelect");
+            /** @type {HTMLOptGroupElement} */
+            const setTfliteTaskOptgroup = setTfliteTaskSelect.querySelector("optgroup");
+            /** @type {HTMLButtonElement} */
+            const setTfliteTaskButton = availableDeviceContainer.querySelector(".setTfliteTaskButton");
+
+            BS.Device.TfliteTasks.forEach((task) => {
+                setTfliteTaskOptgroup.appendChild(new Option(task));
+            });
+
+            device.addEventListener("getTfliteTask", () => {
+                const task = device.tfliteTask;
+                setTfliteTaskSelect.value = task;
+                tfliteModelTaskSpan.innerText = task;
+            });
+            setTfliteTaskSelect.value = device.tfliteTask;
+            tfliteModelTaskSpan.innerText = device.tfliteTask;
+
+            setTfliteTaskButton.addEventListener("click", () => {
+                device.setTfliteTask(setTfliteTaskSelect.value);
+            });
+            device.addEventListener("getTfliteInferencingEnabled", () => {
+                setTfliteTaskButton.disabled = device.tfliteInferencingEnabled;
+            });
+
+            /** @type {HTMLSpanElement} */
+            const tfliteSampleRateSpan = availableDeviceContainer.querySelector(".tfliteSampleRate");
+            /** @type {HTMLInputElement} */
+            const setTfliteSampleRateInput = availableDeviceContainer.querySelector(".setTfliteSampleRateInput");
+            /** @type {HTMLButtonElement} */
+            const setTfliteSampleRateButton = availableDeviceContainer.querySelector(".setTfliteSampleRateButton");
+
+            device.addEventListener("getTfliteSampleRate", () => {
+                tfliteSampleRateSpan.innerText = device.tfliteSampleRate;
+
+                setTfliteSampleRateInput.value = "";
+                setTfliteSampleRateInput.disabled = false;
+
+                setTfliteSampleRateButton.disabled = false;
+                setTfliteSampleRateButton.innerText = "set sample rate";
+            });
+            tfliteSampleRateSpan.innerText = device.tfliteSampleRate;
+
+            setTfliteSampleRateButton.addEventListener("click", () => {
+                device.setTfliteSampleRate(Number(setTfliteSampleRateInput.value));
+
+                setTfliteSampleRateInput.disabled = true;
+
+                setTfliteSampleRateButton.disabled = true;
+                setTfliteSampleRateButton.innerText = "setting sample rate...";
+            });
+            device.addEventListener("getTfliteInferencingEnabled", () => {
+                setTfliteSampleRateButton.disabled = device.tfliteInferencingEnabled;
+            });
+
+            /** @typedef {import("../../build/brilliantsole.module.js").SensorType} SensorType */
+
+            const tfliteSensorTypesContainer = availableDeviceContainer.querySelector(".tfliteSensorTypes");
+            /** @type {HTMLTemplateElement} */
+            const tfliteSensorTypeTemplate = availableDeviceContainer.querySelector(".tfliteSensorTypeTemplate");
+            /** @type {Object.<string, HTMLElement>} */
+            const tfliteSensorTypeContainers = {};
+            /** @type {SensorType[]} */
+            let tfliteSensorTypes = [];
+            /** @type {HTMLButtonElement} */
+            const setTfliteSensorTypesButton = availableDeviceContainer.querySelector(".setTfliteSensorTypes");
+
+            BS.Device.TfliteSensorTypes.forEach((sensorType) => {
+                const sensorTypeContainer = tfliteSensorTypeTemplate.content
+                    .cloneNode(true)
+                    .querySelector(".sensorType");
+                sensorTypeContainer.querySelector(".name").innerText = sensorType;
+
+                /** @type {HTMLInputElement} */
+                const isSensorEnabledInput = sensorTypeContainer.querySelector(".enabled");
+                isSensorEnabledInput.addEventListener("input", () => {
+                    if (isSensorEnabledInput.checked) {
+                        tfliteSensorTypes.push(sensorType);
+                    } else {
+                        tfliteSensorTypes.splice(tfliteSensorTypes.indexOf(sensorType), 1);
+                    }
+                    console.log("tfliteSensorTypes", tfliteSensorTypes);
+                });
+
+                device.addEventListener("getTfliteSensorTypes", () => {
+                    isSensorEnabledInput.checked = device.tfliteSensorTypes.includes(sensorType);
+                });
+                isSensorEnabledInput.checked = device.tfliteSensorTypes.includes(sensorType);
+
+                tfliteSensorTypeContainers[sensorType] = sensorTypeContainer;
+
+                tfliteSensorTypesContainer.appendChild(sensorTypeContainer);
+            });
+
+            device.addEventListener("getTfliteSensorTypes", () => {
+                tfliteSensorTypes = device.tfliteSensorTypes;
+            });
+
+            setTfliteSensorTypesButton.addEventListener("click", () => {
+                setTfliteSensorTypesButton.disabled = true;
+                setTfliteSensorTypesButton.innerText = "setting sensor types...";
+                device.setTfliteSensorTypes(tfliteSensorTypes);
+            });
+            device.addEventListener("getTfliteSensorTypes", () => {
+                setTfliteSensorTypesButton.disabled = false;
+                setTfliteSensorTypesButton.innerText = "set sensor types";
+            });
+            device.addEventListener("getTfliteInferencingEnabled", () => {
+                setTfliteSensorTypesButton.disabled = device.tfliteInferencingEnabled;
+            });
+            setTfliteSensorTypesButton.disabled = false;
+
+            /** @type {HTMLInputElement} */
+            const setTfliteIsReadyInput = availableDeviceContainer.querySelector(".tfliteIsReady");
+            device.addEventListener("tfliteModelIsReady", () => {
+                setTfliteIsReadyInput.checked = device.tfliteIsReady;
+            });
+            setTfliteIsReadyInput.checked = device.tfliteIsReady;
+
+            /** @type {HTMLSpanElement} */
+            const tfliteThresholdSpan = availableDeviceContainer.querySelector(".tfliteThreshold");
+            /** @type {HTMLInputElement} */
+            const setTfliteThresholdInput = availableDeviceContainer.querySelector(".setTfliteThresholdInput");
+            /** @type {HTMLButtonElement} */
+            const setTfliteThresholdButton = availableDeviceContainer.querySelector(".setTfliteThresholdButton");
+
+            device.addEventListener("getTfliteThreshold", () => {
+                tfliteThresholdSpan.innerText = device.tfliteThreshold;
+
+                setTfliteThresholdInput.value = "";
+                setTfliteThresholdInput.disabled = false;
+
+                setTfliteThresholdButton.disabled = false;
+                setTfliteThresholdButton.innerText = "set threshold";
+            });
+            tfliteThresholdSpan.innerText = device.tfliteThreshold;
+
+            setTfliteThresholdButton.addEventListener("click", () => {
+                device.setTfliteThreshold(Number(setTfliteThresholdInput.value));
+
+                setTfliteThresholdInput.disabled = true;
+
+                setTfliteThresholdButton.disabled = true;
+                setTfliteThresholdButton.innerText = "setting threshold...";
+            });
+
+            /** @type {HTMLSpanElement} */
+            const tfliteCaptureDelaySpan = availableDeviceContainer.querySelector(".tfliteCaptureDelay");
+            /** @type {HTMLInputElement} */
+            const setTfliteCaptureDelayInput = availableDeviceContainer.querySelector(".setTfliteCaptureDelayInput");
+            /** @type {HTMLButtonElement} */
+            const setTfliteCaptureDelayButton = availableDeviceContainer.querySelector(".setTfliteCaptureDelayButton");
+
+            device.addEventListener("getTfliteCaptureDelay", () => {
+                tfliteCaptureDelaySpan.innerText = device.tfliteCaptureDelay;
+
+                setTfliteCaptureDelayInput.value = "";
+                setTfliteCaptureDelayInput.disabled = false;
+
+                setTfliteCaptureDelayButton.disabled = false;
+                setTfliteCaptureDelayButton.innerText = "set capture delay";
+            });
+            tfliteCaptureDelaySpan.innerText = device.tfliteCaptureDelay;
+
+            setTfliteCaptureDelayButton.addEventListener("click", () => {
+                device.setTfliteCaptureDelay(Number(setTfliteCaptureDelayInput.value));
+
+                setTfliteCaptureDelayInput.disabled = true;
+
+                setTfliteCaptureDelayButton.disabled = true;
+                setTfliteCaptureDelayButton.innerText = "setting capture delay...";
+            });
+
+            /** @type {HTMLInputElement} */
+            const tfliteInferencingEnabledInput = availableDeviceContainer.querySelector(".tfliteInferencingEnabled");
+            /** @type {HTMLButtonElement} */
+            const toggleTfliteInferencingEnabledButton = availableDeviceContainer.querySelector(
+                ".toggleTfliteInferencingEnabled"
+            );
+
+            const updateTfliteInferencingUI = () => {
+                toggleTfliteInferencingEnabledButton.disabled = !device.tfliteIsReady;
+
+                tfliteInferencingEnabledInput.checked = device.tfliteInferencingEnabled;
+                toggleTfliteInferencingEnabledButton.innerText = device.tfliteInferencingEnabled
+                    ? "disable inferencing"
+                    : "enable inferencing";
+            };
+
+            device.addEventListener("tfliteModelIsReady", () => {
+                toggleTfliteInferencingEnabledButton.disabled = !device.tfliteIsReady;
+            });
+            device.addEventListener("getTfliteInferencingEnabled", () => {
+                tfliteInferencingEnabledInput.checked = device.tfliteInferencingEnabled;
+                toggleTfliteInferencingEnabledButton.innerText = device.tfliteInferencingEnabled
+                    ? "disable inferencing"
+                    : "enable inferencing";
+            });
+            updateTfliteInferencingUI();
+
+            toggleTfliteInferencingEnabledButton.addEventListener("click", () => {
+                device.toggleTfliteInferencing();
+            });
+
+            /** @type {HTMLPreElement} */
+            const tfliteInferencePre = availableDeviceContainer.querySelector(".tfliteInference");
+            device.addEventListener("tfliteModelInference", (event) => {
+                console.log("inference", event.message.tfliteModelInference);
+                tfliteInferencePre.textContent = JSON.stringify(event.message.tfliteModelInference, null, 2);
+            });
+
+            const updateTfliteUI = () => {
+                const disabled = !device.isConnected;
+                setTfliteCaptureDelayInput.disabled = disabled;
+                setTfliteCaptureDelayButton.disabled = disabled;
+
+                setTfliteTaskSelect.disabled = disabled;
+                setTfliteTaskButton.disabled = disabled;
+
+                setTfliteThresholdInput.disabled = disabled;
+                setTfliteThresholdButton.disabled = disabled;
+
+                setTfliteNameInput.disabled = disabled;
+                setTfliteNameButton.disabled = disabled;
+
+                setTfliteSampleRateInput.disabled = disabled;
+                setTfliteSampleRateButton.disabled = disabled;
+            };
+            device.addEventListener("isConnected", () => {
+                updateTfliteUI();
+            });
+            updateTfliteUI();
+
+            // FIRMWARE
+
+            /** @type {HTMLPreElement} */
+            const firmwareImagesPre = availableDeviceContainer.querySelector(".firmwareImages");
+            device.addEventListener("firmwareImages", () => {
+                firmwareImagesPre.textContent = JSON.stringify(
+                    device.firmwareImages,
+                    (key, value) => (key == "hash" ? Array.from(value).join(",") : value),
+                    2
+                );
+            });
+
+            device.addEventListener("isConnected", () => {
+                if (device.isConnected) {
+                    device.getFirmwareImages();
+                }
+            });
+
+            /** @type {HTMLSpanElement} */
+            const firmwareStatusSpan = availableDeviceContainer.querySelector(".firmwareStatus");
+
+            /** @type {HTMLButtonElement} */
+            const resetButton = availableDeviceContainer.querySelector(".reset");
+            resetButton.addEventListener("click", () => {
+                device.reset();
+                resetButton.disabled = true;
+            });
+            const updateResetButton = () => {
+                const status = device.firmwareStatus;
+                const enabled = status == "pending" || status == "testing";
+                resetButton.disabled = !enabled;
+            };
+
+            /** @type {HTMLButtonElement} */
+            const testFirmwareImageButton = availableDeviceContainer.querySelector(".testFirmwareImage");
+            testFirmwareImageButton.addEventListener("click", () => {
+                device.testFirmwareImage();
+            });
+            const updateTestFirmwareImageButton = () => {
+                const enabled = device.firmwareStatus == "uploaded";
+                testFirmwareImageButton.disabled = !enabled;
+            };
+
+            /** @type {HTMLButtonElement} */
+            const confirmFirmwareImageButton = availableDeviceContainer.querySelector(".confirmFirmwareImage");
+            confirmFirmwareImageButton.addEventListener("click", () => {
+                device.confirmFirmwareImage();
+            });
+            const updateConfirmFirmwareImageButton = () => {
+                const enabled = device.firmwareStatus == "testing";
+                confirmFirmwareImageButton.disabled = !enabled;
+            };
+
+            /** @type {HTMLButtonElement} */
+            const eraseFirmwareImageButton = availableDeviceContainer.querySelector(".eraseFirmwareImage");
+            eraseFirmwareImageButton.addEventListener("click", () => {
+                device.eraseFirmwareImage();
+            });
+            const updateEraseFirmwareImageButton = () => {
+                const enabled = device.firmwareStatus == "uploaded";
+                eraseFirmwareImageButton.disabled = !enabled;
+            };
+
+            const updateFirmwareUI = () => {
+                firmwareStatusSpan.innerText = device.firmwareStatus;
+
+                updateResetButton();
+                updateTestFirmwareImageButton();
+                updateConfirmFirmwareImageButton();
+                updateEraseFirmwareImageButton();
+            };
+            device.addEventListener("firmwareStatus", () => {
+                updateFirmwareUI();
+            });
+            updateFirmwareUI();
+
+            device.getFirmwareImages();
+
             availableDevicesContainer.appendChild(availableDeviceContainer);
         }
     });
