@@ -3,7 +3,6 @@ const https = require("https");
 const http = require("http");
 const app = express();
 const fs = require("fs");
-const _ = require("lodash");
 const ip = require("ip");
 const BS = require("./");
 const ws = require("ws");
