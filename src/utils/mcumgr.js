@@ -251,6 +251,10 @@ export class MCUManager {
     }
 
     async _uploadNext() {
+        if (!this._uploadImage) {
+            return;
+        }
+
         if (this._uploadOffset >= this._uploadImage.byteLength) {
             this._uploadIsInProgress = false;
             this._imageUploadFinishedCallback();

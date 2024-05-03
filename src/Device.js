@@ -1377,16 +1377,8 @@ class Device {
 
     #firmwareManager = new FirmwareManager();
 
-    get areFirmwareUpdatesSupported() {
-        return this.connectionType != "webSocketClient";
-    }
-    #assertFirmwareUpdatesAreSupported() {
-        _console.assertWithError(this.areFirmwareUpdatesSupported, "firmware updates are not supported");
-    }
-
     /** @param {FileLike} file */
     async uploadFirmware(file) {
-        this.#assertFirmwareUpdatesAreSupported();
         return this.#firmwareManager.uploadFirmware(file);
     }
 

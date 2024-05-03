@@ -812,6 +812,47 @@ BS.Device.AddEventListener("availableDevices", (event) => {
 
             // FIRMWARE
 
+            /** @type {File?} */
+            let firmware;
+
+            /** @type {HTMLInputElement} */
+            const firmwareInput = availableDeviceContainer.querySelector(".firmwareInput");
+            firmwareInput.addEventListener("input", () => {
+                firmware = firmwareInput.files[0];
+                updateToggleFirmwareUploadButton();
+            });
+            /** @type {HTMLButtonElement} */
+            const toggleFirmwareUploadButton = availableDeviceContainer.querySelector(".toggleFirmwareUpload");
+            toggleFirmwareUploadButton.addEventListener("click", () => {
+                device.uploadFirmware(firmware);
+            });
+            const updateToggleFirmwareUploadButton = () => {
+                const enabled = device.isConnected && Boolean(firmware);
+                toggleFirmwareUploadButton.disabled = !enabled;
+            };
+            device.addEventListener("isConnected", () => {
+                updateToggleFirmwareUploadButton();
+            });
+
+            /** @type {HTMLProgressElement} */
+            const firmwareUploadProgress = availableDeviceContainer.querySelector(".firmwareUploadProgress");
+            /** @type {HTMLSpanElement} */
+            const firmwareUploadProgressPercentageSpan = availableDeviceContainer.querySelector(
+                ".firmwareUploadProgressPercentage"
+            );
+            device.addEventListener("firmwareUploadProgress", (event) => {
+                const progress = event.message.firmwareUploadProgress;
+                firmwareUploadProgress.value = progress;
+                firmwareUploadProgressPercentageSpan.innerText = `${Math.floor(100 * progress)}%`;
+            });
+            device.addEventListener("firmwareUploadComplete", () => {
+                firmwareUploadProgress.value = 0;
+            });
+            device.addEventListener("firmwareStatus", () => {
+                const isUploading = device.firmwareStatus == "uploading";
+                firmwareUploadProgressPercentageSpan.style.display = isUploading ? "" : "none";
+            });
+
             /** @type {HTMLPreElement} */
             const firmwareImagesPre = availableDeviceContainer.querySelector(".firmwareImages");
             device.addEventListener("firmwareImages", () => {

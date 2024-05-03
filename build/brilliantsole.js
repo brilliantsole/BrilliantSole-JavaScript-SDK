@@ -4433,6 +4433,10 @@
 	    }
 
 	    async _uploadNext() {
+	        if (!this._uploadImage) {
+	            return;
+	        }
+
 	        if (this._uploadOffset >= this._uploadImage.byteLength) {
 	            this._uploadIsInProgress = false;
 	            this._imageUploadFinishedCallback();
@@ -6400,16 +6404,8 @@
 
 	    #firmwareManager = new FirmwareManager();
 
-	    get areFirmwareUpdatesSupported() {
-	        return this.connectionType != "webSocketClient";
-	    }
-	    #assertFirmwareUpdatesAreSupported() {
-	        _console$c.assertWithError(this.areFirmwareUpdatesSupported, "firmware updates are not supported");
-	    }
-
 	    /** @param {FileLike} file */
 	    async uploadFirmware(file) {
-	        this.#assertFirmwareUpdatesAreSupported();
 	        return this.#firmwareManager.uploadFirmware(file);
 	    }
 
