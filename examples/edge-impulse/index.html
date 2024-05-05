@@ -1,0 +1,69 @@
+<html>
+    <head>
+        <title>Edge Impulse | BrilliantSole JavaScript SDK</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico" />
+        <script type="module" src="./script.js"></script>
+    </head>
+    <style>
+        .column {
+            display: flex;
+            flex-direction: column;
+        }
+    </style>
+    <body>
+        <nav>
+            <a href="../../">home</a>
+        </nav>
+
+        <h1>Edge Impulse | BrilliantSole JavaScript SDK</h1>
+
+        <h3>Available Devices</h3>
+        <div id="availableDevices">
+            <template id="availableDeviceTemplate">
+                <div class="availableDevice">
+                    <ul>
+                        <li><b>name: </b> <span class="name"></span></li>
+                        <li><b>type: </b> <span class="type"></span></li>
+                        <li><button class="toggleConnection">connect</button></li>
+                    </ul>
+                </div>
+            </template>
+        </div>
+
+        <h3>Device Connection</h3>
+        <button id="toggleConnection">connect</button>
+        <button id="reconnect" disabled>reconnect</button>
+        <label>reconnect on disconnection? <input id="reconnectOnDisconnection" type="checkbox" /></label>
+
+        <h3>Device Information</h3>
+        <pre id="deviceInformationPre"></pre>
+        <div class="column">
+            <label>name: <span id="name"></span></label>
+            <label>battery level: <span id="batteryLevel">_</span>%</label>
+            <label>type: <span id="type"></span></label>
+        </div>
+        <label>
+            sensor configuration:
+            <pre id="sensorConfigurationPre"></pre>
+        </label>
+
+        <h3>Edge Impulse Keys</h3>
+
+        <div class="column">
+            <label>project id <input type="string" id="projectId" size="8" /></label>
+            <label>api key <input type="string" id="apiKey" size="70" /></label>
+        </div>
+
+        <h3>Edge Impulse Projects</h3>
+        <button id="getProject">get project</button>
+        <button id="getProjects">get projects</button>
+
+        <h3>Edge Impulse Remote Management</h3>
+
+        <button id="toggleRemoteManagementConnection" disabled>connect</button>
+        <label>
+            reconnect on disconnection? <input id="reconnectRemoteManagementOnDisconnection" type="checkbox" />
+        </label>
+    </body>
+</html>

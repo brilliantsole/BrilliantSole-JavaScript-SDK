@@ -5886,6 +5886,9 @@ class Device {
     static get DefaultNumberOfPressureSensors() {
         return this.#DefaultNumberOfPressureSensors;
     }
+    get numberOfPressureSensors() {
+        return this.#sensorDataManager.pressureSensorDataManager.numberOfSensors;
+    }
 
     // SENSOR DATA
 
@@ -6350,6 +6353,9 @@ class Device {
 
     get tfliteSensorTypes() {
         return this.#tfliteManager.sensorTypes;
+    }
+    get allowedTfliteSensorTypes() {
+        return this.sensorTypes.filter((sensorType) => TfliteManager.SensorTypes.includes(sensorType));
     }
     /** @param {SensorType[]} newSensorTypes */
     setTfliteSensorTypes(newSensorTypes) {
