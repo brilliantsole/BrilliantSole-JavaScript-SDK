@@ -48,22 +48,47 @@
             <pre id="sensorConfigurationPre"></pre>
         </label>
 
-        <h3>Edge Impulse Keys</h3>
+        <h3>Keys</h3>
 
         <div class="column">
-            <label>project id <input type="string" id="projectId" size="8" /></label>
             <label>api key <input type="string" id="apiKey" size="70" /></label>
+            <label>project id <input type="string" id="projectId" size="8" /></label>
         </div>
 
-        <h3>Edge Impulse Projects</h3>
-        <button id="getProject">get project</button>
-        <button id="getProjects">get projects</button>
-
-        <h3>Edge Impulse Remote Management</h3>
+        <h3>Remote Management</h3>
 
         <button id="toggleRemoteManagementConnection" disabled>connect</button>
         <label>
             reconnect on disconnection? <input id="reconnectRemoteManagementOnDisconnection" type="checkbox" />
         </label>
+
+        <h3>Sensor Types</h3>
+
+        <div id="sensorTypes" class="column">
+            <template id="sensorTypeTemplate">
+                <label class="sensorType">
+                    <b class="name"></b>
+                    <input class="enabled" type="checkbox" />
+                </label>
+            </template>
+        </div>
+
+        <h3>Sampling</h3>
+
+        <div class="column">
+            <label>path <input id="path" type="text" readonly /></label>
+            <label>label <input id="label" type="text" /></label>
+            <label>
+                interval (ms) <input id="samplingInterval" type="number" min="10" value="20" step="5" max="1000" />
+            </label>
+            <label>number of samples <input id="numberOfSamples" type="number" min="1" value="1" step="1" /></label>
+            <label>
+                length (ms)
+                <input id="samplingLength" readonly type="number" min="10" value="20" step="5" max="60000" />
+            </label>
+        </div>
+
+        <button id="getHmacKey" disabled>get hmacKey</button>
+        <button id="toggleSampling" disabled>start sampling</button>
     </body>
 </html>

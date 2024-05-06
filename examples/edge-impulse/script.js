@@ -172,6 +172,7 @@ const projectIdInput = document.getElementById("projectId");
 projectIdInput.addEventListener("input", (event) => {
     setProjectId(event.target.value);
     setSocketToken();
+    setHmacKey();
 });
 /** @param {string} newProjectId */
 function setProjectId(newProjectId) {
@@ -201,6 +202,7 @@ const apiKeyInput = document.getElementById("apiKey");
 apiKeyInput.addEventListener("input", (event) => {
     setApiKey(event.target.value);
     setSocketToken();
+    setHmacKey();
 });
 function setApiKey(newApiKey) {
     apiKey = newApiKey;
@@ -220,7 +222,239 @@ window.addEventListener("load", () => {
     }
 });
 
-// EDGE IMPULSE PROJECTS
+// HmacKey
+
+/** @type {string?} */
+let hmacKey;
+
+function setHmacKey(newHmacKey) {
+    hmacKey = newHmacKey;
+    console.log({ hmacKey });
+    window.dispatchEvent(new Event("hmacKey"));
+    updateHmacKeyButton();
+    setUrlParam("hmacKey", hmacKey);
+}
+
+/** @type {HTMLButtonElement} */
+const getHmacKeyButton = document.getElementById("getHmacKey");
+getHmacKeyButton.addEventListener("click", async () => {
+    getHmacKeyButton.innerText = "getting hmacKey...";
+    getHmacKeyButton.disabled = true;
+    await getHmacKey();
+    updateHmacKeyButton();
+});
+
+function updateHmacKeyButton() {
+    getHmacKeyButton.disabled = Boolean(hmacKey);
+    getHmacKeyButton.innerText = Boolean(hmacKey) ? "got hmacKey" : "get hmacKey";
+}
+
+["projectId", "apiKey", "hmacKey"].forEach((eventType) => {
+    window.addEventListener(eventType, () => {
+        updateHmacKeyButton();
+    });
+});
+
+window.addEventListener("load", () => {
+    if (url.searchParams.has("hmacKey")) {
+        setHmacKey(url.searchParams.get("hmacKey"));
+    }
+});
+
+// SENSOR TYPES
+
+/** @type {SensorType[]} */
+let sensorTypes = [];
+/** @param {SensorType[]} newSensorTypes */
+function setSensorTypes(newSensorTypes) {
+    sensorTypes = newSensorTypes;
+    console.log("sensorTypes", sensorTypes);
+    window.dispatchEvent(new Event("sensorTypes"));
+}
+
+const sensorTypesContainer = document.getElementById("sensorTypes");
+/** @type {HTMLTemplateElement} */
+const sensorTypeTemplate = document.getElementById("sensorTypeTemplate");
+/** @type {Object.<string, HTMLElement>} */
+const sensorTypeContainers = {};
+
+BS.Device.TfliteSensorTypes.forEach((sensorType) => {
+    const sensorTypeContainer = sensorTypeTemplate.content.cloneNode(true).querySelector(".sensorType");
+    sensorTypeContainer.querySelector(".name").innerText = sensorType;
+
+    /** @type {HTMLInputElement} */
+    const isSensorEnabledInput = sensorTypeContainer.querySelector(".enabled");
+    isSensorEnabledInput.addEventListener("input", () => {
+        onSensorTypesInput();
+    });
+
+    window.addEventListener("sensorTypes", () => {
+        isSensorEnabledInput.checked = sensorTypes.includes(sensorType);
+    });
+
+    sensorTypeContainers[sensorType] = sensorTypeContainer;
+
+    sensorTypesContainer.appendChild(sensorTypeContainer);
+});
+
+function onSensorTypesInput() {
+    const sensorTypes = BS.Device.TfliteSensorTypes.filter((sensorType) => {
+        /** @type {HTMLInputElement} */
+        const input = sensorTypeContainers[sensorType].querySelector(".enabled");
+        return input.checked;
+    });
+    setSensorTypes(sensorTypes);
+}
+
+// SAMPLING
+
+/** @type {number} */
+let samplingInterval;
+/** @param {number} newSamplingInterval */
+function setSamplingInterval(newSamplingInterval) {
+    samplingInterval = newSamplingInterval;
+    console.log({ samplingInterval });
+    samplingIntervalInput.value = samplingInterval;
+    window.dispatchEvent(new Event("samplingInterval"));
+}
+/** @type {HTMLInputElement} */
+const samplingIntervalInput = document.getElementById("samplingInterval");
+samplingIntervalInput.addEventListener("input", (event) => {
+    setSamplingInterval(Number(event.target.value));
+});
+setSamplingInterval(20);
+
+/** @type {number} */
+let numberOfSamples;
+/** @param {number} newNumberOfSamples */
+function setNumberOfSamples(newNumberOfSamples) {
+    numberOfSamples = newNumberOfSamples;
+    console.log({ numberOfSamples });
+    numberOfSamplesInput.value = numberOfSamples;
+    window.dispatchEvent(new Event("numberOfSamples"));
+}
+/** @type {HTMLInputElement} */
+const numberOfSamplesInput = document.getElementById("numberOfSamples");
+numberOfSamplesInput.addEventListener("input", (event) => {
+    setNumberOfSamples(Number(event.target.value));
+});
+setNumberOfSamples(10);
+
+/** @type {string} */
+let label;
+/** @type {HTMLInputElement} */
+const labelInput = document.getElementById("label");
+labelInput.addEventListener("input", (event) => {
+    setLabel(event.target.value);
+});
+/** @param {string} newLabel */
+function setLabel(newLabel) {
+    label = newLabel;
+    console.log({ label });
+    labelInput.value = label;
+    window.dispatchEvent(new Event("label"));
+}
+setLabel("idle");
+
+/** @type {string} */
+let path;
+/** @type {HTMLInputElement} */
+const pathInput = document.getElementById("path");
+pathInput.addEventListener("input", (event) => {
+    setPath(event.target.value);
+});
+/** @param {string} newPath */
+function setPath(newPath) {
+    path = newPath;
+    console.log({ path });
+    pathInput.value = path;
+    window.dispatchEvent(new Event("path"));
+}
+setPath("/api/training/data");
+
+/** @type {number} */
+let samplingLength;
+/** @param {number} newSamplingLength */
+function setSamplingLength(newSamplingLength) {
+    samplingLength = newSamplingLength;
+    console.log({ samplingLength });
+    samplingLengthInput.value = samplingLength;
+    window.dispatchEvent(new Event("samplingLength"));
+}
+/** @type {HTMLInputElement} */
+const samplingLengthInput = document.getElementById("samplingLength");
+
+function updateSamplingLength() {
+    const newSamplingLength = numberOfSamples * samplingInterval;
+    setSamplingLength(newSamplingLength);
+}
+updateSamplingLength();
+
+["samplingInterval", "numberOfSamples"].forEach((eventType) => {
+    window.addEventListener(eventType, () => {
+        updateSamplingLength();
+    });
+});
+
+// SAMPLING
+
+let isSampling = false;
+/** @param {boolean} newIsSampling */
+function setIsSampling(newIsSampling) {
+    isSampling = newIsSampling;
+    console.log({ isSampling });
+    window.dispatchEvent(new Event("isSampling"));
+}
+
+/** @type {HTMLButtonElement} */
+const toggleSamplingButton = document.getElementById("toggleSampling");
+toggleSamplingButton.addEventListener("click", () => {
+    sampleAndUpload();
+});
+
+function updateToggleSamplingButton() {
+    const enabled =
+        device.isConnected &&
+        isRemoteManagementConnected() &&
+        sensorTypes.length > 0 &&
+        label.length > 0 &&
+        !isSampling;
+    toggleSamplingButton.disabled = !enabled;
+    toggleSamplingButton.innerText = isSampling ? "sampling..." : "start sampling";
+}
+
+["isSampling", "remoteManagementConnection", "sensortypes", "label"].forEach((eventType) => {
+    window.addEventListener(eventType, () => {
+        updateToggleSamplingButton();
+    });
+});
+device.addEventListener("isConnected", () => {
+    updateToggleSamplingButton();
+});
+
+async function sampleAndUpload() {
+    /** @type {SensorConfiguration} */
+    const sensorConfiguration = {};
+    sensorTypes.forEach((sensorType) => {
+        sensorConfiguration[sensorType] = samplingInterval;
+    });
+    console.log("sensorConfiguration", sensorConfiguration);
+    device.setSensorConfiguration(sensorConfiguration);
+
+    setIsSampling(true);
+
+    const deviceData = await collectData(sensorTypes, numberOfSamples);
+    await device.clearSensorConfiguration();
+    console.log("deviceData", deviceData);
+
+    sendRemoteManagementMessage?.({ sampleFinished: true });
+    setIsSampling(false);
+
+    sendRemoteManagementMessage?.({ sampleUploading: true });
+    await uploadData(sensorTypes, deviceData);
+}
+
+// EDGE IMPULSE API
 
 const ingestionApi = "https://ingestion.edgeimpulse.com";
 const remoteManagementEndpoint = "wss://remote-mgmt.edgeimpulse.com";
@@ -278,16 +512,36 @@ async function getProject() {
     });
 }
 
-/** @type {HTMLButtonElement} */
-const getProjectButton = document.getElementById("getProject");
-getProjectButton.addEventListener("click", () => {
-    getProject();
-});
-/** @type {HTMLButtonElement} */
-const getProjectsButton = document.getElementById("getProjects");
-getProjectsButton.addEventListener("click", () => {
-    getProjects();
-});
+async function getHmacKey() {
+    return new Promise((resolve, reject) => {
+        const x = new XMLHttpRequest();
+        x.open("GET", `${studioEndpoint}/v1/api/${projectId}/devkeys`);
+        x.onload = () => {
+            if (x.status !== 200) {
+                reject("No development keys found: " + x.status + " - " + JSON.stringify(x.response));
+            } else {
+                if (!x.response.success) {
+                    reject(x.response.error);
+                } else {
+                    const { apiKey, hmacKey } = x.response;
+                    console.log({ apiKey, hmacKey });
+                    //setApiKey(apiKey);
+                    setHmacKey(hmacKey);
+                    resolve({
+                        apiKey,
+                        hmacKey,
+                    });
+                }
+            }
+        };
+        x.onerror = (err) => reject(err);
+        x.responseType = "json";
+        if (apiKey) {
+            x.setRequestHeader("x-api-key", apiKey);
+        }
+        x.send();
+    });
+}
 
 // REMOTE MANAGEMENT
 
@@ -321,7 +575,7 @@ async function connectToRemoteManagement() {
     };
     ws.addEventListener("open", () => {
         console.log("remoteManagementWebSocket.open");
-        window.dispatchEvent(new Event("remoteManagementWebSocket.open"));
+        window.dispatchEvent(new Event("remoteManagementConnection"));
         sendRemoteManagementMessage(remoteManagementHelloMessage());
         intervalId = setInterval(() => {
             console.log("ping");
@@ -330,7 +584,7 @@ async function connectToRemoteManagement() {
     });
     ws.addEventListener("close", () => {
         console.log("remoteManagementWebSocket.close");
-        window.dispatchEvent(new Event("remoteManagementWebSocket.close"));
+        window.dispatchEvent(new Event("remoteManagementConnection"));
         clearInterval(intervalId);
         if (reconnectRemoteManagementOnDisconnection && !ws.dontReconnect) {
             window.setTimeout(() => {
@@ -343,7 +597,7 @@ async function connectToRemoteManagement() {
     });
     ws.addEventListener("error", (event) => {
         console.log("remoteManagementWebSocket.error", event);
-        window.dispatchEvent(new Event("remoteManagementWebSocket.close"));
+        window.dispatchEvent(new Event("remoteManagementConnection"));
     });
     ws.addEventListener("message", async (event) => {
         console.log("remoteManagementWebSocket.message", event.data);
@@ -359,7 +613,8 @@ async function connectToRemoteManagement() {
             const isConnected = data.hello;
             console.log({ isConnected });
             if (isConnected) {
-                window.dispatchEvent(new Event("remoteManagement.connected"));
+                ws._isConnected = true;
+                window.dispatchEvent(new Event("remoteManagementConnection"));
             }
         }
 
@@ -367,9 +622,6 @@ async function connectToRemoteManagement() {
             /** @type {SamplingDetails} */
             const samplingDetails = data.sample;
             console.log("samplingDetails", samplingDetails);
-
-            const numberOfSamples = samplingDetails.length / samplingDetails.interval;
-            console.log({ numberOfSamples });
 
             /** @type {SensorType[]} */
             const sensorTypes = samplingDetails.sensor.split(sensorCombinationSeparator);
@@ -383,20 +635,36 @@ async function connectToRemoteManagement() {
                 return;
             }
 
-            /** @type {SensorConfiguration} */
-            const sensorConfiguration = {};
-            sensorTypes.forEach((sensorType) => {
-                sensorConfiguration[sensorType] = samplingDetails.interval;
-            });
-            console.log("sensorConfiguration", sensorConfiguration);
+            const numberOfSamples = samplingDetails.length / samplingDetails.interval;
+            setNumberOfSamples(numberOfSamples);
+            setSensorTypes(sensorTypes);
+            setSamplingInterval(samplingDetails.interval);
+            setSamplingLength(samplingDetails.length);
+            setLabel(samplingDetails.label);
+            setHmacKey(samplingDetails.hmacKey);
+            setPath(samplingDetails.path);
 
-            device.setSensorConfiguration(sensorConfiguration);
-            const deviceData = await collectData(sensorTypes, numberOfSamples);
-            await device.clearSensorConfiguration();
-            console.log("deviceData", deviceData);
-            sendRemoteManagementMessage({ sampleFinished: true });
-            sendRemoteManagementMessage({ sampleUploading: true });
-            await uploadData(samplingDetails, sensorTypes, deviceData);
+            sampleAndUpload();
+
+            // /** @type {SensorConfiguration} */
+            // const sensorConfiguration = {};
+            // sensorTypes.forEach((sensorType) => {
+            //     sensorConfiguration[sensorType] = samplingDetails.interval;
+            // });
+            // console.log("sensorConfiguration", sensorConfiguration);
+            // device.setSensorConfiguration(sensorConfiguration);
+
+            // setIsSampling(true);
+
+            // const deviceData = await collectData(sensorTypes, numberOfSamples);
+            // await device.clearSensorConfiguration();
+            // console.log("deviceData", deviceData);
+
+            // sendRemoteManagementMessage?.({ sampleFinished: true });
+            // setIsSampling(false);
+
+            // sendRemoteManagementMessage?.({ sampleUploading: true });
+            // await uploadData(samplingDetails, sensorTypes, deviceData);
         }
     });
 }
@@ -464,10 +732,14 @@ function remoteManagementHelloMessage() {
     };
 }
 
+function isRemoteManagementConnected() {
+    return remoteManagementWebSocket?.readyState == WebSocket.OPEN && remoteManagementWebSocket?._isConnected;
+}
+
 /** @type {HTMLButtonElement} */
 const toggleRemoteManagementConnectionButton = document.getElementById("toggleRemoteManagementConnection");
 toggleRemoteManagementConnectionButton.addEventListener("click", () => {
-    if (remoteManagementWebSocket?.readyState == WebSocket.OPEN) {
+    if (isRemoteManagementConnected()) {
         remoteManagementWebSocket.dontReconnect = true;
         remoteManagementWebSocket.close();
         toggleRemoteManagementConnectionButton.innerText = "disconnecting...";
@@ -478,13 +750,14 @@ toggleRemoteManagementConnectionButton.addEventListener("click", () => {
     }
 });
 
-window.addEventListener("remoteManagementWebSocket.open", () => {
-    toggleRemoteManagementConnectionButton.innerText = "disconnect";
-    toggleRemoteManagementConnectionButton.disabled = false;
-});
-window.addEventListener("remoteManagementWebSocket.close", () => {
-    toggleRemoteManagementConnectionButton.innerText = "connect";
-    toggleRemoteManagementConnectionButton.disabled = false;
+window.addEventListener("remoteManagementConnection", () => {
+    if (isRemoteManagementConnected()) {
+        toggleRemoteManagementConnectionButton.innerText = "disconnect";
+        toggleRemoteManagementConnectionButton.disabled = false;
+    } else {
+        toggleRemoteManagementConnectionButton.innerText = "connect";
+        toggleRemoteManagementConnectionButton.disabled = false;
+    }
 });
 
 function updateToggleRemoteManagementConnectionButton() {
@@ -576,11 +849,10 @@ async function collectData(sensorTypes, numberOfSamples) {
 const emptySignature = Array(64).fill("0").join("");
 
 /**
- * @param {SamplingDetails} samplingDetails
  * @param {SensorType[]} sensorTypes
  * @param {DeviceData} deviceData
  */
-async function uploadData(samplingDetails, sensorTypes, deviceData) {
+async function uploadData(sensorTypes, deviceData) {
     const sensors = sensorTypes.flatMap((sensorType) => {
         let names = [];
         let units;
@@ -619,8 +891,6 @@ async function uploadData(samplingDetails, sensorTypes, deviceData) {
 
     console.log("sensors", sensors);
 
-    const numberOfSamples = samplingDetails.length / samplingDetails.interval;
-
     const values = [];
     for (let sampleIndex = 0; sampleIndex < numberOfSamples; sampleIndex++) {
         const value = [];
@@ -634,13 +904,11 @@ async function uploadData(samplingDetails, sensorTypes, deviceData) {
                 case "gyroscope":
                 case "magnetometer":
                     ["x", "y", "z"].forEach((component) => {
-                        console.log({ sampleIndex, sensorType, sensorSamples, component });
                         value.push(sensorSamples[sampleIndex][component] * scalar);
                     });
                     break;
                 case "pressure":
                     for (let pressureIndex = 0; pressureIndex < device.numberOfPressureSensors; pressureIndex++) {
-                        console.log({ sampleIndex, sensorType, sensorSamples, pressureIndex });
                         value.push(sensorSamples[sampleIndex].sensors[pressureIndex].rawValue * scalar);
                     }
                     break;
@@ -664,7 +932,7 @@ async function uploadData(samplingDetails, sensorTypes, deviceData) {
         payload: {
             device_name: getDeviceId(),
             device_type: "BrilliantSole",
-            interval_ms: samplingDetails.interval,
+            interval_ms: samplingInterval,
             sensors,
             values,
         },
@@ -672,7 +940,7 @@ async function uploadData(samplingDetails, sensorTypes, deviceData) {
 
     console.log("data", data);
 
-    data.signature = await createSignature(samplingDetails.hmacKey, data);
+    data.signature = await createSignature(hmacKey, data);
 
     console.log("signature", data.signature);
 
@@ -689,9 +957,9 @@ async function uploadData(samplingDetails, sensorTypes, deviceData) {
             }
         };
         xml.onerror = () => reject(undefined);
-        xml.open("post", ingestionApi + samplingDetails.path);
+        xml.open("post", ingestionApi + path);
         xml.setRequestHeader("x-api-key", apiKey);
-        xml.setRequestHeader("x-file-name", encodeLabel(samplingDetails.label));
+        xml.setRequestHeader("x-file-name", encodeLabel(label));
         xml.send(formData);
     });
 }
@@ -742,6 +1010,7 @@ const configLocalStorageKey = "EdgeImpulse";
 let config = {
     projectId,
     apiKey,
+    hmacKey,
 };
 /** @type {object?} */
 let loadedConfig;
@@ -775,6 +1044,7 @@ Object.keys(config).forEach((type) => {
         config = {
             projectId,
             apiKey,
+            hmacKey,
         };
         saveConfigToLocalStorage();
     });
