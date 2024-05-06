@@ -171,7 +171,6 @@ let projectId;
 const projectIdInput = document.getElementById("projectId");
 projectIdInput.addEventListener("input", (event) => {
     setProjectId(event.target.value);
-    setSocketToken();
     setHmacKey();
 });
 /** @param {string} newProjectId */
@@ -201,7 +200,6 @@ let apiKey;
 const apiKeyInput = document.getElementById("apiKey");
 apiKeyInput.addEventListener("input", (event) => {
     setApiKey(event.target.value);
-    setSocketToken();
     setHmacKey();
 });
 function setApiKey(newApiKey) {
@@ -863,7 +861,7 @@ async function uploadData(sensorTypes, deviceData) {
                 names = ["x", "y", "z"].map((component) => `${sensorType}.${component}`);
                 switch (sensorType) {
                     case "linearAcceleration":
-                        units = "g";
+                        units = "g/s";
                         break;
                     case "gyroscope":
                         units = "deg/s";
