@@ -5806,6 +5806,7 @@ class Device {
     }
 
     // SENSOR CONFIGURATION
+
     #sensorConfigurationManager = new SensorConfigurationManager();
     /** @type {SensorConfiguration?} */
     #sensorConfiguration = {};
