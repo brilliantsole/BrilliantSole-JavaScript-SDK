@@ -31,7 +31,7 @@ class BluetoothConnectionManager extends BaseConnectionManager {
      * @param {ArrayBuffer} data
      */
     async writeCharacteristic(characteristicName, data) {
-        console.log("writeCharacteristic", ...arguments);
+        _console.log("writeCharacteristic", ...arguments);
     }
 
     /** @param {ArrayBuffer} data */

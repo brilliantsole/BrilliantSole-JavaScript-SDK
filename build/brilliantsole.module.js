@@ -223,7 +223,7 @@ function capitalizeFirstCharacter(string) {
     return string[0].toUpperCase() + string.slice(1);
 }
 
-const _console$s = createConsole("EventDispatcher", { log: false });
+const _console$t = createConsole("EventDispatcher", { log: false });
 
 /**
  * @typedef EventDispatcherEvent
@@ -248,9 +248,9 @@ class EventDispatcher {
      * @param {string[]?} eventTypes
      */
     constructor(target, eventTypes) {
-        _console$s.assertWithError(target, "target is required");
+        _console$t.assertWithError(target, "target is required");
         this.#target = target;
-        _console$s.assertWithError(Array.isArray(eventTypes) || eventTypes == undefined, "eventTypes must be an array");
+        _console$t.assertWithError(Array.isArray(eventTypes) || eventTypes == undefined, "eventTypes must be an array");
         this.#eventTypes = eventTypes;
     }
 
@@ -275,7 +275,7 @@ class EventDispatcher {
      * @throws {Error}
      */
     #assertValidEventType(type) {
-        _console$s.assertWithError(this.#isValidEventType(type), `invalid event type "${type}"`);
+        _console$t.assertWithError(this.#isValidEventType(type), `invalid event type "${type}"`);
     }
 
     /** @type {Object.<string, [function]?>?} */
@@ -287,7 +287,7 @@ class EventDispatcher {
      * @param {EventDispatcherOptions?} options
      */
     addEventListener(type, listener, options) {
-        _console$s.log(`adding "${type}" eventListener`, listener);
+        _console$t.log(`adding "${type}" eventListener`, listener);
         this.#assertValidEventType(type);
 
         if (!this.#listeners) this.#listeners = {};
@@ -317,7 +317,7 @@ class EventDispatcher {
      * @param {EventDispatcherListener} listener
      */
     hasEventListener(type, listener) {
-        _console$s.log(`has "${type}" eventListener?`, listener);
+        _console$t.log(`has "${type}" eventListener?`, listener);
         this.#assertValidEventType(type);
         return this.#listeners?.[type]?.includes(listener);
     }
@@ -327,7 +327,7 @@ class EventDispatcher {
      * @param {EventDispatcherListener} listener
      */
     removeEventListener(type, listener) {
-        _console$s.log(`removing "${type}" eventListener`, listener);
+        _console$t.log(`removing "${type}" eventListener`, listener);
         this.#assertValidEventType(type);
         if (this.hasEventListener(type, listener)) {
             const index = this.#listeners[type].indexOf(listener);
@@ -352,7 +352,7 @@ class EventDispatcher {
                 try {
                     array[i].call(this, event);
                 } catch (error) {
-                    _console$s.error(error);
+                    _console$t.error(error);
                 }
             }
         }
@@ -360,7 +360,7 @@ class EventDispatcher {
 
     /** @param {string} type */
     waitForEvent(type) {
-        _console$s.log(`waiting for event "${type}"`);
+        _console$t.log(`waiting for event "${type}"`);
         this.#assertValidEventType(type);
         return new Promise((resolve) => {
             this.addEventListener(
@@ -380,7 +380,7 @@ class EventDispatcher {
  */
 function addEventListeners(target, boundEventListeners) {
     let addEventListener = target.addEventListener || target.addListener || target.on || target.AddEventListener;
-    _console$s.assertWithError(addEventListener, "no add listener function found for target");
+    _console$t.assertWithError(addEventListener, "no add listener function found for target");
     addEventListener = addEventListener.bind(target);
     Object.entries(boundEventListeners).forEach(([eventType, eventListener]) => {
         addEventListener(eventType, eventListener);
@@ -393,14 +393,14 @@ function addEventListeners(target, boundEventListeners) {
  */
 function removeEventListeners(target, boundEventListeners) {
     let removeEventListener = target.removeEventListener || target.removeListener || target.RemoveEventListener;
-    _console$s.assertWithError(removeEventListener, "no remove listener function found for target");
+    _console$t.assertWithError(removeEventListener, "no remove listener function found for target");
     removeEventListener = removeEventListener.bind(target);
     Object.entries(boundEventListeners).forEach(([eventType, eventListener]) => {
         removeEventListener(eventType, eventListener);
     });
 }
 
-const _console$r = createConsole("Timer", { log: false });
+const _console$s = createConsole("Timer", { log: false });
 
 class Timer {
     /** @type {function} */
@@ -409,8 +409,8 @@ class Timer {
         return this.#callback;
     }
     set callback(newCallback) {
-        _console$r.assertTypeWithError(newCallback, "function");
-        _console$r.log({ newCallback });
+        _console$s.assertTypeWithError(newCallback, "function");
+        _console$s.log({ newCallback });
         this.#callback = newCallback;
         if (this.isRunning) {
             this.restart();
@@ -423,9 +423,9 @@ class Timer {
         return this.#interval;
     }
     set interval(newInterval) {
-        _console$r.assertTypeWithError(newInterval, "number");
-        _console$r.assertWithError(newInterval > 0, "interval must be above 0");
-        _console$r.log({ newInterval });
+        _console$s.assertTypeWithError(newInterval, "number");
+        _console$s.assertWithError(newInterval > 0, "interval must be above 0");
+        _console$s.log({ newInterval });
         this.#interval = newInterval;
         if (this.isRunning) {
             this.restart();
@@ -449,18 +449,18 @@ class Timer {
 
     start() {
         if (this.isRunning) {
-            _console$r.log("interval already running");
+            _console$s.log("interval already running");
             return;
         }
-        _console$r.log("starting interval");
+        _console$s.log("starting interval");
         this.#intervalId = setInterval(this.#callback, this.#interval);
     }
     stop() {
         if (!this.isRunning) {
-            _console$r.log("interval already not running");
+            _console$s.log("interval already not running");
             return;
         }
-        _console$r.log("stopping interval");
+        _console$s.log("stopping interval");
         clearInterval(this.#intervalId);
         this.#intervalId = null;
     }
@@ -501,7 +501,7 @@ function crc32(dataIterable) {
     return crc;
 }
 
-const _console$q = createConsole("ArrayBufferUtils", { log: false });
+const _console$r = createConsole("ArrayBufferUtils", { log: false });
 
 const textEncoder$1 = new TextEncoder();
 
@@ -576,7 +576,7 @@ function sliceDataView(dataView, begin, length) {
     if (length != undefined) {
         end = dataView.byteOffset + begin + length;
     }
-    _console$q.log({ dataView, begin, end, length });
+    _console$r.log({ dataView, begin, end, length });
     return new DataView(dataView.buffer.slice(dataView.byteOffset + begin, end));
 }
 
@@ -602,7 +602,7 @@ async function getFileBuffer(file) {
     return fileBuffer;
 }
 
-const _console$p = createConsole("FileTransferManager", { log: true });
+const _console$q = createConsole("FileTransferManager", { log: true });
 
 /**
  * @typedef { "maxFileLength" |
@@ -716,11 +716,11 @@ class FileTransferManager {
     }
     /** @param {FileType} type */
     #assertValidType(type) {
-        _console$p.assertEnumWithError(type, this.types);
+        _console$q.assertEnumWithError(type, this.types);
     }
     /** @param {number} typeEnum */
     #assertValidTypeEnum(typeEnum) {
-        _console$p.assertWithError(this.types[typeEnum], `invalid typeEnum ${typeEnum}`);
+        _console$q.assertWithError(this.types[typeEnum], `invalid typeEnum ${typeEnum}`);
     }
 
     /** @type {FileTransferStatus[]} */
@@ -733,7 +733,7 @@ class FileTransferManager {
     }
     /** @param {number} statusEnum */
     #assertValidStatusEnum(statusEnum) {
-        _console$p.assertWithError(this.statuses[statusEnum], `invalid statusEnum ${statusEnum}`);
+        _console$q.assertWithError(this.statuses[statusEnum], `invalid statusEnum ${statusEnum}`);
     }
 
     /** @type {FileTransferCommand[]} */
@@ -746,7 +746,7 @@ class FileTransferManager {
     }
     /** @param {FileTransferCommand} command */
     #assertValidCommand(command) {
-        _console$p.assertEnumWithError(command, this.commands);
+        _console$q.assertEnumWithError(command, this.commands);
     }
 
     static #MaxLength = 0; // kB
@@ -760,14 +760,14 @@ class FileTransferManager {
     }
     /** @param {DataView} dataView */
     #parseMaxLength(dataView) {
-        _console$p.log("parseFileMaxLength", dataView);
+        _console$q.log("parseFileMaxLength", dataView);
         const maxLength = dataView.getUint32(0, true);
-        _console$p.log(`maxLength: ${maxLength / 1024}kB`);
+        _console$q.log(`maxLength: ${maxLength / 1024}kB`);
         this.#maxLength = maxLength;
     }
     /** @param {number} length */
     #assertValidLength(length) {
-        _console$p.assertWithError(
+        _console$q.assertWithError(
             length <= this.maxLength,
             `file length ${length}kB too large - must be ${this.maxLength}kB or less`
         );
@@ -780,7 +780,7 @@ class FileTransferManager {
     }
     /** @param {DataView} dataView */
     #parseType(dataView) {
-        _console$p.log("parseFileType", dataView);
+        _console$q.log("parseFileType", dataView);
         const typeEnum = dataView.getUint8(0);
         this.#assertValidTypeEnum(typeEnum);
         const type = this.types[typeEnum];
@@ -788,7 +788,7 @@ class FileTransferManager {
     }
     /** @param {FileType} type */
     #updateType(type) {
-        _console$p.log({ fileTransferType: type });
+        _console$q.log({ fileTransferType: type });
         this.#type = type;
         this.#dispatchEvent({ type: "getFileTransferType", message: { fileType: type } });
     }
@@ -799,7 +799,7 @@ class FileTransferManager {
     async #setType(newType, sendImmediately) {
         this.#assertValidType(newType);
         if (this.type == newType) {
-            _console$p.log(`redundant type assignment ${newType}`);
+            _console$q.log(`redundant type assignment ${newType}`);
             return;
         }
 
@@ -817,14 +817,14 @@ class FileTransferManager {
     }
     /** @param {DataView} dataView */
     #parseLength(dataView) {
-        _console$p.log("parseFileLength", dataView);
+        _console$q.log("parseFileLength", dataView);
         const length = dataView.getUint32(0, true);
 
         this.#updateLength(length);
     }
     /** @param {number} length */
     #updateLength(length) {
-        _console$p.log(`length: ${length / 1024}kB`);
+        _console$q.log(`length: ${length / 1024}kB`);
         this.#length = length;
         this.#dispatchEvent({ type: "getFileLength", message: { fileLength: length } });
     }
@@ -833,10 +833,10 @@ class FileTransferManager {
      * @param {boolean} sendImmediately
      */
     async #setLength(newLength, sendImmediately) {
-        _console$p.assertTypeWithError(newLength, "number");
+        _console$q.assertTypeWithError(newLength, "number");
         this.#assertValidLength(newLength);
         if (this.length == newLength) {
-            _console$p.log(`redundant length assignment ${newLength}`);
+            _console$q.log(`redundant length assignment ${newLength}`);
             return;
         }
 
@@ -855,13 +855,13 @@ class FileTransferManager {
     }
     /** @param {DataView} dataView */
     #parseChecksum(dataView) {
-        _console$p.log("checksum", dataView);
+        _console$q.log("checksum", dataView);
         const checksum = dataView.getUint32(0, true);
         this.#updateChecksum(checksum);
     }
     /** @param {number} checksum */
     #updateChecksum(checksum) {
-        _console$p.log({ checksum });
+        _console$q.log({ checksum });
         this.#checksum = checksum;
         this.#dispatchEvent({ type: "getFileChecksum", message: { fileChecksum: checksum } });
     }
@@ -870,9 +870,9 @@ class FileTransferManager {
      * @param {boolean} sendImmediately
      */
     async #setChecksum(newChecksum, sendImmediately) {
-        _console$p.assertTypeWithError(newChecksum, "number");
+        _console$q.assertTypeWithError(newChecksum, "number");
         if (this.checksum == newChecksum) {
-            _console$p.log(`redundant checksum assignment ${newChecksum}`);
+            _console$q.log(`redundant checksum assignment ${newChecksum}`);
             return;
         }
 
@@ -910,7 +910,7 @@ class FileTransferManager {
     }
     /** @param {DataView} dataView */
     #parseStatus(dataView) {
-        _console$p.log("parseFileStatus", dataView);
+        _console$q.log("parseFileStatus", dataView);
         const statusEnum = dataView.getUint8(0);
         this.#assertValidStatusEnum(statusEnum);
         const status = this.statuses[statusEnum];
@@ -918,16 +918,16 @@ class FileTransferManager {
     }
     /** @param {FileTransferStatus} status */
     #updateStatus(status) {
-        _console$p.log({ status });
+        _console$q.log({ status });
         this.#status = status;
         this.#dispatchEvent({ type: "fileTransferStatus", message: { fileTransferStatus: status } });
         this.#receivedBlocks.length = 0;
     }
     #assertIsIdle() {
-        _console$p.assertWithError(this.#status == "idle", "status is not idle");
+        _console$q.assertWithError(this.#status == "idle", "status is not idle");
     }
     #assertIsNotIdle() {
-        _console$p.assertWithError(this.#status != "idle", "status is idle");
+        _console$q.assertWithError(this.#status != "idle", "status is idle");
     }
 
     // BLOCK
@@ -937,13 +937,13 @@ class FileTransferManager {
 
     /** @param {DataView} dataView */
     async #parseBlock(dataView) {
-        _console$p.log("parseFileBlock", dataView);
+        _console$q.log("parseFileBlock", dataView);
         this.#receivedBlocks.push(dataView.buffer);
 
         const bytesReceived = this.#receivedBlocks.reduce((sum, arrayBuffer) => (sum += arrayBuffer.byteLength), 0);
         const progress = bytesReceived / this.#length;
 
-        _console$p.log(`received ${bytesReceived} of ${this.#length} bytes (${progress * 100}%)`);
+        _console$q.log(`received ${bytesReceived} of ${this.#length} bytes (${progress * 100}%)`);
 
         this.#dispatchEvent({ type: "fileTransferProgress", message: { progress } });
 
@@ -951,7 +951,7 @@ class FileTransferManager {
             return;
         }
 
-        _console$p.log("file transfer complete");
+        _console$q.log("file transfer complete");
 
         let fileName = new Date().toLocaleString();
         switch (this.type) {
@@ -970,10 +970,10 @@ class FileTransferManager {
 
         const arrayBuffer = await file.arrayBuffer();
         const checksum = crc32(arrayBuffer);
-        _console$p.log({ checksum });
+        _console$q.log({ checksum });
 
         if (checksum != this.#checksum) {
-            _console$p.error(`wrong checksum - expected ${this.#checksum}, got ${checksum}`);
+            _console$q.error(`wrong checksum - expected ${this.#checksum}, got ${checksum}`);
             return;
         }
 
@@ -990,7 +990,7 @@ class FileTransferManager {
      * @param {DataView} dataView
      */
     parseMessage(messageType, dataView) {
-        _console$p.log({ messageType });
+        _console$q.log({ messageType });
 
         switch (messageType) {
             case "maxFileLength":
@@ -1066,14 +1066,14 @@ class FileTransferManager {
         console.log("slicedBuffer", slicedBuffer);
         const bytesLeft = buffer.byteLength - offset;
         const progress = 1 - bytesLeft / buffer.byteLength;
-        _console$p.log(
+        _console$q.log(
             `sending bytes ${offset}-${offset + slicedBuffer.byteLength} of ${buffer.byteLength} bytes (${
                 progress * 100
             }%)`
         );
         this.#dispatchEvent({ type: "fileTransferProgress", message: { progress } });
         if (slicedBuffer.byteLength == 0) {
-            _console$p.log("finished sending buffer");
+            _console$q.log("finished sending buffer");
             this.#dispatchEvent({ type: "fileTransferComplete", message: { direction: "sending" } });
         } else {
             await this.sendMessage([{ type: "setFileTransferBlock", data: slicedBuffer }]);
@@ -1289,7 +1289,7 @@ function arrayWithoutDuplicates(array) {
  * @property {CenterOfPressure?} normalizedCenter
  */
 
-const _console$o = createConsole("PressureSensorDataManager", { log: true });
+const _console$p = createConsole("PressureSensorDataManager", { log: true });
 
 class PressureSensorDataManager {
     /** @type {PressureSensorPosition[]} */
@@ -1318,7 +1318,7 @@ class PressureSensorDataManager {
             });
         }
 
-        _console$o.log({ positions });
+        _console$p.log({ positions });
 
         this.#positions = positions;
 
@@ -1362,14 +1362,14 @@ class PressureSensorDataManager {
             pressure.normalizedCenter = this.#centerOfPressureHelper.updateAndGetNormalization(pressure.center);
         }
 
-        _console$o.log({ pressure });
+        _console$p.log({ pressure });
         return pressure;
     }
 }
 
 /** @typedef {"acceleration" | "gravity" | "linearAcceleration" | "gyroscope" | "magnetometer" | "gameRotation" | "rotation"} MotionSensorType */
 
-const _console$n = createConsole("MotionSensorDataManager", { log: false });
+const _console$o = createConsole("MotionSensorDataManager", { log: false });
 
 /**
  * @typedef Vector3
@@ -1409,7 +1409,7 @@ class MotionSensorDataManager {
 
         const vector = { x, y, z };
 
-        _console$n.log({ vector });
+        _console$o.log({ vector });
         return vector;
     }
 
@@ -1436,7 +1436,7 @@ class MotionSensorDataManager {
 
         const quaternion = { x, y, z, w };
 
-        _console$n.log({ quaternion });
+        _console$o.log({ quaternion });
         return quaternion;
     }
 }
@@ -1457,7 +1457,7 @@ class BarometerSensorDataManager {
     }
 }
 
-const _console$m = createConsole("ParseUtils", { log: true });
+const _console$n = createConsole("ParseUtils", { log: true });
 
 const textDecoder = new TextDecoder();
 
@@ -1501,11 +1501,11 @@ function parseMessage(dataView, enumeration, callback, parseMessageLengthAsUint1
             messageLength = dataView.getUint8(byteOffset++);
         }
 
-        _console$m.log({ messageTypeEnum, messageType, messageLength, dataView, byteOffset });
-        _console$m.assertWithError(messageType, `invalid messageTypeEnum ${messageTypeEnum}`);
+        _console$n.log({ messageTypeEnum, messageType, messageLength, dataView, byteOffset });
+        _console$n.assertWithError(messageType, `invalid messageTypeEnum ${messageTypeEnum}`);
 
         const _dataView = sliceDataView(dataView, byteOffset, messageLength);
-        _console$m.log({ _dataView });
+        _console$n.log({ _dataView });
 
         callback(messageType, _dataView);
 
@@ -1513,7 +1513,7 @@ function parseMessage(dataView, enumeration, callback, parseMessageLengthAsUint1
     }
 }
 
-const _console$l = createConsole("SensorDataManager", { log: true });
+const _console$m = createConsole("SensorDataManager", { log: true });
 
 
 
@@ -1557,13 +1557,13 @@ class SensorDataManager {
 
     /** @param {string} sensorType */
     static AssertValidSensorType(sensorType) {
-        _console$l.assertTypeWithError(sensorType, "string");
-        _console$l.assertWithError(this.#Types.includes(sensorType), `invalid sensorType "${sensorType}"`);
+        _console$m.assertTypeWithError(sensorType, "string");
+        _console$m.assertWithError(this.#Types.includes(sensorType), `invalid sensorType "${sensorType}"`);
     }
     /** @param {number} sensorTypeEnum */
     static AssertValidSensorTypeEnum(sensorTypeEnum) {
-        _console$l.assertTypeWithError(sensorTypeEnum, "number");
-        _console$l.assertWithError(sensorTypeEnum in this.#Types, `invalid sensorTypeEnum ${sensorTypeEnum}`);
+        _console$m.assertTypeWithError(sensorTypeEnum, "number");
+        _console$m.assertWithError(sensorTypeEnum in this.#Types, `invalid sensorTypeEnum ${sensorTypeEnum}`);
     }
 
     /** @type {SensorDataCallback} */
@@ -1571,7 +1571,7 @@ class SensorDataManager {
 
     /** @param {DataView} dataView */
     parseData(dataView) {
-        _console$l.log("sensorData", Array.from(new Uint8Array(dataView.buffer)));
+        _console$m.log("sensorData", Array.from(new Uint8Array(dataView.buffer)));
 
         let byteOffset = 0;
         const timestamp = parseTimestamp(dataView, byteOffset);
@@ -1605,10 +1605,10 @@ class SensorDataManager {
                     // FILL
                     break;
                 default:
-                    _console$l.error(`uncaught sensorType "${sensorType}"`);
+                    _console$m.error(`uncaught sensorType "${sensorType}"`);
             }
 
-            _console$l.assertWithError(value, `no value defined for sensorType "${sensorType}"`);
+            _console$m.assertWithError(value, `no value defined for sensorType "${sensorType}"`);
             this.onDataReceived(sensorType, { timestamp, [sensorType]: value });
         });
     }
@@ -1619,11 +1619,11 @@ class SensorDataManager {
             const sensorTypeIndex = dataView.getUint8(byteOffset);
             const sensorType = SensorDataManager.Types[sensorTypeIndex];
             if (!sensorType) {
-                _console$l.warn(`unknown sensorType index ${sensorTypeIndex}`);
+                _console$m.warn(`unknown sensorType index ${sensorTypeIndex}`);
                 continue;
             }
             const sensorScalar = dataView.getFloat32(byteOffset + 1, true);
-            _console$l.log({ sensorType, sensorScalar });
+            _console$m.log({ sensorType, sensorScalar });
             this.#scalars.set(sensorType, sensorScalar);
         }
     }
@@ -1643,16 +1643,16 @@ class SensorDataManager {
  * @property {number?} barometer
  */
 
-const _console$k = createConsole("SensorConfigurationManager", { log: false });
+const _console$l = createConsole("SensorConfigurationManager", { log: false });
 
 class SensorConfigurationManager {
     /** @type {SensorType[]} */
     #availableSensorTypes;
     /** @param {SensorType} sensorType */
     #assertAvailableSensorType(sensorType) {
-        _console$k.assertWithError(this.#availableSensorTypes, "must get initial sensorConfiguration");
+        _console$l.assertWithError(this.#availableSensorTypes, "must get initial sensorConfiguration");
         const isSensorTypeAvailable = this.#availableSensorTypes?.includes(sensorType);
-        _console$k.assert(isSensorTypeAvailable, `unavailable sensor type "${sensorType}"`);
+        _console$l.assert(isSensorTypeAvailable, `unavailable sensor type "${sensorType}"`);
         return isSensorTypeAvailable;
     }
 
@@ -1664,14 +1664,14 @@ class SensorConfigurationManager {
             const sensorTypeIndex = dataView.getUint8(byteOffset);
             const sensorType = SensorDataManager.Types[sensorTypeIndex];
             if (!sensorType) {
-                _console$k.warn(`unknown sensorType index ${sensorTypeIndex}`);
+                _console$l.warn(`unknown sensorType index ${sensorTypeIndex}`);
                 continue;
             }
             const sensorRate = dataView.getUint16(byteOffset + 1, true);
-            _console$k.log({ sensorType, sensorRate });
+            _console$l.log({ sensorType, sensorRate });
             parsedSensorConfiguration[sensorType] = sensorRate;
         }
-        _console$k.log({ parsedSensorConfiguration });
+        _console$l.log({ parsedSensorConfiguration });
         this.#availableSensorTypes = Object.keys(parsedSensorConfiguration);
         return parsedSensorConfiguration;
     }
@@ -1693,13 +1693,13 @@ class SensorConfigurationManager {
 
     /** @param {sensorRate} number */
     static #AssertValidSensorRate(sensorRate) {
-        _console$k.assertTypeWithError(sensorRate, "number");
-        _console$k.assertWithError(sensorRate >= 0, `sensorRate must be 0 or greater (got ${sensorRate})`);
-        _console$k.assertWithError(
+        _console$l.assertTypeWithError(sensorRate, "number");
+        _console$l.assertWithError(sensorRate >= 0, `sensorRate must be 0 or greater (got ${sensorRate})`);
+        _console$l.assertWithError(
             sensorRate < this.MaxSensorRate,
             `sensorRate must be 0 or greater (got ${sensorRate})`
         );
-        _console$k.assertWithError(
+        _console$l.assertWithError(
             sensorRate % this.SensorRateStep == 0,
             `sensorRate must be multiple of ${this.SensorRateStep}`
         );
@@ -1726,7 +1726,7 @@ class SensorConfigurationManager {
             this.#assertValidSensorRate(sensorRate);
             dataView.setUint16(index * 3 + 1, sensorConfiguration[sensorType], true);
         });
-        _console$k.log({ sensorConfigurationData: dataView });
+        _console$l.log({ sensorConfigurationData: dataView });
         return dataView;
     }
 
@@ -1736,7 +1736,7 @@ class SensorConfigurationManager {
     }
 }
 
-const _console$j = createConsole("TfliteManager", { log: true });
+const _console$k = createConsole("TfliteManager", { log: true });
 
 /**
  * @typedef { "getTfliteName" |
@@ -1816,11 +1816,11 @@ class TfliteManager {
     }
     /** @param {TfliteTask} task */
     #assertValidTask(task) {
-        _console$j.assertEnumWithError(task, this.tasks);
+        _console$k.assertEnumWithError(task, this.tasks);
     }
     /** @param {number} taskEnum */
     #assertValidTaskEnum(taskEnum) {
-        _console$j.assertWithError(this.tasks[taskEnum], `invalid taskEnum ${taskEnum}`);
+        _console$k.assertWithError(this.tasks[taskEnum], `invalid taskEnum ${taskEnum}`);
     }
 
     // EVENT DISPATCHER
@@ -1874,13 +1874,13 @@ class TfliteManager {
     }
     /** @param {DataView} dataView */
     #parseName(dataView) {
-        _console$j.log("parseName", dataView);
+        _console$k.log("parseName", dataView);
         const name = textDecoder$1.decode(dataView);
         this.#updateName(name);
     }
     /** @param {string} name */
     #updateName(name) {
-        _console$j.log({ name });
+        _console$k.log({ name });
         this.#name = name;
         this.#dispatchEvent({ type: "getTfliteName", message: { tfliteModelName: name } });
     }
@@ -1889,9 +1889,9 @@ class TfliteManager {
      * @param {boolean} sendImmediately
      */
     async setName(newName, sendImmediately) {
-        _console$j.assertTypeWithError(newName, "string");
+        _console$k.assertTypeWithError(newName, "string");
         if (this.name == newName) {
-            _console$j.log(`redundant name assignment ${newName}`);
+            _console$k.log(`redundant name assignment ${newName}`);
             return;
         }
 
@@ -1910,7 +1910,7 @@ class TfliteManager {
     }
     /** @param {DataView} dataView */
     #parseTask(dataView) {
-        _console$j.log("parseTask", dataView);
+        _console$k.log("parseTask", dataView);
         const taskEnum = dataView.getUint8(0);
         this.#assertValidTaskEnum(taskEnum);
         const task = this.tasks[taskEnum];
@@ -1918,7 +1918,7 @@ class TfliteManager {
     }
     /** @param {TfliteTask} task */
     #updateTask(task) {
-        _console$j.log({ task });
+        _console$k.log({ task });
         this.#task = task;
         this.#dispatchEvent({ type: "getTfliteTask", message: { tfliteModelTask: task } });
     }
@@ -1929,7 +1929,7 @@ class TfliteManager {
     async setTask(newTask, sendImmediately) {
         this.#assertValidTask(newTask);
         if (this.task == newTask) {
-            _console$j.log(`redundant task assignment ${newTask}`);
+            _console$k.log(`redundant task assignment ${newTask}`);
             return;
         }
 
@@ -1948,12 +1948,12 @@ class TfliteManager {
     }
     /** @param {DataView} dataView */
     #parseSampleRate(dataView) {
-        _console$j.log("parseSampleRate", dataView);
+        _console$k.log("parseSampleRate", dataView);
         const sampleRate = dataView.getUint16(0, true);
         this.#updateSampleRate(sampleRate);
     }
     #updateSampleRate(sampleRate) {
-        _console$j.log({ sampleRate });
+        _console$k.log({ sampleRate });
         this.#sampleRate = sampleRate;
         this.#dispatchEvent({ type: "getTfliteSampleRate", message: { tfliteModelSampleRate: sampleRate } });
     }
@@ -1962,14 +1962,14 @@ class TfliteManager {
      * @param {boolean} sendImmediately
      */
     async setSampleRate(newSampleRate, sendImmediately) {
-        _console$j.assertTypeWithError(newSampleRate, "number");
+        _console$k.assertTypeWithError(newSampleRate, "number");
         newSampleRate -= newSampleRate % SensorConfigurationManager.SensorRateStep;
-        _console$j.assertWithError(
+        _console$k.assertWithError(
             newSampleRate >= SensorConfigurationManager.SensorRateStep,
             `sampleRate must be multiple of ${SensorConfigurationManager.SensorRateStep} greater than 0 (got ${newSampleRate})`
         );
         if (this.#sampleRate == newSampleRate) {
-            _console$j.log(`redundant sampleRate assignment ${newSampleRate}`);
+            _console$k.log(`redundant sampleRate assignment ${newSampleRate}`);
             return;
         }
 
@@ -1990,7 +1990,7 @@ class TfliteManager {
 
     static AssertValidSensorType(sensorType) {
         SensorDataManager.AssertValidSensorType(sensorType);
-        _console$j.assertWithError(this.#SensorTypes.includes(sensorType), `invalid tflite sensorType "${sensorType}"`);
+        _console$k.assertWithError(this.#SensorTypes.includes(sensorType), `invalid tflite sensorType "${sensorType}"`);
     }
 
     /** @type {SensorType[]} */
@@ -2000,7 +2000,7 @@ class TfliteManager {
     }
     /** @param {DataView} dataView */
     #parseSensorTypes(dataView) {
-        _console$j.log("parseSensorTypes", dataView);
+        _console$k.log("parseSensorTypes", dataView);
         /** @type {SensorType[]} */
         const sensorTypes = [];
         for (let index = 0; index < dataView.byteLength; index++) {
@@ -2009,14 +2009,14 @@ class TfliteManager {
             if (sensorType) {
                 sensorTypes.push(sensorType);
             } else {
-                _console$j.error(`invalid sensorTypeEnum ${sensorTypeEnum}`);
+                _console$k.error(`invalid sensorTypeEnum ${sensorTypeEnum}`);
             }
         }
         this.#updateSensorTypes(sensorTypes);
     }
     /** @param {SensorType[]} sensorTypes */
     #updateSensorTypes(sensorTypes) {
-        _console$j.log({ sensorTypes });
+        _console$k.log({ sensorTypes });
         this.#sensorTypes = sensorTypes;
         this.#dispatchEvent({ type: "getTfliteSensorTypes", message: { tfliteModelSensorTypes: sensorTypes } });
     }
@@ -2035,7 +2035,7 @@ class TfliteManager {
         const newSensorTypeEnums = newSensorTypes
             .map((sensorType) => SensorDataManager.Types.indexOf(sensorType))
             .sort();
-        _console$j.log(newSensorTypes, newSensorTypeEnums);
+        _console$k.log(newSensorTypes, newSensorTypeEnums);
         this.sendMessage(
             [{ type: "setTfliteSensorTypes", data: Uint8Array.from(newSensorTypeEnums).buffer }],
             sendImmediately
@@ -2051,13 +2051,13 @@ class TfliteManager {
     }
     /** @param {DataView} dataView */
     #parseIsReady(dataView) {
-        _console$j.log("parseIsReady", dataView);
+        _console$k.log("parseIsReady", dataView);
         const isReady = Boolean(dataView.getUint8(0));
         this.#updateIsReady(isReady);
     }
     /** @param {boolean} isReady */
     #updateIsReady(isReady) {
-        _console$j.log({ isReady });
+        _console$k.log({ isReady });
         this.#isReady = isReady;
         this.#dispatchEvent({
             type: "tfliteModelIsReady",
@@ -2065,7 +2065,7 @@ class TfliteManager {
         });
     }
     #assertIsReady() {
-        _console$j.assertWithError(this.isReady, `tflite is not ready`);
+        _console$k.assertWithError(this.isReady, `tflite is not ready`);
     }
 
     /** @type {number} */
@@ -2075,13 +2075,13 @@ class TfliteManager {
     }
     /** @param {DataView} dataView */
     #parseCaptureDelay(dataView) {
-        _console$j.log("parseCaptureDelay", dataView);
+        _console$k.log("parseCaptureDelay", dataView);
         const captureDelay = dataView.getUint16(0, true);
         this.#updateCaptueDelay(captureDelay);
     }
     /** @param {number} captureDelay */
     #updateCaptueDelay(captureDelay) {
-        _console$j.log({ captureDelay });
+        _console$k.log({ captureDelay });
         this.#captureDelay = captureDelay;
         this.#dispatchEvent({
             type: "getTfliteCaptureDelay",
@@ -2093,9 +2093,9 @@ class TfliteManager {
      * @param {boolean} sendImmediately
      */
     async setCaptureDelay(newCaptureDelay, sendImmediately) {
-        _console$j.assertTypeWithError(newCaptureDelay, "number");
+        _console$k.assertTypeWithError(newCaptureDelay, "number");
         if (this.#captureDelay == newCaptureDelay) {
-            _console$j.log(`redundant captureDelay assignment ${newCaptureDelay}`);
+            _console$k.log(`redundant captureDelay assignment ${newCaptureDelay}`);
             return;
         }
 
@@ -2115,13 +2115,13 @@ class TfliteManager {
     }
     /** @param {DataView} dataView */
     #parseThreshold(dataView) {
-        _console$j.log("parseThreshold", dataView);
+        _console$k.log("parseThreshold", dataView);
         const threshold = dataView.getFloat32(0, true);
         this.#updateThreshold(threshold);
     }
     /** @param {number} threshold */
     #updateThreshold(threshold) {
-        _console$j.log({ threshold });
+        _console$k.log({ threshold });
         this.#threshold = threshold;
         this.#dispatchEvent({
             type: "getTfliteThreshold",
@@ -2133,10 +2133,10 @@ class TfliteManager {
      * @param {boolean} sendImmediately
      */
     async setThreshold(newThreshold, sendImmediately) {
-        _console$j.assertTypeWithError(newThreshold, "number");
-        _console$j.assertWithError(newThreshold >= 0, `threshold must be positive (got ${newThreshold})`);
+        _console$k.assertTypeWithError(newThreshold, "number");
+        _console$k.assertWithError(newThreshold >= 0, `threshold must be positive (got ${newThreshold})`);
         if (this.#threshold == newThreshold) {
-            _console$j.log(`redundant threshold assignment ${newThreshold}`);
+            _console$k.log(`redundant threshold assignment ${newThreshold}`);
             return;
         }
 
@@ -2156,12 +2156,12 @@ class TfliteManager {
     }
     /** @param {DataView} dataView */
     #parseInferencingEnabled(dataView) {
-        _console$j.log("parseInferencingEnabled", dataView);
+        _console$k.log("parseInferencingEnabled", dataView);
         const inferencingEnabled = Boolean(dataView.getUint8(0));
         this.#updateInferencingEnabled(inferencingEnabled);
     }
     #updateInferencingEnabled(inferencingEnabled) {
-        _console$j.log({ inferencingEnabled });
+        _console$k.log({ inferencingEnabled });
         this.#inferencingEnabled = inferencingEnabled;
         this.#dispatchEvent({
             type: "getTfliteInferencingEnabled",
@@ -2173,10 +2173,10 @@ class TfliteManager {
      * @param {boolean} sendImmediately
      */
     async setInferencingEnabled(newInferencingEnabled, sendImmediately) {
-        _console$j.assertTypeWithError(newInferencingEnabled, "boolean");
+        _console$k.assertTypeWithError(newInferencingEnabled, "boolean");
         this.#assertIsReady();
         if (this.#inferencingEnabled == newInferencingEnabled) {
-            _console$j.log(`redundant inferencingEnabled assignment ${newInferencingEnabled}`);
+            _console$k.log(`redundant inferencingEnabled assignment ${newInferencingEnabled}`);
             return;
         }
 
@@ -2220,10 +2220,10 @@ class TfliteManager {
 
     /** @param {DataView} dataView */
     #parseInference(dataView) {
-        _console$j.log("parseInference", dataView);
+        _console$k.log("parseInference", dataView);
 
         const timestamp = parseTimestamp(dataView, 0);
-        _console$j.log({ timestamp });
+        _console$k.log({ timestamp });
 
         /** @type {number[]} */
         const values = [];
@@ -2231,7 +2231,7 @@ class TfliteManager {
             const value = dataView.getFloat32(byteOffset, true);
             values.push(value);
         }
-        _console$j.log("values", values);
+        _console$k.log("values", values);
 
         /** @type {TfliteModelInference} */
         const inference = {
@@ -2247,7 +2247,7 @@ class TfliteManager {
      * @param {DataView} dataView
      */
     parseMessage(messageType, dataView) {
-        _console$j.log({ messageType });
+        _console$k.log({ messageType });
 
         switch (messageType) {
             case "getTfliteName":
@@ -2299,7 +2299,7 @@ class TfliteManager {
     sendMessage;
 }
 
-const _console$i = createConsole("BaseConnectionManager", { log: true });
+const _console$j = createConsole("BaseConnectionManager", { log: true });
 
 
 
@@ -2413,7 +2413,7 @@ class BaseConnectionManager {
     }
     /** @param {ConnectionMessageType} messageType */
     static #AssertValidTxRxMessageType(messageType) {
-        _console$i.assertEnumWithError(messageType, this.#TxRxMessageTypes);
+        _console$j.assertEnumWithError(messageType, this.#TxRxMessageTypes);
     }
 
     // ID
@@ -2457,12 +2457,12 @@ class BaseConnectionManager {
 
     /** @throws {Error} if not supported */
     #assertIsSupported() {
-        _console$i.assertWithError(this.isSupported, `${this.constructor.name} is not supported`);
+        _console$j.assertWithError(this.isSupported, `${this.constructor.name} is not supported`);
     }
 
     /** @throws {Error} if abstract class */
     #assertIsSubclass() {
-        _console$i.assertWithError(
+        _console$j.assertWithError(
             this.constructor != BaseConnectionManager,
             `${this.constructor.name} must be subclassed`
         );
@@ -2480,12 +2480,12 @@ class BaseConnectionManager {
     }
     /** @protected */
     set status(newConnectionStatus) {
-        _console$i.assertTypeWithError(newConnectionStatus, "string");
+        _console$j.assertTypeWithError(newConnectionStatus, "string");
         if (this.#status == newConnectionStatus) {
-            _console$i.log(`tried to assign same connection status "${newConnectionStatus}"`);
+            _console$j.log(`tried to assign same connection status "${newConnectionStatus}"`);
             return;
         }
-        _console$i.log(`new connection status "${newConnectionStatus}"`);
+        _console$j.log(`new connection status "${newConnectionStatus}"`);
         this.#status = newConnectionStatus;
         this.onStatusUpdated?.(this.status);
 
@@ -2506,19 +2506,19 @@ class BaseConnectionManager {
 
     /** @throws {Error} if connected */
     #assertIsNotConnected() {
-        _console$i.assertWithError(!this.isConnected, "device is already connected");
+        _console$j.assertWithError(!this.isConnected, "device is already connected");
     }
     /** @throws {Error} if connecting */
     #assertIsNotConnecting() {
-        _console$i.assertWithError(this.status != "connecting", "device is already connecting");
+        _console$j.assertWithError(this.status != "connecting", "device is already connecting");
     }
     /** @throws {Error} if not connected */
     #assertIsConnected() {
-        _console$i.assertWithError(this.isConnected, "device is not connected");
+        _console$j.assertWithError(this.isConnected, "device is not connected");
     }
     /** @throws {Error} if disconnecting */
     #assertIsNotDisconnecting() {
-        _console$i.assertWithError(this.status != "disconnecting", "device is already disconnecting");
+        _console$j.assertWithError(this.status != "disconnecting", "device is already disconnecting");
     }
     /** @throws {Error} if not connected or is disconnecting */
     #assertIsConnectedAndNotDisconnecting() {
@@ -2538,19 +2538,19 @@ class BaseConnectionManager {
     async reconnect() {
         this.#assertIsNotConnected();
         this.#assertIsNotConnecting();
-        _console$i.assert(this.canReconnect, "unable to reconnect");
+        _console$j.assert(this.canReconnect, "unable to reconnect");
     }
     async disconnect() {
         this.#assertIsConnected();
         this.#assertIsNotDisconnecting();
         this.status = "disconnecting";
-        _console$i.log("disconnecting from device...");
+        _console$j.log("disconnecting from device...");
     }
 
     /** @param {ArrayBuffer} data */
     async sendSmpMessage(data) {
         this.#assertIsConnectedAndNotDisconnecting();
-        _console$i.log("sending smp message", data);
+        _console$j.log("sending smp message", data);
     }
 
     /** @type {TxMessage[]} */
@@ -2571,7 +2571,7 @@ class BaseConnectionManager {
             return;
         }
 
-        _console$i.log("sendTxMessages", this.#pendingMessages.slice());
+        _console$j.log("sendTxMessages", this.#pendingMessages.slice());
 
         const arrayBuffers = this.#pendingMessages.map((message) => {
             BaseConnectionManager.#AssertValidTxRxMessageType(message.type);
@@ -2593,15 +2593,15 @@ class BaseConnectionManager {
                     arrayBufferByteLength += arrayBuffer.byteLength;
                 });
                 const arrayBuffersToSend = arrayBuffers.splice(0, arrayBufferCount);
-                _console$i.log({ arrayBufferCount, arrayBuffersToSend });
+                _console$j.log({ arrayBufferCount, arrayBuffersToSend });
 
                 const arrayBuffer = concatenateArrayBuffers(...arrayBuffersToSend);
-                _console$i.log("sending arrayBuffer", arrayBuffer);
+                _console$j.log("sending arrayBuffer", arrayBuffer);
                 await this.sendTxData(arrayBuffer);
             }
         } else {
             const arrayBuffer = concatenateArrayBuffers(...arrayBuffers);
-            _console$i.log("sending arrayBuffer", arrayBuffer);
+            _console$j.log("sending arrayBuffer", arrayBuffer);
             await this.sendTxData(arrayBuffer);
         }
 
@@ -2622,7 +2622,7 @@ class BaseConnectionManager {
      * @param {ArrayBuffer} data
      */
     async sendTxData(data) {
-        _console$i.log("sendTxData", data);
+        _console$j.log("sendTxData", data);
     }
 
     /** @param {DataView} dataView */
@@ -2636,7 +2636,7 @@ class BaseConnectionManager {
      * @param {DataView} dataView
      */
     #onRxMessage(messageType, dataView) {
-        _console$i.log({ messageType, dataView });
+        _console$j.log({ messageType, dataView });
         this.onMessageReceived?.(messageType, dataView);
     }
 
@@ -2644,13 +2644,13 @@ class BaseConnectionManager {
     #checkConnection() {
         //console.log("checking connection...");
         if (!this.isConnected) {
-            _console$i.log("timer detected disconnection");
+            _console$j.log("timer detected disconnection");
             this.status = "not connected";
         }
     }
 }
 
-const _console$h = createConsole("bluetoothUUIDs", { log: false });
+const _console$i = createConsole("bluetoothUUIDs", { log: false });
 
 if (isInNode) {
     const webbluetooth = require("webbluetooth");
@@ -2665,8 +2665,8 @@ if (isInBrowser) {
  * @returns {BluetoothServiceUUID}
  */
 function generateBluetoothUUID(value) {
-    _console$h.assertTypeWithError(value, "string");
-    _console$h.assertWithError(value.length == 4, "value must be 4 characters long");
+    _console$i.assertTypeWithError(value, "string");
+    _console$i.assertWithError(value.length == 4, "value must be 4 characters long");
     return `ea6da725-${value}-4f9b-893d-c3913e33b39f`;
 }
 
@@ -2887,7 +2887,7 @@ function getCharacteristicProperties(characteristicName) {
 
 const serviceDataUUID = "0000";
 
-createConsole("BluetoothConnectionManager", { log: true });
+const _console$h = createConsole("BluetoothConnectionManager", { log: true });
 
 
 
@@ -2917,7 +2917,7 @@ class BluetoothConnectionManager extends BaseConnectionManager {
      * @param {ArrayBuffer} data
      */
     async writeCharacteristic(characteristicName, data) {
-        console.log("writeCharacteristic", ...arguments);
+        _console$h.log("writeCharacteristic", ...arguments);
     }
 
     /** @param {ArrayBuffer} data */
