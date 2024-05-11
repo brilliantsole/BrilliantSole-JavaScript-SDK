@@ -288,8 +288,24 @@ class BaseConnectionManager {
             return concatenateArrayBuffers(messageTypeEnum, dataLength, message.data);
         });
 
-        if (false && this.#mtu) {
-            // FILL - chunk arrayBuffers into subArrays whose lengths are within mtu
+        if (this.#mtu) {
+            while (arrayBuffers.length > 0) {
+                let arrayBufferByteLength = 0;
+                let arrayBufferCount = 0;
+                arrayBuffers.some((arrayBuffer) => {
+                    if (arrayBufferByteLength + arrayBuffer.byteLength > this.#mtu - 3) {
+                        return true;
+                    }
+                    arrayBufferCount++;
+                    arrayBufferByteLength += arrayBuffer.byteLength;
+                });
+                const arrayBuffersToSend = arrayBuffers.splice(0, arrayBufferCount);
+                _console.log({ arrayBufferCount, arrayBuffersToSend });
+
+                const arrayBuffer = concatenateArrayBuffers(...arrayBuffersToSend);
+                _console.log("sending arrayBuffer", arrayBuffer);
+                await this.sendTxData(arrayBuffer);
+            }
         } else {
             const arrayBuffer = concatenateArrayBuffers(...arrayBuffers);
             _console.log("sending arrayBuffer", arrayBuffer);
