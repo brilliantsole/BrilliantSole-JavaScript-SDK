@@ -45,7 +45,7 @@ export function parseMessage(dataView, enumeration, callback, parseMessageLength
             messageLength = dataView.getUint8(byteOffset++);
         }
 
-        _console.log({ messageTypeEnum, messageType, messageLength, dataView });
+        _console.log({ messageTypeEnum, messageType, messageLength, dataView, byteOffset });
         _console.assertWithError(messageType, `invalid messageTypeEnum ${messageTypeEnum}`);
 
         const _dataView = sliceDataView(dataView, byteOffset, messageLength);

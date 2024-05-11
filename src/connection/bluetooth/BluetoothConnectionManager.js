@@ -1,14 +1,5 @@
 import { createConsole } from "../../utils/Console.js";
-import { isInNode, isInBrowser, isInBluefy, isInWebBLE } from "../../utils/environment.js";
-import { addEventListeners, removeEventListeners } from "../../utils/EventDispatcher.js";
 import BaseConnectionManager from "../BaseConnectionManager.js";
-import {
-    serviceUUIDs,
-    optionalServiceUUIDs,
-    getServiceNameFromUUID,
-    getCharacteristicNameFromUUID,
-    getCharacteristicProperties,
-} from "./bluetoothUUIDs.js";
 
 const _console = createConsole("BluetoothConnectionManager", { log: true });
 
@@ -17,142 +8,53 @@ const _console = createConsole("BluetoothConnectionManager", { log: true });
 
 /** @typedef {import("../BaseConnectionManager.js").ConnectionMessageType} ConnectionMessageType */
 /** @typedef {import("../BaseConnectionManager.js").ConnectionType} ConnectionType */
+/** @typedef {import("../BaseConnectionManager.js").TxRxMessageType} TxRxMessageType */
+/** @typedef {import("../BaseConnectionManager.js").ConnectionStatus} ConnectionStatus */
 
 class BluetoothConnectionManager extends BaseConnectionManager {
+    get status() {
+        return super.status;
+    }
+    set status(newConnectionStatus) {
+        super.status = newConnectionStatus;
+
+        if (this.status == "connected") {
+            this.sendTxMessages({ type: "getMtu" });
+        }
+    }
+
     /**
      * @protected
      * @param {BluetoothCharacteristicName} characteristicName
      * @param {DataView} dataView
      */
     onCharacteristicValueChanged(characteristicName, dataView) {
-        switch (characteristicName) {
-            case "manufacturerName":
-            case "modelNumber":
-            case "softwareRevision":
-            case "hardwareRevision":
-            case "firmwareRevision":
-            case "pnpId":
-            case "serialNumber":
-            case "batteryLevel":
-            case "sensorData":
-            case "pressurePositions":
-            case "sensorScalars":
-
-            case "maxFileLength":
-            case "fileTransferStatus":
-
-            case "tfliteModelIsReady":
-            case "tfliteModelInference":
-
-            case "smp":
-
-            case "mtu":
-                this.onMessageReceived(characteristicName, dataView);
-                break;
-
-            case "name":
-                this.onMessageReceived("getName", dataView);
-                break;
-            case "type":
-                this.onMessageReceived("getType", dataView);
-                break;
-            case "sensorConfiguration":
-                this.onMessageReceived("getSensorConfiguration", dataView);
-                break;
-            case "currentTime":
-                this.onMessageReceived("getCurrentTime", dataView);
-                break;
-            case "fileTransferType":
-                this.onMessageReceived("getFileTransferType", dataView);
-                break;
-            case "fileLength":
-                this.onMessageReceived("getFileLength", dataView);
-                break;
-            case "fileChecksum":
-                this.onMessageReceived("getFileChecksum", dataView);
-                break;
-            case "fileTransferBlock":
-                this.onMessageReceived("getFileTransferBlock", dataView);
-                break;
-            case "tfliteModelName":
-                this.onMessageReceived("getTfliteName", dataView);
-                break;
-            case "tfliteModelTask":
-                this.onMessageReceived("getTfliteTask", dataView);
-                break;
-            case "tfliteModelSampleRate":
-                this.onMessageReceived("getTfliteSampleRate", dataView);
-                break;
-            case "tfliteModelSensorTypes":
-                this.onMessageReceived("getTfliteSensorTypes", dataView);
-                break;
-            case "tfliteCaptureDelay":
-                this.onMessageReceived("getTfliteCaptureDelay", dataView);
-                break;
-            case "tfliteThreshold":
-                this.onMessageReceived("getTfliteThreshold", dataView);
-                break;
-            case "tfliteInferencingEnabled":
-                this.onMessageReceived("getTfliteInferencingEnabled", dataView);
-                break;
-            default:
-                throw new Error(`uncaught characteristicName "${characteristicName}"`);
+        if (characteristicName == "rx") {
+            this.parseRxMessage(dataView);
+        } else {
+            this.onMessageReceived?.(characteristicName, dataView);
         }
     }
 
     /**
-     * @param {ConnectionMessageType} messageType
-     * @returns {BluetoothCharacteristicName}
+     * @protected
+     * @param {BluetoothCharacteristicName} characteristicName
+     * @param {ArrayBuffer} data
      */
-    characteristicNameForMessageType(messageType) {
-        switch (messageType) {
-            case "setName":
-                return "name";
-            case "setType":
-                return "type";
+    async writeCharacteristic(characteristicName, data) {
+        console.log("writeCharacteristic", ...arguments);
+    }
 
-            case "setSensorConfiguration":
-                return "sensorConfiguration";
-            case "setCurrentTime":
-                return "currentTime";
-            case "triggerVibration":
-                return "vibration";
+    /** @param {ArrayBuffer} data */
+    async sendSmpMessage(data) {
+        super.sendSmpMessage(...arguments);
+        return this.writeCharacteristic("smp", data);
+    }
 
-            case "setFileTransferType":
-                return "fileTransferType";
-            case "setFileLength":
-                return "fileLength";
-            case "setFileChecksum":
-                return "fileChecksum";
-            case "setFileTransferCommand":
-                return "fileTransferCommand";
-            case "setFileTransferBlock":
-                return "fileTransferBlock";
-
-            case "setTfliteName":
-                return "tfliteModelName";
-            case "setTfliteTask":
-                return "tfliteModelTask";
-            case "setTfliteSampleRate":
-                return "tfliteModelSampleRate";
-            case "setTfliteSensorTypes":
-                return "tfliteModelSensorTypes";
-            case "setTfliteCaptureDelay":
-                return "tfliteCaptureDelay";
-            case "setTfliteThreshold":
-                return "tfliteThreshold";
-            case "setTfliteInferencingEnabled":
-                return "tfliteInferencingEnabled";
-
-            case "smp":
-                return "smp";
-
-            case "mtu":
-                return "mtu";
-
-            default:
-                throw Error(`no characteristicName for messageType "${messageType}"`);
-        }
+    /** @param {ArrayBuffer} data */
+    async sendTxData(data) {
+        super.sendTxData(...arguments);
+        return this.writeCharacteristic("tx", data);
     }
 }
 

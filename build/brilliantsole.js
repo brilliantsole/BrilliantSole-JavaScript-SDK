@@ -1482,7 +1482,7 @@
 	            messageLength = dataView.getUint8(byteOffset++);
 	        }
 
-	        _console$m.log({ messageTypeEnum, messageType, messageLength, dataView });
+	        _console$m.log({ messageTypeEnum, messageType, messageLength, dataView, byteOffset });
 	        _console$m.assertWithError(messageType, `invalid messageTypeEnum ${messageTypeEnum}`);
 
 	        const _dataView = sliceDataView(dataView, byteOffset, messageLength);
@@ -2241,8 +2241,41 @@
 	    sendMessage;
 	}
 
+	const _console$i = createConsole("BaseConnectionManager", { log: false });
+
+
+
+
+
 	/** @typedef {"webBluetooth" | "noble" | "webSocketClient"} ConnectionType */
 	/** @typedef {"not connected" | "connecting" | "connected" | "disconnecting"} ConnectionStatus */
+
+	/**
+	 * @typedef { "getMtu" |
+	 * "getName" |
+	 * "setName" |
+	 * "getType" |
+	 * "setType" |
+	 * "getSensorConfiguration" |
+	 * "setSensorConfiguration" |
+	 * "pressurePositions" |
+	 * "sensorScalars" |
+	 * "setCurrentTime" |
+	 * "getCurrentTime" |
+	 * "sensorData" |
+	 * "triggerVibration" |
+	 * TfliteMessageType |
+	 * FirmwareMessageType
+	 * } TxRxMessageType
+	 */
+
+	/**
+	 * @typedef TxMessage
+	 * @type {Object}
+	 * @property {TxRxMessageType} type
+	 * @property {ArrayBuffer?} data
+	 */
+
 	/**
 	 * @typedef { "manufacturerName" |
 	 * "modelNumber" |
@@ -2252,26 +2285,11 @@
 	 * "pnpId" |
 	 * "serialNumber" |
 	 * "batteryLevel" |
-	 * "getName" |
-	 * "setName" |
-	 * "getType" |
-	 * "setType" |
-	 * "getSensorConfiguration" |
-	 * "setSensorConfiguration" |
-	 * "sensorScalars" |
-	 * "pressurePositions" |
-	 * "sensorData" |
-	 * "setCurrentTime" |
-	 * "getCurrentTime" |
-	 * "triggerVibration" |
-	 * FileTransferMessageType |
-	 * TfliteMessageType |
-	 * "mtu" |
-	 * FirmwareMessageType
+	 * "smp" |
+	 * "rx" |
+	 * TxRxMessageType
 	 * } ConnectionMessageType
 	 */
-
-	const _console$i = createConsole("ConnectionManager", { log: true });
 
 	/**
 	 * @callback ConnectionStatusCallback
@@ -2281,10 +2299,37 @@
 	/**
 	 * @callback MessageReceivedCallback
 	 * @param {ConnectionMessageType} messageType
-	 * @param {DataView} data
+	 * @param {DataView} dataView
 	 */
 
 	class BaseConnectionManager {
+	    // MESSAGES
+
+	    /** @type {TxRxMessageType[]} */
+	    static #TxRxMessageTypes = [
+	        "getMtu",
+
+	        "getName",
+	        "setName",
+
+	        "getType",
+	        "setType",
+
+	        "getSensorConfiguration",
+	        "setSensorConfiguration",
+	        "pressurePositions",
+	        "sensorScalars",
+	        "setCurrentTime",
+	        "getCurrentTime",
+	        "sensorData",
+	        "triggerVibration",
+
+	        ...TfliteManager.MessageTypes,
+	        ...FileTransferManager.MessageTypes,
+	    ];
+	    static get TxRxMessageTypes() {
+	        return this.#TxRxMessageTypes;
+	    }
 	    /** @type {ConnectionMessageType[]} */
 	    static #MessageTypes = [
 	        "manufacturerName",
@@ -2294,35 +2339,30 @@
 	        "firmwareRevision",
 	        "pnpId",
 	        "serialNumber",
-	        "batteryLevel",
-	        "getName",
-	        "setName",
-	        "getType",
-	        "setType",
-	        "getSensorConfiguration",
-	        "setSensorConfiguration",
-	        "sensorScalars",
-	        "pressurePositions",
-	        "sensorData",
-	        "getCurrentTime",
-	        "setCurrentTime",
-	        "triggerVibration",
 
-	        "mtu",
+	        "batteryLevel",
 	        "smp",
 
-	        ...FileTransferManager.MessageTypes,
-	        ...TfliteManager.MessageTypes,
+	        "rx",
+
+	        ...this.TxRxMessageTypes,
 	    ];
 	    static get MessageTypes() {
 	        return this.#MessageTypes;
 	    }
+	    /** @param {ConnectionMessageType} messageType */
+	    static #AssertValidTxRxMessageType(messageType) {
+	        _console$i.assertEnumWithError(messageType, this.#TxRxMessageTypes);
+	    }
+
+	    // ID
 
 	    /** @type {string?} */
 	    get id() {
 	        this.#throwNotImplementedError("id");
 	    }
 
+	    // CALLBACKS
 	    /** @type {ConnectionStatusCallback?} */
 	    onStatusUpdated;
 	    /** @type {MessageReceivedCallback?} */
@@ -2442,13 +2482,60 @@
 	        _console$i.log("disconnecting from device...");
 	    }
 
-	    /**
-	     * @param {ConnectionMessageType} messageType
-	     * @param {DataView|ArrayBuffer} data
-	     */
-	    async sendMessage(messageType, data) {
+	    /** @param {ArrayBuffer} data */
+	    async sendSmpMessage(data) {
 	        this.#assertIsConnectedAndNotDisconnecting();
-	        _console$i.log("sending message", { messageType, data });
+	        _console$i.log("sending smp message", data);
+	    }
+
+	    /** @param {...TxMessage} messages */
+	    async sendTxMessages(...messages) {
+	        this.#assertIsConnectedAndNotDisconnecting();
+
+	        const arrayBuffers = messages.map((message) => {
+	            BaseConnectionManager.#AssertValidTxRxMessageType(message.type);
+	            const messageTypeEnum = BaseConnectionManager.TxRxMessageTypes.indexOf(message.type);
+	            const dataLength = new DataView(new ArrayBuffer(2));
+	            dataLength.setUint16(0, message.data?.byteLength || 0, true);
+	            return concatenateArrayBuffers(messageTypeEnum, dataLength, message.data);
+	        });
+	        const arrayBuffer = concatenateArrayBuffers(...arrayBuffers);
+
+	        // FILL - break into chunks if mtu is defined
+	        this.sendTxData(arrayBuffer);
+	    }
+
+	    /** @param {number?} */
+	    #mtu;
+	    get mtu() {
+	        return this.#mtu;
+	    }
+	    set mtu(newMtu) {
+	        this.#mtu = newMtu;
+	        // FILL - request follow-up information
+	    }
+
+	    /**
+	     * @protected
+	     * @param {ArrayBuffer} data
+	     */
+	    async sendTxData(data) {
+	        _console$i.log("sendTxData", data);
+	    }
+
+	    /** @param {DataView} dataView */
+	    parseRxMessage(dataView) {
+	        this.onMessageReceived?.("rx", dataView);
+	        parseMessage(dataView, BaseConnectionManager.#TxRxMessageTypes, this.#onRxMessage.bind(this), true);
+	    }
+
+	    /**
+	     * @param {TxRxMessageType} messageType
+	     * @param {DataView} dataView
+	     */
+	    #onRxMessage(messageType, dataView) {
+	        _console$i.log({ messageType, dataView });
+	        this.onMessageReceived?.(messageType, dataView);
 	    }
 
 	    #timer = new Timer(this.#checkConnection.bind(this), 5000);
@@ -2501,31 +2588,8 @@
 	 * "pnpId" |
 	 * "serialNumber" |
 	 * "batteryLevel" |
-	 * "name" |
-	 * "type" |
-	 * "sensorConfiguration" |
-	 * "pressurePositions" |
-	 * "sensorScalars" |
-	 * "sensorData" |
-	 * "currentTime" |
-	 * "vibration" |
-	 * "maxFileLength" |
-	 * "fileTransferType" |
-	 * "fileLength" |
-	 * "fileChecksum" |
-	 * "fileTransferCommand" |
-	 * "fileTransferStatus" |
-	 * "fileTransferBlock" |
-	 * "tfliteModelName" |
-	 * "tfliteModelTask" |
-	 * "tfliteModelSampleRate" |
-	 * "tfliteModelSensorTypes" |
-	 * "tfliteModelIsReady" |
-	 * "tfliteCaptureDelay" |
-	 * "tfliteThreshold" |
-	 * "tfliteInferencingEnabled" |
-	 * "tfliteModelInference" |
-	 * "mtu" |
+	 * "rx" |
+	 * "tx" |
 	 * "smp"
 	 * } BluetoothCharacteristicName
 	 */
@@ -2569,36 +2633,8 @@
 	        main: {
 	            uuid: generateBluetoothUUID("0000"),
 	            characteristics: {
-	                name: { uuid: generateBluetoothUUID("1000") },
-	                type: { uuid: generateBluetoothUUID("1001") },
-
-	                sensorConfiguration: { uuid: generateBluetoothUUID("2000") },
-	                pressurePositions: { uuid: generateBluetoothUUID("2001") },
-	                sensorScalars: { uuid: generateBluetoothUUID("2002") },
-	                currentTime: { uuid: generateBluetoothUUID("2003") },
-	                sensorData: { uuid: generateBluetoothUUID("2004") },
-
-	                vibration: { uuid: generateBluetoothUUID("3000") },
-
-	                maxFileLength: { uuid: generateBluetoothUUID("4000") },
-	                fileTransferType: { uuid: generateBluetoothUUID("4001") },
-	                fileLength: { uuid: generateBluetoothUUID("4002") },
-	                fileChecksum: { uuid: generateBluetoothUUID("4003") },
-	                fileTransferCommand: { uuid: generateBluetoothUUID("4004") },
-	                fileTransferStatus: { uuid: generateBluetoothUUID("4005") },
-	                fileTransferBlock: { uuid: generateBluetoothUUID("4006") },
-
-	                tfliteModelName: { uuid: generateBluetoothUUID("5000") },
-	                tfliteModelTask: { uuid: generateBluetoothUUID("5001") },
-	                tfliteModelSampleRate: { uuid: generateBluetoothUUID("5002") },
-	                tfliteModelSensorTypes: { uuid: generateBluetoothUUID("5003") },
-	                tfliteModelIsReady: { uuid: generateBluetoothUUID("5004") },
-	                tfliteCaptureDelay: { uuid: generateBluetoothUUID("5005") },
-	                tfliteThreshold: { uuid: generateBluetoothUUID("5006") },
-	                tfliteInferencingEnabled: { uuid: generateBluetoothUUID("5007") },
-	                tfliteModelInference: { uuid: generateBluetoothUUID("5008") },
-
-	                mtu: { uuid: generateBluetoothUUID("6000") },
+	                rx: { uuid: generateBluetoothUUID("1000") },
+	                tx: { uuid: generateBluetoothUUID("1001") },
 	            },
 	        },
 	        smp: {
@@ -2720,11 +2756,8 @@
 
 	    // read
 	    switch (characteristicName) {
-	        case "vibration":
-	        case "sensorData":
-	        case "fileTransferCommand":
-	        case "fileTransferBlock":
-	        case "tfliteModelInference":
+	        case "rx":
+	        case "tx":
 	        case "smp":
 	            properties.read = false;
 	            break;
@@ -2733,27 +2766,7 @@
 	    // notify
 	    switch (characteristicName) {
 	        case "batteryLevel":
-	        case "name":
-	        case "type":
-	        case "sensorConfiguration":
-	        case "sensorData":
-	        case "pressurePositions":
-	        case "currentTime":
-	        case "fileLength":
-	        case "fileChecksum":
-	        case "fileTransferType":
-	        case "fileTransferStatus":
-	        case "fileTransferBlock":
-	        case "tfliteModelName":
-	        case "tfliteModelTask":
-	        case "tfliteModelSampleRate":
-	        case "tfliteModelSensorTypes":
-	        case "tfliteModelIsReady":
-	        case "tfliteThreshold":
-	        case "tfliteCaptureDelay":
-	        case "tfliteInferencingEnabled":
-	        case "tfliteModelInference":
-	        case "mtu":
+	        case "rx":
 	        case "smp":
 	            properties.notify = true;
 	            break;
@@ -2761,20 +2774,7 @@
 
 	    // write
 	    switch (characteristicName) {
-	        case "name":
-	        case "type":
-	        case "sensorConfiguration":
-	        case "vibration":
-	        case "fileLength":
-	        case "fileChecksum":
-	        case "fileTransferType":
-	        case "fileTransferCommand":
-	        case "fileTransferBlock":
-	        case "tfliteModelName":
-	        case "tfliteModelTask":
-	        case "tfliteModelSampleRate":
-	        case "tfliteModelSensorTypes":
-	        case "tfliteInferencingEnabled":
+	        case "tx":
 	        case "smp":
 	            properties.write = true;
 	            properties.writeWithoutResponse = true;
@@ -2795,145 +2795,57 @@
 
 
 
+
+
 	class BluetoothConnectionManager extends BaseConnectionManager {
+	    get status() {
+	        return super.status;
+	    }
+	    set status(newConnectionStatus) {
+	        super.status = newConnectionStatus;
+
+	        if (this.status == "connected") {
+	            this.sendTxMessages({ type: "getMtu" });
+	        }
+	    }
+
 	    /**
 	     * @protected
 	     * @param {BluetoothCharacteristicName} characteristicName
 	     * @param {DataView} dataView
 	     */
 	    onCharacteristicValueChanged(characteristicName, dataView) {
-	        switch (characteristicName) {
-	            case "manufacturerName":
-	            case "modelNumber":
-	            case "softwareRevision":
-	            case "hardwareRevision":
-	            case "firmwareRevision":
-	            case "pnpId":
-	            case "serialNumber":
-	            case "batteryLevel":
-	            case "sensorData":
-	            case "pressurePositions":
-	            case "sensorScalars":
-
-	            case "maxFileLength":
-	            case "fileTransferStatus":
-
-	            case "tfliteModelIsReady":
-	            case "tfliteModelInference":
-
-	            case "smp":
-
-	            case "mtu":
-	                this.onMessageReceived(characteristicName, dataView);
-	                break;
-
-	            case "name":
-	                this.onMessageReceived("getName", dataView);
-	                break;
-	            case "type":
-	                this.onMessageReceived("getType", dataView);
-	                break;
-	            case "sensorConfiguration":
-	                this.onMessageReceived("getSensorConfiguration", dataView);
-	                break;
-	            case "currentTime":
-	                this.onMessageReceived("getCurrentTime", dataView);
-	                break;
-	            case "fileTransferType":
-	                this.onMessageReceived("getFileTransferType", dataView);
-	                break;
-	            case "fileLength":
-	                this.onMessageReceived("getFileLength", dataView);
-	                break;
-	            case "fileChecksum":
-	                this.onMessageReceived("getFileChecksum", dataView);
-	                break;
-	            case "fileTransferBlock":
-	                this.onMessageReceived("getFileTransferBlock", dataView);
-	                break;
-	            case "tfliteModelName":
-	                this.onMessageReceived("getTfliteName", dataView);
-	                break;
-	            case "tfliteModelTask":
-	                this.onMessageReceived("getTfliteTask", dataView);
-	                break;
-	            case "tfliteModelSampleRate":
-	                this.onMessageReceived("getTfliteSampleRate", dataView);
-	                break;
-	            case "tfliteModelSensorTypes":
-	                this.onMessageReceived("getTfliteSensorTypes", dataView);
-	                break;
-	            case "tfliteCaptureDelay":
-	                this.onMessageReceived("getTfliteCaptureDelay", dataView);
-	                break;
-	            case "tfliteThreshold":
-	                this.onMessageReceived("getTfliteThreshold", dataView);
-	                break;
-	            case "tfliteInferencingEnabled":
-	                this.onMessageReceived("getTfliteInferencingEnabled", dataView);
-	                break;
-	            default:
-	                throw new Error(`uncaught characteristicName "${characteristicName}"`);
+	        if (characteristicName == "rx") {
+	            this.parseRxMessage(dataView);
+	        } else {
+	            this.onMessageReceived?.(characteristicName, dataView);
 	        }
 	    }
 
 	    /**
-	     * @param {ConnectionMessageType} messageType
-	     * @returns {BluetoothCharacteristicName}
+	     * @protected
+	     * @param {BluetoothCharacteristicName} characteristicName
+	     * @param {ArrayBuffer} data
 	     */
-	    characteristicNameForMessageType(messageType) {
-	        switch (messageType) {
-	            case "setName":
-	                return "name";
-	            case "setType":
-	                return "type";
+	    async writeCharacteristic(characteristicName, data) {
+	        console.log("writeCharacteristic", ...arguments);
+	    }
 
-	            case "setSensorConfiguration":
-	                return "sensorConfiguration";
-	            case "setCurrentTime":
-	                return "currentTime";
-	            case "triggerVibration":
-	                return "vibration";
+	    /** @param {ArrayBuffer} data */
+	    async sendSmpMessage(data) {
+	        super.sendSmpMessage(...arguments);
+	        return this.writeCharacteristic("smp", data);
+	    }
 
-	            case "setFileTransferType":
-	                return "fileTransferType";
-	            case "setFileLength":
-	                return "fileLength";
-	            case "setFileChecksum":
-	                return "fileChecksum";
-	            case "setFileTransferCommand":
-	                return "fileTransferCommand";
-	            case "setFileTransferBlock":
-	                return "fileTransferBlock";
-
-	            case "setTfliteName":
-	                return "tfliteModelName";
-	            case "setTfliteTask":
-	                return "tfliteModelTask";
-	            case "setTfliteSampleRate":
-	                return "tfliteModelSampleRate";
-	            case "setTfliteSensorTypes":
-	                return "tfliteModelSensorTypes";
-	            case "setTfliteCaptureDelay":
-	                return "tfliteCaptureDelay";
-	            case "setTfliteThreshold":
-	                return "tfliteThreshold";
-	            case "setTfliteInferencingEnabled":
-	                return "tfliteInferencingEnabled";
-
-	            case "smp":
-	                return "smp";
-
-	            case "mtu":
-	                return "mtu";
-
-	            default:
-	                throw Error(`no characteristicName for messageType "${messageType}"`);
-	        }
+	    /** @param {ArrayBuffer} data */
+	    async sendTxData(data) {
+	        super.sendTxData(...arguments);
+	        return this.writeCharacteristic("tx", data);
 	    }
 	}
 
-	const _console$g = createConsole("WebBluetoothConnectionManager", { log: true });
+	const _console$g = createConsole("WebBluetoothConnectionManager", { log: false });
+
 
 
 
@@ -3124,32 +3036,19 @@
 	        this.onCharacteristicValueChanged(characteristicName, dataView);
 	    }
 
-	    /** @param {Event} event */
-	    #onGattserverdisconnected(event) {
-	        _console$g.log("gattserverdisconnected");
-	        this.status = "not connected";
-	    }
-
 	    /**
-	     * @param {ConnectionMessageType} messageType
-	     * @param {DataView|ArrayBuffer} data
+	     * @param {BluetoothCharacteristicName} characteristicName
+	     * @param {ArrayBuffer} data
 	     */
-	    async sendMessage(messageType, data) {
-	        await super.sendMessage(...arguments);
-
-	        const characteristicName = this.characteristicNameForMessageType(messageType);
-	        _console$g.log({ characteristicName });
+	    async writeCharacteristic(characteristicName, data) {
+	        super.writeCharacteristic(...arguments);
 
 	        const characteristic = this.#characteristics.get(characteristicName);
-	        _console$g.assertWithError(characteristic, `no characteristic found with name "${characteristicName}"`);
-	        if (data instanceof DataView) {
-	            data = data.buffer;
-	        }
-	        if (messageType == "smp") {
-	            await characteristic.writeValueWithoutResponse(data);
-	        } else {
-	            await characteristic.writeValueWithResponse(data);
-	        }
+	        _console$g.assertWithError(characteristic, `${characteristicName} characteristic not found`);
+	        _console$g.log("writing characteristic", characteristic, data);
+	        await characteristic.writeValueWithoutResponse(data);
+	        _console$g.log("wrote characteristic");
+
 	        const characteristicProperties = characteristic.properties || getCharacteristicProperties(characteristicName);
 	        if (characteristicProperties.read && !characteristicProperties.notify) {
 	            _console$g.log("reading value after write...");
@@ -3158,6 +3057,12 @@
 	                this.#onCharacteristicValueChanged(characteristic);
 	            }
 	        }
+	    }
+
+	    /** @param {Event} event */
+	    #onGattserverdisconnected(event) {
+	        _console$g.log("gattserverdisconnected");
+	        this.status = "not connected";
 	    }
 
 	    /** @type {boolean} */
@@ -4658,8 +4563,7 @@
 	class FirmwareManager {
 	    /**
 	     * @callback SendMessageCallback
-	     * @param {FirmwareMessageType} messageType
-	     * @param {DataView|ArrayBuffer} data
+	     * @param {ArrayBuffer} data
 	     */
 
 	    /** @type {SendMessageCallback} */
@@ -4816,7 +4720,7 @@
 	        const promise = this.waitForEvent("firmwareImages");
 
 	        _console$d.log("getting firmware image state...");
-	        this.sendMessage("smp", Uint8Array.from(this.#mcuManager.cmdImageState()));
+	        this.sendMessage(Uint8Array.from(this.#mcuManager.cmdImageState()).buffer);
 
 	        await promise;
 	    }
@@ -4839,7 +4743,7 @@
 	        const promise = this.waitForEvent("smp");
 
 	        _console$d.log("testing firmware image...");
-	        this.sendMessage("smp", Uint8Array.from(this.#mcuManager.cmdImageTest(this.#images[1].hash)));
+	        this.sendMessage(Uint8Array.from(this.#mcuManager.cmdImageTest(this.#images[1].hash)).buffer);
 
 	        await promise;
 	    }
@@ -4849,7 +4753,7 @@
 	        const promise = this.waitForEvent("smp");
 
 	        _console$d.log("erasing image...");
-	        this.sendMessage("smp", Uint8Array.from(this.#mcuManager.cmdImageErase()));
+	        this.sendMessage(Uint8Array.from(this.#mcuManager.cmdImageErase()).buffer);
 
 	        this.#updateStatus("erasing");
 
@@ -4867,7 +4771,7 @@
 	        const promise = this.waitForEvent("smp");
 
 	        _console$d.log("confirming image...");
-	        this.sendMessage("smp", Uint8Array.from(this.#mcuManager.cmdImageConfirm(this.#images[0].hash)));
+	        this.sendMessage(Uint8Array.from(this.#mcuManager.cmdImageConfirm(this.#images[0].hash)).buffer);
 
 	        await promise;
 	    }
@@ -4879,7 +4783,7 @@
 	        const promise = this.waitForEvent("smp");
 
 	        _console$d.log("sending echo...");
-	        this.sendMessage("smp", Uint8Array.from(this.#mcuManager.smpEcho(string)));
+	        this.sendMessage(Uint8Array.from(this.#mcuManager.smpEcho(string)).buffer);
 
 	        await promise;
 	    }
@@ -4888,7 +4792,7 @@
 	        const promise = this.waitForEvent("smp");
 
 	        _console$d.log("resetting...");
-	        this.sendMessage("smp", Uint8Array.from(this.#mcuManager.cmdReset()));
+	        this.sendMessage(Uint8Array.from(this.#mcuManager.cmdReset()).buffer);
 
 	        await promise;
 	    }
@@ -4974,7 +4878,7 @@
 
 	    #onMcuImageUploadNext({ packet }) {
 	        _console$d.log("onMcuImageUploadNext", ...arguments);
-	        this.sendMessage("smp", Uint8Array.from(packet));
+	        this.sendMessage(Uint8Array.from(packet).buffer);
 	    }
 	    #onMcuImageUploadProgress({ percentage }) {
 	        const progress = percentage / 100;
@@ -5041,7 +4945,7 @@
 	    }
 	}
 
-	const _console$c = createConsole("Device", { log: false });
+	const _console$c = createConsole("Device", { log: true });
 
 
 
@@ -5144,7 +5048,7 @@
 	        this.#tfliteManager.sendMessage = this.#sendMessage.bind(this);
 	        this.#tfliteManager.eventDispatcher = this.#eventDispatcher;
 
-	        this.#firmwareManager.sendMessage = this.#sendMessage.bind(this);
+	        this.#firmwareManager.sendMessage = this.#sendSmpMessage.bind(this);
 	        this.#firmwareManager.eventDispatcher = this.#eventDispatcher;
 
 	        if (isInBrowser) {
@@ -5216,7 +5120,7 @@
 
 	        "connectionMessage",
 
-	        "mtu",
+	        "getMtu",
 
 	        ...FileTransferManager.EventTypes,
 	        ...TfliteManager.EventTypes,
@@ -5285,11 +5189,11 @@
 	        _console$c.log("assigned new connectionManager", this.#connectionManager);
 	    }
 	    /**
-	     * @param {ConnectionMessageType} messageType
+	     * @param {ConnectionMessageType} type
 	     * @param {DataView|ArrayBuffer} data
 	     */
-	    #sendMessage(messageType, data) {
-	        return this.#connectionManager?.sendMessage(messageType, data);
+	    #sendMessage(type, data) {
+	        return this.#connectionManager?.sendTxMessages({ type, data });
 	    }
 
 	    async connect() {
@@ -5308,15 +5212,8 @@
 	        _console$c.assertWithError(this.isConnected, "not connected");
 	    }
 
-	    /** @type {ConnectionMessageType[]} */
-	    static #AllInformationConnectionMessages = [
-	        "manufacturerName",
-	        "modelNumber",
-	        "softwareRevision",
-	        "hardwareRevision",
-	        "firmwareRevision",
-	        "pnpId",
-	        "batteryLevel",
+	    /** @type {import("./connection/BaseConnectionManager.js").TxRxMessageType[]} */
+	    static #RequiredInformationConnectionMessages = [
 	        "getName",
 	        "getType",
 	        "getSensorConfiguration",
@@ -5337,19 +5234,21 @@
 	        "getTfliteCaptureDelay",
 	        "getTfliteThreshold",
 	        "getTfliteInferencingEnabled",
-
-	        "mtu",
 	    ];
-	    static get AllInformationConnectionMessages() {
-	        return this.#AllInformationConnectionMessages;
+	    get #requiredInformationConnectionMessages() {
+	        return Device.#RequiredInformationConnectionMessages;
 	    }
-	    get #allInformationConnectionMessages() {
-	        return Device.#AllInformationConnectionMessages;
-	    }
-	    get #hasAllInformation() {
-	        return this.#allInformationConnectionMessages.every((messageType) => {
+	    get #hasRequiredInformation() {
+	        return this.#requiredInformationConnectionMessages.every((messageType) => {
 	            return this.latestConnectionMessage.has(messageType);
 	        });
+	    }
+	    #requestRequiredInformation() {
+	        /** @type {import("./connection/BaseConnectionManager.js").TxMessage[]} */
+	        const messages = this.#requiredInformationConnectionMessages.map((messageType) => ({
+	            type: messageType,
+	        }));
+	        this.connectionManager.sendTxMessages(...messages);
 	    }
 
 	    get canReconnect() {
@@ -5457,7 +5356,8 @@
 	        }
 	    }
 	    #checkConnection() {
-	        this.#isConnected = this.connectionManager?.isConnected && this.#hasAllInformation && this.#isCurrentTimeSet;
+	        this.#isConnected =
+	            this.connectionManager?.isConnected && this.#hasRequiredInformation && this.#isCurrentTimeSet;
 
 	        switch (this.connectionStatus) {
 	            case "connected":
@@ -5537,11 +5437,13 @@
 	                break;
 
 	            case "getName":
+	            case "setName":
 	                const name = textDecoder$1.decode(dataView);
 	                _console$c.log({ name });
 	                this.#updateName(name);
 	                break;
 	            case "getType":
+	            case "setType":
 	                const typeEnum = dataView.getUint8(0);
 	                const type = this.#types[typeEnum];
 	                _console$c.log({ typeEnum, type });
@@ -5549,6 +5451,7 @@
 	                break;
 
 	            case "getSensorConfiguration":
+	            case "setSensorConfiguration":
 	                const sensorConfiguration = this.#sensorConfigurationManager.parse(dataView);
 	                _console$c.log({ sensorConfiguration });
 	                this.#updateSensorConfiguration(sensorConfiguration);
@@ -5562,6 +5465,7 @@
 	                break;
 
 	            case "getCurrentTime":
+	            case "setCurrentTime":
 	                const currentTime = Number(dataView.getBigUint64(0, true));
 	                this.#onCurrentTime(currentTime);
 	                break;
@@ -5570,10 +5474,13 @@
 	                this.#sensorDataManager.parseData(dataView);
 	                break;
 
-	            case "mtu":
+	            case "getMtu":
 	                const mtu = dataView.getUint16(0, true);
 	                _console$c.log({ mtu });
 	                this.#updateMtu(mtu);
+	                break;
+
+	            case "rx":
 	                break;
 
 	            default:
@@ -5591,7 +5498,7 @@
 	        this.latestConnectionMessage.set(messageType, dataView);
 	        this.#dispatchEvent({ type: "connectionMessage", message: { messageType, dataView } });
 
-	        if (!this.isConnected && this.#hasAllInformation) {
+	        if (!this.isConnected && this.#hasRequiredInformation) {
 	            this.#checkConnection();
 	        }
 	    }
@@ -5614,7 +5521,7 @@
 	        _console$c.log("setting current time...");
 	        const dataView = new DataView(new ArrayBuffer(8));
 	        dataView.setBigUint64(0, BigInt(Date.now()), true);
-	        this.#connectionManager.sendMessage("setCurrentTime", dataView);
+	        this.#sendMessage("setCurrentTime", dataView);
 	    }
 
 	    // DEVICE INFORMATION
@@ -5712,7 +5619,7 @@
 	        );
 	        const setNameData = textEncoder.encode(newName);
 	        _console$c.log({ setNameData });
-	        await this.#connectionManager.sendMessage("setName", setNameData);
+	        await this.#sendMessage("setName", setNameData);
 	    }
 
 	    // TYPE
@@ -5762,7 +5669,7 @@
 	        this.#assertValidDeviceTypeEnum(newTypeEnum);
 	        const setTypeData = Uint8Array.from([newTypeEnum]);
 	        _console$c.log({ setTypeData });
-	        await this.#connectionManager.sendMessage("setType", setTypeData);
+	        await this.#sendMessage("setType", setTypeData);
 	    }
 	    /** @param {DeviceType} newType */
 	    async setType(newType) {
@@ -5843,7 +5750,7 @@
 	        _console$c.log({ newSensorConfiguration });
 	        const setSensorConfigurationData = this.#sensorConfigurationManager.createData(newSensorConfiguration);
 	        _console$c.log({ setSensorConfigurationData });
-	        await this.#connectionManager.sendMessage("setSensorConfiguration", setSensorConfigurationData);
+	        await this.#sendMessage("setSensorConfiguration", setSensorConfigurationData);
 	    }
 
 	    static #ClearSensorConfigurationOnLeave = true;
@@ -5987,7 +5894,7 @@
 	            _console$c.log({ type, dataView });
 	            triggerVibrationData = concatenateArrayBuffers(triggerVibrationData, dataView);
 	        });
-	        await this.#connectionManager.sendMessage("triggerVibration", triggerVibrationData);
+	        await this.#sendMessage("triggerVibration", triggerVibrationData);
 	    }
 
 	    // CONNECTED DEVICES
@@ -6411,6 +6318,11 @@
 
 	    #firmwareManager = new FirmwareManager();
 
+	    /** @param {ArrayBuffer} data */
+	    #sendSmpMessage(data) {
+	        this.#connectionManager.sendSmpMessage(data);
+	    }
+
 	    /** @param {FileLike} file */
 	    async uploadFirmware(file) {
 	        return this.#firmwareManager.uploadFirmware(file);
@@ -6459,8 +6371,13 @@
 
 	        this.#firmwareManager.mtu = this.mtu;
 	        this.#fileTransferManager.mtu = this.mtu;
+	        this.connectionManager.mtu = this.mtu;
 
-	        this.#dispatchEvent({ type: "mtu", message: { mtu: this.#mtu } });
+	        this.#dispatchEvent({ type: "getMtu", message: { mtu: this.#mtu } });
+
+	        if (!this.#hasRequiredInformation) {
+	            this.#requestRequiredInformation();
+	        }
 	    }
 	}
 
@@ -6722,7 +6639,8 @@
 	        }
 	        const buffer = Buffer.from(data);
 	        _console$a.log("writing data", buffer);
-	        const withoutResponse = messageType == "smp";
+	        //const withoutResponse = messageType == "smp";
+	        const withoutResponse = true;
 	        await characteristic.writeAsync(buffer, withoutResponse);
 	        if (characteristic.properties.includes("read")) {
 	            await characteristic.readAsync();
@@ -7920,7 +7838,7 @@
 	                    case "getTfliteInferencingEnabled":
 	                    case "tfliteModelInference":
 
-	                    case "mtu":
+	                    case "getMtu":
 
 	                    case "smp":
 	                        this.onMessageReceived(messageType, dataView);
@@ -8910,7 +8828,7 @@
 
 	                    case "getCurrentTime":
 
-	                    case "mtu":
+	                    case "getMtu":
 
 	                    case "maxFileLength":
 	                    case "getFileChecksum":
