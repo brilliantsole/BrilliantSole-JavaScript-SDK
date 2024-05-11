@@ -489,27 +489,34 @@ class TfliteManager {
 
         switch (messageType) {
             case "getTfliteName":
+            case "setTfliteName":
                 this.#parseName(dataView);
                 break;
             case "getTfliteTask":
+            case "setTfliteTask":
                 this.#parseTask(dataView);
                 break;
             case "getTfliteSampleRate":
+            case "setTfliteSampleRate":
                 this.#parseSampleRate(dataView);
                 break;
             case "getTfliteSensorTypes":
+            case "setTfliteSensorTypes":
                 this.#parseSensorTypes(dataView);
                 break;
             case "tfliteModelIsReady":
                 this.#parseIsReady(dataView);
                 break;
             case "getTfliteCaptureDelay":
+            case "setTfliteCaptureDelay":
                 this.#parseCaptureDelay(dataView);
                 break;
             case "getTfliteThreshold":
+            case "setTfliteThreshold":
                 this.#parseThreshold(dataView);
                 break;
             case "getTfliteInferencingEnabled":
+            case "setTfliteInferencingEnabled":
                 this.#parseInferencingEnabled(dataView);
                 break;
             case "tfliteModelInference":

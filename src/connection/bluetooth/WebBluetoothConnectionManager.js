@@ -212,10 +212,14 @@ class WebBluetoothConnectionManager extends BluetoothConnectionManager {
         const characteristic = this.#characteristics.get(characteristicName);
         _console.assertWithError(characteristic, `${characteristicName} characteristic not found`);
         _console.log("writing characteristic", characteristic, data);
-        await characteristic.writeValueWithoutResponse(data);
+        const characteristicProperties = characteristic.properties || getCharacteristicProperties(characteristicName);
+        if (characteristicProperties.writeWithoutResponse) {
+            await characteristic.writeValueWithoutResponse(data);
+        } else {
+            await characteristic.writeValueWithResponse(data);
+        }
         _console.log("wrote characteristic");
 
-        const characteristicProperties = characteristic.properties || getCharacteristicProperties(characteristicName);
         if (characteristicProperties.read && !characteristicProperties.notify) {
             _console.log("reading value after write...");
             await characteristic.readValue();

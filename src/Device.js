@@ -257,7 +257,7 @@ class Device {
     }
     /**
      * @param {ConnectionMessageType} type
-     * @param {DataView|ArrayBuffer} data
+     * @param {ArrayBuffer} data
      */
     #sendMessage(type, data) {
         return this.#connectionManager?.sendTxMessages({ type, data });
@@ -281,6 +281,8 @@ class Device {
 
     /** @type {import("./connection/BaseConnectionManager.js").TxRxMessageType[]} */
     static #RequiredInformationConnectionMessages = [
+        "getMtu",
+
         "getName",
         "getType",
         "getSensorConfiguration",
@@ -594,7 +596,7 @@ class Device {
         _console.log("setting current time...");
         const dataView = new DataView(new ArrayBuffer(8));
         dataView.setBigUint64(0, BigInt(Date.now()), true);
-        this.#sendMessage("setCurrentTime", dataView);
+        this.#sendMessage("setCurrentTime", dataView.buffer);
     }
 
     // DEVICE INFORMATION

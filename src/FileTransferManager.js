@@ -191,7 +191,7 @@ class FileTransferManager {
     }
     /** @param {FileType} type */
     #updateType(type) {
-        _console.log({ type });
+        _console.log({ fileTransferType: type });
         this.#type = type;
         this.#dispatchEvent({ type: "getFileTransferType", message: { fileType: type } });
     }
@@ -206,7 +206,7 @@ class FileTransferManager {
         const promise = this.waitForEvent("getFileTransferType");
 
         const typeEnum = this.types.indexOf(newType);
-        this.sendMessage("setFileTransferType", Uint8Array.from([typeEnum]));
+        this.sendMessage("setFileTransferType", Uint8Array.from([typeEnum]).buffer);
 
         await promise;
     }
@@ -241,7 +241,7 @@ class FileTransferManager {
 
         const dataView = new DataView(new ArrayBuffer(4));
         dataView.setUint32(0, newLength, true);
-        this.sendMessage("setFileLength", dataView);
+        this.sendMessage("setFileLength", dataView.buffer);
 
         await promise;
     }
@@ -274,7 +274,7 @@ class FileTransferManager {
 
         const dataView = new DataView(new ArrayBuffer(4));
         dataView.setUint32(0, newChecksum, true);
-        this.sendMessage("setFileChecksum", dataView);
+        this.sendMessage("setFileChecksum", dataView.buffer);
 
         await promise;
     }
@@ -286,7 +286,7 @@ class FileTransferManager {
         const promise = this.waitForEvent("fileTransferStatus");
 
         const commandEnum = this.commands.indexOf(command);
-        this.sendMessage("setFileTransferCommand", Uint8Array.from([commandEnum]));
+        this.sendMessage("setFileTransferCommand", Uint8Array.from([commandEnum]).buffer);
 
         await promise;
     }
@@ -385,12 +385,15 @@ class FileTransferManager {
                 this.#parseMaxLength(dataView);
                 break;
             case "getFileTransferType":
+            case "setFileTransferType":
                 this.#parseType(dataView);
                 break;
             case "getFileLength":
+            case "setFileLength":
                 this.#parseLength(dataView);
                 break;
             case "getFileChecksum":
+            case "setFileChecksum":
                 this.#parseChecksum(dataView);
                 break;
             case "fileTransferStatus":
@@ -440,7 +443,7 @@ class FileTransferManager {
             return;
         }
 
-        const slicedBuffer = buffer.slice(offset, offset + (this.#mtu - 3));
+        const slicedBuffer = buffer.slice(offset, offset + (this.#mtu - 3 - 3));
         console.log("slicedBuffer", slicedBuffer);
         const bytesLeft = buffer.byteLength - offset;
         const progress = 1 - bytesLeft / buffer.byteLength;
@@ -477,7 +480,7 @@ class FileTransferManager {
     /**
      * @callback SendMessageCallback
      * @param {FileTransferMessageType} messageType
-     * @param {DataView|ArrayBuffer} data
+     * @param {ArrayBuffer} data
      */
 
     /** @type {SendMessageCallback} */

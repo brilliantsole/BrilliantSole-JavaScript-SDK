@@ -6,7 +6,7 @@ import TfliteManager from "../TfliteManager.js";
 import { concatenateArrayBuffers } from "../utils/ArrayBufferUtils.js";
 import { parseMessage } from "../utils/ParseUtils.js";
 
-const _console = createConsole("BaseConnectionManager", { log: false });
+const _console = createConsole("BaseConnectionManager", { log: true });
 
 /** @typedef {import("../FileTransferManager.js").FileTransferMessageType} FileTransferMessageType */
 /** @typedef {import("../TfliteManager.js").TfliteMessageType} TfliteMessageType */
@@ -84,8 +84,10 @@ class BaseConnectionManager {
         "setSensorConfiguration",
         "pressurePositions",
         "sensorScalars",
-        "setCurrentTime",
+
         "getCurrentTime",
+        "setCurrentTime",
+
         "sensorData",
         "triggerVibration",
 
@@ -198,6 +200,10 @@ class BaseConnectionManager {
         } else {
             this.#timer.stop();
         }
+
+        if (this.#status == "not connected") {
+            this.#mtu = null;
+        }
     }
 
     get isConnected() {
@@ -257,6 +263,8 @@ class BaseConnectionManager {
     async sendTxMessages(...messages) {
         this.#assertIsConnectedAndNotDisconnecting();
 
+        _console.log("sendTxMessages", messages);
+
         const arrayBuffers = messages.map((message) => {
             BaseConnectionManager.#AssertValidTxRxMessageType(message.type);
             const messageTypeEnum = BaseConnectionManager.TxRxMessageTypes.indexOf(message.type);
@@ -264,10 +272,14 @@ class BaseConnectionManager {
             dataLength.setUint16(0, message.data?.byteLength || 0, true);
             return concatenateArrayBuffers(messageTypeEnum, dataLength, message.data);
         });
-        const arrayBuffer = concatenateArrayBuffers(...arrayBuffers);
 
-        // FILL - break into chunks if mtu is defined
-        this.sendTxData(arrayBuffer);
+        if (false && this.#mtu) {
+            // FILL - chunk arrayBuffers into subArrays whose lengths are within mtu
+        } else {
+            const arrayBuffer = concatenateArrayBuffers(...arrayBuffers);
+            _console.log("sending arrayBuffer", arrayBuffer);
+            await this.sendTxData(arrayBuffer);
+        }
     }
 
     /** @param {number?} */

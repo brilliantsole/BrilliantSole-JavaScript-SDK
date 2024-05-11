@@ -233,9 +233,7 @@ export function getCharacteristicProperties(characteristicName) {
     switch (characteristicName) {
         case "tx":
         case "smp":
-            properties.write = true;
             properties.writeWithoutResponse = true;
-            properties.reliableWrite = true;
             break;
     }
 

@@ -37,13 +37,13 @@ class BluetoothConnectionManager extends BaseConnectionManager {
     /** @param {ArrayBuffer} data */
     async sendSmpMessage(data) {
         super.sendSmpMessage(...arguments);
-        return this.writeCharacteristic("smp", data);
+        await this.writeCharacteristic("smp", data);
     }
 
     /** @param {ArrayBuffer} data */
     async sendTxData(data) {
         super.sendTxData(...arguments);
-        return this.writeCharacteristic("tx", data);
+        await this.writeCharacteristic("tx", data);
     }
 }
 

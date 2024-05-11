@@ -740,7 +740,6 @@ function visualizeSensorTypeData(sensorTypeData, canvas) {
 
     console.log({ config });
 
-    // FILL - config
     const chart = new Chart(canvas, config);
     canvas.chart = chart;
 }
