@@ -277,7 +277,6 @@ class BaseConnectionManager {
     }
     set mtu(newMtu) {
         this.#mtu = newMtu;
-        // FILL - request follow-up information
     }
 
     /**

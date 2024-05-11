@@ -9,7 +9,8 @@
 })(this, (function () { 'use strict';
 
 	/** @type {"__BRILLIANTSOLE__DEV__" | "__BRILLIANTSOLE__PROD__"} */
-	const isInDev = "__BRILLIANTSOLE__PROD__" == "__BRILLIANTSOLE__DEV__";
+	const __BRILLIANTSOLE__ENVIRONMENT__ = "__BRILLIANTSOLE__DEV__";
+	const isInDev = __BRILLIANTSOLE__ENVIRONMENT__ == "__BRILLIANTSOLE__DEV__";
 
 	// https://github.com/flexdinesh/browser-or-node/blob/master/src/index.ts
 	const isInBrowser = typeof window !== "undefined" && window?.document !== "undefined";
@@ -136,6 +137,9 @@
 	     */
 	    static create(type, levelFlags) {
 	        const console = this.#consoles[type] || new Console(type);
+	        if (levelFlags) {
+	            console.setLevelFlags(levelFlags);
+	        }
 	        return console;
 	    }
 
@@ -2512,7 +2516,6 @@
 	    }
 	    set mtu(newMtu) {
 	        this.#mtu = newMtu;
-	        // FILL - request follow-up information
 	    }
 
 	    /**
@@ -2798,17 +2801,6 @@
 
 
 	class BluetoothConnectionManager extends BaseConnectionManager {
-	    get status() {
-	        return super.status;
-	    }
-	    set status(newConnectionStatus) {
-	        super.status = newConnectionStatus;
-
-	        if (this.status == "connected") {
-	            this.sendTxMessages({ type: "getMtu" });
-	        }
-	    }
-
 	    /**
 	     * @protected
 	     * @param {BluetoothCharacteristicName} characteristicName
@@ -5098,6 +5090,8 @@
 
 	        "batteryLevel",
 
+	        "getMtu",
+
 	        "getName",
 	        "getType",
 
@@ -5119,8 +5113,6 @@
 	        "barometer",
 
 	        "connectionMessage",
-
-	        "getMtu",
 
 	        ...FileTransferManager.EventTypes,
 	        ...TfliteManager.EventTypes,
@@ -5345,6 +5337,10 @@
 	        }
 
 	        this.#checkConnection();
+
+	        if (connectionStatus == "connected" && !this.#isConnected) {
+	            this.#requestRequiredInformation();
+	        }
 	    }
 
 	    /** @param {boolean} includeIsConnected */
@@ -6374,10 +6370,6 @@
 	        this.connectionManager.mtu = this.mtu;
 
 	        this.#dispatchEvent({ type: "getMtu", message: { mtu: this.#mtu } });
-
-	        if (!this.#hasRequiredInformation) {
-	            this.#requestRequiredInformation();
-	        }
 	    }
 	}
 

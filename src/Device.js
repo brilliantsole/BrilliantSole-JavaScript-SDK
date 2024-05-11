@@ -165,6 +165,8 @@ class Device {
 
         "batteryLevel",
 
+        "getMtu",
+
         "getName",
         "getType",
 
@@ -186,8 +188,6 @@ class Device {
         "barometer",
 
         "connectionMessage",
-
-        "getMtu",
 
         ...FileTransferManager.EventTypes,
         ...TfliteManager.EventTypes,
@@ -412,6 +412,10 @@ class Device {
         }
 
         this.#checkConnection();
+
+        if (connectionStatus == "connected" && !this.#isConnected) {
+            this.#requestRequiredInformation();
+        }
     }
 
     /** @param {boolean} includeIsConnected */
@@ -1443,10 +1447,6 @@ class Device {
         this.connectionManager.mtu = this.mtu;
 
         this.#dispatchEvent({ type: "getMtu", message: { mtu: this.#mtu } });
-
-        if (!this.#hasRequiredInformation) {
-            this.#requestRequiredInformation();
-        }
     }
 }
 

@@ -12,17 +12,6 @@ const _console = createConsole("BluetoothConnectionManager", { log: true });
 /** @typedef {import("../BaseConnectionManager.js").ConnectionStatus} ConnectionStatus */
 
 class BluetoothConnectionManager extends BaseConnectionManager {
-    get status() {
-        return super.status;
-    }
-    set status(newConnectionStatus) {
-        super.status = newConnectionStatus;
-
-        if (this.status == "connected") {
-            this.sendTxMessages({ type: "getMtu" });
-        }
-    }
-
     /**
      * @protected
      * @param {BluetoothCharacteristicName} characteristicName
