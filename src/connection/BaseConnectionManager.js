@@ -30,6 +30,7 @@ const _console = createConsole("BaseConnectionManager", { log: true });
  * "sensorData" |
  * "triggerVibration" |
  * TfliteMessageType |
+ * FileTransferMessageType |
  * FirmwareMessageType
  * } TxRxMessageType
  */
@@ -259,13 +260,27 @@ class BaseConnectionManager {
         _console.log("sending smp message", data);
     }
 
-    /** @param {...TxMessage} messages */
-    async sendTxMessages(...messages) {
+    /** @type {TxMessage[]} */
+    #pendingMessages = [];
+
+    /**
+     * @param {TxMessage[]?} messages
+     * @param {boolean} sendImmediately
+     */
+    async sendTxMessages(messages, sendImmediately = true) {
         this.#assertIsConnectedAndNotDisconnecting();
 
-        _console.log("sendTxMessages", messages);
+        if (messages) {
+            this.#pendingMessages.push(...messages);
+        }
 
-        const arrayBuffers = messages.map((message) => {
+        if (!sendImmediately) {
+            return;
+        }
+
+        _console.log("sendTxMessages", this.#pendingMessages.slice());
+
+        const arrayBuffers = this.#pendingMessages.map((message) => {
             BaseConnectionManager.#AssertValidTxRxMessageType(message.type);
             const messageTypeEnum = BaseConnectionManager.TxRxMessageTypes.indexOf(message.type);
             const dataLength = new DataView(new ArrayBuffer(2));
@@ -280,6 +295,8 @@ class BaseConnectionManager {
             _console.log("sending arrayBuffer", arrayBuffer);
             await this.sendTxData(arrayBuffer);
         }
+
+        this.#pendingMessages.length = 0;
     }
 
     /** @param {number?} */

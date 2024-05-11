@@ -154,8 +154,11 @@ class TfliteManager {
         this.#name = name;
         this.#dispatchEvent({ type: "getTfliteName", message: { tfliteModelName: name } });
     }
-    /** @param {string} newName */
-    async setName(newName) {
+    /**
+     * @param {string} newName
+     * @param {boolean} sendImmediately
+     */
+    async setName(newName, sendImmediately) {
         _console.assertTypeWithError(newName, "string");
         if (this.name == newName) {
             _console.log(`redundant name assignment ${newName}`);
@@ -165,7 +168,7 @@ class TfliteManager {
         const promise = this.waitForEvent("getTfliteName");
 
         const setNameData = textEncoder.encode(newName);
-        this.sendMessage("setTfliteName", setNameData);
+        this.sendMessage([{ type: "setTfliteName", data: setNameData.buffer }], sendImmediately);
 
         await promise;
     }
@@ -189,8 +192,11 @@ class TfliteManager {
         this.#task = task;
         this.#dispatchEvent({ type: "getTfliteTask", message: { tfliteModelTask: task } });
     }
-    /** @param {TfliteTask} newTask */
-    async setTask(newTask) {
+    /**
+     * @param {TfliteTask} newTask
+     * @param {boolean} sendImmediately
+     */
+    async setTask(newTask, sendImmediately) {
         this.#assertValidTask(newTask);
         if (this.task == newTask) {
             _console.log(`redundant task assignment ${newTask}`);
@@ -200,7 +206,7 @@ class TfliteManager {
         const promise = this.waitForEvent("getTfliteTask");
 
         const taskEnum = this.tasks.indexOf(newTask);
-        this.sendMessage("setTfliteTask", Uint8Array.from([taskEnum]));
+        this.sendMessage([{ type: "setTfliteTask", data: Uint8Array.from([taskEnum]).buffer }], sendImmediately);
 
         await promise;
     }
@@ -221,8 +227,11 @@ class TfliteManager {
         this.#sampleRate = sampleRate;
         this.#dispatchEvent({ type: "getTfliteSampleRate", message: { tfliteModelSampleRate: sampleRate } });
     }
-    /** @param {number} newSampleRate */
-    async setSampleRate(newSampleRate) {
+    /**
+     * @param {number} newSampleRate
+     * @param {boolean} sendImmediately
+     */
+    async setSampleRate(newSampleRate, sendImmediately) {
         _console.assertTypeWithError(newSampleRate, "number");
         newSampleRate -= newSampleRate % SensorConfigurationManager.SensorRateStep;
         _console.assertWithError(
@@ -238,7 +247,7 @@ class TfliteManager {
 
         const dataView = new DataView(new ArrayBuffer(2));
         dataView.setUint16(0, newSampleRate, true);
-        this.sendMessage("setTfliteSampleRate", dataView);
+        this.sendMessage([{ type: "setTfliteSampleRate", data: dataView.buffer }], sendImmediately);
 
         await promise;
     }
@@ -281,8 +290,11 @@ class TfliteManager {
         this.#sensorTypes = sensorTypes;
         this.#dispatchEvent({ type: "getTfliteSensorTypes", message: { tfliteModelSensorTypes: sensorTypes } });
     }
-    /** @param {SensorType[]} newSensorTypes */
-    async setSensorTypes(newSensorTypes) {
+    /**
+     * @param {SensorType[]} newSensorTypes
+     * @param {boolean} sendImmediately
+     */
+    async setSensorTypes(newSensorTypes, sendImmediately) {
         newSensorTypes.forEach((sensorType) => {
             TfliteManager.AssertValidSensorType(sensorType);
         });
@@ -294,7 +306,10 @@ class TfliteManager {
             .map((sensorType) => SensorDataManager.Types.indexOf(sensorType))
             .sort();
         _console.log(newSensorTypes, newSensorTypeEnums);
-        this.sendMessage("setTfliteSensorTypes", Uint8Array.from(newSensorTypeEnums));
+        this.sendMessage(
+            [{ type: "setTfliteSensorTypes", data: Uint8Array.from(newSensorTypeEnums).buffer }],
+            sendImmediately
+        );
 
         await promise;
     }
@@ -343,8 +358,11 @@ class TfliteManager {
             message: { tfliteCaptureDelay: captureDelay },
         });
     }
-    /** @param {number} newCaptureDelay */
-    async setCaptureDelay(newCaptureDelay) {
+    /**
+     * @param {number} newCaptureDelay
+     * @param {boolean} sendImmediately
+     */
+    async setCaptureDelay(newCaptureDelay, sendImmediately) {
         _console.assertTypeWithError(newCaptureDelay, "number");
         if (this.#captureDelay == newCaptureDelay) {
             _console.log(`redundant captureDelay assignment ${newCaptureDelay}`);
@@ -355,7 +373,7 @@ class TfliteManager {
 
         const dataView = new DataView(new ArrayBuffer(2));
         dataView.setUint16(0, newCaptureDelay, true);
-        this.sendMessage("setTfliteCaptureDelay", dataView);
+        this.sendMessage([{ type: "setTfliteCaptureDelay", data: dataView.buffer }], sendImmediately);
 
         await promise;
     }
@@ -380,8 +398,11 @@ class TfliteManager {
             message: { tfliteThreshold: threshold },
         });
     }
-    /** @param {number} newThreshold */
-    async setThreshold(newThreshold) {
+    /**
+     * @param {number} newThreshold
+     * @param {boolean} sendImmediately
+     */
+    async setThreshold(newThreshold, sendImmediately) {
         _console.assertTypeWithError(newThreshold, "number");
         _console.assertWithError(newThreshold >= 0, `threshold must be positive (got ${newThreshold})`);
         if (this.#threshold == newThreshold) {
@@ -393,7 +414,7 @@ class TfliteManager {
 
         const dataView = new DataView(new ArrayBuffer(4));
         dataView.setFloat32(0, newThreshold, true);
-        this.sendMessage("setTfliteThreshold", dataView);
+        this.sendMessage([{ type: "setTfliteThreshold", data: dataView.buffer }], sendImmediately);
 
         await promise;
     }
@@ -417,8 +438,11 @@ class TfliteManager {
             message: { tfliteInferencingEnabled: inferencingEnabled },
         });
     }
-    /** @param {boolean} newInferencingEnabled */
-    async setInferencingEnabled(newInferencingEnabled) {
+    /**
+     * @param {boolean} newInferencingEnabled
+     * @param {boolean} sendImmediately
+     */
+    async setInferencingEnabled(newInferencingEnabled, sendImmediately) {
         _console.assertTypeWithError(newInferencingEnabled, "boolean");
         this.#assertIsReady();
         if (this.#inferencingEnabled == newInferencingEnabled) {
@@ -428,7 +452,15 @@ class TfliteManager {
 
         const promise = this.waitForEvent("getTfliteInferencingEnabled");
 
-        this.sendMessage("setTfliteInferencingEnabled", Uint8Array.from([newInferencingEnabled]));
+        this.sendMessage(
+            [
+                {
+                    type: "setTfliteInferencingEnabled",
+                    data: Uint8Array.from([newInferencingEnabled]).buffer,
+                },
+            ],
+            sendImmediately
+        );
 
         await promise;
     }
@@ -529,8 +561,8 @@ class TfliteManager {
 
     /**
      * @callback SendMessageCallback
-     * @param {TfliteMessageType} messageType
-     * @param {DataView|ArrayBuffer} data
+     * @param {{type: TfliteMessageType, data: ArrayBuffer}} messages
+     * @param {boolean} sendImmediately
      */
 
     /** @type {SendMessageCallback} */
