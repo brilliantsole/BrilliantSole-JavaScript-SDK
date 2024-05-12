@@ -2883,6 +2883,8 @@ function getCharacteristicProperties(characteristicName) {
     // write
     switch (characteristicName) {
         case "tx":
+            properties.write = true;
+            break;
         case "smp":
             properties.writeWithoutResponse = true;
             break;
