@@ -14,7 +14,6 @@ import EventDispatcher from "../../utils/EventDispatcher.js";
 import Device from "../../Device.js";
 import WebSocketClientConnectionManager from "../../connection/webSocket/WebSocketClientConnectionManager.js";
 import { sliceDataView } from "../../utils/ArrayBufferUtils.js";
-import WebBluetoothConnectionManager from "../../connection/bluetooth/WebBluetoothConnectionManager.js";
 
 const _console = createConsole("WebSocketClient", { log: true });
 
@@ -22,7 +21,6 @@ const _console = createConsole("WebSocketClient", { log: true });
 /** @typedef {import("../../utils/EventDispatcher.js").EventDispatcherOptions} EventDispatcherOptions */
 
 /** @typedef {"not connected" | "connecting" | "connected" | "disconnecting"} ClientConnectionStatus */
-
 /** @typedef {ClientConnectionStatus | "connectionStatus" |  "isConnected" | "isScanningAvailable" | "isScanning" | "discoveredDevice" | "expiredDiscoveredDevice"} ClientEventType */
 
 /**
@@ -266,8 +264,6 @@ class WebSocketClient {
             case "not connected":
                 this.#dispatchEvent({ type: "isConnected", message: { isConnected: this.isConnected } });
                 if (this.isConnected) {
-                    //this.#requestIsScanningAvailable();
-                    //this.#requestDiscoveredDevices();
                     this.#sendServerMessage("isScanningAvailable", "discoveredDevices", "connectedDevices");
                 } else {
                     this.#isScanningAvailable = false;
@@ -283,87 +279,82 @@ class WebSocketClient {
     /** @param {DataView} dataView */
     #parseMessage(dataView) {
         _console.log("parseMessage", { dataView });
-        parseMessage(
-            dataView,
-            ServerMessageTypes,
-            (_messageType, dataView) => {
-                /** @type {ServerMessageType} */
-                const messageType = _messageType;
+        parseMessage(dataView, ServerMessageTypes, this.#parseMessageCallback.bind(this), null, true);
+    }
 
-                let byteOffset = 0;
+    /**
+     * @param {ServerMessageType} messageType
+     * @param {DataView} dataView
+     */
+    #parseMessageCallback(messageType, dataView) {
+        let byteOffset = 0;
 
-                switch (messageType) {
-                    case "ping":
-                        this.#pong();
-                        break;
-                    case "pong":
-                        break;
-                    case "isScanningAvailable":
-                        {
-                            const isScanningAvailable = Boolean(dataView.getUint8(byteOffset++));
-                            _console.log({ isScanningAvailable });
-                            this.#isScanningAvailable = isScanningAvailable;
-                        }
-                        break;
-                    case "isScanning":
-                        {
-                            const isScanning = Boolean(dataView.getUint8(byteOffset++));
-                            _console.log({ isScanning });
-                            this.#isScanning = isScanning;
-                        }
-                        break;
-                    case "discoveredDevice":
-                        {
-                            const { string: discoveredDeviceString } = parseStringFromDataView(dataView, byteOffset);
-                            _console.log({ discoveredDeviceString });
-
-                            /** @type {DiscoveredDevice} */
-                            const discoveredDevice = JSON.parse(discoveredDeviceString);
-                            _console.log({ discoveredDevice });
-
-                            this.#onDiscoveredDevice(discoveredDevice);
-                        }
-                        break;
-                    case "expiredDiscoveredDevice":
-                        {
-                            const { string: deviceId } = parseStringFromDataView(dataView, byteOffset);
-                            this.#onExpiredDiscoveredDevice(deviceId);
-                        }
-                        break;
-                    case "connectedDevices":
-                        {
-                            if (dataView.byteLength == 0) {
-                                break;
-                            }
-                            const { string: connectedDeviceIdStrings } = parseStringFromDataView(dataView, byteOffset);
-                            _console.log({ connectedDeviceIdStrings });
-                            const connectedDeviceIds = JSON.parse(connectedDeviceIdStrings);
-                            _console.log({ connectedDeviceIds });
-                            this.#onConnectedDeviceIds(connectedDeviceIds);
-                        }
-                        break;
-                    case "deviceMessage":
-                        {
-                            const { string: deviceId, byteOffset: _byteOffset } = parseStringFromDataView(
-                                dataView,
-                                byteOffset
-                            );
-                            byteOffset = _byteOffset;
-                            const device = this.#devices[deviceId];
-                            _console.assertWithError(device, `no device found for id ${deviceId}`);
-                            /** @type {WebSocketClientConnectionManager} */
-                            const connectionManager = device.connectionManager;
-                            const _dataView = sliceDataView(dataView, byteOffset);
-                            connectionManager.onWebSocketMessage(_dataView);
-                        }
-                        break;
-                    default:
-                        _console.error(`uncaught messageType "${messageType}"`);
-                        break;
+        switch (messageType) {
+            case "ping":
+                this.#pong();
+                break;
+            case "pong":
+                break;
+            case "isScanningAvailable":
+                {
+                    const isScanningAvailable = Boolean(dataView.getUint8(byteOffset++));
+                    _console.log({ isScanningAvailable });
+                    this.#isScanningAvailable = isScanningAvailable;
                 }
-            },
-            true
-        );
+                break;
+            case "isScanning":
+                {
+                    const isScanning = Boolean(dataView.getUint8(byteOffset++));
+                    _console.log({ isScanning });
+                    this.#isScanning = isScanning;
+                }
+                break;
+            case "discoveredDevice":
+                {
+                    const { string: discoveredDeviceString } = parseStringFromDataView(dataView, byteOffset);
+                    _console.log({ discoveredDeviceString });
+
+                    /** @type {DiscoveredDevice} */
+                    const discoveredDevice = JSON.parse(discoveredDeviceString);
+                    _console.log({ discoveredDevice });
+
+                    this.#onDiscoveredDevice(discoveredDevice);
+                }
+                break;
+            case "expiredDiscoveredDevice":
+                {
+                    const { string: deviceId } = parseStringFromDataView(dataView, byteOffset);
+                    this.#onExpiredDiscoveredDevice(deviceId);
+                }
+                break;
+            case "connectedDevices":
+                {
+                    if (dataView.byteLength == 0) {
+                        break;
+                    }
+                    const { string: connectedDeviceIdStrings } = parseStringFromDataView(dataView, byteOffset);
+                    _console.log({ connectedDeviceIdStrings });
+                    const connectedDeviceIds = JSON.parse(connectedDeviceIdStrings);
+                    _console.log({ connectedDeviceIds });
+                    this.#onConnectedDeviceIds(connectedDeviceIds);
+                }
+                break;
+            case "deviceMessage":
+                {
+                    const { string: deviceId, byteOffset: _byteOffset } = parseStringFromDataView(dataView, byteOffset);
+                    byteOffset = _byteOffset;
+                    const device = this.#devices[deviceId];
+                    _console.assertWithError(device, `no device found for id ${deviceId}`);
+                    /** @type {WebSocketClientConnectionManager} */
+                    const connectionManager = device.connectionManager;
+                    const _dataView = sliceDataView(dataView, byteOffset);
+                    connectionManager.onWebSocketMessage(_dataView);
+                }
+                break;
+            default:
+                _console.error(`uncaught messageType "${messageType}"`);
+                break;
+        }
     }
 
     // PING

@@ -69,7 +69,25 @@ class NobleConnectionManager extends BluetoothConnectionManager {
         }
         const buffer = Buffer.from(data);
         _console.log("writing data", buffer);
-        //const withoutResponse = messageType == "smp";
+        const withoutResponse = true;
+        await characteristic.writeAsync(buffer, withoutResponse);
+        if (characteristic.properties.includes("read")) {
+            await characteristic.readAsync();
+        }
+    }
+
+    /**
+     * @param {BluetoothCharacteristicName} characteristicName
+     * @param {ArrayBuffer} data
+     */
+    async writeCharacteristic(characteristicName, data) {
+        const characteristic = this.#characteristics.get(characteristicName);
+        _console.assertWithError(characteristic, `no characteristic found with name "${characteristicName}"`);
+        // if (data instanceof DataView) {
+        //     data = data.buffer;
+        // }
+        const buffer = Buffer.from(data);
+        _console.log("writing data", buffer);
         const withoutResponse = true;
         await characteristic.writeAsync(buffer, withoutResponse);
         if (characteristic.properties.includes("read")) {

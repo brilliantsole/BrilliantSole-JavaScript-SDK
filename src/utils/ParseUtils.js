@@ -28,9 +28,10 @@ export function parseStringFromDataView(dataView, byteOffset = 0) {
  * @param {DataView} dataView
  * @param {string[]} enumeration
  * @param {ParseMessageCallback} callback
+ * @param {Object?} context
  * @param {boolean} parseMessageLengthAsUint16
  */
-export function parseMessage(dataView, enumeration, callback, parseMessageLengthAsUint16 = false) {
+export function parseMessage(dataView, enumeration, callback, context, parseMessageLengthAsUint16 = false) {
     let byteOffset = 0;
     while (byteOffset < dataView.byteLength) {
         const messageTypeEnum = dataView.getUint8(byteOffset++);
@@ -51,7 +52,7 @@ export function parseMessage(dataView, enumeration, callback, parseMessageLength
         const _dataView = sliceDataView(dataView, byteOffset, messageLength);
         _console.log({ _dataView });
 
-        callback(messageType, _dataView);
+        callback(messageType, _dataView, context);
 
         byteOffset += messageLength;
     }

@@ -1484,9 +1484,10 @@ function parseStringFromDataView(dataView, byteOffset = 0) {
  * @param {DataView} dataView
  * @param {string[]} enumeration
  * @param {ParseMessageCallback} callback
+ * @param {Object?} context
  * @param {boolean} parseMessageLengthAsUint16
  */
-function parseMessage(dataView, enumeration, callback, parseMessageLengthAsUint16 = false) {
+function parseMessage(dataView, enumeration, callback, context, parseMessageLengthAsUint16 = false) {
     let byteOffset = 0;
     while (byteOffset < dataView.byteLength) {
         const messageTypeEnum = dataView.getUint8(byteOffset++);
@@ -1507,7 +1508,7 @@ function parseMessage(dataView, enumeration, callback, parseMessageLengthAsUint1
         const _dataView = sliceDataView(dataView, byteOffset, messageLength);
         _console$n.log({ _dataView });
 
-        callback(messageType, _dataView);
+        callback(messageType, _dataView, context);
 
         byteOffset += messageLength;
     }
@@ -1579,38 +1580,42 @@ class SensorDataManager {
 
         const _dataView = new DataView(dataView.buffer, byteOffset);
 
-        parseMessage(_dataView, SensorDataManager.Types, (messageType, dataView) => {
-            /** @type {SensorType} */
-            const sensorType = messageType;
+        parseMessage(_dataView, SensorDataManager.Types, this.#parseDataCallback.bind(this), { timestamp });
+    }
 
-            const scalar = this.#scalars.get(sensorType);
+    /**
+     * @param {SensorType} sensorType
+     * @param {DataView} dataView
+     * @param {{timestamp: number}} context
+     */
+    #parseDataCallback(sensorType, dataView, { timestamp }) {
+        const scalar = this.#scalars.get(sensorType);
 
-            let value;
-            switch (sensorType) {
-                case "pressure":
-                    value = this.pressureSensorDataManager.parseData(dataView);
-                    break;
-                case "acceleration":
-                case "gravity":
-                case "linearAcceleration":
-                case "gyroscope":
-                case "magnetometer":
-                    value = this.motionSensorDataManager.parseVector3(dataView, scalar);
-                    break;
-                case "gameRotation":
-                case "rotation":
-                    value = this.motionSensorDataManager.parseQuaternion(dataView, scalar);
-                    break;
-                case "barometer":
-                    // FILL
-                    break;
-                default:
-                    _console$m.error(`uncaught sensorType "${sensorType}"`);
-            }
+        let value;
+        switch (sensorType) {
+            case "pressure":
+                value = this.pressureSensorDataManager.parseData(dataView);
+                break;
+            case "acceleration":
+            case "gravity":
+            case "linearAcceleration":
+            case "gyroscope":
+            case "magnetometer":
+                value = this.motionSensorDataManager.parseVector3(dataView, scalar);
+                break;
+            case "gameRotation":
+            case "rotation":
+                value = this.motionSensorDataManager.parseQuaternion(dataView, scalar);
+                break;
+            case "barometer":
+                // FILL
+                break;
+            default:
+                _console$m.error(`uncaught sensorType "${sensorType}"`);
+        }
 
-            _console$m.assertWithError(value, `no value defined for sensorType "${sensorType}"`);
-            this.onDataReceived(sensorType, { timestamp, [sensorType]: value });
-        });
+        _console$m.assertWithError(value, `no value defined for sensorType "${sensorType}"`);
+        this.onDataReceived(sensorType, { timestamp, [sensorType]: value });
     }
 
     /** @param {DataView} dataView */
@@ -2346,6 +2351,7 @@ const _console$j = createConsole("BaseConnectionManager", { log: true });
  * "batteryLevel" |
  * "smp" |
  * "rx" |
+ * "tx" |
  * TxRxMessageType
  * } ConnectionMessageType
  */
@@ -2402,9 +2408,11 @@ class BaseConnectionManager {
         "serialNumber",
 
         "batteryLevel",
+
         "smp",
 
         "rx",
+        "tx",
 
         ...this.TxRxMessageTypes,
     ];
@@ -2617,18 +2625,14 @@ class BaseConnectionManager {
         this.#mtu = newMtu;
     }
 
-    /**
-     * @protected
-     * @param {ArrayBuffer} data
-     */
+    /** @param {ArrayBuffer} data */
     async sendTxData(data) {
         _console$j.log("sendTxData", data);
     }
 
     /** @param {DataView} dataView */
     parseRxMessage(dataView) {
-        this.onMessageReceived?.("rx", dataView);
-        parseMessage(dataView, BaseConnectionManager.#TxRxMessageTypes, this.#onRxMessage.bind(this), true);
+        parseMessage(dataView, BaseConnectionManager.#TxRxMessageTypes, this.#onRxMessage.bind(this), null, true);
     }
 
     /**
@@ -5199,13 +5203,19 @@ class Device {
         "getMtu",
 
         "getName",
+        "setName",
+
         "getType",
+        "setType",
 
         "getSensorConfiguration",
+        "setSensorConfiguration",
+
         "pressurePositions",
         "sensorScalars",
 
         "getCurrentTime",
+        "setCurrentTime",
 
         "sensorData",
         "pressure",
@@ -5583,9 +5593,6 @@ class Device {
                 const mtu = dataView.getUint16(0, true);
                 _console$c.log({ mtu });
                 this.#updateMtu(mtu);
-                break;
-
-            case "rx":
                 break;
 
             default:
@@ -6740,7 +6747,25 @@ class NobleConnectionManager extends BluetoothConnectionManager {
         }
         const buffer = Buffer.from(data);
         _console$a.log("writing data", buffer);
-        //const withoutResponse = messageType == "smp";
+        const withoutResponse = true;
+        await characteristic.writeAsync(buffer, withoutResponse);
+        if (characteristic.properties.includes("read")) {
+            await characteristic.readAsync();
+        }
+    }
+
+    /**
+     * @param {BluetoothCharacteristicName} characteristicName
+     * @param {ArrayBuffer} data
+     */
+    async writeCharacteristic(characteristicName, data) {
+        const characteristic = this.#characteristics.get(characteristicName);
+        _console$a.assertWithError(characteristic, `no characteristic found with name "${characteristicName}"`);
+        // if (data instanceof DataView) {
+        //     data = data.buffer;
+        // }
+        const buffer = Buffer.from(data);
+        _console$a.log("writing data", buffer);
         const withoutResponse = true;
         await characteristic.writeAsync(buffer, withoutResponse);
         if (characteristic.properties.includes("read")) {
@@ -7628,7 +7653,7 @@ class DevicePair {
     }
 }
 
-const _console$4 = createConsole("ServerUtils", { log: false });
+const _console$4 = createConsole("ServerUtils", { log: true });
 
 const pingTimeout = 30_000_000;
 const reconnectTimeout = 3_000;
@@ -7812,8 +7837,8 @@ class WebSocketClientConnectionManager extends BaseConnectionManager {
 
         this.status = this.#isConnected ? "connected" : "not connected";
 
-        if (this.#isConnected) {
-            this.#requestAllDeviceInformation();
+        if (this.isConnected) {
+            this.#requestDeviceInformation();
         }
     }
 
@@ -7824,43 +7849,6 @@ class WebSocketClientConnectionManager extends BaseConnectionManager {
     async disconnect() {
         await super.disconnect();
         this.sendWebSocketDisconnectMessage();
-    }
-
-    /**
-     * @param {ConnectionMessageType} messageType
-     * @param {DataView|ArrayBuffer} data
-     */
-    async sendMessage(messageType, data) {
-        await super.sendMessage(...arguments);
-        switch (messageType) {
-            case "setName":
-            case "setType":
-            case "setSensorConfiguration":
-            case "triggerVibration":
-
-            case "setFileTransferType":
-            case "setFileLength":
-            case "setFileChecksum":
-            case "setFileTransferCommand":
-            case "setFileTransferBlock":
-
-            case "setTfliteName":
-            case "setTfliteTask":
-            case "setTfliteSensorTypes":
-            case "setTfliteSampleRate":
-            case "setTfliteThreshold":
-            case "setTfliteCaptureDelay":
-            case "setTfliteInferencingEnabled":
-
-            case "smp":
-                this.sendWebSocketMessage({ type: messageType, data });
-                break;
-            case "setCurrentTime":
-                _console$3.log("setCurrentTime request ignored - reserved for direct device connections");
-                break;
-            default:
-                throw Error(`uncaught messageType "${messageType}"`);
-        }
     }
 
     /** @type {boolean} */
@@ -7884,77 +7872,65 @@ class WebSocketClientConnectionManager extends BaseConnectionManager {
     sendWebSocketConnectMessage;
     /** @type {function?} */
     sendWebSocketDisconnectMessage;
+
+    /** @param {ArrayBuffer} data */
+    async sendSmpMessage(data) {
+        super.sendSmpMessage(...arguments);
+        this.sendWebSocketMessage({ type: "smp", data });
+    }
+
+    /** @param {ArrayBuffer} data */
+    async sendTxData(data) {
+        super.sendTxData(...arguments);
+        this.sendWebSocketMessage({ type: "tx", data });
+    }
+
+    /** @type {ConnectionMessageType[]} */
+    static #DeviceInformationMessageTypes = [
+        "manufacturerName",
+        "modelNumber",
+        "softwareRevision",
+        "hardwareRevision",
+        "firmwareRevision",
+        "pnpId",
+
+        "batteryLevel",
+    ];
+    get #deviceInformationMessageTypes() {
+        return WebSocketClientConnectionManager.#DeviceInformationMessageTypes;
+    }
+    #requestDeviceInformation() {
+        this.sendWebSocketMessage(...this.#deviceInformationMessageTypes);
+    }
+
     /** @param {DataView} dataView */
     onWebSocketMessage(dataView) {
         _console$3.log({ dataView });
-
-        parseMessage(
-            dataView,
-            Device.EventTypes,
-            (_messageType, dataView) => {
-                /** @type {DeviceEventType} */
-                const messageType = _messageType;
-
-                let byteOffset = 0;
-
-                switch (messageType) {
-                    case "isConnected":
-                        const isConnected = Boolean(dataView.getUint8(byteOffset++));
-                        _console$3.log({ isConnected });
-                        this.isConnected = isConnected;
-                        break;
-
-                    case "manufacturerName":
-                    case "modelNumber":
-                    case "softwareRevision":
-                    case "hardwareRevision":
-                    case "firmwareRevision":
-                    case "pnpId":
-
-                    case "batteryLevel":
-
-                    case "getName":
-                    case "getType":
-
-                    case "getSensorConfiguration":
-                    case "pressurePositions":
-                    case "sensorScalars":
-                    case "sensorData":
-                    case "getCurrentTime":
-
-                    case "maxFileLength":
-                    case "getFileChecksum":
-                    case "getFileLength":
-                    case "getFileTransferType":
-                    case "getFileTransferBlock":
-                    case "fileTransferStatus":
-
-                    case "getTfliteName":
-                    case "getTfliteTask":
-                    case "getTfliteSampleRate":
-                    case "getTfliteSensorTypes":
-                    case "tfliteModelIsReady":
-                    case "getTfliteCaptureDelay":
-                    case "getTfliteThreshold":
-                    case "getTfliteInferencingEnabled":
-                    case "tfliteModelInference":
-
-                    case "getMtu":
-
-                    case "smp":
-                        this.onMessageReceived(messageType, dataView);
-                        break;
-                    default:
-                        _console$3.error(`uncaught messageType "${messageType}"`);
-                        break;
-                }
-            },
-            true
-        );
+        parseMessage(dataView, Device.EventTypes, this.#onWebSocketMessageCallback.bind(this), null, true);
     }
 
-    #requestAllDeviceInformation() {
-        this.sendWebSocketMessage(...Device.AllInformationConnectionMessages);
+    /**
+     * @param {DeviceEventType} messageType
+     * @param {DataView} dataView
+     */
+    #onWebSocketMessageCallback(messageType, dataView) {
+        let byteOffset = 0;
+
+        switch (messageType) {
+            case "isConnected":
+                const isConnected = Boolean(dataView.getUint8(byteOffset++));
+                _console$3.log({ isConnected });
+                this.isConnected = isConnected;
+                break;
+
+            case "rx":
+                this.parseRxMessage(dataView);
+                break;
+
+            default:
+                this.onMessageReceived(messageType, dataView);
+                break;
+        }
     }
 }
 
@@ -7964,7 +7940,6 @@ const _console$2 = createConsole("WebSocketClient", { log: true });
 
 
 /** @typedef {"not connected" | "connecting" | "connected" | "disconnecting"} ClientConnectionStatus */
-
 /** @typedef {ClientConnectionStatus | "connectionStatus" |  "isConnected" | "isScanningAvailable" | "isScanning" | "discoveredDevice" | "expiredDiscoveredDevice"} ClientEventType */
 
 /**
@@ -8208,8 +8183,6 @@ class WebSocketClient {
             case "not connected":
                 this.#dispatchEvent({ type: "isConnected", message: { isConnected: this.isConnected } });
                 if (this.isConnected) {
-                    //this.#requestIsScanningAvailable();
-                    //this.#requestDiscoveredDevices();
                     this.#sendServerMessage("isScanningAvailable", "discoveredDevices", "connectedDevices");
                 } else {
                     this.#isScanningAvailable = false;
@@ -8225,87 +8198,82 @@ class WebSocketClient {
     /** @param {DataView} dataView */
     #parseMessage(dataView) {
         _console$2.log("parseMessage", { dataView });
-        parseMessage(
-            dataView,
-            ServerMessageTypes,
-            (_messageType, dataView) => {
-                /** @type {ServerMessageType} */
-                const messageType = _messageType;
+        parseMessage(dataView, ServerMessageTypes, this.#parseMessageCallback.bind(this), null, true);
+    }
 
-                let byteOffset = 0;
+    /**
+     * @param {ServerMessageType} messageType
+     * @param {DataView} dataView
+     */
+    #parseMessageCallback(messageType, dataView) {
+        let byteOffset = 0;
 
-                switch (messageType) {
-                    case "ping":
-                        this.#pong();
-                        break;
-                    case "pong":
-                        break;
-                    case "isScanningAvailable":
-                        {
-                            const isScanningAvailable = Boolean(dataView.getUint8(byteOffset++));
-                            _console$2.log({ isScanningAvailable });
-                            this.#isScanningAvailable = isScanningAvailable;
-                        }
-                        break;
-                    case "isScanning":
-                        {
-                            const isScanning = Boolean(dataView.getUint8(byteOffset++));
-                            _console$2.log({ isScanning });
-                            this.#isScanning = isScanning;
-                        }
-                        break;
-                    case "discoveredDevice":
-                        {
-                            const { string: discoveredDeviceString } = parseStringFromDataView(dataView, byteOffset);
-                            _console$2.log({ discoveredDeviceString });
-
-                            /** @type {DiscoveredDevice} */
-                            const discoveredDevice = JSON.parse(discoveredDeviceString);
-                            _console$2.log({ discoveredDevice });
-
-                            this.#onDiscoveredDevice(discoveredDevice);
-                        }
-                        break;
-                    case "expiredDiscoveredDevice":
-                        {
-                            const { string: deviceId } = parseStringFromDataView(dataView, byteOffset);
-                            this.#onExpiredDiscoveredDevice(deviceId);
-                        }
-                        break;
-                    case "connectedDevices":
-                        {
-                            if (dataView.byteLength == 0) {
-                                break;
-                            }
-                            const { string: connectedDeviceIdStrings } = parseStringFromDataView(dataView, byteOffset);
-                            _console$2.log({ connectedDeviceIdStrings });
-                            const connectedDeviceIds = JSON.parse(connectedDeviceIdStrings);
-                            _console$2.log({ connectedDeviceIds });
-                            this.#onConnectedDeviceIds(connectedDeviceIds);
-                        }
-                        break;
-                    case "deviceMessage":
-                        {
-                            const { string: deviceId, byteOffset: _byteOffset } = parseStringFromDataView(
-                                dataView,
-                                byteOffset
-                            );
-                            byteOffset = _byteOffset;
-                            const device = this.#devices[deviceId];
-                            _console$2.assertWithError(device, `no device found for id ${deviceId}`);
-                            /** @type {WebSocketClientConnectionManager} */
-                            const connectionManager = device.connectionManager;
-                            const _dataView = sliceDataView(dataView, byteOffset);
-                            connectionManager.onWebSocketMessage(_dataView);
-                        }
-                        break;
-                    default:
-                        _console$2.error(`uncaught messageType "${messageType}"`);
-                        break;
+        switch (messageType) {
+            case "ping":
+                this.#pong();
+                break;
+            case "pong":
+                break;
+            case "isScanningAvailable":
+                {
+                    const isScanningAvailable = Boolean(dataView.getUint8(byteOffset++));
+                    _console$2.log({ isScanningAvailable });
+                    this.#isScanningAvailable = isScanningAvailable;
                 }
-            },
-            true
-        );
+                break;
+            case "isScanning":
+                {
+                    const isScanning = Boolean(dataView.getUint8(byteOffset++));
+                    _console$2.log({ isScanning });
+                    this.#isScanning = isScanning;
+                }
+                break;
+            case "discoveredDevice":
+                {
+                    const { string: discoveredDeviceString } = parseStringFromDataView(dataView, byteOffset);
+                    _console$2.log({ discoveredDeviceString });
+
+                    /** @type {DiscoveredDevice} */
+                    const discoveredDevice = JSON.parse(discoveredDeviceString);
+                    _console$2.log({ discoveredDevice });
+
+                    this.#onDiscoveredDevice(discoveredDevice);
+                }
+                break;
+            case "expiredDiscoveredDevice":
+                {
+                    const { string: deviceId } = parseStringFromDataView(dataView, byteOffset);
+                    this.#onExpiredDiscoveredDevice(deviceId);
+                }
+                break;
+            case "connectedDevices":
+                {
+                    if (dataView.byteLength == 0) {
+                        break;
+                    }
+                    const { string: connectedDeviceIdStrings } = parseStringFromDataView(dataView, byteOffset);
+                    _console$2.log({ connectedDeviceIdStrings });
+                    const connectedDeviceIds = JSON.parse(connectedDeviceIdStrings);
+                    _console$2.log({ connectedDeviceIds });
+                    this.#onConnectedDeviceIds(connectedDeviceIds);
+                }
+                break;
+            case "deviceMessage":
+                {
+                    const { string: deviceId, byteOffset: _byteOffset } = parseStringFromDataView(dataView, byteOffset);
+                    byteOffset = _byteOffset;
+                    const device = this.#devices[deviceId];
+                    _console$2.assertWithError(device, `no device found for id ${deviceId}`);
+                    /** @type {WebSocketClientConnectionManager} */
+                    const connectionManager = device.connectionManager;
+                    const _dataView = sliceDataView(dataView, byteOffset);
+                    connectionManager.onWebSocketMessage(_dataView);
+                }
+                break;
+            default:
+                _console$2.error(`uncaught messageType "${messageType}"`);
+                break;
+        }
     }
 
     // PING
@@ -8819,77 +8787,77 @@ class BaseServer {
         /** @type {ArrayBuffer[]} */
         let responseMessages = [];
 
-        parseMessage(
-            dataView,
-            ServerMessageTypes,
-            (_messageType, dataView) => {
-                /** @type {ServerMessageType} */
-                const messageType = _messageType;
-                switch (messageType) {
-                    case "ping":
-                        responseMessages.push(pongMessage);
-                        break;
-                    case "pong":
-                        break;
-                    case "isScanningAvailable":
-                        responseMessages.push(this.#isScanningAvailableMessage);
-                        break;
-                    case "isScanning":
-                        responseMessages.push(this.#isScanningMessage);
-                        break;
-                    case "startScan":
-                        Scanner.startScan();
-                        break;
-                    case "stopScan":
-                        Scanner.stopScan();
-                        break;
-                    case "discoveredDevices":
-                        responseMessages.push(this.#discoveredDevicesMessage);
-                        break;
-                    case "connectToDevice":
-                        {
-                            const { string: deviceId } = parseStringFromDataView(dataView);
-                            Scanner.connectToDevice(deviceId);
-                        }
-                        break;
-                    case "disconnectFromDevice":
-                        {
-                            const { string: deviceId } = parseStringFromDataView(dataView);
-                            const device = Device.ConnectedDevices.find((device) => device.id == deviceId);
-                            if (!device) {
-                                _console$1.error(`no device found with id ${deviceId}`);
-                                break;
-                            }
-                            device.disconnect();
-                        }
-                        break;
-                    case "connectedDevices":
-                        responseMessages.push(this.#connectedDevicesMessage);
-                        break;
-                    case "deviceMessage":
-                        {
-                            const { string: deviceId, byteOffset } = parseStringFromDataView(dataView);
-                            const device = Device.ConnectedDevices.find((device) => device.id == deviceId);
-                            if (!device) {
-                                _console$1.error(`no device found with id ${deviceId}`);
-                                break;
-                            }
-                            const _dataView = new DataView(dataView.buffer, dataView.byteOffset + byteOffset);
-                            responseMessages.push(this.parseClientDeviceMessage(device, _dataView));
-                        }
-                        break;
-                    default:
-                        _console$1.error(`uncaught messageType "${messageType}"`);
-                        break;
-                }
-            },
-            true
-        );
+        parseMessage(dataView, ServerMessageTypes, this.#onClientMessage.bind(this), { responseMessages }, true);
 
         responseMessages = responseMessages.filter(Boolean);
 
         if (responseMessages.length > 0) {
             return concatenateArrayBuffers(responseMessages);
+        }
+    }
+
+    /**
+     * @param {ServerMessageType} messageType
+     * @param {DataView} dataView
+     * @param {{responseMessages: ArrayBuffer[]}} context
+     */
+    #onClientMessage(messageType, dataView, context) {
+        switch (messageType) {
+            case "ping":
+                responseMessages.push(pongMessage);
+                break;
+            case "pong":
+                break;
+            case "isScanningAvailable":
+                context.responseMessages.push(this.#isScanningAvailableMessage);
+                break;
+            case "isScanning":
+                context.responseMessages.push(this.#isScanningMessage);
+                break;
+            case "startScan":
+                Scanner.startScan();
+                break;
+            case "stopScan":
+                Scanner.stopScan();
+                break;
+            case "discoveredDevices":
+                context.responseMessages.push(this.#discoveredDevicesMessage);
+                break;
+            case "connectToDevice":
+                {
+                    const { string: deviceId } = parseStringFromDataView(dataView);
+                    Scanner.connectToDevice(deviceId);
+                }
+                break;
+            case "disconnectFromDevice":
+                {
+                    const { string: deviceId } = parseStringFromDataView(dataView);
+                    const device = Device.ConnectedDevices.find((device) => device.id == deviceId);
+                    if (!device) {
+                        _console$1.error(`no device found with id ${deviceId}`);
+                        break;
+                    }
+                    device.disconnect();
+                }
+                break;
+            case "connectedDevices":
+                context.responseMessages.push(this.#connectedDevicesMessage);
+                break;
+            case "deviceMessage":
+                {
+                    const { string: deviceId, byteOffset } = parseStringFromDataView(dataView);
+                    const device = Device.ConnectedDevices.find((device) => device.id == deviceId);
+                    if (!device) {
+                        _console$1.error(`no device found with id ${deviceId}`);
+                        break;
+                    }
+                    const _dataView = new DataView(dataView.buffer, dataView.byteOffset + byteOffset);
+                    context.responseMessages.push(this.parseClientDeviceMessage(device, _dataView));
+                }
+                break;
+            default:
+                _console$1.error(`uncaught messageType "${messageType}"`);
+                break;
         }
     }
 
@@ -8907,81 +8875,32 @@ class BaseServer {
         parseMessage(
             dataView,
             BaseConnectionManager.MessageTypes,
-            (_messageType, dataView) => {
-                /** @type {ConnectionMessageType} */
-                const messageType = _messageType;
-                switch (messageType) {
-                    case "manufacturerName":
-                    case "modelNumber":
-                    case "softwareRevision":
-                    case "hardwareRevision":
-                    case "firmwareRevision":
-                    case "pnpId":
-
-                    case "batteryLevel":
-
-                    case "getName":
-                    case "getType":
-
-                    case "getSensorConfiguration":
-                    case "pressurePositions":
-                    case "sensorScalars":
-
-                    case "getCurrentTime":
-
-                    case "getMtu":
-
-                    case "maxFileLength":
-                    case "getFileChecksum":
-                    case "getFileLength":
-                    case "getFileTransferType":
-                    case "getFileTransferBlock":
-                    case "fileTransferStatus":
-
-                    case "getTfliteName":
-                    case "getTfliteTask":
-                    case "getTfliteSampleRate":
-                    case "getTfliteSensorTypes":
-                    case "tfliteModelIsReady":
-                    case "getTfliteCaptureDelay":
-                    case "getTfliteThreshold":
-                    case "getTfliteInferencingEnabled":
-                    case "tfliteModelInference":
-                        responseMessages.push(this.#createDeviceMessage(device, messageType));
-                        break;
-
-                    case "setName":
-                    case "setType":
-                    case "setSensorConfiguration":
-                    case "triggerVibration":
-
-                    case "setFileTransferType":
-                    case "setFileLength":
-                    case "setFileChecksum":
-                    case "setFileTransferCommand":
-                    case "setFileTransferBlock":
-
-                    case "setTfliteName":
-                    case "setTfliteTask":
-                    case "setTfliteSensorTypes":
-                    case "setTfliteSampleRate":
-                    case "setTfliteThreshold":
-                    case "setTfliteCaptureDelay":
-                    case "setTfliteInferencingEnabled":
-
-                    case "smp":
-                        device.connectionManager.sendMessage(messageType, dataView);
-                        break;
-                    default:
-                        _console$1.error(`uncaught messageType "${messageType}"`);
-                        break;
-                }
-            },
+            this.#parseClientDeviceMessageCallback.bind(this),
+            { responseMessages, device },
             true
         );
 
         if (responseMessages.length > 0) {
             return this.#createDeviceServerMessage(device, ...responseMessages);
+        }
+    }
+
+    /**
+     * @param {ConnectionMessageType} messageType
+     * @param {DataView} dataView
+     * @param {{responseMessages: (DeviceEventType | DeviceMessage)[], device: Device}} context
+     */
+    #parseClientDeviceMessageCallback(messageType, dataView, context) {
+        switch (messageType) {
+            case "smp":
+                context.device.connectionManager.sendSmpMessage(dataView.buffer);
+                break;
+            case "tx":
+                context.device.connectionManager.sendTxData(dataView.buffer);
+                break;
+            default:
+                context.responseMessages.push(this.#createDeviceMessage(context.device, messageType));
+                break;
         }
     }
 }

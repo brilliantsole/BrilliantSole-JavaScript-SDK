@@ -3,7 +3,7 @@ import BaseConnectionManager from "../connection/BaseConnectionManager";
 import { concatenateArrayBuffers } from "../utils/ArrayBufferUtils";
 import { createConsole } from "../utils/Console";
 
-const _console = createConsole("ServerUtils", { log: false });
+const _console = createConsole("ServerUtils", { log: true });
 
 export const pingTimeout = 30_000_000;
 export const reconnectTimeout = 3_000;

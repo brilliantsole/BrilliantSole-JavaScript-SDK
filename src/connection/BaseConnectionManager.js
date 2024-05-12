@@ -53,6 +53,7 @@ const _console = createConsole("BaseConnectionManager", { log: true });
  * "batteryLevel" |
  * "smp" |
  * "rx" |
+ * "tx" |
  * TxRxMessageType
  * } ConnectionMessageType
  */
@@ -109,9 +110,11 @@ class BaseConnectionManager {
         "serialNumber",
 
         "batteryLevel",
+
         "smp",
 
         "rx",
+        "tx",
 
         ...this.TxRxMessageTypes,
     ];
@@ -324,18 +327,14 @@ class BaseConnectionManager {
         this.#mtu = newMtu;
     }
 
-    /**
-     * @protected
-     * @param {ArrayBuffer} data
-     */
+    /** @param {ArrayBuffer} data */
     async sendTxData(data) {
         _console.log("sendTxData", data);
     }
 
     /** @param {DataView} dataView */
     parseRxMessage(dataView) {
-        this.onMessageReceived?.("rx", dataView);
-        parseMessage(dataView, BaseConnectionManager.#TxRxMessageTypes, this.#onRxMessage.bind(this), true);
+        parseMessage(dataView, BaseConnectionManager.#TxRxMessageTypes, this.#onRxMessage.bind(this), null, true);
     }
 
     /**

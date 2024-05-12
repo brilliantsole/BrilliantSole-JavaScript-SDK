@@ -51,8 +51,8 @@ class WebSocketClientConnectionManager extends BaseConnectionManager {
 
         this.status = this.#isConnected ? "connected" : "not connected";
 
-        if (this.#isConnected) {
-            this.#requestAllDeviceInformation();
+        if (this.isConnected) {
+            this.#requestDeviceInformation();
         }
     }
 
@@ -63,43 +63,6 @@ class WebSocketClientConnectionManager extends BaseConnectionManager {
     async disconnect() {
         await super.disconnect();
         this.sendWebSocketDisconnectMessage();
-    }
-
-    /**
-     * @param {ConnectionMessageType} messageType
-     * @param {DataView|ArrayBuffer} data
-     */
-    async sendMessage(messageType, data) {
-        await super.sendMessage(...arguments);
-        switch (messageType) {
-            case "setName":
-            case "setType":
-            case "setSensorConfiguration":
-            case "triggerVibration":
-
-            case "setFileTransferType":
-            case "setFileLength":
-            case "setFileChecksum":
-            case "setFileTransferCommand":
-            case "setFileTransferBlock":
-
-            case "setTfliteName":
-            case "setTfliteTask":
-            case "setTfliteSensorTypes":
-            case "setTfliteSampleRate":
-            case "setTfliteThreshold":
-            case "setTfliteCaptureDelay":
-            case "setTfliteInferencingEnabled":
-
-            case "smp":
-                this.sendWebSocketMessage({ type: messageType, data });
-                break;
-            case "setCurrentTime":
-                _console.log("setCurrentTime request ignored - reserved for direct device connections");
-                break;
-            default:
-                throw Error(`uncaught messageType "${messageType}"`);
-        }
     }
 
     /** @type {boolean} */
@@ -123,77 +86,65 @@ class WebSocketClientConnectionManager extends BaseConnectionManager {
     sendWebSocketConnectMessage;
     /** @type {function?} */
     sendWebSocketDisconnectMessage;
+
+    /** @param {ArrayBuffer} data */
+    async sendSmpMessage(data) {
+        super.sendSmpMessage(...arguments);
+        this.sendWebSocketMessage({ type: "smp", data });
+    }
+
+    /** @param {ArrayBuffer} data */
+    async sendTxData(data) {
+        super.sendTxData(...arguments);
+        this.sendWebSocketMessage({ type: "tx", data });
+    }
+
+    /** @type {ConnectionMessageType[]} */
+    static #DeviceInformationMessageTypes = [
+        "manufacturerName",
+        "modelNumber",
+        "softwareRevision",
+        "hardwareRevision",
+        "firmwareRevision",
+        "pnpId",
+
+        "batteryLevel",
+    ];
+    get #deviceInformationMessageTypes() {
+        return WebSocketClientConnectionManager.#DeviceInformationMessageTypes;
+    }
+    #requestDeviceInformation() {
+        this.sendWebSocketMessage(...this.#deviceInformationMessageTypes);
+    }
+
     /** @param {DataView} dataView */
     onWebSocketMessage(dataView) {
         _console.log({ dataView });
-
-        parseMessage(
-            dataView,
-            Device.EventTypes,
-            (_messageType, dataView) => {
-                /** @type {DeviceEventType} */
-                const messageType = _messageType;
-
-                let byteOffset = 0;
-
-                switch (messageType) {
-                    case "isConnected":
-                        const isConnected = Boolean(dataView.getUint8(byteOffset++));
-                        _console.log({ isConnected });
-                        this.isConnected = isConnected;
-                        break;
-
-                    case "manufacturerName":
-                    case "modelNumber":
-                    case "softwareRevision":
-                    case "hardwareRevision":
-                    case "firmwareRevision":
-                    case "pnpId":
-
-                    case "batteryLevel":
-
-                    case "getName":
-                    case "getType":
-
-                    case "getSensorConfiguration":
-                    case "pressurePositions":
-                    case "sensorScalars":
-                    case "sensorData":
-                    case "getCurrentTime":
-
-                    case "maxFileLength":
-                    case "getFileChecksum":
-                    case "getFileLength":
-                    case "getFileTransferType":
-                    case "getFileTransferBlock":
-                    case "fileTransferStatus":
-
-                    case "getTfliteName":
-                    case "getTfliteTask":
-                    case "getTfliteSampleRate":
-                    case "getTfliteSensorTypes":
-                    case "tfliteModelIsReady":
-                    case "getTfliteCaptureDelay":
-                    case "getTfliteThreshold":
-                    case "getTfliteInferencingEnabled":
-                    case "tfliteModelInference":
-
-                    case "getMtu":
-
-                    case "smp":
-                        this.onMessageReceived(messageType, dataView);
-                        break;
-                    default:
-                        _console.error(`uncaught messageType "${messageType}"`);
-                        break;
-                }
-            },
-            true
-        );
+        parseMessage(dataView, Device.EventTypes, this.#onWebSocketMessageCallback.bind(this), null, true);
     }
 
-    #requestAllDeviceInformation() {
-        this.sendWebSocketMessage(...Device.AllInformationConnectionMessages);
+    /**
+     * @param {DeviceEventType} messageType
+     * @param {DataView} dataView
+     */
+    #onWebSocketMessageCallback(messageType, dataView) {
+        let byteOffset = 0;
+
+        switch (messageType) {
+            case "isConnected":
+                const isConnected = Boolean(dataView.getUint8(byteOffset++));
+                _console.log({ isConnected });
+                this.isConnected = isConnected;
+                break;
+
+            case "rx":
+                this.parseRxMessage(dataView);
+                break;
+
+            default:
+                this.onMessageReceived(messageType, dataView);
+                break;
+        }
     }
 }
 

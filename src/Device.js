@@ -171,13 +171,19 @@ class Device {
         "getMtu",
 
         "getName",
+        "setName",
+
         "getType",
+        "setType",
 
         "getSensorConfiguration",
+        "setSensorConfiguration",
+
         "pressurePositions",
         "sensorScalars",
 
         "getCurrentTime",
+        "setCurrentTime",
 
         "sensorData",
         "pressure",
@@ -557,9 +563,6 @@ class Device {
                 const mtu = dataView.getUint16(0, true);
                 _console.log({ mtu });
                 this.#updateMtu(mtu);
-                break;
-
-            case "rx":
                 break;
 
             default:

@@ -71,38 +71,42 @@ class SensorDataManager {
 
         const _dataView = new DataView(dataView.buffer, byteOffset);
 
-        parseMessage(_dataView, SensorDataManager.Types, (messageType, dataView) => {
-            /** @type {SensorType} */
-            const sensorType = messageType;
+        parseMessage(_dataView, SensorDataManager.Types, this.#parseDataCallback.bind(this), { timestamp });
+    }
 
-            const scalar = this.#scalars.get(sensorType);
+    /**
+     * @param {SensorType} sensorType
+     * @param {DataView} dataView
+     * @param {{timestamp: number}} context
+     */
+    #parseDataCallback(sensorType, dataView, { timestamp }) {
+        const scalar = this.#scalars.get(sensorType);
 
-            let value;
-            switch (sensorType) {
-                case "pressure":
-                    value = this.pressureSensorDataManager.parseData(dataView);
-                    break;
-                case "acceleration":
-                case "gravity":
-                case "linearAcceleration":
-                case "gyroscope":
-                case "magnetometer":
-                    value = this.motionSensorDataManager.parseVector3(dataView, scalar);
-                    break;
-                case "gameRotation":
-                case "rotation":
-                    value = this.motionSensorDataManager.parseQuaternion(dataView, scalar);
-                    break;
-                case "barometer":
-                    // FILL
-                    break;
-                default:
-                    _console.error(`uncaught sensorType "${sensorType}"`);
-            }
+        let value;
+        switch (sensorType) {
+            case "pressure":
+                value = this.pressureSensorDataManager.parseData(dataView);
+                break;
+            case "acceleration":
+            case "gravity":
+            case "linearAcceleration":
+            case "gyroscope":
+            case "magnetometer":
+                value = this.motionSensorDataManager.parseVector3(dataView, scalar);
+                break;
+            case "gameRotation":
+            case "rotation":
+                value = this.motionSensorDataManager.parseQuaternion(dataView, scalar);
+                break;
+            case "barometer":
+                // FILL
+                break;
+            default:
+                _console.error(`uncaught sensorType "${sensorType}"`);
+        }
 
-            _console.assertWithError(value, `no value defined for sensorType "${sensorType}"`);
-            this.onDataReceived(sensorType, { timestamp, [sensorType]: value });
-        });
+        _console.assertWithError(value, `no value defined for sensorType "${sensorType}"`);
+        this.onDataReceived(sensorType, { timestamp, [sensorType]: value });
     }
 
     /** @param {DataView} dataView */
