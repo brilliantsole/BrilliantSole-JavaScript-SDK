@@ -3147,8 +3147,10 @@
 	        _console$g.log("writing characteristic", characteristic, data);
 	        const characteristicProperties = characteristic.properties || getCharacteristicProperties(characteristicName);
 	        if (characteristicProperties.writeWithoutResponse) {
+	            _console$g.log("writing without response");
 	            await characteristic.writeValueWithoutResponse(data);
 	        } else {
+	            _console$g.log("writing with response");
 	            await characteristic.writeValueWithResponse(data);
 	        }
 	        _console$g.log("wrote characteristic");
