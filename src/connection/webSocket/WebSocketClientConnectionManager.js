@@ -178,7 +178,7 @@ class WebSocketClientConnectionManager extends BaseConnectionManager {
                     case "getTfliteInferencingEnabled":
                     case "tfliteModelInference":
 
-                    case "mtu":
+                    case "getMtu":
 
                     case "smp":
                         this.onMessageReceived(messageType, dataView);

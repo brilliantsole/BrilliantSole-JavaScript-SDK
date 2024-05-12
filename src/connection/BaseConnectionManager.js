@@ -3,9 +3,10 @@ import Timer from "../utils/Timer.js";
 
 import FileTransferManager from "../FileTransferManager.js";
 import TfliteManager from "../TfliteManager.js";
+import { concatenateArrayBuffers } from "../utils/ArrayBufferUtils.js";
+import { parseMessage } from "../utils/ParseUtils.js";
 
-/** @typedef {import("./utils/EventDispatcher.js").EventDispatcherListener} EventDispatcherListener */
-/** @typedef {import("./utils/EventDispatcher.js").EventDispatcherOptions} EventDispatcherOptions */
+const _console = createConsole("BaseConnectionManager", { log: true });
 
 /** @typedef {import("../FileTransferManager.js").FileTransferMessageType} FileTransferMessageType */
 /** @typedef {import("../TfliteManager.js").TfliteMessageType} TfliteMessageType */
@@ -13,6 +14,34 @@ import TfliteManager from "../TfliteManager.js";
 
 /** @typedef {"webBluetooth" | "noble" | "webSocketClient"} ConnectionType */
 /** @typedef {"not connected" | "connecting" | "connected" | "disconnecting"} ConnectionStatus */
+
+/**
+ * @typedef { "getMtu" |
+ * "getName" |
+ * "setName" |
+ * "getType" |
+ * "setType" |
+ * "getSensorConfiguration" |
+ * "setSensorConfiguration" |
+ * "pressurePositions" |
+ * "sensorScalars" |
+ * "setCurrentTime" |
+ * "getCurrentTime" |
+ * "sensorData" |
+ * "triggerVibration" |
+ * TfliteMessageType |
+ * FileTransferMessageType |
+ * FirmwareMessageType
+ * } TxRxMessageType
+ */
+
+/**
+ * @typedef TxMessage
+ * @type {Object}
+ * @property {TxRxMessageType} type
+ * @property {ArrayBuffer?} data
+ */
+
 /**
  * @typedef { "manufacturerName" |
  * "modelNumber" |
@@ -22,26 +51,11 @@ import TfliteManager from "../TfliteManager.js";
  * "pnpId" |
  * "serialNumber" |
  * "batteryLevel" |
- * "getName" |
- * "setName" |
- * "getType" |
- * "setType" |
- * "getSensorConfiguration" |
- * "setSensorConfiguration" |
- * "sensorScalars" |
- * "pressurePositions" |
- * "sensorData" |
- * "setCurrentTime" |
- * "getCurrentTime" |
- * "triggerVibration" |
- * FileTransferMessageType |
- * TfliteMessageType |
- * "mtu" |
- * FirmwareMessageType
+ * "smp" |
+ * "rx" |
+ * TxRxMessageType
  * } ConnectionMessageType
  */
-
-const _console = createConsole("ConnectionManager", { log: true });
 
 /**
  * @callback ConnectionStatusCallback
@@ -51,10 +65,39 @@ const _console = createConsole("ConnectionManager", { log: true });
 /**
  * @callback MessageReceivedCallback
  * @param {ConnectionMessageType} messageType
- * @param {DataView} data
+ * @param {DataView} dataView
  */
 
 class BaseConnectionManager {
+    // MESSAGES
+
+    /** @type {TxRxMessageType[]} */
+    static #TxRxMessageTypes = [
+        "getMtu",
+
+        "getName",
+        "setName",
+
+        "getType",
+        "setType",
+
+        "getSensorConfiguration",
+        "setSensorConfiguration",
+        "pressurePositions",
+        "sensorScalars",
+
+        "getCurrentTime",
+        "setCurrentTime",
+
+        "sensorData",
+        "triggerVibration",
+
+        ...TfliteManager.MessageTypes,
+        ...FileTransferManager.MessageTypes,
+    ];
+    static get TxRxMessageTypes() {
+        return this.#TxRxMessageTypes;
+    }
     /** @type {ConnectionMessageType[]} */
     static #MessageTypes = [
         "manufacturerName",
@@ -64,35 +107,30 @@ class BaseConnectionManager {
         "firmwareRevision",
         "pnpId",
         "serialNumber",
-        "batteryLevel",
-        "getName",
-        "setName",
-        "getType",
-        "setType",
-        "getSensorConfiguration",
-        "setSensorConfiguration",
-        "sensorScalars",
-        "pressurePositions",
-        "sensorData",
-        "getCurrentTime",
-        "setCurrentTime",
-        "triggerVibration",
 
-        "mtu",
+        "batteryLevel",
         "smp",
 
-        ...FileTransferManager.MessageTypes,
-        ...TfliteManager.MessageTypes,
+        "rx",
+
+        ...this.TxRxMessageTypes,
     ];
     static get MessageTypes() {
         return this.#MessageTypes;
     }
+    /** @param {ConnectionMessageType} messageType */
+    static #AssertValidTxRxMessageType(messageType) {
+        _console.assertEnumWithError(messageType, this.#TxRxMessageTypes);
+    }
+
+    // ID
 
     /** @type {string?} */
     get id() {
         this.#throwNotImplementedError("id");
     }
 
+    // CALLBACKS
     /** @type {ConnectionStatusCallback?} */
     onStatusUpdated;
     /** @type {MessageReceivedCallback?} */
@@ -163,6 +201,10 @@ class BaseConnectionManager {
         } else {
             this.#timer.stop();
         }
+
+        if (this.#status == "not connected") {
+            this.#mtu = null;
+        }
     }
 
     get isConnected() {
@@ -212,13 +254,97 @@ class BaseConnectionManager {
         _console.log("disconnecting from device...");
     }
 
-    /**
-     * @param {ConnectionMessageType} messageType
-     * @param {DataView|ArrayBuffer} data
-     */
-    async sendMessage(messageType, data) {
+    /** @param {ArrayBuffer} data */
+    async sendSmpMessage(data) {
         this.#assertIsConnectedAndNotDisconnecting();
-        _console.log("sending message", { messageType, data });
+        _console.log("sending smp message", data);
+    }
+
+    /** @type {TxMessage[]} */
+    #pendingMessages = [];
+
+    /**
+     * @param {TxMessage[]?} messages
+     * @param {boolean} sendImmediately
+     */
+    async sendTxMessages(messages, sendImmediately = true) {
+        this.#assertIsConnectedAndNotDisconnecting();
+
+        if (messages) {
+            this.#pendingMessages.push(...messages);
+        }
+
+        if (!sendImmediately) {
+            return;
+        }
+
+        _console.log("sendTxMessages", this.#pendingMessages.slice());
+
+        const arrayBuffers = this.#pendingMessages.map((message) => {
+            BaseConnectionManager.#AssertValidTxRxMessageType(message.type);
+            const messageTypeEnum = BaseConnectionManager.TxRxMessageTypes.indexOf(message.type);
+            const dataLength = new DataView(new ArrayBuffer(2));
+            dataLength.setUint16(0, message.data?.byteLength || 0, true);
+            return concatenateArrayBuffers(messageTypeEnum, dataLength, message.data);
+        });
+
+        if (this.#mtu) {
+            while (arrayBuffers.length > 0) {
+                let arrayBufferByteLength = 0;
+                let arrayBufferCount = 0;
+                arrayBuffers.some((arrayBuffer) => {
+                    if (arrayBufferByteLength + arrayBuffer.byteLength > this.#mtu - 3) {
+                        return true;
+                    }
+                    arrayBufferCount++;
+                    arrayBufferByteLength += arrayBuffer.byteLength;
+                });
+                const arrayBuffersToSend = arrayBuffers.splice(0, arrayBufferCount);
+                _console.log({ arrayBufferCount, arrayBuffersToSend });
+
+                const arrayBuffer = concatenateArrayBuffers(...arrayBuffersToSend);
+                _console.log("sending arrayBuffer", arrayBuffer);
+                await this.sendTxData(arrayBuffer);
+            }
+        } else {
+            const arrayBuffer = concatenateArrayBuffers(...arrayBuffers);
+            _console.log("sending arrayBuffer", arrayBuffer);
+            await this.sendTxData(arrayBuffer);
+        }
+
+        this.#pendingMessages.length = 0;
+    }
+
+    /** @param {number?} */
+    #mtu;
+    get mtu() {
+        return this.#mtu;
+    }
+    set mtu(newMtu) {
+        this.#mtu = newMtu;
+    }
+
+    /**
+     * @protected
+     * @param {ArrayBuffer} data
+     */
+    async sendTxData(data) {
+        _console.log("sendTxData", data);
+    }
+
+    /** @param {DataView} dataView */
+    parseRxMessage(dataView) {
+        this.onMessageReceived?.("rx", dataView);
+        parseMessage(dataView, BaseConnectionManager.#TxRxMessageTypes, this.#onRxMessage.bind(this), true);
+    }
+
+    /**
+     * @param {TxRxMessageType} messageType
+     * @param {DataView} dataView
+     */
+    #onRxMessage(messageType, dataView) {
+        _console.log({ messageType, dataView });
+        this.onMessageReceived?.(messageType, dataView);
     }
 
     #timer = new Timer(this.#checkConnection.bind(this), 5000);

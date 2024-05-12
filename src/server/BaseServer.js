@@ -413,7 +413,7 @@ class BaseServer {
 
                     case "getCurrentTime":
 
-                    case "mtu":
+                    case "getMtu":
 
                     case "maxFileLength":
                     case "getFileChecksum":

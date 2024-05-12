@@ -5,7 +5,7 @@ import MotionSensorDataManager from "./MotionSensorDataManager.js";
 import BarometerSensorDataManager from "./BarometerSensorDataManager.js";
 import { parseMessage } from "../utils/ParseUtils.js";
 
-const _console = createConsole("SensorDataManager", { log: false });
+const _console = createConsole("SensorDataManager", { log: true });
 
 /** @typedef {import("./MotionSensorDataManager.js").MotionSensorType} MotionSensorType */
 /** @typedef {import("./PressureSensorDataManager.js").PressureSensorType} PressureSensorType */

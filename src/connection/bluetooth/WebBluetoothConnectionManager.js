@@ -10,12 +10,13 @@ import {
 } from "./bluetoothUUIDs.js";
 import BluetoothConnectionManager from "./BluetoothConnectionManager.js";
 
-const _console = createConsole("WebBluetoothConnectionManager", { log: true });
+const _console = createConsole("WebBluetoothConnectionManager", { log: false });
 
 /** @typedef {import("./bluetoothUUIDs.js").BluetoothCharacteristicName} BluetoothCharacteristicName */
 /** @typedef {import("./bluetoothUUIDs.js").BluetoothServiceName} BluetoothServiceName */
 
 /** @typedef {import("../BaseConnectionManager.js").ConnectionMessageType} ConnectionMessageType */
+/** @typedef {import("../BaseConnectionManager.js").TxRxMessageType} TxRxMessageType */
 /** @typedef {import("../BaseConnectionManager.js").ConnectionType} ConnectionType */
 
 if (isInNode) {
@@ -201,33 +202,24 @@ class WebBluetoothConnectionManager extends BluetoothConnectionManager {
         this.onCharacteristicValueChanged(characteristicName, dataView);
     }
 
-    /** @param {Event} event */
-    #onGattserverdisconnected(event) {
-        _console.log("gattserverdisconnected");
-        this.status = "not connected";
-    }
-
     /**
-     * @param {ConnectionMessageType} messageType
-     * @param {DataView|ArrayBuffer} data
+     * @param {BluetoothCharacteristicName} characteristicName
+     * @param {ArrayBuffer} data
      */
-    async sendMessage(messageType, data) {
-        await super.sendMessage(...arguments);
-
-        const characteristicName = this.characteristicNameForMessageType(messageType);
-        _console.log({ characteristicName });
+    async writeCharacteristic(characteristicName, data) {
+        super.writeCharacteristic(...arguments);
 
         const characteristic = this.#characteristics.get(characteristicName);
-        _console.assertWithError(characteristic, `no characteristic found with name "${characteristicName}"`);
-        if (data instanceof DataView) {
-            data = data.buffer;
-        }
-        if (messageType == "smp") {
+        _console.assertWithError(characteristic, `${characteristicName} characteristic not found`);
+        _console.log("writing characteristic", characteristic, data);
+        const characteristicProperties = characteristic.properties || getCharacteristicProperties(characteristicName);
+        if (characteristicProperties.writeWithoutResponse) {
             await characteristic.writeValueWithoutResponse(data);
         } else {
             await characteristic.writeValueWithResponse(data);
         }
-        const characteristicProperties = characteristic.properties || getCharacteristicProperties(characteristicName);
+        _console.log("wrote characteristic");
+
         if (characteristicProperties.read && !characteristicProperties.notify) {
             _console.log("reading value after write...");
             await characteristic.readValue();
@@ -235,6 +227,12 @@ class WebBluetoothConnectionManager extends BluetoothConnectionManager {
                 this.#onCharacteristicValueChanged(characteristic);
             }
         }
+    }
+
+    /** @param {Event} event */
+    #onGattserverdisconnected(event) {
+        _console.log("gattserverdisconnected");
+        this.status = "not connected";
     }
 
     /** @type {boolean} */

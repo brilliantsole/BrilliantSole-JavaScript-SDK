@@ -69,7 +69,8 @@ class NobleConnectionManager extends BluetoothConnectionManager {
         }
         const buffer = Buffer.from(data);
         _console.log("writing data", buffer);
-        const withoutResponse = messageType == "smp";
+        //const withoutResponse = messageType == "smp";
+        const withoutResponse = true;
         await characteristic.writeAsync(buffer, withoutResponse);
         if (characteristic.properties.includes("read")) {
             await characteristic.readAsync();

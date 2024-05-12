@@ -12,10 +12,13 @@ import TfliteManager from "./TfliteManager.js";
 import { textEncoder, textDecoder } from "./utils/Text.js";
 import FirmwareManager from "./FirmwareManager.js";
 
-const _console = createConsole("Device", { log: false });
+const _console = createConsole("Device", { log: true });
 
 /** @typedef {import("./connection/BaseConnectionManager.js").ConnectionMessageType} ConnectionMessageType */
 /** @typedef {import("./sensor/SensorDataManager.js").SensorType} SensorType */
+
+/** @typedef {import("./connection/BaseConnectionManager.js").TxMessage} TxMessage */
+/** @typedef {import("./connection/BaseConnectionManager.js").TxRxMessageType} TxRxMessageType */
 
 /** @typedef {import("./FileTransferManager.js").FileTransferManagerEventType} FileTransferManagerEventType */
 /** @typedef {import("./TfliteManager.js").TfliteManagerEventType} TfliteManagerEventType */
@@ -109,13 +112,13 @@ class Device {
     constructor() {
         this.#sensorDataManager.onDataReceived = this.#onSensorDataReceived.bind(this);
 
-        this.#fileTransferManager.sendMessage = this.#sendMessage.bind(this);
+        this.#fileTransferManager.sendMessage = this.#sendTxMessages.bind(this);
         this.#fileTransferManager.eventDispatcher = this.#eventDispatcher;
 
-        this.#tfliteManager.sendMessage = this.#sendMessage.bind(this);
+        this.#tfliteManager.sendMessage = this.#sendTxMessages.bind(this);
         this.#tfliteManager.eventDispatcher = this.#eventDispatcher;
 
-        this.#firmwareManager.sendMessage = this.#sendMessage.bind(this);
+        this.#firmwareManager.sendMessage = this.#sendSmpMessage.bind(this);
         this.#firmwareManager.eventDispatcher = this.#eventDispatcher;
 
         if (isInBrowser) {
@@ -165,6 +168,8 @@ class Device {
 
         "batteryLevel",
 
+        "getMtu",
+
         "getName",
         "getType",
 
@@ -186,8 +191,6 @@ class Device {
         "barometer",
 
         "connectionMessage",
-
-        "mtu",
 
         ...FileTransferManager.EventTypes,
         ...TfliteManager.EventTypes,
@@ -256,11 +259,11 @@ class Device {
         _console.log("assigned new connectionManager", this.#connectionManager);
     }
     /**
-     * @param {ConnectionMessageType} messageType
-     * @param {DataView|ArrayBuffer} data
+     * @param {TxMessage[]} messages
+     * @param {boolean} sendImmediately
      */
-    #sendMessage(messageType, data) {
-        return this.#connectionManager?.sendMessage(messageType, data);
+    async #sendTxMessages(messages, sendImmediately) {
+        await this.#connectionManager?.sendTxMessages(...arguments);
     }
 
     async connect() {
@@ -279,15 +282,10 @@ class Device {
         _console.assertWithError(this.isConnected, "not connected");
     }
 
-    /** @type {ConnectionMessageType[]} */
-    static #AllInformationConnectionMessages = [
-        "manufacturerName",
-        "modelNumber",
-        "softwareRevision",
-        "hardwareRevision",
-        "firmwareRevision",
-        "pnpId",
-        "batteryLevel",
+    /** @type {TxRxMessageType[]} */
+    static #RequiredInformationConnectionMessages = [
+        "getMtu",
+
         "getName",
         "getType",
         "getSensorConfiguration",
@@ -298,6 +296,7 @@ class Device {
         "maxFileLength",
         "getFileLength",
         "getFileChecksum",
+        "getFileTransferType",
         "fileTransferStatus",
 
         "getTfliteName",
@@ -308,19 +307,21 @@ class Device {
         "getTfliteCaptureDelay",
         "getTfliteThreshold",
         "getTfliteInferencingEnabled",
-
-        "mtu",
     ];
-    static get AllInformationConnectionMessages() {
-        return this.#AllInformationConnectionMessages;
+    get #requiredInformationConnectionMessages() {
+        return Device.#RequiredInformationConnectionMessages;
     }
-    get #allInformationConnectionMessages() {
-        return Device.#AllInformationConnectionMessages;
-    }
-    get #hasAllInformation() {
-        return this.#allInformationConnectionMessages.every((messageType) => {
+    get #hasRequiredInformation() {
+        return this.#requiredInformationConnectionMessages.every((messageType) => {
             return this.latestConnectionMessage.has(messageType);
         });
+    }
+    #requestRequiredInformation() {
+        /** @type {TxMessage[]} */
+        const messages = this.#requiredInformationConnectionMessages.map((messageType) => ({
+            type: messageType,
+        }));
+        this.#sendTxMessages(messages);
     }
 
     get canReconnect() {
@@ -417,6 +418,10 @@ class Device {
         }
 
         this.#checkConnection();
+
+        if (connectionStatus == "connected" && !this.#isConnected) {
+            this.#requestRequiredInformation();
+        }
     }
 
     /** @param {boolean} includeIsConnected */
@@ -428,7 +433,8 @@ class Device {
         }
     }
     #checkConnection() {
-        this.#isConnected = this.connectionManager?.isConnected && this.#hasAllInformation && this.#isCurrentTimeSet;
+        this.#isConnected =
+            this.connectionManager?.isConnected && this.#hasRequiredInformation && this.#isCurrentTimeSet;
 
         switch (this.connectionStatus) {
             case "connected":
@@ -510,11 +516,13 @@ class Device {
                 break;
 
             case "getName":
+            case "setName":
                 const name = textDecoder.decode(dataView);
                 _console.log({ name });
                 this.#updateName(name);
                 break;
             case "getType":
+            case "setType":
                 const typeEnum = dataView.getUint8(0);
                 const type = this.#types[typeEnum];
                 _console.log({ typeEnum, type });
@@ -522,6 +530,7 @@ class Device {
                 break;
 
             case "getSensorConfiguration":
+            case "setSensorConfiguration":
                 const sensorConfiguration = this.#sensorConfigurationManager.parse(dataView);
                 _console.log({ sensorConfiguration });
                 this.#updateSensorConfiguration(sensorConfiguration);
@@ -535,6 +544,7 @@ class Device {
                 break;
 
             case "getCurrentTime":
+            case "setCurrentTime":
                 const currentTime = Number(dataView.getBigUint64(0, true));
                 this.#onCurrentTime(currentTime);
                 break;
@@ -543,10 +553,13 @@ class Device {
                 this.#sensorDataManager.parseData(dataView);
                 break;
 
-            case "mtu":
+            case "getMtu":
                 const mtu = dataView.getUint16(0, true);
                 _console.log({ mtu });
                 this.#updateMtu(mtu);
+                break;
+
+            case "rx":
                 break;
 
             default:
@@ -564,7 +577,7 @@ class Device {
         this.latestConnectionMessage.set(messageType, dataView);
         this.#dispatchEvent({ type: "connectionMessage", message: { messageType, dataView } });
 
-        if (!this.isConnected && this.#hasAllInformation) {
+        if (!this.isConnected && this.#hasRequiredInformation) {
             this.#checkConnection();
         }
     }
@@ -587,7 +600,7 @@ class Device {
         _console.log("setting current time...");
         const dataView = new DataView(new ArrayBuffer(8));
         dataView.setBigUint64(0, BigInt(Date.now()), true);
-        this.#connectionManager.sendMessage("setCurrentTime", dataView);
+        this.#sendTxMessages([{ type: "setCurrentTime", data: dataView.buffer }]);
     }
 
     // DEVICE INFORMATION
@@ -685,7 +698,7 @@ class Device {
         );
         const setNameData = textEncoder.encode(newName);
         _console.log({ setNameData });
-        await this.#connectionManager.sendMessage("setName", setNameData);
+        await this.#sendTxMessages([{ type: "setName", data: setNameData.buffer }]);
     }
 
     // TYPE
@@ -735,7 +748,7 @@ class Device {
         this.#assertValidDeviceTypeEnum(newTypeEnum);
         const setTypeData = Uint8Array.from([newTypeEnum]);
         _console.log({ setTypeData });
-        await this.#connectionManager.sendMessage("setType", setTypeData);
+        await this.#sendTxMessages([{ type: "setType", data: setTypeData.buffer }]);
     }
     /** @param {DeviceType} newType */
     async setType(newType) {
@@ -816,7 +829,7 @@ class Device {
         _console.log({ newSensorConfiguration });
         const setSensorConfigurationData = this.#sensorConfigurationManager.createData(newSensorConfiguration);
         _console.log({ setSensorConfigurationData });
-        await this.#connectionManager.sendMessage("setSensorConfiguration", setSensorConfigurationData);
+        await this.#sendTxMessages([{ type: "setSensorConfiguration", data: setSensorConfigurationData.buffer }]);
     }
 
     static #ClearSensorConfigurationOnLeave = true;
@@ -960,7 +973,7 @@ class Device {
             _console.log({ type, dataView });
             triggerVibrationData = concatenateArrayBuffers(triggerVibrationData, dataView);
         });
-        await this.#connectionManager.sendMessage("triggerVibration", triggerVibrationData);
+        await this.#sendTxMessages([{ type: "triggerVibration", data: triggerVibrationData.buffer }]);
     }
 
     // CONNECTED DEVICES
@@ -1384,6 +1397,11 @@ class Device {
 
     #firmwareManager = new FirmwareManager();
 
+    /** @param {ArrayBuffer} data */
+    #sendSmpMessage(data) {
+        this.#connectionManager.sendSmpMessage(data);
+    }
+
     /** @param {FileLike} file */
     async uploadFirmware(file) {
         return this.#firmwareManager.uploadFirmware(file);
@@ -1432,8 +1450,9 @@ class Device {
 
         this.#firmwareManager.mtu = this.mtu;
         this.#fileTransferManager.mtu = this.mtu;
+        this.connectionManager.mtu = this.mtu;
 
-        this.#dispatchEvent({ type: "mtu", message: { mtu: this.#mtu } });
+        this.#dispatchEvent({ type: "getMtu", message: { mtu: this.#mtu } });
     }
 }
 

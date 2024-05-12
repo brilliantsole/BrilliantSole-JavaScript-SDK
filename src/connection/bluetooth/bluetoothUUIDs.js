@@ -41,31 +41,8 @@ function stringToServiceUUID(identifier) {
  * "pnpId" |
  * "serialNumber" |
  * "batteryLevel" |
- * "name" |
- * "type" |
- * "sensorConfiguration" |
- * "pressurePositions" |
- * "sensorScalars" |
- * "sensorData" |
- * "currentTime" |
- * "vibration" |
- * "maxFileLength" |
- * "fileTransferType" |
- * "fileLength" |
- * "fileChecksum" |
- * "fileTransferCommand" |
- * "fileTransferStatus" |
- * "fileTransferBlock" |
- * "tfliteModelName" |
- * "tfliteModelTask" |
- * "tfliteModelSampleRate" |
- * "tfliteModelSensorTypes" |
- * "tfliteModelIsReady" |
- * "tfliteCaptureDelay" |
- * "tfliteThreshold" |
- * "tfliteInferencingEnabled" |
- * "tfliteModelInference" |
- * "mtu" |
+ * "rx" |
+ * "tx" |
  * "smp"
  * } BluetoothCharacteristicName
  */
@@ -109,36 +86,8 @@ const bluetoothUUIDs = Object.freeze({
         main: {
             uuid: generateBluetoothUUID("0000"),
             characteristics: {
-                name: { uuid: generateBluetoothUUID("1000") },
-                type: { uuid: generateBluetoothUUID("1001") },
-
-                sensorConfiguration: { uuid: generateBluetoothUUID("2000") },
-                pressurePositions: { uuid: generateBluetoothUUID("2001") },
-                sensorScalars: { uuid: generateBluetoothUUID("2002") },
-                currentTime: { uuid: generateBluetoothUUID("2003") },
-                sensorData: { uuid: generateBluetoothUUID("2004") },
-
-                vibration: { uuid: generateBluetoothUUID("3000") },
-
-                maxFileLength: { uuid: generateBluetoothUUID("4000") },
-                fileTransferType: { uuid: generateBluetoothUUID("4001") },
-                fileLength: { uuid: generateBluetoothUUID("4002") },
-                fileChecksum: { uuid: generateBluetoothUUID("4003") },
-                fileTransferCommand: { uuid: generateBluetoothUUID("4004") },
-                fileTransferStatus: { uuid: generateBluetoothUUID("4005") },
-                fileTransferBlock: { uuid: generateBluetoothUUID("4006") },
-
-                tfliteModelName: { uuid: generateBluetoothUUID("5000") },
-                tfliteModelTask: { uuid: generateBluetoothUUID("5001") },
-                tfliteModelSampleRate: { uuid: generateBluetoothUUID("5002") },
-                tfliteModelSensorTypes: { uuid: generateBluetoothUUID("5003") },
-                tfliteModelIsReady: { uuid: generateBluetoothUUID("5004") },
-                tfliteCaptureDelay: { uuid: generateBluetoothUUID("5005") },
-                tfliteThreshold: { uuid: generateBluetoothUUID("5006") },
-                tfliteInferencingEnabled: { uuid: generateBluetoothUUID("5007") },
-                tfliteModelInference: { uuid: generateBluetoothUUID("5008") },
-
-                mtu: { uuid: generateBluetoothUUID("6000") },
+                rx: { uuid: generateBluetoothUUID("1000") },
+                tx: { uuid: generateBluetoothUUID("1001") },
             },
         },
         smp: {
@@ -264,11 +213,8 @@ export function getCharacteristicProperties(characteristicName) {
 
     // read
     switch (characteristicName) {
-        case "vibration":
-        case "sensorData":
-        case "fileTransferCommand":
-        case "fileTransferBlock":
-        case "tfliteModelInference":
+        case "rx":
+        case "tx":
         case "smp":
             properties.read = false;
             break;
@@ -277,27 +223,7 @@ export function getCharacteristicProperties(characteristicName) {
     // notify
     switch (characteristicName) {
         case "batteryLevel":
-        case "name":
-        case "type":
-        case "sensorConfiguration":
-        case "sensorData":
-        case "pressurePositions":
-        case "currentTime":
-        case "fileLength":
-        case "fileChecksum":
-        case "fileTransferType":
-        case "fileTransferStatus":
-        case "fileTransferBlock":
-        case "tfliteModelName":
-        case "tfliteModelTask":
-        case "tfliteModelSampleRate":
-        case "tfliteModelSensorTypes":
-        case "tfliteModelIsReady":
-        case "tfliteThreshold":
-        case "tfliteCaptureDelay":
-        case "tfliteInferencingEnabled":
-        case "tfliteModelInference":
-        case "mtu":
+        case "rx":
         case "smp":
             properties.notify = true;
             break;
@@ -305,24 +231,9 @@ export function getCharacteristicProperties(characteristicName) {
 
     // write
     switch (characteristicName) {
-        case "name":
-        case "type":
-        case "sensorConfiguration":
-        case "vibration":
-        case "fileLength":
-        case "fileChecksum":
-        case "fileTransferType":
-        case "fileTransferCommand":
-        case "fileTransferBlock":
-        case "tfliteModelName":
-        case "tfliteModelTask":
-        case "tfliteModelSampleRate":
-        case "tfliteModelSensorTypes":
-        case "tfliteInferencingEnabled":
+        case "tx":
         case "smp":
-            properties.write = true;
             properties.writeWithoutResponse = true;
-            properties.reliableWrite = true;
             break;
     }
 
