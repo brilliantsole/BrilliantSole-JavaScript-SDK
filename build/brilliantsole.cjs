@@ -2939,7 +2939,7 @@ class BluetoothConnectionManager extends BaseConnectionManager {
     }
 }
 
-const _console$g = createConsole("WebBluetoothConnectionManager", { log: false });
+const _console$g = createConsole("WebBluetoothConnectionManager", { log: true });
 
 
 
