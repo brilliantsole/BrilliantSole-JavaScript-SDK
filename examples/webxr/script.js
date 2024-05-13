@@ -1125,10 +1125,12 @@ devicePair.sides.forEach((side) => {
 
 const vibrateDevicePairEntity = devicePairEntity.querySelector(".vibrate");
 vibrateDevicePairEntity.addEventListener("click", () => {
-    devicePair.triggerVibration({
-        type: "waveformEffect",
-        waveformEffect: { segments: [{ effect: "strongBuzz100" }] },
-    });
+    devicePair.triggerVibration([
+        {
+            type: "waveformEffect",
+            waveformEffect: { segments: [{ effect: "strongBuzz100" }] },
+        },
+    ]);
 });
 
 function updateVibrateEntity() {

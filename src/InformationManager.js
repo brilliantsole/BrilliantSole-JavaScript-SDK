@@ -31,6 +31,9 @@ const _console = createConsole("InformationManager", { log: true });
  */
 /** @typedef {(event: InformationManagerEvent) => void} InformationManagerEventListener */
 
+/** @typedef {"leftInsole" | "rightInsole"} DeviceType */
+/** @typedef {"left" | "right"} InsoleSide */
+
 class InformationManager {
     // MESSAGE TYPES
 

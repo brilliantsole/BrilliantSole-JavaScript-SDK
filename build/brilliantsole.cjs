@@ -1783,7 +1783,7 @@ const _console$m = createConsole("TfliteManager", { log: true });
 
 /** @typedef {(event: TfliteManagerEvent) => void} TfliteManagerEventListener */
 
-class TfliteManager {
+let TfliteManager$1 = class TfliteManager {
     /** @type {TfliteMessageType[]} */
     static #MessageTypes = [
         "getTfliteName",
@@ -2301,7 +2301,7 @@ class TfliteManager {
 
     /** @type {SendMessageCallback} */
     sendMessage;
-}
+};
 
 const _console$l = createConsole("DeviceInformationManager", { log: true });
 
@@ -2513,6 +2513,9 @@ const _console$k = createConsole("InformationManager", { log: true });
  * @property {Object} message
  */
 /** @typedef {(event: InformationManagerEvent) => void} InformationManagerEventListener */
+
+/** @typedef {"leftInsole" | "rightInsole"} DeviceType */
+/** @typedef {"left" | "right"} InsoleSide */
 
 class InformationManager {
     // MESSAGE TYPES
@@ -2764,853 +2767,6 @@ class InformationManager {
 
     clear() {
         this.#isCurrentTimeSet = false;
-    }
-}
-
-const _console$j = createConsole("BaseConnectionManager", { log: true });
-
-
-
-
-
-
-
-/** @typedef {"webBluetooth" | "noble" | "webSocketClient"} ConnectionType */
-/** @typedef {"not connected" | "connecting" | "connected" | "disconnecting"} ConnectionStatus */
-
-/**
- * @typedef { "getSensorConfiguration" |
- * "setSensorConfiguration" |
- * "pressurePositions" |
- * "sensorScalars" |
- * "sensorData" |
- * "triggerVibration" |
- * InformationMessageType |
- * TfliteMessageType |
- * FileTransferMessageType |
- * FirmwareMessageType
- * } TxRxMessageType
- */
-
-/**
- * @typedef TxMessage
- * @type {Object}
- * @property {TxRxMessageType} type
- * @property {ArrayBuffer?} data
- */
-
-/**
- * @typedef { DeviceInformationMessageType |
- * "batteryLevel" |
- * "smp" |
- * "rx" |
- * "tx" |
- * TxRxMessageType
- * } ConnectionMessageType
- */
-
-/**
- * @callback ConnectionStatusCallback
- * @param {ConnectionStatus} status
- */
-
-/**
- * @callback MessageReceivedCallback
- * @param {ConnectionMessageType} messageType
- * @param {DataView} dataView
- */
-
-class BaseConnectionManager {
-    // MESSAGES
-
-    /** @type {TxRxMessageType[]} */
-    static #TxRxMessageTypes = [
-        ...InformationManager.MessageTypes,
-
-        "getSensorConfiguration",
-        "setSensorConfiguration",
-
-        "pressurePositions",
-        "sensorScalars",
-        "sensorData",
-
-        "triggerVibration",
-
-        ...TfliteManager.MessageTypes,
-        ...FileTransferManager.MessageTypes,
-    ];
-    static get TxRxMessageTypes() {
-        return this.#TxRxMessageTypes;
-    }
-    /** @type {ConnectionMessageType[]} */
-    static #MessageTypes = [
-        ...DeviceInformationManager.MessageTypes,
-        "batteryLevel",
-        "smp",
-        "rx",
-        "tx",
-        ...this.TxRxMessageTypes,
-    ];
-    static get MessageTypes() {
-        return this.#MessageTypes;
-    }
-    /** @param {ConnectionMessageType} messageType */
-    static #AssertValidTxRxMessageType(messageType) {
-        _console$j.assertEnumWithError(messageType, this.#TxRxMessageTypes);
-    }
-
-    // ID
-
-    /** @type {string?} */
-    get id() {
-        this.#throwNotImplementedError("id");
-    }
-
-    // CALLBACKS
-    /** @type {ConnectionStatusCallback?} */
-    onStatusUpdated;
-    /** @type {MessageReceivedCallback?} */
-    onMessageReceived;
-
-    /** @param {string} name */
-    static #staticThrowNotImplementedError(name) {
-        throw new Error(`"${name}" is not implemented by "${this.name}" subclass`);
-    }
-    /** @param {string} name */
-    #throwNotImplementedError(name) {
-        throw new Error(`"${name}" is not implemented by "${this.constructor.name}" subclass`);
-    }
-
-    static get isSupported() {
-        return false;
-    }
-    /** @type {boolean} */
-    get isSupported() {
-        return this.constructor.isSupported;
-    }
-
-    /** @type {ConnectionType} */
-    static get type() {
-        this.#staticThrowNotImplementedError("type");
-    }
-    /** @type {ConnectionType} */
-    get type() {
-        return this.constructor.type;
-    }
-
-    /** @throws {Error} if not supported */
-    #assertIsSupported() {
-        _console$j.assertWithError(this.isSupported, `${this.constructor.name} is not supported`);
-    }
-
-    /** @throws {Error} if abstract class */
-    #assertIsSubclass() {
-        _console$j.assertWithError(
-            this.constructor != BaseConnectionManager,
-            `${this.constructor.name} must be subclassed`
-        );
-    }
-
-    constructor() {
-        this.#assertIsSubclass();
-        this.#assertIsSupported();
-    }
-
-    /** @type {ConnectionStatus} */
-    #status = "not connected";
-    get status() {
-        return this.#status;
-    }
-    /** @protected */
-    set status(newConnectionStatus) {
-        _console$j.assertTypeWithError(newConnectionStatus, "string");
-        if (this.#status == newConnectionStatus) {
-            _console$j.log(`tried to assign same connection status "${newConnectionStatus}"`);
-            return;
-        }
-        _console$j.log(`new connection status "${newConnectionStatus}"`);
-        this.#status = newConnectionStatus;
-        this.onStatusUpdated?.(this.status);
-
-        if (this.isConnected) {
-            this.#timer.start();
-        } else {
-            this.#timer.stop();
-        }
-
-        if (this.#status == "not connected") {
-            this.#mtu = null;
-        }
-    }
-
-    get isConnected() {
-        return this.status == "connected";
-    }
-
-    /** @throws {Error} if connected */
-    #assertIsNotConnected() {
-        _console$j.assertWithError(!this.isConnected, "device is already connected");
-    }
-    /** @throws {Error} if connecting */
-    #assertIsNotConnecting() {
-        _console$j.assertWithError(this.status != "connecting", "device is already connecting");
-    }
-    /** @throws {Error} if not connected */
-    #assertIsConnected() {
-        _console$j.assertWithError(this.isConnected, "device is not connected");
-    }
-    /** @throws {Error} if disconnecting */
-    #assertIsNotDisconnecting() {
-        _console$j.assertWithError(this.status != "disconnecting", "device is already disconnecting");
-    }
-    /** @throws {Error} if not connected or is disconnecting */
-    #assertIsConnectedAndNotDisconnecting() {
-        this.#assertIsConnected();
-        this.#assertIsNotDisconnecting();
-    }
-
-    async connect() {
-        this.#assertIsNotConnected();
-        this.#assertIsNotConnecting();
-        this.status = "connecting";
-    }
-    /** @type {boolean} */
-    get canReconnect() {
-        return false;
-    }
-    async reconnect() {
-        this.#assertIsNotConnected();
-        this.#assertIsNotConnecting();
-        _console$j.assert(this.canReconnect, "unable to reconnect");
-    }
-    async disconnect() {
-        this.#assertIsConnected();
-        this.#assertIsNotDisconnecting();
-        this.status = "disconnecting";
-        _console$j.log("disconnecting from device...");
-    }
-
-    /** @param {ArrayBuffer} data */
-    async sendSmpMessage(data) {
-        this.#assertIsConnectedAndNotDisconnecting();
-        _console$j.log("sending smp message", data);
-    }
-
-    /** @type {TxMessage[]} */
-    #pendingMessages = [];
-
-    /**
-     * @param {TxMessage[]?} messages
-     * @param {boolean} sendImmediately
-     */
-    async sendTxMessages(messages, sendImmediately = true) {
-        this.#assertIsConnectedAndNotDisconnecting();
-
-        if (messages) {
-            this.#pendingMessages.push(...messages);
-        }
-
-        if (!sendImmediately) {
-            return;
-        }
-
-        _console$j.log("sendTxMessages", this.#pendingMessages.slice());
-
-        const arrayBuffers = this.#pendingMessages.map((message) => {
-            BaseConnectionManager.#AssertValidTxRxMessageType(message.type);
-            const messageTypeEnum = BaseConnectionManager.TxRxMessageTypes.indexOf(message.type);
-            const dataLength = new DataView(new ArrayBuffer(2));
-            dataLength.setUint16(0, message.data?.byteLength || 0, true);
-            return concatenateArrayBuffers(messageTypeEnum, dataLength, message.data);
-        });
-
-        if (this.#mtu) {
-            while (arrayBuffers.length > 0) {
-                let arrayBufferByteLength = 0;
-                let arrayBufferCount = 0;
-                arrayBuffers.some((arrayBuffer) => {
-                    if (arrayBufferByteLength + arrayBuffer.byteLength > this.#mtu - 3) {
-                        return true;
-                    }
-                    arrayBufferCount++;
-                    arrayBufferByteLength += arrayBuffer.byteLength;
-                });
-                const arrayBuffersToSend = arrayBuffers.splice(0, arrayBufferCount);
-                _console$j.log({ arrayBufferCount, arrayBuffersToSend });
-
-                const arrayBuffer = concatenateArrayBuffers(...arrayBuffersToSend);
-                _console$j.log("sending arrayBuffer", arrayBuffer);
-                await this.sendTxData(arrayBuffer);
-            }
-        } else {
-            const arrayBuffer = concatenateArrayBuffers(...arrayBuffers);
-            _console$j.log("sending arrayBuffer", arrayBuffer);
-            await this.sendTxData(arrayBuffer);
-        }
-
-        this.#pendingMessages.length = 0;
-    }
-
-    /** @param {number?} */
-    #mtu;
-    get mtu() {
-        return this.#mtu;
-    }
-    set mtu(newMtu) {
-        this.#mtu = newMtu;
-    }
-
-    /** @param {ArrayBuffer} data */
-    async sendTxData(data) {
-        _console$j.log("sendTxData", data);
-    }
-
-    /** @param {DataView} dataView */
-    parseRxMessage(dataView) {
-        parseMessage(dataView, BaseConnectionManager.#TxRxMessageTypes, this.#onRxMessage.bind(this), null, true);
-    }
-
-    /**
-     * @param {TxRxMessageType} messageType
-     * @param {DataView} dataView
-     */
-    #onRxMessage(messageType, dataView) {
-        _console$j.log({ messageType, dataView });
-        this.onMessageReceived?.(messageType, dataView);
-    }
-
-    #timer = new Timer(this.#checkConnection.bind(this), 5000);
-    #checkConnection() {
-        //console.log("checking connection...");
-        if (!this.isConnected) {
-            _console$j.log("timer detected disconnection");
-            this.status = "not connected";
-        }
-    }
-}
-
-const _console$i = createConsole("bluetoothUUIDs", { log: false });
-
-if (isInNode) {
-    const webbluetooth = require("webbluetooth");
-    var BluetoothUUID = webbluetooth.BluetoothUUID;
-}
-if (isInBrowser) {
-    var BluetoothUUID = window.BluetoothUUID;
-}
-
-/**
- * @param {string} value
- * @returns {BluetoothServiceUUID}
- */
-function generateBluetoothUUID(value) {
-    _console$i.assertTypeWithError(value, "string");
-    _console$i.assertWithError(value.length == 4, "value must be 4 characters long");
-    return `ea6da725-${value}-4f9b-893d-c3913e33b39f`;
-}
-
-/** @param {string} identifier */
-function stringToCharacteristicUUID(identifier) {
-    return BluetoothUUID?.getCharacteristic?.(identifier);
-}
-
-/** @param {string} identifier */
-function stringToServiceUUID(identifier) {
-    return BluetoothUUID?.getService?.(identifier);
-}
-
-/** @typedef {"deviceInformation" | "battery" | "main" | "smp"} BluetoothServiceName */
-
-/**
- * @typedef { DeviceInformationMessageType |
- * "batteryLevel" |
- * "rx" |
- * "tx" |
- * "smp"
- * } BluetoothCharacteristicName
- */
-
-const bluetoothUUIDs = Object.freeze({
-    services: {
-        deviceInformation: {
-            uuid: stringToServiceUUID("device_information"),
-            characteristics: {
-                manufacturerName: {
-                    uuid: stringToCharacteristicUUID("manufacturer_name_string"),
-                },
-                modelNumber: {
-                    uuid: stringToCharacteristicUUID("model_number_string"),
-                },
-                hardwareRevision: {
-                    uuid: stringToCharacteristicUUID("hardware_revision_string"),
-                },
-                firmwareRevision: {
-                    uuid: stringToCharacteristicUUID("firmware_revision_string"),
-                },
-                softwareRevision: {
-                    uuid: stringToCharacteristicUUID("software_revision_string"),
-                },
-                pnpId: {
-                    uuid: stringToCharacteristicUUID("pnp_id"),
-                },
-                serialNumber: {
-                    uuid: stringToCharacteristicUUID("serial_number_string"),
-                },
-            },
-        },
-        battery: {
-            uuid: stringToServiceUUID("battery_service"),
-            characteristics: {
-                batteryLevel: {
-                    uuid: stringToCharacteristicUUID("battery_level"),
-                },
-            },
-        },
-        main: {
-            uuid: generateBluetoothUUID("0000"),
-            characteristics: {
-                rx: { uuid: generateBluetoothUUID("1000") },
-                tx: { uuid: generateBluetoothUUID("1001") },
-            },
-        },
-        smp: {
-            uuid: "8d53dc1d-1db7-4cd3-868b-8a527460aa84",
-            characteristics: {
-                smp: { uuid: "da2e7828-fbce-4e01-ae9e-261174997c48" },
-            },
-        },
-    },
-
-    /** @type {BluetoothServiceUUID[]} */
-    get serviceUUIDs() {
-        return [this.services.main.uuid];
-    },
-
-    /** @type {BluetoothServiceUUID[]} */
-    get optionalServiceUUIDs() {
-        return [this.services.deviceInformation.uuid, this.services.battery.uuid, this.services.smp.uuid];
-    },
-
-    /**
-     * @param {BluetoothServiceUUID} serviceUUID
-     * @returns {BluetoothServiceName?}
-     */
-    getServiceNameFromUUID(serviceUUID) {
-        serviceUUID = serviceUUID.toLowerCase();
-        return Object.entries(this.services).find(([serviceName, serviceInfo]) => {
-            let serviceInfoUUID = serviceInfo.uuid;
-            if (serviceUUID.length == 4) {
-                serviceInfoUUID = serviceInfoUUID.slice(4, 8);
-            }
-            if (!serviceUUID.includes("-")) {
-                serviceInfoUUID = serviceInfoUUID.replaceAll("-", "");
-            }
-            return serviceUUID == serviceInfoUUID;
-        })?.[0];
-    },
-
-    /**
-     * @param {BluetoothCharacteristicUUID} characteristicUUID
-     * @returns {BluetoothCharacteristicName?}
-     */
-    getCharacteristicNameFromUUID(characteristicUUID) {
-        //_console.log({ characteristicUUID });
-        characteristicUUID = characteristicUUID.toLowerCase();
-        var characteristicName;
-        Object.values(this.services).some((serviceInfo) => {
-            characteristicName = Object.entries(serviceInfo.characteristics).find(
-                ([characteristicName, characteristicInfo]) => {
-                    let characteristicInfoUUID = characteristicInfo.uuid;
-                    if (characteristicUUID.length == 4) {
-                        characteristicInfoUUID = characteristicInfoUUID.slice(4, 8);
-                    }
-                    if (!characteristicUUID.includes("-")) {
-                        characteristicInfoUUID = characteristicInfoUUID.replaceAll("-", "");
-                    }
-                    return characteristicUUID == characteristicInfoUUID;
-                }
-            )?.[0];
-            return characteristicName;
-        });
-        return characteristicName;
-    },
-});
-
-const serviceUUIDs = bluetoothUUIDs.serviceUUIDs;
-const optionalServiceUUIDs = bluetoothUUIDs.optionalServiceUUIDs;
-const allServiceUUIDs = [...serviceUUIDs, ...optionalServiceUUIDs];
-
-/** @param {BluetoothServiceUUID} serviceUUID */
-function getServiceNameFromUUID(serviceUUID) {
-    return bluetoothUUIDs.getServiceNameFromUUID(serviceUUID);
-}
-
-/** @type {BluetoothCharacteristicUUID[]} */
-const characteristicUUIDs = [];
-/** @type {BluetoothCharacteristicUUID[]} */
-const allCharacteristicUUIDs = [];
-/** @type {BluetoothCharacteristicName[]} */
-const allCharacteristicNames = [];
-
-Object.entries(bluetoothUUIDs.services).forEach(([serviceName, serviceInfo]) => {
-    if (!serviceInfo.characteristics) {
-        return;
-    }
-    Object.entries(serviceInfo.characteristics).forEach(([characteristicName, characteristicInfo]) => {
-        if (serviceUUIDs.includes(serviceInfo.uuid)) {
-            characteristicUUIDs.push(characteristicInfo.uuid);
-        }
-        allCharacteristicUUIDs.push(characteristicInfo.uuid);
-        allCharacteristicNames.push(characteristicName);
-    });
-}, []);
-
-//_console.log({ characteristicUUIDs, allCharacteristicUUIDs });
-
-/** @param {BluetoothCharacteristicUUID} characteristicUUID */
-function getCharacteristicNameFromUUID(characteristicUUID) {
-    return bluetoothUUIDs.getCharacteristicNameFromUUID(characteristicUUID);
-}
-
-/**
- * @param {BluetoothCharacteristicName} characteristicName
- * @returns {BluetoothCharacteristicProperties}
- */
-function getCharacteristicProperties(characteristicName) {
-    /** @type {BluetoothCharacteristicProperties} */
-    const properties = {
-        broadcast: false,
-        read: true,
-        writeWithoutResponse: false,
-        write: false,
-        notify: false,
-        indicate: false,
-        authenticatedSignedWrites: false,
-        reliableWrite: false,
-        writableAuxiliaries: false,
-    };
-
-    // read
-    switch (characteristicName) {
-        case "rx":
-        case "tx":
-        case "smp":
-            properties.read = false;
-            break;
-    }
-
-    // notify
-    switch (characteristicName) {
-        case "batteryLevel":
-        case "rx":
-        case "smp":
-            properties.notify = true;
-            break;
-    }
-
-    // write
-    switch (characteristicName) {
-        case "tx":
-        case "smp":
-            properties.writeWithoutResponse = true;
-            break;
-    }
-
-    return properties;
-}
-
-const serviceDataUUID = "0000";
-
-const _console$h = createConsole("BluetoothConnectionManager", { log: true });
-
-
-
-
-
-
-
-
-
-class BluetoothConnectionManager extends BaseConnectionManager {
-    /**
-     * @protected
-     * @param {BluetoothCharacteristicName} characteristicName
-     * @param {DataView} dataView
-     */
-    onCharacteristicValueChanged(characteristicName, dataView) {
-        if (characteristicName == "rx") {
-            this.parseRxMessage(dataView);
-        } else {
-            this.onMessageReceived?.(characteristicName, dataView);
-        }
-    }
-
-    /**
-     * @protected
-     * @param {BluetoothCharacteristicName} characteristicName
-     * @param {ArrayBuffer} data
-     */
-    async writeCharacteristic(characteristicName, data) {
-        _console$h.log("writeCharacteristic", ...arguments);
-    }
-
-    /** @param {ArrayBuffer} data */
-    async sendSmpMessage(data) {
-        super.sendSmpMessage(...arguments);
-        await this.writeCharacteristic("smp", data);
-    }
-
-    /** @param {ArrayBuffer} data */
-    async sendTxData(data) {
-        super.sendTxData(...arguments);
-        await this.writeCharacteristic("tx", data);
-    }
-}
-
-const _console$g = createConsole("WebBluetoothConnectionManager", { log: true });
-
-
-
-
-
-
-
-
-if (isInNode) {
-    const webbluetooth = require("webbluetooth");
-    const { bluetooth } = webbluetooth;
-    var navigator$1 = { bluetooth };
-}
-if (isInBrowser) {
-    var navigator$1 = window.navigator;
-}
-
-class WebBluetoothConnectionManager extends BluetoothConnectionManager {
-    get id() {
-        return this.device?.id;
-    }
-
-    /** @type {Object.<string, EventListener} */
-    #boundBluetoothCharacteristicEventListeners = {
-        characteristicvaluechanged: this.#onCharacteristicvaluechanged.bind(this),
-    };
-    /** @type {Object.<string, EventListener} */
-    #boundBluetoothDeviceEventListeners = {
-        gattserverdisconnected: this.#onGattserverdisconnected.bind(this),
-    };
-
-    static get isSupported() {
-        return "bluetooth" in navigator$1;
-    }
-    /** @type {ConnectionType} */
-    static get type() {
-        return "webBluetooth";
-    }
-
-    /** @type {BluetoothDevice?} */
-    #device;
-    get device() {
-        return this.#device;
-    }
-    set device(newDevice) {
-        if (this.#device == newDevice) {
-            _console$g.log("tried to assign the same BluetoothDevice");
-            return;
-        }
-        if (this.#device) {
-            removeEventListeners(this.#device, this.#boundBluetoothDeviceEventListeners);
-        }
-        if (newDevice) {
-            addEventListeners(newDevice, this.#boundBluetoothDeviceEventListeners);
-        }
-        this.#device = newDevice;
-    }
-
-    /** @type {BluetoothRemoteGATTServer?} */
-    get server() {
-        return this.#device?.gatt;
-    }
-    get isConnected() {
-        return this.server?.connected;
-    }
-
-    /** @type {Map.<BluetoothServiceName, BluetoothRemoteGATTService} */
-    #services = new Map();
-    /** @type {Map.<BluetoothCharacteristicName, BluetoothRemoteGATTCharacteristic} */
-    #characteristics = new Map();
-
-    async connect() {
-        await super.connect();
-
-        try {
-            const device = await navigator$1.bluetooth.requestDevice({
-                filters: [{ services: serviceUUIDs }],
-                optionalServices: isInBrowser ? optionalServiceUUIDs : [],
-            });
-
-            _console$g.log("got BluetoothDevice");
-            this.device = device;
-
-            _console$g.log("connecting to device...");
-            const server = await this.device.gatt.connect();
-            _console$g.log(`connected to device? ${server.connected}`);
-
-            await this.#getServicesAndCharacteristics();
-
-            _console$g.log("fully connected");
-
-            this.status = "connected";
-        } catch (error) {
-            _console$g.error(error);
-            this.status = "not connected";
-            this.server?.disconnect();
-            this.#removeEventListeners();
-        }
-    }
-    async #getServicesAndCharacteristics() {
-        this.#removeEventListeners();
-
-        _console$g.log("getting services...");
-        const services = await this.server.getPrimaryServices();
-        _console$g.log("got services", services.length);
-        await this.server.getPrimaryService("8d53dc1d-1db7-4cd3-868b-8a527460aa84");
-
-        _console$g.log("getting characteristics...");
-        for (const serviceIndex in services) {
-            const service = services[serviceIndex];
-            _console$g.log({ service });
-            const serviceName = getServiceNameFromUUID(service.uuid);
-            _console$g.assertWithError(serviceName, `no name found for service uuid "${service.uuid}"`);
-            _console$g.log(`got "${serviceName}" service`);
-            service._name = serviceName;
-            this.#services.set(serviceName, service);
-            _console$g.log(`getting characteristics for "${serviceName}" service`);
-            const characteristics = await service.getCharacteristics();
-            _console$g.log(`got characteristics for "${serviceName}" service`);
-            for (const characteristicIndex in characteristics) {
-                const characteristic = characteristics[characteristicIndex];
-                _console$g.log({ characteristic });
-                const characteristicName = getCharacteristicNameFromUUID(characteristic.uuid);
-                _console$g.assertWithError(
-                    characteristicName,
-                    `no name found for characteristic uuid "${characteristic.uuid}" in "${serviceName}" service`
-                );
-                _console$g.log(`got "${characteristicName}" characteristic in "${serviceName}" service`);
-                characteristic._name = characteristicName;
-                this.#characteristics.set(characteristicName, characteristic);
-                addEventListeners(characteristic, this.#boundBluetoothCharacteristicEventListeners);
-                const characteristicProperties =
-                    characteristic.properties || getCharacteristicProperties(characteristicName);
-                if (characteristicProperties.notify) {
-                    _console$g.log(`starting notifications for "${characteristicName}" characteristic`);
-                    await characteristic.startNotifications();
-                }
-                if (characteristicProperties.read) {
-                    _console$g.log(`reading "${characteristicName}" characteristic...`);
-                    await characteristic.readValue();
-                    if (isInBluefy || isInWebBLE) {
-                        this.#onCharacteristicValueChanged(characteristic);
-                    }
-                }
-            }
-        }
-    }
-    #removeEventListeners() {
-        if (this.device) {
-            removeEventListeners(this.device, this.#boundBluetoothDeviceEventListeners);
-        }
-        this.#characteristics.forEach((characteristic) => {
-            removeEventListeners(characteristic, this.#boundBluetoothCharacteristicEventListeners);
-        });
-    }
-    async disconnect() {
-        await super.disconnect();
-        this.server?.disconnect();
-        this.#removeEventListeners();
-        this.status = "not connected";
-    }
-
-    /** @param {Event} event */
-    #onCharacteristicvaluechanged(event) {
-        _console$g.log("oncharacteristicvaluechanged");
-
-        /** @type {BluetoothRemoteGATTCharacteristic} */
-        const characteristic = event.target;
-
-        this.#onCharacteristicValueChanged(characteristic);
-    }
-
-    /** @param {BluetoothRemoteGATTCharacteristic} characteristic */
-    #onCharacteristicValueChanged(characteristic) {
-        _console$g.log("onCharacteristicValue");
-
-        /** @type {BluetoothCharacteristicName} */
-        const characteristicName = characteristic._name;
-        _console$g.assertWithError(
-            characteristicName,
-            `no name found for characteristic with uuid "${characteristic.uuid}"`
-        );
-
-        _console$g.log(`oncharacteristicvaluechanged for "${characteristicName}" characteristic`);
-        const dataView = characteristic.value;
-        _console$g.assertWithError(dataView, `no data found for "${characteristicName}" characteristic`);
-        _console$g.log(`data for "${characteristicName}" characteristic`, Array.from(new Uint8Array(dataView.buffer)));
-
-        this.onCharacteristicValueChanged(characteristicName, dataView);
-    }
-
-    /**
-     * @param {BluetoothCharacteristicName} characteristicName
-     * @param {ArrayBuffer} data
-     */
-    async writeCharacteristic(characteristicName, data) {
-        super.writeCharacteristic(...arguments);
-
-        const characteristic = this.#characteristics.get(characteristicName);
-        _console$g.assertWithError(characteristic, `${characteristicName} characteristic not found`);
-        _console$g.log("writing characteristic", characteristic, data);
-        const characteristicProperties = characteristic.properties || getCharacteristicProperties(characteristicName);
-        if (characteristicProperties.writeWithoutResponse) {
-            _console$g.log("writing without response");
-            await characteristic.writeValueWithoutResponse(data);
-        } else {
-            _console$g.log("writing with response");
-            await characteristic.writeValueWithResponse(data);
-        }
-        _console$g.log("wrote characteristic");
-
-        if (characteristicProperties.read && !characteristicProperties.notify) {
-            _console$g.log("reading value after write...");
-            await characteristic.readValue();
-            if (isInBluefy || isInWebBLE) {
-                this.#onCharacteristicValueChanged(characteristic);
-            }
-        }
-    }
-
-    /** @param {Event} event */
-    #onGattserverdisconnected(event) {
-        _console$g.log("gattserverdisconnected");
-        this.status = "not connected";
-    }
-
-    /** @type {boolean} */
-    get canReconnect() {
-        return this.server && !this.server.connected;
-    }
-    async reconnect() {
-        await super.reconnect();
-        _console$g.log("attempting to reconnect...");
-        this.status = "connecting";
-        await this.server.connect();
-        if (this.isConnected) {
-            _console$g.log("successfully reconnected!");
-            await this.#getServicesAndCharacteristics();
-            this.status = "connected";
-        } else {
-            _console$g.log("unable to reconnect");
-            this.status = "not connected";
-        }
     }
 }
 
@@ -3870,7 +3026,7 @@ const VibrationWaveformEffects = [
     "smoothHum10",
 ];
 
-const _console$f = createConsole("VibrationManager");
+const _console$j = createConsole("VibrationManager");
 
 /** @typedef {"front" | "rear"} VibrationLocation */
 /** @typedef {"waveformEffect" | "waveform"} VibrationType */
@@ -3892,7 +3048,43 @@ const _console$f = createConsole("VibrationManager");
  * @property {number} amplitude float ranging [0, 1]
  */
 
+/** @typedef { "triggerVibration" } VibrationMessageType */
+
+/**
+ * @typedef VibrationWaveformEffectConfiguration
+ * @type {Object}
+ * @property {VibrationWaveformEffectSegment[]} segments
+ * @property {number?} loopCount how many times the entire sequence should loop (int ranging [0, 6])
+ */
+
+
+/**
+ * @typedef VibrationWaveformConfiguration
+ * @type {Object}
+ * @property {VibrationWaveformSegment[]} segments
+ */
+
+/**
+ * @typedef VibrationConfiguration
+ * @type {Object}
+ * @property {VibrationLocation[]} locations
+ * @property {VibrationType} type
+ * @property {VibrationWaveformEffectConfiguration?} waveformEffect use if type is "waveformEffect"
+ * @property {VibrationWaveformConfiguration?} waveform use if type is "waveform"
+ */
+
 class VibrationManager {
+    /** @type {VibrationMessageType[]} */
+    static #MessageTypes = ["triggerVibration"];
+    static get MessageTypes() {
+        return this.#MessageTypes;
+    }
+    get messageTypes() {
+        return TfliteManager.MessageTypes;
+    }
+
+    // LOCATIONS
+
     /** @type {VibrationLocation[]} */
     static #Locations = ["front", "rear"];
     static get Locations() {
@@ -3903,8 +3095,8 @@ class VibrationManager {
     }
     /** @param {VibrationLocation} location */
     #verifyLocation(location) {
-        _console$f.assertTypeWithError(location, "string");
-        _console$f.assertWithError(this.locations.includes(location), `invalid location "${location}"`);
+        _console$j.assertTypeWithError(location, "string");
+        _console$j.assertWithError(this.locations.includes(location), `invalid location "${location}"`);
     }
     /** @param {VibrationLocation[]} locations */
     #verifyLocations(locations) {
@@ -3922,15 +3114,15 @@ class VibrationManager {
             const locationIndex = this.locations.indexOf(location);
             locationsBitmask |= 1 << locationIndex;
         });
-        _console$f.log({ locationsBitmask });
-        _console$f.assertWithError(locationsBitmask > 0, `locationsBitmask must not be zero`);
+        _console$j.log({ locationsBitmask });
+        _console$j.assertWithError(locationsBitmask > 0, `locationsBitmask must not be zero`);
         return locationsBitmask;
     }
 
     /** @param {any[]} array */
     #assertNonEmptyArray(array) {
-        _console$f.assertWithError(Array.isArray(array), "passed non-array");
-        _console$f.assertWithError(array.length > 0, "passed empty array");
+        _console$j.assertWithError(Array.isArray(array), "passed non-array");
+        _console$j.assertWithError(array.length > 0, "passed empty array");
     }
 
     static get WaveformEffects() {
@@ -3941,7 +3133,7 @@ class VibrationManager {
     }
     /** @param {VibrationWaveformEffect} waveformEffect */
     #verifyWaveformEffect(waveformEffect) {
-        _console$f.assertWithError(
+        _console$j.assertWithError(
             this.waveformEffects.includes(waveformEffect),
             `invalid waveformEffect "${waveformEffect}"`
         );
@@ -3961,8 +3153,8 @@ class VibrationManager {
             this.#verifyWaveformEffect(waveformEffect);
         } else if (waveformEffectSegment.delay != undefined) {
             const { delay } = waveformEffectSegment;
-            _console$f.assertWithError(delay >= 0, `delay must be 0ms or greater (got ${delay})`);
-            _console$f.assertWithError(
+            _console$j.assertWithError(delay >= 0, `delay must be 0ms or greater (got ${delay})`);
+            _console$j.assertWithError(
                 delay <= this.maxWaveformEffectSegmentDelay,
                 `delay must be ${this.maxWaveformEffectSegmentDelay}ms or less (got ${delay})`
             );
@@ -3984,12 +3176,12 @@ class VibrationManager {
     }
     /** @param {number} waveformEffectSegmentLoopCount */
     #verifyWaveformEffectSegmentLoopCount(waveformEffectSegmentLoopCount) {
-        _console$f.assertTypeWithError(waveformEffectSegmentLoopCount, "number");
-        _console$f.assertWithError(
+        _console$j.assertTypeWithError(waveformEffectSegmentLoopCount, "number");
+        _console$j.assertWithError(
             waveformEffectSegmentLoopCount >= 0,
             `waveformEffectSegmentLoopCount must be 0 or greater (got ${waveformEffectSegmentLoopCount})`
         );
-        _console$f.assertWithError(
+        _console$j.assertWithError(
             waveformEffectSegmentLoopCount <= this.maxWaveformEffectSegmentLoopCount,
             `waveformEffectSegmentLoopCount must be ${this.maxWaveformEffectSegmentLoopCount} or fewer (got ${waveformEffectSegmentLoopCount})`
         );
@@ -4005,7 +3197,7 @@ class VibrationManager {
     /** @param {VibrationWaveformEffectSegment[]} waveformEffectSegments */
     #verifyWaveformEffectSegments(waveformEffectSegments) {
         this.#assertNonEmptyArray(waveformEffectSegments);
-        _console$f.assertWithError(
+        _console$j.assertWithError(
             waveformEffectSegments.length <= this.maxNumberOfWaveformEffectSegments,
             `must have ${this.maxNumberOfWaveformEffectSegments} waveformEffectSegments or fewer (got ${waveformEffectSegments.length})`
         );
@@ -4023,12 +3215,12 @@ class VibrationManager {
     }
     /** @param {number} waveformEffectSequenceLoopCount */
     #verifyWaveformEffectSequenceLoopCount(waveformEffectSequenceLoopCount) {
-        _console$f.assertTypeWithError(waveformEffectSequenceLoopCount, "number");
-        _console$f.assertWithError(
+        _console$j.assertTypeWithError(waveformEffectSequenceLoopCount, "number");
+        _console$j.assertWithError(
             waveformEffectSequenceLoopCount >= 0,
             `waveformEffectSequenceLoopCount must be 0 or greater (got ${waveformEffectSequenceLoopCount})`
         );
-        _console$f.assertWithError(
+        _console$j.assertWithError(
             waveformEffectSequenceLoopCount <= this.maxWaveformEffectSequenceLoopCount,
             `waveformEffectSequenceLoopCount must be ${this.maxWaveformEffectSequenceLoopCount} or fewer (got ${waveformEffectSequenceLoopCount})`
         );
@@ -4043,22 +3235,22 @@ class VibrationManager {
     }
     /** @param {VibrationWaveformSegment} waveformSegment */
     #verifyWaveformSegment(waveformSegment) {
-        _console$f.assertTypeWithError(waveformSegment.amplitude, "number");
-        _console$f.assertWithError(
+        _console$j.assertTypeWithError(waveformSegment.amplitude, "number");
+        _console$j.assertWithError(
             waveformSegment.amplitude >= 0,
             `amplitude must be 0 or greater (got ${waveformSegment.amplitude})`
         );
-        _console$f.assertWithError(
+        _console$j.assertWithError(
             waveformSegment.amplitude <= 1,
             `amplitude must be 1 or less (got ${waveformSegment.amplitude})`
         );
 
-        _console$f.assertTypeWithError(waveformSegment.duration, "number");
-        _console$f.assertWithError(
+        _console$j.assertTypeWithError(waveformSegment.duration, "number");
+        _console$j.assertWithError(
             waveformSegment.duration > 0,
             `duration must be greater than 0ms (got ${waveformSegment.duration}ms)`
         );
-        _console$f.assertWithError(
+        _console$j.assertWithError(
             waveformSegment.duration <= this.maxWaveformSegmentDuration,
             `duration must be ${this.maxWaveformSegmentDuration}ms or less (got ${waveformSegment.duration}ms)`
         );
@@ -4073,7 +3265,7 @@ class VibrationManager {
     /** @param {VibrationWaveformSegment[]} waveformSegments */
     #verifyWaveformSegments(waveformSegments) {
         this.#assertNonEmptyArray(waveformSegments);
-        _console$f.assertWithError(
+        _console$j.assertWithError(
             waveformSegments.length <= this.maxNumberOfWaveformSegments,
             `must have ${this.maxNumberOfWaveformSegments} waveformSegments or fewer (got ${waveformSegments.length})`
         );
@@ -4087,7 +3279,7 @@ class VibrationManager {
      * @param {VibrationWaveformEffectSegment[]} waveformEffectSegments
      * @param {number?} waveformEffectSequenceLoopCount how many times the entire sequence should loop (int ranging [0, 6])
      */
-    createWaveformEffectsData(locations, waveformEffectSegments, waveformEffectSequenceLoopCount = 0) {
+    #createWaveformEffectsData(locations, waveformEffectSegments, waveformEffectSequenceLoopCount = 0) {
         this.#verifyWaveformEffectSegments(waveformEffectSegments);
         this.#verifyWaveformEffectSequenceLoopCount(waveformEffectSequenceLoopCount);
 
@@ -4142,21 +3334,21 @@ class VibrationManager {
             dataArray[byteOffset++] = waveformEffectSequenceLoopCount;
         }
         const dataView = new DataView(Uint8Array.from(dataArray).buffer);
-        _console$f.log({ dataArray, dataView });
+        _console$j.log({ dataArray, dataView });
         return this.#createData(locations, "waveformEffect", dataView);
     }
     /**
      * @param {VibrationLocation[]} locations
      * @param {VibrationWaveformSegment[]} waveformSegments
      */
-    createWaveformData(locations, waveformSegments) {
+    #createWaveformData(locations, waveformSegments) {
         this.#verifyWaveformSegments(waveformSegments);
         const dataView = new DataView(new ArrayBuffer(waveformSegments.length * 2));
         waveformSegments.forEach((waveformSegment, index) => {
             dataView.setUint8(index * 2, Math.floor(waveformSegment.amplitude * 127));
             dataView.setUint8(index * 2 + 1, Math.floor(waveformSegment.duration / 10));
         });
-        _console$f.log({ dataView });
+        _console$j.log({ dataView });
         return this.#createData(locations, "waveform", dataView);
     }
 
@@ -4170,8 +3362,8 @@ class VibrationManager {
     }
     /** @param {VibrationType} vibrationType */
     #verifyVibrationType(vibrationType) {
-        _console$f.assertTypeWithError(vibrationType, "string");
-        _console$f.assertWithError(this.#types.includes(vibrationType), `invalid vibrationType "${vibrationType}"`);
+        _console$j.assertTypeWithError(vibrationType, "string");
+        _console$j.assertWithError(this.#types.includes(vibrationType), `invalid vibrationType "${vibrationType}"`);
     }
 
     /**
@@ -4180,14 +3372,916 @@ class VibrationManager {
      * @param {DataView} dataView
      */
     #createData(locations, vibrationType, dataView) {
-        _console$f.assertWithError(dataView?.byteLength > 0, "no data received");
+        _console$j.assertWithError(dataView?.byteLength > 0, "no data received");
         const locationsBitmask = this.#createLocationsBitmask(locations);
         this.#verifyVibrationType(vibrationType);
         const vibrationTypeIndex = this.#types.indexOf(vibrationType);
-        _console$f.log({ locationsBitmask, vibrationTypeIndex, dataView });
+        _console$j.log({ locationsBitmask, vibrationTypeIndex, dataView });
         const data = concatenateArrayBuffers(locationsBitmask, vibrationTypeIndex, dataView.byteLength, dataView);
-        _console$f.log({ data });
+        _console$j.log({ data });
         return data;
+    }
+
+    /**
+     * @param  {VibrationConfiguration[]} vibrationConfigurations
+     * @param  {boolean} sendImmediately
+     */
+    async triggerVibration(vibrationConfigurations, sendImmediately) {
+        /** @type {ArrayBuffer} */
+        let triggerVibrationData;
+        vibrationConfigurations.forEach((vibrationConfiguration) => {
+            const { type } = vibrationConfiguration;
+
+            let { locations } = vibrationConfiguration;
+            locations = locations || this.locations.slice();
+
+            /** @type {DataView} */
+            let dataView;
+
+            switch (type) {
+                case "waveformEffect":
+                    {
+                        const { waveformEffect } = vibrationConfiguration;
+                        if (!waveformEffect) {
+                            throw Error("waveformEffect not defined in vibrationConfiguration");
+                        }
+                        const { segments, loopCount } = waveformEffect;
+                        dataView = this.#createWaveformEffectsData(locations, segments, loopCount);
+                    }
+                    break;
+                case "waveform":
+                    {
+                        const { waveform } = vibrationConfiguration;
+                        if (!waveform) {
+                            throw Error("waveform not defined in vibrationConfiguration");
+                        }
+                        const { segments } = waveform;
+                        dataView = this.#createWaveformData(locations, segments);
+                    }
+                    break;
+                default:
+                    throw Error(`invalid vibration type "${type}"`);
+            }
+            _console$j.log({ type, dataView });
+            triggerVibrationData = concatenateArrayBuffers(triggerVibrationData, dataView);
+        });
+        await this.sendMessage([{ type: "triggerVibration", data: triggerVibrationData }], sendImmediately);
+    }
+
+    /**
+     * @callback SendMessageCallback
+     * @param {{type: VibrationMessageType, data: ArrayBuffer}[]} messages
+     * @param {boolean} sendImmediately
+     */
+
+    /** @type {SendMessageCallback} */
+    sendMessage;
+}
+
+const _console$i = createConsole("BaseConnectionManager", { log: true });
+
+
+
+
+
+
+
+
+/** @typedef {"webBluetooth" | "noble" | "webSocketClient"} ConnectionType */
+/** @typedef {"not connected" | "connecting" | "connected" | "disconnecting"} ConnectionStatus */
+
+/**
+ * @typedef { "getSensorConfiguration" |
+ * "setSensorConfiguration" |
+ * "pressurePositions" |
+ * "sensorScalars" |
+ * "sensorData" |
+ * VibrationMessageType |
+ * InformationMessageType |
+ * TfliteMessageType |
+ * FileTransferMessageType |
+ * FirmwareMessageType
+ * } TxRxMessageType
+ */
+
+/**
+ * @typedef TxMessage
+ * @type {Object}
+ * @property {TxRxMessageType} type
+ * @property {ArrayBuffer?} data
+ */
+
+/**
+ * @typedef { DeviceInformationMessageType |
+ * "batteryLevel" |
+ * "smp" |
+ * "rx" |
+ * "tx" |
+ * TxRxMessageType
+ * } ConnectionMessageType
+ */
+
+/**
+ * @callback ConnectionStatusCallback
+ * @param {ConnectionStatus} status
+ */
+
+/**
+ * @callback MessageReceivedCallback
+ * @param {ConnectionMessageType} messageType
+ * @param {DataView} dataView
+ */
+
+class BaseConnectionManager {
+    // MESSAGES
+
+    /** @type {TxRxMessageType[]} */
+    static #TxRxMessageTypes = [
+        ...InformationManager.MessageTypes,
+
+        "getSensorConfiguration",
+        "setSensorConfiguration",
+
+        "pressurePositions",
+        "sensorScalars",
+        "sensorData",
+
+        ...VibrationManager.MessageTypes,
+        ...TfliteManager$1.MessageTypes,
+        ...FileTransferManager.MessageTypes,
+    ];
+    static get TxRxMessageTypes() {
+        return this.#TxRxMessageTypes;
+    }
+    /** @type {ConnectionMessageType[]} */
+    static #MessageTypes = [
+        ...DeviceInformationManager.MessageTypes,
+        "batteryLevel",
+        "smp",
+        "rx",
+        "tx",
+        ...this.TxRxMessageTypes,
+    ];
+    static get MessageTypes() {
+        return this.#MessageTypes;
+    }
+    /** @param {ConnectionMessageType} messageType */
+    static #AssertValidTxRxMessageType(messageType) {
+        _console$i.assertEnumWithError(messageType, this.#TxRxMessageTypes);
+    }
+
+    // ID
+
+    /** @type {string?} */
+    get id() {
+        this.#throwNotImplementedError("id");
+    }
+
+    // CALLBACKS
+    /** @type {ConnectionStatusCallback?} */
+    onStatusUpdated;
+    /** @type {MessageReceivedCallback?} */
+    onMessageReceived;
+
+    /** @param {string} name */
+    static #staticThrowNotImplementedError(name) {
+        throw new Error(`"${name}" is not implemented by "${this.name}" subclass`);
+    }
+    /** @param {string} name */
+    #throwNotImplementedError(name) {
+        throw new Error(`"${name}" is not implemented by "${this.constructor.name}" subclass`);
+    }
+
+    static get isSupported() {
+        return false;
+    }
+    /** @type {boolean} */
+    get isSupported() {
+        return this.constructor.isSupported;
+    }
+
+    /** @type {ConnectionType} */
+    static get type() {
+        this.#staticThrowNotImplementedError("type");
+    }
+    /** @type {ConnectionType} */
+    get type() {
+        return this.constructor.type;
+    }
+
+    /** @throws {Error} if not supported */
+    #assertIsSupported() {
+        _console$i.assertWithError(this.isSupported, `${this.constructor.name} is not supported`);
+    }
+
+    /** @throws {Error} if abstract class */
+    #assertIsSubclass() {
+        _console$i.assertWithError(
+            this.constructor != BaseConnectionManager,
+            `${this.constructor.name} must be subclassed`
+        );
+    }
+
+    constructor() {
+        this.#assertIsSubclass();
+        this.#assertIsSupported();
+    }
+
+    /** @type {ConnectionStatus} */
+    #status = "not connected";
+    get status() {
+        return this.#status;
+    }
+    /** @protected */
+    set status(newConnectionStatus) {
+        _console$i.assertTypeWithError(newConnectionStatus, "string");
+        if (this.#status == newConnectionStatus) {
+            _console$i.log(`tried to assign same connection status "${newConnectionStatus}"`);
+            return;
+        }
+        _console$i.log(`new connection status "${newConnectionStatus}"`);
+        this.#status = newConnectionStatus;
+        this.onStatusUpdated?.(this.status);
+
+        if (this.isConnected) {
+            this.#timer.start();
+        } else {
+            this.#timer.stop();
+        }
+
+        if (this.#status == "not connected") {
+            this.#mtu = null;
+        }
+    }
+
+    get isConnected() {
+        return this.status == "connected";
+    }
+
+    /** @throws {Error} if connected */
+    #assertIsNotConnected() {
+        _console$i.assertWithError(!this.isConnected, "device is already connected");
+    }
+    /** @throws {Error} if connecting */
+    #assertIsNotConnecting() {
+        _console$i.assertWithError(this.status != "connecting", "device is already connecting");
+    }
+    /** @throws {Error} if not connected */
+    #assertIsConnected() {
+        _console$i.assertWithError(this.isConnected, "device is not connected");
+    }
+    /** @throws {Error} if disconnecting */
+    #assertIsNotDisconnecting() {
+        _console$i.assertWithError(this.status != "disconnecting", "device is already disconnecting");
+    }
+    /** @throws {Error} if not connected or is disconnecting */
+    #assertIsConnectedAndNotDisconnecting() {
+        this.#assertIsConnected();
+        this.#assertIsNotDisconnecting();
+    }
+
+    async connect() {
+        this.#assertIsNotConnected();
+        this.#assertIsNotConnecting();
+        this.status = "connecting";
+    }
+    /** @type {boolean} */
+    get canReconnect() {
+        return false;
+    }
+    async reconnect() {
+        this.#assertIsNotConnected();
+        this.#assertIsNotConnecting();
+        _console$i.assert(this.canReconnect, "unable to reconnect");
+    }
+    async disconnect() {
+        this.#assertIsConnected();
+        this.#assertIsNotDisconnecting();
+        this.status = "disconnecting";
+        _console$i.log("disconnecting from device...");
+    }
+
+    /** @param {ArrayBuffer} data */
+    async sendSmpMessage(data) {
+        this.#assertIsConnectedAndNotDisconnecting();
+        _console$i.log("sending smp message", data);
+    }
+
+    /** @type {TxMessage[]} */
+    #pendingMessages = [];
+
+    /**
+     * @param {TxMessage[]?} messages
+     * @param {boolean} sendImmediately
+     */
+    async sendTxMessages(messages, sendImmediately = true) {
+        this.#assertIsConnectedAndNotDisconnecting();
+
+        if (messages) {
+            this.#pendingMessages.push(...messages);
+        }
+
+        if (!sendImmediately) {
+            return;
+        }
+
+        _console$i.log("sendTxMessages", this.#pendingMessages.slice());
+
+        const arrayBuffers = this.#pendingMessages.map((message) => {
+            BaseConnectionManager.#AssertValidTxRxMessageType(message.type);
+            const messageTypeEnum = BaseConnectionManager.TxRxMessageTypes.indexOf(message.type);
+            const dataLength = new DataView(new ArrayBuffer(2));
+            dataLength.setUint16(0, message.data?.byteLength || 0, true);
+            return concatenateArrayBuffers(messageTypeEnum, dataLength, message.data);
+        });
+
+        if (this.#mtu) {
+            while (arrayBuffers.length > 0) {
+                let arrayBufferByteLength = 0;
+                let arrayBufferCount = 0;
+                arrayBuffers.some((arrayBuffer) => {
+                    if (arrayBufferByteLength + arrayBuffer.byteLength > this.#mtu - 3) {
+                        return true;
+                    }
+                    arrayBufferCount++;
+                    arrayBufferByteLength += arrayBuffer.byteLength;
+                });
+                const arrayBuffersToSend = arrayBuffers.splice(0, arrayBufferCount);
+                _console$i.log({ arrayBufferCount, arrayBuffersToSend });
+
+                const arrayBuffer = concatenateArrayBuffers(...arrayBuffersToSend);
+                _console$i.log("sending arrayBuffer", arrayBuffer);
+                await this.sendTxData(arrayBuffer);
+            }
+        } else {
+            const arrayBuffer = concatenateArrayBuffers(...arrayBuffers);
+            _console$i.log("sending arrayBuffer", arrayBuffer);
+            await this.sendTxData(arrayBuffer);
+        }
+
+        this.#pendingMessages.length = 0;
+    }
+
+    /** @param {number?} */
+    #mtu;
+    get mtu() {
+        return this.#mtu;
+    }
+    set mtu(newMtu) {
+        this.#mtu = newMtu;
+    }
+
+    /** @param {ArrayBuffer} data */
+    async sendTxData(data) {
+        _console$i.log("sendTxData", data);
+    }
+
+    /** @param {DataView} dataView */
+    parseRxMessage(dataView) {
+        parseMessage(dataView, BaseConnectionManager.#TxRxMessageTypes, this.#onRxMessage.bind(this), null, true);
+    }
+
+    /**
+     * @param {TxRxMessageType} messageType
+     * @param {DataView} dataView
+     */
+    #onRxMessage(messageType, dataView) {
+        _console$i.log({ messageType, dataView });
+        this.onMessageReceived?.(messageType, dataView);
+    }
+
+    #timer = new Timer(this.#checkConnection.bind(this), 5000);
+    #checkConnection() {
+        //console.log("checking connection...");
+        if (!this.isConnected) {
+            _console$i.log("timer detected disconnection");
+            this.status = "not connected";
+        }
+    }
+}
+
+const _console$h = createConsole("bluetoothUUIDs", { log: false });
+
+if (isInNode) {
+    const webbluetooth = require("webbluetooth");
+    var BluetoothUUID = webbluetooth.BluetoothUUID;
+}
+if (isInBrowser) {
+    var BluetoothUUID = window.BluetoothUUID;
+}
+
+/**
+ * @param {string} value
+ * @returns {BluetoothServiceUUID}
+ */
+function generateBluetoothUUID(value) {
+    _console$h.assertTypeWithError(value, "string");
+    _console$h.assertWithError(value.length == 4, "value must be 4 characters long");
+    return `ea6da725-${value}-4f9b-893d-c3913e33b39f`;
+}
+
+/** @param {string} identifier */
+function stringToCharacteristicUUID(identifier) {
+    return BluetoothUUID?.getCharacteristic?.(identifier);
+}
+
+/** @param {string} identifier */
+function stringToServiceUUID(identifier) {
+    return BluetoothUUID?.getService?.(identifier);
+}
+
+/** @typedef {"deviceInformation" | "battery" | "main" | "smp"} BluetoothServiceName */
+
+/**
+ * @typedef { DeviceInformationMessageType |
+ * "batteryLevel" |
+ * "rx" |
+ * "tx" |
+ * "smp"
+ * } BluetoothCharacteristicName
+ */
+
+const bluetoothUUIDs = Object.freeze({
+    services: {
+        deviceInformation: {
+            uuid: stringToServiceUUID("device_information"),
+            characteristics: {
+                manufacturerName: {
+                    uuid: stringToCharacteristicUUID("manufacturer_name_string"),
+                },
+                modelNumber: {
+                    uuid: stringToCharacteristicUUID("model_number_string"),
+                },
+                hardwareRevision: {
+                    uuid: stringToCharacteristicUUID("hardware_revision_string"),
+                },
+                firmwareRevision: {
+                    uuid: stringToCharacteristicUUID("firmware_revision_string"),
+                },
+                softwareRevision: {
+                    uuid: stringToCharacteristicUUID("software_revision_string"),
+                },
+                pnpId: {
+                    uuid: stringToCharacteristicUUID("pnp_id"),
+                },
+                serialNumber: {
+                    uuid: stringToCharacteristicUUID("serial_number_string"),
+                },
+            },
+        },
+        battery: {
+            uuid: stringToServiceUUID("battery_service"),
+            characteristics: {
+                batteryLevel: {
+                    uuid: stringToCharacteristicUUID("battery_level"),
+                },
+            },
+        },
+        main: {
+            uuid: generateBluetoothUUID("0000"),
+            characteristics: {
+                rx: { uuid: generateBluetoothUUID("1000") },
+                tx: { uuid: generateBluetoothUUID("1001") },
+            },
+        },
+        smp: {
+            uuid: "8d53dc1d-1db7-4cd3-868b-8a527460aa84",
+            characteristics: {
+                smp: { uuid: "da2e7828-fbce-4e01-ae9e-261174997c48" },
+            },
+        },
+    },
+
+    /** @type {BluetoothServiceUUID[]} */
+    get serviceUUIDs() {
+        return [this.services.main.uuid];
+    },
+
+    /** @type {BluetoothServiceUUID[]} */
+    get optionalServiceUUIDs() {
+        return [this.services.deviceInformation.uuid, this.services.battery.uuid, this.services.smp.uuid];
+    },
+
+    /**
+     * @param {BluetoothServiceUUID} serviceUUID
+     * @returns {BluetoothServiceName?}
+     */
+    getServiceNameFromUUID(serviceUUID) {
+        serviceUUID = serviceUUID.toLowerCase();
+        return Object.entries(this.services).find(([serviceName, serviceInfo]) => {
+            let serviceInfoUUID = serviceInfo.uuid;
+            if (serviceUUID.length == 4) {
+                serviceInfoUUID = serviceInfoUUID.slice(4, 8);
+            }
+            if (!serviceUUID.includes("-")) {
+                serviceInfoUUID = serviceInfoUUID.replaceAll("-", "");
+            }
+            return serviceUUID == serviceInfoUUID;
+        })?.[0];
+    },
+
+    /**
+     * @param {BluetoothCharacteristicUUID} characteristicUUID
+     * @returns {BluetoothCharacteristicName?}
+     */
+    getCharacteristicNameFromUUID(characteristicUUID) {
+        //_console.log({ characteristicUUID });
+        characteristicUUID = characteristicUUID.toLowerCase();
+        var characteristicName;
+        Object.values(this.services).some((serviceInfo) => {
+            characteristicName = Object.entries(serviceInfo.characteristics).find(
+                ([characteristicName, characteristicInfo]) => {
+                    let characteristicInfoUUID = characteristicInfo.uuid;
+                    if (characteristicUUID.length == 4) {
+                        characteristicInfoUUID = characteristicInfoUUID.slice(4, 8);
+                    }
+                    if (!characteristicUUID.includes("-")) {
+                        characteristicInfoUUID = characteristicInfoUUID.replaceAll("-", "");
+                    }
+                    return characteristicUUID == characteristicInfoUUID;
+                }
+            )?.[0];
+            return characteristicName;
+        });
+        return characteristicName;
+    },
+});
+
+const serviceUUIDs = bluetoothUUIDs.serviceUUIDs;
+const optionalServiceUUIDs = bluetoothUUIDs.optionalServiceUUIDs;
+const allServiceUUIDs = [...serviceUUIDs, ...optionalServiceUUIDs];
+
+/** @param {BluetoothServiceUUID} serviceUUID */
+function getServiceNameFromUUID(serviceUUID) {
+    return bluetoothUUIDs.getServiceNameFromUUID(serviceUUID);
+}
+
+/** @type {BluetoothCharacteristicUUID[]} */
+const characteristicUUIDs = [];
+/** @type {BluetoothCharacteristicUUID[]} */
+const allCharacteristicUUIDs = [];
+/** @type {BluetoothCharacteristicName[]} */
+const allCharacteristicNames = [];
+
+Object.entries(bluetoothUUIDs.services).forEach(([serviceName, serviceInfo]) => {
+    if (!serviceInfo.characteristics) {
+        return;
+    }
+    Object.entries(serviceInfo.characteristics).forEach(([characteristicName, characteristicInfo]) => {
+        if (serviceUUIDs.includes(serviceInfo.uuid)) {
+            characteristicUUIDs.push(characteristicInfo.uuid);
+        }
+        allCharacteristicUUIDs.push(characteristicInfo.uuid);
+        allCharacteristicNames.push(characteristicName);
+    });
+}, []);
+
+//_console.log({ characteristicUUIDs, allCharacteristicUUIDs });
+
+/** @param {BluetoothCharacteristicUUID} characteristicUUID */
+function getCharacteristicNameFromUUID(characteristicUUID) {
+    return bluetoothUUIDs.getCharacteristicNameFromUUID(characteristicUUID);
+}
+
+/**
+ * @param {BluetoothCharacteristicName} characteristicName
+ * @returns {BluetoothCharacteristicProperties}
+ */
+function getCharacteristicProperties(characteristicName) {
+    /** @type {BluetoothCharacteristicProperties} */
+    const properties = {
+        broadcast: false,
+        read: true,
+        writeWithoutResponse: false,
+        write: false,
+        notify: false,
+        indicate: false,
+        authenticatedSignedWrites: false,
+        reliableWrite: false,
+        writableAuxiliaries: false,
+    };
+
+    // read
+    switch (characteristicName) {
+        case "rx":
+        case "tx":
+        case "smp":
+            properties.read = false;
+            break;
+    }
+
+    // notify
+    switch (characteristicName) {
+        case "batteryLevel":
+        case "rx":
+        case "smp":
+            properties.notify = true;
+            break;
+    }
+
+    // write
+    switch (characteristicName) {
+        case "tx":
+        case "smp":
+            properties.writeWithoutResponse = true;
+            break;
+    }
+
+    return properties;
+}
+
+const serviceDataUUID = "0000";
+
+const _console$g = createConsole("BluetoothConnectionManager", { log: true });
+
+
+
+
+
+
+
+
+
+class BluetoothConnectionManager extends BaseConnectionManager {
+    /**
+     * @protected
+     * @param {BluetoothCharacteristicName} characteristicName
+     * @param {DataView} dataView
+     */
+    onCharacteristicValueChanged(characteristicName, dataView) {
+        if (characteristicName == "rx") {
+            this.parseRxMessage(dataView);
+        } else {
+            this.onMessageReceived?.(characteristicName, dataView);
+        }
+    }
+
+    /**
+     * @protected
+     * @param {BluetoothCharacteristicName} characteristicName
+     * @param {ArrayBuffer} data
+     */
+    async writeCharacteristic(characteristicName, data) {
+        _console$g.log("writeCharacteristic", ...arguments);
+    }
+
+    /** @param {ArrayBuffer} data */
+    async sendSmpMessage(data) {
+        super.sendSmpMessage(...arguments);
+        await this.writeCharacteristic("smp", data);
+    }
+
+    /** @param {ArrayBuffer} data */
+    async sendTxData(data) {
+        super.sendTxData(...arguments);
+        await this.writeCharacteristic("tx", data);
+    }
+}
+
+const _console$f = createConsole("WebBluetoothConnectionManager", { log: true });
+
+
+
+
+
+
+
+
+if (isInNode) {
+    const webbluetooth = require("webbluetooth");
+    const { bluetooth } = webbluetooth;
+    var navigator$1 = { bluetooth };
+}
+if (isInBrowser) {
+    var navigator$1 = window.navigator;
+}
+
+class WebBluetoothConnectionManager extends BluetoothConnectionManager {
+    get id() {
+        return this.device?.id;
+    }
+
+    /** @type {Object.<string, EventListener} */
+    #boundBluetoothCharacteristicEventListeners = {
+        characteristicvaluechanged: this.#onCharacteristicvaluechanged.bind(this),
+    };
+    /** @type {Object.<string, EventListener} */
+    #boundBluetoothDeviceEventListeners = {
+        gattserverdisconnected: this.#onGattserverdisconnected.bind(this),
+    };
+
+    static get isSupported() {
+        return "bluetooth" in navigator$1;
+    }
+    /** @type {ConnectionType} */
+    static get type() {
+        return "webBluetooth";
+    }
+
+    /** @type {BluetoothDevice?} */
+    #device;
+    get device() {
+        return this.#device;
+    }
+    set device(newDevice) {
+        if (this.#device == newDevice) {
+            _console$f.log("tried to assign the same BluetoothDevice");
+            return;
+        }
+        if (this.#device) {
+            removeEventListeners(this.#device, this.#boundBluetoothDeviceEventListeners);
+        }
+        if (newDevice) {
+            addEventListeners(newDevice, this.#boundBluetoothDeviceEventListeners);
+        }
+        this.#device = newDevice;
+    }
+
+    /** @type {BluetoothRemoteGATTServer?} */
+    get server() {
+        return this.#device?.gatt;
+    }
+    get isConnected() {
+        return this.server?.connected;
+    }
+
+    /** @type {Map.<BluetoothServiceName, BluetoothRemoteGATTService} */
+    #services = new Map();
+    /** @type {Map.<BluetoothCharacteristicName, BluetoothRemoteGATTCharacteristic} */
+    #characteristics = new Map();
+
+    async connect() {
+        await super.connect();
+
+        try {
+            const device = await navigator$1.bluetooth.requestDevice({
+                filters: [{ services: serviceUUIDs }],
+                optionalServices: isInBrowser ? optionalServiceUUIDs : [],
+            });
+
+            _console$f.log("got BluetoothDevice");
+            this.device = device;
+
+            _console$f.log("connecting to device...");
+            const server = await this.device.gatt.connect();
+            _console$f.log(`connected to device? ${server.connected}`);
+
+            await this.#getServicesAndCharacteristics();
+
+            _console$f.log("fully connected");
+
+            this.status = "connected";
+        } catch (error) {
+            _console$f.error(error);
+            this.status = "not connected";
+            this.server?.disconnect();
+            this.#removeEventListeners();
+        }
+    }
+    async #getServicesAndCharacteristics() {
+        this.#removeEventListeners();
+
+        _console$f.log("getting services...");
+        const services = await this.server.getPrimaryServices();
+        _console$f.log("got services", services.length);
+        await this.server.getPrimaryService("8d53dc1d-1db7-4cd3-868b-8a527460aa84");
+
+        _console$f.log("getting characteristics...");
+        for (const serviceIndex in services) {
+            const service = services[serviceIndex];
+            _console$f.log({ service });
+            const serviceName = getServiceNameFromUUID(service.uuid);
+            _console$f.assertWithError(serviceName, `no name found for service uuid "${service.uuid}"`);
+            _console$f.log(`got "${serviceName}" service`);
+            service._name = serviceName;
+            this.#services.set(serviceName, service);
+            _console$f.log(`getting characteristics for "${serviceName}" service`);
+            const characteristics = await service.getCharacteristics();
+            _console$f.log(`got characteristics for "${serviceName}" service`);
+            for (const characteristicIndex in characteristics) {
+                const characteristic = characteristics[characteristicIndex];
+                _console$f.log({ characteristic });
+                const characteristicName = getCharacteristicNameFromUUID(characteristic.uuid);
+                _console$f.assertWithError(
+                    characteristicName,
+                    `no name found for characteristic uuid "${characteristic.uuid}" in "${serviceName}" service`
+                );
+                _console$f.log(`got "${characteristicName}" characteristic in "${serviceName}" service`);
+                characteristic._name = characteristicName;
+                this.#characteristics.set(characteristicName, characteristic);
+                addEventListeners(characteristic, this.#boundBluetoothCharacteristicEventListeners);
+                const characteristicProperties =
+                    characteristic.properties || getCharacteristicProperties(characteristicName);
+                if (characteristicProperties.notify) {
+                    _console$f.log(`starting notifications for "${characteristicName}" characteristic`);
+                    await characteristic.startNotifications();
+                }
+                if (characteristicProperties.read) {
+                    _console$f.log(`reading "${characteristicName}" characteristic...`);
+                    await characteristic.readValue();
+                    if (isInBluefy || isInWebBLE) {
+                        this.#onCharacteristicValueChanged(characteristic);
+                    }
+                }
+            }
+        }
+    }
+    #removeEventListeners() {
+        if (this.device) {
+            removeEventListeners(this.device, this.#boundBluetoothDeviceEventListeners);
+        }
+        this.#characteristics.forEach((characteristic) => {
+            removeEventListeners(characteristic, this.#boundBluetoothCharacteristicEventListeners);
+        });
+    }
+    async disconnect() {
+        await super.disconnect();
+        this.server?.disconnect();
+        this.#removeEventListeners();
+        this.status = "not connected";
+    }
+
+    /** @param {Event} event */
+    #onCharacteristicvaluechanged(event) {
+        _console$f.log("oncharacteristicvaluechanged");
+
+        /** @type {BluetoothRemoteGATTCharacteristic} */
+        const characteristic = event.target;
+
+        this.#onCharacteristicValueChanged(characteristic);
+    }
+
+    /** @param {BluetoothRemoteGATTCharacteristic} characteristic */
+    #onCharacteristicValueChanged(characteristic) {
+        _console$f.log("onCharacteristicValue");
+
+        /** @type {BluetoothCharacteristicName} */
+        const characteristicName = characteristic._name;
+        _console$f.assertWithError(
+            characteristicName,
+            `no name found for characteristic with uuid "${characteristic.uuid}"`
+        );
+
+        _console$f.log(`oncharacteristicvaluechanged for "${characteristicName}" characteristic`);
+        const dataView = characteristic.value;
+        _console$f.assertWithError(dataView, `no data found for "${characteristicName}" characteristic`);
+        _console$f.log(`data for "${characteristicName}" characteristic`, Array.from(new Uint8Array(dataView.buffer)));
+
+        this.onCharacteristicValueChanged(characteristicName, dataView);
+    }
+
+    /**
+     * @param {BluetoothCharacteristicName} characteristicName
+     * @param {ArrayBuffer} data
+     */
+    async writeCharacteristic(characteristicName, data) {
+        super.writeCharacteristic(...arguments);
+
+        const characteristic = this.#characteristics.get(characteristicName);
+        _console$f.assertWithError(characteristic, `${characteristicName} characteristic not found`);
+        _console$f.log("writing characteristic", characteristic, data);
+        const characteristicProperties = characteristic.properties || getCharacteristicProperties(characteristicName);
+        if (characteristicProperties.writeWithoutResponse) {
+            _console$f.log("writing without response");
+            await characteristic.writeValueWithoutResponse(data);
+        } else {
+            _console$f.log("writing with response");
+            await characteristic.writeValueWithResponse(data);
+        }
+        _console$f.log("wrote characteristic");
+
+        if (characteristicProperties.read && !characteristicProperties.notify) {
+            _console$f.log("reading value after write...");
+            await characteristic.readValue();
+            if (isInBluefy || isInWebBLE) {
+                this.#onCharacteristicValueChanged(characteristic);
+            }
+        }
+    }
+
+    /** @param {Event} event */
+    #onGattserverdisconnected(event) {
+        _console$f.log("gattserverdisconnected");
+        this.status = "not connected";
+    }
+
+    /** @type {boolean} */
+    get canReconnect() {
+        return this.server && !this.server.connected;
+    }
+    async reconnect() {
+        await super.reconnect();
+        _console$f.log("attempting to reconnect...");
+        this.status = "connecting";
+        await this.server.connect();
+        if (this.isConnected) {
+            _console$f.log("successfully reconnected!");
+            await this.#getServicesAndCharacteristics();
+            this.status = "connected";
+        } else {
+            _console$f.log("unable to reconnect");
+            this.status = "not connected";
+        }
     }
 }
 
@@ -5485,9 +5579,11 @@ const _console$c = createConsole("Device", { log: true });
 
 
 
-/** @typedef {"connectionStatus" | ConnectionStatus | "isConnected" | ConnectionMessageType | DeviceInformationManagerEventType | SensorType | "connectionMessage" | FileTransferManagerEventType | TfliteManagerEventType | FirmwareManagerEventType} DeviceEventType */
 
-/** @typedef {"deviceConnected" | "deviceDisconnected" | "deviceIsConnected" | "availableDevices"} StaticDeviceEventType */
+
+
+
+/** @typedef {"connectionStatus" | ConnectionStatus | "isConnected" | ConnectionMessageType | DeviceInformationManagerEventType | SensorType | "connectionMessage" | FileTransferManagerEventType | TfliteManagerEventType | FirmwareManagerEventType} DeviceEventType */
 
 
 
@@ -5499,51 +5595,16 @@ const _console$c = createConsole("Device", { log: true });
  * @property {DeviceEventType} type
  * @property {Object} message
  */
-
 /** @typedef {(event: DeviceEvent) => void} DeviceEventListener */
 
+/** @typedef {"deviceConnected" | "deviceDisconnected" | "deviceIsConnected" | "availableDevices"} StaticDeviceEventType */
 /**
  * @typedef StaticDeviceEvent
  * @type {Object}
  * @property {StaticDeviceEventType} type
  * @property {Object} message
  */
-
 /** @typedef {(event: StaticDeviceEvent) => void} StaticDeviceEventListener */
-
-
-
-/** @typedef {"leftInsole" | "rightInsole"} DeviceType */
-/** @typedef {"left" | "right"} InsoleSide */
-
-
-
-
-
-
-
-/**
- * @typedef VibrationWaveformEffectConfiguration
- * @type {Object}
- * @property {VibrationWaveformEffectSegment[]} segments
- * @property {number?} loopCount how many times the entire sequence should loop (int ranging [0, 6])
- */
-
-
-/**
- * @typedef VibrationWaveformConfiguration
- * @type {Object}
- * @property {VibrationWaveformSegment[]} segments
- */
-
-/**
- * @typedef VibrationConfiguration
- * @type {Object}
- * @property {VibrationLocation[]} locations
- * @property {VibrationType} type
- * @property {VibrationWaveformEffectConfiguration?} waveformEffect use if type is "waveformEffect"
- * @property {VibrationWaveformConfiguration?} waveform use if type is "waveform"
- */
 
 let Device$1 = class Device {
     get id() {
@@ -5566,6 +5627,8 @@ let Device$1 = class Device {
 
         this.#informationManager.sendMessage = this.#sendTxMessages.bind(this);
         this.#informationManager.eventDispatcher = this.#eventDispatcher;
+
+        this.#vibrationManager.sendMessage = this.#sendTxMessages.bind(this);
 
         this.addEventListener("getMtu", () => {
             this.#firmwareManager.mtu = this.mtu;
@@ -5639,7 +5702,7 @@ let Device$1 = class Device {
         ...InformationManager.EventTypes,
         ...DeviceInformationManager.EventTypes,
         ...FileTransferManager.EventTypes,
-        ...TfliteManager.EventTypes,
+        ...TfliteManager$1.EventTypes,
         ...FirmwareManager.EventTypes,
     ];
     static get EventTypes() {
@@ -6148,6 +6211,7 @@ let Device$1 = class Device {
     }
 
     // VIBRATION
+
     #vibrationManager = new VibrationManager();
     static get VibrationLocations() {
         return VibrationManager.Locations;
@@ -6179,47 +6243,13 @@ let Device$1 = class Device {
         return VibrationManager.MaxNumberOfWaveformSegments;
     }
 
-    /** @param  {...VibrationConfiguration} vibrationConfigurations */
-    async triggerVibration(...vibrationConfigurations) {
-        /** @type {ArrayBuffer} */
-        let triggerVibrationData;
-        vibrationConfigurations.forEach((vibrationConfiguration) => {
-            const { type } = vibrationConfiguration;
-
-            let { locations } = vibrationConfiguration;
-            locations = locations || this.#vibrationManager.locations.slice();
-
-            /** @type {DataView} */
-            let dataView;
-
-            switch (type) {
-                case "waveformEffect":
-                    {
-                        const { waveformEffect } = vibrationConfiguration;
-                        if (!waveformEffect) {
-                            throw Error("waveformEffect not defined in vibrationConfiguration");
-                        }
-                        const { segments, loopCount } = waveformEffect;
-                        dataView = this.#vibrationManager.createWaveformEffectsData(locations, segments, loopCount);
-                    }
-                    break;
-                case "waveform":
-                    {
-                        const { waveform } = vibrationConfiguration;
-                        if (!waveform) {
-                            throw Error("waveform not defined in vibrationConfiguration");
-                        }
-                        const { segments } = waveform;
-                        dataView = this.#vibrationManager.createWaveformData(locations, segments);
-                    }
-                    break;
-                default:
-                    throw Error(`invalid vibration type "${type}"`);
-            }
-            _console$c.log({ type, dataView });
-            triggerVibrationData = concatenateArrayBuffers(triggerVibrationData, dataView);
-        });
-        await this.#sendTxMessages([{ type: "triggerVibration", data: triggerVibrationData.buffer }]);
+    
+    /**
+     * @param  {VibrationConfiguration[]} vibrationConfigurations
+     * @param  {boolean} sendImmediately
+     */
+    async triggerVibration(vibrationConfigurations, sendImmediately) {
+        this.#vibrationManager.triggerVibration(vibrationConfigurations, sendImmediately);
     }
 
     // FILE TRANSFER
@@ -6263,10 +6293,10 @@ let Device$1 = class Device {
     // TFLITE
 
     static get TfliteSensorTypes() {
-        return TfliteManager.SensorTypes;
+        return TfliteManager$1.SensorTypes;
     }
 
-    #tfliteManager = new TfliteManager();
+    #tfliteManager = new TfliteManager$1();
 
     get tfliteName() {
         return this.#tfliteManager.name;
@@ -6279,7 +6309,7 @@ let Device$1 = class Device {
     // TFLITE MODEL CONFIG
 
     static get TfliteTasks() {
-        return TfliteManager.Tasks;
+        return TfliteManager$1.Tasks;
     }
 
     get tfliteTask() {
@@ -6302,7 +6332,7 @@ let Device$1 = class Device {
         return this.#tfliteManager.sensorTypes;
     }
     get allowedTfliteSensorTypes() {
-        return this.sensorTypes.filter((sensorType) => TfliteManager.SensorTypes.includes(sensorType));
+        return this.sensorTypes.filter((sensorType) => TfliteManager$1.SensorTypes.includes(sensorType));
     }
     /** @param {SensorType[]} newSensorTypes */
     setTfliteSensorTypes(newSensorTypes) {
@@ -7816,12 +7846,14 @@ class DevicePair {
     // VIBRATION
 
     
-
-    /** @param  {...VibrationConfiguration} vibrationConfigurations */
-    async triggerVibration(...vibrationConfigurations) {
+    /**
+     * @param {VibrationConfiguration[]} vibrationConfigurations
+     * @param {boolean} sendImmediately
+     */
+    async triggerVibration(vibrationConfigurations, sendImmediately) {
         const promises = this.sides
             .map((side) => {
-                return this[side]?.triggerVibration(...vibrationConfigurations);
+                return this[side]?.triggerVibration(vibrationConfigurations, sendImmediately);
             })
             .filter(Boolean);
         return Promise.allSettled(promises);

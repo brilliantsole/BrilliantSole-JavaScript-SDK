@@ -383,10 +383,12 @@ BS.Device.AddEventListener("availableDevices", (event) => {
             /** @type {HTMLButtonElement} */
             const triggerVibrationButton = availableDeviceContainer.querySelector(".triggerVibration");
             triggerVibrationButton.addEventListener("click", () => {
-                device.triggerVibration({
-                    type: "waveformEffect",
-                    waveformEffect: { segments: [{ effect: "doubleClick100" }] },
-                });
+                device.triggerVibration([
+                    {
+                        type: "waveformEffect",
+                        waveformEffect: { segments: [{ effect: "doubleClick100" }] },
+                    },
+                ]);
             });
             device.addEventListener("isConnected", () => {
                 triggerVibrationButton.disabled = !device.isConnected;

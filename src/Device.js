@@ -26,9 +26,11 @@ const _console = createConsole("Device", { log: true });
 /** @typedef {import("./FirmwareManager.js").FirmwareManagerEventType} FirmwareManagerEventType */
 /** @typedef {import("./DeviceInformationManager.js").DeviceInformationManagerEventType} DeviceInformationManagerEventType */
 
-/** @typedef {"connectionStatus" | ConnectionStatus | "isConnected" | ConnectionMessageType | DeviceInformationManagerEventType | SensorType | "connectionMessage" | FileTransferManagerEventType | TfliteManagerEventType | FirmwareManagerEventType} DeviceEventType */
+/** @typedef {import("./connection/BaseConnectionManager.js").ConnectionStatus} ConnectionStatus */
 
-/** @typedef {"deviceConnected" | "deviceDisconnected" | "deviceIsConnected" | "availableDevices"} StaticDeviceEventType */
+/** @typedef {import("./sensor/SensorConfigurationManager.js").SensorConfiguration} SensorConfiguration */
+
+/** @typedef {"connectionStatus" | ConnectionStatus | "isConnected" | ConnectionMessageType | DeviceInformationManagerEventType | SensorType | "connectionMessage" | FileTransferManagerEventType | TfliteManagerEventType | FirmwareManagerEventType} DeviceEventType */
 
 /** @typedef {import("./utils/EventDispatcher.js").EventDispatcherListener} EventDispatcherListener */
 /** @typedef {import("./utils/EventDispatcher.js").EventDispatcherOptions} EventDispatcherOptions */
@@ -40,51 +42,16 @@ const _console = createConsole("Device", { log: true });
  * @property {DeviceEventType} type
  * @property {Object} message
  */
-
 /** @typedef {(event: DeviceEvent) => void} DeviceEventListener */
 
+/** @typedef {"deviceConnected" | "deviceDisconnected" | "deviceIsConnected" | "availableDevices"} StaticDeviceEventType */
 /**
  * @typedef StaticDeviceEvent
  * @type {Object}
  * @property {StaticDeviceEventType} type
  * @property {Object} message
  */
-
 /** @typedef {(event: StaticDeviceEvent) => void} StaticDeviceEventListener */
-
-/** @typedef {import("./connection/BaseConnectionManager.js").ConnectionStatus} ConnectionStatus */
-
-/** @typedef {"leftInsole" | "rightInsole"} DeviceType */
-/** @typedef {"left" | "right"} InsoleSide */
-
-/** @typedef {import("./sensor/SensorConfigurationManager.js").SensorConfiguration} SensorConfiguration */
-
-/** @typedef {import("./vibration/VibrationManager.js").VibrationLocation} VibrationLocation */
-/** @typedef {import("./vibration/VibrationManager.js").VibrationType} VibrationType */
-
-/** @typedef {import("./vibration/VibrationManager.js").VibrationWaveformEffectSegment} VibrationWaveformEffectSegment */
-/**
- * @typedef VibrationWaveformEffectConfiguration
- * @type {Object}
- * @property {VibrationWaveformEffectSegment[]} segments
- * @property {number?} loopCount how many times the entire sequence should loop (int ranging [0, 6])
- */
-
-/** @typedef {import("./vibration/VibrationManager.js").VibrationWaveformSegment} VibrationWaveformSegment */
-/**
- * @typedef VibrationWaveformConfiguration
- * @type {Object}
- * @property {VibrationWaveformSegment[]} segments
- */
-
-/**
- * @typedef VibrationConfiguration
- * @type {Object}
- * @property {VibrationLocation[]} locations
- * @property {VibrationType} type
- * @property {VibrationWaveformEffectConfiguration?} waveformEffect use if type is "waveformEffect"
- * @property {VibrationWaveformConfiguration?} waveform use if type is "waveform"
- */
 
 class Device {
     get id() {
@@ -107,6 +74,8 @@ class Device {
 
         this.#informationManager.sendMessage = this.#sendTxMessages.bind(this);
         this.#informationManager.eventDispatcher = this.#eventDispatcher;
+
+        this.#vibrationManager.sendMessage = this.#sendTxMessages.bind(this);
 
         this.addEventListener("getMtu", () => {
             this.#firmwareManager.mtu = this.mtu;
@@ -689,6 +658,7 @@ class Device {
     }
 
     // VIBRATION
+
     #vibrationManager = new VibrationManager();
     static get VibrationLocations() {
         return VibrationManager.Locations;
@@ -720,47 +690,13 @@ class Device {
         return VibrationManager.MaxNumberOfWaveformSegments;
     }
 
-    /** @param  {...VibrationConfiguration} vibrationConfigurations */
-    async triggerVibration(...vibrationConfigurations) {
-        /** @type {ArrayBuffer} */
-        let triggerVibrationData;
-        vibrationConfigurations.forEach((vibrationConfiguration) => {
-            const { type } = vibrationConfiguration;
-
-            let { locations } = vibrationConfiguration;
-            locations = locations || this.#vibrationManager.locations.slice();
-
-            /** @type {DataView} */
-            let dataView;
-
-            switch (type) {
-                case "waveformEffect":
-                    {
-                        const { waveformEffect } = vibrationConfiguration;
-                        if (!waveformEffect) {
-                            throw Error("waveformEffect not defined in vibrationConfiguration");
-                        }
-                        const { segments, loopCount } = waveformEffect;
-                        dataView = this.#vibrationManager.createWaveformEffectsData(locations, segments, loopCount);
-                    }
-                    break;
-                case "waveform":
-                    {
-                        const { waveform } = vibrationConfiguration;
-                        if (!waveform) {
-                            throw Error("waveform not defined in vibrationConfiguration");
-                        }
-                        const { segments } = waveform;
-                        dataView = this.#vibrationManager.createWaveformData(locations, segments);
-                    }
-                    break;
-                default:
-                    throw Error(`invalid vibration type "${type}"`);
-            }
-            _console.log({ type, dataView });
-            triggerVibrationData = concatenateArrayBuffers(triggerVibrationData, dataView);
-        });
-        await this.#sendTxMessages([{ type: "triggerVibration", data: triggerVibrationData.buffer }]);
+    /** @typedef {import("./vibration/VibrationManager.js").VibrationConfiguration} VibrationConfiguration */
+    /**
+     * @param  {VibrationConfiguration[]} vibrationConfigurations
+     * @param  {boolean} sendImmediately
+     */
+    async triggerVibration(vibrationConfigurations, sendImmediately) {
+        this.#vibrationManager.triggerVibration(vibrationConfigurations, sendImmediately);
     }
 
     // FILE TRANSFER

@@ -224,13 +224,15 @@ class DevicePair {
 
     // VIBRATION
 
-    /** @typedef {import("../Device.js").VibrationConfiguration} VibrationConfiguration */
-
-    /** @param  {...VibrationConfiguration} vibrationConfigurations */
-    async triggerVibration(...vibrationConfigurations) {
+    /** @typedef {import("../vibration/VibrationManager.js").VibrationConfiguration} VibrationConfiguration */
+    /**
+     * @param {VibrationConfiguration[]} vibrationConfigurations
+     * @param {boolean} sendImmediately
+     */
+    async triggerVibration(vibrationConfigurations, sendImmediately) {
         const promises = this.sides
             .map((side) => {
-                return this[side]?.triggerVibration(...vibrationConfigurations);
+                return this[side]?.triggerVibration(vibrationConfigurations, sendImmediately);
             })
             .filter(Boolean);
         return Promise.allSettled(promises);

@@ -438,14 +438,17 @@ addVibrationButton.addEventListener("click", () => {
     updateTriggerVibrationsButtonDisabled();
 });
 
+/** @typedef {import("../../build/brilliantsole.module.js").VibrationConfiguration} VibrationConfiguration */
+/** @typedef {import("../../build/brilliantsole.module.js").VibrationWaveformEffectSegment} VibrationWaveformEffectSegment */
+
 const triggerVibrationsButton = document.getElementById("triggerVibrations");
 triggerVibrationsButton.addEventListener("click", () => {
-    /** @type {import("../../build/brilliantsole.module.js").BS.DeviceVibrationConfiguration[]} */
+    /** @type {VibrationConfiguration[]} */
     let vibrationConfigurations = [];
     Array.from(vibrationTemplate.parentElement.querySelectorAll(".vibration"))
         .filter((vibrationContainer) => vibrationContainer.querySelector(".shouldTrigger").checked)
         .forEach((vibrationContainer) => {
-            /** @type {import("../../build/brilliantsole.module.js").BS.DeviceVibrationConfiguration} */
+            /** @type {VibrationConfiguration} */
             const vibrationConfiguration = {
                 locations: [],
             };
@@ -465,7 +468,7 @@ triggerVibrationsButton.addEventListener("click", () => {
                         segments: Array.from(
                             vibrationContainer.querySelectorAll(".waveformEffect .waveformEffectSegment")
                         ).map((waveformEffectSegmentContainer) => {
-                            /** @type {import("../../build/brilliantsole.module.js").BS.DeviceVibrationWaveformEffectSegment} */
+                            /** @type {VibrationWaveformEffectSegment} */
                             const waveformEffectSegment = {
                                 loopCount: Number(waveformEffectSegmentContainer.querySelector(".loopCount").value),
                             };
@@ -501,7 +504,7 @@ triggerVibrationsButton.addEventListener("click", () => {
         });
     console.log({ vibrationConfigurations });
     if (vibrationConfigurations.length > 0) {
-        device.triggerVibration(...vibrationConfigurations);
+        device.triggerVibration(vibrationConfigurations);
     }
 });
 device.addEventListener("isConnected", () => {
@@ -653,10 +656,19 @@ const setTfliteNameInput = document.getElementById("setTfliteNameInput");
 /** @type {HTMLButtonElement} */
 const setTfliteNameButton = document.getElementById("setTfliteNameButton");
 
+function updateSetTfliteNameButton() {
+    const enabled = device.isConnected && setTfliteNameInput.value.length > 0;
+    setTfliteNameButton.disabled = !enabled;
+}
+
 device.addEventListener("isConnected", () => {
     const disabled = !device.isConnected;
     setTfliteNameInput.disabled = disabled;
-    setTfliteNameButton.disabled = disabled;
+    updateSetTfliteNameButton();
+});
+
+setTfliteNameInput.addEventListener("input", () => {
+    updateSetTfliteNameButton();
 });
 
 device.addEventListener("getTfliteName", () => {
@@ -666,7 +678,7 @@ device.addEventListener("getTfliteName", () => {
     setTfliteNameButton.disabled = !device.isConnected;
 
     setTfliteNameInput.value = "";
-    setTfliteNameInput.disabled = !device.isConnected;
+    updateSetTfliteNameButton();
 });
 
 setTfliteNameButton.addEventListener("click", () => {

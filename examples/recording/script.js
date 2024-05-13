@@ -449,10 +449,12 @@ function updateRecordingCountdown(recordingCountdown) {
  */
 function vibrate(effect) {
     BS.Device.ConnectedDevices.forEach((device) => {
-        device.triggerVibration({
-            type: "waveformEffect",
-            waveformEffect: { segments: [{ effect }] },
-        });
+        device.triggerVibration([
+            {
+                type: "waveformEffect",
+                waveformEffect: { segments: [{ effect }] },
+            },
+        ]);
     });
 }
 

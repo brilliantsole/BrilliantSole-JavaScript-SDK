@@ -7,6 +7,7 @@ import { concatenateArrayBuffers } from "../utils/ArrayBufferUtils.js";
 import { parseMessage } from "../utils/ParseUtils.js";
 import DeviceInformationManager from "../DeviceInformationManager.js";
 import InformationManager from "../InformationManager.js";
+import VibrationManager from "../vibration/VibrationManager.js";
 
 const _console = createConsole("BaseConnectionManager", { log: true });
 
@@ -15,6 +16,7 @@ const _console = createConsole("BaseConnectionManager", { log: true });
 /** @typedef {import("../FirmwareManager.js").FirmwareMessageType} FirmwareMessageType */
 /** @typedef {import("../DeviceInformationManager.js").DeviceInformationMessageType} DeviceInformationMessageType */
 /** @typedef {import("../InformationManager.js").InformationMessageType} InformationMessageType */
+/** @typedef {import("../vibration/VibrationManager.js").VibrationMessageType} VibrationMessageType */
 
 /** @typedef {"webBluetooth" | "noble" | "webSocketClient"} ConnectionType */
 /** @typedef {"not connected" | "connecting" | "connected" | "disconnecting"} ConnectionStatus */
@@ -25,7 +27,7 @@ const _console = createConsole("BaseConnectionManager", { log: true });
  * "pressurePositions" |
  * "sensorScalars" |
  * "sensorData" |
- * "triggerVibration" |
+ * VibrationMessageType |
  * InformationMessageType |
  * TfliteMessageType |
  * FileTransferMessageType |
@@ -75,8 +77,7 @@ class BaseConnectionManager {
         "sensorScalars",
         "sensorData",
 
-        "triggerVibration",
-
+        ...VibrationManager.MessageTypes,
         ...TfliteManager.MessageTypes,
         ...FileTransferManager.MessageTypes,
     ];

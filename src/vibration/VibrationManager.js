@@ -24,7 +24,43 @@ const _console = createConsole("VibrationManager");
  * @property {number} amplitude float ranging [0, 1]
  */
 
+/** @typedef { "triggerVibration" } VibrationMessageType */
+
+/**
+ * @typedef VibrationWaveformEffectConfiguration
+ * @type {Object}
+ * @property {VibrationWaveformEffectSegment[]} segments
+ * @property {number?} loopCount how many times the entire sequence should loop (int ranging [0, 6])
+ */
+
+/** @typedef {import("./vibration/VibrationManager.js").VibrationWaveformSegment} VibrationWaveformSegment */
+/**
+ * @typedef VibrationWaveformConfiguration
+ * @type {Object}
+ * @property {VibrationWaveformSegment[]} segments
+ */
+
+/**
+ * @typedef VibrationConfiguration
+ * @type {Object}
+ * @property {VibrationLocation[]} locations
+ * @property {VibrationType} type
+ * @property {VibrationWaveformEffectConfiguration?} waveformEffect use if type is "waveformEffect"
+ * @property {VibrationWaveformConfiguration?} waveform use if type is "waveform"
+ */
+
 class VibrationManager {
+    /** @type {VibrationMessageType[]} */
+    static #MessageTypes = ["triggerVibration"];
+    static get MessageTypes() {
+        return this.#MessageTypes;
+    }
+    get messageTypes() {
+        return TfliteManager.MessageTypes;
+    }
+
+    // LOCATIONS
+
     /** @type {VibrationLocation[]} */
     static #Locations = ["front", "rear"];
     static get Locations() {
@@ -219,7 +255,7 @@ class VibrationManager {
      * @param {VibrationWaveformEffectSegment[]} waveformEffectSegments
      * @param {number?} waveformEffectSequenceLoopCount how many times the entire sequence should loop (int ranging [0, 6])
      */
-    createWaveformEffectsData(locations, waveformEffectSegments, waveformEffectSequenceLoopCount = 0) {
+    #createWaveformEffectsData(locations, waveformEffectSegments, waveformEffectSequenceLoopCount = 0) {
         this.#verifyWaveformEffectSegments(waveformEffectSegments);
         this.#verifyWaveformEffectSequenceLoopCount(waveformEffectSequenceLoopCount);
 
@@ -281,7 +317,7 @@ class VibrationManager {
      * @param {VibrationLocation[]} locations
      * @param {VibrationWaveformSegment[]} waveformSegments
      */
-    createWaveformData(locations, waveformSegments) {
+    #createWaveformData(locations, waveformSegments) {
         this.#verifyWaveformSegments(waveformSegments);
         const dataView = new DataView(new ArrayBuffer(waveformSegments.length * 2));
         waveformSegments.forEach((waveformSegment, index) => {
@@ -321,6 +357,61 @@ class VibrationManager {
         _console.log({ data });
         return data;
     }
+
+    /**
+     * @param  {VibrationConfiguration[]} vibrationConfigurations
+     * @param  {boolean} sendImmediately
+     */
+    async triggerVibration(vibrationConfigurations, sendImmediately) {
+        /** @type {ArrayBuffer} */
+        let triggerVibrationData;
+        vibrationConfigurations.forEach((vibrationConfiguration) => {
+            const { type } = vibrationConfiguration;
+
+            let { locations } = vibrationConfiguration;
+            locations = locations || this.locations.slice();
+
+            /** @type {DataView} */
+            let dataView;
+
+            switch (type) {
+                case "waveformEffect":
+                    {
+                        const { waveformEffect } = vibrationConfiguration;
+                        if (!waveformEffect) {
+                            throw Error("waveformEffect not defined in vibrationConfiguration");
+                        }
+                        const { segments, loopCount } = waveformEffect;
+                        dataView = this.#createWaveformEffectsData(locations, segments, loopCount);
+                    }
+                    break;
+                case "waveform":
+                    {
+                        const { waveform } = vibrationConfiguration;
+                        if (!waveform) {
+                            throw Error("waveform not defined in vibrationConfiguration");
+                        }
+                        const { segments } = waveform;
+                        dataView = this.#createWaveformData(locations, segments);
+                    }
+                    break;
+                default:
+                    throw Error(`invalid vibration type "${type}"`);
+            }
+            _console.log({ type, dataView });
+            triggerVibrationData = concatenateArrayBuffers(triggerVibrationData, dataView);
+        });
+        await this.sendMessage([{ type: "triggerVibration", data: triggerVibrationData }], sendImmediately);
+    }
+
+    /**
+     * @callback SendMessageCallback
+     * @param {{type: VibrationMessageType, data: ArrayBuffer}[]} messages
+     * @param {boolean} sendImmediately
+     */
+
+    /** @type {SendMessageCallback} */
+    sendMessage;
 }
 
 export default VibrationManager;
