@@ -223,7 +223,7 @@ function capitalizeFirstCharacter(string) {
     return string[0].toUpperCase() + string.slice(1);
 }
 
-const _console$t = createConsole("EventDispatcher", { log: false });
+const _console$v = createConsole("EventDispatcher", { log: false });
 
 /**
  * @typedef EventDispatcherEvent
@@ -248,9 +248,9 @@ class EventDispatcher {
      * @param {string[]?} eventTypes
      */
     constructor(target, eventTypes) {
-        _console$t.assertWithError(target, "target is required");
+        _console$v.assertWithError(target, "target is required");
         this.#target = target;
-        _console$t.assertWithError(Array.isArray(eventTypes) || eventTypes == undefined, "eventTypes must be an array");
+        _console$v.assertWithError(Array.isArray(eventTypes) || eventTypes == undefined, "eventTypes must be an array");
         this.#eventTypes = eventTypes;
     }
 
@@ -275,7 +275,7 @@ class EventDispatcher {
      * @throws {Error}
      */
     #assertValidEventType(type) {
-        _console$t.assertWithError(this.#isValidEventType(type), `invalid event type "${type}"`);
+        _console$v.assertWithError(this.#isValidEventType(type), `invalid event type "${type}"`);
     }
 
     /** @type {Object.<string, [function]?>?} */
@@ -287,7 +287,7 @@ class EventDispatcher {
      * @param {EventDispatcherOptions?} options
      */
     addEventListener(type, listener, options) {
-        _console$t.log(`adding "${type}" eventListener`, listener);
+        _console$v.log(`adding "${type}" eventListener`, listener);
         this.#assertValidEventType(type);
 
         if (!this.#listeners) this.#listeners = {};
@@ -317,7 +317,7 @@ class EventDispatcher {
      * @param {EventDispatcherListener} listener
      */
     hasEventListener(type, listener) {
-        _console$t.log(`has "${type}" eventListener?`, listener);
+        _console$v.log(`has "${type}" eventListener?`, listener);
         this.#assertValidEventType(type);
         return this.#listeners?.[type]?.includes(listener);
     }
@@ -327,7 +327,7 @@ class EventDispatcher {
      * @param {EventDispatcherListener} listener
      */
     removeEventListener(type, listener) {
-        _console$t.log(`removing "${type}" eventListener`, listener);
+        _console$v.log(`removing "${type}" eventListener`, listener);
         this.#assertValidEventType(type);
         if (this.hasEventListener(type, listener)) {
             const index = this.#listeners[type].indexOf(listener);
@@ -352,7 +352,7 @@ class EventDispatcher {
                 try {
                     array[i].call(this, event);
                 } catch (error) {
-                    _console$t.error(error);
+                    _console$v.error(error);
                 }
             }
         }
@@ -360,7 +360,7 @@ class EventDispatcher {
 
     /** @param {string} type */
     waitForEvent(type) {
-        _console$t.log(`waiting for event "${type}"`);
+        _console$v.log(`waiting for event "${type}"`);
         this.#assertValidEventType(type);
         return new Promise((resolve) => {
             this.addEventListener(
@@ -380,7 +380,7 @@ class EventDispatcher {
  */
 function addEventListeners(target, boundEventListeners) {
     let addEventListener = target.addEventListener || target.addListener || target.on || target.AddEventListener;
-    _console$t.assertWithError(addEventListener, "no add listener function found for target");
+    _console$v.assertWithError(addEventListener, "no add listener function found for target");
     addEventListener = addEventListener.bind(target);
     Object.entries(boundEventListeners).forEach(([eventType, eventListener]) => {
         addEventListener(eventType, eventListener);
@@ -393,14 +393,14 @@ function addEventListeners(target, boundEventListeners) {
  */
 function removeEventListeners(target, boundEventListeners) {
     let removeEventListener = target.removeEventListener || target.removeListener || target.RemoveEventListener;
-    _console$t.assertWithError(removeEventListener, "no remove listener function found for target");
+    _console$v.assertWithError(removeEventListener, "no remove listener function found for target");
     removeEventListener = removeEventListener.bind(target);
     Object.entries(boundEventListeners).forEach(([eventType, eventListener]) => {
         removeEventListener(eventType, eventListener);
     });
 }
 
-const _console$s = createConsole("Timer", { log: false });
+const _console$u = createConsole("Timer", { log: false });
 
 class Timer {
     /** @type {function} */
@@ -409,8 +409,8 @@ class Timer {
         return this.#callback;
     }
     set callback(newCallback) {
-        _console$s.assertTypeWithError(newCallback, "function");
-        _console$s.log({ newCallback });
+        _console$u.assertTypeWithError(newCallback, "function");
+        _console$u.log({ newCallback });
         this.#callback = newCallback;
         if (this.isRunning) {
             this.restart();
@@ -423,9 +423,9 @@ class Timer {
         return this.#interval;
     }
     set interval(newInterval) {
-        _console$s.assertTypeWithError(newInterval, "number");
-        _console$s.assertWithError(newInterval > 0, "interval must be above 0");
-        _console$s.log({ newInterval });
+        _console$u.assertTypeWithError(newInterval, "number");
+        _console$u.assertWithError(newInterval > 0, "interval must be above 0");
+        _console$u.log({ newInterval });
         this.#interval = newInterval;
         if (this.isRunning) {
             this.restart();
@@ -449,18 +449,18 @@ class Timer {
 
     start() {
         if (this.isRunning) {
-            _console$s.log("interval already running");
+            _console$u.log("interval already running");
             return;
         }
-        _console$s.log("starting interval");
+        _console$u.log("starting interval");
         this.#intervalId = setInterval(this.#callback, this.#interval);
     }
     stop() {
         if (!this.isRunning) {
-            _console$s.log("interval already not running");
+            _console$u.log("interval already not running");
             return;
         }
-        _console$s.log("stopping interval");
+        _console$u.log("stopping interval");
         clearInterval(this.#intervalId);
         this.#intervalId = null;
     }
@@ -501,7 +501,7 @@ function crc32(dataIterable) {
     return crc;
 }
 
-const _console$r = createConsole("ArrayBufferUtils", { log: false });
+const _console$t = createConsole("ArrayBufferUtils", { log: false });
 
 const textEncoder$1 = new TextEncoder();
 
@@ -576,7 +576,7 @@ function sliceDataView(dataView, begin, length) {
     if (length != undefined) {
         end = dataView.byteOffset + begin + length;
     }
-    _console$r.log({ dataView, begin, end, length });
+    _console$t.log({ dataView, begin, end, length });
     return new DataView(dataView.buffer.slice(dataView.byteOffset + begin, end));
 }
 
@@ -602,7 +602,7 @@ async function getFileBuffer(file) {
     return fileBuffer;
 }
 
-const _console$q = createConsole("FileTransferManager", { log: true });
+const _console$s = createConsole("FileTransferManager", { log: true });
 
 /**
  * @typedef { "maxFileLength" |
@@ -628,10 +628,12 @@ const _console$q = createConsole("FileTransferManager", { log: true });
 
 /** @typedef {FileTransferMessageType | "fileTransferProgress" | "fileTransferComplete" | "fileReceived"} FileTransferManagerEventType */
 
+
+
 /**
  * @typedef FileTransferManagerEvent
  * @type {Object}
- * @property {FileTransferManager} target
+ * @property {Device} target
  * @property {FileTransferManagerEventType} type
  * @property {Object} message
  */
@@ -716,11 +718,11 @@ class FileTransferManager {
     }
     /** @param {FileType} type */
     #assertValidType(type) {
-        _console$q.assertEnumWithError(type, this.types);
+        _console$s.assertEnumWithError(type, this.types);
     }
     /** @param {number} typeEnum */
     #assertValidTypeEnum(typeEnum) {
-        _console$q.assertWithError(this.types[typeEnum], `invalid typeEnum ${typeEnum}`);
+        _console$s.assertWithError(this.types[typeEnum], `invalid typeEnum ${typeEnum}`);
     }
 
     /** @type {FileTransferStatus[]} */
@@ -733,7 +735,7 @@ class FileTransferManager {
     }
     /** @param {number} statusEnum */
     #assertValidStatusEnum(statusEnum) {
-        _console$q.assertWithError(this.statuses[statusEnum], `invalid statusEnum ${statusEnum}`);
+        _console$s.assertWithError(this.statuses[statusEnum], `invalid statusEnum ${statusEnum}`);
     }
 
     /** @type {FileTransferCommand[]} */
@@ -746,7 +748,7 @@ class FileTransferManager {
     }
     /** @param {FileTransferCommand} command */
     #assertValidCommand(command) {
-        _console$q.assertEnumWithError(command, this.commands);
+        _console$s.assertEnumWithError(command, this.commands);
     }
 
     static #MaxLength = 0; // kB
@@ -760,14 +762,14 @@ class FileTransferManager {
     }
     /** @param {DataView} dataView */
     #parseMaxLength(dataView) {
-        _console$q.log("parseFileMaxLength", dataView);
+        _console$s.log("parseFileMaxLength", dataView);
         const maxLength = dataView.getUint32(0, true);
-        _console$q.log(`maxLength: ${maxLength / 1024}kB`);
+        _console$s.log(`maxLength: ${maxLength / 1024}kB`);
         this.#maxLength = maxLength;
     }
     /** @param {number} length */
     #assertValidLength(length) {
-        _console$q.assertWithError(
+        _console$s.assertWithError(
             length <= this.maxLength,
             `file length ${length}kB too large - must be ${this.maxLength}kB or less`
         );
@@ -780,7 +782,7 @@ class FileTransferManager {
     }
     /** @param {DataView} dataView */
     #parseType(dataView) {
-        _console$q.log("parseFileType", dataView);
+        _console$s.log("parseFileType", dataView);
         const typeEnum = dataView.getUint8(0);
         this.#assertValidTypeEnum(typeEnum);
         const type = this.types[typeEnum];
@@ -788,7 +790,7 @@ class FileTransferManager {
     }
     /** @param {FileType} type */
     #updateType(type) {
-        _console$q.log({ fileTransferType: type });
+        _console$s.log({ fileTransferType: type });
         this.#type = type;
         this.#dispatchEvent({ type: "getFileTransferType", message: { fileType: type } });
     }
@@ -799,7 +801,7 @@ class FileTransferManager {
     async #setType(newType, sendImmediately) {
         this.#assertValidType(newType);
         if (this.type == newType) {
-            _console$q.log(`redundant type assignment ${newType}`);
+            _console$s.log(`redundant type assignment ${newType}`);
             return;
         }
 
@@ -817,14 +819,14 @@ class FileTransferManager {
     }
     /** @param {DataView} dataView */
     #parseLength(dataView) {
-        _console$q.log("parseFileLength", dataView);
+        _console$s.log("parseFileLength", dataView);
         const length = dataView.getUint32(0, true);
 
         this.#updateLength(length);
     }
     /** @param {number} length */
     #updateLength(length) {
-        _console$q.log(`length: ${length / 1024}kB`);
+        _console$s.log(`length: ${length / 1024}kB`);
         this.#length = length;
         this.#dispatchEvent({ type: "getFileLength", message: { fileLength: length } });
     }
@@ -833,10 +835,10 @@ class FileTransferManager {
      * @param {boolean} sendImmediately
      */
     async #setLength(newLength, sendImmediately) {
-        _console$q.assertTypeWithError(newLength, "number");
+        _console$s.assertTypeWithError(newLength, "number");
         this.#assertValidLength(newLength);
         if (this.length == newLength) {
-            _console$q.log(`redundant length assignment ${newLength}`);
+            _console$s.log(`redundant length assignment ${newLength}`);
             return;
         }
 
@@ -855,13 +857,13 @@ class FileTransferManager {
     }
     /** @param {DataView} dataView */
     #parseChecksum(dataView) {
-        _console$q.log("checksum", dataView);
+        _console$s.log("checksum", dataView);
         const checksum = dataView.getUint32(0, true);
         this.#updateChecksum(checksum);
     }
     /** @param {number} checksum */
     #updateChecksum(checksum) {
-        _console$q.log({ checksum });
+        _console$s.log({ checksum });
         this.#checksum = checksum;
         this.#dispatchEvent({ type: "getFileChecksum", message: { fileChecksum: checksum } });
     }
@@ -870,9 +872,9 @@ class FileTransferManager {
      * @param {boolean} sendImmediately
      */
     async #setChecksum(newChecksum, sendImmediately) {
-        _console$q.assertTypeWithError(newChecksum, "number");
+        _console$s.assertTypeWithError(newChecksum, "number");
         if (this.checksum == newChecksum) {
-            _console$q.log(`redundant checksum assignment ${newChecksum}`);
+            _console$s.log(`redundant checksum assignment ${newChecksum}`);
             return;
         }
 
@@ -910,7 +912,7 @@ class FileTransferManager {
     }
     /** @param {DataView} dataView */
     #parseStatus(dataView) {
-        _console$q.log("parseFileStatus", dataView);
+        _console$s.log("parseFileStatus", dataView);
         const statusEnum = dataView.getUint8(0);
         this.#assertValidStatusEnum(statusEnum);
         const status = this.statuses[statusEnum];
@@ -918,16 +920,16 @@ class FileTransferManager {
     }
     /** @param {FileTransferStatus} status */
     #updateStatus(status) {
-        _console$q.log({ status });
+        _console$s.log({ status });
         this.#status = status;
         this.#dispatchEvent({ type: "fileTransferStatus", message: { fileTransferStatus: status } });
         this.#receivedBlocks.length = 0;
     }
     #assertIsIdle() {
-        _console$q.assertWithError(this.#status == "idle", "status is not idle");
+        _console$s.assertWithError(this.#status == "idle", "status is not idle");
     }
     #assertIsNotIdle() {
-        _console$q.assertWithError(this.#status != "idle", "status is idle");
+        _console$s.assertWithError(this.#status != "idle", "status is idle");
     }
 
     // BLOCK
@@ -937,13 +939,13 @@ class FileTransferManager {
 
     /** @param {DataView} dataView */
     async #parseBlock(dataView) {
-        _console$q.log("parseFileBlock", dataView);
+        _console$s.log("parseFileBlock", dataView);
         this.#receivedBlocks.push(dataView.buffer);
 
         const bytesReceived = this.#receivedBlocks.reduce((sum, arrayBuffer) => (sum += arrayBuffer.byteLength), 0);
         const progress = bytesReceived / this.#length;
 
-        _console$q.log(`received ${bytesReceived} of ${this.#length} bytes (${progress * 100}%)`);
+        _console$s.log(`received ${bytesReceived} of ${this.#length} bytes (${progress * 100}%)`);
 
         this.#dispatchEvent({ type: "fileTransferProgress", message: { progress } });
 
@@ -951,7 +953,7 @@ class FileTransferManager {
             return;
         }
 
-        _console$q.log("file transfer complete");
+        _console$s.log("file transfer complete");
 
         let fileName = new Date().toLocaleString();
         switch (this.type) {
@@ -970,10 +972,10 @@ class FileTransferManager {
 
         const arrayBuffer = await file.arrayBuffer();
         const checksum = crc32(arrayBuffer);
-        _console$q.log({ checksum });
+        _console$s.log({ checksum });
 
         if (checksum != this.#checksum) {
-            _console$q.error(`wrong checksum - expected ${this.#checksum}, got ${checksum}`);
+            _console$s.error(`wrong checksum - expected ${this.#checksum}, got ${checksum}`);
             return;
         }
 
@@ -990,7 +992,7 @@ class FileTransferManager {
      * @param {DataView} dataView
      */
     parseMessage(messageType, dataView) {
-        _console$q.log({ messageType });
+        _console$s.log({ messageType });
 
         switch (messageType) {
             case "maxFileLength":
@@ -1062,18 +1064,18 @@ class FileTransferManager {
             return;
         }
 
-        const slicedBuffer = buffer.slice(offset, offset + (this.#mtu - 3 - 3));
+        const slicedBuffer = buffer.slice(offset, offset + (this.mtu - 3 - 3));
         console.log("slicedBuffer", slicedBuffer);
         const bytesLeft = buffer.byteLength - offset;
         const progress = 1 - bytesLeft / buffer.byteLength;
-        _console$q.log(
+        _console$s.log(
             `sending bytes ${offset}-${offset + slicedBuffer.byteLength} of ${buffer.byteLength} bytes (${
                 progress * 100
             }%)`
         );
         this.#dispatchEvent({ type: "fileTransferProgress", message: { progress } });
         if (slicedBuffer.byteLength == 0) {
-            _console$q.log("finished sending buffer");
+            _console$s.log("finished sending buffer");
             this.#dispatchEvent({ type: "fileTransferComplete", message: { direction: "sending" } });
         } else {
             await this.sendMessage([{ type: "setFileTransferBlock", data: slicedBuffer }]);
@@ -1098,7 +1100,7 @@ class FileTransferManager {
 
     /**
      * @callback SendMessageCallback
-     * @param {{type: FileTransferMessageType, data: ArrayBuffer}} messages
+     * @param {{type: FileTransferMessageType, data: ArrayBuffer}[]} messages
      * @param {boolean} sendImmediately
      */
 
@@ -1107,13 +1109,8 @@ class FileTransferManager {
 
     // MTU
 
-    #mtu;
-    get mtu() {
-        return this.#mtu;
-    }
-    set mtu(newMtu) {
-        this.#mtu = newMtu;
-    }
+    /** @type {number} */
+    mtu;
 }
 
 const textEncoder = new TextEncoder();
@@ -1289,7 +1286,7 @@ function arrayWithoutDuplicates(array) {
  * @property {CenterOfPressure?} normalizedCenter
  */
 
-const _console$p = createConsole("PressureSensorDataManager", { log: true });
+const _console$r = createConsole("PressureSensorDataManager", { log: true });
 
 class PressureSensorDataManager {
     /** @type {PressureSensorPosition[]} */
@@ -1318,7 +1315,7 @@ class PressureSensorDataManager {
             });
         }
 
-        _console$p.log({ positions });
+        _console$r.log({ positions });
 
         this.#positions = positions;
 
@@ -1362,14 +1359,14 @@ class PressureSensorDataManager {
             pressure.normalizedCenter = this.#centerOfPressureHelper.updateAndGetNormalization(pressure.center);
         }
 
-        _console$p.log({ pressure });
+        _console$r.log({ pressure });
         return pressure;
     }
 }
 
 /** @typedef {"acceleration" | "gravity" | "linearAcceleration" | "gyroscope" | "magnetometer" | "gameRotation" | "rotation"} MotionSensorType */
 
-const _console$o = createConsole("MotionSensorDataManager", { log: false });
+const _console$q = createConsole("MotionSensorDataManager", { log: false });
 
 /**
  * @typedef Vector3
@@ -1409,7 +1406,7 @@ class MotionSensorDataManager {
 
         const vector = { x, y, z };
 
-        _console$o.log({ vector });
+        _console$q.log({ vector });
         return vector;
     }
 
@@ -1436,7 +1433,7 @@ class MotionSensorDataManager {
 
         const quaternion = { x, y, z, w };
 
-        _console$o.log({ quaternion });
+        _console$q.log({ quaternion });
         return quaternion;
     }
 }
@@ -1457,7 +1454,7 @@ class BarometerSensorDataManager {
     }
 }
 
-const _console$n = createConsole("ParseUtils", { log: true });
+const _console$p = createConsole("ParseUtils", { log: true });
 
 const textDecoder = new TextDecoder();
 
@@ -1502,11 +1499,11 @@ function parseMessage(dataView, enumeration, callback, context, parseMessageLeng
             messageLength = dataView.getUint8(byteOffset++);
         }
 
-        _console$n.log({ messageTypeEnum, messageType, messageLength, dataView, byteOffset });
-        _console$n.assertWithError(messageType, `invalid messageTypeEnum ${messageTypeEnum}`);
+        _console$p.log({ messageTypeEnum, messageType, messageLength, dataView, byteOffset });
+        _console$p.assertWithError(messageType, `invalid messageTypeEnum ${messageTypeEnum}`);
 
         const _dataView = sliceDataView(dataView, byteOffset, messageLength);
-        _console$n.log({ _dataView });
+        _console$p.log({ _dataView });
 
         callback(messageType, _dataView, context);
 
@@ -1514,7 +1511,7 @@ function parseMessage(dataView, enumeration, callback, context, parseMessageLeng
     }
 }
 
-const _console$m = createConsole("SensorDataManager", { log: true });
+const _console$o = createConsole("SensorDataManager", { log: true });
 
 
 
@@ -1558,13 +1555,13 @@ class SensorDataManager {
 
     /** @param {string} sensorType */
     static AssertValidSensorType(sensorType) {
-        _console$m.assertTypeWithError(sensorType, "string");
-        _console$m.assertWithError(this.#Types.includes(sensorType), `invalid sensorType "${sensorType}"`);
+        _console$o.assertTypeWithError(sensorType, "string");
+        _console$o.assertWithError(this.#Types.includes(sensorType), `invalid sensorType "${sensorType}"`);
     }
     /** @param {number} sensorTypeEnum */
     static AssertValidSensorTypeEnum(sensorTypeEnum) {
-        _console$m.assertTypeWithError(sensorTypeEnum, "number");
-        _console$m.assertWithError(sensorTypeEnum in this.#Types, `invalid sensorTypeEnum ${sensorTypeEnum}`);
+        _console$o.assertTypeWithError(sensorTypeEnum, "number");
+        _console$o.assertWithError(sensorTypeEnum in this.#Types, `invalid sensorTypeEnum ${sensorTypeEnum}`);
     }
 
     /** @type {SensorDataCallback} */
@@ -1572,7 +1569,7 @@ class SensorDataManager {
 
     /** @param {DataView} dataView */
     parseData(dataView) {
-        _console$m.log("sensorData", Array.from(new Uint8Array(dataView.buffer)));
+        _console$o.log("sensorData", Array.from(new Uint8Array(dataView.buffer)));
 
         let byteOffset = 0;
         const timestamp = parseTimestamp(dataView, byteOffset);
@@ -1611,10 +1608,10 @@ class SensorDataManager {
                 // FILL
                 break;
             default:
-                _console$m.error(`uncaught sensorType "${sensorType}"`);
+                _console$o.error(`uncaught sensorType "${sensorType}"`);
         }
 
-        _console$m.assertWithError(value, `no value defined for sensorType "${sensorType}"`);
+        _console$o.assertWithError(value, `no value defined for sensorType "${sensorType}"`);
         this.onDataReceived(sensorType, { timestamp, [sensorType]: value });
     }
 
@@ -1624,11 +1621,11 @@ class SensorDataManager {
             const sensorTypeIndex = dataView.getUint8(byteOffset);
             const sensorType = SensorDataManager.Types[sensorTypeIndex];
             if (!sensorType) {
-                _console$m.warn(`unknown sensorType index ${sensorTypeIndex}`);
+                _console$o.warn(`unknown sensorType index ${sensorTypeIndex}`);
                 continue;
             }
             const sensorScalar = dataView.getFloat32(byteOffset + 1, true);
-            _console$m.log({ sensorType, sensorScalar });
+            _console$o.log({ sensorType, sensorScalar });
             this.#scalars.set(sensorType, sensorScalar);
         }
     }
@@ -1648,16 +1645,16 @@ class SensorDataManager {
  * @property {number?} barometer
  */
 
-const _console$l = createConsole("SensorConfigurationManager", { log: false });
+const _console$n = createConsole("SensorConfigurationManager", { log: false });
 
 class SensorConfigurationManager {
     /** @type {SensorType[]} */
     #availableSensorTypes;
     /** @param {SensorType} sensorType */
     #assertAvailableSensorType(sensorType) {
-        _console$l.assertWithError(this.#availableSensorTypes, "must get initial sensorConfiguration");
+        _console$n.assertWithError(this.#availableSensorTypes, "must get initial sensorConfiguration");
         const isSensorTypeAvailable = this.#availableSensorTypes?.includes(sensorType);
-        _console$l.assert(isSensorTypeAvailable, `unavailable sensor type "${sensorType}"`);
+        _console$n.assert(isSensorTypeAvailable, `unavailable sensor type "${sensorType}"`);
         return isSensorTypeAvailable;
     }
 
@@ -1669,14 +1666,14 @@ class SensorConfigurationManager {
             const sensorTypeIndex = dataView.getUint8(byteOffset);
             const sensorType = SensorDataManager.Types[sensorTypeIndex];
             if (!sensorType) {
-                _console$l.warn(`unknown sensorType index ${sensorTypeIndex}`);
+                _console$n.warn(`unknown sensorType index ${sensorTypeIndex}`);
                 continue;
             }
             const sensorRate = dataView.getUint16(byteOffset + 1, true);
-            _console$l.log({ sensorType, sensorRate });
+            _console$n.log({ sensorType, sensorRate });
             parsedSensorConfiguration[sensorType] = sensorRate;
         }
-        _console$l.log({ parsedSensorConfiguration });
+        _console$n.log({ parsedSensorConfiguration });
         this.#availableSensorTypes = Object.keys(parsedSensorConfiguration);
         return parsedSensorConfiguration;
     }
@@ -1698,13 +1695,13 @@ class SensorConfigurationManager {
 
     /** @param {sensorRate} number */
     static #AssertValidSensorRate(sensorRate) {
-        _console$l.assertTypeWithError(sensorRate, "number");
-        _console$l.assertWithError(sensorRate >= 0, `sensorRate must be 0 or greater (got ${sensorRate})`);
-        _console$l.assertWithError(
+        _console$n.assertTypeWithError(sensorRate, "number");
+        _console$n.assertWithError(sensorRate >= 0, `sensorRate must be 0 or greater (got ${sensorRate})`);
+        _console$n.assertWithError(
             sensorRate < this.MaxSensorRate,
             `sensorRate must be 0 or greater (got ${sensorRate})`
         );
-        _console$l.assertWithError(
+        _console$n.assertWithError(
             sensorRate % this.SensorRateStep == 0,
             `sensorRate must be multiple of ${this.SensorRateStep}`
         );
@@ -1731,7 +1728,7 @@ class SensorConfigurationManager {
             this.#assertValidSensorRate(sensorRate);
             dataView.setUint16(index * 3 + 1, sensorConfiguration[sensorType], true);
         });
-        _console$l.log({ sensorConfigurationData: dataView });
+        _console$n.log({ sensorConfigurationData: dataView });
         return dataView;
     }
 
@@ -1741,7 +1738,7 @@ class SensorConfigurationManager {
     }
 }
 
-const _console$k = createConsole("TfliteManager", { log: true });
+const _console$m = createConsole("TfliteManager", { log: true });
 
 /**
  * @typedef { "getTfliteName" |
@@ -1772,10 +1769,12 @@ const _console$k = createConsole("TfliteManager", { log: true });
 
 /** @typedef {TfliteMessageType} TfliteManagerEventType */
 
+
+
 /**
  * @typedef TfliteManagerEvent
  * @type {Object}
- * @property {TfliteManager} target
+ * @property {Device} target
  * @property {TfliteManagerEventType} type
  * @property {Object} message
  */
@@ -1821,11 +1820,11 @@ class TfliteManager {
     }
     /** @param {TfliteTask} task */
     #assertValidTask(task) {
-        _console$k.assertEnumWithError(task, this.tasks);
+        _console$m.assertEnumWithError(task, this.tasks);
     }
     /** @param {number} taskEnum */
     #assertValidTaskEnum(taskEnum) {
-        _console$k.assertWithError(this.tasks[taskEnum], `invalid taskEnum ${taskEnum}`);
+        _console$m.assertWithError(this.tasks[taskEnum], `invalid taskEnum ${taskEnum}`);
     }
 
     // EVENT DISPATCHER
@@ -1850,9 +1849,7 @@ class TfliteManager {
         this.eventDispatcher.addEventListener(type, listener, options);
     }
 
-    /**
-     * @param {TfliteManagerEvent} event
-     */
+    /** @param {TfliteManagerEvent} event */
     #dispatchEvent(event) {
         this.eventDispatcher.dispatchEvent(event);
     }
@@ -1879,13 +1876,13 @@ class TfliteManager {
     }
     /** @param {DataView} dataView */
     #parseName(dataView) {
-        _console$k.log("parseName", dataView);
+        _console$m.log("parseName", dataView);
         const name = textDecoder$1.decode(dataView);
         this.#updateName(name);
     }
     /** @param {string} name */
     #updateName(name) {
-        _console$k.log({ name });
+        _console$m.log({ name });
         this.#name = name;
         this.#dispatchEvent({ type: "getTfliteName", message: { tfliteModelName: name } });
     }
@@ -1894,9 +1891,9 @@ class TfliteManager {
      * @param {boolean} sendImmediately
      */
     async setName(newName, sendImmediately) {
-        _console$k.assertTypeWithError(newName, "string");
+        _console$m.assertTypeWithError(newName, "string");
         if (this.name == newName) {
-            _console$k.log(`redundant name assignment ${newName}`);
+            _console$m.log(`redundant name assignment ${newName}`);
             return;
         }
 
@@ -1915,7 +1912,7 @@ class TfliteManager {
     }
     /** @param {DataView} dataView */
     #parseTask(dataView) {
-        _console$k.log("parseTask", dataView);
+        _console$m.log("parseTask", dataView);
         const taskEnum = dataView.getUint8(0);
         this.#assertValidTaskEnum(taskEnum);
         const task = this.tasks[taskEnum];
@@ -1923,7 +1920,7 @@ class TfliteManager {
     }
     /** @param {TfliteTask} task */
     #updateTask(task) {
-        _console$k.log({ task });
+        _console$m.log({ task });
         this.#task = task;
         this.#dispatchEvent({ type: "getTfliteTask", message: { tfliteModelTask: task } });
     }
@@ -1934,7 +1931,7 @@ class TfliteManager {
     async setTask(newTask, sendImmediately) {
         this.#assertValidTask(newTask);
         if (this.task == newTask) {
-            _console$k.log(`redundant task assignment ${newTask}`);
+            _console$m.log(`redundant task assignment ${newTask}`);
             return;
         }
 
@@ -1953,12 +1950,12 @@ class TfliteManager {
     }
     /** @param {DataView} dataView */
     #parseSampleRate(dataView) {
-        _console$k.log("parseSampleRate", dataView);
+        _console$m.log("parseSampleRate", dataView);
         const sampleRate = dataView.getUint16(0, true);
         this.#updateSampleRate(sampleRate);
     }
     #updateSampleRate(sampleRate) {
-        _console$k.log({ sampleRate });
+        _console$m.log({ sampleRate });
         this.#sampleRate = sampleRate;
         this.#dispatchEvent({ type: "getTfliteSampleRate", message: { tfliteModelSampleRate: sampleRate } });
     }
@@ -1967,14 +1964,14 @@ class TfliteManager {
      * @param {boolean} sendImmediately
      */
     async setSampleRate(newSampleRate, sendImmediately) {
-        _console$k.assertTypeWithError(newSampleRate, "number");
+        _console$m.assertTypeWithError(newSampleRate, "number");
         newSampleRate -= newSampleRate % SensorConfigurationManager.SensorRateStep;
-        _console$k.assertWithError(
+        _console$m.assertWithError(
             newSampleRate >= SensorConfigurationManager.SensorRateStep,
             `sampleRate must be multiple of ${SensorConfigurationManager.SensorRateStep} greater than 0 (got ${newSampleRate})`
         );
         if (this.#sampleRate == newSampleRate) {
-            _console$k.log(`redundant sampleRate assignment ${newSampleRate}`);
+            _console$m.log(`redundant sampleRate assignment ${newSampleRate}`);
             return;
         }
 
@@ -1995,7 +1992,7 @@ class TfliteManager {
 
     static AssertValidSensorType(sensorType) {
         SensorDataManager.AssertValidSensorType(sensorType);
-        _console$k.assertWithError(this.#SensorTypes.includes(sensorType), `invalid tflite sensorType "${sensorType}"`);
+        _console$m.assertWithError(this.#SensorTypes.includes(sensorType), `invalid tflite sensorType "${sensorType}"`);
     }
 
     /** @type {SensorType[]} */
@@ -2005,7 +2002,7 @@ class TfliteManager {
     }
     /** @param {DataView} dataView */
     #parseSensorTypes(dataView) {
-        _console$k.log("parseSensorTypes", dataView);
+        _console$m.log("parseSensorTypes", dataView);
         /** @type {SensorType[]} */
         const sensorTypes = [];
         for (let index = 0; index < dataView.byteLength; index++) {
@@ -2014,14 +2011,14 @@ class TfliteManager {
             if (sensorType) {
                 sensorTypes.push(sensorType);
             } else {
-                _console$k.error(`invalid sensorTypeEnum ${sensorTypeEnum}`);
+                _console$m.error(`invalid sensorTypeEnum ${sensorTypeEnum}`);
             }
         }
         this.#updateSensorTypes(sensorTypes);
     }
     /** @param {SensorType[]} sensorTypes */
     #updateSensorTypes(sensorTypes) {
-        _console$k.log({ sensorTypes });
+        _console$m.log({ sensorTypes });
         this.#sensorTypes = sensorTypes;
         this.#dispatchEvent({ type: "getTfliteSensorTypes", message: { tfliteModelSensorTypes: sensorTypes } });
     }
@@ -2040,7 +2037,7 @@ class TfliteManager {
         const newSensorTypeEnums = newSensorTypes
             .map((sensorType) => SensorDataManager.Types.indexOf(sensorType))
             .sort();
-        _console$k.log(newSensorTypes, newSensorTypeEnums);
+        _console$m.log(newSensorTypes, newSensorTypeEnums);
         this.sendMessage(
             [{ type: "setTfliteSensorTypes", data: Uint8Array.from(newSensorTypeEnums).buffer }],
             sendImmediately
@@ -2056,13 +2053,13 @@ class TfliteManager {
     }
     /** @param {DataView} dataView */
     #parseIsReady(dataView) {
-        _console$k.log("parseIsReady", dataView);
+        _console$m.log("parseIsReady", dataView);
         const isReady = Boolean(dataView.getUint8(0));
         this.#updateIsReady(isReady);
     }
     /** @param {boolean} isReady */
     #updateIsReady(isReady) {
-        _console$k.log({ isReady });
+        _console$m.log({ isReady });
         this.#isReady = isReady;
         this.#dispatchEvent({
             type: "tfliteModelIsReady",
@@ -2070,7 +2067,7 @@ class TfliteManager {
         });
     }
     #assertIsReady() {
-        _console$k.assertWithError(this.isReady, `tflite is not ready`);
+        _console$m.assertWithError(this.isReady, `tflite is not ready`);
     }
 
     /** @type {number} */
@@ -2080,13 +2077,13 @@ class TfliteManager {
     }
     /** @param {DataView} dataView */
     #parseCaptureDelay(dataView) {
-        _console$k.log("parseCaptureDelay", dataView);
+        _console$m.log("parseCaptureDelay", dataView);
         const captureDelay = dataView.getUint16(0, true);
         this.#updateCaptueDelay(captureDelay);
     }
     /** @param {number} captureDelay */
     #updateCaptueDelay(captureDelay) {
-        _console$k.log({ captureDelay });
+        _console$m.log({ captureDelay });
         this.#captureDelay = captureDelay;
         this.#dispatchEvent({
             type: "getTfliteCaptureDelay",
@@ -2098,9 +2095,9 @@ class TfliteManager {
      * @param {boolean} sendImmediately
      */
     async setCaptureDelay(newCaptureDelay, sendImmediately) {
-        _console$k.assertTypeWithError(newCaptureDelay, "number");
+        _console$m.assertTypeWithError(newCaptureDelay, "number");
         if (this.#captureDelay == newCaptureDelay) {
-            _console$k.log(`redundant captureDelay assignment ${newCaptureDelay}`);
+            _console$m.log(`redundant captureDelay assignment ${newCaptureDelay}`);
             return;
         }
 
@@ -2120,13 +2117,13 @@ class TfliteManager {
     }
     /** @param {DataView} dataView */
     #parseThreshold(dataView) {
-        _console$k.log("parseThreshold", dataView);
+        _console$m.log("parseThreshold", dataView);
         const threshold = dataView.getFloat32(0, true);
         this.#updateThreshold(threshold);
     }
     /** @param {number} threshold */
     #updateThreshold(threshold) {
-        _console$k.log({ threshold });
+        _console$m.log({ threshold });
         this.#threshold = threshold;
         this.#dispatchEvent({
             type: "getTfliteThreshold",
@@ -2138,10 +2135,10 @@ class TfliteManager {
      * @param {boolean} sendImmediately
      */
     async setThreshold(newThreshold, sendImmediately) {
-        _console$k.assertTypeWithError(newThreshold, "number");
-        _console$k.assertWithError(newThreshold >= 0, `threshold must be positive (got ${newThreshold})`);
+        _console$m.assertTypeWithError(newThreshold, "number");
+        _console$m.assertWithError(newThreshold >= 0, `threshold must be positive (got ${newThreshold})`);
         if (this.#threshold == newThreshold) {
-            _console$k.log(`redundant threshold assignment ${newThreshold}`);
+            _console$m.log(`redundant threshold assignment ${newThreshold}`);
             return;
         }
 
@@ -2161,12 +2158,12 @@ class TfliteManager {
     }
     /** @param {DataView} dataView */
     #parseInferencingEnabled(dataView) {
-        _console$k.log("parseInferencingEnabled", dataView);
+        _console$m.log("parseInferencingEnabled", dataView);
         const inferencingEnabled = Boolean(dataView.getUint8(0));
         this.#updateInferencingEnabled(inferencingEnabled);
     }
     #updateInferencingEnabled(inferencingEnabled) {
-        _console$k.log({ inferencingEnabled });
+        _console$m.log({ inferencingEnabled });
         this.#inferencingEnabled = inferencingEnabled;
         this.#dispatchEvent({
             type: "getTfliteInferencingEnabled",
@@ -2178,10 +2175,10 @@ class TfliteManager {
      * @param {boolean} sendImmediately
      */
     async setInferencingEnabled(newInferencingEnabled, sendImmediately) {
-        _console$k.assertTypeWithError(newInferencingEnabled, "boolean");
+        _console$m.assertTypeWithError(newInferencingEnabled, "boolean");
         this.#assertIsReady();
         if (this.#inferencingEnabled == newInferencingEnabled) {
-            _console$k.log(`redundant inferencingEnabled assignment ${newInferencingEnabled}`);
+            _console$m.log(`redundant inferencingEnabled assignment ${newInferencingEnabled}`);
             return;
         }
 
@@ -2225,10 +2222,10 @@ class TfliteManager {
 
     /** @param {DataView} dataView */
     #parseInference(dataView) {
-        _console$k.log("parseInference", dataView);
+        _console$m.log("parseInference", dataView);
 
         const timestamp = parseTimestamp(dataView, 0);
-        _console$k.log({ timestamp });
+        _console$m.log({ timestamp });
 
         /** @type {number[]} */
         const values = [];
@@ -2236,7 +2233,7 @@ class TfliteManager {
             const value = dataView.getFloat32(byteOffset, true);
             values.push(value);
         }
-        _console$k.log("values", values);
+        _console$m.log("values", values);
 
         /** @type {TfliteModelInference} */
         const inference = {
@@ -2252,7 +2249,7 @@ class TfliteManager {
      * @param {DataView} dataView
      */
     parseMessage(messageType, dataView) {
-        _console$k.log({ messageType });
+        _console$m.log({ messageType });
 
         switch (messageType) {
             case "getTfliteName":
@@ -2296,7 +2293,7 @@ class TfliteManager {
 
     /**
      * @callback SendMessageCallback
-     * @param {{type: TfliteMessageType, data: ArrayBuffer}} messages
+     * @param {{type: TfliteMessageType, data: ArrayBuffer}[]} messages
      * @param {boolean} sendImmediately
      */
 
@@ -2304,7 +2301,473 @@ class TfliteManager {
     sendMessage;
 }
 
+const _console$l = createConsole("DeviceInformationManager", { log: true });
+
+/**
+ * @typedef DeviceInformation
+ * @type {Object}
+ * @property {string?} manufacturerName
+ * @property {string?} modelNumber
+ * @property {string?} softwareRevision
+ * @property {string?} hardwareRevision
+ * @property {string?} firmwareRevision
+ * @property {PnpId?} pnpId
+ * @property {string?} serialNumber
+ */
+
+/**
+ * @typedef PnpId
+ * @type {Object}
+ * @property {"Bluetooth"|"USB"} source
+ * @property {number} vendorId
+ * @property {number} productId
+ * @property {number} productVersion
+ */
+
+/**
+ * @typedef { "manufacturerName" |
+ * "modelNumber" |
+ * "softwareRevision" |
+ * "hardwareRevision" |
+ * "firmwareRevision" |
+ * "pnpId" |
+ * "serialNumber"
+ * } DeviceInformationMessageType
+ */
+
+/** @typedef {DeviceInformationMessageType | "deviceInformation"} DeviceInformationManagerEventType */
+
+
+
+
+
+
+/**
+ * @typedef DeviceInformationManagerEvent
+ * @type {Object}
+ * @property {Device} target
+ * @property {DeviceInformationManagerEventType} type
+ * @property {Object} message
+ */
+/** @typedef {(event: DeviceInformationManagerEvent) => void} DeviceInformationManagerEventListener */
+
+class DeviceInformationManager {
+    // MESSAGE TYPES
+
+    /** @type {DeviceInformationMessageType[]} */
+    static #MessageTypes = [
+        "manufacturerName",
+        "modelNumber",
+        "softwareRevision",
+        "hardwareRevision",
+        "firmwareRevision",
+        "pnpId",
+        "serialNumber",
+    ];
+    static get MessageTypes() {
+        return this.#MessageTypes;
+    }
+    get messageTypes() {
+        return DeviceInformationManager.MessageTypes;
+    }
+
+    // EVENT DISPATCHER
+
+    /** @type {DeviceInformationManagerEventType[]} */
+    static #EventTypes = [...this.#MessageTypes, "deviceInformation"];
+    static get EventTypes() {
+        return this.#EventTypes;
+    }
+    get eventTypes() {
+        return DeviceInformationManager.#EventTypes;
+    }
+    /** @type {EventDispatcher} */
+    eventDispatcher;
+
+    /**
+     * @param {DeviceInformationManagerEvent} event
+     */
+    #dispatchEvent(event) {
+        this.eventDispatcher.dispatchEvent(event);
+    }
+
+    // PROPERTIES
+
+    /** @type {DeviceInformation} */
+    information = {
+        manufacturerName: null,
+        modelNumber: null,
+        softwareRevision: null,
+        hardwareRevision: null,
+        firmwareRevision: null,
+        pnpId: null,
+    };
+    get #isComplete() {
+        return Object.values(this.information).every((value) => value != null);
+    }
+
+    /** @param {DeviceInformation} partialDeviceInformation */
+    #update(partialDeviceInformation) {
+        _console$l.log({ partialDeviceInformation });
+        for (const deviceInformationName in partialDeviceInformation) {
+            this.#dispatchEvent({
+                type: deviceInformationName,
+                message: { [deviceInformationName]: partialDeviceInformation[deviceInformationName] },
+            });
+        }
+
+        Object.assign(this.information, partialDeviceInformation);
+        _console$l.log({ deviceInformation: this.information });
+        if (this.#isComplete) {
+            _console$l.log("completed deviceInformation");
+            this.#dispatchEvent({ type: "deviceInformation", message: { deviceInformation: this.information } });
+        }
+    }
+
+    // MESSAGE
+
+    /**
+     * @param {DeviceInformationMessageType} messageType
+     * @param {DataView} dataView
+     */
+    parseMessage(messageType, dataView) {
+        _console$l.log({ messageType });
+
+        switch (messageType) {
+            case "manufacturerName":
+                const manufacturerName = textDecoder$1.decode(dataView);
+                _console$l.log({ manufacturerName });
+                this.#update({ manufacturerName });
+                break;
+            case "modelNumber":
+                const modelNumber = textDecoder$1.decode(dataView);
+                _console$l.log({ modelNumber });
+                this.#update({ modelNumber });
+                break;
+            case "softwareRevision":
+                const softwareRevision = textDecoder$1.decode(dataView);
+                _console$l.log({ softwareRevision });
+                this.#update({ softwareRevision });
+                break;
+            case "hardwareRevision":
+                const hardwareRevision = textDecoder$1.decode(dataView);
+                _console$l.log({ hardwareRevision });
+                this.#update({ hardwareRevision });
+                break;
+            case "firmwareRevision":
+                const firmwareRevision = textDecoder$1.decode(dataView);
+                _console$l.log({ firmwareRevision });
+                this.#update({ firmwareRevision });
+                break;
+            case "pnpId":
+                /** @type {PnpId} */
+                const pnpId = {
+                    source: dataView.getUint8(0) === 1 ? "Bluetooth" : "USB",
+                    productId: dataView.getUint16(3, true),
+                    productVersion: dataView.getUint16(5, true),
+                };
+                if (pnpId.source == "Bluetooth") {
+                    pnpId.vendorId = dataView.getUint16(1, true);
+                }
+                _console$l.log({ pnpId });
+                this.#update({ pnpId });
+                break;
+            case "serialNumber":
+                const serialNumber = textDecoder$1.decode(dataView);
+                console.log({ serialNumber });
+                // will only be used for node.js
+                break;
+            default:
+                throw Error(`uncaught messageType ${messageType}`);
+        }
+    }
+}
+
+const _console$k = createConsole("InformationManager", { log: true });
+
+/**
+ * @typedef { "getMtu" |
+ * "getName"|
+ * "setName"|
+ * "getType"|
+ * "setType"|
+ * "getCurrentTime"|
+ * "setCurrentTime"
+ * } InformationMessageType
+ */
+
+/** @typedef {InformationMessageType} InformationManagerEventType */
+
+
+
+
+
+
+/**
+ * @typedef InformationManagerEvent
+ * @type {Object}
+ * @property {Device} target
+ * @property {InformationManagerEventType} type
+ * @property {Object} message
+ */
+/** @typedef {(event: InformationManagerEvent) => void} InformationManagerEventListener */
+
+class InformationManager {
+    // MESSAGE TYPES
+
+    /** @type {InformationMessageType[]} */
+    static #MessageTypes = ["getMtu", "getName", "setName", "getType", "setType", "getCurrentTime", "setCurrentTime"];
+    static get MessageTypes() {
+        return this.#MessageTypes;
+    }
+    get messageTypes() {
+        return InformationManager.MessageTypes;
+    }
+
+    // EVENT DISPATCHER
+
+    /** @type {InformationManagerEventType[]} */
+    static #EventTypes = [...this.#MessageTypes];
+    static get EventTypes() {
+        return this.#EventTypes;
+    }
+    get eventTypes() {
+        return InformationManager.#EventTypes;
+    }
+    /** @type {EventDispatcher} */
+    eventDispatcher;
+
+    /** @param {InformationManagerEvent} event */
+    #dispatchEvent(event) {
+        this.eventDispatcher.dispatchEvent(event);
+    }
+
+    /** @param {InformationManagerEventType} eventType */
+    waitForEvent(eventType) {
+        return this.eventDispatcher.waitForEvent(eventType);
+    }
+
+    // PROPERTIES
+
+    /** @type {string?} */
+    #name;
+    get name() {
+        return this.#name;
+    }
+
+    /** @param {string} updatedName */
+    updateName(updatedName) {
+        _console$k.assertTypeWithError(updatedName, "string");
+        this.#name = updatedName;
+        _console$k.log({ updatedName: this.#name });
+        this.#dispatchEvent({ type: "getName", message: { name: this.#name } });
+    }
+    static get MinNameLength() {
+        return 2;
+    }
+    get minNameLength() {
+        return Device.MinNameLength;
+    }
+    static get MaxNameLength() {
+        return 30;
+    }
+    get maxNameLength() {
+        return Device.MaxNameLength;
+    }
+    /** @param {string} newName */
+    async setName(newName) {
+        _console$k.assertTypeWithError(newName, "string");
+        _console$k.assertWithError(
+            newName.length >= this.minNameLength,
+            `name must be greater than ${this.minNameLength} characters long ("${newName}" is ${newName.length} characters long)`
+        );
+        _console$k.assertWithError(
+            newName.length < this.maxNameLength,
+            `name must be less than ${this.maxNameLength} characters long ("${newName}" is ${newName.length} characters long)`
+        );
+        const setNameData = textEncoder.encode(newName);
+        _console$k.log({ setNameData });
+
+        const promise = this.waitForEvent("getName");
+        this.sendMessage([{ type: "setName", data: setNameData.buffer }]);
+        await promise;
+    }
+
+    // TYPE
+    /** @type {DeviceType[]} */
+    static #Types = ["leftInsole", "rightInsole"];
+    static get Types() {
+        return this.#Types;
+    }
+    get #types() {
+        return InformationManager.Types;
+    }
+    /** @type {DeviceType?} */
+    #type;
+    get type() {
+        return this.#type;
+    }
+    get typeEnum() {
+        return InformationManager.Types.indexOf(this.type);
+    }
+    /** @param {DeviceType} type */
+    #assertValidDeviceType(type) {
+        _console$k.assertEnumWithError(type, this.#types);
+    }
+    /** @param {number} typeEnum */
+    #assertValidDeviceTypeEnum(typeEnum) {
+        _console$k.assertTypeWithError(typeEnum, "number");
+        _console$k.assertWithError(this.#types[typeEnum], `invalid typeEnum ${typeEnum}`);
+    }
+    /** @param {DeviceType} updatedType */
+    updateType(updatedType) {
+        this.#assertValidDeviceType(updatedType);
+        if (updatedType == this.type) {
+            _console$k.log("redundant type assignment");
+            return;
+        }
+        this.#type = updatedType;
+        _console$k.log({ updatedType: this.#type });
+
+        this.#dispatchEvent({ type: "getType", message: { type: this.#type } });
+    }
+    /** @param {number} newTypeEnum */
+    async #setTypeEnum(newTypeEnum) {
+        this.#assertValidDeviceTypeEnum(newTypeEnum);
+        const setTypeData = Uint8Array.from([newTypeEnum]);
+        _console$k.log({ setTypeData });
+        const promise = this.waitForEvent("getType");
+        this.sendMessage([{ type: "setType", data: setTypeData.buffer }]);
+        await promise;
+    }
+    /** @param {DeviceType} newType */
+    async setType(newType) {
+        this.#assertValidDeviceType(newType);
+        const newTypeEnum = this.#types.indexOf(newType);
+        this.#setTypeEnum(newTypeEnum);
+    }
+
+    get isInsole() {
+        switch (this.type) {
+            case "leftInsole":
+            case "rightInsole":
+                return true;
+            default:
+                // for future non-insole device types
+                return false;
+        }
+    }
+    /** @type {InsoleSide[]} */
+    static #InsoleSides = ["left", "right"];
+    static get InsoleSides() {
+        return this.#InsoleSides;
+    }
+    get insoleSides() {
+        return InformationManager.InsoleSides;
+    }
+    /** @type {InsoleSide} */
+    get insoleSide() {
+        switch (this.type) {
+            case "leftInsole":
+                return "left";
+            case "rightInsole":
+                return "right";
+        }
+    }
+
+    #mtu = 0;
+    get mtu() {
+        return this.#mtu;
+    }
+    /** @param {number} newMtu */
+    #updateMtu(newMtu) {
+        _console$k.assertTypeWithError(newMtu, "number");
+        if (this.#mtu == newMtu) {
+            _console$k.log("redundant mtu assignment", newMtu);
+            return;
+        }
+        this.#mtu = newMtu;
+
+        this.#dispatchEvent({ type: "getMtu", message: { mtu: this.#mtu } });
+    }
+
+    #isCurrentTimeSet = false;
+    get isCurrentTimeSet() {
+        return this.#isCurrentTimeSet;
+    }
+
+    /** @param {number} currentTime */
+    #onCurrentTime(currentTime) {
+        _console$k.log({ currentTime });
+        this.#isCurrentTimeSet = currentTime != 0;
+        if (!this.#isCurrentTimeSet) {
+            this.#setCurrentTime();
+        }
+    }
+    async #setCurrentTime() {
+        _console$k.log("setting current time...");
+        const dataView = new DataView(new ArrayBuffer(8));
+        dataView.setBigUint64(0, BigInt(Date.now()), true);
+        const promise = this.waitForEvent("getCurrentTime");
+        this.sendMessage([{ type: "setCurrentTime", data: dataView.buffer }]);
+        await promise;
+    }
+
+    // MESSAGE
+
+    /**
+     * @param {InformationMessageType} messageType
+     * @param {DataView} dataView
+     */
+    parseMessage(messageType, dataView) {
+        _console$k.log({ messageType });
+
+        switch (messageType) {
+            case "getName":
+            case "setName":
+                const name = textDecoder$1.decode(dataView);
+                _console$k.log({ name });
+                this.updateName(name);
+                break;
+            case "getType":
+            case "setType":
+                const typeEnum = dataView.getUint8(0);
+                const type = this.#types[typeEnum];
+                _console$k.log({ typeEnum, type });
+                this.updateType(type);
+                break;
+            case "getMtu":
+                const mtu = dataView.getUint16(0, true);
+                _console$k.log({ mtu });
+                this.#updateMtu(mtu);
+                break;
+            case "getCurrentTime":
+            case "setCurrentTime":
+                const currentTime = Number(dataView.getBigUint64(0, true));
+                this.#onCurrentTime(currentTime);
+                break;
+            default:
+                throw Error(`uncaught messageType ${messageType}`);
+        }
+    }
+
+    /**
+     * @callback SendMessageCallback
+     * @param {{type: InformationMessageType, data: ArrayBuffer}[]} messages
+     * @param {boolean} sendImmediately
+     */
+
+    /** @type {SendMessageCallback} */
+    sendMessage;
+
+    clear() {
+        this.#isCurrentTimeSet = false;
+    }
+}
+
 const _console$j = createConsole("BaseConnectionManager", { log: true });
+
+
 
 
 
@@ -2314,19 +2777,13 @@ const _console$j = createConsole("BaseConnectionManager", { log: true });
 /** @typedef {"not connected" | "connecting" | "connected" | "disconnecting"} ConnectionStatus */
 
 /**
- * @typedef { "getMtu" |
- * "getName" |
- * "setName" |
- * "getType" |
- * "setType" |
- * "getSensorConfiguration" |
+ * @typedef { "getSensorConfiguration" |
  * "setSensorConfiguration" |
  * "pressurePositions" |
  * "sensorScalars" |
- * "setCurrentTime" |
- * "getCurrentTime" |
  * "sensorData" |
  * "triggerVibration" |
+ * InformationMessageType |
  * TfliteMessageType |
  * FileTransferMessageType |
  * FirmwareMessageType
@@ -2341,13 +2798,7 @@ const _console$j = createConsole("BaseConnectionManager", { log: true });
  */
 
 /**
- * @typedef { "manufacturerName" |
- * "modelNumber" |
- * "softwareRevision" |
- * "hardwareRevision" |
- * "firmwareRevision" |
- * "pnpId" |
- * "serialNumber" |
+ * @typedef { DeviceInformationMessageType |
  * "batteryLevel" |
  * "smp" |
  * "rx" |
@@ -2372,23 +2823,15 @@ class BaseConnectionManager {
 
     /** @type {TxRxMessageType[]} */
     static #TxRxMessageTypes = [
-        "getMtu",
-
-        "getName",
-        "setName",
-
-        "getType",
-        "setType",
+        ...InformationManager.MessageTypes,
 
         "getSensorConfiguration",
         "setSensorConfiguration",
+
         "pressurePositions",
         "sensorScalars",
-
-        "getCurrentTime",
-        "setCurrentTime",
-
         "sensorData",
+
         "triggerVibration",
 
         ...TfliteManager.MessageTypes,
@@ -2399,21 +2842,11 @@ class BaseConnectionManager {
     }
     /** @type {ConnectionMessageType[]} */
     static #MessageTypes = [
-        "manufacturerName",
-        "modelNumber",
-        "softwareRevision",
-        "hardwareRevision",
-        "firmwareRevision",
-        "pnpId",
-        "serialNumber",
-
+        ...DeviceInformationManager.MessageTypes,
         "batteryLevel",
-
         "smp",
-
         "rx",
         "tx",
-
         ...this.TxRxMessageTypes,
     ];
     static get MessageTypes() {
@@ -2685,14 +3118,9 @@ function stringToServiceUUID(identifier) {
 }
 
 /** @typedef {"deviceInformation" | "battery" | "main" | "smp"} BluetoothServiceName */
+
 /**
- * @typedef { "manufacturerName" |
- * "modelNumber" |
- * "hardwareRevision" |
- * "firmwareRevision" |
- * "softwareRevision" |
- * "pnpId" |
- * "serialNumber" |
+ * @typedef { DeviceInformationMessageType |
  * "batteryLevel" |
  * "rx" |
  * "tx" |
@@ -4709,9 +5137,7 @@ class FirmwareManager {
         this.eventDispatcher.addEventListener(type, listener, options);
     }
 
-    /**
-     * @param {FirmwareManagerEvent} event
-     */
+    /** @param {FirmwareManagerEvent} event */
     #dispatchEvent(event) {
         this.eventDispatcher.dispatchEvent(event);
     }
@@ -5056,7 +5482,8 @@ const _console$c = createConsole("Device", { log: true });
 
 
 
-/** @typedef {"connectionStatus" | ConnectionStatus | "isConnected" | ConnectionMessageType | "deviceInformation" | SensorType | "connectionMessage" | FileTransferManagerEventType | TfliteManagerEventType | FirmwareManagerEventType} DeviceEventType */
+
+/** @typedef {"connectionStatus" | ConnectionStatus | "isConnected" | ConnectionMessageType | DeviceInformationManagerEventType | SensorType | "connectionMessage" | FileTransferManagerEventType | TfliteManagerEventType | FirmwareManagerEventType} DeviceEventType */
 
 /** @typedef {"deviceConnected" | "deviceDisconnected" | "deviceIsConnected" | "availableDevices"} StaticDeviceEventType */
 
@@ -5083,26 +5510,6 @@ const _console$c = createConsole("Device", { log: true });
 /** @typedef {(event: StaticDeviceEvent) => void} StaticDeviceEventListener */
 
 
-
-/**
- * @typedef DeviceInformation
- * @type {Object}
- * @property {string?} manufacturerName
- * @property {string?} modelNumber
- * @property {string?} softwareRevision
- * @property {string?} hardwareRevision
- * @property {string?} firmwareRevision
- * @property {PnpId?} pnpId
- */
-
-/**
- * @typedef PnpId
- * @type {Object}
- * @property {"Bluetooth"|"USB"} source
- * @property {number} vendorId
- * @property {number} productId
- * @property {number} productVersion
- */
 
 /** @typedef {"leftInsole" | "rightInsole"} DeviceType */
 /** @typedef {"left" | "right"} InsoleSide */
@@ -5136,7 +5543,7 @@ const _console$c = createConsole("Device", { log: true });
  * @property {VibrationWaveformConfiguration?} waveform use if type is "waveform"
  */
 
-class Device {
+let Device$1 = class Device {
     get id() {
         return this.#connectionManager?.id;
     }
@@ -5152,6 +5559,22 @@ class Device {
 
         this.#firmwareManager.sendMessage = this.#sendSmpMessage.bind(this);
         this.#firmwareManager.eventDispatcher = this.#eventDispatcher;
+
+        this.#deviceInformationManager.eventDispatcher = this.#eventDispatcher;
+
+        this.#informationManager.sendMessage = this.#sendTxMessages.bind(this);
+        this.#informationManager.eventDispatcher = this.#eventDispatcher;
+
+        this.addEventListener("getMtu", () => {
+            this.#firmwareManager.mtu = this.mtu;
+            this.#fileTransferManager.mtu = this.mtu;
+            this.connectionManager.mtu = this.mtu;
+        });
+        this.addEventListener("getType", () => {
+            if (Device.#UseLocalStorage) {
+                Device.#UpdateLocalStorageConfigurationForDevice(this);
+            }
+        });
 
         if (isInBrowser) {
             window.addEventListener("beforeunload", () => {
@@ -5190,32 +5613,11 @@ class Device {
         "not connected",
         "isConnected",
 
-        "manufacturerName",
-        "modelNumber",
-        "softwareRevision",
-        "hardwareRevision",
-        "firmwareRevision",
-        "pnpId",
-        "deviceInformation",
-
-        "batteryLevel",
-
-        "getMtu",
-
-        "getName",
-        "setName",
-
-        "getType",
-        "setType",
-
         "getSensorConfiguration",
         "setSensorConfiguration",
 
         "pressurePositions",
         "sensorScalars",
-
-        "getCurrentTime",
-        "setCurrentTime",
 
         "sensorData",
         "pressure",
@@ -5230,6 +5632,10 @@ class Device {
 
         "connectionMessage",
 
+        "batteryLevel",
+
+        ...InformationManager.EventTypes,
+        ...DeviceInformationManager.EventTypes,
         ...FileTransferManager.EventTypes,
         ...TfliteManager.EventTypes,
         ...FirmwareManager.EventTypes,
@@ -5472,7 +5878,9 @@ class Device {
     }
     #checkConnection() {
         this.#isConnected =
-            this.connectionManager?.isConnected && this.#hasRequiredInformation && this.#isCurrentTimeSet;
+            this.connectionManager?.isConnected &&
+            this.#hasRequiredInformation &&
+            this.#informationManager.isCurrentTimeSet;
 
         switch (this.connectionStatus) {
             case "connected":
@@ -5491,7 +5899,7 @@ class Device {
 
     #clear() {
         this.latestConnectionMessage.clear();
-        this.#isCurrentTimeSet = false;
+        this.#informationManager.clear();
     }
 
     /**
@@ -5501,68 +5909,10 @@ class Device {
     #onConnectionMessageReceived(messageType, dataView) {
         _console$c.log({ messageType, dataView });
         switch (messageType) {
-            case "manufacturerName":
-                const manufacturerName = textDecoder$1.decode(dataView);
-                _console$c.log({ manufacturerName });
-                this.#updateDeviceInformation({ manufacturerName });
-                break;
-            case "modelNumber":
-                const modelNumber = textDecoder$1.decode(dataView);
-                _console$c.log({ modelNumber });
-                this.#updateDeviceInformation({ modelNumber });
-                break;
-            case "softwareRevision":
-                const softwareRevision = textDecoder$1.decode(dataView);
-                _console$c.log({ softwareRevision });
-                this.#updateDeviceInformation({ softwareRevision });
-                break;
-            case "hardwareRevision":
-                const hardwareRevision = textDecoder$1.decode(dataView);
-                _console$c.log({ hardwareRevision });
-                this.#updateDeviceInformation({ hardwareRevision });
-                break;
-            case "firmwareRevision":
-                const firmwareRevision = textDecoder$1.decode(dataView);
-                _console$c.log({ firmwareRevision });
-                this.#updateDeviceInformation({ firmwareRevision });
-                break;
-            case "pnpId":
-                /** @type {PnpId} */
-                const pnpId = {
-                    source: dataView.getUint8(0) === 1 ? "Bluetooth" : "USB",
-                    productId: dataView.getUint16(3, true),
-                    productVersion: dataView.getUint16(5, true),
-                };
-                if (pnpId.source == "Bluetooth") {
-                    pnpId.vendorId = dataView.getUint16(1, true);
-                }
-                _console$c.log({ pnpId });
-                this.#updateDeviceInformation({ pnpId });
-                break;
-            case "serialNumber":
-                const serialNumber = textDecoder$1.decode(dataView);
-                _console$c.log({ serialNumber });
-                // will only be used for node.js
-                break;
-
             case "batteryLevel":
                 const batteryLevel = dataView.getUint8(0);
                 _console$c.log("received battery level", { batteryLevel });
                 this.#updateBatteryLevel(batteryLevel);
-                break;
-
-            case "getName":
-            case "setName":
-                const name = textDecoder$1.decode(dataView);
-                _console$c.log({ name });
-                this.#updateName(name);
-                break;
-            case "getType":
-            case "setType":
-                const typeEnum = dataView.getUint8(0);
-                const type = this.#types[typeEnum];
-                _console$c.log({ typeEnum, type });
-                this.#updateType(type);
                 break;
 
             case "getSensorConfiguration":
@@ -5579,20 +5929,8 @@ class Device {
                 this.#sensorDataManager.pressureSensorDataManager.parsePositions(dataView);
                 break;
 
-            case "getCurrentTime":
-            case "setCurrentTime":
-                const currentTime = Number(dataView.getBigUint64(0, true));
-                this.#onCurrentTime(currentTime);
-                break;
-
             case "sensorData":
                 this.#sensorDataManager.parseData(dataView);
-                break;
-
-            case "getMtu":
-                const mtu = dataView.getUint16(0, true);
-                _console$c.log({ mtu });
-                this.#updateMtu(mtu);
                 break;
 
             default:
@@ -5602,6 +5940,10 @@ class Device {
                     this.#tfliteManager.parseMessage(messageType, dataView);
                 } else if (this.#firmwareManager.messageTypes.includes(messageType)) {
                     this.#firmwareManager.parseMessage(messageType, dataView);
+                } else if (this.#deviceInformationManager.messageTypes.includes(messageType)) {
+                    this.#deviceInformationManager.parseMessage(messageType, dataView);
+                } else if (this.#informationManager.messageTypes.includes(messageType)) {
+                    this.#informationManager.parseMessage(messageType, dataView);
                 } else {
                     throw Error(`uncaught messageType ${messageType}`);
                 }
@@ -5618,58 +5960,12 @@ class Device {
     /** @type {Map.<ConnectionMessageType, DataView>} */
     latestConnectionMessage = new Map();
 
-    // CURRENT TIME
-
-    #isCurrentTimeSet = false;
-    /** @param {number} currentTime */
-    #onCurrentTime(currentTime) {
-        _console$c.log({ currentTime });
-        this.#isCurrentTimeSet = currentTime != 0;
-        if (!this.#isCurrentTimeSet) {
-            this.#setCurrentTime();
-        }
-    }
-    #setCurrentTime() {
-        _console$c.log("setting current time...");
-        const dataView = new DataView(new ArrayBuffer(8));
-        dataView.setBigUint64(0, BigInt(Date.now()), true);
-        this.#sendTxMessages([{ type: "setCurrentTime", data: dataView.buffer }]);
-    }
-
     // DEVICE INFORMATION
 
-    /** @type {DeviceInformation} */
-    #deviceInformation = {
-        manufacturerName: null,
-        modelNumber: null,
-        softwareRevision: null,
-        hardwareRevision: null,
-        firmwareRevision: null,
-        pnpId: null,
-    };
+    #deviceInformationManager = new DeviceInformationManager();
+
     get deviceInformation() {
-        return this.#deviceInformation;
-    }
-    get #isDeviceInformationComplete() {
-        return Object.values(this.#deviceInformation).every((value) => value != null);
-    }
-
-    /** @param {DeviceInformation} partialDeviceInformation */
-    #updateDeviceInformation(partialDeviceInformation) {
-        _console$c.log({ partialDeviceInformation });
-        for (const deviceInformationName in partialDeviceInformation) {
-            this.#dispatchEvent({
-                type: deviceInformationName,
-                message: { [deviceInformationName]: partialDeviceInformation[deviceInformationName] },
-            });
-        }
-
-        Object.assign(this.#deviceInformation, partialDeviceInformation);
-        _console$c.log({ deviceInformation: this.#deviceInformation });
-        if (this.#isDeviceInformationComplete) {
-            _console$c.log("completed deviceInformation");
-            this.#dispatchEvent({ type: "deviceInformation", message: { deviceInformation: this.#deviceInformation } });
-        }
+        return this.#deviceInformationManager.information;
     }
 
     // BATTERY LEVEL
@@ -5691,132 +5987,48 @@ class Device {
         this.#dispatchEvent({ type: "batteryLevel", message: { batteryLevel: this.#batteryLevel } });
     }
 
-    // NAME
-    /** @type {string?} */
-    #name;
-    get name() {
-        return this.#name;
-    }
+    // INFORMATION
+    #informationManager = new InformationManager();
 
-    /** @param {string} updatedName */
-    #updateName(updatedName) {
-        _console$c.assertTypeWithError(updatedName, "string");
-        this.#name = updatedName;
-        _console$c.log({ updatedName: this.#name });
-        this.#dispatchEvent({ type: "getName", message: { name: this.#name } });
-    }
+    // FILL - type metadata
+
     static get MinNameLength() {
-        return 2;
-    }
-    get minNameLength() {
-        return Device.MinNameLength;
+        return InformationManager.MinNameLength;
     }
     static get MaxNameLength() {
-        return 30;
+        return InformationManager.MaxNameLength;
     }
-    get maxNameLength() {
-        return Device.MaxNameLength;
+    get name() {
+        return this.#informationManager.name;
     }
     /** @param {string} newName */
     async setName(newName) {
-        this.#assertIsConnected();
-        _console$c.assertTypeWithError(newName, "string");
-        _console$c.assertWithError(
-            newName.length >= this.minNameLength,
-            `name must be greater than ${this.minNameLength} characters long ("${newName}" is ${newName.length} characters long)`
-        );
-        _console$c.assertWithError(
-            newName.length < this.maxNameLength,
-            `name must be less than ${this.maxNameLength} characters long ("${newName}" is ${newName.length} characters long)`
-        );
-        const setNameData = textEncoder.encode(newName);
-        _console$c.log({ setNameData });
-        await this.#sendTxMessages([{ type: "setName", data: setNameData.buffer }]);
+        await this.#informationManager.setName(newName);
     }
 
-    // TYPE
-    /** @type {DeviceType[]} */
-    static #Types = ["leftInsole", "rightInsole"];
     static get Types() {
-        return this.#Types;
+        return InformationManager.Types;
     }
-    get #types() {
-        return Device.Types;
-    }
-    /** @type {DeviceType?} */
-    #type;
     get type() {
-        return this.#type;
-    }
-    get typeEnum() {
-        return Device.Types.indexOf(this.type);
-    }
-    /** @param {DeviceType} type */
-    #assertValidDeviceType(type) {
-        _console$c.assertEnumWithError(type, this.#types);
-    }
-    /** @param {number} typeEnum */
-    #assertValidDeviceTypeEnum(typeEnum) {
-        _console$c.assertTypeWithError(typeEnum, "number");
-        _console$c.assertWithError(this.#types[typeEnum], `invalid typeEnum ${typeEnum}`);
-    }
-    /** @param {DeviceType} updatedType */
-    #updateType(updatedType) {
-        this.#assertValidDeviceType(updatedType);
-        if (updatedType == this.type) {
-            _console$c.log("redundant type assignment");
-            return;
-        }
-        this.#type = updatedType;
-        _console$c.log({ updatedType: this.#type });
-
-        this.#dispatchEvent({ type: "getType", message: { type: this.#type } });
-
-        if (Device.#UseLocalStorage) {
-            Device.#UpdateLocalStorageConfigurationForDevice(this);
-        }
-    }
-    /** @param {number} newTypeEnum */
-    async #setTypeEnum(newTypeEnum) {
-        this.#assertValidDeviceTypeEnum(newTypeEnum);
-        const setTypeData = Uint8Array.from([newTypeEnum]);
-        _console$c.log({ setTypeData });
-        await this.#sendTxMessages([{ type: "setType", data: setTypeData.buffer }]);
+        return this.#informationManager.type;
     }
     /** @param {DeviceType} newType */
     async setType(newType) {
-        this.#assertIsConnected();
-        this.#assertValidDeviceType(newType);
-        const newTypeEnum = this.#types.indexOf(newType);
-        this.#setTypeEnum(newTypeEnum);
+        await this.#informationManager.setType(newType);
     }
 
-    get isInsole() {
-        switch (this.type) {
-            case "leftInsole":
-            case "rightInsole":
-                return true;
-            default:
-                // for future non-insole device types
-                return false;
-        }
-    }
-    /** @type {InsoleSide[]} */
-    static #InsoleSides = ["left", "right"];
     static get InsoleSides() {
-        return this.#InsoleSides;
+        return InformationManager.InsoleSides;
     }
-    get insoleSides() {
-        return Device.InsoleSides;
+    get isInsole() {
+        return this.#informationManager.isInsole;
     }
-    /** @type {InsoleSide} */
     get insoleSide() {
-        switch (this.type) {
-            case "leftInsole":
-                return "left";
-            case "rightInsole":
-                return "right";
-        }
+        return this.#informationManager.insoleSide;
+    }
+
+    get mtu() {
+        return this.#informationManager.mtu;
     }
 
     // SENSOR TYPES
@@ -5858,7 +6070,6 @@ class Device {
     }
     /** @param {SensorConfiguration} newSensorConfiguration */
     async setSensorConfiguration(newSensorConfiguration) {
-        this.#assertIsConnected();
         _console$c.log({ newSensorConfiguration });
         const setSensorConfigurationData = this.#sensorConfigurationManager.createData(newSensorConfiguration);
         _console$c.log({ setSensorConfigurationData });
@@ -6007,6 +6218,173 @@ class Device {
             triggerVibrationData = concatenateArrayBuffers(triggerVibrationData, dataView);
         });
         await this.#sendTxMessages([{ type: "triggerVibration", data: triggerVibrationData.buffer }]);
+    }
+
+    // FILE TRANSFER
+
+    #fileTransferManager = new FileTransferManager();
+    static get FileTypes() {
+        return FileTransferManager.Types;
+    }
+
+    get maxFileLength() {
+        return this.#fileTransferManager.maxLength;
+    }
+
+    
+
+    /**
+     * @param {FileType} fileType
+     * @param {FileLike} file
+     */
+    async sendFile(fileType, file) {
+        const promise = this.waitForEvent("fileTransferComplete");
+        this.#fileTransferManager.send(fileType, file);
+        await promise;
+    }
+
+    /** @param {FileType} fileType */
+    async receiveFile(fileType) {
+        const promise = this.waitForEvent("fileTransferComplete");
+        this.#fileTransferManager.receive(fileType);
+        await promise;
+    }
+
+    get fileTransferStatus() {
+        return this.#fileTransferManager.status;
+    }
+
+    cancelFileTransfer() {
+        this.#fileTransferManager.cancel();
+    }
+
+    // TFLITE
+
+    static get TfliteSensorTypes() {
+        return TfliteManager.SensorTypes;
+    }
+
+    #tfliteManager = new TfliteManager();
+
+    get tfliteName() {
+        return this.#tfliteManager.name;
+    }
+    /** @param {string} newName */
+    setTfliteName(newName) {
+        return this.#tfliteManager.setName(newName);
+    }
+
+    // TFLITE MODEL CONFIG
+
+    static get TfliteTasks() {
+        return TfliteManager.Tasks;
+    }
+
+    get tfliteTask() {
+        return this.#tfliteManager.task;
+    }
+    /** @param {import("./TfliteManager.js").TfliteTask} newTask */
+    setTfliteTask(newTask) {
+        return this.#tfliteManager.setTask(newTask);
+    }
+
+    get tfliteSampleRate() {
+        return this.#tfliteManager.sampleRate;
+    }
+    /** @param {number} newSampleRate */
+    setTfliteSampleRate(newSampleRate) {
+        return this.#tfliteManager.setSampleRate(newSampleRate);
+    }
+
+    get tfliteSensorTypes() {
+        return this.#tfliteManager.sensorTypes;
+    }
+    get allowedTfliteSensorTypes() {
+        return this.sensorTypes.filter((sensorType) => TfliteManager.SensorTypes.includes(sensorType));
+    }
+    /** @param {SensorType[]} newSensorTypes */
+    setTfliteSensorTypes(newSensorTypes) {
+        return this.#tfliteManager.setSensorTypes(newSensorTypes);
+    }
+
+    get tfliteIsReady() {
+        return this.#tfliteManager.isReady;
+    }
+
+    // TFLITE INFERENCING
+
+    get tfliteInferencingEnabled() {
+        return this.#tfliteManager.inferencingEnabled;
+    }
+    /** @param {boolean} inferencingEnabled */
+    async setTfliteInferencingEnabled(inferencingEnabled) {
+        return this.#tfliteManager.setInferencingEnabled(inferencingEnabled);
+    }
+    async enableTfliteInferencing() {
+        return this.setTfliteInferencingEnabled(true);
+    }
+    async disableTfliteInferencing() {
+        return this.setTfliteInferencingEnabled(false);
+    }
+    async toggleTfliteInferencing() {
+        return this.#tfliteManager.toggleInferencingEnabled();
+    }
+
+    // TFLITE INFERENCE CONFIG
+
+    get tfliteCaptureDelay() {
+        return this.#tfliteManager.captureDelay;
+    }
+    /** @param {number} newCaptureDelay */
+    async setTfliteCaptureDelay(newCaptureDelay) {
+        return this.#tfliteManager.setCaptureDelay(newCaptureDelay);
+    }
+    get tfliteThreshold() {
+        return this.#tfliteManager.threshold;
+    }
+    /** @param {number} newThreshold */
+    async setTfliteThreshold(newThreshold) {
+        return this.#tfliteManager.setThreshold(newThreshold);
+    }
+
+    // FIRMWARE MANAGER
+
+    #firmwareManager = new FirmwareManager();
+
+    /** @param {ArrayBuffer} data */
+    #sendSmpMessage(data) {
+        this.#connectionManager.sendSmpMessage(data);
+    }
+
+    /** @param {FileLike} file */
+    async uploadFirmware(file) {
+        return this.#firmwareManager.uploadFirmware(file);
+    }
+
+    async reset() {
+        await this.#firmwareManager.reset();
+        return this.#connectionManager.disconnect();
+    }
+
+    get firmwareStatus() {
+        return this.#firmwareManager.status;
+    }
+
+    async getFirmwareImages() {
+        return this.#firmwareManager.getImages();
+    }
+    get firmwareImages() {
+        return this.#firmwareManager.images;
+    }
+
+    async eraseFirmwareImage() {
+        return this.#firmwareManager.eraseImage();
+    }
+    async confirmFirmwareImage() {
+        return this.#firmwareManager.confirmImage();
+    }
+    async testFirmwareImage() {
+        return this.#firmwareManager.testImage();
     }
 
     // CONNECTED DEVICES
@@ -6186,9 +6564,9 @@ class Device {
             const connectionManager = new WebBluetoothConnectionManager();
             connectionManager.device = bluetoothDevice;
             if (bluetoothDevice.name) {
-                device.#updateName(bluetoothDevice.name);
+                device.#informationManager.updateName(bluetoothDevice.name);
             }
-            device.#updateType(deviceInformation.type);
+            device.#informationManager.updateType(deviceInformation.type);
             device.connectionManager = connectionManager;
 
             this.AvailableDevices.push(device);
@@ -6298,196 +6676,7 @@ class Device {
             this.UseLocalStorage = true;
         }
     }
-
-    // FILE TRANSFER
-
-    #fileTransferManager = new FileTransferManager();
-    static get FileTypes() {
-        return FileTransferManager.Types;
-    }
-
-    get maxFileLength() {
-        return this.#fileTransferManager.maxLength;
-    }
-
-    
-
-    /**
-     * @param {FileType} fileType
-     * @param {FileLike} file
-     */
-    async sendFile(fileType, file) {
-        const promise = this.waitForEvent("fileTransferComplete");
-        this.#fileTransferManager.send(fileType, file);
-        await promise;
-    }
-
-    /** @param {FileType} fileType */
-    async receiveFile(fileType) {
-        const promise = this.waitForEvent("fileTransferComplete");
-        this.#fileTransferManager.receive(fileType);
-        await promise;
-    }
-
-    get fileTransferStatus() {
-        return this.#fileTransferManager.status;
-    }
-
-    cancelFileTransfer() {
-        this.#fileTransferManager.cancel();
-    }
-
-    // TFLITE
-
-    static get TfliteSensorTypes() {
-        return TfliteManager.SensorTypes;
-    }
-
-    #tfliteManager = new TfliteManager();
-
-    get tfliteName() {
-        return this.#tfliteManager.name;
-    }
-    /** @param {string} newName */
-    setTfliteName(newName) {
-        return this.#tfliteManager.setName(newName);
-    }
-
-    // TFLITE MODEL CONFIG
-
-    static get TfliteTasks() {
-        return TfliteManager.Tasks;
-    }
-
-    get tfliteTask() {
-        return this.#tfliteManager.task;
-    }
-    /** @param {import("./TfliteManager.js").TfliteTask} newTask */
-    setTfliteTask(newTask) {
-        return this.#tfliteManager.setTask(newTask);
-    }
-
-    get tfliteSampleRate() {
-        return this.#tfliteManager.sampleRate;
-    }
-    /** @param {number} newSampleRate */
-    setTfliteSampleRate(newSampleRate) {
-        return this.#tfliteManager.setSampleRate(newSampleRate);
-    }
-
-    get tfliteSensorTypes() {
-        return this.#tfliteManager.sensorTypes;
-    }
-    get allowedTfliteSensorTypes() {
-        return this.sensorTypes.filter((sensorType) => TfliteManager.SensorTypes.includes(sensorType));
-    }
-    /** @param {SensorType[]} newSensorTypes */
-    setTfliteSensorTypes(newSensorTypes) {
-        return this.#tfliteManager.setSensorTypes(newSensorTypes);
-    }
-
-    get tfliteIsReady() {
-        return this.#tfliteManager.isReady;
-    }
-
-    // TFLITE INFERENCING
-
-    get tfliteInferencingEnabled() {
-        return this.#tfliteManager.inferencingEnabled;
-    }
-    /** @param {boolean} inferencingEnabled */
-    async setTfliteInferencingEnabled(inferencingEnabled) {
-        return this.#tfliteManager.setInferencingEnabled(inferencingEnabled);
-    }
-    async enableTfliteInferencing() {
-        return this.setTfliteInferencingEnabled(true);
-    }
-    async disableTfliteInferencing() {
-        return this.setTfliteInferencingEnabled(false);
-    }
-    async toggleTfliteInferencing() {
-        return this.#tfliteManager.toggleInferencingEnabled();
-    }
-
-    // TFLITE INFERENCE CONFIG
-
-    get tfliteCaptureDelay() {
-        return this.#tfliteManager.captureDelay;
-    }
-    /** @param {number} newCaptureDelay */
-    async setTfliteCaptureDelay(newCaptureDelay) {
-        return this.#tfliteManager.setCaptureDelay(newCaptureDelay);
-    }
-    get tfliteThreshold() {
-        return this.#tfliteManager.threshold;
-    }
-    /** @param {number} newThreshold */
-    async setTfliteThreshold(newThreshold) {
-        return this.#tfliteManager.setThreshold(newThreshold);
-    }
-
-    // FIRMWARE MANAGER
-
-    #firmwareManager = new FirmwareManager();
-
-    /** @param {ArrayBuffer} data */
-    #sendSmpMessage(data) {
-        this.#connectionManager.sendSmpMessage(data);
-    }
-
-    /** @param {FileLike} file */
-    async uploadFirmware(file) {
-        return this.#firmwareManager.uploadFirmware(file);
-    }
-
-    async reset() {
-        await this.#firmwareManager.reset();
-        return this.#connectionManager.disconnect();
-    }
-
-    get firmwareStatus() {
-        return this.#firmwareManager.status;
-    }
-
-    async getFirmwareImages() {
-        return this.#firmwareManager.getImages();
-    }
-    get firmwareImages() {
-        return this.#firmwareManager.images;
-    }
-
-    async eraseFirmwareImage() {
-        return this.#firmwareManager.eraseImage();
-    }
-    async confirmFirmwareImage() {
-        return this.#firmwareManager.confirmImage();
-    }
-    async testFirmwareImage() {
-        return this.#firmwareManager.testImage();
-    }
-
-    // MTU
-
-    #mtu = 0;
-    get mtu() {
-        return this.#mtu;
-    }
-    /** @param {number} newMtu */
-    #updateMtu(newMtu) {
-        _console$c.assertTypeWithError(newMtu, "number");
-        if (this.#mtu == newMtu) {
-            _console$c.log("redundant mtu assignment", newMtu);
-            return;
-        }
-        this.#mtu = newMtu;
-
-        this.#firmwareManager.mtu = this.mtu;
-        this.#fileTransferManager.mtu = this.mtu;
-        this.connectionManager.mtu = this.mtu;
-
-        this.#dispatchEvent({ type: "getMtu", message: { mtu: this.#mtu } });
-    }
-}
+};
 
 const _console$b = createConsole("BaseScanner");
 
@@ -7129,7 +7318,7 @@ class NobleScanner extends BaseScanner {
             //_console.log("deviceTypeServiceData", deviceTypeServiceData);
             if (deviceTypeServiceData) {
                 const deviceTypeEnum = deviceTypeServiceData.data.readUint8(0);
-                deviceType = Device.Types[deviceTypeEnum];
+                deviceType = Device$1.Types[deviceTypeEnum];
             }
         }
 
@@ -7210,7 +7399,7 @@ class NobleScanner extends BaseScanner {
         const noblePeripheral = this.#noblePeripherals[deviceId];
         _console$9.log("connecting to discoveredDevice...", deviceId);
 
-        let device = Device.AvailableDevices.filter((device) => device.connectionType == "noble").find(
+        let device = Device$1.AvailableDevices.filter((device) => device.connectionType == "noble").find(
             (device) => device.id == deviceId
         );
         if (!device) {
@@ -7223,7 +7412,7 @@ class NobleScanner extends BaseScanner {
 
     /** @param {noble.Peripheral} noblePeripheral */
     #createDevice(noblePeripheral) {
-        const device = new Device();
+        const device = new Device$1();
         const nobleConnectionManager = new NobleConnectionManager();
         nobleConnectionManager.noblePeripheral = noblePeripheral;
         device.connectionManager = nobleConnectionManager;
@@ -7275,10 +7464,10 @@ const _console$7 = createConsole("DevicePairPressureSensorDataManager", { log: t
 
 class DevicePairPressureSensorDataManager {
     static get Sides() {
-        return Device.InsoleSides;
+        return Device$1.InsoleSides;
     }
     get sides() {
-        return Device.InsoleSides;
+        return Device$1.InsoleSides;
     }
 
     // PRESSURE DATA
@@ -7349,10 +7538,10 @@ const _console$6 = createConsole("DevicePairSensorDataManager", { log: true });
 
 class DevicePairSensorDataManager {
     static get Sides() {
-        return Device.InsoleSides;
+        return Device$1.InsoleSides;
     }
     get sides() {
-        return Device.InsoleSides;
+        return Device$1.InsoleSides;
     }
 
     /** @type {Object.<SensorType, Object.<InsoleSide, number>>} */
@@ -7455,7 +7644,7 @@ class DevicePair {
     static #EventTypes = [
         "isConnected",
         "pressure",
-        ...Device.EventTypes.map((sensorType) => `device${capitalizeFirstCharacter(sensorType)}`),
+        ...Device$1.EventTypes.map((sensorType) => `device${capitalizeFirstCharacter(sensorType)}`),
     ];
     static get EventTypes() {
         return this.#EventTypes;
@@ -7492,7 +7681,7 @@ class DevicePair {
     // SIDES
 
     static get Sides() {
-        return Device.InsoleSides;
+        return Device$1.InsoleSides;
     }
     get sides() {
         return DevicePair.Sides;
@@ -7643,7 +7832,7 @@ class DevicePair {
         return this.#shared;
     }
     static {
-        Device.AddEventListener("deviceConnected", (event) => {
+        Device$1.AddEventListener("deviceConnected", (event) => {
             /** @type {Device} */
             const device = event.message.device;
             if (device.isInsole) {
@@ -7763,7 +7952,7 @@ function createServerMessage(...messages) {
 /** @param {...DeviceEventType|DeviceMessage} messages */
 function createDeviceMessage(...messages) {
     _console$4.log("createDeviceMessage", ...messages);
-    return createMessage(Device.EventTypes, ...messages);
+    return createMessage(Device$1.EventTypes, ...messages);
 }
 
 
@@ -7886,16 +8075,7 @@ class WebSocketClientConnectionManager extends BaseConnectionManager {
     }
 
     /** @type {ConnectionMessageType[]} */
-    static #DeviceInformationMessageTypes = [
-        "manufacturerName",
-        "modelNumber",
-        "softwareRevision",
-        "hardwareRevision",
-        "firmwareRevision",
-        "pnpId",
-
-        "batteryLevel",
-    ];
+    static #DeviceInformationMessageTypes = [...DeviceInformationManager.MessageTypes, "batteryLevel"];
     get #deviceInformationMessageTypes() {
         return WebSocketClientConnectionManager.#DeviceInformationMessageTypes;
     }
@@ -7906,7 +8086,7 @@ class WebSocketClientConnectionManager extends BaseConnectionManager {
     /** @param {DataView} dataView */
     onWebSocketMessage(dataView) {
         _console$3.log({ dataView });
-        parseMessage(dataView, Device.EventTypes, this.#onWebSocketMessageCallback.bind(this), null, true);
+        parseMessage(dataView, Device$1.EventTypes, this.#onWebSocketMessageCallback.bind(this), null, true);
     }
 
     /**
@@ -8407,7 +8587,7 @@ class WebSocketClient {
 
     /** @param {string} deviceId */
     #createDevice(deviceId) {
-        const device = new Device();
+        const device = new Device$1();
         const clientConnectionManager = new WebSocketClientConnectionManager();
         clientConnectionManager.id = deviceId;
         clientConnectionManager.sendWebSocketMessage = this.#sendDeviceMessage.bind(this, deviceId);
@@ -8564,7 +8744,7 @@ class BaseServer {
         _console$1.assertWithError(Scanner, "no scanner defined");
 
         addEventListeners(Scanner, this.#boundScannerListeners);
-        addEventListeners(Device, this.#boundDeviceClassListeners);
+        addEventListeners(Device$1, this.#boundDeviceClassListeners);
         addEventListeners(this, this.#boundServerListeners);
     }
 
@@ -8606,7 +8786,7 @@ class BaseServer {
         event.message.client;
         _console$1.log("onClientDisconnected");
         if (this.numberOfClients == 0 && this.clearSensorConfigurationsWhenNoClients) {
-            Device.ConnectedDevices.forEach((device) => {
+            Device$1.ConnectedDevices.forEach((device) => {
                 device.clearSensorConfiguration();
                 device.setTfliteInferencingEnabled(false);
             });
@@ -8684,7 +8864,7 @@ class BaseServer {
     get #connectedDevicesMessage() {
         return createServerMessage({
             type: "connectedDevices",
-            data: JSON.stringify(Device.ConnectedDevices.map((device) => device.id)),
+            data: JSON.stringify(Device$1.ConnectedDevices.map((device) => device.id)),
         });
     }
 
@@ -8832,7 +9012,7 @@ class BaseServer {
             case "disconnectFromDevice":
                 {
                     const { string: deviceId } = parseStringFromDataView(dataView);
-                    const device = Device.ConnectedDevices.find((device) => device.id == deviceId);
+                    const device = Device$1.ConnectedDevices.find((device) => device.id == deviceId);
                     if (!device) {
                         _console$1.error(`no device found with id ${deviceId}`);
                         break;
@@ -8846,7 +9026,7 @@ class BaseServer {
             case "deviceMessage":
                 {
                     const { string: deviceId, byteOffset } = parseStringFromDataView(dataView);
-                    const device = Device.ConnectedDevices.find((device) => device.id == deviceId);
+                    const device = Device$1.ConnectedDevices.find((device) => device.id == deviceId);
                     if (!device) {
                         _console$1.error(`no device found with id ${deviceId}`);
                         break;
@@ -9050,7 +9230,7 @@ class WebSocketServer extends BaseServer {
 var BS = {
     setAllConsoleLevelFlags,
     setConsoleLevelFlagsForType,
-    Device,
+    Device: Device$1,
     DevicePair,
     WebSocketClient,
     WebSocketServer,

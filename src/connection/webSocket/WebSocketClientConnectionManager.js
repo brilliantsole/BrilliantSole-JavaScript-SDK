@@ -3,6 +3,7 @@ import { isInBrowser } from "../../utils/environment.js";
 import BaseConnectionManager from "../BaseConnectionManager.js";
 import Device from "../../Device.js";
 import { parseMessage } from "../../utils/ParseUtils.js";
+import DeviceInformationManager from "../../DeviceInformationManager.js";
 
 const _console = createConsole("WebSocketClientConnectionManager", { log: true });
 
@@ -100,16 +101,7 @@ class WebSocketClientConnectionManager extends BaseConnectionManager {
     }
 
     /** @type {ConnectionMessageType[]} */
-    static #DeviceInformationMessageTypes = [
-        "manufacturerName",
-        "modelNumber",
-        "softwareRevision",
-        "hardwareRevision",
-        "firmwareRevision",
-        "pnpId",
-
-        "batteryLevel",
-    ];
+    static #DeviceInformationMessageTypes = [...DeviceInformationManager.MessageTypes, "batteryLevel"];
     get #deviceInformationMessageTypes() {
         return WebSocketClientConnectionManager.#DeviceInformationMessageTypes;
     }

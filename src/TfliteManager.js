@@ -37,10 +37,12 @@ const _console = createConsole("TfliteManager", { log: true });
 
 /** @typedef {TfliteMessageType} TfliteManagerEventType */
 
+/** @typedef {import("./Device.js").Device} Device */
+
 /**
  * @typedef TfliteManagerEvent
  * @type {Object}
- * @property {TfliteManager} target
+ * @property {Device} target
  * @property {TfliteManagerEventType} type
  * @property {Object} message
  */
@@ -115,9 +117,7 @@ class TfliteManager {
         this.eventDispatcher.addEventListener(type, listener, options);
     }
 
-    /**
-     * @param {TfliteManagerEvent} event
-     */
+    /** @param {TfliteManagerEvent} event */
     #dispatchEvent(event) {
         this.eventDispatcher.dispatchEvent(event);
     }
@@ -561,7 +561,7 @@ class TfliteManager {
 
     /**
      * @callback SendMessageCallback
-     * @param {{type: TfliteMessageType, data: ArrayBuffer}} messages
+     * @param {{type: TfliteMessageType, data: ArrayBuffer}[]} messages
      * @param {boolean} sendImmediately
      */
 

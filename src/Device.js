@@ -9,8 +9,9 @@ import VibrationManager from "./vibration/VibrationManager.js";
 import { concatenateArrayBuffers } from "./utils/ArrayBufferUtils.js";
 import FileTransferManager from "./FileTransferManager.js";
 import TfliteManager from "./TfliteManager.js";
-import { textEncoder, textDecoder } from "./utils/Text.js";
 import FirmwareManager from "./FirmwareManager.js";
+import DeviceInformationManager from "./DeviceInformationManager.js";
+import InformationManager from "./InformationManager.js";
 
 const _console = createConsole("Device", { log: true });
 
@@ -23,8 +24,9 @@ const _console = createConsole("Device", { log: true });
 /** @typedef {import("./FileTransferManager.js").FileTransferManagerEventType} FileTransferManagerEventType */
 /** @typedef {import("./TfliteManager.js").TfliteManagerEventType} TfliteManagerEventType */
 /** @typedef {import("./FirmwareManager.js").FirmwareManagerEventType} FirmwareManagerEventType */
+/** @typedef {import("./DeviceInformationManager.js").DeviceInformationManagerEventType} DeviceInformationManagerEventType */
 
-/** @typedef {"connectionStatus" | ConnectionStatus | "isConnected" | ConnectionMessageType | "deviceInformation" | SensorType | "connectionMessage" | FileTransferManagerEventType | TfliteManagerEventType | FirmwareManagerEventType} DeviceEventType */
+/** @typedef {"connectionStatus" | ConnectionStatus | "isConnected" | ConnectionMessageType | DeviceInformationManagerEventType | SensorType | "connectionMessage" | FileTransferManagerEventType | TfliteManagerEventType | FirmwareManagerEventType} DeviceEventType */
 
 /** @typedef {"deviceConnected" | "deviceDisconnected" | "deviceIsConnected" | "availableDevices"} StaticDeviceEventType */
 
@@ -51,26 +53,6 @@ const _console = createConsole("Device", { log: true });
 /** @typedef {(event: StaticDeviceEvent) => void} StaticDeviceEventListener */
 
 /** @typedef {import("./connection/BaseConnectionManager.js").ConnectionStatus} ConnectionStatus */
-
-/**
- * @typedef DeviceInformation
- * @type {Object}
- * @property {string?} manufacturerName
- * @property {string?} modelNumber
- * @property {string?} softwareRevision
- * @property {string?} hardwareRevision
- * @property {string?} firmwareRevision
- * @property {PnpId?} pnpId
- */
-
-/**
- * @typedef PnpId
- * @type {Object}
- * @property {"Bluetooth"|"USB"} source
- * @property {number} vendorId
- * @property {number} productId
- * @property {number} productVersion
- */
 
 /** @typedef {"leftInsole" | "rightInsole"} DeviceType */
 /** @typedef {"left" | "right"} InsoleSide */
@@ -121,6 +103,22 @@ class Device {
         this.#firmwareManager.sendMessage = this.#sendSmpMessage.bind(this);
         this.#firmwareManager.eventDispatcher = this.#eventDispatcher;
 
+        this.#deviceInformationManager.eventDispatcher = this.#eventDispatcher;
+
+        this.#informationManager.sendMessage = this.#sendTxMessages.bind(this);
+        this.#informationManager.eventDispatcher = this.#eventDispatcher;
+
+        this.addEventListener("getMtu", () => {
+            this.#firmwareManager.mtu = this.mtu;
+            this.#fileTransferManager.mtu = this.mtu;
+            this.connectionManager.mtu = this.mtu;
+        });
+        this.addEventListener("getType", () => {
+            if (Device.#UseLocalStorage) {
+                Device.#UpdateLocalStorageConfigurationForDevice(this);
+            }
+        });
+
         if (isInBrowser) {
             window.addEventListener("beforeunload", () => {
                 if (this.isConnected && this.clearSensorConfigurationOnLeave) {
@@ -158,32 +156,11 @@ class Device {
         "not connected",
         "isConnected",
 
-        "manufacturerName",
-        "modelNumber",
-        "softwareRevision",
-        "hardwareRevision",
-        "firmwareRevision",
-        "pnpId",
-        "deviceInformation",
-
-        "batteryLevel",
-
-        "getMtu",
-
-        "getName",
-        "setName",
-
-        "getType",
-        "setType",
-
         "getSensorConfiguration",
         "setSensorConfiguration",
 
         "pressurePositions",
         "sensorScalars",
-
-        "getCurrentTime",
-        "setCurrentTime",
 
         "sensorData",
         "pressure",
@@ -198,6 +175,10 @@ class Device {
 
         "connectionMessage",
 
+        "batteryLevel",
+
+        ...InformationManager.EventTypes,
+        ...DeviceInformationManager.EventTypes,
         ...FileTransferManager.EventTypes,
         ...TfliteManager.EventTypes,
         ...FirmwareManager.EventTypes,
@@ -440,7 +421,9 @@ class Device {
     }
     #checkConnection() {
         this.#isConnected =
-            this.connectionManager?.isConnected && this.#hasRequiredInformation && this.#isCurrentTimeSet;
+            this.connectionManager?.isConnected &&
+            this.#hasRequiredInformation &&
+            this.#informationManager.isCurrentTimeSet;
 
         switch (this.connectionStatus) {
             case "connected":
@@ -459,7 +442,7 @@ class Device {
 
     #clear() {
         this.latestConnectionMessage.clear();
-        this.#isCurrentTimeSet = false;
+        this.#informationManager.clear();
     }
 
     /**
@@ -469,70 +452,10 @@ class Device {
     #onConnectionMessageReceived(messageType, dataView) {
         _console.log({ messageType, dataView });
         switch (messageType) {
-            case "manufacturerName":
-                const manufacturerName = textDecoder.decode(dataView);
-                _console.log({ manufacturerName });
-                this.#updateDeviceInformation({ manufacturerName });
-                break;
-            case "modelNumber":
-                const modelNumber = textDecoder.decode(dataView);
-                _console.log({ modelNumber });
-                this.#updateDeviceInformation({ modelNumber });
-                break;
-            case "softwareRevision":
-                const softwareRevision = textDecoder.decode(dataView);
-                _console.log({ softwareRevision });
-                this.#updateDeviceInformation({ softwareRevision });
-                break;
-            case "hardwareRevision":
-                const hardwareRevision = textDecoder.decode(dataView);
-                _console.log({ hardwareRevision });
-                this.#updateDeviceInformation({ hardwareRevision });
-                break;
-            case "firmwareRevision":
-                const firmwareRevision = textDecoder.decode(dataView);
-                _console.log({ firmwareRevision });
-                this.#updateDeviceInformation({ firmwareRevision });
-                break;
-            case "pnpId":
-                /** @type {PnpId} */
-                const pnpId = {
-                    source: dataView.getUint8(0) === 1 ? "Bluetooth" : "USB",
-                    productId: dataView.getUint16(3, true),
-                    productVersion: dataView.getUint16(5, true),
-                };
-                if (pnpId.source == "Bluetooth") {
-                    pnpId.vendorId = dataView.getUint16(1, true);
-                } else {
-                    // no need to implement
-                }
-                _console.log({ pnpId });
-                this.#updateDeviceInformation({ pnpId });
-                break;
-            case "serialNumber":
-                const serialNumber = textDecoder.decode(dataView);
-                _console.log({ serialNumber });
-                // will only be used for node.js
-                break;
-
             case "batteryLevel":
                 const batteryLevel = dataView.getUint8(0);
                 _console.log("received battery level", { batteryLevel });
                 this.#updateBatteryLevel(batteryLevel);
-                break;
-
-            case "getName":
-            case "setName":
-                const name = textDecoder.decode(dataView);
-                _console.log({ name });
-                this.#updateName(name);
-                break;
-            case "getType":
-            case "setType":
-                const typeEnum = dataView.getUint8(0);
-                const type = this.#types[typeEnum];
-                _console.log({ typeEnum, type });
-                this.#updateType(type);
                 break;
 
             case "getSensorConfiguration":
@@ -549,20 +472,8 @@ class Device {
                 this.#sensorDataManager.pressureSensorDataManager.parsePositions(dataView);
                 break;
 
-            case "getCurrentTime":
-            case "setCurrentTime":
-                const currentTime = Number(dataView.getBigUint64(0, true));
-                this.#onCurrentTime(currentTime);
-                break;
-
             case "sensorData":
                 this.#sensorDataManager.parseData(dataView);
-                break;
-
-            case "getMtu":
-                const mtu = dataView.getUint16(0, true);
-                _console.log({ mtu });
-                this.#updateMtu(mtu);
                 break;
 
             default:
@@ -572,6 +483,10 @@ class Device {
                     this.#tfliteManager.parseMessage(messageType, dataView);
                 } else if (this.#firmwareManager.messageTypes.includes(messageType)) {
                     this.#firmwareManager.parseMessage(messageType, dataView);
+                } else if (this.#deviceInformationManager.messageTypes.includes(messageType)) {
+                    this.#deviceInformationManager.parseMessage(messageType, dataView);
+                } else if (this.#informationManager.messageTypes.includes(messageType)) {
+                    this.#informationManager.parseMessage(messageType, dataView);
                 } else {
                     throw Error(`uncaught messageType ${messageType}`);
                 }
@@ -588,58 +503,12 @@ class Device {
     /** @type {Map.<ConnectionMessageType, DataView>} */
     latestConnectionMessage = new Map();
 
-    // CURRENT TIME
-
-    #isCurrentTimeSet = false;
-    /** @param {number} currentTime */
-    #onCurrentTime(currentTime) {
-        _console.log({ currentTime });
-        this.#isCurrentTimeSet = currentTime != 0;
-        if (!this.#isCurrentTimeSet) {
-            this.#setCurrentTime();
-        }
-    }
-    #setCurrentTime() {
-        _console.log("setting current time...");
-        const dataView = new DataView(new ArrayBuffer(8));
-        dataView.setBigUint64(0, BigInt(Date.now()), true);
-        this.#sendTxMessages([{ type: "setCurrentTime", data: dataView.buffer }]);
-    }
-
     // DEVICE INFORMATION
 
-    /** @type {DeviceInformation} */
-    #deviceInformation = {
-        manufacturerName: null,
-        modelNumber: null,
-        softwareRevision: null,
-        hardwareRevision: null,
-        firmwareRevision: null,
-        pnpId: null,
-    };
+    #deviceInformationManager = new DeviceInformationManager();
+
     get deviceInformation() {
-        return this.#deviceInformation;
-    }
-    get #isDeviceInformationComplete() {
-        return Object.values(this.#deviceInformation).every((value) => value != null);
-    }
-
-    /** @param {DeviceInformation} partialDeviceInformation */
-    #updateDeviceInformation(partialDeviceInformation) {
-        _console.log({ partialDeviceInformation });
-        for (const deviceInformationName in partialDeviceInformation) {
-            this.#dispatchEvent({
-                type: deviceInformationName,
-                message: { [deviceInformationName]: partialDeviceInformation[deviceInformationName] },
-            });
-        }
-
-        Object.assign(this.#deviceInformation, partialDeviceInformation);
-        _console.log({ deviceInformation: this.#deviceInformation });
-        if (this.#isDeviceInformationComplete) {
-            _console.log("completed deviceInformation");
-            this.#dispatchEvent({ type: "deviceInformation", message: { deviceInformation: this.#deviceInformation } });
-        }
+        return this.#deviceInformationManager.information;
     }
 
     // BATTERY LEVEL
@@ -661,132 +530,48 @@ class Device {
         this.#dispatchEvent({ type: "batteryLevel", message: { batteryLevel: this.#batteryLevel } });
     }
 
-    // NAME
-    /** @type {string?} */
-    #name;
-    get name() {
-        return this.#name;
-    }
+    // INFORMATION
+    #informationManager = new InformationManager();
 
-    /** @param {string} updatedName */
-    #updateName(updatedName) {
-        _console.assertTypeWithError(updatedName, "string");
-        this.#name = updatedName;
-        _console.log({ updatedName: this.#name });
-        this.#dispatchEvent({ type: "getName", message: { name: this.#name } });
-    }
+    // FILL - type metadata
+
     static get MinNameLength() {
-        return 2;
-    }
-    get minNameLength() {
-        return Device.MinNameLength;
+        return InformationManager.MinNameLength;
     }
     static get MaxNameLength() {
-        return 30;
+        return InformationManager.MaxNameLength;
     }
-    get maxNameLength() {
-        return Device.MaxNameLength;
+    get name() {
+        return this.#informationManager.name;
     }
     /** @param {string} newName */
     async setName(newName) {
-        this.#assertIsConnected();
-        _console.assertTypeWithError(newName, "string");
-        _console.assertWithError(
-            newName.length >= this.minNameLength,
-            `name must be greater than ${this.minNameLength} characters long ("${newName}" is ${newName.length} characters long)`
-        );
-        _console.assertWithError(
-            newName.length < this.maxNameLength,
-            `name must be less than ${this.maxNameLength} characters long ("${newName}" is ${newName.length} characters long)`
-        );
-        const setNameData = textEncoder.encode(newName);
-        _console.log({ setNameData });
-        await this.#sendTxMessages([{ type: "setName", data: setNameData.buffer }]);
+        await this.#informationManager.setName(newName);
     }
 
-    // TYPE
-    /** @type {DeviceType[]} */
-    static #Types = ["leftInsole", "rightInsole"];
     static get Types() {
-        return this.#Types;
+        return InformationManager.Types;
     }
-    get #types() {
-        return Device.Types;
-    }
-    /** @type {DeviceType?} */
-    #type;
     get type() {
-        return this.#type;
-    }
-    get typeEnum() {
-        return Device.Types.indexOf(this.type);
-    }
-    /** @param {DeviceType} type */
-    #assertValidDeviceType(type) {
-        _console.assertEnumWithError(type, this.#types);
-    }
-    /** @param {number} typeEnum */
-    #assertValidDeviceTypeEnum(typeEnum) {
-        _console.assertTypeWithError(typeEnum, "number");
-        _console.assertWithError(this.#types[typeEnum], `invalid typeEnum ${typeEnum}`);
-    }
-    /** @param {DeviceType} updatedType */
-    #updateType(updatedType) {
-        this.#assertValidDeviceType(updatedType);
-        if (updatedType == this.type) {
-            _console.log("redundant type assignment");
-            return;
-        }
-        this.#type = updatedType;
-        _console.log({ updatedType: this.#type });
-
-        this.#dispatchEvent({ type: "getType", message: { type: this.#type } });
-
-        if (Device.#UseLocalStorage) {
-            Device.#UpdateLocalStorageConfigurationForDevice(this);
-        }
-    }
-    /** @param {number} newTypeEnum */
-    async #setTypeEnum(newTypeEnum) {
-        this.#assertValidDeviceTypeEnum(newTypeEnum);
-        const setTypeData = Uint8Array.from([newTypeEnum]);
-        _console.log({ setTypeData });
-        await this.#sendTxMessages([{ type: "setType", data: setTypeData.buffer }]);
+        return this.#informationManager.type;
     }
     /** @param {DeviceType} newType */
     async setType(newType) {
-        this.#assertIsConnected();
-        this.#assertValidDeviceType(newType);
-        const newTypeEnum = this.#types.indexOf(newType);
-        this.#setTypeEnum(newTypeEnum);
+        await this.#informationManager.setType(newType);
     }
 
-    get isInsole() {
-        switch (this.type) {
-            case "leftInsole":
-            case "rightInsole":
-                return true;
-            default:
-                // for future non-insole device types
-                return false;
-        }
-    }
-    /** @type {InsoleSide[]} */
-    static #InsoleSides = ["left", "right"];
     static get InsoleSides() {
-        return this.#InsoleSides;
+        return InformationManager.InsoleSides;
     }
-    get insoleSides() {
-        return Device.InsoleSides;
+    get isInsole() {
+        return this.#informationManager.isInsole;
     }
-    /** @type {InsoleSide} */
     get insoleSide() {
-        switch (this.type) {
-            case "leftInsole":
-                return "left";
-            case "rightInsole":
-                return "right";
-        }
+        return this.#informationManager.insoleSide;
+    }
+
+    get mtu() {
+        return this.#informationManager.mtu;
     }
 
     // SENSOR TYPES
@@ -828,7 +613,6 @@ class Device {
     }
     /** @param {SensorConfiguration} newSensorConfiguration */
     async setSensorConfiguration(newSensorConfiguration) {
-        this.#assertIsConnected();
         _console.log({ newSensorConfiguration });
         const setSensorConfigurationData = this.#sensorConfigurationManager.createData(newSensorConfiguration);
         _console.log({ setSensorConfigurationData });
@@ -977,6 +761,173 @@ class Device {
             triggerVibrationData = concatenateArrayBuffers(triggerVibrationData, dataView);
         });
         await this.#sendTxMessages([{ type: "triggerVibration", data: triggerVibrationData.buffer }]);
+    }
+
+    // FILE TRANSFER
+
+    #fileTransferManager = new FileTransferManager();
+    static get FileTypes() {
+        return FileTransferManager.Types;
+    }
+
+    get maxFileLength() {
+        return this.#fileTransferManager.maxLength;
+    }
+
+    /** @typedef {import("./utils/ArrayBufferUtils.js").FileLike} FileLike */
+
+    /**
+     * @param {FileType} fileType
+     * @param {FileLike} file
+     */
+    async sendFile(fileType, file) {
+        const promise = this.waitForEvent("fileTransferComplete");
+        this.#fileTransferManager.send(fileType, file);
+        await promise;
+    }
+
+    /** @param {FileType} fileType */
+    async receiveFile(fileType) {
+        const promise = this.waitForEvent("fileTransferComplete");
+        this.#fileTransferManager.receive(fileType);
+        await promise;
+    }
+
+    get fileTransferStatus() {
+        return this.#fileTransferManager.status;
+    }
+
+    cancelFileTransfer() {
+        this.#fileTransferManager.cancel();
+    }
+
+    // TFLITE
+
+    static get TfliteSensorTypes() {
+        return TfliteManager.SensorTypes;
+    }
+
+    #tfliteManager = new TfliteManager();
+
+    get tfliteName() {
+        return this.#tfliteManager.name;
+    }
+    /** @param {string} newName */
+    setTfliteName(newName) {
+        return this.#tfliteManager.setName(newName);
+    }
+
+    // TFLITE MODEL CONFIG
+
+    static get TfliteTasks() {
+        return TfliteManager.Tasks;
+    }
+
+    get tfliteTask() {
+        return this.#tfliteManager.task;
+    }
+    /** @param {import("./TfliteManager.js").TfliteTask} newTask */
+    setTfliteTask(newTask) {
+        return this.#tfliteManager.setTask(newTask);
+    }
+
+    get tfliteSampleRate() {
+        return this.#tfliteManager.sampleRate;
+    }
+    /** @param {number} newSampleRate */
+    setTfliteSampleRate(newSampleRate) {
+        return this.#tfliteManager.setSampleRate(newSampleRate);
+    }
+
+    get tfliteSensorTypes() {
+        return this.#tfliteManager.sensorTypes;
+    }
+    get allowedTfliteSensorTypes() {
+        return this.sensorTypes.filter((sensorType) => TfliteManager.SensorTypes.includes(sensorType));
+    }
+    /** @param {SensorType[]} newSensorTypes */
+    setTfliteSensorTypes(newSensorTypes) {
+        return this.#tfliteManager.setSensorTypes(newSensorTypes);
+    }
+
+    get tfliteIsReady() {
+        return this.#tfliteManager.isReady;
+    }
+
+    // TFLITE INFERENCING
+
+    get tfliteInferencingEnabled() {
+        return this.#tfliteManager.inferencingEnabled;
+    }
+    /** @param {boolean} inferencingEnabled */
+    async setTfliteInferencingEnabled(inferencingEnabled) {
+        return this.#tfliteManager.setInferencingEnabled(inferencingEnabled);
+    }
+    async enableTfliteInferencing() {
+        return this.setTfliteInferencingEnabled(true);
+    }
+    async disableTfliteInferencing() {
+        return this.setTfliteInferencingEnabled(false);
+    }
+    async toggleTfliteInferencing() {
+        return this.#tfliteManager.toggleInferencingEnabled();
+    }
+
+    // TFLITE INFERENCE CONFIG
+
+    get tfliteCaptureDelay() {
+        return this.#tfliteManager.captureDelay;
+    }
+    /** @param {number} newCaptureDelay */
+    async setTfliteCaptureDelay(newCaptureDelay) {
+        return this.#tfliteManager.setCaptureDelay(newCaptureDelay);
+    }
+    get tfliteThreshold() {
+        return this.#tfliteManager.threshold;
+    }
+    /** @param {number} newThreshold */
+    async setTfliteThreshold(newThreshold) {
+        return this.#tfliteManager.setThreshold(newThreshold);
+    }
+
+    // FIRMWARE MANAGER
+
+    #firmwareManager = new FirmwareManager();
+
+    /** @param {ArrayBuffer} data */
+    #sendSmpMessage(data) {
+        this.#connectionManager.sendSmpMessage(data);
+    }
+
+    /** @param {FileLike} file */
+    async uploadFirmware(file) {
+        return this.#firmwareManager.uploadFirmware(file);
+    }
+
+    async reset() {
+        await this.#firmwareManager.reset();
+        return this.#connectionManager.disconnect();
+    }
+
+    get firmwareStatus() {
+        return this.#firmwareManager.status;
+    }
+
+    async getFirmwareImages() {
+        return this.#firmwareManager.getImages();
+    }
+    get firmwareImages() {
+        return this.#firmwareManager.images;
+    }
+
+    async eraseFirmwareImage() {
+        return this.#firmwareManager.eraseImage();
+    }
+    async confirmFirmwareImage() {
+        return this.#firmwareManager.confirmImage();
+    }
+    async testFirmwareImage() {
+        return this.#firmwareManager.testImage();
     }
 
     // CONNECTED DEVICES
@@ -1156,9 +1107,9 @@ class Device {
             const connectionManager = new WebBluetoothConnectionManager();
             connectionManager.device = bluetoothDevice;
             if (bluetoothDevice.name) {
-                device.#updateName(bluetoothDevice.name);
+                device.#informationManager.updateName(bluetoothDevice.name);
             }
-            device.#updateType(deviceInformation.type);
+            device.#informationManager.updateType(deviceInformation.type);
             device.connectionManager = connectionManager;
 
             this.AvailableDevices.push(device);
@@ -1268,195 +1219,8 @@ class Device {
             this.UseLocalStorage = true;
         }
     }
-
-    // FILE TRANSFER
-
-    #fileTransferManager = new FileTransferManager();
-    static get FileTypes() {
-        return FileTransferManager.Types;
-    }
-
-    get maxFileLength() {
-        return this.#fileTransferManager.maxLength;
-    }
-
-    /** @typedef {import("./utils/ArrayBufferUtils.js").FileLike} FileLike */
-
-    /**
-     * @param {FileType} fileType
-     * @param {FileLike} file
-     */
-    async sendFile(fileType, file) {
-        const promise = this.waitForEvent("fileTransferComplete");
-        this.#fileTransferManager.send(fileType, file);
-        await promise;
-    }
-
-    /** @param {FileType} fileType */
-    async receiveFile(fileType) {
-        const promise = this.waitForEvent("fileTransferComplete");
-        this.#fileTransferManager.receive(fileType);
-        await promise;
-    }
-
-    get fileTransferStatus() {
-        return this.#fileTransferManager.status;
-    }
-
-    cancelFileTransfer() {
-        this.#fileTransferManager.cancel();
-    }
-
-    // TFLITE
-
-    static get TfliteSensorTypes() {
-        return TfliteManager.SensorTypes;
-    }
-
-    #tfliteManager = new TfliteManager();
-
-    get tfliteName() {
-        return this.#tfliteManager.name;
-    }
-    /** @param {string} newName */
-    setTfliteName(newName) {
-        return this.#tfliteManager.setName(newName);
-    }
-
-    // TFLITE MODEL CONFIG
-
-    static get TfliteTasks() {
-        return TfliteManager.Tasks;
-    }
-
-    get tfliteTask() {
-        return this.#tfliteManager.task;
-    }
-    /** @param {import("./TfliteManager.js").TfliteTask} newTask */
-    setTfliteTask(newTask) {
-        return this.#tfliteManager.setTask(newTask);
-    }
-
-    get tfliteSampleRate() {
-        return this.#tfliteManager.sampleRate;
-    }
-    /** @param {number} newSampleRate */
-    setTfliteSampleRate(newSampleRate) {
-        return this.#tfliteManager.setSampleRate(newSampleRate);
-    }
-
-    get tfliteSensorTypes() {
-        return this.#tfliteManager.sensorTypes;
-    }
-    get allowedTfliteSensorTypes() {
-        return this.sensorTypes.filter((sensorType) => TfliteManager.SensorTypes.includes(sensorType));
-    }
-    /** @param {SensorType[]} newSensorTypes */
-    setTfliteSensorTypes(newSensorTypes) {
-        return this.#tfliteManager.setSensorTypes(newSensorTypes);
-    }
-
-    get tfliteIsReady() {
-        return this.#tfliteManager.isReady;
-    }
-
-    // TFLITE INFERENCING
-
-    get tfliteInferencingEnabled() {
-        return this.#tfliteManager.inferencingEnabled;
-    }
-    /** @param {boolean} inferencingEnabled */
-    async setTfliteInferencingEnabled(inferencingEnabled) {
-        return this.#tfliteManager.setInferencingEnabled(inferencingEnabled);
-    }
-    async enableTfliteInferencing() {
-        return this.setTfliteInferencingEnabled(true);
-    }
-    async disableTfliteInferencing() {
-        return this.setTfliteInferencingEnabled(false);
-    }
-    async toggleTfliteInferencing() {
-        return this.#tfliteManager.toggleInferencingEnabled();
-    }
-
-    // TFLITE INFERENCE CONFIG
-
-    get tfliteCaptureDelay() {
-        return this.#tfliteManager.captureDelay;
-    }
-    /** @param {number} newCaptureDelay */
-    async setTfliteCaptureDelay(newCaptureDelay) {
-        return this.#tfliteManager.setCaptureDelay(newCaptureDelay);
-    }
-    get tfliteThreshold() {
-        return this.#tfliteManager.threshold;
-    }
-    /** @param {number} newThreshold */
-    async setTfliteThreshold(newThreshold) {
-        return this.#tfliteManager.setThreshold(newThreshold);
-    }
-
-    // FIRMWARE MANAGER
-
-    #firmwareManager = new FirmwareManager();
-
-    /** @param {ArrayBuffer} data */
-    #sendSmpMessage(data) {
-        this.#connectionManager.sendSmpMessage(data);
-    }
-
-    /** @param {FileLike} file */
-    async uploadFirmware(file) {
-        return this.#firmwareManager.uploadFirmware(file);
-    }
-
-    async reset() {
-        await this.#firmwareManager.reset();
-        return this.#connectionManager.disconnect();
-    }
-
-    get firmwareStatus() {
-        return this.#firmwareManager.status;
-    }
-
-    async getFirmwareImages() {
-        return this.#firmwareManager.getImages();
-    }
-    get firmwareImages() {
-        return this.#firmwareManager.images;
-    }
-
-    async eraseFirmwareImage() {
-        return this.#firmwareManager.eraseImage();
-    }
-    async confirmFirmwareImage() {
-        return this.#firmwareManager.confirmImage();
-    }
-    async testFirmwareImage() {
-        return this.#firmwareManager.testImage();
-    }
-
-    // MTU
-
-    #mtu = 0;
-    get mtu() {
-        return this.#mtu;
-    }
-    /** @param {number} newMtu */
-    #updateMtu(newMtu) {
-        _console.assertTypeWithError(newMtu, "number");
-        if (this.#mtu == newMtu) {
-            _console.log("redundant mtu assignment", newMtu);
-            return;
-        }
-        this.#mtu = newMtu;
-
-        this.#firmwareManager.mtu = this.mtu;
-        this.#fileTransferManager.mtu = this.mtu;
-        this.connectionManager.mtu = this.mtu;
-
-        this.#dispatchEvent({ type: "getMtu", message: { mtu: this.#mtu } });
-    }
 }
+
+/** @typedef {Device} Device */
 
 export default Device;

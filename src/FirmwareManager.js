@@ -74,9 +74,7 @@ class FirmwareManager {
         this.eventDispatcher.addEventListener(type, listener, options);
     }
 
-    /**
-     * @param {FirmwareManagerEvent} event
-     */
+    /** @param {FirmwareManagerEvent} event */
     #dispatchEvent(event) {
         this.eventDispatcher.dispatchEvent(event);
     }

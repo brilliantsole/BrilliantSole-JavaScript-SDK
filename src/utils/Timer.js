@@ -2,6 +2,14 @@ import { createConsole } from "./Console.js";
 
 const _console = createConsole("Timer", { log: false });
 
+/** @param {number} delay ms */
+export async function wait(delay) {
+    _console.log(`waiting for ${delay} ms`);
+    return new Promise((resolve) => {
+        setTimeout(() => resolve(), delay);
+    });
+}
+
 class Timer {
     /** @type {function} */
     #callback;

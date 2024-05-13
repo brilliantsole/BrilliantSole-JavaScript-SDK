@@ -31,10 +31,12 @@ const _console = createConsole("FileTransferManager", { log: true });
 
 /** @typedef {FileTransferMessageType | "fileTransferProgress" | "fileTransferComplete" | "fileReceived"} FileTransferManagerEventType */
 
+/** @typedef {import("./Device.js").Device} Device */
+
 /**
  * @typedef FileTransferManagerEvent
  * @type {Object}
- * @property {FileTransferManager} target
+ * @property {Device} target
  * @property {FileTransferManagerEventType} type
  * @property {Object} message
  */
@@ -465,7 +467,7 @@ class FileTransferManager {
             return;
         }
 
-        const slicedBuffer = buffer.slice(offset, offset + (this.#mtu - 3 - 3));
+        const slicedBuffer = buffer.slice(offset, offset + (this.mtu - 3 - 3));
         console.log("slicedBuffer", slicedBuffer);
         const bytesLeft = buffer.byteLength - offset;
         const progress = 1 - bytesLeft / buffer.byteLength;
@@ -501,7 +503,7 @@ class FileTransferManager {
 
     /**
      * @callback SendMessageCallback
-     * @param {{type: FileTransferMessageType, data: ArrayBuffer}} messages
+     * @param {{type: FileTransferMessageType, data: ArrayBuffer}[]} messages
      * @param {boolean} sendImmediately
      */
 
@@ -510,13 +512,8 @@ class FileTransferManager {
 
     // MTU
 
-    #mtu;
-    get mtu() {
-        return this.#mtu;
-    }
-    set mtu(newMtu) {
-        this.#mtu = newMtu;
-    }
+    /** @type {number} */
+    mtu;
 }
 
 export default FileTransferManager;

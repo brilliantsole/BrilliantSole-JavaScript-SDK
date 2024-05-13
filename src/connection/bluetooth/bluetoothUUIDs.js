@@ -32,14 +32,9 @@ function stringToServiceUUID(identifier) {
 }
 
 /** @typedef {"deviceInformation" | "battery" | "main" | "smp"} BluetoothServiceName */
+/** @typedef {import("../../DeviceInformationManager.js").DeviceInformationMessageType} DeviceInformationMessageType */
 /**
- * @typedef { "manufacturerName" |
- * "modelNumber" |
- * "hardwareRevision" |
- * "firmwareRevision" |
- * "softwareRevision" |
- * "pnpId" |
- * "serialNumber" |
+ * @typedef { DeviceInformationMessageType |
  * "batteryLevel" |
  * "rx" |
  * "tx" |

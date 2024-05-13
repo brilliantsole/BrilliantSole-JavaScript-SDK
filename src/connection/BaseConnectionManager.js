@@ -5,30 +5,28 @@ import FileTransferManager from "../FileTransferManager.js";
 import TfliteManager from "../TfliteManager.js";
 import { concatenateArrayBuffers } from "../utils/ArrayBufferUtils.js";
 import { parseMessage } from "../utils/ParseUtils.js";
+import DeviceInformationManager from "../DeviceInformationManager.js";
+import InformationManager from "../InformationManager.js";
 
 const _console = createConsole("BaseConnectionManager", { log: true });
 
 /** @typedef {import("../FileTransferManager.js").FileTransferMessageType} FileTransferMessageType */
 /** @typedef {import("../TfliteManager.js").TfliteMessageType} TfliteMessageType */
 /** @typedef {import("../FirmwareManager.js").FirmwareMessageType} FirmwareMessageType */
+/** @typedef {import("../DeviceInformationManager.js").DeviceInformationMessageType} DeviceInformationMessageType */
+/** @typedef {import("../InformationManager.js").InformationMessageType} InformationMessageType */
 
 /** @typedef {"webBluetooth" | "noble" | "webSocketClient"} ConnectionType */
 /** @typedef {"not connected" | "connecting" | "connected" | "disconnecting"} ConnectionStatus */
 
 /**
- * @typedef { "getMtu" |
- * "getName" |
- * "setName" |
- * "getType" |
- * "setType" |
- * "getSensorConfiguration" |
+ * @typedef { "getSensorConfiguration" |
  * "setSensorConfiguration" |
  * "pressurePositions" |
  * "sensorScalars" |
- * "setCurrentTime" |
- * "getCurrentTime" |
  * "sensorData" |
  * "triggerVibration" |
+ * InformationMessageType |
  * TfliteMessageType |
  * FileTransferMessageType |
  * FirmwareMessageType
@@ -43,13 +41,7 @@ const _console = createConsole("BaseConnectionManager", { log: true });
  */
 
 /**
- * @typedef { "manufacturerName" |
- * "modelNumber" |
- * "softwareRevision" |
- * "hardwareRevision" |
- * "firmwareRevision" |
- * "pnpId" |
- * "serialNumber" |
+ * @typedef { DeviceInformationMessageType |
  * "batteryLevel" |
  * "smp" |
  * "rx" |
@@ -74,23 +66,15 @@ class BaseConnectionManager {
 
     /** @type {TxRxMessageType[]} */
     static #TxRxMessageTypes = [
-        "getMtu",
-
-        "getName",
-        "setName",
-
-        "getType",
-        "setType",
+        ...InformationManager.MessageTypes,
 
         "getSensorConfiguration",
         "setSensorConfiguration",
+
         "pressurePositions",
         "sensorScalars",
-
-        "getCurrentTime",
-        "setCurrentTime",
-
         "sensorData",
+
         "triggerVibration",
 
         ...TfliteManager.MessageTypes,
@@ -101,21 +85,11 @@ class BaseConnectionManager {
     }
     /** @type {ConnectionMessageType[]} */
     static #MessageTypes = [
-        "manufacturerName",
-        "modelNumber",
-        "softwareRevision",
-        "hardwareRevision",
-        "firmwareRevision",
-        "pnpId",
-        "serialNumber",
-
+        ...DeviceInformationManager.MessageTypes,
         "batteryLevel",
-
         "smp",
-
         "rx",
         "tx",
-
         ...this.TxRxMessageTypes,
     ];
     static get MessageTypes() {
