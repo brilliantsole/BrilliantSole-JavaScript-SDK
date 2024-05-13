@@ -4,6 +4,7 @@ import PressureSensorDataManager from "./PressureSensorDataManager.js";
 import MotionSensorDataManager from "./MotionSensorDataManager.js";
 import BarometerSensorDataManager from "./BarometerSensorDataManager.js";
 import { parseMessage } from "../utils/ParseUtils.js";
+import EventDispatcher from "../utils/EventDispatcher.js";
 
 const _console = createConsole("SensorDataManager", { log: true });
 
@@ -13,14 +14,70 @@ const _console = createConsole("SensorDataManager", { log: true });
 
 /** @typedef {MotionSensorType | PressureSensorType | BarometerSensorType} SensorType */
 
+/** @typedef {"pressurePositions" | "sensorScalars" | "sensorData"} SensorDataMessageType */
+/** @typedef {SensorDataMessageType | SensorType} SensorDataManagerEventType */
+
+/** @typedef {import("../utils/EventDispatcher.js").EventDispatcherListener} EventDispatcherListener */
+/** @typedef {import("../utils/EventDispatcher.js").EventDispatcherOptions} EventDispatcherOptions */
+
+/** @typedef {import("../Device.js").Device} Device */
 /**
- * @callback SensorDataCallback
- * @param {SensorType} sensorType
- * @param {Object} data
- * @param {number} data.timestamp
+ * @typedef SensorDataManagerEvent
+ * @type {Object}
+ * @property {Device} target
+ * @property {SensorDataManagerEventType} type
+ * @property {Object} message
  */
 
 class SensorDataManager {
+    // MESSAGE TYPES
+
+    /** @type {SensorDataMessageType[]} */
+    static #MessageTypes = ["pressurePositions", "sensorScalars", "sensorData"];
+    static get MessageTypes() {
+        return this.#MessageTypes;
+    }
+    get messageTypes() {
+        return SensorDataManager.MessageTypes;
+    }
+
+    // EVENT DISPATCHER
+
+    /** @type {SensorDataManagerEventType[]} */
+    static #EventTypes = [
+        ...this.#MessageTypes,
+
+        "pressure",
+        "acceleration",
+        "gravity",
+        "linearAcceleration",
+        "gyroscope",
+        "magnetometer",
+        "gameRotation",
+        "rotation",
+        "barometer",
+    ];
+    static get EventTypes() {
+        return this.#EventTypes;
+    }
+    get eventTypes() {
+        return SensorDataManager.#EventTypes;
+    }
+    /** @type {EventDispatcher} */
+    eventDispatcher;
+
+    /** @param {SensorDataManagerEvent} event */
+    #dispatchEvent(event) {
+        this.eventDispatcher.dispatchEvent(event);
+    }
+
+    /** @param {SensorDataManagerEventType} eventType */
+    waitForEvent(eventType) {
+        return this.eventDispatcher.waitForEvent(eventType);
+    }
+
+    // MANAGERS
+
     pressureSensorDataManager = new PressureSensorDataManager();
     motionSensorDataManager = new MotionSensorDataManager();
     barometerSensorDataManager = new BarometerSensorDataManager();
@@ -58,11 +115,8 @@ class SensorDataManager {
         _console.assertWithError(sensorTypeEnum in this.#Types, `invalid sensorTypeEnum ${sensorTypeEnum}`);
     }
 
-    /** @type {SensorDataCallback} */
-    onDataReceived;
-
     /** @param {DataView} dataView */
-    parseData(dataView) {
+    #parseData(dataView) {
         _console.log("sensorData", Array.from(new Uint8Array(dataView.buffer)));
 
         let byteOffset = 0;
@@ -82,21 +136,21 @@ class SensorDataManager {
     #parseDataCallback(sensorType, dataView, { timestamp }) {
         const scalar = this.#scalars.get(sensorType);
 
-        let value;
+        let sensorData;
         switch (sensorType) {
             case "pressure":
-                value = this.pressureSensorDataManager.parseData(dataView);
+                sensorData = this.pressureSensorDataManager.parseData(dataView);
                 break;
             case "acceleration":
             case "gravity":
             case "linearAcceleration":
             case "gyroscope":
             case "magnetometer":
-                value = this.motionSensorDataManager.parseVector3(dataView, scalar);
+                sensorData = this.motionSensorDataManager.parseVector3(dataView, scalar);
                 break;
             case "gameRotation":
             case "rotation":
-                value = this.motionSensorDataManager.parseQuaternion(dataView, scalar);
+                sensorData = this.motionSensorDataManager.parseQuaternion(dataView, scalar);
                 break;
             case "barometer":
                 // FILL
@@ -105,8 +159,11 @@ class SensorDataManager {
                 _console.error(`uncaught sensorType "${sensorType}"`);
         }
 
-        _console.assertWithError(value, `no value defined for sensorType "${sensorType}"`);
-        this.onDataReceived(sensorType, { timestamp, [sensorType]: value });
+        _console.assertWithError(sensorData, `no sensorData defined for sensorType "${sensorType}"`);
+
+        _console.log({ sensorType, sensorData });
+        this.#dispatchEvent({ type: sensorType, message: sensorData });
+        this.#dispatchEvent({ type: "sensorData", message: { ...sensorData, sensorType } });
     }
 
     /** @param {DataView} dataView */
@@ -123,6 +180,39 @@ class SensorDataManager {
             this.#scalars.set(sensorType, sensorScalar);
         }
     }
+
+    // MESSAGE
+
+    /**
+     * @param {SensorDataMessageType} messageType
+     * @param {DataView} dataView
+     */
+    parseMessage(messageType, dataView) {
+        _console.log({ messageType });
+
+        switch (messageType) {
+            case "sensorScalars":
+                this.parseScalars(dataView);
+                break;
+            case "pressurePositions":
+                this.pressureSensorDataManager.parsePositions(dataView);
+                break;
+            case "sensorData":
+                this.#parseData(dataView);
+                break;
+            default:
+                throw Error(`uncaught messageType ${messageType}`);
+        }
+    }
+
+    /**
+     * @callback SendMessageCallback
+     * @param {{type: SensorDataMessageType, data: ArrayBuffer}[]} messages
+     * @param {boolean} sendImmediately
+     */
+
+    /** @type {SendMessageCallback} */
+    sendMessage;
 }
 
 export default SensorDataManager;

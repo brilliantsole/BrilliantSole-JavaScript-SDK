@@ -9,6 +9,7 @@ import DeviceInformationManager from "../DeviceInformationManager.js";
 import InformationManager from "../InformationManager.js";
 import VibrationManager from "../vibration/VibrationManager.js";
 import SensorConfigurationManager from "../sensor/SensorConfigurationManager.js";
+import SensorDataManager from "../sensor/SensorDataManager.js";
 
 const _console = createConsole("BaseConnectionManager", { log: true });
 
@@ -18,20 +19,19 @@ const _console = createConsole("BaseConnectionManager", { log: true });
 /** @typedef {import("../DeviceInformationManager.js").DeviceInformationMessageType} DeviceInformationMessageType */
 /** @typedef {import("../InformationManager.js").InformationMessageType} InformationMessageType */
 /** @typedef {import("../sensor/SensorConfigurationManager.js").SensorConfigurationMessageType} SensorConfigurationMessageType */
+/** @typedef {import("../sensor/SensorDataManager.js").SensorDataMessageType} SensorDataMessageType */
 /** @typedef {import("../vibration/VibrationManager.js").VibrationMessageType} VibrationMessageType */
 
 /** @typedef {"webBluetooth" | "noble" | "webSocketClient"} ConnectionType */
 /** @typedef {"not connected" | "connecting" | "connected" | "disconnecting"} ConnectionStatus */
 
 /**
- * @typedef { SensorConfigurationMessageType |
- * "pressurePositions" |
- * "sensorScalars" |
- * "sensorData" |
+ * @typedef { InformationMessageType |
+ * SensorConfigurationMessageType |
+ * SensorDataMessageType |
  * VibrationMessageType |
- * InformationMessageType |
- * TfliteMessageType |
  * FileTransferMessageType |
+ * TfliteMessageType |
  * FirmwareMessageType
  * } TxRxMessageType
  */
@@ -46,9 +46,9 @@ const _console = createConsole("BaseConnectionManager", { log: true });
 /**
  * @typedef { DeviceInformationMessageType |
  * "batteryLevel" |
- * "smp" |
  * "rx" |
  * "tx" |
+ * "smp" |
  * TxRxMessageType
  * } ConnectionMessageType
  */
@@ -71,11 +71,7 @@ class BaseConnectionManager {
     static #TxRxMessageTypes = [
         ...InformationManager.MessageTypes,
         ...SensorConfigurationManager.MessageTypes,
-
-        "pressurePositions",
-        "sensorScalars",
-        "sensorData",
-
+        ...SensorDataManager.MessageTypes,
         ...VibrationManager.MessageTypes,
         ...TfliteManager.MessageTypes,
         ...FileTransferManager.MessageTypes,
@@ -157,6 +153,17 @@ class BaseConnectionManager {
         this.#assertIsSupported();
     }
 
+    /** @type {ConnectionStatus[]} */
+    static get #Statuses() {
+        return ["not connected", "connecting", "connected", "disconnecting"];
+    }
+    static get Statuses() {
+        return this.#Statuses;
+    }
+    get #statuses() {
+        return BaseConnectionManager.#Statuses;
+    }
+
     /** @type {ConnectionStatus} */
     #status = "not connected";
     get status() {
@@ -164,7 +171,7 @@ class BaseConnectionManager {
     }
     /** @protected */
     set status(newConnectionStatus) {
-        _console.assertTypeWithError(newConnectionStatus, "string");
+        _console.assertEnumWithError(newConnectionStatus, this.#statuses);
         if (this.#status == newConnectionStatus) {
             _console.log(`tried to assign same connection status "${newConnectionStatus}"`);
             return;

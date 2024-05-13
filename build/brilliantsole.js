@@ -1525,14 +1525,70 @@
 
 	/** @typedef {MotionSensorType | PressureSensorType | BarometerSensorType} SensorType */
 
+	/** @typedef {"pressurePositions" | "sensorScalars" | "sensorData"} SensorDataMessageType */
+	/** @typedef {SensorDataMessageType | SensorType} SensorDataManagerEventType */
+
+
+
+
+
 	/**
-	 * @callback SensorDataCallback
-	 * @param {SensorType} sensorType
-	 * @param {Object} data
-	 * @param {number} data.timestamp
+	 * @typedef SensorDataManagerEvent
+	 * @type {Object}
+	 * @property {Device} target
+	 * @property {SensorDataManagerEventType} type
+	 * @property {Object} message
 	 */
 
 	class SensorDataManager {
+	    // MESSAGE TYPES
+
+	    /** @type {SensorDataMessageType[]} */
+	    static #MessageTypes = ["pressurePositions", "sensorScalars", "sensorData"];
+	    static get MessageTypes() {
+	        return this.#MessageTypes;
+	    }
+	    get messageTypes() {
+	        return SensorDataManager.MessageTypes;
+	    }
+
+	    // EVENT DISPATCHER
+
+	    /** @type {SensorDataManagerEventType[]} */
+	    static #EventTypes = [
+	        ...this.#MessageTypes,
+
+	        "pressure",
+	        "acceleration",
+	        "gravity",
+	        "linearAcceleration",
+	        "gyroscope",
+	        "magnetometer",
+	        "gameRotation",
+	        "rotation",
+	        "barometer",
+	    ];
+	    static get EventTypes() {
+	        return this.#EventTypes;
+	    }
+	    get eventTypes() {
+	        return SensorDataManager.#EventTypes;
+	    }
+	    /** @type {EventDispatcher} */
+	    eventDispatcher;
+
+	    /** @param {SensorDataManagerEvent} event */
+	    #dispatchEvent(event) {
+	        this.eventDispatcher.dispatchEvent(event);
+	    }
+
+	    /** @param {SensorDataManagerEventType} eventType */
+	    waitForEvent(eventType) {
+	        return this.eventDispatcher.waitForEvent(eventType);
+	    }
+
+	    // MANAGERS
+
 	    pressureSensorDataManager = new PressureSensorDataManager();
 	    motionSensorDataManager = new MotionSensorDataManager();
 	    barometerSensorDataManager = new BarometerSensorDataManager();
@@ -1570,11 +1626,8 @@
 	        _console$o.assertWithError(sensorTypeEnum in this.#Types, `invalid sensorTypeEnum ${sensorTypeEnum}`);
 	    }
 
-	    /** @type {SensorDataCallback} */
-	    onDataReceived;
-
 	    /** @param {DataView} dataView */
-	    parseData(dataView) {
+	    #parseData(dataView) {
 	        _console$o.log("sensorData", Array.from(new Uint8Array(dataView.buffer)));
 
 	        let byteOffset = 0;
@@ -1594,21 +1647,21 @@
 	    #parseDataCallback(sensorType, dataView, { timestamp }) {
 	        const scalar = this.#scalars.get(sensorType);
 
-	        let value;
+	        let sensorData;
 	        switch (sensorType) {
 	            case "pressure":
-	                value = this.pressureSensorDataManager.parseData(dataView);
+	                sensorData = this.pressureSensorDataManager.parseData(dataView);
 	                break;
 	            case "acceleration":
 	            case "gravity":
 	            case "linearAcceleration":
 	            case "gyroscope":
 	            case "magnetometer":
-	                value = this.motionSensorDataManager.parseVector3(dataView, scalar);
+	                sensorData = this.motionSensorDataManager.parseVector3(dataView, scalar);
 	                break;
 	            case "gameRotation":
 	            case "rotation":
-	                value = this.motionSensorDataManager.parseQuaternion(dataView, scalar);
+	                sensorData = this.motionSensorDataManager.parseQuaternion(dataView, scalar);
 	                break;
 	            case "barometer":
 	                // FILL
@@ -1617,8 +1670,11 @@
 	                _console$o.error(`uncaught sensorType "${sensorType}"`);
 	        }
 
-	        _console$o.assertWithError(value, `no value defined for sensorType "${sensorType}"`);
-	        this.onDataReceived(sensorType, { timestamp, [sensorType]: value });
+	        _console$o.assertWithError(sensorData, `no sensorData defined for sensorType "${sensorType}"`);
+
+	        _console$o.log({ sensorType, sensorData });
+	        this.#dispatchEvent({ type: sensorType, message: sensorData });
+	        this.#dispatchEvent({ type: "sensorData", message: { ...sensorData, sensorType } });
 	    }
 
 	    /** @param {DataView} dataView */
@@ -1635,6 +1691,39 @@
 	            this.#scalars.set(sensorType, sensorScalar);
 	        }
 	    }
+
+	    // MESSAGE
+
+	    /**
+	     * @param {SensorDataMessageType} messageType
+	     * @param {DataView} dataView
+	     */
+	    parseMessage(messageType, dataView) {
+	        _console$o.log({ messageType });
+
+	        switch (messageType) {
+	            case "sensorScalars":
+	                this.parseScalars(dataView);
+	                break;
+	            case "pressurePositions":
+	                this.pressureSensorDataManager.parsePositions(dataView);
+	                break;
+	            case "sensorData":
+	                this.#parseData(dataView);
+	                break;
+	            default:
+	                throw Error(`uncaught messageType ${messageType}`);
+	        }
+	    }
+
+	    /**
+	     * @callback SendMessageCallback
+	     * @param {{type: SensorDataMessageType, data: ArrayBuffer}[]} messages
+	     * @param {boolean} sendImmediately
+	     */
+
+	    /** @type {SendMessageCallback} */
+	    sendMessage;
 	}
 
 	const _console$n = createConsole("SensorConfigurationManager", { log: false });
@@ -1704,38 +1793,14 @@
 	        return this.eventDispatcher.waitForEvent(eventType);
 	    }
 
+	    // SENSOR TYPES
+
 	    static get #SensorTypes() {
 	        return SensorDataManager.Types;
 	    }
 	    get #sensorTypes() {
 	        return SensorConfigurationManager.#SensorTypes;
 	    }
-
-	    // ZERO
-
-	    /** @type {SensorConfiguration} */
-	    static #ZeroSensorConfiguration = {};
-	    static get ZeroSensorConfiguration() {
-	        return this.#ZeroSensorConfiguration;
-	    }
-	    static {
-	        this.#SensorTypes.forEach((sensorType) => {
-	            this.#ZeroSensorConfiguration[sensorType] = 0;
-	        });
-	    }
-	    get zeroSensorConfiguration() {
-	        /** @type {SensorConfiguration} */
-	        const zeroSensorConfiguration = {};
-	        this.#sensorTypes.forEach((sensorType) => {
-	            zeroSensorConfiguration[sensorType] = 0;
-	        });
-	        return zeroSensorConfiguration;
-	    }
-	    async clearSensorConfiguration() {
-	        return this.setConfiguration(this.zeroSensorConfiguration);
-	    }
-
-	    // SENSOR TYPES
 
 	    /** @type {SensorType[]} */
 	    #availableSensorTypes;
@@ -1848,9 +1913,28 @@
 	        return dataView;
 	    }
 
-	    /** @param {SensorConfiguration} sensorConfiguration */
-	    #hasAtLeastOneNonZeroSensorRate(sensorConfiguration) {
-	        return Object.values(sensorConfiguration).some((value) => value > 0);
+	    // ZERO
+
+	    /** @type {SensorConfiguration} */
+	    static #ZeroSensorConfiguration = {};
+	    static get ZeroSensorConfiguration() {
+	        return this.#ZeroSensorConfiguration;
+	    }
+	    static {
+	        this.#SensorTypes.forEach((sensorType) => {
+	            this.#ZeroSensorConfiguration[sensorType] = 0;
+	        });
+	    }
+	    get zeroSensorConfiguration() {
+	        /** @type {SensorConfiguration} */
+	        const zeroSensorConfiguration = {};
+	        this.#sensorTypes.forEach((sensorType) => {
+	            zeroSensorConfiguration[sensorType] = 0;
+	        });
+	        return zeroSensorConfiguration;
+	    }
+	    async clearSensorConfiguration() {
+	        return this.setConfiguration(this.zeroSensorConfiguration);
 	    }
 
 	    // MESSAGE
@@ -3586,18 +3670,17 @@
 
 
 
+
 	/** @typedef {"webBluetooth" | "noble" | "webSocketClient"} ConnectionType */
 	/** @typedef {"not connected" | "connecting" | "connected" | "disconnecting"} ConnectionStatus */
 
 	/**
-	 * @typedef { SensorConfigurationMessageType |
-	 * "pressurePositions" |
-	 * "sensorScalars" |
-	 * "sensorData" |
+	 * @typedef { InformationMessageType |
+	 * SensorConfigurationMessageType |
+	 * SensorDataMessageType |
 	 * VibrationMessageType |
-	 * InformationMessageType |
-	 * TfliteMessageType |
 	 * FileTransferMessageType |
+	 * TfliteMessageType |
 	 * FirmwareMessageType
 	 * } TxRxMessageType
 	 */
@@ -3612,9 +3695,9 @@
 	/**
 	 * @typedef { DeviceInformationMessageType |
 	 * "batteryLevel" |
-	 * "smp" |
 	 * "rx" |
 	 * "tx" |
+	 * "smp" |
 	 * TxRxMessageType
 	 * } ConnectionMessageType
 	 */
@@ -3637,11 +3720,7 @@
 	    static #TxRxMessageTypes = [
 	        ...InformationManager.MessageTypes,
 	        ...SensorConfigurationManager.MessageTypes,
-
-	        "pressurePositions",
-	        "sensorScalars",
-	        "sensorData",
-
+	        ...SensorDataManager.MessageTypes,
 	        ...VibrationManager.MessageTypes,
 	        ...TfliteManager$1.MessageTypes,
 	        ...FileTransferManager.MessageTypes,
@@ -3723,6 +3802,17 @@
 	        this.#assertIsSupported();
 	    }
 
+	    /** @type {ConnectionStatus[]} */
+	    static get #Statuses() {
+	        return ["not connected", "connecting", "connected", "disconnecting"];
+	    }
+	    static get Statuses() {
+	        return this.#Statuses;
+	    }
+	    get #statuses() {
+	        return BaseConnectionManager.#Statuses;
+	    }
+
 	    /** @type {ConnectionStatus} */
 	    #status = "not connected";
 	    get status() {
@@ -3730,7 +3820,7 @@
 	    }
 	    /** @protected */
 	    set status(newConnectionStatus) {
-	        _console$i.assertTypeWithError(newConnectionStatus, "string");
+	        _console$i.assertEnumWithError(newConnectionStatus, this.#statuses);
 	        if (this.#status == newConnectionStatus) {
 	            _console$i.log(`tried to assign same connection status "${newConnectionStatus}"`);
 	            return;
@@ -5756,7 +5846,8 @@
 	        this.#sensorConfigurationManager.sendMessage = this.#sendTxMessages.bind(this);
 	        this.#sensorConfigurationManager.eventDispatcher = this.#eventDispatcher;
 
-	        this.#sensorDataManager.onDataReceived = this.#onSensorDataReceived.bind(this);
+	        this.#sensorDataManager.sendMessage = this.#sendTxMessages.bind(this);
+	        this.#sensorDataManager.eventDispatcher = this.#eventDispatcher;
 
 	        this.#vibrationManager.sendMessage = this.#sendTxMessages.bind(this);
 
@@ -5810,35 +5901,18 @@
 
 	    /** @type {DeviceEventType[]} */
 	    static #EventTypes = [
+	        "batteryLevel",
+
 	        "connectionStatus",
-	        "connecting",
-	        "connected",
-	        "disconnecting",
-	        "not connected",
+	        ...BaseConnectionManager.Statuses,
 	        "isConnected",
-
-	        ...SensorConfigurationManager.EventTypes,
-
-	        "pressurePositions",
-	        "sensorScalars",
-
-	        "sensorData",
-	        "pressure",
-	        "acceleration",
-	        "gravity",
-	        "linearAcceleration",
-	        "gyroscope",
-	        "magnetometer",
-	        "gameRotation",
-	        "rotation",
-	        "barometer",
 
 	        "connectionMessage",
 
-	        "batteryLevel",
-
-	        ...InformationManager.EventTypes,
 	        ...DeviceInformationManager.EventTypes,
+	        ...InformationManager.EventTypes,
+	        ...SensorConfigurationManager.EventTypes,
+	        ...SensorDataManager.EventTypes,
 	        ...FileTransferManager.EventTypes,
 	        ...TfliteManager$1.EventTypes,
 	        ...FirmwareManager.EventTypes,
@@ -6118,22 +6192,13 @@
 	                this.#updateBatteryLevel(batteryLevel);
 	                break;
 
-	            case "sensorScalars":
-	                this.#sensorDataManager.parseScalars(dataView);
-	                break;
-	            case "pressurePositions":
-	                this.#sensorDataManager.pressureSensorDataManager.parsePositions(dataView);
-	                break;
-
-	            case "sensorData":
-	                this.#sensorDataManager.parseData(dataView);
-	                break;
-
 	            default:
 	                if (this.#fileTransferManager.messageTypes.includes(messageType)) {
 	                    this.#fileTransferManager.parseMessage(messageType, dataView);
 	                } else if (this.#tfliteManager.messageTypes.includes(messageType)) {
 	                    this.#tfliteManager.parseMessage(messageType, dataView);
+	                } else if (this.#sensorDataManager.messageTypes.includes(messageType)) {
+	                    this.#sensorDataManager.parseMessage(messageType, dataView);
 	                } else if (this.#firmwareManager.messageTypes.includes(messageType)) {
 	                    this.#firmwareManager.parseMessage(messageType, dataView);
 	                } else if (this.#deviceInformationManager.messageTypes.includes(messageType)) {
@@ -6279,6 +6344,7 @@
 	    }
 
 	    // PRESSURE
+
 	    static #DefaultNumberOfPressureSensors = 8;
 	    static get DefaultNumberOfPressureSensors() {
 	        return this.#DefaultNumberOfPressureSensors;
@@ -6291,17 +6357,6 @@
 
 	    /** @type {SensorDataManager} */
 	    #sensorDataManager = new SensorDataManager();
-
-	    /**
-	     * @param {SensorType} sensorType
-	     * @param {Object} sensorData
-	     * @param {number} sensorData.timestamp
-	     */
-	    #onSensorDataReceived(sensorType, sensorData) {
-	        _console$c.log({ sensorType, sensorData });
-	        this.#dispatchEvent({ type: sensorType, message: sensorData });
-	        this.#dispatchEvent({ type: "sensorData", message: { ...sensorData, sensorType } });
-	    }
 
 	    resetPressureRange() {
 	        this.#sensorDataManager.pressureSensorDataManager.resetRange();

@@ -69,38 +69,14 @@ class SensorConfigurationManager {
         return this.eventDispatcher.waitForEvent(eventType);
     }
 
+    // SENSOR TYPES
+
     static get #SensorTypes() {
         return SensorDataManager.Types;
     }
     get #sensorTypes() {
         return SensorConfigurationManager.#SensorTypes;
     }
-
-    // ZERO
-
-    /** @type {SensorConfiguration} */
-    static #ZeroSensorConfiguration = {};
-    static get ZeroSensorConfiguration() {
-        return this.#ZeroSensorConfiguration;
-    }
-    static {
-        this.#SensorTypes.forEach((sensorType) => {
-            this.#ZeroSensorConfiguration[sensorType] = 0;
-        });
-    }
-    get zeroSensorConfiguration() {
-        /** @type {SensorConfiguration} */
-        const zeroSensorConfiguration = {};
-        this.#sensorTypes.forEach((sensorType) => {
-            zeroSensorConfiguration[sensorType] = 0;
-        });
-        return zeroSensorConfiguration;
-    }
-    async clearSensorConfiguration() {
-        return this.setConfiguration(this.zeroSensorConfiguration);
-    }
-
-    // SENSOR TYPES
 
     /** @type {SensorType[]} */
     #availableSensorTypes;
@@ -213,9 +189,28 @@ class SensorConfigurationManager {
         return dataView;
     }
 
-    /** @param {SensorConfiguration} sensorConfiguration */
-    #hasAtLeastOneNonZeroSensorRate(sensorConfiguration) {
-        return Object.values(sensorConfiguration).some((value) => value > 0);
+    // ZERO
+
+    /** @type {SensorConfiguration} */
+    static #ZeroSensorConfiguration = {};
+    static get ZeroSensorConfiguration() {
+        return this.#ZeroSensorConfiguration;
+    }
+    static {
+        this.#SensorTypes.forEach((sensorType) => {
+            this.#ZeroSensorConfiguration[sensorType] = 0;
+        });
+    }
+    get zeroSensorConfiguration() {
+        /** @type {SensorConfiguration} */
+        const zeroSensorConfiguration = {};
+        this.#sensorTypes.forEach((sensorType) => {
+            zeroSensorConfiguration[sensorType] = 0;
+        });
+        return zeroSensorConfiguration;
+    }
+    async clearSensorConfiguration() {
+        return this.setConfiguration(this.zeroSensorConfiguration);
     }
 
     // MESSAGE

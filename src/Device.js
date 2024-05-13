@@ -66,7 +66,8 @@ class Device {
         this.#sensorConfigurationManager.sendMessage = this.#sendTxMessages.bind(this);
         this.#sensorConfigurationManager.eventDispatcher = this.#eventDispatcher;
 
-        this.#sensorDataManager.onDataReceived = this.#onSensorDataReceived.bind(this);
+        this.#sensorDataManager.sendMessage = this.#sendTxMessages.bind(this);
+        this.#sensorDataManager.eventDispatcher = this.#eventDispatcher;
 
         this.#vibrationManager.sendMessage = this.#sendTxMessages.bind(this);
 
@@ -120,35 +121,18 @@ class Device {
 
     /** @type {DeviceEventType[]} */
     static #EventTypes = [
+        "batteryLevel",
+
         "connectionStatus",
-        "connecting",
-        "connected",
-        "disconnecting",
-        "not connected",
+        ...BaseConnectionManager.Statuses,
         "isConnected",
-
-        ...SensorConfigurationManager.EventTypes,
-
-        "pressurePositions",
-        "sensorScalars",
-
-        "sensorData",
-        "pressure",
-        "acceleration",
-        "gravity",
-        "linearAcceleration",
-        "gyroscope",
-        "magnetometer",
-        "gameRotation",
-        "rotation",
-        "barometer",
 
         "connectionMessage",
 
-        "batteryLevel",
-
-        ...InformationManager.EventTypes,
         ...DeviceInformationManager.EventTypes,
+        ...InformationManager.EventTypes,
+        ...SensorConfigurationManager.EventTypes,
+        ...SensorDataManager.EventTypes,
         ...FileTransferManager.EventTypes,
         ...TfliteManager.EventTypes,
         ...FirmwareManager.EventTypes,
@@ -428,22 +412,13 @@ class Device {
                 this.#updateBatteryLevel(batteryLevel);
                 break;
 
-            case "sensorScalars":
-                this.#sensorDataManager.parseScalars(dataView);
-                break;
-            case "pressurePositions":
-                this.#sensorDataManager.pressureSensorDataManager.parsePositions(dataView);
-                break;
-
-            case "sensorData":
-                this.#sensorDataManager.parseData(dataView);
-                break;
-
             default:
                 if (this.#fileTransferManager.messageTypes.includes(messageType)) {
                     this.#fileTransferManager.parseMessage(messageType, dataView);
                 } else if (this.#tfliteManager.messageTypes.includes(messageType)) {
                     this.#tfliteManager.parseMessage(messageType, dataView);
+                } else if (this.#sensorDataManager.messageTypes.includes(messageType)) {
+                    this.#sensorDataManager.parseMessage(messageType, dataView);
                 } else if (this.#firmwareManager.messageTypes.includes(messageType)) {
                     this.#firmwareManager.parseMessage(messageType, dataView);
                 } else if (this.#deviceInformationManager.messageTypes.includes(messageType)) {
@@ -589,6 +564,7 @@ class Device {
     }
 
     // PRESSURE
+
     static #DefaultNumberOfPressureSensors = 8;
     static get DefaultNumberOfPressureSensors() {
         return this.#DefaultNumberOfPressureSensors;
@@ -601,17 +577,6 @@ class Device {
 
     /** @type {SensorDataManager} */
     #sensorDataManager = new SensorDataManager();
-
-    /**
-     * @param {SensorType} sensorType
-     * @param {Object} sensorData
-     * @param {number} sensorData.timestamp
-     */
-    #onSensorDataReceived(sensorType, sensorData) {
-        _console.log({ sensorType, sensorData });
-        this.#dispatchEvent({ type: sensorType, message: sensorData });
-        this.#dispatchEvent({ type: "sensorData", message: { ...sensorData, sensorType } });
-    }
 
     resetPressureRange() {
         this.#sensorDataManager.pressureSensorDataManager.resetRange();
