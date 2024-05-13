@@ -6,7 +6,6 @@ import WebBluetoothConnectionManager from "./connection/bluetooth/WebBluetoothCo
 import SensorConfigurationManager from "./sensor/SensorConfigurationManager.js";
 import SensorDataManager from "./sensor/SensorDataManager.js";
 import VibrationManager from "./vibration/VibrationManager.js";
-import { concatenateArrayBuffers } from "./utils/ArrayBufferUtils.js";
 import FileTransferManager from "./FileTransferManager.js";
 import TfliteManager from "./TfliteManager.js";
 import FirmwareManager from "./FirmwareManager.js";
@@ -59,23 +58,26 @@ class Device {
     }
 
     constructor() {
-        this.#sensorDataManager.onDataReceived = this.#onSensorDataReceived.bind(this);
-
-        this.#fileTransferManager.sendMessage = this.#sendTxMessages.bind(this);
-        this.#fileTransferManager.eventDispatcher = this.#eventDispatcher;
-
-        this.#tfliteManager.sendMessage = this.#sendTxMessages.bind(this);
-        this.#tfliteManager.eventDispatcher = this.#eventDispatcher;
-
-        this.#firmwareManager.sendMessage = this.#sendSmpMessage.bind(this);
-        this.#firmwareManager.eventDispatcher = this.#eventDispatcher;
-
         this.#deviceInformationManager.eventDispatcher = this.#eventDispatcher;
 
         this.#informationManager.sendMessage = this.#sendTxMessages.bind(this);
         this.#informationManager.eventDispatcher = this.#eventDispatcher;
 
+        this.#sensorConfigurationManager.sendMessage = this.#sendTxMessages.bind(this);
+        this.#sensorConfigurationManager.eventDispatcher = this.#eventDispatcher;
+
+        this.#sensorDataManager.onDataReceived = this.#onSensorDataReceived.bind(this);
+
         this.#vibrationManager.sendMessage = this.#sendTxMessages.bind(this);
+
+        this.#tfliteManager.sendMessage = this.#sendTxMessages.bind(this);
+        this.#tfliteManager.eventDispatcher = this.#eventDispatcher;
+
+        this.#fileTransferManager.sendMessage = this.#sendTxMessages.bind(this);
+        this.#fileTransferManager.eventDispatcher = this.#eventDispatcher;
+
+        this.#firmwareManager.sendMessage = this.#sendSmpMessage.bind(this);
+        this.#firmwareManager.eventDispatcher = this.#eventDispatcher;
 
         this.addEventListener("getMtu", () => {
             this.#firmwareManager.mtu = this.mtu;
@@ -125,8 +127,7 @@ class Device {
         "not connected",
         "isConnected",
 
-        "getSensorConfiguration",
-        "setSensorConfiguration",
+        ...SensorConfigurationManager.EventTypes,
 
         "pressurePositions",
         "sensorScalars",
@@ -427,13 +428,6 @@ class Device {
                 this.#updateBatteryLevel(batteryLevel);
                 break;
 
-            case "getSensorConfiguration":
-            case "setSensorConfiguration":
-                const sensorConfiguration = this.#sensorConfigurationManager.parse(dataView);
-                _console.log({ sensorConfiguration });
-                this.#updateSensorConfiguration(sensorConfiguration);
-                break;
-
             case "sensorScalars":
                 this.#sensorDataManager.parseScalars(dataView);
                 break;
@@ -456,6 +450,8 @@ class Device {
                     this.#deviceInformationManager.parseMessage(messageType, dataView);
                 } else if (this.#informationManager.messageTypes.includes(messageType)) {
                     this.#informationManager.parseMessage(messageType, dataView);
+                } else if (this.#sensorConfigurationManager.messageTypes.includes(messageType)) {
+                    this.#sensorConfigurationManager.parseMessage(messageType, dataView);
                 } else {
                     throw Error(`uncaught messageType ${messageType}`);
                 }
@@ -501,8 +497,6 @@ class Device {
 
     // INFORMATION
     #informationManager = new InformationManager();
-
-    // FILL - type metadata
 
     static get MinNameLength() {
         return InformationManager.MinNameLength;
@@ -555,13 +549,9 @@ class Device {
     // SENSOR CONFIGURATION
 
     #sensorConfigurationManager = new SensorConfigurationManager();
-    /** @type {SensorConfiguration?} */
-    #sensorConfiguration = {};
+
     get sensorConfiguration() {
-        return this.#sensorConfiguration;
-    }
-    get sensorConfigurationData() {
-        return this.#sensorConfigurationManager.createData(this.sensorConfiguration);
+        return this.#sensorConfigurationManager.configuration;
     }
 
     static get MaxSensorRate() {
@@ -571,21 +561,13 @@ class Device {
         return SensorConfigurationManager.SensorRateStep;
     }
 
-    /** @param {SensorConfiguration} updatedSensorConfiguration */
-    #updateSensorConfiguration(updatedSensorConfiguration) {
-        this.#sensorConfiguration = updatedSensorConfiguration;
-        _console.log({ updatedSensorConfiguration: this.#sensorConfiguration });
-        this.#dispatchEvent({
-            type: "getSensorConfiguration",
-            message: { sensorConfiguration: this.sensorConfiguration },
-        });
-    }
     /** @param {SensorConfiguration} newSensorConfiguration */
     async setSensorConfiguration(newSensorConfiguration) {
-        _console.log({ newSensorConfiguration });
-        const setSensorConfigurationData = this.#sensorConfigurationManager.createData(newSensorConfiguration);
-        _console.log({ setSensorConfigurationData });
-        await this.#sendTxMessages([{ type: "setSensorConfiguration", data: setSensorConfigurationData.buffer }]);
+        await this.#sensorConfigurationManager.setConfiguration(newSensorConfiguration);
+    }
+
+    async clearSensorConfiguration() {
+        return this.#sensorConfigurationManager.clearSensorConfiguration();
     }
 
     static #ClearSensorConfigurationOnLeave = true;
@@ -604,28 +586,6 @@ class Device {
     set clearSensorConfigurationOnLeave(newClearSensorConfigurationOnLeave) {
         _console.assertTypeWithError(newClearSensorConfigurationOnLeave, "boolean");
         this.#clearSensorConfigurationOnLeave = newClearSensorConfigurationOnLeave;
-    }
-
-    /** @type {SensorConfiguration} */
-    static #ZeroSensorConfiguration = {};
-    static get ZeroSensorConfiguration() {
-        return this.#ZeroSensorConfiguration;
-    }
-    static {
-        this.SensorTypes.forEach((sensorType) => {
-            this.#ZeroSensorConfiguration[sensorType] = 0;
-        });
-    }
-    get zeroSensorConfiguration() {
-        /** @type {SensorConfiguration} */
-        const zeroSensorConfiguration = {};
-        this.sensorTypes.forEach((sensorType) => {
-            zeroSensorConfiguration[sensorType] = 0;
-        });
-        return zeroSensorConfiguration;
-    }
-    async clearSensorConfiguration() {
-        return this.setSensorConfiguration(this.zeroSensorConfiguration);
     }
 
     // PRESSURE

@@ -42,7 +42,6 @@ const _console = createConsole("DeviceInformationManager", { log: true });
 /** @typedef {import("./utils/EventDispatcher.js").EventDispatcherOptions} EventDispatcherOptions */
 
 /** @typedef {import("./Device.js").Device} Device */
-
 /**
  * @typedef DeviceInformationManagerEvent
  * @type {Object}
@@ -50,7 +49,6 @@ const _console = createConsole("DeviceInformationManager", { log: true });
  * @property {DeviceInformationManagerEventType} type
  * @property {Object} message
  */
-/** @typedef {(event: DeviceInformationManagerEvent) => void} DeviceInformationManagerEventListener */
 
 class DeviceInformationManager {
     // MESSAGE TYPES

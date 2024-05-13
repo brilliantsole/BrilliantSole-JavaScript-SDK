@@ -1,5 +1,8 @@
 import { createConsole } from "../utils/Console.js";
 import SensorDataManager from "./SensorDataManager.js";
+import EventDispatcher from "../utils/EventDispatcher.js";
+
+const _console = createConsole("SensorConfigurationManager", { log: false });
 
 /** @typedef {import("./SensorDataManager.js").SensorType} SensorType */
 /**
@@ -16,9 +19,89 @@ import SensorDataManager from "./SensorDataManager.js";
  * @property {number?} barometer
  */
 
-const _console = createConsole("SensorConfigurationManager", { log: false });
+/** @typedef {"getSensorConfiguration" | "setSensorConfiguration"} SensorConfigurationMessageType */
+/** @typedef {SensorConfigurationMessageType} SensorConfigurationManagerEventType */
+
+/** @typedef {import("../utils/EventDispatcher.js").EventDispatcherListener} EventDispatcherListener */
+/** @typedef {import("../utils/EventDispatcher.js").EventDispatcherOptions} EventDispatcherOptions */
+
+/** @typedef {import("../Device.js").Device} Device */
+/**
+ * @typedef SensorConfigurationManagerEvent
+ * @type {Object}
+ * @property {Device} target
+ * @property {SensorConfigurationManagerEventType} type
+ * @property {Object} message
+ */
 
 class SensorConfigurationManager {
+    // MESSAGE TYPES
+
+    /** @type {SensorConfigurationMessageType[]} */
+    static #MessageTypes = ["getSensorConfiguration", "setSensorConfiguration"];
+    static get MessageTypes() {
+        return this.#MessageTypes;
+    }
+    get messageTypes() {
+        return SensorConfigurationManager.MessageTypes;
+    }
+
+    // EVENT DISPATCHER
+
+    /** @type {SensorConfigurationManagerEventType[]} */
+    static #EventTypes = [...this.#MessageTypes];
+    static get EventTypes() {
+        return this.#EventTypes;
+    }
+    get eventTypes() {
+        return SensorConfigurationManager.#EventTypes;
+    }
+    /** @type {EventDispatcher} */
+    eventDispatcher;
+
+    /** @param {SensorConfigurationManagerEvent} event */
+    #dispatchEvent(event) {
+        this.eventDispatcher.dispatchEvent(event);
+    }
+
+    /** @param {SensorConfigurationManagerEventType} eventType */
+    waitForEvent(eventType) {
+        return this.eventDispatcher.waitForEvent(eventType);
+    }
+
+    static get #SensorTypes() {
+        return SensorDataManager.Types;
+    }
+    get #sensorTypes() {
+        return SensorConfigurationManager.#SensorTypes;
+    }
+
+    // ZERO
+
+    /** @type {SensorConfiguration} */
+    static #ZeroSensorConfiguration = {};
+    static get ZeroSensorConfiguration() {
+        return this.#ZeroSensorConfiguration;
+    }
+    static {
+        this.#SensorTypes.forEach((sensorType) => {
+            this.#ZeroSensorConfiguration[sensorType] = 0;
+        });
+    }
+    get zeroSensorConfiguration() {
+        /** @type {SensorConfiguration} */
+        const zeroSensorConfiguration = {};
+        this.#sensorTypes.forEach((sensorType) => {
+            zeroSensorConfiguration[sensorType] = 0;
+        });
+        return zeroSensorConfiguration;
+    }
+    async clearSensorConfiguration() {
+        return this.setConfiguration(this.zeroSensorConfiguration);
+    }
+
+    // SENSOR TYPES
+
     /** @type {SensorType[]} */
     #availableSensorTypes;
     /** @param {SensorType} sensorType */
@@ -29,8 +112,35 @@ class SensorConfigurationManager {
         return isSensorTypeAvailable;
     }
 
+    /** @type {SensorConfiguration?} */
+    #configuration;
+    get configuration() {
+        return this.#configuration;
+    }
+
+    /** @param {SensorConfiguration} updatedConfiguration */
+    #updateConfiguration(updatedConfiguration) {
+        this.#configuration = updatedConfiguration;
+        _console.log({ updatedConfiguration: this.#configuration });
+        this.#dispatchEvent({
+            type: "getSensorConfiguration",
+            message: { sensorConfiguration: this.configuration },
+        });
+    }
+
+    /** @param {SensorConfiguration} newSensorConfiguration */
+    async setConfiguration(newSensorConfiguration) {
+        _console.log({ newSensorConfiguration });
+        const setSensorConfigurationData = this.#createData(newSensorConfiguration);
+        _console.log({ setSensorConfigurationData });
+
+        const promise = this.waitForEvent("getSensorConfiguration");
+        this.sendMessage([{ type: "setSensorConfiguration", data: setSensorConfigurationData.buffer }]);
+        await promise;
+    }
+
     /** @param {DataView} dataView */
-    parse(dataView) {
+    #parse(dataView) {
         /** @type {SensorConfiguration} */
         const parsedSensorConfiguration = {};
         for (let byteOffset = 0; byteOffset < dataView.byteLength; byteOffset += 3) {
@@ -84,7 +194,7 @@ class SensorConfigurationManager {
     }
 
     /** @param {SensorConfiguration} sensorConfiguration */
-    createData(sensorConfiguration) {
+    #createData(sensorConfiguration) {
         /** @type {SensorType[]} */
         let sensorTypes = Object.keys(sensorConfiguration);
         sensorTypes = sensorTypes.filter((sensorType) => this.#assertAvailableSensorType(sensorType));
@@ -104,9 +214,38 @@ class SensorConfigurationManager {
     }
 
     /** @param {SensorConfiguration} sensorConfiguration */
-    hasAtLeastOneNonZeroSensorRate(sensorConfiguration) {
+    #hasAtLeastOneNonZeroSensorRate(sensorConfiguration) {
         return Object.values(sensorConfiguration).some((value) => value > 0);
     }
+
+    // MESSAGE
+
+    /**
+     * @param {SensorConfigurationMessageType} messageType
+     * @param {DataView} dataView
+     */
+    parseMessage(messageType, dataView) {
+        _console.log({ messageType });
+
+        switch (messageType) {
+            case "getSensorConfiguration":
+            case "setSensorConfiguration":
+                const newSensorConfiguration = this.#parse(dataView);
+                this.#updateConfiguration(newSensorConfiguration);
+                break;
+            default:
+                throw Error(`uncaught messageType ${messageType}`);
+        }
+    }
+
+    /**
+     * @callback SendMessageCallback
+     * @param {{type: SensorConfigurationMessageType, data: ArrayBuffer}[]} messages
+     * @param {boolean} sendImmediately
+     */
+
+    /** @type {SendMessageCallback} */
+    sendMessage;
 }
 
 export default SensorConfigurationManager;

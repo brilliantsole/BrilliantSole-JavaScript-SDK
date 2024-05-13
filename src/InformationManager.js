@@ -4,6 +4,9 @@ import { textDecoder, textEncoder } from "./utils/Text.js";
 
 const _console = createConsole("InformationManager", { log: true });
 
+/** @typedef {"leftInsole" | "rightInsole"} DeviceType */
+/** @typedef {"left" | "right"} InsoleSide */
+
 /**
  * @typedef { "getMtu" |
  * "getName"|
@@ -14,14 +17,12 @@ const _console = createConsole("InformationManager", { log: true });
  * "setCurrentTime"
  * } InformationMessageType
  */
-
 /** @typedef {InformationMessageType} InformationManagerEventType */
 
 /** @typedef {import("./utils/EventDispatcher.js").EventDispatcherListener} EventDispatcherListener */
 /** @typedef {import("./utils/EventDispatcher.js").EventDispatcherOptions} EventDispatcherOptions */
 
 /** @typedef {import("./Device.js").Device} Device */
-
 /**
  * @typedef InformationManagerEvent
  * @type {Object}
@@ -29,10 +30,6 @@ const _console = createConsole("InformationManager", { log: true });
  * @property {InformationManagerEventType} type
  * @property {Object} message
  */
-/** @typedef {(event: InformationManagerEvent) => void} InformationManagerEventListener */
-
-/** @typedef {"leftInsole" | "rightInsole"} DeviceType */
-/** @typedef {"left" | "right"} InsoleSide */
 
 class InformationManager {
     // MESSAGE TYPES

@@ -8,6 +8,7 @@ import { parseMessage } from "../utils/ParseUtils.js";
 import DeviceInformationManager from "../DeviceInformationManager.js";
 import InformationManager from "../InformationManager.js";
 import VibrationManager from "../vibration/VibrationManager.js";
+import SensorConfigurationManager from "../sensor/SensorConfigurationManager.js";
 
 const _console = createConsole("BaseConnectionManager", { log: true });
 
@@ -16,14 +17,14 @@ const _console = createConsole("BaseConnectionManager", { log: true });
 /** @typedef {import("../FirmwareManager.js").FirmwareMessageType} FirmwareMessageType */
 /** @typedef {import("../DeviceInformationManager.js").DeviceInformationMessageType} DeviceInformationMessageType */
 /** @typedef {import("../InformationManager.js").InformationMessageType} InformationMessageType */
+/** @typedef {import("../sensor/SensorConfigurationManager.js").SensorConfigurationMessageType} SensorConfigurationMessageType */
 /** @typedef {import("../vibration/VibrationManager.js").VibrationMessageType} VibrationMessageType */
 
 /** @typedef {"webBluetooth" | "noble" | "webSocketClient"} ConnectionType */
 /** @typedef {"not connected" | "connecting" | "connected" | "disconnecting"} ConnectionStatus */
 
 /**
- * @typedef { "getSensorConfiguration" |
- * "setSensorConfiguration" |
+ * @typedef { SensorConfigurationMessageType |
  * "pressurePositions" |
  * "sensorScalars" |
  * "sensorData" |
@@ -69,9 +70,7 @@ class BaseConnectionManager {
     /** @type {TxRxMessageType[]} */
     static #TxRxMessageTypes = [
         ...InformationManager.MessageTypes,
-
-        "getSensorConfiguration",
-        "setSensorConfiguration",
+        ...SensorConfigurationManager.MessageTypes,
 
         "pressurePositions",
         "sensorScalars",
