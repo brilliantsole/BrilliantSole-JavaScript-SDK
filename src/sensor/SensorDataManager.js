@@ -161,9 +161,9 @@ class SensorDataManager {
 
         _console.assertWithError(sensorData, `no sensorData defined for sensorType "${sensorType}"`);
 
-        _console.log({ sensorType, sensorData });
-        this.#dispatchEvent({ type: sensorType, message: sensorData });
-        this.#dispatchEvent({ type: "sensorData", message: { ...sensorData, sensorType } });
+        _console.log({ sensorType, sensorData, sensorData });
+        this.#dispatchEvent({ type: sensorType, message: { [sensorType]: sensorData } });
+        this.#dispatchEvent({ type: "sensorData", message: { [sensorType]: sensorData, sensorType } });
     }
 
     /** @param {DataView} dataView */

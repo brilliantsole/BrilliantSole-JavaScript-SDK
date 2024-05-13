@@ -9,8 +9,7 @@
 })(this, (function () { 'use strict';
 
 	/** @type {"__BRILLIANTSOLE__DEV__" | "__BRILLIANTSOLE__PROD__"} */
-	const __BRILLIANTSOLE__ENVIRONMENT__ = "__BRILLIANTSOLE__DEV__";
-	const isInDev = __BRILLIANTSOLE__ENVIRONMENT__ == "__BRILLIANTSOLE__DEV__";
+	const isInDev = "__BRILLIANTSOLE__PROD__" == "__BRILLIANTSOLE__DEV__";
 
 	// https://github.com/flexdinesh/browser-or-node/blob/master/src/index.ts
 	const isInBrowser = typeof window !== "undefined" && window?.document !== "undefined";
@@ -137,9 +136,6 @@
 	     */
 	    static create(type, levelFlags) {
 	        const console = this.#consoles[type] || new Console(type);
-	        if (levelFlags) {
-	            console.setLevelFlags(levelFlags);
-	        }
 	        return console;
 	    }
 
@@ -1676,9 +1672,9 @@
 
 	        _console$o.assertWithError(sensorData, `no sensorData defined for sensorType "${sensorType}"`);
 
-	        _console$o.log({ sensorType, sensorData });
-	        this.#dispatchEvent({ type: sensorType, message: sensorData });
-	        this.#dispatchEvent({ type: "sensorData", message: { ...sensorData, sensorType } });
+	        _console$o.log({ sensorType, sensorData, sensorData });
+	        this.#dispatchEvent({ type: sensorType, message: { [sensorType]: sensorData } });
+	        this.#dispatchEvent({ type: "sensorData", message: { [sensorType]: sensorData, sensorType } });
 	    }
 
 	    /** @param {DataView} dataView */
@@ -2797,13 +2793,13 @@
 	        return 2;
 	    }
 	    get minNameLength() {
-	        return Device.MinNameLength;
+	        return InformationManager.MinNameLength;
 	    }
 	    static get MaxNameLength() {
 	        return 30;
 	    }
 	    get maxNameLength() {
-	        return Device.MaxNameLength;
+	        return InformationManager.MaxNameLength;
 	    }
 	    /** @param {string} newName */
 	    async setName(newName) {
@@ -5836,7 +5832,7 @@
 	 */
 	/** @typedef {(event: StaticDeviceEvent) => void} StaticDeviceEventListener */
 
-	let Device$1 = class Device {
+	class Device {
 	    get id() {
 	        return this.#connectionManager?.id;
 	    }
@@ -6013,10 +6009,10 @@
 
 	        "getName",
 	        "getType",
+	        "getCurrentTime",
 	        "getSensorConfiguration",
 	        "getSensorScalars",
 	        "getPressurePositions",
-	        "getCurrentTime",
 
 	        "maxFileLength",
 	        "getFileLength",
@@ -6864,7 +6860,7 @@
 	            this.UseLocalStorage = true;
 	        }
 	    }
-	};
+	}
 
 	const _console$b = createConsole("BaseScanner");
 
@@ -7506,7 +7502,7 @@
 	            //_console.log("deviceTypeServiceData", deviceTypeServiceData);
 	            if (deviceTypeServiceData) {
 	                const deviceTypeEnum = deviceTypeServiceData.data.readUint8(0);
-	                deviceType = Device$1.Types[deviceTypeEnum];
+	                deviceType = Device.Types[deviceTypeEnum];
 	            }
 	        }
 
@@ -7587,7 +7583,7 @@
 	        const noblePeripheral = this.#noblePeripherals[deviceId];
 	        _console$9.log("connecting to discoveredDevice...", deviceId);
 
-	        let device = Device$1.AvailableDevices.filter((device) => device.connectionType == "noble").find(
+	        let device = Device.AvailableDevices.filter((device) => device.connectionType == "noble").find(
 	            (device) => device.id == deviceId
 	        );
 	        if (!device) {
@@ -7600,7 +7596,7 @@
 
 	    /** @param {noble.Peripheral} noblePeripheral */
 	    #createDevice(noblePeripheral) {
-	        const device = new Device$1();
+	        const device = new Device();
 	        const nobleConnectionManager = new NobleConnectionManager();
 	        nobleConnectionManager.noblePeripheral = noblePeripheral;
 	        device.connectionManager = nobleConnectionManager;
@@ -7652,10 +7648,10 @@
 
 	class DevicePairPressureSensorDataManager {
 	    static get Sides() {
-	        return Device$1.InsoleSides;
+	        return Device.InsoleSides;
 	    }
 	    get sides() {
-	        return Device$1.InsoleSides;
+	        return Device.InsoleSides;
 	    }
 
 	    // PRESSURE DATA
@@ -7726,10 +7722,10 @@
 
 	class DevicePairSensorDataManager {
 	    static get Sides() {
-	        return Device$1.InsoleSides;
+	        return Device.InsoleSides;
 	    }
 	    get sides() {
-	        return Device$1.InsoleSides;
+	        return Device.InsoleSides;
 	    }
 
 	    /** @type {Object.<SensorType, Object.<InsoleSide, number>>} */
@@ -7832,7 +7828,7 @@
 	    static #EventTypes = [
 	        "isConnected",
 	        "pressure",
-	        ...Device$1.EventTypes.map((sensorType) => `device${capitalizeFirstCharacter(sensorType)}`),
+	        ...Device.EventTypes.map((sensorType) => `device${capitalizeFirstCharacter(sensorType)}`),
 	    ];
 	    static get EventTypes() {
 	        return this.#EventTypes;
@@ -7869,7 +7865,7 @@
 	    // SIDES
 
 	    static get Sides() {
-	        return Device$1.InsoleSides;
+	        return Device.InsoleSides;
 	    }
 	    get sides() {
 	        return DevicePair.Sides;
@@ -8022,7 +8018,7 @@
 	        return this.#shared;
 	    }
 	    static {
-	        Device$1.AddEventListener("deviceConnected", (event) => {
+	        Device.AddEventListener("deviceConnected", (event) => {
 	            /** @type {Device} */
 	            const device = event.message.device;
 	            if (device.isInsole) {
@@ -8142,7 +8138,7 @@
 	/** @param {...DeviceEventType|DeviceMessage} messages */
 	function createDeviceMessage(...messages) {
 	    _console$4.log("createDeviceMessage", ...messages);
-	    return createMessage(Device$1.EventTypes, ...messages);
+	    return createMessage(Device.EventTypes, ...messages);
 	}
 
 
@@ -8276,7 +8272,7 @@
 	    /** @param {DataView} dataView */
 	    onWebSocketMessage(dataView) {
 	        _console$3.log({ dataView });
-	        parseMessage(dataView, Device$1.EventTypes, this.#onWebSocketMessageCallback.bind(this), null, true);
+	        parseMessage(dataView, Device.EventTypes, this.#onWebSocketMessageCallback.bind(this), null, true);
 	    }
 
 	    /**
@@ -8777,7 +8773,7 @@
 
 	    /** @param {string} deviceId */
 	    #createDevice(deviceId) {
-	        const device = new Device$1();
+	        const device = new Device();
 	        const clientConnectionManager = new WebSocketClientConnectionManager();
 	        clientConnectionManager.id = deviceId;
 	        clientConnectionManager.sendWebSocketMessage = this.#sendDeviceMessage.bind(this, deviceId);
@@ -8934,7 +8930,7 @@
 	        _console$1.assertWithError(Scanner, "no scanner defined");
 
 	        addEventListeners(Scanner, this.#boundScannerListeners);
-	        addEventListeners(Device$1, this.#boundDeviceClassListeners);
+	        addEventListeners(Device, this.#boundDeviceClassListeners);
 	        addEventListeners(this, this.#boundServerListeners);
 	    }
 
@@ -8976,7 +8972,7 @@
 	        event.message.client;
 	        _console$1.log("onClientDisconnected");
 	        if (this.numberOfClients == 0 && this.clearSensorConfigurationsWhenNoClients) {
-	            Device$1.ConnectedDevices.forEach((device) => {
+	            Device.ConnectedDevices.forEach((device) => {
 	                device.clearSensorConfiguration();
 	                device.setTfliteInferencingEnabled(false);
 	            });
@@ -9054,7 +9050,7 @@
 	    get #connectedDevicesMessage() {
 	        return createServerMessage({
 	            type: "connectedDevices",
-	            data: JSON.stringify(Device$1.ConnectedDevices.map((device) => device.id)),
+	            data: JSON.stringify(Device.ConnectedDevices.map((device) => device.id)),
 	        });
 	    }
 
@@ -9202,7 +9198,7 @@
 	            case "disconnectFromDevice":
 	                {
 	                    const { string: deviceId } = parseStringFromDataView(dataView);
-	                    const device = Device$1.ConnectedDevices.find((device) => device.id == deviceId);
+	                    const device = Device.ConnectedDevices.find((device) => device.id == deviceId);
 	                    if (!device) {
 	                        _console$1.error(`no device found with id ${deviceId}`);
 	                        break;
@@ -9216,7 +9212,7 @@
 	            case "deviceMessage":
 	                {
 	                    const { string: deviceId, byteOffset } = parseStringFromDataView(dataView);
-	                    const device = Device$1.ConnectedDevices.find((device) => device.id == deviceId);
+	                    const device = Device.ConnectedDevices.find((device) => device.id == deviceId);
 	                    if (!device) {
 	                        _console$1.error(`no device found with id ${deviceId}`);
 	                        break;
@@ -9420,7 +9416,7 @@
 	var BS = {
 	    setAllConsoleLevelFlags,
 	    setConsoleLevelFlagsForType,
-	    Device: Device$1,
+	    Device,
 	    DevicePair,
 	    WebSocketClient,
 	    WebSocketServer,

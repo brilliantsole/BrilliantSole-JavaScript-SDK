@@ -85,13 +85,13 @@ class InformationManager {
         return 2;
     }
     get minNameLength() {
-        return Device.MinNameLength;
+        return InformationManager.MinNameLength;
     }
     static get MaxNameLength() {
         return 30;
     }
     get maxNameLength() {
-        return Device.MaxNameLength;
+        return InformationManager.MaxNameLength;
     }
     /** @param {string} newName */
     async setName(newName) {
