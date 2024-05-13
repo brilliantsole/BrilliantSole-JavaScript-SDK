@@ -9,7 +9,8 @@
 })(this, (function () { 'use strict';
 
 	/** @type {"__BRILLIANTSOLE__DEV__" | "__BRILLIANTSOLE__PROD__"} */
-	const isInDev = "__BRILLIANTSOLE__PROD__" == "__BRILLIANTSOLE__DEV__";
+	const __BRILLIANTSOLE__ENVIRONMENT__ = "__BRILLIANTSOLE__DEV__";
+	const isInDev = __BRILLIANTSOLE__ENVIRONMENT__ == "__BRILLIANTSOLE__DEV__";
 
 	// https://github.com/flexdinesh/browser-or-node/blob/master/src/index.ts
 	const isInBrowser = typeof window !== "undefined" && window?.document !== "undefined";
@@ -136,6 +137,9 @@
 	     */
 	    static create(type, levelFlags) {
 	        const console = this.#consoles[type] || new Console(type);
+	        if (levelFlags) {
+	            console.setLevelFlags(levelFlags);
+	        }
 	        return console;
 	    }
 
@@ -1525,7 +1529,7 @@
 
 	/** @typedef {MotionSensorType | PressureSensorType | BarometerSensorType} SensorType */
 
-	/** @typedef {"pressurePositions" | "sensorScalars" | "sensorData"} SensorDataMessageType */
+	/** @typedef {"getPressurePositions" | "getSensorScalars" | "sensorData"} SensorDataMessageType */
 	/** @typedef {SensorDataMessageType | SensorType} SensorDataManagerEventType */
 
 
@@ -1544,7 +1548,7 @@
 	    // MESSAGE TYPES
 
 	    /** @type {SensorDataMessageType[]} */
-	    static #MessageTypes = ["pressurePositions", "sensorScalars", "sensorData"];
+	    static #MessageTypes = ["getPressurePositions", "getSensorScalars", "sensorData"];
 	    static get MessageTypes() {
 	        return this.#MessageTypes;
 	    }
@@ -1702,10 +1706,10 @@
 	        _console$o.log({ messageType });
 
 	        switch (messageType) {
-	            case "sensorScalars":
+	            case "getSensorScalars":
 	                this.parseScalars(dataView);
 	                break;
-	            case "pressurePositions":
+	            case "getPressurePositions":
 	                this.pressureSensorDataManager.parsePositions(dataView);
 	                break;
 	            case "sensorData":
@@ -6010,8 +6014,8 @@
 	        "getName",
 	        "getType",
 	        "getSensorConfiguration",
-	        "sensorScalars",
-	        "pressurePositions",
+	        "getSensorScalars",
+	        "getPressurePositions",
 	        "getCurrentTime",
 
 	        "maxFileLength",

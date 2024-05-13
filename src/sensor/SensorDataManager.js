@@ -14,7 +14,7 @@ const _console = createConsole("SensorDataManager", { log: true });
 
 /** @typedef {MotionSensorType | PressureSensorType | BarometerSensorType} SensorType */
 
-/** @typedef {"pressurePositions" | "sensorScalars" | "sensorData"} SensorDataMessageType */
+/** @typedef {"getPressurePositions" | "getSensorScalars" | "sensorData"} SensorDataMessageType */
 /** @typedef {SensorDataMessageType | SensorType} SensorDataManagerEventType */
 
 /** @typedef {import("../utils/EventDispatcher.js").EventDispatcherListener} EventDispatcherListener */
@@ -33,7 +33,7 @@ class SensorDataManager {
     // MESSAGE TYPES
 
     /** @type {SensorDataMessageType[]} */
-    static #MessageTypes = ["pressurePositions", "sensorScalars", "sensorData"];
+    static #MessageTypes = ["getPressurePositions", "getSensorScalars", "sensorData"];
     static get MessageTypes() {
         return this.#MessageTypes;
     }
@@ -191,10 +191,10 @@ class SensorDataManager {
         _console.log({ messageType });
 
         switch (messageType) {
-            case "sensorScalars":
+            case "getSensorScalars":
                 this.parseScalars(dataView);
                 break;
-            case "pressurePositions":
+            case "getPressurePositions":
                 this.pressureSensorDataManager.parsePositions(dataView);
                 break;
             case "sensorData":

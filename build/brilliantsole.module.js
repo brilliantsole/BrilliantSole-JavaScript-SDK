@@ -3,7 +3,8 @@
  * @license MIT
  */
 /** @type {"__BRILLIANTSOLE__DEV__" | "__BRILLIANTSOLE__PROD__"} */
-const isInDev = "__BRILLIANTSOLE__PROD__" == "__BRILLIANTSOLE__DEV__";
+const __BRILLIANTSOLE__ENVIRONMENT__ = "__BRILLIANTSOLE__DEV__";
+const isInDev = __BRILLIANTSOLE__ENVIRONMENT__ == "__BRILLIANTSOLE__DEV__";
 
 // https://github.com/flexdinesh/browser-or-node/blob/master/src/index.ts
 const isInBrowser = typeof window !== "undefined" && window?.document !== "undefined";
@@ -130,6 +131,9 @@ class Console {
      */
     static create(type, levelFlags) {
         const console = this.#consoles[type] || new Console(type);
+        if (levelFlags) {
+            console.setLevelFlags(levelFlags);
+        }
         return console;
     }
 
@@ -1519,7 +1523,7 @@ const _console$o = createConsole("SensorDataManager", { log: true });
 
 /** @typedef {MotionSensorType | PressureSensorType | BarometerSensorType} SensorType */
 
-/** @typedef {"pressurePositions" | "sensorScalars" | "sensorData"} SensorDataMessageType */
+/** @typedef {"getPressurePositions" | "getSensorScalars" | "sensorData"} SensorDataMessageType */
 /** @typedef {SensorDataMessageType | SensorType} SensorDataManagerEventType */
 
 
@@ -1538,7 +1542,7 @@ class SensorDataManager {
     // MESSAGE TYPES
 
     /** @type {SensorDataMessageType[]} */
-    static #MessageTypes = ["pressurePositions", "sensorScalars", "sensorData"];
+    static #MessageTypes = ["getPressurePositions", "getSensorScalars", "sensorData"];
     static get MessageTypes() {
         return this.#MessageTypes;
     }
@@ -1696,10 +1700,10 @@ class SensorDataManager {
         _console$o.log({ messageType });
 
         switch (messageType) {
-            case "sensorScalars":
+            case "getSensorScalars":
                 this.parseScalars(dataView);
                 break;
-            case "pressurePositions":
+            case "getPressurePositions":
                 this.pressureSensorDataManager.parsePositions(dataView);
                 break;
             case "sensorData":
@@ -6004,8 +6008,8 @@ let Device$1 = class Device {
         "getName",
         "getType",
         "getSensorConfiguration",
-        "sensorScalars",
-        "pressurePositions",
+        "getSensorScalars",
+        "getPressurePositions",
         "getCurrentTime",
 
         "maxFileLength",

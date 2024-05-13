@@ -230,8 +230,8 @@ class Device {
         "getName",
         "getType",
         "getSensorConfiguration",
-        "sensorScalars",
-        "pressurePositions",
+        "getSensorScalars",
+        "getPressurePositions",
         "getCurrentTime",
 
         "maxFileLength",
