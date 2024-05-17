@@ -221,7 +221,7 @@ BS.Device.SensorTypes.forEach((sensorType) => {
         device.setSensorConfiguration({ [sensorType]: sensorRate });
     });
 
-    device.addEventListener("isConnected", () => {
+    device.addEventListener("connected", () => {
         if (device.sensorTypes.includes(sensorType)) {
             sensorTypeConfigurationContainer.classList.remove("hidden");
         } else {

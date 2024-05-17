@@ -41,50 +41,18 @@ class SensorDataManager {
         return SensorDataManager.MessageTypes;
     }
 
-    // EVENT DISPATCHER
-
-    /** @type {SensorDataManagerEventType[]} */
-    static #EventTypes = [
-        ...this.#MessageTypes,
-
-        "pressure",
-        "acceleration",
-        "gravity",
-        "linearAcceleration",
-        "gyroscope",
-        "magnetometer",
-        "gameRotation",
-        "rotation",
-        "barometer",
-    ];
-    static get EventTypes() {
-        return this.#EventTypes;
-    }
-    get eventTypes() {
-        return SensorDataManager.#EventTypes;
-    }
-    /** @type {EventDispatcher} */
-    eventDispatcher;
-
-    /** @param {SensorDataManagerEvent} event */
-    #dispatchEvent(event) {
-        this.eventDispatcher.dispatchEvent(event);
-    }
-
-    /** @param {SensorDataManagerEventType} eventType */
-    waitForEvent(eventType) {
-        return this.eventDispatcher.waitForEvent(eventType);
-    }
-
     // MANAGERS
 
     pressureSensorDataManager = new PressureSensorDataManager();
     motionSensorDataManager = new MotionSensorDataManager();
     barometerSensorDataManager = new BarometerSensorDataManager();
 
+    // TYPES
+
     /** @type {SensorType[]} */
     static #Types = [
         "pressure",
+
         "acceleration",
         "gravity",
         "linearAcceleration",
@@ -92,6 +60,7 @@ class SensorDataManager {
         "magnetometer",
         "gameRotation",
         "rotation",
+
         "barometer",
     ];
     static get Types() {
@@ -114,6 +83,31 @@ class SensorDataManager {
         _console.assertTypeWithError(sensorTypeEnum, "number");
         _console.assertWithError(sensorTypeEnum in this.#Types, `invalid sensorTypeEnum ${sensorTypeEnum}`);
     }
+
+    // EVENT DISPATCHER
+
+    /** @type {SensorDataManagerEventType[]} */
+    static #EventTypes = [...this.#MessageTypes, ...this.#Types];
+    static get EventTypes() {
+        return this.#EventTypes;
+    }
+    get eventTypes() {
+        return SensorDataManager.#EventTypes;
+    }
+    /** @type {EventDispatcher} */
+    eventDispatcher;
+
+    /** @param {SensorDataManagerEvent} event */
+    #dispatchEvent(event) {
+        this.eventDispatcher.dispatchEvent(event);
+    }
+
+    /** @param {SensorDataManagerEventType} eventType */
+    waitForEvent(eventType) {
+        return this.eventDispatcher.waitForEvent(eventType);
+    }
+
+    // DATA
 
     /** @param {DataView} dataView */
     #parseData(dataView) {
@@ -153,7 +147,7 @@ class SensorDataManager {
                 sensorData = this.motionSensorDataManager.parseQuaternion(dataView, scalar);
                 break;
             case "barometer":
-                // FILL
+                sensorData = this.barometerSensorDataManager.parseData(dataView, scalar);
                 break;
             default:
                 _console.error(`uncaught sensorType "${sensorType}"`);

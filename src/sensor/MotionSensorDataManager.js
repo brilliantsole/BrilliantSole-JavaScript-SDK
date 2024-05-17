@@ -21,6 +21,14 @@ const _console = createConsole("MotionSensorDataManager", { log: false });
  * @property {number} w
  */
 
+/**
+ * @typedef Euler
+ * @type {Object}
+ * @property {number} heading
+ * @property {number} pitch
+ * @property {number} roll
+ */
+
 class MotionSensorDataManager {
     static #Vector3Size = 3 * 2;
     static get Vector3Size() {
@@ -40,6 +48,7 @@ class MotionSensorDataManager {
             (value) => value * scalar
         );
 
+        /** @type {Vector3} */
         const vector = { x, y, z };
 
         _console.log({ vector });
@@ -67,10 +76,38 @@ class MotionSensorDataManager {
             dataView.getInt16(6, true),
         ].map((value) => value * scalar);
 
+        /** @type {Quaternion} */
         const quaternion = { x, y, z, w };
 
         _console.log({ quaternion });
         return quaternion;
+    }
+
+    static #EulerSize = 3 * 2;
+    static get EulerSize() {
+        return this.#EulerSize;
+    }
+    get eulerSize() {
+        return MotionSensorDataManager.EulerSize;
+    }
+
+    /**
+     * @param {DataView} dataView
+     * @param {number} scalar
+     * @returns {Euler}
+     */
+    parseEuler(dataView, scalar) {
+        let [heading, pitch, roll] = [
+            dataView.getInt16(0, true),
+            dataView.getInt16(2, true),
+            dataView.getInt16(4, true),
+        ].map((value) => value * scalar);
+
+        /** @type {Euler} */
+        const euler = { heading, pitch, roll };
+
+        _console.log({ euler });
+        return euler;
     }
 }
 

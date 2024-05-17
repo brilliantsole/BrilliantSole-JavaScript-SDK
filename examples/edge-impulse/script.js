@@ -788,7 +788,7 @@ const scalars = {
     pressure: 1 / (2 ** 16 - 1),
     linearAcceleration: 1 / 4,
     gyroscope: 1 / 720,
-    magnetometer: 1, // FILL LATER
+    magnetometer: 1 / 2500,
 };
 
 /** @typedef {Object.<string, number>} SensorData */

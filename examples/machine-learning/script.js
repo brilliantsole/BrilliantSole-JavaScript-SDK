@@ -773,7 +773,10 @@ function flattenDeviceData(deviceData) {
                     }
                     break;
                 case "barometer":
-                    // FILL
+                    {
+                        // FILL
+                        const
+                    }
                     break;
             }
         });

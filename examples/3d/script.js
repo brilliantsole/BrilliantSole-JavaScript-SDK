@@ -316,6 +316,8 @@ devicePair.sides.forEach((side) => {
 
         /** @type {Quaternion} */
         const gameRotation = event.message.gameRotation;
+        //permuteQuaternion(gameRotation);
+
         updateQuaternion(gameRotation, true);
     });
     devicePair.addEventListener("deviceRotation", (event) => {
@@ -328,6 +330,24 @@ devicePair.sides.forEach((side) => {
         const rotation = event.message.rotation;
         updateQuaternion(rotation, true);
     });
+
+    // const orientationVector3 = new THREE.Vector3();
+    // const orientationEuler = new THREE.Euler(0, 0, 0, "YXZ");
+    // const orientationQuaternion = new THREE.Quaternion();
+    // /** @typedef {import("../../build/brilliantsole.module.js").Euler} Euler */
+    // devicePair.addEventListener("deviceOrientation", (event) => {
+    //     const device = event.message.device;
+    //     if (device.insoleSide != side) {
+    //         return;
+    //     }
+
+    //     /** @type {Euler} */
+    //     const orientation = event.message.orientation;
+    //     orientationVector3.set(orientation.pitch, orientation.heading, orientation.roll).multiplyScalar(Math.PI / 180);
+    //     orientationEuler.setFromVector3(orientationVector3);
+    //     orientationQuaternion.setFromEuler(orientationEuler);
+    //     updateQuaternion(orientationQuaternion);
+    // });
 
     const gyroscopeVector3 = new THREE.Vector3();
     const gyroscopeEuler = new THREE.Euler();
@@ -345,4 +365,77 @@ devicePair.sides.forEach((side) => {
         gyroscopeQuaternion.setFromEuler(gyroscopeEuler);
         updateQuaternion(gyroscopeQuaternion);
     });
+});
+
+// CHATGPT
+
+function getAllArrangements(arr) {
+    const arrangements = [];
+
+    // Function to generate permutations recursively
+    function generatePermutations(perm, remaining) {
+        if (remaining.length === 0) {
+            arrangements.push(perm);
+            return;
+        }
+
+        for (let i = 0; i < remaining.length; i++) {
+            const nextPerm = perm.concat(remaining[i]);
+            const nextRemaining = remaining.slice(0, i).concat(remaining.slice(i + 1));
+            generatePermutations(nextPerm, nextRemaining);
+        }
+    }
+
+    // Start generating permutations
+    generatePermutations([], arr);
+
+    // Generate signed versions
+    const signedArrangements = arrangements.flatMap((perm) => {
+        const signedVersions = [];
+        for (let i = 0; i < perm.length; i++) {
+            const signedPerm = perm.slice(); // Copy the permutation array
+            signedPerm[i] *= -1; // Multiply each element by -1 to get its signed version
+            signedVersions.push(signedPerm);
+        }
+        return signedVersions;
+    });
+
+    return signedArrangements;
+}
+
+const input = [1, 2, 3, 4];
+const arrangements = getAllArrangements(input);
+console.log(arrangements);
+
+let arrangementIndex = 55;
+function offsetIndex(offset) {
+    arrangementIndex += offset;
+    console.log({ arrangementIndex });
+}
+console.log(arrangements[arrangementIndex]);
+
+function permuteQuaternion(quaternion) {
+    const { x, y, z, w } = quaternion;
+    const p1 = [x, y, z, w];
+    const permutation = arrangements[arrangementIndex];
+    const p2 = permutation.map((value) => {
+        const sign = Math.sign(value);
+        const index = Math.abs(value) - 1;
+        return p1[index] * sign;
+    });
+    quaternion.x = p2[0];
+    quaternion.y = p2[1];
+    quaternion.z = p2[2];
+    quaternion.w = p2[3];
+}
+
+window.addEventListener("keypress", (event) => {
+    switch (event.key) {
+        case "-":
+            offsetIndex(-1);
+            break;
+        case "=":
+            offsetIndex(1);
+            break;
+    }
 });
