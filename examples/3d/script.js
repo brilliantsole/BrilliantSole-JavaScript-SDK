@@ -405,7 +405,6 @@ function getAllArrangements(arr) {
 
 const input = [1, 2, 3, 4];
 const arrangements = getAllArrangements(input);
-console.log(arrangements);
 
 let arrangementIndex = 55;
 function offsetIndex(offset) {
