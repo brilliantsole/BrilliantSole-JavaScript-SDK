@@ -141,7 +141,7 @@ devicePair.sides.forEach((side) => {
     const orientationSelect = insoleContainer.querySelector(".orientation");
     orientationSelect.addEventListener("input", () => {
         /** @type {import("../../build/brilliantsole.module.js").SensorConfiguration} */
-        const configuration = { gameRotation: 0, rotation: 0, gyroscope: 0 };
+        const configuration = { gameRotation: 0, rotation: 0, gyroscope: 0, orientation: 0 };
 
         switch (orientationSelect.value) {
             case "none":
@@ -151,6 +151,9 @@ devicePair.sides.forEach((side) => {
                 break;
             case "rotation":
                 configuration.rotation = sensorRate;
+                break;
+            case "orientation":
+                configuration.orientation = sensorRate;
                 break;
             case "gyroscope":
                 configuration.gyroscope = sensorRate;
@@ -232,6 +235,7 @@ devicePair.sides.forEach((side) => {
                 switch (sensorType) {
                     case "gameRotation":
                     case "rotation":
+                    case "orientation":
                     case "gyroscope":
                         newOrientationSelectValue = sensorType;
                         break;
@@ -331,23 +335,23 @@ devicePair.sides.forEach((side) => {
         updateQuaternion(rotation, true);
     });
 
-    // const orientationVector3 = new THREE.Vector3();
-    // const orientationEuler = new THREE.Euler(0, 0, 0, "YXZ");
-    // const orientationQuaternion = new THREE.Quaternion();
-    // /** @typedef {import("../../build/brilliantsole.module.js").Euler} Euler */
-    // devicePair.addEventListener("deviceOrientation", (event) => {
-    //     const device = event.message.device;
-    //     if (device.insoleSide != side) {
-    //         return;
-    //     }
+    const orientationVector3 = new THREE.Vector3();
+    const orientationEuler = new THREE.Euler(0, 0, 0, "YXZ");
+    const orientationQuaternion = new THREE.Quaternion();
+    /** @typedef {import("../../build/brilliantsole.module.js").Euler} Euler */
+    devicePair.addEventListener("deviceOrientation", (event) => {
+        const device = event.message.device;
+        if (device.insoleSide != side) {
+            return;
+        }
 
-    //     /** @type {Euler} */
-    //     const orientation = event.message.orientation;
-    //     orientationVector3.set(orientation.pitch, orientation.heading, orientation.roll).multiplyScalar(Math.PI / 180);
-    //     orientationEuler.setFromVector3(orientationVector3);
-    //     orientationQuaternion.setFromEuler(orientationEuler);
-    //     updateQuaternion(orientationQuaternion);
-    // });
+        /** @type {Euler} */
+        const orientation = event.message.orientation;
+        orientationVector3.set(orientation.pitch, orientation.heading, orientation.roll).multiplyScalar(Math.PI / 180);
+        orientationEuler.setFromVector3(orientationVector3);
+        orientationQuaternion.setFromEuler(orientationEuler);
+        updateQuaternion(orientationQuaternion);
+    });
 
     const gyroscopeVector3 = new THREE.Vector3();
     const gyroscopeEuler = new THREE.Euler();
@@ -405,6 +409,7 @@ function getAllArrangements(arr) {
 
 const input = [1, 2, 3, 4];
 const arrangements = getAllArrangements(input);
+console.log(arrangements);
 
 let arrangementIndex = 55;
 function offsetIndex(offset) {

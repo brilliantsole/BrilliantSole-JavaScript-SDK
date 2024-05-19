@@ -60,6 +60,7 @@ class SensorDataManager {
         "magnetometer",
         "gameRotation",
         "rotation",
+        "orientation",
 
         "barometer",
     ];
@@ -145,6 +146,9 @@ class SensorDataManager {
             case "gameRotation":
             case "rotation":
                 sensorData = this.motionSensorDataManager.parseQuaternion(dataView, scalar);
+                break;
+            case "orientation":
+                sensorData = this.motionSensorDataManager.parseEuler(dataView, scalar);
                 break;
             case "barometer":
                 sensorData = this.barometerSensorDataManager.parseData(dataView, scalar);

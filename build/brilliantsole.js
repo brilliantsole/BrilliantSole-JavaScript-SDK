@@ -1370,7 +1370,7 @@
 	    }
 	}
 
-	/** @typedef {"acceleration" | "gravity" | "linearAcceleration" | "gyroscope" | "magnetometer" | "gameRotation" | "rotation"} MotionSensorType */
+	/** @typedef {"acceleration" | "gravity" | "linearAcceleration" | "gyroscope" | "magnetometer" | "gameRotation" | "rotation" | "orientation"} MotionSensorType */
 
 	const _console$r = createConsole("MotionSensorDataManager", { log: false });
 
@@ -1624,6 +1624,7 @@
 	        "magnetometer",
 	        "gameRotation",
 	        "rotation",
+	        "orientation",
 
 	        "barometer",
 	    ];
@@ -1710,6 +1711,9 @@
 	            case "rotation":
 	                sensorData = this.motionSensorDataManager.parseQuaternion(dataView, scalar);
 	                break;
+	            case "orientation":
+	                sensorData = this.motionSensorDataManager.parseEuler(dataView, scalar);
+	                break;
 	            case "barometer":
 	                sensorData = this.barometerSensorDataManager.parseData(dataView, scalar);
 	                break;
@@ -1787,6 +1791,7 @@
 	 * @property {number?} magnetometer
 	 * @property {number?} gameRotation
 	 * @property {number?} rotation
+	 * @property {number?} orientation
 	 * @property {number?} barometer
 	 */
 

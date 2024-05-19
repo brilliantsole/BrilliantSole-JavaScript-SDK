@@ -16,6 +16,7 @@ const _console = createConsole("SensorConfigurationManager", { log: false });
  * @property {number?} magnetometer
  * @property {number?} gameRotation
  * @property {number?} rotation
+ * @property {number?} orientation
  * @property {number?} barometer
  */
 
