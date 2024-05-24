@@ -40,6 +40,12 @@ import { createArray } from "../utils/ArrayUtils.js";
 const _console = createConsole("PressureSensorDataManager", { log: true });
 
 class PressureSensorDataManager {
+    /** @type {PressureSensorType[]} */
+    static #Types = ["pressure"];
+    static get Types() {
+        return this.#Types;
+    }
+
     /** @type {PressureSensorPosition[]} */
     #positions = [];
     get positions() {

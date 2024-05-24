@@ -51,18 +51,9 @@ class SensorDataManager {
 
     /** @type {SensorType[]} */
     static #Types = [
-        "pressure",
-
-        "acceleration",
-        "gravity",
-        "linearAcceleration",
-        "gyroscope",
-        "magnetometer",
-        "gameRotation",
-        "rotation",
-        "orientation",
-
-        "barometer",
+        ...PressureSensorDataManager.Types,
+        ...MotionSensorDataManager.Types,
+        ...BarometerSensorDataManager.Types,
     ];
     static get Types() {
         return this.#Types;
@@ -131,7 +122,7 @@ class SensorDataManager {
     #parseDataCallback(sensorType, dataView, { timestamp }) {
         const scalar = this.#scalars.get(sensorType);
 
-        let sensorData;
+        let sensorData = null;
         switch (sensorType) {
             case "pressure":
                 sensorData = this.pressureSensorDataManager.parseData(dataView);
@@ -150,6 +141,15 @@ class SensorDataManager {
             case "orientation":
                 sensorData = this.motionSensorDataManager.parseEuler(dataView, scalar);
                 break;
+            case "stepCounter":
+                sensorData = this.motionSensorDataManager.parseStepCounter(dataView);
+                break;
+            case "activity":
+                sensorData = this.motionSensorDataManager.parseActivity(dataView);
+                break;
+            case "deviceOrientation":
+                sensorData = this.motionSensorDataManager.parseDeviceOrientation(dataView);
+                break;
             case "barometer":
                 sensorData = this.barometerSensorDataManager.parseData(dataView, scalar);
                 break;
@@ -157,11 +157,11 @@ class SensorDataManager {
                 _console.error(`uncaught sensorType "${sensorType}"`);
         }
 
-        _console.assertWithError(sensorData, `no sensorData defined for sensorType "${sensorType}"`);
+        _console.assertWithError(sensorData != null, `no sensorData defined for sensorType "${sensorType}"`);
 
         _console.log({ sensorType, sensorData, sensorData });
-        this.#dispatchEvent({ type: sensorType, message: { [sensorType]: sensorData } });
-        this.#dispatchEvent({ type: "sensorData", message: { [sensorType]: sensorData, sensorType } });
+        this.#dispatchEvent({ type: sensorType, message: { [sensorType]: sensorData, timestamp } });
+        this.#dispatchEvent({ type: "sensorData", message: { [sensorType]: sensorData, sensorType, timestamp } });
     }
 
     /** @param {DataView} dataView */

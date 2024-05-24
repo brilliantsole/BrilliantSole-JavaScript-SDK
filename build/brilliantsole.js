@@ -1295,6 +1295,12 @@
 	const _console$s = createConsole("PressureSensorDataManager", { log: true });
 
 	class PressureSensorDataManager {
+	    /** @type {PressureSensorType[]} */
+	    static #Types = ["pressure"];
+	    static get Types() {
+	        return this.#Types;
+	    }
+
 	    /** @type {PressureSensorPosition[]} */
 	    #positions = [];
 	    get positions() {
@@ -1370,9 +1376,22 @@
 	    }
 	}
 
-	/** @typedef {"acceleration" | "gravity" | "linearAcceleration" | "gyroscope" | "magnetometer" | "gameRotation" | "rotation" | "orientation"} MotionSensorType */
+	/**
+	 * @typedef { "acceleration" |
+	 * "gravity" |
+	 * "linearAcceleration" |
+	 * "gyroscope" |
+	 * "magnetometer" |
+	 * "gameRotation" |
+	 * "rotation" |
+	 * "orientation" |
+	 * "activity" |
+	 * "stepCounter" |
+	 * "deviceOrientation"
+	 * } MotionSensorType
+	 */
 
-	const _console$r = createConsole("MotionSensorDataManager", { log: false });
+	const _console$r = createConsole("MotionSensorDataManager", { log: true });
 
 	/**
 	 * @typedef Vector3
@@ -1399,7 +1418,55 @@
 	 * @property {number} roll
 	 */
 
+	/**
+	 * @typedef {"still" |
+	 * "walking" |
+	 * "running" |
+	 * "bicycle" |
+	 * "vehicle" |
+	 * "tilting"
+	 * } ActivityType
+	 */
+
+	/**
+	 * @typedef Activity
+	 * @type {Object}
+	 * @property {boolean} still
+	 * @property {boolean} walking
+	 * @property {boolean} running
+	 * @property {boolean} bicycle
+	 * @property {boolean} vehicle
+	 * @property {boolean} tilting
+	 */
+
+	/**
+	 * @typedef {"portraitUpright" |
+	 * "landscapeLeft" |
+	 * "portraitUpsideDown" |
+	 * "landscapeRight" |
+	 * "unknown"
+	 * } DeviceOrientation
+	 */
+
 	class MotionSensorDataManager {
+	    /** @type {MotionSensorType[]} */
+	    static #Types = [
+	        "acceleration",
+	        "gravity",
+	        "linearAcceleration",
+	        "gyroscope",
+	        "magnetometer",
+	        "gameRotation",
+	        "rotation",
+	        "orientation",
+	        "activity",
+	        "stepCounter",
+	        "deviceOrientation",
+	    ];
+	    static get Types() {
+	        return this.#Types;
+	    }
+
 	    static #Vector3Size = 3 * 2;
 	    static get Vector3Size() {
 	        return this.#Vector3Size;
@@ -1473,11 +1540,71 @@
 	            dataView.getInt16(4, true),
 	        ].map((value) => value * scalar);
 
+	        roll *= -1;
+	        heading *= -1;
+
 	        /** @type {Euler} */
 	        const euler = { heading, pitch, roll };
 
 	        _console$r.log({ euler });
 	        return euler;
+	    }
+
+	    /** @param {DataView} dataView */
+	    parseStepCounter(dataView) {
+	        _console$r.log("parseStepCounter", dataView);
+	        const stepCount = dataView.getUint32(0, true);
+	        _console$r.log({ stepCount });
+	        return stepCount;
+	    }
+
+	    /** @type {ActivityType[]} */
+	    static #ActivityTypes = ["still", "walking", "running", "bicycle", "vehicle", "tilting"];
+	    static get ActivityTypes() {
+	        return this.#ActivityTypes;
+	    }
+	    get #activityTypes() {
+	        return MotionSensorDataManager.#ActivityTypes;
+	    }
+	    /** @param {DataView} dataView */
+	    parseActivity(dataView) {
+	        _console$r.log("parseActivity", dataView);
+	        /** @type {Activity} */
+	        const activity = {};
+
+	        const activityBitfield = dataView.getUint8(0);
+	        _console$r.log("activityBitfield", activityBitfield.toString(2));
+	        this.#activityTypes.forEach((activityType, index) => {
+	            activity[activityType] = Boolean(activityBitfield & (1 << index));
+	        });
+
+	        _console$r.log("activity", activity);
+
+	        return activity;
+	    }
+
+	    /** @type {DeviceOrientation[]} */
+	    static #DeviceOrientations = [
+	        "portraitUpright",
+	        "landscapeLeft",
+	        "portraitUpsideDown",
+	        "landscapeRight",
+	        "unknown",
+	    ];
+	    static get DeviceOrientations() {
+	        return this.#DeviceOrientations;
+	    }
+	    get #deviceOrientations() {
+	        return MotionSensorDataManager.#DeviceOrientations;
+	    }
+	    /** @param {DataView} dataView */
+	    parseDeviceOrientation(dataView) {
+	        _console$r.log("parseDeviceOrientation", dataView);
+	        const index = dataView.getUint8(0);
+	        const deviceOrientation = this.#deviceOrientations[index];
+	        _console$r.assertWithError(deviceOrientation, "undefined deviceOrientation");
+	        _console$r.log({ deviceOrientation });
+	        return deviceOrientation;
 	    }
 	}
 
@@ -1486,6 +1613,12 @@
 	const _console$q = createConsole("BarometerSensorDataManager", { log: true });
 
 	class BarometerSensorDataManager {
+	    /** @type {BarometerSensorType[]} */
+	    static #Types = ["barometer"];
+	    static get Types() {
+	        return this.#Types;
+	    }
+
 	    /** @param {number} pressure */
 	    #calculcateAltitude(pressure) {
 	        const P0 = 101325; // Standard atmospheric pressure at sea level in Pascals
@@ -1615,18 +1748,9 @@
 
 	    /** @type {SensorType[]} */
 	    static #Types = [
-	        "pressure",
-
-	        "acceleration",
-	        "gravity",
-	        "linearAcceleration",
-	        "gyroscope",
-	        "magnetometer",
-	        "gameRotation",
-	        "rotation",
-	        "orientation",
-
-	        "barometer",
+	        ...PressureSensorDataManager.Types,
+	        ...MotionSensorDataManager.Types,
+	        ...BarometerSensorDataManager.Types,
 	    ];
 	    static get Types() {
 	        return this.#Types;
@@ -1695,7 +1819,7 @@
 	    #parseDataCallback(sensorType, dataView, { timestamp }) {
 	        const scalar = this.#scalars.get(sensorType);
 
-	        let sensorData;
+	        let sensorData = null;
 	        switch (sensorType) {
 	            case "pressure":
 	                sensorData = this.pressureSensorDataManager.parseData(dataView);
@@ -1714,6 +1838,15 @@
 	            case "orientation":
 	                sensorData = this.motionSensorDataManager.parseEuler(dataView, scalar);
 	                break;
+	            case "stepCounter":
+	                sensorData = this.motionSensorDataManager.parseStepCounter(dataView);
+	                break;
+	            case "activity":
+	                sensorData = this.motionSensorDataManager.parseActivity(dataView);
+	                break;
+	            case "deviceOrientation":
+	                sensorData = this.motionSensorDataManager.parseDeviceOrientation(dataView);
+	                break;
 	            case "barometer":
 	                sensorData = this.barometerSensorDataManager.parseData(dataView, scalar);
 	                break;
@@ -1721,11 +1854,11 @@
 	                _console$o.error(`uncaught sensorType "${sensorType}"`);
 	        }
 
-	        _console$o.assertWithError(sensorData, `no sensorData defined for sensorType "${sensorType}"`);
+	        _console$o.assertWithError(sensorData != null, `no sensorData defined for sensorType "${sensorType}"`);
 
 	        _console$o.log({ sensorType, sensorData, sensorData });
-	        this.#dispatchEvent({ type: sensorType, message: { [sensorType]: sensorData } });
-	        this.#dispatchEvent({ type: "sensorData", message: { [sensorType]: sensorData, sensorType } });
+	        this.#dispatchEvent({ type: sensorType, message: { [sensorType]: sensorData, timestamp } });
+	        this.#dispatchEvent({ type: "sensorData", message: { [sensorType]: sensorData, sensorType, timestamp } });
 	    }
 
 	    /** @param {DataView} dataView */
@@ -1777,7 +1910,7 @@
 	    sendMessage;
 	}
 
-	const _console$n = createConsole("SensorConfigurationManager", { log: false });
+	const _console$n = createConsole("SensorConfigurationManager", { log: true });
 
 
 	/**
@@ -1792,6 +1925,8 @@
 	 * @property {number?} gameRotation
 	 * @property {number?} rotation
 	 * @property {number?} orientation
+	 * @property {number?} activity
+	 * @property {number?} stepCounter
 	 * @property {number?} barometer
 	 */
 

@@ -2,7 +2,7 @@ import { createConsole } from "../utils/Console.js";
 import SensorDataManager from "./SensorDataManager.js";
 import EventDispatcher from "../utils/EventDispatcher.js";
 
-const _console = createConsole("SensorConfigurationManager", { log: false });
+const _console = createConsole("SensorConfigurationManager", { log: true });
 
 /** @typedef {import("./SensorDataManager.js").SensorType} SensorType */
 /**
@@ -17,6 +17,8 @@ const _console = createConsole("SensorConfigurationManager", { log: false });
  * @property {number?} gameRotation
  * @property {number?} rotation
  * @property {number?} orientation
+ * @property {number?} activity
+ * @property {number?} stepCounter
  * @property {number?} barometer
  */
 

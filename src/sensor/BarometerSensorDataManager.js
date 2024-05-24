@@ -5,6 +5,12 @@ import { createConsole } from "../utils/Console.js";
 const _console = createConsole("BarometerSensorDataManager", { log: true });
 
 class BarometerSensorDataManager {
+    /** @type {BarometerSensorType[]} */
+    static #Types = ["barometer"];
+    static get Types() {
+        return this.#Types;
+    }
+
     /** @param {number} pressure */
     #calculcateAltitude(pressure) {
         const P0 = 101325; // Standard atmospheric pressure at sea level in Pascals
