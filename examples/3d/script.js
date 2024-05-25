@@ -332,6 +332,8 @@ devicePair.sides.forEach((side) => {
 
         /** @type {Quaternion} */
         const rotation = event.message.rotation;
+        //permuteQuaternion(rotation);
+
         updateQuaternion(rotation, true);
     });
 
@@ -373,45 +375,68 @@ devicePair.sides.forEach((side) => {
 
 // CHATGPT
 
-function getAllArrangements(arr) {
-    const arrangements = [];
+function generateSignVariations(arr) {
+    let signVariations = [];
 
-    // Function to generate permutations recursively
-    function generatePermutations(perm, remaining) {
-        if (remaining.length === 0) {
-            arrangements.push(perm);
+    function helper(subset, index) {
+        if (index === arr.length) {
+            signVariations.push(subset.slice());
             return;
         }
 
-        for (let i = 0; i < remaining.length; i++) {
-            const nextPerm = perm.concat(remaining[i]);
-            const nextRemaining = remaining.slice(0, i).concat(remaining.slice(i + 1));
-            generatePermutations(nextPerm, nextRemaining);
+        // Include the positive version of the current element
+        subset.push(arr[index]);
+        helper(subset, index + 1);
+        subset.pop();
+
+        // Include the negative version of the current element
+        subset.push(-arr[index]);
+        helper(subset, index + 1);
+        subset.pop();
+    }
+
+    helper([], 0);
+    return signVariations;
+}
+
+function permute(arr) {
+    let permutations = [];
+
+    function generate(currentPermutation, remainingElements) {
+        if (remainingElements.length === 0) {
+            permutations.push(currentPermutation.slice());
+            return;
+        }
+
+        for (let i = 0; i < remainingElements.length; i++) {
+            let nextElement = remainingElements[i];
+            currentPermutation.push(nextElement);
+            generate(currentPermutation, remainingElements.slice(0, i).concat(remainingElements.slice(i + 1)));
+            currentPermutation.pop();
         }
     }
 
-    // Start generating permutations
-    generatePermutations([], arr);
+    generate([], arr);
+    return permutations;
+}
 
-    // Generate signed versions
-    const signedArrangements = arrangements.flatMap((perm) => {
-        const signedVersions = [];
-        for (let i = 0; i < perm.length; i++) {
-            const signedPerm = perm.slice(); // Copy the permutation array
-            signedPerm[i] *= -1; // Multiply each element by -1 to get its signed version
-            signedVersions.push(signedPerm);
-        }
-        return signedVersions;
+function generateAllCombinationsWithPermutations(arr) {
+    let signVariations = generateSignVariations(arr);
+    let allPermutations = [];
+
+    signVariations.forEach((variation) => {
+        let perms = permute(variation);
+        allPermutations.push(...perms);
     });
 
-    return signedArrangements;
+    return allPermutations;
 }
 
 const input = [1, 2, 3, 4];
-const arrangements = getAllArrangements(input);
+const arrangements = generateAllCombinationsWithPermutations(input);
 console.log(arrangements);
 
-let arrangementIndex = 55;
+let arrangementIndex = 0;
 function offsetIndex(offset) {
     arrangementIndex += offset;
     console.log({ arrangementIndex });

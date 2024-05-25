@@ -1540,7 +1540,7 @@
 	            dataView.getInt16(4, true),
 	        ].map((value) => value * scalar);
 
-	        roll *= -1;
+	        pitch *= -1;
 	        heading *= -1;
 
 	        /** @type {Euler} */
