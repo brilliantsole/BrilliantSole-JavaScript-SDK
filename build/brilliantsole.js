@@ -5962,12 +5962,12 @@
 	                );
 	                newStatus = "testing";
 	            } else {
-	                if (this.#images[1].pending == false) {
-	                    _console$d.log("Slot 1 has a valid image. run testImage() to test it or upload a different image.");
-	                    newStatus = "uploaded";
-	                } else {
+	                if (this.#images[1].pending) {
 	                    _console$d.log("reset to upload to the new firmware image");
 	                    newStatus = "pending";
+	                } else {
+	                    _console$d.log("Slot 1 has a valid image. run testImage() to test it or upload a different image.");
+	                    newStatus = "uploaded";
 	                }
 	            }
 	        }

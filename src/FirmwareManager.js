@@ -387,12 +387,12 @@ class FirmwareManager {
                 );
                 newStatus = "testing";
             } else {
-                if (this.#images[1].pending == false) {
-                    _console.log("Slot 1 has a valid image. run testImage() to test it or upload a different image.");
-                    newStatus = "uploaded";
-                } else {
+                if (this.#images[1].pending) {
                     _console.log("reset to upload to the new firmware image");
                     newStatus = "pending";
+                } else {
+                    _console.log("Slot 1 has a valid image. run testImage() to test it or upload a different image.");
+                    newStatus = "uploaded";
                 }
             }
         }

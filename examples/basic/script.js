@@ -973,6 +973,7 @@ device.addEventListener("firmwareStatus", () => {
     updateTestFirmwareImageButton();
     updateConfirmFirmwareImageButton();
     updateEraseFirmwareImageButton();
+    updateSelectImageSelect();
 });
 
 /** @type {HTMLButtonElement} */
@@ -990,7 +991,7 @@ const updateResetButton = () => {
 /** @type {HTMLButtonElement} */
 const testFirmwareImageButton = document.getElementById("testFirmwareImage");
 testFirmwareImageButton.addEventListener("click", () => {
-    device.testFirmwareImage();
+    device.testFirmwareImage(selectedImageIndex);
 });
 const updateTestFirmwareImageButton = () => {
     const enabled = device.firmwareStatus == "uploaded";
@@ -1000,10 +1001,10 @@ const updateTestFirmwareImageButton = () => {
 /** @type {HTMLButtonElement} */
 const confirmFirmwareImageButton = document.getElementById("confirmFirmwareImage");
 confirmFirmwareImageButton.addEventListener("click", () => {
-    device.confirmFirmwareImage();
+    device.confirmFirmwareImage(selectedImageIndex);
 });
 const updateConfirmFirmwareImageButton = () => {
-    const enabled = device.firmwareStatus == "testing";
+    const enabled = device.firmwareStatus == "testing" || device.firmwareStatus == "uploaded";
     confirmFirmwareImageButton.disabled = !enabled;
 };
 
@@ -1016,3 +1017,36 @@ const updateEraseFirmwareImageButton = () => {
     const enabled = device.firmwareStatus == "uploaded";
     eraseFirmwareImageButton.disabled = !enabled;
 };
+
+/** @type {HTMLSelectElement} */
+const imageSelectionSelect = document.getElementById("imageSelection");
+/** @type {HTMLOptGroupElement} */
+const imageSelectionOptGroup = imageSelectionSelect.querySelector("optgroup");
+device.addEventListener("firmwareImages", () => {
+    imageSelectionOptGroup.innerHTML = "";
+    device.firmwareImages.forEach((firmwareImage, index) => {
+        const option = new Option(`${firmwareImage.version} (slot ${index})`, index);
+        option.disabled = firmwareImage.empty;
+        imageSelectionOptGroup.appendChild(option);
+    });
+    imageSelectionSelect.dispatchEvent(new Event("input"));
+});
+imageSelectionSelect.addEventListener("input", () => {
+    selectedImageIndex = Number(imageSelectionSelect.value);
+    console.log({ selectedImageIndex });
+});
+let selectedImageIndex = 0;
+device.addEventListener("isConnected", () => {
+    imageSelectionSelect.disabled = !device.isConnected;
+});
+
+function updateSelectImageSelect() {
+    let enabled = true;
+    switch (device.firmwareStatus) {
+        case "uploading":
+        case "erasing":
+            enabled = false;
+            break;
+    }
+    imageSelectionSelect.disabled = !enabled;
+}
