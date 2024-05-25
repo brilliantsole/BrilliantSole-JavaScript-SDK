@@ -444,6 +444,9 @@ class TfliteManager {
      */
     async setInferencingEnabled(newInferencingEnabled, sendImmediately) {
         _console.assertTypeWithError(newInferencingEnabled, "boolean");
+        if (!newInferencingEnabled && !this.isReady) {
+            return;
+        }
         this.#assertIsReady();
         if (this.#inferencingEnabled == newInferencingEnabled) {
             _console.log(`redundant inferencingEnabled assignment ${newInferencingEnabled}`);

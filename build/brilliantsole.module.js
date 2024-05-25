@@ -2586,6 +2586,9 @@ let TfliteManager$1 = class TfliteManager {
      */
     async setInferencingEnabled(newInferencingEnabled, sendImmediately) {
         _console$m.assertTypeWithError(newInferencingEnabled, "boolean");
+        if (!newInferencingEnabled && !this.isReady) {
+            return;
+        }
         this.#assertIsReady();
         if (this.#inferencingEnabled == newInferencingEnabled) {
             _console$m.log(`redundant inferencingEnabled assignment ${newInferencingEnabled}`);
@@ -5744,6 +5747,10 @@ class FirmwareManager {
     #assertImages() {
         _console$d.assertWithError(this.#images, "didn't get imageState");
     }
+    #assertValidImageIndex(imageIndex) {
+        _console$d.assertTypeWithError(imageIndex, "number");
+        _console$d.assertWithError(imageIndex == 0 || imageIndex == 1, "imageIndex must be 0 or 1");
+    }
     async getImages() {
         const promise = this.waitForEvent("firmwareImages");
 
@@ -5753,25 +5760,27 @@ class FirmwareManager {
         await promise;
     }
 
-    async testImage() {
+    /** @param {number} imageIndex */
+    async testImage(imageIndex = 1) {
+        this.#assertValidImageIndex(imageIndex);
         this.#assertImages();
-        if (this.#images.length < 2) {
-            _console$d.log("image 1 not found");
+        if (!this.#images[imageIndex]) {
+            _console$d.log(`image ${imageIndex} not found`);
             return;
         }
-        if (this.#images[1].pending == true) {
-            _console$d.log("image 1 is already pending");
+        if (this.#images[imageIndex].pending == true) {
+            _console$d.log(`image ${imageIndex} is already pending`);
             return;
         }
-        if (this.#images[1].empty) {
-            _console$d.log("image 1 is empty");
+        if (this.#images[imageIndex].empty) {
+            _console$d.log(`image ${imageIndex} is empty`);
             return;
         }
 
         const promise = this.waitForEvent("smp");
 
         _console$d.log("testing firmware image...");
-        this.sendMessage(Uint8Array.from(this.#mcuManager.cmdImageTest(this.#images[1].hash)).buffer);
+        this.sendMessage(Uint8Array.from(this.#mcuManager.cmdImageTest(this.#images[imageIndex].hash)).buffer);
 
         await promise;
     }
@@ -5789,17 +5798,19 @@ class FirmwareManager {
         await this.getImages();
     }
 
-    async confirmImage() {
+    /** @param {number} imageIndex */
+    async confirmImage(imageIndex = 0) {
+        this.#assertValidImageIndex(imageIndex);
         this.#assertImages();
-        if (this.#images[0].confirmed === true) {
-            _console$d.log("image 0 is already confirmed");
+        if (this.#images[imageIndex].confirmed === true) {
+            _console$d.log(`image ${imageIndex} is already confirmed`);
             return;
         }
 
         const promise = this.waitForEvent("smp");
 
         _console$d.log("confirming image...");
-        this.sendMessage(Uint8Array.from(this.#mcuManager.cmdImageConfirm(this.#images[0].hash)).buffer);
+        this.sendMessage(Uint8Array.from(this.#mcuManager.cmdImageConfirm(this.#images[imageIndex].hash)).buffer);
 
         await promise;
     }
@@ -6745,11 +6756,13 @@ class Device {
     async eraseFirmwareImage() {
         return this.#firmwareManager.eraseImage();
     }
-    async confirmFirmwareImage() {
-        return this.#firmwareManager.confirmImage();
+    /** @param {number} imageIndex */
+    async confirmFirmwareImage(imageIndex) {
+        return this.#firmwareManager.confirmImage(imageIndex);
     }
-    async testFirmwareImage() {
-        return this.#firmwareManager.testImage();
+    /** @param {number} imageIndex */
+    async testFirmwareImage(imageIndex) {
+        return this.#firmwareManager.testImage(imageIndex);
     }
 
     // CONNECTED DEVICES

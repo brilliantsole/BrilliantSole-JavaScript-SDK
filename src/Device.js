@@ -784,11 +784,13 @@ class Device {
     async eraseFirmwareImage() {
         return this.#firmwareManager.eraseImage();
     }
-    async confirmFirmwareImage() {
-        return this.#firmwareManager.confirmImage();
+    /** @param {number} imageIndex */
+    async confirmFirmwareImage(imageIndex) {
+        return this.#firmwareManager.confirmImage(imageIndex);
     }
-    async testFirmwareImage() {
-        return this.#firmwareManager.testImage();
+    /** @param {number} imageIndex */
+    async testFirmwareImage(imageIndex) {
+        return this.#firmwareManager.testImage(imageIndex);
     }
 
     // CONNECTED DEVICES
