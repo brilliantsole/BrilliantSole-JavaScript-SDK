@@ -144,6 +144,9 @@ class SensorDataManager {
             case "stepCounter":
                 sensorData = this.motionSensorDataManager.parseStepCounter(dataView);
                 break;
+            case "stepDetector":
+                sensorData = {};
+                break;
             case "activity":
                 sensorData = this.motionSensorDataManager.parseActivity(dataView);
                 break;

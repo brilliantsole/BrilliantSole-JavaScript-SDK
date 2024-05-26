@@ -1387,6 +1387,7 @@
 	 * "orientation" |
 	 * "activity" |
 	 * "stepCounter" |
+	 * "stepDetector" |
 	 * "deviceOrientation"
 	 * } MotionSensorType
 	 */
@@ -1461,6 +1462,7 @@
 	        "orientation",
 	        "activity",
 	        "stepCounter",
+	        "stepDetector",
 	        "deviceOrientation",
 	    ];
 	    static get Types() {
@@ -1840,6 +1842,9 @@
 	                break;
 	            case "stepCounter":
 	                sensorData = this.motionSensorDataManager.parseStepCounter(dataView);
+	                break;
+	            case "stepDetector":
+	                sensorData = {};
 	                break;
 	            case "activity":
 	                sensorData = this.motionSensorDataManager.parseActivity(dataView);

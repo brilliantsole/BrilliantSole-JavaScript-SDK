@@ -11,6 +11,7 @@ import { createConsole } from "../utils/Console.js";
  * "orientation" |
  * "activity" |
  * "stepCounter" |
+ * "stepDetector" |
  * "deviceOrientation"
  * } MotionSensorType
  */
@@ -85,6 +86,7 @@ class MotionSensorDataManager {
         "orientation",
         "activity",
         "stepCounter",
+        "stepDetector",
         "deviceOrientation",
     ];
     static get Types() {

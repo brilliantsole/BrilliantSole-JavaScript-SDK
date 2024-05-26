@@ -1383,6 +1383,7 @@ class PressureSensorDataManager {
  * "orientation" |
  * "activity" |
  * "stepCounter" |
+ * "stepDetector" |
  * "deviceOrientation"
  * } MotionSensorType
  */
@@ -1457,6 +1458,7 @@ class MotionSensorDataManager {
         "orientation",
         "activity",
         "stepCounter",
+        "stepDetector",
         "deviceOrientation",
     ];
     static get Types() {
@@ -1836,6 +1838,9 @@ class SensorDataManager {
                 break;
             case "stepCounter":
                 sensorData = this.motionSensorDataManager.parseStepCounter(dataView);
+                break;
+            case "stepDetector":
+                sensorData = {};
                 break;
             case "activity":
                 sensorData = this.motionSensorDataManager.parseActivity(dataView);
