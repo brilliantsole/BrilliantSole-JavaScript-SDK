@@ -121,7 +121,7 @@ class FirmwareManager {
 
         const arrayBuffer = await getFileBuffer(file);
         const imageInfo = await this.#mcuManager.imageInfo(arrayBuffer);
-        console.log({ imageInfo });
+        _console.log({ imageInfo });
 
         this.#mcuManager.cmdUpload(arrayBuffer, 1);
 

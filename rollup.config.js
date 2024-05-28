@@ -3,6 +3,7 @@ import MagicString from "magic-string";
 import replace from "@rollup/plugin-replace";
 import resolve from "@rollup/plugin-node-resolve";
 import commonjs from "@rollup/plugin-commonjs";
+import babel from "@rollup/plugin-babel";
 
 const production = !process.env.ROLLUP_WATCH;
 
@@ -49,6 +50,22 @@ function removeJSDocImports() {
     };
 }
 
+function removeJSDoc() {
+    return {
+        transform(code) {
+            code = new MagicString(code);
+
+            // removes all jsdocs (thanks chatGPT)
+            code.replace(/\/\*\*[\s\S]*?\*\//g, "");
+
+            return {
+                code: code.toString(),
+                map: code.generateMap(),
+            };
+        },
+    };
+}
+
 const _plugins = [header(), removeJSDocImports()];
 
 if (production) {
@@ -56,6 +73,15 @@ if (production) {
 }
 
 const _browserPlugins = [commonjs(), resolve({ browser: true })];
+const lensStudioPlugins = [
+    removeJSDoc(),
+    resolve(),
+    commonjs(),
+    babel({
+        babelHelpers: "bundled",
+        exclude: "node_modules/**",
+    }),
+];
 
 const name = "BS";
 const input = "src/BS.js";
@@ -115,6 +141,18 @@ const builds = [
                 format: "cjs",
                 name,
                 file: "build/brilliantsole.cjs",
+            },
+        ],
+    },
+
+    {
+        input,
+        plugins: [..._plugins, ...lensStudioPlugins],
+        output: [
+            {
+                format: "umd",
+                name,
+                file: "build/brilliantsole.ls.js",
             },
         ],
     },

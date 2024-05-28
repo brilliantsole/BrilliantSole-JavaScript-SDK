@@ -1,9 +1,8 @@
 import { sliceDataView } from "./ArrayBufferUtils";
 import { createConsole } from "./Console";
+import { textDecoder } from "./Text";
 
 const _console = createConsole("ParseUtils", { log: true });
-
-const textDecoder = new TextDecoder();
 
 /**
  * @param {DataView} dataView

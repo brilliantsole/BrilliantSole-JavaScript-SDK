@@ -17,27 +17,43 @@ const isInWebBLE = isInBrowser && navigator.userAgent.includes("WebBLE");
 isInBrowser && navigator.userAgent.includes("Android");
 isInBrowser && navigator.userAgent.includes("Safari");
 
+const isInLensStudio = !isInBrowser && !isInNode && typeof global !== "undefined" && typeof Studio !== "undefined";
+
+var __console;
+if (isInLensStudio) {
+    const log = function (...args) {
+        Studio.log(args.map((value) => new String(value)).join(","));
+    };
+    __console = {
+        log,
+        warn: log,
+        error: log,
+    };
+} else {
+    __console = console;
+}
+
 // console.assert not supported in WebBLE
-if (!console.assert) {
+if (!__console.assert) {
     /**
      * @param {boolean} condition
      * @param  {...any} data
      */
     const assert = (condition, ...data) => {
         if (!condition) {
-            console.warn(...data);
+            __console.warn(...data);
         }
     };
-    console.assert = assert;
+    __console.assert = assert;
 }
 
 // console.table not supported in WebBLE
-if (!console.table) {
+if (!__console.table) {
     /** @param  {...any} data */
     const table = (...data) => {
-        console.log(...data);
+        __console.log(...data);
     };
-    console.table = table;
+    __console.table = table;
 }
 
 /**
@@ -64,15 +80,15 @@ if (!console.table) {
 function emptyFunction() {}
 
 /** @type {LogFunction} */
-const log = console.log.bind(console);
+const log = __console.log.bind(__console);
 /** @type {LogFunction} */
-const warn = console.warn.bind(console);
+const warn = __console.warn.bind(__console);
 /** @type {LogFunction} */
-const error = console.error.bind(console);
+const error = __console.error.bind(__console);
 /** @type {LogFunction} */
-const table = console.table.bind(console);
+const table = __console.table.bind(__console);
 /** @type {AssertLogFunction} */
-const assert = console.assert.bind(console);
+const assert = __console.assert.bind(__console);
 
 class Console {
     /** @type {Object.<string, Console>} */
@@ -472,6 +488,8 @@ class Timer {
     }
 }
 
+createConsole("checksum", { log: true });
+
 // https://github.com/googlecreativelab/tiny-motion-trainer/blob/5fceb49f018ae0c403bf9f0ccc437309c2acb507/frontend/src/tf4micro-motion-kit/modules/bleFileTransfer.js#L195
 
 // See http://home.thep.lu.se/~bjorn/crc/ for more information on simple CRC32 calculations.
@@ -503,9 +521,40 @@ function crc32(dataIterable) {
     return crc;
 }
 
-const _console$u = createConsole("ArrayBufferUtils", { log: false });
+var _TextEncoder;
+if (typeof TextEncoder == "undefined") {
+    _TextEncoder = class {
+        /** @param {String} string */
+        encode(string) {
+            const encoding = Array.from(string).map((char) => char.charCodeAt(0));
+            return Uint8Array.from(encoding);
+        }
+    };
+} else {
+    _TextEncoder = TextEncoder;
+}
 
-const textEncoder$1 = new TextEncoder();
+var _TextDecoder;
+if (typeof TextDecoder == "undefined") {
+    _TextDecoder = class {
+        /** @param {ArrayBuffer} data */
+        decode(data) {
+            const byteArray = Array.from(new Uint8Array(data));
+            return byteArray
+                .map((value) => {
+                    return String.fromCharCode(value);
+                })
+                .join("");
+        }
+    };
+} else {
+    _TextDecoder = TextDecoder;
+}
+
+const textEncoder = new _TextEncoder();
+const textDecoder = new _TextDecoder();
+
+const _console$u = createConsole("ArrayBufferUtils", { log: false });
 
 /**
  * @param {...ArrayBuffer} arrayBuffers
@@ -559,7 +608,7 @@ function dataToArrayBuffer(data) {
 
 /** @param {String} string */
 function stringToArrayBuffer(string) {
-    const encoding = textEncoder$1.encode(string);
+    const encoding = textEncoder.encode(string);
     return concatenateArrayBuffers(encoding.byteLength, encoding);
 }
 
@@ -981,7 +1030,7 @@ class FileTransferManager {
             return;
         }
 
-        console.log("received file", file);
+        _console$t.log("received file", file);
 
         this.#dispatchEvent({ type: "fileTransferComplete", message: { direction: "receiving" } });
         this.#dispatchEvent({ type: "fileReceived", message: { file } });
@@ -1067,7 +1116,7 @@ class FileTransferManager {
         }
 
         const slicedBuffer = buffer.slice(offset, offset + (this.mtu - 3 - 3));
-        console.log("slicedBuffer", slicedBuffer);
+        _console$t.log("slicedBuffer", slicedBuffer);
         const bytesLeft = buffer.byteLength - offset;
         const progress = 1 - bytesLeft / buffer.byteLength;
         _console$t.log(
@@ -1114,9 +1163,6 @@ class FileTransferManager {
     /** @type {number} */
     mtu;
 }
-
-const textEncoder = new TextEncoder();
-const textDecoder$1 = new TextDecoder();
 
 /**
  * @param {number} value
@@ -1645,8 +1691,6 @@ class BarometerSensorDataManager {
 }
 
 const _console$p = createConsole("ParseUtils", { log: true });
-
-const textDecoder = new TextDecoder();
 
 /**
  * @param {DataView} dataView
@@ -2294,7 +2338,7 @@ let TfliteManager$1 = class TfliteManager {
     /** @param {DataView} dataView */
     #parseName(dataView) {
         _console$m.log("parseName", dataView);
-        const name = textDecoder$1.decode(dataView);
+        const name = textDecoder.decode(dataView);
         this.#updateName(name);
     }
     /** @param {string} name */
@@ -2853,27 +2897,27 @@ class DeviceInformationManager {
 
         switch (messageType) {
             case "manufacturerName":
-                const manufacturerName = textDecoder$1.decode(dataView);
+                const manufacturerName = textDecoder.decode(dataView);
                 _console$l.log({ manufacturerName });
                 this.#update({ manufacturerName });
                 break;
             case "modelNumber":
-                const modelNumber = textDecoder$1.decode(dataView);
+                const modelNumber = textDecoder.decode(dataView);
                 _console$l.log({ modelNumber });
                 this.#update({ modelNumber });
                 break;
             case "softwareRevision":
-                const softwareRevision = textDecoder$1.decode(dataView);
+                const softwareRevision = textDecoder.decode(dataView);
                 _console$l.log({ softwareRevision });
                 this.#update({ softwareRevision });
                 break;
             case "hardwareRevision":
-                const hardwareRevision = textDecoder$1.decode(dataView);
+                const hardwareRevision = textDecoder.decode(dataView);
                 _console$l.log({ hardwareRevision });
                 this.#update({ hardwareRevision });
                 break;
             case "firmwareRevision":
-                const firmwareRevision = textDecoder$1.decode(dataView);
+                const firmwareRevision = textDecoder.decode(dataView);
                 _console$l.log({ firmwareRevision });
                 this.#update({ firmwareRevision });
                 break;
@@ -2891,8 +2935,8 @@ class DeviceInformationManager {
                 this.#update({ pnpId });
                 break;
             case "serialNumber":
-                const serialNumber = textDecoder$1.decode(dataView);
-                console.log({ serialNumber });
+                const serialNumber = textDecoder.decode(dataView);
+                _console$l.log({ serialNumber });
                 // will only be used for node.js
                 break;
             default:
@@ -3143,7 +3187,7 @@ class InformationManager {
         switch (messageType) {
             case "getName":
             case "setName":
-                const name = textDecoder$1.decode(dataView);
+                const name = textDecoder.decode(dataView);
                 _console$k.log({ name });
                 this.updateName(name);
                 break;
@@ -5697,7 +5741,7 @@ class FirmwareManager {
 
         const arrayBuffer = await getFileBuffer(file);
         const imageInfo = await this.#mcuManager.imageInfo(arrayBuffer);
-        console.log({ imageInfo });
+        _console$d.log({ imageInfo });
 
         this.#mcuManager.cmdUpload(arrayBuffer, 1);
 
@@ -9219,7 +9263,7 @@ class BaseServer {
     #onScannerDiscoveredDevice(event) {
         /** @type {DiscoveredDevice} */
         const discoveredDevice = event.message.discoveredDevice;
-        console.log(discoveredDevice);
+        _console$1.log(discoveredDevice);
 
         this.broadcastMessage(this.#createDiscoveredDeviceMessage(discoveredDevice));
     }
@@ -9232,7 +9276,7 @@ class BaseServer {
     #onExpiredDiscoveredDevice(event) {
         /** @type {DiscoveredDevice} */
         const discoveredDevice = event.message.discoveredDevice;
-        console.log("expired", discoveredDevice);
+        _console$1.log("expired", discoveredDevice);
         this.broadcastMessage(this.#createExpiredDiscoveredDeviceMessage(discoveredDevice));
     }
     /** @param {DiscoveredDevice} discoveredDevice */

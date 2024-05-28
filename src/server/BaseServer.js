@@ -168,7 +168,7 @@ class BaseServer {
     #onScannerDiscoveredDevice(event) {
         /** @type {DiscoveredDevice} */
         const discoveredDevice = event.message.discoveredDevice;
-        console.log(discoveredDevice);
+        _console.log(discoveredDevice);
 
         this.broadcastMessage(this.#createDiscoveredDeviceMessage(discoveredDevice));
     }
@@ -181,7 +181,7 @@ class BaseServer {
     #onExpiredDiscoveredDevice(event) {
         /** @type {DiscoveredDevice} */
         const discoveredDevice = event.message.discoveredDevice;
-        console.log("expired", discoveredDevice);
+        _console.log("expired", discoveredDevice);
         this.broadcastMessage(this.#createExpiredDiscoveredDeviceMessage(discoveredDevice));
     }
     /** @param {DiscoveredDevice} discoveredDevice */

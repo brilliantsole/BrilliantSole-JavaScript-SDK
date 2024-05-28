@@ -1,3 +1,7 @@
+import { createConsole } from "./Console.js";
+
+const _console = createConsole("checksum", { log: true });
+
 // https://github.com/googlecreativelab/tiny-motion-trainer/blob/5fceb49f018ae0c403bf9f0ccc437309c2acb507/frontend/src/tf4micro-motion-kit/modules/bleFileTransfer.js#L195
 
 // See http://home.thep.lu.se/~bjorn/crc/ for more information on simple CRC32 calculations.
@@ -35,5 +39,5 @@ export function crc32(dataIterable) {
 export function testCrc32() {
     const testArray = [97, 98, 99, 100, 101];
     const testArrayCrc32 = crc32(testArray);
-    console.log("CRC32 for [97, 98, 99, 100, 101] is 0x" + testArrayCrc32.toString(16) + " (" + testArrayCrc32 + ")");
+    _console.log("CRC32 for [97, 98, 99, 100, 101] is 0x" + testArrayCrc32.toString(16) + " (" + testArrayCrc32 + ")");
 }

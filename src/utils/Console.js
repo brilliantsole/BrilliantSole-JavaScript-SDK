@@ -1,26 +1,40 @@
-import { isInDev } from "./environment.js";
+import { isInDev, isInLensStudio } from "./environment.js";
+
+var __console;
+if (isInLensStudio) {
+    const log = function (...args) {
+        Studio.log(args.map((value) => new String(value)).join(","));
+    };
+    __console = {
+        log,
+        warn: log,
+        error: log,
+    };
+} else {
+    __console = console;
+}
 
 // console.assert not supported in WebBLE
-if (!console.assert) {
+if (!__console.assert) {
     /**
      * @param {boolean} condition
      * @param  {...any} data
      */
     const assert = (condition, ...data) => {
         if (!condition) {
-            console.warn(...data);
+            __console.warn(...data);
         }
     };
-    console.assert = assert;
+    __console.assert = assert;
 }
 
 // console.table not supported in WebBLE
-if (!console.table) {
+if (!__console.table) {
     /** @param  {...any} data */
     const table = (...data) => {
-        console.log(...data);
+        __console.log(...data);
     };
-    console.table = table;
+    __console.table = table;
 }
 
 /**
@@ -47,15 +61,15 @@ if (!console.table) {
 function emptyFunction() {}
 
 /** @type {LogFunction} */
-const log = console.log.bind(console);
+const log = __console.log.bind(__console);
 /** @type {LogFunction} */
-const warn = console.warn.bind(console);
+const warn = __console.warn.bind(__console);
 /** @type {LogFunction} */
-const error = console.error.bind(console);
+const error = __console.error.bind(__console);
 /** @type {LogFunction} */
-const table = console.table.bind(console);
+const table = __console.table.bind(__console);
 /** @type {AssertLogFunction} */
-const assert = console.assert.bind(console);
+const assert = __console.assert.bind(__console);
 
 class Console {
     /** @type {Object.<string, Console>} */

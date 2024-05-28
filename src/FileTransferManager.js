@@ -382,7 +382,7 @@ class FileTransferManager {
             return;
         }
 
-        console.log("received file", file);
+        _console.log("received file", file);
 
         this.#dispatchEvent({ type: "fileTransferComplete", message: { direction: "receiving" } });
         this.#dispatchEvent({ type: "fileReceived", message: { file } });
@@ -468,7 +468,7 @@ class FileTransferManager {
         }
 
         const slicedBuffer = buffer.slice(offset, offset + (this.mtu - 3 - 3));
-        console.log("slicedBuffer", slicedBuffer);
+        _console.log("slicedBuffer", slicedBuffer);
         const bytesLeft = buffer.byteLength - offset;
         const progress = 1 - bytesLeft / buffer.byteLength;
         _console.log(

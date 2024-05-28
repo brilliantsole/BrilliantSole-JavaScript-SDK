@@ -14,4 +14,6 @@ const isInWebBLE = isInBrowser && navigator.userAgent.includes("WebBLE");
 const isAndroid = isInBrowser && navigator.userAgent.includes("Android");
 const isSafari = isInBrowser && navigator.userAgent.includes("Safari");
 
-export { isInDev, isInProduction, isInBrowser, isInNode, isAndroid, isInBluefy, isInWebBLE };
+const isInLensStudio = !isInBrowser && !isInNode && typeof global !== "undefined" && typeof Studio !== "undefined";
+
+export { isInDev, isInProduction, isInBrowser, isInNode, isAndroid, isInBluefy, isInWebBLE, isSafari, isInLensStudio };

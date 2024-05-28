@@ -1,8 +1,7 @@
 import { createConsole } from "./Console";
+import { textEncoder } from "./Text";
 
 const _console = createConsole("ArrayBufferUtils", { log: false });
-
-const textEncoder = new TextEncoder();
 
 /**
  * @param {...ArrayBuffer} arrayBuffers

@@ -175,7 +175,7 @@ class DeviceInformationManager {
                 break;
             case "serialNumber":
                 const serialNumber = textDecoder.decode(dataView);
-                console.log({ serialNumber });
+                _console.log({ serialNumber });
                 // will only be used for node.js
                 break;
             default:
