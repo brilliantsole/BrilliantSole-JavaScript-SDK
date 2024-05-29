@@ -321,7 +321,6 @@ devicePair.sides.forEach((side) => {
         /** @type {Quaternion} */
         const gameRotation = event.message.gameRotation;
         //permuteQuaternion(gameRotation);
-
         updateQuaternion(gameRotation, true);
     });
     devicePair.addEventListener("deviceRotation", (event) => {
@@ -333,7 +332,6 @@ devicePair.sides.forEach((side) => {
         /** @type {Quaternion} */
         const rotation = event.message.rotation;
         //permuteQuaternion(rotation);
-
         updateQuaternion(rotation, true);
     });
 
