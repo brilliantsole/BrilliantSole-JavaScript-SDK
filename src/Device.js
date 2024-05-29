@@ -54,7 +54,7 @@ const _console = createConsole("Device", { log: true });
 
 class Device {
     get bluetoothId() {
-        return this.#connectionManager?.id;
+        return this.#connectionManager?.bluetoothId;
     }
 
     constructor() {
@@ -1059,7 +1059,9 @@ class Device {
             this.GetDevices();
         }
         if (device.isConnected && !this.AvailableDevices.includes(device)) {
-            const existingAvailableDevice = this.AvailableDevices.find((_device) => _device.id == device.id);
+            const existingAvailableDevice = this.AvailableDevices.find(
+                (_device) => _device.bluetoothId == device.bluetoothId
+            );
             _console.log({ existingAvailableDevice });
             if (existingAvailableDevice) {
                 this.AvailableDevices[this.AvailableDevices.indexOf(existingAvailableDevice)] = device;

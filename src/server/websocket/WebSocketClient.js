@@ -323,8 +323,8 @@ class WebSocketClient {
                 break;
             case "expiredDiscoveredDevice":
                 {
-                    const { string: deviceId } = parseStringFromDataView(dataView, byteOffset);
-                    this.#onExpiredDiscoveredDevice(deviceId);
+                    const { string: bluetoothId } = parseStringFromDataView(dataView, byteOffset);
+                    this.#onExpiredDiscoveredDevice(bluetoothId);
                 }
                 break;
             case "connectedDevices":
@@ -332,19 +332,22 @@ class WebSocketClient {
                     if (dataView.byteLength == 0) {
                         break;
                     }
-                    const { string: connectedDeviceIdStrings } = parseStringFromDataView(dataView, byteOffset);
-                    _console.log({ connectedDeviceIdStrings });
-                    const connectedDeviceIds = JSON.parse(connectedDeviceIdStrings);
-                    _console.log({ connectedDeviceIds });
-                    this.#onConnectedDeviceIds(connectedDeviceIds);
+                    const { string: connectedBluetoothDeviceIdStrings } = parseStringFromDataView(dataView, byteOffset);
+                    _console.log({ connectedBluetoothDeviceIdStrings });
+                    const connectedBluetoothDeviceIds = JSON.parse(connectedBluetoothDeviceIdStrings);
+                    _console.log({ connectedBluetoothDeviceIds });
+                    this.#onConnectedBluetoothDeviceIds(connectedBluetoothDeviceIds);
                 }
                 break;
             case "deviceMessage":
                 {
-                    const { string: deviceId, byteOffset: _byteOffset } = parseStringFromDataView(dataView, byteOffset);
+                    const { string: bluetoothId, byteOffset: _byteOffset } = parseStringFromDataView(
+                        dataView,
+                        byteOffset
+                    );
                     byteOffset = _byteOffset;
-                    const device = this.#devices[deviceId];
-                    _console.assertWithError(device, `no device found for id ${deviceId}`);
+                    const device = this.#devices[bluetoothId];
+                    _console.assertWithError(device, `no device found for id ${bluetoothId}`);
                     /** @type {WebSocketClientConnectionManager} */
                     const connectionManager = device.connectionManager;
                     const _dataView = sliceDataView(dataView, byteOffset);
@@ -444,124 +447,124 @@ class WebSocketClient {
     /** @param {DiscoveredDevice} discoveredDevice */
     #onDiscoveredDevice(discoveredDevice) {
         _console.log({ discoveredDevice });
-        this.#discoveredDevices[discoveredDevice.id] = discoveredDevice;
+        this.#discoveredDevices[discoveredDevice.bluetoothId] = discoveredDevice;
         this.#dispatchEvent({ type: "discoveredDevice", message: { discoveredDevice } });
     }
     #requestDiscoveredDevices() {
         this.#sendWebSocketMessage(discoveredDevicesMessage);
     }
-    /** @param {string} deviceId */
-    #onExpiredDiscoveredDevice(deviceId) {
-        _console.log({ expiredDeviceId: deviceId });
-        const discoveredDevice = this.#discoveredDevices[deviceId];
+    /** @param {string} bluetoothId */
+    #onExpiredDiscoveredDevice(bluetoothId) {
+        _console.log({ expiredBluetoothDeviceId: bluetoothId });
+        const discoveredDevice = this.#discoveredDevices[bluetoothId];
         if (!discoveredDevice) {
-            _console.warn(`no discoveredDevice found with id "${deviceId}"`);
+            _console.warn(`no discoveredDevice found with id "${bluetoothId}"`);
             return;
         }
         _console.log({ expiredDiscoveredDevice: discoveredDevice });
-        delete this.#discoveredDevices[deviceId];
+        delete this.#discoveredDevices[bluetoothId];
         this.#dispatchEvent({ type: "expiredDiscoveredDevice", message: { discoveredDevice } });
     }
 
     // DEVICE CONNECTION
 
-    /** @param {string} deviceId */
-    connectToDevice(deviceId) {
-        return this.#requestConnectionToDevice(deviceId);
+    /** @param {string} bluetoothId */
+    connectToDevice(bluetoothId) {
+        return this.#requestConnectionToDevice(bluetoothId);
     }
-    /** @param {string} deviceId */
-    #requestConnectionToDevice(deviceId) {
+    /** @param {string} bluetoothId */
+    #requestConnectionToDevice(bluetoothId) {
         this.#assertConnection();
-        _console.assertTypeWithError(deviceId, "string");
-        const device = this.#getOrCreateDevice(deviceId);
+        _console.assertTypeWithError(bluetoothId, "string");
+        const device = this.#getOrCreateDevice(bluetoothId);
         device.connect();
         return device;
     }
-    /** @param {string} deviceId */
-    #sendConnectToDeviceMessage(deviceId) {
-        this.#sendWebSocketMessage(this.#createConnectToDeviceMessage(deviceId));
+    /** @param {string} bluetoothId */
+    #sendConnectToDeviceMessage(bluetoothId) {
+        this.#sendWebSocketMessage(this.#createConnectToDeviceMessage(bluetoothId));
     }
-    /** @param {string} deviceId */
-    #createConnectToDeviceMessage(deviceId) {
-        return createServerMessage({ type: "connectToDevice", data: deviceId });
+    /** @param {string} bluetoothId */
+    #createConnectToDeviceMessage(bluetoothId) {
+        return createServerMessage({ type: "connectToDevice", data: bluetoothId });
     }
 
-    /** @param {string} deviceId */
-    #createDevice(deviceId) {
+    /** @param {string} bluetoothId */
+    #createDevice(bluetoothId) {
         const device = new Device();
         const clientConnectionManager = new WebSocketClientConnectionManager();
-        clientConnectionManager.id = deviceId;
-        clientConnectionManager.sendWebSocketMessage = this.#sendDeviceMessage.bind(this, deviceId);
-        clientConnectionManager.sendWebSocketConnectMessage = this.#sendConnectToDeviceMessage.bind(this, deviceId);
+        clientConnectionManager.bluetoothId = bluetoothId;
+        clientConnectionManager.sendWebSocketMessage = this.#sendDeviceMessage.bind(this, bluetoothId);
+        clientConnectionManager.sendWebSocketConnectMessage = this.#sendConnectToDeviceMessage.bind(this, bluetoothId);
         clientConnectionManager.sendWebSocketDisconnectMessage = this.#sendDisconnectFromDeviceMessage.bind(
             this,
-            deviceId
+            bluetoothId
         );
         device.connectionManager = clientConnectionManager;
         return device;
     }
 
-    /** @param {string} deviceId */
-    #getOrCreateDevice(deviceId) {
-        let device = this.#devices[deviceId];
+    /** @param {string} bluetoothId */
+    #getOrCreateDevice(bluetoothId) {
+        let device = this.#devices[bluetoothId];
         if (!device) {
-            device = this.#createDevice(deviceId);
-            this.#devices[deviceId] = device;
+            device = this.#createDevice(bluetoothId);
+            this.#devices[bluetoothId] = device;
         }
         return device;
     }
-    /** @param {string[]} deviceIds */
-    #onConnectedDeviceIds(deviceIds) {
-        _console.log({ deviceIds });
-        deviceIds.forEach((deviceId) => {
-            const device = this.#getOrCreateDevice(deviceId);
+    /** @param {string[]} bluetoothIds */
+    #onConnectedBluetoothDeviceIds(bluetoothIds) {
+        _console.log({ bluetoothIds });
+        bluetoothIds.forEach((bluetoothId) => {
+            const device = this.#getOrCreateDevice(bluetoothId);
             /** @type {WebSocketClientConnectionManager} */
             const connectionManager = device.connectionManager;
             connectionManager.isConnected = true;
         });
     }
 
-    /** @param {string} deviceId */
-    disconnectFromDevice(deviceId) {
-        this.#requestDisconnectionFromDevice(deviceId);
+    /** @param {string} bluetoothId */
+    disconnectFromDevice(bluetoothId) {
+        this.#requestDisconnectionFromDevice(bluetoothId);
     }
-    /** @param {string} deviceId */
-    #requestDisconnectionFromDevice(deviceId) {
+    /** @param {string} bluetoothId */
+    #requestDisconnectionFromDevice(bluetoothId) {
         this.#assertConnection();
-        _console.assertTypeWithError(deviceId, "string");
-        const device = this.devices[deviceId];
-        _console.assertWithError(device, `no device found with id ${deviceId}`);
+        _console.assertTypeWithError(bluetoothId, "string");
+        const device = this.devices[bluetoothId];
+        _console.assertWithError(device, `no device found with id ${bluetoothId}`);
         device.disconnect();
         return device;
     }
-    /** @param {string} deviceId */
-    #sendDisconnectFromDeviceMessage(deviceId) {
-        this.#sendWebSocketMessage(this.#createDisconnectFromDeviceMessage(deviceId));
+    /** @param {string} bluetoothId */
+    #sendDisconnectFromDeviceMessage(bluetoothId) {
+        this.#sendWebSocketMessage(this.#createDisconnectFromDeviceMessage(bluetoothId));
     }
-    /** @param {string} deviceId */
-    #createDisconnectFromDeviceMessage(deviceId) {
-        return createServerMessage({ type: "disconnectFromDevice", data: deviceId });
+    /** @param {string} bluetoothId */
+    #createDisconnectFromDeviceMessage(bluetoothId) {
+        return createServerMessage({ type: "disconnectFromDevice", data: bluetoothId });
     }
 
     /** @typedef {import("../../connection/BaseConnectionManager.js").ConnectionMessageType} ConnectionMessageType */
     /** @typedef {import("../ServerUtils.js").ClientDeviceMessage} ClientDeviceMessage */
 
     /**
-     * @param {string} deviceId
+     * @param {string} bluetoothId
      * @param {...(ConnectionMessageType|ClientDeviceMessage)} messages
      */
-    #sendDeviceMessage(deviceId, ...messages) {
-        this.#sendWebSocketMessage(this.#createDeviceMessage(deviceId, ...messages));
+    #sendDeviceMessage(bluetoothId, ...messages) {
+        this.#sendWebSocketMessage(this.#createDeviceMessage(bluetoothId, ...messages));
     }
 
     /**
-     * @param {string} deviceId
+     * @param {string} bluetoothId
      * @param {...(ConnectionMessageType|ClientDeviceMessage)} messages
      */
-    #createDeviceMessage(deviceId, ...messages) {
+    #createDeviceMessage(bluetoothId, ...messages) {
         return createServerMessage({
             type: "deviceMessage",
-            data: [deviceId, createClientDeviceMessage(...messages)],
+            data: [bluetoothId, createClientDeviceMessage(...messages)],
         });
     }
 

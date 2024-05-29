@@ -27,7 +27,7 @@ if (isInNode) {
 /** @typedef {import("../BaseConnectionManager.js").ConnectionMessageType} ConnectionType */
 
 class NobleConnectionManager extends BluetoothConnectionManager {
-    get id() {
+    get bluetoothId() {
         return this.#noblePeripheral?.id;
     }
 
@@ -164,7 +164,7 @@ class NobleConnectionManager extends BluetoothConnectionManager {
     }
 
     async #onNoblePeripheralState() {
-        _console.log(`noblePeripheral ${this.id} state ${this.#noblePeripheral.state}`);
+        _console.log(`noblePeripheral ${this.bluetoothId} state ${this.#noblePeripheral.state}`);
 
         switch (this.#noblePeripheral.state) {
             case "connected":

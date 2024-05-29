@@ -22,7 +22,7 @@ const _console = createConsole("BaseScanner");
 /**
  * @typedef DiscoveredDevice
  * @type {Object}
- * @property {string} id
+ * @property {string} bluetoothId
  * @property {string} name
  * @property {DeviceType} deviceType
  * @property {number} rssi
@@ -140,7 +140,7 @@ class BaseScanner {
     }
     get discoveredDevicesArray() {
         return Object.values(this.#discoveredDevices).sort((a, b) => {
-            return this.#discoveredDeviceTimestamps[a.id] - this.#discoveredDeviceTimestamps[b.id];
+            return this.#discoveredDeviceTimestamps[a.bluetoothId] - this.#discoveredDeviceTimestamps[b.bluetoothId];
         });
     }
     /** @param {string} discoveredDeviceId */
@@ -155,8 +155,8 @@ class BaseScanner {
     #onDiscoveredDevice(event) {
         /** @type {DiscoveredDevice} */
         const discoveredDevice = event.message.discoveredDevice;
-        this.#discoveredDevices[discoveredDevice.id] = discoveredDevice;
-        this.#discoveredDeviceTimestamps[discoveredDevice.id] = Date.now();
+        this.#discoveredDevices[discoveredDevice.bluetoothId] = discoveredDevice;
+        this.#discoveredDeviceTimestamps[discoveredDevice.bluetoothId] = Date.now();
         this.#checkDiscoveredDevicesExpirationTimer.start();
     }
 

@@ -393,20 +393,20 @@ toggleShowDiscoveredDevicesEntity.addEventListener("click", () => {
 client.addEventListener("discoveredDevice", (event) => {
     /** @type {DiscoveredDevice} */
     const discoveredDevice = event.message.discoveredDevice;
-    let discoveredDeviceEntity = discoveredDeviceEntities[discoveredDevice.id];
+    let discoveredDeviceEntity = discoveredDeviceEntities[discoveredDevice.bluetoothId];
     if (!discoveredDeviceEntity) {
         discoveredDeviceEntity = discoveredDeviceEntityTemplate.content
             .cloneNode(true)
             .querySelector(".discoveredDevice");
 
         discoveredDeviceEntity.addEventListener("click", () => {
-            let device = client.devices[discoveredDevice.id];
+            let device = client.devices[discoveredDevice.bluetoothId];
             console.log("discoveredDeviceEntity touch");
             if (device) {
                 console.log("toggle connection", device);
                 device.toggleConnection();
             } else {
-                device = client.connectToDevice(discoveredDevice.id);
+                device = client.connectToDevice(discoveredDevice.bluetoothId);
                 console.log("created", device);
             }
             onDevice(device);
@@ -416,7 +416,7 @@ client.addEventListener("discoveredDevice", (event) => {
             /** @type {Device} */
             const device = event.message.device;
             console.log("deviceIsConnected", device);
-            if (device.id != discoveredDevice.id) {
+            if (device.bluetoothId != discoveredDevice.bluetoothId) {
                 return;
             }
             onDevice(device);
@@ -439,12 +439,12 @@ client.addEventListener("discoveredDevice", (event) => {
             BS.Device.RemoveEventListener("deviceIsConnected", deviceIsConnectedListener);
         };
 
-        let device = client.devices[discoveredDevice.id];
+        let device = client.devices[discoveredDevice.bluetoothId];
         if (device) {
             onDevice(device);
         }
 
-        discoveredDeviceEntities[discoveredDevice.id] = discoveredDeviceEntity;
+        discoveredDeviceEntities[discoveredDevice.bluetoothId] = discoveredDeviceEntity;
         discoveredDevicesEntity.appendChild(discoveredDeviceEntity);
     }
 
@@ -453,13 +453,13 @@ client.addEventListener("discoveredDevice", (event) => {
 
 /** @param {DiscoveredDevice} discoveredDevice */
 function updateDiscoveredDeviceEntity(discoveredDevice) {
-    const discoveredDeviceEntity = discoveredDeviceEntities[discoveredDevice.id];
+    const discoveredDeviceEntity = discoveredDeviceEntities[discoveredDevice.bluetoothId];
     if (!discoveredDeviceEntity) {
-        console.warn(`no discoveredDeviceEntity for device id ${discoveredDevice.id}`);
+        console.warn(`no discoveredDeviceEntity for device id ${discoveredDevice.bluetoothId}`);
         return;
     }
 
-    const device = client.devices[discoveredDevice.id];
+    const device = client.devices[discoveredDevice.bluetoothId];
     const connectionStatus = device?.connectionStatus || "not connected";
     let connectMessage;
     let disabled;
@@ -510,14 +510,14 @@ window.addEventListener("screenMode", () => {
 
 /** @param {DiscoveredDevice} discoveredDevice */
 function removeDiscoveredDeviceEntity(discoveredDevice) {
-    const discoveredDeviceEntity = discoveredDeviceEntities[discoveredDevice.id];
+    const discoveredDeviceEntity = discoveredDeviceEntities[discoveredDevice.bluetoothId];
     if (!discoveredDeviceEntity) {
-        console.warn(`no discoveredDeviceEntity for device id ${discoveredDevice.id}`);
+        console.warn(`no discoveredDeviceEntity for device id ${discoveredDevice.bluetoothId}`);
         return;
     }
 
     discoveredDeviceEntity.remove();
-    delete discoveredDeviceEntities[discoveredDevice.id];
+    delete discoveredDeviceEntities[discoveredDevice.bluetoothId];
 }
 
 client.addEventListener("expiredDiscoveredDevice", (event) => {
@@ -570,11 +570,11 @@ BS.Device.AddEventListener("availableDevices", (event) => {
     console.log({ availableDevices });
 
     availableDevices.forEach((device) => {
-        if (device.connectionType != "webSocketClient" || !device.id) {
+        if (device.connectionType != "webSocketClient" || !device.bluetoothId) {
             return;
         }
 
-        let availableDeviceEntity = availableDeviceEntities[device.id];
+        let availableDeviceEntity = availableDeviceEntities[device.bluetoothId];
         if (!availableDeviceEntity) {
             availableDeviceEntity = availableDeviceEntityTemplate.content
                 .cloneNode(true)
@@ -589,7 +589,7 @@ BS.Device.AddEventListener("availableDevices", (event) => {
                 updateAvailableDeviceEntity(device);
             });
 
-            availableDeviceEntities[device.id] = availableDeviceEntity;
+            availableDeviceEntities[device.bluetoothId] = availableDeviceEntity;
             availableDevicesEntity.appendChild(availableDeviceEntity);
         }
 
@@ -599,9 +599,9 @@ BS.Device.AddEventListener("availableDevices", (event) => {
 
 /** @param {Device} device */
 function updateAvailableDeviceEntity(device) {
-    const availableDeviceEntity = availableDeviceEntities[device.id];
+    const availableDeviceEntity = availableDeviceEntities[device.bluetoothId];
     if (!availableDeviceEntity) {
-        console.warn(`no availableDeviceEntity for device id ${device.id}`);
+        console.warn(`no availableDeviceEntity for device id ${device.bluetoothId}`);
         return;
     }
 

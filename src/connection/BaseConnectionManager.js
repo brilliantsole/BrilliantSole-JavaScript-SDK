@@ -99,8 +99,8 @@ class BaseConnectionManager {
     // ID
 
     /** @type {string?} */
-    get id() {
-        this.#throwNotImplementedError("id");
+    get bluetoothId() {
+        this.#throwNotImplementedError("bluetoothId");
     }
 
     // CALLBACKS

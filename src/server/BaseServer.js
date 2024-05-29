@@ -186,7 +186,7 @@ class BaseServer {
     }
     /** @param {DiscoveredDevice} discoveredDevice */
     #createExpiredDiscoveredDeviceMessage(discoveredDevice) {
-        return createServerMessage({ type: "expiredDiscoveredDevice", data: discoveredDevice.id });
+        return createServerMessage({ type: "expiredDiscoveredDevice", data: discoveredDevice.bluetoothId });
     }
 
     get #discoveredDevicesMessage() {
@@ -200,7 +200,7 @@ class BaseServer {
     get #connectedDevicesMessage() {
         return createServerMessage({
             type: "connectedDevices",
-            data: JSON.stringify(Device.ConnectedDevices.map((device) => device.id)),
+            data: JSON.stringify(Device.ConnectedDevices.map((device) => device.bluetoothId)),
         });
     }
 
@@ -256,7 +256,7 @@ class BaseServer {
     #onDeviceConnected(staticDeviceEvent) {
         /** @type {Device} */
         const device = staticDeviceEvent.message.device;
-        _console.log("onDeviceConnected", device.id);
+        _console.log("onDeviceConnected", device.bluetoothId);
         addEventListeners(device, this.#boundDeviceListeners);
     }
 
@@ -264,7 +264,7 @@ class BaseServer {
     #onDeviceDisconnected(staticDeviceEvent) {
         /** @type {Device} */
         const device = staticDeviceEvent.message.device;
-        _console.log("onDeviceDisconnected", device.id);
+        _console.log("onDeviceDisconnected", device.bluetoothId);
         removeEventListeners(device, this.#boundDeviceListeners);
     }
 
@@ -272,7 +272,7 @@ class BaseServer {
     #onDeviceIsConnected(staticDeviceEvent) {
         /** @type {Device} */
         const device = staticDeviceEvent.message.device;
-        _console.log("onDeviceIsConnected", device.id);
+        _console.log("onDeviceIsConnected", device.bluetoothId);
         this.broadcastMessage(this.#createDeviceIsConnectedMessage(device));
     }
     /** @param {Device} device */
@@ -287,7 +287,7 @@ class BaseServer {
     #createDeviceServerMessage(device, ...messages) {
         return createServerMessage({
             type: "deviceMessage",
-            data: [device.id, createDeviceMessage(...messages)],
+            data: [device.bluetoothId, createDeviceMessage(...messages)],
         });
     }
 
@@ -348,7 +348,7 @@ class BaseServer {
             case "disconnectFromDevice":
                 {
                     const { string: deviceId } = parseStringFromDataView(dataView);
-                    const device = Device.ConnectedDevices.find((device) => device.id == deviceId);
+                    const device = Device.ConnectedDevices.find((device) => device.bluetoothId == deviceId);
                     if (!device) {
                         _console.error(`no device found with id ${deviceId}`);
                         break;
@@ -362,7 +362,7 @@ class BaseServer {
             case "deviceMessage":
                 {
                     const { string: deviceId, byteOffset } = parseStringFromDataView(dataView);
-                    const device = Device.ConnectedDevices.find((device) => device.id == deviceId);
+                    const device = Device.ConnectedDevices.find((device) => device.bluetoothId == deviceId);
                     if (!device) {
                         _console.error(`no device found with id ${deviceId}`);
                         break;
@@ -383,7 +383,7 @@ class BaseServer {
      * @param {DataView} dataView
      */
     parseClientDeviceMessage(device, dataView) {
-        _console.log("onDeviceMessage", device.id, dataView);
+        _console.log("onDeviceMessage", device.bluetoothId, dataView);
 
         /** @type {(DeviceEventType | DeviceMessage)[]} */
         let responseMessages = [];

@@ -29,7 +29,7 @@ if (isInBrowser) {
 }
 
 class WebBluetoothConnectionManager extends BluetoothConnectionManager {
-    get id() {
+    get bluetoothId() {
         return this.device?.id;
     }
 

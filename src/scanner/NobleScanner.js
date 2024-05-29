@@ -106,7 +106,7 @@ class NobleScanner extends BaseScanner {
         /** @type {DiscoveredDevice} */
         const discoveredDevice = {
             name: noblePeripheral.advertisement.localName,
-            id: noblePeripheral.id,
+            bluetoothId: noblePeripheral.id,
             deviceType,
             rssi: noblePeripheral.rssi,
         };
@@ -153,10 +153,10 @@ class NobleScanner extends BaseScanner {
     #onExpiredDiscoveredDevice(event) {
         /** @type {DiscoveredDevice} */
         const discoveredDevice = event.message.discoveredDevice;
-        const noblePeripheral = this.#noblePeripherals[discoveredDevice.id];
+        const noblePeripheral = this.#noblePeripherals[discoveredDevice.bluetoothId];
         if (noblePeripheral) {
             // disconnect?
-            delete this.#noblePeripherals[discoveredDevice.id];
+            delete this.#noblePeripherals[discoveredDevice.bluetoothId];
         }
     }
 
@@ -181,7 +181,7 @@ class NobleScanner extends BaseScanner {
         _console.log("connecting to discoveredDevice...", deviceId);
 
         let device = Device.AvailableDevices.filter((device) => device.connectionType == "noble").find(
-            (device) => device.id == deviceId
+            (device) => device.bluetoothId == deviceId
         );
         if (!device) {
             device = this.#createDevice(noblePeripheral);

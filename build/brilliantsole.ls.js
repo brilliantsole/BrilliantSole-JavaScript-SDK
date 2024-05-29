@@ -2296,7 +2296,7 @@
     log: true
   });
   var _InformationManager_brand = /*#__PURE__*/new WeakSet();
-  var _id$1 = /*#__PURE__*/new WeakMap();
+  var _id = /*#__PURE__*/new WeakMap();
   var _name = /*#__PURE__*/new WeakMap();
   var _type = /*#__PURE__*/new WeakMap();
   var _mtu$2 = /*#__PURE__*/new WeakMap();
@@ -2307,7 +2307,7 @@
       _defineProperty(this, "eventDispatcher", void 0);
       // PROPERTIES
 
-      _classPrivateFieldInitSpec(this, _id$1, void 0);
+      _classPrivateFieldInitSpec(this, _id, void 0);
       _classPrivateFieldInitSpec(this, _name, void 0);
       _classPrivateFieldInitSpec(this, _type, void 0);
       _classPrivateFieldInitSpec(this, _mtu$2, 0);
@@ -2333,18 +2333,18 @@
       return this.eventDispatcher.waitForEvent(eventType);
     }
     get id() {
-      return _classPrivateFieldGet2(_id$1, this);
+      return _classPrivateFieldGet2(_id, this);
     }
     updateId(updatedId) {
       _console$k.assertTypeWithError(updatedId, "string");
-      _classPrivateFieldSet2(_id$1, this, updatedId);
+      _classPrivateFieldSet2(_id, this, updatedId);
       _console$k.log({
-        id: _classPrivateFieldGet2(_id$1, this)
+        id: _classPrivateFieldGet2(_id, this)
       });
       _assertClassBrand(_InformationManager_brand, this, _dispatchEvent$4).call(this, {
         type: "getId",
         message: {
-          id: _classPrivateFieldGet2(_id$1, this)
+          id: _classPrivateFieldGet2(_id, this)
         }
       });
     }
@@ -2924,8 +2924,8 @@
     }
     // ID
 
-    get id() {
-      _assertClassBrand(_BaseConnectionManager_brand, this, _throwNotImplementedError).call(this, "id");
+    get bluetoothId() {
+      _assertClassBrand(_BaseConnectionManager_brand, this, _throwNotImplementedError).call(this, "bluetoothId");
     }
 
     // CALLBACKS
@@ -3376,7 +3376,7 @@
       _classPrivateFieldInitSpec(this, _services$1, new Map());
       _classPrivateFieldInitSpec(this, _characteristics$1, new Map());
     }
-    get id() {
+    get bluetoothId() {
       var _this$device;
       return (_this$device = this.device) === null || _this$device === void 0 ? void 0 : _this$device.id;
     }
@@ -4693,7 +4693,7 @@
   class Device {
     get bluetoothId() {
       var _classPrivateFieldGet2$1;
-      return (_classPrivateFieldGet2$1 = _classPrivateFieldGet2(_connectionManager, this)) === null || _classPrivateFieldGet2$1 === void 0 ? void 0 : _classPrivateFieldGet2$1.id;
+      return (_classPrivateFieldGet2$1 = _classPrivateFieldGet2(_connectionManager, this)) === null || _classPrivateFieldGet2$1 === void 0 ? void 0 : _classPrivateFieldGet2$1.bluetoothId;
     }
     constructor() {
       _classPrivateMethodInitSpec(this, _Device_brand);
@@ -5487,7 +5487,7 @@
       this.GetDevices();
     }
     if (device.isConnected && !this.AvailableDevices.includes(device)) {
-      const existingAvailableDevice = this.AvailableDevices.find(_device => _device.id == device.id);
+      const existingAvailableDevice = this.AvailableDevices.find(_device => _device.bluetoothId == device.bluetoothId);
       _console$c.log({
         existingAvailableDevice
       });
@@ -5628,7 +5628,7 @@
     }
     get discoveredDevicesArray() {
       return Object.values(_classPrivateFieldGet2(_discoveredDevices$1, this)).sort((a, b) => {
-        return _classPrivateFieldGet2(_discoveredDeviceTimestamps, this)[a.id] - _classPrivateFieldGet2(_discoveredDeviceTimestamps, this)[b.id];
+        return _classPrivateFieldGet2(_discoveredDeviceTimestamps, this)[a.bluetoothId] - _classPrivateFieldGet2(_discoveredDeviceTimestamps, this)[b.bluetoothId];
       });
     }
     static get DiscoveredDeviceExpirationTimeout() {
@@ -5676,8 +5676,8 @@
   }
   function _onDiscoveredDevice$1(event) {
     const discoveredDevice = event.message.discoveredDevice;
-    _classPrivateFieldGet2(_discoveredDevices$1, this)[discoveredDevice.id] = discoveredDevice;
-    _classPrivateFieldGet2(_discoveredDeviceTimestamps, this)[discoveredDevice.id] = Date.now();
+    _classPrivateFieldGet2(_discoveredDevices$1, this)[discoveredDevice.bluetoothId] = discoveredDevice;
+    _classPrivateFieldGet2(_discoveredDeviceTimestamps, this)[discoveredDevice.bluetoothId] = Date.now();
     _classPrivateFieldGet2(_checkDiscoveredDevicesExpirationTimer, this).start();
   }
   function _get_discoveredDeviceExpirationTimeout(_this) {
@@ -5755,7 +5755,7 @@
       });
       _classPrivateFieldInitSpec(this, _characteristics, new Map());
     }
-    get id() {
+    get bluetoothId() {
       var _classPrivateFieldGet2$1;
       return (_classPrivateFieldGet2$1 = _classPrivateFieldGet2(_noblePeripheral, this)) === null || _classPrivateFieldGet2$1 === void 0 ? void 0 : _classPrivateFieldGet2$1.id;
     }
@@ -5918,7 +5918,7 @@
     await this._connectionManager.onNoblePeripheralConnect(this);
   }
   async function _onNoblePeripheralState() {
-    _console$a.log(`noblePeripheral ${this.id} state ${_classPrivateFieldGet2(_noblePeripheral, this).state}`);
+    _console$a.log(`noblePeripheral ${this.bluetoothId} state ${_classPrivateFieldGet2(_noblePeripheral, this).state}`);
     switch (_classPrivateFieldGet2(_noblePeripheral, this).state) {
       case "connected":
         //this.status = "connected";
@@ -6058,7 +6058,7 @@
       _assertClassBrand(_NobleScanner_brand, this, _assertValidNoblePeripheralId).call(this, deviceId);
       const noblePeripheral = _classPrivateFieldGet2(_noblePeripherals, this)[deviceId];
       _console$9.log("connecting to discoveredDevice...", deviceId);
-      let device = Device.AvailableDevices.filter(device => device.connectionType == "noble").find(device => device.id == deviceId);
+      let device = Device.AvailableDevices.filter(device => device.connectionType == "noble").find(device => device.bluetoothId == deviceId);
       if (!device) {
         device = _assertClassBrand(_NobleScanner_brand, this, _createDevice$1).call(this, noblePeripheral);
         await device.connect();
@@ -6137,7 +6137,7 @@
     }
     const discoveredDevice = {
       name: noblePeripheral.advertisement.localName,
-      id: noblePeripheral.id,
+      bluetoothId: noblePeripheral.id,
       deviceType,
       rssi: noblePeripheral.rssi
     };
@@ -6150,10 +6150,10 @@
   }
   function _onExpiredDiscoveredDevice$2(event) {
     const discoveredDevice = event.message.discoveredDevice;
-    const noblePeripheral = _classPrivateFieldGet2(_noblePeripherals, this)[discoveredDevice.id];
+    const noblePeripheral = _classPrivateFieldGet2(_noblePeripherals, this)[discoveredDevice.bluetoothId];
     if (noblePeripheral) {
       // disconnect?
-      delete _classPrivateFieldGet2(_noblePeripherals, this)[discoveredDevice.id];
+      delete _classPrivateFieldGet2(_noblePeripherals, this)[discoveredDevice.bluetoothId];
     }
   }
   function _assertValidNoblePeripheralId(noblePeripheralId) {
@@ -6581,14 +6581,14 @@
   const _console$3 = createConsole("WebSocketClientConnectionManager", {
     log: true
   });
-  var _id = /*#__PURE__*/new WeakMap();
+  var _bluetoothId = /*#__PURE__*/new WeakMap();
   var _isConnected = /*#__PURE__*/new WeakMap();
   var _WebSocketClientConnectionManager_brand = /*#__PURE__*/new WeakSet();
   class WebSocketClientConnectionManager extends BaseConnectionManager {
     constructor() {
       super(...arguments);
       _classPrivateMethodInitSpec(this, _WebSocketClientConnectionManager_brand);
-      _classPrivateFieldInitSpec(this, _id, void 0);
+      _classPrivateFieldInitSpec(this, _bluetoothId, void 0);
       _classPrivateFieldInitSpec(this, _isConnected, false);
       _defineProperty(this, "sendWebSocketMessage", void 0);
       _defineProperty(this, "sendWebSocketConnectMessage", void 0);
@@ -6600,16 +6600,16 @@
     static get type() {
       return "webSocketClient";
     }
-    get id() {
-      return _classPrivateFieldGet2(_id, this);
+    get bluetoothId() {
+      return _classPrivateFieldGet2(_bluetoothId, this);
     }
-    set id(newId) {
-      _console$3.assertTypeWithError(newId, "string");
-      if (_classPrivateFieldGet2(_id, this) == newId) {
-        _console$3.log("redundant id assignment");
+    set bluetoothId(newBluetoothId) {
+      _console$3.assertTypeWithError(newBluetoothId, "string");
+      if (_classPrivateFieldGet2(_bluetoothId, this) == newBluetoothId) {
+        _console$3.log("redundant bluetoothId assignment");
         return;
       }
-      _classPrivateFieldSet2(_id, this, newId);
+      _classPrivateFieldSet2(_bluetoothId, this, newBluetoothId);
     }
     get isConnected() {
       return _classPrivateFieldGet2(_isConnected, this);
@@ -6853,11 +6853,11 @@
     }
     // DEVICE CONNECTION
 
-    connectToDevice(deviceId) {
-      return _assertClassBrand(_WebSocketClient_brand, this, _requestConnectionToDevice).call(this, deviceId);
+    connectToDevice(bluetoothId) {
+      return _assertClassBrand(_WebSocketClient_brand, this, _requestConnectionToDevice).call(this, bluetoothId);
     }
-    disconnectFromDevice(deviceId) {
-      _assertClassBrand(_WebSocketClient_brand, this, _requestDisconnectionFromDevice).call(this, deviceId);
+    disconnectFromDevice(bluetoothId) {
+      _assertClassBrand(_WebSocketClient_brand, this, _requestDisconnectionFromDevice).call(this, bluetoothId);
     }
     get devices() {
       return _classPrivateFieldGet2(_devices, this);
@@ -6995,9 +6995,9 @@
       case "expiredDiscoveredDevice":
         {
           const {
-            string: deviceId
+            string: bluetoothId
           } = parseStringFromDataView(dataView, byteOffset);
-          _assertClassBrand(_WebSocketClient_brand, this, _onExpiredDiscoveredDevice$1).call(this, deviceId);
+          _assertClassBrand(_WebSocketClient_brand, this, _onExpiredDiscoveredDevice$1).call(this, bluetoothId);
         }
         break;
       case "connectedDevices":
@@ -7006,27 +7006,27 @@
             break;
           }
           const {
-            string: connectedDeviceIdStrings
+            string: connectedBluetoothDeviceIdStrings
           } = parseStringFromDataView(dataView, byteOffset);
           _console$2.log({
-            connectedDeviceIdStrings
+            connectedBluetoothDeviceIdStrings
           });
-          const connectedDeviceIds = JSON.parse(connectedDeviceIdStrings);
+          const connectedBluetoothDeviceIds = JSON.parse(connectedBluetoothDeviceIdStrings);
           _console$2.log({
-            connectedDeviceIds
+            connectedBluetoothDeviceIds
           });
-          _assertClassBrand(_WebSocketClient_brand, this, _onConnectedDeviceIds).call(this, connectedDeviceIds);
+          _assertClassBrand(_WebSocketClient_brand, this, _onConnectedBluetoothDeviceIds).call(this, connectedBluetoothDeviceIds);
         }
         break;
       case "deviceMessage":
         {
           const {
-            string: deviceId,
+            string: bluetoothId,
             byteOffset: _byteOffset
           } = parseStringFromDataView(dataView, byteOffset);
           byteOffset = _byteOffset;
-          const device = _classPrivateFieldGet2(_devices, this)[deviceId];
-          _console$2.assertWithError(device, `no device found for id ${deviceId}`);
+          const device = _classPrivateFieldGet2(_devices, this)[bluetoothId];
+          _console$2.assertWithError(device, `no device found for id ${bluetoothId}`);
           const connectionManager = device.connectionManager;
           const _dataView = sliceDataView(dataView, byteOffset);
           connectionManager.onWebSocketMessage(_dataView);
@@ -7089,7 +7089,7 @@
     _console$2.log({
       discoveredDevice
     });
-    _classPrivateFieldGet2(_discoveredDevices, this)[discoveredDevice.id] = discoveredDevice;
+    _classPrivateFieldGet2(_discoveredDevices, this)[discoveredDevice.bluetoothId] = discoveredDevice;
     _assertClassBrand(_WebSocketClient_brand, this, _dispatchEvent).call(this, {
       type: "discoveredDevice",
       message: {
@@ -7097,19 +7097,19 @@
       }
     });
   }
-  function _onExpiredDiscoveredDevice$1(deviceId) {
+  function _onExpiredDiscoveredDevice$1(bluetoothId) {
     _console$2.log({
-      expiredDeviceId: deviceId
+      expiredBluetoothDeviceId: bluetoothId
     });
-    const discoveredDevice = _classPrivateFieldGet2(_discoveredDevices, this)[deviceId];
+    const discoveredDevice = _classPrivateFieldGet2(_discoveredDevices, this)[bluetoothId];
     if (!discoveredDevice) {
-      _console$2.warn(`no discoveredDevice found with id "${deviceId}"`);
+      _console$2.warn(`no discoveredDevice found with id "${bluetoothId}"`);
       return;
     }
     _console$2.log({
       expiredDiscoveredDevice: discoveredDevice
     });
-    delete _classPrivateFieldGet2(_discoveredDevices, this)[deviceId];
+    delete _classPrivateFieldGet2(_discoveredDevices, this)[bluetoothId];
     _assertClassBrand(_WebSocketClient_brand, this, _dispatchEvent).call(this, {
       type: "expiredDiscoveredDevice",
       message: {
@@ -7117,80 +7117,80 @@
       }
     });
   }
-  function _requestConnectionToDevice(deviceId) {
+  function _requestConnectionToDevice(bluetoothId) {
     _assertClassBrand(_WebSocketClient_brand, this, _assertConnection).call(this);
-    _console$2.assertTypeWithError(deviceId, "string");
-    const device = _assertClassBrand(_WebSocketClient_brand, this, _getOrCreateDevice).call(this, deviceId);
+    _console$2.assertTypeWithError(bluetoothId, "string");
+    const device = _assertClassBrand(_WebSocketClient_brand, this, _getOrCreateDevice).call(this, bluetoothId);
     device.connect();
     return device;
   }
-  function _sendConnectToDeviceMessage(deviceId) {
-    _assertClassBrand(_WebSocketClient_brand, this, _sendWebSocketMessage).call(this, _assertClassBrand(_WebSocketClient_brand, this, _createConnectToDeviceMessage).call(this, deviceId));
+  function _sendConnectToDeviceMessage(bluetoothId) {
+    _assertClassBrand(_WebSocketClient_brand, this, _sendWebSocketMessage).call(this, _assertClassBrand(_WebSocketClient_brand, this, _createConnectToDeviceMessage).call(this, bluetoothId));
   }
-  function _createConnectToDeviceMessage(deviceId) {
+  function _createConnectToDeviceMessage(bluetoothId) {
     return createServerMessage({
       type: "connectToDevice",
-      data: deviceId
+      data: bluetoothId
     });
   }
-  function _createDevice(deviceId) {
+  function _createDevice(bluetoothId) {
     const device = new Device();
     const clientConnectionManager = new WebSocketClientConnectionManager();
-    clientConnectionManager.id = deviceId;
-    clientConnectionManager.sendWebSocketMessage = _assertClassBrand(_WebSocketClient_brand, this, _sendDeviceMessage).bind(this, deviceId);
-    clientConnectionManager.sendWebSocketConnectMessage = _assertClassBrand(_WebSocketClient_brand, this, _sendConnectToDeviceMessage).bind(this, deviceId);
-    clientConnectionManager.sendWebSocketDisconnectMessage = _assertClassBrand(_WebSocketClient_brand, this, _sendDisconnectFromDeviceMessage).bind(this, deviceId);
+    clientConnectionManager.bluetoothId = bluetoothId;
+    clientConnectionManager.sendWebSocketMessage = _assertClassBrand(_WebSocketClient_brand, this, _sendDeviceMessage).bind(this, bluetoothId);
+    clientConnectionManager.sendWebSocketConnectMessage = _assertClassBrand(_WebSocketClient_brand, this, _sendConnectToDeviceMessage).bind(this, bluetoothId);
+    clientConnectionManager.sendWebSocketDisconnectMessage = _assertClassBrand(_WebSocketClient_brand, this, _sendDisconnectFromDeviceMessage).bind(this, bluetoothId);
     device.connectionManager = clientConnectionManager;
     return device;
   }
-  function _getOrCreateDevice(deviceId) {
-    let device = _classPrivateFieldGet2(_devices, this)[deviceId];
+  function _getOrCreateDevice(bluetoothId) {
+    let device = _classPrivateFieldGet2(_devices, this)[bluetoothId];
     if (!device) {
-      device = _assertClassBrand(_WebSocketClient_brand, this, _createDevice).call(this, deviceId);
-      _classPrivateFieldGet2(_devices, this)[deviceId] = device;
+      device = _assertClassBrand(_WebSocketClient_brand, this, _createDevice).call(this, bluetoothId);
+      _classPrivateFieldGet2(_devices, this)[bluetoothId] = device;
     }
     return device;
   }
-  function _onConnectedDeviceIds(deviceIds) {
+  function _onConnectedBluetoothDeviceIds(bluetoothIds) {
     _console$2.log({
-      deviceIds
+      bluetoothIds
     });
-    deviceIds.forEach(deviceId => {
-      const device = _assertClassBrand(_WebSocketClient_brand, this, _getOrCreateDevice).call(this, deviceId);
+    bluetoothIds.forEach(bluetoothId => {
+      const device = _assertClassBrand(_WebSocketClient_brand, this, _getOrCreateDevice).call(this, bluetoothId);
       const connectionManager = device.connectionManager;
       connectionManager.isConnected = true;
     });
   }
-  function _requestDisconnectionFromDevice(deviceId) {
+  function _requestDisconnectionFromDevice(bluetoothId) {
     _assertClassBrand(_WebSocketClient_brand, this, _assertConnection).call(this);
-    _console$2.assertTypeWithError(deviceId, "string");
-    const device = this.devices[deviceId];
-    _console$2.assertWithError(device, `no device found with id ${deviceId}`);
+    _console$2.assertTypeWithError(bluetoothId, "string");
+    const device = this.devices[bluetoothId];
+    _console$2.assertWithError(device, `no device found with id ${bluetoothId}`);
     device.disconnect();
     return device;
   }
-  function _sendDisconnectFromDeviceMessage(deviceId) {
-    _assertClassBrand(_WebSocketClient_brand, this, _sendWebSocketMessage).call(this, _assertClassBrand(_WebSocketClient_brand, this, _createDisconnectFromDeviceMessage).call(this, deviceId));
+  function _sendDisconnectFromDeviceMessage(bluetoothId) {
+    _assertClassBrand(_WebSocketClient_brand, this, _sendWebSocketMessage).call(this, _assertClassBrand(_WebSocketClient_brand, this, _createDisconnectFromDeviceMessage).call(this, bluetoothId));
   }
-  function _createDisconnectFromDeviceMessage(deviceId) {
+  function _createDisconnectFromDeviceMessage(bluetoothId) {
     return createServerMessage({
       type: "disconnectFromDevice",
-      data: deviceId
+      data: bluetoothId
     });
   }
-  function _sendDeviceMessage(deviceId) {
+  function _sendDeviceMessage(bluetoothId) {
     for (var _len = arguments.length, messages = new Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
       messages[_key - 1] = arguments[_key];
     }
-    _assertClassBrand(_WebSocketClient_brand, this, _sendWebSocketMessage).call(this, _assertClassBrand(_WebSocketClient_brand, this, _createDeviceMessage$1).call(this, deviceId, ...messages));
+    _assertClassBrand(_WebSocketClient_brand, this, _sendWebSocketMessage).call(this, _assertClassBrand(_WebSocketClient_brand, this, _createDeviceMessage$1).call(this, bluetoothId, ...messages));
   }
-  function _createDeviceMessage$1(deviceId) {
+  function _createDeviceMessage$1(bluetoothId) {
     for (var _len2 = arguments.length, messages = new Array(_len2 > 1 ? _len2 - 1 : 0), _key2 = 1; _key2 < _len2; _key2++) {
       messages[_key2 - 1] = arguments[_key2];
     }
     return createServerMessage({
       type: "deviceMessage",
-      data: [deviceId, createClientDeviceMessage(...messages)]
+      data: [bluetoothId, createClientDeviceMessage(...messages)]
     });
   }
   // EVENT DISPATCHER
@@ -7301,7 +7301,7 @@
       }
     }
     parseClientDeviceMessage(device, dataView) {
-      _console$1.log("onDeviceMessage", device.id, dataView);
+      _console$1.log("onDeviceMessage", device.bluetoothId, dataView);
       let responseMessages = [];
       parseMessage(dataView, BaseConnectionManager.MessageTypes, _assertClassBrand(_BaseServer_brand, this, _parseClientDeviceMessageCallback).bind(this), {
         responseMessages,
@@ -7367,7 +7367,7 @@
   function _createExpiredDiscoveredDeviceMessage(discoveredDevice) {
     return createServerMessage({
       type: "expiredDiscoveredDevice",
-      data: discoveredDevice.id
+      data: discoveredDevice.bluetoothId
     });
   }
   function _get_discoveredDevicesMessage(_this3) {
@@ -7381,7 +7381,7 @@
   function _get_connectedDevicesMessage(_this4) {
     return createServerMessage({
       type: "connectedDevices",
-      data: JSON.stringify(Device.ConnectedDevices.map(device => device.id))
+      data: JSON.stringify(Device.ConnectedDevices.map(device => device.bluetoothId))
     });
   }
   function _createDeviceMessage(device, messageType, dataView) {
@@ -7402,17 +7402,17 @@
   }
   function _onDeviceConnected(staticDeviceEvent) {
     const device = staticDeviceEvent.message.device;
-    _console$1.log("onDeviceConnected", device.id);
+    _console$1.log("onDeviceConnected", device.bluetoothId);
     addEventListeners(device, _classPrivateFieldGet2(_boundDeviceListeners, this));
   }
   function _onDeviceDisconnected(staticDeviceEvent) {
     const device = staticDeviceEvent.message.device;
-    _console$1.log("onDeviceDisconnected", device.id);
+    _console$1.log("onDeviceDisconnected", device.bluetoothId);
     removeEventListeners(device, _classPrivateFieldGet2(_boundDeviceListeners, this));
   }
   function _onDeviceIsConnected(staticDeviceEvent) {
     const device = staticDeviceEvent.message.device;
-    _console$1.log("onDeviceIsConnected", device.id);
+    _console$1.log("onDeviceIsConnected", device.bluetoothId);
     this.broadcastMessage(_assertClassBrand(_BaseServer_brand, this, _createDeviceIsConnectedMessage).call(this, device));
   }
   function _createDeviceIsConnectedMessage(device) {
@@ -7427,7 +7427,7 @@
     }
     return createServerMessage({
       type: "deviceMessage",
-      data: [device.id, createDeviceMessage(...messages)]
+      data: [device.bluetoothId, createDeviceMessage(...messages)]
     });
   }
   function _onClientMessage$1(messageType, dataView, context) {
@@ -7465,7 +7465,7 @@
           const {
             string: deviceId
           } = parseStringFromDataView(dataView);
-          const device = Device.ConnectedDevices.find(device => device.id == deviceId);
+          const device = Device.ConnectedDevices.find(device => device.bluetoothId == deviceId);
           if (!device) {
             _console$1.error(`no device found with id ${deviceId}`);
             break;
@@ -7482,7 +7482,7 @@
             string: deviceId,
             byteOffset
           } = parseStringFromDataView(dataView);
-          const device = Device.ConnectedDevices.find(device => device.id == deviceId);
+          const device = Device.ConnectedDevices.find(device => device.bluetoothId == deviceId);
           if (!device) {
             _console$1.error(`no device found with id ${deviceId}`);
             break;

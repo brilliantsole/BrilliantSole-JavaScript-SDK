@@ -25,17 +25,17 @@ class WebSocketClientConnectionManager extends BaseConnectionManager {
     }
 
     /** @type {string?} */
-    #id;
-    get id() {
-        return this.#id;
+    #bluetoothId;
+    get bluetoothId() {
+        return this.#bluetoothId;
     }
-    set id(newId) {
-        _console.assertTypeWithError(newId, "string");
-        if (this.#id == newId) {
-            _console.log("redundant id assignment");
+    set bluetoothId(newBluetoothId) {
+        _console.assertTypeWithError(newBluetoothId, "string");
+        if (this.#bluetoothId == newBluetoothId) {
+            _console.log("redundant bluetoothId assignment");
             return;
         }
-        this.#id = newId;
+        this.#bluetoothId = newBluetoothId;
     }
 
     #isConnected = false;
