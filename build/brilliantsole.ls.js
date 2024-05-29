@@ -4691,7 +4691,7 @@
   var _tfliteManager = /*#__PURE__*/new WeakMap();
   var _firmwareManager = /*#__PURE__*/new WeakMap();
   class Device {
-    get id() {
+    get bluetoothId() {
       var _classPrivateFieldGet2$1;
       return (_classPrivateFieldGet2$1 = _classPrivateFieldGet2(_connectionManager, this)) === null || _classPrivateFieldGet2$1 === void 0 ? void 0 : _classPrivateFieldGet2$1.id;
     }
@@ -4883,7 +4883,7 @@
     get batteryLevel() {
       return _classPrivateFieldGet2(_batteryLevel, this);
     }
-    get hardwareId() {
+    get id() {
       return _classPrivateFieldGet2(_informationManager, this).id;
     }
     static get MinNameLength() {
@@ -5180,10 +5180,10 @@
         if (!deviceInformation) {
           return;
         }
-        let existingConnectedDevice = this.ConnectedDevices.filter(device => device.connectionType == "webBluetooth").find(device => device.id == bluetoothDevice.id);
-        const existingAvailableDevice = this.AvailableDevices.filter(device => device.connectionType == "webBluetooth").find(device => device.id == bluetoothDevice.id);
+        let existingConnectedDevice = this.ConnectedDevices.filter(device => device.connectionType == "webBluetooth").find(device => device.bluetoothId == bluetoothDevice.id);
+        const existingAvailableDevice = this.AvailableDevices.filter(device => device.connectionType == "webBluetooth").find(device => device.bluetoothId == bluetoothDevice.id);
         if (existingAvailableDevice) {
-          if ((existingConnectedDevice === null || existingConnectedDevice === void 0 ? void 0 : existingConnectedDevice.id) == existingAvailableDevice.id && existingConnectedDevice != existingAvailableDevice) {
+          if ((existingConnectedDevice === null || existingConnectedDevice === void 0 ? void 0 : existingConnectedDevice.bluetoothId) == existingAvailableDevice.bluetoothId && existingConnectedDevice != existingAvailableDevice) {
             this.AvailableDevices[_assertClassBrand(Device, this, _AvailableDevices)._.indexOf(existingAvailableDevice)] = existingConnectedDevice;
           }
           return;
@@ -5419,7 +5419,7 @@
     }
     _assertClassBrand(_Device, this, _AssertLocalStorage).call(this);
     const deviceInformationIndex = _assertClassBrand(_Device, this, _LocalStorageConfiguration)._.devices.findIndex(deviceInformation => {
-      return deviceInformation.bluetoothId == device.id;
+      return deviceInformation.bluetoothId == device.bluetoothId;
     });
     if (deviceInformationIndex == -1) {
       return;
@@ -5438,7 +5438,7 @@
         if (this.UseLocalStorage && device.connectionType == "webBluetooth") {
           const deviceInformation = {
             type: device.type,
-            bluetoothId: device.id
+            bluetoothId: device.bluetoothId
           };
           const deviceInformationIndex = _assertClassBrand(_Device, this, _LocalStorageConfiguration)._.devices.findIndex(_deviceInformation => _deviceInformation.bluetoothId == deviceInformation.bluetoothId);
           if (deviceInformationIndex == -1) {
@@ -6513,7 +6513,7 @@
   });
 
   const _console$4 = createConsole("ServerUtils", {
-    log: true
+    log: false
   });
   const pingTimeout = 30000000;
   const reconnectTimeout = 3000;

@@ -373,6 +373,7 @@ devicePair.sides.forEach((side) => {
 
 // CHATGPT
 
+/*
 function generateSignVariations(arr) {
     let signVariations = [];
 
@@ -432,7 +433,7 @@ function generateAllCombinationsWithPermutations(arr) {
 
 const input = [1, 2, 3, 4];
 const arrangements = generateAllCombinationsWithPermutations(input);
-console.log(arrangements);
+//console.log(arrangements);
 
 let arrangementIndex = 0;
 function offsetIndex(offset) {
@@ -466,3 +467,4 @@ window.addEventListener("keypress", (event) => {
             break;
     }
 });
+*/

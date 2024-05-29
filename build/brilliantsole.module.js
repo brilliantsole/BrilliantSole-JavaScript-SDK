@@ -6102,7 +6102,7 @@ const _console$c = createConsole("Device", { log: true });
 /** @typedef {(event: StaticDeviceEvent) => void} StaticDeviceEventListener */
 
 class Device {
-    get id() {
+    get bluetoothId() {
         return this.#connectionManager?.id;
     }
 
@@ -6523,7 +6523,7 @@ class Device {
     // INFORMATION
     #informationManager = new InformationManager();
 
-    get hardwareId() {
+    get id() {
         return this.#informationManager.id;
     }
 
@@ -6930,7 +6930,7 @@ class Device {
         }
         this.#AssertLocalStorage();
         const deviceInformationIndex = this.#LocalStorageConfiguration.devices.findIndex((deviceInformation) => {
-            return deviceInformation.bluetoothId == device.id;
+            return deviceInformation.bluetoothId == device.bluetoothId;
         });
         if (deviceInformationIndex == -1) {
             return;
@@ -6999,14 +6999,14 @@ class Device {
 
             let existingConnectedDevice = this.ConnectedDevices.filter(
                 (device) => device.connectionType == "webBluetooth"
-            ).find((device) => device.id == bluetoothDevice.id);
+            ).find((device) => device.bluetoothId == bluetoothDevice.id);
 
             const existingAvailableDevice = this.AvailableDevices.filter(
                 (device) => device.connectionType == "webBluetooth"
-            ).find((device) => device.id == bluetoothDevice.id);
+            ).find((device) => device.bluetoothId == bluetoothDevice.id);
             if (existingAvailableDevice) {
                 if (
-                    existingConnectedDevice?.id == existingAvailableDevice.id &&
+                    existingConnectedDevice?.bluetoothId == existingAvailableDevice.bluetoothId &&
                     existingConnectedDevice != existingAvailableDevice
                 ) {
                     this.AvailableDevices[this.#AvailableDevices.indexOf(existingAvailableDevice)] =
@@ -7028,7 +7028,6 @@ class Device {
             }
             device.#informationManager.updateType(deviceInformation.type);
             device.connectionManager = connectionManager;
-
             this.AvailableDevices.push(device);
         });
         this.#DispatchAvailableDevices();
@@ -7078,7 +7077,7 @@ class Device {
                 if (this.UseLocalStorage && device.connectionType == "webBluetooth") {
                     const deviceInformation = {
                         type: device.type,
-                        bluetoothId: device.id,
+                        bluetoothId: device.bluetoothId,
                     };
                     const deviceInformationIndex = this.#LocalStorageConfiguration.devices.findIndex(
                         (_deviceInformation) => _deviceInformation.bluetoothId == deviceInformation.bluetoothId
@@ -8304,7 +8303,7 @@ class DevicePair {
     }
 }
 
-const _console$4 = createConsole("ServerUtils", { log: true });
+const _console$4 = createConsole("ServerUtils", { log: false });
 
 const pingTimeout = 30_000_000;
 const reconnectTimeout = 3_000;
