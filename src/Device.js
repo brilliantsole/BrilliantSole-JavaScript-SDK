@@ -225,6 +225,7 @@ class Device {
 
     /** @type {TxRxMessageType[]} */
     static #RequiredInformationConnectionMessages = [
+        "getId",
         "getMtu",
 
         "getName",
@@ -472,6 +473,10 @@ class Device {
 
     // INFORMATION
     #informationManager = new InformationManager();
+
+    get hardwareId() {
+        return this.#informationManager.id;
+    }
 
     static get MinNameLength() {
         return InformationManager.MinNameLength;

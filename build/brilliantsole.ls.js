@@ -2296,6 +2296,7 @@
     log: true
   });
   var _InformationManager_brand = /*#__PURE__*/new WeakSet();
+  var _id$1 = /*#__PURE__*/new WeakMap();
   var _name = /*#__PURE__*/new WeakMap();
   var _type = /*#__PURE__*/new WeakMap();
   var _mtu$2 = /*#__PURE__*/new WeakMap();
@@ -2306,6 +2307,7 @@
       _defineProperty(this, "eventDispatcher", void 0);
       // PROPERTIES
 
+      _classPrivateFieldInitSpec(this, _id$1, void 0);
       _classPrivateFieldInitSpec(this, _name, void 0);
       _classPrivateFieldInitSpec(this, _type, void 0);
       _classPrivateFieldInitSpec(this, _mtu$2, 0);
@@ -2329,6 +2331,22 @@
     }
     waitForEvent(eventType) {
       return this.eventDispatcher.waitForEvent(eventType);
+    }
+    get id() {
+      return _classPrivateFieldGet2(_id$1, this);
+    }
+    updateId(updatedId) {
+      _console$k.assertTypeWithError(updatedId, "string");
+      _classPrivateFieldSet2(_id$1, this, updatedId);
+      _console$k.log({
+        id: _classPrivateFieldGet2(_id$1, this)
+      });
+      _assertClassBrand(_InformationManager_brand, this, _dispatchEvent$4).call(this, {
+        type: "getId",
+        message: {
+          id: _classPrivateFieldGet2(_id$1, this)
+        }
+      });
     }
     get name() {
       return _classPrivateFieldGet2(_name, this);
@@ -2444,6 +2462,13 @@
         messageType
       });
       switch (messageType) {
+        case "getId":
+          const id = textDecoder.decode(dataView);
+          _console$k.log({
+            id
+          });
+          this.updateId(id);
+          break;
         case "getName":
         case "setName":
           const name = textDecoder.decode(dataView);
@@ -2545,7 +2570,7 @@
   }
   // MESSAGE TYPES
   var _MessageTypes$3 = {
-    _: ["getMtu", "getName", "setName", "getType", "setType", "getCurrentTime", "setCurrentTime"]
+    _: ["getMtu", "getId", "getName", "setName", "getType", "setType", "getCurrentTime", "setCurrentTime"]
   };
   var _EventTypes$6 = {
     _: [..._assertClassBrand(_InformationManager, _InformationManager, _MessageTypes$3)._]
@@ -4858,6 +4883,9 @@
     get batteryLevel() {
       return _classPrivateFieldGet2(_batteryLevel, this);
     }
+    get hardwareId() {
+      return _classPrivateFieldGet2(_informationManager, this).id;
+    }
     static get MinNameLength() {
       return InformationManager.MinNameLength;
     }
@@ -5487,7 +5515,7 @@
     _: ["batteryLevel", "connectionStatus", ...BaseConnectionManager.Statuses, "isConnected", "connectionMessage", ...DeviceInformationManager.EventTypes, ...InformationManager.EventTypes, ...SensorConfigurationManager.EventTypes, ...SensorDataManager.EventTypes, ...FileTransferManager.EventTypes, ...TfliteManager$1.EventTypes, ...FirmwareManager.EventTypes]
   };
   var _RequiredInformationConnectionMessages = {
-    _: ["getMtu", "getName", "getType", "getCurrentTime", "getSensorConfiguration", "getSensorScalars", "getPressurePositions", "maxFileLength", "getFileLength", "getFileChecksum", "getFileTransferType", "fileTransferStatus", "getTfliteName", "getTfliteTask", "getTfliteSampleRate", "getTfliteSensorTypes", "tfliteModelIsReady", "getTfliteCaptureDelay", "getTfliteThreshold", "getTfliteInferencingEnabled"]
+    _: ["getId", "getMtu", "getName", "getType", "getCurrentTime", "getSensorConfiguration", "getSensorScalars", "getPressurePositions", "maxFileLength", "getFileLength", "getFileChecksum", "getFileTransferType", "fileTransferStatus", "getTfliteName", "getTfliteTask", "getTfliteSampleRate", "getTfliteSensorTypes", "tfliteModelIsReady", "getTfliteCaptureDelay", "getTfliteThreshold", "getTfliteInferencingEnabled"]
   };
   var _ReconnectOnDisconnection$1 = {
     _: false

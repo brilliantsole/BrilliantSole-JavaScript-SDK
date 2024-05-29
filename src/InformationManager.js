@@ -9,6 +9,7 @@ const _console = createConsole("InformationManager", { log: true });
 
 /**
  * @typedef { "getMtu" |
+ * "getId"|
  * "getName"|
  * "setName"|
  * "getType"|
@@ -35,7 +36,16 @@ class InformationManager {
     // MESSAGE TYPES
 
     /** @type {InformationMessageType[]} */
-    static #MessageTypes = ["getMtu", "getName", "setName", "getType", "setType", "getCurrentTime", "setCurrentTime"];
+    static #MessageTypes = [
+        "getMtu",
+        "getId",
+        "getName",
+        "setName",
+        "getType",
+        "setType",
+        "getCurrentTime",
+        "setCurrentTime",
+    ];
     static get MessageTypes() {
         return this.#MessageTypes;
     }
@@ -67,6 +77,19 @@ class InformationManager {
     }
 
     // PROPERTIES
+
+    /** @type {string?} */
+    #id;
+    get id() {
+        return this.#id;
+    }
+    /** @param {string} updatedId */
+    updateId(updatedId) {
+        _console.assertTypeWithError(updatedId, "string");
+        this.#id = updatedId;
+        _console.log({ id: this.#id });
+        this.#dispatchEvent({ type: "getId", message: { id: this.#id } });
+    }
 
     /** @type {string?} */
     #name;
@@ -242,6 +265,11 @@ class InformationManager {
         _console.log({ messageType });
 
         switch (messageType) {
+            case "getId":
+                const id = textDecoder.decode(dataView);
+                _console.log({ id });
+                this.updateId(id);
+                break;
             case "getName":
             case "setName":
                 const name = textDecoder.decode(dataView);
