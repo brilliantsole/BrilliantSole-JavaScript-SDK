@@ -28,11 +28,10 @@
 	    const log = function (...args) {
 	        Studio.log(args.map((value) => new String(value)).join(","));
 	    };
-	    __console = {
-	        log: log,
-	        warn: log.bind(undefined, "WARNING"),
-	        error: log.bind(undefined, "ERROR"),
-	    };
+	    __console = {};
+	    __console.log = log;
+	    __console.warn = log.bind(__console, "WARNING");
+	    __console.error = log.bind(__console, "ERROR");
 	} else {
 	    __console = console;
 	}
