@@ -6,9 +6,9 @@ if (isInLensStudio) {
         Studio.log(args.map((value) => new String(value)).join(","));
     };
     __console = {
-        log,
-        warn: log,
-        error: log,
+        log: log,
+        warn: log.bind(this, "WARNING"),
+        error: log.bind(this, "ERROR"),
     };
 } else {
     __console = console;
