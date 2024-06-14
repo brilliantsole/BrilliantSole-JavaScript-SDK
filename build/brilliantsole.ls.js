@@ -3606,7 +3606,11 @@
     const dataView = characteristic.value;
     _console$f.assertWithError(dataView, `no data found for "${characteristicName}" characteristic`);
     _console$f.log(`data for "${characteristicName}" characteristic`, Array.from(new Uint8Array(dataView.buffer)));
-    this.onCharacteristicValueChanged(characteristicName, dataView);
+    try {
+      this.onCharacteristicValueChanged(characteristicName, dataView);
+    } catch (error) {
+      _console$f.error(error);
+    }
   }
   function _onGattserverdisconnected(event) {
     _console$f.log("gattserverdisconnected");
