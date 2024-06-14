@@ -2295,6 +2295,8 @@
     log: true
   });
   var _InformationManager_brand = /*#__PURE__*/new WeakSet();
+  var _isCharging = /*#__PURE__*/new WeakMap();
+  var _batteryCurrent = /*#__PURE__*/new WeakMap();
   var _id = /*#__PURE__*/new WeakMap();
   var _name = /*#__PURE__*/new WeakMap();
   var _type = /*#__PURE__*/new WeakMap();
@@ -2306,6 +2308,8 @@
       _defineProperty(this, "eventDispatcher", void 0);
       // PROPERTIES
 
+      _classPrivateFieldInitSpec(this, _isCharging, void 0);
+      _classPrivateFieldInitSpec(this, _batteryCurrent, void 0);
       _classPrivateFieldInitSpec(this, _id, void 0);
       _classPrivateFieldInitSpec(this, _name, void 0);
       _classPrivateFieldInitSpec(this, _type, void 0);
@@ -2330,6 +2334,46 @@
     }
     waitForEvent(eventType) {
       return this.eventDispatcher.waitForEvent(eventType);
+    }
+    get isCharging() {
+      return _classPrivateFieldGet2(_isCharging, this);
+    }
+    updateIsCharging(updatedIsCharging) {
+      _console$k.assertTypeWithError(updatedIsCharging, "boolean");
+      _classPrivateFieldSet2(_isCharging, this, updatedIsCharging);
+      _console$k.log({
+        isCharging: _classPrivateFieldGet2(_isCharging, this)
+      });
+      _assertClassBrand(_InformationManager_brand, this, _dispatchEvent$4).call(this, {
+        type: "isCharging",
+        message: {
+          isCharging: _classPrivateFieldGet2(_isCharging, this)
+        }
+      });
+    }
+    get batteryCurrent() {
+      return _classPrivateFieldGet2(_batteryCurrent, this);
+    }
+    async getBatteryCurrent() {
+      _console$k.log("getting battery current...");
+      const promise = this.waitForEvent("getBatteryCurrent");
+      this.sendMessage([{
+        type: "getBatteryCurrent"
+      }]);
+      await promise;
+    }
+    updateBatteryCurrent(updatedBatteryCurrent) {
+      _console$k.assertTypeWithError(updatedBatteryCurrent, "number");
+      _classPrivateFieldSet2(_batteryCurrent, this, updatedBatteryCurrent);
+      _console$k.log({
+        batteryCurrent: _classPrivateFieldGet2(_batteryCurrent, this)
+      });
+      _assertClassBrand(_InformationManager_brand, this, _dispatchEvent$4).call(this, {
+        type: "getBatteryCurrent",
+        message: {
+          batteryCurrent: _classPrivateFieldGet2(_batteryCurrent, this)
+        }
+      });
     }
     get id() {
       return _classPrivateFieldGet2(_id, this);
@@ -2461,6 +2505,20 @@
         messageType
       });
       switch (messageType) {
+        case "isCharging":
+          const isCharging = Boolean(dataView.getUint8(0));
+          _console$k.log({
+            isCharging
+          });
+          this.updateIsCharging(isCharging);
+          break;
+        case "getBatteryCurrent":
+          const batteryCurrent = dataView.getFloat32(0, true);
+          _console$k.log({
+            batteryCurrent
+          });
+          this.updateBatteryCurrent(batteryCurrent);
+          break;
         case "getId":
           const id = textDecoder.decode(dataView);
           _console$k.log({
@@ -2569,7 +2627,7 @@
   }
   // MESSAGE TYPES
   var _MessageTypes$3 = {
-    _: ["getMtu", "getId", "getName", "setName", "getType", "setType", "getCurrentTime", "setCurrentTime"]
+    _: ["isCharging", "getBatteryCurrent", "getMtu", "getId", "getName", "setName", "getType", "setType", "getCurrentTime", "setCurrentTime"]
   };
   var _EventTypes$6 = {
     _: [..._assertClassBrand(_InformationManager, _InformationManager, _MessageTypes$3)._]
@@ -4885,6 +4943,15 @@
     get id() {
       return _classPrivateFieldGet2(_informationManager, this).id;
     }
+    get isCharging() {
+      return _classPrivateFieldGet2(_informationManager, this).isCharging;
+    }
+    get batteryCurrent() {
+      return _classPrivateFieldGet2(_informationManager, this).batteryCurrent;
+    }
+    async getBatteryCurrent() {
+      await _classPrivateFieldGet2(_informationManager, this).getBatteryCurrent();
+    }
     static get MinNameLength() {
       return InformationManager.MinNameLength;
     }
@@ -5514,7 +5581,7 @@
     _: ["batteryLevel", "connectionStatus", ...BaseConnectionManager.Statuses, "isConnected", "connectionMessage", ...DeviceInformationManager.EventTypes, ...InformationManager.EventTypes, ...SensorConfigurationManager.EventTypes, ...SensorDataManager.EventTypes, ...FileTransferManager.EventTypes, ...TfliteManager$1.EventTypes, ...FirmwareManager.EventTypes]
   };
   var _RequiredInformationConnectionMessages = {
-    _: ["getId", "getMtu", "getName", "getType", "getCurrentTime", "getSensorConfiguration", "getSensorScalars", "getPressurePositions", "maxFileLength", "getFileLength", "getFileChecksum", "getFileTransferType", "fileTransferStatus", "getTfliteName", "getTfliteTask", "getTfliteSampleRate", "getTfliteSensorTypes", "tfliteModelIsReady", "getTfliteCaptureDelay", "getTfliteThreshold", "getTfliteInferencingEnabled"]
+    _: ["isCharging", "getBatteryCurrent", "getId", "getMtu", "getName", "getType", "getCurrentTime", "getSensorConfiguration", "getSensorScalars", "getPressurePositions", "maxFileLength", "getFileLength", "getFileChecksum", "getFileTransferType", "fileTransferStatus", "getTfliteName", "getTfliteTask", "getTfliteSampleRate", "getTfliteSensorTypes", "tfliteModelIsReady", "getTfliteCaptureDelay", "getTfliteThreshold", "getTfliteInferencingEnabled"]
   };
   var _ReconnectOnDisconnection$1 = {
     _: false
