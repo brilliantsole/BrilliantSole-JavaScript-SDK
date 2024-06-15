@@ -1,225 +1,220 @@
 <html>
-    <head>
-        <title>WebXR | BrilliantSole JavaScript SDK</title>
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico" />
-        <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
-        <script src="https://gftruj.github.io/hand.tracking.controls.extras/dist/aframe-hand-tracking-controls-extras.js"></script>
-        <script src="https://unpkg.com/aframe-layout-component@5.3.0/dist/aframe-layout-component.min.js"></script>
-        <script src="../utils/aframe/fingertip-colliders-component.js"></script>
-        <script src="../utils/aframe/fingertip-collider-target-component.js"></script>
-        <script src="../utils/aframe/fingertip-button-component.js"></script>
+  <head>
+    <title>WebXR | BrilliantSole JavaScript SDK</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico" />
+    <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+    <script src="https://gftruj.github.io/hand.tracking.controls.extras/dist/aframe-hand-tracking-controls-extras.js"></script>
+    <script src="https://unpkg.com/aframe-layout-component@5.3.0/dist/aframe-layout-component.min.js"></script>
+    <script src="../utils/aframe/fingertip-colliders-component.js"></script>
+    <script src="../utils/aframe/fingertip-collider-target-component.js"></script>
+    <script src="../utils/aframe/fingertip-button-component.js"></script>
 
-        <script type="module" src="./script.js"></script>
-    </head>
+    <script type="module" src="./script.js"></script>
+  </head>
 
-    <style>
-        a-scene {
-            height: calc(100% - 8rem);
-            margin: auto;
-            border-radius: 20px;
-            overflow: hidden;
-            border: solid black;
-        }
-    </style>
+  <style>
+    a-scene {
+      height: calc(100% - 8rem);
+      margin: auto;
+      border-radius: 20px;
+      overflow: hidden;
+      border: solid black;
+    }
+  </style>
 
-    <body>
-        <nav>
-            <a href="../../">home</a>
-        </nav>
+  <body>
+    <nav>
+      <a href="../../">home</a>
+    </nav>
 
-        <h1>WebXR | BrilliantSole JavaScript SDK</h1>
+    <h1>WebXR | BrilliantSole JavaScript SDK</h1>
 
-        <div>
-            <label>webSocket url <input id="webSocketUrl" type="url" placeholder="localhost" /></label>
-            <button id="toggleConnection">connect</button>
-        </div>
+    <div>
+      <label>webSocket url <input id="webSocketUrl" type="url" placeholder="localhost" /></label>
+      <button id="toggleConnection">connect</button>
+    </div>
 
-        <div>
-            <label> is scanning available? <input id="isScanningAvailable" type="checkbox" readonly disabled /> </label>
-            <button id="toggleScan" disabled>scan</button>
-        </div>
+    <div>
+      <label> is scanning available? <input id="isScanningAvailable" type="checkbox" readonly disabled /> </label>
+      <button id="toggleScan" disabled>scan</button>
+    </div>
 
-        <a-scene
-            embedded
-            xr-mode-ui="enabled: true; XRMode: ar"
-            device-orientation-permission-ui="enabled: false"
-            renderer="colorManagement: true;"
-            webxr="optionalFeatures: hit-test;"
-            ar-hit-test="target: #desktop;"
-            obb-collider="showColliders: false;"
-        >
-            <a-assets>
-                <a-asset-item id="insoleModel" src="../../assets/3d/leftInsole.glb"></a-asset-item>
+    <a-scene
+      embedded
+      xr-mode-ui="enabled: true; XRMode: ar"
+      device-orientation-permission-ui="enabled: false"
+      renderer="colorManagement: true;"
+      webxr="optionalFeatures: hit-test;"
+      ar-hit-test="target: #desktop;"
+      obb-collider="showColliders: false;"
+    >
+      <a-assets>
+        <a-asset-item id="insoleModel" src="../../assets/3d/leftInsole.glb"></a-asset-item>
 
-                <img id="insoleImage" src="../../assets/images/right-insole.svg" />
+        <img id="insoleImage" src="../../assets/images/right-insole.svg" />
 
-                <img id="pressureSensorImage0" src="../../assets/images/pressure-0.svg" />
-                <img id="pressureSensorImage1" src="../../assets/images/pressure-1.svg" />
-                <img id="pressureSensorImage2" src="../../assets/images/pressure-2.svg" />
-                <img id="pressureSensorImage3" src="../../assets/images/pressure-3.svg" />
-                <img id="pressureSensorImage4" src="../../assets/images/pressure-4.svg" />
-                <img id="pressureSensorImage5" src="../../assets/images/pressure-5.svg" />
-                <img id="pressureSensorImage6" src="../../assets/images/pressure-6.svg" />
-                <img id="pressureSensorImage7" src="../../assets/images/pressure-7.svg" />
-            </a-assets>
+        <img id="pressureSensorImage0" src="../../assets/images/pressure-0.svg" />
+        <img id="pressureSensorImage1" src="../../assets/images/pressure-1.svg" />
+        <img id="pressureSensorImage2" src="../../assets/images/pressure-2.svg" />
+        <img id="pressureSensorImage3" src="../../assets/images/pressure-3.svg" />
+        <img id="pressureSensorImage4" src="../../assets/images/pressure-4.svg" />
+        <img id="pressureSensorImage5" src="../../assets/images/pressure-5.svg" />
+        <img id="pressureSensorImage6" src="../../assets/images/pressure-6.svg" />
+        <img id="pressureSensorImage7" src="../../assets/images/pressure-7.svg" />
+      </a-assets>
 
-            <a-camera position="0 1.6 0">
-                <a-entity
-                    cursor="rayOrigin: mouse; fuseTimeout: 500"
-                    raycaster="objects: .clickable"
-                    position="0 0 -0.1"
-                ></a-entity>
-            </a-camera>
+      <a-camera position="0 1.6 0">
+        <a-entity
+          cursor="rayOrigin: mouse; fuseTimeout: 500"
+          raycaster="objects: .clickable"
+          position="0 0 -0.1"
+        ></a-entity>
+      </a-camera>
+
+      <a-entity
+        class="left hand"
+        hand-tracking-controls="hand: left;"
+        hand-tracking-extras
+        fingertip-colliders
+        visible="true"
+      ></a-entity>
+      <a-entity
+        class="right hand"
+        hand-tracking-controls="hand: right;"
+        hand-tracking-extras
+        fingertip-colliders
+        visible="true"
+      ></a-entity>
+
+      <template id="insoleMotionTemplate">
+        <a-entity class="insole motion" visible="true">
+          <a-entity class="orientation">
+            <a-entity class="position">
+              <a-entity class="model" gltf-model="#insoleModel"></a-entity>
+            </a-entity>
+          </a-entity>
+        </a-entity>
+      </template>
+
+      <template id="insolePressureTemplate">
+        <a-entity class="insole pressure" rotation="-90 0 0">
+          <a-entity class="imagesScale" scale="0.25 0.25 0.25">
+            <a-entity class="images">
+              <a-image class="base" src="#insoleImage" position="0 0 -0.001">
+                <a-plane opacity="1" position="0 0 -0.001"></a-plane>
+              </a-image>
+            </a-entity>
+          </a-entity>
+        </a-entity>
+      </template>
+
+      <template id="insolePressureSensorTemplate">
+        <a-image
+          class="insolePressureSensor"
+          data-pressure="0"
+          opacity="0"
+          material="shader:standard; emissive:red; emissiveIntensity:1"
+        ></a-image>
+      </template>
+
+      <a-entity id="desktop" hide-on-enter-ar position="0 1.1 -0.75">
+        <a-entity class="screen" position="0 0.3 -0.25">
+          <a-text
+            class="title"
+            value=""
+            color="black"
+            align="center"
+            baseline="top"
+            width="1"
+            position="0 0.21 0"
+          ></a-text>
+
+          <a-entity
+            class="discoveredDevices"
+            layout="marginColumn: 0.3; marginRow: 0.15; columns: 3; align: center; type: box;"
+            position="0 0.05 0"
+          >
+            <template class="discoveredDeviceTemplate">
+              <a-entity
+                class="discoveredDevice"
+                fingertip-button="text: discovered\ndevice; rotation: 90 0 0; disabled: true;"
+              >
+              </a-entity>
+            </template>
+          </a-entity>
+
+          <a-entity
+            class="availableDevices"
+            layout="marginColumn: 0.3; marginRow: 0.15; columns: 3; align: center; type: box;"
+            position="0 0.05 0"
+          >
+            <template class="availableDeviceTemplate">
+              <a-entity
+                class="availableDevice"
+                fingertip-button="text: available\ndevice; rotation: 90 0 0; disabled: true;"
+              >
+              </a-entity>
+            </template>
+          </a-entity>
+
+          <a-entity
+            class="devicePair"
+            layout="marginColumn: 0.3; marginRow: 0.18; columns: 3; align: center; type: box;"
+            position="0 -0.03 0"
+          >
+            <a-entity class="vibrate" fingertip-button="text: vibrate; rotation: 90 0 0; disabled: true;"> </a-entity>
 
             <a-entity
-                class="left hand"
-                hand-tracking-controls="hand: left;"
-                hand-tracking-extras
-                fingertip-colliders
-                visible="true"
-            ></a-entity>
-            <a-entity
-                class="right hand"
-                hand-tracking-controls="hand: right;"
-                hand-tracking-extras
-                fingertip-colliders
-                visible="true"
-            ></a-entity>
-
-            <template id="insoleMotionTemplate">
-                <a-entity class="insole motion" visible="true">
-                    <a-entity class="position">
-                        <a-entity class="orientation">
-                            <a-entity class="model" gltf-model="#insoleModel"></a-entity>
-                        </a-entity>
-                    </a-entity>
-                </a-entity>
-            </template>
-
-            <template id="insolePressureTemplate">
-                <a-entity class="insole pressure" rotation="-90 0 0">
-                    <a-entity class="imagesScale" scale="0.25 0.25 0.25">
-                        <a-entity class="images">
-                            <a-image class="base" src="#insoleImage" position="0 0 -0.001">
-                                <a-plane opacity="1" position="0 0 -0.001"></a-plane>
-                            </a-image>
-                        </a-entity>
-                    </a-entity>
-                </a-entity>
-            </template>
-
-            <template id="insolePressureSensorTemplate">
-                <a-image
-                    class="insolePressureSensor"
-                    data-pressure="0"
-                    opacity="0"
-                    material="shader:standard; emissive:red; emissiveIntensity:1"
-                ></a-image>
-            </template>
-
-            <a-entity id="desktop" hide-on-enter-ar position="0 1.1 -0.75">
-                <a-entity class="screen" position="0 0.3 -0.25">
-                    <a-text
-                        class="title"
-                        value=""
-                        color="black"
-                        align="center"
-                        baseline="top"
-                        width="1"
-                        position="0 0.21 0"
-                    ></a-text>
-
-                    <a-entity
-                        class="discoveredDevices"
-                        layout="marginColumn: 0.3; marginRow: 0.15; columns: 3; align: center; type: box;"
-                        position="0 0.05 0"
-                    >
-                        <template class="discoveredDeviceTemplate">
-                            <a-entity
-                                class="discoveredDevice"
-                                fingertip-button="text: discovered\ndevice; rotation: 90 0 0; disabled: true;"
-                            >
-                            </a-entity>
-                        </template>
-                    </a-entity>
-
-                    <a-entity
-                        class="availableDevices"
-                        layout="marginColumn: 0.3; marginRow: 0.15; columns: 3; align: center; type: box;"
-                        position="0 0.05 0"
-                    >
-                        <template class="availableDeviceTemplate">
-                            <a-entity
-                                class="availableDevice"
-                                fingertip-button="text: available\ndevice; rotation: 90 0 0; disabled: true;"
-                            >
-                            </a-entity>
-                        </template>
-                    </a-entity>
-
-                    <a-entity
-                        class="devicePair"
-                        layout="marginColumn: 0.3; marginRow: 0.18; columns: 3; align: center; type: box;"
-                        position="0 -0.03 0"
-                    >
-                        <a-entity class="vibrate" fingertip-button="text: vibrate; rotation: 90 0 0; disabled: true;">
-                        </a-entity>
-
-                        <a-entity
-                            class="resetOrientation"
-                            fingertip-button="text: reset\norientation; rotation: 90 0 0; disabled: true;"
-                        >
-                        </a-entity>
-
-                        <template class="toggleSensorTypeTemplate">
-                            <a-entity
-                                class="toggleSensorType"
-                                fingertip-button="text: toggle\nsensor\ntype; rotation: 90 0 0; disabled: true;"
-                            >
-                            </a-entity>
-                        </template>
-                    </a-entity>
-
-                    <a-plane color="#ddd" width="1" height="0.5" position="0 0 -0.02"></a-plane>
-                </a-entity>
-
-                <a-entity class="toggleARHitTest" position="-0.4 0 0" fingertip-button="text: move;"></a-entity>
-
-                <a-entity
-                    class="toggleSetWebSocketUrl"
-                    position="0.4 0 0.1"
-                    fingertip-button="text: localhost; subtitle: url;"
-                ></a-entity>
-
-                <a-entity class="toggleConnection" position="0.4 0 0" fingertip-button="text: connect;"></a-entity>
-
-                <a-entity
-                    class="toggleScan"
-                    position="0.4 0 -0.1"
-                    fingertip-button="text: scan; disabled: true;"
-                ></a-entity>
-
-                <a-entity
-                    class="toggleShowDiscoveredDevices"
-                    position="0.4 0 -0.22"
-                    fingertip-button="text: show\ndiscovered\ndevices; disabled: true;"
-                ></a-entity>
-
-                <a-entity
-                    class="toggleShowAvailableDevices"
-                    position="0.7 0 -0.1"
-                    fingertip-button="text: show\navailable\ndevices; disabled: true;"
-                ></a-entity>
-
-                <a-entity
-                    class="toggleShowDevicePair"
-                    position="0.7 0 0.08"
-                    fingertip-button="text: show\ndevice\npair; disabled: true;"
-                ></a-entity>
+              class="resetOrientation"
+              fingertip-button="text: reset\norientation; rotation: 90 0 0; disabled: true;"
+            >
             </a-entity>
 
-            <a-sky hide-on-enter-ar></a-sky>
-        </a-scene>
-    </body>
+            <template class="toggleSensorTypeTemplate">
+              <a-entity
+                class="toggleSensorType"
+                fingertip-button="text: toggle\nsensor\ntype; rotation: 90 0 0; disabled: true;"
+              >
+              </a-entity>
+            </template>
+          </a-entity>
+
+          <a-plane color="#ddd" width="1" height="0.5" position="0 0 -0.02"></a-plane>
+        </a-entity>
+
+        <a-entity class="toggleARHitTest" position="-0.4 0 0" fingertip-button="text: move;"></a-entity>
+
+        <a-entity
+          class="toggleSetWebSocketUrl"
+          position="0.4 0 0.1"
+          fingertip-button="text: localhost; subtitle: url;"
+        ></a-entity>
+
+        <a-entity class="toggleConnection" position="0.4 0 0" fingertip-button="text: connect;"></a-entity>
+
+        <a-entity class="toggleScan" position="0.4 0 -0.1" fingertip-button="text: scan; disabled: true;"></a-entity>
+
+        <a-entity
+          class="toggleShowDiscoveredDevices"
+          position="0.4 0 -0.22"
+          fingertip-button="text: show\ndiscovered\ndevices; disabled: true;"
+        ></a-entity>
+
+        <a-entity
+          class="toggleShowAvailableDevices"
+          position="0.7 0 -0.1"
+          fingertip-button="text: show\navailable\ndevices; disabled: true;"
+        ></a-entity>
+
+        <a-entity
+          class="toggleShowDevicePair"
+          position="0.7 0 0.08"
+          fingertip-button="text: show\ndevice\npair; disabled: true;"
+        ></a-entity>
+      </a-entity>
+
+      <a-sky hide-on-enter-ar></a-sky>
+    </a-scene>
+  </body>
 </html>
