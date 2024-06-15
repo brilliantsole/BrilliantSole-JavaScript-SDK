@@ -1,0 +1,53 @@
+<html>
+  <head>
+    <title>3D iframe | BrilliantSole JavaScript SDK</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico" />
+    <!-- <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script> -->
+    <script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script>
+    <!-- required to get aframe-orbit-controls-component to work -->
+    <script>
+      THREE.Quaternion.prototype.inverse = THREE.Quaternion.prototype.invert;
+      THREE.Math = THREE.MathUtils;
+    </script>
+    <!-- https://github.com/tizzle/aframe-orbit-controls-component -->
+    <script src="https://cdn.rawgit.com/tizzle/aframe-orbit-controls-component/v0.1.14/dist/aframe-orbit-controls-component.min.js"></script>
+  </head>
+
+  <body>
+    <a-scene
+      embedded
+      xr-mode-ui="enabled: false;"
+      device-orientation-permission-ui="enabled: false"
+      renderer="colorManagement: true;"
+    >
+      <a-light type="directional" position="2 2 -2" target=".target"></a-light>
+      <a-light type="directional" position="-2 2 2" target=".target"></a-light>
+      <a-light type="directional" position="2 -2 2" target=".target"></a-light>
+
+      <a-camera
+        class="camera"
+        camera="fov: 50; zoom: 2;"
+        position="0 1 0"
+        orbit-controls="
+                            enableZoom: true;
+                            autoRotate: false;
+                            target: .target;
+                            enableDamping: true;
+                            dampingFactor: 0.125;
+                            rotateSpeed:0.25;
+                            minDistance:0.75;
+                            maxDistance:2;
+                        "
+      ></a-camera>
+
+      <a-entity class="target">
+        <a-entity class="targetPositionOffset">
+          <a-entity class="targetRotationOffset">
+            <a-entity class="insole" gltf-model="../../assets/3d/leftInsole.glb" visible="true"></a-entity>
+          </a-entity>
+        </a-entity>
+      </a-entity>
+    </a-scene>
+  </body>
+</html>

@@ -7028,6 +7028,11 @@
 	      return;
 	    }
 
+	    if (isInBluefy) {
+	      _console$c.warn("bluefy lists too many devices...");
+	      return;
+	    }
+
 	    if (!navigator.bluetooth.getDevices) {
 	      _console$c.warn("bluetooth.getDevices() is not available in this browser");
 	      return;

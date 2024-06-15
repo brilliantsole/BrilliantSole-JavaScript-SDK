@@ -928,6 +928,11 @@ class Device {
       return;
     }
 
+    if (isInBluefy) {
+      _console.warn("bluefy lists too many devices...");
+      return;
+    }
+
     if (!navigator.bluetooth.getDevices) {
       _console.warn("bluetooth.getDevices() is not available in this browser");
       return;
