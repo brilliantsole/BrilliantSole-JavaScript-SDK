@@ -102,7 +102,10 @@ function onIFrameLoaded(insoleContainer) {
   /** @type {HTMLIFrameElement} */
   const iframe = insoleContainer.querySelector("iframe");
   const scene = iframe.contentDocument.querySelector("a-scene");
-  const insoleEntity = scene.querySelector(".insole");
+  const targetEntity = scene.querySelector(".target");
+  const targetPositionEntity = targetEntity.querySelector(".position");
+  const targetRotationEntity = targetEntity.querySelector(".rotation");
+  const insoleEntity = targetEntity.querySelector(".insole");
   scene.addEventListener("loaded", () => {
     if (side == "right") {
       insoleEntity.object3D.scale.x = -1;
@@ -270,7 +273,7 @@ function onIFrameLoaded(insoleContainer) {
   /** @param {Vector3} position */
   const updatePosition = (position) => {
     _position.copy(position).multiplyScalar(window.positionScalar);
-    insoleEntity.object3D.position.lerp(_position, window.interpolationSmoothing);
+    targetPositionEntity.object3D.position.lerp(_position, window.interpolationSmoothing);
   };
 
   devicePair.addEventListener("deviceAcceleration", (event) => {
@@ -321,7 +324,7 @@ function onIFrameLoaded(insoleContainer) {
     if (applyOffset) {
       targetQuaternion.premultiply(offsetQuaternion);
     }
-    insoleEntity.object3D.quaternion.slerp(targetQuaternion, window.interpolationSmoothing);
+    targetRotationEntity.object3D.quaternion.slerp(targetQuaternion, window.interpolationSmoothing);
   };
   devicePair.addEventListener("deviceGameRotation", (event) => {
     const device = event.message.device;
