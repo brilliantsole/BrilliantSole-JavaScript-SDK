@@ -1,7 +1,7 @@
 import { createConsole } from "./utils/Console.js";
 import EventDispatcher, { addEventListeners } from "./utils/EventDispatcher.js";
 import BaseConnectionManager from "./connection/BaseConnectionManager.js";
-import { isInBrowser, isInNode } from "./utils/environment.js";
+import { isInBluefy, isInBrowser, isInNode } from "./utils/environment.js";
 import WebBluetoothConnectionManager from "./connection/bluetooth/WebBluetoothConnectionManager.js";
 import SensorConfigurationManager from "./sensor/SensorConfigurationManager.js";
 import SensorDataManager from "./sensor/SensorDataManager.js";
@@ -908,7 +908,7 @@ class Device {
   }
 
   static get CanGetDevices() {
-    return isInBrowser && navigator.bluetooth?.getDevices;
+    return isInBrowser && navigator.bluetooth?.getDevices && !isInBluefy;
   }
   /**
    * retrieves devices already connected via web bluetooth in other tabs/windows

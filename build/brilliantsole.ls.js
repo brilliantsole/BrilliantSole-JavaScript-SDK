@@ -5215,7 +5215,7 @@
     }
     static get CanGetDevices() {
       var _navigator$bluetooth;
-      return isInBrowser && ((_navigator$bluetooth = navigator.bluetooth) === null || _navigator$bluetooth === void 0 ? void 0 : _navigator$bluetooth.getDevices);
+      return isInBrowser && ((_navigator$bluetooth = navigator.bluetooth) === null || _navigator$bluetooth === void 0 ? void 0 : _navigator$bluetooth.getDevices) && !isInBluefy;
     }
     static async GetDevices() {
       if (!isInBrowser) {

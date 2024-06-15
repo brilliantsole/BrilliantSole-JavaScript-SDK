@@ -7004,7 +7004,7 @@ class Device {
   }
 
   static get CanGetDevices() {
-    return isInBrowser && navigator.bluetooth?.getDevices;
+    return isInBrowser && navigator.bluetooth?.getDevices && !isInBluefy;
   }
   /**
    * retrieves devices already connected via web bluetooth in other tabs/windows
