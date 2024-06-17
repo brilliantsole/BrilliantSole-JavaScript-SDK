@@ -103,6 +103,15 @@ reconnectOnDisconnectionCheckbox.addEventListener("input", () => {
   device.reconnectOnDisconnection = reconnectOnDisconnectionCheckbox.checked;
 });
 
+/** @type {HTMLButtonElement} */
+const resetDeviceButton = document.getElementById("resetDevice");
+device.addEventListener("isConnected", () => {
+  resetDeviceButton.disabled = !device.isConnected;
+});
+resetDeviceButton.addEventListener("click", () => {
+  device.reset();
+});
+
 // DEVICE INFORMATION
 
 /** @type {HTMLPreElement} */

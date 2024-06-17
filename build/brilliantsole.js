@@ -1171,17 +1171,15 @@
 	 * @param {number} value
 	 * @param {number} min
 	 * @param {number} max
+	 * @param {number?} range
 	 */
-	function getInterpolation(value, min, max) {
-	    return (value - min) / (max - min);
-	}
 
 	const Uint16Max = 2 ** 16;
 
 	/** @param {number} number */
 	function removeLower2Bytes(number) {
-	    const lower2Bytes = number % Uint16Max;
-	    return number - lower2Bytes;
+	  const lower2Bytes = number % Uint16Max;
+	  return number - lower2Bytes;
 	}
 
 	/**
@@ -1189,47 +1187,11 @@
 	 * @param {number} byteOffset
 	 */
 	function parseTimestamp(dataView, byteOffset) {
-	    const now = Date.now();
-	    const nowWithoutLower2Bytes = removeLower2Bytes(now);
-	    const lower2Bytes = dataView.getUint16(byteOffset, true);
-	    const timestamp = nowWithoutLower2Bytes + lower2Bytes;
-	    return timestamp;
-	}
-
-	/**
-	 * @typedef Range
-	 * @type {Object}
-	 * @property {number} min
-	 * @property {number} max
-	 */
-
-	/** @type {Range} */
-	const initialRange = { min: Infinity, max: -Infinity };
-
-	class RangeHelper {
-	    /** @type {Range} */
-	    #range = Object.assign({}, initialRange);
-
-	    reset() {
-	        Object.assign(this.#range, initialRange);
-	    }
-
-	    /** @param {number} value */
-	    update(value) {
-	        this.#range.min = Math.min(value, this.#range.min);
-	        this.#range.max = Math.max(value, this.#range.max);
-	    }
-
-	    /** @param {number} value */
-	    getNormalization(value) {
-	        return getInterpolation(value, this.#range.min, this.#range.max) || 0;
-	    }
-
-	    /** @param {number} value */
-	    updateAndGetNormalization(value) {
-	        this.update(value);
-	        return this.getNormalization(value);
-	    }
+	  const now = Date.now();
+	  const nowWithoutLower2Bytes = removeLower2Bytes(now);
+	  const lower2Bytes = dataView.getUint16(byteOffset, true);
+	  const timestamp = nowWithoutLower2Bytes + lower2Bytes;
+	  return timestamp;
 	}
 
 	/**
@@ -1238,6 +1200,44 @@
 	 * @property {number} x
 	 * @property {number} y
 	 */
+
+	/**
+	 * @typedef Range
+	 * @type {Object}
+	 * @property {number} min
+	 * @property {number} max
+	 * @property {number} range
+	 */
+
+	/** @type {Range} */
+	const initialRange = { min: Infinity, max: -Infinity, range: 0 };
+
+	class RangeHelper {
+	  /** @type {Range} */
+	  #range = Object.assign({}, initialRange);
+
+	  reset() {
+	    Object.assign(this.#range, initialRange);
+	  }
+
+	  /** @param {number} value */
+	  update(value) {
+	    this.#range.min = Math.min(value, this.#range.min);
+	    this.#range.max = Math.max(value, this.#range.max);
+	    this.#range.range = this.#range.max - this.#range.min;
+	  }
+
+	  /** @param {number} value */
+	  getNormalization(value) {
+	    return this.#range.range * value || 0;
+	  }
+
+	  /** @param {number} value */
+	  updateAndGetNormalization(value) {
+	    this.update(value);
+	    return this.getNormalization(value);
+	  }
+	}
 
 	/** @typedef {Vector2} CenterOfPressure */
 
@@ -1249,37 +1249,37 @@
 	 */
 
 	class CenterOfPressureHelper {
-	    /** @type {CenterOfPressureRange} */
-	    #range = {
-	        x: new RangeHelper(),
-	        y: new RangeHelper(),
+	  /** @type {CenterOfPressureRange} */
+	  #range = {
+	    x: new RangeHelper(),
+	    y: new RangeHelper(),
+	  };
+	  reset() {
+	    this.#range.x.reset();
+	    this.#range.y.reset();
+	  }
+
+	  /** @param {CenterOfPressure} centerOfPressure  */
+	  update(centerOfPressure) {
+	    this.#range.x.update(centerOfPressure.x);
+	    this.#range.y.update(centerOfPressure.y);
+	  }
+	  /**
+	   * @param {CenterOfPressure} centerOfPressure
+	   * @returns {CenterOfPressure}
+	   */
+	  getNormalization(centerOfPressure) {
+	    return {
+	      x: this.#range.x.getNormalization(centerOfPressure.x),
+	      y: this.#range.y.getNormalization(centerOfPressure.y),
 	    };
-	    reset() {
-	        this.#range.x.reset();
-	        this.#range.y.reset();
-	    }
+	  }
 
-	    /** @param {CenterOfPressure} centerOfPressure  */
-	    update(centerOfPressure) {
-	        this.#range.x.update(centerOfPressure.x);
-	        this.#range.y.update(centerOfPressure.y);
-	    }
-	    /**
-	     * @param {CenterOfPressure} centerOfPressure
-	     * @returns {CenterOfPressure}
-	     */
-	    getNormalization(centerOfPressure) {
-	        return {
-	            x: this.#range.x.getNormalization(centerOfPressure.x),
-	            y: this.#range.y.getNormalization(centerOfPressure.y),
-	        };
-	    }
-
-	    /** @param {CenterOfPressure} centerOfPressure  */
-	    updateAndGetNormalization(centerOfPressure) {
-	        this.update(centerOfPressure);
-	        return this.getNormalization(centerOfPressure);
-	    }
+	  /** @param {CenterOfPressure} centerOfPressure  */
+	  updateAndGetNormalization(centerOfPressure) {
+	    this.update(centerOfPressure);
+	    return this.getNormalization(centerOfPressure);
+	  }
 	}
 
 	/**
@@ -1305,12 +1305,6 @@
 
 	/** @typedef {"pressure"} PressureSensorType */
 
-	/**
-	 * @typedef Vector2
-	 * @type {Object}
-	 * @property {number} x
-	 * @property {number} y
-	 */
 
 	/** @typedef {Vector2} PressureSensorPosition */
 
@@ -1321,8 +1315,9 @@
 	 * @type {Object}
 	 * @property {PressureSensorPosition} position
 	 * @property {number} rawValue
+	 * @property {number} scaledValue
 	 * @property {number} normalizedValue
-	 * @property {number?} weightedValue
+	 * @property {number} weightedValue
 	 */
 
 	/**
@@ -1330,7 +1325,7 @@
 	 * @type {Object}
 	 * @property {PressureSensorValue[]} sensors
 	 *
-	 * @property {number} rawSum
+	 * @property {number} scaledSum
 	 * @property {number} normalizedSum
 	 *
 	 * @property {CenterOfPressure?} center
@@ -1340,85 +1335,89 @@
 	const _console$s = createConsole("PressureSensorDataManager", { log: true });
 
 	class PressureSensorDataManager {
-	    /** @type {PressureSensorType[]} */
-	    static #Types = ["pressure"];
-	    static get Types() {
-	        return this.#Types;
-	    }
+	  /** @type {PressureSensorType[]} */
+	  static #Types = ["pressure"];
+	  static get Types() {
+	    return this.#Types;
+	  }
 
+	  /** @type {PressureSensorPosition[]} */
+	  #positions = [];
+	  get positions() {
+	    return this.#positions;
+	  }
+
+	  get numberOfSensors() {
+	    return this.positions.length;
+	  }
+
+	  /** @param {DataView} dataView */
+	  parsePositions(dataView) {
 	    /** @type {PressureSensorPosition[]} */
-	    #positions = [];
-	    get positions() {
-	        return this.#positions;
+	    const positions = [];
+
+	    for (
+	      let pressureSensorIndex = 0, byteOffset = 0;
+	      byteOffset < dataView.byteLength;
+	      pressureSensorIndex++, byteOffset += 2
+	    ) {
+	      positions.push({
+	        x: dataView.getUint8(byteOffset) / 2 ** 8,
+	        y: dataView.getUint8(byteOffset + 1) / 2 ** 8,
+	      });
 	    }
 
-	    get numberOfSensors() {
-	        return this.positions.length;
+	    _console$s.log({ positions });
+
+	    this.#positions = positions;
+
+	    this.#sensorRangeHelpers = createArray(this.numberOfSensors, () => new RangeHelper());
+
+	    this.resetRange();
+	  }
+
+	  /** @type {RangeHelper[]?} */
+	  #sensorRangeHelpers;
+
+	  #centerOfPressureHelper = new CenterOfPressureHelper();
+
+	  resetRange() {
+	    this.#sensorRangeHelpers.forEach((rangeHelper) => rangeHelper.reset());
+	    this.#centerOfPressureHelper.reset();
+	  }
+
+	  /**
+	   * @param {DataView} dataView
+	   * @param {number} scalar
+	   */
+	  parseData(dataView, scalar) {
+	    /** @type {PressureData} */
+	    const pressure = { sensors: [], scaledSum: 0, normalizedSum: 0 };
+	    for (let index = 0, byteOffset = 0; byteOffset < dataView.byteLength; index++, byteOffset += 2) {
+	      const rawValue = dataView.getUint16(byteOffset, true);
+	      const scaledValue = rawValue * scalar;
+	      const rangeHelper = this.#sensorRangeHelpers[index];
+	      const normalizedValue = rangeHelper.updateAndGetNormalization(scaledValue);
+	      const position = this.positions[index];
+	      pressure.sensors[index] = { rawValue, scaledValue, normalizedValue, position, weightedValue: 0 };
+
+	      pressure.scaledSum += scaledValue;
+	      pressure.normalizedSum += normalizedValue / this.numberOfSensors;
 	    }
 
-	    /** @param {DataView} dataView */
-	    parsePositions(dataView) {
-	        /** @type {PressureSensorPosition[]} */
-	        const positions = [];
-
-	        for (
-	            let pressureSensorIndex = 0, byteOffset = 0;
-	            byteOffset < dataView.byteLength;
-	            pressureSensorIndex++, byteOffset += 2
-	        ) {
-	            positions.push({
-	                x: dataView.getUint8(byteOffset) / 2 ** 8,
-	                y: dataView.getUint8(byteOffset + 1) / 2 ** 8,
-	            });
-	        }
-
-	        _console$s.log({ positions });
-
-	        this.#positions = positions;
-
-	        this.#sensorRangeHelpers = createArray(this.numberOfSensors, () => new RangeHelper());
-
-	        this.resetRange();
+	    if (pressure.scaledSum > 0) {
+	      pressure.center = { x: 0, y: 0 };
+	      pressure.sensors.forEach((sensor) => {
+	        sensor.weightedValue = sensor.scaledValue / pressure.scaledSum;
+	        pressure.center.x += sensor.position.x * sensor.weightedValue;
+	        pressure.center.y += sensor.position.y * sensor.weightedValue;
+	      });
+	      pressure.normalizedCenter = this.#centerOfPressureHelper.updateAndGetNormalization(pressure.center);
 	    }
 
-	    /** @type {RangeHelper[]?} */
-	    #sensorRangeHelpers;
-
-	    #centerOfPressureHelper = new CenterOfPressureHelper();
-
-	    resetRange() {
-	        this.#sensorRangeHelpers.forEach((rangeHelper) => rangeHelper.reset());
-	        this.#centerOfPressureHelper.reset();
-	    }
-
-	    /** @param {DataView} dataView */
-	    parseData(dataView) {
-	        /** @type {PressureData} */
-	        const pressure = { sensors: [], rawSum: 0, normalizedSum: 0 };
-	        for (let index = 0, byteOffset = 0; byteOffset < dataView.byteLength; index++, byteOffset += 2) {
-	            const rawValue = dataView.getUint16(byteOffset, true);
-	            const rangeHelper = this.#sensorRangeHelpers[index];
-	            const normalizedValue = rangeHelper.updateAndGetNormalization(rawValue);
-	            const position = this.positions[index];
-	            pressure.sensors[index] = { rawValue, normalizedValue, position };
-
-	            pressure.rawSum += rawValue;
-	            pressure.normalizedSum += normalizedValue / this.numberOfSensors;
-	        }
-
-	        if (pressure.rawSum > 0) {
-	            pressure.center = { x: 0, y: 0 };
-	            pressure.sensors.forEach((sensor) => {
-	                sensor.weightedValue = sensor.rawValue / pressure.rawSum;
-	                pressure.center.x += sensor.position.x * sensor.weightedValue;
-	                pressure.center.y += sensor.position.y * sensor.weightedValue;
-	            });
-	            pressure.normalizedCenter = this.#centerOfPressureHelper.updateAndGetNormalization(pressure.center);
-	        }
-
-	        _console$s.log({ pressure });
-	        return pressure;
-	    }
+	    _console$s.log({ pressure });
+	    return pressure;
+	  }
 	}
 
 	/**
@@ -1772,190 +1771,190 @@
 	 */
 
 	class SensorDataManager {
-	    // MESSAGE TYPES
+	  // MESSAGE TYPES
 
-	    /** @type {SensorDataMessageType[]} */
-	    static #MessageTypes = ["getPressurePositions", "getSensorScalars", "sensorData"];
-	    static get MessageTypes() {
-	        return this.#MessageTypes;
-	    }
-	    get messageTypes() {
-	        return SensorDataManager.MessageTypes;
-	    }
+	  /** @type {SensorDataMessageType[]} */
+	  static #MessageTypes = ["getPressurePositions", "getSensorScalars", "sensorData"];
+	  static get MessageTypes() {
+	    return this.#MessageTypes;
+	  }
+	  get messageTypes() {
+	    return SensorDataManager.MessageTypes;
+	  }
 
-	    // MANAGERS
+	  // MANAGERS
 
-	    pressureSensorDataManager = new PressureSensorDataManager();
-	    motionSensorDataManager = new MotionSensorDataManager();
-	    barometerSensorDataManager = new BarometerSensorDataManager();
+	  pressureSensorDataManager = new PressureSensorDataManager();
+	  motionSensorDataManager = new MotionSensorDataManager();
+	  barometerSensorDataManager = new BarometerSensorDataManager();
 
-	    // TYPES
+	  // TYPES
 
-	    /** @type {SensorType[]} */
-	    static #Types = [
-	        ...PressureSensorDataManager.Types,
-	        ...MotionSensorDataManager.Types,
-	        ...BarometerSensorDataManager.Types,
-	    ];
-	    static get Types() {
-	        return this.#Types;
-	    }
-	    get types() {
-	        return SensorDataManager.Types;
-	    }
+	  /** @type {SensorType[]} */
+	  static #Types = [
+	    ...PressureSensorDataManager.Types,
+	    ...MotionSensorDataManager.Types,
+	    ...BarometerSensorDataManager.Types,
+	  ];
+	  static get Types() {
+	    return this.#Types;
+	  }
+	  get types() {
+	    return SensorDataManager.Types;
+	  }
 
-	    /** @type {Map.<SensorType, number>} */
-	    #scalars = new Map();
+	  /** @type {Map.<SensorType, number>} */
+	  #scalars = new Map();
 
-	    /** @param {string} sensorType */
-	    static AssertValidSensorType(sensorType) {
-	        _console$o.assertTypeWithError(sensorType, "string");
-	        _console$o.assertWithError(this.#Types.includes(sensorType), `invalid sensorType "${sensorType}"`);
-	    }
-	    /** @param {number} sensorTypeEnum */
-	    static AssertValidSensorTypeEnum(sensorTypeEnum) {
-	        _console$o.assertTypeWithError(sensorTypeEnum, "number");
-	        _console$o.assertWithError(sensorTypeEnum in this.#Types, `invalid sensorTypeEnum ${sensorTypeEnum}`);
-	    }
+	  /** @param {string} sensorType */
+	  static AssertValidSensorType(sensorType) {
+	    _console$o.assertTypeWithError(sensorType, "string");
+	    _console$o.assertWithError(this.#Types.includes(sensorType), `invalid sensorType "${sensorType}"`);
+	  }
+	  /** @param {number} sensorTypeEnum */
+	  static AssertValidSensorTypeEnum(sensorTypeEnum) {
+	    _console$o.assertTypeWithError(sensorTypeEnum, "number");
+	    _console$o.assertWithError(sensorTypeEnum in this.#Types, `invalid sensorTypeEnum ${sensorTypeEnum}`);
+	  }
 
-	    // EVENT DISPATCHER
+	  // EVENT DISPATCHER
 
-	    /** @type {SensorDataManagerEventType[]} */
-	    static #EventTypes = [...this.#MessageTypes, ...this.#Types];
-	    static get EventTypes() {
-	        return this.#EventTypes;
-	    }
-	    get eventTypes() {
-	        return SensorDataManager.#EventTypes;
-	    }
-	    /** @type {EventDispatcher} */
-	    eventDispatcher;
+	  /** @type {SensorDataManagerEventType[]} */
+	  static #EventTypes = [...this.#MessageTypes, ...this.#Types];
+	  static get EventTypes() {
+	    return this.#EventTypes;
+	  }
+	  get eventTypes() {
+	    return SensorDataManager.#EventTypes;
+	  }
+	  /** @type {EventDispatcher} */
+	  eventDispatcher;
 
-	    /** @param {SensorDataManagerEvent} event */
-	    #dispatchEvent(event) {
-	        this.eventDispatcher.dispatchEvent(event);
-	    }
+	  /** @param {SensorDataManagerEvent} event */
+	  #dispatchEvent(event) {
+	    this.eventDispatcher.dispatchEvent(event);
+	  }
 
-	    /** @param {SensorDataManagerEventType} eventType */
-	    waitForEvent(eventType) {
-	        return this.eventDispatcher.waitForEvent(eventType);
-	    }
+	  /** @param {SensorDataManagerEventType} eventType */
+	  waitForEvent(eventType) {
+	    return this.eventDispatcher.waitForEvent(eventType);
+	  }
 
-	    // DATA
+	  // DATA
 
-	    /** @param {DataView} dataView */
-	    #parseData(dataView) {
-	        _console$o.log("sensorData", Array.from(new Uint8Array(dataView.buffer)));
+	  /** @param {DataView} dataView */
+	  #parseData(dataView) {
+	    _console$o.log("sensorData", Array.from(new Uint8Array(dataView.buffer)));
 
-	        let byteOffset = 0;
-	        const timestamp = parseTimestamp(dataView, byteOffset);
-	        byteOffset += 2;
+	    let byteOffset = 0;
+	    const timestamp = parseTimestamp(dataView, byteOffset);
+	    byteOffset += 2;
 
-	        const _dataView = new DataView(dataView.buffer, byteOffset);
+	    const _dataView = new DataView(dataView.buffer, byteOffset);
 
-	        parseMessage(_dataView, SensorDataManager.Types, this.#parseDataCallback.bind(this), { timestamp });
-	    }
+	    parseMessage(_dataView, SensorDataManager.Types, this.#parseDataCallback.bind(this), { timestamp });
+	  }
 
-	    /**
-	     * @param {SensorType} sensorType
-	     * @param {DataView} dataView
-	     * @param {{timestamp: number}} context
-	     */
-	    #parseDataCallback(sensorType, dataView, { timestamp }) {
-	        const scalar = this.#scalars.get(sensorType);
+	  /**
+	   * @param {SensorType} sensorType
+	   * @param {DataView} dataView
+	   * @param {{timestamp: number}} context
+	   */
+	  #parseDataCallback(sensorType, dataView, { timestamp }) {
+	    const scalar = this.#scalars.get(sensorType);
 
-	        let sensorData = null;
-	        switch (sensorType) {
-	            case "pressure":
-	                sensorData = this.pressureSensorDataManager.parseData(dataView);
-	                break;
-	            case "acceleration":
-	            case "gravity":
-	            case "linearAcceleration":
-	            case "gyroscope":
-	            case "magnetometer":
-	                sensorData = this.motionSensorDataManager.parseVector3(dataView, scalar);
-	                break;
-	            case "gameRotation":
-	            case "rotation":
-	                sensorData = this.motionSensorDataManager.parseQuaternion(dataView, scalar);
-	                break;
-	            case "orientation":
-	                sensorData = this.motionSensorDataManager.parseEuler(dataView, scalar);
-	                break;
-	            case "stepCounter":
-	                sensorData = this.motionSensorDataManager.parseStepCounter(dataView);
-	                break;
-	            case "stepDetector":
-	                sensorData = {};
-	                break;
-	            case "activity":
-	                sensorData = this.motionSensorDataManager.parseActivity(dataView);
-	                break;
-	            case "deviceOrientation":
-	                sensorData = this.motionSensorDataManager.parseDeviceOrientation(dataView);
-	                break;
-	            case "barometer":
-	                sensorData = this.barometerSensorDataManager.parseData(dataView, scalar);
-	                break;
-	            default:
-	                _console$o.error(`uncaught sensorType "${sensorType}"`);
-	        }
-
-	        _console$o.assertWithError(sensorData != null, `no sensorData defined for sensorType "${sensorType}"`);
-
-	        _console$o.log({ sensorType, sensorData, sensorData });
-	        this.#dispatchEvent({ type: sensorType, message: { [sensorType]: sensorData, timestamp } });
-	        this.#dispatchEvent({ type: "sensorData", message: { [sensorType]: sensorData, sensorType, timestamp } });
+	    let sensorData = null;
+	    switch (sensorType) {
+	      case "pressure":
+	        sensorData = this.pressureSensorDataManager.parseData(dataView, scalar);
+	        break;
+	      case "acceleration":
+	      case "gravity":
+	      case "linearAcceleration":
+	      case "gyroscope":
+	      case "magnetometer":
+	        sensorData = this.motionSensorDataManager.parseVector3(dataView, scalar);
+	        break;
+	      case "gameRotation":
+	      case "rotation":
+	        sensorData = this.motionSensorDataManager.parseQuaternion(dataView, scalar);
+	        break;
+	      case "orientation":
+	        sensorData = this.motionSensorDataManager.parseEuler(dataView, scalar);
+	        break;
+	      case "stepCounter":
+	        sensorData = this.motionSensorDataManager.parseStepCounter(dataView);
+	        break;
+	      case "stepDetector":
+	        sensorData = {};
+	        break;
+	      case "activity":
+	        sensorData = this.motionSensorDataManager.parseActivity(dataView);
+	        break;
+	      case "deviceOrientation":
+	        sensorData = this.motionSensorDataManager.parseDeviceOrientation(dataView);
+	        break;
+	      case "barometer":
+	        sensorData = this.barometerSensorDataManager.parseData(dataView, scalar);
+	        break;
+	      default:
+	        _console$o.error(`uncaught sensorType "${sensorType}"`);
 	    }
 
-	    /** @param {DataView} dataView */
-	    parseScalars(dataView) {
-	        for (let byteOffset = 0; byteOffset < dataView.byteLength; byteOffset += 5) {
-	            const sensorTypeIndex = dataView.getUint8(byteOffset);
-	            const sensorType = SensorDataManager.Types[sensorTypeIndex];
-	            if (!sensorType) {
-	                _console$o.warn(`unknown sensorType index ${sensorTypeIndex}`);
-	                continue;
-	            }
-	            const sensorScalar = dataView.getFloat32(byteOffset + 1, true);
-	            _console$o.log({ sensorType, sensorScalar });
-	            this.#scalars.set(sensorType, sensorScalar);
-	        }
+	    _console$o.assertWithError(sensorData != null, `no sensorData defined for sensorType "${sensorType}"`);
+
+	    _console$o.log({ sensorType, sensorData, sensorData });
+	    this.#dispatchEvent({ type: sensorType, message: { [sensorType]: sensorData, timestamp } });
+	    this.#dispatchEvent({ type: "sensorData", message: { [sensorType]: sensorData, sensorType, timestamp } });
+	  }
+
+	  /** @param {DataView} dataView */
+	  parseScalars(dataView) {
+	    for (let byteOffset = 0; byteOffset < dataView.byteLength; byteOffset += 5) {
+	      const sensorTypeIndex = dataView.getUint8(byteOffset);
+	      const sensorType = SensorDataManager.Types[sensorTypeIndex];
+	      if (!sensorType) {
+	        _console$o.warn(`unknown sensorType index ${sensorTypeIndex}`);
+	        continue;
+	      }
+	      const sensorScalar = dataView.getFloat32(byteOffset + 1, true);
+	      _console$o.log({ sensorType, sensorScalar });
+	      this.#scalars.set(sensorType, sensorScalar);
 	    }
+	  }
 
-	    // MESSAGE
+	  // MESSAGE
 
-	    /**
-	     * @param {SensorDataMessageType} messageType
-	     * @param {DataView} dataView
-	     */
-	    parseMessage(messageType, dataView) {
-	        _console$o.log({ messageType });
+	  /**
+	   * @param {SensorDataMessageType} messageType
+	   * @param {DataView} dataView
+	   */
+	  parseMessage(messageType, dataView) {
+	    _console$o.log({ messageType });
 
-	        switch (messageType) {
-	            case "getSensorScalars":
-	                this.parseScalars(dataView);
-	                break;
-	            case "getPressurePositions":
-	                this.pressureSensorDataManager.parsePositions(dataView);
-	                break;
-	            case "sensorData":
-	                this.#parseData(dataView);
-	                break;
-	            default:
-	                throw Error(`uncaught messageType ${messageType}`);
-	        }
+	    switch (messageType) {
+	      case "getSensorScalars":
+	        this.parseScalars(dataView);
+	        break;
+	      case "getPressurePositions":
+	        this.pressureSensorDataManager.parsePositions(dataView);
+	        break;
+	      case "sensorData":
+	        this.#parseData(dataView);
+	        break;
+	      default:
+	        throw Error(`uncaught messageType ${messageType}`);
 	    }
+	  }
 
-	    /**
-	     * @callback SendMessageCallback
-	     * @param {{type: SensorDataMessageType, data: ArrayBuffer}[]} messages
-	     * @param {boolean} sendImmediately
-	     */
+	  /**
+	   * @callback SendMessageCallback
+	   * @param {{type: SensorDataMessageType, data: ArrayBuffer}[]} messages
+	   * @param {boolean} sendImmediately
+	   */
 
-	    /** @type {SendMessageCallback} */
-	    sendMessage;
+	  /** @type {SendMessageCallback} */
+	  sendMessage;
 	}
 
 	const _console$n = createConsole("SensorConfigurationManager", { log: true });

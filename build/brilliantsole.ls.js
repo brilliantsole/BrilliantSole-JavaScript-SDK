@@ -931,9 +931,6 @@
     _: 0
   };
 
-  function getInterpolation(value, min, max) {
-    return (value - min) / (max - min);
-  }
   const Uint16Max = 2 ** 16;
   function removeLower2Bytes(number) {
     const lower2Bytes = number % Uint16Max;
@@ -949,7 +946,8 @@
 
   const initialRange = {
     min: Infinity,
-    max: -Infinity
+    max: -Infinity,
+    range: 0
   };
   var _range$1 = /*#__PURE__*/new WeakMap();
   class RangeHelper {
@@ -962,9 +960,10 @@
     update(value) {
       _classPrivateFieldGet2(_range$1, this).min = Math.min(value, _classPrivateFieldGet2(_range$1, this).min);
       _classPrivateFieldGet2(_range$1, this).max = Math.max(value, _classPrivateFieldGet2(_range$1, this).max);
+      _classPrivateFieldGet2(_range$1, this).range = _classPrivateFieldGet2(_range$1, this).max - _classPrivateFieldGet2(_range$1, this).min;
     }
     getNormalization(value) {
-      return getInterpolation(value, _classPrivateFieldGet2(_range$1, this).min, _classPrivateFieldGet2(_range$1, this).max) || 0;
+      return _classPrivateFieldGet2(_range$1, this).range * value || 0;
     }
     updateAndGetNormalization(value) {
       this.update(value);
@@ -1055,32 +1054,35 @@
       _classPrivateFieldGet2(_sensorRangeHelpers, this).forEach(rangeHelper => rangeHelper.reset());
       _classPrivateFieldGet2(_centerOfPressureHelper$1, this).reset();
     }
-    parseData(dataView) {
+    parseData(dataView, scalar) {
       const pressure = {
         sensors: [],
-        rawSum: 0,
+        scaledSum: 0,
         normalizedSum: 0
       };
       for (let index = 0, byteOffset = 0; byteOffset < dataView.byteLength; index++, byteOffset += 2) {
         const rawValue = dataView.getUint16(byteOffset, true);
+        const scaledValue = rawValue * scalar;
         const rangeHelper = _classPrivateFieldGet2(_sensorRangeHelpers, this)[index];
-        const normalizedValue = rangeHelper.updateAndGetNormalization(rawValue);
+        const normalizedValue = rangeHelper.updateAndGetNormalization(scaledValue);
         const position = this.positions[index];
         pressure.sensors[index] = {
           rawValue,
+          scaledValue,
           normalizedValue,
-          position
+          position,
+          weightedValue: 0
         };
-        pressure.rawSum += rawValue;
+        pressure.scaledSum += scaledValue;
         pressure.normalizedSum += normalizedValue / this.numberOfSensors;
       }
-      if (pressure.rawSum > 0) {
+      if (pressure.scaledSum > 0) {
         pressure.center = {
           x: 0,
           y: 0
         };
         pressure.sensors.forEach(sensor => {
-          sensor.weightedValue = sensor.rawValue / pressure.rawSum;
+          sensor.weightedValue = sensor.scaledValue / pressure.scaledSum;
           pressure.center.x += sensor.position.x * sensor.weightedValue;
           pressure.center.y += sensor.position.y * sensor.weightedValue;
         });
@@ -1419,7 +1421,7 @@
     let sensorData = null;
     switch (sensorType) {
       case "pressure":
-        sensorData = this.pressureSensorDataManager.parseData(dataView);
+        sensorData = this.pressureSensorDataManager.parseData(dataView, scalar);
         break;
       case "acceleration":
       case "gravity":
