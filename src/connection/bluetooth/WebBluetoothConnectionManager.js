@@ -19,14 +19,17 @@ const _console = createConsole("WebBluetoothConnectionManager", { log: true });
 /** @typedef {import("../BaseConnectionManager.js").TxRxMessageType} TxRxMessageType */
 /** @typedef {import("../BaseConnectionManager.js").ConnectionType} ConnectionType */
 
-if (isInNode) {
-  const webbluetooth = require("webbluetooth");
-  const { bluetooth } = webbluetooth;
-  var navigator = { bluetooth };
-}
+// NODE_START
+import webbluetooth from "webbluetooth";
+const { bluetooth } = webbluetooth;
+var navigator = { bluetooth };
+// NODE_END
+
+// BROWSER_START
 if (isInBrowser) {
   var navigator = window.navigator;
 }
+// BROWSER_END
 
 class WebBluetoothConnectionManager extends BluetoothConnectionManager {
   get bluetoothId() {

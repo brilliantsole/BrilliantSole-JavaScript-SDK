@@ -1,4 +1,4 @@
-import BS from "../../build/brilliantsole.module.js";
+import * as BS from "../../build/brilliantsole.module.js";
 import * as THREE from "../utils/three/three.module.min.js";
 window.BS = BS;
 console.log({ BS });
