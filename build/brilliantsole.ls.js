@@ -54,8 +54,7 @@
   }
 
   var _window, _process, _process$versions;
-  const __BRILLIANTSOLE__ENVIRONMENT__ = "__BRILLIANTSOLE__DEV__";
-  const isInDev = __BRILLIANTSOLE__ENVIRONMENT__ == "__BRILLIANTSOLE__DEV__";
+  const isInDev = "__BRILLIANTSOLE__PROD__" == "__BRILLIANTSOLE__DEV__";
 
   // https://github.com/flexdinesh/browser-or-node/blob/master/src/index.ts
   const isInBrowser = typeof window !== "undefined" && ((_window = window) === null || _window === void 0 ? void 0 : _window.document) !== "undefined";
@@ -139,9 +138,6 @@
     }
     static create(type, levelFlags) {
       const console = _assertClassBrand(Console, this, _consoles)._[type] || new Console(type);
-      if (levelFlags) {
-        console.setLevelFlags(levelFlags);
-      }
       return console;
     }
     get log() {
