@@ -53,7 +53,7 @@ class BaseServer {
   /**
    * @param {ServerEventType} type
    * @param {EventDispatcherListener} listener
-   * @param {EventDispatcherOptions} options
+   * @param {EventDispatcherOptions} [options]
    */
   addEventListener(type, listener, options) {
     this.#eventDispatcher.addEventListener(type, listener, options);
@@ -216,7 +216,7 @@ class BaseServer {
   /**
    * @param {Device} device
    * @param {DeviceEventType} messageType
-   * @param {DataView?} dataView
+   * @param {DataView} [dataView]
    * @returns {DeviceMessage}
    */
   #createDeviceMessage(device, messageType, dataView) {

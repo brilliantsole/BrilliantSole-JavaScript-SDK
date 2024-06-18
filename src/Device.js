@@ -148,7 +148,7 @@ class Device {
   /**
    * @param {DeviceEventType} type
    * @param {DeviceEventListener} listener
-   * @param {EventDispatcherOptions} options
+   * @param {EventDispatcherOptions} [options]
    */
   addEventListener(type, listener, options) {
     this.#eventDispatcher.addEventListener(type, listener, options);
@@ -1011,7 +1011,7 @@ class Device {
   /**
    * @param {StaticDeviceEventType} type
    * @param {StaticDeviceEventListener} listener
-   * @param {EventDispatcherOptions} options
+   * @param {EventDispatcherOptions} [options]
    * @throws {Error}
    */
   static AddEventListener(type, listener, options) {

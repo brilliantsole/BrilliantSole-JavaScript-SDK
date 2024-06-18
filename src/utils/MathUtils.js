@@ -2,7 +2,7 @@
  * @param {number} value
  * @param {number} min
  * @param {number} max
- * @param {number?} range
+ * @param {number} [range]
  */
 export function getInterpolation(value, min, max, range) {
   if (range == undefined) {

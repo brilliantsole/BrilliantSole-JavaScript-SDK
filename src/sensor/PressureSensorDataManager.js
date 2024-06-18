@@ -28,8 +28,8 @@ import { createArray } from "../utils/ArrayUtils.js";
  * @property {number} scaledSum
  * @property {number} normalizedSum
  *
- * @property {CenterOfPressure?} center
- * @property {CenterOfPressure?} normalizedCenter
+ * @property {CenterOfPressure} [center]
+ * @property {CenterOfPressure} [normalizedCenter]
  */
 
 const _console = createConsole("PressureSensorDataManager", { log: true });

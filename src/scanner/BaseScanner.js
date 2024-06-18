@@ -29,180 +29,180 @@ const _console = createConsole("BaseScanner");
  */
 
 class BaseScanner {
-    // IS SUPPORTED
+  // IS SUPPORTED
 
-    static get isSupported() {
-        return false;
-    }
-    /** @type {boolean} */
-    get isSupported() {
-        return this.constructor.isSupported;
-    }
+  static get isSupported() {
+    return false;
+  }
+  /** @type {boolean} */
+  get isSupported() {
+    return this.constructor.isSupported;
+  }
 
-    #assertIsSupported() {
-        _console.assertWithError(this.isSupported, `${this.constructor.name} is not supported`);
-    }
+  #assertIsSupported() {
+    _console.assertWithError(this.isSupported, `${this.constructor.name} is not supported`);
+  }
 
-    // CONSTRUCTOR
+  // CONSTRUCTOR
 
-    #assertIsSubclass() {
-        _console.assertWithError(this.constructor != BaseScanner, `${this.constructor.name} must be subclassed`);
-    }
+  #assertIsSubclass() {
+    _console.assertWithError(this.constructor != BaseScanner, `${this.constructor.name} must be subclassed`);
+  }
 
-    constructor() {
-        this.#assertIsSubclass();
-        this.#assertIsSupported();
-        addEventListeners(this, this.#boundEventListeners);
-    }
+  constructor() {
+    this.#assertIsSubclass();
+    this.#assertIsSupported();
+    addEventListeners(this, this.#boundEventListeners);
+  }
 
-    #boundEventListeners = {
-        discoveredDevice: this.#onDiscoveredDevice.bind(this),
-        isScanning: this.#onIsScanning.bind(this),
-    };
+  #boundEventListeners = {
+    discoveredDevice: this.#onDiscoveredDevice.bind(this),
+    isScanning: this.#onIsScanning.bind(this),
+  };
 
-    // EVENT DISPATCHER
+  // EVENT DISPATCHER
 
-    /** @type {ScannerEventType[]} */
-    static #EventTypes = ["isAvailable", "isScanning", "discoveredDevice", "expiredDiscoveredDevice"];
-    static get EventTypes() {
-        return this.#EventTypes;
-    }
-    get eventTypes() {
-        return BaseScanner.#EventTypes;
-    }
-    #eventDispatcher = new EventDispatcher(this, this.eventTypes);
+  /** @type {ScannerEventType[]} */
+  static #EventTypes = ["isAvailable", "isScanning", "discoveredDevice", "expiredDiscoveredDevice"];
+  static get EventTypes() {
+    return this.#EventTypes;
+  }
+  get eventTypes() {
+    return BaseScanner.#EventTypes;
+  }
+  #eventDispatcher = new EventDispatcher(this, this.eventTypes);
 
-    /**
-     * @param {ScannerEventType} type
-     * @param {EventDispatcherListener} listener
-     * @param {EventDispatcherOptions} options
-     */
-    addEventListener(type, listener, options) {
-        this.#eventDispatcher.addEventListener(type, listener, options);
-    }
+  /**
+   * @param {ScannerEventType} type
+   * @param {EventDispatcherListener} listener
+   * @param {EventDispatcherOptions} [options]
+   */
+  addEventListener(type, listener, options) {
+    this.#eventDispatcher.addEventListener(type, listener, options);
+  }
 
-    /**
-     * @protected
-     * @param {ScannerEvent} event
-     */
-    dispatchEvent(event) {
-        this.#eventDispatcher.dispatchEvent(event);
-    }
+  /**
+   * @protected
+   * @param {ScannerEvent} event
+   */
+  dispatchEvent(event) {
+    this.#eventDispatcher.dispatchEvent(event);
+  }
 
-    /**
-     * @param {ScannerEventType} type
-     * @param {EventDispatcherListener} listener
-     */
-    removeEventListener(type, listener) {
-        return this.#eventDispatcher.removeEventListener(type, listener);
-    }
+  /**
+   * @param {ScannerEventType} type
+   * @param {EventDispatcherListener} listener
+   */
+  removeEventListener(type, listener) {
+    return this.#eventDispatcher.removeEventListener(type, listener);
+  }
 
-    // AVAILABILITY
-    get isAvailable() {
-        return false;
-    }
-    #assertIsAvailable() {
-        _console.assertWithError(this.isAvailable, "not available");
-    }
+  // AVAILABILITY
+  get isAvailable() {
+    return false;
+  }
+  #assertIsAvailable() {
+    _console.assertWithError(this.isAvailable, "not available");
+  }
 
-    // SCANNING
-    get isScanning() {
-        return false;
-    }
-    #assertIsScanning() {
-        _console.assertWithError(this.isScanning, "not scanning");
-    }
-    #assertIsNotScanning() {
-        _console.assertWithError(!this.isScanning, "already scanning");
-    }
+  // SCANNING
+  get isScanning() {
+    return false;
+  }
+  #assertIsScanning() {
+    _console.assertWithError(this.isScanning, "not scanning");
+  }
+  #assertIsNotScanning() {
+    _console.assertWithError(!this.isScanning, "already scanning");
+  }
 
-    startScan() {
-        this.#assertIsAvailable();
-        this.#assertIsNotScanning();
+  startScan() {
+    this.#assertIsAvailable();
+    this.#assertIsNotScanning();
+  }
+  stopScan() {
+    this.#assertIsScanning();
+  }
+  #onIsScanning() {
+    if (this.isScanning) {
+      this.#discoveredDevices = {};
+      this.#discoveredDeviceTimestamps = {};
+    } else {
+      this.#checkDiscoveredDevicesExpirationTimer.stop();
     }
-    stopScan() {
-        this.#assertIsScanning();
-    }
-    #onIsScanning() {
-        if (this.isScanning) {
-            this.#discoveredDevices = {};
-            this.#discoveredDeviceTimestamps = {};
-        } else {
-            this.#checkDiscoveredDevicesExpirationTimer.stop();
-        }
-    }
+  }
 
-    // DISCOVERED DEVICES
-    /** @type {Object.<string, DiscoveredDevice>} */
-    #discoveredDevices = {};
-    get discoveredDevices() {
-        return this.#discoveredDevices;
-    }
-    get discoveredDevicesArray() {
-        return Object.values(this.#discoveredDevices).sort((a, b) => {
-            return this.#discoveredDeviceTimestamps[a.bluetoothId] - this.#discoveredDeviceTimestamps[b.bluetoothId];
-        });
-    }
-    /** @param {string} discoveredDeviceId */
-    #assertValidDiscoveredDeviceId(discoveredDeviceId) {
-        _console.assertWithError(
-            this.#discoveredDevices[discoveredDeviceId],
-            `no discovered device with id "${discoveredDeviceId}"`
-        );
-    }
+  // DISCOVERED DEVICES
+  /** @type {Object.<string, DiscoveredDevice>} */
+  #discoveredDevices = {};
+  get discoveredDevices() {
+    return this.#discoveredDevices;
+  }
+  get discoveredDevicesArray() {
+    return Object.values(this.#discoveredDevices).sort((a, b) => {
+      return this.#discoveredDeviceTimestamps[a.bluetoothId] - this.#discoveredDeviceTimestamps[b.bluetoothId];
+    });
+  }
+  /** @param {string} discoveredDeviceId */
+  #assertValidDiscoveredDeviceId(discoveredDeviceId) {
+    _console.assertWithError(
+      this.#discoveredDevices[discoveredDeviceId],
+      `no discovered device with id "${discoveredDeviceId}"`
+    );
+  }
 
-    /** @param {ScannerEvent} event */
-    #onDiscoveredDevice(event) {
-        /** @type {DiscoveredDevice} */
-        const discoveredDevice = event.message.discoveredDevice;
-        this.#discoveredDevices[discoveredDevice.bluetoothId] = discoveredDevice;
-        this.#discoveredDeviceTimestamps[discoveredDevice.bluetoothId] = Date.now();
-        this.#checkDiscoveredDevicesExpirationTimer.start();
-    }
+  /** @param {ScannerEvent} event */
+  #onDiscoveredDevice(event) {
+    /** @type {DiscoveredDevice} */
+    const discoveredDevice = event.message.discoveredDevice;
+    this.#discoveredDevices[discoveredDevice.bluetoothId] = discoveredDevice;
+    this.#discoveredDeviceTimestamps[discoveredDevice.bluetoothId] = Date.now();
+    this.#checkDiscoveredDevicesExpirationTimer.start();
+  }
 
-    /** @type {Object.<string, number>} */
-    #discoveredDeviceTimestamps = {};
+  /** @type {Object.<string, number>} */
+  #discoveredDeviceTimestamps = {};
 
-    static #DiscoveredDeviceExpirationTimeout = 5000;
-    static get DiscoveredDeviceExpirationTimeout() {
-        return this.#DiscoveredDeviceExpirationTimeout;
+  static #DiscoveredDeviceExpirationTimeout = 5000;
+  static get DiscoveredDeviceExpirationTimeout() {
+    return this.#DiscoveredDeviceExpirationTimeout;
+  }
+  get #discoveredDeviceExpirationTimeout() {
+    return BaseScanner.DiscoveredDeviceExpirationTimeout;
+  }
+  #checkDiscoveredDevicesExpirationTimer = new Timer(this.#checkDiscoveredDevicesExpiration.bind(this), 1000);
+  #checkDiscoveredDevicesExpiration() {
+    const entries = Object.entries(this.#discoveredDevices);
+    if (entries.length == 0) {
+      this.#checkDiscoveredDevicesExpirationTimer.stop();
+      return;
     }
-    get #discoveredDeviceExpirationTimeout() {
-        return BaseScanner.DiscoveredDeviceExpirationTimeout;
-    }
-    #checkDiscoveredDevicesExpirationTimer = new Timer(this.#checkDiscoveredDevicesExpiration.bind(this), 1000);
-    #checkDiscoveredDevicesExpiration() {
-        const entries = Object.entries(this.#discoveredDevices);
-        if (entries.length == 0) {
-            this.#checkDiscoveredDevicesExpirationTimer.stop();
-            return;
-        }
-        const now = Date.now();
-        entries.forEach(([id, discoveredDevice]) => {
-            const timestamp = this.#discoveredDeviceTimestamps[id];
-            if (now - timestamp > this.#discoveredDeviceExpirationTimeout) {
-                _console.log("discovered device timeout");
-                delete this.#discoveredDevices[id];
-                delete this.#discoveredDeviceTimestamps[id];
-                this.dispatchEvent({ type: "expiredDiscoveredDevice", message: { discoveredDevice } });
-            }
-        });
-    }
+    const now = Date.now();
+    entries.forEach(([id, discoveredDevice]) => {
+      const timestamp = this.#discoveredDeviceTimestamps[id];
+      if (now - timestamp > this.#discoveredDeviceExpirationTimeout) {
+        _console.log("discovered device timeout");
+        delete this.#discoveredDevices[id];
+        delete this.#discoveredDeviceTimestamps[id];
+        this.dispatchEvent({ type: "expiredDiscoveredDevice", message: { discoveredDevice } });
+      }
+    });
+  }
 
-    // DEVICE CONNECTION
-    /** @param {string} deviceId */
-    async connectToDevice(deviceId) {
-        this.#assertIsAvailable();
-    }
+  // DEVICE CONNECTION
+  /** @param {string} deviceId */
+  async connectToDevice(deviceId) {
+    this.#assertIsAvailable();
+  }
 
-    // RESET
+  // RESET
 
-    get canReset() {
-        return false;
-    }
-    reset() {
-        _console.log("resetting...");
-    }
+  get canReset() {
+    return false;
+  }
+  reset() {
+    _console.log("resetting...");
+  }
 }
 
 export default BaseScanner;
