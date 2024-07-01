@@ -8,12 +8,37 @@ const isInDev = __BRILLIANTSOLE__ENVIRONMENT__ == "__BRILLIANTSOLE__DEV__";
 const isInBrowser = typeof window !== "undefined" && window?.document !== "undefined";
 const isInNode = typeof process !== "undefined" && process?.versions?.node != null;
 
-const isInBluefy = isInBrowser && navigator.userAgent.includes("Bluefy");
-const isInWebBLE = isInBrowser && navigator.userAgent.includes("WebBLE");
+const userAgent = (isInBrowser && navigator.userAgent) || "";
 
-const isAndroid = isInBrowser && navigator.userAgent.includes("Android");
-const isSafari = isInBrowser && navigator.userAgent.includes("Safari");
+let isBluetoothSupported = false;
+if (isInBrowser) {
+  isBluetoothSupported = Boolean(navigator.bluetooth);
+} else if (isInNode) {
+  isBluetoothSupported = true;
+}
+
+const isInBluefy = isInBrowser && /Bluefy/i.test(userAgent);
+const isInWebBLE = isInBrowser && /WebBLE/i.test(userAgent);
+
+const isAndroid = isInBrowser && /Android/i.test(userAgent);
+const isSafari = isInBrowser && /Safari/i.test(userAgent) && !/Chrome/i.test(userAgent);
+
+const isIOS = isInBrowser && /iPad|iPhone|iPod/i.test(userAgent);
+const isMac = isInBrowser && /Macintosh/i.test(userAgent);
 
 const isInLensStudio = !isInBrowser && !isInNode && typeof global !== "undefined" && typeof Studio !== "undefined";
 
-export { isInDev, isInProduction, isInBrowser, isInNode, isAndroid, isInBluefy, isInWebBLE, isSafari, isInLensStudio };
+export {
+  isInDev,
+  isInProduction,
+  isInBrowser,
+  isInNode,
+  isAndroid,
+  isInBluefy,
+  isInWebBLE,
+  isSafari,
+  isInLensStudio,
+  isIOS,
+  isMac,
+  isBluetoothSupported,
+};

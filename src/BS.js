@@ -1,5 +1,6 @@
 export { setAllConsoleLevelFlags, setConsoleLevelFlagsForType } from "./utils/Console.js";
 export { default as Device } from "./Device.js";
+export * as Environment from "./utils/environment.js";
 /** @typedef {Device} Device */
 // NODE_START
 export { default as Scanner } from "./scanner/Scanner.js";

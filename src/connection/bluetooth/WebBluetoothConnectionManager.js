@@ -242,13 +242,19 @@ class WebBluetoothConnectionManager extends BluetoothConnectionManager {
 
   /** @type {boolean} */
   get canReconnect() {
-    return this.server && !this.server.connected;
+    return this.server && !this.server.connected && this.isInRange;
   }
   async reconnect() {
     await super.reconnect();
     _console.log("attempting to reconnect...");
     this.status = "connecting";
-    await this.server.connect();
+    try {
+      await this.server.connect();
+    } catch (error) {
+      _console.error(error);
+      this.isInRange = false;
+    }
+
     if (this.isConnected) {
       _console.log("successfully reconnected!");
       await this.#getServicesAndCharacteristics();

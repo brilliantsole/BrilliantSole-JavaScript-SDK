@@ -43,7 +43,7 @@ const _console = createConsole("VibrationManager");
 /**
  * @typedef VibrationConfiguration
  * @type {Object}
- * @property {VibrationLocation[]} locations
+ * @property {VibrationLocation[]} [locations]
  * @property {VibrationType} type
  * @property {VibrationWaveformEffectConfiguration} [waveformEffect] use if type is "waveformEffect"
  * @property {VibrationWaveformConfiguration} [waveform] use if type is "waveform"

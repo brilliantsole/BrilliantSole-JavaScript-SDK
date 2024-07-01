@@ -9,19 +9,49 @@
 })(this, (function (exports) { 'use strict';
 
 	/** @type {"__BRILLIANTSOLE__DEV__" | "__BRILLIANTSOLE__PROD__"} */
+
+	const isInProduction = "__BRILLIANTSOLE__PROD__" == "__BRILLIANTSOLE__PROD__";
 	const isInDev = "__BRILLIANTSOLE__PROD__" == "__BRILLIANTSOLE__DEV__";
 
 	// https://github.com/flexdinesh/browser-or-node/blob/master/src/index.ts
 	const isInBrowser = typeof window !== "undefined" && window?.document !== "undefined";
 	const isInNode = typeof process !== "undefined" && process?.versions?.node != null;
 
-	const isInBluefy = isInBrowser && navigator.userAgent.includes("Bluefy");
-	const isInWebBLE = isInBrowser && navigator.userAgent.includes("WebBLE");
+	const userAgent = (isInBrowser && navigator.userAgent) || "";
 
-	isInBrowser && navigator.userAgent.includes("Android");
-	isInBrowser && navigator.userAgent.includes("Safari");
+	let isBluetoothSupported = false;
+	if (isInBrowser) {
+	  isBluetoothSupported = Boolean(navigator.bluetooth);
+	} else if (isInNode) {
+	  isBluetoothSupported = true;
+	}
+
+	const isInBluefy = isInBrowser && /Bluefy/i.test(userAgent);
+	const isInWebBLE = isInBrowser && /WebBLE/i.test(userAgent);
+
+	const isAndroid = isInBrowser && /Android/i.test(userAgent);
+	const isSafari = isInBrowser && /Safari/i.test(userAgent) && !/Chrome/i.test(userAgent);
+
+	const isIOS = isInBrowser && /iPad|iPhone|iPod/i.test(userAgent);
+	const isMac = isInBrowser && /Macintosh/i.test(userAgent);
 
 	const isInLensStudio = !isInBrowser && !isInNode && typeof global !== "undefined" && typeof Studio !== "undefined";
+
+	var environment = /*#__PURE__*/Object.freeze({
+		__proto__: null,
+		isAndroid: isAndroid,
+		get isBluetoothSupported () { return isBluetoothSupported; },
+		isIOS: isIOS,
+		isInBluefy: isInBluefy,
+		isInBrowser: isInBrowser,
+		isInDev: isInDev,
+		isInLensStudio: isInLensStudio,
+		isInNode: isInNode,
+		isInProduction: isInProduction,
+		isInWebBLE: isInWebBLE,
+		isMac: isMac,
+		isSafari: isSafari
+	});
 
 	var __console;
 	if (isInLensStudio) {
@@ -1333,6 +1363,9 @@
 	  static get Types() {
 	    return this.#Types;
 	  }
+	  static get ContinuousTypes() {
+	    return this.Types;
+	  }
 
 	  /** @type {PressureSensorPosition[]} */
 	  #positions = [];
@@ -1487,164 +1520,173 @@
 	 */
 
 	class MotionSensorDataManager {
-	    /** @type {MotionSensorType[]} */
-	    static #Types = [
-	        "acceleration",
-	        "gravity",
-	        "linearAcceleration",
-	        "gyroscope",
-	        "magnetometer",
-	        "gameRotation",
-	        "rotation",
-	        "orientation",
-	        "activity",
-	        "stepCounter",
-	        "stepDetector",
-	        "deviceOrientation",
-	    ];
-	    static get Types() {
-	        return this.#Types;
+	  /** @type {MotionSensorType[]} */
+	  static #Types = [
+	    "acceleration",
+	    "gravity",
+	    "linearAcceleration",
+	    "gyroscope",
+	    "magnetometer",
+	    "gameRotation",
+	    "rotation",
+	    "orientation",
+	    "activity",
+	    "stepCounter",
+	    "stepDetector",
+	    "deviceOrientation",
+	  ];
+	  static get Types() {
+	    return this.#Types;
+	  }
+	  static #ContinuousTypes = this.#Types.filter((type) => {
+	    switch (type) {
+	      case "orientation":
+	      case "activity":
+	      case "stepCounter":
+	      case "stepDetector":
+	      case "deviceOrientation":
+	        return false;
+	      default:
+	        return true;
 	    }
+	  });
+	  static get ContinuousTypes() {
+	    return this.#ContinuousTypes;
+	  }
 
-	    static #Vector3Size = 3 * 2;
-	    static get Vector3Size() {
-	        return this.#Vector3Size;
-	    }
-	    get vector3Size() {
-	        return MotionSensorDataManager.Vector3Size;
-	    }
+	  static #Vector3Size = 3 * 2;
+	  static get Vector3Size() {
+	    return this.#Vector3Size;
+	  }
+	  get vector3Size() {
+	    return MotionSensorDataManager.Vector3Size;
+	  }
 
-	    /**
-	     * @param {DataView} dataView
-	     * @param {number} scalar
-	     * @returns {Vector3}
-	     */
-	    parseVector3(dataView, scalar) {
-	        let [x, y, z] = [dataView.getInt16(0, true), dataView.getInt16(2, true), dataView.getInt16(4, true)].map(
-	            (value) => value * scalar
-	        );
+	  /**
+	   * @param {DataView} dataView
+	   * @param {number} scalar
+	   * @returns {Vector3}
+	   */
+	  parseVector3(dataView, scalar) {
+	    let [x, y, z] = [dataView.getInt16(0, true), dataView.getInt16(2, true), dataView.getInt16(4, true)].map(
+	      (value) => value * scalar
+	    );
 
-	        /** @type {Vector3} */
-	        const vector = { x, y, z };
+	    /** @type {Vector3} */
+	    const vector = { x, y, z };
 
-	        _console$l.log({ vector });
-	        return vector;
-	    }
+	    _console$l.log({ vector });
+	    return vector;
+	  }
 
-	    static #QuaternionSize = 4 * 2;
-	    static get QuaternionSize() {
-	        return this.#QuaternionSize;
-	    }
-	    get quaternionSize() {
-	        return MotionSensorDataManager.QuaternionSize;
-	    }
+	  static #QuaternionSize = 4 * 2;
+	  static get QuaternionSize() {
+	    return this.#QuaternionSize;
+	  }
+	  get quaternionSize() {
+	    return MotionSensorDataManager.QuaternionSize;
+	  }
 
-	    /**
-	     * @param {DataView} dataView
-	     * @param {number} scalar
-	     * @returns {Quaternion}
-	     */
-	    parseQuaternion(dataView, scalar) {
-	        let [x, y, z, w] = [
-	            dataView.getInt16(0, true),
-	            dataView.getInt16(2, true),
-	            dataView.getInt16(4, true),
-	            dataView.getInt16(6, true),
-	        ].map((value) => value * scalar);
+	  /**
+	   * @param {DataView} dataView
+	   * @param {number} scalar
+	   * @returns {Quaternion}
+	   */
+	  parseQuaternion(dataView, scalar) {
+	    let [x, y, z, w] = [
+	      dataView.getInt16(0, true),
+	      dataView.getInt16(2, true),
+	      dataView.getInt16(4, true),
+	      dataView.getInt16(6, true),
+	    ].map((value) => value * scalar);
 
-	        /** @type {Quaternion} */
-	        const quaternion = { x, y, z, w };
+	    /** @type {Quaternion} */
+	    const quaternion = { x, y, z, w };
 
-	        _console$l.log({ quaternion });
-	        return quaternion;
-	    }
+	    _console$l.log({ quaternion });
+	    return quaternion;
+	  }
 
-	    static #EulerSize = 3 * 2;
-	    static get EulerSize() {
-	        return this.#EulerSize;
-	    }
-	    get eulerSize() {
-	        return MotionSensorDataManager.EulerSize;
-	    }
+	  static #EulerSize = 3 * 2;
+	  static get EulerSize() {
+	    return this.#EulerSize;
+	  }
+	  get eulerSize() {
+	    return MotionSensorDataManager.EulerSize;
+	  }
 
-	    /**
-	     * @param {DataView} dataView
-	     * @param {number} scalar
-	     * @returns {Euler}
-	     */
-	    parseEuler(dataView, scalar) {
-	        let [heading, pitch, roll] = [
-	            dataView.getInt16(0, true),
-	            dataView.getInt16(2, true),
-	            dataView.getInt16(4, true),
-	        ].map((value) => value * scalar);
+	  /**
+	   * @param {DataView} dataView
+	   * @param {number} scalar
+	   * @returns {Euler}
+	   */
+	  parseEuler(dataView, scalar) {
+	    let [heading, pitch, roll] = [
+	      dataView.getInt16(0, true),
+	      dataView.getInt16(2, true),
+	      dataView.getInt16(4, true),
+	    ].map((value) => value * scalar);
 
-	        pitch *= -1;
-	        heading *= -1;
+	    pitch *= -1;
+	    heading *= -1;
 
-	        /** @type {Euler} */
-	        const euler = { heading, pitch, roll };
+	    /** @type {Euler} */
+	    const euler = { heading, pitch, roll };
 
-	        _console$l.log({ euler });
-	        return euler;
-	    }
+	    _console$l.log({ euler });
+	    return euler;
+	  }
 
-	    /** @param {DataView} dataView */
-	    parseStepCounter(dataView) {
-	        _console$l.log("parseStepCounter", dataView);
-	        const stepCount = dataView.getUint32(0, true);
-	        _console$l.log({ stepCount });
-	        return stepCount;
-	    }
+	  /** @param {DataView} dataView */
+	  parseStepCounter(dataView) {
+	    _console$l.log("parseStepCounter", dataView);
+	    const stepCount = dataView.getUint32(0, true);
+	    _console$l.log({ stepCount });
+	    return stepCount;
+	  }
 
-	    /** @type {ActivityType[]} */
-	    static #ActivityTypes = ["still", "walking", "running", "bicycle", "vehicle", "tilting"];
-	    static get ActivityTypes() {
-	        return this.#ActivityTypes;
-	    }
-	    get #activityTypes() {
-	        return MotionSensorDataManager.#ActivityTypes;
-	    }
-	    /** @param {DataView} dataView */
-	    parseActivity(dataView) {
-	        _console$l.log("parseActivity", dataView);
-	        /** @type {Activity} */
-	        const activity = {};
+	  /** @type {ActivityType[]} */
+	  static #ActivityTypes = ["still", "walking", "running", "bicycle", "vehicle", "tilting"];
+	  static get ActivityTypes() {
+	    return this.#ActivityTypes;
+	  }
+	  get #activityTypes() {
+	    return MotionSensorDataManager.#ActivityTypes;
+	  }
+	  /** @param {DataView} dataView */
+	  parseActivity(dataView) {
+	    _console$l.log("parseActivity", dataView);
+	    /** @type {Activity} */
+	    const activity = {};
 
-	        const activityBitfield = dataView.getUint8(0);
-	        _console$l.log("activityBitfield", activityBitfield.toString(2));
-	        this.#activityTypes.forEach((activityType, index) => {
-	            activity[activityType] = Boolean(activityBitfield & (1 << index));
-	        });
+	    const activityBitfield = dataView.getUint8(0);
+	    _console$l.log("activityBitfield", activityBitfield.toString(2));
+	    this.#activityTypes.forEach((activityType, index) => {
+	      activity[activityType] = Boolean(activityBitfield & (1 << index));
+	    });
 
-	        _console$l.log("activity", activity);
+	    _console$l.log("activity", activity);
 
-	        return activity;
-	    }
+	    return activity;
+	  }
 
-	    /** @type {DeviceOrientation[]} */
-	    static #DeviceOrientations = [
-	        "portraitUpright",
-	        "landscapeLeft",
-	        "portraitUpsideDown",
-	        "landscapeRight",
-	        "unknown",
-	    ];
-	    static get DeviceOrientations() {
-	        return this.#DeviceOrientations;
-	    }
-	    get #deviceOrientations() {
-	        return MotionSensorDataManager.#DeviceOrientations;
-	    }
-	    /** @param {DataView} dataView */
-	    parseDeviceOrientation(dataView) {
-	        _console$l.log("parseDeviceOrientation", dataView);
-	        const index = dataView.getUint8(0);
-	        const deviceOrientation = this.#deviceOrientations[index];
-	        _console$l.assertWithError(deviceOrientation, "undefined deviceOrientation");
-	        _console$l.log({ deviceOrientation });
-	        return deviceOrientation;
-	    }
+	  /** @type {DeviceOrientation[]} */
+	  static #DeviceOrientations = ["portraitUpright", "landscapeLeft", "portraitUpsideDown", "landscapeRight", "unknown"];
+	  static get DeviceOrientations() {
+	    return this.#DeviceOrientations;
+	  }
+	  get #deviceOrientations() {
+	    return MotionSensorDataManager.#DeviceOrientations;
+	  }
+	  /** @param {DataView} dataView */
+	  parseDeviceOrientation(dataView) {
+	    _console$l.log("parseDeviceOrientation", dataView);
+	    const index = dataView.getUint8(0);
+	    const deviceOrientation = this.#deviceOrientations[index];
+	    _console$l.assertWithError(deviceOrientation, "undefined deviceOrientation");
+	    _console$l.log({ deviceOrientation });
+	    return deviceOrientation;
+	  }
 	}
 
 	/** @typedef {"barometer"} BarometerSensorType */
@@ -1652,37 +1694,40 @@
 	const _console$k = createConsole("BarometerSensorDataManager", { log: true });
 
 	class BarometerSensorDataManager {
-	    /** @type {BarometerSensorType[]} */
-	    static #Types = ["barometer"];
-	    static get Types() {
-	        return this.#Types;
-	    }
+	  /** @type {BarometerSensorType[]} */
+	  static #Types = ["barometer"];
+	  static get Types() {
+	    return this.#Types;
+	  }
+	  static get ContinuousTypes() {
+	    return this.Types;
+	  }
 
-	    /** @param {number} pressure */
-	    #calculcateAltitude(pressure) {
-	        const P0 = 101325; // Standard atmospheric pressure at sea level in Pascals
-	        const T0 = 288.15; // Standard temperature at sea level in Kelvin
-	        const L = 0.0065; // Temperature lapse rate in K/m
-	        const R = 8.3144598; // Universal gas constant in J/(mol·K)
-	        const g = 9.80665; // Acceleration due to gravity in m/s²
-	        const M = 0.0289644; // Molar mass of Earth's air in kg/mol
+	  /** @param {number} pressure */
+	  #calculcateAltitude(pressure) {
+	    const P0 = 101325; // Standard atmospheric pressure at sea level in Pascals
+	    const T0 = 288.15; // Standard temperature at sea level in Kelvin
+	    const L = 0.0065; // Temperature lapse rate in K/m
+	    const R = 8.3144598; // Universal gas constant in J/(mol·K)
+	    const g = 9.80665; // Acceleration due to gravity in m/s²
+	    const M = 0.0289644; // Molar mass of Earth's air in kg/mol
 
-	        const exponent = (R * L) / (g * M);
-	        const h = (T0 / L) * (1 - Math.pow(pressure / P0, exponent));
+	    const exponent = (R * L) / (g * M);
+	    const h = (T0 / L) * (1 - Math.pow(pressure / P0, exponent));
 
-	        return h;
-	    }
+	    return h;
+	  }
 
-	    /**
-	     * @param {DataView} dataView
-	     * @param {number} scalar
-	     */
-	    parseData(dataView, scalar) {
-	        const pressure = dataView.getUint32(0, true) * scalar;
-	        const altitude = this.#calculcateAltitude(pressure);
-	        _console$k.log({ pressure, altitude });
-	        return { pressure };
-	    }
+	  /**
+	   * @param {DataView} dataView
+	   * @param {number} scalar
+	   */
+	  parseData(dataView, scalar) {
+	    const pressure = dataView.getUint32(0, true) * scalar;
+	    const altitude = this.#calculcateAltitude(pressure);
+	    _console$k.log({ pressure, altitude });
+	    return { pressure };
+	  }
 	}
 
 	const _console$j = createConsole("ParseUtils", { log: true });
@@ -1789,8 +1834,16 @@
 	    ...MotionSensorDataManager.Types,
 	    ...BarometerSensorDataManager.Types,
 	  ];
+	  static #ContinuousTypes = [
+	    ...PressureSensorDataManager.ContinuousTypes,
+	    ...MotionSensorDataManager.ContinuousTypes,
+	    ...BarometerSensorDataManager.ContinuousTypes,
+	  ];
 	  static get Types() {
 	    return this.#Types;
+	  }
+	  static get ContinuousTypes() {
+	    return this.#ContinuousTypes;
 	  }
 	  get types() {
 	    return SensorDataManager.Types;
@@ -1966,7 +2019,9 @@
 	 * @property {number} [rotation]
 	 * @property {number} [orientation]
 	 * @property {number} [activity]
+	 * @property {number} [stepDetector]
 	 * @property {number} [stepCounter]
+	 * @property {number} [deviceOrientation]
 	 * @property {number} [barometer]
 	 */
 
@@ -2055,9 +2110,22 @@
 	    });
 	  }
 
+	  /** @param {SensorConfiguration} sensorConfiguration */
+	  #isRedundant(sensorConfiguration) {
+	    /** @type {SensorType[]} */
+	    let sensorTypes = Object.keys(sensorConfiguration);
+	    return sensorTypes.every((sensorType) => {
+	      return this.configuration[sensorType] == sensorConfiguration[sensorType];
+	    });
+	  }
+
 	  /** @param {SensorConfiguration} newSensorConfiguration */
 	  async setConfiguration(newSensorConfiguration) {
 	    _console$h.log({ newSensorConfiguration });
+	    if (this.#isRedundant(newSensorConfiguration)) {
+	      _console$h.log("redundant sensor configuration");
+	      return;
+	    }
 	    const setSensorConfigurationData = this.#createData(newSensorConfiguration);
 	    _console$h.log({ setSensorConfigurationData });
 
@@ -2760,13 +2828,13 @@
 	/**
 	 * @typedef DeviceInformation
 	 * @type {Object}
-	 * @property {string} [manufacturerName]
-	 * @property {string} [modelNumber]
-	 * @property {string} [softwareRevision]
-	 * @property {string} [hardwareRevision]
-	 * @property {string} [firmwareRevision]
-	 * @property {PnpId} [pnpId]
-	 * @property {string} [serialNumber]
+	 * @property {string} manufacturerName
+	 * @property {string} modelNumber
+	 * @property {string} softwareRevision
+	 * @property {string} hardwareRevision
+	 * @property {string} firmwareRevision
+	 * @property {PnpId} pnpId
+	 * @property {string} serialNumber
 	 */
 
 	/**
@@ -2854,6 +2922,11 @@
 	    firmwareRevision: null,
 	    pnpId: null,
 	  };
+	  clear() {
+	    for (const key in this.information) {
+	      this.information[key] = null;
+	    }
+	  }
 	  get #isComplete() {
 	    return Object.values(this.information).every((value) => value != null);
 	  }
@@ -3015,8 +3088,7 @@
 
 	  // PROPERTIES
 
-	  /** @type {boolean?} */
-	  #isCharging;
+	  #isCharging = false;
 	  get isCharging() {
 	    return this.#isCharging;
 	  }
@@ -3047,7 +3119,7 @@
 	    this.#dispatchEvent({ type: "getBatteryCurrent", message: { batteryCurrent: this.#batteryCurrent } });
 	  }
 
-	  /** @type {string?} */
+	  /** @type {string} */
 	  #id;
 	  get id() {
 	    return this.#id;
@@ -3060,8 +3132,7 @@
 	    this.#dispatchEvent({ type: "getId", message: { id: this.#id } });
 	  }
 
-	  /** @type {string?} */
-	  #name;
+	  #name = "";
 	  get name() {
 	    return this.#name;
 	  }
@@ -3113,7 +3184,7 @@
 	  get #types() {
 	    return InformationManager.Types;
 	  }
-	  /** @type {DeviceType?} */
+	  /** @type {DeviceType} */
 	  #type;
 	  get type() {
 	    return this.#type;
@@ -3588,7 +3659,7 @@
 	/**
 	 * @typedef VibrationConfiguration
 	 * @type {Object}
-	 * @property {VibrationLocation[]} locations
+	 * @property {VibrationLocation[]} [locations]
 	 * @property {VibrationType} type
 	 * @property {VibrationWaveformEffectConfiguration} [waveformEffect] use if type is "waveformEffect"
 	 * @property {VibrationWaveformConfiguration} [waveform] use if type is "waveform"
@@ -4522,39 +4593,41 @@
 
 
 	class BluetoothConnectionManager extends BaseConnectionManager {
-	    /**
-	     * @protected
-	     * @param {BluetoothCharacteristicName} characteristicName
-	     * @param {DataView} dataView
-	     */
-	    onCharacteristicValueChanged(characteristicName, dataView) {
-	        if (characteristicName == "rx") {
-	            this.parseRxMessage(dataView);
-	        } else {
-	            this.onMessageReceived?.(characteristicName, dataView);
-	        }
-	    }
+	  isInRange = true;
 
-	    /**
-	     * @protected
-	     * @param {BluetoothCharacteristicName} characteristicName
-	     * @param {ArrayBuffer} data
-	     */
-	    async writeCharacteristic(characteristicName, data) {
-	        _console$a.log("writeCharacteristic", ...arguments);
+	  /**
+	   * @protected
+	   * @param {BluetoothCharacteristicName} characteristicName
+	   * @param {DataView} dataView
+	   */
+	  onCharacteristicValueChanged(characteristicName, dataView) {
+	    if (characteristicName == "rx") {
+	      this.parseRxMessage(dataView);
+	    } else {
+	      this.onMessageReceived?.(characteristicName, dataView);
 	    }
+	  }
 
-	    /** @param {ArrayBuffer} data */
-	    async sendSmpMessage(data) {
-	        super.sendSmpMessage(...arguments);
-	        await this.writeCharacteristic("smp", data);
-	    }
+	  /**
+	   * @protected
+	   * @param {BluetoothCharacteristicName} characteristicName
+	   * @param {ArrayBuffer} data
+	   */
+	  async writeCharacteristic(characteristicName, data) {
+	    _console$a.log("writeCharacteristic", ...arguments);
+	  }
 
-	    /** @param {ArrayBuffer} data */
-	    async sendTxData(data) {
-	        super.sendTxData(...arguments);
-	        await this.writeCharacteristic("tx", data);
-	    }
+	  /** @param {ArrayBuffer} data */
+	  async sendSmpMessage(data) {
+	    super.sendSmpMessage(...arguments);
+	    await this.writeCharacteristic("smp", data);
+	  }
+
+	  /** @param {ArrayBuffer} data */
+	  async sendTxData(data) {
+	    super.sendTxData(...arguments);
+	    await this.writeCharacteristic("tx", data);
+	  }
 	}
 
 	const _console$9 = createConsole("WebBluetoothConnectionManager", { log: true });
@@ -4789,13 +4862,19 @@
 
 	  /** @type {boolean} */
 	  get canReconnect() {
-	    return this.server && !this.server.connected;
+	    return this.server && !this.server.connected && this.isInRange;
 	  }
 	  async reconnect() {
 	    await super.reconnect();
 	    _console$9.log("attempting to reconnect...");
 	    this.status = "connecting";
-	    await this.server.connect();
+	    try {
+	      await this.server.connect();
+	    } catch (error) {
+	      _console$9.error(error);
+	      this.isInRange = false;
+	    }
+
 	    if (this.isConnected) {
 	      _console$9.log("successfully reconnected!");
 	      await this.#getServicesAndCharacteristics();
@@ -6125,7 +6204,7 @@
 	 */
 	/** @typedef {(event: DeviceEvent) => void} DeviceEventListener */
 
-	/** @typedef {"deviceConnected" | "deviceDisconnected" | "deviceIsConnected" | "availableDevices"} StaticDeviceEventType */
+	/** @typedef {"deviceConnected" | "deviceDisconnected" | "deviceIsConnected" | "availableDevices" | "connectedDevices"} StaticDeviceEventType */
 	/**
 	 * @typedef StaticDeviceEvent
 	 * @type {Object}
@@ -6420,6 +6499,9 @@
 	        return "not connected";
 	    }
 	  }
+	  get isConnectionBusy() {
+	    return this.connectionStatus == "connecting" || this.connectionStatus == "disconnecting";
+	  }
 
 	  /** @param {ConnectionStatus} connectionStatus */
 	  #onConnectionStatusUpdated(connectionStatus) {
@@ -6447,6 +6529,12 @@
 
 	    if (connectionStatus == "connected" && !this.#isConnected) {
 	      this.#requestRequiredInformation();
+	    }
+
+	    if (connectionStatus == "not connected" && !this.canReconnect && Device.#AvailableDevices.includes(this)) {
+	      const deviceIndex = Device.#AvailableDevices.indexOf(this);
+	      Device.AvailableDevices.splice(deviceIndex, 1);
+	      Device.#DispatchAvailableDevices();
 	    }
 	  }
 
@@ -6480,6 +6568,7 @@
 	  #clear() {
 	    this.latestConnectionMessage.clear();
 	    this.#informationManager.clear();
+	    this.#deviceInformationManager.clear();
 	  }
 
 	  /**
@@ -6536,8 +6625,7 @@
 
 	  // BATTERY LEVEL
 
-	  /** @type {number?} */
-	  #batteryLevel = null;
+	  #batteryLevel = 0;
 	  get batteryLevel() {
 	    return this.#batteryLevel;
 	  }
@@ -6613,9 +6701,15 @@
 	  static get SensorTypes() {
 	    return SensorDataManager.Types;
 	  }
+	  static get ContinuousSensorTypes() {
+	    return SensorDataManager.ContinuousTypes;
+	  }
 	  /** @type {SensorType[]} */
 	  get sensorTypes() {
 	    return Object.keys(this.sensorConfiguration);
+	  }
+	  get continuousSensorTypes() {
+	    return this.sensorTypes.filter((sensorType) => Device.ContinuousSensorTypes.includes(sensorType));
 	  }
 
 	  // SENSOR CONFIGURATION
@@ -6715,7 +6809,7 @@
 	  
 	  /**
 	   * @param  {VibrationConfiguration[]} vibrationConfigurations
-	   * @param  {boolean} sendImmediately
+	   * @param  {boolean} [sendImmediately]
 	   */
 	  async triggerVibration(vibrationConfigurations, sendImmediately) {
 	    this.#vibrationManager.triggerVibration(vibrationConfigurations, sendImmediately);
@@ -7084,7 +7178,13 @@
 	  // STATIC EVENTLISTENERS
 
 	  /** @type {StaticDeviceEventType[]} */
-	  static #StaticEventTypes = ["deviceConnected", "deviceDisconnected", "deviceIsConnected", "availableDevices"];
+	  static #StaticEventTypes = [
+	    "deviceConnected",
+	    "deviceDisconnected",
+	    "deviceIsConnected",
+	    "availableDevices",
+	    "connectedDevices",
+	  ];
 	  static get StaticEventTypes() {
 	    return this.#StaticEventTypes;
 	  }
@@ -7138,6 +7238,7 @@
 	        }
 	        this.#DispatchEvent({ type: "deviceConnected", message: { device } });
 	        this.#DispatchEvent({ type: "deviceIsConnected", message: { device } });
+	        this.#DispatchConnectedDevices();
 	      } else {
 	        _console$6.log("device already included");
 	      }
@@ -7147,6 +7248,7 @@
 	        this.#ConnectedDevices.splice(this.#ConnectedDevices.indexOf(device), 1);
 	        this.#DispatchEvent({ type: "deviceDisconnected", message: { device } });
 	        this.#DispatchEvent({ type: "deviceIsConnected", message: { device } });
+	        this.#DispatchConnectedDevices();
 	      } else {
 	        _console$6.log("device already not included");
 	      }
@@ -7171,6 +7273,10 @@
 	  static #DispatchAvailableDevices() {
 	    _console$6.log({ AvailableDevices: this.AvailableDevices });
 	    this.#DispatchEvent({ type: "availableDevices", message: { devices: this.AvailableDevices } });
+	  }
+	  static #DispatchConnectedDevices() {
+	    _console$6.log({ ConnectedDevices: this.ConnectedDevices });
+	    this.#DispatchEvent({ type: "connectedDevices", message: { devices: this.ConnectedDevices } });
 	  }
 
 	  static async Connect() {
@@ -8413,6 +8519,7 @@
 
 	exports.Device = Device;
 	exports.DevicePair = DevicePair;
+	exports.Environment = environment;
 	exports.WebSocketClient = WebSocketClient;
 	exports.setAllConsoleLevelFlags = setAllConsoleLevelFlags;
 	exports.setConsoleLevelFlagsForType = setConsoleLevelFlagsForType;

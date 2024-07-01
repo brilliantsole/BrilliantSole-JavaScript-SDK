@@ -12,39 +12,41 @@ const _console = createConsole("BluetoothConnectionManager", { log: true });
 /** @typedef {import("../BaseConnectionManager.js").ConnectionStatus} ConnectionStatus */
 
 class BluetoothConnectionManager extends BaseConnectionManager {
-    /**
-     * @protected
-     * @param {BluetoothCharacteristicName} characteristicName
-     * @param {DataView} dataView
-     */
-    onCharacteristicValueChanged(characteristicName, dataView) {
-        if (characteristicName == "rx") {
-            this.parseRxMessage(dataView);
-        } else {
-            this.onMessageReceived?.(characteristicName, dataView);
-        }
-    }
+  isInRange = true;
 
-    /**
-     * @protected
-     * @param {BluetoothCharacteristicName} characteristicName
-     * @param {ArrayBuffer} data
-     */
-    async writeCharacteristic(characteristicName, data) {
-        _console.log("writeCharacteristic", ...arguments);
+  /**
+   * @protected
+   * @param {BluetoothCharacteristicName} characteristicName
+   * @param {DataView} dataView
+   */
+  onCharacteristicValueChanged(characteristicName, dataView) {
+    if (characteristicName == "rx") {
+      this.parseRxMessage(dataView);
+    } else {
+      this.onMessageReceived?.(characteristicName, dataView);
     }
+  }
 
-    /** @param {ArrayBuffer} data */
-    async sendSmpMessage(data) {
-        super.sendSmpMessage(...arguments);
-        await this.writeCharacteristic("smp", data);
-    }
+  /**
+   * @protected
+   * @param {BluetoothCharacteristicName} characteristicName
+   * @param {ArrayBuffer} data
+   */
+  async writeCharacteristic(characteristicName, data) {
+    _console.log("writeCharacteristic", ...arguments);
+  }
 
-    /** @param {ArrayBuffer} data */
-    async sendTxData(data) {
-        super.sendTxData(...arguments);
-        await this.writeCharacteristic("tx", data);
-    }
+  /** @param {ArrayBuffer} data */
+  async sendSmpMessage(data) {
+    super.sendSmpMessage(...arguments);
+    await this.writeCharacteristic("smp", data);
+  }
+
+  /** @param {ArrayBuffer} data */
+  async sendTxData(data) {
+    super.sendTxData(...arguments);
+    await this.writeCharacteristic("tx", data);
+  }
 }
 
 export default BluetoothConnectionManager;

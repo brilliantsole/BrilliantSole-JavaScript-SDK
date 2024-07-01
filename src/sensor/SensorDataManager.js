@@ -55,8 +55,16 @@ class SensorDataManager {
     ...MotionSensorDataManager.Types,
     ...BarometerSensorDataManager.Types,
   ];
+  static #ContinuousTypes = [
+    ...PressureSensorDataManager.ContinuousTypes,
+    ...MotionSensorDataManager.ContinuousTypes,
+    ...BarometerSensorDataManager.ContinuousTypes,
+  ];
   static get Types() {
     return this.#Types;
+  }
+  static get ContinuousTypes() {
+    return this.#ContinuousTypes;
   }
   get types() {
     return SensorDataManager.Types;

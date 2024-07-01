@@ -18,7 +18,9 @@ const _console = createConsole("SensorConfigurationManager", { log: true });
  * @property {number} [rotation]
  * @property {number} [orientation]
  * @property {number} [activity]
+ * @property {number} [stepDetector]
  * @property {number} [stepCounter]
+ * @property {number} [deviceOrientation]
  * @property {number} [barometer]
  */
 
@@ -107,9 +109,22 @@ class SensorConfigurationManager {
     });
   }
 
+  /** @param {SensorConfiguration} sensorConfiguration */
+  #isRedundant(sensorConfiguration) {
+    /** @type {SensorType[]} */
+    let sensorTypes = Object.keys(sensorConfiguration);
+    return sensorTypes.every((sensorType) => {
+      return this.configuration[sensorType] == sensorConfiguration[sensorType];
+    });
+  }
+
   /** @param {SensorConfiguration} newSensorConfiguration */
   async setConfiguration(newSensorConfiguration) {
     _console.log({ newSensorConfiguration });
+    if (this.#isRedundant(newSensorConfiguration)) {
+      _console.log("redundant sensor configuration");
+      return;
+    }
     const setSensorConfigurationData = this.#createData(newSensorConfiguration);
     _console.log({ setSensorConfigurationData });
 

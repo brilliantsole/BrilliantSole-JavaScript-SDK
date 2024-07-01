@@ -7,13 +7,13 @@ const _console = createConsole("DeviceInformationManager", { log: true });
 /**
  * @typedef DeviceInformation
  * @type {Object}
- * @property {string} [manufacturerName]
- * @property {string} [modelNumber]
- * @property {string} [softwareRevision]
- * @property {string} [hardwareRevision]
- * @property {string} [firmwareRevision]
- * @property {PnpId} [pnpId]
- * @property {string} [serialNumber]
+ * @property {string} manufacturerName
+ * @property {string} modelNumber
+ * @property {string} softwareRevision
+ * @property {string} hardwareRevision
+ * @property {string} firmwareRevision
+ * @property {PnpId} pnpId
+ * @property {string} serialNumber
  */
 
 /**
@@ -101,6 +101,11 @@ class DeviceInformationManager {
     firmwareRevision: null,
     pnpId: null,
   };
+  clear() {
+    for (const key in this.information) {
+      this.information[key] = null;
+    }
+  }
   get #isComplete() {
     return Object.values(this.information).every((value) => value != null);
   }

@@ -43,7 +43,7 @@ const _console = createConsole("Device", { log: true });
  */
 /** @typedef {(event: DeviceEvent) => void} DeviceEventListener */
 
-/** @typedef {"deviceConnected" | "deviceDisconnected" | "deviceIsConnected" | "availableDevices"} StaticDeviceEventType */
+/** @typedef {"deviceConnected" | "deviceDisconnected" | "deviceIsConnected" | "availableDevices" | "connectedDevices"} StaticDeviceEventType */
 /**
  * @typedef StaticDeviceEvent
  * @type {Object}
@@ -338,6 +338,9 @@ class Device {
         return "not connected";
     }
   }
+  get isConnectionBusy() {
+    return this.connectionStatus == "connecting" || this.connectionStatus == "disconnecting";
+  }
 
   /** @param {ConnectionStatus} connectionStatus */
   #onConnectionStatusUpdated(connectionStatus) {
@@ -365,6 +368,12 @@ class Device {
 
     if (connectionStatus == "connected" && !this.#isConnected) {
       this.#requestRequiredInformation();
+    }
+
+    if (connectionStatus == "not connected" && !this.canReconnect && Device.#AvailableDevices.includes(this)) {
+      const deviceIndex = Device.#AvailableDevices.indexOf(this);
+      Device.AvailableDevices.splice(deviceIndex, 1);
+      Device.#DispatchAvailableDevices();
     }
   }
 
@@ -398,6 +407,7 @@ class Device {
   #clear() {
     this.latestConnectionMessage.clear();
     this.#informationManager.clear();
+    this.#deviceInformationManager.clear();
   }
 
   /**
@@ -454,8 +464,7 @@ class Device {
 
   // BATTERY LEVEL
 
-  /** @type {number?} */
-  #batteryLevel = null;
+  #batteryLevel = 0;
   get batteryLevel() {
     return this.#batteryLevel;
   }
@@ -531,9 +540,15 @@ class Device {
   static get SensorTypes() {
     return SensorDataManager.Types;
   }
+  static get ContinuousSensorTypes() {
+    return SensorDataManager.ContinuousTypes;
+  }
   /** @type {SensorType[]} */
   get sensorTypes() {
     return Object.keys(this.sensorConfiguration);
+  }
+  get continuousSensorTypes() {
+    return this.sensorTypes.filter((sensorType) => Device.ContinuousSensorTypes.includes(sensorType));
   }
 
   // SENSOR CONFIGURATION
@@ -633,7 +648,7 @@ class Device {
   /** @typedef {import("./vibration/VibrationManager.js").VibrationConfiguration} VibrationConfiguration */
   /**
    * @param  {VibrationConfiguration[]} vibrationConfigurations
-   * @param  {boolean} sendImmediately
+   * @param  {boolean} [sendImmediately]
    */
   async triggerVibration(vibrationConfigurations, sendImmediately) {
     this.#vibrationManager.triggerVibration(vibrationConfigurations, sendImmediately);
@@ -1002,7 +1017,13 @@ class Device {
   // STATIC EVENTLISTENERS
 
   /** @type {StaticDeviceEventType[]} */
-  static #StaticEventTypes = ["deviceConnected", "deviceDisconnected", "deviceIsConnected", "availableDevices"];
+  static #StaticEventTypes = [
+    "deviceConnected",
+    "deviceDisconnected",
+    "deviceIsConnected",
+    "availableDevices",
+    "connectedDevices",
+  ];
   static get StaticEventTypes() {
     return this.#StaticEventTypes;
   }
@@ -1056,6 +1077,7 @@ class Device {
         }
         this.#DispatchEvent({ type: "deviceConnected", message: { device } });
         this.#DispatchEvent({ type: "deviceIsConnected", message: { device } });
+        this.#DispatchConnectedDevices();
       } else {
         _console.log("device already included");
       }
@@ -1065,6 +1087,7 @@ class Device {
         this.#ConnectedDevices.splice(this.#ConnectedDevices.indexOf(device), 1);
         this.#DispatchEvent({ type: "deviceDisconnected", message: { device } });
         this.#DispatchEvent({ type: "deviceIsConnected", message: { device } });
+        this.#DispatchConnectedDevices();
       } else {
         _console.log("device already not included");
       }
@@ -1089,6 +1112,10 @@ class Device {
   static #DispatchAvailableDevices() {
     _console.log({ AvailableDevices: this.AvailableDevices });
     this.#DispatchEvent({ type: "availableDevices", message: { devices: this.AvailableDevices } });
+  }
+  static #DispatchConnectedDevices() {
+    _console.log({ ConnectedDevices: this.ConnectedDevices });
+    this.#DispatchEvent({ type: "connectedDevices", message: { devices: this.ConnectedDevices } });
   }
 
   static async Connect() {

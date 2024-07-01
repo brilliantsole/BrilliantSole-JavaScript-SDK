@@ -40,6 +40,9 @@ class PressureSensorDataManager {
   static get Types() {
     return this.#Types;
   }
+  static get ContinuousTypes() {
+    return this.Types;
+  }
 
   /** @type {PressureSensorPosition[]} */
   #positions = [];

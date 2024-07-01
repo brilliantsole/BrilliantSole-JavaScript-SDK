@@ -82,8 +82,7 @@ class InformationManager {
 
   // PROPERTIES
 
-  /** @type {boolean?} */
-  #isCharging;
+  #isCharging = false;
   get isCharging() {
     return this.#isCharging;
   }
@@ -114,7 +113,7 @@ class InformationManager {
     this.#dispatchEvent({ type: "getBatteryCurrent", message: { batteryCurrent: this.#batteryCurrent } });
   }
 
-  /** @type {string?} */
+  /** @type {string} */
   #id;
   get id() {
     return this.#id;
@@ -127,8 +126,7 @@ class InformationManager {
     this.#dispatchEvent({ type: "getId", message: { id: this.#id } });
   }
 
-  /** @type {string?} */
-  #name;
+  #name = "";
   get name() {
     return this.#name;
   }
@@ -180,7 +178,7 @@ class InformationManager {
   get #types() {
     return InformationManager.Types;
   }
-  /** @type {DeviceType?} */
+  /** @type {DeviceType} */
   #type;
   get type() {
     return this.#type;

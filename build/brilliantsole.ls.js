@@ -54,16 +54,42 @@
   }
 
   var _window, _process, _process$versions;
+  const isInProduction = "__BRILLIANTSOLE__PROD__" == "__BRILLIANTSOLE__PROD__";
   const isInDev = "__BRILLIANTSOLE__PROD__" == "__BRILLIANTSOLE__DEV__";
 
   // https://github.com/flexdinesh/browser-or-node/blob/master/src/index.ts
   const isInBrowser = typeof window !== "undefined" && ((_window = window) === null || _window === void 0 ? void 0 : _window.document) !== "undefined";
   const isInNode = typeof process !== "undefined" && ((_process = process) === null || _process === void 0 ? void 0 : (_process$versions = _process.versions) === null || _process$versions === void 0 ? void 0 : _process$versions.node) != null;
-  const isInBluefy = isInBrowser && navigator.userAgent.includes("Bluefy");
-  const isInWebBLE = isInBrowser && navigator.userAgent.includes("WebBLE");
-  isInBrowser && navigator.userAgent.includes("Android");
-  isInBrowser && navigator.userAgent.includes("Safari");
+  const userAgent = isInBrowser && navigator.userAgent || "";
+  let isBluetoothSupported = false;
+  if (isInBrowser) {
+    isBluetoothSupported = Boolean(navigator.bluetooth);
+  } else if (isInNode) {
+    isBluetoothSupported = true;
+  }
+  const isInBluefy = isInBrowser && /Bluefy/i.test(userAgent);
+  const isInWebBLE = isInBrowser && /WebBLE/i.test(userAgent);
+  const isAndroid = isInBrowser && /Android/i.test(userAgent);
+  const isSafari = isInBrowser && /Safari/i.test(userAgent) && !/Chrome/i.test(userAgent);
+  const isIOS = isInBrowser && /iPad|iPhone|iPod/i.test(userAgent);
+  const isMac = isInBrowser && /Macintosh/i.test(userAgent);
   const isInLensStudio = !isInBrowser && !isInNode && typeof global !== "undefined" && typeof Studio !== "undefined";
+
+  var environment = /*#__PURE__*/Object.freeze({
+    __proto__: null,
+    isAndroid: isAndroid,
+    get isBluetoothSupported () { return isBluetoothSupported; },
+    isIOS: isIOS,
+    isInBluefy: isInBluefy,
+    isInBrowser: isInBrowser,
+    isInDev: isInDev,
+    isInLensStudio: isInLensStudio,
+    isInNode: isInNode,
+    isInProduction: isInProduction,
+    isInWebBLE: isInWebBLE,
+    isMac: isMac,
+    isSafari: isSafari
+  });
 
   var __console;
   if (isInLensStudio) {
@@ -1023,6 +1049,9 @@
     static get Types() {
       return _assertClassBrand(PressureSensorDataManager, this, _Types$5)._;
     }
+    static get ContinuousTypes() {
+      return this.Types;
+    }
     get positions() {
       return _classPrivateFieldGet2(_positions, this);
     }
@@ -1092,6 +1121,7 @@
     _: ["pressure"]
   };
 
+  var _MotionSensorDataManager;
   const _console$i = createConsole("MotionSensorDataManager", {
     log: true
   });
@@ -1102,6 +1132,9 @@
     }
     static get Types() {
       return _assertClassBrand(MotionSensorDataManager, this, _Types$4)._;
+    }
+    static get ContinuousTypes() {
+      return _assertClassBrand(MotionSensorDataManager, this, _ContinuousTypes$1)._;
     }
     static get Vector3Size() {
       return _assertClassBrand(MotionSensorDataManager, this, _Vector3Size)._;
@@ -1196,6 +1229,7 @@
       return deviceOrientation;
     }
   }
+  _MotionSensorDataManager = MotionSensorDataManager;
   function _get_activityTypes(_this) {
     return _ActivityTypes._;
   }
@@ -1204,6 +1238,20 @@
   }
   var _Types$4 = {
     _: ["acceleration", "gravity", "linearAcceleration", "gyroscope", "magnetometer", "gameRotation", "rotation", "orientation", "activity", "stepCounter", "stepDetector", "deviceOrientation"]
+  };
+  var _ContinuousTypes$1 = {
+    _: _assertClassBrand(_MotionSensorDataManager, _MotionSensorDataManager, _Types$4)._.filter(type => {
+      switch (type) {
+        case "orientation":
+        case "activity":
+        case "stepCounter":
+        case "stepDetector":
+        case "deviceOrientation":
+          return false;
+        default:
+          return true;
+      }
+    })
   };
   var _Vector3Size = {
     _: 3 * 2
@@ -1231,6 +1279,9 @@
     }
     static get Types() {
       return _assertClassBrand(BarometerSensorDataManager, this, _Types$3)._;
+    }
+    static get ContinuousTypes() {
+      return this.Types;
     }
     parseData(dataView, scalar) {
       const pressure = dataView.getUint32(0, true) * scalar;
@@ -1318,6 +1369,9 @@
     }
     static get Types() {
       return _assertClassBrand(SensorDataManager, this, _Types$2)._;
+    }
+    static get ContinuousTypes() {
+      return _assertClassBrand(SensorDataManager, this, _ContinuousTypes)._;
     }
     get types() {
       return SensorDataManager.Types;
@@ -1469,6 +1523,9 @@
   var _Types$2 = {
     _: [...PressureSensorDataManager.Types, ...MotionSensorDataManager.Types, ...BarometerSensorDataManager.Types]
   };
+  var _ContinuousTypes = {
+    _: [...PressureSensorDataManager.ContinuousTypes, ...MotionSensorDataManager.ContinuousTypes, ...BarometerSensorDataManager.ContinuousTypes]
+  };
   var _EventTypes$7 = {
     _: [..._assertClassBrand(_SensorDataManager, _SensorDataManager, _MessageTypes$7)._, ..._assertClassBrand(_SensorDataManager, _SensorDataManager, _Types$2)._]
   };
@@ -1516,6 +1573,10 @@
       _console$e.log({
         newSensorConfiguration
       });
+      if (_assertClassBrand(_SensorConfigurationManager_brand, this, _isRedundant).call(this, newSensorConfiguration)) {
+        _console$e.log("redundant sensor configuration");
+        return;
+      }
       const setSensorConfigurationData = _assertClassBrand(_SensorConfigurationManager_brand, this, _createData$1).call(this, newSensorConfiguration);
       _console$e.log({
         setSensorConfigurationData
@@ -1597,6 +1658,12 @@
       message: {
         sensorConfiguration: this.configuration
       }
+    });
+  }
+  function _isRedundant(sensorConfiguration) {
+    let sensorTypes = Object.keys(sensorConfiguration);
+    return sensorTypes.every(sensorType => {
+      return this.configuration[sensorType] == sensorConfiguration[sensorType];
     });
   }
   function _parse(dataView) {
@@ -2155,6 +2222,11 @@
     get eventTypes() {
       return _EventTypes$4._;
     }
+    clear() {
+      for (const key in this.information) {
+        this.information[key] = null;
+      }
+    }
     // MESSAGE
 
     parseMessage(messageType, dataView) {
@@ -2294,10 +2366,10 @@
       _defineProperty(this, "eventDispatcher", void 0);
       // PROPERTIES
 
-      _classPrivateFieldInitSpec(this, _isCharging, void 0);
+      _classPrivateFieldInitSpec(this, _isCharging, false);
       _classPrivateFieldInitSpec(this, _batteryCurrent, void 0);
       _classPrivateFieldInitSpec(this, _id, void 0);
-      _classPrivateFieldInitSpec(this, _name, void 0);
+      _classPrivateFieldInitSpec(this, _name, "");
       _classPrivateFieldInitSpec(this, _type, void 0);
       _classPrivateFieldInitSpec(this, _mtu$2, 0);
       _classPrivateFieldInitSpec(this, _isCurrentTimeSet, false);
@@ -3364,6 +3436,10 @@
     log: true
   });
   class BluetoothConnectionManager extends BaseConnectionManager {
+    constructor() {
+      super(...arguments);
+      _defineProperty(this, "isInRange", true);
+    }
     onCharacteristicValueChanged(characteristicName, dataView) {
       if (characteristicName == "rx") {
         this.parseRxMessage(dataView);
@@ -3509,13 +3585,18 @@
       }
     }
     get canReconnect() {
-      return this.server && !this.server.connected;
+      return this.server && !this.server.connected && this.isInRange;
     }
     async reconnect() {
       await super.reconnect();
       _console$6.log("attempting to reconnect...");
       this.status = "connecting";
-      await this.server.connect();
+      try {
+        await this.server.connect();
+      } catch (error) {
+        _console$6.error(error);
+        this.isInRange = false;
+      }
       if (this.isConnected) {
         _console$6.log("successfully reconnected!");
         await _assertClassBrand(_WebBluetoothConnectionManager_brand, this, _getServicesAndCharacteristics).call(this);
@@ -4758,7 +4839,7 @@
       _classPrivateFieldInitSpec(this, _deviceInformationManager, new DeviceInformationManager());
       // BATTERY LEVEL
 
-      _classPrivateFieldInitSpec(this, _batteryLevel, null);
+      _classPrivateFieldInitSpec(this, _batteryLevel, 0);
       // INFORMATION
       _classPrivateFieldInitSpec(this, _informationManager, new InformationManager());
       // SENSOR CONFIGURATION
@@ -4925,6 +5006,9 @@
           return "not connected";
       }
     }
+    get isConnectionBusy() {
+      return this.connectionStatus == "connecting" || this.connectionStatus == "disconnecting";
+    }
     get deviceInformation() {
       return _classPrivateFieldGet2(_deviceInformationManager, this).information;
     }
@@ -4981,8 +5065,14 @@
     static get SensorTypes() {
       return SensorDataManager.Types;
     }
+    static get ContinuousSensorTypes() {
+      return SensorDataManager.ContinuousTypes;
+    }
     get sensorTypes() {
       return Object.keys(this.sensorConfiguration);
+    }
+    get continuousSensorTypes() {
+      return this.sensorTypes.filter(sensorType => Device.ContinuousSensorTypes.includes(sensorType));
     }
     get sensorConfiguration() {
       return _classPrivateFieldGet2(_sensorConfigurationManager, this).configuration;
@@ -5337,6 +5427,11 @@
     if (connectionStatus == "connected" && !_classPrivateFieldGet2(_isConnected, this)) {
       _assertClassBrand(_Device_brand, this, _requestRequiredInformation).call(this);
     }
+    if (connectionStatus == "not connected" && !this.canReconnect && _AvailableDevices._.includes(this)) {
+      const deviceIndex = _AvailableDevices._.indexOf(this);
+      _Device.AvailableDevices.splice(deviceIndex, 1);
+      _DispatchAvailableDevices.call(_Device);
+    }
   }
   function _dispatchConnectionEvents() {
     let includeIsConnected = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : false;
@@ -5378,6 +5473,7 @@
   function _clear() {
     this.latestConnectionMessage.clear();
     _classPrivateFieldGet2(_informationManager, this).clear();
+    _classPrivateFieldGet2(_deviceInformationManager, this).clear();
   }
   function _onConnectionMessageReceived(messageType, dataView) {
     _console$3.log({
@@ -5521,6 +5617,7 @@
             device
           }
         });
+        _assertClassBrand(_Device, this, _DispatchConnectedDevices).call(this);
       } else {
         _console$3.log("device already included");
       }
@@ -5540,6 +5637,7 @@
             device
           }
         });
+        _assertClassBrand(_Device, this, _DispatchConnectedDevices).call(this);
       } else {
         _console$3.log("device already not included");
       }
@@ -5568,6 +5666,17 @@
       type: "availableDevices",
       message: {
         devices: this.AvailableDevices
+      }
+    });
+  }
+  function _DispatchConnectedDevices() {
+    _console$3.log({
+      ConnectedDevices: this.ConnectedDevices
+    });
+    _assertClassBrand(_Device, this, _DispatchEvent).call(this, {
+      type: "connectedDevices",
+      message: {
+        devices: this.ConnectedDevices
       }
     });
   }
@@ -5609,7 +5718,7 @@
     _: []
   };
   var _StaticEventTypes = {
-    _: ["deviceConnected", "deviceDisconnected", "deviceIsConnected", "availableDevices"]
+    _: ["deviceConnected", "deviceDisconnected", "deviceIsConnected", "availableDevices", "connectedDevices"]
   };
   var _EventDispatcher = {
     _: new EventDispatcher(_Device, _assertClassBrand(_Device, _Device, _StaticEventTypes)._)
@@ -5954,6 +6063,7 @@
 
   exports.Device = Device;
   exports.DevicePair = DevicePair;
+  exports.Environment = environment;
   exports.setAllConsoleLevelFlags = setAllConsoleLevelFlags;
   exports.setConsoleLevelFlagsForType = setConsoleLevelFlagsForType;
 
