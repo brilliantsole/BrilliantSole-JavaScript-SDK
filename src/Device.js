@@ -68,6 +68,7 @@ const _console = createConsole("Device", { log: true });
 /** @typedef {import("./TfliteManager.js").TfliteManagerEvent} TfliteManagerEvent */
 /** @typedef {import("./FirmwareManager.js").FirmwareManagerEvent} FirmwareManagerEvent */
 /** @typedef {import("./FileTransferManager.js").FileTransferManagerEvent} FileTransferManagerEvent */
+/** @typedef {import("./sensor/SensorDataManager.js").SensorDataManagerEvent} SensorDataManagerEvent */
 
 /**
  * @typedef {DeviceInformationManagerEvent |
@@ -76,7 +77,8 @@ const _console = createConsole("Device", { log: true });
  * InformationManagerEvent |
  * TfliteManagerEvent |
  * FirmwareManagerEvent |
- * FileTransferManagerEvent
+ * FileTransferManagerEvent |
+ * SensorDataManagerEvent
  * } DeviceEvent
  */
 /** @typedef {(event: DeviceEvent) => void} DeviceEventListener */

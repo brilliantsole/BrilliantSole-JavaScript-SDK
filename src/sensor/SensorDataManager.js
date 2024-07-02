@@ -17,17 +17,30 @@ const _console = createConsole("SensorDataManager", { log: true });
 /** @typedef {"getPressurePositions" | "getSensorScalars" | "sensorData"} SensorDataMessageType */
 /** @typedef {SensorDataMessageType | SensorType} SensorDataManagerEventType */
 
-/** @typedef {import("../utils/EventDispatcher.js").EventDispatcherListener} EventDispatcherListener */
 /** @typedef {import("../utils/EventDispatcher.js").EventDispatcherOptions} EventDispatcherOptions */
 
-/** @typedef {import("../Device.js").Device} Device */
+/** @typedef {import("../Device.js").BaseDeviceEvent} BaseDeviceEvent */
+
 /**
- * @typedef SensorDataManagerEvent
- * @type {Object}
- * @property {Device} target
- * @property {SensorDataManagerEventType} type
- * @property {Object} message
+ * @typedef {Object} BaseSensorDataEventMessage
+ * @property {number} timestamp
  */
+
+/** @typedef {import("./PressureSensorDataManager.js").PressureSensorDataEventMessage} PressureSensorDataEventMessage */
+/** @typedef {import("./MotionSensorDataManager.js").MotionSensorDataEventMessage} MotionSensorDataEventMessage */
+/** @typedef {import("./BarometerSensorDataManager.js").BarometerSensorDataEventMessage} BarometerSensorDataEventMessage */
+/** @typedef {PressureSensorDataEventMessage | MotionSensorDataEventMessage | BarometerSensorDataEventMessage} SensorDataEventMessage */
+
+/**
+ * @typedef {Object} SensorDataEvent
+ * @property {"sensorData"} type
+ * @property {{sensorType: SensorType} & SensorDataEventMessage} message
+ */
+
+/** @typedef {import("./PressureSensorDataManager.js").PressureSensorDataEvent} PressureSensorDataEvent */
+/** @typedef {import("./MotionSensorDataManager.js").MotionSensorDataEvent} MotionSensorDataEvent */
+/** @typedef {import("./BarometerSensorDataManager.js").BarometerSensorDataEvent} BarometerSensorDataEvent */
+/** @typedef {SensorDataEvent | PressureSensorDataEvent | MotionSensorDataEvent | BarometerSensorDataEvent} SensorDataManagerEvent */
 
 class SensorDataManager {
   // MESSAGE TYPES

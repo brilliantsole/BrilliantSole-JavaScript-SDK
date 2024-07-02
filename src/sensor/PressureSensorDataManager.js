@@ -32,6 +32,19 @@ import { createArray } from "../utils/ArrayUtils.js";
  * @property {CenterOfPressure} [normalizedCenter]
  */
 
+/** @typedef {import("./SensorDataManager.js").BaseSensorDataEventMessage} BaseSensorDataEventMessage */
+
+/**
+ * @typedef {Object} PressureSensorDataEventMessage
+ * @property {PressureData} pressure
+ */
+
+/**
+ * @typedef {Object} PressureSensorDataEvent
+ * @property {"pressure"} type
+ * @property {PressureSensorDataEventMessage & BaseSensorDataEventMessage} message
+ */
+
 const _console = createConsole("PressureSensorDataManager", { log: true });
 
 class PressureSensorDataManager {

@@ -1399,6 +1399,19 @@ function arrayWithoutDuplicates(array) {
  * @property {CenterOfPressure} [normalizedCenter]
  */
 
+
+
+/**
+ * @typedef {Object} PressureSensorDataEventMessage
+ * @property {PressureData} pressure
+ */
+
+/**
+ * @typedef {Object} PressureSensorDataEvent
+ * @property {"pressure"} type
+ * @property {PressureSensorDataEventMessage & BaseSensorDataEventMessage} message
+ */
+
 const _console$m = createConsole("PressureSensorDataManager", { log: true });
 
 class PressureSensorDataManager {
@@ -1561,6 +1574,159 @@ const _console$l = createConsole("MotionSensorDataManager", { log: true });
  * "landscapeRight" |
  * "unknown"
  * } DeviceOrientation
+ */
+
+
+
+/**
+ * @typedef {Object} AccelerationDataEventMessage
+ * @property {Vector3} acceleration
+ */
+/**
+ * @typedef {Object} AccelerationDataEvent
+ * @property {"acceleration"} type
+ * @property {AccelerationDataEventMessage & BaseSensorDataEventMessage} message
+ */
+
+/**
+ * @typedef {Object} GravityDataEventMessage
+ * @property {Vector3} gravity
+ */
+/**
+ * @typedef {Object} GravityDataEvent
+ * @property {"gravity"} type
+ * @property {GravityDataEventMessage & BaseSensorDataEventMessage} message
+ */
+
+/**
+ * @typedef {Object} LinearAccelerationDataEventMessage
+ * @property {Vector3} linearAcceleration
+ */
+/**
+ * @typedef {Object} LinearAccelerationDataEvent
+ * @property {"linearAcceleration"} type
+ * @property {LinearAccelerationDataEventMessage & BaseSensorDataEventMessage} message
+ */
+
+/**
+ * @typedef {Object} GyroscopeDataEventMessage
+ * @property {Vector3} gyroscope
+ */
+/**
+ * @typedef {Object} GyroscopeDataEvent
+ * @property {"gyroscope"} type
+ * @property {GyroscopeDataEventMessage & BaseSensorDataEventMessage} message
+ */
+
+/**
+ * @typedef {Object} MagnetometerDataEventMessage
+ * @property {Vector3} magnetometer
+ */
+/**
+ * @typedef {Object} MagnetometerDataEvent
+ * @property {"magnetometer"} type
+ * @property {MagnetometerDataEventMessage & BaseSensorDataEventMessage} message
+ */
+
+/**
+ * @typedef {Object} GameRotationDataEventMessage
+ * @property {Quaternion} gameRotation
+ */
+/**
+ * @typedef {Object} GameRotationDataEvent
+ * @property {"gameRotation"} type
+ * @property {GameRotationDataEventMessage & BaseSensorDataEventMessage} message
+ */
+
+/**
+ * @typedef {Object} RotationDataEventMessage
+ * @property {Quaternion} rotation
+ */
+/**
+ * @typedef {Object} RotationDataEvent
+ * @property {"rotation"} type
+ * @property {RotationDataEventMessage & BaseSensorDataEventMessage} message
+ */
+
+/**
+ * @typedef {Object} OrientationDataEventMessage
+ * @property {Euler} orientation
+ */
+/**
+ * @typedef {Object} OrientationDataEvent
+ * @property {"orientation"} type
+ * @property {OrientationDataEventMessage & BaseSensorDataEventMessage} message
+ */
+
+/**
+ * @typedef {Object} ActivityDataEventMessage
+ * @property {Activity} activity
+ */
+/**
+ * @typedef {Object} ActivityDataEvent
+ * @property {"activity"} type
+ * @property {ActivityDataEventMessage & BaseSensorDataEventMessage} message
+ */
+
+/**
+ * @typedef {Object} StepDetectorDataEventMessage
+ */
+/**
+ * @typedef {Object} StepDetectorDataEvent
+ * @property {"stepDetector"} type
+ * @property {StepDetectorDataEventMessage & BaseSensorDataEventMessage} message
+ */
+
+/**
+ * @typedef {Object} StepCounterDataEventMessage
+ * @property {number} stepCounter
+ */
+/**
+ * @typedef {Object} StepCounterDataEvent
+ * @property {"stepCounter"} type
+ * @property {StepCounterDataEventMessage & BaseSensorDataEventMessage} message
+ */
+
+/**
+ * @typedef {Object} DeviceOrientationDataEventMessage
+ * @property {DeviceOrientation} deviceOrientation
+ */
+/**
+ * @typedef {Object} DeviceOrientationDataEvent
+ * @property {"deviceOrientation"} type
+ * @property {DeviceOrientationDataEventMessage & BaseSensorDataEventMessage} message
+ */
+
+/**
+ * @typedef {AccelerationDataEventMessage |
+ * GravityDataEventMessage |
+ * LinearAccelerationDataEventMessage |
+ * GyroscopeDataEventMessage |
+ * MagnetometerDataEventMessage |
+ * GameRotationDataEventMessage |
+ * RotationDataEventMessage |
+ * OrientationDataEventMessage |
+ * ActivityDataEventMessage |
+ * StepDetectorDataEventMessage |
+ * StepCounterDataEventMessage |
+ * DeviceOrientationDataEventMessage
+ * } MotionSensorDataEventMessage
+ */
+/**
+ *
+ * @typedef { AccelerationDataEvent |
+ * GravityDataEvent |
+ * LinearAccelerationDataEvent |
+ * GyroscopeDataEvent |
+ * MagnetometerDataEvent |
+ * GameRotationDataEvent |
+ * RotationDataEvent |
+ * OrientationDataEvent |
+ * ActivityDataEvent |
+ * StepDetectorDataEvent |
+ * StepCounterDataEvent |
+ * DeviceOrientationDataEvent
+ * } MotionSensorDataEvent
  */
 
 class MotionSensorDataManager {
@@ -1735,6 +1901,19 @@ class MotionSensorDataManager {
 
 /** @typedef {"barometer"} BarometerSensorType */
 
+
+
+/**
+ * @typedef {Object} BarometerSensorDataEventMessage
+ * @property {number} barometer
+ */
+
+/**
+ * @typedef {Object} BarometerSensorDataEvent
+ * @property {"barometer"} type
+ * @property {BarometerSensorDataEventMessage & BaseSensorDataEventMessage} message
+ */
+
 const _console$k = createConsole("BarometerSensorDataManager", { log: true });
 
 class BarometerSensorDataManager {
@@ -1845,12 +2024,25 @@ const _console$i = createConsole("SensorDataManager", { log: true });
 
 
 /**
- * @typedef SensorDataManagerEvent
- * @type {Object}
- * @property {Device} target
- * @property {SensorDataManagerEventType} type
- * @property {Object} message
+ * @typedef {Object} BaseSensorDataEventMessage
+ * @property {number} timestamp
  */
+
+
+
+
+/** @typedef {PressureSensorDataEventMessage | MotionSensorDataEventMessage | BarometerSensorDataEventMessage} SensorDataEventMessage */
+
+/**
+ * @typedef {Object} SensorDataEvent
+ * @property {"sensorData"} type
+ * @property {{sensorType: SensorType} & SensorDataEventMessage} message
+ */
+
+
+
+
+/** @typedef {SensorDataEvent | PressureSensorDataEvent | MotionSensorDataEvent | BarometerSensorDataEvent} SensorDataManagerEvent */
 
 class SensorDataManager {
   // MESSAGE TYPES
@@ -6424,6 +6616,7 @@ const _console$6 = createConsole("Device", { log: true });
 
 
 
+
 /**
  * @typedef {DeviceInformationManagerEvent |
  * BatteryLevelEvent |
@@ -6431,7 +6624,8 @@ const _console$6 = createConsole("Device", { log: true });
  * InformationManagerEvent |
  * TfliteManagerEvent |
  * FirmwareManagerEvent |
- * FileTransferManagerEvent
+ * FileTransferManagerEvent |
+ * SensorDataManagerEvent
  * } DeviceEvent
  */
 /** @typedef {(event: DeviceEvent) => void} DeviceEventListener */

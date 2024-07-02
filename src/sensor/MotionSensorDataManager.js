@@ -73,6 +73,159 @@ const _console = createConsole("MotionSensorDataManager", { log: true });
  * } DeviceOrientation
  */
 
+/** @typedef {import("./SensorDataManager.js").BaseSensorDataEventMessage} BaseSensorDataEventMessage */
+
+/**
+ * @typedef {Object} AccelerationDataEventMessage
+ * @property {Vector3} acceleration
+ */
+/**
+ * @typedef {Object} AccelerationDataEvent
+ * @property {"acceleration"} type
+ * @property {AccelerationDataEventMessage & BaseSensorDataEventMessage} message
+ */
+
+/**
+ * @typedef {Object} GravityDataEventMessage
+ * @property {Vector3} gravity
+ */
+/**
+ * @typedef {Object} GravityDataEvent
+ * @property {"gravity"} type
+ * @property {GravityDataEventMessage & BaseSensorDataEventMessage} message
+ */
+
+/**
+ * @typedef {Object} LinearAccelerationDataEventMessage
+ * @property {Vector3} linearAcceleration
+ */
+/**
+ * @typedef {Object} LinearAccelerationDataEvent
+ * @property {"linearAcceleration"} type
+ * @property {LinearAccelerationDataEventMessage & BaseSensorDataEventMessage} message
+ */
+
+/**
+ * @typedef {Object} GyroscopeDataEventMessage
+ * @property {Vector3} gyroscope
+ */
+/**
+ * @typedef {Object} GyroscopeDataEvent
+ * @property {"gyroscope"} type
+ * @property {GyroscopeDataEventMessage & BaseSensorDataEventMessage} message
+ */
+
+/**
+ * @typedef {Object} MagnetometerDataEventMessage
+ * @property {Vector3} magnetometer
+ */
+/**
+ * @typedef {Object} MagnetometerDataEvent
+ * @property {"magnetometer"} type
+ * @property {MagnetometerDataEventMessage & BaseSensorDataEventMessage} message
+ */
+
+/**
+ * @typedef {Object} GameRotationDataEventMessage
+ * @property {Quaternion} gameRotation
+ */
+/**
+ * @typedef {Object} GameRotationDataEvent
+ * @property {"gameRotation"} type
+ * @property {GameRotationDataEventMessage & BaseSensorDataEventMessage} message
+ */
+
+/**
+ * @typedef {Object} RotationDataEventMessage
+ * @property {Quaternion} rotation
+ */
+/**
+ * @typedef {Object} RotationDataEvent
+ * @property {"rotation"} type
+ * @property {RotationDataEventMessage & BaseSensorDataEventMessage} message
+ */
+
+/**
+ * @typedef {Object} OrientationDataEventMessage
+ * @property {Euler} orientation
+ */
+/**
+ * @typedef {Object} OrientationDataEvent
+ * @property {"orientation"} type
+ * @property {OrientationDataEventMessage & BaseSensorDataEventMessage} message
+ */
+
+/**
+ * @typedef {Object} ActivityDataEventMessage
+ * @property {Activity} activity
+ */
+/**
+ * @typedef {Object} ActivityDataEvent
+ * @property {"activity"} type
+ * @property {ActivityDataEventMessage & BaseSensorDataEventMessage} message
+ */
+
+/**
+ * @typedef {Object} StepDetectorDataEventMessage
+ */
+/**
+ * @typedef {Object} StepDetectorDataEvent
+ * @property {"stepDetector"} type
+ * @property {StepDetectorDataEventMessage & BaseSensorDataEventMessage} message
+ */
+
+/**
+ * @typedef {Object} StepCounterDataEventMessage
+ * @property {number} stepCounter
+ */
+/**
+ * @typedef {Object} StepCounterDataEvent
+ * @property {"stepCounter"} type
+ * @property {StepCounterDataEventMessage & BaseSensorDataEventMessage} message
+ */
+
+/**
+ * @typedef {Object} DeviceOrientationDataEventMessage
+ * @property {DeviceOrientation} deviceOrientation
+ */
+/**
+ * @typedef {Object} DeviceOrientationDataEvent
+ * @property {"deviceOrientation"} type
+ * @property {DeviceOrientationDataEventMessage & BaseSensorDataEventMessage} message
+ */
+
+/**
+ * @typedef {AccelerationDataEventMessage |
+ * GravityDataEventMessage |
+ * LinearAccelerationDataEventMessage |
+ * GyroscopeDataEventMessage |
+ * MagnetometerDataEventMessage |
+ * GameRotationDataEventMessage |
+ * RotationDataEventMessage |
+ * OrientationDataEventMessage |
+ * ActivityDataEventMessage |
+ * StepDetectorDataEventMessage |
+ * StepCounterDataEventMessage |
+ * DeviceOrientationDataEventMessage
+ * } MotionSensorDataEventMessage
+ */
+/**
+ *
+ * @typedef { AccelerationDataEvent |
+ * GravityDataEvent |
+ * LinearAccelerationDataEvent |
+ * GyroscopeDataEvent |
+ * MagnetometerDataEvent |
+ * GameRotationDataEvent |
+ * RotationDataEvent |
+ * OrientationDataEvent |
+ * ActivityDataEvent |
+ * StepDetectorDataEvent |
+ * StepCounterDataEvent |
+ * DeviceOrientationDataEvent
+ * } MotionSensorDataEvent
+ */
+
 class MotionSensorDataManager {
   /** @type {MotionSensorType[]} */
   static #Types = [

@@ -2,6 +2,19 @@ import { createConsole } from "../utils/Console.js";
 
 /** @typedef {"barometer"} BarometerSensorType */
 
+/** @typedef {import("./SensorDataManager.js").BaseSensorDataEventMessage} BaseSensorDataEventMessage */
+
+/**
+ * @typedef {Object} BarometerSensorDataEventMessage
+ * @property {number} barometer
+ */
+
+/**
+ * @typedef {Object} BarometerSensorDataEvent
+ * @property {"barometer"} type
+ * @property {BarometerSensorDataEventMessage & BaseSensorDataEventMessage} message
+ */
+
 const _console = createConsole("BarometerSensorDataManager", { log: true });
 
 class BarometerSensorDataManager {
