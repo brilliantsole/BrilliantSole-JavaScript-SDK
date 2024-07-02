@@ -19,16 +19,14 @@ import { createConsole } from "../utils/Console.js";
 const _console = createConsole("MotionSensorDataManager", { log: true });
 
 /**
- * @typedef Vector3
- * @type {Object}
+ * @typedef {Object} Vector3
  * @property {number} x
  * @property {number} y
  * @property {number} z
  */
 
 /**
- * @typedef Quaternion
- * @type {Object}
+ * @typedef {Object} Quaternion
  * @property {number} x
  * @property {number} y
  * @property {number} z
@@ -36,8 +34,7 @@ const _console = createConsole("MotionSensorDataManager", { log: true });
  */
 
 /**
- * @typedef Euler
- * @type {Object}
+ * @typedef {Object} Euler
  * @property {number} heading
  * @property {number} pitch
  * @property {number} roll
@@ -54,8 +51,7 @@ const _console = createConsole("MotionSensorDataManager", { log: true });
  */
 
 /**
- * @typedef Activity
- * @type {Object}
+ * @typedef {Object} Activity
  * @property {boolean} still
  * @property {boolean} walking
  * @property {boolean} running

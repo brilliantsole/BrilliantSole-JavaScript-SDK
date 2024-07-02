@@ -12,16 +12,14 @@ const _console = createConsole("BaseScanner");
 /** @typedef {import("../utils/EventDispatcher.js").EventDispatcherOptions} EventDispatcherOptions */
 
 /**
- * @typedef ScannerEvent
- * @type {Object}
+ * @typedef {Object} ScannerEvent
  * @property {BaseScanner} target
  * @property {ScannerEventType} type
  * @property {Object} message
  */
 
 /**
- * @typedef DiscoveredDevice
- * @type {Object}
+ * @typedef {Object} DiscoveredDevice
  * @property {string} bluetoothId
  * @property {string} name
  * @property {DeviceType} deviceType

@@ -36,8 +36,7 @@ const _console = createConsole("DevicePair", { log: true });
 /** @typedef {import("../utils/CenterOfPressureHelper.js").CenterOfPressure} CenterOfPressure */
 
 /**
- * @typedef BaseDevicePairEvent
- * @type {Object}
+ * @typedef {Object} BaseDevicePairEvent
  * @property {DevicePair} target
  * @property {DevicePairEventType} type
  */

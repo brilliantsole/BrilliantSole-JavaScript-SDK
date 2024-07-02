@@ -13,8 +13,7 @@ export const reconnectTimeout = 3_000;
 /** @typedef {Number | Number[] | ArrayBufferLike | DataView} MessageLike */
 
 /**
- * @typedef Message
- * @type {Object}
+ * @typedef {Object} Message
  * @property {string} type
  * @property {MessageLike|MessageLike[]?} data
  */
@@ -24,35 +23,35 @@ export const reconnectTimeout = 3_000;
  * @param  {...(Message|string)} messages
  */
 function createMessage(enumeration, ...messages) {
-    _console.log("createMessage", ...messages);
+  _console.log("createMessage", ...messages);
 
-    const messageBuffers = messages.map((message) => {
-        if (typeof message == "string") {
-            message = { type: message };
-        }
+  const messageBuffers = messages.map((message) => {
+    if (typeof message == "string") {
+      message = { type: message };
+    }
 
-        if ("data" in message) {
-            if (!Array.isArray(message.data)) {
-                message.data = [message.data];
-            }
-        } else {
-            message.data = [];
-        }
+    if ("data" in message) {
+      if (!Array.isArray(message.data)) {
+        message.data = [message.data];
+      }
+    } else {
+      message.data = [];
+    }
 
-        const messageDataArrayBuffer = concatenateArrayBuffers(...message.data);
-        const messageDataArrayBufferByteLength = messageDataArrayBuffer.byteLength;
+    const messageDataArrayBuffer = concatenateArrayBuffers(...message.data);
+    const messageDataArrayBufferByteLength = messageDataArrayBuffer.byteLength;
 
-        _console.assertEnumWithError(message.type, enumeration);
-        const messageTypeEnum = enumeration.indexOf(message.type);
+    _console.assertEnumWithError(message.type, enumeration);
+    const messageTypeEnum = enumeration.indexOf(message.type);
 
-        return concatenateArrayBuffers(
-            messageTypeEnum,
-            Uint16Array.from([messageDataArrayBufferByteLength]),
-            messageDataArrayBuffer
-        );
-    });
-    _console.log("messageBuffers", ...messageBuffers);
-    return concatenateArrayBuffers(...messageBuffers);
+    return concatenateArrayBuffers(
+      messageTypeEnum,
+      Uint16Array.from([messageDataArrayBufferByteLength]),
+      messageDataArrayBuffer
+    );
+  });
+  _console.log("messageBuffers", ...messageBuffers);
+  return concatenateArrayBuffers(...messageBuffers);
 }
 
 /**
@@ -73,61 +72,58 @@ function createMessage(enumeration, ...messages) {
  */
 
 /**
- * @typedef ServerMessage
- * @type {Object}
+ * @typedef {Object} ServerMessage
  * @property {ServerMessageType} type
  * @property {MessageLike|MessageLike[]?} data
  */
 
 /** @type {ServerMessageType[]} */
 export const ServerMessageTypes = [
-    "ping",
-    "pong",
-    "isScanningAvailable",
-    "isScanning",
-    "startScan",
-    "stopScan",
-    "discoveredDevice",
-    "discoveredDevices",
-    "expiredDiscoveredDevice",
-    "connectToDevice",
-    "disconnectFromDevice",
-    "connectedDevices",
-    "deviceMessage",
+  "ping",
+  "pong",
+  "isScanningAvailable",
+  "isScanning",
+  "startScan",
+  "stopScan",
+  "discoveredDevice",
+  "discoveredDevices",
+  "expiredDiscoveredDevice",
+  "connectToDevice",
+  "disconnectFromDevice",
+  "connectedDevices",
+  "deviceMessage",
 ];
 
 /** @param {...ServerMessage|ServerMessageType} messages */
 export function createServerMessage(...messages) {
-    return createMessage(ServerMessageTypes, ...messages);
+  return createMessage(ServerMessageTypes, ...messages);
 }
 
 /** @typedef {import("../Device").DeviceEventType} DeviceEventType */
 
 /**
- * @typedef DeviceMessage
- * @type {Object}
+ * @typedef {Object} DeviceMessage
  * @property {DeviceEventType} type
  * @property {MessageLike|MessageLike[]?} data
  */
 
 /** @param {...DeviceEventType|DeviceMessage} messages */
 export function createDeviceMessage(...messages) {
-    _console.log("createDeviceMessage", ...messages);
-    return createMessage(Device.EventTypes, ...messages);
+  _console.log("createDeviceMessage", ...messages);
+  return createMessage(Device.EventTypes, ...messages);
 }
 
 /** @typedef {import("../connection/BaseConnectionManager").ConnectionMessageType} ConnectionMessageType */
 
 /**
- * @typedef ClientDeviceMessage
- * @type {Object}
+ * @typedef {Object} ClientDeviceMessage
  * @property {ConnectionMessageType} type
  * @property {MessageLike|MessageLike[]?} data
  */
 
 /** @param {...ConnectionMessageType|ClientDeviceMessage} messages */
 export function createClientDeviceMessage(...messages) {
-    return createMessage(BaseConnectionManager.MessageTypes, ...messages);
+  return createMessage(BaseConnectionManager.MessageTypes, ...messages);
 }
 
 // STATIC MESSAGES

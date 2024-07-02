@@ -1,8 +1,7 @@
 import { getInterpolation } from "./MathUtils.js";
 
 /**
- * @typedef Range
- * @type {Object}
+ * @typedef {Object} Range
  * @property {number} min
  * @property {number} max
  * @property {number} range

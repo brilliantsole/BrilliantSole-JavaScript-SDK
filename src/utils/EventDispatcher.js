@@ -4,16 +4,14 @@ import { spacesToPascalCase } from "./stringUtils.js";
 const _console = createConsole("EventDispatcher", { log: false });
 
 /**
- * @typedef EventDispatcherEvent
- * @type {Object}
+ * @typedef {Object} EventDispatcherEvent
  * @property {any} target
  * @property {string} type
  * @property {object} message
  */
 
 /**
- * @typedef EventDispatcherOptions
- * @type {Object}
+ * @typedef {Object} EventDispatcherOptions
  * @property {boolean} [once]
  */
 

@@ -37,8 +37,7 @@ const _console = createConsole("BaseConnectionManager", { log: true });
  */
 
 /**
- * @typedef TxMessage
- * @type {Object}
+ * @typedef {Object} TxMessage
  * @property {TxRxMessageType} type
  * @property {ArrayBuffer} [data]
  */

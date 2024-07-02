@@ -48,8 +48,7 @@ if (!__console.table) {
  */
 
 /**
- * @typedef ConsoleLevelFlags
- * @type {Object}
+ * @typedef {Object} ConsoleLevelFlags
  * @property {boolean} log
  * @property {boolean} warn
  * @property {boolean} error

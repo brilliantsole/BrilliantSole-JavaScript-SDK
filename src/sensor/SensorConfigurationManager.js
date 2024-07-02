@@ -6,8 +6,7 @@ const _console = createConsole("SensorConfigurationManager", { log: true });
 
 /** @typedef {import("./SensorDataManager.js").SensorType} SensorType */
 /**
- * @typedef SensorConfiguration
- * @type {Object}
+ * @typedef {Object} SensorConfiguration
  * @property {number} [pressure]
  * @property {number} [acceleration]
  * @property {number} [gravity]
@@ -32,8 +31,7 @@ const _console = createConsole("SensorConfigurationManager", { log: true });
 
 /** @typedef {import("../Device.js").Device} Device */
 /**
- * @typedef SensorConfigurationManagerEvent
- * @type {Object}
+ * @typedef {Object} SensorConfigurationManagerEvent
  * @property {Device} target
  * @property {SensorConfigurationManagerEventType} type
  * @property {Object} message

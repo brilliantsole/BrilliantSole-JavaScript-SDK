@@ -12,15 +12,13 @@ const _console = createConsole("DevicePairPressureSensorDataManager", { log: tru
 /** @typedef {import("../utils/CenterOfPressureHelper.js").CenterOfPressure} CenterOfPressure */
 
 /**
- * @typedef DevicePairRawPressureData
- * @type {Object}
+ * @typedef {Object} DevicePairRawPressureData
  * @property {PressureData} left
  * @property {PressureData} right
  */
 
 /**
- * @typedef DevicePairPressureData
- * @type {Object}
+ * @typedef {Object} DevicePairPressureData
  *
  * @property {number} rawSum
  * @property {number} normalizedSum

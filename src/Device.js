@@ -927,15 +927,13 @@ class Device {
   }
 
   /**
-   * @typedef LocalStorageDeviceInformation
-   * @type {Object}
+   * @typedef {Object} LocalStorageDeviceInformation
    * @property {string} bluetoothId
    * @property {DeviceType} type
    */
 
   /**
-   * @typedef LocalStorageConfiguration
-   * @type {Object}
+   * @typedef {Object} LocalStorageConfiguration
    * @property {LocalStorageDeviceInformation[]} devices
    */
 

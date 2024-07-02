@@ -550,8 +550,7 @@ class TfliteManager {
   }
 
   /**
-   * @typedef TfliteInference
-   * @type {object}
+   * @typedef {Object} TfliteInference
    * @property {number} timestamp
    * @property {number[]} values
    */

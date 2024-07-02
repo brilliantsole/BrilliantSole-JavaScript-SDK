@@ -24,8 +24,7 @@ const _console = createConsole("WebSocketClient", { log: true });
 /** @typedef {ClientConnectionStatus | "connectionStatus" |  "isConnected" | "isScanningAvailable" | "isScanning" | "discoveredDevice" | "expiredDiscoveredDevice"} ClientEventType */
 
 /**
- * @typedef ClientEvent
- * @type {Object}
+ * @typedef {Object} ClientEvent
  * @property {WebSocketClient} target
  * @property {ClientEventType} type
  * @property {Object} message

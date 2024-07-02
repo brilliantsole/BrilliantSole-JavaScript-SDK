@@ -191,8 +191,7 @@ class FirmwareManager {
   // COMMANDS
 
   /**
-   * @typedef FirmwareImage
-   * @type {object}
+   * @typedef {Object} FirmwareImage
    * @property {number} slot
    * @property {boolean} active
    * @property {boolean} confirmed

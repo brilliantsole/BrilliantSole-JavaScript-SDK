@@ -101,8 +101,7 @@ if (!__console.table) {
  */
 
 /**
- * @typedef ConsoleLevelFlags
- * @type {Object}
+ * @typedef {Object} ConsoleLevelFlags
  * @property {boolean} log
  * @property {boolean} warn
  * @property {boolean} error
@@ -277,16 +276,14 @@ function capitalizeFirstCharacter(string) {
 const _console$u = createConsole("EventDispatcher", { log: false });
 
 /**
- * @typedef EventDispatcherEvent
- * @type {Object}
+ * @typedef {Object} EventDispatcherEvent
  * @property {any} target
  * @property {string} type
  * @property {object} message
  */
 
 /**
- * @typedef EventDispatcherOptions
- * @type {Object}
+ * @typedef {Object} EventDispatcherOptions
  * @property {boolean} [once]
  */
 
@@ -1273,15 +1270,13 @@ function parseTimestamp(dataView, byteOffset) {
 }
 
 /**
- * @typedef Vector2
- * @type {Object}
+ * @typedef {Object} Vector2
  * @property {number} x
  * @property {number} y
  */
 
 /**
- * @typedef Range
- * @type {Object}
+ * @typedef {Object} Range
  * @property {number} min
  * @property {number} max
  * @property {number} range
@@ -1320,8 +1315,7 @@ class RangeHelper {
 /** @typedef {Vector2} CenterOfPressure */
 
 /**
- * @typedef CenterOfPressureRange
- * @type {Object}
+ * @typedef {Object} CenterOfPressureRange
  * @property {RangeHelper} x
  * @property {RangeHelper} y
  */
@@ -1389,8 +1383,7 @@ function arrayWithoutDuplicates(array) {
 
 
 /**
- * @typedef PressureSensorValue
- * @type {Object}
+ * @typedef {Object} PressureSensorValue
  * @property {PressureSensorPosition} position
  * @property {number} rawValue
  * @property {number} scaledValue
@@ -1399,8 +1392,7 @@ function arrayWithoutDuplicates(array) {
  */
 
 /**
- * @typedef PressureData
- * @type {Object}
+ * @typedef {Object} PressureData
  * @property {PressureSensorValue[]} sensors
  *
  * @property {number} scaledSum
@@ -1533,16 +1525,14 @@ class PressureSensorDataManager {
 const _console$p = createConsole("MotionSensorDataManager", { log: true });
 
 /**
- * @typedef Vector3
- * @type {Object}
+ * @typedef {Object} Vector3
  * @property {number} x
  * @property {number} y
  * @property {number} z
  */
 
 /**
- * @typedef Quaternion
- * @type {Object}
+ * @typedef {Object} Quaternion
  * @property {number} x
  * @property {number} y
  * @property {number} z
@@ -1550,8 +1540,7 @@ const _console$p = createConsole("MotionSensorDataManager", { log: true });
  */
 
 /**
- * @typedef Euler
- * @type {Object}
+ * @typedef {Object} Euler
  * @property {number} heading
  * @property {number} pitch
  * @property {number} roll
@@ -1568,8 +1557,7 @@ const _console$p = createConsole("MotionSensorDataManager", { log: true });
  */
 
 /**
- * @typedef Activity
- * @type {Object}
+ * @typedef {Object} Activity
  * @property {boolean} still
  * @property {boolean} walking
  * @property {boolean} running
@@ -2254,8 +2242,7 @@ const _console$l = createConsole("SensorConfigurationManager", { log: true });
 
 
 /**
- * @typedef SensorConfiguration
- * @type {Object}
+ * @typedef {Object} SensorConfiguration
  * @property {number} [pressure]
  * @property {number} [acceleration]
  * @property {number} [gravity]
@@ -2280,8 +2267,7 @@ const _console$l = createConsole("SensorConfigurationManager", { log: true });
 
 
 /**
- * @typedef SensorConfigurationManagerEvent
- * @type {Object}
+ * @typedef {Object} SensorConfigurationManagerEvent
  * @property {Device} target
  * @property {SensorConfigurationManagerEventType} type
  * @property {Object} message
@@ -3050,8 +3036,7 @@ let TfliteManager$1 = class TfliteManager {
   }
 
   /**
-   * @typedef TfliteInference
-   * @type {object}
+   * @typedef {Object} TfliteInference
    * @property {number} timestamp
    * @property {number[]} values
    */
@@ -3979,17 +3964,15 @@ const _console$h = createConsole("VibrationManager");
 
 
 /**
- * @typedef VibrationWaveformEffectSegment
+ * @typedef {Object} VibrationWaveformEffectSegment
  * use either effect or delay but not both (defaults to effect if both are defined)
- * @type {Object}
  * @property {VibrationWaveformEffect} [effect]
  * @property {number} [delay] (ms int ranging [0, 1270])
  * @property {number} [loopCount] how many times each segment should loop (int ranging [0, 3])
  */
 
 /**
- * @typedef VibrationWaveformSegment
- * @type {Object}
+ * @typedef {Object} VibrationWaveformSegment
  * @property {number} duration ms int ranging [0, 2550]
  * @property {number} amplitude float ranging [0, 1]
  */
@@ -3997,22 +3980,19 @@ const _console$h = createConsole("VibrationManager");
 /** @typedef { "triggerVibration" } VibrationMessageType */
 
 /**
- * @typedef VibrationWaveformEffectConfiguration
- * @type {Object}
+ * @typedef {Object} VibrationWaveformEffectConfiguration
  * @property {VibrationWaveformEffectSegment[]} segments
  * @property {number} [loopCount] how many times the entire sequence should loop (int ranging [0, 6])
  */
 
 
 /**
- * @typedef VibrationWaveformConfiguration
- * @type {Object}
+ * @typedef {Object} VibrationWaveformConfiguration
  * @property {VibrationWaveformSegment[]} segments
  */
 
 /**
- * @typedef VibrationConfiguration
- * @type {Object}
+ * @typedef {Object} VibrationConfiguration
  * @property {VibrationLocation[]} [locations]
  * @property {VibrationType} type
  * @property {VibrationWaveformEffectConfiguration} [waveformEffect] use if type is "waveformEffect"
@@ -4410,8 +4390,7 @@ const _console$g = createConsole("BaseConnectionManager", { log: true });
  */
 
 /**
- * @typedef TxMessage
- * @type {Object}
+ * @typedef {Object} TxMessage
  * @property {TxRxMessageType} type
  * @property {ArrayBuffer} [data]
  */
@@ -6306,8 +6285,7 @@ class FirmwareManager {
   // COMMANDS
 
   /**
-   * @typedef FirmwareImage
-   * @type {object}
+   * @typedef {Object} FirmwareImage
    * @property {number} slot
    * @property {boolean} active
    * @property {boolean} confirmed
@@ -7477,15 +7455,13 @@ class Device {
   }
 
   /**
-   * @typedef LocalStorageDeviceInformation
-   * @type {Object}
+   * @typedef {Object} LocalStorageDeviceInformation
    * @property {string} bluetoothId
    * @property {DeviceType} type
    */
 
   /**
-   * @typedef LocalStorageConfiguration
-   * @type {Object}
+   * @typedef {Object} LocalStorageConfiguration
    * @property {LocalStorageDeviceInformation[]} devices
    */
 
@@ -7773,16 +7749,14 @@ const _console$9 = createConsole("BaseScanner");
 
 
 /**
- * @typedef ScannerEvent
- * @type {Object}
+ * @typedef {Object} ScannerEvent
  * @property {BaseScanner} target
  * @property {ScannerEventType} type
  * @property {Object} message
  */
 
 /**
- * @typedef DiscoveredDevice
- * @type {Object}
+ * @typedef {Object} DiscoveredDevice
  * @property {string} bluetoothId
  * @property {string} name
  * @property {DeviceType} deviceType
@@ -8516,8 +8490,7 @@ const pingTimeout = 30_000_000;
 /** @typedef {Number | Number[] | ArrayBufferLike | DataView} MessageLike */
 
 /**
- * @typedef Message
- * @type {Object}
+ * @typedef {Object} Message
  * @property {string} type
  * @property {MessageLike|MessageLike[]?} data
  */
@@ -8527,35 +8500,35 @@ const pingTimeout = 30_000_000;
  * @param  {...(Message|string)} messages
  */
 function createMessage(enumeration, ...messages) {
-    _console$5.log("createMessage", ...messages);
+  _console$5.log("createMessage", ...messages);
 
-    const messageBuffers = messages.map((message) => {
-        if (typeof message == "string") {
-            message = { type: message };
-        }
+  const messageBuffers = messages.map((message) => {
+    if (typeof message == "string") {
+      message = { type: message };
+    }
 
-        if ("data" in message) {
-            if (!Array.isArray(message.data)) {
-                message.data = [message.data];
-            }
-        } else {
-            message.data = [];
-        }
+    if ("data" in message) {
+      if (!Array.isArray(message.data)) {
+        message.data = [message.data];
+      }
+    } else {
+      message.data = [];
+    }
 
-        const messageDataArrayBuffer = concatenateArrayBuffers(...message.data);
-        const messageDataArrayBufferByteLength = messageDataArrayBuffer.byteLength;
+    const messageDataArrayBuffer = concatenateArrayBuffers(...message.data);
+    const messageDataArrayBufferByteLength = messageDataArrayBuffer.byteLength;
 
-        _console$5.assertEnumWithError(message.type, enumeration);
-        const messageTypeEnum = enumeration.indexOf(message.type);
+    _console$5.assertEnumWithError(message.type, enumeration);
+    const messageTypeEnum = enumeration.indexOf(message.type);
 
-        return concatenateArrayBuffers(
-            messageTypeEnum,
-            Uint16Array.from([messageDataArrayBufferByteLength]),
-            messageDataArrayBuffer
-        );
-    });
-    _console$5.log("messageBuffers", ...messageBuffers);
-    return concatenateArrayBuffers(...messageBuffers);
+    return concatenateArrayBuffers(
+      messageTypeEnum,
+      Uint16Array.from([messageDataArrayBufferByteLength]),
+      messageDataArrayBuffer
+    );
+  });
+  _console$5.log("messageBuffers", ...messageBuffers);
+  return concatenateArrayBuffers(...messageBuffers);
 }
 
 /**
@@ -8576,47 +8549,45 @@ function createMessage(enumeration, ...messages) {
  */
 
 /**
- * @typedef ServerMessage
- * @type {Object}
+ * @typedef {Object} ServerMessage
  * @property {ServerMessageType} type
  * @property {MessageLike|MessageLike[]?} data
  */
 
 /** @type {ServerMessageType[]} */
 const ServerMessageTypes = [
-    "ping",
-    "pong",
-    "isScanningAvailable",
-    "isScanning",
-    "startScan",
-    "stopScan",
-    "discoveredDevice",
-    "discoveredDevices",
-    "expiredDiscoveredDevice",
-    "connectToDevice",
-    "disconnectFromDevice",
-    "connectedDevices",
-    "deviceMessage",
+  "ping",
+  "pong",
+  "isScanningAvailable",
+  "isScanning",
+  "startScan",
+  "stopScan",
+  "discoveredDevice",
+  "discoveredDevices",
+  "expiredDiscoveredDevice",
+  "connectToDevice",
+  "disconnectFromDevice",
+  "connectedDevices",
+  "deviceMessage",
 ];
 
 /** @param {...ServerMessage|ServerMessageType} messages */
 function createServerMessage(...messages) {
-    return createMessage(ServerMessageTypes, ...messages);
+  return createMessage(ServerMessageTypes, ...messages);
 }
 
 
 
 /**
- * @typedef DeviceMessage
- * @type {Object}
+ * @typedef {Object} DeviceMessage
  * @property {DeviceEventType} type
  * @property {MessageLike|MessageLike[]?} data
  */
 
 /** @param {...DeviceEventType|DeviceMessage} messages */
 function createDeviceMessage(...messages) {
-    _console$5.log("createDeviceMessage", ...messages);
-    return createMessage(Device.EventTypes, ...messages);
+  _console$5.log("createDeviceMessage", ...messages);
+  return createMessage(Device.EventTypes, ...messages);
 }
 
 // STATIC MESSAGES
@@ -8642,11 +8613,9 @@ const _console$4 = createConsole("BaseServer", { log: true });
 
 /** @typedef {"clientConnected" | "clientDisconnected"} ServerEventType */
 /**
- * @typedef BaseServerEvent
- * @type {Object}
+ * @typedef {Object} BaseServerEvent
  * @property {BaseServer} target
  * @property {ServerEventType} type
- * @property {Object} message
  */
 // FILL
 /** @typedef {BaseServerEvent} ServerEvent */
@@ -9192,15 +9161,13 @@ const _console$2 = createConsole("DevicePairPressureSensorDataManager", { log: t
 
 
 /**
- * @typedef DevicePairRawPressureData
- * @type {Object}
+ * @typedef {Object} DevicePairRawPressureData
  * @property {PressureData} left
  * @property {PressureData} right
  */
 
 /**
- * @typedef DevicePairPressureData
- * @type {Object}
+ * @typedef {Object} DevicePairPressureData
  *
  * @property {number} rawSum
  * @property {number} normalizedSum
@@ -9374,8 +9341,7 @@ const _console = createConsole("DevicePair", { log: true });
 
 
 /**
- * @typedef BaseDevicePairEvent
- * @type {Object}
+ * @typedef {Object} BaseDevicePairEvent
  * @property {DevicePair} target
  * @property {DevicePairEventType} type
  */

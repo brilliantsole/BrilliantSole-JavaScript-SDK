@@ -32,8 +32,7 @@ export function parseTimestamp(dataView, byteOffset) {
 }
 
 /**
- * @typedef Vector2
- * @type {Object}
+ * @typedef {Object} Vector2
  * @property {number} x
  * @property {number} y
  */

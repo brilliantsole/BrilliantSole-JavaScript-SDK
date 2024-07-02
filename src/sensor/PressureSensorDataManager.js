@@ -11,8 +11,7 @@ import { createArray } from "../utils/ArrayUtils.js";
 /** @typedef {import("../utils/CenterOfPressureHelper.js").CenterOfPressure} CenterOfPressure */
 
 /**
- * @typedef PressureSensorValue
- * @type {Object}
+ * @typedef {Object} PressureSensorValue
  * @property {PressureSensorPosition} position
  * @property {number} rawValue
  * @property {number} scaledValue
@@ -21,8 +20,7 @@ import { createArray } from "../utils/ArrayUtils.js";
  */
 
 /**
- * @typedef PressureData
- * @type {Object}
+ * @typedef {Object} PressureData
  * @property {PressureSensorValue[]} sensors
  *
  * @property {number} scaledSum

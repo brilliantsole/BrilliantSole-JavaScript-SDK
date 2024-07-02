@@ -5,8 +5,7 @@ import RangeHelper from "./RangeHelper.js";
 /** @typedef {Vector2} CenterOfPressure */
 
 /**
- * @typedef CenterOfPressureRange
- * @type {Object}
+ * @typedef {Object} CenterOfPressureRange
  * @property {RangeHelper} x
  * @property {RangeHelper} y
  */

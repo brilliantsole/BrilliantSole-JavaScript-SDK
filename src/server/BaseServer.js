@@ -21,11 +21,9 @@ const _console = createConsole("BaseServer", { log: true });
 
 /** @typedef {"clientConnected" | "clientDisconnected"} ServerEventType */
 /**
- * @typedef BaseServerEvent
- * @type {Object}
+ * @typedef {Object} BaseServerEvent
  * @property {BaseServer} target
  * @property {ServerEventType} type
- * @property {Object} message
  */
 // FILL
 /** @typedef {BaseServerEvent} ServerEvent */
