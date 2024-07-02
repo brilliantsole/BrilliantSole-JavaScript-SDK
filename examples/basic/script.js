@@ -7,6 +7,12 @@ const device = new BS.Device();
 console.log({ device });
 window.device = device;
 
+BS.Device.AddEventListener("availableDevices", (event) => {
+  if (event.type == "availableDevices") {
+    event.message.availableDevices;
+  }
+});
+
 //BS.setAllConsoleLevelFlags({ log: false });
 
 /** @typedef {import("../../build/brilliantsole.module.js").Device} Device */
@@ -53,7 +59,7 @@ async function getDevices() {
 }
 
 BS.Device.AddEventListener("availableDevices", (event) => {
-  const devices = event.message.devices;
+  const devices = event.message.availableDevices;
   onAvailableDevices(devices);
 });
 getDevices();

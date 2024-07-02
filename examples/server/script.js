@@ -224,7 +224,7 @@ let availableDeviceContainers = {};
 
 BS.Device.AddEventListener("availableDevices", (event) => {
   /** @type {Device[]} */
-  const availableDevices = event.message.devices;
+  const availableDevices = event.message.availableDevices;
   console.log({ availableDevices });
 
   availableDevices.forEach((device) => {

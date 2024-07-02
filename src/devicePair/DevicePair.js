@@ -42,6 +42,15 @@ const _console = createConsole("DevicePair", { log: true });
  * @property {DevicePairEventType} type
  * @property {Object} message
  */
+
+/**
+    TODO
+      device connection events
+      isConnected event
+      device sensor events
+      sensor events
+ */
+
 /** @typedef {BaseDevicePairEvent} DevicePairEvent */
 /** @typedef {(event: DevicePairEvent) => void} DevicePairEventListener */
 

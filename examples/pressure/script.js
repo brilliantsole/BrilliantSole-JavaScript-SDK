@@ -55,7 +55,7 @@ async function getDevices() {
 }
 
 BS.Device.AddEventListener("availableDevices", (event) => {
-  const devices = event.message.devices;
+  const devices = event.message.availableDevices;
   onAvailableDevices(devices);
 });
 getDevices();

@@ -1,5 +1,5 @@
 import { createConsole } from "./utils/Console.js";
-import EventDispatcher, { addEventListeners } from "./utils/EventDispatcher.js";
+import EventDispatcher from "./utils/EventDispatcher.js";
 import BaseConnectionManager from "./connection/BaseConnectionManager.js";
 import { isInBluefy, isInBrowser, isInNode } from "./utils/environment.js";
 import WebBluetoothConnectionManager from "./connection/bluetooth/WebBluetoothConnectionManager.js";
@@ -88,8 +88,50 @@ const _console = createConsole("Device", { log: true });
  * @typedef {Object} BaseStaticDeviceEvent
  * @property {StaticDeviceEventType} type
  */
-// FILL
-/** @typedef {BaseStaticDeviceEvent} StaticDeviceEvent */
+
+/**
+ * @typedef {Object} BaseStaticDeviceConnectedEvent
+ * @property {"deviceConnected"} type
+ * @property {{device: Device}} message
+ */
+/** @typedef {BaseStaticDeviceEvent & BaseStaticDeviceConnectedEvent} StaticDeviceConnectedEvent */
+
+/**
+ * @typedef {Object} BaseStaticDeviceDisconnectedEvent
+ * @property {"deviceDisconnected"} type
+ * @property {{device: Device}} message
+ */
+/** @typedef {BaseStaticDeviceEvent & BaseStaticDeviceDisconnectedEvent} StaticDeviceDisconnectedEvent */
+
+/**
+ * @typedef {Object} BaseStaticDeviceIsConnectedEvent
+ * @property {"deviceIsConnected"} type
+ * @property {{device: Device}} message
+ */
+/** @typedef {BaseStaticDeviceEvent & BaseStaticDeviceIsConnectedEvent} StaticDeviceIsConnectedEvent */
+
+/**
+ * @typedef {Object} BaseStaticAvailableDevicesEvent
+ * @property {"availableDevices"} type
+ * @property {{availableDevices: Device[]}} message
+ */
+/** @typedef {BaseStaticDeviceEvent & BaseStaticAvailableDevicesEvent} StaticAvailableDevicesEvent */
+
+/**
+ * @typedef {Object} BaseStaticConnectedDevicesEvent
+ * @property {"connectedDevices"} type
+ * @property {{connectedDevices: Device[]}} message
+ */
+/** @typedef {BaseStaticDeviceEvent & BaseStaticConnectedDevicesEvent} StaticConnectedDevicesEvent */
+
+/**
+ * @typedef {StaticDeviceConnectedEvent |
+ * StaticDeviceDisconnectedEvent |
+ * StaticDeviceIsConnectedEvent |
+ * StaticAvailableDevicesEvent |
+ * StaticConnectedDevicesEvent
+ * } StaticDeviceEvent
+ */
 /** @typedef {(event: StaticDeviceEvent) => void} StaticDeviceEventListener */
 
 class Device {
@@ -1151,11 +1193,11 @@ class Device {
 
   static #DispatchAvailableDevices() {
     _console.log({ AvailableDevices: this.AvailableDevices });
-    this.#DispatchEvent({ type: "availableDevices", message: { devices: this.AvailableDevices } });
+    this.#DispatchEvent({ type: "availableDevices", message: { availableDevices: this.AvailableDevices } });
   }
   static #DispatchConnectedDevices() {
     _console.log({ ConnectedDevices: this.ConnectedDevices });
-    this.#DispatchEvent({ type: "connectedDevices", message: { devices: this.ConnectedDevices } });
+    this.#DispatchEvent({ type: "connectedDevices", message: { connectedDevices: this.ConnectedDevices } });
   }
 
   static async Connect() {

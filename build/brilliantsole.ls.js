@@ -4828,8 +4828,6 @@
   const _console$3 = createConsole("Device", {
     log: true
   });
-
-  // FILL
   var _eventDispatcher$1 = /*#__PURE__*/new WeakMap();
   var _Device_brand = /*#__PURE__*/new WeakSet();
   var _connectionManager = /*#__PURE__*/new WeakMap();
@@ -5692,7 +5690,7 @@
     _assertClassBrand(_Device, this, _DispatchEvent).call(this, {
       type: "availableDevices",
       message: {
-        devices: this.AvailableDevices
+        availableDevices: this.AvailableDevices
       }
     });
   }
@@ -5703,7 +5701,7 @@
     _assertClassBrand(_Device, this, _DispatchEvent).call(this, {
       type: "connectedDevices",
       message: {
-        devices: this.ConnectedDevices
+        connectedDevices: this.ConnectedDevices
       }
     });
   }
