@@ -10,7 +10,6 @@ import BaseConnectionManager from "../connection/BaseConnectionManager.js";
 
 const _console = createConsole("BaseServer", { log: true });
 
-/** @typedef {import("../utils/EventDispatcher.js").EventDispatcherListener} EventDispatcherListener */
 /** @typedef {import("../utils/EventDispatcher.js").EventDispatcherOptions} EventDispatcherOptions */
 
 /** @typedef {import("../scanner/BaseScanner.js").ScannerEvent} ScannerEvent */
@@ -22,12 +21,15 @@ const _console = createConsole("BaseServer", { log: true });
 
 /** @typedef {"clientConnected" | "clientDisconnected"} ServerEventType */
 /**
- * @typedef ServerEvent
+ * @typedef BaseServerEvent
  * @type {Object}
  * @property {BaseServer} target
  * @property {ServerEventType} type
  * @property {Object} message
  */
+// FILL
+/** @typedef {BaseServerEvent} ServerEvent */
+/** @typedef {(event: ServerEvent) => void} ServerEventListener */
 
 class BaseServer {
   /**
@@ -52,7 +54,7 @@ class BaseServer {
 
   /**
    * @param {ServerEventType} type
-   * @param {EventDispatcherListener} listener
+   * @param {ServerEventListener} listener
    * @param {EventDispatcherOptions} [options]
    */
   addEventListener(type, listener, options) {
@@ -69,7 +71,7 @@ class BaseServer {
 
   /**
    * @param {ServerEventType} type
-   * @param {EventDispatcherListener} listener
+   * @param {ServerEventListener} listener
    */
   removeEventListener(type, listener) {
     return this.#eventDispatcher.removeEventListener(type, listener);

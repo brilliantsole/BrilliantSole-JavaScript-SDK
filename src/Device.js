@@ -31,25 +31,28 @@ const _console = createConsole("Device", { log: true });
 
 /** @typedef {"connectionStatus" | ConnectionStatus | "isConnected" | ConnectionMessageType | DeviceInformationManagerEventType | SensorType | "connectionMessage" | FileTransferManagerEventType | TfliteManagerEventType | FirmwareManagerEventType} DeviceEventType */
 
-/** @typedef {import("./utils/EventDispatcher.js").EventDispatcherListener} EventDispatcherListener */
 /** @typedef {import("./utils/EventDispatcher.js").EventDispatcherOptions} EventDispatcherOptions */
 
 /**
- * @typedef DeviceEvent
+ * @typedef BaseDeviceEvent
  * @type {Object}
  * @property {Device} target
  * @property {DeviceEventType} type
  * @property {Object} message
  */
+// FILL
+/** @typedef {BaseDeviceEvent} DeviceEvent */
 /** @typedef {(event: DeviceEvent) => void} DeviceEventListener */
 
 /** @typedef {"deviceConnected" | "deviceDisconnected" | "deviceIsConnected" | "availableDevices" | "connectedDevices"} StaticDeviceEventType */
 /**
- * @typedef StaticDeviceEvent
+ * @typedef BaseStaticDeviceEvent
  * @type {Object}
  * @property {StaticDeviceEventType} type
  * @property {Object} message
  */
+// FILL
+/** @typedef {BaseStaticDeviceEvent} StaticDeviceEvent */
 /** @typedef {(event: StaticDeviceEvent) => void} StaticDeviceEventListener */
 
 class Device {

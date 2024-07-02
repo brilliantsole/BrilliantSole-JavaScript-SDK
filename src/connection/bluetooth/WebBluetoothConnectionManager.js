@@ -160,18 +160,27 @@ class WebBluetoothConnectionManager extends BluetoothConnectionManager {
       }
     }
   }
-  #removeEventListeners() {
+  async #removeEventListeners() {
     if (this.device) {
       removeEventListeners(this.device, this.#boundBluetoothDeviceEventListeners);
     }
-    this.#characteristics.forEach((characteristic) => {
+
+    const promises = Array.from(this.#characteristics.keys()).map((characteristicName) => {
+      const characteristic = this.#characteristics.get(characteristicName);
       removeEventListeners(characteristic, this.#boundBluetoothCharacteristicEventListeners);
+      const characteristicProperties = characteristic.properties || getCharacteristicProperties(characteristicName);
+      if (characteristicProperties.notify) {
+        _console.log(`stopping notifications for "${characteristicName}" characteristic`);
+        return characteristic.stopNotifications();
+      }
     });
+
+    return Promise.allSettled(promises);
   }
   async disconnect() {
+    await this.#removeEventListeners();
     await super.disconnect();
     this.server?.disconnect();
-    this.#removeEventListeners();
     this.status = "not connected";
   }
 

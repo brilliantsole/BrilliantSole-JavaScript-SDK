@@ -3557,9 +3557,9 @@
     }
     async disconnect() {
       var _this$server3;
+      await _assertClassBrand(_WebBluetoothConnectionManager_brand, this, _removeEventListeners).call(this);
       await super.disconnect();
       (_this$server3 = this.server) === null || _this$server3 === void 0 ? void 0 : _this$server3.disconnect();
-      _assertClassBrand(_WebBluetoothConnectionManager_brand, this, _removeEventListeners).call(this);
       this.status = "not connected";
     }
     async writeCharacteristic(characteristicName, data) {
@@ -3653,13 +3653,20 @@
       }
     }
   }
-  function _removeEventListeners() {
+  async function _removeEventListeners() {
     if (this.device) {
       removeEventListeners(this.device, _classPrivateFieldGet2(_boundBluetoothDeviceEventListeners, this));
     }
-    _classPrivateFieldGet2(_characteristics, this).forEach(characteristic => {
+    const promises = Array.from(_classPrivateFieldGet2(_characteristics, this).keys()).map(characteristicName => {
+      const characteristic = _classPrivateFieldGet2(_characteristics, this).get(characteristicName);
       removeEventListeners(characteristic, _classPrivateFieldGet2(_boundBluetoothCharacteristicEventListeners, this));
+      const characteristicProperties = characteristic.properties || getCharacteristicProperties(characteristicName);
+      if (characteristicProperties.notify) {
+        _console$6.log(`stopping notifications for "${characteristicName}" characteristic`);
+        return characteristic.stopNotifications();
+      }
     });
+    return Promise.allSettled(promises);
   }
   function _onCharacteristicvaluechanged(event) {
     _console$6.log("oncharacteristicvaluechanged");
@@ -4803,6 +4810,10 @@
   const _console$3 = createConsole("Device", {
     log: true
   });
+
+  // FILL
+
+  // FILL
   var _eventDispatcher$1 = /*#__PURE__*/new WeakMap();
   var _Device_brand = /*#__PURE__*/new WeakSet();
   var _connectionManager = /*#__PURE__*/new WeakMap();

@@ -29,7 +29,6 @@ const _console = createConsole("DevicePair", { log: true });
 /** @typedef {"pressure"} DevicePairSensorType */
 /** @typedef {"isConnected" | DevicePairDeviceEventType | DevicePairDeviceSensorEventType | DevicePairSensorType | "deviceGetSensorConfiguration"} DevicePairEventType */
 
-/** @typedef {import("../utils/EventDispatcher.js").EventDispatcherListener} EventDispatcherListener */
 /** @typedef {import("../utils/EventDispatcher.js").EventDispatcherOptions} EventDispatcherOptions */
 
 /** @typedef {import("../sensor/SensorConfigurationManager.js").SensorConfiguration} SensorConfiguration */
@@ -37,12 +36,14 @@ const _console = createConsole("DevicePair", { log: true });
 /** @typedef {import("../utils/CenterOfPressureHelper.js").CenterOfPressure} CenterOfPressure */
 
 /**
- * @typedef DevicePairEvent
+ * @typedef BaseDevicePairEvent
  * @type {Object}
  * @property {DevicePair} target
  * @property {DevicePairEventType} type
  * @property {Object} message
  */
+/** @typedef {BaseDevicePairEvent} DevicePairEvent */
+/** @typedef {(event: DevicePairEvent) => void} DevicePairEventListener */
 
 class DevicePair {
   constructor() {
@@ -67,7 +68,7 @@ class DevicePair {
 
   /**
    * @param {DevicePairEventType} type
-   * @param {EventDispatcherListener} listener
+   * @param {DevicePairEventListener} listener
    * @param {EventDispatcherOptions} [options]
    */
   addEventListener(type, listener, options) {
@@ -83,7 +84,7 @@ class DevicePair {
 
   /**
    * @param {DevicePairEventType} type
-   * @param {EventDispatcherListener} listener
+   * @param {DevicePairEventListener} listener
    */
   removeEventListener(type, listener) {
     return this.#eventDispatcher.removeEventListener(type, listener);

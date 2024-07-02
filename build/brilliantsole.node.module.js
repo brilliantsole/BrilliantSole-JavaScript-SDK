@@ -4775,18 +4775,27 @@ class WebBluetoothConnectionManager extends BluetoothConnectionManager {
       }
     }
   }
-  #removeEventListeners() {
+  async #removeEventListeners() {
     if (this.device) {
       removeEventListeners(this.device, this.#boundBluetoothDeviceEventListeners);
     }
-    this.#characteristics.forEach((characteristic) => {
+
+    const promises = Array.from(this.#characteristics.keys()).map((characteristicName) => {
+      const characteristic = this.#characteristics.get(characteristicName);
       removeEventListeners(characteristic, this.#boundBluetoothCharacteristicEventListeners);
+      const characteristicProperties = characteristic.properties || getCharacteristicProperties(characteristicName);
+      if (characteristicProperties.notify) {
+        _console$d.log(`stopping notifications for "${characteristicName}" characteristic`);
+        return characteristic.stopNotifications();
+      }
     });
+
+    return Promise.allSettled(promises);
   }
   async disconnect() {
+    await this.#removeEventListeners();
     await super.disconnect();
     this.server?.disconnect();
-    this.#removeEventListeners();
     this.status = "not connected";
   }
 
@@ -6189,23 +6198,26 @@ const _console$a = createConsole("Device", { log: true });
 
 
 
-
 /**
- * @typedef DeviceEvent
+ * @typedef BaseDeviceEvent
  * @type {Object}
  * @property {Device} target
  * @property {DeviceEventType} type
  * @property {Object} message
  */
+// FILL
+/** @typedef {BaseDeviceEvent} DeviceEvent */
 /** @typedef {(event: DeviceEvent) => void} DeviceEventListener */
 
 /** @typedef {"deviceConnected" | "deviceDisconnected" | "deviceIsConnected" | "availableDevices" | "connectedDevices"} StaticDeviceEventType */
 /**
- * @typedef StaticDeviceEvent
+ * @typedef BaseStaticDeviceEvent
  * @type {Object}
  * @property {StaticDeviceEventType} type
  * @property {Object} message
  */
+// FILL
+/** @typedef {BaseStaticDeviceEvent} StaticDeviceEvent */
 /** @typedef {(event: StaticDeviceEvent) => void} StaticDeviceEventListener */
 
 class Device {
@@ -8164,15 +8176,17 @@ const _console$4 = createConsole("BaseServer", { log: true });
 
 
 
-
 /** @typedef {"clientConnected" | "clientDisconnected"} ServerEventType */
 /**
- * @typedef ServerEvent
+ * @typedef BaseServerEvent
  * @type {Object}
  * @property {BaseServer} target
  * @property {ServerEventType} type
  * @property {Object} message
  */
+// FILL
+/** @typedef {BaseServerEvent} ServerEvent */
+/** @typedef {(event: ServerEvent) => void} ServerEventListener */
 
 class BaseServer {
   /**
@@ -8197,7 +8211,7 @@ class BaseServer {
 
   /**
    * @param {ServerEventType} type
-   * @param {EventDispatcherListener} listener
+   * @param {ServerEventListener} listener
    * @param {EventDispatcherOptions} [options]
    */
   addEventListener(type, listener, options) {
@@ -8214,7 +8228,7 @@ class BaseServer {
 
   /**
    * @param {ServerEventType} type
-   * @param {EventDispatcherListener} listener
+   * @param {ServerEventListener} listener
    */
   removeEventListener(type, listener) {
     return this.#eventDispatcher.removeEventListener(type, listener);
@@ -8895,14 +8909,15 @@ const _console = createConsole("DevicePair", { log: true });
 
 
 
-
 /**
- * @typedef DevicePairEvent
+ * @typedef BaseDevicePairEvent
  * @type {Object}
  * @property {DevicePair} target
  * @property {DevicePairEventType} type
  * @property {Object} message
  */
+/** @typedef {BaseDevicePairEvent} DevicePairEvent */
+/** @typedef {(event: DevicePairEvent) => void} DevicePairEventListener */
 
 class DevicePair {
   constructor() {
@@ -8927,7 +8942,7 @@ class DevicePair {
 
   /**
    * @param {DevicePairEventType} type
-   * @param {EventDispatcherListener} listener
+   * @param {DevicePairEventListener} listener
    * @param {EventDispatcherOptions} [options]
    */
   addEventListener(type, listener, options) {
@@ -8943,7 +8958,7 @@ class DevicePair {
 
   /**
    * @param {DevicePairEventType} type
-   * @param {EventDispatcherListener} listener
+   * @param {DevicePairEventListener} listener
    */
   removeEventListener(type, listener) {
     return this.#eventDispatcher.removeEventListener(type, listener);
