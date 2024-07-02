@@ -1493,7 +1493,7 @@ async function convertModelToTflite() {
                     isConvertingModel = false;
                     Object.assign(tfLiteFiles, { tfLite_model_cpp, model_tflite });
                     window.dispatchEvent(new CustomEvent("convertModelToTflite", { detail: { tfLiteFiles, files } }));
-                    window.dispatchEvent(new CustomEvent("tfliteModel", { detail: { tfliteModel: model_tflite } }));
+                    window.dispatchEvent(new CustomEvent("tflite", { detail: { tfliteModel: model_tflite } }));
                 });
         })
         .catch((error) => {
@@ -1522,7 +1522,7 @@ loadTfliteInput.addEventListener("input", () => {
     if (tfliteModel) {
         console.log({ tfliteModel });
         tfLiteFiles.model_tflite = tfliteModel;
-        window.dispatchEvent(new CustomEvent("tfliteModel", { detail: { tfliteModel } }));
+        window.dispatchEvent(new CustomEvent("tflite", { detail: { tfliteModel } }));
     }
 });
 
@@ -1540,7 +1540,7 @@ transferTfliteButton.addEventListener("click", async () => {
     }
 });
 
-["createNeuralNetwork", "tfliteModel"].forEach((eventType) => {
+["createNeuralNetwork", "tflite"].forEach((eventType) => {
     window.addEventListener(eventType, () => {
         updateTransferTfliteButton();
     });
@@ -1614,11 +1614,11 @@ window.addEventListener(
         if (selectedDevices.length == 1) {
             const device = selectedDevices[0];
 
-            device.addEventListener("tfliteModelIsReady", () => {
+            device.addEventListener("tfliteIsReady", () => {
                 setTfliteIsReadyInput.checked = device.tfliteIsReady;
             });
 
-            device.addEventListener("tfliteModelIsReady", () => {
+            device.addEventListener("tfliteIsReady", () => {
                 toggleTfliteInferencingEnabledButton.disabled = !device.tfliteIsReady;
             });
             device.addEventListener("getTfliteInferencingEnabled", () => {
@@ -1628,8 +1628,8 @@ window.addEventListener(
                 toggleTfliteInferencingEnabledButton.disabled = false;
             });
 
-            device.addEventListener("tfliteModelInference", (event) => {
-                tfliteInferencePre.textContent = JSON.stringify(event.message.tfliteModelInference, null, 2);
+            device.addEventListener("tfliteInference", (event) => {
+                tfliteInferencePre.textContent = JSON.stringify(event.message.tfliteInference, null, 2);
             });
         }
     },

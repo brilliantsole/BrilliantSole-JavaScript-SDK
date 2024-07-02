@@ -708,7 +708,19 @@
     _console$k.log("parseFileMaxLength", dataView);
     const maxLength = dataView.getUint32(0, true);
     _console$k.log(`maxLength: ${maxLength / 1024}kB`);
+    _assertClassBrand(_FileTransferManager_brand, this, _updateMaxLength).call(this, maxLength);
+  }
+  function _updateMaxLength(maxLength) {
+    _console$k.log({
+      maxLength
+    });
     _classPrivateFieldSet2(_maxLength, this, maxLength);
+    _assertClassBrand(_FileTransferManager_brand, this, _dispatchEvent$8).call(this, {
+      type: "maxFileLength",
+      message: {
+        maxFileLength: maxLength
+      }
+    });
   }
   function _assertValidLength(length) {
     _console$k.assertWithError(length <= this.maxLength, `file length ${length}kB too large - must be ${this.maxLength}kB or less`);
@@ -883,6 +895,12 @@
       return;
     }
     _console$k.log("received file", file);
+    _assertClassBrand(_FileTransferManager_brand, this, _dispatchEvent$8).call(this, {
+      type: "getFileTransferBlock",
+      message: {
+        fileTransferBlock: dataView
+      }
+    });
     _assertClassBrand(_FileTransferManager_brand, this, _dispatchEvent$8).call(this, {
       type: "fileTransferComplete",
       message: {
@@ -1968,7 +1986,7 @@
         case "setTfliteSensorTypes":
           _assertClassBrand(_TfliteManager_brand, this, _parseSensorTypes).call(this, dataView);
           break;
-        case "tfliteModelIsReady":
+        case "tfliteIsReady":
           _assertClassBrand(_TfliteManager_brand, this, _parseIsReady).call(this, dataView);
           break;
         case "getTfliteCaptureDelay":
@@ -1983,7 +2001,7 @@
         case "setTfliteInferencingEnabled":
           _assertClassBrand(_TfliteManager_brand, this, _parseInferencingEnabled).call(this, dataView);
           break;
-        case "tfliteModelInference":
+        case "tfliteInference":
           _assertClassBrand(_TfliteManager_brand, this, _parseInference).call(this, dataView);
           break;
         default:
@@ -2014,7 +2032,7 @@
     _assertClassBrand(_TfliteManager_brand, this, _dispatchEvent$5).call(this, {
       type: "getTfliteName",
       message: {
-        tfliteModelName: name
+        tfliteName: name
       }
     });
   }
@@ -2033,7 +2051,7 @@
     _assertClassBrand(_TfliteManager_brand, this, _dispatchEvent$5).call(this, {
       type: "getTfliteTask",
       message: {
-        tfliteModelTask: task
+        tfliteTask: task
       }
     });
   }
@@ -2050,7 +2068,7 @@
     _assertClassBrand(_TfliteManager_brand, this, _dispatchEvent$5).call(this, {
       type: "getTfliteSampleRate",
       message: {
-        tfliteModelSampleRate: sampleRate
+        tfliteSampleRate: sampleRate
       }
     });
   }
@@ -2076,7 +2094,7 @@
     _assertClassBrand(_TfliteManager_brand, this, _dispatchEvent$5).call(this, {
       type: "getTfliteSensorTypes",
       message: {
-        tfliteModelSensorTypes: sensorTypes
+        tfliteSensorTypes: sensorTypes
       }
     });
   }
@@ -2091,9 +2109,9 @@
     });
     _classPrivateFieldSet2(_isReady, this, isReady);
     _assertClassBrand(_TfliteManager_brand, this, _dispatchEvent$5).call(this, {
-      type: "tfliteModelIsReady",
+      type: "tfliteIsReady",
       message: {
-        tfliteModelIsReady: isReady
+        tfliteIsReady: isReady
       }
     });
   }
@@ -2168,14 +2186,14 @@
       values
     };
     _assertClassBrand(_TfliteManager_brand, this, _dispatchEvent$5).call(this, {
-      type: "tfliteModelInference",
+      type: "tfliteInference",
       message: {
-        tfliteModelInference: inference
+        tfliteInference: inference
       }
     });
   }
   var _MessageTypes$5 = {
-    _: ["getTfliteName", "setTfliteName", "getTfliteTask", "setTfliteTask", "getTfliteSampleRate", "setTfliteSampleRate", "getTfliteSensorTypes", "setTfliteSensorTypes", "tfliteModelIsReady", "getTfliteCaptureDelay", "setTfliteCaptureDelay", "getTfliteThreshold", "setTfliteThreshold", "getTfliteInferencingEnabled", "setTfliteInferencingEnabled", "tfliteModelInference"]
+    _: ["getTfliteName", "setTfliteName", "getTfliteTask", "setTfliteTask", "getTfliteSampleRate", "setTfliteSampleRate", "getTfliteSensorTypes", "setTfliteSensorTypes", "tfliteIsReady", "getTfliteCaptureDelay", "setTfliteCaptureDelay", "getTfliteThreshold", "setTfliteThreshold", "getTfliteInferencingEnabled", "setTfliteInferencingEnabled", "tfliteInference"]
   };
   var _Tasks = {
     _: ["classification", "regression"]
@@ -4812,8 +4830,6 @@
   });
 
   // FILL
-
-  // FILL
   var _eventDispatcher$1 = /*#__PURE__*/new WeakMap();
   var _Device_brand = /*#__PURE__*/new WeakSet();
   var _connectionManager = /*#__PURE__*/new WeakMap();
@@ -5696,7 +5712,7 @@
     _: ["batteryLevel", "connectionStatus", ...BaseConnectionManager.Statuses, "isConnected", "connectionMessage", ...DeviceInformationManager.EventTypes, ...InformationManager.EventTypes, ...SensorConfigurationManager.EventTypes, ...SensorDataManager.EventTypes, ...FileTransferManager.EventTypes, ...TfliteManager$1.EventTypes, ...FirmwareManager.EventTypes]
   };
   var _RequiredInformationConnectionMessages = {
-    _: ["isCharging", "getBatteryCurrent", "getId", "getMtu", "getName", "getType", "getCurrentTime", "getSensorConfiguration", "getSensorScalars", "getPressurePositions", "maxFileLength", "getFileLength", "getFileChecksum", "getFileTransferType", "fileTransferStatus", "getTfliteName", "getTfliteTask", "getTfliteSampleRate", "getTfliteSensorTypes", "tfliteModelIsReady", "getTfliteCaptureDelay", "getTfliteThreshold", "getTfliteInferencingEnabled"]
+    _: ["isCharging", "getBatteryCurrent", "getId", "getMtu", "getName", "getType", "getCurrentTime", "getSensorConfiguration", "getSensorScalars", "getPressurePositions", "maxFileLength", "getFileLength", "getFileChecksum", "getFileTransferType", "fileTransferStatus", "getTfliteName", "getTfliteTask", "getTfliteSampleRate", "getTfliteSensorTypes", "tfliteIsReady", "getTfliteCaptureDelay", "getTfliteThreshold", "getTfliteInferencingEnabled"]
   };
   var _ReconnectOnDisconnection = {
     _: false

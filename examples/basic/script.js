@@ -718,7 +718,7 @@ setTfliteNameButton.addEventListener("click", () => {
 });
 
 /** @type {HTMLSpanElement} */
-const tfliteModelTaskSpan = document.getElementById("tfliteTask");
+const tfliteTaskSpan = document.getElementById("tfliteTask");
 /** @type {HTMLSelectElement} */
 const setTfliteTaskSelect = document.getElementById("setTfliteTaskSelect");
 /** @type {HTMLOptGroupElement} */
@@ -739,7 +739,7 @@ BS.Device.TfliteTasks.forEach((task) => {
 device.addEventListener("getTfliteTask", () => {
   const task = device.tfliteTask;
   setTfliteTaskSelect.value = task;
-  tfliteModelTaskSpan.innerText = task;
+  tfliteTaskSpan.innerText = task;
 });
 
 setTfliteTaskButton.addEventListener("click", () => {
@@ -840,7 +840,7 @@ device.addEventListener("getTfliteInferencingEnabled", () => {
 
 /** @type {HTMLInputElement} */
 const setTfliteIsReadyInput = document.getElementById("tfliteIsReady");
-device.addEventListener("tfliteModelIsReady", () => {
+device.addEventListener("tfliteIsReady", () => {
   setTfliteIsReadyInput.checked = device.tfliteIsReady;
 });
 
@@ -913,7 +913,7 @@ const tfliteInferencingEnabledInput = document.getElementById("tfliteInferencing
 /** @type {HTMLButtonElement} */
 const toggleTfliteInferencingEnabledButton = document.getElementById("toggleTfliteInferencingEnabled");
 
-device.addEventListener("tfliteModelIsReady", () => {
+device.addEventListener("tfliteIsReady", () => {
   toggleTfliteInferencingEnabledButton.disabled = !device.tfliteIsReady;
 });
 device.addEventListener("getTfliteInferencingEnabled", () => {
@@ -929,9 +929,9 @@ toggleTfliteInferencingEnabledButton.addEventListener("click", () => {
 
 /** @type {HTMLPreElement} */
 const tfliteInferencePre = document.getElementById("tfliteInference");
-device.addEventListener("tfliteModelInference", (event) => {
-  console.log("inference", event.message.tfliteModelInference);
-  tfliteInferencePre.textContent = JSON.stringify(event.message.tfliteModelInference, null, 2);
+device.addEventListener("tfliteInference", (event) => {
+  console.log("inference", event.message.tfliteInference);
+  tfliteInferencePre.textContent = JSON.stringify(event.message.tfliteInference, null, 2);
 });
 
 // FIRMWARE

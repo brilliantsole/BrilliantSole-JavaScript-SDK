@@ -5,8 +5,7 @@ import { textDecoder } from "./utils/Text.js";
 const _console = createConsole("DeviceInformationManager", { log: true });
 
 /**
- * @typedef DeviceInformation
- * @type {Object}
+ * @typedef {Object} DeviceInformation
  * @property {string} manufacturerName
  * @property {string} modelNumber
  * @property {string} softwareRevision
@@ -17,8 +16,7 @@ const _console = createConsole("DeviceInformationManager", { log: true });
  */
 
 /**
- * @typedef PnpId
- * @type {Object}
+ * @typedef {Object} PnpId
  * @property {"Bluetooth"|"USB"} source
  * @property {number} vendorId
  * @property {number} productId
@@ -38,17 +36,16 @@ const _console = createConsole("DeviceInformationManager", { log: true });
 
 /** @typedef {DeviceInformationMessageType | "deviceInformation"} DeviceInformationManagerEventType */
 
-/** @typedef {import("./utils/EventDispatcher.js").EventDispatcherListener} EventDispatcherListener */
 /** @typedef {import("./utils/EventDispatcher.js").EventDispatcherOptions} EventDispatcherOptions */
 
-/** @typedef {import("./Device.js").Device} Device */
+/** @typedef {import("./Device.js").BaseDeviceEvent} BaseDeviceEvent */
+
 /**
- * @typedef DeviceInformationManagerEvent
- * @type {Object}
- * @property {Device} target
+ * @typedef {Object} BaseDeviceInformationManagerEvent
  * @property {DeviceInformationManagerEventType} type
- * @property {Object} message
+ * @property {{deviceInformation: DeviceInformation}} message
  */
+/** @typedef {BaseDeviceEvent & BaseDeviceInformationManagerEvent} DeviceInformationManagerEvent */
 
 class DeviceInformationManager {
   // MESSAGE TYPES

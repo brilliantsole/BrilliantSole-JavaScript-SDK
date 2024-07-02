@@ -17,14 +17,14 @@ const _console = createConsole("TfliteManager", { log: true });
  * "setTfliteSampleRate" |
  * "getTfliteSensorTypes" |
  * "setTfliteSensorTypes" |
- * "tfliteModelIsReady" |
+ * "tfliteIsReady" |
  * "getTfliteCaptureDelay" |
  * "setTfliteCaptureDelay" |
  * "getTfliteThreshold" |
  * "setTfliteThreshold" |
  * "getTfliteInferencingEnabled" |
  * "setTfliteInferencingEnabled" |
- * "tfliteModelInference"
+ * "tfliteInference"
  * } TfliteMessageType
  */
 
@@ -32,19 +32,86 @@ const _console = createConsole("TfliteManager", { log: true });
 
 /** @typedef {import("./sensor/SensorDataManager.js").SensorType} SensorType */
 
-/** @typedef {import("./utils/EventDispatcher.js").EventDispatcherListener} EventDispatcherListener */
 /** @typedef {import("./utils/EventDispatcher.js").EventDispatcherOptions} EventDispatcherOptions */
 
 /** @typedef {TfliteMessageType} TfliteManagerEventType */
 
-/** @typedef {import("./Device.js").Device} Device */
+/** @typedef {import("./Device.js").BaseDeviceEvent} BaseDeviceEvent */
 
 /**
- * @typedef TfliteManagerEvent
- * @type {Object}
- * @property {Device} target
- * @property {TfliteManagerEventType} type
- * @property {Object} message
+ * @typedef {Object} BaseTfliteNameEvent
+ * @property {"getTfliteName"} type
+ * @property {{tfliteName: string}} message
+ */
+/** @typedef {BaseDeviceEvent & BaseTfliteNameEvent} TfliteNameEvent */
+
+/**
+ * @typedef {Object} BaseTfliteTaskEvent
+ * @property {"getTfliteTask"} type
+ * @property {{tfliteTask: TfliteTask}} message
+ */
+/** @typedef {BaseDeviceEvent & BaseTfliteNameEvent} TfliteTaskEvent */
+
+/**
+ * @typedef {Object} BaseTfliteSampleRateEvent
+ * @property {"getTfliteSampleRate"} type
+ * @property {{tfliteSampleRate: number}} message
+ */
+/** @typedef {BaseDeviceEvent & BaseTfliteSampleRateEvent} TfliteSampleRateEvent */
+
+/**
+ * @typedef {Object} BaseTfliteSensorTypesEvent
+ * @property {"getTfliteSensorTypes"} type
+ * @property {{tfliteSensorTypes: SensorType[]}} message
+ */
+/** @typedef {BaseDeviceEvent & BaseTfliteSensorTypesEvent} TfliteSensorTypesEvent */
+
+/**
+ * @typedef {Object} BaseTfliteIsReadyEvent
+ * @property {"tfliteIsReady"} type
+ * @property {{tfliteIsReady: boolean}} message
+ */
+/** @typedef {BaseDeviceEvent & BaseTfliteIsReadyEvent} TfliteIsReadyEvent */
+
+/**
+ * @typedef {Object} BaseTfliteCaptureDelayEvent
+ * @property {"getTfliteCaptureDelay"} type
+ * @property {{tfliteCaptureDelay: number}} message
+ */
+/** @typedef {BaseDeviceEvent & BaseTfliteCaptureDelayEvent} TfliteCaptureDelayEvent */
+
+/**
+ * @typedef {Object} BaseTfliteThresholdEvent
+ * @property {"getTfliteThreshold"} type
+ * @property {{tfliteThreshold: number}} message
+ */
+/** @typedef {BaseDeviceEvent & BaseTfliteThresholdEvent} TfliteThresholdEvent */
+
+/**
+ * @typedef {Object} BaseTfliteInferencingEnabledEvent
+ * @property {"getTfliteInferencingEnabled"} type
+ * @property {{tfliteInferencingEnabled: boolean}} message
+ */
+/** @typedef {BaseDeviceEvent & BaseTfliteInferencingEnabledEvent} TfliteInferencingEnabledEvent */
+
+/**
+ * @typedef {Object} BaseTfliteInferenceEvent
+ * @property {"tfliteInference"} type
+ * @property {{tfliteInference: TfliteInference}} message
+ */
+/** @typedef {BaseDeviceEvent & BaseTfliteInferenceEvent} TfliteInferenceEvent */
+
+/**
+ * @typedef {TfliteNameEvent |
+ * TfliteTaskEvent |
+ * TfliteSampleRateEvent |
+ * TfliteSensorTypesEvent |
+ * TfliteIsReadyEvent |
+ * TfliteCaptureDelayEvent |
+ * TfliteThresholdEvent |
+ * TfliteInferencingEnabledEvent |
+ * BaseTfliteInferenceEvent
+ * } TfliteManagerEvent
  */
 
 /** @typedef {(event: TfliteManagerEvent) => void} TfliteManagerEventListener */
@@ -60,14 +127,14 @@ class TfliteManager {
     "setTfliteSampleRate",
     "getTfliteSensorTypes",
     "setTfliteSensorTypes",
-    "tfliteModelIsReady",
+    "tfliteIsReady",
     "getTfliteCaptureDelay",
     "setTfliteCaptureDelay",
     "getTfliteThreshold",
     "setTfliteThreshold",
     "getTfliteInferencingEnabled",
     "setTfliteInferencingEnabled",
-    "tfliteModelInference",
+    "tfliteInference",
   ];
   static get MessageTypes() {
     return this.#MessageTypes;
@@ -152,7 +219,7 @@ class TfliteManager {
   #updateName(name) {
     _console.log({ name });
     this.#name = name;
-    this.#dispatchEvent({ type: "getTfliteName", message: { tfliteModelName: name } });
+    this.#dispatchEvent({ type: "getTfliteName", message: { tfliteName: name } });
   }
   /**
    * @param {string} newName
@@ -190,7 +257,7 @@ class TfliteManager {
   #updateTask(task) {
     _console.log({ task });
     this.#task = task;
-    this.#dispatchEvent({ type: "getTfliteTask", message: { tfliteModelTask: task } });
+    this.#dispatchEvent({ type: "getTfliteTask", message: { tfliteTask: task } });
   }
   /**
    * @param {TfliteTask} newTask
@@ -225,7 +292,7 @@ class TfliteManager {
   #updateSampleRate(sampleRate) {
     _console.log({ sampleRate });
     this.#sampleRate = sampleRate;
-    this.#dispatchEvent({ type: "getTfliteSampleRate", message: { tfliteModelSampleRate: sampleRate } });
+    this.#dispatchEvent({ type: "getTfliteSampleRate", message: { tfliteSampleRate: sampleRate } });
   }
   /**
    * @param {number} newSampleRate
@@ -288,7 +355,7 @@ class TfliteManager {
   #updateSensorTypes(sensorTypes) {
     _console.log({ sensorTypes });
     this.#sensorTypes = sensorTypes;
-    this.#dispatchEvent({ type: "getTfliteSensorTypes", message: { tfliteModelSensorTypes: sensorTypes } });
+    this.#dispatchEvent({ type: "getTfliteSensorTypes", message: { tfliteSensorTypes: sensorTypes } });
   }
   /**
    * @param {SensorType[]} newSensorTypes
@@ -328,8 +395,8 @@ class TfliteManager {
     _console.log({ isReady });
     this.#isReady = isReady;
     this.#dispatchEvent({
-      type: "tfliteModelIsReady",
-      message: { tfliteModelIsReady: isReady },
+      type: "tfliteIsReady",
+      message: { tfliteIsReady: isReady },
     });
   }
   #assertIsReady() {
@@ -483,7 +550,7 @@ class TfliteManager {
   }
 
   /**
-   * @typedef TfliteModelInference
+   * @typedef TfliteInference
    * @type {object}
    * @property {number} timestamp
    * @property {number[]} values
@@ -504,13 +571,13 @@ class TfliteManager {
     }
     _console.log("values", values);
 
-    /** @type {TfliteModelInference} */
+    /** @type {TfliteInference} */
     const inference = {
       timestamp,
       values,
     };
 
-    this.#dispatchEvent({ type: "tfliteModelInference", message: { tfliteModelInference: inference } });
+    this.#dispatchEvent({ type: "tfliteInference", message: { tfliteInference: inference } });
   }
 
   /**
@@ -537,7 +604,7 @@ class TfliteManager {
       case "setTfliteSensorTypes":
         this.#parseSensorTypes(dataView);
         break;
-      case "tfliteModelIsReady":
+      case "tfliteIsReady":
         this.#parseIsReady(dataView);
         break;
       case "getTfliteCaptureDelay":
@@ -552,7 +619,7 @@ class TfliteManager {
       case "setTfliteInferencingEnabled":
         this.#parseInferencingEnabled(dataView);
         break;
-      case "tfliteModelInference":
+      case "tfliteInference":
         this.#parseInference(dataView);
         break;
       default:

@@ -704,17 +704,60 @@
 
 
 
-
 	/** @typedef {FileTransferMessageType | "fileTransferProgress" | "fileTransferComplete" | "fileReceived"} FileTransferManagerEventType */
 
 
 
 	/**
-	 * @typedef FileTransferManagerEvent
-	 * @type {Object}
-	 * @property {Device} target
-	 * @property {FileTransferManagerEventType} type
-	 * @property {Object} message
+	 * @typedef {Object} BaseFileTransferMaxLengthEvent
+	 * @property {"maxFileLength"} type
+	 * @property {{maxFileLength: number}} message
+	 */
+	/** @typedef {BaseDeviceEvent & BaseFileTransferMaxLengthEvent} FileTransferMaxLengthEvent */
+
+	/**
+	 * @typedef {Object} BaseFileTransferTypeEvent
+	 * @property {"getFileTransferType"} type
+	 * @property {{fileType: FileType}} message
+	 */
+	/** @typedef {BaseDeviceEvent & BaseFileTransferTypeEvent} FileTransferTypeEvent */
+
+	/**
+	 * @typedef {Object} BaseFileTransferLengthEvent
+	 * @property {"getFileLength"} type
+	 * @property {{fileLength: number}} message
+	 */
+	/** @typedef {BaseDeviceEvent & BaseFileTransferLengthEvent} FileTransferLengthEvent */
+
+	/**
+	 * @typedef {Object} BaseFileChecksumEvent
+	 * @property {"getFileChecksum"} type
+	 * @property {{fileChecksum: number}} message
+	 */
+	/** @typedef {BaseDeviceEvent & BaseFileChecksumEvent} FileChecksumEvent */
+
+	/**
+	 * @typedef {Object} BaseFileTransferStatusEvent
+	 * @property {"fileTransferStatus"} type
+	 * @property {{fileTransferStatus: FileTransferStatus}} message
+	 */
+	/** @typedef {BaseDeviceEvent & BaseFileTransferStatusEvent} FileTransferStatusEvent */
+
+	/**
+	 * @typedef {Object} BaseFileTransferBlockEvent
+	 * @property {"getFileTransferBlock"} type
+	 * @property {{fileTransferBlock: DataView}} message
+	 */
+	/** @typedef {BaseDeviceEvent & BaseFileTransferBlockEvent} FileTransferBlockEvent */
+
+	/**
+	 * @typedef {FileTransferMaxLengthEvent |
+	 * FileTransferTypeEvent |
+	 * FileTransferLengthEvent |
+	 * FileChecksumEvent |
+	 * FileTransferStatusEvent |
+	 * FileTransferBlockEvent
+	 * } FileTransferManagerEvent
 	 */
 
 	/** @typedef {(event: FileTransferManagerEvent) => void} FileTransferManagerEventListener */
@@ -844,7 +887,13 @@
 	    _console$n.log("parseFileMaxLength", dataView);
 	    const maxLength = dataView.getUint32(0, true);
 	    _console$n.log(`maxLength: ${maxLength / 1024}kB`);
+	    this.#updateMaxLength(maxLength);
+	  }
+	  /** @param {number} maxLength */
+	  #updateMaxLength(maxLength) {
+	    _console$n.log({ maxLength });
 	    this.#maxLength = maxLength;
+	    this.#dispatchEvent({ type: "maxFileLength", message: { maxFileLength: maxLength } });
 	  }
 	  /** @param {number} length */
 	  #assertValidLength(length) {
@@ -1060,6 +1109,7 @@
 
 	    _console$n.log("received file", file);
 
+	    this.#dispatchEvent({ type: "getFileTransferBlock", message: { fileTransferBlock: dataView } });
 	    this.#dispatchEvent({ type: "fileTransferComplete", message: { direction: "receiving" } });
 	    this.#dispatchEvent({ type: "fileReceived", message: { file } });
 	  }
@@ -2270,19 +2320,18 @@
 	 * "setTfliteSampleRate" |
 	 * "getTfliteSensorTypes" |
 	 * "setTfliteSensorTypes" |
-	 * "tfliteModelIsReady" |
+	 * "tfliteIsReady" |
 	 * "getTfliteCaptureDelay" |
 	 * "setTfliteCaptureDelay" |
 	 * "getTfliteThreshold" |
 	 * "setTfliteThreshold" |
 	 * "getTfliteInferencingEnabled" |
 	 * "setTfliteInferencingEnabled" |
-	 * "tfliteModelInference"
+	 * "tfliteInference"
 	 * } TfliteMessageType
 	 */
 
 	/** @typedef {"classification" | "regression"} TfliteTask */
-
 
 
 
@@ -2293,11 +2342,79 @@
 
 
 	/**
-	 * @typedef TfliteManagerEvent
-	 * @type {Object}
-	 * @property {Device} target
-	 * @property {TfliteManagerEventType} type
-	 * @property {Object} message
+	 * @typedef {Object} BaseTfliteNameEvent
+	 * @property {"getTfliteName"} type
+	 * @property {{tfliteName: string}} message
+	 */
+	/** @typedef {BaseDeviceEvent & BaseTfliteNameEvent} TfliteNameEvent */
+
+	/**
+	 * @typedef {Object} BaseTfliteTaskEvent
+	 * @property {"getTfliteTask"} type
+	 * @property {{tfliteTask: TfliteTask}} message
+	 */
+	/** @typedef {BaseDeviceEvent & BaseTfliteNameEvent} TfliteTaskEvent */
+
+	/**
+	 * @typedef {Object} BaseTfliteSampleRateEvent
+	 * @property {"getTfliteSampleRate"} type
+	 * @property {{tfliteSampleRate: number}} message
+	 */
+	/** @typedef {BaseDeviceEvent & BaseTfliteSampleRateEvent} TfliteSampleRateEvent */
+
+	/**
+	 * @typedef {Object} BaseTfliteSensorTypesEvent
+	 * @property {"getTfliteSensorTypes"} type
+	 * @property {{tfliteSensorTypes: SensorType[]}} message
+	 */
+	/** @typedef {BaseDeviceEvent & BaseTfliteSensorTypesEvent} TfliteSensorTypesEvent */
+
+	/**
+	 * @typedef {Object} BaseTfliteIsReadyEvent
+	 * @property {"tfliteIsReady"} type
+	 * @property {{tfliteIsReady: boolean}} message
+	 */
+	/** @typedef {BaseDeviceEvent & BaseTfliteIsReadyEvent} TfliteIsReadyEvent */
+
+	/**
+	 * @typedef {Object} BaseTfliteCaptureDelayEvent
+	 * @property {"getTfliteCaptureDelay"} type
+	 * @property {{tfliteCaptureDelay: number}} message
+	 */
+	/** @typedef {BaseDeviceEvent & BaseTfliteCaptureDelayEvent} TfliteCaptureDelayEvent */
+
+	/**
+	 * @typedef {Object} BaseTfliteThresholdEvent
+	 * @property {"getTfliteThreshold"} type
+	 * @property {{tfliteThreshold: number}} message
+	 */
+	/** @typedef {BaseDeviceEvent & BaseTfliteThresholdEvent} TfliteThresholdEvent */
+
+	/**
+	 * @typedef {Object} BaseTfliteInferencingEnabledEvent
+	 * @property {"getTfliteInferencingEnabled"} type
+	 * @property {{tfliteInferencingEnabled: boolean}} message
+	 */
+	/** @typedef {BaseDeviceEvent & BaseTfliteInferencingEnabledEvent} TfliteInferencingEnabledEvent */
+
+	/**
+	 * @typedef {Object} BaseTfliteInferenceEvent
+	 * @property {"tfliteInference"} type
+	 * @property {{tfliteInference: TfliteInference}} message
+	 */
+	/** @typedef {BaseDeviceEvent & BaseTfliteInferenceEvent} TfliteInferenceEvent */
+
+	/**
+	 * @typedef {TfliteNameEvent |
+	 * TfliteTaskEvent |
+	 * TfliteSampleRateEvent |
+	 * TfliteSensorTypesEvent |
+	 * TfliteIsReadyEvent |
+	 * TfliteCaptureDelayEvent |
+	 * TfliteThresholdEvent |
+	 * TfliteInferencingEnabledEvent |
+	 * BaseTfliteInferenceEvent
+	 * } TfliteManagerEvent
 	 */
 
 	/** @typedef {(event: TfliteManagerEvent) => void} TfliteManagerEventListener */
@@ -2313,14 +2430,14 @@
 	    "setTfliteSampleRate",
 	    "getTfliteSensorTypes",
 	    "setTfliteSensorTypes",
-	    "tfliteModelIsReady",
+	    "tfliteIsReady",
 	    "getTfliteCaptureDelay",
 	    "setTfliteCaptureDelay",
 	    "getTfliteThreshold",
 	    "setTfliteThreshold",
 	    "getTfliteInferencingEnabled",
 	    "setTfliteInferencingEnabled",
-	    "tfliteModelInference",
+	    "tfliteInference",
 	  ];
 	  static get MessageTypes() {
 	    return this.#MessageTypes;
@@ -2405,7 +2522,7 @@
 	  #updateName(name) {
 	    _console$g.log({ name });
 	    this.#name = name;
-	    this.#dispatchEvent({ type: "getTfliteName", message: { tfliteModelName: name } });
+	    this.#dispatchEvent({ type: "getTfliteName", message: { tfliteName: name } });
 	  }
 	  /**
 	   * @param {string} newName
@@ -2443,7 +2560,7 @@
 	  #updateTask(task) {
 	    _console$g.log({ task });
 	    this.#task = task;
-	    this.#dispatchEvent({ type: "getTfliteTask", message: { tfliteModelTask: task } });
+	    this.#dispatchEvent({ type: "getTfliteTask", message: { tfliteTask: task } });
 	  }
 	  /**
 	   * @param {TfliteTask} newTask
@@ -2478,7 +2595,7 @@
 	  #updateSampleRate(sampleRate) {
 	    _console$g.log({ sampleRate });
 	    this.#sampleRate = sampleRate;
-	    this.#dispatchEvent({ type: "getTfliteSampleRate", message: { tfliteModelSampleRate: sampleRate } });
+	    this.#dispatchEvent({ type: "getTfliteSampleRate", message: { tfliteSampleRate: sampleRate } });
 	  }
 	  /**
 	   * @param {number} newSampleRate
@@ -2541,7 +2658,7 @@
 	  #updateSensorTypes(sensorTypes) {
 	    _console$g.log({ sensorTypes });
 	    this.#sensorTypes = sensorTypes;
-	    this.#dispatchEvent({ type: "getTfliteSensorTypes", message: { tfliteModelSensorTypes: sensorTypes } });
+	    this.#dispatchEvent({ type: "getTfliteSensorTypes", message: { tfliteSensorTypes: sensorTypes } });
 	  }
 	  /**
 	   * @param {SensorType[]} newSensorTypes
@@ -2581,8 +2698,8 @@
 	    _console$g.log({ isReady });
 	    this.#isReady = isReady;
 	    this.#dispatchEvent({
-	      type: "tfliteModelIsReady",
-	      message: { tfliteModelIsReady: isReady },
+	      type: "tfliteIsReady",
+	      message: { tfliteIsReady: isReady },
 	    });
 	  }
 	  #assertIsReady() {
@@ -2736,7 +2853,7 @@
 	  }
 
 	  /**
-	   * @typedef TfliteModelInference
+	   * @typedef TfliteInference
 	   * @type {object}
 	   * @property {number} timestamp
 	   * @property {number[]} values
@@ -2757,13 +2874,13 @@
 	    }
 	    _console$g.log("values", values);
 
-	    /** @type {TfliteModelInference} */
+	    /** @type {TfliteInference} */
 	    const inference = {
 	      timestamp,
 	      values,
 	    };
 
-	    this.#dispatchEvent({ type: "tfliteModelInference", message: { tfliteModelInference: inference } });
+	    this.#dispatchEvent({ type: "tfliteInference", message: { tfliteInference: inference } });
 	  }
 
 	  /**
@@ -2790,7 +2907,7 @@
 	      case "setTfliteSensorTypes":
 	        this.#parseSensorTypes(dataView);
 	        break;
-	      case "tfliteModelIsReady":
+	      case "tfliteIsReady":
 	        this.#parseIsReady(dataView);
 	        break;
 	      case "getTfliteCaptureDelay":
@@ -2805,7 +2922,7 @@
 	      case "setTfliteInferencingEnabled":
 	        this.#parseInferencingEnabled(dataView);
 	        break;
-	      case "tfliteModelInference":
+	      case "tfliteInference":
 	        this.#parseInference(dataView);
 	        break;
 	      default:
@@ -2826,8 +2943,7 @@
 	const _console$f = createConsole("DeviceInformationManager", { log: true });
 
 	/**
-	 * @typedef DeviceInformation
-	 * @type {Object}
+	 * @typedef {Object} DeviceInformation
 	 * @property {string} manufacturerName
 	 * @property {string} modelNumber
 	 * @property {string} softwareRevision
@@ -2838,8 +2954,7 @@
 	 */
 
 	/**
-	 * @typedef PnpId
-	 * @type {Object}
+	 * @typedef {Object} PnpId
 	 * @property {"Bluetooth"|"USB"} source
 	 * @property {number} vendorId
 	 * @property {number} productId
@@ -2864,12 +2979,11 @@
 
 
 	/**
-	 * @typedef DeviceInformationManagerEvent
-	 * @type {Object}
-	 * @property {Device} target
+	 * @typedef {Object} BaseDeviceInformationManagerEvent
 	 * @property {DeviceInformationManagerEventType} type
-	 * @property {Object} message
+	 * @property {{deviceInformation: DeviceInformation}} message
 	 */
+	/** @typedef {BaseDeviceEvent & BaseDeviceInformationManagerEvent} DeviceInformationManagerEvent */
 
 	class DeviceInformationManager {
 	  // MESSAGE TYPES
@@ -3033,12 +3147,55 @@
 
 
 	/**
-	 * @typedef InformationManagerEvent
-	 * @type {Object}
-	 * @property {Device} target
-	 * @property {InformationManagerEventType} type
-	 * @property {Object} message
+	 * @typedef {Object} BaseBatteryCurrentEvent
+	 * @property {"getBatteryCurrent"} type
+	 * @property {{batteryCurrent: number}} message
 	 */
+	/** @typedef {BaseDeviceEvent & BaseBatteryCurrentEvent} BatteryCurrentEvent */
+
+	/**
+	 * @typedef {Object} BaseIsChargingEvent
+	 * @property {"isCharging"} type
+	 * @property {{isCharging: boolean}} message
+	 */
+	/** @typedef {BaseDeviceEvent & BaseIsChargingEvent} IsChargingEvent */
+
+	/**
+	 * @typedef {Object} BaseNameEvent
+	 * @property {"getName"} type
+	 * @property {{name: string}} message
+	 */
+	/** @typedef {BaseDeviceEvent & BaseNameEvent} NameEvent */
+
+	/**
+	 * @typedef {Object} BaseTypeEvent
+	 * @property {"getType"} type
+	 * @property {{type: DeviceType}} message
+	 */
+	/** @typedef {BaseDeviceEvent & BaseTypeEvent} TypeEvent */
+
+	/**
+	 * @typedef {Object} BaseIdEvent
+	 * @property {"getId"} type
+	 * @property {{id: string}} message
+	 */
+	/** @typedef {BaseDeviceEvent & BaseIdEvent} IdEvent */
+
+	/**
+	 * @typedef {Object} BaseMtuEvent
+	 * @property {"getMtu"} type
+	 * @property {{mtu: number}} message
+	 */
+	/** @typedef {BaseDeviceEvent & BaseMtuEvent} MtuEvent */
+
+	/**
+	 * @typedef {Object} BaseCurrentTimeEvent
+	 * @property {"getCurrentTime"} type
+	 * @property {{currentTime: number}} message
+	 */
+	/** @typedef {BaseDeviceEvent & BaseCurrentTimeEvent} CurrentTimeEvent */
+
+	/** @typedef {IdEvent | CurrentTimeEvent | BatteryCurrentEvent | IsChargingEvent | NameEvent | TypeEvent} InformationManagerEvent */
 
 	class InformationManager {
 	  // MESSAGE TYPES
@@ -5778,19 +5935,53 @@
 
 
 
-
 	/** @typedef {FirmwareMessageType | "firmwareImages" | "firmwareUploadProgress" | "firmwareStatus" | "firmwareUploadComplete"} FirmwareManagerEventType */
 
 	/** @typedef {"idle" | "uploading" | "uploaded" | "pending" | "testing" | "erasing"} FirmwareStatus */
 
-	/**
-	 * @typedef FirmwareManagerEvent
-	 * @type {Object}
-	 * @property {FirmwareManager} target
-	 * @property {FirmwareManagerEventType} type
-	 * @property {Object} message
-	 */
 
+
+	/**
+	 * @typedef {Object} BaseSmpEvent
+	 * @property {"smp"} type
+	 */
+	/** @typedef {BaseDeviceEvent & BaseSmpEvent} SmpEvent */
+
+	/**
+	 * @typedef {Object} BaseFirmwareImagesEvent
+	 * @property {"firmwareImages"} type
+	 * @property {{firmwareImages: FirmwareImage[]}} message
+	 */
+	/** @typedef {BaseDeviceEvent & BaseFirmwareImagesEvent} FirmwareImagesEvent */
+
+	/**
+	 * @typedef {Object} BaseFirmwareUploadProgressEvent
+	 * @property {"firmwareUploadProgress"} type
+	 * @property {{firmwareUploadProgress: number}} message
+	 */
+	/** @typedef {BaseDeviceEvent & BaseFirmwareUploadProgressEvent} FirmwareUploadProgressEvent */
+
+	/**
+	 * @typedef {Object} BaseFirmwareUploadCompleteEvent
+	 * @property {"firmwareUploadComplete"} type
+	 */
+	/** @typedef {BaseDeviceEvent & BaseFirmwareUploadCompleteEvent} FirmwareUploadCompleteEvent */
+
+	/**
+	 * @typedef {Object} BaseFirmwareStatusEvent
+	 * @property {"firmwareStatus"} type
+	 * @property {{firmwareStatus: FirmwareStatus}} message
+	 */
+	/** @typedef {BaseDeviceEvent & BaseFirmwareStatusEvent} FirmwareStatusEvent */
+
+	/**
+	 * @typedef {SmpEvent |
+	 * FirmwareImagesEvent |
+	 * FirmwareUploadProgressEvent |
+	 * FirmwareUploadCompleteEvent |
+	 * FirmwareStatusEvent
+	 * } FirmwareManagerEvent
+	 */
 	/** @typedef {(event: FirmwareManagerEvent) => void} FirmwareManagerEventListener */
 
 	class FirmwareManager {
@@ -5939,7 +6130,7 @@
 	   * @property {boolean} [empty]
 	   */
 
-	  /** @type {FirmwareImage[]?} */
+	  /** @type {FirmwareImage[]} */
 	  #images;
 	  get images() {
 	    return this.#images;
@@ -6204,22 +6395,57 @@
 
 
 	/**
-	 * @typedef BaseDeviceEvent
-	 * @type {Object}
+	 * @typedef {Object} BaseDeviceEvent
 	 * @property {Device} target
 	 * @property {DeviceEventType} type
-	 * @property {Object} message
 	 */
-	// FILL
-	/** @typedef {BaseDeviceEvent} DeviceEvent */
+
+	/**
+	 * @typedef {Object} BaseBatteryLevelEvent
+	 * @property {"batteryLevel"} type
+	 * @property {{batteryLevel: number}} message
+	 */
+	/** @typedef {BaseDeviceEvent & BaseBatteryLevelEvent} BatteryLevelEvent */
+
+
+
+	/**
+	 * @typedef {Object} BaseIsConnectedEvent
+	 * @property {"isConnected"} type
+	 * @property {{isConnected: boolean}} message
+	 */
+	/** @typedef {BaseDeviceEvent & BaseIsConnectedEvent} IsConnectedEvent */
+
+	/**
+	 * @typedef {Object} BaseConnectionStatusEvent
+	 * @property {"connectionStatus"} type
+	 * @property {{connectionStatus: ConnectionStatus}} message
+	 */
+	/** @typedef {BaseDeviceEvent & BaseConnectionStatusEvent} ConnectionStatusEvent */
+
+	/** @typedef {BaseIsConnectedEvent | ConnectionStatusEvent} ConnectionEvents */
+
+
+
+
+
+
+	/**
+	 * @typedef {DeviceInformationManagerEvent |
+	 * BatteryLevelEvent |
+	 * ConnectionEvents |
+	 * InformationManagerEvent |
+	 * TfliteManagerEvent |
+	 * FirmwareManagerEvent |
+	 * FileTransferManagerEvent
+	 * } DeviceEvent
+	 */
 	/** @typedef {(event: DeviceEvent) => void} DeviceEventListener */
 
 	/** @typedef {"deviceConnected" | "deviceDisconnected" | "deviceIsConnected" | "availableDevices" | "connectedDevices"} StaticDeviceEventType */
 	/**
-	 * @typedef BaseStaticDeviceEvent
-	 * @type {Object}
+	 * @typedef {Object} BaseStaticDeviceEvent
 	 * @property {StaticDeviceEventType} type
-	 * @property {Object} message
 	 */
 	// FILL
 	/** @typedef {BaseStaticDeviceEvent} StaticDeviceEvent */
@@ -6420,7 +6646,7 @@
 	    "getTfliteTask",
 	    "getTfliteSampleRate",
 	    "getTfliteSensorTypes",
-	    "tfliteModelIsReady",
+	    "tfliteIsReady",
 	    "getTfliteCaptureDelay",
 	    "getTfliteThreshold",
 	    "getTfliteInferencingEnabled",

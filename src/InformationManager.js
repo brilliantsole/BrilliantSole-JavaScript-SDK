@@ -22,17 +22,60 @@ const _console = createConsole("InformationManager", { log: true });
  */
 /** @typedef {InformationMessageType} InformationManagerEventType */
 
-/** @typedef {import("./utils/EventDispatcher.js").EventDispatcherListener} EventDispatcherListener */
 /** @typedef {import("./utils/EventDispatcher.js").EventDispatcherOptions} EventDispatcherOptions */
 
-/** @typedef {import("./Device.js").Device} Device */
+/** @typedef {import("./Device.js").BaseDeviceEvent} BaseDeviceEvent */
+
 /**
- * @typedef InformationManagerEvent
- * @type {Object}
- * @property {Device} target
- * @property {InformationManagerEventType} type
- * @property {Object} message
+ * @typedef {Object} BaseBatteryCurrentEvent
+ * @property {"getBatteryCurrent"} type
+ * @property {{batteryCurrent: number}} message
  */
+/** @typedef {BaseDeviceEvent & BaseBatteryCurrentEvent} BatteryCurrentEvent */
+
+/**
+ * @typedef {Object} BaseIsChargingEvent
+ * @property {"isCharging"} type
+ * @property {{isCharging: boolean}} message
+ */
+/** @typedef {BaseDeviceEvent & BaseIsChargingEvent} IsChargingEvent */
+
+/**
+ * @typedef {Object} BaseNameEvent
+ * @property {"getName"} type
+ * @property {{name: string}} message
+ */
+/** @typedef {BaseDeviceEvent & BaseNameEvent} NameEvent */
+
+/**
+ * @typedef {Object} BaseTypeEvent
+ * @property {"getType"} type
+ * @property {{type: DeviceType}} message
+ */
+/** @typedef {BaseDeviceEvent & BaseTypeEvent} TypeEvent */
+
+/**
+ * @typedef {Object} BaseIdEvent
+ * @property {"getId"} type
+ * @property {{id: string}} message
+ */
+/** @typedef {BaseDeviceEvent & BaseIdEvent} IdEvent */
+
+/**
+ * @typedef {Object} BaseMtuEvent
+ * @property {"getMtu"} type
+ * @property {{mtu: number}} message
+ */
+/** @typedef {BaseDeviceEvent & BaseMtuEvent} MtuEvent */
+
+/**
+ * @typedef {Object} BaseCurrentTimeEvent
+ * @property {"getCurrentTime"} type
+ * @property {{currentTime: number}} message
+ */
+/** @typedef {BaseDeviceEvent & BaseCurrentTimeEvent} CurrentTimeEvent */
+
+/** @typedef {IdEvent | CurrentTimeEvent | BatteryCurrentEvent | IsChargingEvent | NameEvent | TypeEvent} InformationManagerEvent */
 
 class InformationManager {
   // MESSAGE TYPES

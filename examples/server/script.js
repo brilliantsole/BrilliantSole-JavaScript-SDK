@@ -569,7 +569,7 @@ BS.Device.AddEventListener("availableDevices", (event) => {
       });
 
       /** @type {HTMLSpanElement} */
-      const tfliteModelTaskSpan = availableDeviceContainer.querySelector(".tfliteTask");
+      const tfliteTaskSpan = availableDeviceContainer.querySelector(".tfliteTask");
       /** @type {HTMLSelectElement} */
       const setTfliteTaskSelect = availableDeviceContainer.querySelector(".setTfliteTaskSelect");
       /** @type {HTMLOptGroupElement} */
@@ -584,10 +584,10 @@ BS.Device.AddEventListener("availableDevices", (event) => {
       device.addEventListener("getTfliteTask", () => {
         const task = device.tfliteTask;
         setTfliteTaskSelect.value = task;
-        tfliteModelTaskSpan.innerText = task;
+        tfliteTaskSpan.innerText = task;
       });
       setTfliteTaskSelect.value = device.tfliteTask;
-      tfliteModelTaskSpan.innerText = device.tfliteTask;
+      tfliteTaskSpan.innerText = device.tfliteTask;
 
       setTfliteTaskButton.addEventListener("click", () => {
         device.setTfliteTask(setTfliteTaskSelect.value);
@@ -683,7 +683,7 @@ BS.Device.AddEventListener("availableDevices", (event) => {
 
       /** @type {HTMLInputElement} */
       const setTfliteIsReadyInput = availableDeviceContainer.querySelector(".tfliteIsReady");
-      device.addEventListener("tfliteModelIsReady", () => {
+      device.addEventListener("tfliteIsReady", () => {
         setTfliteIsReadyInput.checked = device.tfliteIsReady;
       });
       setTfliteIsReadyInput.checked = device.tfliteIsReady;
@@ -758,7 +758,7 @@ BS.Device.AddEventListener("availableDevices", (event) => {
           : "enable inferencing";
       };
 
-      device.addEventListener("tfliteModelIsReady", () => {
+      device.addEventListener("tfliteIsReady", () => {
         toggleTfliteInferencingEnabledButton.disabled = !device.tfliteIsReady;
       });
       device.addEventListener("getTfliteInferencingEnabled", () => {
@@ -775,9 +775,9 @@ BS.Device.AddEventListener("availableDevices", (event) => {
 
       /** @type {HTMLPreElement} */
       const tfliteInferencePre = availableDeviceContainer.querySelector(".tfliteInference");
-      device.addEventListener("tfliteModelInference", (event) => {
-        console.log("inference", event.message.tfliteModelInference);
-        tfliteInferencePre.textContent = JSON.stringify(event.message.tfliteModelInference, null, 2);
+      device.addEventListener("tfliteInference", (event) => {
+        console.log("inference", event.message.tfliteInference);
+        tfliteInferencePre.textContent = JSON.stringify(event.message.tfliteInference, null, 2);
       });
 
       const updateTfliteUI = () => {

@@ -34,22 +34,57 @@ const _console = createConsole("Device", { log: true });
 /** @typedef {import("./utils/EventDispatcher.js").EventDispatcherOptions} EventDispatcherOptions */
 
 /**
- * @typedef BaseDeviceEvent
- * @type {Object}
+ * @typedef {Object} BaseDeviceEvent
  * @property {Device} target
  * @property {DeviceEventType} type
- * @property {Object} message
  */
-// FILL
-/** @typedef {BaseDeviceEvent} DeviceEvent */
+
+/**
+ * @typedef {Object} BaseBatteryLevelEvent
+ * @property {"batteryLevel"} type
+ * @property {{batteryLevel: number}} message
+ */
+/** @typedef {BaseDeviceEvent & BaseBatteryLevelEvent} BatteryLevelEvent */
+
+/** @typedef {import("./DeviceInformationManager.js").DeviceInformationManagerEvent} DeviceInformationManagerEvent */
+
+/**
+ * @typedef {Object} BaseIsConnectedEvent
+ * @property {"isConnected"} type
+ * @property {{isConnected: boolean}} message
+ */
+/** @typedef {BaseDeviceEvent & BaseIsConnectedEvent} IsConnectedEvent */
+
+/**
+ * @typedef {Object} BaseConnectionStatusEvent
+ * @property {"connectionStatus"} type
+ * @property {{connectionStatus: ConnectionStatus}} message
+ */
+/** @typedef {BaseDeviceEvent & BaseConnectionStatusEvent} ConnectionStatusEvent */
+
+/** @typedef {BaseIsConnectedEvent | ConnectionStatusEvent} ConnectionEvents */
+
+/** @typedef {import("./InformationManager.js").InformationManagerEvent} InformationManagerEvent */
+/** @typedef {import("./TfliteManager.js").TfliteManagerEvent} TfliteManagerEvent */
+/** @typedef {import("./FirmwareManager.js").FirmwareManagerEvent} FirmwareManagerEvent */
+/** @typedef {import("./FileTransferManager.js").FileTransferManagerEvent} FileTransferManagerEvent */
+
+/**
+ * @typedef {DeviceInformationManagerEvent |
+ * BatteryLevelEvent |
+ * ConnectionEvents |
+ * InformationManagerEvent |
+ * TfliteManagerEvent |
+ * FirmwareManagerEvent |
+ * FileTransferManagerEvent
+ * } DeviceEvent
+ */
 /** @typedef {(event: DeviceEvent) => void} DeviceEventListener */
 
 /** @typedef {"deviceConnected" | "deviceDisconnected" | "deviceIsConnected" | "availableDevices" | "connectedDevices"} StaticDeviceEventType */
 /**
- * @typedef BaseStaticDeviceEvent
- * @type {Object}
+ * @typedef {Object} BaseStaticDeviceEvent
  * @property {StaticDeviceEventType} type
- * @property {Object} message
  */
 // FILL
 /** @typedef {BaseStaticDeviceEvent} StaticDeviceEvent */
@@ -250,7 +285,7 @@ class Device {
     "getTfliteTask",
     "getTfliteSampleRate",
     "getTfliteSensorTypes",
-    "tfliteModelIsReady",
+    "tfliteIsReady",
     "getTfliteCaptureDelay",
     "getTfliteThreshold",
     "getTfliteInferencingEnabled",

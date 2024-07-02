@@ -26,19 +26,62 @@ const _console = createConsole("FileTransferManager", { log: true });
 
 /** @typedef {import("./utils/ArrayBufferUtils.js").FileLike} */
 
-/** @typedef {import("./utils/EventDispatcher.js").EventDispatcherListener} EventDispatcherListener */
 /** @typedef {import("./utils/EventDispatcher.js").EventDispatcherOptions} EventDispatcherOptions */
 
 /** @typedef {FileTransferMessageType | "fileTransferProgress" | "fileTransferComplete" | "fileReceived"} FileTransferManagerEventType */
 
-/** @typedef {import("./Device.js").Device} Device */
+/** @typedef {import("./Device.js").BaseDeviceEvent} BaseDeviceEvent */
 
 /**
- * @typedef FileTransferManagerEvent
- * @type {Object}
- * @property {Device} target
- * @property {FileTransferManagerEventType} type
- * @property {Object} message
+ * @typedef {Object} BaseFileTransferMaxLengthEvent
+ * @property {"maxFileLength"} type
+ * @property {{maxFileLength: number}} message
+ */
+/** @typedef {BaseDeviceEvent & BaseFileTransferMaxLengthEvent} FileTransferMaxLengthEvent */
+
+/**
+ * @typedef {Object} BaseFileTransferTypeEvent
+ * @property {"getFileTransferType"} type
+ * @property {{fileType: FileType}} message
+ */
+/** @typedef {BaseDeviceEvent & BaseFileTransferTypeEvent} FileTransferTypeEvent */
+
+/**
+ * @typedef {Object} BaseFileTransferLengthEvent
+ * @property {"getFileLength"} type
+ * @property {{fileLength: number}} message
+ */
+/** @typedef {BaseDeviceEvent & BaseFileTransferLengthEvent} FileTransferLengthEvent */
+
+/**
+ * @typedef {Object} BaseFileChecksumEvent
+ * @property {"getFileChecksum"} type
+ * @property {{fileChecksum: number}} message
+ */
+/** @typedef {BaseDeviceEvent & BaseFileChecksumEvent} FileChecksumEvent */
+
+/**
+ * @typedef {Object} BaseFileTransferStatusEvent
+ * @property {"fileTransferStatus"} type
+ * @property {{fileTransferStatus: FileTransferStatus}} message
+ */
+/** @typedef {BaseDeviceEvent & BaseFileTransferStatusEvent} FileTransferStatusEvent */
+
+/**
+ * @typedef {Object} BaseFileTransferBlockEvent
+ * @property {"getFileTransferBlock"} type
+ * @property {{fileTransferBlock: DataView}} message
+ */
+/** @typedef {BaseDeviceEvent & BaseFileTransferBlockEvent} FileTransferBlockEvent */
+
+/**
+ * @typedef {FileTransferMaxLengthEvent |
+ * FileTransferTypeEvent |
+ * FileTransferLengthEvent |
+ * FileChecksumEvent |
+ * FileTransferStatusEvent |
+ * FileTransferBlockEvent
+ * } FileTransferManagerEvent
  */
 
 /** @typedef {(event: FileTransferManagerEvent) => void} FileTransferManagerEventListener */
@@ -168,7 +211,13 @@ class FileTransferManager {
     _console.log("parseFileMaxLength", dataView);
     const maxLength = dataView.getUint32(0, true);
     _console.log(`maxLength: ${maxLength / 1024}kB`);
+    this.#updateMaxLength(maxLength);
+  }
+  /** @param {number} maxLength */
+  #updateMaxLength(maxLength) {
+    _console.log({ maxLength });
     this.#maxLength = maxLength;
+    this.#dispatchEvent({ type: "maxFileLength", message: { maxFileLength: maxLength } });
   }
   /** @param {number} length */
   #assertValidLength(length) {
@@ -384,6 +433,7 @@ class FileTransferManager {
 
     _console.log("received file", file);
 
+    this.#dispatchEvent({ type: "getFileTransferBlock", message: { fileTransferBlock: dataView } });
     this.#dispatchEvent({ type: "fileTransferComplete", message: { direction: "receiving" } });
     this.#dispatchEvent({ type: "fileReceived", message: { file } });
   }

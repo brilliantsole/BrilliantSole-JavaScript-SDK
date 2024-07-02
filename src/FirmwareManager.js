@@ -7,21 +7,55 @@ const _console = createConsole("FirmwareManager", { log: true });
 
 /** @typedef {"smp"} FirmwareMessageType */
 
-/** @typedef {import("./utils/EventDispatcher.js").EventDispatcherListener} EventDispatcherListener */
 /** @typedef {import("./utils/EventDispatcher.js").EventDispatcherOptions} EventDispatcherOptions */
 
 /** @typedef {FirmwareMessageType | "firmwareImages" | "firmwareUploadProgress" | "firmwareStatus" | "firmwareUploadComplete"} FirmwareManagerEventType */
 
 /** @typedef {"idle" | "uploading" | "uploaded" | "pending" | "testing" | "erasing"} FirmwareStatus */
 
-/**
- * @typedef FirmwareManagerEvent
- * @type {Object}
- * @property {FirmwareManager} target
- * @property {FirmwareManagerEventType} type
- * @property {Object} message
- */
+/** @typedef {import("./Device.js").BaseDeviceEvent} BaseDeviceEvent */
 
+/**
+ * @typedef {Object} BaseSmpEvent
+ * @property {"smp"} type
+ */
+/** @typedef {BaseDeviceEvent & BaseSmpEvent} SmpEvent */
+
+/**
+ * @typedef {Object} BaseFirmwareImagesEvent
+ * @property {"firmwareImages"} type
+ * @property {{firmwareImages: FirmwareImage[]}} message
+ */
+/** @typedef {BaseDeviceEvent & BaseFirmwareImagesEvent} FirmwareImagesEvent */
+
+/**
+ * @typedef {Object} BaseFirmwareUploadProgressEvent
+ * @property {"firmwareUploadProgress"} type
+ * @property {{firmwareUploadProgress: number}} message
+ */
+/** @typedef {BaseDeviceEvent & BaseFirmwareUploadProgressEvent} FirmwareUploadProgressEvent */
+
+/**
+ * @typedef {Object} BaseFirmwareUploadCompleteEvent
+ * @property {"firmwareUploadComplete"} type
+ */
+/** @typedef {BaseDeviceEvent & BaseFirmwareUploadCompleteEvent} FirmwareUploadCompleteEvent */
+
+/**
+ * @typedef {Object} BaseFirmwareStatusEvent
+ * @property {"firmwareStatus"} type
+ * @property {{firmwareStatus: FirmwareStatus}} message
+ */
+/** @typedef {BaseDeviceEvent & BaseFirmwareStatusEvent} FirmwareStatusEvent */
+
+/**
+ * @typedef {SmpEvent |
+ * FirmwareImagesEvent |
+ * FirmwareUploadProgressEvent |
+ * FirmwareUploadCompleteEvent |
+ * FirmwareStatusEvent
+ * } FirmwareManagerEvent
+ */
 /** @typedef {(event: FirmwareManagerEvent) => void} FirmwareManagerEventListener */
 
 class FirmwareManager {
@@ -170,7 +204,7 @@ class FirmwareManager {
    * @property {boolean} [empty]
    */
 
-  /** @type {FirmwareImage[]?} */
+  /** @type {FirmwareImage[]} */
   #images;
   get images() {
     return this.#images;
