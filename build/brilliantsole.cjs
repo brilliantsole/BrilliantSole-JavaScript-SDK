@@ -8617,7 +8617,7 @@ const _console$4 = createConsole("BaseServer", { log: true });
  * @property {BaseServer} target
  * @property {ServerEventType} type
  */
-// FILL
+
 /** @typedef {BaseServerEvent} ServerEvent */
 /** @typedef {(event: ServerEvent) => void} ServerEventListener */
 

@@ -7,17 +7,6 @@ const device = new BS.Device();
 console.log({ device });
 window.device = device;
 
-device.addEventListener("sensorData", (event) => {
-  if (event.type == "sensorData") {
-  }
-});
-
-BS.DevicePair.shared.addEventListener("deviceIsConnected", (event) => {
-  if (event.type == "isConnected") {
-    event.message.isConnected;
-  }
-});
-
 //BS.setAllConsoleLevelFlags({ log: false });
 
 /** @typedef {import("../../build/brilliantsole.module.js").Device} Device */
