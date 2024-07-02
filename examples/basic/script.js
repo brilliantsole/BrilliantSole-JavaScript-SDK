@@ -7,9 +7,14 @@ const device = new BS.Device();
 console.log({ device });
 window.device = device;
 
-BS.Device.AddEventListener("availableDevices", (event) => {
-  if (event.type == "availableDevices") {
-    event.message.availableDevices;
+device.addEventListener("sensorData", (event) => {
+  if (event.type == "sensorData") {
+  }
+});
+
+BS.DevicePair.shared.addEventListener("deviceIsConnected", (event) => {
+  if (event.type == "isConnected") {
+    event.message.isConnected;
   }
 });
 

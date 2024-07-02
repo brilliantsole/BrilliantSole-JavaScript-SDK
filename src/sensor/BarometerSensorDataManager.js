@@ -8,7 +8,6 @@ import { createConsole } from "../utils/Console.js";
  * @typedef {Object} BarometerSensorDataEventMessage
  * @property {number} barometer
  */
-
 /**
  * @typedef {Object} BarometerSensorDataEvent
  * @property {"barometer"} type

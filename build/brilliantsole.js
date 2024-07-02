@@ -1676,6 +1676,7 @@
 
 	/**
 	 * @typedef {Object} StepDetectorDataEventMessage
+	 * @property {Object} stepDetector
 	 */
 	/**
 	 * @typedef {Object} StepDetectorDataEvent
@@ -1913,7 +1914,6 @@
 	 * @typedef {Object} BarometerSensorDataEventMessage
 	 * @property {number} barometer
 	 */
-
 	/**
 	 * @typedef {Object} BarometerSensorDataEvent
 	 * @property {"barometer"} type
@@ -7945,10 +7945,10 @@
 	 * "deviceGameRotation" |
 	 * "deviceRotation" |
 	 * "deviceBarometer"
-	 * } DevicePairDeviceSensorEventType
+	 * } DevicePairDeviceSensorDataEventType
 	 */
 	/** @typedef {"pressure"} DevicePairSensorType */
-	/** @typedef {"isConnected" | DevicePairDeviceEventType | DevicePairDeviceSensorEventType | DevicePairSensorType | "deviceGetSensorConfiguration"} DevicePairEventType */
+	/** @typedef {"isConnected" | DevicePairDeviceEventType | DevicePairDeviceSensorDataEventType | DevicePairSensorType | "deviceGetSensorConfiguration"} DevicePairEventType */
 
 
 
@@ -7961,18 +7961,61 @@
 	 * @type {Object}
 	 * @property {DevicePair} target
 	 * @property {DevicePairEventType} type
-	 * @property {Object} message
 	 */
 
 	/**
-	    TODO
-	      device connection events
-	      isConnected event
-	      device sensor events
-	      sensor events
+	 * @typedef {Object} BaseDevicePairIsConnectedEvent
+	 * @property {"isConnected"} type
+	 * @property {{isConnected: boolean}} message
 	 */
+	/** @typedef {BaseDevicePairEvent & BaseDevicePairIsConnectedEvent} DevicePairIsConnectedEvent */
 
-	/** @typedef {BaseDevicePairEvent} DevicePairEvent */
+	/** @typedef {DevicePairIsConnectedEvent} DevicePairConnectionEvent */
+
+
+	/**
+	 * @typedef {Object} BaseDevicePairPressureEvent
+	 * @property {"pressure"} type
+	 * @property {{pressure: PressureData}} message
+	 */
+	/** @typedef {BaseDevicePairEvent & BaseDevicePairPressureEvent} DevicePairPressureEvent */
+
+	/** @typedef {DevicePairPressureEvent} DevicePairDeviceSensorEvent */
+
+	/**
+	 * @typedef {Object} BaseDevicePairDeviceIsConnectedEvent
+	 * @property {"deviceIsConnected"} type
+	 * @property {{device: Device, isConnected: boolean}} message
+	 */
+	/** @typedef {BaseDevicePairEvent & BaseDevicePairDeviceIsConnectedEvent} DevicePairDeviceIsConnectedEvent */
+
+
+	/**
+	 * @typedef {Object} BaseDevicePairDeviceConnectionStatusEvent
+	 * @property {"deviceConnectionStatus"} type
+	 * @property {{device: Device, connectionStatus: ConnectionStatus}} message
+	 */
+	/** @typedef {BaseDevicePairEvent & BaseDevicePairDeviceConnectionStatusEvent} DevicePairDeviceConnectionStatusEvent */
+
+	/** @typedef {DevicePairDeviceIsConnectedEvent | DevicePairDeviceConnectionStatusEvent} DevicePairDeviceConnectionEvent */
+
+
+	/**
+	 * @typedef {Object} BaseDevicePairDeviceSensorDataEvent
+	 * @property {DevicePairDeviceSensorDataEventType} type
+	 * @property {{device: Device} & SensorDataEventMessage} message
+	 */
+	/** @typedef {BaseDevicePairEvent & BaseDevicePairDeviceSensorDataEvent} DevicePairDeviceSensorDataEvent */
+
+	/** @typedef {DevicePairDeviceSensorDataEvent} DevicePairSensorEvent */
+
+	/**
+	 * @typedef {DevicePairDeviceConnectionEvent |
+	 * DevicePairConnectionEvent |
+	 * DevicePairDeviceSensorEvent |
+	 * DevicePairSensorEvent
+	 * } DevicePairEvent
+	 */
 	/** @typedef {(event: DevicePairEvent) => void} DevicePairEventListener */
 
 	class DevicePair {

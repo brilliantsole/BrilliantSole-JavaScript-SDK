@@ -167,6 +167,7 @@ const _console = createConsole("MotionSensorDataManager", { log: true });
 
 /**
  * @typedef {Object} StepDetectorDataEventMessage
+ * @property {Object} stepDetector
  */
 /**
  * @typedef {Object} StepDetectorDataEvent

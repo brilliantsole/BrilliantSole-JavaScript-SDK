@@ -24,10 +24,10 @@ const _console = createConsole("DevicePair", { log: true });
  * "deviceGameRotation" |
  * "deviceRotation" |
  * "deviceBarometer"
- * } DevicePairDeviceSensorEventType
+ * } DevicePairDeviceSensorDataEventType
  */
 /** @typedef {"pressure"} DevicePairSensorType */
-/** @typedef {"isConnected" | DevicePairDeviceEventType | DevicePairDeviceSensorEventType | DevicePairSensorType | "deviceGetSensorConfiguration"} DevicePairEventType */
+/** @typedef {"isConnected" | DevicePairDeviceEventType | DevicePairDeviceSensorDataEventType | DevicePairSensorType | "deviceGetSensorConfiguration"} DevicePairEventType */
 
 /** @typedef {import("../utils/EventDispatcher.js").EventDispatcherOptions} EventDispatcherOptions */
 
@@ -40,18 +40,61 @@ const _console = createConsole("DevicePair", { log: true });
  * @type {Object}
  * @property {DevicePair} target
  * @property {DevicePairEventType} type
- * @property {Object} message
  */
 
 /**
-    TODO
-      device connection events
-      isConnected event
-      device sensor events
-      sensor events
+ * @typedef {Object} BaseDevicePairIsConnectedEvent
+ * @property {"isConnected"} type
+ * @property {{isConnected: boolean}} message
  */
+/** @typedef {BaseDevicePairEvent & BaseDevicePairIsConnectedEvent} DevicePairIsConnectedEvent */
 
-/** @typedef {BaseDevicePairEvent} DevicePairEvent */
+/** @typedef {DevicePairIsConnectedEvent} DevicePairConnectionEvent */
+
+/** @typedef {import("./DevicePairPressureSensorDataManager.js").PressureData} PressureData */
+/**
+ * @typedef {Object} BaseDevicePairPressureEvent
+ * @property {"pressure"} type
+ * @property {{pressure: PressureData}} message
+ */
+/** @typedef {BaseDevicePairEvent & BaseDevicePairPressureEvent} DevicePairPressureEvent */
+
+/** @typedef {DevicePairPressureEvent} DevicePairDeviceSensorEvent */
+
+/**
+ * @typedef {Object} BaseDevicePairDeviceIsConnectedEvent
+ * @property {"deviceIsConnected"} type
+ * @property {{device: Device, isConnected: boolean}} message
+ */
+/** @typedef {BaseDevicePairEvent & BaseDevicePairDeviceIsConnectedEvent} DevicePairDeviceIsConnectedEvent */
+
+/** @typedef {import("../Device.js").ConnectionStatus} ConnectionStatus */
+/**
+ * @typedef {Object} BaseDevicePairDeviceConnectionStatusEvent
+ * @property {"deviceConnectionStatus"} type
+ * @property {{device: Device, connectionStatus: ConnectionStatus}} message
+ */
+/** @typedef {BaseDevicePairEvent & BaseDevicePairDeviceConnectionStatusEvent} DevicePairDeviceConnectionStatusEvent */
+
+/** @typedef {DevicePairDeviceIsConnectedEvent | DevicePairDeviceConnectionStatusEvent} DevicePairDeviceConnectionEvent */
+
+/** @typedef {import("../sensor/SensorDataManager.js").SensorDataEventMessage} SensorDataEventMessage */
+/**
+ * @typedef {Object} BaseDevicePairDeviceSensorDataEvent
+ * @property {DevicePairDeviceSensorDataEventType} type
+ * @property {{device: Device} & SensorDataEventMessage} message
+ */
+/** @typedef {BaseDevicePairEvent & BaseDevicePairDeviceSensorDataEvent} DevicePairDeviceSensorDataEvent */
+
+/** @typedef {DevicePairDeviceSensorDataEvent} DevicePairSensorEvent */
+
+/**
+ * @typedef {DevicePairDeviceConnectionEvent |
+ * DevicePairConnectionEvent |
+ * DevicePairDeviceSensorEvent |
+ * DevicePairSensorEvent
+ * } DevicePairEvent
+ */
 /** @typedef {(event: DevicePairEvent) => void} DevicePairEventListener */
 
 class DevicePair {
