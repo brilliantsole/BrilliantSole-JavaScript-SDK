@@ -8618,7 +8618,19 @@ const _console$4 = createConsole("BaseServer", { log: true });
  * @property {ServerEventType} type
  */
 
-/** @typedef {BaseServerEvent} ServerEvent */
+/**
+ * @typedef {Object} BaseClientConnectedEvent
+ * @property {"clientConnected"} type
+ */
+/** @typedef {BaseServerEvent & BaseClientConnectedEvent} ClientConnectedEvent */
+
+/**
+ * @typedef {Object} BaseClientDisconnectedEvent
+ * @property {"clientDisconnected"} type
+ */
+/** @typedef {BaseServerEvent & BaseClientDisconnectedEvent} ClientDisconnectedEvent */
+
+/** @typedef {ClientConnectedEvent | ClientDisconnectedEvent} ServerEvent */
 /** @typedef {(event: ServerEvent) => void} ServerEventListener */
 
 class BaseServer {
@@ -9019,7 +9031,43 @@ class BaseServer {
 const _console$3 = createConsole("WebSocketServer", { log: true });
 
 
+
+
+
+/**
+ * @typedef {Object} BaseWebSocketClientConnectedEvent
+ * @property {{client: ws.WebSocket}} message
+ */
+/** @typedef {ClientConnectedEvent & BaseWebSocketClientConnectedEvent} WebSocketClientConnectedEvent */
+
+
+/**
+ * @typedef {Object} BaseWebSocketClientDisconnectedEvent
+ * @property {{client: ws.WebSocket}} message
+ */
+/** @typedef {ClientDisconnectedEvent & BaseWebSocketClientDisconnectedEvent} WebSocketClientDisconnectedEvent */
+
+/** @typedef {WebSocketClientConnectedEvent | WebSocketClientDisconnectedEvent} WebSocketServerEvent */
+/** @typedef {(event: WebSocketServerEvent) => void} WebSocketServerEventListener */
+
 class WebSocketServer extends BaseServer {
+  /**
+   * @param {ServerEventType} type
+   * @param {WebSocketServerEventListener} listener
+   * @param {EventDispatcherOptions} [options]
+   */
+  addEventListener(type, listener, options) {
+    super.addEventListener(type, listener, options);
+  }
+
+  /**
+   * @protected
+   * @param {WebSocketServerEvent} event
+   */
+  dispatchEvent(event) {
+    super.dispatchEvent(event);
+  }
+
   get numberOfClients() {
     return this.#server?.clients.size || 0;
   }

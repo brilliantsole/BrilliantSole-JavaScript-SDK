@@ -17,20 +17,100 @@ import { sliceDataView } from "../../utils/ArrayBufferUtils.js";
 
 const _console = createConsole("WebSocketClient", { log: true });
 
-/** @typedef {import("../../utils/EventDispatcher.js").EventDispatcherListener} EventDispatcherListener */
 /** @typedef {import("../../utils/EventDispatcher.js").EventDispatcherOptions} EventDispatcherOptions */
 
 /** @typedef {"not connected" | "connecting" | "connected" | "disconnecting"} ClientConnectionStatus */
-/** @typedef {ClientConnectionStatus | "connectionStatus" |  "isConnected" | "isScanningAvailable" | "isScanning" | "discoveredDevice" | "expiredDiscoveredDevice"} ClientEventType */
+/** @typedef {ClientConnectionStatus | "connectionStatus" | "isConnected" | "isScanningAvailable" | "isScanning" | "discoveredDevice" | "expiredDiscoveredDevice"} ClientEventType */
 
 /**
- * @typedef {Object} ClientEvent
+ * @typedef {Object} BaseClientEvent
  * @property {WebSocketClient} target
  * @property {ClientEventType} type
- * @property {Object} message
  */
 
-/** @typedef {import("./WebSocketServer.js").DiscoveredDevice} DiscoveredDevice */
+/**
+ * @typedef {Object} BaseClientConnectionStatusEvent
+ * @property {"connectionStatus"} type
+ * @property {{connectionStatus: ClientConnectionStatus}} message
+ */
+/** @typedef {BaseClientEvent & BaseClientConnectionStatusEvent} ClientConnectionStatusEvent */
+
+/**
+ * @typedef {Object} BaseClientIsConnectedEvent
+ * @property {"isConnected"} type
+ * @property {{isConnected: boolean}} message
+ */
+/** @typedef {BaseClientEvent & BaseClientIsConnectedEvent} ClientIsConnectedEvent */
+
+/**
+ * @typedef {Object} BaseClientNotConnectedEvent
+ * @property {"not connected"} type
+ */
+/** @typedef {BaseClientEvent & BaseClientNotConnectedEvent} ClientNotConnectedEvent */
+
+/**
+ * @typedef {Object} BaseClientConnectingEvent
+ * @property {"connecting"} type
+ */
+/** @typedef {BaseClientEvent & BaseClientConnectingEvent} ClientConnectingEvent */
+
+/**
+ * @typedef {Object} BaseClientConnectedEvent
+ * @property {"connected"} type
+ */
+/** @typedef {BaseClientEvent & BaseClientConnectedEvent} ClientConnectedEvent */
+
+/**
+ * @typedef {Object} BaseClientDisconnectingEvent
+ * @property {"disconnecting"} type
+ */
+/** @typedef {BaseClientEvent & BaseClientDisconnectingEvent} ClientDisconnectingEvent */
+
+/**
+ * @typedef {ClientConnectionStatusEvent |
+ * ClientIsConnectedEvent |
+ * ClientNotConnectedEvent |
+ * ClientConnectingEvent |
+ * ClientConnectedEvent |
+ * ClientDisconnectingEvent
+ * } ClientConnectionEvent
+ */
+
+/**
+ * @typedef {Object} BaseClientIsScanningAvailableEvent
+ * @property {"isScanningAvailable"} type
+ * @property {{isScanningAvailable: boolean}} message
+ */
+/** @typedef {BaseClientEvent & BaseClientIsScanningAvailableEvent} ClientIsScanningAvailableEvent */
+
+/**
+ * @typedef {Object} BaseClientIsScanningEvent
+ * @property {"isScanning"} type
+ * @property {{isScanning: boolean}} message
+ */
+/** @typedef {BaseClientEvent & BaseClientIsScanningEvent} ClientIsScanningEvent */
+
+/** @typedef {import("../BaseServer.js").DiscoveredDevice} DiscoveredDevice */
+
+/**
+ * @typedef {Object} BaseClientDiscoveredDeviceEvent
+ * @property {"discoveredDevice"} type
+ * @property {{discoveredDevice: DiscoveredDevice}} message
+ */
+/** @typedef {BaseClientEvent & BaseClientDiscoveredDeviceEvent} ClientDiscoveredDeviceEvent */
+
+/**
+ * @typedef {Object} BaseClientExpiredDiscoveredDeviceEvent
+ * @property {"expiredDiscoveredDevice"} type
+ * @property {{discoveredDevice: DiscoveredDevice}} message
+ */
+/** @typedef {BaseClientEvent & BaseClientExpiredDiscoveredDeviceEvent} ClientExpiredDiscoveredDeviceEvent */
+
+/** @typedef {ClientIsScanningAvailableEvent | ClientIsScanningEvent | ClientDiscoveredDeviceEvent | ClientExpiredDiscoveredDeviceEvent} ClientScanEvent */
+
+/** @typedef {ClientConnectionEvent | ClientScanEvent} ClientEvent */
+
+/** @typedef {(event: ClientEvent) => void} ClientEventListener */
 
 class WebSocketClient {
   // EVENT DISPATCHER
@@ -58,7 +138,7 @@ class WebSocketClient {
 
   /**
    * @param {ClientEventType} type
-   * @param {EventDispatcherListener} listener
+   * @param {ClientEventListener} listener
    * @param {EventDispatcherOptions} [options]
    */
   addEventListener(type, listener, options) {
@@ -74,7 +154,7 @@ class WebSocketClient {
 
   /**
    * @param {ClientEventType} type
-   * @param {EventDispatcherListener} listener
+   * @param {ClientEventListener} listener
    */
   removeEventListener(type, listener) {
     return this.#eventDispatcher.removeEventListener(type, listener);

@@ -1,5 +1,4 @@
 import { createConsole } from "../../utils/Console.js";
-import { isInNode } from "../../utils/environment.js";
 import { addEventListeners, removeEventListeners } from "../../utils/EventDispatcher.js";
 import { pingTimeout, pingMessage } from "../ServerUtils.js";
 import { dataToArrayBuffer } from "../../utils/ArrayBufferUtils.js";
@@ -12,7 +11,43 @@ const _console = createConsole("WebSocketServer", { log: true });
 import ws from "ws";
 // NODE_END
 
+/** @typedef {import("../BaseServer.js").ServerEventType} ServerEventType */
+
+/** @typedef {import("../BaseServer.js").ClientConnectedEvent} ClientConnectedEvent */
+/**
+ * @typedef {Object} BaseWebSocketClientConnectedEvent
+ * @property {{client: ws.WebSocket}} message
+ */
+/** @typedef {ClientConnectedEvent & BaseWebSocketClientConnectedEvent} WebSocketClientConnectedEvent */
+
+/** @typedef {import("../BaseServer.js").ClientDisconnectedEvent} ClientDisconnectedEvent */
+/**
+ * @typedef {Object} BaseWebSocketClientDisconnectedEvent
+ * @property {{client: ws.WebSocket}} message
+ */
+/** @typedef {ClientDisconnectedEvent & BaseWebSocketClientDisconnectedEvent} WebSocketClientDisconnectedEvent */
+
+/** @typedef {WebSocketClientConnectedEvent | WebSocketClientDisconnectedEvent} WebSocketServerEvent */
+/** @typedef {(event: WebSocketServerEvent) => void} WebSocketServerEventListener */
+
 class WebSocketServer extends BaseServer {
+  /**
+   * @param {ServerEventType} type
+   * @param {WebSocketServerEventListener} listener
+   * @param {EventDispatcherOptions} [options]
+   */
+  addEventListener(type, listener, options) {
+    super.addEventListener(type, listener, options);
+  }
+
+  /**
+   * @protected
+   * @param {WebSocketServerEvent} event
+   */
+  dispatchEvent(event) {
+    super.dispatchEvent(event);
+  }
+
   get numberOfClients() {
     return this.#server?.clients.size || 0;
   }

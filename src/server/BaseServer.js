@@ -26,7 +26,19 @@ const _console = createConsole("BaseServer", { log: true });
  * @property {ServerEventType} type
  */
 
-/** @typedef {BaseServerEvent} ServerEvent */
+/**
+ * @typedef {Object} BaseClientConnectedEvent
+ * @property {"clientConnected"} type
+ */
+/** @typedef {BaseServerEvent & BaseClientConnectedEvent} ClientConnectedEvent */
+
+/**
+ * @typedef {Object} BaseClientDisconnectedEvent
+ * @property {"clientDisconnected"} type
+ */
+/** @typedef {BaseServerEvent & BaseClientDisconnectedEvent} ClientDisconnectedEvent */
+
+/** @typedef {ClientConnectedEvent | ClientDisconnectedEvent} ServerEvent */
 /** @typedef {(event: ServerEvent) => void} ServerEventListener */
 
 class BaseServer {
