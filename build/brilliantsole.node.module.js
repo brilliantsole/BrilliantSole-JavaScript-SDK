@@ -1403,15 +1403,19 @@ function arrayWithoutDuplicates(array) {
 
 
 /**
- * @typedef {Object} PressureSensorDataEventMessage
+ * @typedef {Object} BasePressureSensorDataEventMessage
  * @property {PressureData} pressure
  */
+/** @typedef {BaseSensorDataEventMessage & BasePressureSensorDataEventMessage} PressureSensorDataEventMessage */
 
 /**
- * @typedef {Object} PressureSensorDataEvent
+ * @typedef {Object} BasePressureSensorDataEvent
  * @property {"pressure"} type
- * @property {PressureSensorDataEventMessage & BaseSensorDataEventMessage} message
+ * @property {PressureSensorDataEventMessage} message
  */
+
+
+/** @typedef {BaseDeviceEvent & BasePressureSensorDataEvent} PressureSensorDataEvent */
 
 const _console$q = createConsole("PressureSensorDataManager", { log: true });
 
@@ -1575,125 +1579,150 @@ const _console$p = createConsole("MotionSensorDataManager", { log: true });
 
 
 
-/**
- * @typedef {Object} AccelerationDataEventMessage
- * @property {Vector3} acceleration
- */
-/**
- * @typedef {Object} AccelerationDataEvent
- * @property {"acceleration"} type
- * @property {AccelerationDataEventMessage & BaseSensorDataEventMessage} message
- */
 
 /**
- * @typedef {Object} GravityDataEventMessage
+ * @typedef {Object} BaseAccelerationDataEventMessage
+ * @property {Vector3} acceleration
+ */
+/** @typedef {BaseSensorDataEventMessage & BaseAccelerationDataEventMessage} AccelerationDataEventMessage */
+/**
+ * @typedef {Object} BaseAccelerationDataEvent
+ * @property {"acceleration"} type
+ * @property {AccelerationDataEventMessage} message
+ */
+/** @typedef {BaseDeviceEvent & BaseAccelerationDataEvent} AccelerationDataEvent */
+
+/**
+ * @typedef {Object} BaseGravityDataEventMessage
  * @property {Vector3} gravity
  */
+/** @typedef {BaseSensorDataEventMessage & BaseGravityDataEventMessage} GravityDataEventMessage */
 /**
- * @typedef {Object} GravityDataEvent
+ * @typedef {Object} BaseGravityDataEvent
  * @property {"gravity"} type
  * @property {GravityDataEventMessage & BaseSensorDataEventMessage} message
  */
+/** @typedef {BaseDeviceEvent & BaseGravityDataEvent} GravityDataEvent */
 
 /**
- * @typedef {Object} LinearAccelerationDataEventMessage
+ * @typedef {Object} BaseLinearAccelerationDataEventMessage
  * @property {Vector3} linearAcceleration
  */
+/** @typedef {BaseSensorDataEventMessage & BaseLinearAccelerationDataEventMessage} LinearAccelerationDataEventMessage */
 /**
- * @typedef {Object} LinearAccelerationDataEvent
+ * @typedef {Object} BaseLinearAccelerationDataEvent
  * @property {"linearAcceleration"} type
  * @property {LinearAccelerationDataEventMessage & BaseSensorDataEventMessage} message
  */
+/** @typedef {BaseDeviceEvent & BaseLinearAccelerationDataEvent} LinearAccelerationDataEvent */
 
 /**
- * @typedef {Object} GyroscopeDataEventMessage
+ * @typedef {Object} BaseGyroscopeDataEventMessage
  * @property {Vector3} gyroscope
  */
+/** @typedef {BaseSensorDataEventMessage & BaseGyroscopeDataEventMessage} GyroscopeDataEventMessage */
 /**
- * @typedef {Object} GyroscopeDataEvent
+ * @typedef {Object} BaseGyroscopeDataEvent
  * @property {"gyroscope"} type
  * @property {GyroscopeDataEventMessage & BaseSensorDataEventMessage} message
  */
+/** @typedef {BaseDeviceEvent & BaseGyroscopeDataEvent} GyroscopeDataEvent */
 
 /**
- * @typedef {Object} MagnetometerDataEventMessage
+ * @typedef {Object} BaseMagnetometerDataEventMessage
  * @property {Vector3} magnetometer
  */
+/** @typedef {BaseSensorDataEventMessage & BaseMagnetometerDataEventMessage} MagnetometerDataEventMessage */
 /**
- * @typedef {Object} MagnetometerDataEvent
+ * @typedef {Object} BaseMagnetometerDataEvent
  * @property {"magnetometer"} type
  * @property {MagnetometerDataEventMessage & BaseSensorDataEventMessage} message
  */
+/** @typedef {BaseDeviceEvent & BaseMagnetometerDataEvent} MagnetometerDataEvent */
 
 /**
- * @typedef {Object} GameRotationDataEventMessage
+ * @typedef {Object} BaseGameRotationDataEventMessage
  * @property {Quaternion} gameRotation
  */
+/** @typedef {BaseSensorDataEventMessage & BaseGameRotationDataEventMessage} GameRotationDataEventMessage */
 /**
- * @typedef {Object} GameRotationDataEvent
+ * @typedef {Object} BaseGameRotationDataEvent
  * @property {"gameRotation"} type
  * @property {GameRotationDataEventMessage & BaseSensorDataEventMessage} message
  */
+/** @typedef {BaseDeviceEvent & BaseGameRotationDataEvent} GameRotationDataEvent */
 
 /**
- * @typedef {Object} RotationDataEventMessage
+ * @typedef {Object} BaseRotationDataEventMessage
  * @property {Quaternion} rotation
  */
+/** @typedef {BaseSensorDataEventMessage & BaseRotationDataEventMessage} RotationDataEventMessage */
 /**
- * @typedef {Object} RotationDataEvent
+ * @typedef {Object} BaseRotationDataEvent
  * @property {"rotation"} type
  * @property {RotationDataEventMessage & BaseSensorDataEventMessage} message
  */
+/** @typedef {BaseDeviceEvent & BaseRotationDataEvent} RotationDataEvent */
 
 /**
- * @typedef {Object} OrientationDataEventMessage
+ * @typedef {Object} BaseOrientationDataEventMessage
  * @property {Euler} orientation
  */
+/** @typedef {BaseSensorDataEventMessage & BaseOrientationDataEventMessage} OrientationDataEventMessage */
 /**
- * @typedef {Object} OrientationDataEvent
+ * @typedef {Object} BaseOrientationDataEvent
  * @property {"orientation"} type
  * @property {OrientationDataEventMessage & BaseSensorDataEventMessage} message
  */
+/** @typedef {BaseDeviceEvent & BaseOrientationDataEvent} OrientationDataEvent */
 
 /**
- * @typedef {Object} ActivityDataEventMessage
+ * @typedef {Object} BaseActivityDataEventMessage
  * @property {Activity} activity
  */
+/** @typedef {BaseSensorDataEventMessage & BaseActivityDataEventMessage} ActivityDataEventMessage */
 /**
- * @typedef {Object} ActivityDataEvent
+ * @typedef {Object} BaseActivityDataEvent
  * @property {"activity"} type
  * @property {ActivityDataEventMessage & BaseSensorDataEventMessage} message
  */
+/** @typedef {BaseDeviceEvent & BaseActivityDataEvent} ActivityDataEvent */
 
 /**
- * @typedef {Object} StepDetectorDataEventMessage
+ * @typedef {Object} BaseStepDetectorDataEventMessage
  * @property {Object} stepDetector
  */
+/** @typedef {BaseSensorDataEventMessage & BaseStepDetectorDataEventMessage} StepDetectorDataEventMessage */
 /**
- * @typedef {Object} StepDetectorDataEvent
+ * @typedef {Object} BaseStepDetectorDataEvent
  * @property {"stepDetector"} type
  * @property {StepDetectorDataEventMessage & BaseSensorDataEventMessage} message
  */
+/** @typedef {BaseDeviceEvent & BaseStepDetectorDataEvent} StepDetectorDataEvent */
 
 /**
- * @typedef {Object} StepCounterDataEventMessage
+ * @typedef {Object} BaseStepCounterDataEventMessage
  * @property {number} stepCounter
  */
+/** @typedef {BaseSensorDataEventMessage & BaseStepCounterDataEventMessage} StepCounterDataEventMessage */
 /**
- * @typedef {Object} StepCounterDataEvent
+ * @typedef {Object} BaseStepCounterDataEvent
  * @property {"stepCounter"} type
  * @property {StepCounterDataEventMessage & BaseSensorDataEventMessage} message
  */
+/** @typedef {BaseDeviceEvent & BaseStepCounterDataEvent} StepCounterDataEvent */
 
 /**
- * @typedef {Object} DeviceOrientationDataEventMessage
+ * @typedef {Object} BaseDeviceOrientationDataEventMessage
  * @property {DeviceOrientation} deviceOrientation
  */
+/** @typedef {BaseSensorDataEventMessage & BaseDeviceOrientationDataEventMessage} DeviceOrientationDataEventMessage */
 /**
- * @typedef {Object} DeviceOrientationDataEvent
+ * @typedef {Object} BaseDeviceOrientationDataEvent
  * @property {"deviceOrientation"} type
  * @property {DeviceOrientationDataEventMessage & BaseSensorDataEventMessage} message
  */
+/** @typedef {BaseDeviceEvent & BaseDeviceOrientationDataEvent} DeviceOrientationDataEvent */
 
 /**
  * @typedef {AccelerationDataEventMessage |
@@ -1901,15 +1930,18 @@ class MotionSensorDataManager {
 
 
 
+
 /**
- * @typedef {Object} BarometerSensorDataEventMessage
+ * @typedef {Object} BaseBarometerSensorDataEventMessage
  * @property {number} barometer
  */
+/** @typedef {BaseSensorDataEventMessage & BaseBarometerSensorDataEventMessage} BarometerSensorDataEventMessage */
 /**
- * @typedef {Object} BarometerSensorDataEvent
+ * @typedef {Object} BaseBarometerSensorDataEvent
  * @property {"barometer"} type
- * @property {BarometerSensorDataEventMessage & BaseSensorDataEventMessage} message
+ * @property {BarometerSensorDataEventMessage} message
  */
+/** @typedef {BaseDeviceEvent & BaseBarometerSensorDataEvent} BarometerSensorDataEvent */
 
 const _console$o = createConsole("BarometerSensorDataManager", { log: true });
 
@@ -2031,10 +2063,11 @@ const _console$m = createConsole("SensorDataManager", { log: true });
 /** @typedef {PressureSensorDataEventMessage | MotionSensorDataEventMessage | BarometerSensorDataEventMessage} SensorDataEventMessage */
 
 /**
- * @typedef {Object} SensorDataEvent
+ * @typedef {Object} BaseSensorDataEvent
  * @property {"sensorData"} type
  * @property {{sensorType: SensorType} & SensorDataEventMessage} message
  */
+/** @typedef {BaseDeviceEvent & BaseSensorDataEvent} SensorDataEvent */
 
 
 
@@ -2325,7 +2358,7 @@ class SensorConfigurationManager {
     return isSensorTypeAvailable;
   }
 
-  /** @type {SensorConfiguration?} */
+  /** @type {SensorConfiguration} */
   #configuration;
   get configuration() {
     return this.#configuration;
@@ -2350,8 +2383,14 @@ class SensorConfigurationManager {
     });
   }
 
-  /** @param {SensorConfiguration} newSensorConfiguration */
-  async setConfiguration(newSensorConfiguration) {
+  /**
+   * @param {SensorConfiguration} newSensorConfiguration
+   * @param {boolean} [clearRest]
+   */
+  async setConfiguration(newSensorConfiguration, clearRest) {
+    if (clearRest) {
+      newSensorConfiguration = Object.assign({ ...this.zeroSensorConfiguration }, newSensorConfiguration);
+    }
     _console$l.log({ newSensorConfiguration });
     if (this.#isRedundant(newSensorConfiguration)) {
       _console$l.log("redundant sensor configuration");
@@ -7174,9 +7213,12 @@ class Device {
     return SensorConfigurationManager.SensorRateStep;
   }
 
-  /** @param {SensorConfiguration} newSensorConfiguration */
-  async setSensorConfiguration(newSensorConfiguration) {
-    await this.#sensorConfigurationManager.setConfiguration(newSensorConfiguration);
+  /**
+   * @param {SensorConfiguration} newSensorConfiguration
+   * @param {boolean} [clearRest]
+   */
+  async setSensorConfiguration(newSensorConfiguration, clearRest) {
+    await this.#sensorConfigurationManager.setConfiguration(newSensorConfiguration, clearRest);
   }
 
   async clearSensorConfiguration() {

@@ -32,10 +32,11 @@ const _console = createConsole("SensorDataManager", { log: true });
 /** @typedef {PressureSensorDataEventMessage | MotionSensorDataEventMessage | BarometerSensorDataEventMessage} SensorDataEventMessage */
 
 /**
- * @typedef {Object} SensorDataEvent
+ * @typedef {Object} BaseSensorDataEvent
  * @property {"sensorData"} type
  * @property {{sensorType: SensorType} & SensorDataEventMessage} message
  */
+/** @typedef {BaseDeviceEvent & BaseSensorDataEvent} SensorDataEvent */
 
 /** @typedef {import("./PressureSensorDataManager.js").PressureSensorDataEvent} PressureSensorDataEvent */
 /** @typedef {import("./MotionSensorDataManager.js").MotionSensorDataEvent} MotionSensorDataEvent */

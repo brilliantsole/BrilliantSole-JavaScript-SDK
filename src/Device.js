@@ -648,9 +648,12 @@ class Device {
     return SensorConfigurationManager.SensorRateStep;
   }
 
-  /** @param {SensorConfiguration} newSensorConfiguration */
-  async setSensorConfiguration(newSensorConfiguration) {
-    await this.#sensorConfigurationManager.setConfiguration(newSensorConfiguration);
+  /**
+   * @param {SensorConfiguration} newSensorConfiguration
+   * @param {boolean} [clearRest]
+   */
+  async setSensorConfiguration(newSensorConfiguration, clearRest) {
+    await this.#sensorConfigurationManager.setConfiguration(newSensorConfiguration, clearRest);
   }
 
   async clearSensorConfiguration() {

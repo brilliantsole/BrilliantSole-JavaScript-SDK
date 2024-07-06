@@ -3,16 +3,19 @@ import { createConsole } from "../utils/Console.js";
 /** @typedef {"barometer"} BarometerSensorType */
 
 /** @typedef {import("./SensorDataManager.js").BaseSensorDataEventMessage} BaseSensorDataEventMessage */
+/** @typedef {import("../Device.js").BaseDeviceEvent} BaseDeviceEvent */
 
 /**
- * @typedef {Object} BarometerSensorDataEventMessage
+ * @typedef {Object} BaseBarometerSensorDataEventMessage
  * @property {number} barometer
  */
+/** @typedef {BaseSensorDataEventMessage & BaseBarometerSensorDataEventMessage} BarometerSensorDataEventMessage */
 /**
- * @typedef {Object} BarometerSensorDataEvent
+ * @typedef {Object} BaseBarometerSensorDataEvent
  * @property {"barometer"} type
- * @property {BarometerSensorDataEventMessage & BaseSensorDataEventMessage} message
+ * @property {BarometerSensorDataEventMessage} message
  */
+/** @typedef {BaseDeviceEvent & BaseBarometerSensorDataEvent} BarometerSensorDataEvent */
 
 const _console = createConsole("BarometerSensorDataManager", { log: true });
 

@@ -91,7 +91,7 @@ class SensorConfigurationManager {
     return isSensorTypeAvailable;
   }
 
-  /** @type {SensorConfiguration?} */
+  /** @type {SensorConfiguration} */
   #configuration;
   get configuration() {
     return this.#configuration;
@@ -116,8 +116,14 @@ class SensorConfigurationManager {
     });
   }
 
-  /** @param {SensorConfiguration} newSensorConfiguration */
-  async setConfiguration(newSensorConfiguration) {
+  /**
+   * @param {SensorConfiguration} newSensorConfiguration
+   * @param {boolean} [clearRest]
+   */
+  async setConfiguration(newSensorConfiguration, clearRest) {
+    if (clearRest) {
+      newSensorConfiguration = Object.assign({ ...this.zeroSensorConfiguration }, newSensorConfiguration);
+    }
     _console.log({ newSensorConfiguration });
     if (this.#isRedundant(newSensorConfiguration)) {
       _console.log("redundant sensor configuration");

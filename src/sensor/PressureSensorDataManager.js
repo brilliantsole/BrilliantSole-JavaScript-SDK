@@ -33,15 +33,19 @@ import { createArray } from "../utils/ArrayUtils.js";
 /** @typedef {import("./SensorDataManager.js").BaseSensorDataEventMessage} BaseSensorDataEventMessage */
 
 /**
- * @typedef {Object} PressureSensorDataEventMessage
+ * @typedef {Object} BasePressureSensorDataEventMessage
  * @property {PressureData} pressure
  */
+/** @typedef {BaseSensorDataEventMessage & BasePressureSensorDataEventMessage} PressureSensorDataEventMessage */
 
 /**
- * @typedef {Object} PressureSensorDataEvent
+ * @typedef {Object} BasePressureSensorDataEvent
  * @property {"pressure"} type
- * @property {PressureSensorDataEventMessage & BaseSensorDataEventMessage} message
+ * @property {PressureSensorDataEventMessage} message
  */
+
+/** @typedef {import("../Device.js").BaseDeviceEvent} BaseDeviceEvent */
+/** @typedef {BaseDeviceEvent & BasePressureSensorDataEvent} PressureSensorDataEvent */
 
 const _console = createConsole("PressureSensorDataManager", { log: true });
 

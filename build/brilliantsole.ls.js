@@ -1587,7 +1587,12 @@
     get configuration() {
       return _classPrivateFieldGet2(_configuration, this);
     }
-    async setConfiguration(newSensorConfiguration) {
+    async setConfiguration(newSensorConfiguration, clearRest) {
+      if (clearRest) {
+        newSensorConfiguration = Object.assign({
+          ...this.zeroSensorConfiguration
+        }, newSensorConfiguration);
+      }
       _console$e.log({
         newSensorConfiguration
       });
@@ -5108,8 +5113,8 @@
     static get SensorRateStep() {
       return SensorConfigurationManager.SensorRateStep;
     }
-    async setSensorConfiguration(newSensorConfiguration) {
-      await _classPrivateFieldGet2(_sensorConfigurationManager, this).setConfiguration(newSensorConfiguration);
+    async setSensorConfiguration(newSensorConfiguration, clearRest) {
+      await _classPrivateFieldGet2(_sensorConfigurationManager, this).setConfiguration(newSensorConfiguration, clearRest);
     }
     async clearSensorConfiguration() {
       return _classPrivateFieldGet2(_sensorConfigurationManager, this).clearSensorConfiguration();
