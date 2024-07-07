@@ -1,4 +1,4 @@
-import { createConsole } from "../../utils/Console.js";
+import { createConsole } from "../../utils/Console";
 import {
   ServerMessageTypes,
   pingTimeout,
@@ -6,18 +6,18 @@ import {
   discoveredDevicesMessage,
   createServerMessage,
   createClientDeviceMessage,
-} from "../ServerUtils.js";
-import { parseMessage, parseStringFromDataView } from "../../utils/ParseUtils.js";
-import { addEventListeners, removeEventListeners } from "../../utils/EventDispatcher.js";
-import Timer from "../../utils/Timer.js";
-import EventDispatcher from "../../utils/EventDispatcher.js";
-import Device from "../../Device.js";
-import WebSocketClientConnectionManager from "../../connection/webSocket/WebSocketClientConnectionManager.js";
-import { sliceDataView } from "../../utils/ArrayBufferUtils.js";
+} from "../ServerUtils";
+import { parseMessage, parseStringFromDataView } from "../../utils/ParseUtils";
+import { addEventListeners, removeEventListeners } from "../../utils/EventDispatcher";
+import Timer from "../../utils/Timer";
+import EventDispatcher from "../../utils/EventDispatcher";
+import Device from "../../Device";
+import WebSocketClientConnectionManager from "../../connection/webSocket/WebSocketClientConnectionManager";
+import { sliceDataView } from "../../utils/ArrayBufferUtils";
 
 const _console = createConsole("WebSocketClient", { log: true });
 
-/** @typedef {import("../../utils/EventDispatcher.js").EventDispatcherOptions} EventDispatcherOptions */
+/** @typedef {import("../../utils/EventDispatcher").EventDispatcherOptions} EventDispatcherOptions */
 
 /** @typedef {"not connected" | "connecting" | "connected" | "disconnecting"} ClientConnectionStatus */
 /** @typedef {ClientConnectionStatus | "connectionStatus" | "isConnected" | "isScanningAvailable" | "isScanning" | "discoveredDevice" | "expiredDiscoveredDevice"} ClientEventType */
@@ -90,7 +90,7 @@ const _console = createConsole("WebSocketClient", { log: true });
  */
 /** @typedef {BaseClientEvent & BaseClientIsScanningEvent} ClientIsScanningEvent */
 
-/** @typedef {import("../BaseServer.js").DiscoveredDevice} DiscoveredDevice */
+/** @typedef {import("../BaseServer").DiscoveredDevice} DiscoveredDevice */
 
 /**
  * @typedef {Object} BaseClientDiscoveredDeviceEvent
@@ -260,7 +260,7 @@ class WebSocketClient {
 
   // WEBSOCKET MESSAGING
 
-  /** @typedef {import("../ServerUtils.js").MessageLike} MessageLike */
+  /** @typedef {import("../ServerUtils").MessageLike} MessageLike */
 
   /** @param  {MessageLike} message */
   #sendWebSocketMessage(message) {
@@ -268,8 +268,8 @@ class WebSocketClient {
     this.#webSocket.send(message);
   }
 
-  /** @typedef {import("../ServerUtils.js").ServerMessage} ServerMessage */
-  /** @typedef {import("../ServerUtils.js").ServerMessageType} ServerMessageType */
+  /** @typedef {import("../ServerUtils").ServerMessage} ServerMessage */
+  /** @typedef {import("../ServerUtils").ServerMessageType} ServerMessageType */
 
   /** @param {...ServerMessage | ServerMessageType} messages */
   #sendServerMessage(...messages) {
@@ -622,8 +622,8 @@ class WebSocketClient {
     return createServerMessage({ type: "disconnectFromDevice", data: bluetoothId });
   }
 
-  /** @typedef {import("../../connection/BaseConnectionManager.js").ConnectionMessageType} ConnectionMessageType */
-  /** @typedef {import("../ServerUtils.js").ClientDeviceMessage} ClientDeviceMessage */
+  /** @typedef {import("../../connection/BaseConnectionManager").ConnectionMessageType} ConnectionMessageType */
+  /** @typedef {import("../ServerUtils").ClientDeviceMessage} ClientDeviceMessage */
 
   /**
    * @param {string} bluetoothId

@@ -1,6 +1,6 @@
-import { createConsole } from "./utils/Console.js";
-import EventDispatcher from "./utils/EventDispatcher.js";
-import { textDecoder, textEncoder } from "./utils/Text.js";
+import { createConsole } from "./utils/Console";
+import EventDispatcher from "./utils/EventDispatcher";
+import { textDecoder, textEncoder } from "./utils/Text";
 
 const _console = createConsole("InformationManager", { log: true });
 
@@ -22,9 +22,9 @@ const _console = createConsole("InformationManager", { log: true });
  */
 /** @typedef {InformationMessageType} InformationManagerEventType */
 
-/** @typedef {import("./utils/EventDispatcher.js").EventDispatcherOptions} EventDispatcherOptions */
+/** @typedef {import("./utils/EventDispatcher").EventDispatcherOptions} EventDispatcherOptions */
 
-/** @typedef {import("./Device.js").BaseDeviceEvent} BaseDeviceEvent */
+/** @typedef {import("./Device").BaseDeviceEvent} BaseDeviceEvent */
 
 /**
  * @typedef {Object} BaseBatteryCurrentEvent

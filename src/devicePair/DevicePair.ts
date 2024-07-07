@@ -1,16 +1,16 @@
-import { createConsole } from "../utils/Console.js";
-import EventDispatcher, { addEventListeners, removeEventListeners } from "../utils/EventDispatcher.js";
-import Device from "../Device.js";
-import DevicePairSensorDataManager from "./DevicePairSensorDataManager.js";
-import { capitalizeFirstCharacter } from "../utils/stringUtils.js";
+import { createConsole } from "../utils/Console";
+import EventDispatcher, { addEventListeners, removeEventListeners } from "../utils/EventDispatcher";
+import Device from "../Device";
+import DevicePairSensorDataManager from "./DevicePairSensorDataManager";
+import { capitalizeFirstCharacter } from "../utils/stringUtils";
 
 const _console = createConsole("DevicePair", { log: true });
 
-/** @typedef {import("../Device.js").InsoleSide} InsoleSide */
-/** @typedef {import("../Device.js").DeviceEvent} DeviceEvent */
-/** @typedef {import("../Device.js").DeviceEventType} DeviceEventType */
+/** @typedef {import("../Device").InsoleSide} InsoleSide */
+/** @typedef {import("../Device").DeviceEvent} DeviceEvent */
+/** @typedef {import("../Device").DeviceEventType} DeviceEventType */
 
-/** @typedef {import("../sensor/SensorDataManager.js").SensorType} SensorType */
+/** @typedef {import("../sensor/SensorDataManager").SensorType} SensorType */
 
 /** @typedef {"deviceIsConnected" | "deviceConnectionStatus"} DevicePairDeviceEventType */
 /**
@@ -34,11 +34,11 @@ const _console = createConsole("DevicePair", { log: true });
 /** @typedef {"pressure"} DevicePairSensorType */
 /** @typedef {"isConnected" | DevicePairDeviceEventType | DevicePairDeviceSensorDataEventType | DevicePairSensorType | "deviceGetSensorConfiguration"} DevicePairEventType */
 
-/** @typedef {import("../utils/EventDispatcher.js").EventDispatcherOptions} EventDispatcherOptions */
+/** @typedef {import("../utils/EventDispatcher").EventDispatcherOptions} EventDispatcherOptions */
 
-/** @typedef {import("../sensor/SensorConfigurationManager.js").SensorConfiguration} SensorConfiguration */
+/** @typedef {import("../sensor/SensorConfigurationManager").SensorConfiguration} SensorConfiguration */
 
-/** @typedef {import("../utils/CenterOfPressureHelper.js").CenterOfPressure} CenterOfPressure */
+/** @typedef {import("../utils/CenterOfPressureHelper").CenterOfPressure} CenterOfPressure */
 
 /**
  * @typedef {Object} BaseDevicePairEvent
@@ -55,7 +55,7 @@ const _console = createConsole("DevicePair", { log: true });
 
 /** @typedef {DevicePairIsConnectedEvent} DevicePairConnectionEvent */
 
-/** @typedef {import("./DevicePairPressureSensorDataManager.js").PressureData} PressureData */
+/** @typedef {import("./DevicePairPressureSensorDataManager").PressureData} PressureData */
 /**
  * @typedef {Object} BaseDevicePairPressureEvent
  * @property {"pressure"} type
@@ -72,7 +72,7 @@ const _console = createConsole("DevicePair", { log: true });
  */
 /** @typedef {BaseDevicePairEvent & BaseDevicePairDeviceIsConnectedEvent} DevicePairDeviceIsConnectedEvent */
 
-/** @typedef {import("../Device.js").ConnectionStatus} ConnectionStatus */
+/** @typedef {import("../Device").ConnectionStatus} ConnectionStatus */
 /**
  * @typedef {Object} BaseDevicePairDeviceConnectionStatusEvent
  * @property {"deviceConnectionStatus"} type
@@ -82,7 +82,7 @@ const _console = createConsole("DevicePair", { log: true });
 
 /** @typedef {DevicePairDeviceIsConnectedEvent | DevicePairDeviceConnectionStatusEvent} DevicePairDeviceConnectionEvent */
 
-/** @typedef {import("../sensor/SensorDataManager.js").SensorDataEventMessage} SensorDataEventMessage */
+/** @typedef {import("../sensor/SensorDataManager").SensorDataEventMessage} SensorDataEventMessage */
 /**
  * @typedef {Object} BaseDevicePairDeviceSensorDataEvent
  * @property {DevicePairDeviceSensorDataEventType} type
@@ -93,84 +93,84 @@ const _console = createConsole("DevicePair", { log: true });
 /**
  * @typedef {Object} BaseDevicePairDeviceAccelerationSensorDataEvent
  * @property {"deviceAcceleration"} type
- * @property {{device: Device} & import("../sensor/MotionSensorDataManager.js").AccelerationDataEventMessage} message
+ * @property {{device: Device} & import("../sensor/MotionSensorDataManager").AccelerationDataEventMessage} message
  */
 /** @typedef {BaseDevicePairEvent & BaseDevicePairDeviceAccelerationSensorDataEvent} DevicePairDeviceAccelerationSensorDataEvent */
 
 /**
  * @typedef {Object} BaseDevicePairDeviceGravitySensorDataEvent
  * @property {"deviceGravity"} type
- * @property {{device: Device} & import("../sensor/MotionSensorDataManager.js").GravityDataEventMessage} message
+ * @property {{device: Device} & import("../sensor/MotionSensorDataManager").GravityDataEventMessage} message
  */
 /** @typedef {BaseDevicePairEvent & BaseDevicePairDeviceGravitySensorDataEvent} DevicePairDeviceGravitySensorDataEvent */
 
 /**
  * @typedef {Object} BaseDevicePairDeviceLinearAccelerationSensorDataEvent
  * @property {"deviceLinearAcceleration"} type
- * @property {{device: Device} & import("../sensor/MotionSensorDataManager.js").LinearAccelerationDataEventMessage} message
+ * @property {{device: Device} & import("../sensor/MotionSensorDataManager").LinearAccelerationDataEventMessage} message
  */
 /** @typedef {BaseDevicePairEvent & BaseDevicePairDeviceLinearAccelerationSensorDataEvent} DevicePairDeviceLinearAccelerationSensorDataEvent */
 
 /**
  * @typedef {Object} BaseDevicePairDeviceGyroscopeSensorDataEvent
  * @property {"deviceGyroscope"} type
- * @property {{device: Device} & import("../sensor/MotionSensorDataManager.js").GyroscopeDataEventMessage} message
+ * @property {{device: Device} & import("../sensor/MotionSensorDataManager").GyroscopeDataEventMessage} message
  */
 /** @typedef {BaseDevicePairEvent & BaseDevicePairDeviceGyroscopeSensorDataEvent} DevicePairDeviceGyroscopeSensorDataEvent */
 
 /**
  * @typedef {Object} BaseDevicePairDeviceMagnetometerSensorDataEvent
  * @property {"deviceMagnetometer"} type
- * @property {{device: Device} & import("../sensor/MotionSensorDataManager.js").MagnetometerDataEventMessage} message
+ * @property {{device: Device} & import("../sensor/MotionSensorDataManager").MagnetometerDataEventMessage} message
  */
 /** @typedef {BaseDevicePairEvent & BaseDevicePairDeviceMagnetometerSensorDataEvent} DevicePairDeviceMagnetometerSensorDataEvent */
 
 /**
  * @typedef {Object} BaseDevicePairDeviceRotationSensorDataEvent
  * @property {"deviceRotation"} type
- * @property {{device: Device} & import("../sensor/MotionSensorDataManager.js").RotationDataEventMessage} message
+ * @property {{device: Device} & import("../sensor/MotionSensorDataManager").RotationDataEventMessage} message
  */
 /** @typedef {BaseDevicePairEvent & BaseDevicePairDeviceRotationSensorDataEvent} DevicePairDeviceRotationSensorDataEvent */
 
 /**
  * @typedef {Object} BaseDevicePairDeviceGameRotationSensorDataEvent
  * @property {"deviceGameRotation"} type
- * @property {{device: Device} & import("../sensor/MotionSensorDataManager.js").GameRotationDataEventMessage} message
+ * @property {{device: Device} & import("../sensor/MotionSensorDataManager").GameRotationDataEventMessage} message
  */
 /** @typedef {BaseDevicePairEvent & BaseDevicePairDeviceGameRotationSensorDataEvent} DevicePairDeviceGameRotationSensorDataEvent */
 
 /**
  * @typedef {Object} BaseDevicePairDeviceDeviceOrientationSensorDataEvent
  * @property {"deviceDeviceOrientation"} type
- * @property {{device: Device} & import("../sensor/MotionSensorDataManager.js").DeviceOrientationDataEventMessage} message
+ * @property {{device: Device} & import("../sensor/MotionSensorDataManager").DeviceOrientationDataEventMessage} message
  */
 /** @typedef {BaseDevicePairEvent & BaseDevicePairDeviceDeviceOrientationSensorDataEvent} DevicePairDeviceDeviceOrientationSensorDataEvent */
 
 /**
  * @typedef {Object} BaseDevicePairDeviceActivitySensorDataEvent
  * @property {"deviceActivity"} type
- * @property {{device: Device} & import("../sensor/MotionSensorDataManager.js").ActivityDataEventMessage} message
+ * @property {{device: Device} & import("../sensor/MotionSensorDataManager").ActivityDataEventMessage} message
  */
 /** @typedef {BaseDevicePairEvent & BaseDevicePairDeviceActivitySensorDataEvent} DevicePairDeviceActivitySensorDataEvent */
 
 /**
  * @typedef {Object} BaseDevicePairDeviceStepDetectorSensorDataEvent
  * @property {"deviceStepDetector"} type
- * @property {{device: Device} & import("../sensor/MotionSensorDataManager.js").StepDetectorDataEventMessage} message
+ * @property {{device: Device} & import("../sensor/MotionSensorDataManager").StepDetectorDataEventMessage} message
  */
 /** @typedef {BaseDevicePairEvent & BaseDevicePairDeviceStepDetectorSensorDataEvent} DevicePairDeviceStepDetectorSensorDataEvent */
 
 /**
  * @typedef {Object} BaseDevicePairDeviceStepCounterSensorDataEvent
  * @property {"deviceStepCounter"} type
- * @property {{device: Device} & import("../sensor/MotionSensorDataManager.js").StepCounterDataEventMessage} message
+ * @property {{device: Device} & import("../sensor/MotionSensorDataManager").StepCounterDataEventMessage} message
  */
 /** @typedef {BaseDevicePairEvent & BaseDevicePairDeviceStepCounterSensorDataEvent} DevicePairDeviceStepCounterSensorDataEvent */
 
 /**
  * @typedef {Object} BaseDevicePairDeviceBarometerSensorDataEvent
  * @property {"deviceBarometer"} type
- * @property {{device: Device} & import("../sensor/MotionSensorDataManager.js").BarometerDataEventMessage} message
+ * @property {{device: Device} & import("../sensor/MotionSensorDataManager").BarometerDataEventMessage} message
  */
 /** @typedef {BaseDevicePairEvent & BaseDevicePairDeviceBarometerSensorDataEvent} DevicePairDeviceBarometerSensorDataEvent */
 
@@ -380,7 +380,7 @@ class DevicePair {
 
   // VIBRATION
 
-  /** @typedef {import("../vibration/VibrationManager.js").VibrationConfiguration} VibrationConfiguration */
+  /** @typedef {import("../vibration/VibrationManager").VibrationConfiguration} VibrationConfiguration */
   /**
    * @param {VibrationConfiguration[]} vibrationConfigurations
    * @param {boolean} sendImmediately

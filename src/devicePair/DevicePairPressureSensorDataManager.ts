@@ -1,15 +1,15 @@
-import PressureSensorDataManager from "../sensor/PressureSensorDataManager.js";
-import CenterOfPressureHelper from "../utils/CenterOfPressureHelper.js";
-import { createConsole } from "../utils/Console.js";
-import Device from "../Device.js";
+import PressureSensorDataManager from "../sensor/PressureSensorDataManager";
+import CenterOfPressureHelper from "../utils/CenterOfPressureHelper";
+import { createConsole } from "../utils/Console";
+import Device from "../Device";
 
 const _console = createConsole("DevicePairPressureSensorDataManager", { log: true });
 
-/** @typedef {import("../Device.js").SensorType} SensorType */
+/** @typedef {import("../Device").SensorType} SensorType */
 
-/** @typedef {import("../sensor/PressureSensorDataManager.js").PressureData} PressureData */
+/** @typedef {import("../sensor/PressureSensorDataManager").PressureData} PressureData */
 
-/** @typedef {import("../utils/CenterOfPressureHelper.js").CenterOfPressure} CenterOfPressure */
+/** @typedef {import("../utils/CenterOfPressureHelper").CenterOfPressure} CenterOfPressure */
 
 /**
  * @typedef {Object} DevicePairRawPressureData
@@ -27,7 +27,7 @@ const _console = createConsole("DevicePairPressureSensorDataManager", { log: tru
  * @property {CenterOfPressure} [normalizedCenter]
  */
 
-/** @typedef {import("../Device.js").DeviceEvent} DeviceEvent */
+/** @typedef {import("../Device").DeviceEvent} DeviceEvent */
 
 class DevicePairPressureSensorDataManager {
   static get Sides() {

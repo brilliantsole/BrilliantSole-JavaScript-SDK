@@ -1,15 +1,15 @@
-import EventDispatcher, { addEventListeners } from "../utils/EventDispatcher.js";
-import { createConsole } from "../utils/Console.js";
-import Timer from "../utils/Timer.js";
+import EventDispatcher, { addEventListeners } from "../utils/EventDispatcher";
+import { createConsole } from "../utils/Console";
+import Timer from "../utils/Timer";
 
 const _console = createConsole("BaseScanner");
 
-/** @typedef {import("../Device.js").DeviceType} DeviceType */
+/** @typedef {import("../Device").DeviceType} DeviceType */
 
 /** @typedef {"isAvailable" | "isScanning" | "discoveredDevice" | "expiredDiscoveredDevice"} ScannerEventType */
 
-/** @typedef {import("../utils/EventDispatcher.js").EventDispatcherListener} EventDispatcherListener */
-/** @typedef {import("../utils/EventDispatcher.js").EventDispatcherOptions} EventDispatcherOptions */
+/** @typedef {import("../utils/EventDispatcher").EventDispatcherListener} EventDispatcherListener */
+/** @typedef {import("../utils/EventDispatcher").EventDispatcherOptions} EventDispatcherOptions */
 
 /**
  * @typedef {Object} ScannerEvent

@@ -1,5 +1,5 @@
-import { createConsole } from "./Console.js";
-import { spacesToPascalCase } from "./stringUtils.js";
+import { createConsole } from "./Console";
+import { spacesToPascalCase } from "./stringUtils";
 
 const _console = createConsole("EventDispatcher", { log: false });
 
@@ -17,7 +17,7 @@ const _console = createConsole("EventDispatcher", { log: false });
 
 /** @typedef {(event: EventDispatcherEvent) => void} EventDispatcherListener */
 
-// based on https://github.com/mrdoob/eventdispatcher.js/
+// based on https://github.com/mrdoob/eventdispatcher/
 class EventDispatcher {
   /**
    * @param {object} target

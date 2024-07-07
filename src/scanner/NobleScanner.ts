@@ -1,10 +1,10 @@
-import BaseScanner from "./BaseScanner.js";
-import { createConsole } from "../utils/Console.js";
-import { isInNode } from "../utils/environment.js";
-import { addEventListeners, removeEventListeners } from "../utils/EventDispatcher.js";
-import { serviceDataUUID, serviceUUIDs } from "../connection/bluetooth/bluetoothUUIDs.js";
-import Device from "../Device.js";
-import NobleConnectionManager from "../connection/bluetooth/NobleConnectionManager.js";
+import BaseScanner from "./BaseScanner";
+import { createConsole } from "../utils/Console";
+import { isInNode } from "../utils/environment";
+import { addEventListeners, removeEventListeners } from "../utils/EventDispatcher";
+import { serviceDataUUID, serviceUUIDs } from "../connection/bluetooth/bluetoothUUIDs";
+import Device from "../Device";
+import NobleConnectionManager from "../connection/bluetooth/NobleConnectionManager";
 
 const _console = createConsole("NobleScanner", { log: true });
 
@@ -17,8 +17,8 @@ isSupported = true;
 
 /** @typedef {"unknown" | "resetting" | "unsupported" | "unauthorized" | "poweredOff" | "poweredOn"} NobleState */
 
-/** @typedef {import("./BaseScanner.js").DiscoveredDevice} DiscoveredDevice */
-/** @typedef {import("./BaseScanner.js").ScannerEvent} ScannerEvent */
+/** @typedef {import("./BaseScanner").DiscoveredDevice} DiscoveredDevice */
+/** @typedef {import("./BaseScanner").ScannerEvent} ScannerEvent */
 
 class NobleScanner extends BaseScanner {
   // IS SUPPORTED

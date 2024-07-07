@@ -1,6 +1,6 @@
-import RangeHelper from "./RangeHelper.js";
+import RangeHelper from "./RangeHelper";
 
-/** @typedef {import("./MathUtils.js").Vector2} Vector2 */
+/** @typedef {import("./MathUtils").Vector2} Vector2 */
 
 /** @typedef {Vector2} CenterOfPressure */
 

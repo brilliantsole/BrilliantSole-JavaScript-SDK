@@ -1,6 +1,6 @@
-import { createConsole } from "../utils/Console.js";
-import NobleScanner from "./NobleScanner.js";
-import BaseScanner from "./BaseScanner.js";
+import { createConsole } from "../utils/Console";
+import NobleScanner from "./NobleScanner";
+import BaseScanner from "./BaseScanner";
 
 const _console = createConsole("Scanner", { log: false });
 
@@ -8,10 +8,10 @@ const _console = createConsole("Scanner", { log: false });
 let scanner;
 
 if (NobleScanner.isSupported) {
-    _console.log("using NobleScanner");
-    scanner = new NobleScanner();
+  _console.log("using NobleScanner");
+  scanner = new NobleScanner();
 } else {
-    _console.log("Scanner not available");
+  _console.log("Scanner not available");
 }
 
 export default scanner;

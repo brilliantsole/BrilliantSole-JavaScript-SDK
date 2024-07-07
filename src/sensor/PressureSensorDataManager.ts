@@ -1,14 +1,14 @@
-import { createConsole } from "../utils/Console.js";
-import CenterOfPressureHelper from "../utils/CenterOfPressureHelper.js";
-import RangeHelper from "../utils/RangeHelper.js";
-import { createArray } from "../utils/ArrayUtils.js";
+import { createConsole } from "../utils/Console";
+import CenterOfPressureHelper from "../utils/CenterOfPressureHelper";
+import RangeHelper from "../utils/RangeHelper";
+import { createArray } from "../utils/ArrayUtils";
 
 /** @typedef {"pressure"} PressureSensorType */
-/** @typedef {import("../utils/MathUtils.js").Vector2} Vector2 */
+/** @typedef {import("../utils/MathUtils").Vector2} Vector2 */
 
 /** @typedef {Vector2} PressureSensorPosition */
 
-/** @typedef {import("../utils/CenterOfPressureHelper.js").CenterOfPressure} CenterOfPressure */
+/** @typedef {import("../utils/CenterOfPressureHelper").CenterOfPressure} CenterOfPressure */
 
 /**
  * @typedef {Object} PressureSensorValue
@@ -30,7 +30,7 @@ import { createArray } from "../utils/ArrayUtils.js";
  * @property {CenterOfPressure} [normalizedCenter]
  */
 
-/** @typedef {import("./SensorDataManager.js").BaseSensorDataEventMessage} BaseSensorDataEventMessage */
+/** @typedef {import("./SensorDataManager").BaseSensorDataEventMessage} BaseSensorDataEventMessage */
 
 /**
  * @typedef {Object} BasePressureSensorDataEventMessage
@@ -44,7 +44,7 @@ import { createArray } from "../utils/ArrayUtils.js";
  * @property {PressureSensorDataEventMessage} message
  */
 
-/** @typedef {import("../Device.js").BaseDeviceEvent} BaseDeviceEvent */
+/** @typedef {import("../Device").BaseDeviceEvent} BaseDeviceEvent */
 /** @typedef {BaseDeviceEvent & BasePressureSensorDataEvent} PressureSensorDataEvent */
 
 const _console = createConsole("PressureSensorDataManager", { log: true });

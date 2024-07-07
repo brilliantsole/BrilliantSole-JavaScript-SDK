@@ -1,9 +1,9 @@
-import { createConsole } from "../../utils/Console.js";
-import { addEventListeners, removeEventListeners } from "../../utils/EventDispatcher.js";
-import { pingTimeout, pingMessage } from "../ServerUtils.js";
-import { dataToArrayBuffer } from "../../utils/ArrayBufferUtils.js";
-import Timer from "../../utils/Timer.js";
-import BaseServer from "../BaseServer.js";
+import { createConsole } from "../../utils/Console";
+import { addEventListeners, removeEventListeners } from "../../utils/EventDispatcher";
+import { pingTimeout, pingMessage } from "../ServerUtils";
+import { dataToArrayBuffer } from "../../utils/ArrayBufferUtils";
+import Timer from "../../utils/Timer";
+import BaseServer from "../BaseServer";
 
 const _console = createConsole("WebSocketServer", { log: true });
 
@@ -11,16 +11,16 @@ const _console = createConsole("WebSocketServer", { log: true });
 import ws from "ws";
 // NODE_END
 
-/** @typedef {import("../BaseServer.js").ServerEventType} ServerEventType */
+/** @typedef {import("../BaseServer").ServerEventType} ServerEventType */
 
-/** @typedef {import("../BaseServer.js").ClientConnectedEvent} ClientConnectedEvent */
+/** @typedef {import("../BaseServer").ClientConnectedEvent} ClientConnectedEvent */
 /**
  * @typedef {Object} BaseWebSocketClientConnectedEvent
  * @property {{client: ws.WebSocket}} message
  */
 /** @typedef {ClientConnectedEvent & BaseWebSocketClientConnectedEvent} WebSocketClientConnectedEvent */
 
-/** @typedef {import("../BaseServer.js").ClientDisconnectedEvent} ClientDisconnectedEvent */
+/** @typedef {import("../BaseServer").ClientDisconnectedEvent} ClientDisconnectedEvent */
 /**
  * @typedef {Object} BaseWebSocketClientDisconnectedEvent
  * @property {{client: ws.WebSocket}} message

@@ -1,13 +1,13 @@
-export { setAllConsoleLevelFlags, setConsoleLevelFlagsForType } from "./utils/Console.js";
-export { default as Device } from "./Device.js";
-export * as Environment from "./utils/environment.js";
+export { setAllConsoleLevelFlags, setConsoleLevelFlagsForType } from "./utils/Console";
+export { default as Device } from "./Device";
+export * as Environment from "./utils/environment";
 /** @typedef {Device} Device */
 // NODE_START
-export { default as Scanner } from "./scanner/Scanner.js";
-export { default as WebSocketServer } from "./server/websocket/WebSocketServer.js";
+export { default as Scanner } from "./scanner/Scanner";
+export { default as WebSocketServer } from "./server/websocket/WebSocketServer";
 // NODE_END
-export { default as DevicePair } from "./devicePair/DevicePair.js";
+export { default as DevicePair } from "./devicePair/DevicePair";
 /** @typedef {DevicePair} DevicePair */
 // BROWSER_START
-export { default as WebSocketClient } from "./server/websocket/WebSocketClient.js";
+export { default as WebSocketClient } from "./server/websocket/WebSocketClient";
 // BROWSER_END

@@ -1,90 +1,84 @@
-import { createConsole } from "./utils/Console.js";
-import { crc32 } from "./utils/checksum.js";
-import EventDispatcher from "./utils/EventDispatcher.js";
-import { getFileBuffer } from "./utils/ArrayBufferUtils.js";
+import { createConsole } from "./utils/Console";
+import { crc32 } from "./utils/checksum";
+import EventDispatcher from "./utils/EventDispatcher";
+import { getFileBuffer } from "./utils/ArrayBufferUtils";
 
 const _console = createConsole("FileTransferManager", { log: true });
 
-/**
- * @typedef { "maxFileLength" |
- * "getFileTransferType" |
- * "setFileTransferType" |
- * "getFileLength" |
- * "setFileLength" |
- * "getFileChecksum" |
- * "setFileChecksum" |
- * "setFileTransferCommand" |
- * "fileTransferStatus" |
- * "getFileTransferBlock" |
- * "setFileTransferBlock"
- * } FileTransferMessageType
- */
+type FileTransferMessageType =
+  | "maxFileLength"
+  | "getFileTransferType"
+  | "setFileTransferType"
+  | "getFileLength"
+  | "setFileLength"
+  | "getFileChecksum"
+  | "setFileChecksum"
+  | "setFileTransferCommand"
+  | "fileTransferStatus"
+  | "getFileTransferBlock"
+  | "setFileTransferBlock";
 
-/** @typedef {"tflite"} FileType */
-/** @typedef {"idle" | "sending" | "receiving"} FileTransferStatus */
-/** @typedef {"startReceive" | "startSend" | "cancel"} FileTransferCommand */
+type FileType = "tflite";
+type FileTransferStatus = "idle" | "sending" | "receiving";
+type FileTransferCommand = "startReceive" | "startSend" | "cancel";
 
-/** @typedef {import("./utils/ArrayBufferUtils.js").FileLike} */
+/** @typedef {import("./utils/ArrayBufferUtils").FileLike} */
 
-/** @typedef {import("./utils/EventDispatcher.js").EventDispatcherOptions} EventDispatcherOptions */
+type EventDispatcherOptions = import("./utils/EventDispatcher").EventDispatcherOptions;
 
-/** @typedef {FileTransferMessageType | "fileTransferProgress" | "fileTransferComplete" | "fileReceived"} FileTransferManagerEventType */
+type FileTransferManagerEventType =
+  | FileTransferMessageType
+  | "fileTransferProgress"
+  | "fileTransferComplete"
+  | "fileReceived";
 
-/** @typedef {import("./Device.js").BaseDeviceEvent} BaseDeviceEvent */
+type BaseDeviceEvent = import("./Device").BaseDeviceEvent;
 
-/**
- * @typedef {Object} BaseFileTransferMaxLengthEvent
- * @property {"maxFileLength"} type
- * @property {{maxFileLength: number}} message
- */
-/** @typedef {BaseDeviceEvent & BaseFileTransferMaxLengthEvent} FileTransferMaxLengthEvent */
+interface BaseFileTransferMaxLengthEvent {
+  type: "maxFileLength";
+  message: { maxFileLength: number };
+}
+type FileTransferMaxLengthEvent = BaseDeviceEvent & BaseFileTransferMaxLengthEvent;
 
-/**
- * @typedef {Object} BaseFileTransferTypeEvent
- * @property {"getFileTransferType"} type
- * @property {{fileType: FileType}} message
- */
-/** @typedef {BaseDeviceEvent & BaseFileTransferTypeEvent} FileTransferTypeEvent */
+interface BaseFileTransferTypeEvent {
+  type: "getFileTransferType";
+  message: { fileType: FileType };
+}
+type FileTransferTypeEvent = BaseDeviceEvent & BaseFileTransferTypeEvent;
 
-/**
- * @typedef {Object} BaseFileTransferLengthEvent
- * @property {"getFileLength"} type
- * @property {{fileLength: number}} message
- */
-/** @typedef {BaseDeviceEvent & BaseFileTransferLengthEvent} FileTransferLengthEvent */
+interface BaseFileTransferLengthEvent {
+  type: "getFileLength";
+  message: { fileLength: number };
+}
+type FileTransferLengthEvent = BaseDeviceEvent & BaseFileTransferLengthEvent;
 
-/**
- * @typedef {Object} BaseFileChecksumEvent
- * @property {"getFileChecksum"} type
- * @property {{fileChecksum: number}} message
- */
-/** @typedef {BaseDeviceEvent & BaseFileChecksumEvent} FileChecksumEvent */
+interface BaseFileChecksumEvent {
+  type: "getFileChecksum";
+  message: { fileChecksum: number };
+}
+type FileChecksumEvent = BaseDeviceEvent & BaseFileChecksumEvent;
 
-/**
- * @typedef {Object} BaseFileTransferStatusEvent
- * @property {"fileTransferStatus"} type
- * @property {{fileTransferStatus: FileTransferStatus}} message
- */
-/** @typedef {BaseDeviceEvent & BaseFileTransferStatusEvent} FileTransferStatusEvent */
+interface BaseFileTransferStatusEvent {
+  type: "fileTransferStatus";
+  message: { fileTransferStatus: FileTransferStatus };
+}
+type FileTransferStatusEvent = BaseDeviceEvent & BaseFileTransferStatusEvent;
 
-/**
- * @typedef {Object} BaseFileTransferBlockEvent
- * @property {"getFileTransferBlock"} type
- * @property {{fileTransferBlock: DataView}} message
- */
-/** @typedef {BaseDeviceEvent & BaseFileTransferBlockEvent} FileTransferBlockEvent */
+interface BaseFileTransferBlockEvent {
+  type: "getFileTransferBlock";
+  message: { fileTransferBlock: DataView };
+}
+type FileTransferBlockEvent = BaseDeviceEvent & BaseFileTransferBlockEvent;
 
-/**
- * @typedef {FileTransferMaxLengthEvent |
- * FileTransferTypeEvent |
- * FileTransferLengthEvent |
- * FileChecksumEvent |
- * FileTransferStatusEvent |
- * FileTransferBlockEvent
- * } FileTransferManagerEvent
- */
+type FileTransferManagerEvent =
+  | FileTransferMaxLengthEvent
+  | FileTransferTypeEvent
+  | FileTransferLengthEvent
+  | FileChecksumEvent
+  | FileTransferStatusEvent
+  | FileTransferBlockEvent;
 
-/** @typedef {(event: FileTransferManagerEvent) => void} FileTransferManagerEventListener */
+type FileTransferManagerEventListener = (event: FileTransferManagerEvent) => void;
 
 class FileTransferManager {
   // MESSAGE TYPES

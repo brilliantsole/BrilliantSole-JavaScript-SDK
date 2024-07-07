@@ -1,10 +1,10 @@
-import { createConsole } from "./utils/Console.js";
-import EventDispatcher from "./utils/EventDispatcher.js";
-import { textDecoder, textEncoder } from "./utils/Text.js";
-import SensorDataManager from "./sensor/SensorDataManager.js";
-import { arrayWithoutDuplicates } from "./utils/ArrayUtils.js";
-import SensorConfigurationManager from "./sensor/SensorConfigurationManager.js";
-import { parseTimestamp } from "./utils/MathUtils.js";
+import { createConsole } from "./utils/Console";
+import EventDispatcher from "./utils/EventDispatcher";
+import { textDecoder, textEncoder } from "./utils/Text";
+import SensorDataManager from "./sensor/SensorDataManager";
+import { arrayWithoutDuplicates } from "./utils/ArrayUtils";
+import SensorConfigurationManager from "./sensor/SensorConfigurationManager";
+import { parseTimestamp } from "./utils/MathUtils";
 
 const _console = createConsole("TfliteManager", { log: true });
 
@@ -30,13 +30,13 @@ const _console = createConsole("TfliteManager", { log: true });
 
 /** @typedef {"classification" | "regression"} TfliteTask */
 
-/** @typedef {import("./sensor/SensorDataManager.js").SensorType} SensorType */
+/** @typedef {import("./sensor/SensorDataManager").SensorType} SensorType */
 
-/** @typedef {import("./utils/EventDispatcher.js").EventDispatcherOptions} EventDispatcherOptions */
+/** @typedef {import("./utils/EventDispatcher").EventDispatcherOptions} EventDispatcherOptions */
 
 /** @typedef {TfliteMessageType} TfliteManagerEventType */
 
-/** @typedef {import("./Device.js").BaseDeviceEvent} BaseDeviceEvent */
+/** @typedef {import("./Device").BaseDeviceEvent} BaseDeviceEvent */
 
 /**
  * @typedef {Object} BaseTfliteNameEvent

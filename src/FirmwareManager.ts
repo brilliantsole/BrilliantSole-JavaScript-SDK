@@ -1,62 +1,54 @@
-import { getFileBuffer } from "./utils/ArrayBufferUtils.js";
-import { createConsole } from "./utils/Console.js";
-import EventDispatcher from "./utils/EventDispatcher.js";
-import { MCUManager, constants } from "./utils/mcumgr.js";
+import { getFileBuffer } from "./utils/ArrayBufferUtils";
+import { createConsole } from "./utils/Console";
+import EventDispatcher from "./utils/EventDispatcher";
+import { MCUManager, constants } from "./utils/mcumgr";
 
 const _console = createConsole("FirmwareManager", { log: true });
 
-/** @typedef {"smp"} FirmwareMessageType */
+type FirmwareMessageType = "smp";
 
-/** @typedef {import("./utils/EventDispatcher.js").EventDispatcherOptions} EventDispatcherOptions */
+type EventDispatcherOptions = import("./utils/EventDispatcher").EventDispatcherOptions;
 
-/** @typedef {FirmwareMessageType | "firmwareImages" | "firmwareUploadProgress" | "firmwareStatus" | "firmwareUploadComplete"} FirmwareManagerEventType */
+type FirmwareManagerEventType = FirmwareMessageType | "firmwareImages" | "firmwareUploadProgress" | "firmwareStatus" | "firmwareUploadComplete";
 
-/** @typedef {"idle" | "uploading" | "uploaded" | "pending" | "testing" | "erasing"} FirmwareStatus */
+type FirmwareStatus = "idle" | "uploading" | "uploaded" | "pending" | "testing" | "erasing";
 
-/** @typedef {import("./Device.js").BaseDeviceEvent} BaseDeviceEvent */
+type BaseDeviceEvent = import("./Device").BaseDeviceEvent;
 
-/**
- * @typedef {Object} BaseSmpEvent
- * @property {"smp"} type
- */
-/** @typedef {BaseDeviceEvent & BaseSmpEvent} SmpEvent */
+interface BaseSmpEvent {
+  type: "smp";
+}
+type SmpEvent = BaseDeviceEvent & BaseSmpEvent;
 
-/**
- * @typedef {Object} BaseFirmwareImagesEvent
- * @property {"firmwareImages"} type
- * @property {{firmwareImages: FirmwareImage[]}} message
- */
-/** @typedef {BaseDeviceEvent & BaseFirmwareImagesEvent} FirmwareImagesEvent */
+interface BaseFirmwareImagesEvent {
+  type: "firmwareImages";
+  message: { firmwareImages: FirmwareImage[]; };
+}
+type FirmwareImagesEvent = BaseDeviceEvent & BaseFirmwareImagesEvent;
 
-/**
- * @typedef {Object} BaseFirmwareUploadProgressEvent
- * @property {"firmwareUploadProgress"} type
- * @property {{firmwareUploadProgress: number}} message
- */
-/** @typedef {BaseDeviceEvent & BaseFirmwareUploadProgressEvent} FirmwareUploadProgressEvent */
+interface BaseFirmwareUploadProgressEvent {
+  type: "firmwareUploadProgress";
+  message: { firmwareUploadProgress: number; };
+}
+type FirmwareUploadProgressEvent = BaseDeviceEvent & BaseFirmwareUploadProgressEvent;
 
-/**
- * @typedef {Object} BaseFirmwareUploadCompleteEvent
- * @property {"firmwareUploadComplete"} type
- */
-/** @typedef {BaseDeviceEvent & BaseFirmwareUploadCompleteEvent} FirmwareUploadCompleteEvent */
+interface BaseFirmwareUploadCompleteEvent {
+  type: "firmwareUploadComplete";
+}
+type FirmwareUploadCompleteEvent = BaseDeviceEvent & BaseFirmwareUploadCompleteEvent;
 
-/**
- * @typedef {Object} BaseFirmwareStatusEvent
- * @property {"firmwareStatus"} type
- * @property {{firmwareStatus: FirmwareStatus}} message
- */
-/** @typedef {BaseDeviceEvent & BaseFirmwareStatusEvent} FirmwareStatusEvent */
+interface BaseFirmwareStatusEvent {
+  type: "firmwareStatus";
+  message: { firmwareStatus: FirmwareStatus; };
+}
+type FirmwareStatusEvent = BaseDeviceEvent & BaseFirmwareStatusEvent;
 
-/**
- * @typedef {SmpEvent |
- * FirmwareImagesEvent |
- * FirmwareUploadProgressEvent |
- * FirmwareUploadCompleteEvent |
- * FirmwareStatusEvent
- * } FirmwareManagerEvent
- */
-/** @typedef {(event: FirmwareManagerEvent) => void} FirmwareManagerEventListener */
+type FirmwareManagerEvent = SmpEvent |
+  FirmwareImagesEvent |
+  FirmwareUploadProgressEvent |
+  FirmwareUploadCompleteEvent |
+  FirmwareStatusEvent;
+type FirmwareManagerEventListener = (event: FirmwareManagerEvent) => void;
 
 class FirmwareManager {
   /**
@@ -143,7 +135,7 @@ class FirmwareManager {
     }
   }
 
-  /** @typedef {import("./utils/ArrayBufferUtils.js").FileLike} FileLike */
+  type FileLike = import("./utils/ArrayBufferUtils").FileLike;
 
   /** @param {FileLike} file */
   async uploadFirmware(file) {
@@ -190,18 +182,17 @@ class FirmwareManager {
 
   // COMMANDS
 
-  /**
-   * @typedef {Object} FirmwareImage
-   * @property {number} slot
-   * @property {boolean} active
-   * @property {boolean} confirmed
-   * @property {boolean} pending
-   * @property {boolean} permanent
-   * @property {boolean} bootable
-   * @property {string} version
-   * @property {Uint8Array} [hash]
-   * @property {boolean} [empty]
-   */
+  interface FirmwareImage {
+    slot: number;
+    active: boolean;
+    confirmed: boolean;
+    pending: boolean;
+    permanent: boolean;
+    bootable: boolean;
+    version: string;
+    hash?: Uint8Array;
+    empty?: boolean;
+  }
 
   /** @type {FirmwareImage[]} */
   #images;

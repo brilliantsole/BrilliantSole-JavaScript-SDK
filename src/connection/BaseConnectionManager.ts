@@ -1,56 +1,45 @@
-import { createConsole } from "../utils/Console.js";
-import Timer from "../utils/Timer.js";
+import { createConsole } from "../utils/Console";
+import Timer from "../utils/Timer";
 
-import FileTransferManager from "../FileTransferManager.js";
-import TfliteManager from "../TfliteManager.js";
-import { concatenateArrayBuffers } from "../utils/ArrayBufferUtils.js";
-import { parseMessage } from "../utils/ParseUtils.js";
-import DeviceInformationManager from "../DeviceInformationManager.js";
-import InformationManager from "../InformationManager.js";
-import VibrationManager from "../vibration/VibrationManager.js";
-import SensorConfigurationManager from "../sensor/SensorConfigurationManager.js";
-import SensorDataManager from "../sensor/SensorDataManager.js";
+import FileTransferManager from "../FileTransferManager";
+import TfliteManager from "../TfliteManager";
+import { concatenateArrayBuffers } from "../utils/ArrayBufferUtils";
+import { parseMessage } from "../utils/ParseUtils";
+import DeviceInformationManager from "../DeviceInformationManager";
+import InformationManager from "../InformationManager";
+import VibrationManager from "../vibration/VibrationManager";
+import SensorConfigurationManager from "../sensor/SensorConfigurationManager";
+import SensorDataManager from "../sensor/SensorDataManager";
 
 const _console = createConsole("BaseConnectionManager", { log: true });
 
-/** @typedef {import("../FileTransferManager.js").FileTransferMessageType} FileTransferMessageType */
-/** @typedef {import("../TfliteManager.js").TfliteMessageType} TfliteMessageType */
-/** @typedef {import("../FirmwareManager.js").FirmwareMessageType} FirmwareMessageType */
-/** @typedef {import("../DeviceInformationManager.js").DeviceInformationMessageType} DeviceInformationMessageType */
-/** @typedef {import("../InformationManager.js").InformationMessageType} InformationMessageType */
-/** @typedef {import("../sensor/SensorConfigurationManager.js").SensorConfigurationMessageType} SensorConfigurationMessageType */
-/** @typedef {import("../sensor/SensorDataManager.js").SensorDataMessageType} SensorDataMessageType */
-/** @typedef {import("../vibration/VibrationManager.js").VibrationMessageType} VibrationMessageType */
+type FileTransferMessageType = import("../FileTransferManager").FileTransferMessageType;
+type TfliteMessageType = import("../TfliteManager").TfliteMessageType;
+type FirmwareMessageType = import("../FirmwareManager").FirmwareMessageType;
+type DeviceInformationMessageType = import("../DeviceInformationManager").DeviceInformationMessageType;
+type InformationMessageType = import("../InformationManager").InformationMessageType;
+type SensorConfigurationMessageType = import("../sensor/SensorConfigurationManager").SensorConfigurationMessageType;
+type SensorDataMessageType = import("../sensor/SensorDataManager").SensorDataMessageType;
+type VibrationMessageType = import("../vibration/VibrationManager").VibrationMessageType;
 
-/** @typedef {"webBluetooth" | "noble" | "webSocketClient"} ConnectionType */
-/** @typedef {"not connected" | "connecting" | "connected" | "disconnecting"} ConnectionStatus */
+type ConnectionType = "webBluetooth" | "noble" | "webSocketClient";
+type ConnectionStatus = "not connected" | "connecting" | "connected" | "disconnecting";
 
-/**
- * @typedef { InformationMessageType |
- * SensorConfigurationMessageType |
- * SensorDataMessageType |
- * VibrationMessageType |
- * FileTransferMessageType |
- * TfliteMessageType |
- * FirmwareMessageType
- * } TxRxMessageType
- */
+type TxRxMessageType =
+  | InformationMessageType
+  | SensorConfigurationMessageType
+  | SensorDataMessageType
+  | VibrationMessageType
+  | FileTransferMessageType
+  | TfliteMessageType
+  | FirmwareMessageType;
 
-/**
- * @typedef {Object} TxMessage
- * @property {TxRxMessageType} type
- * @property {ArrayBuffer} [data]
- */
+interface TxMessage {
+  type: TxRxMessageType;
+  data?: ArrayBuffer;
+}
 
-/**
- * @typedef { DeviceInformationMessageType |
- * "batteryLevel" |
- * "rx" |
- * "tx" |
- * "smp" |
- * TxRxMessageType
- * } ConnectionMessageType
- */
+type ConnectionMessageType = DeviceInformationMessageType | "batteryLevel" | "rx" | "tx" | "smp" | TxRxMessageType;
 
 /**
  * @callback ConnectionStatusCallback

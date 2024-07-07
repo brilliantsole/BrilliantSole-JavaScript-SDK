@@ -1,51 +1,46 @@
-import { createConsole } from "./utils/Console.js";
-import EventDispatcher from "./utils/EventDispatcher.js";
-import { textDecoder } from "./utils/Text.js";
+import { createConsole } from "./utils/Console";
+import EventDispatcher from "./utils/EventDispatcher";
+import { textDecoder } from "./utils/Text";
 
 const _console = createConsole("DeviceInformationManager", { log: true });
 
-/**
- * @typedef {Object} DeviceInformation
- * @property {string} manufacturerName
- * @property {string} modelNumber
- * @property {string} softwareRevision
- * @property {string} hardwareRevision
- * @property {string} firmwareRevision
- * @property {PnpId} pnpId
- * @property {string} serialNumber
- */
+export interface DeviceInformation {
+  manufacturerName: string;
+  modelNumber: string;
+  softwareRevision: string;
+  hardwareRevision: string;
+  firmwareRevision: string;
+  pnpId: PnpId;
+  serialNumber: string;
+}
 
-/**
- * @typedef {Object} PnpId
- * @property {"Bluetooth"|"USB"} source
- * @property {number} vendorId
- * @property {number} productId
- * @property {number} productVersion
- */
+export interface PnpId {
+  source: "Bluetooth" | "USB";
+  vendorId: number;
+  productId: number;
+  productVersion: number;
+}
 
-/**
- * @typedef { "manufacturerName" |
- * "modelNumber" |
- * "softwareRevision" |
- * "hardwareRevision" |
- * "firmwareRevision" |
- * "pnpId" |
- * "serialNumber"
- * } DeviceInformationMessageType
- */
+export type DeviceInformationMessageType =
+  | "manufacturerName"
+  | "modelNumber"
+  | "softwareRevision"
+  | "hardwareRevision"
+  | "firmwareRevision"
+  | "pnpId"
+  | "serialNumber";
 
-/** @typedef {DeviceInformationMessageType | "deviceInformation"} DeviceInformationManagerEventType */
+export type DeviceInformationManagerEventType = DeviceInformationMessageType | "deviceInformation";
 
-/** @typedef {import("./utils/EventDispatcher.js").EventDispatcherOptions} EventDispatcherOptions */
+type EventDispatcherOptions = import("./utils/EventDispatcher").EventDispatcherOptions;
 
-/** @typedef {import("./Device.js").BaseDeviceEvent} BaseDeviceEvent */
+type BaseDeviceEvent = import("./Device").BaseDeviceEvent;
 
-/**
- * @typedef {Object} BaseDeviceInformationManagerEvent
- * @property {DeviceInformationManagerEventType} type
- * @property {{deviceInformation: DeviceInformation}} message
- */
-/** @typedef {BaseDeviceEvent & BaseDeviceInformationManagerEvent} DeviceInformationManagerEvent */
+export interface BaseDeviceInformationManagerEvent {
+  type: DeviceInformationManagerEventType;
+  message: { deviceInformation: DeviceInformation };
+}
+export type DeviceInformationManagerEvent = BaseDeviceEvent & BaseDeviceInformationManagerEvent;
 
 class DeviceInformationManager {
   // MESSAGE TYPES
@@ -178,7 +173,7 @@ class DeviceInformationManager {
       case "serialNumber":
         const serialNumber = textDecoder.decode(dataView);
         _console.log({ serialNumber });
-        // will only be used for node.js
+        // will only be used for node
         break;
       default:
         throw Error(`uncaught messageType ${messageType}`);

@@ -1,23 +1,23 @@
 import { createConsole } from "../utils/Console";
 import EventDispatcher from "../utils/EventDispatcher";
-import { createServerMessage, createDeviceMessage, ServerMessageTypes, pongMessage } from "./ServerUtils.js";
-import Device from "../Device.js";
+import { createServerMessage, createDeviceMessage, ServerMessageTypes, pongMessage } from "./ServerUtils";
+import Device from "../Device";
 import { addEventListeners, removeEventListeners } from "../utils/EventDispatcher";
-import scanner from "../scanner/Scanner.js";
-import { parseMessage, parseStringFromDataView } from "../utils/ParseUtils.js";
-import { concatenateArrayBuffers } from "../utils/ArrayBufferUtils.js";
-import BaseConnectionManager from "../connection/BaseConnectionManager.js";
+import scanner from "../scanner/Scanner";
+import { parseMessage, parseStringFromDataView } from "../utils/ParseUtils";
+import { concatenateArrayBuffers } from "../utils/ArrayBufferUtils";
+import BaseConnectionManager from "../connection/BaseConnectionManager";
 
 const _console = createConsole("BaseServer", { log: true });
 
-/** @typedef {import("../utils/EventDispatcher.js").EventDispatcherOptions} EventDispatcherOptions */
+/** @typedef {import("../utils/EventDispatcher").EventDispatcherOptions} EventDispatcherOptions */
 
-/** @typedef {import("../scanner/BaseScanner.js").ScannerEvent} ScannerEvent */
-/** @typedef {import("../scanner/BaseScanner.js").DiscoveredDevice} DiscoveredDevice */
+/** @typedef {import("../scanner/BaseScanner").ScannerEvent} ScannerEvent */
+/** @typedef {import("../scanner/BaseScanner").DiscoveredDevice} DiscoveredDevice */
 
-/** @typedef {import("../Device.js").DeviceEventType} DeviceEventType */
+/** @typedef {import("../Device").DeviceEventType} DeviceEventType */
 
-/** @typedef {import("./ServerUtils.js").DeviceMessage} DeviceMessage */
+/** @typedef {import("./ServerUtils").DeviceMessage} DeviceMessage */
 
 /** @typedef {"clientConnected" | "clientDisconnected"} ServerEventType */
 /**
@@ -235,8 +235,8 @@ class BaseServer {
     return { type: messageType, data: dataView || device.latestConnectionMessage.get(messageType) };
   }
 
-  /** @typedef {import("../Device.js").DeviceEvent} DeviceEvent */
-  /** @typedef {import("../connection/BaseConnectionManager.js").ConnectionMessageType} ConnectionMessageType */
+  /** @typedef {import("../Device").DeviceEvent} DeviceEvent */
+  /** @typedef {import("../connection/BaseConnectionManager").ConnectionMessageType} ConnectionMessageType */
 
   /** @param {DeviceEvent} deviceEvent */
   #onDeviceConnectionMessage(deviceEvent) {
@@ -265,7 +265,7 @@ class BaseServer {
     deviceIsConnected: this.#onDeviceIsConnected.bind(this),
   };
 
-  /** @typedef {import("../../Device.js").StaticDeviceEvent} StaticDeviceEvent */
+  /** @typedef {import("../../Device").StaticDeviceEvent} StaticDeviceEvent */
 
   /** @param {StaticDeviceEvent} staticDeviceEvent */
   #onDeviceConnected(staticDeviceEvent) {
@@ -308,7 +308,7 @@ class BaseServer {
 
   // PARSING
 
-  /** @typedef {import("./ServerUtils.js").ServerMessageType} ServerMessageType */
+  /** @typedef {import("./ServerUtils").ServerMessageType} ServerMessageType */
 
   /**
    * @protected

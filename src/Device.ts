@@ -1,37 +1,37 @@
-import { createConsole } from "./utils/Console.js";
-import EventDispatcher from "./utils/EventDispatcher.js";
-import BaseConnectionManager from "./connection/BaseConnectionManager.js";
-import { isInBluefy, isInBrowser, isInNode } from "./utils/environment.js";
-import WebBluetoothConnectionManager from "./connection/bluetooth/WebBluetoothConnectionManager.js";
-import SensorConfigurationManager from "./sensor/SensorConfigurationManager.js";
-import SensorDataManager from "./sensor/SensorDataManager.js";
-import VibrationManager from "./vibration/VibrationManager.js";
-import FileTransferManager from "./FileTransferManager.js";
-import TfliteManager from "./TfliteManager.js";
-import FirmwareManager from "./FirmwareManager.js";
-import DeviceInformationManager from "./DeviceInformationManager.js";
-import InformationManager from "./InformationManager.js";
+import { createConsole } from "./utils/Console";
+import EventDispatcher from "./utils/EventDispatcher";
+import BaseConnectionManager from "./connection/BaseConnectionManager";
+import { isInBluefy, isInBrowser, isInNode } from "./utils/environment";
+import WebBluetoothConnectionManager from "./connection/bluetooth/WebBluetoothConnectionManager";
+import SensorConfigurationManager from "./sensor/SensorConfigurationManager";
+import SensorDataManager from "./sensor/SensorDataManager";
+import VibrationManager from "./vibration/VibrationManager";
+import FileTransferManager from "./FileTransferManager";
+import TfliteManager from "./TfliteManager";
+import FirmwareManager from "./FirmwareManager";
+import DeviceInformationManager from "./DeviceInformationManager";
+import InformationManager from "./InformationManager";
 
 const _console = createConsole("Device", { log: true });
 
-/** @typedef {import("./connection/BaseConnectionManager.js").ConnectionMessageType} ConnectionMessageType */
-/** @typedef {import("./sensor/SensorDataManager.js").SensorType} SensorType */
+/** @typedef {import("./connection/BaseConnectionManager").ConnectionMessageType} ConnectionMessageType */
+/** @typedef {import("./sensor/SensorDataManager").SensorType} SensorType */
 
-/** @typedef {import("./connection/BaseConnectionManager.js").TxMessage} TxMessage */
-/** @typedef {import("./connection/BaseConnectionManager.js").TxRxMessageType} TxRxMessageType */
+/** @typedef {import("./connection/BaseConnectionManager").TxMessage} TxMessage */
+/** @typedef {import("./connection/BaseConnectionManager").TxRxMessageType} TxRxMessageType */
 
-/** @typedef {import("./FileTransferManager.js").FileTransferManagerEventType} FileTransferManagerEventType */
-/** @typedef {import("./TfliteManager.js").TfliteManagerEventType} TfliteManagerEventType */
-/** @typedef {import("./FirmwareManager.js").FirmwareManagerEventType} FirmwareManagerEventType */
-/** @typedef {import("./DeviceInformationManager.js").DeviceInformationManagerEventType} DeviceInformationManagerEventType */
+/** @typedef {import("./FileTransferManager").FileTransferManagerEventType} FileTransferManagerEventType */
+/** @typedef {import("./TfliteManager").TfliteManagerEventType} TfliteManagerEventType */
+/** @typedef {import("./FirmwareManager").FirmwareManagerEventType} FirmwareManagerEventType */
+/** @typedef {import("./DeviceInformationManager").DeviceInformationManagerEventType} DeviceInformationManagerEventType */
 
-/** @typedef {import("./connection/BaseConnectionManager.js").ConnectionStatus} ConnectionStatus */
+/** @typedef {import("./connection/BaseConnectionManager").ConnectionStatus} ConnectionStatus */
 
-/** @typedef {import("./sensor/SensorConfigurationManager.js").SensorConfiguration} SensorConfiguration */
+/** @typedef {import("./sensor/SensorConfigurationManager").SensorConfiguration} SensorConfiguration */
 
 /** @typedef {"connectionStatus" | ConnectionStatus | "isConnected" | ConnectionMessageType | DeviceInformationManagerEventType | SensorType | "connectionMessage" | FileTransferManagerEventType | TfliteManagerEventType | FirmwareManagerEventType} DeviceEventType */
 
-/** @typedef {import("./utils/EventDispatcher.js").EventDispatcherOptions} EventDispatcherOptions */
+/** @typedef {import("./utils/EventDispatcher").EventDispatcherOptions} EventDispatcherOptions */
 
 /**
  * @typedef {Object} BaseDeviceEvent
@@ -46,7 +46,7 @@ const _console = createConsole("Device", { log: true });
  */
 /** @typedef {BaseDeviceEvent & BaseBatteryLevelEvent} BatteryLevelEvent */
 
-/** @typedef {import("./DeviceInformationManager.js").DeviceInformationManagerEvent} DeviceInformationManagerEvent */
+/** @typedef {import("./DeviceInformationManager").DeviceInformationManagerEvent} DeviceInformationManagerEvent */
 
 /**
  * @typedef {Object} BaseIsConnectedEvent
@@ -64,11 +64,11 @@ const _console = createConsole("Device", { log: true });
 
 /** @typedef {BaseIsConnectedEvent | ConnectionStatusEvent} ConnectionEvents */
 
-/** @typedef {import("./InformationManager.js").InformationManagerEvent} InformationManagerEvent */
-/** @typedef {import("./TfliteManager.js").TfliteManagerEvent} TfliteManagerEvent */
-/** @typedef {import("./FirmwareManager.js").FirmwareManagerEvent} FirmwareManagerEvent */
-/** @typedef {import("./FileTransferManager.js").FileTransferManagerEvent} FileTransferManagerEvent */
-/** @typedef {import("./sensor/SensorDataManager.js").SensorDataManagerEvent} SensorDataManagerEvent */
+/** @typedef {import("./InformationManager").InformationManagerEvent} InformationManagerEvent */
+/** @typedef {import("./TfliteManager").TfliteManagerEvent} TfliteManagerEvent */
+/** @typedef {import("./FirmwareManager").FirmwareManagerEvent} FirmwareManagerEvent */
+/** @typedef {import("./FileTransferManager").FileTransferManagerEvent} FileTransferManagerEvent */
+/** @typedef {import("./sensor/SensorDataManager").SensorDataManagerEvent} SensorDataManagerEvent */
 
 /**
  * @typedef {DeviceInformationManagerEvent |
@@ -181,7 +181,7 @@ class Device {
       });
     }
     if (isInNode) {
-      /** can add more node.js leave handlers https://gist.github.com/hyrious/30a878f6e6a057f09db87638567cb11a */
+      /** can add more node leave handlers https://gist.github.com/hyrious/30a878f6e6a057f09db87638567cb11a */
       process.on("exit", () => {
         if (this.isConnected && this.clearSensorConfigurationOnLeave) {
           this.clearSensorConfiguration();
@@ -730,7 +730,7 @@ class Device {
     return VibrationManager.MaxNumberOfWaveformSegments;
   }
 
-  /** @typedef {import("./vibration/VibrationManager.js").VibrationConfiguration} VibrationConfiguration */
+  /** @typedef {import("./vibration/VibrationManager").VibrationConfiguration} VibrationConfiguration */
   /**
    * @param  {VibrationConfiguration[]} vibrationConfigurations
    * @param  {boolean} [sendImmediately]
@@ -750,7 +750,7 @@ class Device {
     return this.#fileTransferManager.maxLength;
   }
 
-  /** @typedef {import("./utils/ArrayBufferUtils.js").FileLike} FileLike */
+  /** @typedef {import("./utils/ArrayBufferUtils").FileLike} FileLike */
 
   /**
    * @param {FileType} fileType
@@ -802,7 +802,7 @@ class Device {
   get tfliteTask() {
     return this.#tfliteManager.task;
   }
-  /** @param {import("./TfliteManager.js").TfliteTask} newTask */
+  /** @param {import("./TfliteManager").TfliteTask} newTask */
   setTfliteTask(newTask) {
     return this.#tfliteManager.setTask(newTask);
   }

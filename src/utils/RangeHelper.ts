@@ -1,4 +1,4 @@
-import { getInterpolation } from "./MathUtils.js";
+import { getInterpolation } from "./MathUtils";
 
 /**
  * @typedef {Object} Range

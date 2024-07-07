@@ -1,23 +1,23 @@
-import { createConsole } from "../../utils/Console.js";
-import { isInNode, isInBrowser, isInBluefy, isInWebBLE } from "../../utils/environment.js";
-import { addEventListeners, removeEventListeners } from "../../utils/EventDispatcher.js";
+import { createConsole } from "../../utils/Console";
+import { isInNode, isInBrowser, isInBluefy, isInWebBLE } from "../../utils/environment";
+import { addEventListeners, removeEventListeners } from "../../utils/EventDispatcher";
 import {
   serviceUUIDs,
   optionalServiceUUIDs,
   getServiceNameFromUUID,
   getCharacteristicNameFromUUID,
   getCharacteristicProperties,
-} from "./bluetoothUUIDs.js";
-import BluetoothConnectionManager from "./BluetoothConnectionManager.js";
+} from "./bluetoothUUIDs";
+import BluetoothConnectionManager from "./BluetoothConnectionManager";
 
 const _console = createConsole("WebBluetoothConnectionManager", { log: true });
 
-/** @typedef {import("./bluetoothUUIDs.js").BluetoothCharacteristicName} BluetoothCharacteristicName */
-/** @typedef {import("./bluetoothUUIDs.js").BluetoothServiceName} BluetoothServiceName */
+/** @typedef {import("./bluetoothUUIDs").BluetoothCharacteristicName} BluetoothCharacteristicName */
+/** @typedef {import("./bluetoothUUIDs").BluetoothServiceName} BluetoothServiceName */
 
-/** @typedef {import("../BaseConnectionManager.js").ConnectionMessageType} ConnectionMessageType */
-/** @typedef {import("../BaseConnectionManager.js").TxRxMessageType} TxRxMessageType */
-/** @typedef {import("../BaseConnectionManager.js").ConnectionType} ConnectionType */
+/** @typedef {import("../BaseConnectionManager").ConnectionMessageType} ConnectionMessageType */
+/** @typedef {import("../BaseConnectionManager").TxRxMessageType} TxRxMessageType */
+/** @typedef {import("../BaseConnectionManager").ConnectionType} ConnectionType */
 
 // NODE_START
 import webbluetooth from "webbluetooth";

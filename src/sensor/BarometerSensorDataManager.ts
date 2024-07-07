@@ -1,9 +1,9 @@
-import { createConsole } from "../utils/Console.js";
+import { createConsole } from "../utils/Console";
 
 /** @typedef {"barometer"} BarometerSensorType */
 
-/** @typedef {import("./SensorDataManager.js").BaseSensorDataEventMessage} BaseSensorDataEventMessage */
-/** @typedef {import("../Device.js").BaseDeviceEvent} BaseDeviceEvent */
+/** @typedef {import("./SensorDataManager").BaseSensorDataEventMessage} BaseSensorDataEventMessage */
+/** @typedef {import("../Device").BaseDeviceEvent} BaseDeviceEvent */
 
 /**
  * @typedef {Object} BaseBarometerSensorDataEventMessage

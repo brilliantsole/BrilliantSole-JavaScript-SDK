@@ -1,34 +1,34 @@
-import { createConsole } from "../utils/Console.js";
-import { parseTimestamp } from "../utils/MathUtils.js";
-import PressureSensorDataManager from "./PressureSensorDataManager.js";
-import MotionSensorDataManager from "./MotionSensorDataManager.js";
-import BarometerSensorDataManager from "./BarometerSensorDataManager.js";
-import { parseMessage } from "../utils/ParseUtils.js";
-import EventDispatcher from "../utils/EventDispatcher.js";
+import { createConsole } from "../utils/Console";
+import { parseTimestamp } from "../utils/MathUtils";
+import PressureSensorDataManager from "./PressureSensorDataManager";
+import MotionSensorDataManager from "./MotionSensorDataManager";
+import BarometerSensorDataManager from "./BarometerSensorDataManager";
+import { parseMessage } from "../utils/ParseUtils";
+import EventDispatcher from "../utils/EventDispatcher";
 
 const _console = createConsole("SensorDataManager", { log: true });
 
-/** @typedef {import("./MotionSensorDataManager.js").MotionSensorType} MotionSensorType */
-/** @typedef {import("./PressureSensorDataManager.js").PressureSensorType} PressureSensorType */
-/** @typedef {import("./BarometerSensorDataManager.js").BarometerSensorType} BarometerSensorType */
+/** @typedef {import("./MotionSensorDataManager").MotionSensorType} MotionSensorType */
+/** @typedef {import("./PressureSensorDataManager").PressureSensorType} PressureSensorType */
+/** @typedef {import("./BarometerSensorDataManager").BarometerSensorType} BarometerSensorType */
 
 /** @typedef {MotionSensorType | PressureSensorType | BarometerSensorType} SensorType */
 
 /** @typedef {"getPressurePositions" | "getSensorScalars" | "sensorData"} SensorDataMessageType */
 /** @typedef {SensorDataMessageType | SensorType} SensorDataManagerEventType */
 
-/** @typedef {import("../utils/EventDispatcher.js").EventDispatcherOptions} EventDispatcherOptions */
+/** @typedef {import("../utils/EventDispatcher").EventDispatcherOptions} EventDispatcherOptions */
 
-/** @typedef {import("../Device.js").BaseDeviceEvent} BaseDeviceEvent */
+/** @typedef {import("../Device").BaseDeviceEvent} BaseDeviceEvent */
 
 /**
  * @typedef {Object} BaseSensorDataEventMessage
  * @property {number} timestamp
  */
 
-/** @typedef {import("./PressureSensorDataManager.js").PressureSensorDataEventMessage} PressureSensorDataEventMessage */
-/** @typedef {import("./MotionSensorDataManager.js").MotionSensorDataEventMessage} MotionSensorDataEventMessage */
-/** @typedef {import("./BarometerSensorDataManager.js").BarometerSensorDataEventMessage} BarometerSensorDataEventMessage */
+/** @typedef {import("./PressureSensorDataManager").PressureSensorDataEventMessage} PressureSensorDataEventMessage */
+/** @typedef {import("./MotionSensorDataManager").MotionSensorDataEventMessage} MotionSensorDataEventMessage */
+/** @typedef {import("./BarometerSensorDataManager").BarometerSensorDataEventMessage} BarometerSensorDataEventMessage */
 /** @typedef {PressureSensorDataEventMessage | MotionSensorDataEventMessage | BarometerSensorDataEventMessage} SensorDataEventMessage */
 
 /**
@@ -38,9 +38,9 @@ const _console = createConsole("SensorDataManager", { log: true });
  */
 /** @typedef {BaseDeviceEvent & BaseSensorDataEvent} SensorDataEvent */
 
-/** @typedef {import("./PressureSensorDataManager.js").PressureSensorDataEvent} PressureSensorDataEvent */
-/** @typedef {import("./MotionSensorDataManager.js").MotionSensorDataEvent} MotionSensorDataEvent */
-/** @typedef {import("./BarometerSensorDataManager.js").BarometerSensorDataEvent} BarometerSensorDataEvent */
+/** @typedef {import("./PressureSensorDataManager").PressureSensorDataEvent} PressureSensorDataEvent */
+/** @typedef {import("./MotionSensorDataManager").MotionSensorDataEvent} MotionSensorDataEvent */
+/** @typedef {import("./BarometerSensorDataManager").BarometerSensorDataEvent} BarometerSensorDataEvent */
 /** @typedef {SensorDataEvent | PressureSensorDataEvent | MotionSensorDataEvent | BarometerSensorDataEvent} SensorDataManagerEvent */
 
 class SensorDataManager {

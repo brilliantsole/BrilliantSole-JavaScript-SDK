@@ -1,10 +1,10 @@
-import { createConsole } from "../utils/Console.js";
-import SensorDataManager from "./SensorDataManager.js";
-import EventDispatcher from "../utils/EventDispatcher.js";
+import { createConsole } from "../utils/Console";
+import SensorDataManager from "./SensorDataManager";
+import EventDispatcher from "../utils/EventDispatcher";
 
 const _console = createConsole("SensorConfigurationManager", { log: true });
 
-/** @typedef {import("./SensorDataManager.js").SensorType} SensorType */
+/** @typedef {import("./SensorDataManager").SensorType} SensorType */
 /**
  * @typedef {Object} SensorConfiguration
  * @property {number} [pressure]
@@ -26,10 +26,10 @@ const _console = createConsole("SensorConfigurationManager", { log: true });
 /** @typedef {"getSensorConfiguration" | "setSensorConfiguration"} SensorConfigurationMessageType */
 /** @typedef {SensorConfigurationMessageType} SensorConfigurationManagerEventType */
 
-/** @typedef {import("../utils/EventDispatcher.js").EventDispatcherListener} EventDispatcherListener */
-/** @typedef {import("../utils/EventDispatcher.js").EventDispatcherOptions} EventDispatcherOptions */
+/** @typedef {import("../utils/EventDispatcher").EventDispatcherListener} EventDispatcherListener */
+/** @typedef {import("../utils/EventDispatcher").EventDispatcherOptions} EventDispatcherOptions */
 
-/** @typedef {import("../Device.js").Device} Device */
+/** @typedef {import("../Device").Device} Device */
 /**
  * @typedef {Object} SensorConfigurationManagerEvent
  * @property {Device} target

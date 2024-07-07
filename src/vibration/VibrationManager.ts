@@ -1,13 +1,13 @@
-import { createConsole } from "../utils/Console.js";
-import VibrationWaveformEffects from "./VibrationWaveformEffects.js";
-import { concatenateArrayBuffers } from "../utils/ArrayBufferUtils.js";
+import { createConsole } from "../utils/Console";
+import VibrationWaveformEffects from "./VibrationWaveformEffects";
+import { concatenateArrayBuffers } from "../utils/ArrayBufferUtils";
 
 const _console = createConsole("VibrationManager");
 
 /** @typedef {"front" | "rear"} VibrationLocation */
 /** @typedef {"waveformEffect" | "waveform"} VibrationType */
 
-/** @typedef {import("./VibrationWaveformEffects.js").VibrationWaveformEffect} VibrationWaveformEffect */
+/** @typedef {import("./VibrationWaveformEffects").VibrationWaveformEffect} VibrationWaveformEffect */
 /**
  * @typedef {Object} VibrationWaveformEffectSegment
  * use either effect or delay but not both (defaults to effect if both are defined)
@@ -30,7 +30,7 @@ const _console = createConsole("VibrationManager");
  * @property {number} [loopCount] how many times the entire sequence should loop (int ranging [0, 6])
  */
 
-/** @typedef {import("./vibration/VibrationManager.js").VibrationWaveformSegment} VibrationWaveformSegment */
+/** @typedef {import("./vibration/VibrationManager").VibrationWaveformSegment} VibrationWaveformSegment */
 /**
  * @typedef {Object} VibrationWaveformConfiguration
  * @property {VibrationWaveformSegment[]} segments

@@ -1,7 +1,7 @@
-import { dataToArrayBuffer } from "../../utils/ArrayBufferUtils.js";
-import { createConsole } from "../../utils/Console.js";
-import { isInNode } from "../../utils/environment.js";
-import { addEventListeners, removeEventListeners } from "../../utils/EventDispatcher.js";
+import { dataToArrayBuffer } from "../../utils/ArrayBufferUtils";
+import { createConsole } from "../../utils/Console";
+import { isInNode } from "../../utils/environment";
+import { addEventListeners, removeEventListeners } from "../../utils/EventDispatcher";
 import {
   allServiceUUIDs,
   serviceUUIDs,
@@ -11,8 +11,8 @@ import {
   allCharacteristicUUIDs,
   characteristicUUIDs,
   allCharacteristicNames,
-} from "./bluetoothUUIDs.js";
-import BluetoothConnectionManager from "./BluetoothConnectionManager.js";
+} from "./bluetoothUUIDs";
+import BluetoothConnectionManager from "./BluetoothConnectionManager";
 
 const _console = createConsole("NobleConnectionManager", { log: true });
 
@@ -20,11 +20,11 @@ const _console = createConsole("NobleConnectionManager", { log: true });
 import noble from "@abandonware/noble";
 // NODE_END
 
-/** @typedef {import("./bluetoothUUIDs.js").BluetoothCharacteristicName} BluetoothCharacteristicName */
-/** @typedef {import("./bluetoothUUIDs.js").BluetoothServiceName} BluetoothServiceName */
+/** @typedef {import("./bluetoothUUIDs").BluetoothCharacteristicName} BluetoothCharacteristicName */
+/** @typedef {import("./bluetoothUUIDs").BluetoothServiceName} BluetoothServiceName */
 
-/** @typedef {import("../BaseConnectionManager.js").ConnectionMessageType} ConnectionMessageType */
-/** @typedef {import("../BaseConnectionManager.js").ConnectionMessageType} ConnectionType */
+/** @typedef {import("../BaseConnectionManager").ConnectionMessageType} ConnectionMessageType */
+/** @typedef {import("../BaseConnectionManager").ConnectionMessageType} ConnectionType */
 
 class NobleConnectionManager extends BluetoothConnectionManager {
   get bluetoothId() {

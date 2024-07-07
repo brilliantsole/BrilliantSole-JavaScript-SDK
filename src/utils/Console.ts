@@ -1,4 +1,4 @@
-import { isInDev, isInLensStudio } from "./environment.js";
+import { isInDev, isInLensStudio } from "./environment";
 
 var __console;
 if (isInLensStudio) {
