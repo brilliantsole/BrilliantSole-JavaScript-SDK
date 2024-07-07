@@ -4,6 +4,7 @@ import replace from "@rollup/plugin-replace";
 import resolve from "@rollup/plugin-node-resolve";
 import commonjs from "@rollup/plugin-commonjs";
 import babel from "@rollup/plugin-babel";
+import typescript from "@rollup/plugin-typescript";
 
 const production = !process.env.ROLLUP_WATCH;
 
@@ -85,7 +86,7 @@ function removeJSDoc() {
   };
 }
 
-const _plugins = [header(), removeJSDocImports()];
+const _plugins = [typescript(), header(), removeJSDocImports()];
 
 if (production) {
   _plugins.push(replaceEnvironment());
@@ -106,7 +107,7 @@ const lensStudioPlugins = [
 ];
 
 const name = "BS";
-const input = "src/BS.js";
+const input = "src/BS.ts";
 
 const builds = [
   {
