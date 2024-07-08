@@ -1,8 +1,29 @@
 import { isInDev, isInLensStudio } from "./environment";
 
-var __console;
+declare var Studio: any | undefined;
+
+export type LogFunction = (...data: any[]) => void;
+export type AssertLogFunction = (condition: boolean, ...data: any[]) => void;
+
+export interface ConsoleLevelFlags {
+  log?: boolean;
+  warn?: boolean;
+  error?: boolean;
+  assert?: boolean;
+  table?: boolean;
+}
+
+interface ConsoleLike {
+  log?: LogFunction;
+  warn?: LogFunction;
+  error?: LogFunction;
+  assert?: AssertLogFunction;
+  table?: LogFunction;
+}
+
+var __console: ConsoleLike;
 if (isInLensStudio) {
-  const log = function (...args) {
+  const log = function (...args: any[]) {
     Studio.log(args.map((value) => new String(value)).join(","));
   };
   __console = {};
@@ -15,13 +36,9 @@ if (isInLensStudio) {
 
 // console.assert not supported in WebBLE
 if (!__console.assert) {
-  /**
-   * @param {boolean} condition
-   * @param  {...any} data
-   */
-  const assert = (condition, ...data) => {
+  const assert: AssertLogFunction = (condition, ...data) => {
     if (!condition) {
-      __console.warn(...data);
+      __console.warn!(...data);
     }
   };
   __console.assert = assert;
@@ -29,62 +46,31 @@ if (!__console.assert) {
 
 // console.table not supported in WebBLE
 if (!__console.table) {
-  /** @param  {...any} data */
-  const table = (...data) => {
-    __console.log(...data);
+  const table: LogFunction = (...data) => {
+    __console.log!(...data);
   };
   __console.table = table;
 }
 
-/**
- * @callback LogFunction
- * @param {...any} data
- */
-
-/**
- * @callback AssertLogFunction
- * @param {boolean} condition
- * @param {...any} data
- */
-
-/**
- * @typedef {Object} ConsoleLevelFlags
- * @property {boolean} log
- * @property {boolean} warn
- * @property {boolean} error
- * @property {boolean} assert
- * @property {boolean} table
- */
-
 function emptyFunction() {}
 
-/** @type {LogFunction} */
-const log = __console.log.bind(__console);
-/** @type {LogFunction} */
-const warn = __console.warn.bind(__console);
-/** @type {LogFunction} */
-const error = __console.error.bind(__console);
-/** @type {LogFunction} */
-const table = __console.table.bind(__console);
-/** @type {AssertLogFunction} */
-const assert = __console.assert.bind(__console);
+const log: LogFunction = __console.log!.bind(__console);
+const warn: LogFunction = __console.warn!.bind(__console);
+const error: LogFunction = __console.error!.bind(__console);
+const table: LogFunction = __console.table!.bind(__console);
+const assert: AssertLogFunction = __console.assert.bind(__console);
 
 class Console {
-  /** @type {Object.<string, Console>} */
-  static #consoles = {};
+  static #consoles: { [type: string]: Console } = {};
 
-  /**
-   * @param {string} type
-   */
-  constructor(type) {
+  constructor(type: string) {
     if (Console.#consoles[type]) {
       throw new Error(`"${type}" console already exists`);
     }
     Console.#consoles[type] = this;
   }
 
-  /** @type {ConsoleLevelFlags} */
-  #levelFlags = {
+  #levelFlags: ConsoleLevelFlags = {
     log: isInDev,
     warn: isInDev,
     assert: true,
@@ -92,40 +78,25 @@ class Console {
     table: true,
   };
 
-  /**
-   * @param {ConsoleLevelFlags} levelFlags
-   */
-  setLevelFlags(levelFlags) {
+  setLevelFlags(levelFlags: ConsoleLevelFlags) {
     Object.assign(this.#levelFlags, levelFlags);
   }
 
-  /**
-   * @param {string} type
-   * @param {ConsoleLevelFlags} levelFlags
-   * @throws {Error} if no console with type "type" is found
-   */
-  static setLevelFlagsForType(type, levelFlags) {
+  /** @throws {Error} if no console with type "type" is found */
+  static setLevelFlagsForType(type: string, levelFlags: ConsoleLevelFlags) {
     if (!this.#consoles[type]) {
       throw new Error(`no console found with type "${type}"`);
     }
     this.#consoles[type].setLevelFlags(levelFlags);
   }
 
-  /**
-   * @param {ConsoleLevelFlags} levelFlags
-   */
-  static setAllLevelFlags(levelFlags) {
+  static setAllLevelFlags(levelFlags: ConsoleLevelFlags) {
     for (const type in this.#consoles) {
       this.#consoles[type].setLevelFlags(levelFlags);
     }
   }
 
-  /**
-   * @param {string} type
-   * @param {ConsoleLevelFlags} levelFlags
-   * @returns {Console}
-   */
-  static create(type, levelFlags) {
+  static create(type: string, levelFlags: ConsoleLevelFlags): Console {
     const console = this.#consoles[type] || new Console(type);
     if (isInDev && levelFlags) {
       console.setLevelFlags(levelFlags);
@@ -133,82 +104,53 @@ class Console {
     return console;
   }
 
-  /** @type {LogFunction} */
   get log() {
     return this.#levelFlags.log ? log : emptyFunction;
   }
 
-  /** @type {LogFunction} */
   get warn() {
     return this.#levelFlags.warn ? warn : emptyFunction;
   }
 
-  /** @type {LogFunction} */
   get error() {
     return this.#levelFlags.error ? error : emptyFunction;
   }
 
-  /** @type {AssertLogFunction} */
   get assert() {
     return this.#levelFlags.assert ? assert : emptyFunction;
   }
 
-  /** @type {LogFunction} */
   get table() {
     return this.#levelFlags.table ? table : emptyFunction;
   }
 
-  /**
-   * @param {boolean} condition
-   * @param {string} [message]
-   * @throws {Error} if condition is not met
-   */
-  assertWithError(condition, message) {
+  /** @throws {Error} if condition is not met */
+  assertWithError(condition: boolean, message: string) {
     if (!condition) {
       throw new Error(message);
     }
   }
 
-  /**
-   * @param {any} value
-   * @param {string} type
-   * @throws {Error} if value's type doesn't match
-   */
-  assertTypeWithError(value, type) {
+  /** @throws {Error} if value's type doesn't match */
+  assertTypeWithError(value: any, type: string) {
     this.assertWithError(typeof value == type, `value ${value} of type "${typeof value}" not of type "${type}"`);
   }
 
-  /**
-   * @param {string} value
-   * @param {string[]} enumeration
-   * @throws {Error} if value's type doesn't match
-   */
-  assertEnumWithError(value, enumeration) {
+  /** @throws {Error} if value's type doesn't match */
+  assertEnumWithError(value: string, enumeration: string[]) {
     this.assertWithError(enumeration.includes(value), `invalid enum "${value}"`);
   }
 }
 
-/**
- * @param {string} type
- * @param {ConsoleLevelFlags} [levelFlags]
- * @returns {Console}
- */
-export function createConsole(type, levelFlags) {
+export function createConsole(type: string, levelFlags: ConsoleLevelFlags): Console {
   return Console.create(type, levelFlags);
 }
 
-/**
- * @param {string} type
- * @param {ConsoleLevelFlags} levelFlags
- * @throws {Error} if no console with type is found
- */
-export function setConsoleLevelFlagsForType(type, levelFlags) {
+/** @throws {Error} if no console with type is found */
+export function setConsoleLevelFlagsForType(type: string, levelFlags: ConsoleLevelFlags) {
   Console.setLevelFlagsForType(type, levelFlags);
 }
 
-/**
- * @param {ConsoleLevelFlags} levelFlags
- */
-export function setAllConsoleLevelFlags(levelFlags) {
+export function setAllConsoleLevelFlags(levelFlags: ConsoleLevelFlags) {
   Console.setAllLevelFlags(levelFlags);
 }

@@ -11,7 +11,7 @@ import { DeviceEventType } from "../../Device";
 import { WebSocketClient } from "../../server/websocket/WebSocketClient";
 import { ClientDeviceMessage } from "../../server/ServerUtils";
 
-export type SendWebSocketMessageCallback = (...messages: ConnectionMessageType | ClientDeviceMessage) => void;
+export type SendWebSocketMessageCallback = (...messages: (ConnectionMessageType | ClientDeviceMessage)[]) => void;
 
 class WebSocketClientConnectionManager extends BaseConnectionManager {
   static get isSupported() {

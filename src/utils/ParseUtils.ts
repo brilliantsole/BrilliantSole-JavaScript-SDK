@@ -27,8 +27,7 @@ export function parseMessage(
     const messageTypeEnum = dataView.getUint8(byteOffset++);
     const messageType = enumeration[messageTypeEnum];
 
-    /** @type {number} */
-    let messageLength;
+    let messageLength: number;
     if (parseMessageLengthAsUint16) {
       messageLength = dataView.getUint16(byteOffset, true);
       byteOffset += 2;
