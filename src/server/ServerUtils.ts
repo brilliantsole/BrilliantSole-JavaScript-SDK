@@ -10,19 +10,14 @@ export const reconnectTimeout = 3_000;
 
 // MESSAGING
 
-/** @typedef {Number | Number[] | ArrayBufferLike | DataView} MessageLike */
+export type MessageLike = Number | Number[] | ArrayBufferLike | DataView;
 
-/**
- * @typedef {Object} Message
- * @property {string} type
- * @property {MessageLike|MessageLike[]?} data
- */
+export interface Message {
+  type: string;
+  data?: MessageLike | MessageLike[];
+}
 
-/**
- * @param {string[]} enumeration
- * @param  {...(Message|string)} messages
- */
-function createMessage(enumeration, ...messages) {
+function createMessage(enumeration: readonly string[], ...messages: (Message | string)[]) {
   _console.log("createMessage", ...messages);
 
   const messageBuffers = messages.map((message) => {
@@ -32,7 +27,7 @@ function createMessage(enumeration, ...messages) {
 
     if ("data" in message) {
       if (!Array.isArray(message.data)) {
-        message.data = [message.data];
+        message.data = [message.data!];
       }
     } else {
       message.data = [];
@@ -54,30 +49,6 @@ function createMessage(enumeration, ...messages) {
   return concatenateArrayBuffers(...messageBuffers);
 }
 
-/**
- * @typedef { "ping"
- * | "pong"
- * | "isScanningAvailable"
- * | "isScanning"
- * | "startScan"
- * | "stopScan"
- * | "discoveredDevice"
- * | "discoveredDevices"
- * | "expiredDiscoveredDevice"
- * | "connectToDevice"
- * | "disconnectFromDevice"
- * | "connectedDevices"
- * | "deviceMessage"
- * } ServerMessageType
- */
-
-/**
- * @typedef {Object} ServerMessage
- * @property {ServerMessageType} type
- * @property {MessageLike|MessageLike[]?} data
- */
-
-/** @type {ServerMessageType[]} */
 export const ServerMessageTypes = [
   "ping",
   "pong",
@@ -92,37 +63,35 @@ export const ServerMessageTypes = [
   "disconnectFromDevice",
   "connectedDevices",
   "deviceMessage",
-];
+] as const;
+export type ServerMessageType = (typeof ServerMessageTypes)[number];
 
-/** @param {...ServerMessage|ServerMessageType} messages */
-export function createServerMessage(...messages) {
+export interface ServerMessage extends Message {
+  type: ServerMessageType;
+}
+
+export function createServerMessage(...messages: (ServerMessage | ServerMessageType)[]) {
   return createMessage(ServerMessageTypes, ...messages);
 }
 
-/** @typedef {import("../Device").DeviceEventType} DeviceEventType */
+import { DeviceEventType } from "../Device";
 
-/**
- * @typedef {Object} DeviceMessage
- * @property {DeviceEventType} type
- * @property {MessageLike|MessageLike[]?} data
- */
+export interface DeviceMessage extends Message {
+  type: DeviceEventType;
+}
 
-/** @param {...DeviceEventType|DeviceMessage} messages */
-export function createDeviceMessage(...messages) {
+export function createDeviceMessage(...messages: (DeviceEventType | DeviceMessage)[]) {
   _console.log("createDeviceMessage", ...messages);
   return createMessage(Device.EventTypes, ...messages);
 }
 
-/** @typedef {import("../connection/BaseConnectionManager").ConnectionMessageType} ConnectionMessageType */
+type ConnectionMessageType = import("../connection/BaseConnectionManager").ConnectionMessageType;
 
-/**
- * @typedef {Object} ClientDeviceMessage
- * @property {ConnectionMessageType} type
- * @property {MessageLike|MessageLike[]?} data
- */
+interface ClientDeviceMessage extends Message {
+  type: ConnectionMessageType;
+}
 
-/** @param {...ConnectionMessageType|ClientDeviceMessage} messages */
-export function createClientDeviceMessage(...messages) {
+export function createClientDeviceMessage(...messages: (ConnectionMessageType | ClientDeviceMessage)[]) {
   return createMessage(BaseConnectionManager.MessageTypes, ...messages);
 }
 

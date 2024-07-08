@@ -1,4 +1,4 @@
-const VibrationWaveformEffects = [
+export const VibrationWaveformEffects = [
   "none",
   "strongClick100",
   "strongClick60",
@@ -125,4 +125,4 @@ const VibrationWaveformEffects = [
   "smoothHum10",
 ] as const;
 
-export default VibrationWaveformEffects;
+export type VibrationWaveformEffect = (typeof VibrationWaveformEffects)[number];

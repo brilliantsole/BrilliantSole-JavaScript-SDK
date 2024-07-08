@@ -10,27 +10,25 @@ import BaseConnectionManager from "../connection/BaseConnectionManager";
 
 const _console = createConsole("BaseServer", { log: true });
 
-/** @typedef {import("../utils/EventDispatcher").EventDispatcherOptions} EventDispatcherOptions */
+import { EventDispatcherOptions } from "../utils/EventDispatcher";
 
-/** @typedef {import("../scanner/BaseScanner").ScannerEvent} ScannerEvent */
-/** @typedef {import("../scanner/BaseScanner").DiscoveredDevice} DiscoveredDevice */
+type ScannerEvent = import("../scanner/BaseScanner").ScannerEvent;
+type DiscoveredDevice = import("../scanner/BaseScanner").DiscoveredDevice;
 
-/** @typedef {import("../Device").DeviceEventType} DeviceEventType */
+type DeviceEventType = import("../Device").DeviceEventType;
 
-/** @typedef {import("./ServerUtils").DeviceMessage} DeviceMessage */
+type DeviceMessage = import("./ServerUtils").DeviceMessage;
 
-/** @typedef {"clientConnected" | "clientDisconnected"} ServerEventType */
-/**
- * @typedef {Object} BaseServerEvent
- * @property {BaseServer} target
- * @property {ServerEventType} type
- */
+type ServerEventType = "clientConnected" | "clientDisconnected";
+interface BaseServerEvent {
+  target: BaseServer;
+  type: ServerEventType;
+}
 
-/**
- * @typedef {Object} BaseClientConnectedEvent
- * @property {"clientConnected"} type
- */
-/** @typedef {BaseServerEvent & BaseClientConnectedEvent} ClientConnectedEvent */
+interface BaseClientConnectedEvent {
+  type: "clientConnected";
+}
+type ClientConnectedEvent = BaseServerEvent & BaseClientConnectedEvent;
 
 /**
  * @typedef {Object} BaseClientDisconnectedEvent
@@ -39,7 +37,7 @@ const _console = createConsole("BaseServer", { log: true });
 /** @typedef {BaseServerEvent & BaseClientDisconnectedEvent} ClientDisconnectedEvent */
 
 /** @typedef {ClientConnectedEvent | ClientDisconnectedEvent} ServerEvent */
-/** @typedef {(event: ServerEvent) => void} ServerEventListener */
+type ServerEventListener = (event: ServerEvent) => void;
 
 class BaseServer {
   /**
@@ -265,7 +263,7 @@ class BaseServer {
     deviceIsConnected: this.#onDeviceIsConnected.bind(this),
   };
 
-  /** @typedef {import("../../Device").StaticDeviceEvent} StaticDeviceEvent */
+  type StaticDeviceEvent = import("../../Device").StaticDeviceEvent;
 
   /** @param {StaticDeviceEvent} staticDeviceEvent */
   #onDeviceConnected(staticDeviceEvent) {
@@ -308,7 +306,7 @@ class BaseServer {
 
   // PARSING
 
-  /** @typedef {import("./ServerUtils").ServerMessageType} ServerMessageType */
+  type ServerMessageType = import("./ServerUtils").ServerMessageType;
 
   /**
    * @protected

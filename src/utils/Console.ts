@@ -96,7 +96,7 @@ class Console {
     }
   }
 
-  static create(type: string, levelFlags: ConsoleLevelFlags): Console {
+  static create(type: string, levelFlags?: ConsoleLevelFlags): Console {
     const console = this.#consoles[type] || new Console(type);
     if (isInDev && levelFlags) {
       console.setLevelFlags(levelFlags);
@@ -137,12 +137,12 @@ class Console {
   }
 
   /** @throws {Error} if value's type doesn't match */
-  assertEnumWithError(value: string, enumeration: string[]) {
+  assertEnumWithError(value: string, enumeration: readonly string[]) {
     this.assertWithError(enumeration.includes(value), `invalid enum "${value}"`);
   }
 }
 
-export function createConsole(type: string, levelFlags: ConsoleLevelFlags): Console {
+export function createConsole(type: string, levelFlags?: ConsoleLevelFlags): Console {
   return Console.create(type, levelFlags);
 }
 

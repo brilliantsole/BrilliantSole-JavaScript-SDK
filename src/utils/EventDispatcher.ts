@@ -13,7 +13,7 @@ export interface EventDispatcherOptions {
   once?: boolean;
 }
 
-type EventDispatcherListener = (event: EventDispatcherEvent) => void;
+export type EventDispatcherListener = (event: EventDispatcherEvent) => void;
 
 // based on https://github.com/mrdoob/eventdispatcher/
 class EventDispatcher {

@@ -1,38 +1,36 @@
-import EventDispatcher, { addEventListeners } from "../utils/EventDispatcher";
+import EventDispatcher, {
+  addEventListeners,
+  EventDispatcherListener,
+  EventDispatcherOptions,
+} from "../utils/EventDispatcher";
 import { createConsole } from "../utils/Console";
 import Timer from "../utils/Timer";
 
 const _console = createConsole("BaseScanner");
 
-/** @typedef {import("../Device").DeviceType} DeviceType */
+import { DeviceType } from "../Device";
 
-/** @typedef {"isAvailable" | "isScanning" | "discoveredDevice" | "expiredDiscoveredDevice"} ScannerEventType */
+export const ScannerEventTypes = ["isAvailable", "isScanning", "discoveredDevice", "expiredDiscoveredDevice"] as const;
+export type ScannerEventType = (typeof ScannerEventTypes)[number];
 
-/** @typedef {import("../utils/EventDispatcher").EventDispatcherListener} EventDispatcherListener */
-/** @typedef {import("../utils/EventDispatcher").EventDispatcherOptions} EventDispatcherOptions */
+export interface ScannerEvent {
+  target: typeof BaseScanner;
+  type: ScannerEventType;
+}
 
-/**
- * @typedef {Object} ScannerEvent
- * @property {BaseScanner} target
- * @property {ScannerEventType} type
- * @property {Object} message
- */
+export interface DiscoveredDevice {
+  bluetoothId: string;
+  name: string;
+  deviceType: DeviceType;
+  rssi: number;
+}
 
-/**
- * @typedef {Object} DiscoveredDevice
- * @property {string} bluetoothId
- * @property {string} name
- * @property {DeviceType} deviceType
- * @property {number} rssi
- */
-
-class BaseScanner {
+abstract class BaseScanner {
   // IS SUPPORTED
 
   static get isSupported() {
     return false;
   }
-  /** @type {boolean} */
   get isSupported() {
     return this.constructor.isSupported;
   }
@@ -61,7 +59,7 @@ class BaseScanner {
   // EVENT DISPATCHER
 
   /** @type {ScannerEventType[]} */
-  static #EventTypes = ["isAvailable", "isScanning", "discoveredDevice", "expiredDiscoveredDevice"];
+  static #EventTypes: ScannerEventType[] = ["isAvailable", "isScanning", "discoveredDevice", "expiredDiscoveredDevice"];
   static get EventTypes() {
     return this.#EventTypes;
   }
@@ -75,15 +73,11 @@ class BaseScanner {
    * @param {EventDispatcherListener} listener
    * @param {EventDispatcherOptions} [options]
    */
-  addEventListener(type, listener, options) {
+  addEventListener(type: ScannerEventType, listener: EventDispatcherListener, options: EventDispatcherOptions) {
     this.#eventDispatcher.addEventListener(type, listener, options);
   }
 
-  /**
-   * @protected
-   * @param {ScannerEvent} event
-   */
-  dispatchEvent(event) {
+  protected dispatchEvent(event: ScannerEvent) {
     this.#eventDispatcher.dispatchEvent(event);
   }
 
@@ -91,7 +85,7 @@ class BaseScanner {
    * @param {ScannerEventType} type
    * @param {EventDispatcherListener} listener
    */
-  removeEventListener(type, listener) {
+  removeEventListener(type: ScannerEventType, listener: EventDispatcherListener) {
     return this.#eventDispatcher.removeEventListener(type, listener);
   }
 
@@ -132,7 +126,7 @@ class BaseScanner {
 
   // DISCOVERED DEVICES
   /** @type {Object.<string, DiscoveredDevice>} */
-  #discoveredDevices = {};
+  #discoveredDevices: { [s: string]: DiscoveredDevice } = {};
   get discoveredDevices() {
     return this.#discoveredDevices;
   }
@@ -142,7 +136,7 @@ class BaseScanner {
     });
   }
   /** @param {string} discoveredDeviceId */
-  #assertValidDiscoveredDeviceId(discoveredDeviceId) {
+  #assertValidDiscoveredDeviceId(discoveredDeviceId: string) {
     _console.assertWithError(
       this.#discoveredDevices[discoveredDeviceId],
       `no discovered device with id "${discoveredDeviceId}"`
@@ -150,16 +144,15 @@ class BaseScanner {
   }
 
   /** @param {ScannerEvent} event */
-  #onDiscoveredDevice(event) {
+  #onDiscoveredDevice(event: ScannerEvent) {
     /** @type {DiscoveredDevice} */
-    const discoveredDevice = event.message.discoveredDevice;
+    const discoveredDevice: DiscoveredDevice = event.message.discoveredDevice;
     this.#discoveredDevices[discoveredDevice.bluetoothId] = discoveredDevice;
     this.#discoveredDeviceTimestamps[discoveredDevice.bluetoothId] = Date.now();
     this.#checkDiscoveredDevicesExpirationTimer.start();
   }
 
-  /** @type {Object.<string, number>} */
-  #discoveredDeviceTimestamps = {};
+  #discoveredDeviceTimestamps: { [id: string]: number } = {};
 
   static #DiscoveredDeviceExpirationTimeout = 5000;
   static get DiscoveredDeviceExpirationTimeout() {
@@ -188,8 +181,7 @@ class BaseScanner {
   }
 
   // DEVICE CONNECTION
-  /** @param {string} deviceId */
-  async connectToDevice(deviceId) {
+  async connectToDevice(deviceId: string) {
     this.#assertIsAvailable();
   }
 

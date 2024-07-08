@@ -7,7 +7,7 @@ import { concatenateArrayBuffers } from "../utils/ArrayBufferUtils";
 import { parseMessage } from "../utils/ParseUtils";
 import DeviceInformationManager from "../DeviceInformationManager";
 import InformationManager from "../InformationManager";
-import VibrationManager from "../vibration/VibrationManager";
+import VibrationManager, { VibrationMessageTypes } from "../vibration/VibrationManager";
 import SensorConfigurationManager from "../sensor/SensorConfigurationManager";
 import SensorDataManager from "../sensor/SensorDataManager";
 
@@ -25,27 +25,30 @@ import { VibrationMessageType } from "../vibration/VibrationManager";
 export type ConnectionType = "webBluetooth" | "noble" | "webSocketClient";
 export type ConnectionStatus = "not connected" | "connecting" | "connected" | "disconnecting";
 
-export type TxRxMessageType =
-  | InformationMessageType
-  | SensorConfigurationMessageType
-  | SensorDataMessageType
-  | VibrationMessageType
-  | FileTransferMessageType
-  | TfliteMessageType
-  | FirmwareMessageType;
-
 export interface TxMessage {
   type: TxRxMessageType;
   data?: ArrayBuffer;
 }
 
-export type ConnectionMessageType =
-  | DeviceInformationMessageType
-  | "batteryLevel"
-  | "rx"
-  | "tx"
-  | "smp"
-  | TxRxMessageType;
+export const TxRxMessageTypes = [
+  ...InformationManager.MessageTypes,
+  ...SensorConfigurationManager.MessageTypes,
+  ...SensorDataManager.MessageTypes,
+  ...VibrationMessageTypes,
+  ...TfliteManager.MessageTypes,
+  ...FileTransferManager.MessageTypes,
+] as const;
+export type TxRxMessageType = (typeof TxRxMessageTypes)[number];
+
+export const ConnectionMessageTypes = [
+  ...DeviceInformationManager.MessageTypes,
+  "batteryLevel",
+  "smp",
+  "rx",
+  "tx",
+  ...TxRxMessageTypes,
+] as const;
+export type ConnectionMessageType = (typeof ConnectionMessageTypes)[number];
 
 export type ConnectionStatusCallback = (status: ConnectionStatus) => void;
 export type MessageReceivedCallback = (messageType: ConnectionMessageType, dataView: DataView) => void;
@@ -53,30 +56,8 @@ export type MessageReceivedCallback = (messageType: ConnectionMessageType, dataV
 abstract class BaseConnectionManager {
   // MESSAGES
 
-  static #TxRxMessageTypes: TxRxMessageType[] = [
-    ...InformationManager.MessageTypes,
-    ...SensorConfigurationManager.MessageTypes,
-    ...SensorDataManager.MessageTypes,
-    ...VibrationManager.MessageTypes,
-    ...TfliteManager.MessageTypes,
-    ...FileTransferManager.MessageTypes,
-  ];
-  static get TxRxMessageTypes() {
-    return this.#TxRxMessageTypes;
-  }
-  static #MessageTypes: ConnectionMessageType[] = [
-    ...DeviceInformationManager.MessageTypes,
-    "batteryLevel",
-    "smp",
-    "rx",
-    "tx",
-    ...this.TxRxMessageTypes,
-  ];
-  static get MessageTypes() {
-    return this.#MessageTypes;
-  }
   static #AssertValidTxRxMessageType(messageType: ConnectionMessageType) {
-    _console.assertEnumWithError(messageType, this.#TxRxMessageTypes);
+    _console.assertEnumWithError(messageType, TxRxMessageTypes);
   }
 
   // ID
