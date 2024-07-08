@@ -3,11 +3,7 @@ import { textEncoder } from "./Text";
 
 const _console = createConsole("ArrayBufferUtils", { log: false });
 
-/**
- * @param {...ArrayBuffer} arrayBuffers
- * @returns {ArrayBuffer}
- */
-export function concatenateArrayBuffers(...arrayBuffers) {
+export function concatenateArrayBuffers(...arrayBuffers: any[]): ArrayBuffer {
   arrayBuffers = arrayBuffers.filter((arrayBuffer) => arrayBuffer != undefined || arrayBuffer != null);
   arrayBuffers = arrayBuffers.map((arrayBuffer) => {
     if (typeof arrayBuffer == "number") {
@@ -48,28 +44,20 @@ export function concatenateArrayBuffers(...arrayBuffers) {
   return uint8Array.buffer;
 }
 
-/** @param {Buffer} data */
-export function dataToArrayBuffer(data) {
+export function dataToArrayBuffer(data: Buffer) {
   return data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength);
 }
 
-/** @param {String} string */
-export function stringToArrayBuffer(string) {
+export function stringToArrayBuffer(string: string) {
   const encoding = textEncoder.encode(string);
   return concatenateArrayBuffers(encoding.byteLength, encoding);
 }
 
-/** @param {Object} object */
-export function objectToArrayBuffer(object) {
+export function objectToArrayBuffer(object: object) {
   return stringToArrayBuffer(JSON.stringify(object));
 }
 
-/**
- * @param {DataView} dataView
- * @param {number} begin
- * @param {number} [length]
- */
-export function sliceDataView(dataView, begin, length) {
+export function sliceDataView(dataView: DataView, begin: number, length: number) {
   let end;
   if (length != undefined) {
     end = dataView.byteOffset + begin + length;
@@ -78,10 +66,9 @@ export function sliceDataView(dataView, begin, length) {
   return new DataView(dataView.buffer.slice(dataView.byteOffset + begin, end));
 }
 
-/** @typedef {number[] | ArrayBuffer | DataView | URL | string | File} FileLike */
+export type FileLike = number[] | ArrayBuffer | DataView | URL | string | File;
 
-/** @param {FileLike} file */
-export async function getFileBuffer(file) {
+export async function getFileBuffer(file: FileLike) {
   let fileBuffer;
   if (file instanceof Array) {
     fileBuffer = Uint8Array.from(file);

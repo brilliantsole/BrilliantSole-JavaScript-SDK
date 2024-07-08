@@ -1,15 +1,16 @@
 import { dataToArrayBuffer } from "../../utils/ArrayBufferUtils";
 import { createConsole } from "../../utils/Console";
 import { isInNode } from "../../utils/environment";
-import { addEventListeners, removeEventListeners } from "../../utils/EventDispatcher";
+import {
+  BoundEventListeners,
+  BoundGenericEventListeners,
+  addEventListeners,
+  removeEventListeners,
+} from "../../utils/EventDispatcher";
 import {
   allServiceUUIDs,
-  serviceUUIDs,
-  optionalServiceUUIDs,
   getServiceNameFromUUID,
   getCharacteristicNameFromUUID,
-  allCharacteristicUUIDs,
-  characteristicUUIDs,
   allCharacteristicNames,
 } from "./bluetoothUUIDs";
 import BluetoothConnectionManager from "./BluetoothConnectionManager";
@@ -17,25 +18,32 @@ import BluetoothConnectionManager from "./BluetoothConnectionManager";
 const _console = createConsole("NobleConnectionManager", { log: true });
 
 // NODE_START
-import noble from "@abandonware/noble";
+import type * as noble from "@abandonware/noble";
 // NODE_END
 
-/** @typedef {import("./bluetoothUUIDs").BluetoothCharacteristicName} BluetoothCharacteristicName */
-/** @typedef {import("./bluetoothUUIDs").BluetoothServiceName} BluetoothServiceName */
+import { BluetoothCharacteristicName, BluetoothServiceName } from "./bluetoothUUIDs";
+import { ConnectionType } from "../BaseConnectionManager";
 
-/** @typedef {import("../BaseConnectionManager").ConnectionMessageType} ConnectionMessageType */
-/** @typedef {import("../BaseConnectionManager").ConnectionMessageType} ConnectionType */
+interface HasConnectionManager {
+  connectionManager: NobleConnectionManager | undefined;
+}
+interface NoblePeripheral extends noble.Peripheral, HasConnectionManager {}
+interface NobleService extends noble.Service, HasConnectionManager {
+  name: BluetoothServiceName;
+}
+interface NobleCharacteristic extends noble.Characteristic, HasConnectionManager {
+  name: BluetoothCharacteristicName;
+}
 
 class NobleConnectionManager extends BluetoothConnectionManager {
   get bluetoothId() {
-    return this.#noblePeripheral?.id;
+    return this.#noblePeripheral!.id;
   }
 
   static get isSupported() {
     return isInNode;
   }
-  /** @type {ConnectionType} */
-  static get type() {
+  static get type(): ConnectionType {
     return "noble";
   }
 
@@ -45,43 +53,15 @@ class NobleConnectionManager extends BluetoothConnectionManager {
 
   async connect() {
     await super.connect();
-    await this.#noblePeripheral.connectAsync();
+    await this.#noblePeripheral!.connectAsync();
   }
   async disconnect() {
     await super.disconnect();
-    await this.#noblePeripheral.disconnectAsync();
+    await this.#noblePeripheral!.disconnectAsync();
   }
 
-  /**
-   * @param {ConnectionMessageType} messageType
-   * @param {DataView|ArrayBuffer} data
-   */
-  async sendMessage(messageType, data) {
-    await super.sendMessage(...arguments);
-
-    const characteristicName = this.characteristicNameForMessageType(messageType);
-    _console.log({ characteristicName });
-
-    const characteristic = this.#characteristics.get(characteristicName);
-    _console.assertWithError(characteristic, `no characteristic found with name "${characteristicName}"`);
-    if (data instanceof DataView) {
-      data = data.buffer;
-    }
-    const buffer = Buffer.from(data);
-    _console.log("writing data", buffer);
-    const withoutResponse = true;
-    await characteristic.writeAsync(buffer, withoutResponse);
-    if (characteristic.properties.includes("read")) {
-      await characteristic.readAsync();
-    }
-  }
-
-  /**
-   * @param {BluetoothCharacteristicName} characteristicName
-   * @param {ArrayBuffer} data
-   */
-  async writeCharacteristic(characteristicName, data) {
-    const characteristic = this.#characteristics.get(characteristicName);
+  async writeCharacteristic(characteristicName: BluetoothCharacteristicName, data: ArrayBuffer) {
+    const characteristic = this.#characteristics.get(characteristicName)!;
     _console.assertWithError(characteristic, `no characteristic found with name "${characteristicName}"`);
     // if (data instanceof DataView) {
     //     data = data.buffer;
@@ -97,7 +77,7 @@ class NobleConnectionManager extends BluetoothConnectionManager {
 
   /** @type {boolean} */
   get canReconnect() {
-    return this.#noblePeripheral.connectable;
+    return this.#noblePeripheral!.connectable;
   }
   async reconnect() {
     await super.reconnect();
@@ -106,12 +86,11 @@ class NobleConnectionManager extends BluetoothConnectionManager {
   }
 
   // NOBLE
-  /** @type {noble.Peripheral?} */
-  #noblePeripheral;
-  get noblePeripheral() {
+  #noblePeripheral!: NoblePeripheral | undefined;
+  get noblePeripheral(): NoblePeripheral | undefined {
     return this.#noblePeripheral;
   }
-  set noblePeripheral(newNoblePeripheral) {
+  set noblePeripheral(newNoblePeripheral: NoblePeripheral) {
     _console.assertTypeWithError(newNoblePeripheral, "object");
     if (this.noblePeripheral == newNoblePeripheral) {
       _console.log("attempted to assign duplicate noblePeripheral");
@@ -122,11 +101,11 @@ class NobleConnectionManager extends BluetoothConnectionManager {
 
     if (this.#noblePeripheral) {
       removeEventListeners(this.#noblePeripheral, this.#unboundNoblePeripheralListeners);
-      delete this.#noblePeripheral._connectionManager;
+      delete this.#noblePeripheral!.connectionManager;
     }
 
     if (newNoblePeripheral) {
-      newNoblePeripheral._connectionManager = this;
+      newNoblePeripheral.connectionManager = this;
       addEventListeners(newNoblePeripheral, this.#unboundNoblePeripheralListeners);
     }
 
@@ -134,39 +113,37 @@ class NobleConnectionManager extends BluetoothConnectionManager {
   }
 
   // NOBLE EVENTLISTENERS
-  #unboundNoblePeripheralListeners = {
+  #unboundNoblePeripheralListeners: BoundGenericEventListeners = {
     connect: this.#onNoblePeripheralConnect,
     disconnect: this.#onNoblePeripheralDisconnect,
     rssiUpdate: this.#onNoblePeripheralRssiUpdate,
     servicesDiscover: this.#onNoblePeripheralServicesDiscover,
   };
 
-  async #onNoblePeripheralConnect() {
-    await this._connectionManager.onNoblePeripheralConnect(this);
+  async #onNoblePeripheralConnect(this: NoblePeripheral) {
+    await this.connectionManager!.onNoblePeripheralConnect(this);
   }
-  /** @param {noble.Peripheral} noblePeripheral */
-  async onNoblePeripheralConnect(noblePeripheral) {
+  async onNoblePeripheralConnect(noblePeripheral: NoblePeripheral) {
     _console.log("onNoblePeripheralConnect", noblePeripheral.id, noblePeripheral.state);
     if (noblePeripheral.state == "connected") {
-      await this.#noblePeripheral.discoverServicesAsync(allServiceUUIDs);
+      await this.#noblePeripheral!.discoverServicesAsync(allServiceUUIDs as string[]);
     }
     // this gets called when it connects and disconnects, so we use the noblePeripheral's "state" property instead
     await this.#onNoblePeripheralState();
   }
 
-  async #onNoblePeripheralDisconnect() {
-    await this._connectionManager.onNoblePeripheralConnect(this);
+  async #onNoblePeripheralDisconnect(this: NoblePeripheral) {
+    await this.connectionManager!.onNoblePeripheralConnect(this);
   }
-  /** @param {noble.Peripheral} noblePeripheral */
-  async onNoblePeripheralDisconnect(noblePeripheral) {
+  async onNoblePeripheralDisconnect(noblePeripheral: NoblePeripheral) {
     _console.log("onNoblePeripheralDisconnect", noblePeripheral.id);
     await this.#onNoblePeripheralState();
   }
 
   async #onNoblePeripheralState() {
-    _console.log(`noblePeripheral ${this.bluetoothId} state ${this.#noblePeripheral.state}`);
+    _console.log(`noblePeripheral ${this.bluetoothId} state ${this.#noblePeripheral!.state}`);
 
-    switch (this.#noblePeripheral.state) {
+    switch (this.#noblePeripheral!.state) {
       case "connected":
         //this.status = "connected";
         break;
@@ -184,7 +161,7 @@ class NobleConnectionManager extends BluetoothConnectionManager {
         _console.error("noblePeripheral error");
         break;
       default:
-        _console.log(`uncaught noblePeripheral state ${this.#noblePeripheral.state}`);
+        _console.log(`uncaught noblePeripheral state ${this.#noblePeripheral!.state}`);
         break;
     }
   }
@@ -202,28 +179,18 @@ class NobleConnectionManager extends BluetoothConnectionManager {
     this.#characteristics.clear();
   }
 
-  /** @param {number} rssi */
-  async #onNoblePeripheralRssiUpdate(rssi) {
-    await this._connectionManager.onNoblePeripheralRssiUpdate(this, rssi);
+  async #onNoblePeripheralRssiUpdate(this: NoblePeripheral, rssi: number) {
+    await this.connectionManager!.onNoblePeripheralRssiUpdate(this, rssi);
   }
-  /**
-   * @param {noble.Peripheral} noblePeripheral
-   * @param {number} rssi
-   */
-  async onNoblePeripheralRssiUpdate(noblePeripheral, rssi) {
+  async onNoblePeripheralRssiUpdate(noblePeripheral: NoblePeripheral, rssi: number) {
     _console.log("onNoblePeripheralRssiUpdate", noblePeripheral.id, rssi);
     // FILL
   }
 
-  /** @param {noble.Service[]} services */
-  async #onNoblePeripheralServicesDiscover(services) {
-    await this._connectionManager.onNoblePeripheralServicesDiscover(this, services);
+  async #onNoblePeripheralServicesDiscover(this: NoblePeripheral, services: NobleService[]) {
+    await this.connectionManager!.onNoblePeripheralServicesDiscover(this, services);
   }
-  /**
-   * @param {noble.Peripheral} noblePeripheral
-   * @param {noble.Service[]} services
-   */
-  async onNoblePeripheralServicesDiscover(noblePeripheral, services) {
+  async onNoblePeripheralServicesDiscover(noblePeripheral: NoblePeripheral, services: NobleService[]) {
     _console.log(
       "onNoblePeripheralServicesDiscover",
       noblePeripheral.id,
@@ -232,34 +199,28 @@ class NobleConnectionManager extends BluetoothConnectionManager {
     for (const index in services) {
       const service = services[index];
       _console.log("service", service.uuid);
-      const serviceName = getServiceNameFromUUID(service.uuid);
+      const serviceName = getServiceNameFromUUID(service.uuid)!;
       _console.assertWithError(serviceName, `no name found for service uuid "${service.uuid}"`);
       _console.log({ serviceName });
       this.#services.set(serviceName, service);
-      service._name = serviceName;
-      service._connectionManager = this;
+      service.name = serviceName;
+      service.connectionManager = this;
       addEventListeners(service, this.#unboundNobleServiceListeners);
       await service.discoverCharacteristicsAsync();
     }
   }
 
   // NOBLE SERVICE
-  /** @type {Map.<BluetoothServiceName, BluetoothRemoteGATTService} */
-  #services = new Map();
+  #services: Map<BluetoothServiceName, NobleService> = new Map();
 
   #unboundNobleServiceListeners = {
     characteristicsDiscover: this.#onNobleServiceCharacteristicsDiscover,
   };
 
-  /** @param {noble.Characteristic[]} characteristics */
-  async #onNobleServiceCharacteristicsDiscover(characteristics) {
-    await this._connectionManager.onNobleServiceCharacteristicsDiscover(this, characteristics);
+  async #onNobleServiceCharacteristicsDiscover(this: NobleService, characteristics: NobleCharacteristic[]) {
+    await this.connectionManager!.onNobleServiceCharacteristicsDiscover(this, characteristics);
   }
-  /**
-   * @param {noble.Service} service
-   * @param {noble.Characteristic[]} characteristics
-   */
-  async onNobleServiceCharacteristicsDiscover(service, characteristics) {
+  async onNobleServiceCharacteristicsDiscover(service: NobleService, characteristics: NobleCharacteristic[]) {
     _console.log(
       "onNobleServiceCharacteristicsDiscover",
       service.uuid,
@@ -269,12 +230,12 @@ class NobleConnectionManager extends BluetoothConnectionManager {
     for (const index in characteristics) {
       const characteristic = characteristics[index];
       _console.log("characteristic", characteristic.uuid);
-      const characteristicName = getCharacteristicNameFromUUID(characteristic.uuid);
+      const characteristicName = getCharacteristicNameFromUUID(characteristic.uuid)!;
       _console.assertWithError(characteristicName, `no name found for characteristic uuid "${characteristic.uuid}"`);
       _console.log({ characteristicName });
       this.#characteristics.set(characteristicName, characteristic);
-      characteristic._name = characteristicName;
-      characteristic._connectionManager = this;
+      characteristic.name = characteristicName;
+      characteristic.connectionManager = this;
       addEventListeners(characteristic, this.#unboundNobleCharacteristicListeners);
       if (characteristic.properties.includes("read")) {
         await characteristic.readAsync();
@@ -296,8 +257,7 @@ class NobleConnectionManager extends BluetoothConnectionManager {
     notify: this.#onNobleCharacteristicNotify,
   };
 
-  /** @type {Map.<BluetoothCharacteristicName, noble.Characteristic} */
-  #characteristics = new Map();
+  #characteristics: Map<BluetoothCharacteristicName, NobleCharacteristic> = new Map();
 
   get #hasAllCharacteristics() {
     return allCharacteristicNames.every((characteristicName) => {
@@ -305,49 +265,31 @@ class NobleConnectionManager extends BluetoothConnectionManager {
     });
   }
 
-  /**
-   * @param {Buffer} data
-   * @param {boolean} isNotification
-   */
-  #onNobleCharacteristicData(data, isNotification) {
-    this._connectionManager.onNobleCharacteristicData(this, data, isNotification);
+  #onNobleCharacteristicData(this: NobleCharacteristic, data: Buffer, isNotification: boolean) {
+    this.connectionManager!.onNobleCharacteristicData(this, data, isNotification);
   }
-  /**
-   * @param {noble.Characteristic} characteristic
-   * @param {Buffer} data
-   * @param {boolean} isNotification
-   */
-  onNobleCharacteristicData(characteristic, data, isNotification) {
+  onNobleCharacteristicData(characteristic: NobleCharacteristic, data: Buffer, isNotification: boolean) {
     _console.log("onNobleCharacteristicData", characteristic.uuid, data, isNotification);
     const dataView = new DataView(dataToArrayBuffer(data));
 
-    /** @type {BluetoothCharacteristicName} */
-    const characteristicName = characteristic._name;
+    const characteristicName: BluetoothCharacteristicName = characteristic.name;
     _console.assertWithError(characteristicName, `no name found for characteristic with uuid "${characteristic.uuid}"`);
 
     this.onCharacteristicValueChanged(characteristicName, dataView);
   }
 
-  #onNobleCharacteristicWrite() {
-    this._connectionManager.onNobleCharacteristicWrite(this);
+  #onNobleCharacteristicWrite(this: NobleCharacteristic) {
+    this.connectionManager!.onNobleCharacteristicWrite(this);
   }
-  /**
-   * @param {noble.Characteristic} characteristic
-   */
-  onNobleCharacteristicWrite(characteristic) {
+  onNobleCharacteristicWrite(characteristic: NobleCharacteristic) {
     _console.log("onNobleCharacteristicWrite", characteristic.uuid);
     // FILL
   }
 
-  /** @param {boolean} isSubscribed */
-  #onNobleCharacteristicNotify(isSubscribed) {
-    this._connectionManager.onNobleCharacteristicNotify(this, isSubscribed);
+  #onNobleCharacteristicNotify(this: NobleCharacteristic, isSubscribed: boolean) {
+    this.connectionManager!.onNobleCharacteristicNotify(this, isSubscribed);
   }
-  /**
-   * @param {noble.Characteristic} characteristic
-   * @param {boolean} isSubscribed
-   */
-  onNobleCharacteristicNotify(characteristic, isSubscribed) {
+  onNobleCharacteristicNotify(characteristic: NobleCharacteristic, isSubscribed: boolean) {
     _console.log("onNobleCharacteristicNotify", characteristic.uuid, isSubscribed);
   }
 }

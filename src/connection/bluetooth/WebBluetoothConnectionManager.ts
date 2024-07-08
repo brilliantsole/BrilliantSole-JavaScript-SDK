@@ -12,49 +12,52 @@ import BluetoothConnectionManager from "./BluetoothConnectionManager";
 
 const _console = createConsole("WebBluetoothConnectionManager", { log: true });
 
-/** @typedef {import("./bluetoothUUIDs").BluetoothCharacteristicName} BluetoothCharacteristicName */
-/** @typedef {import("./bluetoothUUIDs").BluetoothServiceName} BluetoothServiceName */
+import { BluetoothCharacteristicName, BluetoothServiceName } from "./bluetoothUUIDs";
+import { ConnectionType } from "../BaseConnectionManager";
 
-/** @typedef {import("../BaseConnectionManager").ConnectionMessageType} ConnectionMessageType */
-/** @typedef {import("../BaseConnectionManager").TxRxMessageType} TxRxMessageType */
-/** @typedef {import("../BaseConnectionManager").ConnectionType} ConnectionType */
+type WebBluetoothInterface = webbluetooth.Bluetooth | Bluetooth;
 
+var bluetooth: WebBluetoothInterface | undefined;
 // NODE_START
-import webbluetooth from "webbluetooth";
-const { bluetooth } = webbluetooth;
-var navigator = { bluetooth };
+import * as webbluetooth from "webbluetooth";
+if (isInNode) {
+  bluetooth = webbluetooth.bluetooth;
+}
 // NODE_END
 
 // BROWSER_START
 if (isInBrowser) {
-  var navigator = window.navigator;
+  bluetooth = window.navigator.bluetooth;
 }
 // BROWSER_END
 
+interface BluetoothService extends BluetoothRemoteGATTService {
+  name?: BluetoothServiceName;
+}
+interface BluetoothCharacteristic extends BluetoothRemoteGATTCharacteristic {
+  name?: BluetoothCharacteristicName;
+}
+
 class WebBluetoothConnectionManager extends BluetoothConnectionManager {
   get bluetoothId() {
-    return this.device?.id;
+    return this.device!.id;
   }
 
-  /** @type {Object.<string, EventListener} */
-  #boundBluetoothCharacteristicEventListeners = {
+  #boundBluetoothCharacteristicEventListeners: { [eventType: string]: EventListener } = {
     characteristicvaluechanged: this.#onCharacteristicvaluechanged.bind(this),
   };
-  /** @type {Object.<string, EventListener} */
-  #boundBluetoothDeviceEventListeners = {
+  #boundBluetoothDeviceEventListeners: { [eventType: string]: EventListener } = {
     gattserverdisconnected: this.#onGattserverdisconnected.bind(this),
   };
 
   static get isSupported() {
-    return "bluetooth" in navigator;
+    return Boolean(bluetooth);
   }
-  /** @type {ConnectionType} */
-  static get type() {
+  static get type(): ConnectionType {
     return "webBluetooth";
   }
 
-  /** @type {BluetoothDevice?} */
-  #device;
+  #device!: BluetoothDevice | undefined;
   get device() {
     return this.#device;
   }
@@ -72,24 +75,23 @@ class WebBluetoothConnectionManager extends BluetoothConnectionManager {
     this.#device = newDevice;
   }
 
-  /** @type {BluetoothRemoteGATTServer?} */
-  get server() {
+  get server(): BluetoothRemoteGATTServer | undefined {
     return this.#device?.gatt;
   }
   get isConnected() {
-    return this.server?.connected;
+    return this.server?.connected || false;
   }
 
-  /** @type {Map.<BluetoothServiceName, BluetoothRemoteGATTService} */
-  #services = new Map();
-  /** @type {Map.<BluetoothCharacteristicName, BluetoothRemoteGATTCharacteristic} */
-  #characteristics = new Map();
+  /** @type {Map.<BluetoothServiceName, BluetoothService} */
+  #services: Map<BluetoothServiceName, BluetoothService> = new Map();
+  /** @type {Map.<BluetoothCharacteristicName, BluetoothCharacteristic} */
+  #characteristics: Map<BluetoothCharacteristicName, BluetoothCharacteristic> = new Map();
 
   async connect() {
     await super.connect();
 
     try {
-      const device = await navigator.bluetooth.requestDevice({
+      const device = await bluetooth!.requestDevice({
         filters: [{ services: serviceUUIDs }],
         optionalServices: isInBrowser ? optionalServiceUUIDs : [],
       });
@@ -98,7 +100,7 @@ class WebBluetoothConnectionManager extends BluetoothConnectionManager {
       this.device = device;
 
       _console.log("connecting to device...");
-      const server = await this.device.gatt.connect();
+      const server = await this.server!.connect();
       _console.log(`connected to device? ${server.connected}`);
 
       await this.#getServicesAndCharacteristics();
@@ -117,32 +119,32 @@ class WebBluetoothConnectionManager extends BluetoothConnectionManager {
     this.#removeEventListeners();
 
     _console.log("getting services...");
-    const services = await this.server.getPrimaryServices();
+    const services = await this.server!.getPrimaryServices();
     _console.log("got services", services.length);
-    const service = await this.server.getPrimaryService("8d53dc1d-1db7-4cd3-868b-8a527460aa84");
+    const service = await this.server!.getPrimaryService("8d53dc1d-1db7-4cd3-868b-8a527460aa84");
 
     _console.log("getting characteristics...");
     for (const serviceIndex in services) {
-      const service = services[serviceIndex];
+      const service = services[serviceIndex] as BluetoothService;
       _console.log({ service });
-      const serviceName = getServiceNameFromUUID(service.uuid);
+      const serviceName = getServiceNameFromUUID(service.uuid)!;
       _console.assertWithError(serviceName, `no name found for service uuid "${service.uuid}"`);
       _console.log(`got "${serviceName}" service`);
-      service._name = serviceName;
+      service.name = serviceName;
       this.#services.set(serviceName, service);
       _console.log(`getting characteristics for "${serviceName}" service`);
       const characteristics = await service.getCharacteristics();
       _console.log(`got characteristics for "${serviceName}" service`);
       for (const characteristicIndex in characteristics) {
-        const characteristic = characteristics[characteristicIndex];
+        const characteristic = characteristics[characteristicIndex] as BluetoothCharacteristic;
         _console.log({ characteristic });
-        const characteristicName = getCharacteristicNameFromUUID(characteristic.uuid);
+        const characteristicName = getCharacteristicNameFromUUID(characteristic.uuid)!;
         _console.assertWithError(
           characteristicName,
           `no name found for characteristic uuid "${characteristic.uuid}" in "${serviceName}" service`
         );
         _console.log(`got "${characteristicName}" characteristic in "${serviceName}" service`);
-        characteristic._name = characteristicName;
+        characteristic.name = characteristicName;
         this.#characteristics.set(characteristicName, characteristic);
         addEventListeners(characteristic, this.#boundBluetoothCharacteristicEventListeners);
         const characteristicProperties = characteristic.properties || getCharacteristicProperties(characteristicName);
@@ -166,7 +168,7 @@ class WebBluetoothConnectionManager extends BluetoothConnectionManager {
     }
 
     const promises = Array.from(this.#characteristics.keys()).map((characteristicName) => {
-      const characteristic = this.#characteristics.get(characteristicName);
+      const characteristic = this.#characteristics.get(characteristicName)!;
       removeEventListeners(characteristic, this.#boundBluetoothCharacteristicEventListeners);
       const characteristicProperties = characteristic.properties || getCharacteristicProperties(characteristicName);
       if (characteristicProperties.notify) {
@@ -184,26 +186,22 @@ class WebBluetoothConnectionManager extends BluetoothConnectionManager {
     this.status = "not connected";
   }
 
-  /** @param {Event} event */
-  #onCharacteristicvaluechanged(event) {
+  #onCharacteristicvaluechanged(event: Event) {
     _console.log("oncharacteristicvaluechanged");
 
-    /** @type {BluetoothRemoteGATTCharacteristic} */
-    const characteristic = event.target;
-
+    const characteristic = event.target as BluetoothCharacteristic;
     this.#onCharacteristicValueChanged(characteristic);
   }
 
-  /** @param {BluetoothRemoteGATTCharacteristic} characteristic */
-  #onCharacteristicValueChanged(characteristic) {
+  /** @param {BluetoothCharacteristic} characteristic */
+  #onCharacteristicValueChanged(characteristic: BluetoothCharacteristic) {
     _console.log("onCharacteristicValue");
 
-    /** @type {BluetoothCharacteristicName} */
-    const characteristicName = characteristic._name;
+    const characteristicName = characteristic.name!;
     _console.assertWithError(characteristicName, `no name found for characteristic with uuid "${characteristic.uuid}"`);
 
     _console.log(`oncharacteristicvaluechanged for "${characteristicName}" characteristic`);
-    const dataView = characteristic.value;
+    const dataView = characteristic.value!;
     _console.assertWithError(dataView, `no data found for "${characteristicName}" characteristic`);
     _console.log(`data for "${characteristicName}" characteristic`, Array.from(new Uint8Array(dataView.buffer)));
 
@@ -218,10 +216,10 @@ class WebBluetoothConnectionManager extends BluetoothConnectionManager {
    * @param {BluetoothCharacteristicName} characteristicName
    * @param {ArrayBuffer} data
    */
-  async writeCharacteristic(characteristicName, data) {
-    super.writeCharacteristic(...arguments);
+  async writeCharacteristic(characteristicName: BluetoothCharacteristicName, data: ArrayBuffer) {
+    super.writeCharacteristic(characteristicName, data);
 
-    const characteristic = this.#characteristics.get(characteristicName);
+    const characteristic = this.#characteristics.get(characteristicName)!;
     _console.assertWithError(characteristic, `${characteristicName} characteristic not found`);
     _console.log("writing characteristic", characteristic, data);
     const characteristicProperties = characteristic.properties || getCharacteristicProperties(characteristicName);
@@ -244,21 +242,20 @@ class WebBluetoothConnectionManager extends BluetoothConnectionManager {
   }
 
   /** @param {Event} event */
-  #onGattserverdisconnected(event) {
+  #onGattserverdisconnected(event: Event) {
     _console.log("gattserverdisconnected");
     this.status = "not connected";
   }
 
-  /** @type {boolean} */
   get canReconnect() {
-    return this.server && !this.server.connected && this.isInRange;
+    return Boolean(this.server && !this.server.connected && this.isInRange);
   }
   async reconnect() {
     await super.reconnect();
     _console.log("attempting to reconnect...");
     this.status = "connecting";
     try {
-      await this.server.connect();
+      await this.server!.connect();
     } catch (error) {
       _console.error(error);
       this.isInRange = false;

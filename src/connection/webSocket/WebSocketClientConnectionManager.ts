@@ -1,33 +1,29 @@
 import { createConsole } from "../../utils/Console";
 import { isInBrowser } from "../../utils/environment";
-import BaseConnectionManager from "../BaseConnectionManager";
+import BaseConnectionManager, { ConnectionType, ConnectionMessageType } from "../BaseConnectionManager";
 import Device from "../../Device";
 import { parseMessage } from "../../utils/ParseUtils";
 import DeviceInformationManager from "../../DeviceInformationManager";
 
 const _console = createConsole("WebSocketClientConnectionManager", { log: true });
 
-/** @typedef {import("../BaseConnectionManager").ConnectionMessageType} ConnectionMessageType */
-/** @typedef {import("../BaseConnectionManager").ConnectionType} ConnectionType */
+import { DeviceEventType } from "../../Device";
+import { WebSocketClient } from "../../server/websocket/WebSocketClient";
+import { ClientDeviceMessage } from "../../server/ServerUtils";
 
-/** @typedef {import("../../server/websocket/WebSocketClient").WebSocketClient} WebSocketClient */
-/** @typedef {import("../../Device").DeviceEventType} DeviceEventType */
-
-/** @typedef {import("../../server/ServerUtils").ClientDeviceMessage} ClientDeviceMessage */
+export type SendWebSocketMessageCallback = (...messages: ConnectionMessageType | ClientDeviceMessage) => void;
 
 class WebSocketClientConnectionManager extends BaseConnectionManager {
   static get isSupported() {
     return isInBrowser;
   }
-  /** @type {ConnectionType} */
-  static get type() {
+  static get type(): ConnectionType {
     return "webSocketClient";
   }
 
-  /** @type {string?} */
-  #bluetoothId;
+  #bluetoothId!: string | undefined;
   get bluetoothId() {
-    return this.#bluetoothId;
+    return this.#bluetoothId!;
   }
   set bluetoothId(newBluetoothId) {
     _console.assertTypeWithError(newBluetoothId, "string");
@@ -76,32 +72,24 @@ class WebSocketClientConnectionManager extends BaseConnectionManager {
     this.connect();
   }
 
-  /**
-   * @callback SendWebSocketMessageCallback
-   * @param {...(ConnectionMessageType|ClientDeviceMessage)} messages
-   */
+  sendWebSocketMessage!: SendWebSocketMessageCallback;
+  sendWebSocketConnectMessage!: Function;
+  sendWebSocketDisconnectMessage!: Function;
 
-  /** @type {SendWebSocketMessageCallback?} */
-  sendWebSocketMessage;
-  /** @type {function?} */
-  sendWebSocketConnectMessage;
-  /** @type {function?} */
-  sendWebSocketDisconnectMessage;
-
-  /** @param {ArrayBuffer} data */
-  async sendSmpMessage(data) {
-    super.sendSmpMessage(...arguments);
+  async sendSmpMessage(data: ArrayBuffer) {
+    super.sendSmpMessage(data);
     this.sendWebSocketMessage({ type: "smp", data });
   }
 
-  /** @param {ArrayBuffer} data */
-  async sendTxData(data) {
-    super.sendTxData(...arguments);
+  async sendTxData(data: ArrayBuffer) {
+    super.sendTxData(data);
     this.sendWebSocketMessage({ type: "tx", data });
   }
 
-  /** @type {ConnectionMessageType[]} */
-  static #DeviceInformationMessageTypes = [...DeviceInformationManager.MessageTypes, "batteryLevel"];
+  static #DeviceInformationMessageTypes: ConnectionMessageType[] = [
+    ...DeviceInformationManager.MessageTypes,
+    "batteryLevel",
+  ];
   get #deviceInformationMessageTypes() {
     return WebSocketClientConnectionManager.#DeviceInformationMessageTypes;
   }
@@ -110,7 +98,7 @@ class WebSocketClientConnectionManager extends BaseConnectionManager {
   }
 
   /** @param {DataView} dataView */
-  onWebSocketMessage(dataView) {
+  onWebSocketMessage(dataView: DataView) {
     _console.log({ dataView });
     parseMessage(dataView, Device.EventTypes, this.#onWebSocketMessageCallback.bind(this), null, true);
   }
@@ -119,7 +107,7 @@ class WebSocketClientConnectionManager extends BaseConnectionManager {
    * @param {DeviceEventType} messageType
    * @param {DataView} dataView
    */
-  #onWebSocketMessageCallback(messageType, dataView) {
+  #onWebSocketMessageCallback(messageType: DeviceEventType, dataView: DataView) {
     let byteOffset = 0;
 
     switch (messageType) {

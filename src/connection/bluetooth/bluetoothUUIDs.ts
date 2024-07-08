@@ -27,9 +27,9 @@ function stringToServiceUUID(identifier: string): BluetoothServiceUUID {
   return BluetoothUUID?.getService?.(identifier);
 }
 
-type BluetoothServiceName = "deviceInformation" | "battery" | "main" | "smp";
+export type BluetoothServiceName = "deviceInformation" | "battery" | "main" | "smp";
 import { DeviceInformationMessageType } from "../../DeviceInformationManager";
-type BluetoothCharacteristicName = DeviceInformationMessageType | "batteryLevel" | "rx" | "tx" | "smp";
+export type BluetoothCharacteristicName = DeviceInformationMessageType | "batteryLevel" | "rx" | "tx" | "smp";
 
 interface BluetoothCharacteristicInformation {
   uuid: BluetoothCharacteristicUUID;

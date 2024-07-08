@@ -13,19 +13,19 @@ import SensorDataManager from "../sensor/SensorDataManager";
 
 const _console = createConsole("BaseConnectionManager", { log: true });
 
-type FileTransferMessageType = import("../FileTransferManager").FileTransferMessageType;
-type TfliteMessageType = import("../TfliteManager").TfliteMessageType;
-type FirmwareMessageType = import("../FirmwareManager").FirmwareMessageType;
-type DeviceInformationMessageType = import("../DeviceInformationManager").DeviceInformationMessageType;
-type InformationMessageType = import("../InformationManager").InformationMessageType;
-type SensorConfigurationMessageType = import("../sensor/SensorConfigurationManager").SensorConfigurationMessageType;
-type SensorDataMessageType = import("../sensor/SensorDataManager").SensorDataMessageType;
-type VibrationMessageType = import("../vibration/VibrationManager").VibrationMessageType;
+import { FileTransferMessageType } from "../FileTransferManager";
+import { TfliteMessageType } from "../TfliteManager";
+import { FirmwareMessageType } from "../FirmwareManager";
+import { DeviceInformationMessageType } from "../DeviceInformationManager";
+import { InformationMessageType } from "../InformationManager";
+import { SensorConfigurationMessageType } from "../sensor/SensorConfigurationManager";
+import { SensorDataMessageType } from "../sensor/SensorDataManager";
+import { VibrationMessageType } from "../vibration/VibrationManager";
 
-type ConnectionType = "webBluetooth" | "noble" | "webSocketClient";
-type ConnectionStatus = "not connected" | "connecting" | "connected" | "disconnecting";
+export type ConnectionType = "webBluetooth" | "noble" | "webSocketClient";
+export type ConnectionStatus = "not connected" | "connecting" | "connected" | "disconnecting";
 
-type TxRxMessageType =
+export type TxRxMessageType =
   | InformationMessageType
   | SensorConfigurationMessageType
   | SensorDataMessageType
@@ -34,29 +34,26 @@ type TxRxMessageType =
   | TfliteMessageType
   | FirmwareMessageType;
 
-interface TxMessage {
+export interface TxMessage {
   type: TxRxMessageType;
   data?: ArrayBuffer;
 }
 
-type ConnectionMessageType = DeviceInformationMessageType | "batteryLevel" | "rx" | "tx" | "smp" | TxRxMessageType;
+export type ConnectionMessageType =
+  | DeviceInformationMessageType
+  | "batteryLevel"
+  | "rx"
+  | "tx"
+  | "smp"
+  | TxRxMessageType;
 
-/**
- * @callback ConnectionStatusCallback
- * @param {ConnectionStatus} status
- */
+export type ConnectionStatusCallback = (status: ConnectionStatus) => void;
+export type MessageReceivedCallback = (messageType: ConnectionMessageType, dataView: DataView) => void;
 
-/**
- * @callback MessageReceivedCallback
- * @param {ConnectionMessageType} messageType
- * @param {DataView} dataView
- */
-
-class BaseConnectionManager {
+abstract class BaseConnectionManager {
   // MESSAGES
 
-  /** @type {TxRxMessageType[]} */
-  static #TxRxMessageTypes = [
+  static #TxRxMessageTypes: TxRxMessageType[] = [
     ...InformationManager.MessageTypes,
     ...SensorConfigurationManager.MessageTypes,
     ...SensorDataManager.MessageTypes,
@@ -67,8 +64,7 @@ class BaseConnectionManager {
   static get TxRxMessageTypes() {
     return this.#TxRxMessageTypes;
   }
-  /** @type {ConnectionMessageType[]} */
-  static #MessageTypes = [
+  static #MessageTypes: ConnectionMessageType[] = [
     ...DeviceInformationManager.MessageTypes,
     "batteryLevel",
     "smp",
@@ -79,31 +75,26 @@ class BaseConnectionManager {
   static get MessageTypes() {
     return this.#MessageTypes;
   }
-  /** @param {ConnectionMessageType} messageType */
-  static #AssertValidTxRxMessageType(messageType) {
+  static #AssertValidTxRxMessageType(messageType: ConnectionMessageType) {
     _console.assertEnumWithError(messageType, this.#TxRxMessageTypes);
   }
 
   // ID
-
-  /** @type {string?} */
-  get bluetoothId() {
-    this.#throwNotImplementedError("bluetoothId");
-  }
+  abstract get bluetoothId(): string;
 
   // CALLBACKS
-  /** @type {ConnectionStatusCallback?} */
-  onStatusUpdated;
-  /** @type {MessageReceivedCallback?} */
-  onMessageReceived;
+  onStatusUpdated!: ConnectionStatusCallback;
+  onMessageReceived!: MessageReceivedCallback;
 
-  /** @param {string} name */
-  static #staticThrowNotImplementedError(name) {
+  static #staticThrowNotImplementedError(name: string) {
     throw new Error(`"${name}" is not implemented by "${this.name}" subclass`);
   }
-  /** @param {string} name */
-  #throwNotImplementedError(name) {
+  #throwNotImplementedError(name: string) {
     throw new Error(`"${name}" is not implemented by "${this.constructor.name}" subclass`);
+  }
+
+  get #baseConstructor() {
+    return this.constructor as typeof BaseConnectionManager;
   }
 
   static get isSupported() {
@@ -111,16 +102,12 @@ class BaseConnectionManager {
   }
   /** @type {boolean} */
   get isSupported() {
-    return this.constructor.isSupported;
+    return this.#baseConstructor.isSupported;
   }
 
-  /** @type {ConnectionType} */
-  static get type() {
-    this.#staticThrowNotImplementedError("type");
-  }
-  /** @type {ConnectionType} */
-  get type() {
-    return this.constructor.type;
+  static type: ConnectionType;
+  get type(): ConnectionType {
+    return this.#baseConstructor.type;
   }
 
   /** @throws {Error} if not supported */
@@ -149,8 +136,7 @@ class BaseConnectionManager {
     return BaseConnectionManager.#Statuses;
   }
 
-  /** @type {ConnectionStatus} */
-  #status = "not connected";
+  #status: ConnectionStatus = "not connected";
   get status() {
     return this.#status;
   }
@@ -172,7 +158,7 @@ class BaseConnectionManager {
     }
 
     if (this.#status == "not connected") {
-      this.#mtu = null;
+      this.mtu = undefined;
     }
   }
 
@@ -207,7 +193,6 @@ class BaseConnectionManager {
     this.#assertIsNotConnecting();
     this.status = "connecting";
   }
-  /** @type {boolean} */
   get canReconnect() {
     return false;
   }
@@ -223,20 +208,14 @@ class BaseConnectionManager {
     _console.log("disconnecting from device...");
   }
 
-  /** @param {ArrayBuffer} data */
-  async sendSmpMessage(data) {
+  async sendSmpMessage(data: ArrayBuffer) {
     this.#assertIsConnectedAndNotDisconnecting();
     _console.log("sending smp message", data);
   }
 
-  /** @type {TxMessage[]} */
-  #pendingMessages = [];
+  #pendingMessages: TxMessage[] = [];
 
-  /**
-   * @param {TxMessage[]?} messages
-   * @param {boolean} sendImmediately
-   */
-  async sendTxMessages(messages, sendImmediately = true) {
+  async sendTxMessages(messages: TxMessage[] | undefined, sendImmediately: boolean = true) {
     this.#assertIsConnectedAndNotDisconnecting();
 
     if (messages) {
@@ -257,12 +236,12 @@ class BaseConnectionManager {
       return concatenateArrayBuffers(messageTypeEnum, dataLength, message.data);
     });
 
-    if (this.#mtu) {
+    if (this.mtu) {
       while (arrayBuffers.length > 0) {
         let arrayBufferByteLength = 0;
         let arrayBufferCount = 0;
         arrayBuffers.some((arrayBuffer) => {
-          if (arrayBufferByteLength + arrayBuffer.byteLength > this.#mtu - 3) {
+          if (arrayBufferByteLength + arrayBuffer.byteLength > this.mtu! - 3) {
             return true;
           }
           arrayBufferCount++;
@@ -284,30 +263,17 @@ class BaseConnectionManager {
     this.#pendingMessages.length = 0;
   }
 
-  /** @param {number?} */
-  #mtu;
-  get mtu() {
-    return this.#mtu;
-  }
-  set mtu(newMtu) {
-    this.#mtu = newMtu;
-  }
+  mtu: number | undefined;
 
-  /** @param {ArrayBuffer} data */
-  async sendTxData(data) {
+  async sendTxData(data: ArrayBuffer) {
     _console.log("sendTxData", data);
   }
 
-  /** @param {DataView} dataView */
-  parseRxMessage(dataView) {
+  parseRxMessage(dataView: DataView) {
     parseMessage(dataView, BaseConnectionManager.#TxRxMessageTypes, this.#onRxMessage.bind(this), null, true);
   }
 
-  /**
-   * @param {TxRxMessageType} messageType
-   * @param {DataView} dataView
-   */
-  #onRxMessage(messageType, dataView) {
+  #onRxMessage(messageType: TxRxMessageType, dataView: DataView) {
     _console.log({ messageType, dataView });
     this.onMessageReceived?.(messageType, dataView);
   }

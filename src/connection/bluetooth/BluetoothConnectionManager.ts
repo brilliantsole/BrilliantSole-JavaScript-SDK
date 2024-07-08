@@ -3,15 +3,9 @@ import BaseConnectionManager from "../BaseConnectionManager";
 
 const _console = createConsole("BluetoothConnectionManager", { log: true });
 
-type BluetoothCharacteristicName = import("./bluetoothUUIDs").BluetoothCharacteristicName;
-type BluetoothServiceName = import("./bluetoothUUIDs").BluetoothServiceName;
+import { BluetoothCharacteristicName } from "./bluetoothUUIDs";
 
-type ConnectionMessageType = import("../BaseConnectionManager").ConnectionMessageType;
-type ConnectionType = import("../BaseConnectionManager").ConnectionType;
-type TxRxMessageType = import("../BaseConnectionManager").TxRxMessageType;
-type ConnectionStatus = import("../BaseConnectionManager").ConnectionStatus;
-
-class BluetoothConnectionManager extends BaseConnectionManager {
+abstract class BluetoothConnectionManager extends BaseConnectionManager {
   isInRange = true;
 
   protected onCharacteristicValueChanged(characteristicName: BluetoothCharacteristicName, dataView: DataView) {
