@@ -1,18 +1,16 @@
 import RangeHelper from "./RangeHelper";
 
-/** @typedef {import("./MathUtils").Vector2} Vector2 */
+import { Vector2 } from "./MathUtils";
 
-/** @typedef {Vector2} CenterOfPressure */
+export type CenterOfPressure = Vector2;
 
-/**
- * @typedef {Object} CenterOfPressureRange
- * @property {RangeHelper} x
- * @property {RangeHelper} y
- */
+export interface CenterOfPressureRange {
+  x: RangeHelper;
+  y: RangeHelper;
+}
 
 class CenterOfPressureHelper {
-  /** @type {CenterOfPressureRange} */
-  #range = {
+  #range: CenterOfPressureRange = {
     x: new RangeHelper(),
     y: new RangeHelper(),
   };
@@ -21,24 +19,18 @@ class CenterOfPressureHelper {
     this.#range.y.reset();
   }
 
-  /** @param {CenterOfPressure} centerOfPressure  */
-  update(centerOfPressure) {
+  update(centerOfPressure: CenterOfPressure) {
     this.#range.x.update(centerOfPressure.x);
     this.#range.y.update(centerOfPressure.y);
   }
-  /**
-   * @param {CenterOfPressure} centerOfPressure
-   * @returns {CenterOfPressure}
-   */
-  getNormalization(centerOfPressure) {
+  getNormalization(centerOfPressure: CenterOfPressure): CenterOfPressure {
     return {
       x: this.#range.x.getNormalization(centerOfPressure.x),
       y: this.#range.y.getNormalization(centerOfPressure.y),
     };
   }
 
-  /** @param {CenterOfPressure} centerOfPressure  */
-  updateAndGetNormalization(centerOfPressure) {
+  updateAndGetNormalization(centerOfPressure: CenterOfPressure) {
     this.update(centerOfPressure);
     return this.getNormalization(centerOfPressure);
   }

@@ -4,11 +4,7 @@ import { textDecoder } from "./Text";
 
 const _console = createConsole("ParseUtils", { log: true });
 
-/**
- * @param {DataView} dataView
- * @param {number} byteOffset
- */
-export function parseStringFromDataView(dataView, byteOffset = 0) {
+export function parseStringFromDataView(dataView: DataView, byteOffset: number = 0) {
   const stringLength = dataView.getUint8(byteOffset++);
   const string = textDecoder.decode(
     dataView.buffer.slice(dataView.byteOffset + byteOffset, dataView.byteOffset + byteOffset + stringLength)
@@ -17,20 +13,15 @@ export function parseStringFromDataView(dataView, byteOffset = 0) {
   return { string, byteOffset };
 }
 
-/**
- * @callback ParseMessageCallback
- * @param {string} messageType
- * @param {DataView} dataView
- */
+export type ParseMessageCallback = (messageType: string, dataView: DataView, context?: any) => void;
 
-/**
- * @param {DataView} dataView
- * @param {string[]} enumeration
- * @param {ParseMessageCallback} callback
- * @param {Object} [context]
- * @param {boolean} parseMessageLengthAsUint16
- */
-export function parseMessage(dataView, enumeration, callback, context, parseMessageLengthAsUint16 = false) {
+export function parseMessage(
+  dataView: DataView,
+  enumeration: string[],
+  callback: ParseMessageCallback,
+  context?: any,
+  parseMessageLengthAsUint16: boolean = false
+) {
   let byteOffset = 0;
   while (byteOffset < dataView.byteLength) {
     const messageTypeEnum = dataView.getUint8(byteOffset++);

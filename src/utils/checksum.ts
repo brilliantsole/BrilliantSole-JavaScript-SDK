@@ -5,8 +5,7 @@ const _console = createConsole("checksum", { log: true });
 // https://github.com/googlecreativelab/tiny-motion-trainer/blob/5fceb49f018ae0c403bf9f0ccc437309c2acb507/frontend/src/tf4micro-motion-kit/modules/bleFileTransfer#L195
 
 // See http://home.thep.lu.se/~bjorn/crc/ for more information on simple CRC32 calculations.
-/** @param {number} r */
-export function crc32ForByte(r) {
+export function crc32ForByte(r: number) {
   for (let j = 0; j < 8; ++j) {
     r = (r & 1 ? 0 : 0xedb88320) ^ (r >>> 1);
   }
@@ -19,8 +18,7 @@ for (let i = 0; i < tableSize; ++i) {
   crc32Table[i] = crc32ForByte(i);
 }
 
-/** @param {number[]} dataIterable */
-export function crc32(dataIterable) {
+export function crc32(dataIterable: number[]) {
   let dataBytes = new Uint8Array(dataIterable);
   let crc = 0;
   for (let i = 0; i < dataBytes.byteLength; ++i) {

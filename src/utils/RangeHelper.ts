@@ -1,37 +1,31 @@
 import { getInterpolation } from "./MathUtils";
 
-/**
- * @typedef {Object} Range
- * @property {number} min
- * @property {number} max
- * @property {number} range
- */
+interface Range {
+  min: number;
+  max: number;
+  range: number;
+}
 
-/** @type {Range} */
-const initialRange = { min: Infinity, max: -Infinity, range: 0 };
+const initialRange: Range = { min: Infinity, max: -Infinity, range: 0 };
 
 class RangeHelper {
-  /** @type {Range} */
-  #range = Object.assign({}, initialRange);
+  #range: Range = Object.assign({}, initialRange);
 
   reset() {
     Object.assign(this.#range, initialRange);
   }
 
-  /** @param {number} value */
-  update(value) {
+  update(value: number) {
     this.#range.min = Math.min(value, this.#range.min);
     this.#range.max = Math.max(value, this.#range.max);
     this.#range.range = this.#range.max - this.#range.min;
   }
 
-  /** @param {number} value */
-  getNormalization(value) {
+  getNormalization(value: number) {
     return this.#range.range * value || 0;
   }
 
-  /** @param {number} value */
-  updateAndGetNormalization(value) {
+  updateAndGetNormalization(value: any) {
     this.update(value);
     return this.getNormalization(value);
   }

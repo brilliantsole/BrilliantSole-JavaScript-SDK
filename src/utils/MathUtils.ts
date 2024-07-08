@@ -1,10 +1,4 @@
-/**
- * @param {number} value
- * @param {number} min
- * @param {number} max
- * @param {number} [range]
- */
-export function getInterpolation(value, min, max, range) {
+export function getInterpolation(value: number, min: number, max: number, range: number) {
   if (range == undefined) {
     range = max - min;
   }
@@ -13,17 +7,12 @@ export function getInterpolation(value, min, max, range) {
 
 const Uint16Max = 2 ** 16;
 
-/** @param {number} number */
-function removeLower2Bytes(number) {
+function removeLower2Bytes(number: number) {
   const lower2Bytes = number % Uint16Max;
   return number - lower2Bytes;
 }
 
-/**
- * @param {DataView} dataView
- * @param {number} byteOffset
- */
-export function parseTimestamp(dataView, byteOffset) {
+export function parseTimestamp(dataView: DataView, byteOffset: number) {
   const now = Date.now();
   const nowWithoutLower2Bytes = removeLower2Bytes(now);
   const lower2Bytes = dataView.getUint16(byteOffset, true);
@@ -31,8 +20,7 @@ export function parseTimestamp(dataView, byteOffset) {
   return timestamp;
 }
 
-/**
- * @typedef {Object} Vector2
- * @property {number} x
- * @property {number} y
- */
+export interface Vector2 {
+  x: number;
+  y: number;
+}

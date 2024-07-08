@@ -2,17 +2,15 @@ import { createConsole } from "./Console";
 
 const _console = createConsole("Timer", { log: false });
 
-/** @param {number} delay ms */
-export async function wait(delay) {
+export async function wait(delay: number) {
   _console.log(`waiting for ${delay} ms`);
-  return new Promise((resolve) => {
+  return new Promise((resolve: Function) => {
     setTimeout(() => resolve(), delay);
   });
 }
 
 class Timer {
-  /** @type {function} */
-  #callback;
+  #callback!: Function;
   get callback() {
     return this.#callback;
   }
@@ -25,8 +23,7 @@ class Timer {
     }
   }
 
-  /** @type {number} */
-  #interval;
+  #interval!: number;
   get interval() {
     return this.#interval;
   }
@@ -40,19 +37,14 @@ class Timer {
     }
   }
 
-  /**
-   * @param {function} callback
-   * @param {number} interval
-   */
-  constructor(callback, interval) {
+  constructor(callback: Function, interval: number) {
     this.interval = interval;
     this.callback = callback;
   }
 
-  /** @type {number?} */
-  #intervalId = null;
+  #intervalId: number | undefined;
   get isRunning() {
-    return this.#intervalId != null;
+    return this.#intervalId != undefined;
   }
 
   start() {
@@ -70,7 +62,7 @@ class Timer {
     }
     _console.log("stopping interval");
     clearInterval(this.#intervalId);
-    this.#intervalId = null;
+    this.#intervalId = undefined;
   }
   restart() {
     this.stop();
