@@ -19,7 +19,7 @@ import Device from "../Device";
 export const SensorTypes = [...MotionSensorTypes, ...PressureSensorTypes, ...BarometerSensorTypes] as const;
 export type SensorType = (typeof SensorTypes)[number];
 
-export const SensorEventTypes = [...SensorTypes, "anySensor"] as const;
+export const SensorEventTypes = [...SensorTypes, "sensorData"] as const;
 export type SensorEventType = (typeof SensorEventTypes)[number];
 
 export const ContinuousSensorTypes = [
@@ -41,8 +41,9 @@ export interface BaseSensorDataMessage {
 }
 export type SensorDataMessage = PressureDataMessage | MotionSensorDataMessage | BarometerSensorDataMessage;
 interface AnySensorDataMessages {
-  anySensor: SensorDataMessage;
+  sensorData: SensorDataMessage;
 }
+
 export type SensorDataMessages = BarometerSensorDataMessages &
   MotionSensorDataMessages &
   PressureDataMessages &
@@ -159,7 +160,7 @@ class SensorDataManager {
     // @ts-expect-error
     this.dispatchEvent(sensorType, { sensorType, [sensorType]: sensorData, timestamp });
     // @ts-expect-error
-    this.dispatchEvent("anySensor", { sensorType, [sensorType]: sensorData, timestamp });
+    this.dispatchEvent("sensorData", { sensorType, [sensorType]: sensorData, timestamp });
   }
 }
 

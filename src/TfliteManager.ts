@@ -1,191 +1,140 @@
 import { createConsole } from "./utils/Console";
 import EventDispatcher from "./utils/EventDispatcher";
 import { textDecoder, textEncoder } from "./utils/Text";
-import SensorDataManager from "./sensor/SensorDataManager";
+import SensorDataManager, { SensorTypes } from "./sensor/SensorDataManager";
 import { arrayWithoutDuplicates } from "./utils/ArrayUtils";
 import SensorConfigurationManager from "./sensor/SensorConfigurationManager";
 import { parseTimestamp } from "./utils/MathUtils";
+import { SensorType } from "./sensor/SensorDataManager";
+import Device from "./Device";
 
 const _console = createConsole("TfliteManager", { log: true });
 
-/**
- * @typedef { "getTfliteName" |
- * "setTfliteName" |
- * "getTfliteTask" |
- * "setTfliteTask" |
- * "getTfliteSampleRate" |
- * "setTfliteSampleRate" |
- * "getTfliteSensorTypes" |
- * "setTfliteSensorTypes" |
- * "tfliteIsReady" |
- * "getTfliteCaptureDelay" |
- * "setTfliteCaptureDelay" |
- * "getTfliteThreshold" |
- * "setTfliteThreshold" |
- * "getTfliteInferencingEnabled" |
- * "setTfliteInferencingEnabled" |
- * "tfliteInference"
- * } TfliteMessageType
- */
+export const TfliteMessageTypes = [
+  "getTfliteName",
+  "setTfliteName",
+  "getTfliteTask",
+  "setTfliteTask",
+  "getTfliteSampleRate",
+  "setTfliteSampleRate",
+  "getTfliteSensorTypes",
+  "setTfliteSensorTypes",
+  "tfliteIsReady",
+  "getTfliteCaptureDelay",
+  "setTfliteCaptureDelay",
+  "getTfliteThreshold",
+  "setTfliteThreshold",
+  "getTfliteInferencingEnabled",
+  "setTfliteInferencingEnabled",
+  "tfliteInference",
+] as const;
+export type TfliteMessageType = (typeof TfliteMessageTypes)[number];
 
-/** @typedef {"classification" | "regression"} TfliteTask */
+export const TfliteTasks = ["classification", "regression"] as const;
+export type TfliteTask = (typeof TfliteTasks)[number];
 
-/** @typedef {import("./sensor/SensorDataManager").SensorType} SensorType */
+interface BaseTfliteNameEvent {
+  type: "getTfliteName";
+  message: { tfliteName: string };
+}
+type TfliteNameEvent = BaseDeviceEvent & BaseTfliteNameEvent;
 
-/** @typedef {import("./utils/EventDispatcher").EventDispatcherOptions} EventDispatcherOptions */
+interface BaseTfliteTaskEvent {
+  type: "getTfliteTask";
+  message: { tfliteTask: TfliteTask };
+}
+type TfliteTaskEvent = BaseDeviceEvent & BaseTfliteNameEvent;
 
-/** @typedef {TfliteMessageType} TfliteManagerEventType */
+interface BaseTfliteSampleRateEvent {
+  type: "getTfliteSampleRate";
+  message: { tfliteSampleRate: number };
+}
+type TfliteSampleRateEvent = BaseDeviceEvent & BaseTfliteSampleRateEvent;
 
-/** @typedef {import("./Device").BaseDeviceEvent} BaseDeviceEvent */
+interface BaseTfliteSensorTypesEvent {
+  type: "getTfliteSensorTypes";
+  message: { tfliteSensorTypes: SensorType[] };
+}
+type TfliteSensorTypesEvent = BaseDeviceEvent & BaseTfliteSensorTypesEvent;
 
-/**
- * @typedef {Object} BaseTfliteNameEvent
- * @property {"getTfliteName"} type
- * @property {{tfliteName: string}} message
- */
-/** @typedef {BaseDeviceEvent & BaseTfliteNameEvent} TfliteNameEvent */
+interface BaseTfliteIsReadyEvent {
+  type: "tfliteIsReady";
+  message: { tfliteIsReady: boolean };
+}
+type TfliteIsReadyEvent = BaseDeviceEvent & BaseTfliteIsReadyEvent;
 
-/**
- * @typedef {Object} BaseTfliteTaskEvent
- * @property {"getTfliteTask"} type
- * @property {{tfliteTask: TfliteTask}} message
- */
-/** @typedef {BaseDeviceEvent & BaseTfliteNameEvent} TfliteTaskEvent */
+interface BaseTfliteCaptureDelayEvent {
+  type: "getTfliteCaptureDelay";
+  message: { tfliteCaptureDelay: number };
+}
+type TfliteCaptureDelayEvent = BaseDeviceEvent & BaseTfliteCaptureDelayEvent;
 
-/**
- * @typedef {Object} BaseTfliteSampleRateEvent
- * @property {"getTfliteSampleRate"} type
- * @property {{tfliteSampleRate: number}} message
- */
-/** @typedef {BaseDeviceEvent & BaseTfliteSampleRateEvent} TfliteSampleRateEvent */
+interface BaseTfliteThresholdEvent {
+  type: "getTfliteThreshold";
+  message: { tfliteThreshold: number };
+}
+type TfliteThresholdEvent = BaseDeviceEvent & BaseTfliteThresholdEvent;
 
-/**
- * @typedef {Object} BaseTfliteSensorTypesEvent
- * @property {"getTfliteSensorTypes"} type
- * @property {{tfliteSensorTypes: SensorType[]}} message
- */
-/** @typedef {BaseDeviceEvent & BaseTfliteSensorTypesEvent} TfliteSensorTypesEvent */
+interface BaseTfliteInferencingEnabledEvent {
+  type: "getTfliteInferencingEnabled";
+  message: { tfliteInferencingEnabled: boolean };
+}
+type TfliteInferencingEnabledEvent = BaseDeviceEvent & BaseTfliteInferencingEnabledEvent;
 
-/**
- * @typedef {Object} BaseTfliteIsReadyEvent
- * @property {"tfliteIsReady"} type
- * @property {{tfliteIsReady: boolean}} message
- */
-/** @typedef {BaseDeviceEvent & BaseTfliteIsReadyEvent} TfliteIsReadyEvent */
+interface BaseTfliteInferenceEvent {
+  type: "tfliteInference";
+  message: { tfliteInference: TfliteInference };
+}
+type TfliteInferenceEvent = BaseDeviceEvent & BaseTfliteInferenceEvent;
 
-/**
- * @typedef {Object} BaseTfliteCaptureDelayEvent
- * @property {"getTfliteCaptureDelay"} type
- * @property {{tfliteCaptureDelay: number}} message
- */
-/** @typedef {BaseDeviceEvent & BaseTfliteCaptureDelayEvent} TfliteCaptureDelayEvent */
+type TfliteManagerEvent =
+  | TfliteNameEvent
+  | TfliteTaskEvent
+  | TfliteSampleRateEvent
+  | TfliteSensorTypesEvent
+  | TfliteIsReadyEvent
+  | TfliteCaptureDelayEvent
+  | TfliteThresholdEvent
+  | TfliteInferencingEnabledEvent
+  | BaseTfliteInferenceEvent;
 
-/**
- * @typedef {Object} BaseTfliteThresholdEvent
- * @property {"getTfliteThreshold"} type
- * @property {{tfliteThreshold: number}} message
- */
-/** @typedef {BaseDeviceEvent & BaseTfliteThresholdEvent} TfliteThresholdEvent */
+export interface TfliteMessages {}
 
-/**
- * @typedef {Object} BaseTfliteInferencingEnabledEvent
- * @property {"getTfliteInferencingEnabled"} type
- * @property {{tfliteInferencingEnabled: boolean}} message
- */
-/** @typedef {BaseDeviceEvent & BaseTfliteInferencingEnabledEvent} TfliteInferencingEnabledEvent */
+export type SendMessageCallback = (
+  messages: { type: TfliteMessageType; data: ArrayBuffer }[],
+  sendImmediately: boolean
+) => void;
 
-/**
- * @typedef {Object} BaseTfliteInferenceEvent
- * @property {"tfliteInference"} type
- * @property {{tfliteInference: TfliteInference}} message
- */
-/** @typedef {BaseDeviceEvent & BaseTfliteInferenceEvent} TfliteInferenceEvent */
-
-/**
- * @typedef {TfliteNameEvent |
- * TfliteTaskEvent |
- * TfliteSampleRateEvent |
- * TfliteSensorTypesEvent |
- * TfliteIsReadyEvent |
- * TfliteCaptureDelayEvent |
- * TfliteThresholdEvent |
- * TfliteInferencingEnabledEvent |
- * BaseTfliteInferenceEvent
- * } TfliteManagerEvent
- */
-
-/** @typedef {(event: TfliteManagerEvent) => void} TfliteManagerEventListener */
+export interface TfliteInference {
+  timestamp: number;
+  values: number[];
+}
 
 class TfliteManager {
-  /** @type {TfliteMessageType[]} */
-  static #MessageTypes = [
-    "getTfliteName",
-    "setTfliteName",
-    "getTfliteTask",
-    "setTfliteTask",
-    "getTfliteSampleRate",
-    "setTfliteSampleRate",
-    "getTfliteSensorTypes",
-    "setTfliteSensorTypes",
-    "tfliteIsReady",
-    "getTfliteCaptureDelay",
-    "setTfliteCaptureDelay",
-    "getTfliteThreshold",
-    "setTfliteThreshold",
-    "getTfliteInferencingEnabled",
-    "setTfliteInferencingEnabled",
-    "tfliteInference",
-  ];
-  static get MessageTypes() {
-    return this.#MessageTypes;
+  #assertValidTask(task: TfliteTask) {
+    _console.assertEnumWithError(task, TfliteTasks);
   }
-  get messageTypes() {
-    return TfliteManager.MessageTypes;
+  #assertValidTaskEnum(taskEnum: number) {
+    _console.assertWithError(taskEnum in TfliteTasks, `invalid taskEnum ${taskEnum}`);
   }
 
-  // TASK
-
-  /** @type {TfliteTask[]} */
-  static #Tasks = ["classification", "regression"];
-  static get Tasks() {
-    return this.#Tasks;
-  }
-  get tasks() {
-    return TfliteManager.Tasks;
-  }
-  /** @param {TfliteTask} task */
-  #assertValidTask(task) {
-    _console.assertEnumWithError(task, this.tasks);
-  }
-  /** @param {number} taskEnum */
-  #assertValidTaskEnum(taskEnum) {
-    _console.assertWithError(this.tasks[taskEnum], `invalid taskEnum ${taskEnum}`);
-  }
-
-  // EVENT DISPATCHER
-
-  /** @type {TfliteManagerEventType[]} */
-  static #EventTypes = [...this.#MessageTypes];
-  static get EventTypes() {
-    return this.#EventTypes;
-  }
-  get eventTypes() {
-    return TfliteManager.#EventTypes;
-  }
-  /** @type {EventDispatcher} */
-  eventDispatcher;
+  eventDispatcher!: EventDispatcher<typeof Device, TfliteMessageType, TfliteMessages>;
 
   /**
    * @param {TfliteManagerEventType} type
    * @param {TfliteManagerEventListener} listener
    * @param {EventDispatcherOptions} [options]
    */
-  addEventListener(type, listener, options) {
+  addEventListener(
+    type: TfliteManagerEventType,
+    listener: TfliteManagerEventListener,
+    options: EventDispatcherOptions
+  ) {
     this.eventDispatcher.addEventListener(type, listener, options);
   }
 
   /** @param {TfliteManagerEvent} event */
-  #dispatchEvent(event) {
+  #dispatchEvent(event: TfliteManagerEvent) {
     this.eventDispatcher.dispatchEvent(event);
   }
 
@@ -193,39 +142,32 @@ class TfliteManager {
    * @param {TfliteManagerEventType} type
    * @param {TfliteManagerEventListener} listener
    */
-  removeEventListener(type, listener) {
+  removeEventListener(type: TfliteManagerEventType, listener: TfliteManagerEventListener) {
     return this.eventDispatcher.removeEventListener(type, listener);
   }
 
   /** @param {TfliteManagerEventType} eventType */
-  waitForEvent(eventType) {
+  waitForEvent(eventType: TfliteManagerEventType) {
     return this.eventDispatcher.waitForEvent(eventType);
   }
 
   // PROPERTIES
 
-  /** @type {string} */
-  #name;
+  #name!: string;
   get name() {
     return this.#name;
   }
-  /** @param {DataView} dataView */
-  #parseName(dataView) {
+  #parseName(dataView: DataView) {
     _console.log("parseName", dataView);
     const name = textDecoder.decode(dataView);
     this.#updateName(name);
   }
-  /** @param {string} name */
-  #updateName(name) {
+  #updateName(name: string) {
     _console.log({ name });
     this.#name = name;
     this.#dispatchEvent({ type: "getTfliteName", message: { tfliteName: name } });
   }
-  /**
-   * @param {string} newName
-   * @param {boolean} sendImmediately
-   */
-  async setName(newName, sendImmediately) {
+  async setName(newName: string, sendImmediately: boolean) {
     _console.assertTypeWithError(newName, "string");
     if (this.name == newName) {
       _console.log(`redundant name assignment ${newName}`);
@@ -240,30 +182,23 @@ class TfliteManager {
     await promise;
   }
 
-  /** @type {TfliteTask} */
-  #task;
+  #task!: TfliteTask;
   get task() {
     return this.#task;
   }
-  /** @param {DataView} dataView */
-  #parseTask(dataView) {
+  #parseTask(dataView: DataView) {
     _console.log("parseTask", dataView);
     const taskEnum = dataView.getUint8(0);
     this.#assertValidTaskEnum(taskEnum);
     const task = this.tasks[taskEnum];
     this.#updateTask(task);
   }
-  /** @param {TfliteTask} task */
-  #updateTask(task) {
+  #updateTask(task: TfliteTask) {
     _console.log({ task });
     this.#task = task;
     this.#dispatchEvent({ type: "getTfliteTask", message: { tfliteTask: task } });
   }
-  /**
-   * @param {TfliteTask} newTask
-   * @param {boolean} sendImmediately
-   */
-  async setTask(newTask, sendImmediately) {
+  async setTask(newTask: TfliteTask, sendImmediately: boolean) {
     this.#assertValidTask(newTask);
     if (this.task == newTask) {
       _console.log(`redundant task assignment ${newTask}`);
@@ -278,27 +213,21 @@ class TfliteManager {
     await promise;
   }
 
-  /** @type {number} */
-  #sampleRate;
+  #sampleRate!: number;
   get sampleRate() {
     return this.#sampleRate;
   }
-  /** @param {DataView} dataView */
-  #parseSampleRate(dataView) {
+  #parseSampleRate(dataView: DataView) {
     _console.log("parseSampleRate", dataView);
     const sampleRate = dataView.getUint16(0, true);
     this.#updateSampleRate(sampleRate);
   }
-  #updateSampleRate(sampleRate) {
+  #updateSampleRate(sampleRate: number) {
     _console.log({ sampleRate });
     this.#sampleRate = sampleRate;
     this.#dispatchEvent({ type: "getTfliteSampleRate", message: { tfliteSampleRate: sampleRate } });
   }
-  /**
-   * @param {number} newSampleRate
-   * @param {boolean} sendImmediately
-   */
-  async setSampleRate(newSampleRate, sendImmediately) {
+  async setSampleRate(newSampleRate: number, sendImmediately: boolean) {
     _console.assertTypeWithError(newSampleRate, "number");
     newSampleRate -= newSampleRate % SensorConfigurationManager.SensorRateStep;
     _console.assertWithError(
@@ -319,30 +248,27 @@ class TfliteManager {
     await promise;
   }
 
-  /** @type {SensorType[]} */
-  static #SensorTypes = ["pressure", "linearAcceleration", "gyroscope", "magnetometer"];
+  static #SensorTypes: SensorType[] = ["pressure", "linearAcceleration", "gyroscope", "magnetometer"];
   static get SensorTypes() {
     return this.#SensorTypes;
   }
 
-  static AssertValidSensorType(sensorType) {
+  static AssertValidSensorType(sensorType: SensorType) {
     SensorDataManager.AssertValidSensorType(sensorType);
     _console.assertWithError(this.#SensorTypes.includes(sensorType), `invalid tflite sensorType "${sensorType}"`);
   }
 
-  /** @type {SensorType[]} */
-  #sensorTypes = [];
+  #sensorTypes: SensorType[] = [];
   get sensorTypes() {
     return this.#sensorTypes.slice();
   }
-  /** @param {DataView} dataView */
-  #parseSensorTypes(dataView) {
+  #parseSensorTypes(dataView: DataView) {
     _console.log("parseSensorTypes", dataView);
     /** @type {SensorType[]} */
-    const sensorTypes = [];
+    const sensorTypes: SensorType[] = [];
     for (let index = 0; index < dataView.byteLength; index++) {
       const sensorTypeEnum = dataView.getUint8(index);
-      const sensorType = SensorDataManager.Types[sensorTypeEnum];
+      const sensorType = SensorTypes[sensorTypeEnum];
       if (sensorType) {
         sensorTypes.push(sensorType);
       } else {
@@ -351,17 +277,12 @@ class TfliteManager {
     }
     this.#updateSensorTypes(sensorTypes);
   }
-  /** @param {SensorType[]} sensorTypes */
-  #updateSensorTypes(sensorTypes) {
+  #updateSensorTypes(sensorTypes: SensorType[]) {
     _console.log({ sensorTypes });
     this.#sensorTypes = sensorTypes;
     this.#dispatchEvent({ type: "getTfliteSensorTypes", message: { tfliteSensorTypes: sensorTypes } });
   }
-  /**
-   * @param {SensorType[]} newSensorTypes
-   * @param {boolean} sendImmediately
-   */
-  async setSensorTypes(newSensorTypes, sendImmediately) {
+  async setSensorTypes(newSensorTypes: SensorType[], sendImmediately: boolean) {
     newSensorTypes.forEach((sensorType) => {
       TfliteManager.AssertValidSensorType(sensorType);
     });
@@ -379,19 +300,16 @@ class TfliteManager {
     await promise;
   }
 
-  /** @type {boolean} */
-  #isReady;
+  #isReady!: boolean;
   get isReady() {
     return this.#isReady;
   }
-  /** @param {DataView} dataView */
-  #parseIsReady(dataView) {
+  #parseIsReady(dataView: DataView) {
     _console.log("parseIsReady", dataView);
     const isReady = Boolean(dataView.getUint8(0));
     this.#updateIsReady(isReady);
   }
-  /** @param {boolean} isReady */
-  #updateIsReady(isReady) {
+  #updateIsReady(isReady: boolean) {
     _console.log({ isReady });
     this.#isReady = isReady;
     this.#dispatchEvent({
@@ -403,19 +321,16 @@ class TfliteManager {
     _console.assertWithError(this.isReady, `tflite is not ready`);
   }
 
-  /** @type {number} */
-  #captureDelay;
+  #captureDelay!: number;
   get captureDelay() {
     return this.#captureDelay;
   }
-  /** @param {DataView} dataView */
-  #parseCaptureDelay(dataView) {
+  #parseCaptureDelay(dataView: DataView) {
     _console.log("parseCaptureDelay", dataView);
     const captureDelay = dataView.getUint16(0, true);
     this.#updateCaptueDelay(captureDelay);
   }
-  /** @param {number} captureDelay */
-  #updateCaptueDelay(captureDelay) {
+  #updateCaptueDelay(captureDelay: number) {
     _console.log({ captureDelay });
     this.#captureDelay = captureDelay;
     this.#dispatchEvent({
@@ -423,11 +338,7 @@ class TfliteManager {
       message: { tfliteCaptureDelay: captureDelay },
     });
   }
-  /**
-   * @param {number} newCaptureDelay
-   * @param {boolean} sendImmediately
-   */
-  async setCaptureDelay(newCaptureDelay, sendImmediately) {
+  async setCaptureDelay(newCaptureDelay: number, sendImmediately: boolean) {
     _console.assertTypeWithError(newCaptureDelay, "number");
     if (this.#captureDelay == newCaptureDelay) {
       _console.log(`redundant captureDelay assignment ${newCaptureDelay}`);
@@ -443,19 +354,16 @@ class TfliteManager {
     await promise;
   }
 
-  /** @type {number} */
-  #threshold;
+  #threshold!: number;
   get threshold() {
     return this.#threshold;
   }
-  /** @param {DataView} dataView */
-  #parseThreshold(dataView) {
+  #parseThreshold(dataView: DataView) {
     _console.log("parseThreshold", dataView);
     const threshold = dataView.getFloat32(0, true);
     this.#updateThreshold(threshold);
   }
-  /** @param {number} threshold */
-  #updateThreshold(threshold) {
+  #updateThreshold(threshold: number) {
     _console.log({ threshold });
     this.#threshold = threshold;
     this.#dispatchEvent({
@@ -463,11 +371,7 @@ class TfliteManager {
       message: { tfliteThreshold: threshold },
     });
   }
-  /**
-   * @param {number} newThreshold
-   * @param {boolean} sendImmediately
-   */
-  async setThreshold(newThreshold, sendImmediately) {
+  async setThreshold(newThreshold: number, sendImmediately: boolean) {
     _console.assertTypeWithError(newThreshold, "number");
     _console.assertWithError(newThreshold >= 0, `threshold must be positive (got ${newThreshold})`);
     if (this.#threshold == newThreshold) {
@@ -484,18 +388,16 @@ class TfliteManager {
     await promise;
   }
 
-  /** @type {boolean} */
-  #inferencingEnabled;
+  #inferencingEnabled!: boolean;
   get inferencingEnabled() {
     return this.#inferencingEnabled;
   }
-  /** @param {DataView} dataView */
-  #parseInferencingEnabled(dataView) {
+  #parseInferencingEnabled(dataView: DataView) {
     _console.log("parseInferencingEnabled", dataView);
     const inferencingEnabled = Boolean(dataView.getUint8(0));
     this.#updateInferencingEnabled(inferencingEnabled);
   }
-  #updateInferencingEnabled(inferencingEnabled) {
+  #updateInferencingEnabled(inferencingEnabled: boolean) {
     _console.log({ inferencingEnabled });
     this.#inferencingEnabled = inferencingEnabled;
     this.#dispatchEvent({
@@ -503,11 +405,7 @@ class TfliteManager {
       message: { tfliteInferencingEnabled: inferencingEnabled },
     });
   }
-  /**
-   * @param {boolean} newInferencingEnabled
-   * @param {boolean} sendImmediately
-   */
-  async setInferencingEnabled(newInferencingEnabled, sendImmediately) {
+  async setInferencingEnabled(newInferencingEnabled: boolean, sendImmediately: boolean = true) {
     _console.assertTypeWithError(newInferencingEnabled, "boolean");
     if (!newInferencingEnabled && !this.isReady) {
       return;
@@ -524,7 +422,7 @@ class TfliteManager {
       [
         {
           type: "setTfliteInferencingEnabled",
-          data: Uint8Array.from([newInferencingEnabled]).buffer,
+          data: Uint8Array.from([Number(newInferencingEnabled)]).buffer,
         },
       ],
       sendImmediately
@@ -549,29 +447,20 @@ class TfliteManager {
     this.setInferencingEnabled(false);
   }
 
-  /**
-   * @typedef {Object} TfliteInference
-   * @property {number} timestamp
-   * @property {number[]} values
-   */
-
-  /** @param {DataView} dataView */
-  #parseInference(dataView) {
+  #parseInference(dataView: DataView) {
     _console.log("parseInference", dataView);
 
     const timestamp = parseTimestamp(dataView, 0);
     _console.log({ timestamp });
 
-    /** @type {number[]} */
-    const values = [];
+    const values: number[] = [];
     for (let index = 0, byteOffset = 2; byteOffset < dataView.byteLength; index++, byteOffset += 4) {
       const value = dataView.getFloat32(byteOffset, true);
       values.push(value);
     }
     _console.log("values", values);
 
-    /** @type {TfliteInference} */
-    const inference = {
+    const inference: TfliteInference = {
       timestamp,
       values,
     };
@@ -579,11 +468,7 @@ class TfliteManager {
     this.#dispatchEvent({ type: "tfliteInference", message: { tfliteInference: inference } });
   }
 
-  /**
-   * @param {TfliteMessageType} messageType
-   * @param {DataView} dataView
-   */
-  parseMessage(messageType, dataView) {
+  parseMessage(messageType: TfliteMessageType, dataView: DataView) {
     _console.log({ messageType });
 
     switch (messageType) {
@@ -626,14 +511,7 @@ class TfliteManager {
     }
   }
 
-  /**
-   * @callback SendMessageCallback
-   * @param {{type: TfliteMessageType, data: ArrayBuffer}[]} messages
-   * @param {boolean} sendImmediately
-   */
-
-  /** @type {SendMessageCallback} */
-  sendMessage;
+  sendMessage!: SendMessageCallback;
 }
 
 export default TfliteManager;
