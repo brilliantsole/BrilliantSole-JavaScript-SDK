@@ -6,7 +6,7 @@ import {
   BoundGenericEventListeners,
   addEventListeners,
   removeEventListeners,
-} from "../../utils/EventDispatcher";
+} from "../../utils/EventUtils";
 import {
   allServiceUUIDs,
   getServiceNameFromUUID,
@@ -75,7 +75,6 @@ class NobleConnectionManager extends BluetoothConnectionManager {
     }
   }
 
-  /** @type {boolean} */
   get canReconnect() {
     return this.#noblePeripheral!.connectable;
   }
@@ -231,7 +230,10 @@ class NobleConnectionManager extends BluetoothConnectionManager {
       const characteristic = characteristics[index];
       _console.log("characteristic", characteristic.uuid);
       const characteristicName = getCharacteristicNameFromUUID(characteristic.uuid)!;
-      _console.assertWithError(characteristicName, `no name found for characteristic uuid "${characteristic.uuid}"`);
+      _console.assertWithError(
+        Boolean(characteristicName),
+        `no name found for characteristic uuid "${characteristic.uuid}"`
+      );
       _console.log({ characteristicName });
       this.#characteristics.set(characteristicName, characteristic);
       characteristic.name = characteristicName;
@@ -273,7 +275,10 @@ class NobleConnectionManager extends BluetoothConnectionManager {
     const dataView = new DataView(dataToArrayBuffer(data));
 
     const characteristicName: BluetoothCharacteristicName = characteristic.name;
-    _console.assertWithError(characteristicName, `no name found for characteristic with uuid "${characteristic.uuid}"`);
+    _console.assertWithError(
+      Boolean(characteristicName),
+      `no name found for characteristic with uuid "${characteristic.uuid}"`
+    );
 
     this.onCharacteristicValueChanged(characteristicName, dataView);
   }

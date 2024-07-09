@@ -1,6 +1,6 @@
 import { createConsole } from "../../utils/Console";
 import { isInNode, isInBrowser, isInBluefy, isInWebBLE } from "../../utils/environment";
-import { addEventListeners, removeEventListeners } from "../../utils/EventDispatcher";
+import { addEventListeners, removeEventListeners } from "../../utils/EventUtils";
 import {
   serviceUUIDs,
   optionalServiceUUIDs,
@@ -82,9 +82,7 @@ class WebBluetoothConnectionManager extends BluetoothConnectionManager {
     return this.server?.connected || false;
   }
 
-  /** @type {Map.<BluetoothServiceName, BluetoothService} */
   #services: Map<BluetoothServiceName, BluetoothService> = new Map();
-  /** @type {Map.<BluetoothCharacteristicName, BluetoothCharacteristic} */
   #characteristics: Map<BluetoothCharacteristicName, BluetoothCharacteristic> = new Map();
 
   async connect() {
@@ -140,7 +138,7 @@ class WebBluetoothConnectionManager extends BluetoothConnectionManager {
         _console.log({ characteristic });
         const characteristicName = getCharacteristicNameFromUUID(characteristic.uuid)!;
         _console.assertWithError(
-          characteristicName,
+          Boolean(characteristicName),
           `no name found for characteristic uuid "${characteristic.uuid}" in "${serviceName}" service`
         );
         _console.log(`got "${characteristicName}" characteristic in "${serviceName}" service`);
@@ -193,12 +191,14 @@ class WebBluetoothConnectionManager extends BluetoothConnectionManager {
     this.#onCharacteristicValueChanged(characteristic);
   }
 
-  /** @param {BluetoothCharacteristic} characteristic */
   #onCharacteristicValueChanged(characteristic: BluetoothCharacteristic) {
     _console.log("onCharacteristicValue");
 
     const characteristicName = characteristic.name!;
-    _console.assertWithError(characteristicName, `no name found for characteristic with uuid "${characteristic.uuid}"`);
+    _console.assertWithError(
+      Boolean(characteristicName),
+      `no name found for characteristic with uuid "${characteristic.uuid}"`
+    );
 
     _console.log(`oncharacteristicvaluechanged for "${characteristicName}" characteristic`);
     const dataView = characteristic.value!;
@@ -212,10 +212,6 @@ class WebBluetoothConnectionManager extends BluetoothConnectionManager {
     }
   }
 
-  /**
-   * @param {BluetoothCharacteristicName} characteristicName
-   * @param {ArrayBuffer} data
-   */
   async writeCharacteristic(characteristicName: BluetoothCharacteristicName, data: ArrayBuffer) {
     super.writeCharacteristic(characteristicName, data);
 
@@ -241,8 +237,7 @@ class WebBluetoothConnectionManager extends BluetoothConnectionManager {
     }
   }
 
-  /** @param {Event} event */
-  #onGattserverdisconnected(event: Event) {
+  #onGattserverdisconnected() {
     _console.log("gattserverdisconnected");
     this.status = "not connected";
   }

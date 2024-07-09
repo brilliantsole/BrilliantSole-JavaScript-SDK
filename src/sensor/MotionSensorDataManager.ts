@@ -205,7 +205,7 @@ class MotionSensorDataManager {
     _console.log("parseDeviceOrientation", dataView);
     const index = dataView.getUint8(0);
     const deviceOrientation = DeviceOrientations[index];
-    _console.assertWithError(Boolean(deviceOrientation), "undefined deviceOrientation");
+    _console.assertWithError(deviceOrientation, "undefined deviceOrientation");
     _console.log({ deviceOrientation });
     return deviceOrientation;
   }

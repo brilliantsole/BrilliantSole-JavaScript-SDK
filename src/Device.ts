@@ -138,6 +138,7 @@ export type SendMessageCallback<MessageType extends string> = (
   messages?: { type: MessageType; data?: ArrayBuffer }[],
   sendImmediately?: boolean
 ) => Promise<void>;
+export type SendSmpMessageCallback = (data: ArrayBuffer) => Promise<void>;
 
 class Device {
   get bluetoothId() {

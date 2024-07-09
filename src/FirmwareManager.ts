@@ -1,144 +1,96 @@
+import Device, { SendSmpMessageCallback } from "./Device";
 import { getFileBuffer } from "./utils/ArrayBufferUtils";
 import { createConsole } from "./utils/Console";
 import EventDispatcher from "./utils/EventDispatcher";
 import { MCUManager, constants } from "./utils/mcumgr";
+import { FileLike } from "./utils/ArrayBufferUtils";
 
 const _console = createConsole("FirmwareManager", { log: true });
 
-type FirmwareMessageType = "smp";
+export const FirmwareMessageTypes = ["smp"] as const;
+export type FirmwareMessageType = (typeof FirmwareMessageTypes)[number];
 
-type EventDispatcherOptions = import("./utils/EventDispatcher").EventDispatcherOptions;
+export const FirmwareEventTypes = [
+  ...FirmwareMessageTypes,
+  "firmwareImages",
+  "firmwareUploadProgress",
+  "firmwareStatus",
+  "firmwareUploadComplete",
+] as const;
+export type FirmwareEventType = (typeof FirmwareEventTypes)[number];
 
-type FirmwareManagerEventType = FirmwareMessageType | "firmwareImages" | "firmwareUploadProgress" | "firmwareStatus" | "firmwareUploadComplete";
+export const FirmwareStatuses = ["idle", "uploading", "uploaded", "pending", "testing", "erasing"] as const;
+export type FirmwareStatus = (typeof FirmwareStatuses)[number];
 
-type FirmwareStatus = "idle" | "uploading" | "uploaded" | "pending" | "testing" | "erasing";
-
-type BaseDeviceEvent = import("./Device").BaseDeviceEvent;
-
-interface BaseSmpEvent {
-  type: "smp";
+interface SmpEventMessage {
+  dataView: DataView;
 }
-type SmpEvent = BaseDeviceEvent & BaseSmpEvent;
-
-interface BaseFirmwareImagesEvent {
-  type: "firmwareImages";
-  message: { firmwareImages: FirmwareImage[]; };
+interface FirmwareImagesEventMessage {
+  firmwareImages: FirmwareImage[];
 }
-type FirmwareImagesEvent = BaseDeviceEvent & BaseFirmwareImagesEvent;
-
-interface BaseFirmwareUploadProgressEvent {
-  type: "firmwareUploadProgress";
-  message: { firmwareUploadProgress: number; };
+interface FirmwareUploadProgressEventMessage {
+  progress: number;
 }
-type FirmwareUploadProgressEvent = BaseDeviceEvent & BaseFirmwareUploadProgressEvent;
-
-interface BaseFirmwareUploadCompleteEvent {
-  type: "firmwareUploadComplete";
+interface FirmwareStatusEventMessage {
+  firmwareStatus: FirmwareStatus;
 }
-type FirmwareUploadCompleteEvent = BaseDeviceEvent & BaseFirmwareUploadCompleteEvent;
+interface FirmwareUploadCompleteEventMessage {}
 
-interface BaseFirmwareStatusEvent {
-  type: "firmwareStatus";
-  message: { firmwareStatus: FirmwareStatus; };
+export interface FirmwareEventMessages {
+  smp: SmpEventMessage;
+  firmwareImages: FirmwareImagesEventMessage;
+  firmwareUploadProgress: FirmwareUploadProgressEventMessage;
+  firmwareStatus: FirmwareStatusEventMessage;
+  firmwareUploadComplete: FirmwareUploadCompleteEventMessage;
 }
-type FirmwareStatusEvent = BaseDeviceEvent & BaseFirmwareStatusEvent;
 
-type FirmwareManagerEvent = SmpEvent |
-  FirmwareImagesEvent |
-  FirmwareUploadProgressEvent |
-  FirmwareUploadCompleteEvent |
-  FirmwareStatusEvent;
-type FirmwareManagerEventListener = (event: FirmwareManagerEvent) => void;
+export interface FirmwareImage {
+  slot: number;
+  active: boolean;
+  confirmed: boolean;
+  pending: boolean;
+  permanent: boolean;
+  bootable: boolean;
+  version: string;
+  hash?: Uint8Array;
+  empty?: boolean;
+}
 
 class FirmwareManager {
-  /**
-   * @callback SendMessageCallback
-   * @param {ArrayBuffer} data
-   */
-
-  /** @type {SendMessageCallback} */
-  sendMessage;
+  sendMessage!: SendSmpMessageCallback;
 
   constructor() {
     this.#assignMcuManagerCallbacks();
   }
 
-  /** @type {FirmwareMessageType[]} */
-  static #MessageTypes = ["smp"];
-  static get MessageTypes() {
-    return this.#MessageTypes;
+  eventDispatcher!: EventDispatcher<Device, FirmwareEventType, FirmwareEventMessages>;
+  get addEventListenter() {
+    return this.eventDispatcher.addEventListener;
   }
-  get messageTypes() {
-    return FirmwareManager.MessageTypes;
+  get #dispatchEvent() {
+    return this.eventDispatcher.dispatchEvent;
   }
-
-  // EVENT DISPATCHER
-
-  /** @type {FirmwareManagerEventType[]} */
-  static #EventTypes = [
-    ...this.#MessageTypes,
-    "firmwareImages",
-    "firmwareUploadProgress",
-    "firmwareUploadComplete",
-    "firmwareStatus",
-  ];
-  static get EventTypes() {
-    return this.#EventTypes;
+  get removeEventListener() {
+    return this.eventDispatcher.removeEventListener;
   }
-  get eventTypes() {
-    return FirmwareManager.#EventTypes;
-  }
-  /** @type {EventDispatcher} */
-  eventDispatcher;
-
-  /**
-   * @param {FirmwareManagerEventType} type
-   * @param {FirmwareManagerEventListener} listener
-   * @param {EventDispatcherOptions} [options]
-   */
-  addEventListener(type, listener, options) {
-    this.eventDispatcher.addEventListener(type, listener, options);
+  get waitForEvent() {
+    return this.eventDispatcher.waitForEvent;
   }
 
-  /** @param {FirmwareManagerEvent} event */
-  #dispatchEvent(event) {
-    this.eventDispatcher.dispatchEvent(event);
-  }
-
-  /**
-   * @param {FirmwareManagerEventType} type
-   * @param {FirmwareManagerEventListener} listener
-   */
-  removeEventListener(type, listener) {
-    return this.eventDispatcher.removeEventListener(type, listener);
-  }
-
-  /** @param {FirmwareManagerEventType} eventType */
-  waitForEvent(eventType) {
-    return this.eventDispatcher.waitForEvent(eventType);
-  }
-
-  /**
-   * @param {FirmwareMessageType} messageType
-   * @param {DataView} dataView
-   */
-  parseMessage(messageType, dataView) {
+  parseMessage(messageType: FirmwareMessageType, dataView: DataView) {
     _console.log({ messageType });
 
     switch (messageType) {
       case "smp":
         this.#mcuManager._notification(Array.from(new Uint8Array(dataView.buffer)));
-        this.#dispatchEvent({ type: "smp" });
+        this.#dispatchEvent("smp", { dataView });
         break;
       default:
         throw Error(`uncaught messageType ${messageType}`);
     }
   }
 
-  type FileLike = import("./utils/ArrayBufferUtils").FileLike;
-
-  /** @param {FileLike} file */
-  async uploadFirmware(file) {
+  async uploadFirmware(file: FileLike) {
     _console.log("uploadFirmware", file);
 
     const promise = this.waitForEvent("firmwareUploadComplete");
@@ -156,20 +108,12 @@ class FirmwareManager {
     await promise;
   }
 
-  /** @type {FirmwareStatus[]} */
-  static #Statuses = ["idle", "uploading", "uploaded", "pending", "testing", "erasing"];
-  static get Statuses() {
-    return this.#Statuses;
-  }
-
-  /** @type {FirmwareStatus} */
-  #status = "idle";
+  #status: FirmwareStatus = "idle";
   get status() {
     return this.#status;
   }
-  /** @param {FirmwareStatus} newStatus */
-  #updateStatus(newStatus) {
-    _console.assertEnumWithError(newStatus, FirmwareManager.Statuses);
+  #updateStatus(newStatus: FirmwareStatus) {
+    _console.assertEnumWithError(newStatus, FirmwareStatuses);
     if (this.#status == newStatus) {
       _console.log(`redundant firmwareStatus assignment "${newStatus}"`);
       return;
@@ -177,32 +121,19 @@ class FirmwareManager {
 
     this.#status = newStatus;
     _console.log({ firmwareStatus: this.#status });
-    this.#dispatchEvent({ type: "firmwareStatus", message: { firmwareStatus: this.#status } });
+    this.#dispatchEvent("firmwareStatus", { firmwareStatus: this.#status });
   }
 
   // COMMANDS
 
-  interface FirmwareImage {
-    slot: number;
-    active: boolean;
-    confirmed: boolean;
-    pending: boolean;
-    permanent: boolean;
-    bootable: boolean;
-    version: string;
-    hash?: Uint8Array;
-    empty?: boolean;
-  }
-
-  /** @type {FirmwareImage[]} */
-  #images;
+  #images!: FirmwareImage[];
   get images() {
     return this.#images;
   }
   #assertImages() {
     _console.assertWithError(this.#images, "didn't get imageState");
   }
-  #assertValidImageIndex(imageIndex) {
+  #assertValidImageIndex(imageIndex: number) {
     _console.assertTypeWithError(imageIndex, "number");
     _console.assertWithError(imageIndex == 0 || imageIndex == 1, "imageIndex must be 0 or 1");
   }
@@ -215,8 +146,7 @@ class FirmwareManager {
     await promise;
   }
 
-  /** @param {number} imageIndex */
-  async testImage(imageIndex = 1) {
+  async testImage(imageIndex: number = 1) {
     this.#assertValidImageIndex(imageIndex);
     this.#assertImages();
     if (!this.#images[imageIndex]) {
@@ -253,8 +183,7 @@ class FirmwareManager {
     await this.getImages();
   }
 
-  /** @param {number} imageIndex */
-  async confirmImage(imageIndex = 0) {
+  async confirmImage(imageIndex: number = 0) {
     this.#assertValidImageIndex(imageIndex);
     this.#assertImages();
     if (this.#images[imageIndex].confirmed === true) {
@@ -270,8 +199,7 @@ class FirmwareManager {
     await promise;
   }
 
-  /** @param {string} echo */
-  async echo(string) {
+  async echo(string: string) {
     _console.assertTypeWithError(string, "string");
 
     const promise = this.waitForEvent("smp");
@@ -292,18 +220,16 @@ class FirmwareManager {
   }
 
   // MTU
-
-  #mtu;
+  #mtu!: number;
   get mtu() {
     return this.#mtu;
   }
-  set mtu(newMtu) {
+  set mtu(newMtu: number) {
     this.#mtu = newMtu;
-    this.#mcuManager._mtu = this.#mtu;
+    this.#mcuManager._mtu = newMtu;
   }
 
   // MCUManager
-
   #mcuManager = new MCUManager();
 
   #assignMcuManagerCallbacks() {
@@ -361,31 +287,31 @@ class FirmwareManager {
   }
 
   #onMcuFileUploadNext() {
-    _console.log("onMcuFileUploadNext", ...arguments);
+    _console.log("onMcuFileUploadNext");
   }
   #onMcuFileUploadProgress() {
-    _console.log("onMcuFileUploadProgress", ...arguments);
+    _console.log("onMcuFileUploadProgress");
   }
   #onMcuFileUploadFinished() {
-    _console.log("onMcuFileUploadFinished", ...arguments);
+    _console.log("onMcuFileUploadFinished");
   }
 
-  #onMcuImageUploadNext({ packet }) {
-    _console.log("onMcuImageUploadNext", ...arguments);
+  #onMcuImageUploadNext({ packet }: { packet: number[] }) {
+    _console.log("onMcuImageUploadNext");
     this.sendMessage(Uint8Array.from(packet).buffer);
   }
-  #onMcuImageUploadProgress({ percentage }) {
+  #onMcuImageUploadProgress({ percentage }: { percentage: number }) {
     const progress = percentage / 100;
     _console.log("onMcuImageUploadProgress", ...arguments);
-    this.#dispatchEvent({ type: "firmwareUploadProgress", message: { firmwareUploadProgress: progress } });
+    this.#dispatchEvent("firmwareUploadProgress", { progress });
   }
   async #onMcuImageUploadFinished() {
     _console.log("onMcuImageUploadFinished", ...arguments);
 
     await this.getImages();
 
-    this.#dispatchEvent({ type: "firmwareUploadProgress", message: { firmwareUploadProgress: 100 } });
-    this.#dispatchEvent({ type: "firmwareUploadComplete" });
+    this.#dispatchEvent("firmwareUploadProgress", { progress: 100 });
+    this.#dispatchEvent("firmwareUploadComplete", {});
   }
 
   #onMcuImageState(data) {
@@ -397,8 +323,7 @@ class FirmwareManager {
       return;
     }
 
-    /** @type {FirmwareStatus} */
-    let newStatus = "idle";
+    let newStatus: FirmwareStatus = "idle";
 
     if (this.#images.length == 2) {
       if (!this.#images[1].bootable) {
@@ -427,13 +352,15 @@ class FirmwareManager {
         pending: false,
         confirmed: false,
         bootable: false,
+        active: false,
+        permanent: false,
       });
 
       _console.log("Select a firmware upload image to upload to slot 1.");
     }
 
     this.#updateStatus(newStatus);
-    this.#dispatchEvent({ type: "firmwareImages", message: { firmwareImages: this.#images } });
+    this.#dispatchEvent("firmwareImages", { firmwareImages: this.#images });
   }
 }
 

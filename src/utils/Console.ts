@@ -125,8 +125,8 @@ class Console {
   }
 
   /** @throws {Error} if condition is not met */
-  assertWithError(condition: boolean, message: string) {
-    if (!condition) {
+  assertWithError(condition: any, message: string) {
+    if (!Boolean(condition)) {
       throw new Error(message);
     }
   }

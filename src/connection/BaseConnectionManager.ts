@@ -211,7 +211,7 @@ abstract class BaseConnectionManager {
 
     const arrayBuffers = this.#pendingMessages.map((message) => {
       BaseConnectionManager.#AssertValidTxRxMessageType(message.type);
-      const messageTypeEnum = BaseConnectionManager.TxRxMessageTypes.indexOf(message.type);
+      const messageTypeEnum = TxRxMessageTypes.indexOf(message.type);
       const dataLength = new DataView(new ArrayBuffer(2));
       dataLength.setUint16(0, message.data?.byteLength || 0, true);
       return concatenateArrayBuffers(messageTypeEnum, dataLength, message.data);
@@ -251,7 +251,7 @@ abstract class BaseConnectionManager {
   }
 
   parseRxMessage(dataView: DataView) {
-    parseMessage(dataView, BaseConnectionManager.#TxRxMessageTypes, this.#onRxMessage.bind(this), null, true);
+    parseMessage(dataView, TxRxMessageTypes, this.#onRxMessage.bind(this), null, true);
   }
 
   #onRxMessage(messageType: TxRxMessageType, dataView: DataView) {
