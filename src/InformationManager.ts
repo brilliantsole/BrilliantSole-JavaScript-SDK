@@ -53,15 +53,12 @@ interface InformationMessages {
   getMtu: MtuMessage;
   getId: IdMessage;
   getName: NameMessage;
-  setName: NameMessage;
   getType: TypeMessage;
-  setType: TypeMessage;
   getCurrentTime: CurrentTimeMessage;
-  setCurrentTime: CurrentTimeMessage;
 }
 
 class InformationManager {
-  eventDispatcher!: EventDispatcher<typeof Device, InformationMessageType, InformationMessages>;
+  eventDispatcher!: EventDispatcher<typeof Device.prototype, InformationMessageType, InformationMessages>;
   get #dispatchEvent() {
     return this.eventDispatcher.dispatchEvent;
   }

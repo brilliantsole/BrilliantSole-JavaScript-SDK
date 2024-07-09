@@ -332,7 +332,7 @@ class VibrationManager {
       _console.log({ type, arrayBuffer });
       triggerVibrationData = concatenateArrayBuffers(triggerVibrationData, arrayBuffer);
     });
-    this.sendMessage([{ type: "triggerVibration", data: triggerVibrationData }], sendImmediately);
+    await this.sendMessage([{ type: "triggerVibration", data: triggerVibrationData }], sendImmediately);
   }
 
   sendMessage!: SendMessageCallback<VibrationMessageType>;

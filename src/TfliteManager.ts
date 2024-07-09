@@ -63,20 +63,13 @@ interface TfliteInferenceMessage {
 
 export interface TfliteMessages {
   getTfliteName: TfliteNameMessage;
-  setTfliteName: TfliteNameMessage;
   getTfliteTask: TfliteTaskMessage;
-  setTfliteTask: TfliteTaskMessage;
   getTfliteSampleRate: TfliteSampleRateMessage;
-  setTfliteSampleRate: TfliteSampleRateMessage;
   getTfliteSensorTypes: TfliteSensorTypesMessage;
-  setTfliteSensorTypes: TfliteSensorTypesMessage;
   tfliteIsReady: TfliteIsReadyMessage;
   getTfliteCaptureDelay: TfliteCaptureDelayMessage;
-  setTfliteCaptureDelay: TfliteCaptureDelayMessage;
   getTfliteThreshold: TfliteThresholdMessage;
-  setTfliteThreshold: TfliteThresholdMessage;
   getTfliteInferencingEnabled: TfliteInferencingEnabledMessage;
-  setTfliteInferencingEnabled: TfliteInferencingEnabledMessage;
   tfliteInference: TfliteInferenceMessage;
 }
 
@@ -93,7 +86,7 @@ class TfliteManager {
     _console.assertWithError(taskEnum in TfliteTasks, `invalid taskEnum ${taskEnum}`);
   }
 
-  eventDispatcher!: EventDispatcher<typeof Device, TfliteMessageType, TfliteMessages>;
+  eventDispatcher!: EventDispatcher<typeof Device.prototype, TfliteMessageType, TfliteMessages>;
   get addEventListenter() {
     return this.eventDispatcher.addEventListener;
   }

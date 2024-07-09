@@ -1,4 +1,8 @@
-class EventDispatcher<Target extends any, EventType extends string, EventMessages extends Record<EventType, any>> {
+class EventDispatcher<
+  Target extends any,
+  EventType extends string,
+  EventMessages extends Partial<Record<EventType, any>>
+> {
   private listeners: {
     [K in EventType]?: {
       listener: (event: { type: K; target: Target; message: EventMessages[K] }) => void;

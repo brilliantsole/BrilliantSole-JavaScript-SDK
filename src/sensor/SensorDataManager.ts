@@ -64,7 +64,7 @@ class SensorDataManager {
     _console.assertWithError(sensorTypeEnum in SensorTypes, `invalid sensorTypeEnum ${sensorTypeEnum}`);
   }
 
-  eventDispatcher!: EventDispatcher<typeof Device, SensorEventType, SensorDataMessages>;
+  eventDispatcher!: EventDispatcher<typeof Device.prototype, SensorEventType, SensorDataMessages>;
   get dispatchEvent() {
     return this.eventDispatcher.dispatchEvent;
   }

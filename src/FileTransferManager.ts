@@ -1,200 +1,114 @@
 import { createConsole } from "./utils/Console";
 import { crc32 } from "./utils/checksum";
 import { getFileBuffer } from "./utils/ArrayBufferUtils";
+import { FileLike } from "./utils/ArrayBufferUtils";
+import Device, { SendMessageCallback } from "./Device";
+import EventDispatcher from "./utils/EventDispatcher";
 
 const _console = createConsole("FileTransferManager", { log: true });
 
-export type FileTransferMessageType =
-  | "maxFileLength"
-  | "getFileTransferType"
-  | "setFileTransferType"
-  | "getFileLength"
-  | "setFileLength"
-  | "getFileChecksum"
-  | "setFileChecksum"
-  | "setFileTransferCommand"
-  | "fileTransferStatus"
-  | "getFileTransferBlock"
-  | "setFileTransferBlock";
+export const FileTransferMessageTypes = [
+  "maxFileLength",
+  "getFileType",
+  "setFileType",
+  "getFileLength",
+  "setFileLength",
+  "getFileChecksum",
+  "setFileChecksum",
+  "setFileTransferCommand",
+  "fileTransferStatus",
+  "getFileBlock",
+  "setFileBlock",
+] as const;
+export type FileTransferMessageType = (typeof FileTransferMessageTypes)[number];
 
-export type FileType = "tflite";
-export type FileTransferStatus = "idle" | "sending" | "receiving";
-export type FileTransferCommand = "startReceive" | "startSend" | "cancel";
+export const FileTypes = ["tflite"] as const;
+export type FileType = (typeof FileTypes)[number];
 
-import { FileLike } from "./utils/ArrayBufferUtils";
+export const FileTransferStatuses = ["idle", "sending", "receiving"] as const;
+export type FileTransferStatus = (typeof FileTransferStatuses)[number];
 
-import { EventDispatcherOptions } from "./utils/EventDispatcher";
+export const FileTransferCommands = ["startReceive", "startSend", "cancel"] as const;
+export type FileTransferCommand = (typeof FileTransferCommands)[number];
 
-export type FileTransferManagerEventType =
-  | FileTransferMessageType
-  | "fileTransferProgress"
-  | "fileTransferComplete"
-  | "fileReceived";
+export const FileTransferDirections = ["sending", "receiving"] as const;
+export type FileTransferDirection = (typeof FileTransferDirections)[number];
 
-type BaseDeviceEvent = import("./Device").BaseDeviceEvent;
+export const FileTransferEventTypes = [
+  ...FileTransferMessageTypes,
+  "fileTransferProgress",
+  "fileTransferComplete",
+  "fileReceived",
+] as const;
+export type FileTransferEventType = (typeof FileTransferEventTypes)[number];
 
-interface BaseFileTransferMaxLengthEvent {
-  type: "maxFileLength";
-  message: { maxFileLength: number };
+interface MaxFileLengthMessage {
+  maxFileLength: number;
 }
-type FileTransferMaxLengthEvent = BaseDeviceEvent & BaseFileTransferMaxLengthEvent;
-
-interface BaseFileTransferTypeEvent {
-  type: "getFileTransferType";
-  message: { fileType: FileType };
+interface FileTypeMessage {
+  fileType: FileType;
 }
-type FileTransferTypeEvent = BaseDeviceEvent & BaseFileTransferTypeEvent;
-
-interface BaseFileTransferLengthEvent {
-  type: "getFileLength";
-  message: { fileLength: number };
+interface FileTransferLengthMessage {
+  fileLength: number;
 }
-type FileTransferLengthEvent = BaseDeviceEvent & BaseFileTransferLengthEvent;
-
-interface BaseFileChecksumEvent {
-  type: "getFileChecksum";
-  message: { fileChecksum: number };
+interface FileChecksumMessage {
+  fileChecksum: number;
 }
-type FileChecksumEvent = BaseDeviceEvent & BaseFileChecksumEvent;
-
-interface BaseFileTransferStatusEvent {
-  type: "fileTransferStatus";
-  message: { fileTransferStatus: FileTransferStatus };
+interface FileTransferStatusMessage {
+  fileTransferStatus: FileTransferStatus;
 }
-type FileTransferStatusEvent = BaseDeviceEvent & BaseFileTransferStatusEvent;
-
-interface BaseFileTransferBlockEvent {
-  type: "getFileTransferBlock";
-  message: { fileTransferBlock: DataView };
+interface FileBlockMessage {
+  fileTransferBlock: DataView;
 }
-type FileTransferBlockEvent = BaseDeviceEvent & BaseFileTransferBlockEvent;
+interface FileTransferProgress {
+  progress: number;
+}
+interface FileTransferComplete {
+  direction: FileTransferDirection;
+}
+interface FileReceivedMessage {
+  file: File | Blob;
+}
 
-type FileTransferManagerEvent =
-  | FileTransferMaxLengthEvent
-  | FileTransferTypeEvent
-  | FileTransferLengthEvent
-  | FileChecksumEvent
-  | FileTransferStatusEvent
-  | FileTransferBlockEvent;
-
-type FileTransferManagerEventListener = (event: FileTransferManagerEvent) => void;
+interface FileTransferMessages {
+  maxFileLength: MaxFileLengthMessage;
+  getFileType: FileTypeMessage;
+  getFileLength: FileTransferLengthMessage;
+  getFileChecksum: FileChecksumMessage;
+  fileTransferStatus: FileTransferStatusMessage;
+  getFileBlock: FileBlockMessage;
+  fileTransferProgress: FileTransferProgress;
+  fileTransferComplete: FileTransferComplete;
+  fileReceived: FileReceivedMessage;
+}
 
 class FileTransferManager {
-  // MESSAGE TYPES
-
-  /** @type {FileTransferMessageType[]} */
-  static #MessageTypes: FileTransferMessageType[] = [
-    "maxFileLength",
-    "getFileTransferType",
-    "setFileTransferType",
-    "getFileLength",
-    "setFileLength",
-    "getFileChecksum",
-    "setFileChecksum",
-    "setFileTransferCommand",
-    "fileTransferStatus",
-    "getFileTransferBlock",
-    "setFileTransferBlock",
-  ];
-  static get MessageTypes() {
-    return this.#MessageTypes;
+  eventDispatcher!: EventDispatcher<typeof Device.prototype, FileTransferEventType, FileTransferMessages>;
+  get addEventListener() {
+    return this.eventDispatcher.addEventListener;
   }
-  get messageTypes() {
-    return FileTransferManager.MessageTypes;
+  get #dispatchEvent() {
+    return this.eventDispatcher.dispatchEvent;
+  }
+  get removeEventListener() {
+    return this.eventDispatcher.removeEventListener;
+  }
+  get waitForEvent() {
+    return this.eventDispatcher.waitForEvent;
   }
 
-  // EVENT DISPATCHER
-
-  static #EventTypes: FileTransferManagerEventType[] = [
-    ...this.#MessageTypes,
-    "fileTransferProgress",
-    "fileTransferComplete",
-    "fileReceived",
-  ];
-  static get EventTypes() {
-    return this.#EventTypes;
-  }
-  get eventTypes() {
-    return FileTransferManager.#EventTypes;
-  }
-  eventDispatcher: EventDispatcher;
-
-  /**
-   * @param {FileTransferManagerEventType} type
-   * @param {FileTransferManagerEventListener} listener
-   * @param {EventDispatcherOptions} [options]
-   */
-  addEventListener(
-    type: FileTransferManagerEventType,
-    listener: FileTransferManagerEventListener,
-    options: EventDispatcherOptions
-  ) {
-    this.eventDispatcher.addEventListener(type, listener, options);
-  }
-
-  /**
-   * @param {FileTransferManagerEvent} event
-   */
-  #dispatchEvent(event: FileTransferManagerEvent) {
-    this.eventDispatcher.dispatchEvent(event);
-  }
-
-  /**
-   * @param {FileTransferManagerEventType} type
-   * @param {FileTransferManagerEventListener} listener
-   */
-  removeEventListener(type: FileTransferManagerEventType, listener: FileTransferManagerEventListener) {
-    return this.eventDispatcher.removeEventListener(type, listener);
-  }
-
-  /** @param {FileTransferManagerEventType} eventType */
-  waitForEvent(eventType: FileTransferManagerEventType) {
-    return this.eventDispatcher.waitForEvent(eventType);
-  }
-
-  // PROPERTIES
-
-  /** @type {FileType[]} */
-  static #Types: FileType[] = ["tflite"];
-  static get Types() {
-    return this.#Types;
-  }
-  get types() {
-    return FileTransferManager.Types;
-  }
-  /** @param {FileType} type */
   #assertValidType(type: FileType) {
-    _console.assertEnumWithError(type, this.types);
+    _console.assertEnumWithError(type, FileTypes);
   }
-  /** @param {number} typeEnum */
   #assertValidTypeEnum(typeEnum: number) {
-    _console.assertWithError(this.types[typeEnum], `invalid typeEnum ${typeEnum}`);
+    _console.assertWithError(typeEnum in FileTypes, `invalid typeEnum ${typeEnum}`);
   }
 
-  /** @type {FileTransferStatus[]} */
-  static #Statuses: FileTransferStatus[] = ["idle", "sending", "receiving"];
-  static get Statuses() {
-    return this.#Statuses;
-  }
-  get statuses() {
-    return FileTransferManager.Statuses;
-  }
-  /** @param {number} statusEnum */
   #assertValidStatusEnum(statusEnum: number) {
-    _console.assertWithError(this.statuses[statusEnum], `invalid statusEnum ${statusEnum}`);
+    _console.assertWithError(statusEnum in FileTransferStatuses, `invalid statusEnum ${statusEnum}`);
   }
-
-  /** @type {FileTransferCommand[]} */
-  static #Commands: FileTransferCommand[] = ["startSend", "startReceive", "cancel"];
-  static get Commands() {
-    return this.#Commands;
-  }
-  get commands() {
-    return FileTransferManager.Commands;
-  }
-  /** @param {FileTransferCommand} command */
   #assertValidCommand(command: FileTransferCommand) {
-    _console.assertEnumWithError(command, this.commands);
+    _console.assertEnumWithError(command, FileTransferCommands);
   }
 
   static #MaxLength = 0; // kB
@@ -206,20 +120,17 @@ class FileTransferManager {
   get maxLength() {
     return this.#maxLength;
   }
-  /** @param {DataView} dataView */
   #parseMaxLength(dataView: DataView) {
     _console.log("parseFileMaxLength", dataView);
     const maxLength = dataView.getUint32(0, true);
     _console.log(`maxLength: ${maxLength / 1024}kB`);
     this.#updateMaxLength(maxLength);
   }
-  /** @param {number} maxLength */
   #updateMaxLength(maxLength: number) {
     _console.log({ maxLength });
     this.#maxLength = maxLength;
-    this.#dispatchEvent({ type: "maxFileLength", message: { maxFileLength: maxLength } });
+    this.#dispatchEvent("maxFileLength", { maxFileLength: maxLength });
   }
-  /** @param {number} length */
   #assertValidLength(length: number) {
     _console.assertWithError(
       length <= this.maxLength,
@@ -231,35 +142,29 @@ class FileTransferManager {
   get type() {
     return this.#type;
   }
-  /** @param {DataView} dataView */
   #parseType(dataView: DataView) {
     _console.log("parseFileType", dataView);
     const typeEnum = dataView.getUint8(0);
     this.#assertValidTypeEnum(typeEnum);
-    const type = this.types[typeEnum];
+    const type = FileTypes[typeEnum];
     this.#updateType(type);
   }
-  /** @param {FileType} type */
   #updateType(type: FileType) {
     _console.log({ fileTransferType: type });
     this.#type = type;
-    this.#dispatchEvent({ type: "getFileTransferType", message: { fileType: type } });
+    this.#dispatchEvent("getFileType", { fileType: type });
   }
-  /**
-   * @param {FileType} newType
-   * @param {boolean} sendImmediately
-   */
-  async #setType(newType: FileType, sendImmediately: boolean) {
+  async #setType(newType: FileType, sendImmediately?: boolean) {
     this.#assertValidType(newType);
     if (this.type == newType) {
       _console.log(`redundant type assignment ${newType}`);
       return;
     }
 
-    const promise = this.waitForEvent("getFileTransferType");
+    const promise = this.waitForEvent("getFileType");
 
-    const typeEnum = this.types.indexOf(newType);
-    this.sendMessage([{ type: "setFileTransferType", data: Uint8Array.from([typeEnum]).buffer }], sendImmediately);
+    const typeEnum = FileTypes.indexOf(newType);
+    this.sendMessage([{ type: "setFileType", data: Uint8Array.from([typeEnum]).buffer }], sendImmediately);
 
     await promise;
   }
@@ -268,23 +173,17 @@ class FileTransferManager {
   get length() {
     return this.#length;
   }
-  /** @param {DataView} dataView */
   #parseLength(dataView: DataView) {
     _console.log("parseFileLength", dataView);
     const length = dataView.getUint32(0, true);
 
     this.#updateLength(length);
   }
-  /** @param {number} length */
   #updateLength(length: number) {
     _console.log(`length: ${length / 1024}kB`);
     this.#length = length;
-    this.#dispatchEvent({ type: "getFileLength", message: { fileLength: length } });
+    this.#dispatchEvent("getFileLength", { fileLength: length });
   }
-  /**
-   * @param {number} newLength
-   * @param {boolean} sendImmediately
-   */
   async #setLength(newLength: number, sendImmediately: boolean) {
     _console.assertTypeWithError(newLength, "number");
     this.#assertValidLength(newLength);
@@ -306,22 +205,16 @@ class FileTransferManager {
   get checksum() {
     return this.#checksum;
   }
-  /** @param {DataView} dataView */
   #parseChecksum(dataView: DataView) {
     _console.log("checksum", dataView);
     const checksum = dataView.getUint32(0, true);
     this.#updateChecksum(checksum);
   }
-  /** @param {number} checksum */
   #updateChecksum(checksum: number) {
     _console.log({ checksum });
     this.#checksum = checksum;
-    this.#dispatchEvent({ type: "getFileChecksum", message: { fileChecksum: checksum } });
+    this.#dispatchEvent("getFileChecksum", { fileChecksum: checksum });
   }
-  /**
-   * @param {number} newChecksum
-   * @param {boolean} sendImmediately
-   */
   async #setChecksum(newChecksum: number, sendImmediately: boolean) {
     _console.assertTypeWithError(newChecksum, "number");
     if (this.checksum == newChecksum) {
@@ -338,16 +231,12 @@ class FileTransferManager {
     await promise;
   }
 
-  /**
-   * @param {FileTransferCommand} command
-   * @param {boolean} sendImmediately
-   */
-  async #setCommand(command: FileTransferCommand, sendImmediately: boolean) {
+  async #setCommand(command: FileTransferCommand, sendImmediately?: boolean) {
     this.#assertValidCommand(command);
 
     const promise = this.waitForEvent("fileTransferStatus");
 
-    const commandEnum = this.commands.indexOf(command);
+    const commandEnum = FileTransferCommands.indexOf(command);
     this.sendMessage(
       [{ type: "setFileTransferCommand", data: Uint8Array.from([commandEnum]).buffer }],
       sendImmediately
@@ -356,24 +245,21 @@ class FileTransferManager {
     await promise;
   }
 
-  /** @type {FileTransferStatus} */
   #status: FileTransferStatus = "idle";
   get status() {
     return this.#status;
   }
-  /** @param {DataView} dataView */
   #parseStatus(dataView: DataView) {
     _console.log("parseFileStatus", dataView);
     const statusEnum = dataView.getUint8(0);
     this.#assertValidStatusEnum(statusEnum);
-    const status = this.statuses[statusEnum];
+    const status = FileTransferStatuses[statusEnum];
     this.#updateStatus(status);
   }
-  /** @param {FileTransferStatus} status */
   #updateStatus(status: FileTransferStatus) {
     _console.log({ status });
     this.#status = status;
-    this.#dispatchEvent({ type: "fileTransferStatus", message: { fileTransferStatus: status } });
+    this.#dispatchEvent("fileTransferStatus", { fileTransferStatus: status });
     this.#receivedBlocks.length = 0;
   }
   #assertIsIdle() {
@@ -385,10 +271,8 @@ class FileTransferManager {
 
   // BLOCK
 
-  /** @type {ArrayBuffer[]} */
   #receivedBlocks: ArrayBuffer[] = [];
 
-  /** @param {DataView} dataView */
   async #parseBlock(dataView: DataView) {
     _console.log("parseFileBlock", dataView);
     this.#receivedBlocks.push(dataView.buffer);
@@ -398,7 +282,7 @@ class FileTransferManager {
 
     _console.log(`received ${bytesReceived} of ${this.#length} bytes (${progress * 100}%)`);
 
-    this.#dispatchEvent({ type: "fileTransferProgress", message: { progress } });
+    this.#dispatchEvent("fileTransferProgress", { progress });
 
     if (bytesReceived != this.#length) {
       return;
@@ -413,7 +297,6 @@ class FileTransferManager {
         break;
     }
 
-    /** @type {File|Blob} */
     let file: File | Blob;
     if (typeof File !== "undefined") {
       file = new File(this.#receivedBlocks, fileName);
@@ -432,17 +315,11 @@ class FileTransferManager {
 
     _console.log("received file", file);
 
-    this.#dispatchEvent({ type: "getFileTransferBlock", message: { fileTransferBlock: dataView } });
-    this.#dispatchEvent({ type: "fileTransferComplete", message: { direction: "receiving" } });
-    this.#dispatchEvent({ type: "fileReceived", message: { file } });
+    this.#dispatchEvent("getFileBlock", { fileTransferBlock: dataView });
+    this.#dispatchEvent("fileTransferComplete", { direction: "receiving" });
+    this.#dispatchEvent("fileReceived", { file });
   }
 
-  // MESSAGE
-
-  /**
-   * @param {FileTransferMessageType} messageType
-   * @param {DataView} dataView
-   */
   parseMessage(messageType: FileTransferMessageType, dataView: DataView) {
     _console.log({ messageType });
 
@@ -450,8 +327,8 @@ class FileTransferManager {
       case "maxFileLength":
         this.#parseMaxLength(dataView);
         break;
-      case "getFileTransferType":
-      case "setFileTransferType":
+      case "getFileType":
+      case "setFileType":
         this.#parseType(dataView);
         break;
       case "getFileLength":
@@ -465,7 +342,7 @@ class FileTransferManager {
       case "fileTransferStatus":
         this.#parseStatus(dataView);
         break;
-      case "getFileTransferBlock":
+      case "getFileBlock":
         this.#parseBlock(dataView);
         break;
       default:
@@ -473,19 +350,12 @@ class FileTransferManager {
     }
   }
 
-  // FILE TRANSFER
-
-  /**
-   * @param {FileType} type
-   * @param {FileLike} file
-   */
   async send(type: FileType, file: FileLike) {
     this.#assertIsIdle();
 
     this.#assertValidType(type);
     const fileBuffer = await getFileBuffer(file);
 
-    /** @type {Promise[]} */
     const promises: Promise<any>[] = [];
 
     promises.push(this.#setType(type, false));
@@ -502,12 +372,12 @@ class FileTransferManager {
     await this.#send(fileBuffer);
   }
 
-  /** @param {ArrayBuffer} buffer */
   async #send(buffer: ArrayBuffer) {
     return this.#sendBlock(buffer);
   }
 
-  async #sendBlock(buffer: ArrayBuffer, offset: number = 0) {
+  mtu!: number;
+  async #sendBlock(buffer: ArrayBuffer, offset: number = 0): Promise<void> {
     if (this.status != "sending") {
       return;
     }
@@ -519,17 +389,16 @@ class FileTransferManager {
     _console.log(
       `sending bytes ${offset}-${offset + slicedBuffer.byteLength} of ${buffer.byteLength} bytes (${progress * 100}%)`
     );
-    this.#dispatchEvent({ type: "fileTransferProgress", message: { progress } });
+    this.#dispatchEvent("fileTransferProgress", { progress });
     if (slicedBuffer.byteLength == 0) {
       _console.log("finished sending buffer");
-      this.#dispatchEvent({ type: "fileTransferComplete", message: { direction: "sending" } });
+      this.#dispatchEvent("fileTransferComplete", { direction: "sending" });
     } else {
-      await this.sendMessage([{ type: "setFileTransferBlock", data: slicedBuffer }]);
+      this.sendMessage([{ type: "setFileBlock", data: slicedBuffer }]);
       return this.#sendBlock(buffer, offset + slicedBuffer.byteLength);
     }
   }
 
-  /** @param {FileType} type */
   async receive(type: FileType) {
     this.#assertIsIdle();
 
@@ -544,19 +413,7 @@ class FileTransferManager {
     await this.#setCommand("cancel");
   }
 
-  /**
-   * @callback SendMessageCallback
-   * @param {{type: FileTransferMessageType, data: ArrayBuffer}[]} messages
-   * @param {boolean} sendImmediately
-   */
-
-  /** @type {SendMessageCallback} */
-  sendMessage: SendMessageCallback;
-
-  // MTU
-
-  /** @type {number} */
-  mtu: number;
+  sendMessage!: SendMessageCallback<FileTransferMessageType>;
 }
 
 export default FileTransferManager;

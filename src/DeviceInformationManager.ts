@@ -73,7 +73,11 @@ interface DeviceInformationMessages {
 }
 
 class DeviceInformationManager {
-  eventDispatcher!: EventDispatcher<typeof Device, DeviceInformationManagerEventType, DeviceInformationMessages>;
+  eventDispatcher!: EventDispatcher<
+    typeof Device.prototype,
+    DeviceInformationManagerEventType,
+    DeviceInformationMessages
+  >;
   get #dispatchEvent() {
     return this.eventDispatcher.dispatchEvent;
   }

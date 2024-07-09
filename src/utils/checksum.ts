@@ -18,7 +18,7 @@ for (let i = 0; i < tableSize; ++i) {
   crc32Table[i] = crc32ForByte(i);
 }
 
-export function crc32(dataIterable: number[]) {
+export function crc32(dataIterable: ArrayBuffer | number[]) {
   let dataBytes = new Uint8Array(dataIterable);
   let crc = 0;
   for (let i = 0; i < dataBytes.byteLength; ++i) {
