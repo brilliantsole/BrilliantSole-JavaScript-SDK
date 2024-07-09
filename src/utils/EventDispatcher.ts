@@ -1,171 +1,71 @@
-import { createConsole } from "./Console";
-import { spacesToPascalCase } from "./stringUtils";
+class EventDispatcher<Target extends any, EventType extends string, EventMessages extends Record<EventType, any>> {
+  private listeners: {
+    [K in EventType]?: {
+      listener: (event: { type: K; target: Target; message: EventMessages[K] }) => void;
+      once: boolean;
+    }[];
+  } = {};
 
-const _console = createConsole("EventDispatcher", { log: false });
+  constructor(private target: Target, private validEventTypes: readonly EventType[]) {}
 
-export interface EventDispatcherEvent {
-  target: any;
-  type: string;
-  message: Object;
-}
-
-export interface EventDispatcherOptions {
-  once?: boolean;
-}
-
-export type EventDispatcherListener = (event: EventDispatcherEvent) => void;
-
-// based on https://github.com/mrdoob/eventdispatcher/
-class EventDispatcher {
-  constructor(target: object, eventTypes: string[] | undefined) {
-    _console.assertWithError(target, "target is required");
-    this.#target = target;
-    _console.assertWithError(Array.isArray(eventTypes) || eventTypes == undefined, "eventTypes must be an array");
-    this.#eventTypes = eventTypes!;
+  private isValidEventType(type: any): type is EventType {
+    return this.validEventTypes.includes(type);
   }
 
-  #target: any;
-  #eventTypes: string[];
-
-  #isValidEventType(type: string): boolean {
-    if (!this.#eventTypes) {
-      return true;
-    }
-    return this.#eventTypes.includes(type);
-  }
-
-  /**
-   * @param {string} type
-   * @throws {Error}
-   */
-  #assertValidEventType(type: string) {
-    _console.assertWithError(this.#isValidEventType(type), `invalid event type "${type}"`);
-  }
-
-  #listeners: { [type: string]: EventDispatcherListener[] | undefined } = {};
-
-  /**
-   * @param {string} type
-   * @param {EventDispatcherListener} listener
-   * @param {EventDispatcherOptions} [options]
-   */
-  addEventListener(type: string, listener: EventDispatcherListener, options: EventDispatcherOptions) {
-    _console.log(`adding "${type}" eventListener`, listener);
-    this.#assertValidEventType(type);
-
-    if (options?.once) {
-      const _listener = listener;
-      listener = function onceCallback(this: EventDispatcher, event) {
-        _listener.call(this, event);
-        this.removeEventListener(type, onceCallback);
-      };
+  addEventListener<T extends EventType>(
+    type: T,
+    listener: (event: { type: T; target: Target; message: EventMessages[T] }) => void,
+    options: { once: boolean } = { once: false }
+  ): void {
+    if (!this.isValidEventType(type)) {
+      throw new Error(`Invalid event type: ${type}`);
     }
 
-    const listeners = this.#listeners;
-
-    if (!listeners[type]) {
-      listeners[type] = [];
+    if (!this.listeners[type]) {
+      this.listeners[type] = [];
     }
 
-    if (!listeners[type]!.includes(listener)) {
-      listeners[type]!.push(listener);
+    this.listeners[type]!.push({ listener, once: options.once });
+  }
+
+  removeEventListener<T extends EventType>(
+    type: T,
+    listener: (event: { type: T; target: Target; message: EventMessages[T] }) => void
+  ): void {
+    if (!this.isValidEventType(type)) {
+      throw new Error(`Invalid event type: ${type}`);
     }
+
+    if (!this.listeners[type]) return;
+
+    this.listeners[type] = this.listeners[type]!.filter((l) => l.listener !== listener);
   }
 
-  /**
-   *
-   * @param {string} type
-   * @param {EventDispatcherListener} listener
-   */
-  hasEventListener(type: string, listener: EventDispatcherListener) {
-    _console.log(`has "${type}" eventListener?`, listener);
-    this.#assertValidEventType(type);
-    return this.#listeners?.[type]?.includes(listener);
-  }
-
-  /**
-   * @param {string} type
-   * @param {EventDispatcherListener} listener
-   */
-  removeEventListener(type: string, listener: EventDispatcherListener) {
-    _console.log(`removing "${type}" eventListener`, listener);
-    this.#assertValidEventType(type);
-    if (this.hasEventListener(type, listener)) {
-      const index = this.#listeners[type]!.indexOf(listener);
-      this.#listeners[type]!.splice(index, 1);
-      return true;
+  dispatchEvent<T extends EventType>(type: T, message: EventMessages[T]): void {
+    if (!this.isValidEventType(type)) {
+      throw new Error(`Invalid event type: ${type}`);
     }
-    return false;
-  }
 
-  /**
-   * @param {EventDispatcherEvent} event
-   */
-  dispatchEvent(event: EventDispatcherEvent) {
-    this.#assertValidEventType(event.type);
-    if (this.#listeners?.[event.type]) {
-      event.target = this.#target;
+    if (!this.listeners[type]) return;
 
-      // Make a copy, in case listeners are removed while iterating.
-      const array = this.#listeners[event.type]!.slice(0);
-
-      for (let i = 0, l = array.length; i < l; i++) {
-        try {
-          array[i].call(this, event);
-        } catch (error) {
-          _console.error(error);
-        }
+    const listeners = this.listeners[type]!;
+    listeners.forEach((listenerObj, index) => {
+      listenerObj.listener({ type, target: this.target, message });
+      if (listenerObj.once) {
+        listeners.splice(index, 1);
       }
-    }
-  }
-
-  /** @param {string} type */
-  waitForEvent(type: string) {
-    _console.log(`waiting for event "${type}"`);
-    this.#assertValidEventType(type);
-    return new Promise((resolve) => {
-      this.addEventListener(
-        type,
-        (event) => {
-          resolve(event);
-        },
-        { once: true }
-      );
     });
   }
-}
 
-export type BoundEventListeners = { [eventType: string]: EventListener };
-export type BoundGenericEventListeners = { [eventType: string]: Function };
+  waitForEvent<T extends EventType>(type: T): Promise<{ type: T; target: Target; message: EventMessages[T] }> {
+    return new Promise((resolve) => {
+      const onceListener = (event: { type: T; target: Target; message: EventMessages[T] }) => {
+        resolve(event);
+      };
 
-export function bindEventListeners(eventTypes: string[], boundEventListeners: BoundGenericEventListeners, target: any) {
-  _console.log("bindEventListeners", { eventTypes, boundEventListeners, target });
-  eventTypes.forEach((eventType) => {
-    const _eventType = `_on${spacesToPascalCase(eventType)}`;
-    _console.assertWithError(target[_eventType], `no event "${_eventType}" found in target`, target);
-    _console.log(`binding eventType "${eventType}" as ${_eventType} from target`, target);
-    const boundEvent = target[_eventType].bind(target);
-    target[_eventType] = boundEvent;
-    boundEventListeners[eventType] = boundEvent;
-  });
-}
-
-export function addEventListeners(target: any, boundEventListeners: BoundGenericEventListeners) {
-  let addEventListener = target.addEventListener || target.addListener || target.on || target.AddEventListener;
-  _console.assertWithError(addEventListener, "no add listener function found for target");
-  addEventListener = addEventListener.bind(target);
-  Object.entries(boundEventListeners).forEach(([eventType, eventListener]) => {
-    addEventListener(eventType, eventListener);
-  });
-}
-
-export function removeEventListeners(target: any, boundEventListeners: BoundGenericEventListeners) {
-  let removeEventListener = target.removeEventListener || target.removeListener || target.RemoveEventListener;
-  _console.assertWithError(removeEventListener, "no remove listener function found for target");
-  removeEventListener = removeEventListener.bind(target);
-  Object.entries(boundEventListeners).forEach(([eventType, eventListener]) => {
-    removeEventListener(eventType, eventListener);
-  });
+      this.addEventListener(type, onceListener, { once: true });
+    });
+  }
 }
 
 export default EventDispatcher;

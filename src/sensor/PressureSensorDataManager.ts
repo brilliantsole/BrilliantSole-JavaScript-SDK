@@ -3,64 +3,48 @@ import CenterOfPressureHelper from "../utils/CenterOfPressureHelper";
 import RangeHelper from "../utils/RangeHelper";
 import { createArray } from "../utils/ArrayUtils";
 
-/** @typedef {"pressure"} PressureSensorType */
-/** @typedef {import("../utils/MathUtils").Vector2} Vector2 */
+const _console = createConsole("PressureDataManager", { log: true });
 
-/** @typedef {Vector2} PressureSensorPosition */
+export const PressureSensorTypes = ["pressure"] as const;
+export type PressureSensorType = (typeof PressureSensorTypes)[number];
 
-/** @typedef {import("../utils/CenterOfPressureHelper").CenterOfPressure} CenterOfPressure */
+export const ContinuousPressureSensorTypes = PressureSensorTypes;
+export type ContinuousPressureSensorType = (typeof ContinuousPressureSensorTypes)[number];
 
-/**
- * @typedef {Object} PressureSensorValue
- * @property {PressureSensorPosition} position
- * @property {number} rawValue
- * @property {number} scaledValue
- * @property {number} normalizedValue
- * @property {number} weightedValue
- */
+import { Vector2 } from "../utils/MathUtils";
+export type PressureSensorPosition = Vector2;
 
-/**
- * @typedef {Object} PressureData
- * @property {PressureSensorValue[]} sensors
- *
- * @property {number} scaledSum
- * @property {number} normalizedSum
- *
- * @property {CenterOfPressure} [center]
- * @property {CenterOfPressure} [normalizedCenter]
- */
+import { CenterOfPressure } from "../utils/CenterOfPressureHelper";
 
-/** @typedef {import("./SensorDataManager").BaseSensorDataEventMessage} BaseSensorDataEventMessage */
+export interface PressureSensorValue {
+  position: PressureSensorPosition;
+  rawValue: number;
+  scaledValue: number;
+  normalizedValue: number;
+  weightedValue: number;
+}
 
-/**
- * @typedef {Object} BasePressureSensorDataEventMessage
- * @property {PressureData} pressure
- */
-/** @typedef {BaseSensorDataEventMessage & BasePressureSensorDataEventMessage} PressureSensorDataEventMessage */
+export interface PressureData {
+  sensors: PressureSensorValue[];
+  scaledSum: number;
+  normalizedSum: number;
+  center?: CenterOfPressure;
+  normalizedCenter?: CenterOfPressure;
+}
 
-/**
- * @typedef {Object} BasePressureSensorDataEvent
- * @property {"pressure"} type
- * @property {PressureSensorDataEventMessage} message
- */
+import { BaseSensorDataMessage } from "./SensorDataManager";
 
-/** @typedef {import("../Device").BaseDeviceEvent} BaseDeviceEvent */
-/** @typedef {BaseDeviceEvent & BasePressureSensorDataEvent} PressureSensorDataEvent */
+export interface PressureDataMessage extends BaseSensorDataMessage {
+  sensorType: "pressure";
+  pressure: PressureData;
+}
 
-const _console = createConsole("PressureSensorDataManager", { log: true });
+export interface PressureDataMessages {
+  pressure: PressureDataMessage;
+}
 
 class PressureSensorDataManager {
-  /** @type {PressureSensorType[]} */
-  static #Types = ["pressure"];
-  static get Types() {
-    return this.#Types;
-  }
-  static get ContinuousTypes() {
-    return this.Types;
-  }
-
-  /** @type {PressureSensorPosition[]} */
-  #positions = [];
+  #positions: PressureSensorPosition[] = [];
   get positions() {
     return this.#positions;
   }
@@ -69,10 +53,8 @@ class PressureSensorDataManager {
     return this.positions.length;
   }
 
-  /** @param {DataView} dataView */
-  parsePositions(dataView) {
-    /** @type {PressureSensorPosition[]} */
-    const positions = [];
+  parsePositions(dataView: DataView) {
+    const positions: PressureSensorPosition[] = [];
 
     for (
       let pressureSensorIndex = 0, byteOffset = 0;
@@ -94,8 +76,7 @@ class PressureSensorDataManager {
     this.resetRange();
   }
 
-  /** @type {RangeHelper[]?} */
-  #sensorRangeHelpers;
+  #sensorRangeHelpers!: RangeHelper[];
 
   #centerOfPressureHelper = new CenterOfPressureHelper();
 
@@ -104,13 +85,8 @@ class PressureSensorDataManager {
     this.#centerOfPressureHelper.reset();
   }
 
-  /**
-   * @param {DataView} dataView
-   * @param {number} scalar
-   */
-  parseData(dataView, scalar) {
-    /** @type {PressureData} */
-    const pressure = { sensors: [], scaledSum: 0, normalizedSum: 0 };
+  parseData(dataView: DataView, scalar: number) {
+    const pressure: PressureData = { sensors: [], scaledSum: 0, normalizedSum: 0 };
     for (let index = 0, byteOffset = 0; byteOffset < dataView.byteLength; index++, byteOffset += 2) {
       const rawValue = dataView.getUint16(byteOffset, true);
       const scaledValue = rawValue * scalar;
@@ -127,8 +103,8 @@ class PressureSensorDataManager {
       pressure.center = { x: 0, y: 0 };
       pressure.sensors.forEach((sensor) => {
         sensor.weightedValue = sensor.scaledValue / pressure.scaledSum;
-        pressure.center.x += sensor.position.x * sensor.weightedValue;
-        pressure.center.y += sensor.position.y * sensor.weightedValue;
+        pressure.center!.x += sensor.position.x * sensor.weightedValue;
+        pressure.center!.y += sensor.position.y * sensor.weightedValue;
       });
       pressure.normalizedCenter = this.#centerOfPressureHelper.updateAndGetNormalization(pressure.center);
     }

@@ -1,130 +1,106 @@
 import { createConsole } from "../utils/Console";
 import { parseTimestamp } from "../utils/MathUtils";
-import PressureSensorDataManager from "./PressureSensorDataManager";
-import MotionSensorDataManager from "./MotionSensorDataManager";
-import BarometerSensorDataManager from "./BarometerSensorDataManager";
+import PressureSensorDataManager, { PressureDataMessages, PressureDataMessage } from "./PressureSensorDataManager";
+import MotionSensorDataManager, { MotionSensorDataMessages, MotionSensorDataMessage } from "./MotionSensorDataManager";
+import BarometerSensorDataManager, {
+  BarometerSensorDataMessages,
+  BarometerSensorDataMessage,
+} from "./BarometerSensorDataManager";
 import { parseMessage } from "../utils/ParseUtils";
 import EventDispatcher from "../utils/EventDispatcher";
 
 const _console = createConsole("SensorDataManager", { log: true });
 
-/** @typedef {import("./MotionSensorDataManager").MotionSensorType} MotionSensorType */
-/** @typedef {import("./PressureSensorDataManager").PressureSensorType} PressureSensorType */
-/** @typedef {import("./BarometerSensorDataManager").BarometerSensorType} BarometerSensorType */
+import { MotionSensorTypes, ContinuousMotionTypes } from "./MotionSensorDataManager";
+import { PressureSensorTypes, ContinuousPressureSensorTypes } from "./PressureSensorDataManager";
+import { BarometerSensorTypes, ContinuousBarometerSensorTypes } from "./BarometerSensorDataManager";
+import Device from "../Device";
 
-/** @typedef {MotionSensorType | PressureSensorType | BarometerSensorType} SensorType */
+export const SensorTypes = [...MotionSensorTypes, ...PressureSensorTypes, ...BarometerSensorTypes] as const;
+export type SensorType = (typeof SensorTypes)[number];
 
-/** @typedef {"getPressurePositions" | "getSensorScalars" | "sensorData"} SensorDataMessageType */
-/** @typedef {SensorDataMessageType | SensorType} SensorDataManagerEventType */
+export const SensorEventTypes = [...SensorTypes, "anySensor"] as const;
+export type SensorEventType = (typeof SensorEventTypes)[number];
 
-/** @typedef {import("../utils/EventDispatcher").EventDispatcherOptions} EventDispatcherOptions */
+export const ContinuousSensorTypes = [
+  ...ContinuousMotionTypes,
+  ...ContinuousPressureSensorTypes,
+  ...ContinuousBarometerSensorTypes,
+] as const;
+export type ContinuousSensorType = (typeof ContinuousSensorTypes)[number];
 
-/** @typedef {import("../Device").BaseDeviceEvent} BaseDeviceEvent */
+export const SensorDataMessageTypes = ["getPressurePositions", "getSensorScalars", "sensorData"] as const;
+export type SensorDataMessageType = (typeof SensorDataMessageTypes)[number];
 
-/**
- * @typedef {Object} BaseSensorDataEventMessage
- * @property {number} timestamp
- */
+export const SensorDataManagerEventTypes = [...SensorDataMessageTypes, ...SensorTypes] as const;
+export type SensorDataManagerEventType = (typeof SensorDataManagerEventTypes)[number];
 
-/** @typedef {import("./PressureSensorDataManager").PressureSensorDataEventMessage} PressureSensorDataEventMessage */
-/** @typedef {import("./MotionSensorDataManager").MotionSensorDataEventMessage} MotionSensorDataEventMessage */
-/** @typedef {import("./BarometerSensorDataManager").BarometerSensorDataEventMessage} BarometerSensorDataEventMessage */
-/** @typedef {PressureSensorDataEventMessage | MotionSensorDataEventMessage | BarometerSensorDataEventMessage} SensorDataEventMessage */
-
-/**
- * @typedef {Object} BaseSensorDataEvent
- * @property {"sensorData"} type
- * @property {{sensorType: SensorType} & SensorDataEventMessage} message
- */
-/** @typedef {BaseDeviceEvent & BaseSensorDataEvent} SensorDataEvent */
-
-/** @typedef {import("./PressureSensorDataManager").PressureSensorDataEvent} PressureSensorDataEvent */
-/** @typedef {import("./MotionSensorDataManager").MotionSensorDataEvent} MotionSensorDataEvent */
-/** @typedef {import("./BarometerSensorDataManager").BarometerSensorDataEvent} BarometerSensorDataEvent */
-/** @typedef {SensorDataEvent | PressureSensorDataEvent | MotionSensorDataEvent | BarometerSensorDataEvent} SensorDataManagerEvent */
+export interface BaseSensorDataMessage {
+  sensorType: SensorType;
+  timestamp: number;
+}
+export type SensorDataMessage = PressureDataMessage | MotionSensorDataMessage | BarometerSensorDataMessage;
+interface AnySensorDataMessages {
+  anySensor: SensorDataMessage;
+}
+export type SensorDataMessages = BarometerSensorDataMessages &
+  MotionSensorDataMessages &
+  PressureDataMessages &
+  AnySensorDataMessages;
 
 class SensorDataManager {
-  // MESSAGE TYPES
-
-  /** @type {SensorDataMessageType[]} */
-  static #MessageTypes = ["getPressurePositions", "getSensorScalars", "sensorData"];
-  static get MessageTypes() {
-    return this.#MessageTypes;
-  }
-  get messageTypes() {
-    return SensorDataManager.MessageTypes;
-  }
-
-  // MANAGERS
-
   pressureSensorDataManager = new PressureSensorDataManager();
   motionSensorDataManager = new MotionSensorDataManager();
   barometerSensorDataManager = new BarometerSensorDataManager();
 
-  // TYPES
+  private scalars: Map<SensorType, number> = new Map();
 
-  /** @type {SensorType[]} */
-  static #Types = [
-    ...PressureSensorDataManager.Types,
-    ...MotionSensorDataManager.Types,
-    ...BarometerSensorDataManager.Types,
-  ];
-  static #ContinuousTypes = [
-    ...PressureSensorDataManager.ContinuousTypes,
-    ...MotionSensorDataManager.ContinuousTypes,
-    ...BarometerSensorDataManager.ContinuousTypes,
-  ];
-  static get Types() {
-    return this.#Types;
+  static AssertValidSensorType(sensorType: SensorType) {
+    _console.assertEnumWithError(sensorType, SensorTypes);
   }
-  static get ContinuousTypes() {
-    return this.#ContinuousTypes;
-  }
-  get types() {
-    return SensorDataManager.Types;
-  }
-
-  /** @type {Map.<SensorType, number>} */
-  #scalars = new Map();
-
-  /** @param {string} sensorType */
-  static AssertValidSensorType(sensorType) {
-    _console.assertTypeWithError(sensorType, "string");
-    _console.assertWithError(this.#Types.includes(sensorType), `invalid sensorType "${sensorType}"`);
-  }
-  /** @param {number} sensorTypeEnum */
-  static AssertValidSensorTypeEnum(sensorTypeEnum) {
+  static AssertValidSensorTypeEnum(sensorTypeEnum: number) {
     _console.assertTypeWithError(sensorTypeEnum, "number");
-    _console.assertWithError(sensorTypeEnum in this.#Types, `invalid sensorTypeEnum ${sensorTypeEnum}`);
+    _console.assertWithError(sensorTypeEnum in SensorTypes, `invalid sensorTypeEnum ${sensorTypeEnum}`);
   }
 
-  // EVENT DISPATCHER
-
-  /** @type {SensorDataManagerEventType[]} */
-  static #EventTypes = [...this.#MessageTypes, ...this.#Types];
-  static get EventTypes() {
-    return this.#EventTypes;
-  }
-  get eventTypes() {
-    return SensorDataManager.#EventTypes;
-  }
-  /** @type {EventDispatcher} */
-  eventDispatcher;
-
-  /** @param {SensorDataManagerEvent} event */
-  #dispatchEvent(event) {
-    this.eventDispatcher.dispatchEvent(event);
+  eventDispatcher!: EventDispatcher<typeof Device, SensorEventType, SensorDataMessages>;
+  get dispatchEvent() {
+    return this.eventDispatcher.dispatchEvent;
   }
 
-  /** @param {SensorDataManagerEventType} eventType */
-  waitForEvent(eventType) {
-    return this.eventDispatcher.waitForEvent(eventType);
+  parseMessage(messageType: SensorDataMessageType, dataView: DataView) {
+    _console.log({ messageType });
+
+    switch (messageType) {
+      case "getSensorScalars":
+        this.parseScalars(dataView);
+        break;
+      case "getPressurePositions":
+        this.pressureSensorDataManager.parsePositions(dataView);
+        break;
+      case "sensorData":
+        this.parseData(dataView);
+        break;
+      default:
+        throw Error(`uncaught messageType ${messageType}`);
+    }
   }
 
-  // DATA
+  parseScalars(dataView: DataView) {
+    for (let byteOffset = 0; byteOffset < dataView.byteLength; byteOffset += 5) {
+      const sensorTypeIndex = dataView.getUint8(byteOffset);
+      const sensorType = SensorTypes[sensorTypeIndex];
+      if (!sensorType) {
+        _console.warn(`unknown sensorType index ${sensorTypeIndex}`);
+        continue;
+      }
+      const sensorScalar = dataView.getFloat32(byteOffset + 1, true);
+      _console.log({ sensorType, sensorScalar });
+      this.scalars.set(sensorType, sensorScalar);
+    }
+  }
 
-  /** @param {DataView} dataView */
-  #parseData(dataView) {
+  private parseData(dataView: DataView) {
     _console.log("sensorData", Array.from(new Uint8Array(dataView.buffer)));
 
     let byteOffset = 0;
@@ -133,16 +109,11 @@ class SensorDataManager {
 
     const _dataView = new DataView(dataView.buffer, byteOffset);
 
-    parseMessage(_dataView, SensorDataManager.Types, this.#parseDataCallback.bind(this), { timestamp });
+    parseMessage<SensorType>(_dataView, SensorTypes, this.parseDataCallback.bind(this), { timestamp });
   }
 
-  /**
-   * @param {SensorType} sensorType
-   * @param {DataView} dataView
-   * @param {{timestamp: number}} context
-   */
-  #parseDataCallback(sensorType, dataView, { timestamp }) {
-    const scalar = this.#scalars.get(sensorType);
+  private parseDataCallback(sensorType: SensorType, dataView: DataView, { timestamp }: { timestamp: number }) {
+    const scalar = this.scalars.get(sensorType) || 1;
 
     let sensorData = null;
     switch (sensorType) {
@@ -184,58 +155,12 @@ class SensorDataManager {
 
     _console.assertWithError(sensorData != null, `no sensorData defined for sensorType "${sensorType}"`);
 
-    _console.log({ sensorType, sensorData, sensorData });
-    this.#dispatchEvent({ type: sensorType, message: { [sensorType]: sensorData, timestamp } });
-    this.#dispatchEvent({ type: "sensorData", message: { [sensorType]: sensorData, sensorType, timestamp } });
+    _console.log({ sensorType, sensorData });
+    // @ts-expect-error
+    this.dispatchEvent(sensorType, { sensorType, [sensorType]: sensorData, timestamp });
+    // @ts-expect-error
+    this.dispatchEvent("anySensor", { sensorType, [sensorType]: sensorData, timestamp });
   }
-
-  /** @param {DataView} dataView */
-  parseScalars(dataView) {
-    for (let byteOffset = 0; byteOffset < dataView.byteLength; byteOffset += 5) {
-      const sensorTypeIndex = dataView.getUint8(byteOffset);
-      const sensorType = SensorDataManager.Types[sensorTypeIndex];
-      if (!sensorType) {
-        _console.warn(`unknown sensorType index ${sensorTypeIndex}`);
-        continue;
-      }
-      const sensorScalar = dataView.getFloat32(byteOffset + 1, true);
-      _console.log({ sensorType, sensorScalar });
-      this.#scalars.set(sensorType, sensorScalar);
-    }
-  }
-
-  // MESSAGE
-
-  /**
-   * @param {SensorDataMessageType} messageType
-   * @param {DataView} dataView
-   */
-  parseMessage(messageType, dataView) {
-    _console.log({ messageType });
-
-    switch (messageType) {
-      case "getSensorScalars":
-        this.parseScalars(dataView);
-        break;
-      case "getPressurePositions":
-        this.pressureSensorDataManager.parsePositions(dataView);
-        break;
-      case "sensorData":
-        this.#parseData(dataView);
-        break;
-      default:
-        throw Error(`uncaught messageType ${messageType}`);
-    }
-  }
-
-  /**
-   * @callback SendMessageCallback
-   * @param {{type: SensorDataMessageType, data: ArrayBuffer}[]} messages
-   * @param {boolean} sendImmediately
-   */
-
-  /** @type {SendMessageCallback} */
-  sendMessage;
 }
 
 export default SensorDataManager;

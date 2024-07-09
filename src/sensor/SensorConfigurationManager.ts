@@ -4,71 +4,47 @@ import EventDispatcher from "../utils/EventDispatcher";
 
 const _console = createConsole("SensorConfigurationManager", { log: true });
 
-/** @typedef {import("./SensorDataManager").SensorType} SensorType */
-/**
- * @typedef {Object} SensorConfiguration
- * @property {number} [pressure]
- * @property {number} [acceleration]
- * @property {number} [gravity]
- * @property {number} [linearAcceleration]
- * @property {number} [gyroscope]
- * @property {number} [magnetometer]
- * @property {number} [gameRotation]
- * @property {number} [rotation]
- * @property {number} [orientation]
- * @property {number} [activity]
- * @property {number} [stepDetector]
- * @property {number} [stepCounter]
- * @property {number} [deviceOrientation]
- * @property {number} [barometer]
- */
+import { SensorType } from "./SensorDataManager";
 
-/** @typedef {"getSensorConfiguration" | "setSensorConfiguration"} SensorConfigurationMessageType */
-/** @typedef {SensorConfigurationMessageType} SensorConfigurationManagerEventType */
+export interface SensorConfiguration {
+  pressure?: number;
+  acceleration?: number;
+  gravity?: number;
+  linearAcceleration?: number;
+  gyroscope?: number;
+  magnetometer?: number;
+  gameRotation?: number;
+  rotation?: number;
+  orientation?: number;
+  activity?: number;
+  stepDetector?: number;
+  stepCounter?: number;
+  deviceOrientation?: number;
+  barometer?: number;
+}
 
-/** @typedef {import("../utils/EventDispatcher").EventDispatcherListener} EventDispatcherListener */
-/** @typedef {import("../utils/EventDispatcher").EventDispatcherOptions} EventDispatcherOptions */
+export const SensorConfigurationMessageTypes = ["getSensorConfiguration", "setSensorConfiguration"] as const;
+export type SensorConfigurationMessageType = (typeof SensorConfigurationMessageTypes)[number];
+type SensorConfigurationManagerEventType = SensorConfigurationMessageType;
 
-/** @typedef {import("../Device").Device} Device */
-/**
- * @typedef {Object} SensorConfigurationManagerEvent
- * @property {Device} target
- * @property {SensorConfigurationManagerEventType} type
- * @property {Object} message
- */
+import Device from "../Device";
+
+interface SensorConfigurationManagerEvent {
+  target: Device;
+  type: SensorConfigurationManagerEventType;
+  message: Object;
+}
 
 class SensorConfigurationManager {
-  // MESSAGE TYPES
-
-  /** @type {SensorConfigurationMessageType[]} */
-  static #MessageTypes = ["getSensorConfiguration", "setSensorConfiguration"];
-  static get MessageTypes() {
-    return this.#MessageTypes;
-  }
-  get messageTypes() {
-    return SensorConfigurationManager.MessageTypes;
-  }
-
-  // EVENT DISPATCHER
-
-  /** @type {SensorConfigurationManagerEventType[]} */
-  static #EventTypes = [...this.#MessageTypes];
-  static get EventTypes() {
-    return this.#EventTypes;
-  }
-  get eventTypes() {
-    return SensorConfigurationManager.#EventTypes;
-  }
-  /** @type {EventDispatcher} */
-  eventDispatcher;
+  eventDispatcher!: EventDispatcher;
 
   /** @param {SensorConfigurationManagerEvent} event */
-  #dispatchEvent(event) {
+  #dispatchEvent(event: SensorConfigurationManagerEvent) {
     this.eventDispatcher.dispatchEvent(event);
   }
 
   /** @param {SensorConfigurationManagerEventType} eventType */
-  waitForEvent(eventType) {
+  waitForEvent(eventType: SensorConfigurationManagerEventType) {
     return this.eventDispatcher.waitForEvent(eventType);
   }
 
@@ -82,9 +58,9 @@ class SensorConfigurationManager {
   }
 
   /** @type {SensorType[]} */
-  #availableSensorTypes;
+  #availableSensorTypes: SensorType[];
   /** @param {SensorType} sensorType */
-  #assertAvailableSensorType(sensorType) {
+  #assertAvailableSensorType(sensorType: SensorType) {
     _console.assertWithError(this.#availableSensorTypes, "must get initial sensorConfiguration");
     const isSensorTypeAvailable = this.#availableSensorTypes?.includes(sensorType);
     _console.assert(isSensorTypeAvailable, `unavailable sensor type "${sensorType}"`);
@@ -92,13 +68,13 @@ class SensorConfigurationManager {
   }
 
   /** @type {SensorConfiguration} */
-  #configuration;
+  #configuration: SensorConfiguration;
   get configuration() {
     return this.#configuration;
   }
 
   /** @param {SensorConfiguration} updatedConfiguration */
-  #updateConfiguration(updatedConfiguration) {
+  #updateConfiguration(updatedConfiguration: SensorConfiguration) {
     this.#configuration = updatedConfiguration;
     _console.log({ updatedConfiguration: this.#configuration });
     this.#dispatchEvent({
@@ -108,9 +84,9 @@ class SensorConfigurationManager {
   }
 
   /** @param {SensorConfiguration} sensorConfiguration */
-  #isRedundant(sensorConfiguration) {
+  #isRedundant(sensorConfiguration: SensorConfiguration) {
     /** @type {SensorType[]} */
-    let sensorTypes = Object.keys(sensorConfiguration);
+    let sensorTypes: SensorType[] = Object.keys(sensorConfiguration);
     return sensorTypes.every((sensorType) => {
       return this.configuration[sensorType] == sensorConfiguration[sensorType];
     });
@@ -120,7 +96,7 @@ class SensorConfigurationManager {
    * @param {SensorConfiguration} newSensorConfiguration
    * @param {boolean} [clearRest]
    */
-  async setConfiguration(newSensorConfiguration, clearRest) {
+  async setConfiguration(newSensorConfiguration: SensorConfiguration, clearRest: boolean) {
     if (clearRest) {
       newSensorConfiguration = Object.assign({ ...this.zeroSensorConfiguration }, newSensorConfiguration);
     }
@@ -138,9 +114,9 @@ class SensorConfigurationManager {
   }
 
   /** @param {DataView} dataView */
-  #parse(dataView) {
+  #parse(dataView: DataView) {
     /** @type {SensorConfiguration} */
-    const parsedSensorConfiguration = {};
+    const parsedSensorConfiguration: SensorConfiguration = {};
     for (let byteOffset = 0; byteOffset < dataView.byteLength; byteOffset += 3) {
       const sensorTypeIndex = dataView.getUint8(byteOffset);
       const sensorType = SensorDataManager.Types[sensorTypeIndex];
@@ -189,9 +165,9 @@ class SensorConfigurationManager {
   }
 
   /** @param {SensorConfiguration} sensorConfiguration */
-  #createData(sensorConfiguration) {
+  #createData(sensorConfiguration: SensorConfiguration) {
     /** @type {SensorType[]} */
-    let sensorTypes = Object.keys(sensorConfiguration);
+    let sensorTypes: SensorType[] = Object.keys(sensorConfiguration);
     sensorTypes = sensorTypes.filter((sensorType) => this.#assertAvailableSensorType(sensorType));
 
     const dataView = new DataView(new ArrayBuffer(sensorTypes.length * 3));
@@ -211,7 +187,7 @@ class SensorConfigurationManager {
   // ZERO
 
   /** @type {SensorConfiguration} */
-  static #ZeroSensorConfiguration = {};
+  static #ZeroSensorConfiguration: SensorConfiguration = {};
   static get ZeroSensorConfiguration() {
     return this.#ZeroSensorConfiguration;
   }
@@ -222,7 +198,7 @@ class SensorConfigurationManager {
   }
   get zeroSensorConfiguration() {
     /** @type {SensorConfiguration} */
-    const zeroSensorConfiguration = {};
+    const zeroSensorConfiguration: SensorConfiguration = {};
     this.#sensorTypes.forEach((sensorType) => {
       zeroSensorConfiguration[sensorType] = 0;
     });
@@ -238,7 +214,7 @@ class SensorConfigurationManager {
    * @param {SensorConfigurationMessageType} messageType
    * @param {DataView} dataView
    */
-  parseMessage(messageType, dataView) {
+  parseMessage(messageType: SensorConfigurationMessageType, dataView: DataView) {
     _console.log({ messageType });
 
     switch (messageType) {
@@ -259,7 +235,7 @@ class SensorConfigurationManager {
    */
 
   /** @type {SendMessageCallback} */
-  sendMessage;
+  sendMessage: SendMessageCallback;
 }
 
 export default SensorConfigurationManager;

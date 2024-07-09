@@ -13,19 +13,18 @@ export function parseStringFromDataView(dataView: DataView, byteOffset: number =
   return { string, byteOffset };
 }
 
-export type ParseMessageCallback = (messageType: string, dataView: DataView, context?: any) => void;
-
-export function parseMessage(
+export function parseMessage<MessageType extends string>(
   dataView: DataView,
-  enumeration: string[],
-  callback: ParseMessageCallback,
+  messageTypes: readonly MessageType[],
+  callback: (messageType: MessageType, dataView: DataView, context?: any) => void;
   context?: any,
   parseMessageLengthAsUint16: boolean = false
 ) {
   let byteOffset = 0;
   while (byteOffset < dataView.byteLength) {
     const messageTypeEnum = dataView.getUint8(byteOffset++);
-    const messageType = enumeration[messageTypeEnum];
+    _console.assertWithError(messageTypeEnum in messageTypes, `invalid messageTypeEnum ${messageTypeEnum}`);
+    const messageType = messageTypes[messageTypeEnum];
 
     let messageLength: number;
     if (parseMessageLengthAsUint16) {
@@ -36,7 +35,6 @@ export function parseMessage(
     }
 
     _console.log({ messageTypeEnum, messageType, messageLength, dataView, byteOffset });
-    _console.assertWithError(messageType, `invalid messageTypeEnum ${messageTypeEnum}`);
 
     const _dataView = sliceDataView(dataView, byteOffset, messageLength);
     _console.log({ _dataView });
