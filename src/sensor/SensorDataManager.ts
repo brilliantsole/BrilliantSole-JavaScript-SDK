@@ -15,18 +15,15 @@ import BarometerSensorDataManager, {
 import { parseMessage } from "../utils/ParseUtils";
 import EventDispatcher from "../utils/EventDispatcher";
 
-const _console = createConsole("SensorDataManager", { log: true });
-
 import { MotionSensorTypes, ContinuousMotionTypes } from "./MotionSensorDataManager";
 import { PressureSensorTypes, ContinuousPressureSensorTypes } from "./PressureSensorDataManager";
 import { BarometerSensorTypes, ContinuousBarometerSensorTypes } from "./BarometerSensorDataManager";
 import Device from "../Device";
 
+const _console = createConsole("SensorDataManager", { log: true });
+
 export const SensorTypes = [...MotionSensorTypes, ...PressureSensorTypes, ...BarometerSensorTypes] as const;
 export type SensorType = (typeof SensorTypes)[number];
-
-export const SensorEventTypes = [...SensorTypes, "sensorData"] as const;
-export type SensorEventType = (typeof SensorEventTypes)[number];
 
 export const ContinuousSensorTypes = [
   ...ContinuousMotionTypes,
@@ -35,11 +32,11 @@ export const ContinuousSensorTypes = [
 ] as const;
 export type ContinuousSensorType = (typeof ContinuousSensorTypes)[number];
 
-export const SensorDataEventMessageTypes = ["getPressurePositions", "getSensorScalars", "sensorData"] as const;
-export type SensorDataEventMessageType = (typeof SensorDataEventMessageTypes)[number];
+export const SensorDataMessageTypes = ["getPressurePositions", "getSensorScalars", "sensorData"] as const;
+export type SensorDataMessageType = (typeof SensorDataMessageTypes)[number];
 
-export const SensorDataManagerEventTypes = [...SensorDataEventMessageTypes, ...SensorTypes] as const;
-export type SensorDataManagerEventType = (typeof SensorDataManagerEventTypes)[number];
+export const SensorDataEventTypes = [...SensorDataMessageTypes, ...SensorTypes] as const;
+export type SensorDataEventType = (typeof SensorDataEventTypes)[number];
 
 export interface BaseSensorDataEventMessage {
   sensorType: SensorType;
@@ -73,12 +70,12 @@ class SensorDataManager {
     _console.assertWithError(sensorTypeEnum in SensorTypes, `invalid sensorTypeEnum ${sensorTypeEnum}`);
   }
 
-  eventDispatcher!: EventDispatcher<Device, SensorEventType, SensorDataEventMessages>;
+  eventDispatcher!: EventDispatcher<Device, SensorDataEventType, SensorDataEventMessages>;
   get dispatchEvent() {
     return this.eventDispatcher.dispatchEvent;
   }
 
-  parseMessage(messageType: SensorDataEventMessageType, dataView: DataView) {
+  parseMessage(messageType: SensorDataMessageType, dataView: DataView) {
     _console.log({ messageType });
 
     switch (messageType) {

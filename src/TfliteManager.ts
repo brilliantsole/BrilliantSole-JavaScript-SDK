@@ -124,7 +124,7 @@ class TfliteManager {
     this.#name = name;
     this.#dispatchEvent("getTfliteName", { tfliteName: name });
   }
-  async setName(newName: string, sendImmediately: boolean) {
+  async setName(newName: string, sendImmediately?: boolean) {
     _console.assertTypeWithError(newName, "string");
     if (this.name == newName) {
       _console.log(`redundant name assignment ${newName}`);
@@ -155,7 +155,7 @@ class TfliteManager {
     this.#task = task;
     this.#dispatchEvent("getTfliteTask", { tfliteTask: task });
   }
-  async setTask(newTask: TfliteTask, sendImmediately: boolean) {
+  async setTask(newTask: TfliteTask, sendImmediately?: boolean) {
     this.#assertValidTask(newTask);
     if (this.task == newTask) {
       _console.log(`redundant task assignment ${newTask}`);
@@ -184,7 +184,7 @@ class TfliteManager {
     this.#sampleRate = sampleRate;
     this.#dispatchEvent("getTfliteSampleRate", { tfliteSampleRate: sampleRate });
   }
-  async setSampleRate(newSampleRate: number, sendImmediately: boolean) {
+  async setSampleRate(newSampleRate: number, sendImmediately?: boolean) {
     _console.assertTypeWithError(newSampleRate, "number");
     newSampleRate -= newSampleRate % SensorConfigurationManager.SensorRateStep;
     _console.assertWithError(
@@ -239,7 +239,7 @@ class TfliteManager {
     this.#sensorTypes = sensorTypes;
     this.#dispatchEvent("getTfliteSensorTypes", { tfliteSensorTypes: sensorTypes });
   }
-  async setSensorTypes(newSensorTypes: SensorType[], sendImmediately: boolean) {
+  async setSensorTypes(newSensorTypes: SensorType[], sendImmediately?: boolean) {
     newSensorTypes.forEach((sensorType) => {
       TfliteManager.AssertValidSensorType(sensorType);
     });

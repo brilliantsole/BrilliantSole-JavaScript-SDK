@@ -14,43 +14,71 @@ import SensorConfigurationManager, {
   SendSensorConfigurationMessageCallback,
   SensorConfiguration,
   SensorConfigurationEventDispatcher,
+  SensorConfigurationMessageType,
+  SensorConfigurationMessageTypes,
 } from "./sensor/SensorConfigurationManager";
-import SensorDataManager, { SensorEventTypes, SensorType } from "./sensor/SensorDataManager";
-import VibrationManager, { SendVibrationMessageCallback, VibrationConfiguration } from "./vibration/VibrationManager";
+import SensorDataManager, {
+  SensorDataEventMessages,
+  SensorDataEventTypes,
+  SensorDataMessageType,
+  SensorDataMessageTypes,
+  SensorType,
+  SensorTypes,
+  ContinuousSensorTypes,
+  ContinuousSensorType,
+} from "./sensor/SensorDataManager";
+import VibrationManager, {
+  SendVibrationMessageCallback,
+  VibrationConfiguration,
+  VibrationLocations,
+  VibrationTypes,
+} from "./vibration/VibrationManager";
 import FileTransferManager, {
-  FileTransferEventType,
   FileTransferEventTypes,
   FileTransferEventMessages,
   FileTransferEventDispatcher,
   SendFileTransferMessageCallback,
+  FileTransferMessageTypes,
+  FileTransferMessageType,
+  FileTypes,
+  FileType,
 } from "./FileTransferManager";
 import TfliteManager, {
-  TfliteEventType,
   TfliteEventTypes,
   TfliteEventMessages,
   TfliteEventDispatcher,
   SendTfliteMessageCallback,
+  TfliteMessageTypes,
+  TfliteMessageType,
+  TfliteTasks,
 } from "./TfliteManager";
 import FirmwareManager, {
   FirmwareEventDispatcher,
   FirmwareEventMessages,
-  FirmwareEventType,
   FirmwareEventTypes,
+  FirmwareMessageType,
+  FirmwareMessageTypes,
 } from "./FirmwareManager";
 import DeviceInformationManager, {
   DeviceInformationEventDispatcher,
-  DeviceInformationEventType,
   DeviceInformationEventTypes,
+  DeviceInformationMessageType,
+  DeviceInformationMessageTypes,
   DeviceInformationMessages,
 } from "./DeviceInformationManager";
 import InformationManager, {
+  DeviceType,
+  DeviceTypes,
   InformationEventDispatcher,
-  InformationEventType,
   InformationEventTypes,
+  InformationMessageType,
+  InformationMessageTypes,
   InformationMessages,
+  InsoleSides,
   SendInformationMessageCallback,
 } from "./InformationManager";
 import { FileLike } from "./utils/ArrayBufferUtils";
+import { VibrationWaveformEffects } from "./vibration/VibrationWaveformEffects";
 
 const _console = createConsole("Device", { log: true });
 
@@ -64,32 +92,33 @@ export const DeviceEventTypes = [
   "connectionMessage",
   ...InformationEventTypes,
   ...DeviceInformationEventTypes,
-  ...SensorEventTypes,
+  ...SensorDataEventTypes,
   ...FileTransferEventTypes,
   ...TfliteEventTypes,
   ...FirmwareEventTypes,
 ] as const;
 export type DeviceEventType = (typeof DeviceEventTypes)[number];
 
+interface ConnectionStatusEventMessage {
+  connectionStatus: ConnectionStatus;
+}
+interface IsConnectedEventMessage {
+  isConnected: boolean;
+}
+interface ConnectionEventMessages {
+  connectionStatus: ConnectionStatusEventMessage;
+  isConnected: IsConnectedEventMessage;
+}
+
 interface BatteryLevelMessage {
   batteryLevel: number;
 }
 
-interface ConnectionStatusMessage {
-  connectionStatus: ConnectionStatus;
-}
-interface IsConnectedMessage {
-  isConnected: boolean;
-}
-interface ConnectionMessages {
-  connectionStatus: ConnectionStatusMessage;
-  isConnected: IsConnectedMessage;
-}
-
-export type DeviceEventMessages = ConnectionMessages &
+export type DeviceEventMessages = ConnectionEventMessages &
   BatteryLevelMessage &
   DeviceInformationMessages &
   InformationMessages &
+  SensorDataEventMessages &
   TfliteEventMessages &
   FileTransferEventMessages &
   FirmwareEventMessages;
@@ -133,6 +162,15 @@ export type SendMessageCallback<MessageType extends string> = (
 ) => Promise<void>;
 
 export type SendSmpMessageCallback = (data: ArrayBuffer) => Promise<void>;
+
+export interface LocalStorageDeviceInformation {
+  bluetoothId: string;
+  type: DeviceType;
+}
+
+export interface LocalStorageConfiguration {
+  devices: LocalStorageDeviceInformation[];
+}
 
 class Device {
   get bluetoothId() {
@@ -193,8 +231,8 @@ class Device {
     });
   }
 
-  static get #DefaultConnectionManager(): typeof BaseConnectionManager {
-    return WebBluetoothConnectionManager;
+  static #DefaultConnectionManager(): BaseConnectionManager {
+    return new WebBluetoothConnectionManager();
   }
 
   #eventDispatcher: EventDispatcher<Device, DeviceEventType, DeviceEventMessages> = new EventDispatcher(
@@ -244,7 +282,7 @@ class Device {
 
   async connect() {
     if (!this.connectionManager) {
-      this.connectionManager = new Device.#DefaultConnectionManager();
+      this.connectionManager = Device.#DefaultConnectionManager();
     }
     this.#clear();
     return this.connectionManager.connect();
@@ -274,7 +312,7 @@ class Device {
     "maxFileLength",
     "getFileLength",
     "getFileChecksum",
-    "getFileTransferType",
+    "getFileType",
     "fileTransferStatus",
 
     "getTfliteName",
@@ -326,8 +364,7 @@ class Device {
     _console.assertTypeWithError(newReconnectOnDisconnection, "boolean");
     this.#reconnectOnDisconnection = newReconnectOnDisconnection;
   }
-  /** @type {number?} */
-  #reconnectIntervalId: number | null;
+  #reconnectIntervalId?: NodeJS.Timeout | number;
 
   get connectionType() {
     return this.connectionManager?.type;
@@ -345,7 +382,7 @@ class Device {
       );
     }
 
-    return this.connectionManager.disconnect();
+    return this.connectionManager!.disconnect();
   }
 
   toggleConnection() {
@@ -417,7 +454,9 @@ class Device {
   }
   #checkConnection() {
     this.#isConnected =
-      this.connectionManager?.isConnected && this.#hasRequiredInformation && this.#informationManager.isCurrentTimeSet;
+      Boolean(this.connectionManager?.isConnected) &&
+      this.#hasRequiredInformation &&
+      this.#informationManager.isCurrentTimeSet;
 
     switch (this.connectionStatus) {
       case "connected":
@@ -450,20 +489,20 @@ class Device {
         break;
 
       default:
-        if (this.#fileTransferManager.messageTypes.includes(messageType)) {
-          this.#fileTransferManager.parseMessage(messageType, dataView);
-        } else if (this.#tfliteManager.messageTypes.includes(messageType)) {
-          this.#tfliteManager.parseMessage(messageType, dataView);
-        } else if (this.#sensorDataManager.messageTypes.includes(messageType)) {
-          this.#sensorDataManager.parseMessage(messageType, dataView);
-        } else if (this.#firmwareManager.messageTypes.includes(messageType)) {
-          this.#firmwareManager.parseMessage(messageType, dataView);
-        } else if (this.#deviceInformationManager.messageTypes.includes(messageType)) {
-          this.#deviceInformationManager.parseMessage(messageType, dataView);
-        } else if (this.#informationManager.messageTypes.includes(messageType)) {
-          this.#informationManager.parseMessage(messageType, dataView);
-        } else if (this.#sensorConfigurationManager.messageTypes.includes(messageType)) {
-          this.#sensorConfigurationManager.parseMessage(messageType, dataView);
+        if (FileTransferMessageTypes.includes(messageType as FileTransferMessageType)) {
+          this.#fileTransferManager.parseMessage(messageType as FileTransferMessageType, dataView);
+        } else if (TfliteMessageTypes.includes(messageType as TfliteMessageType)) {
+          this.#tfliteManager.parseMessage(messageType as TfliteMessageType, dataView);
+        } else if (SensorDataMessageTypes.includes(messageType as SensorDataMessageType)) {
+          this.#sensorDataManager.parseMessage(messageType as SensorDataMessageType, dataView);
+        } else if (FirmwareMessageTypes.includes(messageType as FirmwareMessageType)) {
+          this.#firmwareManager.parseMessage(messageType as FirmwareMessageType, dataView);
+        } else if (DeviceInformationMessageTypes.includes(messageType as DeviceInformationMessageType)) {
+          this.#deviceInformationManager.parseMessage(messageType as DeviceInformationMessageType, dataView);
+        } else if (InformationMessageTypes.includes(messageType as InformationMessageType)) {
+          this.#informationManager.parseMessage(messageType as InformationMessageType, dataView);
+        } else if (SensorConfigurationMessageTypes.includes(messageType as SensorConfigurationMessageType)) {
+          this.#sensorConfigurationManager.parseMessage(messageType as SensorConfigurationMessageType, dataView);
         } else {
           throw Error(`uncaught messageType ${messageType}`);
         }
@@ -527,24 +566,22 @@ class Device {
   get name() {
     return this.#informationManager.name;
   }
-  /** @param {string} newName */
-  async setName(newName: string) {
-    await this.#informationManager.setName(newName);
+  get setName() {
+    return this.#informationManager.setName;
   }
 
   static get Types() {
-    return InformationManager.Types;
+    return DeviceTypes;
   }
   get type() {
     return this.#informationManager.type;
   }
-  /** @param {DeviceType} newType */
-  async setType(newType: DeviceType) {
-    await this.#informationManager.setType(newType);
+  get setType() {
+    return this.#informationManager.setType;
   }
 
   static get InsoleSides() {
-    return InformationManager.InsoleSides;
+    return InsoleSides;
   }
   get isInsole() {
     return this.#informationManager.isInsole;
@@ -559,17 +596,16 @@ class Device {
 
   // SENSOR TYPES
   static get SensorTypes() {
-    return SensorDataManager.Types;
+    return SensorTypes;
   }
   static get ContinuousSensorTypes() {
-    return SensorDataManager.ContinuousTypes;
+    return ContinuousSensorTypes;
   }
-  /** @type {SensorType[]} */
   get sensorTypes() {
-    return Object.keys(this.sensorConfiguration);
+    return Object.keys(this.sensorConfiguration) as SensorType[];
   }
   get continuousSensorTypes() {
-    return this.sensorTypes.filter((sensorType) => Device.ContinuousSensorTypes.includes(sensorType));
+    return this.sensorTypes.filter((sensorType) => ContinuousSensorTypes.includes(sensorType as ContinuousSensorType));
   }
 
   // SENSOR CONFIGURATION
@@ -587,11 +623,7 @@ class Device {
     return SensorConfigurationManager.SensorRateStep;
   }
 
-  /**
-   * @param {SensorConfiguration} newSensorConfiguration
-   * @param {boolean} [clearRest]
-   */
-  async setSensorConfiguration(newSensorConfiguration: SensorConfiguration, clearRest: boolean) {
+  async setSensorConfiguration(newSensorConfiguration: SensorConfiguration, clearRest?: boolean) {
     await this.#sensorConfigurationManager.setConfiguration(newSensorConfiguration, clearRest);
   }
 
@@ -639,14 +671,14 @@ class Device {
 
   #vibrationManager = new VibrationManager();
   static get VibrationLocations() {
-    return VibrationManager.Locations;
+    return VibrationLocations;
   }
   static get VibrationTypes() {
-    return VibrationManager.Types;
+    return VibrationTypes;
   }
 
   static get VibrationWaveformEffects() {
-    return VibrationManager.WaveformEffects;
+    return VibrationWaveformEffects;
   }
   static get MaxVibrationWaveformEffectSegmentDelay() {
     return VibrationManager.MaxWaveformEffectSegmentDelay;
@@ -668,36 +700,26 @@ class Device {
     return VibrationManager.MaxNumberOfWaveformSegments;
   }
 
-  /**
-   * @param  {VibrationConfiguration[]} vibrationConfigurations
-   * @param  {boolean} [sendImmediately]
-   */
-  async triggerVibration(vibrationConfigurations: VibrationConfiguration[], sendImmediately: boolean) {
+  async triggerVibration(vibrationConfigurations: VibrationConfiguration[], sendImmediately?: boolean) {
     this.#vibrationManager.triggerVibration(vibrationConfigurations, sendImmediately);
   }
 
   // FILE TRANSFER
-
   #fileTransferManager = new FileTransferManager();
   static get FileTypes() {
-    return FileTransferManager.Types;
+    return FileTypes;
   }
 
   get maxFileLength() {
     return this.#fileTransferManager.maxLength;
   }
 
-  /**
-   * @param {FileType} fileType
-   * @param {FileLike} file
-   */
   async sendFile(fileType: FileType, file: FileLike) {
     const promise = this.waitForEvent("fileTransferComplete");
     this.#fileTransferManager.send(fileType, file);
     await promise;
   }
 
-  /** @param {FileType} fileType */
   async receiveFile(fileType: FileType) {
     const promise = this.waitForEvent("fileTransferComplete");
     this.#fileTransferManager.receive(fileType);
@@ -723,31 +745,28 @@ class Device {
   get tfliteName() {
     return this.#tfliteManager.name;
   }
-  /** @param {string} newName */
-  setTfliteName(newName: string) {
-    return this.#tfliteManager.setName(newName);
+  get setTfliteName() {
+    return this.#tfliteManager.setName;
   }
 
   // TFLITE MODEL CONFIG
 
   static get TfliteTasks() {
-    return TfliteManager.Tasks;
+    return TfliteTasks;
   }
 
   get tfliteTask() {
     return this.#tfliteManager.task;
   }
-  /** @param {import("./TfliteManager").TfliteTask} newTask */
-  setTfliteTask(newTask: import("./TfliteManager").TfliteTask) {
-    return this.#tfliteManager.setTask(newTask);
+  get setTfliteTask() {
+    return this.#tfliteManager.setTask;
   }
 
   get tfliteSampleRate() {
     return this.#tfliteManager.sampleRate;
   }
-  /** @param {number} newSampleRate */
-  setTfliteSampleRate(newSampleRate: number) {
-    return this.#tfliteManager.setSampleRate(newSampleRate);
+  get setTfliteSampleRate() {
+    return this.#tfliteManager.setSampleRate;
   }
 
   get tfliteSensorTypes() {
@@ -756,9 +775,8 @@ class Device {
   get allowedTfliteSensorTypes() {
     return this.sensorTypes.filter((sensorType) => TfliteManager.SensorTypes.includes(sensorType));
   }
-  /** @param {SensorType[]} newSensorTypes */
-  setTfliteSensorTypes(newSensorTypes: SensorType[]) {
-    return this.#tfliteManager.setSensorTypes(newSensorTypes);
+  get setTfliteSensorTypes() {
+    return this.#tfliteManager.setSensorTypes;
   }
 
   get tfliteIsReady() {
@@ -770,9 +788,8 @@ class Device {
   get tfliteInferencingEnabled() {
     return this.#tfliteManager.inferencingEnabled;
   }
-  /** @param {boolean} inferencingEnabled */
-  async setTfliteInferencingEnabled(inferencingEnabled: boolean) {
-    return this.#tfliteManager.setInferencingEnabled(inferencingEnabled);
+  get setTfliteInferencingEnabled() {
+    return this.#tfliteManager.setInferencingEnabled;
   }
   async enableTfliteInferencing() {
     return this.setTfliteInferencingEnabled(true);
@@ -780,8 +797,8 @@ class Device {
   async disableTfliteInferencing() {
     return this.setTfliteInferencingEnabled(false);
   }
-  async toggleTfliteInferencing() {
-    return this.#tfliteManager.toggleInferencingEnabled();
+  get toggleTfliteInferencing() {
+    return this.#tfliteManager.toggleInferencingEnabled;
   }
 
   // TFLITE INFERENCE CONFIG
@@ -789,63 +806,56 @@ class Device {
   get tfliteCaptureDelay() {
     return this.#tfliteManager.captureDelay;
   }
-  /** @param {number} newCaptureDelay */
-  async setTfliteCaptureDelay(newCaptureDelay: number) {
-    return this.#tfliteManager.setCaptureDelay(newCaptureDelay);
+  get setTfliteCaptureDelay() {
+    return this.#tfliteManager.setCaptureDelay;
   }
   get tfliteThreshold() {
     return this.#tfliteManager.threshold;
   }
-  /** @param {number} newThreshold */
-  async setTfliteThreshold(newThreshold: number) {
-    return this.#tfliteManager.setThreshold(newThreshold);
+  get setTfliteThreshold() {
+    return this.#tfliteManager.setThreshold;
   }
 
   // FIRMWARE MANAGER
 
   #firmwareManager = new FirmwareManager();
 
-  /** @param {ArrayBuffer} data */
-  #sendSmpMessage(data: ArrayBuffer) {
-    this.#connectionManager.sendSmpMessage(data);
+  get #sendSmpMessage() {
+    return this.#connectionManager!.sendSmpMessage;
   }
 
-  /** @param {FileLike} file */
   async uploadFirmware(file: FileLike) {
     return this.#firmwareManager.uploadFirmware(file);
   }
 
   async reset() {
     await this.#firmwareManager.reset();
-    return this.#connectionManager.disconnect();
+    return this.#connectionManager!.disconnect();
   }
 
   get firmwareStatus() {
     return this.#firmwareManager.status;
   }
 
-  async getFirmwareImages() {
-    return this.#firmwareManager.getImages();
+  get getFirmwareImages() {
+    return this.#firmwareManager.getImages;
   }
   get firmwareImages() {
     return this.#firmwareManager.images;
   }
 
-  async eraseFirmwareImage() {
-    return this.#firmwareManager.eraseImage();
+  get eraseFirmwareImage() {
+    return this.#firmwareManager.eraseImage;
   }
-  /** @param {number} imageIndex */
-  async confirmFirmwareImage(imageIndex: number) {
-    return this.#firmwareManager.confirmImage(imageIndex);
+  get confirmFirmwareImage() {
+    return this.#firmwareManager.confirmImage;
   }
-  /** @param {number} imageIndex */
-  async testFirmwareImage(imageIndex: number) {
-    return this.#firmwareManager.testImage(imageIndex);
+  get testFirmwareImage() {
+    return this.#firmwareManager.testImage;
   }
 
   // CONNECTED DEVICES
 
-  /** @type {Device[]} */
   static #ConnectedDevices: Device[] = [];
   static get ConnectedDevices() {
     return this.#ConnectedDevices;
@@ -864,23 +874,10 @@ class Device {
     }
   }
 
-  /**
-   * @typedef {Object} LocalStorageDeviceInformation
-   * @property {string} bluetoothId
-   * @property {DeviceType} type
-   */
-
-  /**
-   * @typedef {Object} LocalStorageConfiguration
-   * @property {LocalStorageDeviceInformation[]} devices
-   */
-
-  /** @type {LocalStorageConfiguration} */
   static #DefaultLocalStorageConfiguration: LocalStorageConfiguration = {
     devices: [],
   };
-  /** @type {LocalStorageConfiguration?} */
-  static #LocalStorageConfiguration: LocalStorageConfiguration | null;
+  static #LocalStorageConfiguration?: LocalStorageConfiguration;
 
   static get CanUseLocalStorage() {
     return isInBrowser && window.localStorage;
@@ -916,7 +913,6 @@ class Device {
     }
   }
 
-  /** @param {Device} device */
   static #UpdateLocalStorageConfigurationForDevice(device: Device) {
     if (device.connectionType != "webBluetooth") {
       _console.log("localStorage is only for webBluetooth devices");
@@ -934,7 +930,6 @@ class Device {
   }
 
   // AVAILABLE DEVICES
-  /** @type {Device[]} */
   static #AvailableDevices: Device[] = [];
   static get AvailableDevices() {
     return this.#AvailableDevices;
@@ -947,8 +942,6 @@ class Device {
    * retrieves devices already connected via web bluetooth in other tabs/windows
    *
    * _only available on web-bluetooth enabled browsers_
-   *
-   * @returns {Promise<Device[]?>}
    */
   static async GetDevices(): Promise<Device[] | null> {
     if (!isInBrowser) {
@@ -1067,8 +1060,8 @@ class Device {
           }
           this.#SaveToLocalStorage();
         }
-        this.#dispatchEvent("deviceConnected", { device });
-        this.#dispatchEvent("deviceIsConnected", { device });
+        this.#DispatchEvent("deviceConnected", { device });
+        this.#DispatchEvent("deviceIsConnected", { device });
         this.#DispatchConnectedDevices();
       } else {
         _console.log("device already included");
@@ -1077,8 +1070,8 @@ class Device {
       if (this.#ConnectedDevices.includes(device)) {
         _console.log("removing device", device);
         this.#ConnectedDevices.splice(this.#ConnectedDevices.indexOf(device), 1);
-        this.#dispatchEvent("deviceDisconnected", { device });
-        this.#dispatchEvent("deviceIsConnected", { device });
+        this.#DispatchEvent("deviceDisconnected", { device });
+        this.#DispatchEvent("deviceIsConnected", { device });
         this.#DispatchConnectedDevices();
       } else {
         _console.log("device already not included");
@@ -1103,11 +1096,11 @@ class Device {
 
   static #DispatchAvailableDevices() {
     _console.log({ AvailableDevices: this.AvailableDevices });
-    this.#dispatchEvent("availableDevices", { availableDevices: this.AvailableDevices });
+    this.#DispatchEvent("availableDevices", { availableDevices: this.AvailableDevices });
   }
   static #DispatchConnectedDevices() {
     _console.log({ ConnectedDevices: this.ConnectedDevices });
-    this.#dispatchEvent("connectedDevices", { connectedDevices: this.ConnectedDevices });
+    this.#DispatchEvent("connectedDevices", { connectedDevices: this.ConnectedDevices });
   }
 
   static async Connect() {
