@@ -36,46 +36,46 @@ export type DeviceInformationMessageType = (typeof DeviceInformationMessageTypes
 export const DeviceInformationEventTypes = [...DeviceInformationMessageTypes, "deviceInformation"] as const;
 export type DeviceInformationEventType = (typeof DeviceInformationEventTypes)[number];
 
-interface ManufacturerNameMessage {
+interface ManufacturerNameEventMessage {
   manufacturerName: string;
 }
-interface ModelNumberMessage {
+interface ModelNumberEventMessage {
   modelNumber: string;
 }
-interface SoftwareRevisionMessage {
+interface SoftwareRevisionEventMessage {
   softwareRevision: string;
 }
-interface HardwareRevisionMessage {
+interface HardwareRevisionEventMessage {
   hardwareRevision: string;
 }
-interface FirmwareRevisionMessage {
+interface FirmwareRevisionEventMessage {
   firmwareRevision: string;
 }
-interface PnpIdMessage {
+interface PnpIdEventMessage {
   pnpId: PnpId;
 }
-interface SerialNumberMessage {
+interface SerialNumberEventMessage {
   serialNumber: string;
 }
-interface DeviceInformationMessage {
+interface DeviceInformationEventMessage {
   deviceInformation: DeviceInformation;
 }
 
-export interface DeviceInformationMessages {
-  manufacturerName: ManufacturerNameMessage;
-  modelNumber: ModelNumberMessage;
-  softwareRevision: SoftwareRevisionMessage;
-  hardwareRevision: HardwareRevisionMessage;
-  firmwareRevision: FirmwareRevisionMessage;
-  pnpId: PnpIdMessage;
-  serialNumber: SerialNumberMessage;
-  deviceInformation: DeviceInformationMessage;
+export interface DeviceInformationEventMessages {
+  manufacturerName: ManufacturerNameEventMessage;
+  modelNumber: ModelNumberEventMessage;
+  softwareRevision: SoftwareRevisionEventMessage;
+  hardwareRevision: HardwareRevisionEventMessage;
+  firmwareRevision: FirmwareRevisionEventMessage;
+  pnpId: PnpIdEventMessage;
+  serialNumber: SerialNumberEventMessage;
+  deviceInformation: DeviceInformationEventMessage;
 }
 
 export type DeviceInformationEventDispatcher = EventDispatcher<
   Device,
   DeviceInformationEventType,
-  DeviceInformationMessages
+  DeviceInformationEventMessages
 >;
 
 class DeviceInformationManager {

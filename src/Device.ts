@@ -64,7 +64,7 @@ import DeviceInformationManager, {
   DeviceInformationEventTypes,
   DeviceInformationMessageType,
   DeviceInformationMessageTypes,
-  DeviceInformationMessages,
+  DeviceInformationEventMessages,
 } from "./DeviceInformationManager";
 import InformationManager, {
   DeviceType,
@@ -73,7 +73,7 @@ import InformationManager, {
   InformationEventTypes,
   InformationMessageType,
   InformationMessageTypes,
-  InformationMessages,
+  InformationEventMessages,
   InsoleSides,
   SendInformationMessageCallback,
 } from "./InformationManager";
@@ -110,14 +110,17 @@ interface ConnectionEventMessages {
   isConnected: IsConnectedEventMessage;
 }
 
-interface BatteryLevelMessage {
+interface BatteryLevelEventMessage {
   batteryLevel: number;
+}
+interface BatteryLevelEventMessages {
+  batteryLevel: BatteryLevelEventMessage;
 }
 
 export type DeviceEventMessages = ConnectionEventMessages &
-  BatteryLevelMessage &
-  DeviceInformationMessages &
-  InformationMessages &
+  BatteryLevelEventMessages &
+  DeviceInformationEventMessages &
+  InformationEventMessages &
   SensorDataEventMessages &
   TfliteEventMessages &
   FileTransferEventMessages &
@@ -236,7 +239,7 @@ class Device {
   }
 
   #eventDispatcher: EventDispatcher<Device, DeviceEventType, DeviceEventMessages> = new EventDispatcher(
-    this,
+    this as Device,
     DeviceEventTypes
   );
   get addEventListener() {

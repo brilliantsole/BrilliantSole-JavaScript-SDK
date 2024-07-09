@@ -28,39 +28,39 @@ export type InformationMessageType = (typeof InformationMessageTypes)[number];
 export const InformationEventTypes = InformationMessageTypes;
 export type InformationEventType = (typeof InformationEventTypes)[number];
 
-interface BatteryCurrentMessage {
+interface BatteryCurrentEventMessage {
   batteryCurrent: number;
 }
-interface IsChargingMessage {
+interface IsChargingEventMessage {
   isCharging: boolean;
 }
-interface NameMessage {
+interface NameEventMessage {
   name: string;
 }
-interface TypeMessage {
+interface TypeEventMessage {
   type: DeviceType;
 }
-interface IdMessage {
+interface IdEventMessage {
   id: string;
 }
-interface MtuMessage {
+interface MtuEventMessage {
   mtu: number;
 }
-interface CurrentTimeMessage {
+interface CurrentTimeEventMessage {
   currentTime: number;
 }
 
-export interface InformationMessages {
-  isCharging: IsChargingMessage;
-  getBatteryCurrent: BatteryCurrentMessage;
-  getMtu: MtuMessage;
-  getId: IdMessage;
-  getName: NameMessage;
-  getType: TypeMessage;
-  getCurrentTime: CurrentTimeMessage;
+export interface InformationEventMessages {
+  isCharging: IsChargingEventMessage;
+  getBatteryCurrent: BatteryCurrentEventMessage;
+  getMtu: MtuEventMessage;
+  getId: IdEventMessage;
+  getName: NameEventMessage;
+  getType: TypeEventMessage;
+  getCurrentTime: CurrentTimeEventMessage;
 }
 
-export type InformationEventDispatcher = EventDispatcher<Device, InformationEventType, InformationMessages>;
+export type InformationEventDispatcher = EventDispatcher<Device, InformationEventType, InformationEventMessages>;
 export type SendInformationMessageCallback = SendMessageCallback<InformationMessageType>;
 
 class InformationManager {

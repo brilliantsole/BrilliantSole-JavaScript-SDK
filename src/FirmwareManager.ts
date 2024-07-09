@@ -22,6 +22,18 @@ export type FirmwareEventType = (typeof FirmwareEventTypes)[number];
 export const FirmwareStatuses = ["idle", "uploading", "uploaded", "pending", "testing", "erasing"] as const;
 export type FirmwareStatus = (typeof FirmwareStatuses)[number];
 
+export interface FirmwareImage {
+  slot: number;
+  active: boolean;
+  confirmed: boolean;
+  pending: boolean;
+  permanent: boolean;
+  bootable: boolean;
+  version: string;
+  hash?: Uint8Array;
+  empty?: boolean;
+}
+
 interface SmpEventMessage {
   dataView: DataView;
 }
@@ -42,18 +54,6 @@ export interface FirmwareEventMessages {
   firmwareUploadProgress: FirmwareUploadProgressEventMessage;
   firmwareStatus: FirmwareStatusEventMessage;
   firmwareUploadComplete: FirmwareUploadCompleteEventMessage;
-}
-
-export interface FirmwareImage {
-  slot: number;
-  active: boolean;
-  confirmed: boolean;
-  pending: boolean;
-  permanent: boolean;
-  bootable: boolean;
-  version: string;
-  hash?: Uint8Array;
-  empty?: boolean;
 }
 
 export type FirmwareEventDispatcher = EventDispatcher<Device, FirmwareEventType, FirmwareEventMessages>;
