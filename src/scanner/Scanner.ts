@@ -4,7 +4,7 @@ import BaseScanner from "./BaseScanner";
 
 const _console = createConsole("Scanner", { log: false });
 
-let scanner: BaseScanner | undefined;
+let scanner: typeof BaseScanner | undefined;
 
 if (NobleScanner.isSupported) {
   _console.log("using NobleScanner");

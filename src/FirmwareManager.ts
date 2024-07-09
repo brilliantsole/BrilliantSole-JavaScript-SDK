@@ -248,7 +248,7 @@ class FirmwareManager {
     this.#mcuManager.onImageUploadFinished(this.#onMcuImageUploadFinished.bind(this));
   }
 
-  #onMcuMessage({ op, group, id, data, length }) {
+  #onMcuMessage({ op, group, id, data, length }: { op: number; group: number; id: number; data: any; length: number }) {
     _console.log("onMcuMessage", ...arguments);
 
     switch (group) {
@@ -314,9 +314,9 @@ class FirmwareManager {
     this.#dispatchEvent("firmwareUploadComplete", {});
   }
 
-  #onMcuImageState(data) {
-    if (data.images) {
-      this.#images = data.images;
+  #onMcuImageState({ images }: { images?: FirmwareImage[] }) {
+    if (images) {
+      this.#images = images;
       _console.log("images", this.#images);
     } else {
       _console.log("no images found");

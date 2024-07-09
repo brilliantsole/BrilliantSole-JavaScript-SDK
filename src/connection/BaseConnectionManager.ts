@@ -1,29 +1,23 @@
 import { createConsole } from "../utils/Console";
 import Timer from "../utils/Timer";
 
-import FileTransferManager from "../FileTransferManager";
-import TfliteManager from "../TfliteManager";
+import { FileTransferMessageTypes } from "../FileTransferManager";
+import { TfliteMessageTypes } from "../TfliteManager";
 import { concatenateArrayBuffers } from "../utils/ArrayBufferUtils";
 import { parseMessage } from "../utils/ParseUtils";
-import DeviceInformationManager from "../DeviceInformationManager";
-import InformationManager from "../InformationManager";
-import VibrationManager, { VibrationMessageTypes } from "../vibration/VibrationManager";
-import SensorConfigurationManager from "../sensor/SensorConfigurationManager";
-import SensorDataManager from "../sensor/SensorDataManager";
+import { DeviceInformationMessageTypes } from "../DeviceInformationManager";
+import { InformationMessageTypes } from "../InformationManager";
+import { VibrationMessageTypes } from "../vibration/VibrationManager";
+import { SensorConfigurationMessageTypes } from "../sensor/SensorConfigurationManager";
+import { SensorDataMessageTypes } from "../sensor/SensorDataManager";
 
 const _console = createConsole("BaseConnectionManager", { log: true });
 
-import { FileTransferMessageType } from "../FileTransferManager";
-import { TfliteMessageType } from "../TfliteManager";
-import { FirmwareMessageType } from "../FirmwareManager";
-import { DeviceInformationMessageType } from "../DeviceInformationManager";
-import { InformationMessageType } from "../InformationManager";
-import { SensorConfigurationMessageType } from "../sensor/SensorConfigurationManager";
-import { SensorDataMessageType } from "../sensor/SensorDataManager";
-import { VibrationMessageType } from "../vibration/VibrationManager";
+const ConnectionTypes = ["webBluetooth", "noble", "webSocketClient"] as const;
+export type ConnectionType = (typeof ConnectionTypes)[number];
 
-export type ConnectionType = "webBluetooth" | "noble" | "webSocketClient";
-export type ConnectionStatus = "not connected" | "connecting" | "connected" | "disconnecting";
+const ConnectionStatuses = ["not connected", "connecting", "connected", "disconnecting"] as const;
+export type ConnectionStatus = (typeof ConnectionStatuses)[number];
 
 export interface TxMessage {
   type: TxRxMessageType;
@@ -31,17 +25,17 @@ export interface TxMessage {
 }
 
 export const TxRxMessageTypes = [
-  ...InformationManager.MessageTypes,
-  ...SensorConfigurationManager.MessageTypes,
-  ...SensorDataManager.MessageTypes,
+  ...InformationMessageTypes,
+  ...SensorConfigurationMessageTypes,
+  ...SensorDataMessageTypes,
   ...VibrationMessageTypes,
-  ...TfliteManager.MessageTypes,
-  ...FileTransferManager.MessageTypes,
+  ...TfliteMessageTypes,
+  ...FileTransferMessageTypes,
 ] as const;
 export type TxRxMessageType = (typeof TxRxMessageTypes)[number];
 
 export const ConnectionMessageTypes = [
-  ...DeviceInformationManager.MessageTypes,
+  ...DeviceInformationMessageTypes,
   "batteryLevel",
   "smp",
   "rx",
@@ -54,13 +48,10 @@ export type ConnectionStatusCallback = (status: ConnectionStatus) => void;
 export type MessageReceivedCallback = (messageType: ConnectionMessageType, dataView: DataView) => void;
 
 abstract class BaseConnectionManager {
-  // MESSAGES
-
-  static #AssertValidTxRxMessageType(messageType: ConnectionMessageType) {
+  static #AssertValidTxRxMessageType(messageType: TxRxMessageType) {
     _console.assertEnumWithError(messageType, TxRxMessageTypes);
   }
 
-  // ID
   abstract get bluetoothId(): string;
 
   // CALLBACKS
@@ -81,7 +72,6 @@ abstract class BaseConnectionManager {
   static get isSupported() {
     return false;
   }
-  /** @type {boolean} */
   get isSupported() {
     return this.#baseConstructor.isSupported;
   }
