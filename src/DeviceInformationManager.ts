@@ -1,8 +1,16 @@
+import Device from "./Device";
 import { createConsole } from "./utils/Console";
 import EventDispatcher from "./utils/EventDispatcher";
 import { textDecoder } from "./utils/Text";
 
 const _console = createConsole("DeviceInformationManager", { log: true });
+
+export interface PnpId {
+  source: "Bluetooth" | "USB";
+  vendorId: number;
+  productId: number;
+  productVersion: number;
+}
 
 export interface DeviceInformation {
   manufacturerName: string;
@@ -14,153 +22,126 @@ export interface DeviceInformation {
   serialNumber: string;
 }
 
-export interface PnpId {
-  source: "Bluetooth" | "USB";
-  vendorId: number;
-  productId: number;
-  productVersion: number;
+export const DeviceInformationMessageTypes = [
+  "manufacturerName",
+  "modelNumber",
+  "softwareRevision",
+  "hardwareRevision",
+  "firmwareRevision",
+  "pnpId",
+  "serialNumber",
+] as const;
+export type DeviceInformationMessageType = (typeof DeviceInformationMessageTypes)[number];
+
+export const DeviceInformationManagerEventTypes = [...DeviceInformationMessageTypes, "deviceInformation"] as const;
+export type DeviceInformationManagerEventType = (typeof DeviceInformationManagerEventTypes)[number];
+
+interface ManufacturerNameMessage {
+  manufacturerName: string;
+}
+interface ModelNumberMessage {
+  modelNumber: string;
+}
+interface SoftwareRevisionMessage {
+  softwareRevision: string;
+}
+interface HardwareRevisionMessage {
+  hardwareRevision: string;
+}
+interface FirmwareRevisionMessage {
+  firmwareRevision: string;
+}
+interface PnpIdMessage {
+  pnpId: PnpId;
+}
+interface SerialNumberMessage {
+  serialNumber: string;
+}
+interface DeviceInformationMessage {
+  deviceInformation: DeviceInformation;
 }
 
-export type DeviceInformationMessageType =
-  | "manufacturerName"
-  | "modelNumber"
-  | "softwareRevision"
-  | "hardwareRevision"
-  | "firmwareRevision"
-  | "pnpId"
-  | "serialNumber";
-
-export type DeviceInformationManagerEventType = DeviceInformationMessageType | "deviceInformation";
-
-type EventDispatcherOptions = import("./utils/EventDispatcher").EventDispatcherOptions;
-
-type BaseDeviceEvent = import("./Device").BaseDeviceEvent;
-
-export interface BaseDeviceInformationManagerEvent {
-  type: DeviceInformationManagerEventType;
-  message: { deviceInformation: DeviceInformation };
+interface DeviceInformationMessages {
+  manufacturerName: ManufacturerNameMessage;
+  modelNumber: ModelNumberMessage;
+  softwareRevision: SoftwareRevisionMessage;
+  hardwareRevision: HardwareRevisionMessage;
+  firmwareRevision: FirmwareRevisionMessage;
+  pnpId: PnpIdMessage;
+  serialNumber: SerialNumberMessage;
+  deviceInformation: DeviceInformationMessage;
 }
-export type DeviceInformationManagerEvent = BaseDeviceEvent & BaseDeviceInformationManagerEvent;
 
 class DeviceInformationManager {
-  // MESSAGE TYPES
-
-  /** @type {DeviceInformationMessageType[]} */
-  static #MessageTypes = [
-    "manufacturerName",
-    "modelNumber",
-    "softwareRevision",
-    "hardwareRevision",
-    "firmwareRevision",
-    "pnpId",
-    "serialNumber",
-  ];
-  static get MessageTypes() {
-    return this.#MessageTypes;
-  }
-  get messageTypes() {
-    return DeviceInformationManager.MessageTypes;
+  eventDispatcher!: EventDispatcher<typeof Device, DeviceInformationManagerEventType, DeviceInformationMessages>;
+  get #dispatchEvent() {
+    return this.eventDispatcher.dispatchEvent;
   }
 
-  // EVENT DISPATCHER
-
-  /** @type {DeviceInformationManagerEventType[]} */
-  static #EventTypes = [...this.#MessageTypes, "deviceInformation"];
-  static get EventTypes() {
-    return this.#EventTypes;
+  #information: Partial<DeviceInformation> = {};
+  get information() {
+    return this.#information as DeviceInformation;
   }
-  get eventTypes() {
-    return DeviceInformationManager.#EventTypes;
-  }
-  /** @type {EventDispatcher} */
-  eventDispatcher;
-
-  /**
-   * @param {DeviceInformationManagerEvent} event
-   */
-  #dispatchEvent(event) {
-    this.eventDispatcher.dispatchEvent(event);
-  }
-
-  // PROPERTIES
-
-  /** @type {DeviceInformation} */
-  information = {
-    manufacturerName: null,
-    modelNumber: null,
-    softwareRevision: null,
-    hardwareRevision: null,
-    firmwareRevision: null,
-    pnpId: null,
-  };
   clear() {
-    for (const key in this.information) {
-      this.information[key] = null;
-    }
+    this.#information = {};
   }
   get #isComplete() {
-    return Object.values(this.information).every((value) => value != null);
+    return DeviceInformationMessageTypes.every((key) => key in this.#information);
   }
 
-  /** @param {DeviceInformation} partialDeviceInformation */
-  #update(partialDeviceInformation) {
+  #update(partialDeviceInformation: Partial<DeviceInformation>) {
     _console.log({ partialDeviceInformation });
-    for (const deviceInformationName in partialDeviceInformation) {
-      this.#dispatchEvent({
-        type: deviceInformationName,
-        message: { [deviceInformationName]: partialDeviceInformation[deviceInformationName] },
+    const deviceInformationNames = Object.keys(partialDeviceInformation) as (keyof DeviceInformation)[];
+    deviceInformationNames.forEach((deviceInformationName) => {
+      // @ts-expect-error
+      this.#dispatchEvent(deviceInformationName, {
+        [deviceInformationName]: partialDeviceInformation[deviceInformationName],
       });
-    }
+    });
 
-    Object.assign(this.information, partialDeviceInformation);
-    _console.log({ deviceInformation: this.information });
+    Object.assign(this.#information, partialDeviceInformation);
+    _console.log({ deviceInformation: this.#information });
     if (this.#isComplete) {
       _console.log("completed deviceInformation");
-      this.#dispatchEvent({ type: "deviceInformation", message: { deviceInformation: this.information } });
+      this.#dispatchEvent("deviceInformation", { deviceInformation: this.information });
     }
   }
 
-  // MESSAGE
-
-  /**
-   * @param {DeviceInformationMessageType} messageType
-   * @param {DataView} dataView
-   */
-  parseMessage(messageType, dataView) {
+  parseMessage(messageType: DeviceInformationMessageType, dataView: DataView) {
     _console.log({ messageType });
 
     switch (messageType) {
       case "manufacturerName":
-        const manufacturerName = textDecoder.decode(dataView);
+        const manufacturerName = textDecoder.decode(dataView.buffer);
         _console.log({ manufacturerName });
         this.#update({ manufacturerName });
         break;
       case "modelNumber":
-        const modelNumber = textDecoder.decode(dataView);
+        const modelNumber = textDecoder.decode(dataView.buffer);
         _console.log({ modelNumber });
         this.#update({ modelNumber });
         break;
       case "softwareRevision":
-        const softwareRevision = textDecoder.decode(dataView);
+        const softwareRevision = textDecoder.decode(dataView.buffer);
         _console.log({ softwareRevision });
         this.#update({ softwareRevision });
         break;
       case "hardwareRevision":
-        const hardwareRevision = textDecoder.decode(dataView);
+        const hardwareRevision = textDecoder.decode(dataView.buffer);
         _console.log({ hardwareRevision });
         this.#update({ hardwareRevision });
         break;
       case "firmwareRevision":
-        const firmwareRevision = textDecoder.decode(dataView);
+        const firmwareRevision = textDecoder.decode(dataView.buffer);
         _console.log({ firmwareRevision });
         this.#update({ firmwareRevision });
         break;
       case "pnpId":
-        /** @type {PnpId} */
-        const pnpId = {
+        const pnpId: PnpId = {
           source: dataView.getUint8(0) === 1 ? "Bluetooth" : "USB",
           productId: dataView.getUint16(3, true),
           productVersion: dataView.getUint16(5, true),
+          vendorId: 0,
         };
         if (pnpId.source == "Bluetooth") {
           pnpId.vendorId = dataView.getUint16(1, true);
@@ -171,7 +152,7 @@ class DeviceInformationManager {
         this.#update({ pnpId });
         break;
       case "serialNumber":
-        const serialNumber = textDecoder.decode(dataView);
+        const serialNumber = textDecoder.decode(dataView.buffer);
         _console.log({ serialNumber });
         // will only be used for node
         break;
