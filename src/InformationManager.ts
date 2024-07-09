@@ -25,6 +25,9 @@ export const InformationMessageTypes = [
 ] as const;
 export type InformationMessageType = (typeof InformationMessageTypes)[number];
 
+export const InformationEventTypes = InformationMessageTypes;
+export type InformationEventType = (typeof InformationEventTypes)[number];
+
 interface BatteryCurrentMessage {
   batteryCurrent: number;
 }
@@ -47,7 +50,7 @@ interface CurrentTimeMessage {
   currentTime: number;
 }
 
-interface InformationMessages {
+export interface InformationMessages {
   isCharging: IsChargingMessage;
   getBatteryCurrent: BatteryCurrentMessage;
   getMtu: MtuMessage;
@@ -57,8 +60,13 @@ interface InformationMessages {
   getCurrentTime: CurrentTimeMessage;
 }
 
+export type InformationEventDispatcher = EventDispatcher<Device, InformationEventType, InformationMessages>;
+export type SendInformationMessageCallback = SendMessageCallback<InformationMessageType>;
+
 class InformationManager {
-  eventDispatcher!: EventDispatcher<typeof Device.prototype, InformationMessageType, InformationMessages>;
+  sendMessage!: SendInformationMessageCallback;
+
+  eventDispatcher!: InformationEventDispatcher;
   get #dispatchEvent() {
     return this.eventDispatcher.dispatchEvent;
   }
@@ -291,8 +299,6 @@ class InformationManager {
         throw Error(`uncaught messageType ${messageType}`);
     }
   }
-
-  sendMessage!: SendMessageCallback<InformationMessageType>;
 
   clear() {
     this.#isCurrentTimeSet = false;

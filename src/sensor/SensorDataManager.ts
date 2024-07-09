@@ -1,10 +1,16 @@
 import { createConsole } from "../utils/Console";
 import { parseTimestamp } from "../utils/MathUtils";
-import PressureSensorDataManager, { PressureDataMessages, PressureDataMessage } from "./PressureSensorDataManager";
-import MotionSensorDataManager, { MotionSensorDataMessages, MotionSensorDataMessage } from "./MotionSensorDataManager";
+import PressureSensorDataManager, {
+  PressureDataEventMessages,
+  PressureDataEventMessage,
+} from "./PressureSensorDataManager";
+import MotionSensorDataManager, {
+  MotionSensorDataEventMessages,
+  MotionSensorDataEventMessage,
+} from "./MotionSensorDataManager";
 import BarometerSensorDataManager, {
-  BarometerSensorDataMessages,
-  BarometerSensorDataMessage,
+  BarometerSensorDataEventMessages,
+  BarometerSensorDataEventMessage,
 } from "./BarometerSensorDataManager";
 import { parseMessage } from "../utils/ParseUtils";
 import EventDispatcher from "../utils/EventDispatcher";
@@ -29,25 +35,28 @@ export const ContinuousSensorTypes = [
 ] as const;
 export type ContinuousSensorType = (typeof ContinuousSensorTypes)[number];
 
-export const SensorDataMessageTypes = ["getPressurePositions", "getSensorScalars", "sensorData"] as const;
-export type SensorDataMessageType = (typeof SensorDataMessageTypes)[number];
+export const SensorDataEventMessageTypes = ["getPressurePositions", "getSensorScalars", "sensorData"] as const;
+export type SensorDataEventMessageType = (typeof SensorDataEventMessageTypes)[number];
 
-export const SensorDataManagerEventTypes = [...SensorDataMessageTypes, ...SensorTypes] as const;
+export const SensorDataManagerEventTypes = [...SensorDataEventMessageTypes, ...SensorTypes] as const;
 export type SensorDataManagerEventType = (typeof SensorDataManagerEventTypes)[number];
 
-export interface BaseSensorDataMessage {
+export interface BaseSensorDataEventMessage {
   sensorType: SensorType;
   timestamp: number;
 }
-export type SensorDataMessage = PressureDataMessage | MotionSensorDataMessage | BarometerSensorDataMessage;
-interface AnySensorDataMessages {
-  sensorData: SensorDataMessage;
+export type SensorDataEventMessage =
+  | PressureDataEventMessage
+  | MotionSensorDataEventMessage
+  | BarometerSensorDataEventMessage;
+interface AnySensorDataEventMessages {
+  sensorData: SensorDataEventMessage;
 }
 
-export type SensorDataMessages = BarometerSensorDataMessages &
-  MotionSensorDataMessages &
-  PressureDataMessages &
-  AnySensorDataMessages;
+export type SensorDataEventMessages = BarometerSensorDataEventMessages &
+  MotionSensorDataEventMessages &
+  PressureDataEventMessages &
+  AnySensorDataEventMessages;
 
 class SensorDataManager {
   pressureSensorDataManager = new PressureSensorDataManager();
@@ -64,12 +73,12 @@ class SensorDataManager {
     _console.assertWithError(sensorTypeEnum in SensorTypes, `invalid sensorTypeEnum ${sensorTypeEnum}`);
   }
 
-  eventDispatcher!: EventDispatcher<typeof Device.prototype, SensorEventType, SensorDataMessages>;
+  eventDispatcher!: EventDispatcher<Device, SensorEventType, SensorDataEventMessages>;
   get dispatchEvent() {
     return this.eventDispatcher.dispatchEvent;
   }
 
-  parseMessage(messageType: SensorDataMessageType, dataView: DataView) {
+  parseMessage(messageType: SensorDataEventMessageType, dataView: DataView) {
     _console.log({ messageType });
 
     switch (messageType) {

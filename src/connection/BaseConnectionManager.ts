@@ -9,14 +9,14 @@ import { DeviceInformationMessageTypes } from "../DeviceInformationManager";
 import { InformationMessageTypes } from "../InformationManager";
 import { VibrationMessageTypes } from "../vibration/VibrationManager";
 import { SensorConfigurationMessageTypes } from "../sensor/SensorConfigurationManager";
-import { SensorDataMessageTypes } from "../sensor/SensorDataManager";
+import { SensorDataManagerEventTypes } from "../sensor/SensorDataManager";
 
 const _console = createConsole("BaseConnectionManager", { log: true });
 
-const ConnectionTypes = ["webBluetooth", "noble", "webSocketClient"] as const;
+export const ConnectionTypes = ["webBluetooth", "noble", "webSocketClient"] as const;
 export type ConnectionType = (typeof ConnectionTypes)[number];
 
-const ConnectionStatuses = ["not connected", "connecting", "connected", "disconnecting"] as const;
+export const ConnectionStatuses = ["not connected", "connecting", "connected", "disconnecting"] as const;
 export type ConnectionStatus = (typeof ConnectionStatuses)[number];
 
 export interface TxMessage {
@@ -27,7 +27,7 @@ export interface TxMessage {
 export const TxRxMessageTypes = [
   ...InformationMessageTypes,
   ...SensorConfigurationMessageTypes,
-  ...SensorDataMessageTypes,
+  ...SensorDataManagerEventTypes,
   ...VibrationMessageTypes,
   ...TfliteMessageTypes,
   ...FileTransferMessageTypes,
@@ -234,7 +234,7 @@ abstract class BaseConnectionManager {
     this.#pendingMessages.length = 0;
   }
 
-  mtu: number | undefined;
+  mtu?: number;
 
   async sendTxData(data: ArrayBuffer) {
     _console.log("sendTxData", data);

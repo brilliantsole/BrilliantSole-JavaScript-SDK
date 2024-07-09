@@ -41,7 +41,11 @@ export interface VibrationConfiguration {
   waveform?: VibrationWaveformConfiguration;
 }
 
+export type SendVibrationMessageCallback = SendMessageCallback<VibrationMessageType>;
+
 class VibrationManager {
+  sendMessage!: SendVibrationMessageCallback;
+
   #verifyLocation(location: VibrationLocation) {
     _console.assertTypeWithError(location, "string");
     _console.assertWithError(VibrationLocations.includes(location), `invalid location "${location}"`);
@@ -334,8 +338,6 @@ class VibrationManager {
     });
     await this.sendMessage([{ type: "triggerVibration", data: triggerVibrationData }], sendImmediately);
   }
-
-  sendMessage!: SendMessageCallback<VibrationMessageType>;
 }
 
 export default VibrationManager;

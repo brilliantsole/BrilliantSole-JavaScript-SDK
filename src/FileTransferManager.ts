@@ -42,48 +42,53 @@ export const FileTransferEventTypes = [
 ] as const;
 export type FileTransferEventType = (typeof FileTransferEventTypes)[number];
 
-interface MaxFileLengthMessage {
+interface MaxFileLengthEventMessage {
   maxFileLength: number;
 }
-interface FileTypeMessage {
+interface FileTypeEventMessage {
   fileType: FileType;
 }
-interface FileTransferLengthMessage {
+interface FileTransferLengthEventMessage {
   fileLength: number;
 }
-interface FileChecksumMessage {
+interface FileChecksumEventMessage {
   fileChecksum: number;
 }
-interface FileTransferStatusMessage {
+interface FileTransferStatusEventMessage {
   fileTransferStatus: FileTransferStatus;
 }
-interface FileBlockMessage {
+interface FileBlockEventMessage {
   fileTransferBlock: DataView;
 }
-interface FileTransferProgress {
+interface FileTransferProgressEventMessage {
   progress: number;
 }
-interface FileTransferComplete {
+interface FileTransferCompleteEventMessage {
   direction: FileTransferDirection;
 }
-interface FileReceivedMessage {
+interface FileReceivedEventMessage {
   file: File | Blob;
 }
 
-interface FileTransferMessages {
-  maxFileLength: MaxFileLengthMessage;
-  getFileType: FileTypeMessage;
-  getFileLength: FileTransferLengthMessage;
-  getFileChecksum: FileChecksumMessage;
-  fileTransferStatus: FileTransferStatusMessage;
-  getFileBlock: FileBlockMessage;
-  fileTransferProgress: FileTransferProgress;
-  fileTransferComplete: FileTransferComplete;
-  fileReceived: FileReceivedMessage;
+export interface FileTransferEventMessages {
+  maxFileLength: MaxFileLengthEventMessage;
+  getFileType: FileTypeEventMessage;
+  getFileLength: FileTransferLengthEventMessage;
+  getFileChecksum: FileChecksumEventMessage;
+  fileTransferStatus: FileTransferStatusEventMessage;
+  getFileBlock: FileBlockEventMessage;
+  fileTransferProgress: FileTransferProgressEventMessage;
+  fileTransferComplete: FileTransferCompleteEventMessage;
+  fileReceived: FileReceivedEventMessage;
 }
 
+export type FileTransferEventDispatcher = EventDispatcher<Device, FileTransferEventType, FileTransferEventMessages>;
+export type SendFileTransferMessageCallback = SendMessageCallback<FileTransferMessageType>;
+
 class FileTransferManager {
-  eventDispatcher!: EventDispatcher<typeof Device.prototype, FileTransferEventType, FileTransferMessages>;
+  sendMessage!: SendFileTransferMessageCallback;
+
+  eventDispatcher!: FileTransferEventDispatcher;
   get addEventListener() {
     return this.eventDispatcher.addEventListener;
   }
@@ -412,8 +417,6 @@ class FileTransferManager {
     this.#assertIsNotIdle();
     await this.#setCommand("cancel");
   }
-
-  sendMessage!: SendMessageCallback<FileTransferMessageType>;
 }
 
 export default FileTransferManager;

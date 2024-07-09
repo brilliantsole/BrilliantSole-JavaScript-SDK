@@ -33,8 +33,8 @@ export const DeviceInformationMessageTypes = [
 ] as const;
 export type DeviceInformationMessageType = (typeof DeviceInformationMessageTypes)[number];
 
-export const DeviceInformationManagerEventTypes = [...DeviceInformationMessageTypes, "deviceInformation"] as const;
-export type DeviceInformationManagerEventType = (typeof DeviceInformationManagerEventTypes)[number];
+export const DeviceInformationEventTypes = [...DeviceInformationMessageTypes, "deviceInformation"] as const;
+export type DeviceInformationEventType = (typeof DeviceInformationEventTypes)[number];
 
 interface ManufacturerNameMessage {
   manufacturerName: string;
@@ -61,7 +61,7 @@ interface DeviceInformationMessage {
   deviceInformation: DeviceInformation;
 }
 
-interface DeviceInformationMessages {
+export interface DeviceInformationMessages {
   manufacturerName: ManufacturerNameMessage;
   modelNumber: ModelNumberMessage;
   softwareRevision: SoftwareRevisionMessage;
@@ -72,12 +72,14 @@ interface DeviceInformationMessages {
   deviceInformation: DeviceInformationMessage;
 }
 
+export type DeviceInformationEventDispatcher = EventDispatcher<
+  Device,
+  DeviceInformationEventType,
+  DeviceInformationMessages
+>;
+
 class DeviceInformationManager {
-  eventDispatcher!: EventDispatcher<
-    typeof Device.prototype,
-    DeviceInformationManagerEventType,
-    DeviceInformationMessages
-  >;
+  eventDispatcher!: DeviceInformationEventDispatcher;
   get #dispatchEvent() {
     return this.eventDispatcher.dispatchEvent;
   }

@@ -6,15 +6,15 @@ export type BarometerSensorType = (typeof BarometerSensorTypes)[number];
 export const ContinuousBarometerSensorTypes = BarometerSensorTypes;
 export type ContinuousBarometerSensorType = (typeof ContinuousBarometerSensorTypes)[number];
 
-import { BaseSensorDataMessage } from "./SensorDataManager";
-export interface BarometerSensorDataMessage extends BaseSensorDataMessage {
+import { BaseSensorDataEventMessage } from "./SensorDataManager";
+export interface BarometerSensorDataEventMessage extends BaseSensorDataEventMessage {
   sensorType: "barometer";
   barometer: number;
   //altitude: number;
 }
 
-export interface BarometerSensorDataMessages {
-  barometer: BarometerSensorDataMessage;
+export interface BarometerSensorDataEventMessages {
+  barometer: BarometerSensorDataEventMessage;
 }
 
 const _console = createConsole("BarometerSensorDataManager", { log: true });

@@ -32,15 +32,15 @@ export interface PressureData {
   normalizedCenter?: CenterOfPressure;
 }
 
-import { BaseSensorDataMessage } from "./SensorDataManager";
+import { BaseSensorDataEventMessage } from "./SensorDataManager";
 
-export interface PressureDataMessage extends BaseSensorDataMessage {
+export interface PressureDataEventMessage extends BaseSensorDataEventMessage {
   sensorType: "pressure";
   pressure: PressureData;
 }
 
-export interface PressureDataMessages {
-  pressure: PressureDataMessage;
+export interface PressureDataEventMessages {
+  pressure: PressureDataEventMessage;
 }
 
 class PressureSensorDataManager {

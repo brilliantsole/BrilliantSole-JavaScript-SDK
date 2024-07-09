@@ -56,6 +56,8 @@ export interface FirmwareImage {
   empty?: boolean;
 }
 
+export type FirmwareEventDispatcher = EventDispatcher<Device, FirmwareEventType, FirmwareEventMessages>;
+
 class FirmwareManager {
   sendMessage!: SendSmpMessageCallback;
 
@@ -63,7 +65,7 @@ class FirmwareManager {
     this.#assignMcuManagerCallbacks();
   }
 
-  eventDispatcher!: EventDispatcher<Device, FirmwareEventType, FirmwareEventMessages>;
+  eventDispatcher!: FirmwareEventDispatcher;
   get addEventListenter() {
     return this.eventDispatcher.addEventListener;
   }

@@ -30,47 +30,50 @@ export const TfliteMessageTypes = [
 ] as const;
 export type TfliteMessageType = (typeof TfliteMessageTypes)[number];
 
+export const TfliteEventTypes = TfliteMessageTypes;
+export type TfliteEventType = (typeof TfliteEventTypes)[number];
+
 export const TfliteTasks = ["classification", "regression"] as const;
 export type TfliteTask = (typeof TfliteTasks)[number];
 
-interface TfliteNameMessage {
+interface TfliteNameEventMessage {
   tfliteName: string;
 }
-interface TfliteTaskMessage {
+interface TfliteTaskEventMessage {
   tfliteTask: TfliteTask;
 }
-interface TfliteSampleRateMessage {
+interface TfliteSampleRateEventMessage {
   tfliteSampleRate: number;
 }
-interface TfliteSensorTypesMessage {
+interface TfliteSensorTypesEventMessage {
   tfliteSensorTypes: SensorType[];
 }
-interface TfliteIsReadyMessage {
+interface TfliteIsReadyEventMessage {
   tfliteIsReady: boolean;
 }
-interface TfliteCaptureDelayMessage {
+interface TfliteCaptureDelayEventMessage {
   tfliteCaptureDelay: number;
 }
-interface TfliteThresholdMessage {
+interface TfliteThresholdEventMessage {
   tfliteThreshold: number;
 }
-interface TfliteInferencingEnabledMessage {
+interface TfliteInferencingEnabledEventMessage {
   tfliteInferencingEnabled: boolean;
 }
-interface TfliteInferenceMessage {
+interface TfliteInferenceEventMessage {
   tfliteInference: TfliteInference;
 }
 
-export interface TfliteMessages {
-  getTfliteName: TfliteNameMessage;
-  getTfliteTask: TfliteTaskMessage;
-  getTfliteSampleRate: TfliteSampleRateMessage;
-  getTfliteSensorTypes: TfliteSensorTypesMessage;
-  tfliteIsReady: TfliteIsReadyMessage;
-  getTfliteCaptureDelay: TfliteCaptureDelayMessage;
-  getTfliteThreshold: TfliteThresholdMessage;
-  getTfliteInferencingEnabled: TfliteInferencingEnabledMessage;
-  tfliteInference: TfliteInferenceMessage;
+export interface TfliteEventMessages {
+  getTfliteName: TfliteNameEventMessage;
+  getTfliteTask: TfliteTaskEventMessage;
+  getTfliteSampleRate: TfliteSampleRateEventMessage;
+  getTfliteSensorTypes: TfliteSensorTypesEventMessage;
+  tfliteIsReady: TfliteIsReadyEventMessage;
+  getTfliteCaptureDelay: TfliteCaptureDelayEventMessage;
+  getTfliteThreshold: TfliteThresholdEventMessage;
+  getTfliteInferencingEnabled: TfliteInferencingEnabledEventMessage;
+  tfliteInference: TfliteInferenceEventMessage;
 }
 
 export interface TfliteInference {
@@ -78,7 +81,12 @@ export interface TfliteInference {
   values: number[];
 }
 
+export type TfliteEventDispatcher = EventDispatcher<Device, TfliteEventType, TfliteEventMessages>;
+export type SendTfliteMessageCallback = SendMessageCallback<TfliteMessageType>;
+
 class TfliteManager {
+  sendMessage!: SendTfliteMessageCallback;
+
   #assertValidTask(task: TfliteTask) {
     _console.assertEnumWithError(task, TfliteTasks);
   }
@@ -86,7 +94,7 @@ class TfliteManager {
     _console.assertWithError(taskEnum in TfliteTasks, `invalid taskEnum ${taskEnum}`);
   }
 
-  eventDispatcher!: EventDispatcher<typeof Device.prototype, TfliteMessageType, TfliteMessages>;
+  eventDispatcher!: TfliteEventDispatcher;
   get addEventListenter() {
     return this.eventDispatcher.addEventListener;
   }
@@ -447,8 +455,6 @@ class TfliteManager {
         throw Error(`uncaught messageType ${messageType}`);
     }
   }
-
-  sendMessage!: SendMessageCallback<TfliteMessageType>;
 }
 
 export default TfliteManager;

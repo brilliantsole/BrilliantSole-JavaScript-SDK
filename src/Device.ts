@@ -1,143 +1,137 @@
 import { createConsole } from "./utils/Console";
 import EventDispatcher from "./utils/EventDispatcher";
-import BaseConnectionManager from "./connection/BaseConnectionManager";
+import BaseConnectionManager, {
+  TxMessage,
+  TxRxMessageType,
+  ConnectionStatuses,
+  ConnectionStatus,
+  ConnectionMessageTypes,
+  ConnectionMessageType,
+} from "./connection/BaseConnectionManager";
 import { isInBluefy, isInBrowser, isInNode } from "./utils/environment";
 import WebBluetoothConnectionManager from "./connection/bluetooth/WebBluetoothConnectionManager";
-import SensorConfigurationManager from "./sensor/SensorConfigurationManager";
-import SensorDataManager from "./sensor/SensorDataManager";
-import VibrationManager from "./vibration/VibrationManager";
-import FileTransferManager from "./FileTransferManager";
-import TfliteManager from "./TfliteManager";
-import FirmwareManager from "./FirmwareManager";
-import DeviceInformationManager from "./DeviceInformationManager";
-import InformationManager from "./InformationManager";
+import SensorConfigurationManager, {
+  SendSensorConfigurationMessageCallback,
+  SensorConfiguration,
+  SensorConfigurationEventDispatcher,
+} from "./sensor/SensorConfigurationManager";
+import SensorDataManager, { SensorEventTypes, SensorType } from "./sensor/SensorDataManager";
+import VibrationManager, { SendVibrationMessageCallback, VibrationConfiguration } from "./vibration/VibrationManager";
+import FileTransferManager, {
+  FileTransferEventType,
+  FileTransferEventTypes,
+  FileTransferEventMessages,
+  FileTransferEventDispatcher,
+  SendFileTransferMessageCallback,
+} from "./FileTransferManager";
+import TfliteManager, {
+  TfliteEventType,
+  TfliteEventTypes,
+  TfliteEventMessages,
+  TfliteEventDispatcher,
+  SendTfliteMessageCallback,
+} from "./TfliteManager";
+import FirmwareManager, {
+  FirmwareEventDispatcher,
+  FirmwareEventMessages,
+  FirmwareEventType,
+  FirmwareEventTypes,
+} from "./FirmwareManager";
+import DeviceInformationManager, {
+  DeviceInformationEventDispatcher,
+  DeviceInformationEventType,
+  DeviceInformationEventTypes,
+  DeviceInformationMessages,
+} from "./DeviceInformationManager";
+import InformationManager, {
+  InformationEventDispatcher,
+  InformationEventType,
+  InformationEventTypes,
+  InformationMessages,
+  SendInformationMessageCallback,
+} from "./InformationManager";
+import { FileLike } from "./utils/ArrayBufferUtils";
 
 const _console = createConsole("Device", { log: true });
 
-/** @typedef {import("./connection/BaseConnectionManager").ConnectionMessageType} ConnectionMessageType */
-/** @typedef {import("./sensor/SensorDataManager").SensorType} SensorType */
+export const ConnectionEventTypes = [...ConnectionStatuses, "connectionStatus", "isConnected"] as const;
+export type ConnectionEventType = (typeof ConnectionEventTypes)[number];
 
-/** @typedef {import("./connection/BaseConnectionManager").TxMessage} TxMessage */
-/** @typedef {import("./connection/BaseConnectionManager").TxRxMessageType} TxRxMessageType */
+// TODO - redundant (Message and EventType)
+export const DeviceEventTypes = [
+  ...ConnectionEventTypes,
+  ...ConnectionMessageTypes,
+  "connectionMessage",
+  ...InformationEventTypes,
+  ...DeviceInformationEventTypes,
+  ...SensorEventTypes,
+  ...FileTransferEventTypes,
+  ...TfliteEventTypes,
+  ...FirmwareEventTypes,
+] as const;
+export type DeviceEventType = (typeof DeviceEventTypes)[number];
 
-/** @typedef {import("./FileTransferManager").FileTransferManagerEventType} FileTransferManagerEventType */
-/** @typedef {import("./TfliteManager").TfliteManagerEventType} TfliteManagerEventType */
-/** @typedef {import("./FirmwareManager").FirmwareManagerEventType} FirmwareManagerEventType */
-/** @typedef {import("./DeviceInformationManager").DeviceInformationManagerEventType} DeviceInformationManagerEventType */
+interface BatteryLevelMessage {
+  batteryLevel: number;
+}
 
-/** @typedef {import("./connection/BaseConnectionManager").ConnectionStatus} ConnectionStatus */
+interface ConnectionStatusMessage {
+  connectionStatus: ConnectionStatus;
+}
+interface IsConnectedMessage {
+  isConnected: boolean;
+}
+interface ConnectionMessages {
+  connectionStatus: ConnectionStatusMessage;
+  isConnected: IsConnectedMessage;
+}
 
-/** @typedef {import("./sensor/SensorConfigurationManager").SensorConfiguration} SensorConfiguration */
+export type DeviceEventMessages = ConnectionMessages &
+  BatteryLevelMessage &
+  DeviceInformationMessages &
+  InformationMessages &
+  TfliteEventMessages &
+  FileTransferEventMessages &
+  FirmwareEventMessages;
 
-/** @typedef {"connectionStatus" | ConnectionStatus | "isConnected" | ConnectionMessageType | DeviceInformationManagerEventType | SensorType | "connectionMessage" | FileTransferManagerEventType | TfliteManagerEventType | FirmwareManagerEventType} DeviceEventType */
+export const StaticDeviceEventTypes = [
+  "deviceConnected",
+  "deviceDisconnected",
+  "deviceIsConnected",
+  "availableDevices",
+  "connectedDevices",
+] as const;
+export type StaticDeviceEventType = (typeof StaticDeviceEventTypes)[number];
 
-/** @typedef {import("./utils/EventDispatcher").EventDispatcherOptions} EventDispatcherOptions */
+interface StaticDeviceConnectedEventMessage {
+  device: Device;
+}
+interface StaticDeviceDisconnectedEventMessage {
+  device: Device;
+}
+interface StaticDeviceIsConnectedEventMessage {
+  device: Device;
+}
+interface StaticAvailableDevicesEventMessage {
+  availableDevices: Device[];
+}
+interface StaticConnectedDevicesEventMessage {
+  connectedDevices: Device[];
+}
 
-/**
- * @typedef {Object} BaseDeviceEvent
- * @property {Device} target
- * @property {DeviceEventType} type
- */
-
-/**
- * @typedef {Object} BaseBatteryLevelEvent
- * @property {"batteryLevel"} type
- * @property {{batteryLevel: number}} message
- */
-/** @typedef {BaseDeviceEvent & BaseBatteryLevelEvent} BatteryLevelEvent */
-
-/** @typedef {import("./DeviceInformationManager").DeviceInformationManagerEvent} DeviceInformationManagerEvent */
-
-/**
- * @typedef {Object} BaseIsConnectedEvent
- * @property {"isConnected"} type
- * @property {{isConnected: boolean}} message
- */
-/** @typedef {BaseDeviceEvent & BaseIsConnectedEvent} IsConnectedEvent */
-
-/**
- * @typedef {Object} BaseConnectionStatusEvent
- * @property {"connectionStatus"} type
- * @property {{connectionStatus: ConnectionStatus}} message
- */
-/** @typedef {BaseDeviceEvent & BaseConnectionStatusEvent} ConnectionStatusEvent */
-
-/** @typedef {BaseIsConnectedEvent | ConnectionStatusEvent} ConnectionEvents */
-
-/** @typedef {import("./InformationManager").InformationManagerEvent} InformationManagerEvent */
-/** @typedef {import("./TfliteManager").TfliteManagerEvent} TfliteManagerEvent */
-/** @typedef {import("./FirmwareManager").FirmwareManagerEvent} FirmwareManagerEvent */
-/** @typedef {import("./FileTransferManager").FileTransferManagerEvent} FileTransferManagerEvent */
-/** @typedef {import("./sensor/SensorDataManager").SensorDataManagerEvent} SensorDataManagerEvent */
-
-/**
- * @typedef {DeviceInformationManagerEvent |
- * BatteryLevelEvent |
- * ConnectionEvents |
- * InformationManagerEvent |
- * TfliteManagerEvent |
- * FirmwareManagerEvent |
- * FileTransferManagerEvent |
- * SensorDataManagerEvent
- * } DeviceEvent
- */
-/** @typedef {(event: DeviceEvent) => void} DeviceEventListener */
-
-/** @typedef {"deviceConnected" | "deviceDisconnected" | "deviceIsConnected" | "availableDevices" | "connectedDevices"} StaticDeviceEventType */
-/**
- * @typedef {Object} BaseStaticDeviceEvent
- * @property {StaticDeviceEventType} type
- */
-
-/**
- * @typedef {Object} BaseStaticDeviceConnectedEvent
- * @property {"deviceConnected"} type
- * @property {{device: Device}} message
- */
-/** @typedef {BaseStaticDeviceEvent & BaseStaticDeviceConnectedEvent} StaticDeviceConnectedEvent */
-
-/**
- * @typedef {Object} BaseStaticDeviceDisconnectedEvent
- * @property {"deviceDisconnected"} type
- * @property {{device: Device}} message
- */
-/** @typedef {BaseStaticDeviceEvent & BaseStaticDeviceDisconnectedEvent} StaticDeviceDisconnectedEvent */
-
-/**
- * @typedef {Object} BaseStaticDeviceIsConnectedEvent
- * @property {"deviceIsConnected"} type
- * @property {{device: Device}} message
- */
-/** @typedef {BaseStaticDeviceEvent & BaseStaticDeviceIsConnectedEvent} StaticDeviceIsConnectedEvent */
-
-/**
- * @typedef {Object} BaseStaticAvailableDevicesEvent
- * @property {"availableDevices"} type
- * @property {{availableDevices: Device[]}} message
- */
-/** @typedef {BaseStaticDeviceEvent & BaseStaticAvailableDevicesEvent} StaticAvailableDevicesEvent */
-
-/**
- * @typedef {Object} BaseStaticConnectedDevicesEvent
- * @property {"connectedDevices"} type
- * @property {{connectedDevices: Device[]}} message
- */
-/** @typedef {BaseStaticDeviceEvent & BaseStaticConnectedDevicesEvent} StaticConnectedDevicesEvent */
-
-/**
- * @typedef {StaticDeviceConnectedEvent |
- * StaticDeviceDisconnectedEvent |
- * StaticDeviceIsConnectedEvent |
- * StaticAvailableDevicesEvent |
- * StaticConnectedDevicesEvent
- * } StaticDeviceEvent
- */
-/** @typedef {(event: StaticDeviceEvent) => void} StaticDeviceEventListener */
+export interface StaticDeviceEventMessages {
+  deviceConnected: StaticDeviceConnectedEventMessage;
+  deviceDisconnected: StaticDeviceDisconnectedEventMessage;
+  deviceIsConnected: StaticDeviceIsConnectedEventMessage;
+  availableDevices: StaticAvailableDevicesEventMessage;
+  connectedDevices: StaticConnectedDevicesEventMessage;
+}
 
 export type SendMessageCallback<MessageType extends string> = (
   messages?: { type: MessageType; data?: ArrayBuffer }[],
   sendImmediately?: boolean
 ) => Promise<void>;
+
 export type SendSmpMessageCallback = (data: ArrayBuffer) => Promise<void>;
 
 class Device {
@@ -146,32 +140,31 @@ class Device {
   }
 
   constructor() {
-    this.#deviceInformationManager.eventDispatcher = this.#eventDispatcher;
+    this.#deviceInformationManager.eventDispatcher = this.#eventDispatcher as DeviceInformationEventDispatcher;
 
-    this.#informationManager.sendMessage = this.#sendTxMessages.bind(this);
-    this.#informationManager.eventDispatcher = this.#eventDispatcher;
+    this.#informationManager.sendMessage = this.#sendTxMessages.bind(this) as SendInformationMessageCallback;
+    this.#informationManager.eventDispatcher = this.#eventDispatcher as InformationEventDispatcher;
 
-    this.#sensorConfigurationManager.sendMessage = this.#sendTxMessages.bind(this);
-    this.#sensorConfigurationManager.eventDispatcher = this.#eventDispatcher;
+    this.#sensorConfigurationManager.sendMessage = this.#sendTxMessages.bind(
+      this
+    ) as SendSensorConfigurationMessageCallback;
+    this.#sensorConfigurationManager.eventDispatcher = this.#eventDispatcher as SensorConfigurationEventDispatcher;
 
-    this.#sensorDataManager.sendMessage = this.#sendTxMessages.bind(this);
-    this.#sensorDataManager.eventDispatcher = this.#eventDispatcher;
+    this.#vibrationManager.sendMessage = this.#sendTxMessages.bind(this) as SendVibrationMessageCallback;
 
-    this.#vibrationManager.sendMessage = this.#sendTxMessages.bind(this);
+    this.#tfliteManager.sendMessage = this.#sendTxMessages.bind(this) as SendTfliteMessageCallback;
+    this.#tfliteManager.eventDispatcher = this.#eventDispatcher as TfliteEventDispatcher;
 
-    this.#tfliteManager.sendMessage = this.#sendTxMessages.bind(this);
-    this.#tfliteManager.eventDispatcher = this.#eventDispatcher;
+    this.#fileTransferManager.sendMessage = this.#sendTxMessages.bind(this) as SendFileTransferMessageCallback;
+    this.#fileTransferManager.eventDispatcher = this.#eventDispatcher as FileTransferEventDispatcher;
 
-    this.#fileTransferManager.sendMessage = this.#sendTxMessages.bind(this);
-    this.#fileTransferManager.eventDispatcher = this.#eventDispatcher;
-
-    this.#firmwareManager.sendMessage = this.#sendSmpMessage.bind(this);
-    this.#firmwareManager.eventDispatcher = this.#eventDispatcher;
+    this.#firmwareManager.sendMessage = this.#sendSmpMessage.bind(this) as SendSmpMessageCallback;
+    this.#firmwareManager.eventDispatcher = this.#eventDispatcher as FirmwareEventDispatcher;
 
     this.addEventListener("getMtu", () => {
       this.#firmwareManager.mtu = this.mtu;
       this.#fileTransferManager.mtu = this.mtu;
-      this.connectionManager.mtu = this.mtu;
+      this.connectionManager!.mtu = this.mtu;
     });
     this.addEventListener("getType", () => {
       if (Device.#UseLocalStorage) {
@@ -200,72 +193,30 @@ class Device {
     });
   }
 
-  /** @returns {BaseConnectionManager} */
-  static get #DefaultConnectionManager() {
+  static get #DefaultConnectionManager(): typeof BaseConnectionManager {
     return WebBluetoothConnectionManager;
   }
 
-  // EVENT DISPATCHER
-
-  /** @type {DeviceEventType[]} */
-  static #EventTypes = [
-    "batteryLevel",
-
-    "connectionStatus",
-    ...BaseConnectionManager.Statuses,
-    "isConnected",
-
-    "connectionMessage",
-
-    ...DeviceInformationManager.EventTypes,
-    ...InformationManager.EventTypes,
-    ...SensorConfigurationManager.EventTypes,
-    ...SensorDataManager.EventTypes,
-    ...FileTransferManager.EventTypes,
-    ...TfliteManager.EventTypes,
-    ...FirmwareManager.EventTypes,
-  ];
-  static get EventTypes() {
-    return this.#EventTypes;
+  #eventDispatcher: EventDispatcher<Device, DeviceEventType, DeviceEventMessages> = new EventDispatcher(
+    this,
+    DeviceEventTypes
+  );
+  get addEventListener() {
+    return this.#eventDispatcher.addEventListener;
   }
-  get eventTypes() {
-    return Device.#EventTypes;
+  get #dispatchEvent() {
+    return this.#eventDispatcher.dispatchEvent;
   }
-  #eventDispatcher = new EventDispatcher(this, this.eventTypes);
-
-  /**
-   * @param {DeviceEventType} type
-   * @param {DeviceEventListener} listener
-   * @param {EventDispatcherOptions} [options]
-   */
-  addEventListener(type, listener, options) {
-    this.#eventDispatcher.addEventListener(type, listener, options);
+  get removeEventListener() {
+    return this.#eventDispatcher.removeEventListener;
   }
-
-  /**
-   * @param {DeviceEvent} event
-   */
-  #dispatchEvent(event) {
-    this.#eventDispatcher.dispatchEvent(event);
-  }
-
-  /**
-   * @param {DeviceEventType} type
-   * @param {DeviceEventListener} listener
-   */
-  removeEventListener(type, listener) {
-    return this.#eventDispatcher.removeEventListener(type, listener);
-  }
-
-  /** @param {DeviceEventType} type */
-  waitForEvent(type) {
-    return this.#eventDispatcher.waitForEvent(type);
+  get waitForEvent() {
+    return this.#eventDispatcher.waitForEvent;
   }
 
   // CONNECTION MANAGER
 
-  /** @type {BaseConnectionManager?} */
-  #connectionManager;
+  #connectionManager?: BaseConnectionManager;
   get connectionManager() {
     return this.#connectionManager;
   }
@@ -287,12 +238,8 @@ class Device {
     this.#connectionManager = newConnectionManager;
     _console.log("assigned new connectionManager", this.#connectionManager);
   }
-  /**
-   * @param {TxMessage[]} messages
-   * @param {boolean} sendImmediately
-   */
-  async #sendTxMessages(messages, sendImmediately) {
-    await this.#connectionManager?.sendTxMessages(...arguments);
+  async #sendTxMessages(messages: TxMessage[], sendImmediately?: boolean) {
+    await this.#connectionManager?.sendTxMessages(messages, sendImmediately);
   }
 
   async connect() {
@@ -311,8 +258,7 @@ class Device {
     _console.assertWithError(this.isConnected, "not connected");
   }
 
-  /** @type {TxRxMessageType[]} */
-  static #RequiredInformationConnectionMessages = [
+  static #RequiredInformationConnectionMessages: TxRxMessageType[] = [
     "isCharging",
     "getBatteryCurrent",
     "getId",
@@ -349,8 +295,7 @@ class Device {
     });
   }
   #requestRequiredInformation() {
-    /** @type {TxMessage[]} */
-    const messages = this.#requiredInformationConnectionMessages.map((messageType) => ({
+    const messages: TxMessage[] = this.#requiredInformationConnectionMessages.map((messageType) => ({
       type: messageType,
     }));
     this.#sendTxMessages(messages);
@@ -382,7 +327,7 @@ class Device {
     this.#reconnectOnDisconnection = newReconnectOnDisconnection;
   }
   /** @type {number?} */
-  #reconnectIntervalId;
+  #reconnectIntervalId: number | null;
 
   get connectionType() {
     return this.connectionManager?.type;
@@ -413,8 +358,7 @@ class Device {
     }
   }
 
-  /** @returns {ConnectionStatus} */
-  get connectionStatus() {
+  get connectionStatus(): ConnectionStatus {
     switch (this.#connectionManager?.status) {
       case "connected":
         return this.isConnected ? "connected" : "connecting";
@@ -430,8 +374,7 @@ class Device {
     return this.connectionStatus == "connecting" || this.connectionStatus == "disconnecting";
   }
 
-  /** @param {ConnectionStatus} connectionStatus */
-  #onConnectionStatusUpdated(connectionStatus) {
+  #onConnectionStatusUpdated(connectionStatus: ConnectionStatus) {
     _console.log({ connectionStatus });
 
     if (connectionStatus == "not connected") {
@@ -465,12 +408,11 @@ class Device {
     }
   }
 
-  /** @param {boolean} includeIsConnected */
-  #dispatchConnectionEvents(includeIsConnected = false) {
-    this.#dispatchEvent({ type: "connectionStatus", message: { connectionStatus: this.connectionStatus } });
-    this.#dispatchEvent({ type: this.connectionStatus });
+  #dispatchConnectionEvents(includeIsConnected: boolean = false) {
+    this.#dispatchEvent("connectionStatus", { connectionStatus: this.connectionStatus });
+    this.#dispatchEvent(this.connectionStatus, {});
     if (includeIsConnected) {
-      this.#dispatchEvent({ type: "isConnected", message: { isConnected: this.isConnected } });
+      this.#dispatchEvent("isConnected", { isConnected: this.isConnected });
     }
   }
   #checkConnection() {
@@ -498,11 +440,7 @@ class Device {
     this.#deviceInformationManager.clear();
   }
 
-  /**
-   * @param {ConnectionMessageType} messageType
-   * @param {DataView} dataView
-   */
-  #onConnectionMessageReceived(messageType, dataView) {
+  #onConnectionMessageReceived(messageType: ConnectionMessageType, dataView: DataView) {
     _console.log({ messageType, dataView });
     switch (messageType) {
       case "batteryLevel":
@@ -532,32 +470,27 @@ class Device {
     }
 
     this.latestConnectionMessage.set(messageType, dataView);
-    this.#dispatchEvent({ type: "connectionMessage", message: { messageType, dataView } });
+    this.#dispatchEvent("connectionMessage", { messageType, dataView });
 
     if (!this.isConnected && this.#hasRequiredInformation) {
       this.#checkConnection();
     }
   }
 
-  /** @type {Map.<ConnectionMessageType, DataView>} */
-  latestConnectionMessage = new Map();
+  latestConnectionMessage: Map<ConnectionMessageType, DataView> = new Map();
 
   // DEVICE INFORMATION
-
   #deviceInformationManager = new DeviceInformationManager();
-
   get deviceInformation() {
     return this.#deviceInformationManager.information;
   }
 
   // BATTERY LEVEL
-
   #batteryLevel = 0;
   get batteryLevel() {
     return this.#batteryLevel;
   }
-  /** @param {number} updatedBatteryLevel */
-  #updateBatteryLevel(updatedBatteryLevel) {
+  #updateBatteryLevel(updatedBatteryLevel: number) {
     _console.assertTypeWithError(updatedBatteryLevel, "number");
     if (this.#batteryLevel == updatedBatteryLevel) {
       _console.log(`duplicate batteryLevel assignment ${updatedBatteryLevel}`);
@@ -565,7 +498,7 @@ class Device {
     }
     this.#batteryLevel = updatedBatteryLevel;
     _console.log({ updatedBatteryLevel: this.#batteryLevel });
-    this.#dispatchEvent({ type: "batteryLevel", message: { batteryLevel: this.#batteryLevel } });
+    this.#dispatchEvent("batteryLevel", { batteryLevel: this.#batteryLevel });
   }
 
   // INFORMATION
@@ -595,7 +528,7 @@ class Device {
     return this.#informationManager.name;
   }
   /** @param {string} newName */
-  async setName(newName) {
+  async setName(newName: string) {
     await this.#informationManager.setName(newName);
   }
 
@@ -606,7 +539,7 @@ class Device {
     return this.#informationManager.type;
   }
   /** @param {DeviceType} newType */
-  async setType(newType) {
+  async setType(newType: DeviceType) {
     await this.#informationManager.setType(newType);
   }
 
@@ -658,7 +591,7 @@ class Device {
    * @param {SensorConfiguration} newSensorConfiguration
    * @param {boolean} [clearRest]
    */
-  async setSensorConfiguration(newSensorConfiguration, clearRest) {
+  async setSensorConfiguration(newSensorConfiguration: SensorConfiguration, clearRest: boolean) {
     await this.#sensorConfigurationManager.setConfiguration(newSensorConfiguration, clearRest);
   }
 
@@ -696,8 +629,7 @@ class Device {
 
   // SENSOR DATA
 
-  /** @type {SensorDataManager} */
-  #sensorDataManager = new SensorDataManager();
+  #sensorDataManager: SensorDataManager = new SensorDataManager();
 
   resetPressureRange() {
     this.#sensorDataManager.pressureSensorDataManager.resetRange();
@@ -736,12 +668,11 @@ class Device {
     return VibrationManager.MaxNumberOfWaveformSegments;
   }
 
-  /** @typedef {import("./vibration/VibrationManager").VibrationConfiguration} VibrationConfiguration */
   /**
    * @param  {VibrationConfiguration[]} vibrationConfigurations
    * @param  {boolean} [sendImmediately]
    */
-  async triggerVibration(vibrationConfigurations, sendImmediately) {
+  async triggerVibration(vibrationConfigurations: VibrationConfiguration[], sendImmediately: boolean) {
     this.#vibrationManager.triggerVibration(vibrationConfigurations, sendImmediately);
   }
 
@@ -756,20 +687,18 @@ class Device {
     return this.#fileTransferManager.maxLength;
   }
 
-  /** @typedef {import("./utils/ArrayBufferUtils").FileLike} FileLike */
-
   /**
    * @param {FileType} fileType
    * @param {FileLike} file
    */
-  async sendFile(fileType, file) {
+  async sendFile(fileType: FileType, file: FileLike) {
     const promise = this.waitForEvent("fileTransferComplete");
     this.#fileTransferManager.send(fileType, file);
     await promise;
   }
 
   /** @param {FileType} fileType */
-  async receiveFile(fileType) {
+  async receiveFile(fileType: FileType) {
     const promise = this.waitForEvent("fileTransferComplete");
     this.#fileTransferManager.receive(fileType);
     await promise;
@@ -795,7 +724,7 @@ class Device {
     return this.#tfliteManager.name;
   }
   /** @param {string} newName */
-  setTfliteName(newName) {
+  setTfliteName(newName: string) {
     return this.#tfliteManager.setName(newName);
   }
 
@@ -809,7 +738,7 @@ class Device {
     return this.#tfliteManager.task;
   }
   /** @param {import("./TfliteManager").TfliteTask} newTask */
-  setTfliteTask(newTask) {
+  setTfliteTask(newTask: import("./TfliteManager").TfliteTask) {
     return this.#tfliteManager.setTask(newTask);
   }
 
@@ -817,7 +746,7 @@ class Device {
     return this.#tfliteManager.sampleRate;
   }
   /** @param {number} newSampleRate */
-  setTfliteSampleRate(newSampleRate) {
+  setTfliteSampleRate(newSampleRate: number) {
     return this.#tfliteManager.setSampleRate(newSampleRate);
   }
 
@@ -828,7 +757,7 @@ class Device {
     return this.sensorTypes.filter((sensorType) => TfliteManager.SensorTypes.includes(sensorType));
   }
   /** @param {SensorType[]} newSensorTypes */
-  setTfliteSensorTypes(newSensorTypes) {
+  setTfliteSensorTypes(newSensorTypes: SensorType[]) {
     return this.#tfliteManager.setSensorTypes(newSensorTypes);
   }
 
@@ -842,7 +771,7 @@ class Device {
     return this.#tfliteManager.inferencingEnabled;
   }
   /** @param {boolean} inferencingEnabled */
-  async setTfliteInferencingEnabled(inferencingEnabled) {
+  async setTfliteInferencingEnabled(inferencingEnabled: boolean) {
     return this.#tfliteManager.setInferencingEnabled(inferencingEnabled);
   }
   async enableTfliteInferencing() {
@@ -861,14 +790,14 @@ class Device {
     return this.#tfliteManager.captureDelay;
   }
   /** @param {number} newCaptureDelay */
-  async setTfliteCaptureDelay(newCaptureDelay) {
+  async setTfliteCaptureDelay(newCaptureDelay: number) {
     return this.#tfliteManager.setCaptureDelay(newCaptureDelay);
   }
   get tfliteThreshold() {
     return this.#tfliteManager.threshold;
   }
   /** @param {number} newThreshold */
-  async setTfliteThreshold(newThreshold) {
+  async setTfliteThreshold(newThreshold: number) {
     return this.#tfliteManager.setThreshold(newThreshold);
   }
 
@@ -877,12 +806,12 @@ class Device {
   #firmwareManager = new FirmwareManager();
 
   /** @param {ArrayBuffer} data */
-  #sendSmpMessage(data) {
+  #sendSmpMessage(data: ArrayBuffer) {
     this.#connectionManager.sendSmpMessage(data);
   }
 
   /** @param {FileLike} file */
-  async uploadFirmware(file) {
+  async uploadFirmware(file: FileLike) {
     return this.#firmwareManager.uploadFirmware(file);
   }
 
@@ -906,18 +835,18 @@ class Device {
     return this.#firmwareManager.eraseImage();
   }
   /** @param {number} imageIndex */
-  async confirmFirmwareImage(imageIndex) {
+  async confirmFirmwareImage(imageIndex: number) {
     return this.#firmwareManager.confirmImage(imageIndex);
   }
   /** @param {number} imageIndex */
-  async testFirmwareImage(imageIndex) {
+  async testFirmwareImage(imageIndex: number) {
     return this.#firmwareManager.testImage(imageIndex);
   }
 
   // CONNECTED DEVICES
 
   /** @type {Device[]} */
-  static #ConnectedDevices = [];
+  static #ConnectedDevices: Device[] = [];
   static get ConnectedDevices() {
     return this.#ConnectedDevices;
   }
@@ -947,11 +876,11 @@ class Device {
    */
 
   /** @type {LocalStorageConfiguration} */
-  static #DefaultLocalStorageConfiguration = {
+  static #DefaultLocalStorageConfiguration: LocalStorageConfiguration = {
     devices: [],
   };
   /** @type {LocalStorageConfiguration?} */
-  static #LocalStorageConfiguration;
+  static #LocalStorageConfiguration: LocalStorageConfiguration | null;
 
   static get CanUseLocalStorage() {
     return isInBrowser && window.localStorage;
@@ -988,7 +917,7 @@ class Device {
   }
 
   /** @param {Device} device */
-  static #UpdateLocalStorageConfigurationForDevice(device) {
+  static #UpdateLocalStorageConfigurationForDevice(device: Device) {
     if (device.connectionType != "webBluetooth") {
       _console.log("localStorage is only for webBluetooth devices");
       return;
@@ -1006,7 +935,7 @@ class Device {
 
   // AVAILABLE DEVICES
   /** @type {Device[]} */
-  static #AvailableDevices = [];
+  static #AvailableDevices: Device[] = [];
   static get AvailableDevices() {
     return this.#AvailableDevices;
   }
@@ -1021,7 +950,7 @@ class Device {
    *
    * @returns {Promise<Device[]?>}
    */
-  static async GetDevices() {
+  static async GetDevices(): Promise<Device[] | null> {
     if (!isInBrowser) {
       _console.warn("GetDevices is only available in the browser");
       return;
@@ -1105,46 +1034,20 @@ class Device {
 
   // STATIC EVENTLISTENERS
 
-  /** @type {StaticDeviceEventType[]} */
-  static #StaticEventTypes = [
-    "deviceConnected",
-    "deviceDisconnected",
-    "deviceIsConnected",
-    "availableDevices",
-    "connectedDevices",
-  ];
-  static get StaticEventTypes() {
-    return this.#StaticEventTypes;
-  }
-  static #EventDispatcher = new EventDispatcher(this, this.#StaticEventTypes);
+  static #EventDispatcher: EventDispatcher<typeof Device, StaticDeviceEventType, StaticDeviceEventMessages> =
+    new EventDispatcher(this, StaticDeviceEventTypes);
 
-  /**
-   * @param {StaticDeviceEventType} type
-   * @param {StaticDeviceEventListener} listener
-   * @param {EventDispatcherOptions} [options]
-   * @throws {Error}
-   */
-  static AddEventListener(type, listener, options) {
-    this.#EventDispatcher.addEventListener(type, listener, options);
+  static get AddEventListener() {
+    return this.#EventDispatcher.addEventListener;
+  }
+  static get #DispatchEvent() {
+    return this.#EventDispatcher.dispatchEvent;
+  }
+  static get RemoveEventListener() {
+    return this.#EventDispatcher.removeEventListener;
   }
 
-  /**
-   * @param {StaticDeviceEvent} event
-   */
-  static #DispatchEvent(event) {
-    this.#EventDispatcher.dispatchEvent(event);
-  }
-
-  /**
-   * @param {StaticDeviceEventType} type
-   * @param {StaticDeviceEventListener} listener
-   */
-  static RemoveEventListener(type, listener) {
-    return this.#EventDispatcher.removeEventListener(type, listener);
-  }
-
-  /** @param {Device} device */
-  static #OnDeviceIsConnected(device) {
+  static #OnDeviceIsConnected(device: Device) {
     if (device.isConnected) {
       if (!this.#ConnectedDevices.includes(device)) {
         _console.log("adding device", device);
@@ -1164,8 +1067,8 @@ class Device {
           }
           this.#SaveToLocalStorage();
         }
-        this.#DispatchEvent({ type: "deviceConnected", message: { device } });
-        this.#DispatchEvent({ type: "deviceIsConnected", message: { device } });
+        this.#dispatchEvent("deviceConnected", { device });
+        this.#dispatchEvent("deviceIsConnected", { device });
         this.#DispatchConnectedDevices();
       } else {
         _console.log("device already included");
@@ -1174,8 +1077,8 @@ class Device {
       if (this.#ConnectedDevices.includes(device)) {
         _console.log("removing device", device);
         this.#ConnectedDevices.splice(this.#ConnectedDevices.indexOf(device), 1);
-        this.#DispatchEvent({ type: "deviceDisconnected", message: { device } });
-        this.#DispatchEvent({ type: "deviceIsConnected", message: { device } });
+        this.#dispatchEvent("deviceDisconnected", { device });
+        this.#dispatchEvent("deviceIsConnected", { device });
         this.#DispatchConnectedDevices();
       } else {
         _console.log("device already not included");
@@ -1200,11 +1103,11 @@ class Device {
 
   static #DispatchAvailableDevices() {
     _console.log({ AvailableDevices: this.AvailableDevices });
-    this.#DispatchEvent({ type: "availableDevices", message: { availableDevices: this.AvailableDevices } });
+    this.#dispatchEvent("availableDevices", { availableDevices: this.AvailableDevices });
   }
   static #DispatchConnectedDevices() {
     _console.log({ ConnectedDevices: this.ConnectedDevices });
-    this.#DispatchEvent({ type: "connectedDevices", message: { connectedDevices: this.ConnectedDevices } });
+    this.#dispatchEvent("connectedDevices", { connectedDevices: this.ConnectedDevices });
   }
 
   static async Connect() {
@@ -1219,7 +1122,5 @@ class Device {
     }
   }
 }
-
-/** @typedef {Device} Device */
 
 export default Device;
