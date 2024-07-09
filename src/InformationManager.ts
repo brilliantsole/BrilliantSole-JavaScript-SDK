@@ -1,126 +1,72 @@
+import Device, { SendMessageCallback } from "./Device";
 import { createConsole } from "./utils/Console";
 import EventDispatcher from "./utils/EventDispatcher";
 import { textDecoder, textEncoder } from "./utils/Text";
 
 const _console = createConsole("InformationManager", { log: true });
 
-/** @typedef {"leftInsole" | "rightInsole"} DeviceType */
-/** @typedef {"left" | "right"} InsoleSide */
+export const DeviceTypes = ["leftInsole", "rightInsole"] as const;
+export type DeviceType = (typeof DeviceTypes)[number];
 
-/**
- * @typedef { "isCharging" |
- * "getBatteryCurrent" |
- * "getMtu" |
- * "getId"|
- * "getName"|
- * "setName"|
- * "getType"|
- * "setType"|
- * "getCurrentTime"|
- * "setCurrentTime"
- * } InformationMessageType
- */
-/** @typedef {InformationMessageType} InformationManagerEventType */
+export const InsoleSides = ["left", "right"] as const;
+export type InsoleSide = (typeof InsoleSides)[number];
 
-/** @typedef {import("./utils/EventDispatcher").EventDispatcherOptions} EventDispatcherOptions */
+export const InformationMessageTypes = [
+  "isCharging",
+  "getBatteryCurrent",
+  "getMtu",
+  "getId",
+  "getName",
+  "setName",
+  "getType",
+  "setType",
+  "getCurrentTime",
+  "setCurrentTime",
+] as const;
+export type InformationMessageType = (typeof InformationMessageTypes)[number];
 
-/** @typedef {import("./Device").BaseDeviceEvent} BaseDeviceEvent */
+interface BatteryCurrentMessage {
+  batteryCurrent: number;
+}
+interface IsChargingMessage {
+  isCharging: boolean;
+}
+interface NameMessage {
+  name: string;
+}
+interface TypeMessage {
+  type: DeviceType;
+}
+interface IdMessage {
+  id: string;
+}
+interface MtuMessage {
+  mtu: number;
+}
+interface CurrentTimeMessage {
+  currentTime: number;
+}
 
-/**
- * @typedef {Object} BaseBatteryCurrentEvent
- * @property {"getBatteryCurrent"} type
- * @property {{batteryCurrent: number}} message
- */
-/** @typedef {BaseDeviceEvent & BaseBatteryCurrentEvent} BatteryCurrentEvent */
-
-/**
- * @typedef {Object} BaseIsChargingEvent
- * @property {"isCharging"} type
- * @property {{isCharging: boolean}} message
- */
-/** @typedef {BaseDeviceEvent & BaseIsChargingEvent} IsChargingEvent */
-
-/**
- * @typedef {Object} BaseNameEvent
- * @property {"getName"} type
- * @property {{name: string}} message
- */
-/** @typedef {BaseDeviceEvent & BaseNameEvent} NameEvent */
-
-/**
- * @typedef {Object} BaseTypeEvent
- * @property {"getType"} type
- * @property {{type: DeviceType}} message
- */
-/** @typedef {BaseDeviceEvent & BaseTypeEvent} TypeEvent */
-
-/**
- * @typedef {Object} BaseIdEvent
- * @property {"getId"} type
- * @property {{id: string}} message
- */
-/** @typedef {BaseDeviceEvent & BaseIdEvent} IdEvent */
-
-/**
- * @typedef {Object} BaseMtuEvent
- * @property {"getMtu"} type
- * @property {{mtu: number}} message
- */
-/** @typedef {BaseDeviceEvent & BaseMtuEvent} MtuEvent */
-
-/**
- * @typedef {Object} BaseCurrentTimeEvent
- * @property {"getCurrentTime"} type
- * @property {{currentTime: number}} message
- */
-/** @typedef {BaseDeviceEvent & BaseCurrentTimeEvent} CurrentTimeEvent */
-
-/** @typedef {IdEvent | CurrentTimeEvent | BatteryCurrentEvent | IsChargingEvent | NameEvent | TypeEvent} InformationManagerEvent */
+interface InformationMessages {
+  isCharging: IsChargingMessage;
+  getBatteryCurrent: BatteryCurrentMessage;
+  getMtu: MtuMessage;
+  getId: IdMessage;
+  getName: NameMessage;
+  setName: NameMessage;
+  getType: TypeMessage;
+  setType: TypeMessage;
+  getCurrentTime: CurrentTimeMessage;
+  setCurrentTime: CurrentTimeMessage;
+}
 
 class InformationManager {
-  // MESSAGE TYPES
-
-  /** @type {InformationMessageType[]} */
-  static #MessageTypes = [
-    "isCharging",
-    "getBatteryCurrent",
-    "getMtu",
-    "getId",
-    "getName",
-    "setName",
-    "getType",
-    "setType",
-    "getCurrentTime",
-    "setCurrentTime",
-  ];
-  static get MessageTypes() {
-    return this.#MessageTypes;
+  eventDispatcher!: EventDispatcher<typeof Device, InformationMessageType, InformationMessages>;
+  get #dispatchEvent() {
+    return this.eventDispatcher.dispatchEvent;
   }
-  get messageTypes() {
-    return InformationManager.MessageTypes;
-  }
-
-  // EVENT DISPATCHER
-
-  /** @type {InformationManagerEventType[]} */
-  static #EventTypes = [...this.#MessageTypes];
-  static get EventTypes() {
-    return this.#EventTypes;
-  }
-  get eventTypes() {
-    return InformationManager.#EventTypes;
-  }
-  /** @type {EventDispatcher} */
-  eventDispatcher;
-
-  /** @param {InformationManagerEvent} event */
-  #dispatchEvent(event) {
-    this.eventDispatcher.dispatchEvent(event);
-  }
-
-  /** @param {InformationManagerEventType} eventType */
-  waitForEvent(eventType) {
-    return this.eventDispatcher.waitForEvent(eventType);
+  get waitForEvent() {
+    return this.eventDispatcher.waitForEvent;
   }
 
   // PROPERTIES
@@ -129,16 +75,14 @@ class InformationManager {
   get isCharging() {
     return this.#isCharging;
   }
-  /** @param {string} updatedIsCharging */
-  updateIsCharging(updatedIsCharging) {
+  updateIsCharging(updatedIsCharging: boolean) {
     _console.assertTypeWithError(updatedIsCharging, "boolean");
     this.#isCharging = updatedIsCharging;
     _console.log({ isCharging: this.#isCharging });
-    this.#dispatchEvent({ type: "isCharging", message: { isCharging: this.#isCharging } });
+    this.#dispatchEvent("isCharging", { isCharging: this.#isCharging });
   }
 
-  /** @type {number?} */
-  #batteryCurrent;
+  #batteryCurrent!: number;
   get batteryCurrent() {
     return this.#batteryCurrent;
   }
@@ -148,25 +92,22 @@ class InformationManager {
     this.sendMessage([{ type: "getBatteryCurrent" }]);
     await promise;
   }
-  /** @param {string} updatedBatteryCurrent */
-  updateBatteryCurrent(updatedBatteryCurrent) {
+  updateBatteryCurrent(updatedBatteryCurrent: number) {
     _console.assertTypeWithError(updatedBatteryCurrent, "number");
     this.#batteryCurrent = updatedBatteryCurrent;
     _console.log({ batteryCurrent: this.#batteryCurrent });
-    this.#dispatchEvent({ type: "getBatteryCurrent", message: { batteryCurrent: this.#batteryCurrent } });
+    this.#dispatchEvent("getBatteryCurrent", { batteryCurrent: this.#batteryCurrent });
   }
 
-  /** @type {string} */
-  #id;
+  #id!: string;
   get id() {
     return this.#id;
   }
-  /** @param {string} updatedId */
-  updateId(updatedId) {
+  updateId(updatedId: string) {
     _console.assertTypeWithError(updatedId, "string");
     this.#id = updatedId;
     _console.log({ id: this.#id });
-    this.#dispatchEvent({ type: "getId", message: { id: this.#id } });
+    this.#dispatchEvent("getId", { id: this.#id });
   }
 
   #name = "";
@@ -174,12 +115,11 @@ class InformationManager {
     return this.#name;
   }
 
-  /** @param {string} updatedName */
-  updateName(updatedName) {
+  updateName(updatedName: string) {
     _console.assertTypeWithError(updatedName, "string");
     this.#name = updatedName;
     _console.log({ updatedName: this.#name });
-    this.#dispatchEvent({ type: "getName", message: { name: this.#name } });
+    this.#dispatchEvent("getName", { name: this.#name });
   }
   static get MinNameLength() {
     return 2;
@@ -193,8 +133,7 @@ class InformationManager {
   get maxNameLength() {
     return InformationManager.MaxNameLength;
   }
-  /** @param {string} newName */
-  async setName(newName) {
+  async setName(newName: string) {
     _console.assertTypeWithError(newName, "string");
     _console.assertWithError(
       newName.length >= this.minNameLength,
@@ -213,33 +152,21 @@ class InformationManager {
   }
 
   // TYPE
-  /** @type {DeviceType[]} */
-  static #Types = ["leftInsole", "rightInsole"];
-  static get Types() {
-    return this.#Types;
-  }
-  get #types() {
-    return InformationManager.Types;
-  }
-  /** @type {DeviceType} */
-  #type;
+  #type!: DeviceType;
   get type() {
     return this.#type;
   }
   get typeEnum() {
-    return InformationManager.Types.indexOf(this.type);
+    return DeviceTypes.indexOf(this.type);
   }
-  /** @param {DeviceType} type */
-  #assertValidDeviceType(type) {
-    _console.assertEnumWithError(type, this.#types);
+  #assertValidDeviceType(type: DeviceType) {
+    _console.assertEnumWithError(type, DeviceTypes);
   }
-  /** @param {number} typeEnum */
-  #assertValidDeviceTypeEnum(typeEnum) {
+  #assertValidDeviceTypeEnum(typeEnum: number) {
     _console.assertTypeWithError(typeEnum, "number");
-    _console.assertWithError(this.#types[typeEnum], `invalid typeEnum ${typeEnum}`);
+    _console.assertWithError(typeEnum in DeviceTypes, `invalid typeEnum ${typeEnum}`);
   }
-  /** @param {DeviceType} updatedType */
-  updateType(updatedType) {
+  updateType(updatedType: DeviceType) {
     this.#assertValidDeviceType(updatedType);
     if (updatedType == this.type) {
       _console.log("redundant type assignment");
@@ -248,10 +175,9 @@ class InformationManager {
     this.#type = updatedType;
     _console.log({ updatedType: this.#type });
 
-    this.#dispatchEvent({ type: "getType", message: { type: this.#type } });
+    this.#dispatchEvent("getType", { type: this.#type });
   }
-  /** @param {number} newTypeEnum */
-  async #setTypeEnum(newTypeEnum) {
+  async #setTypeEnum(newTypeEnum: number) {
     this.#assertValidDeviceTypeEnum(newTypeEnum);
     const setTypeData = Uint8Array.from([newTypeEnum]);
     _console.log({ setTypeData });
@@ -259,10 +185,9 @@ class InformationManager {
     this.sendMessage([{ type: "setType", data: setTypeData.buffer }]);
     await promise;
   }
-  /** @param {DeviceType} newType */
-  async setType(newType) {
+  async setType(newType: DeviceType) {
     this.#assertValidDeviceType(newType);
-    const newTypeEnum = this.#types.indexOf(newType);
+    const newTypeEnum = DeviceTypes.indexOf(newType);
     this.#setTypeEnum(newTypeEnum);
   }
 
@@ -276,16 +201,8 @@ class InformationManager {
         return false;
     }
   }
-  /** @type {InsoleSide[]} */
-  static #InsoleSides = ["left", "right"];
-  static get InsoleSides() {
-    return this.#InsoleSides;
-  }
-  get insoleSides() {
-    return InformationManager.InsoleSides;
-  }
-  /** @type {InsoleSide} */
-  get insoleSide() {
+
+  get insoleSide(): InsoleSide {
     switch (this.type) {
       case "leftInsole":
         return "left";
@@ -298,8 +215,7 @@ class InformationManager {
   get mtu() {
     return this.#mtu;
   }
-  /** @param {number} newMtu */
-  #updateMtu(newMtu) {
+  #updateMtu(newMtu: number) {
     _console.assertTypeWithError(newMtu, "number");
     if (this.#mtu == newMtu) {
       _console.log("redundant mtu assignment", newMtu);
@@ -307,7 +223,7 @@ class InformationManager {
     }
     this.#mtu = newMtu;
 
-    this.#dispatchEvent({ type: "getMtu", message: { mtu: this.#mtu } });
+    this.#dispatchEvent("getMtu", { mtu: this.#mtu });
   }
 
   #isCurrentTimeSet = false;
@@ -315,8 +231,7 @@ class InformationManager {
     return this.#isCurrentTimeSet;
   }
 
-  /** @param {number} currentTime */
-  #onCurrentTime(currentTime) {
+  #onCurrentTime(currentTime: number) {
     _console.log({ currentTime });
     this.#isCurrentTimeSet = currentTime != 0;
     if (!this.#isCurrentTimeSet) {
@@ -333,12 +248,7 @@ class InformationManager {
   }
 
   // MESSAGE
-
-  /**
-   * @param {InformationMessageType} messageType
-   * @param {DataView} dataView
-   */
-  parseMessage(messageType, dataView) {
+  parseMessage(messageType: InformationMessageType, dataView: DataView) {
     _console.log({ messageType });
 
     switch (messageType) {
@@ -353,20 +263,20 @@ class InformationManager {
         this.updateBatteryCurrent(batteryCurrent);
         break;
       case "getId":
-        const id = textDecoder.decode(dataView);
+        const id = textDecoder.decode(dataView.buffer);
         _console.log({ id });
         this.updateId(id);
         break;
       case "getName":
       case "setName":
-        const name = textDecoder.decode(dataView);
+        const name = textDecoder.decode(dataView.buffer);
         _console.log({ name });
         this.updateName(name);
         break;
       case "getType":
       case "setType":
         const typeEnum = dataView.getUint8(0);
-        const type = this.#types[typeEnum];
+        const type = DeviceTypes[typeEnum];
         _console.log({ typeEnum, type });
         this.updateType(type);
         break;
@@ -385,14 +295,7 @@ class InformationManager {
     }
   }
 
-  /**
-   * @callback SendMessageCallback
-   * @param {{type: InformationMessageType, data: ArrayBuffer}[]} messages
-   * @param {boolean} sendImmediately
-   */
-
-  /** @type {SendMessageCallback} */
-  sendMessage;
+  sendMessage!: SendMessageCallback<InformationMessageType>;
 
   clear() {
     this.#isCurrentTimeSet = false;

@@ -134,6 +134,11 @@ const _console = createConsole("Device", { log: true });
  */
 /** @typedef {(event: StaticDeviceEvent) => void} StaticDeviceEventListener */
 
+export type SendMessageCallback<MessageType extends string> = (
+  messages: { type: MessageType; data?: ArrayBuffer }[],
+  sendImmediately?: boolean
+) => void;
+
 class Device {
   get bluetoothId() {
     return this.#connectionManager?.bluetoothId;

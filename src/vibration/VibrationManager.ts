@@ -1,6 +1,7 @@
 import { createConsole } from "../utils/Console";
 import { VibrationWaveformEffect, VibrationWaveformEffects } from "./VibrationWaveformEffects";
 import { concatenateArrayBuffers } from "../utils/ArrayBufferUtils";
+import { SendMessageCallback } from "../Device";
 
 const _console = createConsole("VibrationManager");
 
@@ -24,11 +25,6 @@ export interface VibrationWaveformSegment {
 export const VibrationMessageTypes = ["triggerVibration"] as const;
 export type VibrationMessageType = (typeof VibrationMessageTypes)[number];
 
-export type SendVibrationMessageCallback = (
-  messages: { type: VibrationMessageType; data: ArrayBuffer }[],
-  sendImmediately: boolean
-) => Promise<void>;
-
 export interface VibrationWaveformEffectConfiguration {
   segments: VibrationWaveformEffectSegment[];
   loopCount?: number;
@@ -46,8 +42,6 @@ export interface VibrationConfiguration {
 }
 
 class VibrationManager {
-  // LOCATIONS
-
   #verifyLocation(location: VibrationLocation) {
     _console.assertTypeWithError(location, "string");
     _console.assertWithError(VibrationLocations.includes(location), `invalid location "${location}"`);
@@ -338,10 +332,10 @@ class VibrationManager {
       _console.log({ type, arrayBuffer });
       triggerVibrationData = concatenateArrayBuffers(triggerVibrationData, arrayBuffer);
     });
-    await this.sendMessage([{ type: "triggerVibration", data: triggerVibrationData }], sendImmediately);
+    this.sendMessage([{ type: "triggerVibration", data: triggerVibrationData }], sendImmediately);
   }
 
-  sendMessage!: SendVibrationMessageCallback;
+  sendMessage!: SendMessageCallback<VibrationMessageType>;
 }
 
 export default VibrationManager;
