@@ -167,8 +167,8 @@ export type SendMessageCallback<MessageType extends string> = (
 export type SendSmpMessageCallback = (data: ArrayBuffer) => Promise<void>;
 
 export interface LocalStorageDeviceInformation {
-  bluetoothId: string;
   type: DeviceType;
+  bluetoothId: string;
 }
 
 export interface LocalStorageConfiguration {
@@ -268,8 +268,8 @@ class Device {
     }
 
     if (this.connectionManager) {
-      this.connectionManager.onStatusUpdated = null;
-      this.connectionManager.onMessageReceived = null;
+      this.connectionManager.onStatusUpdated = undefined;
+      this.connectionManager.onMessageReceived = undefined;
     }
     if (newConnectionManager) {
       newConnectionManager.onStatusUpdated = this.#onConnectionStatusUpdated.bind(this);
@@ -922,13 +922,13 @@ class Device {
       return;
     }
     this.#AssertLocalStorage();
-    const deviceInformationIndex = this.#LocalStorageConfiguration.devices.findIndex((deviceInformation) => {
+    const deviceInformationIndex = this.#LocalStorageConfiguration!.devices.findIndex((deviceInformation) => {
       return deviceInformation.bluetoothId == device.bluetoothId;
     });
     if (deviceInformationIndex == -1) {
       return;
     }
-    this.#LocalStorageConfiguration.devices[deviceInformationIndex].type = device.type;
+    this.#LocalStorageConfiguration!.devices[deviceInformationIndex].type = device.type;
     this.#SaveToLocalStorage();
   }
 
@@ -939,6 +939,7 @@ class Device {
   }
 
   static get CanGetDevices() {
+    // @ts-expect-error
     return isInBrowser && navigator.bluetooth?.getDevices && !isInBluefy;
   }
   /**
@@ -946,7 +947,7 @@ class Device {
    *
    * _only available on web-bluetooth enabled browsers_
    */
-  static async GetDevices(): Promise<Device[] | null> {
+  static async GetDevices(): Promise<Device[] | undefined> {
     if (!isInBrowser) {
       _console.warn("GetDevices is only available in the browser");
       return;
@@ -971,7 +972,7 @@ class Device {
       this.#LoadFromLocalStorage();
     }
 
-    const configuration = this.#LocalStorageConfiguration;
+    const configuration = this.#LocalStorageConfiguration!;
     if (!configuration.devices || configuration.devices.length == 0) {
       _console.log("no devices found in configuration");
       return;
@@ -1001,6 +1002,7 @@ class Device {
       ).find((device) => device.bluetoothId == bluetoothDevice.id);
       if (existingAvailableDevice) {
         if (
+          existingConnectedDevice &&
           existingConnectedDevice?.bluetoothId == existingAvailableDevice.bluetoothId &&
           existingConnectedDevice != existingAvailableDevice
         ) {
@@ -1049,17 +1051,17 @@ class Device {
         _console.log("adding device", device);
         this.#ConnectedDevices.push(device);
         if (this.UseLocalStorage && device.connectionType == "webBluetooth") {
-          const deviceInformation = {
+          const deviceInformation: LocalStorageDeviceInformation = {
             type: device.type,
-            bluetoothId: device.bluetoothId,
+            bluetoothId: device.bluetoothId!,
           };
-          const deviceInformationIndex = this.#LocalStorageConfiguration.devices.findIndex(
+          const deviceInformationIndex = this.#LocalStorageConfiguration!.devices.findIndex(
             (_deviceInformation) => _deviceInformation.bluetoothId == deviceInformation.bluetoothId
           );
           if (deviceInformationIndex == -1) {
-            this.#LocalStorageConfiguration.devices.push(deviceInformation);
+            this.#LocalStorageConfiguration!.devices.push(deviceInformation);
           } else {
-            this.#LocalStorageConfiguration.devices[deviceInformationIndex] = deviceInformation;
+            this.#LocalStorageConfiguration!.devices[deviceInformationIndex] = deviceInformation;
           }
           this.#SaveToLocalStorage();
         }

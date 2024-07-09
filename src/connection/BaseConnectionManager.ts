@@ -55,8 +55,8 @@ abstract class BaseConnectionManager {
   abstract get bluetoothId(): string;
 
   // CALLBACKS
-  onStatusUpdated!: ConnectionStatusCallback;
-  onMessageReceived!: MessageReceivedCallback;
+  onStatusUpdated?: ConnectionStatusCallback;
+  onMessageReceived?: MessageReceivedCallback;
 
   static #staticThrowNotImplementedError(name: string) {
     throw new Error(`"${name}" is not implemented by "${this.name}" subclass`);
