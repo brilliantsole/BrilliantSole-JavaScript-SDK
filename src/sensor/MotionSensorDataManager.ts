@@ -30,6 +30,7 @@ export const ContinuousMotionTypes = [
 export type ContinuousMotionType = (typeof ContinuousMotionTypes)[number];
 
 import { Vector3, Quaternion, Euler } from "../utils/MathUtils";
+import { ValueOf } from "../utils/TypeScriptUtils";
 
 export const Vector2Size = 2 * 2;
 export const Vector3Size = 3 * 2;
@@ -56,56 +57,40 @@ export const DeviceOrientations = [
 ] as const;
 export type DeviceOrientation = (typeof DeviceOrientations)[number];
 
-import { BaseSensorDataEventMessage } from "./SensorDataManager";
-export interface BaseMotionSensorDataEventMessage extends BaseSensorDataEventMessage {
-  sensorType: MotionSensorType;
-}
-export interface AccelerationDataEventMessage extends BaseMotionSensorDataEventMessage {
-  sensorType: "acceleration";
+interface AccelerationDataEventMessage {
   acceleration: Vector3;
 }
-export interface GravityDataEventMessage extends BaseMotionSensorDataEventMessage {
-  sensorType: "gravity";
+interface GravityDataEventMessage {
   gravity: Vector3;
 }
-export interface LinearAccelerationDataEventMessage extends BaseMotionSensorDataEventMessage {
-  sensorType: "linearAcceleration";
+interface LinearAccelerationDataEventMessage {
   linearAcceleration: Vector3;
 }
-export interface GyroscopeDataEventMessage extends BaseMotionSensorDataEventMessage {
-  sensorType: "gyroscope";
+interface GyroscopeDataEventMessage {
   gyroscope: Vector3;
 }
-export interface MagnetometerDataEventMessage extends BaseMotionSensorDataEventMessage {
-  sensorType: "magnetometer";
+interface MagnetometerDataEventMessage {
   magnetomter: Vector3;
 }
-export interface GameRotationDataEventMessage extends BaseMotionSensorDataEventMessage {
-  sensorType: "gameRotation";
+interface GameRotationDataEventMessage {
   gameRotation: Quaternion;
 }
-export interface RotationDataEventMessage extends BaseMotionSensorDataEventMessage {
-  sensorType: "rotation";
+interface RotationDataEventMessage {
   rotation: Quaternion;
 }
-export interface OrientationDataEventMessage extends BaseMotionSensorDataEventMessage {
-  sensorType: "orientation";
+interface OrientationDataEventMessage {
   orientation: Euler;
 }
-export interface ActivityDataEventMessage extends BaseMotionSensorDataEventMessage {
-  sensorType: "activity";
+interface ActivityDataEventMessage {
   activity: Activity;
 }
-export interface StepDetectorDataEventMessage extends BaseMotionSensorDataEventMessage {
-  sensorType: "stepDetector";
+interface StepDetectorDataEventMessage {
   stepDetector: Object;
 }
-export interface StepCounterDataEventMessage extends BaseMotionSensorDataEventMessage {
-  sensorType: "stepCounter";
+interface StepCounterDataEventMessage {
   stepCounter: number;
 }
-export interface DeviceOrientationDataEventMessage extends BaseMotionSensorDataEventMessage {
-  sensorType: "deviceOrientation";
+interface DeviceOrientationDataEventMessage {
   deviceOrientation: DeviceOrientation;
 }
 
@@ -123,19 +108,8 @@ export interface MotionSensorDataEventMessages {
   activity: ActivityDataEventMessage;
   deviceOrientation: DeviceOrientationDataEventMessage;
 }
-export type MotionSensorDataEventMessage =
-  | AccelerationDataEventMessage
-  | GravityDataEventMessage
-  | LinearAccelerationDataEventMessage
-  | GyroscopeDataEventMessage
-  | MagnetometerDataEventMessage
-  | GameRotationDataEventMessage
-  | RotationDataEventMessage
-  | OrientationDataEventMessage
-  | StepDetectorDataEventMessage
-  | StepCounterDataEventMessage
-  | ActivityDataEventMessage
-  | DeviceOrientationDataEventMessage;
+
+export type MotionSensorDataEventMessage = ValueOf<MotionSensorDataEventMessages>;
 
 class MotionSensorDataManager {
   parseVector3(dataView: DataView, scalar: number): Vector3 {

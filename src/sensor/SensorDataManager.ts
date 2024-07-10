@@ -1,17 +1,8 @@
 import { createConsole } from "../utils/Console";
 import { parseTimestamp } from "../utils/MathUtils";
-import PressureSensorDataManager, {
-  PressureDataEventMessages,
-  PressureDataEventMessage,
-} from "./PressureSensorDataManager";
-import MotionSensorDataManager, {
-  MotionSensorDataEventMessages,
-  MotionSensorDataEventMessage,
-} from "./MotionSensorDataManager";
-import BarometerSensorDataManager, {
-  BarometerSensorDataEventMessages,
-  BarometerSensorDataEventMessage,
-} from "./BarometerSensorDataManager";
+import PressureSensorDataManager, { PressureDataEventMessages } from "./PressureSensorDataManager";
+import MotionSensorDataManager, { MotionSensorDataEventMessages } from "./MotionSensorDataManager";
+import BarometerSensorDataManager, { BarometerSensorDataEventMessages } from "./BarometerSensorDataManager";
 import { parseMessage } from "../utils/ParseUtils";
 import EventDispatcher from "../utils/EventDispatcher";
 
@@ -19,6 +10,7 @@ import { MotionSensorTypes, ContinuousMotionTypes } from "./MotionSensorDataMana
 import { PressureSensorTypes, ContinuousPressureSensorTypes } from "./PressureSensorDataManager";
 import { BarometerSensorTypes, ContinuousBarometerSensorTypes } from "./BarometerSensorDataManager";
 import Device from "../Device";
+import { AddKeysAsPropertyToInterface, ExtendInterfaceValues, ValueOf } from "../utils/TypeScriptUtils";
 
 const _console = createConsole("SensorDataManager", { log: true });
 
@@ -38,22 +30,22 @@ export type SensorDataMessageType = (typeof SensorDataMessageTypes)[number];
 export const SensorDataEventTypes = [...SensorDataMessageTypes, ...SensorTypes] as const;
 export type SensorDataEventType = (typeof SensorDataEventTypes)[number];
 
-export interface BaseSensorDataEventMessage {
-  sensorType: SensorType;
+interface BaseSensorDataEventMessage {
   timestamp: number;
 }
-export type SensorDataEventMessage =
-  | PressureDataEventMessage
-  | MotionSensorDataEventMessage
-  | BarometerSensorDataEventMessage;
+
+type BaseSensorDataEventMessages = BarometerSensorDataEventMessages &
+  MotionSensorDataEventMessages &
+  PressureDataEventMessages;
+type _SensorDataEventMessages = ExtendInterfaceValues<
+  AddKeysAsPropertyToInterface<BaseSensorDataEventMessages, "sensorType">,
+  BaseSensorDataEventMessage
+>;
+export type SensorDataEventMessage = ValueOf<_SensorDataEventMessages>;
 interface AnySensorDataEventMessages {
   sensorData: SensorDataEventMessage;
 }
-
-export type SensorDataEventMessages = BarometerSensorDataEventMessages &
-  MotionSensorDataEventMessages &
-  PressureDataEventMessages &
-  AnySensorDataEventMessages;
+export type SensorDataEventMessages = _SensorDataEventMessages & AnySensorDataEventMessages;
 
 export type SensorDataEventDispatcher = EventDispatcher<Device, SensorDataEventType, SensorDataEventMessages>;
 

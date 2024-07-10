@@ -8,6 +8,7 @@ import { SensorType } from "../sensor/SensorDataManager";
 import { DeviceEvent } from "../Device";
 import EventDispatcher from "../utils/EventDispatcher";
 import DevicePair from "./DevicePair";
+import { AddKeysAsPropertyToInterface, ExtendInterfaceValues, ValueOf } from "../utils/TypeScriptUtils";
 
 const _console = createConsole("DevicePairSensorDataManager", { log: true });
 
@@ -19,18 +20,22 @@ export type DevicePairSensorDataEventType = (typeof DevicePairSensorDataEventTyp
 
 export type DevicePairSensorDataTimestamps = { [insoleSide in InsoleSide]: number };
 
-export interface BaseDevicePairSensorDataEventMessage {
-  sensorType: DevicePairSensorType;
+interface BaseDevicePairSensorDataEventMessage {
   timestamps: DevicePairSensorDataTimestamps;
 }
-export type DevicePairSensorDataEventMessage = DevicePairPressureDataEventMessage;
+
+type BaseDevicePairSensorDataEventMessages = DevicePairPressureDataEventMessages;
+type _DevicePairSensorDataEventMessages = ExtendInterfaceValues<
+  AddKeysAsPropertyToInterface<BaseDevicePairSensorDataEventMessages, "sensorType">,
+  BaseDevicePairSensorDataEventMessage
+>;
+
+export type DevicePairSensorDataEventMessage = ValueOf<_DevicePairSensorDataEventMessages>;
 interface AnyDevicePairSensorDataEventMessages {
   sensorData: DevicePairSensorDataEventMessage;
 }
-
-export type DevicePairSensorDataEventMessages =
-  | DevicePairPressureDataEventMessages
-  | AnyDevicePairSensorDataEventMessages;
+export type DevicePairSensorDataEventMessages = _DevicePairSensorDataEventMessages &
+  AnyDevicePairSensorDataEventMessages;
 
 export type DevicePairSensorDataEventDispatcher = EventDispatcher<
   DevicePair,
@@ -52,9 +57,7 @@ class DevicePairSensorDataManager {
   }
 
   onDeviceSensorData(event: DeviceEvent<"sensorData">) {
-    const { timestamp } = event.message;
-
-    const { sensorType } = event.message;
+    const { timestamp, sensorType } = event.message;
 
     _console.log({ sensorType, timestamp, event });
 

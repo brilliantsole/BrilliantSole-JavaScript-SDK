@@ -136,13 +136,7 @@ export const StaticDeviceEventTypes = [
 ] as const;
 export type StaticDeviceEventType = (typeof StaticDeviceEventTypes)[number];
 
-interface StaticDeviceConnectedEventMessage {
-  device: Device;
-}
-interface StaticDeviceDisconnectedEventMessage {
-  device: Device;
-}
-interface StaticDeviceIsConnectedEventMessage {
+interface StaticDeviceEventMessage {
   device: Device;
 }
 interface StaticAvailableDevicesEventMessage {
@@ -153,9 +147,9 @@ interface StaticConnectedDevicesEventMessage {
 }
 
 export interface StaticDeviceEventMessages {
-  deviceConnected: StaticDeviceConnectedEventMessage;
-  deviceDisconnected: StaticDeviceDisconnectedEventMessage;
-  deviceIsConnected: StaticDeviceIsConnectedEventMessage;
+  deviceConnected: StaticDeviceEventMessage;
+  deviceDisconnected: StaticDeviceEventMessage;
+  deviceIsConnected: StaticDeviceEventMessage;
   availableDevices: StaticAvailableDevicesEventMessage;
   connectedDevices: StaticConnectedDevicesEventMessage;
 }

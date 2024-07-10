@@ -4,7 +4,6 @@ import { PressureData } from "../sensor/PressureSensorDataManager";
 import { CenterOfPressure } from "../utils/CenterOfPressureHelper";
 import { InsoleSide, InsoleSides } from "../InformationManager";
 import { DeviceEvent } from "../Device";
-import { BaseDevicePairSensorDataEventMessage } from "./DevicePairSensorDataManager";
 
 const _console = createConsole("DevicePairPressureSensorDataManager", { log: true });
 
@@ -17,8 +16,7 @@ export interface DevicePairPressureData {
   normalizedCenter?: CenterOfPressure;
 }
 
-export interface DevicePairPressureDataEventMessage extends BaseDevicePairSensorDataEventMessage {
-  sensorType: "pressure";
+export interface DevicePairPressureDataEventMessage {
   pressure: DevicePairPressureData;
 }
 
