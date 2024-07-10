@@ -11,18 +11,3 @@ export type AddKeysAsPropertyToInterface<Interface extends object, Key extends s
 export type ExtendInterfaceValues<Interface extends object, T> = {
   [Key in keyof Interface]: Interface[Key] & T;
 };
-
-interface Acceleration {
-  acceleration: boolean;
-}
-
-interface Gravity {
-  gravity: number;
-}
-
-interface SensorMessages {
-  acceleration: Acceleration;
-  gravity: Gravity;
-}
-
-type Y = AddKeysAsPropertyToInterface<SensorMessages, "sensorType">;
