@@ -1,11 +1,10 @@
 import { createConsole } from "../utils/Console";
 import EventDispatcher, { Event, GenericEvent } from "../utils/EventDispatcher";
 import { addEventListeners, removeEventListeners } from "../utils/EventUtils";
-import Device, { DeviceEventType, GenericDeviceEvent } from "../Device";
+import Device, { DeviceEvent, DeviceEventType, GenericDeviceEvent } from "../Device";
 import DevicePairSensorDataManager, { DevicePairSensorDataEventDispatcher } from "./DevicePairSensorDataManager";
 import { capitalizeFirstCharacter } from "../utils/stringUtils";
 import { InsoleSides } from "../InformationManager";
-import { SensorDataEventTypes, SensorType } from "../sensor/SensorDataManager";
 import { VibrationConfiguration } from "../vibration/VibrationManager";
 import { SensorConfiguration } from "../sensor/SensorConfigurationManager";
 
@@ -59,20 +58,6 @@ export type GenericDevicePairEvent = GenericEvent<DevicePair, DeviceEventType>;
 class DevicePair {
   constructor() {
     this.#sensorDataManager.eventDispatcher = this.#eventDispatcher as DevicePairSensorDataEventDispatcher;
-  }
-
-  // EVENT DISPATCHER
-
-  static #EventTypes: DevicePairEventType[] = [
-    "isConnected",
-    "pressure",
-    ...Device.EventTypes.map((sensorType) => `device${capitalizeFirstCharacter(sensorType)}`),
-  ];
-  static get EventTypes() {
-    return this.#EventTypes;
-  }
-  get eventTypes() {
-    return DevicePair.#EventTypes;
   }
 
   #eventDispatcher: DevicePairEventDispatcher = new EventDispatcher(this as DevicePair, DevicePairEventTypes);
@@ -172,7 +157,6 @@ class DevicePair {
   }
 
   // SENSOR CONFIGURATION
-
   setSensorConfiguration(sensorConfiguration: SensorConfiguration) {
     InsoleSides.forEach((side) => {
       this[side]?.setSensorConfiguration(sensorConfiguration);
@@ -180,16 +164,14 @@ class DevicePair {
   }
 
   // SENSOR DATA
-
   #sensorDataManager = new DevicePairSensorDataManager();
-  #onDeviceSensorData(deviceEvent: GenericDeviceEvent) {
+  #onDeviceSensorData(deviceEvent: DeviceEvent<"sensorData">) {
     this.#redispatchDeviceEvent(deviceEvent);
 
     if (this.isConnected) {
       this.#sensorDataManager.onDeviceSensorData(deviceEvent);
     }
   }
-
   resetPressureRange() {
     this.#sensorDataManager.resetPressureRange();
   }
