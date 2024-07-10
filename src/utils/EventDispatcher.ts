@@ -1,15 +1,17 @@
 export type Event<
   Target extends any,
   EventType extends string,
+  EventMessages extends Partial<Record<EventType, any>>
+> = {
+  [T in keyof EventMessages]: { type: T; target: Target; message: EventMessages[T] };
+}[keyof EventMessages];
+
+export type SpecificEvent<
+  Target extends any,
+  EventType extends string,
   EventMessages extends Partial<Record<EventType, any>>,
   T extends EventType
 > = { type: T; target: Target; message: EventMessages[T] };
-
-export type GenericEvent<Target extends any, EventType extends string> = {
-  type: EventType;
-  target: Target;
-  message: any;
-};
 
 class EventDispatcher<
   Target extends any,

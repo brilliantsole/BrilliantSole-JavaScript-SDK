@@ -1,5 +1,5 @@
 import { createConsole } from "./utils/Console";
-import EventDispatcher, { Event, GenericEvent } from "./utils/EventDispatcher";
+import EventDispatcher, { Event, SpecificEvent } from "./utils/EventDispatcher";
 import BaseConnectionManager, {
   TxMessage,
   TxRxMessageType,
@@ -69,17 +69,14 @@ import DeviceInformationManager, {
 } from "./DeviceInformationManager";
 import InformationManager, {
   DeviceType,
-  DeviceTypes,
   InformationEventDispatcher,
   InformationEventTypes,
   InformationMessageType,
   InformationMessageTypes,
   InformationEventMessages,
-  InsoleSides,
   SendInformationMessageCallback,
 } from "./InformationManager";
 import { FileLike } from "./utils/ArrayBufferUtils";
-import { VibrationWaveformEffects } from "./vibration/VibrationWaveformEffects";
 
 const _console = createConsole("Device", { log: true });
 
@@ -171,8 +168,13 @@ export interface LocalStorageConfiguration {
 }
 
 export type DeviceEventDispatcher = EventDispatcher<Device, DeviceEventType, DeviceEventMessages>;
-export type DeviceEvent<Type extends DeviceEventType> = Event<Device, DeviceEventType, DeviceEventMessages, Type>;
-export type GenericDeviceEvent = GenericEvent<Device, DeviceEventType>;
+export type SpecificDeviceEvent<Type extends DeviceEventType> = SpecificEvent<
+  Device,
+  DeviceEventType,
+  DeviceEventMessages,
+  Type
+>;
+export type DeviceEvent = Event<Device, DeviceEventType, DeviceEventMessages>;
 
 class Device {
   get bluetoothId() {

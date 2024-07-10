@@ -1,11 +1,10 @@
 import DevicePairPressureSensorDataManager, {
-  DevicePairPressureDataEventMessage,
   DevicePairPressureDataEventMessages,
 } from "./DevicePairPressureSensorDataManager";
 import { createConsole } from "../utils/Console";
 import { InsoleSide } from "../InformationManager";
 import { SensorType } from "../sensor/SensorDataManager";
-import { DeviceEvent } from "../Device";
+import { SpecificDeviceEvent } from "../Device";
 import EventDispatcher from "../utils/EventDispatcher";
 import DevicePair from "./DevicePair";
 import { AddKeysAsPropertyToInterface, ExtendInterfaceValues, ValueOf } from "../utils/TypeScriptUtils";
@@ -56,7 +55,7 @@ class DevicePairSensorDataManager {
     this.pressureSensorDataManager.resetPressureRange();
   }
 
-  onDeviceSensorData(event: DeviceEvent<"sensorData">) {
+  onDeviceSensorData(event: SpecificDeviceEvent<"sensorData">) {
     const { timestamp, sensorType } = event.message;
 
     _console.log({ sensorType, timestamp, event });
@@ -69,7 +68,9 @@ class DevicePairSensorDataManager {
     let value;
     switch (sensorType) {
       case "pressure":
-        value = this.pressureSensorDataManager.onDevicePressureData(event as unknown as DeviceEvent<"pressure">);
+        value = this.pressureSensorDataManager.onDevicePressureData(
+          event as unknown as SpecificDeviceEvent<"pressure">
+        );
         break;
       default:
         _console.log(`uncaught sensorType "${sensorType}"`);
@@ -78,7 +79,10 @@ class DevicePairSensorDataManager {
 
     if (value) {
       const timestamps = Object.assign({}, this.#timestamps[sensorType]) as DevicePairSensorDataTimestamps;
-      this.dispatchEvent(sensorType as DevicePairSensorDataEventType, { timestamps, [sensorType]: value });
+      // @ts-expect-error
+      this.dispatchEvent(sensorType as DevicePairSensorDataEventType, { sensorType, timestamps, [sensorType]: value });
+      // @ts-expect-error
+      this.dispatchEvent("sensorData", { sensorType, timestamps, [sensorType]: value });
     } else {
       _console.log("no value received");
     }
