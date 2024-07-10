@@ -14,12 +14,7 @@ import { InsoleSide, InsoleSides } from "../InformationManager";
 import { VibrationConfiguration } from "../vibration/VibrationManager";
 import { SensorConfiguration } from "../sensor/SensorConfigurationManager";
 import { DevicePairSensorDataEventMessages, DevicePairSensorDataEventTypes } from "./DevicePairSensorDataManager";
-import {
-  AddPrefixToInterfaceKeys,
-  AddPropertyToInterfaceValues,
-  ExtendInterfaceValues,
-  KeyOf,
-} from "../utils/TypeScriptUtils";
+import { AddPrefixToInterfaceKeys, ExtendInterfaceValues, KeyOf } from "../utils/TypeScriptUtils";
 
 const _console = createConsole("DevicePair", { log: true });
 
@@ -89,7 +84,6 @@ class DevicePair {
   }
 
   // SIDES
-
   #left?: Device;
   get left() {
     return this.#left;
@@ -151,11 +145,30 @@ class DevicePair {
     return currentDevice;
   }
 
-  #boundDeviceEventListeners: { [eventType in DeviceEventType]?: Function } = {
+  #removeInsole(device: Device) {
+    const foundDevice = InsoleSides.some((side) => {
+      if (this[side] != device) {
+        return false;
+      }
+
+      _console.log(`removing ${side} insole`, device);
+      removeEventListeners(device, this.#boundDeviceEventListeners);
+      delete this[side];
+
+      return true;
+    });
+    if (foundDevice) {
+      this.#dispatchEvent("isConnected", { isConnected: this.isConnected });
+    }
+    return foundDevice;
+  }
+
+  #boundDeviceEventListeners: { [eventType in DeviceEventType]?: (event: DeviceEvent | any) => void } = {
     connectionStatus: this.#redispatchDeviceEvent.bind(this),
     isConnected: this.#onDeviceIsConnected.bind(this),
     sensorData: this.#onDeviceSensorData.bind(this),
     getSensorConfiguration: this.#redispatchDeviceEvent.bind(this),
+    getType: this.#onDeviceType.bind(this),
   };
 
   #redispatchDeviceEvent(deviceEvent: DeviceEvent) {
@@ -167,9 +180,21 @@ class DevicePair {
     });
   }
 
-  #onDeviceIsConnected(deviceEvent: DeviceEvent) {
+  #onDeviceIsConnected(deviceEvent: SpecificDeviceEvent<"isConnected">) {
     this.#redispatchDeviceEvent(deviceEvent);
     this.#dispatchEvent("isConnected", { isConnected: this.isConnected });
+  }
+
+  #onDeviceType(deviceEvent: SpecificDeviceEvent<"getType">) {
+    const { target: device } = deviceEvent;
+    if (this[device.insoleSide] == device) {
+      return;
+    }
+    const foundDevice = this.#removeInsole(device);
+    if (!foundDevice) {
+      return;
+    }
+    this.assignInsole(device);
   }
 
   // SENSOR CONFIGURATION
