@@ -1,15 +1,43 @@
 import { createConsole } from "../utils/Console";
 import EventDispatcher, { Event, SpecificEvent } from "../utils/EventDispatcher";
 import { addEventListeners, removeEventListeners } from "../utils/EventUtils";
-import Device, { DeviceEvent, DeviceEventType, SpecificDeviceEvent } from "../Device";
+import Device, {
+  DeviceEvent,
+  DeviceEventType,
+  SpecificDeviceEvent,
+  DeviceEventMessages,
+  DeviceEventTypes,
+} from "../Device";
 import DevicePairSensorDataManager, { DevicePairSensorDataEventDispatcher } from "./DevicePairSensorDataManager";
 import { capitalizeFirstCharacter } from "../utils/stringUtils";
-import { InsoleSides } from "../InformationManager";
+import { InsoleSide, InsoleSides } from "../InformationManager";
 import { VibrationConfiguration } from "../vibration/VibrationManager";
 import { SensorConfiguration } from "../sensor/SensorConfigurationManager";
 import { DevicePairSensorDataEventMessages, DevicePairSensorDataEventTypes } from "./DevicePairSensorDataManager";
+import {
+  AddPrefixToInterfaceKeys,
+  AddPropertyToInterfaceValues,
+  ExtendInterfaceValues,
+  KeyOf,
+} from "../utils/TypeScriptUtils";
 
 const _console = createConsole("DevicePair", { log: true });
+
+interface BaseDevicePairDeviceEventMessage {
+  device: Device;
+  side: InsoleSide;
+}
+type DevicePairDeviceEventMessages = ExtendInterfaceValues<
+  AddPrefixToInterfaceKeys<DeviceEventMessages, "device">,
+  BaseDevicePairDeviceEventMessage
+>;
+type DevicePairDeviceEventType = KeyOf<DevicePairDeviceEventMessages>;
+function getDevicePairDeviceEventType(deviceEventType: DeviceEventType) {
+  return `device${capitalizeFirstCharacter(deviceEventType)}` as DevicePairDeviceEventType;
+}
+const DevicePairDeviceEventTypes = DeviceEventTypes.map((eventType) =>
+  getDevicePairDeviceEventType(eventType)
+) as DevicePairDeviceEventType[];
 
 export const DevicePairConnectionEventTypes = ["isConnected"] as const;
 export type DevicePairConnectionEventType = (typeof DevicePairConnectionEventTypes)[number];
@@ -21,10 +49,16 @@ export interface DevicePairConnectionEventMessages {
   isConnected: DevicePairConnectionEventMessage;
 }
 
-export const DevicePairEventTypes = [...DevicePairConnectionEventTypes, ...DevicePairSensorDataEventTypes] as const;
+export const DevicePairEventTypes = [
+  ...DevicePairConnectionEventTypes,
+  ...DevicePairSensorDataEventTypes,
+  ...DevicePairDeviceEventTypes,
+] as const;
 export type DevicePairEventType = (typeof DevicePairEventTypes)[number];
 
-export type DevicePairEventMessages = DevicePairConnectionEventMessages & DevicePairSensorDataEventMessages;
+export type DevicePairEventMessages = DevicePairConnectionEventMessages &
+  DevicePairSensorDataEventMessages &
+  DevicePairDeviceEventMessages;
 
 export type DevicePairEventDispatcher = EventDispatcher<DevicePair, DevicePairEventType, DevicePairEventMessages>;
 export type SpecificDevicePairEvent<Type extends DevicePairEventType> = SpecificEvent<
@@ -112,7 +146,7 @@ class DevicePair {
     this.resetPressureRange();
 
     this.#dispatchEvent("isConnected", { isConnected: this.isConnected });
-    this.#dispatchEvent("deviceIsConnected", { device, isConnected: device.isConnected });
+    this.#dispatchEvent("deviceIsConnected", { device, isConnected: device.isConnected, side });
 
     return currentDevice;
   }
@@ -125,9 +159,11 @@ class DevicePair {
   };
 
   #redispatchDeviceEvent(deviceEvent: DeviceEvent) {
-    this.#dispatchEvent(`device${capitalizeFirstCharacter(deviceEvent.type)}`, {
-      ...deviceEvent.message,
-      device: deviceEvent.target,
+    const { type, target: device, message } = deviceEvent;
+    this.#dispatchEvent(getDevicePairDeviceEventType(type), {
+      ...message,
+      device,
+      side: device.insoleSide,
     });
   }
 

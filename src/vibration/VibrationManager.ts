@@ -25,21 +25,23 @@ export interface VibrationWaveformSegment {
 export const VibrationMessageTypes = ["triggerVibration"] as const;
 export type VibrationMessageType = (typeof VibrationMessageTypes)[number];
 
-export interface VibrationWaveformEffectConfiguration {
+interface BaseVibrationConfiguration {
+  type: VibrationType;
+  locations?: VibrationLocation[];
+}
+
+export interface VibrationWaveformEffectConfiguration extends BaseVibrationConfiguration {
+  type: "waveformEffect";
   segments: VibrationWaveformEffectSegment[];
   loopCount?: number;
 }
 
-export interface VibrationWaveformConfiguration {
+export interface VibrationWaveformConfiguration extends BaseVibrationConfiguration {
+  type: "waveform";
   segments: VibrationWaveformSegment[];
 }
 
-export interface VibrationConfiguration {
-  locations?: VibrationLocation[];
-  type: VibrationType;
-  waveformEffect?: VibrationWaveformEffectConfiguration;
-  waveform?: VibrationWaveformConfiguration;
-}
+export type VibrationConfiguration = VibrationWaveformEffectConfiguration | VibrationWaveformConfiguration;
 
 export type SendVibrationMessageCallback = SendMessageCallback<VibrationMessageType>;
 
@@ -312,21 +314,13 @@ class VibrationManager {
       switch (type) {
         case "waveformEffect":
           {
-            const { waveformEffect } = vibrationConfiguration;
-            if (!waveformEffect) {
-              throw Error("waveformEffect not defined in vibrationConfiguration");
-            }
-            const { segments, loopCount } = waveformEffect;
+            const { segments, loopCount } = vibrationConfiguration;
             arrayBuffer = this.#createWaveformEffectsData(locations, segments, loopCount);
           }
           break;
         case "waveform":
           {
-            const { waveform } = vibrationConfiguration;
-            if (!waveform) {
-              throw Error("waveform not defined in vibrationConfiguration");
-            }
-            const { segments } = waveform;
+            const { segments } = vibrationConfiguration;
             arrayBuffer = this.#createWaveformData(locations, segments);
           }
           break;

@@ -40,12 +40,12 @@ export const ActivityTypes = ["still", "walking", "running", "bicycle", "vehicle
 export type ActivityType = (typeof ActivityTypes)[number];
 
 export interface Activity {
-  still?: boolean;
-  walking?: boolean;
-  running?: boolean;
-  bicycle?: boolean;
-  vehicle?: boolean;
-  tilting?: boolean;
+  still: boolean;
+  walking: boolean;
+  running: boolean;
+  bicycle: boolean;
+  vehicle: boolean;
+  tilting: boolean;
 }
 
 export const DeviceOrientations = [
@@ -162,7 +162,7 @@ class MotionSensorDataManager {
 
   parseActivity(dataView: DataView) {
     _console.log("parseActivity", dataView);
-    const activity: Activity = {};
+    const activity: Partial<Activity> = {};
 
     const activityBitfield = dataView.getUint8(0);
     _console.log("activityBitfield", activityBitfield.toString(2));
@@ -172,7 +172,7 @@ class MotionSensorDataManager {
 
     _console.log("activity", activity);
 
-    return activity;
+    return activity as Activity;
   }
 
   parseDeviceOrientation(dataView: DataView) {
