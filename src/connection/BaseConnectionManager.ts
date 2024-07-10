@@ -68,7 +68,6 @@ abstract class BaseConnectionManager {
   get #baseConstructor() {
     return this.constructor as typeof BaseConnectionManager;
   }
-
   static get isSupported() {
     return false;
   }
@@ -96,24 +95,13 @@ abstract class BaseConnectionManager {
     this.#assertIsSupported();
   }
 
-  /** @type {ConnectionStatus[]} */
-  static get #Statuses() {
-    return ["not connected", "connecting", "connected", "disconnecting"];
-  }
-  static get Statuses() {
-    return this.#Statuses;
-  }
-  get #statuses() {
-    return BaseConnectionManager.#Statuses;
-  }
-
   #status: ConnectionStatus = "not connected";
   get status() {
     return this.#status;
   }
   /** @protected */
   set status(newConnectionStatus) {
-    _console.assertEnumWithError(newConnectionStatus, this.#statuses);
+    _console.assertEnumWithError(newConnectionStatus, ConnectionStatuses);
     if (this.#status == newConnectionStatus) {
       _console.log(`tried to assign same connection status "${newConnectionStatus}"`);
       return;

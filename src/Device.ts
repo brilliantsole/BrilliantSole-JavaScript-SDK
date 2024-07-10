@@ -1,5 +1,5 @@
 import { createConsole } from "./utils/Console";
-import EventDispatcher, { Event, SpecificEvent } from "./utils/EventDispatcher";
+import EventDispatcher, { BoundEventListeners, Event, SpecificEvent } from "./utils/EventDispatcher";
 import BaseConnectionManager, {
   TxMessage,
   TxRxMessageType,
@@ -14,6 +14,7 @@ import SensorConfigurationManager, {
   SendSensorConfigurationMessageCallback,
   SensorConfiguration,
   SensorConfigurationEventDispatcher,
+  SensorConfigurationEventMessages,
   SensorConfigurationMessageType,
   SensorConfigurationMessageTypes,
 } from "./sensor/SensorConfigurationManager";
@@ -120,6 +121,7 @@ export type DeviceEventMessages = ConnectionEventMessages &
   DeviceInformationEventMessages &
   InformationEventMessages &
   SensorDataEventMessages &
+  SensorConfigurationEventMessages &
   TfliteEventMessages &
   FileTransferEventMessages &
   FirmwareEventMessages;
@@ -168,13 +170,15 @@ export interface LocalStorageConfiguration {
 }
 
 export type DeviceEventDispatcher = EventDispatcher<Device, DeviceEventType, DeviceEventMessages>;
-export type SpecificDeviceEvent<Type extends DeviceEventType> = SpecificEvent<
+export type SpecificDeviceEvent<EventType extends DeviceEventType> = SpecificEvent<
   Device,
   DeviceEventType,
   DeviceEventMessages,
-  Type
+  EventType
 >;
 export type DeviceEvent = Event<Device, DeviceEventType, DeviceEventMessages>;
+
+export type BoundDeviceEventListeners = BoundEventListeners<Device, DeviceEventType, DeviceEventMessages>;
 
 class Device {
   get bluetoothId() {

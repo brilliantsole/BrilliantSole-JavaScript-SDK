@@ -62,7 +62,6 @@ class WebSocketClientConnectionManager extends BaseConnectionManager {
     this.sendWebSocketDisconnectMessage();
   }
 
-  /** @type {boolean} */
   get canReconnect() {
     return true;
   }
@@ -97,16 +96,11 @@ class WebSocketClientConnectionManager extends BaseConnectionManager {
     this.sendWebSocketMessage(...this.#deviceInformationMessageTypes);
   }
 
-  /** @param {DataView} dataView */
   onWebSocketMessage(dataView: DataView) {
     _console.log({ dataView });
     parseMessage(dataView, Device.EventTypes, this.#onWebSocketMessageCallback.bind(this), null, true);
   }
 
-  /**
-   * @param {DeviceEventType} messageType
-   * @param {DataView} dataView
-   */
   #onWebSocketMessageCallback(messageType: DeviceEventType, dataView: DataView) {
     let byteOffset = 0;
 

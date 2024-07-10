@@ -1,5 +1,5 @@
 import { createConsole } from "../utils/Console";
-import EventDispatcher, { Event, SpecificEvent } from "../utils/EventDispatcher";
+import EventDispatcher, { BoundEventListeners, Event, SpecificEvent } from "../utils/EventDispatcher";
 import { addEventListeners, removeEventListeners } from "../utils/EventUtils";
 import Device, {
   DeviceEvent,
@@ -7,6 +7,7 @@ import Device, {
   SpecificDeviceEvent,
   DeviceEventMessages,
   DeviceEventTypes,
+  BoundDeviceEventListeners,
 } from "../Device";
 import DevicePairSensorDataManager, { DevicePairSensorDataEventDispatcher } from "./DevicePairSensorDataManager";
 import { capitalizeFirstCharacter } from "../utils/stringUtils";
@@ -63,6 +64,8 @@ export type SpecificDevicePairEvent<Type extends DevicePairEventType> = Specific
   Type
 >;
 export type DevicePairEvent = Event<DevicePair, DeviceEventType, DevicePairEventMessages>;
+
+type BoundDevicePairEventListeners = BoundEventListeners<DevicePair, DeviceEventType, DevicePairEventMessages>;
 
 class DevicePair {
   constructor() {
@@ -163,7 +166,7 @@ class DevicePair {
     return foundDevice;
   }
 
-  #boundDeviceEventListeners: { [eventType in DeviceEventType]?: (event: DeviceEvent | any) => void } = {
+  #boundDeviceEventListeners: BoundDeviceEventListeners = {
     connectionStatus: this.#redispatchDeviceEvent.bind(this),
     isConnected: this.#onDeviceIsConnected.bind(this),
     sensorData: this.#onDeviceSensorData.bind(this),

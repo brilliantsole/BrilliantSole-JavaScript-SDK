@@ -10,8 +10,19 @@ export type SpecificEvent<
   Target extends any,
   EventType extends string,
   EventMessages extends Partial<Record<EventType, any>>,
-  T extends EventType
-> = { type: T; target: Target; message: EventMessages[T] };
+  SpecificEventType extends EventType
+> = { type: SpecificEventType; target: Target; message: EventMessages[SpecificEventType] };
+
+export type BoundEventListeners<
+  Target extends any,
+  EventType extends string,
+  EventMessages extends Partial<Record<EventType, any>>
+> = {
+  [SpecificEventType in keyof EventMessages]?: (
+    // @ts-expect-error
+    event: SpecificEvent<Target, EventType, EventMessages, SpecificEventType>
+  ) => void;
+};
 
 class EventDispatcher<
   Target extends any,

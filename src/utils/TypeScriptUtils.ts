@@ -2,14 +2,14 @@ export type ValueOf<T> = T[keyof T];
 export type KeyOf<T> = keyof T;
 
 export type AddProperty<T, Key extends string, Value> = T & { [K in Key]: Value };
-export type AddPropertyToInterfaceValues<Interface extends object, Key extends string, Value> = {
+export type AddPropertyToInterfaceValues<Interface, Key extends string, Value> = {
   [_ in keyof Interface]: AddProperty<Interface[_], Key, Value>;
 };
-export type AddKeysAsPropertyToInterface<Interface extends object, Key extends string> = {
+export type AddKeysAsPropertyToInterface<Interface, Key extends string> = {
   [Value in keyof Interface]: AddProperty<Interface[Value], Key, Value>;
 };
 
-export type ExtendInterfaceValues<Interface extends object, T> = {
+export type ExtendInterfaceValues<Interface, T> = {
   [Key in keyof Interface]: Interface[Key] & T;
 };
 
