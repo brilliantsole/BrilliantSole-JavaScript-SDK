@@ -7,44 +7,24 @@ import { capitalizeFirstCharacter } from "../utils/stringUtils";
 import { InsoleSides } from "../InformationManager";
 import { VibrationConfiguration } from "../vibration/VibrationManager";
 import { SensorConfiguration } from "../sensor/SensorConfigurationManager";
+import { DevicePairSensorDataEventMessages, DevicePairSensorDataEventTypes } from "./DevicePairSensorDataManager";
 
 const _console = createConsole("DevicePair", { log: true });
 
-export const DevicePairDeviceEventTypes = ["deviceIsConnected", "deviceConnectionStatus"] as const;
-export type DevicePairDeviceEventType = (typeof DevicePairDeviceEventTypes)[number];
+export const DevicePairConnectionEventTypes = ["isConnected"] as const;
+export type DevicePairConnectionEventType = (typeof DevicePairConnectionEventTypes)[number];
 
-// FILL - define device type...
-
-export const DevicePairDeviceSensorDataEventTypes = [
-  "deviceSensorData",
-  "devicePressure",
-  "deviceAcceleration",
-  "deviceGravity",
-  "deviceLinearAcceleration",
-  "deviceGyroscope",
-  "deviceMagnetometer",
-  "deviceGameRotation",
-  "deviceRotation",
-  "deviceOrientation",
-  "deviceDeviceOrientation",
-  "deviceActivity",
-  "deviceStepCounter",
-  "deviceStepDetector",
-  "deviceBarometer",
-] as const;
-type DevicePairDeviceSensorDataEventType = (typeof DevicePairDeviceSensorDataEventTypes)[number];
-
-type DevicePairSensorType = "pressure";
-type DevicePairEventType =
-  | "isConnected"
-  | DevicePairDeviceEventType
-  | DevicePairDeviceSensorDataEventType
-  | DevicePairSensorType
-  | "deviceGetSensorConfiguration";
-
-export interface DevicePairEventMessages {
-  // FILL
+export interface DevicePairConnectionEventMessage {
+  isConnected: boolean;
 }
+export interface DevicePairConnectionEventMessages {
+  isConnected: DevicePairConnectionEventMessage;
+}
+
+export const DevicePairEventTypes = [...DevicePairConnectionEventTypes, ...DevicePairSensorDataEventTypes] as const;
+export type DevicePairEventType = (typeof DevicePairEventTypes)[number];
+
+export type DevicePairEventMessages = DevicePairConnectionEventMessages & DevicePairSensorDataEventMessages;
 
 export type DevicePairEventDispatcher = EventDispatcher<DevicePair, DevicePairEventType, DevicePairEventMessages>;
 export type DevicePairEvent<Type extends DevicePairEventType> = Event<
