@@ -1,12 +1,7 @@
 import { dataToArrayBuffer } from "../../utils/ArrayBufferUtils";
 import { createConsole } from "../../utils/Console";
 import { isInNode } from "../../utils/environment";
-import {
-  BoundEventListeners,
-  BoundGenericEventListeners,
-  addEventListeners,
-  removeEventListeners,
-} from "../../utils/EventUtils";
+import { BoundGenericEventListeners, addEventListeners, removeEventListeners } from "../../utils/EventUtils";
 import {
   allServiceUUIDs,
   getServiceNameFromUUID,
@@ -23,11 +18,14 @@ import type * as noble from "@abandonware/noble";
 
 import { BluetoothCharacteristicName, BluetoothServiceName } from "./bluetoothUUIDs";
 import { ConnectionType } from "../BaseConnectionManager";
+import NobleScanner from "../../scanner/NobleScanner";
 
 interface HasConnectionManager {
   connectionManager: NobleConnectionManager | undefined;
 }
-interface NoblePeripheral extends noble.Peripheral, HasConnectionManager {}
+export interface NoblePeripheral extends noble.Peripheral, HasConnectionManager {
+  scanner: NobleScanner;
+}
 interface NobleService extends noble.Service, HasConnectionManager {
   name: BluetoothServiceName;
 }

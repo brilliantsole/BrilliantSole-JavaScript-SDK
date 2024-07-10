@@ -12,7 +12,7 @@ export type ScannerEventType = (typeof ScannerEventTypes)[number];
 export interface DiscoveredDevice {
   bluetoothId: string;
   name: string;
-  deviceType: DeviceType;
+  deviceType?: DeviceType;
   rssi: number;
 }
 
@@ -79,7 +79,7 @@ abstract class BaseScanner {
   };
 
   // EVENT DISPATCHER
-  #eventDispatcher = new EventDispatcher(this, ScannerEventTypes);
+  #eventDispatcher: ScannerEventDispatcher = new EventDispatcher(this as BaseScanner, ScannerEventTypes);
   get addEventListener() {
     return this.#eventDispatcher.addEventListener;
   }
