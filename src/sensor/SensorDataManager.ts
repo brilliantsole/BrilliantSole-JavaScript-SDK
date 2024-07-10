@@ -55,6 +55,8 @@ export type SensorDataEventMessages = BarometerSensorDataEventMessages &
   PressureDataEventMessages &
   AnySensorDataEventMessages;
 
+export type SensorDataEventDispatcher = EventDispatcher<Device, SensorDataEventType, SensorDataEventMessages>;
+
 class SensorDataManager {
   pressureSensorDataManager = new PressureSensorDataManager();
   motionSensorDataManager = new MotionSensorDataManager();
@@ -70,7 +72,7 @@ class SensorDataManager {
     _console.assertWithError(sensorTypeEnum in SensorTypes, `invalid sensorTypeEnum ${sensorTypeEnum}`);
   }
 
-  eventDispatcher!: EventDispatcher<Device, SensorDataEventType, SensorDataEventMessages>;
+  eventDispatcher!: SensorDataEventDispatcher;
   get dispatchEvent() {
     return this.eventDispatcher.dispatchEvent;
   }

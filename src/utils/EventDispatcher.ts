@@ -1,11 +1,24 @@
+export type Event<
+  Target extends any,
+  EventType extends string,
+  EventMessages extends Partial<Record<EventType, any>>,
+  T extends EventType
+> = { type: T; target: Target; message: EventMessages[T] };
+
+export type GenericEvent<Target extends any, EventType extends string> = {
+  type: EventType;
+  target: Target;
+  message: any;
+};
+
 class EventDispatcher<
   Target extends any,
   EventType extends string,
   EventMessages extends Partial<Record<EventType, any>>
 > {
   private listeners: {
-    [K in EventType]?: {
-      listener: (event: { type: K; target: Target; message: EventMessages[K] }) => void;
+    [T in EventType]?: {
+      listener: (event: { type: T; target: Target; message: EventMessages[T] }) => void;
       once: boolean;
     }[];
   } = {};

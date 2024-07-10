@@ -1,46 +1,33 @@
-import PressureSensorDataManager from "../sensor/PressureSensorDataManager";
-import CenterOfPressureHelper from "../utils/CenterOfPressureHelper";
 import { createConsole } from "../utils/Console";
-import Device from "../Device";
+import CenterOfPressureHelper from "../utils/CenterOfPressureHelper";
+import { PressureData } from "../sensor/PressureSensorDataManager";
+import { CenterOfPressure } from "../utils/CenterOfPressureHelper";
+import { InsoleSide, InsoleSides } from "../InformationManager";
+import { DeviceEvent } from "../Device";
+import { BaseDevicePairSensorDataEventMessage } from "./DevicePairSensorDataManager";
 
 const _console = createConsole("DevicePairPressureSensorDataManager", { log: true });
 
-/** @typedef {import("../Device").SensorType} SensorType */
+export type DevicePairRawPressureData = { [insoleSide in InsoleSide]: PressureData };
 
-/** @typedef {import("../sensor/PressureSensorDataManager").PressureData} PressureData */
+export interface DevicePairPressureData {
+  rawSum: number;
+  normalizedSum: number;
+  center?: CenterOfPressure;
+  normalizedCenter?: CenterOfPressure;
+}
 
-/** @typedef {import("../utils/CenterOfPressureHelper").CenterOfPressure} CenterOfPressure */
+export interface DevicePairPressureDataEventMessage extends BaseDevicePairSensorDataEventMessage {
+  sensorType: "pressure";
+  pressure: DevicePairPressureData;
+}
 
-/**
- * @typedef {Object} DevicePairRawPressureData
- * @property {PressureData} left
- * @property {PressureData} right
- */
-
-/**
- * @typedef {Object} DevicePairPressureData
- *
- * @property {number} rawSum
- * @property {number} normalizedSum
- *
- * @property {CenterOfPressure} [center]
- * @property {CenterOfPressure} [normalizedCenter]
- */
-
-/** @typedef {import("../Device").DeviceEvent} DeviceEvent */
+export interface DevicePairPressureDataEventMessages {
+  pressure: DevicePairPressureDataEventMessage;
+}
 
 class DevicePairPressureSensorDataManager {
-  static get Sides() {
-    return Device.InsoleSides;
-  }
-  get sides() {
-    return Device.InsoleSides;
-  }
-
-  // PRESSURE DATA
-
-  /** @type {DevicePairRawPressureData} */
-  #rawPressure = {};
+  #rawPressure: Partial<DevicePairRawPressureData> = {};
 
   #centerOfPressureHelper = new CenterOfPressureHelper();
 
@@ -48,8 +35,7 @@ class DevicePairPressureSensorDataManager {
     this.#centerOfPressureHelper.reset();
   }
 
-  /** @param {DeviceEvent} event  */
-  onDevicePressureData(event) {
+  onDevicePressureData(event: DeviceEvent<"pressure">) {
     const { pressure } = event.message;
     const insoleSide = event.target.insoleSide;
     _console.log({ pressure, insoleSide });
@@ -62,27 +48,26 @@ class DevicePairPressureSensorDataManager {
   }
 
   get #hasAllPressureData() {
-    return this.sides.every((side) => side in this.#rawPressure);
+    return InsoleSides.every((side) => side in this.#rawPressure);
   }
 
   #updatePressureData() {
-    /** @type {DevicePairPressureData} */
-    const pressure = { rawSum: 0, normalizedSum: 0 };
+    const pressure: DevicePairPressureData = { rawSum: 0, normalizedSum: 0 };
 
-    this.sides.forEach((side) => {
-      pressure.rawSum += this.#rawPressure[side].rawSum;
-      pressure.normalizedSum += this.#rawPressure[side].normalizedSum;
+    InsoleSides.forEach((side) => {
+      pressure.rawSum += this.#rawPressure[side]!.scaledSum;
+      pressure.normalizedSum += this.#rawPressure[side]!.normalizedSum;
     });
 
     if (pressure.normalizedSum > 0) {
       pressure.center = { x: 0, y: 0 };
-      this.sides.forEach((side) => {
-        const sidePressure = this.#rawPressure[side];
+      InsoleSides.forEach((side) => {
+        const sidePressure = this.#rawPressure[side]!;
         const normalizedPressureSumWeight = sidePressure.normalizedSum / pressure.normalizedSum;
         if (normalizedPressureSumWeight > 0) {
-          pressure.center.y += sidePressure.normalizedCenter.y * normalizedPressureSumWeight;
+          pressure.center!.y += sidePressure.normalizedCenter!.y * normalizedPressureSumWeight;
           if (side == "right") {
-            pressure.center.x = normalizedPressureSumWeight;
+            pressure.center!.x = normalizedPressureSumWeight;
           }
         }
       });

@@ -1,5 +1,5 @@
 import { createConsole } from "./utils/Console";
-import EventDispatcher from "./utils/EventDispatcher";
+import EventDispatcher, { Event, GenericEvent } from "./utils/EventDispatcher";
 import BaseConnectionManager, {
   TxMessage,
   TxRxMessageType,
@@ -26,6 +26,7 @@ import SensorDataManager, {
   SensorTypes,
   ContinuousSensorTypes,
   ContinuousSensorType,
+  SensorDataEventDispatcher,
 } from "./sensor/SensorDataManager";
 import VibrationManager, {
   SendVibrationMessageCallback,
@@ -175,6 +176,10 @@ export interface LocalStorageConfiguration {
   devices: LocalStorageDeviceInformation[];
 }
 
+export type DeviceEventDispatcher = EventDispatcher<Device, DeviceEventType, DeviceEventMessages>;
+export type DeviceEvent<Type extends DeviceEventType> = Event<Device, DeviceEventType, DeviceEventMessages, Type>;
+export type GenericDeviceEvent = GenericEvent<Device, DeviceEventType>;
+
 class Device {
   get bluetoothId() {
     return this.#connectionManager?.bluetoothId;
@@ -190,6 +195,8 @@ class Device {
       this
     ) as SendSensorConfigurationMessageCallback;
     this.#sensorConfigurationManager.eventDispatcher = this.#eventDispatcher as SensorConfigurationEventDispatcher;
+
+    this.#sensorDataManager.eventDispatcher = this.#eventDispatcher as SensorDataEventDispatcher;
 
     this.#vibrationManager.sendMessage = this.#sendTxMessages.bind(this) as SendVibrationMessageCallback;
 
@@ -238,10 +245,7 @@ class Device {
     return new WebBluetoothConnectionManager();
   }
 
-  #eventDispatcher: EventDispatcher<Device, DeviceEventType, DeviceEventMessages> = new EventDispatcher(
-    this as Device,
-    DeviceEventTypes
-  );
+  #eventDispatcher: DeviceEventDispatcher = new EventDispatcher(this as Device, DeviceEventTypes);
   get addEventListener() {
     return this.#eventDispatcher.addEventListener;
   }
@@ -560,12 +564,6 @@ class Device {
     await this.#informationManager.getBatteryCurrent();
   }
 
-  static get MinNameLength() {
-    return InformationManager.MinNameLength;
-  }
-  static get MaxNameLength() {
-    return InformationManager.MaxNameLength;
-  }
   get name() {
     return this.#informationManager.name;
   }
@@ -573,9 +571,6 @@ class Device {
     return this.#informationManager.setName;
   }
 
-  static get Types() {
-    return DeviceTypes;
-  }
   get type() {
     return this.#informationManager.type;
   }
@@ -583,9 +578,6 @@ class Device {
     return this.#informationManager.setType;
   }
 
-  static get InsoleSides() {
-    return InsoleSides;
-  }
   get isInsole() {
     return this.#informationManager.isInsole;
   }
@@ -598,12 +590,6 @@ class Device {
   }
 
   // SENSOR TYPES
-  static get SensorTypes() {
-    return SensorTypes;
-  }
-  static get ContinuousSensorTypes() {
-    return ContinuousSensorTypes;
-  }
   get sensorTypes() {
     return Object.keys(this.sensorConfiguration) as SensorType[];
   }
@@ -617,13 +603,6 @@ class Device {
 
   get sensorConfiguration() {
     return this.#sensorConfigurationManager.configuration;
-  }
-
-  static get MaxSensorRate() {
-    return SensorConfigurationManager.MaxSensorRate;
-  }
-  static get SensorRateStep() {
-    return SensorConfigurationManager.SensorRateStep;
   }
 
   async setSensorConfiguration(newSensorConfiguration: SensorConfiguration, clearRest?: boolean) {
@@ -663,55 +642,19 @@ class Device {
   }
 
   // SENSOR DATA
-
   #sensorDataManager: SensorDataManager = new SensorDataManager();
-
   resetPressureRange() {
     this.#sensorDataManager.pressureSensorDataManager.resetRange();
   }
 
   // VIBRATION
-
   #vibrationManager = new VibrationManager();
-  static get VibrationLocations() {
-    return VibrationLocations;
-  }
-  static get VibrationTypes() {
-    return VibrationTypes;
-  }
-
-  static get VibrationWaveformEffects() {
-    return VibrationWaveformEffects;
-  }
-  static get MaxVibrationWaveformEffectSegmentDelay() {
-    return VibrationManager.MaxWaveformEffectSegmentDelay;
-  }
-  static get MaxNumberOfVibrationWaveformEffectSegments() {
-    return VibrationManager.MaxNumberOfWaveformEffectSegments;
-  }
-  static get MaxVibrationWaveformEffectSegmentLoopCount() {
-    return VibrationManager.MaxWaveformEffectSegmentLoopCount;
-  }
-  static get MaxVibrationWaveformEffectSequenceLoopCount() {
-    return VibrationManager.MaxWaveformEffectSequenceLoopCount;
-  }
-
-  static get MaxVibrationWaveformSegmentDuration() {
-    return VibrationManager.MaxWaveformSegmentDuration;
-  }
-  static get MaxNumberOfVibrationWaveformSegments() {
-    return VibrationManager.MaxNumberOfWaveformSegments;
-  }
-
   async triggerVibration(vibrationConfigurations: VibrationConfiguration[], sendImmediately?: boolean) {
     this.#vibrationManager.triggerVibration(vibrationConfigurations, sendImmediately);
   }
 
   // FILE TRANSFER
   #fileTransferManager = new FileTransferManager();
-  static get FileTypes() {
-    return FileTypes;
-  }
 
   get maxFileLength() {
     return this.#fileTransferManager.maxLength;
@@ -738,11 +681,6 @@ class Device {
   }
 
   // TFLITE
-
-  static get TfliteSensorTypes() {
-    return TfliteManager.SensorTypes;
-  }
-
   #tfliteManager = new TfliteManager();
 
   get tfliteName() {
@@ -753,7 +691,6 @@ class Device {
   }
 
   // TFLITE MODEL CONFIG
-
   static get TfliteTasks() {
     return TfliteTasks;
   }
@@ -827,8 +764,8 @@ class Device {
     return this.#connectionManager!.sendSmpMessage;
   }
 
-  async uploadFirmware(file: FileLike) {
-    return this.#firmwareManager.uploadFirmware(file);
+  get uploadFirmware() {
+    return this.#firmwareManager.uploadFirmware;
   }
 
   async reset() {

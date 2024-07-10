@@ -1,214 +1,69 @@
 import { createConsole } from "../utils/Console";
-import EventDispatcher, { addEventListeners, removeEventListeners } from "../utils/EventDispatcher";
-import Device from "../Device";
-import DevicePairSensorDataManager from "./DevicePairSensorDataManager";
+import EventDispatcher, { Event, GenericEvent } from "../utils/EventDispatcher";
+import { addEventListeners, removeEventListeners } from "../utils/EventUtils";
+import Device, { DeviceEventType, GenericDeviceEvent } from "../Device";
+import DevicePairSensorDataManager, { DevicePairSensorDataEventDispatcher } from "./DevicePairSensorDataManager";
 import { capitalizeFirstCharacter } from "../utils/stringUtils";
+import { InsoleSides } from "../InformationManager";
+import { SensorDataEventTypes, SensorType } from "../sensor/SensorDataManager";
+import { VibrationConfiguration } from "../vibration/VibrationManager";
+import { SensorConfiguration } from "../sensor/SensorConfigurationManager";
 
 const _console = createConsole("DevicePair", { log: true });
 
-/** @typedef {import("../Device").InsoleSide} InsoleSide */
-/** @typedef {import("../Device").DeviceEvent} DeviceEvent */
-/** @typedef {import("../Device").DeviceEventType} DeviceEventType */
+export const DevicePairDeviceEventTypes = ["deviceIsConnected", "deviceConnectionStatus"] as const;
+export type DevicePairDeviceEventType = (typeof DevicePairDeviceEventTypes)[number];
 
-/** @typedef {import("../sensor/SensorDataManager").SensorType} SensorType */
+// FILL - define device type...
 
-/** @typedef {"deviceIsConnected" | "deviceConnectionStatus"} DevicePairDeviceEventType */
-/**
- * @typedef { "deviceSensorData" |
- * "devicePressure" |
- * "deviceAcceleration" |
- * "deviceGravity" |
- * "deviceLinearAcceleration" |
- * "deviceGyroscope" |
- * "deviceMagnetometer" |
- * "deviceGameRotation" |
- * "deviceRotation" |
- * "deviceOrientation" |
- * "deviceDeviceOrientation" |
- * "deviceActivity" |
- * "deviceStepCounter" |
- * "deviceStepDetector" |
- * "deviceBarometer"
- * } DevicePairDeviceSensorDataEventType
- */
-/** @typedef {"pressure"} DevicePairSensorType */
-/** @typedef {"isConnected" | DevicePairDeviceEventType | DevicePairDeviceSensorDataEventType | DevicePairSensorType | "deviceGetSensorConfiguration"} DevicePairEventType */
+export const DevicePairDeviceSensorDataEventTypes = [
+  "deviceSensorData",
+  "devicePressure",
+  "deviceAcceleration",
+  "deviceGravity",
+  "deviceLinearAcceleration",
+  "deviceGyroscope",
+  "deviceMagnetometer",
+  "deviceGameRotation",
+  "deviceRotation",
+  "deviceOrientation",
+  "deviceDeviceOrientation",
+  "deviceActivity",
+  "deviceStepCounter",
+  "deviceStepDetector",
+  "deviceBarometer",
+] as const;
+type DevicePairDeviceSensorDataEventType = (typeof DevicePairDeviceSensorDataEventTypes)[number];
 
-/** @typedef {import("../utils/EventDispatcher").EventDispatcherOptions} EventDispatcherOptions */
+type DevicePairSensorType = "pressure";
+type DevicePairEventType =
+  | "isConnected"
+  | DevicePairDeviceEventType
+  | DevicePairDeviceSensorDataEventType
+  | DevicePairSensorType
+  | "deviceGetSensorConfiguration";
 
-/** @typedef {import("../sensor/SensorConfigurationManager").SensorConfiguration} SensorConfiguration */
+export interface DevicePairEventMessages {
+  // FILL
+}
 
-/** @typedef {import("../utils/CenterOfPressureHelper").CenterOfPressure} CenterOfPressure */
-
-/**
- * @typedef {Object} BaseDevicePairEvent
- * @property {DevicePair} target
- * @property {DevicePairEventType} type
- */
-
-/**
- * @typedef {Object} BaseDevicePairIsConnectedEvent
- * @property {"isConnected"} type
- * @property {{isConnected: boolean}} message
- */
-/** @typedef {BaseDevicePairEvent & BaseDevicePairIsConnectedEvent} DevicePairIsConnectedEvent */
-
-/** @typedef {DevicePairIsConnectedEvent} DevicePairConnectionEvent */
-
-/** @typedef {import("./DevicePairPressureSensorDataManager").PressureData} PressureData */
-/**
- * @typedef {Object} BaseDevicePairPressureEvent
- * @property {"pressure"} type
- * @property {{pressure: PressureData}} message
- */
-/** @typedef {BaseDevicePairEvent & BaseDevicePairPressureEvent} DevicePairPressureEvent */
-
-/** @typedef {DevicePairPressureEvent} DevicePairSensorEvent */
-
-/**
- * @typedef {Object} BaseDevicePairDeviceIsConnectedEvent
- * @property {"deviceIsConnected"} type
- * @property {{device: Device, isConnected: boolean}} message
- */
-/** @typedef {BaseDevicePairEvent & BaseDevicePairDeviceIsConnectedEvent} DevicePairDeviceIsConnectedEvent */
-
-/** @typedef {import("../Device").ConnectionStatus} ConnectionStatus */
-/**
- * @typedef {Object} BaseDevicePairDeviceConnectionStatusEvent
- * @property {"deviceConnectionStatus"} type
- * @property {{device: Device, connectionStatus: ConnectionStatus}} message
- */
-/** @typedef {BaseDevicePairEvent & BaseDevicePairDeviceConnectionStatusEvent} DevicePairDeviceConnectionStatusEvent */
-
-/** @typedef {DevicePairDeviceIsConnectedEvent | DevicePairDeviceConnectionStatusEvent} DevicePairDeviceConnectionEvent */
-
-/** @typedef {import("../sensor/SensorDataManager").SensorDataEventMessage} SensorDataEventMessage */
-/**
- * @typedef {Object} BaseDevicePairDeviceSensorDataEvent
- * @property {DevicePairDeviceSensorDataEventType} type
- * @property {{device: Device} & SensorDataEventMessage} message
- */
-/** @typedef {BaseDevicePairEvent & BaseDevicePairDeviceSensorDataEvent} DevicePairDeviceSensorDataEvent */
-
-/**
- * @typedef {Object} BaseDevicePairDeviceAccelerationSensorDataEvent
- * @property {"deviceAcceleration"} type
- * @property {{device: Device} & import("../sensor/MotionSensorDataManager").AccelerationDataEventMessage} message
- */
-/** @typedef {BaseDevicePairEvent & BaseDevicePairDeviceAccelerationSensorDataEvent} DevicePairDeviceAccelerationSensorDataEvent */
-
-/**
- * @typedef {Object} BaseDevicePairDeviceGravitySensorDataEvent
- * @property {"deviceGravity"} type
- * @property {{device: Device} & import("../sensor/MotionSensorDataManager").GravityDataEventMessage} message
- */
-/** @typedef {BaseDevicePairEvent & BaseDevicePairDeviceGravitySensorDataEvent} DevicePairDeviceGravitySensorDataEvent */
-
-/**
- * @typedef {Object} BaseDevicePairDeviceLinearAccelerationSensorDataEvent
- * @property {"deviceLinearAcceleration"} type
- * @property {{device: Device} & import("../sensor/MotionSensorDataManager").LinearAccelerationDataEventMessage} message
- */
-/** @typedef {BaseDevicePairEvent & BaseDevicePairDeviceLinearAccelerationSensorDataEvent} DevicePairDeviceLinearAccelerationSensorDataEvent */
-
-/**
- * @typedef {Object} BaseDevicePairDeviceGyroscopeSensorDataEvent
- * @property {"deviceGyroscope"} type
- * @property {{device: Device} & import("../sensor/MotionSensorDataManager").GyroscopeDataEventMessage} message
- */
-/** @typedef {BaseDevicePairEvent & BaseDevicePairDeviceGyroscopeSensorDataEvent} DevicePairDeviceGyroscopeSensorDataEvent */
-
-/**
- * @typedef {Object} BaseDevicePairDeviceMagnetometerSensorDataEvent
- * @property {"deviceMagnetometer"} type
- * @property {{device: Device} & import("../sensor/MotionSensorDataManager").MagnetometerDataEventMessage} message
- */
-/** @typedef {BaseDevicePairEvent & BaseDevicePairDeviceMagnetometerSensorDataEvent} DevicePairDeviceMagnetometerSensorDataEvent */
-
-/**
- * @typedef {Object} BaseDevicePairDeviceRotationSensorDataEvent
- * @property {"deviceRotation"} type
- * @property {{device: Device} & import("../sensor/MotionSensorDataManager").RotationDataEventMessage} message
- */
-/** @typedef {BaseDevicePairEvent & BaseDevicePairDeviceRotationSensorDataEvent} DevicePairDeviceRotationSensorDataEvent */
-
-/**
- * @typedef {Object} BaseDevicePairDeviceGameRotationSensorDataEvent
- * @property {"deviceGameRotation"} type
- * @property {{device: Device} & import("../sensor/MotionSensorDataManager").GameRotationDataEventMessage} message
- */
-/** @typedef {BaseDevicePairEvent & BaseDevicePairDeviceGameRotationSensorDataEvent} DevicePairDeviceGameRotationSensorDataEvent */
-
-/**
- * @typedef {Object} BaseDevicePairDeviceDeviceOrientationSensorDataEvent
- * @property {"deviceDeviceOrientation"} type
- * @property {{device: Device} & import("../sensor/MotionSensorDataManager").DeviceOrientationDataEventMessage} message
- */
-/** @typedef {BaseDevicePairEvent & BaseDevicePairDeviceDeviceOrientationSensorDataEvent} DevicePairDeviceDeviceOrientationSensorDataEvent */
-
-/**
- * @typedef {Object} BaseDevicePairDeviceActivitySensorDataEvent
- * @property {"deviceActivity"} type
- * @property {{device: Device} & import("../sensor/MotionSensorDataManager").ActivityDataEventMessage} message
- */
-/** @typedef {BaseDevicePairEvent & BaseDevicePairDeviceActivitySensorDataEvent} DevicePairDeviceActivitySensorDataEvent */
-
-/**
- * @typedef {Object} BaseDevicePairDeviceStepDetectorSensorDataEvent
- * @property {"deviceStepDetector"} type
- * @property {{device: Device} & import("../sensor/MotionSensorDataManager").StepDetectorDataEventMessage} message
- */
-/** @typedef {BaseDevicePairEvent & BaseDevicePairDeviceStepDetectorSensorDataEvent} DevicePairDeviceStepDetectorSensorDataEvent */
-
-/**
- * @typedef {Object} BaseDevicePairDeviceStepCounterSensorDataEvent
- * @property {"deviceStepCounter"} type
- * @property {{device: Device} & import("../sensor/MotionSensorDataManager").StepCounterDataEventMessage} message
- */
-/** @typedef {BaseDevicePairEvent & BaseDevicePairDeviceStepCounterSensorDataEvent} DevicePairDeviceStepCounterSensorDataEvent */
-
-/**
- * @typedef {Object} BaseDevicePairDeviceBarometerSensorDataEvent
- * @property {"deviceBarometer"} type
- * @property {{device: Device} & import("../sensor/MotionSensorDataManager").BarometerDataEventMessage} message
- */
-/** @typedef {BaseDevicePairEvent & BaseDevicePairDeviceBarometerSensorDataEvent} DevicePairDeviceBarometerSensorDataEvent */
-
-/**
- * @typedef {DevicePairDeviceSensorDataEvent |
- * DevicePairDeviceAccelerationSensorDataEvent |
- * DevicePairDeviceGravitySensorDataEvent |
- * DevicePairDeviceLinearAccelerationSensorDataEvent |
- * DevicePairDeviceGyroscopeSensorDataEvent |
- * DevicePairDeviceMagnetometerSensorDataEvent |
- * DevicePairDeviceRotationSensorDataEvent |
- * DevicePairDeviceGameRotationSensorDataEvent |
- * DevicePairDeviceDeviceOrientationSensorDataEvent |
- * DevicePairDeviceActivitySensorDataEvent |
- * DevicePairDeviceStepDetectorSensorDataEvent |
- * DevicePairDeviceStepCounterSensorDataEvent |
- * DevicePairDeviceBarometerSensorDataEvent
- * } DevicePairDeviceSensorEvent
- */
-
-/**
- * @typedef {DevicePairDeviceConnectionEvent |
- * DevicePairConnectionEvent |
- * DevicePairDeviceSensorEvent |
- * DevicePairSensorEvent
- * } DevicePairEvent
- */
-/** @typedef {(event: DevicePairEvent) => void} DevicePairEventListener */
+export type DevicePairEventDispatcher = EventDispatcher<DevicePair, DevicePairEventType, DevicePairEventMessages>;
+export type DevicePairEvent<Type extends DevicePairEventType> = Event<
+  DevicePair,
+  DevicePairEventType,
+  DevicePairEventMessages,
+  Type
+>;
+export type GenericDevicePairEvent = GenericEvent<DevicePair, DeviceEventType>;
 
 class DevicePair {
   constructor() {
-    this.#sensorDataManager.onDataReceived = this.#onSensorDataReceived.bind(this);
+    this.#sensorDataManager.eventDispatcher = this.#eventDispatcher as DevicePairSensorDataEventDispatcher;
   }
 
   // EVENT DISPATCHER
 
-  /** @type {DevicePairEventType[]} */
-  static #EventTypes = [
+  static #EventTypes: DevicePairEventType[] = [
     "isConnected",
     "pressure",
     ...Device.EventTypes.map((sensorType) => `device${capitalizeFirstCharacter(sensorType)}`),
@@ -219,58 +74,38 @@ class DevicePair {
   get eventTypes() {
     return DevicePair.#EventTypes;
   }
-  #eventDispatcher = new EventDispatcher(this, this.eventTypes);
 
-  /**
-   * @param {DevicePairEventType} type
-   * @param {DevicePairEventListener} listener
-   * @param {EventDispatcherOptions} [options]
-   */
-  addEventListener(type, listener, options) {
-    this.#eventDispatcher.addEventListener(type, listener, options);
+  #eventDispatcher: DevicePairEventDispatcher = new EventDispatcher(this as DevicePair, DevicePairEventTypes);
+  get addEventListener() {
+    return this.#eventDispatcher.addEventListener;
   }
-
-  /**
-   * @param {DevicePairEvent} event
-   */
-  #dispatchEvent(event) {
-    this.#eventDispatcher.dispatchEvent(event);
+  get #dispatchEvent() {
+    return this.#eventDispatcher.dispatchEvent;
   }
-
-  /**
-   * @param {DevicePairEventType} type
-   * @param {DevicePairEventListener} listener
-   */
-  removeEventListener(type, listener) {
-    return this.#eventDispatcher.removeEventListener(type, listener);
+  get removeEventListener() {
+    return this.#eventDispatcher.removeEventListener;
+  }
+  get waitForEvent() {
+    return this.#eventDispatcher.waitForEvent;
   }
 
   // SIDES
 
-  static get Sides() {
-    return Device.InsoleSides;
-  }
-  get sides() {
-    return DevicePair.Sides;
-  }
-
-  /** @type {Device?} */
-  #left;
+  #left?: Device;
   get left() {
     return this.#left;
   }
 
-  /** @type {Device?} */
-  #right;
+  #right?: Device;
   get right() {
     return this.#right;
   }
 
   get isConnected() {
-    return this.sides.every((side) => this[side]?.isConnected);
+    return InsoleSides.every((side) => this[side]?.isConnected);
   }
   get isPartiallyConnected() {
-    return this.sides.some((side) => this[side]?.isConnected);
+    return InsoleSides.some((side) => this[side]?.isConnected);
   }
   get isHalfConnected() {
     return this.isPartiallyConnected && !this.isConnected;
@@ -279,8 +114,7 @@ class DevicePair {
     _console.assertWithError(this.isConnected, "devicePair must be connected");
   }
 
-  /** @param {Device} device */
-  assignInsole(device) {
+  assignInsole(device: Device) {
     if (!device.isInsole) {
       _console.warn("device is not an insole");
       return;
@@ -312,39 +146,35 @@ class DevicePair {
 
     this.resetPressureRange();
 
-    this.#dispatchEvent({ type: "isConnected", message: { isConnected: this.isConnected } });
-    this.#dispatchEvent({ type: "deviceIsConnected", message: { device, isConnected: device.isConnected } });
+    this.#dispatchEvent("isConnected", { isConnected: this.isConnected });
+    this.#dispatchEvent("deviceIsConnected", { device, isConnected: device.isConnected });
 
     return currentDevice;
   }
 
-  /** @type {Object.<string, EventListener} */
-  #boundDeviceEventListeners = {
+  #boundDeviceEventListeners: { [eventType in DeviceEventType]?: Function } = {
     connectionStatus: this.#redispatchDeviceEvent.bind(this),
     isConnected: this.#onDeviceIsConnected.bind(this),
     sensorData: this.#onDeviceSensorData.bind(this),
     getSensorConfiguration: this.#redispatchDeviceEvent.bind(this),
   };
 
-  /** @param {DeviceEvent} deviceEvent */
-  #redispatchDeviceEvent(deviceEvent) {
-    this.#dispatchEvent({
-      type: `device${capitalizeFirstCharacter(deviceEvent.type)}`,
-      message: { ...deviceEvent.message, device: deviceEvent.target },
+  #redispatchDeviceEvent(deviceEvent: GenericDeviceEvent) {
+    this.#dispatchEvent(`device${capitalizeFirstCharacter(deviceEvent.type)}`, {
+      ...deviceEvent.message,
+      device: deviceEvent.target,
     });
   }
 
-  /** @param {DeviceEvent} deviceEvent */
-  #onDeviceIsConnected(deviceEvent) {
+  #onDeviceIsConnected(deviceEvent: GenericDeviceEvent) {
     this.#redispatchDeviceEvent(deviceEvent);
-    this.#dispatchEvent({ type: "isConnected", message: { isConnected: this.isConnected } });
+    this.#dispatchEvent("isConnected", { isConnected: this.isConnected });
   }
 
   // SENSOR CONFIGURATION
 
-  /** @param {SensorConfiguration} sensorConfiguration */
-  setSensorConfiguration(sensorConfiguration) {
-    this.sides.forEach((side) => {
+  setSensorConfiguration(sensorConfiguration: SensorConfiguration) {
+    InsoleSides.forEach((side) => {
       this[side]?.setSensorConfiguration(sensorConfiguration);
     });
   }
@@ -352,26 +182,12 @@ class DevicePair {
   // SENSOR DATA
 
   #sensorDataManager = new DevicePairSensorDataManager();
-  /** @param {DeviceEvent} deviceEvent */
-  #onDeviceSensorData(deviceEvent) {
+  #onDeviceSensorData(deviceEvent: GenericDeviceEvent) {
     this.#redispatchDeviceEvent(deviceEvent);
-    this.#dispatchEvent({
-      type: `device${capitalizeFirstCharacter(deviceEvent.message.sensorType)}`,
-      message: { ...deviceEvent.message, device: deviceEvent.target },
-    });
 
     if (this.isConnected) {
       this.#sensorDataManager.onDeviceSensorData(deviceEvent);
     }
-  }
-  /**
-   * @param {SensorType} sensorType
-   * @param {Object} sensorData
-   * @param {number} sensorData.timestamp
-   */
-  #onSensorDataReceived(sensorType, sensorData) {
-    _console.log({ sensorType, sensorData });
-    this.#dispatchEvent({ type: sensorType, message: sensorData });
   }
 
   resetPressureRange() {
@@ -379,31 +195,21 @@ class DevicePair {
   }
 
   // VIBRATION
-
-  /** @typedef {import("../vibration/VibrationManager").VibrationConfiguration} VibrationConfiguration */
-  /**
-   * @param {VibrationConfiguration[]} vibrationConfigurations
-   * @param {boolean} sendImmediately
-   */
-  async triggerVibration(vibrationConfigurations, sendImmediately) {
-    const promises = this.sides
-      .map((side) => {
-        return this[side]?.triggerVibration(vibrationConfigurations, sendImmediately);
-      })
-      .filter(Boolean);
+  async triggerVibration(vibrationConfigurations: VibrationConfiguration[], sendImmediately?: boolean) {
+    const promises = InsoleSides.map((side) => {
+      return this[side]?.triggerVibration(vibrationConfigurations, sendImmediately);
+    }).filter(Boolean);
     return Promise.allSettled(promises);
   }
 
   // SHARED INSTANCE
-
   static #shared = new DevicePair();
   static get shared() {
     return this.#shared;
   }
   static {
     Device.AddEventListener("deviceConnected", (event) => {
-      /** @type {Device} */
-      const device = event.message.device;
+      const device: Device = event.message.device;
       if (device.isInsole) {
         this.#shared.assignInsole(device);
       }
