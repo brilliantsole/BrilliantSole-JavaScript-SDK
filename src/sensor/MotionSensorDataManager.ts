@@ -57,56 +57,19 @@ export const DeviceOrientations = [
 ] as const;
 export type DeviceOrientation = (typeof DeviceOrientations)[number];
 
-interface AccelerationDataEventMessage {
-  acceleration: Vector3;
-}
-interface GravityDataEventMessage {
-  gravity: Vector3;
-}
-interface LinearAccelerationDataEventMessage {
-  linearAcceleration: Vector3;
-}
-interface GyroscopeDataEventMessage {
-  gyroscope: Vector3;
-}
-interface MagnetometerDataEventMessage {
-  magnetomter: Vector3;
-}
-interface GameRotationDataEventMessage {
-  gameRotation: Quaternion;
-}
-interface RotationDataEventMessage {
-  rotation: Quaternion;
-}
-interface OrientationDataEventMessage {
-  orientation: Euler;
-}
-interface ActivityDataEventMessage {
-  activity: Activity;
-}
-interface StepDetectorDataEventMessage {
-  stepDetector: Object;
-}
-interface StepCounterDataEventMessage {
-  stepCounter: number;
-}
-interface DeviceOrientationDataEventMessage {
-  deviceOrientation: DeviceOrientation;
-}
-
 export interface MotionSensorDataEventMessages {
-  acceleration: AccelerationDataEventMessage;
-  gravity: GravityDataEventMessage;
-  linearAcceleration: LinearAccelerationDataEventMessage;
-  gyroscope: GyroscopeDataEventMessage;
-  magnetometer: MagnetometerDataEventMessage;
-  gameRotation: GameRotationDataEventMessage;
-  rotation: RotationDataEventMessage;
-  orientation: OrientationDataEventMessage;
-  stepDetector: StepDetectorDataEventMessage;
-  stepCounter: StepCounterDataEventMessage;
-  activity: ActivityDataEventMessage;
-  deviceOrientation: DeviceOrientationDataEventMessage;
+  acceleration: { acceleration: Vector3 };
+  gravity: { gravity: Vector3 };
+  linearAcceleration: { linearAcceleration: Vector3 };
+  gyroscope: { gyroscope: Vector3 };
+  magnetometer: { magnetomter: Vector3 };
+  gameRotation: { gameRotation: Quaternion };
+  rotation: { rotation: Quaternion };
+  orientation: { orientation: Euler };
+  stepDetector: { stepDetector: Object };
+  stepCounter: { stepCounter: number };
+  activity: { activity: Activity };
+  deviceOrientation: { deviceOrientation: DeviceOrientation };
 }
 
 export type MotionSensorDataEventMessage = ValueOf<MotionSensorDataEventMessages>;

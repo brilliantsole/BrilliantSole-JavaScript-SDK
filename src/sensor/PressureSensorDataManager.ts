@@ -32,12 +32,8 @@ export interface PressureData {
   normalizedCenter?: CenterOfPressure;
 }
 
-export interface PressureDataEventMessage {
-  pressure: PressureData;
-}
-
 export interface PressureDataEventMessages {
-  pressure: PressureDataEventMessage;
+  pressure: { pressure: PressureData };
 }
 
 class PressureSensorDataManager {

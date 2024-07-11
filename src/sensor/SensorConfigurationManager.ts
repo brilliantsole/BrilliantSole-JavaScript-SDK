@@ -15,12 +15,8 @@ export type SensorConfigurationMessageType = (typeof SensorConfigurationMessageT
 export const SensorConfigurationEventTypes = SensorConfigurationMessageTypes;
 export type SensorConfigurationEventType = (typeof SensorConfigurationEventTypes)[number];
 
-interface SensorConfigurationEventMessage {
-  sensorConfiguration: SensorConfiguration;
-}
-
 export interface SensorConfigurationEventMessages {
-  getSensorConfiguration: SensorConfigurationEventMessage;
+  getSensorConfiguration: { sensorConfiguration: SensorConfiguration };
 }
 
 export type SensorConfigurationEventDispatcher = EventDispatcher<

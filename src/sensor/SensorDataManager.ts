@@ -5,7 +5,6 @@ import MotionSensorDataManager, { MotionSensorDataEventMessages } from "./Motion
 import BarometerSensorDataManager, { BarometerSensorDataEventMessages } from "./BarometerSensorDataManager";
 import { parseMessage } from "../utils/ParseUtils";
 import EventDispatcher from "../utils/EventDispatcher";
-
 import { MotionSensorTypes, ContinuousMotionTypes } from "./MotionSensorDataManager";
 import { PressureSensorTypes, ContinuousPressureSensorTypes } from "./PressureSensorDataManager";
 import { BarometerSensorTypes, ContinuousBarometerSensorTypes } from "./BarometerSensorDataManager";
