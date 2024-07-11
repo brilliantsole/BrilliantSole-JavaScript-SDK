@@ -109,7 +109,7 @@ class SensorDataManager {
 
     const _dataView = new DataView(dataView.buffer, byteOffset);
 
-    parseMessage<SensorType>(_dataView, SensorTypes, this.parseDataCallback.bind(this), { timestamp });
+    parseMessage(_dataView, SensorTypes, this.parseDataCallback.bind(this), { timestamp });
   }
 
   private parseDataCallback(sensorType: SensorType, dataView: DataView, { timestamp }: { timestamp: number }) {

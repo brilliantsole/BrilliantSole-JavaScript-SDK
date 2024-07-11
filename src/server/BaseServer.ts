@@ -1,5 +1,5 @@
 import { createConsole } from "../utils/Console";
-import EventDispatcher from "../utils/EventDispatcher";
+import EventDispatcher, { BoundEventListeners, Event, SpecificEvent } from "../utils/EventDispatcher";
 import {
   createServerMessage,
   createDeviceMessage,
@@ -27,19 +27,20 @@ const _console = createConsole("BaseServer", { log: true });
 export const ServerEventTypes = ["clientConnected", "clientDisconnected"] as const;
 export type ServerEventType = (typeof ServerEventTypes)[number];
 
-interface BaseClientConnectedEvent {
-  type: "clientConnected";
+interface ServerEventMessages {
+  clientConnected: { client: any };
+  clientDisconnected: { client: any };
 }
-type ClientConnectedEvent = BaseServerEvent & BaseClientConnectedEvent;
 
-/**
- * @typedef {Object} BaseClientDisconnectedEvent
- * @property {"clientDisconnected"} type
- */
-/** @typedef {BaseServerEvent & BaseClientDisconnectedEvent} ClientDisconnectedEvent */
-
-type ServerEvent = ClientConnectedEvent | ClientDisconnectedEvent;
-type ServerEventListener = (event: ServerEvent) => void;
+export type ServerEventDispatcher = EventDispatcher<BaseServer, ServerEventType, ServerEventMessages>;
+export type SpecificServerEvent<EventType extends ServerEventType> = SpecificEvent<
+  BaseServer,
+  ServerEventType,
+  ServerEventMessages,
+  EventType
+>;
+export type ServerEvent = Event<BaseServer, ServerEventType, ServerEventMessages>;
+export type BoundServerEventListeners = BoundEventListeners<BaseServer, ServerEventType, ServerEventMessages>;
 
 abstract class BaseServer {
   /** @throws {Error} if abstract class */
@@ -48,16 +49,18 @@ abstract class BaseServer {
   }
 
   // EVENT DISPATCHER
-
-  #eventDispatcher = new EventDispatcher(this, ServerEventTypes);
+  protected eventDispatcher = new EventDispatcher(this, ServerEventTypes);
   get addEventListener() {
-    return this.#eventDispatcher.addEventListener;
+    return this.eventDispatcher.addEventListener;
+  }
+  protected get dispatchEvent() {
+    return this.eventDispatcher.dispatchEvent;
   }
   get removeEventListener() {
-    return this.#eventDispatcher.removeEventListener;
+    return this.eventDispatcher.removeEventListener;
   }
   get waitForEvent() {
-    return this.#eventDispatcher.waitForEvent;
+    return this.eventDispatcher.waitForEvent;
   }
 
   // CONSTRUCTOR
@@ -95,15 +98,15 @@ abstract class BaseServer {
   }
 
   // SERVER LISTENERS
-  #boundServerListeners: BoundServerListeners = {
+  #boundServerListeners: BoundServerEventListeners = {
     clientConnected: this.#onClientConnected.bind(this),
     clientDisconnected: this.#onClientDisconnected.bind(this),
   };
-  #onClientConnected(event: ServerEvent) {
+  #onClientConnected(event: SpecificServerEvent<"clientConnected">) {
     const client = event.message.client;
     _console.log("onClientConnected");
   }
-  #onClientDisconnected(event: ServerEvent) {
+  #onClientDisconnected(event: SpecificServerEvent<"clientDisconnected">) {
     const client = event.message.client;
     _console.log("onClientDisconnected");
     if (this.numberOfClients == 0 && this.clearSensorConfigurationsWhenNoClients) {
@@ -121,17 +124,17 @@ abstract class BaseServer {
 
   // SCANNER
   #boundScannerListeners: BoundScannerEventListeners = {
-    isAvailable: this.#onScannerIsAvailable.bind(this),
+    isScanningAvailable: this.#onScannerIsAvailable.bind(this),
     isScanning: this.#onScannerIsScanning.bind(this),
     discoveredDevice: this.#onScannerDiscoveredDevice.bind(this),
     expiredDiscoveredDevice: this.#onExpiredDiscoveredDevice.bind(this),
   };
 
-  #onScannerIsAvailable(event: SpecificScannerEvent<"isAvailable">) {
+  #onScannerIsAvailable(event: SpecificScannerEvent<"isScanningAvailable">) {
     this.broadcastMessage(this.#isScanningAvailableMessage);
   }
   get #isScanningAvailableMessage() {
-    return createServerMessage({ type: "isScanningAvailable", data: scanner!.isAvailable });
+    return createServerMessage({ type: "isScanningAvailable", data: scanner!.isScanningAvailable });
   }
 
   #onScannerIsScanning(event: SpecificScannerEvent<"isScanning">) {

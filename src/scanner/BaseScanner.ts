@@ -6,7 +6,12 @@ import { DeviceType } from "../InformationManager";
 
 const _console = createConsole("BaseScanner");
 
-export const ScannerEventTypes = ["isAvailable", "isScanning", "discoveredDevice", "expiredDiscoveredDevice"] as const;
+export const ScannerEventTypes = [
+  "isScanningAvailable",
+  "isScanning",
+  "discoveredDevice",
+  "expiredDiscoveredDevice",
+] as const;
 export type ScannerEventType = (typeof ScannerEventTypes)[number];
 
 export interface DiscoveredDevice {
@@ -21,10 +26,10 @@ interface ScannerDiscoveredDeviceEventMessage {
 }
 
 export interface ScannerEventMessages {
-  isAvailable: { isAvailable: boolean };
-  isScanning: { isScanning: boolean };
   discoveredDevice: ScannerDiscoveredDeviceEventMessage;
   expiredDiscoveredDevice: ScannerDiscoveredDeviceEventMessage;
+  isScanningAvailable: { isScanningAvailable: boolean };
+  isScanning: { isScanning: boolean };
 }
 
 export type ScannerEventDispatcher = EventDispatcher<BaseScanner, ScannerEventType, ScannerEventMessages>;
@@ -84,11 +89,11 @@ abstract class BaseScanner {
   }
 
   // AVAILABILITY
-  get isAvailable() {
+  get isScanningAvailable() {
     return false;
   }
   #assertIsAvailable() {
-    _console.assertWithError(this.isAvailable, "not available");
+    _console.assertWithError(this.isScanningAvailable, "not available");
   }
 
   // SCANNING

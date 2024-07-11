@@ -3,8 +3,8 @@ import { spacesToPascalCase } from "./stringUtils";
 
 const _console = createConsole("EventUtils", { log: false });
 
-export type BoundEventListeners = { [eventType: string]: EventListener };
-export type BoundGenericEventListeners = { [eventType: string]: Function };
+type BoundEventListeners = { [eventType: string]: EventListener };
+type BoundGenericEventListeners = { [eventType: string]: Function };
 
 export function bindEventListeners(
   eventTypes: readonly string[],

@@ -54,7 +54,7 @@ class NobleScanner extends BaseScanner {
     }
     this.#_nobleState = newNobleState;
     _console.log({ newNobleState });
-    this.dispatchEvent("isAvailable", { isAvailable: this.isAvailable });
+    this.dispatchEvent("isScanningAvailable", { isScanningAvailable: this.isScanningAvailable });
   }
 
   // NOBLE LISTENERS
@@ -114,7 +114,7 @@ class NobleScanner extends BaseScanner {
   }
 
   // AVAILABILITY
-  get isAvailable() {
+  get isScanningAvailable() {
     return this.#nobleState == "poweredOn";
   }
 

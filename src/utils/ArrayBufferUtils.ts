@@ -57,7 +57,7 @@ export function objectToArrayBuffer(object: object) {
   return stringToArrayBuffer(JSON.stringify(object));
 }
 
-export function sliceDataView(dataView: DataView, begin: number, length: number) {
+export function sliceDataView(dataView: DataView, begin: number, length?: number) {
   let end;
   if (length != undefined) {
     end = dataView.byteOffset + begin + length;
