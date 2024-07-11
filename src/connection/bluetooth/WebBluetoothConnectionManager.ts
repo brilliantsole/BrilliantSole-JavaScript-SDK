@@ -16,6 +16,13 @@ const _console = createConsole("WebBluetoothConnectionManager", { log: true });
 
 type WebBluetoothInterface = webbluetooth.Bluetooth | Bluetooth;
 
+interface BluetoothService extends BluetoothRemoteGATTService {
+  name?: BluetoothServiceName;
+}
+interface BluetoothCharacteristic extends BluetoothRemoteGATTCharacteristic {
+  name?: BluetoothCharacteristicName;
+}
+
 var bluetooth: WebBluetoothInterface | undefined;
 // NODE_START
 import * as webbluetooth from "webbluetooth";
@@ -29,13 +36,6 @@ if (isInBrowser) {
   bluetooth = window.navigator.bluetooth;
 }
 // BROWSER_END
-
-interface BluetoothService extends BluetoothRemoteGATTService {
-  name?: BluetoothServiceName;
-}
-interface BluetoothCharacteristic extends BluetoothRemoteGATTCharacteristic {
-  name?: BluetoothCharacteristicName;
-}
 
 class WebBluetoothConnectionManager extends BluetoothConnectionManager {
   get bluetoothId() {

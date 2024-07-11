@@ -31,6 +31,7 @@ function removeLines(context) {
   const isInBrowser = context == "browser";
   const isInNode = context == "node";
   const isInLensStudio = context == "ls";
+
   return replace({
     preventAssignment: true,
     delimiters: ["", ""],
@@ -61,7 +62,6 @@ if (production) {
 }
 
 const _browserPlugins = [removeLines("browser"), commonjs(), resolve({ browser: true })];
-
 const _nodePlugins = [removeLines("node")];
 const nodeExternal = ["webbluetooth", "debounce", "ws", "@abandonware/noble"];
 

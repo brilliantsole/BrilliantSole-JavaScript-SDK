@@ -2431,7 +2431,7 @@ function removeEventListeners(target, boundEventListeners) {
 }
 
 const _console$c = createConsole("bluetoothUUIDs", { log: false });
-/**
+/*
 import * as webbluetooth from "webbluetooth";
 var BluetoothUUID = webbluetooth.BluetoothUUID;
 */
@@ -2630,7 +2630,7 @@ class BluetoothConnectionManager extends BaseConnectionManager {
 var _WebBluetoothConnectionManager_instances, _WebBluetoothConnectionManager_boundBluetoothCharacteristicEventListeners, _WebBluetoothConnectionManager_boundBluetoothDeviceEventListeners, _WebBluetoothConnectionManager_device, _WebBluetoothConnectionManager_services, _WebBluetoothConnectionManager_characteristics, _WebBluetoothConnectionManager_getServicesAndCharacteristics, _WebBluetoothConnectionManager_removeEventListeners, _WebBluetoothConnectionManager_onCharacteristicvaluechanged, _WebBluetoothConnectionManager_onCharacteristicValueChanged, _WebBluetoothConnectionManager_onGattserverdisconnected;
 const _console$a = createConsole("WebBluetoothConnectionManager", { log: true });
 var bluetooth;
-/**
+/*
 import * as webbluetooth from "webbluetooth";
 if (isInNode) {
     bluetooth = webbluetooth.bluetooth;
@@ -2640,6 +2640,7 @@ if (isInNode) {
 if (isInBrowser) {
     bluetooth = window.navigator.bluetooth;
 }
+
 class WebBluetoothConnectionManager extends BluetoothConnectionManager {
     constructor() {
         super(...arguments);
