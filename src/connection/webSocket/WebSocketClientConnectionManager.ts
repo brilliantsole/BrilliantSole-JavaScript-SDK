@@ -1,15 +1,12 @@
 import { createConsole } from "../../utils/Console";
 import { isInBrowser } from "../../utils/environment";
 import BaseConnectionManager, { ConnectionType, ConnectionMessageType } from "../BaseConnectionManager";
-import Device from "../../Device";
+import { DeviceEventTypes } from "../../Device";
 import { parseMessage } from "../../utils/ParseUtils";
-import DeviceInformationManager from "../../DeviceInformationManager";
-
-const _console = createConsole("WebSocketClientConnectionManager", { log: true });
-
+import { DeviceInformationMessageTypes } from "../../DeviceInformationManager";
 import { DeviceEventType } from "../../Device";
-import { WebSocketClient } from "../../server/websocket/WebSocketClient";
 import { ClientDeviceMessage } from "../../server/ServerUtils";
+const _console = createConsole("WebSocketClientConnectionManager", { log: true });
 
 export type SendWebSocketMessageCallback = (...messages: (ConnectionMessageType | ClientDeviceMessage)[]) => void;
 
@@ -21,7 +18,7 @@ class WebSocketClientConnectionManager extends BaseConnectionManager {
     return "webSocketClient";
   }
 
-  #bluetoothId!: string | undefined;
+  #bluetoothId!: string;
   get bluetoothId() {
     return this.#bluetoothId!;
   }
@@ -85,10 +82,7 @@ class WebSocketClientConnectionManager extends BaseConnectionManager {
     this.sendWebSocketMessage({ type: "tx", data });
   }
 
-  static #DeviceInformationMessageTypes: ConnectionMessageType[] = [
-    ...DeviceInformationManager.MessageTypes,
-    "batteryLevel",
-  ];
+  static #DeviceInformationMessageTypes: ConnectionMessageType[] = [...DeviceInformationMessageTypes, "batteryLevel"];
   get #deviceInformationMessageTypes() {
     return WebSocketClientConnectionManager.#DeviceInformationMessageTypes;
   }
@@ -98,7 +92,7 @@ class WebSocketClientConnectionManager extends BaseConnectionManager {
 
   onWebSocketMessage(dataView: DataView) {
     _console.log({ dataView });
-    parseMessage(dataView, Device.EventTypes, this.#onWebSocketMessageCallback.bind(this), null, true);
+    parseMessage(dataView, DeviceEventTypes, this.#onWebSocketMessageCallback.bind(this), null, true);
   }
 
   #onWebSocketMessageCallback(messageType: DeviceEventType, dataView: DataView) {
@@ -116,7 +110,7 @@ class WebSocketClientConnectionManager extends BaseConnectionManager {
         break;
 
       default:
-        this.onMessageReceived(messageType, dataView);
+        this.onMessageReceived(messageType as ConnectionMessageType, dataView);
         break;
     }
   }
