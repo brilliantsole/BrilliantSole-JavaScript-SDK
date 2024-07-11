@@ -8,7 +8,7 @@ import { DeviceEventType } from "../../Device";
 import { ClientDeviceMessage } from "../../server/ServerUtils";
 const _console = createConsole("WebSocketClientConnectionManager", { log: true });
 
-export type SendWebSocketMessageCallback = (...messages: (ConnectionMessageType | ClientDeviceMessage)[]) => void;
+export type SendWebSocketMessageCallback = (...messages: ClientDeviceMessage[]) => void;
 
 class WebSocketClientConnectionManager extends BaseConnectionManager {
   static get isSupported() {
