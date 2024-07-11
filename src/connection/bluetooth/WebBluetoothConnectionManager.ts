@@ -9,11 +9,10 @@ import {
   getCharacteristicProperties,
 } from "./bluetoothUUIDs";
 import BluetoothConnectionManager from "./BluetoothConnectionManager";
-
-const _console = createConsole("WebBluetoothConnectionManager", { log: true });
-
 import { BluetoothCharacteristicName, BluetoothServiceName } from "./bluetoothUUIDs";
 import { ConnectionType } from "../BaseConnectionManager";
+
+const _console = createConsole("WebBluetoothConnectionManager", { log: true });
 
 type WebBluetoothInterface = webbluetooth.Bluetooth | Bluetooth;
 

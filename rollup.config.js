@@ -26,7 +26,7 @@ function header() {
   };
 }
 
-/** @param {"node"|"browser"|"ls"} context  */
+/** @param {"node" | "browser" | "ls"} context  */
 function removeLines(context) {
   const isInBrowser = context == "browser";
   const isInNode = context == "node";
@@ -54,52 +54,21 @@ function replaceEnvironment() {
   });
 }
 
-function removeJSDocImports() {
-  return {
-    transform(code) {
-      code = new MagicString(code);
-
-      // removes /** @typedef {import("./SomeModule.js").SomeType} SomeType */ (thanks ChatGPT)
-      code.replace(/\/\*\* @typedef \{import\((?:"|')(.*?)("|')\)(?:\.(\w+))?\.(.*?)\} (\w+) \*\//gs, "");
-
-      return {
-        code: code.toString(),
-        map: code.generateMap(),
-      };
-    },
-  };
-}
-
-function removeJSDoc() {
-  return {
-    transform(code) {
-      code = new MagicString(code);
-
-      // removes all jsdocs (thanks chatGPT)
-      code.replace(/\/\*\*[\s\S]*?\*\//g, "");
-
-      return {
-        code: code.toString(),
-        map: code.generateMap(),
-      };
-    },
-  };
-}
-
-const _plugins = [typescript(), header(), removeJSDocImports()];
+const _plugins = [typescript(), header()];
 
 if (production) {
   _plugins.push(replaceEnvironment());
 }
 
 const _browserPlugins = [removeLines("browser"), commonjs(), resolve({ browser: true })];
+
 const _nodePlugins = [removeLines("node")];
 const nodeExternal = ["webbluetooth", "debounce", "ws", "@abandonware/noble"];
+
 const lensStudioPlugins = [
-  removeJSDoc(),
+  removeLines("ls"),
   resolve(),
   commonjs(),
-  removeLines("ls"),
   babel({
     babelHelpers: "bundled",
     exclude: "node_modules/**",
@@ -112,7 +81,7 @@ const input = "src/BS.ts";
 const builds = [
   {
     input,
-    plugins: [..._plugins, ..._browserPlugins],
+    plugins: [_browserPlugins, ..._plugins],
     output: [
       {
         format: "esm",
@@ -122,7 +91,7 @@ const builds = [
   },
   {
     input,
-    plugins: [..._plugins, ..._browserPlugins, terser()],
+    plugins: [..._browserPlugins, ..._plugins, terser()],
     output: [
       {
         format: "esm",
@@ -133,7 +102,7 @@ const builds = [
 
   {
     input,
-    plugins: [..._plugins, ..._browserPlugins],
+    plugins: [..._browserPlugins, ..._plugins],
     output: [
       {
         format: "umd",
@@ -145,7 +114,7 @@ const builds = [
   },
   {
     input,
-    plugins: [..._plugins, ..._browserPlugins, terser()],
+    plugins: [..._browserPlugins, ..._plugins, terser()],
     output: [
       {
         format: "umd",
@@ -157,7 +126,7 @@ const builds = [
 
   {
     input,
-    plugins: [..._plugins, ..._nodePlugins],
+    plugins: [..._nodePlugins, ..._plugins],
     external: nodeExternal,
     output: [
       {
@@ -168,7 +137,7 @@ const builds = [
   },
   {
     input,
-    plugins: [..._plugins, ..._nodePlugins],
+    plugins: [..._nodePlugins, ..._plugins],
     external: nodeExternal,
     output: [
       {
@@ -181,7 +150,7 @@ const builds = [
 
   {
     input,
-    plugins: [..._plugins, ...lensStudioPlugins],
+    plugins: [...lensStudioPlugins, ..._plugins],
     output: [
       {
         format: "umd",

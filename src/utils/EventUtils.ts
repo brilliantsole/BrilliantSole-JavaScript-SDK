@@ -4,7 +4,7 @@ import { spacesToPascalCase } from "./stringUtils";
 const _console = createConsole("EventUtils", { log: false });
 
 type BoundEventListeners = { [eventType: string]: EventListener };
-type BoundGenericEventListeners = { [eventType: string]: Function };
+export type BoundGenericEventListeners = { [eventType: string]: Function };
 
 export function bindEventListeners(
   eventTypes: readonly string[],

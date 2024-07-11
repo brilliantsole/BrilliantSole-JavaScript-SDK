@@ -6,6 +6,7 @@ import { parseMessage } from "../../utils/ParseUtils";
 import { DeviceInformationMessageTypes } from "../../DeviceInformationManager";
 import { DeviceEventType } from "../../Device";
 import { ClientDeviceMessage } from "../../server/ServerUtils";
+
 const _console = createConsole("WebSocketClientConnectionManager", { log: true });
 
 export type SendWebSocketMessageCallback = (...messages: ClientDeviceMessage[]) => void;
@@ -110,7 +111,7 @@ class WebSocketClientConnectionManager extends BaseConnectionManager {
         break;
 
       default:
-        this.onMessageReceived(messageType as ConnectionMessageType, dataView);
+        this.onMessageReceived!(messageType as ConnectionMessageType, dataView);
         break;
     }
   }

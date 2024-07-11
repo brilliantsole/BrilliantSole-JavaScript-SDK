@@ -55,8 +55,8 @@ abstract class BaseConnectionManager {
   abstract get bluetoothId(): string;
 
   // CALLBACKS
-  onStatusUpdated!: ConnectionStatusCallback;
-  onMessageReceived!: MessageReceivedCallback;
+  onStatusUpdated?: ConnectionStatusCallback;
+  onMessageReceived?: MessageReceivedCallback;
 
   static #staticThrowNotImplementedError(name: string) {
     throw new Error(`"${name}" is not implemented by "${this.name}" subclass`);
@@ -99,8 +99,7 @@ abstract class BaseConnectionManager {
   get status() {
     return this.#status;
   }
-  /** @protected */
-  set status(newConnectionStatus) {
+  protected set status(newConnectionStatus) {
     _console.assertEnumWithError(newConnectionStatus, ConnectionStatuses);
     if (this.#status == newConnectionStatus) {
       _console.log(`tried to assign same connection status "${newConnectionStatus}"`);
@@ -108,7 +107,7 @@ abstract class BaseConnectionManager {
     }
     _console.log(`new connection status "${newConnectionStatus}"`);
     this.#status = newConnectionStatus;
-    this.onStatusUpdated(this.status);
+    this.onStatusUpdated!(this.status);
 
     if (this.isConnected) {
       this.#timer.start();
@@ -234,7 +233,7 @@ abstract class BaseConnectionManager {
 
   #onRxMessage(messageType: TxRxMessageType, dataView: DataView) {
     _console.log({ messageType, dataView });
-    this.onMessageReceived(messageType, dataView);
+    this.onMessageReceived!(messageType, dataView);
   }
 
   #timer = new Timer(this.#checkConnection.bind(this), 5000);

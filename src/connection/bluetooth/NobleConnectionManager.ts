@@ -1,7 +1,7 @@
 import { dataToArrayBuffer } from "../../utils/ArrayBufferUtils";
 import { createConsole } from "../../utils/Console";
 import { isInNode } from "../../utils/environment";
-import { BoundGenericEventListeners, addEventListeners, removeEventListeners } from "../../utils/EventUtils";
+import { addEventListeners, removeEventListeners, BoundGenericEventListeners } from "../../utils/EventUtils";
 import {
   allServiceUUIDs,
   getServiceNameFromUUID,
