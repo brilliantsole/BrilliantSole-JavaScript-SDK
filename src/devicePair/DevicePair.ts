@@ -38,11 +38,8 @@ const DevicePairDeviceEventTypes = DeviceEventTypes.map((eventType) =>
 export const DevicePairConnectionEventTypes = ["isConnected"] as const;
 export type DevicePairConnectionEventType = (typeof DevicePairConnectionEventTypes)[number];
 
-export interface DevicePairConnectionEventMessage {
-  isConnected: boolean;
-}
 export interface DevicePairConnectionEventMessages {
-  isConnected: DevicePairConnectionEventMessage;
+  isConnected: { isConnected: boolean };
 }
 
 export const DevicePairEventTypes = [
@@ -65,7 +62,7 @@ export type SpecificDevicePairEvent<Type extends DevicePairEventType> = Specific
 >;
 export type DevicePairEvent = Event<DevicePair, DeviceEventType, DevicePairEventMessages>;
 
-type BoundDevicePairEventListeners = BoundEventListeners<DevicePair, DeviceEventType, DevicePairEventMessages>;
+export type BoundDevicePairEventListeners = BoundEventListeners<DevicePair, DeviceEventType, DevicePairEventMessages>;
 
 class DevicePair {
   constructor() {

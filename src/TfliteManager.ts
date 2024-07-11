@@ -36,44 +36,16 @@ export type TfliteEventType = (typeof TfliteEventTypes)[number];
 export const TfliteTasks = ["classification", "regression"] as const;
 export type TfliteTask = (typeof TfliteTasks)[number];
 
-interface TfliteNameEventMessage {
-  tfliteName: string;
-}
-interface TfliteTaskEventMessage {
-  tfliteTask: TfliteTask;
-}
-interface TfliteSampleRateEventMessage {
-  tfliteSampleRate: number;
-}
-interface TfliteSensorTypesEventMessage {
-  tfliteSensorTypes: SensorType[];
-}
-interface TfliteIsReadyEventMessage {
-  tfliteIsReady: boolean;
-}
-interface TfliteCaptureDelayEventMessage {
-  tfliteCaptureDelay: number;
-}
-interface TfliteThresholdEventMessage {
-  tfliteThreshold: number;
-}
-interface TfliteInferencingEnabledEventMessage {
-  tfliteInferencingEnabled: boolean;
-}
-interface TfliteInferenceEventMessage {
-  tfliteInference: TfliteInference;
-}
-
 export interface TfliteEventMessages {
-  getTfliteName: TfliteNameEventMessage;
-  getTfliteTask: TfliteTaskEventMessage;
-  getTfliteSampleRate: TfliteSampleRateEventMessage;
-  getTfliteSensorTypes: TfliteSensorTypesEventMessage;
-  tfliteIsReady: TfliteIsReadyEventMessage;
-  getTfliteCaptureDelay: TfliteCaptureDelayEventMessage;
-  getTfliteThreshold: TfliteThresholdEventMessage;
-  getTfliteInferencingEnabled: TfliteInferencingEnabledEventMessage;
-  tfliteInference: TfliteInferenceEventMessage;
+  getTfliteName: { tfliteName: string };
+  getTfliteTask: { tfliteTask: TfliteTask };
+  getTfliteSampleRate: { tfliteSampleRate: number };
+  getTfliteSensorTypes: { tfliteSensorTypes: SensorType[] };
+  tfliteIsReady: { tfliteIsReady: boolean };
+  getTfliteCaptureDelay: { tfliteCaptureDelay: number };
+  getTfliteThreshold: { tfliteThreshold: number };
+  getTfliteInferencingEnabled: { tfliteInferencingEnabled: boolean };
+  tfliteInference: { tfliteInference: TfliteInference };
 }
 
 export interface TfliteInference {

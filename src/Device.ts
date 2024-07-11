@@ -98,22 +98,13 @@ export const DeviceEventTypes = [
 ] as const;
 export type DeviceEventType = (typeof DeviceEventTypes)[number];
 
-interface ConnectionStatusEventMessage {
-  connectionStatus: ConnectionStatus;
-}
-interface IsConnectedEventMessage {
-  isConnected: boolean;
-}
 interface ConnectionEventMessages {
-  connectionStatus: ConnectionStatusEventMessage;
-  isConnected: IsConnectedEventMessage;
+  connectionStatus: { connectionStatus: ConnectionStatus };
+  isConnected: { isConnected: boolean };
 }
 
-interface BatteryLevelEventMessage {
-  batteryLevel: number;
-}
 interface BatteryLevelEventMessages {
-  batteryLevel: BatteryLevelEventMessage;
+  batteryLevel: { batteryLevel: number };
 }
 
 export type DeviceEventMessages = ConnectionEventMessages &
@@ -138,19 +129,12 @@ export type StaticDeviceEventType = (typeof StaticDeviceEventTypes)[number];
 interface StaticDeviceEventMessage {
   device: Device;
 }
-interface StaticAvailableDevicesEventMessage {
-  availableDevices: Device[];
-}
-interface StaticConnectedDevicesEventMessage {
-  connectedDevices: Device[];
-}
-
 export interface StaticDeviceEventMessages {
   deviceConnected: StaticDeviceEventMessage;
   deviceDisconnected: StaticDeviceEventMessage;
   deviceIsConnected: StaticDeviceEventMessage;
-  availableDevices: StaticAvailableDevicesEventMessage;
-  connectedDevices: StaticConnectedDevicesEventMessage;
+  availableDevices: { availableDevices: Device[] };
+  connectedDevices: { connectedDevices: Device[] };
 }
 
 export type SendMessageCallback<MessageType extends string> = (

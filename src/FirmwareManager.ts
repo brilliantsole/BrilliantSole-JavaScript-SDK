@@ -34,26 +34,12 @@ export interface FirmwareImage {
   empty?: boolean;
 }
 
-interface SmpEventMessage {
-  dataView: DataView;
-}
-interface FirmwareImagesEventMessage {
-  firmwareImages: FirmwareImage[];
-}
-interface FirmwareUploadProgressEventMessage {
-  progress: number;
-}
-interface FirmwareStatusEventMessage {
-  firmwareStatus: FirmwareStatus;
-}
-interface FirmwareUploadCompleteEventMessage {}
-
 export interface FirmwareEventMessages {
-  smp: SmpEventMessage;
-  firmwareImages: FirmwareImagesEventMessage;
-  firmwareUploadProgress: FirmwareUploadProgressEventMessage;
-  firmwareStatus: FirmwareStatusEventMessage;
-  firmwareUploadComplete: FirmwareUploadCompleteEventMessage;
+  smp: { dataView: DataView };
+  firmwareImages: { firmwareImages: FirmwareImage[] };
+  firmwareUploadProgress: { progress: number };
+  firmwareStatus: { firmwareStatus: FirmwareStatus };
+  //firmwareUploadComplete: {};
 }
 
 export type FirmwareEventDispatcher = EventDispatcher<Device, FirmwareEventType, FirmwareEventMessages>;

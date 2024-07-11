@@ -2,15 +2,13 @@ import { createConsole } from "../utils/Console";
 import EventDispatcher from "../utils/EventDispatcher";
 import { createServerMessage, createDeviceMessage, ServerMessageTypes, pongMessage } from "./ServerUtils";
 import Device from "../Device";
-import { addEventListeners, removeEventListeners } from "../utils/EventDispatcher";
+import { addEventListeners, removeEventListeners } from "../utils/EventUtils";
 import scanner from "../scanner/Scanner";
 import { parseMessage, parseStringFromDataView } from "../utils/ParseUtils";
 import { concatenateArrayBuffers } from "../utils/ArrayBufferUtils";
 import BaseConnectionManager from "../connection/BaseConnectionManager";
 
 const _console = createConsole("BaseServer", { log: true });
-
-import { EventDispatcherOptions } from "../utils/EventDispatcher";
 
 type ScannerEvent = import("../scanner/BaseScanner").ScannerEvent;
 type DiscoveredDevice = import("../scanner/BaseScanner").DiscoveredDevice;

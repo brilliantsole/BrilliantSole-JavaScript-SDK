@@ -36,40 +36,15 @@ export type DeviceInformationMessageType = (typeof DeviceInformationMessageTypes
 export const DeviceInformationEventTypes = [...DeviceInformationMessageTypes, "deviceInformation"] as const;
 export type DeviceInformationEventType = (typeof DeviceInformationEventTypes)[number];
 
-interface ManufacturerNameEventMessage {
-  manufacturerName: string;
-}
-interface ModelNumberEventMessage {
-  modelNumber: string;
-}
-interface SoftwareRevisionEventMessage {
-  softwareRevision: string;
-}
-interface HardwareRevisionEventMessage {
-  hardwareRevision: string;
-}
-interface FirmwareRevisionEventMessage {
-  firmwareRevision: string;
-}
-interface PnpIdEventMessage {
-  pnpId: PnpId;
-}
-interface SerialNumberEventMessage {
-  serialNumber: string;
-}
-interface DeviceInformationEventMessage {
-  deviceInformation: DeviceInformation;
-}
-
 export interface DeviceInformationEventMessages {
-  manufacturerName: ManufacturerNameEventMessage;
-  modelNumber: ModelNumberEventMessage;
-  softwareRevision: SoftwareRevisionEventMessage;
-  hardwareRevision: HardwareRevisionEventMessage;
-  firmwareRevision: FirmwareRevisionEventMessage;
-  pnpId: PnpIdEventMessage;
-  serialNumber: SerialNumberEventMessage;
-  deviceInformation: DeviceInformationEventMessage;
+  manufacturerName: { manufacturerName: string };
+  modelNumber: { modelNumber: string };
+  softwareRevision: { softwareRevision: string };
+  hardwareRevision: { hardwareRevision: string };
+  firmwareRevision: { firmwareRevision: string };
+  pnpId: { pnpId: PnpId };
+  serialNumber: { serialNumber: string };
+  deviceInformation: { deviceInformation: DeviceInformation };
 }
 
 export type DeviceInformationEventDispatcher = EventDispatcher<

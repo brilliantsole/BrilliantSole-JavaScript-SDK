@@ -16,24 +16,15 @@ export interface DiscoveredDevice {
   rssi: number;
 }
 
-interface ScannerIsAvailableEventMessage {
-  isAvailable: boolean;
-}
-interface ScannerIsScanningEventMessage {
-  isScanning: boolean;
-}
 interface ScannerDiscoveredDeviceEventMessage {
-  discoveredDevice: DiscoveredDevice;
-}
-interface ScannerExpiredDiscoveredDeviceEventMessage {
   discoveredDevice: DiscoveredDevice;
 }
 
 export interface ScannerEventMessages {
-  isAvailable: ScannerIsAvailableEventMessage;
-  isScanning: ScannerIsScanningEventMessage;
+  isAvailable: { isAvailable: boolean };
+  isScanning: { isScanning: boolean };
   discoveredDevice: ScannerDiscoveredDeviceEventMessage;
-  expiredDiscoveredDevice: ScannerExpiredDiscoveredDeviceEventMessage;
+  expiredDiscoveredDevice: ScannerDiscoveredDeviceEventMessage;
 }
 
 export type ScannerEventDispatcher = EventDispatcher<BaseScanner, ScannerEventType, ScannerEventMessages>;

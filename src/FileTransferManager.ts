@@ -42,44 +42,16 @@ export const FileTransferEventTypes = [
 ] as const;
 export type FileTransferEventType = (typeof FileTransferEventTypes)[number];
 
-interface MaxFileLengthEventMessage {
-  maxFileLength: number;
-}
-interface FileTypeEventMessage {
-  fileType: FileType;
-}
-interface FileTransferLengthEventMessage {
-  fileLength: number;
-}
-interface FileChecksumEventMessage {
-  fileChecksum: number;
-}
-interface FileTransferStatusEventMessage {
-  fileTransferStatus: FileTransferStatus;
-}
-interface FileBlockEventMessage {
-  fileTransferBlock: DataView;
-}
-interface FileTransferProgressEventMessage {
-  progress: number;
-}
-interface FileTransferCompleteEventMessage {
-  direction: FileTransferDirection;
-}
-interface FileReceivedEventMessage {
-  file: File | Blob;
-}
-
 export interface FileTransferEventMessages {
-  maxFileLength: MaxFileLengthEventMessage;
-  getFileType: FileTypeEventMessage;
-  getFileLength: FileTransferLengthEventMessage;
-  getFileChecksum: FileChecksumEventMessage;
-  fileTransferStatus: FileTransferStatusEventMessage;
-  getFileBlock: FileBlockEventMessage;
-  fileTransferProgress: FileTransferProgressEventMessage;
-  fileTransferComplete: FileTransferCompleteEventMessage;
-  fileReceived: FileReceivedEventMessage;
+  maxFileLength: { maxFileLength: number };
+  getFileType: { fileType: FileType };
+  getFileLength: { fileLength: number };
+  getFileChecksum: { fileChecksum: number };
+  fileTransferStatus: { fileTransferStatus: FileTransferStatus };
+  getFileBlock: { fileTransferBlock: DataView };
+  fileTransferProgress: { progress: number };
+  fileTransferComplete: { direction: FileTransferDirection };
+  fileReceived: { file: File | Blob };
 }
 
 export type FileTransferEventDispatcher = EventDispatcher<Device, FileTransferEventType, FileTransferEventMessages>;

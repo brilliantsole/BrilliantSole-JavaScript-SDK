@@ -28,36 +28,14 @@ export type InformationMessageType = (typeof InformationMessageTypes)[number];
 export const InformationEventTypes = InformationMessageTypes;
 export type InformationEventType = (typeof InformationEventTypes)[number];
 
-interface BatteryCurrentEventMessage {
-  batteryCurrent: number;
-}
-interface IsChargingEventMessage {
-  isCharging: boolean;
-}
-interface NameEventMessage {
-  name: string;
-}
-interface TypeEventMessage {
-  type: DeviceType;
-}
-interface IdEventMessage {
-  id: string;
-}
-interface MtuEventMessage {
-  mtu: number;
-}
-interface CurrentTimeEventMessage {
-  currentTime: number;
-}
-
 export interface InformationEventMessages {
-  isCharging: IsChargingEventMessage;
-  getBatteryCurrent: BatteryCurrentEventMessage;
-  getMtu: MtuEventMessage;
-  getId: IdEventMessage;
-  getName: NameEventMessage;
-  getType: TypeEventMessage;
-  getCurrentTime: CurrentTimeEventMessage;
+  isCharging: { isCharging: boolean };
+  getBatteryCurrent: { batteryCurrent: number };
+  getMtu: { mtu: number };
+  getId: { id: string };
+  getName: { name: string };
+  getType: { type: DeviceType };
+  getCurrentTime: { currentTime: number };
 }
 
 export type InformationEventDispatcher = EventDispatcher<Device, InformationEventType, InformationEventMessages>;
