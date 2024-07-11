@@ -98,24 +98,21 @@ export const DeviceEventTypes = [
 ] as const;
 export type DeviceEventType = (typeof DeviceEventTypes)[number];
 
-interface ConnectionEventMessages {
+export interface DeviceEventMessages
+  extends DeviceInformationEventMessages,
+    InformationEventMessages,
+    SensorDataEventMessages,
+    SensorConfigurationEventMessages,
+    TfliteEventMessages,
+    FileTransferEventMessages,
+    FirmwareEventMessages {
   connectionStatus: { connectionStatus: ConnectionStatus };
   isConnected: { isConnected: boolean };
-}
 
-interface BatteryLevelEventMessages {
   batteryLevel: { batteryLevel: number };
-}
 
-export type DeviceEventMessages = ConnectionEventMessages &
-  BatteryLevelEventMessages &
-  DeviceInformationEventMessages &
-  InformationEventMessages &
-  SensorDataEventMessages &
-  SensorConfigurationEventMessages &
-  TfliteEventMessages &
-  FileTransferEventMessages &
-  FirmwareEventMessages;
+  connectionMessage: { messageType: ConnectionMessageType; dataView: DataView };
+}
 
 export const StaticDeviceEventTypes = [
   "deviceConnected",
@@ -161,8 +158,25 @@ export type SpecificDeviceEvent<EventType extends DeviceEventType> = SpecificEve
   EventType
 >;
 export type DeviceEvent = Event<Device, DeviceEventType, DeviceEventMessages>;
-
 export type BoundDeviceEventListeners = BoundEventListeners<Device, DeviceEventType, DeviceEventMessages>;
+
+export type StaticDeviceEventDispatcher = EventDispatcher<
+  typeof Device,
+  StaticDeviceEventType,
+  StaticDeviceEventMessages
+>;
+export type SpecificStaticDeviceEvent<EventType extends StaticDeviceEventType> = SpecificEvent<
+  typeof Device,
+  StaticDeviceEventType,
+  StaticDeviceEventMessages,
+  EventType
+>;
+export type StaticDeviceEvent = Event<typeof Device, StaticDeviceEventType, StaticDeviceEventMessages>;
+export type BoundStaticDeviceEventListeners = BoundEventListeners<
+  typeof Device,
+  StaticDeviceEventType,
+  StaticDeviceEventMessages
+>;
 
 class Device {
   get bluetoothId() {
@@ -953,8 +967,7 @@ class Device {
 
   // STATIC EVENTLISTENERS
 
-  static #EventDispatcher: EventDispatcher<typeof Device, StaticDeviceEventType, StaticDeviceEventMessages> =
-    new EventDispatcher(this, StaticDeviceEventTypes);
+  static #EventDispatcher: StaticDeviceEventDispatcher = new EventDispatcher(this, StaticDeviceEventTypes);
 
   static get AddEventListener() {
     return this.#EventDispatcher.addEventListener;

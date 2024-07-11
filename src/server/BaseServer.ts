@@ -1,27 +1,31 @@
 import { createConsole } from "../utils/Console";
 import EventDispatcher from "../utils/EventDispatcher";
-import { createServerMessage, createDeviceMessage, ServerMessageTypes, pongMessage } from "./ServerUtils";
-import Device from "../Device";
+import {
+  createServerMessage,
+  createDeviceMessage,
+  ServerMessageTypes,
+  pongMessage,
+  ServerMessageType,
+  DeviceMessage,
+  ServerMessage,
+} from "./ServerUtils";
+import Device, {
+  BoundDeviceEventListeners,
+  BoundStaticDeviceEventListeners,
+  SpecificDeviceEvent,
+  SpecificStaticDeviceEvent,
+} from "../Device";
 import { addEventListeners, removeEventListeners } from "../utils/EventUtils";
 import scanner from "../scanner/Scanner";
 import { parseMessage, parseStringFromDataView } from "../utils/ParseUtils";
+import { ConnectionMessageType, ConnectionMessageTypes } from "../connection/BaseConnectionManager";
 import { concatenateArrayBuffers } from "../utils/ArrayBufferUtils";
-import BaseConnectionManager from "../connection/BaseConnectionManager";
+import { BoundScannerEventListeners, DiscoveredDevice, SpecificScannerEvent } from "../scanner/BaseScanner";
 
 const _console = createConsole("BaseServer", { log: true });
 
-type ScannerEvent = import("../scanner/BaseScanner").ScannerEvent;
-type DiscoveredDevice = import("../scanner/BaseScanner").DiscoveredDevice;
-
-type DeviceEventType = import("../Device").DeviceEventType;
-
-type DeviceMessage = import("./ServerUtils").DeviceMessage;
-
-type ServerEventType = "clientConnected" | "clientDisconnected";
-interface BaseServerEvent {
-  target: BaseServer;
-  type: ServerEventType;
-}
+export const ServerEventTypes = ["clientConnected", "clientDisconnected"] as const;
+export type ServerEventType = (typeof ServerEventTypes)[number];
 
 interface BaseClientConnectedEvent {
   type: "clientConnected";
@@ -34,53 +38,26 @@ type ClientConnectedEvent = BaseServerEvent & BaseClientConnectedEvent;
  */
 /** @typedef {BaseServerEvent & BaseClientDisconnectedEvent} ClientDisconnectedEvent */
 
-/** @typedef {ClientConnectedEvent | ClientDisconnectedEvent} ServerEvent */
+type ServerEvent = ClientConnectedEvent | ClientDisconnectedEvent;
 type ServerEventListener = (event: ServerEvent) => void;
 
-class BaseServer {
-  /**
-   * @abstract
-   * @throws {Error} if abstract class
-   */
+abstract class BaseServer {
+  /** @throws {Error} if abstract class */
   #assertIsSubclass() {
     _console.assertWithError(this.constructor != BaseServer, `${this.constructor.name} must be subclassed`);
   }
 
   // EVENT DISPATCHER
 
-  /** @type {ServerEventType[]} */
-  static #EventTypes = ["clientConnected", "clientDisconnected"];
-  static get EventTypes() {
-    return this.#EventTypes;
+  #eventDispatcher = new EventDispatcher(this, ServerEventTypes);
+  get addEventListener() {
+    return this.#eventDispatcher.addEventListener;
   }
-  get eventTypes() {
-    return BaseServer.#EventTypes;
+  get removeEventListener() {
+    return this.#eventDispatcher.removeEventListener;
   }
-  #eventDispatcher = new EventDispatcher(this, this.eventTypes);
-
-  /**
-   * @param {ServerEventType} type
-   * @param {ServerEventListener} listener
-   * @param {EventDispatcherOptions} [options]
-   */
-  addEventListener(type, listener, options) {
-    this.#eventDispatcher.addEventListener(type, listener, options);
-  }
-
-  /**
-   * @protected
-   * @param {ServerEvent} event
-   */
-  dispatchEvent(event) {
-    this.#eventDispatcher.dispatchEvent(event);
-  }
-
-  /**
-   * @param {ServerEventType} type
-   * @param {ServerEventListener} listener
-   */
-  removeEventListener(type, listener) {
-    return this.#eventDispatcher.removeEventListener(type, listener);
+  get waitForEvent() {
+    return this.#eventDispatcher.waitForEvent;
   }
 
   // CONSTRUCTOR
@@ -91,7 +68,7 @@ class BaseServer {
     _console.assertWithError(scanner, "no scanner defined");
 
     addEventListeners(scanner, this.#boundScannerListeners);
-    addEventListeners(Device, this.#boundDeviceClassListeners);
+    addEventListeners(Device, this.#boundStaticDeviceListeners);
     addEventListeners(this, this.#boundServerListeners);
   }
 
@@ -118,18 +95,15 @@ class BaseServer {
   }
 
   // SERVER LISTENERS
-  #boundServerListeners = {
+  #boundServerListeners: BoundServerListeners = {
     clientConnected: this.#onClientConnected.bind(this),
     clientDisconnected: this.#onClientDisconnected.bind(this),
   };
-
-  /** @param {ServerEvent} event */
-  #onClientConnected(event) {
+  #onClientConnected(event: ServerEvent) {
     const client = event.message.client;
     _console.log("onClientConnected");
   }
-  /** @param {ServerEvent} event */
-  #onClientDisconnected(event) {
+  #onClientDisconnected(event: ServerEvent) {
     const client = event.message.client;
     _console.log("onClientDisconnected");
     if (this.numberOfClients == 0 && this.clearSensorConfigurationsWhenNoClients) {
@@ -141,71 +115,56 @@ class BaseServer {
   }
 
   // CLIENT MESSAGING
-
-  /**
-   * @protected
-   * @param {ArrayBuffer} message
-   */
-  broadcastMessage(message) {
+  broadcastMessage(message: ArrayBuffer) {
     _console.log("broadcasting", message);
   }
 
   // SCANNER
-
-  #boundScannerListeners = {
+  #boundScannerListeners: BoundScannerEventListeners = {
     isAvailable: this.#onScannerIsAvailable.bind(this),
     isScanning: this.#onScannerIsScanning.bind(this),
     discoveredDevice: this.#onScannerDiscoveredDevice.bind(this),
     expiredDiscoveredDevice: this.#onExpiredDiscoveredDevice.bind(this),
   };
 
-  /** @param {ScannerEvent} event */
-  #onScannerIsAvailable(event) {
+  #onScannerIsAvailable(event: SpecificScannerEvent<"isAvailable">) {
     this.broadcastMessage(this.#isScanningAvailableMessage);
   }
   get #isScanningAvailableMessage() {
-    return createServerMessage({ type: "isScanningAvailable", data: scanner.isAvailable });
+    return createServerMessage({ type: "isScanningAvailable", data: scanner!.isAvailable });
   }
 
-  /** @param {ScannerEvent} event */
-  #onScannerIsScanning(event) {
+  #onScannerIsScanning(event: SpecificScannerEvent<"isScanning">) {
     this.broadcastMessage(this.#isScanningMessage);
   }
   get #isScanningMessage() {
-    return createServerMessage({ type: "isScanning", data: scanner.isScanning });
+    return createServerMessage({ type: "isScanning", data: scanner!.isScanning });
   }
 
-  /** @param {ScannerEvent} event */
-  #onScannerDiscoveredDevice(event) {
-    /** @type {DiscoveredDevice} */
-    const discoveredDevice = event.message.discoveredDevice;
+  #onScannerDiscoveredDevice(event: SpecificScannerEvent<"discoveredDevice">) {
+    const { discoveredDevice } = event.message;
     _console.log(discoveredDevice);
 
     this.broadcastMessage(this.#createDiscoveredDeviceMessage(discoveredDevice));
   }
-  /** @param {DiscoveredDevice} discoveredDevice */
-  #createDiscoveredDeviceMessage(discoveredDevice) {
+  #createDiscoveredDeviceMessage(discoveredDevice: DiscoveredDevice) {
     return createServerMessage({ type: "discoveredDevice", data: discoveredDevice });
   }
 
-  /** @param {ScannerEvent} event */
-  #onExpiredDiscoveredDevice(event) {
-    /** @type {DiscoveredDevice} */
-    const discoveredDevice = event.message.discoveredDevice;
+  #onExpiredDiscoveredDevice(event: SpecificScannerEvent<"expiredDiscoveredDevice">) {
+    const { discoveredDevice } = event.message;
     _console.log("expired", discoveredDevice);
     this.broadcastMessage(this.#createExpiredDiscoveredDeviceMessage(discoveredDevice));
   }
-  /** @param {DiscoveredDevice} discoveredDevice */
-  #createExpiredDiscoveredDeviceMessage(discoveredDevice) {
+  #createExpiredDiscoveredDeviceMessage(discoveredDevice: DiscoveredDevice) {
     return createServerMessage({ type: "expiredDiscoveredDevice", data: discoveredDevice.bluetoothId });
   }
 
   get #discoveredDevicesMessage() {
-    return createServerMessage(
-      ...scanner.discoveredDevicesArray.map((discoveredDevice) => {
-        return { type: "discoveredDevice", data: discoveredDevice };
-      })
-    );
+    const serverMessages: ServerMessage[] = scanner!.discoveredDevicesArray.map((discoveredDevice) => {
+      return { type: "discoveredDevice", data: discoveredDevice };
+    });
+    return createServerMessage(...serverMessages);
   }
 
   get #connectedDevicesMessage() {
@@ -217,102 +176,67 @@ class BaseServer {
 
   // DEVICE LISTENERS
 
-  #boundDeviceListeners = {
+  #boundDeviceListeners: BoundDeviceEventListeners = {
     connectionMessage: this.#onDeviceConnectionMessage.bind(this),
   };
 
-  /**
-   * @param {Device} device
-   * @param {DeviceEventType} messageType
-   * @param {DataView} [dataView]
-   * @returns {DeviceMessage}
-   */
-  #createDeviceMessage(device, messageType, dataView) {
+  #createDeviceMessage(device: Device, messageType: ConnectionMessageType, dataView?: DataView): DeviceMessage {
     return { type: messageType, data: dataView || device.latestConnectionMessage.get(messageType) };
   }
 
-  /** @typedef {import("../Device").DeviceEvent} DeviceEvent */
-  /** @typedef {import("../connection/BaseConnectionManager").ConnectionMessageType} ConnectionMessageType */
-
-  /** @param {DeviceEvent} deviceEvent */
-  #onDeviceConnectionMessage(deviceEvent) {
-    const device = deviceEvent.target;
+  #onDeviceConnectionMessage(deviceEvent: SpecificDeviceEvent<"connectionMessage">) {
+    const { target: device, message } = deviceEvent;
     _console.log("onDeviceConnectionMessage", deviceEvent.message);
 
     if (!device.isConnected) {
       return;
     }
 
-    /** @type {ConnectionMessageType} */
-    const messageType = deviceEvent.message.messageType;
-    /** @type {DataView} */
-    const dataView = deviceEvent.message.dataView;
+    const { messageType, dataView } = message;
 
     this.broadcastMessage(
       this.#createDeviceServerMessage(device, this.#createDeviceMessage(device, messageType, dataView))
     );
   }
 
-  // DEVICE CLASS LISTENERS
-
-  #boundDeviceClassListeners = {
+  // STATIC DEVICE LISTENERS
+  #boundStaticDeviceListeners: BoundStaticDeviceEventListeners = {
     deviceConnected: this.#onDeviceConnected.bind(this),
     deviceDisconnected: this.#onDeviceDisconnected.bind(this),
     deviceIsConnected: this.#onDeviceIsConnected.bind(this),
   };
 
-  type StaticDeviceEvent = import("../../Device").StaticDeviceEvent;
-
-  /** @param {StaticDeviceEvent} staticDeviceEvent */
-  #onDeviceConnected(staticDeviceEvent) {
-    /** @type {Device} */
-    const device = staticDeviceEvent.message.device;
+  #onDeviceConnected(staticDeviceEvent: SpecificStaticDeviceEvent<"deviceConnected">) {
+    const { device } = staticDeviceEvent.message;
     _console.log("onDeviceConnected", device.bluetoothId);
     addEventListeners(device, this.#boundDeviceListeners);
   }
 
-  /** @param {StaticDeviceEvent} staticDeviceEvent */
-  #onDeviceDisconnected(staticDeviceEvent) {
-    /** @type {Device} */
-    const device = staticDeviceEvent.message.device;
+  #onDeviceDisconnected(staticDeviceEvent: SpecificStaticDeviceEvent<"deviceDisconnected">) {
+    const { device } = staticDeviceEvent.message;
     _console.log("onDeviceDisconnected", device.bluetoothId);
     removeEventListeners(device, this.#boundDeviceListeners);
   }
 
-  /** @param {StaticDeviceEvent} staticDeviceEvent */
-  #onDeviceIsConnected(staticDeviceEvent) {
-    /** @type {Device} */
-    const device = staticDeviceEvent.message.device;
+  #onDeviceIsConnected(staticDeviceEvent: SpecificStaticDeviceEvent<"deviceIsConnected">) {
+    const { device } = staticDeviceEvent.message;
     _console.log("onDeviceIsConnected", device.bluetoothId);
     this.broadcastMessage(this.#createDeviceIsConnectedMessage(device));
   }
-  /** @param {Device} device */
-  #createDeviceIsConnectedMessage(device) {
+  #createDeviceIsConnectedMessage(device: Device) {
     return this.#createDeviceServerMessage(device, { type: "isConnected", data: device.isConnected });
   }
 
-  /**
-   * @param {Device} device
-   * @param {...DeviceEventType|DeviceMessage} messages
-   */
-  #createDeviceServerMessage(device, ...messages) {
+  #createDeviceServerMessage(device: Device, ...messages: DeviceMessage[]) {
     return createServerMessage({
       type: "deviceMessage",
-      data: [device.bluetoothId, createDeviceMessage(...messages)],
+      data: [device.bluetoothId!, createDeviceMessage(...messages)],
     });
   }
 
   // PARSING
-
-  type ServerMessageType = import("./ServerUtils").ServerMessageType;
-
-  /**
-   * @protected
-   * @param {DataView} dataView
-   */
-  parseClientMessage(dataView) {
-    /** @type {ArrayBuffer[]} */
-    let responseMessages = [];
+  parseClientMessage(dataView: DataView) {
+    let responseMessages: ArrayBuffer[] = [];
 
     parseMessage(dataView, ServerMessageTypes, this.#onClientMessage.bind(this), { responseMessages }, true);
 
@@ -323,12 +247,8 @@ class BaseServer {
     }
   }
 
-  /**
-   * @param {ServerMessageType} messageType
-   * @param {DataView} dataView
-   * @param {{responseMessages: ArrayBuffer[]}} context
-   */
-  #onClientMessage(messageType, dataView, context) {
+  #onClientMessage(messageType: ServerMessageType, dataView: DataView, context: { responseMessages: ArrayBuffer[] }) {
+    const { responseMessages } = context;
     switch (messageType) {
       case "ping":
         responseMessages.push(pongMessage);
@@ -336,24 +256,24 @@ class BaseServer {
       case "pong":
         break;
       case "isScanningAvailable":
-        context.responseMessages.push(this.#isScanningAvailableMessage);
+        responseMessages.push(this.#isScanningAvailableMessage);
         break;
       case "isScanning":
-        context.responseMessages.push(this.#isScanningMessage);
+        responseMessages.push(this.#isScanningMessage);
         break;
       case "startScan":
-        scanner.startScan();
+        scanner!.startScan();
         break;
       case "stopScan":
-        scanner.stopScan();
+        scanner!.stopScan();
         break;
       case "discoveredDevices":
-        context.responseMessages.push(this.#discoveredDevicesMessage);
+        responseMessages.push(this.#discoveredDevicesMessage);
         break;
       case "connectToDevice":
         {
           const { string: deviceId } = parseStringFromDataView(dataView);
-          scanner.connectToDevice(deviceId);
+          scanner!.connectToDevice(deviceId);
         }
         break;
       case "disconnectFromDevice":
@@ -368,7 +288,7 @@ class BaseServer {
         }
         break;
       case "connectedDevices":
-        context.responseMessages.push(this.#connectedDevicesMessage);
+        responseMessages.push(this.#connectedDevicesMessage);
         break;
       case "deviceMessage":
         {
@@ -379,7 +299,10 @@ class BaseServer {
             break;
           }
           const _dataView = new DataView(dataView.buffer, dataView.byteOffset + byteOffset);
-          context.responseMessages.push(this.parseClientDeviceMessage(device, _dataView));
+          const responseMessage = this.parseClientDeviceMessage(device, _dataView);
+          if (responseMessage) {
+            responseMessages.push();
+          }
         }
         break;
       default:
@@ -388,20 +311,14 @@ class BaseServer {
     }
   }
 
-  /**
-   * @protected
-   * @param {Device} device
-   * @param {DataView} dataView
-   */
-  parseClientDeviceMessage(device, dataView) {
+  protected parseClientDeviceMessage(device: Device, dataView: DataView) {
     _console.log("onDeviceMessage", device.bluetoothId, dataView);
 
-    /** @type {(DeviceEventType | DeviceMessage)[]} */
-    let responseMessages = [];
+    let responseMessages: DeviceMessage[] = [];
 
     parseMessage(
       dataView,
-      BaseConnectionManager.MessageTypes,
+      ConnectionMessageTypes,
       this.#parseClientDeviceMessageCallback.bind(this),
       { responseMessages, device },
       true
@@ -412,18 +329,17 @@ class BaseServer {
     }
   }
 
-  /**
-   * @param {ConnectionMessageType} messageType
-   * @param {DataView} dataView
-   * @param {{responseMessages: (DeviceEventType | DeviceMessage)[], device: Device}} context
-   */
-  #parseClientDeviceMessageCallback(messageType, dataView, context) {
+  #parseClientDeviceMessageCallback(
+    messageType: ConnectionMessageType,
+    dataView: DataView,
+    context: { responseMessages: DeviceMessage[]; device: Device }
+  ) {
     switch (messageType) {
       case "smp":
-        context.device.connectionManager.sendSmpMessage(dataView.buffer);
+        context.device.connectionManager!.sendSmpMessage(dataView.buffer);
         break;
       case "tx":
-        context.device.connectionManager.sendTxData(dataView.buffer);
+        context.device.connectionManager!.sendTxData(dataView.buffer);
         break;
       default:
         context.responseMessages.push(this.#createDeviceMessage(context.device, messageType));

@@ -1,5 +1,5 @@
 import { createConsole } from "../../utils/Console";
-import { addEventListeners, removeEventListeners } from "../../utils/EventDispatcher";
+import { addEventListeners, removeEventListeners } from "../../utils/EventUtils";
 import { pingTimeout, pingMessage } from "../ServerUtils";
 import { dataToArrayBuffer } from "../../utils/ArrayBufferUtils";
 import Timer from "../../utils/Timer";
@@ -8,7 +8,7 @@ import BaseServer from "../BaseServer";
 const _console = createConsole("WebSocketServer", { log: true });
 
 // NODE_START
-import ws from "ws";
+import * as ws from "ws";
 // NODE_END
 
 /** @typedef {import("../BaseServer").ServerEventType} ServerEventType */
@@ -31,20 +31,11 @@ import ws from "ws";
 /** @typedef {(event: WebSocketServerEvent) => void} WebSocketServerEventListener */
 
 class WebSocketServer extends BaseServer {
-  /**
-   * @param {ServerEventType} type
-   * @param {WebSocketServerEventListener} listener
-   * @param {EventDispatcherOptions} [options]
-   */
-  addEventListener(type, listener, options) {
+  addEventListener(type: ServerEventType, listener: WebSocketServerEventListener, options: EventDispatcherOptions) {
     super.addEventListener(type, listener, options);
   }
 
-  /**
-   * @protected
-   * @param {WebSocketServerEvent} event
-   */
-  dispatchEvent(event) {
+  protected dispatchEvent(event: WebSocketServerEvent) {
     super.dispatchEvent(event);
   }
 
@@ -54,8 +45,7 @@ class WebSocketServer extends BaseServer {
 
   // WEBSOCKET SERVER
 
-  /** @type {ws.WebSocketServer?} */
-  #server;
+  #server?: ws.WebSocketServer;
   get server() {
     return this.#server;
   }
@@ -90,8 +80,7 @@ class WebSocketServer extends BaseServer {
   #onServerClose() {
     _console.log("server.close");
   }
-  /** @param {ws.WebSocket} client */
-  #onServerConnection(client) {
+  #onServerConnection(client: ws.WebSocket) {
     _console.log("server.connection");
     client.isAlive = true;
     client.pingClientTimer = new Timer(() => this.#pingClient(client), pingTimeout);
@@ -99,8 +88,7 @@ class WebSocketServer extends BaseServer {
     addEventListeners(client, this.#boundClientListeners);
     this.dispatchEvent({ type: "clientConnected", message: { client } });
   }
-  /** @param {Error} error */
-  #onServerError(error) {
+  #onServerError(error: Error) {
     _console.error(error);
   }
   #onServerHeaders() {
@@ -118,12 +106,10 @@ class WebSocketServer extends BaseServer {
     close: this.#onClientClose.bind(this),
     error: this.#onClientError.bind(this),
   };
-  /** @param {ws.Event} event */
-  #onClientOpen(event) {
+  #onClientOpen(event: ws.Event) {
     _console.log("client.open");
   }
-  /** @param {ws.MessageEvent} event */
-  #onClientMessage(event) {
+  #onClientMessage(event: ws.MessageEvent) {
     _console.log("client.message");
     const client = event.target;
     client.isAlive = true;
@@ -131,26 +117,20 @@ class WebSocketServer extends BaseServer {
     const dataView = new DataView(dataToArrayBuffer(event.data));
     this.#parseClientMessage(client, dataView);
   }
-  /** @param {ws.CloseEvent} event */
-  #onClientClose(event) {
+  #onClientClose(event: ws.CloseEvent) {
     _console.log("client.close");
     const client = event.target;
     client.pingClientTimer.stop();
     removeEventListeners(client, this.#boundClientListeners);
     this.dispatchEvent({ type: "clientDisconnected", message: { client } });
   }
-  /** @param {ws.ErrorEvent} event */
-  #onClientError(event) {
+  #onClientError(event: ws.ErrorEvent) {
     _console.log("client.error");
   }
 
   // PARSING
 
-  /**
-   * @param {ws.WebSocket} client
-   * @param {DataView} dataView
-   */
-  #parseClientMessage(client, dataView) {
+  #parseClientMessage(client: ws.WebSocket, dataView: DataView) {
     const responseMessage = this.parseClientMessage(dataView);
     if (responseMessage) {
       client.send(responseMessage);
@@ -158,9 +138,7 @@ class WebSocketServer extends BaseServer {
   }
 
   // CLIENT MESSAGING
-
-  /** @param {ArrayBuffer} message */
-  broadcastMessage(message) {
+  broadcastMessage(message: ArrayBuffer) {
     super.broadcastMessage(message);
     this.server.clients.forEach((client) => {
       client.send(message);
@@ -168,9 +146,7 @@ class WebSocketServer extends BaseServer {
   }
 
   // PING
-
-  /** @param {ws.WebSocket} client */
-  #pingClient(client) {
+  #pingClient(client: ws.WebSocket) {
     if (!client.isAlive) {
       client.terminate();
       return;

@@ -35,8 +35,7 @@ export type SpecificScannerEvent<EventType extends ScannerEventType> = SpecificE
   EventType
 >;
 export type ScannerEvent = Event<BaseScanner, ScannerEventType, ScannerEventMessages>;
-
-type BoundScannerEventListeners = BoundEventListeners<BaseScanner, ScannerEventType, ScannerEventMessages>;
+export type BoundScannerEventListeners = BoundEventListeners<BaseScanner, ScannerEventType, ScannerEventMessages>;
 
 abstract class BaseScanner {
   // IS SUPPORTED
