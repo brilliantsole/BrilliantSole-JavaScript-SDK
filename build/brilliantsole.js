@@ -43,10 +43,9 @@
 	    return e.name = "SuppressedError", e.error = error, e.suppressed = suppressed, e;
 	};
 
-	const __BRILLIANTSOLE__ENVIRONMENT__ = "__BRILLIANTSOLE__DEV__";
 	//@ts-expect-error
-	const isInProduction = __BRILLIANTSOLE__ENVIRONMENT__ == "__BRILLIANTSOLE__PROD__";
-	const isInDev = __BRILLIANTSOLE__ENVIRONMENT__ == "__BRILLIANTSOLE__DEV__";
+	const isInProduction = "__BRILLIANTSOLE__PROD__" == "__BRILLIANTSOLE__PROD__";
+	const isInDev = "__BRILLIANTSOLE__PROD__" == "__BRILLIANTSOLE__DEV__";
 	// https://github.com/flexdinesh/browser-or-node/blob/master/src/index.ts
 	const isInBrowser = typeof window !== "undefined" && typeof window?.document !== "undefined";
 	const isInNode = typeof process !== "undefined" && process?.versions?.node != null;
@@ -150,9 +149,6 @@
 	    }
 	    static create(type, levelFlags) {
 	        const console = __classPrivateFieldGet(this, _a$8, "f", _Console_consoles)[type] || new _a$8(type);
-	        if (levelFlags) {
-	            console.setLevelFlags(levelFlags);
-	        }
 	        return console;
 	    }
 	    get log() {
@@ -2255,7 +2251,7 @@
 	_VibrationManager_MaxWaveformSegmentDuration = { value: 2550 };
 	_VibrationManager_MaxNumberOfWaveformSegments = { value: 20 };
 
-	var _BaseConnectionManager_instances, _a$4, _BaseConnectionManager_AssertValidTxRxMessageType, _BaseConnectionManager_baseConstructor_get, _BaseConnectionManager_assertIsSupported, _BaseConnectionManager_assertIsSubclass, _BaseConnectionManager_status, _BaseConnectionManager_assertIsNotConnected, _BaseConnectionManager_assertIsNotConnecting, _BaseConnectionManager_assertIsConnected, _BaseConnectionManager_assertIsNotDisconnecting, _BaseConnectionManager_assertIsConnectedAndNotDisconnecting, _BaseConnectionManager_pendingMessages, _BaseConnectionManager_onRxMessage, _BaseConnectionManager_timer, _BaseConnectionManager_checkConnection;
+	var _BaseConnectionManager_instances, _a$4, _BaseConnectionManager_AssertValidTxRxMessageType, _BaseConnectionManager_baseConstructor_get, _BaseConnectionManager_assertIsSupported, _BaseConnectionManager_status, _BaseConnectionManager_assertIsNotConnected, _BaseConnectionManager_assertIsNotConnecting, _BaseConnectionManager_assertIsConnected, _BaseConnectionManager_assertIsNotDisconnecting, _BaseConnectionManager_assertIsConnectedAndNotDisconnecting, _BaseConnectionManager_pendingMessages, _BaseConnectionManager_onRxMessage, _BaseConnectionManager_timer, _BaseConnectionManager_checkConnection;
 	const _console$e = createConsole("BaseConnectionManager", { log: true });
 	const ConnectionStatuses = ["not connected", "connecting", "connected", "disconnecting"];
 	const TxRxMessageTypes = [
@@ -2289,7 +2285,6 @@
 	        _BaseConnectionManager_status.set(this, "not connected");
 	        _BaseConnectionManager_pendingMessages.set(this, []);
 	        _BaseConnectionManager_timer.set(this, new Timer(__classPrivateFieldGet(this, _BaseConnectionManager_instances, "m", _BaseConnectionManager_checkConnection).bind(this), 5000));
-	        __classPrivateFieldGet(this, _BaseConnectionManager_instances, "m", _BaseConnectionManager_assertIsSubclass).call(this);
 	        __classPrivateFieldGet(this, _BaseConnectionManager_instances, "m", _BaseConnectionManager_assertIsSupported).call(this);
 	        this.sendSmpMessage = this.sendSmpMessage.bind(this);
 	    }
@@ -2395,8 +2390,6 @@
 	    return this.constructor;
 	}, _BaseConnectionManager_assertIsSupported = function _BaseConnectionManager_assertIsSupported() {
 	    _console$e.assertWithError(this.isSupported, `${this.constructor.name} is not supported`);
-	}, _BaseConnectionManager_assertIsSubclass = function _BaseConnectionManager_assertIsSubclass() {
-	    _console$e.assertWithError(this.constructor != _a$4, `${this.constructor.name} must be subclassed`);
 	}, _BaseConnectionManager_assertIsNotConnected = function _BaseConnectionManager_assertIsNotConnected() {
 	    _console$e.assertWithError(!this.isConnected, "device is already connected");
 	}, _BaseConnectionManager_assertIsNotConnecting = function _BaseConnectionManager_assertIsNotConnecting() {

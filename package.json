@@ -4,6 +4,7 @@
   "description": "JavaScript SDK for BrilliantSole Smart Insoles",
   "main": "build/brilliantsole.js",
   "module": "./build/brilliantsole.module.js",
+  "types": "./build/brilliantsole.module.d.ts",
   "browser": "build/brilliantsole.js",
   "type": "module",
   "exports": {

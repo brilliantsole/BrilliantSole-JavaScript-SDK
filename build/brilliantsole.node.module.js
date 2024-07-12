@@ -40,10 +40,9 @@ typeof SuppressedError === "function" ? SuppressedError : function (error, suppr
     return e.name = "SuppressedError", e.error = error, e.suppressed = suppressed, e;
 };
 
-const __BRILLIANTSOLE__ENVIRONMENT__ = "__BRILLIANTSOLE__DEV__";
 //@ts-expect-error
-const isInProduction = __BRILLIANTSOLE__ENVIRONMENT__ == "__BRILLIANTSOLE__PROD__";
-const isInDev = __BRILLIANTSOLE__ENVIRONMENT__ == "__BRILLIANTSOLE__DEV__";
+const isInProduction = "__BRILLIANTSOLE__PROD__" == "__BRILLIANTSOLE__PROD__";
+const isInDev = "__BRILLIANTSOLE__PROD__" == "__BRILLIANTSOLE__DEV__";
 // https://github.com/flexdinesh/browser-or-node/blob/master/src/index.ts
 const isInBrowser = typeof window !== "undefined" && typeof window?.document !== "undefined";
 const isInNode = typeof process !== "undefined" && process?.versions?.node != null;
@@ -147,9 +146,6 @@ class Console {
     }
     static create(type, levelFlags) {
         const console = __classPrivateFieldGet(this, _a$8, "f", _Console_consoles)[type] || new _a$8(type);
-        if (levelFlags) {
-            console.setLevelFlags(levelFlags);
-        }
         return console;
     }
     get log() {
@@ -2255,7 +2251,7 @@ _VibrationManager_MaxWaveformEffectSequenceLoopCount = { value: 6 };
 _VibrationManager_MaxWaveformSegmentDuration = { value: 2550 };
 _VibrationManager_MaxNumberOfWaveformSegments = { value: 20 };
 
-var _BaseConnectionManager_instances, _a$4, _BaseConnectionManager_AssertValidTxRxMessageType, _BaseConnectionManager_baseConstructor_get, _BaseConnectionManager_assertIsSupported, _BaseConnectionManager_assertIsSubclass, _BaseConnectionManager_status, _BaseConnectionManager_assertIsNotConnected, _BaseConnectionManager_assertIsNotConnecting, _BaseConnectionManager_assertIsConnected, _BaseConnectionManager_assertIsNotDisconnecting, _BaseConnectionManager_assertIsConnectedAndNotDisconnecting, _BaseConnectionManager_pendingMessages, _BaseConnectionManager_onRxMessage, _BaseConnectionManager_timer, _BaseConnectionManager_checkConnection;
+var _BaseConnectionManager_instances, _a$4, _BaseConnectionManager_AssertValidTxRxMessageType, _BaseConnectionManager_baseConstructor_get, _BaseConnectionManager_assertIsSupported, _BaseConnectionManager_status, _BaseConnectionManager_assertIsNotConnected, _BaseConnectionManager_assertIsNotConnecting, _BaseConnectionManager_assertIsConnected, _BaseConnectionManager_assertIsNotDisconnecting, _BaseConnectionManager_assertIsConnectedAndNotDisconnecting, _BaseConnectionManager_pendingMessages, _BaseConnectionManager_onRxMessage, _BaseConnectionManager_timer, _BaseConnectionManager_checkConnection;
 const _console$h = createConsole("BaseConnectionManager", { log: true });
 const ConnectionStatuses = ["not connected", "connecting", "connected", "disconnecting"];
 const TxRxMessageTypes = [
@@ -2289,7 +2285,6 @@ class BaseConnectionManager {
         _BaseConnectionManager_status.set(this, "not connected");
         _BaseConnectionManager_pendingMessages.set(this, []);
         _BaseConnectionManager_timer.set(this, new Timer(__classPrivateFieldGet(this, _BaseConnectionManager_instances, "m", _BaseConnectionManager_checkConnection).bind(this), 5000));
-        __classPrivateFieldGet(this, _BaseConnectionManager_instances, "m", _BaseConnectionManager_assertIsSubclass).call(this);
         __classPrivateFieldGet(this, _BaseConnectionManager_instances, "m", _BaseConnectionManager_assertIsSupported).call(this);
         this.sendSmpMessage = this.sendSmpMessage.bind(this);
     }
@@ -2395,8 +2390,6 @@ _a$4 = BaseConnectionManager, _BaseConnectionManager_status = new WeakMap(), _Ba
     return this.constructor;
 }, _BaseConnectionManager_assertIsSupported = function _BaseConnectionManager_assertIsSupported() {
     _console$h.assertWithError(this.isSupported, `${this.constructor.name} is not supported`);
-}, _BaseConnectionManager_assertIsSubclass = function _BaseConnectionManager_assertIsSubclass() {
-    _console$h.assertWithError(this.constructor != _a$4, `${this.constructor.name} must be subclassed`);
 }, _BaseConnectionManager_assertIsNotConnected = function _BaseConnectionManager_assertIsNotConnected() {
     _console$h.assertWithError(!this.isConnected, "device is already connected");
 }, _BaseConnectionManager_assertIsNotConnecting = function _BaseConnectionManager_assertIsNotConnecting() {
@@ -5281,7 +5274,7 @@ createServerMessage("startScan");
 createServerMessage("stopScan");
 createServerMessage("discoveredDevices");
 
-var _BaseServer_instances, _a$1, _BaseServer_assertIsSubclass, _BaseServer_ClearSensorConfigurationsWhenNoClients, _BaseServer_clearSensorConfigurationsWhenNoClients, _BaseServer_boundServerListeners, _BaseServer_onClientConnected, _BaseServer_onClientDisconnected, _BaseServer_boundScannerListeners, _BaseServer_onScannerIsAvailable, _BaseServer_isScanningAvailableMessage_get, _BaseServer_onScannerIsScanning, _BaseServer_isScanningMessage_get, _BaseServer_onScannerDiscoveredDevice, _BaseServer_createDiscoveredDeviceMessage, _BaseServer_onExpiredDiscoveredDevice, _BaseServer_createExpiredDiscoveredDeviceMessage, _BaseServer_discoveredDevicesMessage_get, _BaseServer_connectedDevicesMessage_get, _BaseServer_boundDeviceListeners, _BaseServer_createDeviceMessage, _BaseServer_onDeviceConnectionMessage, _BaseServer_boundStaticDeviceListeners, _BaseServer_onDeviceConnected, _BaseServer_onDeviceDisconnected, _BaseServer_onDeviceIsConnected, _BaseServer_createDeviceIsConnectedMessage, _BaseServer_createDeviceServerMessage, _BaseServer_onClientMessage, _BaseServer_parseClientDeviceMessageCallback;
+var _BaseServer_instances, _a$1, _BaseServer_ClearSensorConfigurationsWhenNoClients, _BaseServer_clearSensorConfigurationsWhenNoClients, _BaseServer_boundServerListeners, _BaseServer_onClientConnected, _BaseServer_onClientDisconnected, _BaseServer_boundScannerListeners, _BaseServer_onScannerIsAvailable, _BaseServer_isScanningAvailableMessage_get, _BaseServer_onScannerIsScanning, _BaseServer_isScanningMessage_get, _BaseServer_onScannerDiscoveredDevice, _BaseServer_createDiscoveredDeviceMessage, _BaseServer_onExpiredDiscoveredDevice, _BaseServer_createExpiredDiscoveredDeviceMessage, _BaseServer_discoveredDevicesMessage_get, _BaseServer_connectedDevicesMessage_get, _BaseServer_boundDeviceListeners, _BaseServer_createDeviceMessage, _BaseServer_onDeviceConnectionMessage, _BaseServer_boundStaticDeviceListeners, _BaseServer_onDeviceConnected, _BaseServer_onDeviceDisconnected, _BaseServer_onDeviceIsConnected, _BaseServer_createDeviceIsConnectedMessage, _BaseServer_createDeviceServerMessage, _BaseServer_onClientMessage, _BaseServer_parseClientDeviceMessageCallback;
 const _console$4 = createConsole("BaseServer", { log: true });
 const ServerEventTypes = ["clientConnected", "clientDisconnected"];
 class BaseServer {
@@ -5325,7 +5318,6 @@ class BaseServer {
             deviceDisconnected: __classPrivateFieldGet(this, _BaseServer_instances, "m", _BaseServer_onDeviceDisconnected).bind(this),
             deviceIsConnected: __classPrivateFieldGet(this, _BaseServer_instances, "m", _BaseServer_onDeviceIsConnected).bind(this),
         });
-        __classPrivateFieldGet(this, _BaseServer_instances, "m", _BaseServer_assertIsSubclass).call(this);
         _console$4.assertWithError(scanner$1, "no scanner defined");
         addEventListeners(scanner$1, __classPrivateFieldGet(this, _BaseServer_boundScannerListeners, "f"));
         addEventListeners(Device, __classPrivateFieldGet(this, _BaseServer_boundStaticDeviceListeners, "f"));
@@ -5370,9 +5362,7 @@ class BaseServer {
         }
     }
 }
-_a$1 = BaseServer, _BaseServer_clearSensorConfigurationsWhenNoClients = new WeakMap(), _BaseServer_boundServerListeners = new WeakMap(), _BaseServer_boundScannerListeners = new WeakMap(), _BaseServer_boundDeviceListeners = new WeakMap(), _BaseServer_boundStaticDeviceListeners = new WeakMap(), _BaseServer_instances = new WeakSet(), _BaseServer_assertIsSubclass = function _BaseServer_assertIsSubclass() {
-    _console$4.assertWithError(this.constructor != _a$1, `${this.constructor.name} must be subclassed`);
-}, _BaseServer_onClientConnected = function _BaseServer_onClientConnected(event) {
+_a$1 = BaseServer, _BaseServer_clearSensorConfigurationsWhenNoClients = new WeakMap(), _BaseServer_boundServerListeners = new WeakMap(), _BaseServer_boundScannerListeners = new WeakMap(), _BaseServer_boundDeviceListeners = new WeakMap(), _BaseServer_boundStaticDeviceListeners = new WeakMap(), _BaseServer_instances = new WeakSet(), _BaseServer_onClientConnected = function _BaseServer_onClientConnected(event) {
     event.message.client;
     _console$4.log("onClientConnected");
 }, _BaseServer_onClientDisconnected = function _BaseServer_onClientDisconnected(event) {

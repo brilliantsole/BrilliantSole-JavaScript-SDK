@@ -98,6 +98,7 @@ const builds = [
     output: [{ file: "build/brilliantsole.module.d.ts", format: "es" }],
     plugins: [dts()],
   },
+
   {
     input,
     plugins: [..._browserPlugins, ..._plugins, terser()],
@@ -108,6 +109,11 @@ const builds = [
         file: "build/brilliantsole.module.min.js",
       },
     ],
+  },
+  {
+    input: "./build/dts/BS.d.ts",
+    output: [{ file: "build/brilliantsole.module.min.d.ts", format: "es" }],
+    plugins: [dts()],
   },
 
   {

@@ -43,11 +43,6 @@ export type ServerEvent = Event<BaseServer, ServerEventType, ServerEventMessages
 export type BoundServerEventListeners = BoundEventListeners<BaseServer, ServerEventType, ServerEventMessages>;
 
 abstract class BaseServer {
-  /** @throws {Error} if abstract class */
-  #assertIsSubclass() {
-    _console.assertWithError(this.constructor != BaseServer, `${this.constructor.name} must be subclassed`);
-  }
-
   // EVENT DISPATCHER
   protected eventDispatcher: ServerEventDispatcher = new EventDispatcher(this as BaseServer, ServerEventTypes);
   get addEventListener() {
@@ -66,8 +61,6 @@ abstract class BaseServer {
   // CONSTRUCTOR
 
   constructor() {
-    this.#assertIsSubclass();
-
     _console.assertWithError(scanner, "no scanner defined");
 
     addEventListeners(scanner, this.#boundScannerListeners);

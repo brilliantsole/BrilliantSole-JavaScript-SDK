@@ -58,13 +58,6 @@ abstract class BaseConnectionManager {
   onStatusUpdated?: ConnectionStatusCallback;
   onMessageReceived?: MessageReceivedCallback;
 
-  static #staticThrowNotImplementedError(name: string) {
-    throw new Error(`"${name}" is not implemented by "${this.name}" subclass`);
-  }
-  #throwNotImplementedError(name: string) {
-    throw new Error(`"${name}" is not implemented by "${this.constructor.name}" subclass`);
-  }
-
   get #baseConstructor() {
     return this.constructor as typeof BaseConnectionManager;
   }
@@ -85,13 +78,7 @@ abstract class BaseConnectionManager {
     _console.assertWithError(this.isSupported, `${this.constructor.name} is not supported`);
   }
 
-  /** @throws {Error} if abstract class */
-  #assertIsSubclass() {
-    _console.assertWithError(this.constructor != BaseConnectionManager, `${this.constructor.name} must be subclassed`);
-  }
-
   constructor() {
-    this.#assertIsSubclass();
     this.#assertIsSupported();
     this.sendSmpMessage = this.sendSmpMessage.bind(this);
   }
