@@ -25,6 +25,9 @@ export type ScannerEventDispatcher = EventDispatcher<BaseScanner, ScannerEventTy
 export type SpecificScannerEvent<EventType extends ScannerEventType> = SpecificEvent<BaseScanner, ScannerEventType, ScannerEventMessages, EventType>;
 export type ScannerEvent = Event<BaseScanner, ScannerEventType, ScannerEventMessages>;
 export type BoundScannerEventListeners = BoundEventListeners<BaseScanner, ScannerEventType, ScannerEventMessages>;
+export type DiscoveredDevicesMap = {
+    [deviceId: string]: DiscoveredDevice;
+};
 declare abstract class BaseScanner {
     #private;
     static get isSupported(): boolean;
@@ -52,9 +55,7 @@ declare abstract class BaseScanner {
     get isScanning(): boolean;
     startScan(): void;
     stopScan(): void;
-    get discoveredDevices(): {
-        [deviceId: string]: DiscoveredDevice;
-    };
+    get discoveredDevices(): Readonly<DiscoveredDevicesMap>;
     get discoveredDevicesArray(): DiscoveredDevice[];
     static get DiscoveredDeviceExpirationTimeout(): number;
     connectToDevice(deviceId: string): Promise<void>;

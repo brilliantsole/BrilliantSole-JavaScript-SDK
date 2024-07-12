@@ -2,7 +2,7 @@ import { ServerMessage, MessageLike, ClientDeviceMessage } from "./ServerUtils";
 import Timer from "../utils/Timer";
 import EventDispatcher, { BoundEventListeners, Event, SpecificEvent } from "../utils/EventDispatcher";
 import Device from "../Device";
-import { DiscoveredDevice, ScannerEventMessages } from "../scanner/BaseScanner";
+import { DiscoveredDevice, DiscoveredDevicesMap, ScannerEventMessages } from "../scanner/BaseScanner";
 export declare const ClientConnectionStatuses: readonly ["not connected", "connecting", "connected", "disconnecting"];
 export type ClientConnectionStatus = (typeof ClientConnectionStatuses)[number];
 export declare const ClientEventTypes: readonly ["not connected", "connecting", "connected", "disconnecting", "connectionStatus", "isConnected", "isScanningAvailable", "isScanning", "discoveredDevice", "expiredDiscoveredDevice"];
@@ -23,9 +23,6 @@ export type BoundClientEventListeners = BoundEventListeners<BaseClient, ClientEv
 export type ServerURL = string | URL;
 type DevicesMap = {
     [deviceId: string]: Device;
-};
-type DiscoveredDevicesMap = {
-    [deviceId: string]: DiscoveredDevice;
 };
 declare abstract class BaseClient {
     #private;

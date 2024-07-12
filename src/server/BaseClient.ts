@@ -16,7 +16,7 @@ import EventDispatcher, { BoundEventListeners, Event, SpecificEvent } from "../u
 import Device from "../Device";
 import WebSocketClientConnectionManager from "../connection/webSocket/WebSocketClientConnectionManager";
 import { sliceDataView } from "../utils/ArrayBufferUtils";
-import { DiscoveredDevice, ScannerEventMessages } from "../scanner/BaseScanner";
+import { DiscoveredDevice, DiscoveredDevicesMap, ScannerEventMessages } from "../scanner/BaseScanner";
 
 const _console = createConsole("WebSocketClient", { log: true });
 
@@ -54,7 +54,6 @@ export type BoundClientEventListeners = BoundEventListeners<BaseClient, ClientEv
 export type ServerURL = string | URL;
 
 type DevicesMap = { [deviceId: string]: Device };
-type DiscoveredDevicesMap = { [deviceId: string]: DiscoveredDevice };
 
 abstract class BaseClient {
   get #baseConstructor() {

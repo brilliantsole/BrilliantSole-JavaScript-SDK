@@ -110,11 +110,6 @@ const builds = [
       },
     ],
   },
-  {
-    input: "./build/dts/BS.d.ts",
-    output: [{ file: "build/brilliantsole.module.min.d.ts", format: "es" }],
-    plugins: [dts()],
-  },
 
   {
     input,

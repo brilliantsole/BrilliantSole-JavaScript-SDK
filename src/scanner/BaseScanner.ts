@@ -42,6 +42,8 @@ export type SpecificScannerEvent<EventType extends ScannerEventType> = SpecificE
 export type ScannerEvent = Event<BaseScanner, ScannerEventType, ScannerEventMessages>;
 export type BoundScannerEventListeners = BoundEventListeners<BaseScanner, ScannerEventType, ScannerEventMessages>;
 
+export type DiscoveredDevicesMap = { [deviceId: string]: DiscoveredDevice };
+
 abstract class BaseScanner {
   // IS SUPPORTED
   get #baseConstructor() {
@@ -124,8 +126,8 @@ abstract class BaseScanner {
   }
 
   // DISCOVERED DEVICES
-  #discoveredDevices: { [deviceId: string]: DiscoveredDevice } = {};
-  get discoveredDevices() {
+  #discoveredDevices: DiscoveredDevicesMap = {};
+  get discoveredDevices(): Readonly<DiscoveredDevicesMap> {
     return this.#discoveredDevices;
   }
   get discoveredDevicesArray() {

@@ -7,6 +7,8 @@ const device = new BS.Device();
 console.log({ device });
 window.device = device;
 
+device.addEventListener("");
+
 //BS.setAllConsoleLevelFlags({ log: false });
 
 /** @typedef {import("../../build/brilliantsole.module.js").Device} Device */

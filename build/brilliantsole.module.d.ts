@@ -620,6 +620,9 @@ interface ScannerEventMessages {
         isScanning: boolean;
     };
 }
+type DiscoveredDevicesMap = {
+    [deviceId: string]: DiscoveredDevice;
+};
 declare abstract class BaseScanner {
     #private;
     static get isSupported(): boolean;
@@ -647,9 +650,7 @@ declare abstract class BaseScanner {
     get isScanning(): boolean;
     startScan(): void;
     stopScan(): void;
-    get discoveredDevices(): {
-        [deviceId: string]: DiscoveredDevice;
-    };
+    get discoveredDevices(): Readonly<DiscoveredDevicesMap>;
     get discoveredDevicesArray(): DiscoveredDevice[];
     static get DiscoveredDeviceExpirationTimeout(): number;
     connectToDevice(deviceId: string): Promise<void>;
@@ -819,9 +820,6 @@ type ClientEventMessages = ClientConnectionEventMessages & ScannerEventMessages;
 type ServerURL = string | URL;
 type DevicesMap = {
     [deviceId: string]: Device;
-};
-type DiscoveredDevicesMap = {
-    [deviceId: string]: DiscoveredDevice;
 };
 declare abstract class BaseClient {
     #private;
