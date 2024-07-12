@@ -9,7 +9,7 @@ import { DeviceInformationMessageTypes } from "../DeviceInformationManager";
 import { InformationMessageTypes } from "../InformationManager";
 import { VibrationMessageTypes } from "../vibration/VibrationManager";
 import { SensorConfigurationMessageTypes } from "../sensor/SensorConfigurationManager";
-import { SensorDataEventTypes } from "../sensor/SensorDataManager";
+import { SensorDataMessageTypes } from "../sensor/SensorDataManager";
 
 const _console = createConsole("BaseConnectionManager", { log: true });
 
@@ -27,7 +27,7 @@ export interface TxMessage {
 export const TxRxMessageTypes = [
   ...InformationMessageTypes,
   ...SensorConfigurationMessageTypes,
-  ...SensorDataEventTypes,
+  ...SensorDataMessageTypes,
   ...VibrationMessageTypes,
   ...TfliteMessageTypes,
   ...FileTransferMessageTypes,

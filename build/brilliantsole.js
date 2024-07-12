@@ -2261,7 +2261,7 @@
 	const TxRxMessageTypes = [
 	    ...InformationMessageTypes,
 	    ...SensorConfigurationMessageTypes,
-	    ...SensorDataEventTypes,
+	    ...SensorDataMessageTypes,
 	    ...VibrationMessageTypes,
 	    ...TfliteMessageTypes,
 	    ...FileTransferMessageTypes,

@@ -2283,7 +2283,7 @@ const ConnectionStatuses = ["not connected", "connecting", "connected", "disconn
 const TxRxMessageTypes = [
     ...InformationMessageTypes,
     ...SensorConfigurationMessageTypes,
-    ...SensorDataEventTypes,
+    ...SensorDataMessageTypes,
     ...VibrationMessageTypes,
     ...TfliteMessageTypes,
     ...FileTransferMessageTypes,
