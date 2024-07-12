@@ -1,6 +1,6 @@
 import DevicePairPressureSensorDataManager, { DevicePairPressureDataEventMessages } from "./DevicePairPressureSensorDataManager.ts";
 import { InsoleSide } from "../InformationManager.ts";
-import { SpecificDeviceEvent } from "../Device.ts";
+import { DeviceEventMap } from "../Device.ts";
 import EventDispatcher from "../utils/EventDispatcher.ts";
 import DevicePair from "./DevicePair.ts";
 import { AddKeysAsPropertyToInterface, ExtendInterfaceValues, ValueOf } from "../utils/TypeScriptUtils.ts";
@@ -28,6 +28,6 @@ declare class DevicePairSensorDataManager {
     get dispatchEvent(): <T extends "pressure" | "sensorData">(type: T, message: DevicePairSensorDataEventMessages[T]) => void;
     pressureSensorDataManager: DevicePairPressureSensorDataManager;
     resetPressureRange(): void;
-    onDeviceSensorData(event: SpecificDeviceEvent<"sensorData">): void;
+    onDeviceSensorData(event: DeviceEventMap["sensorData"]): void;
 }
 export default DevicePairSensorDataManager;

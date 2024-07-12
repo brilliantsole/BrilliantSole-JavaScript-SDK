@@ -1,4 +1,4 @@
-import EventDispatcher, { BoundEventListeners, Event, SpecificEvent } from "../utils/EventDispatcher.ts";
+import EventDispatcher, { BoundEventListeners, Event, EventMap } from "../utils/EventDispatcher.ts";
 import { DeviceType } from "../InformationManager.ts";
 export declare const ScannerEventTypes: readonly ["isScanningAvailable", "isScanning", "discoveredDevice", "expiredDiscoveredDevice"];
 export type ScannerEventType = (typeof ScannerEventTypes)[number];
@@ -22,7 +22,7 @@ export interface ScannerEventMessages {
     };
 }
 export type ScannerEventDispatcher = EventDispatcher<BaseScanner, ScannerEventType, ScannerEventMessages>;
-export type SpecificScannerEvent<EventType extends ScannerEventType> = SpecificEvent<BaseScanner, ScannerEventType, ScannerEventMessages, EventType>;
+export type ScannerEventMap = EventMap<BaseScanner, ScannerEventType, ScannerEventMessages>;
 export type ScannerEvent = Event<BaseScanner, ScannerEventType, ScannerEventMessages>;
 export type BoundScannerEventListeners = BoundEventListeners<BaseScanner, ScannerEventType, ScannerEventMessages>;
 export type DiscoveredDevicesMap = {

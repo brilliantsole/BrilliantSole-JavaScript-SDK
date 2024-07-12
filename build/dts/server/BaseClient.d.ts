@@ -1,6 +1,6 @@
 import { ServerMessage, MessageLike, ClientDeviceMessage } from "./ServerUtils.ts";
 import Timer from "../utils/Timer.ts";
-import EventDispatcher, { BoundEventListeners, Event, SpecificEvent } from "../utils/EventDispatcher.ts";
+import EventDispatcher, { BoundEventListeners, Event } from "../utils/EventDispatcher.ts";
 import Device from "../Device.ts";
 import { DiscoveredDevice, DiscoveredDevicesMap, ScannerEventMessages } from "../scanner/BaseScanner.ts";
 export declare const ClientConnectionStatuses: readonly ["not connected", "connecting", "connected", "disconnecting"];
@@ -17,7 +17,6 @@ interface ClientConnectionEventMessages {
 }
 export type ClientEventMessages = ClientConnectionEventMessages & ScannerEventMessages;
 export type ClientEventDispatcher = EventDispatcher<BaseClient, ClientEventType, ClientEventMessages>;
-export type SpecificClientEvent<EventType extends ClientEventType> = SpecificEvent<BaseClient, ClientEventType, ClientEventMessages, EventType>;
 export type ClientEvent = Event<BaseClient, ClientEventType, ClientEventMessages>;
 export type BoundClientEventListeners = BoundEventListeners<BaseClient, ClientEventType, ClientEventMessages>;
 export type ServerURL = string | URL;

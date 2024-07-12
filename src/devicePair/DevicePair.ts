@@ -1,13 +1,13 @@
 import { createConsole } from "../utils/Console.ts";
-import EventDispatcher, { BoundEventListeners, Event, SpecificEvent } from "../utils/EventDispatcher.ts";
+import EventDispatcher, { BoundEventListeners, Event, EventMap } from "../utils/EventDispatcher.ts";
 import { addEventListeners, removeEventListeners } from "../utils/EventUtils.ts";
 import Device, {
   DeviceEvent,
   DeviceEventType,
-  SpecificDeviceEvent,
   DeviceEventMessages,
   DeviceEventTypes,
   BoundDeviceEventListeners,
+  DeviceEventMap,
 } from "../Device.ts";
 import DevicePairSensorDataManager, { DevicePairSensorDataEventDispatcher } from "./DevicePairSensorDataManager.ts";
 import { capitalizeFirstCharacter } from "../utils/stringUtils.ts";
@@ -54,14 +54,8 @@ export type DevicePairEventMessages = DevicePairConnectionEventMessages &
   DevicePairDeviceEventMessages;
 
 export type DevicePairEventDispatcher = EventDispatcher<DevicePair, DevicePairEventType, DevicePairEventMessages>;
-export type SpecificDevicePairEvent<Type extends DevicePairEventType> = SpecificEvent<
-  DevicePair,
-  DevicePairEventType,
-  DevicePairEventMessages,
-  Type
->;
+export type DevicePairEventMap = EventMap<DevicePair, DeviceEventType, DevicePairEventMessages>;
 export type DevicePairEvent = Event<DevicePair, DeviceEventType, DevicePairEventMessages>;
-
 export type BoundDevicePairEventListeners = BoundEventListeners<DevicePair, DeviceEventType, DevicePairEventMessages>;
 
 class DevicePair {
@@ -180,12 +174,12 @@ class DevicePair {
     });
   }
 
-  #onDeviceIsConnected(deviceEvent: SpecificDeviceEvent<"isConnected">) {
+  #onDeviceIsConnected(deviceEvent: DeviceEventMap["isConnected"]) {
     this.#redispatchDeviceEvent(deviceEvent);
     this.#dispatchEvent("isConnected", { isConnected: this.isConnected });
   }
 
-  #onDeviceType(deviceEvent: SpecificDeviceEvent<"getType">) {
+  #onDeviceType(deviceEvent: DeviceEventMap["getType"]) {
     const { target: device } = deviceEvent;
     if (this[device.insoleSide] == device) {
       return;
@@ -206,7 +200,7 @@ class DevicePair {
 
   // SENSOR DATA
   #sensorDataManager = new DevicePairSensorDataManager();
-  #onDeviceSensorData(deviceEvent: SpecificDeviceEvent<"sensorData">) {
+  #onDeviceSensorData(deviceEvent: DeviceEventMap["sensorData"]) {
     this.#redispatchDeviceEvent(deviceEvent);
 
     if (this.isConnected) {

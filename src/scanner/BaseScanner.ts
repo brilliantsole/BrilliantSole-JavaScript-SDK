@@ -1,4 +1,4 @@
-import EventDispatcher, { BoundEventListeners, Event, SpecificEvent } from "../utils/EventDispatcher.ts";
+import EventDispatcher, { BoundEventListeners, Event, EventMap } from "../utils/EventDispatcher.ts";
 import { addEventListeners } from "../utils/EventUtils.ts";
 import { createConsole } from "../utils/Console.ts";
 import Timer from "../utils/Timer.ts";
@@ -33,12 +33,7 @@ export interface ScannerEventMessages {
 }
 
 export type ScannerEventDispatcher = EventDispatcher<BaseScanner, ScannerEventType, ScannerEventMessages>;
-export type SpecificScannerEvent<EventType extends ScannerEventType> = SpecificEvent<
-  BaseScanner,
-  ScannerEventType,
-  ScannerEventMessages,
-  EventType
->;
+export type ScannerEventMap = EventMap<BaseScanner, ScannerEventType, ScannerEventMessages>;
 export type ScannerEvent = Event<BaseScanner, ScannerEventType, ScannerEventMessages>;
 export type BoundScannerEventListeners = BoundEventListeners<BaseScanner, ScannerEventType, ScannerEventMessages>;
 
@@ -116,7 +111,7 @@ abstract class BaseScanner {
   stopScan() {
     this.#assertIsScanning();
   }
-  #onIsScanning(event: SpecificScannerEvent<"isScanning">) {
+  #onIsScanning(event: ScannerEventMap["isScanning"]) {
     if (this.isScanning) {
       this.#discoveredDevices = {};
       this.#discoveredDeviceTimestamps = {};
@@ -142,7 +137,7 @@ abstract class BaseScanner {
     );
   }
 
-  #onDiscoveredDevice(event: SpecificScannerEvent<"discoveredDevice">) {
+  #onDiscoveredDevice(event: ScannerEventMap["discoveredDevice"]) {
     const { discoveredDevice } = event.message;
     this.#discoveredDevices[discoveredDevice.bluetoothId] = discoveredDevice;
     this.#discoveredDeviceTimestamps[discoveredDevice.bluetoothId] = Date.now();

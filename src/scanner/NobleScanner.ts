@@ -1,4 +1,4 @@
-import BaseScanner, { DiscoveredDevice, ScannerEvent, SpecificScannerEvent } from "./BaseScanner.ts";
+import BaseScanner, { DiscoveredDevice, ScannerEvent, ScannerEventMap, SpecificScannerEvent } from "./BaseScanner.ts";
 import { createConsole } from "../utils/Console.ts";
 import { addEventListeners } from "../utils/EventUtils.ts";
 import { serviceDataUUID, serviceUUIDs } from "../connection/bluetooth/bluetoothUUIDs.ts";
@@ -142,7 +142,7 @@ class NobleScanner extends BaseScanner {
     expiredDiscoveredDevice: this.#onExpiredDiscoveredDevice.bind(this),
   };
 
-  #onExpiredDiscoveredDevice(event: SpecificScannerEvent<"expiredDiscoveredDevice">) {
+  #onExpiredDiscoveredDevice(event: ScannerEventMap["expiredDiscoveredDevice"]) {
     const { discoveredDevice } = event.message;
     const noblePeripheral = this.#noblePeripherals[discoveredDevice.bluetoothId];
     if (noblePeripheral) {

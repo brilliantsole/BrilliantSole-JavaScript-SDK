@@ -1,4 +1,4 @@
-import EventDispatcher, { BoundEventListeners, Event, SpecificEvent } from "./utils/EventDispatcher.ts";
+import EventDispatcher, { BoundEventListeners, Event, EventMap } from "./utils/EventDispatcher.ts";
 import BaseConnectionManager, { ConnectionStatus, ConnectionMessageType } from "./connection/BaseConnectionManager.ts";
 import { SensorConfiguration, SensorConfigurationEventMessages } from "./sensor/SensorConfigurationManager.ts";
 import { SensorDataEventMessages, SensorType } from "./sensor/SensorDataManager.ts";
@@ -57,11 +57,11 @@ export interface LocalStorageConfiguration {
     devices: LocalStorageDeviceInformation[];
 }
 export type DeviceEventDispatcher = EventDispatcher<Device, DeviceEventType, DeviceEventMessages>;
-export type SpecificDeviceEvent<EventType extends DeviceEventType> = SpecificEvent<Device, DeviceEventType, DeviceEventMessages, EventType>;
 export type DeviceEvent = Event<Device, DeviceEventType, DeviceEventMessages>;
+export type DeviceEventMap = EventMap<Device, DeviceEventType, DeviceEventMessages>;
 export type BoundDeviceEventListeners = BoundEventListeners<Device, DeviceEventType, DeviceEventMessages>;
 export type StaticDeviceEventDispatcher = EventDispatcher<typeof Device, StaticDeviceEventType, StaticDeviceEventMessages>;
-export type SpecificStaticDeviceEvent<EventType extends StaticDeviceEventType> = SpecificEvent<typeof Device, StaticDeviceEventType, StaticDeviceEventMessages, EventType>;
+export type StaticDeviceEventMap = EventMap<typeof Device, StaticDeviceEventType, StaticDeviceEventMessages>;
 export type StaticDeviceEvent = Event<typeof Device, StaticDeviceEventType, StaticDeviceEventMessages>;
 export type BoundStaticDeviceEventListeners = BoundEventListeners<typeof Device, StaticDeviceEventType, StaticDeviceEventMessages>;
 declare class Device {

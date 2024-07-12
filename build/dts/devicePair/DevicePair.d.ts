@@ -1,4 +1,4 @@
-import EventDispatcher, { BoundEventListeners, Event, SpecificEvent } from "../utils/EventDispatcher.ts";
+import EventDispatcher, { BoundEventListeners, Event, EventMap } from "../utils/EventDispatcher.ts";
 import Device, { DeviceEventType, DeviceEventMessages } from "../Device.ts";
 import { InsoleSide } from "../InformationManager.ts";
 import { VibrationConfiguration } from "../vibration/VibrationManager.ts";
@@ -21,7 +21,7 @@ export declare const DevicePairEventTypes: readonly ["isConnected", "pressure", 
 export type DevicePairEventType = (typeof DevicePairEventTypes)[number];
 export type DevicePairEventMessages = DevicePairConnectionEventMessages & DevicePairSensorDataEventMessages & DevicePairDeviceEventMessages;
 export type DevicePairEventDispatcher = EventDispatcher<DevicePair, DevicePairEventType, DevicePairEventMessages>;
-export type SpecificDevicePairEvent<Type extends DevicePairEventType> = SpecificEvent<DevicePair, DevicePairEventType, DevicePairEventMessages, Type>;
+export type DevicePairEventMap = EventMap<DevicePair, DeviceEventType, DevicePairEventMessages>;
 export type DevicePairEvent = Event<DevicePair, DeviceEventType, DevicePairEventMessages>;
 export type BoundDevicePairEventListeners = BoundEventListeners<DevicePair, DeviceEventType, DevicePairEventMessages>;
 declare class DevicePair {

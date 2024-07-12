@@ -1,5 +1,4 @@
 import * as BS from "../../build/brilliantsole.module";
-//import BS.Device from "../../src/BS.Device.js";
 window.BS = BS;
 console.log(BS);
 
@@ -9,14 +8,11 @@ window.device = device;
 
 //BS.setAllConsoleLevelFlags({ log: false });
 
-/** @typedef {import("../../build/brilliantsole.module.js").Device} Device */
-
 // GET DEVICES
-
 /** @type {HTMLTemplateElement} */
 const availableDeviceTemplate = document.getElementById("availableDeviceTemplate");
 const availableDevicesContainer = document.getElementById("availableDevices");
-/** @param {Device[]} availableDevices */
+/** @param {BS.Device[]} availableDevices */
 function onAvailableDevices(availableDevices) {
   availableDevicesContainer.innerHTML = "";
   if (availableDevices.length == 0) {
@@ -445,7 +441,7 @@ addVibrationButton.addEventListener("click", () => {
     let showWaveformContainer = false;
     let showWaveformEffectContainer = false;
 
-    /** @type {import("../../build/brilliantsole.module.js").BS.DeviceVibrationType} */
+    /** @type {BS.VibrationType} */
     const vibrationType = vibrationTypeSelect.value;
     switch (vibrationType) {
       case "waveform":
@@ -468,17 +464,14 @@ addVibrationButton.addEventListener("click", () => {
   updateTriggerVibrationsButtonDisabled();
 });
 
-/** @typedef {import("../../build/brilliantsole.module.js").VibrationConfiguration} VibrationConfiguration */
-/** @typedef {import("../../build/brilliantsole.module.js").VibrationWaveformEffectSegment} VibrationWaveformEffectSegment */
-
 const triggerVibrationsButton = document.getElementById("triggerVibrations");
 triggerVibrationsButton.addEventListener("click", () => {
-  /** @type {VibrationConfiguration[]} */
+  /** @type {BS.VibrationConfiguration[]} */
   let vibrationConfigurations = [];
   Array.from(vibrationTemplate.parentElement.querySelectorAll(".vibration"))
     .filter((vibrationContainer) => vibrationContainer.querySelector(".shouldTrigger").checked)
     .forEach((vibrationContainer) => {
-      /** @type {VibrationConfiguration} */
+      /** @type {BS.VibrationConfiguration} */
       const vibrationConfiguration = {
         locations: [],
       };
@@ -497,7 +490,7 @@ triggerVibrationsButton.addEventListener("click", () => {
           vibrationConfiguration.waveformEffect = {
             segments: Array.from(vibrationContainer.querySelectorAll(".waveformEffect .waveformEffectSegment")).map(
               (waveformEffectSegmentContainer) => {
-                /** @type {VibrationWaveformEffectSegment} */
+                /** @type {BS.VibrationWaveformEffectSegment} */
                 const waveformEffectSegment = {
                   loopCount: Number(waveformEffectSegmentContainer.querySelector(".loopCount").value),
                 };
@@ -569,7 +562,7 @@ device.addEventListener("isConnected", () => {
   updateMaxFileLengthSpan();
 });
 
-/** @type {import("../../build/brilliantsole.module.js").FileType} */
+/** @type {BS.FileType} */
 let fileType;
 
 /** @type {HTMLSelectElement} */
@@ -646,7 +639,7 @@ device.addEventListener("fileTransferStatus", () => {
   updateToggleFileTransferButton();
 });
 
-/** @type {"send" | "receive"} */
+/** @type {BS.FileTransferDirection} */
 let fileTransferDirection;
 /** @type {HTMLSelectElement} */
 const fileTransferDirectionSelect = document.getElementById("fileTransferDirection");
@@ -784,14 +777,12 @@ device.addEventListener("getTfliteInferencingEnabled", () => {
   setTfliteSampleRateButton.disabled = device.tfliteInferencingEnabled;
 });
 
-/** @typedef {import("../../build/brilliantsole.module.js").SensorType} SensorType */
-
 const tfliteSensorTypesContainer = document.getElementById("tfliteSensorTypes");
 /** @type {HTMLTemplateElement} */
 const tfliteSensorTypeTemplate = document.getElementById("tfliteSensorTypeTemplate");
 /** @type {Object.<string, HTMLElement>} */
 const tfliteSensorTypeContainers = {};
-/** @type {SensorType[]} */
+/** @type {BS.SensorType[]} */
 let tfliteSensorTypes = [];
 /** @type {HTMLButtonElement} */
 const setTfliteSensorTypesButton = document.getElementById("setTfliteSensorTypes");

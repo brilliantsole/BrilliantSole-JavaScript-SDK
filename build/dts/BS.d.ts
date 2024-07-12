@@ -1,12 +1,12 @@
 export { setAllConsoleLevelFlags, setConsoleLevelFlagsForType } from "./utils/Console.ts";
-export { default as Device } from "./Device.ts";
+export { default as Device, DeviceEvent, DeviceEventMap, StaticDeviceEvent, StaticDeviceEventMap } from "./Device.ts";
 export * as Environment from "./utils/environment.ts";
 export { SensorType, SensorTypes, ContinuousSensorType, ContinuousSensorTypes } from "./sensor/SensorDataManager.ts";
 export { DeviceType, DeviceTypes } from "./InformationManager.ts";
 export { VibrationConfiguration, VibrationLocation, VibrationLocations, VibrationType, VibrationTypes, } from "./vibration/VibrationManager.ts";
 export { VibrationWaveformEffect, VibrationWaveformEffects } from "./vibration/VibrationWaveformEffects.ts";
 export { DeviceInformation } from "./DeviceInformationManager.ts";
-export { FileType, FileTypes } from "./FileTransferManager.ts";
+export { FileType, FileTypes, FileTransferDirection, FileTransferDirections } from "./FileTransferManager.ts";
 export { TfliteSensorType, TfliteSensorTypes } from "./TfliteManager.ts";
 export { default as Scanner } from "./scanner/Scanner.ts";
 export { default as WebSocketServer } from "./server/websocket/WebSocketServer.ts";

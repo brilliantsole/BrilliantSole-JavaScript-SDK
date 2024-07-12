@@ -476,6 +476,7 @@
 	const FileTypes = ["tflite"];
 	const FileTransferStatuses = ["idle", "sending", "receiving"];
 	const FileTransferCommands = ["startReceive", "startSend", "cancel"];
+	const FileTransferDirections = ["sending", "receiving"];
 	const FileTransferEventTypes = [
 	    ...FileTransferMessageTypes,
 	    "fileTransferProgress",
@@ -5548,6 +5549,7 @@
 	exports.DevicePair = DevicePair;
 	exports.DeviceTypes = DeviceTypes;
 	exports.Environment = environment;
+	exports.FileTransferDirections = FileTransferDirections;
 	exports.FileTypes = FileTypes;
 	exports.SensorTypes = SensorTypes;
 	exports.TfliteSensorTypes = TfliteSensorTypes;

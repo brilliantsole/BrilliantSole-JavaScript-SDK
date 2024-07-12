@@ -470,6 +470,7 @@ const FileTransferMessageTypes = [
 const FileTypes = ["tflite"];
 const FileTransferStatuses = ["idle", "sending", "receiving"];
 const FileTransferCommands = ["startReceive", "startSend", "cancel"];
+const FileTransferDirections = ["sending", "receiving"];
 const FileTransferEventTypes = [
     ...FileTransferMessageTypes,
     "fileTransferProgress",
@@ -5537,5 +5538,5 @@ _WebSocketClient_webSocket = new WeakMap(), _WebSocketClient_boundWebSocketEvent
     _console.error("webSocket.error", event.message);
 };
 
-export { ContinuousSensorTypes, Device, DevicePair, DeviceTypes, environment as Environment, FileTypes, SensorTypes, TfliteSensorTypes, VibrationLocations, VibrationTypes, VibrationWaveformEffects, WebSocketClient, setAllConsoleLevelFlags, setConsoleLevelFlagsForType };
+export { ContinuousSensorTypes, Device, DevicePair, DeviceTypes, environment as Environment, FileTransferDirections, FileTypes, SensorTypes, TfliteSensorTypes, VibrationLocations, VibrationTypes, VibrationWaveformEffects, WebSocketClient, setAllConsoleLevelFlags, setConsoleLevelFlagsForType };
 //# sourceMappingURL=brilliantsole.module.js.map

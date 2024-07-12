@@ -1,7 +1,7 @@
 import { PressureData } from "../sensor/PressureSensorDataManager.ts";
 import { CenterOfPressure } from "../utils/CenterOfPressureHelper.ts";
 import { InsoleSide } from "../InformationManager.ts";
-import { SpecificDeviceEvent } from "../Device.ts";
+import { DeviceEventMap } from "../Device.ts";
 export type DevicePairRawPressureData = {
     [insoleSide in InsoleSide]: PressureData;
 };
@@ -20,6 +20,6 @@ export interface DevicePairPressureDataEventMessages {
 declare class DevicePairPressureSensorDataManager {
     #private;
     resetPressureRange(): void;
-    onDevicePressureData(event: SpecificDeviceEvent<"pressure">): DevicePairPressureData | undefined;
+    onDevicePressureData(event: DeviceEventMap["pressure"]): DevicePairPressureData | undefined;
 }
 export default DevicePairPressureSensorDataManager;

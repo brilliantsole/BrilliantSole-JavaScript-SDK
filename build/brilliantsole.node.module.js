@@ -476,6 +476,7 @@ const FileTransferMessageTypes = [
 const FileTypes = ["tflite"];
 const FileTransferStatuses = ["idle", "sending", "receiving"];
 const FileTransferCommands = ["startReceive", "startSend", "cancel"];
+const FileTransferDirections = ["sending", "receiving"];
 const FileTransferEventTypes = [
     ...FileTransferMessageTypes,
     "fileTransferProgress",
@@ -5863,5 +5864,5 @@ _DevicePair_shared = { value: new _a() };
     });
 })();
 
-export { ContinuousSensorTypes, Device, DevicePair, DeviceTypes, environment as Environment, FileTypes, scanner$1 as Scanner, SensorTypes, TfliteSensorTypes, VibrationLocations, VibrationTypes, VibrationWaveformEffects, WebSocketServer, setAllConsoleLevelFlags, setConsoleLevelFlagsForType };
+export { ContinuousSensorTypes, Device, DevicePair, DeviceTypes, environment as Environment, FileTransferDirections, FileTypes, scanner$1 as Scanner, SensorTypes, TfliteSensorTypes, VibrationLocations, VibrationTypes, VibrationWaveformEffects, WebSocketServer, setAllConsoleLevelFlags, setConsoleLevelFlagsForType };
 //# sourceMappingURL=brilliantsole.node.module.js.map

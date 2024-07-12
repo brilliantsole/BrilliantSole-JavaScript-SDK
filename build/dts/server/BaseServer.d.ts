@@ -1,4 +1,4 @@
-import EventDispatcher, { BoundEventListeners, Event, SpecificEvent } from "../utils/EventDispatcher.ts";
+import EventDispatcher, { BoundEventListeners, Event, EventMap } from "../utils/EventDispatcher.ts";
 import Device from "../Device.ts";
 export declare const ServerEventTypes: readonly ["clientConnected", "clientDisconnected"];
 export type ServerEventType = (typeof ServerEventTypes)[number];
@@ -11,8 +11,8 @@ interface ServerEventMessages {
     };
 }
 export type ServerEventDispatcher = EventDispatcher<BaseServer, ServerEventType, ServerEventMessages>;
-export type SpecificServerEvent<EventType extends ServerEventType> = SpecificEvent<BaseServer, ServerEventType, ServerEventMessages, EventType>;
 export type ServerEvent = Event<BaseServer, ServerEventType, ServerEventMessages>;
+export type ServerEventMap = EventMap<BaseServer, ServerEventType, ServerEventMessages>;
 export type BoundServerEventListeners = BoundEventListeners<BaseServer, ServerEventType, ServerEventMessages>;
 declare abstract class BaseServer {
     #private;

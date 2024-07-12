@@ -12,7 +12,7 @@ import {
 } from "./ServerUtils.ts";
 import { parseMessage, parseStringFromDataView } from "../utils/ParseUtils.ts";
 import Timer from "../utils/Timer.ts";
-import EventDispatcher, { BoundEventListeners, Event, SpecificEvent } from "../utils/EventDispatcher.ts";
+import EventDispatcher, { BoundEventListeners, Event } from "../utils/EventDispatcher.ts";
 import Device from "../Device.ts";
 import WebSocketClientConnectionManager from "../connection/webSocket/WebSocketClientConnectionManager.ts";
 import { sliceDataView } from "../utils/ArrayBufferUtils.ts";
@@ -42,12 +42,6 @@ interface ClientConnectionEventMessages {
 export type ClientEventMessages = ClientConnectionEventMessages & ScannerEventMessages;
 
 export type ClientEventDispatcher = EventDispatcher<BaseClient, ClientEventType, ClientEventMessages>;
-export type SpecificClientEvent<EventType extends ClientEventType> = SpecificEvent<
-  BaseClient,
-  ClientEventType,
-  ClientEventMessages,
-  EventType
->;
 export type ClientEvent = Event<BaseClient, ClientEventType, ClientEventMessages>;
 export type BoundClientEventListeners = BoundEventListeners<BaseClient, ClientEventType, ClientEventMessages>;
 

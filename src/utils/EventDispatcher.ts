@@ -1,12 +1,18 @@
-export type Event<
+export type EventMap<
   Target extends any,
   EventType extends string,
   EventMessages extends Partial<Record<EventType, any>>
 > = {
   [T in keyof EventMessages]: { type: T; target: Target; message: EventMessages[T] };
-}[keyof EventMessages];
+};
 
-export type SpecificEvent<
+export type Event<
+  Target extends any,
+  EventType extends string,
+  EventMessages extends Partial<Record<EventType, any>>
+> = EventMap<Target, EventType, EventMessages>[keyof EventMessages];
+
+type SpecificEvent<
   Target extends any,
   EventType extends string,
   EventMessages extends Partial<Record<EventType, any>>,

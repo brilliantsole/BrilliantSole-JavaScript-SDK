@@ -11,6 +11,14 @@ interface ConsoleLevelFlags {
 declare function setConsoleLevelFlagsForType(type: string, levelFlags: ConsoleLevelFlags): void;
 declare function setAllConsoleLevelFlags(levelFlags: ConsoleLevelFlags): void;
 
+type EventMap<Target extends any, EventType extends string, EventMessages extends Partial<Record<EventType, any>>> = {
+    [T in keyof EventMessages]: {
+        type: T;
+        target: Target;
+        message: EventMessages[T];
+    };
+};
+type Event<Target extends any, EventType extends string, EventMessages extends Partial<Record<EventType, any>>> = EventMap<Target, EventType, EventMessages>[keyof EventMessages];
 declare class EventDispatcher<Target extends any, EventType extends string, EventMessages extends Partial<Record<EventType, any>>> {
     private target;
     private validEventTypes;
@@ -418,6 +426,8 @@ interface InformationEventMessages {
     };
 }
 
+declare const DeviceEventTypes: readonly ["not connected", "connecting", "connected", "disconnecting", "connectionStatus", "isConnected", "manufacturerName", "modelNumber", "softwareRevision", "hardwareRevision", "firmwareRevision", "pnpId", "serialNumber", "batteryLevel", "smp", "rx", "tx", "isCharging", "getBatteryCurrent", "getMtu", "getId", "getName", "setName", "getType", "setType", "getCurrentTime", "setCurrentTime", "getSensorConfiguration", "setSensorConfiguration", "getPressurePositions", "getSensorScalars", "sensorData", "triggerVibration", "getTfliteName", "setTfliteName", "getTfliteTask", "setTfliteTask", "getTfliteSampleRate", "setTfliteSampleRate", "getTfliteSensorTypes", "setTfliteSensorTypes", "tfliteIsReady", "getTfliteCaptureDelay", "setTfliteCaptureDelay", "getTfliteThreshold", "setTfliteThreshold", "getTfliteInferencingEnabled", "setTfliteInferencingEnabled", "tfliteInference", "maxFileLength", "getFileType", "setFileType", "getFileLength", "setFileLength", "getFileChecksum", "setFileChecksum", "setFileTransferCommand", "fileTransferStatus", "getFileBlock", "setFileBlock", "connectionMessage", "isCharging", "getBatteryCurrent", "getMtu", "getId", "getName", "setName", "getType", "setType", "getCurrentTime", "setCurrentTime", "manufacturerName", "modelNumber", "softwareRevision", "hardwareRevision", "firmwareRevision", "pnpId", "serialNumber", "deviceInformation", "getPressurePositions", "getSensorScalars", "sensorData", "acceleration", "gravity", "linearAcceleration", "gyroscope", "magnetometer", "gameRotation", "rotation", "orientation", "activity", "stepCounter", "stepDetector", "deviceOrientation", "pressure", "barometer", "maxFileLength", "getFileType", "setFileType", "getFileLength", "setFileLength", "getFileChecksum", "setFileChecksum", "setFileTransferCommand", "fileTransferStatus", "getFileBlock", "setFileBlock", "fileTransferProgress", "fileTransferComplete", "fileReceived", "getTfliteName", "setTfliteName", "getTfliteTask", "setTfliteTask", "getTfliteSampleRate", "setTfliteSampleRate", "getTfliteSensorTypes", "setTfliteSensorTypes", "tfliteIsReady", "getTfliteCaptureDelay", "setTfliteCaptureDelay", "getTfliteThreshold", "setTfliteThreshold", "getTfliteInferencingEnabled", "setTfliteInferencingEnabled", "tfliteInference", "smp", "firmwareImages", "firmwareUploadProgress", "firmwareStatus", "firmwareUploadComplete"];
+type DeviceEventType = (typeof DeviceEventTypes)[number];
 interface DeviceEventMessages extends DeviceInformationEventMessages, InformationEventMessages, SensorDataEventMessages, SensorConfigurationEventMessages, TfliteEventMessages, FileTransferEventMessages, FirmwareEventMessages {
     connectionStatus: {
         connectionStatus: ConnectionStatus;
@@ -433,6 +443,8 @@ interface DeviceEventMessages extends DeviceInformationEventMessages, Informatio
         dataView: DataView;
     };
 }
+declare const StaticDeviceEventTypes: readonly ["deviceConnected", "deviceDisconnected", "deviceIsConnected", "availableDevices", "connectedDevices"];
+type StaticDeviceEventType = (typeof StaticDeviceEventTypes)[number];
 interface StaticDeviceEventMessage {
     device: Device;
 }
@@ -447,6 +459,10 @@ interface StaticDeviceEventMessages {
         connectedDevices: Device[];
     };
 }
+type DeviceEvent = Event<Device, DeviceEventType, DeviceEventMessages>;
+type DeviceEventMap = EventMap<Device, DeviceEventType, DeviceEventMessages>;
+type StaticDeviceEventMap = EventMap<typeof Device, StaticDeviceEventType, StaticDeviceEventMessages>;
+type StaticDeviceEvent = Event<typeof Device, StaticDeviceEventType, StaticDeviceEventMessages>;
 declare class Device {
     #private;
     get bluetoothId(): string | undefined;
@@ -898,4 +914,4 @@ declare class WebSocketClient extends BaseClient {
     createDevice(bluetoothId: string): Device;
 }
 
-export { type ContinuousSensorType, ContinuousSensorTypes, Device, type DeviceInformation, DevicePair, type DeviceType, DeviceTypes, environment_d as Environment, type FileType, FileTypes, scanner as Scanner, type SensorType, SensorTypes, type TfliteSensorType, TfliteSensorTypes, type VibrationConfiguration, type VibrationLocation, VibrationLocations, type VibrationType, VibrationTypes, type VibrationWaveformEffect, VibrationWaveformEffects, WebSocketClient, WebSocketServer, setAllConsoleLevelFlags, setConsoleLevelFlagsForType };
+export { type ContinuousSensorType, ContinuousSensorTypes, Device, type DeviceEvent, type DeviceEventMap, type DeviceInformation, DevicePair, type DeviceType, DeviceTypes, environment_d as Environment, type FileTransferDirection, FileTransferDirections, type FileType, FileTypes, scanner as Scanner, type SensorType, SensorTypes, type StaticDeviceEvent, type StaticDeviceEventMap, type TfliteSensorType, TfliteSensorTypes, type VibrationConfiguration, type VibrationLocation, VibrationLocations, type VibrationType, VibrationTypes, type VibrationWaveformEffect, VibrationWaveformEffects, WebSocketClient, WebSocketServer, setAllConsoleLevelFlags, setConsoleLevelFlagsForType };
