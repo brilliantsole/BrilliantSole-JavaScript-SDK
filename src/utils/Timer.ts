@@ -1,4 +1,4 @@
-import { createConsole } from "./Console";
+import { createConsole } from "./Console.ts";
 
 const _console = createConsole("Timer", { log: false });
 

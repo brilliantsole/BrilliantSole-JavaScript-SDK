@@ -1,4 +1,4 @@
-import { createConsole } from "../utils/Console";
+import { createConsole } from "../utils/Console.ts";
 
 export const BarometerSensorTypes = ["barometer"] as const;
 export type BarometerSensorType = (typeof BarometerSensorTypes)[number];

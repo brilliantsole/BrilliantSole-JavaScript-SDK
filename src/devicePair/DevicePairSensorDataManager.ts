@@ -1,13 +1,13 @@
 import DevicePairPressureSensorDataManager, {
   DevicePairPressureDataEventMessages,
-} from "./DevicePairPressureSensorDataManager";
-import { createConsole } from "../utils/Console";
-import { InsoleSide } from "../InformationManager";
-import { SensorType } from "../sensor/SensorDataManager";
-import { SpecificDeviceEvent } from "../Device";
-import EventDispatcher from "../utils/EventDispatcher";
-import DevicePair from "./DevicePair";
-import { AddKeysAsPropertyToInterface, ExtendInterfaceValues, ValueOf } from "../utils/TypeScriptUtils";
+} from "./DevicePairPressureSensorDataManager.ts";
+import { createConsole } from "../utils/Console.ts";
+import { InsoleSide } from "../InformationManager.ts";
+import { SensorType } from "../sensor/SensorDataManager.ts";
+import { SpecificDeviceEvent } from "../Device.ts";
+import EventDispatcher from "../utils/EventDispatcher.ts";
+import DevicePair from "./DevicePair.ts";
+import { AddKeysAsPropertyToInterface, ExtendInterfaceValues, ValueOf } from "../utils/TypeScriptUtils.ts";
 
 const _console = createConsole("DevicePairSensorDataManager", { log: true });
 

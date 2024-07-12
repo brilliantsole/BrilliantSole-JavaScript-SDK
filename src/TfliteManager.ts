@@ -1,12 +1,12 @@
-import { createConsole } from "./utils/Console";
-import EventDispatcher from "./utils/EventDispatcher";
-import { textDecoder, textEncoder } from "./utils/Text";
-import SensorDataManager, { SensorTypes } from "./sensor/SensorDataManager";
-import { arrayWithoutDuplicates } from "./utils/ArrayUtils";
-import SensorConfigurationManager from "./sensor/SensorConfigurationManager";
-import { parseTimestamp } from "./utils/MathUtils";
-import { SensorType } from "./sensor/SensorDataManager";
-import Device, { SendMessageCallback } from "./Device";
+import { createConsole } from "./utils/Console.ts";
+import EventDispatcher from "./utils/EventDispatcher.ts";
+import { textDecoder, textEncoder } from "./utils/Text.ts";
+import SensorDataManager, { SensorTypes } from "./sensor/SensorDataManager.ts";
+import { arrayWithoutDuplicates } from "./utils/ArrayUtils.ts";
+import SensorConfigurationManager from "./sensor/SensorConfigurationManager.ts";
+import { parseTimestamp } from "./utils/MathUtils.ts";
+import { SensorType } from "./sensor/SensorDataManager.ts";
+import Device, { SendMessageCallback } from "./Device.ts";
 
 const _console = createConsole("TfliteManager", { log: true });
 

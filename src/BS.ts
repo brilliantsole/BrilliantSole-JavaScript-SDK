@@ -1,26 +1,26 @@
-export { setAllConsoleLevelFlags, setConsoleLevelFlagsForType } from "./utils/Console";
-export { default as Device } from "./Device";
-export * as Environment from "./utils/environment";
+export { setAllConsoleLevelFlags, setConsoleLevelFlagsForType } from "./utils/Console.ts";
+export { default as Device } from "./Device.ts";
+export * as Environment from "./utils/environment.ts";
 
-export { SensorType, SensorTypes, ContinuousSensorType, ContinuousSensorTypes } from "./sensor/SensorDataManager";
-export { DeviceType, DeviceTypes } from "./InformationManager";
+export { SensorType, SensorTypes, ContinuousSensorType, ContinuousSensorTypes } from "./sensor/SensorDataManager.ts";
+export { DeviceType, DeviceTypes } from "./InformationManager.ts";
 export {
   VibrationConfiguration,
   VibrationLocation,
   VibrationLocations,
   VibrationType,
   VibrationTypes,
-} from "./vibration/VibrationManager";
-export { VibrationWaveformEffect, VibrationWaveformEffects } from "./vibration/VibrationWaveformEffects";
-export { DeviceInformation } from "./DeviceInformationManager";
-export { FileType, FileTypes } from "./FileTransferManager";
-export { TfliteSensorType, TfliteSensorTypes } from "./TfliteManager";
+} from "./vibration/VibrationManager.ts";
+export { VibrationWaveformEffect, VibrationWaveformEffects } from "./vibration/VibrationWaveformEffects.ts";
+export { DeviceInformation } from "./DeviceInformationManager.ts";
+export { FileType, FileTypes } from "./FileTransferManager.ts";
+export { TfliteSensorType, TfliteSensorTypes } from "./TfliteManager.ts";
 
 // NODE_START
-export { default as Scanner } from "./scanner/Scanner";
-export { default as WebSocketServer } from "./server/websocket/WebSocketServer";
+export { default as Scanner } from "./scanner/Scanner.ts";
+export { default as WebSocketServer } from "./server/websocket/WebSocketServer.ts";
 // NODE_END
-export { default as DevicePair } from "./devicePair/DevicePair";
+export { default as DevicePair } from "./devicePair/DevicePair.ts";
 // BROWSER_START
-export { default as WebSocketClient } from "./server/websocket/WebSocketClient";
+export { default as WebSocketClient } from "./server/websocket/WebSocketClient.ts";
 // BROWSER_END

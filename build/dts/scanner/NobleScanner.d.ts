@@ -1,4 +1,4 @@
-import BaseScanner from "./BaseScanner";
+import BaseScanner from "./BaseScanner.ts";
 export declare const NobleStates: readonly ["unknown", "resetting", "unsupported", "unauthorized", "poweredOff", "poweredOn"];
 export type NobleState = (typeof NobleStates)[number];
 declare class NobleScanner extends BaseScanner {

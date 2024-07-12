@@ -1,4 +1,4 @@
-import { createConsole } from "../utils/Console";
+import { createConsole } from "../utils/Console.ts";
 import {
   ServerMessageTypes,
   pingTimeout,
@@ -9,14 +9,14 @@ import {
   ClientDeviceMessage,
   createClientDeviceMessage,
   ServerMessageType,
-} from "./ServerUtils";
-import { parseMessage, parseStringFromDataView } from "../utils/ParseUtils";
-import Timer from "../utils/Timer";
-import EventDispatcher, { BoundEventListeners, Event, SpecificEvent } from "../utils/EventDispatcher";
-import Device from "../Device";
-import WebSocketClientConnectionManager from "../connection/webSocket/WebSocketClientConnectionManager";
-import { sliceDataView } from "../utils/ArrayBufferUtils";
-import { DiscoveredDevice, DiscoveredDevicesMap, ScannerEventMessages } from "../scanner/BaseScanner";
+} from "./ServerUtils.ts";
+import { parseMessage, parseStringFromDataView } from "../utils/ParseUtils.ts";
+import Timer from "../utils/Timer.ts";
+import EventDispatcher, { BoundEventListeners, Event, SpecificEvent } from "../utils/EventDispatcher.ts";
+import Device from "../Device.ts";
+import WebSocketClientConnectionManager from "../connection/webSocket/WebSocketClientConnectionManager.ts";
+import { sliceDataView } from "../utils/ArrayBufferUtils.ts";
+import { DiscoveredDevice, DiscoveredDevicesMap, ScannerEventMessages } from "../scanner/BaseScanner.ts";
 
 const _console = createConsole("WebSocketClient", { log: true });
 

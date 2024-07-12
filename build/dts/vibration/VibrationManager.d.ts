@@ -1,5 +1,5 @@
-import { VibrationWaveformEffect } from "./VibrationWaveformEffects";
-import { SendMessageCallback } from "../Device";
+import { VibrationWaveformEffect } from "./VibrationWaveformEffects.ts";
+import { SendMessageCallback } from "../Device.ts";
 export declare const VibrationLocations: readonly ["front", "rear"];
 export type VibrationLocation = (typeof VibrationLocations)[number];
 export declare const VibrationTypes: readonly ["waveformEffect", "waveform"];

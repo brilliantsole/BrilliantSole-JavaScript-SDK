@@ -1,7 +1,7 @@
-import { PressureData } from "../sensor/PressureSensorDataManager";
-import { CenterOfPressure } from "../utils/CenterOfPressureHelper";
-import { InsoleSide } from "../InformationManager";
-import { SpecificDeviceEvent } from "../Device";
+import { PressureData } from "../sensor/PressureSensorDataManager.ts";
+import { CenterOfPressure } from "../utils/CenterOfPressureHelper.ts";
+import { InsoleSide } from "../InformationManager.ts";
+import { SpecificDeviceEvent } from "../Device.ts";
 export type DevicePairRawPressureData = {
     [insoleSide in InsoleSide]: PressureData;
 };

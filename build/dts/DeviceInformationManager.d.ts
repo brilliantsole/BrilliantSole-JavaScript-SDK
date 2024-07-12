@@ -1,5 +1,5 @@
-import Device from "./Device";
-import EventDispatcher from "./utils/EventDispatcher";
+import Device from "./Device.ts";
+import EventDispatcher from "./utils/EventDispatcher.ts";
 export interface PnpId {
     source: "Bluetooth" | "USB";
     vendorId: number;

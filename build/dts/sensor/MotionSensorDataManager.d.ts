@@ -2,8 +2,8 @@ export declare const MotionSensorTypes: readonly ["acceleration", "gravity", "li
 export type MotionSensorType = (typeof MotionSensorTypes)[number];
 export declare const ContinuousMotionTypes: readonly ["acceleration", "gravity", "linearAcceleration", "gyroscope", "magnetometer", "gameRotation", "rotation"];
 export type ContinuousMotionType = (typeof ContinuousMotionTypes)[number];
-import { Vector3, Quaternion, Euler } from "../utils/MathUtils";
-import { ValueOf } from "../utils/TypeScriptUtils";
+import { Vector3, Quaternion, Euler } from "../utils/MathUtils.ts";
+import { ValueOf } from "../utils/TypeScriptUtils.ts";
 export declare const Vector2Size: number;
 export declare const Vector3Size: number;
 export declare const QuaternionSize: number;

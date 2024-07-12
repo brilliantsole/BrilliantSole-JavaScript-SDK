@@ -2,9 +2,9 @@ export declare const PressureSensorTypes: readonly ["pressure"];
 export type PressureSensorType = (typeof PressureSensorTypes)[number];
 export declare const ContinuousPressureSensorTypes: readonly ["pressure"];
 export type ContinuousPressureSensorType = (typeof ContinuousPressureSensorTypes)[number];
-import { Vector2 } from "../utils/MathUtils";
+import { Vector2 } from "../utils/MathUtils.ts";
 export type PressureSensorPosition = Vector2;
-import { CenterOfPressure } from "../utils/CenterOfPressureHelper";
+import { CenterOfPressure } from "../utils/CenterOfPressureHelper.ts";
 export interface PressureSensorValue {
     position: PressureSensorPosition;
     rawValue: number;

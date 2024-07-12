@@ -1,7 +1,7 @@
-import { createConsole } from "../utils/Console";
-import { VibrationWaveformEffect, VibrationWaveformEffects } from "./VibrationWaveformEffects";
-import { concatenateArrayBuffers } from "../utils/ArrayBufferUtils";
-import { SendMessageCallback } from "../Device";
+import { createConsole } from "../utils/Console.ts";
+import { VibrationWaveformEffect, VibrationWaveformEffects } from "./VibrationWaveformEffects.ts";
+import { concatenateArrayBuffers } from "../utils/ArrayBufferUtils.ts";
+import { SendMessageCallback } from "../Device.ts";
 
 const _console = createConsole("VibrationManager");
 

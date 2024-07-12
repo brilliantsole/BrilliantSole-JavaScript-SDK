@@ -1,7 +1,7 @@
-import { createConsole } from "../utils/Console";
-import CenterOfPressureHelper from "../utils/CenterOfPressureHelper";
-import RangeHelper from "../utils/RangeHelper";
-import { createArray } from "../utils/ArrayUtils";
+import { createConsole } from "../utils/Console.ts";
+import CenterOfPressureHelper from "../utils/CenterOfPressureHelper.ts";
+import RangeHelper from "../utils/RangeHelper.ts";
+import { createArray } from "../utils/ArrayUtils.ts";
 
 const _console = createConsole("PressureDataManager", { log: true });
 
@@ -11,10 +11,10 @@ export type PressureSensorType = (typeof PressureSensorTypes)[number];
 export const ContinuousPressureSensorTypes = PressureSensorTypes;
 export type ContinuousPressureSensorType = (typeof ContinuousPressureSensorTypes)[number];
 
-import { Vector2 } from "../utils/MathUtils";
+import { Vector2 } from "../utils/MathUtils.ts";
 export type PressureSensorPosition = Vector2;
 
-import { CenterOfPressure } from "../utils/CenterOfPressureHelper";
+import { CenterOfPressure } from "../utils/CenterOfPressureHelper.ts";
 
 export interface PressureSensorValue {
   position: PressureSensorPosition;

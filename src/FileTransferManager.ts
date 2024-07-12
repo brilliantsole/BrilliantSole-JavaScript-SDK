@@ -1,9 +1,9 @@
-import { createConsole } from "./utils/Console";
-import { crc32 } from "./utils/checksum";
-import { getFileBuffer } from "./utils/ArrayBufferUtils";
-import { FileLike } from "./utils/ArrayBufferUtils";
-import Device, { SendMessageCallback } from "./Device";
-import EventDispatcher from "./utils/EventDispatcher";
+import { createConsole } from "./utils/Console.ts";
+import { crc32 } from "./utils/checksum.ts";
+import { getFileBuffer } from "./utils/ArrayBufferUtils.ts";
+import { FileLike } from "./utils/ArrayBufferUtils.ts";
+import Device, { SendMessageCallback } from "./Device.ts";
+import EventDispatcher from "./utils/EventDispatcher.ts";
 
 const _console = createConsole("FileTransferManager", { log: true });
 

@@ -1,5 +1,5 @@
-import Device, { SendMessageCallback } from "./Device";
-import EventDispatcher from "./utils/EventDispatcher";
+import Device, { SendMessageCallback } from "./Device.ts";
+import EventDispatcher from "./utils/EventDispatcher.ts";
 export declare const DeviceTypes: readonly ["leftInsole", "rightInsole"];
 export type DeviceType = (typeof DeviceTypes)[number];
 export declare const InsoleSides: readonly ["left", "right"];

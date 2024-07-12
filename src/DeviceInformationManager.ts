@@ -1,7 +1,7 @@
-import Device from "./Device";
-import { createConsole } from "./utils/Console";
-import EventDispatcher from "./utils/EventDispatcher";
-import { textDecoder } from "./utils/Text";
+import Device from "./Device.ts";
+import { createConsole } from "./utils/Console.ts";
+import EventDispatcher from "./utils/EventDispatcher.ts";
+import { textDecoder } from "./utils/Text.ts";
 
 const _console = createConsole("DeviceInformationManager", { log: true });
 

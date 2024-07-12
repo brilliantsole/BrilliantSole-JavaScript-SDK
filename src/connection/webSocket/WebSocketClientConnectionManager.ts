@@ -1,11 +1,11 @@
-import { createConsole } from "../../utils/Console";
-import { isInBrowser } from "../../utils/environment";
-import BaseConnectionManager, { ConnectionType, ConnectionMessageType } from "../BaseConnectionManager";
-import { DeviceEventTypes } from "../../Device";
-import { parseMessage } from "../../utils/ParseUtils";
-import { DeviceInformationMessageTypes } from "../../DeviceInformationManager";
-import { DeviceEventType } from "../../Device";
-import { ClientDeviceMessage } from "../../server/ServerUtils";
+import { createConsole } from "../../utils/Console.ts";
+import { isInBrowser } from "../../utils/environment.ts";
+import BaseConnectionManager, { ConnectionType, ConnectionMessageType } from "../BaseConnectionManager.ts";
+import { DeviceEventTypes } from "../../Device.ts";
+import { parseMessage } from "../../utils/ParseUtils.ts";
+import { DeviceInformationMessageTypes } from "../../DeviceInformationManager.ts";
+import { DeviceEventType } from "../../Device.ts";
+import { ClientDeviceMessage } from "../../server/ServerUtils.ts";
 
 const _console = createConsole("WebSocketClientConnectionManager", { log: true });
 

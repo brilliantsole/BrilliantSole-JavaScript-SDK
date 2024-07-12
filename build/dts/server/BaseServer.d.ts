@@ -1,5 +1,5 @@
-import EventDispatcher, { BoundEventListeners, Event, SpecificEvent } from "../utils/EventDispatcher";
-import Device from "../Device";
+import EventDispatcher, { BoundEventListeners, Event, SpecificEvent } from "../utils/EventDispatcher.ts";
+import Device from "../Device.ts";
 export declare const ServerEventTypes: readonly ["clientConnected", "clientDisconnected"];
 export type ServerEventType = (typeof ServerEventTypes)[number];
 interface ServerEventMessages {

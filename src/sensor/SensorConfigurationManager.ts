@@ -1,11 +1,11 @@
-import { createConsole } from "../utils/Console";
-import SensorDataManager, { SensorTypes } from "./SensorDataManager";
-import EventDispatcher from "../utils/EventDispatcher";
-import Device, { SendMessageCallback } from "../Device";
+import { createConsole } from "../utils/Console.ts";
+import SensorDataManager, { SensorTypes } from "./SensorDataManager.ts";
+import EventDispatcher from "../utils/EventDispatcher.ts";
+import Device, { SendMessageCallback } from "../Device.ts";
 
 const _console = createConsole("SensorConfigurationManager", { log: true });
 
-import { SensorType } from "./SensorDataManager";
+import { SensorType } from "./SensorDataManager.ts";
 
 export type SensorConfiguration = { [sensorType in SensorType]?: number };
 

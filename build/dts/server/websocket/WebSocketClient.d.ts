@@ -1,6 +1,6 @@
-import { MessageLike } from "../ServerUtils";
-import Device from "../../Device";
-import BaseClient, { ServerURL } from "../BaseClient";
+import { MessageLike } from "../ServerUtils.ts";
+import Device from "../../Device.ts";
+import BaseClient, { ServerURL } from "../BaseClient.ts";
 declare class WebSocketClient extends BaseClient {
     #private;
     get webSocket(): WebSocket | undefined;

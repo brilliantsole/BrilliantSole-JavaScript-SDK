@@ -1,8 +1,8 @@
-import { DeviceEventTypes } from "../Device";
-import { ConnectionMessageType, ConnectionMessageTypes } from "../connection/BaseConnectionManager";
-import { concatenateArrayBuffers } from "../utils/ArrayBufferUtils";
-import { createConsole } from "../utils/Console";
-import { DeviceEventType } from "../Device";
+import { DeviceEventTypes } from "../Device.ts";
+import { ConnectionMessageType, ConnectionMessageTypes } from "../connection/BaseConnectionManager.ts";
+import { concatenateArrayBuffers } from "../utils/ArrayBufferUtils.ts";
+import { createConsole } from "../utils/Console.ts";
+import { DeviceEventType } from "../Device.ts";
 
 const _console = createConsole("ServerUtils", { log: false });
 

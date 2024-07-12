@@ -1,6 +1,6 @@
-import { FileLike } from "./utils/ArrayBufferUtils";
-import Device, { SendMessageCallback } from "./Device";
-import EventDispatcher from "./utils/EventDispatcher";
+import { FileLike } from "./utils/ArrayBufferUtils.ts";
+import Device, { SendMessageCallback } from "./Device.ts";
+import EventDispatcher from "./utils/EventDispatcher.ts";
 export declare const FileTransferMessageTypes: readonly ["maxFileLength", "getFileType", "setFileType", "getFileLength", "setFileLength", "getFileChecksum", "setFileChecksum", "setFileTransferCommand", "fileTransferStatus", "getFileBlock", "setFileBlock"];
 export type FileTransferMessageType = (typeof FileTransferMessageTypes)[number];
 export declare const FileTypes: readonly ["tflite"];

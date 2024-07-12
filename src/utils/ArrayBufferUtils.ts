@@ -1,5 +1,5 @@
-import { createConsole } from "./Console";
-import { textEncoder } from "./Text";
+import { createConsole } from "./Console.ts";
+import { textEncoder } from "./Text.ts";
 
 const _console = createConsole("ArrayBufferUtils", { log: false });
 

@@ -1,5 +1,5 @@
-import BaseConnectionManager, { ConnectionType } from "../BaseConnectionManager";
-import { ClientDeviceMessage } from "../../server/ServerUtils";
+import BaseConnectionManager, { ConnectionType } from "../BaseConnectionManager.ts";
+import { ClientDeviceMessage } from "../../server/ServerUtils.ts";
 export type SendWebSocketMessageCallback = (...messages: ClientDeviceMessage[]) => void;
 declare class WebSocketClientConnectionManager extends BaseConnectionManager {
     #private;

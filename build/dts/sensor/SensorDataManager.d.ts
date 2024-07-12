@@ -1,9 +1,9 @@
-import PressureSensorDataManager, { PressureDataEventMessages } from "./PressureSensorDataManager";
-import MotionSensorDataManager, { MotionSensorDataEventMessages } from "./MotionSensorDataManager";
-import BarometerSensorDataManager, { BarometerSensorDataEventMessages } from "./BarometerSensorDataManager";
-import EventDispatcher from "../utils/EventDispatcher";
-import Device from "../Device";
-import { AddKeysAsPropertyToInterface, ExtendInterfaceValues, ValueOf } from "../utils/TypeScriptUtils";
+import PressureSensorDataManager, { PressureDataEventMessages } from "./PressureSensorDataManager.ts";
+import MotionSensorDataManager, { MotionSensorDataEventMessages } from "./MotionSensorDataManager.ts";
+import BarometerSensorDataManager, { BarometerSensorDataEventMessages } from "./BarometerSensorDataManager.ts";
+import EventDispatcher from "../utils/EventDispatcher.ts";
+import Device from "../Device.ts";
+import { AddKeysAsPropertyToInterface, ExtendInterfaceValues, ValueOf } from "../utils/TypeScriptUtils.ts";
 export declare const SensorTypes: readonly ["acceleration", "gravity", "linearAcceleration", "gyroscope", "magnetometer", "gameRotation", "rotation", "orientation", "activity", "stepCounter", "stepDetector", "deviceOrientation", "pressure", "barometer"];
 export type SensorType = (typeof SensorTypes)[number];
 export declare const ContinuousSensorTypes: readonly ["acceleration", "gravity", "linearAcceleration", "gyroscope", "magnetometer", "gameRotation", "rotation", "pressure", "barometer"];

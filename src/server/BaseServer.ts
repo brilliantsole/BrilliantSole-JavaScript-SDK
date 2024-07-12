@@ -1,5 +1,5 @@
-import { createConsole } from "../utils/Console";
-import EventDispatcher, { BoundEventListeners, Event, SpecificEvent } from "../utils/EventDispatcher";
+import { createConsole } from "../utils/Console.ts";
+import EventDispatcher, { BoundEventListeners, Event, SpecificEvent } from "../utils/EventDispatcher.ts";
 import {
   createServerMessage,
   createDeviceMessage,
@@ -8,19 +8,19 @@ import {
   ServerMessageType,
   DeviceMessage,
   ServerMessage,
-} from "./ServerUtils";
+} from "./ServerUtils.ts";
 import Device, {
   BoundDeviceEventListeners,
   BoundStaticDeviceEventListeners,
   SpecificDeviceEvent,
   SpecificStaticDeviceEvent,
-} from "../Device";
-import { addEventListeners, removeEventListeners } from "../utils/EventUtils";
-import scanner from "../scanner/Scanner";
-import { parseMessage, parseStringFromDataView } from "../utils/ParseUtils";
-import { ConnectionMessageType, ConnectionMessageTypes } from "../connection/BaseConnectionManager";
-import { concatenateArrayBuffers } from "../utils/ArrayBufferUtils";
-import { BoundScannerEventListeners, DiscoveredDevice, SpecificScannerEvent } from "../scanner/BaseScanner";
+} from "../Device.ts";
+import { addEventListeners, removeEventListeners } from "../utils/EventUtils.ts";
+import scanner from "../scanner/Scanner.ts";
+import { parseMessage, parseStringFromDataView } from "../utils/ParseUtils.ts";
+import { ConnectionMessageType, ConnectionMessageTypes } from "../connection/BaseConnectionManager.ts";
+import { concatenateArrayBuffers } from "../utils/ArrayBufferUtils.ts";
+import { BoundScannerEventListeners, DiscoveredDevice, SpecificScannerEvent } from "../scanner/BaseScanner.ts";
 
 const _console = createConsole("BaseServer", { log: true });
 

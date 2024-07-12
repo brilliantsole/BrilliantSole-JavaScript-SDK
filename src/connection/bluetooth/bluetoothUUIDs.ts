@@ -1,5 +1,5 @@
-import { isInBrowser, isInNode } from "../../utils/environment";
-import { createConsole } from "../../utils/Console";
+import { isInBrowser, isInNode } from "../../utils/environment.ts";
+import { createConsole } from "../../utils/Console.ts";
 
 const _console = createConsole("bluetoothUUIDs", { log: false });
 
@@ -28,7 +28,7 @@ function stringToServiceUUID(identifier: string): BluetoothServiceUUID {
 }
 
 export type BluetoothServiceName = "deviceInformation" | "battery" | "main" | "smp";
-import { DeviceInformationMessageType } from "../../DeviceInformationManager";
+import { DeviceInformationMessageType } from "../../DeviceInformationManager.ts";
 export type BluetoothCharacteristicName = DeviceInformationMessageType | "batteryLevel" | "rx" | "tx" | "smp";
 
 interface BluetoothCharacteristicInformation {

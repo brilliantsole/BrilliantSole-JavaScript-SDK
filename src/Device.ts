@@ -1,5 +1,5 @@
-import { createConsole } from "./utils/Console";
-import EventDispatcher, { BoundEventListeners, Event, SpecificEvent } from "./utils/EventDispatcher";
+import { createConsole } from "./utils/Console.ts";
+import EventDispatcher, { BoundEventListeners, Event, SpecificEvent } from "./utils/EventDispatcher.ts";
 import BaseConnectionManager, {
   TxMessage,
   TxRxMessageType,
@@ -7,9 +7,9 @@ import BaseConnectionManager, {
   ConnectionStatus,
   ConnectionMessageTypes,
   ConnectionMessageType,
-} from "./connection/BaseConnectionManager";
-import { isInBluefy, isInBrowser, isInNode } from "./utils/environment";
-import WebBluetoothConnectionManager from "./connection/bluetooth/WebBluetoothConnectionManager";
+} from "./connection/BaseConnectionManager.ts";
+import { isInBluefy, isInBrowser, isInNode } from "./utils/environment.ts";
+import WebBluetoothConnectionManager from "./connection/bluetooth/WebBluetoothConnectionManager.ts";
 import SensorConfigurationManager, {
   SendSensorConfigurationMessageCallback,
   SensorConfiguration,
@@ -17,24 +17,21 @@ import SensorConfigurationManager, {
   SensorConfigurationEventMessages,
   SensorConfigurationMessageType,
   SensorConfigurationMessageTypes,
-} from "./sensor/SensorConfigurationManager";
+} from "./sensor/SensorConfigurationManager.ts";
 import SensorDataManager, {
   SensorDataEventMessages,
   SensorDataEventTypes,
   SensorDataMessageType,
   SensorDataMessageTypes,
   SensorType,
-  SensorTypes,
   ContinuousSensorTypes,
   ContinuousSensorType,
   SensorDataEventDispatcher,
-} from "./sensor/SensorDataManager";
+} from "./sensor/SensorDataManager.ts";
 import VibrationManager, {
   SendVibrationMessageCallback,
   VibrationConfiguration,
-  VibrationLocations,
-  VibrationTypes,
-} from "./vibration/VibrationManager";
+} from "./vibration/VibrationManager.ts";
 import FileTransferManager, {
   FileTransferEventTypes,
   FileTransferEventMessages,
@@ -42,9 +39,8 @@ import FileTransferManager, {
   SendFileTransferMessageCallback,
   FileTransferMessageTypes,
   FileTransferMessageType,
-  FileTypes,
   FileType,
-} from "./FileTransferManager";
+} from "./FileTransferManager.ts";
 import TfliteManager, {
   TfliteEventTypes,
   TfliteEventMessages,
@@ -54,21 +50,21 @@ import TfliteManager, {
   TfliteMessageType,
   TfliteTasks,
   TfliteSensorTypes,
-} from "./TfliteManager";
+} from "./TfliteManager.ts";
 import FirmwareManager, {
   FirmwareEventDispatcher,
   FirmwareEventMessages,
   FirmwareEventTypes,
   FirmwareMessageType,
   FirmwareMessageTypes,
-} from "./FirmwareManager";
+} from "./FirmwareManager.ts";
 import DeviceInformationManager, {
   DeviceInformationEventDispatcher,
   DeviceInformationEventTypes,
   DeviceInformationMessageType,
   DeviceInformationMessageTypes,
   DeviceInformationEventMessages,
-} from "./DeviceInformationManager";
+} from "./DeviceInformationManager.ts";
 import InformationManager, {
   DeviceType,
   InformationEventDispatcher,
@@ -77,8 +73,8 @@ import InformationManager, {
   InformationMessageTypes,
   InformationEventMessages,
   SendInformationMessageCallback,
-} from "./InformationManager";
-import { FileLike } from "./utils/ArrayBufferUtils";
+} from "./InformationManager.ts";
+import { FileLike } from "./utils/ArrayBufferUtils.ts";
 
 const _console = createConsole("Device", { log: true });
 
@@ -592,7 +588,7 @@ class Device {
     return Object.keys(this.sensorConfiguration) as SensorType[];
   }
   get continuousSensorTypes() {
-    return this.sensorTypes.filter((sensorType) => ContinuousSensorTypes.includes(sensorType as ContinuousSensorType));
+    return ContinuousSensorTypes.filter((sensorType) => this.sensorTypes.includes(sensorType));
   }
 
   // SENSOR CONFIGURATION

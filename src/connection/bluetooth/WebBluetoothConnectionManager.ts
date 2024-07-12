@@ -1,16 +1,16 @@
-import { createConsole } from "../../utils/Console";
-import { isInNode, isInBrowser, isInBluefy, isInWebBLE } from "../../utils/environment";
-import { addEventListeners, removeEventListeners } from "../../utils/EventUtils";
+import { createConsole } from "../../utils/Console.ts";
+import { isInNode, isInBrowser, isInBluefy, isInWebBLE } from "../../utils/environment.ts";
+import { addEventListeners, removeEventListeners } from "../../utils/EventUtils.ts";
 import {
   serviceUUIDs,
   optionalServiceUUIDs,
   getServiceNameFromUUID,
   getCharacteristicNameFromUUID,
   getCharacteristicProperties,
-} from "./bluetoothUUIDs";
-import BluetoothConnectionManager from "./BluetoothConnectionManager";
-import { BluetoothCharacteristicName, BluetoothServiceName } from "./bluetoothUUIDs";
-import { ConnectionType } from "../BaseConnectionManager";
+} from "./bluetoothUUIDs.ts";
+import BluetoothConnectionManager from "./BluetoothConnectionManager.ts";
+import { BluetoothCharacteristicName, BluetoothServiceName } from "./bluetoothUUIDs.ts";
+import { ConnectionType } from "../BaseConnectionManager.ts";
 
 const _console = createConsole("WebBluetoothConnectionManager", { log: true });
 

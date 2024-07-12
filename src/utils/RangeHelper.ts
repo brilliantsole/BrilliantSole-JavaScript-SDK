@@ -1,4 +1,4 @@
-import { getInterpolation } from "./MathUtils";
+import { getInterpolation } from "./MathUtils.ts";
 
 interface Range {
   min: number;

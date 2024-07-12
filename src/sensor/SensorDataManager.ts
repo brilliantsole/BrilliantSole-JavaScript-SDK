@@ -1,15 +1,15 @@
-import { createConsole } from "../utils/Console";
-import { parseTimestamp } from "../utils/MathUtils";
-import PressureSensorDataManager, { PressureDataEventMessages } from "./PressureSensorDataManager";
-import MotionSensorDataManager, { MotionSensorDataEventMessages } from "./MotionSensorDataManager";
-import BarometerSensorDataManager, { BarometerSensorDataEventMessages } from "./BarometerSensorDataManager";
-import { parseMessage } from "../utils/ParseUtils";
-import EventDispatcher from "../utils/EventDispatcher";
-import { MotionSensorTypes, ContinuousMotionTypes } from "./MotionSensorDataManager";
-import { PressureSensorTypes, ContinuousPressureSensorTypes } from "./PressureSensorDataManager";
-import { BarometerSensorTypes, ContinuousBarometerSensorTypes } from "./BarometerSensorDataManager";
-import Device from "../Device";
-import { AddKeysAsPropertyToInterface, ExtendInterfaceValues, ValueOf } from "../utils/TypeScriptUtils";
+import { createConsole } from "../utils/Console.ts";
+import { parseTimestamp } from "../utils/MathUtils.ts";
+import PressureSensorDataManager, { PressureDataEventMessages } from "./PressureSensorDataManager.ts";
+import MotionSensorDataManager, { MotionSensorDataEventMessages } from "./MotionSensorDataManager.ts";
+import BarometerSensorDataManager, { BarometerSensorDataEventMessages } from "./BarometerSensorDataManager.ts";
+import { parseMessage } from "../utils/ParseUtils.ts";
+import EventDispatcher from "../utils/EventDispatcher.ts";
+import { MotionSensorTypes, ContinuousMotionTypes } from "./MotionSensorDataManager.ts";
+import { PressureSensorTypes, ContinuousPressureSensorTypes } from "./PressureSensorDataManager.ts";
+import { BarometerSensorTypes, ContinuousBarometerSensorTypes } from "./BarometerSensorDataManager.ts";
+import Device from "../Device.ts";
+import { AddKeysAsPropertyToInterface, ExtendInterfaceValues, ValueOf } from "../utils/TypeScriptUtils.ts";
 
 const _console = createConsole("SensorDataManager", { log: true });
 

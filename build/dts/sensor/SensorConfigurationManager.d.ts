@@ -1,6 +1,6 @@
-import EventDispatcher from "../utils/EventDispatcher";
-import Device, { SendMessageCallback } from "../Device";
-import { SensorType } from "./SensorDataManager";
+import EventDispatcher from "../utils/EventDispatcher.ts";
+import Device, { SendMessageCallback } from "../Device.ts";
+import { SensorType } from "./SensorDataManager.ts";
 export type SensorConfiguration = {
     [sensorType in SensorType]?: number;
 };

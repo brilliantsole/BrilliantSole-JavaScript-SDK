@@ -1,6 +1,6 @@
-import { createConsole } from "../utils/Console";
-import NobleScanner from "./NobleScanner";
-import BaseScanner from "./BaseScanner";
+import { createConsole } from "../utils/Console.ts";
+import NobleScanner from "./NobleScanner.ts";
+import BaseScanner from "./BaseScanner.ts";
 
 const _console = createConsole("Scanner", { log: false });
 

@@ -1,5 +1,5 @@
-import { ConnectionMessageType } from "../connection/BaseConnectionManager";
-import { DeviceEventType } from "../Device";
+import { ConnectionMessageType } from "../connection/BaseConnectionManager.ts";
+import { DeviceEventType } from "../Device.ts";
 export declare const pingTimeout = 30000000;
 export declare const reconnectTimeout = 3000;
 export declare const ServerMessageTypes: readonly ["ping", "pong", "isScanningAvailable", "isScanning", "startScan", "stopScan", "discoveredDevice", "discoveredDevices", "expiredDiscoveredDevice", "connectToDevice", "disconnectFromDevice", "connectedDevices", "deviceMessage"];

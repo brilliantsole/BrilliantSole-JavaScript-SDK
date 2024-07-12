@@ -4197,7 +4197,7 @@ class Device {
         return Object.keys(this.sensorConfiguration);
     }
     get continuousSensorTypes() {
-        return this.sensorTypes.filter((sensorType) => ContinuousSensorTypes.includes(sensorType));
+        return ContinuousSensorTypes.filter((sensorType) => this.sensorTypes.includes(sensorType));
     }
     get sensorConfiguration() {
         return __classPrivateFieldGet(this, _Device_sensorConfigurationManager, "f").configuration;

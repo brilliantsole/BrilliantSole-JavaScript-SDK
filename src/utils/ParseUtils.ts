@@ -1,6 +1,6 @@
-import { sliceDataView } from "./ArrayBufferUtils";
-import { createConsole } from "./Console";
-import { textDecoder } from "./Text";
+import { sliceDataView } from "./ArrayBufferUtils.ts";
+import { createConsole } from "./Console.ts";
+import { textDecoder } from "./Text.ts";
 
 const _console = createConsole("ParseUtils", { log: true });
 

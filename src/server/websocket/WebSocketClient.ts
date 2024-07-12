@@ -1,10 +1,10 @@
-import { createConsole } from "../../utils/Console";
-import { reconnectTimeout, MessageLike } from "../ServerUtils";
-import { addEventListeners, removeEventListeners } from "../../utils/EventUtils";
-import Device from "../../Device";
-import WebSocketClientConnectionManager from "../../connection/webSocket/WebSocketClientConnectionManager";
-import BaseClient, { ServerURL } from "../BaseClient";
-import type * as ws from "ws";
+import { createConsole } from "../../utils/Console.ts";
+import { reconnectTimeout, MessageLike } from "../ServerUtils.ts";
+import { addEventListeners, removeEventListeners } from "../../utils/EventUtils.ts";
+import Device from "../../Device.ts";
+import WebSocketClientConnectionManager from "../../connection/webSocket/WebSocketClientConnectionManager.ts";
+import BaseClient, { ServerURL } from "../BaseClient.ts";
+import type * as ws from "ws.ts";
 
 const _console = createConsole("WebSocketClient", { log: true });
 

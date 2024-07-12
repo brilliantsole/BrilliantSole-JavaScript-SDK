@@ -1,5 +1,5 @@
-import { createConsole } from "./Console";
-import { spacesToPascalCase } from "./stringUtils";
+import { createConsole } from "./Console.ts";
+import { spacesToPascalCase } from "./stringUtils.ts";
 
 const _console = createConsole("EventUtils", { log: false });
 

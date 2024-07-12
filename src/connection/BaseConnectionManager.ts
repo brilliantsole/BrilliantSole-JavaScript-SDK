@@ -1,15 +1,15 @@
-import { createConsole } from "../utils/Console";
-import Timer from "../utils/Timer";
+import { createConsole } from "../utils/Console.ts";
+import Timer from "../utils/Timer.ts";
 
-import { FileTransferMessageTypes } from "../FileTransferManager";
-import { TfliteMessageTypes } from "../TfliteManager";
-import { concatenateArrayBuffers } from "../utils/ArrayBufferUtils";
-import { parseMessage } from "../utils/ParseUtils";
-import { DeviceInformationMessageTypes } from "../DeviceInformationManager";
-import { InformationMessageTypes } from "../InformationManager";
-import { VibrationMessageTypes } from "../vibration/VibrationManager";
-import { SensorConfigurationMessageTypes } from "../sensor/SensorConfigurationManager";
-import { SensorDataMessageTypes } from "../sensor/SensorDataManager";
+import { FileTransferMessageTypes } from "../FileTransferManager.ts";
+import { TfliteMessageTypes } from "../TfliteManager.ts";
+import { concatenateArrayBuffers } from "../utils/ArrayBufferUtils.ts";
+import { parseMessage } from "../utils/ParseUtils.ts";
+import { DeviceInformationMessageTypes } from "../DeviceInformationManager.ts";
+import { InformationMessageTypes } from "../InformationManager.ts";
+import { VibrationMessageTypes } from "../vibration/VibrationManager.ts";
+import { SensorConfigurationMessageTypes } from "../sensor/SensorConfigurationManager.ts";
+import { SensorDataMessageTypes } from "../sensor/SensorDataManager.ts";
 
 const _console = createConsole("BaseConnectionManager", { log: true });
 

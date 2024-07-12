@@ -1,9 +1,9 @@
-import BaseScanner, { DiscoveredDevice, ScannerEvent, SpecificScannerEvent } from "./BaseScanner";
-import { createConsole } from "../utils/Console";
-import { addEventListeners } from "../utils/EventUtils";
-import { serviceDataUUID, serviceUUIDs } from "../connection/bluetooth/bluetoothUUIDs";
-import Device from "../Device";
-import NobleConnectionManager, { NoblePeripheral } from "../connection/bluetooth/NobleConnectionManager";
+import BaseScanner, { DiscoveredDevice, ScannerEvent, SpecificScannerEvent } from "./BaseScanner.ts";
+import { createConsole } from "../utils/Console.ts";
+import { addEventListeners } from "../utils/EventUtils.ts";
+import { serviceDataUUID, serviceUUIDs } from "../connection/bluetooth/bluetoothUUIDs.ts";
+import Device from "../Device.ts";
+import NobleConnectionManager, { NoblePeripheral } from "../connection/bluetooth/NobleConnectionManager.ts";
 
 const _console = createConsole("NobleScanner", { log: true });
 
@@ -11,7 +11,7 @@ let isSupported = false;
 
 // NODE_START
 import * as noble from "@abandonware/noble";
-import { DeviceTypes } from "../InformationManager";
+import { DeviceTypes } from "../InformationManager.ts";
 isSupported = true;
 // NODE_END
 

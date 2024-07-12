@@ -1,9 +1,9 @@
-import Device, { SendSmpMessageCallback } from "./Device";
-import { getFileBuffer } from "./utils/ArrayBufferUtils";
-import { createConsole } from "./utils/Console";
-import EventDispatcher from "./utils/EventDispatcher";
-import { MCUManager, constants } from "./utils/mcumgr";
-import { FileLike } from "./utils/ArrayBufferUtils";
+import Device, { SendSmpMessageCallback } from "./Device.ts";
+import { getFileBuffer } from "./utils/ArrayBufferUtils.ts";
+import { createConsole } from "./utils/Console.ts";
+import EventDispatcher from "./utils/EventDispatcher.ts";
+import { MCUManager, constants } from "./utils/mcumgr.js";
+import { FileLike } from "./utils/ArrayBufferUtils.ts";
 
 const _console = createConsole("FirmwareManager", { log: true });
 

@@ -1,6 +1,6 @@
-import Device, { SendSmpMessageCallback } from "./Device";
-import EventDispatcher from "./utils/EventDispatcher";
-import { FileLike } from "./utils/ArrayBufferUtils";
+import Device, { SendSmpMessageCallback } from "./Device.ts";
+import EventDispatcher from "./utils/EventDispatcher.ts";
+import { FileLike } from "./utils/ArrayBufferUtils.ts";
 export declare const FirmwareMessageTypes: readonly ["smp"];
 export type FirmwareMessageType = (typeof FirmwareMessageTypes)[number];
 export declare const FirmwareEventTypes: readonly ["smp", "firmwareImages", "firmwareUploadProgress", "firmwareStatus", "firmwareUploadComplete"];

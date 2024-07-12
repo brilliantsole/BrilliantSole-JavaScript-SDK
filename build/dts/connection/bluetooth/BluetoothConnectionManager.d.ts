@@ -1,5 +1,5 @@
-import BaseConnectionManager from "../BaseConnectionManager";
-import { BluetoothCharacteristicName } from "./bluetoothUUIDs";
+import BaseConnectionManager from "../BaseConnectionManager.ts";
+import { BluetoothCharacteristicName } from "./bluetoothUUIDs.ts";
 declare abstract class BluetoothConnectionManager extends BaseConnectionManager {
     isInRange: boolean;
     protected onCharacteristicValueChanged(characteristicName: BluetoothCharacteristicName, dataView: DataView): void;

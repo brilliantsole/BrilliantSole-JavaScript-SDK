@@ -1,9 +1,9 @@
-import { createConsole } from "../../utils/Console";
-import { addEventListeners, removeEventListeners } from "../../utils/EventUtils";
-import { pingTimeout, pingMessage } from "../ServerUtils";
-import { dataToArrayBuffer } from "../../utils/ArrayBufferUtils";
-import Timer from "../../utils/Timer";
-import BaseServer from "../BaseServer";
+import { createConsole } from "../../utils/Console.ts";
+import { addEventListeners, removeEventListeners } from "../../utils/EventUtils.ts";
+import { pingTimeout, pingMessage } from "../ServerUtils.ts";
+import { dataToArrayBuffer } from "../../utils/ArrayBufferUtils.ts";
+import Timer from "../../utils/Timer.ts";
+import BaseServer from "../BaseServer.ts";
 
 const _console = createConsole("WebSocketServer", { log: true });
 

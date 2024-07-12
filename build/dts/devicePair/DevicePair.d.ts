@@ -1,10 +1,10 @@
-import EventDispatcher, { BoundEventListeners, Event, SpecificEvent } from "../utils/EventDispatcher";
-import Device, { DeviceEventType, DeviceEventMessages } from "../Device";
-import { InsoleSide } from "../InformationManager";
-import { VibrationConfiguration } from "../vibration/VibrationManager";
-import { SensorConfiguration } from "../sensor/SensorConfigurationManager";
-import { DevicePairSensorDataEventMessages } from "./DevicePairSensorDataManager";
-import { AddPrefixToInterfaceKeys, ExtendInterfaceValues } from "../utils/TypeScriptUtils";
+import EventDispatcher, { BoundEventListeners, Event, SpecificEvent } from "../utils/EventDispatcher.ts";
+import Device, { DeviceEventType, DeviceEventMessages } from "../Device.ts";
+import { InsoleSide } from "../InformationManager.ts";
+import { VibrationConfiguration } from "../vibration/VibrationManager.ts";
+import { SensorConfiguration } from "../sensor/SensorConfigurationManager.ts";
+import { DevicePairSensorDataEventMessages } from "./DevicePairSensorDataManager.ts";
+import { AddPrefixToInterfaceKeys, ExtendInterfaceValues } from "../utils/TypeScriptUtils.ts";
 interface BaseDevicePairDeviceEventMessage {
     device: Device;
     side: InsoleSide;

@@ -1,8 +1,8 @@
-import { ServerMessage, MessageLike, ClientDeviceMessage } from "./ServerUtils";
-import Timer from "../utils/Timer";
-import EventDispatcher, { BoundEventListeners, Event, SpecificEvent } from "../utils/EventDispatcher";
-import Device from "../Device";
-import { DiscoveredDevice, DiscoveredDevicesMap, ScannerEventMessages } from "../scanner/BaseScanner";
+import { ServerMessage, MessageLike, ClientDeviceMessage } from "./ServerUtils.ts";
+import Timer from "../utils/Timer.ts";
+import EventDispatcher, { BoundEventListeners, Event, SpecificEvent } from "../utils/EventDispatcher.ts";
+import Device from "../Device.ts";
+import { DiscoveredDevice, DiscoveredDevicesMap, ScannerEventMessages } from "../scanner/BaseScanner.ts";
 export declare const ClientConnectionStatuses: readonly ["not connected", "connecting", "connected", "disconnecting"];
 export type ClientConnectionStatus = (typeof ClientConnectionStatuses)[number];
 export declare const ClientEventTypes: readonly ["not connected", "connecting", "connected", "disconnecting", "connectionStatus", "isConnected", "isScanningAvailable", "isScanning", "discoveredDevice", "expiredDiscoveredDevice"];

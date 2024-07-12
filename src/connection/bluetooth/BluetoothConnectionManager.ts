@@ -1,9 +1,9 @@
-import { createConsole } from "../../utils/Console";
-import BaseConnectionManager from "../BaseConnectionManager";
+import { createConsole } from "../../utils/Console.ts";
+import BaseConnectionManager from "../BaseConnectionManager.ts";
 
 const _console = createConsole("BluetoothConnectionManager", { log: true });
 
-import { BluetoothCharacteristicName } from "./bluetoothUUIDs";
+import { BluetoothCharacteristicName } from "./bluetoothUUIDs.ts";
 
 abstract class BluetoothConnectionManager extends BaseConnectionManager {
   isInRange = true;

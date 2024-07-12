@@ -1,8 +1,8 @@
-import BluetoothConnectionManager from "./BluetoothConnectionManager";
+import BluetoothConnectionManager from "./BluetoothConnectionManager.ts";
 import type * as noble from "@abandonware/noble";
-import { BluetoothCharacteristicName, BluetoothServiceName } from "./bluetoothUUIDs";
-import { ConnectionType } from "../BaseConnectionManager";
-import NobleScanner from "../../scanner/NobleScanner";
+import { BluetoothCharacteristicName, BluetoothServiceName } from "./bluetoothUUIDs.ts";
+import { ConnectionType } from "../BaseConnectionManager.ts";
+import NobleScanner from "../../scanner/NobleScanner.ts";
 interface HasConnectionManager {
     connectionManager: NobleConnectionManager | undefined;
 }

@@ -1,6 +1,6 @@
-import BluetoothConnectionManager from "./BluetoothConnectionManager";
-import { BluetoothCharacteristicName } from "./bluetoothUUIDs";
-import { ConnectionType } from "../BaseConnectionManager";
+import BluetoothConnectionManager from "./BluetoothConnectionManager.ts";
+import { BluetoothCharacteristicName } from "./bluetoothUUIDs.ts";
+import { ConnectionType } from "../BaseConnectionManager.ts";
 declare class WebBluetoothConnectionManager extends BluetoothConnectionManager {
     #private;
     get bluetoothId(): string;

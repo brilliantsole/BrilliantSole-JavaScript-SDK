@@ -30,8 +30,8 @@
  * updated to also support file upload/download over SMP.
  */
 
-import { CBOR } from "./cbor";
-import { createConsole } from "./Console";
+import { CBOR } from "./cbor.js";
+import { createConsole } from "./Console.ts";
 
 const _console = createConsole("mcumgr", { log: true });
 

@@ -1,9 +1,9 @@
-import { createConsole } from "../utils/Console";
-import CenterOfPressureHelper from "../utils/CenterOfPressureHelper";
-import { PressureData } from "../sensor/PressureSensorDataManager";
-import { CenterOfPressure } from "../utils/CenterOfPressureHelper";
-import { InsoleSide, InsoleSides } from "../InformationManager";
-import { SpecificDeviceEvent } from "../Device";
+import { createConsole } from "../utils/Console.ts";
+import CenterOfPressureHelper from "../utils/CenterOfPressureHelper.ts";
+import { PressureData } from "../sensor/PressureSensorDataManager.ts";
+import { CenterOfPressure } from "../utils/CenterOfPressureHelper.ts";
+import { InsoleSide, InsoleSides } from "../InformationManager.ts";
+import { SpecificDeviceEvent } from "../Device.ts";
 
 const _console = createConsole("DevicePairPressureSensorDataManager", { log: true });
 

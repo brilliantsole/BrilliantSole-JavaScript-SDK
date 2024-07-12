@@ -1,14 +1,14 @@
-import { dataToArrayBuffer } from "../../utils/ArrayBufferUtils";
-import { createConsole } from "../../utils/Console";
-import { isInNode } from "../../utils/environment";
-import { addEventListeners, removeEventListeners, BoundGenericEventListeners } from "../../utils/EventUtils";
+import { dataToArrayBuffer } from "../../utils/ArrayBufferUtils.ts";
+import { createConsole } from "../../utils/Console.ts";
+import { isInNode } from "../../utils/environment.ts";
+import { addEventListeners, removeEventListeners, BoundGenericEventListeners } from "../../utils/EventUtils.ts";
 import {
   allServiceUUIDs,
   getServiceNameFromUUID,
   getCharacteristicNameFromUUID,
   allCharacteristicNames,
-} from "./bluetoothUUIDs";
-import BluetoothConnectionManager from "./BluetoothConnectionManager";
+} from "./bluetoothUUIDs.ts";
+import BluetoothConnectionManager from "./BluetoothConnectionManager.ts";
 
 const _console = createConsole("NobleConnectionManager", { log: true });
 
@@ -16,9 +16,9 @@ const _console = createConsole("NobleConnectionManager", { log: true });
 import type * as noble from "@abandonware/noble";
 // NODE_END
 
-import { BluetoothCharacteristicName, BluetoothServiceName } from "./bluetoothUUIDs";
-import { ConnectionType } from "../BaseConnectionManager";
-import NobleScanner from "../../scanner/NobleScanner";
+import { BluetoothCharacteristicName, BluetoothServiceName } from "./bluetoothUUIDs.ts";
+import { ConnectionType } from "../BaseConnectionManager.ts";
+import NobleScanner from "../../scanner/NobleScanner.ts";
 
 interface HasConnectionManager {
   connectionManager: NobleConnectionManager | undefined;

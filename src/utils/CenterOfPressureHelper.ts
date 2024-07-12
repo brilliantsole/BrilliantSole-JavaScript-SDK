@@ -1,6 +1,6 @@
-import RangeHelper from "./RangeHelper";
+import RangeHelper from "./RangeHelper.ts";
 
-import { Vector2 } from "./MathUtils";
+import { Vector2 } from "./MathUtils.ts";
 
 export type CenterOfPressure = Vector2;
 

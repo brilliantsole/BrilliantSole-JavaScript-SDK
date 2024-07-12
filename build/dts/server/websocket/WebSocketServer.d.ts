@@ -1,4 +1,4 @@
-import BaseServer from "../BaseServer";
+import BaseServer from "../BaseServer.ts";
 import * as ws from "ws";
 interface WebSocketServer extends ws.WebSocketServer {
 }

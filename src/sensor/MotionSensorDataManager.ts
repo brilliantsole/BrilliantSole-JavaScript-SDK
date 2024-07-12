@@ -1,4 +1,4 @@
-import { createConsole } from "../utils/Console";
+import { createConsole } from "../utils/Console.ts";
 
 const _console = createConsole("MotionSensorDataManager", { log: true });
 
@@ -29,8 +29,8 @@ export const ContinuousMotionTypes = [
 ] as const;
 export type ContinuousMotionType = (typeof ContinuousMotionTypes)[number];
 
-import { Vector3, Quaternion, Euler } from "../utils/MathUtils";
-import { ValueOf } from "../utils/TypeScriptUtils";
+import { Vector3, Quaternion, Euler } from "../utils/MathUtils.ts";
+import { ValueOf } from "../utils/TypeScriptUtils.ts";
 
 export const Vector2Size = 2 * 2;
 export const Vector3Size = 3 * 2;

@@ -1,9 +1,9 @@
-import DevicePairPressureSensorDataManager, { DevicePairPressureDataEventMessages } from "./DevicePairPressureSensorDataManager";
-import { InsoleSide } from "../InformationManager";
-import { SpecificDeviceEvent } from "../Device";
-import EventDispatcher from "../utils/EventDispatcher";
-import DevicePair from "./DevicePair";
-import { AddKeysAsPropertyToInterface, ExtendInterfaceValues, ValueOf } from "../utils/TypeScriptUtils";
+import DevicePairPressureSensorDataManager, { DevicePairPressureDataEventMessages } from "./DevicePairPressureSensorDataManager.ts";
+import { InsoleSide } from "../InformationManager.ts";
+import { SpecificDeviceEvent } from "../Device.ts";
+import EventDispatcher from "../utils/EventDispatcher.ts";
+import DevicePair from "./DevicePair.ts";
+import { AddKeysAsPropertyToInterface, ExtendInterfaceValues, ValueOf } from "../utils/TypeScriptUtils.ts";
 export declare const DevicePairSensorTypes: readonly ["pressure", "sensorData"];
 export type DevicePairSensorType = (typeof DevicePairSensorTypes)[number];
 export declare const DevicePairSensorDataEventTypes: readonly ["pressure", "sensorData"];

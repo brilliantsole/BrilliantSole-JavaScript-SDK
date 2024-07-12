@@ -1,4 +1,4 @@
-import { isInDev, isInLensStudio } from "./environment";
+import { isInDev, isInLensStudio } from "./environment.ts";
 
 declare var Studio: any | undefined;
 

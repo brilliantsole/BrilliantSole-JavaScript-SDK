@@ -1,6 +1,6 @@
-import { createConsole } from "../utils/Console";
-import EventDispatcher, { BoundEventListeners, Event, SpecificEvent } from "../utils/EventDispatcher";
-import { addEventListeners, removeEventListeners } from "../utils/EventUtils";
+import { createConsole } from "../utils/Console.ts";
+import EventDispatcher, { BoundEventListeners, Event, SpecificEvent } from "../utils/EventDispatcher.ts";
+import { addEventListeners, removeEventListeners } from "../utils/EventUtils.ts";
 import Device, {
   DeviceEvent,
   DeviceEventType,
@@ -8,14 +8,14 @@ import Device, {
   DeviceEventMessages,
   DeviceEventTypes,
   BoundDeviceEventListeners,
-} from "../Device";
-import DevicePairSensorDataManager, { DevicePairSensorDataEventDispatcher } from "./DevicePairSensorDataManager";
-import { capitalizeFirstCharacter } from "../utils/stringUtils";
-import { InsoleSide, InsoleSides } from "../InformationManager";
-import { VibrationConfiguration } from "../vibration/VibrationManager";
-import { SensorConfiguration } from "../sensor/SensorConfigurationManager";
-import { DevicePairSensorDataEventMessages, DevicePairSensorDataEventTypes } from "./DevicePairSensorDataManager";
-import { AddPrefixToInterfaceKeys, ExtendInterfaceValues, KeyOf } from "../utils/TypeScriptUtils";
+} from "../Device.ts";
+import DevicePairSensorDataManager, { DevicePairSensorDataEventDispatcher } from "./DevicePairSensorDataManager.ts";
+import { capitalizeFirstCharacter } from "../utils/stringUtils.ts";
+import { InsoleSide, InsoleSides } from "../InformationManager.ts";
+import { VibrationConfiguration } from "../vibration/VibrationManager.ts";
+import { SensorConfiguration } from "../sensor/SensorConfigurationManager.ts";
+import { DevicePairSensorDataEventMessages, DevicePairSensorDataEventTypes } from "./DevicePairSensorDataManager.ts";
+import { AddPrefixToInterfaceKeys, ExtendInterfaceValues, KeyOf } from "../utils/TypeScriptUtils.ts";
 
 const _console = createConsole("DevicePair", { log: true });
 

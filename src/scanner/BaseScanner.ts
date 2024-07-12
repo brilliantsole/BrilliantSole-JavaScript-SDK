@@ -1,8 +1,8 @@
-import EventDispatcher, { BoundEventListeners, Event, SpecificEvent } from "../utils/EventDispatcher";
-import { addEventListeners } from "../utils/EventUtils";
-import { createConsole } from "../utils/Console";
-import Timer from "../utils/Timer";
-import { DeviceType } from "../InformationManager";
+import EventDispatcher, { BoundEventListeners, Event, SpecificEvent } from "../utils/EventDispatcher.ts";
+import { addEventListeners } from "../utils/EventUtils.ts";
+import { createConsole } from "../utils/Console.ts";
+import Timer from "../utils/Timer.ts";
+import { DeviceType } from "../InformationManager.ts";
 
 const _console = createConsole("BaseScanner");
 
