@@ -91,7 +91,7 @@ device.addEventListener("connectionStatus", () => {
 
 /** @type {HTMLTemplateElement} */
 const sensorTypeConfigurationTemplate = document.getElementById("sensorTypeConfigurationTemplate");
-BS.Device.SensorTypes.forEach((sensorType) => {
+BS.SensorTypes.forEach((sensorType) => {
   const sensorTypeConfigurationContainer = sensorTypeConfigurationTemplate.content
     .cloneNode(true)
     .querySelector(".sensorTypeConfiguration");
@@ -236,7 +236,7 @@ const chartsContainer = document.getElementById("charts");
 
 /** @type {HTMLTemplateElement} */
 const chartTemplate = document.getElementById("chartTemplate");
-BS.Device.SensorTypes.forEach((sensorType) => {
+BS.SensorTypes.forEach((sensorType) => {
   const chartContainer = chartTemplate.content.cloneNode(true).querySelector(".chart");
   chartsContainer.appendChild(chartContainer);
 

@@ -164,7 +164,7 @@ const sensorConfigurationContainer = document.getElementById("sensorConfiguratio
 const sensorTypeConfigurationTemplate = document.getElementById("sensorTypeConfigurationTemplate");
 /** @type {Object.<string, HTMLElement>} */
 const sensorTypeConfigurationContainers = {};
-BS.Device.SensorTypes.forEach((sensorType) => {
+BS.SensorTypes.forEach((sensorType) => {
   sensorConfiguration[sensorType] = 0;
 
   const sensorTypeConfigurationContainer = sensorTypeConfigurationTemplate.content

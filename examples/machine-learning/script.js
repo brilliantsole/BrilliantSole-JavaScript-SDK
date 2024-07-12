@@ -312,7 +312,7 @@ const sensorTypeTemplate = document.getElementById("sensorTypeTemplate");
 /** @type {Object.<string, HTMLElement>} */
 const sensorTypeContainers = {};
 
-BS.Device.TfliteSensorTypes.forEach((sensorType) => {
+BS.TfliteSensorTypes.forEach((sensorType) => {
     const sensorTypeContainer = sensorTypeTemplate.content.cloneNode(true).querySelector(".sensorType");
     sensorTypeContainer.querySelector(".name").innerText = sensorType;
 
@@ -324,7 +324,7 @@ BS.Device.TfliteSensorTypes.forEach((sensorType) => {
         } else {
             sensorTypes.splice(sensorTypes.indexOf(sensorType), 1);
         }
-        sensorTypes.sort((a, b) => BS.Device.SensorTypes.indexOf(a) - BS.Device.SensorTypes.indexOf(b));
+        sensorTypes.sort((a, b) => BS.SensorTypes.indexOf(a) - BS.SensorTypes.indexOf(b));
         console.log("sensorTypes", sensorTypes);
         window.dispatchEvent(new CustomEvent("sensorTypes", { detail: { sensorTypes } }));
     });

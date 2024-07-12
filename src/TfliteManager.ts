@@ -56,6 +56,9 @@ export interface TfliteInference {
 export type TfliteEventDispatcher = EventDispatcher<Device, TfliteEventType, TfliteEventMessages>;
 export type SendTfliteMessageCallback = SendMessageCallback<TfliteMessageType>;
 
+export const TfliteSensorTypes: SensorType[] = ["pressure", "linearAcceleration", "gyroscope", "magnetometer"] as const;
+export type TfliteSensorType = (typeof TfliteSensorTypes)[number];
+
 class TfliteManager {
   sendMessage!: SendTfliteMessageCallback;
 
@@ -177,14 +180,9 @@ class TfliteManager {
     await promise;
   }
 
-  static #SensorTypes: SensorType[] = ["pressure", "linearAcceleration", "gyroscope", "magnetometer"];
-  static get SensorTypes() {
-    return this.#SensorTypes;
-  }
-
   static AssertValidSensorType(sensorType: SensorType) {
     SensorDataManager.AssertValidSensorType(sensorType);
-    _console.assertWithError(this.#SensorTypes.includes(sensorType), `invalid tflite sensorType "${sensorType}"`);
+    _console.assertWithError(TfliteSensorTypes.includes(sensorType), `invalid tflite sensorType "${sensorType}"`);
   }
 
   #sensorTypes: SensorType[] = [];
@@ -193,7 +191,6 @@ class TfliteManager {
   }
   #parseSensorTypes(dataView: DataView) {
     _console.log("parseSensorTypes", dataView);
-    /** @type {SensorType[]} */
     const sensorTypes: SensorType[] = [];
     for (let index = 0; index < dataView.byteLength; index++) {
       const sensorTypeEnum = dataView.getUint8(index);

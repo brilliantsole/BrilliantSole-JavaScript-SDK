@@ -271,7 +271,7 @@ const sensorTypeTemplate = document.getElementById("sensorTypeTemplate");
 /** @type {Object.<string, HTMLElement>} */
 const sensorTypeContainers = {};
 
-BS.Device.TfliteSensorTypes.forEach((sensorType) => {
+BS.TfliteSensorTypes.forEach((sensorType) => {
   const sensorTypeContainer = sensorTypeTemplate.content.cloneNode(true).querySelector(".sensorType");
   sensorTypeContainer.querySelector(".name").innerText = sensorType;
 
@@ -291,7 +291,7 @@ BS.Device.TfliteSensorTypes.forEach((sensorType) => {
 });
 
 function onSensorTypesInput() {
-  const sensorTypes = BS.Device.TfliteSensorTypes.filter((sensorType) => {
+  const sensorTypes = BS.TfliteSensorTypes.filter((sensorType) => {
     /** @type {HTMLInputElement} */
     const input = sensorTypeContainers[sensorType].querySelector(".enabled");
     return input.checked;

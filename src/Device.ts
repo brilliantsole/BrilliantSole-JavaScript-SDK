@@ -53,6 +53,7 @@ import TfliteManager, {
   TfliteMessageTypes,
   TfliteMessageType,
   TfliteTasks,
+  TfliteSensorTypes,
 } from "./TfliteManager";
 import FirmwareManager, {
   FirmwareEventDispatcher,
@@ -710,7 +711,7 @@ class Device {
     return this.#tfliteManager.sensorTypes;
   }
   get allowedTfliteSensorTypes() {
-    return this.sensorTypes.filter((sensorType) => TfliteManager.SensorTypes.includes(sensorType));
+    return this.sensorTypes.filter((sensorType) => TfliteSensorTypes.includes(sensorType));
   }
   get setTfliteSensorTypes() {
     return this.#tfliteManager.setSensorTypes;

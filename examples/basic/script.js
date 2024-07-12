@@ -203,7 +203,7 @@ const setTypeButton = document.getElementById("setTypeButton");
 const setTypeSelect = document.getElementById("setTypeSelect");
 /** @type {HTMLOptGroupElement} */
 const setTypeSelectOptgroup = setTypeSelect.querySelector("optgroup");
-BS.Device.Types.forEach((type) => {
+BS.DeviceTypes.forEach((type) => {
   setTypeSelectOptgroup.appendChild(new Option(type));
 });
 
@@ -235,7 +235,7 @@ device.addEventListener("getSensorConfiguration", () => {
 
 /** @type {HTMLTemplateElement} */
 const sensorTypeConfigurationTemplate = document.getElementById("sensorTypeConfigurationTemplate");
-BS.Device.SensorTypes.forEach((sensorType) => {
+BS.SensorTypes.forEach((sensorType) => {
   /** @type {HTMLElement} */
   const sensorTypeConfigurationContainer = sensorTypeConfigurationTemplate.content
     .cloneNode(true)
@@ -280,7 +280,7 @@ device.addEventListener("isConnected", () => {
 
 /** @type {HTMLTemplateElement} */
 const sensorTypeDataTemplate = document.getElementById("sensorTypeDataTemplate");
-BS.Device.SensorTypes.forEach((sensorType) => {
+BS.SensorTypes.forEach((sensorType) => {
   const sensorTypeDataContainer = sensorTypeDataTemplate.content.cloneNode(true).querySelector(".sensorTypeData");
   sensorTypeDataContainer.querySelector(".sensorType").innerText = sensorType;
 
@@ -314,7 +314,7 @@ const waveformEffectSegmentTemplate = document.getElementById("waveformEffectSeg
   /** @type {HTMLSelectElement} */
   const waveformEffectSelect = waveformEffectSegmentTemplate.content.querySelector(".effect");
   const waveformEffectOptgroup = waveformEffectSelect.querySelector("optgroup");
-  BS.Device.VibrationWaveformEffects.forEach((waveformEffect) => {
+  BS.VibrationWaveformEffects.forEach((waveformEffect) => {
     waveformEffectOptgroup.appendChild(new Option(waveformEffect));
   });
 
@@ -585,7 +585,7 @@ fileTransferTypesSelect.addEventListener("input", () => {
 });
 /** @type {HTMLOptGroupElement} */
 const fileTransferTypesOptgroup = fileTransferTypesSelect.querySelector("optgroup");
-BS.Device.FileTypes.forEach((fileType) => {
+BS.FileTypes.forEach((fileType) => {
   fileTransferTypesOptgroup.appendChild(new Option(fileType));
 });
 fileTransferTypesSelect.dispatchEvent(new Event("input"));
@@ -796,7 +796,7 @@ let tfliteSensorTypes = [];
 /** @type {HTMLButtonElement} */
 const setTfliteSensorTypesButton = document.getElementById("setTfliteSensorTypes");
 
-BS.Device.TfliteSensorTypes.forEach((sensorType) => {
+BS.TfliteSensorTypes.forEach((sensorType) => {
   const sensorTypeContainer = tfliteSensorTypeTemplate.content.cloneNode(true).querySelector(".sensorType");
   sensorTypeContainer.querySelector(".name").innerText = sensorType;
 

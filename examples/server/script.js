@@ -296,7 +296,7 @@ BS.Device.AddEventListener("availableDevices", (event) => {
       const setTypeSelect = availableDeviceContainer.querySelector(".setTypeSelect");
       /** @type {HTMLOptGroupElement} */
       const setTypeSelectOptgroup = setTypeSelect.querySelector("optgroup");
-      BS.Device.Types.forEach((type) => {
+      BS.DeviceTypes.forEach((type) => {
         setTypeSelectOptgroup.appendChild(new Option(type));
       });
 
@@ -449,7 +449,7 @@ BS.Device.AddEventListener("availableDevices", (event) => {
       });
       /** @type {HTMLOptGroupElement} */
       const fileTransferTypesOptgroup = fileTransferTypesSelect.querySelector("optgroup");
-      BS.Device.FileTypes.forEach((fileType) => {
+      BS.FileTypes.forEach((fileType) => {
         fileTransferTypesOptgroup.appendChild(new Option(fileType));
       });
       fileTransferTypesSelect.dispatchEvent(new Event("input"));
@@ -638,7 +638,7 @@ BS.Device.AddEventListener("availableDevices", (event) => {
       /** @type {HTMLButtonElement} */
       const setTfliteSensorTypesButton = availableDeviceContainer.querySelector(".setTfliteSensorTypes");
 
-      BS.Device.TfliteSensorTypes.forEach((sensorType) => {
+      BS.TfliteSensorTypes.forEach((sensorType) => {
         const sensorTypeContainer = tfliteSensorTypeTemplate.content.cloneNode(true).querySelector(".sensorType");
         sensorTypeContainer.querySelector(".name").innerText = sensorType;
 

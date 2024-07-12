@@ -83,7 +83,7 @@
         isSafari: isSafari
     });
 
-    var _a$7, _Console_consoles, _Console_levelFlags;
+    var _a$6, _Console_consoles, _Console_levelFlags;
     var __console;
     if (isInLensStudio) {
         const log = function (...args) {
@@ -128,28 +128,28 @@
                 error: true,
                 table: true,
             });
-            if (__classPrivateFieldGet(_a$7, _a$7, "f", _Console_consoles)[type]) {
+            if (__classPrivateFieldGet(_a$6, _a$6, "f", _Console_consoles)[type]) {
                 throw new Error(`"${type}" console already exists`);
             }
-            __classPrivateFieldGet(_a$7, _a$7, "f", _Console_consoles)[type] = this;
+            __classPrivateFieldGet(_a$6, _a$6, "f", _Console_consoles)[type] = this;
         }
         setLevelFlags(levelFlags) {
             Object.assign(__classPrivateFieldGet(this, _Console_levelFlags, "f"), levelFlags);
         }
         /** @throws {Error} if no console with type "type" is found */
         static setLevelFlagsForType(type, levelFlags) {
-            if (!__classPrivateFieldGet(this, _a$7, "f", _Console_consoles)[type]) {
+            if (!__classPrivateFieldGet(this, _a$6, "f", _Console_consoles)[type]) {
                 throw new Error(`no console found with type "${type}"`);
             }
-            __classPrivateFieldGet(this, _a$7, "f", _Console_consoles)[type].setLevelFlags(levelFlags);
+            __classPrivateFieldGet(this, _a$6, "f", _Console_consoles)[type].setLevelFlags(levelFlags);
         }
         static setAllLevelFlags(levelFlags) {
-            for (const type in __classPrivateFieldGet(this, _a$7, "f", _Console_consoles)) {
-                __classPrivateFieldGet(this, _a$7, "f", _Console_consoles)[type].setLevelFlags(levelFlags);
+            for (const type in __classPrivateFieldGet(this, _a$6, "f", _Console_consoles)) {
+                __classPrivateFieldGet(this, _a$6, "f", _Console_consoles)[type].setLevelFlags(levelFlags);
             }
         }
         static create(type, levelFlags) {
-            const console = __classPrivateFieldGet(this, _a$7, "f", _Console_consoles)[type] || new _a$7(type);
+            const console = __classPrivateFieldGet(this, _a$6, "f", _Console_consoles)[type] || new _a$6(type);
             if (levelFlags) {
                 console.setLevelFlags(levelFlags);
             }
@@ -185,7 +185,7 @@
             this.assertWithError(enumeration.includes(value), `invalid enum "${value}"`);
         }
     }
-    _a$7 = Console, _Console_levelFlags = new WeakMap();
+    _a$6 = Console, _Console_levelFlags = new WeakMap();
     _Console_consoles = { value: {} };
     function createConsole(type, levelFlags) {
         return Console.create(type, levelFlags);
@@ -458,7 +458,7 @@
         return fileBuffer;
     }
 
-    var _FileTransferManager_instances, _a$6, _FileTransferManager_dispatchEvent_get, _FileTransferManager_assertValidType, _FileTransferManager_assertValidTypeEnum, _FileTransferManager_assertValidStatusEnum, _FileTransferManager_assertValidCommand, _FileTransferManager_MaxLength, _FileTransferManager_maxLength, _FileTransferManager_parseMaxLength, _FileTransferManager_updateMaxLength, _FileTransferManager_assertValidLength, _FileTransferManager_type, _FileTransferManager_parseType, _FileTransferManager_updateType, _FileTransferManager_setType, _FileTransferManager_length, _FileTransferManager_parseLength, _FileTransferManager_updateLength, _FileTransferManager_setLength, _FileTransferManager_checksum, _FileTransferManager_parseChecksum, _FileTransferManager_updateChecksum, _FileTransferManager_setChecksum, _FileTransferManager_setCommand, _FileTransferManager_status, _FileTransferManager_parseStatus, _FileTransferManager_updateStatus, _FileTransferManager_assertIsIdle, _FileTransferManager_assertIsNotIdle, _FileTransferManager_receivedBlocks, _FileTransferManager_parseBlock, _FileTransferManager_send, _FileTransferManager_sendBlock;
+    var _FileTransferManager_instances, _a$5, _FileTransferManager_dispatchEvent_get, _FileTransferManager_assertValidType, _FileTransferManager_assertValidTypeEnum, _FileTransferManager_assertValidStatusEnum, _FileTransferManager_assertValidCommand, _FileTransferManager_MaxLength, _FileTransferManager_maxLength, _FileTransferManager_parseMaxLength, _FileTransferManager_updateMaxLength, _FileTransferManager_assertValidLength, _FileTransferManager_type, _FileTransferManager_parseType, _FileTransferManager_updateType, _FileTransferManager_setType, _FileTransferManager_length, _FileTransferManager_parseLength, _FileTransferManager_updateLength, _FileTransferManager_setLength, _FileTransferManager_checksum, _FileTransferManager_parseChecksum, _FileTransferManager_updateChecksum, _FileTransferManager_setChecksum, _FileTransferManager_setCommand, _FileTransferManager_status, _FileTransferManager_parseStatus, _FileTransferManager_updateStatus, _FileTransferManager_assertIsIdle, _FileTransferManager_assertIsNotIdle, _FileTransferManager_receivedBlocks, _FileTransferManager_parseBlock, _FileTransferManager_send, _FileTransferManager_sendBlock;
     const _console$l = createConsole("FileTransferManager", { log: true });
     const FileTransferMessageTypes = [
         "maxFileLength",
@@ -485,7 +485,7 @@
     class FileTransferManager {
         constructor() {
             _FileTransferManager_instances.add(this);
-            _FileTransferManager_maxLength.set(this, _a$6.MaxLength);
+            _FileTransferManager_maxLength.set(this, _a$5.MaxLength);
             _FileTransferManager_type.set(this, void 0);
             _FileTransferManager_length.set(this, 0);
             _FileTransferManager_checksum.set(this, 0);
@@ -503,7 +503,7 @@
             return this.eventDispatcher.waitForEvent;
         }
         static get MaxLength() {
-            return __classPrivateFieldGet(this, _a$6, "f", _FileTransferManager_MaxLength);
+            return __classPrivateFieldGet(this, _a$5, "f", _FileTransferManager_MaxLength);
         }
         /** kB */
         get maxLength() {
@@ -575,7 +575,7 @@
             await __classPrivateFieldGet(this, _FileTransferManager_instances, "m", _FileTransferManager_setCommand).call(this, "cancel");
         }
     }
-    _a$6 = FileTransferManager, _FileTransferManager_maxLength = new WeakMap(), _FileTransferManager_type = new WeakMap(), _FileTransferManager_length = new WeakMap(), _FileTransferManager_checksum = new WeakMap(), _FileTransferManager_status = new WeakMap(), _FileTransferManager_receivedBlocks = new WeakMap(), _FileTransferManager_instances = new WeakSet(), _FileTransferManager_dispatchEvent_get = function _FileTransferManager_dispatchEvent_get() {
+    _a$5 = FileTransferManager, _FileTransferManager_maxLength = new WeakMap(), _FileTransferManager_type = new WeakMap(), _FileTransferManager_length = new WeakMap(), _FileTransferManager_checksum = new WeakMap(), _FileTransferManager_status = new WeakMap(), _FileTransferManager_receivedBlocks = new WeakMap(), _FileTransferManager_instances = new WeakSet(), _FileTransferManager_dispatchEvent_get = function _FileTransferManager_dispatchEvent_get() {
         return this.eventDispatcher.dispatchEvent;
     }, _FileTransferManager_assertValidType = function _FileTransferManager_assertValidType(type) {
         _console$l.assertEnumWithError(type, FileTypes);
@@ -1126,7 +1126,7 @@
         }
     }
 
-    var _SensorConfigurationManager_instances, _a$5, _SensorConfigurationManager_dispatchEvent_get, _SensorConfigurationManager_availableSensorTypes, _SensorConfigurationManager_assertAvailableSensorType, _SensorConfigurationManager_configuration, _SensorConfigurationManager_updateConfiguration, _SensorConfigurationManager_isRedundant, _SensorConfigurationManager_parse, _SensorConfigurationManager_MaxSensorRate, _SensorConfigurationManager_SensorRateStep, _SensorConfigurationManager_AssertValidSensorRate, _SensorConfigurationManager_assertValidSensorRate, _SensorConfigurationManager_createData, _SensorConfigurationManager_ZeroSensorConfiguration;
+    var _SensorConfigurationManager_instances, _a$4, _SensorConfigurationManager_dispatchEvent_get, _SensorConfigurationManager_availableSensorTypes, _SensorConfigurationManager_assertAvailableSensorType, _SensorConfigurationManager_configuration, _SensorConfigurationManager_updateConfiguration, _SensorConfigurationManager_isRedundant, _SensorConfigurationManager_parse, _SensorConfigurationManager_MaxSensorRate, _SensorConfigurationManager_SensorRateStep, _SensorConfigurationManager_AssertValidSensorRate, _SensorConfigurationManager_assertValidSensorRate, _SensorConfigurationManager_createData, _SensorConfigurationManager_ZeroSensorConfiguration;
     const _console$f = createConsole("SensorConfigurationManager", { log: true });
     const SensorConfigurationMessageTypes = ["getSensorConfiguration", "setSensorConfiguration"];
     class SensorConfigurationManager {
@@ -1160,19 +1160,19 @@
             await promise;
         }
         static get MaxSensorRate() {
-            return __classPrivateFieldGet(this, _a$5, "f", _SensorConfigurationManager_MaxSensorRate);
+            return __classPrivateFieldGet(this, _a$4, "f", _SensorConfigurationManager_MaxSensorRate);
         }
         get maxSensorRate() {
-            return _a$5.MaxSensorRate;
+            return _a$4.MaxSensorRate;
         }
         static get SensorRateStep() {
-            return __classPrivateFieldGet(this, _a$5, "f", _SensorConfigurationManager_SensorRateStep);
+            return __classPrivateFieldGet(this, _a$4, "f", _SensorConfigurationManager_SensorRateStep);
         }
         get sensorRateStep() {
-            return _a$5.SensorRateStep;
+            return _a$4.SensorRateStep;
         }
         static get ZeroSensorConfiguration() {
-            return __classPrivateFieldGet(this, _a$5, "f", _SensorConfigurationManager_ZeroSensorConfiguration);
+            return __classPrivateFieldGet(this, _a$4, "f", _SensorConfigurationManager_ZeroSensorConfiguration);
         }
         get zeroSensorConfiguration() {
             const zeroSensorConfiguration = {};
@@ -1198,7 +1198,7 @@
             }
         }
     }
-    _a$5 = SensorConfigurationManager, _SensorConfigurationManager_availableSensorTypes = new WeakMap(), _SensorConfigurationManager_configuration = new WeakMap(), _SensorConfigurationManager_instances = new WeakSet(), _SensorConfigurationManager_dispatchEvent_get = function _SensorConfigurationManager_dispatchEvent_get() {
+    _a$4 = SensorConfigurationManager, _SensorConfigurationManager_availableSensorTypes = new WeakMap(), _SensorConfigurationManager_configuration = new WeakMap(), _SensorConfigurationManager_instances = new WeakSet(), _SensorConfigurationManager_dispatchEvent_get = function _SensorConfigurationManager_dispatchEvent_get() {
         return this.eventDispatcher.dispatchEvent;
     }, _SensorConfigurationManager_assertAvailableSensorType = function _SensorConfigurationManager_assertAvailableSensorType(sensorType) {
         _console$f.assertWithError(__classPrivateFieldGet(this, _SensorConfigurationManager_availableSensorTypes, "f"), "must get initial sensorConfiguration");
@@ -1236,7 +1236,7 @@
         _console$f.assertWithError(sensorRate < this.MaxSensorRate, `sensorRate must be 0 or greater (got ${sensorRate})`);
         _console$f.assertWithError(sensorRate % this.SensorRateStep == 0, `sensorRate must be multiple of ${this.SensorRateStep}`);
     }, _SensorConfigurationManager_assertValidSensorRate = function _SensorConfigurationManager_assertValidSensorRate(sensorRate) {
-        __classPrivateFieldGet(_a$5, _a$5, "m", _SensorConfigurationManager_AssertValidSensorRate).call(_a$5, sensorRate);
+        __classPrivateFieldGet(_a$4, _a$4, "m", _SensorConfigurationManager_AssertValidSensorRate).call(_a$4, sensorRate);
     }, _SensorConfigurationManager_createData = function _SensorConfigurationManager_createData(sensorConfiguration) {
         let sensorTypes = Object.keys(sensorConfiguration);
         sensorTypes = sensorTypes.filter((sensorType) => __classPrivateFieldGet(this, _SensorConfigurationManager_instances, "m", _SensorConfigurationManager_assertAvailableSensorType).call(this, sensorType));
@@ -1258,11 +1258,11 @@
     _SensorConfigurationManager_ZeroSensorConfiguration = { value: {} };
     (() => {
         SensorTypes.forEach((sensorType) => {
-            __classPrivateFieldGet(_a$5, _a$5, "f", _SensorConfigurationManager_ZeroSensorConfiguration)[sensorType] = 0;
+            __classPrivateFieldGet(_a$4, _a$4, "f", _SensorConfigurationManager_ZeroSensorConfiguration)[sensorType] = 0;
         });
     })();
 
-    var _TfliteManager_instances, _a$4, _TfliteManager_assertValidTask, _TfliteManager_assertValidTaskEnum, _TfliteManager_dispatchEvent_get, _TfliteManager_name, _TfliteManager_parseName, _TfliteManager_updateName, _TfliteManager_task, _TfliteManager_parseTask, _TfliteManager_updateTask, _TfliteManager_sampleRate, _TfliteManager_parseSampleRate, _TfliteManager_updateSampleRate, _TfliteManager_SensorTypes, _TfliteManager_sensorTypes, _TfliteManager_parseSensorTypes, _TfliteManager_updateSensorTypes, _TfliteManager_isReady, _TfliteManager_parseIsReady, _TfliteManager_updateIsReady, _TfliteManager_assertIsReady, _TfliteManager_captureDelay, _TfliteManager_parseCaptureDelay, _TfliteManager_updateCaptueDelay, _TfliteManager_threshold, _TfliteManager_parseThreshold, _TfliteManager_updateThreshold, _TfliteManager_inferencingEnabled, _TfliteManager_parseInferencingEnabled, _TfliteManager_updateInferencingEnabled, _TfliteManager_parseInference;
+    var _TfliteManager_instances, _TfliteManager_assertValidTask, _TfliteManager_assertValidTaskEnum, _TfliteManager_dispatchEvent_get, _TfliteManager_name, _TfliteManager_parseName, _TfliteManager_updateName, _TfliteManager_task, _TfliteManager_parseTask, _TfliteManager_updateTask, _TfliteManager_sampleRate, _TfliteManager_parseSampleRate, _TfliteManager_updateSampleRate, _TfliteManager_sensorTypes, _TfliteManager_parseSensorTypes, _TfliteManager_updateSensorTypes, _TfliteManager_isReady, _TfliteManager_parseIsReady, _TfliteManager_updateIsReady, _TfliteManager_assertIsReady, _TfliteManager_captureDelay, _TfliteManager_parseCaptureDelay, _TfliteManager_updateCaptueDelay, _TfliteManager_threshold, _TfliteManager_parseThreshold, _TfliteManager_updateThreshold, _TfliteManager_inferencingEnabled, _TfliteManager_parseInferencingEnabled, _TfliteManager_updateInferencingEnabled, _TfliteManager_parseInference;
     const _console$e = createConsole("TfliteManager", { log: true });
     const TfliteMessageTypes = [
         "getTfliteName",
@@ -1284,6 +1284,7 @@
     ];
     const TfliteEventTypes = TfliteMessageTypes;
     const TfliteTasks = ["classification", "regression"];
+    const TfliteSensorTypes = ["pressure", "linearAcceleration", "gyroscope", "magnetometer"];
     class TfliteManager {
         constructor() {
             _TfliteManager_instances.add(this);
@@ -1351,19 +1352,16 @@
             this.sendMessage([{ type: "setTfliteSampleRate", data: dataView.buffer }], sendImmediately);
             await promise;
         }
-        static get SensorTypes() {
-            return __classPrivateFieldGet(this, _a$4, "f", _TfliteManager_SensorTypes);
-        }
         static AssertValidSensorType(sensorType) {
             SensorDataManager.AssertValidSensorType(sensorType);
-            _console$e.assertWithError(__classPrivateFieldGet(this, _a$4, "f", _TfliteManager_SensorTypes).includes(sensorType), `invalid tflite sensorType "${sensorType}"`);
+            _console$e.assertWithError(TfliteSensorTypes.includes(sensorType), `invalid tflite sensorType "${sensorType}"`);
         }
         get sensorTypes() {
             return __classPrivateFieldGet(this, _TfliteManager_sensorTypes, "f").slice();
         }
         async setSensorTypes(newSensorTypes, sendImmediately) {
             newSensorTypes.forEach((sensorType) => {
-                _a$4.AssertValidSensorType(sensorType);
+                TfliteManager.AssertValidSensorType(sensorType);
             });
             const promise = this.waitForEvent("getTfliteSensorTypes");
             newSensorTypes = arrayWithoutDuplicates(newSensorTypes);
@@ -1485,7 +1483,7 @@
             }
         }
     }
-    _a$4 = TfliteManager, _TfliteManager_name = new WeakMap(), _TfliteManager_task = new WeakMap(), _TfliteManager_sampleRate = new WeakMap(), _TfliteManager_sensorTypes = new WeakMap(), _TfliteManager_isReady = new WeakMap(), _TfliteManager_captureDelay = new WeakMap(), _TfliteManager_threshold = new WeakMap(), _TfliteManager_inferencingEnabled = new WeakMap(), _TfliteManager_instances = new WeakSet(), _TfliteManager_assertValidTask = function _TfliteManager_assertValidTask(task) {
+    _TfliteManager_name = new WeakMap(), _TfliteManager_task = new WeakMap(), _TfliteManager_sampleRate = new WeakMap(), _TfliteManager_sensorTypes = new WeakMap(), _TfliteManager_isReady = new WeakMap(), _TfliteManager_captureDelay = new WeakMap(), _TfliteManager_threshold = new WeakMap(), _TfliteManager_inferencingEnabled = new WeakMap(), _TfliteManager_instances = new WeakSet(), _TfliteManager_assertValidTask = function _TfliteManager_assertValidTask(task) {
         _console$e.assertEnumWithError(task, TfliteTasks);
     }, _TfliteManager_assertValidTaskEnum = function _TfliteManager_assertValidTaskEnum(taskEnum) {
         _console$e.assertWithError(taskEnum in TfliteTasks, `invalid taskEnum ${taskEnum}`);
@@ -1519,7 +1517,6 @@
         __classPrivateFieldGet(this, _TfliteManager_instances, "a", _TfliteManager_dispatchEvent_get).call(this, "getTfliteSampleRate", { tfliteSampleRate: sampleRate });
     }, _TfliteManager_parseSensorTypes = function _TfliteManager_parseSensorTypes(dataView) {
         _console$e.log("parseSensorTypes", dataView);
-        /** @type {SensorType[]} */
         const sensorTypes = [];
         for (let index = 0; index < dataView.byteLength; index++) {
             const sensorTypeEnum = dataView.getUint8(index);
@@ -1586,7 +1583,6 @@
         };
         __classPrivateFieldGet(this, _TfliteManager_instances, "a", _TfliteManager_dispatchEvent_get).call(this, "tfliteInference", { tfliteInference: inference });
     };
-    _TfliteManager_SensorTypes = { value: ["pressure", "linearAcceleration", "gyroscope", "magnetometer"] };
 
     var _DeviceInformationManager_instances, _DeviceInformationManager_dispatchEvent_get, _DeviceInformationManager_information, _DeviceInformationManager_isComplete_get, _DeviceInformationManager_update;
     const _console$d = createConsole("DeviceInformationManager", { log: true });
@@ -4200,7 +4196,7 @@
             return __classPrivateFieldGet(this, _Device_tfliteManager, "f").sensorTypes;
         }
         get allowedTfliteSensorTypes() {
-            return this.sensorTypes.filter((sensorType) => TfliteManager.SensorTypes.includes(sensorType));
+            return this.sensorTypes.filter((sensorType) => TfliteSensorTypes.includes(sensorType));
         }
         get setTfliteSensorTypes() {
             return __classPrivateFieldGet(this, _Device_tfliteManager, "f").setSensorTypes;
@@ -4890,9 +4886,17 @@
         });
     })();
 
+    exports.ContinuousSensorTypes = ContinuousSensorTypes;
     exports.Device = Device;
     exports.DevicePair = DevicePair;
+    exports.DeviceTypes = DeviceTypes;
     exports.Environment = environment;
+    exports.FileTypes = FileTypes;
+    exports.SensorTypes = SensorTypes;
+    exports.TfliteSensorTypes = TfliteSensorTypes;
+    exports.VibrationLocations = VibrationLocations;
+    exports.VibrationTypes = VibrationTypes;
+    exports.VibrationWaveformEffects = VibrationWaveformEffects;
     exports.setAllConsoleLevelFlags = setAllConsoleLevelFlags;
     exports.setConsoleLevelFlagsForType = setConsoleLevelFlagsForType;
 
