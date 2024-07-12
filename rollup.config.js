@@ -5,6 +5,7 @@ import resolve from "@rollup/plugin-node-resolve";
 import commonjs from "@rollup/plugin-commonjs";
 import babel from "@rollup/plugin-babel";
 import typescript from "@rollup/plugin-typescript";
+import { dts } from "rollup-plugin-dts";
 
 const production = !process.env.ROLLUP_WATCH;
 
@@ -78,22 +79,31 @@ const lensStudioPlugins = [
 const name = "BS";
 const input = "src/BS.ts";
 
+const defaultOutput = { sourcemap: true };
+
 const builds = [
   {
     input,
     plugins: [_browserPlugins, ..._plugins],
     output: [
       {
+        ...defaultOutput,
         format: "esm",
         file: "build/brilliantsole.module.js",
       },
     ],
   },
   {
+    input: "./build/dts/BS.d.ts",
+    output: [{ file: "build/brilliantsole.module.d.ts", format: "es" }],
+    plugins: [dts()],
+  },
+  {
     input,
     plugins: [..._browserPlugins, ..._plugins, terser()],
     output: [
       {
+        ...defaultOutput,
         format: "esm",
         file: "build/brilliantsole.module.min.js",
       },
@@ -105,8 +115,9 @@ const builds = [
     plugins: [..._browserPlugins, ..._plugins],
     output: [
       {
-        format: "umd",
         name,
+        ...defaultOutput,
+        format: "umd",
         file: "build/brilliantsole.js",
         indent: "\t",
       },
@@ -117,6 +128,7 @@ const builds = [
     plugins: [..._browserPlugins, ..._plugins, terser()],
     output: [
       {
+        ...defaultOutput,
         format: "umd",
         name,
         file: "build/brilliantsole.min.js",
@@ -130,6 +142,7 @@ const builds = [
     external: nodeExternal,
     output: [
       {
+        ...defaultOutput,
         format: "esm",
         file: "build/brilliantsole.node.module.js",
       },
@@ -141,6 +154,7 @@ const builds = [
     external: nodeExternal,
     output: [
       {
+        ...defaultOutput,
         format: "cjs",
         name,
         file: "build/brilliantsole.cjs",
@@ -153,6 +167,7 @@ const builds = [
     plugins: [...lensStudioPlugins, ..._plugins],
     output: [
       {
+        ...defaultOutput,
         format: "umd",
         name,
         file: "build/brilliantsole.ls.js",

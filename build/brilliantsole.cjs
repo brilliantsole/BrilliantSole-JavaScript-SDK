@@ -5906,3 +5906,4 @@ exports.VibrationWaveformEffects = VibrationWaveformEffects;
 exports.WebSocketServer = WebSocketServer;
 exports.setAllConsoleLevelFlags = setAllConsoleLevelFlags;
 exports.setConsoleLevelFlagsForType = setConsoleLevelFlagsForType;
+//# sourceMappingURL=brilliantsole.cjs.map

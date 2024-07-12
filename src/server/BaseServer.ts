@@ -49,7 +49,7 @@ abstract class BaseServer {
   }
 
   // EVENT DISPATCHER
-  protected eventDispatcher = new EventDispatcher(this, ServerEventTypes);
+  protected eventDispatcher: ServerEventDispatcher = new EventDispatcher(this as BaseServer, ServerEventTypes);
   get addEventListener() {
     return this.eventDispatcher.addEventListener;
   }

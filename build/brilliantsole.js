@@ -5562,3 +5562,4 @@
 	exports.setConsoleLevelFlagsForType = setConsoleLevelFlagsForType;
 
 }));
+//# sourceMappingURL=brilliantsole.js.map

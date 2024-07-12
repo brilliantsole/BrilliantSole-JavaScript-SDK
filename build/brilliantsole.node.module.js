@@ -5870,3 +5870,4 @@ _DevicePair_shared = { value: new _a() };
 })();
 
 export { ContinuousSensorTypes, Device, DevicePair, DeviceTypes, environment as Environment, FileTypes, scanner$1 as Scanner, SensorTypes, TfliteSensorTypes, VibrationLocations, VibrationTypes, VibrationWaveformEffects, WebSocketServer, setAllConsoleLevelFlags, setConsoleLevelFlagsForType };
+//# sourceMappingURL=brilliantsole.node.module.js.map

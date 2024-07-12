@@ -5541,3 +5541,4 @@ _WebSocketClient_webSocket = new WeakMap(), _WebSocketClient_boundWebSocketEvent
 };
 
 export { ContinuousSensorTypes, Device, DevicePair, DeviceTypes, environment as Environment, FileTypes, SensorTypes, TfliteSensorTypes, VibrationLocations, VibrationTypes, VibrationWaveformEffects, WebSocketClient, setAllConsoleLevelFlags, setConsoleLevelFlagsForType };
+//# sourceMappingURL=brilliantsole.module.js.map
