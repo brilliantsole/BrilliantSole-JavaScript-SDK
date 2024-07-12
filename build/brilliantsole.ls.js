@@ -8,46 +8,24 @@
     (global = typeof globalThis !== 'undefined' ? globalThis : global || self, factory(global.BS = {}));
 })(this, (function (exports) { 'use strict';
 
-    /******************************************************************************
-    Copyright (c) Microsoft Corporation.
-
-    Permission to use, copy, modify, and/or distribute this software for any
-    purpose with or without fee is hereby granted.
-
-    THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH
-    REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY
-    AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT,
-    INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM
-    LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
-    OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
-    PERFORMANCE OF THIS SOFTWARE.
-    ***************************************************************************** */
-    /* global Reflect, Promise, SuppressedError, Symbol */
-
-
     function __classPrivateFieldGet(receiver, state, kind, f) {
         if (kind === "a" && !f) throw new TypeError("Private accessor was defined without a getter");
         if (typeof state === "function" ? receiver !== state || !f : !state.has(receiver)) throw new TypeError("Cannot read private member from an object whose class did not declare it");
         return kind === "m" ? f : kind === "a" ? f.call(receiver) : f ? f.value : state.get(receiver);
     }
-
     function __classPrivateFieldSet(receiver, state, value, kind, f) {
         if (kind === "m") throw new TypeError("Private method is not writable");
         if (kind === "a" && !f) throw new TypeError("Private accessor was defined without a setter");
         if (typeof state === "function" ? receiver !== state || !f : !state.has(receiver)) throw new TypeError("Cannot write private member to an object whose class did not declare it");
         return (kind === "a" ? f.call(receiver, value) : f ? f.value = value : state.set(receiver, value)), value;
     }
-
     typeof SuppressedError === "function" ? SuppressedError : function (error, suppressed, message) {
         var e = new Error(message);
         return e.name = "SuppressedError", e.error = error, e.suppressed = suppressed, e;
     };
 
-    const __BRILLIANTSOLE__ENVIRONMENT__ = "__BRILLIANTSOLE__DEV__";
-    //@ts-expect-error
-    const isInProduction = __BRILLIANTSOLE__ENVIRONMENT__ == "__BRILLIANTSOLE__PROD__";
-    const isInDev = __BRILLIANTSOLE__ENVIRONMENT__ == "__BRILLIANTSOLE__DEV__";
-    // https://github.com/flexdinesh/browser-or-node/blob/master/src/index.ts
+    const isInProduction = "__BRILLIANTSOLE__PROD__" == "__BRILLIANTSOLE__PROD__";
+    const isInDev = "__BRILLIANTSOLE__PROD__" == "__BRILLIANTSOLE__DEV__";
     const isInBrowser = typeof window !== "undefined" && typeof window?.document !== "undefined";
     const isInNode = typeof process !== "undefined" && process?.versions?.node != null;
     const userAgent = (isInBrowser && navigator.userAgent) || "";
@@ -64,7 +42,6 @@
     const isSafari = isInBrowser && /Safari/i.test(userAgent) && !/Chrome/i.test(userAgent);
     const isIOS = isInBrowser && /iPad|iPhone|iPod/i.test(userAgent);
     const isMac = isInBrowser && /Macintosh/i.test(userAgent);
-    // @ts-expect-error
     const isInLensStudio = !isInBrowser && !isInNode && typeof global !== "undefined" && typeof Studio !== "undefined";
 
     var environment = /*#__PURE__*/Object.freeze({
@@ -97,7 +74,6 @@
     else {
         __console = console;
     }
-    // console.assert not supported in WebBLE
     if (!__console.assert) {
         const assert = (condition, ...data) => {
             if (!condition) {
@@ -106,7 +82,6 @@
         };
         __console.assert = assert;
     }
-    // console.table not supported in WebBLE
     if (!__console.table) {
         const table = (...data) => {
             __console.log(...data);
@@ -136,7 +111,6 @@
         setLevelFlags(levelFlags) {
             Object.assign(__classPrivateFieldGet(this, _Console_levelFlags, "f"), levelFlags);
         }
-        /** @throws {Error} if no console with type "type" is found */
         static setLevelFlagsForType(type, levelFlags) {
             if (!__classPrivateFieldGet(this, _a$6, "f", _Console_consoles)[type]) {
                 throw new Error(`no console found with type "${type}"`);
@@ -150,9 +124,6 @@
         }
         static create(type, levelFlags) {
             const console = __classPrivateFieldGet(this, _a$6, "f", _Console_consoles)[type] || new _a$6(type);
-            if (levelFlags) {
-                console.setLevelFlags(levelFlags);
-            }
             return console;
         }
         get log() {
@@ -170,17 +141,14 @@
         get table() {
             return __classPrivateFieldGet(this, _Console_levelFlags, "f").table ? table : emptyFunction;
         }
-        /** @throws {Error} if condition is not met */
         assertWithError(condition, message) {
             if (!Boolean(condition)) {
                 throw new Error(message);
             }
         }
-        /** @throws {Error} if value's type doesn't match */
         assertTypeWithError(value, type) {
             this.assertWithError(typeof value == type, `value ${value} of type "${typeof value}" not of type "${type}"`);
         }
-        /** @throws {Error} if value's type doesn't match */
         assertEnumWithError(value, enumeration) {
             this.assertWithError(enumeration.includes(value), `invalid enum "${value}"`);
         }
@@ -190,7 +158,6 @@
     function createConsole(type, levelFlags) {
         return Console.create(type, levelFlags);
     }
-    /** @throws {Error} if no console with type is found */
     function setConsoleLevelFlagsForType(type, levelFlags) {
         Console.setLevelFlagsForType(type, levelFlags);
     }
@@ -313,8 +280,6 @@
     _Timer_callback = new WeakMap(), _Timer_interval = new WeakMap(), _Timer_intervalId = new WeakMap();
 
     createConsole("checksum", { log: true });
-    // https://github.com/googlecreativelab/tiny-motion-trainer/blob/5fceb49f018ae0c403bf9f0ccc437309c2acb507/frontend/src/tf4micro-motion-kit/modules/bleFileTransfer#L195
-    // See http://home.thep.lu.se/~bjorn/crc/ for more information on simple CRC32 calculations.
     function crc32ForByte(r) {
         for (let j = 0; j < 8; ++j) {
             r = (r & 1 ? 0 : 0xedb88320) ^ (r >>> 1);
@@ -333,7 +298,6 @@
             const crcLowByte = crc & 0x000000ff;
             const dataByte = dataBytes[i];
             const tableIndex = crcLowByte ^ dataByte;
-            // The last >>> is to convert this into an unsigned 32-bit integer.
             crc = (crc32Table[tableIndex] ^ (crc >>> 8)) >>> 0;
         }
         return crc;
@@ -491,7 +455,6 @@
             _FileTransferManager_length.set(this, 0);
             _FileTransferManager_checksum.set(this, 0);
             _FileTransferManager_status.set(this, "idle");
-            // BLOCK
             _FileTransferManager_receivedBlocks.set(this, []);
         }
         get addEventListener() {
@@ -506,7 +469,6 @@
         static get MaxLength() {
             return __classPrivateFieldGet(this, _a$5, "f", _FileTransferManager_MaxLength);
         }
-        /** kB */
         get maxLength() {
             return __classPrivateFieldGet(this, _FileTransferManager_maxLength, "f");
         }
@@ -733,7 +695,7 @@
             return __classPrivateFieldGet(this, _FileTransferManager_instances, "m", _FileTransferManager_sendBlock).call(this, buffer, offset + slicedBuffer.byteLength);
         }
     };
-    _FileTransferManager_MaxLength = { value: 0 }; // kB
+    _FileTransferManager_MaxLength = { value: 0 };
 
     const Uint16Max = 2 ** 16;
     function removeLower2Bytes(number) {
@@ -982,12 +944,12 @@
         }
     }
     _BarometerSensorDataManager_instances = new WeakSet(), _BarometerSensorDataManager_calculcateAltitude = function _BarometerSensorDataManager_calculcateAltitude(pressure) {
-        const P0 = 101325; // Standard atmospheric pressure at sea level in Pascals
-        const T0 = 288.15; // Standard temperature at sea level in Kelvin
-        const L = 0.0065; // Temperature lapse rate in K/m
-        const R = 8.3144598; // Universal gas constant in J/(mol·K)
-        const g = 9.80665; // Acceleration due to gravity in m/s²
-        const M = 0.0289644; // Molar mass of Earth's air in kg/mol
+        const P0 = 101325;
+        const T0 = 288.15;
+        const L = 0.0065;
+        const R = 8.3144598;
+        const g = 9.80665;
+        const M = 0.0289644;
         const exponent = (R * L) / (g * M);
         const h = (T0 / L) * (1 - Math.pow(pressure / P0, exponent));
         return h;
@@ -1120,9 +1082,7 @@
             }
             _console$g.assertWithError(sensorData != null, `no sensorData defined for sensorType "${sensorType}"`);
             _console$g.log({ sensorType, sensorData });
-            // @ts-expect-error
             this.dispatchEvent(sensorType, { sensorType, [sensorType]: sensorData, timestamp });
-            // @ts-expect-error
             this.dispatchEvent("sensorData", { sensorType, [sensorType]: sensorData, timestamp });
         }
     }
@@ -1185,7 +1145,6 @@
         async clearSensorConfiguration() {
             return this.setConfiguration(this.zeroSensorConfiguration);
         }
-        // MESSAGE
         parseMessage(messageType, dataView) {
             _console$f.log({ messageType });
             switch (messageType) {
@@ -1255,7 +1214,6 @@
     };
     _SensorConfigurationManager_MaxSensorRate = { value: 2 ** 16 - 1 };
     _SensorConfigurationManager_SensorRateStep = { value: 5 };
-    // ZERO
     _SensorConfigurationManager_ZeroSensorConfiguration = { value: {} };
     (() => {
         SensorTypes.forEach((sensorType) => {
@@ -1289,7 +1247,6 @@
     class TfliteManager {
         constructor() {
             _TfliteManager_instances.add(this);
-            // PROPERTIES
             _TfliteManager_name.set(this, void 0);
             _TfliteManager_task.set(this, void 0);
             _TfliteManager_sampleRate.set(this, void 0);
@@ -1652,7 +1609,6 @@
                 case "serialNumber":
                     const serialNumber = textDecoder.decode(dataView.buffer);
                     _console$d.log({ serialNumber });
-                    // will only be used for node
                     break;
                 default:
                     throw Error(`uncaught messageType ${messageType}`);
@@ -1667,7 +1623,6 @@
         _console$d.log({ partialDeviceInformation });
         const deviceInformationNames = Object.keys(partialDeviceInformation);
         deviceInformationNames.forEach((deviceInformationName) => {
-            // @ts-expect-error
             __classPrivateFieldGet(this, _DeviceInformationManager_instances, "a", _DeviceInformationManager_dispatchEvent_get).call(this, deviceInformationName, {
                 [deviceInformationName]: partialDeviceInformation[deviceInformationName],
             });
@@ -1700,12 +1655,10 @@
     class InformationManager {
         constructor() {
             _InformationManager_instances.add(this);
-            // PROPERTIES
             _InformationManager_isCharging.set(this, false);
             _InformationManager_batteryCurrent.set(this, void 0);
             _InformationManager_id.set(this, void 0);
             _InformationManager_name.set(this, "");
-            // TYPE
             _InformationManager_type.set(this, void 0);
             _InformationManager_mtu.set(this, 0);
             _InformationManager_isCurrentTimeSet.set(this, false);
@@ -1804,7 +1757,6 @@
                 case "rightInsole":
                     return true;
                 default:
-                    // for future non-insole device types
                     return false;
             }
         }
@@ -1822,7 +1774,6 @@
         get isCurrentTimeSet() {
             return __classPrivateFieldGet(this, _InformationManager_isCurrentTimeSet, "f");
         }
-        // MESSAGE
         parseMessage(messageType, dataView) {
             _console$c.log({ messageType });
             switch (messageType) {
@@ -2196,7 +2147,7 @@
             }
             else if (waveformEffectSegment.delay != undefined) {
                 const { delay } = waveformEffectSegment;
-                dataArray[byteOffset++] = (1 << 7) | Math.floor(delay / 10); // set most significant bit to 1
+                dataArray[byteOffset++] = (1 << 7) | Math.floor(delay / 10);
             }
             else {
                 throw Error("invalid waveformEffectSegment");
@@ -2404,7 +2355,6 @@
         _console$a.log({ messageType, dataView });
         this.onMessageReceived(messageType, dataView);
     }, _BaseConnectionManager_checkConnection = function _BaseConnectionManager_checkConnection() {
-        //console.log("checking connection...");
         if (!this.isConnected) {
             _console$a.log("timer detected disconnection");
             this.status = "not connected";
@@ -2434,15 +2384,6 @@
     }
 
     const _console$8 = createConsole("bluetoothUUIDs", { log: false });
-    /*
-    import * as webbluetooth from "webbluetooth";
-    var BluetoothUUID = webbluetooth.BluetoothUUID;
-    */
-    /*
-    if (isInBrowser) {
-        var BluetoothUUID = window.BluetoothUUID;
-    }
-    */
     function generateBluetoothUUID(value) {
         _console$8.assertTypeWithError(value, "string");
         _console$8.assertWithError(value.length == 4, "value must be 4 characters long");
@@ -2543,9 +2484,7 @@
             allCharacteristicUUIDs.push(characteristicInfo.uuid);
         });
     }, []);
-    //_console.log({ characteristicUUIDs, allCharacteristicUUIDs });
     function getCharacteristicNameFromUUID(characteristicUUID) {
-        //_console.log({ characteristicUUID });
         characteristicUUID = characteristicUUID.toString().toLowerCase();
         var characteristicName;
         Object.values(bluetoothUUIDs.services).some((serviceInfo) => {
@@ -2577,7 +2516,6 @@
             reliableWrite: false,
             writableAuxiliaries: false,
         };
-        // read
         switch (characteristicName) {
             case "rx":
             case "tx":
@@ -2585,7 +2523,6 @@
                 properties.read = false;
                 break;
         }
-        // notify
         switch (characteristicName) {
             case "batteryLevel":
             case "rx":
@@ -2593,7 +2530,6 @@
                 properties.notify = true;
                 break;
         }
-        // write
         switch (characteristicName) {
             case "tx":
             case "smp":
@@ -2633,17 +2569,6 @@
     var _WebBluetoothConnectionManager_instances, _WebBluetoothConnectionManager_boundBluetoothCharacteristicEventListeners, _WebBluetoothConnectionManager_boundBluetoothDeviceEventListeners, _WebBluetoothConnectionManager_device, _WebBluetoothConnectionManager_services, _WebBluetoothConnectionManager_characteristics, _WebBluetoothConnectionManager_getServicesAndCharacteristics, _WebBluetoothConnectionManager_removeEventListeners, _WebBluetoothConnectionManager_onCharacteristicvaluechanged, _WebBluetoothConnectionManager_onCharacteristicValueChanged, _WebBluetoothConnectionManager_onGattserverdisconnected;
     const _console$6 = createConsole("WebBluetoothConnectionManager", { log: true });
     var bluetooth;
-    /*
-    import * as webbluetooth from "webbluetooth";
-    if (isInNode) {
-        bluetooth = webbluetooth.bluetooth;
-    }
-    */
-    /*
-    if (isInBrowser) {
-        bluetooth = window.navigator.bluetooth;
-    }
-    */
     class WebBluetoothConnectionManager extends BluetoothConnectionManager {
         constructor() {
             super(...arguments);
@@ -2843,30 +2768,6 @@
         _console$6.log("gattserverdisconnected");
         this.status = "not connected";
     };
-
-    /*
-     * The MIT License (MIT)
-     *
-     * Copyright (c) 2014-2016 Patrick Gansterer <paroga@paroga.com>
-     *
-     * Permission is hereby granted, free of charge, to any person obtaining a copy
-     * of this software and associated documentation files (the "Software"), to deal
-     * in the Software without restriction, including without limitation the rights
-     * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-     * copies of the Software, and to permit persons to whom the Software is
-     * furnished to do so, subject to the following conditions:
-     *
-     * The above copyright notice and this permission notice shall be included in all
-     * copies or substantial portions of the Software.
-     *
-     * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-     * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-     * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-     * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-     * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-     * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-     * SOFTWARE.
-     */
 
     const POW_2_24 = 5.960464477539063e-8;
     const POW_2_32 = 4294967296;
@@ -3245,40 +3146,14 @@
       decode
     };
 
-    /*
-     * The MIT License (MIT)
-     *
-     * Copyright (c) 2023 Laird Connectivity
-     *
-     * Permission is hereby granted, free of charge, to any person obtaining a copy
-     * of this software and associated documentation files (the "Software"), to deal
-     * in the Software without restriction, including without limitation the rights
-     * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-     * copies of the Software, and to permit persons to whom the Software is
-     * furnished to do so, subject to the following conditions:
-     *
-     * The above copyright notice and this permission notice shall be included in all
-     * copies or substantial portions of the Software.
-     *
-     * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-     * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-     * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-     * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-     * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-     * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-     * SOFTWARE.
-     */
-
     const _console$5 = createConsole("mcumgr", {
       log: true
     });
     const constants = {
-      // Opcodes
       MGMT_OP_READ: 0,
       MGMT_OP_READ_RSP: 1,
       MGMT_OP_WRITE: 2,
       MGMT_OP_WRITE_RSP: 3,
-      // Groups
       MGMT_GROUP_ID_OS: 0,
       MGMT_GROUP_ID_IMAGE: 1,
       MGMT_GROUP_ID_STAT: 2,
@@ -3289,21 +3164,18 @@
       MGMT_GROUP_ID_RUN: 7,
       MGMT_GROUP_ID_FS: 8,
       MGMT_GROUP_ID_SHELL: 9,
-      // OS group
       OS_MGMT_ID_ECHO: 0,
       OS_MGMT_ID_CONS_ECHO_CTRL: 1,
       OS_MGMT_ID_TASKSTAT: 2,
       OS_MGMT_ID_MPSTAT: 3,
       OS_MGMT_ID_DATETIME_STR: 4,
       OS_MGMT_ID_RESET: 5,
-      // Image group
       IMG_MGMT_ID_STATE: 0,
       IMG_MGMT_ID_UPLOAD: 1,
       IMG_MGMT_ID_FILE: 2,
       IMG_MGMT_ID_CORELIST: 3,
       IMG_MGMT_ID_CORELOAD: 4,
       IMG_MGMT_ID_ERASE: 5,
-      // Filesystem group
       FS_MGMT_ID_FILE: 0
     };
     class MCUManager {
@@ -3583,36 +3455,24 @@
       async imageInfo(image) {
         const info = {};
         const view = new Uint8Array(image);
-
-        // check header length
         if (view.length < 32) {
           throw new Error("Invalid image (too short file)");
         }
-
-        // check MAGIC bytes 0x96f3b83d
         if (view[0] !== 0x3d || view[1] !== 0xb8 || view[2] !== 0xf3 || view[3] !== 0x96) {
           throw new Error("Invalid image (wrong magic bytes)");
         }
-
-        // check load address is 0x00000000
         if (view[4] !== 0x00 || view[5] !== 0x00 || view[6] !== 0x00 || view[7] !== 0x00) {
           throw new Error("Invalid image (wrong load address)");
         }
         const headerSize = view[8] + view[9] * 2 ** 8;
-
-        // check protected TLV area size is 0
         if (view[10] !== 0x00 || view[11] !== 0x00) {
           throw new Error("Invalid image (wrong protected TLV area size)");
         }
         const imageSize = view[12] + view[13] * 2 ** 8 + view[14] * 2 ** 16 + view[15] * 2 ** 24;
         info.imageSize = imageSize;
-
-        // check image size is correct
         if (view.length < imageSize + headerSize) {
           throw new Error("Invalid image (wrong image size)");
         }
-
-        // check flags is 0x00000000
         if (view[16] !== 0x00 || view[17] !== 0x00 || view[18] !== 0x00 || view[19] !== 0x00) {
           throw new Error("Invalid image (wrong flags)");
         }
@@ -3638,11 +3498,8 @@
         constructor() {
             _FirmwareManager_instances.add(this);
             _FirmwareManager_status.set(this, "idle");
-            // COMMANDS
             _FirmwareManager_images.set(this, void 0);
-            // MTU
             _FirmwareManager_mtu.set(this, void 0);
-            // MCUManager
             _FirmwareManager_mcuManager.set(this, new MCUManager());
             __classPrivateFieldGet(this, _FirmwareManager_instances, "m", _FirmwareManager_assignMcuManagerCallbacks).call(this);
         }
@@ -3876,7 +3733,6 @@
     var _Device_instances, _a$1, _Device_DefaultConnectionManager, _Device_eventDispatcher, _Device_dispatchEvent_get, _Device_connectionManager, _Device_sendTxMessages, _Device_isConnected, _Device_assertIsConnected, _Device_RequiredInformationConnectionMessages, _Device_requiredInformationConnectionMessages_get, _Device_hasRequiredInformation_get, _Device_requestRequiredInformation, _Device_ReconnectOnDisconnection, _Device_reconnectOnDisconnection, _Device_reconnectIntervalId, _Device_onConnectionStatusUpdated, _Device_dispatchConnectionEvents, _Device_checkConnection, _Device_clear, _Device_onConnectionMessageReceived, _Device_deviceInformationManager, _Device_batteryLevel, _Device_updateBatteryLevel, _Device_informationManager, _Device_sensorConfigurationManager, _Device_ClearSensorConfigurationOnLeave, _Device_clearSensorConfigurationOnLeave, _Device_DefaultNumberOfPressureSensors, _Device_sensorDataManager, _Device_vibrationManager, _Device_fileTransferManager, _Device_tfliteManager, _Device_firmwareManager, _Device_ConnectedDevices, _Device_UseLocalStorage, _Device_DefaultLocalStorageConfiguration, _Device_LocalStorageConfiguration, _Device_AssertLocalStorage, _Device_LocalStorageKey, _Device_SaveToLocalStorage, _Device_LoadFromLocalStorage, _Device_UpdateLocalStorageConfigurationForDevice, _Device_AvailableDevices, _Device_EventDispatcher, _Device_DispatchEvent_get, _Device_OnDeviceIsConnected, _Device_DispatchAvailableDevices, _Device_DispatchConnectedDevices;
     const _console$3 = createConsole("Device", { log: true });
     const ConnectionEventTypes = [...ConnectionStatuses, "connectionStatus", "isConnected"];
-    // TODO - redundant (Message and EventType)
     const DeviceEventTypes = [
         ...ConnectionEventTypes,
         ...ConnectionMessageTypes,
@@ -3902,31 +3758,21 @@
         constructor() {
             _Device_instances.add(this);
             _Device_eventDispatcher.set(this, new EventDispatcher(this, DeviceEventTypes));
-            // CONNECTION MANAGER
             _Device_connectionManager.set(this, void 0);
             this.sendTxMessages = __classPrivateFieldGet(this, _Device_instances, "m", _Device_sendTxMessages).bind(this);
             _Device_isConnected.set(this, false);
             _Device_reconnectOnDisconnection.set(this, _a$1.ReconnectOnDisconnection);
             _Device_reconnectIntervalId.set(this, void 0);
             this.latestConnectionMessage = new Map();
-            // DEVICE INFORMATION
             _Device_deviceInformationManager.set(this, new DeviceInformationManager());
-            // BATTERY LEVEL
             _Device_batteryLevel.set(this, 0);
-            // INFORMATION
             _Device_informationManager.set(this, new InformationManager());
-            // SENSOR CONFIGURATION
             _Device_sensorConfigurationManager.set(this, new SensorConfigurationManager());
             _Device_clearSensorConfigurationOnLeave.set(this, _a$1.ClearSensorConfigurationOnLeave);
-            // SENSOR DATA
             _Device_sensorDataManager.set(this, new SensorDataManager());
-            // VIBRATION
             _Device_vibrationManager.set(this, new VibrationManager());
-            // FILE TRANSFER
             _Device_fileTransferManager.set(this, new FileTransferManager());
-            // TFLITE
             _Device_tfliteManager.set(this, new TfliteManager());
-            // FIRMWARE MANAGER
             _Device_firmwareManager.set(this, new FirmwareManager());
             __classPrivateFieldGet(this, _Device_deviceInformationManager, "f").eventDispatcher = __classPrivateFieldGet(this, _Device_eventDispatcher, "f");
             __classPrivateFieldGet(this, _Device_informationManager, "f").sendMessage = this.sendTxMessages;
@@ -3959,7 +3805,6 @@
                 });
             }
             if (isInNode) {
-                /** can add more node leave handlers https://gist.github.com/hyrious/30a878f6e6a057f09db87638567cb11a */
                 process.on("exit", () => {
                     if (this.isConnected && this.clearSensorConfigurationOnLeave) {
                         this.clearSensorConfiguration();
@@ -4107,7 +3952,6 @@
         get mtu() {
             return __classPrivateFieldGet(this, _Device_informationManager, "f").mtu;
         }
-        // SENSOR TYPES
         get sensorTypes() {
             return Object.keys(this.sensorConfiguration);
         }
@@ -4174,7 +4018,6 @@
         get setTfliteName() {
             return __classPrivateFieldGet(this, _Device_tfliteManager, "f").setName;
         }
-        // TFLITE MODEL CONFIG
         static get TfliteTasks() {
             return TfliteTasks;
         }
@@ -4202,7 +4045,6 @@
         get tfliteIsReady() {
             return __classPrivateFieldGet(this, _Device_tfliteManager, "f").isReady;
         }
-        // TFLITE INFERENCING
         get tfliteInferencingEnabled() {
             return __classPrivateFieldGet(this, _Device_tfliteManager, "f").inferencingEnabled;
         }
@@ -4218,7 +4060,6 @@
         get toggleTfliteInferencing() {
             return __classPrivateFieldGet(this, _Device_tfliteManager, "f").toggleInferencingEnabled;
         }
-        // TFLITE INFERENCE CONFIG
         get tfliteCaptureDelay() {
             return __classPrivateFieldGet(this, _Device_tfliteManager, "f").captureDelay;
         }
@@ -4280,14 +4121,8 @@
             return __classPrivateFieldGet(this, _a$1, "f", _Device_AvailableDevices);
         }
         static get CanGetDevices() {
-            // @ts-expect-error
             return isInBrowser && navigator.bluetooth?.getDevices && !isInBluefy;
         }
-        /**
-         * retrieves devices already connected via web bluetooth in other tabs/windows
-         *
-         * _only available on web-bluetooth enabled browsers_
-         */
         static async GetDevices() {
             if (!isInBrowser) {
                 _console$3.warn("GetDevices is only available in the browser");
@@ -4384,7 +4219,6 @@
     }, _Device_onConnectionStatusUpdated = function _Device_onConnectionStatusUpdated(connectionStatus) {
         _console$3.log({ connectionStatus });
         if (connectionStatus == "not connected") {
-            //this.#clear();
             if (this.canReconnect && this.reconnectOnDisconnection) {
                 _console$3.log("starting reconnect interval...");
                 __classPrivateFieldSet(this, _Device_reconnectIntervalId, setInterval(() => {
@@ -4504,7 +4338,7 @@
             _console$3.log({ configuration });
             __classPrivateFieldSet(this, _a$1, configuration, "f", _Device_LocalStorageConfiguration);
             if (this.CanGetDevices) {
-                await this.GetDevices(); // redundant?
+                await this.GetDevices();
             }
         }
         catch (error) {
@@ -4613,9 +4447,7 @@
         ] };
     _Device_ReconnectOnDisconnection = { value: false };
     _Device_ClearSensorConfigurationOnLeave = { value: true };
-    // PRESSURE
     _Device_DefaultNumberOfPressureSensors = { value: 8 };
-    // CONNECTED DEVICES
     _Device_ConnectedDevices = { value: [] };
     _Device_UseLocalStorage = { value: false };
     _Device_DefaultLocalStorageConfiguration = { value: {
@@ -4623,9 +4455,7 @@
         } };
     _Device_LocalStorageConfiguration = { value: void 0 };
     _Device_LocalStorageKey = { value: "BS.Device" };
-    // AVAILABLE DEVICES
     _Device_AvailableDevices = { value: [] };
-    // STATIC EVENTLISTENERS
     _Device_EventDispatcher = { value: new EventDispatcher(_a$1, StaticDeviceEventTypes) };
     (() => {
         if (_a$1.CanUseLocalStorage) {
@@ -4716,9 +4546,7 @@
             }
             if (value) {
                 const timestamps = Object.assign({}, __classPrivateFieldGet(this, _DevicePairSensorDataManager_timestamps, "f")[sensorType]);
-                // @ts-expect-error
                 this.dispatchEvent(sensorType, { sensorType, timestamps, [sensorType]: value });
-                // @ts-expect-error
                 this.dispatchEvent("sensorData", { sensorType, timestamps, [sensorType]: value });
             }
             else {
@@ -4744,7 +4572,6 @@
         constructor() {
             _DevicePair_instances.add(this);
             _DevicePair_eventDispatcher.set(this, new EventDispatcher(this, DevicePairEventTypes));
-            // SIDES
             _DevicePair_left.set(this, void 0);
             _DevicePair_right.set(this, void 0);
             _DevicePair_boundDeviceEventListeners.set(this, {
@@ -4754,7 +4581,6 @@
                 getSensorConfiguration: __classPrivateFieldGet(this, _DevicePair_instances, "m", _DevicePair_redispatchDeviceEvent).bind(this),
                 getType: __classPrivateFieldGet(this, _DevicePair_instances, "m", _DevicePair_onDeviceType).bind(this),
             });
-            // SENSOR DATA
             _DevicePair_sensorDataManager.set(this, new DevicePairSensorDataManager());
             __classPrivateFieldGet(this, _DevicePair_sensorDataManager, "f").eventDispatcher = __classPrivateFieldGet(this, _DevicePair_eventDispatcher, "f");
         }
@@ -4811,7 +4637,6 @@
             __classPrivateFieldGet(this, _DevicePair_instances, "a", _DevicePair_dispatchEvent_get).call(this, "deviceIsConnected", { device, isConnected: device.isConnected, side });
             return currentDevice;
         }
-        // SENSOR CONFIGURATION
         setSensorConfiguration(sensorConfiguration) {
             InsoleSides.forEach((side) => {
                 this[side]?.setSensorConfiguration(sensorConfiguration);
@@ -4820,7 +4645,6 @@
         resetPressureRange() {
             __classPrivateFieldGet(this, _DevicePair_sensorDataManager, "f").resetPressureRange();
         }
-        // VIBRATION
         async triggerVibration(vibrationConfigurations, sendImmediately) {
             const promises = InsoleSides.map((side) => {
                 return this[side]?.triggerVibration(vibrationConfigurations, sendImmediately);
@@ -4873,7 +4697,6 @@
             __classPrivateFieldGet(this, _DevicePair_sensorDataManager, "f").onDeviceSensorData(deviceEvent);
         }
     };
-    // SHARED INSTANCE
     _DevicePair_shared = { value: new _a() };
     (() => {
         Device.AddEventListener("deviceConnected", (event) => {

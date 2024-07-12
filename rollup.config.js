@@ -7,6 +7,7 @@ import babel from "@rollup/plugin-babel";
 import typescript from "@rollup/plugin-typescript";
 import { dts } from "rollup-plugin-dts";
 import copy from "rollup-plugin-copy";
+import cleanup from "rollup-plugin-cleanup";
 
 const production = !process.env.ROLLUP_WATCH;
 
@@ -57,7 +58,7 @@ function replaceEnvironment() {
   });
 }
 
-const _plugins = [typescript(), header()];
+const _plugins = [cleanup({ comments: "none", extensions: ["ts", "js"] }), typescript(), header()];
 
 if (production) {
   _plugins.push(replaceEnvironment());
@@ -85,7 +86,7 @@ const defaultOutput = { sourcemap: true };
 const builds = [
   {
     input,
-    plugins: [_browserPlugins, ..._plugins],
+    plugins: [..._browserPlugins, ..._plugins],
     output: [
       {
         ...defaultOutput,
