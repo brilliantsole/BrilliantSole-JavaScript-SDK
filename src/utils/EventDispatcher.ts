@@ -36,7 +36,12 @@ class EventDispatcher<
     }[];
   } = {};
 
-  constructor(private target: Target, private validEventTypes: readonly EventType[]) {}
+  constructor(private target: Target, private validEventTypes: readonly EventType[]) {
+    this.addEventListener = this.addEventListener.bind(this);
+    this.removeEventListener = this.removeEventListener.bind(this);
+    this.dispatchEvent = this.dispatchEvent.bind(this);
+    this.waitForEvent = this.waitForEvent.bind(this);
+  }
 
   private isValidEventType(type: any): type is EventType {
     return this.validEventTypes.includes(type);

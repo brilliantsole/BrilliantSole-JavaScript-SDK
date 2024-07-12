@@ -93,6 +93,7 @@ abstract class BaseConnectionManager {
   constructor() {
     this.#assertIsSubclass();
     this.#assertIsSupported();
+    this.sendSmpMessage = this.sendSmpMessage.bind(this);
   }
 
   #status: ConnectionStatus = "not connected";

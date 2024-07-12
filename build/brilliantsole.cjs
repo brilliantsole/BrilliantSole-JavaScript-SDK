@@ -62,9 +62,10 @@ typeof SuppressedError === "function" ? SuppressedError : function (error, suppr
     return e.name = "SuppressedError", e.error = error, e.suppressed = suppressed, e;
 };
 
+const __BRILLIANTSOLE__ENVIRONMENT__ = "__BRILLIANTSOLE__DEV__";
 //@ts-expect-error
-const isInProduction = "__BRILLIANTSOLE__PROD__" == "__BRILLIANTSOLE__PROD__";
-const isInDev = "__BRILLIANTSOLE__PROD__" == "__BRILLIANTSOLE__DEV__";
+const isInProduction = __BRILLIANTSOLE__ENVIRONMENT__ == "__BRILLIANTSOLE__PROD__";
+const isInDev = __BRILLIANTSOLE__ENVIRONMENT__ == "__BRILLIANTSOLE__DEV__";
 // https://github.com/flexdinesh/browser-or-node/blob/master/src/index.ts
 const isInBrowser = typeof window !== "undefined" && typeof window?.document !== "undefined";
 const isInNode = typeof process !== "undefined" && process?.versions?.node != null;
@@ -168,6 +169,9 @@ class Console {
     }
     static create(type, levelFlags) {
         const console = __classPrivateFieldGet(this, _a$9, "f", _Console_consoles)[type] || new _a$9(type);
+        if (levelFlags) {
+            console.setLevelFlags(levelFlags);
+        }
         return console;
     }
     get log() {
@@ -218,6 +222,10 @@ class EventDispatcher {
         this.target = target;
         this.validEventTypes = validEventTypes;
         this.listeners = {};
+        this.addEventListener = this.addEventListener.bind(this);
+        this.removeEventListener = this.removeEventListener.bind(this);
+        this.dispatchEvent = this.dispatchEvent.bind(this);
+        this.waitForEvent = this.waitForEvent.bind(this);
     }
     isValidEventType(type) {
         return this.validEventTypes.includes(type);
@@ -2309,6 +2317,7 @@ class BaseConnectionManager {
         _BaseConnectionManager_timer.set(this, new Timer(__classPrivateFieldGet(this, _BaseConnectionManager_instances, "m", _BaseConnectionManager_checkConnection).bind(this), 5000));
         __classPrivateFieldGet(this, _BaseConnectionManager_instances, "m", _BaseConnectionManager_assertIsSubclass).call(this);
         __classPrivateFieldGet(this, _BaseConnectionManager_instances, "m", _BaseConnectionManager_assertIsSupported).call(this);
+        this.sendSmpMessage = this.sendSmpMessage.bind(this);
     }
     get status() {
         return __classPrivateFieldGet(this, _BaseConnectionManager_status, "f");
@@ -3983,7 +3992,7 @@ _FirmwareManager_status = new WeakMap(), _FirmwareManager_images = new WeakMap()
     __classPrivateFieldGet(this, _FirmwareManager_instances, "a", _FirmwareManager_dispatchEvent_get).call(this, "firmwareImages", { firmwareImages: __classPrivateFieldGet(this, _FirmwareManager_images, "f") });
 };
 
-var _Device_instances, _a$3, _Device_DefaultConnectionManager, _Device_eventDispatcher, _Device_dispatchEvent_get, _Device_connectionManager, _Device_sendTxMessages, _Device_isConnected, _Device_assertIsConnected, _Device_RequiredInformationConnectionMessages, _Device_requiredInformationConnectionMessages_get, _Device_hasRequiredInformation_get, _Device_requestRequiredInformation, _Device_ReconnectOnDisconnection, _Device_reconnectOnDisconnection, _Device_reconnectIntervalId, _Device_onConnectionStatusUpdated, _Device_dispatchConnectionEvents, _Device_checkConnection, _Device_clear, _Device_onConnectionMessageReceived, _Device_deviceInformationManager, _Device_batteryLevel, _Device_updateBatteryLevel, _Device_informationManager, _Device_sensorConfigurationManager, _Device_ClearSensorConfigurationOnLeave, _Device_clearSensorConfigurationOnLeave, _Device_DefaultNumberOfPressureSensors, _Device_sensorDataManager, _Device_vibrationManager, _Device_fileTransferManager, _Device_tfliteManager, _Device_firmwareManager, _Device_sendSmpMessage_get, _Device_ConnectedDevices, _Device_UseLocalStorage, _Device_DefaultLocalStorageConfiguration, _Device_LocalStorageConfiguration, _Device_AssertLocalStorage, _Device_LocalStorageKey, _Device_SaveToLocalStorage, _Device_LoadFromLocalStorage, _Device_UpdateLocalStorageConfigurationForDevice, _Device_AvailableDevices, _Device_EventDispatcher, _Device_DispatchEvent_get, _Device_OnDeviceIsConnected, _Device_DispatchAvailableDevices, _Device_DispatchConnectedDevices;
+var _Device_instances, _a$3, _Device_DefaultConnectionManager, _Device_eventDispatcher, _Device_dispatchEvent_get, _Device_connectionManager, _Device_sendTxMessages, _Device_isConnected, _Device_assertIsConnected, _Device_RequiredInformationConnectionMessages, _Device_requiredInformationConnectionMessages_get, _Device_hasRequiredInformation_get, _Device_requestRequiredInformation, _Device_ReconnectOnDisconnection, _Device_reconnectOnDisconnection, _Device_reconnectIntervalId, _Device_onConnectionStatusUpdated, _Device_dispatchConnectionEvents, _Device_checkConnection, _Device_clear, _Device_onConnectionMessageReceived, _Device_deviceInformationManager, _Device_batteryLevel, _Device_updateBatteryLevel, _Device_informationManager, _Device_sensorConfigurationManager, _Device_ClearSensorConfigurationOnLeave, _Device_clearSensorConfigurationOnLeave, _Device_DefaultNumberOfPressureSensors, _Device_sensorDataManager, _Device_vibrationManager, _Device_fileTransferManager, _Device_tfliteManager, _Device_firmwareManager, _Device_ConnectedDevices, _Device_UseLocalStorage, _Device_DefaultLocalStorageConfiguration, _Device_LocalStorageConfiguration, _Device_AssertLocalStorage, _Device_LocalStorageKey, _Device_SaveToLocalStorage, _Device_LoadFromLocalStorage, _Device_UpdateLocalStorageConfigurationForDevice, _Device_AvailableDevices, _Device_EventDispatcher, _Device_DispatchEvent_get, _Device_OnDeviceIsConnected, _Device_DispatchAvailableDevices, _Device_DispatchConnectedDevices;
 const _console$a = createConsole("Device", { log: true });
 const ConnectionEventTypes = [...ConnectionStatuses, "connectionStatus", "isConnected"];
 // TODO - redundant (Message and EventType)
@@ -4014,6 +4023,7 @@ class Device {
         _Device_eventDispatcher.set(this, new EventDispatcher(this, DeviceEventTypes));
         // CONNECTION MANAGER
         _Device_connectionManager.set(this, void 0);
+        this.sendTxMessages = __classPrivateFieldGet(this, _Device_instances, "m", _Device_sendTxMessages).bind(this);
         _Device_isConnected.set(this, false);
         _Device_reconnectOnDisconnection.set(this, _a$3.ReconnectOnDisconnection);
         _Device_reconnectIntervalId.set(this, void 0);
@@ -4038,17 +4048,17 @@ class Device {
         // FIRMWARE MANAGER
         _Device_firmwareManager.set(this, new FirmwareManager());
         __classPrivateFieldGet(this, _Device_deviceInformationManager, "f").eventDispatcher = __classPrivateFieldGet(this, _Device_eventDispatcher, "f");
-        __classPrivateFieldGet(this, _Device_informationManager, "f").sendMessage = __classPrivateFieldGet(this, _Device_instances, "m", _Device_sendTxMessages).bind(this);
+        __classPrivateFieldGet(this, _Device_informationManager, "f").sendMessage = this.sendTxMessages;
         __classPrivateFieldGet(this, _Device_informationManager, "f").eventDispatcher = __classPrivateFieldGet(this, _Device_eventDispatcher, "f");
-        __classPrivateFieldGet(this, _Device_sensorConfigurationManager, "f").sendMessage = __classPrivateFieldGet(this, _Device_instances, "m", _Device_sendTxMessages).bind(this);
+        __classPrivateFieldGet(this, _Device_sensorConfigurationManager, "f").sendMessage = this.sendTxMessages;
         __classPrivateFieldGet(this, _Device_sensorConfigurationManager, "f").eventDispatcher = __classPrivateFieldGet(this, _Device_eventDispatcher, "f");
         __classPrivateFieldGet(this, _Device_sensorDataManager, "f").eventDispatcher = __classPrivateFieldGet(this, _Device_eventDispatcher, "f");
-        __classPrivateFieldGet(this, _Device_vibrationManager, "f").sendMessage = __classPrivateFieldGet(this, _Device_instances, "m", _Device_sendTxMessages).bind(this);
-        __classPrivateFieldGet(this, _Device_tfliteManager, "f").sendMessage = __classPrivateFieldGet(this, _Device_instances, "m", _Device_sendTxMessages).bind(this);
+        __classPrivateFieldGet(this, _Device_vibrationManager, "f").sendMessage = this.sendTxMessages;
+        __classPrivateFieldGet(this, _Device_tfliteManager, "f").sendMessage = this.sendTxMessages;
         __classPrivateFieldGet(this, _Device_tfliteManager, "f").eventDispatcher = __classPrivateFieldGet(this, _Device_eventDispatcher, "f");
-        __classPrivateFieldGet(this, _Device_fileTransferManager, "f").sendMessage = __classPrivateFieldGet(this, _Device_instances, "m", _Device_sendTxMessages).bind(this);
+        __classPrivateFieldGet(this, _Device_fileTransferManager, "f").sendMessage = this.sendTxMessages;
         __classPrivateFieldGet(this, _Device_fileTransferManager, "f").eventDispatcher = __classPrivateFieldGet(this, _Device_eventDispatcher, "f");
-        __classPrivateFieldGet(this, _Device_firmwareManager, "f").sendMessage = __classPrivateFieldGet(this, _Device_instances, "a", _Device_sendSmpMessage_get).bind(this);
+        __classPrivateFieldGet(this, _Device_firmwareManager, "f").sendMessage = this.sendSmpMessage;
         __classPrivateFieldGet(this, _Device_firmwareManager, "f").eventDispatcher = __classPrivateFieldGet(this, _Device_eventDispatcher, "f");
         this.addEventListener("getMtu", () => {
             __classPrivateFieldGet(this, _Device_firmwareManager, "f").mtu = this.mtu;
@@ -4340,6 +4350,9 @@ class Device {
     get setTfliteThreshold() {
         return __classPrivateFieldGet(this, _Device_tfliteManager, "f").setThreshold;
     }
+    sendSmpMessage(data) {
+        return __classPrivateFieldGet(this, _Device_connectionManager, "f").sendSmpMessage(data);
+    }
     get uploadFirmware() {
         return __classPrivateFieldGet(this, _Device_firmwareManager, "f").uploadFirmware;
     }
@@ -4590,8 +4603,6 @@ _a$3 = Device, _Device_eventDispatcher = new WeakMap(), _Device_connectionManage
     __classPrivateFieldSet(this, _Device_batteryLevel, updatedBatteryLevel, "f");
     _console$a.log({ updatedBatteryLevel: __classPrivateFieldGet(this, _Device_batteryLevel, "f") });
     __classPrivateFieldGet(this, _Device_instances, "a", _Device_dispatchEvent_get).call(this, "batteryLevel", { batteryLevel: __classPrivateFieldGet(this, _Device_batteryLevel, "f") });
-}, _Device_sendSmpMessage_get = function _Device_sendSmpMessage_get() {
-    return __classPrivateFieldGet(this, _Device_connectionManager, "f").sendSmpMessage;
 }, _Device_AssertLocalStorage = function _Device_AssertLocalStorage() {
     _console$a.assertWithError(isInBrowser, "localStorage is only available in the browser");
     _console$a.assertWithError(window.localStorage, "localStorage not found");

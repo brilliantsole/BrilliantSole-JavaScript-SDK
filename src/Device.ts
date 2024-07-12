@@ -186,25 +186,23 @@ class Device {
   constructor() {
     this.#deviceInformationManager.eventDispatcher = this.#eventDispatcher as DeviceInformationEventDispatcher;
 
-    this.#informationManager.sendMessage = this.#sendTxMessages.bind(this) as SendInformationMessageCallback;
+    this.#informationManager.sendMessage = this.sendTxMessages as SendInformationMessageCallback;
     this.#informationManager.eventDispatcher = this.#eventDispatcher as InformationEventDispatcher;
 
-    this.#sensorConfigurationManager.sendMessage = this.#sendTxMessages.bind(
-      this
-    ) as SendSensorConfigurationMessageCallback;
+    this.#sensorConfigurationManager.sendMessage = this.sendTxMessages as SendSensorConfigurationMessageCallback;
     this.#sensorConfigurationManager.eventDispatcher = this.#eventDispatcher as SensorConfigurationEventDispatcher;
 
     this.#sensorDataManager.eventDispatcher = this.#eventDispatcher as SensorDataEventDispatcher;
 
-    this.#vibrationManager.sendMessage = this.#sendTxMessages.bind(this) as SendVibrationMessageCallback;
+    this.#vibrationManager.sendMessage = this.sendTxMessages as SendVibrationMessageCallback;
 
-    this.#tfliteManager.sendMessage = this.#sendTxMessages.bind(this) as SendTfliteMessageCallback;
+    this.#tfliteManager.sendMessage = this.sendTxMessages as SendTfliteMessageCallback;
     this.#tfliteManager.eventDispatcher = this.#eventDispatcher as TfliteEventDispatcher;
 
-    this.#fileTransferManager.sendMessage = this.#sendTxMessages.bind(this) as SendFileTransferMessageCallback;
+    this.#fileTransferManager.sendMessage = this.sendTxMessages as SendFileTransferMessageCallback;
     this.#fileTransferManager.eventDispatcher = this.#eventDispatcher as FileTransferEventDispatcher;
 
-    this.#firmwareManager.sendMessage = this.#sendSmpMessage.bind(this) as SendSmpMessageCallback;
+    this.#firmwareManager.sendMessage = this.sendSmpMessage as SendSmpMessageCallback;
     this.#firmwareManager.eventDispatcher = this.#eventDispatcher as FirmwareEventDispatcher;
 
     this.addEventListener("getMtu", () => {
@@ -284,6 +282,7 @@ class Device {
   async #sendTxMessages(messages: TxMessage[], sendImmediately?: boolean) {
     await this.#connectionManager?.sendTxMessages(messages, sendImmediately);
   }
+  private sendTxMessages = this.#sendTxMessages.bind(this);
 
   async connect() {
     if (!this.connectionManager) {
@@ -758,8 +757,8 @@ class Device {
 
   #firmwareManager = new FirmwareManager();
 
-  get #sendSmpMessage() {
-    return this.#connectionManager!.sendSmpMessage;
+  private sendSmpMessage(data: ArrayBuffer) {
+    return this.#connectionManager!.sendSmpMessage(data);
   }
 
   get uploadFirmware() {
