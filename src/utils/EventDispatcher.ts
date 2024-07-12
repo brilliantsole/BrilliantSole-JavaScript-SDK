@@ -32,7 +32,7 @@ class EventDispatcher<
   private listeners: {
     [T in EventType]?: {
       listener: (event: { type: T; target: Target; message: EventMessages[T] }) => void;
-      once: boolean;
+      once?: boolean;
     }[];
   } = {};
 
@@ -50,7 +50,7 @@ class EventDispatcher<
   addEventListener<T extends EventType>(
     type: T,
     listener: (event: { type: T; target: Target; message: EventMessages[T] }) => void,
-    options: { once: boolean } = { once: false }
+    options: { once?: boolean } = { once: false }
   ): void {
     if (!this.isValidEventType(type)) {
       throw new Error(`Invalid event type: ${type}`);

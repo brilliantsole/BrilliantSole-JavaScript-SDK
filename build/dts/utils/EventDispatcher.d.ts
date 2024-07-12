@@ -24,7 +24,7 @@ declare class EventDispatcher<Target extends any, EventType extends string, Even
         target: Target;
         message: EventMessages[T];
     }) => void, options?: {
-        once: boolean;
+        once?: boolean;
     }): void;
     removeEventListener<T extends EventType>(type: T, listener: (event: {
         type: T;

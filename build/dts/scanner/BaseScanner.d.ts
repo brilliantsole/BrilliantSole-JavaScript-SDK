@@ -38,7 +38,7 @@ declare abstract class BaseScanner {
         target: BaseScanner;
         message: ScannerEventMessages[T];
     }) => void, options?: {
-        once: boolean;
+        once?: boolean;
     }) => void;
     protected get dispatchEvent(): <T extends "isScanningAvailable" | "isScanning" | "discoveredDevice" | "expiredDiscoveredDevice">(type: T, message: ScannerEventMessages[T]) => void;
     get removeEventListener(): <T extends "isScanningAvailable" | "isScanning" | "discoveredDevice" | "expiredDiscoveredDevice">(type: T, listener: (event: {

@@ -24,7 +24,7 @@ declare class SensorConfigurationManager {
         target: Device;
         message: SensorConfigurationEventMessages[T];
     }) => void, options?: {
-        once: boolean;
+        once?: boolean;
     }) => void;
     get waitForEvent(): <T extends "getSensorConfiguration" | "setSensorConfiguration">(type: T) => Promise<{
         type: T;

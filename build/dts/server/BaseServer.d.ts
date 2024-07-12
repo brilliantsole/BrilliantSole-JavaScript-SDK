@@ -22,7 +22,7 @@ declare abstract class BaseServer {
         target: BaseServer;
         message: ServerEventMessages[T];
     }) => void, options?: {
-        once: boolean;
+        once?: boolean;
     }) => void;
     protected get dispatchEvent(): <T extends "clientConnected" | "clientDisconnected">(type: T, message: ServerEventMessages[T]) => void;
     get removeEventListener(): <T extends "clientConnected" | "clientDisconnected">(type: T, listener: (event: {

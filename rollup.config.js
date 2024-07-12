@@ -6,6 +6,7 @@ import commonjs from "@rollup/plugin-commonjs";
 import babel from "@rollup/plugin-babel";
 import typescript from "@rollup/plugin-typescript";
 import { dts } from "rollup-plugin-dts";
+import copy from "rollup-plugin-copy";
 
 const production = !process.env.ROLLUP_WATCH;
 
@@ -95,8 +96,18 @@ const builds = [
   },
   {
     input: "./build/dts/BS.d.ts",
-    output: [{ file: "build/brilliantsole.module.d.ts", format: "es" }],
-    plugins: [dts()],
+    output: [{ file: "build/index.d.ts", format: "es" }],
+    plugins: [
+      dts(),
+      copy({
+        targets: [
+          { src: "build/index.d.ts", dest: "build", rename: "brilliantsole.module.d.ts" },
+          { src: "build/index.d.ts", dest: "build", rename: "brilliantsole.module.min.d.ts" },
+          { src: "build/index.d.ts", dest: "build", rename: "brilliantsole.node.module.d.ts" },
+          { src: "build/index.d.ts", dest: "build", rename: "brilliantsole.node.module.min.d.ts" },
+        ],
+      }),
+    ],
   },
 
   {

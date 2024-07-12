@@ -43,7 +43,7 @@ declare class FirmwareManager {
         target: Device;
         message: FirmwareEventMessages[T];
     }) => void, options?: {
-        once: boolean;
+        once?: boolean;
     }) => void;
     get removeEventListener(): <T extends "smp" | "firmwareImages" | "firmwareUploadProgress" | "firmwareStatus" | "firmwareUploadComplete">(type: T, listener: (event: {
         type: T;

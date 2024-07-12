@@ -1,4 +1,4 @@
-import * as BS from "../../build/brilliantsole.module.js";
+import * as BS from "../../build/brilliantsole.module";
 //import BS.Device from "../../src/BS.Device.js";
 window.BS = BS;
 console.log(BS);
@@ -6,8 +6,6 @@ console.log(BS);
 const device = new BS.Device();
 console.log({ device });
 window.device = device;
-
-device.addEventListener("");
 
 //BS.setAllConsoleLevelFlags({ log: false });
 
