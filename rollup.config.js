@@ -66,9 +66,6 @@ if (production) {
 
 const _browserPlugins = [resolve(), commonjs(), removeLines("browser")];
 const _nodePlugins = [removeLines("node")];
-const browserGlobals = {
-  "auto-bind": "autoBind",
-};
 const nodeExternal = ["webbluetooth", "debounce", "ws", "@abandonware/noble", "auto-bind"];
 
 const lensStudioPlugins = [
@@ -90,7 +87,6 @@ const builds = [
   {
     input,
     plugins: [..._browserPlugins, ..._plugins],
-    globals: browserGlobals,
     output: [
       {
         ...defaultOutput,
@@ -132,7 +128,6 @@ const builds = [
       {
         name,
         ...defaultOutput,
-        globals: browserGlobals,
         format: "umd",
         file: "build/brilliantsole.js",
         indent: "\t",
@@ -145,7 +140,6 @@ const builds = [
     output: [
       {
         ...defaultOutput,
-        globals: browserGlobals,
         format: "umd",
         name,
         file: "build/brilliantsole.min.js",
@@ -200,7 +194,6 @@ const builds = [
     output: [
       {
         ...defaultOutput,
-        globals: browserGlobals,
         format: "umd",
         name,
         file: "build/brilliantsole.ls.js",

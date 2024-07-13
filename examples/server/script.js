@@ -113,7 +113,6 @@ client.addEventListener("discoveredDevice", (event) => {
       if (device) {
         device.toggleConnection();
       } else {
-        console.log("FUCK", discoveredDevice);
         device = client.connectToDevice(discoveredDevice.bluetoothId);
         onDevice(device);
       }

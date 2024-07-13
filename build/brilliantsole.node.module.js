@@ -22,9 +22,8 @@ typeof SuppressedError === "function" ? SuppressedError : function (error, suppr
     return e.name = "SuppressedError", e.error = error, e.suppressed = suppressed, e;
 };
 
-const __BRILLIANTSOLE__ENVIRONMENT__ = "__BRILLIANTSOLE__DEV__";
-const isInProduction = __BRILLIANTSOLE__ENVIRONMENT__ == "__BRILLIANTSOLE__PROD__";
-const isInDev = __BRILLIANTSOLE__ENVIRONMENT__ == "__BRILLIANTSOLE__DEV__";
+const isInProduction = "__BRILLIANTSOLE__PROD__" == "__BRILLIANTSOLE__PROD__";
+const isInDev = "__BRILLIANTSOLE__PROD__" == "__BRILLIANTSOLE__DEV__";
 const isInBrowser = typeof window !== "undefined" && typeof window?.document !== "undefined";
 const isInNode = typeof process !== "undefined" && process?.versions?.node != null;
 const userAgent = (isInBrowser && navigator.userAgent) || "";
@@ -123,9 +122,6 @@ class Console {
     }
     static create(type, levelFlags) {
         const console = __classPrivateFieldGet(this, _a$7, "f", _Console_consoles)[type] || new _a$7(type);
-        if (levelFlags) {
-            console.setLevelFlags(levelFlags);
-        }
         return console;
     }
     get log() {
@@ -5093,7 +5089,10 @@ _a$1 = BaseServer, _BaseServer_clearSensorConfigurationsWhenNoClients = new Weak
         data: JSON.stringify(Device.ConnectedDevices.map((device) => device.bluetoothId)),
     });
 }, _BaseServer_createDeviceMessage = function _BaseServer_createDeviceMessage(device, messageType, dataView) {
-    return { type: messageType, data: dataView || device.latestConnectionMessage.get(messageType) };
+    return {
+        type: messageType,
+        data: dataView || device.latestConnectionMessage.get(messageType),
+    };
 }, _BaseServer_onDeviceConnectionMessage = function _BaseServer_onDeviceConnectionMessage(deviceEvent) {
     const { target: device, message } = deviceEvent;
     _console$4.log("onDeviceConnectionMessage", deviceEvent.message);
@@ -5175,7 +5174,7 @@ _a$1 = BaseServer, _BaseServer_clearSensorConfigurationsWhenNoClients = new Weak
                 const _dataView = new DataView(dataView.buffer, dataView.byteOffset + byteOffset);
                 const responseMessage = this.parseClientDeviceMessage(device, _dataView);
                 if (responseMessage) {
-                    responseMessages.push();
+                    responseMessages.push(responseMessage);
                 }
             }
             break;
@@ -5411,6 +5410,9 @@ class DevicePair {
         });
         _DevicePair_sensorDataManager.set(this, new DevicePairSensorDataManager());
         __classPrivateFieldGet(this, _DevicePair_sensorDataManager, "f").eventDispatcher = __classPrivateFieldGet(this, _DevicePair_eventDispatcher, "f");
+    }
+    get sides() {
+        return InsoleSides;
     }
     get addEventListener() {
         return __classPrivateFieldGet(this, _DevicePair_eventDispatcher, "f").addEventListener;

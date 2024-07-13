@@ -172,7 +172,10 @@ abstract class BaseServer {
   };
 
   #createDeviceMessage(device: Device, messageType: ConnectionMessageType, dataView?: DataView): DeviceMessage {
-    return { type: messageType, data: dataView || device.latestConnectionMessage.get(messageType) };
+    return {
+      type: messageType,
+      data: dataView || device.latestConnectionMessage.get(messageType),
+    };
   }
 
   #onDeviceConnectionMessage(deviceEvent: DeviceEventMap["connectionMessage"]) {
@@ -226,7 +229,7 @@ abstract class BaseServer {
   }
 
   // PARSING
-  parseClientMessage(dataView: DataView) {
+  protected parseClientMessage(dataView: DataView) {
     let responseMessages: ArrayBuffer[] = [];
 
     parseMessage(dataView, ServerMessageTypes, this.#onClientMessage.bind(this), { responseMessages }, true);
@@ -292,7 +295,7 @@ abstract class BaseServer {
           const _dataView = new DataView(dataView.buffer, dataView.byteOffset + byteOffset);
           const responseMessage = this.parseClientDeviceMessage(device, _dataView);
           if (responseMessage) {
-            responseMessages.push();
+            responseMessages.push(responseMessage);
           }
         }
         break;

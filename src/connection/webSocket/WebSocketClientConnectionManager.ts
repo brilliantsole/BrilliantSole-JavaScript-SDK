@@ -11,6 +11,11 @@ const _console = createConsole("WebSocketClientConnectionManager", { log: true }
 
 export type SendWebSocketMessageCallback = (...messages: ClientDeviceMessage[]) => void;
 
+const WebSocketDeviceInformationMessageTypes: ConnectionMessageType[] = [
+  ...DeviceInformationMessageTypes,
+  "batteryLevel",
+];
+
 class WebSocketClientConnectionManager extends BaseConnectionManager {
   static get isSupported() {
     return isInBrowser;
@@ -83,12 +88,8 @@ class WebSocketClientConnectionManager extends BaseConnectionManager {
     this.sendWebSocketMessage({ type: "tx", data });
   }
 
-  static #DeviceInformationMessageTypes: ConnectionMessageType[] = [...DeviceInformationMessageTypes, "batteryLevel"];
-  get #deviceInformationMessageTypes() {
-    return WebSocketClientConnectionManager.#DeviceInformationMessageTypes;
-  }
   #requestDeviceInformation() {
-    this.sendWebSocketMessage(...this.#deviceInformationMessageTypes);
+    this.sendWebSocketMessage(...WebSocketDeviceInformationMessageTypes);
   }
 
   onWebSocketMessage(dataView: DataView) {

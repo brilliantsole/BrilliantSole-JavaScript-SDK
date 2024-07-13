@@ -63,6 +63,10 @@ class DevicePair {
     this.#sensorDataManager.eventDispatcher = this.#eventDispatcher as DevicePairSensorDataEventDispatcher;
   }
 
+  get sides() {
+    return InsoleSides;
+  }
+
   #eventDispatcher: DevicePairEventDispatcher = new EventDispatcher(this as DevicePair, DevicePairEventTypes);
   get addEventListener() {
     return this.#eventDispatcher.addEventListener;
