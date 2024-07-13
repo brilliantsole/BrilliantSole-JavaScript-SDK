@@ -3,8 +3,6 @@ window.BS = BS;
 console.log({ BS });
 //BS.setAllConsoleLevelFlags({ log: false });
 
-/** @typedef {import("../../build/brilliantsole.module.js").Device} Device */
-
 // GET DEVICES
 
 /** @type {HTMLTemplateElement} */
@@ -112,10 +110,7 @@ BS.Device.AddEventListener("deviceConnected", (event) => {
   updateSensorConfigurationPre();
 
   device.addEventListener("sensorData", (event) => {
-    /** @type {BS.SensorType} */
-    const sensorType = event.message.sensorType;
-    /** @type {number} */
-    const timestamp = event.message.timestamp;
+    const { sensorType, timestamp } = event.message;
 
     const { [sensorType]: data } = event.message;
     //console.log({ name: device.name, sensorType, timestamp, data });
@@ -277,14 +272,14 @@ let isRecording = false;
  * @type {Object}
  * @property {string} id
  * @property {string} name
- * @property {import("../../build/brilliantsole.module.js").DeviceType} type
+ * @property {BS.DeviceType} type
  * @property {SensorTypeData[]} sensorData
  */
 
 /**
  * @typedef SensorTypeData
  * @type {Object}
- * @property {SensorType} sensorType
+ * @property {BS.SensorType} sensorType
  * @property {number} initialTimestamp ms
  * @property {number} dataRate ms
  * @property {Object[]} data
@@ -441,7 +436,7 @@ function updateRecordingCountdown(recordingCountdown) {
 
 /**
  * vibrates all connected insoles with a single waveformEffect
- * @param {import("../../build/brilliantsole.module.js").VibrationWaveformEffect} effect
+ * @param {BS.VibrationWaveformEffect} effect
  */
 function vibrate(effect) {
   BS.Device.ConnectedDevices.forEach((device) => {

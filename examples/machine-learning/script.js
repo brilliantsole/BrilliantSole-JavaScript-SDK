@@ -8,7 +8,7 @@ console.log({ BS });
 
 /**
  * vibrates all connected insoles with a single waveformEffect - use to indicate stuff
- * @param {import("../../build/brilliantsole.module.js").VibrationWaveformEffect} effect
+ * @param {B.VibrationWaveformEffect} effect
  */
 function vibrate(effect) {
   BS.Device.ConnectedDevices.forEach((device) => {
@@ -1013,7 +1013,7 @@ thresholdSensorTypes.forEach((sensorType) => {
 });
 
 const thresholdVector = new THREE.Vector3();
-/** @param {import("../../build/brilliantsole.module.js").Vector3} vector */
+/** @param {BS.Vector3} vector */
 function getVectorMagnitude(vector) {
   const { x, y, z } = vector;
   thresholdVector.set(x, y, z);
@@ -1023,7 +1023,7 @@ function getVectorMagnitude(vector) {
 const thresholdEuler = new THREE.Euler();
 const thresholdQuaternion = new THREE.Quaternion();
 const identityQuaternion = new THREE.Quaternion();
-/** @param {import("../../build/brilliantsole.module.js").Vector3} euler */
+/** @param {BS.Vector3} euler */
 function getEulerMagnitude(euler) {
   const { x, y, z } = euler;
   thresholdEuler.set(...[x, y, z].map((value) => THREE.MathUtils.degToRad(value)));
