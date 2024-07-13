@@ -1,4 +1,4 @@
-import * as BS from "../../build/brilliantsole.module";
+import * as BS from "../../build/brilliantsole.module.js";
 window.BS = BS;
 console.log(BS);
 
@@ -159,8 +159,8 @@ device.addEventListener("getName", () => {
 
 /** @type {HTMLInputElement} */
 const setNameInput = document.getElementById("setNameInput");
-setNameInput.minLength = BS.Device.MinNameLength;
-setNameInput.maxLength = BS.Device.MaxNameLength;
+setNameInput.minLength = BS.MinNameLength;
+setNameInput.maxLength = BS.MaxNameLength;
 
 /** @type {HTMLButtonElement} */
 const setNameButton = document.getElementById("setNameButton");
@@ -241,8 +241,8 @@ BS.SensorTypes.forEach((sensorType) => {
   /** @type {HTMLInputElement} */
   const sensorRateInput = sensorTypeConfigurationContainer.querySelector(".sensorRate");
   sensorRateInput.value = 0;
-  sensorRateInput.max = BS.Device.MaxSensorRate;
-  sensorRateInput.step = BS.Device.SensorRateStep;
+  sensorRateInput.max = BS.MaxSensorRate;
+  sensorRateInput.step = BS.SensorRateStep;
   sensorRateInput.addEventListener("input", () => {
     const sensorRate = Number(sensorRateInput.value);
     console.log({ sensorType, sensorRate });
@@ -346,7 +346,7 @@ addVibrationButton.addEventListener("click", () => {
 
   /** @type {HTMLUListElement} */
   const vibrationLocationsContainer = vibrationContainer.querySelector(".locations");
-  BS.Device.VibrationLocations.forEach((vibrationLocation) => {
+  BS.VibrationLocations.forEach((vibrationLocation) => {
     const vibrationLocationContainer = vibrationLocationTemplate.content
       .cloneNode(true)
       .querySelector(".vibrationLocation");
@@ -433,7 +433,7 @@ addVibrationButton.addEventListener("click", () => {
   const vibrationTypeSelect = vibrationContainer.querySelector(".type");
   /** @type {HTMLOptGroupElement} */
   const vibrationTypeSelectOptgroup = vibrationTypeSelect.querySelector("optgroup");
-  BS.Device.VibrationTypes.forEach((vibrationType) => {
+  BS.VibrationTypes.forEach((vibrationType) => {
     vibrationTypeSelectOptgroup.appendChild(new Option(vibrationType));
   });
 

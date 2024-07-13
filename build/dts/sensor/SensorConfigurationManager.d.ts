@@ -4,6 +4,8 @@ import { SensorType } from "./SensorDataManager.ts";
 export type SensorConfiguration = {
     [sensorType in SensorType]?: number;
 };
+export declare const MaxSensorRate: number;
+export declare const SensorRateStep = 5;
 export declare const SensorConfigurationMessageTypes: readonly ["getSensorConfiguration", "setSensorConfiguration"];
 export type SensorConfigurationMessageType = (typeof SensorConfigurationMessageTypes)[number];
 export declare const SensorConfigurationEventTypes: readonly ["getSensorConfiguration", "setSensorConfiguration"];
@@ -17,6 +19,7 @@ export type SensorConfigurationEventDispatcher = EventDispatcher<Device, SensorC
 export type SendSensorConfigurationMessageCallback = SendMessageCallback<SensorConfigurationMessageType>;
 declare class SensorConfigurationManager {
     #private;
+    constructor();
     sendMessage: SendSensorConfigurationMessageCallback;
     eventDispatcher: SensorConfigurationEventDispatcher;
     get addEventListener(): <T extends "getSensorConfiguration" | "setSensorConfiguration">(type: T, listener: (event: {
@@ -33,10 +36,6 @@ declare class SensorConfigurationManager {
     }>;
     get configuration(): SensorConfiguration;
     setConfiguration(newSensorConfiguration: SensorConfiguration, clearRest?: boolean): Promise<void>;
-    static get MaxSensorRate(): number;
-    get maxSensorRate(): number;
-    static get SensorRateStep(): number;
-    get sensorRateStep(): number;
     static get ZeroSensorConfiguration(): SensorConfiguration;
     get zeroSensorConfiguration(): SensorConfiguration;
     clearSensorConfiguration(): Promise<void>;

@@ -1,5 +1,7 @@
 import BluetoothConnectionManager from "./BluetoothConnectionManager.ts";
+/** NODE_START */
 import type * as noble from "@abandonware/noble";
+/** NODE_END */
 import { BluetoothCharacteristicName, BluetoothServiceName } from "./bluetoothUUIDs.ts";
 import { ConnectionType } from "../BaseConnectionManager.ts";
 import NobleScanner from "../../scanner/NobleScanner.ts";

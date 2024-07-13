@@ -3,15 +3,15 @@ import { createConsole } from "../../utils/Console.ts";
 
 const _console = createConsole("bluetoothUUIDs", { log: false });
 
-// NODE_START
+/** NODE_START */
 import * as webbluetooth from "webbluetooth";
 var BluetoothUUID = webbluetooth.BluetoothUUID;
-// NODE_END
-// BROWSER_START
+/** NODE_END */
+/** BROWSER_START */
 if (isInBrowser) {
   var BluetoothUUID = window.BluetoothUUID;
 }
-// BROWSER_END
+/** BROWSER_END */
 
 function generateBluetoothUUID(value: string): BluetoothServiceUUID {
   _console.assertTypeWithError(value, "string");

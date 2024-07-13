@@ -6,8 +6,12 @@ import Device, { SendMessageCallback } from "../Device.ts";
 const _console = createConsole("SensorConfigurationManager", { log: true });
 
 import { SensorType } from "./SensorDataManager.ts";
+import autoBind from "../../node_modules/auto-bind/index.js";
 
 export type SensorConfiguration = { [sensorType in SensorType]?: number };
+
+export const MaxSensorRate = 2 ** 16 - 1;
+export const SensorRateStep = 5;
 
 export const SensorConfigurationMessageTypes = ["getSensorConfiguration", "setSensorConfiguration"] as const;
 export type SensorConfigurationMessageType = (typeof SensorConfigurationMessageTypes)[number];
@@ -28,6 +32,10 @@ export type SensorConfigurationEventDispatcher = EventDispatcher<
 export type SendSensorConfigurationMessageCallback = SendMessageCallback<SensorConfigurationMessageType>;
 
 class SensorConfigurationManager {
+  constructor() {
+    autoBind(this);
+  }
+
   sendMessage!: SendSensorConfigurationMessageCallback;
 
   eventDispatcher!: SensorConfigurationEventDispatcher;
@@ -102,29 +110,11 @@ class SensorConfigurationManager {
     return parsedSensorConfiguration;
   }
 
-  static #MaxSensorRate = 2 ** 16 - 1;
-  static get MaxSensorRate() {
-    return this.#MaxSensorRate;
-  }
-  get maxSensorRate() {
-    return SensorConfigurationManager.MaxSensorRate;
-  }
-  static #SensorRateStep = 5;
-  static get SensorRateStep() {
-    return this.#SensorRateStep;
-  }
-  get sensorRateStep() {
-    return SensorConfigurationManager.SensorRateStep;
-  }
-
   static #AssertValidSensorRate(sensorRate: number) {
     _console.assertTypeWithError(sensorRate, "number");
     _console.assertWithError(sensorRate >= 0, `sensorRate must be 0 or greater (got ${sensorRate})`);
-    _console.assertWithError(sensorRate < this.MaxSensorRate, `sensorRate must be 0 or greater (got ${sensorRate})`);
-    _console.assertWithError(
-      sensorRate % this.SensorRateStep == 0,
-      `sensorRate must be multiple of ${this.SensorRateStep}`
-    );
+    _console.assertWithError(sensorRate < MaxSensorRate, `sensorRate must be 0 or greater (got ${sensorRate})`);
+    _console.assertWithError(sensorRate % SensorRateStep == 0, `sensorRate must be multiple of ${SensorRateStep}`);
   }
 
   #assertValidSensorRate(sensorRate: number) {

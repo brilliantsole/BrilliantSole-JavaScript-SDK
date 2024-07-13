@@ -32,6 +32,7 @@ export type VibrationConfiguration = VibrationWaveformEffectConfiguration | Vibr
 export type SendVibrationMessageCallback = SendMessageCallback<VibrationMessageType>;
 declare class VibrationManager {
     #private;
+    constructor();
     sendMessage: SendVibrationMessageCallback;
     static get MaxWaveformEffectSegmentDelay(): number;
     get maxWaveformEffectSegmentDelay(): number;

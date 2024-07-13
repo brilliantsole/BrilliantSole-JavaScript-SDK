@@ -4,6 +4,7 @@ import { getFileBuffer } from "./utils/ArrayBufferUtils.ts";
 import { FileLike } from "./utils/ArrayBufferUtils.ts";
 import Device, { SendMessageCallback } from "./Device.ts";
 import EventDispatcher from "./utils/EventDispatcher.ts";
+import autoBind from "../node_modules/auto-bind/index.js";
 
 const _console = createConsole("FileTransferManager", { log: true });
 
@@ -58,6 +59,9 @@ export type FileTransferEventDispatcher = EventDispatcher<Device, FileTransferEv
 export type SendFileTransferMessageCallback = SendMessageCallback<FileTransferMessageType>;
 
 class FileTransferManager {
+  constructor() {
+    autoBind(this);
+  }
   sendMessage!: SendFileTransferMessageCallback;
 
   eventDispatcher!: FileTransferEventDispatcher;

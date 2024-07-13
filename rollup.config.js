@@ -39,12 +39,12 @@ function removeLines(context) {
     preventAssignment: true,
     delimiters: ["", ""],
     values: {
-      "// BROWSER_START": isInBrowser ? "" : "/*",
-      "// BROWSER_END": isInBrowser ? "" : "*/",
-      "// NODE_START": isInNode ? "" : "/*",
-      "// NODE_END": isInNode ? "" : "*/",
-      "// LS_START": isInLensStudio ? "" : "/*",
-      "// LS_END": isInLensStudio ? "" : "*/",
+      "/** BROWSER_START */": isInBrowser ? "" : "/*",
+      "/** BROWSER_END */": isInBrowser ? "" : "*/",
+      "/** NODE_START */": isInNode ? "" : "/*",
+      "/** NODE_END */": isInNode ? "" : "*/",
+      "/** LS_START */": isInLensStudio ? "" : "/*",
+      "/** LS_END */": isInLensStudio ? "" : "*/",
     },
   });
 }
@@ -58,15 +58,25 @@ function replaceEnvironment() {
   });
 }
 
-const _plugins = [cleanup({ comments: "none", extensions: ["ts", "js"] }), typescript(), header()];
+const _plugins = [
+  resolve(),
+  commonjs(),
+  typescript(),
+  cleanup({ comments: "none", extensions: ["js", "ts"] }),
+  header(),
+];
 
 if (production) {
   _plugins.push(replaceEnvironment());
 }
 
-const _browserPlugins = [removeLines("browser"), commonjs(), resolve({ browser: true })];
+const _browserPlugins = [removeLines("browser")];
 const _nodePlugins = [removeLines("node")];
-const nodeExternal = ["webbluetooth", "debounce", "ws", "@abandonware/noble"];
+const browserExternal = ["auto-bind"];
+const browserGlobals = {
+  "auto-bind": "autoBind",
+};
+const nodeExternal = ["webbluetooth", "debounce", "ws", "@abandonware/noble", "auto-bind"];
 
 const lensStudioPlugins = [
   removeLines("ls"),
@@ -87,6 +97,7 @@ const builds = [
   {
     input,
     plugins: [..._browserPlugins, ..._plugins],
+    external: browserExternal,
     output: [
       {
         ...defaultOutput,
@@ -96,24 +107,9 @@ const builds = [
     ],
   },
   {
-    input: "./build/dts/BS.d.ts",
-    output: [{ file: "build/index.d.ts", format: "es" }],
-    plugins: [
-      dts(),
-      copy({
-        targets: [
-          { src: "build/index.d.ts", dest: "build", rename: "brilliantsole.module.d.ts" },
-          { src: "build/index.d.ts", dest: "build", rename: "brilliantsole.module.min.d.ts" },
-          { src: "build/index.d.ts", dest: "build", rename: "brilliantsole.node.module.d.ts" },
-          { src: "build/index.d.ts", dest: "build", rename: "brilliantsole.node.module.min.d.ts" },
-        ],
-      }),
-    ],
-  },
-
-  {
     input,
     plugins: [..._browserPlugins, ..._plugins, terser()],
+    external: browserExternal,
     output: [
       {
         ...defaultOutput,
@@ -122,14 +118,30 @@ const builds = [
       },
     ],
   },
+  {
+    input: "./build/dts/BS.d.ts",
+    output: [{ file: "build/index.d.ts", format: "es" }],
+    plugins: [
+      removeLines("browser"),
+      dts(),
+      copy({
+        targets: [
+          { src: "build/index.d.ts", dest: "build", rename: "brilliantsole.module.d.ts" },
+          { src: "build/index.d.ts", dest: "build", rename: "brilliantsole.module.min.d.ts" },
+        ],
+      }),
+    ],
+  },
 
   {
     input,
     plugins: [..._browserPlugins, ..._plugins],
+    external: browserExternal,
     output: [
       {
         name,
         ...defaultOutput,
+        globals: browserGlobals,
         format: "umd",
         file: "build/brilliantsole.js",
         indent: "\t",
@@ -139,9 +151,11 @@ const builds = [
   {
     input,
     plugins: [..._browserPlugins, ..._plugins, terser()],
+    external: browserExternal,
     output: [
       {
         ...defaultOutput,
+        globals: browserGlobals,
         format: "umd",
         name,
         file: "build/brilliantsole.min.js",
@@ -162,6 +176,21 @@ const builds = [
     ],
   },
   {
+    input: "./build/dts/BS.d.ts",
+    output: [{ file: "build/index.node.d.ts", format: "es" }],
+    plugins: [
+      removeLines("node"),
+      dts(),
+      copy({
+        targets: [
+          { src: "build/index.node.d.ts", dest: "build", rename: "brilliantsole.node.module.d.ts" },
+          { src: "build/index.node.d.ts", dest: "build", rename: "brilliantsole.node.module.min.d.ts" },
+        ],
+      }),
+    ],
+  },
+
+  {
     input,
     plugins: [..._nodePlugins, ..._plugins],
     external: nodeExternal,
@@ -178,9 +207,11 @@ const builds = [
   {
     input,
     plugins: [...lensStudioPlugins, ..._plugins],
+    external: browserExternal,
     output: [
       {
         ...defaultOutput,
+        globals: browserGlobals,
         format: "umd",
         name,
         file: "build/brilliantsole.ls.js",

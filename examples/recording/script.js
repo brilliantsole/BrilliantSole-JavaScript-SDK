@@ -175,8 +175,8 @@ BS.SensorTypes.forEach((sensorType) => {
   /** @type {HTMLInputElement} */
   const sensorRateInput = sensorTypeConfigurationContainer.querySelector(".sensorRate");
   sensorRateInput.value = 0;
-  sensorRateInput.max = BS.Device.MaxSensorRate;
-  sensorRateInput.step = BS.Device.SensorRateStep;
+  sensorRateInput.max = BS.MaxSensorRate;
+  sensorRateInput.step = BS.SensorRateStep;
   sensorRateInput.addEventListener("input", () => {
     sensorConfiguration[sensorType] = Number(sensorRateInput.value);
     console.log({ sensorConfiguration });

@@ -4,6 +4,8 @@ export declare const DeviceTypes: readonly ["leftInsole", "rightInsole"];
 export type DeviceType = (typeof DeviceTypes)[number];
 export declare const InsoleSides: readonly ["left", "right"];
 export type InsoleSide = (typeof InsoleSides)[number];
+export declare const MinNameLength = 2;
+export declare const MaxNameLength = 30;
 export declare const InformationMessageTypes: readonly ["isCharging", "getBatteryCurrent", "getMtu", "getId", "getName", "setName", "getType", "setType", "getCurrentTime", "setCurrentTime"];
 export type InformationMessageType = (typeof InformationMessageTypes)[number];
 export declare const InformationEventTypes: readonly ["isCharging", "getBatteryCurrent", "getMtu", "getId", "getName", "setName", "getType", "setType", "getCurrentTime", "setCurrentTime"];
@@ -35,6 +37,7 @@ export type InformationEventDispatcher = EventDispatcher<Device, InformationEven
 export type SendInformationMessageCallback = SendMessageCallback<InformationMessageType>;
 declare class InformationManager {
     #private;
+    constructor();
     sendMessage: SendInformationMessageCallback;
     eventDispatcher: InformationEventDispatcher;
     get waitForEvent(): <T extends "isCharging" | "getBatteryCurrent" | "getMtu" | "getId" | "getName" | "setName" | "getType" | "setType" | "getCurrentTime" | "setCurrentTime">(type: T) => Promise<{
@@ -43,22 +46,13 @@ declare class InformationManager {
         message: InformationEventMessages[T];
     }>;
     get isCharging(): boolean;
-    updateIsCharging(updatedIsCharging: boolean): void;
     get batteryCurrent(): number;
     getBatteryCurrent(): Promise<void>;
-    updateBatteryCurrent(updatedBatteryCurrent: number): void;
     get id(): string;
-    updateId(updatedId: string): void;
     get name(): string;
-    updateName(updatedName: string): void;
-    static get MinNameLength(): number;
-    get minNameLength(): number;
-    static get MaxNameLength(): number;
-    get maxNameLength(): number;
     setName(newName: string): Promise<void>;
     get type(): "leftInsole" | "rightInsole";
     get typeEnum(): number;
-    updateType(updatedType: DeviceType): void;
     setType(newType: DeviceType): Promise<void>;
     get isInsole(): boolean;
     get insoleSide(): InsoleSide;

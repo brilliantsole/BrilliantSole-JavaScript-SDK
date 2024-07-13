@@ -7,9 +7,9 @@ import BaseServer from "../BaseServer.ts";
 
 const _console = createConsole("WebSocketServer", { log: true });
 
-// NODE_START
+/** NODE_START */
 import * as ws from "ws";
-// NODE_END
+/** NODE_END */
 
 interface WebSocketClient extends ws.WebSocket {
   isAlive: boolean;

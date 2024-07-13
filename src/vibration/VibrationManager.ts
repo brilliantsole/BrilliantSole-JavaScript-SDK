@@ -2,6 +2,7 @@ import { createConsole } from "../utils/Console.ts";
 import { VibrationWaveformEffect, VibrationWaveformEffects } from "./VibrationWaveformEffects.ts";
 import { concatenateArrayBuffers } from "../utils/ArrayBufferUtils.ts";
 import { SendMessageCallback } from "../Device.ts";
+import autoBind from "../../node_modules/auto-bind/index.js";
 
 const _console = createConsole("VibrationManager");
 
@@ -46,6 +47,9 @@ export type VibrationConfiguration = VibrationWaveformEffectConfiguration | Vibr
 export type SendVibrationMessageCallback = SendMessageCallback<VibrationMessageType>;
 
 class VibrationManager {
+  constructor() {
+    autoBind(this);
+  }
   sendMessage!: SendVibrationMessageCallback;
 
   #verifyLocation(location: VibrationLocation) {

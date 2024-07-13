@@ -2,6 +2,7 @@ import Device, { SendMessageCallback } from "./Device.ts";
 import { createConsole } from "./utils/Console.ts";
 import EventDispatcher from "./utils/EventDispatcher.ts";
 import { textDecoder, textEncoder } from "./utils/Text.ts";
+import autoBind from "../node_modules/auto-bind/index.js";
 
 const _console = createConsole("InformationManager", { log: true });
 
@@ -10,6 +11,9 @@ export type DeviceType = (typeof DeviceTypes)[number];
 
 export const InsoleSides = ["left", "right"] as const;
 export type InsoleSide = (typeof InsoleSides)[number];
+
+export const MinNameLength = 2;
+export const MaxNameLength = 30;
 
 export const InformationMessageTypes = [
   "isCharging",
@@ -42,6 +46,10 @@ export type InformationEventDispatcher = EventDispatcher<Device, InformationEven
 export type SendInformationMessageCallback = SendMessageCallback<InformationMessageType>;
 
 class InformationManager {
+  constructor() {
+    autoBind(this);
+  }
+
   sendMessage!: SendInformationMessageCallback;
 
   eventDispatcher!: InformationEventDispatcher;
@@ -58,7 +66,7 @@ class InformationManager {
   get isCharging() {
     return this.#isCharging;
   }
-  updateIsCharging(updatedIsCharging: boolean) {
+  #updateIsCharging(updatedIsCharging: boolean) {
     _console.assertTypeWithError(updatedIsCharging, "boolean");
     this.#isCharging = updatedIsCharging;
     _console.log({ isCharging: this.#isCharging });
@@ -75,7 +83,7 @@ class InformationManager {
     this.sendMessage([{ type: "getBatteryCurrent" }]);
     await promise;
   }
-  updateBatteryCurrent(updatedBatteryCurrent: number) {
+  #updateBatteryCurrent(updatedBatteryCurrent: number) {
     _console.assertTypeWithError(updatedBatteryCurrent, "number");
     this.#batteryCurrent = updatedBatteryCurrent;
     _console.log({ batteryCurrent: this.#batteryCurrent });
@@ -86,7 +94,7 @@ class InformationManager {
   get id() {
     return this.#id;
   }
-  updateId(updatedId: string) {
+  #updateId(updatedId: string) {
     _console.assertTypeWithError(updatedId, "string");
     this.#id = updatedId;
     _console.log({ id: this.#id });
@@ -98,33 +106,21 @@ class InformationManager {
     return this.#name;
   }
 
-  updateName(updatedName: string) {
+  #updateName(updatedName: string) {
     _console.assertTypeWithError(updatedName, "string");
     this.#name = updatedName;
     _console.log({ updatedName: this.#name });
     this.#dispatchEvent("getName", { name: this.#name });
   }
-  static get MinNameLength() {
-    return 2;
-  }
-  get minNameLength() {
-    return InformationManager.MinNameLength;
-  }
-  static get MaxNameLength() {
-    return 30;
-  }
-  get maxNameLength() {
-    return InformationManager.MaxNameLength;
-  }
   async setName(newName: string) {
     _console.assertTypeWithError(newName, "string");
     _console.assertWithError(
-      newName.length >= this.minNameLength,
-      `name must be greater than ${this.minNameLength} characters long ("${newName}" is ${newName.length} characters long)`
+      newName.length >= MinNameLength,
+      `name must be greater than ${MinNameLength} characters long ("${newName}" is ${newName.length} characters long)`
     );
     _console.assertWithError(
-      newName.length < this.maxNameLength,
-      `name must be less than ${this.maxNameLength} characters long ("${newName}" is ${newName.length} characters long)`
+      newName.length < MaxNameLength,
+      `name must be less than ${MaxNameLength} characters long ("${newName}" is ${newName.length} characters long)`
     );
     const setNameData = textEncoder.encode(newName);
     _console.log({ setNameData });
@@ -149,7 +145,7 @@ class InformationManager {
     _console.assertTypeWithError(typeEnum, "number");
     _console.assertWithError(typeEnum in DeviceTypes, `invalid typeEnum ${typeEnum}`);
   }
-  updateType(updatedType: DeviceType) {
+  #updateType(updatedType: DeviceType) {
     this.#assertValidDeviceType(updatedType);
     if (updatedType == this.type) {
       _console.log("redundant type assignment");
@@ -238,30 +234,30 @@ class InformationManager {
       case "isCharging":
         const isCharging = Boolean(dataView.getUint8(0));
         _console.log({ isCharging });
-        this.updateIsCharging(isCharging);
+        this.#updateIsCharging(isCharging);
         break;
       case "getBatteryCurrent":
         const batteryCurrent = dataView.getFloat32(0, true);
         _console.log({ batteryCurrent });
-        this.updateBatteryCurrent(batteryCurrent);
+        this.#updateBatteryCurrent(batteryCurrent);
         break;
       case "getId":
         const id = textDecoder.decode(dataView.buffer);
         _console.log({ id });
-        this.updateId(id);
+        this.#updateId(id);
         break;
       case "getName":
       case "setName":
         const name = textDecoder.decode(dataView.buffer);
         _console.log({ name });
-        this.updateName(name);
+        this.#updateName(name);
         break;
       case "getType":
       case "setType":
         const typeEnum = dataView.getUint8(0);
         const type = DeviceTypes[typeEnum];
         _console.log({ typeEnum, type });
-        this.updateType(type);
+        this.#updateType(type);
         break;
       case "getMtu":
         const mtu = dataView.getUint16(0, true);

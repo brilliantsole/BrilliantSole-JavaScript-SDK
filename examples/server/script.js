@@ -257,8 +257,8 @@ BS.Device.AddEventListener("availableDevices", (event) => {
 
       /** @type {HTMLInputElement} */
       const setNameInput = availableDeviceContainer.querySelector(".setNameInput");
-      setNameInput.minLength = BS.Device.MinNameLength;
-      setNameInput.maxLength = BS.Device.MaxNameLength;
+      setNameInput.minLength = BS.MinNameLength;
+      setNameInput.maxLength = BS.MaxNameLength;
       setNameInput.disabled = !device.isConnected;
 
       /** @type {HTMLButtonElement} */
@@ -339,8 +339,8 @@ BS.Device.AddEventListener("availableDevices", (event) => {
         /** @type {HTMLInputElement} */
         const sensorRateInput = sensorTypeConfigurationContainer.querySelector(".sensorRate");
         sensorRateInput.value = 0;
-        sensorRateInput.max = BS.Device.MaxSensorRate;
-        sensorRateInput.step = BS.Device.SensorRateStep;
+        sensorRateInput.max = BS.MaxSensorRate;
+        sensorRateInput.step = BS.SensorRateStep;
         sensorRateInput.addEventListener("input", () => {
           const sensorRate = Number(sensorRateInput.value);
           console.log({ sensorType, sensorRate });

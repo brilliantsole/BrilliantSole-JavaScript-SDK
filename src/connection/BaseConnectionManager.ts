@@ -80,7 +80,6 @@ abstract class BaseConnectionManager {
 
   constructor() {
     this.#assertIsSupported();
-    this.sendSmpMessage = this.sendSmpMessage.bind(this);
   }
 
   #status: ConnectionStatus = "not connected";

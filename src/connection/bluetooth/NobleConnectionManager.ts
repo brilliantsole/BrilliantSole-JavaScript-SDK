@@ -12,9 +12,9 @@ import BluetoothConnectionManager from "./BluetoothConnectionManager.ts";
 
 const _console = createConsole("NobleConnectionManager", { log: true });
 
-// NODE_START
+/** NODE_START */
 import type * as noble from "@abandonware/noble";
-// NODE_END
+/** NODE_END */
 
 import { BluetoothCharacteristicName, BluetoothServiceName } from "./bluetoothUUIDs.ts";
 import { ConnectionType } from "../BaseConnectionManager.ts";

@@ -9,11 +9,11 @@ const _console = createConsole("NobleScanner", { log: true });
 
 let isSupported = false;
 
-// NODE_START
-import * as noble from "@abandonware/noble";
+/** NODE_START */
+import noble from "@abandonware/noble";
 import { DeviceTypes } from "../InformationManager.ts";
 isSupported = true;
-// NODE_END
+/** NODE_END */
 
 export const NobleStates = ["unknown", "resetting", "unsupported", "unauthorized", "poweredOff", "poweredOn"] as const;
 export type NobleState = (typeof NobleStates)[number];

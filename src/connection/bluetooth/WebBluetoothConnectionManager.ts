@@ -24,18 +24,18 @@ interface BluetoothCharacteristic extends BluetoothRemoteGATTCharacteristic {
 }
 
 var bluetooth: WebBluetoothInterface | undefined;
-// NODE_START
+/** NODE_START */
 import * as webbluetooth from "webbluetooth";
 if (isInNode) {
   bluetooth = webbluetooth.bluetooth;
 }
-// NODE_END
+/** NODE_END */
 
-// BROWSER_START
+/** BROWSER_START */
 if (isInBrowser) {
   bluetooth = window.navigator.bluetooth;
 }
-// BROWSER_END
+/** BROWSER_END */
 
 class WebBluetoothConnectionManager extends BluetoothConnectionManager {
   get bluetoothId() {

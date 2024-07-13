@@ -46,6 +46,7 @@ export type FileTransferEventDispatcher = EventDispatcher<Device, FileTransferEv
 export type SendFileTransferMessageCallback = SendMessageCallback<FileTransferMessageType>;
 declare class FileTransferManager {
     #private;
+    constructor();
     sendMessage: SendFileTransferMessageCallback;
     eventDispatcher: FileTransferEventDispatcher;
     get addEventListener(): <T extends "maxFileLength" | "getFileType" | "setFileType" | "getFileLength" | "setFileLength" | "getFileChecksum" | "setFileChecksum" | "setFileTransferCommand" | "fileTransferStatus" | "getFileBlock" | "setFileBlock" | "fileTransferProgress" | "fileTransferComplete" | "fileReceived">(type: T, listener: (event: {

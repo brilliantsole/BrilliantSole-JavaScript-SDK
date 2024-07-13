@@ -543,8 +543,8 @@ class Device {
   get batteryCurrent() {
     return this.#informationManager.batteryCurrent;
   }
-  async getBatteryCurrent() {
-    await this.#informationManager.getBatteryCurrent();
+  get getBatteryCurrent() {
+    return this.#informationManager.getBatteryCurrent;
   }
 
   get name() {
@@ -743,9 +743,10 @@ class Device {
 
   #firmwareManager = new FirmwareManager();
 
-  private sendSmpMessage(data: ArrayBuffer) {
+  #sendSmpMessage(data: ArrayBuffer) {
     return this.#connectionManager!.sendSmpMessage(data);
   }
+  private sendSmpMessage = this.#sendSmpMessage.bind(this);
 
   get uploadFirmware() {
     return this.#firmwareManager.uploadFirmware;

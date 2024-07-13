@@ -3,10 +3,11 @@ import EventDispatcher from "./utils/EventDispatcher.ts";
 import { textDecoder, textEncoder } from "./utils/Text.ts";
 import SensorDataManager, { SensorTypes } from "./sensor/SensorDataManager.ts";
 import { arrayWithoutDuplicates } from "./utils/ArrayUtils.ts";
-import SensorConfigurationManager from "./sensor/SensorConfigurationManager.ts";
+import { SensorRateStep } from "./sensor/SensorConfigurationManager.ts";
 import { parseTimestamp } from "./utils/MathUtils.ts";
 import { SensorType } from "./sensor/SensorDataManager.ts";
 import Device, { SendMessageCallback } from "./Device.ts";
+import autoBind from "../node_modules/auto-bind/index.js";
 
 const _console = createConsole("TfliteManager", { log: true });
 
@@ -60,6 +61,10 @@ export const TfliteSensorTypes: SensorType[] = ["pressure", "linearAcceleration"
 export type TfliteSensorType = (typeof TfliteSensorTypes)[number];
 
 class TfliteManager {
+  constructor() {
+    autoBind(this);
+  }
+
   sendMessage!: SendTfliteMessageCallback;
 
   #assertValidTask(task: TfliteTask) {
@@ -161,10 +166,10 @@ class TfliteManager {
   }
   async setSampleRate(newSampleRate: number, sendImmediately?: boolean) {
     _console.assertTypeWithError(newSampleRate, "number");
-    newSampleRate -= newSampleRate % SensorConfigurationManager.SensorRateStep;
+    newSampleRate -= newSampleRate % SensorRateStep;
     _console.assertWithError(
-      newSampleRate >= SensorConfigurationManager.SensorRateStep,
-      `sampleRate must be multiple of ${SensorConfigurationManager.SensorRateStep} greater than 0 (got ${newSampleRate})`
+      newSampleRate >= SensorRateStep,
+      `sampleRate must be multiple of ${SensorRateStep} greater than 0 (got ${newSampleRate})`
     );
     if (this.#sampleRate == newSampleRate) {
       _console.log(`redundant sampleRate assignment ${newSampleRate}`);
