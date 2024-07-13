@@ -41,14 +41,14 @@ export type DiscoveredDevicesMap = { [deviceId: string]: DiscoveredDevice };
 
 abstract class BaseScanner {
   // IS SUPPORTED
-  get #baseConstructor() {
+  protected get baseConstructor() {
     return this.constructor as typeof BaseScanner;
   }
   static get isSupported() {
     return false;
   }
   get isSupported() {
-    return this.#baseConstructor.isSupported;
+    return this.baseConstructor.isSupported;
   }
 
   #assertIsSupported() {

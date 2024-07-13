@@ -239,7 +239,7 @@ let task = "classification";
 const taskSelect = document.getElementById("task");
 /** @type {HTMLOptGroupElement} */
 const taskSelectOptgroup = taskSelect.querySelector("optgroup");
-BS.Device.TfliteTasks.forEach((task) => {
+BS.TfliteTasks.forEach((task) => {
     taskSelectOptgroup.appendChild(new Option(task));
 });
 taskSelect.addEventListener("input", () => {
@@ -270,7 +270,7 @@ function getInputs() {
     sensorTypes.forEach((sensorType) => {
         switch (sensorType) {
             case "pressure":
-                for (let index = 0; index < BS.Device.DefaultNumberOfPressureSensors; index++) {
+                for (let index = 0; index < BS.DefaultNumberOfPressureSensors; index++) {
                     _inputs.push(`${sensorType}.${index}`);
                 }
                 break;

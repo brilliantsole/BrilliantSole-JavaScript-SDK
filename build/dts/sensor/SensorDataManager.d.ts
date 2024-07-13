@@ -4,13 +4,13 @@ import BarometerSensorDataManager, { BarometerSensorDataEventMessages } from "./
 import EventDispatcher from "../utils/EventDispatcher.ts";
 import Device from "../Device.ts";
 import { AddKeysAsPropertyToInterface, ExtendInterfaceValues, ValueOf } from "../utils/TypeScriptUtils.ts";
-export declare const SensorTypes: readonly ["acceleration", "gravity", "linearAcceleration", "gyroscope", "magnetometer", "gameRotation", "rotation", "orientation", "activity", "stepCounter", "stepDetector", "deviceOrientation", "pressure", "barometer"];
+export declare const SensorTypes: readonly ["pressure", "acceleration", "gravity", "linearAcceleration", "gyroscope", "magnetometer", "gameRotation", "rotation", "orientation", "activity", "stepCounter", "stepDetector", "deviceOrientation", "barometer"];
 export type SensorType = (typeof SensorTypes)[number];
-export declare const ContinuousSensorTypes: readonly ["acceleration", "gravity", "linearAcceleration", "gyroscope", "magnetometer", "gameRotation", "rotation", "pressure", "barometer"];
+export declare const ContinuousSensorTypes: readonly ["pressure", "acceleration", "gravity", "linearAcceleration", "gyroscope", "magnetometer", "gameRotation", "rotation", "barometer"];
 export type ContinuousSensorType = (typeof ContinuousSensorTypes)[number];
 export declare const SensorDataMessageTypes: readonly ["getPressurePositions", "getSensorScalars", "sensorData"];
 export type SensorDataMessageType = (typeof SensorDataMessageTypes)[number];
-export declare const SensorDataEventTypes: readonly ["getPressurePositions", "getSensorScalars", "sensorData", "acceleration", "gravity", "linearAcceleration", "gyroscope", "magnetometer", "gameRotation", "rotation", "orientation", "activity", "stepCounter", "stepDetector", "deviceOrientation", "pressure", "barometer"];
+export declare const SensorDataEventTypes: readonly ["getPressurePositions", "getSensorScalars", "sensorData", "pressure", "acceleration", "gravity", "linearAcceleration", "gyroscope", "magnetometer", "gameRotation", "rotation", "orientation", "activity", "stepCounter", "stepDetector", "deviceOrientation", "barometer"];
 export type SensorDataEventType = (typeof SensorDataEventTypes)[number];
 interface BaseSensorDataEventMessage {
     timestamp: number;
@@ -31,7 +31,7 @@ declare class SensorDataManager {
     static AssertValidSensorType(sensorType: SensorType): void;
     static AssertValidSensorTypeEnum(sensorTypeEnum: number): void;
     eventDispatcher: SensorDataEventDispatcher;
-    get dispatchEvent(): <T extends "getPressurePositions" | "getSensorScalars" | "sensorData" | "acceleration" | "gravity" | "linearAcceleration" | "gyroscope" | "magnetometer" | "gameRotation" | "rotation" | "orientation" | "activity" | "stepCounter" | "stepDetector" | "deviceOrientation" | "pressure" | "barometer">(type: T, message: SensorDataEventMessages[T]) => void;
+    get dispatchEvent(): <T extends "pressure" | "sensorData" | "barometer" | "acceleration" | "gravity" | "linearAcceleration" | "gyroscope" | "magnetometer" | "gameRotation" | "rotation" | "orientation" | "stepDetector" | "stepCounter" | "activity" | "deviceOrientation" | "getPressurePositions" | "getSensorScalars">(type: T, message: SensorDataEventMessages[T]) => void;
     parseMessage(messageType: SensorDataMessageType, dataView: DataView): void;
     parseScalars(dataView: DataView): void;
     private parseData;

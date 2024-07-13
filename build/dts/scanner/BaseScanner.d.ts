@@ -30,6 +30,7 @@ export type DiscoveredDevicesMap = {
 };
 declare abstract class BaseScanner {
     #private;
+    protected get baseConstructor(): typeof BaseScanner;
     static get isSupported(): boolean;
     get isSupported(): boolean;
     constructor();

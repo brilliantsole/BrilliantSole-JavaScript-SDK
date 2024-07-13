@@ -55,7 +55,7 @@ var environment = /*#__PURE__*/Object.freeze({
     isSafari: isSafari
 });
 
-var _a$8, _Console_consoles, _Console_levelFlags;
+var _a$6, _Console_consoles, _Console_levelFlags;
 var __console;
 if (isInLensStudio) {
     const log = function (...args) {
@@ -98,27 +98,27 @@ class Console {
             error: true,
             table: true,
         });
-        if (__classPrivateFieldGet(_a$8, _a$8, "f", _Console_consoles)[type]) {
+        if (__classPrivateFieldGet(_a$6, _a$6, "f", _Console_consoles)[type]) {
             throw new Error(`"${type}" console already exists`);
         }
-        __classPrivateFieldGet(_a$8, _a$8, "f", _Console_consoles)[type] = this;
+        __classPrivateFieldGet(_a$6, _a$6, "f", _Console_consoles)[type] = this;
     }
     setLevelFlags(levelFlags) {
         Object.assign(__classPrivateFieldGet(this, _Console_levelFlags, "f"), levelFlags);
     }
     static setLevelFlagsForType(type, levelFlags) {
-        if (!__classPrivateFieldGet(this, _a$8, "f", _Console_consoles)[type]) {
+        if (!__classPrivateFieldGet(this, _a$6, "f", _Console_consoles)[type]) {
             throw new Error(`no console found with type "${type}"`);
         }
-        __classPrivateFieldGet(this, _a$8, "f", _Console_consoles)[type].setLevelFlags(levelFlags);
+        __classPrivateFieldGet(this, _a$6, "f", _Console_consoles)[type].setLevelFlags(levelFlags);
     }
     static setAllLevelFlags(levelFlags) {
-        for (const type in __classPrivateFieldGet(this, _a$8, "f", _Console_consoles)) {
-            __classPrivateFieldGet(this, _a$8, "f", _Console_consoles)[type].setLevelFlags(levelFlags);
+        for (const type in __classPrivateFieldGet(this, _a$6, "f", _Console_consoles)) {
+            __classPrivateFieldGet(this, _a$6, "f", _Console_consoles)[type].setLevelFlags(levelFlags);
         }
     }
     static create(type, levelFlags) {
-        const console = __classPrivateFieldGet(this, _a$8, "f", _Console_consoles)[type] || new _a$8(type);
+        const console = __classPrivateFieldGet(this, _a$6, "f", _Console_consoles)[type] || new _a$6(type);
         if (levelFlags) {
             console.setLevelFlags(levelFlags);
         }
@@ -151,7 +151,7 @@ class Console {
         this.assertWithError(enumeration.includes(value), `invalid enum "${value}"`);
     }
 }
-_a$8 = Console, _Console_levelFlags = new WeakMap();
+_a$6 = Console, _Console_levelFlags = new WeakMap();
 _Console_consoles = { value: {} };
 function createConsole(type, levelFlags) {
     return Console.create(type, levelFlags);
@@ -452,7 +452,7 @@ function autoBind(self, {include, exclude} = {}) {
 	return self;
 }
 
-var _FileTransferManager_instances, _a$7, _FileTransferManager_dispatchEvent_get, _FileTransferManager_assertValidType, _FileTransferManager_assertValidTypeEnum, _FileTransferManager_assertValidStatusEnum, _FileTransferManager_assertValidCommand, _FileTransferManager_MaxLength, _FileTransferManager_maxLength, _FileTransferManager_parseMaxLength, _FileTransferManager_updateMaxLength, _FileTransferManager_assertValidLength, _FileTransferManager_type, _FileTransferManager_parseType, _FileTransferManager_updateType, _FileTransferManager_setType, _FileTransferManager_length, _FileTransferManager_parseLength, _FileTransferManager_updateLength, _FileTransferManager_setLength, _FileTransferManager_checksum, _FileTransferManager_parseChecksum, _FileTransferManager_updateChecksum, _FileTransferManager_setChecksum, _FileTransferManager_setCommand, _FileTransferManager_status, _FileTransferManager_parseStatus, _FileTransferManager_updateStatus, _FileTransferManager_assertIsIdle, _FileTransferManager_assertIsNotIdle, _FileTransferManager_receivedBlocks, _FileTransferManager_parseBlock, _FileTransferManager_send, _FileTransferManager_sendBlock;
+var _FileTransferManager_instances, _a$5, _FileTransferManager_dispatchEvent_get, _FileTransferManager_assertValidType, _FileTransferManager_assertValidTypeEnum, _FileTransferManager_assertValidStatusEnum, _FileTransferManager_assertValidCommand, _FileTransferManager_MaxLength, _FileTransferManager_maxLength, _FileTransferManager_parseMaxLength, _FileTransferManager_updateMaxLength, _FileTransferManager_assertValidLength, _FileTransferManager_type, _FileTransferManager_parseType, _FileTransferManager_updateType, _FileTransferManager_setType, _FileTransferManager_length, _FileTransferManager_parseLength, _FileTransferManager_updateLength, _FileTransferManager_setLength, _FileTransferManager_checksum, _FileTransferManager_parseChecksum, _FileTransferManager_updateChecksum, _FileTransferManager_setChecksum, _FileTransferManager_setCommand, _FileTransferManager_status, _FileTransferManager_parseStatus, _FileTransferManager_updateStatus, _FileTransferManager_assertIsIdle, _FileTransferManager_assertIsNotIdle, _FileTransferManager_receivedBlocks, _FileTransferManager_parseBlock, _FileTransferManager_send, _FileTransferManager_sendBlock;
 const _console$p = createConsole("FileTransferManager", { log: true });
 const FileTransferMessageTypes = [
     "maxFileLength",
@@ -480,7 +480,7 @@ const FileTransferEventTypes = [
 class FileTransferManager {
     constructor() {
         _FileTransferManager_instances.add(this);
-        _FileTransferManager_maxLength.set(this, _a$7.MaxLength);
+        _FileTransferManager_maxLength.set(this, _a$5.MaxLength);
         _FileTransferManager_type.set(this, void 0);
         _FileTransferManager_length.set(this, 0);
         _FileTransferManager_checksum.set(this, 0);
@@ -498,7 +498,7 @@ class FileTransferManager {
         return this.eventDispatcher.waitForEvent;
     }
     static get MaxLength() {
-        return __classPrivateFieldGet(this, _a$7, "f", _FileTransferManager_MaxLength);
+        return __classPrivateFieldGet(this, _a$5, "f", _FileTransferManager_MaxLength);
     }
     get maxLength() {
         return __classPrivateFieldGet(this, _FileTransferManager_maxLength, "f");
@@ -569,7 +569,7 @@ class FileTransferManager {
         await __classPrivateFieldGet(this, _FileTransferManager_instances, "m", _FileTransferManager_setCommand).call(this, "cancel");
     }
 }
-_a$7 = FileTransferManager, _FileTransferManager_maxLength = new WeakMap(), _FileTransferManager_type = new WeakMap(), _FileTransferManager_length = new WeakMap(), _FileTransferManager_checksum = new WeakMap(), _FileTransferManager_status = new WeakMap(), _FileTransferManager_receivedBlocks = new WeakMap(), _FileTransferManager_instances = new WeakSet(), _FileTransferManager_dispatchEvent_get = function _FileTransferManager_dispatchEvent_get() {
+_a$5 = FileTransferManager, _FileTransferManager_maxLength = new WeakMap(), _FileTransferManager_type = new WeakMap(), _FileTransferManager_length = new WeakMap(), _FileTransferManager_checksum = new WeakMap(), _FileTransferManager_status = new WeakMap(), _FileTransferManager_receivedBlocks = new WeakMap(), _FileTransferManager_instances = new WeakSet(), _FileTransferManager_dispatchEvent_get = function _FileTransferManager_dispatchEvent_get() {
     return this.eventDispatcher.dispatchEvent;
 }, _FileTransferManager_assertValidType = function _FileTransferManager_assertValidType(type) {
     _console$p.assertEnumWithError(type, FileTypes);
@@ -814,6 +814,7 @@ var _PressureSensorDataManager_positions, _PressureSensorDataManager_sensorRange
 const _console$o = createConsole("PressureDataManager", { log: true });
 const PressureSensorTypes = ["pressure"];
 const ContinuousPressureSensorTypes = PressureSensorTypes;
+const DefaultNumberOfPressureSensors = 8;
 class PressureSensorDataManager {
     constructor() {
         _PressureSensorDataManager_positions.set(this, []);
@@ -1016,10 +1017,10 @@ function parseMessage(dataView, messageTypes, callback, context, parseMessageLen
 }
 
 const _console$k = createConsole("SensorDataManager", { log: true });
-const SensorTypes = [...MotionSensorTypes, ...PressureSensorTypes, ...BarometerSensorTypes];
+const SensorTypes = [...PressureSensorTypes, ...MotionSensorTypes, ...BarometerSensorTypes];
 const ContinuousSensorTypes = [
-    ...ContinuousMotionTypes,
     ...ContinuousPressureSensorTypes,
+    ...ContinuousMotionTypes,
     ...ContinuousBarometerSensorTypes,
 ];
 const SensorDataMessageTypes = ["getPressurePositions", "getSensorScalars", "sensorData"];
@@ -1124,7 +1125,7 @@ class SensorDataManager {
     }
 }
 
-var _SensorConfigurationManager_instances, _a$6, _SensorConfigurationManager_dispatchEvent_get, _SensorConfigurationManager_availableSensorTypes, _SensorConfigurationManager_assertAvailableSensorType, _SensorConfigurationManager_configuration, _SensorConfigurationManager_updateConfiguration, _SensorConfigurationManager_isRedundant, _SensorConfigurationManager_parse, _SensorConfigurationManager_AssertValidSensorRate, _SensorConfigurationManager_assertValidSensorRate, _SensorConfigurationManager_createData, _SensorConfigurationManager_ZeroSensorConfiguration;
+var _SensorConfigurationManager_instances, _a$4, _SensorConfigurationManager_dispatchEvent_get, _SensorConfigurationManager_availableSensorTypes, _SensorConfigurationManager_assertAvailableSensorType, _SensorConfigurationManager_configuration, _SensorConfigurationManager_updateConfiguration, _SensorConfigurationManager_isRedundant, _SensorConfigurationManager_parse, _SensorConfigurationManager_AssertValidSensorRate, _SensorConfigurationManager_assertValidSensorRate, _SensorConfigurationManager_createData, _SensorConfigurationManager_ZeroSensorConfiguration;
 const _console$j = createConsole("SensorConfigurationManager", { log: true });
 const MaxSensorRate = 2 ** 16 - 1;
 const SensorRateStep = 5;
@@ -1161,7 +1162,7 @@ class SensorConfigurationManager {
         await promise;
     }
     static get ZeroSensorConfiguration() {
-        return __classPrivateFieldGet(this, _a$6, "f", _SensorConfigurationManager_ZeroSensorConfiguration);
+        return __classPrivateFieldGet(this, _a$4, "f", _SensorConfigurationManager_ZeroSensorConfiguration);
     }
     get zeroSensorConfiguration() {
         const zeroSensorConfiguration = {};
@@ -1186,7 +1187,7 @@ class SensorConfigurationManager {
         }
     }
 }
-_a$6 = SensorConfigurationManager, _SensorConfigurationManager_availableSensorTypes = new WeakMap(), _SensorConfigurationManager_configuration = new WeakMap(), _SensorConfigurationManager_instances = new WeakSet(), _SensorConfigurationManager_dispatchEvent_get = function _SensorConfigurationManager_dispatchEvent_get() {
+_a$4 = SensorConfigurationManager, _SensorConfigurationManager_availableSensorTypes = new WeakMap(), _SensorConfigurationManager_configuration = new WeakMap(), _SensorConfigurationManager_instances = new WeakSet(), _SensorConfigurationManager_dispatchEvent_get = function _SensorConfigurationManager_dispatchEvent_get() {
     return this.eventDispatcher.dispatchEvent;
 }, _SensorConfigurationManager_assertAvailableSensorType = function _SensorConfigurationManager_assertAvailableSensorType(sensorType) {
     _console$j.assertWithError(__classPrivateFieldGet(this, _SensorConfigurationManager_availableSensorTypes, "f"), "must get initial sensorConfiguration");
@@ -1224,7 +1225,7 @@ _a$6 = SensorConfigurationManager, _SensorConfigurationManager_availableSensorTy
     _console$j.assertWithError(sensorRate < MaxSensorRate, `sensorRate must be 0 or greater (got ${sensorRate})`);
     _console$j.assertWithError(sensorRate % SensorRateStep == 0, `sensorRate must be multiple of ${SensorRateStep}`);
 }, _SensorConfigurationManager_assertValidSensorRate = function _SensorConfigurationManager_assertValidSensorRate(sensorRate) {
-    __classPrivateFieldGet(_a$6, _a$6, "m", _SensorConfigurationManager_AssertValidSensorRate).call(_a$6, sensorRate);
+    __classPrivateFieldGet(_a$4, _a$4, "m", _SensorConfigurationManager_AssertValidSensorRate).call(_a$4, sensorRate);
 }, _SensorConfigurationManager_createData = function _SensorConfigurationManager_createData(sensorConfiguration) {
     let sensorTypes = Object.keys(sensorConfiguration);
     sensorTypes = sensorTypes.filter((sensorType) => __classPrivateFieldGet(this, _SensorConfigurationManager_instances, "m", _SensorConfigurationManager_assertAvailableSensorType).call(this, sensorType));
@@ -1243,7 +1244,7 @@ _a$6 = SensorConfigurationManager, _SensorConfigurationManager_availableSensorTy
 _SensorConfigurationManager_ZeroSensorConfiguration = { value: {} };
 (() => {
     SensorTypes.forEach((sensorType) => {
-        __classPrivateFieldGet(_a$6, _a$6, "f", _SensorConfigurationManager_ZeroSensorConfiguration)[sensorType] = 0;
+        __classPrivateFieldGet(_a$4, _a$4, "f", _SensorConfigurationManager_ZeroSensorConfiguration)[sensorType] = 0;
     });
 })();
 
@@ -1662,7 +1663,7 @@ _DeviceInformationManager_information = new WeakMap(), _DeviceInformationManager
     }
 };
 
-var _InformationManager_instances, _InformationManager_dispatchEvent_get, _InformationManager_isCharging, _InformationManager_updateIsCharging, _InformationManager_batteryCurrent, _InformationManager_updateBatteryCurrent, _InformationManager_id, _InformationManager_updateId, _InformationManager_name, _InformationManager_updateName, _InformationManager_type, _InformationManager_assertValidDeviceType, _InformationManager_assertValidDeviceTypeEnum, _InformationManager_updateType, _InformationManager_setTypeEnum, _InformationManager_mtu, _InformationManager_updateMtu, _InformationManager_isCurrentTimeSet, _InformationManager_onCurrentTime, _InformationManager_setCurrentTime;
+var _InformationManager_instances, _InformationManager_dispatchEvent_get, _InformationManager_isCharging, _InformationManager_updateIsCharging, _InformationManager_batteryCurrent, _InformationManager_updateBatteryCurrent, _InformationManager_id, _InformationManager_updateId, _InformationManager_name, _InformationManager_type, _InformationManager_assertValidDeviceType, _InformationManager_assertValidDeviceTypeEnum, _InformationManager_setTypeEnum, _InformationManager_mtu, _InformationManager_updateMtu, _InformationManager_isCurrentTimeSet, _InformationManager_onCurrentTime, _InformationManager_setCurrentTime;
 const _console$g = createConsole("InformationManager", { log: true });
 const DeviceTypes = ["leftInsole", "rightInsole"];
 const InsoleSides = ["left", "right"];
@@ -1714,6 +1715,12 @@ class InformationManager {
     get name() {
         return __classPrivateFieldGet(this, _InformationManager_name, "f");
     }
+    updateName(updatedName) {
+        _console$g.assertTypeWithError(updatedName, "string");
+        __classPrivateFieldSet(this, _InformationManager_name, updatedName, "f");
+        _console$g.log({ updatedName: __classPrivateFieldGet(this, _InformationManager_name, "f") });
+        __classPrivateFieldGet(this, _InformationManager_instances, "a", _InformationManager_dispatchEvent_get).call(this, "getName", { name: __classPrivateFieldGet(this, _InformationManager_name, "f") });
+    }
     async setName(newName) {
         _console$g.assertTypeWithError(newName, "string");
         _console$g.assertWithError(newName.length >= MinNameLength, `name must be greater than ${MinNameLength} characters long ("${newName}" is ${newName.length} characters long)`);
@@ -1729,6 +1736,16 @@ class InformationManager {
     }
     get typeEnum() {
         return DeviceTypes.indexOf(this.type);
+    }
+    updateType(updatedType) {
+        __classPrivateFieldGet(this, _InformationManager_instances, "m", _InformationManager_assertValidDeviceType).call(this, updatedType);
+        if (updatedType == this.type) {
+            _console$g.log("redundant type assignment");
+            return;
+        }
+        __classPrivateFieldSet(this, _InformationManager_type, updatedType, "f");
+        _console$g.log({ updatedType: __classPrivateFieldGet(this, _InformationManager_type, "f") });
+        __classPrivateFieldGet(this, _InformationManager_instances, "a", _InformationManager_dispatchEvent_get).call(this, "getType", { type: __classPrivateFieldGet(this, _InformationManager_type, "f") });
     }
     async setType(newType) {
         __classPrivateFieldGet(this, _InformationManager_instances, "m", _InformationManager_assertValidDeviceType).call(this, newType);
@@ -1780,14 +1797,14 @@ class InformationManager {
             case "setName":
                 const name = textDecoder.decode(dataView.buffer);
                 _console$g.log({ name });
-                __classPrivateFieldGet(this, _InformationManager_instances, "m", _InformationManager_updateName).call(this, name);
+                this.updateName(name);
                 break;
             case "getType":
             case "setType":
                 const typeEnum = dataView.getUint8(0);
                 const type = DeviceTypes[typeEnum];
                 _console$g.log({ typeEnum, type });
-                __classPrivateFieldGet(this, _InformationManager_instances, "m", _InformationManager_updateType).call(this, type);
+                this.updateType(type);
                 break;
             case "getMtu":
                 const mtu = dataView.getUint16(0, true);
@@ -1824,25 +1841,11 @@ _InformationManager_isCharging = new WeakMap(), _InformationManager_batteryCurre
     __classPrivateFieldSet(this, _InformationManager_id, updatedId, "f");
     _console$g.log({ id: __classPrivateFieldGet(this, _InformationManager_id, "f") });
     __classPrivateFieldGet(this, _InformationManager_instances, "a", _InformationManager_dispatchEvent_get).call(this, "getId", { id: __classPrivateFieldGet(this, _InformationManager_id, "f") });
-}, _InformationManager_updateName = function _InformationManager_updateName(updatedName) {
-    _console$g.assertTypeWithError(updatedName, "string");
-    __classPrivateFieldSet(this, _InformationManager_name, updatedName, "f");
-    _console$g.log({ updatedName: __classPrivateFieldGet(this, _InformationManager_name, "f") });
-    __classPrivateFieldGet(this, _InformationManager_instances, "a", _InformationManager_dispatchEvent_get).call(this, "getName", { name: __classPrivateFieldGet(this, _InformationManager_name, "f") });
 }, _InformationManager_assertValidDeviceType = function _InformationManager_assertValidDeviceType(type) {
     _console$g.assertEnumWithError(type, DeviceTypes);
 }, _InformationManager_assertValidDeviceTypeEnum = function _InformationManager_assertValidDeviceTypeEnum(typeEnum) {
     _console$g.assertTypeWithError(typeEnum, "number");
     _console$g.assertWithError(typeEnum in DeviceTypes, `invalid typeEnum ${typeEnum}`);
-}, _InformationManager_updateType = function _InformationManager_updateType(updatedType) {
-    __classPrivateFieldGet(this, _InformationManager_instances, "m", _InformationManager_assertValidDeviceType).call(this, updatedType);
-    if (updatedType == this.type) {
-        _console$g.log("redundant type assignment");
-        return;
-    }
-    __classPrivateFieldSet(this, _InformationManager_type, updatedType, "f");
-    _console$g.log({ updatedType: __classPrivateFieldGet(this, _InformationManager_type, "f") });
-    __classPrivateFieldGet(this, _InformationManager_instances, "a", _InformationManager_dispatchEvent_get).call(this, "getType", { type: __classPrivateFieldGet(this, _InformationManager_type, "f") });
 }, _InformationManager_setTypeEnum = async function _InformationManager_setTypeEnum(newTypeEnum) {
     __classPrivateFieldGet(this, _InformationManager_instances, "m", _InformationManager_assertValidDeviceTypeEnum).call(this, newTypeEnum);
     const setTypeData = Uint8Array.from([newTypeEnum]);
@@ -2000,51 +2003,21 @@ const VibrationWaveformEffects = [
     "smoothHum10",
 ];
 
-var _VibrationManager_instances, _a$5, _VibrationManager_verifyLocation, _VibrationManager_verifyLocations, _VibrationManager_createLocationsBitmask, _VibrationManager_assertNonEmptyArray, _VibrationManager_verifyWaveformEffect, _VibrationManager_MaxWaveformEffectSegmentDelay, _VibrationManager_verifyWaveformEffectSegment, _VibrationManager_MaxWaveformEffectSegmentLoopCount, _VibrationManager_verifyWaveformEffectSegmentLoopCount, _VibrationManager_MaxNumberOfWaveformEffectSegments, _VibrationManager_verifyWaveformEffectSegments, _VibrationManager_MaxWaveformEffectSequenceLoopCount, _VibrationManager_verifyWaveformEffectSequenceLoopCount, _VibrationManager_MaxWaveformSegmentDuration, _VibrationManager_verifyWaveformSegment, _VibrationManager_MaxNumberOfWaveformSegments, _VibrationManager_verifyWaveformSegments, _VibrationManager_createWaveformEffectsData, _VibrationManager_createWaveformData, _VibrationManager_verifyVibrationType, _VibrationManager_createData;
+var _VibrationManager_instances, _VibrationManager_verifyLocation, _VibrationManager_verifyLocations, _VibrationManager_createLocationsBitmask, _VibrationManager_assertNonEmptyArray, _VibrationManager_verifyWaveformEffect, _VibrationManager_verifyWaveformEffectSegment, _VibrationManager_verifyWaveformEffectSegmentLoopCount, _VibrationManager_verifyWaveformEffectSegments, _VibrationManager_verifyWaveformEffectSequenceLoopCount, _VibrationManager_verifyWaveformSegment, _VibrationManager_verifyWaveformSegments, _VibrationManager_createWaveformEffectsData, _VibrationManager_createWaveformData, _VibrationManager_verifyVibrationType, _VibrationManager_createData;
 const _console$f = createConsole("VibrationManager");
 const VibrationLocations = ["front", "rear"];
 const VibrationTypes = ["waveformEffect", "waveform"];
 const VibrationMessageTypes = ["triggerVibration"];
+const MaxNumberOfVibrationWaveformEffectSegments = 8;
+const MaxVibrationWaveformSegmentDuration = 2550;
+const MaxVibrationWaveformEffectSegmentDelay = 1270;
+const MaxVibrationWaveformEffectSegmentLoopCount = 3;
+const MaxNumberOfVibrationWaveformSegments = 20;
+const MaxVibrationWaveformEffectSequenceLoopCount = 6;
 class VibrationManager {
     constructor() {
         _VibrationManager_instances.add(this);
         autoBind(this);
-    }
-    static get MaxWaveformEffectSegmentDelay() {
-        return __classPrivateFieldGet(this, _a$5, "f", _VibrationManager_MaxWaveformEffectSegmentDelay);
-    }
-    get maxWaveformEffectSegmentDelay() {
-        return _a$5.MaxWaveformEffectSegmentDelay;
-    }
-    static get MaxWaveformEffectSegmentLoopCount() {
-        return __classPrivateFieldGet(this, _a$5, "f", _VibrationManager_MaxWaveformEffectSegmentLoopCount);
-    }
-    get maxWaveformEffectSegmentLoopCount() {
-        return _a$5.MaxWaveformEffectSegmentLoopCount;
-    }
-    static get MaxNumberOfWaveformEffectSegments() {
-        return __classPrivateFieldGet(this, _a$5, "f", _VibrationManager_MaxNumberOfWaveformEffectSegments);
-    }
-    get maxNumberOfWaveformEffectSegments() {
-        return _a$5.MaxNumberOfWaveformEffectSegments;
-    }
-    static get MaxWaveformEffectSequenceLoopCount() {
-        return __classPrivateFieldGet(this, _a$5, "f", _VibrationManager_MaxWaveformEffectSequenceLoopCount);
-    }
-    get maxWaveformEffectSequenceLoopCount() {
-        return _a$5.MaxWaveformEffectSequenceLoopCount;
-    }
-    static get MaxWaveformSegmentDuration() {
-        return __classPrivateFieldGet(this, _a$5, "f", _VibrationManager_MaxWaveformSegmentDuration);
-    }
-    get maxWaveformSegmentDuration() {
-        return _a$5.MaxWaveformSegmentDuration;
-    }
-    static get MaxNumberOfWaveformSegments() {
-        return __classPrivateFieldGet(this, _a$5, "f", _VibrationManager_MaxNumberOfWaveformSegments);
-    }
-    get maxNumberOfWaveformSegments() {
-        return _a$5.MaxNumberOfWaveformSegments;
     }
     async triggerVibration(vibrationConfigurations, sendImmediately = true) {
         let triggerVibrationData;
@@ -2075,7 +2048,7 @@ class VibrationManager {
         await this.sendMessage([{ type: "triggerVibration", data: triggerVibrationData }], sendImmediately);
     }
 }
-_a$5 = VibrationManager, _VibrationManager_instances = new WeakSet(), _VibrationManager_verifyLocation = function _VibrationManager_verifyLocation(location) {
+_VibrationManager_instances = new WeakSet(), _VibrationManager_verifyLocation = function _VibrationManager_verifyLocation(location) {
     _console$f.assertTypeWithError(location, "string");
     _console$f.assertWithError(VibrationLocations.includes(location), `invalid location "${location}"`);
 }, _VibrationManager_verifyLocations = function _VibrationManager_verifyLocations(locations) {
@@ -2106,7 +2079,7 @@ _a$5 = VibrationManager, _VibrationManager_instances = new WeakSet(), _Vibration
     else if (waveformEffectSegment.delay != undefined) {
         const { delay } = waveformEffectSegment;
         _console$f.assertWithError(delay >= 0, `delay must be 0ms or greater (got ${delay})`);
-        _console$f.assertWithError(delay <= this.maxWaveformEffectSegmentDelay, `delay must be ${this.maxWaveformEffectSegmentDelay}ms or less (got ${delay})`);
+        _console$f.assertWithError(delay <= MaxVibrationWaveformEffectSegmentDelay, `delay must be ${MaxVibrationWaveformEffectSegmentDelay}ms or less (got ${delay})`);
     }
     else {
         throw Error("no effect or delay found in waveformEffectSegment");
@@ -2118,27 +2091,27 @@ _a$5 = VibrationManager, _VibrationManager_instances = new WeakSet(), _Vibration
 }, _VibrationManager_verifyWaveformEffectSegmentLoopCount = function _VibrationManager_verifyWaveformEffectSegmentLoopCount(waveformEffectSegmentLoopCount) {
     _console$f.assertTypeWithError(waveformEffectSegmentLoopCount, "number");
     _console$f.assertWithError(waveformEffectSegmentLoopCount >= 0, `waveformEffectSegmentLoopCount must be 0 or greater (got ${waveformEffectSegmentLoopCount})`);
-    _console$f.assertWithError(waveformEffectSegmentLoopCount <= this.maxWaveformEffectSegmentLoopCount, `waveformEffectSegmentLoopCount must be ${this.maxWaveformEffectSegmentLoopCount} or fewer (got ${waveformEffectSegmentLoopCount})`);
+    _console$f.assertWithError(waveformEffectSegmentLoopCount <= MaxVibrationWaveformEffectSegmentLoopCount, `waveformEffectSegmentLoopCount must be ${MaxVibrationWaveformEffectSegmentLoopCount} or fewer (got ${waveformEffectSegmentLoopCount})`);
 }, _VibrationManager_verifyWaveformEffectSegments = function _VibrationManager_verifyWaveformEffectSegments(waveformEffectSegments) {
     __classPrivateFieldGet(this, _VibrationManager_instances, "m", _VibrationManager_assertNonEmptyArray).call(this, waveformEffectSegments);
-    _console$f.assertWithError(waveformEffectSegments.length <= this.maxNumberOfWaveformEffectSegments, `must have ${this.maxNumberOfWaveformEffectSegments} waveformEffectSegments or fewer (got ${waveformEffectSegments.length})`);
+    _console$f.assertWithError(waveformEffectSegments.length <= MaxNumberOfVibrationWaveformEffectSegments, `must have ${MaxNumberOfVibrationWaveformEffectSegments} waveformEffectSegments or fewer (got ${waveformEffectSegments.length})`);
     waveformEffectSegments.forEach((waveformEffectSegment) => {
         __classPrivateFieldGet(this, _VibrationManager_instances, "m", _VibrationManager_verifyWaveformEffectSegment).call(this, waveformEffectSegment);
     });
 }, _VibrationManager_verifyWaveformEffectSequenceLoopCount = function _VibrationManager_verifyWaveformEffectSequenceLoopCount(waveformEffectSequenceLoopCount) {
     _console$f.assertTypeWithError(waveformEffectSequenceLoopCount, "number");
     _console$f.assertWithError(waveformEffectSequenceLoopCount >= 0, `waveformEffectSequenceLoopCount must be 0 or greater (got ${waveformEffectSequenceLoopCount})`);
-    _console$f.assertWithError(waveformEffectSequenceLoopCount <= this.maxWaveformEffectSequenceLoopCount, `waveformEffectSequenceLoopCount must be ${this.maxWaveformEffectSequenceLoopCount} or fewer (got ${waveformEffectSequenceLoopCount})`);
+    _console$f.assertWithError(waveformEffectSequenceLoopCount <= MaxVibrationWaveformEffectSequenceLoopCount, `waveformEffectSequenceLoopCount must be ${MaxVibrationWaveformEffectSequenceLoopCount} or fewer (got ${waveformEffectSequenceLoopCount})`);
 }, _VibrationManager_verifyWaveformSegment = function _VibrationManager_verifyWaveformSegment(waveformSegment) {
     _console$f.assertTypeWithError(waveformSegment.amplitude, "number");
     _console$f.assertWithError(waveformSegment.amplitude >= 0, `amplitude must be 0 or greater (got ${waveformSegment.amplitude})`);
     _console$f.assertWithError(waveformSegment.amplitude <= 1, `amplitude must be 1 or less (got ${waveformSegment.amplitude})`);
     _console$f.assertTypeWithError(waveformSegment.duration, "number");
     _console$f.assertWithError(waveformSegment.duration > 0, `duration must be greater than 0ms (got ${waveformSegment.duration}ms)`);
-    _console$f.assertWithError(waveformSegment.duration <= this.maxWaveformSegmentDuration, `duration must be ${this.maxWaveformSegmentDuration}ms or less (got ${waveformSegment.duration}ms)`);
+    _console$f.assertWithError(waveformSegment.duration <= MaxVibrationWaveformSegmentDuration, `duration must be ${MaxVibrationWaveformSegmentDuration}ms or less (got ${waveformSegment.duration}ms)`);
 }, _VibrationManager_verifyWaveformSegments = function _VibrationManager_verifyWaveformSegments(waveformSegments) {
     __classPrivateFieldGet(this, _VibrationManager_instances, "m", _VibrationManager_assertNonEmptyArray).call(this, waveformSegments);
-    _console$f.assertWithError(waveformSegments.length <= this.maxNumberOfWaveformSegments, `must have ${this.maxNumberOfWaveformSegments} waveformSegments or fewer (got ${waveformSegments.length})`);
+    _console$f.assertWithError(waveformSegments.length <= MaxNumberOfVibrationWaveformSegments, `must have ${MaxNumberOfVibrationWaveformSegments} waveformSegments or fewer (got ${waveformSegments.length})`);
     waveformSegments.forEach((waveformSegment) => {
         __classPrivateFieldGet(this, _VibrationManager_instances, "m", _VibrationManager_verifyWaveformSegment).call(this, waveformSegment);
     });
@@ -2153,7 +2126,7 @@ _a$5 = VibrationManager, _VibrationManager_instances = new WeakSet(), _Vibration
     });
     const includeAllWaveformEffectSegments = hasAtLeast1WaveformEffectWithANonzeroLoopCount || waveformEffectSequenceLoopCount != 0;
     for (let index = 0; index < waveformEffectSegments.length ||
-        (includeAllWaveformEffectSegments && index < this.maxNumberOfWaveformEffectSegments); index++) {
+        (includeAllWaveformEffectSegments && index < MaxNumberOfVibrationWaveformEffectSegments); index++) {
         const waveformEffectSegment = waveformEffectSegments[index] || { effect: "none" };
         if (waveformEffectSegment.effect != undefined) {
             const waveformEffect = waveformEffectSegment.effect;
@@ -2169,7 +2142,7 @@ _a$5 = VibrationManager, _VibrationManager_instances = new WeakSet(), _Vibration
     }
     const includeAllWaveformEffectSegmentLoopCounts = waveformEffectSequenceLoopCount != 0;
     for (let index = 0; index < waveformEffectSegments.length ||
-        (includeAllWaveformEffectSegmentLoopCounts && index < this.maxNumberOfWaveformEffectSegments); index++) {
+        (includeAllWaveformEffectSegmentLoopCounts && index < MaxNumberOfVibrationWaveformEffectSegments); index++) {
         const waveformEffectSegmentLoopCount = waveformEffectSegments[index]?.loopCount || 0;
         if (index == 0 || index == 4) {
             dataArray[byteOffset] = 0;
@@ -2208,14 +2181,8 @@ _a$5 = VibrationManager, _VibrationManager_instances = new WeakSet(), _Vibration
     _console$f.log({ data });
     return data;
 };
-_VibrationManager_MaxWaveformEffectSegmentDelay = { value: 1270 };
-_VibrationManager_MaxWaveformEffectSegmentLoopCount = { value: 3 };
-_VibrationManager_MaxNumberOfWaveformEffectSegments = { value: 8 };
-_VibrationManager_MaxWaveformEffectSequenceLoopCount = { value: 6 };
-_VibrationManager_MaxWaveformSegmentDuration = { value: 2550 };
-_VibrationManager_MaxNumberOfWaveformSegments = { value: 20 };
 
-var _BaseConnectionManager_instances, _a$4, _BaseConnectionManager_AssertValidTxRxMessageType, _BaseConnectionManager_baseConstructor_get, _BaseConnectionManager_assertIsSupported, _BaseConnectionManager_status, _BaseConnectionManager_assertIsNotConnected, _BaseConnectionManager_assertIsNotConnecting, _BaseConnectionManager_assertIsConnected, _BaseConnectionManager_assertIsNotDisconnecting, _BaseConnectionManager_assertIsConnectedAndNotDisconnecting, _BaseConnectionManager_pendingMessages, _BaseConnectionManager_onRxMessage, _BaseConnectionManager_timer, _BaseConnectionManager_checkConnection;
+var _BaseConnectionManager_instances, _a$3, _BaseConnectionManager_AssertValidTxRxMessageType, _BaseConnectionManager_assertIsSupported, _BaseConnectionManager_status, _BaseConnectionManager_assertIsNotConnected, _BaseConnectionManager_assertIsNotConnecting, _BaseConnectionManager_assertIsConnected, _BaseConnectionManager_assertIsNotDisconnecting, _BaseConnectionManager_assertIsConnectedAndNotDisconnecting, _BaseConnectionManager_pendingMessages, _BaseConnectionManager_onRxMessage, _BaseConnectionManager_timer, _BaseConnectionManager_checkConnection;
 const _console$e = createConsole("BaseConnectionManager", { log: true });
 const ConnectionStatuses = ["not connected", "connecting", "connected", "disconnecting"];
 const TxRxMessageTypes = [
@@ -2235,14 +2202,17 @@ const ConnectionMessageTypes = [
     ...TxRxMessageTypes,
 ];
 class BaseConnectionManager {
+    get baseConstructor() {
+        return this.constructor;
+    }
     static get isSupported() {
         return false;
     }
     get isSupported() {
-        return __classPrivateFieldGet(this, _BaseConnectionManager_instances, "a", _BaseConnectionManager_baseConstructor_get).isSupported;
+        return this.baseConstructor.isSupported;
     }
     get type() {
-        return __classPrivateFieldGet(this, _BaseConnectionManager_instances, "a", _BaseConnectionManager_baseConstructor_get).type;
+        return this.baseConstructor.type;
     }
     constructor() {
         _BaseConnectionManager_instances.add(this);
@@ -2309,7 +2279,7 @@ class BaseConnectionManager {
         }
         _console$e.log("sendTxMessages", __classPrivateFieldGet(this, _BaseConnectionManager_pendingMessages, "f").slice());
         const arrayBuffers = __classPrivateFieldGet(this, _BaseConnectionManager_pendingMessages, "f").map((message) => {
-            __classPrivateFieldGet(_a$4, _a$4, "m", _BaseConnectionManager_AssertValidTxRxMessageType).call(_a$4, message.type);
+            __classPrivateFieldGet(_a$3, _a$3, "m", _BaseConnectionManager_AssertValidTxRxMessageType).call(_a$3, message.type);
             const messageTypeEnum = TxRxMessageTypes.indexOf(message.type);
             const dataLength = new DataView(new ArrayBuffer(2));
             dataLength.setUint16(0, message.data?.byteLength || 0, true);
@@ -2347,10 +2317,8 @@ class BaseConnectionManager {
         parseMessage(dataView, TxRxMessageTypes, __classPrivateFieldGet(this, _BaseConnectionManager_instances, "m", _BaseConnectionManager_onRxMessage).bind(this), null, true);
     }
 }
-_a$4 = BaseConnectionManager, _BaseConnectionManager_status = new WeakMap(), _BaseConnectionManager_pendingMessages = new WeakMap(), _BaseConnectionManager_timer = new WeakMap(), _BaseConnectionManager_instances = new WeakSet(), _BaseConnectionManager_AssertValidTxRxMessageType = function _BaseConnectionManager_AssertValidTxRxMessageType(messageType) {
+_a$3 = BaseConnectionManager, _BaseConnectionManager_status = new WeakMap(), _BaseConnectionManager_pendingMessages = new WeakMap(), _BaseConnectionManager_timer = new WeakMap(), _BaseConnectionManager_instances = new WeakSet(), _BaseConnectionManager_AssertValidTxRxMessageType = function _BaseConnectionManager_AssertValidTxRxMessageType(messageType) {
     _console$e.assertEnumWithError(messageType, TxRxMessageTypes);
-}, _BaseConnectionManager_baseConstructor_get = function _BaseConnectionManager_baseConstructor_get() {
-    return this.constructor;
 }, _BaseConnectionManager_assertIsSupported = function _BaseConnectionManager_assertIsSupported() {
     _console$e.assertWithError(this.isSupported, `${this.constructor.name} is not supported`);
 }, _BaseConnectionManager_assertIsNotConnected = function _BaseConnectionManager_assertIsNotConnected() {
@@ -3744,7 +3712,7 @@ _FirmwareManager_status = new WeakMap(), _FirmwareManager_images = new WeakMap()
     __classPrivateFieldGet(this, _FirmwareManager_instances, "a", _FirmwareManager_dispatchEvent_get).call(this, "firmwareImages", { firmwareImages: __classPrivateFieldGet(this, _FirmwareManager_images, "f") });
 };
 
-var _Device_instances, _a$3, _Device_DefaultConnectionManager, _Device_eventDispatcher, _Device_dispatchEvent_get, _Device_connectionManager, _Device_sendTxMessages, _Device_isConnected, _Device_assertIsConnected, _Device_RequiredInformationConnectionMessages, _Device_requiredInformationConnectionMessages_get, _Device_hasRequiredInformation_get, _Device_requestRequiredInformation, _Device_ReconnectOnDisconnection, _Device_reconnectOnDisconnection, _Device_reconnectIntervalId, _Device_onConnectionStatusUpdated, _Device_dispatchConnectionEvents, _Device_checkConnection, _Device_clear, _Device_onConnectionMessageReceived, _Device_deviceInformationManager, _Device_batteryLevel, _Device_updateBatteryLevel, _Device_informationManager, _Device_sensorConfigurationManager, _Device_ClearSensorConfigurationOnLeave, _Device_clearSensorConfigurationOnLeave, _Device_DefaultNumberOfPressureSensors, _Device_sensorDataManager, _Device_vibrationManager, _Device_fileTransferManager, _Device_tfliteManager, _Device_firmwareManager, _Device_sendSmpMessage, _Device_ConnectedDevices, _Device_UseLocalStorage, _Device_DefaultLocalStorageConfiguration, _Device_LocalStorageConfiguration, _Device_AssertLocalStorage, _Device_LocalStorageKey, _Device_SaveToLocalStorage, _Device_LoadFromLocalStorage, _Device_UpdateLocalStorageConfigurationForDevice, _Device_AvailableDevices, _Device_EventDispatcher, _Device_DispatchEvent_get, _Device_OnDeviceIsConnected, _Device_DispatchAvailableDevices, _Device_DispatchConnectedDevices;
+var _Device_instances, _a$2, _Device_DefaultConnectionManager, _Device_eventDispatcher, _Device_dispatchEvent_get, _Device_connectionManager, _Device_sendTxMessages, _Device_isConnected, _Device_assertIsConnected, _Device_RequiredInformationConnectionMessages, _Device_requiredInformationConnectionMessages_get, _Device_hasRequiredInformation_get, _Device_requestRequiredInformation, _Device_ReconnectOnDisconnection, _Device_reconnectOnDisconnection, _Device_reconnectIntervalId, _Device_onConnectionStatusUpdated, _Device_dispatchConnectionEvents, _Device_checkConnection, _Device_clear, _Device_onConnectionMessageReceived, _Device_deviceInformationManager, _Device_batteryLevel, _Device_updateBatteryLevel, _Device_informationManager, _Device_sensorConfigurationManager, _Device_ClearSensorConfigurationOnLeave, _Device_clearSensorConfigurationOnLeave, _Device_sensorDataManager, _Device_vibrationManager, _Device_fileTransferManager, _Device_tfliteManager, _Device_firmwareManager, _Device_sendSmpMessage, _Device_ConnectedDevices, _Device_UseLocalStorage, _Device_DefaultLocalStorageConfiguration, _Device_LocalStorageConfiguration, _Device_AssertLocalStorage, _Device_LocalStorageKey, _Device_SaveToLocalStorage, _Device_LoadFromLocalStorage, _Device_UpdateLocalStorageConfigurationForDevice, _Device_AvailableDevices, _Device_EventDispatcher, _Device_DispatchEvent_get, _Device_OnDeviceIsConnected, _Device_DispatchAvailableDevices, _Device_DispatchConnectedDevices;
 const _console$7 = createConsole("Device", { log: true });
 const ConnectionEventTypes = [...ConnectionStatuses, "connectionStatus", "isConnected"];
 const DeviceEventTypes = [
@@ -3775,14 +3743,14 @@ class Device {
         _Device_connectionManager.set(this, void 0);
         this.sendTxMessages = __classPrivateFieldGet(this, _Device_instances, "m", _Device_sendTxMessages).bind(this);
         _Device_isConnected.set(this, false);
-        _Device_reconnectOnDisconnection.set(this, _a$3.ReconnectOnDisconnection);
+        _Device_reconnectOnDisconnection.set(this, _a$2.ReconnectOnDisconnection);
         _Device_reconnectIntervalId.set(this, void 0);
         this.latestConnectionMessage = new Map();
         _Device_deviceInformationManager.set(this, new DeviceInformationManager());
         _Device_batteryLevel.set(this, 0);
         _Device_informationManager.set(this, new InformationManager());
         _Device_sensorConfigurationManager.set(this, new SensorConfigurationManager());
-        _Device_clearSensorConfigurationOnLeave.set(this, _a$3.ClearSensorConfigurationOnLeave);
+        _Device_clearSensorConfigurationOnLeave.set(this, _a$2.ClearSensorConfigurationOnLeave);
         _Device_sensorDataManager.set(this, new SensorDataManager());
         _Device_vibrationManager.set(this, new VibrationManager());
         _Device_fileTransferManager.set(this, new FileTransferManager());
@@ -3808,8 +3776,8 @@ class Device {
             this.connectionManager.mtu = this.mtu;
         });
         this.addEventListener("getType", () => {
-            if (__classPrivateFieldGet(_a$3, _a$3, "f", _Device_UseLocalStorage)) {
-                __classPrivateFieldGet(_a$3, _a$3, "m", _Device_UpdateLocalStorageConfigurationForDevice).call(_a$3, this);
+            if (__classPrivateFieldGet(_a$2, _a$2, "f", _Device_UseLocalStorage)) {
+                __classPrivateFieldGet(_a$2, _a$2, "m", _Device_UpdateLocalStorageConfigurationForDevice).call(_a$2, this);
             }
         });
         if (isInBrowser) {
@@ -3827,7 +3795,7 @@ class Device {
             });
         }
         this.addEventListener("isConnected", () => {
-            __classPrivateFieldGet(_a$3, _a$3, "m", _Device_OnDeviceIsConnected).call(_a$3, this);
+            __classPrivateFieldGet(_a$2, _a$2, "m", _Device_OnDeviceIsConnected).call(_a$2, this);
         });
     }
     get addEventListener() {
@@ -3860,7 +3828,7 @@ class Device {
     }
     async connect() {
         if (!this.connectionManager) {
-            this.connectionManager = __classPrivateFieldGet(_a$3, _a$3, "m", _Device_DefaultConnectionManager).call(_a$3);
+            this.connectionManager = __classPrivateFieldGet(_a$2, _a$2, "m", _Device_DefaultConnectionManager).call(_a$2);
         }
         __classPrivateFieldGet(this, _Device_instances, "m", _Device_clear).call(this);
         return this.connectionManager.connect();
@@ -3876,11 +3844,11 @@ class Device {
         return this.connectionManager?.reconnect();
     }
     static get ReconnectOnDisconnection() {
-        return __classPrivateFieldGet(this, _a$3, "f", _Device_ReconnectOnDisconnection);
+        return __classPrivateFieldGet(this, _a$2, "f", _Device_ReconnectOnDisconnection);
     }
     static set ReconnectOnDisconnection(newReconnectOnDisconnection) {
         _console$7.assertTypeWithError(newReconnectOnDisconnection, "boolean");
-        __classPrivateFieldSet(this, _a$3, newReconnectOnDisconnection, "f", _Device_ReconnectOnDisconnection);
+        __classPrivateFieldSet(this, _a$2, newReconnectOnDisconnection, "f", _Device_ReconnectOnDisconnection);
     }
     get reconnectOnDisconnection() {
         return __classPrivateFieldGet(this, _Device_reconnectOnDisconnection, "f");
@@ -3983,11 +3951,11 @@ class Device {
         return __classPrivateFieldGet(this, _Device_sensorConfigurationManager, "f").clearSensorConfiguration();
     }
     static get ClearSensorConfigurationOnLeave() {
-        return __classPrivateFieldGet(this, _a$3, "f", _Device_ClearSensorConfigurationOnLeave);
+        return __classPrivateFieldGet(this, _a$2, "f", _Device_ClearSensorConfigurationOnLeave);
     }
     static set ClearSensorConfigurationOnLeave(newClearSensorConfigurationOnLeave) {
         _console$7.assertTypeWithError(newClearSensorConfigurationOnLeave, "boolean");
-        __classPrivateFieldSet(this, _a$3, newClearSensorConfigurationOnLeave, "f", _Device_ClearSensorConfigurationOnLeave);
+        __classPrivateFieldSet(this, _a$2, newClearSensorConfigurationOnLeave, "f", _Device_ClearSensorConfigurationOnLeave);
     }
     get clearSensorConfigurationOnLeave() {
         return __classPrivateFieldGet(this, _Device_clearSensorConfigurationOnLeave, "f");
@@ -3995,9 +3963,6 @@ class Device {
     set clearSensorConfigurationOnLeave(newClearSensorConfigurationOnLeave) {
         _console$7.assertTypeWithError(newClearSensorConfigurationOnLeave, "boolean");
         __classPrivateFieldSet(this, _Device_clearSensorConfigurationOnLeave, newClearSensorConfigurationOnLeave, "f");
-    }
-    static get DefaultNumberOfPressureSensors() {
-        return __classPrivateFieldGet(this, _a$3, "f", _Device_DefaultNumberOfPressureSensors);
     }
     get numberOfPressureSensors() {
         return __classPrivateFieldGet(this, _Device_sensorDataManager, "f").pressureSensorDataManager.numberOfSensors;
@@ -4032,9 +3997,6 @@ class Device {
     }
     get setTfliteName() {
         return __classPrivateFieldGet(this, _Device_tfliteManager, "f").setName;
-    }
-    static get TfliteTasks() {
-        return TfliteTasks;
     }
     get tfliteTask() {
         return __classPrivateFieldGet(this, _Device_tfliteManager, "f").task;
@@ -4113,24 +4075,24 @@ class Device {
         return __classPrivateFieldGet(this, _Device_firmwareManager, "f").testImage;
     }
     static get ConnectedDevices() {
-        return __classPrivateFieldGet(this, _a$3, "f", _Device_ConnectedDevices);
+        return __classPrivateFieldGet(this, _a$2, "f", _Device_ConnectedDevices);
     }
     static get UseLocalStorage() {
-        return __classPrivateFieldGet(this, _a$3, "f", _Device_UseLocalStorage);
+        return __classPrivateFieldGet(this, _a$2, "f", _Device_UseLocalStorage);
     }
     static set UseLocalStorage(newUseLocalStorage) {
-        __classPrivateFieldGet(this, _a$3, "m", _Device_AssertLocalStorage).call(this);
+        __classPrivateFieldGet(this, _a$2, "m", _Device_AssertLocalStorage).call(this);
         _console$7.assertTypeWithError(newUseLocalStorage, "boolean");
-        __classPrivateFieldSet(this, _a$3, newUseLocalStorage, "f", _Device_UseLocalStorage);
-        if (__classPrivateFieldGet(this, _a$3, "f", _Device_UseLocalStorage) && !__classPrivateFieldGet(this, _a$3, "f", _Device_LocalStorageConfiguration)) {
-            __classPrivateFieldGet(this, _a$3, "m", _Device_LoadFromLocalStorage).call(this);
+        __classPrivateFieldSet(this, _a$2, newUseLocalStorage, "f", _Device_UseLocalStorage);
+        if (__classPrivateFieldGet(this, _a$2, "f", _Device_UseLocalStorage) && !__classPrivateFieldGet(this, _a$2, "f", _Device_LocalStorageConfiguration)) {
+            __classPrivateFieldGet(this, _a$2, "m", _Device_LoadFromLocalStorage).call(this);
         }
     }
     static get CanUseLocalStorage() {
         return isInBrowser && window.localStorage;
     }
     static get AvailableDevices() {
-        return __classPrivateFieldGet(this, _a$3, "f", _Device_AvailableDevices);
+        return __classPrivateFieldGet(this, _a$2, "f", _Device_AvailableDevices);
     }
     static get CanGetDevices() {
         return isInBrowser && navigator.bluetooth?.getDevices && !isInBluefy;
@@ -4152,10 +4114,10 @@ class Device {
             _console$7.warn("bluetooth.getDevices() is not available in this browser");
             return;
         }
-        if (!__classPrivateFieldGet(this, _a$3, "f", _Device_LocalStorageConfiguration)) {
-            __classPrivateFieldGet(this, _a$3, "m", _Device_LoadFromLocalStorage).call(this);
+        if (!__classPrivateFieldGet(this, _a$2, "f", _Device_LocalStorageConfiguration)) {
+            __classPrivateFieldGet(this, _a$2, "m", _Device_LoadFromLocalStorage).call(this);
         }
-        const configuration = __classPrivateFieldGet(this, _a$3, "f", _Device_LocalStorageConfiguration);
+        const configuration = __classPrivateFieldGet(this, _a$2, "f", _Device_LocalStorageConfiguration);
         if (!configuration.devices || configuration.devices.length == 0) {
             _console$7.log("no devices found in configuration");
             return;
@@ -4176,7 +4138,7 @@ class Device {
                 if (existingConnectedDevice &&
                     existingConnectedDevice?.bluetoothId == existingAvailableDevice.bluetoothId &&
                     existingConnectedDevice != existingAvailableDevice) {
-                    this.AvailableDevices[__classPrivateFieldGet(this, _a$3, "f", _Device_AvailableDevices).indexOf(existingAvailableDevice)] = existingConnectedDevice;
+                    this.AvailableDevices[__classPrivateFieldGet(this, _a$2, "f", _Device_AvailableDevices).indexOf(existingAvailableDevice)] = existingConnectedDevice;
                 }
                 return;
             }
@@ -4184,7 +4146,7 @@ class Device {
                 this.AvailableDevices.push(existingConnectedDevice);
                 return;
             }
-            const device = new _a$3();
+            const device = new _a$2();
             const connectionManager = new WebBluetoothConnectionManager();
             connectionManager.device = bluetoothDevice;
             if (bluetoothDevice.name) {
@@ -4194,22 +4156,22 @@ class Device {
             device.connectionManager = connectionManager;
             this.AvailableDevices.push(device);
         });
-        __classPrivateFieldGet(this, _a$3, "m", _Device_DispatchAvailableDevices).call(this);
+        __classPrivateFieldGet(this, _a$2, "m", _Device_DispatchAvailableDevices).call(this);
         return this.AvailableDevices;
     }
     static get AddEventListener() {
-        return __classPrivateFieldGet(this, _a$3, "f", _Device_EventDispatcher).addEventListener;
+        return __classPrivateFieldGet(this, _a$2, "f", _Device_EventDispatcher).addEventListener;
     }
     static get RemoveEventListener() {
-        return __classPrivateFieldGet(this, _a$3, "f", _Device_EventDispatcher).removeEventListener;
+        return __classPrivateFieldGet(this, _a$2, "f", _Device_EventDispatcher).removeEventListener;
     }
     static async Connect() {
-        const device = new _a$3();
+        const device = new _a$2();
         await device.connect();
         return device;
     }
 }
-_a$3 = Device, _Device_eventDispatcher = new WeakMap(), _Device_connectionManager = new WeakMap(), _Device_isConnected = new WeakMap(), _Device_reconnectOnDisconnection = new WeakMap(), _Device_reconnectIntervalId = new WeakMap(), _Device_deviceInformationManager = new WeakMap(), _Device_batteryLevel = new WeakMap(), _Device_informationManager = new WeakMap(), _Device_sensorConfigurationManager = new WeakMap(), _Device_clearSensorConfigurationOnLeave = new WeakMap(), _Device_sensorDataManager = new WeakMap(), _Device_vibrationManager = new WeakMap(), _Device_fileTransferManager = new WeakMap(), _Device_tfliteManager = new WeakMap(), _Device_firmwareManager = new WeakMap(), _Device_instances = new WeakSet(), _Device_DefaultConnectionManager = function _Device_DefaultConnectionManager() {
+_a$2 = Device, _Device_eventDispatcher = new WeakMap(), _Device_connectionManager = new WeakMap(), _Device_isConnected = new WeakMap(), _Device_reconnectOnDisconnection = new WeakMap(), _Device_reconnectIntervalId = new WeakMap(), _Device_deviceInformationManager = new WeakMap(), _Device_batteryLevel = new WeakMap(), _Device_informationManager = new WeakMap(), _Device_sensorConfigurationManager = new WeakMap(), _Device_clearSensorConfigurationOnLeave = new WeakMap(), _Device_sensorDataManager = new WeakMap(), _Device_vibrationManager = new WeakMap(), _Device_fileTransferManager = new WeakMap(), _Device_tfliteManager = new WeakMap(), _Device_firmwareManager = new WeakMap(), _Device_instances = new WeakSet(), _Device_DefaultConnectionManager = function _Device_DefaultConnectionManager() {
     return new WebBluetoothConnectionManager();
 }, _Device_dispatchEvent_get = function _Device_dispatchEvent_get() {
     return __classPrivateFieldGet(this, _Device_eventDispatcher, "f").dispatchEvent;
@@ -4218,7 +4180,7 @@ _a$3 = Device, _Device_eventDispatcher = new WeakMap(), _Device_connectionManage
 }, _Device_assertIsConnected = function _Device_assertIsConnected() {
     _console$7.assertWithError(this.isConnected, "not connected");
 }, _Device_requiredInformationConnectionMessages_get = function _Device_requiredInformationConnectionMessages_get() {
-    return __classPrivateFieldGet(_a$3, _a$3, "f", _Device_RequiredInformationConnectionMessages);
+    return __classPrivateFieldGet(_a$2, _a$2, "f", _Device_RequiredInformationConnectionMessages);
 }, _Device_hasRequiredInformation_get = function _Device_hasRequiredInformation_get() {
     return __classPrivateFieldGet(this, _Device_instances, "a", _Device_requiredInformationConnectionMessages_get).every((messageType) => {
         return this.latestConnectionMessage.has(messageType);
@@ -4250,10 +4212,10 @@ _a$3 = Device, _Device_eventDispatcher = new WeakMap(), _Device_connectionManage
     if (connectionStatus == "connected" && !__classPrivateFieldGet(this, _Device_isConnected, "f")) {
         __classPrivateFieldGet(this, _Device_instances, "m", _Device_requestRequiredInformation).call(this);
     }
-    if (connectionStatus == "not connected" && !this.canReconnect && __classPrivateFieldGet(_a$3, _a$3, "f", _Device_AvailableDevices).includes(this)) {
-        const deviceIndex = __classPrivateFieldGet(_a$3, _a$3, "f", _Device_AvailableDevices).indexOf(this);
-        _a$3.AvailableDevices.splice(deviceIndex, 1);
-        __classPrivateFieldGet(_a$3, _a$3, "m", _Device_DispatchAvailableDevices).call(_a$3);
+    if (connectionStatus == "not connected" && !this.canReconnect && __classPrivateFieldGet(_a$2, _a$2, "f", _Device_AvailableDevices).includes(this)) {
+        const deviceIndex = __classPrivateFieldGet(_a$2, _a$2, "f", _Device_AvailableDevices).indexOf(this);
+        _a$2.AvailableDevices.splice(deviceIndex, 1);
+        __classPrivateFieldGet(_a$2, _a$2, "m", _Device_DispatchAvailableDevices).call(_a$2);
     }
 }, _Device_dispatchConnectionEvents = function _Device_dispatchConnectionEvents(includeIsConnected = false) {
     __classPrivateFieldGet(this, _Device_instances, "a", _Device_dispatchEvent_get).call(this, "connectionStatus", { connectionStatus: this.connectionStatus });
@@ -4336,21 +4298,21 @@ _a$3 = Device, _Device_eventDispatcher = new WeakMap(), _Device_connectionManage
     _console$7.assertWithError(isInBrowser, "localStorage is only available in the browser");
     _console$7.assertWithError(window.localStorage, "localStorage not found");
 }, _Device_SaveToLocalStorage = function _Device_SaveToLocalStorage() {
-    __classPrivateFieldGet(this, _a$3, "m", _Device_AssertLocalStorage).call(this);
-    localStorage.setItem(__classPrivateFieldGet(this, _a$3, "f", _Device_LocalStorageKey), JSON.stringify(__classPrivateFieldGet(this, _a$3, "f", _Device_LocalStorageConfiguration)));
+    __classPrivateFieldGet(this, _a$2, "m", _Device_AssertLocalStorage).call(this);
+    localStorage.setItem(__classPrivateFieldGet(this, _a$2, "f", _Device_LocalStorageKey), JSON.stringify(__classPrivateFieldGet(this, _a$2, "f", _Device_LocalStorageConfiguration)));
 }, _Device_LoadFromLocalStorage = async function _Device_LoadFromLocalStorage() {
-    __classPrivateFieldGet(this, _a$3, "m", _Device_AssertLocalStorage).call(this);
-    let localStorageString = localStorage.getItem(__classPrivateFieldGet(this, _a$3, "f", _Device_LocalStorageKey));
+    __classPrivateFieldGet(this, _a$2, "m", _Device_AssertLocalStorage).call(this);
+    let localStorageString = localStorage.getItem(__classPrivateFieldGet(this, _a$2, "f", _Device_LocalStorageKey));
     if (typeof localStorageString != "string") {
         _console$7.log("no info found in localStorage");
-        __classPrivateFieldSet(this, _a$3, Object.assign({}, __classPrivateFieldGet(this, _a$3, "f", _Device_DefaultLocalStorageConfiguration)), "f", _Device_LocalStorageConfiguration);
-        __classPrivateFieldGet(this, _a$3, "m", _Device_SaveToLocalStorage).call(this);
+        __classPrivateFieldSet(this, _a$2, Object.assign({}, __classPrivateFieldGet(this, _a$2, "f", _Device_DefaultLocalStorageConfiguration)), "f", _Device_LocalStorageConfiguration);
+        __classPrivateFieldGet(this, _a$2, "m", _Device_SaveToLocalStorage).call(this);
         return;
     }
     try {
         const configuration = JSON.parse(localStorageString);
         _console$7.log({ configuration });
-        __classPrivateFieldSet(this, _a$3, configuration, "f", _Device_LocalStorageConfiguration);
+        __classPrivateFieldSet(this, _a$2, configuration, "f", _Device_LocalStorageConfiguration);
         if (this.CanGetDevices) {
             await this.GetDevices();
         }
@@ -4363,51 +4325,51 @@ _a$3 = Device, _Device_eventDispatcher = new WeakMap(), _Device_connectionManage
         _console$7.log("localStorage is only for webBluetooth devices");
         return;
     }
-    __classPrivateFieldGet(this, _a$3, "m", _Device_AssertLocalStorage).call(this);
-    const deviceInformationIndex = __classPrivateFieldGet(this, _a$3, "f", _Device_LocalStorageConfiguration).devices.findIndex((deviceInformation) => {
+    __classPrivateFieldGet(this, _a$2, "m", _Device_AssertLocalStorage).call(this);
+    const deviceInformationIndex = __classPrivateFieldGet(this, _a$2, "f", _Device_LocalStorageConfiguration).devices.findIndex((deviceInformation) => {
         return deviceInformation.bluetoothId == device.bluetoothId;
     });
     if (deviceInformationIndex == -1) {
         return;
     }
-    __classPrivateFieldGet(this, _a$3, "f", _Device_LocalStorageConfiguration).devices[deviceInformationIndex].type = device.type;
-    __classPrivateFieldGet(this, _a$3, "m", _Device_SaveToLocalStorage).call(this);
+    __classPrivateFieldGet(this, _a$2, "f", _Device_LocalStorageConfiguration).devices[deviceInformationIndex].type = device.type;
+    __classPrivateFieldGet(this, _a$2, "m", _Device_SaveToLocalStorage).call(this);
 }, _Device_DispatchEvent_get = function _Device_DispatchEvent_get() {
-    return __classPrivateFieldGet(this, _a$3, "f", _Device_EventDispatcher).dispatchEvent;
+    return __classPrivateFieldGet(this, _a$2, "f", _Device_EventDispatcher).dispatchEvent;
 }, _Device_OnDeviceIsConnected = function _Device_OnDeviceIsConnected(device) {
     if (device.isConnected) {
-        if (!__classPrivateFieldGet(this, _a$3, "f", _Device_ConnectedDevices).includes(device)) {
+        if (!__classPrivateFieldGet(this, _a$2, "f", _Device_ConnectedDevices).includes(device)) {
             _console$7.log("adding device", device);
-            __classPrivateFieldGet(this, _a$3, "f", _Device_ConnectedDevices).push(device);
+            __classPrivateFieldGet(this, _a$2, "f", _Device_ConnectedDevices).push(device);
             if (this.UseLocalStorage && device.connectionType == "webBluetooth") {
                 const deviceInformation = {
                     type: device.type,
                     bluetoothId: device.bluetoothId,
                 };
-                const deviceInformationIndex = __classPrivateFieldGet(this, _a$3, "f", _Device_LocalStorageConfiguration).devices.findIndex((_deviceInformation) => _deviceInformation.bluetoothId == deviceInformation.bluetoothId);
+                const deviceInformationIndex = __classPrivateFieldGet(this, _a$2, "f", _Device_LocalStorageConfiguration).devices.findIndex((_deviceInformation) => _deviceInformation.bluetoothId == deviceInformation.bluetoothId);
                 if (deviceInformationIndex == -1) {
-                    __classPrivateFieldGet(this, _a$3, "f", _Device_LocalStorageConfiguration).devices.push(deviceInformation);
+                    __classPrivateFieldGet(this, _a$2, "f", _Device_LocalStorageConfiguration).devices.push(deviceInformation);
                 }
                 else {
-                    __classPrivateFieldGet(this, _a$3, "f", _Device_LocalStorageConfiguration).devices[deviceInformationIndex] = deviceInformation;
+                    __classPrivateFieldGet(this, _a$2, "f", _Device_LocalStorageConfiguration).devices[deviceInformationIndex] = deviceInformation;
                 }
-                __classPrivateFieldGet(this, _a$3, "m", _Device_SaveToLocalStorage).call(this);
+                __classPrivateFieldGet(this, _a$2, "m", _Device_SaveToLocalStorage).call(this);
             }
-            __classPrivateFieldGet(this, _a$3, "a", _Device_DispatchEvent_get).call(this, "deviceConnected", { device });
-            __classPrivateFieldGet(this, _a$3, "a", _Device_DispatchEvent_get).call(this, "deviceIsConnected", { device });
-            __classPrivateFieldGet(this, _a$3, "m", _Device_DispatchConnectedDevices).call(this);
+            __classPrivateFieldGet(this, _a$2, "a", _Device_DispatchEvent_get).call(this, "deviceConnected", { device });
+            __classPrivateFieldGet(this, _a$2, "a", _Device_DispatchEvent_get).call(this, "deviceIsConnected", { device });
+            __classPrivateFieldGet(this, _a$2, "m", _Device_DispatchConnectedDevices).call(this);
         }
         else {
             _console$7.log("device already included");
         }
     }
     else {
-        if (__classPrivateFieldGet(this, _a$3, "f", _Device_ConnectedDevices).includes(device)) {
+        if (__classPrivateFieldGet(this, _a$2, "f", _Device_ConnectedDevices).includes(device)) {
             _console$7.log("removing device", device);
-            __classPrivateFieldGet(this, _a$3, "f", _Device_ConnectedDevices).splice(__classPrivateFieldGet(this, _a$3, "f", _Device_ConnectedDevices).indexOf(device), 1);
-            __classPrivateFieldGet(this, _a$3, "a", _Device_DispatchEvent_get).call(this, "deviceDisconnected", { device });
-            __classPrivateFieldGet(this, _a$3, "a", _Device_DispatchEvent_get).call(this, "deviceIsConnected", { device });
-            __classPrivateFieldGet(this, _a$3, "m", _Device_DispatchConnectedDevices).call(this);
+            __classPrivateFieldGet(this, _a$2, "f", _Device_ConnectedDevices).splice(__classPrivateFieldGet(this, _a$2, "f", _Device_ConnectedDevices).indexOf(device), 1);
+            __classPrivateFieldGet(this, _a$2, "a", _Device_DispatchEvent_get).call(this, "deviceDisconnected", { device });
+            __classPrivateFieldGet(this, _a$2, "a", _Device_DispatchEvent_get).call(this, "deviceIsConnected", { device });
+            __classPrivateFieldGet(this, _a$2, "m", _Device_DispatchConnectedDevices).call(this);
         }
         else {
             _console$7.log("device already not included");
@@ -4425,14 +4387,14 @@ _a$3 = Device, _Device_eventDispatcher = new WeakMap(), _Device_connectionManage
         else {
             this.AvailableDevices.push(device);
         }
-        __classPrivateFieldGet(this, _a$3, "m", _Device_DispatchAvailableDevices).call(this);
+        __classPrivateFieldGet(this, _a$2, "m", _Device_DispatchAvailableDevices).call(this);
     }
 }, _Device_DispatchAvailableDevices = function _Device_DispatchAvailableDevices() {
     _console$7.log({ AvailableDevices: this.AvailableDevices });
-    __classPrivateFieldGet(this, _a$3, "a", _Device_DispatchEvent_get).call(this, "availableDevices", { availableDevices: this.AvailableDevices });
+    __classPrivateFieldGet(this, _a$2, "a", _Device_DispatchEvent_get).call(this, "availableDevices", { availableDevices: this.AvailableDevices });
 }, _Device_DispatchConnectedDevices = function _Device_DispatchConnectedDevices() {
     _console$7.log({ ConnectedDevices: this.ConnectedDevices });
-    __classPrivateFieldGet(this, _a$3, "a", _Device_DispatchEvent_get).call(this, "connectedDevices", { connectedDevices: this.ConnectedDevices });
+    __classPrivateFieldGet(this, _a$2, "a", _Device_DispatchEvent_get).call(this, "connectedDevices", { connectedDevices: this.ConnectedDevices });
 };
 _Device_RequiredInformationConnectionMessages = { value: [
         "isCharging",
@@ -4461,7 +4423,6 @@ _Device_RequiredInformationConnectionMessages = { value: [
     ] };
 _Device_ReconnectOnDisconnection = { value: false };
 _Device_ClearSensorConfigurationOnLeave = { value: true };
-_Device_DefaultNumberOfPressureSensors = { value: 8 };
 _Device_ConnectedDevices = { value: [] };
 _Device_UseLocalStorage = { value: false };
 _Device_DefaultLocalStorageConfiguration = { value: {
@@ -4470,10 +4431,10 @@ _Device_DefaultLocalStorageConfiguration = { value: {
 _Device_LocalStorageConfiguration = { value: void 0 };
 _Device_LocalStorageKey = { value: "BS.Device" };
 _Device_AvailableDevices = { value: [] };
-_Device_EventDispatcher = { value: new EventDispatcher(_a$3, StaticDeviceEventTypes) };
+_Device_EventDispatcher = { value: new EventDispatcher(_a$2, StaticDeviceEventTypes) };
 (() => {
-    if (_a$3.CanUseLocalStorage) {
-        _a$3.UseLocalStorage = true;
+    if (_a$2.CanUseLocalStorage) {
+        _a$2.UseLocalStorage = true;
     }
 })();
 
@@ -4570,7 +4531,7 @@ class DevicePairSensorDataManager {
 }
 _DevicePairSensorDataManager_timestamps = new WeakMap();
 
-var _DevicePair_instances, _a$2, _DevicePair_eventDispatcher, _DevicePair_dispatchEvent_get, _DevicePair_left, _DevicePair_right, _DevicePair_removeInsole, _DevicePair_boundDeviceEventListeners, _DevicePair_redispatchDeviceEvent, _DevicePair_onDeviceIsConnected, _DevicePair_onDeviceType, _DevicePair_sensorDataManager, _DevicePair_onDeviceSensorData, _DevicePair_shared;
+var _DevicePair_instances, _a$1, _DevicePair_eventDispatcher, _DevicePair_dispatchEvent_get, _DevicePair_left, _DevicePair_right, _DevicePair_removeInsole, _DevicePair_boundDeviceEventListeners, _DevicePair_redispatchDeviceEvent, _DevicePair_onDeviceIsConnected, _DevicePair_onDeviceType, _DevicePair_sensorDataManager, _DevicePair_onDeviceSensorData, _DevicePair_shared;
 const _console$4 = createConsole("DevicePair", { log: true });
 function getDevicePairDeviceEventType(deviceEventType) {
     return `device${capitalizeFirstCharacter(deviceEventType)}`;
@@ -4666,10 +4627,10 @@ class DevicePair {
         return Promise.allSettled(promises);
     }
     static get shared() {
-        return __classPrivateFieldGet(this, _a$2, "f", _DevicePair_shared);
+        return __classPrivateFieldGet(this, _a$1, "f", _DevicePair_shared);
     }
 }
-_a$2 = DevicePair, _DevicePair_eventDispatcher = new WeakMap(), _DevicePair_left = new WeakMap(), _DevicePair_right = new WeakMap(), _DevicePair_boundDeviceEventListeners = new WeakMap(), _DevicePair_sensorDataManager = new WeakMap(), _DevicePair_instances = new WeakSet(), _DevicePair_dispatchEvent_get = function _DevicePair_dispatchEvent_get() {
+_a$1 = DevicePair, _DevicePair_eventDispatcher = new WeakMap(), _DevicePair_left = new WeakMap(), _DevicePair_right = new WeakMap(), _DevicePair_boundDeviceEventListeners = new WeakMap(), _DevicePair_sensorDataManager = new WeakMap(), _DevicePair_instances = new WeakSet(), _DevicePair_dispatchEvent_get = function _DevicePair_dispatchEvent_get() {
     return __classPrivateFieldGet(this, _DevicePair_eventDispatcher, "f").dispatchEvent;
 }, _DevicePair_removeInsole = function _DevicePair_removeInsole(device) {
     const foundDevice = InsoleSides.some((side) => {
@@ -4711,12 +4672,12 @@ _a$2 = DevicePair, _DevicePair_eventDispatcher = new WeakMap(), _DevicePair_left
         __classPrivateFieldGet(this, _DevicePair_sensorDataManager, "f").onDeviceSensorData(deviceEvent);
     }
 };
-_DevicePair_shared = { value: new _a$2() };
+_DevicePair_shared = { value: new _a$1() };
 (() => {
     Device.AddEventListener("deviceConnected", (event) => {
         const device = event.message.device;
         if (device.isInsole) {
-            __classPrivateFieldGet(_a$2, _a$2, "f", _DevicePair_shared).assignInsole(device);
+            __classPrivateFieldGet(_a$1, _a$1, "f", _DevicePair_shared).assignInsole(device);
         }
     });
 })();
@@ -4778,7 +4739,7 @@ createServerMessage("startScan");
 createServerMessage("stopScan");
 const discoveredDevicesMessage = createServerMessage("discoveredDevices");
 
-var _WebSocketClientConnectionManager_instances, _a$1, _WebSocketClientConnectionManager_bluetoothId, _WebSocketClientConnectionManager_isConnected, _WebSocketClientConnectionManager_DeviceInformationMessageTypes, _WebSocketClientConnectionManager_deviceInformationMessageTypes_get, _WebSocketClientConnectionManager_requestDeviceInformation, _WebSocketClientConnectionManager_onWebSocketMessageCallback;
+var _WebSocketClientConnectionManager_instances, _a, _WebSocketClientConnectionManager_bluetoothId, _WebSocketClientConnectionManager_isConnected, _WebSocketClientConnectionManager_DeviceInformationMessageTypes, _WebSocketClientConnectionManager_deviceInformationMessageTypes_get, _WebSocketClientConnectionManager_requestDeviceInformation, _WebSocketClientConnectionManager_onWebSocketMessageCallback;
 const _console$2 = createConsole("WebSocketClientConnectionManager", { log: true });
 class WebSocketClientConnectionManager extends BaseConnectionManager {
     constructor() {
@@ -4848,8 +4809,8 @@ class WebSocketClientConnectionManager extends BaseConnectionManager {
         parseMessage(dataView, DeviceEventTypes, __classPrivateFieldGet(this, _WebSocketClientConnectionManager_instances, "m", _WebSocketClientConnectionManager_onWebSocketMessageCallback).bind(this), null, true);
     }
 }
-_a$1 = WebSocketClientConnectionManager, _WebSocketClientConnectionManager_bluetoothId = new WeakMap(), _WebSocketClientConnectionManager_isConnected = new WeakMap(), _WebSocketClientConnectionManager_instances = new WeakSet(), _WebSocketClientConnectionManager_deviceInformationMessageTypes_get = function _WebSocketClientConnectionManager_deviceInformationMessageTypes_get() {
-    return __classPrivateFieldGet(_a$1, _a$1, "f", _WebSocketClientConnectionManager_DeviceInformationMessageTypes);
+_a = WebSocketClientConnectionManager, _WebSocketClientConnectionManager_bluetoothId = new WeakMap(), _WebSocketClientConnectionManager_isConnected = new WeakMap(), _WebSocketClientConnectionManager_instances = new WeakSet(), _WebSocketClientConnectionManager_deviceInformationMessageTypes_get = function _WebSocketClientConnectionManager_deviceInformationMessageTypes_get() {
+    return __classPrivateFieldGet(_a, _a, "f", _WebSocketClientConnectionManager_DeviceInformationMessageTypes);
 }, _WebSocketClientConnectionManager_requestDeviceInformation = function _WebSocketClientConnectionManager_requestDeviceInformation() {
     this.sendWebSocketMessage(...__classPrivateFieldGet(this, _WebSocketClientConnectionManager_instances, "a", _WebSocketClientConnectionManager_deviceInformationMessageTypes_get));
 }, _WebSocketClientConnectionManager_onWebSocketMessageCallback = function _WebSocketClientConnectionManager_onWebSocketMessageCallback(messageType, dataView) {
@@ -4870,7 +4831,7 @@ _a$1 = WebSocketClientConnectionManager, _WebSocketClientConnectionManager_bluet
 };
 _WebSocketClientConnectionManager_DeviceInformationMessageTypes = { value: [...DeviceInformationMessageTypes, "batteryLevel"] };
 
-var _BaseClient_instances, _a, _BaseClient_baseConstructor_get, _BaseClient_devices, _BaseClient_eventDispatcher, _BaseClient_ReconnectOnDisconnection, _BaseClient_reconnectOnDisconnection, _BaseClient__connectionStatus, _BaseClient_parseMessageCallback, _BaseClient_ping, _BaseClient_pong, _BaseClient__isScanningAvailable, _BaseClient_isScanningAvailable_get, _BaseClient_isScanningAvailable_set, _BaseClient_assertIsScanningAvailable, _BaseClient__isScanning, _BaseClient_isScanning_get, _BaseClient_isScanning_set, _BaseClient_requestIsScanning, _BaseClient_assertIsScanning, _BaseClient_assertIsNotScanning, _BaseClient_discoveredDevices, _BaseClient_onExpiredDiscoveredDevice, _BaseClient_getOrCreateDevice, _BaseClient_createDisconnectFromDeviceMessage;
+var _BaseClient_instances, _BaseClient_devices, _BaseClient_eventDispatcher, _BaseClient__connectionStatus, _BaseClient_parseMessageCallback, _BaseClient_ping, _BaseClient_pong, _BaseClient__isScanningAvailable, _BaseClient_isScanningAvailable_get, _BaseClient_isScanningAvailable_set, _BaseClient_assertIsScanningAvailable, _BaseClient__isScanning, _BaseClient_isScanning_get, _BaseClient_isScanning_set, _BaseClient_requestIsScanning, _BaseClient_assertIsScanning, _BaseClient_assertIsNotScanning, _BaseClient_discoveredDevices, _BaseClient_onExpiredDiscoveredDevice, _BaseClient_getOrCreateDevice, _BaseClient_createDisconnectFromDeviceMessage;
 const _console$1 = createConsole("WebSocketClient", { log: true });
 const ClientConnectionStatuses = ["not connected", "connecting", "connected", "disconnecting"];
 const ClientEventTypes = [
@@ -4887,12 +4848,15 @@ class BaseClient {
         _BaseClient_instances.add(this);
         _BaseClient_devices.set(this, {});
         _BaseClient_eventDispatcher.set(this, new EventDispatcher(this, ClientEventTypes));
-        _BaseClient_reconnectOnDisconnection.set(this, __classPrivateFieldGet(__classPrivateFieldGet(this, _BaseClient_instances, "a", _BaseClient_baseConstructor_get), _a, "f", _BaseClient_ReconnectOnDisconnection));
+        this._reconnectOnDisconnection = this.baseConstructor.ReconnectOnDisconnection;
         _BaseClient__connectionStatus.set(this, "not connected");
         this.pingTimer = new Timer(__classPrivateFieldGet(this, _BaseClient_instances, "m", _BaseClient_ping).bind(this), pingTimeout);
         _BaseClient__isScanningAvailable.set(this, false);
         _BaseClient__isScanning.set(this, false);
         _BaseClient_discoveredDevices.set(this, {});
+    }
+    get baseConstructor() {
+        return this.constructor;
     }
     get devices() {
         return __classPrivateFieldGet(this, _BaseClient_devices, "f");
@@ -4916,18 +4880,18 @@ class BaseClient {
         _console$1.assertWithError(this.isDisconnected, "not disconnected");
     }
     static get ReconnectOnDisconnection() {
-        return __classPrivateFieldGet(this, _a, "f", _BaseClient_ReconnectOnDisconnection);
+        return this._reconnectOnDisconnection;
     }
     static set ReconnectOnDisconnection(newReconnectOnDisconnection) {
         _console$1.assertTypeWithError(newReconnectOnDisconnection, "boolean");
-        __classPrivateFieldSet(this, _a, newReconnectOnDisconnection, "f", _BaseClient_ReconnectOnDisconnection);
+        this._reconnectOnDisconnection = newReconnectOnDisconnection;
     }
     get reconnectOnDisconnection() {
-        return __classPrivateFieldGet(this, _BaseClient_reconnectOnDisconnection, "f");
+        return this._reconnectOnDisconnection;
     }
     set reconnectOnDisconnection(newReconnectOnDisconnection) {
         _console$1.assertTypeWithError(newReconnectOnDisconnection, "boolean");
-        __classPrivateFieldSet(this, _BaseClient_reconnectOnDisconnection, newReconnectOnDisconnection, "f");
+        this._reconnectOnDisconnection = newReconnectOnDisconnection;
     }
     sendServerMessage(...messages) {
         this.sendMessage(createServerMessage(...messages));
@@ -5047,9 +5011,7 @@ class BaseClient {
         });
     }
 }
-_a = BaseClient, _BaseClient_devices = new WeakMap(), _BaseClient_eventDispatcher = new WeakMap(), _BaseClient_reconnectOnDisconnection = new WeakMap(), _BaseClient__connectionStatus = new WeakMap(), _BaseClient__isScanningAvailable = new WeakMap(), _BaseClient__isScanning = new WeakMap(), _BaseClient_discoveredDevices = new WeakMap(), _BaseClient_instances = new WeakSet(), _BaseClient_baseConstructor_get = function _BaseClient_baseConstructor_get() {
-    return this.constructor;
-}, _BaseClient_parseMessageCallback = function _BaseClient_parseMessageCallback(messageType, dataView) {
+_BaseClient_devices = new WeakMap(), _BaseClient_eventDispatcher = new WeakMap(), _BaseClient__connectionStatus = new WeakMap(), _BaseClient__isScanningAvailable = new WeakMap(), _BaseClient__isScanning = new WeakMap(), _BaseClient_discoveredDevices = new WeakMap(), _BaseClient_instances = new WeakSet(), _BaseClient_parseMessageCallback = function _BaseClient_parseMessageCallback(messageType, dataView) {
     let byteOffset = 0;
     switch (messageType) {
         case "ping":
@@ -5161,7 +5123,7 @@ _a = BaseClient, _BaseClient_devices = new WeakMap(), _BaseClient_eventDispatche
 }, _BaseClient_createDisconnectFromDeviceMessage = function _BaseClient_createDisconnectFromDeviceMessage(bluetoothId) {
     return createServerMessage({ type: "disconnectFromDevice", data: bluetoothId });
 };
-_BaseClient_ReconnectOnDisconnection = { value: true };
+BaseClient._reconnectOnDisconnection = true;
 
 var _WebSocketClient_instances, _WebSocketClient_webSocket, _WebSocketClient_boundWebSocketEventListeners, _WebSocketClient_onWebSocketOpen, _WebSocketClient_onWebSocketMessage, _WebSocketClient_onWebSocketClose, _WebSocketClient_onWebSocketError;
 const _console = createConsole("WebSocketClient", { log: true });
@@ -5277,5 +5239,5 @@ _WebSocketClient_webSocket = new WeakMap(), _WebSocketClient_boundWebSocketEvent
     _console.error("webSocket.error", event.message);
 };
 
-export { ContinuousSensorTypes, Device, DevicePair, DeviceTypes, environment as Environment, FileTransferDirections, FileTypes, MaxNameLength, MaxSensorRate, MinNameLength, SensorRateStep, SensorTypes, TfliteSensorTypes, VibrationLocations, VibrationTypes, VibrationWaveformEffects, WebSocketClient, setAllConsoleLevelFlags, setConsoleLevelFlagsForType };
+export { ContinuousSensorTypes, DefaultNumberOfPressureSensors, Device, DevicePair, DeviceTypes, environment as Environment, FileTransferDirections, FileTypes, MaxNameLength, MaxNumberOfVibrationWaveformEffectSegments, MaxNumberOfVibrationWaveformSegments, MaxSensorRate, MaxVibrationWaveformEffectSegmentDelay, MaxVibrationWaveformEffectSegmentLoopCount, MaxVibrationWaveformEffectSequenceLoopCount, MaxVibrationWaveformSegmentDuration, MinNameLength, SensorRateStep, SensorTypes, TfliteSensorTypes, TfliteTasks, VibrationLocations, VibrationTypes, VibrationWaveformEffects, WebSocketClient, setAllConsoleLevelFlags, setConsoleLevelFlagsForType };
 //# sourceMappingURL=brilliantsole.module.js.map

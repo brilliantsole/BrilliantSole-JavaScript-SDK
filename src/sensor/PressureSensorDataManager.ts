@@ -36,6 +36,8 @@ export interface PressureDataEventMessages {
   pressure: { pressure: PressureData };
 }
 
+export const DefaultNumberOfPressureSensors = 8;
+
 class PressureSensorDataManager {
   #positions: PressureSensorPosition[] = [];
   get positions() {

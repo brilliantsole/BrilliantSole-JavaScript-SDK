@@ -13,12 +13,12 @@ import { AddKeysAsPropertyToInterface, ExtendInterfaceValues, ValueOf } from "..
 
 const _console = createConsole("SensorDataManager", { log: true });
 
-export const SensorTypes = [...MotionSensorTypes, ...PressureSensorTypes, ...BarometerSensorTypes] as const;
+export const SensorTypes = [...PressureSensorTypes, ...MotionSensorTypes, ...BarometerSensorTypes] as const;
 export type SensorType = (typeof SensorTypes)[number];
 
 export const ContinuousSensorTypes = [
-  ...ContinuousMotionTypes,
   ...ContinuousPressureSensorTypes,
+  ...ContinuousMotionTypes,
   ...ContinuousBarometerSensorTypes,
 ] as const;
 export type ContinuousSensorType = (typeof ContinuousSensorTypes)[number];

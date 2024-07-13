@@ -61,7 +61,7 @@
         isSafari: isSafari
     });
 
-    var _a$6, _Console_consoles, _Console_levelFlags;
+    var _a$5, _Console_consoles, _Console_levelFlags;
     var __console;
     if (isInLensStudio) {
         const log = function (...args) {
@@ -104,27 +104,27 @@
                 error: true,
                 table: true,
             });
-            if (__classPrivateFieldGet(_a$6, _a$6, "f", _Console_consoles)[type]) {
+            if (__classPrivateFieldGet(_a$5, _a$5, "f", _Console_consoles)[type]) {
                 throw new Error(`"${type}" console already exists`);
             }
-            __classPrivateFieldGet(_a$6, _a$6, "f", _Console_consoles)[type] = this;
+            __classPrivateFieldGet(_a$5, _a$5, "f", _Console_consoles)[type] = this;
         }
         setLevelFlags(levelFlags) {
             Object.assign(__classPrivateFieldGet(this, _Console_levelFlags, "f"), levelFlags);
         }
         static setLevelFlagsForType(type, levelFlags) {
-            if (!__classPrivateFieldGet(this, _a$6, "f", _Console_consoles)[type]) {
+            if (!__classPrivateFieldGet(this, _a$5, "f", _Console_consoles)[type]) {
                 throw new Error(`no console found with type "${type}"`);
             }
-            __classPrivateFieldGet(this, _a$6, "f", _Console_consoles)[type].setLevelFlags(levelFlags);
+            __classPrivateFieldGet(this, _a$5, "f", _Console_consoles)[type].setLevelFlags(levelFlags);
         }
         static setAllLevelFlags(levelFlags) {
-            for (const type in __classPrivateFieldGet(this, _a$6, "f", _Console_consoles)) {
-                __classPrivateFieldGet(this, _a$6, "f", _Console_consoles)[type].setLevelFlags(levelFlags);
+            for (const type in __classPrivateFieldGet(this, _a$5, "f", _Console_consoles)) {
+                __classPrivateFieldGet(this, _a$5, "f", _Console_consoles)[type].setLevelFlags(levelFlags);
             }
         }
         static create(type, levelFlags) {
-            const console = __classPrivateFieldGet(this, _a$6, "f", _Console_consoles)[type] || new _a$6(type);
+            const console = __classPrivateFieldGet(this, _a$5, "f", _Console_consoles)[type] || new _a$5(type);
             if (levelFlags) {
                 console.setLevelFlags(levelFlags);
             }
@@ -157,7 +157,7 @@
             this.assertWithError(enumeration.includes(value), `invalid enum "${value}"`);
         }
     }
-    _a$6 = Console, _Console_levelFlags = new WeakMap();
+    _a$5 = Console, _Console_levelFlags = new WeakMap();
     _Console_consoles = { value: {} };
     function createConsole(type, levelFlags) {
         return Console.create(type, levelFlags);
@@ -458,7 +458,7 @@
     	return self;
     }
 
-    var _FileTransferManager_instances, _a$5, _FileTransferManager_dispatchEvent_get, _FileTransferManager_assertValidType, _FileTransferManager_assertValidTypeEnum, _FileTransferManager_assertValidStatusEnum, _FileTransferManager_assertValidCommand, _FileTransferManager_MaxLength, _FileTransferManager_maxLength, _FileTransferManager_parseMaxLength, _FileTransferManager_updateMaxLength, _FileTransferManager_assertValidLength, _FileTransferManager_type, _FileTransferManager_parseType, _FileTransferManager_updateType, _FileTransferManager_setType, _FileTransferManager_length, _FileTransferManager_parseLength, _FileTransferManager_updateLength, _FileTransferManager_setLength, _FileTransferManager_checksum, _FileTransferManager_parseChecksum, _FileTransferManager_updateChecksum, _FileTransferManager_setChecksum, _FileTransferManager_setCommand, _FileTransferManager_status, _FileTransferManager_parseStatus, _FileTransferManager_updateStatus, _FileTransferManager_assertIsIdle, _FileTransferManager_assertIsNotIdle, _FileTransferManager_receivedBlocks, _FileTransferManager_parseBlock, _FileTransferManager_send, _FileTransferManager_sendBlock;
+    var _FileTransferManager_instances, _a$4, _FileTransferManager_dispatchEvent_get, _FileTransferManager_assertValidType, _FileTransferManager_assertValidTypeEnum, _FileTransferManager_assertValidStatusEnum, _FileTransferManager_assertValidCommand, _FileTransferManager_MaxLength, _FileTransferManager_maxLength, _FileTransferManager_parseMaxLength, _FileTransferManager_updateMaxLength, _FileTransferManager_assertValidLength, _FileTransferManager_type, _FileTransferManager_parseType, _FileTransferManager_updateType, _FileTransferManager_setType, _FileTransferManager_length, _FileTransferManager_parseLength, _FileTransferManager_updateLength, _FileTransferManager_setLength, _FileTransferManager_checksum, _FileTransferManager_parseChecksum, _FileTransferManager_updateChecksum, _FileTransferManager_setChecksum, _FileTransferManager_setCommand, _FileTransferManager_status, _FileTransferManager_parseStatus, _FileTransferManager_updateStatus, _FileTransferManager_assertIsIdle, _FileTransferManager_assertIsNotIdle, _FileTransferManager_receivedBlocks, _FileTransferManager_parseBlock, _FileTransferManager_send, _FileTransferManager_sendBlock;
     const _console$l = createConsole("FileTransferManager", { log: true });
     const FileTransferMessageTypes = [
         "maxFileLength",
@@ -486,7 +486,7 @@
     class FileTransferManager {
         constructor() {
             _FileTransferManager_instances.add(this);
-            _FileTransferManager_maxLength.set(this, _a$5.MaxLength);
+            _FileTransferManager_maxLength.set(this, _a$4.MaxLength);
             _FileTransferManager_type.set(this, void 0);
             _FileTransferManager_length.set(this, 0);
             _FileTransferManager_checksum.set(this, 0);
@@ -504,7 +504,7 @@
             return this.eventDispatcher.waitForEvent;
         }
         static get MaxLength() {
-            return __classPrivateFieldGet(this, _a$5, "f", _FileTransferManager_MaxLength);
+            return __classPrivateFieldGet(this, _a$4, "f", _FileTransferManager_MaxLength);
         }
         get maxLength() {
             return __classPrivateFieldGet(this, _FileTransferManager_maxLength, "f");
@@ -575,7 +575,7 @@
             await __classPrivateFieldGet(this, _FileTransferManager_instances, "m", _FileTransferManager_setCommand).call(this, "cancel");
         }
     }
-    _a$5 = FileTransferManager, _FileTransferManager_maxLength = new WeakMap(), _FileTransferManager_type = new WeakMap(), _FileTransferManager_length = new WeakMap(), _FileTransferManager_checksum = new WeakMap(), _FileTransferManager_status = new WeakMap(), _FileTransferManager_receivedBlocks = new WeakMap(), _FileTransferManager_instances = new WeakSet(), _FileTransferManager_dispatchEvent_get = function _FileTransferManager_dispatchEvent_get() {
+    _a$4 = FileTransferManager, _FileTransferManager_maxLength = new WeakMap(), _FileTransferManager_type = new WeakMap(), _FileTransferManager_length = new WeakMap(), _FileTransferManager_checksum = new WeakMap(), _FileTransferManager_status = new WeakMap(), _FileTransferManager_receivedBlocks = new WeakMap(), _FileTransferManager_instances = new WeakSet(), _FileTransferManager_dispatchEvent_get = function _FileTransferManager_dispatchEvent_get() {
         return this.eventDispatcher.dispatchEvent;
     }, _FileTransferManager_assertValidType = function _FileTransferManager_assertValidType(type) {
         _console$l.assertEnumWithError(type, FileTypes);
@@ -820,6 +820,7 @@
     const _console$k = createConsole("PressureDataManager", { log: true });
     const PressureSensorTypes = ["pressure"];
     const ContinuousPressureSensorTypes = PressureSensorTypes;
+    const DefaultNumberOfPressureSensors = 8;
     class PressureSensorDataManager {
         constructor() {
             _PressureSensorDataManager_positions.set(this, []);
@@ -1016,10 +1017,10 @@
     }
 
     const _console$g = createConsole("SensorDataManager", { log: true });
-    const SensorTypes = [...MotionSensorTypes, ...PressureSensorTypes, ...BarometerSensorTypes];
+    const SensorTypes = [...PressureSensorTypes, ...MotionSensorTypes, ...BarometerSensorTypes];
     const ContinuousSensorTypes = [
-        ...ContinuousMotionTypes,
         ...ContinuousPressureSensorTypes,
+        ...ContinuousMotionTypes,
         ...ContinuousBarometerSensorTypes,
     ];
     const SensorDataMessageTypes = ["getPressurePositions", "getSensorScalars", "sensorData"];
@@ -1124,7 +1125,7 @@
         }
     }
 
-    var _SensorConfigurationManager_instances, _a$4, _SensorConfigurationManager_dispatchEvent_get, _SensorConfigurationManager_availableSensorTypes, _SensorConfigurationManager_assertAvailableSensorType, _SensorConfigurationManager_configuration, _SensorConfigurationManager_updateConfiguration, _SensorConfigurationManager_isRedundant, _SensorConfigurationManager_parse, _SensorConfigurationManager_AssertValidSensorRate, _SensorConfigurationManager_assertValidSensorRate, _SensorConfigurationManager_createData, _SensorConfigurationManager_ZeroSensorConfiguration;
+    var _SensorConfigurationManager_instances, _a$3, _SensorConfigurationManager_dispatchEvent_get, _SensorConfigurationManager_availableSensorTypes, _SensorConfigurationManager_assertAvailableSensorType, _SensorConfigurationManager_configuration, _SensorConfigurationManager_updateConfiguration, _SensorConfigurationManager_isRedundant, _SensorConfigurationManager_parse, _SensorConfigurationManager_AssertValidSensorRate, _SensorConfigurationManager_assertValidSensorRate, _SensorConfigurationManager_createData, _SensorConfigurationManager_ZeroSensorConfiguration;
     const _console$f = createConsole("SensorConfigurationManager", { log: true });
     const MaxSensorRate = 2 ** 16 - 1;
     const SensorRateStep = 5;
@@ -1161,7 +1162,7 @@
             await promise;
         }
         static get ZeroSensorConfiguration() {
-            return __classPrivateFieldGet(this, _a$4, "f", _SensorConfigurationManager_ZeroSensorConfiguration);
+            return __classPrivateFieldGet(this, _a$3, "f", _SensorConfigurationManager_ZeroSensorConfiguration);
         }
         get zeroSensorConfiguration() {
             const zeroSensorConfiguration = {};
@@ -1186,7 +1187,7 @@
             }
         }
     }
-    _a$4 = SensorConfigurationManager, _SensorConfigurationManager_availableSensorTypes = new WeakMap(), _SensorConfigurationManager_configuration = new WeakMap(), _SensorConfigurationManager_instances = new WeakSet(), _SensorConfigurationManager_dispatchEvent_get = function _SensorConfigurationManager_dispatchEvent_get() {
+    _a$3 = SensorConfigurationManager, _SensorConfigurationManager_availableSensorTypes = new WeakMap(), _SensorConfigurationManager_configuration = new WeakMap(), _SensorConfigurationManager_instances = new WeakSet(), _SensorConfigurationManager_dispatchEvent_get = function _SensorConfigurationManager_dispatchEvent_get() {
         return this.eventDispatcher.dispatchEvent;
     }, _SensorConfigurationManager_assertAvailableSensorType = function _SensorConfigurationManager_assertAvailableSensorType(sensorType) {
         _console$f.assertWithError(__classPrivateFieldGet(this, _SensorConfigurationManager_availableSensorTypes, "f"), "must get initial sensorConfiguration");
@@ -1224,7 +1225,7 @@
         _console$f.assertWithError(sensorRate < MaxSensorRate, `sensorRate must be 0 or greater (got ${sensorRate})`);
         _console$f.assertWithError(sensorRate % SensorRateStep == 0, `sensorRate must be multiple of ${SensorRateStep}`);
     }, _SensorConfigurationManager_assertValidSensorRate = function _SensorConfigurationManager_assertValidSensorRate(sensorRate) {
-        __classPrivateFieldGet(_a$4, _a$4, "m", _SensorConfigurationManager_AssertValidSensorRate).call(_a$4, sensorRate);
+        __classPrivateFieldGet(_a$3, _a$3, "m", _SensorConfigurationManager_AssertValidSensorRate).call(_a$3, sensorRate);
     }, _SensorConfigurationManager_createData = function _SensorConfigurationManager_createData(sensorConfiguration) {
         let sensorTypes = Object.keys(sensorConfiguration);
         sensorTypes = sensorTypes.filter((sensorType) => __classPrivateFieldGet(this, _SensorConfigurationManager_instances, "m", _SensorConfigurationManager_assertAvailableSensorType).call(this, sensorType));
@@ -1243,7 +1244,7 @@
     _SensorConfigurationManager_ZeroSensorConfiguration = { value: {} };
     (() => {
         SensorTypes.forEach((sensorType) => {
-            __classPrivateFieldGet(_a$4, _a$4, "f", _SensorConfigurationManager_ZeroSensorConfiguration)[sensorType] = 0;
+            __classPrivateFieldGet(_a$3, _a$3, "f", _SensorConfigurationManager_ZeroSensorConfiguration)[sensorType] = 0;
         });
     })();
 
@@ -1662,7 +1663,7 @@
         }
     };
 
-    var _InformationManager_instances, _InformationManager_dispatchEvent_get, _InformationManager_isCharging, _InformationManager_updateIsCharging, _InformationManager_batteryCurrent, _InformationManager_updateBatteryCurrent, _InformationManager_id, _InformationManager_updateId, _InformationManager_name, _InformationManager_updateName, _InformationManager_type, _InformationManager_assertValidDeviceType, _InformationManager_assertValidDeviceTypeEnum, _InformationManager_updateType, _InformationManager_setTypeEnum, _InformationManager_mtu, _InformationManager_updateMtu, _InformationManager_isCurrentTimeSet, _InformationManager_onCurrentTime, _InformationManager_setCurrentTime;
+    var _InformationManager_instances, _InformationManager_dispatchEvent_get, _InformationManager_isCharging, _InformationManager_updateIsCharging, _InformationManager_batteryCurrent, _InformationManager_updateBatteryCurrent, _InformationManager_id, _InformationManager_updateId, _InformationManager_name, _InformationManager_type, _InformationManager_assertValidDeviceType, _InformationManager_assertValidDeviceTypeEnum, _InformationManager_setTypeEnum, _InformationManager_mtu, _InformationManager_updateMtu, _InformationManager_isCurrentTimeSet, _InformationManager_onCurrentTime, _InformationManager_setCurrentTime;
     const _console$c = createConsole("InformationManager", { log: true });
     const DeviceTypes = ["leftInsole", "rightInsole"];
     const InsoleSides = ["left", "right"];
@@ -1714,6 +1715,12 @@
         get name() {
             return __classPrivateFieldGet(this, _InformationManager_name, "f");
         }
+        updateName(updatedName) {
+            _console$c.assertTypeWithError(updatedName, "string");
+            __classPrivateFieldSet(this, _InformationManager_name, updatedName, "f");
+            _console$c.log({ updatedName: __classPrivateFieldGet(this, _InformationManager_name, "f") });
+            __classPrivateFieldGet(this, _InformationManager_instances, "a", _InformationManager_dispatchEvent_get).call(this, "getName", { name: __classPrivateFieldGet(this, _InformationManager_name, "f") });
+        }
         async setName(newName) {
             _console$c.assertTypeWithError(newName, "string");
             _console$c.assertWithError(newName.length >= MinNameLength, `name must be greater than ${MinNameLength} characters long ("${newName}" is ${newName.length} characters long)`);
@@ -1729,6 +1736,16 @@
         }
         get typeEnum() {
             return DeviceTypes.indexOf(this.type);
+        }
+        updateType(updatedType) {
+            __classPrivateFieldGet(this, _InformationManager_instances, "m", _InformationManager_assertValidDeviceType).call(this, updatedType);
+            if (updatedType == this.type) {
+                _console$c.log("redundant type assignment");
+                return;
+            }
+            __classPrivateFieldSet(this, _InformationManager_type, updatedType, "f");
+            _console$c.log({ updatedType: __classPrivateFieldGet(this, _InformationManager_type, "f") });
+            __classPrivateFieldGet(this, _InformationManager_instances, "a", _InformationManager_dispatchEvent_get).call(this, "getType", { type: __classPrivateFieldGet(this, _InformationManager_type, "f") });
         }
         async setType(newType) {
             __classPrivateFieldGet(this, _InformationManager_instances, "m", _InformationManager_assertValidDeviceType).call(this, newType);
@@ -1780,14 +1797,14 @@
                 case "setName":
                     const name = textDecoder.decode(dataView.buffer);
                     _console$c.log({ name });
-                    __classPrivateFieldGet(this, _InformationManager_instances, "m", _InformationManager_updateName).call(this, name);
+                    this.updateName(name);
                     break;
                 case "getType":
                 case "setType":
                     const typeEnum = dataView.getUint8(0);
                     const type = DeviceTypes[typeEnum];
                     _console$c.log({ typeEnum, type });
-                    __classPrivateFieldGet(this, _InformationManager_instances, "m", _InformationManager_updateType).call(this, type);
+                    this.updateType(type);
                     break;
                 case "getMtu":
                     const mtu = dataView.getUint16(0, true);
@@ -1824,25 +1841,11 @@
         __classPrivateFieldSet(this, _InformationManager_id, updatedId, "f");
         _console$c.log({ id: __classPrivateFieldGet(this, _InformationManager_id, "f") });
         __classPrivateFieldGet(this, _InformationManager_instances, "a", _InformationManager_dispatchEvent_get).call(this, "getId", { id: __classPrivateFieldGet(this, _InformationManager_id, "f") });
-    }, _InformationManager_updateName = function _InformationManager_updateName(updatedName) {
-        _console$c.assertTypeWithError(updatedName, "string");
-        __classPrivateFieldSet(this, _InformationManager_name, updatedName, "f");
-        _console$c.log({ updatedName: __classPrivateFieldGet(this, _InformationManager_name, "f") });
-        __classPrivateFieldGet(this, _InformationManager_instances, "a", _InformationManager_dispatchEvent_get).call(this, "getName", { name: __classPrivateFieldGet(this, _InformationManager_name, "f") });
     }, _InformationManager_assertValidDeviceType = function _InformationManager_assertValidDeviceType(type) {
         _console$c.assertEnumWithError(type, DeviceTypes);
     }, _InformationManager_assertValidDeviceTypeEnum = function _InformationManager_assertValidDeviceTypeEnum(typeEnum) {
         _console$c.assertTypeWithError(typeEnum, "number");
         _console$c.assertWithError(typeEnum in DeviceTypes, `invalid typeEnum ${typeEnum}`);
-    }, _InformationManager_updateType = function _InformationManager_updateType(updatedType) {
-        __classPrivateFieldGet(this, _InformationManager_instances, "m", _InformationManager_assertValidDeviceType).call(this, updatedType);
-        if (updatedType == this.type) {
-            _console$c.log("redundant type assignment");
-            return;
-        }
-        __classPrivateFieldSet(this, _InformationManager_type, updatedType, "f");
-        _console$c.log({ updatedType: __classPrivateFieldGet(this, _InformationManager_type, "f") });
-        __classPrivateFieldGet(this, _InformationManager_instances, "a", _InformationManager_dispatchEvent_get).call(this, "getType", { type: __classPrivateFieldGet(this, _InformationManager_type, "f") });
     }, _InformationManager_setTypeEnum = async function _InformationManager_setTypeEnum(newTypeEnum) {
         __classPrivateFieldGet(this, _InformationManager_instances, "m", _InformationManager_assertValidDeviceTypeEnum).call(this, newTypeEnum);
         const setTypeData = Uint8Array.from([newTypeEnum]);
@@ -2000,51 +2003,21 @@
         "smoothHum10",
     ];
 
-    var _VibrationManager_instances, _a$3, _VibrationManager_verifyLocation, _VibrationManager_verifyLocations, _VibrationManager_createLocationsBitmask, _VibrationManager_assertNonEmptyArray, _VibrationManager_verifyWaveformEffect, _VibrationManager_MaxWaveformEffectSegmentDelay, _VibrationManager_verifyWaveformEffectSegment, _VibrationManager_MaxWaveformEffectSegmentLoopCount, _VibrationManager_verifyWaveformEffectSegmentLoopCount, _VibrationManager_MaxNumberOfWaveformEffectSegments, _VibrationManager_verifyWaveformEffectSegments, _VibrationManager_MaxWaveformEffectSequenceLoopCount, _VibrationManager_verifyWaveformEffectSequenceLoopCount, _VibrationManager_MaxWaveformSegmentDuration, _VibrationManager_verifyWaveformSegment, _VibrationManager_MaxNumberOfWaveformSegments, _VibrationManager_verifyWaveformSegments, _VibrationManager_createWaveformEffectsData, _VibrationManager_createWaveformData, _VibrationManager_verifyVibrationType, _VibrationManager_createData;
+    var _VibrationManager_instances, _VibrationManager_verifyLocation, _VibrationManager_verifyLocations, _VibrationManager_createLocationsBitmask, _VibrationManager_assertNonEmptyArray, _VibrationManager_verifyWaveformEffect, _VibrationManager_verifyWaveformEffectSegment, _VibrationManager_verifyWaveformEffectSegmentLoopCount, _VibrationManager_verifyWaveformEffectSegments, _VibrationManager_verifyWaveformEffectSequenceLoopCount, _VibrationManager_verifyWaveformSegment, _VibrationManager_verifyWaveformSegments, _VibrationManager_createWaveformEffectsData, _VibrationManager_createWaveformData, _VibrationManager_verifyVibrationType, _VibrationManager_createData;
     const _console$b = createConsole("VibrationManager");
     const VibrationLocations = ["front", "rear"];
     const VibrationTypes = ["waveformEffect", "waveform"];
     const VibrationMessageTypes = ["triggerVibration"];
+    const MaxNumberOfVibrationWaveformEffectSegments = 8;
+    const MaxVibrationWaveformSegmentDuration = 2550;
+    const MaxVibrationWaveformEffectSegmentDelay = 1270;
+    const MaxVibrationWaveformEffectSegmentLoopCount = 3;
+    const MaxNumberOfVibrationWaveformSegments = 20;
+    const MaxVibrationWaveformEffectSequenceLoopCount = 6;
     class VibrationManager {
         constructor() {
             _VibrationManager_instances.add(this);
             autoBind(this);
-        }
-        static get MaxWaveformEffectSegmentDelay() {
-            return __classPrivateFieldGet(this, _a$3, "f", _VibrationManager_MaxWaveformEffectSegmentDelay);
-        }
-        get maxWaveformEffectSegmentDelay() {
-            return _a$3.MaxWaveformEffectSegmentDelay;
-        }
-        static get MaxWaveformEffectSegmentLoopCount() {
-            return __classPrivateFieldGet(this, _a$3, "f", _VibrationManager_MaxWaveformEffectSegmentLoopCount);
-        }
-        get maxWaveformEffectSegmentLoopCount() {
-            return _a$3.MaxWaveformEffectSegmentLoopCount;
-        }
-        static get MaxNumberOfWaveformEffectSegments() {
-            return __classPrivateFieldGet(this, _a$3, "f", _VibrationManager_MaxNumberOfWaveformEffectSegments);
-        }
-        get maxNumberOfWaveformEffectSegments() {
-            return _a$3.MaxNumberOfWaveformEffectSegments;
-        }
-        static get MaxWaveformEffectSequenceLoopCount() {
-            return __classPrivateFieldGet(this, _a$3, "f", _VibrationManager_MaxWaveformEffectSequenceLoopCount);
-        }
-        get maxWaveformEffectSequenceLoopCount() {
-            return _a$3.MaxWaveformEffectSequenceLoopCount;
-        }
-        static get MaxWaveformSegmentDuration() {
-            return __classPrivateFieldGet(this, _a$3, "f", _VibrationManager_MaxWaveformSegmentDuration);
-        }
-        get maxWaveformSegmentDuration() {
-            return _a$3.MaxWaveformSegmentDuration;
-        }
-        static get MaxNumberOfWaveformSegments() {
-            return __classPrivateFieldGet(this, _a$3, "f", _VibrationManager_MaxNumberOfWaveformSegments);
-        }
-        get maxNumberOfWaveformSegments() {
-            return _a$3.MaxNumberOfWaveformSegments;
         }
         async triggerVibration(vibrationConfigurations, sendImmediately = true) {
             let triggerVibrationData;
@@ -2075,7 +2048,7 @@
             await this.sendMessage([{ type: "triggerVibration", data: triggerVibrationData }], sendImmediately);
         }
     }
-    _a$3 = VibrationManager, _VibrationManager_instances = new WeakSet(), _VibrationManager_verifyLocation = function _VibrationManager_verifyLocation(location) {
+    _VibrationManager_instances = new WeakSet(), _VibrationManager_verifyLocation = function _VibrationManager_verifyLocation(location) {
         _console$b.assertTypeWithError(location, "string");
         _console$b.assertWithError(VibrationLocations.includes(location), `invalid location "${location}"`);
     }, _VibrationManager_verifyLocations = function _VibrationManager_verifyLocations(locations) {
@@ -2106,7 +2079,7 @@
         else if (waveformEffectSegment.delay != undefined) {
             const { delay } = waveformEffectSegment;
             _console$b.assertWithError(delay >= 0, `delay must be 0ms or greater (got ${delay})`);
-            _console$b.assertWithError(delay <= this.maxWaveformEffectSegmentDelay, `delay must be ${this.maxWaveformEffectSegmentDelay}ms or less (got ${delay})`);
+            _console$b.assertWithError(delay <= MaxVibrationWaveformEffectSegmentDelay, `delay must be ${MaxVibrationWaveformEffectSegmentDelay}ms or less (got ${delay})`);
         }
         else {
             throw Error("no effect or delay found in waveformEffectSegment");
@@ -2118,27 +2091,27 @@
     }, _VibrationManager_verifyWaveformEffectSegmentLoopCount = function _VibrationManager_verifyWaveformEffectSegmentLoopCount(waveformEffectSegmentLoopCount) {
         _console$b.assertTypeWithError(waveformEffectSegmentLoopCount, "number");
         _console$b.assertWithError(waveformEffectSegmentLoopCount >= 0, `waveformEffectSegmentLoopCount must be 0 or greater (got ${waveformEffectSegmentLoopCount})`);
-        _console$b.assertWithError(waveformEffectSegmentLoopCount <= this.maxWaveformEffectSegmentLoopCount, `waveformEffectSegmentLoopCount must be ${this.maxWaveformEffectSegmentLoopCount} or fewer (got ${waveformEffectSegmentLoopCount})`);
+        _console$b.assertWithError(waveformEffectSegmentLoopCount <= MaxVibrationWaveformEffectSegmentLoopCount, `waveformEffectSegmentLoopCount must be ${MaxVibrationWaveformEffectSegmentLoopCount} or fewer (got ${waveformEffectSegmentLoopCount})`);
     }, _VibrationManager_verifyWaveformEffectSegments = function _VibrationManager_verifyWaveformEffectSegments(waveformEffectSegments) {
         __classPrivateFieldGet(this, _VibrationManager_instances, "m", _VibrationManager_assertNonEmptyArray).call(this, waveformEffectSegments);
-        _console$b.assertWithError(waveformEffectSegments.length <= this.maxNumberOfWaveformEffectSegments, `must have ${this.maxNumberOfWaveformEffectSegments} waveformEffectSegments or fewer (got ${waveformEffectSegments.length})`);
+        _console$b.assertWithError(waveformEffectSegments.length <= MaxNumberOfVibrationWaveformEffectSegments, `must have ${MaxNumberOfVibrationWaveformEffectSegments} waveformEffectSegments or fewer (got ${waveformEffectSegments.length})`);
         waveformEffectSegments.forEach((waveformEffectSegment) => {
             __classPrivateFieldGet(this, _VibrationManager_instances, "m", _VibrationManager_verifyWaveformEffectSegment).call(this, waveformEffectSegment);
         });
     }, _VibrationManager_verifyWaveformEffectSequenceLoopCount = function _VibrationManager_verifyWaveformEffectSequenceLoopCount(waveformEffectSequenceLoopCount) {
         _console$b.assertTypeWithError(waveformEffectSequenceLoopCount, "number");
         _console$b.assertWithError(waveformEffectSequenceLoopCount >= 0, `waveformEffectSequenceLoopCount must be 0 or greater (got ${waveformEffectSequenceLoopCount})`);
-        _console$b.assertWithError(waveformEffectSequenceLoopCount <= this.maxWaveformEffectSequenceLoopCount, `waveformEffectSequenceLoopCount must be ${this.maxWaveformEffectSequenceLoopCount} or fewer (got ${waveformEffectSequenceLoopCount})`);
+        _console$b.assertWithError(waveformEffectSequenceLoopCount <= MaxVibrationWaveformEffectSequenceLoopCount, `waveformEffectSequenceLoopCount must be ${MaxVibrationWaveformEffectSequenceLoopCount} or fewer (got ${waveformEffectSequenceLoopCount})`);
     }, _VibrationManager_verifyWaveformSegment = function _VibrationManager_verifyWaveformSegment(waveformSegment) {
         _console$b.assertTypeWithError(waveformSegment.amplitude, "number");
         _console$b.assertWithError(waveformSegment.amplitude >= 0, `amplitude must be 0 or greater (got ${waveformSegment.amplitude})`);
         _console$b.assertWithError(waveformSegment.amplitude <= 1, `amplitude must be 1 or less (got ${waveformSegment.amplitude})`);
         _console$b.assertTypeWithError(waveformSegment.duration, "number");
         _console$b.assertWithError(waveformSegment.duration > 0, `duration must be greater than 0ms (got ${waveformSegment.duration}ms)`);
-        _console$b.assertWithError(waveformSegment.duration <= this.maxWaveformSegmentDuration, `duration must be ${this.maxWaveformSegmentDuration}ms or less (got ${waveformSegment.duration}ms)`);
+        _console$b.assertWithError(waveformSegment.duration <= MaxVibrationWaveformSegmentDuration, `duration must be ${MaxVibrationWaveformSegmentDuration}ms or less (got ${waveformSegment.duration}ms)`);
     }, _VibrationManager_verifyWaveformSegments = function _VibrationManager_verifyWaveformSegments(waveformSegments) {
         __classPrivateFieldGet(this, _VibrationManager_instances, "m", _VibrationManager_assertNonEmptyArray).call(this, waveformSegments);
-        _console$b.assertWithError(waveformSegments.length <= this.maxNumberOfWaveformSegments, `must have ${this.maxNumberOfWaveformSegments} waveformSegments or fewer (got ${waveformSegments.length})`);
+        _console$b.assertWithError(waveformSegments.length <= MaxNumberOfVibrationWaveformSegments, `must have ${MaxNumberOfVibrationWaveformSegments} waveformSegments or fewer (got ${waveformSegments.length})`);
         waveformSegments.forEach((waveformSegment) => {
             __classPrivateFieldGet(this, _VibrationManager_instances, "m", _VibrationManager_verifyWaveformSegment).call(this, waveformSegment);
         });
@@ -2153,7 +2126,7 @@
         });
         const includeAllWaveformEffectSegments = hasAtLeast1WaveformEffectWithANonzeroLoopCount || waveformEffectSequenceLoopCount != 0;
         for (let index = 0; index < waveformEffectSegments.length ||
-            (includeAllWaveformEffectSegments && index < this.maxNumberOfWaveformEffectSegments); index++) {
+            (includeAllWaveformEffectSegments && index < MaxNumberOfVibrationWaveformEffectSegments); index++) {
             const waveformEffectSegment = waveformEffectSegments[index] || { effect: "none" };
             if (waveformEffectSegment.effect != undefined) {
                 const waveformEffect = waveformEffectSegment.effect;
@@ -2169,7 +2142,7 @@
         }
         const includeAllWaveformEffectSegmentLoopCounts = waveformEffectSequenceLoopCount != 0;
         for (let index = 0; index < waveformEffectSegments.length ||
-            (includeAllWaveformEffectSegmentLoopCounts && index < this.maxNumberOfWaveformEffectSegments); index++) {
+            (includeAllWaveformEffectSegmentLoopCounts && index < MaxNumberOfVibrationWaveformEffectSegments); index++) {
             const waveformEffectSegmentLoopCount = waveformEffectSegments[index]?.loopCount || 0;
             if (index == 0 || index == 4) {
                 dataArray[byteOffset] = 0;
@@ -2208,14 +2181,8 @@
         _console$b.log({ data });
         return data;
     };
-    _VibrationManager_MaxWaveformEffectSegmentDelay = { value: 1270 };
-    _VibrationManager_MaxWaveformEffectSegmentLoopCount = { value: 3 };
-    _VibrationManager_MaxNumberOfWaveformEffectSegments = { value: 8 };
-    _VibrationManager_MaxWaveformEffectSequenceLoopCount = { value: 6 };
-    _VibrationManager_MaxWaveformSegmentDuration = { value: 2550 };
-    _VibrationManager_MaxNumberOfWaveformSegments = { value: 20 };
 
-    var _BaseConnectionManager_instances, _a$2, _BaseConnectionManager_AssertValidTxRxMessageType, _BaseConnectionManager_baseConstructor_get, _BaseConnectionManager_assertIsSupported, _BaseConnectionManager_status, _BaseConnectionManager_assertIsNotConnected, _BaseConnectionManager_assertIsNotConnecting, _BaseConnectionManager_assertIsConnected, _BaseConnectionManager_assertIsNotDisconnecting, _BaseConnectionManager_assertIsConnectedAndNotDisconnecting, _BaseConnectionManager_pendingMessages, _BaseConnectionManager_onRxMessage, _BaseConnectionManager_timer, _BaseConnectionManager_checkConnection;
+    var _BaseConnectionManager_instances, _a$2, _BaseConnectionManager_AssertValidTxRxMessageType, _BaseConnectionManager_assertIsSupported, _BaseConnectionManager_status, _BaseConnectionManager_assertIsNotConnected, _BaseConnectionManager_assertIsNotConnecting, _BaseConnectionManager_assertIsConnected, _BaseConnectionManager_assertIsNotDisconnecting, _BaseConnectionManager_assertIsConnectedAndNotDisconnecting, _BaseConnectionManager_pendingMessages, _BaseConnectionManager_onRxMessage, _BaseConnectionManager_timer, _BaseConnectionManager_checkConnection;
     const _console$a = createConsole("BaseConnectionManager", { log: true });
     const ConnectionStatuses = ["not connected", "connecting", "connected", "disconnecting"];
     const TxRxMessageTypes = [
@@ -2235,14 +2202,17 @@
         ...TxRxMessageTypes,
     ];
     class BaseConnectionManager {
+        get baseConstructor() {
+            return this.constructor;
+        }
         static get isSupported() {
             return false;
         }
         get isSupported() {
-            return __classPrivateFieldGet(this, _BaseConnectionManager_instances, "a", _BaseConnectionManager_baseConstructor_get).isSupported;
+            return this.baseConstructor.isSupported;
         }
         get type() {
-            return __classPrivateFieldGet(this, _BaseConnectionManager_instances, "a", _BaseConnectionManager_baseConstructor_get).type;
+            return this.baseConstructor.type;
         }
         constructor() {
             _BaseConnectionManager_instances.add(this);
@@ -2349,8 +2319,6 @@
     }
     _a$2 = BaseConnectionManager, _BaseConnectionManager_status = new WeakMap(), _BaseConnectionManager_pendingMessages = new WeakMap(), _BaseConnectionManager_timer = new WeakMap(), _BaseConnectionManager_instances = new WeakSet(), _BaseConnectionManager_AssertValidTxRxMessageType = function _BaseConnectionManager_AssertValidTxRxMessageType(messageType) {
         _console$a.assertEnumWithError(messageType, TxRxMessageTypes);
-    }, _BaseConnectionManager_baseConstructor_get = function _BaseConnectionManager_baseConstructor_get() {
-        return this.constructor;
     }, _BaseConnectionManager_assertIsSupported = function _BaseConnectionManager_assertIsSupported() {
         _console$a.assertWithError(this.isSupported, `${this.constructor.name} is not supported`);
     }, _BaseConnectionManager_assertIsNotConnected = function _BaseConnectionManager_assertIsNotConnected() {
@@ -3744,7 +3712,7 @@
         __classPrivateFieldGet(this, _FirmwareManager_instances, "a", _FirmwareManager_dispatchEvent_get).call(this, "firmwareImages", { firmwareImages: __classPrivateFieldGet(this, _FirmwareManager_images, "f") });
     };
 
-    var _Device_instances, _a$1, _Device_DefaultConnectionManager, _Device_eventDispatcher, _Device_dispatchEvent_get, _Device_connectionManager, _Device_sendTxMessages, _Device_isConnected, _Device_assertIsConnected, _Device_RequiredInformationConnectionMessages, _Device_requiredInformationConnectionMessages_get, _Device_hasRequiredInformation_get, _Device_requestRequiredInformation, _Device_ReconnectOnDisconnection, _Device_reconnectOnDisconnection, _Device_reconnectIntervalId, _Device_onConnectionStatusUpdated, _Device_dispatchConnectionEvents, _Device_checkConnection, _Device_clear, _Device_onConnectionMessageReceived, _Device_deviceInformationManager, _Device_batteryLevel, _Device_updateBatteryLevel, _Device_informationManager, _Device_sensorConfigurationManager, _Device_ClearSensorConfigurationOnLeave, _Device_clearSensorConfigurationOnLeave, _Device_DefaultNumberOfPressureSensors, _Device_sensorDataManager, _Device_vibrationManager, _Device_fileTransferManager, _Device_tfliteManager, _Device_firmwareManager, _Device_sendSmpMessage, _Device_ConnectedDevices, _Device_UseLocalStorage, _Device_DefaultLocalStorageConfiguration, _Device_LocalStorageConfiguration, _Device_AssertLocalStorage, _Device_LocalStorageKey, _Device_SaveToLocalStorage, _Device_LoadFromLocalStorage, _Device_UpdateLocalStorageConfigurationForDevice, _Device_AvailableDevices, _Device_EventDispatcher, _Device_DispatchEvent_get, _Device_OnDeviceIsConnected, _Device_DispatchAvailableDevices, _Device_DispatchConnectedDevices;
+    var _Device_instances, _a$1, _Device_DefaultConnectionManager, _Device_eventDispatcher, _Device_dispatchEvent_get, _Device_connectionManager, _Device_sendTxMessages, _Device_isConnected, _Device_assertIsConnected, _Device_RequiredInformationConnectionMessages, _Device_requiredInformationConnectionMessages_get, _Device_hasRequiredInformation_get, _Device_requestRequiredInformation, _Device_ReconnectOnDisconnection, _Device_reconnectOnDisconnection, _Device_reconnectIntervalId, _Device_onConnectionStatusUpdated, _Device_dispatchConnectionEvents, _Device_checkConnection, _Device_clear, _Device_onConnectionMessageReceived, _Device_deviceInformationManager, _Device_batteryLevel, _Device_updateBatteryLevel, _Device_informationManager, _Device_sensorConfigurationManager, _Device_ClearSensorConfigurationOnLeave, _Device_clearSensorConfigurationOnLeave, _Device_sensorDataManager, _Device_vibrationManager, _Device_fileTransferManager, _Device_tfliteManager, _Device_firmwareManager, _Device_sendSmpMessage, _Device_ConnectedDevices, _Device_UseLocalStorage, _Device_DefaultLocalStorageConfiguration, _Device_LocalStorageConfiguration, _Device_AssertLocalStorage, _Device_LocalStorageKey, _Device_SaveToLocalStorage, _Device_LoadFromLocalStorage, _Device_UpdateLocalStorageConfigurationForDevice, _Device_AvailableDevices, _Device_EventDispatcher, _Device_DispatchEvent_get, _Device_OnDeviceIsConnected, _Device_DispatchAvailableDevices, _Device_DispatchConnectedDevices;
     const _console$3 = createConsole("Device", { log: true });
     const ConnectionEventTypes = [...ConnectionStatuses, "connectionStatus", "isConnected"];
     const DeviceEventTypes = [
@@ -3996,9 +3964,6 @@
             _console$3.assertTypeWithError(newClearSensorConfigurationOnLeave, "boolean");
             __classPrivateFieldSet(this, _Device_clearSensorConfigurationOnLeave, newClearSensorConfigurationOnLeave, "f");
         }
-        static get DefaultNumberOfPressureSensors() {
-            return __classPrivateFieldGet(this, _a$1, "f", _Device_DefaultNumberOfPressureSensors);
-        }
         get numberOfPressureSensors() {
             return __classPrivateFieldGet(this, _Device_sensorDataManager, "f").pressureSensorDataManager.numberOfSensors;
         }
@@ -4032,9 +3997,6 @@
         }
         get setTfliteName() {
             return __classPrivateFieldGet(this, _Device_tfliteManager, "f").setName;
-        }
-        static get TfliteTasks() {
-            return TfliteTasks;
         }
         get tfliteTask() {
             return __classPrivateFieldGet(this, _Device_tfliteManager, "f").task;
@@ -4461,7 +4423,6 @@
         ] };
     _Device_ReconnectOnDisconnection = { value: false };
     _Device_ClearSensorConfigurationOnLeave = { value: true };
-    _Device_DefaultNumberOfPressureSensors = { value: 8 };
     _Device_ConnectedDevices = { value: [] };
     _Device_UseLocalStorage = { value: false };
     _Device_DefaultLocalStorageConfiguration = { value: {
@@ -4722,6 +4683,7 @@
     })();
 
     exports.ContinuousSensorTypes = ContinuousSensorTypes;
+    exports.DefaultNumberOfPressureSensors = DefaultNumberOfPressureSensors;
     exports.Device = Device;
     exports.DevicePair = DevicePair;
     exports.DeviceTypes = DeviceTypes;
@@ -4729,11 +4691,18 @@
     exports.FileTransferDirections = FileTransferDirections;
     exports.FileTypes = FileTypes;
     exports.MaxNameLength = MaxNameLength;
+    exports.MaxNumberOfVibrationWaveformEffectSegments = MaxNumberOfVibrationWaveformEffectSegments;
+    exports.MaxNumberOfVibrationWaveformSegments = MaxNumberOfVibrationWaveformSegments;
     exports.MaxSensorRate = MaxSensorRate;
+    exports.MaxVibrationWaveformEffectSegmentDelay = MaxVibrationWaveformEffectSegmentDelay;
+    exports.MaxVibrationWaveformEffectSegmentLoopCount = MaxVibrationWaveformEffectSegmentLoopCount;
+    exports.MaxVibrationWaveformEffectSequenceLoopCount = MaxVibrationWaveformEffectSequenceLoopCount;
+    exports.MaxVibrationWaveformSegmentDuration = MaxVibrationWaveformSegmentDuration;
     exports.MinNameLength = MinNameLength;
     exports.SensorRateStep = SensorRateStep;
     exports.SensorTypes = SensorTypes;
     exports.TfliteSensorTypes = TfliteSensorTypes;
+    exports.TfliteTasks = TfliteTasks;
     exports.VibrationLocations = VibrationLocations;
     exports.VibrationTypes = VibrationTypes;
     exports.VibrationWaveformEffects = VibrationWaveformEffects;

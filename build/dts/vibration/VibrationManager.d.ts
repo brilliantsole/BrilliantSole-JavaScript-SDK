@@ -15,6 +15,12 @@ export interface VibrationWaveformSegment {
 }
 export declare const VibrationMessageTypes: readonly ["triggerVibration"];
 export type VibrationMessageType = (typeof VibrationMessageTypes)[number];
+export declare const MaxNumberOfVibrationWaveformEffectSegments = 8;
+export declare const MaxVibrationWaveformSegmentDuration = 2550;
+export declare const MaxVibrationWaveformEffectSegmentDelay = 1270;
+export declare const MaxVibrationWaveformEffectSegmentLoopCount = 3;
+export declare const MaxNumberOfVibrationWaveformSegments = 20;
+export declare const MaxVibrationWaveformEffectSequenceLoopCount = 6;
 interface BaseVibrationConfiguration {
     type: VibrationType;
     locations?: VibrationLocation[];
@@ -34,18 +40,6 @@ declare class VibrationManager {
     #private;
     constructor();
     sendMessage: SendVibrationMessageCallback;
-    static get MaxWaveformEffectSegmentDelay(): number;
-    get maxWaveformEffectSegmentDelay(): number;
-    static get MaxWaveformEffectSegmentLoopCount(): number;
-    get maxWaveformEffectSegmentLoopCount(): number;
-    static get MaxNumberOfWaveformEffectSegments(): number;
-    get maxNumberOfWaveformEffectSegments(): number;
-    static get MaxWaveformEffectSequenceLoopCount(): number;
-    get maxWaveformEffectSequenceLoopCount(): number;
-    static get MaxWaveformSegmentDuration(): number;
-    get maxWaveformSegmentDuration(): number;
-    static get MaxNumberOfWaveformSegments(): number;
-    get maxNumberOfWaveformSegments(): number;
     triggerVibration(vibrationConfigurations: VibrationConfiguration[], sendImmediately?: boolean): Promise<void>;
 }
 export default VibrationManager;

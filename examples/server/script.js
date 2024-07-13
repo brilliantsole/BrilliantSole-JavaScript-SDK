@@ -8,8 +8,6 @@ console.log({ client });
 
 window.client = client;
 
-/** @typedef {import("../../build/brilliantsole.module.js").Device} Device */
-
 // SEARCH PARAMS
 
 const url = new URL(location);
@@ -95,8 +93,6 @@ client.addEventListener("isScanning", () => {
 
 // DISCOVERED DEVICES
 
-/** @typedef {import("../../build/brilliantsole.module.js").DiscoveredDevice} DiscoveredDevice */
-
 /** @type {HTMLTemplateElement} */
 const discoveredDeviceTemplate = document.getElementById("discoveredDeviceTemplate");
 const discoveredDevicesContainer = document.getElementById("discoveredDevices");
@@ -104,7 +100,6 @@ const discoveredDevicesContainer = document.getElementById("discoveredDevices");
 let discoveredDeviceContainers = {};
 
 client.addEventListener("discoveredDevice", (event) => {
-  /** @type {DiscoveredDevice} */
   const discoveredDevice = event.message.discoveredDevice;
 
   let discoveredDeviceContainer = discoveredDeviceContainers[discoveredDevice.bluetoothId];
@@ -124,7 +119,7 @@ client.addEventListener("discoveredDevice", (event) => {
       }
     });
 
-    /** @param {Device} device */
+    /** @param {BS.Device} device */
     const onDevice = (device) => {
       device.addEventListener("connectionStatus", () => {
         updateToggleConnectionButton(device);
@@ -134,7 +129,7 @@ client.addEventListener("discoveredDevice", (event) => {
 
     discoveredDeviceContainer._onDevice = onDevice;
 
-    /** @param {Device} device */
+    /** @param {BS.Device} device */
     const updateToggleConnectionButton = (device) => {
       console.log({ deviceConnectionStatus: device.connectionStatus });
       switch (device.connectionStatus) {
@@ -158,7 +153,7 @@ client.addEventListener("discoveredDevice", (event) => {
   updateDiscoveredDeviceContainer(discoveredDevice);
 });
 
-/** @param {DiscoveredDevice} discoveredDevice */
+/** @param {BS.DiscoveredDevice} discoveredDevice */
 function updateDiscoveredDeviceContainer(discoveredDevice) {
   const discoveredDeviceContainer = discoveredDeviceContainers[discoveredDevice.bluetoothId];
   if (!discoveredDeviceContainer) {
@@ -170,7 +165,7 @@ function updateDiscoveredDeviceContainer(discoveredDevice) {
   discoveredDeviceContainer.querySelector(".deviceType").innerText = discoveredDevice.deviceType;
 }
 
-/** @param {DiscoveredDevice} discoveredDevice */
+/** @param {BS.DiscoveredDevice} discoveredDevice */
 function removeDiscoveredDeviceContainer(discoveredDevice) {
   const discoveredDeviceContainer = discoveredDeviceContainers[discoveredDevice.bluetoothId];
   if (!discoveredDeviceContainer) {
@@ -183,7 +178,6 @@ function removeDiscoveredDeviceContainer(discoveredDevice) {
 }
 
 client.addEventListener("expiredDiscoveredDevice", (event) => {
-  /** @type {DiscoveredDevice} */
   const discoveredDevice = event.message.discoveredDevice;
   removeDiscoveredDeviceContainer(discoveredDevice);
 });
@@ -204,7 +198,6 @@ client.addEventListener("isScanning", () => {
 });
 
 BS.Device.AddEventListener("deviceIsConnected", (event) => {
-  /** @type {Device} */
   const device = event.message.device;
   console.log("deviceIsConnected", device);
   const discoveredDeviceContainer = discoveredDeviceContainers[device.bluetoothId];
@@ -223,8 +216,7 @@ const availableDevicesContainer = document.getElementById("availableDevices");
 let availableDeviceContainers = {};
 
 BS.Device.AddEventListener("availableDevices", (event) => {
-  /** @type {Device[]} */
-  const availableDevices = event.message.availableDevices;
+  const { availableDevices } = event.message;
   console.log({ availableDevices });
 
   availableDevices.forEach((device) => {
@@ -433,7 +425,7 @@ BS.Device.AddEventListener("availableDevices", (event) => {
         updateMaxFileLengthSpan();
       });
 
-      /** @type {import("../../build/brilliantsole.module.js").FileType} */
+      /** @type {BS.FileType} */
       let fileType;
 
       /** @type {HTMLSelectElement} */
@@ -511,7 +503,7 @@ BS.Device.AddEventListener("availableDevices", (event) => {
         updateToggleFileTransferButton();
       });
 
-      /** @type {"send" | "receive"} */
+      /** @type {BS.FileTransferDirection} */
       let fileTransferDirection;
       /** @type {HTMLSelectElement} */
       const fileTransferDirectionSelect = availableDeviceContainer.querySelector(".fileTransferDirection");
@@ -577,7 +569,7 @@ BS.Device.AddEventListener("availableDevices", (event) => {
       /** @type {HTMLButtonElement} */
       const setTfliteTaskButton = availableDeviceContainer.querySelector(".setTfliteTaskButton");
 
-      BS.Device.TfliteTasks.forEach((task) => {
+      BS.TfliteTasks.forEach((task) => {
         setTfliteTaskOptgroup.appendChild(new Option(task));
       });
 

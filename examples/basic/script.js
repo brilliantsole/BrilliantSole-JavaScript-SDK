@@ -299,7 +299,7 @@ const vibrationTemplate = document.getElementById("vibrationTemplate");
   const waveformEffectSequenceLoopCountInput = vibrationTemplate.content.querySelector(
     ".waveformEffect .sequenceLoopCount"
   );
-  waveformEffectSequenceLoopCountInput.max = BS.Device.MaxVibrationWaveformEffectSequenceLoopCount;
+  waveformEffectSequenceLoopCountInput.max = BS.MaxVibrationWaveformEffectSequenceLoopCount;
 }
 /** @type {HTMLTemplateElement} */
 const vibrationLocationTemplate = document.getElementById("vibrationLocationTemplate");
@@ -316,11 +316,11 @@ const waveformEffectSegmentTemplate = document.getElementById("waveformEffectSeg
 
   /** @type {HTMLInputElement} */
   const waveformEffectSegmentDelayInput = waveformEffectSegmentTemplate.content.querySelector(".delay");
-  waveformEffectSegmentDelayInput.max = BS.Device.MaxVibrationWaveformEffectSegmentDelay;
+  waveformEffectSegmentDelayInput.max = BS.MaxVibrationWaveformEffectSegmentDelay;
 
   /** @type {HTMLInputElement} */
   const waveformEffectLoopCountInput = waveformEffectSegmentTemplate.content.querySelector(".loopCount");
-  waveformEffectLoopCountInput.max = BS.Device.MaxVibrationWaveformEffectSegmentLoopCount;
+  waveformEffectLoopCountInput.max = BS.MaxVibrationWaveformEffectSegmentLoopCount;
 }
 
 /** @type {HTMLTemplateElement} */
@@ -328,7 +328,7 @@ const waveformSegmentTemplate = document.getElementById("waveformSegmentTemplate
 {
   /** @type {HTMLInputElement} */
   const waveformDurationSegmentInput = waveformSegmentTemplate.content.querySelector(".duration");
-  waveformDurationSegmentInput.max = BS.Device.MaxVibrationWaveformSegmentDuration;
+  waveformDurationSegmentInput.max = BS.MaxVibrationWaveformSegmentDuration;
 }
 
 /** @type {HTMLButtonElement} */
@@ -363,7 +363,7 @@ addVibrationButton.addEventListener("click", () => {
   const addWaveformEffectSegmentButton = waveformEffectContainer.querySelector(".add");
   const updateAddWaveformEffectSegmentButton = () => {
     addWaveformEffectSegmentButton.disabled =
-      waveformEffectSegmentsContainer.children.length >= BS.Device.MaxNumberOfVibrationWaveformEffectSegments;
+      waveformEffectSegmentsContainer.children.length >= BS.MaxNumberOfVibrationWaveformEffectSegments;
   };
   addWaveformEffectSegmentButton.addEventListener("click", () => {
     /** @type {HTMLElement} */
@@ -414,7 +414,7 @@ addVibrationButton.addEventListener("click", () => {
   const addWaveformSegmentButton = waveformContainer.querySelector(".add");
   const updateAddWaveformSegmentButton = () => {
     addWaveformSegmentButton.disabled =
-      waveformSegmentsContainer.children.length >= BS.Device.MaxNumberOfVibrationWaveformSegments;
+      waveformSegmentsContainer.children.length >= BS.MaxNumberOfVibrationWaveformSegments;
   };
   addWaveformSegmentButton.addEventListener("click", () => {
     /** @type {HTMLElement} */
@@ -487,35 +487,33 @@ triggerVibrationsButton.addEventListener("click", () => {
       vibrationConfiguration.type = vibrationContainer.querySelector("select.type").value;
       switch (vibrationConfiguration.type) {
         case "waveformEffect":
-          vibrationConfiguration.waveformEffect = {
-            segments: Array.from(vibrationContainer.querySelectorAll(".waveformEffect .waveformEffectSegment")).map(
-              (waveformEffectSegmentContainer) => {
-                /** @type {BS.VibrationWaveformEffectSegment} */
-                const waveformEffectSegment = {
-                  loopCount: Number(waveformEffectSegmentContainer.querySelector(".loopCount").value),
-                };
-                if (waveformEffectSegmentContainer.querySelector(".type").value == "effect") {
-                  waveformEffectSegment.effect = waveformEffectSegmentContainer.querySelector(".effect").value;
-                } else {
-                  waveformEffectSegment.delay = Number(waveformEffectSegmentContainer.querySelector(".delay").value);
-                }
-                return waveformEffectSegment;
-              }
-            ),
-            loopCount: Number(vibrationContainer.querySelector(".waveformEffect .sequenceLoopCount").value),
-          };
+          vibrationConfiguration.segments = Array.from(
+            vibrationContainer.querySelectorAll(".waveformEffect .waveformEffectSegment")
+          ).map((waveformEffectSegmentContainer) => {
+            /** @type {BS.VibrationWaveformEffectSegment} */
+            const waveformEffectSegment = {
+              loopCount: Number(waveformEffectSegmentContainer.querySelector(".loopCount").value),
+            };
+            if (waveformEffectSegmentContainer.querySelector(".type").value == "effect") {
+              waveformEffectSegment.effect = waveformEffectSegmentContainer.querySelector(".effect").value;
+            } else {
+              waveformEffectSegment.delay = Number(waveformEffectSegmentContainer.querySelector(".delay").value);
+            }
+            return waveformEffectSegment;
+          });
+          vibrationConfiguration.loopCount = Number(
+            vibrationContainer.querySelector(".waveformEffect .sequenceLoopCount").value
+          );
           break;
         case "waveform":
-          vibrationConfiguration.waveform = {
-            segments: Array.from(vibrationContainer.querySelectorAll(".waveform .waveformSegment")).map(
-              (waveformSegmentContainer) => {
-                return {
-                  amplitude: Number(waveformSegmentContainer.querySelector(".amplitude").value),
-                  duration: Number(waveformSegmentContainer.querySelector(".duration").value),
-                };
-              }
-            ),
-          };
+          vibrationConfiguration.segments = Array.from(
+            vibrationContainer.querySelectorAll(".waveform .waveformSegment")
+          ).map((waveformSegmentContainer) => {
+            return {
+              amplitude: Number(waveformSegmentContainer.querySelector(".amplitude").value),
+              duration: Number(waveformSegmentContainer.querySelector(".duration").value),
+            };
+          });
           break;
         default:
           throw Error(`invalid vibrationType "${vibrationConfiguration.type}"`);
@@ -725,7 +723,7 @@ device.addEventListener("isConnected", () => {
   setTfliteTaskButton.disabled = disabled;
 });
 
-BS.Device.TfliteTasks.forEach((task) => {
+BS.TfliteTasks.forEach((task) => {
   setTfliteTaskOptgroup.appendChild(new Option(task));
 });
 
@@ -954,7 +952,7 @@ const firmwareUploadProgress = document.getElementById("firmwareUploadProgress")
 /** @type {HTMLSpanElement} */
 const firmwareUploadProgressPercentageSpan = document.getElementById("firmwareUploadProgressPercentage");
 device.addEventListener("firmwareUploadProgress", (event) => {
-  const progress = event.message.firmwareUploadProgress;
+  const progress = event.message.progress;
   firmwareUploadProgress.value = progress;
   firmwareUploadProgressPercentageSpan.innerText = `${Math.floor(100 * progress)}%`;
 });

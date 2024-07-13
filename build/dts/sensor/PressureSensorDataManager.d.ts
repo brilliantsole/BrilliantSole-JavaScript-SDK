@@ -24,6 +24,7 @@ export interface PressureDataEventMessages {
         pressure: PressureData;
     };
 }
+export declare const DefaultNumberOfPressureSensors = 8;
 declare class PressureSensorDataManager {
     #private;
     get positions(): Vector2[];

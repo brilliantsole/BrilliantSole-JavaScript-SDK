@@ -17,6 +17,7 @@ declare abstract class BaseConnectionManager {
     abstract get bluetoothId(): string;
     onStatusUpdated?: ConnectionStatusCallback;
     onMessageReceived?: MessageReceivedCallback;
+    protected get baseConstructor(): typeof BaseConnectionManager;
     static get isSupported(): boolean;
     get isSupported(): boolean;
     static type: ConnectionType;

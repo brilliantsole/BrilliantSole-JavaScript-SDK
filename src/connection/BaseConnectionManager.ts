@@ -58,19 +58,19 @@ abstract class BaseConnectionManager {
   onStatusUpdated?: ConnectionStatusCallback;
   onMessageReceived?: MessageReceivedCallback;
 
-  get #baseConstructor() {
+  protected get baseConstructor() {
     return this.constructor as typeof BaseConnectionManager;
   }
   static get isSupported() {
     return false;
   }
   get isSupported() {
-    return this.#baseConstructor.isSupported;
+    return this.baseConstructor.isSupported;
   }
 
   static type: ConnectionType;
   get type(): ConnectionType {
-    return this.#baseConstructor.type;
+    return this.baseConstructor.type;
   }
 
   /** @throws {Error} if not supported */

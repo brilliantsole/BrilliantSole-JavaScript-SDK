@@ -58,21 +58,14 @@ function replaceEnvironment() {
   });
 }
 
-const _plugins = [
-  resolve(),
-  commonjs(),
-  typescript(),
-  cleanup({ comments: "none", extensions: ["js", "ts"] }),
-  header(),
-];
+const _plugins = [typescript(), cleanup({ comments: "none", extensions: ["js", "ts"] }), header()];
 
 if (production) {
   _plugins.push(replaceEnvironment());
 }
 
-const _browserPlugins = [removeLines("browser")];
+const _browserPlugins = [resolve(), commonjs(), removeLines("browser")];
 const _nodePlugins = [removeLines("node")];
-const browserExternal = ["auto-bind"];
 const browserGlobals = {
   "auto-bind": "autoBind",
 };
@@ -97,7 +90,7 @@ const builds = [
   {
     input,
     plugins: [..._browserPlugins, ..._plugins],
-    external: browserExternal,
+    globals: browserGlobals,
     output: [
       {
         ...defaultOutput,
@@ -109,7 +102,6 @@ const builds = [
   {
     input,
     plugins: [..._browserPlugins, ..._plugins, terser()],
-    external: browserExternal,
     output: [
       {
         ...defaultOutput,
@@ -136,7 +128,6 @@ const builds = [
   {
     input,
     plugins: [..._browserPlugins, ..._plugins],
-    external: browserExternal,
     output: [
       {
         name,
@@ -151,7 +142,6 @@ const builds = [
   {
     input,
     plugins: [..._browserPlugins, ..._plugins, terser()],
-    external: browserExternal,
     output: [
       {
         ...defaultOutput,
@@ -207,7 +197,6 @@ const builds = [
   {
     input,
     plugins: [...lensStudioPlugins, ..._plugins],
-    external: browserExternal,
     output: [
       {
         ...defaultOutput,

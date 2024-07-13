@@ -2,7 +2,7 @@ import Device, { SendMessageCallback } from "./Device.ts";
 import { createConsole } from "./utils/Console.ts";
 import EventDispatcher from "./utils/EventDispatcher.ts";
 import { textDecoder, textEncoder } from "./utils/Text.ts";
-import autoBind from "../node_modules/auto-bind/index.js";
+import autoBind from "auto-bind";
 
 const _console = createConsole("InformationManager", { log: true });
 
@@ -106,7 +106,7 @@ class InformationManager {
     return this.#name;
   }
 
-  #updateName(updatedName: string) {
+  updateName(updatedName: string) {
     _console.assertTypeWithError(updatedName, "string");
     this.#name = updatedName;
     _console.log({ updatedName: this.#name });
@@ -145,7 +145,7 @@ class InformationManager {
     _console.assertTypeWithError(typeEnum, "number");
     _console.assertWithError(typeEnum in DeviceTypes, `invalid typeEnum ${typeEnum}`);
   }
-  #updateType(updatedType: DeviceType) {
+  updateType(updatedType: DeviceType) {
     this.#assertValidDeviceType(updatedType);
     if (updatedType == this.type) {
       _console.log("redundant type assignment");
@@ -250,14 +250,14 @@ class InformationManager {
       case "setName":
         const name = textDecoder.decode(dataView.buffer);
         _console.log({ name });
-        this.#updateName(name);
+        this.updateName(name);
         break;
       case "getType":
       case "setType":
         const typeEnum = dataView.getUint8(0);
         const type = DeviceTypes[typeEnum];
         _console.log({ typeEnum, type });
-        this.#updateType(type);
+        this.updateType(type);
         break;
       case "getMtu":
         const mtu = dataView.getUint16(0, true);

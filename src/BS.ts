@@ -3,6 +3,7 @@ export { default as Device, DeviceEvent, DeviceEventMap, StaticDeviceEvent, Stat
 export * as Environment from "./utils/environment.ts";
 
 export { SensorType, SensorTypes, ContinuousSensorType, ContinuousSensorTypes } from "./sensor/SensorDataManager.ts";
+export { DefaultNumberOfPressureSensors } from "./sensor/PressureSensorDataManager.ts";
 export { DeviceType, DeviceTypes, MinNameLength, MaxNameLength } from "./InformationManager.ts";
 export {
   VibrationConfiguration,
@@ -10,12 +11,19 @@ export {
   VibrationLocations,
   VibrationType,
   VibrationTypes,
+  MaxNumberOfVibrationWaveformEffectSegments,
+  MaxVibrationWaveformSegmentDuration,
+  MaxVibrationWaveformEffectSegmentDelay,
+  MaxVibrationWaveformEffectSegmentLoopCount,
+  MaxNumberOfVibrationWaveformSegments,
+  MaxVibrationWaveformEffectSequenceLoopCount,
 } from "./vibration/VibrationManager.ts";
 export { VibrationWaveformEffect, VibrationWaveformEffects } from "./vibration/VibrationWaveformEffects.ts";
 export { DeviceInformation } from "./DeviceInformationManager.ts";
 export { FileType, FileTypes, FileTransferDirection, FileTransferDirections } from "./FileTransferManager.ts";
-export { TfliteSensorType, TfliteSensorTypes } from "./TfliteManager.ts";
+export { TfliteSensorType, TfliteSensorTypes, TfliteTask, TfliteTasks } from "./TfliteManager.ts";
 export { MaxSensorRate, SensorRateStep } from "./sensor/SensorConfigurationManager.ts";
+export { DiscoveredDevice } from "./scanner/BaseScanner.ts";
 
 /** NODE_START */
 export { default as Scanner } from "./scanner/Scanner.ts";

@@ -1,4 +1,4 @@
-import BaseScanner, { DiscoveredDevice, ScannerEvent, ScannerEventMap, SpecificScannerEvent } from "./BaseScanner.ts";
+import BaseScanner, { DiscoveredDevice, ScannerEventMap } from "./BaseScanner.ts";
 import { createConsole } from "../utils/Console.ts";
 import { addEventListeners } from "../utils/EventUtils.ts";
 import { serviceDataUUID, serviceUUIDs } from "../connection/bluetooth/bluetoothUUIDs.ts";
@@ -152,7 +152,7 @@ class NobleScanner extends BaseScanner {
   }
 
   // DISCOVERED DEVICES
-  #noblePeripherals: { [deviceId: string]: NoblePeripheral } = {};
+  #noblePeripherals: { [bluetoothId: string]: NoblePeripheral } = {};
   #assertValidNoblePeripheralId(noblePeripheralId: string) {
     _console.assertTypeWithError(noblePeripheralId, "string");
     _console.assertWithError(

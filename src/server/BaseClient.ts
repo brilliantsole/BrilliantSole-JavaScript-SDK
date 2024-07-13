@@ -50,7 +50,7 @@ export type ServerURL = string | URL;
 type DevicesMap = { [deviceId: string]: Device };
 
 abstract class BaseClient {
-  get #baseConstructor() {
+  protected get baseConstructor() {
     return this.constructor as typeof BaseClient;
   }
 
@@ -89,22 +89,22 @@ abstract class BaseClient {
   abstract reconnect(): void;
   abstract toggleConnection(url?: ServerURL): void;
 
-  static #ReconnectOnDisconnection = true;
+  static _reconnectOnDisconnection = true;
   static get ReconnectOnDisconnection() {
-    return this.#ReconnectOnDisconnection;
+    return this._reconnectOnDisconnection;
   }
   static set ReconnectOnDisconnection(newReconnectOnDisconnection) {
     _console.assertTypeWithError(newReconnectOnDisconnection, "boolean");
-    this.#ReconnectOnDisconnection = newReconnectOnDisconnection;
+    this._reconnectOnDisconnection = newReconnectOnDisconnection;
   }
 
-  #reconnectOnDisconnection = this.#baseConstructor.#ReconnectOnDisconnection;
+  protected _reconnectOnDisconnection = this.baseConstructor.ReconnectOnDisconnection;
   get reconnectOnDisconnection() {
-    return this.#reconnectOnDisconnection;
+    return this._reconnectOnDisconnection;
   }
   set reconnectOnDisconnection(newReconnectOnDisconnection) {
     _console.assertTypeWithError(newReconnectOnDisconnection, "boolean");
-    this.#reconnectOnDisconnection = newReconnectOnDisconnection;
+    this._reconnectOnDisconnection = newReconnectOnDisconnection;
   }
 
   protected sendServerMessage(...messages: ServerMessage[]) {

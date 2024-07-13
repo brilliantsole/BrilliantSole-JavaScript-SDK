@@ -2,7 +2,7 @@ import { createConsole } from "../utils/Console.ts";
 import { VibrationWaveformEffect, VibrationWaveformEffects } from "./VibrationWaveformEffects.ts";
 import { concatenateArrayBuffers } from "../utils/ArrayBufferUtils.ts";
 import { SendMessageCallback } from "../Device.ts";
-import autoBind from "../../node_modules/auto-bind/index.js";
+import autoBind from "auto-bind";
 
 const _console = createConsole("VibrationManager");
 
@@ -25,6 +25,13 @@ export interface VibrationWaveformSegment {
 
 export const VibrationMessageTypes = ["triggerVibration"] as const;
 export type VibrationMessageType = (typeof VibrationMessageTypes)[number];
+
+export const MaxNumberOfVibrationWaveformEffectSegments = 8;
+export const MaxVibrationWaveformSegmentDuration = 2550;
+export const MaxVibrationWaveformEffectSegmentDelay = 1270;
+export const MaxVibrationWaveformEffectSegmentLoopCount = 3;
+export const MaxNumberOfVibrationWaveformSegments = 20;
+export const MaxVibrationWaveformEffectSequenceLoopCount = 6;
 
 interface BaseVibrationConfiguration {
   type: VibrationType;
@@ -87,13 +94,6 @@ class VibrationManager {
     );
   }
 
-  static #MaxWaveformEffectSegmentDelay = 1270;
-  static get MaxWaveformEffectSegmentDelay() {
-    return this.#MaxWaveformEffectSegmentDelay;
-  }
-  get maxWaveformEffectSegmentDelay() {
-    return VibrationManager.MaxWaveformEffectSegmentDelay;
-  }
   #verifyWaveformEffectSegment(waveformEffectSegment: VibrationWaveformEffectSegment) {
     if (waveformEffectSegment.effect != undefined) {
       const waveformEffect = waveformEffectSegment.effect;
@@ -102,8 +102,8 @@ class VibrationManager {
       const { delay } = waveformEffectSegment;
       _console.assertWithError(delay >= 0, `delay must be 0ms or greater (got ${delay})`);
       _console.assertWithError(
-        delay <= this.maxWaveformEffectSegmentDelay,
-        `delay must be ${this.maxWaveformEffectSegmentDelay}ms or less (got ${delay})`
+        delay <= MaxVibrationWaveformEffectSegmentDelay,
+        `delay must be ${MaxVibrationWaveformEffectSegmentDelay}ms or less (got ${delay})`
       );
     } else {
       throw Error("no effect or delay found in waveformEffectSegment");
@@ -114,13 +114,7 @@ class VibrationManager {
       this.#verifyWaveformEffectSegmentLoopCount(loopCount);
     }
   }
-  static #MaxWaveformEffectSegmentLoopCount = 3;
-  static get MaxWaveformEffectSegmentLoopCount() {
-    return this.#MaxWaveformEffectSegmentLoopCount;
-  }
-  get maxWaveformEffectSegmentLoopCount() {
-    return VibrationManager.MaxWaveformEffectSegmentLoopCount;
-  }
+
   #verifyWaveformEffectSegmentLoopCount(waveformEffectSegmentLoopCount: number) {
     _console.assertTypeWithError(waveformEffectSegmentLoopCount, "number");
     _console.assertWithError(
@@ -128,36 +122,22 @@ class VibrationManager {
       `waveformEffectSegmentLoopCount must be 0 or greater (got ${waveformEffectSegmentLoopCount})`
     );
     _console.assertWithError(
-      waveformEffectSegmentLoopCount <= this.maxWaveformEffectSegmentLoopCount,
-      `waveformEffectSegmentLoopCount must be ${this.maxWaveformEffectSegmentLoopCount} or fewer (got ${waveformEffectSegmentLoopCount})`
+      waveformEffectSegmentLoopCount <= MaxVibrationWaveformEffectSegmentLoopCount,
+      `waveformEffectSegmentLoopCount must be ${MaxVibrationWaveformEffectSegmentLoopCount} or fewer (got ${waveformEffectSegmentLoopCount})`
     );
   }
 
-  static #MaxNumberOfWaveformEffectSegments = 8;
-  static get MaxNumberOfWaveformEffectSegments() {
-    return this.#MaxNumberOfWaveformEffectSegments;
-  }
-  get maxNumberOfWaveformEffectSegments() {
-    return VibrationManager.MaxNumberOfWaveformEffectSegments;
-  }
   #verifyWaveformEffectSegments(waveformEffectSegments: VibrationWaveformEffectSegment[]) {
     this.#assertNonEmptyArray(waveformEffectSegments);
     _console.assertWithError(
-      waveformEffectSegments.length <= this.maxNumberOfWaveformEffectSegments,
-      `must have ${this.maxNumberOfWaveformEffectSegments} waveformEffectSegments or fewer (got ${waveformEffectSegments.length})`
+      waveformEffectSegments.length <= MaxNumberOfVibrationWaveformEffectSegments,
+      `must have ${MaxNumberOfVibrationWaveformEffectSegments} waveformEffectSegments or fewer (got ${waveformEffectSegments.length})`
     );
     waveformEffectSegments.forEach((waveformEffectSegment) => {
       this.#verifyWaveformEffectSegment(waveformEffectSegment);
     });
   }
 
-  static #MaxWaveformEffectSequenceLoopCount = 6;
-  static get MaxWaveformEffectSequenceLoopCount() {
-    return this.#MaxWaveformEffectSequenceLoopCount;
-  }
-  get maxWaveformEffectSequenceLoopCount() {
-    return VibrationManager.MaxWaveformEffectSequenceLoopCount;
-  }
   #verifyWaveformEffectSequenceLoopCount(waveformEffectSequenceLoopCount: number) {
     _console.assertTypeWithError(waveformEffectSequenceLoopCount, "number");
     _console.assertWithError(
@@ -165,18 +145,11 @@ class VibrationManager {
       `waveformEffectSequenceLoopCount must be 0 or greater (got ${waveformEffectSequenceLoopCount})`
     );
     _console.assertWithError(
-      waveformEffectSequenceLoopCount <= this.maxWaveformEffectSequenceLoopCount,
-      `waveformEffectSequenceLoopCount must be ${this.maxWaveformEffectSequenceLoopCount} or fewer (got ${waveformEffectSequenceLoopCount})`
+      waveformEffectSequenceLoopCount <= MaxVibrationWaveformEffectSequenceLoopCount,
+      `waveformEffectSequenceLoopCount must be ${MaxVibrationWaveformEffectSequenceLoopCount} or fewer (got ${waveformEffectSequenceLoopCount})`
     );
   }
 
-  static #MaxWaveformSegmentDuration = 2550;
-  static get MaxWaveformSegmentDuration() {
-    return this.#MaxWaveformSegmentDuration;
-  }
-  get maxWaveformSegmentDuration() {
-    return VibrationManager.MaxWaveformSegmentDuration;
-  }
   #verifyWaveformSegment(waveformSegment: VibrationWaveformSegment) {
     _console.assertTypeWithError(waveformSegment.amplitude, "number");
     _console.assertWithError(
@@ -194,22 +167,16 @@ class VibrationManager {
       `duration must be greater than 0ms (got ${waveformSegment.duration}ms)`
     );
     _console.assertWithError(
-      waveformSegment.duration <= this.maxWaveformSegmentDuration,
-      `duration must be ${this.maxWaveformSegmentDuration}ms or less (got ${waveformSegment.duration}ms)`
+      waveformSegment.duration <= MaxVibrationWaveformSegmentDuration,
+      `duration must be ${MaxVibrationWaveformSegmentDuration}ms or less (got ${waveformSegment.duration}ms)`
     );
   }
-  static #MaxNumberOfWaveformSegments = 20;
-  static get MaxNumberOfWaveformSegments() {
-    return this.#MaxNumberOfWaveformSegments;
-  }
-  get maxNumberOfWaveformSegments() {
-    return VibrationManager.MaxNumberOfWaveformSegments;
-  }
+
   #verifyWaveformSegments(waveformSegments: VibrationWaveformSegment[]) {
     this.#assertNonEmptyArray(waveformSegments);
     _console.assertWithError(
-      waveformSegments.length <= this.maxNumberOfWaveformSegments,
-      `must have ${this.maxNumberOfWaveformSegments} waveformSegments or fewer (got ${waveformSegments.length})`
+      waveformSegments.length <= MaxNumberOfVibrationWaveformSegments,
+      `must have ${MaxNumberOfVibrationWaveformSegments} waveformSegments or fewer (got ${waveformSegments.length})`
     );
     waveformSegments.forEach((waveformSegment) => {
       this.#verifyWaveformSegment(waveformSegment);
@@ -238,7 +205,7 @@ class VibrationManager {
     for (
       let index = 0;
       index < waveformEffectSegments.length ||
-      (includeAllWaveformEffectSegments && index < this.maxNumberOfWaveformEffectSegments);
+      (includeAllWaveformEffectSegments && index < MaxNumberOfVibrationWaveformEffectSegments);
       index++
     ) {
       const waveformEffectSegment = waveformEffectSegments[index] || { effect: "none" };
@@ -257,7 +224,7 @@ class VibrationManager {
     for (
       let index = 0;
       index < waveformEffectSegments.length ||
-      (includeAllWaveformEffectSegmentLoopCounts && index < this.maxNumberOfWaveformEffectSegments);
+      (includeAllWaveformEffectSegmentLoopCounts && index < MaxNumberOfVibrationWaveformEffectSegments);
       index++
     ) {
       const waveformEffectSegmentLoopCount = waveformEffectSegments[index]?.loopCount || 0;

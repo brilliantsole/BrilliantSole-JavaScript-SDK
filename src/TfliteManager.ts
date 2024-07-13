@@ -7,7 +7,7 @@ import { SensorRateStep } from "./sensor/SensorConfigurationManager.ts";
 import { parseTimestamp } from "./utils/MathUtils.ts";
 import { SensorType } from "./sensor/SensorDataManager.ts";
 import Device, { SendMessageCallback } from "./Device.ts";
-import autoBind from "../node_modules/auto-bind/index.js";
+import autoBind from "auto-bind";
 
 const _console = createConsole("TfliteManager", { log: true });
 

@@ -616,10 +616,6 @@ class Device {
 
   // PRESSURE
 
-  static #DefaultNumberOfPressureSensors = 8;
-  static get DefaultNumberOfPressureSensors() {
-    return this.#DefaultNumberOfPressureSensors;
-  }
   get numberOfPressureSensors() {
     return this.#sensorDataManager.pressureSensorDataManager.numberOfSensors;
   }
@@ -674,10 +670,6 @@ class Device {
   }
 
   // TFLITE MODEL CONFIG
-  static get TfliteTasks() {
-    return TfliteTasks;
-  }
-
   get tfliteTask() {
     return this.#tfliteManager.task;
   }

@@ -4,7 +4,7 @@ import { getFileBuffer } from "./utils/ArrayBufferUtils.ts";
 import { FileLike } from "./utils/ArrayBufferUtils.ts";
 import Device, { SendMessageCallback } from "./Device.ts";
 import EventDispatcher from "./utils/EventDispatcher.ts";
-import autoBind from "../node_modules/auto-bind/index.js";
+import autoBind from "auto-bind";
 
 const _console = createConsole("FileTransferManager", { log: true });
 

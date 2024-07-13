@@ -4,7 +4,7 @@ import { addEventListeners, removeEventListeners } from "../../utils/EventUtils.
 import Device from "../../Device.ts";
 import WebSocketClientConnectionManager from "../../connection/webSocket/WebSocketClientConnectionManager.ts";
 import BaseClient, { ServerURL } from "../BaseClient.ts";
-import type * as ws from "ws.ts";
+import type * as ws from "ws";
 
 const _console = createConsole("WebSocketClient", { log: true });
 

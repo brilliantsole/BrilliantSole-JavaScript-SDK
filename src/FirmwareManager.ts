@@ -4,7 +4,7 @@ import { createConsole } from "./utils/Console.ts";
 import EventDispatcher from "./utils/EventDispatcher.ts";
 import { MCUManager, constants } from "./utils/mcumgr.js";
 import { FileLike } from "./utils/ArrayBufferUtils.ts";
-import autoBind from "../node_modules/auto-bind/index.js";
+import autoBind from "auto-bind";
 
 const _console = createConsole("FirmwareManager", { log: true });
 
