@@ -3,6 +3,10 @@ window.BS = BS;
 console.log({ BS });
 //BS.setAllConsoleLevelFlags({ log: false });
 
+/** @typedef {import("../utils/three/three.module.min").Vector3} TVector3 */
+/** @typedef {import("../utils/three/three.module.min").Quaternion} TQuaternion */
+/** @typedef {import("../utils/three/three.module.min").Euler} TEuler */
+
 // GET DEVICES
 
 /** @type {HTMLTemplateElement} */
@@ -262,6 +266,7 @@ function onIFrameLoaded(insoleContainer) {
     positionSelect.value = newPositionSelectValue;
   });
 
+  /** @type {TVector3} */
   const _position = new THREE.Vector3();
 
   /** @param {BS.Vector3} position */
@@ -300,12 +305,15 @@ function onIFrameLoaded(insoleContainer) {
     updatePosition(linearAcceleration);
   });
 
+  /** @type {TQuaternion} */
   const offsetQuaternion = new THREE.Quaternion();
   const resetOrientation = () => {
     offsetQuaternion.copy(_quaternion).invert();
   };
 
+  /** @type {TQuaternion} */
   const _quaternion = new THREE.Quaternion();
+  /** @type {TQuaternion} */
   const targetQuaternion = new THREE.Quaternion();
   /**
    * @param {BS.Quaternion} quaternion
@@ -342,8 +350,11 @@ function onIFrameLoaded(insoleContainer) {
     updateQuaternion(rotation, true);
   });
 
+  /** @type {TVector3} */
   const orientationVector3 = new THREE.Vector3();
+  /** @type {TEuler} */
   const orientationEuler = new THREE.Euler(0, 0, 0, "YXZ");
+  /** @type {TQuaternion} */
   const orientationQuaternion = new THREE.Quaternion();
   devicePair.addEventListener("deviceOrientation", (event) => {
     const device = event.message.device;
@@ -359,8 +370,11 @@ function onIFrameLoaded(insoleContainer) {
     updateQuaternion(orientationQuaternion);
   });
 
+  /** @type {TVector3} */
   const gyroscopeVector3 = new THREE.Vector3();
+  /** @type {TEuler} */
   const gyroscopeEuler = new THREE.Euler();
+  /** @type {TQuaternion} */
   const gyroscopeQuaternion = new THREE.Quaternion();
   devicePair.addEventListener("deviceGyroscope", (event) => {
     const device = event.message.device;
