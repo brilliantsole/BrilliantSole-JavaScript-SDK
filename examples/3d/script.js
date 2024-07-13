@@ -3,14 +3,12 @@ window.BS = BS;
 console.log({ BS });
 //BS.setAllConsoleLevelFlags({ log: false });
 
-/** @typedef {import("../../build/brilliantsole.module.js").Device} Device */
-
 // GET DEVICES
 
 /** @type {HTMLTemplateElement} */
 const availableDeviceTemplate = document.getElementById("availableDeviceTemplate");
 const availableDevicesContainer = document.getElementById("availableDevices");
-/** @param {Device[]} availableDevices */
+/** @param {BS.Device[]} availableDevices */
 function onAvailableDevices(availableDevices) {
   availableDevicesContainer.innerHTML = "";
   if (availableDevices.length == 0) {
@@ -118,7 +116,7 @@ function onIFrameLoaded(insoleContainer) {
     devicePair[side].toggleConnection();
   });
   devicePair.addEventListener("deviceIsConnected", (event) => {
-    /** @type {Device} */
+    /** @type {BS.Device} */
     const device = event.message.device;
     if (device.insoleSide != side) {
       return;
@@ -131,7 +129,7 @@ function onIFrameLoaded(insoleContainer) {
   });
 
   devicePair.addEventListener("deviceConnectionStatus", (event) => {
-    /** @type {Device} */
+    /** @type {BS.Device} */
     const device = event.message.device;
     if (device.insoleSide != side) {
       return;
@@ -154,7 +152,7 @@ function onIFrameLoaded(insoleContainer) {
   /** @type {HTMLSelectElement} */
   const orientationSelect = insoleContainer.querySelector(".orientation");
   orientationSelect.addEventListener("input", () => {
-    /** @type {import("../../build/brilliantsole.module.js").SensorConfiguration} */
+    /** @type {BS.SensorConfiguration} */
     const configuration = { gameRotation: 0, rotation: 0, gyroscope: 0, orientation: 0 };
 
     switch (orientationSelect.value) {
@@ -197,7 +195,7 @@ function onIFrameLoaded(insoleContainer) {
   /** @type {HTMLSelectElement} */
   const positionSelect = insoleContainer.querySelector(".position");
   positionSelect.addEventListener("input", () => {
-    /** @type {import("../../build/brilliantsole.module.js").SensorConfiguration} */
+    /** @type {BS.SensorConfiguration} */
     const configuration = { acceleration: 0, gravity: 0, linearAcceleration: 0 };
 
     switch (positionSelect.value) {
@@ -231,8 +229,6 @@ function onIFrameLoaded(insoleContainer) {
     positionSelect.disabled = !device.isConnected;
   });
 
-  /** @typedef {import("../../build/brilliantsole.module.js").SensorType} SensorType */
-
   devicePair.addEventListener("deviceGetSensorConfiguration", (event) => {
     const device = event.message.device;
     if (device.insoleSide != side) {
@@ -243,7 +239,7 @@ function onIFrameLoaded(insoleContainer) {
     let newPositionSelectValue = "none";
 
     for (const key in device.sensorConfiguration) {
-      /** @type {SensorType} */
+      /** @type {BS.SensorType} */
       const sensorType = key;
       if (device.sensorConfiguration[sensorType] > 0) {
         switch (sensorType) {
@@ -266,11 +262,9 @@ function onIFrameLoaded(insoleContainer) {
     positionSelect.value = newPositionSelectValue;
   });
 
-  /** @typedef {import("../../build/brilliantsole.module.js").Vector3} Vector3 */
-
   const _position = new THREE.Vector3();
 
-  /** @param {Vector3} position */
+  /** @param {BS.Vector3} position */
   const updatePosition = (position) => {
     _position.copy(position).multiplyScalar(window.positionScalar);
     targetPositionEntity.object3D.position.lerp(_position, window.interpolationSmoothing);
@@ -281,7 +275,7 @@ function onIFrameLoaded(insoleContainer) {
     if (device.insoleSide != side) {
       return;
     }
-    /** @type {Vector3} */
+    /** @type {BS.Vector3} */
     const acceleration = event.message.acceleration;
     updatePosition(acceleration);
   });
@@ -291,7 +285,7 @@ function onIFrameLoaded(insoleContainer) {
       return;
     }
 
-    /** @type {Vector3} */
+    /** @type {BS.Vector3} */
     const gravity = event.message.gravity;
     updatePosition(gravity);
   });
@@ -301,7 +295,7 @@ function onIFrameLoaded(insoleContainer) {
       return;
     }
 
-    /** @type {Vector3} */
+    /** @type {BS.Vector3} */
     const linearAcceleration = event.message.linearAcceleration;
     updatePosition(linearAcceleration);
   });
@@ -313,9 +307,8 @@ function onIFrameLoaded(insoleContainer) {
 
   const _quaternion = new THREE.Quaternion();
   const targetQuaternion = new THREE.Quaternion();
-  /** @typedef {import("../../build/brilliantsole.module.js").Quaternion} Quaternion */
   /**
-   * @param {Quaternion} quaternion
+   * @param {BS.Quaternion} quaternion
    * @param {boolean} applyOffset
    */
   const updateQuaternion = (quaternion, applyOffset = false) => {
@@ -332,7 +325,7 @@ function onIFrameLoaded(insoleContainer) {
       return;
     }
 
-    /** @type {Quaternion} */
+    /** @type {BS.Quaternion} */
     const gameRotation = event.message.gameRotation;
     //permuteQuaternion(gameRotation);
     updateQuaternion(gameRotation, true);
@@ -343,7 +336,7 @@ function onIFrameLoaded(insoleContainer) {
       return;
     }
 
-    /** @type {Quaternion} */
+    /** @type {BS.Quaternion} */
     const rotation = event.message.rotation;
     //permuteQuaternion(rotation);
     updateQuaternion(rotation, true);
@@ -352,14 +345,13 @@ function onIFrameLoaded(insoleContainer) {
   const orientationVector3 = new THREE.Vector3();
   const orientationEuler = new THREE.Euler(0, 0, 0, "YXZ");
   const orientationQuaternion = new THREE.Quaternion();
-  /** @typedef {import("../../build/brilliantsole.module.js").Euler} Euler */
   devicePair.addEventListener("deviceOrientation", (event) => {
     const device = event.message.device;
     if (device.insoleSide != side) {
       return;
     }
 
-    /** @type {Euler} */
+    /** @type {BS.Euler} */
     const orientation = event.message.orientation;
     orientationVector3.set(orientation.pitch, orientation.heading, orientation.roll).multiplyScalar(Math.PI / 180);
     orientationEuler.setFromVector3(orientationVector3);
@@ -376,7 +368,7 @@ function onIFrameLoaded(insoleContainer) {
       return;
     }
 
-    /** @type {Vector3} */
+    /** @type {BS.Vector3} */
     const gyroscope = event.message.gyroscope;
     gyroscopeVector3.copy(gyroscope).multiplyScalar(Math.PI / 180);
     gyroscopeEuler.setFromVector3(gyroscopeVector3);

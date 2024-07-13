@@ -5,8 +5,6 @@ window.BS = BS;
 console.log({ BS });
 //BS.setAllConsoleLevelFlags({ log: true });
 
-/** @typedef {import("../../build/brilliantsole.module.js").Device} Device */
-
 const device = new BS.Device();
 console.log({ device });
 window.device = device;
@@ -16,7 +14,7 @@ window.device = device;
 /** @type {HTMLTemplateElement} */
 const availableDeviceTemplate = document.getElementById("availableDeviceTemplate");
 const availableDevicesContainer = document.getElementById("availableDevices");
-/** @param {Device[]} availableDevices */
+/** @param {BS.Device[]} availableDevices */
 function onAvailableDevices(availableDevices) {
   availableDevicesContainer.innerHTML = "";
   if (availableDevices.length == 0) {
@@ -124,8 +122,6 @@ device.addEventListener("isConnected", () => {
 });
 
 // GRAPHING
-
-/** @typedef {import("../../build/brilliantsole.module.js").SensorType} SensorType */
 
 const charts = {};
 window.charts = charts;
@@ -323,9 +319,8 @@ BS.SensorTypes.forEach((sensorType) => {
   device.addEventListener(sensorType, (event) => {
     let { timestamp, [sensorType]: data } = event.message;
 
-    /** @typedef {import("../../build/brilliantsole.module.js").PressureData} PressureData */
     if (sensorType == "pressure") {
-      /** @type {PressureData} */
+      /** @type {BS.PressureData} */
       let pressure = data;
       data = pressure.sensors.map((sensor) => sensor.normalizedValue);
     }
@@ -344,7 +339,7 @@ BS.SensorTypes.forEach((sensorType) => {
         break;
       case "pressure":
         {
-          /** @type {PressureData} */
+          /** @type {BS.PressureData} */
           let pressure = event.message.pressure;
           charts.pressureMetadata._appendData(timestamp, {
             sum: pressure.normalizedSum,

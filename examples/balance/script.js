@@ -8,7 +8,7 @@ console.log({ BS });
 /** @type {HTMLTemplateElement} */
 const availableDeviceTemplate = document.getElementById("availableDeviceTemplate");
 const availableDevicesContainer = document.getElementById("availableDevices");
-/** @param {Device[]} availableDevices */
+/** @param {BS.Device[]} availableDevices */
 function onAvailableDevices(availableDevices) {
   availableDevicesContainer.innerHTML = "";
   if (availableDevices.length == 0) {
@@ -112,9 +112,7 @@ resetPressureRangeButton.addEventListener("click", () => {
   devicePair.resetPressureRange();
 });
 
-/** @typedef {import("../../build/brilliantsole.module.js").CenterOfPressure} CenterOfPressure */
-
-/** @param {CenterOfPressure} center  */
+/** @param {BS.CenterOfPressure} center  */
 function updateUIOnCenterOfPressure(center) {
   devicePair.sides.forEach((side) => {
     let height = center.x;
@@ -158,7 +156,7 @@ const target = {
   height: 0,
   start: 0,
 
-  /** @param {CenterOfPressure} center  */
+  /** @param {BS.CenterOfPressure} center  */
   isInside(center) {
     console.log(center, this);
     return center.x >= this.start && center.x <= this.start + this.height;
@@ -181,13 +179,11 @@ const target = {
   },
 };
 
-/** @typedef {import("../../build/brilliantsole.module.js").DevicePairPressureData} DevicePairPressureData */
-
 let isCenterOfPressureInsideTarget = false;
 let insideTargetTimeoutId;
 
 devicePair.addEventListener("pressure", (event) => {
-  /** @type {DevicePairPressureData} */
+  /** @type {BS.DevicePairPressureData} */
   const pressure = event.message.pressure;
   console.log({ pressure });
   if (pressure.normalizedCenter) {
@@ -196,7 +192,7 @@ devicePair.addEventListener("pressure", (event) => {
   }
 });
 
-/** @param {CenterOfPressure} center */
+/** @param {BS.CenterOfPressure} center */
 function onCenterOfPressure(center) {
   updateUIOnCenterOfPressure(center);
 

@@ -10,7 +10,7 @@ console.log({ BS });
 /** @type {HTMLTemplateElement} */
 const availableDeviceTemplate = document.getElementById("availableDeviceTemplate");
 const availableDevicesContainer = document.getElementById("availableDevices");
-/** @param {Device[]} availableDevices */
+/** @param {BS.Device[]} availableDevices */
 function onAvailableDevices(availableDevices) {
   availableDevicesContainer.innerHTML = "";
   if (availableDevices.length == 0) {
@@ -79,7 +79,7 @@ const connectedDevicesContainer = document.getElementById("connectedDevices");
 const connectedDeviceTemplate = document.getElementById("connectedDeviceTemplate");
 
 BS.Device.AddEventListener("deviceConnected", (event) => {
-  /** @type {Device} */
+  /** @type {BS.Device} */
   const device = event.message.device;
   console.log("deviceConnected", device);
   const connectedDeviceContainer = connectedDeviceTemplate.content.cloneNode(true).querySelector(".connectedDevice");
@@ -112,7 +112,7 @@ BS.Device.AddEventListener("deviceConnected", (event) => {
   updateSensorConfigurationPre();
 
   device.addEventListener("sensorData", (event) => {
-    /** @type {SensorType} */
+    /** @type {BS.SensorType} */
     const sensorType = event.message.sensorType;
     /** @type {number} */
     const timestamp = event.message.timestamp;
@@ -139,7 +139,7 @@ BS.Device.AddEventListener("deviceConnected", (event) => {
       }
 
       if (sensorType == "pressure") {
-        /** @type {import("../../build/brilliantsole.module.js").PressureData} */
+        /** @type {BS.PressureData} */
         const pressure = data;
         const pressureSensorData = pressure.sensors.map((sensor) => {
           const { name, normalizedValue } = sensor;
@@ -157,7 +157,7 @@ BS.Device.AddEventListener("deviceConnected", (event) => {
 
 // SENSOR CONFIGURATION
 
-/** @type {import("../../build/brilliantsole.module.js").SensorConfiguration} */
+/** @type {BS.SensorConfiguration} */
 const sensorConfiguration = {};
 const sensorConfigurationContainer = document.getElementById("sensorConfiguration");
 /** @type {HTMLTemplateElement} */
@@ -261,8 +261,6 @@ recordingDurationInput.addEventListener("input", () => {
 recordingDurationInput.dispatchEvent(new Event("input"));
 
 // RECORDING
-
-/** @typedef {import("../../build/brilliantsole.module.js").SensorType} SensorType */
 
 let isRecording = false;
 

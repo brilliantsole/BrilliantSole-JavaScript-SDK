@@ -3,14 +3,12 @@ window.BS = BS;
 console.log({ BS });
 //BS.setAllConsoleLevelFlags({ log: true });
 
-/** @typedef {import("../../build/brilliantsole.module.js").Device} Device */
-
 // GET DEVICES
 
 /** @type {HTMLTemplateElement} */
 const availableDeviceTemplate = document.getElementById("availableDeviceTemplate");
 const availableDevicesContainer = document.getElementById("availableDevices");
-/** @param {Device[]} availableDevices */
+/** @param {BS.Device[]} availableDevices */
 function onAvailableDevices(availableDevices) {
   availableDevicesContainer.innerHTML = "";
   if (availableDevices.length == 0) {
@@ -117,7 +115,7 @@ devicePair.sides.forEach((side) => {
   });
 
   devicePair.addEventListener("deviceIsConnected", (event) => {
-    /** @type {Device} */
+    /** @type {BS.Device} */
     const device = event.message.device;
     if (device.insoleSide != side) {
       return;
@@ -130,7 +128,7 @@ devicePair.sides.forEach((side) => {
   });
 
   devicePair.addEventListener("deviceConnectionStatus", (event) => {
-    /** @type {Device} */
+    /** @type {BS.Device} */
     const device = event.message.device;
     if (device.insoleSide != side) {
       return;
@@ -153,13 +151,13 @@ devicePair.sides.forEach((side) => {
   /** @type {HTMLPreElement} */
   const pressurePre = deviceContainer.querySelector(".pressure");
   devicePair.addEventListener("devicePressure", (event) => {
-    /** @type {Device} */
+    /** @type {BS.Device} */
     const device = event.message.device;
     if (device.insoleSide != side) {
       return;
     }
 
-    /** @type {import("../../build/brilliantsole.module.js").PressureData} */
+    /** @type {BS.PressureData} */
     const pressure = event.message.pressure;
 
     pressurePre.textContent = JSON.stringify(
@@ -180,7 +178,7 @@ const devicePairContainer = document.getElementById("devicePair");
 const devicePairPressurePre = devicePairContainer.querySelector(".pressure");
 
 devicePair.addEventListener("pressure", (event) => {
-  /** @type {import("../../build/brilliantsole.module.js").DevicePairPressureData} */
+  /** @type {BS.DevicePairPressureData} */
   const pressure = event.message.pressure;
 
   devicePairPressurePre.textContent = JSON.stringify(

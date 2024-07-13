@@ -10,7 +10,7 @@ console.log({ BS });
 /** @type {HTMLTemplateElement} */
 const availableDeviceTemplate = document.getElementById("availableDeviceTemplate");
 const availableDevicesContainer = document.getElementById("availableDevices");
-/** @param {Device[]} availableDevices */
+/** @param {BS.Device[]} availableDevices */
 function onAvailableDevices(availableDevices) {
   availableDevicesContainer.innerHTML = "";
   if (availableDevices.length == 0) {
@@ -124,7 +124,7 @@ devicePair.sides.forEach((side) => {
 });
 
 devicePair.addEventListener("deviceIsConnected", (event) => {
-  /** @type {Device} */
+  /** @type {BS.Device} */
   const device = event.message.device;
 
   const toggleConnectionButton = toggleConnectionButtons[device.insoleSide];
@@ -137,7 +137,7 @@ devicePair.addEventListener("deviceIsConnected", (event) => {
 });
 
 devicePair.addEventListener("deviceConnectionStatus", (event) => {
-  /** @type {Device} */
+  /** @type {BS.Device} */
   const device = event.message.device;
 
   const toggleConnectionButton = toggleConnectionButtons[device.insoleSide];
@@ -157,7 +157,7 @@ devicePair.addEventListener("deviceConnectionStatus", (event) => {
 });
 
 devicePair.addEventListener("deviceGetSensorConfiguration", (event) => {
-  /** @type {Device} */
+  /** @type {BS.Device} */
   const device = event.message.device;
 
   const togglePressureDataButton = togglePressureDataButtons[device.insoleSide];
@@ -171,10 +171,10 @@ devicePair.addEventListener("deviceGetSensorConfiguration", (event) => {
 });
 
 devicePair.addEventListener("devicePressure", (event) => {
-  /** @type {Device} */
+  /** @type {BS.Device} */
   const device = event.message.device;
 
-  /** @type {import("../../build/brilliantsole.module.js").PressureData} */
+  /** @type {BS.PressureData} */
   const pressure = event.message.pressure;
 
   pressure.sensors.forEach((sensor, index) => {

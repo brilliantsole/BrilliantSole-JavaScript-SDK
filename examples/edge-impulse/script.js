@@ -7,10 +7,6 @@ BS.setAllConsoleLevelFlags({ log: false });
 
 // DEVICE
 
-/** @typedef {import("../../build/brilliantsole.module.js").Device} Device */
-/** @typedef {import("../../build/brilliantsole.module.js").SensorType} SensorType */
-/** @typedef {import("../../build/brilliantsole.module.js").SensorConfiguration} SensorConfiguration */
-
 const device = new BS.Device();
 console.log({ device });
 window.device = device;
@@ -20,7 +16,7 @@ window.device = device;
 /** @type {HTMLTemplateElement} */
 const availableDeviceTemplate = document.getElementById("availableDeviceTemplate");
 const availableDevicesContainer = document.getElementById("availableDevices");
-/** @param {Device[]} availableDevices */
+/** @param {BS.Device[]} availableDevices */
 function onAvailableDevices(availableDevices) {
   availableDevicesContainer.innerHTML = "";
   if (availableDevices.length == 0) {
@@ -256,9 +252,9 @@ window.addEventListener("load", () => {
 
 // SENSOR TYPES
 
-/** @type {SensorType[]} */
+/** @type {BS.SensorType[]} */
 let sensorTypes = [];
-/** @param {SensorType[]} newSensorTypes */
+/** @param {BS.SensorType[]} newSensorTypes */
 function setSensorTypes(newSensorTypes) {
   sensorTypes = newSensorTypes;
   console.log("sensorTypes", sensorTypes);
@@ -612,7 +608,7 @@ async function connectToRemoteManagement() {
       const samplingDetails = data.sample;
       console.log("samplingDetails", samplingDetails);
 
-      /** @type {SensorType[]} */
+      /** @type {BS.SensorType[]} */
       const sensorTypes = samplingDetails.sensor.split(sensorCombinationSeparator);
       console.log("sensorTypes", sensorTypes);
 
@@ -784,7 +780,7 @@ const scalars = {
 /** @typedef {Object.<string, SensorData[]>} DeviceData */
 
 /**
- * @param {SensorType[]} sensorTypes
+ * @param {BS.SensorType[]} sensorTypes
  * @param {number} numberOfSamples
  * @returns {Promise<DeviceData>}
  */
@@ -800,7 +796,7 @@ async function collectData(sensorTypes, numberOfSamples) {
     console.log("deviceData", deviceData);
 
     const onDeviceSensorData = (event) => {
-      /** @type {SensorType} */
+      /** @type {BS.SensorType} */
       const sensorType = event.message.sensorType;
 
       if (!(sensorType in deviceData)) {
@@ -819,7 +815,7 @@ async function collectData(sensorTypes, numberOfSamples) {
       }
 
       if (deviceData[sensorType].length == numberOfSamples) {
-        console.log(`finished collecting ${sensorType} data for device`);
+        console.log(`finished collecting ${BS.SensorType} data for device`);
         return;
       }
 
@@ -836,7 +832,7 @@ async function collectData(sensorTypes, numberOfSamples) {
 const emptySignature = Array(64).fill("0").join("");
 
 /**
- * @param {SensorType[]} sensorTypes
+ * @param {BS.SensorType[]} sensorTypes
  * @param {DeviceData} deviceData
  */
 async function uploadData(sensorTypes, deviceData) {
@@ -847,7 +843,7 @@ async function uploadData(sensorTypes, deviceData) {
       case "linearAcceleration":
       case "gyroscope":
       case "magnetometer":
-        names = ["x", "y", "z"].map((component) => `${sensorType}.${component}`);
+        names = ["x", "y", "z"].map((component) => `${BS.SensorType}.${component}`);
         switch (sensorType) {
           case "linearAcceleration":
             units = "g/s";
@@ -862,12 +858,12 @@ async function uploadData(sensorTypes, deviceData) {
         break;
       case "pressure":
         for (let index = 0; index < device.numberOfPressureSensors; index++) {
-          names.push(`${sensorType}.${index}`);
+          names.push(`${BS.SensorType}.${index}`);
         }
         units = "pressure";
         break;
       default:
-        throw `uncaught sensorType ${sensorType}`;
+        throw `uncaught sensorType ${BS.SensorType}`;
     }
 
     return names.map((name) => ({
@@ -900,7 +896,7 @@ async function uploadData(sensorTypes, deviceData) {
           }
           break;
         default:
-          throw `uncaught sensorType ${sensorType}`;
+          throw `uncaught sensorType ${BS.SensorType}`;
       }
     });
 

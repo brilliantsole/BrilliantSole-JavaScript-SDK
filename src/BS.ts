@@ -3,7 +3,8 @@ export { default as Device, DeviceEvent, DeviceEventMap, StaticDeviceEvent, Stat
 export * as Environment from "./utils/environment.ts";
 
 export { SensorType, SensorTypes, ContinuousSensorType, ContinuousSensorTypes } from "./sensor/SensorDataManager.ts";
-export { DefaultNumberOfPressureSensors } from "./sensor/PressureSensorDataManager.ts";
+export { DefaultNumberOfPressureSensors, PressureData } from "./sensor/PressureSensorDataManager.ts";
+export { Vector2, Vector3, Quaternion, Euler } from "./utils/MathUtils.ts";
 export { DeviceType, DeviceTypes, MinNameLength, MaxNameLength } from "./InformationManager.ts";
 export {
   VibrationConfiguration,

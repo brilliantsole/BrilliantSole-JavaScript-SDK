@@ -618,14 +618,12 @@ BS.Device.AddEventListener("availableDevices", (event) => {
         setTfliteSampleRateButton.disabled = device.tfliteInferencingEnabled;
       });
 
-      /** @typedef {import("../../build/brilliantsole.module.js").SensorType} SensorType */
-
       const tfliteSensorTypesContainer = availableDeviceContainer.querySelector(".tfliteSensorTypes");
       /** @type {HTMLTemplateElement} */
       const tfliteSensorTypeTemplate = availableDeviceContainer.querySelector(".tfliteSensorTypeTemplate");
       /** @type {Object.<string, HTMLElement>} */
       const tfliteSensorTypeContainers = {};
-      /** @type {SensorType[]} */
+      /** @type {BS.SensorType[]} */
       let tfliteSensorTypes = [];
       /** @type {HTMLButtonElement} */
       const setTfliteSensorTypesButton = availableDeviceContainer.querySelector(".setTfliteSensorTypes");

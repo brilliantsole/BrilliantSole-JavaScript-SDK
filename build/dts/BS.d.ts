@@ -2,7 +2,8 @@ export { setAllConsoleLevelFlags, setConsoleLevelFlagsForType } from "./utils/Co
 export { default as Device, DeviceEvent, DeviceEventMap, StaticDeviceEvent, StaticDeviceEventMap } from "./Device.ts";
 export * as Environment from "./utils/environment.ts";
 export { SensorType, SensorTypes, ContinuousSensorType, ContinuousSensorTypes } from "./sensor/SensorDataManager.ts";
-export { DefaultNumberOfPressureSensors } from "./sensor/PressureSensorDataManager.ts";
+export { DefaultNumberOfPressureSensors, PressureData } from "./sensor/PressureSensorDataManager.ts";
+export { Vector2, Vector3, Quaternion, Euler } from "./utils/MathUtils.ts";
 export { DeviceType, DeviceTypes, MinNameLength, MaxNameLength } from "./InformationManager.ts";
 export { VibrationConfiguration, VibrationLocation, VibrationLocations, VibrationType, VibrationTypes, MaxNumberOfVibrationWaveformEffectSegments, MaxVibrationWaveformSegmentDuration, MaxVibrationWaveformEffectSegmentDelay, MaxVibrationWaveformEffectSegmentLoopCount, MaxNumberOfVibrationWaveformSegments, MaxVibrationWaveformEffectSequenceLoopCount, } from "./vibration/VibrationManager.ts";
 export { VibrationWaveformEffect, VibrationWaveformEffects } from "./vibration/VibrationWaveformEffects.ts";
