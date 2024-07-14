@@ -18,9 +18,8 @@ typeof SuppressedError === "function" ? SuppressedError : function (error, suppr
     return e.name = "SuppressedError", e.error = error, e.suppressed = suppressed, e;
 };
 
-const __BRILLIANTSOLE__ENVIRONMENT__ = "__BRILLIANTSOLE__DEV__";
-const isInProduction = __BRILLIANTSOLE__ENVIRONMENT__ == "__BRILLIANTSOLE__PROD__";
-const isInDev = __BRILLIANTSOLE__ENVIRONMENT__ == "__BRILLIANTSOLE__DEV__";
+const isInProduction = "__BRILLIANTSOLE__PROD__" == "__BRILLIANTSOLE__PROD__";
+const isInDev = "__BRILLIANTSOLE__PROD__" == "__BRILLIANTSOLE__DEV__";
 const isInBrowser = typeof window !== "undefined" && typeof window?.document !== "undefined";
 const isInNode = typeof process !== "undefined" && process?.versions?.node != null;
 const userAgent = (isInBrowser && navigator.userAgent) || "";
@@ -119,9 +118,6 @@ class Console {
     }
     static create(type, levelFlags) {
         const console = __classPrivateFieldGet(this, _a$5, "f", _Console_consoles)[type] || new _a$5(type);
-        if (levelFlags) {
-            console.setLevelFlags(levelFlags);
-        }
         return console;
     }
     get log() {
@@ -4554,7 +4550,7 @@ class DevicePairSensorDataManager {
 }
 _DevicePairSensorDataManager_timestamps = new WeakMap();
 
-var _DevicePair_instances, _a, _DevicePair_eventDispatcher, _DevicePair_dispatchEvent_get, _DevicePair_left, _DevicePair_right, _DevicePair_removeInsole, _DevicePair_boundDeviceEventListeners, _DevicePair_redispatchDeviceEvent, _DevicePair_onDeviceIsConnected, _DevicePair_onDeviceType, _DevicePair_sensorDataManager, _DevicePair_onDeviceSensorData, _DevicePair_shared;
+var _DevicePair_instances, _a, _DevicePair_eventDispatcher, _DevicePair_dispatchEvent_get, _DevicePair_left, _DevicePair_right, _DevicePair_addDeviceEventListeners, _DevicePair_removeDeviceEventListeners, _DevicePair_removeInsole, _DevicePair_boundDeviceEventListeners, _DevicePair_redispatchDeviceEvent, _DevicePair_onDeviceIsConnected, _DevicePair_onDeviceType, _DevicePair_sensorDataManager, _DevicePair_onDeviceSensorData, _DevicePair_shared;
 const _console$4 = createConsole("DevicePair", { log: true });
 function getDevicePairDeviceEventType(deviceEventType) {
     return `device${capitalizeFirstCharacter(deviceEventType)}`;
@@ -4573,10 +4569,8 @@ class DevicePair {
         _DevicePair_left.set(this, void 0);
         _DevicePair_right.set(this, void 0);
         _DevicePair_boundDeviceEventListeners.set(this, {
-            connectionStatus: __classPrivateFieldGet(this, _DevicePair_instances, "m", _DevicePair_redispatchDeviceEvent).bind(this),
             isConnected: __classPrivateFieldGet(this, _DevicePair_instances, "m", _DevicePair_onDeviceIsConnected).bind(this),
             sensorData: __classPrivateFieldGet(this, _DevicePair_instances, "m", _DevicePair_onDeviceSensorData).bind(this),
-            getSensorConfiguration: __classPrivateFieldGet(this, _DevicePair_instances, "m", _DevicePair_redispatchDeviceEvent).bind(this),
             getType: __classPrivateFieldGet(this, _DevicePair_instances, "m", _DevicePair_onDeviceType).bind(this),
         });
         _DevicePair_sensorDataManager.set(this, new DevicePairSensorDataManager());
@@ -4621,9 +4615,9 @@ class DevicePair {
             return;
         }
         if (currentDevice) {
-            removeEventListeners(currentDevice, __classPrivateFieldGet(this, _DevicePair_boundDeviceEventListeners, "f"));
+            __classPrivateFieldGet(this, _DevicePair_instances, "m", _DevicePair_removeDeviceEventListeners).call(this, currentDevice);
         }
-        addEventListeners(device, __classPrivateFieldGet(this, _DevicePair_boundDeviceEventListeners, "f"));
+        __classPrivateFieldGet(this, _DevicePair_instances, "m", _DevicePair_addDeviceEventListeners).call(this, device);
         switch (side) {
             case "left":
                 __classPrivateFieldSet(this, _DevicePair_left, device, "f");
@@ -4658,6 +4652,16 @@ class DevicePair {
 }
 _a = DevicePair, _DevicePair_eventDispatcher = new WeakMap(), _DevicePair_left = new WeakMap(), _DevicePair_right = new WeakMap(), _DevicePair_boundDeviceEventListeners = new WeakMap(), _DevicePair_sensorDataManager = new WeakMap(), _DevicePair_instances = new WeakSet(), _DevicePair_dispatchEvent_get = function _DevicePair_dispatchEvent_get() {
     return __classPrivateFieldGet(this, _DevicePair_eventDispatcher, "f").dispatchEvent;
+}, _DevicePair_addDeviceEventListeners = function _DevicePair_addDeviceEventListeners(device) {
+    addEventListeners(device, __classPrivateFieldGet(this, _DevicePair_boundDeviceEventListeners, "f"));
+    DeviceEventTypes.forEach((deviceEventType) => {
+        device.addEventListener(deviceEventType, __classPrivateFieldGet(this, _DevicePair_instances, "m", _DevicePair_redispatchDeviceEvent).bind(this));
+    });
+}, _DevicePair_removeDeviceEventListeners = function _DevicePair_removeDeviceEventListeners(device) {
+    removeEventListeners(device, __classPrivateFieldGet(this, _DevicePair_boundDeviceEventListeners, "f"));
+    DeviceEventTypes.forEach((deviceEventType) => {
+        device.removeEventListener(deviceEventType, __classPrivateFieldGet(this, _DevicePair_instances, "m", _DevicePair_redispatchDeviceEvent).bind(this));
+    });
 }, _DevicePair_removeInsole = function _DevicePair_removeInsole(device) {
     const foundDevice = InsoleSides.some((side) => {
         if (this[side] != device) {
@@ -4680,7 +4684,6 @@ _a = DevicePair, _DevicePair_eventDispatcher = new WeakMap(), _DevicePair_left =
         side: device.insoleSide,
     });
 }, _DevicePair_onDeviceIsConnected = function _DevicePair_onDeviceIsConnected(deviceEvent) {
-    __classPrivateFieldGet(this, _DevicePair_instances, "m", _DevicePair_redispatchDeviceEvent).call(this, deviceEvent);
     __classPrivateFieldGet(this, _DevicePair_instances, "a", _DevicePair_dispatchEvent_get).call(this, "isConnected", { isConnected: this.isConnected });
 }, _DevicePair_onDeviceType = function _DevicePair_onDeviceType(deviceEvent) {
     const { target: device } = deviceEvent;
@@ -4693,7 +4696,6 @@ _a = DevicePair, _DevicePair_eventDispatcher = new WeakMap(), _DevicePair_left =
     }
     this.assignInsole(device);
 }, _DevicePair_onDeviceSensorData = function _DevicePair_onDeviceSensorData(deviceEvent) {
-    __classPrivateFieldGet(this, _DevicePair_instances, "m", _DevicePair_redispatchDeviceEvent).call(this, deviceEvent);
     if (this.isConnected) {
         __classPrivateFieldGet(this, _DevicePair_sensorDataManager, "f").onDeviceSensorData(deviceEvent);
     }

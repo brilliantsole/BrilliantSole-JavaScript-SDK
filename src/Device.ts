@@ -107,9 +107,7 @@ export interface DeviceEventMessages
     FirmwareEventMessages {
   connectionStatus: { connectionStatus: ConnectionStatus };
   isConnected: { isConnected: boolean };
-
   batteryLevel: { batteryLevel: number };
-
   connectionMessage: { messageType: ConnectionMessageType; dataView: DataView };
 }
 

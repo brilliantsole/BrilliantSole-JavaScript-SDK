@@ -120,11 +120,10 @@ class DevicePair {
       return;
     }
 
-    // FILL - listen for all devices
     if (currentDevice) {
-      removeEventListeners(currentDevice, this.#boundDeviceEventListeners);
+      this.#removeDeviceEventListeners(currentDevice);
     }
-    addEventListeners(device, this.#boundDeviceEventListeners);
+    this.#addDeviceEventListeners(device);
 
     switch (side) {
       case "left":
@@ -143,6 +142,21 @@ class DevicePair {
     this.#dispatchEvent("deviceIsConnected", { device, isConnected: device.isConnected, side });
 
     return currentDevice;
+  }
+
+  #addDeviceEventListeners(device: Device) {
+    addEventListeners(device, this.#boundDeviceEventListeners);
+    DeviceEventTypes.forEach((deviceEventType) => {
+      // @ts-expect-error
+      device.addEventListener(deviceEventType, this.#redispatchDeviceEvent.bind(this));
+    });
+  }
+  #removeDeviceEventListeners(device: Device) {
+    removeEventListeners(device, this.#boundDeviceEventListeners);
+    DeviceEventTypes.forEach((deviceEventType) => {
+      // @ts-expect-error
+      device.removeEventListener(deviceEventType, this.#redispatchDeviceEvent.bind(this));
+    });
   }
 
   #removeInsole(device: Device) {
@@ -164,10 +178,8 @@ class DevicePair {
   }
 
   #boundDeviceEventListeners: BoundDeviceEventListeners = {
-    connectionStatus: this.#redispatchDeviceEvent.bind(this),
     isConnected: this.#onDeviceIsConnected.bind(this),
     sensorData: this.#onDeviceSensorData.bind(this),
-    getSensorConfiguration: this.#redispatchDeviceEvent.bind(this),
     getType: this.#onDeviceType.bind(this),
   };
 
@@ -181,7 +193,6 @@ class DevicePair {
   }
 
   #onDeviceIsConnected(deviceEvent: DeviceEventMap["isConnected"]) {
-    this.#redispatchDeviceEvent(deviceEvent);
     this.#dispatchEvent("isConnected", { isConnected: this.isConnected });
   }
 
@@ -207,8 +218,6 @@ class DevicePair {
   // SENSOR DATA
   #sensorDataManager = new DevicePairSensorDataManager();
   #onDeviceSensorData(deviceEvent: DeviceEventMap["sensorData"]) {
-    this.#redispatchDeviceEvent(deviceEvent);
-
     if (this.isConnected) {
       this.#sensorDataManager.onDeviceSensorData(deviceEvent);
     }
