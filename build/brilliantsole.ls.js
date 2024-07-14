@@ -471,7 +471,7 @@
     ];
     const FileTypes = ["tflite"];
     const FileTransferStatuses = ["idle", "sending", "receiving"];
-    const FileTransferCommands = ["startReceive", "startSend", "cancel"];
+    const FileTransferCommands = ["startSend", "startReceive", "cancel"];
     const FileTransferDirections = ["sending", "receiving"];
     const FileTransferEventTypes = [
         ...FileTransferMessageTypes,
@@ -724,7 +724,7 @@
             __classPrivateFieldGet(this, _FileTransferManager_instances, "a", _FileTransferManager_dispatchEvent_get).call(this, "fileTransferComplete", { direction: "sending" });
         }
         else {
-            this.sendMessage([{ type: "setFileBlock", data: slicedBuffer }]);
+            await this.sendMessage([{ type: "setFileBlock", data: slicedBuffer }]);
             return __classPrivateFieldGet(this, _FileTransferManager_instances, "m", _FileTransferManager_sendBlock).call(this, buffer, offset + slicedBuffer.byteLength);
         }
     };

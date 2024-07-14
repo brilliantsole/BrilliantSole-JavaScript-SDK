@@ -29,7 +29,7 @@ export type FileType = (typeof FileTypes)[number];
 export const FileTransferStatuses = ["idle", "sending", "receiving"] as const;
 export type FileTransferStatus = (typeof FileTransferStatuses)[number];
 
-export const FileTransferCommands = ["startReceive", "startSend", "cancel"] as const;
+export const FileTransferCommands = ["startSend", "startReceive", "cancel"] as const;
 export type FileTransferCommand = (typeof FileTransferCommands)[number];
 
 export const FileTransferDirections = ["sending", "receiving"] as const;
@@ -375,7 +375,7 @@ class FileTransferManager {
       _console.log("finished sending buffer");
       this.#dispatchEvent("fileTransferComplete", { direction: "sending" });
     } else {
-      this.sendMessage([{ type: "setFileBlock", data: slicedBuffer }]);
+      await this.sendMessage([{ type: "setFileBlock", data: slicedBuffer }]);
       return this.#sendBlock(buffer, offset + slicedBuffer.byteLength);
     }
   }

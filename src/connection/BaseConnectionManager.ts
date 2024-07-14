@@ -204,7 +204,6 @@ abstract class BaseConnectionManager {
       _console.log("sending arrayBuffer", arrayBuffer);
       await this.sendTxData(arrayBuffer);
     }
-
     this.#pendingMessages.length = 0;
   }
 

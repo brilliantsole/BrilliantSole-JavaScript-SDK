@@ -7,7 +7,7 @@ export declare const FileTypes: readonly ["tflite"];
 export type FileType = (typeof FileTypes)[number];
 export declare const FileTransferStatuses: readonly ["idle", "sending", "receiving"];
 export type FileTransferStatus = (typeof FileTransferStatuses)[number];
-export declare const FileTransferCommands: readonly ["startReceive", "startSend", "cancel"];
+export declare const FileTransferCommands: readonly ["startSend", "startReceive", "cancel"];
 export type FileTransferCommand = (typeof FileTransferCommands)[number];
 export declare const FileTransferDirections: readonly ["sending", "receiving"];
 export type FileTransferDirection = (typeof FileTransferDirections)[number];
