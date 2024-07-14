@@ -1,5 +1,5 @@
 import * as BS from "../../build/brilliantsole.module.js";
-//import BS.Device from "../../src/BS.Device.js";
+//import BS.Device from "../../src/BS.DeviceManager.js";
 window.BS = BS;
 console.log(BS);
 
@@ -45,14 +45,14 @@ function onAvailableDevices(availableDevices) {
   }
 }
 async function getDevices() {
-  const availableDevices = await BS.Device.GetDevices();
+  const availableDevices = await BS.DeviceManager.GetDevices();
   if (!availableDevices) {
     return;
   }
   onAvailableDevices(availableDevices);
 }
 
-BS.Device.AddEventListener("availableDevices", (event) => {
+BS.DeviceManager.AddEventListener("availableDevices", (event) => {
   const devices = event.message.availableDevices;
   onAvailableDevices(devices);
 });

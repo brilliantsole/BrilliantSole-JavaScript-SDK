@@ -409,7 +409,7 @@ client.addEventListener("discoveredDevice", (event) => {
       }
       onDevice(device);
     };
-    BS.Device.AddEventListener("deviceIsConnected", deviceIsConnectedListener);
+    BS.DeviceManager.AddEventListener("deviceIsConnected", deviceIsConnectedListener);
 
     let addedEventListeners = false;
     /** @param {BS.Device} device */
@@ -424,7 +424,7 @@ client.addEventListener("discoveredDevice", (event) => {
         updateDiscoveredDeviceEntity(discoveredDevice);
       });
       updateDiscoveredDeviceEntity(discoveredDevice);
-      BS.Device.RemoveEventListener("deviceIsConnected", deviceIsConnectedListener);
+      BS.DeviceManager.RemoveEventListener("deviceIsConnected", deviceIsConnectedListener);
     };
 
     let device = client.devices[discoveredDevice.bluetoothId];
@@ -552,7 +552,7 @@ toggleShowAvailableDevicesEntity.addEventListener("click", () => {
   }
 });
 
-BS.Device.AddEventListener("availableDevices", (event) => {
+BS.DeviceManager.AddEventListener("availableDevices", (event) => {
   /** @type {BS.Device[]} */
   const availableDevices = event.message.availableDevices;
   console.log({ availableDevices });
@@ -628,7 +628,7 @@ window.addEventListener("screenMode", () => {
     text,
   });
   availableDevicesEntity.object3D.visible = isAvailableDevicesMode;
-  BS.Device.AvailableDevices.forEach((availableDevice) => {
+  BS.DeviceManager.AvailableDevices.forEach((availableDevice) => {
     updateAvailableDeviceEntity(availableDevice);
   });
 });

@@ -9,6 +9,54 @@ interface ConsoleLevelFlags {
 declare function setConsoleLevelFlagsForType(type: string, levelFlags: ConsoleLevelFlags): void;
 declare function setAllConsoleLevelFlags(levelFlags: ConsoleLevelFlags): void;
 
+declare const isInProduction: boolean;
+declare const isInDev: boolean;
+declare const isInBrowser: boolean;
+declare const isInNode: boolean;
+declare let isBluetoothSupported: boolean;
+declare const isInBluefy: boolean;
+declare const isInWebBLE: boolean;
+declare const isAndroid: boolean;
+declare const isSafari: boolean;
+declare const isIOS: boolean;
+declare const isMac: boolean;
+declare const isInLensStudio: boolean;
+
+declare const environment_d_isAndroid: typeof isAndroid;
+declare const environment_d_isBluetoothSupported: typeof isBluetoothSupported;
+declare const environment_d_isIOS: typeof isIOS;
+declare const environment_d_isInBluefy: typeof isInBluefy;
+declare const environment_d_isInBrowser: typeof isInBrowser;
+declare const environment_d_isInDev: typeof isInDev;
+declare const environment_d_isInLensStudio: typeof isInLensStudio;
+declare const environment_d_isInNode: typeof isInNode;
+declare const environment_d_isInProduction: typeof isInProduction;
+declare const environment_d_isInWebBLE: typeof isInWebBLE;
+declare const environment_d_isMac: typeof isMac;
+declare const environment_d_isSafari: typeof isSafari;
+declare namespace environment_d {
+  export { environment_d_isAndroid as isAndroid, environment_d_isBluetoothSupported as isBluetoothSupported, environment_d_isIOS as isIOS, environment_d_isInBluefy as isInBluefy, environment_d_isInBrowser as isInBrowser, environment_d_isInDev as isInDev, environment_d_isInLensStudio as isInLensStudio, environment_d_isInNode as isInNode, environment_d_isInProduction as isInProduction, environment_d_isInWebBLE as isInWebBLE, environment_d_isMac as isMac, environment_d_isSafari as isSafari };
+}
+
+interface Vector2 {
+    x: number;
+    y: number;
+}
+interface Vector3 extends Vector2 {
+    z: number;
+}
+interface Quaternion {
+    x: number;
+    y: number;
+    z: number;
+    w: number;
+}
+interface Euler {
+    heading: number;
+    pitch: number;
+    roll: number;
+}
+
 type EventMap<Target extends any, EventType extends string, EventMessages extends Partial<Record<EventType, any>>> = {
     [T in keyof EventMessages]: {
         type: T;
@@ -17,6 +65,31 @@ type EventMap<Target extends any, EventType extends string, EventMessages extend
     };
 };
 type Event<Target extends any, EventType extends string, EventMessages extends Partial<Record<EventType, any>>> = EventMap<Target, EventType, EventMessages>[keyof EventMessages];
+declare class EventDispatcher<Target extends any, EventType extends string, EventMessages extends Partial<Record<EventType, any>>> {
+    private target;
+    private validEventTypes;
+    private listeners;
+    constructor(target: Target, validEventTypes: readonly EventType[]);
+    private isValidEventType;
+    addEventListener<T extends EventType>(type: T, listener: (event: {
+        type: T;
+        target: Target;
+        message: EventMessages[T];
+    }) => void, options?: {
+        once?: boolean;
+    }): void;
+    removeEventListener<T extends EventType>(type: T, listener: (event: {
+        type: T;
+        target: Target;
+        message: EventMessages[T];
+    }) => void): void;
+    dispatchEvent<T extends EventType>(type: T, message: EventMessages[T]): void;
+    waitForEvent<T extends EventType>(type: T): Promise<{
+        type: T;
+        target: Target;
+        message: EventMessages[T];
+    }>;
+}
 
 type FileLike = number[] | ArrayBuffer | DataView | URL | string | File;
 
@@ -46,25 +119,6 @@ interface FirmwareEventMessages {
     firmwareStatus: {
         firmwareStatus: FirmwareStatus;
     };
-}
-
-interface Vector2 {
-    x: number;
-    y: number;
-}
-interface Vector3 extends Vector2 {
-    z: number;
-}
-interface Quaternion {
-    x: number;
-    y: number;
-    z: number;
-    w: number;
-}
-interface Euler {
-    heading: number;
-    pitch: number;
-    roll: number;
 }
 
 type CenterOfPressure = Vector2;
@@ -387,6 +441,10 @@ declare const InsoleSides: readonly ["left", "right"];
 type InsoleSide = (typeof InsoleSides)[number];
 declare const MinNameLength = 2;
 declare const MaxNameLength = 30;
+declare const InformationMessageTypes: readonly ["isCharging", "getBatteryCurrent", "getMtu", "getId", "getName", "setName", "getType", "setType", "getCurrentTime", "setCurrentTime"];
+type InformationMessageType = (typeof InformationMessageTypes)[number];
+declare const InformationEventTypes: readonly ["isCharging", "getBatteryCurrent", "getMtu", "getId", "getName", "setName", "getType", "setType", "getCurrentTime", "setCurrentTime"];
+type InformationEventType = (typeof InformationEventTypes)[number];
 interface InformationEventMessages {
     isCharging: {
         isCharging: boolean;
@@ -410,6 +468,36 @@ interface InformationEventMessages {
         currentTime: number;
     };
 }
+type InformationEventDispatcher = EventDispatcher<Device, InformationEventType, InformationEventMessages>;
+type SendInformationMessageCallback = SendMessageCallback<InformationMessageType>;
+declare class InformationManager {
+    #private;
+    constructor();
+    sendMessage: SendInformationMessageCallback;
+    eventDispatcher: InformationEventDispatcher;
+    get waitForEvent(): <T extends "isCharging" | "getBatteryCurrent" | "getMtu" | "getId" | "getName" | "setName" | "getType" | "setType" | "getCurrentTime" | "setCurrentTime">(type: T) => Promise<{
+        type: T;
+        target: Device;
+        message: InformationEventMessages[T];
+    }>;
+    get isCharging(): boolean;
+    get batteryCurrent(): number;
+    getBatteryCurrent(): Promise<void>;
+    get id(): string;
+    get name(): string;
+    updateName(updatedName: string): void;
+    setName(newName: string): Promise<void>;
+    get type(): "leftInsole" | "rightInsole";
+    get typeEnum(): number;
+    updateType(updatedType: DeviceType): void;
+    setType(newType: DeviceType): Promise<void>;
+    get isInsole(): boolean;
+    get insoleSide(): InsoleSide;
+    get mtu(): number;
+    get isCurrentTimeSet(): boolean;
+    parseMessage(messageType: InformationMessageType, dataView: DataView): void;
+    clear(): void;
+}
 
 declare const DeviceEventTypes: readonly ["not connected", "connecting", "connected", "disconnecting", "connectionStatus", "isConnected", "manufacturerName", "modelNumber", "softwareRevision", "hardwareRevision", "firmwareRevision", "pnpId", "serialNumber", "batteryLevel", "smp", "rx", "tx", "isCharging", "getBatteryCurrent", "getMtu", "getId", "getName", "setName", "getType", "setType", "getCurrentTime", "setCurrentTime", "getSensorConfiguration", "setSensorConfiguration", "getPressurePositions", "getSensorScalars", "sensorData", "triggerVibration", "getTfliteName", "setTfliteName", "getTfliteTask", "setTfliteTask", "getTfliteSampleRate", "setTfliteSampleRate", "getTfliteSensorTypes", "setTfliteSensorTypes", "tfliteIsReady", "getTfliteCaptureDelay", "setTfliteCaptureDelay", "getTfliteThreshold", "setTfliteThreshold", "getTfliteInferencingEnabled", "setTfliteInferencingEnabled", "tfliteInference", "maxFileLength", "getFileType", "setFileType", "getFileLength", "setFileLength", "getFileChecksum", "setFileChecksum", "setFileTransferCommand", "fileTransferStatus", "getFileBlock", "setFileBlock", "connectionMessage", "isCharging", "getBatteryCurrent", "getMtu", "getId", "getName", "setName", "getType", "setType", "getCurrentTime", "setCurrentTime", "manufacturerName", "modelNumber", "softwareRevision", "hardwareRevision", "firmwareRevision", "pnpId", "serialNumber", "deviceInformation", "getPressurePositions", "getSensorScalars", "sensorData", "pressure", "acceleration", "gravity", "linearAcceleration", "gyroscope", "magnetometer", "gameRotation", "rotation", "orientation", "activity", "stepCounter", "stepDetector", "deviceOrientation", "barometer", "maxFileLength", "getFileType", "setFileType", "getFileLength", "setFileLength", "getFileChecksum", "setFileChecksum", "setFileTransferCommand", "fileTransferStatus", "getFileBlock", "setFileBlock", "fileTransferProgress", "fileTransferComplete", "fileReceived", "getTfliteName", "setTfliteName", "getTfliteTask", "setTfliteTask", "getTfliteSampleRate", "setTfliteSampleRate", "getTfliteSensorTypes", "setTfliteSensorTypes", "tfliteIsReady", "getTfliteCaptureDelay", "setTfliteCaptureDelay", "getTfliteThreshold", "setTfliteThreshold", "getTfliteInferencingEnabled", "setTfliteInferencingEnabled", "tfliteInference", "smp", "firmwareImages", "firmwareUploadProgress", "firmwareStatus", "firmwareUploadComplete"];
 type DeviceEventType = (typeof DeviceEventTypes)[number];
@@ -428,26 +516,12 @@ interface DeviceEventMessages extends DeviceInformationEventMessages, Informatio
         dataView: DataView;
     };
 }
-declare const StaticDeviceEventTypes: readonly ["deviceConnected", "deviceDisconnected", "deviceIsConnected", "availableDevices", "connectedDevices"];
-type StaticDeviceEventType = (typeof StaticDeviceEventTypes)[number];
-interface StaticDeviceEventMessage {
-    device: Device;
-}
-interface StaticDeviceEventMessages {
-    deviceConnected: StaticDeviceEventMessage;
-    deviceDisconnected: StaticDeviceEventMessage;
-    deviceIsConnected: StaticDeviceEventMessage;
-    availableDevices: {
-        availableDevices: Device[];
-    };
-    connectedDevices: {
-        connectedDevices: Device[];
-    };
-}
+type SendMessageCallback<MessageType extends string> = (messages?: {
+    type: MessageType;
+    data?: ArrayBuffer;
+}[], sendImmediately?: boolean) => Promise<void>;
 type DeviceEvent = Event<Device, DeviceEventType, DeviceEventMessages>;
 type DeviceEventMap = EventMap<Device, DeviceEventType, DeviceEventMessages>;
-type StaticDeviceEventMap = EventMap<typeof Device, StaticDeviceEventType, StaticDeviceEventMessages>;
-type StaticDeviceEvent = Event<typeof Device, StaticDeviceEventType, StaticDeviceEventMessages>;
 declare class Device {
     #private;
     get bluetoothId(): string | undefined;
@@ -476,6 +550,7 @@ declare class Device {
     get isConnected(): boolean;
     get canReconnect(): boolean | undefined;
     reconnect(): Promise<void | undefined>;
+    Connect(): Promise<Device>;
     static get ReconnectOnDisconnection(): boolean;
     static set ReconnectOnDisconnection(newReconnectOnDisconnection: boolean);
     get reconnectOnDisconnection(): boolean;
@@ -488,6 +563,8 @@ declare class Device {
     latestConnectionMessage: Map<ConnectionMessageType, DataView>;
     get deviceInformation(): DeviceInformation;
     get batteryLevel(): number;
+    /** @private */
+    _informationManager: InformationManager;
     get id(): string;
     get isCharging(): boolean;
     get batteryCurrent(): number;
@@ -544,61 +621,60 @@ declare class Device {
     get eraseFirmwareImage(): () => Promise<void>;
     get confirmFirmwareImage(): (imageIndex?: number) => Promise<void>;
     get testFirmwareImage(): (imageIndex?: number) => Promise<void>;
-    static get ConnectedDevices(): Device[];
-    static get UseLocalStorage(): boolean;
-    static set UseLocalStorage(newUseLocalStorage: boolean);
-    static get CanUseLocalStorage(): false | Storage;
-    static get AvailableDevices(): Device[];
-    static get CanGetDevices(): boolean;
+}
+
+declare const DeviceManagerEventTypes: readonly ["deviceConnected", "deviceDisconnected", "deviceIsConnected", "availableDevices", "connectedDevices"];
+type DeviceManagerEventType = (typeof DeviceManagerEventTypes)[number];
+interface DeviceManagerEventMessage {
+    device: Device;
+}
+interface DeviceManagerEventMessages {
+    deviceConnected: DeviceManagerEventMessage;
+    deviceDisconnected: DeviceManagerEventMessage;
+    deviceIsConnected: DeviceManagerEventMessage;
+    availableDevices: {
+        availableDevices: Device[];
+    };
+    connectedDevices: {
+        connectedDevices: Device[];
+    };
+}
+type DeviceManagerEventMap = EventMap<typeof Device, DeviceManagerEventType, DeviceManagerEventMessages>;
+type DeviceManagerEvent = Event<typeof Device, DeviceManagerEventType, DeviceManagerEventMessages>;
+declare class DeviceManager {
+    #private;
+    static get shared(): DeviceManager;
+    constructor();
+    /** @private */
+    onDevice(device: Device): void;
+    /** @private */
+    OnDeviceConnectionStatusUpdated(device: Device, connectionStatus: ConnectionStatus): void;
+    get ConnectedDevices(): Device[];
+    get UseLocalStorage(): boolean;
+    set UseLocalStorage(newUseLocalStorage: boolean);
+    get CanUseLocalStorage(): false | Storage;
+    get AvailableDevices(): Device[];
+    get CanGetDevices(): boolean;
     /**
      * retrieves devices already connected via web bluetooth in other tabs/windows
      *
      * _only available on web-bluetooth enabled browsers_
      */
-    static GetDevices(): Promise<Device[] | undefined>;
-    static get AddEventListener(): <T extends "deviceConnected" | "deviceDisconnected" | "deviceIsConnected" | "availableDevices" | "connectedDevices">(type: T, listener: (event: {
+    GetDevices(): Promise<Device[] | undefined>;
+    get AddEventListener(): <T extends "deviceConnected" | "deviceDisconnected" | "deviceIsConnected" | "availableDevices" | "connectedDevices">(type: T, listener: (event: {
         type: T;
-        target: typeof Device;
-        message: StaticDeviceEventMessages[T];
+        target: DeviceManager;
+        message: DeviceManagerEventMessages[T];
     }) => void, options?: {
         once?: boolean;
     }) => void;
-    static get RemoveEventListener(): <T extends "deviceConnected" | "deviceDisconnected" | "deviceIsConnected" | "availableDevices" | "connectedDevices">(type: T, listener: (event: {
+    get RemoveEventListener(): <T extends "deviceConnected" | "deviceDisconnected" | "deviceIsConnected" | "availableDevices" | "connectedDevices">(type: T, listener: (event: {
         type: T;
-        target: typeof Device;
-        message: StaticDeviceEventMessages[T];
+        target: DeviceManager;
+        message: DeviceManagerEventMessages[T];
     }) => void) => void;
-    static Connect(): Promise<Device>;
 }
-
-declare const isInProduction: boolean;
-declare const isInDev: boolean;
-declare const isInBrowser: boolean;
-declare const isInNode: boolean;
-declare let isBluetoothSupported: boolean;
-declare const isInBluefy: boolean;
-declare const isInWebBLE: boolean;
-declare const isAndroid: boolean;
-declare const isSafari: boolean;
-declare const isIOS: boolean;
-declare const isMac: boolean;
-declare const isInLensStudio: boolean;
-
-declare const environment_d_isAndroid: typeof isAndroid;
-declare const environment_d_isBluetoothSupported: typeof isBluetoothSupported;
-declare const environment_d_isIOS: typeof isIOS;
-declare const environment_d_isInBluefy: typeof isInBluefy;
-declare const environment_d_isInBrowser: typeof isInBrowser;
-declare const environment_d_isInDev: typeof isInDev;
-declare const environment_d_isInLensStudio: typeof isInLensStudio;
-declare const environment_d_isInNode: typeof isInNode;
-declare const environment_d_isInProduction: typeof isInProduction;
-declare const environment_d_isInWebBLE: typeof isInWebBLE;
-declare const environment_d_isMac: typeof isMac;
-declare const environment_d_isSafari: typeof isSafari;
-declare namespace environment_d {
-  export { environment_d_isAndroid as isAndroid, environment_d_isBluetoothSupported as isBluetoothSupported, environment_d_isIOS as isIOS, environment_d_isInBluefy as isInBluefy, environment_d_isInBrowser as isInBrowser, environment_d_isInDev as isInDev, environment_d_isInLensStudio as isInLensStudio, environment_d_isInNode as isInNode, environment_d_isInProduction as isInProduction, environment_d_isInWebBLE as isInWebBLE, environment_d_isMac as isMac, environment_d_isSafari as isSafari };
-}
+declare const _default: DeviceManager;
 
 interface DiscoveredDevice {
     bluetoothId: string;
@@ -665,19 +741,19 @@ declare class DevicePair {
     #private;
     constructor();
     get sides(): readonly ["left", "right"];
-    get addEventListener(): <T extends "pressure" | "deviceOrientation" | "sensorData" | "isConnected" | "deviceIsConnected" | "deviceMaxFileLength" | "deviceGetFileType" | "deviceGetFileLength" | "deviceGetFileChecksum" | "deviceFileTransferStatus" | "deviceGetFileBlock" | "deviceFileTransferProgress" | "deviceFileTransferComplete" | "deviceFileReceived" | "devicePressure" | "deviceAcceleration" | "deviceGravity" | "deviceLinearAcceleration" | "deviceGyroscope" | "deviceMagnetometer" | "deviceGameRotation" | "deviceRotation" | "deviceActivity" | "deviceStepCounter" | "deviceStepDetector" | "deviceDeviceOrientation" | "deviceBarometer" | "deviceSensorData" | "deviceGetSensorConfiguration" | "deviceGetTfliteName" | "deviceGetTfliteTask" | "deviceGetTfliteSampleRate" | "deviceGetTfliteSensorTypes" | "deviceTfliteIsReady" | "deviceGetTfliteCaptureDelay" | "deviceGetTfliteThreshold" | "deviceGetTfliteInferencingEnabled" | "deviceTfliteInference" | "deviceManufacturerName" | "deviceModelNumber" | "deviceSoftwareRevision" | "deviceHardwareRevision" | "deviceFirmwareRevision" | "devicePnpId" | "deviceSerialNumber" | "deviceDeviceInformation" | "deviceIsCharging" | "deviceGetBatteryCurrent" | "deviceGetMtu" | "deviceGetId" | "deviceGetName" | "deviceGetType" | "deviceGetCurrentTime" | "deviceBatteryLevel" | "deviceSmp" | "deviceFirmwareImages" | "deviceFirmwareUploadProgress" | "deviceFirmwareStatus" | "deviceConnectionStatus" | "deviceConnectionMessage">(type: T, listener: (event: {
+    get addEventListener(): <T extends "pressure" | "deviceOrientation" | "sensorData" | "deviceIsConnected" | "isConnected" | "deviceMaxFileLength" | "deviceGetFileType" | "deviceGetFileLength" | "deviceGetFileChecksum" | "deviceFileTransferStatus" | "deviceGetFileBlock" | "deviceFileTransferProgress" | "deviceFileTransferComplete" | "deviceFileReceived" | "devicePressure" | "deviceAcceleration" | "deviceGravity" | "deviceLinearAcceleration" | "deviceGyroscope" | "deviceMagnetometer" | "deviceGameRotation" | "deviceRotation" | "deviceActivity" | "deviceStepCounter" | "deviceStepDetector" | "deviceDeviceOrientation" | "deviceBarometer" | "deviceSensorData" | "deviceGetSensorConfiguration" | "deviceGetTfliteName" | "deviceGetTfliteTask" | "deviceGetTfliteSampleRate" | "deviceGetTfliteSensorTypes" | "deviceTfliteIsReady" | "deviceGetTfliteCaptureDelay" | "deviceGetTfliteThreshold" | "deviceGetTfliteInferencingEnabled" | "deviceTfliteInference" | "deviceManufacturerName" | "deviceModelNumber" | "deviceSoftwareRevision" | "deviceHardwareRevision" | "deviceFirmwareRevision" | "devicePnpId" | "deviceSerialNumber" | "deviceDeviceInformation" | "deviceIsCharging" | "deviceGetBatteryCurrent" | "deviceGetMtu" | "deviceGetId" | "deviceGetName" | "deviceGetType" | "deviceGetCurrentTime" | "deviceBatteryLevel" | "deviceSmp" | "deviceFirmwareImages" | "deviceFirmwareUploadProgress" | "deviceFirmwareStatus" | "deviceConnectionStatus" | "deviceConnectionMessage">(type: T, listener: (event: {
         type: T;
         target: DevicePair;
         message: DevicePairEventMessages[T];
     }) => void, options?: {
         once?: boolean;
     }) => void;
-    get removeEventListener(): <T extends "pressure" | "deviceOrientation" | "sensorData" | "isConnected" | "deviceIsConnected" | "deviceMaxFileLength" | "deviceGetFileType" | "deviceGetFileLength" | "deviceGetFileChecksum" | "deviceFileTransferStatus" | "deviceGetFileBlock" | "deviceFileTransferProgress" | "deviceFileTransferComplete" | "deviceFileReceived" | "devicePressure" | "deviceAcceleration" | "deviceGravity" | "deviceLinearAcceleration" | "deviceGyroscope" | "deviceMagnetometer" | "deviceGameRotation" | "deviceRotation" | "deviceActivity" | "deviceStepCounter" | "deviceStepDetector" | "deviceDeviceOrientation" | "deviceBarometer" | "deviceSensorData" | "deviceGetSensorConfiguration" | "deviceGetTfliteName" | "deviceGetTfliteTask" | "deviceGetTfliteSampleRate" | "deviceGetTfliteSensorTypes" | "deviceTfliteIsReady" | "deviceGetTfliteCaptureDelay" | "deviceGetTfliteThreshold" | "deviceGetTfliteInferencingEnabled" | "deviceTfliteInference" | "deviceManufacturerName" | "deviceModelNumber" | "deviceSoftwareRevision" | "deviceHardwareRevision" | "deviceFirmwareRevision" | "devicePnpId" | "deviceSerialNumber" | "deviceDeviceInformation" | "deviceIsCharging" | "deviceGetBatteryCurrent" | "deviceGetMtu" | "deviceGetId" | "deviceGetName" | "deviceGetType" | "deviceGetCurrentTime" | "deviceBatteryLevel" | "deviceSmp" | "deviceFirmwareImages" | "deviceFirmwareUploadProgress" | "deviceFirmwareStatus" | "deviceConnectionStatus" | "deviceConnectionMessage">(type: T, listener: (event: {
+    get removeEventListener(): <T extends "pressure" | "deviceOrientation" | "sensorData" | "deviceIsConnected" | "isConnected" | "deviceMaxFileLength" | "deviceGetFileType" | "deviceGetFileLength" | "deviceGetFileChecksum" | "deviceFileTransferStatus" | "deviceGetFileBlock" | "deviceFileTransferProgress" | "deviceFileTransferComplete" | "deviceFileReceived" | "devicePressure" | "deviceAcceleration" | "deviceGravity" | "deviceLinearAcceleration" | "deviceGyroscope" | "deviceMagnetometer" | "deviceGameRotation" | "deviceRotation" | "deviceActivity" | "deviceStepCounter" | "deviceStepDetector" | "deviceDeviceOrientation" | "deviceBarometer" | "deviceSensorData" | "deviceGetSensorConfiguration" | "deviceGetTfliteName" | "deviceGetTfliteTask" | "deviceGetTfliteSampleRate" | "deviceGetTfliteSensorTypes" | "deviceTfliteIsReady" | "deviceGetTfliteCaptureDelay" | "deviceGetTfliteThreshold" | "deviceGetTfliteInferencingEnabled" | "deviceTfliteInference" | "deviceManufacturerName" | "deviceModelNumber" | "deviceSoftwareRevision" | "deviceHardwareRevision" | "deviceFirmwareRevision" | "devicePnpId" | "deviceSerialNumber" | "deviceDeviceInformation" | "deviceIsCharging" | "deviceGetBatteryCurrent" | "deviceGetMtu" | "deviceGetId" | "deviceGetName" | "deviceGetType" | "deviceGetCurrentTime" | "deviceBatteryLevel" | "deviceSmp" | "deviceFirmwareImages" | "deviceFirmwareUploadProgress" | "deviceFirmwareStatus" | "deviceConnectionStatus" | "deviceConnectionMessage">(type: T, listener: (event: {
         type: T;
         target: DevicePair;
         message: DevicePairEventMessages[T];
     }) => void) => void;
-    get waitForEvent(): <T extends "pressure" | "deviceOrientation" | "sensorData" | "isConnected" | "deviceIsConnected" | "deviceMaxFileLength" | "deviceGetFileType" | "deviceGetFileLength" | "deviceGetFileChecksum" | "deviceFileTransferStatus" | "deviceGetFileBlock" | "deviceFileTransferProgress" | "deviceFileTransferComplete" | "deviceFileReceived" | "devicePressure" | "deviceAcceleration" | "deviceGravity" | "deviceLinearAcceleration" | "deviceGyroscope" | "deviceMagnetometer" | "deviceGameRotation" | "deviceRotation" | "deviceActivity" | "deviceStepCounter" | "deviceStepDetector" | "deviceDeviceOrientation" | "deviceBarometer" | "deviceSensorData" | "deviceGetSensorConfiguration" | "deviceGetTfliteName" | "deviceGetTfliteTask" | "deviceGetTfliteSampleRate" | "deviceGetTfliteSensorTypes" | "deviceTfliteIsReady" | "deviceGetTfliteCaptureDelay" | "deviceGetTfliteThreshold" | "deviceGetTfliteInferencingEnabled" | "deviceTfliteInference" | "deviceManufacturerName" | "deviceModelNumber" | "deviceSoftwareRevision" | "deviceHardwareRevision" | "deviceFirmwareRevision" | "devicePnpId" | "deviceSerialNumber" | "deviceDeviceInformation" | "deviceIsCharging" | "deviceGetBatteryCurrent" | "deviceGetMtu" | "deviceGetId" | "deviceGetName" | "deviceGetType" | "deviceGetCurrentTime" | "deviceBatteryLevel" | "deviceSmp" | "deviceFirmwareImages" | "deviceFirmwareUploadProgress" | "deviceFirmwareStatus" | "deviceConnectionStatus" | "deviceConnectionMessage">(type: T) => Promise<{
+    get waitForEvent(): <T extends "pressure" | "deviceOrientation" | "sensorData" | "deviceIsConnected" | "isConnected" | "deviceMaxFileLength" | "deviceGetFileType" | "deviceGetFileLength" | "deviceGetFileChecksum" | "deviceFileTransferStatus" | "deviceGetFileBlock" | "deviceFileTransferProgress" | "deviceFileTransferComplete" | "deviceFileReceived" | "devicePressure" | "deviceAcceleration" | "deviceGravity" | "deviceLinearAcceleration" | "deviceGyroscope" | "deviceMagnetometer" | "deviceGameRotation" | "deviceRotation" | "deviceActivity" | "deviceStepCounter" | "deviceStepDetector" | "deviceDeviceOrientation" | "deviceBarometer" | "deviceSensorData" | "deviceGetSensorConfiguration" | "deviceGetTfliteName" | "deviceGetTfliteTask" | "deviceGetTfliteSampleRate" | "deviceGetTfliteSensorTypes" | "deviceTfliteIsReady" | "deviceGetTfliteCaptureDelay" | "deviceGetTfliteThreshold" | "deviceGetTfliteInferencingEnabled" | "deviceTfliteInference" | "deviceManufacturerName" | "deviceModelNumber" | "deviceSoftwareRevision" | "deviceHardwareRevision" | "deviceFirmwareRevision" | "devicePnpId" | "deviceSerialNumber" | "deviceDeviceInformation" | "deviceIsCharging" | "deviceGetBatteryCurrent" | "deviceGetMtu" | "deviceGetId" | "deviceGetName" | "deviceGetType" | "deviceGetCurrentTime" | "deviceBatteryLevel" | "deviceSmp" | "deviceFirmwareImages" | "deviceFirmwareUploadProgress" | "deviceFirmwareStatus" | "deviceConnectionStatus" | "deviceConnectionMessage">(type: T) => Promise<{
         type: T;
         target: DevicePair;
         message: DevicePairEventMessages[T];
@@ -812,4 +888,4 @@ declare class WebSocketClient extends BaseClient {
     createDevice(bluetoothId: string): Device;
 }
 
-export { type ContinuousSensorType, ContinuousSensorTypes, DefaultNumberOfPressureSensors, Device, type DeviceEvent, type DeviceEventMap, type DeviceInformation, DevicePair, type DeviceType, DeviceTypes, type DiscoveredDevice, environment_d as Environment, type Euler, type FileTransferDirection, FileTransferDirections, type FileType, FileTypes, MaxNameLength, MaxNumberOfVibrationWaveformEffectSegments, MaxNumberOfVibrationWaveformSegments, MaxSensorRate, MaxVibrationWaveformEffectSegmentDelay, MaxVibrationWaveformEffectSegmentLoopCount, MaxVibrationWaveformEffectSequenceLoopCount, MaxVibrationWaveformSegmentDuration, MinNameLength, type PressureData, type Quaternion, SensorRateStep, type SensorType, SensorTypes, type StaticDeviceEvent, type StaticDeviceEventMap, type TfliteSensorType, TfliteSensorTypes, type TfliteTask, TfliteTasks, type Vector2, type Vector3, type VibrationConfiguration, type VibrationLocation, VibrationLocations, type VibrationType, VibrationTypes, type VibrationWaveformEffect, VibrationWaveformEffects, WebSocketClient, setAllConsoleLevelFlags, setConsoleLevelFlagsForType };
+export { type ContinuousSensorType, ContinuousSensorTypes, DefaultNumberOfPressureSensors, Device, type DeviceEvent, type DeviceEventMap, type DeviceInformation, _default as DeviceManager, type DeviceManagerEvent, type DeviceManagerEventMap, DevicePair, type DeviceType, DeviceTypes, type DiscoveredDevice, environment_d as Environment, type Euler, type FileTransferDirection, FileTransferDirections, type FileType, FileTypes, MaxNameLength, MaxNumberOfVibrationWaveformEffectSegments, MaxNumberOfVibrationWaveformSegments, MaxSensorRate, MaxVibrationWaveformEffectSegmentDelay, MaxVibrationWaveformEffectSegmentLoopCount, MaxVibrationWaveformEffectSequenceLoopCount, MaxVibrationWaveformSegmentDuration, MinNameLength, type PressureData, type Quaternion, SensorRateStep, type SensorType, SensorTypes, type TfliteSensorType, TfliteSensorTypes, type TfliteTask, TfliteTasks, type Vector2, type Vector3, type VibrationConfiguration, type VibrationLocation, VibrationLocations, type VibrationType, VibrationTypes, type VibrationWaveformEffect, VibrationWaveformEffects, WebSocketClient, setAllConsoleLevelFlags, setConsoleLevelFlagsForType };

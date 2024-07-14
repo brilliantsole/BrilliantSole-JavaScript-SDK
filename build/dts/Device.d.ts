@@ -1,5 +1,5 @@
 import EventDispatcher, { BoundEventListeners, Event, EventMap } from "./utils/EventDispatcher.ts";
-import BaseConnectionManager, { ConnectionStatus, ConnectionMessageType } from "./connection/BaseConnectionManager.ts";
+import BaseConnectionManager, { TxRxMessageType, ConnectionStatus, ConnectionMessageType } from "./connection/BaseConnectionManager.ts";
 import { SensorConfiguration, SensorConfigurationEventMessages } from "./sensor/SensorConfigurationManager.ts";
 import { SensorDataEventMessages, SensorType } from "./sensor/SensorDataManager.ts";
 import { VibrationConfiguration } from "./vibration/VibrationManager.ts";
@@ -7,7 +7,7 @@ import { FileTransferEventMessages, FileType } from "./FileTransferManager.ts";
 import { TfliteEventMessages } from "./TfliteManager.ts";
 import { FirmwareEventMessages } from "./FirmwareManager.ts";
 import { DeviceInformationEventMessages } from "./DeviceInformationManager.ts";
-import { DeviceType, InformationEventMessages } from "./InformationManager.ts";
+import InformationManager, { DeviceType, InformationEventMessages } from "./InformationManager.ts";
 import { FileLike } from "./utils/ArrayBufferUtils.ts";
 export declare const ConnectionEventTypes: readonly ["not connected", "connecting", "connected", "disconnecting", "connectionStatus", "isConnected"];
 export type ConnectionEventType = (typeof ConnectionEventTypes)[number];
@@ -28,42 +28,16 @@ export interface DeviceEventMessages extends DeviceInformationEventMessages, Inf
         dataView: DataView;
     };
 }
-export declare const StaticDeviceEventTypes: readonly ["deviceConnected", "deviceDisconnected", "deviceIsConnected", "availableDevices", "connectedDevices"];
-export type StaticDeviceEventType = (typeof StaticDeviceEventTypes)[number];
-interface StaticDeviceEventMessage {
-    device: Device;
-}
-export interface StaticDeviceEventMessages {
-    deviceConnected: StaticDeviceEventMessage;
-    deviceDisconnected: StaticDeviceEventMessage;
-    deviceIsConnected: StaticDeviceEventMessage;
-    availableDevices: {
-        availableDevices: Device[];
-    };
-    connectedDevices: {
-        connectedDevices: Device[];
-    };
-}
 export type SendMessageCallback<MessageType extends string> = (messages?: {
     type: MessageType;
     data?: ArrayBuffer;
 }[], sendImmediately?: boolean) => Promise<void>;
 export type SendSmpMessageCallback = (data: ArrayBuffer) => Promise<void>;
-export interface LocalStorageDeviceInformation {
-    type: DeviceType;
-    bluetoothId: string;
-}
-export interface LocalStorageConfiguration {
-    devices: LocalStorageDeviceInformation[];
-}
 export type DeviceEventDispatcher = EventDispatcher<Device, DeviceEventType, DeviceEventMessages>;
 export type DeviceEvent = Event<Device, DeviceEventType, DeviceEventMessages>;
 export type DeviceEventMap = EventMap<Device, DeviceEventType, DeviceEventMessages>;
 export type BoundDeviceEventListeners = BoundEventListeners<Device, DeviceEventType, DeviceEventMessages>;
-export type StaticDeviceEventDispatcher = EventDispatcher<typeof Device, StaticDeviceEventType, StaticDeviceEventMessages>;
-export type StaticDeviceEventMap = EventMap<typeof Device, StaticDeviceEventType, StaticDeviceEventMessages>;
-export type StaticDeviceEvent = Event<typeof Device, StaticDeviceEventType, StaticDeviceEventMessages>;
-export type BoundStaticDeviceEventListeners = BoundEventListeners<typeof Device, StaticDeviceEventType, StaticDeviceEventMessages>;
+export declare const RequiredInformationConnectionMessages: TxRxMessageType[];
 declare class Device {
     #private;
     get bluetoothId(): string | undefined;
@@ -92,6 +66,7 @@ declare class Device {
     get isConnected(): boolean;
     get canReconnect(): boolean | undefined;
     reconnect(): Promise<void | undefined>;
+    Connect(): Promise<Device>;
     static get ReconnectOnDisconnection(): boolean;
     static set ReconnectOnDisconnection(newReconnectOnDisconnection: boolean);
     get reconnectOnDisconnection(): boolean;
@@ -104,6 +79,8 @@ declare class Device {
     latestConnectionMessage: Map<ConnectionMessageType, DataView>;
     get deviceInformation(): import("./DeviceInformationManager.ts").DeviceInformation;
     get batteryLevel(): number;
+    /** @private */
+    _informationManager: InformationManager;
     get id(): string;
     get isCharging(): boolean;
     get batteryCurrent(): number;
@@ -160,30 +137,5 @@ declare class Device {
     get eraseFirmwareImage(): () => Promise<void>;
     get confirmFirmwareImage(): (imageIndex?: number) => Promise<void>;
     get testFirmwareImage(): (imageIndex?: number) => Promise<void>;
-    static get ConnectedDevices(): Device[];
-    static get UseLocalStorage(): boolean;
-    static set UseLocalStorage(newUseLocalStorage: boolean);
-    static get CanUseLocalStorage(): false | Storage;
-    static get AvailableDevices(): Device[];
-    static get CanGetDevices(): boolean;
-    /**
-     * retrieves devices already connected via web bluetooth in other tabs/windows
-     *
-     * _only available on web-bluetooth enabled browsers_
-     */
-    static GetDevices(): Promise<Device[] | undefined>;
-    static get AddEventListener(): <T extends "deviceConnected" | "deviceDisconnected" | "deviceIsConnected" | "availableDevices" | "connectedDevices">(type: T, listener: (event: {
-        type: T;
-        target: typeof Device;
-        message: StaticDeviceEventMessages[T];
-    }) => void, options?: {
-        once?: boolean;
-    }) => void;
-    static get RemoveEventListener(): <T extends "deviceConnected" | "deviceDisconnected" | "deviceIsConnected" | "availableDevices" | "connectedDevices">(type: T, listener: (event: {
-        type: T;
-        target: typeof Device;
-        message: StaticDeviceEventMessages[T];
-    }) => void) => void;
-    static Connect(): Promise<Device>;
 }
 export default Device;

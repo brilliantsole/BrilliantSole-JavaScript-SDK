@@ -16,6 +16,7 @@ import { VibrationConfiguration } from "../vibration/VibrationManager.ts";
 import { SensorConfiguration } from "../sensor/SensorConfigurationManager.ts";
 import { DevicePairSensorDataEventMessages, DevicePairSensorDataEventTypes } from "./DevicePairSensorDataManager.ts";
 import { AddPrefixToInterfaceKeys, ExtendInterfaceValues, KeyOf } from "../utils/TypeScriptUtils.ts";
+import DeviceManager from "../DeviceManager.ts";
 
 const _console = createConsole("DevicePair", { log: true });
 
@@ -229,7 +230,7 @@ class DevicePair {
     return this.#shared;
   }
   static {
-    Device.AddEventListener("deviceConnected", (event) => {
+    DeviceManager.AddEventListener("deviceConnected", (event) => {
       const device: Device = event.message.device;
       if (device.isInsole) {
         this.#shared.assignInsole(device);

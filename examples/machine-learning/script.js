@@ -66,14 +66,14 @@ function onAvailableDevices(availableDevices) {
   }
 }
 async function getDevices() {
-  const availableDevices = await BS.Device.GetDevices();
+  const availableDevices = await BS.DeviceManager.GetDevices();
   if (!availableDevices) {
     return;
   }
   onAvailableDevices(availableDevices);
 }
 
-BS.Device.AddEventListener("availableDevices", (event) => {
+BS.DeviceManager.AddEventListener("availableDevices", (event) => {
   const devices = event.message.availableDevices;
   onAvailableDevices(devices);
 });
@@ -97,7 +97,7 @@ const connectedDevicesContainer = document.getElementById("connectedDevices");
 /** @type {HTMLTemplateElement} */
 const connectedDeviceTemplate = document.getElementById("connectedDeviceTemplate");
 
-BS.Device.AddEventListener("deviceConnected", (event) => {
+BS.DeviceManager.AddEventListener("deviceConnected", (event) => {
   /** @type {BS.Device} */
   const device = event.message.device;
   console.log("deviceConnected", device);

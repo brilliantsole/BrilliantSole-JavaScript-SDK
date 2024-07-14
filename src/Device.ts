@@ -8,7 +8,7 @@ import BaseConnectionManager, {
   ConnectionMessageTypes,
   ConnectionMessageType,
 } from "./connection/BaseConnectionManager.ts";
-import { isInBluefy, isInBrowser, isInNode } from "./utils/environment.ts";
+import { isInBrowser, isInNode } from "./utils/environment.ts";
 import WebBluetoothConnectionManager from "./connection/bluetooth/WebBluetoothConnectionManager.ts";
 import SensorConfigurationManager, {
   SendSensorConfigurationMessageCallback,
@@ -47,7 +47,6 @@ import TfliteManager, {
   SendTfliteMessageCallback,
   TfliteMessageTypes,
   TfliteMessageType,
-  TfliteTasks,
   TfliteSensorTypes,
 } from "./TfliteManager.ts";
 import FirmwareManager, {
@@ -74,6 +73,8 @@ import InformationManager, {
   SendInformationMessageCallback,
 } from "./InformationManager.ts";
 import { FileLike } from "./utils/ArrayBufferUtils.ts";
+import DeviceManager from "./DeviceManager.ts";
+import autoBind from "auto-bind";
 
 const _console = createConsole("Device", { log: true });
 
@@ -110,26 +111,6 @@ export interface DeviceEventMessages
   connectionMessage: { messageType: ConnectionMessageType; dataView: DataView };
 }
 
-export const StaticDeviceEventTypes = [
-  "deviceConnected",
-  "deviceDisconnected",
-  "deviceIsConnected",
-  "availableDevices",
-  "connectedDevices",
-] as const;
-export type StaticDeviceEventType = (typeof StaticDeviceEventTypes)[number];
-
-interface StaticDeviceEventMessage {
-  device: Device;
-}
-export interface StaticDeviceEventMessages {
-  deviceConnected: StaticDeviceEventMessage;
-  deviceDisconnected: StaticDeviceEventMessage;
-  deviceIsConnected: StaticDeviceEventMessage;
-  availableDevices: { availableDevices: Device[] };
-  connectedDevices: { connectedDevices: Device[] };
-}
-
 export type SendMessageCallback<MessageType extends string> = (
   messages?: { type: MessageType; data?: ArrayBuffer }[],
   sendImmediately?: boolean
@@ -137,32 +118,39 @@ export type SendMessageCallback<MessageType extends string> = (
 
 export type SendSmpMessageCallback = (data: ArrayBuffer) => Promise<void>;
 
-export interface LocalStorageDeviceInformation {
-  type: DeviceType;
-  bluetoothId: string;
-}
-
-export interface LocalStorageConfiguration {
-  devices: LocalStorageDeviceInformation[];
-}
-
 export type DeviceEventDispatcher = EventDispatcher<Device, DeviceEventType, DeviceEventMessages>;
 export type DeviceEvent = Event<Device, DeviceEventType, DeviceEventMessages>;
 export type DeviceEventMap = EventMap<Device, DeviceEventType, DeviceEventMessages>;
 export type BoundDeviceEventListeners = BoundEventListeners<Device, DeviceEventType, DeviceEventMessages>;
 
-export type StaticDeviceEventDispatcher = EventDispatcher<
-  typeof Device,
-  StaticDeviceEventType,
-  StaticDeviceEventMessages
->;
-export type StaticDeviceEventMap = EventMap<typeof Device, StaticDeviceEventType, StaticDeviceEventMessages>;
-export type StaticDeviceEvent = Event<typeof Device, StaticDeviceEventType, StaticDeviceEventMessages>;
-export type BoundStaticDeviceEventListeners = BoundEventListeners<
-  typeof Device,
-  StaticDeviceEventType,
-  StaticDeviceEventMessages
->;
+export const RequiredInformationConnectionMessages: TxRxMessageType[] = [
+  "isCharging",
+  "getBatteryCurrent",
+  "getId",
+  "getMtu",
+
+  "getName",
+  "getType",
+  "getCurrentTime",
+  "getSensorConfiguration",
+  "getSensorScalars",
+  "getPressurePositions",
+
+  "maxFileLength",
+  "getFileLength",
+  "getFileChecksum",
+  "getFileType",
+  "fileTransferStatus",
+
+  "getTfliteName",
+  "getTfliteTask",
+  "getTfliteSampleRate",
+  "getTfliteSensorTypes",
+  "tfliteIsReady",
+  "getTfliteCaptureDelay",
+  "getTfliteThreshold",
+  "getTfliteInferencingEnabled",
+];
 
 class Device {
   get bluetoothId() {
@@ -172,8 +160,8 @@ class Device {
   constructor() {
     this.#deviceInformationManager.eventDispatcher = this.#eventDispatcher as DeviceInformationEventDispatcher;
 
-    this.#informationManager.sendMessage = this.sendTxMessages as SendInformationMessageCallback;
-    this.#informationManager.eventDispatcher = this.#eventDispatcher as InformationEventDispatcher;
+    this._informationManager.sendMessage = this.sendTxMessages as SendInformationMessageCallback;
+    this._informationManager.eventDispatcher = this.#eventDispatcher as InformationEventDispatcher;
 
     this.#sensorConfigurationManager.sendMessage = this.sendTxMessages as SendSensorConfigurationMessageCallback;
     this.#sensorConfigurationManager.eventDispatcher = this.#eventDispatcher as SensorConfigurationEventDispatcher;
@@ -196,12 +184,7 @@ class Device {
       this.#fileTransferManager.mtu = this.mtu;
       this.connectionManager!.mtu = this.mtu;
     });
-    this.addEventListener("getType", () => {
-      if (Device.#UseLocalStorage) {
-        Device.#UpdateLocalStorageConfigurationForDevice(this);
-      }
-    });
-
+    DeviceManager.onDevice(this);
     if (isInBrowser) {
       window.addEventListener("beforeunload", () => {
         if (this.isConnected && this.clearSensorConfigurationOnLeave) {
@@ -217,10 +200,6 @@ class Device {
         }
       });
     }
-
-    this.addEventListener("isConnected", () => {
-      Device.#OnDeviceIsConnected(this);
-    });
   }
 
   static #DefaultConnectionManager(): BaseConnectionManager {
@@ -286,44 +265,13 @@ class Device {
     _console.assertWithError(this.isConnected, "not connected");
   }
 
-  static #RequiredInformationConnectionMessages: TxRxMessageType[] = [
-    "isCharging",
-    "getBatteryCurrent",
-    "getId",
-    "getMtu",
-
-    "getName",
-    "getType",
-    "getCurrentTime",
-    "getSensorConfiguration",
-    "getSensorScalars",
-    "getPressurePositions",
-
-    "maxFileLength",
-    "getFileLength",
-    "getFileChecksum",
-    "getFileType",
-    "fileTransferStatus",
-
-    "getTfliteName",
-    "getTfliteTask",
-    "getTfliteSampleRate",
-    "getTfliteSensorTypes",
-    "tfliteIsReady",
-    "getTfliteCaptureDelay",
-    "getTfliteThreshold",
-    "getTfliteInferencingEnabled",
-  ];
-  get #requiredInformationConnectionMessages() {
-    return Device.#RequiredInformationConnectionMessages;
-  }
   get #hasRequiredInformation() {
-    return this.#requiredInformationConnectionMessages.every((messageType) => {
+    return RequiredInformationConnectionMessages.every((messageType) => {
       return this.latestConnectionMessage.has(messageType);
     });
   }
   #requestRequiredInformation() {
-    const messages: TxMessage[] = this.#requiredInformationConnectionMessages.map((messageType) => ({
+    const messages: TxMessage[] = RequiredInformationConnectionMessages.map((messageType) => ({
       type: messageType,
     }));
     this.#sendTxMessages(messages);
@@ -335,6 +283,12 @@ class Device {
   async reconnect() {
     this.#clear();
     return this.connectionManager?.reconnect();
+  }
+
+  async Connect() {
+    const device = new Device();
+    await device.connect();
+    return device;
   }
 
   static #ReconnectOnDisconnection = false;
@@ -428,11 +382,7 @@ class Device {
       this.#requestRequiredInformation();
     }
 
-    if (connectionStatus == "not connected" && !this.canReconnect && Device.#AvailableDevices.includes(this)) {
-      const deviceIndex = Device.#AvailableDevices.indexOf(this);
-      Device.AvailableDevices.splice(deviceIndex, 1);
-      Device.#DispatchAvailableDevices();
-    }
+    DeviceManager.OnDeviceConnectionStatusUpdated(this, connectionStatus);
   }
 
   #dispatchConnectionEvents(includeIsConnected: boolean = false) {
@@ -446,7 +396,7 @@ class Device {
     this.#isConnected =
       Boolean(this.connectionManager?.isConnected) &&
       this.#hasRequiredInformation &&
-      this.#informationManager.isCurrentTimeSet;
+      this._informationManager.isCurrentTimeSet;
 
     switch (this.connectionStatus) {
       case "connected":
@@ -465,7 +415,7 @@ class Device {
 
   #clear() {
     this.latestConnectionMessage.clear();
-    this.#informationManager.clear();
+    this._informationManager.clear();
     this.#deviceInformationManager.clear();
   }
 
@@ -490,7 +440,7 @@ class Device {
         } else if (DeviceInformationMessageTypes.includes(messageType as DeviceInformationMessageType)) {
           this.#deviceInformationManager.parseMessage(messageType as DeviceInformationMessageType, dataView);
         } else if (InformationMessageTypes.includes(messageType as InformationMessageType)) {
-          this.#informationManager.parseMessage(messageType as InformationMessageType, dataView);
+          this._informationManager.parseMessage(messageType as InformationMessageType, dataView);
         } else if (SensorConfigurationMessageTypes.includes(messageType as SensorConfigurationMessageType)) {
           this.#sensorConfigurationManager.parseMessage(messageType as SensorConfigurationMessageType, dataView);
         } else {
@@ -531,45 +481,46 @@ class Device {
   }
 
   // INFORMATION
-  #informationManager = new InformationManager();
+  /** @private */
+  _informationManager = new InformationManager();
 
   get id() {
-    return this.#informationManager.id;
+    return this._informationManager.id;
   }
 
   get isCharging() {
-    return this.#informationManager.isCharging;
+    return this._informationManager.isCharging;
   }
   get batteryCurrent() {
-    return this.#informationManager.batteryCurrent;
+    return this._informationManager.batteryCurrent;
   }
   get getBatteryCurrent() {
-    return this.#informationManager.getBatteryCurrent;
+    return this._informationManager.getBatteryCurrent;
   }
 
   get name() {
-    return this.#informationManager.name;
+    return this._informationManager.name;
   }
   get setName() {
-    return this.#informationManager.setName;
+    return this._informationManager.setName;
   }
 
   get type() {
-    return this.#informationManager.type;
+    return this._informationManager.type;
   }
   get setType() {
-    return this.#informationManager.setType;
+    return this._informationManager.setType;
   }
 
   get isInsole() {
-    return this.#informationManager.isInsole;
+    return this._informationManager.isInsole;
   }
   get insoleSide() {
-    return this.#informationManager.insoleSide;
+    return this._informationManager.insoleSide;
   }
 
   get mtu() {
-    return this.#informationManager.mtu;
+    return this._informationManager.mtu;
   }
 
   // SENSOR TYPES
@@ -615,7 +566,6 @@ class Device {
   }
 
   // PRESSURE
-
   get numberOfPressureSensors() {
     return this.#sensorDataManager.pressureSensorDataManager.numberOfSensors;
   }
@@ -644,7 +594,6 @@ class Device {
     this.#fileTransferManager.send(fileType, file);
     await promise;
   }
-
   async receiveFile(fileType: FileType) {
     const promise = this.waitForEvent("fileTransferComplete");
     this.#fileTransferManager.receive(fileType);
@@ -676,14 +625,12 @@ class Device {
   get setTfliteTask() {
     return this.#tfliteManager.setTask;
   }
-
   get tfliteSampleRate() {
     return this.#tfliteManager.sampleRate;
   }
   get setTfliteSampleRate() {
     return this.#tfliteManager.setSampleRate;
   }
-
   get tfliteSensorTypes() {
     return this.#tfliteManager.sensorTypes;
   }
@@ -693,7 +640,6 @@ class Device {
   get setTfliteSensorTypes() {
     return this.#tfliteManager.setSensorTypes;
   }
-
   get tfliteIsReady() {
     return this.#tfliteManager.isReady;
   }
@@ -743,23 +689,19 @@ class Device {
   get uploadFirmware() {
     return this.#firmwareManager.uploadFirmware;
   }
-
   async reset() {
     await this.#firmwareManager.reset();
     return this.#connectionManager!.disconnect();
   }
-
   get firmwareStatus() {
     return this.#firmwareManager.status;
   }
-
   get getFirmwareImages() {
     return this.#firmwareManager.getImages;
   }
   get firmwareImages() {
     return this.#firmwareManager.images;
   }
-
   get eraseFirmwareImage() {
     return this.#firmwareManager.eraseImage;
   }
@@ -768,268 +710,6 @@ class Device {
   }
   get testFirmwareImage() {
     return this.#firmwareManager.testImage;
-  }
-
-  // CONNECTED DEVICES
-
-  static #ConnectedDevices: Device[] = [];
-  static get ConnectedDevices() {
-    return this.#ConnectedDevices;
-  }
-
-  static #UseLocalStorage = false;
-  static get UseLocalStorage() {
-    return this.#UseLocalStorage;
-  }
-  static set UseLocalStorage(newUseLocalStorage) {
-    this.#AssertLocalStorage();
-    _console.assertTypeWithError(newUseLocalStorage, "boolean");
-    this.#UseLocalStorage = newUseLocalStorage;
-    if (this.#UseLocalStorage && !this.#LocalStorageConfiguration) {
-      this.#LoadFromLocalStorage();
-    }
-  }
-
-  static #DefaultLocalStorageConfiguration: LocalStorageConfiguration = {
-    devices: [],
-  };
-  static #LocalStorageConfiguration?: LocalStorageConfiguration;
-
-  static get CanUseLocalStorage() {
-    return isInBrowser && window.localStorage;
-  }
-
-  static #AssertLocalStorage() {
-    _console.assertWithError(isInBrowser, "localStorage is only available in the browser");
-    _console.assertWithError(window.localStorage, "localStorage not found");
-  }
-  static #LocalStorageKey = "BS.Device";
-  static #SaveToLocalStorage() {
-    this.#AssertLocalStorage();
-    localStorage.setItem(this.#LocalStorageKey, JSON.stringify(this.#LocalStorageConfiguration));
-  }
-  static async #LoadFromLocalStorage() {
-    this.#AssertLocalStorage();
-    let localStorageString = localStorage.getItem(this.#LocalStorageKey);
-    if (typeof localStorageString != "string") {
-      _console.log("no info found in localStorage");
-      this.#LocalStorageConfiguration = Object.assign({}, this.#DefaultLocalStorageConfiguration);
-      this.#SaveToLocalStorage();
-      return;
-    }
-    try {
-      const configuration = JSON.parse(localStorageString);
-      _console.log({ configuration });
-      this.#LocalStorageConfiguration = configuration;
-      if (this.CanGetDevices) {
-        await this.GetDevices(); // redundant?
-      }
-    } catch (error) {
-      _console.error(error);
-    }
-  }
-
-  static #UpdateLocalStorageConfigurationForDevice(device: Device) {
-    if (device.connectionType != "webBluetooth") {
-      _console.log("localStorage is only for webBluetooth devices");
-      return;
-    }
-    this.#AssertLocalStorage();
-    const deviceInformationIndex = this.#LocalStorageConfiguration!.devices.findIndex((deviceInformation) => {
-      return deviceInformation.bluetoothId == device.bluetoothId;
-    });
-    if (deviceInformationIndex == -1) {
-      return;
-    }
-    this.#LocalStorageConfiguration!.devices[deviceInformationIndex].type = device.type;
-    this.#SaveToLocalStorage();
-  }
-
-  // AVAILABLE DEVICES
-  static #AvailableDevices: Device[] = [];
-  static get AvailableDevices() {
-    return this.#AvailableDevices;
-  }
-
-  static get CanGetDevices() {
-    // @ts-expect-error
-    return isInBrowser && navigator.bluetooth?.getDevices && !isInBluefy;
-  }
-  /**
-   * retrieves devices already connected via web bluetooth in other tabs/windows
-   *
-   * _only available on web-bluetooth enabled browsers_
-   */
-  static async GetDevices(): Promise<Device[] | undefined> {
-    if (!isInBrowser) {
-      _console.warn("GetDevices is only available in the browser");
-      return;
-    }
-
-    if (!navigator.bluetooth) {
-      _console.warn("bluetooth is not available in this browser");
-      return;
-    }
-
-    if (isInBluefy) {
-      _console.warn("bluefy lists too many devices...");
-      return;
-    }
-
-    if (!navigator.bluetooth.getDevices) {
-      _console.warn("bluetooth.getDevices() is not available in this browser");
-      return;
-    }
-
-    if (!this.#LocalStorageConfiguration) {
-      this.#LoadFromLocalStorage();
-    }
-
-    const configuration = this.#LocalStorageConfiguration!;
-    if (!configuration.devices || configuration.devices.length == 0) {
-      _console.log("no devices found in configuration");
-      return;
-    }
-
-    const bluetoothDevices = await navigator.bluetooth.getDevices();
-
-    _console.log({ bluetoothDevices });
-
-    bluetoothDevices.forEach((bluetoothDevice) => {
-      if (!bluetoothDevice.gatt) {
-        return;
-      }
-      let deviceInformation = configuration.devices.find(
-        (deviceInformation) => bluetoothDevice.id == deviceInformation.bluetoothId
-      );
-      if (!deviceInformation) {
-        return;
-      }
-
-      let existingConnectedDevice = this.ConnectedDevices.filter(
-        (device) => device.connectionType == "webBluetooth"
-      ).find((device) => device.bluetoothId == bluetoothDevice.id);
-
-      const existingAvailableDevice = this.AvailableDevices.filter(
-        (device) => device.connectionType == "webBluetooth"
-      ).find((device) => device.bluetoothId == bluetoothDevice.id);
-      if (existingAvailableDevice) {
-        if (
-          existingConnectedDevice &&
-          existingConnectedDevice?.bluetoothId == existingAvailableDevice.bluetoothId &&
-          existingConnectedDevice != existingAvailableDevice
-        ) {
-          this.AvailableDevices[this.#AvailableDevices.indexOf(existingAvailableDevice)] = existingConnectedDevice;
-        }
-        return;
-      }
-
-      if (existingConnectedDevice) {
-        this.AvailableDevices.push(existingConnectedDevice);
-        return;
-      }
-
-      const device = new Device();
-      const connectionManager = new WebBluetoothConnectionManager();
-      connectionManager.device = bluetoothDevice;
-      if (bluetoothDevice.name) {
-        device.#informationManager.updateName(bluetoothDevice.name);
-      }
-      device.#informationManager.updateType(deviceInformation.type);
-      device.connectionManager = connectionManager;
-      this.AvailableDevices.push(device);
-    });
-    this.#DispatchAvailableDevices();
-    return this.AvailableDevices;
-  }
-
-  // STATIC EVENTLISTENERS
-
-  static #EventDispatcher: StaticDeviceEventDispatcher = new EventDispatcher(this, StaticDeviceEventTypes);
-
-  static get AddEventListener() {
-    return this.#EventDispatcher.addEventListener;
-  }
-  static get #DispatchEvent() {
-    return this.#EventDispatcher.dispatchEvent;
-  }
-  static get RemoveEventListener() {
-    return this.#EventDispatcher.removeEventListener;
-  }
-
-  static #OnDeviceIsConnected(device: Device) {
-    if (device.isConnected) {
-      if (!this.#ConnectedDevices.includes(device)) {
-        _console.log("adding device", device);
-        this.#ConnectedDevices.push(device);
-        if (this.UseLocalStorage && device.connectionType == "webBluetooth") {
-          const deviceInformation: LocalStorageDeviceInformation = {
-            type: device.type,
-            bluetoothId: device.bluetoothId!,
-          };
-          const deviceInformationIndex = this.#LocalStorageConfiguration!.devices.findIndex(
-            (_deviceInformation) => _deviceInformation.bluetoothId == deviceInformation.bluetoothId
-          );
-          if (deviceInformationIndex == -1) {
-            this.#LocalStorageConfiguration!.devices.push(deviceInformation);
-          } else {
-            this.#LocalStorageConfiguration!.devices[deviceInformationIndex] = deviceInformation;
-          }
-          this.#SaveToLocalStorage();
-        }
-        this.#DispatchEvent("deviceConnected", { device });
-        this.#DispatchEvent("deviceIsConnected", { device });
-        this.#DispatchConnectedDevices();
-      } else {
-        _console.log("device already included");
-      }
-    } else {
-      if (this.#ConnectedDevices.includes(device)) {
-        _console.log("removing device", device);
-        this.#ConnectedDevices.splice(this.#ConnectedDevices.indexOf(device), 1);
-        this.#DispatchEvent("deviceDisconnected", { device });
-        this.#DispatchEvent("deviceIsConnected", { device });
-        this.#DispatchConnectedDevices();
-      } else {
-        _console.log("device already not included");
-      }
-    }
-    if (this.CanGetDevices) {
-      this.GetDevices();
-    }
-    if (device.isConnected && !this.AvailableDevices.includes(device)) {
-      const existingAvailableDevice = this.AvailableDevices.find(
-        (_device) => _device.bluetoothId == device.bluetoothId
-      );
-      _console.log({ existingAvailableDevice });
-      if (existingAvailableDevice) {
-        this.AvailableDevices[this.AvailableDevices.indexOf(existingAvailableDevice)] = device;
-      } else {
-        this.AvailableDevices.push(device);
-      }
-      this.#DispatchAvailableDevices();
-    }
-  }
-
-  static #DispatchAvailableDevices() {
-    _console.log({ AvailableDevices: this.AvailableDevices });
-    this.#DispatchEvent("availableDevices", { availableDevices: this.AvailableDevices });
-  }
-  static #DispatchConnectedDevices() {
-    _console.log({ ConnectedDevices: this.ConnectedDevices });
-    this.#DispatchEvent("connectedDevices", { connectedDevices: this.ConnectedDevices });
-  }
-
-  static async Connect() {
-    const device = new Device();
-    await device.connect();
-    return device;
-  }
-
-  static {
-    if (this.CanUseLocalStorage) {
-      this.UseLocalStorage = true;
-    }
   }
 }
 

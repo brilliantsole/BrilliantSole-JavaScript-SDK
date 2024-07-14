@@ -196,7 +196,7 @@ client.addEventListener("isScanning", () => {
   }
 });
 
-BS.Device.AddEventListener("deviceIsConnected", (event) => {
+BS.DeviceManager.AddEventListener("deviceIsConnected", (event) => {
   const device = event.message.device;
   console.log("deviceIsConnected", device);
   const discoveredDeviceContainer = discoveredDeviceContainers[device.bluetoothId];
@@ -214,7 +214,7 @@ const availableDevicesContainer = document.getElementById("availableDevices");
 /** @type {Object.<string, HTMLElement>} */
 let availableDeviceContainers = {};
 
-BS.Device.AddEventListener("availableDevices", (event) => {
+BS.DeviceManager.AddEventListener("availableDevices", (event) => {
   const { availableDevices } = event.message;
   console.log({ availableDevices });
 
