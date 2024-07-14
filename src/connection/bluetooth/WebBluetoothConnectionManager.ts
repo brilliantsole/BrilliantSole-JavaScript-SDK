@@ -107,7 +107,7 @@ class WebBluetoothConnectionManager extends BluetoothConnectionManager {
       this.status = "connected";
     } catch (error) {
       _console.error(error);
-      this.status = "not connected";
+      this.status = "notConnected";
       this.server?.disconnect();
       this.#removeEventListeners();
     }
@@ -180,7 +180,7 @@ class WebBluetoothConnectionManager extends BluetoothConnectionManager {
     await this.#removeEventListeners();
     await super.disconnect();
     this.server?.disconnect();
-    this.status = "not connected";
+    this.status = "notConnected";
   }
 
   #onCharacteristicvaluechanged(event: Event) {
@@ -238,7 +238,7 @@ class WebBluetoothConnectionManager extends BluetoothConnectionManager {
 
   #onGattserverdisconnected() {
     _console.log("gattserverdisconnected");
-    this.status = "not connected";
+    this.status = "notConnected";
   }
 
   get canReconnect() {
@@ -261,7 +261,7 @@ class WebBluetoothConnectionManager extends BluetoothConnectionManager {
       this.status = "connected";
     } else {
       _console.log("unable to reconnect");
-      this.status = "not connected";
+      this.status = "notConnected";
     }
   }
 }

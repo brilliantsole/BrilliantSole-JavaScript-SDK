@@ -16,8 +16,20 @@ const _console = createConsole("BaseConnectionManager", { log: true });
 export const ConnectionTypes = ["webBluetooth", "noble", "webSocketClient"] as const;
 export type ConnectionType = (typeof ConnectionTypes)[number];
 
-export const ConnectionStatuses = ["not connected", "connecting", "connected", "disconnecting"] as const;
+export const ConnectionStatuses = ["notConnected", "connecting", "connected", "disconnecting"] as const;
 export type ConnectionStatus = (typeof ConnectionStatuses)[number];
+
+export const ConnectionEventTypes = [...ConnectionStatuses, "connectionStatus", "isConnected"] as const;
+export type ConnectionEventType = (typeof ConnectionEventTypes)[number];
+
+export interface ConnectionStatusEventMessages {
+  notConnected: any;
+  connecting: any;
+  connected: any;
+  disconnecting: any;
+  connectionStatus: { connectionStatus: ConnectionStatus };
+  isConnected: { isConnected: boolean };
+}
 
 export interface TxMessage {
   type: TxRxMessageType;
@@ -90,7 +102,7 @@ abstract class BaseConnectionManager {
     this.#assertIsSupported();
   }
 
-  #status: ConnectionStatus = "not connected";
+  #status: ConnectionStatus = "notConnected";
   get status() {
     return this.#status;
   }
@@ -110,7 +122,7 @@ abstract class BaseConnectionManager {
       this.#timer.stop();
     }
 
-    if (this.#status == "not connected") {
+    if (this.#status == "notConnected") {
       this.mtu = undefined;
     }
   }
@@ -235,7 +247,7 @@ abstract class BaseConnectionManager {
     //console.log("checking connection...");
     if (!this.isConnected) {
       _console.log("timer detected disconnection");
-      this.status = "not connected";
+      this.status = "notConnected";
     }
   }
 }

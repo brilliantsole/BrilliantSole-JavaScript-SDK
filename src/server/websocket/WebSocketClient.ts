@@ -110,7 +110,7 @@ class WebSocketClient extends BaseClient {
   #onWebSocketClose(event: ws.CloseEvent) {
     _console.log("webSocket.close", event);
 
-    this._connectionStatus = "not connected";
+    this._connectionStatus = "notConnected";
 
     Object.entries(this.devices).forEach(([id, device]) => {
       const connectionManager = device.connectionManager! as WebSocketClientConnectionManager;

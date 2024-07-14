@@ -5,6 +5,13 @@ export type EventMap<
 > = {
   [T in keyof EventMessages]: { type: T; target: Target; message: EventMessages[T] };
 };
+export type EventListenerMap<
+  Target extends any,
+  EventType extends string,
+  EventMessages extends Partial<Record<EventType, any>>
+> = {
+  [T in keyof EventMessages]: (event: { type: T; target: Target; message: EventMessages[T] }) => void;
+};
 
 export type Event<
   Target extends any,

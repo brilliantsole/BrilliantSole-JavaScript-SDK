@@ -8,14 +8,14 @@ console.log({ BS });
 
 /**
  * vibrates all connected insoles with a single waveformEffect - use to indicate stuff
- * @param {B.VibrationWaveformEffect} effect
+ * @param {BS.VibrationWaveformEffect} effect
  */
 function vibrate(effect) {
   BS.DeviceManager.ConnectedDevices.forEach((device) => {
     device.triggerVibration([
       {
         type: "waveformEffect",
-        waveformEffect: { segments: [{ effect }] },
+        segments: [{ effect }],
       },
     ]);
   });
@@ -48,7 +48,7 @@ function onAvailableDevices(availableDevices) {
       const onConnectionStatusUpdate = () => {
         switch (availableDevice.connectionStatus) {
           case "connected":
-          case "not connected":
+          case "notConnected":
             toggleConnectionButton.disabled = false;
             toggleConnectionButton.innerText = availableDevice.isConnected ? "disconnect" : "connect";
             break;
@@ -74,8 +74,8 @@ async function getDevices() {
 }
 
 BS.DeviceManager.AddEventListener("availableDevices", (event) => {
-  const devices = event.message.availableDevices;
-  onAvailableDevices(devices);
+  const { availableDevices } = event.message;
+  onAvailableDevices(availableDevices);
 });
 getDevices();
 
@@ -98,8 +98,7 @@ const connectedDevicesContainer = document.getElementById("connectedDevices");
 const connectedDeviceTemplate = document.getElementById("connectedDeviceTemplate");
 
 BS.DeviceManager.AddEventListener("deviceConnected", (event) => {
-  /** @type {BS.Device} */
-  const device = event.message.device;
+  const { device } = event.message;
   console.log("deviceConnected", device);
   const connectedDeviceContainer = connectedDeviceTemplate.content.cloneNode(true).querySelector(".connectedDevice");
   connectedDeviceContainer.querySelector(".name").innerText = device.name;
@@ -112,7 +111,7 @@ BS.DeviceManager.AddEventListener("deviceConnected", (event) => {
     disconnectButton.disabled = true;
     device.disconnect();
   });
-  device.addEventListener("not connected", () => {
+  device.addEventListener("notConnected", () => {
     connectedDeviceContainer.remove();
   });
 
@@ -256,7 +255,7 @@ window.addEventListener("loadConfig", () => {
 
 // INPUTS
 
-/** @type {BS.SensorType[]} */
+/** @type {BS.ContinuousSensorType[]} */
 let sensorTypes = [];
 function getInputs() {
   /** @type {string[]} */
@@ -318,7 +317,7 @@ BS.TfliteSensorTypes.forEach((sensorType) => {
     } else {
       sensorTypes.splice(sensorTypes.indexOf(sensorType), 1);
     }
-    sensorTypes.sort((a, b) => BS.SensorTypes.indexOf(a) - BS.SensorTypes.indexOf(b));
+    sensorTypes.sort((a, b) => BS.ContinuousSensorTypes.indexOf(a) - BS.ContinuousSensorTypes.indexOf(b));
     console.log("sensorTypes", sensorTypes);
     window.dispatchEvent(new CustomEvent("sensorTypes", { detail: { sensorTypes } }));
   });
@@ -638,7 +637,7 @@ toggleSensorDataInputs.forEach((toggleSensorDataInput) => {
   });
 });
 
-/** @param {SensorConfiguration} sensorConfiguration */
+/** @param {BS.SensorConfiguration} sensorConfiguration */
 function setSensorConfiguration(sensorConfiguration) {
   selectedDevices.forEach((device) => {
     device.setSensorConfiguration(sensorConfiguration);
@@ -790,7 +789,7 @@ async function collectData() {
       devicesData[index] = deviceData;
 
       const onDeviceSensorData = (event) => {
-        /** @type {BS.SensorType} */
+        /** @type {BS.ContinuousSensorType} */
         const sensorType = event.message.sensorType;
 
         if (!(sensorType in deviceData)) {
@@ -904,7 +903,7 @@ window.addEventListener("loadConfig", () => {
   captureDelayInput.dispatchEvent(new Event("input"));
 });
 
-/** @type {BS.SensorType[]} */
+/** @type {BS.ContinuousSensorType[]} */
 const thresholdSensorTypes = ["linearAcceleration"];
 
 const thresholdsContainer = document.getElementById("thresholds");
@@ -1040,7 +1039,7 @@ window.addEventListener(
           return;
         }
 
-        /** @type {BS.SensorType} */
+        /** @type {BS.ContinuousSensorType} */
         const sensorType = event.message.sensorType;
         if (!thresholdSensorTypes.includes(sensorType)) {
           return;
@@ -1565,7 +1564,7 @@ window.addEventListener(
   () => {
     if (selectedDevices.length == 1) {
       const device = selectedDevices[0];
-      device.addEventListener("fileTransferStatus", (event) => {
+      device.addEventListener("fileTransferStatus", () => {
         transferTfliteButton.innerText = device.fileTransferStatus == "idle" ? "send file" : "stop sending file";
 
         switch (device.fileTransferStatus) {
@@ -1605,7 +1604,7 @@ window.addEventListener(
     if (selectedDevices.length == 1) {
       const device = selectedDevices[0];
 
-      device.addEventListener("tfliteIsReady", () => {
+      device.addEventListener("tfliteIsReady", (e) => {
         setTfliteIsReadyInput.checked = device.tfliteIsReady;
       });
 

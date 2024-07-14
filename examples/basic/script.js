@@ -32,9 +32,9 @@ function onAvailableDevices(availableDevices) {
         device.reconnect();
       });
       device.addEventListener("connectionStatus", () => {
-        toggleConnectionButton.disabled = device.connectionStatus != "not connected";
+        toggleConnectionButton.disabled = device.connectionStatus != "notConnected";
       });
-      toggleConnectionButton.disabled = device.connectionStatus != "not connected";
+      toggleConnectionButton.disabled = device.connectionStatus != "notConnected";
 
       availableDevicesContainer.appendChild(availableDeviceContainer);
     });
@@ -60,7 +60,7 @@ getDevices();
 const toggleConnectionButton = document.getElementById("toggleConnection");
 toggleConnectionButton.addEventListener("click", () => {
   switch (device.connectionStatus) {
-    case "not connected":
+    case "notConnected":
       device.connect();
       break;
     case "connected":
@@ -81,7 +81,7 @@ device.addEventListener("connectionStatus", () => {
 device.addEventListener("connectionStatus", () => {
   switch (device.connectionStatus) {
     case "connected":
-    case "not connected":
+    case "notConnected":
       toggleConnectionButton.disabled = false;
       toggleConnectionButton.innerText = device.isConnected ? "disconnect" : "connect";
       break;
@@ -168,7 +168,7 @@ const setNameButton = document.getElementById("setNameButton");
 device.addEventListener("isConnected", () => {
   setNameInput.disabled = !device.isConnected;
 });
-device.addEventListener("not connected", () => {
+device.addEventListener("notConnected", () => {
   setNameInput.value = "";
 });
 

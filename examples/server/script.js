@@ -59,7 +59,7 @@ toggleConnectionButton.addEventListener("click", () => {
 client.addEventListener("connectionStatus", () => {
   switch (client.connectionStatus) {
     case "connected":
-    case "not connected":
+    case "notConnected":
       toggleConnectionButton.disabled = false;
       toggleConnectionButton.innerText = client.isConnected ? "disconnect" : "connect";
       break;
@@ -133,7 +133,7 @@ client.addEventListener("discoveredDevice", (event) => {
       console.log({ deviceConnectionStatus: device.connectionStatus });
       switch (device.connectionStatus) {
         case "connected":
-        case "not connected":
+        case "notConnected":
           toggleConnectionButton.innerText = device.isConnected ? "disconnect" : "connect";
           toggleConnectionButton.disabled = false;
           break;
@@ -186,7 +186,7 @@ function clearDiscoveredDevices() {
   discoveredDeviceContainers = {};
 }
 
-client.addEventListener("not connected", () => {
+client.addEventListener("notConnected", () => {
   clearDiscoveredDevices();
 });
 
@@ -259,7 +259,7 @@ BS.DeviceManager.AddEventListener("availableDevices", (event) => {
       device.addEventListener("isConnected", () => {
         setNameInput.disabled = !device.isConnected;
       });
-      device.addEventListener("not connected", () => {
+      device.addEventListener("notConnected", () => {
         setNameInput.value = "";
       });
 
@@ -369,7 +369,7 @@ BS.DeviceManager.AddEventListener("availableDevices", (event) => {
         device.triggerVibration([
           {
             type: "waveformEffect",
-            waveformEffect: { segments: [{ effect: "doubleClick100" }] },
+            segments: [{ effect: "doubleClick100" }],
           },
         ]);
       });
@@ -386,7 +386,7 @@ BS.DeviceManager.AddEventListener("availableDevices", (event) => {
       const updateToggleConnectionButton = () => {
         switch (device.connectionStatus) {
           case "connected":
-          case "not connected":
+          case "notConnected":
             toggleConnectionButton.disabled = false;
             toggleConnectionButton.innerText = device.isConnected ? "disconnect" : "connect";
             break;

@@ -53,7 +53,7 @@ class SensorDataManager {
   motionSensorDataManager = new MotionSensorDataManager();
   barometerSensorDataManager = new BarometerSensorDataManager();
 
-  private scalars: Map<SensorType, number> = new Map();
+  #scalars: Map<SensorType, number> = new Map();
 
   static AssertValidSensorType(sensorType: SensorType) {
     _console.assertEnumWithError(sensorType, SensorTypes);
@@ -96,7 +96,7 @@ class SensorDataManager {
       }
       const sensorScalar = dataView.getFloat32(byteOffset + 1, true);
       _console.log({ sensorType, sensorScalar });
-      this.scalars.set(sensorType, sensorScalar);
+      this.#scalars.set(sensorType, sensorScalar);
     }
   }
 
@@ -113,7 +113,7 @@ class SensorDataManager {
   }
 
   private parseDataCallback(sensorType: SensorType, dataView: DataView, { timestamp }: { timestamp: number }) {
-    const scalar = this.scalars.get(sensorType) || 1;
+    const scalar = this.#scalars.get(sensorType) || 1;
 
     let sensorData = null;
     switch (sensorType) {

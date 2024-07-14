@@ -1,7 +1,7 @@
 import { ConnectionStatus } from "./connection/BaseConnectionManager.ts";
+import Device from "./Device.ts";
 import { DeviceType } from "./InformationManager.ts";
-import EventDispatcher, { BoundEventListeners, Event, EventMap } from "./utils/EventDispatcher.ts";
-import type Device from "./Device.ts";
+import EventDispatcher, { BoundEventListeners, Event, EventListenerMap, EventMap } from "./utils/EventDispatcher.ts";
 export interface LocalStorageDeviceInformation {
     type: DeviceType;
     bluetoothId: string;
@@ -27,6 +27,7 @@ export interface DeviceManagerEventMessages {
 }
 export type DeviceManagerEventDispatcher = EventDispatcher<DeviceManager, DeviceManagerEventType, DeviceManagerEventMessages>;
 export type DeviceManagerEventMap = EventMap<typeof Device, DeviceManagerEventType, DeviceManagerEventMessages>;
+export type DeviceManagerEventListenerMap = EventListenerMap<typeof Device, DeviceManagerEventType, DeviceManagerEventMessages>;
 export type DeviceManagerEvent = Event<typeof Device, DeviceManagerEventType, DeviceManagerEventMessages>;
 export type BoundDeviceManagerEventListeners = BoundEventListeners<typeof Device, DeviceManagerEventType, DeviceManagerEventMessages>;
 declare class DeviceManager {

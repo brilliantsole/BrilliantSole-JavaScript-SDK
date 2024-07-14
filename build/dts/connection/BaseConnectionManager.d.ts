@@ -1,7 +1,21 @@
 export declare const ConnectionTypes: readonly ["webBluetooth", "noble", "webSocketClient"];
 export type ConnectionType = (typeof ConnectionTypes)[number];
-export declare const ConnectionStatuses: readonly ["not connected", "connecting", "connected", "disconnecting"];
+export declare const ConnectionStatuses: readonly ["notConnected", "connecting", "connected", "disconnecting"];
 export type ConnectionStatus = (typeof ConnectionStatuses)[number];
+export declare const ConnectionEventTypes: readonly ["notConnected", "connecting", "connected", "disconnecting", "connectionStatus", "isConnected"];
+export type ConnectionEventType = (typeof ConnectionEventTypes)[number];
+export interface ConnectionStatusEventMessages {
+    notConnected: any;
+    connecting: any;
+    connected: any;
+    disconnecting: any;
+    connectionStatus: {
+        connectionStatus: ConnectionStatus;
+    };
+    isConnected: {
+        isConnected: boolean;
+    };
+}
 export interface TxMessage {
     type: TxRxMessageType;
     data?: ArrayBuffer;
@@ -29,8 +43,8 @@ declare abstract class BaseConnectionManager {
     static type: ConnectionType;
     get type(): ConnectionType;
     constructor();
-    get status(): "not connected" | "connecting" | "connected" | "disconnecting";
-    protected set status(newConnectionStatus: "not connected" | "connecting" | "connected" | "disconnecting");
+    get status(): "notConnected" | "connecting" | "connected" | "disconnecting";
+    protected set status(newConnectionStatus: "notConnected" | "connecting" | "connected" | "disconnecting");
     get isConnected(): boolean;
     connect(): Promise<void>;
     get canReconnect(): boolean;

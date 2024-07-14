@@ -233,7 +233,7 @@ toggleConnectionButton.addEventListener("click", () => {
 client.addEventListener("connectionStatus", () => {
   switch (client.connectionStatus) {
     case "connected":
-    case "not connected":
+    case "notConnected":
       toggleConnectionButton.disabled = false;
       toggleConnectionButton.innerText = client.isConnected ? "disconnect" : "connect";
       break;
@@ -252,7 +252,7 @@ client.addEventListener("connectionStatus", (event) => {
 
   switch (client.connectionStatus) {
     case "connected":
-    case "not connected":
+    case "notConnected":
       text = client.isConnected ? "disconnect" : "connect";
       disabled = false;
       break;
@@ -448,12 +448,12 @@ function updateDiscoveredDeviceEntity(discoveredDevice) {
   }
 
   const device = client.devices[discoveredDevice.bluetoothId];
-  const connectionStatus = device?.connectionStatus || "not connected";
+  const connectionStatus = device?.connectionStatus || "notConnected";
   let connectMessage;
   let disabled;
   switch (connectionStatus) {
     case "connected":
-    case "not connected":
+    case "notConnected":
       connectMessage = device?.isConnected ? "disconnect" : "connect";
       disabled = false;
       break;
@@ -519,7 +519,7 @@ function clearDiscoveredDevices() {
   discoveredDeviceEntities = {};
 }
 
-client.addEventListener("not connected", () => {
+client.addEventListener("notConnected", () => {
   clearDiscoveredDevices();
 });
 
@@ -597,7 +597,7 @@ function updateAvailableDeviceEntity(device) {
   let disabled;
   switch (device.connectionStatus) {
     case "connected":
-    case "not connected":
+    case "notConnected":
       connectMessage = device.isConnected ? "disconnect" : "connect";
       disabled = false;
       break;
@@ -638,7 +638,7 @@ function clearAvailableDevices() {
   availableDeviceEntities = {};
 }
 
-client.addEventListener("not connected", () => {
+client.addEventListener("notConnected", () => {
   clearAvailableDevices();
 });
 

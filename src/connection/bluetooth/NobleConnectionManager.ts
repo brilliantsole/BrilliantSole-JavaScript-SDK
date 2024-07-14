@@ -149,7 +149,7 @@ class NobleConnectionManager extends BluetoothConnectionManager {
         break;
       case "disconnected":
         this.#removeEventListeners();
-        this.status = "not connected";
+        this.status = "notConnected";
         break;
       case "disconnecting":
         this.status = "disconnecting";

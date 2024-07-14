@@ -1,13 +1,14 @@
 import { createConsole } from "./utils/Console.ts";
-import EventDispatcher, { BoundEventListeners, Event, EventMap } from "./utils/EventDispatcher.ts";
+import EventDispatcher, { BoundEventListeners, Event, EventListenerMap, EventMap } from "./utils/EventDispatcher.ts";
 import BaseConnectionManager, {
   TxMessage,
   TxRxMessageType,
-  ConnectionStatuses,
   ConnectionStatus,
   ConnectionMessageType,
   MetaConnectionMessageTypes,
   BatteryLevelMessageTypes,
+  ConnectionEventTypes,
+  ConnectionStatusEventMessages,
 } from "./connection/BaseConnectionManager.ts";
 import { isInBrowser, isInNode } from "./utils/environment.ts";
 import WebBluetoothConnectionManager from "./connection/bluetooth/WebBluetoothConnectionManager.ts";
@@ -79,12 +80,9 @@ import DeviceManager from "./DeviceManager.ts";
 
 const _console = createConsole("Device", { log: true });
 
-export const ConnectionEventTypes = [...ConnectionStatuses, "connectionStatus", "isConnected"] as const;
-export type ConnectionEventType = (typeof ConnectionEventTypes)[number];
-
 export const DeviceEventTypes = [
-  ...ConnectionEventTypes,
   "connectionMessage",
+  ...ConnectionEventTypes,
   ...MetaConnectionMessageTypes,
   ...BatteryLevelMessageTypes,
   ...InformationEventTypes,
@@ -98,15 +96,14 @@ export const DeviceEventTypes = [
 export type DeviceEventType = (typeof DeviceEventTypes)[number];
 
 export interface DeviceEventMessages
-  extends DeviceInformationEventMessages,
+  extends ConnectionStatusEventMessages,
+    DeviceInformationEventMessages,
     InformationEventMessages,
     SensorDataEventMessages,
     SensorConfigurationEventMessages,
     TfliteEventMessages,
     FileTransferEventMessages,
     FirmwareEventMessages {
-  connectionStatus: { connectionStatus: ConnectionStatus };
-  isConnected: { isConnected: boolean };
   batteryLevel: { batteryLevel: number };
   connectionMessage: { messageType: ConnectionMessageType; dataView: DataView };
 }
@@ -121,6 +118,7 @@ export type SendSmpMessageCallback = (data: ArrayBuffer) => Promise<void>;
 export type DeviceEventDispatcher = EventDispatcher<Device, DeviceEventType, DeviceEventMessages>;
 export type DeviceEvent = Event<Device, DeviceEventType, DeviceEventMessages>;
 export type DeviceEventMap = EventMap<Device, DeviceEventType, DeviceEventMessages>;
+export type DeviceEventListenerMap = EventListenerMap<Device, DeviceEventType, DeviceEventMessages>;
 export type BoundDeviceEventListeners = BoundEventListeners<Device, DeviceEventType, DeviceEventMessages>;
 
 export const RequiredInformationConnectionMessages: TxRxMessageType[] = [
@@ -262,7 +260,7 @@ class Device {
   }
   /** @throws {Error} if not connected */
   #assertIsConnected() {
-    _console.assertWithError(this.isConnected, "not connected");
+    _console.assertWithError(this.isConnected, "notConnected");
   }
 
   get #hasRequiredInformation() {
@@ -343,12 +341,12 @@ class Device {
     switch (this.#connectionManager?.status) {
       case "connected":
         return this.isConnected ? "connected" : "connecting";
-      case "not connected":
+      case "notConnected":
       case "connecting":
       case "disconnecting":
         return this.#connectionManager.status;
       default:
-        return "not connected";
+        return "notConnected";
     }
   }
   get isConnectionBusy() {
@@ -358,7 +356,7 @@ class Device {
   #onConnectionStatusUpdated(connectionStatus: ConnectionStatus) {
     _console.log({ connectionStatus });
 
-    if (connectionStatus == "not connected") {
+    if (connectionStatus == "notConnected") {
       //this.#clear();
 
       if (this.canReconnect && this.reconnectOnDisconnection) {
@@ -404,7 +402,7 @@ class Device {
           this.#dispatchConnectionEvents(true);
         }
         break;
-      case "not connected":
+      case "notConnected":
         this.#dispatchConnectionEvents(true);
         break;
       default:
@@ -571,7 +569,7 @@ class Device {
   }
 
   // SENSOR DATA
-  #sensorDataManager: SensorDataManager = new SensorDataManager();
+  #sensorDataManager = new SensorDataManager();
   resetPressureRange() {
     this.#sensorDataManager.pressureSensorDataManager.resetRange();
   }

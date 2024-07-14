@@ -1,5 +1,5 @@
 import { createConsole } from "../utils/Console.ts";
-import EventDispatcher, { BoundEventListeners, Event, EventMap } from "../utils/EventDispatcher.ts";
+import EventDispatcher, { BoundEventListeners, Event, EventListenerMap, EventMap } from "../utils/EventDispatcher.ts";
 import { addEventListeners, removeEventListeners } from "../utils/EventUtils.ts";
 import Device, {
   DeviceEvent,
@@ -56,6 +56,7 @@ export type DevicePairEventMessages = DevicePairConnectionEventMessages &
 
 export type DevicePairEventDispatcher = EventDispatcher<DevicePair, DevicePairEventType, DevicePairEventMessages>;
 export type DevicePairEventMap = EventMap<DevicePair, DeviceEventType, DevicePairEventMessages>;
+export type DevicePairEventListenerMap = EventListenerMap<DevicePair, DeviceEventType, DevicePairEventMessages>;
 export type DevicePairEvent = Event<DevicePair, DeviceEventType, DevicePairEventMessages>;
 export type BoundDevicePairEventListeners = BoundEventListeners<DevicePair, DeviceEventType, DevicePairEventMessages>;
 

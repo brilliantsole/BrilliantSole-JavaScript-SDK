@@ -34,9 +34,9 @@ function onAvailableDevices(availableDevices) {
         device.reconnect();
       });
       device.addEventListener("connectionStatus", () => {
-        toggleConnectionButton.disabled = device.connectionStatus != "not connected";
+        toggleConnectionButton.disabled = device.connectionStatus != "notConnected";
       });
-      toggleConnectionButton.disabled = device.connectionStatus != "not connected";
+      toggleConnectionButton.disabled = device.connectionStatus != "notConnected";
 
       availableDevicesContainer.appendChild(availableDeviceContainer);
     });
@@ -62,7 +62,7 @@ getDevices();
 const toggleConnectionButton = document.getElementById("toggleConnection");
 toggleConnectionButton.addEventListener("click", () => {
   switch (device.connectionStatus) {
-    case "not connected":
+    case "notConnected":
       device.connect();
       break;
     case "connected":
@@ -73,7 +73,7 @@ toggleConnectionButton.addEventListener("click", () => {
 device.addEventListener("connectionStatus", () => {
   switch (device.connectionStatus) {
     case "connected":
-    case "not connected":
+    case "notConnected":
       toggleConnectionButton.disabled = false;
       toggleConnectionButton.innerText = device.isConnected ? "disconnect" : "connect";
       break;
@@ -89,7 +89,7 @@ device.addEventListener("connectionStatus", () => {
 
 /** @type {HTMLTemplateElement} */
 const sensorTypeConfigurationTemplate = document.getElementById("sensorTypeConfigurationTemplate");
-BS.SensorTypes.forEach((sensorType) => {
+BS.ContinuousSensorTypes.forEach((sensorType) => {
   const sensorTypeConfigurationContainer = sensorTypeConfigurationTemplate.content
     .cloneNode(true)
     .querySelector(".sensorTypeConfiguration");
@@ -111,13 +111,20 @@ BS.SensorTypes.forEach((sensorType) => {
 });
 device.addEventListener("getSensorConfiguration", () => {
   for (const sensorType in device.sensorConfiguration) {
-    document.querySelector(`.sensorTypeConfiguration[data-sensor-type="${sensorType}"] input`).value =
-      device.sensorConfiguration[sensorType];
+    /** @type {HTMLInputElement?} */
+    const input = document.querySelector(`.sensorTypeConfiguration[data-sensor-type="${sensorType}"] input`);
+    if (input) {
+      input.value = device.sensorConfiguration[sensorType];
+    }
   }
 });
 device.addEventListener("isConnected", () => {
   for (const sensorType in device.sensorConfiguration) {
-    document.querySelector(`[data-sensor-type="${sensorType}"] input`).disabled = !device.isConnected;
+    /** @type {HTMLInputElement?} */
+    const input = document.querySelector(`[data-sensor-type="${sensorType}"] input`);
+    if (input) {
+      input.disabled = !device.isConnected;
+    }
   }
 });
 
@@ -232,7 +239,7 @@ const chartsContainer = document.getElementById("charts");
 
 /** @type {HTMLTemplateElement} */
 const chartTemplate = document.getElementById("chartTemplate");
-BS.SensorTypes.forEach((sensorType) => {
+BS.ContinuousSensorTypes.forEach((sensorType) => {
   const chartContainer = chartTemplate.content.cloneNode(true).querySelector(".chart");
   chartsContainer.appendChild(chartContainer);
 

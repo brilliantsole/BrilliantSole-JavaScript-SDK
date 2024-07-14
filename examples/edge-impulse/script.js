@@ -1,5 +1,5 @@
 import * as BS from "../../build/brilliantsole.module.js";
-//import BS.Device from "../../src/BS.DeviceManager.js";
+//import BS.Device from "../../src/BS.Device.js";
 window.BS = BS;
 console.log(BS);
 
@@ -36,9 +36,9 @@ function onAvailableDevices(availableDevices) {
         device.reconnect();
       });
       device.addEventListener("connectionStatus", () => {
-        toggleConnectionButton.disabled = device.connectionStatus != "not connected";
+        toggleConnectionButton.disabled = device.connectionStatus != "notConnected";
       });
-      toggleConnectionButton.disabled = device.connectionStatus != "not connected";
+      toggleConnectionButton.disabled = device.connectionStatus != "notConnected";
 
       availableDevicesContainer.appendChild(availableDeviceContainer);
     });
@@ -64,7 +64,7 @@ getDevices();
 const toggleConnectionButton = document.getElementById("toggleConnection");
 toggleConnectionButton.addEventListener("click", () => {
   switch (device.connectionStatus) {
-    case "not connected":
+    case "notConnected":
       device.connect();
       break;
     case "connected":
@@ -85,7 +85,7 @@ device.addEventListener("connectionStatus", () => {
 device.addEventListener("connectionStatus", () => {
   switch (device.connectionStatus) {
     case "connected":
-    case "not connected":
+    case "notConnected":
       toggleConnectionButton.disabled = false;
       toggleConnectionButton.innerText = device.isConnected ? "disconnect" : "connect";
       break;
@@ -252,9 +252,9 @@ window.addEventListener("load", () => {
 
 // SENSOR TYPES
 
-/** @type {BS.SensorType[]} */
+/** @type {BS.ContinuousSensorType[]} */
 let sensorTypes = [];
-/** @param {BS.SensorType[]} newSensorTypes */
+/** @param {BS.ContinuousSensorType[]} newSensorTypes */
 function setSensorTypes(newSensorTypes) {
   sensorTypes = newSensorTypes;
   console.log("sensorTypes", sensorTypes);
@@ -608,7 +608,7 @@ async function connectToRemoteManagement() {
       const samplingDetails = data.sample;
       console.log("samplingDetails", samplingDetails);
 
-      /** @type {BS.SensorType[]} */
+      /** @type {BS.ContinuousSensorType[]} */
       const sensorTypes = samplingDetails.sensor.split(sensorCombinationSeparator);
       console.log("sensorTypes", sensorTypes);
 
@@ -780,7 +780,7 @@ const scalars = {
 /** @typedef {Object.<string, SensorData[]>} DeviceData */
 
 /**
- * @param {BS.SensorType[]} sensorTypes
+ * @param {BS.ContinuousSensorType[]} sensorTypes
  * @param {number} numberOfSamples
  * @returns {Promise<DeviceData>}
  */
@@ -796,7 +796,7 @@ async function collectData(sensorTypes, numberOfSamples) {
     console.log("deviceData", deviceData);
 
     const onDeviceSensorData = (event) => {
-      /** @type {BS.SensorType} */
+      /** @type {SensorType} */
       const sensorType = event.message.sensorType;
 
       if (!(sensorType in deviceData)) {
@@ -815,7 +815,7 @@ async function collectData(sensorTypes, numberOfSamples) {
       }
 
       if (deviceData[sensorType].length == numberOfSamples) {
-        console.log(`finished collecting ${BS.SensorType} data for device`);
+        console.log(`finished collecting ${sensorType} data for device`);
         return;
       }
 
@@ -832,7 +832,7 @@ async function collectData(sensorTypes, numberOfSamples) {
 const emptySignature = Array(64).fill("0").join("");
 
 /**
- * @param {BS.SensorType[]} sensorTypes
+ * @param {BS.ContinuousSensorType[]} sensorTypes
  * @param {DeviceData} deviceData
  */
 async function uploadData(sensorTypes, deviceData) {
@@ -843,7 +843,7 @@ async function uploadData(sensorTypes, deviceData) {
       case "linearAcceleration":
       case "gyroscope":
       case "magnetometer":
-        names = ["x", "y", "z"].map((component) => `${BS.SensorType}.${component}`);
+        names = ["x", "y", "z"].map((component) => `${sensorType}.${component}`);
         switch (sensorType) {
           case "linearAcceleration":
             units = "g/s";
@@ -858,12 +858,12 @@ async function uploadData(sensorTypes, deviceData) {
         break;
       case "pressure":
         for (let index = 0; index < device.numberOfPressureSensors; index++) {
-          names.push(`${BS.SensorType}.${index}`);
+          names.push(`${sensorType}.${index}`);
         }
         units = "pressure";
         break;
       default:
-        throw `uncaught sensorType ${BS.SensorType}`;
+        throw `uncaught sensorType ${sensorType}`;
     }
 
     return names.map((name) => ({
@@ -896,7 +896,7 @@ async function uploadData(sensorTypes, deviceData) {
           }
           break;
         default:
-          throw `uncaught sensorType ${BS.SensorType}`;
+          throw `uncaught sensorType ${sensorType}`;
       }
     });
 

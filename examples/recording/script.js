@@ -27,7 +27,7 @@ function onAvailableDevices(availableDevices) {
       const onConnectionStatusUpdate = () => {
         switch (availableDevice.connectionStatus) {
           case "connected":
-          case "not connected":
+          case "notConnected":
             toggleConnectionButton.disabled = false;
             toggleConnectionButton.innerText = availableDevice.isConnected ? "disconnect" : "connect";
             break;
@@ -91,7 +91,7 @@ BS.DeviceManager.AddEventListener("deviceConnected", (event) => {
     disconnectButton.disabled = true;
     device.disconnect();
   });
-  device.addEventListener("not connected", () => {
+  device.addEventListener("notConnected", () => {
     connectedDeviceContainer.remove();
   });
 
@@ -159,7 +159,7 @@ const sensorConfigurationContainer = document.getElementById("sensorConfiguratio
 const sensorTypeConfigurationTemplate = document.getElementById("sensorTypeConfigurationTemplate");
 /** @type {Object.<string, HTMLElement>} */
 const sensorTypeConfigurationContainers = {};
-BS.SensorTypes.forEach((sensorType) => {
+BS.ContinuousSensorTypes.forEach((sensorType) => {
   sensorConfiguration[sensorType] = 0;
 
   const sensorTypeConfigurationContainer = sensorTypeConfigurationTemplate.content
@@ -279,7 +279,7 @@ let isRecording = false;
 /**
  * @typedef SensorTypeData
  * @type {Object}
- * @property {BS.SensorType} sensorType
+ * @property {BS.ContinuousSensorType} sensorType
  * @property {number} initialTimestamp ms
  * @property {number} dataRate ms
  * @property {Object[]} data
@@ -443,7 +443,7 @@ function vibrate(effect) {
     device.triggerVibration([
       {
         type: "waveformEffect",
-        waveformEffect: { segments: [{ effect }] },
+        segments: [{ effect }],
       },
     ]);
   });

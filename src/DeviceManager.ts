@@ -1,12 +1,11 @@
 import { ConnectionStatus } from "./connection/BaseConnectionManager.ts";
 import WebBluetoothConnectionManager from "./connection/bluetooth/WebBluetoothConnectionManager.ts";
-import { BoundDeviceEventListeners, DeviceEventMap } from "./Device.ts";
+import Device, { BoundDeviceEventListeners, DeviceEventMap } from "./Device.ts";
 import { DeviceType } from "./InformationManager.ts";
 import { createConsole } from "./utils/Console.ts";
 import { isInBluefy, isInBrowser } from "./utils/environment.ts";
-import EventDispatcher, { BoundEventListeners, Event, EventMap } from "./utils/EventDispatcher.ts";
+import EventDispatcher, { BoundEventListeners, Event, EventListenerMap, EventMap } from "./utils/EventDispatcher.ts";
 import { addEventListeners } from "./utils/EventUtils.ts";
-import type Device from "./Device.ts";
 
 const _console = createConsole("DeviceManager", { log: true });
 
@@ -45,6 +44,11 @@ export type DeviceManagerEventDispatcher = EventDispatcher<
   DeviceManagerEventMessages
 >;
 export type DeviceManagerEventMap = EventMap<typeof Device, DeviceManagerEventType, DeviceManagerEventMessages>;
+export type DeviceManagerEventListenerMap = EventListenerMap<
+  typeof Device,
+  DeviceManagerEventType,
+  DeviceManagerEventMessages
+>;
 export type DeviceManagerEvent = Event<typeof Device, DeviceManagerEventType, DeviceManagerEventMessages>;
 export type BoundDeviceManagerEventListeners = BoundEventListeners<
   typeof Device,
@@ -84,7 +88,7 @@ class DeviceManager {
   // CONNECTION STATUS
   /** @private */
   OnDeviceConnectionStatusUpdated(device: Device, connectionStatus: ConnectionStatus) {
-    if (connectionStatus == "not connected" && !device.canReconnect && this.#AvailableDevices.includes(device)) {
+    if (connectionStatus == "notConnected" && !device.canReconnect && this.#AvailableDevices.includes(device)) {
       const deviceIndex = this.#AvailableDevices.indexOf(device);
       this.AvailableDevices.splice(deviceIndex, 1);
       this.#DispatchAvailableDevices();

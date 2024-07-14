@@ -27,7 +27,7 @@ function onAvailableDevices(availableDevices) {
       const onConnectionStatusUpdate = () => {
         switch (availableDevice.connectionStatus) {
           case "connected":
-          case "not connected":
+          case "notConnected":
             toggleConnectionButton.disabled = false;
             toggleConnectionButton.innerText = availableDevice.isConnected ? "disconnect" : "connect";
             break;
@@ -53,8 +53,8 @@ async function getDevices() {
 }
 
 BS.DeviceManager.AddEventListener("availableDevices", (event) => {
-  const devices = event.message.availableDevices;
-  onAvailableDevices(devices);
+  const { availableDevices } = event.message;
+  onAvailableDevices(availableDevices);
 });
 getDevices();
 
@@ -183,8 +183,7 @@ let isCenterOfPressureInsideTarget = false;
 let insideTargetTimeoutId;
 
 devicePair.addEventListener("pressure", (event) => {
-  /** @type {BS.DevicePairPressureData} */
-  const pressure = event.message.pressure;
+  const { pressure } = event.message;
   console.log({ pressure });
   if (pressure.normalizedCenter) {
     console.log("center", pressure.normalizedCenter);

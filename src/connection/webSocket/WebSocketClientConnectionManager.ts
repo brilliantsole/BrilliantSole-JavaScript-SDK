@@ -49,7 +49,7 @@ class WebSocketClientConnectionManager extends BaseConnectionManager {
     }
     this.#isConnected = newIsConnected;
 
-    this.status = this.#isConnected ? "connected" : "not connected";
+    this.status = this.#isConnected ? "connected" : "notConnected";
 
     if (this.isConnected) {
       this.#requestDeviceInformation();

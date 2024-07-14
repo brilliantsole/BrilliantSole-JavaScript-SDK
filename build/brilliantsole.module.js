@@ -1012,6 +1012,7 @@ function parseMessage(dataView, messageTypes, callback, context, parseMessageLen
     }
 }
 
+var _SensorDataManager_scalars;
 const _console$l = createConsole("SensorDataManager", { log: true });
 const SensorTypes = [...PressureSensorTypes, ...MotionSensorTypes, ...BarometerSensorTypes];
 const ContinuousSensorTypes = [
@@ -1026,7 +1027,7 @@ class SensorDataManager {
         this.pressureSensorDataManager = new PressureSensorDataManager();
         this.motionSensorDataManager = new MotionSensorDataManager();
         this.barometerSensorDataManager = new BarometerSensorDataManager();
-        this.scalars = new Map();
+        _SensorDataManager_scalars.set(this, new Map());
     }
     static AssertValidSensorType(sensorType) {
         _console$l.assertEnumWithError(sensorType, SensorTypes);
@@ -1064,7 +1065,7 @@ class SensorDataManager {
             }
             const sensorScalar = dataView.getFloat32(byteOffset + 1, true);
             _console$l.log({ sensorType, sensorScalar });
-            this.scalars.set(sensorType, sensorScalar);
+            __classPrivateFieldGet(this, _SensorDataManager_scalars, "f").set(sensorType, sensorScalar);
         }
     }
     parseData(dataView) {
@@ -1076,7 +1077,7 @@ class SensorDataManager {
         parseMessage(_dataView, SensorTypes, this.parseDataCallback.bind(this), { timestamp });
     }
     parseDataCallback(sensorType, dataView, { timestamp }) {
-        const scalar = this.scalars.get(sensorType) || 1;
+        const scalar = __classPrivateFieldGet(this, _SensorDataManager_scalars, "f").get(sensorType) || 1;
         let sensorData = null;
         switch (sensorType) {
             case "pressure":
@@ -1120,6 +1121,7 @@ class SensorDataManager {
         this.dispatchEvent("sensorData", { sensorType, [sensorType]: sensorData, timestamp });
     }
 }
+_SensorDataManager_scalars = new WeakMap();
 
 var _SensorConfigurationManager_instances, _a$3, _SensorConfigurationManager_dispatchEvent_get, _SensorConfigurationManager_availableSensorTypes, _SensorConfigurationManager_assertAvailableSensorType, _SensorConfigurationManager_configuration, _SensorConfigurationManager_updateConfiguration, _SensorConfigurationManager_isRedundant, _SensorConfigurationManager_parse, _SensorConfigurationManager_AssertValidSensorRate, _SensorConfigurationManager_assertValidSensorRate, _SensorConfigurationManager_createData, _SensorConfigurationManager_ZeroSensorConfiguration;
 const _console$k = createConsole("SensorConfigurationManager", { log: true });
@@ -2181,7 +2183,8 @@ _VibrationManager_instances = new WeakSet(), _VibrationManager_verifyLocation = 
 
 var _BaseConnectionManager_instances, _a$2, _BaseConnectionManager_AssertValidTxRxMessageType, _BaseConnectionManager_assertIsSupported, _BaseConnectionManager_status, _BaseConnectionManager_assertIsNotConnected, _BaseConnectionManager_assertIsNotConnecting, _BaseConnectionManager_assertIsConnected, _BaseConnectionManager_assertIsNotDisconnecting, _BaseConnectionManager_assertIsConnectedAndNotDisconnecting, _BaseConnectionManager_pendingMessages, _BaseConnectionManager_onRxMessage, _BaseConnectionManager_timer, _BaseConnectionManager_checkConnection;
 const _console$f = createConsole("BaseConnectionManager", { log: true });
-const ConnectionStatuses = ["not connected", "connecting", "connected", "disconnecting"];
+const ConnectionStatuses = ["notConnected", "connecting", "connected", "disconnecting"];
+const ConnectionEventTypes = [...ConnectionStatuses, "connectionStatus", "isConnected"];
 const TxRxMessageTypes = [
     ...InformationMessageTypes,
     ...SensorConfigurationMessageTypes,
@@ -2215,7 +2218,7 @@ class BaseConnectionManager {
     }
     constructor() {
         _BaseConnectionManager_instances.add(this);
-        _BaseConnectionManager_status.set(this, "not connected");
+        _BaseConnectionManager_status.set(this, "notConnected");
         _BaseConnectionManager_pendingMessages.set(this, []);
         _BaseConnectionManager_timer.set(this, new Timer(__classPrivateFieldGet(this, _BaseConnectionManager_instances, "m", _BaseConnectionManager_checkConnection).bind(this), 5000));
         __classPrivateFieldGet(this, _BaseConnectionManager_instances, "m", _BaseConnectionManager_assertIsSupported).call(this);
@@ -2238,7 +2241,7 @@ class BaseConnectionManager {
         else {
             __classPrivateFieldGet(this, _BaseConnectionManager_timer, "f").stop();
         }
-        if (__classPrivateFieldGet(this, _BaseConnectionManager_status, "f") == "not connected") {
+        if (__classPrivateFieldGet(this, _BaseConnectionManager_status, "f") == "notConnected") {
             this.mtu = undefined;
         }
     }
@@ -2337,7 +2340,7 @@ _a$2 = BaseConnectionManager, _BaseConnectionManager_status = new WeakMap(), _Ba
 }, _BaseConnectionManager_checkConnection = function _BaseConnectionManager_checkConnection() {
     if (!this.isConnected) {
         _console$f.log("timer detected disconnection");
-        this.status = "not connected";
+        this.status = "notConnected";
     }
 };
 
@@ -2618,7 +2621,7 @@ class WebBluetoothConnectionManager extends BluetoothConnectionManager {
         }
         catch (error) {
             _console$b.error(error);
-            this.status = "not connected";
+            this.status = "notConnected";
             this.server?.disconnect();
             __classPrivateFieldGet(this, _WebBluetoothConnectionManager_instances, "m", _WebBluetoothConnectionManager_removeEventListeners).call(this);
         }
@@ -2627,7 +2630,7 @@ class WebBluetoothConnectionManager extends BluetoothConnectionManager {
         await __classPrivateFieldGet(this, _WebBluetoothConnectionManager_instances, "m", _WebBluetoothConnectionManager_removeEventListeners).call(this);
         await super.disconnect();
         this.server?.disconnect();
-        this.status = "not connected";
+        this.status = "notConnected";
     }
     async writeCharacteristic(characteristicName, data) {
         super.writeCharacteristic(characteristicName, data);
@@ -2673,7 +2676,7 @@ class WebBluetoothConnectionManager extends BluetoothConnectionManager {
         }
         else {
             _console$b.log("unable to reconnect");
-            this.status = "not connected";
+            this.status = "notConnected";
         }
     }
 }
@@ -2752,7 +2755,7 @@ _WebBluetoothConnectionManager_boundBluetoothCharacteristicEventListeners = new 
     }
 }, _WebBluetoothConnectionManager_onGattserverdisconnected = function _WebBluetoothConnectionManager_onGattserverdisconnected() {
     _console$b.log("gattserverdisconnected");
-    this.status = "not connected";
+    this.status = "notConnected";
 };
 
 const POW_2_24 = 5.960464477539063e-8;
@@ -3747,7 +3750,7 @@ class DeviceManager {
         addEventListeners(device, __classPrivateFieldGet(this, _DeviceManager_boundDeviceEventListeners, "f"));
     }
     OnDeviceConnectionStatusUpdated(device, connectionStatus) {
-        if (connectionStatus == "not connected" && !device.canReconnect && __classPrivateFieldGet(this, _DeviceManager_AvailableDevices, "f").includes(device)) {
+        if (connectionStatus == "notConnected" && !device.canReconnect && __classPrivateFieldGet(this, _DeviceManager_AvailableDevices, "f").includes(device)) {
             const deviceIndex = __classPrivateFieldGet(this, _DeviceManager_AvailableDevices, "f").indexOf(device);
             this.AvailableDevices.splice(deviceIndex, 1);
             __classPrivateFieldGet(this, _DeviceManager_instances, "m", _DeviceManager_DispatchAvailableDevices).call(this);
@@ -3825,7 +3828,7 @@ class DeviceManager {
                 this.AvailableDevices.push(existingConnectedDevice);
                 return;
             }
-            const device = new Device();
+            const device = new Device$1();
             const connectionManager = new WebBluetoothConnectionManager();
             connectionManager.device = bluetoothDevice;
             if (bluetoothDevice.name) {
@@ -3957,10 +3960,9 @@ var DeviceManager$1 = DeviceManager.shared;
 
 var _Device_instances, _a$1, _Device_DefaultConnectionManager, _Device_eventDispatcher, _Device_dispatchEvent_get, _Device_connectionManager, _Device_sendTxMessages, _Device_isConnected, _Device_assertIsConnected, _Device_hasRequiredInformation_get, _Device_requestRequiredInformation, _Device_ReconnectOnDisconnection, _Device_reconnectOnDisconnection, _Device_reconnectIntervalId, _Device_onConnectionStatusUpdated, _Device_dispatchConnectionEvents, _Device_checkConnection, _Device_clear, _Device_onConnectionMessageReceived, _Device_deviceInformationManager, _Device_batteryLevel, _Device_updateBatteryLevel, _Device_sensorConfigurationManager, _Device_ClearSensorConfigurationOnLeave, _Device_clearSensorConfigurationOnLeave, _Device_sensorDataManager, _Device_vibrationManager, _Device_fileTransferManager, _Device_tfliteManager, _Device_firmwareManager, _Device_sendSmpMessage;
 const _console$7 = createConsole("Device", { log: true });
-const ConnectionEventTypes = [...ConnectionStatuses, "connectionStatus", "isConnected"];
 const DeviceEventTypes = [
-    ...ConnectionEventTypes,
     "connectionMessage",
+    ...ConnectionEventTypes,
     ...MetaConnectionMessageTypes,
     ...BatteryLevelMessageTypes,
     ...InformationEventTypes,
@@ -3996,7 +3998,7 @@ const RequiredInformationConnectionMessages = [
     "getTfliteThreshold",
     "getTfliteInferencingEnabled",
 ];
-let Device$1 = class Device {
+class Device {
     get bluetoothId() {
         return __classPrivateFieldGet(this, _Device_connectionManager, "f")?.bluetoothId;
     }
@@ -4146,12 +4148,12 @@ let Device$1 = class Device {
         switch (__classPrivateFieldGet(this, _Device_connectionManager, "f")?.status) {
             case "connected":
                 return this.isConnected ? "connected" : "connecting";
-            case "not connected":
+            case "notConnected":
             case "connecting":
             case "disconnecting":
                 return __classPrivateFieldGet(this, _Device_connectionManager, "f").status;
             default:
-                return "not connected";
+                return "notConnected";
         }
     }
     get isConnectionBusy() {
@@ -4335,15 +4337,15 @@ let Device$1 = class Device {
     get testFirmwareImage() {
         return __classPrivateFieldGet(this, _Device_firmwareManager, "f").testImage;
     }
-};
-_a$1 = Device$1, _Device_eventDispatcher = new WeakMap(), _Device_connectionManager = new WeakMap(), _Device_isConnected = new WeakMap(), _Device_reconnectOnDisconnection = new WeakMap(), _Device_reconnectIntervalId = new WeakMap(), _Device_deviceInformationManager = new WeakMap(), _Device_batteryLevel = new WeakMap(), _Device_sensorConfigurationManager = new WeakMap(), _Device_clearSensorConfigurationOnLeave = new WeakMap(), _Device_sensorDataManager = new WeakMap(), _Device_vibrationManager = new WeakMap(), _Device_fileTransferManager = new WeakMap(), _Device_tfliteManager = new WeakMap(), _Device_firmwareManager = new WeakMap(), _Device_instances = new WeakSet(), _Device_DefaultConnectionManager = function _Device_DefaultConnectionManager() {
+}
+_a$1 = Device, _Device_eventDispatcher = new WeakMap(), _Device_connectionManager = new WeakMap(), _Device_isConnected = new WeakMap(), _Device_reconnectOnDisconnection = new WeakMap(), _Device_reconnectIntervalId = new WeakMap(), _Device_deviceInformationManager = new WeakMap(), _Device_batteryLevel = new WeakMap(), _Device_sensorConfigurationManager = new WeakMap(), _Device_clearSensorConfigurationOnLeave = new WeakMap(), _Device_sensorDataManager = new WeakMap(), _Device_vibrationManager = new WeakMap(), _Device_fileTransferManager = new WeakMap(), _Device_tfliteManager = new WeakMap(), _Device_firmwareManager = new WeakMap(), _Device_instances = new WeakSet(), _Device_DefaultConnectionManager = function _Device_DefaultConnectionManager() {
     return new WebBluetoothConnectionManager();
 }, _Device_dispatchEvent_get = function _Device_dispatchEvent_get() {
     return __classPrivateFieldGet(this, _Device_eventDispatcher, "f").dispatchEvent;
 }, _Device_sendTxMessages = async function _Device_sendTxMessages(messages, sendImmediately) {
     await __classPrivateFieldGet(this, _Device_connectionManager, "f")?.sendTxMessages(messages, sendImmediately);
 }, _Device_assertIsConnected = function _Device_assertIsConnected() {
-    _console$7.assertWithError(this.isConnected, "not connected");
+    _console$7.assertWithError(this.isConnected, "notConnected");
 }, _Device_hasRequiredInformation_get = function _Device_hasRequiredInformation_get() {
     return RequiredInformationConnectionMessages.every((messageType) => {
         return this.latestConnectionMessage.has(messageType);
@@ -4355,7 +4357,7 @@ _a$1 = Device$1, _Device_eventDispatcher = new WeakMap(), _Device_connectionMana
     __classPrivateFieldGet(this, _Device_instances, "m", _Device_sendTxMessages).call(this, messages);
 }, _Device_onConnectionStatusUpdated = function _Device_onConnectionStatusUpdated(connectionStatus) {
     _console$7.log({ connectionStatus });
-    if (connectionStatus == "not connected") {
+    if (connectionStatus == "notConnected") {
         if (this.canReconnect && this.reconnectOnDisconnection) {
             _console$7.log("starting reconnect interval...");
             __classPrivateFieldSet(this, _Device_reconnectIntervalId, setInterval(() => {
@@ -4392,7 +4394,7 @@ _a$1 = Device$1, _Device_eventDispatcher = new WeakMap(), _Device_connectionMana
                 __classPrivateFieldGet(this, _Device_instances, "m", _Device_dispatchConnectionEvents).call(this, true);
             }
             break;
-        case "not connected":
+        case "notConnected":
             __classPrivateFieldGet(this, _Device_instances, "m", _Device_dispatchConnectionEvents).call(this, true);
             break;
         default:
@@ -4456,6 +4458,7 @@ _a$1 = Device$1, _Device_eventDispatcher = new WeakMap(), _Device_connectionMana
 };
 _Device_ReconnectOnDisconnection = { value: false };
 _Device_ClearSensorConfigurationOnLeave = { value: true };
+var Device$1 = Device;
 
 var _DevicePairPressureSensorDataManager_instances, _DevicePairPressureSensorDataManager_rawPressure, _DevicePairPressureSensorDataManager_centerOfPressureHelper, _DevicePairPressureSensorDataManager_hasAllPressureData_get, _DevicePairPressureSensorDataManager_updatePressureData;
 const _console$6 = createConsole("DevicePairPressureSensorDataManager", { log: true });
@@ -4807,7 +4810,7 @@ class WebSocketClientConnectionManager extends BaseConnectionManager {
             return;
         }
         __classPrivateFieldSet(this, _WebSocketClientConnectionManager_isConnected, newIsConnected, "f");
-        this.status = __classPrivateFieldGet(this, _WebSocketClientConnectionManager_isConnected, "f") ? "connected" : "not connected";
+        this.status = __classPrivateFieldGet(this, _WebSocketClientConnectionManager_isConnected, "f") ? "connected" : "notConnected";
         if (this.isConnected) {
             __classPrivateFieldGet(this, _WebSocketClientConnectionManager_instances, "m", _WebSocketClientConnectionManager_requestDeviceInformation).call(this);
         }
@@ -4862,7 +4865,7 @@ _WebSocketClientConnectionManager_bluetoothId = new WeakMap(), _WebSocketClientC
 
 var _BaseClient_instances, _BaseClient_devices, _BaseClient_eventDispatcher, _BaseClient__connectionStatus, _BaseClient_parseMessageCallback, _BaseClient_ping, _BaseClient_pong, _BaseClient__isScanningAvailable, _BaseClient_isScanningAvailable_get, _BaseClient_isScanningAvailable_set, _BaseClient_assertIsScanningAvailable, _BaseClient__isScanning, _BaseClient_isScanning_get, _BaseClient_isScanning_set, _BaseClient_requestIsScanning, _BaseClient_assertIsScanning, _BaseClient_assertIsNotScanning, _BaseClient_discoveredDevices, _BaseClient_onExpiredDiscoveredDevice, _BaseClient_getOrCreateDevice, _BaseClient_createDisconnectFromDeviceMessage;
 const _console$1 = createConsole("WebSocketClient", { log: true });
-const ClientConnectionStatuses = ["not connected", "connecting", "connected", "disconnecting"];
+const ClientConnectionStatuses = ["notConnected", "connecting", "connected", "disconnecting"];
 const ClientEventTypes = [
     ...ClientConnectionStatuses,
     "connectionStatus",
@@ -4878,7 +4881,7 @@ class BaseClient {
         _BaseClient_devices.set(this, {});
         _BaseClient_eventDispatcher.set(this, new EventDispatcher(this, ClientEventTypes));
         this._reconnectOnDisconnection = this.baseConstructor.ReconnectOnDisconnection;
-        _BaseClient__connectionStatus.set(this, "not connected");
+        _BaseClient__connectionStatus.set(this, "notConnected");
         this.pingTimer = new Timer(__classPrivateFieldGet(this, _BaseClient_instances, "m", _BaseClient_ping).bind(this), pingTimeout);
         _BaseClient__isScanningAvailable.set(this, false);
         _BaseClient__isScanning.set(this, false);
@@ -4903,7 +4906,7 @@ class BaseClient {
         return __classPrivateFieldGet(this, _BaseClient_eventDispatcher, "f").waitForEvent;
     }
     assertConnection() {
-        _console$1.assertWithError(this.isConnected, "not connected");
+        _console$1.assertWithError(this.isConnected, "notConnected");
     }
     assertDisconnection() {
         _console$1.assertWithError(this.isDisconnected, "not disconnected");
@@ -4936,7 +4939,7 @@ class BaseClient {
         this.dispatchEvent(this.connectionStatus, {});
         switch (newConnectionStatus) {
             case "connected":
-            case "not connected":
+            case "notConnected":
                 this.dispatchEvent("isConnected", { isConnected: this.isConnected });
                 if (this.isConnected) {
                     this.sendServerMessage("isScanningAvailable", "discoveredDevices", "connectedDevices");
@@ -5253,7 +5256,7 @@ _WebSocketClient_webSocket = new WeakMap(), _WebSocketClient_boundWebSocketEvent
     this.parseMessage(dataView);
 }, _WebSocketClient_onWebSocketClose = function _WebSocketClient_onWebSocketClose(event) {
     _console.log("webSocket.close", event);
-    this._connectionStatus = "not connected";
+    this._connectionStatus = "notConnected";
     Object.entries(this.devices).forEach(([id, device]) => {
         const connectionManager = device.connectionManager;
         connectionManager.isConnected = false;

@@ -20,7 +20,7 @@ import { DiscoveredDevice, DiscoveredDevicesMap, ScannerEventMessages } from "..
 
 const _console = createConsole("WebSocketClient", { log: true });
 
-export const ClientConnectionStatuses = ["not connected", "connecting", "connected", "disconnecting"] as const;
+export const ClientConnectionStatuses = ["notConnected", "connecting", "connected", "disconnecting"] as const;
 export type ClientConnectionStatus = (typeof ClientConnectionStatuses)[number];
 
 export const ClientEventTypes = [
@@ -76,7 +76,7 @@ abstract class BaseClient {
 
   abstract isConnected: boolean;
   protected assertConnection() {
-    _console.assertWithError(this.isConnected, "not connected");
+    _console.assertWithError(this.isConnected, "notConnected");
   }
 
   abstract isDisconnected: boolean;
@@ -113,7 +113,7 @@ abstract class BaseClient {
   abstract sendMessage(message: MessageLike): void;
 
   // CONNECTION STATUS
-  #_connectionStatus: ClientConnectionStatus = "not connected";
+  #_connectionStatus: ClientConnectionStatus = "notConnected";
   protected get _connectionStatus() {
     return this.#_connectionStatus;
   }
@@ -127,7 +127,7 @@ abstract class BaseClient {
 
     switch (newConnectionStatus) {
       case "connected":
-      case "not connected":
+      case "notConnected":
         this.dispatchEvent("isConnected", { isConnected: this.isConnected });
         if (this.isConnected) {
           this.sendServerMessage("isScanningAvailable", "discoveredDevices", "connectedDevices");

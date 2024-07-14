@@ -27,7 +27,7 @@ function onAvailableDevices(availableDevices) {
       const onConnectionStatusUpdate = () => {
         switch (availableDevice.connectionStatus) {
           case "connected":
-          case "not connected":
+          case "notConnected":
             toggleConnectionButton.disabled = false;
             toggleConnectionButton.innerText = availableDevice.isConnected ? "disconnect" : "connect";
             break;
@@ -53,8 +53,8 @@ async function getDevices() {
 }
 
 BS.DeviceManager.AddEventListener("availableDevices", (event) => {
-  const devices = event.message.availableDevices;
-  onAvailableDevices(devices);
+  const { availableDevices } = event.message;
+  onAvailableDevices(availableDevices);
 });
 getDevices();
 
@@ -122,8 +122,7 @@ devicePair.sides.forEach((side) => {
 });
 
 devicePair.addEventListener("deviceIsConnected", (event) => {
-  /** @type {BS.Device} */
-  const device = event.message.device;
+  const { device } = event.message;
 
   const toggleConnectionButton = toggleConnectionButtons[device.insoleSide];
   if (device.isConnected) {
@@ -135,14 +134,13 @@ devicePair.addEventListener("deviceIsConnected", (event) => {
 });
 
 devicePair.addEventListener("deviceConnectionStatus", (event) => {
-  /** @type {BS.Device} */
-  const device = event.message.device;
+  const { device } = event.message;
 
   const toggleConnectionButton = toggleConnectionButtons[device.insoleSide];
 
   switch (device.connectionStatus) {
     case "connected":
-    case "not connected":
+    case "notConnected":
       toggleConnectionButton.disabled = false;
       toggleConnectionButton.innerText = device.isConnected ? "disconnect" : "reconnect";
       break;
@@ -155,8 +153,7 @@ devicePair.addEventListener("deviceConnectionStatus", (event) => {
 });
 
 devicePair.addEventListener("deviceGetSensorConfiguration", (event) => {
-  /** @type {BS.Device} */
-  const device = event.message.device;
+  const { device } = event.message;
 
   const togglePressureDataButton = togglePressureDataButtons[device.insoleSide];
   const isPressureDataEnabled = device.sensorConfiguration.pressure > 0;
@@ -169,13 +166,9 @@ devicePair.addEventListener("deviceGetSensorConfiguration", (event) => {
 });
 
 devicePair.addEventListener("devicePressure", (event) => {
-  /** @type {BS.Device} */
-  const device = event.message.device;
-
-  /** @type {BS.PressureData} */
-  const pressure = event.message.pressure;
+  const { pressure, side } = event.message;
 
   pressure.sensors.forEach((sensor, index) => {
-    pressureSensorElementsContainers[device.insoleSide][index].style.opacity = sensor.normalizedValue;
+    pressureSensorElementsContainers[side][index].style.opacity = sensor.normalizedValue;
   });
 });

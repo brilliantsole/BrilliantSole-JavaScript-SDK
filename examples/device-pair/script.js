@@ -27,7 +27,7 @@ function onAvailableDevices(availableDevices) {
       const onConnectionStatusUpdate = () => {
         switch (availableDevice.connectionStatus) {
           case "connected":
-          case "not connected":
+          case "notConnected":
             toggleConnectionButton.disabled = false;
             toggleConnectionButton.innerText = availableDevice.isConnected ? "disconnect" : "connect";
             break;
@@ -53,8 +53,8 @@ async function getDevices() {
 }
 
 BS.DeviceManager.AddEventListener("availableDevices", (event) => {
-  const devices = event.message.availableDevices;
-  onAvailableDevices(devices);
+  const { availableDevices } = event.message;
+  onAvailableDevices(availableDevices);
 });
 getDevices();
 
@@ -115,8 +115,7 @@ devicePair.sides.forEach((side) => {
   });
 
   devicePair.addEventListener("deviceIsConnected", (event) => {
-    /** @type {BS.Device} */
-    const device = event.message.device;
+    const { device } = event.message;
     if (device.insoleSide != side) {
       return;
     }
@@ -128,15 +127,14 @@ devicePair.sides.forEach((side) => {
   });
 
   devicePair.addEventListener("deviceConnectionStatus", (event) => {
-    /** @type {BS.Device} */
-    const device = event.message.device;
+    const { device } = event.message;
     if (device.insoleSide != side) {
       return;
     }
 
     switch (device.connectionStatus) {
       case "connected":
-      case "not connected":
+      case "notConnected":
         toggleConnectionButton.disabled = false;
         toggleConnectionButton.innerText = device.isConnected ? "disconnect" : "reconnect";
         break;
@@ -151,14 +149,12 @@ devicePair.sides.forEach((side) => {
   /** @type {HTMLPreElement} */
   const pressurePre = deviceContainer.querySelector(".pressure");
   devicePair.addEventListener("devicePressure", (event) => {
-    /** @type {BS.Device} */
-    const device = event.message.device;
+    const { device } = event.message;
     if (device.insoleSide != side) {
       return;
     }
 
-    /** @type {BS.PressureData} */
-    const pressure = event.message.pressure;
+    const { pressure } = event.message;
 
     pressurePre.textContent = JSON.stringify(
       {
@@ -178,8 +174,7 @@ const devicePairContainer = document.getElementById("devicePair");
 const devicePairPressurePre = devicePairContainer.querySelector(".pressure");
 
 devicePair.addEventListener("pressure", (event) => {
-  /** @type {BS.DevicePairPressureData} */
-  const pressure = event.message.pressure;
+  const { pressure } = event.message;
 
   devicePairPressurePre.textContent = JSON.stringify(
     {

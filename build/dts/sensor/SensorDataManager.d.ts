@@ -24,10 +24,10 @@ interface AnySensorDataEventMessages {
 export type SensorDataEventMessages = _SensorDataEventMessages & AnySensorDataEventMessages;
 export type SensorDataEventDispatcher = EventDispatcher<Device, SensorDataEventType, SensorDataEventMessages>;
 declare class SensorDataManager {
+    #private;
     pressureSensorDataManager: PressureSensorDataManager;
     motionSensorDataManager: MotionSensorDataManager;
     barometerSensorDataManager: BarometerSensorDataManager;
-    private scalars;
     static AssertValidSensorType(sensorType: SensorType): void;
     static AssertValidSensorTypeEnum(sensorTypeEnum: number): void;
     eventDispatcher: SensorDataEventDispatcher;

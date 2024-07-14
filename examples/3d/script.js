@@ -31,7 +31,7 @@ function onAvailableDevices(availableDevices) {
       const onConnectionStatusUpdate = () => {
         switch (availableDevice.connectionStatus) {
           case "connected":
-          case "not connected":
+          case "notConnected":
             toggleConnectionButton.disabled = false;
             toggleConnectionButton.innerText = availableDevice.isConnected ? "disconnect" : "connect";
             break;
@@ -141,7 +141,7 @@ function onIFrameLoaded(insoleContainer) {
 
     switch (device.connectionStatus) {
       case "connected":
-      case "not connected":
+      case "notConnected":
         toggleConnectionButton.disabled = false;
         toggleConnectionButton.innerText = device.isConnected ? "disconnect" : "reconnect";
         break;
@@ -328,7 +328,6 @@ function onIFrameLoaded(insoleContainer) {
     targetRotationEntity.object3D.quaternion.slerp(targetQuaternion, window.interpolationSmoothing);
   };
   devicePair.addEventListener("deviceGameRotation", (event) => {
-    console.log("FUCK", event);
     const device = event.message.device;
     if (device.insoleSide != side) {
       return;
