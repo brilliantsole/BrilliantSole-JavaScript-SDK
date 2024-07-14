@@ -328,6 +328,7 @@ function onIFrameLoaded(insoleContainer) {
     targetRotationEntity.object3D.quaternion.slerp(targetQuaternion, window.interpolationSmoothing);
   };
   devicePair.addEventListener("deviceGameRotation", (event) => {
+    console.log("FUCK", event);
     const device = event.message.device;
     if (device.insoleSide != side) {
       return;

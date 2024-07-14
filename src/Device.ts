@@ -285,7 +285,7 @@ class Device {
     return this.connectionManager?.reconnect();
   }
 
-  async Connect() {
+  static async Connect() {
     const device = new Device();
     await device.connect();
     return device;

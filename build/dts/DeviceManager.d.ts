@@ -49,14 +49,14 @@ declare class DeviceManager {
      * _only available on web-bluetooth enabled browsers_
      */
     GetDevices(): Promise<Device[] | undefined>;
-    get AddEventListener(): <T extends "deviceConnected" | "deviceDisconnected" | "deviceIsConnected" | "availableDevices" | "connectedDevices">(type: T, listener: (event: {
+    get AddEventListener(): <T extends "connectedDevices" | "deviceIsConnected" | "deviceConnected" | "deviceDisconnected" | "availableDevices">(type: T, listener: (event: {
         type: T;
         target: DeviceManager;
         message: DeviceManagerEventMessages[T];
     }) => void, options?: {
         once?: boolean;
     }) => void;
-    get RemoveEventListener(): <T extends "deviceConnected" | "deviceDisconnected" | "deviceIsConnected" | "availableDevices" | "connectedDevices">(type: T, listener: (event: {
+    get RemoveEventListener(): <T extends "connectedDevices" | "deviceIsConnected" | "deviceConnected" | "deviceDisconnected" | "availableDevices">(type: T, listener: (event: {
         type: T;
         target: DeviceManager;
         message: DeviceManagerEventMessages[T];

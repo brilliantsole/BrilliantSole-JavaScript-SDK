@@ -11,7 +11,7 @@ console.log({ BS });
  * @param {B.VibrationWaveformEffect} effect
  */
 function vibrate(effect) {
-  BS.Device.ConnectedDevices.forEach((device) => {
+  BS.DeviceManager.ConnectedDevices.forEach((device) => {
     device.triggerVibration([
       {
         type: "waveformEffect",

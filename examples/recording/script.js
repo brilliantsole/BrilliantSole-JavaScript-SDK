@@ -196,7 +196,7 @@ function setIsSensorDataEnabled(newIsSensorDataEnabled) {
   }
   isSensorDataEnabled = newIsSensorDataEnabled;
 
-  BS.Device.ConnectedDevices.forEach((device) => {
+  BS.DeviceManager.ConnectedDevices.forEach((device) => {
     if (isSensorDataEnabled) {
       console.log(device, sensorConfiguration);
       device.setSensorConfiguration(sensorConfiguration);
@@ -215,7 +215,7 @@ toggleSensorDataCheckbox.addEventListener("input", () => {
 });
 function updateToggleSensorDataCheckbox() {
   const isSensorConfigurationZero = Object.values(sensorConfiguration).every((sensorRate) => sensorRate == 0);
-  toggleSensorDataCheckbox.disabled = isSensorConfigurationZero || BS.Device.ConnectedDevices.length == 0;
+  toggleSensorDataCheckbox.disabled = isSensorConfigurationZero || BS.DeviceManager.ConnectedDevices.length == 0;
 }
 window.addEventListener("sensorConfiguration", (event) => {
   updateToggleSensorDataCheckbox();
@@ -439,7 +439,7 @@ function updateRecordingCountdown(recordingCountdown) {
  * @param {BS.VibrationWaveformEffect} effect
  */
 function vibrate(effect) {
-  BS.Device.ConnectedDevices.forEach((device) => {
+  BS.DeviceManager.ConnectedDevices.forEach((device) => {
     device.triggerVibration([
       {
         type: "waveformEffect",
