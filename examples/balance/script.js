@@ -8,7 +8,7 @@ console.log({ BS });
 /** @type {HTMLTemplateElement} */
 const availableDeviceTemplate = document.getElementById("availableDeviceTemplate");
 const availableDevicesContainer = document.getElementById("availableDevices");
-/** @param {Device[]} availableDevices */
+/** @param {BS.Device[]} availableDevices */
 function onAvailableDevices(availableDevices) {
   availableDevicesContainer.innerHTML = "";
   if (availableDevices.length == 0) {
@@ -27,7 +27,7 @@ function onAvailableDevices(availableDevices) {
       const onConnectionStatusUpdate = () => {
         switch (availableDevice.connectionStatus) {
           case "connected":
-          case "not connected":
+          case "notConnected":
             toggleConnectionButton.disabled = false;
             toggleConnectionButton.innerText = availableDevice.isConnected ? "disconnect" : "connect";
             break;
@@ -45,16 +45,16 @@ function onAvailableDevices(availableDevices) {
   }
 }
 async function getDevices() {
-  const availableDevices = await BS.Device.GetDevices();
+  const availableDevices = await BS.DeviceManager.GetDevices();
   if (!availableDevices) {
     return;
   }
   onAvailableDevices(availableDevices);
 }
 
-BS.Device.AddEventListener("availableDevices", (event) => {
-  const devices = event.message.availableDevices;
-  onAvailableDevices(devices);
+BS.DeviceManager.AddEventListener("availableDevices", (event) => {
+  const { availableDevices } = event.message;
+  onAvailableDevices(availableDevices);
 });
 getDevices();
 
@@ -112,9 +112,7 @@ resetPressureRangeButton.addEventListener("click", () => {
   devicePair.resetPressureRange();
 });
 
-/** @typedef {import("../../build/brilliantsole.module.js").CenterOfPressure} CenterOfPressure */
-
-/** @param {CenterOfPressure} center  */
+/** @param {BS.CenterOfPressure} center  */
 function updateUIOnCenterOfPressure(center) {
   devicePair.sides.forEach((side) => {
     let height = center.x;
@@ -158,7 +156,7 @@ const target = {
   height: 0,
   start: 0,
 
-  /** @param {CenterOfPressure} center  */
+  /** @param {BS.CenterOfPressure} center  */
   isInside(center) {
     console.log(center, this);
     return center.x >= this.start && center.x <= this.start + this.height;
@@ -181,14 +179,11 @@ const target = {
   },
 };
 
-/** @typedef {import("../../build/brilliantsole.module.js").DevicePairPressureData} DevicePairPressureData */
-
 let isCenterOfPressureInsideTarget = false;
 let insideTargetTimeoutId;
 
 devicePair.addEventListener("pressure", (event) => {
-  /** @type {DevicePairPressureData} */
-  const pressure = event.message.pressure;
+  const { pressure } = event.message;
   console.log({ pressure });
   if (pressure.normalizedCenter) {
     console.log("center", pressure.normalizedCenter);
@@ -196,7 +191,7 @@ devicePair.addEventListener("pressure", (event) => {
   }
 });
 
-/** @param {CenterOfPressure} center */
+/** @param {BS.CenterOfPressure} center */
 function onCenterOfPressure(center) {
   updateUIOnCenterOfPressure(center);
 

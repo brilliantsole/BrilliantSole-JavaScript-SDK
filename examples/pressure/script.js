@@ -3,14 +3,12 @@ window.BS = BS;
 console.log({ BS });
 //BS.setAllConsoleLevelFlags({ log: true });
 
-/** @typedef {import("../../build/brilliantsole.module.js").Device} Device */
-
 // GET DEVICES
 
 /** @type {HTMLTemplateElement} */
 const availableDeviceTemplate = document.getElementById("availableDeviceTemplate");
 const availableDevicesContainer = document.getElementById("availableDevices");
-/** @param {Device[]} availableDevices */
+/** @param {BS.Device[]} availableDevices */
 function onAvailableDevices(availableDevices) {
   availableDevicesContainer.innerHTML = "";
   if (availableDevices.length == 0) {
@@ -29,7 +27,7 @@ function onAvailableDevices(availableDevices) {
       const onConnectionStatusUpdate = () => {
         switch (availableDevice.connectionStatus) {
           case "connected":
-          case "not connected":
+          case "notConnected":
             toggleConnectionButton.disabled = false;
             toggleConnectionButton.innerText = availableDevice.isConnected ? "disconnect" : "connect";
             break;
@@ -47,16 +45,16 @@ function onAvailableDevices(availableDevices) {
   }
 }
 async function getDevices() {
-  const availableDevices = await BS.Device.GetDevices();
+  const availableDevices = await BS.DeviceManager.GetDevices();
   if (!availableDevices) {
     return;
   }
   onAvailableDevices(availableDevices);
 }
 
-BS.Device.AddEventListener("availableDevices", (event) => {
-  const devices = event.message.availableDevices;
-  onAvailableDevices(devices);
+BS.DeviceManager.AddEventListener("availableDevices", (event) => {
+  const { availableDevices } = event.message;
+  onAvailableDevices(availableDevices);
 });
 getDevices();
 
@@ -124,8 +122,7 @@ devicePair.sides.forEach((side) => {
 });
 
 devicePair.addEventListener("deviceIsConnected", (event) => {
-  /** @type {Device} */
-  const device = event.message.device;
+  const { device } = event.message;
 
   const toggleConnectionButton = toggleConnectionButtons[device.insoleSide];
   if (device.isConnected) {
@@ -137,14 +134,13 @@ devicePair.addEventListener("deviceIsConnected", (event) => {
 });
 
 devicePair.addEventListener("deviceConnectionStatus", (event) => {
-  /** @type {Device} */
-  const device = event.message.device;
+  const { device } = event.message;
 
   const toggleConnectionButton = toggleConnectionButtons[device.insoleSide];
 
   switch (device.connectionStatus) {
     case "connected":
-    case "not connected":
+    case "notConnected":
       toggleConnectionButton.disabled = false;
       toggleConnectionButton.innerText = device.isConnected ? "disconnect" : "reconnect";
       break;
@@ -157,8 +153,7 @@ devicePair.addEventListener("deviceConnectionStatus", (event) => {
 });
 
 devicePair.addEventListener("deviceGetSensorConfiguration", (event) => {
-  /** @type {Device} */
-  const device = event.message.device;
+  const { device } = event.message;
 
   const togglePressureDataButton = togglePressureDataButtons[device.insoleSide];
   const isPressureDataEnabled = device.sensorConfiguration.pressure > 0;
@@ -171,13 +166,9 @@ devicePair.addEventListener("deviceGetSensorConfiguration", (event) => {
 });
 
 devicePair.addEventListener("devicePressure", (event) => {
-  /** @type {Device} */
-  const device = event.message.device;
-
-  /** @type {import("../../build/brilliantsole.module.js").PressureData} */
-  const pressure = event.message.pressure;
+  const { pressure, side } = event.message;
 
   pressure.sensors.forEach((sensor, index) => {
-    pressureSensorElementsContainers[device.insoleSide][index].style.opacity = sensor.normalizedValue;
+    pressureSensorElementsContainers[side][index].style.opacity = sensor.normalizedValue;
   });
 });

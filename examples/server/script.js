@@ -8,8 +8,6 @@ console.log({ client });
 
 window.client = client;
 
-/** @typedef {import("../../build/brilliantsole.module.js").Device} Device */
-
 // SEARCH PARAMS
 
 const url = new URL(location);
@@ -61,7 +59,7 @@ toggleConnectionButton.addEventListener("click", () => {
 client.addEventListener("connectionStatus", () => {
   switch (client.connectionStatus) {
     case "connected":
-    case "not connected":
+    case "notConnected":
       toggleConnectionButton.disabled = false;
       toggleConnectionButton.innerText = client.isConnected ? "disconnect" : "connect";
       break;
@@ -95,8 +93,6 @@ client.addEventListener("isScanning", () => {
 
 // DISCOVERED DEVICES
 
-/** @typedef {import("../../build/brilliantsole.module.js").DiscoveredDevice} DiscoveredDevice */
-
 /** @type {HTMLTemplateElement} */
 const discoveredDeviceTemplate = document.getElementById("discoveredDeviceTemplate");
 const discoveredDevicesContainer = document.getElementById("discoveredDevices");
@@ -104,7 +100,6 @@ const discoveredDevicesContainer = document.getElementById("discoveredDevices");
 let discoveredDeviceContainers = {};
 
 client.addEventListener("discoveredDevice", (event) => {
-  /** @type {DiscoveredDevice} */
   const discoveredDevice = event.message.discoveredDevice;
 
   let discoveredDeviceContainer = discoveredDeviceContainers[discoveredDevice.bluetoothId];
@@ -118,13 +113,12 @@ client.addEventListener("discoveredDevice", (event) => {
       if (device) {
         device.toggleConnection();
       } else {
-        console.log("FUCK", discoveredDevice);
         device = client.connectToDevice(discoveredDevice.bluetoothId);
         onDevice(device);
       }
     });
 
-    /** @param {Device} device */
+    /** @param {BS.Device} device */
     const onDevice = (device) => {
       device.addEventListener("connectionStatus", () => {
         updateToggleConnectionButton(device);
@@ -134,12 +128,12 @@ client.addEventListener("discoveredDevice", (event) => {
 
     discoveredDeviceContainer._onDevice = onDevice;
 
-    /** @param {Device} device */
+    /** @param {BS.Device} device */
     const updateToggleConnectionButton = (device) => {
       console.log({ deviceConnectionStatus: device.connectionStatus });
       switch (device.connectionStatus) {
         case "connected":
-        case "not connected":
+        case "notConnected":
           toggleConnectionButton.innerText = device.isConnected ? "disconnect" : "connect";
           toggleConnectionButton.disabled = false;
           break;
@@ -158,7 +152,7 @@ client.addEventListener("discoveredDevice", (event) => {
   updateDiscoveredDeviceContainer(discoveredDevice);
 });
 
-/** @param {DiscoveredDevice} discoveredDevice */
+/** @param {BS.DiscoveredDevice} discoveredDevice */
 function updateDiscoveredDeviceContainer(discoveredDevice) {
   const discoveredDeviceContainer = discoveredDeviceContainers[discoveredDevice.bluetoothId];
   if (!discoveredDeviceContainer) {
@@ -170,7 +164,7 @@ function updateDiscoveredDeviceContainer(discoveredDevice) {
   discoveredDeviceContainer.querySelector(".deviceType").innerText = discoveredDevice.deviceType;
 }
 
-/** @param {DiscoveredDevice} discoveredDevice */
+/** @param {BS.DiscoveredDevice} discoveredDevice */
 function removeDiscoveredDeviceContainer(discoveredDevice) {
   const discoveredDeviceContainer = discoveredDeviceContainers[discoveredDevice.bluetoothId];
   if (!discoveredDeviceContainer) {
@@ -183,7 +177,6 @@ function removeDiscoveredDeviceContainer(discoveredDevice) {
 }
 
 client.addEventListener("expiredDiscoveredDevice", (event) => {
-  /** @type {DiscoveredDevice} */
   const discoveredDevice = event.message.discoveredDevice;
   removeDiscoveredDeviceContainer(discoveredDevice);
 });
@@ -193,7 +186,7 @@ function clearDiscoveredDevices() {
   discoveredDeviceContainers = {};
 }
 
-client.addEventListener("not connected", () => {
+client.addEventListener("notConnected", () => {
   clearDiscoveredDevices();
 });
 
@@ -203,8 +196,7 @@ client.addEventListener("isScanning", () => {
   }
 });
 
-BS.Device.AddEventListener("deviceIsConnected", (event) => {
-  /** @type {Device} */
+BS.DeviceManager.AddEventListener("deviceIsConnected", (event) => {
   const device = event.message.device;
   console.log("deviceIsConnected", device);
   const discoveredDeviceContainer = discoveredDeviceContainers[device.bluetoothId];
@@ -222,9 +214,8 @@ const availableDevicesContainer = document.getElementById("availableDevices");
 /** @type {Object.<string, HTMLElement>} */
 let availableDeviceContainers = {};
 
-BS.Device.AddEventListener("availableDevices", (event) => {
-  /** @type {Device[]} */
-  const availableDevices = event.message.availableDevices;
+BS.DeviceManager.AddEventListener("availableDevices", (event) => {
+  const { availableDevices } = event.message;
   console.log({ availableDevices });
 
   availableDevices.forEach((device) => {
@@ -257,8 +248,8 @@ BS.Device.AddEventListener("availableDevices", (event) => {
 
       /** @type {HTMLInputElement} */
       const setNameInput = availableDeviceContainer.querySelector(".setNameInput");
-      setNameInput.minLength = BS.Device.MinNameLength;
-      setNameInput.maxLength = BS.Device.MaxNameLength;
+      setNameInput.minLength = BS.MinNameLength;
+      setNameInput.maxLength = BS.MaxNameLength;
       setNameInput.disabled = !device.isConnected;
 
       /** @type {HTMLButtonElement} */
@@ -268,7 +259,7 @@ BS.Device.AddEventListener("availableDevices", (event) => {
       device.addEventListener("isConnected", () => {
         setNameInput.disabled = !device.isConnected;
       });
-      device.addEventListener("not connected", () => {
+      device.addEventListener("notConnected", () => {
         setNameInput.value = "";
       });
 
@@ -296,7 +287,7 @@ BS.Device.AddEventListener("availableDevices", (event) => {
       const setTypeSelect = availableDeviceContainer.querySelector(".setTypeSelect");
       /** @type {HTMLOptGroupElement} */
       const setTypeSelectOptgroup = setTypeSelect.querySelector("optgroup");
-      BS.Device.Types.forEach((type) => {
+      BS.DeviceTypes.forEach((type) => {
         setTypeSelectOptgroup.appendChild(new Option(type));
       });
 
@@ -339,8 +330,8 @@ BS.Device.AddEventListener("availableDevices", (event) => {
         /** @type {HTMLInputElement} */
         const sensorRateInput = sensorTypeConfigurationContainer.querySelector(".sensorRate");
         sensorRateInput.value = 0;
-        sensorRateInput.max = BS.Device.MaxSensorRate;
-        sensorRateInput.step = BS.Device.SensorRateStep;
+        sensorRateInput.max = BS.MaxSensorRate;
+        sensorRateInput.step = BS.SensorRateStep;
         sensorRateInput.addEventListener("input", () => {
           const sensorRate = Number(sensorRateInput.value);
           console.log({ sensorType, sensorRate });
@@ -378,7 +369,7 @@ BS.Device.AddEventListener("availableDevices", (event) => {
         device.triggerVibration([
           {
             type: "waveformEffect",
-            waveformEffect: { segments: [{ effect: "doubleClick100" }] },
+            segments: [{ effect: "doubleClick100" }],
           },
         ]);
       });
@@ -395,7 +386,7 @@ BS.Device.AddEventListener("availableDevices", (event) => {
       const updateToggleConnectionButton = () => {
         switch (device.connectionStatus) {
           case "connected":
-          case "not connected":
+          case "notConnected":
             toggleConnectionButton.disabled = false;
             toggleConnectionButton.innerText = device.isConnected ? "disconnect" : "connect";
             break;
@@ -433,7 +424,7 @@ BS.Device.AddEventListener("availableDevices", (event) => {
         updateMaxFileLengthSpan();
       });
 
-      /** @type {import("../../build/brilliantsole.module.js").FileType} */
+      /** @type {BS.FileType} */
       let fileType;
 
       /** @type {HTMLSelectElement} */
@@ -449,7 +440,7 @@ BS.Device.AddEventListener("availableDevices", (event) => {
       });
       /** @type {HTMLOptGroupElement} */
       const fileTransferTypesOptgroup = fileTransferTypesSelect.querySelector("optgroup");
-      BS.Device.FileTypes.forEach((fileType) => {
+      BS.FileTypes.forEach((fileType) => {
         fileTransferTypesOptgroup.appendChild(new Option(fileType));
       });
       fileTransferTypesSelect.dispatchEvent(new Event("input"));
@@ -511,7 +502,7 @@ BS.Device.AddEventListener("availableDevices", (event) => {
         updateToggleFileTransferButton();
       });
 
-      /** @type {"send" | "receive"} */
+      /** @type {BS.FileTransferDirection} */
       let fileTransferDirection;
       /** @type {HTMLSelectElement} */
       const fileTransferDirectionSelect = availableDeviceContainer.querySelector(".fileTransferDirection");
@@ -577,7 +568,7 @@ BS.Device.AddEventListener("availableDevices", (event) => {
       /** @type {HTMLButtonElement} */
       const setTfliteTaskButton = availableDeviceContainer.querySelector(".setTfliteTaskButton");
 
-      BS.Device.TfliteTasks.forEach((task) => {
+      BS.TfliteTasks.forEach((task) => {
         setTfliteTaskOptgroup.appendChild(new Option(task));
       });
 
@@ -626,19 +617,17 @@ BS.Device.AddEventListener("availableDevices", (event) => {
         setTfliteSampleRateButton.disabled = device.tfliteInferencingEnabled;
       });
 
-      /** @typedef {import("../../build/brilliantsole.module.js").SensorType} SensorType */
-
       const tfliteSensorTypesContainer = availableDeviceContainer.querySelector(".tfliteSensorTypes");
       /** @type {HTMLTemplateElement} */
       const tfliteSensorTypeTemplate = availableDeviceContainer.querySelector(".tfliteSensorTypeTemplate");
       /** @type {Object.<string, HTMLElement>} */
       const tfliteSensorTypeContainers = {};
-      /** @type {SensorType[]} */
+      /** @type {BS.SensorType[]} */
       let tfliteSensorTypes = [];
       /** @type {HTMLButtonElement} */
       const setTfliteSensorTypesButton = availableDeviceContainer.querySelector(".setTfliteSensorTypes");
 
-      BS.Device.TfliteSensorTypes.forEach((sensorType) => {
+      BS.TfliteSensorTypes.forEach((sensorType) => {
         const sensorTypeContainer = tfliteSensorTypeTemplate.content.cloneNode(true).querySelector(".sensorType");
         sensorTypeContainer.querySelector(".name").innerText = sensorType;
 

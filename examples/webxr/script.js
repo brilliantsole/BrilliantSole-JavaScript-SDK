@@ -8,9 +8,6 @@ console.log({ client });
 
 window.client = client;
 
-/** @typedef {import("../../build/brilliantsole.module.js").Device} Device */
-/** @typedef {import("../../build/brilliantsole.module.js").SensorType} SensorType */
-
 const devicePair = BS.DevicePair.shared;
 window.devicePair = devicePair;
 
@@ -236,7 +233,7 @@ toggleConnectionButton.addEventListener("click", () => {
 client.addEventListener("connectionStatus", () => {
   switch (client.connectionStatus) {
     case "connected":
-    case "not connected":
+    case "notConnected":
       toggleConnectionButton.disabled = false;
       toggleConnectionButton.innerText = client.isConnected ? "disconnect" : "connect";
       break;
@@ -255,7 +252,7 @@ client.addEventListener("connectionStatus", (event) => {
 
   switch (client.connectionStatus) {
     case "connected":
-    case "not connected":
+    case "notConnected":
       text = client.isConnected ? "disconnect" : "connect";
       disabled = false;
       break;
@@ -362,8 +359,6 @@ window.addEventListener("screenMode", () => {
 
 // DISCOVERED DEVICES
 
-/** @typedef {import("../../build/brilliantsole.module.js").DiscoveredDevice} DiscoveredDevice */
-
 const discoveredDevicesEntity = scene.querySelector(".discoveredDevices");
 /** @type {HTMLTemplateElement} */
 const discoveredDeviceEntityTemplate = discoveredDevicesEntity.querySelector(".discoveredDeviceTemplate");
@@ -381,12 +376,12 @@ toggleShowDiscoveredDevicesEntity.addEventListener("click", () => {
   if (screenMode == "discoveredDevices") {
     setScreenMode("none");
   } else {
-    setScreenMode("discoveredDevices");
+    setScreenMode("s");
   }
 });
 
 client.addEventListener("discoveredDevice", (event) => {
-  /** @type {DiscoveredDevice} */
+  /** @type {BS.DiscoveredDevice} */
   const discoveredDevice = event.message.discoveredDevice;
   let discoveredDeviceEntity = discoveredDeviceEntities[discoveredDevice.bluetoothId];
   if (!discoveredDeviceEntity) {
@@ -406,7 +401,7 @@ client.addEventListener("discoveredDevice", (event) => {
     });
 
     const deviceIsConnectedListener = (event) => {
-      /** @type {Device} */
+      /** @type {BS.Device} */
       const device = event.message.device;
       console.log("deviceIsConnected", device);
       if (device.bluetoothId != discoveredDevice.bluetoothId) {
@@ -414,10 +409,10 @@ client.addEventListener("discoveredDevice", (event) => {
       }
       onDevice(device);
     };
-    BS.Device.AddEventListener("deviceIsConnected", deviceIsConnectedListener);
+    BS.DeviceManager.AddEventListener("deviceIsConnected", deviceIsConnectedListener);
 
     let addedEventListeners = false;
-    /** @param {Device} device */
+    /** @param {BS.Device} device */
     const onDevice = (device) => {
       if (addedEventListeners) {
         return;
@@ -429,7 +424,7 @@ client.addEventListener("discoveredDevice", (event) => {
         updateDiscoveredDeviceEntity(discoveredDevice);
       });
       updateDiscoveredDeviceEntity(discoveredDevice);
-      BS.Device.RemoveEventListener("deviceIsConnected", deviceIsConnectedListener);
+      BS.DeviceManager.RemoveEventListener("deviceIsConnected", deviceIsConnectedListener);
     };
 
     let device = client.devices[discoveredDevice.bluetoothId];
@@ -444,7 +439,7 @@ client.addEventListener("discoveredDevice", (event) => {
   updateDiscoveredDeviceEntity(discoveredDevice);
 });
 
-/** @param {DiscoveredDevice} discoveredDevice */
+/** @param {BS.DiscoveredDevice} discoveredDevice */
 function updateDiscoveredDeviceEntity(discoveredDevice) {
   const discoveredDeviceEntity = discoveredDeviceEntities[discoveredDevice.bluetoothId];
   if (!discoveredDeviceEntity) {
@@ -453,12 +448,12 @@ function updateDiscoveredDeviceEntity(discoveredDevice) {
   }
 
   const device = client.devices[discoveredDevice.bluetoothId];
-  const connectionStatus = device?.connectionStatus || "not connected";
+  const connectionStatus = device?.connectionStatus || "notConnected";
   let connectMessage;
   let disabled;
   switch (connectionStatus) {
     case "connected":
-    case "not connected":
+    case "notConnected":
       connectMessage = device?.isConnected ? "disconnect" : "connect";
       disabled = false;
       break;
@@ -501,7 +496,7 @@ window.addEventListener("screenMode", () => {
   });
 });
 
-/** @param {DiscoveredDevice} discoveredDevice */
+/** @param {BS.DiscoveredDevice} discoveredDevice */
 function removeDiscoveredDeviceEntity(discoveredDevice) {
   const discoveredDeviceEntity = discoveredDeviceEntities[discoveredDevice.bluetoothId];
   if (!discoveredDeviceEntity) {
@@ -514,7 +509,7 @@ function removeDiscoveredDeviceEntity(discoveredDevice) {
 }
 
 client.addEventListener("expiredDiscoveredDevice", (event) => {
-  /** @type {DiscoveredDevice} */
+  /** @type {BS.DiscoveredDevice} */
   const discoveredDevice = event.message.discoveredDevice;
   removeDiscoveredDeviceEntity(discoveredDevice);
 });
@@ -524,7 +519,7 @@ function clearDiscoveredDevices() {
   discoveredDeviceEntities = {};
 }
 
-client.addEventListener("not connected", () => {
+client.addEventListener("notConnected", () => {
   clearDiscoveredDevices();
 });
 
@@ -557,8 +552,8 @@ toggleShowAvailableDevicesEntity.addEventListener("click", () => {
   }
 });
 
-BS.Device.AddEventListener("availableDevices", (event) => {
-  /** @type {Device[]} */
+BS.DeviceManager.AddEventListener("availableDevices", (event) => {
+  /** @type {BS.Device[]} */
   const availableDevices = event.message.availableDevices;
   console.log({ availableDevices });
 
@@ -588,7 +583,7 @@ BS.Device.AddEventListener("availableDevices", (event) => {
   });
 });
 
-/** @param {Device} device */
+/** @param {BS.Device} device */
 function updateAvailableDeviceEntity(device) {
   const availableDeviceEntity = availableDeviceEntities[device.bluetoothId];
   if (!availableDeviceEntity) {
@@ -602,7 +597,7 @@ function updateAvailableDeviceEntity(device) {
   let disabled;
   switch (device.connectionStatus) {
     case "connected":
-    case "not connected":
+    case "notConnected":
       connectMessage = device.isConnected ? "disconnect" : "connect";
       disabled = false;
       break;
@@ -633,7 +628,7 @@ window.addEventListener("screenMode", () => {
     text,
   });
   availableDevicesEntity.object3D.visible = isAvailableDevicesMode;
-  BS.Device.AvailableDevices.forEach((availableDevice) => {
+  BS.DeviceManager.AvailableDevices.forEach((availableDevice) => {
     updateAvailableDeviceEntity(availableDevice);
   });
 });
@@ -643,13 +638,11 @@ function clearAvailableDevices() {
   availableDeviceEntities = {};
 }
 
-client.addEventListener("not connected", () => {
+client.addEventListener("notConnected", () => {
   clearAvailableDevices();
 });
 
 // SENSOR DATA
-
-/** @typedef {import("../../build/brilliantsole.module.js").SensorConfiguration} SensorConfiguration */
 
 let sensorDataRate = 20;
 
@@ -673,7 +666,7 @@ function setPositionMode(newPositionMode) {
   }
   positionMode = newPositionMode;
 
-  /** @type {SensorConfiguration} */
+  /** @type {BS.SensorConfiguration} */
   const sensorConfiguration = {
     linearAcceleration: 0,
     acceleration: 0,
@@ -709,7 +702,7 @@ function setOrientationMode(newOrientationMode) {
   }
   orientationMode = newOrientationMode;
 
-  /** @type {SensorConfiguration} */
+  /** @type {BS.SensorConfiguration} */
   const sensorConfiguration = {
     gameRotation: 0,
     rotation: 0,
@@ -745,7 +738,7 @@ function setPressureMode(newPressureMode) {
   }
   pressureMode = newPressureMode;
 
-  /** @type {SensorConfiguration} */
+  /** @type {BS.SensorConfiguration} */
   const sensorConfiguration = {
     pressure: 0,
   };
@@ -763,7 +756,7 @@ function setPressureMode(newPressureMode) {
 
 const devicePairEntity = scene.querySelector(".devicePair");
 
-/** @type {SensorType[]} */
+/** @type {BS.SensorType[]} */
 const sensorTypes = ["pressure", "linearAcceleration", "gameRotation", "gyroscope"];
 /** @type {HTMLTemplateElement} */
 const toggleSensorTypeEntityTemplate = devicePairEntity.querySelector(".toggleSensorTypeTemplate");
@@ -913,11 +906,9 @@ devicePair.sides.forEach((side) => {
 
   // POSITION
 
-  /** @typedef {import("../../build/brilliantsole.module.js").Vector3} Vector3 */
-
   const interpolatedPosition = new THREE.Vector3();
 
-  /** @param {Vector3} position */
+  /** @param {BS.Vector3} position */
   const updatePosition = (position) => {
     interpolatedPosition.copy(position).multiplyScalar(positionScalar);
     insolePositionEntity.object3D.position.lerp(interpolatedPosition, positionInterpolationSmoothing);
@@ -932,11 +923,9 @@ devicePair.sides.forEach((side) => {
   };
   window.addEventListener("resetOrientation", () => resetOrientation());
 
-  /** @typedef {import("../../build/brilliantsole.module.js").Quaternion} Quaternion */
-
   const targetQuaternion = new THREE.Quaternion();
   /**
-   * @param {Quaternion} quaternion
+   * @param {BS.Quaternion} quaternion
    * @param {boolean} applyOffset
    */
   const updateOrientation = (quaternion, applyOffset = false) => {
@@ -955,14 +944,14 @@ devicePair.sides.forEach((side) => {
   const gyroscopeQuaternion = new THREE.Quaternion();
 
   devicePair.addEventListener("deviceSensorData", (event) => {
-    /** @type {Device} */
+    /** @type {BS.Device} */
     const device = event.message.device;
 
     if (device.insoleSide != side) {
       return;
     }
 
-    /** @type {SensorType} */
+    /** @type {BS.SensorType} */
     const sensorType = event.message.sensorType;
 
     if (sensorType == positionMode) {
@@ -971,7 +960,7 @@ devicePair.sides.forEach((side) => {
         case "gravity":
         case "linearAcceleration":
           {
-            /** @type {Vector3} */
+            /** @type {BS.Vector3} */
             const position = event.message[sensorType];
             updatePosition(position);
           }
@@ -1091,17 +1080,15 @@ devicePair.sides.forEach((side) => {
     }
   });
 
-  /** @typedef {import("../../build/brilliantsole.module.js").PressureData} PressureData */
-
   devicePair.addEventListener("devicePressure", (event) => {
-    /** @type {Device} */
+    /** @type {BS.Device} */
     const device = event.message.device;
 
     if (device.insoleSide != side) {
       return;
     }
 
-    /** @type {PressureData} */
+    /** @type {BS.PressureData} */
     const pressure = event.message.pressure;
 
     pressure.sensors.forEach((sensor, index) => {

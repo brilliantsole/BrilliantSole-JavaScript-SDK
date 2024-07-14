@@ -1,0 +1,134 @@
+import EventDispatcher, { BoundEventListeners, Event, EventListenerMap, EventMap } from "./utils/EventDispatcher.ts";
+import BaseConnectionManager, { TxRxMessageType, ConnectionStatus, ConnectionMessageType, ConnectionStatusEventMessages } from "./connection/BaseConnectionManager.ts";
+import { SensorConfiguration, SensorConfigurationEventMessages } from "./sensor/SensorConfigurationManager.ts";
+import { SensorDataEventMessages, SensorType } from "./sensor/SensorDataManager.ts";
+import { VibrationConfiguration } from "./vibration/VibrationManager.ts";
+import { FileTransferEventMessages, FileType } from "./FileTransferManager.ts";
+import { TfliteEventMessages } from "./TfliteManager.ts";
+import { FirmwareEventMessages } from "./FirmwareManager.ts";
+import { DeviceInformationEventMessages } from "./DeviceInformationManager.ts";
+import InformationManager, { DeviceType, InformationEventMessages } from "./InformationManager.ts";
+import { FileLike } from "./utils/ArrayBufferUtils.ts";
+export declare const DeviceEventTypes: readonly ["connectionMessage", "notConnected", "connecting", "connected", "disconnecting", "connectionStatus", "isConnected", "rx", "tx", "batteryLevel", "isCharging", "getBatteryCurrent", "getMtu", "getId", "getName", "setName", "getType", "setType", "getCurrentTime", "setCurrentTime", "manufacturerName", "modelNumber", "softwareRevision", "hardwareRevision", "firmwareRevision", "pnpId", "serialNumber", "deviceInformation", "getSensorConfiguration", "setSensorConfiguration", "getPressurePositions", "getSensorScalars", "sensorData", "pressure", "acceleration", "gravity", "linearAcceleration", "gyroscope", "magnetometer", "gameRotation", "rotation", "orientation", "activity", "stepCounter", "stepDetector", "deviceOrientation", "barometer", "maxFileLength", "getFileType", "setFileType", "getFileLength", "setFileLength", "getFileChecksum", "setFileChecksum", "setFileTransferCommand", "fileTransferStatus", "getFileBlock", "setFileBlock", "fileTransferProgress", "fileTransferComplete", "fileReceived", "getTfliteName", "setTfliteName", "getTfliteTask", "setTfliteTask", "getTfliteSampleRate", "setTfliteSampleRate", "getTfliteSensorTypes", "setTfliteSensorTypes", "tfliteIsReady", "getTfliteCaptureDelay", "setTfliteCaptureDelay", "getTfliteThreshold", "setTfliteThreshold", "getTfliteInferencingEnabled", "setTfliteInferencingEnabled", "tfliteInference", "smp", "firmwareImages", "firmwareUploadProgress", "firmwareStatus", "firmwareUploadComplete"];
+export type DeviceEventType = (typeof DeviceEventTypes)[number];
+export interface DeviceEventMessages extends ConnectionStatusEventMessages, DeviceInformationEventMessages, InformationEventMessages, SensorDataEventMessages, SensorConfigurationEventMessages, TfliteEventMessages, FileTransferEventMessages, FirmwareEventMessages {
+    batteryLevel: {
+        batteryLevel: number;
+    };
+    connectionMessage: {
+        messageType: ConnectionMessageType;
+        dataView: DataView;
+    };
+}
+export type SendMessageCallback<MessageType extends string> = (messages?: {
+    type: MessageType;
+    data?: ArrayBuffer;
+}[], sendImmediately?: boolean) => Promise<void>;
+export type SendSmpMessageCallback = (data: ArrayBuffer) => Promise<void>;
+export type DeviceEventDispatcher = EventDispatcher<Device, DeviceEventType, DeviceEventMessages>;
+export type DeviceEvent = Event<Device, DeviceEventType, DeviceEventMessages>;
+export type DeviceEventMap = EventMap<Device, DeviceEventType, DeviceEventMessages>;
+export type DeviceEventListenerMap = EventListenerMap<Device, DeviceEventType, DeviceEventMessages>;
+export type BoundDeviceEventListeners = BoundEventListeners<Device, DeviceEventType, DeviceEventMessages>;
+export declare const RequiredInformationConnectionMessages: TxRxMessageType[];
+declare class Device {
+    #private;
+    get bluetoothId(): string | undefined;
+    constructor();
+    get addEventListener(): <T extends "maxFileLength" | "getFileType" | "setFileType" | "getFileLength" | "setFileLength" | "getFileChecksum" | "setFileChecksum" | "setFileTransferCommand" | "fileTransferStatus" | "getFileBlock" | "setFileBlock" | "fileTransferProgress" | "fileTransferComplete" | "fileReceived" | "pressure" | "acceleration" | "gravity" | "linearAcceleration" | "gyroscope" | "magnetometer" | "gameRotation" | "rotation" | "orientation" | "activity" | "stepCounter" | "stepDetector" | "deviceOrientation" | "barometer" | "getPressurePositions" | "getSensorScalars" | "sensorData" | "getSensorConfiguration" | "setSensorConfiguration" | "getTfliteName" | "setTfliteName" | "getTfliteTask" | "setTfliteTask" | "getTfliteSampleRate" | "setTfliteSampleRate" | "getTfliteSensorTypes" | "setTfliteSensorTypes" | "tfliteIsReady" | "getTfliteCaptureDelay" | "setTfliteCaptureDelay" | "getTfliteThreshold" | "setTfliteThreshold" | "getTfliteInferencingEnabled" | "setTfliteInferencingEnabled" | "tfliteInference" | "manufacturerName" | "modelNumber" | "softwareRevision" | "hardwareRevision" | "firmwareRevision" | "pnpId" | "serialNumber" | "deviceInformation" | "isCharging" | "getBatteryCurrent" | "getMtu" | "getId" | "getName" | "setName" | "getType" | "setType" | "getCurrentTime" | "setCurrentTime" | "notConnected" | "connecting" | "connected" | "disconnecting" | "connectionStatus" | "isConnected" | "smp" | "batteryLevel" | "rx" | "tx" | "firmwareImages" | "firmwareUploadProgress" | "firmwareStatus" | "firmwareUploadComplete" | "connectionMessage">(type: T, listener: (event: {
+        type: T;
+        target: Device;
+        message: DeviceEventMessages[T];
+    }) => void, options?: {
+        once?: boolean;
+    }) => void;
+    get removeEventListener(): <T extends "maxFileLength" | "getFileType" | "setFileType" | "getFileLength" | "setFileLength" | "getFileChecksum" | "setFileChecksum" | "setFileTransferCommand" | "fileTransferStatus" | "getFileBlock" | "setFileBlock" | "fileTransferProgress" | "fileTransferComplete" | "fileReceived" | "pressure" | "acceleration" | "gravity" | "linearAcceleration" | "gyroscope" | "magnetometer" | "gameRotation" | "rotation" | "orientation" | "activity" | "stepCounter" | "stepDetector" | "deviceOrientation" | "barometer" | "getPressurePositions" | "getSensorScalars" | "sensorData" | "getSensorConfiguration" | "setSensorConfiguration" | "getTfliteName" | "setTfliteName" | "getTfliteTask" | "setTfliteTask" | "getTfliteSampleRate" | "setTfliteSampleRate" | "getTfliteSensorTypes" | "setTfliteSensorTypes" | "tfliteIsReady" | "getTfliteCaptureDelay" | "setTfliteCaptureDelay" | "getTfliteThreshold" | "setTfliteThreshold" | "getTfliteInferencingEnabled" | "setTfliteInferencingEnabled" | "tfliteInference" | "manufacturerName" | "modelNumber" | "softwareRevision" | "hardwareRevision" | "firmwareRevision" | "pnpId" | "serialNumber" | "deviceInformation" | "isCharging" | "getBatteryCurrent" | "getMtu" | "getId" | "getName" | "setName" | "getType" | "setType" | "getCurrentTime" | "setCurrentTime" | "notConnected" | "connecting" | "connected" | "disconnecting" | "connectionStatus" | "isConnected" | "smp" | "batteryLevel" | "rx" | "tx" | "firmwareImages" | "firmwareUploadProgress" | "firmwareStatus" | "firmwareUploadComplete" | "connectionMessage">(type: T, listener: (event: {
+        type: T;
+        target: Device;
+        message: DeviceEventMessages[T];
+    }) => void) => void;
+    get waitForEvent(): <T extends "maxFileLength" | "getFileType" | "setFileType" | "getFileLength" | "setFileLength" | "getFileChecksum" | "setFileChecksum" | "setFileTransferCommand" | "fileTransferStatus" | "getFileBlock" | "setFileBlock" | "fileTransferProgress" | "fileTransferComplete" | "fileReceived" | "pressure" | "acceleration" | "gravity" | "linearAcceleration" | "gyroscope" | "magnetometer" | "gameRotation" | "rotation" | "orientation" | "activity" | "stepCounter" | "stepDetector" | "deviceOrientation" | "barometer" | "getPressurePositions" | "getSensorScalars" | "sensorData" | "getSensorConfiguration" | "setSensorConfiguration" | "getTfliteName" | "setTfliteName" | "getTfliteTask" | "setTfliteTask" | "getTfliteSampleRate" | "setTfliteSampleRate" | "getTfliteSensorTypes" | "setTfliteSensorTypes" | "tfliteIsReady" | "getTfliteCaptureDelay" | "setTfliteCaptureDelay" | "getTfliteThreshold" | "setTfliteThreshold" | "getTfliteInferencingEnabled" | "setTfliteInferencingEnabled" | "tfliteInference" | "manufacturerName" | "modelNumber" | "softwareRevision" | "hardwareRevision" | "firmwareRevision" | "pnpId" | "serialNumber" | "deviceInformation" | "isCharging" | "getBatteryCurrent" | "getMtu" | "getId" | "getName" | "setName" | "getType" | "setType" | "getCurrentTime" | "setCurrentTime" | "notConnected" | "connecting" | "connected" | "disconnecting" | "connectionStatus" | "isConnected" | "smp" | "batteryLevel" | "rx" | "tx" | "firmwareImages" | "firmwareUploadProgress" | "firmwareStatus" | "firmwareUploadComplete" | "connectionMessage">(type: T) => Promise<{
+        type: T;
+        target: Device;
+        message: DeviceEventMessages[T];
+    }>;
+    get connectionManager(): BaseConnectionManager | undefined;
+    set connectionManager(newConnectionManager: BaseConnectionManager | undefined);
+    private sendTxMessages;
+    connect(): Promise<void>;
+    get isConnected(): boolean;
+    get canReconnect(): boolean | undefined;
+    reconnect(): Promise<void | undefined>;
+    static Connect(): Promise<Device>;
+    static get ReconnectOnDisconnection(): boolean;
+    static set ReconnectOnDisconnection(newReconnectOnDisconnection: boolean);
+    get reconnectOnDisconnection(): boolean;
+    set reconnectOnDisconnection(newReconnectOnDisconnection: boolean);
+    get connectionType(): "webBluetooth" | "noble" | "webSocketClient" | undefined;
+    disconnect(): Promise<void>;
+    toggleConnection(): void;
+    get connectionStatus(): ConnectionStatus;
+    get isConnectionBusy(): boolean;
+    latestConnectionMessage: Map<ConnectionMessageType, DataView>;
+    get deviceInformation(): import("./DeviceInformationManager.ts").DeviceInformation;
+    get batteryLevel(): number;
+    /** @private */
+    _informationManager: InformationManager;
+    get id(): string;
+    get isCharging(): boolean;
+    get batteryCurrent(): number;
+    get getBatteryCurrent(): () => Promise<void>;
+    get name(): string;
+    get setName(): (newName: string) => Promise<void>;
+    get type(): "leftInsole" | "rightInsole";
+    get setType(): (newType: DeviceType) => Promise<void>;
+    get isInsole(): boolean;
+    get insoleSide(): "left" | "right";
+    get mtu(): number;
+    get sensorTypes(): SensorType[];
+    get continuousSensorTypes(): ("pressure" | "acceleration" | "gravity" | "linearAcceleration" | "gyroscope" | "magnetometer" | "gameRotation" | "rotation" | "barometer")[];
+    get sensorConfiguration(): SensorConfiguration;
+    setSensorConfiguration(newSensorConfiguration: SensorConfiguration, clearRest?: boolean): Promise<void>;
+    clearSensorConfiguration(): Promise<void>;
+    static get ClearSensorConfigurationOnLeave(): boolean;
+    static set ClearSensorConfigurationOnLeave(newClearSensorConfigurationOnLeave: boolean);
+    get clearSensorConfigurationOnLeave(): boolean;
+    set clearSensorConfigurationOnLeave(newClearSensorConfigurationOnLeave: boolean);
+    get numberOfPressureSensors(): number;
+    resetPressureRange(): void;
+    triggerVibration(vibrationConfigurations: VibrationConfiguration[], sendImmediately?: boolean): Promise<void>;
+    get maxFileLength(): number;
+    sendFile(fileType: FileType, file: FileLike): Promise<void>;
+    receiveFile(fileType: FileType): Promise<void>;
+    get fileTransferStatus(): "idle" | "sending" | "receiving";
+    cancelFileTransfer(): void;
+    get tfliteName(): string;
+    get setTfliteName(): (newName: string, sendImmediately?: boolean) => Promise<void>;
+    get tfliteTask(): "classification" | "regression";
+    get setTfliteTask(): (newTask: import("./TfliteManager.ts").TfliteTask, sendImmediately?: boolean) => Promise<void>;
+    get tfliteSampleRate(): number;
+    get setTfliteSampleRate(): (newSampleRate: number, sendImmediately?: boolean) => Promise<void>;
+    get tfliteSensorTypes(): ("pressure" | "acceleration" | "gravity" | "linearAcceleration" | "gyroscope" | "magnetometer" | "gameRotation" | "rotation" | "orientation" | "activity" | "stepCounter" | "stepDetector" | "deviceOrientation" | "barometer")[];
+    get allowedTfliteSensorTypes(): ("pressure" | "acceleration" | "gravity" | "linearAcceleration" | "gyroscope" | "magnetometer" | "gameRotation" | "rotation" | "orientation" | "activity" | "stepCounter" | "stepDetector" | "deviceOrientation" | "barometer")[];
+    get setTfliteSensorTypes(): (newSensorTypes: SensorType[], sendImmediately?: boolean) => Promise<void>;
+    get tfliteIsReady(): boolean;
+    get tfliteInferencingEnabled(): boolean;
+    get setTfliteInferencingEnabled(): (newInferencingEnabled: boolean, sendImmediately?: boolean) => Promise<void>;
+    enableTfliteInferencing(): Promise<void>;
+    disableTfliteInferencing(): Promise<void>;
+    get toggleTfliteInferencing(): () => Promise<void>;
+    get tfliteCaptureDelay(): number;
+    get setTfliteCaptureDelay(): (newCaptureDelay: number, sendImmediately: boolean) => Promise<void>;
+    get tfliteThreshold(): number;
+    get setTfliteThreshold(): (newThreshold: number, sendImmediately: boolean) => Promise<void>;
+    private sendSmpMessage;
+    get uploadFirmware(): (file: FileLike) => Promise<void>;
+    reset(): Promise<void>;
+    get firmwareStatus(): "idle" | "uploading" | "uploaded" | "pending" | "testing" | "erasing";
+    get getFirmwareImages(): () => Promise<void>;
+    get firmwareImages(): import("./FirmwareManager.ts").FirmwareImage[];
+    get eraseFirmwareImage(): () => Promise<void>;
+    get confirmFirmwareImage(): (imageIndex?: number) => Promise<void>;
+    get testFirmwareImage(): (imageIndex?: number) => Promise<void>;
+}
+export default Device;

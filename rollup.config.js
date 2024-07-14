@@ -4,6 +4,10 @@ import replace from "@rollup/plugin-replace";
 import resolve from "@rollup/plugin-node-resolve";
 import commonjs from "@rollup/plugin-commonjs";
 import babel from "@rollup/plugin-babel";
+import typescript from "@rollup/plugin-typescript";
+import { dts } from "rollup-plugin-dts";
+import copy from "rollup-plugin-copy";
+import cleanup from "rollup-plugin-cleanup";
 
 const production = !process.env.ROLLUP_WATCH;
 
@@ -25,21 +29,22 @@ function header() {
   };
 }
 
-/** @param {"node"|"browser"|"ls"} context  */
+/** @param {"node" | "browser" | "ls"} context  */
 function removeLines(context) {
   const isInBrowser = context == "browser";
   const isInNode = context == "node";
   const isInLensStudio = context == "ls";
+
   return replace({
     preventAssignment: true,
     delimiters: ["", ""],
     values: {
-      "// BROWSER_START": isInBrowser ? "" : "/*",
-      "// BROWSER_END": isInBrowser ? "" : "*/",
-      "// NODE_START": isInNode ? "" : "/*",
-      "// NODE_END": isInNode ? "" : "*/",
-      "// LS_START": isInLensStudio ? "" : "/*",
-      "// LS_END": isInLensStudio ? "" : "*/",
+      "/** BROWSER_START */": isInBrowser ? "" : "/*",
+      "/** BROWSER_END */": isInBrowser ? "" : "*/",
+      "/** NODE_START */": isInNode ? "" : "/*",
+      "/** NODE_END */": isInNode ? "" : "*/",
+      "/** LS_START */": isInLensStudio ? "" : "/*",
+      "/** LS_END */": isInLensStudio ? "" : "*/",
     },
   });
 }
@@ -53,52 +58,20 @@ function replaceEnvironment() {
   });
 }
 
-function removeJSDocImports() {
-  return {
-    transform(code) {
-      code = new MagicString(code);
-
-      // removes /** @typedef {import("./SomeModule.js").SomeType} SomeType */ (thanks ChatGPT)
-      code.replace(/\/\*\* @typedef \{import\((?:"|')(.*?)("|')\)(?:\.(\w+))?\.(.*?)\} (\w+) \*\//gs, "");
-
-      return {
-        code: code.toString(),
-        map: code.generateMap(),
-      };
-    },
-  };
-}
-
-function removeJSDoc() {
-  return {
-    transform(code) {
-      code = new MagicString(code);
-
-      // removes all jsdocs (thanks chatGPT)
-      code.replace(/\/\*\*[\s\S]*?\*\//g, "");
-
-      return {
-        code: code.toString(),
-        map: code.generateMap(),
-      };
-    },
-  };
-}
-
-const _plugins = [header(), removeJSDocImports()];
+const _plugins = [typescript(), cleanup({ comments: "none", extensions: ["js", "ts"] }), header()];
 
 if (production) {
   _plugins.push(replaceEnvironment());
 }
 
-const _browserPlugins = [removeLines("browser"), commonjs(), resolve({ browser: true })];
+const _browserPlugins = [resolve(), commonjs(), removeLines("browser")];
 const _nodePlugins = [removeLines("node")];
-const nodeExternal = ["webbluetooth", "debounce", "ws", "@abandonware/noble"];
+const nodeExternal = ["webbluetooth", "debounce", "ws", "@abandonware/noble", "auto-bind"];
+
 const lensStudioPlugins = [
-  removeJSDoc(),
+  removeLines("ls"),
   resolve(),
   commonjs(),
-  removeLines("ls"),
   babel({
     babelHelpers: "bundled",
     exclude: "node_modules/**",
@@ -106,37 +79,82 @@ const lensStudioPlugins = [
 ];
 
 const name = "BS";
-const input = "src/BS.js";
+const input = "src/BS.ts";
+
+const defaultOutput = { sourcemap: true };
 
 const builds = [
   {
     input,
-    plugins: [..._plugins, ..._browserPlugins],
+    plugins: [..._browserPlugins, ..._plugins],
     output: [
       {
+        ...defaultOutput,
         format: "esm",
         file: "build/brilliantsole.module.js",
       },
     ],
   },
   {
-    input,
-    plugins: [..._plugins, ..._browserPlugins, terser()],
-    output: [
-      {
-        format: "esm",
-        file: "build/brilliantsole.module.min.js",
-      },
+    input: "./build/dts/BS.d.ts",
+    output: [{ file: "build/index.d.ts", format: "es" }],
+    plugins: [
+      removeLines("browser"),
+      dts(),
+      copy({
+        targets: [
+          { src: "build/index.d.ts", dest: "build", rename: "brilliantsole.module.d.ts" },
+          { src: "build/index.d.ts", dest: "build", rename: "brilliantsole.module.min.d.ts" },
+        ],
+      }),
     ],
   },
 
   {
     input,
-    plugins: [..._plugins, ..._browserPlugins],
+    plugins: [..._nodePlugins, ..._plugins],
+    external: nodeExternal,
     output: [
       {
-        format: "umd",
+        ...defaultOutput,
+        format: "esm",
+        file: "build/brilliantsole.node.module.js",
+      },
+    ],
+  },
+  {
+    input: "./build/dts/BS.d.ts",
+    output: [{ file: "build/index.node.d.ts", format: "es" }],
+    plugins: [
+      removeLines("node"),
+      dts(),
+      copy({
+        targets: [{ src: "build/index.node.d.ts", dest: "build", rename: "brilliantsole.node.module.d.ts" }],
+      }),
+    ],
+  },
+];
+
+const productionOnlyBuilds = [
+  {
+    input,
+    plugins: [..._browserPlugins, ..._plugins, terser()],
+    output: [
+      {
+        ...defaultOutput,
+        format: "esm",
+        file: "build/brilliantsole.module.min.js",
+      },
+    ],
+  },
+  {
+    input,
+    plugins: [..._browserPlugins, ..._plugins],
+    output: [
+      {
         name,
+        ...defaultOutput,
+        format: "umd",
         file: "build/brilliantsole.js",
         indent: "\t",
       },
@@ -144,9 +162,10 @@ const builds = [
   },
   {
     input,
-    plugins: [..._plugins, ..._browserPlugins, terser()],
+    plugins: [..._browserPlugins, ..._plugins, terser()],
     output: [
       {
+        ...defaultOutput,
         format: "umd",
         name,
         file: "build/brilliantsole.min.js",
@@ -156,33 +175,23 @@ const builds = [
 
   {
     input,
-    plugins: [..._plugins, ..._nodePlugins],
+    plugins: [..._nodePlugins, ..._plugins],
     external: nodeExternal,
     output: [
       {
-        format: "esm",
-        file: "build/brilliantsole.node.module.js",
-      },
-    ],
-  },
-  {
-    input,
-    plugins: [..._plugins, ..._nodePlugins],
-    external: nodeExternal,
-    output: [
-      {
+        ...defaultOutput,
         format: "cjs",
         name,
         file: "build/brilliantsole.cjs",
       },
     ],
   },
-
   {
     input,
-    plugins: [..._plugins, ...lensStudioPlugins],
+    plugins: [...lensStudioPlugins, ..._plugins],
     output: [
       {
+        ...defaultOutput,
         format: "umd",
         name,
         file: "build/brilliantsole.ls.js",
@@ -190,5 +199,9 @@ const builds = [
     ],
   },
 ];
+
+if (production) {
+  builds.push(...productionOnlyBuilds);
+}
 
 export default builds;

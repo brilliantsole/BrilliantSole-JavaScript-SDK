@@ -3,14 +3,12 @@ window.BS = BS;
 console.log({ BS });
 //BS.setAllConsoleLevelFlags({ log: false });
 
-/** @typedef {import("../../build/brilliantsole.module.js").Device} Device */
-
 // GET DEVICES
 
 /** @type {HTMLTemplateElement} */
 const availableDeviceTemplate = document.getElementById("availableDeviceTemplate");
 const availableDevicesContainer = document.getElementById("availableDevices");
-/** @param {Device[]} availableDevices */
+/** @param {BS.Device[]} availableDevices */
 function onAvailableDevices(availableDevices) {
   availableDevicesContainer.innerHTML = "";
   if (availableDevices.length == 0) {
@@ -29,7 +27,7 @@ function onAvailableDevices(availableDevices) {
       const onConnectionStatusUpdate = () => {
         switch (availableDevice.connectionStatus) {
           case "connected":
-          case "not connected":
+          case "notConnected":
             toggleConnectionButton.disabled = false;
             toggleConnectionButton.innerText = availableDevice.isConnected ? "disconnect" : "connect";
             break;
@@ -47,14 +45,14 @@ function onAvailableDevices(availableDevices) {
   }
 }
 async function getDevices() {
-  const availableDevices = await BS.Device.GetDevices();
+  const availableDevices = await BS.DeviceManager.GetDevices();
   if (!availableDevices) {
     return;
   }
   onAvailableDevices(availableDevices);
 }
 
-BS.Device.AddEventListener("availableDevices", (event) => {
+BS.DeviceManager.AddEventListener("availableDevices", (event) => {
   const devices = event.message.availableDevices;
   onAvailableDevices(devices);
 });
@@ -78,8 +76,8 @@ const connectedDevicesContainer = document.getElementById("connectedDevices");
 /** @type {HTMLTemplateElement} */
 const connectedDeviceTemplate = document.getElementById("connectedDeviceTemplate");
 
-BS.Device.AddEventListener("deviceConnected", (event) => {
-  /** @type {Device} */
+BS.DeviceManager.AddEventListener("deviceConnected", (event) => {
+  /** @type {BS.Device} */
   const device = event.message.device;
   console.log("deviceConnected", device);
   const connectedDeviceContainer = connectedDeviceTemplate.content.cloneNode(true).querySelector(".connectedDevice");
@@ -93,7 +91,7 @@ BS.Device.AddEventListener("deviceConnected", (event) => {
     disconnectButton.disabled = true;
     device.disconnect();
   });
-  device.addEventListener("not connected", () => {
+  device.addEventListener("notConnected", () => {
     connectedDeviceContainer.remove();
   });
 
@@ -112,10 +110,7 @@ BS.Device.AddEventListener("deviceConnected", (event) => {
   updateSensorConfigurationPre();
 
   device.addEventListener("sensorData", (event) => {
-    /** @type {SensorType} */
-    const sensorType = event.message.sensorType;
-    /** @type {number} */
-    const timestamp = event.message.timestamp;
+    const { sensorType, timestamp } = event.message;
 
     const { [sensorType]: data } = event.message;
     //console.log({ name: device.name, sensorType, timestamp, data });
@@ -139,7 +134,7 @@ BS.Device.AddEventListener("deviceConnected", (event) => {
       }
 
       if (sensorType == "pressure") {
-        /** @type {import("../../build/brilliantsole.module.js").PressureData} */
+        /** @type {BS.PressureData} */
         const pressure = data;
         const pressureSensorData = pressure.sensors.map((sensor) => {
           const { name, normalizedValue } = sensor;
@@ -157,14 +152,14 @@ BS.Device.AddEventListener("deviceConnected", (event) => {
 
 // SENSOR CONFIGURATION
 
-/** @type {import("../../build/brilliantsole.module.js").SensorConfiguration} */
+/** @type {BS.SensorConfiguration} */
 const sensorConfiguration = {};
 const sensorConfigurationContainer = document.getElementById("sensorConfiguration");
 /** @type {HTMLTemplateElement} */
 const sensorTypeConfigurationTemplate = document.getElementById("sensorTypeConfigurationTemplate");
 /** @type {Object.<string, HTMLElement>} */
 const sensorTypeConfigurationContainers = {};
-BS.Device.SensorTypes.forEach((sensorType) => {
+BS.ContinuousSensorTypes.forEach((sensorType) => {
   sensorConfiguration[sensorType] = 0;
 
   const sensorTypeConfigurationContainer = sensorTypeConfigurationTemplate.content
@@ -175,8 +170,8 @@ BS.Device.SensorTypes.forEach((sensorType) => {
   /** @type {HTMLInputElement} */
   const sensorRateInput = sensorTypeConfigurationContainer.querySelector(".sensorRate");
   sensorRateInput.value = 0;
-  sensorRateInput.max = BS.Device.MaxSensorRate;
-  sensorRateInput.step = BS.Device.SensorRateStep;
+  sensorRateInput.max = BS.MaxSensorRate;
+  sensorRateInput.step = BS.SensorRateStep;
   sensorRateInput.addEventListener("input", () => {
     sensorConfiguration[sensorType] = Number(sensorRateInput.value);
     console.log({ sensorConfiguration });
@@ -201,7 +196,7 @@ function setIsSensorDataEnabled(newIsSensorDataEnabled) {
   }
   isSensorDataEnabled = newIsSensorDataEnabled;
 
-  BS.Device.ConnectedDevices.forEach((device) => {
+  BS.DeviceManager.ConnectedDevices.forEach((device) => {
     if (isSensorDataEnabled) {
       console.log(device, sensorConfiguration);
       device.setSensorConfiguration(sensorConfiguration);
@@ -220,13 +215,13 @@ toggleSensorDataCheckbox.addEventListener("input", () => {
 });
 function updateToggleSensorDataCheckbox() {
   const isSensorConfigurationZero = Object.values(sensorConfiguration).every((sensorRate) => sensorRate == 0);
-  toggleSensorDataCheckbox.disabled = isSensorConfigurationZero || BS.Device.ConnectedDevices.length == 0;
+  toggleSensorDataCheckbox.disabled = isSensorConfigurationZero || BS.DeviceManager.ConnectedDevices.length == 0;
 }
 window.addEventListener("sensorConfiguration", (event) => {
   updateToggleSensorDataCheckbox();
 });
 
-BS.Device.AddEventListener("deviceIsConnected", () => {
+BS.DeviceManager.AddEventListener("deviceIsConnected", () => {
   updateToggleSensorDataCheckbox();
 });
 
@@ -262,8 +257,6 @@ recordingDurationInput.dispatchEvent(new Event("input"));
 
 // RECORDING
 
-/** @typedef {import("../../build/brilliantsole.module.js").SensorType} SensorType */
-
 let isRecording = false;
 
 /**
@@ -279,14 +272,14 @@ let isRecording = false;
  * @type {Object}
  * @property {string} id
  * @property {string} name
- * @property {import("../../build/brilliantsole.module.js").DeviceType} type
+ * @property {BS.DeviceType} type
  * @property {SensorTypeData[]} sensorData
  */
 
 /**
  * @typedef SensorTypeData
  * @type {Object}
- * @property {SensorType} sensorType
+ * @property {BS.ContinuousSensorType} sensorType
  * @property {number} initialTimestamp ms
  * @property {number} dataRate ms
  * @property {Object[]} data
@@ -443,14 +436,14 @@ function updateRecordingCountdown(recordingCountdown) {
 
 /**
  * vibrates all connected insoles with a single waveformEffect
- * @param {import("../../build/brilliantsole.module.js").VibrationWaveformEffect} effect
+ * @param {BS.VibrationWaveformEffect} effect
  */
 function vibrate(effect) {
-  BS.Device.ConnectedDevices.forEach((device) => {
+  BS.DeviceManager.ConnectedDevices.forEach((device) => {
     device.triggerVibration([
       {
         type: "waveformEffect",
-        waveformEffect: { segments: [{ effect }] },
+        segments: [{ effect }],
       },
     ]);
   });

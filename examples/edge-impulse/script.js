@@ -7,10 +7,6 @@ BS.setAllConsoleLevelFlags({ log: false });
 
 // DEVICE
 
-/** @typedef {import("../../build/brilliantsole.module.js").Device} Device */
-/** @typedef {import("../../build/brilliantsole.module.js").SensorType} SensorType */
-/** @typedef {import("../../build/brilliantsole.module.js").SensorConfiguration} SensorConfiguration */
-
 const device = new BS.Device();
 console.log({ device });
 window.device = device;
@@ -20,7 +16,7 @@ window.device = device;
 /** @type {HTMLTemplateElement} */
 const availableDeviceTemplate = document.getElementById("availableDeviceTemplate");
 const availableDevicesContainer = document.getElementById("availableDevices");
-/** @param {Device[]} availableDevices */
+/** @param {BS.Device[]} availableDevices */
 function onAvailableDevices(availableDevices) {
   availableDevicesContainer.innerHTML = "";
   if (availableDevices.length == 0) {
@@ -40,23 +36,23 @@ function onAvailableDevices(availableDevices) {
         device.reconnect();
       });
       device.addEventListener("connectionStatus", () => {
-        toggleConnectionButton.disabled = device.connectionStatus != "not connected";
+        toggleConnectionButton.disabled = device.connectionStatus != "notConnected";
       });
-      toggleConnectionButton.disabled = device.connectionStatus != "not connected";
+      toggleConnectionButton.disabled = device.connectionStatus != "notConnected";
 
       availableDevicesContainer.appendChild(availableDeviceContainer);
     });
   }
 }
 async function getDevices() {
-  const availableDevices = await BS.Device.GetDevices();
+  const availableDevices = await BS.DeviceManager.GetDevices();
   if (!availableDevices) {
     return;
   }
   onAvailableDevices(availableDevices);
 }
 
-BS.Device.AddEventListener("availableDevices", (event) => {
+BS.DeviceManager.AddEventListener("availableDevices", (event) => {
   const devices = event.message.availableDevices;
   onAvailableDevices(devices);
 });
@@ -68,7 +64,7 @@ getDevices();
 const toggleConnectionButton = document.getElementById("toggleConnection");
 toggleConnectionButton.addEventListener("click", () => {
   switch (device.connectionStatus) {
-    case "not connected":
+    case "notConnected":
       device.connect();
       break;
     case "connected":
@@ -89,7 +85,7 @@ device.addEventListener("connectionStatus", () => {
 device.addEventListener("connectionStatus", () => {
   switch (device.connectionStatus) {
     case "connected":
-    case "not connected":
+    case "notConnected":
       toggleConnectionButton.disabled = false;
       toggleConnectionButton.innerText = device.isConnected ? "disconnect" : "connect";
       break;
@@ -256,9 +252,9 @@ window.addEventListener("load", () => {
 
 // SENSOR TYPES
 
-/** @type {SensorType[]} */
+/** @type {BS.ContinuousSensorType[]} */
 let sensorTypes = [];
-/** @param {SensorType[]} newSensorTypes */
+/** @param {BS.ContinuousSensorType[]} newSensorTypes */
 function setSensorTypes(newSensorTypes) {
   sensorTypes = newSensorTypes;
   console.log("sensorTypes", sensorTypes);
@@ -271,7 +267,7 @@ const sensorTypeTemplate = document.getElementById("sensorTypeTemplate");
 /** @type {Object.<string, HTMLElement>} */
 const sensorTypeContainers = {};
 
-BS.Device.TfliteSensorTypes.forEach((sensorType) => {
+BS.TfliteSensorTypes.forEach((sensorType) => {
   const sensorTypeContainer = sensorTypeTemplate.content.cloneNode(true).querySelector(".sensorType");
   sensorTypeContainer.querySelector(".name").innerText = sensorType;
 
@@ -291,7 +287,7 @@ BS.Device.TfliteSensorTypes.forEach((sensorType) => {
 });
 
 function onSensorTypesInput() {
-  const sensorTypes = BS.Device.TfliteSensorTypes.filter((sensorType) => {
+  const sensorTypes = BS.TfliteSensorTypes.filter((sensorType) => {
     /** @type {HTMLInputElement} */
     const input = sensorTypeContainers[sensorType].querySelector(".enabled");
     return input.checked;
@@ -612,7 +608,7 @@ async function connectToRemoteManagement() {
       const samplingDetails = data.sample;
       console.log("samplingDetails", samplingDetails);
 
-      /** @type {SensorType[]} */
+      /** @type {BS.ContinuousSensorType[]} */
       const sensorTypes = samplingDetails.sensor.split(sensorCombinationSeparator);
       console.log("sensorTypes", sensorTypes);
 
@@ -784,7 +780,7 @@ const scalars = {
 /** @typedef {Object.<string, SensorData[]>} DeviceData */
 
 /**
- * @param {SensorType[]} sensorTypes
+ * @param {BS.ContinuousSensorType[]} sensorTypes
  * @param {number} numberOfSamples
  * @returns {Promise<DeviceData>}
  */
@@ -836,7 +832,7 @@ async function collectData(sensorTypes, numberOfSamples) {
 const emptySignature = Array(64).fill("0").join("");
 
 /**
- * @param {SensorType[]} sensorTypes
+ * @param {BS.ContinuousSensorType[]} sensorTypes
  * @param {DeviceData} deviceData
  */
 async function uploadData(sensorTypes, deviceData) {
