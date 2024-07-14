@@ -1,11 +1,12 @@
 import { ConnectionStatus } from "./connection/BaseConnectionManager.ts";
 import WebBluetoothConnectionManager from "./connection/bluetooth/WebBluetoothConnectionManager.ts";
-import Device, { BoundDeviceEventListeners, DeviceEventMap } from "./Device.ts";
+import { BoundDeviceEventListeners, DeviceEventMap } from "./Device.ts";
 import { DeviceType } from "./InformationManager.ts";
 import { createConsole } from "./utils/Console.ts";
 import { isInBluefy, isInBrowser } from "./utils/environment.ts";
 import EventDispatcher, { BoundEventListeners, Event, EventMap } from "./utils/EventDispatcher.ts";
 import { addEventListeners } from "./utils/EventUtils.ts";
+import type Device from "./Device.ts";
 
 const _console = createConsole("DeviceManager", { log: true });
 
@@ -52,12 +53,13 @@ export type BoundDeviceManagerEventListeners = BoundEventListeners<
 >;
 
 class DeviceManager {
-  static #shared = new DeviceManager();
-  static get shared() {
-    return this.#shared;
-  }
+  static readonly shared = new DeviceManager();
 
   constructor() {
+    if (DeviceManager.shared && this != DeviceManager.shared) {
+      throw Error("DeviceManager is a singleton - use DeviceManager.shared");
+    }
+
     if (this.CanUseLocalStorage) {
       this.UseLocalStorage = true;
     }

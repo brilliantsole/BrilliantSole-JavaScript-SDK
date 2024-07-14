@@ -120,6 +120,7 @@ class DevicePair {
       return;
     }
 
+    // FILL - listen for all devices
     if (currentDevice) {
       removeEventListeners(currentDevice, this.#boundDeviceEventListeners);
     }
@@ -231,7 +232,7 @@ class DevicePair {
   }
   static {
     DeviceManager.AddEventListener("deviceConnected", (event) => {
-      const device: Device = event.message.device;
+      const { device } = event.message;
       if (device.isInsole) {
         this.#shared.assignInsole(device);
       }

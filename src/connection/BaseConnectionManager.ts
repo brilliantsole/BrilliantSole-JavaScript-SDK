@@ -34,13 +34,21 @@ export const TxRxMessageTypes = [
 ] as const;
 export type TxRxMessageType = (typeof TxRxMessageTypes)[number];
 
+export const SMPMessageTypes = ["smp"] as const;
+export type SMPMessageType = (typeof SMPMessageTypes)[number];
+
+export const BatteryLevelMessageTypes = ["batteryLevel"] as const;
+export type BatteryLevelMessageType = (typeof BatteryLevelMessageTypes)[number];
+
+export const MetaConnectionMessageTypes = ["rx", "tx"] as const;
+export type MetaConnectionMessageType = (typeof MetaConnectionMessageTypes)[number];
+
 export const ConnectionMessageTypes = [
+  ...BatteryLevelMessageTypes,
   ...DeviceInformationMessageTypes,
-  "batteryLevel",
-  "smp",
-  "rx",
-  "tx",
+  ...MetaConnectionMessageTypes,
   ...TxRxMessageTypes,
+  ...SMPMessageTypes,
 ] as const;
 export type ConnectionMessageType = (typeof ConnectionMessageTypes)[number];
 

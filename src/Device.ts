@@ -5,8 +5,9 @@ import BaseConnectionManager, {
   TxRxMessageType,
   ConnectionStatuses,
   ConnectionStatus,
-  ConnectionMessageTypes,
   ConnectionMessageType,
+  MetaConnectionMessageTypes,
+  BatteryLevelMessageTypes,
 } from "./connection/BaseConnectionManager.ts";
 import { isInBrowser, isInNode } from "./utils/environment.ts";
 import WebBluetoothConnectionManager from "./connection/bluetooth/WebBluetoothConnectionManager.ts";
@@ -15,6 +16,7 @@ import SensorConfigurationManager, {
   SensorConfiguration,
   SensorConfigurationEventDispatcher,
   SensorConfigurationEventMessages,
+  SensorConfigurationEventTypes,
   SensorConfigurationMessageType,
   SensorConfigurationMessageTypes,
 } from "./sensor/SensorConfigurationManager.ts";
@@ -74,20 +76,20 @@ import InformationManager, {
 } from "./InformationManager.ts";
 import { FileLike } from "./utils/ArrayBufferUtils.ts";
 import DeviceManager from "./DeviceManager.ts";
-import autoBind from "auto-bind";
 
 const _console = createConsole("Device", { log: true });
 
 export const ConnectionEventTypes = [...ConnectionStatuses, "connectionStatus", "isConnected"] as const;
 export type ConnectionEventType = (typeof ConnectionEventTypes)[number];
 
-// TODO - redundant (Message and EventType)
 export const DeviceEventTypes = [
   ...ConnectionEventTypes,
-  ...ConnectionMessageTypes,
   "connectionMessage",
+  ...MetaConnectionMessageTypes,
+  ...BatteryLevelMessageTypes,
   ...InformationEventTypes,
   ...DeviceInformationEventTypes,
+  ...SensorConfigurationEventTypes,
   ...SensorDataEventTypes,
   ...FileTransferEventTypes,
   ...TfliteEventTypes,

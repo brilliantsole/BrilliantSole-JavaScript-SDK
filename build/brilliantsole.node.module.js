@@ -22,9 +22,8 @@ typeof SuppressedError === "function" ? SuppressedError : function (error, suppr
     return e.name = "SuppressedError", e.error = error, e.suppressed = suppressed, e;
 };
 
-const __BRILLIANTSOLE__ENVIRONMENT__ = "__BRILLIANTSOLE__DEV__";
-const isInProduction = __BRILLIANTSOLE__ENVIRONMENT__ == "__BRILLIANTSOLE__PROD__";
-const isInDev = __BRILLIANTSOLE__ENVIRONMENT__ == "__BRILLIANTSOLE__DEV__";
+const isInProduction = "__BRILLIANTSOLE__PROD__" == "__BRILLIANTSOLE__PROD__";
+const isInDev = "__BRILLIANTSOLE__PROD__" == "__BRILLIANTSOLE__DEV__";
 const isInBrowser = typeof window !== "undefined" && typeof window?.document !== "undefined";
 const isInNode = typeof process !== "undefined" && process?.versions?.node != null;
 const userAgent = (isInBrowser && navigator.userAgent) || "";
@@ -59,7 +58,7 @@ var environment = /*#__PURE__*/Object.freeze({
     isSafari: isSafari
 });
 
-var _a$8, _Console_consoles, _Console_levelFlags;
+var _a$7, _Console_consoles, _Console_levelFlags;
 var __console;
 if (isInLensStudio) {
     const log = function (...args) {
@@ -102,30 +101,27 @@ class Console {
             error: true,
             table: true,
         });
-        if (__classPrivateFieldGet(_a$8, _a$8, "f", _Console_consoles)[type]) {
+        if (__classPrivateFieldGet(_a$7, _a$7, "f", _Console_consoles)[type]) {
             throw new Error(`"${type}" console already exists`);
         }
-        __classPrivateFieldGet(_a$8, _a$8, "f", _Console_consoles)[type] = this;
+        __classPrivateFieldGet(_a$7, _a$7, "f", _Console_consoles)[type] = this;
     }
     setLevelFlags(levelFlags) {
         Object.assign(__classPrivateFieldGet(this, _Console_levelFlags, "f"), levelFlags);
     }
     static setLevelFlagsForType(type, levelFlags) {
-        if (!__classPrivateFieldGet(this, _a$8, "f", _Console_consoles)[type]) {
+        if (!__classPrivateFieldGet(this, _a$7, "f", _Console_consoles)[type]) {
             throw new Error(`no console found with type "${type}"`);
         }
-        __classPrivateFieldGet(this, _a$8, "f", _Console_consoles)[type].setLevelFlags(levelFlags);
+        __classPrivateFieldGet(this, _a$7, "f", _Console_consoles)[type].setLevelFlags(levelFlags);
     }
     static setAllLevelFlags(levelFlags) {
-        for (const type in __classPrivateFieldGet(this, _a$8, "f", _Console_consoles)) {
-            __classPrivateFieldGet(this, _a$8, "f", _Console_consoles)[type].setLevelFlags(levelFlags);
+        for (const type in __classPrivateFieldGet(this, _a$7, "f", _Console_consoles)) {
+            __classPrivateFieldGet(this, _a$7, "f", _Console_consoles)[type].setLevelFlags(levelFlags);
         }
     }
     static create(type, levelFlags) {
-        const console = __classPrivateFieldGet(this, _a$8, "f", _Console_consoles)[type] || new _a$8(type);
-        if (levelFlags) {
-            console.setLevelFlags(levelFlags);
-        }
+        const console = __classPrivateFieldGet(this, _a$7, "f", _Console_consoles)[type] || new _a$7(type);
         return console;
     }
     get log() {
@@ -155,7 +151,7 @@ class Console {
         this.assertWithError(enumeration.includes(value), `invalid enum "${value}"`);
     }
 }
-_a$8 = Console, _Console_levelFlags = new WeakMap();
+_a$7 = Console, _Console_levelFlags = new WeakMap();
 _Console_consoles = { value: {} };
 function createConsole(type, levelFlags) {
     return Console.create(type, levelFlags);
@@ -427,7 +423,7 @@ async function getFileBuffer(file) {
     return fileBuffer;
 }
 
-var _FileTransferManager_instances, _a$7, _FileTransferManager_dispatchEvent_get, _FileTransferManager_assertValidType, _FileTransferManager_assertValidTypeEnum, _FileTransferManager_assertValidStatusEnum, _FileTransferManager_assertValidCommand, _FileTransferManager_MaxLength, _FileTransferManager_maxLength, _FileTransferManager_parseMaxLength, _FileTransferManager_updateMaxLength, _FileTransferManager_assertValidLength, _FileTransferManager_type, _FileTransferManager_parseType, _FileTransferManager_updateType, _FileTransferManager_setType, _FileTransferManager_length, _FileTransferManager_parseLength, _FileTransferManager_updateLength, _FileTransferManager_setLength, _FileTransferManager_checksum, _FileTransferManager_parseChecksum, _FileTransferManager_updateChecksum, _FileTransferManager_setChecksum, _FileTransferManager_setCommand, _FileTransferManager_status, _FileTransferManager_parseStatus, _FileTransferManager_updateStatus, _FileTransferManager_assertIsIdle, _FileTransferManager_assertIsNotIdle, _FileTransferManager_receivedBlocks, _FileTransferManager_parseBlock, _FileTransferManager_send, _FileTransferManager_sendBlock;
+var _FileTransferManager_instances, _a$6, _FileTransferManager_dispatchEvent_get, _FileTransferManager_assertValidType, _FileTransferManager_assertValidTypeEnum, _FileTransferManager_assertValidStatusEnum, _FileTransferManager_assertValidCommand, _FileTransferManager_MaxLength, _FileTransferManager_maxLength, _FileTransferManager_parseMaxLength, _FileTransferManager_updateMaxLength, _FileTransferManager_assertValidLength, _FileTransferManager_type, _FileTransferManager_parseType, _FileTransferManager_updateType, _FileTransferManager_setType, _FileTransferManager_length, _FileTransferManager_parseLength, _FileTransferManager_updateLength, _FileTransferManager_setLength, _FileTransferManager_checksum, _FileTransferManager_parseChecksum, _FileTransferManager_updateChecksum, _FileTransferManager_setChecksum, _FileTransferManager_setCommand, _FileTransferManager_status, _FileTransferManager_parseStatus, _FileTransferManager_updateStatus, _FileTransferManager_assertIsIdle, _FileTransferManager_assertIsNotIdle, _FileTransferManager_receivedBlocks, _FileTransferManager_parseBlock, _FileTransferManager_send, _FileTransferManager_sendBlock;
 const _console$t = createConsole("FileTransferManager", { log: true });
 const FileTransferMessageTypes = [
     "maxFileLength",
@@ -455,7 +451,7 @@ const FileTransferEventTypes = [
 class FileTransferManager {
     constructor() {
         _FileTransferManager_instances.add(this);
-        _FileTransferManager_maxLength.set(this, _a$7.MaxLength);
+        _FileTransferManager_maxLength.set(this, _a$6.MaxLength);
         _FileTransferManager_type.set(this, void 0);
         _FileTransferManager_length.set(this, 0);
         _FileTransferManager_checksum.set(this, 0);
@@ -473,7 +469,7 @@ class FileTransferManager {
         return this.eventDispatcher.waitForEvent;
     }
     static get MaxLength() {
-        return __classPrivateFieldGet(this, _a$7, "f", _FileTransferManager_MaxLength);
+        return __classPrivateFieldGet(this, _a$6, "f", _FileTransferManager_MaxLength);
     }
     get maxLength() {
         return __classPrivateFieldGet(this, _FileTransferManager_maxLength, "f");
@@ -544,7 +540,7 @@ class FileTransferManager {
         await __classPrivateFieldGet(this, _FileTransferManager_instances, "m", _FileTransferManager_setCommand).call(this, "cancel");
     }
 }
-_a$7 = FileTransferManager, _FileTransferManager_maxLength = new WeakMap(), _FileTransferManager_type = new WeakMap(), _FileTransferManager_length = new WeakMap(), _FileTransferManager_checksum = new WeakMap(), _FileTransferManager_status = new WeakMap(), _FileTransferManager_receivedBlocks = new WeakMap(), _FileTransferManager_instances = new WeakSet(), _FileTransferManager_dispatchEvent_get = function _FileTransferManager_dispatchEvent_get() {
+_a$6 = FileTransferManager, _FileTransferManager_maxLength = new WeakMap(), _FileTransferManager_type = new WeakMap(), _FileTransferManager_length = new WeakMap(), _FileTransferManager_checksum = new WeakMap(), _FileTransferManager_status = new WeakMap(), _FileTransferManager_receivedBlocks = new WeakMap(), _FileTransferManager_instances = new WeakSet(), _FileTransferManager_dispatchEvent_get = function _FileTransferManager_dispatchEvent_get() {
     return this.eventDispatcher.dispatchEvent;
 }, _FileTransferManager_assertValidType = function _FileTransferManager_assertValidType(type) {
     _console$t.assertEnumWithError(type, FileTypes);
@@ -1132,11 +1128,12 @@ function autoBind(self, {include, exclude} = {}) {
 	return self;
 }
 
-var _SensorConfigurationManager_instances, _a$6, _SensorConfigurationManager_dispatchEvent_get, _SensorConfigurationManager_availableSensorTypes, _SensorConfigurationManager_assertAvailableSensorType, _SensorConfigurationManager_configuration, _SensorConfigurationManager_updateConfiguration, _SensorConfigurationManager_isRedundant, _SensorConfigurationManager_parse, _SensorConfigurationManager_AssertValidSensorRate, _SensorConfigurationManager_assertValidSensorRate, _SensorConfigurationManager_createData, _SensorConfigurationManager_ZeroSensorConfiguration;
+var _SensorConfigurationManager_instances, _a$5, _SensorConfigurationManager_dispatchEvent_get, _SensorConfigurationManager_availableSensorTypes, _SensorConfigurationManager_assertAvailableSensorType, _SensorConfigurationManager_configuration, _SensorConfigurationManager_updateConfiguration, _SensorConfigurationManager_isRedundant, _SensorConfigurationManager_parse, _SensorConfigurationManager_AssertValidSensorRate, _SensorConfigurationManager_assertValidSensorRate, _SensorConfigurationManager_createData, _SensorConfigurationManager_ZeroSensorConfiguration;
 const _console$n = createConsole("SensorConfigurationManager", { log: true });
 const MaxSensorRate = 2 ** 16 - 1;
 const SensorRateStep = 5;
 const SensorConfigurationMessageTypes = ["getSensorConfiguration", "setSensorConfiguration"];
+const SensorConfigurationEventTypes = SensorConfigurationMessageTypes;
 class SensorConfigurationManager {
     constructor() {
         _SensorConfigurationManager_instances.add(this);
@@ -1169,7 +1166,7 @@ class SensorConfigurationManager {
         await promise;
     }
     static get ZeroSensorConfiguration() {
-        return __classPrivateFieldGet(this, _a$6, "f", _SensorConfigurationManager_ZeroSensorConfiguration);
+        return __classPrivateFieldGet(this, _a$5, "f", _SensorConfigurationManager_ZeroSensorConfiguration);
     }
     get zeroSensorConfiguration() {
         const zeroSensorConfiguration = {};
@@ -1194,7 +1191,7 @@ class SensorConfigurationManager {
         }
     }
 }
-_a$6 = SensorConfigurationManager, _SensorConfigurationManager_availableSensorTypes = new WeakMap(), _SensorConfigurationManager_configuration = new WeakMap(), _SensorConfigurationManager_instances = new WeakSet(), _SensorConfigurationManager_dispatchEvent_get = function _SensorConfigurationManager_dispatchEvent_get() {
+_a$5 = SensorConfigurationManager, _SensorConfigurationManager_availableSensorTypes = new WeakMap(), _SensorConfigurationManager_configuration = new WeakMap(), _SensorConfigurationManager_instances = new WeakSet(), _SensorConfigurationManager_dispatchEvent_get = function _SensorConfigurationManager_dispatchEvent_get() {
     return this.eventDispatcher.dispatchEvent;
 }, _SensorConfigurationManager_assertAvailableSensorType = function _SensorConfigurationManager_assertAvailableSensorType(sensorType) {
     _console$n.assertWithError(__classPrivateFieldGet(this, _SensorConfigurationManager_availableSensorTypes, "f"), "must get initial sensorConfiguration");
@@ -1232,7 +1229,7 @@ _a$6 = SensorConfigurationManager, _SensorConfigurationManager_availableSensorTy
     _console$n.assertWithError(sensorRate < MaxSensorRate, `sensorRate must be 0 or greater (got ${sensorRate})`);
     _console$n.assertWithError(sensorRate % SensorRateStep == 0, `sensorRate must be multiple of ${SensorRateStep}`);
 }, _SensorConfigurationManager_assertValidSensorRate = function _SensorConfigurationManager_assertValidSensorRate(sensorRate) {
-    __classPrivateFieldGet(_a$6, _a$6, "m", _SensorConfigurationManager_AssertValidSensorRate).call(_a$6, sensorRate);
+    __classPrivateFieldGet(_a$5, _a$5, "m", _SensorConfigurationManager_AssertValidSensorRate).call(_a$5, sensorRate);
 }, _SensorConfigurationManager_createData = function _SensorConfigurationManager_createData(sensorConfiguration) {
     let sensorTypes = Object.keys(sensorConfiguration);
     sensorTypes = sensorTypes.filter((sensorType) => __classPrivateFieldGet(this, _SensorConfigurationManager_instances, "m", _SensorConfigurationManager_assertAvailableSensorType).call(this, sensorType));
@@ -1251,7 +1248,7 @@ _a$6 = SensorConfigurationManager, _SensorConfigurationManager_availableSensorTy
 _SensorConfigurationManager_ZeroSensorConfiguration = { value: {} };
 (() => {
     SensorTypes.forEach((sensorType) => {
-        __classPrivateFieldGet(_a$6, _a$6, "f", _SensorConfigurationManager_ZeroSensorConfiguration)[sensorType] = 0;
+        __classPrivateFieldGet(_a$5, _a$5, "f", _SensorConfigurationManager_ZeroSensorConfiguration)[sensorType] = 0;
     });
 })();
 
@@ -2189,7 +2186,7 @@ _VibrationManager_instances = new WeakSet(), _VibrationManager_verifyLocation = 
     return data;
 };
 
-var _BaseConnectionManager_instances, _a$5, _BaseConnectionManager_AssertValidTxRxMessageType, _BaseConnectionManager_assertIsSupported, _BaseConnectionManager_status, _BaseConnectionManager_assertIsNotConnected, _BaseConnectionManager_assertIsNotConnecting, _BaseConnectionManager_assertIsConnected, _BaseConnectionManager_assertIsNotDisconnecting, _BaseConnectionManager_assertIsConnectedAndNotDisconnecting, _BaseConnectionManager_pendingMessages, _BaseConnectionManager_onRxMessage, _BaseConnectionManager_timer, _BaseConnectionManager_checkConnection;
+var _BaseConnectionManager_instances, _a$4, _BaseConnectionManager_AssertValidTxRxMessageType, _BaseConnectionManager_assertIsSupported, _BaseConnectionManager_status, _BaseConnectionManager_assertIsNotConnected, _BaseConnectionManager_assertIsNotConnecting, _BaseConnectionManager_assertIsConnected, _BaseConnectionManager_assertIsNotDisconnecting, _BaseConnectionManager_assertIsConnectedAndNotDisconnecting, _BaseConnectionManager_pendingMessages, _BaseConnectionManager_onRxMessage, _BaseConnectionManager_timer, _BaseConnectionManager_checkConnection;
 const _console$i = createConsole("BaseConnectionManager", { log: true });
 const ConnectionStatuses = ["not connected", "connecting", "connected", "disconnecting"];
 const TxRxMessageTypes = [
@@ -2200,13 +2197,15 @@ const TxRxMessageTypes = [
     ...TfliteMessageTypes,
     ...FileTransferMessageTypes,
 ];
+const SMPMessageTypes = ["smp"];
+const BatteryLevelMessageTypes = ["batteryLevel"];
+const MetaConnectionMessageTypes = ["rx", "tx"];
 const ConnectionMessageTypes = [
+    ...BatteryLevelMessageTypes,
     ...DeviceInformationMessageTypes,
-    "batteryLevel",
-    "smp",
-    "rx",
-    "tx",
+    ...MetaConnectionMessageTypes,
     ...TxRxMessageTypes,
+    ...SMPMessageTypes,
 ];
 class BaseConnectionManager {
     get baseConstructor() {
@@ -2286,7 +2285,7 @@ class BaseConnectionManager {
         }
         _console$i.log("sendTxMessages", __classPrivateFieldGet(this, _BaseConnectionManager_pendingMessages, "f").slice());
         const arrayBuffers = __classPrivateFieldGet(this, _BaseConnectionManager_pendingMessages, "f").map((message) => {
-            __classPrivateFieldGet(_a$5, _a$5, "m", _BaseConnectionManager_AssertValidTxRxMessageType).call(_a$5, message.type);
+            __classPrivateFieldGet(_a$4, _a$4, "m", _BaseConnectionManager_AssertValidTxRxMessageType).call(_a$4, message.type);
             const messageTypeEnum = TxRxMessageTypes.indexOf(message.type);
             const dataLength = new DataView(new ArrayBuffer(2));
             dataLength.setUint16(0, message.data?.byteLength || 0, true);
@@ -2324,7 +2323,7 @@ class BaseConnectionManager {
         parseMessage(dataView, TxRxMessageTypes, __classPrivateFieldGet(this, _BaseConnectionManager_instances, "m", _BaseConnectionManager_onRxMessage).bind(this), null, true);
     }
 }
-_a$5 = BaseConnectionManager, _BaseConnectionManager_status = new WeakMap(), _BaseConnectionManager_pendingMessages = new WeakMap(), _BaseConnectionManager_timer = new WeakMap(), _BaseConnectionManager_instances = new WeakSet(), _BaseConnectionManager_AssertValidTxRxMessageType = function _BaseConnectionManager_AssertValidTxRxMessageType(messageType) {
+_a$4 = BaseConnectionManager, _BaseConnectionManager_status = new WeakMap(), _BaseConnectionManager_pendingMessages = new WeakMap(), _BaseConnectionManager_timer = new WeakMap(), _BaseConnectionManager_instances = new WeakSet(), _BaseConnectionManager_AssertValidTxRxMessageType = function _BaseConnectionManager_AssertValidTxRxMessageType(messageType) {
     _console$i.assertEnumWithError(messageType, TxRxMessageTypes);
 }, _BaseConnectionManager_assertIsSupported = function _BaseConnectionManager_assertIsSupported() {
     _console$i.assertWithError(this.isSupported, `${this.constructor.name} is not supported`);
@@ -3720,7 +3719,7 @@ _FirmwareManager_status = new WeakMap(), _FirmwareManager_images = new WeakMap()
     __classPrivateFieldGet(this, _FirmwareManager_instances, "a", _FirmwareManager_dispatchEvent_get).call(this, "firmwareImages", { firmwareImages: __classPrivateFieldGet(this, _FirmwareManager_images, "f") });
 };
 
-var _DeviceManager_instances, _a$4, _DeviceManager_shared, _DeviceManager_boundDeviceEventListeners, _DeviceManager_onDeviceType, _DeviceManager_ConnectedDevices, _DeviceManager_UseLocalStorage, _DeviceManager_DefaultLocalStorageConfiguration, _DeviceManager_LocalStorageConfiguration, _DeviceManager_AssertLocalStorage, _DeviceManager_LocalStorageKey, _DeviceManager_SaveToLocalStorage, _DeviceManager_LoadFromLocalStorage, _DeviceManager_UpdateLocalStorageConfigurationForDevice, _DeviceManager_AvailableDevices, _DeviceManager_EventDispatcher, _DeviceManager_DispatchEvent_get, _DeviceManager_OnDeviceIsConnected, _DeviceManager_DispatchAvailableDevices, _DeviceManager_DispatchConnectedDevices;
+var _DeviceManager_instances, _DeviceManager_boundDeviceEventListeners, _DeviceManager_onDeviceType, _DeviceManager_ConnectedDevices, _DeviceManager_UseLocalStorage, _DeviceManager_DefaultLocalStorageConfiguration, _DeviceManager_LocalStorageConfiguration, _DeviceManager_AssertLocalStorage, _DeviceManager_LocalStorageKey, _DeviceManager_SaveToLocalStorage, _DeviceManager_LoadFromLocalStorage, _DeviceManager_UpdateLocalStorageConfigurationForDevice, _DeviceManager_AvailableDevices, _DeviceManager_EventDispatcher, _DeviceManager_DispatchEvent_get, _DeviceManager_OnDeviceIsConnected, _DeviceManager_DispatchAvailableDevices, _DeviceManager_DispatchConnectedDevices;
 const _console$b = createConsole("DeviceManager", { log: true });
 const DeviceManagerEventTypes = [
     "deviceConnected",
@@ -3730,9 +3729,6 @@ const DeviceManagerEventTypes = [
     "connectedDevices",
 ];
 class DeviceManager {
-    static get shared() {
-        return __classPrivateFieldGet(this, _a$4, "f", _DeviceManager_shared);
-    }
     constructor() {
         _DeviceManager_instances.add(this);
         _DeviceManager_boundDeviceEventListeners.set(this, {
@@ -3748,6 +3744,9 @@ class DeviceManager {
         _DeviceManager_LocalStorageKey.set(this, "BS.Device");
         _DeviceManager_AvailableDevices.set(this, []);
         _DeviceManager_EventDispatcher.set(this, new EventDispatcher(this, DeviceManagerEventTypes));
+        if (DeviceManager.shared && this != DeviceManager.shared) {
+            throw Error("DeviceManager is a singleton - use DeviceManager.shared");
+        }
         if (this.CanUseLocalStorage) {
             this.UseLocalStorage = true;
         }
@@ -3834,7 +3833,7 @@ class DeviceManager {
                 this.AvailableDevices.push(existingConnectedDevice);
                 return;
             }
-            const device = new Device$1();
+            const device = new Device();
             const connectionManager = new WebBluetoothConnectionManager();
             connectionManager.device = bluetoothDevice;
             if (bluetoothDevice.name) {
@@ -3854,7 +3853,7 @@ class DeviceManager {
         return __classPrivateFieldGet(this, _DeviceManager_EventDispatcher, "f").removeEventListener;
     }
 }
-_a$4 = DeviceManager, _DeviceManager_boundDeviceEventListeners = new WeakMap(), _DeviceManager_ConnectedDevices = new WeakMap(), _DeviceManager_UseLocalStorage = new WeakMap(), _DeviceManager_DefaultLocalStorageConfiguration = new WeakMap(), _DeviceManager_LocalStorageConfiguration = new WeakMap(), _DeviceManager_LocalStorageKey = new WeakMap(), _DeviceManager_AvailableDevices = new WeakMap(), _DeviceManager_EventDispatcher = new WeakMap(), _DeviceManager_instances = new WeakSet(), _DeviceManager_onDeviceType = function _DeviceManager_onDeviceType(event) {
+_DeviceManager_boundDeviceEventListeners = new WeakMap(), _DeviceManager_ConnectedDevices = new WeakMap(), _DeviceManager_UseLocalStorage = new WeakMap(), _DeviceManager_DefaultLocalStorageConfiguration = new WeakMap(), _DeviceManager_LocalStorageConfiguration = new WeakMap(), _DeviceManager_LocalStorageKey = new WeakMap(), _DeviceManager_AvailableDevices = new WeakMap(), _DeviceManager_EventDispatcher = new WeakMap(), _DeviceManager_instances = new WeakSet(), _DeviceManager_onDeviceType = function _DeviceManager_onDeviceType(event) {
     if (__classPrivateFieldGet(this, _DeviceManager_UseLocalStorage, "f")) {
         __classPrivateFieldGet(this, _DeviceManager_instances, "m", _DeviceManager_UpdateLocalStorageConfigurationForDevice).call(this, event.target);
     }
@@ -3961,7 +3960,7 @@ _a$4 = DeviceManager, _DeviceManager_boundDeviceEventListeners = new WeakMap(), 
     _console$b.log({ ConnectedDevices: this.ConnectedDevices });
     __classPrivateFieldGet(this, _DeviceManager_instances, "a", _DeviceManager_DispatchEvent_get).call(this, "connectedDevices", { connectedDevices: this.ConnectedDevices });
 };
-_DeviceManager_shared = { value: new _a$4() };
+DeviceManager.shared = new DeviceManager();
 var DeviceManager$1 = DeviceManager.shared;
 
 var _Device_instances, _a$3, _Device_DefaultConnectionManager, _Device_eventDispatcher, _Device_dispatchEvent_get, _Device_connectionManager, _Device_sendTxMessages, _Device_isConnected, _Device_assertIsConnected, _Device_hasRequiredInformation_get, _Device_requestRequiredInformation, _Device_ReconnectOnDisconnection, _Device_reconnectOnDisconnection, _Device_reconnectIntervalId, _Device_onConnectionStatusUpdated, _Device_dispatchConnectionEvents, _Device_checkConnection, _Device_clear, _Device_onConnectionMessageReceived, _Device_deviceInformationManager, _Device_batteryLevel, _Device_updateBatteryLevel, _Device_sensorConfigurationManager, _Device_ClearSensorConfigurationOnLeave, _Device_clearSensorConfigurationOnLeave, _Device_sensorDataManager, _Device_vibrationManager, _Device_fileTransferManager, _Device_tfliteManager, _Device_firmwareManager, _Device_sendSmpMessage;
@@ -3969,10 +3968,12 @@ const _console$a = createConsole("Device", { log: true });
 const ConnectionEventTypes = [...ConnectionStatuses, "connectionStatus", "isConnected"];
 const DeviceEventTypes = [
     ...ConnectionEventTypes,
-    ...ConnectionMessageTypes,
     "connectionMessage",
+    ...MetaConnectionMessageTypes,
+    ...BatteryLevelMessageTypes,
     ...InformationEventTypes,
     ...DeviceInformationEventTypes,
+    ...SensorConfigurationEventTypes,
     ...SensorDataEventTypes,
     ...FileTransferEventTypes,
     ...TfliteEventTypes,
@@ -4003,7 +4004,7 @@ const RequiredInformationConnectionMessages = [
     "getTfliteThreshold",
     "getTfliteInferencingEnabled",
 ];
-class Device {
+let Device$1 = class Device {
     get bluetoothId() {
         return __classPrivateFieldGet(this, _Device_connectionManager, "f")?.bluetoothId;
     }
@@ -4342,8 +4343,8 @@ class Device {
     get testFirmwareImage() {
         return __classPrivateFieldGet(this, _Device_firmwareManager, "f").testImage;
     }
-}
-_a$3 = Device, _Device_eventDispatcher = new WeakMap(), _Device_connectionManager = new WeakMap(), _Device_isConnected = new WeakMap(), _Device_reconnectOnDisconnection = new WeakMap(), _Device_reconnectIntervalId = new WeakMap(), _Device_deviceInformationManager = new WeakMap(), _Device_batteryLevel = new WeakMap(), _Device_sensorConfigurationManager = new WeakMap(), _Device_clearSensorConfigurationOnLeave = new WeakMap(), _Device_sensorDataManager = new WeakMap(), _Device_vibrationManager = new WeakMap(), _Device_fileTransferManager = new WeakMap(), _Device_tfliteManager = new WeakMap(), _Device_firmwareManager = new WeakMap(), _Device_instances = new WeakSet(), _Device_DefaultConnectionManager = function _Device_DefaultConnectionManager() {
+};
+_a$3 = Device$1, _Device_eventDispatcher = new WeakMap(), _Device_connectionManager = new WeakMap(), _Device_isConnected = new WeakMap(), _Device_reconnectOnDisconnection = new WeakMap(), _Device_reconnectIntervalId = new WeakMap(), _Device_deviceInformationManager = new WeakMap(), _Device_batteryLevel = new WeakMap(), _Device_sensorConfigurationManager = new WeakMap(), _Device_clearSensorConfigurationOnLeave = new WeakMap(), _Device_sensorDataManager = new WeakMap(), _Device_vibrationManager = new WeakMap(), _Device_fileTransferManager = new WeakMap(), _Device_tfliteManager = new WeakMap(), _Device_firmwareManager = new WeakMap(), _Device_instances = new WeakSet(), _Device_DefaultConnectionManager = function _Device_DefaultConnectionManager() {
     return new WebBluetoothConnectionManager();
 }, _Device_dispatchEvent_get = function _Device_dispatchEvent_get() {
     return __classPrivateFieldGet(this, _Device_eventDispatcher, "f").dispatchEvent;
@@ -4463,7 +4464,6 @@ _a$3 = Device, _Device_eventDispatcher = new WeakMap(), _Device_connectionManage
 };
 _Device_ReconnectOnDisconnection = { value: false };
 _Device_ClearSensorConfigurationOnLeave = { value: true };
-var Device$1 = Device;
 
 var _BaseScanner_instances, _a$2, _BaseScanner_assertIsSupported, _BaseScanner_assertIsSubclass, _BaseScanner_boundEventListeners, _BaseScanner_eventDispatcher, _BaseScanner_assertIsAvailable, _BaseScanner_assertIsScanning, _BaseScanner_assertIsNotScanning, _BaseScanner_onIsScanning, _BaseScanner_discoveredDevices, _BaseScanner_onDiscoveredDevice, _BaseScanner_discoveredDeviceTimestamps, _BaseScanner_DiscoveredDeviceExpirationTimeout, _BaseScanner_discoveredDeviceExpirationTimeout_get, _BaseScanner_checkDiscoveredDevicesExpirationTimer, _BaseScanner_checkDiscoveredDevicesExpiration;
 const _console$9 = createConsole("BaseScanner");
@@ -5553,7 +5553,7 @@ _a = DevicePair, _DevicePair_eventDispatcher = new WeakMap(), _DevicePair_left =
 _DevicePair_shared = { value: new _a() };
 (() => {
     DeviceManager$1.AddEventListener("deviceConnected", (event) => {
-        const device = event.message.device;
+        const { device } = event.message;
         if (device.isInsole) {
             __classPrivateFieldGet(_a, _a, "f", _DevicePair_shared).assignInsole(device);
         }

@@ -1,7 +1,7 @@
 import { ConnectionStatus } from "./connection/BaseConnectionManager.ts";
-import Device from "./Device.ts";
 import { DeviceType } from "./InformationManager.ts";
 import EventDispatcher, { BoundEventListeners, Event, EventMap } from "./utils/EventDispatcher.ts";
+import type Device from "./Device.ts";
 export interface LocalStorageDeviceInformation {
     type: DeviceType;
     bluetoothId: string;
@@ -31,7 +31,7 @@ export type DeviceManagerEvent = Event<typeof Device, DeviceManagerEventType, De
 export type BoundDeviceManagerEventListeners = BoundEventListeners<typeof Device, DeviceManagerEventType, DeviceManagerEventMessages>;
 declare class DeviceManager {
     #private;
-    static get shared(): DeviceManager;
+    static readonly shared: DeviceManager;
     constructor();
     /** @private */
     onDevice(device: Device): void;
@@ -49,14 +49,14 @@ declare class DeviceManager {
      * _only available on web-bluetooth enabled browsers_
      */
     GetDevices(): Promise<Device[] | undefined>;
-    get AddEventListener(): <T extends "connectedDevices" | "deviceIsConnected" | "deviceConnected" | "deviceDisconnected" | "availableDevices">(type: T, listener: (event: {
+    get AddEventListener(): <T extends "deviceConnected" | "deviceDisconnected" | "deviceIsConnected" | "availableDevices" | "connectedDevices">(type: T, listener: (event: {
         type: T;
         target: DeviceManager;
         message: DeviceManagerEventMessages[T];
     }) => void, options?: {
         once?: boolean;
     }) => void;
-    get RemoveEventListener(): <T extends "connectedDevices" | "deviceIsConnected" | "deviceConnected" | "deviceDisconnected" | "availableDevices">(type: T, listener: (event: {
+    get RemoveEventListener(): <T extends "deviceConnected" | "deviceDisconnected" | "deviceIsConnected" | "availableDevices" | "connectedDevices">(type: T, listener: (event: {
         type: T;
         target: DeviceManager;
         message: DeviceManagerEventMessages[T];

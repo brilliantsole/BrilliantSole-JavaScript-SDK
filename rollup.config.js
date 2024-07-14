@@ -96,17 +96,6 @@ const builds = [
     ],
   },
   {
-    input,
-    plugins: [..._browserPlugins, ..._plugins, terser()],
-    output: [
-      {
-        ...defaultOutput,
-        format: "esm",
-        file: "build/brilliantsole.module.min.js",
-      },
-    ],
-  },
-  {
     input: "./build/dts/BS.d.ts",
     output: [{ file: "build/index.d.ts", format: "es" }],
     plugins: [
@@ -120,7 +109,20 @@ const builds = [
       }),
     ],
   },
+];
 
+const productionOnlyBuilds = [
+  {
+    input,
+    plugins: [..._browserPlugins, ..._plugins, terser()],
+    output: [
+      {
+        ...defaultOutput,
+        format: "esm",
+        file: "build/brilliantsole.module.min.js",
+      },
+    ],
+  },
   {
     input,
     plugins: [..._browserPlugins, ..._plugins],
@@ -187,7 +189,6 @@ const builds = [
       },
     ],
   },
-
   {
     input,
     plugins: [...lensStudioPlugins, ..._plugins],
@@ -201,5 +202,9 @@ const builds = [
     ],
   },
 ];
+
+if (production) {
+  builds.push(...productionOnlyBuilds);
+}
 
 export default builds;

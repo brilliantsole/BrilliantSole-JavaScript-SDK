@@ -3,6 +3,7 @@ import SensorDataManager, { SensorTypes, SensorType } from "./SensorDataManager.
 import EventDispatcher from "../utils/EventDispatcher.ts";
 import Device, { SendMessageCallback } from "../Device.ts";
 import autoBind from "../../node_modules/auto-bind/index.js";
+
 const _console = createConsole("SensorConfigurationManager", { log: true });
 
 export type SensorConfiguration = { [sensorType in SensorType]?: number };
