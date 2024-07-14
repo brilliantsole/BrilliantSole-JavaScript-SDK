@@ -109,6 +109,30 @@ const builds = [
       }),
     ],
   },
+
+  {
+    input,
+    plugins: [..._nodePlugins, ..._plugins],
+    external: nodeExternal,
+    output: [
+      {
+        ...defaultOutput,
+        format: "esm",
+        file: "build/brilliantsole.node.module.js",
+      },
+    ],
+  },
+  {
+    input: "./build/dts/BS.d.ts",
+    output: [{ file: "build/index.node.d.ts", format: "es" }],
+    plugins: [
+      removeLines("node"),
+      dts(),
+      copy({
+        targets: [{ src: "build/index.node.d.ts", dest: "build", rename: "brilliantsole.node.module.d.ts" }],
+      }),
+    ],
+  },
 ];
 
 const productionOnlyBuilds = [
@@ -146,33 +170,6 @@ const productionOnlyBuilds = [
         name,
         file: "build/brilliantsole.min.js",
       },
-    ],
-  },
-
-  {
-    input,
-    plugins: [..._nodePlugins, ..._plugins],
-    external: nodeExternal,
-    output: [
-      {
-        ...defaultOutput,
-        format: "esm",
-        file: "build/brilliantsole.node.module.js",
-      },
-    ],
-  },
-  {
-    input: "./build/dts/BS.d.ts",
-    output: [{ file: "build/index.node.d.ts", format: "es" }],
-    plugins: [
-      removeLines("node"),
-      dts(),
-      copy({
-        targets: [
-          { src: "build/index.node.d.ts", dest: "build", rename: "brilliantsole.node.module.d.ts" },
-          { src: "build/index.node.d.ts", dest: "build", rename: "brilliantsole.node.module.min.d.ts" },
-        ],
-      }),
     ],
   },
 

@@ -9,18 +9,14 @@ import {
   ServerMessageType,
   createDeviceMessage,
 } from "./ServerUtils.ts";
-import Device, {
-  BoundDeviceEventListeners,
-  BoundStaticDeviceEventListeners,
-  DeviceEventMap,
-  StaticDeviceEventMap,
-} from "../Device.ts";
+import Device, { BoundDeviceEventListeners, DeviceEventMap, DeviceEventType } from "../Device.ts";
 import { addEventListeners, removeEventListeners } from "../utils/EventUtils.ts";
 import scanner from "../scanner/Scanner.ts";
 import { parseMessage, parseStringFromDataView } from "../utils/ParseUtils.ts";
 import { ConnectionMessageType, ConnectionMessageTypes } from "../connection/BaseConnectionManager.ts";
 import { BoundScannerEventListeners, DiscoveredDevice, ScannerEventMap } from "../scanner/BaseScanner.ts";
 import { concatenateArrayBuffers } from "../utils/ArrayBufferUtils.ts";
+import DeviceManager, { DeviceManagerEventMap, BoundDeviceManagerEventListeners } from "../DeviceManager.ts";
 
 const _console = createConsole("BaseServer", { log: true });
 
@@ -59,7 +55,7 @@ abstract class BaseServer {
     _console.assertWithError(scanner, "no scanner defined");
 
     addEventListeners(scanner, this.#boundScannerListeners);
-    addEventListeners(Device, this.#boundStaticDeviceListeners);
+    addEventListeners(DeviceManager, this.#boundDeviceManagerListeners);
     addEventListeners(this, this.#boundServerListeners);
   }
 
@@ -98,7 +94,7 @@ abstract class BaseServer {
     const client = event.message.client;
     _console.log("onClientDisconnected");
     if (this.numberOfClients == 0 && this.clearSensorConfigurationsWhenNoClients) {
-      Device.ConnectedDevices.forEach((device) => {
+      DeviceManager.ConnectedDevices.forEach((device) => {
         device.clearSensorConfiguration();
         device.setTfliteInferencingEnabled(false);
       });
@@ -161,7 +157,7 @@ abstract class BaseServer {
   get #connectedDevicesMessage() {
     return createServerMessage({
       type: "connectedDevices",
-      data: JSON.stringify(Device.ConnectedDevices.map((device) => device.bluetoothId)),
+      data: JSON.stringify(DeviceManager.ConnectedDevices.map((device) => device.bluetoothId)),
     });
   }
 
@@ -173,7 +169,7 @@ abstract class BaseServer {
 
   #createDeviceMessage(device: Device, messageType: ConnectionMessageType, dataView?: DataView): DeviceMessage {
     return {
-      type: messageType,
+      type: messageType as DeviceEventType,
       data: dataView || device.latestConnectionMessage.get(messageType),
     };
   }
@@ -194,25 +190,25 @@ abstract class BaseServer {
   }
 
   // STATIC DEVICE LISTENERS
-  #boundStaticDeviceListeners: BoundStaticDeviceEventListeners = {
+  #boundDeviceManagerListeners: BoundDeviceManagerEventListeners = {
     deviceConnected: this.#onDeviceConnected.bind(this),
     deviceDisconnected: this.#onDeviceDisconnected.bind(this),
     deviceIsConnected: this.#onDeviceIsConnected.bind(this),
   };
 
-  #onDeviceConnected(staticDeviceEvent: StaticDeviceEventMap["deviceConnected"]) {
+  #onDeviceConnected(staticDeviceEvent: DeviceManagerEventMap["deviceConnected"]) {
     const { device } = staticDeviceEvent.message;
     _console.log("onDeviceConnected", device.bluetoothId);
     addEventListeners(device, this.#boundDeviceListeners);
   }
 
-  #onDeviceDisconnected(staticDeviceEvent: StaticDeviceEventMap["deviceDisconnected"]) {
+  #onDeviceDisconnected(staticDeviceEvent: DeviceManagerEventMap["deviceDisconnected"]) {
     const { device } = staticDeviceEvent.message;
     _console.log("onDeviceDisconnected", device.bluetoothId);
     removeEventListeners(device, this.#boundDeviceListeners);
   }
 
-  #onDeviceIsConnected(staticDeviceEvent: StaticDeviceEventMap["deviceIsConnected"]) {
+  #onDeviceIsConnected(staticDeviceEvent: DeviceManagerEventMap["deviceIsConnected"]) {
     const { device } = staticDeviceEvent.message;
     _console.log("onDeviceIsConnected", device.bluetoothId);
     this.broadcastMessage(this.#createDeviceIsConnectedMessage(device));
@@ -273,7 +269,7 @@ abstract class BaseServer {
       case "disconnectFromDevice":
         {
           const { string: deviceId } = parseStringFromDataView(dataView);
-          const device = Device.ConnectedDevices.find((device) => device.bluetoothId == deviceId);
+          const device = DeviceManager.ConnectedDevices.find((device) => device.bluetoothId == deviceId);
           if (!device) {
             _console.error(`no device found with id ${deviceId}`);
             break;
@@ -287,7 +283,7 @@ abstract class BaseServer {
       case "deviceMessage":
         {
           const { string: deviceId, byteOffset } = parseStringFromDataView(dataView);
-          const device = Device.ConnectedDevices.find((device) => device.bluetoothId == deviceId);
+          const device = DeviceManager.ConnectedDevices.find((device) => device.bluetoothId == deviceId);
           if (!device) {
             _console.error(`no device found with id ${deviceId}`);
             break;

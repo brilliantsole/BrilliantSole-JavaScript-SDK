@@ -12,6 +12,7 @@ let isSupported = false;
 /** NODE_START */
 import noble from "@abandonware/noble";
 import { DeviceTypes } from "../InformationManager.ts";
+import DeviceManager from "../DeviceManager.ts";
 isSupported = true;
 /** NODE_END */
 
@@ -168,7 +169,7 @@ class NobleScanner extends BaseScanner {
     const noblePeripheral = this.#noblePeripherals[deviceId];
     _console.log("connecting to discoveredDevice...", deviceId);
 
-    let device = Device.AvailableDevices.filter((device) => device.connectionType == "noble").find(
+    let device = DeviceManager.AvailableDevices.filter((device) => device.connectionType == "noble").find(
       (device) => device.bluetoothId == deviceId
     );
     if (!device) {

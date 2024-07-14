@@ -4841,7 +4841,7 @@ class NobleScanner extends BaseScanner {
         __classPrivateFieldGet(this, _NobleScanner_instances, "m", _NobleScanner_assertValidNoblePeripheralId).call(this, deviceId);
         const noblePeripheral = __classPrivateFieldGet(this, _NobleScanner_noblePeripherals, "f")[deviceId];
         _console$7.log("connecting to discoveredDevice...", deviceId);
-        let device = Device$1.AvailableDevices.filter((device) => device.connectionType == "noble").find((device) => device.bluetoothId == deviceId);
+        let device = DeviceManager$1.AvailableDevices.filter((device) => device.connectionType == "noble").find((device) => device.bluetoothId == deviceId);
         if (!device) {
             device = __classPrivateFieldGet(this, _NobleScanner_instances, "m", _NobleScanner_createDevice).call(this, noblePeripheral);
             await device.connect();
@@ -4989,7 +4989,7 @@ createServerMessage("startScan");
 createServerMessage("stopScan");
 createServerMessage("discoveredDevices");
 
-var _BaseServer_instances, _a$1, _BaseServer_ClearSensorConfigurationsWhenNoClients, _BaseServer_clearSensorConfigurationsWhenNoClients, _BaseServer_boundServerListeners, _BaseServer_onClientConnected, _BaseServer_onClientDisconnected, _BaseServer_boundScannerListeners, _BaseServer_onScannerIsAvailable, _BaseServer_isScanningAvailableMessage_get, _BaseServer_onScannerIsScanning, _BaseServer_isScanningMessage_get, _BaseServer_onScannerDiscoveredDevice, _BaseServer_createDiscoveredDeviceMessage, _BaseServer_onExpiredDiscoveredDevice, _BaseServer_createExpiredDiscoveredDeviceMessage, _BaseServer_discoveredDevicesMessage_get, _BaseServer_connectedDevicesMessage_get, _BaseServer_boundDeviceListeners, _BaseServer_createDeviceMessage, _BaseServer_onDeviceConnectionMessage, _BaseServer_boundStaticDeviceListeners, _BaseServer_onDeviceConnected, _BaseServer_onDeviceDisconnected, _BaseServer_onDeviceIsConnected, _BaseServer_createDeviceIsConnectedMessage, _BaseServer_createDeviceServerMessage, _BaseServer_onClientMessage, _BaseServer_parseClientDeviceMessageCallback;
+var _BaseServer_instances, _a$1, _BaseServer_ClearSensorConfigurationsWhenNoClients, _BaseServer_clearSensorConfigurationsWhenNoClients, _BaseServer_boundServerListeners, _BaseServer_onClientConnected, _BaseServer_onClientDisconnected, _BaseServer_boundScannerListeners, _BaseServer_onScannerIsAvailable, _BaseServer_isScanningAvailableMessage_get, _BaseServer_onScannerIsScanning, _BaseServer_isScanningMessage_get, _BaseServer_onScannerDiscoveredDevice, _BaseServer_createDiscoveredDeviceMessage, _BaseServer_onExpiredDiscoveredDevice, _BaseServer_createExpiredDiscoveredDeviceMessage, _BaseServer_discoveredDevicesMessage_get, _BaseServer_connectedDevicesMessage_get, _BaseServer_boundDeviceListeners, _BaseServer_createDeviceMessage, _BaseServer_onDeviceConnectionMessage, _BaseServer_boundDeviceManagerListeners, _BaseServer_onDeviceConnected, _BaseServer_onDeviceDisconnected, _BaseServer_onDeviceIsConnected, _BaseServer_createDeviceIsConnectedMessage, _BaseServer_createDeviceServerMessage, _BaseServer_onClientMessage, _BaseServer_parseClientDeviceMessageCallback;
 const _console$4 = createConsole("BaseServer", { log: true });
 const ServerEventTypes = ["clientConnected", "clientDisconnected"];
 class BaseServer {
@@ -5022,14 +5022,14 @@ class BaseServer {
         _BaseServer_boundDeviceListeners.set(this, {
             connectionMessage: __classPrivateFieldGet(this, _BaseServer_instances, "m", _BaseServer_onDeviceConnectionMessage).bind(this),
         });
-        _BaseServer_boundStaticDeviceListeners.set(this, {
+        _BaseServer_boundDeviceManagerListeners.set(this, {
             deviceConnected: __classPrivateFieldGet(this, _BaseServer_instances, "m", _BaseServer_onDeviceConnected).bind(this),
             deviceDisconnected: __classPrivateFieldGet(this, _BaseServer_instances, "m", _BaseServer_onDeviceDisconnected).bind(this),
             deviceIsConnected: __classPrivateFieldGet(this, _BaseServer_instances, "m", _BaseServer_onDeviceIsConnected).bind(this),
         });
         _console$4.assertWithError(scanner$1, "no scanner defined");
         addEventListeners(scanner$1, __classPrivateFieldGet(this, _BaseServer_boundScannerListeners, "f"));
-        addEventListeners(Device$1, __classPrivateFieldGet(this, _BaseServer_boundStaticDeviceListeners, "f"));
+        addEventListeners(DeviceManager$1, __classPrivateFieldGet(this, _BaseServer_boundDeviceManagerListeners, "f"));
         addEventListeners(this, __classPrivateFieldGet(this, _BaseServer_boundServerListeners, "f"));
     }
     get numberOfClients() {
@@ -5069,14 +5069,14 @@ class BaseServer {
         }
     }
 }
-_a$1 = BaseServer, _BaseServer_clearSensorConfigurationsWhenNoClients = new WeakMap(), _BaseServer_boundServerListeners = new WeakMap(), _BaseServer_boundScannerListeners = new WeakMap(), _BaseServer_boundDeviceListeners = new WeakMap(), _BaseServer_boundStaticDeviceListeners = new WeakMap(), _BaseServer_instances = new WeakSet(), _BaseServer_onClientConnected = function _BaseServer_onClientConnected(event) {
+_a$1 = BaseServer, _BaseServer_clearSensorConfigurationsWhenNoClients = new WeakMap(), _BaseServer_boundServerListeners = new WeakMap(), _BaseServer_boundScannerListeners = new WeakMap(), _BaseServer_boundDeviceListeners = new WeakMap(), _BaseServer_boundDeviceManagerListeners = new WeakMap(), _BaseServer_instances = new WeakSet(), _BaseServer_onClientConnected = function _BaseServer_onClientConnected(event) {
     event.message.client;
     _console$4.log("onClientConnected");
 }, _BaseServer_onClientDisconnected = function _BaseServer_onClientDisconnected(event) {
     event.message.client;
     _console$4.log("onClientDisconnected");
     if (this.numberOfClients == 0 && this.clearSensorConfigurationsWhenNoClients) {
-        Device$1.ConnectedDevices.forEach((device) => {
+        DeviceManager$1.ConnectedDevices.forEach((device) => {
             device.clearSensorConfiguration();
             device.setTfliteInferencingEnabled(false);
         });
@@ -5109,7 +5109,7 @@ _a$1 = BaseServer, _BaseServer_clearSensorConfigurationsWhenNoClients = new Weak
 }, _BaseServer_connectedDevicesMessage_get = function _BaseServer_connectedDevicesMessage_get() {
     return createServerMessage({
         type: "connectedDevices",
-        data: JSON.stringify(Device$1.ConnectedDevices.map((device) => device.bluetoothId)),
+        data: JSON.stringify(DeviceManager$1.ConnectedDevices.map((device) => device.bluetoothId)),
     });
 }, _BaseServer_createDeviceMessage = function _BaseServer_createDeviceMessage(device, messageType, dataView) {
     return {
@@ -5175,7 +5175,7 @@ _a$1 = BaseServer, _BaseServer_clearSensorConfigurationsWhenNoClients = new Weak
         case "disconnectFromDevice":
             {
                 const { string: deviceId } = parseStringFromDataView(dataView);
-                const device = Device$1.ConnectedDevices.find((device) => device.bluetoothId == deviceId);
+                const device = DeviceManager$1.ConnectedDevices.find((device) => device.bluetoothId == deviceId);
                 if (!device) {
                     _console$4.error(`no device found with id ${deviceId}`);
                     break;
@@ -5189,7 +5189,7 @@ _a$1 = BaseServer, _BaseServer_clearSensorConfigurationsWhenNoClients = new Weak
         case "deviceMessage":
             {
                 const { string: deviceId, byteOffset } = parseStringFromDataView(dataView);
-                const device = Device$1.ConnectedDevices.find((device) => device.bluetoothId == deviceId);
+                const device = DeviceManager$1.ConnectedDevices.find((device) => device.bluetoothId == deviceId);
                 if (!device) {
                     _console$4.error(`no device found with id ${deviceId}`);
                     break;
