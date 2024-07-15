@@ -276,9 +276,15 @@ class Device {
   }
 
   get canReconnect() {
+    _console.log("devices don't pair bond, so you can't reconnect");
+    return false;
     return this.connectionManager?.canReconnect;
   }
+  #assertCanReconnect() {
+    _console.assertWithError(this.canReconnect, "cannot reconnect to device");
+  }
   async reconnect() {
+    this.#assertCanReconnect();
     this.#clear();
     return this.connectionManager?.reconnect();
   }

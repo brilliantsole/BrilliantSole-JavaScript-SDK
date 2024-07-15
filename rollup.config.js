@@ -83,6 +83,14 @@ const input = "src/BS.ts";
 
 const defaultOutput = { sourcemap: true };
 
+const warningsToIgnore = ["PLUGIN_WARNING", "CIRCULAR_DEPENDENCY"];
+const onwarn = (warning) => {
+  if (warningsToIgnore.includes(warning.code)) {
+    return;
+  }
+  console.warn(warning);
+};
+
 const builds = [
   {
     input,
@@ -94,6 +102,7 @@ const builds = [
         file: "build/brilliantsole.module.js",
       },
     ],
+    onwarn,
   },
   {
     input: "./build/dts/BS.d.ts",
@@ -121,6 +130,7 @@ const builds = [
         file: "build/brilliantsole.node.module.js",
       },
     ],
+    onwarn,
   },
   {
     input: "./build/dts/BS.d.ts",
@@ -146,6 +156,7 @@ const productionOnlyBuilds = [
         file: "build/brilliantsole.module.min.js",
       },
     ],
+    onwarn,
   },
   {
     input,
@@ -159,6 +170,7 @@ const productionOnlyBuilds = [
         indent: "\t",
       },
     ],
+    onwarn,
   },
   {
     input,
@@ -171,6 +183,7 @@ const productionOnlyBuilds = [
         file: "build/brilliantsole.min.js",
       },
     ],
+    onwarn,
   },
 
   {
@@ -185,6 +198,7 @@ const productionOnlyBuilds = [
         file: "build/brilliantsole.cjs",
       },
     ],
+    onwarn,
   },
   {
     input,
@@ -197,6 +211,7 @@ const productionOnlyBuilds = [
         file: "build/brilliantsole.ls.js",
       },
     ],
+    onwarn,
   },
 ];
 

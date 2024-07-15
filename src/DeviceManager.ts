@@ -177,6 +177,8 @@ class DeviceManager {
   }
 
   get CanGetDevices() {
+    _console.log("current firmware doesn't pair-bond");
+    return false;
     // @ts-expect-error
     return isInBrowser && navigator.bluetooth?.getDevices && !isInBluefy;
   }
@@ -203,6 +205,11 @@ class DeviceManager {
 
     if (!navigator.bluetooth.getDevices) {
       _console.warn("bluetooth.getDevices() is not available in this browser");
+      return;
+    }
+
+    if (!this.CanGetDevices) {
+      _console.log("CanGetDevices is false");
       return;
     }
 

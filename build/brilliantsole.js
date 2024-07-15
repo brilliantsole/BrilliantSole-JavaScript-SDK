@@ -3783,7 +3783,8 @@
 	        return __classPrivateFieldGet(this, _DeviceManager_AvailableDevices, "f");
 	    }
 	    get CanGetDevices() {
-	        return isInBrowser && navigator.bluetooth?.getDevices && !isInBluefy;
+	        _console$8.log("current firmware doesn't pair-bond");
+	        return false;
 	    }
 	    async GetDevices() {
 	        if (!isInBrowser) {
@@ -3800,6 +3801,10 @@
 	        }
 	        if (!navigator.bluetooth.getDevices) {
 	            _console$8.warn("bluetooth.getDevices() is not available in this browser");
+	            return;
+	        }
+	        if (!this.CanGetDevices) {
+	            _console$8.log("CanGetDevices is false");
 	            return;
 	        }
 	        if (!__classPrivateFieldGet(this, _DeviceManager_LocalStorageConfiguration, "f")) {
@@ -3964,7 +3969,7 @@
 	DeviceManager.shared = new DeviceManager();
 	var DeviceManager$1 = DeviceManager.shared;
 
-	var _Device_instances, _a$1, _Device_DefaultConnectionManager, _Device_eventDispatcher, _Device_dispatchEvent_get, _Device_connectionManager, _Device_sendTxMessages, _Device_isConnected, _Device_assertIsConnected, _Device_hasRequiredInformation_get, _Device_requestRequiredInformation, _Device_ReconnectOnDisconnection, _Device_reconnectOnDisconnection, _Device_reconnectIntervalId, _Device_onConnectionStatusUpdated, _Device_dispatchConnectionEvents, _Device_checkConnection, _Device_clear, _Device_onConnectionMessageReceived, _Device_deviceInformationManager, _Device_batteryLevel, _Device_updateBatteryLevel, _Device_sensorConfigurationManager, _Device_ClearSensorConfigurationOnLeave, _Device_clearSensorConfigurationOnLeave, _Device_sensorDataManager, _Device_vibrationManager, _Device_fileTransferManager, _Device_tfliteManager, _Device_firmwareManager, _Device_sendSmpMessage;
+	var _Device_instances, _a$1, _Device_DefaultConnectionManager, _Device_eventDispatcher, _Device_dispatchEvent_get, _Device_connectionManager, _Device_sendTxMessages, _Device_isConnected, _Device_assertIsConnected, _Device_hasRequiredInformation_get, _Device_requestRequiredInformation, _Device_assertCanReconnect, _Device_ReconnectOnDisconnection, _Device_reconnectOnDisconnection, _Device_reconnectIntervalId, _Device_onConnectionStatusUpdated, _Device_dispatchConnectionEvents, _Device_checkConnection, _Device_clear, _Device_onConnectionMessageReceived, _Device_deviceInformationManager, _Device_batteryLevel, _Device_updateBatteryLevel, _Device_sensorConfigurationManager, _Device_ClearSensorConfigurationOnLeave, _Device_clearSensorConfigurationOnLeave, _Device_sensorDataManager, _Device_vibrationManager, _Device_fileTransferManager, _Device_tfliteManager, _Device_firmwareManager, _Device_sendSmpMessage;
 	const _console$7 = createConsole("Device", { log: true });
 	const DeviceEventTypes = [
 	    "connectionMessage",
@@ -4101,9 +4106,11 @@
 	        return __classPrivateFieldGet(this, _Device_isConnected, "f");
 	    }
 	    get canReconnect() {
-	        return this.connectionManager?.canReconnect;
+	        _console$7.log("devices don't pair bond, so you can't reconnect");
+	        return false;
 	    }
 	    async reconnect() {
+	        __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertCanReconnect).call(this);
 	        __classPrivateFieldGet(this, _Device_instances, "m", _Device_clear).call(this);
 	        return this.connectionManager?.reconnect();
 	    }
@@ -4361,6 +4368,8 @@
 	        type: messageType,
 	    }));
 	    __classPrivateFieldGet(this, _Device_instances, "m", _Device_sendTxMessages).call(this, messages);
+	}, _Device_assertCanReconnect = function _Device_assertCanReconnect() {
+	    _console$7.assertWithError(this.canReconnect, "cannot reconnect to device");
 	}, _Device_onConnectionStatusUpdated = function _Device_onConnectionStatusUpdated(connectionStatus) {
 	    _console$7.log({ connectionStatus });
 	    if (connectionStatus == "notConnected") {
