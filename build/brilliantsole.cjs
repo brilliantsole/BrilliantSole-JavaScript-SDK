@@ -3806,7 +3806,8 @@ class DeviceManager {
         return __classPrivateFieldGet(this, _DeviceManager_AvailableDevices, "f");
     }
     get CanGetDevices() {
-        return isInBrowser && navigator.bluetooth?.getDevices && !isInBluefy;
+        _console$b.log("current firmware doesn't pair-bond");
+        return false;
     }
     async GetDevices() {
         if (!isInBrowser) {
@@ -3823,6 +3824,10 @@ class DeviceManager {
         }
         if (!navigator.bluetooth.getDevices) {
             _console$b.warn("bluetooth.getDevices() is not available in this browser");
+            return;
+        }
+        if (!this.CanGetDevices) {
+            _console$b.log("CanGetDevices is false");
             return;
         }
         if (!__classPrivateFieldGet(this, _DeviceManager_LocalStorageConfiguration, "f")) {
@@ -3987,7 +3992,7 @@ _DeviceManager_boundDeviceEventListeners = new WeakMap(), _DeviceManager_Connect
 DeviceManager.shared = new DeviceManager();
 var DeviceManager$1 = DeviceManager.shared;
 
-var _Device_instances, _a$3, _Device_DefaultConnectionManager, _Device_eventDispatcher, _Device_dispatchEvent_get, _Device_connectionManager, _Device_sendTxMessages, _Device_isConnected, _Device_assertIsConnected, _Device_hasRequiredInformation_get, _Device_requestRequiredInformation, _Device_ReconnectOnDisconnection, _Device_reconnectOnDisconnection, _Device_reconnectIntervalId, _Device_onConnectionStatusUpdated, _Device_dispatchConnectionEvents, _Device_checkConnection, _Device_clear, _Device_onConnectionMessageReceived, _Device_deviceInformationManager, _Device_batteryLevel, _Device_updateBatteryLevel, _Device_sensorConfigurationManager, _Device_ClearSensorConfigurationOnLeave, _Device_clearSensorConfigurationOnLeave, _Device_sensorDataManager, _Device_vibrationManager, _Device_fileTransferManager, _Device_tfliteManager, _Device_firmwareManager, _Device_sendSmpMessage;
+var _Device_instances, _a$3, _Device_DefaultConnectionManager, _Device_eventDispatcher, _Device_dispatchEvent_get, _Device_connectionManager, _Device_sendTxMessages, _Device_isConnected, _Device_assertIsConnected, _Device_hasRequiredInformation_get, _Device_requestRequiredInformation, _Device_assertCanReconnect, _Device_ReconnectOnDisconnection, _Device_reconnectOnDisconnection, _Device_reconnectIntervalId, _Device_onConnectionStatusUpdated, _Device_dispatchConnectionEvents, _Device_checkConnection, _Device_clear, _Device_onConnectionMessageReceived, _Device_deviceInformationManager, _Device_batteryLevel, _Device_updateBatteryLevel, _Device_sensorConfigurationManager, _Device_ClearSensorConfigurationOnLeave, _Device_clearSensorConfigurationOnLeave, _Device_sensorDataManager, _Device_vibrationManager, _Device_fileTransferManager, _Device_tfliteManager, _Device_firmwareManager, _Device_sendSmpMessage;
 const _console$a = createConsole("Device", { log: true });
 const DeviceEventTypes = [
     "connectionMessage",
@@ -4124,9 +4129,11 @@ class Device {
         return __classPrivateFieldGet(this, _Device_isConnected, "f");
     }
     get canReconnect() {
-        return this.connectionManager?.canReconnect;
+        _console$a.log("devices don't pair bond, so you can't reconnect");
+        return false;
     }
     async reconnect() {
+        __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertCanReconnect).call(this);
         __classPrivateFieldGet(this, _Device_instances, "m", _Device_clear).call(this);
         return this.connectionManager?.reconnect();
     }
@@ -4384,6 +4391,8 @@ _a$3 = Device, _Device_eventDispatcher = new WeakMap(), _Device_connectionManage
         type: messageType,
     }));
     __classPrivateFieldGet(this, _Device_instances, "m", _Device_sendTxMessages).call(this, messages);
+}, _Device_assertCanReconnect = function _Device_assertCanReconnect() {
+    _console$a.assertWithError(this.canReconnect, "cannot reconnect to device");
 }, _Device_onConnectionStatusUpdated = function _Device_onConnectionStatusUpdated(connectionStatus) {
     _console$a.log({ connectionStatus });
     if (connectionStatus == "notConnected") {
