@@ -81,7 +81,12 @@ const lensStudioPlugins = [
 const name = "BS";
 const input = "src/BS.ts";
 
-const defaultOutput = { sourcemap: true };
+const defaultOutput = {
+  sourcemap: true,
+  sourcemapPathTransform: (relativeSourcePath, sourcemapPath) => {
+    return relativeSourcePath.replace("../src/", "../brilliantsole/");
+  },
+};
 
 const warningsToIgnore = ["PLUGIN_WARNING", "CIRCULAR_DEPENDENCY"];
 const onwarn = (warning) => {
@@ -89,6 +94,13 @@ const onwarn = (warning) => {
     return;
   }
   console.warn(warning);
+};
+
+const defaultBuild = {
+  watch: {
+    clearScreen: false,
+  },
+  onwarn,
 };
 
 const builds = [
@@ -102,7 +114,7 @@ const builds = [
         file: "build/brilliantsole.module.js",
       },
     ],
-    onwarn,
+    ...defaultBuild,
   },
   {
     input: "./build/dts/BS.d.ts",
@@ -117,6 +129,7 @@ const builds = [
         ],
       }),
     ],
+    ...defaultBuild,
   },
 
   {
@@ -130,7 +143,7 @@ const builds = [
         file: "build/brilliantsole.node.module.js",
       },
     ],
-    onwarn,
+    ...defaultBuild,
   },
   {
     input: "./build/dts/BS.d.ts",
@@ -142,6 +155,7 @@ const builds = [
         targets: [{ src: "build/index.node.d.ts", dest: "build", rename: "brilliantsole.node.module.d.ts" }],
       }),
     ],
+    ...defaultBuild,
   },
 ];
 
@@ -156,7 +170,7 @@ const productionOnlyBuilds = [
         file: "build/brilliantsole.module.min.js",
       },
     ],
-    onwarn,
+    ...defaultBuild,
   },
   {
     input,
@@ -170,7 +184,7 @@ const productionOnlyBuilds = [
         indent: "\t",
       },
     ],
-    onwarn,
+    ...defaultBuild,
   },
   {
     input,
@@ -183,7 +197,7 @@ const productionOnlyBuilds = [
         file: "build/brilliantsole.min.js",
       },
     ],
-    onwarn,
+    ...defaultBuild,
   },
 
   {
@@ -198,7 +212,7 @@ const productionOnlyBuilds = [
         file: "build/brilliantsole.cjs",
       },
     ],
-    onwarn,
+    ...defaultBuild,
   },
   {
     input,
@@ -211,7 +225,7 @@ const productionOnlyBuilds = [
         file: "build/brilliantsole.ls.js",
       },
     ],
-    onwarn,
+    ...defaultBuild,
   },
 ];
 
