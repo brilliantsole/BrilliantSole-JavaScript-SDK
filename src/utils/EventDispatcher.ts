@@ -1,3 +1,7 @@
+import { createConsole } from "./Console.ts";
+
+const _console = createConsole("EventDispatcher", { log: false });
+
 export type EventMap<
   Target extends any,
   EventType extends string,
@@ -71,8 +75,9 @@ class EventDispatcher<
 
     if (!this.listeners[type]) {
       this.listeners[type] = [];
+      _console.log(`creating "${type}" listeners array`, this.listeners[type]!);
     }
-
+    _console.log(`adding "${type}" listener`, listener, options);
     this.listeners[type]!.push({ listener, once: options.once });
   }
 
@@ -86,6 +91,8 @@ class EventDispatcher<
 
     if (!this.listeners[type]) return;
 
+    _console.log(`removing "${type}" listener`, listener);
+
     this.listeners[type] = this.listeners[type]!.filter((l) => l.listener !== listener);
   }
 
@@ -97,11 +104,14 @@ class EventDispatcher<
     if (!this.listeners[type]) return;
 
     const listeners = this.listeners[type]!;
-    listeners.forEach((listenerObj, index) => {
+    this.listeners[type] = listeners.filter((listenerObj) => {
+      //_console.log(`dispatching "${type}" listener`, listenerObj);
       listenerObj.listener({ type, target: this.target, message });
       if (listenerObj.once) {
-        listeners.splice(index, 1);
+        _console.log(`removing "${type}" listener`, listenerObj);
+        return false;
       }
+      return true;
     });
   }
 

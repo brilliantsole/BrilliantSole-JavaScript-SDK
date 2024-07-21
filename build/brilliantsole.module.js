@@ -159,6 +159,7 @@ function setAllConsoleLevelFlags(levelFlags) {
     Console.setAllLevelFlags(levelFlags);
 }
 
+const _console$t = createConsole("EventDispatcher", { log: false });
 class EventDispatcher {
     constructor(target, validEventTypes) {
         this.target = target;
@@ -178,7 +179,9 @@ class EventDispatcher {
         }
         if (!this.listeners[type]) {
             this.listeners[type] = [];
+            _console$t.log(`creating "${type}" listeners array`, this.listeners[type]);
         }
+        _console$t.log(`adding "${type}" listener`, listener, options);
         this.listeners[type].push({ listener, once: options.once });
     }
     removeEventListener(type, listener) {
@@ -187,6 +190,7 @@ class EventDispatcher {
         }
         if (!this.listeners[type])
             return;
+        _console$t.log(`removing "${type}" listener`, listener);
         this.listeners[type] = this.listeners[type].filter((l) => l.listener !== listener);
     }
     dispatchEvent(type, message) {
@@ -196,11 +200,13 @@ class EventDispatcher {
         if (!this.listeners[type])
             return;
         const listeners = this.listeners[type];
-        listeners.forEach((listenerObj, index) => {
+        this.listeners[type] = listeners.filter((listenerObj) => {
             listenerObj.listener({ type, target: this.target, message });
             if (listenerObj.once) {
-                listeners.splice(index, 1);
+                _console$t.log(`removing "${type}" listener`, listenerObj);
+                return false;
             }
+            return true;
         });
     }
     waitForEvent(type) {
@@ -733,7 +739,10 @@ function parseTimestamp(dataView, byteOffset) {
     const now = Date.now();
     const nowWithoutLower2Bytes = removeLower2Bytes(now);
     const lower2Bytes = dataView.getUint16(byteOffset, true);
-    const timestamp = nowWithoutLower2Bytes + lower2Bytes;
+    let timestamp = nowWithoutLower2Bytes + lower2Bytes;
+    if (timestamp < now) {
+        timestamp += 2 ** 16;
+    }
     return timestamp;
 }
 

@@ -62,7 +62,7 @@ export interface MotionSensorDataEventMessages {
   gravity: { gravity: Vector3 };
   linearAcceleration: { linearAcceleration: Vector3 };
   gyroscope: { gyroscope: Vector3 };
-  magnetometer: { magnetomter: Vector3 };
+  magnetometer: { magnetometer: Vector3 };
   gameRotation: { gameRotation: Quaternion };
   rotation: { rotation: Quaternion };
   orientation: { orientation: Euler };

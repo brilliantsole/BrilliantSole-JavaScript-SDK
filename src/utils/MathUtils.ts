@@ -16,7 +16,10 @@ export function parseTimestamp(dataView: DataView, byteOffset: number) {
   const now = Date.now();
   const nowWithoutLower2Bytes = removeLower2Bytes(now);
   const lower2Bytes = dataView.getUint16(byteOffset, true);
-  const timestamp = nowWithoutLower2Bytes + lower2Bytes;
+  let timestamp = nowWithoutLower2Bytes + lower2Bytes;
+  if (timestamp < now) {
+    timestamp += 2 ** 16;
+  }
   return timestamp;
 }
 

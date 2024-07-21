@@ -201,7 +201,7 @@ interface MotionSensorDataEventMessages {
         gyroscope: Vector3;
     };
     magnetometer: {
-        magnetomter: Vector3;
+        magnetometer: Vector3;
     };
     gameRotation: {
         gameRotation: Quaternion;
