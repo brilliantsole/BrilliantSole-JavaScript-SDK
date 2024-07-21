@@ -6,17 +6,7 @@ const device = new BS.Device();
 console.log({ device });
 window.device = device;
 
-BS.setAllConsoleLevelFlags({ log: false });
-
-let previousTimestamp = 0;
-device.addEventListener("sensorData", (event) => {
-  const { timestamp } = event.message;
-  const timestampDifference = timestamp - previousTimestamp;
-  if (Math.abs(timestampDifference) > 1000) {
-    console.log("fuck", timestampDifference);
-  }
-  previousTimestamp = timestamp;
-});
+//BS.setAllConsoleLevelFlags({ log: false });
 
 // GET DEVICES
 /** @type {HTMLTemplateElement} */
