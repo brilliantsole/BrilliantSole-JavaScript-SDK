@@ -165,7 +165,7 @@
         Console.setAllLevelFlags(levelFlags);
     }
 
-    const _console$p = createConsole("EventDispatcher", { log: false });
+    const _console$q = createConsole("EventDispatcher", { log: false });
     class EventDispatcher {
         constructor(target, validEventTypes) {
             this.target = target;
@@ -185,9 +185,9 @@
             }
             if (!this.listeners[type]) {
                 this.listeners[type] = [];
-                _console$p.log(`creating "${type}" listeners array`, this.listeners[type]);
+                _console$q.log(`creating "${type}" listeners array`, this.listeners[type]);
             }
-            _console$p.log(`adding "${type}" listener`, listener, options);
+            _console$q.log(`adding "${type}" listener`, listener, options);
             this.listeners[type].push({ listener, once: options.once });
         }
         removeEventListener(type, listener) {
@@ -196,7 +196,7 @@
             }
             if (!this.listeners[type])
                 return;
-            _console$p.log(`removing "${type}" listener`, listener);
+            _console$q.log(`removing "${type}" listener`, listener);
             this.listeners[type] = this.listeners[type].filter((l) => l.listener !== listener);
         }
         dispatchEvent(type, message) {
@@ -209,7 +209,7 @@
             this.listeners[type] = listeners.filter((listenerObj) => {
                 listenerObj.listener({ type, target: this.target, message });
                 if (listenerObj.once) {
-                    _console$p.log(`removing "${type}" listener`, listenerObj);
+                    _console$q.log(`removing "${type}" listener`, listenerObj);
                     return false;
                 }
                 return true;
@@ -226,14 +226,14 @@
     }
 
     var _Timer_callback, _Timer_interval, _Timer_intervalId;
-    const _console$o = createConsole("Timer", { log: false });
+    const _console$p = createConsole("Timer", { log: false });
     class Timer {
         get callback() {
             return __classPrivateFieldGet(this, _Timer_callback, "f");
         }
         set callback(newCallback) {
-            _console$o.assertTypeWithError(newCallback, "function");
-            _console$o.log({ newCallback });
+            _console$p.assertTypeWithError(newCallback, "function");
+            _console$p.log({ newCallback });
             __classPrivateFieldSet(this, _Timer_callback, newCallback, "f");
             if (this.isRunning) {
                 this.restart();
@@ -243,9 +243,9 @@
             return __classPrivateFieldGet(this, _Timer_interval, "f");
         }
         set interval(newInterval) {
-            _console$o.assertTypeWithError(newInterval, "number");
-            _console$o.assertWithError(newInterval > 0, "interval must be above 0");
-            _console$o.log({ newInterval });
+            _console$p.assertTypeWithError(newInterval, "number");
+            _console$p.assertWithError(newInterval > 0, "interval must be above 0");
+            _console$p.log({ newInterval });
             __classPrivateFieldSet(this, _Timer_interval, newInterval, "f");
             if (this.isRunning) {
                 this.restart();
@@ -263,18 +263,18 @@
         }
         start() {
             if (this.isRunning) {
-                _console$o.log("interval already running");
+                _console$p.log("interval already running");
                 return;
             }
-            _console$o.log("starting interval");
+            _console$p.log("starting interval");
             __classPrivateFieldSet(this, _Timer_intervalId, setInterval(__classPrivateFieldGet(this, _Timer_callback, "f"), __classPrivateFieldGet(this, _Timer_interval, "f")), "f");
         }
         stop() {
             if (!this.isRunning) {
-                _console$o.log("interval already not running");
+                _console$p.log("interval already not running");
                 return;
             }
-            _console$o.log("stopping interval");
+            _console$p.log("stopping interval");
             clearInterval(__classPrivateFieldGet(this, _Timer_intervalId, "f"));
             __classPrivateFieldSet(this, _Timer_intervalId, undefined, "f");
         }
@@ -340,7 +340,7 @@
     const textEncoder = new _TextEncoder();
     const textDecoder = new _TextDecoder();
 
-    const _console$n = createConsole("ArrayBufferUtils", { log: false });
+    const _console$o = createConsole("ArrayBufferUtils", { log: false });
     function concatenateArrayBuffers(...arrayBuffers) {
         arrayBuffers = arrayBuffers.filter((arrayBuffer) => arrayBuffer != undefined || arrayBuffer != null);
         arrayBuffers = arrayBuffers.map((arrayBuffer) => {
@@ -401,7 +401,7 @@
         if (length != undefined) {
             end = dataView.byteOffset + begin + length;
         }
-        _console$n.log({ dataView, begin, end, length });
+        _console$o.log({ dataView, begin, end, length });
         return new DataView(dataView.buffer.slice(dataView.byteOffset + begin, end));
     }
     async function getFileBuffer(file) {
@@ -461,7 +461,7 @@
     }
 
     var _FileTransferManager_instances, _a$4, _FileTransferManager_dispatchEvent_get, _FileTransferManager_assertValidType, _FileTransferManager_assertValidTypeEnum, _FileTransferManager_assertValidStatusEnum, _FileTransferManager_assertValidCommand, _FileTransferManager_MaxLength, _FileTransferManager_maxLength, _FileTransferManager_parseMaxLength, _FileTransferManager_updateMaxLength, _FileTransferManager_assertValidLength, _FileTransferManager_type, _FileTransferManager_parseType, _FileTransferManager_updateType, _FileTransferManager_setType, _FileTransferManager_length, _FileTransferManager_parseLength, _FileTransferManager_updateLength, _FileTransferManager_setLength, _FileTransferManager_checksum, _FileTransferManager_parseChecksum, _FileTransferManager_updateChecksum, _FileTransferManager_setChecksum, _FileTransferManager_setCommand, _FileTransferManager_status, _FileTransferManager_parseStatus, _FileTransferManager_updateStatus, _FileTransferManager_assertIsIdle, _FileTransferManager_assertIsNotIdle, _FileTransferManager_receivedBlocks, _FileTransferManager_parseBlock, _FileTransferManager_send, _FileTransferManager_sendBlock;
-    const _console$m = createConsole("FileTransferManager", { log: true });
+    const _console$n = createConsole("FileTransferManager", { log: true });
     const FileTransferMessageTypes = [
         "maxFileLength",
         "getFileType",
@@ -524,7 +524,7 @@
             return __classPrivateFieldGet(this, _FileTransferManager_status, "f");
         }
         parseMessage(messageType, dataView) {
-            _console$m.log({ messageType });
+            _console$n.log({ messageType });
             switch (messageType) {
                 case "maxFileLength":
                     __classPrivateFieldGet(this, _FileTransferManager_instances, "m", _FileTransferManager_parseMaxLength).call(this, dataView);
@@ -580,38 +580,38 @@
     _a$4 = FileTransferManager, _FileTransferManager_maxLength = new WeakMap(), _FileTransferManager_type = new WeakMap(), _FileTransferManager_length = new WeakMap(), _FileTransferManager_checksum = new WeakMap(), _FileTransferManager_status = new WeakMap(), _FileTransferManager_receivedBlocks = new WeakMap(), _FileTransferManager_instances = new WeakSet(), _FileTransferManager_dispatchEvent_get = function _FileTransferManager_dispatchEvent_get() {
         return this.eventDispatcher.dispatchEvent;
     }, _FileTransferManager_assertValidType = function _FileTransferManager_assertValidType(type) {
-        _console$m.assertEnumWithError(type, FileTypes);
+        _console$n.assertEnumWithError(type, FileTypes);
     }, _FileTransferManager_assertValidTypeEnum = function _FileTransferManager_assertValidTypeEnum(typeEnum) {
-        _console$m.assertWithError(typeEnum in FileTypes, `invalid typeEnum ${typeEnum}`);
+        _console$n.assertWithError(typeEnum in FileTypes, `invalid typeEnum ${typeEnum}`);
     }, _FileTransferManager_assertValidStatusEnum = function _FileTransferManager_assertValidStatusEnum(statusEnum) {
-        _console$m.assertWithError(statusEnum in FileTransferStatuses, `invalid statusEnum ${statusEnum}`);
+        _console$n.assertWithError(statusEnum in FileTransferStatuses, `invalid statusEnum ${statusEnum}`);
     }, _FileTransferManager_assertValidCommand = function _FileTransferManager_assertValidCommand(command) {
-        _console$m.assertEnumWithError(command, FileTransferCommands);
+        _console$n.assertEnumWithError(command, FileTransferCommands);
     }, _FileTransferManager_parseMaxLength = function _FileTransferManager_parseMaxLength(dataView) {
-        _console$m.log("parseFileMaxLength", dataView);
+        _console$n.log("parseFileMaxLength", dataView);
         const maxLength = dataView.getUint32(0, true);
-        _console$m.log(`maxLength: ${maxLength / 1024}kB`);
+        _console$n.log(`maxLength: ${maxLength / 1024}kB`);
         __classPrivateFieldGet(this, _FileTransferManager_instances, "m", _FileTransferManager_updateMaxLength).call(this, maxLength);
     }, _FileTransferManager_updateMaxLength = function _FileTransferManager_updateMaxLength(maxLength) {
-        _console$m.log({ maxLength });
+        _console$n.log({ maxLength });
         __classPrivateFieldSet(this, _FileTransferManager_maxLength, maxLength, "f");
         __classPrivateFieldGet(this, _FileTransferManager_instances, "a", _FileTransferManager_dispatchEvent_get).call(this, "maxFileLength", { maxFileLength: maxLength });
     }, _FileTransferManager_assertValidLength = function _FileTransferManager_assertValidLength(length) {
-        _console$m.assertWithError(length <= this.maxLength, `file length ${length}kB too large - must be ${this.maxLength}kB or less`);
+        _console$n.assertWithError(length <= this.maxLength, `file length ${length}kB too large - must be ${this.maxLength}kB or less`);
     }, _FileTransferManager_parseType = function _FileTransferManager_parseType(dataView) {
-        _console$m.log("parseFileType", dataView);
+        _console$n.log("parseFileType", dataView);
         const typeEnum = dataView.getUint8(0);
         __classPrivateFieldGet(this, _FileTransferManager_instances, "m", _FileTransferManager_assertValidTypeEnum).call(this, typeEnum);
         const type = FileTypes[typeEnum];
         __classPrivateFieldGet(this, _FileTransferManager_instances, "m", _FileTransferManager_updateType).call(this, type);
     }, _FileTransferManager_updateType = function _FileTransferManager_updateType(type) {
-        _console$m.log({ fileTransferType: type });
+        _console$n.log({ fileTransferType: type });
         __classPrivateFieldSet(this, _FileTransferManager_type, type, "f");
         __classPrivateFieldGet(this, _FileTransferManager_instances, "a", _FileTransferManager_dispatchEvent_get).call(this, "getFileType", { fileType: type });
     }, _FileTransferManager_setType = async function _FileTransferManager_setType(newType, sendImmediately) {
         __classPrivateFieldGet(this, _FileTransferManager_instances, "m", _FileTransferManager_assertValidType).call(this, newType);
         if (this.type == newType) {
-            _console$m.log(`redundant type assignment ${newType}`);
+            _console$n.log(`redundant type assignment ${newType}`);
             return;
         }
         const promise = this.waitForEvent("getFileType");
@@ -619,18 +619,18 @@
         this.sendMessage([{ type: "setFileType", data: Uint8Array.from([typeEnum]).buffer }], sendImmediately);
         await promise;
     }, _FileTransferManager_parseLength = function _FileTransferManager_parseLength(dataView) {
-        _console$m.log("parseFileLength", dataView);
+        _console$n.log("parseFileLength", dataView);
         const length = dataView.getUint32(0, true);
         __classPrivateFieldGet(this, _FileTransferManager_instances, "m", _FileTransferManager_updateLength).call(this, length);
     }, _FileTransferManager_updateLength = function _FileTransferManager_updateLength(length) {
-        _console$m.log(`length: ${length / 1024}kB`);
+        _console$n.log(`length: ${length / 1024}kB`);
         __classPrivateFieldSet(this, _FileTransferManager_length, length, "f");
         __classPrivateFieldGet(this, _FileTransferManager_instances, "a", _FileTransferManager_dispatchEvent_get).call(this, "getFileLength", { fileLength: length });
     }, _FileTransferManager_setLength = async function _FileTransferManager_setLength(newLength, sendImmediately) {
-        _console$m.assertTypeWithError(newLength, "number");
+        _console$n.assertTypeWithError(newLength, "number");
         __classPrivateFieldGet(this, _FileTransferManager_instances, "m", _FileTransferManager_assertValidLength).call(this, newLength);
         if (this.length == newLength) {
-            _console$m.log(`redundant length assignment ${newLength}`);
+            _console$n.log(`redundant length assignment ${newLength}`);
             return;
         }
         const promise = this.waitForEvent("getFileLength");
@@ -639,17 +639,17 @@
         this.sendMessage([{ type: "setFileLength", data: dataView.buffer }], sendImmediately);
         await promise;
     }, _FileTransferManager_parseChecksum = function _FileTransferManager_parseChecksum(dataView) {
-        _console$m.log("checksum", dataView);
+        _console$n.log("checksum", dataView);
         const checksum = dataView.getUint32(0, true);
         __classPrivateFieldGet(this, _FileTransferManager_instances, "m", _FileTransferManager_updateChecksum).call(this, checksum);
     }, _FileTransferManager_updateChecksum = function _FileTransferManager_updateChecksum(checksum) {
-        _console$m.log({ checksum });
+        _console$n.log({ checksum });
         __classPrivateFieldSet(this, _FileTransferManager_checksum, checksum, "f");
         __classPrivateFieldGet(this, _FileTransferManager_instances, "a", _FileTransferManager_dispatchEvent_get).call(this, "getFileChecksum", { fileChecksum: checksum });
     }, _FileTransferManager_setChecksum = async function _FileTransferManager_setChecksum(newChecksum, sendImmediately) {
-        _console$m.assertTypeWithError(newChecksum, "number");
+        _console$n.assertTypeWithError(newChecksum, "number");
         if (this.checksum == newChecksum) {
-            _console$m.log(`redundant checksum assignment ${newChecksum}`);
+            _console$n.log(`redundant checksum assignment ${newChecksum}`);
             return;
         }
         const promise = this.waitForEvent("getFileChecksum");
@@ -664,31 +664,31 @@
         this.sendMessage([{ type: "setFileTransferCommand", data: Uint8Array.from([commandEnum]).buffer }], sendImmediately);
         await promise;
     }, _FileTransferManager_parseStatus = function _FileTransferManager_parseStatus(dataView) {
-        _console$m.log("parseFileStatus", dataView);
+        _console$n.log("parseFileStatus", dataView);
         const statusEnum = dataView.getUint8(0);
         __classPrivateFieldGet(this, _FileTransferManager_instances, "m", _FileTransferManager_assertValidStatusEnum).call(this, statusEnum);
         const status = FileTransferStatuses[statusEnum];
         __classPrivateFieldGet(this, _FileTransferManager_instances, "m", _FileTransferManager_updateStatus).call(this, status);
     }, _FileTransferManager_updateStatus = function _FileTransferManager_updateStatus(status) {
-        _console$m.log({ status });
+        _console$n.log({ status });
         __classPrivateFieldSet(this, _FileTransferManager_status, status, "f");
         __classPrivateFieldGet(this, _FileTransferManager_instances, "a", _FileTransferManager_dispatchEvent_get).call(this, "fileTransferStatus", { fileTransferStatus: status });
         __classPrivateFieldGet(this, _FileTransferManager_receivedBlocks, "f").length = 0;
     }, _FileTransferManager_assertIsIdle = function _FileTransferManager_assertIsIdle() {
-        _console$m.assertWithError(__classPrivateFieldGet(this, _FileTransferManager_status, "f") == "idle", "status is not idle");
+        _console$n.assertWithError(__classPrivateFieldGet(this, _FileTransferManager_status, "f") == "idle", "status is not idle");
     }, _FileTransferManager_assertIsNotIdle = function _FileTransferManager_assertIsNotIdle() {
-        _console$m.assertWithError(__classPrivateFieldGet(this, _FileTransferManager_status, "f") != "idle", "status is idle");
+        _console$n.assertWithError(__classPrivateFieldGet(this, _FileTransferManager_status, "f") != "idle", "status is idle");
     }, _FileTransferManager_parseBlock = async function _FileTransferManager_parseBlock(dataView) {
-        _console$m.log("parseFileBlock", dataView);
+        _console$n.log("parseFileBlock", dataView);
         __classPrivateFieldGet(this, _FileTransferManager_receivedBlocks, "f").push(dataView.buffer);
         const bytesReceived = __classPrivateFieldGet(this, _FileTransferManager_receivedBlocks, "f").reduce((sum, arrayBuffer) => (sum += arrayBuffer.byteLength), 0);
         const progress = bytesReceived / __classPrivateFieldGet(this, _FileTransferManager_length, "f");
-        _console$m.log(`received ${bytesReceived} of ${__classPrivateFieldGet(this, _FileTransferManager_length, "f")} bytes (${progress * 100}%)`);
+        _console$n.log(`received ${bytesReceived} of ${__classPrivateFieldGet(this, _FileTransferManager_length, "f")} bytes (${progress * 100}%)`);
         __classPrivateFieldGet(this, _FileTransferManager_instances, "a", _FileTransferManager_dispatchEvent_get).call(this, "fileTransferProgress", { progress });
         if (bytesReceived != __classPrivateFieldGet(this, _FileTransferManager_length, "f")) {
             return;
         }
-        _console$m.log("file transfer complete");
+        _console$n.log("file transfer complete");
         let fileName = new Date().toLocaleString();
         switch (this.type) {
             case "tflite":
@@ -704,12 +704,12 @@
         }
         const arrayBuffer = await file.arrayBuffer();
         const checksum = crc32(arrayBuffer);
-        _console$m.log({ checksum });
+        _console$n.log({ checksum });
         if (checksum != __classPrivateFieldGet(this, _FileTransferManager_checksum, "f")) {
-            _console$m.error(`wrong checksum - expected ${__classPrivateFieldGet(this, _FileTransferManager_checksum, "f")}, got ${checksum}`);
+            _console$n.error(`wrong checksum - expected ${__classPrivateFieldGet(this, _FileTransferManager_checksum, "f")}, got ${checksum}`);
             return;
         }
-        _console$m.log("received file", file);
+        _console$n.log("received file", file);
         __classPrivateFieldGet(this, _FileTransferManager_instances, "a", _FileTransferManager_dispatchEvent_get).call(this, "getFileBlock", { fileTransferBlock: dataView });
         __classPrivateFieldGet(this, _FileTransferManager_instances, "a", _FileTransferManager_dispatchEvent_get).call(this, "fileTransferComplete", { direction: "receiving" });
         __classPrivateFieldGet(this, _FileTransferManager_instances, "a", _FileTransferManager_dispatchEvent_get).call(this, "fileReceived", { file });
@@ -720,13 +720,13 @@
             return;
         }
         const slicedBuffer = buffer.slice(offset, offset + (this.mtu - 3 - 3));
-        _console$m.log("slicedBuffer", slicedBuffer);
+        _console$n.log("slicedBuffer", slicedBuffer);
         const bytesLeft = buffer.byteLength - offset;
         const progress = 1 - bytesLeft / buffer.byteLength;
-        _console$m.log(`sending bytes ${offset}-${offset + slicedBuffer.byteLength} of ${buffer.byteLength} bytes (${progress * 100}%)`);
+        _console$n.log(`sending bytes ${offset}-${offset + slicedBuffer.byteLength} of ${buffer.byteLength} bytes (${progress * 100}%)`);
         __classPrivateFieldGet(this, _FileTransferManager_instances, "a", _FileTransferManager_dispatchEvent_get).call(this, "fileTransferProgress", { progress });
         if (slicedBuffer.byteLength == 0) {
-            _console$m.log("finished sending buffer");
+            _console$n.log("finished sending buffer");
             __classPrivateFieldGet(this, _FileTransferManager_instances, "a", _FileTransferManager_dispatchEvent_get).call(this, "fileTransferComplete", { direction: "sending" });
         }
         else {
@@ -736,18 +736,25 @@
     };
     _FileTransferManager_MaxLength = { value: 0 };
 
+    const _console$m = createConsole("MathUtils", { log: true });
     const Uint16Max = 2 ** 16;
     function removeLower2Bytes(number) {
         const lower2Bytes = number % Uint16Max;
         return number - lower2Bytes;
     }
+    const timestampThreshold = 60_000;
     function parseTimestamp(dataView, byteOffset) {
         const now = Date.now();
         const nowWithoutLower2Bytes = removeLower2Bytes(now);
         const lower2Bytes = dataView.getUint16(byteOffset, true);
         let timestamp = nowWithoutLower2Bytes + lower2Bytes;
         if (timestamp < now) {
-            timestamp += 2 ** 16;
+            _console$m.log("timestamp underflow");
+            timestamp += Uint16Max;
+        }
+        else if (now - timestamp > timestampThreshold) {
+            _console$m.log("timestamp overflow");
+            timestamp -= Uint16Max;
         }
         return timestamp;
     }
