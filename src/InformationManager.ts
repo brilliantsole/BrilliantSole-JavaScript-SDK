@@ -1,6 +1,7 @@
 import Device, { SendMessageCallback } from "./Device.ts";
 import { createConsole } from "./utils/Console.ts";
 import EventDispatcher from "./utils/EventDispatcher.ts";
+import { Uint16Max } from "./utils/MathUtils.ts";
 import { textDecoder, textEncoder } from "./utils/Text.ts";
 import autoBind from "auto-bind";
 
@@ -212,7 +213,7 @@ class InformationManager {
 
   #onCurrentTime(currentTime: number) {
     _console.log({ currentTime });
-    this.#isCurrentTimeSet = currentTime != 0;
+    this.#isCurrentTimeSet = currentTime != 0 || Math.abs(Date.now() - currentTime) < Uint16Max;
     if (!this.#isCurrentTimeSet) {
       this.#setCurrentTime();
     }

@@ -738,13 +738,9 @@ function parseTimestamp(dataView, byteOffset) {
     const nowWithoutLower2Bytes = removeLower2Bytes(now);
     const lower2Bytes = dataView.getUint16(byteOffset, true);
     let timestamp = nowWithoutLower2Bytes + lower2Bytes;
-    if (timestamp < now) {
-        _console$t.log("timestamp underflow");
-        timestamp += Uint16Max;
-    }
-    else if (now - timestamp > timestampThreshold) {
-        _console$t.log("timestamp overflow");
-        timestamp -= Uint16Max;
+    if (Math.abs(now - timestamp) > timestampThreshold) {
+        _console$t.log("correcting timestamp delta");
+        timestamp += Uint16Max * Math.sign(now - timestamp);
     }
     return timestamp;
 }
@@ -1906,7 +1902,7 @@ _InformationManager_isCharging = new WeakMap(), _InformationManager_batteryCurre
     __classPrivateFieldGet(this, _InformationManager_instances, "a", _InformationManager_dispatchEvent_get).call(this, "getMtu", { mtu: __classPrivateFieldGet(this, _InformationManager_mtu, "f") });
 }, _InformationManager_onCurrentTime = function _InformationManager_onCurrentTime(currentTime) {
     _console$k.log({ currentTime });
-    __classPrivateFieldSet(this, _InformationManager_isCurrentTimeSet, currentTime != 0, "f");
+    __classPrivateFieldSet(this, _InformationManager_isCurrentTimeSet, currentTime != 0 || Math.abs(Date.now() - currentTime) < Uint16Max, "f");
     if (!__classPrivateFieldGet(this, _InformationManager_isCurrentTimeSet, "f")) {
         __classPrivateFieldGet(this, _InformationManager_instances, "m", _InformationManager_setCurrentTime).call(this);
     }

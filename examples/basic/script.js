@@ -6,17 +6,18 @@ const device = new BS.Device();
 console.log({ device });
 window.device = device;
 
-//BS.setAllConsoleLevelFlags({ log: false });
+BS.setAllConsoleLevelFlags({ log: false });
+BS.setConsoleLevelFlagsForType("MathUtils", { log: true });
 
-// let previousTimestamp = 0;
-// device.addEventListener("sensorData", (event) => {
-//   const { timestamp } = event.message;
-//   const timestampDifference = timestamp - previousTimestamp;
-//   if (Math.abs(timestampDifference) > 1000) {
-//     console.log("fuck", timestampDifference);
-//   }
-//   previousTimestamp = timestamp;
-// });
+let previousTimestamp = 0;
+device.addEventListener("sensorData", (event) => {
+  const { timestamp } = event.message;
+  const timestampDifference = timestamp - previousTimestamp;
+  if (Math.abs(timestampDifference) > 1000) {
+    console.log("whoops", timestampDifference);
+  }
+  previousTimestamp = timestamp;
+});
 
 // GET DEVICES
 /** @type {HTMLTemplateElement} */

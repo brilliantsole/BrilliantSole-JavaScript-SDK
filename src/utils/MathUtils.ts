@@ -9,7 +9,7 @@ export function getInterpolation(value: number, min: number, max: number, range:
   return (value - min) / range;
 }
 
-const Uint16Max = 2 ** 16;
+export const Uint16Max = 2 ** 16;
 
 function removeLower2Bytes(number: number) {
   const lower2Bytes = number % Uint16Max;
@@ -23,12 +23,9 @@ export function parseTimestamp(dataView: DataView, byteOffset: number) {
   const nowWithoutLower2Bytes = removeLower2Bytes(now);
   const lower2Bytes = dataView.getUint16(byteOffset, true);
   let timestamp = nowWithoutLower2Bytes + lower2Bytes;
-  if (timestamp < now) {
-    _console.log("timestamp underflow");
-    timestamp += Uint16Max;
-  } else if (now - timestamp > timestampThreshold) {
-    _console.log("timestamp overflow");
-    timestamp -= Uint16Max;
+  if (Math.abs(now - timestamp) > timestampThreshold) {
+    _console.log("correcting timestamp delta");
+    timestamp += Uint16Max * Math.sign(now - timestamp);
   }
   return timestamp;
 }

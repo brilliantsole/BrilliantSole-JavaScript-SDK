@@ -22,9 +22,8 @@ typeof SuppressedError === "function" ? SuppressedError : function (error, suppr
     return e.name = "SuppressedError", e.error = error, e.suppressed = suppressed, e;
 };
 
-const __BRILLIANTSOLE__ENVIRONMENT__ = "__BRILLIANTSOLE__DEV__";
-const isInProduction = __BRILLIANTSOLE__ENVIRONMENT__ == "__BRILLIANTSOLE__PROD__";
-const isInDev = __BRILLIANTSOLE__ENVIRONMENT__ == "__BRILLIANTSOLE__DEV__";
+const isInProduction = "__BRILLIANTSOLE__PROD__" == "__BRILLIANTSOLE__PROD__";
+const isInDev = "__BRILLIANTSOLE__PROD__" == "__BRILLIANTSOLE__DEV__";
 const isInBrowser = typeof window !== "undefined" && typeof window?.document !== "undefined";
 const isInNode = typeof process !== "undefined" && process?.versions?.node != null;
 const userAgent = (isInBrowser && navigator.userAgent) || "";
@@ -123,9 +122,6 @@ class Console {
     }
     static create(type, levelFlags) {
         const console = __classPrivateFieldGet(this, _a$7, "f", _Console_consoles)[type] || new _a$7(type);
-        if (levelFlags) {
-            console.setLevelFlags(levelFlags);
-        }
         return console;
     }
     get log() {
@@ -721,13 +717,9 @@ function parseTimestamp(dataView, byteOffset) {
     const nowWithoutLower2Bytes = removeLower2Bytes(now);
     const lower2Bytes = dataView.getUint16(byteOffset, true);
     let timestamp = nowWithoutLower2Bytes + lower2Bytes;
-    if (timestamp < now) {
-        _console$t.log("timestamp underflow");
-        timestamp += Uint16Max;
-    }
-    else if (now - timestamp > timestampThreshold) {
-        _console$t.log("timestamp overflow");
-        timestamp -= Uint16Max;
+    if (Math.abs(now - timestamp) > timestampThreshold) {
+        _console$t.log("correcting timestamp delta");
+        timestamp += Uint16Max * Math.sign(now - timestamp);
     }
     return timestamp;
 }
@@ -1889,7 +1881,7 @@ _InformationManager_isCharging = new WeakMap(), _InformationManager_batteryCurre
     __classPrivateFieldGet(this, _InformationManager_instances, "a", _InformationManager_dispatchEvent_get).call(this, "getMtu", { mtu: __classPrivateFieldGet(this, _InformationManager_mtu, "f") });
 }, _InformationManager_onCurrentTime = function _InformationManager_onCurrentTime(currentTime) {
     _console$k.log({ currentTime });
-    __classPrivateFieldSet(this, _InformationManager_isCurrentTimeSet, currentTime != 0, "f");
+    __classPrivateFieldSet(this, _InformationManager_isCurrentTimeSet, currentTime != 0 || Math.abs(Date.now() - currentTime) < Uint16Max, "f");
     if (!__classPrivateFieldGet(this, _InformationManager_isCurrentTimeSet, "f")) {
         __classPrivateFieldGet(this, _InformationManager_instances, "m", _InformationManager_setCurrentTime).call(this);
     }
