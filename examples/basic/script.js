@@ -7,17 +7,7 @@ console.log({ device });
 window.device = device;
 
 BS.setAllConsoleLevelFlags({ log: false });
-BS.setConsoleLevelFlagsForType("MathUtils", { log: true });
-
-let previousTimestamp = 0;
-device.addEventListener("sensorData", (event) => {
-  const { timestamp } = event.message;
-  const timestampDifference = timestamp - previousTimestamp;
-  if (Math.abs(timestampDifference) > 1000) {
-    console.log("whoops", timestampDifference);
-  }
-  previousTimestamp = timestamp;
-});
+BS.setConsoleLevelFlagsForType("PressureDataManager", { log: true });
 
 // GET DEVICES
 /** @type {HTMLTemplateElement} */

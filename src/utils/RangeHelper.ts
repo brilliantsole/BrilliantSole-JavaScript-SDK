@@ -21,11 +21,15 @@ class RangeHelper {
     this.#range.range = this.#range.max - this.#range.min;
   }
 
-  getNormalization(value: number) {
-    return this.#range.range * value || 0;
+  getNormalization(value: number, useInterpolation = false) {
+    if (useInterpolation) {
+      return getInterpolation(value, this.#range.min, this.#range.max, this.#range.range);
+    } else {
+      return value || 0;
+    }
   }
 
-  updateAndGetNormalization(value: any) {
+  updateAndGetNormalization(value: number) {
     this.update(value);
     return this.getNormalization(value);
   }

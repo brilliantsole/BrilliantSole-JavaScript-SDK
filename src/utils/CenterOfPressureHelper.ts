@@ -25,8 +25,8 @@ class CenterOfPressureHelper {
   }
   getNormalization(centerOfPressure: CenterOfPressure): CenterOfPressure {
     return {
-      x: this.#range.x.getNormalization(centerOfPressure.x),
-      y: this.#range.y.getNormalization(centerOfPressure.y),
+      x: this.#range.x.getNormalization(centerOfPressure.x, true),
+      y: this.#range.y.getNormalization(centerOfPressure.y, true),
     };
   }
 

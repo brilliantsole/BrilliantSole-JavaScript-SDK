@@ -2,7 +2,7 @@ declare class RangeHelper {
     #private;
     reset(): void;
     update(value: number): void;
-    getNormalization(value: number): number;
-    updateAndGetNormalization(value: any): number;
+    getNormalization(value: number, useInterpolation?: boolean): number;
+    updateAndGetNormalization(value: number): number;
 }
 export default RangeHelper;

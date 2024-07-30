@@ -706,6 +706,12 @@ _a$6 = FileTransferManager, _FileTransferManager_maxLength = new WeakMap(), _Fil
 _FileTransferManager_MaxLength = { value: 0 };
 
 const _console$t = createConsole("MathUtils", { log: true });
+function getInterpolation(value, min, max, range) {
+    if (range == undefined) {
+        range = max - min;
+    }
+    return (value - min) / range;
+}
 const Uint16Max = 2 ** 16;
 function removeLower2Bytes(number) {
     const lower2Bytes = number % Uint16Max;
@@ -738,8 +744,13 @@ class RangeHelper {
         __classPrivateFieldGet(this, _RangeHelper_range, "f").max = Math.max(value, __classPrivateFieldGet(this, _RangeHelper_range, "f").max);
         __classPrivateFieldGet(this, _RangeHelper_range, "f").range = __classPrivateFieldGet(this, _RangeHelper_range, "f").max - __classPrivateFieldGet(this, _RangeHelper_range, "f").min;
     }
-    getNormalization(value) {
-        return __classPrivateFieldGet(this, _RangeHelper_range, "f").range * value || 0;
+    getNormalization(value, useInterpolation = false) {
+        if (useInterpolation) {
+            return getInterpolation(value, __classPrivateFieldGet(this, _RangeHelper_range, "f").min, __classPrivateFieldGet(this, _RangeHelper_range, "f").max, __classPrivateFieldGet(this, _RangeHelper_range, "f").range);
+        }
+        else {
+            return value || 0;
+        }
     }
     updateAndGetNormalization(value) {
         this.update(value);
@@ -766,8 +777,8 @@ class CenterOfPressureHelper {
     }
     getNormalization(centerOfPressure) {
         return {
-            x: __classPrivateFieldGet(this, _CenterOfPressureHelper_range, "f").x.getNormalization(centerOfPressure.x),
-            y: __classPrivateFieldGet(this, _CenterOfPressureHelper_range, "f").y.getNormalization(centerOfPressure.y),
+            x: __classPrivateFieldGet(this, _CenterOfPressureHelper_range, "f").x.getNormalization(centerOfPressure.x, true),
+            y: __classPrivateFieldGet(this, _CenterOfPressureHelper_range, "f").y.getNormalization(centerOfPressure.y, true),
         };
     }
     updateAndGetNormalization(centerOfPressure) {
