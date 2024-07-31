@@ -775,13 +775,8 @@
             __classPrivateFieldGet(this, _RangeHelper_range, "f").max = Math.max(value, __classPrivateFieldGet(this, _RangeHelper_range, "f").max);
             __classPrivateFieldGet(this, _RangeHelper_range, "f").range = __classPrivateFieldGet(this, _RangeHelper_range, "f").max - __classPrivateFieldGet(this, _RangeHelper_range, "f").min;
         }
-        getNormalization(value, useInterpolation = false) {
-            if (useInterpolation) {
-                return getInterpolation(value, __classPrivateFieldGet(this, _RangeHelper_range, "f").min, __classPrivateFieldGet(this, _RangeHelper_range, "f").max, __classPrivateFieldGet(this, _RangeHelper_range, "f").range);
-            }
-            else {
-                return value || 0;
-            }
+        getNormalization(value) {
+            return getInterpolation(value, __classPrivateFieldGet(this, _RangeHelper_range, "f").min, __classPrivateFieldGet(this, _RangeHelper_range, "f").max, __classPrivateFieldGet(this, _RangeHelper_range, "f").range) * __classPrivateFieldGet(this, _RangeHelper_range, "f").range;
         }
         updateAndGetNormalization(value) {
             this.update(value);
@@ -808,8 +803,8 @@
         }
         getNormalization(centerOfPressure) {
             return {
-                x: __classPrivateFieldGet(this, _CenterOfPressureHelper_range, "f").x.getNormalization(centerOfPressure.x, true),
-                y: __classPrivateFieldGet(this, _CenterOfPressureHelper_range, "f").y.getNormalization(centerOfPressure.y, true),
+                x: __classPrivateFieldGet(this, _CenterOfPressureHelper_range, "f").x.getNormalization(centerOfPressure.x),
+                y: __classPrivateFieldGet(this, _CenterOfPressureHelper_range, "f").y.getNormalization(centerOfPressure.y),
             };
         }
         updateAndGetNormalization(centerOfPressure) {
