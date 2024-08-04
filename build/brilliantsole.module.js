@@ -770,7 +770,7 @@ class RangeHelper {
         __classPrivateFieldGet(this, _RangeHelper_range, "f").range = __classPrivateFieldGet(this, _RangeHelper_range, "f").max - __classPrivateFieldGet(this, _RangeHelper_range, "f").min;
     }
     getNormalization(value) {
-        return getInterpolation(value, __classPrivateFieldGet(this, _RangeHelper_range, "f").min, __classPrivateFieldGet(this, _RangeHelper_range, "f").max, __classPrivateFieldGet(this, _RangeHelper_range, "f").range) * __classPrivateFieldGet(this, _RangeHelper_range, "f").range;
+        return getInterpolation(value, __classPrivateFieldGet(this, _RangeHelper_range, "f").min, __classPrivateFieldGet(this, _RangeHelper_range, "f").max, __classPrivateFieldGet(this, _RangeHelper_range, "f").range) * __classPrivateFieldGet(this, _RangeHelper_range, "f").range || 0;
     }
     updateAndGetNormalization(value) {
         this.update(value);

@@ -22,7 +22,7 @@ class RangeHelper {
   }
 
   getNormalization(value: number) {
-    return getInterpolation(value, this.#range.min, this.#range.max, this.#range.range) * this.#range.range;
+    return getInterpolation(value, this.#range.min, this.#range.max, this.#range.range) * this.#range.range || 0;
   }
 
   updateAndGetNormalization(value: number) {

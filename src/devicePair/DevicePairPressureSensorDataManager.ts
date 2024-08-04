@@ -3,7 +3,7 @@ import CenterOfPressureHelper from "../utils/CenterOfPressureHelper.ts";
 import { PressureData } from "../sensor/PressureSensorDataManager.ts";
 import { CenterOfPressure } from "../utils/CenterOfPressureHelper.ts";
 import { InsoleSide, InsoleSides } from "../InformationManager.ts";
-import { DeviceEventMap, SpecificDeviceEvent } from "../Device.ts";
+import { DeviceEventMap } from "../Device.ts";
 
 const _console = createConsole("DevicePairPressureSensorDataManager", { log: true });
 
