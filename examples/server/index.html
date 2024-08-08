@@ -1,279 +1,266 @@
 <html>
-    <head>
-        <title>Server | BrilliantSole JavaScript SDK</title>
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico" />
-        <script type="module" src="./script.js"></script>
-    </head>
+  <head>
+    <title>Server | BrilliantSole JavaScript SDK</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico" />
+    <script type="module" src="./script.js"></script>
+  </head>
 
-    <style>
-        .block {
-            display: block;
-        }
-        div {
-            margin-top: 1rem;
-        }
-        ul,
-        ol {
-            margin-top: 0;
-        }
-    </style>
+  <style>
+    .block {
+      display: block;
+    }
+    div {
+      margin-top: 1rem;
+    }
+    ul,
+    ol {
+      margin-top: 0;
+    }
+  </style>
 
-    <body>
-        <nav>
-            <a href="../../">home</a>
-        </nav>
+  <body>
+    <nav>
+      <a href="../../">home</a>
+    </nav>
 
-        <h1>Server | BrilliantSole JavaScript SDK</h1>
+    <h1>Server | BrilliantSole JavaScript SDK</h1>
 
-        <div>
-            <label>webSocket url <input id="webSocketUrl" type="url" placeholder="localhost" /></label>
-            <button id="toggleConnection">connect</button>
-        </div>
+    <div>
+      <label>webSocket url <input id="webSocketUrl" type="url" placeholder="localhost" /></label>
+      <button id="toggleConnection">connect</button>
+    </div>
 
-        <div>
-            <label> is scanning available? <input id="isScanningAvailable" type="checkbox" readonly disabled /> </label>
-            <button id="toggleScan" disabled>scan</button>
-        </div>
+    <div>
+      <label> is scanning available? <input id="isScanningAvailable" type="checkbox" readonly disabled /> </label>
+      <button id="toggleScan" disabled>scan</button>
+    </div>
 
-        <div>
-            <h2>discovered devices</h2>
-            <div id="discoveredDevices">
-                <template id="discoveredDeviceTemplate">
-                    <div class="discoveredDevice">
-                        <label class="block"><b>name:</b> <span class="name"></span></label>
-                        <label class="block"><b>device type:</b> <span class="deviceType"></span></label>
-                        <label class="block"><b>rssi:</b> <span class="rssi"></span></label>
-                        <button class="toggleConnection">connect</button>
-                    </div>
-                </template>
+    <div>
+      <h2>discovered devices</h2>
+      <div id="discoveredDevices">
+        <template id="discoveredDeviceTemplate">
+          <div class="discoveredDevice">
+            <label class="block"><b>name:</b> <span class="name"></span></label>
+            <label class="block"><b>device type:</b> <span class="deviceType"></span></label>
+            <label class="block"><b>rssi:</b> <span class="rssi"></span></label>
+            <button class="toggleConnection">connect</button>
+          </div>
+        </template>
+      </div>
+    </div>
+
+    <div>
+      <h2>connected devices</h2>
+      <div id="connectedDevices">
+        <template id="connectedDeviceTemplate">
+          <div class="connectedDevice">
+            <label class="block">
+              <b>device information: </b>
+              <pre class="deviceInformation"></pre>
+            </label>
+
+            <label class="block"><b>battery level:</b> <span class="batteryLevel"></span>%</label>
+
+            <label class="block"><b>name:</b> <span class="name"></span></label>
+            <label>
+              <b>new name: </b>
+              <input class="setNameInput" type="text" placeholder="type in a name" disabled />
+            </label>
+            <button class="setNameButton" disabled>set name</button>
+
+            <label class="block"><b>device type:</b> <span class="deviceType"></span></label>
+            <label class="block">
+              <b>new type: </b>
+              <select class="setTypeSelect" disabled>
+                <optgroup label="select type"></optgroup>
+              </select>
+              <button class="setTypeButton" disabled>set type</button>
+            </label>
+
+            <label class="block">
+              <b>sensor configuration: </b>
+              <pre class="sensorConfiguration"></pre>
+            </label>
+
+            <template class="sensorTypeConfigurationTemplate">
+              <label class="sensorTypeConfiguration block">
+                <b class="sensorType"></b>
+                <input class="sensorRate" type="number" min="0" value="" disabled />ms
+              </label>
+            </template>
+
+            <label class="block">
+              <b>sensor data: </b>
+              <pre class="sensorData"></pre>
+            </label>
+
+            <div>
+              <button class="triggerVibration" disabled>triggerVibration</button>
             </div>
-        </div>
 
-        <div>
-            <h2>available devices</h2>
-            <div id="availableDevices">
-                <template id="availableDeviceTemplate">
-                    <div class="availableDevice">
-                        <label class="block">
-                            <b>device information: </b>
-                            <pre class="deviceInformation"></pre>
-                        </label>
-
-                        <label class="block"><b>battery level:</b> <span class="batteryLevel"></span>%</label>
-
-                        <label class="block"><b>name:</b> <span class="name"></span></label>
-                        <label>
-                            <b>new name: </b>
-                            <input class="setNameInput" type="text" placeholder="type in a name" disabled />
-                        </label>
-                        <button class="setNameButton" disabled>set name</button>
-
-                        <label class="block"><b>device type:</b> <span class="deviceType"></span></label>
-                        <label class="block">
-                            <b>new type: </b>
-                            <select class="setTypeSelect" disabled>
-                                <optgroup label="select type"></optgroup>
-                            </select>
-                            <button class="setTypeButton" disabled>set type</button>
-                        </label>
-
-                        <label class="block">
-                            <b>sensor configuration: </b>
-                            <pre class="sensorConfiguration"></pre>
-                        </label>
-
-                        <template class="sensorTypeConfigurationTemplate">
-                            <label class="sensorTypeConfiguration block">
-                                <b class="sensorType"></b>
-                                <input class="sensorRate" type="number" min="0" value="" disabled />ms
-                            </label>
-                        </template>
-
-                        <label class="block">
-                            <b>sensor data: </b>
-                            <pre class="sensorData"></pre>
-                        </label>
-
-                        <div>
-                            <button class="triggerVibration" disabled>triggerVibration</button>
-                        </div>
-
-                        <div>
-                            <h3>file transfer</h3>
-                            <label>
-                                file transfer type
-                                <select class="fileTransferTypes">
-                                    <optgroup label="file transfer type"></optgroup>
-                                </select>
-                            </label>
-                            <br />
-                            <label>
-                                file (max <span class="maxFileLength">0</span>kb)
-                                <input class="file" type="file" accept=".tflite" />
-                            </label>
-                            <br />
-                            <label>
-                                file transfer direction
-                                <select class="fileTransferDirection">
-                                    <optgroup label="file transfer direction">
-                                        <option>send</option>
-                                        <option>receive</option>
-                                    </optgroup>
-                                </select>
-                            </label>
-                            <button disabled class="toggleFileTransfer">send file</button>
-                            <progress value="0" class="fileTransferProgress"></progress>
-                        </div>
-
-                        <div>
-                            <h3>tflite</h3>
-
-                            <div>
-                                <label><b>name:</b> <span class="tfliteName"></span></label>
-                                <br />
-                                <label>
-                                    <b>new name: </b>
-                                    <input
-                                        class="setTfliteNameInput"
-                                        type="text"
-                                        placeholder="type in a name"
-                                        disabled
-                                    />
-                                </label>
-                                <button class="setTfliteNameButton" disabled>set name</button>
-                            </div>
-
-                            <div>
-                                <label><b>task:</b> <span class="tfliteTask"></span></label>
-                                <br />
-                                <label>
-                                    <b>new task: </b>
-                                    <select class="setTfliteTaskSelect" disabled>
-                                        <optgroup label="select task"></optgroup>
-                                    </select>
-                                    <button class="setTfliteTaskButton" disabled>set task</button>
-                                </label>
-                            </div>
-
-                            <div>
-                                <label><b>sample rate:</b> <span class="tfliteSampleRate"></span></label>
-                                <br />
-                                <label>
-                                    <b>new sample rate: </b>
-                                    <input
-                                        class="setTfliteSampleRateInput"
-                                        type="number"
-                                        min="5"
-                                        value="20"
-                                        max="1000"
-                                        step="5"
-                                        disabled
-                                    />
-                                </label>
-                                <button class="setTfliteSampleRateButton" disabled>set sample rate</button>
-                            </div>
-
-                            <div>
-                                <div class="tfliteSensorTypes">
-                                    <template class="tfliteSensorTypeTemplate">
-                                        <label class="sensorType">
-                                            <b class="name"></b>
-                                            <input class="enabled" type="checkbox" />
-                                        </label>
-                                    </template>
-                                </div>
-
-                                <button disabled class="setTfliteSensorTypes">set sensor types</button>
-                            </div>
-
-                            <div>
-                                <label><b>is ready?</b> <input type="checkbox" class="tfliteIsReady" disabled /></label>
-                            </div>
-
-                            <div>
-                                <label><b>threshold:</b> <span class="tfliteThreshold"></span></label>
-                                <br />
-                                <label>
-                                    <b>new threshold: </b>
-                                    <input
-                                        class="setTfliteThresholdInput"
-                                        type="number"
-                                        min="0"
-                                        value="0"
-                                        max="1"
-                                        step="0.1"
-                                        disabled
-                                    />
-                                </label>
-                                <button class="setTfliteThresholdButton" disabled>set threshold</button>
-                            </div>
-
-                            <div>
-                                <label><b>capture delay:</b> <span class="tfliteCaptureDelay"></span></label>
-                                <br />
-                                <label>
-                                    <b>new capture delay: </b>
-                                    <input
-                                        class="setTfliteCaptureDelayInput"
-                                        type="number"
-                                        min="0"
-                                        value="0"
-                                        max="2000"
-                                        step="1"
-                                        disabled
-                                    />
-                                </label>
-                                <button class="setTfliteCaptureDelayButton" disabled>set capture delay</button>
-                            </div>
-
-                            <div>
-                                <label>
-                                    <b>inferencing enabled? </b>
-                                    <input class="tfliteInferencingEnabled" type="checkbox" disabled />
-                                </label>
-                                <button class="toggleTfliteInferencingEnabled" disabled>enable inferencing</button>
-                            </div>
-
-                            <div>
-                                <label>
-                                    <b>inference: </b>
-                                    <pre class="tfliteInference"></pre>
-                                </label>
-                            </div>
-                        </div>
-
-                        <div>
-                            <h3>firmware update</h3>
-
-                            <label><b>status:</b> <span class="firmwareStatus"></span></label>
-                            <br />
-                            <label>firmware <input class="firmwareInput" type="file" accept=".bin" /></label>
-                            <br />
-                            <button class="toggleFirmwareUpload" disabled>upload firmware</button>
-                            <progress value="0" class="firmwareUploadProgress"></progress>
-                            <span class="firmwareUploadProgressPercentage" style="display: none"></span>
-
-                            <br />
-
-                            <label>
-                                <b>firmware images: </b>
-                                <pre class="firmwareImages"></pre>
-                            </label>
-
-                            <button class="reset" disabled>reset</button>
-
-                            <button class="testFirmwareImage" disabled>test</button>
-                            <button class="confirmFirmwareImage" disabled>confirm</button>
-                            <button class="eraseFirmwareImage" disabled>erase</button>
-                        </div>
-
-                        <div>
-                            <button class="toggleConnection">connect</button>
-                        </div>
-                    </div>
-                </template>
+            <div>
+              <h3>file transfer</h3>
+              <label>
+                file transfer type
+                <select class="fileTransferTypes">
+                  <optgroup label="file transfer type"></optgroup>
+                </select>
+              </label>
+              <br />
+              <label>
+                file (max <span class="maxFileLength">0</span>kb)
+                <input class="file" type="file" accept=".tflite" />
+              </label>
+              <br />
+              <label>
+                file transfer direction
+                <select class="fileTransferDirection">
+                  <optgroup label="file transfer direction">
+                    <option>send</option>
+                    <option>receive</option>
+                  </optgroup>
+                </select>
+              </label>
+              <button disabled class="toggleFileTransfer">send file</button>
+              <progress value="0" class="fileTransferProgress"></progress>
             </div>
-        </div>
-    </body>
+
+            <div>
+              <h3>tflite</h3>
+
+              <div>
+                <label><b>name:</b> <span class="tfliteName"></span></label>
+                <br />
+                <label>
+                  <b>new name: </b>
+                  <input class="setTfliteNameInput" type="text" placeholder="type in a name" disabled />
+                </label>
+                <button class="setTfliteNameButton" disabled>set name</button>
+              </div>
+
+              <div>
+                <label><b>task:</b> <span class="tfliteTask"></span></label>
+                <br />
+                <label>
+                  <b>new task: </b>
+                  <select class="setTfliteTaskSelect" disabled>
+                    <optgroup label="select task"></optgroup>
+                  </select>
+                  <button class="setTfliteTaskButton" disabled>set task</button>
+                </label>
+              </div>
+
+              <div>
+                <label><b>sample rate:</b> <span class="tfliteSampleRate"></span></label>
+                <br />
+                <label>
+                  <b>new sample rate: </b>
+                  <input
+                    class="setTfliteSampleRateInput"
+                    type="number"
+                    min="5"
+                    value="20"
+                    max="1000"
+                    step="5"
+                    disabled
+                  />
+                </label>
+                <button class="setTfliteSampleRateButton" disabled>set sample rate</button>
+              </div>
+
+              <div>
+                <div class="tfliteSensorTypes">
+                  <template class="tfliteSensorTypeTemplate">
+                    <label class="sensorType">
+                      <b class="name"></b>
+                      <input class="enabled" type="checkbox" />
+                    </label>
+                  </template>
+                </div>
+
+                <button disabled class="setTfliteSensorTypes">set sensor types</button>
+              </div>
+
+              <div>
+                <label><b>is ready?</b> <input type="checkbox" class="tfliteIsReady" disabled /></label>
+              </div>
+
+              <div>
+                <label><b>threshold:</b> <span class="tfliteThreshold"></span></label>
+                <br />
+                <label>
+                  <b>new threshold: </b>
+                  <input class="setTfliteThresholdInput" type="number" min="0" value="0" max="1" step="0.1" disabled />
+                </label>
+                <button class="setTfliteThresholdButton" disabled>set threshold</button>
+              </div>
+
+              <div>
+                <label><b>capture delay:</b> <span class="tfliteCaptureDelay"></span></label>
+                <br />
+                <label>
+                  <b>new capture delay: </b>
+                  <input
+                    class="setTfliteCaptureDelayInput"
+                    type="number"
+                    min="0"
+                    value="0"
+                    max="2000"
+                    step="1"
+                    disabled
+                  />
+                </label>
+                <button class="setTfliteCaptureDelayButton" disabled>set capture delay</button>
+              </div>
+
+              <div>
+                <label>
+                  <b>inferencing enabled? </b>
+                  <input class="tfliteInferencingEnabled" type="checkbox" disabled />
+                </label>
+                <button class="toggleTfliteInferencingEnabled" disabled>enable inferencing</button>
+              </div>
+
+              <div>
+                <label>
+                  <b>inference: </b>
+                  <pre class="tfliteInference"></pre>
+                </label>
+              </div>
+            </div>
+
+            <div>
+              <h3>firmware update</h3>
+
+              <label><b>status:</b> <span class="firmwareStatus"></span></label>
+              <br />
+              <label>firmware <input class="firmwareInput" type="file" accept=".bin" /></label>
+              <br />
+              <button class="toggleFirmwareUpload" disabled>upload firmware</button>
+              <progress value="0" class="firmwareUploadProgress"></progress>
+              <span class="firmwareUploadProgressPercentage" style="display: none"></span>
+
+              <br />
+
+              <label>
+                <b>firmware images: </b>
+                <pre class="firmwareImages"></pre>
+              </label>
+
+              <button class="reset" disabled>reset</button>
+
+              <button class="testFirmwareImage" disabled>test</button>
+              <button class="confirmFirmwareImage" disabled>confirm</button>
+              <button class="eraseFirmwareImage" disabled>erase</button>
+            </div>
+
+            <div>
+              <button class="toggleConnection">connect</button>
+            </div>
+          </div>
+        </template>
+      </div>
+    </div>
+  </body>
 </html>

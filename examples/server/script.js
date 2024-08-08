@@ -209,51 +209,51 @@ BS.DeviceManager.AddEventListener("deviceIsConnected", (event) => {
 // AVAILABLE DEVICES
 
 /** @type {HTMLTemplateElement} */
-const availableDeviceTemplate = document.getElementById("availableDeviceTemplate");
-const availableDevicesContainer = document.getElementById("availableDevices");
+const connectedDeviceTemplate = document.getElementById("connectedDeviceTemplate");
+const connectedDevicesContainer = document.getElementById("connectedDevices");
 /** @type {Object.<string, HTMLElement>} */
-let availableDeviceContainers = {};
+let connectedDeviceContainers = {};
 
-BS.DeviceManager.AddEventListener("availableDevices", (event) => {
-  const { availableDevices } = event.message;
-  console.log({ availableDevices });
+BS.DeviceManager.AddEventListener("connectedDevices", (event) => {
+  const { connectedDevices } = event.message;
+  console.log({ connectedDevices });
 
-  availableDevices.forEach((device) => {
+  connectedDevices.forEach((device) => {
     if (device.connectionType != "webSocketClient" || !device.bluetoothId) {
       return;
     }
-    let availableDeviceContainer = availableDeviceContainers[device.bluetoothId];
-    if (!availableDeviceContainer) {
-      availableDeviceContainer = availableDeviceTemplate.content.cloneNode(true).querySelector(".availableDevice");
-      availableDeviceContainers[device.bluetoothId] = availableDeviceContainer;
+    let connectedDeviceContainer = connectedDeviceContainers[device.bluetoothId];
+    if (!connectedDeviceContainer) {
+      connectedDeviceContainer = connectedDeviceTemplate.content.cloneNode(true).querySelector(".connectedDevice");
+      connectedDeviceContainers[device.bluetoothId] = connectedDeviceContainer;
 
       /** @type {HTMLPreElement} */
-      const deviceInformationPre = availableDeviceContainer.querySelector(".deviceInformation");
+      const deviceInformationPre = connectedDeviceContainer.querySelector(".deviceInformation");
       const setDeviceInformationPre = () =>
         (deviceInformationPre.textContent = JSON.stringify(device.deviceInformation, null, 2));
       setDeviceInformationPre();
       device.addEventListener("deviceInformation", () => setDeviceInformationPre());
 
       /** @type {HTMLSpanElement} */
-      const batteryLevelSpan = availableDeviceContainer.querySelector(".batteryLevel");
+      const batteryLevelSpan = connectedDeviceContainer.querySelector(".batteryLevel");
       const setBatteryLevelSpan = () => (batteryLevelSpan.innerText = device.batteryLevel);
       setBatteryLevelSpan();
       device.addEventListener("batteryLevel", () => setBatteryLevelSpan());
 
       /** @type {HTMLSpanElement} */
-      const nameSpan = availableDeviceContainer.querySelector(".name");
+      const nameSpan = connectedDeviceContainer.querySelector(".name");
       const setNameSpan = () => (nameSpan.innerText = device.name);
       setNameSpan();
       device.addEventListener("getName", () => setNameSpan());
 
       /** @type {HTMLInputElement} */
-      const setNameInput = availableDeviceContainer.querySelector(".setNameInput");
+      const setNameInput = connectedDeviceContainer.querySelector(".setNameInput");
       setNameInput.minLength = BS.MinNameLength;
       setNameInput.maxLength = BS.MaxNameLength;
       setNameInput.disabled = !device.isConnected;
 
       /** @type {HTMLButtonElement} */
-      const setNameButton = availableDeviceContainer.querySelector(".setNameButton");
+      const setNameButton = connectedDeviceContainer.querySelector(".setNameButton");
       setNameButton.disabled = !device.isConnected;
 
       device.addEventListener("isConnected", () => {
@@ -275,16 +275,16 @@ BS.DeviceManager.AddEventListener("availableDevices", (event) => {
       });
 
       /** @type {HTMLSpanElement} */
-      const deviceTypeSpan = availableDeviceContainer.querySelector(".deviceType");
+      const deviceTypeSpan = connectedDeviceContainer.querySelector(".deviceType");
       const setDeviceTypeSpan = () => (deviceTypeSpan.innerText = device.type);
       setDeviceTypeSpan();
       device.addEventListener("getType", () => setDeviceTypeSpan());
 
       /** @type {HTMLButtonElement} */
-      const setTypeButton = availableDeviceContainer.querySelector(".setTypeButton");
+      const setTypeButton = connectedDeviceContainer.querySelector(".setTypeButton");
 
       /** @type {HTMLSelectElement} */
-      const setTypeSelect = availableDeviceContainer.querySelector(".setTypeSelect");
+      const setTypeSelect = connectedDeviceContainer.querySelector(".setTypeSelect");
       /** @type {HTMLOptGroupElement} */
       const setTypeSelectOptgroup = setTypeSelect.querySelector("optgroup");
       BS.DeviceTypes.forEach((type) => {
@@ -311,14 +311,14 @@ BS.DeviceManager.AddEventListener("availableDevices", (event) => {
       });
 
       /** @type {HTMLPreElement} */
-      const sensorConfigurationPre = availableDeviceContainer.querySelector(".sensorConfiguration");
+      const sensorConfigurationPre = connectedDeviceContainer.querySelector(".sensorConfiguration");
       const setSensorConfigurationPre = () =>
         (sensorConfigurationPre.textContent = JSON.stringify(device.sensorConfiguration, null, 2));
       setSensorConfigurationPre();
       device.addEventListener("getSensorConfiguration", () => setSensorConfigurationPre());
 
       /** @type {HTMLTemplateElement} */
-      const sensorTypeConfigurationTemplate = availableDeviceContainer.querySelector(
+      const sensorTypeConfigurationTemplate = connectedDeviceContainer.querySelector(
         ".sensorTypeConfigurationTemplate"
       );
       device.sensorTypes.forEach((sensorType) => {
@@ -347,24 +347,24 @@ BS.DeviceManager.AddEventListener("availableDevices", (event) => {
       });
 
       device.addEventListener("isConnected", () => {
-        availableDeviceContainer.querySelectorAll("input").forEach((input) => (input.disabled = !device.isConnected));
+        connectedDeviceContainer.querySelectorAll("input").forEach((input) => (input.disabled = !device.isConnected));
       });
 
       device.addEventListener("getSensorConfiguration", () => {
         for (const sensorType in device.sensorConfiguration) {
-          availableDeviceContainer.querySelector(
+          connectedDeviceContainer.querySelector(
             `.sensorTypeConfiguration[data-sensor-type="${sensorType}"] input`
           ).value = device.sensorConfiguration[sensorType];
         }
       });
 
       /** @type {HTMLPreElement} */
-      const sensorDataPre = availableDeviceContainer.querySelector(".sensorData");
+      const sensorDataPre = connectedDeviceContainer.querySelector(".sensorData");
       const setSensorDataPre = (event) => (sensorDataPre.textContent = JSON.stringify(event.message, null, 2));
       device.addEventListener("sensorData", (event) => setSensorDataPre(event));
 
       /** @type {HTMLButtonElement} */
-      const triggerVibrationButton = availableDeviceContainer.querySelector(".triggerVibration");
+      const triggerVibrationButton = connectedDeviceContainer.querySelector(".triggerVibration");
       triggerVibrationButton.addEventListener("click", () => {
         device.triggerVibration([
           {
@@ -379,7 +379,7 @@ BS.DeviceManager.AddEventListener("availableDevices", (event) => {
       triggerVibrationButton.disabled = !device.isConnected;
 
       /** @type {HTMLButtonElement} */
-      const toggleConnectionButton = availableDeviceContainer.querySelector(".toggleConnection");
+      const toggleConnectionButton = connectedDeviceContainer.querySelector(".toggleConnection");
       toggleConnectionButton.addEventListener("click", () => {
         device.toggleConnection();
       });
@@ -404,7 +404,7 @@ BS.DeviceManager.AddEventListener("availableDevices", (event) => {
       let file;
 
       /** @type {HTMLInputElement} */
-      const fileInput = availableDeviceContainer.querySelector(".file");
+      const fileInput = connectedDeviceContainer.querySelector(".file");
       fileInput.addEventListener("input", () => {
         if (fileInput.files[0].size > device.maxFileLength) {
           console.log("file size too large");
@@ -415,7 +415,7 @@ BS.DeviceManager.AddEventListener("availableDevices", (event) => {
         updateToggleFileTransferButton();
       });
 
-      const maxFileLengthSpan = availableDeviceContainer.querySelector(".maxFileLength");
+      const maxFileLengthSpan = connectedDeviceContainer.querySelector(".maxFileLength");
       const updateMaxFileLengthSpan = () => {
         maxFileLengthSpan.innerText = (device.maxFileLength / 1024).toLocaleString();
       };
@@ -428,7 +428,7 @@ BS.DeviceManager.AddEventListener("availableDevices", (event) => {
       let fileType;
 
       /** @type {HTMLSelectElement} */
-      const fileTransferTypesSelect = availableDeviceContainer.querySelector(".fileTransferTypes");
+      const fileTransferTypesSelect = connectedDeviceContainer.querySelector(".fileTransferTypes");
       fileTransferTypesSelect.addEventListener("input", () => {
         fileType = fileTransferTypesSelect.value;
         console.log({ fileType });
@@ -446,7 +446,7 @@ BS.DeviceManager.AddEventListener("availableDevices", (event) => {
       fileTransferTypesSelect.dispatchEvent(new Event("input"));
 
       /** @type {HTMLProgressElement} */
-      const fileTransferProgress = availableDeviceContainer.querySelector(".fileTransferProgress");
+      const fileTransferProgress = connectedDeviceContainer.querySelector(".fileTransferProgress");
       console.log("fileTransferProgress", fileTransferProgress);
 
       device.addEventListener("fileTransferProgress", (event) => {
@@ -461,7 +461,7 @@ BS.DeviceManager.AddEventListener("availableDevices", (event) => {
       });
 
       /** @type {HTMLButtonElement} */
-      const toggleFileTransferButton = availableDeviceContainer.querySelector(".toggleFileTransfer");
+      const toggleFileTransferButton = connectedDeviceContainer.querySelector(".toggleFileTransfer");
       toggleFileTransferButton.addEventListener("click", async () => {
         if (device.fileTransferStatus == "idle") {
           if (fileTransferDirection == "send") {
@@ -505,7 +505,7 @@ BS.DeviceManager.AddEventListener("availableDevices", (event) => {
       /** @type {BS.FileTransferDirection} */
       let fileTransferDirection;
       /** @type {HTMLSelectElement} */
-      const fileTransferDirectionSelect = availableDeviceContainer.querySelector(".fileTransferDirection");
+      const fileTransferDirectionSelect = connectedDeviceContainer.querySelector(".fileTransferDirection");
       fileTransferDirectionSelect.addEventListener("input", () => {
         fileTransferDirection = fileTransferDirectionSelect.value;
         console.log({ fileTransferDirection });
@@ -533,11 +533,11 @@ BS.DeviceManager.AddEventListener("availableDevices", (event) => {
       // TFLITE
 
       /** @type {HTMLSpanElement} */
-      const tfliteNameSpan = availableDeviceContainer.querySelector(".tfliteName");
+      const tfliteNameSpan = connectedDeviceContainer.querySelector(".tfliteName");
       /** @type {HTMLInputElement} */
-      const setTfliteNameInput = availableDeviceContainer.querySelector(".setTfliteNameInput");
+      const setTfliteNameInput = connectedDeviceContainer.querySelector(".setTfliteNameInput");
       /** @type {HTMLButtonElement} */
-      const setTfliteNameButton = availableDeviceContainer.querySelector(".setTfliteNameButton");
+      const setTfliteNameButton = connectedDeviceContainer.querySelector(".setTfliteNameButton");
 
       device.addEventListener("getTfliteName", () => {
         tfliteNameSpan.innerText = device.tfliteName;
@@ -560,13 +560,13 @@ BS.DeviceManager.AddEventListener("availableDevices", (event) => {
       });
 
       /** @type {HTMLSpanElement} */
-      const tfliteTaskSpan = availableDeviceContainer.querySelector(".tfliteTask");
+      const tfliteTaskSpan = connectedDeviceContainer.querySelector(".tfliteTask");
       /** @type {HTMLSelectElement} */
-      const setTfliteTaskSelect = availableDeviceContainer.querySelector(".setTfliteTaskSelect");
+      const setTfliteTaskSelect = connectedDeviceContainer.querySelector(".setTfliteTaskSelect");
       /** @type {HTMLOptGroupElement} */
       const setTfliteTaskOptgroup = setTfliteTaskSelect.querySelector("optgroup");
       /** @type {HTMLButtonElement} */
-      const setTfliteTaskButton = availableDeviceContainer.querySelector(".setTfliteTaskButton");
+      const setTfliteTaskButton = connectedDeviceContainer.querySelector(".setTfliteTaskButton");
 
       BS.TfliteTasks.forEach((task) => {
         setTfliteTaskOptgroup.appendChild(new Option(task));
@@ -588,11 +588,11 @@ BS.DeviceManager.AddEventListener("availableDevices", (event) => {
       });
 
       /** @type {HTMLSpanElement} */
-      const tfliteSampleRateSpan = availableDeviceContainer.querySelector(".tfliteSampleRate");
+      const tfliteSampleRateSpan = connectedDeviceContainer.querySelector(".tfliteSampleRate");
       /** @type {HTMLInputElement} */
-      const setTfliteSampleRateInput = availableDeviceContainer.querySelector(".setTfliteSampleRateInput");
+      const setTfliteSampleRateInput = connectedDeviceContainer.querySelector(".setTfliteSampleRateInput");
       /** @type {HTMLButtonElement} */
-      const setTfliteSampleRateButton = availableDeviceContainer.querySelector(".setTfliteSampleRateButton");
+      const setTfliteSampleRateButton = connectedDeviceContainer.querySelector(".setTfliteSampleRateButton");
 
       device.addEventListener("getTfliteSampleRate", () => {
         tfliteSampleRateSpan.innerText = device.tfliteSampleRate;
@@ -617,15 +617,15 @@ BS.DeviceManager.AddEventListener("availableDevices", (event) => {
         setTfliteSampleRateButton.disabled = device.tfliteInferencingEnabled;
       });
 
-      const tfliteSensorTypesContainer = availableDeviceContainer.querySelector(".tfliteSensorTypes");
+      const tfliteSensorTypesContainer = connectedDeviceContainer.querySelector(".tfliteSensorTypes");
       /** @type {HTMLTemplateElement} */
-      const tfliteSensorTypeTemplate = availableDeviceContainer.querySelector(".tfliteSensorTypeTemplate");
+      const tfliteSensorTypeTemplate = connectedDeviceContainer.querySelector(".tfliteSensorTypeTemplate");
       /** @type {Object.<string, HTMLElement>} */
       const tfliteSensorTypeContainers = {};
       /** @type {BS.SensorType[]} */
       let tfliteSensorTypes = [];
       /** @type {HTMLButtonElement} */
-      const setTfliteSensorTypesButton = availableDeviceContainer.querySelector(".setTfliteSensorTypes");
+      const setTfliteSensorTypesButton = connectedDeviceContainer.querySelector(".setTfliteSensorTypes");
 
       BS.TfliteSensorTypes.forEach((sensorType) => {
         const sensorTypeContainer = tfliteSensorTypeTemplate.content.cloneNode(true).querySelector(".sensorType");
@@ -671,18 +671,18 @@ BS.DeviceManager.AddEventListener("availableDevices", (event) => {
       setTfliteSensorTypesButton.disabled = false;
 
       /** @type {HTMLInputElement} */
-      const setTfliteIsReadyInput = availableDeviceContainer.querySelector(".tfliteIsReady");
+      const setTfliteIsReadyInput = connectedDeviceContainer.querySelector(".tfliteIsReady");
       device.addEventListener("tfliteIsReady", () => {
         setTfliteIsReadyInput.checked = device.tfliteIsReady;
       });
       setTfliteIsReadyInput.checked = device.tfliteIsReady;
 
       /** @type {HTMLSpanElement} */
-      const tfliteThresholdSpan = availableDeviceContainer.querySelector(".tfliteThreshold");
+      const tfliteThresholdSpan = connectedDeviceContainer.querySelector(".tfliteThreshold");
       /** @type {HTMLInputElement} */
-      const setTfliteThresholdInput = availableDeviceContainer.querySelector(".setTfliteThresholdInput");
+      const setTfliteThresholdInput = connectedDeviceContainer.querySelector(".setTfliteThresholdInput");
       /** @type {HTMLButtonElement} */
-      const setTfliteThresholdButton = availableDeviceContainer.querySelector(".setTfliteThresholdButton");
+      const setTfliteThresholdButton = connectedDeviceContainer.querySelector(".setTfliteThresholdButton");
 
       device.addEventListener("getTfliteThreshold", () => {
         tfliteThresholdSpan.innerText = device.tfliteThreshold;
@@ -705,11 +705,11 @@ BS.DeviceManager.AddEventListener("availableDevices", (event) => {
       });
 
       /** @type {HTMLSpanElement} */
-      const tfliteCaptureDelaySpan = availableDeviceContainer.querySelector(".tfliteCaptureDelay");
+      const tfliteCaptureDelaySpan = connectedDeviceContainer.querySelector(".tfliteCaptureDelay");
       /** @type {HTMLInputElement} */
-      const setTfliteCaptureDelayInput = availableDeviceContainer.querySelector(".setTfliteCaptureDelayInput");
+      const setTfliteCaptureDelayInput = connectedDeviceContainer.querySelector(".setTfliteCaptureDelayInput");
       /** @type {HTMLButtonElement} */
-      const setTfliteCaptureDelayButton = availableDeviceContainer.querySelector(".setTfliteCaptureDelayButton");
+      const setTfliteCaptureDelayButton = connectedDeviceContainer.querySelector(".setTfliteCaptureDelayButton");
 
       device.addEventListener("getTfliteCaptureDelay", () => {
         tfliteCaptureDelaySpan.innerText = device.tfliteCaptureDelay;
@@ -732,9 +732,9 @@ BS.DeviceManager.AddEventListener("availableDevices", (event) => {
       });
 
       /** @type {HTMLInputElement} */
-      const tfliteInferencingEnabledInput = availableDeviceContainer.querySelector(".tfliteInferencingEnabled");
+      const tfliteInferencingEnabledInput = connectedDeviceContainer.querySelector(".tfliteInferencingEnabled");
       /** @type {HTMLButtonElement} */
-      const toggleTfliteInferencingEnabledButton = availableDeviceContainer.querySelector(
+      const toggleTfliteInferencingEnabledButton = connectedDeviceContainer.querySelector(
         ".toggleTfliteInferencingEnabled"
       );
 
@@ -763,7 +763,7 @@ BS.DeviceManager.AddEventListener("availableDevices", (event) => {
       });
 
       /** @type {HTMLPreElement} */
-      const tfliteInferencePre = availableDeviceContainer.querySelector(".tfliteInference");
+      const tfliteInferencePre = connectedDeviceContainer.querySelector(".tfliteInference");
       device.addEventListener("tfliteInference", (event) => {
         console.log("inference", event.message.tfliteInference);
         tfliteInferencePre.textContent = JSON.stringify(event.message.tfliteInference, null, 2);
@@ -797,13 +797,13 @@ BS.DeviceManager.AddEventListener("availableDevices", (event) => {
       let firmware;
 
       /** @type {HTMLInputElement} */
-      const firmwareInput = availableDeviceContainer.querySelector(".firmwareInput");
+      const firmwareInput = connectedDeviceContainer.querySelector(".firmwareInput");
       firmwareInput.addEventListener("input", () => {
         firmware = firmwareInput.files[0];
         updateToggleFirmwareUploadButton();
       });
       /** @type {HTMLButtonElement} */
-      const toggleFirmwareUploadButton = availableDeviceContainer.querySelector(".toggleFirmwareUpload");
+      const toggleFirmwareUploadButton = connectedDeviceContainer.querySelector(".toggleFirmwareUpload");
       toggleFirmwareUploadButton.addEventListener("click", () => {
         device.uploadFirmware(firmware);
       });
@@ -816,9 +816,9 @@ BS.DeviceManager.AddEventListener("availableDevices", (event) => {
       });
 
       /** @type {HTMLProgressElement} */
-      const firmwareUploadProgress = availableDeviceContainer.querySelector(".firmwareUploadProgress");
+      const firmwareUploadProgress = connectedDeviceContainer.querySelector(".firmwareUploadProgress");
       /** @type {HTMLSpanElement} */
-      const firmwareUploadProgressPercentageSpan = availableDeviceContainer.querySelector(
+      const firmwareUploadProgressPercentageSpan = connectedDeviceContainer.querySelector(
         ".firmwareUploadProgressPercentage"
       );
       device.addEventListener("firmwareUploadProgress", (event) => {
@@ -835,7 +835,7 @@ BS.DeviceManager.AddEventListener("availableDevices", (event) => {
       });
 
       /** @type {HTMLPreElement} */
-      const firmwareImagesPre = availableDeviceContainer.querySelector(".firmwareImages");
+      const firmwareImagesPre = connectedDeviceContainer.querySelector(".firmwareImages");
       device.addEventListener("firmwareImages", () => {
         firmwareImagesPre.textContent = JSON.stringify(
           device.firmwareImages,
@@ -851,10 +851,10 @@ BS.DeviceManager.AddEventListener("availableDevices", (event) => {
       });
 
       /** @type {HTMLSpanElement} */
-      const firmwareStatusSpan = availableDeviceContainer.querySelector(".firmwareStatus");
+      const firmwareStatusSpan = connectedDeviceContainer.querySelector(".firmwareStatus");
 
       /** @type {HTMLButtonElement} */
-      const resetButton = availableDeviceContainer.querySelector(".reset");
+      const resetButton = connectedDeviceContainer.querySelector(".reset");
       resetButton.addEventListener("click", () => {
         device.reset();
         resetButton.disabled = true;
@@ -866,7 +866,7 @@ BS.DeviceManager.AddEventListener("availableDevices", (event) => {
       };
 
       /** @type {HTMLButtonElement} */
-      const testFirmwareImageButton = availableDeviceContainer.querySelector(".testFirmwareImage");
+      const testFirmwareImageButton = connectedDeviceContainer.querySelector(".testFirmwareImage");
       testFirmwareImageButton.addEventListener("click", () => {
         device.testFirmwareImage();
       });
@@ -876,7 +876,7 @@ BS.DeviceManager.AddEventListener("availableDevices", (event) => {
       };
 
       /** @type {HTMLButtonElement} */
-      const confirmFirmwareImageButton = availableDeviceContainer.querySelector(".confirmFirmwareImage");
+      const confirmFirmwareImageButton = connectedDeviceContainer.querySelector(".confirmFirmwareImage");
       confirmFirmwareImageButton.addEventListener("click", () => {
         device.confirmFirmwareImage();
       });
@@ -886,7 +886,7 @@ BS.DeviceManager.AddEventListener("availableDevices", (event) => {
       };
 
       /** @type {HTMLButtonElement} */
-      const eraseFirmwareImageButton = availableDeviceContainer.querySelector(".eraseFirmwareImage");
+      const eraseFirmwareImageButton = connectedDeviceContainer.querySelector(".eraseFirmwareImage");
       eraseFirmwareImageButton.addEventListener("click", () => {
         device.eraseFirmwareImage();
       });
@@ -910,7 +910,16 @@ BS.DeviceManager.AddEventListener("availableDevices", (event) => {
 
       device.getFirmwareImages();
 
-      availableDevicesContainer.appendChild(availableDeviceContainer);
+      connectedDevicesContainer.appendChild(connectedDeviceContainer);
     }
   });
+
+  for (const id in connectedDeviceContainers) {
+    const connectedDevice = connectedDevices.find((connectedDevice) => connectedDevice.bluetoothId == id);
+    if (!connectedDevice) {
+      console.log("remove", id);
+      connectedDeviceContainers[id].remove();
+      delete connectedDeviceContainers[id];
+    }
+  }
 });
