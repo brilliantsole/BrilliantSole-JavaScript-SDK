@@ -376,7 +376,7 @@ toggleShowDiscoveredDevicesEntity.addEventListener("click", () => {
   if (screenMode == "discoveredDevices") {
     setScreenMode("none");
   } else {
-    setScreenMode("s");
+    setScreenMode("discoveredDevices");
   }
 });
 

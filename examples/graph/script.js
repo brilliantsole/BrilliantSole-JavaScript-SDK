@@ -5,7 +5,7 @@ window.BS = BS;
 console.log({ BS });
 //BS.setAllConsoleLevelFlags({ log: true });
 
-const device = new BS.Device();
+let device = new BS.Device();
 console.log({ device });
 window.device = device;
 
@@ -85,6 +85,17 @@ device.addEventListener("connectionStatus", () => {
   }
 });
 
+/** @param {BS.Device} connectedDevice */
+function onConnectedDevice(connectedDevice) {
+  device = connectedDevice;
+  device.addEventListener("getSensorConfiguration", () => {
+    onSensorConfiguration(device);
+  });
+  updateSensorRateInputs(device);
+  onSensorConfiguration(device);
+  addSensorDataEventListeners(device);
+}
+
 // SENSOR CONFIGURATION
 
 /** @type {HTMLTemplateElement} */
@@ -109,7 +120,8 @@ BS.ContinuousSensorTypes.forEach((sensorType) => {
   sensorTypeConfigurationTemplate.parentElement.appendChild(sensorTypeConfigurationContainer);
   sensorTypeConfigurationContainer.dataset.sensorType = sensorType;
 });
-device.addEventListener("getSensorConfiguration", () => {
+/** @param {BS.Device} device */
+function onSensorConfiguration(device) {
   for (const sensorType in device.sensorConfiguration) {
     const sensorRate = device.sensorConfiguration[sensorType];
     /** @type {HTMLInputElement?} */
@@ -135,8 +147,9 @@ device.addEventListener("getSensorConfiguration", () => {
       });
     }
   }
-});
-device.addEventListener("isConnected", () => {
+}
+/** @param {BS.Device} device */
+function updateSensorRateInputs(device) {
   for (const sensorType in device.sensorConfiguration) {
     /** @type {HTMLInputElement?} */
     const input = document.querySelector(`[data-sensor-type="${sensorType}"] input`);
@@ -144,7 +157,7 @@ device.addEventListener("isConnected", () => {
       input.disabled = !device.isConnected;
     }
   }
-});
+}
 
 // GRAPHING
 
@@ -348,42 +361,53 @@ BS.ContinuousSensorTypes.forEach((sensorType) => {
   const euler = new THREE.Euler();
   euler.reorder("YXZ");
 
-  const appendData = createChart(chartContainer.querySelector("canvas"), sensorType, axesLabels, yRange);
-  device.addEventListener(sensorType, (event) => {
-    let { timestamp, [sensorType]: data } = event.message;
-
-    if (sensorType == "pressure") {
-      /** @type {BS.PressureData} */
-      let pressure = data;
-      data = pressure.sensors.map((sensor) => sensor.normalizedValue);
-    }
-    appendData(timestamp, data);
-
-    switch (sensorType) {
-      case "gameRotation":
-      case "rotation":
-        quaternion.copy(data);
-        euler.setFromQuaternion(quaternion);
-        charts[sensorType + "Euler"]._appendData(timestamp, {
-          pitch: euler.x,
-          yaw: euler.y,
-          roll: euler.z,
-        });
-        break;
-      case "pressure":
-        {
-          /** @type {BS.PressureData} */
-          let pressure = event.message.pressure;
-          charts.pressureMetadata._appendData(timestamp, {
-            sum: pressure.normalizedSum,
-            x: pressure.normalizedCenter?.x || 0,
-            y: pressure.normalizedCenter?.y || 0,
-          });
-        }
-        break;
-    }
-  });
+  createChart(chartContainer.querySelector("canvas"), sensorType, axesLabels, yRange);
 });
+
+/** @param {BS.Device} device */
+function addSensorDataEventListeners(device) {
+  BS.ContinuousSensorTypes.forEach((sensorType) => {
+    const chart = charts[sensorType];
+    if (!chart) {
+      return;
+    }
+    const appendData = chart._appendData;
+    device.addEventListener(sensorType, (event) => {
+      let { timestamp, [sensorType]: data } = event.message;
+
+      if (sensorType == "pressure") {
+        /** @type {BS.PressureData} */
+        let pressure = data;
+        data = pressure.sensors.map((sensor) => sensor.normalizedValue);
+      }
+      appendData(timestamp, data);
+
+      switch (sensorType) {
+        case "gameRotation":
+        case "rotation":
+          quaternion.copy(data);
+          euler.setFromQuaternion(quaternion);
+          charts[sensorType + "Euler"]._appendData(timestamp, {
+            pitch: euler.x,
+            yaw: euler.y,
+            roll: euler.z,
+          });
+          break;
+        case "pressure":
+          {
+            /** @type {BS.PressureData} */
+            let pressure = event.message.pressure;
+            charts.pressureMetadata._appendData(timestamp, {
+              sum: pressure.normalizedSum,
+              x: pressure.normalizedCenter?.x || 0,
+              y: pressure.normalizedCenter?.y || 0,
+            });
+          }
+          break;
+      }
+    });
+  });
+}
 
 // TESTING
 
@@ -408,3 +432,38 @@ if (false)
 
     timestamp += interval;
   }, interval);
+
+// SERVER
+
+const websocketClient = new BS.WebSocketClient();
+/** @type {HTMLButtonElement} */
+const toggleServerConnectionButton = document.getElementById("toggleServerConnection");
+toggleServerConnectionButton.addEventListener("click", () => {
+  websocketClient.toggleConnection();
+});
+websocketClient.addEventListener("isConnected", () => {
+  toggleServerConnectionButton.innerText = websocketClient.isConnected ? "disconnect from server" : "connect to server";
+});
+websocketClient.addEventListener("connectionStatus", () => {
+  let disabled;
+  switch (websocketClient.connectionStatus) {
+    case "notConnected":
+    case "connected":
+      disabled = false;
+      break;
+    case "connecting":
+    case "disconnecting":
+      disabled = true;
+      break;
+  }
+  toggleServerConnectionButton.disabled = disabled;
+});
+
+BS.DeviceManager.AddEventListener("connectedDevices", (event) => {
+  const { connectedDevices } = event.message;
+  const connectedDevice = connectedDevices[0];
+  if (!connectedDevice) {
+    return;
+  }
+  onConnectedDevice(connectedDevice);
+});

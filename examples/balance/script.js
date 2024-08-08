@@ -165,7 +165,7 @@ const target = {
   reset() {
     balanceContainer.classList.remove("hover");
 
-    this.height = randomValueBetween(0.1, 0.2);
+    this.height = randomValueBetween(0.2, 0.3);
     this.start = randomValueBetween(0, 1 - this.height);
 
     devicePair.sides.forEach((side) => {
