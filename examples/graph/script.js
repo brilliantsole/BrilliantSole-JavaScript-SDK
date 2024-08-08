@@ -111,10 +111,28 @@ BS.ContinuousSensorTypes.forEach((sensorType) => {
 });
 device.addEventListener("getSensorConfiguration", () => {
   for (const sensorType in device.sensorConfiguration) {
+    const sensorRate = device.sensorConfiguration[sensorType];
     /** @type {HTMLInputElement?} */
     const input = document.querySelector(`.sensorTypeConfiguration[data-sensor-type="${sensorType}"] input`);
     if (input) {
-      input.value = device.sensorConfiguration[sensorType];
+      input.value = sensorRate;
+    }
+    const chartContainer = chartContainers[sensorType];
+    if (chartContainer) {
+      const _chartContainers = [chartContainer];
+      switch (sensorType) {
+        case "gameRotation":
+        case "rotation":
+          _chartContainers.push(chartContainers[`${sensorType}.euler`]);
+          break;
+        case "pressure":
+          _chartContainers.push(chartContainers["pressureMetadata"]);
+          break;
+      }
+      _chartContainers.forEach((chartContainer) => {
+        const display = sensorRate == 0 ? "none" : "";
+        chartContainer.style.display = display;
+      });
     }
   }
 });
@@ -129,6 +147,8 @@ device.addEventListener("isConnected", () => {
 });
 
 // GRAPHING
+
+let borderWidth = 5;
 
 const charts = {};
 window.charts = charts;
@@ -158,7 +178,7 @@ function createChart(canvas, title, axesLabels, yRange) {
       label,
       data: new Array(window.maxTicks).fill(0),
       radius: 0,
-      borderWidth: 2,
+      borderWidth,
     });
   });
 
@@ -213,7 +233,7 @@ function createChart(canvas, title, axesLabels, yRange) {
           label: index,
           data: new Array(window.maxTicks).fill(0),
           radius: 0,
-          borderWidth: 2,
+          borderWidth,
         });
       });
     }
@@ -236,12 +256,16 @@ function createChart(canvas, title, axesLabels, yRange) {
 }
 
 const chartsContainer = document.getElementById("charts");
+/** @type {Object<string, HTMLElement>} */
+const chartContainers = {};
+window.chartContainers = chartContainers;
 
 /** @type {HTMLTemplateElement} */
 const chartTemplate = document.getElementById("chartTemplate");
 BS.ContinuousSensorTypes.forEach((sensorType) => {
   const chartContainer = chartTemplate.content.cloneNode(true).querySelector(".chart");
   chartsContainer.appendChild(chartContainer);
+  chartContainers[sensorType] = chartContainer;
 
   /** @type {string[]?} */
   let axesLabels;
@@ -300,6 +324,7 @@ BS.ContinuousSensorTypes.forEach((sensorType) => {
       {
         const eulerChartContainer = chartTemplate.content.cloneNode(true).querySelector(".chart");
         chartsContainer.appendChild(eulerChartContainer);
+        chartContainers[`${sensorType}.euler`] = eulerChartContainer;
         createChart(eulerChartContainer.querySelector("canvas"), sensorType + "Euler", ["yaw", "pitch", "roll"], {
           min: -Math.PI,
           max: Math.PI,
@@ -310,6 +335,7 @@ BS.ContinuousSensorTypes.forEach((sensorType) => {
       {
         const pressureMetadataChartContainer = chartTemplate.content.cloneNode(true).querySelector(".chart");
         chartsContainer.appendChild(pressureMetadataChartContainer);
+        chartContainers["pressureMetadata"] = pressureMetadataChartContainer;
         createChart(pressureMetadataChartContainer.querySelector("canvas"), "pressureMetadata", ["sum", "x", "y"], {
           min: 0,
           max: 1,
