@@ -1,79 +1,79 @@
 <html>
-    <head>
-        <title>Graph | BrilliantSole JavaScript SDK</title>
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico" />
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
-        <script type="module" src="./script.js"></script>
-    </head>
+  <head>
+    <title>Graph | BrilliantSole JavaScript SDK</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+    <script type="module" src="./script.js"></script>
+  </head>
 
-    <style>
-        #charts {
-            display: grid;
-            grid-template-columns: 1fr 1fr 1fr;
-            width: 100%;
-        }
+  <style>
+    #charts {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      width: 100%;
+    }
 
-        .chart {
-            position: relative;
-        }
+    .chart {
+      position: relative;
+    }
 
-        @media screen and (max-width: 1000px) {
-            #charts {
-                grid-template-columns: 1fr 1fr;
-            }
-        }
+    @media screen and (max-width: 1000px) {
+      #charts {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
 
-        @media screen and (max-width: 800px) {
-            #charts {
-                grid-template-columns: 1fr;
-            }
-        }
-    </style>
+    @media screen and (max-width: 800px) {
+      #charts {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
 
-    <body>
-        <nav>
-            <a href="../../">home</a>
-        </nav>
+  <body>
+    <nav>
+      <a href="../../">home</a>
+    </nav>
 
-        <h1>Graph | BrilliantSole JavaScript SDK</h1>
+    <h1>Graph | BrilliantSole JavaScript SDK</h1>
 
-        <div>
-            <h2>available devices</h2>
-            <div id="availableDevices">
-                <template id="availableDeviceTemplate">
-                    <div class="availableDevice">
-                        <ul>
-                            <li><b>name: </b> <span class="name"></span></li>
-                            <li><b>type: </b> <span class="type"></span></li>
-                            <li><button class="toggleConnection">connect</button></li>
-                        </ul>
-                    </div>
-                </template>
-            </div>
+    <div>
+      <h2>available devices</h2>
+      <div id="availableDevices">
+        <template id="availableDeviceTemplate">
+          <div class="availableDevice">
+            <ul>
+              <li><b>name: </b> <span class="name"></span></li>
+              <li><b>type: </b> <span class="type"></span></li>
+              <li><button class="toggleConnection">connect</button></li>
+            </ul>
+          </div>
+        </template>
+      </div>
+    </div>
+
+    <br />
+
+    <div>
+      <button id="toggleConnection">connect</button>
+    </div>
+
+    <div>
+      <template id="sensorTypeConfigurationTemplate">
+        <label class="sensorTypeConfiguration">
+          <b class="sensorType"></b>
+          <input class="sensorRate" type="number" min="0" value="" disabled />
+        </label>
+      </template>
+    </div>
+
+    <div id="charts">
+      <template id="chartTemplate">
+        <div class="chart">
+          <canvas></canvas>
         </div>
-
-        <br />
-
-        <div>
-            <button id="toggleConnection">connect</button>
-        </div>
-
-        <div>
-            <template id="sensorTypeConfigurationTemplate">
-                <label class="sensorTypeConfiguration">
-                    <b class="sensorType"></b>
-                    <input class="sensorRate" type="number" min="0" value="" disabled />
-                </label>
-            </template>
-        </div>
-
-        <div id="charts">
-            <template id="chartTemplate">
-                <div class="chart">
-                    <canvas></canvas>
-                </div>
-            </template>
-        </div>
-    </body>
+      </template>
+    </div>
+  </body>
 </html>

@@ -172,3 +172,29 @@ devicePair.addEventListener("devicePressure", (event) => {
     pressureSensorElementsContainers[side][index].style.opacity = sensor.normalizedValue;
   });
 });
+
+// SERVER
+
+const websocketClient = new BS.WebSocketClient();
+/** @type {HTMLButtonElement} */
+const toggleServerConnectionButton = document.getElementById("toggleServerConnection");
+toggleServerConnectionButton.addEventListener("click", () => {
+  websocketClient.toggleConnection();
+});
+websocketClient.addEventListener("isConnected", () => {
+  toggleServerConnectionButton.innerText = websocketClient.isConnected ? "disconnect from server" : "connect to server";
+});
+websocketClient.addEventListener("connectionStatus", () => {
+  let disabled;
+  switch (websocketClient.connectionStatus) {
+    case "notConnected":
+    case "connected":
+      disabled = false;
+      break;
+    case "connecting":
+    case "disconnecting":
+      disabled = true;
+      break;
+  }
+  toggleServerConnectionButton.disabled = disabled;
+});
