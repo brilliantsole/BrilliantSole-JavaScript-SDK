@@ -892,12 +892,13 @@ devicePair.sides.forEach((side) => {
       break;
     case "right":
       position = "0.1 0 0";
-      scale = "-1 1 1";
+      //scale = "-1 1 1";
       break;
   }
   insoleMotionEntity.setAttribute("position", position);
 
   const insoleModelEntity = insoleMotionEntity.querySelector(".model");
+  insoleModelEntity.setAttribute("gltf-model", `#${side}InsoleModel`);
   insoleModelEntity.setAttribute("scale", scale);
 
   const insolePositionEntity = insoleMotionEntity.querySelector(".position");

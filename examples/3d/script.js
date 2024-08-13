@@ -108,9 +108,10 @@ function onIFrameLoaded(insoleContainer) {
   const targetPositionEntity = targetEntity.querySelector(".position");
   const targetRotationEntity = targetEntity.querySelector(".rotation");
   const insoleEntity = targetEntity.querySelector(".insole");
+  insoleEntity.setAttribute("gltf-model", `#${side}Insole`);
   scene.addEventListener("loaded", () => {
     if (side == "right") {
-      insoleEntity.object3D.scale.x = -1;
+      //insoleEntity.object3D.scale.x = -1;
     }
   });
 

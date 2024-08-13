@@ -50,7 +50,8 @@
       obb-collider="showColliders: false;"
     >
       <a-assets>
-        <a-asset-item id="insoleModel" src="../../assets/3d/leftInsole.glb"></a-asset-item>
+        <a-asset-item id="leftInsoleModel" src="../../assets/3d/leftInsole.glb"></a-asset-item>
+        <a-asset-item id="rightInsoleModel" src="../../assets/3d/rightInsole.glb"></a-asset-item>
 
         <img id="insoleImage" src="../../assets/images/right-insole.svg" />
 
@@ -91,7 +92,7 @@
         <a-entity class="insole motion" visible="true">
           <a-entity class="orientation">
             <a-entity class="position">
-              <a-entity class="model" gltf-model="#insoleModel"></a-entity>
+              <a-entity class="model" gltf-model="#rightInsoleModel"></a-entity>
             </a-entity>
           </a-entity>
         </a-entity>
