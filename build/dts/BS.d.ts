@@ -4,7 +4,7 @@ export { Vector2, Vector3, Quaternion, Euler } from "./utils/MathUtils.ts";
 export { default as Device, DeviceEvent, DeviceEventMap, DeviceEventListenerMap, BoundDeviceEventListeners, } from "./Device.ts";
 export { default as DeviceManager, DeviceManagerEvent, DeviceManagerEventMap, DeviceManagerEventListenerMap, BoundDeviceManagerEventListeners, } from "./DeviceManager.ts";
 export { DeviceInformation } from "./DeviceInformationManager.ts";
-export { DeviceType, DeviceTypes, MinNameLength, MaxNameLength } from "./InformationManager.ts";
+export { DeviceType, DeviceTypes, MinNameLength, MaxNameLength, InsoleSides, InsoleSide, } from "./InformationManager.ts";
 export { SensorType, SensorTypes, ContinuousSensorType, ContinuousSensorTypes } from "./sensor/SensorDataManager.ts";
 export { MaxSensorRate, SensorRateStep, SensorConfiguration } from "./sensor/SensorConfigurationManager.ts";
 export { DefaultNumberOfPressureSensors, PressureData } from "./sensor/PressureSensorDataManager.ts";
