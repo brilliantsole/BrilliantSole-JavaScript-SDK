@@ -5626,6 +5626,7 @@ exports.DeviceTypes = DeviceTypes;
 exports.Environment = environment;
 exports.FileTransferDirections = FileTransferDirections;
 exports.FileTypes = FileTypes;
+exports.InsoleSides = InsoleSides;
 exports.MaxNameLength = MaxNameLength;
 exports.MaxNumberOfVibrationWaveformEffectSegments = MaxNumberOfVibrationWaveformEffectSegments;
 exports.MaxNumberOfVibrationWaveformSegments = MaxNumberOfVibrationWaveformSegments;
