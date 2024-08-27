@@ -7,7 +7,7 @@ console.log({ device });
 window.device = device;
 
 BS.setAllConsoleLevelFlags({ log: false });
-BS.setConsoleLevelFlagsForType("PressureDataManager", { log: true });
+//BS.setConsoleLevelFlagsForType("PressureDataManager", { log: true });
 
 // GET DEVICES
 /** @type {HTMLTemplateElement} */

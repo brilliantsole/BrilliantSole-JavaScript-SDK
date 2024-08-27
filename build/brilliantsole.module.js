@@ -4118,8 +4118,7 @@ class Device {
         return __classPrivateFieldGet(this, _Device_isConnected, "f");
     }
     get canReconnect() {
-        _console$7.log("devices don't pair bond, so you can't reconnect");
-        return false;
+        return this.connectionManager?.canReconnect;
     }
     async reconnect() {
         __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertCanReconnect).call(this);

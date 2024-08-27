@@ -276,8 +276,6 @@ class Device {
   }
 
   get canReconnect() {
-    _console.log("devices don't pair bond, so you can't reconnect");
-    return false;
     return this.connectionManager?.canReconnect;
   }
   #assertCanReconnect() {
