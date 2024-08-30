@@ -727,11 +727,11 @@ _a$6 = FileTransferManager, _FileTransferManager_maxLength = new WeakMap(), _Fil
 _FileTransferManager_MaxLength = { value: 0 };
 
 const _console$t = createConsole("MathUtils", { log: true });
-function getInterpolation(value, min, max, range) {
-    if (range == undefined) {
-        range = max - min;
+function getInterpolation(value, min, max, span) {
+    if (span == undefined) {
+        span = max - min;
     }
-    return (value - min) / range;
+    return (value - min) / span;
 }
 const Uint16Max = 2 ** 16;
 function removeLower2Bytes(number) {
@@ -752,7 +752,7 @@ function parseTimestamp(dataView, byteOffset) {
 }
 
 var _RangeHelper_range;
-const initialRange = { min: Infinity, max: -Infinity, range: 0 };
+const initialRange = { min: Infinity, max: -Infinity, span: 0 };
 class RangeHelper {
     constructor() {
         _RangeHelper_range.set(this, Object.assign({}, initialRange));
@@ -763,14 +763,18 @@ class RangeHelper {
     update(value) {
         __classPrivateFieldGet(this, _RangeHelper_range, "f").min = Math.min(value, __classPrivateFieldGet(this, _RangeHelper_range, "f").min);
         __classPrivateFieldGet(this, _RangeHelper_range, "f").max = Math.max(value, __classPrivateFieldGet(this, _RangeHelper_range, "f").max);
-        __classPrivateFieldGet(this, _RangeHelper_range, "f").range = __classPrivateFieldGet(this, _RangeHelper_range, "f").max - __classPrivateFieldGet(this, _RangeHelper_range, "f").min;
+        __classPrivateFieldGet(this, _RangeHelper_range, "f").span = __classPrivateFieldGet(this, _RangeHelper_range, "f").max - __classPrivateFieldGet(this, _RangeHelper_range, "f").min;
     }
-    getNormalization(value) {
-        return getInterpolation(value, __classPrivateFieldGet(this, _RangeHelper_range, "f").min, __classPrivateFieldGet(this, _RangeHelper_range, "f").max, __classPrivateFieldGet(this, _RangeHelper_range, "f").range) * __classPrivateFieldGet(this, _RangeHelper_range, "f").range || 0;
+    getNormalization(value, weightByRange) {
+        let normalization = getInterpolation(value, __classPrivateFieldGet(this, _RangeHelper_range, "f").min, __classPrivateFieldGet(this, _RangeHelper_range, "f").max, __classPrivateFieldGet(this, _RangeHelper_range, "f").span);
+        if (weightByRange) {
+            normalization *= __classPrivateFieldGet(this, _RangeHelper_range, "f").span;
+        }
+        return normalization || 0;
     }
-    updateAndGetNormalization(value) {
+    updateAndGetNormalization(value, weightByRange) {
         this.update(value);
-        return this.getNormalization(value);
+        return this.getNormalization(value, weightByRange);
     }
 }
 _RangeHelper_range = new WeakMap();
@@ -793,8 +797,8 @@ class CenterOfPressureHelper {
     }
     getNormalization(centerOfPressure) {
         return {
-            x: __classPrivateFieldGet(this, _CenterOfPressureHelper_range, "f").x.getNormalization(centerOfPressure.x),
-            y: __classPrivateFieldGet(this, _CenterOfPressureHelper_range, "f").y.getNormalization(centerOfPressure.y),
+            x: __classPrivateFieldGet(this, _CenterOfPressureHelper_range, "f").x.getNormalization(centerOfPressure.x, false),
+            y: __classPrivateFieldGet(this, _CenterOfPressureHelper_range, "f").y.getNormalization(centerOfPressure.y, false),
         };
     }
     updateAndGetNormalization(centerOfPressure) {
@@ -860,7 +864,7 @@ class PressureSensorDataManager {
             const rawValue = dataView.getUint16(byteOffset, true);
             const scaledValue = rawValue * scalar;
             const rangeHelper = __classPrivateFieldGet(this, _PressureSensorDataManager_sensorRangeHelpers, "f")[index];
-            const normalizedValue = rangeHelper.updateAndGetNormalization(scaledValue);
+            const normalizedValue = rangeHelper.updateAndGetNormalization(scaledValue, true);
             const position = this.positions[index];
             pressure.sensors[index] = { rawValue, scaledValue, normalizedValue, position, weightedValue: 0 };
             pressure.scaledSum += scaledValue;

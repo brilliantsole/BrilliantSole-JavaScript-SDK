@@ -1,4 +1,4 @@
-export declare function getInterpolation(value: number, min: number, max: number, range: number): number;
+export declare function getInterpolation(value: number, min: number, max: number, span: number): number;
 export declare const Uint16Max: number;
 export declare function parseTimestamp(dataView: DataView, byteOffset: number): number;
 export interface Vector2 {

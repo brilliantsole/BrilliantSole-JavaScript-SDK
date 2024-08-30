@@ -3,10 +3,10 @@ import { getInterpolation } from "./MathUtils.ts";
 interface Range {
   min: number;
   max: number;
-  range: number;
+  span: number;
 }
 
-const initialRange: Range = { min: Infinity, max: -Infinity, range: 0 };
+const initialRange: Range = { min: Infinity, max: -Infinity, span: 0 };
 
 class RangeHelper {
   #range: Range = Object.assign({}, initialRange);
@@ -18,16 +18,20 @@ class RangeHelper {
   update(value: number) {
     this.#range.min = Math.min(value, this.#range.min);
     this.#range.max = Math.max(value, this.#range.max);
-    this.#range.range = this.#range.max - this.#range.min;
+    this.#range.span = this.#range.max - this.#range.min;
   }
 
-  getNormalization(value: number) {
-    return getInterpolation(value, this.#range.min, this.#range.max, this.#range.range) * this.#range.range || 0;
+  getNormalization(value: number, weightByRange: boolean) {
+    let normalization = getInterpolation(value, this.#range.min, this.#range.max, this.#range.span);
+    if (weightByRange) {
+      normalization *= this.#range.span;
+    }
+    return normalization || 0;
   }
 
-  updateAndGetNormalization(value: number) {
+  updateAndGetNormalization(value: number, weightByRange: boolean) {
     this.update(value);
-    return this.getNormalization(value);
+    return this.getNormalization(value, weightByRange);
   }
 }
 

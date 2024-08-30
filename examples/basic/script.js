@@ -6,7 +6,7 @@ const device = new BS.Device();
 console.log({ device });
 window.device = device;
 
-BS.setAllConsoleLevelFlags({ log: false });
+//BS.setAllConsoleLevelFlags({ log: false });
 //BS.setConsoleLevelFlagsForType("PressureDataManager", { log: true });
 
 // GET DEVICES

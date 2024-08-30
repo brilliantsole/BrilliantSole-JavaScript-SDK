@@ -2,11 +2,11 @@ import { createConsole } from "./Console.ts";
 
 const _console = createConsole("MathUtils", { log: true });
 
-export function getInterpolation(value: number, min: number, max: number, range: number) {
-  if (range == undefined) {
-    range = max - min;
+export function getInterpolation(value: number, min: number, max: number, span: number) {
+  if (span == undefined) {
+    span = max - min;
   }
-  return (value - min) / range;
+  return (value - min) / span;
 }
 
 export const Uint16Max = 2 ** 16;

@@ -86,7 +86,7 @@ class PressureSensorDataManager {
       const rawValue = dataView.getUint16(byteOffset, true);
       const scaledValue = rawValue * scalar;
       const rangeHelper = this.#sensorRangeHelpers[index];
-      const normalizedValue = rangeHelper.updateAndGetNormalization(scaledValue);
+      const normalizedValue = rangeHelper.updateAndGetNormalization(scaledValue, true);
       const position = this.positions[index];
       pressure.sensors[index] = { rawValue, scaledValue, normalizedValue, position, weightedValue: 0 };
 
