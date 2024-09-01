@@ -2,7 +2,7 @@ import * as BS from "../../build/brilliantsole.module.js";
 import * as THREE from "../utils/three/three.module.min.js";
 window.BS = BS;
 console.log({ BS });
-//BS.setAllConsoleLevelFlags({ log: false });
+BS.setAllConsoleLevelFlags({ log: false });
 
 // VIBRATION
 
@@ -360,7 +360,7 @@ function updateOutputLabels() {
   });
 
   outputLabels = updatedOutputsLabels;
-  //console.log({ outputLabels });
+  console.log({ outputLabels });
 
   window.dispatchEvent(new CustomEvent("outputLabels", { detail: { outputLabels } }));
 }
@@ -417,7 +417,7 @@ function setNumberOfOutputs(newNumberOfOutputs) {
 
     /** @type {HTMLInputElement} */
     const labelInput = outputContainer.querySelector(".label");
-    labelInput.value = `output${index}`;
+    labelInput.value = config.outputLabels[index] || `output${index}`;
     labelInput.addEventListener("input", () => updateOutputLabels());
 
     window.addEventListener("loadConfig", () => {
