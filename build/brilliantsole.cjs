@@ -198,6 +198,16 @@ class EventDispatcher {
     isValidEventType(type) {
         return this.validEventTypes.includes(type);
     }
+    updateEventListeners(type) {
+        if (!this.listeners[type])
+            return;
+        this.listeners[type] = this.listeners[type].filter((listenerObj) => {
+            if (listenerObj.shouldRemove) {
+                _console$x.log(`removing "${type}" eventListener`, listenerObj);
+            }
+            return !listenerObj.shouldRemove;
+        });
+    }
     addEventListener(type, listener, options = { once: false }) {
         if (!this.isValidEventType(type)) {
             throw new Error(`Invalid event type: ${type}`);
@@ -208,6 +218,7 @@ class EventDispatcher {
         }
         _console$x.log(`adding "${type}" listener`, listener, options);
         this.listeners[type].push({ listener, once: options.once });
+        _console$x.log(`currently have ${this.listeners[type].length} "${type}" listeners`);
     }
     removeEventListener(type, listener) {
         if (!this.isValidEventType(type)) {
@@ -215,8 +226,15 @@ class EventDispatcher {
         }
         if (!this.listeners[type])
             return;
-        _console$x.log(`removing "${type}" listener`, listener);
-        this.listeners[type] = this.listeners[type].filter((l) => l.listener !== listener);
+        _console$x.log(`removing "${type}" listener...`, listener);
+        this.listeners[type].forEach((listenerObj) => {
+            const isListenerToRemove = listenerObj.listener === listener;
+            if (isListenerToRemove) {
+                _console$x.log(`flagging "${type}" listener`, listener);
+                listenerObj.shouldRemove = true;
+            }
+        });
+        this.updateEventListeners(type);
     }
     dispatchEvent(type, message) {
         if (!this.isValidEventType(type)) {
@@ -224,15 +242,18 @@ class EventDispatcher {
         }
         if (!this.listeners[type])
             return;
-        const listeners = this.listeners[type];
-        this.listeners[type] = listeners.filter((listenerObj) => {
+        this.listeners[type].forEach((listenerObj) => {
+            if (listenerObj.shouldRemove) {
+                return;
+            }
+            _console$x.log(`dispatching "${type}" listener`, listenerObj);
             listenerObj.listener({ type, target: this.target, message });
             if (listenerObj.once) {
-                _console$x.log(`removing "${type}" listener`, listenerObj);
-                return false;
+                _console$x.log(`flagging "${type}" listener`, listenerObj);
+                listenerObj.shouldRemove = true;
             }
-            return true;
         });
+        this.updateEventListeners(type);
     }
     waitForEvent(type) {
         return new Promise((resolve) => {

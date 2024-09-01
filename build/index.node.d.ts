@@ -88,6 +88,7 @@ declare class EventDispatcher<Target extends any, EventType extends string, Even
     private listeners;
     constructor(target: Target, validEventTypes: readonly EventType[]);
     private isValidEventType;
+    private updateEventListeners;
     addEventListener<T extends EventType>(type: T, listener: (event: {
         type: T;
         target: Target;

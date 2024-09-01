@@ -3,6 +3,7 @@ import * as THREE from "../utils/three/three.module.min.js";
 window.BS = BS;
 console.log({ BS });
 BS.setAllConsoleLevelFlags({ log: false });
+//BS.setConsoleLevelFlagsForType("EventDispatcher", { log: true });
 
 // VIBRATION
 
@@ -417,7 +418,7 @@ function setNumberOfOutputs(newNumberOfOutputs) {
 
     /** @type {HTMLInputElement} */
     const labelInput = outputContainer.querySelector(".label");
-    labelInput.value = config.outputLabels[index] || `output${index}`;
+    labelInput.value = window?.config?.outputLabels[index] || `output${index}`;
     labelInput.addEventListener("input", () => updateOutputLabels());
 
     window.addEventListener("loadConfig", () => {
@@ -776,6 +777,7 @@ function flattenDeviceData(deviceData) {
 
 /** @returns {Promise<number[]>} */
 async function collectData() {
+  console.log("collecting data...");
   return new Promise((resolve) => {
     /** @type {BS.DevicesData} */
     const devicesData = [];
@@ -789,6 +791,8 @@ async function collectData() {
       devicesData[index] = deviceData;
 
       const onDeviceSensorData = (event) => {
+        console.log(`received sensorData data from device #${index}`);
+
         /** @type {BS.ContinuousSensorType} */
         const sensorType = event.message.sensorType;
 
@@ -798,6 +802,7 @@ async function collectData() {
 
         if (didFinishCollectingDeviceData(deviceData)) {
           console.log(`finished collecting data for device #${index}`);
+          console.log("removing sensorData eventListener");
           device.removeEventListener("sensorData", onDeviceSensorData);
 
           if (didFinishCollectingDevicesData(devicesData)) {
@@ -817,6 +822,7 @@ async function collectData() {
         deviceData[sensorType].push(data);
       };
 
+      console.log("adding sensorData eventListener");
       device.addEventListener("sensorData", onDeviceSensorData);
     });
   });
@@ -1002,7 +1008,7 @@ thresholdSensorTypes.forEach((sensorType) => {
 
     const reachedThreshold = value >= threshold;
     if (reachedThreshold) {
-      //console.log(`reached ${sensorType} threshold`);
+      console.log(`reached ${sensorType} threshold`);
       throttledOnThresholdReached.trigger();
     }
   });

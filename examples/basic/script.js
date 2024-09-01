@@ -697,6 +697,7 @@ device.addEventListener("getTfliteName", () => {
   setTfliteNameButton.disabled = !device.isConnected;
 
   setTfliteNameInput.value = "";
+  setTfliteNameInput.disabled = false;
   updateSetTfliteNameButton();
 });
 
