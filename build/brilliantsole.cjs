@@ -3849,8 +3849,7 @@ class DeviceManager {
         return __classPrivateFieldGet(this, _DeviceManager_AvailableDevices, "f");
     }
     get CanGetDevices() {
-        _console$b.log("current firmware doesn't pair-bond");
-        return false;
+        return isInBrowser && navigator.bluetooth?.getDevices;
     }
     async GetDevices() {
         if (!isInBrowser) {

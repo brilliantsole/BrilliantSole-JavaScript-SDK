@@ -724,7 +724,7 @@ const scalars = {
   pressure: 1 / (2 ** 16 - 1),
   linearAcceleration: 1 / 4,
   gyroscope: 1 / 720,
-  magnetometer: 1, // FILL LATER
+  magnetometer: 1 / 2500,
 };
 /** @param {BS.DeviceData} deviceData */
 function flattenDeviceData(deviceData) {
@@ -1593,8 +1593,9 @@ window.addEventListener(
 
 /** @type {HTMLButtonElement} */
 const toggleTfliteInferencingEnabledButton = document.getElementById("toggleTfliteInferencingEnabled");
-toggleTfliteInferencingEnabledButton.addEventListener("click", () => {
-  selectedDevices[0].toggleTfliteInferencing();
+toggleTfliteInferencingEnabledButton.addEventListener("click", async () => {
+  await selectedDevices[0].setTfliteCaptureDelay(1000);
+  await selectedDevices[0].toggleTfliteInferencing();
   toggleTfliteInferencingEnabledButton.disabled = true;
 });
 
@@ -1603,6 +1604,9 @@ const setTfliteIsReadyInput = document.getElementById("tfliteIsReady");
 
 /** @type {HTMLPreElement} */
 const tfliteInferencePre = document.getElementById("tfliteInference");
+
+/** @type {HTMLElement} */
+const tfliteInferenceClassContainer = document.getElementById("tfliteInferenceClass");
 
 window.addEventListener(
   "createNeuralNetwork",
@@ -1626,6 +1630,19 @@ window.addEventListener(
 
       device.addEventListener("tfliteInference", (event) => {
         tfliteInferencePre.textContent = JSON.stringify(event.message.tfliteInference, null, 2);
+        let highestClassValue = 0;
+        let highestClassIndex = 0;
+        event.message.tfliteInference.values.forEach((classValue, classIndex) => {
+          if (classValue > highestClassValue) {
+            highestClassValue = classValue;
+            highestClassIndex = classIndex;
+          }
+        });
+        if (highestClassIndex == 0) {
+          tfliteInferenceClassContainer.innerText = "";
+        } else {
+          tfliteInferenceClassContainer.innerText = outputLabels[highestClassIndex];
+        }
       });
     }
   },

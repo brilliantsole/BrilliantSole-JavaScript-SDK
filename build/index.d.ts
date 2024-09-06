@@ -680,7 +680,7 @@ declare class DeviceManager {
     set UseLocalStorage(newUseLocalStorage: boolean);
     get CanUseLocalStorage(): false | Storage;
     get AvailableDevices(): Device[];
-    get CanGetDevices(): boolean;
+    get CanGetDevices(): false | (() => Promise<BluetoothDevice[]>);
     /**
      * retrieves devices already connected via web bluetooth in other tabs/windows
      *

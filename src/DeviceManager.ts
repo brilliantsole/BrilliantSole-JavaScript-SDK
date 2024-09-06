@@ -177,10 +177,7 @@ class DeviceManager {
   }
 
   get CanGetDevices() {
-    _console.log("current firmware doesn't pair-bond");
-    return false;
-    // @ts-expect-error
-    return isInBrowser && navigator.bluetooth?.getDevices && !isInBluefy;
+    return isInBrowser && navigator.bluetooth?.getDevices;
   }
   /**
    * retrieves devices already connected via web bluetooth in other tabs/windows
