@@ -3820,8 +3820,7 @@
             return __classPrivateFieldGet(this, _DeviceManager_AvailableDevices, "f");
         }
         get CanGetDevices() {
-            _console$4.log("current firmware doesn't pair-bond");
-            return false;
+            return isInBrowser && navigator.bluetooth?.getDevices;
         }
         async GetDevices() {
             if (!isInBrowser) {
