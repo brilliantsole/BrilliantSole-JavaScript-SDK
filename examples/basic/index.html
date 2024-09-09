@@ -282,9 +282,19 @@
 
       <div>
         <label>
+          <b>inference classes (newline separated - ignore idle)</b>
+          <br />
+          <textarea id="inferenceClasses" rows="3"></textarea>
+        </label>
+        <button id="toggleTfliteInferencingEnabled" disabled>enable inferencing</button>
+      </div>
+
+      <div>
+        <label>
           <b>inference: </b>
           <pre id="tfliteInference"></pre>
         </label>
+        <h1 id="topInferenceClass"></h1>
       </div>
     </div>
 

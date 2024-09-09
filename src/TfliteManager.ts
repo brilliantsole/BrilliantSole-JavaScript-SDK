@@ -52,6 +52,8 @@ export interface TfliteEventMessages {
 export interface TfliteInference {
   timestamp: number;
   values: number[];
+  maxValue?: number;
+  maxIndex?: number;
 }
 
 export type TfliteEventDispatcher = EventDispatcher<Device, TfliteEventType, TfliteEventMessages>;
@@ -383,6 +385,20 @@ class TfliteManager {
       timestamp,
       values,
     };
+
+    if (this.task == "classification") {
+      let maxValue = 0;
+      let maxIndex = 0;
+      values.forEach((value, index) => {
+        if (value > maxValue) {
+          maxValue = value;
+          maxIndex = index;
+        }
+      });
+      _console.log({ maxIndex, maxValue });
+      inference.maxIndex = maxIndex;
+      inference.maxValue = maxValue;
+    }
 
     this.#dispatchEvent("tfliteInference", { tfliteInference: inference });
   }

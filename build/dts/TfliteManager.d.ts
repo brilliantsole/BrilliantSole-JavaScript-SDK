@@ -39,6 +39,8 @@ export interface TfliteEventMessages {
 export interface TfliteInference {
     timestamp: number;
     values: number[];
+    maxValue?: number;
+    maxIndex?: number;
 }
 export type TfliteEventDispatcher = EventDispatcher<Device, TfliteEventType, TfliteEventMessages>;
 export type SendTfliteMessageCallback = SendMessageCallback<TfliteMessageType>;

@@ -918,11 +918,34 @@ toggleTfliteInferencingEnabledButton.addEventListener("click", () => {
   device.toggleTfliteInferencing();
 });
 
+/** @type {String[]} */
+let inferenceClasses = [];
+
+/** @type {HTMLTextAreaElement} */
+const inferenceClassesTextArea = document.getElementById("inferenceClasses");
+inferenceClassesTextArea.addEventListener("input", () => {
+  inferenceClasses = inferenceClassesTextArea.value.split("\n").filter(Boolean);
+  console.log("inferenceClasses", inferenceClasses);
+  localStorage.setItem("BS.inferenceClasses", JSON.stringify(inferenceClasses));
+});
+if (localStorage.getItem("BS.inferenceClasses")) {
+  inferenceClasses = JSON.parse(localStorage.getItem("BS.inferenceClasses"));
+  inferenceClassesTextArea.value = inferenceClasses.join("\n");
+}
+
+/** @type {HTMLElement} */
+const topInferenceClassElement = document.getElementById("topInferenceClass");
+
 /** @type {HTMLPreElement} */
 const tfliteInferencePre = document.getElementById("tfliteInference");
 device.addEventListener("tfliteInference", (event) => {
-  console.log("inference", event.message.tfliteInference);
-  tfliteInferencePre.textContent = JSON.stringify(event.message.tfliteInference, null, 2);
+  const { tfliteInference } = event.message;
+  console.log("inference", tfliteInference);
+  tfliteInferencePre.textContent = JSON.stringify(tfliteInference, null, 2);
+
+  if (device.tfliteTask == "classification") {
+    topInferenceClassElement.innerText = inferenceClasses[tfliteInference.maxIndex - 1] ?? "";
+  }
 });
 
 // FIRMWARE

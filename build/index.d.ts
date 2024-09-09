@@ -282,6 +282,8 @@ interface TfliteEventMessages {
 interface TfliteInference {
     timestamp: number;
     values: number[];
+    maxValue?: number;
+    maxIndex?: number;
 }
 declare const TfliteSensorTypes: SensorType[];
 type TfliteSensorType = (typeof TfliteSensorTypes)[number];

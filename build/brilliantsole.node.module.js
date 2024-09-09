@@ -1616,6 +1616,19 @@ _TfliteManager_name = new WeakMap(), _TfliteManager_task = new WeakMap(), _Tflit
         timestamp,
         values,
     };
+    if (this.task == "classification") {
+        let maxValue = 0;
+        let maxIndex = 0;
+        values.forEach((value, index) => {
+            if (value > maxValue) {
+                maxValue = value;
+                maxIndex = index;
+            }
+        });
+        _console$m.log({ maxIndex, maxValue });
+        inference.maxIndex = maxIndex;
+        inference.maxValue = maxValue;
+    }
     __classPrivateFieldGet(this, _TfliteManager_instances, "a", _TfliteManager_dispatchEvent_get).call(this, "tfliteInference", { tfliteInference: inference });
 };
 
