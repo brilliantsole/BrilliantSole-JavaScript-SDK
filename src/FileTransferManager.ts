@@ -20,6 +20,7 @@ export const FileTransferMessageTypes = [
   "fileTransferStatus",
   "getFileBlock",
   "setFileBlock",
+  "fileBytesTransferred",
 ] as const;
 export type FileTransferMessageType = (typeof FileTransferMessageTypes)[number];
 
@@ -266,6 +267,9 @@ class FileTransferManager {
     this.#dispatchEvent("fileTransferProgress", { progress });
 
     if (bytesReceived != this.#length) {
+      const dataView = new DataView(new ArrayBuffer(4));
+      dataView.setUint32(0, bytesReceived, true);
+      await this.sendMessage([{ type: "fileBytesTransferred", data: dataView.buffer }]);
       return;
     }
 
@@ -326,6 +330,9 @@ class FileTransferManager {
       case "getFileBlock":
         this.#parseBlock(dataView);
         break;
+      case "fileBytesTransferred":
+        this.#parseBytesTransferred(dataView);
+        break;
       default:
         throw Error(`uncaught messageType ${messageType}`);
     }
@@ -353,19 +360,31 @@ class FileTransferManager {
     await this.#send(fileBuffer);
   }
 
+  #buffer?: ArrayBuffer;
+  #bytesTransferred = 0;
   async #send(buffer: ArrayBuffer) {
-    return this.#sendBlock(buffer);
+    this.#buffer = buffer;
+    this.#bytesTransferred = 0;
+    return this.#sendBlock();
   }
 
   mtu!: number;
-  async #sendBlock(buffer: ArrayBuffer, offset: number = 0): Promise<void> {
+  async #sendBlock(): Promise<void> {
     if (this.status != "sending") {
       return;
     }
+    if (!this.#buffer) {
+      _console.error("no buffer defined");
+      return;
+    }
+
+    const buffer = this.#buffer;
+    let offset = this.#bytesTransferred;
 
     const slicedBuffer = buffer.slice(offset, offset + (this.mtu - 3 - 3));
     _console.log("slicedBuffer", slicedBuffer);
     const bytesLeft = buffer.byteLength - offset;
+
     const progress = 1 - bytesLeft / buffer.byteLength;
     _console.log(
       `sending bytes ${offset}-${offset + slicedBuffer.byteLength} of ${buffer.byteLength} bytes (${progress * 100}%)`
@@ -376,8 +395,25 @@ class FileTransferManager {
       this.#dispatchEvent("fileTransferComplete", { direction: "sending" });
     } else {
       await this.sendMessage([{ type: "setFileBlock", data: slicedBuffer }]);
-      return this.#sendBlock(buffer, offset + slicedBuffer.byteLength);
+      this.#bytesTransferred = offset + slicedBuffer.byteLength;
+      //return this.#sendBlock(buffer, offset + slicedBuffer.byteLength);
     }
+  }
+
+  async #parseBytesTransferred(dataView: DataView) {
+    _console.log("parseBytesTransferred", dataView);
+    const bytesTransferred = dataView.getUint32(0, true);
+    _console.log({ bytesTransferred });
+    if (this.status != "sending") {
+      _console.error(`not currently sending file`);
+      return;
+    }
+    if (this.#bytesTransferred != bytesTransferred) {
+      _console.error(`bytesTransferred are not equal - got ${bytesTransferred}, expected ${this.#bytesTransferred}`);
+      this.cancel();
+      return;
+    }
+    this.#sendBlock();
   }
 
   async receive(type: FileType) {

@@ -475,7 +475,7 @@ function autoBind(self, {include, exclude} = {}) {
 	return self;
 }
 
-var _FileTransferManager_instances, _a$4, _FileTransferManager_dispatchEvent_get, _FileTransferManager_assertValidType, _FileTransferManager_assertValidTypeEnum, _FileTransferManager_assertValidStatusEnum, _FileTransferManager_assertValidCommand, _FileTransferManager_MaxLength, _FileTransferManager_maxLength, _FileTransferManager_parseMaxLength, _FileTransferManager_updateMaxLength, _FileTransferManager_assertValidLength, _FileTransferManager_type, _FileTransferManager_parseType, _FileTransferManager_updateType, _FileTransferManager_setType, _FileTransferManager_length, _FileTransferManager_parseLength, _FileTransferManager_updateLength, _FileTransferManager_setLength, _FileTransferManager_checksum, _FileTransferManager_parseChecksum, _FileTransferManager_updateChecksum, _FileTransferManager_setChecksum, _FileTransferManager_setCommand, _FileTransferManager_status, _FileTransferManager_parseStatus, _FileTransferManager_updateStatus, _FileTransferManager_assertIsIdle, _FileTransferManager_assertIsNotIdle, _FileTransferManager_receivedBlocks, _FileTransferManager_parseBlock, _FileTransferManager_send, _FileTransferManager_sendBlock;
+var _FileTransferManager_instances, _a$4, _FileTransferManager_dispatchEvent_get, _FileTransferManager_assertValidType, _FileTransferManager_assertValidTypeEnum, _FileTransferManager_assertValidStatusEnum, _FileTransferManager_assertValidCommand, _FileTransferManager_MaxLength, _FileTransferManager_maxLength, _FileTransferManager_parseMaxLength, _FileTransferManager_updateMaxLength, _FileTransferManager_assertValidLength, _FileTransferManager_type, _FileTransferManager_parseType, _FileTransferManager_updateType, _FileTransferManager_setType, _FileTransferManager_length, _FileTransferManager_parseLength, _FileTransferManager_updateLength, _FileTransferManager_setLength, _FileTransferManager_checksum, _FileTransferManager_parseChecksum, _FileTransferManager_updateChecksum, _FileTransferManager_setChecksum, _FileTransferManager_setCommand, _FileTransferManager_status, _FileTransferManager_parseStatus, _FileTransferManager_updateStatus, _FileTransferManager_assertIsIdle, _FileTransferManager_assertIsNotIdle, _FileTransferManager_receivedBlocks, _FileTransferManager_parseBlock, _FileTransferManager_buffer, _FileTransferManager_bytesTransferred, _FileTransferManager_send, _FileTransferManager_sendBlock, _FileTransferManager_parseBytesTransferred;
 const _console$r = createConsole("FileTransferManager", { log: true });
 const FileTransferMessageTypes = [
     "maxFileLength",
@@ -489,6 +489,7 @@ const FileTransferMessageTypes = [
     "fileTransferStatus",
     "getFileBlock",
     "setFileBlock",
+    "fileBytesTransferred",
 ];
 const FileTypes = ["tflite"];
 const FileTransferStatuses = ["idle", "sending", "receiving"];
@@ -509,6 +510,8 @@ class FileTransferManager {
         _FileTransferManager_checksum.set(this, 0);
         _FileTransferManager_status.set(this, "idle");
         _FileTransferManager_receivedBlocks.set(this, []);
+        _FileTransferManager_buffer.set(this, void 0);
+        _FileTransferManager_bytesTransferred.set(this, 0);
         autoBind(this);
     }
     get addEventListener() {
@@ -562,6 +565,9 @@ class FileTransferManager {
             case "getFileBlock":
                 __classPrivateFieldGet(this, _FileTransferManager_instances, "m", _FileTransferManager_parseBlock).call(this, dataView);
                 break;
+            case "fileBytesTransferred":
+                __classPrivateFieldGet(this, _FileTransferManager_instances, "m", _FileTransferManager_parseBytesTransferred).call(this, dataView);
+                break;
             default:
                 throw Error(`uncaught messageType ${messageType}`);
         }
@@ -592,7 +598,7 @@ class FileTransferManager {
         await __classPrivateFieldGet(this, _FileTransferManager_instances, "m", _FileTransferManager_setCommand).call(this, "cancel");
     }
 }
-_a$4 = FileTransferManager, _FileTransferManager_maxLength = new WeakMap(), _FileTransferManager_type = new WeakMap(), _FileTransferManager_length = new WeakMap(), _FileTransferManager_checksum = new WeakMap(), _FileTransferManager_status = new WeakMap(), _FileTransferManager_receivedBlocks = new WeakMap(), _FileTransferManager_instances = new WeakSet(), _FileTransferManager_dispatchEvent_get = function _FileTransferManager_dispatchEvent_get() {
+_a$4 = FileTransferManager, _FileTransferManager_maxLength = new WeakMap(), _FileTransferManager_type = new WeakMap(), _FileTransferManager_length = new WeakMap(), _FileTransferManager_checksum = new WeakMap(), _FileTransferManager_status = new WeakMap(), _FileTransferManager_receivedBlocks = new WeakMap(), _FileTransferManager_buffer = new WeakMap(), _FileTransferManager_bytesTransferred = new WeakMap(), _FileTransferManager_instances = new WeakSet(), _FileTransferManager_dispatchEvent_get = function _FileTransferManager_dispatchEvent_get() {
     return this.eventDispatcher.dispatchEvent;
 }, _FileTransferManager_assertValidType = function _FileTransferManager_assertValidType(type) {
     _console$r.assertEnumWithError(type, FileTypes);
@@ -701,6 +707,9 @@ _a$4 = FileTransferManager, _FileTransferManager_maxLength = new WeakMap(), _Fil
     _console$r.log(`received ${bytesReceived} of ${__classPrivateFieldGet(this, _FileTransferManager_length, "f")} bytes (${progress * 100}%)`);
     __classPrivateFieldGet(this, _FileTransferManager_instances, "a", _FileTransferManager_dispatchEvent_get).call(this, "fileTransferProgress", { progress });
     if (bytesReceived != __classPrivateFieldGet(this, _FileTransferManager_length, "f")) {
+        const dataView = new DataView(new ArrayBuffer(4));
+        dataView.setUint32(0, bytesReceived, true);
+        await this.sendMessage([{ type: "fileBytesTransferred", data: dataView.buffer }]);
         return;
     }
     _console$r.log("file transfer complete");
@@ -729,11 +738,19 @@ _a$4 = FileTransferManager, _FileTransferManager_maxLength = new WeakMap(), _Fil
     __classPrivateFieldGet(this, _FileTransferManager_instances, "a", _FileTransferManager_dispatchEvent_get).call(this, "fileTransferComplete", { direction: "receiving" });
     __classPrivateFieldGet(this, _FileTransferManager_instances, "a", _FileTransferManager_dispatchEvent_get).call(this, "fileReceived", { file });
 }, _FileTransferManager_send = async function _FileTransferManager_send(buffer) {
-    return __classPrivateFieldGet(this, _FileTransferManager_instances, "m", _FileTransferManager_sendBlock).call(this, buffer);
-}, _FileTransferManager_sendBlock = async function _FileTransferManager_sendBlock(buffer, offset = 0) {
+    __classPrivateFieldSet(this, _FileTransferManager_buffer, buffer, "f");
+    __classPrivateFieldSet(this, _FileTransferManager_bytesTransferred, 0, "f");
+    return __classPrivateFieldGet(this, _FileTransferManager_instances, "m", _FileTransferManager_sendBlock).call(this);
+}, _FileTransferManager_sendBlock = async function _FileTransferManager_sendBlock() {
     if (this.status != "sending") {
         return;
     }
+    if (!__classPrivateFieldGet(this, _FileTransferManager_buffer, "f")) {
+        _console$r.error("no buffer defined");
+        return;
+    }
+    const buffer = __classPrivateFieldGet(this, _FileTransferManager_buffer, "f");
+    let offset = __classPrivateFieldGet(this, _FileTransferManager_bytesTransferred, "f");
     const slicedBuffer = buffer.slice(offset, offset + (this.mtu - 3 - 3));
     _console$r.log("slicedBuffer", slicedBuffer);
     const bytesLeft = buffer.byteLength - offset;
@@ -746,8 +763,22 @@ _a$4 = FileTransferManager, _FileTransferManager_maxLength = new WeakMap(), _Fil
     }
     else {
         await this.sendMessage([{ type: "setFileBlock", data: slicedBuffer }]);
-        return __classPrivateFieldGet(this, _FileTransferManager_instances, "m", _FileTransferManager_sendBlock).call(this, buffer, offset + slicedBuffer.byteLength);
+        __classPrivateFieldSet(this, _FileTransferManager_bytesTransferred, offset + slicedBuffer.byteLength, "f");
     }
+}, _FileTransferManager_parseBytesTransferred = async function _FileTransferManager_parseBytesTransferred(dataView) {
+    _console$r.log("parseBytesTransferred", dataView);
+    const bytesTransferred = dataView.getUint32(0, true);
+    _console$r.log({ bytesTransferred });
+    if (this.status != "sending") {
+        _console$r.error(`not currently sending file`);
+        return;
+    }
+    if (__classPrivateFieldGet(this, _FileTransferManager_bytesTransferred, "f") != bytesTransferred) {
+        _console$r.error(`bytesTransferred are not equal - got ${bytesTransferred}, expected ${__classPrivateFieldGet(this, _FileTransferManager_bytesTransferred, "f")}`);
+        this.cancel();
+        return;
+    }
+    __classPrivateFieldGet(this, _FileTransferManager_instances, "m", _FileTransferManager_sendBlock).call(this);
 };
 _FileTransferManager_MaxLength = { value: 0 };
 
