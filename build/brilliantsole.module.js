@@ -2604,9 +2604,13 @@ function getCharacteristicProperties(characteristicName) {
             break;
     }
     switch (characteristicName) {
-        case "tx":
         case "smp":
             properties.writeWithoutResponse = true;
+            break;
+    }
+    switch (characteristicName) {
+        case "tx":
+            properties.write = true;
             break;
     }
     return properties;

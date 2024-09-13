@@ -7,6 +7,7 @@ import {
   getServiceNameFromUUID,
   getCharacteristicNameFromUUID,
   allCharacteristicNames,
+  getCharacteristicProperties,
 } from "./bluetoothUUIDs.ts";
 import BluetoothConnectionManager from "./BluetoothConnectionManager.ts";
 
@@ -64,10 +65,11 @@ class NobleConnectionManager extends BluetoothConnectionManager {
     // if (data instanceof DataView) {
     //     data = data.buffer;
     // }
+    const properties = getCharacteristicProperties(characteristicName);
     const buffer = Buffer.from(data);
-    _console.log("writing data", buffer);
-    const withoutResponse = true;
-    await characteristic.writeAsync(buffer, withoutResponse);
+    const writeWithoutResponse = properties.writeWithoutResponse;
+    _console.log(`writing to ${characteristicName} ${writeWithoutResponse ? "without" : "with"} response`, buffer);
+    await characteristic.writeAsync(buffer, writeWithoutResponse);
     if (characteristic.properties.includes("read")) {
       await characteristic.readAsync();
     }

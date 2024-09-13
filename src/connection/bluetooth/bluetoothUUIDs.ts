@@ -198,11 +198,17 @@ export function getCharacteristicProperties(
       break;
   }
 
+  // write without response
+  switch (characteristicName) {
+    case "smp":
+      properties.writeWithoutResponse = true;
+      break;
+  }
+
   // write
   switch (characteristicName) {
     case "tx":
-    case "smp":
-      properties.writeWithoutResponse = true;
+      properties.write = true;
       break;
   }
 

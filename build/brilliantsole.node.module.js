@@ -2611,9 +2611,13 @@ function getCharacteristicProperties(characteristicName) {
             break;
     }
     switch (characteristicName) {
-        case "tx":
         case "smp":
             properties.writeWithoutResponse = true;
+            break;
+    }
+    switch (characteristicName) {
+        case "tx":
+            properties.write = true;
             break;
     }
     return properties;
@@ -4984,10 +4988,11 @@ class NobleConnectionManager extends BluetoothConnectionManager {
     async writeCharacteristic(characteristicName, data) {
         const characteristic = __classPrivateFieldGet(this, _NobleConnectionManager_characteristics, "f").get(characteristicName);
         _console$5.assertWithError(characteristic, `no characteristic found with name "${characteristicName}"`);
+        const properties = getCharacteristicProperties(characteristicName);
         const buffer = Buffer.from(data);
-        _console$5.log("writing data", buffer);
-        const withoutResponse = true;
-        await characteristic.writeAsync(buffer, withoutResponse);
+        const writeWithoutResponse = properties.writeWithoutResponse;
+        _console$5.log(`writing to ${characteristicName} ${writeWithoutResponse ? "without" : "with"} response`, buffer);
+        await characteristic.writeAsync(buffer, writeWithoutResponse);
         if (characteristic.properties.includes("read")) {
             await characteristic.readAsync();
         }
