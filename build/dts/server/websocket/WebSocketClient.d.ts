@@ -1,4 +1,4 @@
-import { MessageLike } from "../ServerUtils.ts";
+import { MessageLike, ServerMessage } from "../ServerUtils.ts";
 import Device from "../../Device.ts";
 import BaseClient, { ServerURL } from "../BaseClient.ts";
 declare class WebSocketClient extends BaseClient {
@@ -13,6 +13,7 @@ declare class WebSocketClient extends BaseClient {
     reconnect(): void;
     toggleConnection(url?: ServerURL): void;
     sendMessage(message: MessageLike): void;
+    sendServerMessage(...messages: ServerMessage[]): void;
     createDevice(bluetoothId: string): Device;
 }
 export default WebSocketClient;

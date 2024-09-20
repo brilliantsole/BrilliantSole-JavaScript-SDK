@@ -1,5 +1,4 @@
-import { ServerMessage, MessageLike, ClientDeviceMessage } from "./ServerUtils.ts";
-import Timer from "../utils/Timer.ts";
+import { ServerMessage, ClientDeviceMessage } from "./ServerUtils.ts";
 import EventDispatcher, { BoundEventListeners, Event } from "../utils/EventDispatcher.ts";
 import Device from "../Device.ts";
 import { DiscoveredDevice, DiscoveredDevicesMap, ScannerEventMessages } from "../scanner/BaseScanner.ts";
@@ -27,20 +26,20 @@ declare abstract class BaseClient {
     #private;
     protected get baseConstructor(): typeof BaseClient;
     get devices(): Readonly<DevicesMap>;
-    get addEventListener(): <T extends "notConnected" | "connecting" | "connected" | "disconnecting" | "connectionStatus" | "isConnected" | "isScanningAvailable" | "isScanning" | "discoveredDevice" | "expiredDiscoveredDevice">(type: T, listener: (event: {
+    get addEventListener(): <T extends "isScanningAvailable" | "isScanning" | "discoveredDevice" | "expiredDiscoveredDevice" | "notConnected" | "connecting" | "connected" | "disconnecting" | "connectionStatus" | "isConnected">(type: T, listener: (event: {
         type: T;
         target: BaseClient;
         message: ClientEventMessages[T];
     }) => void, options?: {
         once?: boolean;
     }) => void;
-    protected get dispatchEvent(): <T extends "notConnected" | "connecting" | "connected" | "disconnecting" | "connectionStatus" | "isConnected" | "isScanningAvailable" | "isScanning" | "discoveredDevice" | "expiredDiscoveredDevice">(type: T, message: ClientEventMessages[T]) => void;
-    get removeEventListener(): <T extends "notConnected" | "connecting" | "connected" | "disconnecting" | "connectionStatus" | "isConnected" | "isScanningAvailable" | "isScanning" | "discoveredDevice" | "expiredDiscoveredDevice">(type: T, listener: (event: {
+    protected get dispatchEvent(): <T extends "isScanningAvailable" | "isScanning" | "discoveredDevice" | "expiredDiscoveredDevice" | "notConnected" | "connecting" | "connected" | "disconnecting" | "connectionStatus" | "isConnected">(type: T, message: ClientEventMessages[T]) => void;
+    get removeEventListener(): <T extends "isScanningAvailable" | "isScanning" | "discoveredDevice" | "expiredDiscoveredDevice" | "notConnected" | "connecting" | "connected" | "disconnecting" | "connectionStatus" | "isConnected">(type: T, listener: (event: {
         type: T;
         target: BaseClient;
         message: ClientEventMessages[T];
     }) => void) => void;
-    get waitForEvent(): <T extends "notConnected" | "connecting" | "connected" | "disconnecting" | "connectionStatus" | "isConnected" | "isScanningAvailable" | "isScanning" | "discoveredDevice" | "expiredDiscoveredDevice">(type: T) => Promise<{
+    get waitForEvent(): <T extends "isScanningAvailable" | "isScanning" | "discoveredDevice" | "expiredDiscoveredDevice" | "notConnected" | "connecting" | "connected" | "disconnecting" | "connectionStatus" | "isConnected">(type: T) => Promise<{
         type: T;
         target: BaseClient;
         message: ClientEventMessages[T];
@@ -59,13 +58,11 @@ declare abstract class BaseClient {
     protected _reconnectOnDisconnection: boolean;
     get reconnectOnDisconnection(): boolean;
     set reconnectOnDisconnection(newReconnectOnDisconnection: boolean);
-    protected sendServerMessage(...messages: ServerMessage[]): void;
-    abstract sendMessage(message: MessageLike): void;
+    abstract sendServerMessage(...messages: ServerMessage[]): void;
     protected get _connectionStatus(): "notConnected" | "connecting" | "connected" | "disconnecting";
     protected set _connectionStatus(newConnectionStatus: "notConnected" | "connecting" | "connected" | "disconnecting");
     get connectionStatus(): "notConnected" | "connecting" | "connected" | "disconnecting";
     protected parseMessage(dataView: DataView): void;
-    protected pingTimer: Timer;
     get isScanningAvailable(): boolean;
     protected requestIsScanningAvailable(): void;
     get isScanning(): boolean;
@@ -78,13 +75,11 @@ declare abstract class BaseClient {
     connectToDevice(bluetoothId: string): Device;
     protected requestConnectionToDevice(bluetoothId: string): Device;
     protected sendConnectToDeviceMessage(bluetoothId: string): void;
-    protected createConnectToDeviceMessage(bluetoothId: string): ArrayBuffer;
     abstract createDevice(bluetoothId: string): Device;
     protected onConnectedBluetoothDeviceIds(bluetoothIds: string[]): void;
     disconnectFromDevice(bluetoothId: string): void;
     protected requestDisconnectionFromDevice(bluetoothId: string): Device;
     protected sendDisconnectFromDeviceMessage(bluetoothId: string): void;
     protected sendDeviceMessage(bluetoothId: string, ...messages: ClientDeviceMessage[]): void;
-    createDeviceMessage(bluetoothId: string, ...messages: ClientDeviceMessage[]): ArrayBuffer;
 }
 export default BaseClient;

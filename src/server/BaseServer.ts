@@ -3,7 +3,6 @@ import EventDispatcher, { BoundEventListeners, Event, EventMap } from "../utils/
 import {
   createServerMessage,
   ServerMessageTypes,
-  pongMessage,
   DeviceMessage,
   ServerMessage,
   ServerMessageType,
@@ -240,11 +239,6 @@ abstract class BaseServer {
   #onClientMessage(messageType: ServerMessageType, dataView: DataView, context: { responseMessages: ArrayBuffer[] }) {
     const { responseMessages } = context;
     switch (messageType) {
-      case "ping":
-        responseMessages.push(pongMessage);
-        break;
-      case "pong":
-        break;
       case "isScanningAvailable":
         responseMessages.push(this.#isScanningAvailableMessage);
         break;

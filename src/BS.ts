@@ -61,6 +61,7 @@ export { DiscoveredDevice } from "./scanner/BaseScanner.ts";
 /** NODE_START */
 export { default as Scanner } from "./scanner/Scanner.ts";
 export { default as WebSocketServer } from "./server/websocket/WebSocketServer.ts";
+export { default as UDPServer } from "./server/udp/UDPServer.ts";
 /** NODE_END */
 /** BROWSER_START */
 export { default as WebSocketClient } from "./server/websocket/WebSocketClient.ts";

@@ -1,10 +1,20 @@
 import { createConsole } from "../../utils/Console.ts";
-import { reconnectTimeout, MessageLike } from "../ServerUtils.ts";
+import { createServerMessage, MessageLike, ServerMessage } from "../ServerUtils.ts";
 import { addEventListeners, removeEventListeners } from "../../utils/EventUtils.ts";
 import Device from "../../Device.ts";
 import WebSocketClientConnectionManager from "../../connection/webSocket/WebSocketClientConnectionManager.ts";
 import BaseClient, { ServerURL } from "../BaseClient.ts";
 import type * as ws from "ws";
+import Timer from "../../utils/Timer.ts";
+import {
+  createWebSocketMessage,
+  WebSocketMessageType,
+  WebSocketMessageTypes,
+  webSocketPingTimeout,
+  webSocketReconnectTimeout,
+  WebSocketMessage,
+} from "./WebSocketUtils.ts";
+import { parseMessage } from "../../utils/ParseUtils.ts";
 
 const _console = createConsole("WebSocketClient", { log: true });
 
@@ -86,6 +96,14 @@ class WebSocketClient extends BaseClient {
     this.#webSocket!.send(message);
   }
 
+  sendServerMessage(...messages: ServerMessage[]) {
+    this.sendMessage(createWebSocketMessage({ type: "serverMessage", data: createServerMessage(...messages) }));
+  }
+
+  #sendWebSocketMessage(...messages: WebSocketMessage[]) {
+    this.sendMessage(createWebSocketMessage(...messages));
+  }
+
   // WEBSOCKET EVENTS
   #boundWebSocketEventListeners: { [eventType: string]: Function } = {
     open: this.#onWebSocketOpen.bind(this),
@@ -96,16 +114,16 @@ class WebSocketClient extends BaseClient {
 
   #onWebSocketOpen(event: ws.Event) {
     _console.log("webSocket.open", event);
-    this.pingTimer.start();
+    this.#pingTimer.start();
     this._connectionStatus = "connected";
   }
   async #onWebSocketMessage(event: ws.MessageEvent) {
     _console.log("webSocket.message", event);
-    this.pingTimer.restart();
+    this.#pingTimer.restart();
     //@ts-expect-error
     const arrayBuffer = await event.data.arrayBuffer();
     const dataView = new DataView(arrayBuffer);
-    this.parseMessage(dataView);
+    this.#parseWebSocketMessage(dataView);
   }
   #onWebSocketClose(event: ws.CloseEvent) {
     _console.log("webSocket.close", event);
@@ -117,11 +135,11 @@ class WebSocketClient extends BaseClient {
       connectionManager.isConnected = false;
     });
 
-    this.pingTimer.stop();
+    this.#pingTimer.stop();
     if (this.reconnectOnDisconnection) {
       setTimeout(() => {
         this.reconnect();
-      }, reconnectTimeout);
+      }, webSocketReconnectTimeout);
     }
   }
   #onWebSocketError(event: ws.ErrorEvent) {
@@ -141,6 +159,36 @@ class WebSocketClient extends BaseClient {
     );
     device.connectionManager = clientConnectionManager;
     return device;
+  }
+
+  // PARSING
+  #parseWebSocketMessage(dataView: DataView) {
+    parseMessage(dataView, WebSocketMessageTypes, this.#onServerMessage.bind(this), null, true);
+  }
+
+  #onServerMessage(messageType: WebSocketMessageType, dataView: DataView) {
+    switch (messageType) {
+      case "ping":
+        this.#pong();
+        break;
+      case "pong":
+        break;
+      case "serverMessage":
+        this.parseMessage(dataView);
+        break;
+      default:
+        _console.error(`uncaught messageType "${messageType}"`);
+        break;
+    }
+  }
+
+  // PING
+  #pingTimer = new Timer(this.#ping.bind(this), webSocketPingTimeout);
+  #ping() {
+    this.#sendWebSocketMessage("ping");
+  }
+  #pong() {
+    this.#sendWebSocketMessage("pong");
   }
 }
 

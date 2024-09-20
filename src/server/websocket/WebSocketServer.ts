@@ -1,14 +1,22 @@
 import { createConsole } from "../../utils/Console.ts";
 import { addEventListeners, removeEventListeners } from "../../utils/EventUtils.ts";
-import { pingTimeout, pingMessage } from "../ServerUtils.ts";
-import { dataToArrayBuffer } from "../../utils/ArrayBufferUtils.ts";
+import { concatenateArrayBuffers, dataToArrayBuffer } from "../../utils/ArrayBufferUtils.ts";
 import Timer from "../../utils/Timer.ts";
 import BaseServer from "../BaseServer.ts";
+import {
+  webSocketPingMessage,
+  webSocketPongMessage,
+  WebSocketMessageType,
+  WebSocketMessageTypes,
+  webSocketPingTimeout,
+  createWebSocketMessage,
+} from "./WebSocketUtils.ts";
 
 const _console = createConsole("WebSocketServer", { log: true });
 
 /** NODE_START */
 import * as ws from "ws";
+import { parseMessage } from "../../utils/ParseUtils.ts";
 /** NODE_END */
 
 interface WebSocketClient extends ws.WebSocket {
@@ -30,88 +38,122 @@ class WebSocketServer extends BaseServer {
   }
   set server(newServer) {
     if (this.#server == newServer) {
-      _console.log("redundant WebSocket assignment");
+      _console.log("redundant WebSocket server assignment");
       return;
     }
-    _console.log("assigning server...");
+    _console.log("assigning WebSocket server...");
 
     if (this.#server) {
-      _console.log("clearing existing server...");
-      removeEventListeners(this.#server, this.#boundServerListeners);
+      _console.log("clearing existing WebSocket server...");
+      removeEventListeners(this.#server, this.#boundWebSocketServerListeners);
     }
 
-    addEventListeners(newServer, this.#boundServerListeners);
+    addEventListeners(newServer, this.#boundWebSocketServerListeners);
     this.#server = newServer;
 
-    _console.log("assigned server");
+    _console.log("assigned WebSocket server");
   }
 
   // WEBSOCKET SERVER LISTENERS
 
-  #boundServerListeners = {
-    close: this.#onServerClose.bind(this),
-    connection: this.#onServerConnection.bind(this),
-    error: this.#onServerError.bind(this),
-    headers: this.#onServerHeaders.bind(this),
-    listening: this.#onServerListening.bind(this),
+  #boundWebSocketServerListeners = {
+    close: this.#onWebSocketServerClose.bind(this),
+    connection: this.#onWebSocketServerConnection.bind(this),
+    error: this.#onWebSocketServerError.bind(this),
+    headers: this.#onWebSocketServerHeaders.bind(this),
+    listening: this.#onWebSocketServerListening.bind(this),
   };
 
-  #onServerClose() {
+  #onWebSocketServerClose() {
     _console.log("server.close");
   }
-  #onServerConnection(client: WebSocketClient) {
+  #onWebSocketServerConnection(client: WebSocketClient) {
     _console.log("server.connection");
     client.isAlive = true;
-    client.pingClientTimer = new Timer(() => this.#pingClient(client), pingTimeout);
+    client.pingClientTimer = new Timer(() => this.#pingClient(client), webSocketPingTimeout);
     client.pingClientTimer.start();
-    addEventListeners(client, this.#boundClientListeners);
+    addEventListeners(client, this.#boundWebSocketClientListeners);
     this.dispatchEvent("clientConnected", { client });
   }
-  #onServerError(error: Error) {
+  #onWebSocketServerError(error: Error) {
     _console.error(error);
   }
-  #onServerHeaders() {
+  #onWebSocketServerHeaders() {
     //_console.log("server.headers");
   }
-  #onServerListening() {
+  #onWebSocketServerListening() {
     _console.log("server.listening");
   }
 
   // WEBSOCKET CLIENT LISTENERS
 
-  #boundClientListeners: { [eventType: string]: Function } = {
-    open: this.#onClientOpen.bind(this),
-    message: this.#onClientMessage.bind(this),
-    close: this.#onClientClose.bind(this),
-    error: this.#onClientError.bind(this),
+  #boundWebSocketClientListeners: { [eventType: string]: Function } = {
+    open: this.#onWebSocketClientOpen.bind(this),
+    message: this.#onWebSocketClientMessage.bind(this),
+    close: this.#onWebSocketClientClose.bind(this),
+    error: this.#onWebSocketClientError.bind(this),
   };
-  #onClientOpen(event: ws.Event) {
+  #onWebSocketClientOpen(event: ws.Event) {
     _console.log("client.open");
   }
-  #onClientMessage(event: ws.MessageEvent) {
+  #onWebSocketClientMessage(event: ws.MessageEvent) {
     _console.log("client.message");
     const client = event.target as WebSocketClient;
     client.isAlive = true;
     client.pingClientTimer!.restart();
     const dataView = new DataView(dataToArrayBuffer(event.data as Buffer));
-    this.#parseClientMessage(client, dataView);
+    _console.log(`received ${dataView.byteLength} bytes`, dataView.buffer);
+    this.#parseWebSocketClientMessage(client, dataView);
   }
-  #onClientClose(event: ws.CloseEvent) {
+  #onWebSocketClientClose(event: ws.CloseEvent) {
     _console.log("client.close");
     const client = event.target as WebSocketClient;
     client.pingClientTimer!.stop();
-    removeEventListeners(client, this.#boundClientListeners);
+    removeEventListeners(client, this.#boundWebSocketClientListeners);
     this.dispatchEvent("clientDisconnected", { client });
   }
-  #onClientError(event: ws.ErrorEvent) {
+  #onWebSocketClientError(event: ws.ErrorEvent) {
     _console.error("client.error", event.message);
   }
 
   // PARSING
-  #parseClientMessage(client: WebSocketClient, dataView: DataView) {
-    const responseMessage = this.parseClientMessage(dataView);
-    if (responseMessage) {
-      client.send(responseMessage);
+  #parseWebSocketClientMessage(client: WebSocketClient, dataView: DataView) {
+    let responseMessages: ArrayBuffer[] = [];
+
+    parseMessage(dataView, WebSocketMessageTypes, this.#onClientMessage.bind(this), { responseMessages }, true);
+
+    responseMessages = responseMessages.filter(Boolean);
+
+    if (responseMessages.length == 0) {
+      _console.log("nothing to send back");
+      return;
+    }
+
+    const responseMessage = concatenateArrayBuffers(responseMessages);
+    client.send(responseMessage);
+  }
+
+  #onClientMessage(
+    messageType: WebSocketMessageType,
+    dataView: DataView,
+    context: { responseMessages: (ArrayBuffer | undefined)[] }
+  ) {
+    const { responseMessages } = context;
+    switch (messageType) {
+      case "ping":
+        responseMessages.push(webSocketPongMessage);
+        break;
+      case "pong":
+        break;
+      case "serverMessage":
+        const responseMessage = this.parseClientMessage(dataView);
+        if (responseMessage) {
+          responseMessages.push(createWebSocketMessage({ type: "serverMessage", data: responseMessage }));
+        }
+        break;
+      default:
+        _console.error(`uncaught messageType "${messageType}"`);
+        break;
     }
   }
 
@@ -119,7 +161,7 @@ class WebSocketServer extends BaseServer {
   broadcastMessage(message: ArrayBuffer) {
     super.broadcastMessage(message);
     this.server!.clients.forEach((client) => {
-      client.send(message);
+      client.send(createWebSocketMessage({ type: "serverMessage", data: message }));
     });
   }
 
@@ -130,7 +172,7 @@ class WebSocketServer extends BaseServer {
       return;
     }
     client.isAlive = false;
-    client.send(pingMessage);
+    client.send(webSocketPingMessage);
   }
 }
 

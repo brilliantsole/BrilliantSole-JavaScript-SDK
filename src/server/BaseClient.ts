@@ -1,9 +1,7 @@
 import { createConsole } from "../utils/Console.ts";
 import {
   ServerMessageTypes,
-  pingTimeout,
   discoveredDevicesMessage,
-  createServerMessage,
   ServerMessage,
   MessageLike,
   ClientDeviceMessage,
@@ -11,7 +9,6 @@ import {
   ServerMessageType,
 } from "./ServerUtils.ts";
 import { parseMessage, parseStringFromDataView } from "../utils/ParseUtils.ts";
-import Timer from "../utils/Timer.ts";
 import EventDispatcher, { BoundEventListeners, Event } from "../utils/EventDispatcher.ts";
 import Device from "../Device.ts";
 import WebSocketClientConnectionManager from "../connection/webSocket/WebSocketClientConnectionManager.ts";
@@ -107,10 +104,7 @@ abstract class BaseClient {
     this._reconnectOnDisconnection = newReconnectOnDisconnection;
   }
 
-  protected sendServerMessage(...messages: ServerMessage[]) {
-    this.sendMessage(createServerMessage(...messages));
-  }
-  abstract sendMessage(message: MessageLike): void;
+  abstract sendServerMessage(...messages: ServerMessage[]): void;
 
   // CONNECTION STATUS
   #_connectionStatus: ClientConnectionStatus = "notConnected";
@@ -151,11 +145,6 @@ abstract class BaseClient {
     let byteOffset = 0;
 
     switch (messageType) {
-      case "ping":
-        this.#pong();
-        break;
-      case "pong":
-        break;
       case "isScanningAvailable":
         {
           const isScanningAvailable = Boolean(dataView.getUint8(byteOffset++));
@@ -214,15 +203,6 @@ abstract class BaseClient {
         _console.error(`uncaught messageType "${messageType}"`);
         break;
     }
-  }
-
-  // PING
-  protected pingTimer = new Timer(this.#ping.bind(this), pingTimeout);
-  #ping() {
-    this.sendServerMessage("ping");
-  }
-  #pong() {
-    this.sendServerMessage("pong");
   }
 
   // SCANNING
@@ -302,7 +282,7 @@ abstract class BaseClient {
     this.dispatchEvent("discoveredDevice", { discoveredDevice });
   }
   requestDiscoveredDevices() {
-    this.sendMessage(discoveredDevicesMessage);
+    this.sendServerMessage({ type: "discoveredDevices" });
   }
   #onExpiredDiscoveredDevice(bluetoothId: string) {
     _console.log({ expiredBluetoothDeviceId: bluetoothId });
@@ -328,10 +308,7 @@ abstract class BaseClient {
     return device;
   }
   protected sendConnectToDeviceMessage(bluetoothId: string) {
-    this.sendMessage(this.createConnectToDeviceMessage(bluetoothId));
-  }
-  protected createConnectToDeviceMessage(bluetoothId: string) {
-    return createServerMessage({ type: "connectToDevice", data: bluetoothId });
+    this.sendServerMessage({ type: "connectToDevice", data: bluetoothId });
   }
 
   abstract createDevice(bluetoothId: string): Device;
@@ -365,18 +342,11 @@ abstract class BaseClient {
     return device;
   }
   protected sendDisconnectFromDeviceMessage(bluetoothId: string) {
-    this.sendMessage(this.#createDisconnectFromDeviceMessage(bluetoothId));
-  }
-  #createDisconnectFromDeviceMessage(bluetoothId: string) {
-    return createServerMessage({ type: "disconnectFromDevice", data: bluetoothId });
+    this.sendServerMessage({ type: "disconnectFromDevice", data: bluetoothId });
   }
 
   protected sendDeviceMessage(bluetoothId: string, ...messages: ClientDeviceMessage[]) {
-    this.sendMessage(this.createDeviceMessage(bluetoothId, ...messages));
-  }
-
-  createDeviceMessage(bluetoothId: string, ...messages: ClientDeviceMessage[]) {
-    return createServerMessage({
+    this.sendServerMessage({
       type: "deviceMessage",
       data: [bluetoothId, createClientDeviceMessage(...messages)],
     });

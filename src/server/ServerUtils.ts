@@ -6,12 +6,7 @@ import { DeviceEventType } from "../Device.ts";
 
 const _console = createConsole("ServerUtils", { log: false });
 
-export const pingTimeout = 30_000_000;
-export const reconnectTimeout = 3_000;
-
 export const ServerMessageTypes = [
-  "ping",
-  "pong",
   "isScanningAvailable",
   "isScanning",
   "startScan",
@@ -35,7 +30,7 @@ export interface Message<MessageType extends string> {
   data?: MessageLike | MessageLike[];
 }
 
-function createMessage<MessageType extends string>(
+export function createMessage<MessageType extends string>(
   enumeration: readonly MessageType[],
   ...messages: (Message<MessageType> | MessageType)[]
 ) {
@@ -60,11 +55,10 @@ function createMessage<MessageType extends string>(
     _console.assertEnumWithError(message.type, enumeration);
     const messageTypeEnum = enumeration.indexOf(message.type);
 
-    return concatenateArrayBuffers(
-      messageTypeEnum,
-      Uint16Array.from([messageDataArrayBufferByteLength]),
-      messageDataArrayBuffer
-    );
+    const messageDataLengthDataView = new DataView(new ArrayBuffer(2));
+    messageDataLengthDataView.setUint16(0, messageDataArrayBufferByteLength, true);
+
+    return concatenateArrayBuffers(messageTypeEnum, messageDataLengthDataView, messageDataArrayBuffer);
   });
   _console.log("messageBuffers", ...messageBuffers);
   return concatenateArrayBuffers(...messageBuffers);
@@ -89,8 +83,6 @@ export function createClientDeviceMessage(...messages: ClientDeviceMessage[]) {
 }
 
 // STATIC MESSAGES
-export const pingMessage = createServerMessage("ping");
-export const pongMessage = createServerMessage("pong");
 export const isScanningAvailableRequestMessage = createServerMessage("isScanningAvailable");
 export const isScanningRequestMessage = createServerMessage("isScanning");
 export const startScanRequestMessage = createServerMessage("startScan");
