@@ -11,11 +11,11 @@ import {
 import { parseMessage, parseStringFromDataView } from "../utils/ParseUtils.ts";
 import EventDispatcher, { BoundEventListeners, Event } from "../utils/EventDispatcher.ts";
 import Device from "../Device.ts";
-import WebSocketClientConnectionManager from "../connection/webSocket/WebSocketClientConnectionManager.ts";
 import { sliceDataView } from "../utils/ArrayBufferUtils.ts";
 import { DiscoveredDevice, DiscoveredDevicesMap, ScannerEventMessages } from "../scanner/BaseScanner.ts";
+import ClientConnectionManager from "../connection/ClientConnectionManager.ts";
 
-const _console = createConsole("WebSocketClient", { log: true });
+const _console = createConsole("BaseClient", { log: true });
 
 export const ClientConnectionStatuses = ["notConnected", "connecting", "connected", "disconnecting"] as const;
 export type ClientConnectionStatus = (typeof ClientConnectionStatuses)[number];
@@ -144,6 +144,8 @@ abstract class BaseClient {
   #parseMessageCallback(messageType: ServerMessageType, dataView: DataView) {
     let byteOffset = 0;
 
+    _console.log({ messageType }, dataView);
+
     switch (messageType) {
       case "isScanningAvailable":
         {
@@ -194,9 +196,9 @@ abstract class BaseClient {
           byteOffset = _byteOffset;
           const device = this.#devices[bluetoothId];
           _console.assertWithError(device, `no device found for id ${bluetoothId}`);
-          const connectionManager = device.connectionManager! as WebSocketClientConnectionManager;
+          const connectionManager = device.connectionManager! as ClientConnectionManager;
           const _dataView = sliceDataView(dataView, byteOffset);
-          connectionManager.onWebSocketMessage(_dataView);
+          connectionManager.onClientMessage(_dataView);
         }
         break;
       default:
@@ -311,7 +313,17 @@ abstract class BaseClient {
     this.sendServerMessage({ type: "connectToDevice", data: bluetoothId });
   }
 
-  abstract createDevice(bluetoothId: string): Device;
+  // DEVICE CONNECTION
+  createDevice(bluetoothId: string) {
+    const device = new Device();
+    const clientConnectionManager = new ClientConnectionManager();
+    clientConnectionManager.bluetoothId = bluetoothId;
+    clientConnectionManager.sendClientMessage = this.sendDeviceMessage.bind(this, bluetoothId);
+    clientConnectionManager.sendClientConnectMessage = this.sendConnectToDeviceMessage.bind(this, bluetoothId);
+    clientConnectionManager.sendClientDisconnectMessage = this.sendDisconnectFromDeviceMessage.bind(this, bluetoothId);
+    device.connectionManager = clientConnectionManager;
+    return device;
+  }
 
   #getOrCreateDevice(bluetoothId: string) {
     let device = this.#devices[bluetoothId];
@@ -325,7 +337,7 @@ abstract class BaseClient {
     _console.log({ bluetoothIds });
     bluetoothIds.forEach((bluetoothId) => {
       const device = this.#getOrCreateDevice(bluetoothId);
-      const connectionManager = device.connectionManager! as WebSocketClientConnectionManager;
+      const connectionManager = device.connectionManager! as ClientConnectionManager;
       connectionManager.isConnected = true;
     });
   }

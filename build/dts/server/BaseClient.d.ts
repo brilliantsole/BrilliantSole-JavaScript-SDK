@@ -75,7 +75,7 @@ declare abstract class BaseClient {
     connectToDevice(bluetoothId: string): Device;
     protected requestConnectionToDevice(bluetoothId: string): Device;
     protected sendConnectToDeviceMessage(bluetoothId: string): void;
-    abstract createDevice(bluetoothId: string): Device;
+    createDevice(bluetoothId: string): Device;
     protected onConnectedBluetoothDeviceIds(bluetoothIds: string[]): void;
     disconnectFromDevice(bluetoothId: string): void;
     protected requestDisconnectionFromDevice(bluetoothId: string): Device;

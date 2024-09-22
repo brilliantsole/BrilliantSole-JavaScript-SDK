@@ -1,27 +1,24 @@
-import { createConsole } from "../../utils/Console.ts";
-import { isInBrowser } from "../../utils/environment.ts";
-import BaseConnectionManager, { ConnectionType, ConnectionMessageType } from "../BaseConnectionManager.ts";
-import { DeviceEventTypes } from "../../Device.ts";
-import { parseMessage } from "../../utils/ParseUtils.ts";
-import { DeviceInformationMessageTypes } from "../../DeviceInformationManager.ts";
-import { DeviceEventType } from "../../Device.ts";
-import { ClientDeviceMessage } from "../../server/ServerUtils.ts";
+import { createConsole } from "../utils/Console.ts";
+import { isInBrowser } from "../utils/environment.ts";
+import BaseConnectionManager, { ConnectionType, ConnectionMessageType } from "./BaseConnectionManager.ts";
+import { DeviceEventTypes } from "../Device.ts";
+import { parseMessage } from "../utils/ParseUtils.ts";
+import { DeviceInformationMessageTypes } from "../DeviceInformationManager.ts";
+import { DeviceEventType } from "../Device.ts";
+import { ClientDeviceMessage } from "../server/ServerUtils.ts";
 
-const _console = createConsole("WebSocketClientConnectionManager", { log: true });
+const _console = createConsole("ClientConnectionManager", { log: true });
 
-export type SendWebSocketMessageCallback = (...messages: ClientDeviceMessage[]) => void;
+export type SendClientMessageCallback = (...messages: ClientDeviceMessage[]) => void;
 
-const WebSocketDeviceInformationMessageTypes: ConnectionMessageType[] = [
-  ...DeviceInformationMessageTypes,
-  "batteryLevel",
-];
+const ClientDeviceInformationMessageTypes: ConnectionMessageType[] = [...DeviceInformationMessageTypes, "batteryLevel"];
 
-class WebSocketClientConnectionManager extends BaseConnectionManager {
+class ClientConnectionManager extends BaseConnectionManager {
   static get isSupported() {
     return isInBrowser;
   }
   static get type(): ConnectionType {
-    return "webSocketClient";
+    return "client";
   }
 
   #bluetoothId!: string;
@@ -58,11 +55,11 @@ class WebSocketClientConnectionManager extends BaseConnectionManager {
 
   async connect() {
     await super.connect();
-    this.sendWebSocketConnectMessage();
+    this.sendClientConnectMessage();
   }
   async disconnect() {
     await super.disconnect();
-    this.sendWebSocketDisconnectMessage();
+    this.sendClientDisconnectMessage();
   }
 
   get canReconnect() {
@@ -74,31 +71,33 @@ class WebSocketClientConnectionManager extends BaseConnectionManager {
     this.connect();
   }
 
-  sendWebSocketMessage!: SendWebSocketMessageCallback;
-  sendWebSocketConnectMessage!: Function;
-  sendWebSocketDisconnectMessage!: Function;
+  sendClientMessage!: SendClientMessageCallback;
+  sendClientConnectMessage!: Function;
+  sendClientDisconnectMessage!: Function;
 
   async sendSmpMessage(data: ArrayBuffer) {
     super.sendSmpMessage(data);
-    this.sendWebSocketMessage({ type: "smp", data });
+    this.sendClientMessage({ type: "smp", data });
   }
 
   async sendTxData(data: ArrayBuffer) {
     super.sendTxData(data);
-    this.sendWebSocketMessage({ type: "tx", data });
+    this.sendClientMessage({ type: "tx", data });
   }
 
   #requestDeviceInformation() {
-    this.sendWebSocketMessage(...WebSocketDeviceInformationMessageTypes);
+    this.sendClientMessage(...ClientDeviceInformationMessageTypes);
   }
 
-  onWebSocketMessage(dataView: DataView) {
+  onClientMessage(dataView: DataView) {
     _console.log({ dataView });
-    parseMessage(dataView, DeviceEventTypes, this.#onWebSocketMessageCallback.bind(this), null, true);
+    parseMessage(dataView, DeviceEventTypes, this.#onClientMessageCallback.bind(this), null, true);
   }
 
-  #onWebSocketMessageCallback(messageType: DeviceEventType, dataView: DataView) {
+  #onClientMessageCallback(messageType: DeviceEventType, dataView: DataView) {
     let byteOffset = 0;
+
+    _console.log({ messageType }, dataView);
 
     switch (messageType) {
       case "isConnected":
@@ -118,4 +117,4 @@ class WebSocketClientConnectionManager extends BaseConnectionManager {
   }
 }
 
-export default WebSocketClientConnectionManager;
+export default ClientConnectionManager;

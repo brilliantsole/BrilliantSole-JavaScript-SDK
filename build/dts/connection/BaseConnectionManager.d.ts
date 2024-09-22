@@ -1,4 +1,4 @@
-export declare const ConnectionTypes: readonly ["webBluetooth", "noble", "webSocketClient"];
+export declare const ConnectionTypes: readonly ["webBluetooth", "noble", "client"];
 export type ConnectionType = (typeof ConnectionTypes)[number];
 export declare const ConnectionStatuses: readonly ["notConnected", "connecting", "connected", "disconnecting"];
 export type ConnectionStatus = (typeof ConnectionStatuses)[number];

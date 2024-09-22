@@ -13,7 +13,7 @@ import { SensorDataMessageTypes } from "../sensor/SensorDataManager.ts";
 
 const _console = createConsole("BaseConnectionManager", { log: true });
 
-export const ConnectionTypes = ["webBluetooth", "noble", "webSocketClient"] as const;
+export const ConnectionTypes = ["webBluetooth", "noble", "client"] as const;
 export type ConnectionType = (typeof ConnectionTypes)[number];
 
 export const ConnectionStatuses = ["notConnected", "connecting", "connected", "disconnecting"] as const;

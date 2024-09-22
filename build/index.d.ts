@@ -330,7 +330,7 @@ interface DeviceInformationEventMessages {
     };
 }
 
-declare const ConnectionTypes: readonly ["webBluetooth", "noble", "webSocketClient"];
+declare const ConnectionTypes: readonly ["webBluetooth", "noble", "client"];
 type ConnectionType = (typeof ConnectionTypes)[number];
 declare const ConnectionStatuses: readonly ["notConnected", "connecting", "connected", "disconnecting"];
 type ConnectionStatus = (typeof ConnectionStatuses)[number];
@@ -581,7 +581,7 @@ declare class Device {
     static set ReconnectOnDisconnection(newReconnectOnDisconnection: boolean);
     get reconnectOnDisconnection(): boolean;
     set reconnectOnDisconnection(newReconnectOnDisconnection: boolean);
-    get connectionType(): "webBluetooth" | "noble" | "webSocketClient" | undefined;
+    get connectionType(): "webBluetooth" | "noble" | "client" | undefined;
     disconnect(): Promise<void>;
     toggleConnection(): void;
     get connectionStatus(): ConnectionStatus;
@@ -880,7 +880,7 @@ declare abstract class BaseClient {
     connectToDevice(bluetoothId: string): Device;
     protected requestConnectionToDevice(bluetoothId: string): Device;
     protected sendConnectToDeviceMessage(bluetoothId: string): void;
-    abstract createDevice(bluetoothId: string): Device;
+    createDevice(bluetoothId: string): Device;
     protected onConnectedBluetoothDeviceIds(bluetoothIds: string[]): void;
     disconnectFromDevice(bluetoothId: string): void;
     protected requestDisconnectionFromDevice(bluetoothId: string): Device;
@@ -901,7 +901,6 @@ declare class WebSocketClient extends BaseClient {
     toggleConnection(url?: ServerURL): void;
     sendMessage(message: MessageLike): void;
     sendServerMessage(...messages: ServerMessage[]): void;
-    createDevice(bluetoothId: string): Device;
 }
 
 export { type BoundDeviceEventListeners, type BoundDeviceManagerEventListeners, type BoundDevicePairEventListeners, type CenterOfPressure, type ContinuousSensorType, ContinuousSensorTypes, DefaultNumberOfPressureSensors, Device, type DeviceEvent, type DeviceEventListenerMap, type DeviceEventMap, type DeviceInformation, _default as DeviceManager, type DeviceManagerEvent, type DeviceManagerEventListenerMap, type DeviceManagerEventMap, DevicePair, type DevicePairEvent, type DevicePairEventListenerMap, type DevicePairEventMap, type DeviceType, DeviceTypes, type DiscoveredDevice, environment_d as Environment, type Euler, type FileTransferDirection, FileTransferDirections, type FileType, FileTypes, type InsoleSide, InsoleSides, MaxNameLength, MaxNumberOfVibrationWaveformEffectSegments, MaxNumberOfVibrationWaveformSegments, MaxSensorRate, MaxVibrationWaveformEffectSegmentDelay, MaxVibrationWaveformEffectSegmentLoopCount, MaxVibrationWaveformEffectSequenceLoopCount, MaxVibrationWaveformSegmentDuration, MinNameLength, type PressureData, type Quaternion, type SensorConfiguration, SensorRateStep, type SensorType, SensorTypes, type TfliteSensorType, TfliteSensorTypes, type TfliteTask, TfliteTasks, type Vector2, type Vector3, type VibrationConfiguration, type VibrationLocation, VibrationLocations, type VibrationType, VibrationTypes, type VibrationWaveformEffect, VibrationWaveformEffects, WebSocketClient, setAllConsoleLevelFlags, setConsoleLevelFlagsForType };

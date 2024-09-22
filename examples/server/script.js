@@ -219,7 +219,7 @@ BS.DeviceManager.AddEventListener("connectedDevices", (event) => {
   console.log({ connectedDevices });
 
   connectedDevices.forEach((device) => {
-    if (device.connectionType != "webSocketClient" || !device.bluetoothId) {
+    if (device.connectionType != "client" || !device.bluetoothId) {
       return;
     }
     let connectedDeviceContainer = connectedDeviceContainers[device.bluetoothId];

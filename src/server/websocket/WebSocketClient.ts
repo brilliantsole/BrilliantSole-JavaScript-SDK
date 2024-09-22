@@ -1,8 +1,7 @@
 import { createConsole } from "../../utils/Console.ts";
 import { createServerMessage, MessageLike, ServerMessage } from "../ServerUtils.ts";
 import { addEventListeners, removeEventListeners } from "../../utils/EventUtils.ts";
-import Device from "../../Device.ts";
-import WebSocketClientConnectionManager from "../../connection/webSocket/WebSocketClientConnectionManager.ts";
+import ClientConnectionManager from "../../connection/ClientConnectionManager.ts";
 import BaseClient, { ServerURL } from "../BaseClient.ts";
 import type * as ws from "ws";
 import Timer from "../../utils/Timer.ts";
@@ -131,7 +130,7 @@ class WebSocketClient extends BaseClient {
     this._connectionStatus = "notConnected";
 
     Object.entries(this.devices).forEach(([id, device]) => {
-      const connectionManager = device.connectionManager! as WebSocketClientConnectionManager;
+      const connectionManager = device.connectionManager! as ClientConnectionManager;
       connectionManager.isConnected = false;
     });
 
@@ -144,21 +143,6 @@ class WebSocketClient extends BaseClient {
   }
   #onWebSocketError(event: ws.ErrorEvent) {
     _console.error("webSocket.error", event.message);
-  }
-
-  // DEVICE CONNECTION
-  createDevice(bluetoothId: string) {
-    const device = new Device();
-    const clientConnectionManager = new WebSocketClientConnectionManager();
-    clientConnectionManager.bluetoothId = bluetoothId;
-    clientConnectionManager.sendWebSocketMessage = this.sendDeviceMessage.bind(this, bluetoothId);
-    clientConnectionManager.sendWebSocketConnectMessage = this.sendConnectToDeviceMessage.bind(this, bluetoothId);
-    clientConnectionManager.sendWebSocketDisconnectMessage = this.sendDisconnectFromDeviceMessage.bind(
-      this,
-      bluetoothId
-    );
-    device.connectionManager = clientConnectionManager;
-    return device;
   }
 
   // PARSING

@@ -333,7 +333,7 @@ interface DeviceInformationEventMessages {
     };
 }
 
-declare const ConnectionTypes: readonly ["webBluetooth", "noble", "webSocketClient"];
+declare const ConnectionTypes: readonly ["webBluetooth", "noble", "client"];
 type ConnectionType = (typeof ConnectionTypes)[number];
 declare const ConnectionStatuses: readonly ["notConnected", "connecting", "connected", "disconnecting"];
 type ConnectionStatus = (typeof ConnectionStatuses)[number];
@@ -584,7 +584,7 @@ declare class Device {
     static set ReconnectOnDisconnection(newReconnectOnDisconnection: boolean);
     get reconnectOnDisconnection(): boolean;
     set reconnectOnDisconnection(newReconnectOnDisconnection: boolean);
-    get connectionType(): "webBluetooth" | "noble" | "webSocketClient" | undefined;
+    get connectionType(): "webBluetooth" | "noble" | "client" | undefined;
     disconnect(): Promise<void>;
     toggleConnection(): void;
     get connectionStatus(): ConnectionStatus;

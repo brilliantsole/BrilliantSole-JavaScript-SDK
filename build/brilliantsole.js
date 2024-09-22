@@ -4870,58 +4870,55 @@
 	createServerMessage("stopScan");
 	createServerMessage("discoveredDevices");
 
-	var _WebSocketClientConnectionManager_instances, _WebSocketClientConnectionManager_bluetoothId, _WebSocketClientConnectionManager_isConnected, _WebSocketClientConnectionManager_requestDeviceInformation, _WebSocketClientConnectionManager_onWebSocketMessageCallback;
-	const _console$3 = createConsole("WebSocketClientConnectionManager", { log: true });
-	const WebSocketDeviceInformationMessageTypes = [
-	    ...DeviceInformationMessageTypes,
-	    "batteryLevel",
-	];
-	class WebSocketClientConnectionManager extends BaseConnectionManager {
+	var _ClientConnectionManager_instances, _ClientConnectionManager_bluetoothId, _ClientConnectionManager_isConnected, _ClientConnectionManager_requestDeviceInformation, _ClientConnectionManager_onClientMessageCallback;
+	const _console$3 = createConsole("ClientConnectionManager", { log: true });
+	const ClientDeviceInformationMessageTypes = [...DeviceInformationMessageTypes, "batteryLevel"];
+	class ClientConnectionManager extends BaseConnectionManager {
 	    constructor() {
 	        super(...arguments);
-	        _WebSocketClientConnectionManager_instances.add(this);
-	        _WebSocketClientConnectionManager_bluetoothId.set(this, void 0);
-	        _WebSocketClientConnectionManager_isConnected.set(this, false);
+	        _ClientConnectionManager_instances.add(this);
+	        _ClientConnectionManager_bluetoothId.set(this, void 0);
+	        _ClientConnectionManager_isConnected.set(this, false);
 	    }
 	    static get isSupported() {
 	        return isInBrowser;
 	    }
 	    static get type() {
-	        return "webSocketClient";
+	        return "client";
 	    }
 	    get bluetoothId() {
-	        return __classPrivateFieldGet(this, _WebSocketClientConnectionManager_bluetoothId, "f");
+	        return __classPrivateFieldGet(this, _ClientConnectionManager_bluetoothId, "f");
 	    }
 	    set bluetoothId(newBluetoothId) {
 	        _console$3.assertTypeWithError(newBluetoothId, "string");
-	        if (__classPrivateFieldGet(this, _WebSocketClientConnectionManager_bluetoothId, "f") == newBluetoothId) {
+	        if (__classPrivateFieldGet(this, _ClientConnectionManager_bluetoothId, "f") == newBluetoothId) {
 	            _console$3.log("redundant bluetoothId assignment");
 	            return;
 	        }
-	        __classPrivateFieldSet(this, _WebSocketClientConnectionManager_bluetoothId, newBluetoothId, "f");
+	        __classPrivateFieldSet(this, _ClientConnectionManager_bluetoothId, newBluetoothId, "f");
 	    }
 	    get isConnected() {
-	        return __classPrivateFieldGet(this, _WebSocketClientConnectionManager_isConnected, "f");
+	        return __classPrivateFieldGet(this, _ClientConnectionManager_isConnected, "f");
 	    }
 	    set isConnected(newIsConnected) {
 	        _console$3.assertTypeWithError(newIsConnected, "boolean");
-	        if (__classPrivateFieldGet(this, _WebSocketClientConnectionManager_isConnected, "f") == newIsConnected) {
+	        if (__classPrivateFieldGet(this, _ClientConnectionManager_isConnected, "f") == newIsConnected) {
 	            _console$3.log("redundant newIsConnected assignment", newIsConnected);
 	            return;
 	        }
-	        __classPrivateFieldSet(this, _WebSocketClientConnectionManager_isConnected, newIsConnected, "f");
-	        this.status = __classPrivateFieldGet(this, _WebSocketClientConnectionManager_isConnected, "f") ? "connected" : "notConnected";
+	        __classPrivateFieldSet(this, _ClientConnectionManager_isConnected, newIsConnected, "f");
+	        this.status = __classPrivateFieldGet(this, _ClientConnectionManager_isConnected, "f") ? "connected" : "notConnected";
 	        if (this.isConnected) {
-	            __classPrivateFieldGet(this, _WebSocketClientConnectionManager_instances, "m", _WebSocketClientConnectionManager_requestDeviceInformation).call(this);
+	            __classPrivateFieldGet(this, _ClientConnectionManager_instances, "m", _ClientConnectionManager_requestDeviceInformation).call(this);
 	        }
 	    }
 	    async connect() {
 	        await super.connect();
-	        this.sendWebSocketConnectMessage();
+	        this.sendClientConnectMessage();
 	    }
 	    async disconnect() {
 	        await super.disconnect();
-	        this.sendWebSocketDisconnectMessage();
+	        this.sendClientDisconnectMessage();
 	    }
 	    get canReconnect() {
 	        return true;
@@ -4933,21 +4930,22 @@
 	    }
 	    async sendSmpMessage(data) {
 	        super.sendSmpMessage(data);
-	        this.sendWebSocketMessage({ type: "smp", data });
+	        this.sendClientMessage({ type: "smp", data });
 	    }
 	    async sendTxData(data) {
 	        super.sendTxData(data);
-	        this.sendWebSocketMessage({ type: "tx", data });
+	        this.sendClientMessage({ type: "tx", data });
 	    }
-	    onWebSocketMessage(dataView) {
+	    onClientMessage(dataView) {
 	        _console$3.log({ dataView });
-	        parseMessage(dataView, DeviceEventTypes, __classPrivateFieldGet(this, _WebSocketClientConnectionManager_instances, "m", _WebSocketClientConnectionManager_onWebSocketMessageCallback).bind(this), null, true);
+	        parseMessage(dataView, DeviceEventTypes, __classPrivateFieldGet(this, _ClientConnectionManager_instances, "m", _ClientConnectionManager_onClientMessageCallback).bind(this), null, true);
 	    }
 	}
-	_WebSocketClientConnectionManager_bluetoothId = new WeakMap(), _WebSocketClientConnectionManager_isConnected = new WeakMap(), _WebSocketClientConnectionManager_instances = new WeakSet(), _WebSocketClientConnectionManager_requestDeviceInformation = function _WebSocketClientConnectionManager_requestDeviceInformation() {
-	    this.sendWebSocketMessage(...WebSocketDeviceInformationMessageTypes);
-	}, _WebSocketClientConnectionManager_onWebSocketMessageCallback = function _WebSocketClientConnectionManager_onWebSocketMessageCallback(messageType, dataView) {
+	_ClientConnectionManager_bluetoothId = new WeakMap(), _ClientConnectionManager_isConnected = new WeakMap(), _ClientConnectionManager_instances = new WeakSet(), _ClientConnectionManager_requestDeviceInformation = function _ClientConnectionManager_requestDeviceInformation() {
+	    this.sendClientMessage(...ClientDeviceInformationMessageTypes);
+	}, _ClientConnectionManager_onClientMessageCallback = function _ClientConnectionManager_onClientMessageCallback(messageType, dataView) {
 	    let byteOffset = 0;
+	    _console$3.log({ messageType }, dataView);
 	    switch (messageType) {
 	        case "isConnected":
 	            const isConnected = Boolean(dataView.getUint8(byteOffset++));
@@ -4964,7 +4962,7 @@
 	};
 
 	var _BaseClient_instances, _BaseClient_devices, _BaseClient_eventDispatcher, _BaseClient__connectionStatus, _BaseClient_parseMessageCallback, _BaseClient__isScanningAvailable, _BaseClient_isScanningAvailable_get, _BaseClient_isScanningAvailable_set, _BaseClient_assertIsScanningAvailable, _BaseClient__isScanning, _BaseClient_isScanning_get, _BaseClient_isScanning_set, _BaseClient_requestIsScanning, _BaseClient_assertIsScanning, _BaseClient_assertIsNotScanning, _BaseClient_discoveredDevices, _BaseClient_onExpiredDiscoveredDevice, _BaseClient_getOrCreateDevice;
-	const _console$2 = createConsole("WebSocketClient", { log: true });
+	const _console$2 = createConsole("BaseClient", { log: true });
 	const ClientConnectionStatuses = ["notConnected", "connecting", "connected", "disconnecting"];
 	const ClientEventTypes = [
 	    ...ClientConnectionStatuses,
@@ -5104,6 +5102,16 @@
 	    sendConnectToDeviceMessage(bluetoothId) {
 	        this.sendServerMessage({ type: "connectToDevice", data: bluetoothId });
 	    }
+	    createDevice(bluetoothId) {
+	        const device = new Device$1();
+	        const clientConnectionManager = new ClientConnectionManager();
+	        clientConnectionManager.bluetoothId = bluetoothId;
+	        clientConnectionManager.sendClientMessage = this.sendDeviceMessage.bind(this, bluetoothId);
+	        clientConnectionManager.sendClientConnectMessage = this.sendConnectToDeviceMessage.bind(this, bluetoothId);
+	        clientConnectionManager.sendClientDisconnectMessage = this.sendDisconnectFromDeviceMessage.bind(this, bluetoothId);
+	        device.connectionManager = clientConnectionManager;
+	        return device;
+	    }
 	    onConnectedBluetoothDeviceIds(bluetoothIds) {
 	        _console$2.log({ bluetoothIds });
 	        bluetoothIds.forEach((bluetoothId) => {
@@ -5135,6 +5143,7 @@
 	}
 	_BaseClient_devices = new WeakMap(), _BaseClient_eventDispatcher = new WeakMap(), _BaseClient__connectionStatus = new WeakMap(), _BaseClient__isScanningAvailable = new WeakMap(), _BaseClient__isScanning = new WeakMap(), _BaseClient_discoveredDevices = new WeakMap(), _BaseClient_instances = new WeakSet(), _BaseClient_parseMessageCallback = function _BaseClient_parseMessageCallback(messageType, dataView) {
 	    let byteOffset = 0;
+	    _console$2.log({ messageType }, dataView);
 	    switch (messageType) {
 	        case "isScanningAvailable":
 	            {
@@ -5185,7 +5194,7 @@
 	                _console$2.assertWithError(device, `no device found for id ${bluetoothId}`);
 	                const connectionManager = device.connectionManager;
 	                const _dataView = sliceDataView(dataView, byteOffset);
-	                connectionManager.onWebSocketMessage(_dataView);
+	                connectionManager.onClientMessage(_dataView);
 	            }
 	            break;
 	        default:
@@ -5326,16 +5335,6 @@
 	    }
 	    sendServerMessage(...messages) {
 	        this.sendMessage(createWebSocketMessage({ type: "serverMessage", data: createServerMessage(...messages) }));
-	    }
-	    createDevice(bluetoothId) {
-	        const device = new Device$1();
-	        const clientConnectionManager = new WebSocketClientConnectionManager();
-	        clientConnectionManager.bluetoothId = bluetoothId;
-	        clientConnectionManager.sendWebSocketMessage = this.sendDeviceMessage.bind(this, bluetoothId);
-	        clientConnectionManager.sendWebSocketConnectMessage = this.sendConnectToDeviceMessage.bind(this, bluetoothId);
-	        clientConnectionManager.sendWebSocketDisconnectMessage = this.sendDisconnectFromDeviceMessage.bind(this, bluetoothId);
-	        device.connectionManager = clientConnectionManager;
-	        return device;
 	    }
 	}
 	_WebSocketClient_webSocket = new WeakMap(), _WebSocketClient_boundWebSocketEventListeners = new WeakMap(), _WebSocketClient_pingTimer = new WeakMap(), _WebSocketClient_instances = new WeakSet(), _WebSocketClient_sendWebSocketMessage = function _WebSocketClient_sendWebSocketMessage(...messages) {
