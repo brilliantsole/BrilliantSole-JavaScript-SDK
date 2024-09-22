@@ -21,6 +21,9 @@ export const ServerMessageTypes = [
 ] as const;
 export type ServerMessageType = (typeof ServerMessageTypes)[number];
 
+export const DeviceMessageTypes = ["connectionStatus", "batteryLevel", "deviceInformation", "rx", "smp"] as const;
+export type DeviceMessageType = (typeof DeviceMessageTypes)[number];
+
 // MESSAGING
 
 export type MessageLike = number | number[] | ArrayBufferLike | DataView | boolean | string | any;

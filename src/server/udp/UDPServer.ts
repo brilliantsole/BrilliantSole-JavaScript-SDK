@@ -12,7 +12,7 @@ import {
 } from "./UDPUtils.ts";
 
 /** NODE_START */
-import * as dgram from "dgram";
+import type * as dgram from "dgram";
 import Timer from "../../utils/Timer.ts";
 /** NODE_END */
 
@@ -145,14 +145,7 @@ class UDPServer extends BaseServer {
 
     const response = concatenateArrayBuffers(responseMessages);
     _console.log(`responding with ${response.byteLength} bytes...`, response);
-    this.#socket!.send(new Uint8Array(response), client.receivePort, client.address, (error, bytes) => {
-      if (error) {
-        _console.error("error sending data", error);
-        return;
-      }
-      _console.log(`sent ${bytes} bytes`);
-      client.lastTimeSentData = Date.now();
-    });
+    this.#sendToClient(client, response);
   }
   #onClientUDPMessage(messageType: UDPServerMessageType, dataView: DataView, context: UDPClientContext) {
     const { client, responseMessages } = context;
@@ -186,6 +179,25 @@ class UDPServer extends BaseServer {
     const responseDataView = new DataView(new ArrayBuffer(2));
     responseDataView.setUint16(0, client.receivePort);
     return createUDPServerMessage({ type: "setRemoteReceivePort", data: responseDataView });
+  }
+
+  // CLIENT MESSAGING
+  #sendToClient(client: UDPClient, message: ArrayBuffer) {
+    _console.log(`sending ${message.byteLength} bytes to ${this.#clientToString(client)}...`);
+    this.#socket!.send(new Uint8Array(message), client.receivePort, client.address, (error, bytes) => {
+      if (error) {
+        _console.error("error sending data", error);
+        return;
+      }
+      _console.log(`sent ${bytes} bytes`);
+      client.lastTimeSentData = Date.now();
+    });
+  }
+  broadcastMessage(message: ArrayBuffer) {
+    super.broadcastMessage(message);
+    this.#clients.forEach((client) => {
+      this.#sendToClient(client, createUDPServerMessage({ type: "serverMessage", data: message }));
+    });
   }
 
   // REMOVE CLIENT

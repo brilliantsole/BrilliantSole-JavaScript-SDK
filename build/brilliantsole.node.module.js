@@ -22,9 +22,8 @@ typeof SuppressedError === "function" ? SuppressedError : function (error, suppr
     return e.name = "SuppressedError", e.error = error, e.suppressed = suppressed, e;
 };
 
-const __BRILLIANTSOLE__ENVIRONMENT__ = "__BRILLIANTSOLE__DEV__";
-const isInProduction = __BRILLIANTSOLE__ENVIRONMENT__ == "__BRILLIANTSOLE__PROD__";
-const isInDev = __BRILLIANTSOLE__ENVIRONMENT__ == "__BRILLIANTSOLE__DEV__";
+const isInProduction = "__BRILLIANTSOLE__PROD__" == "__BRILLIANTSOLE__PROD__";
+const isInDev = "__BRILLIANTSOLE__PROD__" == "__BRILLIANTSOLE__DEV__";
 const isInBrowser = typeof window !== "undefined" && typeof window?.document !== "undefined";
 const isInNode = typeof process !== "undefined" && process?.versions?.node != null;
 const userAgent = (isInBrowser && navigator.userAgent) || "";
@@ -123,9 +122,6 @@ class Console {
     }
     static create(type, levelFlags) {
         const console = __classPrivateFieldGet(this, _a$7, "f", _Console_consoles)[type] || new _a$7(type);
-        if (levelFlags) {
-            console.setLevelFlags(levelFlags);
-        }
         return console;
     }
     get log() {
@@ -5257,6 +5253,9 @@ _NobleScanner__isScanning = new WeakMap(), _NobleScanner__nobleState = new WeakM
             deviceType = DeviceTypes[deviceTypeEnum];
         }
     }
+    if (deviceType == undefined) {
+        return;
+    }
     const discoveredDevice = {
         name: noblePeripheral.advertisement.localName,
         bluetoothId: noblePeripheral.id,
@@ -5708,7 +5707,7 @@ function createUDPServerMessage(...messages) {
 createUDPServerMessage("ping");
 const udpPongMessage = createUDPServerMessage("pong");
 
-var _UDPServer_instances, _UDPServer_clients, _UDPServer_getClientByRemoteInfo, _UDPServer_clientToString, _UDPServer_socket, _UDPServer_boundSocketListeners, _UDPServer_onSocketClose, _UDPServer_onSocketConnect, _UDPServer_onSocketError, _UDPServer_onSocketListening, _UDPServer_onSocketMessage, _UDPServer_onClientData, _UDPServer_onClientUDPMessage, _UDPServer_parseRemoteReceivePort, _UDPServer_removeClient;
+var _UDPServer_instances, _UDPServer_clients, _UDPServer_getClientByRemoteInfo, _UDPServer_clientToString, _UDPServer_socket, _UDPServer_boundSocketListeners, _UDPServer_onSocketClose, _UDPServer_onSocketConnect, _UDPServer_onSocketError, _UDPServer_onSocketListening, _UDPServer_onSocketMessage, _UDPServer_onClientData, _UDPServer_onClientUDPMessage, _UDPServer_parseRemoteReceivePort, _UDPServer_sendToClient, _UDPServer_removeClient;
 const _console = createConsole("UDPServer", { log: true });
 class UDPServer extends BaseServer {
     constructor() {
@@ -5743,6 +5742,12 @@ class UDPServer extends BaseServer {
         addEventListeners(newSocket, __classPrivateFieldGet(this, _UDPServer_boundSocketListeners, "f"));
         __classPrivateFieldSet(this, _UDPServer_socket, newSocket, "f");
         _console.log("assigned udp socket");
+    }
+    broadcastMessage(message) {
+        super.broadcastMessage(message);
+        __classPrivateFieldGet(this, _UDPServer_clients, "f").forEach((client) => {
+            __classPrivateFieldGet(this, _UDPServer_instances, "m", _UDPServer_sendToClient).call(this, client, createUDPServerMessage({ type: "serverMessage", data: message }));
+        });
     }
 }
 _UDPServer_clients = new WeakMap(), _UDPServer_socket = new WeakMap(), _UDPServer_boundSocketListeners = new WeakMap(), _UDPServer_instances = new WeakSet(), _UDPServer_getClientByRemoteInfo = function _UDPServer_getClientByRemoteInfo(remoteInfo, createIfNotFound = false) {
@@ -5797,14 +5802,7 @@ _UDPServer_clients = new WeakMap(), _UDPServer_socket = new WeakMap(), _UDPServe
     }
     const response = concatenateArrayBuffers(responseMessages);
     _console.log(`responding with ${response.byteLength} bytes...`, response);
-    __classPrivateFieldGet(this, _UDPServer_socket, "f").send(new Uint8Array(response), client.receivePort, client.address, (error, bytes) => {
-        if (error) {
-            _console.error("error sending data", error);
-            return;
-        }
-        _console.log(`sent ${bytes} bytes`);
-        client.lastTimeSentData = Date.now();
-    });
+    __classPrivateFieldGet(this, _UDPServer_instances, "m", _UDPServer_sendToClient).call(this, client, response);
 }, _UDPServer_onClientUDPMessage = function _UDPServer_onClientUDPMessage(messageType, dataView, context) {
     const { client, responseMessages } = context;
     _console.log(`received "${messageType}" message from ${client.address}:${client.port}`);
@@ -5834,6 +5832,16 @@ _UDPServer_clients = new WeakMap(), _UDPServer_socket = new WeakMap(), _UDPServe
     const responseDataView = new DataView(new ArrayBuffer(2));
     responseDataView.setUint16(0, client.receivePort);
     return createUDPServerMessage({ type: "setRemoteReceivePort", data: responseDataView });
+}, _UDPServer_sendToClient = function _UDPServer_sendToClient(client, message) {
+    _console.log(`sending ${message.byteLength} bytes to ${__classPrivateFieldGet(this, _UDPServer_instances, "m", _UDPServer_clientToString).call(this, client)}...`);
+    __classPrivateFieldGet(this, _UDPServer_socket, "f").send(new Uint8Array(message), client.receivePort, client.address, (error, bytes) => {
+        if (error) {
+            _console.error("error sending data", error);
+            return;
+        }
+        _console.log(`sent ${bytes} bytes`);
+        client.lastTimeSentData = Date.now();
+    });
 }, _UDPServer_removeClient = function _UDPServer_removeClient(client) {
     _console.log(`removing client ${__classPrivateFieldGet(this, _UDPServer_instances, "m", _UDPServer_clientToString).call(this, client)}...`);
     client.removeSelfTimer.stop();

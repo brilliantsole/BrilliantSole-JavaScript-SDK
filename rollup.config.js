@@ -66,7 +66,7 @@ if (production) {
 
 const _browserPlugins = [resolve(), commonjs(), removeLines("browser")];
 const _nodePlugins = [removeLines("node")];
-const nodeExternal = ["webbluetooth", "debounce", "ws", "@abandonware/noble", "auto-bind"];
+const nodeExternal = ["webbluetooth", "debounce", "ws", "@abandonware/noble", "auto-bind", "dgram"];
 
 const lensStudioPlugins = [
   removeLines("ls"),
@@ -148,6 +148,7 @@ const builds = [
   {
     input: "./build/dts/BS.d.ts",
     output: [{ file: "build/index.node.d.ts", format: "es" }],
+    external: nodeExternal,
     plugins: [
       removeLines("node"),
       dts(),

@@ -97,6 +97,9 @@ class NobleScanner extends BaseScanner {
         deviceType = DeviceTypes[deviceTypeEnum];
       }
     }
+    if (deviceType == undefined) {
+      return;
+    }
 
     const discoveredDevice: DiscoveredDevice = {
       name: noblePeripheral.advertisement.localName,

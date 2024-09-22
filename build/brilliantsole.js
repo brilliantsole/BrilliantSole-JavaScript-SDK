@@ -165,7 +165,7 @@
 	    Console.setAllLevelFlags(levelFlags);
 	}
 
-	const _console$u = createConsole("EventDispatcher", { log: false });
+	const _console$v = createConsole("EventDispatcher", { log: false });
 	class EventDispatcher {
 	    constructor(target, validEventTypes) {
 	        this.target = target;
@@ -184,7 +184,7 @@
 	            return;
 	        this.listeners[type] = this.listeners[type].filter((listenerObj) => {
 	            if (listenerObj.shouldRemove) {
-	                _console$u.log(`removing "${type}" eventListener`, listenerObj);
+	                _console$v.log(`removing "${type}" eventListener`, listenerObj);
 	            }
 	            return !listenerObj.shouldRemove;
 	        });
@@ -195,11 +195,11 @@
 	        }
 	        if (!this.listeners[type]) {
 	            this.listeners[type] = [];
-	            _console$u.log(`creating "${type}" listeners array`, this.listeners[type]);
+	            _console$v.log(`creating "${type}" listeners array`, this.listeners[type]);
 	        }
-	        _console$u.log(`adding "${type}" listener`, listener, options);
+	        _console$v.log(`adding "${type}" listener`, listener, options);
 	        this.listeners[type].push({ listener, once: options.once });
-	        _console$u.log(`currently have ${this.listeners[type].length} "${type}" listeners`);
+	        _console$v.log(`currently have ${this.listeners[type].length} "${type}" listeners`);
 	    }
 	    removeEventListener(type, listener) {
 	        if (!this.isValidEventType(type)) {
@@ -207,11 +207,11 @@
 	        }
 	        if (!this.listeners[type])
 	            return;
-	        _console$u.log(`removing "${type}" listener...`, listener);
+	        _console$v.log(`removing "${type}" listener...`, listener);
 	        this.listeners[type].forEach((listenerObj) => {
 	            const isListenerToRemove = listenerObj.listener === listener;
 	            if (isListenerToRemove) {
-	                _console$u.log(`flagging "${type}" listener`, listener);
+	                _console$v.log(`flagging "${type}" listener`, listener);
 	                listenerObj.shouldRemove = true;
 	            }
 	        });
@@ -227,10 +227,10 @@
 	            if (listenerObj.shouldRemove) {
 	                return;
 	            }
-	            _console$u.log(`dispatching "${type}" listener`, listenerObj);
+	            _console$v.log(`dispatching "${type}" listener`, listenerObj);
 	            listenerObj.listener({ type, target: this.target, message });
 	            if (listenerObj.once) {
-	                _console$u.log(`flagging "${type}" listener`, listenerObj);
+	                _console$v.log(`flagging "${type}" listener`, listenerObj);
 	                listenerObj.shouldRemove = true;
 	            }
 	        });
@@ -247,14 +247,14 @@
 	}
 
 	var _Timer_callback, _Timer_interval, _Timer_intervalId;
-	const _console$t = createConsole("Timer", { log: false });
+	const _console$u = createConsole("Timer", { log: false });
 	class Timer {
 	    get callback() {
 	        return __classPrivateFieldGet(this, _Timer_callback, "f");
 	    }
 	    set callback(newCallback) {
-	        _console$t.assertTypeWithError(newCallback, "function");
-	        _console$t.log({ newCallback });
+	        _console$u.assertTypeWithError(newCallback, "function");
+	        _console$u.log({ newCallback });
 	        __classPrivateFieldSet(this, _Timer_callback, newCallback, "f");
 	        if (this.isRunning) {
 	            this.restart();
@@ -264,9 +264,9 @@
 	        return __classPrivateFieldGet(this, _Timer_interval, "f");
 	    }
 	    set interval(newInterval) {
-	        _console$t.assertTypeWithError(newInterval, "number");
-	        _console$t.assertWithError(newInterval > 0, "interval must be above 0");
-	        _console$t.log({ newInterval });
+	        _console$u.assertTypeWithError(newInterval, "number");
+	        _console$u.assertWithError(newInterval > 0, "interval must be above 0");
+	        _console$u.log({ newInterval });
 	        __classPrivateFieldSet(this, _Timer_interval, newInterval, "f");
 	        if (this.isRunning) {
 	            this.restart();
@@ -284,18 +284,18 @@
 	    }
 	    start() {
 	        if (this.isRunning) {
-	            _console$t.log("interval already running");
+	            _console$u.log("interval already running");
 	            return;
 	        }
-	        _console$t.log("starting interval");
+	        _console$u.log("starting interval");
 	        __classPrivateFieldSet(this, _Timer_intervalId, setInterval(__classPrivateFieldGet(this, _Timer_callback, "f"), __classPrivateFieldGet(this, _Timer_interval, "f")), "f");
 	    }
 	    stop() {
 	        if (!this.isRunning) {
-	            _console$t.log("interval already not running");
+	            _console$u.log("interval already not running");
 	            return;
 	        }
-	        _console$t.log("stopping interval");
+	        _console$u.log("stopping interval");
 	        clearInterval(__classPrivateFieldGet(this, _Timer_intervalId, "f"));
 	        __classPrivateFieldSet(this, _Timer_intervalId, undefined, "f");
 	    }
@@ -361,7 +361,7 @@
 	const textEncoder = new _TextEncoder();
 	const textDecoder = new _TextDecoder();
 
-	const _console$s = createConsole("ArrayBufferUtils", { log: false });
+	const _console$t = createConsole("ArrayBufferUtils", { log: false });
 	function concatenateArrayBuffers(...arrayBuffers) {
 	    arrayBuffers = arrayBuffers.filter((arrayBuffer) => arrayBuffer != undefined || arrayBuffer != null);
 	    arrayBuffers = arrayBuffers.map((arrayBuffer) => {
@@ -422,7 +422,7 @@
 	    if (length != undefined) {
 	        end = dataView.byteOffset + begin + length;
 	    }
-	    _console$s.log({ dataView, begin, end, length });
+	    _console$t.log({ dataView, begin, end, length });
 	    return new DataView(dataView.buffer.slice(dataView.byteOffset + begin, end));
 	}
 	async function getFileBuffer(file) {
@@ -482,7 +482,7 @@
 	}
 
 	var _FileTransferManager_instances, _a$4, _FileTransferManager_dispatchEvent_get, _FileTransferManager_assertValidType, _FileTransferManager_assertValidTypeEnum, _FileTransferManager_assertValidStatusEnum, _FileTransferManager_assertValidCommand, _FileTransferManager_MaxLength, _FileTransferManager_maxLength, _FileTransferManager_parseMaxLength, _FileTransferManager_updateMaxLength, _FileTransferManager_assertValidLength, _FileTransferManager_type, _FileTransferManager_parseType, _FileTransferManager_updateType, _FileTransferManager_setType, _FileTransferManager_length, _FileTransferManager_parseLength, _FileTransferManager_updateLength, _FileTransferManager_setLength, _FileTransferManager_checksum, _FileTransferManager_parseChecksum, _FileTransferManager_updateChecksum, _FileTransferManager_setChecksum, _FileTransferManager_setCommand, _FileTransferManager_status, _FileTransferManager_parseStatus, _FileTransferManager_updateStatus, _FileTransferManager_assertIsIdle, _FileTransferManager_assertIsNotIdle, _FileTransferManager_receivedBlocks, _FileTransferManager_parseBlock, _FileTransferManager_buffer, _FileTransferManager_bytesTransferred, _FileTransferManager_send, _FileTransferManager_sendBlock, _FileTransferManager_parseBytesTransferred;
-	const _console$r = createConsole("FileTransferManager", { log: true });
+	const _console$s = createConsole("FileTransferManager", { log: true });
 	const FileTransferMessageTypes = [
 	    "maxFileLength",
 	    "getFileType",
@@ -548,7 +548,7 @@
 	        return __classPrivateFieldGet(this, _FileTransferManager_status, "f");
 	    }
 	    parseMessage(messageType, dataView) {
-	        _console$r.log({ messageType });
+	        _console$s.log({ messageType });
 	        switch (messageType) {
 	            case "maxFileLength":
 	                __classPrivateFieldGet(this, _FileTransferManager_instances, "m", _FileTransferManager_parseMaxLength).call(this, dataView);
@@ -607,38 +607,38 @@
 	_a$4 = FileTransferManager, _FileTransferManager_maxLength = new WeakMap(), _FileTransferManager_type = new WeakMap(), _FileTransferManager_length = new WeakMap(), _FileTransferManager_checksum = new WeakMap(), _FileTransferManager_status = new WeakMap(), _FileTransferManager_receivedBlocks = new WeakMap(), _FileTransferManager_buffer = new WeakMap(), _FileTransferManager_bytesTransferred = new WeakMap(), _FileTransferManager_instances = new WeakSet(), _FileTransferManager_dispatchEvent_get = function _FileTransferManager_dispatchEvent_get() {
 	    return this.eventDispatcher.dispatchEvent;
 	}, _FileTransferManager_assertValidType = function _FileTransferManager_assertValidType(type) {
-	    _console$r.assertEnumWithError(type, FileTypes);
+	    _console$s.assertEnumWithError(type, FileTypes);
 	}, _FileTransferManager_assertValidTypeEnum = function _FileTransferManager_assertValidTypeEnum(typeEnum) {
-	    _console$r.assertWithError(typeEnum in FileTypes, `invalid typeEnum ${typeEnum}`);
+	    _console$s.assertWithError(typeEnum in FileTypes, `invalid typeEnum ${typeEnum}`);
 	}, _FileTransferManager_assertValidStatusEnum = function _FileTransferManager_assertValidStatusEnum(statusEnum) {
-	    _console$r.assertWithError(statusEnum in FileTransferStatuses, `invalid statusEnum ${statusEnum}`);
+	    _console$s.assertWithError(statusEnum in FileTransferStatuses, `invalid statusEnum ${statusEnum}`);
 	}, _FileTransferManager_assertValidCommand = function _FileTransferManager_assertValidCommand(command) {
-	    _console$r.assertEnumWithError(command, FileTransferCommands);
+	    _console$s.assertEnumWithError(command, FileTransferCommands);
 	}, _FileTransferManager_parseMaxLength = function _FileTransferManager_parseMaxLength(dataView) {
-	    _console$r.log("parseFileMaxLength", dataView);
+	    _console$s.log("parseFileMaxLength", dataView);
 	    const maxLength = dataView.getUint32(0, true);
-	    _console$r.log(`maxLength: ${maxLength / 1024}kB`);
+	    _console$s.log(`maxLength: ${maxLength / 1024}kB`);
 	    __classPrivateFieldGet(this, _FileTransferManager_instances, "m", _FileTransferManager_updateMaxLength).call(this, maxLength);
 	}, _FileTransferManager_updateMaxLength = function _FileTransferManager_updateMaxLength(maxLength) {
-	    _console$r.log({ maxLength });
+	    _console$s.log({ maxLength });
 	    __classPrivateFieldSet(this, _FileTransferManager_maxLength, maxLength, "f");
 	    __classPrivateFieldGet(this, _FileTransferManager_instances, "a", _FileTransferManager_dispatchEvent_get).call(this, "maxFileLength", { maxFileLength: maxLength });
 	}, _FileTransferManager_assertValidLength = function _FileTransferManager_assertValidLength(length) {
-	    _console$r.assertWithError(length <= this.maxLength, `file length ${length}kB too large - must be ${this.maxLength}kB or less`);
+	    _console$s.assertWithError(length <= this.maxLength, `file length ${length}kB too large - must be ${this.maxLength}kB or less`);
 	}, _FileTransferManager_parseType = function _FileTransferManager_parseType(dataView) {
-	    _console$r.log("parseFileType", dataView);
+	    _console$s.log("parseFileType", dataView);
 	    const typeEnum = dataView.getUint8(0);
 	    __classPrivateFieldGet(this, _FileTransferManager_instances, "m", _FileTransferManager_assertValidTypeEnum).call(this, typeEnum);
 	    const type = FileTypes[typeEnum];
 	    __classPrivateFieldGet(this, _FileTransferManager_instances, "m", _FileTransferManager_updateType).call(this, type);
 	}, _FileTransferManager_updateType = function _FileTransferManager_updateType(type) {
-	    _console$r.log({ fileTransferType: type });
+	    _console$s.log({ fileTransferType: type });
 	    __classPrivateFieldSet(this, _FileTransferManager_type, type, "f");
 	    __classPrivateFieldGet(this, _FileTransferManager_instances, "a", _FileTransferManager_dispatchEvent_get).call(this, "getFileType", { fileType: type });
 	}, _FileTransferManager_setType = async function _FileTransferManager_setType(newType, sendImmediately) {
 	    __classPrivateFieldGet(this, _FileTransferManager_instances, "m", _FileTransferManager_assertValidType).call(this, newType);
 	    if (this.type == newType) {
-	        _console$r.log(`redundant type assignment ${newType}`);
+	        _console$s.log(`redundant type assignment ${newType}`);
 	        return;
 	    }
 	    const promise = this.waitForEvent("getFileType");
@@ -646,18 +646,18 @@
 	    this.sendMessage([{ type: "setFileType", data: Uint8Array.from([typeEnum]).buffer }], sendImmediately);
 	    await promise;
 	}, _FileTransferManager_parseLength = function _FileTransferManager_parseLength(dataView) {
-	    _console$r.log("parseFileLength", dataView);
+	    _console$s.log("parseFileLength", dataView);
 	    const length = dataView.getUint32(0, true);
 	    __classPrivateFieldGet(this, _FileTransferManager_instances, "m", _FileTransferManager_updateLength).call(this, length);
 	}, _FileTransferManager_updateLength = function _FileTransferManager_updateLength(length) {
-	    _console$r.log(`length: ${length / 1024}kB`);
+	    _console$s.log(`length: ${length / 1024}kB`);
 	    __classPrivateFieldSet(this, _FileTransferManager_length, length, "f");
 	    __classPrivateFieldGet(this, _FileTransferManager_instances, "a", _FileTransferManager_dispatchEvent_get).call(this, "getFileLength", { fileLength: length });
 	}, _FileTransferManager_setLength = async function _FileTransferManager_setLength(newLength, sendImmediately) {
-	    _console$r.assertTypeWithError(newLength, "number");
+	    _console$s.assertTypeWithError(newLength, "number");
 	    __classPrivateFieldGet(this, _FileTransferManager_instances, "m", _FileTransferManager_assertValidLength).call(this, newLength);
 	    if (this.length == newLength) {
-	        _console$r.log(`redundant length assignment ${newLength}`);
+	        _console$s.log(`redundant length assignment ${newLength}`);
 	        return;
 	    }
 	    const promise = this.waitForEvent("getFileLength");
@@ -666,17 +666,17 @@
 	    this.sendMessage([{ type: "setFileLength", data: dataView.buffer }], sendImmediately);
 	    await promise;
 	}, _FileTransferManager_parseChecksum = function _FileTransferManager_parseChecksum(dataView) {
-	    _console$r.log("checksum", dataView);
+	    _console$s.log("checksum", dataView);
 	    const checksum = dataView.getUint32(0, true);
 	    __classPrivateFieldGet(this, _FileTransferManager_instances, "m", _FileTransferManager_updateChecksum).call(this, checksum);
 	}, _FileTransferManager_updateChecksum = function _FileTransferManager_updateChecksum(checksum) {
-	    _console$r.log({ checksum });
+	    _console$s.log({ checksum });
 	    __classPrivateFieldSet(this, _FileTransferManager_checksum, checksum, "f");
 	    __classPrivateFieldGet(this, _FileTransferManager_instances, "a", _FileTransferManager_dispatchEvent_get).call(this, "getFileChecksum", { fileChecksum: checksum });
 	}, _FileTransferManager_setChecksum = async function _FileTransferManager_setChecksum(newChecksum, sendImmediately) {
-	    _console$r.assertTypeWithError(newChecksum, "number");
+	    _console$s.assertTypeWithError(newChecksum, "number");
 	    if (this.checksum == newChecksum) {
-	        _console$r.log(`redundant checksum assignment ${newChecksum}`);
+	        _console$s.log(`redundant checksum assignment ${newChecksum}`);
 	        return;
 	    }
 	    const promise = this.waitForEvent("getFileChecksum");
@@ -691,26 +691,26 @@
 	    this.sendMessage([{ type: "setFileTransferCommand", data: Uint8Array.from([commandEnum]).buffer }], sendImmediately);
 	    await promise;
 	}, _FileTransferManager_parseStatus = function _FileTransferManager_parseStatus(dataView) {
-	    _console$r.log("parseFileStatus", dataView);
+	    _console$s.log("parseFileStatus", dataView);
 	    const statusEnum = dataView.getUint8(0);
 	    __classPrivateFieldGet(this, _FileTransferManager_instances, "m", _FileTransferManager_assertValidStatusEnum).call(this, statusEnum);
 	    const status = FileTransferStatuses[statusEnum];
 	    __classPrivateFieldGet(this, _FileTransferManager_instances, "m", _FileTransferManager_updateStatus).call(this, status);
 	}, _FileTransferManager_updateStatus = function _FileTransferManager_updateStatus(status) {
-	    _console$r.log({ status });
+	    _console$s.log({ status });
 	    __classPrivateFieldSet(this, _FileTransferManager_status, status, "f");
 	    __classPrivateFieldGet(this, _FileTransferManager_instances, "a", _FileTransferManager_dispatchEvent_get).call(this, "fileTransferStatus", { fileTransferStatus: status });
 	    __classPrivateFieldGet(this, _FileTransferManager_receivedBlocks, "f").length = 0;
 	}, _FileTransferManager_assertIsIdle = function _FileTransferManager_assertIsIdle() {
-	    _console$r.assertWithError(__classPrivateFieldGet(this, _FileTransferManager_status, "f") == "idle", "status is not idle");
+	    _console$s.assertWithError(__classPrivateFieldGet(this, _FileTransferManager_status, "f") == "idle", "status is not idle");
 	}, _FileTransferManager_assertIsNotIdle = function _FileTransferManager_assertIsNotIdle() {
-	    _console$r.assertWithError(__classPrivateFieldGet(this, _FileTransferManager_status, "f") != "idle", "status is idle");
+	    _console$s.assertWithError(__classPrivateFieldGet(this, _FileTransferManager_status, "f") != "idle", "status is idle");
 	}, _FileTransferManager_parseBlock = async function _FileTransferManager_parseBlock(dataView) {
-	    _console$r.log("parseFileBlock", dataView);
+	    _console$s.log("parseFileBlock", dataView);
 	    __classPrivateFieldGet(this, _FileTransferManager_receivedBlocks, "f").push(dataView.buffer);
 	    const bytesReceived = __classPrivateFieldGet(this, _FileTransferManager_receivedBlocks, "f").reduce((sum, arrayBuffer) => (sum += arrayBuffer.byteLength), 0);
 	    const progress = bytesReceived / __classPrivateFieldGet(this, _FileTransferManager_length, "f");
-	    _console$r.log(`received ${bytesReceived} of ${__classPrivateFieldGet(this, _FileTransferManager_length, "f")} bytes (${progress * 100}%)`);
+	    _console$s.log(`received ${bytesReceived} of ${__classPrivateFieldGet(this, _FileTransferManager_length, "f")} bytes (${progress * 100}%)`);
 	    __classPrivateFieldGet(this, _FileTransferManager_instances, "a", _FileTransferManager_dispatchEvent_get).call(this, "fileTransferProgress", { progress });
 	    if (bytesReceived != __classPrivateFieldGet(this, _FileTransferManager_length, "f")) {
 	        const dataView = new DataView(new ArrayBuffer(4));
@@ -718,7 +718,7 @@
 	        await this.sendMessage([{ type: "fileBytesTransferred", data: dataView.buffer }]);
 	        return;
 	    }
-	    _console$r.log("file transfer complete");
+	    _console$s.log("file transfer complete");
 	    let fileName = new Date().toLocaleString();
 	    switch (this.type) {
 	        case "tflite":
@@ -734,12 +734,12 @@
 	    }
 	    const arrayBuffer = await file.arrayBuffer();
 	    const checksum = crc32(arrayBuffer);
-	    _console$r.log({ checksum });
+	    _console$s.log({ checksum });
 	    if (checksum != __classPrivateFieldGet(this, _FileTransferManager_checksum, "f")) {
-	        _console$r.error(`wrong checksum - expected ${__classPrivateFieldGet(this, _FileTransferManager_checksum, "f")}, got ${checksum}`);
+	        _console$s.error(`wrong checksum - expected ${__classPrivateFieldGet(this, _FileTransferManager_checksum, "f")}, got ${checksum}`);
 	        return;
 	    }
-	    _console$r.log("received file", file);
+	    _console$s.log("received file", file);
 	    __classPrivateFieldGet(this, _FileTransferManager_instances, "a", _FileTransferManager_dispatchEvent_get).call(this, "getFileBlock", { fileTransferBlock: dataView });
 	    __classPrivateFieldGet(this, _FileTransferManager_instances, "a", _FileTransferManager_dispatchEvent_get).call(this, "fileTransferComplete", { direction: "receiving" });
 	    __classPrivateFieldGet(this, _FileTransferManager_instances, "a", _FileTransferManager_dispatchEvent_get).call(this, "fileReceived", { file });
@@ -752,19 +752,19 @@
 	        return;
 	    }
 	    if (!__classPrivateFieldGet(this, _FileTransferManager_buffer, "f")) {
-	        _console$r.error("no buffer defined");
+	        _console$s.error("no buffer defined");
 	        return;
 	    }
 	    const buffer = __classPrivateFieldGet(this, _FileTransferManager_buffer, "f");
 	    let offset = __classPrivateFieldGet(this, _FileTransferManager_bytesTransferred, "f");
 	    const slicedBuffer = buffer.slice(offset, offset + (this.mtu - 3 - 3));
-	    _console$r.log("slicedBuffer", slicedBuffer);
+	    _console$s.log("slicedBuffer", slicedBuffer);
 	    const bytesLeft = buffer.byteLength - offset;
 	    const progress = 1 - bytesLeft / buffer.byteLength;
-	    _console$r.log(`sending bytes ${offset}-${offset + slicedBuffer.byteLength} of ${buffer.byteLength} bytes (${progress * 100}%)`);
+	    _console$s.log(`sending bytes ${offset}-${offset + slicedBuffer.byteLength} of ${buffer.byteLength} bytes (${progress * 100}%)`);
 	    __classPrivateFieldGet(this, _FileTransferManager_instances, "a", _FileTransferManager_dispatchEvent_get).call(this, "fileTransferProgress", { progress });
 	    if (slicedBuffer.byteLength == 0) {
-	        _console$r.log("finished sending buffer");
+	        _console$s.log("finished sending buffer");
 	        __classPrivateFieldGet(this, _FileTransferManager_instances, "a", _FileTransferManager_dispatchEvent_get).call(this, "fileTransferComplete", { direction: "sending" });
 	    }
 	    else {
@@ -772,15 +772,15 @@
 	        __classPrivateFieldSet(this, _FileTransferManager_bytesTransferred, offset + slicedBuffer.byteLength, "f");
 	    }
 	}, _FileTransferManager_parseBytesTransferred = async function _FileTransferManager_parseBytesTransferred(dataView) {
-	    _console$r.log("parseBytesTransferred", dataView);
+	    _console$s.log("parseBytesTransferred", dataView);
 	    const bytesTransferred = dataView.getUint32(0, true);
-	    _console$r.log({ bytesTransferred });
+	    _console$s.log({ bytesTransferred });
 	    if (this.status != "sending") {
-	        _console$r.error(`not currently sending file`);
+	        _console$s.error(`not currently sending file`);
 	        return;
 	    }
 	    if (__classPrivateFieldGet(this, _FileTransferManager_bytesTransferred, "f") != bytesTransferred) {
-	        _console$r.error(`bytesTransferred are not equal - got ${bytesTransferred}, expected ${__classPrivateFieldGet(this, _FileTransferManager_bytesTransferred, "f")}`);
+	        _console$s.error(`bytesTransferred are not equal - got ${bytesTransferred}, expected ${__classPrivateFieldGet(this, _FileTransferManager_bytesTransferred, "f")}`);
 	        this.cancel();
 	        return;
 	    }
@@ -788,7 +788,7 @@
 	};
 	_FileTransferManager_MaxLength = { value: 0 };
 
-	const _console$q = createConsole("MathUtils", { log: true });
+	const _console$r = createConsole("MathUtils", { log: true });
 	function getInterpolation(value, min, max, span) {
 	    if (span == undefined) {
 	        span = max - min;
@@ -807,7 +807,7 @@
 	    const lower2Bytes = dataView.getUint16(byteOffset, true);
 	    let timestamp = nowWithoutLower2Bytes + lower2Bytes;
 	    if (Math.abs(now - timestamp) > timestampThreshold) {
-	        _console$q.log("correcting timestamp delta");
+	        _console$r.log("correcting timestamp delta");
 	        timestamp += Uint16Max * Math.sign(now - timestamp);
 	    }
 	    return timestamp;
@@ -887,7 +887,7 @@
 	}
 
 	var _PressureSensorDataManager_positions, _PressureSensorDataManager_sensorRangeHelpers, _PressureSensorDataManager_centerOfPressureHelper;
-	const _console$p = createConsole("PressureDataManager", { log: true });
+	const _console$q = createConsole("PressureDataManager", { log: true });
 	const PressureSensorTypes = ["pressure"];
 	const ContinuousPressureSensorTypes = PressureSensorTypes;
 	const DefaultNumberOfPressureSensors = 8;
@@ -911,7 +911,7 @@
 	                y: dataView.getUint8(byteOffset + 1) / 2 ** 8,
 	            });
 	        }
-	        _console$p.log({ positions });
+	        _console$q.log({ positions });
 	        __classPrivateFieldSet(this, _PressureSensorDataManager_positions, positions, "f");
 	        __classPrivateFieldSet(this, _PressureSensorDataManager_sensorRangeHelpers, createArray(this.numberOfSensors, () => new RangeHelper()), "f");
 	        this.resetRange();
@@ -941,13 +941,13 @@
 	            });
 	            pressure.normalizedCenter = __classPrivateFieldGet(this, _PressureSensorDataManager_centerOfPressureHelper, "f").updateAndGetNormalization(pressure.center);
 	        }
-	        _console$p.log({ pressure });
+	        _console$q.log({ pressure });
 	        return pressure;
 	    }
 	}
 	_PressureSensorDataManager_positions = new WeakMap(), _PressureSensorDataManager_sensorRangeHelpers = new WeakMap(), _PressureSensorDataManager_centerOfPressureHelper = new WeakMap();
 
-	const _console$o = createConsole("MotionSensorDataManager", { log: true });
+	const _console$p = createConsole("MotionSensorDataManager", { log: true });
 	const MotionSensorTypes = [
 	    "acceleration",
 	    "gravity",
@@ -983,7 +983,7 @@
 	    parseVector3(dataView, scalar) {
 	        let [x, y, z] = [dataView.getInt16(0, true), dataView.getInt16(2, true), dataView.getInt16(4, true)].map((value) => value * scalar);
 	        const vector = { x, y, z };
-	        _console$o.log({ vector });
+	        _console$p.log({ vector });
 	        return vector;
 	    }
 	    parseQuaternion(dataView, scalar) {
@@ -994,7 +994,7 @@
 	            dataView.getInt16(6, true),
 	        ].map((value) => value * scalar);
 	        const quaternion = { x, y, z, w };
-	        _console$o.log({ quaternion });
+	        _console$p.log({ quaternion });
 	        return quaternion;
 	    }
 	    parseEuler(dataView, scalar) {
@@ -1006,32 +1006,32 @@
 	        pitch *= -1;
 	        heading *= -1;
 	        const euler = { heading, pitch, roll };
-	        _console$o.log({ euler });
+	        _console$p.log({ euler });
 	        return euler;
 	    }
 	    parseStepCounter(dataView) {
-	        _console$o.log("parseStepCounter", dataView);
+	        _console$p.log("parseStepCounter", dataView);
 	        const stepCount = dataView.getUint32(0, true);
-	        _console$o.log({ stepCount });
+	        _console$p.log({ stepCount });
 	        return stepCount;
 	    }
 	    parseActivity(dataView) {
-	        _console$o.log("parseActivity", dataView);
+	        _console$p.log("parseActivity", dataView);
 	        const activity = {};
 	        const activityBitfield = dataView.getUint8(0);
-	        _console$o.log("activityBitfield", activityBitfield.toString(2));
+	        _console$p.log("activityBitfield", activityBitfield.toString(2));
 	        ActivityTypes.forEach((activityType, index) => {
 	            activity[activityType] = Boolean(activityBitfield & (1 << index));
 	        });
-	        _console$o.log("activity", activity);
+	        _console$p.log("activity", activity);
 	        return activity;
 	    }
 	    parseDeviceOrientation(dataView) {
-	        _console$o.log("parseDeviceOrientation", dataView);
+	        _console$p.log("parseDeviceOrientation", dataView);
 	        const index = dataView.getUint8(0);
 	        const deviceOrientation = DeviceOrientations[index];
-	        _console$o.assertWithError(deviceOrientation, "undefined deviceOrientation");
-	        _console$o.log({ deviceOrientation });
+	        _console$p.assertWithError(deviceOrientation, "undefined deviceOrientation");
+	        _console$p.log({ deviceOrientation });
 	        return deviceOrientation;
 	    }
 	}
@@ -1039,7 +1039,7 @@
 	var _BarometerSensorDataManager_instances, _BarometerSensorDataManager_calculcateAltitude;
 	const BarometerSensorTypes = ["barometer"];
 	const ContinuousBarometerSensorTypes = BarometerSensorTypes;
-	const _console$n = createConsole("BarometerSensorDataManager", { log: true });
+	const _console$o = createConsole("BarometerSensorDataManager", { log: true });
 	class BarometerSensorDataManager {
 	    constructor() {
 	        _BarometerSensorDataManager_instances.add(this);
@@ -1047,7 +1047,7 @@
 	    parseData(dataView, scalar) {
 	        const pressure = dataView.getUint32(0, true) * scalar;
 	        const altitude = __classPrivateFieldGet(this, _BarometerSensorDataManager_instances, "m", _BarometerSensorDataManager_calculcateAltitude).call(this, pressure);
-	        _console$n.log({ pressure, altitude });
+	        _console$o.log({ pressure, altitude });
 	        return { pressure };
 	    }
 	}
@@ -1063,7 +1063,7 @@
 	    return h;
 	};
 
-	const _console$m = createConsole("ParseUtils", { log: true });
+	const _console$n = createConsole("ParseUtils", { log: true });
 	function parseStringFromDataView(dataView, byteOffset = 0) {
 	    const stringLength = dataView.getUint8(byteOffset++);
 	    const string = textDecoder.decode(dataView.buffer.slice(dataView.byteOffset + byteOffset, dataView.byteOffset + byteOffset + stringLength));
@@ -1074,7 +1074,7 @@
 	    let byteOffset = 0;
 	    while (byteOffset < dataView.byteLength) {
 	        const messageTypeEnum = dataView.getUint8(byteOffset++);
-	        _console$m.assertWithError(messageTypeEnum in messageTypes, `invalid messageTypeEnum ${messageTypeEnum}`);
+	        _console$n.assertWithError(messageTypeEnum in messageTypes, `invalid messageTypeEnum ${messageTypeEnum}`);
 	        const messageType = messageTypes[messageTypeEnum];
 	        let messageLength;
 	        if (parseMessageLengthAsUint16) {
@@ -1084,16 +1084,16 @@
 	        else {
 	            messageLength = dataView.getUint8(byteOffset++);
 	        }
-	        _console$m.log({ messageTypeEnum, messageType, messageLength, dataView, byteOffset });
+	        _console$n.log({ messageTypeEnum, messageType, messageLength, dataView, byteOffset });
 	        const _dataView = sliceDataView(dataView, byteOffset, messageLength);
-	        _console$m.log({ _dataView });
+	        _console$n.log({ _dataView });
 	        callback(messageType, _dataView, context);
 	        byteOffset += messageLength;
 	    }
 	}
 
 	var _SensorDataManager_scalars;
-	const _console$l = createConsole("SensorDataManager", { log: true });
+	const _console$m = createConsole("SensorDataManager", { log: true });
 	const SensorTypes = [...PressureSensorTypes, ...MotionSensorTypes, ...BarometerSensorTypes];
 	const ContinuousSensorTypes = [
 	    ...ContinuousPressureSensorTypes,
@@ -1110,17 +1110,17 @@
 	        _SensorDataManager_scalars.set(this, new Map());
 	    }
 	    static AssertValidSensorType(sensorType) {
-	        _console$l.assertEnumWithError(sensorType, SensorTypes);
+	        _console$m.assertEnumWithError(sensorType, SensorTypes);
 	    }
 	    static AssertValidSensorTypeEnum(sensorTypeEnum) {
-	        _console$l.assertTypeWithError(sensorTypeEnum, "number");
-	        _console$l.assertWithError(sensorTypeEnum in SensorTypes, `invalid sensorTypeEnum ${sensorTypeEnum}`);
+	        _console$m.assertTypeWithError(sensorTypeEnum, "number");
+	        _console$m.assertWithError(sensorTypeEnum in SensorTypes, `invalid sensorTypeEnum ${sensorTypeEnum}`);
 	    }
 	    get dispatchEvent() {
 	        return this.eventDispatcher.dispatchEvent;
 	    }
 	    parseMessage(messageType, dataView) {
-	        _console$l.log({ messageType });
+	        _console$m.log({ messageType });
 	        switch (messageType) {
 	            case "getSensorScalars":
 	                this.parseScalars(dataView);
@@ -1140,16 +1140,16 @@
 	            const sensorTypeIndex = dataView.getUint8(byteOffset);
 	            const sensorType = SensorTypes[sensorTypeIndex];
 	            if (!sensorType) {
-	                _console$l.warn(`unknown sensorType index ${sensorTypeIndex}`);
+	                _console$m.warn(`unknown sensorType index ${sensorTypeIndex}`);
 	                continue;
 	            }
 	            const sensorScalar = dataView.getFloat32(byteOffset + 1, true);
-	            _console$l.log({ sensorType, sensorScalar });
+	            _console$m.log({ sensorType, sensorScalar });
 	            __classPrivateFieldGet(this, _SensorDataManager_scalars, "f").set(sensorType, sensorScalar);
 	        }
 	    }
 	    parseData(dataView) {
-	        _console$l.log("sensorData", Array.from(new Uint8Array(dataView.buffer)));
+	        _console$m.log("sensorData", Array.from(new Uint8Array(dataView.buffer)));
 	        let byteOffset = 0;
 	        const timestamp = parseTimestamp(dataView, byteOffset);
 	        byteOffset += 2;
@@ -1193,10 +1193,10 @@
 	                sensorData = this.barometerSensorDataManager.parseData(dataView, scalar);
 	                break;
 	            default:
-	                _console$l.error(`uncaught sensorType "${sensorType}"`);
+	                _console$m.error(`uncaught sensorType "${sensorType}"`);
 	        }
-	        _console$l.assertWithError(sensorData != null, `no sensorData defined for sensorType "${sensorType}"`);
-	        _console$l.log({ sensorType, sensorData });
+	        _console$m.assertWithError(sensorData != null, `no sensorData defined for sensorType "${sensorType}"`);
+	        _console$m.log({ sensorType, sensorData });
 	        this.dispatchEvent(sensorType, { sensorType, [sensorType]: sensorData, timestamp });
 	        this.dispatchEvent("sensorData", { sensorType, [sensorType]: sensorData, timestamp });
 	    }
@@ -1204,7 +1204,7 @@
 	_SensorDataManager_scalars = new WeakMap();
 
 	var _SensorConfigurationManager_instances, _a$3, _SensorConfigurationManager_dispatchEvent_get, _SensorConfigurationManager_availableSensorTypes, _SensorConfigurationManager_assertAvailableSensorType, _SensorConfigurationManager_configuration, _SensorConfigurationManager_updateConfiguration, _SensorConfigurationManager_isRedundant, _SensorConfigurationManager_parse, _SensorConfigurationManager_AssertValidSensorRate, _SensorConfigurationManager_assertValidSensorRate, _SensorConfigurationManager_createData, _SensorConfigurationManager_ZeroSensorConfiguration;
-	const _console$k = createConsole("SensorConfigurationManager", { log: true });
+	const _console$l = createConsole("SensorConfigurationManager", { log: true });
 	const MaxSensorRate = 2 ** 16 - 1;
 	const SensorRateStep = 5;
 	const SensorConfigurationMessageTypes = ["getSensorConfiguration", "setSensorConfiguration"];
@@ -1229,13 +1229,13 @@
 	        if (clearRest) {
 	            newSensorConfiguration = Object.assign({ ...this.zeroSensorConfiguration }, newSensorConfiguration);
 	        }
-	        _console$k.log({ newSensorConfiguration });
+	        _console$l.log({ newSensorConfiguration });
 	        if (__classPrivateFieldGet(this, _SensorConfigurationManager_instances, "m", _SensorConfigurationManager_isRedundant).call(this, newSensorConfiguration)) {
-	            _console$k.log("redundant sensor configuration");
+	            _console$l.log("redundant sensor configuration");
 	            return;
 	        }
 	        const setSensorConfigurationData = __classPrivateFieldGet(this, _SensorConfigurationManager_instances, "m", _SensorConfigurationManager_createData).call(this, newSensorConfiguration);
-	        _console$k.log({ setSensorConfigurationData });
+	        _console$l.log({ setSensorConfigurationData });
 	        const promise = this.waitForEvent("getSensorConfiguration");
 	        this.sendMessage([{ type: "setSensorConfiguration", data: setSensorConfigurationData.buffer }]);
 	        await promise;
@@ -1254,7 +1254,7 @@
 	        return this.setConfiguration(this.zeroSensorConfiguration);
 	    }
 	    parseMessage(messageType, dataView) {
-	        _console$k.log({ messageType });
+	        _console$l.log({ messageType });
 	        switch (messageType) {
 	            case "getSensorConfiguration":
 	            case "setSensorConfiguration":
@@ -1269,13 +1269,13 @@
 	_a$3 = SensorConfigurationManager, _SensorConfigurationManager_availableSensorTypes = new WeakMap(), _SensorConfigurationManager_configuration = new WeakMap(), _SensorConfigurationManager_instances = new WeakSet(), _SensorConfigurationManager_dispatchEvent_get = function _SensorConfigurationManager_dispatchEvent_get() {
 	    return this.eventDispatcher.dispatchEvent;
 	}, _SensorConfigurationManager_assertAvailableSensorType = function _SensorConfigurationManager_assertAvailableSensorType(sensorType) {
-	    _console$k.assertWithError(__classPrivateFieldGet(this, _SensorConfigurationManager_availableSensorTypes, "f"), "must get initial sensorConfiguration");
+	    _console$l.assertWithError(__classPrivateFieldGet(this, _SensorConfigurationManager_availableSensorTypes, "f"), "must get initial sensorConfiguration");
 	    const isSensorTypeAvailable = __classPrivateFieldGet(this, _SensorConfigurationManager_availableSensorTypes, "f")?.includes(sensorType);
-	    _console$k.assert(isSensorTypeAvailable, `unavailable sensor type "${sensorType}"`);
+	    _console$l.assert(isSensorTypeAvailable, `unavailable sensor type "${sensorType}"`);
 	    return isSensorTypeAvailable;
 	}, _SensorConfigurationManager_updateConfiguration = function _SensorConfigurationManager_updateConfiguration(updatedConfiguration) {
 	    __classPrivateFieldSet(this, _SensorConfigurationManager_configuration, updatedConfiguration, "f");
-	    _console$k.log({ updatedConfiguration: __classPrivateFieldGet(this, _SensorConfigurationManager_configuration, "f") });
+	    _console$l.log({ updatedConfiguration: __classPrivateFieldGet(this, _SensorConfigurationManager_configuration, "f") });
 	    __classPrivateFieldGet(this, _SensorConfigurationManager_instances, "a", _SensorConfigurationManager_dispatchEvent_get).call(this, "getSensorConfiguration", { sensorConfiguration: this.configuration });
 	}, _SensorConfigurationManager_isRedundant = function _SensorConfigurationManager_isRedundant(sensorConfiguration) {
 	    let sensorTypes = Object.keys(sensorConfiguration);
@@ -1288,21 +1288,21 @@
 	        const sensorTypeIndex = dataView.getUint8(byteOffset);
 	        const sensorType = SensorTypes[sensorTypeIndex];
 	        if (!sensorType) {
-	            _console$k.warn(`unknown sensorType index ${sensorTypeIndex}`);
+	            _console$l.warn(`unknown sensorType index ${sensorTypeIndex}`);
 	            continue;
 	        }
 	        const sensorRate = dataView.getUint16(byteOffset + 1, true);
-	        _console$k.log({ sensorType, sensorRate });
+	        _console$l.log({ sensorType, sensorRate });
 	        parsedSensorConfiguration[sensorType] = sensorRate;
 	    }
-	    _console$k.log({ parsedSensorConfiguration });
+	    _console$l.log({ parsedSensorConfiguration });
 	    __classPrivateFieldSet(this, _SensorConfigurationManager_availableSensorTypes, Object.keys(parsedSensorConfiguration), "f");
 	    return parsedSensorConfiguration;
 	}, _SensorConfigurationManager_AssertValidSensorRate = function _SensorConfigurationManager_AssertValidSensorRate(sensorRate) {
-	    _console$k.assertTypeWithError(sensorRate, "number");
-	    _console$k.assertWithError(sensorRate >= 0, `sensorRate must be 0 or greater (got ${sensorRate})`);
-	    _console$k.assertWithError(sensorRate < MaxSensorRate, `sensorRate must be 0 or greater (got ${sensorRate})`);
-	    _console$k.assertWithError(sensorRate % SensorRateStep == 0, `sensorRate must be multiple of ${SensorRateStep}`);
+	    _console$l.assertTypeWithError(sensorRate, "number");
+	    _console$l.assertWithError(sensorRate >= 0, `sensorRate must be 0 or greater (got ${sensorRate})`);
+	    _console$l.assertWithError(sensorRate < MaxSensorRate, `sensorRate must be 0 or greater (got ${sensorRate})`);
+	    _console$l.assertWithError(sensorRate % SensorRateStep == 0, `sensorRate must be multiple of ${SensorRateStep}`);
 	}, _SensorConfigurationManager_assertValidSensorRate = function _SensorConfigurationManager_assertValidSensorRate(sensorRate) {
 	    __classPrivateFieldGet(_a$3, _a$3, "m", _SensorConfigurationManager_AssertValidSensorRate).call(_a$3, sensorRate);
 	}, _SensorConfigurationManager_createData = function _SensorConfigurationManager_createData(sensorConfiguration) {
@@ -1317,7 +1317,7 @@
 	        __classPrivateFieldGet(this, _SensorConfigurationManager_instances, "m", _SensorConfigurationManager_assertValidSensorRate).call(this, sensorRate);
 	        dataView.setUint16(index * 3 + 1, sensorRate, true);
 	    });
-	    _console$k.log({ sensorConfigurationData: dataView });
+	    _console$l.log({ sensorConfigurationData: dataView });
 	    return dataView;
 	};
 	_SensorConfigurationManager_ZeroSensorConfiguration = { value: {} };
@@ -1328,7 +1328,7 @@
 	})();
 
 	var _TfliteManager_instances, _TfliteManager_assertValidTask, _TfliteManager_assertValidTaskEnum, _TfliteManager_dispatchEvent_get, _TfliteManager_name, _TfliteManager_parseName, _TfliteManager_updateName, _TfliteManager_task, _TfliteManager_parseTask, _TfliteManager_updateTask, _TfliteManager_sampleRate, _TfliteManager_parseSampleRate, _TfliteManager_updateSampleRate, _TfliteManager_sensorTypes, _TfliteManager_parseSensorTypes, _TfliteManager_updateSensorTypes, _TfliteManager_isReady, _TfliteManager_parseIsReady, _TfliteManager_updateIsReady, _TfliteManager_assertIsReady, _TfliteManager_captureDelay, _TfliteManager_parseCaptureDelay, _TfliteManager_updateCaptueDelay, _TfliteManager_threshold, _TfliteManager_parseThreshold, _TfliteManager_updateThreshold, _TfliteManager_inferencingEnabled, _TfliteManager_parseInferencingEnabled, _TfliteManager_updateInferencingEnabled, _TfliteManager_parseInference;
-	const _console$j = createConsole("TfliteManager", { log: true });
+	const _console$k = createConsole("TfliteManager", { log: true });
 	const TfliteMessageTypes = [
 	    "getTfliteName",
 	    "setTfliteName",
@@ -1376,9 +1376,9 @@
 	        return __classPrivateFieldGet(this, _TfliteManager_name, "f");
 	    }
 	    async setName(newName, sendImmediately) {
-	        _console$j.assertTypeWithError(newName, "string");
+	        _console$k.assertTypeWithError(newName, "string");
 	        if (this.name == newName) {
-	            _console$j.log(`redundant name assignment ${newName}`);
+	            _console$k.log(`redundant name assignment ${newName}`);
 	            return;
 	        }
 	        const promise = this.waitForEvent("getTfliteName");
@@ -1392,7 +1392,7 @@
 	    async setTask(newTask, sendImmediately) {
 	        __classPrivateFieldGet(this, _TfliteManager_instances, "m", _TfliteManager_assertValidTask).call(this, newTask);
 	        if (this.task == newTask) {
-	            _console$j.log(`redundant task assignment ${newTask}`);
+	            _console$k.log(`redundant task assignment ${newTask}`);
 	            return;
 	        }
 	        const promise = this.waitForEvent("getTfliteTask");
@@ -1404,11 +1404,11 @@
 	        return __classPrivateFieldGet(this, _TfliteManager_sampleRate, "f");
 	    }
 	    async setSampleRate(newSampleRate, sendImmediately) {
-	        _console$j.assertTypeWithError(newSampleRate, "number");
+	        _console$k.assertTypeWithError(newSampleRate, "number");
 	        newSampleRate -= newSampleRate % SensorRateStep;
-	        _console$j.assertWithError(newSampleRate >= SensorRateStep, `sampleRate must be multiple of ${SensorRateStep} greater than 0 (got ${newSampleRate})`);
+	        _console$k.assertWithError(newSampleRate >= SensorRateStep, `sampleRate must be multiple of ${SensorRateStep} greater than 0 (got ${newSampleRate})`);
 	        if (__classPrivateFieldGet(this, _TfliteManager_sampleRate, "f") == newSampleRate) {
-	            _console$j.log(`redundant sampleRate assignment ${newSampleRate}`);
+	            _console$k.log(`redundant sampleRate assignment ${newSampleRate}`);
 	            return;
 	        }
 	        const promise = this.waitForEvent("getTfliteSampleRate");
@@ -1419,7 +1419,7 @@
 	    }
 	    static AssertValidSensorType(sensorType) {
 	        SensorDataManager.AssertValidSensorType(sensorType);
-	        _console$j.assertWithError(TfliteSensorTypes.includes(sensorType), `invalid tflite sensorType "${sensorType}"`);
+	        _console$k.assertWithError(TfliteSensorTypes.includes(sensorType), `invalid tflite sensorType "${sensorType}"`);
 	    }
 	    get sensorTypes() {
 	        return __classPrivateFieldGet(this, _TfliteManager_sensorTypes, "f").slice();
@@ -1431,7 +1431,7 @@
 	        const promise = this.waitForEvent("getTfliteSensorTypes");
 	        newSensorTypes = arrayWithoutDuplicates(newSensorTypes);
 	        const newSensorTypeEnums = newSensorTypes.map((sensorType) => SensorTypes.indexOf(sensorType)).sort();
-	        _console$j.log(newSensorTypes, newSensorTypeEnums);
+	        _console$k.log(newSensorTypes, newSensorTypeEnums);
 	        this.sendMessage([{ type: "setTfliteSensorTypes", data: Uint8Array.from(newSensorTypeEnums).buffer }], sendImmediately);
 	        await promise;
 	    }
@@ -1442,9 +1442,9 @@
 	        return __classPrivateFieldGet(this, _TfliteManager_captureDelay, "f");
 	    }
 	    async setCaptureDelay(newCaptureDelay, sendImmediately) {
-	        _console$j.assertTypeWithError(newCaptureDelay, "number");
+	        _console$k.assertTypeWithError(newCaptureDelay, "number");
 	        if (__classPrivateFieldGet(this, _TfliteManager_captureDelay, "f") == newCaptureDelay) {
-	            _console$j.log(`redundant captureDelay assignment ${newCaptureDelay}`);
+	            _console$k.log(`redundant captureDelay assignment ${newCaptureDelay}`);
 	            return;
 	        }
 	        const promise = this.waitForEvent("getTfliteCaptureDelay");
@@ -1457,10 +1457,10 @@
 	        return __classPrivateFieldGet(this, _TfliteManager_threshold, "f");
 	    }
 	    async setThreshold(newThreshold, sendImmediately) {
-	        _console$j.assertTypeWithError(newThreshold, "number");
-	        _console$j.assertWithError(newThreshold >= 0, `threshold must be positive (got ${newThreshold})`);
+	        _console$k.assertTypeWithError(newThreshold, "number");
+	        _console$k.assertWithError(newThreshold >= 0, `threshold must be positive (got ${newThreshold})`);
 	        if (__classPrivateFieldGet(this, _TfliteManager_threshold, "f") == newThreshold) {
-	            _console$j.log(`redundant threshold assignment ${newThreshold}`);
+	            _console$k.log(`redundant threshold assignment ${newThreshold}`);
 	            return;
 	        }
 	        const promise = this.waitForEvent("getTfliteThreshold");
@@ -1473,13 +1473,13 @@
 	        return __classPrivateFieldGet(this, _TfliteManager_inferencingEnabled, "f");
 	    }
 	    async setInferencingEnabled(newInferencingEnabled, sendImmediately = true) {
-	        _console$j.assertTypeWithError(newInferencingEnabled, "boolean");
+	        _console$k.assertTypeWithError(newInferencingEnabled, "boolean");
 	        if (!newInferencingEnabled && !this.isReady) {
 	            return;
 	        }
 	        __classPrivateFieldGet(this, _TfliteManager_instances, "m", _TfliteManager_assertIsReady).call(this);
 	        if (__classPrivateFieldGet(this, _TfliteManager_inferencingEnabled, "f") == newInferencingEnabled) {
-	            _console$j.log(`redundant inferencingEnabled assignment ${newInferencingEnabled}`);
+	            _console$k.log(`redundant inferencingEnabled assignment ${newInferencingEnabled}`);
 	            return;
 	        }
 	        const promise = this.waitForEvent("getTfliteInferencingEnabled");
@@ -1507,7 +1507,7 @@
 	        this.setInferencingEnabled(false);
 	    }
 	    parseMessage(messageType, dataView) {
-	        _console$j.log({ messageType });
+	        _console$k.log({ messageType });
 	        switch (messageType) {
 	            case "getTfliteName":
 	            case "setTfliteName":
@@ -1549,39 +1549,39 @@
 	    }
 	}
 	_TfliteManager_name = new WeakMap(), _TfliteManager_task = new WeakMap(), _TfliteManager_sampleRate = new WeakMap(), _TfliteManager_sensorTypes = new WeakMap(), _TfliteManager_isReady = new WeakMap(), _TfliteManager_captureDelay = new WeakMap(), _TfliteManager_threshold = new WeakMap(), _TfliteManager_inferencingEnabled = new WeakMap(), _TfliteManager_instances = new WeakSet(), _TfliteManager_assertValidTask = function _TfliteManager_assertValidTask(task) {
-	    _console$j.assertEnumWithError(task, TfliteTasks);
+	    _console$k.assertEnumWithError(task, TfliteTasks);
 	}, _TfliteManager_assertValidTaskEnum = function _TfliteManager_assertValidTaskEnum(taskEnum) {
-	    _console$j.assertWithError(taskEnum in TfliteTasks, `invalid taskEnum ${taskEnum}`);
+	    _console$k.assertWithError(taskEnum in TfliteTasks, `invalid taskEnum ${taskEnum}`);
 	}, _TfliteManager_dispatchEvent_get = function _TfliteManager_dispatchEvent_get() {
 	    return this.eventDispatcher.dispatchEvent;
 	}, _TfliteManager_parseName = function _TfliteManager_parseName(dataView) {
-	    _console$j.log("parseName", dataView);
+	    _console$k.log("parseName", dataView);
 	    const name = textDecoder.decode(dataView.buffer);
 	    __classPrivateFieldGet(this, _TfliteManager_instances, "m", _TfliteManager_updateName).call(this, name);
 	}, _TfliteManager_updateName = function _TfliteManager_updateName(name) {
-	    _console$j.log({ name });
+	    _console$k.log({ name });
 	    __classPrivateFieldSet(this, _TfliteManager_name, name, "f");
 	    __classPrivateFieldGet(this, _TfliteManager_instances, "a", _TfliteManager_dispatchEvent_get).call(this, "getTfliteName", { tfliteName: name });
 	}, _TfliteManager_parseTask = function _TfliteManager_parseTask(dataView) {
-	    _console$j.log("parseTask", dataView);
+	    _console$k.log("parseTask", dataView);
 	    const taskEnum = dataView.getUint8(0);
 	    __classPrivateFieldGet(this, _TfliteManager_instances, "m", _TfliteManager_assertValidTaskEnum).call(this, taskEnum);
 	    const task = TfliteTasks[taskEnum];
 	    __classPrivateFieldGet(this, _TfliteManager_instances, "m", _TfliteManager_updateTask).call(this, task);
 	}, _TfliteManager_updateTask = function _TfliteManager_updateTask(task) {
-	    _console$j.log({ task });
+	    _console$k.log({ task });
 	    __classPrivateFieldSet(this, _TfliteManager_task, task, "f");
 	    __classPrivateFieldGet(this, _TfliteManager_instances, "a", _TfliteManager_dispatchEvent_get).call(this, "getTfliteTask", { tfliteTask: task });
 	}, _TfliteManager_parseSampleRate = function _TfliteManager_parseSampleRate(dataView) {
-	    _console$j.log("parseSampleRate", dataView);
+	    _console$k.log("parseSampleRate", dataView);
 	    const sampleRate = dataView.getUint16(0, true);
 	    __classPrivateFieldGet(this, _TfliteManager_instances, "m", _TfliteManager_updateSampleRate).call(this, sampleRate);
 	}, _TfliteManager_updateSampleRate = function _TfliteManager_updateSampleRate(sampleRate) {
-	    _console$j.log({ sampleRate });
+	    _console$k.log({ sampleRate });
 	    __classPrivateFieldSet(this, _TfliteManager_sampleRate, sampleRate, "f");
 	    __classPrivateFieldGet(this, _TfliteManager_instances, "a", _TfliteManager_dispatchEvent_get).call(this, "getTfliteSampleRate", { tfliteSampleRate: sampleRate });
 	}, _TfliteManager_parseSensorTypes = function _TfliteManager_parseSensorTypes(dataView) {
-	    _console$j.log("parseSensorTypes", dataView);
+	    _console$k.log("parseSensorTypes", dataView);
 	    const sensorTypes = [];
 	    for (let index = 0; index < dataView.byteLength; index++) {
 	        const sensorTypeEnum = dataView.getUint8(index);
@@ -1590,58 +1590,58 @@
 	            sensorTypes.push(sensorType);
 	        }
 	        else {
-	            _console$j.error(`invalid sensorTypeEnum ${sensorTypeEnum}`);
+	            _console$k.error(`invalid sensorTypeEnum ${sensorTypeEnum}`);
 	        }
 	    }
 	    __classPrivateFieldGet(this, _TfliteManager_instances, "m", _TfliteManager_updateSensorTypes).call(this, sensorTypes);
 	}, _TfliteManager_updateSensorTypes = function _TfliteManager_updateSensorTypes(sensorTypes) {
-	    _console$j.log({ sensorTypes });
+	    _console$k.log({ sensorTypes });
 	    __classPrivateFieldSet(this, _TfliteManager_sensorTypes, sensorTypes, "f");
 	    __classPrivateFieldGet(this, _TfliteManager_instances, "a", _TfliteManager_dispatchEvent_get).call(this, "getTfliteSensorTypes", { tfliteSensorTypes: sensorTypes });
 	}, _TfliteManager_parseIsReady = function _TfliteManager_parseIsReady(dataView) {
-	    _console$j.log("parseIsReady", dataView);
+	    _console$k.log("parseIsReady", dataView);
 	    const isReady = Boolean(dataView.getUint8(0));
 	    __classPrivateFieldGet(this, _TfliteManager_instances, "m", _TfliteManager_updateIsReady).call(this, isReady);
 	}, _TfliteManager_updateIsReady = function _TfliteManager_updateIsReady(isReady) {
-	    _console$j.log({ isReady });
+	    _console$k.log({ isReady });
 	    __classPrivateFieldSet(this, _TfliteManager_isReady, isReady, "f");
 	    __classPrivateFieldGet(this, _TfliteManager_instances, "a", _TfliteManager_dispatchEvent_get).call(this, "tfliteIsReady", { tfliteIsReady: isReady });
 	}, _TfliteManager_assertIsReady = function _TfliteManager_assertIsReady() {
-	    _console$j.assertWithError(this.isReady, `tflite is not ready`);
+	    _console$k.assertWithError(this.isReady, `tflite is not ready`);
 	}, _TfliteManager_parseCaptureDelay = function _TfliteManager_parseCaptureDelay(dataView) {
-	    _console$j.log("parseCaptureDelay", dataView);
+	    _console$k.log("parseCaptureDelay", dataView);
 	    const captureDelay = dataView.getUint16(0, true);
 	    __classPrivateFieldGet(this, _TfliteManager_instances, "m", _TfliteManager_updateCaptueDelay).call(this, captureDelay);
 	}, _TfliteManager_updateCaptueDelay = function _TfliteManager_updateCaptueDelay(captureDelay) {
-	    _console$j.log({ captureDelay });
+	    _console$k.log({ captureDelay });
 	    __classPrivateFieldSet(this, _TfliteManager_captureDelay, captureDelay, "f");
 	    __classPrivateFieldGet(this, _TfliteManager_instances, "a", _TfliteManager_dispatchEvent_get).call(this, "getTfliteCaptureDelay", { tfliteCaptureDelay: captureDelay });
 	}, _TfliteManager_parseThreshold = function _TfliteManager_parseThreshold(dataView) {
-	    _console$j.log("parseThreshold", dataView);
+	    _console$k.log("parseThreshold", dataView);
 	    const threshold = dataView.getFloat32(0, true);
 	    __classPrivateFieldGet(this, _TfliteManager_instances, "m", _TfliteManager_updateThreshold).call(this, threshold);
 	}, _TfliteManager_updateThreshold = function _TfliteManager_updateThreshold(threshold) {
-	    _console$j.log({ threshold });
+	    _console$k.log({ threshold });
 	    __classPrivateFieldSet(this, _TfliteManager_threshold, threshold, "f");
 	    __classPrivateFieldGet(this, _TfliteManager_instances, "a", _TfliteManager_dispatchEvent_get).call(this, "getTfliteThreshold", { tfliteThreshold: threshold });
 	}, _TfliteManager_parseInferencingEnabled = function _TfliteManager_parseInferencingEnabled(dataView) {
-	    _console$j.log("parseInferencingEnabled", dataView);
+	    _console$k.log("parseInferencingEnabled", dataView);
 	    const inferencingEnabled = Boolean(dataView.getUint8(0));
 	    __classPrivateFieldGet(this, _TfliteManager_instances, "m", _TfliteManager_updateInferencingEnabled).call(this, inferencingEnabled);
 	}, _TfliteManager_updateInferencingEnabled = function _TfliteManager_updateInferencingEnabled(inferencingEnabled) {
-	    _console$j.log({ inferencingEnabled });
+	    _console$k.log({ inferencingEnabled });
 	    __classPrivateFieldSet(this, _TfliteManager_inferencingEnabled, inferencingEnabled, "f");
 	    __classPrivateFieldGet(this, _TfliteManager_instances, "a", _TfliteManager_dispatchEvent_get).call(this, "getTfliteInferencingEnabled", { tfliteInferencingEnabled: inferencingEnabled });
 	}, _TfliteManager_parseInference = function _TfliteManager_parseInference(dataView) {
-	    _console$j.log("parseInference", dataView);
+	    _console$k.log("parseInference", dataView);
 	    const timestamp = parseTimestamp(dataView, 0);
-	    _console$j.log({ timestamp });
+	    _console$k.log({ timestamp });
 	    const values = [];
 	    for (let index = 0, byteOffset = 2; byteOffset < dataView.byteLength; index++, byteOffset += 4) {
 	        const value = dataView.getFloat32(byteOffset, true);
 	        values.push(value);
 	    }
-	    _console$j.log("values", values);
+	    _console$k.log("values", values);
 	    const inference = {
 	        timestamp,
 	        values,
@@ -1655,7 +1655,7 @@
 	                maxIndex = index;
 	            }
 	        });
-	        _console$j.log({ maxIndex, maxValue });
+	        _console$k.log({ maxIndex, maxValue });
 	        inference.maxIndex = maxIndex;
 	        inference.maxValue = maxValue;
 	    }
@@ -1663,7 +1663,7 @@
 	};
 
 	var _DeviceInformationManager_instances, _DeviceInformationManager_dispatchEvent_get, _DeviceInformationManager_information, _DeviceInformationManager_isComplete_get, _DeviceInformationManager_update;
-	const _console$i = createConsole("DeviceInformationManager", { log: true });
+	const _console$j = createConsole("DeviceInformationManager", { log: true });
 	const DeviceInformationMessageTypes = [
 	    "manufacturerName",
 	    "modelNumber",
@@ -1686,31 +1686,31 @@
 	        __classPrivateFieldSet(this, _DeviceInformationManager_information, {}, "f");
 	    }
 	    parseMessage(messageType, dataView) {
-	        _console$i.log({ messageType });
+	        _console$j.log({ messageType });
 	        switch (messageType) {
 	            case "manufacturerName":
 	                const manufacturerName = textDecoder.decode(dataView.buffer);
-	                _console$i.log({ manufacturerName });
+	                _console$j.log({ manufacturerName });
 	                __classPrivateFieldGet(this, _DeviceInformationManager_instances, "m", _DeviceInformationManager_update).call(this, { manufacturerName });
 	                break;
 	            case "modelNumber":
 	                const modelNumber = textDecoder.decode(dataView.buffer);
-	                _console$i.log({ modelNumber });
+	                _console$j.log({ modelNumber });
 	                __classPrivateFieldGet(this, _DeviceInformationManager_instances, "m", _DeviceInformationManager_update).call(this, { modelNumber });
 	                break;
 	            case "softwareRevision":
 	                const softwareRevision = textDecoder.decode(dataView.buffer);
-	                _console$i.log({ softwareRevision });
+	                _console$j.log({ softwareRevision });
 	                __classPrivateFieldGet(this, _DeviceInformationManager_instances, "m", _DeviceInformationManager_update).call(this, { softwareRevision });
 	                break;
 	            case "hardwareRevision":
 	                const hardwareRevision = textDecoder.decode(dataView.buffer);
-	                _console$i.log({ hardwareRevision });
+	                _console$j.log({ hardwareRevision });
 	                __classPrivateFieldGet(this, _DeviceInformationManager_instances, "m", _DeviceInformationManager_update).call(this, { hardwareRevision });
 	                break;
 	            case "firmwareRevision":
 	                const firmwareRevision = textDecoder.decode(dataView.buffer);
-	                _console$i.log({ firmwareRevision });
+	                _console$j.log({ firmwareRevision });
 	                __classPrivateFieldGet(this, _DeviceInformationManager_instances, "m", _DeviceInformationManager_update).call(this, { firmwareRevision });
 	                break;
 	            case "pnpId":
@@ -1723,12 +1723,12 @@
 	                if (pnpId.source == "Bluetooth") {
 	                    pnpId.vendorId = dataView.getUint16(1, true);
 	                }
-	                _console$i.log({ pnpId });
+	                _console$j.log({ pnpId });
 	                __classPrivateFieldGet(this, _DeviceInformationManager_instances, "m", _DeviceInformationManager_update).call(this, { pnpId });
 	                break;
 	            case "serialNumber":
 	                const serialNumber = textDecoder.decode(dataView.buffer);
-	                _console$i.log({ serialNumber });
+	                _console$j.log({ serialNumber });
 	                break;
 	            default:
 	                throw Error(`uncaught messageType ${messageType}`);
@@ -1740,7 +1740,7 @@
 	}, _DeviceInformationManager_isComplete_get = function _DeviceInformationManager_isComplete_get() {
 	    return DeviceInformationMessageTypes.every((key) => key in __classPrivateFieldGet(this, _DeviceInformationManager_information, "f"));
 	}, _DeviceInformationManager_update = function _DeviceInformationManager_update(partialDeviceInformation) {
-	    _console$i.log({ partialDeviceInformation });
+	    _console$j.log({ partialDeviceInformation });
 	    const deviceInformationNames = Object.keys(partialDeviceInformation);
 	    deviceInformationNames.forEach((deviceInformationName) => {
 	        __classPrivateFieldGet(this, _DeviceInformationManager_instances, "a", _DeviceInformationManager_dispatchEvent_get).call(this, deviceInformationName, {
@@ -1748,15 +1748,15 @@
 	        });
 	    });
 	    Object.assign(__classPrivateFieldGet(this, _DeviceInformationManager_information, "f"), partialDeviceInformation);
-	    _console$i.log({ deviceInformation: __classPrivateFieldGet(this, _DeviceInformationManager_information, "f") });
+	    _console$j.log({ deviceInformation: __classPrivateFieldGet(this, _DeviceInformationManager_information, "f") });
 	    if (__classPrivateFieldGet(this, _DeviceInformationManager_instances, "a", _DeviceInformationManager_isComplete_get)) {
-	        _console$i.log("completed deviceInformation");
+	        _console$j.log("completed deviceInformation");
 	        __classPrivateFieldGet(this, _DeviceInformationManager_instances, "a", _DeviceInformationManager_dispatchEvent_get).call(this, "deviceInformation", { deviceInformation: this.information });
 	    }
 	};
 
 	var _InformationManager_instances, _InformationManager_dispatchEvent_get, _InformationManager_isCharging, _InformationManager_updateIsCharging, _InformationManager_batteryCurrent, _InformationManager_updateBatteryCurrent, _InformationManager_id, _InformationManager_updateId, _InformationManager_name, _InformationManager_type, _InformationManager_assertValidDeviceType, _InformationManager_assertValidDeviceTypeEnum, _InformationManager_setTypeEnum, _InformationManager_mtu, _InformationManager_updateMtu, _InformationManager_isCurrentTimeSet, _InformationManager_onCurrentTime, _InformationManager_setCurrentTime;
-	const _console$h = createConsole("InformationManager", { log: true });
+	const _console$i = createConsole("InformationManager", { log: true });
 	const DeviceTypes = ["leftInsole", "rightInsole"];
 	const InsoleSides = ["left", "right"];
 	const MinNameLength = 2;
@@ -1796,7 +1796,7 @@
 	        return __classPrivateFieldGet(this, _InformationManager_batteryCurrent, "f");
 	    }
 	    async getBatteryCurrent() {
-	        _console$h.log("getting battery current...");
+	        _console$i.log("getting battery current...");
 	        const promise = this.waitForEvent("getBatteryCurrent");
 	        this.sendMessage([{ type: "getBatteryCurrent" }]);
 	        await promise;
@@ -1808,17 +1808,17 @@
 	        return __classPrivateFieldGet(this, _InformationManager_name, "f");
 	    }
 	    updateName(updatedName) {
-	        _console$h.assertTypeWithError(updatedName, "string");
+	        _console$i.assertTypeWithError(updatedName, "string");
 	        __classPrivateFieldSet(this, _InformationManager_name, updatedName, "f");
-	        _console$h.log({ updatedName: __classPrivateFieldGet(this, _InformationManager_name, "f") });
+	        _console$i.log({ updatedName: __classPrivateFieldGet(this, _InformationManager_name, "f") });
 	        __classPrivateFieldGet(this, _InformationManager_instances, "a", _InformationManager_dispatchEvent_get).call(this, "getName", { name: __classPrivateFieldGet(this, _InformationManager_name, "f") });
 	    }
 	    async setName(newName) {
-	        _console$h.assertTypeWithError(newName, "string");
-	        _console$h.assertWithError(newName.length >= MinNameLength, `name must be greater than ${MinNameLength} characters long ("${newName}" is ${newName.length} characters long)`);
-	        _console$h.assertWithError(newName.length < MaxNameLength, `name must be less than ${MaxNameLength} characters long ("${newName}" is ${newName.length} characters long)`);
+	        _console$i.assertTypeWithError(newName, "string");
+	        _console$i.assertWithError(newName.length >= MinNameLength, `name must be greater than ${MinNameLength} characters long ("${newName}" is ${newName.length} characters long)`);
+	        _console$i.assertWithError(newName.length < MaxNameLength, `name must be less than ${MaxNameLength} characters long ("${newName}" is ${newName.length} characters long)`);
 	        const setNameData = textEncoder.encode(newName);
-	        _console$h.log({ setNameData });
+	        _console$i.log({ setNameData });
 	        const promise = this.waitForEvent("getName");
 	        this.sendMessage([{ type: "setName", data: setNameData.buffer }]);
 	        await promise;
@@ -1832,11 +1832,11 @@
 	    updateType(updatedType) {
 	        __classPrivateFieldGet(this, _InformationManager_instances, "m", _InformationManager_assertValidDeviceType).call(this, updatedType);
 	        if (updatedType == this.type) {
-	            _console$h.log("redundant type assignment");
+	            _console$i.log("redundant type assignment");
 	            return;
 	        }
 	        __classPrivateFieldSet(this, _InformationManager_type, updatedType, "f");
-	        _console$h.log({ updatedType: __classPrivateFieldGet(this, _InformationManager_type, "f") });
+	        _console$i.log({ updatedType: __classPrivateFieldGet(this, _InformationManager_type, "f") });
 	        __classPrivateFieldGet(this, _InformationManager_instances, "a", _InformationManager_dispatchEvent_get).call(this, "getType", { type: __classPrivateFieldGet(this, _InformationManager_type, "f") });
 	    }
 	    async setType(newType) {
@@ -1868,39 +1868,39 @@
 	        return __classPrivateFieldGet(this, _InformationManager_isCurrentTimeSet, "f");
 	    }
 	    parseMessage(messageType, dataView) {
-	        _console$h.log({ messageType });
+	        _console$i.log({ messageType });
 	        switch (messageType) {
 	            case "isCharging":
 	                const isCharging = Boolean(dataView.getUint8(0));
-	                _console$h.log({ isCharging });
+	                _console$i.log({ isCharging });
 	                __classPrivateFieldGet(this, _InformationManager_instances, "m", _InformationManager_updateIsCharging).call(this, isCharging);
 	                break;
 	            case "getBatteryCurrent":
 	                const batteryCurrent = dataView.getFloat32(0, true);
-	                _console$h.log({ batteryCurrent });
+	                _console$i.log({ batteryCurrent });
 	                __classPrivateFieldGet(this, _InformationManager_instances, "m", _InformationManager_updateBatteryCurrent).call(this, batteryCurrent);
 	                break;
 	            case "getId":
 	                const id = textDecoder.decode(dataView.buffer);
-	                _console$h.log({ id });
+	                _console$i.log({ id });
 	                __classPrivateFieldGet(this, _InformationManager_instances, "m", _InformationManager_updateId).call(this, id);
 	                break;
 	            case "getName":
 	            case "setName":
 	                const name = textDecoder.decode(dataView.buffer);
-	                _console$h.log({ name });
+	                _console$i.log({ name });
 	                this.updateName(name);
 	                break;
 	            case "getType":
 	            case "setType":
 	                const typeEnum = dataView.getUint8(0);
 	                const type = DeviceTypes[typeEnum];
-	                _console$h.log({ typeEnum, type });
+	                _console$i.log({ typeEnum, type });
 	                this.updateType(type);
 	                break;
 	            case "getMtu":
 	                const mtu = dataView.getUint16(0, true);
-	                _console$h.log({ mtu });
+	                _console$i.log({ mtu });
 	                __classPrivateFieldGet(this, _InformationManager_instances, "m", _InformationManager_updateMtu).call(this, mtu);
 	                break;
 	            case "getCurrentTime":
@@ -1919,48 +1919,48 @@
 	_InformationManager_isCharging = new WeakMap(), _InformationManager_batteryCurrent = new WeakMap(), _InformationManager_id = new WeakMap(), _InformationManager_name = new WeakMap(), _InformationManager_type = new WeakMap(), _InformationManager_mtu = new WeakMap(), _InformationManager_isCurrentTimeSet = new WeakMap(), _InformationManager_instances = new WeakSet(), _InformationManager_dispatchEvent_get = function _InformationManager_dispatchEvent_get() {
 	    return this.eventDispatcher.dispatchEvent;
 	}, _InformationManager_updateIsCharging = function _InformationManager_updateIsCharging(updatedIsCharging) {
-	    _console$h.assertTypeWithError(updatedIsCharging, "boolean");
+	    _console$i.assertTypeWithError(updatedIsCharging, "boolean");
 	    __classPrivateFieldSet(this, _InformationManager_isCharging, updatedIsCharging, "f");
-	    _console$h.log({ isCharging: __classPrivateFieldGet(this, _InformationManager_isCharging, "f") });
+	    _console$i.log({ isCharging: __classPrivateFieldGet(this, _InformationManager_isCharging, "f") });
 	    __classPrivateFieldGet(this, _InformationManager_instances, "a", _InformationManager_dispatchEvent_get).call(this, "isCharging", { isCharging: __classPrivateFieldGet(this, _InformationManager_isCharging, "f") });
 	}, _InformationManager_updateBatteryCurrent = function _InformationManager_updateBatteryCurrent(updatedBatteryCurrent) {
-	    _console$h.assertTypeWithError(updatedBatteryCurrent, "number");
+	    _console$i.assertTypeWithError(updatedBatteryCurrent, "number");
 	    __classPrivateFieldSet(this, _InformationManager_batteryCurrent, updatedBatteryCurrent, "f");
-	    _console$h.log({ batteryCurrent: __classPrivateFieldGet(this, _InformationManager_batteryCurrent, "f") });
+	    _console$i.log({ batteryCurrent: __classPrivateFieldGet(this, _InformationManager_batteryCurrent, "f") });
 	    __classPrivateFieldGet(this, _InformationManager_instances, "a", _InformationManager_dispatchEvent_get).call(this, "getBatteryCurrent", { batteryCurrent: __classPrivateFieldGet(this, _InformationManager_batteryCurrent, "f") });
 	}, _InformationManager_updateId = function _InformationManager_updateId(updatedId) {
-	    _console$h.assertTypeWithError(updatedId, "string");
+	    _console$i.assertTypeWithError(updatedId, "string");
 	    __classPrivateFieldSet(this, _InformationManager_id, updatedId, "f");
-	    _console$h.log({ id: __classPrivateFieldGet(this, _InformationManager_id, "f") });
+	    _console$i.log({ id: __classPrivateFieldGet(this, _InformationManager_id, "f") });
 	    __classPrivateFieldGet(this, _InformationManager_instances, "a", _InformationManager_dispatchEvent_get).call(this, "getId", { id: __classPrivateFieldGet(this, _InformationManager_id, "f") });
 	}, _InformationManager_assertValidDeviceType = function _InformationManager_assertValidDeviceType(type) {
-	    _console$h.assertEnumWithError(type, DeviceTypes);
+	    _console$i.assertEnumWithError(type, DeviceTypes);
 	}, _InformationManager_assertValidDeviceTypeEnum = function _InformationManager_assertValidDeviceTypeEnum(typeEnum) {
-	    _console$h.assertTypeWithError(typeEnum, "number");
-	    _console$h.assertWithError(typeEnum in DeviceTypes, `invalid typeEnum ${typeEnum}`);
+	    _console$i.assertTypeWithError(typeEnum, "number");
+	    _console$i.assertWithError(typeEnum in DeviceTypes, `invalid typeEnum ${typeEnum}`);
 	}, _InformationManager_setTypeEnum = async function _InformationManager_setTypeEnum(newTypeEnum) {
 	    __classPrivateFieldGet(this, _InformationManager_instances, "m", _InformationManager_assertValidDeviceTypeEnum).call(this, newTypeEnum);
 	    const setTypeData = Uint8Array.from([newTypeEnum]);
-	    _console$h.log({ setTypeData });
+	    _console$i.log({ setTypeData });
 	    const promise = this.waitForEvent("getType");
 	    this.sendMessage([{ type: "setType", data: setTypeData.buffer }]);
 	    await promise;
 	}, _InformationManager_updateMtu = function _InformationManager_updateMtu(newMtu) {
-	    _console$h.assertTypeWithError(newMtu, "number");
+	    _console$i.assertTypeWithError(newMtu, "number");
 	    if (__classPrivateFieldGet(this, _InformationManager_mtu, "f") == newMtu) {
-	        _console$h.log("redundant mtu assignment", newMtu);
+	        _console$i.log("redundant mtu assignment", newMtu);
 	        return;
 	    }
 	    __classPrivateFieldSet(this, _InformationManager_mtu, newMtu, "f");
 	    __classPrivateFieldGet(this, _InformationManager_instances, "a", _InformationManager_dispatchEvent_get).call(this, "getMtu", { mtu: __classPrivateFieldGet(this, _InformationManager_mtu, "f") });
 	}, _InformationManager_onCurrentTime = function _InformationManager_onCurrentTime(currentTime) {
-	    _console$h.log({ currentTime });
+	    _console$i.log({ currentTime });
 	    __classPrivateFieldSet(this, _InformationManager_isCurrentTimeSet, currentTime != 0 || Math.abs(Date.now() - currentTime) < Uint16Max, "f");
 	    if (!__classPrivateFieldGet(this, _InformationManager_isCurrentTimeSet, "f")) {
 	        __classPrivateFieldGet(this, _InformationManager_instances, "m", _InformationManager_setCurrentTime).call(this);
 	    }
 	}, _InformationManager_setCurrentTime = async function _InformationManager_setCurrentTime() {
-	    _console$h.log("setting current time...");
+	    _console$i.log("setting current time...");
 	    const dataView = new DataView(new ArrayBuffer(8));
 	    dataView.setBigUint64(0, BigInt(Date.now()), true);
 	    const promise = this.waitForEvent("getCurrentTime");
@@ -2096,7 +2096,7 @@
 	];
 
 	var _VibrationManager_instances, _VibrationManager_verifyLocation, _VibrationManager_verifyLocations, _VibrationManager_createLocationsBitmask, _VibrationManager_assertNonEmptyArray, _VibrationManager_verifyWaveformEffect, _VibrationManager_verifyWaveformEffectSegment, _VibrationManager_verifyWaveformEffectSegmentLoopCount, _VibrationManager_verifyWaveformEffectSegments, _VibrationManager_verifyWaveformEffectSequenceLoopCount, _VibrationManager_verifyWaveformSegment, _VibrationManager_verifyWaveformSegments, _VibrationManager_createWaveformEffectsData, _VibrationManager_createWaveformData, _VibrationManager_verifyVibrationType, _VibrationManager_createData;
-	const _console$g = createConsole("VibrationManager");
+	const _console$h = createConsole("VibrationManager");
 	const VibrationLocations = ["front", "rear"];
 	const VibrationTypes = ["waveformEffect", "waveform"];
 	const VibrationMessageTypes = ["triggerVibration"];
@@ -2134,15 +2134,15 @@
 	                default:
 	                    throw Error(`invalid vibration type "${type}"`);
 	            }
-	            _console$g.log({ type, arrayBuffer });
+	            _console$h.log({ type, arrayBuffer });
 	            triggerVibrationData = concatenateArrayBuffers(triggerVibrationData, arrayBuffer);
 	        });
 	        await this.sendMessage([{ type: "triggerVibration", data: triggerVibrationData }], sendImmediately);
 	    }
 	}
 	_VibrationManager_instances = new WeakSet(), _VibrationManager_verifyLocation = function _VibrationManager_verifyLocation(location) {
-	    _console$g.assertTypeWithError(location, "string");
-	    _console$g.assertWithError(VibrationLocations.includes(location), `invalid location "${location}"`);
+	    _console$h.assertTypeWithError(location, "string");
+	    _console$h.assertWithError(VibrationLocations.includes(location), `invalid location "${location}"`);
 	}, _VibrationManager_verifyLocations = function _VibrationManager_verifyLocations(locations) {
 	    __classPrivateFieldGet(this, _VibrationManager_instances, "m", _VibrationManager_assertNonEmptyArray).call(this, locations);
 	    locations.forEach((location) => {
@@ -2155,14 +2155,14 @@
 	        const locationIndex = VibrationLocations.indexOf(location);
 	        locationsBitmask |= 1 << locationIndex;
 	    });
-	    _console$g.log({ locationsBitmask });
-	    _console$g.assertWithError(locationsBitmask > 0, `locationsBitmask must not be zero`);
+	    _console$h.log({ locationsBitmask });
+	    _console$h.assertWithError(locationsBitmask > 0, `locationsBitmask must not be zero`);
 	    return locationsBitmask;
 	}, _VibrationManager_assertNonEmptyArray = function _VibrationManager_assertNonEmptyArray(array) {
-	    _console$g.assertWithError(Array.isArray(array), "passed non-array");
-	    _console$g.assertWithError(array.length > 0, "passed empty array");
+	    _console$h.assertWithError(Array.isArray(array), "passed non-array");
+	    _console$h.assertWithError(array.length > 0, "passed empty array");
 	}, _VibrationManager_verifyWaveformEffect = function _VibrationManager_verifyWaveformEffect(waveformEffect) {
-	    _console$g.assertWithError(VibrationWaveformEffects.includes(waveformEffect), `invalid waveformEffect "${waveformEffect}"`);
+	    _console$h.assertWithError(VibrationWaveformEffects.includes(waveformEffect), `invalid waveformEffect "${waveformEffect}"`);
 	}, _VibrationManager_verifyWaveformEffectSegment = function _VibrationManager_verifyWaveformEffectSegment(waveformEffectSegment) {
 	    if (waveformEffectSegment.effect != undefined) {
 	        const waveformEffect = waveformEffectSegment.effect;
@@ -2170,8 +2170,8 @@
 	    }
 	    else if (waveformEffectSegment.delay != undefined) {
 	        const { delay } = waveformEffectSegment;
-	        _console$g.assertWithError(delay >= 0, `delay must be 0ms or greater (got ${delay})`);
-	        _console$g.assertWithError(delay <= MaxVibrationWaveformEffectSegmentDelay, `delay must be ${MaxVibrationWaveformEffectSegmentDelay}ms or less (got ${delay})`);
+	        _console$h.assertWithError(delay >= 0, `delay must be 0ms or greater (got ${delay})`);
+	        _console$h.assertWithError(delay <= MaxVibrationWaveformEffectSegmentDelay, `delay must be ${MaxVibrationWaveformEffectSegmentDelay}ms or less (got ${delay})`);
 	    }
 	    else {
 	        throw Error("no effect or delay found in waveformEffectSegment");
@@ -2181,29 +2181,29 @@
 	        __classPrivateFieldGet(this, _VibrationManager_instances, "m", _VibrationManager_verifyWaveformEffectSegmentLoopCount).call(this, loopCount);
 	    }
 	}, _VibrationManager_verifyWaveformEffectSegmentLoopCount = function _VibrationManager_verifyWaveformEffectSegmentLoopCount(waveformEffectSegmentLoopCount) {
-	    _console$g.assertTypeWithError(waveformEffectSegmentLoopCount, "number");
-	    _console$g.assertWithError(waveformEffectSegmentLoopCount >= 0, `waveformEffectSegmentLoopCount must be 0 or greater (got ${waveformEffectSegmentLoopCount})`);
-	    _console$g.assertWithError(waveformEffectSegmentLoopCount <= MaxVibrationWaveformEffectSegmentLoopCount, `waveformEffectSegmentLoopCount must be ${MaxVibrationWaveformEffectSegmentLoopCount} or fewer (got ${waveformEffectSegmentLoopCount})`);
+	    _console$h.assertTypeWithError(waveformEffectSegmentLoopCount, "number");
+	    _console$h.assertWithError(waveformEffectSegmentLoopCount >= 0, `waveformEffectSegmentLoopCount must be 0 or greater (got ${waveformEffectSegmentLoopCount})`);
+	    _console$h.assertWithError(waveformEffectSegmentLoopCount <= MaxVibrationWaveformEffectSegmentLoopCount, `waveformEffectSegmentLoopCount must be ${MaxVibrationWaveformEffectSegmentLoopCount} or fewer (got ${waveformEffectSegmentLoopCount})`);
 	}, _VibrationManager_verifyWaveformEffectSegments = function _VibrationManager_verifyWaveformEffectSegments(waveformEffectSegments) {
 	    __classPrivateFieldGet(this, _VibrationManager_instances, "m", _VibrationManager_assertNonEmptyArray).call(this, waveformEffectSegments);
-	    _console$g.assertWithError(waveformEffectSegments.length <= MaxNumberOfVibrationWaveformEffectSegments, `must have ${MaxNumberOfVibrationWaveformEffectSegments} waveformEffectSegments or fewer (got ${waveformEffectSegments.length})`);
+	    _console$h.assertWithError(waveformEffectSegments.length <= MaxNumberOfVibrationWaveformEffectSegments, `must have ${MaxNumberOfVibrationWaveformEffectSegments} waveformEffectSegments or fewer (got ${waveformEffectSegments.length})`);
 	    waveformEffectSegments.forEach((waveformEffectSegment) => {
 	        __classPrivateFieldGet(this, _VibrationManager_instances, "m", _VibrationManager_verifyWaveformEffectSegment).call(this, waveformEffectSegment);
 	    });
 	}, _VibrationManager_verifyWaveformEffectSequenceLoopCount = function _VibrationManager_verifyWaveformEffectSequenceLoopCount(waveformEffectSequenceLoopCount) {
-	    _console$g.assertTypeWithError(waveformEffectSequenceLoopCount, "number");
-	    _console$g.assertWithError(waveformEffectSequenceLoopCount >= 0, `waveformEffectSequenceLoopCount must be 0 or greater (got ${waveformEffectSequenceLoopCount})`);
-	    _console$g.assertWithError(waveformEffectSequenceLoopCount <= MaxVibrationWaveformEffectSequenceLoopCount, `waveformEffectSequenceLoopCount must be ${MaxVibrationWaveformEffectSequenceLoopCount} or fewer (got ${waveformEffectSequenceLoopCount})`);
+	    _console$h.assertTypeWithError(waveformEffectSequenceLoopCount, "number");
+	    _console$h.assertWithError(waveformEffectSequenceLoopCount >= 0, `waveformEffectSequenceLoopCount must be 0 or greater (got ${waveformEffectSequenceLoopCount})`);
+	    _console$h.assertWithError(waveformEffectSequenceLoopCount <= MaxVibrationWaveformEffectSequenceLoopCount, `waveformEffectSequenceLoopCount must be ${MaxVibrationWaveformEffectSequenceLoopCount} or fewer (got ${waveformEffectSequenceLoopCount})`);
 	}, _VibrationManager_verifyWaveformSegment = function _VibrationManager_verifyWaveformSegment(waveformSegment) {
-	    _console$g.assertTypeWithError(waveformSegment.amplitude, "number");
-	    _console$g.assertWithError(waveformSegment.amplitude >= 0, `amplitude must be 0 or greater (got ${waveformSegment.amplitude})`);
-	    _console$g.assertWithError(waveformSegment.amplitude <= 1, `amplitude must be 1 or less (got ${waveformSegment.amplitude})`);
-	    _console$g.assertTypeWithError(waveformSegment.duration, "number");
-	    _console$g.assertWithError(waveformSegment.duration > 0, `duration must be greater than 0ms (got ${waveformSegment.duration}ms)`);
-	    _console$g.assertWithError(waveformSegment.duration <= MaxVibrationWaveformSegmentDuration, `duration must be ${MaxVibrationWaveformSegmentDuration}ms or less (got ${waveformSegment.duration}ms)`);
+	    _console$h.assertTypeWithError(waveformSegment.amplitude, "number");
+	    _console$h.assertWithError(waveformSegment.amplitude >= 0, `amplitude must be 0 or greater (got ${waveformSegment.amplitude})`);
+	    _console$h.assertWithError(waveformSegment.amplitude <= 1, `amplitude must be 1 or less (got ${waveformSegment.amplitude})`);
+	    _console$h.assertTypeWithError(waveformSegment.duration, "number");
+	    _console$h.assertWithError(waveformSegment.duration > 0, `duration must be greater than 0ms (got ${waveformSegment.duration}ms)`);
+	    _console$h.assertWithError(waveformSegment.duration <= MaxVibrationWaveformSegmentDuration, `duration must be ${MaxVibrationWaveformSegmentDuration}ms or less (got ${waveformSegment.duration}ms)`);
 	}, _VibrationManager_verifyWaveformSegments = function _VibrationManager_verifyWaveformSegments(waveformSegments) {
 	    __classPrivateFieldGet(this, _VibrationManager_instances, "m", _VibrationManager_assertNonEmptyArray).call(this, waveformSegments);
-	    _console$g.assertWithError(waveformSegments.length <= MaxNumberOfVibrationWaveformSegments, `must have ${MaxNumberOfVibrationWaveformSegments} waveformSegments or fewer (got ${waveformSegments.length})`);
+	    _console$h.assertWithError(waveformSegments.length <= MaxNumberOfVibrationWaveformSegments, `must have ${MaxNumberOfVibrationWaveformSegments} waveformSegments or fewer (got ${waveformSegments.length})`);
 	    waveformSegments.forEach((waveformSegment) => {
 	        __classPrivateFieldGet(this, _VibrationManager_instances, "m", _VibrationManager_verifyWaveformSegment).call(this, waveformSegment);
 	    });
@@ -2249,7 +2249,7 @@
 	        dataArray[byteOffset++] = waveformEffectSequenceLoopCount;
 	    }
 	    const dataView = new DataView(Uint8Array.from(dataArray).buffer);
-	    _console$g.log({ dataArray, dataView });
+	    _console$h.log({ dataArray, dataView });
 	    return __classPrivateFieldGet(this, _VibrationManager_instances, "m", _VibrationManager_createData).call(this, locations, "waveformEffect", dataView);
 	}, _VibrationManager_createWaveformData = function _VibrationManager_createWaveformData(locations, waveformSegments) {
 	    __classPrivateFieldGet(this, _VibrationManager_instances, "m", _VibrationManager_verifyWaveformSegments).call(this, waveformSegments);
@@ -2258,24 +2258,24 @@
 	        dataView.setUint8(index * 2, Math.floor(waveformSegment.amplitude * 127));
 	        dataView.setUint8(index * 2 + 1, Math.floor(waveformSegment.duration / 10));
 	    });
-	    _console$g.log({ dataView });
+	    _console$h.log({ dataView });
 	    return __classPrivateFieldGet(this, _VibrationManager_instances, "m", _VibrationManager_createData).call(this, locations, "waveform", dataView);
 	}, _VibrationManager_verifyVibrationType = function _VibrationManager_verifyVibrationType(vibrationType) {
-	    _console$g.assertTypeWithError(vibrationType, "string");
-	    _console$g.assertWithError(VibrationTypes.includes(vibrationType), `invalid vibrationType "${vibrationType}"`);
+	    _console$h.assertTypeWithError(vibrationType, "string");
+	    _console$h.assertWithError(VibrationTypes.includes(vibrationType), `invalid vibrationType "${vibrationType}"`);
 	}, _VibrationManager_createData = function _VibrationManager_createData(locations, vibrationType, dataView) {
-	    _console$g.assertWithError(dataView?.byteLength > 0, "no data received");
+	    _console$h.assertWithError(dataView?.byteLength > 0, "no data received");
 	    const locationsBitmask = __classPrivateFieldGet(this, _VibrationManager_instances, "m", _VibrationManager_createLocationsBitmask).call(this, locations);
 	    __classPrivateFieldGet(this, _VibrationManager_instances, "m", _VibrationManager_verifyVibrationType).call(this, vibrationType);
 	    const vibrationTypeIndex = VibrationTypes.indexOf(vibrationType);
-	    _console$g.log({ locationsBitmask, vibrationTypeIndex, dataView });
+	    _console$h.log({ locationsBitmask, vibrationTypeIndex, dataView });
 	    const data = concatenateArrayBuffers(locationsBitmask, vibrationTypeIndex, dataView.byteLength, dataView);
-	    _console$g.log({ data });
+	    _console$h.log({ data });
 	    return data;
 	};
 
 	var _BaseConnectionManager_instances, _a$2, _BaseConnectionManager_AssertValidTxRxMessageType, _BaseConnectionManager_assertIsSupported, _BaseConnectionManager_status, _BaseConnectionManager_assertIsNotConnected, _BaseConnectionManager_assertIsNotConnecting, _BaseConnectionManager_assertIsConnected, _BaseConnectionManager_assertIsNotDisconnecting, _BaseConnectionManager_assertIsConnectedAndNotDisconnecting, _BaseConnectionManager_pendingMessages, _BaseConnectionManager_onRxMessage, _BaseConnectionManager_timer, _BaseConnectionManager_checkConnection;
-	const _console$f = createConsole("BaseConnectionManager", { log: true });
+	const _console$g = createConsole("BaseConnectionManager", { log: true });
 	const ConnectionStatuses = ["notConnected", "connecting", "connected", "disconnecting"];
 	const ConnectionEventTypes = [...ConnectionStatuses, "connectionStatus", "isConnected"];
 	const TxRxMessageTypes = [
@@ -2320,12 +2320,12 @@
 	        return __classPrivateFieldGet(this, _BaseConnectionManager_status, "f");
 	    }
 	    set status(newConnectionStatus) {
-	        _console$f.assertEnumWithError(newConnectionStatus, ConnectionStatuses);
+	        _console$g.assertEnumWithError(newConnectionStatus, ConnectionStatuses);
 	        if (__classPrivateFieldGet(this, _BaseConnectionManager_status, "f") == newConnectionStatus) {
-	            _console$f.log(`tried to assign same connection status "${newConnectionStatus}"`);
+	            _console$g.log(`tried to assign same connection status "${newConnectionStatus}"`);
 	            return;
 	        }
-	        _console$f.log(`new connection status "${newConnectionStatus}"`);
+	        _console$g.log(`new connection status "${newConnectionStatus}"`);
 	        __classPrivateFieldSet(this, _BaseConnectionManager_status, newConnectionStatus, "f");
 	        this.onStatusUpdated(this.status);
 	        if (this.isConnected) {
@@ -2352,17 +2352,17 @@
 	    async reconnect() {
 	        __classPrivateFieldGet(this, _BaseConnectionManager_instances, "m", _BaseConnectionManager_assertIsNotConnected).call(this);
 	        __classPrivateFieldGet(this, _BaseConnectionManager_instances, "m", _BaseConnectionManager_assertIsNotConnecting).call(this);
-	        _console$f.assert(this.canReconnect, "unable to reconnect");
+	        _console$g.assert(this.canReconnect, "unable to reconnect");
 	    }
 	    async disconnect() {
 	        __classPrivateFieldGet(this, _BaseConnectionManager_instances, "m", _BaseConnectionManager_assertIsConnected).call(this);
 	        __classPrivateFieldGet(this, _BaseConnectionManager_instances, "m", _BaseConnectionManager_assertIsNotDisconnecting).call(this);
 	        this.status = "disconnecting";
-	        _console$f.log("disconnecting from device...");
+	        _console$g.log("disconnecting from device...");
 	    }
 	    async sendSmpMessage(data) {
 	        __classPrivateFieldGet(this, _BaseConnectionManager_instances, "m", _BaseConnectionManager_assertIsConnectedAndNotDisconnecting).call(this);
-	        _console$f.log("sending smp message", data);
+	        _console$g.log("sending smp message", data);
 	    }
 	    async sendTxMessages(messages, sendImmediately = true) {
 	        __classPrivateFieldGet(this, _BaseConnectionManager_instances, "m", _BaseConnectionManager_assertIsConnectedAndNotDisconnecting).call(this);
@@ -2372,7 +2372,7 @@
 	        if (!sendImmediately) {
 	            return;
 	        }
-	        _console$f.log("sendTxMessages", __classPrivateFieldGet(this, _BaseConnectionManager_pendingMessages, "f").slice());
+	        _console$g.log("sendTxMessages", __classPrivateFieldGet(this, _BaseConnectionManager_pendingMessages, "f").slice());
 	        const arrayBuffers = __classPrivateFieldGet(this, _BaseConnectionManager_pendingMessages, "f").map((message) => {
 	            __classPrivateFieldGet(_a$2, _a$2, "m", _BaseConnectionManager_AssertValidTxRxMessageType).call(_a$2, message.type);
 	            const messageTypeEnum = TxRxMessageTypes.indexOf(message.type);
@@ -2392,47 +2392,47 @@
 	                    arrayBufferByteLength += arrayBuffer.byteLength;
 	                });
 	                const arrayBuffersToSend = arrayBuffers.splice(0, arrayBufferCount);
-	                _console$f.log({ arrayBufferCount, arrayBuffersToSend });
+	                _console$g.log({ arrayBufferCount, arrayBuffersToSend });
 	                const arrayBuffer = concatenateArrayBuffers(...arrayBuffersToSend);
-	                _console$f.log("sending arrayBuffer", arrayBuffer);
+	                _console$g.log("sending arrayBuffer", arrayBuffer);
 	                await this.sendTxData(arrayBuffer);
 	            }
 	        }
 	        else {
 	            const arrayBuffer = concatenateArrayBuffers(...arrayBuffers);
-	            _console$f.log("sending arrayBuffer", arrayBuffer);
+	            _console$g.log("sending arrayBuffer", arrayBuffer);
 	            await this.sendTxData(arrayBuffer);
 	        }
 	        __classPrivateFieldGet(this, _BaseConnectionManager_pendingMessages, "f").length = 0;
 	    }
 	    async sendTxData(data) {
-	        _console$f.log("sendTxData", data);
+	        _console$g.log("sendTxData", data);
 	    }
 	    parseRxMessage(dataView) {
 	        parseMessage(dataView, TxRxMessageTypes, __classPrivateFieldGet(this, _BaseConnectionManager_instances, "m", _BaseConnectionManager_onRxMessage).bind(this), null, true);
 	    }
 	}
 	_a$2 = BaseConnectionManager, _BaseConnectionManager_status = new WeakMap(), _BaseConnectionManager_pendingMessages = new WeakMap(), _BaseConnectionManager_timer = new WeakMap(), _BaseConnectionManager_instances = new WeakSet(), _BaseConnectionManager_AssertValidTxRxMessageType = function _BaseConnectionManager_AssertValidTxRxMessageType(messageType) {
-	    _console$f.assertEnumWithError(messageType, TxRxMessageTypes);
+	    _console$g.assertEnumWithError(messageType, TxRxMessageTypes);
 	}, _BaseConnectionManager_assertIsSupported = function _BaseConnectionManager_assertIsSupported() {
-	    _console$f.assertWithError(this.isSupported, `${this.constructor.name} is not supported`);
+	    _console$g.assertWithError(this.isSupported, `${this.constructor.name} is not supported`);
 	}, _BaseConnectionManager_assertIsNotConnected = function _BaseConnectionManager_assertIsNotConnected() {
-	    _console$f.assertWithError(!this.isConnected, "device is already connected");
+	    _console$g.assertWithError(!this.isConnected, "device is already connected");
 	}, _BaseConnectionManager_assertIsNotConnecting = function _BaseConnectionManager_assertIsNotConnecting() {
-	    _console$f.assertWithError(this.status != "connecting", "device is already connecting");
+	    _console$g.assertWithError(this.status != "connecting", "device is already connecting");
 	}, _BaseConnectionManager_assertIsConnected = function _BaseConnectionManager_assertIsConnected() {
-	    _console$f.assertWithError(this.isConnected, "device is not connected");
+	    _console$g.assertWithError(this.isConnected, "device is not connected");
 	}, _BaseConnectionManager_assertIsNotDisconnecting = function _BaseConnectionManager_assertIsNotDisconnecting() {
-	    _console$f.assertWithError(this.status != "disconnecting", "device is already disconnecting");
+	    _console$g.assertWithError(this.status != "disconnecting", "device is already disconnecting");
 	}, _BaseConnectionManager_assertIsConnectedAndNotDisconnecting = function _BaseConnectionManager_assertIsConnectedAndNotDisconnecting() {
 	    __classPrivateFieldGet(this, _BaseConnectionManager_instances, "m", _BaseConnectionManager_assertIsConnected).call(this);
 	    __classPrivateFieldGet(this, _BaseConnectionManager_instances, "m", _BaseConnectionManager_assertIsNotDisconnecting).call(this);
 	}, _BaseConnectionManager_onRxMessage = function _BaseConnectionManager_onRxMessage(messageType, dataView) {
-	    _console$f.log({ messageType, dataView });
+	    _console$g.log({ messageType, dataView });
 	    this.onMessageReceived(messageType, dataView);
 	}, _BaseConnectionManager_checkConnection = function _BaseConnectionManager_checkConnection() {
 	    if (!this.isConnected) {
-	        _console$f.log("timer detected disconnection");
+	        _console$g.log("timer detected disconnection");
 	        this.status = "notConnected";
 	    }
 	};
@@ -2441,10 +2441,10 @@
 	    return string[0].toUpperCase() + string.slice(1);
 	}
 
-	const _console$e = createConsole("EventUtils", { log: false });
+	const _console$f = createConsole("EventUtils", { log: false });
 	function addEventListeners(target, boundEventListeners) {
 	    let addEventListener = target.addEventListener || target.addListener || target.on || target.AddEventListener;
-	    _console$e.assertWithError(addEventListener, "no add listener function found for target");
+	    _console$f.assertWithError(addEventListener, "no add listener function found for target");
 	    addEventListener = addEventListener.bind(target);
 	    Object.entries(boundEventListeners).forEach(([eventType, eventListener]) => {
 	        addEventListener(eventType, eventListener);
@@ -2452,20 +2452,20 @@
 	}
 	function removeEventListeners(target, boundEventListeners) {
 	    let removeEventListener = target.removeEventListener || target.removeListener || target.RemoveEventListener;
-	    _console$e.assertWithError(removeEventListener, "no remove listener function found for target");
+	    _console$f.assertWithError(removeEventListener, "no remove listener function found for target");
 	    removeEventListener = removeEventListener.bind(target);
 	    Object.entries(boundEventListeners).forEach(([eventType, eventListener]) => {
 	        removeEventListener(eventType, eventListener);
 	    });
 	}
 
-	const _console$d = createConsole("bluetoothUUIDs", { log: false });
+	const _console$e = createConsole("bluetoothUUIDs", { log: false });
 	if (isInBrowser) {
 	    var BluetoothUUID = window.BluetoothUUID;
 	}
 	function generateBluetoothUUID(value) {
-	    _console$d.assertTypeWithError(value, "string");
-	    _console$d.assertWithError(value.length == 4, "value must be 4 characters long");
+	    _console$e.assertTypeWithError(value, "string");
+	    _console$e.assertWithError(value.length == 4, "value must be 4 characters long");
 	    return `ea6da725-${value}-4f9b-893d-c3913e33b39f`;
 	}
 	function stringToCharacteristicUUID(identifier) {
@@ -2622,7 +2622,7 @@
 	    return properties;
 	}
 
-	const _console$c = createConsole("BluetoothConnectionManager", { log: true });
+	const _console$d = createConsole("BluetoothConnectionManager", { log: true });
 	class BluetoothConnectionManager extends BaseConnectionManager {
 	    constructor() {
 	        super(...arguments);
@@ -2637,7 +2637,7 @@
 	        }
 	    }
 	    async writeCharacteristic(characteristicName, data) {
-	        _console$c.log("writeCharacteristic", ...arguments);
+	        _console$d.log("writeCharacteristic", ...arguments);
 	    }
 	    async sendSmpMessage(data) {
 	        super.sendSmpMessage(data);
@@ -2650,7 +2650,7 @@
 	}
 
 	var _WebBluetoothConnectionManager_instances, _WebBluetoothConnectionManager_boundBluetoothCharacteristicEventListeners, _WebBluetoothConnectionManager_boundBluetoothDeviceEventListeners, _WebBluetoothConnectionManager_device, _WebBluetoothConnectionManager_services, _WebBluetoothConnectionManager_characteristics, _WebBluetoothConnectionManager_getServicesAndCharacteristics, _WebBluetoothConnectionManager_removeEventListeners, _WebBluetoothConnectionManager_onCharacteristicvaluechanged, _WebBluetoothConnectionManager_onCharacteristicValueChanged, _WebBluetoothConnectionManager_onGattserverdisconnected;
-	const _console$b = createConsole("WebBluetoothConnectionManager", { log: true });
+	const _console$c = createConsole("WebBluetoothConnectionManager", { log: true });
 	var bluetooth;
 	if (isInBrowser) {
 	    bluetooth = window.navigator.bluetooth;
@@ -2683,7 +2683,7 @@
 	    }
 	    set device(newDevice) {
 	        if (__classPrivateFieldGet(this, _WebBluetoothConnectionManager_device, "f") == newDevice) {
-	            _console$b.log("tried to assign the same BluetoothDevice");
+	            _console$c.log("tried to assign the same BluetoothDevice");
 	            return;
 	        }
 	        if (__classPrivateFieldGet(this, _WebBluetoothConnectionManager_device, "f")) {
@@ -2707,17 +2707,17 @@
 	                filters: [{ services: serviceUUIDs }],
 	                optionalServices: isInBrowser ? optionalServiceUUIDs : [],
 	            });
-	            _console$b.log("got BluetoothDevice");
+	            _console$c.log("got BluetoothDevice");
 	            this.device = device;
-	            _console$b.log("connecting to device...");
+	            _console$c.log("connecting to device...");
 	            const server = await this.server.connect();
-	            _console$b.log(`connected to device? ${server.connected}`);
+	            _console$c.log(`connected to device? ${server.connected}`);
 	            await __classPrivateFieldGet(this, _WebBluetoothConnectionManager_instances, "m", _WebBluetoothConnectionManager_getServicesAndCharacteristics).call(this);
-	            _console$b.log("fully connected");
+	            _console$c.log("fully connected");
 	            this.status = "connected";
 	        }
 	        catch (error) {
-	            _console$b.error(error);
+	            _console$c.error(error);
 	            this.status = "notConnected";
 	            this.server?.disconnect();
 	            __classPrivateFieldGet(this, _WebBluetoothConnectionManager_instances, "m", _WebBluetoothConnectionManager_removeEventListeners).call(this);
@@ -2732,20 +2732,20 @@
 	    async writeCharacteristic(characteristicName, data) {
 	        super.writeCharacteristic(characteristicName, data);
 	        const characteristic = __classPrivateFieldGet(this, _WebBluetoothConnectionManager_characteristics, "f").get(characteristicName);
-	        _console$b.assertWithError(characteristic, `${characteristicName} characteristic not found`);
-	        _console$b.log("writing characteristic", characteristic, data);
+	        _console$c.assertWithError(characteristic, `${characteristicName} characteristic not found`);
+	        _console$c.log("writing characteristic", characteristic, data);
 	        const characteristicProperties = characteristic.properties || getCharacteristicProperties(characteristicName);
 	        if (characteristicProperties.writeWithoutResponse) {
-	            _console$b.log("writing without response");
+	            _console$c.log("writing without response");
 	            await characteristic.writeValueWithoutResponse(data);
 	        }
 	        else {
-	            _console$b.log("writing with response");
+	            _console$c.log("writing with response");
 	            await characteristic.writeValueWithResponse(data);
 	        }
-	        _console$b.log("wrote characteristic");
+	        _console$c.log("wrote characteristic");
 	        if (characteristicProperties.read && !characteristicProperties.notify) {
-	            _console$b.log("reading value after write...");
+	            _console$c.log("reading value after write...");
 	            await characteristic.readValue();
 	            if (isInBluefy || isInWebBLE) {
 	                __classPrivateFieldGet(this, _WebBluetoothConnectionManager_instances, "m", _WebBluetoothConnectionManager_onCharacteristicValueChanged).call(this, characteristic);
@@ -2757,60 +2757,60 @@
 	    }
 	    async reconnect() {
 	        await super.reconnect();
-	        _console$b.log("attempting to reconnect...");
+	        _console$c.log("attempting to reconnect...");
 	        this.status = "connecting";
 	        try {
 	            await this.server.connect();
 	        }
 	        catch (error) {
-	            _console$b.error(error);
+	            _console$c.error(error);
 	            this.isInRange = false;
 	        }
 	        if (this.isConnected) {
-	            _console$b.log("successfully reconnected!");
+	            _console$c.log("successfully reconnected!");
 	            await __classPrivateFieldGet(this, _WebBluetoothConnectionManager_instances, "m", _WebBluetoothConnectionManager_getServicesAndCharacteristics).call(this);
 	            this.status = "connected";
 	        }
 	        else {
-	            _console$b.log("unable to reconnect");
+	            _console$c.log("unable to reconnect");
 	            this.status = "notConnected";
 	        }
 	    }
 	}
 	_WebBluetoothConnectionManager_boundBluetoothCharacteristicEventListeners = new WeakMap(), _WebBluetoothConnectionManager_boundBluetoothDeviceEventListeners = new WeakMap(), _WebBluetoothConnectionManager_device = new WeakMap(), _WebBluetoothConnectionManager_services = new WeakMap(), _WebBluetoothConnectionManager_characteristics = new WeakMap(), _WebBluetoothConnectionManager_instances = new WeakSet(), _WebBluetoothConnectionManager_getServicesAndCharacteristics = async function _WebBluetoothConnectionManager_getServicesAndCharacteristics() {
 	    __classPrivateFieldGet(this, _WebBluetoothConnectionManager_instances, "m", _WebBluetoothConnectionManager_removeEventListeners).call(this);
-	    _console$b.log("getting services...");
+	    _console$c.log("getting services...");
 	    const services = await this.server.getPrimaryServices();
-	    _console$b.log("got services", services.length);
+	    _console$c.log("got services", services.length);
 	    await this.server.getPrimaryService("8d53dc1d-1db7-4cd3-868b-8a527460aa84");
-	    _console$b.log("getting characteristics...");
+	    _console$c.log("getting characteristics...");
 	    for (const serviceIndex in services) {
 	        const service = services[serviceIndex];
-	        _console$b.log({ service });
+	        _console$c.log({ service });
 	        const serviceName = getServiceNameFromUUID(service.uuid);
-	        _console$b.assertWithError(serviceName, `no name found for service uuid "${service.uuid}"`);
-	        _console$b.log(`got "${serviceName}" service`);
+	        _console$c.assertWithError(serviceName, `no name found for service uuid "${service.uuid}"`);
+	        _console$c.log(`got "${serviceName}" service`);
 	        service.name = serviceName;
 	        __classPrivateFieldGet(this, _WebBluetoothConnectionManager_services, "f").set(serviceName, service);
-	        _console$b.log(`getting characteristics for "${serviceName}" service`);
+	        _console$c.log(`getting characteristics for "${serviceName}" service`);
 	        const characteristics = await service.getCharacteristics();
-	        _console$b.log(`got characteristics for "${serviceName}" service`);
+	        _console$c.log(`got characteristics for "${serviceName}" service`);
 	        for (const characteristicIndex in characteristics) {
 	            const characteristic = characteristics[characteristicIndex];
-	            _console$b.log({ characteristic });
+	            _console$c.log({ characteristic });
 	            const characteristicName = getCharacteristicNameFromUUID(characteristic.uuid);
-	            _console$b.assertWithError(Boolean(characteristicName), `no name found for characteristic uuid "${characteristic.uuid}" in "${serviceName}" service`);
-	            _console$b.log(`got "${characteristicName}" characteristic in "${serviceName}" service`);
+	            _console$c.assertWithError(Boolean(characteristicName), `no name found for characteristic uuid "${characteristic.uuid}" in "${serviceName}" service`);
+	            _console$c.log(`got "${characteristicName}" characteristic in "${serviceName}" service`);
 	            characteristic.name = characteristicName;
 	            __classPrivateFieldGet(this, _WebBluetoothConnectionManager_characteristics, "f").set(characteristicName, characteristic);
 	            addEventListeners(characteristic, __classPrivateFieldGet(this, _WebBluetoothConnectionManager_boundBluetoothCharacteristicEventListeners, "f"));
 	            const characteristicProperties = characteristic.properties || getCharacteristicProperties(characteristicName);
 	            if (characteristicProperties.notify) {
-	                _console$b.log(`starting notifications for "${characteristicName}" characteristic`);
+	                _console$c.log(`starting notifications for "${characteristicName}" characteristic`);
 	                await characteristic.startNotifications();
 	            }
 	            if (characteristicProperties.read) {
-	                _console$b.log(`reading "${characteristicName}" characteristic...`);
+	                _console$c.log(`reading "${characteristicName}" characteristic...`);
 	                await characteristic.readValue();
 	                if (isInBluefy || isInWebBLE) {
 	                    __classPrivateFieldGet(this, _WebBluetoothConnectionManager_instances, "m", _WebBluetoothConnectionManager_onCharacteristicValueChanged).call(this, characteristic);
@@ -2827,31 +2827,31 @@
 	        removeEventListeners(characteristic, __classPrivateFieldGet(this, _WebBluetoothConnectionManager_boundBluetoothCharacteristicEventListeners, "f"));
 	        const characteristicProperties = characteristic.properties || getCharacteristicProperties(characteristicName);
 	        if (characteristicProperties.notify) {
-	            _console$b.log(`stopping notifications for "${characteristicName}" characteristic`);
+	            _console$c.log(`stopping notifications for "${characteristicName}" characteristic`);
 	            return characteristic.stopNotifications();
 	        }
 	    });
 	    return Promise.allSettled(promises);
 	}, _WebBluetoothConnectionManager_onCharacteristicvaluechanged = function _WebBluetoothConnectionManager_onCharacteristicvaluechanged(event) {
-	    _console$b.log("oncharacteristicvaluechanged");
+	    _console$c.log("oncharacteristicvaluechanged");
 	    const characteristic = event.target;
 	    __classPrivateFieldGet(this, _WebBluetoothConnectionManager_instances, "m", _WebBluetoothConnectionManager_onCharacteristicValueChanged).call(this, characteristic);
 	}, _WebBluetoothConnectionManager_onCharacteristicValueChanged = function _WebBluetoothConnectionManager_onCharacteristicValueChanged(characteristic) {
-	    _console$b.log("onCharacteristicValue");
+	    _console$c.log("onCharacteristicValue");
 	    const characteristicName = characteristic.name;
-	    _console$b.assertWithError(Boolean(characteristicName), `no name found for characteristic with uuid "${characteristic.uuid}"`);
-	    _console$b.log(`oncharacteristicvaluechanged for "${characteristicName}" characteristic`);
+	    _console$c.assertWithError(Boolean(characteristicName), `no name found for characteristic with uuid "${characteristic.uuid}"`);
+	    _console$c.log(`oncharacteristicvaluechanged for "${characteristicName}" characteristic`);
 	    const dataView = characteristic.value;
-	    _console$b.assertWithError(dataView, `no data found for "${characteristicName}" characteristic`);
-	    _console$b.log(`data for "${characteristicName}" characteristic`, Array.from(new Uint8Array(dataView.buffer)));
+	    _console$c.assertWithError(dataView, `no data found for "${characteristicName}" characteristic`);
+	    _console$c.log(`data for "${characteristicName}" characteristic`, Array.from(new Uint8Array(dataView.buffer)));
 	    try {
 	        this.onCharacteristicValueChanged(characteristicName, dataView);
 	    }
 	    catch (error) {
-	        _console$b.error(error);
+	        _console$c.error(error);
 	    }
 	}, _WebBluetoothConnectionManager_onGattserverdisconnected = function _WebBluetoothConnectionManager_onGattserverdisconnected() {
-	    _console$b.log("gattserverdisconnected");
+	    _console$c.log("gattserverdisconnected");
 	    this.status = "notConnected";
 	};
 
@@ -3233,7 +3233,7 @@
 	  decode,
 	};
 
-	const _console$a = createConsole("mcumgr", { log: true });
+	const _console$b = createConsole("mcumgr", { log: true });
 	const constants = {
 	  MGMT_OP_READ: 0,
 	  MGMT_OP_READ_RSP: 1,
@@ -3331,7 +3331,7 @@
 	    return message;
 	  }
 	  _notification(buffer) {
-	    _console$a.log("mcumgr - message received");
+	    _console$b.log("mcumgr - message received");
 	    const message = new Uint8Array(buffer);
 	    this._buffer = new Uint8Array([...this._buffer, ...message]);
 	    const messageLength = this._buffer[2] * 256 + this._buffer[3];
@@ -3344,7 +3344,7 @@
 	    const data = CBOR.decode(message.slice(8).buffer);
 	    const length = lengthHi * 256 + lengthLo;
 	    const group = groupHi * 256 + groupLo;
-	    _console$a.log("mcumgr - Process Message - Group: " + group + ", Id: " + id + ", Off: " + data.off);
+	    _console$b.log("mcumgr - Process Message - Group: " + group + ", Id: " + id + ", Off: " + data.off);
 	    if (group === constants.MGMT_GROUP_ID_IMAGE && id === constants.IMG_MGMT_ID_UPLOAD && data.off) {
 	      this._uploadOffset = data.off;
 	      this._uploadNext();
@@ -3365,7 +3365,7 @@
 	      if (data.len != undefined) {
 	        this._downloadFileLength = data.len;
 	      }
-	      _console$a.log("downloaded " + this._downloadFileOffset + " bytes of " + this._downloadFileLength);
+	      _console$b.log("downloaded " + this._downloadFileOffset + " bytes of " + this._downloadFileLength);
 	      if (this._downloadFileLength > 0) {
 	        this._fileDownloadProgressCallback({
 	          percentage: Math.floor((this._downloadFileOffset / this._downloadFileLength) * 100),
@@ -3433,7 +3433,7 @@
 	      constants.IMG_MGMT_ID_UPLOAD,
 	      message
 	    );
-	    _console$a.log("mcumgr - _uploadNext: Message Length: " + packet.length);
+	    _console$b.log("mcumgr - _uploadNext: Message Length: " + packet.length);
 	    this._imageUploadNextCallback({ packet });
 	  }
 	  async reset() {
@@ -3449,7 +3449,7 @@
 	  }
 	  async cmdUpload(image, slot = 0) {
 	    if (this._uploadIsInProgress) {
-	      _console$a.error("Upload is already in progress.");
+	      _console$b.error("Upload is already in progress.");
 	      return;
 	    }
 	    this._uploadIsInProgress = true;
@@ -3460,7 +3460,7 @@
 	  }
 	  async cmdUploadFile(filebuf, destFilename) {
 	    if (this._uploadIsInProgress) {
-	      _console$a.error("Upload is already in progress.");
+	      _console$b.error("Upload is already in progress.");
 	      return;
 	    }
 	    this._uploadIsInProgress = true;
@@ -3470,7 +3470,7 @@
 	    this._uploadFileNext();
 	  }
 	  async _uploadFileNext() {
-	    _console$a.log("uploadFileNext - offset: " + this._uploadFileOffset + ", length: " + this._uploadFile.byteLength);
+	    _console$b.log("uploadFileNext - offset: " + this._uploadFileOffset + ", length: " + this._uploadFile.byteLength);
 	    if (this._uploadFileOffset >= this._uploadFile.byteLength) {
 	      this._uploadIsInProgress = false;
 	      this._fileUploadFinishedCallback();
@@ -3494,12 +3494,12 @@
 	      constants.FS_MGMT_ID_FILE,
 	      message
 	    );
-	    _console$a.log("mcumgr - _uploadNext: Message Length: " + packet.length);
+	    _console$b.log("mcumgr - _uploadNext: Message Length: " + packet.length);
 	    this._fileUploadNextCallback({ packet });
 	  }
 	  async cmdDownloadFile(filename, destFilename) {
 	    if (this._downloadIsInProgress) {
-	      _console$a.error("Download is already in progress.");
+	      _console$b.error("Download is already in progress.");
 	      return;
 	    }
 	    this._downloadIsInProgress = true;
@@ -3527,7 +3527,7 @@
 	      constants.FS_MGMT_ID_FILE,
 	      message
 	    );
-	    _console$a.log("mcumgr - _downloadNext: Message Length: " + packet.length);
+	    _console$b.log("mcumgr - _downloadNext: Message Length: " + packet.length);
 	    this._fileDownloadNextCallback({ packet });
 	  }
 	  async imageInfo(image) {
@@ -3564,7 +3564,7 @@
 	}
 
 	var _FirmwareManager_instances, _FirmwareManager_dispatchEvent_get, _FirmwareManager_status, _FirmwareManager_updateStatus, _FirmwareManager_images, _FirmwareManager_assertImages, _FirmwareManager_assertValidImageIndex, _FirmwareManager_mtu, _FirmwareManager_mcuManager, _FirmwareManager_assignMcuManagerCallbacks, _FirmwareManager_onMcuMessage, _FirmwareManager_onMcuFileDownloadNext, _FirmwareManager_onMcuFileDownloadProgress, _FirmwareManager_onMcuFileDownloadFinished, _FirmwareManager_onMcuFileUploadNext, _FirmwareManager_onMcuFileUploadProgress, _FirmwareManager_onMcuFileUploadFinished, _FirmwareManager_onMcuImageUploadNext, _FirmwareManager_onMcuImageUploadProgress, _FirmwareManager_onMcuImageUploadFinished, _FirmwareManager_onMcuImageState;
-	const _console$9 = createConsole("FirmwareManager", { log: true });
+	const _console$a = createConsole("FirmwareManager", { log: true });
 	const FirmwareMessageTypes = ["smp"];
 	const FirmwareEventTypes = [
 	    ...FirmwareMessageTypes,
@@ -3594,7 +3594,7 @@
 	        return this.eventDispatcher.waitForEvent;
 	    }
 	    parseMessage(messageType, dataView) {
-	        _console$9.log({ messageType });
+	        _console$a.log({ messageType });
 	        switch (messageType) {
 	            case "smp":
 	                __classPrivateFieldGet(this, _FirmwareManager_mcuManager, "f")._notification(Array.from(new Uint8Array(dataView.buffer)));
@@ -3605,12 +3605,12 @@
 	        }
 	    }
 	    async uploadFirmware(file) {
-	        _console$9.log("uploadFirmware", file);
+	        _console$a.log("uploadFirmware", file);
 	        const promise = this.waitForEvent("firmwareUploadComplete");
 	        await this.getImages();
 	        const arrayBuffer = await getFileBuffer(file);
 	        const imageInfo = await __classPrivateFieldGet(this, _FirmwareManager_mcuManager, "f").imageInfo(arrayBuffer);
-	        _console$9.log({ imageInfo });
+	        _console$a.log({ imageInfo });
 	        __classPrivateFieldGet(this, _FirmwareManager_mcuManager, "f").cmdUpload(arrayBuffer, 1);
 	        __classPrivateFieldGet(this, _FirmwareManager_instances, "m", _FirmwareManager_updateStatus).call(this, "uploading");
 	        await promise;
@@ -3623,7 +3623,7 @@
 	    }
 	    async getImages() {
 	        const promise = this.waitForEvent("firmwareImages");
-	        _console$9.log("getting firmware image state...");
+	        _console$a.log("getting firmware image state...");
 	        this.sendMessage(Uint8Array.from(__classPrivateFieldGet(this, _FirmwareManager_mcuManager, "f").cmdImageState()).buffer);
 	        await promise;
 	    }
@@ -3631,26 +3631,26 @@
 	        __classPrivateFieldGet(this, _FirmwareManager_instances, "m", _FirmwareManager_assertValidImageIndex).call(this, imageIndex);
 	        __classPrivateFieldGet(this, _FirmwareManager_instances, "m", _FirmwareManager_assertImages).call(this);
 	        if (!__classPrivateFieldGet(this, _FirmwareManager_images, "f")[imageIndex]) {
-	            _console$9.log(`image ${imageIndex} not found`);
+	            _console$a.log(`image ${imageIndex} not found`);
 	            return;
 	        }
 	        if (__classPrivateFieldGet(this, _FirmwareManager_images, "f")[imageIndex].pending == true) {
-	            _console$9.log(`image ${imageIndex} is already pending`);
+	            _console$a.log(`image ${imageIndex} is already pending`);
 	            return;
 	        }
 	        if (__classPrivateFieldGet(this, _FirmwareManager_images, "f")[imageIndex].empty) {
-	            _console$9.log(`image ${imageIndex} is empty`);
+	            _console$a.log(`image ${imageIndex} is empty`);
 	            return;
 	        }
 	        const promise = this.waitForEvent("smp");
-	        _console$9.log("testing firmware image...");
+	        _console$a.log("testing firmware image...");
 	        this.sendMessage(Uint8Array.from(__classPrivateFieldGet(this, _FirmwareManager_mcuManager, "f").cmdImageTest(__classPrivateFieldGet(this, _FirmwareManager_images, "f")[imageIndex].hash)).buffer);
 	        await promise;
 	    }
 	    async eraseImage() {
 	        __classPrivateFieldGet(this, _FirmwareManager_instances, "m", _FirmwareManager_assertImages).call(this);
 	        const promise = this.waitForEvent("smp");
-	        _console$9.log("erasing image...");
+	        _console$a.log("erasing image...");
 	        this.sendMessage(Uint8Array.from(__classPrivateFieldGet(this, _FirmwareManager_mcuManager, "f").cmdImageErase()).buffer);
 	        __classPrivateFieldGet(this, _FirmwareManager_instances, "m", _FirmwareManager_updateStatus).call(this, "erasing");
 	        await promise;
@@ -3660,24 +3660,24 @@
 	        __classPrivateFieldGet(this, _FirmwareManager_instances, "m", _FirmwareManager_assertValidImageIndex).call(this, imageIndex);
 	        __classPrivateFieldGet(this, _FirmwareManager_instances, "m", _FirmwareManager_assertImages).call(this);
 	        if (__classPrivateFieldGet(this, _FirmwareManager_images, "f")[imageIndex].confirmed === true) {
-	            _console$9.log(`image ${imageIndex} is already confirmed`);
+	            _console$a.log(`image ${imageIndex} is already confirmed`);
 	            return;
 	        }
 	        const promise = this.waitForEvent("smp");
-	        _console$9.log("confirming image...");
+	        _console$a.log("confirming image...");
 	        this.sendMessage(Uint8Array.from(__classPrivateFieldGet(this, _FirmwareManager_mcuManager, "f").cmdImageConfirm(__classPrivateFieldGet(this, _FirmwareManager_images, "f")[imageIndex].hash)).buffer);
 	        await promise;
 	    }
 	    async echo(string) {
-	        _console$9.assertTypeWithError(string, "string");
+	        _console$a.assertTypeWithError(string, "string");
 	        const promise = this.waitForEvent("smp");
-	        _console$9.log("sending echo...");
+	        _console$a.log("sending echo...");
 	        this.sendMessage(Uint8Array.from(__classPrivateFieldGet(this, _FirmwareManager_mcuManager, "f").smpEcho(string)).buffer);
 	        await promise;
 	    }
 	    async reset() {
 	        const promise = this.waitForEvent("smp");
-	        _console$9.log("resetting...");
+	        _console$a.log("resetting...");
 	        this.sendMessage(Uint8Array.from(__classPrivateFieldGet(this, _FirmwareManager_mcuManager, "f").cmdReset()).buffer);
 	        await promise;
 	    }
@@ -3692,19 +3692,19 @@
 	_FirmwareManager_status = new WeakMap(), _FirmwareManager_images = new WeakMap(), _FirmwareManager_mtu = new WeakMap(), _FirmwareManager_mcuManager = new WeakMap(), _FirmwareManager_instances = new WeakSet(), _FirmwareManager_dispatchEvent_get = function _FirmwareManager_dispatchEvent_get() {
 	    return this.eventDispatcher.dispatchEvent;
 	}, _FirmwareManager_updateStatus = function _FirmwareManager_updateStatus(newStatus) {
-	    _console$9.assertEnumWithError(newStatus, FirmwareStatuses);
+	    _console$a.assertEnumWithError(newStatus, FirmwareStatuses);
 	    if (__classPrivateFieldGet(this, _FirmwareManager_status, "f") == newStatus) {
-	        _console$9.log(`redundant firmwareStatus assignment "${newStatus}"`);
+	        _console$a.log(`redundant firmwareStatus assignment "${newStatus}"`);
 	        return;
 	    }
 	    __classPrivateFieldSet(this, _FirmwareManager_status, newStatus, "f");
-	    _console$9.log({ firmwareStatus: __classPrivateFieldGet(this, _FirmwareManager_status, "f") });
+	    _console$a.log({ firmwareStatus: __classPrivateFieldGet(this, _FirmwareManager_status, "f") });
 	    __classPrivateFieldGet(this, _FirmwareManager_instances, "a", _FirmwareManager_dispatchEvent_get).call(this, "firmwareStatus", { firmwareStatus: __classPrivateFieldGet(this, _FirmwareManager_status, "f") });
 	}, _FirmwareManager_assertImages = function _FirmwareManager_assertImages() {
-	    _console$9.assertWithError(__classPrivateFieldGet(this, _FirmwareManager_images, "f"), "didn't get imageState");
+	    _console$a.assertWithError(__classPrivateFieldGet(this, _FirmwareManager_images, "f"), "didn't get imageState");
 	}, _FirmwareManager_assertValidImageIndex = function _FirmwareManager_assertValidImageIndex(imageIndex) {
-	    _console$9.assertTypeWithError(imageIndex, "number");
-	    _console$9.assertWithError(imageIndex == 0 || imageIndex == 1, "imageIndex must be 0 or 1");
+	    _console$a.assertTypeWithError(imageIndex, "number");
+	    _console$a.assertWithError(imageIndex == 0 || imageIndex == 1, "imageIndex must be 0 or 1");
 	}, _FirmwareManager_assignMcuManagerCallbacks = function _FirmwareManager_assignMcuManagerCallbacks() {
 	    __classPrivateFieldGet(this, _FirmwareManager_mcuManager, "f").onMessage(__classPrivateFieldGet(this, _FirmwareManager_instances, "m", _FirmwareManager_onMcuMessage).bind(this));
 	    __classPrivateFieldGet(this, _FirmwareManager_mcuManager, "f").onFileDownloadNext(__classPrivateFieldGet(this, _FirmwareManager_instances, "m", _FirmwareManager_onMcuFileDownloadNext));
@@ -3717,18 +3717,18 @@
 	    __classPrivateFieldGet(this, _FirmwareManager_mcuManager, "f").onImageUploadProgress(__classPrivateFieldGet(this, _FirmwareManager_instances, "m", _FirmwareManager_onMcuImageUploadProgress).bind(this));
 	    __classPrivateFieldGet(this, _FirmwareManager_mcuManager, "f").onImageUploadFinished(__classPrivateFieldGet(this, _FirmwareManager_instances, "m", _FirmwareManager_onMcuImageUploadFinished).bind(this));
 	}, _FirmwareManager_onMcuMessage = function _FirmwareManager_onMcuMessage({ op, group, id, data, length }) {
-	    _console$9.log("onMcuMessage", ...arguments);
+	    _console$a.log("onMcuMessage", ...arguments);
 	    switch (group) {
 	        case constants.MGMT_GROUP_ID_OS:
 	            switch (id) {
 	                case constants.OS_MGMT_ID_ECHO:
-	                    _console$9.log(`echo "${data.r}"`);
+	                    _console$a.log(`echo "${data.r}"`);
 	                    break;
 	                case constants.OS_MGMT_ID_TASKSTAT:
-	                    _console$9.table(data.tasks);
+	                    _console$a.table(data.tasks);
 	                    break;
 	                case constants.OS_MGMT_ID_MPSTAT:
-	                    _console$9.log(data);
+	                    _console$a.log(data);
 	                    break;
 	            }
 	            break;
@@ -3742,54 +3742,54 @@
 	            throw Error(`uncaught mcuMessage group ${group}`);
 	    }
 	}, _FirmwareManager_onMcuFileDownloadNext = function _FirmwareManager_onMcuFileDownloadNext() {
-	    _console$9.log("onMcuFileDownloadNext", ...arguments);
+	    _console$a.log("onMcuFileDownloadNext", ...arguments);
 	}, _FirmwareManager_onMcuFileDownloadProgress = function _FirmwareManager_onMcuFileDownloadProgress() {
-	    _console$9.log("onMcuFileDownloadProgress", ...arguments);
+	    _console$a.log("onMcuFileDownloadProgress", ...arguments);
 	}, _FirmwareManager_onMcuFileDownloadFinished = function _FirmwareManager_onMcuFileDownloadFinished() {
-	    _console$9.log("onMcuFileDownloadFinished", ...arguments);
+	    _console$a.log("onMcuFileDownloadFinished", ...arguments);
 	}, _FirmwareManager_onMcuFileUploadNext = function _FirmwareManager_onMcuFileUploadNext() {
-	    _console$9.log("onMcuFileUploadNext");
+	    _console$a.log("onMcuFileUploadNext");
 	}, _FirmwareManager_onMcuFileUploadProgress = function _FirmwareManager_onMcuFileUploadProgress() {
-	    _console$9.log("onMcuFileUploadProgress");
+	    _console$a.log("onMcuFileUploadProgress");
 	}, _FirmwareManager_onMcuFileUploadFinished = function _FirmwareManager_onMcuFileUploadFinished() {
-	    _console$9.log("onMcuFileUploadFinished");
+	    _console$a.log("onMcuFileUploadFinished");
 	}, _FirmwareManager_onMcuImageUploadNext = function _FirmwareManager_onMcuImageUploadNext({ packet }) {
-	    _console$9.log("onMcuImageUploadNext");
+	    _console$a.log("onMcuImageUploadNext");
 	    this.sendMessage(Uint8Array.from(packet).buffer);
 	}, _FirmwareManager_onMcuImageUploadProgress = function _FirmwareManager_onMcuImageUploadProgress({ percentage }) {
 	    const progress = percentage / 100;
-	    _console$9.log("onMcuImageUploadProgress", ...arguments);
+	    _console$a.log("onMcuImageUploadProgress", ...arguments);
 	    __classPrivateFieldGet(this, _FirmwareManager_instances, "a", _FirmwareManager_dispatchEvent_get).call(this, "firmwareUploadProgress", { progress });
 	}, _FirmwareManager_onMcuImageUploadFinished = async function _FirmwareManager_onMcuImageUploadFinished() {
-	    _console$9.log("onMcuImageUploadFinished", ...arguments);
+	    _console$a.log("onMcuImageUploadFinished", ...arguments);
 	    await this.getImages();
 	    __classPrivateFieldGet(this, _FirmwareManager_instances, "a", _FirmwareManager_dispatchEvent_get).call(this, "firmwareUploadProgress", { progress: 100 });
 	    __classPrivateFieldGet(this, _FirmwareManager_instances, "a", _FirmwareManager_dispatchEvent_get).call(this, "firmwareUploadComplete", {});
 	}, _FirmwareManager_onMcuImageState = function _FirmwareManager_onMcuImageState({ images }) {
 	    if (images) {
 	        __classPrivateFieldSet(this, _FirmwareManager_images, images, "f");
-	        _console$9.log("images", __classPrivateFieldGet(this, _FirmwareManager_images, "f"));
+	        _console$a.log("images", __classPrivateFieldGet(this, _FirmwareManager_images, "f"));
 	    }
 	    else {
-	        _console$9.log("no images found");
+	        _console$a.log("no images found");
 	        return;
 	    }
 	    let newStatus = "idle";
 	    if (__classPrivateFieldGet(this, _FirmwareManager_images, "f").length == 2) {
 	        if (!__classPrivateFieldGet(this, _FirmwareManager_images, "f")[1].bootable) {
-	            _console$9.warn('Slot 1 has a invalid image. Click "Erase Image" to erase it or upload a different image');
+	            _console$a.warn('Slot 1 has a invalid image. Click "Erase Image" to erase it or upload a different image');
 	        }
 	        else if (!__classPrivateFieldGet(this, _FirmwareManager_images, "f")[0].confirmed) {
-	            _console$9.log('Slot 0 has a valid image. Click "Confirm Image" to confirm it or wait and the device will swap images back.');
+	            _console$a.log('Slot 0 has a valid image. Click "Confirm Image" to confirm it or wait and the device will swap images back.');
 	            newStatus = "testing";
 	        }
 	        else {
 	            if (__classPrivateFieldGet(this, _FirmwareManager_images, "f")[1].pending) {
-	                _console$9.log("reset to upload to the new firmware image");
+	                _console$a.log("reset to upload to the new firmware image");
 	                newStatus = "pending";
 	            }
 	            else {
-	                _console$9.log("Slot 1 has a valid image. run testImage() to test it or upload a different image.");
+	                _console$a.log("Slot 1 has a valid image. run testImage() to test it or upload a different image.");
 	                newStatus = "uploaded";
 	            }
 	        }
@@ -3805,14 +3805,14 @@
 	            active: false,
 	            permanent: false,
 	        });
-	        _console$9.log("Select a firmware upload image to upload to slot 1.");
+	        _console$a.log("Select a firmware upload image to upload to slot 1.");
 	    }
 	    __classPrivateFieldGet(this, _FirmwareManager_instances, "m", _FirmwareManager_updateStatus).call(this, newStatus);
 	    __classPrivateFieldGet(this, _FirmwareManager_instances, "a", _FirmwareManager_dispatchEvent_get).call(this, "firmwareImages", { firmwareImages: __classPrivateFieldGet(this, _FirmwareManager_images, "f") });
 	};
 
 	var _DeviceManager_instances, _DeviceManager_boundDeviceEventListeners, _DeviceManager_onDeviceType, _DeviceManager_ConnectedDevices, _DeviceManager_UseLocalStorage, _DeviceManager_DefaultLocalStorageConfiguration, _DeviceManager_LocalStorageConfiguration, _DeviceManager_AssertLocalStorage, _DeviceManager_LocalStorageKey, _DeviceManager_SaveToLocalStorage, _DeviceManager_LoadFromLocalStorage, _DeviceManager_UpdateLocalStorageConfigurationForDevice, _DeviceManager_AvailableDevices, _DeviceManager_EventDispatcher, _DeviceManager_DispatchEvent_get, _DeviceManager_OnDeviceIsConnected, _DeviceManager_DispatchAvailableDevices, _DeviceManager_DispatchConnectedDevices;
-	const _console$8 = createConsole("DeviceManager", { log: true });
+	const _console$9 = createConsole("DeviceManager", { log: true });
 	const DeviceManagerEventTypes = [
 	    "deviceConnected",
 	    "deviceDisconnected",
@@ -3861,7 +3861,7 @@
 	    }
 	    set UseLocalStorage(newUseLocalStorage) {
 	        __classPrivateFieldGet(this, _DeviceManager_instances, "m", _DeviceManager_AssertLocalStorage).call(this);
-	        _console$8.assertTypeWithError(newUseLocalStorage, "boolean");
+	        _console$9.assertTypeWithError(newUseLocalStorage, "boolean");
 	        __classPrivateFieldSet(this, _DeviceManager_UseLocalStorage, newUseLocalStorage, "f");
 	        if (__classPrivateFieldGet(this, _DeviceManager_UseLocalStorage, "f") && !__classPrivateFieldGet(this, _DeviceManager_LocalStorageConfiguration, "f")) {
 	            __classPrivateFieldGet(this, _DeviceManager_instances, "m", _DeviceManager_LoadFromLocalStorage).call(this);
@@ -3878,23 +3878,23 @@
 	    }
 	    async GetDevices() {
 	        if (!isInBrowser) {
-	            _console$8.warn("GetDevices is only available in the browser");
+	            _console$9.warn("GetDevices is only available in the browser");
 	            return;
 	        }
 	        if (!navigator.bluetooth) {
-	            _console$8.warn("bluetooth is not available in this browser");
+	            _console$9.warn("bluetooth is not available in this browser");
 	            return;
 	        }
 	        if (isInBluefy) {
-	            _console$8.warn("bluefy lists too many devices...");
+	            _console$9.warn("bluefy lists too many devices...");
 	            return;
 	        }
 	        if (!navigator.bluetooth.getDevices) {
-	            _console$8.warn("bluetooth.getDevices() is not available in this browser");
+	            _console$9.warn("bluetooth.getDevices() is not available in this browser");
 	            return;
 	        }
 	        if (!this.CanGetDevices) {
-	            _console$8.log("CanGetDevices is false");
+	            _console$9.log("CanGetDevices is false");
 	            return;
 	        }
 	        if (!__classPrivateFieldGet(this, _DeviceManager_LocalStorageConfiguration, "f")) {
@@ -3902,11 +3902,11 @@
 	        }
 	        const configuration = __classPrivateFieldGet(this, _DeviceManager_LocalStorageConfiguration, "f");
 	        if (!configuration.devices || configuration.devices.length == 0) {
-	            _console$8.log("no devices found in configuration");
+	            _console$9.log("no devices found in configuration");
 	            return;
 	        }
 	        const bluetoothDevices = await navigator.bluetooth.getDevices();
-	        _console$8.log({ bluetoothDevices });
+	        _console$9.log({ bluetoothDevices });
 	        bluetoothDevices.forEach((bluetoothDevice) => {
 	            if (!bluetoothDevice.gatt) {
 	                return;
@@ -3954,8 +3954,8 @@
 	        __classPrivateFieldGet(this, _DeviceManager_instances, "m", _DeviceManager_UpdateLocalStorageConfigurationForDevice).call(this, event.target);
 	    }
 	}, _DeviceManager_AssertLocalStorage = function _DeviceManager_AssertLocalStorage() {
-	    _console$8.assertWithError(isInBrowser, "localStorage is only available in the browser");
-	    _console$8.assertWithError(window.localStorage, "localStorage not found");
+	    _console$9.assertWithError(isInBrowser, "localStorage is only available in the browser");
+	    _console$9.assertWithError(window.localStorage, "localStorage not found");
 	}, _DeviceManager_SaveToLocalStorage = function _DeviceManager_SaveToLocalStorage() {
 	    __classPrivateFieldGet(this, _DeviceManager_instances, "m", _DeviceManager_AssertLocalStorage).call(this);
 	    localStorage.setItem(__classPrivateFieldGet(this, _DeviceManager_LocalStorageKey, "f"), JSON.stringify(__classPrivateFieldGet(this, _DeviceManager_LocalStorageConfiguration, "f")));
@@ -3963,25 +3963,25 @@
 	    __classPrivateFieldGet(this, _DeviceManager_instances, "m", _DeviceManager_AssertLocalStorage).call(this);
 	    let localStorageString = localStorage.getItem(__classPrivateFieldGet(this, _DeviceManager_LocalStorageKey, "f"));
 	    if (typeof localStorageString != "string") {
-	        _console$8.log("no info found in localStorage");
+	        _console$9.log("no info found in localStorage");
 	        __classPrivateFieldSet(this, _DeviceManager_LocalStorageConfiguration, Object.assign({}, __classPrivateFieldGet(this, _DeviceManager_DefaultLocalStorageConfiguration, "f")), "f");
 	        __classPrivateFieldGet(this, _DeviceManager_instances, "m", _DeviceManager_SaveToLocalStorage).call(this);
 	        return;
 	    }
 	    try {
 	        const configuration = JSON.parse(localStorageString);
-	        _console$8.log({ configuration });
+	        _console$9.log({ configuration });
 	        __classPrivateFieldSet(this, _DeviceManager_LocalStorageConfiguration, configuration, "f");
 	        if (this.CanGetDevices) {
 	            await this.GetDevices();
 	        }
 	    }
 	    catch (error) {
-	        _console$8.error(error);
+	        _console$9.error(error);
 	    }
 	}, _DeviceManager_UpdateLocalStorageConfigurationForDevice = function _DeviceManager_UpdateLocalStorageConfigurationForDevice(device) {
 	    if (device.connectionType != "webBluetooth") {
-	        _console$8.log("localStorage is only for webBluetooth devices");
+	        _console$9.log("localStorage is only for webBluetooth devices");
 	        return;
 	    }
 	    __classPrivateFieldGet(this, _DeviceManager_instances, "m", _DeviceManager_AssertLocalStorage).call(this);
@@ -3999,7 +3999,7 @@
 	    const { target: device } = event;
 	    if (device.isConnected) {
 	        if (!__classPrivateFieldGet(this, _DeviceManager_ConnectedDevices, "f").includes(device)) {
-	            _console$8.log("adding device", device);
+	            _console$9.log("adding device", device);
 	            __classPrivateFieldGet(this, _DeviceManager_ConnectedDevices, "f").push(device);
 	            if (this.UseLocalStorage && device.connectionType == "webBluetooth") {
 	                const deviceInformation = {
@@ -4020,19 +4020,19 @@
 	            __classPrivateFieldGet(this, _DeviceManager_instances, "m", _DeviceManager_DispatchConnectedDevices).call(this);
 	        }
 	        else {
-	            _console$8.log("device already included");
+	            _console$9.log("device already included");
 	        }
 	    }
 	    else {
 	        if (__classPrivateFieldGet(this, _DeviceManager_ConnectedDevices, "f").includes(device)) {
-	            _console$8.log("removing device", device);
+	            _console$9.log("removing device", device);
 	            __classPrivateFieldGet(this, _DeviceManager_ConnectedDevices, "f").splice(__classPrivateFieldGet(this, _DeviceManager_ConnectedDevices, "f").indexOf(device), 1);
 	            __classPrivateFieldGet(this, _DeviceManager_instances, "a", _DeviceManager_DispatchEvent_get).call(this, "deviceDisconnected", { device });
 	            __classPrivateFieldGet(this, _DeviceManager_instances, "a", _DeviceManager_DispatchEvent_get).call(this, "deviceIsConnected", { device });
 	            __classPrivateFieldGet(this, _DeviceManager_instances, "m", _DeviceManager_DispatchConnectedDevices).call(this);
 	        }
 	        else {
-	            _console$8.log("device already not included");
+	            _console$9.log("device already not included");
 	        }
 	    }
 	    if (this.CanGetDevices) {
@@ -4040,7 +4040,7 @@
 	    }
 	    if (device.isConnected && !this.AvailableDevices.includes(device)) {
 	        const existingAvailableDevice = this.AvailableDevices.find((_device) => _device.bluetoothId == device.bluetoothId);
-	        _console$8.log({ existingAvailableDevice });
+	        _console$9.log({ existingAvailableDevice });
 	        if (existingAvailableDevice) {
 	            this.AvailableDevices[this.AvailableDevices.indexOf(existingAvailableDevice)] = device;
 	        }
@@ -4050,17 +4050,17 @@
 	        __classPrivateFieldGet(this, _DeviceManager_instances, "m", _DeviceManager_DispatchAvailableDevices).call(this);
 	    }
 	}, _DeviceManager_DispatchAvailableDevices = function _DeviceManager_DispatchAvailableDevices() {
-	    _console$8.log({ AvailableDevices: this.AvailableDevices });
+	    _console$9.log({ AvailableDevices: this.AvailableDevices });
 	    __classPrivateFieldGet(this, _DeviceManager_instances, "a", _DeviceManager_DispatchEvent_get).call(this, "availableDevices", { availableDevices: this.AvailableDevices });
 	}, _DeviceManager_DispatchConnectedDevices = function _DeviceManager_DispatchConnectedDevices() {
-	    _console$8.log({ ConnectedDevices: this.ConnectedDevices });
+	    _console$9.log({ ConnectedDevices: this.ConnectedDevices });
 	    __classPrivateFieldGet(this, _DeviceManager_instances, "a", _DeviceManager_DispatchEvent_get).call(this, "connectedDevices", { connectedDevices: this.ConnectedDevices });
 	};
 	DeviceManager.shared = new DeviceManager();
 	var DeviceManager$1 = DeviceManager.shared;
 
 	var _Device_instances, _a$1, _Device_DefaultConnectionManager, _Device_eventDispatcher, _Device_dispatchEvent_get, _Device_connectionManager, _Device_sendTxMessages, _Device_isConnected, _Device_assertIsConnected, _Device_hasRequiredInformation_get, _Device_requestRequiredInformation, _Device_assertCanReconnect, _Device_ReconnectOnDisconnection, _Device_reconnectOnDisconnection, _Device_reconnectIntervalId, _Device_onConnectionStatusUpdated, _Device_dispatchConnectionEvents, _Device_checkConnection, _Device_clear, _Device_onConnectionMessageReceived, _Device_deviceInformationManager, _Device_batteryLevel, _Device_updateBatteryLevel, _Device_sensorConfigurationManager, _Device_ClearSensorConfigurationOnLeave, _Device_clearSensorConfigurationOnLeave, _Device_sensorDataManager, _Device_vibrationManager, _Device_fileTransferManager, _Device_tfliteManager, _Device_firmwareManager, _Device_sendSmpMessage;
-	const _console$7 = createConsole("Device", { log: true });
+	const _console$8 = createConsole("Device", { log: true });
 	const DeviceEventTypes = [
 	    "connectionMessage",
 	    ...ConnectionEventTypes,
@@ -4171,7 +4171,7 @@
 	    }
 	    set connectionManager(newConnectionManager) {
 	        if (this.connectionManager == newConnectionManager) {
-	            _console$7.log("same connectionManager is already assigned");
+	            _console$8.log("same connectionManager is already assigned");
 	            return;
 	        }
 	        if (this.connectionManager) {
@@ -4183,7 +4183,7 @@
 	            newConnectionManager.onMessageReceived = __classPrivateFieldGet(this, _Device_instances, "m", _Device_onConnectionMessageReceived).bind(this);
 	        }
 	        __classPrivateFieldSet(this, _Device_connectionManager, newConnectionManager, "f");
-	        _console$7.log("assigned new connectionManager", __classPrivateFieldGet(this, _Device_connectionManager, "f"));
+	        _console$8.log("assigned new connectionManager", __classPrivateFieldGet(this, _Device_connectionManager, "f"));
 	    }
 	    async connect() {
 	        if (!this.connectionManager) {
@@ -4212,14 +4212,14 @@
 	        return __classPrivateFieldGet(this, _a$1, "f", _Device_ReconnectOnDisconnection);
 	    }
 	    static set ReconnectOnDisconnection(newReconnectOnDisconnection) {
-	        _console$7.assertTypeWithError(newReconnectOnDisconnection, "boolean");
+	        _console$8.assertTypeWithError(newReconnectOnDisconnection, "boolean");
 	        __classPrivateFieldSet(this, _a$1, newReconnectOnDisconnection, "f", _Device_ReconnectOnDisconnection);
 	    }
 	    get reconnectOnDisconnection() {
 	        return __classPrivateFieldGet(this, _Device_reconnectOnDisconnection, "f");
 	    }
 	    set reconnectOnDisconnection(newReconnectOnDisconnection) {
-	        _console$7.assertTypeWithError(newReconnectOnDisconnection, "boolean");
+	        _console$8.assertTypeWithError(newReconnectOnDisconnection, "boolean");
 	        __classPrivateFieldSet(this, _Device_reconnectOnDisconnection, newReconnectOnDisconnection, "f");
 	    }
 	    get connectionType() {
@@ -4319,14 +4319,14 @@
 	        return __classPrivateFieldGet(this, _a$1, "f", _Device_ClearSensorConfigurationOnLeave);
 	    }
 	    static set ClearSensorConfigurationOnLeave(newClearSensorConfigurationOnLeave) {
-	        _console$7.assertTypeWithError(newClearSensorConfigurationOnLeave, "boolean");
+	        _console$8.assertTypeWithError(newClearSensorConfigurationOnLeave, "boolean");
 	        __classPrivateFieldSet(this, _a$1, newClearSensorConfigurationOnLeave, "f", _Device_ClearSensorConfigurationOnLeave);
 	    }
 	    get clearSensorConfigurationOnLeave() {
 	        return __classPrivateFieldGet(this, _Device_clearSensorConfigurationOnLeave, "f");
 	    }
 	    set clearSensorConfigurationOnLeave(newClearSensorConfigurationOnLeave) {
-	        _console$7.assertTypeWithError(newClearSensorConfigurationOnLeave, "boolean");
+	        _console$8.assertTypeWithError(newClearSensorConfigurationOnLeave, "boolean");
 	        __classPrivateFieldSet(this, _Device_clearSensorConfigurationOnLeave, newClearSensorConfigurationOnLeave, "f");
 	    }
 	    get numberOfPressureSensors() {
@@ -4447,7 +4447,7 @@
 	}, _Device_sendTxMessages = async function _Device_sendTxMessages(messages, sendImmediately) {
 	    await __classPrivateFieldGet(this, _Device_connectionManager, "f")?.sendTxMessages(messages, sendImmediately);
 	}, _Device_assertIsConnected = function _Device_assertIsConnected() {
-	    _console$7.assertWithError(this.isConnected, "notConnected");
+	    _console$8.assertWithError(this.isConnected, "notConnected");
 	}, _Device_hasRequiredInformation_get = function _Device_hasRequiredInformation_get() {
 	    return RequiredInformationConnectionMessages.every((messageType) => {
 	        return this.latestConnectionMessage.has(messageType);
@@ -4458,21 +4458,21 @@
 	    }));
 	    __classPrivateFieldGet(this, _Device_instances, "m", _Device_sendTxMessages).call(this, messages);
 	}, _Device_assertCanReconnect = function _Device_assertCanReconnect() {
-	    _console$7.assertWithError(this.canReconnect, "cannot reconnect to device");
+	    _console$8.assertWithError(this.canReconnect, "cannot reconnect to device");
 	}, _Device_onConnectionStatusUpdated = function _Device_onConnectionStatusUpdated(connectionStatus) {
-	    _console$7.log({ connectionStatus });
+	    _console$8.log({ connectionStatus });
 	    if (connectionStatus == "notConnected") {
 	        if (this.canReconnect && this.reconnectOnDisconnection) {
-	            _console$7.log("starting reconnect interval...");
+	            _console$8.log("starting reconnect interval...");
 	            __classPrivateFieldSet(this, _Device_reconnectIntervalId, setInterval(() => {
-	                _console$7.log("attempting reconnect...");
+	                _console$8.log("attempting reconnect...");
 	                this.reconnect();
 	            }, 1000), "f");
 	        }
 	    }
 	    else {
 	        if (__classPrivateFieldGet(this, _Device_reconnectIntervalId, "f") != undefined) {
-	            _console$7.log("clearing reconnect interval");
+	            _console$8.log("clearing reconnect interval");
 	            clearInterval(__classPrivateFieldGet(this, _Device_reconnectIntervalId, "f"));
 	            __classPrivateFieldSet(this, _Device_reconnectIntervalId, undefined, "f");
 	        }
@@ -4510,11 +4510,11 @@
 	    this._informationManager.clear();
 	    __classPrivateFieldGet(this, _Device_deviceInformationManager, "f").clear();
 	}, _Device_onConnectionMessageReceived = function _Device_onConnectionMessageReceived(messageType, dataView) {
-	    _console$7.log({ messageType, dataView });
+	    _console$8.log({ messageType, dataView });
 	    switch (messageType) {
 	        case "batteryLevel":
 	            const batteryLevel = dataView.getUint8(0);
-	            _console$7.log("received battery level", { batteryLevel });
+	            _console$8.log("received battery level", { batteryLevel });
 	            __classPrivateFieldGet(this, _Device_instances, "m", _Device_updateBatteryLevel).call(this, batteryLevel);
 	            break;
 	        default:
@@ -4549,13 +4549,13 @@
 	        __classPrivateFieldGet(this, _Device_instances, "m", _Device_checkConnection).call(this);
 	    }
 	}, _Device_updateBatteryLevel = function _Device_updateBatteryLevel(updatedBatteryLevel) {
-	    _console$7.assertTypeWithError(updatedBatteryLevel, "number");
+	    _console$8.assertTypeWithError(updatedBatteryLevel, "number");
 	    if (__classPrivateFieldGet(this, _Device_batteryLevel, "f") == updatedBatteryLevel) {
-	        _console$7.log(`duplicate batteryLevel assignment ${updatedBatteryLevel}`);
+	        _console$8.log(`duplicate batteryLevel assignment ${updatedBatteryLevel}`);
 	        return;
 	    }
 	    __classPrivateFieldSet(this, _Device_batteryLevel, updatedBatteryLevel, "f");
-	    _console$7.log({ updatedBatteryLevel: __classPrivateFieldGet(this, _Device_batteryLevel, "f") });
+	    _console$8.log({ updatedBatteryLevel: __classPrivateFieldGet(this, _Device_batteryLevel, "f") });
 	    __classPrivateFieldGet(this, _Device_instances, "a", _Device_dispatchEvent_get).call(this, "batteryLevel", { batteryLevel: __classPrivateFieldGet(this, _Device_batteryLevel, "f") });
 	}, _Device_sendSmpMessage = function _Device_sendSmpMessage(data) {
 	    return __classPrivateFieldGet(this, _Device_connectionManager, "f").sendSmpMessage(data);
@@ -4565,7 +4565,7 @@
 	var Device$1 = Device;
 
 	var _DevicePairPressureSensorDataManager_instances, _DevicePairPressureSensorDataManager_rawPressure, _DevicePairPressureSensorDataManager_centerOfPressureHelper, _DevicePairPressureSensorDataManager_hasAllPressureData_get, _DevicePairPressureSensorDataManager_updatePressureData;
-	const _console$6 = createConsole("DevicePairPressureSensorDataManager", { log: true });
+	const _console$7 = createConsole("DevicePairPressureSensorDataManager", { log: true });
 	class DevicePairPressureSensorDataManager {
 	    constructor() {
 	        _DevicePairPressureSensorDataManager_instances.add(this);
@@ -4578,13 +4578,13 @@
 	    onDevicePressureData(event) {
 	        const { pressure } = event.message;
 	        const insoleSide = event.target.insoleSide;
-	        _console$6.log({ pressure, insoleSide });
+	        _console$7.log({ pressure, insoleSide });
 	        __classPrivateFieldGet(this, _DevicePairPressureSensorDataManager_rawPressure, "f")[insoleSide] = pressure;
 	        if (__classPrivateFieldGet(this, _DevicePairPressureSensorDataManager_instances, "a", _DevicePairPressureSensorDataManager_hasAllPressureData_get)) {
 	            return __classPrivateFieldGet(this, _DevicePairPressureSensorDataManager_instances, "m", _DevicePairPressureSensorDataManager_updatePressureData).call(this);
 	        }
 	        else {
-	            _console$6.log("doesn't have all pressure data yet...");
+	            _console$7.log("doesn't have all pressure data yet...");
 	        }
 	    }
 	}
@@ -4610,12 +4610,12 @@
 	        });
 	        pressure.normalizedCenter = __classPrivateFieldGet(this, _DevicePairPressureSensorDataManager_centerOfPressureHelper, "f").updateAndGetNormalization(pressure.center);
 	    }
-	    _console$6.log({ devicePairPressure: pressure });
+	    _console$7.log({ devicePairPressure: pressure });
 	    return pressure;
 	};
 
 	var _DevicePairSensorDataManager_timestamps;
-	const _console$5 = createConsole("DevicePairSensorDataManager", { log: true });
+	const _console$6 = createConsole("DevicePairSensorDataManager", { log: true });
 	const DevicePairSensorTypes = ["pressure", "sensorData"];
 	const DevicePairSensorDataEventTypes = DevicePairSensorTypes;
 	class DevicePairSensorDataManager {
@@ -4631,7 +4631,7 @@
 	    }
 	    onDeviceSensorData(event) {
 	        const { timestamp, sensorType } = event.message;
-	        _console$5.log({ sensorType, timestamp, event });
+	        _console$6.log({ sensorType, timestamp, event });
 	        if (!__classPrivateFieldGet(this, _DevicePairSensorDataManager_timestamps, "f")[sensorType]) {
 	            __classPrivateFieldGet(this, _DevicePairSensorDataManager_timestamps, "f")[sensorType] = {};
 	        }
@@ -4642,7 +4642,7 @@
 	                value = this.pressureSensorDataManager.onDevicePressureData(event);
 	                break;
 	            default:
-	                _console$5.log(`uncaught sensorType "${sensorType}"`);
+	                _console$6.log(`uncaught sensorType "${sensorType}"`);
 	                break;
 	        }
 	        if (value) {
@@ -4651,14 +4651,14 @@
 	            this.dispatchEvent("sensorData", { sensorType, timestamps, [sensorType]: value });
 	        }
 	        else {
-	            _console$5.log("no value received");
+	            _console$6.log("no value received");
 	        }
 	    }
 	}
 	_DevicePairSensorDataManager_timestamps = new WeakMap();
 
 	var _DevicePair_instances, _a, _DevicePair_eventDispatcher, _DevicePair_dispatchEvent_get, _DevicePair_left, _DevicePair_right, _DevicePair_addDeviceEventListeners, _DevicePair_removeDeviceEventListeners, _DevicePair_removeInsole, _DevicePair_boundDeviceEventListeners, _DevicePair_redispatchDeviceEvent, _DevicePair_onDeviceIsConnected, _DevicePair_onDeviceType, _DevicePair_sensorDataManager, _DevicePair_onDeviceSensorData, _DevicePair_shared;
-	const _console$4 = createConsole("DevicePair", { log: true });
+	const _console$5 = createConsole("DevicePair", { log: true });
 	function getDevicePairDeviceEventType(deviceEventType) {
 	    return `device${capitalizeFirstCharacter(deviceEventType)}`;
 	}
@@ -4712,13 +4712,13 @@
 	    }
 	    assignInsole(device) {
 	        if (!device.isInsole) {
-	            _console$4.warn("device is not an insole");
+	            _console$5.warn("device is not an insole");
 	            return;
 	        }
 	        const side = device.insoleSide;
 	        const currentDevice = this[side];
 	        if (device == currentDevice) {
-	            _console$4.log("device already assigned");
+	            _console$5.log("device already assigned");
 	            return;
 	        }
 	        if (currentDevice) {
@@ -4733,7 +4733,7 @@
 	                __classPrivateFieldSet(this, _DevicePair_right, device, "f");
 	                break;
 	        }
-	        _console$4.log(`assigned ${side} insole`, device);
+	        _console$5.log(`assigned ${side} insole`, device);
 	        this.resetPressureRange();
 	        __classPrivateFieldGet(this, _DevicePair_instances, "a", _DevicePair_dispatchEvent_get).call(this, "isConnected", { isConnected: this.isConnected });
 	        __classPrivateFieldGet(this, _DevicePair_instances, "a", _DevicePair_dispatchEvent_get).call(this, "deviceIsConnected", { device, isConnected: device.isConnected, side });
@@ -4774,7 +4774,7 @@
 	        if (this[side] != device) {
 	            return false;
 	        }
-	        _console$4.log(`removing ${side} insole`, device);
+	        _console$5.log(`removing ${side} insole`, device);
 	        removeEventListeners(device, __classPrivateFieldGet(this, _DevicePair_boundDeviceEventListeners, "f"));
 	        delete this[side];
 	        return true;
@@ -4817,12 +4817,8 @@
 	    });
 	})();
 
-	const _console$3 = createConsole("ServerUtils", { log: false });
-	const pingTimeout = 30_000_000;
-	const reconnectTimeout = 3_000;
+	const _console$4 = createConsole("ServerUtils", { log: false });
 	const ServerMessageTypes = [
-	    "ping",
-	    "pong",
 	    "isScanningAvailable",
 	    "isScanning",
 	    "startScan",
@@ -4836,7 +4832,7 @@
 	    "deviceMessage",
 	];
 	function createMessage(enumeration, ...messages) {
-	    _console$3.log("createMessage", ...messages);
+	    _console$4.log("createMessage", ...messages);
 	    const messageBuffers = messages.map((message) => {
 	        if (typeof message == "string") {
 	            message = { type: message };
@@ -4851,31 +4847,31 @@
 	        }
 	        const messageDataArrayBuffer = concatenateArrayBuffers(...message.data);
 	        const messageDataArrayBufferByteLength = messageDataArrayBuffer.byteLength;
-	        _console$3.assertEnumWithError(message.type, enumeration);
+	        _console$4.assertEnumWithError(message.type, enumeration);
 	        const messageTypeEnum = enumeration.indexOf(message.type);
-	        return concatenateArrayBuffers(messageTypeEnum, Uint16Array.from([messageDataArrayBufferByteLength]), messageDataArrayBuffer);
+	        const messageDataLengthDataView = new DataView(new ArrayBuffer(2));
+	        messageDataLengthDataView.setUint16(0, messageDataArrayBufferByteLength, true);
+	        return concatenateArrayBuffers(messageTypeEnum, messageDataLengthDataView, messageDataArrayBuffer);
 	    });
-	    _console$3.log("messageBuffers", ...messageBuffers);
+	    _console$4.log("messageBuffers", ...messageBuffers);
 	    return concatenateArrayBuffers(...messageBuffers);
 	}
 	function createServerMessage(...messages) {
-	    _console$3.log("createServerMessage", ...messages);
+	    _console$4.log("createServerMessage", ...messages);
 	    return createMessage(ServerMessageTypes, ...messages);
 	}
 	function createClientDeviceMessage(...messages) {
-	    _console$3.log("createClientDeviceMessage", ...messages);
+	    _console$4.log("createClientDeviceMessage", ...messages);
 	    return createMessage(ConnectionMessageTypes, ...messages);
 	}
-	createServerMessage("ping");
-	createServerMessage("pong");
 	createServerMessage("isScanningAvailable");
 	createServerMessage("isScanning");
 	createServerMessage("startScan");
 	createServerMessage("stopScan");
-	const discoveredDevicesMessage = createServerMessage("discoveredDevices");
+	createServerMessage("discoveredDevices");
 
 	var _WebSocketClientConnectionManager_instances, _WebSocketClientConnectionManager_bluetoothId, _WebSocketClientConnectionManager_isConnected, _WebSocketClientConnectionManager_requestDeviceInformation, _WebSocketClientConnectionManager_onWebSocketMessageCallback;
-	const _console$2 = createConsole("WebSocketClientConnectionManager", { log: true });
+	const _console$3 = createConsole("WebSocketClientConnectionManager", { log: true });
 	const WebSocketDeviceInformationMessageTypes = [
 	    ...DeviceInformationMessageTypes,
 	    "batteryLevel",
@@ -4897,9 +4893,9 @@
 	        return __classPrivateFieldGet(this, _WebSocketClientConnectionManager_bluetoothId, "f");
 	    }
 	    set bluetoothId(newBluetoothId) {
-	        _console$2.assertTypeWithError(newBluetoothId, "string");
+	        _console$3.assertTypeWithError(newBluetoothId, "string");
 	        if (__classPrivateFieldGet(this, _WebSocketClientConnectionManager_bluetoothId, "f") == newBluetoothId) {
-	            _console$2.log("redundant bluetoothId assignment");
+	            _console$3.log("redundant bluetoothId assignment");
 	            return;
 	        }
 	        __classPrivateFieldSet(this, _WebSocketClientConnectionManager_bluetoothId, newBluetoothId, "f");
@@ -4908,9 +4904,9 @@
 	        return __classPrivateFieldGet(this, _WebSocketClientConnectionManager_isConnected, "f");
 	    }
 	    set isConnected(newIsConnected) {
-	        _console$2.assertTypeWithError(newIsConnected, "boolean");
+	        _console$3.assertTypeWithError(newIsConnected, "boolean");
 	        if (__classPrivateFieldGet(this, _WebSocketClientConnectionManager_isConnected, "f") == newIsConnected) {
-	            _console$2.log("redundant newIsConnected assignment", newIsConnected);
+	            _console$3.log("redundant newIsConnected assignment", newIsConnected);
 	            return;
 	        }
 	        __classPrivateFieldSet(this, _WebSocketClientConnectionManager_isConnected, newIsConnected, "f");
@@ -4932,7 +4928,7 @@
 	    }
 	    async reconnect() {
 	        await super.reconnect();
-	        _console$2.log("attempting to reconnect...");
+	        _console$3.log("attempting to reconnect...");
 	        this.connect();
 	    }
 	    async sendSmpMessage(data) {
@@ -4944,7 +4940,7 @@
 	        this.sendWebSocketMessage({ type: "tx", data });
 	    }
 	    onWebSocketMessage(dataView) {
-	        _console$2.log({ dataView });
+	        _console$3.log({ dataView });
 	        parseMessage(dataView, DeviceEventTypes, __classPrivateFieldGet(this, _WebSocketClientConnectionManager_instances, "m", _WebSocketClientConnectionManager_onWebSocketMessageCallback).bind(this), null, true);
 	    }
 	}
@@ -4955,7 +4951,7 @@
 	    switch (messageType) {
 	        case "isConnected":
 	            const isConnected = Boolean(dataView.getUint8(byteOffset++));
-	            _console$2.log({ isConnected });
+	            _console$3.log({ isConnected });
 	            this.isConnected = isConnected;
 	            break;
 	        case "rx":
@@ -4967,8 +4963,8 @@
 	    }
 	};
 
-	var _BaseClient_instances, _BaseClient_devices, _BaseClient_eventDispatcher, _BaseClient__connectionStatus, _BaseClient_parseMessageCallback, _BaseClient_ping, _BaseClient_pong, _BaseClient__isScanningAvailable, _BaseClient_isScanningAvailable_get, _BaseClient_isScanningAvailable_set, _BaseClient_assertIsScanningAvailable, _BaseClient__isScanning, _BaseClient_isScanning_get, _BaseClient_isScanning_set, _BaseClient_requestIsScanning, _BaseClient_assertIsScanning, _BaseClient_assertIsNotScanning, _BaseClient_discoveredDevices, _BaseClient_onExpiredDiscoveredDevice, _BaseClient_getOrCreateDevice, _BaseClient_createDisconnectFromDeviceMessage;
-	const _console$1 = createConsole("WebSocketClient", { log: true });
+	var _BaseClient_instances, _BaseClient_devices, _BaseClient_eventDispatcher, _BaseClient__connectionStatus, _BaseClient_parseMessageCallback, _BaseClient__isScanningAvailable, _BaseClient_isScanningAvailable_get, _BaseClient_isScanningAvailable_set, _BaseClient_assertIsScanningAvailable, _BaseClient__isScanning, _BaseClient_isScanning_get, _BaseClient_isScanning_set, _BaseClient_requestIsScanning, _BaseClient_assertIsScanning, _BaseClient_assertIsNotScanning, _BaseClient_discoveredDevices, _BaseClient_onExpiredDiscoveredDevice, _BaseClient_getOrCreateDevice;
+	const _console$2 = createConsole("WebSocketClient", { log: true });
 	const ClientConnectionStatuses = ["notConnected", "connecting", "connected", "disconnecting"];
 	const ClientEventTypes = [
 	    ...ClientConnectionStatuses,
@@ -4986,7 +4982,6 @@
 	        _BaseClient_eventDispatcher.set(this, new EventDispatcher(this, ClientEventTypes));
 	        this._reconnectOnDisconnection = this.baseConstructor.ReconnectOnDisconnection;
 	        _BaseClient__connectionStatus.set(this, "notConnected");
-	        this.pingTimer = new Timer(__classPrivateFieldGet(this, _BaseClient_instances, "m", _BaseClient_ping).bind(this), pingTimeout);
 	        _BaseClient__isScanningAvailable.set(this, false);
 	        _BaseClient__isScanning.set(this, false);
 	        _BaseClient_discoveredDevices.set(this, {});
@@ -5010,34 +5005,31 @@
 	        return __classPrivateFieldGet(this, _BaseClient_eventDispatcher, "f").waitForEvent;
 	    }
 	    assertConnection() {
-	        _console$1.assertWithError(this.isConnected, "notConnected");
+	        _console$2.assertWithError(this.isConnected, "notConnected");
 	    }
 	    assertDisconnection() {
-	        _console$1.assertWithError(this.isDisconnected, "not disconnected");
+	        _console$2.assertWithError(this.isDisconnected, "not disconnected");
 	    }
 	    static get ReconnectOnDisconnection() {
 	        return this._reconnectOnDisconnection;
 	    }
 	    static set ReconnectOnDisconnection(newReconnectOnDisconnection) {
-	        _console$1.assertTypeWithError(newReconnectOnDisconnection, "boolean");
+	        _console$2.assertTypeWithError(newReconnectOnDisconnection, "boolean");
 	        this._reconnectOnDisconnection = newReconnectOnDisconnection;
 	    }
 	    get reconnectOnDisconnection() {
 	        return this._reconnectOnDisconnection;
 	    }
 	    set reconnectOnDisconnection(newReconnectOnDisconnection) {
-	        _console$1.assertTypeWithError(newReconnectOnDisconnection, "boolean");
+	        _console$2.assertTypeWithError(newReconnectOnDisconnection, "boolean");
 	        this._reconnectOnDisconnection = newReconnectOnDisconnection;
-	    }
-	    sendServerMessage(...messages) {
-	        this.sendMessage(createServerMessage(...messages));
 	    }
 	    get _connectionStatus() {
 	        return __classPrivateFieldGet(this, _BaseClient__connectionStatus, "f");
 	    }
 	    set _connectionStatus(newConnectionStatus) {
-	        _console$1.assertTypeWithError(newConnectionStatus, "string");
-	        _console$1.log({ newConnectionStatus });
+	        _console$2.assertTypeWithError(newConnectionStatus, "string");
+	        _console$2.log({ newConnectionStatus });
 	        __classPrivateFieldSet(this, _BaseClient__connectionStatus, newConnectionStatus, "f");
 	        this.dispatchEvent("connectionStatus", { connectionStatus: this.connectionStatus });
 	        this.dispatchEvent(this.connectionStatus, {});
@@ -5059,7 +5051,7 @@
 	        return this._connectionStatus;
 	    }
 	    parseMessage(dataView) {
-	        _console$1.log("parseMessage", { dataView });
+	        _console$2.log("parseMessage", { dataView });
 	        parseMessage(dataView, ServerMessageTypes, __classPrivateFieldGet(this, _BaseClient_instances, "m", _BaseClient_parseMessageCallback).bind(this), null, true);
 	    }
 	    get isScanningAvailable() {
@@ -5092,31 +5084,28 @@
 	        return __classPrivateFieldGet(this, _BaseClient_discoveredDevices, "f");
 	    }
 	    onDiscoveredDevice(discoveredDevice) {
-	        _console$1.log({ discoveredDevice });
+	        _console$2.log({ discoveredDevice });
 	        __classPrivateFieldGet(this, _BaseClient_discoveredDevices, "f")[discoveredDevice.bluetoothId] = discoveredDevice;
 	        this.dispatchEvent("discoveredDevice", { discoveredDevice });
 	    }
 	    requestDiscoveredDevices() {
-	        this.sendMessage(discoveredDevicesMessage);
+	        this.sendServerMessage({ type: "discoveredDevices" });
 	    }
 	    connectToDevice(bluetoothId) {
 	        return this.requestConnectionToDevice(bluetoothId);
 	    }
 	    requestConnectionToDevice(bluetoothId) {
 	        this.assertConnection();
-	        _console$1.assertTypeWithError(bluetoothId, "string");
+	        _console$2.assertTypeWithError(bluetoothId, "string");
 	        const device = __classPrivateFieldGet(this, _BaseClient_instances, "m", _BaseClient_getOrCreateDevice).call(this, bluetoothId);
 	        device.connect();
 	        return device;
 	    }
 	    sendConnectToDeviceMessage(bluetoothId) {
-	        this.sendMessage(this.createConnectToDeviceMessage(bluetoothId));
-	    }
-	    createConnectToDeviceMessage(bluetoothId) {
-	        return createServerMessage({ type: "connectToDevice", data: bluetoothId });
+	        this.sendServerMessage({ type: "connectToDevice", data: bluetoothId });
 	    }
 	    onConnectedBluetoothDeviceIds(bluetoothIds) {
-	        _console$1.log({ bluetoothIds });
+	        _console$2.log({ bluetoothIds });
 	        bluetoothIds.forEach((bluetoothId) => {
 	            const device = __classPrivateFieldGet(this, _BaseClient_instances, "m", _BaseClient_getOrCreateDevice).call(this, bluetoothId);
 	            const connectionManager = device.connectionManager;
@@ -5128,20 +5117,17 @@
 	    }
 	    requestDisconnectionFromDevice(bluetoothId) {
 	        this.assertConnection();
-	        _console$1.assertTypeWithError(bluetoothId, "string");
+	        _console$2.assertTypeWithError(bluetoothId, "string");
 	        const device = this.devices[bluetoothId];
-	        _console$1.assertWithError(device, `no device found with id ${bluetoothId}`);
+	        _console$2.assertWithError(device, `no device found with id ${bluetoothId}`);
 	        device.disconnect();
 	        return device;
 	    }
 	    sendDisconnectFromDeviceMessage(bluetoothId) {
-	        this.sendMessage(__classPrivateFieldGet(this, _BaseClient_instances, "m", _BaseClient_createDisconnectFromDeviceMessage).call(this, bluetoothId));
+	        this.sendServerMessage({ type: "disconnectFromDevice", data: bluetoothId });
 	    }
 	    sendDeviceMessage(bluetoothId, ...messages) {
-	        this.sendMessage(this.createDeviceMessage(bluetoothId, ...messages));
-	    }
-	    createDeviceMessage(bluetoothId, ...messages) {
-	        return createServerMessage({
+	        this.sendServerMessage({
 	            type: "deviceMessage",
 	            data: [bluetoothId, createClientDeviceMessage(...messages)],
 	        });
@@ -5150,31 +5136,26 @@
 	_BaseClient_devices = new WeakMap(), _BaseClient_eventDispatcher = new WeakMap(), _BaseClient__connectionStatus = new WeakMap(), _BaseClient__isScanningAvailable = new WeakMap(), _BaseClient__isScanning = new WeakMap(), _BaseClient_discoveredDevices = new WeakMap(), _BaseClient_instances = new WeakSet(), _BaseClient_parseMessageCallback = function _BaseClient_parseMessageCallback(messageType, dataView) {
 	    let byteOffset = 0;
 	    switch (messageType) {
-	        case "ping":
-	            __classPrivateFieldGet(this, _BaseClient_instances, "m", _BaseClient_pong).call(this);
-	            break;
-	        case "pong":
-	            break;
 	        case "isScanningAvailable":
 	            {
 	                const isScanningAvailable = Boolean(dataView.getUint8(byteOffset++));
-	                _console$1.log({ isScanningAvailable });
+	                _console$2.log({ isScanningAvailable });
 	                __classPrivateFieldSet(this, _BaseClient_instances, isScanningAvailable, "a", _BaseClient_isScanningAvailable_set);
 	            }
 	            break;
 	        case "isScanning":
 	            {
 	                const isScanning = Boolean(dataView.getUint8(byteOffset++));
-	                _console$1.log({ isScanning });
+	                _console$2.log({ isScanning });
 	                __classPrivateFieldSet(this, _BaseClient_instances, isScanning, "a", _BaseClient_isScanning_set);
 	            }
 	            break;
 	        case "discoveredDevice":
 	            {
 	                const { string: discoveredDeviceString } = parseStringFromDataView(dataView, byteOffset);
-	                _console$1.log({ discoveredDeviceString });
+	                _console$2.log({ discoveredDeviceString });
 	                const discoveredDevice = JSON.parse(discoveredDeviceString);
-	                _console$1.log({ discoveredDevice });
+	                _console$2.log({ discoveredDevice });
 	                this.onDiscoveredDevice(discoveredDevice);
 	            }
 	            break;
@@ -5190,9 +5171,9 @@
 	                    break;
 	                }
 	                const { string: connectedBluetoothDeviceIdStrings } = parseStringFromDataView(dataView, byteOffset);
-	                _console$1.log({ connectedBluetoothDeviceIdStrings });
+	                _console$2.log({ connectedBluetoothDeviceIdStrings });
 	                const connectedBluetoothDeviceIds = JSON.parse(connectedBluetoothDeviceIdStrings);
-	                _console$1.log({ connectedBluetoothDeviceIds });
+	                _console$2.log({ connectedBluetoothDeviceIds });
 	                this.onConnectedBluetoothDeviceIds(connectedBluetoothDeviceIds);
 	            }
 	            break;
@@ -5201,24 +5182,20 @@
 	                const { string: bluetoothId, byteOffset: _byteOffset } = parseStringFromDataView(dataView, byteOffset);
 	                byteOffset = _byteOffset;
 	                const device = __classPrivateFieldGet(this, _BaseClient_devices, "f")[bluetoothId];
-	                _console$1.assertWithError(device, `no device found for id ${bluetoothId}`);
+	                _console$2.assertWithError(device, `no device found for id ${bluetoothId}`);
 	                const connectionManager = device.connectionManager;
 	                const _dataView = sliceDataView(dataView, byteOffset);
 	                connectionManager.onWebSocketMessage(_dataView);
 	            }
 	            break;
 	        default:
-	            _console$1.error(`uncaught messageType "${messageType}"`);
+	            _console$2.error(`uncaught messageType "${messageType}"`);
 	            break;
 	    }
-	}, _BaseClient_ping = function _BaseClient_ping() {
-	    this.sendServerMessage("ping");
-	}, _BaseClient_pong = function _BaseClient_pong() {
-	    this.sendServerMessage("pong");
 	}, _BaseClient_isScanningAvailable_get = function _BaseClient_isScanningAvailable_get() {
 	    return __classPrivateFieldGet(this, _BaseClient__isScanningAvailable, "f");
 	}, _BaseClient_isScanningAvailable_set = function _BaseClient_isScanningAvailable_set(newIsAvailable) {
-	    _console$1.assertTypeWithError(newIsAvailable, "boolean");
+	    _console$2.assertTypeWithError(newIsAvailable, "boolean");
 	    __classPrivateFieldSet(this, _BaseClient__isScanningAvailable, newIsAvailable, "f");
 	    this.dispatchEvent("isScanningAvailable", { isScanningAvailable: this.isScanningAvailable });
 	    if (this.isScanningAvailable) {
@@ -5226,27 +5203,27 @@
 	    }
 	}, _BaseClient_assertIsScanningAvailable = function _BaseClient_assertIsScanningAvailable() {
 	    this.assertConnection();
-	    _console$1.assertWithError(this.isScanningAvailable, "scanning is not available");
+	    _console$2.assertWithError(this.isScanningAvailable, "scanning is not available");
 	}, _BaseClient_isScanning_get = function _BaseClient_isScanning_get() {
 	    return __classPrivateFieldGet(this, _BaseClient__isScanning, "f");
 	}, _BaseClient_isScanning_set = function _BaseClient_isScanning_set(newIsScanning) {
-	    _console$1.assertTypeWithError(newIsScanning, "boolean");
+	    _console$2.assertTypeWithError(newIsScanning, "boolean");
 	    __classPrivateFieldSet(this, _BaseClient__isScanning, newIsScanning, "f");
 	    this.dispatchEvent("isScanning", { isScanning: this.isScanning });
 	}, _BaseClient_requestIsScanning = function _BaseClient_requestIsScanning() {
 	    this.sendServerMessage("isScanning");
 	}, _BaseClient_assertIsScanning = function _BaseClient_assertIsScanning() {
-	    _console$1.assertWithError(this.isScanning, "is not scanning");
+	    _console$2.assertWithError(this.isScanning, "is not scanning");
 	}, _BaseClient_assertIsNotScanning = function _BaseClient_assertIsNotScanning() {
-	    _console$1.assertWithError(!this.isScanning, "is already scanning");
+	    _console$2.assertWithError(!this.isScanning, "is already scanning");
 	}, _BaseClient_onExpiredDiscoveredDevice = function _BaseClient_onExpiredDiscoveredDevice(bluetoothId) {
-	    _console$1.log({ expiredBluetoothDeviceId: bluetoothId });
+	    _console$2.log({ expiredBluetoothDeviceId: bluetoothId });
 	    const discoveredDevice = __classPrivateFieldGet(this, _BaseClient_discoveredDevices, "f")[bluetoothId];
 	    if (!discoveredDevice) {
-	        _console$1.warn(`no discoveredDevice found with id "${bluetoothId}"`);
+	        _console$2.warn(`no discoveredDevice found with id "${bluetoothId}"`);
 	        return;
 	    }
-	    _console$1.log({ expiredDiscoveredDevice: discoveredDevice });
+	    _console$2.log({ expiredDiscoveredDevice: discoveredDevice });
 	    delete __classPrivateFieldGet(this, _BaseClient_discoveredDevices, "f")[bluetoothId];
 	    this.dispatchEvent("expiredDiscoveredDevice", { discoveredDevice });
 	}, _BaseClient_getOrCreateDevice = function _BaseClient_getOrCreateDevice(bluetoothId) {
@@ -5256,12 +5233,21 @@
 	        __classPrivateFieldGet(this, _BaseClient_devices, "f")[bluetoothId] = device;
 	    }
 	    return device;
-	}, _BaseClient_createDisconnectFromDeviceMessage = function _BaseClient_createDisconnectFromDeviceMessage(bluetoothId) {
-	    return createServerMessage({ type: "disconnectFromDevice", data: bluetoothId });
 	};
 	BaseClient._reconnectOnDisconnection = true;
 
-	var _WebSocketClient_instances, _WebSocketClient_webSocket, _WebSocketClient_boundWebSocketEventListeners, _WebSocketClient_onWebSocketOpen, _WebSocketClient_onWebSocketMessage, _WebSocketClient_onWebSocketClose, _WebSocketClient_onWebSocketError;
+	const _console$1 = createConsole("WebSocketUtils", { log: true });
+	const webSocketPingTimeout = 30_000_000;
+	const webSocketReconnectTimeout = 3_000;
+	const WebSocketMessageTypes = ["ping", "pong", "serverMessage"];
+	function createWebSocketMessage(...messages) {
+	    _console$1.log("createWebSocketMessage", ...messages);
+	    return createMessage(WebSocketMessageTypes, ...messages);
+	}
+	createWebSocketMessage("ping");
+	createWebSocketMessage("pong");
+
+	var _WebSocketClient_instances, _WebSocketClient_webSocket, _WebSocketClient_sendWebSocketMessage, _WebSocketClient_boundWebSocketEventListeners, _WebSocketClient_onWebSocketOpen, _WebSocketClient_onWebSocketMessage, _WebSocketClient_onWebSocketClose, _WebSocketClient_onWebSocketError, _WebSocketClient_parseWebSocketMessage, _WebSocketClient_onServerMessage, _WebSocketClient_pingTimer, _WebSocketClient_ping, _WebSocketClient_pong;
 	const _console = createConsole("WebSocketClient", { log: true });
 	class WebSocketClient extends BaseClient {
 	    constructor() {
@@ -5274,6 +5260,7 @@
 	            close: __classPrivateFieldGet(this, _WebSocketClient_instances, "m", _WebSocketClient_onWebSocketClose).bind(this),
 	            error: __classPrivateFieldGet(this, _WebSocketClient_instances, "m", _WebSocketClient_onWebSocketError).bind(this),
 	        });
+	        _WebSocketClient_pingTimer.set(this, new Timer(__classPrivateFieldGet(this, _WebSocketClient_instances, "m", _WebSocketClient_ping).bind(this), webSocketPingTimeout));
 	    }
 	    get webSocket() {
 	        return __classPrivateFieldGet(this, _WebSocketClient_webSocket, "f");
@@ -5337,6 +5324,9 @@
 	        this.assertConnection();
 	        __classPrivateFieldGet(this, _WebSocketClient_webSocket, "f").send(message);
 	    }
+	    sendServerMessage(...messages) {
+	        this.sendMessage(createWebSocketMessage({ type: "serverMessage", data: createServerMessage(...messages) }));
+	    }
 	    createDevice(bluetoothId) {
 	        const device = new Device$1();
 	        const clientConnectionManager = new WebSocketClientConnectionManager();
@@ -5348,16 +5338,18 @@
 	        return device;
 	    }
 	}
-	_WebSocketClient_webSocket = new WeakMap(), _WebSocketClient_boundWebSocketEventListeners = new WeakMap(), _WebSocketClient_instances = new WeakSet(), _WebSocketClient_onWebSocketOpen = function _WebSocketClient_onWebSocketOpen(event) {
+	_WebSocketClient_webSocket = new WeakMap(), _WebSocketClient_boundWebSocketEventListeners = new WeakMap(), _WebSocketClient_pingTimer = new WeakMap(), _WebSocketClient_instances = new WeakSet(), _WebSocketClient_sendWebSocketMessage = function _WebSocketClient_sendWebSocketMessage(...messages) {
+	    this.sendMessage(createWebSocketMessage(...messages));
+	}, _WebSocketClient_onWebSocketOpen = function _WebSocketClient_onWebSocketOpen(event) {
 	    _console.log("webSocket.open", event);
-	    this.pingTimer.start();
+	    __classPrivateFieldGet(this, _WebSocketClient_pingTimer, "f").start();
 	    this._connectionStatus = "connected";
 	}, _WebSocketClient_onWebSocketMessage = async function _WebSocketClient_onWebSocketMessage(event) {
 	    _console.log("webSocket.message", event);
-	    this.pingTimer.restart();
+	    __classPrivateFieldGet(this, _WebSocketClient_pingTimer, "f").restart();
 	    const arrayBuffer = await event.data.arrayBuffer();
 	    const dataView = new DataView(arrayBuffer);
-	    this.parseMessage(dataView);
+	    __classPrivateFieldGet(this, _WebSocketClient_instances, "m", _WebSocketClient_parseWebSocketMessage).call(this, dataView);
 	}, _WebSocketClient_onWebSocketClose = function _WebSocketClient_onWebSocketClose(event) {
 	    _console.log("webSocket.close", event);
 	    this._connectionStatus = "notConnected";
@@ -5365,14 +5357,34 @@
 	        const connectionManager = device.connectionManager;
 	        connectionManager.isConnected = false;
 	    });
-	    this.pingTimer.stop();
+	    __classPrivateFieldGet(this, _WebSocketClient_pingTimer, "f").stop();
 	    if (this.reconnectOnDisconnection) {
 	        setTimeout(() => {
 	            this.reconnect();
-	        }, reconnectTimeout);
+	        }, webSocketReconnectTimeout);
 	    }
 	}, _WebSocketClient_onWebSocketError = function _WebSocketClient_onWebSocketError(event) {
 	    _console.error("webSocket.error", event.message);
+	}, _WebSocketClient_parseWebSocketMessage = function _WebSocketClient_parseWebSocketMessage(dataView) {
+	    parseMessage(dataView, WebSocketMessageTypes, __classPrivateFieldGet(this, _WebSocketClient_instances, "m", _WebSocketClient_onServerMessage).bind(this), null, true);
+	}, _WebSocketClient_onServerMessage = function _WebSocketClient_onServerMessage(messageType, dataView) {
+	    switch (messageType) {
+	        case "ping":
+	            __classPrivateFieldGet(this, _WebSocketClient_instances, "m", _WebSocketClient_pong).call(this);
+	            break;
+	        case "pong":
+	            break;
+	        case "serverMessage":
+	            this.parseMessage(dataView);
+	            break;
+	        default:
+	            _console.error(`uncaught messageType "${messageType}"`);
+	            break;
+	    }
+	}, _WebSocketClient_ping = function _WebSocketClient_ping() {
+	    __classPrivateFieldGet(this, _WebSocketClient_instances, "m", _WebSocketClient_sendWebSocketMessage).call(this, "ping");
+	}, _WebSocketClient_pong = function _WebSocketClient_pong() {
+	    __classPrivateFieldGet(this, _WebSocketClient_instances, "m", _WebSocketClient_sendWebSocketMessage).call(this, "pong");
 	};
 
 	exports.ContinuousSensorTypes = ContinuousSensorTypes;

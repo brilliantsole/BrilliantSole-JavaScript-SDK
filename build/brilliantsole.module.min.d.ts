@@ -782,7 +782,7 @@ declare class DevicePair {
 interface DiscoveredDevice {
     bluetoothId: string;
     name: string;
-    deviceType?: DeviceType;
+    deviceType: DeviceType;
     rssi: number;
 }
 interface ScannerDiscoveredDeviceEventMessage {
@@ -831,20 +831,20 @@ declare abstract class BaseClient {
     #private;
     protected get baseConstructor(): typeof BaseClient;
     get devices(): Readonly<DevicesMap>;
-    get addEventListener(): <T extends "isScanningAvailable" | "isScanning" | "discoveredDevice" | "expiredDiscoveredDevice" | "notConnected" | "connecting" | "connected" | "disconnecting" | "connectionStatus" | "isConnected">(type: T, listener: (event: {
+    get addEventListener(): <T extends "isScanningAvailable" | "isScanning" | "discoveredDevice" | "expiredDiscoveredDevice" | "connectionStatus" | "notConnected" | "connecting" | "connected" | "disconnecting" | "isConnected">(type: T, listener: (event: {
         type: T;
         target: BaseClient;
         message: ClientEventMessages[T];
     }) => void, options?: {
         once?: boolean;
     }) => void;
-    protected get dispatchEvent(): <T extends "isScanningAvailable" | "isScanning" | "discoveredDevice" | "expiredDiscoveredDevice" | "notConnected" | "connecting" | "connected" | "disconnecting" | "connectionStatus" | "isConnected">(type: T, message: ClientEventMessages[T]) => void;
-    get removeEventListener(): <T extends "isScanningAvailable" | "isScanning" | "discoveredDevice" | "expiredDiscoveredDevice" | "notConnected" | "connecting" | "connected" | "disconnecting" | "connectionStatus" | "isConnected">(type: T, listener: (event: {
+    protected get dispatchEvent(): <T extends "isScanningAvailable" | "isScanning" | "discoveredDevice" | "expiredDiscoveredDevice" | "connectionStatus" | "notConnected" | "connecting" | "connected" | "disconnecting" | "isConnected">(type: T, message: ClientEventMessages[T]) => void;
+    get removeEventListener(): <T extends "isScanningAvailable" | "isScanning" | "discoveredDevice" | "expiredDiscoveredDevice" | "connectionStatus" | "notConnected" | "connecting" | "connected" | "disconnecting" | "isConnected">(type: T, listener: (event: {
         type: T;
         target: BaseClient;
         message: ClientEventMessages[T];
     }) => void) => void;
-    get waitForEvent(): <T extends "isScanningAvailable" | "isScanning" | "discoveredDevice" | "expiredDiscoveredDevice" | "notConnected" | "connecting" | "connected" | "disconnecting" | "connectionStatus" | "isConnected">(type: T) => Promise<{
+    get waitForEvent(): <T extends "isScanningAvailable" | "isScanning" | "discoveredDevice" | "expiredDiscoveredDevice" | "connectionStatus" | "notConnected" | "connecting" | "connected" | "disconnecting" | "isConnected">(type: T) => Promise<{
         type: T;
         target: BaseClient;
         message: ClientEventMessages[T];

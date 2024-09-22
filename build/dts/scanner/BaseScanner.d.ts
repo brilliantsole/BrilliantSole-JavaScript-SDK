@@ -5,7 +5,7 @@ export type ScannerEventType = (typeof ScannerEventTypes)[number];
 export interface DiscoveredDevice {
     bluetoothId: string;
     name: string;
-    deviceType?: DeviceType;
+    deviceType: DeviceType;
     rssi: number;
 }
 interface ScannerDiscoveredDeviceEventMessage {

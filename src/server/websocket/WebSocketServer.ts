@@ -15,7 +15,7 @@ import {
 const _console = createConsole("WebSocketServer", { log: true });
 
 /** NODE_START */
-import * as ws from "ws";
+import type * as ws from "ws";
 import { parseMessage } from "../../utils/ParseUtils.ts";
 /** NODE_END */
 
