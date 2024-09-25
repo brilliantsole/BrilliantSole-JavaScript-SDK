@@ -318,6 +318,7 @@ abstract class BaseServer {
     dataView: DataView,
     context: { responseMessages: DeviceMessage[]; device: Device }
   ) {
+    _console.log(`clientDeviceMessage ${messageType} (${dataView.byteLength} bytes)`);
     switch (messageType) {
       case "smp":
         context.device.connectionManager!.sendSmpMessage(dataView.buffer);

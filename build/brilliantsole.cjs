@@ -5577,6 +5577,7 @@ _a = BaseServer, _BaseServer_clearSensorConfigurationsWhenNoClients = new WeakMa
             break;
     }
 }, _BaseServer_parseClientDeviceMessageCallback = function _BaseServer_parseClientDeviceMessageCallback(messageType, dataView, context) {
+    _console$4.log(`clientDeviceMessage ${messageType} (${dataView.byteLength} bytes)`);
     switch (messageType) {
         case "smp":
             context.device.connectionManager.sendSmpMessage(dataView.buffer);
