@@ -475,7 +475,7 @@ function autoBind(self, {include, exclude} = {}) {
 	return self;
 }
 
-var _FileTransferManager_instances, _a$4, _FileTransferManager_dispatchEvent_get, _FileTransferManager_assertValidType, _FileTransferManager_assertValidTypeEnum, _FileTransferManager_assertValidStatusEnum, _FileTransferManager_assertValidCommand, _FileTransferManager_MaxLength, _FileTransferManager_maxLength, _FileTransferManager_parseMaxLength, _FileTransferManager_updateMaxLength, _FileTransferManager_assertValidLength, _FileTransferManager_type, _FileTransferManager_parseType, _FileTransferManager_updateType, _FileTransferManager_setType, _FileTransferManager_length, _FileTransferManager_parseLength, _FileTransferManager_updateLength, _FileTransferManager_setLength, _FileTransferManager_checksum, _FileTransferManager_parseChecksum, _FileTransferManager_updateChecksum, _FileTransferManager_setChecksum, _FileTransferManager_setCommand, _FileTransferManager_status, _FileTransferManager_parseStatus, _FileTransferManager_updateStatus, _FileTransferManager_assertIsIdle, _FileTransferManager_assertIsNotIdle, _FileTransferManager_receivedBlocks, _FileTransferManager_parseBlock, _FileTransferManager_buffer, _FileTransferManager_bytesTransferred, _FileTransferManager_send, _FileTransferManager_sendBlock, _FileTransferManager_parseBytesTransferred;
+var _FileTransferManager_instances, _a$4, _FileTransferManager_dispatchEvent_get, _FileTransferManager_assertValidType, _FileTransferManager_assertValidTypeEnum, _FileTransferManager_assertValidStatusEnum, _FileTransferManager_assertValidCommand, _FileTransferManager_MaxLength, _FileTransferManager_maxLength, _FileTransferManager_parseMaxLength, _FileTransferManager_updateMaxLength, _FileTransferManager_assertValidLength, _FileTransferManager_type, _FileTransferManager_parseType, _FileTransferManager_updateType, _FileTransferManager_setType, _FileTransferManager_length, _FileTransferManager_parseLength, _FileTransferManager_updateLength, _FileTransferManager_setLength, _FileTransferManager_checksum, _FileTransferManager_parseChecksum, _FileTransferManager_updateChecksum, _FileTransferManager_setChecksum, _FileTransferManager_setCommand, _FileTransferManager_status, _FileTransferManager_parseStatus, _FileTransferManager_updateStatus, _FileTransferManager_assertIsIdle, _FileTransferManager_assertIsNotIdle, _FileTransferManager_receivedBlocks, _FileTransferManager_parseBlock, _FileTransferManager_buffer, _FileTransferManager_bytesTransferred, _FileTransferManager_send, _FileTransferManager_sendBlock, _FileTransferManager_parseBytesTransferred, _FileTransferManager_isServerSide;
 const _console$s = createConsole("FileTransferManager", { log: true });
 const FileTransferMessageTypes = [
     "maxFileLength",
@@ -512,6 +512,7 @@ class FileTransferManager {
         _FileTransferManager_receivedBlocks.set(this, []);
         _FileTransferManager_buffer.set(this, void 0);
         _FileTransferManager_bytesTransferred.set(this, 0);
+        _FileTransferManager_isServerSide.set(this, false);
         autoBind(this);
     }
     get addEventListener() {
@@ -597,8 +598,19 @@ class FileTransferManager {
         __classPrivateFieldGet(this, _FileTransferManager_instances, "m", _FileTransferManager_assertIsNotIdle).call(this);
         await __classPrivateFieldGet(this, _FileTransferManager_instances, "m", _FileTransferManager_setCommand).call(this, "cancel");
     }
+    get isServerSide() {
+        return __classPrivateFieldGet(this, _FileTransferManager_isServerSide, "f");
+    }
+    set isServerSide(newIsServerSide) {
+        if (__classPrivateFieldGet(this, _FileTransferManager_isServerSide, "f") == newIsServerSide) {
+            _console$s.log("redundant isServerSide assignment");
+            return;
+        }
+        _console$s.log({ newIsServerSide });
+        __classPrivateFieldSet(this, _FileTransferManager_isServerSide, newIsServerSide, "f");
+    }
 }
-_a$4 = FileTransferManager, _FileTransferManager_maxLength = new WeakMap(), _FileTransferManager_type = new WeakMap(), _FileTransferManager_length = new WeakMap(), _FileTransferManager_checksum = new WeakMap(), _FileTransferManager_status = new WeakMap(), _FileTransferManager_receivedBlocks = new WeakMap(), _FileTransferManager_buffer = new WeakMap(), _FileTransferManager_bytesTransferred = new WeakMap(), _FileTransferManager_instances = new WeakSet(), _FileTransferManager_dispatchEvent_get = function _FileTransferManager_dispatchEvent_get() {
+_a$4 = FileTransferManager, _FileTransferManager_maxLength = new WeakMap(), _FileTransferManager_type = new WeakMap(), _FileTransferManager_length = new WeakMap(), _FileTransferManager_checksum = new WeakMap(), _FileTransferManager_status = new WeakMap(), _FileTransferManager_receivedBlocks = new WeakMap(), _FileTransferManager_buffer = new WeakMap(), _FileTransferManager_bytesTransferred = new WeakMap(), _FileTransferManager_isServerSide = new WeakMap(), _FileTransferManager_instances = new WeakSet(), _FileTransferManager_dispatchEvent_get = function _FileTransferManager_dispatchEvent_get() {
     return this.eventDispatcher.dispatchEvent;
 }, _FileTransferManager_assertValidType = function _FileTransferManager_assertValidType(type) {
     _console$s.assertEnumWithError(type, FileTypes);
@@ -709,6 +721,9 @@ _a$4 = FileTransferManager, _FileTransferManager_maxLength = new WeakMap(), _Fil
     if (bytesReceived != __classPrivateFieldGet(this, _FileTransferManager_length, "f")) {
         const dataView = new DataView(new ArrayBuffer(4));
         dataView.setUint32(0, bytesReceived, true);
+        if (this.isServerSide) {
+            return;
+        }
         await this.sendMessage([{ type: "fileBytesTransferred", data: dataView.buffer }]);
         return;
     }
@@ -773,7 +788,7 @@ _a$4 = FileTransferManager, _FileTransferManager_maxLength = new WeakMap(), _Fil
         _console$s.error(`not currently sending file`);
         return;
     }
-    if (__classPrivateFieldGet(this, _FileTransferManager_bytesTransferred, "f") != bytesTransferred) {
+    if (!this.isServerSide && __classPrivateFieldGet(this, _FileTransferManager_bytesTransferred, "f") != bytesTransferred) {
         _console$s.error(`bytesTransferred are not equal - got ${bytesTransferred}, expected ${__classPrivateFieldGet(this, _FileTransferManager_bytesTransferred, "f")}`);
         this.cancel();
         return;
@@ -4053,7 +4068,7 @@ _DeviceManager_boundDeviceEventListeners = new WeakMap(), _DeviceManager_Connect
 DeviceManager.shared = new DeviceManager();
 var DeviceManager$1 = DeviceManager.shared;
 
-var _Device_instances, _a$1, _Device_DefaultConnectionManager, _Device_eventDispatcher, _Device_dispatchEvent_get, _Device_connectionManager, _Device_sendTxMessages, _Device_isConnected, _Device_assertIsConnected, _Device_hasRequiredInformation_get, _Device_requestRequiredInformation, _Device_assertCanReconnect, _Device_ReconnectOnDisconnection, _Device_reconnectOnDisconnection, _Device_reconnectIntervalId, _Device_onConnectionStatusUpdated, _Device_dispatchConnectionEvents, _Device_checkConnection, _Device_clear, _Device_onConnectionMessageReceived, _Device_deviceInformationManager, _Device_batteryLevel, _Device_updateBatteryLevel, _Device_sensorConfigurationManager, _Device_ClearSensorConfigurationOnLeave, _Device_clearSensorConfigurationOnLeave, _Device_sensorDataManager, _Device_vibrationManager, _Device_fileTransferManager, _Device_tfliteManager, _Device_firmwareManager, _Device_sendSmpMessage;
+var _Device_instances, _a$1, _Device_DefaultConnectionManager, _Device_eventDispatcher, _Device_dispatchEvent_get, _Device_connectionManager, _Device_sendTxMessages, _Device_isConnected, _Device_assertIsConnected, _Device_hasRequiredInformation_get, _Device_requestRequiredInformation, _Device_assertCanReconnect, _Device_ReconnectOnDisconnection, _Device_reconnectOnDisconnection, _Device_reconnectIntervalId, _Device_onConnectionStatusUpdated, _Device_dispatchConnectionEvents, _Device_checkConnection, _Device_clear, _Device_onConnectionMessageReceived, _Device_deviceInformationManager, _Device_batteryLevel, _Device_updateBatteryLevel, _Device_sensorConfigurationManager, _Device_ClearSensorConfigurationOnLeave, _Device_clearSensorConfigurationOnLeave, _Device_sensorDataManager, _Device_vibrationManager, _Device_fileTransferManager, _Device_tfliteManager, _Device_firmwareManager, _Device_sendSmpMessage, _Device_isServerSide;
 const _console$8 = createConsole("Device", { log: true });
 const DeviceEventTypes = [
     "connectionMessage",
@@ -4117,6 +4132,7 @@ class Device {
         _Device_tfliteManager.set(this, new TfliteManager());
         _Device_firmwareManager.set(this, new FirmwareManager());
         this.sendSmpMessage = __classPrivateFieldGet(this, _Device_instances, "m", _Device_sendSmpMessage).bind(this);
+        _Device_isServerSide.set(this, false);
         __classPrivateFieldGet(this, _Device_deviceInformationManager, "f").eventDispatcher = __classPrivateFieldGet(this, _Device_eventDispatcher, "f");
         this._informationManager.sendMessage = this.sendTxMessages;
         this._informationManager.eventDispatcher = __classPrivateFieldGet(this, _Device_eventDispatcher, "f");
@@ -4433,8 +4449,20 @@ class Device {
     get testFirmwareImage() {
         return __classPrivateFieldGet(this, _Device_firmwareManager, "f").testImage;
     }
+    get isServerSide() {
+        return __classPrivateFieldGet(this, _Device_isServerSide, "f");
+    }
+    set isServerSide(newIsServerSide) {
+        if (__classPrivateFieldGet(this, _Device_isServerSide, "f") == newIsServerSide) {
+            _console$8.log("redundant isServerSide assignment");
+            return;
+        }
+        _console$8.log({ newIsServerSide });
+        __classPrivateFieldSet(this, _Device_isServerSide, newIsServerSide, "f");
+        __classPrivateFieldGet(this, _Device_fileTransferManager, "f").isServerSide = this.isServerSide;
+    }
 }
-_a$1 = Device, _Device_eventDispatcher = new WeakMap(), _Device_connectionManager = new WeakMap(), _Device_isConnected = new WeakMap(), _Device_reconnectOnDisconnection = new WeakMap(), _Device_reconnectIntervalId = new WeakMap(), _Device_deviceInformationManager = new WeakMap(), _Device_batteryLevel = new WeakMap(), _Device_sensorConfigurationManager = new WeakMap(), _Device_clearSensorConfigurationOnLeave = new WeakMap(), _Device_sensorDataManager = new WeakMap(), _Device_vibrationManager = new WeakMap(), _Device_fileTransferManager = new WeakMap(), _Device_tfliteManager = new WeakMap(), _Device_firmwareManager = new WeakMap(), _Device_instances = new WeakSet(), _Device_DefaultConnectionManager = function _Device_DefaultConnectionManager() {
+_a$1 = Device, _Device_eventDispatcher = new WeakMap(), _Device_connectionManager = new WeakMap(), _Device_isConnected = new WeakMap(), _Device_reconnectOnDisconnection = new WeakMap(), _Device_reconnectIntervalId = new WeakMap(), _Device_deviceInformationManager = new WeakMap(), _Device_batteryLevel = new WeakMap(), _Device_sensorConfigurationManager = new WeakMap(), _Device_clearSensorConfigurationOnLeave = new WeakMap(), _Device_sensorDataManager = new WeakMap(), _Device_vibrationManager = new WeakMap(), _Device_fileTransferManager = new WeakMap(), _Device_tfliteManager = new WeakMap(), _Device_firmwareManager = new WeakMap(), _Device_isServerSide = new WeakMap(), _Device_instances = new WeakSet(), _Device_DefaultConnectionManager = function _Device_DefaultConnectionManager() {
     return new WebBluetoothConnectionManager();
 }, _Device_dispatchEvent_get = function _Device_dispatchEvent_get() {
     return __classPrivateFieldGet(this, _Device_eventDispatcher, "f").dispatchEvent;

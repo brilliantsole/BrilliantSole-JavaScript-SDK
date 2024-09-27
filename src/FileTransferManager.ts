@@ -269,6 +269,10 @@ class FileTransferManager {
     if (bytesReceived != this.#length) {
       const dataView = new DataView(new ArrayBuffer(4));
       dataView.setUint32(0, bytesReceived, true);
+
+      if (this.isServerSide) {
+        return;
+      }
       await this.sendMessage([{ type: "fileBytesTransferred", data: dataView.buffer }]);
       return;
     }
@@ -408,7 +412,7 @@ class FileTransferManager {
       _console.error(`not currently sending file`);
       return;
     }
-    if (this.#bytesTransferred != bytesTransferred) {
+    if (!this.isServerSide && this.#bytesTransferred != bytesTransferred) {
       _console.error(`bytesTransferred are not equal - got ${bytesTransferred}, expected ${this.#bytesTransferred}`);
       this.cancel();
       return;
@@ -428,6 +432,20 @@ class FileTransferManager {
   async cancel() {
     this.#assertIsNotIdle();
     await this.#setCommand("cancel");
+  }
+
+  // SERVER SIDE
+  #isServerSide = false;
+  get isServerSide() {
+    return this.#isServerSide;
+  }
+  set isServerSide(newIsServerSide) {
+    if (this.#isServerSide == newIsServerSide) {
+      _console.log("redundant isServerSide assignment");
+      return;
+    }
+    _console.log({ newIsServerSide });
+    this.#isServerSide = newIsServerSide;
   }
 }
 

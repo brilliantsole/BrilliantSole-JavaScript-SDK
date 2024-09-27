@@ -130,5 +130,7 @@ declare class Device {
     get eraseFirmwareImage(): () => Promise<void>;
     get confirmFirmwareImage(): (imageIndex?: number) => Promise<void>;
     get testFirmwareImage(): (imageIndex?: number) => Promise<void>;
+    get isServerSide(): boolean;
+    set isServerSide(newIsServerSide: boolean);
 }
 export default Device;

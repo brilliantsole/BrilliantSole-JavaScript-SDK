@@ -78,5 +78,7 @@ declare class FileTransferManager {
     mtu: number;
     receive(type: FileType): Promise<void>;
     cancel(): Promise<void>;
+    get isServerSide(): boolean;
+    set isServerSide(newIsServerSide: boolean);
 }
 export default FileTransferManager;

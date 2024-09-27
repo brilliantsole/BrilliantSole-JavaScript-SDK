@@ -713,6 +713,22 @@ class Device {
   get testFirmwareImage() {
     return this.#firmwareManager.testImage;
   }
+
+  // SERVER SIDE
+  #isServerSide = false;
+  get isServerSide() {
+    return this.#isServerSide;
+  }
+  set isServerSide(newIsServerSide) {
+    if (this.#isServerSide == newIsServerSide) {
+      _console.log("redundant isServerSide assignment");
+      return;
+    }
+    _console.log({ newIsServerSide });
+    this.#isServerSide = newIsServerSide;
+
+    this.#fileTransferManager.isServerSide = this.isServerSide;
+  }
 }
 
 export default Device;

@@ -206,6 +206,7 @@ abstract class BaseServer {
     const { device } = staticDeviceEvent.message;
     _console.log("onDeviceConnected", device.bluetoothId);
     addEventListeners(device, this.#boundDeviceListeners);
+    device.isServerSide = true;
   }
 
   #onDeviceDisconnected(staticDeviceEvent: DeviceManagerEventMap["deviceDisconnected"]) {
