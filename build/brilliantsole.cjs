@@ -5825,6 +5825,7 @@ _UDPServer_clients = new WeakMap(), _UDPServer_socket = new WeakMap(), _UDPServe
         _console.log("created new client", client);
         __classPrivateFieldGet(this, _UDPServer_clients, "f").push(client);
         _console.log(`currently have ${this.numberOfClients} clients`);
+        this.dispatchEvent("clientConnected", { client });
     }
     return client;
 }, _UDPServer_remoteInfoToString = function _UDPServer_remoteInfoToString(client) {
@@ -5919,6 +5920,7 @@ _UDPServer_clients = new WeakMap(), _UDPServer_socket = new WeakMap(), _UDPServe
     client.removeSelfTimer.stop();
     __classPrivateFieldSet(this, _UDPServer_clients, __classPrivateFieldGet(this, _UDPServer_clients, "f").filter((_client) => _client != client), "f");
     _console.log(`currently have ${this.numberOfClients} clients`);
+    this.dispatchEvent("clientDisconnected", { client });
 };
 
 exports.ContinuousSensorTypes = ContinuousSensorTypes;

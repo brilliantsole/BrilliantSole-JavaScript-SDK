@@ -52,6 +52,7 @@ class UDPServer extends BaseServer {
 
       this.#clients.push(client);
       _console.log(`currently have ${this.numberOfClients} clients`);
+      this.dispatchEvent("clientConnected", { client });
     }
     return client;
   }
@@ -221,6 +222,7 @@ class UDPServer extends BaseServer {
     client.removeSelfTimer.stop();
     this.#clients = this.#clients.filter((_client) => _client != client);
     _console.log(`currently have ${this.numberOfClients} clients`);
+    this.dispatchEvent("clientDisconnected", { client });
   }
 }
 

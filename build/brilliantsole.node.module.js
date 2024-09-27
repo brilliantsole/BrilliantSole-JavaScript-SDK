@@ -5804,6 +5804,7 @@ _UDPServer_clients = new WeakMap(), _UDPServer_socket = new WeakMap(), _UDPServe
         _console.log("created new client", client);
         __classPrivateFieldGet(this, _UDPServer_clients, "f").push(client);
         _console.log(`currently have ${this.numberOfClients} clients`);
+        this.dispatchEvent("clientConnected", { client });
     }
     return client;
 }, _UDPServer_remoteInfoToString = function _UDPServer_remoteInfoToString(client) {
@@ -5898,6 +5899,7 @@ _UDPServer_clients = new WeakMap(), _UDPServer_socket = new WeakMap(), _UDPServe
     client.removeSelfTimer.stop();
     __classPrivateFieldSet(this, _UDPServer_clients, __classPrivateFieldGet(this, _UDPServer_clients, "f").filter((_client) => _client != client), "f");
     _console.log(`currently have ${this.numberOfClients} clients`);
+    this.dispatchEvent("clientDisconnected", { client });
 };
 
 export { ContinuousSensorTypes, DefaultNumberOfPressureSensors, Device$1 as Device, DeviceManager$1 as DeviceManager, DevicePair, DeviceTypes, environment as Environment, FileTransferDirections, FileTypes, InsoleSides, MaxNameLength, MaxNumberOfVibrationWaveformEffectSegments, MaxNumberOfVibrationWaveformSegments, MaxSensorRate, MaxVibrationWaveformEffectSegmentDelay, MaxVibrationWaveformEffectSegmentLoopCount, MaxVibrationWaveformEffectSequenceLoopCount, MaxVibrationWaveformSegmentDuration, MinNameLength, scanner$1 as Scanner, SensorRateStep, SensorTypes, TfliteSensorTypes, TfliteTasks, UDPServer, VibrationLocations, VibrationTypes, VibrationWaveformEffects, WebSocketServer, setAllConsoleLevelFlags, setConsoleLevelFlagsForType };
