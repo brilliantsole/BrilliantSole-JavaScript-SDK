@@ -5,6 +5,7 @@ import { parseMessage } from "../../utils/ParseUtils.ts";
 import BaseServer from "../BaseServer.ts";
 import {
   createUDPServerMessage,
+  pongUDPClientTimeout,
   removeUDPClientTimeout,
   udpPongMessage,
   UDPServerMessageType,
@@ -55,9 +56,13 @@ class UDPServer extends BaseServer {
     return client;
   }
 
-  #clientToString(client: dgram.RemoteInfo) {
+  #remoteInfoToString(client: dgram.RemoteInfo) {
     const { address, port } = client;
     return `${address}:${port}`;
+  }
+  #clientToString(client: UDPClient) {
+    const { address, port, receivePort } = client;
+    return `${address}:${port}=>${receivePort}`;
   }
 
   // UDP SOCKET
@@ -108,7 +113,7 @@ class UDPServer extends BaseServer {
     _console.log(`socket listening on port ${address.address}:${address.port}`);
   }
   #onSocketMessage(message: Buffer, remoteInfo: dgram.RemoteInfo) {
-    _console.log(`received ${message.length} bytes from ${this.#clientToString(remoteInfo)}`);
+    _console.log(`received ${message.length} bytes from ${this.#remoteInfoToString(remoteInfo)}`);
     const client = this.#getClientByRemoteInfo(remoteInfo, true);
     if (!client) {
       _console.error("no client found");
@@ -152,7 +157,7 @@ class UDPServer extends BaseServer {
     _console.log(`received "${messageType}" message from ${client.address}:${client.port}`);
     switch (messageType) {
       case "ping":
-        responseMessages.push(udpPongMessage);
+        responseMessages.push(this.#createPongMessage(context));
         break;
       case "pong":
         break;
@@ -172,6 +177,12 @@ class UDPServer extends BaseServer {
     }
   }
 
+  #createPongMessage(context: UDPClientContext) {
+    const { client } = context;
+    // TODO: - no need to ping if streaming sensor data
+    return udpPongMessage;
+  }
+
   #parseRemoteReceivePort(dataView: DataView, client: UDPClient) {
     const receivePort = dataView.getUint16(0);
     client.receivePort = receivePort;
@@ -184,14 +195,18 @@ class UDPServer extends BaseServer {
   // CLIENT MESSAGING
   #sendToClient(client: UDPClient, message: ArrayBuffer) {
     _console.log(`sending ${message.byteLength} bytes to ${this.#clientToString(client)}...`);
-    this.#socket!.send(new Uint8Array(message), client.receivePort, client.address, (error, bytes) => {
-      if (error) {
-        _console.error("error sending data", error);
-        return;
-      }
-      _console.log(`sent ${bytes} bytes`);
-      client.lastTimeSentData = Date.now();
-    });
+    try {
+      this.#socket!.send(new Uint8Array(message), client.receivePort, client.address, (error, bytes) => {
+        if (error) {
+          _console.error("error sending data", error);
+          return;
+        }
+        _console.log(`sent ${bytes} bytes`);
+        client.lastTimeSentData = Date.now();
+      });
+    } catch (error) {
+      _console.error("serious error sending data", error);
+    }
   }
   broadcastMessage(message: ArrayBuffer) {
     super.broadcastMessage(message);

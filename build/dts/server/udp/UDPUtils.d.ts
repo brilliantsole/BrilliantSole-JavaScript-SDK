@@ -1,4 +1,5 @@
 import { Message } from "../ServerUtils.ts";
+export declare const pongUDPClientTimeout = 2000;
 export declare const removeUDPClientTimeout = 3000;
 export declare const UDPServerMessageTypes: readonly ["ping", "pong", "setRemoteReceivePort", "serverMessage"];
 export type UDPServerMessageType = (typeof UDPServerMessageTypes)[number];

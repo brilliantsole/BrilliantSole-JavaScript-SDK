@@ -147,9 +147,16 @@ abstract class BaseServer {
   }
 
   get #discoveredDevicesMessage() {
-    const serverMessages: ServerMessage[] = scanner!.discoveredDevicesArray.map((discoveredDevice) => {
-      return { type: "discoveredDevice", data: discoveredDevice };
-    });
+    const serverMessages: ServerMessage[] = scanner!.discoveredDevicesArray
+      .filter((discoveredDevice) => {
+        const existingConnectedDevice = DeviceManager.ConnectedDevices.find(
+          (device) => device.bluetoothId == discoveredDevice.bluetoothId
+        );
+        return !existingConnectedDevice;
+      })
+      .map((discoveredDevice) => {
+        return { type: "discoveredDevice", data: discoveredDevice };
+      });
     return createServerMessage(...serverMessages);
   }
 

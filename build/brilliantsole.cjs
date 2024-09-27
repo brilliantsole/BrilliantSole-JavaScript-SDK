@@ -5478,7 +5478,12 @@ _a = BaseServer, _BaseServer_clearSensorConfigurationsWhenNoClients = new WeakMa
 }, _BaseServer_createExpiredDiscoveredDeviceMessage = function _BaseServer_createExpiredDiscoveredDeviceMessage(discoveredDevice) {
     return createServerMessage({ type: "expiredDiscoveredDevice", data: discoveredDevice.bluetoothId });
 }, _BaseServer_discoveredDevicesMessage_get = function _BaseServer_discoveredDevicesMessage_get() {
-    const serverMessages = scanner$1.discoveredDevicesArray.map((discoveredDevice) => {
+    const serverMessages = scanner$1.discoveredDevicesArray
+        .filter((discoveredDevice) => {
+        const existingConnectedDevice = DeviceManager$1.ConnectedDevices.find((device) => device.bluetoothId == discoveredDevice.bluetoothId);
+        return !existingConnectedDevice;
+    })
+        .map((discoveredDevice) => {
         return { type: "discoveredDevice", data: discoveredDevice };
     });
     return createServerMessage(...serverMessages);
@@ -5691,7 +5696,13 @@ _WebSocketServer_server = new WeakMap(), _WebSocketServer_boundWebSocketServerLi
         return;
     }
     const responseMessage = concatenateArrayBuffers(responseMessages);
-    client.send(responseMessage);
+    _console$2.log(`sending ${responseMessage.byteLength} bytes to client...`);
+    try {
+        client.send(responseMessage);
+    }
+    catch (error) {
+        _console$2.log("error sending message", error);
+    }
 }, _WebSocketServer_onClientMessage = function _WebSocketServer_onClientMessage(messageType, dataView, context) {
     const { responseMessages } = context;
     switch (messageType) {
@@ -5729,7 +5740,7 @@ function createUDPServerMessage(...messages) {
 createUDPServerMessage("ping");
 const udpPongMessage = createUDPServerMessage("pong");
 
-var _UDPServer_instances, _UDPServer_clients, _UDPServer_getClientByRemoteInfo, _UDPServer_clientToString, _UDPServer_socket, _UDPServer_boundSocketListeners, _UDPServer_onSocketClose, _UDPServer_onSocketConnect, _UDPServer_onSocketError, _UDPServer_onSocketListening, _UDPServer_onSocketMessage, _UDPServer_onClientData, _UDPServer_onClientUDPMessage, _UDPServer_parseRemoteReceivePort, _UDPServer_sendToClient, _UDPServer_removeClient;
+var _UDPServer_instances, _UDPServer_clients, _UDPServer_getClientByRemoteInfo, _UDPServer_remoteInfoToString, _UDPServer_clientToString, _UDPServer_socket, _UDPServer_boundSocketListeners, _UDPServer_onSocketClose, _UDPServer_onSocketConnect, _UDPServer_onSocketError, _UDPServer_onSocketListening, _UDPServer_onSocketMessage, _UDPServer_onClientData, _UDPServer_onClientUDPMessage, _UDPServer_createPongMessage, _UDPServer_parseRemoteReceivePort, _UDPServer_sendToClient, _UDPServer_removeClient;
 const _console = createConsole("UDPServer", { log: true });
 class UDPServer extends BaseServer {
     constructor() {
@@ -5787,9 +5798,12 @@ _UDPServer_clients = new WeakMap(), _UDPServer_socket = new WeakMap(), _UDPServe
         _console.log(`currently have ${this.numberOfClients} clients`);
     }
     return client;
-}, _UDPServer_clientToString = function _UDPServer_clientToString(client) {
+}, _UDPServer_remoteInfoToString = function _UDPServer_remoteInfoToString(client) {
     const { address, port } = client;
     return `${address}:${port}`;
+}, _UDPServer_clientToString = function _UDPServer_clientToString(client) {
+    const { address, port, receivePort } = client;
+    return `${address}:${port}=>${receivePort}`;
 }, _UDPServer_onSocketClose = function _UDPServer_onSocketClose() {
     _console.log("socket close");
 }, _UDPServer_onSocketConnect = function _UDPServer_onSocketConnect() {
@@ -5800,7 +5814,7 @@ _UDPServer_clients = new WeakMap(), _UDPServer_socket = new WeakMap(), _UDPServe
     const address = __classPrivateFieldGet(this, _UDPServer_socket, "f").address();
     _console.log(`socket listening on port ${address.address}:${address.port}`);
 }, _UDPServer_onSocketMessage = function _UDPServer_onSocketMessage(message, remoteInfo) {
-    _console.log(`received ${message.length} bytes from ${__classPrivateFieldGet(this, _UDPServer_instances, "m", _UDPServer_clientToString).call(this, remoteInfo)}`);
+    _console.log(`received ${message.length} bytes from ${__classPrivateFieldGet(this, _UDPServer_instances, "m", _UDPServer_remoteInfoToString).call(this, remoteInfo)}`);
     const client = __classPrivateFieldGet(this, _UDPServer_instances, "m", _UDPServer_getClientByRemoteInfo).call(this, remoteInfo, true);
     if (!client) {
         _console.error("no client found");
@@ -5830,7 +5844,7 @@ _UDPServer_clients = new WeakMap(), _UDPServer_socket = new WeakMap(), _UDPServe
     _console.log(`received "${messageType}" message from ${client.address}:${client.port}`);
     switch (messageType) {
         case "ping":
-            responseMessages.push(udpPongMessage);
+            responseMessages.push(__classPrivateFieldGet(this, _UDPServer_instances, "m", _UDPServer_createPongMessage).call(this, context));
             break;
         case "pong":
             break;
@@ -5847,6 +5861,8 @@ _UDPServer_clients = new WeakMap(), _UDPServer_socket = new WeakMap(), _UDPServe
             _console.error(`uncaught messageType "${messageType}"`);
             break;
     }
+}, _UDPServer_createPongMessage = function _UDPServer_createPongMessage(context) {
+    return udpPongMessage;
 }, _UDPServer_parseRemoteReceivePort = function _UDPServer_parseRemoteReceivePort(dataView, client) {
     const receivePort = dataView.getUint16(0);
     client.receivePort = receivePort;
@@ -5856,14 +5872,19 @@ _UDPServer_clients = new WeakMap(), _UDPServer_socket = new WeakMap(), _UDPServe
     return createUDPServerMessage({ type: "setRemoteReceivePort", data: responseDataView });
 }, _UDPServer_sendToClient = function _UDPServer_sendToClient(client, message) {
     _console.log(`sending ${message.byteLength} bytes to ${__classPrivateFieldGet(this, _UDPServer_instances, "m", _UDPServer_clientToString).call(this, client)}...`);
-    __classPrivateFieldGet(this, _UDPServer_socket, "f").send(new Uint8Array(message), client.receivePort, client.address, (error, bytes) => {
-        if (error) {
-            _console.error("error sending data", error);
-            return;
-        }
-        _console.log(`sent ${bytes} bytes`);
-        client.lastTimeSentData = Date.now();
-    });
+    try {
+        __classPrivateFieldGet(this, _UDPServer_socket, "f").send(new Uint8Array(message), client.receivePort, client.address, (error, bytes) => {
+            if (error) {
+                _console.error("error sending data", error);
+                return;
+            }
+            _console.log(`sent ${bytes} bytes`);
+            client.lastTimeSentData = Date.now();
+        });
+    }
+    catch (error) {
+        _console.error("serious error sending data", error);
+    }
 }, _UDPServer_removeClient = function _UDPServer_removeClient(client) {
     _console.log(`removing client ${__classPrivateFieldGet(this, _UDPServer_instances, "m", _UDPServer_clientToString).call(this, client)}...`);
     client.removeSelfTimer.stop();

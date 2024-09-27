@@ -130,7 +130,12 @@ class WebSocketServer extends BaseServer {
     }
 
     const responseMessage = concatenateArrayBuffers(responseMessages);
-    client.send(responseMessage);
+    _console.log(`sending ${responseMessage.byteLength} bytes to client...`);
+    try {
+      client.send(responseMessage);
+    } catch (error) {
+      _console.log("error sending message", error);
+    }
   }
 
   #onClientMessage(
