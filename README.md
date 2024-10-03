@@ -2,7 +2,7 @@
 
 Web SDK for BrilliantSole insoles
 
-## Running the Node.js server for OSC/WebSocket stuff
+## Running the Node.js server for WebSocket/UDP stuff
 
 On macOS:  
 for the security stuff, run the command in the terminal:  

@@ -1,5 +1,5 @@
 {
-  "name": "brilliantsole",
+  "name": "brilliantsole-javascript-sdk",
   "version": "0.0.1",
   "description": "JavaScript SDK for BrilliantSole Smart Insoles",
   "main": "./build/brilliantsole.module.js",
@@ -23,7 +23,6 @@
   "homepage": "https://www.runonbrilliantsole.com/",
   "author": "Zack Qattan <zack@brilliantsole.com>",
   "license": "MIT",
-  "private": true,
   "devDependencies": {
     "@babel/core": "^7.24.6",
     "@babel/plugin-proposal-class-properties": "^7.18.6",
