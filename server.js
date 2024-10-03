@@ -7,7 +7,8 @@ import ip from "ip";
 import * as BS from "./build/brilliantsole.node.module.js";
 import { WebSocketServer } from "ws";
 import * as dgram from "dgram";
-//BS.setAllConsoleLevelFlags({ log: true, warn: true });
+
+//BS.setAllConsoleLevelFlags({ log: false });
 
 // HTTPS SERVER
 app.use(function (req, res, next) {

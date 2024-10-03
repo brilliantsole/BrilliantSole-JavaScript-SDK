@@ -5267,7 +5267,7 @@ _BaseClient_devices = new WeakMap(), _BaseClient_eventDispatcher = new WeakMap()
 };
 BaseClient._reconnectOnDisconnection = true;
 
-const _console$1 = createConsole("WebSocketUtils", { log: true });
+const _console$1 = createConsole("WebSocketUtils", { log: false });
 const webSocketPingTimeout = 30_000_000;
 const webSocketReconnectTimeout = 3_000;
 const WebSocketMessageTypes = ["ping", "pong", "serverMessage"];

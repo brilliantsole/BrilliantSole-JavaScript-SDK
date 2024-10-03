@@ -1,7 +1,7 @@
 import { createConsole } from "../../utils/Console.ts";
 import { createMessage, Message } from "../ServerUtils.ts";
 
-const _console = createConsole("WebSocketUtils", { log: true });
+const _console = createConsole("WebSocketUtils", { log: false });
 
 export const webSocketPingTimeout = 30_000_000;
 export const webSocketReconnectTimeout = 3_000;

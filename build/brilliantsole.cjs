@@ -5626,7 +5626,7 @@ _a = BaseServer, _BaseServer_clearSensorConfigurationsWhenNoClients = new WeakMa
 };
 _BaseServer_ClearSensorConfigurationsWhenNoClients = { value: true };
 
-const _console$3 = createConsole("WebSocketUtils", { log: true });
+const _console$3 = createConsole("WebSocketUtils", { log: false });
 const webSocketPingTimeout = 30_000_000;
 const WebSocketMessageTypes = ["ping", "pong", "serverMessage"];
 function createWebSocketMessage(...messages) {
@@ -5759,7 +5759,7 @@ _WebSocketServer_server = new WeakMap(), _WebSocketServer_boundWebSocketServerLi
     client.send(webSocketPingMessage);
 };
 
-const _console$1 = createConsole("UDPUtils", { log: true });
+const _console$1 = createConsole("UDPUtils", { log: false });
 const removeUDPClientTimeout = 3_000;
 const UDPServerMessageTypes = ["ping", "pong", "setRemoteReceivePort", "serverMessage"];
 function createUDPServerMessage(...messages) {

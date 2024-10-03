@@ -1,7 +1,7 @@
 import { createConsole } from "../../utils/Console.ts";
 import { createMessage, Message } from "../ServerUtils.ts";
 
-const _console = createConsole("UDPUtils", { log: true });
+const _console = createConsole("UDPUtils", { log: false });
 
 export const pongUDPClientTimeout = 2_000;
 export const removeUDPClientTimeout = 3_000;
