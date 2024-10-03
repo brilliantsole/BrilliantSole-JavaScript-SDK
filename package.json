@@ -9,8 +9,15 @@
   "type": "module",
   "exports": {
     ".": {
-      "import": "./build/brilliantsole.module.js",
-      "types": "./build/brilliantsole.module.d.ts"
+      "node": {
+        "require": "./build/brilliantsole.node.module.js",
+        "import": "./build/brilliantsole.node.module.js",
+        "types": "./build/index.node.d.ts"
+      },
+      "default": {
+        "import": "./build/brilliantsole.module.js",
+        "types": "./build/index.d.ts"
+      }
     },
     "./src/*": "./src/*"
   },
