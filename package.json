@@ -1,6 +1,6 @@
 {
   "name": "brilliantsole",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "description": "JavaScript SDK for BrilliantSole Smart Insoles",
   "main": "./build/brilliantsole.module.js",
   "module": "./build/brilliantsole.module.js",
@@ -8,7 +8,7 @@
   "types": "./build/index.d.ts",
   "type": "module",
   "exports": {
-    "./client": {
+    "./browser": {
       "import": "./build/brilliantsole.module.js",
       "default": "./build/brilliantsole.module.js",
       "types": "./build/index.d.ts"
