@@ -1010,6 +1010,7 @@ class MotionSensorDataManager {
         ].map((value) => value * scalar);
         pitch *= -1;
         heading *= -1;
+        heading += 360;
         const euler = { heading, pitch, roll };
         _console$u.log({ euler });
         return euler;
