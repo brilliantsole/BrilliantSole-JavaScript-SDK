@@ -4627,7 +4627,7 @@ _DevicePairPressureSensorDataManager_rawPressure = new WeakMap(), _DevicePairPre
         pressure.rawSum += __classPrivateFieldGet(this, _DevicePairPressureSensorDataManager_rawPressure, "f")[side].scaledSum;
         pressure.normalizedSum += __classPrivateFieldGet(this, _DevicePairPressureSensorDataManager_rawPressure, "f")[side].normalizedSum;
     });
-    if (pressure.normalizedSum > 0) {
+    if (pressure.normalizedSum > 0.001) {
         pressure.center = { x: 0, y: 0 };
         InsoleSides.forEach((side) => {
             const sidePressure = __classPrivateFieldGet(this, _DevicePairPressureSensorDataManager_rawPressure, "f")[side];

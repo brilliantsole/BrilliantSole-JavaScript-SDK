@@ -57,7 +57,7 @@ class DevicePairPressureSensorDataManager {
       pressure.normalizedSum += this.#rawPressure[side]!.normalizedSum;
     });
 
-    if (pressure.normalizedSum > 0) {
+    if (pressure.normalizedSum > 0.001) {
       pressure.center = { x: 0, y: 0 };
       InsoleSides.forEach((side) => {
         const sidePressure = this.#rawPressure[side]!;
