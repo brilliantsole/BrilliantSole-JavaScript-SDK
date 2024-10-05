@@ -947,7 +947,7 @@
 	            pressure.scaledSum += scaledValue;
 	            pressure.normalizedSum += normalizedValue / this.numberOfSensors;
 	        }
-	        if (pressure.scaledSum > 0) {
+	        if (pressure.scaledSum > 0.001) {
 	            pressure.center = { x: 0, y: 0 };
 	            pressure.sensors.forEach((sensor) => {
 	                sensor.weightedValue = sensor.scaledValue / pressure.scaledSum;
