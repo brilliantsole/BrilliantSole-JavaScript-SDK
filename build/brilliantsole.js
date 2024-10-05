@@ -947,7 +947,7 @@
 	            pressure.scaledSum += scaledValue;
 	            pressure.normalizedSum += normalizedValue / this.numberOfSensors;
 	        }
-	        if (pressure.normalizedSum > 0.001) {
+	        if (pressure.scaledSum > 0 && pressure.normalizedSum > 0.001) {
 	            pressure.center = { x: 0, y: 0 };
 	            pressure.sensors.forEach((sensor) => {
 	                sensor.weightedValue = sensor.scaledValue / pressure.scaledSum;
@@ -4631,7 +4631,9 @@
 	            const sidePressure = __classPrivateFieldGet(this, _DevicePairPressureSensorDataManager_rawPressure, "f")[side];
 	            const normalizedPressureSumWeight = sidePressure.normalizedSum / pressure.normalizedSum;
 	            if (normalizedPressureSumWeight > 0) {
-	                pressure.center.y += sidePressure.normalizedCenter.y * normalizedPressureSumWeight;
+	                if (sidePressure.normalizedCenter?.y != undefined) {
+	                    pressure.center.y += sidePressure.normalizedCenter.y * normalizedPressureSumWeight;
+	                }
 	                if (side == "right") {
 	                    pressure.center.x = normalizedPressureSumWeight;
 	                }
