@@ -2,20 +2,28 @@
   "name": "brilliantsole",
   "version": "0.0.3",
   "description": "JavaScript SDK for BrilliantSole Smart Insoles",
-  "main": "./build/brilliantsole.node.module.js",
-  "module": "./build/brilliantsole.node.module.js",
-  "browser": "./build/brilliantsole.js",
-  "types": "./build/index.node.d.ts",
+  "main": "./build/brilliantsole.module.js",
+  "module": "./build/brilliantsole.module.js",
+  "browser": "./build/brilliantsole.module.js",
+  "types": "./build/index.d.ts",
   "type": "module",
   "exports": {
-    ".": {
-      "default": {
-        "require": "./build/brilliantsole.node.module.js",
-        "import": "./build/brilliantsole.node.module.js",
-        "types": "./build/index.node.d.ts"
-      }
+    "./client": {
+      "import": "./build/brilliantsole.module.js",
+      "default": "./build/brilliantsole.module.js",
+      "types": "./build/index.d.ts"
     },
-    "./src/*": "./src/*"
+    "./node": {
+      "import": "./build/brilliantsole.node.module.js",
+      "node": "./build/brilliantsole.node.module.js",
+      "require": "./build/brilliantsole.cjs",
+      "default": "./build/brilliantsole.node.module.js",
+      "types": "./build/index.node.d.ts"
+    },
+    "./ls": {
+      "default": "./build/brilliantsole.ls.module.js",
+      "types": "./build/index.d.ts"
+    }
   },
   "scripts": {
     "build": "rollup -c",
