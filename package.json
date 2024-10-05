@@ -1,6 +1,6 @@
 {
   "name": "brilliantsole",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "JavaScript SDK for BrilliantSole Smart Insoles",
   "main": "./build/brilliantsole.module.js",
   "module": "./build/brilliantsole.module.js",
@@ -30,8 +30,11 @@
     "dev": "rollup -c -w",
     "server": "node server.js"
   },
-  "repository": "https://github.com/zakaton/BrilliantSole.js.git",
-  "homepage": "https://www.runonbrilliantsole.com/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zakaton/BrilliantSole.js.git"
+  },
+  "homepage": "https://www.brilliantsole.com/",
   "author": "Zack Qattan <zack@brilliantsole.com>",
   "license": "MIT",
   "devDependencies": {
