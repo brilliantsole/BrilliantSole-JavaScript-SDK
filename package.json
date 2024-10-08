@@ -82,9 +82,8 @@
     "LICENSE",
     "src",
     "build",
-    "examples"
-  ],
-  "directories": {
-    "example": "examples"
-  }
+    "examples",
+    "assets",
+    "tflite-converter"
+  ]
 }
