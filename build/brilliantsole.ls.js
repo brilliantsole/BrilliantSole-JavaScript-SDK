@@ -197,6 +197,13 @@
                 this.listeners[type] = [];
                 _console$q.log(`creating "${type}" listeners array`, this.listeners[type]);
             }
+            const alreadyAdded = this.listeners[type].find((listenerObject) => {
+                return listenerObject.listener == listener && listenerObject.once == options.once;
+            });
+            if (alreadyAdded) {
+                _console$q.log("already added listener");
+                return;
+            }
             _console$q.log(`adding "${type}" listener`, listener, options);
             this.listeners[type].push({ listener, once: options.once });
             _console$q.log(`currently have ${this.listeners[type].length} "${type}" listeners`);
@@ -4766,7 +4773,9 @@
         }
         setSensorConfiguration(sensorConfiguration) {
             InsoleSides.forEach((side) => {
-                this[side]?.setSensorConfiguration(sensorConfiguration);
+                if (this[side]?.isConnected) {
+                    this[side]?.setSensorConfiguration(sensorConfiguration);
+                }
             });
         }
         resetPressureRange() {

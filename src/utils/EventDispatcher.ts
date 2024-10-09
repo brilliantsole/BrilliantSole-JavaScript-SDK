@@ -1,4 +1,5 @@
 import { createConsole } from "./Console.ts";
+import { deepEqual } from "./ObjectUtils.ts";
 
 const _console = createConsole("EventDispatcher", { log: false });
 
@@ -87,6 +88,13 @@ class EventDispatcher<
     if (!this.listeners[type]) {
       this.listeners[type] = [];
       _console.log(`creating "${type}" listeners array`, this.listeners[type]!);
+    }
+    const alreadyAdded = this.listeners[type].find((listenerObject) => {
+      return listenerObject.listener == listener && listenerObject.once == options.once;
+    });
+    if (alreadyAdded) {
+      _console.log("already added listener");
+      return;
     }
     _console.log(`adding "${type}" listener`, listener, options);
     this.listeners[type]!.push({ listener, once: options.once });

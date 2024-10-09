@@ -191,6 +191,13 @@ class EventDispatcher {
             this.listeners[type] = [];
             _console$v.log(`creating "${type}" listeners array`, this.listeners[type]);
         }
+        const alreadyAdded = this.listeners[type].find((listenerObject) => {
+            return listenerObject.listener == listener && listenerObject.once == options.once;
+        });
+        if (alreadyAdded) {
+            _console$v.log("already added listener");
+            return;
+        }
         _console$v.log(`adding "${type}" listener`, listener, options);
         this.listeners[type].push({ listener, once: options.once });
         _console$v.log(`currently have ${this.listeners[type].length} "${type}" listeners`);
@@ -4766,7 +4773,9 @@ class DevicePair {
     }
     setSensorConfiguration(sensorConfiguration) {
         InsoleSides.forEach((side) => {
-            this[side]?.setSensorConfiguration(sensorConfiguration);
+            if (this[side]?.isConnected) {
+                this[side]?.setSensorConfiguration(sensorConfiguration);
+            }
         });
     }
     resetPressureRange() {

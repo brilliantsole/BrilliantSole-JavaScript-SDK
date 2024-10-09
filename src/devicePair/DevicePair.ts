@@ -212,7 +212,9 @@ class DevicePair {
   // SENSOR CONFIGURATION
   setSensorConfiguration(sensorConfiguration: SensorConfiguration) {
     InsoleSides.forEach((side) => {
-      this[side]?.setSensorConfiguration(sensorConfiguration);
+      if (this[side]?.isConnected) {
+        this[side]?.setSensorConfiguration(sensorConfiguration);
+      }
     });
   }
 
