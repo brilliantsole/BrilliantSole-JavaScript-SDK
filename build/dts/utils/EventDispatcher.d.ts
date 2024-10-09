@@ -40,6 +40,8 @@ declare class EventDispatcher<Target extends any, EventType extends string, Even
         target: Target;
         message: EventMessages[T];
     }) => void): void;
+    removeEventListeners<T extends EventType>(type: T): void;
+    removeAllEventListeners(): void;
     dispatchEvent<T extends EventType>(type: T, message: EventMessages[T]): void;
     waitForEvent<T extends EventType>(type: T): Promise<{
         type: T;

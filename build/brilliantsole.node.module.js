@@ -171,6 +171,8 @@ class EventDispatcher {
         this.listeners = {};
         this.addEventListener = this.addEventListener.bind(this);
         this.removeEventListener = this.removeEventListener.bind(this);
+        this.removeEventListeners = this.removeEventListeners.bind(this);
+        this.removeAllEventListeners = this.removeAllEventListeners.bind(this);
         this.dispatchEvent = this.dispatchEvent.bind(this);
         this.waitForEvent = this.waitForEvent.bind(this);
     }
@@ -221,6 +223,19 @@ class EventDispatcher {
             }
         });
         this.updateEventListeners(type);
+    }
+    removeEventListeners(type) {
+        if (!this.isValidEventType(type)) {
+            throw new Error(`Invalid event type: ${type}`);
+        }
+        if (!this.listeners[type])
+            return;
+        _console$A.log(`removing "${type}" listeners...`);
+        this.listeners[type] = [];
+    }
+    removeAllEventListeners() {
+        _console$A.log(`removing listeners...`);
+        this.listeners = {};
     }
     dispatchEvent(type, message) {
         if (!this.isValidEventType(type)) {
@@ -3973,6 +3988,12 @@ class DeviceManager {
     get RemoveEventListener() {
         return __classPrivateFieldGet(this, _DeviceManager_EventDispatcher, "f").removeEventListener;
     }
+    get RemoveEventListeners() {
+        return __classPrivateFieldGet(this, _DeviceManager_EventDispatcher, "f").removeEventListeners;
+    }
+    get RemoveAllEventListeners() {
+        return __classPrivateFieldGet(this, _DeviceManager_EventDispatcher, "f").removeAllEventListeners;
+    }
 }
 _DeviceManager_boundDeviceEventListeners = new WeakMap(), _DeviceManager_ConnectedDevices = new WeakMap(), _DeviceManager_UseLocalStorage = new WeakMap(), _DeviceManager_DefaultLocalStorageConfiguration = new WeakMap(), _DeviceManager_LocalStorageConfiguration = new WeakMap(), _DeviceManager_LocalStorageKey = new WeakMap(), _DeviceManager_AvailableDevices = new WeakMap(), _DeviceManager_EventDispatcher = new WeakMap(), _DeviceManager_instances = new WeakSet(), _DeviceManager_onDeviceType = function _DeviceManager_onDeviceType(event) {
     if (__classPrivateFieldGet(this, _DeviceManager_UseLocalStorage, "f")) {
@@ -4191,6 +4212,12 @@ class Device {
     }
     get waitForEvent() {
         return __classPrivateFieldGet(this, _Device_eventDispatcher, "f").waitForEvent;
+    }
+    get removeEventListeners() {
+        return __classPrivateFieldGet(this, _Device_eventDispatcher, "f").removeEventListeners;
+    }
+    get removeAllEventListeners() {
+        return __classPrivateFieldGet(this, _Device_eventDispatcher, "f").removeAllEventListeners;
     }
     get connectionManager() {
         return __classPrivateFieldGet(this, _Device_connectionManager, "f");
@@ -4734,6 +4761,12 @@ class DevicePair {
     }
     get waitForEvent() {
         return __classPrivateFieldGet(this, _DevicePair_eventDispatcher, "f").waitForEvent;
+    }
+    get removeEventListeners() {
+        return __classPrivateFieldGet(this, _DevicePair_eventDispatcher, "f").removeEventListeners;
+    }
+    get removeAllEventListeners() {
+        return __classPrivateFieldGet(this, _DevicePair_eventDispatcher, "f").removeAllEventListeners;
     }
     get left() {
         return __classPrivateFieldGet(this, _DevicePair_left, "f");

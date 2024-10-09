@@ -173,6 +173,8 @@
 	        this.listeners = {};
 	        this.addEventListener = this.addEventListener.bind(this);
 	        this.removeEventListener = this.removeEventListener.bind(this);
+	        this.removeEventListeners = this.removeEventListeners.bind(this);
+	        this.removeAllEventListeners = this.removeAllEventListeners.bind(this);
 	        this.dispatchEvent = this.dispatchEvent.bind(this);
 	        this.waitForEvent = this.waitForEvent.bind(this);
 	    }
@@ -223,6 +225,19 @@
 	            }
 	        });
 	        this.updateEventListeners(type);
+	    }
+	    removeEventListeners(type) {
+	        if (!this.isValidEventType(type)) {
+	            throw new Error(`Invalid event type: ${type}`);
+	        }
+	        if (!this.listeners[type])
+	            return;
+	        _console$v.log(`removing "${type}" listeners...`);
+	        this.listeners[type] = [];
+	    }
+	    removeAllEventListeners() {
+	        _console$v.log(`removing listeners...`);
+	        this.listeners = {};
 	    }
 	    dispatchEvent(type, message) {
 	        if (!this.isValidEventType(type)) {
@@ -3971,6 +3986,12 @@
 	    get RemoveEventListener() {
 	        return __classPrivateFieldGet(this, _DeviceManager_EventDispatcher, "f").removeEventListener;
 	    }
+	    get RemoveEventListeners() {
+	        return __classPrivateFieldGet(this, _DeviceManager_EventDispatcher, "f").removeEventListeners;
+	    }
+	    get RemoveAllEventListeners() {
+	        return __classPrivateFieldGet(this, _DeviceManager_EventDispatcher, "f").removeAllEventListeners;
+	    }
 	}
 	_DeviceManager_boundDeviceEventListeners = new WeakMap(), _DeviceManager_ConnectedDevices = new WeakMap(), _DeviceManager_UseLocalStorage = new WeakMap(), _DeviceManager_DefaultLocalStorageConfiguration = new WeakMap(), _DeviceManager_LocalStorageConfiguration = new WeakMap(), _DeviceManager_LocalStorageKey = new WeakMap(), _DeviceManager_AvailableDevices = new WeakMap(), _DeviceManager_EventDispatcher = new WeakMap(), _DeviceManager_instances = new WeakSet(), _DeviceManager_onDeviceType = function _DeviceManager_onDeviceType(event) {
 	    if (__classPrivateFieldGet(this, _DeviceManager_UseLocalStorage, "f")) {
@@ -4189,6 +4210,12 @@
 	    }
 	    get waitForEvent() {
 	        return __classPrivateFieldGet(this, _Device_eventDispatcher, "f").waitForEvent;
+	    }
+	    get removeEventListeners() {
+	        return __classPrivateFieldGet(this, _Device_eventDispatcher, "f").removeEventListeners;
+	    }
+	    get removeAllEventListeners() {
+	        return __classPrivateFieldGet(this, _Device_eventDispatcher, "f").removeAllEventListeners;
 	    }
 	    get connectionManager() {
 	        return __classPrivateFieldGet(this, _Device_connectionManager, "f");
@@ -4733,6 +4760,12 @@
 	    get waitForEvent() {
 	        return __classPrivateFieldGet(this, _DevicePair_eventDispatcher, "f").waitForEvent;
 	    }
+	    get removeEventListeners() {
+	        return __classPrivateFieldGet(this, _DevicePair_eventDispatcher, "f").removeEventListeners;
+	    }
+	    get removeAllEventListeners() {
+	        return __classPrivateFieldGet(this, _DevicePair_eventDispatcher, "f").removeAllEventListeners;
+	    }
 	    get left() {
 	        return __classPrivateFieldGet(this, _DevicePair_left, "f");
 	    }
@@ -5001,7 +5034,7 @@
 	    }
 	};
 
-	var _BaseClient_instances, _BaseClient_devices, _BaseClient_eventDispatcher, _BaseClient__connectionStatus, _BaseClient_parseMessageCallback, _BaseClient__isScanningAvailable, _BaseClient_isScanningAvailable_get, _BaseClient_isScanningAvailable_set, _BaseClient_assertIsScanningAvailable, _BaseClient__isScanning, _BaseClient_isScanning_get, _BaseClient_isScanning_set, _BaseClient_requestIsScanning, _BaseClient_assertIsScanning, _BaseClient_assertIsNotScanning, _BaseClient_discoveredDevices, _BaseClient_onExpiredDiscoveredDevice, _BaseClient_getOrCreateDevice;
+	var _BaseClient_instances, _BaseClient_reset, _BaseClient_devices, _BaseClient_eventDispatcher, _BaseClient__connectionStatus, _BaseClient_parseMessageCallback, _BaseClient__isScanningAvailable, _BaseClient_isScanningAvailable_get, _BaseClient_isScanningAvailable_set, _BaseClient_assertIsScanningAvailable, _BaseClient__isScanning, _BaseClient_isScanning_get, _BaseClient_isScanning_set, _BaseClient_requestIsScanning, _BaseClient_assertIsScanning, _BaseClient_assertIsNotScanning, _BaseClient_discoveredDevices, _BaseClient_onExpiredDiscoveredDevice, _BaseClient_getOrCreateDevice;
 	const _console$2 = createConsole("BaseClient", { log: true });
 	const ClientConnectionStatuses = ["notConnected", "connecting", "connected", "disconnecting"];
 	const ClientEventTypes = [
@@ -5079,8 +5112,7 @@
 	                    this.sendServerMessage("isScanningAvailable", "discoveredDevices", "connectedDevices");
 	                }
 	                else {
-	                    __classPrivateFieldSet(this, _BaseClient_instances, false, "a", _BaseClient_isScanningAvailable_set);
-	                    __classPrivateFieldSet(this, _BaseClient_instances, false, "a", _BaseClient_isScanning_set);
+	                    __classPrivateFieldGet(this, _BaseClient_instances, "m", _BaseClient_reset).call(this);
 	                }
 	                break;
 	        }
@@ -5181,7 +5213,17 @@
 	        });
 	    }
 	}
-	_BaseClient_devices = new WeakMap(), _BaseClient_eventDispatcher = new WeakMap(), _BaseClient__connectionStatus = new WeakMap(), _BaseClient__isScanningAvailable = new WeakMap(), _BaseClient__isScanning = new WeakMap(), _BaseClient_discoveredDevices = new WeakMap(), _BaseClient_instances = new WeakSet(), _BaseClient_parseMessageCallback = function _BaseClient_parseMessageCallback(messageType, dataView) {
+	_BaseClient_devices = new WeakMap(), _BaseClient_eventDispatcher = new WeakMap(), _BaseClient__connectionStatus = new WeakMap(), _BaseClient__isScanningAvailable = new WeakMap(), _BaseClient__isScanning = new WeakMap(), _BaseClient_discoveredDevices = new WeakMap(), _BaseClient_instances = new WeakSet(), _BaseClient_reset = function _BaseClient_reset() {
+	    __classPrivateFieldSet(this, _BaseClient_instances, false, "a", _BaseClient_isScanningAvailable_set);
+	    __classPrivateFieldSet(this, _BaseClient_instances, false, "a", _BaseClient_isScanning_set);
+	    for (const id in __classPrivateFieldGet(this, _BaseClient_devices, "f")) {
+	        const device = __classPrivateFieldGet(this, _BaseClient_devices, "f")[id];
+	        const connectionManager = device.connectionManager;
+	        connectionManager.isConnected = false;
+	        device.removeAllEventListeners();
+	    }
+	    __classPrivateFieldSet(this, _BaseClient_devices, {}, "f");
+	}, _BaseClient_parseMessageCallback = function _BaseClient_parseMessageCallback(messageType, dataView) {
 	    let byteOffset = 0;
 	    _console$2.log({ messageType }, dataView);
 	    switch (messageType) {
@@ -5356,7 +5398,7 @@
 	    }
 	    reconnect() {
 	        this.assertDisconnection();
-	        this.webSocket = new WebSocket(this.webSocket.url);
+	        this.connect(this.webSocket.url);
 	    }
 	    toggleConnection(url) {
 	        if (this.isConnected) {

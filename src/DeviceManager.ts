@@ -285,6 +285,12 @@ class DeviceManager {
   get RemoveEventListener() {
     return this.#EventDispatcher.removeEventListener;
   }
+  get RemoveEventListeners() {
+    return this.#EventDispatcher.removeEventListeners;
+  }
+  get RemoveAllEventListeners() {
+    return this.#EventDispatcher.removeAllEventListeners;
+  }
 
   #OnDeviceIsConnected(event: DeviceEventMap["isConnected"]) {
     const { target: device } = event;

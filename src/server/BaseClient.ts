@@ -51,6 +51,18 @@ abstract class BaseClient {
     return this.constructor as typeof BaseClient;
   }
 
+  #reset() {
+    this.#isScanningAvailable = false;
+    this.#isScanning = false;
+    for (const id in this.#devices) {
+      const device = this.#devices[id];
+      const connectionManager = device.connectionManager! as ClientConnectionManager;
+      connectionManager.isConnected = false;
+      device.removeAllEventListeners();
+    }
+    this.#devices = {};
+  }
+
   // DEVICES
   #devices: DevicesMap = {};
   get devices(): Readonly<DevicesMap> {
@@ -126,8 +138,7 @@ abstract class BaseClient {
         if (this.isConnected) {
           this.sendServerMessage("isScanningAvailable", "discoveredDevices", "connectedDevices");
         } else {
-          this.#isScanningAvailable = false;
-          this.#isScanning = false;
+          this.#reset();
         }
         break;
     }

@@ -82,6 +82,12 @@ class DevicePair {
   get waitForEvent() {
     return this.#eventDispatcher.waitForEvent;
   }
+  get removeEventListeners() {
+    return this.#eventDispatcher.removeEventListeners;
+  }
+  get removeAllEventListeners() {
+    return this.#eventDispatcher.removeAllEventListeners;
+  }
 
   // SIDES
   #left?: Device;

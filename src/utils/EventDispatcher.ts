@@ -58,6 +58,8 @@ class EventDispatcher<
   constructor(private target: Target, private validEventTypes: readonly EventType[]) {
     this.addEventListener = this.addEventListener.bind(this);
     this.removeEventListener = this.removeEventListener.bind(this);
+    this.removeEventListeners = this.removeEventListeners.bind(this);
+    this.removeAllEventListeners = this.removeAllEventListeners.bind(this);
     this.dispatchEvent = this.dispatchEvent.bind(this);
     this.waitForEvent = this.waitForEvent.bind(this);
   }
@@ -122,6 +124,22 @@ class EventDispatcher<
     });
 
     this.updateEventListeners(type);
+  }
+
+  removeEventListeners<T extends EventType>(type: T): void {
+    if (!this.isValidEventType(type)) {
+      throw new Error(`Invalid event type: ${type}`);
+    }
+
+    if (!this.listeners[type]) return;
+
+    _console.log(`removing "${type}" listeners...`);
+    this.listeners[type] = [];
+  }
+
+  removeAllEventListeners(): void {
+    _console.log(`removing listeners...`);
+    this.listeners = {};
   }
 
   dispatchEvent<T extends EventType>(type: T, message: EventMessages[T]): void {

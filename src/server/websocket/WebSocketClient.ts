@@ -76,7 +76,7 @@ class WebSocketClient extends BaseClient {
 
   reconnect() {
     this.assertDisconnection();
-    this.webSocket = new WebSocket(this.webSocket!.url);
+    this.connect(this.webSocket!.url);
   }
 
   toggleConnection(url?: ServerURL) {

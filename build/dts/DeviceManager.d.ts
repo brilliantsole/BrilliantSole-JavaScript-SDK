@@ -62,6 +62,8 @@ declare class DeviceManager {
         target: DeviceManager;
         message: DeviceManagerEventMessages[T];
     }) => void) => void;
+    get RemoveEventListeners(): <T extends "deviceConnected" | "deviceDisconnected" | "deviceIsConnected" | "availableDevices" | "connectedDevices">(type: T) => void;
+    get RemoveAllEventListeners(): () => void;
 }
 declare const _default: DeviceManager;
 export default _default;
