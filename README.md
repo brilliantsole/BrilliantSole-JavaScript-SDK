@@ -19,3 +19,15 @@ if it doesn't work, try turning the firewall off
 
 if you have issues saving or running stuff on mac, try:  
 `sudo chown -R username directory_name`
+
+## Running the Node.js server for WebSocket/UDP stuff
+
+__To insall via npm:__
+```javascript
+npm install brilliantsole
+```
+
+__to add in a webpage:__
+```html
+<script src="https://unpkg.com/brilliantsole@latest/build/brilliantsole.js"></script>
+```
