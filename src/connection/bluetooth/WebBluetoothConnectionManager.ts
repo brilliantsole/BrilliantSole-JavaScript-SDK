@@ -118,7 +118,7 @@ class WebBluetoothConnectionManager extends BluetoothConnectionManager {
     _console.log("getting services...");
     const services = await this.server!.getPrimaryServices();
     _console.log("got services", services.length);
-    const service = await this.server!.getPrimaryService("8d53dc1d-1db7-4cd3-868b-8a527460aa84");
+    //const service = await this.server!.getPrimaryService("8d53dc1d-1db7-4cd3-868b-8a527460aa84");
 
     _console.log("getting characteristics...");
     for (const serviceIndex in services) {
