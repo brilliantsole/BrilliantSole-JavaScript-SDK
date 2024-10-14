@@ -121,7 +121,6 @@ function onIFrameLoaded(insoleContainer) {
     devicePair[side].toggleConnection();
   });
   devicePair.addEventListener("deviceIsConnected", (event) => {
-    /** @type {BS.Device} */
     const device = event.message.device;
     if (device.insoleSide != side) {
       return;
@@ -134,7 +133,6 @@ function onIFrameLoaded(insoleContainer) {
   });
 
   devicePair.addEventListener("deviceConnectionStatus", (event) => {
-    /** @type {BS.Device} */
     const device = event.message.device;
     if (device.insoleSide != side) {
       return;
@@ -281,7 +279,6 @@ function onIFrameLoaded(insoleContainer) {
     if (device.insoleSide != side) {
       return;
     }
-    /** @type {BS.Vector3} */
     const acceleration = event.message.acceleration;
     updatePosition(acceleration);
   });
@@ -291,7 +288,6 @@ function onIFrameLoaded(insoleContainer) {
       return;
     }
 
-    /** @type {BS.Vector3} */
     const gravity = event.message.gravity;
     updatePosition(gravity);
   });
@@ -301,7 +297,6 @@ function onIFrameLoaded(insoleContainer) {
       return;
     }
 
-    /** @type {BS.Vector3} */
     const linearAcceleration = event.message.linearAcceleration;
     updatePosition(linearAcceleration);
   });
@@ -334,7 +329,6 @@ function onIFrameLoaded(insoleContainer) {
       return;
     }
 
-    /** @type {BS.Quaternion} */
     const gameRotation = event.message.gameRotation;
     //permuteQuaternion(gameRotation);
     updateQuaternion(gameRotation, true);
@@ -345,7 +339,6 @@ function onIFrameLoaded(insoleContainer) {
       return;
     }
 
-    /** @type {BS.Quaternion} */
     const rotation = event.message.rotation;
     //permuteQuaternion(rotation);
     updateQuaternion(rotation, true);
@@ -363,7 +356,6 @@ function onIFrameLoaded(insoleContainer) {
       return;
     }
 
-    /** @type {BS.Euler} */
     const orientation = event.message.orientation;
     orientationVector3.set(orientation.pitch, orientation.heading, orientation.roll).multiplyScalar(Math.PI / 180);
     orientationEuler.setFromVector3(orientationVector3);
@@ -383,7 +375,6 @@ function onIFrameLoaded(insoleContainer) {
       return;
     }
 
-    /** @type {BS.Vector3} */
     const gyroscope = event.message.gyroscope;
     gyroscopeVector3.copy(gyroscope).multiplyScalar(Math.PI / 180);
     gyroscopeEuler.setFromVector3(gyroscopeVector3);
