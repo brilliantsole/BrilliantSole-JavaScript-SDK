@@ -1989,14 +1989,14 @@
         _console$d.log({ currentTime });
         __classPrivateFieldSet(this, _InformationManager_isCurrentTimeSet, currentTime != 0 || Math.abs(Date.now() - currentTime) < Uint16Max, "f");
         if (!__classPrivateFieldGet(this, _InformationManager_isCurrentTimeSet, "f")) {
-            __classPrivateFieldGet(this, _InformationManager_instances, "m", _InformationManager_setCurrentTime).call(this);
+            __classPrivateFieldGet(this, _InformationManager_instances, "m", _InformationManager_setCurrentTime).call(this, false);
         }
-    }, _InformationManager_setCurrentTime = async function _InformationManager_setCurrentTime() {
+    }, _InformationManager_setCurrentTime = async function _InformationManager_setCurrentTime(sendImmediately) {
         _console$d.log("setting current time...");
         const dataView = new DataView(new ArrayBuffer(8));
         dataView.setBigUint64(0, BigInt(Date.now()), true);
         const promise = this.waitForEvent("getCurrentTime");
-        this.sendMessage([{ type: "setCurrentTime", data: dataView.buffer }]);
+        this.sendMessage([{ type: "setCurrentTime", data: dataView.buffer }], sendImmediately);
         await promise;
     };
 
@@ -2306,7 +2306,7 @@
         return data;
     };
 
-    var _BaseConnectionManager_instances, _a$2, _BaseConnectionManager_AssertValidTxRxMessageType, _BaseConnectionManager_assertIsSupported, _BaseConnectionManager_status, _BaseConnectionManager_assertIsNotConnected, _BaseConnectionManager_assertIsNotConnecting, _BaseConnectionManager_assertIsConnected, _BaseConnectionManager_assertIsNotDisconnecting, _BaseConnectionManager_assertIsConnectedAndNotDisconnecting, _BaseConnectionManager_pendingMessages, _BaseConnectionManager_onRxMessage, _BaseConnectionManager_timer, _BaseConnectionManager_checkConnection;
+    var _BaseConnectionManager_instances, _a$2, _BaseConnectionManager_AssertValidTxRxMessageType, _BaseConnectionManager_assertIsSupported, _BaseConnectionManager_status, _BaseConnectionManager_assertIsNotConnected, _BaseConnectionManager_assertIsNotConnecting, _BaseConnectionManager_assertIsConnected, _BaseConnectionManager_assertIsNotDisconnecting, _BaseConnectionManager_assertIsConnectedAndNotDisconnecting, _BaseConnectionManager_pendingMessages, _BaseConnectionManager_isSendingMessages, _BaseConnectionManager_onRxMessage, _BaseConnectionManager_timer, _BaseConnectionManager_checkConnection;
     const _console$b = createConsole("BaseConnectionManager", { log: true });
     const ConnectionStatuses = ["notConnected", "connecting", "connected", "disconnecting"];
     const ConnectionEventTypes = [...ConnectionStatuses, "connectionStatus", "isConnected"];
@@ -2345,6 +2345,7 @@
             _BaseConnectionManager_instances.add(this);
             _BaseConnectionManager_status.set(this, "notConnected");
             _BaseConnectionManager_pendingMessages.set(this, []);
+            _BaseConnectionManager_isSendingMessages.set(this, false);
             _BaseConnectionManager_timer.set(this, new Timer(__classPrivateFieldGet(this, _BaseConnectionManager_instances, "m", _BaseConnectionManager_checkConnection).bind(this), 5000));
             __classPrivateFieldGet(this, _BaseConnectionManager_instances, "m", _BaseConnectionManager_assertIsSupported).call(this);
         }
@@ -2404,6 +2405,10 @@
             if (!sendImmediately) {
                 return;
             }
+            if (__classPrivateFieldGet(this, _BaseConnectionManager_isSendingMessages, "f")) {
+                return;
+            }
+            __classPrivateFieldSet(this, _BaseConnectionManager_isSendingMessages, true, "f");
             _console$b.log("sendTxMessages", __classPrivateFieldGet(this, _BaseConnectionManager_pendingMessages, "f").slice());
             const arrayBuffers = __classPrivateFieldGet(this, _BaseConnectionManager_pendingMessages, "f").map((message) => {
                 __classPrivateFieldGet(_a$2, _a$2, "m", _BaseConnectionManager_AssertValidTxRxMessageType).call(_a$2, message.type);
@@ -2436,15 +2441,17 @@
                 await this.sendTxData(arrayBuffer);
             }
             __classPrivateFieldGet(this, _BaseConnectionManager_pendingMessages, "f").length = 0;
+            __classPrivateFieldSet(this, _BaseConnectionManager_isSendingMessages, false, "f");
         }
         async sendTxData(data) {
             _console$b.log("sendTxData", data);
         }
         parseRxMessage(dataView) {
             parseMessage(dataView, TxRxMessageTypes, __classPrivateFieldGet(this, _BaseConnectionManager_instances, "m", _BaseConnectionManager_onRxMessage).bind(this), null, true);
+            this.onMessagesReceived();
         }
     }
-    _a$2 = BaseConnectionManager, _BaseConnectionManager_status = new WeakMap(), _BaseConnectionManager_pendingMessages = new WeakMap(), _BaseConnectionManager_timer = new WeakMap(), _BaseConnectionManager_instances = new WeakSet(), _BaseConnectionManager_AssertValidTxRxMessageType = function _BaseConnectionManager_AssertValidTxRxMessageType(messageType) {
+    _a$2 = BaseConnectionManager, _BaseConnectionManager_status = new WeakMap(), _BaseConnectionManager_pendingMessages = new WeakMap(), _BaseConnectionManager_isSendingMessages = new WeakMap(), _BaseConnectionManager_timer = new WeakMap(), _BaseConnectionManager_instances = new WeakSet(), _BaseConnectionManager_AssertValidTxRxMessageType = function _BaseConnectionManager_AssertValidTxRxMessageType(messageType) {
         _console$b.assertEnumWithError(messageType, TxRxMessageTypes);
     }, _BaseConnectionManager_assertIsSupported = function _BaseConnectionManager_assertIsSupported() {
         _console$b.assertWithError(this.isSupported, `${this.constructor.name} is not supported`);
@@ -2808,7 +2815,6 @@
         _console$7.log("getting services...");
         const services = await this.server.getPrimaryServices();
         _console$7.log("got services", services.length);
-        await this.server.getPrimaryService("8d53dc1d-1db7-4cd3-868b-8a527460aa84");
         _console$7.log("getting characteristics...");
         for (const serviceIndex in services) {
             const service = services[serviceIndex];
@@ -4097,7 +4103,7 @@
     DeviceManager.shared = new DeviceManager();
     var DeviceManager$1 = DeviceManager.shared;
 
-    var _Device_instances, _a$1, _Device_DefaultConnectionManager, _Device_eventDispatcher, _Device_dispatchEvent_get, _Device_connectionManager, _Device_sendTxMessages, _Device_isConnected, _Device_assertIsConnected, _Device_hasRequiredInformation_get, _Device_requestRequiredInformation, _Device_assertCanReconnect, _Device_ReconnectOnDisconnection, _Device_reconnectOnDisconnection, _Device_reconnectIntervalId, _Device_onConnectionStatusUpdated, _Device_dispatchConnectionEvents, _Device_checkConnection, _Device_clear, _Device_onConnectionMessageReceived, _Device_deviceInformationManager, _Device_batteryLevel, _Device_updateBatteryLevel, _Device_sensorConfigurationManager, _Device_ClearSensorConfigurationOnLeave, _Device_clearSensorConfigurationOnLeave, _Device_sensorDataManager, _Device_vibrationManager, _Device_fileTransferManager, _Device_tfliteManager, _Device_firmwareManager, _Device_sendSmpMessage, _Device_isServerSide;
+    var _Device_instances, _a$1, _Device_DefaultConnectionManager, _Device_eventDispatcher, _Device_dispatchEvent_get, _Device_connectionManager, _Device_sendTxMessages, _Device_isConnected, _Device_assertIsConnected, _Device_hasRequiredInformation_get, _Device_requestRequiredInformation, _Device_assertCanReconnect, _Device_ReconnectOnDisconnection, _Device_reconnectOnDisconnection, _Device_reconnectIntervalId, _Device_onConnectionStatusUpdated, _Device_dispatchConnectionEvents, _Device_checkConnection, _Device_clear, _Device_onConnectionMessageReceived, _Device_onConnectionMessagesReceived, _Device_deviceInformationManager, _Device_batteryLevel, _Device_updateBatteryLevel, _Device_sensorConfigurationManager, _Device_ClearSensorConfigurationOnLeave, _Device_clearSensorConfigurationOnLeave, _Device_sensorDataManager, _Device_vibrationManager, _Device_fileTransferManager, _Device_tfliteManager, _Device_firmwareManager, _Device_sendSmpMessage, _Device_isServerSide;
     const _console$3 = createConsole("Device", { log: true });
     const DeviceEventTypes = [
         "connectionMessage",
@@ -4222,10 +4228,12 @@
             if (this.connectionManager) {
                 this.connectionManager.onStatusUpdated = undefined;
                 this.connectionManager.onMessageReceived = undefined;
+                this.connectionManager.onMessagesReceived = undefined;
             }
             if (newConnectionManager) {
                 newConnectionManager.onStatusUpdated = __classPrivateFieldGet(this, _Device_instances, "m", _Device_onConnectionStatusUpdated).bind(this);
                 newConnectionManager.onMessageReceived = __classPrivateFieldGet(this, _Device_instances, "m", _Device_onConnectionMessageReceived).bind(this);
+                newConnectionManager.onMessagesReceived = __classPrivateFieldGet(this, _Device_instances, "m", _Device_onConnectionMessagesReceived).bind(this);
             }
             __classPrivateFieldSet(this, _Device_connectionManager, newConnectionManager, "f");
             _console$3.log("assigned new connectionManager", __classPrivateFieldGet(this, _Device_connectionManager, "f"));
@@ -4602,9 +4610,11 @@
         }
         this.latestConnectionMessage.set(messageType, dataView);
         __classPrivateFieldGet(this, _Device_instances, "a", _Device_dispatchEvent_get).call(this, "connectionMessage", { messageType, dataView });
+    }, _Device_onConnectionMessagesReceived = function _Device_onConnectionMessagesReceived() {
         if (!this.isConnected && __classPrivateFieldGet(this, _Device_instances, "a", _Device_hasRequiredInformation_get)) {
             __classPrivateFieldGet(this, _Device_instances, "m", _Device_checkConnection).call(this);
         }
+        __classPrivateFieldGet(this, _Device_instances, "m", _Device_sendTxMessages).call(this);
     }, _Device_updateBatteryLevel = function _Device_updateBatteryLevel(updatedBatteryLevel) {
         _console$3.assertTypeWithError(updatedBatteryLevel, "number");
         if (__classPrivateFieldGet(this, _Device_batteryLevel, "f") == updatedBatteryLevel) {

@@ -66,6 +66,7 @@ export type ConnectionMessageType = (typeof ConnectionMessageTypes)[number];
 
 export type ConnectionStatusCallback = (status: ConnectionStatus) => void;
 export type MessageReceivedCallback = (messageType: ConnectionMessageType, dataView: DataView) => void;
+export type MessagesReceivedCallback = () => void;
 
 abstract class BaseConnectionManager {
   static #AssertValidTxRxMessageType(messageType: TxRxMessageType) {
@@ -77,6 +78,7 @@ abstract class BaseConnectionManager {
   // CALLBACKS
   onStatusUpdated?: ConnectionStatusCallback;
   onMessageReceived?: MessageReceivedCallback;
+  onMessagesReceived?: MessagesReceivedCallback;
 
   protected get baseConstructor() {
     return this.constructor as typeof BaseConnectionManager;
@@ -179,7 +181,7 @@ abstract class BaseConnectionManager {
   }
 
   #pendingMessages: TxMessage[] = [];
-
+  #isSendingMessages = false;
   async sendTxMessages(messages: TxMessage[] | undefined, sendImmediately: boolean = true) {
     this.#assertIsConnectedAndNotDisconnecting();
 
@@ -190,6 +192,11 @@ abstract class BaseConnectionManager {
     if (!sendImmediately) {
       return;
     }
+
+    if (this.#isSendingMessages) {
+      return;
+    }
+    this.#isSendingMessages = true;
 
     _console.log("sendTxMessages", this.#pendingMessages.slice());
 
@@ -225,6 +232,8 @@ abstract class BaseConnectionManager {
       await this.sendTxData(arrayBuffer);
     }
     this.#pendingMessages.length = 0;
+
+    this.#isSendingMessages = false;
   }
 
   mtu?: number;
@@ -235,6 +244,7 @@ abstract class BaseConnectionManager {
 
   parseRxMessage(dataView: DataView) {
     parseMessage(dataView, TxRxMessageTypes, this.#onRxMessage.bind(this), null, true);
+    this.onMessagesReceived!();
   }
 
   #onRxMessage(messageType: TxRxMessageType, dataView: DataView) {

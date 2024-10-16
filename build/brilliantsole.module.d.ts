@@ -358,11 +358,13 @@ declare const ConnectionMessageTypes: readonly ["batteryLevel", "manufacturerNam
 type ConnectionMessageType = (typeof ConnectionMessageTypes)[number];
 type ConnectionStatusCallback = (status: ConnectionStatus) => void;
 type MessageReceivedCallback = (messageType: ConnectionMessageType, dataView: DataView) => void;
+type MessagesReceivedCallback = () => void;
 declare abstract class BaseConnectionManager {
     #private;
     abstract get bluetoothId(): string;
     onStatusUpdated?: ConnectionStatusCallback;
     onMessageReceived?: MessageReceivedCallback;
+    onMessagesReceived?: MessagesReceivedCallback;
     protected get baseConstructor(): typeof BaseConnectionManager;
     static get isSupported(): boolean;
     get isSupported(): boolean;

@@ -239,16 +239,18 @@ class Device {
     if (this.connectionManager) {
       this.connectionManager.onStatusUpdated = undefined;
       this.connectionManager.onMessageReceived = undefined;
+      this.connectionManager.onMessagesReceived = undefined;
     }
     if (newConnectionManager) {
       newConnectionManager.onStatusUpdated = this.#onConnectionStatusUpdated.bind(this);
       newConnectionManager.onMessageReceived = this.#onConnectionMessageReceived.bind(this);
+      newConnectionManager.onMessagesReceived = this.#onConnectionMessagesReceived.bind(this);
     }
 
     this.#connectionManager = newConnectionManager;
     _console.log("assigned new connectionManager", this.#connectionManager);
   }
-  async #sendTxMessages(messages: TxMessage[], sendImmediately?: boolean) {
+  async #sendTxMessages(messages?: TxMessage[], sendImmediately?: boolean) {
     await this.#connectionManager?.sendTxMessages(messages, sendImmediately);
   }
   private sendTxMessages = this.#sendTxMessages.bind(this);
@@ -458,10 +460,12 @@ class Device {
 
     this.latestConnectionMessage.set(messageType, dataView);
     this.#dispatchEvent("connectionMessage", { messageType, dataView });
-
+  }
+  #onConnectionMessagesReceived() {
     if (!this.isConnected && this.#hasRequiredInformation) {
       this.#checkConnection();
     }
+    this.#sendTxMessages();
   }
 
   latestConnectionMessage: Map<ConnectionMessageType, DataView> = new Map();

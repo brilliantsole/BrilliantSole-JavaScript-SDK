@@ -215,15 +215,15 @@ class InformationManager {
     _console.log({ currentTime });
     this.#isCurrentTimeSet = currentTime != 0 || Math.abs(Date.now() - currentTime) < Uint16Max;
     if (!this.#isCurrentTimeSet) {
-      this.#setCurrentTime();
+      this.#setCurrentTime(false);
     }
   }
-  async #setCurrentTime() {
+  async #setCurrentTime(sendImmediately?: boolean) {
     _console.log("setting current time...");
     const dataView = new DataView(new ArrayBuffer(8));
     dataView.setBigUint64(0, BigInt(Date.now()), true);
     const promise = this.waitForEvent("getCurrentTime");
-    this.sendMessage([{ type: "setCurrentTime", data: dataView.buffer }]);
+    this.sendMessage([{ type: "setCurrentTime", data: dataView.buffer }], sendImmediately);
     await promise;
   }
 
