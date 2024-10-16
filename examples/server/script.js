@@ -114,8 +114,8 @@ client.addEventListener("discoveredDevice", (event) => {
         device.toggleConnection();
       } else {
         device = client.connectToDevice(discoveredDevice.bluetoothId);
-        onDevice(device);
       }
+      onDevice(device);
     });
 
     /** @param {BS.Device} device */
@@ -124,6 +124,7 @@ client.addEventListener("discoveredDevice", (event) => {
         updateToggleConnectionButton(device);
       });
       updateToggleConnectionButton(device);
+      delete discoveredDeviceContainer._onDevice;
     };
 
     discoveredDeviceContainer._onDevice = onDevice;
@@ -203,7 +204,7 @@ BS.DeviceManager.AddEventListener("deviceIsConnected", (event) => {
   if (!discoveredDeviceContainer) {
     return;
   }
-  discoveredDeviceContainer._onDevice(device);
+  discoveredDeviceContainer._onDevice?.(device);
 });
 
 // AVAILABLE DEVICES
@@ -909,9 +910,8 @@ BS.DeviceManager.AddEventListener("connectedDevices", (event) => {
       updateFirmwareUI();
 
       device.getFirmwareImages();
-
-      connectedDevicesContainer.appendChild(connectedDeviceContainer);
     }
+    connectedDevicesContainer.appendChild(connectedDeviceContainer);
   });
 
   for (const id in connectedDeviceContainers) {
@@ -919,7 +919,7 @@ BS.DeviceManager.AddEventListener("connectedDevices", (event) => {
     if (!connectedDevice) {
       console.log("remove", id);
       connectedDeviceContainers[id].remove();
-      delete connectedDeviceContainers[id];
+      //delete connectedDeviceContainers[id];
     }
   }
 });
