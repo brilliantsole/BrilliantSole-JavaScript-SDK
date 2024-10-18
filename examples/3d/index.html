@@ -115,6 +115,7 @@
         document.body.style.backgroundColor = "black";
         document.querySelectorAll("iframe").forEach((iframe) => {
           iframe.src += "?dark";
+          iframe.style.transform = "scaleX(-1)";
           iframe.style.pointerEvents = "none";
         });
       }
