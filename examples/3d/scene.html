@@ -36,6 +36,7 @@
         orbit-controls="
           enableZoom: true;
           autoRotate: false;
+          
           target: .target;
           enableDamping: true;
           dampingFactor: 0.125;
@@ -62,6 +63,7 @@
       const isDark = params.has("dark");
       if (isDark) {
         document.querySelector("a-sky").setAttribute("color", "black");
+        document.querySelector("a-camera").setAttribute("orbit-controls", "enableRotate", "false");
       }
     });
   </script>
