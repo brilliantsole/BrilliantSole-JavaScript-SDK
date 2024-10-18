@@ -32,7 +32,7 @@
       <a-camera
         class="camera"
         camera="fov: 50; zoom: 3.2;"
-        position="0 1 0"
+        position="0 0 1"
         orbit-controls="
           enableZoom: true;
           autoRotate: false;
@@ -66,7 +66,8 @@
         if (isDark) {
           document.querySelector("a-sky").setAttribute("color", "black");
           document.querySelector("a-camera").setAttribute("orbit-controls", "enableRotate", "false");
-          document.querySelector("a-camera").setAttribute("orbit-controls", "enableZoom", "false");
+          document.querySelector("a-camera").setAttribute("orbit-controls", "enableRotate", "false");
+          document.querySelector("a-camera").setAttribute("position", "0 0 1");
         }
       };
       scene.addEventListener("loaded", () => update());
