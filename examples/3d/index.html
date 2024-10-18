@@ -43,11 +43,6 @@
       height: 100%;
       border: none;
     }
-
-    html,
-    body {
-      background-color: black;
-    }
   </style>
 
   <body>
@@ -111,4 +106,17 @@
       </div>
     </template>
   </body>
+
+  <script>
+    window.addEventListener("load", () => {
+      const params = new URL(location).searchParams;
+      const isDark = params.has("dark");
+      if (isDark) {
+        document.body.style.backgroundColor = "black";
+        document.querySelectorAll("iframe").forEach((iframe) => {
+          iframe.src += "?dark";
+        });
+      }
+    });
+  </script>
 </html>

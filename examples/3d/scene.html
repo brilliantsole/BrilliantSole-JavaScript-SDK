@@ -45,7 +45,7 @@
         "
       ></a-camera>
 
-      <a-sky color="black"></a-sky>
+      <a-sky></a-sky>
 
       <a-entity class="target">
         <a-entity class="rotation">
@@ -56,4 +56,13 @@
       </a-entity>
     </a-scene>
   </body>
+  <script>
+    window.addEventListener("load", () => {
+      const params = new URL(location).searchParams;
+      const isDark = params.has("dark");
+      if (isDark) {
+        document.querySelector("a-sky").setAttribute("color", "black");
+      }
+    });
+  </script>
 </html>
