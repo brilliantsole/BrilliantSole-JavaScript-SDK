@@ -92,6 +92,7 @@ class ClientConnectionManager extends BaseConnectionManager {
   onClientMessage(dataView: DataView) {
     _console.log({ dataView });
     parseMessage(dataView, DeviceEventTypes, this.#onClientMessageCallback.bind(this), null, true);
+    this.onMessagesReceived!();
   }
 
   #onClientMessageCallback(messageType: DeviceEventType, dataView: DataView) {

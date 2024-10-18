@@ -5022,6 +5022,7 @@
 	    onClientMessage(dataView) {
 	        _console$3.log({ dataView });
 	        parseMessage(dataView, DeviceEventTypes, __classPrivateFieldGet(this, _ClientConnectionManager_instances, "m", _ClientConnectionManager_onClientMessageCallback).bind(this), null, true);
+	        this.onMessagesReceived();
 	    }
 	}
 	_ClientConnectionManager_bluetoothId = new WeakMap(), _ClientConnectionManager_isConnected = new WeakMap(), _ClientConnectionManager_instances = new WeakSet(), _ClientConnectionManager_requestDeviceInformation = function _ClientConnectionManager_requestDeviceInformation() {
