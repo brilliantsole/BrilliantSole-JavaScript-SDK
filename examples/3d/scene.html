@@ -59,11 +59,19 @@
   </body>
   <script>
     window.addEventListener("load", () => {
-      const params = new URL(location).searchParams;
-      const isDark = params.has("dark");
-      if (isDark) {
-        document.querySelector("a-sky").setAttribute("color", "black");
-        document.querySelector("a-camera").setAttribute("orbit-controls", "enableRotate", "false");
+      const scene = document.querySelector("a-scene");
+      const update = () => {
+        const params = new URL(location).searchParams;
+        const isDark = params.has("dark");
+        if (isDark) {
+          document.querySelector("a-sky").setAttribute("color", "black");
+          document.querySelector("a-camera").setAttribute("orbit-controls", "enableRotate", "false");
+          document.querySelector("a-camera").setAttribute("orbit-controls", "enableZoom", "false");
+        }
+      };
+      scene.addEventListener("loaded", () => update());
+      if (scene.hasLoaded) {
+        update();
       }
     });
   </script>
