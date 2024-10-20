@@ -66,3 +66,5 @@ export { default as UDPServer } from "./server/udp/UDPServer.ts";
 /** BROWSER_START */
 export { default as WebSocketClient } from "./server/websocket/WebSocketClient.ts";
 /** BROWSER_END */
+
+export { default as RangeHelper } from "./utils/RangeHelper.ts";

@@ -10,6 +10,27 @@ const initialRange: Range = { min: Infinity, max: -Infinity, span: 0 };
 
 class RangeHelper {
   #range: Range = Object.assign({}, initialRange);
+  get min() {
+    return this.#range.min;
+  }
+  get max() {
+    return this.#range.max;
+  }
+
+  set min(newMin) {
+    this.#range.min = newMin;
+    this.#range.max = Math.max(newMin, this.#range.max);
+    this.#updateSpan();
+  }
+  set max(newMax) {
+    this.#range.max = newMax;
+    this.#range.min = Math.min(newMax, this.#range.min);
+    this.#updateSpan();
+  }
+
+  #updateSpan() {
+    this.#range.span = this.#range.max - this.#range.min;
+  }
 
   reset() {
     Object.assign(this.#range, initialRange);
@@ -18,7 +39,7 @@ class RangeHelper {
   update(value: number) {
     this.#range.min = Math.min(value, this.#range.min);
     this.#range.max = Math.max(value, this.#range.max);
-    this.#range.span = this.#range.max - this.#range.min;
+    this.#updateSpan();
   }
 
   getNormalization(value: number, weightByRange: boolean) {

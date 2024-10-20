@@ -840,11 +840,28 @@ function parseTimestamp(dataView, byteOffset) {
     return timestamp;
 }
 
-var _RangeHelper_range;
+var _RangeHelper_instances, _RangeHelper_range, _RangeHelper_updateSpan;
 const initialRange = { min: Infinity, max: -Infinity, span: 0 };
 class RangeHelper {
     constructor() {
+        _RangeHelper_instances.add(this);
         _RangeHelper_range.set(this, Object.assign({}, initialRange));
+    }
+    get min() {
+        return __classPrivateFieldGet(this, _RangeHelper_range, "f").min;
+    }
+    get max() {
+        return __classPrivateFieldGet(this, _RangeHelper_range, "f").max;
+    }
+    set min(newMin) {
+        __classPrivateFieldGet(this, _RangeHelper_range, "f").min = newMin;
+        __classPrivateFieldGet(this, _RangeHelper_range, "f").max = Math.max(newMin, __classPrivateFieldGet(this, _RangeHelper_range, "f").max);
+        __classPrivateFieldGet(this, _RangeHelper_instances, "m", _RangeHelper_updateSpan).call(this);
+    }
+    set max(newMax) {
+        __classPrivateFieldGet(this, _RangeHelper_range, "f").max = newMax;
+        __classPrivateFieldGet(this, _RangeHelper_range, "f").min = Math.min(newMax, __classPrivateFieldGet(this, _RangeHelper_range, "f").min);
+        __classPrivateFieldGet(this, _RangeHelper_instances, "m", _RangeHelper_updateSpan).call(this);
     }
     reset() {
         Object.assign(__classPrivateFieldGet(this, _RangeHelper_range, "f"), initialRange);
@@ -852,7 +869,7 @@ class RangeHelper {
     update(value) {
         __classPrivateFieldGet(this, _RangeHelper_range, "f").min = Math.min(value, __classPrivateFieldGet(this, _RangeHelper_range, "f").min);
         __classPrivateFieldGet(this, _RangeHelper_range, "f").max = Math.max(value, __classPrivateFieldGet(this, _RangeHelper_range, "f").max);
-        __classPrivateFieldGet(this, _RangeHelper_range, "f").span = __classPrivateFieldGet(this, _RangeHelper_range, "f").max - __classPrivateFieldGet(this, _RangeHelper_range, "f").min;
+        __classPrivateFieldGet(this, _RangeHelper_instances, "m", _RangeHelper_updateSpan).call(this);
     }
     getNormalization(value, weightByRange) {
         let normalization = getInterpolation(value, __classPrivateFieldGet(this, _RangeHelper_range, "f").min, __classPrivateFieldGet(this, _RangeHelper_range, "f").max, __classPrivateFieldGet(this, _RangeHelper_range, "f").span);
@@ -866,7 +883,9 @@ class RangeHelper {
         return this.getNormalization(value, weightByRange);
     }
 }
-_RangeHelper_range = new WeakMap();
+_RangeHelper_range = new WeakMap(), _RangeHelper_instances = new WeakSet(), _RangeHelper_updateSpan = function _RangeHelper_updateSpan() {
+    __classPrivateFieldGet(this, _RangeHelper_range, "f").span = __classPrivateFieldGet(this, _RangeHelper_range, "f").max - __classPrivateFieldGet(this, _RangeHelper_range, "f").min;
+};
 
 var _CenterOfPressureHelper_range;
 class CenterOfPressureHelper {
@@ -5997,6 +6016,7 @@ exports.MaxVibrationWaveformEffectSegmentLoopCount = MaxVibrationWaveformEffectS
 exports.MaxVibrationWaveformEffectSequenceLoopCount = MaxVibrationWaveformEffectSequenceLoopCount;
 exports.MaxVibrationWaveformSegmentDuration = MaxVibrationWaveformSegmentDuration;
 exports.MinNameLength = MinNameLength;
+exports.RangeHelper = RangeHelper;
 exports.Scanner = scanner$1;
 exports.SensorRateStep = SensorRateStep;
 exports.SensorTypes = SensorTypes;

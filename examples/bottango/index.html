@@ -1,0 +1,113 @@
+<html>
+  <head>
+    <title>Bottango | BrilliantSole JavaScript SDK</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico" />
+    <script type="module" src="./script.js"></script>
+  </head>
+  <style>
+    label {
+      display: block;
+    }
+    div {
+      margin-top: 1rem;
+    }
+    ul,
+    ol {
+      margin-top: 0;
+      list-style: none;
+    }
+    .hidden {
+      display: none;
+    }
+  </style>
+  <body>
+    <nav>
+      <a href="../../">home</a>
+    </nav>
+
+    <h1>Bottango | BrilliantSole JavaScript SDK</h1>
+
+    <div>
+      <h2>available devices</h2>
+      <div id="availableDevices">
+        <template id="availableDeviceTemplate">
+          <div class="availableDevice">
+            <ul>
+              <li><b>name: </b> <span class="name"></span></li>
+              <li><b>type: </b> <span class="type"></span></li>
+              <li><button class="toggleConnection">connect</button></li>
+            </ul>
+          </div>
+        </template>
+      </div>
+    </div>
+
+    <div>
+      <h2>connection</h2>
+      <button id="toggleConnection">connect</button>
+      <button id="reconnect" disabled>reconnect</button>
+      <label>reconnect on disconnection? <input id="reconnectOnDisconnection" type="checkbox" /></label>
+      <button id="resetDevice" disabled>reset</button>
+    </div>
+
+    <div>
+      <label>
+        <b>sensor configuration: </b>
+        <pre id="sensorConfigurationPre"></pre>
+      </label>
+
+      <template id="sensorTypeConfigurationTemplate">
+        <label class="sensorTypeConfiguration">
+          <b class="sensorType"></b>
+          <input class="sensorRate" type="number" min="0" value="" disabled />ms
+        </label>
+      </template>
+    </div>
+
+    <div>
+      <label>port <input type="number" value="59224" id="bottangoPort" /></label>
+    </div>
+
+    <div>
+      <h2>Mappings</h2>
+      <div id="mappings">
+        <button id="addMapping">add mapping</button>
+        <template id="mappingTemplate">
+          <div class="mapping">
+            <label>identifier <input class="identifier" type="text" placeholder="myIdentifier" /></label>
+            <label>value <input class="value" type="range" min="0" max="1" step="0.001" placeholder="0" /></label>
+            <select class="type">
+              <optgroup label="mapping">
+                <option selected>gameRotation.pitch</option>
+                <option>gameRotation.yaw</option>
+                <option>gameRotation.roll</option>
+                <option>linearAcceleration.x</option>
+                <option>linearAcceleration.y</option>
+                <option>linearAcceleration.z</option>
+                <option>gyroscope.x</option>
+                <option>gyroscope.y</option>
+                <option>gyroscope.z</option>
+                <option>pressure.centerOfPressure.x</option>
+                <option>pressure.centerOfPressure.y</option>
+                <option>pressure.0</option>
+                <option>pressure.1</option>
+                <option>pressure.2</option>
+                <option>pressure.3</option>
+                <option>pressure.4</option>
+                <option>pressure.5</option>
+                <option>pressure.6</option>
+                <option>pressure.7</option>
+              </optgroup>
+            </select>
+            <label>auto range? <input type="checkbox" class="autoRange" checked /></label>
+            <button class="setMin">set min</button>
+            <button class="setMax">set max</button>
+            <button class="reset">reset</button>
+            <button class="delete">delete mapping</button>
+          </div>
+        </template>
+      </div>
+    </div>
+  </body>
+</html>
