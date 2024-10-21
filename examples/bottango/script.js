@@ -306,7 +306,7 @@ function addMapping() {
             break;
           default:
             const pressureSensorIndex = Number(subType);
-            setValue(event.message.pressure.sensors[pressureSensorIndex].normalizedValue);
+            setValue(event.message.pressure.sensors[pressureSensorIndex].normalizedValue, true);
             break;
         }
         break;
@@ -331,7 +331,7 @@ function addMapping() {
             setValue(euler.z);
             break;
           case "yaw":
-            setValue(euler.y, true);
+            setValue(euler.y);
             break;
         }
         break;
