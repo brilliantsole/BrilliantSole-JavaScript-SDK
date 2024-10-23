@@ -758,7 +758,9 @@ _a$6 = FileTransferManager, _FileTransferManager_maxLength = new WeakMap(), _Fil
         return;
     }
     if (!__classPrivateFieldGet(this, _FileTransferManager_buffer, "f")) {
-        _console$x.error("no buffer defined");
+        if (!this.isServerSide) {
+            _console$x.error("no buffer defined");
+        }
         return;
     }
     const buffer = __classPrivateFieldGet(this, _FileTransferManager_buffer, "f");

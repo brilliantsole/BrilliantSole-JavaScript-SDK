@@ -378,7 +378,9 @@ class FileTransferManager {
       return;
     }
     if (!this.#buffer) {
-      _console.error("no buffer defined");
+      if (!this.isServerSide) {
+        _console.error("no buffer defined");
+      }
       return;
     }
 
