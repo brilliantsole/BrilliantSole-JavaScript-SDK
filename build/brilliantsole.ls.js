@@ -789,7 +789,9 @@
             return;
         }
         if (!__classPrivateFieldGet(this, _FileTransferManager_buffer, "f")) {
-            _console$n.error("no buffer defined");
+            if (!this.isServerSide) {
+                _console$n.error("no buffer defined");
+            }
             return;
         }
         const buffer = __classPrivateFieldGet(this, _FileTransferManager_buffer, "f");
