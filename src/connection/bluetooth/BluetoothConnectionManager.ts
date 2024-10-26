@@ -27,6 +27,9 @@ abstract class BluetoothConnectionManager extends BaseConnectionManager {
 
   async sendTxData(data: ArrayBuffer) {
     super.sendTxData(data);
+    if (data.byteLength == 0) {
+      return;
+    }
     await this.writeCharacteristic("tx", data);
   }
 }

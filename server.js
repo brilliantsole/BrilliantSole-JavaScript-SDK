@@ -11,6 +11,8 @@ import nocache from "nocache";
 import cors from "cors";
 import axios from "axios";
 
+process.on("warning", (e) => console.warn(e.stack));
+
 //BS.setAllConsoleLevelFlags({ log: false });
 
 // HTTPS SERVER

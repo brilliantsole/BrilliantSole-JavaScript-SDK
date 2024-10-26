@@ -173,6 +173,9 @@ class NobleConnectionManager extends BluetoothConnectionManager {
     this.#services.clear();
 
     this.#characteristics.forEach((characteristic) => {
+      _console.log(
+        `removing listeners from characteristic "${characteristic.name}" has ${characteristic.listeners.length} listeners`
+      );
       removeEventListeners(characteristic, this.#unboundNobleCharacteristicListeners);
     });
     this.#characteristics.clear();
@@ -238,6 +241,9 @@ class NobleConnectionManager extends BluetoothConnectionManager {
       this.#characteristics.set(characteristicName, characteristic);
       characteristic.name = characteristicName;
       characteristic.connectionManager = this;
+      _console.log(
+        `adding listeners to characteristic "${characteristic.name}" (currently has ${characteristic.listeners.length} listeners)`
+      );
       addEventListeners(characteristic, this.#unboundNobleCharacteristicListeners);
       if (characteristic.properties.includes("read")) {
         await characteristic.readAsync();

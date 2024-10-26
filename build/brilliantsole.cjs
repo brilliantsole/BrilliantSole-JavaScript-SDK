@@ -2734,6 +2734,9 @@ class BluetoothConnectionManager extends BaseConnectionManager {
     }
     async sendTxData(data) {
         super.sendTxData(data);
+        if (data.byteLength == 0) {
+            return;
+        }
         await this.writeCharacteristic("tx", data);
     }
 }
@@ -4664,6 +4667,9 @@ _a$3 = Device, _Device_eventDispatcher = new WeakMap(), _Device_connectionManage
     if (!this.isConnected && __classPrivateFieldGet(this, _Device_instances, "a", _Device_hasRequiredInformation_get)) {
         __classPrivateFieldGet(this, _Device_instances, "m", _Device_checkConnection).call(this);
     }
+    if (this.connectionStatus == "notConnected") {
+        return;
+    }
     __classPrivateFieldGet(this, _Device_instances, "m", _Device_sendTxMessages).call(this);
 }, _Device_updateBatteryLevel = function _Device_updateBatteryLevel(updatedBatteryLevel) {
     _console$d.assertTypeWithError(updatedBatteryLevel, "number");
@@ -5190,6 +5196,7 @@ class NobleConnectionManager extends BluetoothConnectionManager {
             __classPrivateFieldGet(this, _NobleConnectionManager_characteristics, "f").set(characteristicName, characteristic);
             characteristic.name = characteristicName;
             characteristic.connectionManager = this;
+            _console$8.log(`adding listeners to characteristic "${characteristic.name}" (currently has ${characteristic.listeners.length} listeners)`);
             addEventListeners(characteristic, __classPrivateFieldGet(this, _NobleConnectionManager_unboundNobleCharacteristicListeners, "f"));
             if (characteristic.properties.includes("read")) {
                 await characteristic.readAsync();
@@ -5248,6 +5255,7 @@ _NobleConnectionManager_noblePeripheral = new WeakMap(), _NobleConnectionManager
     });
     __classPrivateFieldGet(this, _NobleConnectionManager_services, "f").clear();
     __classPrivateFieldGet(this, _NobleConnectionManager_characteristics, "f").forEach((characteristic) => {
+        _console$8.log(`removing listeners from characteristic "${characteristic.name}" has ${characteristic.listeners.length} listeners`);
         removeEventListeners(characteristic, __classPrivateFieldGet(this, _NobleConnectionManager_unboundNobleCharacteristicListeners, "f"));
     });
     __classPrivateFieldGet(this, _NobleConnectionManager_characteristics, "f").clear();

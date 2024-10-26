@@ -2702,6 +2702,9 @@
         }
         async sendTxData(data) {
             super.sendTxData(data);
+            if (data.byteLength == 0) {
+                return;
+            }
             await this.writeCharacteristic("tx", data);
         }
     }
@@ -4634,6 +4637,9 @@
     }, _Device_onConnectionMessagesReceived = function _Device_onConnectionMessagesReceived() {
         if (!this.isConnected && __classPrivateFieldGet(this, _Device_instances, "a", _Device_hasRequiredInformation_get)) {
             __classPrivateFieldGet(this, _Device_instances, "m", _Device_checkConnection).call(this);
+        }
+        if (this.connectionStatus == "notConnected") {
+            return;
         }
         __classPrivateFieldGet(this, _Device_instances, "m", _Device_sendTxMessages).call(this);
     }, _Device_updateBatteryLevel = function _Device_updateBatteryLevel(updatedBatteryLevel) {

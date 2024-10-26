@@ -82,6 +82,9 @@ class ClientConnectionManager extends BaseConnectionManager {
 
   async sendTxData(data: ArrayBuffer) {
     super.sendTxData(data);
+    if (data.byteLength == 0) {
+      return;
+    }
     this.sendClientMessage({ type: "tx", data });
   }
 

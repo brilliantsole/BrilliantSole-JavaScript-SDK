@@ -465,6 +465,9 @@ class Device {
     if (!this.isConnected && this.#hasRequiredInformation) {
       this.#checkConnection();
     }
+    if (this.connectionStatus == "notConnected") {
+      return;
+    }
     this.#sendTxMessages();
   }
 
