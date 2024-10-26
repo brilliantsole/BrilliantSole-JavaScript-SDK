@@ -58,9 +58,9 @@ abstract class BaseClient {
       const device = this.#devices[id];
       const connectionManager = device.connectionManager! as ClientConnectionManager;
       connectionManager.isConnected = false;
-      device.removeAllEventListeners();
+      //device.removeAllEventListeners();
     }
-    this.#devices = {};
+    //this.#devices = {};
   }
 
   // DEVICES

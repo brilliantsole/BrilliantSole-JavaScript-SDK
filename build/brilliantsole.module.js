@@ -5246,9 +5246,7 @@ _BaseClient_devices = new WeakMap(), _BaseClient_eventDispatcher = new WeakMap()
         const device = __classPrivateFieldGet(this, _BaseClient_devices, "f")[id];
         const connectionManager = device.connectionManager;
         connectionManager.isConnected = false;
-        device.removeAllEventListeners();
     }
-    __classPrivateFieldSet(this, _BaseClient_devices, {}, "f");
 }, _BaseClient_parseMessageCallback = function _BaseClient_parseMessageCallback(messageType, dataView) {
     let byteOffset = 0;
     _console$2.log({ messageType }, dataView);
