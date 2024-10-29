@@ -47,13 +47,16 @@ class Timer {
     return this.#intervalId != undefined;
   }
 
-  start() {
+  start(immediately = false) {
     if (this.isRunning) {
       _console.log("interval already running");
       return;
     }
     _console.log("starting interval");
     this.#intervalId = setInterval(this.#callback, this.#interval);
+    if (immediately) {
+      this.#callback();
+    }
   }
   stop() {
     if (!this.isRunning) {
@@ -64,9 +67,9 @@ class Timer {
     clearInterval(this.#intervalId);
     this.#intervalId = undefined;
   }
-  restart() {
+  restart(startImmediately = false) {
     this.stop();
-    this.start();
+    this.start(startImmediately);
   }
 }
 export default Timer;
