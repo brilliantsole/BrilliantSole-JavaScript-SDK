@@ -304,13 +304,16 @@
         get isRunning() {
             return __classPrivateFieldGet(this, _Timer_intervalId, "f") != undefined;
         }
-        start() {
+        start(immediately = false) {
             if (this.isRunning) {
                 _console$p.log("interval already running");
                 return;
             }
             _console$p.log("starting interval");
             __classPrivateFieldSet(this, _Timer_intervalId, setInterval(__classPrivateFieldGet(this, _Timer_callback, "f"), __classPrivateFieldGet(this, _Timer_interval, "f")), "f");
+            if (immediately) {
+                __classPrivateFieldGet(this, _Timer_callback, "f").call(this);
+            }
         }
         stop() {
             if (!this.isRunning) {
@@ -321,9 +324,9 @@
             clearInterval(__classPrivateFieldGet(this, _Timer_intervalId, "f"));
             __classPrivateFieldSet(this, _Timer_intervalId, undefined, "f");
         }
-        restart() {
+        restart(startImmediately = false) {
             this.stop();
-            this.start();
+            this.start(startImmediately);
         }
     }
     _Timer_callback = new WeakMap(), _Timer_interval = new WeakMap(), _Timer_intervalId = new WeakMap();
@@ -4841,12 +4844,13 @@
             __classPrivateFieldGet(this, _DevicePair_instances, "a", _DevicePair_dispatchEvent_get).call(this, "deviceIsConnected", { device, isConnected: device.isConnected, side });
             return currentDevice;
         }
-        setSensorConfiguration(sensorConfiguration) {
-            InsoleSides.forEach((side) => {
+        async setSensorConfiguration(sensorConfiguration) {
+            for (let i = 0; i < InsoleSides.length; i++) {
+                const side = InsoleSides[i];
                 if (this[side]?.isConnected) {
-                    this[side]?.setSensorConfiguration(sensorConfiguration);
+                    await this[side].setSensorConfiguration(sensorConfiguration);
                 }
-            });
+            }
         }
         resetPressureRange() {
             __classPrivateFieldGet(this, _DevicePair_sensorDataManager, "f").resetPressureRange();

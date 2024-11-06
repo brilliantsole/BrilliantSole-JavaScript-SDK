@@ -7,8 +7,8 @@ declare class Timer {
     set interval(newInterval: number);
     constructor(callback: Function, interval: number);
     get isRunning(): boolean;
-    start(): void;
+    start(immediately?: boolean): void;
     stop(): void;
-    restart(): void;
+    restart(startImmediately?: boolean): void;
 }
 export default Timer;

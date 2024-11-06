@@ -54,7 +54,7 @@ declare class DevicePair {
     get isPartiallyConnected(): boolean;
     get isHalfConnected(): boolean;
     assignInsole(device: Device): Device | undefined;
-    setSensorConfiguration(sensorConfiguration: SensorConfiguration): void;
+    setSensorConfiguration(sensorConfiguration: SensorConfiguration): Promise<void>;
     resetPressureRange(): void;
     triggerVibration(vibrationConfigurations: VibrationConfiguration[], sendImmediately?: boolean): Promise<PromiseSettledResult<void | undefined>[]>;
     static get shared(): DevicePair;

@@ -216,12 +216,13 @@ class DevicePair {
   }
 
   // SENSOR CONFIGURATION
-  setSensorConfiguration(sensorConfiguration: SensorConfiguration) {
-    InsoleSides.forEach((side) => {
+  async setSensorConfiguration(sensorConfiguration: SensorConfiguration) {
+    for (let i = 0; i < InsoleSides.length; i++) {
+      const side = InsoleSides[i];
       if (this[side]?.isConnected) {
-        this[side]?.setSensorConfiguration(sensorConfiguration);
+        await this[side].setSensorConfiguration(sensorConfiguration);
       }
-    });
+    }
   }
 
   // SENSOR DATA
