@@ -4000,7 +4000,7 @@
 	                this.AvailableDevices.push(existingConnectedDevice);
 	                return;
 	            }
-	            const device = new Device$1();
+	            const device = new Device();
 	            const connectionManager = new WebBluetoothConnectionManager();
 	            connectionManager.device = bluetoothDevice;
 	            if (bluetoothDevice.name) {
@@ -4665,7 +4665,6 @@
 	};
 	_Device_ReconnectOnDisconnection = { value: false };
 	_Device_ClearSensorConfigurationOnLeave = { value: true };
-	var Device$1 = Device;
 
 	var _DevicePairPressureSensorDataManager_instances, _DevicePairPressureSensorDataManager_rawPressure, _DevicePairPressureSensorDataManager_centerOfPressureHelper, _DevicePairPressureSensorDataManager_hasAllPressureData_get, _DevicePairPressureSensorDataManager_updatePressureData;
 	const _console$7 = createConsole("DevicePairPressureSensorDataManager", { log: true });
@@ -5220,7 +5219,7 @@
 	        this.sendServerMessage({ type: "connectToDevice", data: bluetoothId });
 	    }
 	    createDevice(bluetoothId) {
-	        const device = new Device$1();
+	        const device = new Device();
 	        const clientConnectionManager = new ClientConnectionManager();
 	        clientConnectionManager.bluetoothId = bluetoothId;
 	        clientConnectionManager.sendClientMessage = this.sendDeviceMessage.bind(this, bluetoothId);
@@ -5513,7 +5512,7 @@
 
 	exports.ContinuousSensorTypes = ContinuousSensorTypes;
 	exports.DefaultNumberOfPressureSensors = DefaultNumberOfPressureSensors;
-	exports.Device = Device$1;
+	exports.Device = Device;
 	exports.DeviceManager = DeviceManager$1;
 	exports.DevicePair = DevicePair;
 	exports.DeviceTypes = DeviceTypes;

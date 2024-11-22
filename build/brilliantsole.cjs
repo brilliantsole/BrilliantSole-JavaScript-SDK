@@ -4023,7 +4023,7 @@ class DeviceManager {
                 this.AvailableDevices.push(existingConnectedDevice);
                 return;
             }
-            const device = new Device$1();
+            const device = new Device();
             const connectionManager = new WebBluetoothConnectionManager();
             connectionManager.device = bluetoothDevice;
             if (bluetoothDevice.name) {
@@ -4688,7 +4688,6 @@ _a$3 = Device, _Device_eventDispatcher = new WeakMap(), _Device_connectionManage
 };
 _Device_ReconnectOnDisconnection = { value: false };
 _Device_ClearSensorConfigurationOnLeave = { value: true };
-var Device$1 = Device;
 
 var _DevicePairPressureSensorDataManager_instances, _DevicePairPressureSensorDataManager_rawPressure, _DevicePairPressureSensorDataManager_centerOfPressureHelper, _DevicePairPressureSensorDataManager_hasAllPressureData_get, _DevicePairPressureSensorDataManager_updatePressureData;
 const _console$c = createConsole("DevicePairPressureSensorDataManager", { log: true });
@@ -5417,7 +5416,7 @@ _NobleScanner__isScanning = new WeakMap(), _NobleScanner__nobleState = new WeakM
     _console$7.assertTypeWithError(noblePeripheralId, "string");
     _console$7.assertWithError(__classPrivateFieldGet(this, _NobleScanner_noblePeripherals, "f")[noblePeripheralId], `no noblePeripheral found with id "${noblePeripheralId}"`);
 }, _NobleScanner_createDevice = function _NobleScanner_createDevice(noblePeripheral) {
-    const device = new Device$1();
+    const device = new Device();
     const nobleConnectionManager = new NobleConnectionManager();
     nobleConnectionManager.noblePeripheral = noblePeripheral;
     device.connectionManager = nobleConnectionManager;
@@ -6020,7 +6019,7 @@ _UDPServer_clients = new WeakMap(), _UDPServer_socket = new WeakMap(), _UDPServe
 
 exports.ContinuousSensorTypes = ContinuousSensorTypes;
 exports.DefaultNumberOfPressureSensors = DefaultNumberOfPressureSensors;
-exports.Device = Device$1;
+exports.Device = Device;
 exports.DeviceManager = DeviceManager$1;
 exports.DevicePair = DevicePair;
 exports.DeviceTypes = DeviceTypes;
