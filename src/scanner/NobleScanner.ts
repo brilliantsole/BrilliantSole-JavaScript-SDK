@@ -85,13 +85,18 @@ class NobleScanner extends BaseScanner {
     }
 
     let deviceType;
-    const serviceData = noblePeripheral.advertisement.serviceData;
+    const { manufacturerData, serviceData } = noblePeripheral.advertisement;
+    if (manufacturerData) {
+      _console.log("manufacturerData", manufacturerData);
+      const deviceTypeEnum = manufacturerData.readUint8(0);
+      deviceType = DeviceTypes[deviceTypeEnum];
+    }
     if (serviceData) {
-      //_console.log("serviceData", serviceData);
+      _console.log("serviceData", serviceData);
       const deviceTypeServiceData = serviceData.find((serviceDatum) => {
         return serviceDatum.uuid == serviceDataUUID;
       });
-      //_console.log("deviceTypeServiceData", deviceTypeServiceData);
+      _console.log("deviceTypeServiceData", deviceTypeServiceData);
       if (deviceTypeServiceData) {
         const deviceTypeEnum = deviceTypeServiceData.data.readUint8(0);
         deviceType = DeviceTypes[deviceTypeEnum];

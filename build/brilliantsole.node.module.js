@@ -5359,11 +5359,18 @@ _NobleScanner__isScanning = new WeakMap(), _NobleScanner__nobleState = new WeakM
         __classPrivateFieldGet(this, _NobleScanner_noblePeripherals, "f")[noblePeripheral.id] = noblePeripheral;
     }
     let deviceType;
-    const serviceData = noblePeripheral.advertisement.serviceData;
+    const { manufacturerData, serviceData } = noblePeripheral.advertisement;
+    if (manufacturerData) {
+        _console$7.log("manufacturerData", manufacturerData);
+        const deviceTypeEnum = manufacturerData.readUint8(0);
+        deviceType = DeviceTypes[deviceTypeEnum];
+    }
     if (serviceData) {
+        _console$7.log("serviceData", serviceData);
         const deviceTypeServiceData = serviceData.find((serviceDatum) => {
             return serviceDatum.uuid == serviceDataUUID;
         });
+        _console$7.log("deviceTypeServiceData", deviceTypeServiceData);
         if (deviceTypeServiceData) {
             const deviceTypeEnum = deviceTypeServiceData.data.readUint8(0);
             deviceType = DeviceTypes[deviceTypeEnum];
