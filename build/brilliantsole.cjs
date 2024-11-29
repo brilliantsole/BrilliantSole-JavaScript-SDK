@@ -5382,7 +5382,7 @@ _NobleScanner__isScanning = new WeakMap(), _NobleScanner__nobleState = new WeakM
     const { manufacturerData, serviceData } = noblePeripheral.advertisement;
     if (manufacturerData) {
         _console$7.log("manufacturerData", manufacturerData);
-        const deviceTypeEnum = manufacturerData.readUint8(0);
+        const deviceTypeEnum = manufacturerData.readUint8(manufacturerData.byteLength - 1);
         deviceType = DeviceTypes[deviceTypeEnum];
     }
     if (serviceData) {
