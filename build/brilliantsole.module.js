@@ -5299,7 +5299,7 @@ _BaseClient_devices = new WeakMap(), _BaseClient_eventDispatcher = new WeakMap()
                 }
                 const { string: connectedBluetoothDeviceIdStrings } = parseStringFromDataView(dataView, byteOffset);
                 _console$2.log({ connectedBluetoothDeviceIdStrings });
-                const connectedBluetoothDeviceIds = JSON.parse(connectedBluetoothDeviceIdStrings);
+                const connectedBluetoothDeviceIds = JSON.parse(connectedBluetoothDeviceIdStrings).connectedDevices;
                 _console$2.log({ connectedBluetoothDeviceIds });
                 this.onConnectedBluetoothDeviceIds(connectedBluetoothDeviceIds);
             }

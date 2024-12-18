@@ -5591,7 +5591,7 @@ _a = BaseServer, _BaseServer_clearSensorConfigurationsWhenNoClients = new WeakMa
 }, _BaseServer_connectedDevicesMessage_get = function _BaseServer_connectedDevicesMessage_get() {
     return createServerMessage({
         type: "connectedDevices",
-        data: JSON.stringify(DeviceManager$1.ConnectedDevices.map((device) => device.bluetoothId)),
+        data: JSON.stringify({ connectedDevices: DeviceManager$1.ConnectedDevices.map((device) => device.bluetoothId) }),
     });
 }, _BaseServer_createDeviceMessage = function _BaseServer_createDeviceMessage(device, messageType, dataView) {
     return {

@@ -196,7 +196,7 @@ abstract class BaseClient {
           }
           const { string: connectedBluetoothDeviceIdStrings } = parseStringFromDataView(dataView, byteOffset);
           _console.log({ connectedBluetoothDeviceIdStrings });
-          const connectedBluetoothDeviceIds = JSON.parse(connectedBluetoothDeviceIdStrings);
+          const connectedBluetoothDeviceIds = JSON.parse(connectedBluetoothDeviceIdStrings).connectedDevices;
           _console.log({ connectedBluetoothDeviceIds });
           this.onConnectedBluetoothDeviceIds(connectedBluetoothDeviceIds);
         }

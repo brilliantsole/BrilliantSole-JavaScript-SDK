@@ -163,7 +163,7 @@ abstract class BaseServer {
   get #connectedDevicesMessage() {
     return createServerMessage({
       type: "connectedDevices",
-      data: JSON.stringify(DeviceManager.ConnectedDevices.map((device) => device.bluetoothId)),
+      data: JSON.stringify({ connectedDevices: DeviceManager.ConnectedDevices.map((device) => device.bluetoothId) }),
     });
   }
 
