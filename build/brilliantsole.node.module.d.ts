@@ -398,6 +398,7 @@ declare abstract class BaseConnectionManager {
     mtu?: number;
     sendTxData(data: ArrayBuffer): Promise<void>;
     parseRxMessage(dataView: DataView): void;
+    clear(): void;
 }
 
 type SensorConfiguration = {

@@ -617,6 +617,7 @@ class FileTransferManager {
     }
     async cancel() {
         __classPrivateFieldGet(this, _FileTransferManager_instances, "m", _FileTransferManager_assertIsNotIdle).call(this);
+        _console$x.log("cancelling file transfer...");
         await __classPrivateFieldGet(this, _FileTransferManager_instances, "m", _FileTransferManager_setCommand).call(this, "cancel");
     }
     get isServerSide() {
@@ -714,6 +715,7 @@ _a$6 = FileTransferManager, _FileTransferManager_maxLength = new WeakMap(), _Fil
 }, _FileTransferManager_setCommand = async function _FileTransferManager_setCommand(command, sendImmediately) {
     __classPrivateFieldGet(this, _FileTransferManager_instances, "m", _FileTransferManager_assertValidCommand).call(this, command);
     const promise = this.waitForEvent("fileTransferStatus");
+    _console$x.log(`setting command ${command}`);
     const commandEnum = FileTransferCommands.indexOf(command);
     this.sendMessage([{ type: "setFileTransferCommand", data: Uint8Array.from([commandEnum]).buffer }], sendImmediately);
     await promise;
@@ -2453,11 +2455,14 @@ class BaseConnectionManager {
         __classPrivateFieldGet(this, _BaseConnectionManager_instances, "m", _BaseConnectionManager_assertIsConnectedAndNotDisconnecting).call(this);
         if (messages) {
             __classPrivateFieldGet(this, _BaseConnectionManager_pendingMessages, "f").push(...messages);
+            _console$l.log(`appended ${messages.length} messages`);
         }
         if (!sendImmediately) {
+            _console$l.log("not sending immediately - waiting until later");
             return;
         }
         if (__classPrivateFieldGet(this, _BaseConnectionManager_isSendingMessages, "f")) {
+            console.log("already sending messages - waiting until later");
             return;
         }
         __classPrivateFieldSet(this, _BaseConnectionManager_isSendingMessages, true, "f");
@@ -2469,6 +2474,7 @@ class BaseConnectionManager {
             dataLength.setUint16(0, message.data?.byteLength || 0, true);
             return concatenateArrayBuffers(messageTypeEnum, dataLength, message.data);
         });
+        __classPrivateFieldGet(this, _BaseConnectionManager_pendingMessages, "f").length = 0;
         if (this.mtu) {
             while (arrayBuffers.length > 0) {
                 let arrayBufferByteLength = 0;
@@ -2492,7 +2498,6 @@ class BaseConnectionManager {
             _console$l.log("sending arrayBuffer", arrayBuffer);
             await this.sendTxData(arrayBuffer);
         }
-        __classPrivateFieldGet(this, _BaseConnectionManager_pendingMessages, "f").length = 0;
         __classPrivateFieldSet(this, _BaseConnectionManager_isSendingMessages, false, "f");
     }
     async sendTxData(data) {
@@ -2501,6 +2506,10 @@ class BaseConnectionManager {
     parseRxMessage(dataView) {
         parseMessage(dataView, TxRxMessageTypes, __classPrivateFieldGet(this, _BaseConnectionManager_instances, "m", _BaseConnectionManager_onRxMessage).bind(this), null, true);
         this.onMessagesReceived();
+    }
+    clear() {
+        __classPrivateFieldSet(this, _BaseConnectionManager_isSendingMessages, false, "f");
+        __classPrivateFieldGet(this, _BaseConnectionManager_pendingMessages, "f").length = 0;
     }
 }
 _a$4 = BaseConnectionManager, _BaseConnectionManager_status = new WeakMap(), _BaseConnectionManager_pendingMessages = new WeakMap(), _BaseConnectionManager_isSendingMessages = new WeakMap(), _BaseConnectionManager_timer = new WeakMap(), _BaseConnectionManager_instances = new WeakSet(), _BaseConnectionManager_AssertValidTxRxMessageType = function _BaseConnectionManager_AssertValidTxRxMessageType(messageType) {
@@ -4627,6 +4636,7 @@ _a$3 = Device, _Device_eventDispatcher = new WeakMap(), _Device_connectionManage
             break;
     }
 }, _Device_clear = function _Device_clear() {
+    this.connectionManager?.clear();
     this.latestConnectionMessage.clear();
     this._informationManager.clear();
     __classPrivateFieldGet(this, _Device_deviceInformationManager, "f").clear();

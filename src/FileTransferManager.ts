@@ -217,7 +217,7 @@ class FileTransferManager {
     this.#assertValidCommand(command);
 
     const promise = this.waitForEvent("fileTransferStatus");
-
+    _console.log(`setting command ${command}`);
     const commandEnum = FileTransferCommands.indexOf(command);
     this.sendMessage(
       [{ type: "setFileTransferCommand", data: Uint8Array.from([commandEnum]).buffer }],
@@ -433,6 +433,7 @@ class FileTransferManager {
 
   async cancel() {
     this.#assertIsNotIdle();
+    _console.log("cancelling file transfer...");
     await this.#setCommand("cancel");
   }
 

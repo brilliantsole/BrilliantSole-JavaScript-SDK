@@ -424,6 +424,7 @@ class Device {
   }
 
   #clear() {
+    this.connectionManager?.clear();
     this.latestConnectionMessage.clear();
     this._informationManager.clear();
     this.#deviceInformationManager.clear();

@@ -187,13 +187,16 @@ abstract class BaseConnectionManager {
 
     if (messages) {
       this.#pendingMessages.push(...messages);
+      _console.log(`appended ${messages.length} messages`);
     }
 
     if (!sendImmediately) {
+      _console.log("not sending immediately - waiting until later");
       return;
     }
 
     if (this.#isSendingMessages) {
+      console.log("already sending messages - waiting until later");
       return;
     }
     this.#isSendingMessages = true;
@@ -207,6 +210,7 @@ abstract class BaseConnectionManager {
       dataLength.setUint16(0, message.data?.byteLength || 0, true);
       return concatenateArrayBuffers(messageTypeEnum, dataLength, message.data);
     });
+    this.#pendingMessages.length = 0;
 
     if (this.mtu) {
       while (arrayBuffers.length > 0) {
@@ -231,7 +235,6 @@ abstract class BaseConnectionManager {
       _console.log("sending arrayBuffer", arrayBuffer);
       await this.sendTxData(arrayBuffer);
     }
-    this.#pendingMessages.length = 0;
 
     this.#isSendingMessages = false;
   }
@@ -259,6 +262,11 @@ abstract class BaseConnectionManager {
       _console.log("timer detected disconnection");
       this.status = "notConnected";
     }
+  }
+
+  clear() {
+    this.#isSendingMessages = false;
+    this.#pendingMessages.length = 0;
   }
 }
 
