@@ -369,7 +369,7 @@ class Device {
     _console.log({ connectionStatus });
 
     if (connectionStatus == "notConnected") {
-      //this.#clear();
+      this.#clearConnection();
 
       if (this.canReconnect && this.reconnectOnDisconnection) {
         _console.log("starting reconnect interval...");
@@ -424,10 +424,13 @@ class Device {
   }
 
   #clear() {
-    this.connectionManager?.clear();
-    this.latestConnectionMessage.clear();
+    this.#clearConnection();
     this._informationManager.clear();
     this.#deviceInformationManager.clear();
+  }
+  #clearConnection() {
+    this.connectionManager?.clear();
+    this.latestConnectionMessage.clear();
   }
 
   #onConnectionMessageReceived(messageType: ConnectionMessageType, dataView: DataView) {

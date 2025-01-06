@@ -196,7 +196,7 @@ abstract class BaseConnectionManager {
     }
 
     if (this.#isSendingMessages) {
-      console.log("already sending messages - waiting until later");
+      _console.log("already sending messages - waiting until later");
       return;
     }
     this.#isSendingMessages = true;

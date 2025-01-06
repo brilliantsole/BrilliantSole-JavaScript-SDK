@@ -2434,7 +2434,7 @@
                 return;
             }
             if (__classPrivateFieldGet(this, _BaseConnectionManager_isSendingMessages, "f")) {
-                console.log("already sending messages - waiting until later");
+                _console$b.log("already sending messages - waiting until later");
                 return;
             }
             __classPrivateFieldSet(this, _BaseConnectionManager_isSendingMessages, true, "f");
@@ -4139,7 +4139,7 @@
     DeviceManager.shared = new DeviceManager();
     var DeviceManager$1 = DeviceManager.shared;
 
-    var _Device_instances, _a$1, _Device_DefaultConnectionManager, _Device_eventDispatcher, _Device_dispatchEvent_get, _Device_connectionManager, _Device_sendTxMessages, _Device_isConnected, _Device_assertIsConnected, _Device_hasRequiredInformation_get, _Device_requestRequiredInformation, _Device_assertCanReconnect, _Device_ReconnectOnDisconnection, _Device_reconnectOnDisconnection, _Device_reconnectIntervalId, _Device_onConnectionStatusUpdated, _Device_dispatchConnectionEvents, _Device_checkConnection, _Device_clear, _Device_onConnectionMessageReceived, _Device_onConnectionMessagesReceived, _Device_deviceInformationManager, _Device_batteryLevel, _Device_updateBatteryLevel, _Device_sensorConfigurationManager, _Device_ClearSensorConfigurationOnLeave, _Device_clearSensorConfigurationOnLeave, _Device_sensorDataManager, _Device_vibrationManager, _Device_fileTransferManager, _Device_tfliteManager, _Device_firmwareManager, _Device_sendSmpMessage, _Device_isServerSide;
+    var _Device_instances, _a$1, _Device_DefaultConnectionManager, _Device_eventDispatcher, _Device_dispatchEvent_get, _Device_connectionManager, _Device_sendTxMessages, _Device_isConnected, _Device_assertIsConnected, _Device_hasRequiredInformation_get, _Device_requestRequiredInformation, _Device_assertCanReconnect, _Device_ReconnectOnDisconnection, _Device_reconnectOnDisconnection, _Device_reconnectIntervalId, _Device_onConnectionStatusUpdated, _Device_dispatchConnectionEvents, _Device_checkConnection, _Device_clear, _Device_clearConnection, _Device_onConnectionMessageReceived, _Device_onConnectionMessagesReceived, _Device_deviceInformationManager, _Device_batteryLevel, _Device_updateBatteryLevel, _Device_sensorConfigurationManager, _Device_ClearSensorConfigurationOnLeave, _Device_clearSensorConfigurationOnLeave, _Device_sensorDataManager, _Device_vibrationManager, _Device_fileTransferManager, _Device_tfliteManager, _Device_firmwareManager, _Device_sendSmpMessage, _Device_isServerSide;
     const _console$3 = createConsole("Device", { log: true });
     const DeviceEventTypes = [
         "connectionMessage",
@@ -4563,6 +4563,7 @@
     }, _Device_onConnectionStatusUpdated = function _Device_onConnectionStatusUpdated(connectionStatus) {
         _console$3.log({ connectionStatus });
         if (connectionStatus == "notConnected") {
+            __classPrivateFieldGet(this, _Device_instances, "m", _Device_clearConnection).call(this);
             if (this.canReconnect && this.reconnectOnDisconnection) {
                 _console$3.log("starting reconnect interval...");
                 __classPrivateFieldSet(this, _Device_reconnectIntervalId, setInterval(() => {
@@ -4607,10 +4608,12 @@
                 break;
         }
     }, _Device_clear = function _Device_clear() {
-        this.connectionManager?.clear();
-        this.latestConnectionMessage.clear();
+        __classPrivateFieldGet(this, _Device_instances, "m", _Device_clearConnection).call(this);
         this._informationManager.clear();
         __classPrivateFieldGet(this, _Device_deviceInformationManager, "f").clear();
+    }, _Device_clearConnection = function _Device_clearConnection() {
+        this.connectionManager?.clear();
+        this.latestConnectionMessage.clear();
     }, _Device_onConnectionMessageReceived = function _Device_onConnectionMessageReceived(messageType, dataView) {
         _console$3.log({ messageType, dataView });
         switch (messageType) {
