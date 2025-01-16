@@ -2,6 +2,18 @@
 
 Web SDK for BrilliantSole insoles
 
+## Installation
+
+__To insall via npm:__
+```javascript
+npm install brilliantsole
+```
+
+__to add in a webpage:__
+```html
+<script src="https://unpkg.com/brilliantsole@latest/build/brilliantsole.js"></script>
+```
+
 ## Running the Node.js server for WebSocket/UDP stuff
 
 On macOS:  
@@ -20,14 +32,8 @@ if it doesn't work, try turning the firewall off
 if you have issues saving or running stuff on mac, try:  
 `sudo chown -R username directory_name`
 
-## Running the Node.js server for WebSocket/UDP stuff
+afterward, you can install using yarn:
+`yarn install`
 
-__To insall via npm:__
-```javascript
-npm install brilliantsole
-```
-
-__to add in a webpage:__
-```html
-<script src="https://unpkg.com/brilliantsole@latest/build/brilliantsole.js"></script>
-```
+and then run `start`:
+`yarn start`
