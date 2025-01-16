@@ -32,8 +32,8 @@ if it doesn't work, try turning the firewall off
 if you have issues saving or running stuff on mac, try:  
 `sudo chown -R username directory_name`
 
-afterward, you can install using yarn:
+afterward, you can install using yarn:  
 `yarn install`
 
-and then run `start`:
+and then run `start`:  
 `yarn start`
