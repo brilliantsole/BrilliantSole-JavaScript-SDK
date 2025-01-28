@@ -2372,6 +2372,7 @@
             _BaseConnectionManager_status.set(this, "notConnected");
             _BaseConnectionManager_pendingMessages.set(this, []);
             _BaseConnectionManager_isSendingMessages.set(this, false);
+            this.mtu = 23;
             _BaseConnectionManager_timer.set(this, new Timer(__classPrivateFieldGet(this, _BaseConnectionManager_instances, "m", _BaseConnectionManager_checkConnection).bind(this), 5000));
             __classPrivateFieldGet(this, _BaseConnectionManager_instances, "m", _BaseConnectionManager_assertIsSupported).call(this);
         }

@@ -239,7 +239,8 @@ abstract class BaseConnectionManager {
     this.#isSendingMessages = false;
   }
 
-  mtu?: number;
+  //mtu?: number;
+  mtu?: number = 23;
 
   async sendTxData(data: ArrayBuffer) {
     _console.log("sendTxData", data);
