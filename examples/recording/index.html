@@ -1,187 +1,195 @@
 <html>
-    <head>
-        <title>Recording | BrilliantSole JavaScript SDK</title>
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico" />
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
-        <script type="module" src="./script.js"></script>
-    </head>
+  <head>
+    <title>Recording | BrilliantSole JavaScript SDK</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+    <script type="module" src="./script.js"></script>
+  </head>
 
-    <style>
-        label {
-            display: block;
-        }
-        div {
-            margin-top: 1rem;
-        }
-        .noListStyle {
-            margin-top: 0;
-            list-style: none;
-            padding-left: 0;
-        }
-        .gap:not(:last-of-type) {
-            padding-bottom: 1rem;
-        }
-        .recording {
-        }
+  <style>
+    label {
+      display: block;
+    }
+    div {
+      margin-top: 1rem;
+    }
+    .noListStyle {
+      margin-top: 0;
+      list-style: none;
+      padding-left: 0;
+    }
+    .gap:not(:last-of-type) {
+      padding-bottom: 1rem;
+    }
+    .recording {
+    }
 
-        .hidden {
-            display: none;
-        }
+    .hidden {
+      display: none;
+    }
 
-        .visualization {
-            overflow-x: auto;
-            width: 100%;
-        }
+    .visualization {
+      overflow-x: auto;
+      width: 100%;
+    }
 
-        .visualization2 {
-            width: 3000px;
-            height: 300px;
-        }
+    .visualization2 {
+      width: 3000px;
+      height: 300px;
+    }
 
-        .visualization canvas {
-        }
-    </style>
+    .visualization canvas {
+    }
+  </style>
 
-    <body>
-        <nav>
-            <a href="../../">home</a>
-        </nav>
+  <body>
+    <nav>
+      <a href="../../">home</a>
+    </nav>
 
-        <h1>Recording | BrilliantSole JavaScript SDK</h1>
+    <h1>Recording | BrilliantSole JavaScript SDK</h1>
 
-        <div>
-            <h2>available devices</h2>
-            <button id="getDevices" disabled hidden>get available devices</button>
-            <div id="availableDevices">
-                <template id="availableDeviceTemplate">
-                    <div class="availableDevice">
-                        <ul class="noListStyle">
-                            <li><b>name: </b> <span class="name"></span></li>
-                            <li><b>type: </b> <span class="type"></span></li>
-                            <li><button class="toggleConnection">connect</button></li>
-                        </ul>
-                    </div>
-                </template>
-            </div>
-        </div>
+    <div>
+      <h2>available devices</h2>
+      <button id="getDevices" disabled hidden>get available devices</button>
+      <div id="availableDevices">
+        <template id="availableDeviceTemplate">
+          <div class="availableDevice">
+            <ul class="noListStyle">
+              <li><b>name: </b> <span class="name"></span></li>
+              <li><b>type: </b> <span class="type"></span></li>
+              <li><button class="toggleConnection">connect</button></li>
+            </ul>
+          </div>
+        </template>
+      </div>
+    </div>
 
-        <div>
-            <h2>connection</h2>
-            <button id="addDevice">add device</button>
-        </div>
+    <div>
+      <h2>connection</h2>
+      <button id="addDevice">add device</button>
+    </div>
 
-        <div>
-            <h2>connected devices</h2>
-            <div id="connectedDevices">
-                <template id="connectedDeviceTemplate">
-                    <div class="connectedDevice">
-                        <ul class="noListStyle">
-                            <li><b>name: </b> <span class="name"></span></li>
-                            <li><b>type: </b> <span class="type"></span></li>
-                            <li>
-                                <b>sensor configuration:</b>
-                                <pre class="sensorConfiguration"></pre>
-                            </li>
-                            <li><button class="disconnect">disconnect</button></li>
-                        </ul>
-                    </div>
-                </template>
-            </div>
-        </div>
+    <div>
+      <h2>connected devices</h2>
+      <div id="connectedDevices">
+        <template id="connectedDeviceTemplate">
+          <div class="connectedDevice">
+            <ul class="noListStyle">
+              <li><b>name: </b> <span class="name"></span></li>
+              <li><b>type: </b> <span class="type"></span></li>
+              <li>
+                <b>sensor configuration:</b>
+                <pre class="sensorConfiguration"></pre>
+              </li>
+              <li><button class="disconnect">disconnect</button></li>
+            </ul>
+          </div>
+        </template>
+      </div>
+    </div>
 
-        <div>
-            <h2>sensor configuration</h2>
+    <div>
+      <h2>sensor configuration</h2>
 
-            <div id="sensorConfiguration">
-                <template id="sensorTypeConfigurationTemplate">
-                    <label class="sensorTypeConfiguration">
-                        <b class="sensorType"></b>
-                        <input class="sensorRate" type="number" min="0" value="" />ms
-                    </label>
-                </template>
-            </div>
+      <div id="sensorConfiguration">
+        <template id="sensorTypeConfigurationTemplate">
+          <label class="sensorTypeConfiguration">
+            <b class="sensorType"></b>
+            <!-- <input class="sensorRate" type="number" min="0" value="" />ms -->
+            <select class="sensorRate">
+              <optgroup label="sensor rate (ms)">
+                <option value="0">0ms</option>
+                <option value="5">5ms</option>
+                <option value="10">10ms</option>
+                <option value="20">20ms</option>
+                <option value="40">40ms</option>
+                <option value="100">100ms</option>
+              </optgroup>
+            </select>
+          </label>
+        </template>
+      </div>
 
+      <div>
+        <label>enable sensors <input id="toggleSensorData" type="checkbox" disabled /></label>
+      </div>
+    </div>
+
+    <div>
+      <h2>recording configuration</h2>
+      <label>
+        countdown (seconds)
+        <input type="number" min="0" value="0" max="10" step="1" id="recordingCountdownInput" />
+      </label>
+
+      <label>fixed duration? <input id="isRecordingFixedDuration" type="checkbox" /></label>
+      <label>
+        duration (seconds)
+        <input type="number" min="1" value="1" max="30" step="1" id="recordingDuration" disabled />
+      </label>
+    </div>
+
+    <div>
+      <h2>recording</h2>
+      <button id="toggleRecording" disabled>record</button>
+      <h2><span id="recordingCountdownSpan"></span></h2>
+    </div>
+
+    <div>
+      <h2>recordings</h2>
+
+      <div>
+        <label> load recording (json) <input id="loadAsJSON" type="file" multiple accept="application/json" /> </label>
+      </div>
+
+      <div>
+        <button id="saveAllAsJSON" disabled>save all as json</button>
+        <button id="saveAllAsCSV" disabled hidden>save all as CSV</button>
+        <button id="deleteAllRecordings" disabled>delete all</button>
+      </div>
+
+      <div id="recordings">
+        <template id="recordingTemplate">
+          <div class="recording">
+            <h3><span class="timestamp"></span> (<span class="duration"></span> seconds)</h3>
             <div>
-                <label>enable sensors <input id="toggleSensorData" type="checkbox" disabled /></label>
+              <button class="saveAsCSV" hidden>save as csv</button>
+              <button class="saveAsJSON">save as json</button>
+              <button class="delete">delete</button>
             </div>
-        </div>
-
-        <div>
-            <h2>recording configuration</h2>
-            <label>
-                countdown (seconds)
-                <input type="number" min="0" value="0" max="10" step="1" id="recordingCountdownInput" />
-            </label>
-
-            <label>fixed duration? <input id="isRecordingFixedDuration" type="checkbox" /></label>
-            <label>
-                duration (seconds)
-                <input type="number" min="1" value="1" max="30" step="1" id="recordingDuration" disabled />
-            </label>
-        </div>
-
-        <div>
-            <h2>recording</h2>
-            <button id="toggleRecording" disabled>record</button>
-            <h2><span id="recordingCountdownSpan"></span></h2>
-        </div>
-
-        <div>
-            <h2>recordings</h2>
-
-            <div>
-                <label>
-                    load recording (json) <input id="loadAsJSON" type="file" multiple accept="application/json" />
-                </label>
-            </div>
-
-            <div>
-                <button id="saveAllAsJSON" disabled>save all as json</button>
-                <button id="saveAllAsCSV" disabled hidden>save all as CSV</button>
-                <button id="deleteAllRecordings" disabled>delete all</button>
-            </div>
-
-            <div id="recordings">
-                <template id="recordingTemplate">
-                    <div class="recording">
-                        <h3><span class="timestamp"></span> (<span class="duration"></span> seconds)</h3>
-                        <div>
-                            <button class="saveAsCSV" hidden>save as csv</button>
-                            <button class="saveAsJSON">save as json</button>
-                            <button class="delete">delete</button>
-                        </div>
-                        <br />
-                        <ol class="devices noListStyle"></ol>
-                        <hr />
-                    </div>
-                </template>
-                <template id="deviceRecordingTemplate">
-                    <li class="deviceRecording gap">
-                        <ul class="noListStyle">
-                            <li><b>id:</b> <span class="id"></span></li>
-                            <li><b>name:</b> <span class="name"></span></li>
-                            <li><b>type:</b> <span class="type"></span></li>
-                            <li><b>sensor types:</b> <span class="sensorTypes"></span></li>
-                        </ul>
-                    </li>
-                </template>
-                <template id="sensorTypeRecordingTemplate">
-                    <li class="sensorTypeRecording gap">
-                        <ul>
-                            <li><b>sensor type:</b> <span class="sensorType"></span></li>
-                            <li><b>data rate:</b> <span class="dataRate"></span>ms</li>
-                            <li><b>initial timestamp:</b> <span class="initialTimestamp"></span></li>
-                            <button class="toggleVisualization">visualize</button>
-                            <div class="hidden visualization">
-                                <div class="visualization2">
-                                    <canvas></canvas>
-                                </div>
-                            </div>
-                        </ul>
-                    </li>
-                </template>
-            </div>
-        </div>
-    </body>
+            <br />
+            <ol class="devices noListStyle"></ol>
+            <hr />
+          </div>
+        </template>
+        <template id="deviceRecordingTemplate">
+          <li class="deviceRecording gap">
+            <ul class="noListStyle">
+              <li><b>id:</b> <span class="id"></span></li>
+              <li><b>name:</b> <span class="name"></span></li>
+              <li><b>type:</b> <span class="type"></span></li>
+              <li><b>sensor types:</b> <span class="sensorTypes"></span></li>
+            </ul>
+          </li>
+        </template>
+        <template id="sensorTypeRecordingTemplate">
+          <li class="sensorTypeRecording gap">
+            <ul>
+              <li><b>sensor type:</b> <span class="sensorType"></span></li>
+              <li><b>data rate:</b> <span class="dataRate"></span>ms</li>
+              <li><b>initial timestamp:</b> <span class="initialTimestamp"></span></li>
+              <button class="toggleVisualization">visualize</button>
+              <div class="hidden visualization">
+                <div class="visualization2">
+                  <canvas></canvas>
+                </div>
+              </div>
+            </ul>
+          </li>
+        </template>
+      </div>
+    </div>
+  </body>
 </html>

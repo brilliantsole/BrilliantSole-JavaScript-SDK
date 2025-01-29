@@ -67,7 +67,17 @@
       <template id="sensorTypeConfigurationTemplate">
         <label class="sensorTypeConfiguration">
           <b class="sensorType"></b>
-          <input class="sensorRate" type="number" min="0" value="" disabled />
+          <!-- <input class="sensorRate" type="number" min="0" value="" disabled /> -->
+          <select class="sensorRate">
+            <optgroup label="sensor rate (ms)">
+              <option value="0">0ms</option>
+              <option value="5">5ms</option>
+              <option value="10">10ms</option>
+              <option value="20">20ms</option>
+              <option value="40">40ms</option>
+              <option value="100">100ms</option>
+            </optgroup>
+          </select>
         </label>
       </template>
     </div>
