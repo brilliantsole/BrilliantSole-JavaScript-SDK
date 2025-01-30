@@ -125,7 +125,7 @@ function onSensorConfiguration(device) {
   for (const sensorType in device.sensorConfiguration) {
     const sensorRate = device.sensorConfiguration[sensorType];
     /** @type {HTMLInputElement?} */
-    const input = document.querySelector(`.sensorTypeConfiguration[data-sensor-type="${sensorType}"] input`);
+    const input = document.querySelector(`.sensorTypeConfiguration[data-sensor-type="${sensorType}"] .input`);
     if (input) {
       input.value = sensorRate;
     }
@@ -152,7 +152,7 @@ function onSensorConfiguration(device) {
 function updateSensorRateInputs(device) {
   for (const sensorType in device.sensorConfiguration) {
     /** @type {HTMLInputElement?} */
-    const input = document.querySelector(`[data-sensor-type="${sensorType}"] input`);
+    const input = document.querySelector(`[data-sensor-type="${sensorType}"] .input`);
     if (input) {
       input.disabled = !device.isConnected;
     }

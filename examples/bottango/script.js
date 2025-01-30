@@ -152,13 +152,13 @@ BS.SensorTypes.forEach((sensorType) => {
 });
 device.addEventListener("getSensorConfiguration", () => {
   for (const sensorType in device.sensorConfiguration) {
-    document.querySelector(`.sensorTypeConfiguration[data-sensor-type="${sensorType}"] input`).value =
+    document.querySelector(`.sensorTypeConfiguration[data-sensor-type="${sensorType}"] .input`).value =
       device.sensorConfiguration[sensorType];
   }
 });
 device.addEventListener("isConnected", () => {
   for (const sensorType in device.sensorConfiguration) {
-    document.querySelector(`[data-sensor-type="${sensorType}"] input`).disabled = !device.isConnected;
+    document.querySelector(`[data-sensor-type="${sensorType}"] .input`).disabled = !device.isConnected;
   }
 });
 
