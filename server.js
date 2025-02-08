@@ -13,7 +13,7 @@ import axios from "axios";
 
 process.on("warning", (e) => console.warn(e.stack));
 
-//BS.setAllConsoleLevelFlags({ log: false });
+//BS.setAllConsoleLevelFlags({ log: true });
 
 // HTTPS SERVER
 app.use(nocache());

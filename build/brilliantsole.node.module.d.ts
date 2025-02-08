@@ -395,7 +395,7 @@ declare abstract class BaseConnectionManager {
     disconnect(): Promise<void>;
     sendSmpMessage(data: ArrayBuffer): Promise<void>;
     sendTxMessages(messages: TxMessage[] | undefined, sendImmediately?: boolean): Promise<void>;
-    mtu: number;
+    mtu?: number;
     sendTxData(data: ArrayBuffer): Promise<void>;
     parseRxMessage(dataView: DataView): void;
     clear(): void;
