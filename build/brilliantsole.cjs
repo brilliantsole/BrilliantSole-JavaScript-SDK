@@ -1824,7 +1824,7 @@ class DeviceInformationManager {
 _DeviceInformationManager_information = new WeakMap(), _DeviceInformationManager_instances = new WeakSet(), _DeviceInformationManager_dispatchEvent_get = function _DeviceInformationManager_dispatchEvent_get() {
     return this.eventDispatcher.dispatchEvent;
 }, _DeviceInformationManager_isComplete_get = function _DeviceInformationManager_isComplete_get() {
-    return DeviceInformationMessageTypes.every((key) => key in __classPrivateFieldGet(this, _DeviceInformationManager_information, "f"));
+    return DeviceInformationMessageTypes.filter((key) => key != "serialNumber").every((key) => key in __classPrivateFieldGet(this, _DeviceInformationManager_information, "f"));
 }, _DeviceInformationManager_update = function _DeviceInformationManager_update(partialDeviceInformation) {
     _console$o.log({ partialDeviceInformation });
     const deviceInformationNames = Object.keys(partialDeviceInformation);

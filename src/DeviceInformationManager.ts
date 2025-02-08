@@ -67,7 +67,9 @@ class DeviceInformationManager {
     this.#information = {};
   }
   get #isComplete() {
-    return DeviceInformationMessageTypes.every((key) => key in this.#information);
+    return DeviceInformationMessageTypes.filter((key) => key != "serialNumber").every(
+      (key) => key in this.#information
+    );
   }
 
   #update(partialDeviceInformation: Partial<DeviceInformation>) {
