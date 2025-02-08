@@ -114,7 +114,6 @@ resetDeviceButton.addEventListener("click", () => {
 /** @type {HTMLPreElement} */
 const deviceInformationPre = document.getElementById("deviceInformationPre");
 device.addEventListener("deviceInformation", () => {
-  console.log("hello!");
   deviceInformationPre.textContent = JSON.stringify(device.deviceInformation, null, 2);
 });
 
