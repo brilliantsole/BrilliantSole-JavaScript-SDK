@@ -1329,7 +1329,7 @@
     }, _SensorConfigurationManager_assertAvailableSensorType = function _SensorConfigurationManager_assertAvailableSensorType(sensorType) {
         _console$g.assertWithError(__classPrivateFieldGet(this, _SensorConfigurationManager_availableSensorTypes, "f"), "must get initial sensorConfiguration");
         const isSensorTypeAvailable = __classPrivateFieldGet(this, _SensorConfigurationManager_availableSensorTypes, "f")?.includes(sensorType);
-        _console$g.assert(isSensorTypeAvailable, `unavailable sensor type "${sensorType}"`);
+        _console$g.log(isSensorTypeAvailable, `unavailable sensor type "${sensorType}"`);
         return isSensorTypeAvailable;
     }, _SensorConfigurationManager_updateConfiguration = function _SensorConfigurationManager_updateConfiguration(updatedConfiguration) {
         __classPrivateFieldSet(this, _SensorConfigurationManager_configuration, updatedConfiguration, "f");

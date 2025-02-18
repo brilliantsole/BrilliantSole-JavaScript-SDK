@@ -51,7 +51,7 @@ class SensorConfigurationManager {
   #assertAvailableSensorType(sensorType: SensorType) {
     _console.assertWithError(this.#availableSensorTypes, "must get initial sensorConfiguration");
     const isSensorTypeAvailable = this.#availableSensorTypes?.includes(sensorType);
-    _console.assert(isSensorTypeAvailable, `unavailable sensor type "${sensorType}"`);
+    _console.log(isSensorTypeAvailable, `unavailable sensor type "${sensorType}"`);
     return isSensorTypeAvailable;
   }
 
