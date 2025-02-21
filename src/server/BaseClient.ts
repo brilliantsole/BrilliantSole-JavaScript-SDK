@@ -14,6 +14,7 @@ import Device from "../Device.ts";
 import { sliceDataView } from "../utils/ArrayBufferUtils.ts";
 import { DiscoveredDevice, DiscoveredDevicesMap, ScannerEventMessages } from "../scanner/BaseScanner.ts";
 import ClientConnectionManager from "../connection/ClientConnectionManager.ts";
+import { DeviceManager } from "../BS.ts";
 
 const _console = createConsole("BaseClient", { log: true });
 
@@ -328,6 +329,7 @@ abstract class BaseClient {
   createDevice(bluetoothId: string) {
     const device = new Device();
     const clientConnectionManager = new ClientConnectionManager();
+    clientConnectionManager.client = this;
     clientConnectionManager.bluetoothId = bluetoothId;
     clientConnectionManager.sendClientMessage = this.sendDeviceMessage.bind(this, bluetoothId);
     clientConnectionManager.sendClientConnectMessage = this.sendConnectToDeviceMessage.bind(this, bluetoothId);
@@ -350,6 +352,7 @@ abstract class BaseClient {
       const device = this.#getOrCreateDevice(bluetoothId);
       const connectionManager = device.connectionManager! as ClientConnectionManager;
       connectionManager.isConnected = true;
+      DeviceManager._CheckDeviceAvailability(device);
     });
   }
 

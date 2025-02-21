@@ -345,6 +345,15 @@ class DeviceManager {
       }
       this.#DispatchAvailableDevices();
     }
+    this._CheckDeviceAvailability(device);
+  }
+
+  _CheckDeviceAvailability(device: Device) {
+    if (!device.isConnected && !device.isAvailable && this.#AvailableDevices.includes(device)) {
+      _console.log("removing device from availableDevices...");
+      this.#AvailableDevices.splice(this.#AvailableDevices.indexOf(device), 1);
+      this.#DispatchAvailableDevices();
+    }
   }
 
   #DispatchAvailableDevices() {

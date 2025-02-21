@@ -90,6 +90,10 @@ abstract class BaseConnectionManager {
     return this.baseConstructor.isSupported;
   }
 
+  get canUpdateFirmware() {
+    return false;
+  }
+
   static type: ConnectionType;
   get type(): ConnectionType {
     return this.baseConstructor.type;
@@ -131,6 +135,10 @@ abstract class BaseConnectionManager {
 
   get isConnected() {
     return this.status == "connected";
+  }
+
+  get isAvailable() {
+    return false;
   }
 
   /** @throws {Error} if connected */

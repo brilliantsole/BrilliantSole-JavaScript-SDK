@@ -6,6 +6,7 @@ import { parseMessage } from "../utils/ParseUtils.ts";
 import { DeviceInformationMessageTypes } from "../DeviceInformationManager.ts";
 import { DeviceEventType } from "../Device.ts";
 import { ClientDeviceMessage } from "../server/ServerUtils.ts";
+import BaseClient from "../server/BaseClient.ts";
 
 const _console = createConsole("ClientConnectionManager", { log: true });
 
@@ -20,6 +21,13 @@ class ClientConnectionManager extends BaseConnectionManager {
   static get type(): ConnectionType {
     return "client";
   }
+
+  get canUpdateFirmware() {
+    // FIX - how to know if it has an smp characteristic?
+    return true;
+  }
+
+  client!: BaseClient;
 
   #bluetoothId!: string;
   get bluetoothId() {
@@ -51,6 +59,10 @@ class ClientConnectionManager extends BaseConnectionManager {
     if (this.isConnected) {
       this.#requestDeviceInformation();
     }
+  }
+
+  get isAvailable() {
+    return this.client.isConnected;
   }
 
   async connect() {

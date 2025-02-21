@@ -155,6 +155,10 @@ class Device {
     return this.#connectionManager?.bluetoothId;
   }
 
+  get isAvailable() {
+    return this.#connectionManager?.isAvailable;
+  }
+
   constructor() {
     this.#deviceInformationManager.eventDispatcher = this.#eventDispatcher as DeviceInformationEventDispatcher;
 
@@ -699,6 +703,10 @@ class Device {
   // FIRMWARE MANAGER
 
   #firmwareManager = new FirmwareManager();
+
+  get canUpdateFirmware() {
+    return this.#connectionManager?.canUpdateFirmware;
+  }
 
   #sendSmpMessage(data: ArrayBuffer) {
     return this.#connectionManager!.sendSmpMessage(data);

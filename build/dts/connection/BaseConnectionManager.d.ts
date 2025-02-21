@@ -42,12 +42,14 @@ declare abstract class BaseConnectionManager {
     protected get baseConstructor(): typeof BaseConnectionManager;
     static get isSupported(): boolean;
     get isSupported(): boolean;
+    get canUpdateFirmware(): boolean;
     static type: ConnectionType;
     get type(): ConnectionType;
     constructor();
     get status(): "notConnected" | "connecting" | "connected" | "disconnecting";
     protected set status(newConnectionStatus: "notConnected" | "connecting" | "connected" | "disconnecting");
     get isConnected(): boolean;
+    get isAvailable(): boolean;
     connect(): Promise<void>;
     get canReconnect(): boolean;
     reconnect(): Promise<void>;

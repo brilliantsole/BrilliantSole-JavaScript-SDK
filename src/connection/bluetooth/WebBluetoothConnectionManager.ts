@@ -42,6 +42,10 @@ class WebBluetoothConnectionManager extends BluetoothConnectionManager {
     return this.device!.id;
   }
 
+  get canUpdateFirmware() {
+    return this.#characteristics.has("smp");
+  }
+
   #boundBluetoothCharacteristicEventListeners: { [eventType: string]: EventListener } = {
     characteristicvaluechanged: this.#onCharacteristicvaluechanged.bind(this),
   };

@@ -2364,6 +2364,9 @@
         get isSupported() {
             return this.baseConstructor.isSupported;
         }
+        get canUpdateFirmware() {
+            return false;
+        }
         get type() {
             return this.baseConstructor.type;
         }
@@ -2400,6 +2403,9 @@
         }
         get isConnected() {
             return this.status == "connected";
+        }
+        get isAvailable() {
+            return false;
         }
         async connect() {
             __classPrivateFieldGet(this, _BaseConnectionManager_instances, "m", _BaseConnectionManager_assertIsNotConnected).call(this);
@@ -2698,6 +2704,9 @@
             super(...arguments);
             this.isInRange = true;
         }
+        get isAvailable() {
+            return true;
+        }
         onCharacteristicValueChanged(characteristicName, dataView) {
             if (characteristicName == "rx") {
                 this.parseRxMessage(dataView);
@@ -2741,6 +2750,9 @@
         }
         get bluetoothId() {
             return this.device.id;
+        }
+        get canUpdateFirmware() {
+            return __classPrivateFieldGet(this, _WebBluetoothConnectionManager_characteristics, "f").has("smp");
         }
         static get isSupported() {
             return Boolean(bluetooth);
@@ -4029,6 +4041,13 @@
         get RemoveAllEventListeners() {
             return __classPrivateFieldGet(this, _DeviceManager_EventDispatcher, "f").removeAllEventListeners;
         }
+        _CheckDeviceAvailability(device) {
+            if (!device.isConnected && !device.isAvailable && __classPrivateFieldGet(this, _DeviceManager_AvailableDevices, "f").includes(device)) {
+                _console$4.log("removing device from availableDevices...");
+                __classPrivateFieldGet(this, _DeviceManager_AvailableDevices, "f").splice(__classPrivateFieldGet(this, _DeviceManager_AvailableDevices, "f").indexOf(device), 1);
+                __classPrivateFieldGet(this, _DeviceManager_instances, "m", _DeviceManager_DispatchAvailableDevices).call(this);
+            }
+        }
     }
     _DeviceManager_boundDeviceEventListeners = new WeakMap(), _DeviceManager_ConnectedDevices = new WeakMap(), _DeviceManager_UseLocalStorage = new WeakMap(), _DeviceManager_DefaultLocalStorageConfiguration = new WeakMap(), _DeviceManager_LocalStorageConfiguration = new WeakMap(), _DeviceManager_LocalStorageKey = new WeakMap(), _DeviceManager_AvailableDevices = new WeakMap(), _DeviceManager_EventDispatcher = new WeakMap(), _DeviceManager_instances = new WeakSet(), _DeviceManager_onDeviceType = function _DeviceManager_onDeviceType(event) {
         if (__classPrivateFieldGet(this, _DeviceManager_UseLocalStorage, "f")) {
@@ -4130,6 +4149,7 @@
             }
             __classPrivateFieldGet(this, _DeviceManager_instances, "m", _DeviceManager_DispatchAvailableDevices).call(this);
         }
+        this._CheckDeviceAvailability(device);
     }, _DeviceManager_DispatchAvailableDevices = function _DeviceManager_DispatchAvailableDevices() {
         _console$4.log({ AvailableDevices: this.AvailableDevices });
         __classPrivateFieldGet(this, _DeviceManager_instances, "a", _DeviceManager_DispatchEvent_get).call(this, "availableDevices", { availableDevices: this.AvailableDevices });
@@ -4183,6 +4203,9 @@
     class Device {
         get bluetoothId() {
             return __classPrivateFieldGet(this, _Device_connectionManager, "f")?.bluetoothId;
+        }
+        get isAvailable() {
+            return __classPrivateFieldGet(this, _Device_connectionManager, "f")?.isAvailable;
         }
         constructor() {
             _Device_instances.add(this);
@@ -4503,6 +4526,9 @@
         }
         get setTfliteThreshold() {
             return __classPrivateFieldGet(this, _Device_tfliteManager, "f").setThreshold;
+        }
+        get canUpdateFirmware() {
+            return __classPrivateFieldGet(this, _Device_connectionManager, "f")?.canUpdateFirmware;
         }
         get uploadFirmware() {
             return __classPrivateFieldGet(this, _Device_firmwareManager, "f").uploadFirmware;

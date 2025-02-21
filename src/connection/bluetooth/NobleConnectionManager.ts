@@ -39,6 +39,10 @@ class NobleConnectionManager extends BluetoothConnectionManager {
     return this.#noblePeripheral!.id;
   }
 
+  get canUpdateFirmware() {
+    return this.#characteristics.has("smp");
+  }
+
   static get isSupported() {
     return isInNode;
   }

@@ -20,6 +20,7 @@ interface NobleCharacteristic extends noble.Characteristic, HasConnectionManager
 declare class NobleConnectionManager extends BluetoothConnectionManager {
     #private;
     get bluetoothId(): string;
+    get canUpdateFirmware(): boolean;
     static get isSupported(): boolean;
     static get type(): ConnectionType;
     get isConnected(): boolean;

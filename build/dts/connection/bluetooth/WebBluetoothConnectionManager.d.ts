@@ -5,6 +5,7 @@ import { ConnectionType } from "../BaseConnectionManager.ts";
 declare class WebBluetoothConnectionManager extends BluetoothConnectionManager {
     #private;
     get bluetoothId(): string;
+    get canUpdateFirmware(): boolean;
     static get isSupported(): boolean;
     static get type(): ConnectionType;
     get device(): BluetoothDevice | undefined;

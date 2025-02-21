@@ -6,6 +6,11 @@ const _console = createConsole("BluetoothConnectionManager", { log: true });
 import { BluetoothCharacteristicName } from "./bluetoothUUIDs.ts";
 
 abstract class BluetoothConnectionManager extends BaseConnectionManager {
+  get isAvailable() {
+    // no way to tell if the user has turned bluetooth on or off
+    return true;
+  }
+
   isInRange = true;
 
   protected onCharacteristicValueChanged(characteristicName: BluetoothCharacteristicName, dataView: DataView) {
