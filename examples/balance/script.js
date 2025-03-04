@@ -164,6 +164,7 @@ const target = {
 
   reset() {
     balanceContainer.classList.remove("hover");
+    insideTargetTimeoutId = undefined;
 
     this.height = randomValueBetween(0.2, 0.3);
     this.start = randomValueBetween(0, 1 - this.height);
