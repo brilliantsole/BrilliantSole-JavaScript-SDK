@@ -86,6 +86,10 @@ const toggleConnectionButtons = {};
 const togglePressureDataButtons = {};
 /** @type {Object.<string, HTMLElement[]>} */
 const pressureSensorElementsContainers = {};
+/** @type {Object.<string, HTMLElement>} */
+const centerOfPressureElementsContainers = {};
+/** @type {Object.<string, HTMLElement>} */
+const devicePairCenterOfPressureElementsContainers = {};
 
 devicePair.sides.forEach((side) => {
   /** @type {HTMLElement} */
@@ -120,6 +124,9 @@ devicePair.sides.forEach((side) => {
   /** @type {HTMLElement[]} */
   const pressureSensorElements = Array.from(insoleContainer.querySelectorAll("[data-pressure]"));
   pressureSensorElementsContainers[side] = pressureSensorElements;
+
+  centerOfPressureElementsContainers[side] = insoleContainer.querySelector(".center");
+  devicePairCenterOfPressureElementsContainers[side] = insoleContainer.querySelector(".devicePairCenter");
 });
 
 devicePair.addEventListener("deviceIsConnected", (event) => {
@@ -169,8 +176,83 @@ devicePair.addEventListener("deviceGetSensorConfiguration", (event) => {
 devicePair.addEventListener("devicePressure", (event) => {
   const { pressure, side } = event.message;
 
-  pressure.sensors.forEach((sensor, index) => {
-    pressureSensorElementsContainers[side][index].style.opacity = sensor.normalizedValue;
+  if (pressureVisualizationMode != "devicePairWeightedValue") {
+    pressure.sensors.forEach((sensor, index) => {
+      var value = 0;
+      switch (pressureVisualizationMode) {
+        case "normalizedValue":
+          value = sensor.normalizedValue;
+          break;
+        case "scaledValue":
+          value = sensor.scaledValue * pressure.sensors.length;
+          break;
+        case "weightedValue":
+          value = (sensor.weightedValue * pressure.sensors.length) / 2;
+          break;
+      }
+      pressureSensorElementsContainers[side][index].style.opacity = value;
+    });
+  }
+});
+
+devicePair.addEventListener("devicePressure", (event) => {
+  const { pressure, side } = event.message;
+
+  const container = centerOfPressureElementsContainers[side];
+  container.style.opacity = pressure.normalizedSum;
+
+  var center;
+  switch (centerOfPressureVisualizationMode) {
+    case "center":
+      center = pressure.center;
+      break;
+    case "normalizedCenter":
+      center = pressure.normalizedCenter;
+      break;
+  }
+  if (!center) {
+    return;
+  }
+
+  container.style.left = `${center.x * 100}%`;
+  container.style.bottom = `${center.y * 100}%`;
+});
+
+devicePair.addEventListener("pressure", (event) => {
+  const { pressure } = event.message;
+  if (pressureVisualizationMode == "devicePairWeightedValue") {
+    pressure.sensors.forEach((sensor) => {
+      pressureSensorElementsContainers[sensor.side][sensor.index].style.opacity =
+        (sensor.weightedValue * pressure.sensors.length) / 2;
+    });
+  }
+});
+
+devicePair.addEventListener("pressure", (event) => {
+  const { pressure } = event.message;
+
+  var center;
+  switch (centerOfPressureVisualizationMode) {
+    case "center":
+      center = pressure.center;
+      break;
+    case "normalizedCenter":
+      center = pressure.normalizedCenter;
+      break;
+  }
+  var side;
+  if (center) {
+    side = center.x < 0.5 ? "left" : "right";
+  }
+  devicePair.sides.forEach((_side) => {
+    const container = devicePairCenterOfPressureElementsContainers[_side];
+    if (side == _side) {
+      container.style.opacity = pressure.normalizedSum;
+      container.style.left = `${(center.x % 0.5) * 2 * 100}%`;
+      container.style.bottom = `${center.y * 100}%`;
+    } else {
+      container.style.opacity = 0;
+    }
   });
 });
 
@@ -199,3 +281,39 @@ websocketClient.addEventListener("connectionStatus", () => {
   }
   toggleServerConnectionButton.disabled = disabled;
 });
+
+// PRESSURE VISUALIZATION
+
+const pressureVisualizationModes = ["scaledValue", "normalizedValue", "weightedValue", "devicePairWeightedValue"];
+let pressureVisualizationMode = "normalizedValue";
+
+/** @type {HTMLSelectElement} */
+const visualizationModeSelect = document.getElementById("pressureVisualizationMode");
+visualizationModeSelect.addEventListener("input", (event) => {
+  pressureVisualizationMode = event.target.value;
+  console.log({ pressureVisualizationMode });
+});
+/** @type {HTMLOptGroupElement} */
+const visualizationModeOptGroup = visualizationModeSelect.querySelector("optgroup");
+pressureVisualizationModes.forEach((pressureVisualizationMode) => {
+  visualizationModeOptGroup.appendChild(new Option(pressureVisualizationMode));
+});
+visualizationModeSelect.value = pressureVisualizationMode;
+
+// CENTER OF PRESSURE VISUALIZATION
+
+const centerOfPressureVisualizationModes = ["normalizedCenter", "center"];
+let centerOfPressureVisualizationMode = "normalizedCenter";
+
+/** @type {HTMLSelectElement} */
+const centerOfPressureVisualizationModeSelect = document.getElementById("centerOfPressureVisualizationMode");
+centerOfPressureVisualizationModeSelect.addEventListener("input", (event) => {
+  centerOfPressureVisualizationMode = event.target.value;
+  console.log({ centerOfPressureVisualizationMode });
+});
+/** @type {HTMLOptGroupElement} */
+const centerOfPressureVisualizationModeOptGroup = centerOfPressureVisualizationModeSelect.querySelector("optgroup");
+centerOfPressureVisualizationModes.forEach((centerOfPressureVisualizationMode) => {
+  centerOfPressureVisualizationModeOptGroup.appendChild(new Option(centerOfPressureVisualizationMode));
+});
+centerOfPressureVisualizationModeSelect.value = centerOfPressureVisualizationMode;

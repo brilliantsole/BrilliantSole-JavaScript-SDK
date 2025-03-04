@@ -1,7 +1,7 @@
 import { createConsole } from "../../utils/Console.ts";
 import BaseConnectionManager from "../BaseConnectionManager.ts";
 
-const _console = createConsole("BluetoothConnectionManager", { log: true });
+const _console = createConsole("BluetoothConnectionManager", { log: false });
 
 import { BluetoothCharacteristicName } from "./bluetoothUUIDs.ts";
 

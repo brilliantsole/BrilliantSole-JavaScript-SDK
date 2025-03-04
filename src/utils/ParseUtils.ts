@@ -2,7 +2,7 @@ import { sliceDataView } from "./ArrayBufferUtils.ts";
 import { createConsole } from "./Console.ts";
 import { textDecoder } from "./Text.ts";
 
-const _console = createConsole("ParseUtils", { log: true });
+const _console = createConsole("ParseUtils", { log: false });
 
 export function parseStringFromDataView(dataView: DataView, byteOffset: number = 0) {
   const stringLength = dataView.getUint8(byteOffset++);

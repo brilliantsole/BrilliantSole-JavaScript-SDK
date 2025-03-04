@@ -9,7 +9,7 @@ declare class CenterOfPressureHelper {
     #private;
     reset(): void;
     update(centerOfPressure: CenterOfPressure): void;
-    getNormalization(centerOfPressure: CenterOfPressure): CenterOfPressure;
-    updateAndGetNormalization(centerOfPressure: CenterOfPressure): Vector2;
+    getNormalization(centerOfPressure: CenterOfPressure, weightByRange: boolean): CenterOfPressure;
+    updateAndGetNormalization(centerOfPressure: CenterOfPressure, weightByRange: boolean): Vector2;
 }
 export default CenterOfPressureHelper;

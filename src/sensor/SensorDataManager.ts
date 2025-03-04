@@ -11,7 +11,7 @@ import { BarometerSensorTypes, ContinuousBarometerSensorTypes } from "./Baromete
 import Device from "../Device.ts";
 import { AddKeysAsPropertyToInterface, ExtendInterfaceValues, ValueOf } from "../utils/TypeScriptUtils.ts";
 
-const _console = createConsole("SensorDataManager", { log: true });
+const _console = createConsole("SensorDataManager", { log: false });
 
 export const SensorTypes = [...PressureSensorTypes, ...MotionSensorTypes, ...BarometerSensorTypes] as const;
 export type SensorType = (typeof SensorTypes)[number];

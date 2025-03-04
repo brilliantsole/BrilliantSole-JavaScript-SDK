@@ -11,7 +11,7 @@ import {
 } from "./bluetoothUUIDs.ts";
 import BluetoothConnectionManager from "./BluetoothConnectionManager.ts";
 
-const _console = createConsole("NobleConnectionManager", { log: true });
+const _console = createConsole("NobleConnectionManager", { log: false });
 
 /** NODE_START */
 import type * as noble from "@abandonware/noble";

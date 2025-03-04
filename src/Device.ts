@@ -78,7 +78,7 @@ import InformationManager, {
 import { FileLike } from "./utils/ArrayBufferUtils.ts";
 import DeviceManager from "./DeviceManager.ts";
 
-const _console = createConsole("Device", { log: true });
+const _console = createConsole("Device", { log: false });
 
 export const DeviceEventTypes = [
   "connectionMessage",

@@ -4,7 +4,7 @@ import EventDispatcher from "../utils/EventDispatcher.ts";
 import Device, { SendMessageCallback } from "../Device.ts";
 import autoBind from "../../node_modules/auto-bind/index.js";
 
-const _console = createConsole("SensorConfigurationManager", { log: true });
+const _console = createConsole("SensorConfigurationManager", { log: false });
 
 export type SensorConfiguration = { [sensorType in SensorType]?: number };
 

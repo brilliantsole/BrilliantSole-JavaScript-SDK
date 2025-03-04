@@ -16,7 +16,7 @@ import { DiscoveredDevice, DiscoveredDevicesMap, ScannerEventMessages } from "..
 import ClientConnectionManager from "../connection/ClientConnectionManager.ts";
 import { DeviceManager } from "../BS.ts";
 
-const _console = createConsole("BaseClient", { log: true });
+const _console = createConsole("BaseClient", { log: false });
 
 export const ClientConnectionStatuses = ["notConnected", "connecting", "connected", "disconnecting"] as const;
 export type ClientConnectionStatus = (typeof ClientConnectionStatuses)[number];

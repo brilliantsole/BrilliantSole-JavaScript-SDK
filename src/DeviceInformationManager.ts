@@ -3,7 +3,7 @@ import { createConsole } from "./utils/Console.ts";
 import EventDispatcher from "./utils/EventDispatcher.ts";
 import { textDecoder } from "./utils/Text.ts";
 
-const _console = createConsole("DeviceInformationManager", { log: true });
+const _console = createConsole("DeviceInformationManager", { log: false });
 
 export interface PnpId {
   source: "Bluetooth" | "USB";

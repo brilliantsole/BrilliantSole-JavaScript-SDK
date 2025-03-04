@@ -1,72 +1,72 @@
 <html>
-    <head>
-        <title>Device Pair | BrilliantSole JavaScript SDK</title>
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico" />
-        <script type="module" src="./script.js"></script>
-    </head>
+  <head>
+    <title>Device Pair | BrilliantSole JavaScript SDK</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico" />
+    <script type="module" src="./script.js"></script>
+  </head>
 
-    <style>
-        #devices {
-            display: flex;
-            flex-direction: row;
-            gap: 1rem;
-        }
+  <style>
+    #devices {
+      display: flex;
+      flex-direction: row;
+      gap: 1rem;
+    }
 
-        .pressure {
-            height: 6rem;
-        }
-    </style>
+    .pressure {
+      height: 10rem;
+    }
+  </style>
 
-    <body>
-        <nav>
-            <a href="../../">home</a>
-        </nav>
+  <body>
+    <nav>
+      <a href="../../">home</a>
+    </nav>
 
-        <h1>Device Pair | BrilliantSole JavaScript SDK</h1>
+    <h1>Device Pair | BrilliantSole JavaScript SDK</h1>
 
-        <div>
-            <h2>available devices</h2>
-            <div id="availableDevices">
-                <template id="availableDeviceTemplate">
-                    <div class="availableDevice">
-                        <ul>
-                            <li><b>name: </b> <span class="name"></span></li>
-                            <li><b>type: </b> <span class="type"></span></li>
-                            <li><button class="toggleConnection">connect</button></li>
-                        </ul>
-                    </div>
-                </template>
-            </div>
-        </div>
-
-        <br />
-
-        <div>
-            <button id="addDevice">add device</button>
-            <button id="togglePressureData" disabled>enable pressure data</button>
-            <button id="resetPressureRange" disabled>recalibrate</button>
-        </div>
-
-        <div id="devicePair">
-            <h2>Device Pair</h2>
-
-            <h3>pressure</h3>
-            <pre class="pressure"></pre>
-        </div>
-
-        <div id="devices"></div>
-
-        <template id="deviceTemplate">
-            <div class="device">
-                <h2><span class="side"></span> side</h2>
-                <p>
-                    <button class="toggleConnection" disabled>disconnect</button>
-                </p>
-
-                <h3>pressure</h3>
-                <pre class="pressure"></pre>
-            </div>
+    <div>
+      <h2>available devices</h2>
+      <div id="availableDevices">
+        <template id="availableDeviceTemplate">
+          <div class="availableDevice">
+            <ul>
+              <li><b>name: </b> <span class="name"></span></li>
+              <li><b>type: </b> <span class="type"></span></li>
+              <li><button class="toggleConnection">connect</button></li>
+            </ul>
+          </div>
         </template>
-    </body>
+      </div>
+    </div>
+
+    <br />
+
+    <div>
+      <button id="addDevice">add device</button>
+      <button id="togglePressureData" disabled>enable pressure data</button>
+      <button id="resetPressureRange" disabled>recalibrate</button>
+    </div>
+
+    <div id="devicePair">
+      <h2>Device Pair</h2>
+
+      <h3>pressure</h3>
+      <pre class="pressure"></pre>
+    </div>
+
+    <div id="devices"></div>
+
+    <template id="deviceTemplate">
+      <div class="device">
+        <h2><span class="side"></span> side</h2>
+        <p>
+          <button class="toggleConnection" disabled>disconnect</button>
+        </p>
+
+        <h3>pressure</h3>
+        <pre class="pressure"></pre>
+      </div>
+    </template>
+  </body>
 </html>

@@ -1,6 +1,6 @@
 import { createConsole } from "./Console.ts";
 
-const _console = createConsole("checksum", { log: true });
+const _console = createConsole("checksum", { log: false });
 
 // https://github.com/googlecreativelab/tiny-motion-trainer/blob/5fceb49f018ae0c403bf9f0ccc437309c2acb507/frontend/src/tf4micro-motion-kit/modules/bleFileTransfer#L195
 

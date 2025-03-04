@@ -6,7 +6,7 @@ import Device, { SendMessageCallback } from "./Device.ts";
 import EventDispatcher from "./utils/EventDispatcher.ts";
 import autoBind from "auto-bind";
 
-const _console = createConsole("FileTransferManager", { log: true });
+const _console = createConsole("FileTransferManager", { log: false });
 
 export const FileTransferMessageTypes = [
   "maxFileLength",

@@ -9,7 +9,7 @@ import EventDispatcher from "../utils/EventDispatcher.ts";
 import DevicePair from "./DevicePair.ts";
 import { AddKeysAsPropertyToInterface, ExtendInterfaceValues, ValueOf } from "../utils/TypeScriptUtils.ts";
 
-const _console = createConsole("DevicePairSensorDataManager", { log: true });
+const _console = createConsole("DevicePairSensorDataManager", { log: false });
 
 export const DevicePairSensorTypes = ["pressure", "sensorData"] as const;
 export type DevicePairSensorType = (typeof DevicePairSensorTypes)[number];

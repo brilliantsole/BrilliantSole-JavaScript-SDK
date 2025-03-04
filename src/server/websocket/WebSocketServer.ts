@@ -12,7 +12,7 @@ import {
   createWebSocketMessage,
 } from "./WebSocketUtils.ts";
 
-const _console = createConsole("WebSocketServer", { log: true });
+const _console = createConsole("WebSocketServer", { log: false });
 
 /** NODE_START */
 import type * as ws from "ws";

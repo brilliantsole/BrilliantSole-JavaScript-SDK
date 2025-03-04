@@ -23,16 +23,16 @@ class CenterOfPressureHelper {
     this.#range.x.update(centerOfPressure.x);
     this.#range.y.update(centerOfPressure.y);
   }
-  getNormalization(centerOfPressure: CenterOfPressure): CenterOfPressure {
+  getNormalization(centerOfPressure: CenterOfPressure, weightByRange: boolean): CenterOfPressure {
     return {
-      x: this.#range.x.getNormalization(centerOfPressure.x, false),
-      y: this.#range.y.getNormalization(centerOfPressure.y, false),
+      x: this.#range.x.getNormalization(centerOfPressure.x, weightByRange),
+      y: this.#range.y.getNormalization(centerOfPressure.y, weightByRange),
     };
   }
 
-  updateAndGetNormalization(centerOfPressure: CenterOfPressure) {
+  updateAndGetNormalization(centerOfPressure: CenterOfPressure, weightByRange: boolean) {
     this.update(centerOfPressure);
-    return this.getNormalization(centerOfPressure);
+    return this.getNormalization(centerOfPressure, weightByRange);
   }
 }
 

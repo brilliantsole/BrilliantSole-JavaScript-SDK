@@ -33,7 +33,7 @@
 import { CBOR } from "./cbor.js";
 import { createConsole } from "./Console.ts";
 
-const _console = createConsole("mcumgr", { log: true });
+const _console = createConsole("mcumgr", { log: false });
 
 export const constants = {
   // Opcodes

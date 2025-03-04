@@ -11,7 +11,7 @@ export type PressureSensorType = (typeof PressureSensorTypes)[number];
 export const ContinuousPressureSensorTypes = PressureSensorTypes;
 export type ContinuousPressureSensorType = (typeof ContinuousPressureSensorTypes)[number];
 
-import { Vector2 } from "../utils/MathUtils.ts";
+import { computeVoronoiWeights, Vector2 } from "../utils/MathUtils.ts";
 export type PressureSensorPosition = Vector2;
 
 import { CenterOfPressure } from "../utils/CenterOfPressureHelper.ts";
@@ -22,6 +22,7 @@ export interface PressureSensorValue {
   scaledValue: number;
   normalizedValue: number;
   weightedValue: number;
+  weight: number;
 }
 
 export interface PressureData {
@@ -48,6 +49,13 @@ class PressureSensorDataManager {
     return this.positions.length;
   }
 
+  #sensorWeights: number[] = [];
+  #generateSensorWeights() {
+    this.#sensorWeights = this.#positions.map((_) => 1);
+    //this.#sensorWeights = computeVoronoiWeights(this.#positions);
+    _console.log("sensorWeights", this.#sensorWeights);
+  }
+
   parsePositions(dataView: DataView) {
     const positions: PressureSensorPosition[] = [];
 
@@ -68,40 +76,50 @@ class PressureSensorDataManager {
 
     this.#sensorRangeHelpers = createArray(this.numberOfSensors, () => new RangeHelper());
 
+    this.#generateSensorWeights();
+
     this.resetRange();
   }
 
   #sensorRangeHelpers!: RangeHelper[];
+  #normalizedSumRangeHelper = new RangeHelper();
 
   #centerOfPressureHelper = new CenterOfPressureHelper();
 
   resetRange() {
-    this.#sensorRangeHelpers.forEach((rangeHelper) => rangeHelper.reset());
+    this.#sensorRangeHelpers?.forEach((rangeHelper) => rangeHelper.reset());
     this.#centerOfPressureHelper.reset();
+    this.#normalizedSumRangeHelper.reset();
   }
 
   parseData(dataView: DataView, scalar: number) {
     const pressure: PressureData = { sensors: [], scaledSum: 0, normalizedSum: 0 };
     for (let index = 0, byteOffset = 0; byteOffset < dataView.byteLength; index++, byteOffset += 2) {
       const rawValue = dataView.getUint16(byteOffset, true);
-      const scaledValue = rawValue * scalar;
+      let scaledValue = (rawValue * scalar) / this.numberOfSensors;
       const rangeHelper = this.#sensorRangeHelpers[index];
-      const normalizedValue = rangeHelper.updateAndGetNormalization(scaledValue, true);
+      const normalizedValue = rangeHelper.updateAndGetNormalization(scaledValue, false);
+
+      const weight = this.#sensorWeights[index];
+      //scaledValue -= rangeHelper.min;
+      scaledValue *= weight;
+
       const position = this.positions[index];
-      pressure.sensors[index] = { rawValue, scaledValue, normalizedValue, position, weightedValue: 0 };
+      pressure.sensors[index] = { rawValue, scaledValue, normalizedValue, position, weightedValue: 0, weight };
 
       pressure.scaledSum += scaledValue;
-      pressure.normalizedSum += normalizedValue / this.numberOfSensors;
+      //pressure.normalizedSum += normalizedValue;
     }
+    pressure.normalizedSum = this.#normalizedSumRangeHelper.updateAndGetNormalization(pressure.scaledSum, false);
 
-    if (pressure.scaledSum > 0 && pressure.normalizedSum > 0.001) {
+    if (pressure.scaledSum > 0) {
       pressure.center = { x: 0, y: 0 };
       pressure.sensors.forEach((sensor) => {
         sensor.weightedValue = sensor.scaledValue / pressure.scaledSum;
         pressure.center!.x += sensor.position.x * sensor.weightedValue;
         pressure.center!.y += sensor.position.y * sensor.weightedValue;
       });
-      pressure.normalizedCenter = this.#centerOfPressureHelper.updateAndGetNormalization(pressure.center);
+      pressure.normalizedCenter = this.#centerOfPressureHelper.updateAndGetNormalization(pressure.center, false);
     }
 
     _console.log({ pressure });

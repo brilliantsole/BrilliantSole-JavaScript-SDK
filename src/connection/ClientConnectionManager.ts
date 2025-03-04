@@ -8,7 +8,7 @@ import { DeviceEventType } from "../Device.ts";
 import { ClientDeviceMessage } from "../server/ServerUtils.ts";
 import BaseClient from "../server/BaseClient.ts";
 
-const _console = createConsole("ClientConnectionManager", { log: true });
+const _console = createConsole("ClientConnectionManager", { log: false });
 
 export type SendClientMessageCallback = (...messages: ClientDeviceMessage[]) => void;
 

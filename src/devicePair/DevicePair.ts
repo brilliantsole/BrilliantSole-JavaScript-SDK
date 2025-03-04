@@ -18,7 +18,7 @@ import { DevicePairSensorDataEventMessages, DevicePairSensorDataEventTypes } fro
 import { AddPrefixToInterfaceKeys, ExtendInterfaceValues, KeyOf } from "../utils/TypeScriptUtils.ts";
 import DeviceManager from "../DeviceManager.ts";
 
-const _console = createConsole("DevicePair", { log: true });
+const _console = createConsole("DevicePair", { log: false });
 
 interface BaseDevicePairDeviceEventMessage {
   device: Device;
@@ -233,6 +233,7 @@ class DevicePair {
     }
   }
   resetPressureRange() {
+    InsoleSides.forEach((side) => this[side]?.resetPressureRange());
     this.#sensorDataManager.resetPressureRange();
   }
 

@@ -12,7 +12,6 @@
     }
     .insole {
       position: relative;
-      height: 500px;
     }
     img:not(.overlay) {
       position: relative;
@@ -20,7 +19,9 @@
     img.overlay {
       position: absolute;
     }
-    .insole.left .viz {
+    .insole.left * [data-pressure],
+    .insole.left * [data-haptics],
+    .insole.left * img {
       -webkit-transform: scaleX(-1);
       transform: scaleX(-1);
     }
@@ -86,6 +87,36 @@
       -webkit-mask-image: url(../../assets/images/haptics-rear.svg);
       mask-image: url(../../assets/images/haptics-rear.svg);
     }
+
+    .viz {
+      position: relative;
+      height: 500px;
+    }
+
+    .center,
+    .devicePairCenter {
+      position: absolute;
+      left: 0%;
+      bottom: 0%;
+      width: 20px;
+      height: 20px;
+      opacity: 0;
+    }
+    .center > div,
+    .devicePairCenter > div {
+      border-radius: 50%;
+      position: relative;
+      top: 50%;
+      left: -50%;
+      width: 100%;
+      height: 100%;
+    }
+    .center > div {
+      background-color: green;
+    }
+    .devicePairCenter > div {
+      background-color: orange;
+    }
   </style>
   <body>
     <nav>
@@ -115,6 +146,24 @@
       <button id="addDevice">add device</button>
     </p>
 
+    <p>
+      <label>
+        pressure visualization
+        <select id="pressureVisualizationMode">
+          <optgroup label="pressure visualization mode"></optgroup>
+        </select>
+      </label>
+    </p>
+
+    <p>
+      <label>
+        center of pressure visualization
+        <select id="centerOfPressureVisualizationMode">
+          <optgroup label="center of pressure visualization mode"></optgroup>
+        </select>
+      </label>
+    </p>
+
     <div id="insoles"></div>
 
     <template id="insoleTemplate">
@@ -125,6 +174,12 @@
           <button class="togglePressureData" disabled>enable pressure data</button>
         </p>
         <div class="viz">
+          <div class="center">
+            <div></div>
+          </div>
+          <div class="devicePairCenter">
+            <div></div>
+          </div>
           <div data-pressure="0"></div>
           <div data-pressure="1"></div>
           <div data-pressure="2"></div>

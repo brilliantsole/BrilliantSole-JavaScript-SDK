@@ -6,7 +6,7 @@ import { MCUManager, constants } from "./utils/mcumgr.js";
 import { FileLike } from "./utils/ArrayBufferUtils.ts";
 import autoBind from "auto-bind";
 
-const _console = createConsole("FirmwareManager", { log: true });
+const _console = createConsole("FirmwareManager", { log: false });
 
 export const FirmwareMessageTypes = ["smp"] as const;
 export type FirmwareMessageType = (typeof FirmwareMessageTypes)[number];

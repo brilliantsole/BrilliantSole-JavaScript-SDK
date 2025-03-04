@@ -279,6 +279,14 @@ device.addEventListener("isConnected", () => {
   }
 });
 
+// PRESSURE RANGE
+
+/** @type {HTMLButtonElement} */
+const resetPressureRangeButton = document.getElementById("resetPressureRange");
+resetPressureRangeButton.addEventListener("click", () => {
+  device.resetPressureRange();
+});
+
 // SENSOR DATA
 
 /** @type {HTMLTemplateElement} */

@@ -12,7 +12,7 @@ import BluetoothConnectionManager from "./BluetoothConnectionManager.ts";
 import { BluetoothCharacteristicName, BluetoothServiceName } from "./bluetoothUUIDs.ts";
 import { ConnectionType } from "../BaseConnectionManager.ts";
 
-const _console = createConsole("WebBluetoothConnectionManager", { log: true });
+const _console = createConsole("WebBluetoothConnectionManager", { log: false });
 
 type WebBluetoothInterface = webbluetooth.Bluetooth | Bluetooth;
 

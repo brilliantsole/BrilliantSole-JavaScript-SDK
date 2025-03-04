@@ -1,6 +1,7 @@
+import { PressureSensorPosition } from "../sensor/PressureSensorDataManager.ts";
 import { createConsole } from "./Console.ts";
 
-const _console = createConsole("MathUtils", { log: true });
+const _console = createConsole("MathUtils", { log: false });
 
 export function getInterpolation(value: number, min: number, max: number, span: number) {
   if (span == undefined) {
@@ -50,4 +51,33 @@ export interface Euler {
   heading: number;
   pitch: number;
   roll: number;
+}
+
+export function computeVoronoiWeights(points: PressureSensorPosition[], sampleCount = 100000) {
+  const n = points.length;
+  const counts = new Array(n).fill(0);
+
+  for (let i = 0; i < sampleCount; i++) {
+    const x = Math.random();
+    const y = Math.random();
+
+    // Find the closest input point
+    let minDist = Infinity;
+    let closestIndex = -1;
+
+    for (let j = 0; j < n; j++) {
+      const { x: px, y: py } = points[j];
+      const dist = (px - x) ** 2 + (py - y) ** 2; // Squared Euclidean distance
+      if (dist < minDist) {
+        minDist = dist;
+        closestIndex = j;
+      }
+    }
+
+    // Increment count for the closest point
+    counts[closestIndex]++;
+  }
+
+  // Convert counts to weights (sum to 1)
+  return counts.map((c) => c / sampleCount);
 }

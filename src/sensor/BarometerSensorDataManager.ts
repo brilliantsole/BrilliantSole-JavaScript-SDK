@@ -13,7 +13,7 @@ export interface BarometerSensorDataEventMessages {
   };
 }
 
-const _console = createConsole("BarometerSensorDataManager", { log: true });
+const _console = createConsole("BarometerSensorDataManager", { log: false });
 
 class BarometerSensorDataManager {
   #calculcateAltitude(pressure: number) {

@@ -158,8 +158,10 @@ devicePair.sides.forEach((side) => {
 
     pressurePre.textContent = JSON.stringify(
       {
-        center: pressure.normalizedCenter,
-        sum: pressure.normalizedSum,
+        center: pressure.center,
+        scaledSum: pressure.scaledSum,
+        normalizedCenter: pressure.normalizedCenter,
+        normalizedSum: pressure.normalizedSum,
       },
       (key, value) => value?.toFixed?.(3) || value,
       2
@@ -178,8 +180,10 @@ devicePair.addEventListener("pressure", (event) => {
 
   devicePairPressurePre.textContent = JSON.stringify(
     {
-      center: pressure.normalizedCenter,
-      sum: pressure.normalizedSum,
+      center: pressure.center,
+      scaledSum: pressure.scaledSum,
+      normalizedCenter: pressure.normalizedCenter,
+      normalizedSum: pressure.normalizedSum,
     },
     (key, value) => value?.toFixed?.(3) || value,
     2

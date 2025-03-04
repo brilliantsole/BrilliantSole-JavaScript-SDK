@@ -325,7 +325,7 @@ class Timer {
 }
 _Timer_callback = new WeakMap(), _Timer_interval = new WeakMap(), _Timer_intervalId = new WeakMap();
 
-createConsole("checksum", { log: true });
+createConsole("checksum", { log: false });
 function crc32ForByte(r) {
     for (let j = 0; j < 8; ++j) {
         r = (r & 1 ? 0 : 0xedb88320) ^ (r >>> 1);
@@ -501,7 +501,7 @@ function autoBind(self, {include, exclude} = {}) {
 }
 
 var _FileTransferManager_instances, _a$4, _FileTransferManager_dispatchEvent_get, _FileTransferManager_assertValidType, _FileTransferManager_assertValidTypeEnum, _FileTransferManager_assertValidStatusEnum, _FileTransferManager_assertValidCommand, _FileTransferManager_MaxLength, _FileTransferManager_maxLength, _FileTransferManager_parseMaxLength, _FileTransferManager_updateMaxLength, _FileTransferManager_assertValidLength, _FileTransferManager_type, _FileTransferManager_parseType, _FileTransferManager_updateType, _FileTransferManager_setType, _FileTransferManager_length, _FileTransferManager_parseLength, _FileTransferManager_updateLength, _FileTransferManager_setLength, _FileTransferManager_checksum, _FileTransferManager_parseChecksum, _FileTransferManager_updateChecksum, _FileTransferManager_setChecksum, _FileTransferManager_setCommand, _FileTransferManager_status, _FileTransferManager_parseStatus, _FileTransferManager_updateStatus, _FileTransferManager_assertIsIdle, _FileTransferManager_assertIsNotIdle, _FileTransferManager_receivedBlocks, _FileTransferManager_parseBlock, _FileTransferManager_buffer, _FileTransferManager_bytesTransferred, _FileTransferManager_send, _FileTransferManager_sendBlock, _FileTransferManager_parseBytesTransferred, _FileTransferManager_isServerSide;
-const _console$s = createConsole("FileTransferManager", { log: true });
+const _console$s = createConsole("FileTransferManager", { log: false });
 const FileTransferMessageTypes = [
     "maxFileLength",
     "getFileType",
@@ -826,7 +826,7 @@ _a$4 = FileTransferManager, _FileTransferManager_maxLength = new WeakMap(), _Fil
 };
 _FileTransferManager_MaxLength = { value: 0 };
 
-const _console$r = createConsole("MathUtils", { log: true });
+const _console$r = createConsole("MathUtils", { log: false });
 function getInterpolation(value, min, max, span) {
     if (span == undefined) {
         span = max - min;
@@ -914,15 +914,15 @@ class CenterOfPressureHelper {
         __classPrivateFieldGet(this, _CenterOfPressureHelper_range, "f").x.update(centerOfPressure.x);
         __classPrivateFieldGet(this, _CenterOfPressureHelper_range, "f").y.update(centerOfPressure.y);
     }
-    getNormalization(centerOfPressure) {
+    getNormalization(centerOfPressure, weightByRange) {
         return {
-            x: __classPrivateFieldGet(this, _CenterOfPressureHelper_range, "f").x.getNormalization(centerOfPressure.x, false),
-            y: __classPrivateFieldGet(this, _CenterOfPressureHelper_range, "f").y.getNormalization(centerOfPressure.y, false),
+            x: __classPrivateFieldGet(this, _CenterOfPressureHelper_range, "f").x.getNormalization(centerOfPressure.x, weightByRange),
+            y: __classPrivateFieldGet(this, _CenterOfPressureHelper_range, "f").y.getNormalization(centerOfPressure.y, weightByRange),
         };
     }
-    updateAndGetNormalization(centerOfPressure) {
+    updateAndGetNormalization(centerOfPressure, weightByRange) {
         this.update(centerOfPressure);
-        return this.getNormalization(centerOfPressure);
+        return this.getNormalization(centerOfPressure, weightByRange);
     }
 }
 _CenterOfPressureHelper_range = new WeakMap();
@@ -943,15 +943,18 @@ function arrayWithoutDuplicates(array) {
     return array.filter((value, index) => array.indexOf(value) == index);
 }
 
-var _PressureSensorDataManager_positions, _PressureSensorDataManager_sensorRangeHelpers, _PressureSensorDataManager_centerOfPressureHelper;
+var _PressureSensorDataManager_instances, _PressureSensorDataManager_positions, _PressureSensorDataManager_sensorWeights, _PressureSensorDataManager_generateSensorWeights, _PressureSensorDataManager_sensorRangeHelpers, _PressureSensorDataManager_normalizedSumRangeHelper, _PressureSensorDataManager_centerOfPressureHelper;
 const _console$q = createConsole("PressureDataManager", { log: true });
 const PressureSensorTypes = ["pressure"];
 const ContinuousPressureSensorTypes = PressureSensorTypes;
 const DefaultNumberOfPressureSensors = 8;
 class PressureSensorDataManager {
     constructor() {
+        _PressureSensorDataManager_instances.add(this);
         _PressureSensorDataManager_positions.set(this, []);
+        _PressureSensorDataManager_sensorWeights.set(this, []);
         _PressureSensorDataManager_sensorRangeHelpers.set(this, void 0);
+        _PressureSensorDataManager_normalizedSumRangeHelper.set(this, new RangeHelper());
         _PressureSensorDataManager_centerOfPressureHelper.set(this, new CenterOfPressureHelper());
     }
     get positions() {
@@ -971,40 +974,47 @@ class PressureSensorDataManager {
         _console$q.log({ positions });
         __classPrivateFieldSet(this, _PressureSensorDataManager_positions, positions, "f");
         __classPrivateFieldSet(this, _PressureSensorDataManager_sensorRangeHelpers, createArray(this.numberOfSensors, () => new RangeHelper()), "f");
+        __classPrivateFieldGet(this, _PressureSensorDataManager_instances, "m", _PressureSensorDataManager_generateSensorWeights).call(this);
         this.resetRange();
     }
     resetRange() {
-        __classPrivateFieldGet(this, _PressureSensorDataManager_sensorRangeHelpers, "f").forEach((rangeHelper) => rangeHelper.reset());
+        __classPrivateFieldGet(this, _PressureSensorDataManager_sensorRangeHelpers, "f")?.forEach((rangeHelper) => rangeHelper.reset());
         __classPrivateFieldGet(this, _PressureSensorDataManager_centerOfPressureHelper, "f").reset();
+        __classPrivateFieldGet(this, _PressureSensorDataManager_normalizedSumRangeHelper, "f").reset();
     }
     parseData(dataView, scalar) {
         const pressure = { sensors: [], scaledSum: 0, normalizedSum: 0 };
         for (let index = 0, byteOffset = 0; byteOffset < dataView.byteLength; index++, byteOffset += 2) {
             const rawValue = dataView.getUint16(byteOffset, true);
-            const scaledValue = rawValue * scalar;
+            let scaledValue = (rawValue * scalar) / this.numberOfSensors;
             const rangeHelper = __classPrivateFieldGet(this, _PressureSensorDataManager_sensorRangeHelpers, "f")[index];
-            const normalizedValue = rangeHelper.updateAndGetNormalization(scaledValue, true);
+            const normalizedValue = rangeHelper.updateAndGetNormalization(scaledValue, false);
+            const weight = __classPrivateFieldGet(this, _PressureSensorDataManager_sensorWeights, "f")[index];
+            scaledValue *= weight;
             const position = this.positions[index];
-            pressure.sensors[index] = { rawValue, scaledValue, normalizedValue, position, weightedValue: 0 };
+            pressure.sensors[index] = { rawValue, scaledValue, normalizedValue, position, weightedValue: 0, weight };
             pressure.scaledSum += scaledValue;
-            pressure.normalizedSum += normalizedValue / this.numberOfSensors;
         }
-        if (pressure.scaledSum > 0 && pressure.normalizedSum > 0.001) {
+        pressure.normalizedSum = __classPrivateFieldGet(this, _PressureSensorDataManager_normalizedSumRangeHelper, "f").updateAndGetNormalization(pressure.scaledSum, false);
+        if (pressure.scaledSum > 0) {
             pressure.center = { x: 0, y: 0 };
             pressure.sensors.forEach((sensor) => {
                 sensor.weightedValue = sensor.scaledValue / pressure.scaledSum;
                 pressure.center.x += sensor.position.x * sensor.weightedValue;
                 pressure.center.y += sensor.position.y * sensor.weightedValue;
             });
-            pressure.normalizedCenter = __classPrivateFieldGet(this, _PressureSensorDataManager_centerOfPressureHelper, "f").updateAndGetNormalization(pressure.center);
+            pressure.normalizedCenter = __classPrivateFieldGet(this, _PressureSensorDataManager_centerOfPressureHelper, "f").updateAndGetNormalization(pressure.center, false);
         }
         _console$q.log({ pressure });
         return pressure;
     }
 }
-_PressureSensorDataManager_positions = new WeakMap(), _PressureSensorDataManager_sensorRangeHelpers = new WeakMap(), _PressureSensorDataManager_centerOfPressureHelper = new WeakMap();
+_PressureSensorDataManager_positions = new WeakMap(), _PressureSensorDataManager_sensorWeights = new WeakMap(), _PressureSensorDataManager_sensorRangeHelpers = new WeakMap(), _PressureSensorDataManager_normalizedSumRangeHelper = new WeakMap(), _PressureSensorDataManager_centerOfPressureHelper = new WeakMap(), _PressureSensorDataManager_instances = new WeakSet(), _PressureSensorDataManager_generateSensorWeights = function _PressureSensorDataManager_generateSensorWeights() {
+    __classPrivateFieldSet(this, _PressureSensorDataManager_sensorWeights, __classPrivateFieldGet(this, _PressureSensorDataManager_positions, "f").map((_) => 1), "f");
+    _console$q.log("sensorWeights", __classPrivateFieldGet(this, _PressureSensorDataManager_sensorWeights, "f"));
+};
 
-const _console$p = createConsole("MotionSensorDataManager", { log: true });
+const _console$p = createConsole("MotionSensorDataManager", { log: false });
 const MotionSensorTypes = [
     "acceleration",
     "gravity",
@@ -1097,7 +1107,7 @@ class MotionSensorDataManager {
 var _BarometerSensorDataManager_instances, _BarometerSensorDataManager_calculcateAltitude;
 const BarometerSensorTypes = ["barometer"];
 const ContinuousBarometerSensorTypes = BarometerSensorTypes;
-const _console$o = createConsole("BarometerSensorDataManager", { log: true });
+const _console$o = createConsole("BarometerSensorDataManager", { log: false });
 class BarometerSensorDataManager {
     constructor() {
         _BarometerSensorDataManager_instances.add(this);
@@ -1121,7 +1131,7 @@ _BarometerSensorDataManager_instances = new WeakSet(), _BarometerSensorDataManag
     return h;
 };
 
-const _console$n = createConsole("ParseUtils", { log: true });
+const _console$n = createConsole("ParseUtils", { log: false });
 function parseStringFromDataView(dataView, byteOffset = 0) {
     const stringLength = dataView.getUint8(byteOffset++);
     const string = textDecoder.decode(dataView.buffer.slice(dataView.byteOffset + byteOffset, dataView.byteOffset + byteOffset + stringLength));
@@ -1151,7 +1161,7 @@ function parseMessage(dataView, messageTypes, callback, context, parseMessageLen
 }
 
 var _SensorDataManager_scalars;
-const _console$m = createConsole("SensorDataManager", { log: true });
+const _console$m = createConsole("SensorDataManager", { log: false });
 const SensorTypes = [...PressureSensorTypes, ...MotionSensorTypes, ...BarometerSensorTypes];
 const ContinuousSensorTypes = [
     ...ContinuousPressureSensorTypes,
@@ -1262,7 +1272,7 @@ class SensorDataManager {
 _SensorDataManager_scalars = new WeakMap();
 
 var _SensorConfigurationManager_instances, _a$3, _SensorConfigurationManager_dispatchEvent_get, _SensorConfigurationManager_availableSensorTypes, _SensorConfigurationManager_assertAvailableSensorType, _SensorConfigurationManager_configuration, _SensorConfigurationManager_updateConfiguration, _SensorConfigurationManager_isRedundant, _SensorConfigurationManager_parse, _SensorConfigurationManager_AssertValidSensorRate, _SensorConfigurationManager_assertValidSensorRate, _SensorConfigurationManager_createData, _SensorConfigurationManager_ZeroSensorConfiguration;
-const _console$l = createConsole("SensorConfigurationManager", { log: true });
+const _console$l = createConsole("SensorConfigurationManager", { log: false });
 const MaxSensorRate = 2 ** 16 - 1;
 const SensorRateStep = 5;
 const SensorConfigurationMessageTypes = ["getSensorConfiguration", "setSensorConfiguration"];
@@ -1386,7 +1396,7 @@ _SensorConfigurationManager_ZeroSensorConfiguration = { value: {} };
 })();
 
 var _TfliteManager_instances, _TfliteManager_assertValidTask, _TfliteManager_assertValidTaskEnum, _TfliteManager_dispatchEvent_get, _TfliteManager_name, _TfliteManager_parseName, _TfliteManager_updateName, _TfliteManager_task, _TfliteManager_parseTask, _TfliteManager_updateTask, _TfliteManager_sampleRate, _TfliteManager_parseSampleRate, _TfliteManager_updateSampleRate, _TfliteManager_sensorTypes, _TfliteManager_parseSensorTypes, _TfliteManager_updateSensorTypes, _TfliteManager_isReady, _TfliteManager_parseIsReady, _TfliteManager_updateIsReady, _TfliteManager_assertIsReady, _TfliteManager_captureDelay, _TfliteManager_parseCaptureDelay, _TfliteManager_updateCaptueDelay, _TfliteManager_threshold, _TfliteManager_parseThreshold, _TfliteManager_updateThreshold, _TfliteManager_inferencingEnabled, _TfliteManager_parseInferencingEnabled, _TfliteManager_updateInferencingEnabled, _TfliteManager_parseInference;
-const _console$k = createConsole("TfliteManager", { log: true });
+const _console$k = createConsole("TfliteManager", { log: false });
 const TfliteMessageTypes = [
     "getTfliteName",
     "setTfliteName",
@@ -1721,7 +1731,7 @@ _TfliteManager_name = new WeakMap(), _TfliteManager_task = new WeakMap(), _Tflit
 };
 
 var _DeviceInformationManager_instances, _DeviceInformationManager_dispatchEvent_get, _DeviceInformationManager_information, _DeviceInformationManager_isComplete_get, _DeviceInformationManager_update;
-const _console$j = createConsole("DeviceInformationManager", { log: true });
+const _console$j = createConsole("DeviceInformationManager", { log: false });
 const DeviceInformationMessageTypes = [
     "manufacturerName",
     "modelNumber",
@@ -1814,7 +1824,7 @@ _DeviceInformationManager_information = new WeakMap(), _DeviceInformationManager
 };
 
 var _InformationManager_instances, _InformationManager_dispatchEvent_get, _InformationManager_isCharging, _InformationManager_updateIsCharging, _InformationManager_batteryCurrent, _InformationManager_updateBatteryCurrent, _InformationManager_id, _InformationManager_updateId, _InformationManager_name, _InformationManager_type, _InformationManager_assertValidDeviceType, _InformationManager_assertValidDeviceTypeEnum, _InformationManager_setTypeEnum, _InformationManager_mtu, _InformationManager_updateMtu, _InformationManager_isCurrentTimeSet, _InformationManager_onCurrentTime, _InformationManager_setCurrentTime;
-const _console$i = createConsole("InformationManager", { log: true });
+const _console$i = createConsole("InformationManager", { log: false });
 const DeviceTypes = ["leftInsole", "rightInsole"];
 const InsoleSides = ["left", "right"];
 const MinNameLength = 2;
@@ -2333,7 +2343,7 @@ _VibrationManager_instances = new WeakSet(), _VibrationManager_verifyLocation = 
 };
 
 var _BaseConnectionManager_instances, _a$2, _BaseConnectionManager_AssertValidTxRxMessageType, _BaseConnectionManager_assertIsSupported, _BaseConnectionManager_status, _BaseConnectionManager_assertIsNotConnected, _BaseConnectionManager_assertIsNotConnecting, _BaseConnectionManager_assertIsConnected, _BaseConnectionManager_assertIsNotDisconnecting, _BaseConnectionManager_assertIsConnectedAndNotDisconnecting, _BaseConnectionManager_pendingMessages, _BaseConnectionManager_isSendingMessages, _BaseConnectionManager_onRxMessage, _BaseConnectionManager_timer, _BaseConnectionManager_checkConnection;
-const _console$g = createConsole("BaseConnectionManager", { log: true });
+const _console$g = createConsole("BaseConnectionManager", { log: false });
 const ConnectionStatuses = ["notConnected", "connecting", "connected", "disconnecting"];
 const ConnectionEventTypes = [...ConnectionStatuses, "connectionStatus", "isConnected"];
 const TxRxMessageTypes = [
@@ -2701,7 +2711,7 @@ function getCharacteristicProperties(characteristicName) {
     return properties;
 }
 
-const _console$d = createConsole("BluetoothConnectionManager", { log: true });
+const _console$d = createConsole("BluetoothConnectionManager", { log: false });
 class BluetoothConnectionManager extends BaseConnectionManager {
     constructor() {
         super(...arguments);
@@ -2735,7 +2745,7 @@ class BluetoothConnectionManager extends BaseConnectionManager {
 }
 
 var _WebBluetoothConnectionManager_instances, _WebBluetoothConnectionManager_boundBluetoothCharacteristicEventListeners, _WebBluetoothConnectionManager_boundBluetoothDeviceEventListeners, _WebBluetoothConnectionManager_device, _WebBluetoothConnectionManager_services, _WebBluetoothConnectionManager_characteristics, _WebBluetoothConnectionManager_getServicesAndCharacteristics, _WebBluetoothConnectionManager_removeEventListeners, _WebBluetoothConnectionManager_onCharacteristicvaluechanged, _WebBluetoothConnectionManager_onCharacteristicValueChanged, _WebBluetoothConnectionManager_onGattserverdisconnected;
-const _console$c = createConsole("WebBluetoothConnectionManager", { log: true });
+const _console$c = createConsole("WebBluetoothConnectionManager", { log: false });
 var bluetooth;
 if (isInBrowser) {
     bluetooth = window.navigator.bluetooth;
@@ -3320,7 +3330,7 @@ const CBOR = {
   decode,
 };
 
-const _console$b = createConsole("mcumgr", { log: true });
+const _console$b = createConsole("mcumgr", { log: false });
 const constants = {
   MGMT_OP_READ: 0,
   MGMT_OP_READ_RSP: 1,
@@ -3651,7 +3661,7 @@ class MCUManager {
 }
 
 var _FirmwareManager_instances, _FirmwareManager_dispatchEvent_get, _FirmwareManager_status, _FirmwareManager_updateStatus, _FirmwareManager_images, _FirmwareManager_assertImages, _FirmwareManager_assertValidImageIndex, _FirmwareManager_mtu, _FirmwareManager_mcuManager, _FirmwareManager_assignMcuManagerCallbacks, _FirmwareManager_onMcuMessage, _FirmwareManager_onMcuFileDownloadNext, _FirmwareManager_onMcuFileDownloadProgress, _FirmwareManager_onMcuFileDownloadFinished, _FirmwareManager_onMcuFileUploadNext, _FirmwareManager_onMcuFileUploadProgress, _FirmwareManager_onMcuFileUploadFinished, _FirmwareManager_onMcuImageUploadNext, _FirmwareManager_onMcuImageUploadProgress, _FirmwareManager_onMcuImageUploadFinished, _FirmwareManager_onMcuImageState;
-const _console$a = createConsole("FirmwareManager", { log: true });
+const _console$a = createConsole("FirmwareManager", { log: false });
 const FirmwareMessageTypes = ["smp"];
 const FirmwareEventTypes = [
     ...FirmwareMessageTypes,
@@ -3899,7 +3909,7 @@ _FirmwareManager_status = new WeakMap(), _FirmwareManager_images = new WeakMap()
 };
 
 var _DeviceManager_instances, _DeviceManager_boundDeviceEventListeners, _DeviceManager_onDeviceType, _DeviceManager_ConnectedDevices, _DeviceManager_UseLocalStorage, _DeviceManager_DefaultLocalStorageConfiguration, _DeviceManager_LocalStorageConfiguration, _DeviceManager_AssertLocalStorage, _DeviceManager_LocalStorageKey, _DeviceManager_SaveToLocalStorage, _DeviceManager_LoadFromLocalStorage, _DeviceManager_UpdateLocalStorageConfigurationForDevice, _DeviceManager_AvailableDevices, _DeviceManager_EventDispatcher, _DeviceManager_DispatchEvent_get, _DeviceManager_OnDeviceIsConnected, _DeviceManager_DispatchAvailableDevices, _DeviceManager_DispatchConnectedDevices;
-const _console$9 = createConsole("DeviceManager", { log: true });
+const _console$9 = createConsole("DeviceManager", { log: false });
 const DeviceManagerEventTypes = [
     "deviceConnected",
     "deviceDisconnected",
@@ -4161,7 +4171,7 @@ DeviceManager.shared = new DeviceManager();
 var DeviceManager$1 = DeviceManager.shared;
 
 var _Device_instances, _a$1, _Device_DefaultConnectionManager, _Device_eventDispatcher, _Device_dispatchEvent_get, _Device_connectionManager, _Device_sendTxMessages, _Device_isConnected, _Device_assertIsConnected, _Device_hasRequiredInformation_get, _Device_requestRequiredInformation, _Device_assertCanReconnect, _Device_ReconnectOnDisconnection, _Device_reconnectOnDisconnection, _Device_reconnectIntervalId, _Device_onConnectionStatusUpdated, _Device_dispatchConnectionEvents, _Device_checkConnection, _Device_clear, _Device_clearConnection, _Device_onConnectionMessageReceived, _Device_onConnectionMessagesReceived, _Device_deviceInformationManager, _Device_batteryLevel, _Device_updateBatteryLevel, _Device_sensorConfigurationManager, _Device_ClearSensorConfigurationOnLeave, _Device_clearSensorConfigurationOnLeave, _Device_sensorDataManager, _Device_vibrationManager, _Device_fileTransferManager, _Device_tfliteManager, _Device_firmwareManager, _Device_sendSmpMessage, _Device_isServerSide;
-const _console$8 = createConsole("Device", { log: true });
+const _console$8 = createConsole("Device", { log: false });
 const DeviceEventTypes = [
     "connectionMessage",
     ...ConnectionEventTypes,
@@ -4700,16 +4710,19 @@ _a$1 = Device, _Device_eventDispatcher = new WeakMap(), _Device_connectionManage
 _Device_ReconnectOnDisconnection = { value: false };
 _Device_ClearSensorConfigurationOnLeave = { value: true };
 
-var _DevicePairPressureSensorDataManager_instances, _DevicePairPressureSensorDataManager_rawPressure, _DevicePairPressureSensorDataManager_centerOfPressureHelper, _DevicePairPressureSensorDataManager_hasAllPressureData_get, _DevicePairPressureSensorDataManager_updatePressureData;
+var _DevicePairPressureSensorDataManager_instances, _DevicePairPressureSensorDataManager_rawPressure, _DevicePairPressureSensorDataManager_centerOfPressureHelper, _DevicePairPressureSensorDataManager_normalizedSumRangeHelper, _DevicePairPressureSensorDataManager_hasAllPressureData_get, _DevicePairPressureSensorDataManager_updatePressureData;
 const _console$7 = createConsole("DevicePairPressureSensorDataManager", { log: true });
 class DevicePairPressureSensorDataManager {
     constructor() {
         _DevicePairPressureSensorDataManager_instances.add(this);
         _DevicePairPressureSensorDataManager_rawPressure.set(this, {});
         _DevicePairPressureSensorDataManager_centerOfPressureHelper.set(this, new CenterOfPressureHelper());
+        _DevicePairPressureSensorDataManager_normalizedSumRangeHelper.set(this, new RangeHelper());
+        this.resetPressureRange();
     }
     resetPressureRange() {
         __classPrivateFieldGet(this, _DevicePairPressureSensorDataManager_centerOfPressureHelper, "f").reset();
+        __classPrivateFieldGet(this, _DevicePairPressureSensorDataManager_normalizedSumRangeHelper, "f").reset();
     }
     onDevicePressureData(event) {
         const { pressure } = event.message;
@@ -4724,36 +4737,44 @@ class DevicePairPressureSensorDataManager {
         }
     }
 }
-_DevicePairPressureSensorDataManager_rawPressure = new WeakMap(), _DevicePairPressureSensorDataManager_centerOfPressureHelper = new WeakMap(), _DevicePairPressureSensorDataManager_instances = new WeakSet(), _DevicePairPressureSensorDataManager_hasAllPressureData_get = function _DevicePairPressureSensorDataManager_hasAllPressureData_get() {
+_DevicePairPressureSensorDataManager_rawPressure = new WeakMap(), _DevicePairPressureSensorDataManager_centerOfPressureHelper = new WeakMap(), _DevicePairPressureSensorDataManager_normalizedSumRangeHelper = new WeakMap(), _DevicePairPressureSensorDataManager_instances = new WeakSet(), _DevicePairPressureSensorDataManager_hasAllPressureData_get = function _DevicePairPressureSensorDataManager_hasAllPressureData_get() {
     return InsoleSides.every((side) => side in __classPrivateFieldGet(this, _DevicePairPressureSensorDataManager_rawPressure, "f"));
 }, _DevicePairPressureSensorDataManager_updatePressureData = function _DevicePairPressureSensorDataManager_updatePressureData() {
-    const pressure = { rawSum: 0, normalizedSum: 0 };
+    const pressure = { scaledSum: 0, normalizedSum: 0, sensors: [] };
     InsoleSides.forEach((side) => {
-        pressure.rawSum += __classPrivateFieldGet(this, _DevicePairPressureSensorDataManager_rawPressure, "f")[side].scaledSum;
-        pressure.normalizedSum += __classPrivateFieldGet(this, _DevicePairPressureSensorDataManager_rawPressure, "f")[side].normalizedSum;
+        const sidePressure = __classPrivateFieldGet(this, _DevicePairPressureSensorDataManager_rawPressure, "f")[side];
+        pressure.scaledSum += sidePressure.scaledSum;
     });
-    if (pressure.normalizedSum > 0.001) {
+    pressure.normalizedSum += __classPrivateFieldGet(this, _DevicePairPressureSensorDataManager_normalizedSumRangeHelper, "f").updateAndGetNormalization(pressure.scaledSum, false);
+    if (pressure.scaledSum > 0) {
         pressure.center = { x: 0, y: 0 };
         InsoleSides.forEach((side) => {
             const sidePressure = __classPrivateFieldGet(this, _DevicePairPressureSensorDataManager_rawPressure, "f")[side];
-            const normalizedPressureSumWeight = sidePressure.normalizedSum / pressure.normalizedSum;
-            if (normalizedPressureSumWeight > 0) {
-                if (sidePressure.normalizedCenter?.y != undefined) {
-                    pressure.center.y += sidePressure.normalizedCenter.y * normalizedPressureSumWeight;
-                }
-                if (side == "right") {
-                    pressure.center.x = normalizedPressureSumWeight;
-                }
+            {
+                sidePressure.sensors.forEach((sensor, index) => {
+                    const _sensor = { ...sensor, side, index };
+                    _sensor.weight;
+                    _sensor.weightedValue = sensor.scaledValue / pressure.scaledSum;
+                    let { x, y } = sensor.position;
+                    x /= 2;
+                    if (side == "right") {
+                        x += 0.5;
+                    }
+                    _sensor.position = { x, y };
+                    pressure.center.x += _sensor.position.x * _sensor.weightedValue;
+                    pressure.center.y += _sensor.position.y * _sensor.weightedValue;
+                    pressure.sensors.push(_sensor);
+                });
             }
         });
-        pressure.normalizedCenter = __classPrivateFieldGet(this, _DevicePairPressureSensorDataManager_centerOfPressureHelper, "f").updateAndGetNormalization(pressure.center);
+        pressure.normalizedCenter = __classPrivateFieldGet(this, _DevicePairPressureSensorDataManager_centerOfPressureHelper, "f").updateAndGetNormalization(pressure.center, false);
     }
     _console$7.log({ devicePairPressure: pressure });
     return pressure;
 };
 
 var _DevicePairSensorDataManager_timestamps;
-const _console$6 = createConsole("DevicePairSensorDataManager", { log: true });
+const _console$6 = createConsole("DevicePairSensorDataManager", { log: false });
 const DevicePairSensorTypes = ["pressure", "sensorData"];
 const DevicePairSensorDataEventTypes = DevicePairSensorTypes;
 class DevicePairSensorDataManager {
@@ -4796,7 +4817,7 @@ class DevicePairSensorDataManager {
 _DevicePairSensorDataManager_timestamps = new WeakMap();
 
 var _DevicePair_instances, _a, _DevicePair_eventDispatcher, _DevicePair_dispatchEvent_get, _DevicePair_left, _DevicePair_right, _DevicePair_addDeviceEventListeners, _DevicePair_removeDeviceEventListeners, _DevicePair_removeInsole, _DevicePair_boundDeviceEventListeners, _DevicePair_redispatchDeviceEvent, _DevicePair_onDeviceIsConnected, _DevicePair_onDeviceType, _DevicePair_sensorDataManager, _DevicePair_onDeviceSensorData, _DevicePair_shared;
-const _console$5 = createConsole("DevicePair", { log: true });
+const _console$5 = createConsole("DevicePair", { log: false });
 function getDevicePairDeviceEventType(deviceEventType) {
     return `device${capitalizeFirstCharacter(deviceEventType)}`;
 }
@@ -4892,6 +4913,7 @@ class DevicePair {
         }
     }
     resetPressureRange() {
+        InsoleSides.forEach((side) => this[side]?.resetPressureRange());
         __classPrivateFieldGet(this, _DevicePair_sensorDataManager, "f").resetPressureRange();
     }
     async triggerVibration(vibrationConfigurations, sendImmediately) {
@@ -5018,7 +5040,7 @@ createServerMessage("stopScan");
 createServerMessage("discoveredDevices");
 
 var _ClientConnectionManager_instances, _ClientConnectionManager_bluetoothId, _ClientConnectionManager_isConnected, _ClientConnectionManager_requestDeviceInformation, _ClientConnectionManager_onClientMessageCallback;
-const _console$3 = createConsole("ClientConnectionManager", { log: true });
+const _console$3 = createConsole("ClientConnectionManager", { log: false });
 const ClientDeviceInformationMessageTypes = [...DeviceInformationMessageTypes, "batteryLevel"];
 class ClientConnectionManager extends BaseConnectionManager {
     constructor() {
@@ -5119,7 +5141,7 @@ _ClientConnectionManager_bluetoothId = new WeakMap(), _ClientConnectionManager_i
 };
 
 var _BaseClient_instances, _BaseClient_reset, _BaseClient_devices, _BaseClient_eventDispatcher, _BaseClient__connectionStatus, _BaseClient_parseMessageCallback, _BaseClient__isScanningAvailable, _BaseClient_isScanningAvailable_get, _BaseClient_isScanningAvailable_set, _BaseClient_assertIsScanningAvailable, _BaseClient__isScanning, _BaseClient_isScanning_get, _BaseClient_isScanning_set, _BaseClient_requestIsScanning, _BaseClient_assertIsScanning, _BaseClient_assertIsNotScanning, _BaseClient_discoveredDevices, _BaseClient_onExpiredDiscoveredDevice, _BaseClient_getOrCreateDevice;
-const _console$2 = createConsole("BaseClient", { log: true });
+const _console$2 = createConsole("BaseClient", { log: false });
 const ClientConnectionStatuses = ["notConnected", "connecting", "connected", "disconnecting"];
 const ClientEventTypes = [
     ...ClientConnectionStatuses,
@@ -5423,7 +5445,7 @@ createWebSocketMessage("ping");
 createWebSocketMessage("pong");
 
 var _WebSocketClient_instances, _WebSocketClient_webSocket, _WebSocketClient_sendWebSocketMessage, _WebSocketClient_boundWebSocketEventListeners, _WebSocketClient_onWebSocketOpen, _WebSocketClient_onWebSocketMessage, _WebSocketClient_onWebSocketClose, _WebSocketClient_onWebSocketError, _WebSocketClient_parseWebSocketMessage, _WebSocketClient_onServerMessage, _WebSocketClient_pingTimer, _WebSocketClient_ping, _WebSocketClient_pong;
-const _console = createConsole("WebSocketClient", { log: true });
+const _console = createConsole("WebSocketClient", { log: false });
 class WebSocketClient extends BaseClient {
     constructor() {
         super(...arguments);

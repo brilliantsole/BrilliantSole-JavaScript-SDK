@@ -17,7 +17,7 @@ import { BoundScannerEventListeners, DiscoveredDevice, ScannerEventMap } from ".
 import { concatenateArrayBuffers } from "../utils/ArrayBufferUtils.ts";
 import DeviceManager, { DeviceManagerEventMap, BoundDeviceManagerEventListeners } from "../DeviceManager.ts";
 
-const _console = createConsole("BaseServer", { log: true });
+const _console = createConsole("BaseServer", { log: false });
 
 export const ServerEventTypes = ["clientConnected", "clientDisconnected"] as const;
 export type ServerEventType = (typeof ServerEventTypes)[number];

@@ -11,7 +11,7 @@ import { VibrationMessageTypes } from "../vibration/VibrationManager.ts";
 import { SensorConfigurationMessageTypes } from "../sensor/SensorConfigurationManager.ts";
 import { SensorDataMessageTypes } from "../sensor/SensorDataManager.ts";
 
-const _console = createConsole("BaseConnectionManager", { log: true });
+const _console = createConsole("BaseConnectionManager", { log: false });
 
 export const ConnectionTypes = ["webBluetooth", "noble", "client"] as const;
 export type ConnectionType = (typeof ConnectionTypes)[number];

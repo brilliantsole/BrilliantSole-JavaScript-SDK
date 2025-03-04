@@ -9,7 +9,7 @@ import { SensorType } from "./sensor/SensorDataManager.ts";
 import Device, { SendMessageCallback } from "./Device.ts";
 import autoBind from "auto-bind";
 
-const _console = createConsole("TfliteManager", { log: true });
+const _console = createConsole("TfliteManager", { log: false });
 
 export const TfliteMessageTypes = [
   "getTfliteName",

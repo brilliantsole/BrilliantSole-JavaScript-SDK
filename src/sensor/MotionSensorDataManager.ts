@@ -1,6 +1,6 @@
 import { createConsole } from "../utils/Console.ts";
 
-const _console = createConsole("MotionSensorDataManager", { log: true });
+const _console = createConsole("MotionSensorDataManager", { log: false });
 
 export const MotionSensorTypes = [
   "acceleration",

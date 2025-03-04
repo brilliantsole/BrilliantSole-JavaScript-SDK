@@ -5,7 +5,7 @@ import { serviceDataUUID, serviceUUIDs } from "../connection/bluetooth/bluetooth
 import Device from "../Device.ts";
 import NobleConnectionManager, { NoblePeripheral } from "../connection/bluetooth/NobleConnectionManager.ts";
 
-const _console = createConsole("NobleScanner", { log: true });
+const _console = createConsole("NobleScanner", { log: false });
 
 let isSupported = false;
 

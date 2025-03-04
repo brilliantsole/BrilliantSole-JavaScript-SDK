@@ -17,7 +17,7 @@ import type * as dgram from "dgram";
 import Timer from "../../utils/Timer.ts";
 /** NODE_END */
 
-const _console = createConsole("UDPServer", { log: true });
+const _console = createConsole("UDPServer", { log: false });
 
 interface UDPClient extends dgram.RemoteInfo {
   receivePort?: number;
