@@ -77,14 +77,14 @@ class DevicePairPressureSensorDataManager {
           const sidePressureWeight = sidePressure.scaledSum / pressure.scaledSum;
           if (sidePressureWeight > 0) {
             if (sidePressure.normalizedCenter?.y != undefined) {
-              pressure.center!.y += sidePressure.normalizedCenter.y * sidePressureWeight;
+              pressure.center!.y += sidePressure.normalizedCenter!.y * sidePressureWeight;
             }
             if (side == "right") {
               pressure.center!.x = sidePressureWeight;
             }
           }
         } else {
-          sidePressure.sensors.forEach((sensor, index) => {
+          sidePressure.sensors.forEach((sensor) => {
             const _sensor: PressureSensorValue = { ...sensor };
             _sensor.weightedValue = sensor.scaledValue / pressure.scaledSum;
             let { x, y } = sensor.position;
