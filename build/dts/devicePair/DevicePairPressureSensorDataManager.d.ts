@@ -5,12 +5,10 @@ import { DeviceEventMap } from "../Device.ts";
 export type DevicePairRawPressureData = {
     [insoleSide in InsoleSide]: PressureData;
 };
-export interface DevicePairPressureSensorValue extends PressureSensorValue {
-    side: InsoleSide;
-    index: number;
-}
 export interface DevicePairPressureData {
-    sensors: DevicePairPressureSensorValue[];
+    sensors: {
+        [key in InsoleSide]: PressureSensorValue[];
+    };
     scaledSum: number;
     normalizedSum: number;
     center?: CenterOfPressure;

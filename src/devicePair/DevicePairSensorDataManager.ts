@@ -4,7 +4,7 @@ import DevicePairPressureSensorDataManager, {
 import { createConsole } from "../utils/Console.ts";
 import { InsoleSide } from "../InformationManager.ts";
 import { SensorType } from "../sensor/SensorDataManager.ts";
-import { DeviceEventMap, SpecificDeviceEvent } from "../Device.ts";
+import { DeviceEventMap } from "../Device.ts";
 import EventDispatcher from "../utils/EventDispatcher.ts";
 import DevicePair from "./DevicePair.ts";
 import { AddKeysAsPropertyToInterface, ExtendInterfaceValues, ValueOf } from "../utils/TypeScriptUtils.ts";

@@ -733,12 +733,10 @@ declare class DeviceManager {
 }
 declare const _default: DeviceManager;
 
-interface DevicePairPressureSensorValue extends PressureSensorValue {
-    side: InsoleSide;
-    index: number;
-}
 interface DevicePairPressureData {
-    sensors: DevicePairPressureSensorValue[];
+    sensors: {
+        [key in InsoleSide]: PressureSensorValue[];
+    };
     scaledSum: number;
     normalizedSum: number;
     center?: CenterOfPressure;

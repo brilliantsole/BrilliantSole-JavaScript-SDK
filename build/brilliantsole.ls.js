@@ -4740,7 +4740,7 @@
     _DevicePairPressureSensorDataManager_rawPressure = new WeakMap(), _DevicePairPressureSensorDataManager_centerOfPressureHelper = new WeakMap(), _DevicePairPressureSensorDataManager_normalizedSumRangeHelper = new WeakMap(), _DevicePairPressureSensorDataManager_instances = new WeakSet(), _DevicePairPressureSensorDataManager_hasAllPressureData_get = function _DevicePairPressureSensorDataManager_hasAllPressureData_get() {
         return InsoleSides.every((side) => side in __classPrivateFieldGet(this, _DevicePairPressureSensorDataManager_rawPressure, "f"));
     }, _DevicePairPressureSensorDataManager_updatePressureData = function _DevicePairPressureSensorDataManager_updatePressureData() {
-        const pressure = { scaledSum: 0, normalizedSum: 0, sensors: [] };
+        const pressure = { scaledSum: 0, normalizedSum: 0, sensors: { left: [], right: [] } };
         InsoleSides.forEach((side) => {
             const sidePressure = __classPrivateFieldGet(this, _DevicePairPressureSensorDataManager_rawPressure, "f")[side];
             pressure.scaledSum += sidePressure.scaledSum;
@@ -4752,7 +4752,7 @@
                 const sidePressure = __classPrivateFieldGet(this, _DevicePairPressureSensorDataManager_rawPressure, "f")[side];
                 {
                     sidePressure.sensors.forEach((sensor, index) => {
-                        const _sensor = { ...sensor, side, index };
+                        const _sensor = { ...sensor };
                         _sensor.weight;
                         _sensor.weightedValue = sensor.scaledValue / pressure.scaledSum;
                         let { x, y } = sensor.position;
@@ -4763,7 +4763,7 @@
                         _sensor.position = { x, y };
                         pressure.center.x += _sensor.position.x * _sensor.weightedValue;
                         pressure.center.y += _sensor.position.y * _sensor.weightedValue;
-                        pressure.sensors.push(_sensor);
+                        pressure.sensors[side].push(_sensor);
                     });
                 }
             });

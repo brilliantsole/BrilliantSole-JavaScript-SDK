@@ -221,9 +221,10 @@ devicePair.addEventListener("devicePressure", (event) => {
 devicePair.addEventListener("pressure", (event) => {
   const { pressure } = event.message;
   if (pressureVisualizationMode == "devicePairWeightedValue") {
-    pressure.sensors.forEach((sensor) => {
-      pressureSensorElementsContainers[sensor.side][sensor.index].style.opacity =
-        (sensor.weightedValue * pressure.sensors.length) / 2;
+    devicePair.sides.forEach((side) => {
+      pressure.sensors[side].forEach((sensor, index) => {
+        pressureSensorElementsContainers[side][index].style.opacity = sensor.weightedValue / 2;
+      });
     });
   }
 });
@@ -244,6 +245,7 @@ devicePair.addEventListener("pressure", (event) => {
   if (center) {
     side = center.x < 0.5 ? "left" : "right";
   }
+
   devicePair.sides.forEach((_side) => {
     const container = devicePairCenterOfPressureElementsContainers[_side];
     if (side == _side) {

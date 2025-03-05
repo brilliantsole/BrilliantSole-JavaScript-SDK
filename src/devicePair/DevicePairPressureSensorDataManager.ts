@@ -10,13 +10,8 @@ const _console = createConsole("DevicePairPressureSensorDataManager", { log: tru
 
 export type DevicePairRawPressureData = { [insoleSide in InsoleSide]: PressureData };
 
-export interface DevicePairPressureSensorValue extends PressureSensorValue {
-  side: InsoleSide;
-  index: number;
-}
-
 export interface DevicePairPressureData {
-  sensors: DevicePairPressureSensorValue[];
+  sensors: { [key in InsoleSide]: PressureSensorValue[] };
   scaledSum: number;
   normalizedSum: number;
   center?: CenterOfPressure;
@@ -64,7 +59,7 @@ class DevicePairPressureSensorDataManager {
   }
 
   #updatePressureData() {
-    const pressure: DevicePairPressureData = { scaledSum: 0, normalizedSum: 0, sensors: [] };
+    const pressure: DevicePairPressureData = { scaledSum: 0, normalizedSum: 0, sensors: { left: [], right: [] } };
 
     InsoleSides.forEach((side) => {
       const sidePressure = this.#rawPressure[side]!;
@@ -90,7 +85,7 @@ class DevicePairPressureSensorDataManager {
           }
         } else {
           sidePressure.sensors.forEach((sensor, index) => {
-            const _sensor: DevicePairPressureSensorValue = { ...sensor, side, index };
+            const _sensor: PressureSensorValue = { ...sensor };
             const weight = _sensor.weight;
             _sensor.weightedValue = sensor.scaledValue / pressure.scaledSum;
             let { x, y } = sensor.position;
@@ -101,7 +96,7 @@ class DevicePairPressureSensorDataManager {
             _sensor.position = { x, y };
             pressure.center!.x += _sensor.position.x * _sensor.weightedValue;
             pressure.center!.y += _sensor.position.y * _sensor.weightedValue;
-            pressure.sensors.push(_sensor);
+            pressure.sensors[side].push(_sensor);
           });
         }
       });
