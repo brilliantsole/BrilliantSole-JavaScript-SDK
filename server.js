@@ -14,6 +14,7 @@ import axios from "axios";
 process.on("warning", (e) => console.warn(e.stack));
 
 //BS.setAllConsoleLevelFlags({ log: true });
+//BS.setConsoleLevelFlagsForType("UDPServer", { log: true });
 
 // HTTPS SERVER
 app.use(nocache());

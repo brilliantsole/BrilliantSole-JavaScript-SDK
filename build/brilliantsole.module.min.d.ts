@@ -900,6 +900,7 @@ declare abstract class BaseClient {
     protected get _connectionStatus(): "notConnected" | "connecting" | "connected" | "disconnecting";
     protected set _connectionStatus(newConnectionStatus: "notConnected" | "connecting" | "connected" | "disconnecting");
     get connectionStatus(): "notConnected" | "connecting" | "connected" | "disconnecting";
+    protected _sendRequiredMessages(): void;
     protected parseMessage(dataView: DataView): void;
     get isScanningAvailable(): boolean;
     protected requestIsScanningAvailable(): void;

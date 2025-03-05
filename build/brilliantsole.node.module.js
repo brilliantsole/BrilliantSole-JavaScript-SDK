@@ -4751,7 +4751,7 @@ _DevicePairPressureSensorDataManager_rawPressure = new WeakMap(), _DevicePairPre
         InsoleSides.forEach((side) => {
             const sidePressure = __classPrivateFieldGet(this, _DevicePairPressureSensorDataManager_rawPressure, "f")[side];
             {
-                sidePressure.sensors.forEach((sensor, index) => {
+                sidePressure.sensors.forEach((sensor) => {
                     const _sensor = { ...sensor };
                     _sensor.weightedValue = sensor.scaledValue / pressure.scaledSum;
                     let { x, y } = sensor.position;

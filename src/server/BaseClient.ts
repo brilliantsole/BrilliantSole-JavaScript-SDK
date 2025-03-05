@@ -61,6 +61,7 @@ abstract class BaseClient {
       connectionManager.isConnected = false;
       //device.removeAllEventListeners();
     }
+    this.#receivedMessageTypes.length = 0;
     //this.#devices = {};
   }
 
@@ -137,7 +138,7 @@ abstract class BaseClient {
       case "notConnected":
         this.dispatchEvent("isConnected", { isConnected: this.isConnected });
         if (this.isConnected) {
-          this.sendServerMessage("isScanningAvailable", "discoveredDevices", "connectedDevices");
+          // this._sendRequiredMessages();
         } else {
           this.#reset();
         }
@@ -148,9 +149,42 @@ abstract class BaseClient {
     return this._connectionStatus;
   }
 
+  static #RequiredMessageTypes: ServerMessage[] = ["isScanningAvailable", "discoveredDevices", "connectedDevices"];
+  get #requiredMessageTypes(): ServerMessage[] {
+    return BaseClient.#RequiredMessageTypes;
+  }
+  protected _sendRequiredMessages() {
+    _console.log("sending required messages", this.#receivedMessageTypes);
+    this.sendServerMessage(...this.#requiredMessageTypes);
+  }
+
+  #receivedMessageTypes: ServerMessage[] = [];
+  #checkIfFullyConnected() {
+    if (this.connectionStatus != "connecting") {
+      return;
+    }
+    _console.log("checking if fully connected...");
+
+    if (!this.#receivedMessageTypes.includes("isScanningAvailable")) {
+      _console.log("not fully connected - didn't receive isScanningAvailable");
+      return;
+    }
+
+    if (this.isScanningAvailable) {
+      if (!this.#receivedMessageTypes.includes("isScanning")) {
+        _console.log("not fully connected - didn't receive isScanning");
+        return;
+      }
+    }
+
+    _console.log("fully connected");
+    this._connectionStatus = "connected";
+  }
+
   protected parseMessage(dataView: DataView) {
     _console.log("parseMessage", { dataView });
     parseMessage(dataView, ServerMessageTypes, this.#parseMessageCallback.bind(this), null, true);
+    this.#checkIfFullyConnected();
   }
 
   #parseMessageCallback(messageType: ServerMessageType, dataView: DataView) {
@@ -216,6 +250,10 @@ abstract class BaseClient {
       default:
         _console.error(`uncaught messageType "${messageType}"`);
         break;
+    }
+
+    if (this.connectionStatus == "connecting") {
+      this.#receivedMessageTypes.push(messageType);
     }
   }
 

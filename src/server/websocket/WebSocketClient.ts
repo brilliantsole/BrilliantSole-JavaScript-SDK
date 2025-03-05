@@ -114,7 +114,8 @@ class WebSocketClient extends BaseClient {
   #onWebSocketOpen(event: ws.Event) {
     _console.log("webSocket.open", event);
     this.#pingTimer.start();
-    this._connectionStatus = "connected";
+    //this._connectionStatus = "connected";
+    this._sendRequiredMessages();
   }
   async #onWebSocketMessage(event: ws.MessageEvent) {
     _console.log("webSocket.message", event);
