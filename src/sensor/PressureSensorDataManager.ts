@@ -22,7 +22,6 @@ export interface PressureSensorValue {
   scaledValue: number;
   normalizedValue: number;
   weightedValue: number;
-  weight: number;
 }
 
 export interface PressureData {
@@ -49,13 +48,6 @@ class PressureSensorDataManager {
     return this.positions.length;
   }
 
-  #sensorWeights: number[] = [];
-  #generateSensorWeights() {
-    this.#sensorWeights = this.#positions.map((_) => 1);
-    //this.#sensorWeights = computeVoronoiWeights(this.#positions);
-    _console.log("sensorWeights", this.#sensorWeights);
-  }
-
   parsePositions(dataView: DataView) {
     const positions: PressureSensorPosition[] = [];
 
@@ -75,8 +67,6 @@ class PressureSensorDataManager {
     this.#positions = positions;
 
     this.#sensorRangeHelpers = createArray(this.numberOfSensors, () => new RangeHelper());
-
-    this.#generateSensorWeights();
 
     this.resetRange();
   }
@@ -99,13 +89,10 @@ class PressureSensorDataManager {
       let scaledValue = (rawValue * scalar) / this.numberOfSensors;
       const rangeHelper = this.#sensorRangeHelpers[index];
       const normalizedValue = rangeHelper.updateAndGetNormalization(scaledValue, false);
-
-      const weight = this.#sensorWeights[index];
       //scaledValue -= rangeHelper.min;
-      scaledValue *= weight;
 
       const position = this.positions[index];
-      pressure.sensors[index] = { rawValue, scaledValue, normalizedValue, position, weightedValue: 0, weight };
+      pressure.sensors[index] = { rawValue, scaledValue, normalizedValue, position, weightedValue: 0 };
 
       pressure.scaledSum += scaledValue;
       //pressure.normalizedSum += normalizedValue;

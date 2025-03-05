@@ -11,7 +11,6 @@ export interface PressureSensorValue {
     scaledValue: number;
     normalizedValue: number;
     weightedValue: number;
-    weight: number;
 }
 export interface PressureData {
     sensors: PressureSensorValue[];

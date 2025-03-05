@@ -949,16 +949,14 @@
         return array.filter((value, index) => array.indexOf(value) == index);
     }
 
-    var _PressureSensorDataManager_instances, _PressureSensorDataManager_positions, _PressureSensorDataManager_sensorWeights, _PressureSensorDataManager_generateSensorWeights, _PressureSensorDataManager_sensorRangeHelpers, _PressureSensorDataManager_normalizedSumRangeHelper, _PressureSensorDataManager_centerOfPressureHelper;
+    var _PressureSensorDataManager_positions, _PressureSensorDataManager_sensorRangeHelpers, _PressureSensorDataManager_normalizedSumRangeHelper, _PressureSensorDataManager_centerOfPressureHelper;
     const _console$l = createConsole("PressureDataManager", { log: true });
     const PressureSensorTypes = ["pressure"];
     const ContinuousPressureSensorTypes = PressureSensorTypes;
     const DefaultNumberOfPressureSensors = 8;
     class PressureSensorDataManager {
         constructor() {
-            _PressureSensorDataManager_instances.add(this);
             _PressureSensorDataManager_positions.set(this, []);
-            _PressureSensorDataManager_sensorWeights.set(this, []);
             _PressureSensorDataManager_sensorRangeHelpers.set(this, void 0);
             _PressureSensorDataManager_normalizedSumRangeHelper.set(this, new RangeHelper());
             _PressureSensorDataManager_centerOfPressureHelper.set(this, new CenterOfPressureHelper());
@@ -980,7 +978,6 @@
             _console$l.log({ positions });
             __classPrivateFieldSet(this, _PressureSensorDataManager_positions, positions, "f");
             __classPrivateFieldSet(this, _PressureSensorDataManager_sensorRangeHelpers, createArray(this.numberOfSensors, () => new RangeHelper()), "f");
-            __classPrivateFieldGet(this, _PressureSensorDataManager_instances, "m", _PressureSensorDataManager_generateSensorWeights).call(this);
             this.resetRange();
         }
         resetRange() {
@@ -995,10 +992,8 @@
                 let scaledValue = (rawValue * scalar) / this.numberOfSensors;
                 const rangeHelper = __classPrivateFieldGet(this, _PressureSensorDataManager_sensorRangeHelpers, "f")[index];
                 const normalizedValue = rangeHelper.updateAndGetNormalization(scaledValue, false);
-                const weight = __classPrivateFieldGet(this, _PressureSensorDataManager_sensorWeights, "f")[index];
-                scaledValue *= weight;
                 const position = this.positions[index];
-                pressure.sensors[index] = { rawValue, scaledValue, normalizedValue, position, weightedValue: 0, weight };
+                pressure.sensors[index] = { rawValue, scaledValue, normalizedValue, position, weightedValue: 0 };
                 pressure.scaledSum += scaledValue;
             }
             pressure.normalizedSum = __classPrivateFieldGet(this, _PressureSensorDataManager_normalizedSumRangeHelper, "f").updateAndGetNormalization(pressure.scaledSum, false);
@@ -1015,10 +1010,7 @@
             return pressure;
         }
     }
-    _PressureSensorDataManager_positions = new WeakMap(), _PressureSensorDataManager_sensorWeights = new WeakMap(), _PressureSensorDataManager_sensorRangeHelpers = new WeakMap(), _PressureSensorDataManager_normalizedSumRangeHelper = new WeakMap(), _PressureSensorDataManager_centerOfPressureHelper = new WeakMap(), _PressureSensorDataManager_instances = new WeakSet(), _PressureSensorDataManager_generateSensorWeights = function _PressureSensorDataManager_generateSensorWeights() {
-        __classPrivateFieldSet(this, _PressureSensorDataManager_sensorWeights, __classPrivateFieldGet(this, _PressureSensorDataManager_positions, "f").map((_) => 1), "f");
-        _console$l.log("sensorWeights", __classPrivateFieldGet(this, _PressureSensorDataManager_sensorWeights, "f"));
-    };
+    _PressureSensorDataManager_positions = new WeakMap(), _PressureSensorDataManager_sensorRangeHelpers = new WeakMap(), _PressureSensorDataManager_normalizedSumRangeHelper = new WeakMap(), _PressureSensorDataManager_centerOfPressureHelper = new WeakMap();
 
     const _console$k = createConsole("MotionSensorDataManager", { log: false });
     const MotionSensorTypes = [
