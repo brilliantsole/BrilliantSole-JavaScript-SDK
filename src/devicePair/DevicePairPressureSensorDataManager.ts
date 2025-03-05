@@ -86,7 +86,6 @@ class DevicePairPressureSensorDataManager {
         } else {
           sidePressure.sensors.forEach((sensor, index) => {
             const _sensor: PressureSensorValue = { ...sensor };
-            const weight = _sensor.weight;
             _sensor.weightedValue = sensor.scaledValue / pressure.scaledSum;
             let { x, y } = sensor.position;
             x /= 2;

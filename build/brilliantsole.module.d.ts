@@ -60,7 +60,6 @@ interface PressureSensorValue {
     scaledValue: number;
     normalizedValue: number;
     weightedValue: number;
-    weight: number;
 }
 interface PressureData {
     sensors: PressureSensorValue[];

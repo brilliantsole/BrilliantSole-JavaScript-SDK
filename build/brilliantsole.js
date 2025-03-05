@@ -4751,7 +4751,6 @@
 	            {
 	                sidePressure.sensors.forEach((sensor, index) => {
 	                    const _sensor = { ...sensor };
-	                    _sensor.weight;
 	                    _sensor.weightedValue = sensor.scaledValue / pressure.scaledSum;
 	                    let { x, y } = sensor.position;
 	                    x /= 2;
