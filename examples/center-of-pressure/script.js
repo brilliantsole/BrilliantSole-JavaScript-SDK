@@ -59,7 +59,7 @@ BS.DeviceManager.AddEventListener("availableDevices", (event) => {
 getDevices();
 
 // CONNECTION
-const devicePair = BS.DevicePair.shared;
+const devicePair = BS.DevicePair.insoles;
 
 /** @type {HTMLButtonElement} */
 const addDeviceButton = document.getElementById("addDevice");

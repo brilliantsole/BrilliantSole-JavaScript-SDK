@@ -3,7 +3,7 @@ import CenterOfPressureHelper from "../utils/CenterOfPressureHelper.ts";
 import RangeHelper from "../utils/RangeHelper.ts";
 import { createArray } from "../utils/ArrayUtils.ts";
 
-const _console = createConsole("PressureDataManager", { log: true });
+const _console = createConsole("PressureDataManager", { log: false });
 
 export const PressureSensorTypes = ["pressure"] as const;
 export type PressureSensorType = (typeof PressureSensorTypes)[number];

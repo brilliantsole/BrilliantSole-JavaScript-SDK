@@ -6,7 +6,7 @@ import { Side, Sides } from "../InformationManager.ts";
 import { DeviceEventMap } from "../Device.ts";
 import { RangeHelper } from "../BS.ts";
 
-const _console = createConsole("DevicePairPressureSensorDataManager", { log: true });
+const _console = createConsole("DevicePairPressureSensorDataManager", { log: false });
 
 export type DevicePairRawPressureData = { [side in Side]: PressureData };
 

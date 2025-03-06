@@ -25,10 +25,13 @@ export type DevicePairEventMap = EventMap<DevicePair, DeviceEventType, DevicePai
 export type DevicePairEventListenerMap = EventListenerMap<DevicePair, DeviceEventType, DevicePairEventMessages>;
 export type DevicePairEvent = Event<DevicePair, DeviceEventType, DevicePairEventMessages>;
 export type BoundDevicePairEventListeners = BoundEventListeners<DevicePair, DeviceEventType, DevicePairEventMessages>;
+export declare const DevicePairTypes: readonly ["insoles", "gloves"];
+export type DevicePairType = (typeof DevicePairTypes)[number];
 declare class DevicePair {
     #private;
-    constructor();
+    constructor(type: DevicePairType);
     get sides(): readonly ["left", "right"];
+    get type(): "insoles" | "gloves";
     get addEventListener(): <T extends "pressure" | "deviceOrientation" | "sensorData" | "isConnected" | "deviceConnected" | "deviceIsConnected" | "devicePressure" | "deviceMaxFileLength" | "deviceGetFileType" | "deviceGetFileLength" | "deviceGetFileChecksum" | "deviceFileTransferStatus" | "deviceGetFileBlock" | "deviceFileTransferProgress" | "deviceFileTransferComplete" | "deviceFileReceived" | "deviceAcceleration" | "deviceGravity" | "deviceLinearAcceleration" | "deviceGyroscope" | "deviceMagnetometer" | "deviceGameRotation" | "deviceRotation" | "deviceActivity" | "deviceStepCounter" | "deviceStepDetector" | "deviceDeviceOrientation" | "deviceBarometer" | "deviceSensorData" | "deviceGetSensorConfiguration" | "deviceGetTfliteName" | "deviceGetTfliteTask" | "deviceGetTfliteSampleRate" | "deviceGetTfliteSensorTypes" | "deviceTfliteIsReady" | "deviceGetTfliteCaptureDelay" | "deviceGetTfliteThreshold" | "deviceGetTfliteInferencingEnabled" | "deviceTfliteInference" | "deviceManufacturerName" | "deviceModelNumber" | "deviceSoftwareRevision" | "deviceHardwareRevision" | "deviceFirmwareRevision" | "devicePnpId" | "deviceSerialNumber" | "deviceDeviceInformation" | "deviceIsCharging" | "deviceGetBatteryCurrent" | "deviceGetMtu" | "deviceGetId" | "deviceGetName" | "deviceGetType" | "deviceGetCurrentTime" | "deviceNotConnected" | "deviceConnecting" | "deviceDisconnecting" | "deviceConnectionStatus" | "deviceSmp" | "deviceBatteryLevel" | "deviceFirmwareImages" | "deviceFirmwareUploadProgress" | "deviceFirmwareStatus" | "deviceConnectionMessage">(type: T, listener: (event: {
         type: T;
         target: DevicePair;
@@ -53,10 +56,11 @@ declare class DevicePair {
     get isConnected(): boolean;
     get isPartiallyConnected(): boolean;
     get isHalfConnected(): boolean;
-    assignInsole(device: Device): Device | undefined;
+    assignDevice(device: Device): Device | undefined;
     setSensorConfiguration(sensorConfiguration: SensorConfiguration): Promise<void>;
     resetPressureRange(): void;
     triggerVibration(vibrationConfigurations: VibrationConfiguration[], sendImmediately?: boolean): Promise<PromiseSettledResult<void | undefined>[]>;
-    static get shared(): DevicePair;
+    static get insoles(): DevicePair;
+    static get gloves(): DevicePair;
 }
 export default DevicePair;

@@ -13,7 +13,7 @@ export { VibrationConfiguration, VibrationLocation, VibrationLocations, Vibratio
 export { VibrationWaveformEffect, VibrationWaveformEffects } from "./vibration/VibrationWaveformEffects.ts";
 export { FileType, FileTypes, FileTransferDirection, FileTransferDirections } from "./FileTransferManager.ts";
 export { TfliteSensorType, TfliteSensorTypes, TfliteTask, TfliteTasks } from "./TfliteManager.ts";
-export { default as DevicePair, DevicePairEvent, DevicePairEventMap, DevicePairEventListenerMap, BoundDevicePairEventListeners, } from "./devicePair/DevicePair.ts";
+export { default as DevicePair, DevicePairEvent, DevicePairEventMap, DevicePairEventListenerMap, BoundDevicePairEventListeners, DevicePairType, DevicePairTypes, } from "./devicePair/DevicePair.ts";
 export { DiscoveredDevice } from "./scanner/BaseScanner.ts";
 /** NODE_START */
 export { default as Scanner } from "./scanner/Scanner.ts";

@@ -70,16 +70,16 @@ addDeviceButton.addEventListener("click", () => {
   BS.Device.Connect();
 });
 
-const devicePair = BS.DevicePair.insoles;
+const devicePair = BS.DevicePair.gloves;
 devicePair.addEventListener("isConnected", () => {
   addDeviceButton.disabled = devicePair.isConnected;
 });
 
 // 3D VISUALIZATION
 
-const insolesContainer = document.getElementById("insoles");
+const glovesContainer = document.getElementById("gloves");
 /** @type {HTMLTemplateElement} */
-const insoleTemplate = document.getElementById("insoleTemplate");
+const gloveTemplate = document.getElementById("gloveTemplate");
 
 window.sensorRate = 20;
 window.interpolationSmoothing = 0.4;
@@ -87,36 +87,35 @@ window.positionScalar = 0.1;
 
 devicePair.sides.forEach((side) => {
   /** @type {HTMLElement} */
-  const insoleContainer = insoleTemplate.content.cloneNode(true).querySelector(".insole");
-  insoleContainer.classList.add(side);
-  insoleContainer.dataset.side = side;
+  const gloveContainer = gloveTemplate.content.cloneNode(true).querySelector(".glove");
+  gloveContainer.classList.add(side);
+  gloveContainer.dataset.side = side;
   /** @type {HTMLIFrameElement} */
-  const iframe = insoleContainer.querySelector("iframe");
+  const iframe = gloveContainer.querySelector("iframe");
   iframe.addEventListener("load", () => {
-    onIFrameLoaded(insoleContainer);
+    onIFrameLoaded(gloveContainer);
   });
-  insolesContainer.appendChild(insoleContainer);
+  glovesContainer.appendChild(gloveContainer);
 });
 
-/** @param {HTMLElement} insoleContainer */
-function onIFrameLoaded(insoleContainer) {
-  const side = insoleContainer.dataset.side;
+/** @param {HTMLElement} gloveContainer */
+function onIFrameLoaded(gloveContainer) {
+  const side = gloveContainer.dataset.side;
   /** @type {HTMLIFrameElement} */
-  const iframe = insoleContainer.querySelector("iframe");
+  const iframe = gloveContainer.querySelector("iframe");
   const scene = iframe.contentDocument.querySelector("a-scene");
   const targetEntity = scene.querySelector(".target");
   const targetPositionEntity = targetEntity.querySelector(".position");
   const targetRotationEntity = targetEntity.querySelector(".rotation");
-  const insoleEntity = targetEntity.querySelector(".insole");
-  insoleEntity.setAttribute("gltf-model", `#${side}Insole`);
+  const gloveEntity = targetEntity.querySelector(".glove");
   scene.addEventListener("loaded", () => {
-    if (side == "right") {
-      //insoleEntity.object3D.scale.x = -1;
+    if (side == "left") {
+      gloveEntity.object3D.scale.x *= -1;
     }
   });
 
   /** @type {HTMLButtonElement} */
-  const toggleConnectionButton = insoleContainer.querySelector(".toggleConnection");
+  const toggleConnectionButton = gloveContainer.querySelector(".toggleConnection");
   toggleConnectionButton.addEventListener("click", () => {
     devicePair[side].toggleConnection();
   });
@@ -153,7 +152,7 @@ function onIFrameLoaded(insoleContainer) {
   });
 
   /** @type {HTMLSelectElement} */
-  const orientationSelect = insoleContainer.querySelector(".orientation");
+  const orientationSelect = gloveContainer.querySelector(".orientation");
   orientationSelect.addEventListener("input", () => {
     /** @type {BS.SensorConfiguration} */
     const configuration = { gameRotation: 0, rotation: 0, gyroscope: 0, orientation: 0 };
@@ -182,7 +181,7 @@ function onIFrameLoaded(insoleContainer) {
   });
 
   /** @type {HTMLButtonElement} */
-  const resetOrientationButton = insoleContainer.querySelector(".resetOrientation");
+  const resetOrientationButton = gloveContainer.querySelector(".resetOrientation");
   resetOrientationButton.addEventListener("click", () => {
     resetOrientation();
   });
@@ -196,7 +195,7 @@ function onIFrameLoaded(insoleContainer) {
   });
 
   /** @type {HTMLSelectElement} */
-  const positionSelect = insoleContainer.querySelector(".position");
+  const positionSelect = gloveContainer.querySelector(".position");
   positionSelect.addEventListener("input", () => {
     /** @type {BS.SensorConfiguration} */
     const configuration = { acceleration: 0, gravity: 0, linearAcceleration: 0 };

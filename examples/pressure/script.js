@@ -67,7 +67,7 @@ addDeviceButton.addEventListener("click", () => {
   BS.Device.Connect();
 });
 
-const devicePair = BS.DevicePair.shared;
+const devicePair = BS.DevicePair.insoles;
 devicePair.addEventListener("isConnected", () => {
   addDeviceButton.disabled = devicePair.isConnected;
 });
@@ -132,19 +132,19 @@ devicePair.sides.forEach((side) => {
 devicePair.addEventListener("deviceIsConnected", (event) => {
   const { device } = event.message;
 
-  const toggleConnectionButton = toggleConnectionButtons[device.insoleSide];
+  const toggleConnectionButton = toggleConnectionButtons[device.side];
   if (device.isConnected) {
     toggleConnectionButton.disabled = false;
   }
   toggleConnectionButton.innerText = device.isConnected ? "disconnect" : "reconnect";
 
-  togglePressureDataButtons[device.insoleSide].disabled = !device.isConnected;
+  togglePressureDataButtons[device.side].disabled = !device.isConnected;
 });
 
 devicePair.addEventListener("deviceConnectionStatus", (event) => {
   const { device } = event.message;
 
-  const toggleConnectionButton = toggleConnectionButtons[device.insoleSide];
+  const toggleConnectionButton = toggleConnectionButtons[device.side];
 
   switch (device.connectionStatus) {
     case "connected":
@@ -163,7 +163,7 @@ devicePair.addEventListener("deviceConnectionStatus", (event) => {
 devicePair.addEventListener("deviceGetSensorConfiguration", (event) => {
   const { device } = event.message;
 
-  const togglePressureDataButton = togglePressureDataButtons[device.insoleSide];
+  const togglePressureDataButton = togglePressureDataButtons[device.side];
   const isPressureDataEnabled = device.sensorConfiguration.pressure > 0;
   if (isPressureDataEnabled) {
     togglePressureDataButton.innerText = "disable pressure data";

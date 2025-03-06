@@ -950,7 +950,7 @@
     }
 
     var _PressureSensorDataManager_positions, _PressureSensorDataManager_sensorRangeHelpers, _PressureSensorDataManager_normalizedSumRangeHelper, _PressureSensorDataManager_centerOfPressureHelper;
-    const _console$l = createConsole("PressureDataManager", { log: true });
+    const _console$l = createConsole("PressureDataManager", { log: false });
     const PressureSensorTypes = ["pressure"];
     const ContinuousPressureSensorTypes = PressureSensorTypes;
     const DefaultNumberOfPressureSensors = 8;
@@ -4719,7 +4719,7 @@
     _Device_ClearSensorConfigurationOnLeave = { value: true };
 
     var _DevicePairPressureSensorDataManager_instances, _DevicePairPressureSensorDataManager_rawPressure, _DevicePairPressureSensorDataManager_centerOfPressureHelper, _DevicePairPressureSensorDataManager_normalizedSumRangeHelper, _DevicePairPressureSensorDataManager_hasAllPressureData_get, _DevicePairPressureSensorDataManager_updatePressureData;
-    const _console$2 = createConsole("DevicePairPressureSensorDataManager", { log: true });
+    const _console$2 = createConsole("DevicePairPressureSensorDataManager", { log: false });
     class DevicePairPressureSensorDataManager {
         constructor() {
             _DevicePairPressureSensorDataManager_instances.add(this);
@@ -4823,7 +4823,7 @@
     }
     _DevicePairSensorDataManager_timestamps = new WeakMap();
 
-    var _DevicePair_instances, _a, _DevicePair_eventDispatcher, _DevicePair_dispatchEvent_get, _DevicePair_left, _DevicePair_right, _DevicePair_addDeviceEventListeners, _DevicePair_removeDeviceEventListeners, _DevicePair_removeInsole, _DevicePair_boundDeviceEventListeners, _DevicePair_redispatchDeviceEvent, _DevicePair_onDeviceIsConnected, _DevicePair_onDeviceType, _DevicePair_sensorDataManager, _DevicePair_onDeviceSensorData, _DevicePair_shared;
+    var _DevicePair_instances, _a, _DevicePair_type, _DevicePair_eventDispatcher, _DevicePair_dispatchEvent_get, _DevicePair_left, _DevicePair_right, _DevicePair_isDeviceCorrectType, _DevicePair_addDeviceEventListeners, _DevicePair_removeDeviceEventListeners, _DevicePair_removeDevice, _DevicePair_boundDeviceEventListeners, _DevicePair_redispatchDeviceEvent, _DevicePair_onDeviceIsConnected, _DevicePair_onDeviceType, _DevicePair_sensorDataManager, _DevicePair_onDeviceSensorData, _DevicePair_insoles, _DevicePair_gloves;
     const _console = createConsole("DevicePair", { log: false });
     function getDevicePairDeviceEventType(deviceEventType) {
         return `device${capitalizeFirstCharacter(deviceEventType)}`;
@@ -4835,9 +4835,11 @@
         ...DevicePairSensorDataEventTypes,
         ...DevicePairDeviceEventTypes,
     ];
+    const DevicePairTypes = ["insoles", "gloves"];
     class DevicePair {
-        constructor() {
+        constructor(type) {
             _DevicePair_instances.add(this);
+            _DevicePair_type.set(this, void 0);
             _DevicePair_eventDispatcher.set(this, new EventDispatcher(this, DevicePairEventTypes));
             _DevicePair_left.set(this, void 0);
             _DevicePair_right.set(this, void 0);
@@ -4847,10 +4849,14 @@
                 getType: __classPrivateFieldGet(this, _DevicePair_instances, "m", _DevicePair_onDeviceType).bind(this),
             });
             _DevicePair_sensorDataManager.set(this, new DevicePairSensorDataManager());
+            __classPrivateFieldSet(this, _DevicePair_type, type, "f");
             __classPrivateFieldGet(this, _DevicePair_sensorDataManager, "f").eventDispatcher = __classPrivateFieldGet(this, _DevicePair_eventDispatcher, "f");
         }
         get sides() {
             return Sides;
+        }
+        get type() {
+            return __classPrivateFieldGet(this, _DevicePair_type, "f");
         }
         get addEventListener() {
             return __classPrivateFieldGet(this, _DevicePair_eventDispatcher, "f").addEventListener;
@@ -4882,9 +4888,9 @@
         get isHalfConnected() {
             return this.isPartiallyConnected && !this.isConnected;
         }
-        assignInsole(device) {
-            if (!device.isInsole) {
-                _console.warn("device is not an insole");
+        assignDevice(device) {
+            if (!__classPrivateFieldGet(this, _DevicePair_instances, "m", _DevicePair_isDeviceCorrectType).call(this, device)) {
+                _console.warn(`device is incorrect type ${device.type} for ${this.type} devicePair`);
                 return;
             }
             const side = device.side;
@@ -4905,7 +4911,7 @@
                     __classPrivateFieldSet(this, _DevicePair_right, device, "f");
                     break;
             }
-            _console.log(`assigned ${side} insole`, device);
+            _console.log(`assigned ${side} device`, device);
             this.resetPressureRange();
             __classPrivateFieldGet(this, _DevicePair_instances, "a", _DevicePair_dispatchEvent_get).call(this, "isConnected", { isConnected: this.isConnected });
             __classPrivateFieldGet(this, _DevicePair_instances, "a", _DevicePair_dispatchEvent_get).call(this, "deviceIsConnected", { device, isConnected: device.isConnected, side });
@@ -4929,12 +4935,22 @@
             }).filter(Boolean);
             return Promise.allSettled(promises);
         }
-        static get shared() {
-            return __classPrivateFieldGet(this, _a, "f", _DevicePair_shared);
+        static get insoles() {
+            return __classPrivateFieldGet(this, _a, "f", _DevicePair_insoles);
+        }
+        static get gloves() {
+            return __classPrivateFieldGet(this, _a, "f", _DevicePair_gloves);
         }
     }
-    _a = DevicePair, _DevicePair_eventDispatcher = new WeakMap(), _DevicePair_left = new WeakMap(), _DevicePair_right = new WeakMap(), _DevicePair_boundDeviceEventListeners = new WeakMap(), _DevicePair_sensorDataManager = new WeakMap(), _DevicePair_instances = new WeakSet(), _DevicePair_dispatchEvent_get = function _DevicePair_dispatchEvent_get() {
+    _a = DevicePair, _DevicePair_type = new WeakMap(), _DevicePair_eventDispatcher = new WeakMap(), _DevicePair_left = new WeakMap(), _DevicePair_right = new WeakMap(), _DevicePair_boundDeviceEventListeners = new WeakMap(), _DevicePair_sensorDataManager = new WeakMap(), _DevicePair_instances = new WeakSet(), _DevicePair_dispatchEvent_get = function _DevicePair_dispatchEvent_get() {
         return __classPrivateFieldGet(this, _DevicePair_eventDispatcher, "f").dispatchEvent;
+    }, _DevicePair_isDeviceCorrectType = function _DevicePair_isDeviceCorrectType(device) {
+        switch (this.type) {
+            case "insoles":
+                return device.isInsole;
+            case "gloves":
+                return device.isGlove;
+        }
     }, _DevicePair_addDeviceEventListeners = function _DevicePair_addDeviceEventListeners(device) {
         addEventListeners(device, __classPrivateFieldGet(this, _DevicePair_boundDeviceEventListeners, "f"));
         DeviceEventTypes.forEach((deviceEventType) => {
@@ -4945,12 +4961,12 @@
         DeviceEventTypes.forEach((deviceEventType) => {
             device.removeEventListener(deviceEventType, __classPrivateFieldGet(this, _DevicePair_instances, "m", _DevicePair_redispatchDeviceEvent).bind(this));
         });
-    }, _DevicePair_removeInsole = function _DevicePair_removeInsole(device) {
+    }, _DevicePair_removeDevice = function _DevicePair_removeDevice(device) {
         const foundDevice = Sides.some((side) => {
             if (this[side] != device) {
                 return false;
             }
-            _console.log(`removing ${side} insole`, device);
+            _console.log(`removing ${side} device`, device);
             removeEventListeners(device, __classPrivateFieldGet(this, _DevicePair_boundDeviceEventListeners, "f"));
             delete this[side];
             return true;
@@ -4973,22 +4989,26 @@
         if (this[device.side] == device) {
             return;
         }
-        const foundDevice = __classPrivateFieldGet(this, _DevicePair_instances, "m", _DevicePair_removeInsole).call(this, device);
+        const foundDevice = __classPrivateFieldGet(this, _DevicePair_instances, "m", _DevicePair_removeDevice).call(this, device);
         if (!foundDevice) {
             return;
         }
-        this.assignInsole(device);
+        this.assignDevice(device);
     }, _DevicePair_onDeviceSensorData = function _DevicePair_onDeviceSensorData(deviceEvent) {
         if (this.isConnected) {
             __classPrivateFieldGet(this, _DevicePair_sensorDataManager, "f").onDeviceSensorData(deviceEvent);
         }
     };
-    _DevicePair_shared = { value: new _a() };
+    _DevicePair_insoles = { value: new _a("insoles") };
+    _DevicePair_gloves = { value: new _a("gloves") };
     (() => {
         DeviceManager$1.AddEventListener("deviceConnected", (event) => {
             const { device } = event.message;
             if (device.isInsole) {
-                __classPrivateFieldGet(_a, _a, "f", _DevicePair_shared).assignInsole(device);
+                __classPrivateFieldGet(_a, _a, "f", _DevicePair_insoles).assignDevice(device);
+            }
+            if (device.isGlove) {
+                __classPrivateFieldGet(_a, _a, "f", _DevicePair_gloves).assignDevice(device);
             }
         });
     })();
@@ -4998,6 +5018,7 @@
     exports.Device = Device;
     exports.DeviceManager = DeviceManager$1;
     exports.DevicePair = DevicePair;
+    exports.DevicePairTypes = DevicePairTypes;
     exports.DeviceTypes = DeviceTypes;
     exports.Environment = environment;
     exports.FileTransferDirections = FileTransferDirections;

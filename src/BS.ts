@@ -48,6 +48,8 @@ export {
   DevicePairEventMap,
   DevicePairEventListenerMap,
   BoundDevicePairEventListeners,
+  DevicePairType,
+  DevicePairTypes,
 } from "./devicePair/DevicePair.ts";
 
 export { DiscoveredDevice } from "./scanner/BaseScanner.ts";

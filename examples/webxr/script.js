@@ -8,7 +8,7 @@ console.log({ client });
 
 window.client = client;
 
-const devicePair = BS.DevicePair.shared;
+const devicePair = BS.DevicePair.insoles;
 window.devicePair = devicePair;
 
 // SCENE SETUP
@@ -948,7 +948,7 @@ devicePair.sides.forEach((side) => {
     /** @type {BS.Device} */
     const device = event.message.device;
 
-    if (device.insoleSide != side) {
+    if (device.side != side) {
       return;
     }
 
@@ -1085,7 +1085,7 @@ devicePair.sides.forEach((side) => {
     /** @type {BS.Device} */
     const device = event.message.device;
 
-    if (device.insoleSide != side) {
+    if (device.side != side) {
       return;
     }
 

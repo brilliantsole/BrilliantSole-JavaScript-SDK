@@ -59,7 +59,7 @@ BS.DeviceManager.AddEventListener("availableDevices", (event) => {
 getDevices();
 
 // CONNECTION
-const devicePair = BS.DevicePair.shared;
+const devicePair = BS.DevicePair.insoles;
 
 /** @type {HTMLButtonElement} */
 const addDeviceButton = document.getElementById("addDevice");
@@ -116,7 +116,7 @@ devicePair.sides.forEach((side) => {
 
   devicePair.addEventListener("deviceIsConnected", (event) => {
     const { device } = event.message;
-    if (device.insoleSide != side) {
+    if (device.side != side) {
       return;
     }
 
@@ -128,7 +128,7 @@ devicePair.sides.forEach((side) => {
 
   devicePair.addEventListener("deviceConnectionStatus", (event) => {
     const { device } = event.message;
-    if (device.insoleSide != side) {
+    if (device.side != side) {
       return;
     }
 
@@ -150,7 +150,7 @@ devicePair.sides.forEach((side) => {
   const pressurePre = deviceContainer.querySelector(".pressure");
   devicePair.addEventListener("devicePressure", (event) => {
     const { device } = event.message;
-    if (device.insoleSide != side) {
+    if (device.side != side) {
       return;
     }
 

@@ -60,13 +60,22 @@ export type DevicePairEventListenerMap = EventListenerMap<DevicePair, DeviceEven
 export type DevicePairEvent = Event<DevicePair, DeviceEventType, DevicePairEventMessages>;
 export type BoundDevicePairEventListeners = BoundEventListeners<DevicePair, DeviceEventType, DevicePairEventMessages>;
 
+export const DevicePairTypes = ["insoles", "gloves"] as const;
+export type DevicePairType = (typeof DevicePairTypes)[number];
+
 class DevicePair {
-  constructor() {
+  constructor(type: DevicePairType) {
+    this.#type = type;
     this.#sensorDataManager.eventDispatcher = this.#eventDispatcher as DevicePairSensorDataEventDispatcher;
   }
 
   get sides() {
     return Sides;
+  }
+
+  #type: DevicePairType;
+  get type() {
+    return this.#type;
   }
 
   #eventDispatcher: DevicePairEventDispatcher = new EventDispatcher(this as DevicePair, DevicePairEventTypes);
@@ -113,9 +122,18 @@ class DevicePair {
     _console.assertWithError(this.isConnected, "devicePair must be connected");
   }
 
-  assignInsole(device: Device) {
-    if (!device.isInsole) {
-      _console.warn("device is not an insole");
+  #isDeviceCorrectType(device: Device) {
+    switch (this.type) {
+      case "insoles":
+        return device.isInsole;
+      case "gloves":
+        return device.isGlove;
+    }
+  }
+
+  assignDevice(device: Device) {
+    if (!this.#isDeviceCorrectType(device)) {
+      _console.warn(`device is incorrect type ${device.type} for ${this.type} devicePair`);
       return;
     }
     const side = device.side;
@@ -141,7 +159,7 @@ class DevicePair {
         break;
     }
 
-    _console.log(`assigned ${side} insole`, device);
+    _console.log(`assigned ${side} device`, device);
 
     this.resetPressureRange();
 
@@ -166,13 +184,13 @@ class DevicePair {
     });
   }
 
-  #removeInsole(device: Device) {
+  #removeDevice(device: Device) {
     const foundDevice = Sides.some((side) => {
       if (this[side] != device) {
         return false;
       }
 
-      _console.log(`removing ${side} insole`, device);
+      _console.log(`removing ${side} device`, device);
       removeEventListeners(device, this.#boundDeviceEventListeners);
       delete this[side];
 
@@ -208,11 +226,11 @@ class DevicePair {
     if (this[device.side] == device) {
       return;
     }
-    const foundDevice = this.#removeInsole(device);
+    const foundDevice = this.#removeDevice(device);
     if (!foundDevice) {
       return;
     }
-    this.assignInsole(device);
+    this.assignDevice(device);
   }
 
   // SENSOR CONFIGURATION
@@ -245,16 +263,23 @@ class DevicePair {
     return Promise.allSettled(promises);
   }
 
-  // SHARED INSTANCE
-  static #shared = new DevicePair();
-  static get shared() {
-    return this.#shared;
+  // SHARED INSTANCES
+  static #insoles = new DevicePair("insoles");
+  static get insoles() {
+    return this.#insoles;
+  }
+  static #gloves = new DevicePair("gloves");
+  static get gloves() {
+    return this.#gloves;
   }
   static {
     DeviceManager.AddEventListener("deviceConnected", (event) => {
       const { device } = event.message;
       if (device.isInsole) {
-        this.#shared.assignInsole(device);
+        this.#insoles.assignDevice(device);
+      }
+      if (device.isGlove) {
+        this.#gloves.assignDevice(device);
       }
     });
   }
