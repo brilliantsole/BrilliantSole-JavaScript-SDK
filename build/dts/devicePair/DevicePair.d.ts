@@ -1,13 +1,13 @@
 import EventDispatcher, { BoundEventListeners, Event, EventListenerMap, EventMap } from "../utils/EventDispatcher.ts";
 import Device, { DeviceEventType, DeviceEventMessages } from "../Device.ts";
-import { InsoleSide } from "../InformationManager.ts";
+import { Side } from "../InformationManager.ts";
 import { VibrationConfiguration } from "../vibration/VibrationManager.ts";
 import { SensorConfiguration } from "../sensor/SensorConfigurationManager.ts";
 import { DevicePairSensorDataEventMessages } from "./DevicePairSensorDataManager.ts";
 import { AddPrefixToInterfaceKeys, ExtendInterfaceValues } from "../utils/TypeScriptUtils.ts";
 interface BaseDevicePairDeviceEventMessage {
     device: Device;
-    side: InsoleSide;
+    side: Side;
 }
 type DevicePairDeviceEventMessages = ExtendInterfaceValues<AddPrefixToInterfaceKeys<DeviceEventMessages, "device">, BaseDevicePairDeviceEventMessage>;
 export declare const DevicePairConnectionEventTypes: readonly ["isConnected"];

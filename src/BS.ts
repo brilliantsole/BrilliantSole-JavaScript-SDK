@@ -18,14 +18,7 @@ export {
 } from "./DeviceManager.ts";
 
 export { DeviceInformation } from "./DeviceInformationManager.ts";
-export {
-  DeviceType,
-  DeviceTypes,
-  MinNameLength,
-  MaxNameLength,
-  InsoleSides,
-  InsoleSide,
-} from "./InformationManager.ts";
+export { DeviceType, DeviceTypes, MinNameLength, MaxNameLength, Sides, Side } from "./InformationManager.ts";
 export { SensorType, SensorTypes, ContinuousSensorType, ContinuousSensorTypes } from "./sensor/SensorDataManager.ts";
 export { MaxSensorRate, SensorRateStep, SensorConfiguration } from "./sensor/SensorConfigurationManager.ts";
 

@@ -538,8 +538,11 @@ class Device {
   get isInsole() {
     return this._informationManager.isInsole;
   }
-  get insoleSide() {
-    return this._informationManager.insoleSide;
+  get isGlove() {
+    return this._informationManager.isGlove;
+  }
+  get side() {
+    return this._informationManager.side;
   }
 
   get mtu() {

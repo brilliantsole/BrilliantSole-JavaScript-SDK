@@ -1845,8 +1845,8 @@ _DeviceInformationManager_information = new WeakMap(), _DeviceInformationManager
 
 var _InformationManager_instances, _InformationManager_dispatchEvent_get, _InformationManager_isCharging, _InformationManager_updateIsCharging, _InformationManager_batteryCurrent, _InformationManager_updateBatteryCurrent, _InformationManager_id, _InformationManager_updateId, _InformationManager_name, _InformationManager_type, _InformationManager_assertValidDeviceType, _InformationManager_assertValidDeviceTypeEnum, _InformationManager_setTypeEnum, _InformationManager_mtu, _InformationManager_updateMtu, _InformationManager_isCurrentTimeSet, _InformationManager_onCurrentTime, _InformationManager_setCurrentTime;
 const _console$n = createConsole("InformationManager", { log: false });
-const DeviceTypes = ["leftInsole", "rightInsole"];
-const InsoleSides = ["left", "right"];
+const DeviceTypes = ["leftInsole", "rightInsole", "leftGlove", "rightGlove", "glasses"];
+const Sides = ["left", "right"];
 const MinNameLength = 2;
 const MaxNameLength = 30;
 const InformationMessageTypes = [
@@ -1941,12 +1941,25 @@ class InformationManager {
                 return false;
         }
     }
-    get insoleSide() {
+    get isGlove() {
+        switch (this.type) {
+            case "leftGlove":
+            case "rightGlove":
+                return true;
+            default:
+                return false;
+        }
+    }
+    get side() {
         switch (this.type) {
             case "leftInsole":
+            case "leftGlove":
                 return "left";
             case "rightInsole":
+            case "rightGlove":
                 return "right";
+            default:
+                return "left";
         }
     }
     get mtu() {
@@ -4438,8 +4451,11 @@ class Device {
     get isInsole() {
         return this._informationManager.isInsole;
     }
-    get insoleSide() {
-        return this._informationManager.insoleSide;
+    get isGlove() {
+        return this._informationManager.isGlove;
+    }
+    get side() {
+        return this._informationManager.side;
     }
     get mtu() {
         return this._informationManager.mtu;
@@ -4747,9 +4763,9 @@ class DevicePairPressureSensorDataManager {
     }
     onDevicePressureData(event) {
         const { pressure } = event.message;
-        const insoleSide = event.target.insoleSide;
-        _console$c.log({ pressure, insoleSide });
-        __classPrivateFieldGet(this, _DevicePairPressureSensorDataManager_rawPressure, "f")[insoleSide] = pressure;
+        const { side } = event.target;
+        _console$c.log({ pressure, side });
+        __classPrivateFieldGet(this, _DevicePairPressureSensorDataManager_rawPressure, "f")[side] = pressure;
         if (__classPrivateFieldGet(this, _DevicePairPressureSensorDataManager_instances, "a", _DevicePairPressureSensorDataManager_hasAllPressureData_get)) {
             return __classPrivateFieldGet(this, _DevicePairPressureSensorDataManager_instances, "m", _DevicePairPressureSensorDataManager_updatePressureData).call(this);
         }
@@ -4759,17 +4775,17 @@ class DevicePairPressureSensorDataManager {
     }
 }
 _DevicePairPressureSensorDataManager_rawPressure = new WeakMap(), _DevicePairPressureSensorDataManager_centerOfPressureHelper = new WeakMap(), _DevicePairPressureSensorDataManager_normalizedSumRangeHelper = new WeakMap(), _DevicePairPressureSensorDataManager_instances = new WeakSet(), _DevicePairPressureSensorDataManager_hasAllPressureData_get = function _DevicePairPressureSensorDataManager_hasAllPressureData_get() {
-    return InsoleSides.every((side) => side in __classPrivateFieldGet(this, _DevicePairPressureSensorDataManager_rawPressure, "f"));
+    return Sides.every((side) => side in __classPrivateFieldGet(this, _DevicePairPressureSensorDataManager_rawPressure, "f"));
 }, _DevicePairPressureSensorDataManager_updatePressureData = function _DevicePairPressureSensorDataManager_updatePressureData() {
     const pressure = { scaledSum: 0, normalizedSum: 0, sensors: { left: [], right: [] } };
-    InsoleSides.forEach((side) => {
+    Sides.forEach((side) => {
         const sidePressure = __classPrivateFieldGet(this, _DevicePairPressureSensorDataManager_rawPressure, "f")[side];
         pressure.scaledSum += sidePressure.scaledSum;
     });
     pressure.normalizedSum += __classPrivateFieldGet(this, _DevicePairPressureSensorDataManager_normalizedSumRangeHelper, "f").updateAndGetNormalization(pressure.scaledSum, false);
     if (pressure.scaledSum > 0) {
         pressure.center = { x: 0, y: 0 };
-        InsoleSides.forEach((side) => {
+        Sides.forEach((side) => {
             const sidePressure = __classPrivateFieldGet(this, _DevicePairPressureSensorDataManager_rawPressure, "f")[side];
             {
                 sidePressure.sensors.forEach((sensor) => {
@@ -4814,7 +4830,7 @@ class DevicePairSensorDataManager {
         if (!__classPrivateFieldGet(this, _DevicePairSensorDataManager_timestamps, "f")[sensorType]) {
             __classPrivateFieldGet(this, _DevicePairSensorDataManager_timestamps, "f")[sensorType] = {};
         }
-        __classPrivateFieldGet(this, _DevicePairSensorDataManager_timestamps, "f")[sensorType][event.target.insoleSide] = timestamp;
+        __classPrivateFieldGet(this, _DevicePairSensorDataManager_timestamps, "f")[sensorType][event.target.side] = timestamp;
         let value;
         switch (sensorType) {
             case "pressure":
@@ -4863,7 +4879,7 @@ class DevicePair {
         __classPrivateFieldGet(this, _DevicePair_sensorDataManager, "f").eventDispatcher = __classPrivateFieldGet(this, _DevicePair_eventDispatcher, "f");
     }
     get sides() {
-        return InsoleSides;
+        return Sides;
     }
     get addEventListener() {
         return __classPrivateFieldGet(this, _DevicePair_eventDispatcher, "f").addEventListener;
@@ -4887,10 +4903,10 @@ class DevicePair {
         return __classPrivateFieldGet(this, _DevicePair_right, "f");
     }
     get isConnected() {
-        return InsoleSides.every((side) => this[side]?.isConnected);
+        return Sides.every((side) => this[side]?.isConnected);
     }
     get isPartiallyConnected() {
-        return InsoleSides.some((side) => this[side]?.isConnected);
+        return Sides.some((side) => this[side]?.isConnected);
     }
     get isHalfConnected() {
         return this.isPartiallyConnected && !this.isConnected;
@@ -4900,7 +4916,7 @@ class DevicePair {
             _console$a.warn("device is not an insole");
             return;
         }
-        const side = device.insoleSide;
+        const side = device.side;
         const currentDevice = this[side];
         if (device == currentDevice) {
             _console$a.log("device already assigned");
@@ -4925,19 +4941,19 @@ class DevicePair {
         return currentDevice;
     }
     async setSensorConfiguration(sensorConfiguration) {
-        for (let i = 0; i < InsoleSides.length; i++) {
-            const side = InsoleSides[i];
+        for (let i = 0; i < Sides.length; i++) {
+            const side = Sides[i];
             if (this[side]?.isConnected) {
                 await this[side].setSensorConfiguration(sensorConfiguration);
             }
         }
     }
     resetPressureRange() {
-        InsoleSides.forEach((side) => this[side]?.resetPressureRange());
+        Sides.forEach((side) => this[side]?.resetPressureRange());
         __classPrivateFieldGet(this, _DevicePair_sensorDataManager, "f").resetPressureRange();
     }
     async triggerVibration(vibrationConfigurations, sendImmediately) {
-        const promises = InsoleSides.map((side) => {
+        const promises = Sides.map((side) => {
             return this[side]?.triggerVibration(vibrationConfigurations, sendImmediately);
         }).filter(Boolean);
         return Promise.allSettled(promises);
@@ -4959,7 +4975,7 @@ _a$2 = DevicePair, _DevicePair_eventDispatcher = new WeakMap(), _DevicePair_left
         device.removeEventListener(deviceEventType, __classPrivateFieldGet(this, _DevicePair_instances, "m", _DevicePair_redispatchDeviceEvent).bind(this));
     });
 }, _DevicePair_removeInsole = function _DevicePair_removeInsole(device) {
-    const foundDevice = InsoleSides.some((side) => {
+    const foundDevice = Sides.some((side) => {
         if (this[side] != device) {
             return false;
         }
@@ -4977,13 +4993,13 @@ _a$2 = DevicePair, _DevicePair_eventDispatcher = new WeakMap(), _DevicePair_left
     __classPrivateFieldGet(this, _DevicePair_instances, "a", _DevicePair_dispatchEvent_get).call(this, getDevicePairDeviceEventType(type), {
         ...message,
         device,
-        side: device.insoleSide,
+        side: device.side,
     });
 }, _DevicePair_onDeviceIsConnected = function _DevicePair_onDeviceIsConnected(deviceEvent) {
     __classPrivateFieldGet(this, _DevicePair_instances, "a", _DevicePair_dispatchEvent_get).call(this, "isConnected", { isConnected: this.isConnected });
 }, _DevicePair_onDeviceType = function _DevicePair_onDeviceType(deviceEvent) {
     const { target: device } = deviceEvent;
-    if (this[device.insoleSide] == device) {
+    if (this[device.side] == device) {
         return;
     }
     const foundDevice = __classPrivateFieldGet(this, _DevicePair_instances, "m", _DevicePair_removeInsole).call(this, device);
@@ -6082,7 +6098,6 @@ exports.DeviceTypes = DeviceTypes;
 exports.Environment = environment;
 exports.FileTransferDirections = FileTransferDirections;
 exports.FileTypes = FileTypes;
-exports.InsoleSides = InsoleSides;
 exports.MaxNameLength = MaxNameLength;
 exports.MaxNumberOfVibrationWaveformEffectSegments = MaxNumberOfVibrationWaveformEffectSegments;
 exports.MaxNumberOfVibrationWaveformSegments = MaxNumberOfVibrationWaveformSegments;
@@ -6096,6 +6111,7 @@ exports.RangeHelper = RangeHelper;
 exports.Scanner = scanner$1;
 exports.SensorRateStep = SensorRateStep;
 exports.SensorTypes = SensorTypes;
+exports.Sides = Sides;
 exports.TfliteSensorTypes = TfliteSensorTypes;
 exports.TfliteTasks = TfliteTasks;
 exports.UDPServer = UDPServer;

@@ -83,10 +83,11 @@ declare class Device {
     get getBatteryCurrent(): () => Promise<void>;
     get name(): string;
     get setName(): (newName: string) => Promise<void>;
-    get type(): "leftInsole" | "rightInsole";
+    get type(): "leftInsole" | "rightInsole" | "leftGlove" | "rightGlove" | "glasses";
     get setType(): (newType: DeviceType) => Promise<void>;
     get isInsole(): boolean;
-    get insoleSide(): "left" | "right";
+    get isGlove(): boolean;
+    get side(): "left" | "right";
     get mtu(): number;
     get sensorTypes(): SensorType[];
     get continuousSensorTypes(): ("pressure" | "acceleration" | "gravity" | "linearAcceleration" | "gyroscope" | "magnetometer" | "gameRotation" | "rotation" | "barometer")[];

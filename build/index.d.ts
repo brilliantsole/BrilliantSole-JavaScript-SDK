@@ -484,10 +484,10 @@ interface FileTransferEventMessages {
     };
 }
 
-declare const DeviceTypes: readonly ["leftInsole", "rightInsole"];
+declare const DeviceTypes: readonly ["leftInsole", "rightInsole", "leftGlove", "rightGlove", "glasses"];
 type DeviceType = (typeof DeviceTypes)[number];
-declare const InsoleSides: readonly ["left", "right"];
-type InsoleSide = (typeof InsoleSides)[number];
+declare const Sides: readonly ["left", "right"];
+type Side = (typeof Sides)[number];
 declare const MinNameLength = 2;
 declare const MaxNameLength = 30;
 declare const InformationMessageTypes: readonly ["isCharging", "getBatteryCurrent", "getMtu", "getId", "getName", "setName", "getType", "setType", "getCurrentTime", "setCurrentTime"];
@@ -536,12 +536,13 @@ declare class InformationManager {
     get name(): string;
     updateName(updatedName: string): void;
     setName(newName: string): Promise<void>;
-    get type(): "leftInsole" | "rightInsole";
+    get type(): "leftInsole" | "rightInsole" | "leftGlove" | "rightGlove" | "glasses";
     get typeEnum(): number;
     updateType(updatedType: DeviceType): void;
     setType(newType: DeviceType): Promise<void>;
     get isInsole(): boolean;
-    get insoleSide(): InsoleSide;
+    get isGlove(): boolean;
+    get side(): Side;
     get mtu(): number;
     get isCurrentTimeSet(): boolean;
     parseMessage(messageType: InformationMessageType, dataView: DataView): void;
@@ -619,10 +620,11 @@ declare class Device {
     get getBatteryCurrent(): () => Promise<void>;
     get name(): string;
     get setName(): (newName: string) => Promise<void>;
-    get type(): "leftInsole" | "rightInsole";
+    get type(): "leftInsole" | "rightInsole" | "leftGlove" | "rightGlove" | "glasses";
     get setType(): (newType: DeviceType) => Promise<void>;
     get isInsole(): boolean;
-    get insoleSide(): "left" | "right";
+    get isGlove(): boolean;
+    get side(): "left" | "right";
     get mtu(): number;
     get sensorTypes(): SensorType[];
     get continuousSensorTypes(): ("pressure" | "acceleration" | "gravity" | "linearAcceleration" | "gyroscope" | "magnetometer" | "gameRotation" | "rotation" | "barometer")[];
@@ -734,7 +736,7 @@ declare const _default: DeviceManager;
 
 interface DevicePairPressureData {
     sensors: {
-        [key in InsoleSide]: PressureSensorValue[];
+        [key in Side]: PressureSensorValue[];
     };
     scaledSum: number;
     normalizedSum: number;
@@ -749,7 +751,7 @@ interface DevicePairPressureDataEventMessages {
 }
 
 type DevicePairSensorDataTimestamps = {
-    [insoleSide in InsoleSide]: number;
+    [side in Side]: number;
 };
 interface BaseDevicePairSensorDataEventMessage {
     timestamps: DevicePairSensorDataTimestamps;
@@ -764,7 +766,7 @@ type DevicePairSensorDataEventMessages = _DevicePairSensorDataEventMessages & An
 
 interface BaseDevicePairDeviceEventMessage {
     device: Device;
-    side: InsoleSide;
+    side: Side;
 }
 type DevicePairDeviceEventMessages = ExtendInterfaceValues<AddPrefixToInterfaceKeys<DeviceEventMessages, "device">, BaseDevicePairDeviceEventMessage>;
 interface DevicePairConnectionEventMessages {
@@ -937,4 +939,4 @@ declare class WebSocketClient extends BaseClient {
     sendServerMessage(...messages: ServerMessage[]): void;
 }
 
-export { type BoundDeviceEventListeners, type BoundDeviceManagerEventListeners, type BoundDevicePairEventListeners, type CenterOfPressure, type ContinuousSensorType, ContinuousSensorTypes, DefaultNumberOfPressureSensors, Device, type DeviceEvent, type DeviceEventListenerMap, type DeviceEventMap, type DeviceInformation, _default as DeviceManager, type DeviceManagerEvent, type DeviceManagerEventListenerMap, type DeviceManagerEventMap, DevicePair, type DevicePairEvent, type DevicePairEventListenerMap, type DevicePairEventMap, type DeviceType, DeviceTypes, type DiscoveredDevice, environment_d as Environment, type Euler, type FileTransferDirection, FileTransferDirections, type FileType, FileTypes, type InsoleSide, InsoleSides, MaxNameLength, MaxNumberOfVibrationWaveformEffectSegments, MaxNumberOfVibrationWaveformSegments, MaxSensorRate, MaxVibrationWaveformEffectSegmentDelay, MaxVibrationWaveformEffectSegmentLoopCount, MaxVibrationWaveformEffectSequenceLoopCount, MaxVibrationWaveformSegmentDuration, MinNameLength, type PressureData, type Quaternion, RangeHelper, type SensorConfiguration, SensorRateStep, type SensorType, SensorTypes, type TfliteSensorType, TfliteSensorTypes, type TfliteTask, TfliteTasks, type Vector2, type Vector3, type VibrationConfiguration, type VibrationLocation, VibrationLocations, type VibrationType, VibrationTypes, type VibrationWaveformEffect, VibrationWaveformEffects, WebSocketClient, setAllConsoleLevelFlags, setConsoleLevelFlagsForType };
+export { type BoundDeviceEventListeners, type BoundDeviceManagerEventListeners, type BoundDevicePairEventListeners, type CenterOfPressure, type ContinuousSensorType, ContinuousSensorTypes, DefaultNumberOfPressureSensors, Device, type DeviceEvent, type DeviceEventListenerMap, type DeviceEventMap, type DeviceInformation, _default as DeviceManager, type DeviceManagerEvent, type DeviceManagerEventListenerMap, type DeviceManagerEventMap, DevicePair, type DevicePairEvent, type DevicePairEventListenerMap, type DevicePairEventMap, type DeviceType, DeviceTypes, type DiscoveredDevice, environment_d as Environment, type Euler, type FileTransferDirection, FileTransferDirections, type FileType, FileTypes, MaxNameLength, MaxNumberOfVibrationWaveformEffectSegments, MaxNumberOfVibrationWaveformSegments, MaxSensorRate, MaxVibrationWaveformEffectSegmentDelay, MaxVibrationWaveformEffectSegmentLoopCount, MaxVibrationWaveformEffectSequenceLoopCount, MaxVibrationWaveformSegmentDuration, MinNameLength, type PressureData, type Quaternion, RangeHelper, type SensorConfiguration, SensorRateStep, type SensorType, SensorTypes, type Side, Sides, type TfliteSensorType, TfliteSensorTypes, type TfliteTask, TfliteTasks, type Vector2, type Vector3, type VibrationConfiguration, type VibrationLocation, VibrationLocations, type VibrationType, VibrationTypes, type VibrationWaveformEffect, VibrationWaveformEffects, WebSocketClient, setAllConsoleLevelFlags, setConsoleLevelFlagsForType };

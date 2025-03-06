@@ -7,11 +7,11 @@ import autoBind from "auto-bind";
 
 const _console = createConsole("InformationManager", { log: false });
 
-export const DeviceTypes = ["leftInsole", "rightInsole"] as const;
+export const DeviceTypes = ["leftInsole", "rightInsole", "leftGlove", "rightGlove", "glasses"] as const;
 export type DeviceType = (typeof DeviceTypes)[number];
 
-export const InsoleSides = ["left", "right"] as const;
-export type InsoleSide = (typeof InsoleSides)[number];
+export const Sides = ["left", "right"] as const;
+export type Side = (typeof Sides)[number];
 
 export const MinNameLength = 2;
 export const MaxNameLength = 30;
@@ -177,17 +177,30 @@ class InformationManager {
       case "rightInsole":
         return true;
       default:
-        // for future non-insole device types
         return false;
     }
   }
 
-  get insoleSide(): InsoleSide {
+  get isGlove() {
+    switch (this.type) {
+      case "leftGlove":
+      case "rightGlove":
+        return true;
+      default:
+        return false;
+    }
+  }
+
+  get side(): Side {
     switch (this.type) {
       case "leftInsole":
+      case "leftGlove":
         return "left";
       case "rightInsole":
+      case "rightGlove":
         return "right";
+      default:
+        return "left";
     }
   }
 

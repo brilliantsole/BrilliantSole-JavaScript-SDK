@@ -1,5 +1,5 @@
 import DevicePairPressureSensorDataManager, { DevicePairPressureDataEventMessages } from "./DevicePairPressureSensorDataManager.ts";
-import { InsoleSide } from "../InformationManager.ts";
+import { Side } from "../InformationManager.ts";
 import { DeviceEventMap } from "../Device.ts";
 import EventDispatcher from "../utils/EventDispatcher.ts";
 import DevicePair from "./DevicePair.ts";
@@ -9,7 +9,7 @@ export type DevicePairSensorType = (typeof DevicePairSensorTypes)[number];
 export declare const DevicePairSensorDataEventTypes: readonly ["pressure", "sensorData"];
 export type DevicePairSensorDataEventType = (typeof DevicePairSensorDataEventTypes)[number];
 export type DevicePairSensorDataTimestamps = {
-    [insoleSide in InsoleSide]: number;
+    [side in Side]: number;
 };
 interface BaseDevicePairSensorDataEventMessage {
     timestamps: DevicePairSensorDataTimestamps;

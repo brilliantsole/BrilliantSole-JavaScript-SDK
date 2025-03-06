@@ -1,9 +1,9 @@
 import Device, { SendMessageCallback } from "./Device.ts";
 import EventDispatcher from "./utils/EventDispatcher.ts";
-export declare const DeviceTypes: readonly ["leftInsole", "rightInsole"];
+export declare const DeviceTypes: readonly ["leftInsole", "rightInsole", "leftGlove", "rightGlove", "glasses"];
 export type DeviceType = (typeof DeviceTypes)[number];
-export declare const InsoleSides: readonly ["left", "right"];
-export type InsoleSide = (typeof InsoleSides)[number];
+export declare const Sides: readonly ["left", "right"];
+export type Side = (typeof Sides)[number];
 export declare const MinNameLength = 2;
 export declare const MaxNameLength = 30;
 export declare const InformationMessageTypes: readonly ["isCharging", "getBatteryCurrent", "getMtu", "getId", "getName", "setName", "getType", "setType", "getCurrentTime", "setCurrentTime"];
@@ -52,12 +52,13 @@ declare class InformationManager {
     get name(): string;
     updateName(updatedName: string): void;
     setName(newName: string): Promise<void>;
-    get type(): "leftInsole" | "rightInsole";
+    get type(): "leftInsole" | "rightInsole" | "leftGlove" | "rightGlove" | "glasses";
     get typeEnum(): number;
     updateType(updatedType: DeviceType): void;
     setType(newType: DeviceType): Promise<void>;
     get isInsole(): boolean;
-    get insoleSide(): InsoleSide;
+    get isGlove(): boolean;
+    get side(): Side;
     get mtu(): number;
     get isCurrentTimeSet(): boolean;
     parseMessage(messageType: InformationMessageType, dataView: DataView): void;

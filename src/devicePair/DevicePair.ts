@@ -11,7 +11,7 @@ import Device, {
 } from "../Device.ts";
 import DevicePairSensorDataManager, { DevicePairSensorDataEventDispatcher } from "./DevicePairSensorDataManager.ts";
 import { capitalizeFirstCharacter } from "../utils/stringUtils.ts";
-import { InsoleSide, InsoleSides } from "../InformationManager.ts";
+import { Side, Sides } from "../InformationManager.ts";
 import { VibrationConfiguration } from "../vibration/VibrationManager.ts";
 import { SensorConfiguration } from "../sensor/SensorConfigurationManager.ts";
 import { DevicePairSensorDataEventMessages, DevicePairSensorDataEventTypes } from "./DevicePairSensorDataManager.ts";
@@ -22,7 +22,7 @@ const _console = createConsole("DevicePair", { log: false });
 
 interface BaseDevicePairDeviceEventMessage {
   device: Device;
-  side: InsoleSide;
+  side: Side;
 }
 type DevicePairDeviceEventMessages = ExtendInterfaceValues<
   AddPrefixToInterfaceKeys<DeviceEventMessages, "device">,
@@ -66,7 +66,7 @@ class DevicePair {
   }
 
   get sides() {
-    return InsoleSides;
+    return Sides;
   }
 
   #eventDispatcher: DevicePairEventDispatcher = new EventDispatcher(this as DevicePair, DevicePairEventTypes);
@@ -101,10 +101,10 @@ class DevicePair {
   }
 
   get isConnected() {
-    return InsoleSides.every((side) => this[side]?.isConnected);
+    return Sides.every((side) => this[side]?.isConnected);
   }
   get isPartiallyConnected() {
-    return InsoleSides.some((side) => this[side]?.isConnected);
+    return Sides.some((side) => this[side]?.isConnected);
   }
   get isHalfConnected() {
     return this.isPartiallyConnected && !this.isConnected;
@@ -118,7 +118,7 @@ class DevicePair {
       _console.warn("device is not an insole");
       return;
     }
-    const side = device.insoleSide;
+    const side = device.side;
 
     const currentDevice = this[side];
 
@@ -167,7 +167,7 @@ class DevicePair {
   }
 
   #removeInsole(device: Device) {
-    const foundDevice = InsoleSides.some((side) => {
+    const foundDevice = Sides.some((side) => {
       if (this[side] != device) {
         return false;
       }
@@ -195,7 +195,7 @@ class DevicePair {
     this.#dispatchEvent(getDevicePairDeviceEventType(type), {
       ...message,
       device,
-      side: device.insoleSide,
+      side: device.side,
     });
   }
 
@@ -205,7 +205,7 @@ class DevicePair {
 
   #onDeviceType(deviceEvent: DeviceEventMap["getType"]) {
     const { target: device } = deviceEvent;
-    if (this[device.insoleSide] == device) {
+    if (this[device.side] == device) {
       return;
     }
     const foundDevice = this.#removeInsole(device);
@@ -217,8 +217,8 @@ class DevicePair {
 
   // SENSOR CONFIGURATION
   async setSensorConfiguration(sensorConfiguration: SensorConfiguration) {
-    for (let i = 0; i < InsoleSides.length; i++) {
-      const side = InsoleSides[i];
+    for (let i = 0; i < Sides.length; i++) {
+      const side = Sides[i];
       if (this[side]?.isConnected) {
         await this[side].setSensorConfiguration(sensorConfiguration);
       }
@@ -233,13 +233,13 @@ class DevicePair {
     }
   }
   resetPressureRange() {
-    InsoleSides.forEach((side) => this[side]?.resetPressureRange());
+    Sides.forEach((side) => this[side]?.resetPressureRange());
     this.#sensorDataManager.resetPressureRange();
   }
 
   // VIBRATION
   async triggerVibration(vibrationConfigurations: VibrationConfiguration[], sendImmediately?: boolean) {
-    const promises = InsoleSides.map((side) => {
+    const promises = Sides.map((side) => {
       return this[side]?.triggerVibration(vibrationConfigurations, sendImmediately);
     }).filter(Boolean);
     return Promise.allSettled(promises);
