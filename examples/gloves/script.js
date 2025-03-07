@@ -462,9 +462,9 @@ function onIFrameLoaded(gloveContainer) {
     } else {
       targetEntity.setAttribute("visible", "true");
       cursorExample.setAttribute("visible", "false");
-      cameraEntity.setAttribute("orbit-controls", { enabled: true });
-      cameraEntity.setAttribute("camera", { active: true });
       cursorCameraEntity.setAttribute("camera", { active: false });
+      cameraEntity.setAttribute("camera", { active: true });
+      cameraEntity.setAttribute("orbit-controls", { enabled: true });
     }
   };
 
@@ -535,7 +535,7 @@ function onIFrameLoaded(gloveContainer) {
       const intersection = intersections[0];
       if (intersection) {
         intersectedEntities.push(entity);
-        entity.setAttribute("color", "blue");
+        entity.setAttribute("color", "lightgreen");
       } else {
         entity.setAttribute("color", entity.dataset.color);
       }
@@ -559,7 +559,7 @@ function onIFrameLoaded(gloveContainer) {
   let draggingEntity;
   const setIsCursorDown = (newIsCursorDown) => {
     isCursorDown = newIsCursorDown;
-    cursorMeshEntity.setAttribute("color", isCursorDown ? "black" : "lightGrey");
+    cursorMeshEntity.setAttribute("color", isCursorDown ? "black" : cursorMeshEntity.dataset.color);
     if (isCursorDown && intersectedEntities[0]) {
       draggingEntity = intersectedEntities[0];
       console.log("dragging entity");

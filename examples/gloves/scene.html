@@ -68,14 +68,15 @@
           <a-cylinder
             class="mesh"
             material="shader: flat;"
-            color="lightGrey"
+            color="lightgreen"
+            data-color="lightgreen"
             scale="1 1 1"
-            radius="0.003"
+            radius="0.005"
             height="0.001"
             rotation="90 0 0"
           ></a-cylinder>
         </a-entity>
-        <a-box color="lightblue" dynamic-body data-color="lightblue" position="0 1 -20" class="intersectable"></a-box>
+        <a-box color="blue" dynamic-body data-color="blue" position="0 1 -20" class="intersectable"></a-box>
         <a-sphere
           class="cursorHandle"
           radius="0.1"
@@ -97,7 +98,7 @@
             <a-entity data-pressure="2" position="-0.00608 0.0113 -0.04775">
               <a-sphere color="red" radius="0.007"></a-sphere>
             </a-entity>
-            <a-entity data-pressure="0" position="0.01241 0.00847 -0.04775">
+            <a-entity data-pressure="0" visible="false" position="0.01241 0.00847 -0.04775">
               <a-sphere color="red" radius="0.007"></a-sphere>
             </a-entity>
             <a-entity data-pressure="3" position="0.03039 0.0069 -0.03797">
