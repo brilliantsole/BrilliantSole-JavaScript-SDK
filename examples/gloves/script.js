@@ -390,13 +390,17 @@ function onIFrameLoaded(gloveContainer) {
   /** @type {HTMLButtonElement} */
   const togglePressureButton = gloveContainer.querySelector(".togglePressure");
   togglePressureButton.addEventListener("click", () => {
-    /** @type {BS.SensorConfiguration} */
-    const configuration = { pressure: 0 };
-    if (devicePair[side].sensorConfiguration.pressure == 0) {
-      configuration.pressure = 20;
-    }
-    devicePair[side].setSensorConfiguration(configuration);
+    togglePressure();
   });
+  const setIsPressureEnabled = (newIsPressureEnabled) => {
+    /** @type {BS.SensorConfiguration} */
+    const configuration = { pressure: newIsPressureEnabled ? 20 : 0 };
+    devicePair[side].setSensorConfiguration(configuration);
+  };
+  const togglePressure = () => {
+    const isPressureEnabled = devicePair[side].sensorConfiguration.pressure != 0;
+    setIsPressureEnabled(!isPressureEnabled);
+  };
   devicePair.addEventListener("deviceGetSensorConfiguration", (event) => {
     if (event.message.side != side) {
       return;
@@ -430,7 +434,7 @@ function onIFrameLoaded(gloveContainer) {
   });
 
   // CURSOR MODE
-  let isCursorEnabled = true;
+  let isCursorEnabled = false;
   /** @type {HTMLButtonElement} */
   const toggleCursorButton = gloveContainer.querySelector(".toggleCursor");
   toggleCursorButton.addEventListener("click", () => {
@@ -445,6 +449,7 @@ function onIFrameLoaded(gloveContainer) {
       orientationSelect.value = "none";
     }
     orientationSelect.dispatchEvent(new Event("input"));
+    setIsPressureEnabled(isCursorEnabled);
     onCursorIsEnabled();
   };
   const onCursorIsEnabled = () => {
@@ -474,6 +479,7 @@ function onIFrameLoaded(gloveContainer) {
   const cameraEntity = scene.querySelector(".camera");
   const cursorCameraEntity = scene.querySelector(".cursorCamera");
   const cursorEntity = scene.querySelector(".cursor");
+  const cursorHandleEntity = scene.querySelector(".cursorHandle");
   const cursorMeshEntity = cursorEntity.querySelector(".mesh");
   const cursorExample = scene.querySelector(".cursorExample");
   devicePair.addEventListener("deviceGyroscope", (event) => {
@@ -485,9 +491,8 @@ function onIFrameLoaded(gloveContainer) {
     }
     const { gyroscope } = event.message;
     const { x: yawDegrees, y: pitchDegrees, z: rollDegrees } = gyroscope;
-    console.log({ yawDegrees, pitchDegrees, rollDegrees });
-    // FIX
-    setCursorPosition(yawDegrees * 0.001 + rollDegrees * 0.001, pitchDegrees * 0.001, true);
+    // console.log({ yawDegrees, pitchDegrees, rollDegrees });
+    setCursorPosition(yawDegrees * 0.001, pitchDegrees * 0.001, true);
   });
   const cursorRaycaster = new THREE.Raycaster();
   const cursor2DPosition = new THREE.Vector2();
@@ -518,7 +523,8 @@ function onIFrameLoaded(gloveContainer) {
   const dragEntityPosition = new THREE.Vector3();
   const dragEntity = () => {
     cursorRaycaster.ray.at(20, dragEntityPosition);
-    draggingEntity.object3D.position.copy(dragEntityPosition);
+    //draggingEntity.object3D.position.copy(dragEntityPosition);
+    cursorHandleEntity.object3D.position.copy(dragEntityPosition);
   };
 
   let intersectedEntities = [];
@@ -558,17 +564,27 @@ function onIFrameLoaded(gloveContainer) {
       draggingEntity = intersectedEntities[0];
       console.log("dragging entity");
       draggingEntity.setAttribute("color", "green");
-      draggingEntity.removeAttribute("dynamic-body");
-      draggingEntity.setAttribute("static-body", "");
+      cursorHandleEntity.setAttribute("static-body", "");
+      draggingEntity.setAttribute("constraint", "target: .cursorHandle; collideConnected: false; type: pointToPoint;");
     }
     if (!isCursorDown && draggingEntity) {
       console.log("removing draggingEntity");
       draggingEntity.setAttribute("color", draggingEntity.dataset.color);
-      draggingEntity.setAttribute("dynamic-body", "");
-      draggingEntity.removeAttribute("static-body");
+
+      draggingEntity.removeAttribute("constraint");
+      cursorHandleEntity.removeAttribute("static-body");
       draggingEntity = undefined;
     }
   };
+  devicePair.addEventListener("devicePressure", (event) => {
+    if (event.message.side != side) {
+      return;
+    }
+    const { pressure } = event.message;
+    const pinchPressure = pressure.sensors[4];
+    const isPinching = pinchPressure.normalizedValue > 0.5;
+    setIsCursorDown(isPinching);
+  });
   onCursorIsEnabled();
 }
 
