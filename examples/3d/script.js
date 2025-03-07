@@ -330,7 +330,6 @@ function onIFrameLoaded(insoleContainer) {
     }
 
     const gameRotation = event.message.gameRotation;
-    //permuteQuaternion(gameRotation);
     updateQuaternion(gameRotation, true);
   });
   devicePair.addEventListener("deviceRotation", (event) => {
@@ -340,7 +339,6 @@ function onIFrameLoaded(insoleContainer) {
     }
 
     const rotation = event.message.rotation;
-    //permuteQuaternion(rotation);
     updateQuaternion(rotation, true);
   });
 

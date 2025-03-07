@@ -3,6 +3,7 @@ window.BS = BS;
 console.log({ BS });
 //BS.setAllConsoleLevelFlags({ log: false });
 
+/** @typedef {import("../utils/three/three.module.min").Vector2} TVector2 */
 /** @typedef {import("../utils/three/three.module.min").Vector3} TVector3 */
 /** @typedef {import("../utils/three/three.module.min").Quaternion} TQuaternion */
 /** @typedef {import("../utils/three/three.module.min").Euler} TEuler */
@@ -100,6 +101,7 @@ devicePair.sides.forEach((side) => {
 
 /** @param {HTMLElement} gloveContainer */
 function onIFrameLoaded(gloveContainer) {
+  /** @type {BS.Side} */
   const side = gloveContainer.dataset.side;
   /** @type {HTMLIFrameElement} */
   const iframe = gloveContainer.querySelector("iframe");
@@ -108,9 +110,13 @@ function onIFrameLoaded(gloveContainer) {
   const targetPositionEntity = targetEntity.querySelector(".position");
   const targetRotationEntity = targetEntity.querySelector(".rotation");
   const gloveEntity = targetEntity.querySelector(".glove");
+  const pressureEntities = Array.from(targetEntity.querySelectorAll("[data-pressure]"))
+    .sort((a, b) => a.dataset.pressure - b.dataset.pressure)
+    .map((entity) => entity.querySelector("a-sphere"));
+  //pressureEntities.forEach((entity) => entity.setAttribute("opacity", "0.0"));
   scene.addEventListener("loaded", () => {
     if (side == "left") {
-      gloveEntity.object3D.scale.x *= -1;
+      targetEntity.object3D.scale.x *= -1;
     }
   });
 
@@ -329,7 +335,6 @@ function onIFrameLoaded(gloveContainer) {
     }
 
     const gameRotation = event.message.gameRotation;
-    //permuteQuaternion(gameRotation);
     updateQuaternion(gameRotation, true);
   });
   devicePair.addEventListener("deviceRotation", (event) => {
@@ -339,7 +344,6 @@ function onIFrameLoaded(gloveContainer) {
     }
 
     const rotation = event.message.rotation;
-    //permuteQuaternion(rotation);
     updateQuaternion(rotation, true);
   });
 
@@ -380,6 +384,192 @@ function onIFrameLoaded(gloveContainer) {
     gyroscopeQuaternion.setFromEuler(gyroscopeEuler);
     updateQuaternion(gyroscopeQuaternion);
   });
+
+  // PRESSURE
+
+  /** @type {HTMLButtonElement} */
+  const togglePressureButton = gloveContainer.querySelector(".togglePressure");
+  togglePressureButton.addEventListener("click", () => {
+    /** @type {BS.SensorConfiguration} */
+    const configuration = { pressure: 0 };
+    if (devicePair[side].sensorConfiguration.pressure == 0) {
+      configuration.pressure = 20;
+    }
+    devicePair[side].setSensorConfiguration(configuration);
+  });
+  devicePair.addEventListener("deviceGetSensorConfiguration", (event) => {
+    if (event.message.side != side) {
+      return;
+    }
+    const { sensorConfiguration } = event.message;
+    togglePressureButton.innerText = sensorConfiguration.pressure == 0 ? "enable pressure" : "disable pressure";
+  });
+  /** @type {HTMLButtonElement} */
+  const resetPressureButton = gloveContainer.querySelector(".resetPressure");
+  resetPressureButton.addEventListener("click", () => {
+    devicePair[side].resetPressureRange();
+  });
+  devicePair.addEventListener("deviceIsConnected", (event) => {
+    const device = event.message.device;
+    if (device.side != side) {
+      return;
+    }
+
+    togglePressureButton.disabled = !device.isConnected;
+    resetPressureButton.disabled = !device.isConnected;
+  });
+
+  devicePair.addEventListener("devicePressure", (event) => {
+    if (event.message.side != side) {
+      return;
+    }
+    const { pressure } = event.message;
+    pressure.sensors.forEach((sensor, index) => {
+      pressureEntities[index].setAttribute("opacity", sensor.normalizedValue);
+    });
+  });
+
+  // CURSOR MODE
+  let isCursorEnabled = true;
+  /** @type {HTMLButtonElement} */
+  const toggleCursorButton = gloveContainer.querySelector(".toggleCursor");
+  toggleCursorButton.addEventListener("click", () => {
+    setIsCursorEnabled(!isCursorEnabled);
+  });
+  const setIsCursorEnabled = (newIsCursorEnabled) => {
+    isCursorEnabled = newIsCursorEnabled;
+    toggleCursorButton.innerText = isCursorEnabled ? "disable cursor" : "enable cursor";
+    if (isCursorEnabled) {
+      orientationSelect.value = "gyroscope";
+    } else {
+      orientationSelect.value = "none";
+    }
+    orientationSelect.dispatchEvent(new Event("input"));
+    onCursorIsEnabled();
+  };
+  const onCursorIsEnabled = () => {
+    if (isCursorEnabled) {
+      targetEntity.setAttribute("visible", "false");
+      cursorExample.setAttribute("visible", "true");
+      cameraEntity.setAttribute("orbit-controls", { enabled: false });
+      cameraEntity.setAttribute("camera", { active: false });
+      cursorCameraEntity.setAttribute("camera", { active: true });
+    } else {
+      targetEntity.setAttribute("visible", "true");
+      cursorExample.setAttribute("visible", "false");
+      cameraEntity.setAttribute("orbit-controls", { enabled: true });
+      cameraEntity.setAttribute("camera", { active: true });
+      cursorCameraEntity.setAttribute("camera", { active: false });
+    }
+  };
+
+  devicePair.addEventListener("deviceIsConnected", (event) => {
+    const device = event.message.device;
+    if (device.side != side) {
+      return;
+    }
+    toggleCursorButton.disabled = !device.isConnected;
+  });
+
+  const cameraEntity = scene.querySelector(".camera");
+  const cursorCameraEntity = scene.querySelector(".cursorCamera");
+  const cursorEntity = scene.querySelector(".cursor");
+  const cursorMeshEntity = cursorEntity.querySelector(".mesh");
+  const cursorExample = scene.querySelector(".cursorExample");
+  devicePair.addEventListener("deviceGyroscope", (event) => {
+    if (event.message.side != side) {
+      return;
+    }
+    if (!isCursorEnabled) {
+      return;
+    }
+    const { gyroscope } = event.message;
+    const { x: yawDegrees, y: pitchDegrees, z: rollDegrees } = gyroscope;
+    console.log({ yawDegrees, pitchDegrees, rollDegrees });
+    // FIX
+    setCursorPosition(yawDegrees * 0.001 + rollDegrees * 0.001, pitchDegrees * 0.001, true);
+  });
+  const cursorRaycaster = new THREE.Raycaster();
+  const cursor2DPosition = new THREE.Vector2();
+  const cursor3DPosition = new THREE.Vector3();
+  const setCursorPosition = (x, y, isOffset = false) => {
+    if (isOffset) {
+      cursor2DPosition.x += x;
+      cursor2DPosition.y += y;
+    } else {
+      cursor2DPosition.set(x, y);
+    }
+    cursor2DPosition.clampScalar(-1, 1);
+    updateCursorEntity();
+    if (!isCursorDown) {
+      intersectEntities();
+    }
+    if (isCursorDown && draggingEntity) {
+      dragEntity();
+    }
+  };
+  const updateCursorEntity = () => {
+    cursorRaycaster.setFromCamera(cursor2DPosition, cursorCameraEntity.object3D.children[0]);
+    cursorRaycaster.ray.at(1, cursor3DPosition);
+    cursorEntity.object3D.position.copy(cursor3DPosition);
+  };
+  const cursorIntersectableEntities = Array.from(scene.querySelectorAll(".intersectable"));
+
+  const dragEntityPosition = new THREE.Vector3();
+  const dragEntity = () => {
+    cursorRaycaster.ray.at(20, dragEntityPosition);
+    draggingEntity.object3D.position.copy(dragEntityPosition);
+  };
+
+  let intersectedEntities = [];
+  const intersectEntities = () => {
+    intersectedEntities.length = 0;
+    cursorIntersectableEntities.forEach((entity) => {
+      const intersections = cursorRaycaster.intersectObject(entity.object3D, true);
+      const intersection = intersections[0];
+      if (intersection) {
+        intersectedEntities.push(entity);
+        entity.setAttribute("color", "blue");
+      } else {
+        entity.setAttribute("color", entity.dataset.color);
+      }
+    });
+  };
+
+  let isCursorDown = false;
+  scene.addEventListener("mousemove", (event) => {
+    const canvas = scene.canvas;
+    const rect = canvas.getBoundingClientRect();
+    const x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+    const y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+    setCursorPosition(x, y);
+  });
+  scene.addEventListener("mousedown", () => {
+    setIsCursorDown(true);
+  });
+  scene.addEventListener("mouseup", () => {
+    setIsCursorDown(false);
+  });
+  let draggingEntity;
+  const setIsCursorDown = (newIsCursorDown) => {
+    isCursorDown = newIsCursorDown;
+    cursorMeshEntity.setAttribute("color", isCursorDown ? "black" : "lightGrey");
+    if (isCursorDown && intersectedEntities[0]) {
+      draggingEntity = intersectedEntities[0];
+      console.log("dragging entity");
+      draggingEntity.setAttribute("color", "green");
+      draggingEntity.removeAttribute("dynamic-body");
+      draggingEntity.setAttribute("static-body", "");
+    }
+    if (!isCursorDown && draggingEntity) {
+      console.log("removing draggingEntity");
+      draggingEntity.setAttribute("color", draggingEntity.dataset.color);
+      draggingEntity.setAttribute("dynamic-body", "");
+      draggingEntity.removeAttribute("static-body");
+      draggingEntity = undefined;
+    }
+  };
+  onCursorIsEnabled();
 }
 
 // SERVER
