@@ -11,7 +11,7 @@ import { VibrationMessageTypes } from "../vibration/VibrationManager.ts";
 import { SensorConfigurationMessageTypes } from "../sensor/SensorConfigurationManager.ts";
 import { SensorDataMessageTypes } from "../sensor/SensorDataManager.ts";
 
-const _console = createConsole("BaseConnectionManager", { log: false });
+const _console = createConsole("BaseConnectionManager", { log: true });
 
 export const ConnectionTypes = ["webBluetooth", "noble", "client"] as const;
 export type ConnectionType = (typeof ConnectionTypes)[number];
@@ -129,7 +129,7 @@ abstract class BaseConnectionManager {
     }
 
     if (this.#status == "notConnected") {
-      this.mtu = undefined;
+      this.mtu = this.#defaultMtu;
     }
   }
 
@@ -235,20 +235,21 @@ abstract class BaseConnectionManager {
         _console.log({ arrayBufferCount, arrayBuffersToSend });
 
         const arrayBuffer = concatenateArrayBuffers(...arrayBuffersToSend);
-        _console.log("sending arrayBuffer", arrayBuffer);
+        _console.log("sending arrayBuffer (partitioned)", arrayBuffer);
         await this.sendTxData(arrayBuffer);
       }
     } else {
       const arrayBuffer = concatenateArrayBuffers(...arrayBuffers);
-      _console.log("sending arrayBuffer", arrayBuffer);
+      _console.log("sending arrayBuffer (all)", arrayBuffer);
       await this.sendTxData(arrayBuffer);
     }
 
     this.#isSendingMessages = false;
   }
 
+  #defaultMtu = 23;
   //mtu?: number;
-  mtu?: number = 23;
+  mtu?: number = this.#defaultMtu;
 
   async sendTxData(data: ArrayBuffer) {
     _console.log("sendTxData", data);

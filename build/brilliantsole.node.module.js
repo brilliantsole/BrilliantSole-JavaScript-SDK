@@ -22,8 +22,9 @@ typeof SuppressedError === "function" ? SuppressedError : function (error, suppr
     return e.name = "SuppressedError", e.error = error, e.suppressed = suppressed, e;
 };
 
-const isInProduction = "__BRILLIANTSOLE__PROD__" == "__BRILLIANTSOLE__PROD__";
-const isInDev = "__BRILLIANTSOLE__PROD__" == "__BRILLIANTSOLE__DEV__";
+const __BRILLIANTSOLE__ENVIRONMENT__ = "__BRILLIANTSOLE__DEV__";
+const isInProduction = __BRILLIANTSOLE__ENVIRONMENT__ == "__BRILLIANTSOLE__PROD__";
+const isInDev = __BRILLIANTSOLE__ENVIRONMENT__ == "__BRILLIANTSOLE__DEV__";
 const isInBrowser = typeof window !== "undefined" && typeof window?.document !== "undefined";
 const isInNode = typeof process !== "undefined" && process?.versions?.node != null;
 const userAgent = (isInBrowser && navigator.userAgent) || "";
@@ -122,6 +123,9 @@ class Console {
     }
     static create(type, levelFlags) {
         const console = __classPrivateFieldGet(this, _a$7, "f", _Console_consoles)[type] || new _a$7(type);
+        if (levelFlags) {
+            console.setLevelFlags(levelFlags);
+        }
         return console;
     }
     get log() {
@@ -2354,8 +2358,8 @@ _VibrationManager_instances = new WeakSet(), _VibrationManager_verifyLocation = 
     return data;
 };
 
-var _BaseConnectionManager_instances, _a$4, _BaseConnectionManager_AssertValidTxRxMessageType, _BaseConnectionManager_assertIsSupported, _BaseConnectionManager_status, _BaseConnectionManager_assertIsNotConnected, _BaseConnectionManager_assertIsNotConnecting, _BaseConnectionManager_assertIsConnected, _BaseConnectionManager_assertIsNotDisconnecting, _BaseConnectionManager_assertIsConnectedAndNotDisconnecting, _BaseConnectionManager_pendingMessages, _BaseConnectionManager_isSendingMessages, _BaseConnectionManager_onRxMessage, _BaseConnectionManager_timer, _BaseConnectionManager_checkConnection;
-const _console$l = createConsole("BaseConnectionManager", { log: false });
+var _BaseConnectionManager_instances, _a$4, _BaseConnectionManager_AssertValidTxRxMessageType, _BaseConnectionManager_assertIsSupported, _BaseConnectionManager_status, _BaseConnectionManager_assertIsNotConnected, _BaseConnectionManager_assertIsNotConnecting, _BaseConnectionManager_assertIsConnected, _BaseConnectionManager_assertIsNotDisconnecting, _BaseConnectionManager_assertIsConnectedAndNotDisconnecting, _BaseConnectionManager_pendingMessages, _BaseConnectionManager_isSendingMessages, _BaseConnectionManager_defaultMtu, _BaseConnectionManager_onRxMessage, _BaseConnectionManager_timer, _BaseConnectionManager_checkConnection;
+const _console$l = createConsole("BaseConnectionManager", { log: true });
 const ConnectionStatuses = ["notConnected", "connecting", "connected", "disconnecting"];
 const ConnectionEventTypes = [...ConnectionStatuses, "connectionStatus", "isConnected"];
 const TxRxMessageTypes = [
@@ -2397,7 +2401,8 @@ class BaseConnectionManager {
         _BaseConnectionManager_status.set(this, "notConnected");
         _BaseConnectionManager_pendingMessages.set(this, []);
         _BaseConnectionManager_isSendingMessages.set(this, false);
-        this.mtu = 23;
+        _BaseConnectionManager_defaultMtu.set(this, 23);
+        this.mtu = __classPrivateFieldGet(this, _BaseConnectionManager_defaultMtu, "f");
         _BaseConnectionManager_timer.set(this, new Timer(__classPrivateFieldGet(this, _BaseConnectionManager_instances, "m", _BaseConnectionManager_checkConnection).bind(this), 5000));
         __classPrivateFieldGet(this, _BaseConnectionManager_instances, "m", _BaseConnectionManager_assertIsSupported).call(this);
     }
@@ -2420,7 +2425,7 @@ class BaseConnectionManager {
             __classPrivateFieldGet(this, _BaseConnectionManager_timer, "f").stop();
         }
         if (__classPrivateFieldGet(this, _BaseConnectionManager_status, "f") == "notConnected") {
-            this.mtu = undefined;
+            this.mtu = __classPrivateFieldGet(this, _BaseConnectionManager_defaultMtu, "f");
         }
     }
     get isConnected() {
@@ -2490,13 +2495,13 @@ class BaseConnectionManager {
                 const arrayBuffersToSend = arrayBuffers.splice(0, arrayBufferCount);
                 _console$l.log({ arrayBufferCount, arrayBuffersToSend });
                 const arrayBuffer = concatenateArrayBuffers(...arrayBuffersToSend);
-                _console$l.log("sending arrayBuffer", arrayBuffer);
+                _console$l.log("sending arrayBuffer (partitioned)", arrayBuffer);
                 await this.sendTxData(arrayBuffer);
             }
         }
         else {
             const arrayBuffer = concatenateArrayBuffers(...arrayBuffers);
-            _console$l.log("sending arrayBuffer", arrayBuffer);
+            _console$l.log("sending arrayBuffer (all)", arrayBuffer);
             await this.sendTxData(arrayBuffer);
         }
         __classPrivateFieldSet(this, _BaseConnectionManager_isSendingMessages, false, "f");
@@ -2513,7 +2518,7 @@ class BaseConnectionManager {
         __classPrivateFieldGet(this, _BaseConnectionManager_pendingMessages, "f").length = 0;
     }
 }
-_a$4 = BaseConnectionManager, _BaseConnectionManager_status = new WeakMap(), _BaseConnectionManager_pendingMessages = new WeakMap(), _BaseConnectionManager_isSendingMessages = new WeakMap(), _BaseConnectionManager_timer = new WeakMap(), _BaseConnectionManager_instances = new WeakSet(), _BaseConnectionManager_AssertValidTxRxMessageType = function _BaseConnectionManager_AssertValidTxRxMessageType(messageType) {
+_a$4 = BaseConnectionManager, _BaseConnectionManager_status = new WeakMap(), _BaseConnectionManager_pendingMessages = new WeakMap(), _BaseConnectionManager_isSendingMessages = new WeakMap(), _BaseConnectionManager_defaultMtu = new WeakMap(), _BaseConnectionManager_timer = new WeakMap(), _BaseConnectionManager_instances = new WeakSet(), _BaseConnectionManager_AssertValidTxRxMessageType = function _BaseConnectionManager_AssertValidTxRxMessageType(messageType) {
     _console$l.assertEnumWithError(messageType, TxRxMessageTypes);
 }, _BaseConnectionManager_assertIsSupported = function _BaseConnectionManager_assertIsSupported() {
     _console$l.assertWithError(this.isSupported, `${this.constructor.name} is not supported`);
@@ -4184,7 +4189,7 @@ DeviceManager.shared = new DeviceManager();
 var DeviceManager$1 = DeviceManager.shared;
 
 var _Device_instances, _a$3, _Device_DefaultConnectionManager, _Device_eventDispatcher, _Device_dispatchEvent_get, _Device_connectionManager, _Device_sendTxMessages, _Device_isConnected, _Device_assertIsConnected, _Device_hasRequiredInformation_get, _Device_requestRequiredInformation, _Device_assertCanReconnect, _Device_ReconnectOnDisconnection, _Device_reconnectOnDisconnection, _Device_reconnectIntervalId, _Device_onConnectionStatusUpdated, _Device_dispatchConnectionEvents, _Device_checkConnection, _Device_clear, _Device_clearConnection, _Device_onConnectionMessageReceived, _Device_onConnectionMessagesReceived, _Device_deviceInformationManager, _Device_batteryLevel, _Device_updateBatteryLevel, _Device_sensorConfigurationManager, _Device_ClearSensorConfigurationOnLeave, _Device_clearSensorConfigurationOnLeave, _Device_sensorDataManager, _Device_vibrationManager, _Device_fileTransferManager, _Device_tfliteManager, _Device_firmwareManager, _Device_sendSmpMessage, _Device_isServerSide;
-const _console$d = createConsole("Device", { log: false });
+const _console$d = createConsole("Device", { log: true });
 const DeviceEventTypes = [
     "connectionMessage",
     ...ConnectionEventTypes,
@@ -4238,7 +4243,7 @@ class Device {
         _Device_isConnected.set(this, false);
         _Device_reconnectOnDisconnection.set(this, _a$3.ReconnectOnDisconnection);
         _Device_reconnectIntervalId.set(this, void 0);
-        this.latestConnectionMessage = new Map();
+        this.latestConnectionMessages = new Map();
         _Device_deviceInformationManager.set(this, new DeviceInformationManager());
         _Device_batteryLevel.set(this, 0);
         this._informationManager = new InformationManager();
@@ -4604,7 +4609,11 @@ _a$3 = Device, _Device_eventDispatcher = new WeakMap(), _Device_connectionManage
     _console$d.assertWithError(this.isConnected, "notConnected");
 }, _Device_hasRequiredInformation_get = function _Device_hasRequiredInformation_get() {
     return RequiredInformationConnectionMessages.every((messageType) => {
-        return this.latestConnectionMessage.has(messageType);
+        const hasConnectionMessage = this.latestConnectionMessages.has(messageType);
+        if (!hasConnectionMessage) {
+            _console$d.log(`didn't receive "${messageType}" message`);
+        }
+        return hasConnectionMessage;
     });
 }, _Device_requestRequiredInformation = function _Device_requestRequiredInformation() {
     const messages = RequiredInformationConnectionMessages.map((messageType) => ({
@@ -4666,7 +4675,7 @@ _a$3 = Device, _Device_eventDispatcher = new WeakMap(), _Device_connectionManage
     __classPrivateFieldGet(this, _Device_deviceInformationManager, "f").clear();
 }, _Device_clearConnection = function _Device_clearConnection() {
     this.connectionManager?.clear();
-    this.latestConnectionMessage.clear();
+    this.latestConnectionMessages.clear();
 }, _Device_onConnectionMessageReceived = function _Device_onConnectionMessageReceived(messageType, dataView) {
     _console$d.log({ messageType, dataView });
     switch (messageType) {
@@ -4701,7 +4710,7 @@ _a$3 = Device, _Device_eventDispatcher = new WeakMap(), _Device_connectionManage
                 throw Error(`uncaught messageType ${messageType}`);
             }
     }
-    this.latestConnectionMessage.set(messageType, dataView);
+    this.latestConnectionMessages.set(messageType, dataView);
     __classPrivateFieldGet(this, _Device_instances, "a", _Device_dispatchEvent_get).call(this, "connectionMessage", { messageType, dataView });
 }, _Device_onConnectionMessagesReceived = function _Device_onConnectionMessagesReceived() {
     if (!this.isConnected && __classPrivateFieldGet(this, _Device_instances, "a", _Device_hasRequiredInformation_get)) {
@@ -5688,7 +5697,7 @@ _a = BaseServer, _BaseServer_clearSensorConfigurationsWhenNoClients = new WeakMa
 }, _BaseServer_createDeviceMessage = function _BaseServer_createDeviceMessage(device, messageType, dataView) {
     return {
         type: messageType,
-        data: dataView || device.latestConnectionMessage.get(messageType),
+        data: dataView || device.latestConnectionMessages.get(messageType),
     };
 }, _BaseServer_onDeviceConnectionMessage = function _BaseServer_onDeviceConnectionMessage(deviceEvent) {
     const { target: device, message } = deviceEvent;

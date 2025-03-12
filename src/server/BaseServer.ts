@@ -176,7 +176,7 @@ abstract class BaseServer {
   #createDeviceMessage(device: Device, messageType: ConnectionMessageType, dataView?: DataView): DeviceMessage {
     return {
       type: messageType as DeviceEventType,
-      data: dataView || device.latestConnectionMessage.get(messageType),
+      data: dataView || device.latestConnectionMessages.get(messageType),
     };
   }
 

@@ -78,7 +78,7 @@ import InformationManager, {
 import { FileLike } from "./utils/ArrayBufferUtils.ts";
 import DeviceManager from "./DeviceManager.ts";
 
-const _console = createConsole("Device", { log: false });
+const _console = createConsole("Device", { log: true });
 
 export const DeviceEventTypes = [
   "connectionMessage",
@@ -277,7 +277,11 @@ class Device {
 
   get #hasRequiredInformation() {
     return RequiredInformationConnectionMessages.every((messageType) => {
-      return this.latestConnectionMessage.has(messageType);
+      const hasConnectionMessage = this.latestConnectionMessages.has(messageType);
+      if (!hasConnectionMessage) {
+        _console.log(`didn't receive "${messageType}" message`);
+      }
+      return hasConnectionMessage;
     });
   }
   #requestRequiredInformation() {
@@ -434,7 +438,7 @@ class Device {
   }
   #clearConnection() {
     this.connectionManager?.clear();
-    this.latestConnectionMessage.clear();
+    this.latestConnectionMessages.clear();
   }
 
   #onConnectionMessageReceived(messageType: ConnectionMessageType, dataView: DataView) {
@@ -466,7 +470,7 @@ class Device {
         }
     }
 
-    this.latestConnectionMessage.set(messageType, dataView);
+    this.latestConnectionMessages.set(messageType, dataView);
     this.#dispatchEvent("connectionMessage", { messageType, dataView });
   }
   #onConnectionMessagesReceived() {
@@ -479,7 +483,7 @@ class Device {
     this.#sendTxMessages();
   }
 
-  latestConnectionMessage: Map<ConnectionMessageType, DataView> = new Map();
+  latestConnectionMessages: Map<ConnectionMessageType, DataView> = new Map();
 
   // DEVICE INFORMATION
   #deviceInformationManager = new DeviceInformationManager();
