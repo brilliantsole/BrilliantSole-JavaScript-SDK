@@ -134,20 +134,20 @@ export const RequiredInformationConnectionMessages: TxRxMessageType[] = [
   "getSensorScalars",
   "getPressurePositions",
 
-  "maxFileLength",
-  "getFileLength",
-  "getFileChecksum",
-  "getFileType",
-  "fileTransferStatus",
+  // "maxFileLength",
+  // "getFileLength",
+  // "getFileChecksum",
+  // "getFileType",
+  // "fileTransferStatus",
 
-  "getTfliteName",
-  "getTfliteTask",
-  "getTfliteSampleRate",
-  "getTfliteSensorTypes",
-  "tfliteIsReady",
-  "getTfliteCaptureDelay",
-  "getTfliteThreshold",
-  "getTfliteInferencingEnabled",
+  // "getTfliteName",
+  // "getTfliteTask",
+  // "getTfliteSampleRate",
+  // "getTfliteSensorTypes",
+  // "tfliteIsReady",
+  // "getTfliteCaptureDelay",
+  // "getTfliteThreshold",
+  // "getTfliteInferencingEnabled",
 ];
 
 class Device {
@@ -714,16 +714,22 @@ class Device {
   get canUpdateFirmware() {
     return this.#connectionManager?.canUpdateFirmware;
   }
+  #assertCanUpdateFirmware() {
+    _console.assertWithError(this.canUpdateFirmware, "can't update firmware");
+  }
 
   #sendSmpMessage(data: ArrayBuffer) {
+    this.#assertCanUpdateFirmware();
     return this.#connectionManager!.sendSmpMessage(data);
   }
   private sendSmpMessage = this.#sendSmpMessage.bind(this);
 
   get uploadFirmware() {
+    this.#assertCanUpdateFirmware();
     return this.#firmwareManager.uploadFirmware;
   }
   async reset() {
+    this.#assertCanUpdateFirmware();
     await this.#firmwareManager.reset();
     return this.#connectionManager!.disconnect();
   }
@@ -731,18 +737,22 @@ class Device {
     return this.#firmwareManager.status;
   }
   get getFirmwareImages() {
+    this.#assertCanUpdateFirmware();
     return this.#firmwareManager.getImages;
   }
   get firmwareImages() {
     return this.#firmwareManager.images;
   }
   get eraseFirmwareImage() {
+    this.#assertCanUpdateFirmware();
     return this.#firmwareManager.eraseImage;
   }
   get confirmFirmwareImage() {
+    this.#assertCanUpdateFirmware();
     return this.#firmwareManager.confirmImage;
   }
   get testFirmwareImage() {
+    this.#assertCanUpdateFirmware();
     return this.#firmwareManager.testImage;
   }
 

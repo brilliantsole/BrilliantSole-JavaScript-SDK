@@ -2347,7 +2347,7 @@
         return data;
     };
 
-    var _BaseConnectionManager_instances, _a$2, _BaseConnectionManager_AssertValidTxRxMessageType, _BaseConnectionManager_assertIsSupported, _BaseConnectionManager_status, _BaseConnectionManager_assertIsNotConnected, _BaseConnectionManager_assertIsNotConnecting, _BaseConnectionManager_assertIsConnected, _BaseConnectionManager_assertIsNotDisconnecting, _BaseConnectionManager_assertIsConnectedAndNotDisconnecting, _BaseConnectionManager_pendingMessages, _BaseConnectionManager_isSendingMessages, _BaseConnectionManager_onRxMessage, _BaseConnectionManager_timer, _BaseConnectionManager_checkConnection;
+    var _BaseConnectionManager_instances, _a$2, _BaseConnectionManager_AssertValidTxRxMessageType, _BaseConnectionManager_assertIsSupported, _BaseConnectionManager_status, _BaseConnectionManager_assertIsNotConnected, _BaseConnectionManager_assertIsNotConnecting, _BaseConnectionManager_assertIsConnected, _BaseConnectionManager_assertIsNotDisconnecting, _BaseConnectionManager_assertIsConnectedAndNotDisconnecting, _BaseConnectionManager_pendingMessages, _BaseConnectionManager_isSendingMessages, _BaseConnectionManager_defaultMtu, _BaseConnectionManager_onRxMessage, _BaseConnectionManager_timer, _BaseConnectionManager_checkConnection;
     const _console$b = createConsole("BaseConnectionManager", { log: false });
     const ConnectionStatuses = ["notConnected", "connecting", "connected", "disconnecting"];
     const ConnectionEventTypes = [...ConnectionStatuses, "connectionStatus", "isConnected"];
@@ -2390,7 +2390,8 @@
             _BaseConnectionManager_status.set(this, "notConnected");
             _BaseConnectionManager_pendingMessages.set(this, []);
             _BaseConnectionManager_isSendingMessages.set(this, false);
-            this.mtu = 23;
+            _BaseConnectionManager_defaultMtu.set(this, 23);
+            this.mtu = __classPrivateFieldGet(this, _BaseConnectionManager_defaultMtu, "f");
             _BaseConnectionManager_timer.set(this, new Timer(__classPrivateFieldGet(this, _BaseConnectionManager_instances, "m", _BaseConnectionManager_checkConnection).bind(this), 5000));
             __classPrivateFieldGet(this, _BaseConnectionManager_instances, "m", _BaseConnectionManager_assertIsSupported).call(this);
         }
@@ -2413,7 +2414,7 @@
                 __classPrivateFieldGet(this, _BaseConnectionManager_timer, "f").stop();
             }
             if (__classPrivateFieldGet(this, _BaseConnectionManager_status, "f") == "notConnected") {
-                this.mtu = undefined;
+                this.mtu = __classPrivateFieldGet(this, _BaseConnectionManager_defaultMtu, "f");
             }
         }
         get isConnected() {
@@ -2471,25 +2472,32 @@
             __classPrivateFieldGet(this, _BaseConnectionManager_pendingMessages, "f").length = 0;
             if (this.mtu) {
                 while (arrayBuffers.length > 0) {
+                    if (arrayBuffers.every((arrayBuffer) => arrayBuffer.byteLength > this.mtu - 3)) {
+                        _console$b.log("every arrayBuffer is too big to send");
+                        break;
+                    }
+                    _console$b.log("remaining arrayBuffers.length", arrayBuffers.length);
                     let arrayBufferByteLength = 0;
                     let arrayBufferCount = 0;
                     arrayBuffers.some((arrayBuffer) => {
                         if (arrayBufferByteLength + arrayBuffer.byteLength > this.mtu - 3) {
+                            _console$b.log(`stopping appending arrayBuffers ( length ${arrayBuffer.byteLength} too much)`);
                             return true;
                         }
+                        _console$b.log(`allowing arrayBuffer with length ${arrayBuffer.byteLength}`);
                         arrayBufferCount++;
                         arrayBufferByteLength += arrayBuffer.byteLength;
                     });
                     const arrayBuffersToSend = arrayBuffers.splice(0, arrayBufferCount);
                     _console$b.log({ arrayBufferCount, arrayBuffersToSend });
                     const arrayBuffer = concatenateArrayBuffers(...arrayBuffersToSend);
-                    _console$b.log("sending arrayBuffer", arrayBuffer);
+                    _console$b.log("sending arrayBuffer (partitioned)", arrayBuffer);
                     await this.sendTxData(arrayBuffer);
                 }
             }
             else {
                 const arrayBuffer = concatenateArrayBuffers(...arrayBuffers);
-                _console$b.log("sending arrayBuffer", arrayBuffer);
+                _console$b.log("sending arrayBuffer (all)", arrayBuffer);
                 await this.sendTxData(arrayBuffer);
             }
             __classPrivateFieldSet(this, _BaseConnectionManager_isSendingMessages, false, "f");
@@ -2506,7 +2514,7 @@
             __classPrivateFieldGet(this, _BaseConnectionManager_pendingMessages, "f").length = 0;
         }
     }
-    _a$2 = BaseConnectionManager, _BaseConnectionManager_status = new WeakMap(), _BaseConnectionManager_pendingMessages = new WeakMap(), _BaseConnectionManager_isSendingMessages = new WeakMap(), _BaseConnectionManager_timer = new WeakMap(), _BaseConnectionManager_instances = new WeakSet(), _BaseConnectionManager_AssertValidTxRxMessageType = function _BaseConnectionManager_AssertValidTxRxMessageType(messageType) {
+    _a$2 = BaseConnectionManager, _BaseConnectionManager_status = new WeakMap(), _BaseConnectionManager_pendingMessages = new WeakMap(), _BaseConnectionManager_isSendingMessages = new WeakMap(), _BaseConnectionManager_defaultMtu = new WeakMap(), _BaseConnectionManager_timer = new WeakMap(), _BaseConnectionManager_instances = new WeakSet(), _BaseConnectionManager_AssertValidTxRxMessageType = function _BaseConnectionManager_AssertValidTxRxMessageType(messageType) {
         _console$b.assertEnumWithError(messageType, TxRxMessageTypes);
     }, _BaseConnectionManager_assertIsSupported = function _BaseConnectionManager_assertIsSupported() {
         _console$b.assertWithError(this.isSupported, `${this.constructor.name} is not supported`);
@@ -4175,8 +4183,8 @@
     DeviceManager.shared = new DeviceManager();
     var DeviceManager$1 = DeviceManager.shared;
 
-    var _Device_instances, _a$1, _Device_DefaultConnectionManager, _Device_eventDispatcher, _Device_dispatchEvent_get, _Device_connectionManager, _Device_sendTxMessages, _Device_isConnected, _Device_assertIsConnected, _Device_hasRequiredInformation_get, _Device_requestRequiredInformation, _Device_assertCanReconnect, _Device_ReconnectOnDisconnection, _Device_reconnectOnDisconnection, _Device_reconnectIntervalId, _Device_onConnectionStatusUpdated, _Device_dispatchConnectionEvents, _Device_checkConnection, _Device_clear, _Device_clearConnection, _Device_onConnectionMessageReceived, _Device_onConnectionMessagesReceived, _Device_deviceInformationManager, _Device_batteryLevel, _Device_updateBatteryLevel, _Device_sensorConfigurationManager, _Device_ClearSensorConfigurationOnLeave, _Device_clearSensorConfigurationOnLeave, _Device_sensorDataManager, _Device_vibrationManager, _Device_fileTransferManager, _Device_tfliteManager, _Device_firmwareManager, _Device_sendSmpMessage, _Device_isServerSide;
-    const _console$3 = createConsole("Device", { log: false });
+    var _Device_instances, _a$1, _Device_DefaultConnectionManager, _Device_eventDispatcher, _Device_dispatchEvent_get, _Device_connectionManager, _Device_sendTxMessages, _Device_isConnected, _Device_assertIsConnected, _Device_hasRequiredInformation_get, _Device_requestRequiredInformation, _Device_assertCanReconnect, _Device_ReconnectOnDisconnection, _Device_reconnectOnDisconnection, _Device_reconnectIntervalId, _Device_onConnectionStatusUpdated, _Device_dispatchConnectionEvents, _Device_checkConnection, _Device_clear, _Device_clearConnection, _Device_onConnectionMessageReceived, _Device_onConnectionMessagesReceived, _Device_deviceInformationManager, _Device_batteryLevel, _Device_updateBatteryLevel, _Device_sensorConfigurationManager, _Device_ClearSensorConfigurationOnLeave, _Device_clearSensorConfigurationOnLeave, _Device_sensorDataManager, _Device_vibrationManager, _Device_fileTransferManager, _Device_tfliteManager, _Device_firmwareManager, _Device_assertCanUpdateFirmware, _Device_sendSmpMessage, _Device_isServerSide;
+    const _console$3 = createConsole("Device", { log: true });
     const DeviceEventTypes = [
         "connectionMessage",
         ...ConnectionEventTypes,
@@ -4201,19 +4209,6 @@
         "getSensorConfiguration",
         "getSensorScalars",
         "getPressurePositions",
-        "maxFileLength",
-        "getFileLength",
-        "getFileChecksum",
-        "getFileType",
-        "fileTransferStatus",
-        "getTfliteName",
-        "getTfliteTask",
-        "getTfliteSampleRate",
-        "getTfliteSensorTypes",
-        "tfliteIsReady",
-        "getTfliteCaptureDelay",
-        "getTfliteThreshold",
-        "getTfliteInferencingEnabled",
     ];
     class Device {
         get bluetoothId() {
@@ -4230,7 +4225,7 @@
             _Device_isConnected.set(this, false);
             _Device_reconnectOnDisconnection.set(this, _a$1.ReconnectOnDisconnection);
             _Device_reconnectIntervalId.set(this, void 0);
-            this.latestConnectionMessage = new Map();
+            this.latestConnectionMessages = new Map();
             _Device_deviceInformationManager.set(this, new DeviceInformationManager());
             _Device_batteryLevel.set(this, 0);
             this._informationManager = new InformationManager();
@@ -4549,9 +4544,11 @@
             return __classPrivateFieldGet(this, _Device_connectionManager, "f")?.canUpdateFirmware;
         }
         get uploadFirmware() {
+            __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertCanUpdateFirmware).call(this);
             return __classPrivateFieldGet(this, _Device_firmwareManager, "f").uploadFirmware;
         }
         async reset() {
+            __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertCanUpdateFirmware).call(this);
             await __classPrivateFieldGet(this, _Device_firmwareManager, "f").reset();
             return __classPrivateFieldGet(this, _Device_connectionManager, "f").disconnect();
         }
@@ -4559,18 +4556,22 @@
             return __classPrivateFieldGet(this, _Device_firmwareManager, "f").status;
         }
         get getFirmwareImages() {
+            __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertCanUpdateFirmware).call(this);
             return __classPrivateFieldGet(this, _Device_firmwareManager, "f").getImages;
         }
         get firmwareImages() {
             return __classPrivateFieldGet(this, _Device_firmwareManager, "f").images;
         }
         get eraseFirmwareImage() {
+            __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertCanUpdateFirmware).call(this);
             return __classPrivateFieldGet(this, _Device_firmwareManager, "f").eraseImage;
         }
         get confirmFirmwareImage() {
+            __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertCanUpdateFirmware).call(this);
             return __classPrivateFieldGet(this, _Device_firmwareManager, "f").confirmImage;
         }
         get testFirmwareImage() {
+            __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertCanUpdateFirmware).call(this);
             return __classPrivateFieldGet(this, _Device_firmwareManager, "f").testImage;
         }
         get isServerSide() {
@@ -4596,7 +4597,11 @@
         _console$3.assertWithError(this.isConnected, "notConnected");
     }, _Device_hasRequiredInformation_get = function _Device_hasRequiredInformation_get() {
         return RequiredInformationConnectionMessages.every((messageType) => {
-            return this.latestConnectionMessage.has(messageType);
+            const hasConnectionMessage = this.latestConnectionMessages.has(messageType);
+            if (!hasConnectionMessage) {
+                _console$3.log(`didn't receive "${messageType}" message`);
+            }
+            return hasConnectionMessage;
         });
     }, _Device_requestRequiredInformation = function _Device_requestRequiredInformation() {
         const messages = RequiredInformationConnectionMessages.map((messageType) => ({
@@ -4658,7 +4663,7 @@
         __classPrivateFieldGet(this, _Device_deviceInformationManager, "f").clear();
     }, _Device_clearConnection = function _Device_clearConnection() {
         this.connectionManager?.clear();
-        this.latestConnectionMessage.clear();
+        this.latestConnectionMessages.clear();
     }, _Device_onConnectionMessageReceived = function _Device_onConnectionMessageReceived(messageType, dataView) {
         _console$3.log({ messageType, dataView });
         switch (messageType) {
@@ -4693,7 +4698,7 @@
                     throw Error(`uncaught messageType ${messageType}`);
                 }
         }
-        this.latestConnectionMessage.set(messageType, dataView);
+        this.latestConnectionMessages.set(messageType, dataView);
         __classPrivateFieldGet(this, _Device_instances, "a", _Device_dispatchEvent_get).call(this, "connectionMessage", { messageType, dataView });
     }, _Device_onConnectionMessagesReceived = function _Device_onConnectionMessagesReceived() {
         if (!this.isConnected && __classPrivateFieldGet(this, _Device_instances, "a", _Device_hasRequiredInformation_get)) {
@@ -4712,7 +4717,10 @@
         __classPrivateFieldSet(this, _Device_batteryLevel, updatedBatteryLevel, "f");
         _console$3.log({ updatedBatteryLevel: __classPrivateFieldGet(this, _Device_batteryLevel, "f") });
         __classPrivateFieldGet(this, _Device_instances, "a", _Device_dispatchEvent_get).call(this, "batteryLevel", { batteryLevel: __classPrivateFieldGet(this, _Device_batteryLevel, "f") });
+    }, _Device_assertCanUpdateFirmware = function _Device_assertCanUpdateFirmware() {
+        _console$3.assertWithError(this.canUpdateFirmware, "can't update firmware");
     }, _Device_sendSmpMessage = function _Device_sendSmpMessage(data) {
+        __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertCanUpdateFirmware).call(this);
         return __classPrivateFieldGet(this, _Device_connectionManager, "f").sendSmpMessage(data);
     };
     _Device_ReconnectOnDisconnection = { value: false };

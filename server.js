@@ -15,6 +15,15 @@ process.on("warning", (e) => console.warn(e.stack));
 
 //BS.setAllConsoleLevelFlags({ log: true });
 //BS.setConsoleLevelFlagsForType("UDPServer", { log: true });
+BS.setConsoleLevelFlagsForType("NobleScanner", { log: true });
+BS.setConsoleLevelFlagsForType("BaseScanner", { log: true });
+BS.setConsoleLevelFlagsForType("Scanner", { log: true });
+BS.setConsoleLevelFlagsForType("BaseConnectionManager", { log: true });
+BS.setConsoleLevelFlagsForType("NobleConnectionManager", { log: true });
+BS.setConsoleLevelFlagsForType("BluetoothConnectionManager", { log: true });
+BS.setConsoleLevelFlagsForType("Device", { log: true });
+BS.setConsoleLevelFlagsForType("DeviceInformationManager", { log: true });
+BS.setConsoleLevelFlagsForType("BaseServer", { log: true });
 
 // HTTPS SERVER
 app.use(nocache());

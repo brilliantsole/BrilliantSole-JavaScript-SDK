@@ -1014,7 +1014,7 @@ device.addEventListener("firmwareImages", () => {
 });
 
 device.addEventListener("isConnected", () => {
-  if (device.isConnected) {
+  if (device.isConnected && device.canUpdateFirmware) {
     device.getFirmwareImages();
   }
 });

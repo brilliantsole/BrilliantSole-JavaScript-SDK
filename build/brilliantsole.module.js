@@ -18,9 +18,8 @@ typeof SuppressedError === "function" ? SuppressedError : function (error, suppr
     return e.name = "SuppressedError", e.error = error, e.suppressed = suppressed, e;
 };
 
-const __BRILLIANTSOLE__ENVIRONMENT__ = "__BRILLIANTSOLE__DEV__";
-const isInProduction = __BRILLIANTSOLE__ENVIRONMENT__ == "__BRILLIANTSOLE__PROD__";
-const isInDev = __BRILLIANTSOLE__ENVIRONMENT__ == "__BRILLIANTSOLE__DEV__";
+const isInProduction = "__BRILLIANTSOLE__PROD__" == "__BRILLIANTSOLE__PROD__";
+const isInDev = "__BRILLIANTSOLE__PROD__" == "__BRILLIANTSOLE__DEV__";
 const isInBrowser = typeof window !== "undefined" && typeof window?.document !== "undefined";
 const isInNode = typeof process !== "undefined" && process?.versions?.node != null;
 const userAgent = (isInBrowser && navigator.userAgent) || "";
@@ -119,9 +118,6 @@ class Console {
     }
     static create(type, levelFlags) {
         const console = __classPrivateFieldGet(this, _a$6, "f", _Console_consoles)[type] || new _a$6(type);
-        if (levelFlags) {
-            console.setLevelFlags(levelFlags);
-        }
         return console;
     }
     get log() {
@@ -2352,7 +2348,7 @@ _VibrationManager_instances = new WeakSet(), _VibrationManager_verifyLocation = 
 };
 
 var _BaseConnectionManager_instances, _a$3, _BaseConnectionManager_AssertValidTxRxMessageType, _BaseConnectionManager_assertIsSupported, _BaseConnectionManager_status, _BaseConnectionManager_assertIsNotConnected, _BaseConnectionManager_assertIsNotConnecting, _BaseConnectionManager_assertIsConnected, _BaseConnectionManager_assertIsNotDisconnecting, _BaseConnectionManager_assertIsConnectedAndNotDisconnecting, _BaseConnectionManager_pendingMessages, _BaseConnectionManager_isSendingMessages, _BaseConnectionManager_defaultMtu, _BaseConnectionManager_onRxMessage, _BaseConnectionManager_timer, _BaseConnectionManager_checkConnection;
-const _console$g = createConsole("BaseConnectionManager", { log: true });
+const _console$g = createConsole("BaseConnectionManager", { log: false });
 const ConnectionStatuses = ["notConnected", "connecting", "connected", "disconnecting"];
 const ConnectionEventTypes = [...ConnectionStatuses, "connectionStatus", "isConnected"];
 const TxRxMessageTypes = [
@@ -2476,12 +2472,19 @@ class BaseConnectionManager {
         __classPrivateFieldGet(this, _BaseConnectionManager_pendingMessages, "f").length = 0;
         if (this.mtu) {
             while (arrayBuffers.length > 0) {
+                if (arrayBuffers.every((arrayBuffer) => arrayBuffer.byteLength > this.mtu - 3)) {
+                    _console$g.log("every arrayBuffer is too big to send");
+                    break;
+                }
+                _console$g.log("remaining arrayBuffers.length", arrayBuffers.length);
                 let arrayBufferByteLength = 0;
                 let arrayBufferCount = 0;
                 arrayBuffers.some((arrayBuffer) => {
                     if (arrayBufferByteLength + arrayBuffer.byteLength > this.mtu - 3) {
+                        _console$g.log(`stopping appending arrayBuffers ( length ${arrayBuffer.byteLength} too much)`);
                         return true;
                     }
+                    _console$g.log(`allowing arrayBuffer with length ${arrayBuffer.byteLength}`);
                     arrayBufferCount++;
                     arrayBufferByteLength += arrayBuffer.byteLength;
                 });
@@ -4180,7 +4183,7 @@ _DeviceManager_boundDeviceEventListeners = new WeakMap(), _DeviceManager_Connect
 DeviceManager.shared = new DeviceManager();
 var DeviceManager$1 = DeviceManager.shared;
 
-var _Device_instances, _a$2, _Device_DefaultConnectionManager, _Device_eventDispatcher, _Device_dispatchEvent_get, _Device_connectionManager, _Device_sendTxMessages, _Device_isConnected, _Device_assertIsConnected, _Device_hasRequiredInformation_get, _Device_requestRequiredInformation, _Device_assertCanReconnect, _Device_ReconnectOnDisconnection, _Device_reconnectOnDisconnection, _Device_reconnectIntervalId, _Device_onConnectionStatusUpdated, _Device_dispatchConnectionEvents, _Device_checkConnection, _Device_clear, _Device_clearConnection, _Device_onConnectionMessageReceived, _Device_onConnectionMessagesReceived, _Device_deviceInformationManager, _Device_batteryLevel, _Device_updateBatteryLevel, _Device_sensorConfigurationManager, _Device_ClearSensorConfigurationOnLeave, _Device_clearSensorConfigurationOnLeave, _Device_sensorDataManager, _Device_vibrationManager, _Device_fileTransferManager, _Device_tfliteManager, _Device_firmwareManager, _Device_sendSmpMessage, _Device_isServerSide;
+var _Device_instances, _a$2, _Device_DefaultConnectionManager, _Device_eventDispatcher, _Device_dispatchEvent_get, _Device_connectionManager, _Device_sendTxMessages, _Device_isConnected, _Device_assertIsConnected, _Device_hasRequiredInformation_get, _Device_requestRequiredInformation, _Device_assertCanReconnect, _Device_ReconnectOnDisconnection, _Device_reconnectOnDisconnection, _Device_reconnectIntervalId, _Device_onConnectionStatusUpdated, _Device_dispatchConnectionEvents, _Device_checkConnection, _Device_clear, _Device_clearConnection, _Device_onConnectionMessageReceived, _Device_onConnectionMessagesReceived, _Device_deviceInformationManager, _Device_batteryLevel, _Device_updateBatteryLevel, _Device_sensorConfigurationManager, _Device_ClearSensorConfigurationOnLeave, _Device_clearSensorConfigurationOnLeave, _Device_sensorDataManager, _Device_vibrationManager, _Device_fileTransferManager, _Device_tfliteManager, _Device_firmwareManager, _Device_assertCanUpdateFirmware, _Device_sendSmpMessage, _Device_isServerSide;
 const _console$8 = createConsole("Device", { log: true });
 const DeviceEventTypes = [
     "connectionMessage",
@@ -4206,19 +4209,6 @@ const RequiredInformationConnectionMessages = [
     "getSensorConfiguration",
     "getSensorScalars",
     "getPressurePositions",
-    "maxFileLength",
-    "getFileLength",
-    "getFileChecksum",
-    "getFileType",
-    "fileTransferStatus",
-    "getTfliteName",
-    "getTfliteTask",
-    "getTfliteSampleRate",
-    "getTfliteSensorTypes",
-    "tfliteIsReady",
-    "getTfliteCaptureDelay",
-    "getTfliteThreshold",
-    "getTfliteInferencingEnabled",
 ];
 class Device {
     get bluetoothId() {
@@ -4554,9 +4544,11 @@ class Device {
         return __classPrivateFieldGet(this, _Device_connectionManager, "f")?.canUpdateFirmware;
     }
     get uploadFirmware() {
+        __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertCanUpdateFirmware).call(this);
         return __classPrivateFieldGet(this, _Device_firmwareManager, "f").uploadFirmware;
     }
     async reset() {
+        __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertCanUpdateFirmware).call(this);
         await __classPrivateFieldGet(this, _Device_firmwareManager, "f").reset();
         return __classPrivateFieldGet(this, _Device_connectionManager, "f").disconnect();
     }
@@ -4564,18 +4556,22 @@ class Device {
         return __classPrivateFieldGet(this, _Device_firmwareManager, "f").status;
     }
     get getFirmwareImages() {
+        __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertCanUpdateFirmware).call(this);
         return __classPrivateFieldGet(this, _Device_firmwareManager, "f").getImages;
     }
     get firmwareImages() {
         return __classPrivateFieldGet(this, _Device_firmwareManager, "f").images;
     }
     get eraseFirmwareImage() {
+        __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertCanUpdateFirmware).call(this);
         return __classPrivateFieldGet(this, _Device_firmwareManager, "f").eraseImage;
     }
     get confirmFirmwareImage() {
+        __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertCanUpdateFirmware).call(this);
         return __classPrivateFieldGet(this, _Device_firmwareManager, "f").confirmImage;
     }
     get testFirmwareImage() {
+        __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertCanUpdateFirmware).call(this);
         return __classPrivateFieldGet(this, _Device_firmwareManager, "f").testImage;
     }
     get isServerSide() {
@@ -4721,7 +4717,10 @@ _a$2 = Device, _Device_eventDispatcher = new WeakMap(), _Device_connectionManage
     __classPrivateFieldSet(this, _Device_batteryLevel, updatedBatteryLevel, "f");
     _console$8.log({ updatedBatteryLevel: __classPrivateFieldGet(this, _Device_batteryLevel, "f") });
     __classPrivateFieldGet(this, _Device_instances, "a", _Device_dispatchEvent_get).call(this, "batteryLevel", { batteryLevel: __classPrivateFieldGet(this, _Device_batteryLevel, "f") });
+}, _Device_assertCanUpdateFirmware = function _Device_assertCanUpdateFirmware() {
+    _console$8.assertWithError(this.canUpdateFirmware, "can't update firmware");
 }, _Device_sendSmpMessage = function _Device_sendSmpMessage(data) {
+    __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertCanUpdateFirmware).call(this);
     return __classPrivateFieldGet(this, _Device_connectionManager, "f").sendSmpMessage(data);
 };
 _Device_ReconnectOnDisconnection = { value: false };
@@ -5092,7 +5091,7 @@ class ClientConnectionManager extends BaseConnectionManager {
         return "client";
     }
     get canUpdateFirmware() {
-        return true;
+        return false;
     }
     get bluetoothId() {
         return __classPrivateFieldGet(this, _ClientConnectionManager_bluetoothId, "f");

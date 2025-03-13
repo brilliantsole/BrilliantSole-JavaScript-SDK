@@ -273,6 +273,9 @@ class NobleConnectionManager extends BluetoothConnectionManager {
 
   get #hasAllCharacteristics() {
     return allCharacteristicNames.every((characteristicName) => {
+      if (characteristicName == "smp") {
+        return true;
+      }
       return this.#characteristics.has(characteristicName);
     });
   }

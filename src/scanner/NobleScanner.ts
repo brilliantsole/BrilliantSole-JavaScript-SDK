@@ -88,8 +88,10 @@ class NobleScanner extends BaseScanner {
     const { manufacturerData, serviceData } = noblePeripheral.advertisement;
     if (manufacturerData) {
       _console.log("manufacturerData", manufacturerData);
-      const deviceTypeEnum = manufacturerData.readUint8(manufacturerData.byteLength - 1);
-      deviceType = DeviceTypes[deviceTypeEnum];
+      if (manufacturerData.byteLength >= 3) {
+        const deviceTypeEnum = manufacturerData.readUint8(2);
+        deviceType = DeviceTypes[deviceTypeEnum];
+      }
     }
     if (serviceData) {
       _console.log("serviceData", serviceData);

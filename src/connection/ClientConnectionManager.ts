@@ -24,7 +24,7 @@ class ClientConnectionManager extends BaseConnectionManager {
 
   get canUpdateFirmware() {
     // FIX - how to know if it has an smp characteristic?
-    return true;
+    return false;
   }
 
   client!: BaseClient;

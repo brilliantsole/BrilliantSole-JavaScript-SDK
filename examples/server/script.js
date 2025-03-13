@@ -223,6 +223,7 @@ BS.DeviceManager.AddEventListener("connectedDevices", (event) => {
     if (device.connectionType != "client" || !device.bluetoothId) {
       return;
     }
+    console.log("AHHH", device.bluetoothId);
     let connectedDeviceContainer = connectedDeviceContainers[device.bluetoothId];
     if (!connectedDeviceContainer) {
       connectedDeviceContainer = connectedDeviceTemplate.content.cloneNode(true).querySelector(".connectedDevice");
@@ -354,7 +355,7 @@ BS.DeviceManager.AddEventListener("connectedDevices", (event) => {
       device.addEventListener("getSensorConfiguration", () => {
         for (const sensorType in device.sensorConfiguration) {
           connectedDeviceContainer.querySelector(
-            `.sensorTypeConfiguration[data-sensor-type="${sensorType}"] input`
+            `.sensorTypeConfiguration[data-sensor-type="${sensorType}"] .input`
           ).value = device.sensorConfiguration[sensorType];
         }
       });
@@ -846,7 +847,7 @@ BS.DeviceManager.AddEventListener("connectedDevices", (event) => {
       });
 
       device.addEventListener("isConnected", () => {
-        if (device.isConnected) {
+        if (device.isConnected && device.canUpdateFirmware) {
           device.getFirmwareImages();
         }
       });
@@ -909,7 +910,9 @@ BS.DeviceManager.AddEventListener("connectedDevices", (event) => {
       });
       updateFirmwareUI();
 
-      device.getFirmwareImages();
+      if (device.canUpdateFirmware) {
+        device.getFirmwareImages();
+      }
     }
     connectedDevicesContainer.appendChild(connectedDeviceContainer);
   });

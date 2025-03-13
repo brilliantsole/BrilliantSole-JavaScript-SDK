@@ -11,7 +11,7 @@ import { VibrationMessageTypes } from "../vibration/VibrationManager.ts";
 import { SensorConfigurationMessageTypes } from "../sensor/SensorConfigurationManager.ts";
 import { SensorDataMessageTypes } from "../sensor/SensorDataManager.ts";
 
-const _console = createConsole("BaseConnectionManager", { log: true });
+const _console = createConsole("BaseConnectionManager", { log: false });
 
 export const ConnectionTypes = ["webBluetooth", "noble", "client"] as const;
 export type ConnectionType = (typeof ConnectionTypes)[number];
@@ -222,12 +222,19 @@ abstract class BaseConnectionManager {
 
     if (this.mtu) {
       while (arrayBuffers.length > 0) {
+        if (arrayBuffers.every((arrayBuffer) => arrayBuffer.byteLength > this.mtu! - 3)) {
+          _console.log("every arrayBuffer is too big to send");
+          break;
+        }
+        _console.log("remaining arrayBuffers.length", arrayBuffers.length);
         let arrayBufferByteLength = 0;
         let arrayBufferCount = 0;
         arrayBuffers.some((arrayBuffer) => {
           if (arrayBufferByteLength + arrayBuffer.byteLength > this.mtu! - 3) {
+            _console.log(`stopping appending arrayBuffers ( length ${arrayBuffer.byteLength} too much)`);
             return true;
           }
+          _console.log(`allowing arrayBuffer with length ${arrayBuffer.byteLength}`);
           arrayBufferCount++;
           arrayBufferByteLength += arrayBuffer.byteLength;
         });
