@@ -329,7 +329,7 @@ function onIFrameLoaded(insoleContainer) {
       return;
     }
 
-    const gameRotation = event.message.gameRotation;
+    let gameRotation = event.message.gameRotation;
     updateQuaternion(gameRotation, true);
   });
   devicePair.addEventListener("deviceRotation", (event) => {
@@ -406,3 +406,78 @@ websocketClient.addEventListener("connectionStatus", () => {
   }
   toggleServerConnectionButton.disabled = disabled;
 });
+
+// /**
+//  *
+//  * @param {BS.Quaternion} quaternion
+//  * @returns {BS.Quaternion}
+//  */
+// function permuteQuaternion(quaternion) {
+//   const newQuaternion = {};
+//   const permutation = permutations[permutationIndex];
+//   const components = ["x", "y", "z", "w"];
+//   permutation.forEach((_index, toIndex) => {
+//     const fromIndex = Math.abs(_index) - 1;
+//     const sign = Math.sign(_index);
+//     newQuaternion[components[toIndex]] = sign * quaternion[components[fromIndex]];
+//   });
+//   return newQuaternion;
+// }
+
+// function generateSignedPermutations(arr) {
+//   function permute(nums, start = 0, result = []) {
+//     if (start === nums.length) {
+//       result.push([...nums]);
+//       return;
+//     }
+//     for (let i = start; i < nums.length; i++) {
+//       [nums[start], nums[i]] = [nums[i], nums[start]];
+//       permute(nums, start + 1, result);
+//       [nums[start], nums[i]] = [nums[i], nums[start]]; // backtrack
+//     }
+//     return result;
+//   }
+
+//   function generateSigns(permutation, index = 0, result = []) {
+//     if (index === permutation.length) {
+//       result.push([...permutation]);
+//       return;
+//     }
+//     permutation[index] = Math.abs(permutation[index]);
+//     generateSigns(permutation, index + 1, result);
+//     permutation[index] = -permutation[index];
+//     generateSigns(permutation, index + 1, result);
+//     return result;
+//   }
+
+//   let permutations = permute(arr);
+//   let signedPermutations = [];
+//   for (let perm of permutations) {
+//     signedPermutations.push(...generateSigns(perm));
+//   }
+//   return signedPermutations;
+// }
+
+// const permutations = generateSignedPermutations([1, 2, 3, 4]);
+// console.log("permutations", permutations);
+
+// let permutationIndex = 0;
+// window.setPermutationIndex = (newPermutationIndex) => {
+//   permutationIndex = newPermutationIndex % permutations.length;
+//   console.log({ permutationIndex }, permutations[permutationIndex]);
+// };
+
+// document.addEventListener("keydown", (event) => {
+//   switch (event.key) {
+//     case "ArrowDown":
+//       if (permutationIndex > 0) {
+//         window.setPermutationIndex(permutationIndex - 1);
+//       }
+//       event.preventDefault();
+//       break;
+//     case "ArrowUp":
+//       window.setPermutationIndex(permutationIndex + 1);
+//       event.preventDefault();
+//       break;
+//   }
+// });
