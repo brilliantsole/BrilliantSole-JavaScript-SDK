@@ -83,7 +83,7 @@ declare class Device {
     get getBatteryCurrent(): () => Promise<void>;
     get name(): string;
     get setName(): (newName: string) => Promise<void>;
-    get type(): "leftInsole" | "rightInsole" | "leftGlove" | "rightGlove" | "glasses";
+    get type(): "leftInsole" | "rightInsole" | "leftGlove" | "rightGlove" | "glasses" | "generic";
     get setType(): (newType: DeviceType) => Promise<void>;
     get isInsole(): boolean;
     get isGlove(): boolean;

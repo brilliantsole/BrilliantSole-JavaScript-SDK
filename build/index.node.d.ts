@@ -487,7 +487,7 @@ interface FileTransferEventMessages {
     };
 }
 
-declare const DeviceTypes: readonly ["leftInsole", "rightInsole", "leftGlove", "rightGlove", "glasses"];
+declare const DeviceTypes: readonly ["leftInsole", "rightInsole", "leftGlove", "rightGlove", "glasses", "generic"];
 type DeviceType = (typeof DeviceTypes)[number];
 declare const Sides: readonly ["left", "right"];
 type Side = (typeof Sides)[number];
@@ -539,7 +539,7 @@ declare class InformationManager {
     get name(): string;
     updateName(updatedName: string): void;
     setName(newName: string): Promise<void>;
-    get type(): "leftInsole" | "rightInsole" | "leftGlove" | "rightGlove" | "glasses";
+    get type(): "leftInsole" | "rightInsole" | "leftGlove" | "rightGlove" | "glasses" | "generic";
     get typeEnum(): number;
     updateType(updatedType: DeviceType): void;
     setType(newType: DeviceType): Promise<void>;
@@ -623,7 +623,7 @@ declare class Device {
     get getBatteryCurrent(): () => Promise<void>;
     get name(): string;
     get setName(): (newName: string) => Promise<void>;
-    get type(): "leftInsole" | "rightInsole" | "leftGlove" | "rightGlove" | "glasses";
+    get type(): "leftInsole" | "rightInsole" | "leftGlove" | "rightGlove" | "glasses" | "generic";
     get setType(): (newType: DeviceType) => Promise<void>;
     get isInsole(): boolean;
     get isGlove(): boolean;

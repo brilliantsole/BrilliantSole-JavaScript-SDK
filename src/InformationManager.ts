@@ -7,7 +7,7 @@ import autoBind from "auto-bind";
 
 const _console = createConsole("InformationManager", { log: false });
 
-export const DeviceTypes = ["leftInsole", "rightInsole", "leftGlove", "rightGlove", "glasses"] as const;
+export const DeviceTypes = ["leftInsole", "rightInsole", "leftGlove", "rightGlove", "glasses", "generic"] as const;
 export type DeviceType = (typeof DeviceTypes)[number];
 
 export const Sides = ["left", "right"] as const;

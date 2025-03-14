@@ -1845,7 +1845,7 @@ _DeviceInformationManager_information = new WeakMap(), _DeviceInformationManager
 
 var _InformationManager_instances, _InformationManager_dispatchEvent_get, _InformationManager_isCharging, _InformationManager_updateIsCharging, _InformationManager_batteryCurrent, _InformationManager_updateBatteryCurrent, _InformationManager_id, _InformationManager_updateId, _InformationManager_name, _InformationManager_type, _InformationManager_assertValidDeviceType, _InformationManager_assertValidDeviceTypeEnum, _InformationManager_setTypeEnum, _InformationManager_mtu, _InformationManager_updateMtu, _InformationManager_isCurrentTimeSet, _InformationManager_onCurrentTime, _InformationManager_setCurrentTime;
 const _console$n = createConsole("InformationManager", { log: false });
-const DeviceTypes = ["leftInsole", "rightInsole", "leftGlove", "rightGlove", "glasses"];
+const DeviceTypes = ["leftInsole", "rightInsole", "leftGlove", "rightGlove", "glasses", "generic"];
 const Sides = ["left", "right"];
 const MinNameLength = 2;
 const MaxNameLength = 30;
