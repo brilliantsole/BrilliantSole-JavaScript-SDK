@@ -1312,7 +1312,7 @@ class SensorConfigurationManager {
     }
     get zeroSensorConfiguration() {
         const zeroSensorConfiguration = {};
-        SensorTypes.forEach((sensorType) => {
+        __classPrivateFieldGet(this, _SensorConfigurationManager_availableSensorTypes, "f").forEach((sensorType) => {
             zeroSensorConfiguration[sensorType] = 0;
         });
         return zeroSensorConfiguration;
@@ -1979,7 +1979,10 @@ class InformationManager {
                 this.updateType(type);
                 break;
             case "getMtu":
-                const mtu = dataView.getUint16(0, true);
+                let mtu = dataView.getUint16(0, true);
+                if (isInBrowser) {
+                    mtu = Math.min(mtu, 512);
+                }
                 _console$n.log({ mtu });
                 __classPrivateFieldGet(this, _InformationManager_instances, "m", _InformationManager_updateMtu).call(this, mtu);
                 break;
@@ -4217,6 +4220,19 @@ const RequiredInformationConnectionMessages = [
     "getSensorConfiguration",
     "getSensorScalars",
     "getPressurePositions",
+    "maxFileLength",
+    "getFileLength",
+    "getFileChecksum",
+    "getFileType",
+    "fileTransferStatus",
+    "getTfliteName",
+    "getTfliteTask",
+    "getTfliteSampleRate",
+    "getTfliteSensorTypes",
+    "tfliteIsReady",
+    "getTfliteCaptureDelay",
+    "getTfliteThreshold",
+    "getTfliteInferencingEnabled",
 ];
 class Device {
     get bluetoothId() {

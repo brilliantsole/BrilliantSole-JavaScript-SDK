@@ -1,5 +1,6 @@
 import Device, { SendMessageCallback } from "./Device.ts";
 import { createConsole } from "./utils/Console.ts";
+import { isInBrowser } from "./utils/environment.ts";
 import EventDispatcher from "./utils/EventDispatcher.ts";
 import { Uint16Max } from "./utils/MathUtils.ts";
 import { textDecoder, textEncoder } from "./utils/Text.ts";
@@ -274,7 +275,10 @@ class InformationManager {
         this.updateType(type);
         break;
       case "getMtu":
-        const mtu = dataView.getUint16(0, true);
+        let mtu = dataView.getUint16(0, true);
+        if (isInBrowser) {
+          mtu = Math.min(mtu, 512);
+        }
         _console.log({ mtu });
         this.#updateMtu(mtu);
         break;

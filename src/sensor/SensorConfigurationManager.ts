@@ -149,7 +149,7 @@ class SensorConfigurationManager {
   }
   get zeroSensorConfiguration() {
     const zeroSensorConfiguration: SensorConfiguration = {};
-    SensorTypes.forEach((sensorType) => {
+    this.#availableSensorTypes.forEach((sensorType) => {
       zeroSensorConfiguration[sensorType] = 0;
     });
     return zeroSensorConfiguration;

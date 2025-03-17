@@ -134,20 +134,20 @@ export const RequiredInformationConnectionMessages: TxRxMessageType[] = [
   "getSensorScalars",
   "getPressurePositions",
 
-  // "maxFileLength",
-  // "getFileLength",
-  // "getFileChecksum",
-  // "getFileType",
-  // "fileTransferStatus",
+  "maxFileLength",
+  "getFileLength",
+  "getFileChecksum",
+  "getFileType",
+  "fileTransferStatus",
 
-  // "getTfliteName",
-  // "getTfliteTask",
-  // "getTfliteSampleRate",
-  // "getTfliteSensorTypes",
-  // "tfliteIsReady",
-  // "getTfliteCaptureDelay",
-  // "getTfliteThreshold",
-  // "getTfliteInferencingEnabled",
+  "getTfliteName",
+  "getTfliteTask",
+  "getTfliteSampleRate",
+  "getTfliteSensorTypes",
+  "tfliteIsReady",
+  "getTfliteCaptureDelay",
+  "getTfliteThreshold",
+  "getTfliteInferencingEnabled",
 ];
 
 class Device {
