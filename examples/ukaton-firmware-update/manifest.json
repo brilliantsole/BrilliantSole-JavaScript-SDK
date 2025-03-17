@@ -1,0 +1,11 @@
+{
+  "name": "Ukaton-BrilliantSole",
+  "version": "0.0.1",
+  "new_install_prompt_erase": true,
+  "builds": [
+    {
+      "chipFamily": "ESP32",
+      "parts": [{ "path": "./merged-firmware.bin", "offset": 0 }]
+    }
+  ]
+}
