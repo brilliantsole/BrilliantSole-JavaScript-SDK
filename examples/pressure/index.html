@@ -46,46 +46,141 @@
     [data-haptics] {
       /* background-color: blue;*/
     }
-    [data-pressure="0"] {
+
+    /* Default pressure images */
+    .viz:not(.ukaton) [data-pressure="0"] {
       -webkit-mask-image: url(../../assets/images/pressure-0.svg);
       mask-image: url(../../assets/images/pressure-0.svg);
     }
-    [data-pressure="1"] {
+    .viz:not(.ukaton) [data-pressure="1"] {
       -webkit-mask-image: url(../../assets/images/pressure-1.svg);
       mask-image: url(../../assets/images/pressure-1.svg);
     }
-    [data-pressure="2"] {
+    .viz:not(.ukaton) [data-pressure="2"] {
       -webkit-mask-image: url(../../assets/images/pressure-2.svg);
       mask-image: url(../../assets/images/pressure-2.svg);
     }
-    [data-pressure="3"] {
+    .viz:not(.ukaton) [data-pressure="3"] {
       -webkit-mask-image: url(../../assets/images/pressure-3.svg);
       mask-image: url(../../assets/images/pressure-3.svg);
     }
-    [data-pressure="4"] {
+    .viz:not(.ukaton) [data-pressure="4"] {
       -webkit-mask-image: url(../../assets/images/pressure-4.svg);
       mask-image: url(../../assets/images/pressure-4.svg);
     }
-    [data-pressure="5"] {
+    .viz:not(.ukaton) [data-pressure="5"] {
       -webkit-mask-image: url(../../assets/images/pressure-5.svg);
       mask-image: url(../../assets/images/pressure-5.svg);
     }
-    [data-pressure="6"] {
+    .viz:not(.ukaton) [data-pressure="6"] {
       -webkit-mask-image: url(../../assets/images/pressure-6.svg);
       mask-image: url(../../assets/images/pressure-6.svg);
     }
-    [data-pressure="7"] {
+    .viz:not(.ukaton) [data-pressure="7"] {
       -webkit-mask-image: url(../../assets/images/pressure-7.svg);
       mask-image: url(../../assets/images/pressure-7.svg);
     }
+    .viz:not(.ukaton) [data-pressure="8"] {
+      display: none;
+    }
+    .viz:not(.ukaton) [data-pressure="9"] {
+      display: none;
+    }
+    .viz:not(.ukaton) [data-pressure="10"] {
+      display: none;
+    }
+    .viz:not(.ukaton) [data-pressure="11"] {
+      display: none;
+    }
+    .viz:not(.ukaton) [data-pressure="12"] {
+      display: none;
+    }
+    .viz:not(.ukaton) [data-pressure="13"] {
+      display: none;
+    }
+    .viz:not(.ukaton) [data-pressure="14"] {
+      display: none;
+    }
+    .viz:not(.ukaton) [data-pressure="15"] {
+      display: none;
+    }
 
-    [data-haptics="front"] {
+    /* Ukaton-specific pressure images */
+    .viz.ukaton [data-pressure="0"] {
+      -webkit-mask-image: url(../../assets/images/ukaton-pressure-0.svg);
+      mask-image: url(../../assets/images/ukaton-pressure-0.svg);
+    }
+    .viz.ukaton [data-pressure="1"] {
+      -webkit-mask-image: url(../../assets/images/ukaton-pressure-1.svg);
+      mask-image: url(../../assets/images/ukaton-pressure-1.svg);
+    }
+    .viz.ukaton [data-pressure="2"] {
+      -webkit-mask-image: url(../../assets/images/ukaton-pressure-2.svg);
+      mask-image: url(../../assets/images/ukaton-pressure-2.svg);
+    }
+    .viz.ukaton [data-pressure="3"] {
+      -webkit-mask-image: url(../../assets/images/ukaton-pressure-3.svg);
+      mask-image: url(../../assets/images/ukaton-pressure-3.svg);
+    }
+    .viz.ukaton [data-pressure="4"] {
+      -webkit-mask-image: url(../../assets/images/ukaton-pressure-4.svg);
+      mask-image: url(../../assets/images/ukaton-pressure-4.svg);
+    }
+    .viz.ukaton [data-pressure="5"] {
+      -webkit-mask-image: url(../../assets/images/ukaton-pressure-5.svg);
+      mask-image: url(../../assets/images/ukaton-pressure-5.svg);
+    }
+    .viz.ukaton [data-pressure="6"] {
+      -webkit-mask-image: url(../../assets/images/ukaton-pressure-6.svg);
+      mask-image: url(../../assets/images/ukaton-pressure-6.svg);
+    }
+    .viz.ukaton [data-pressure="7"] {
+      -webkit-mask-image: url(../../assets/images/ukaton-pressure-7.svg);
+      mask-image: url(../../assets/images/ukaton-pressure-7.svg);
+    }
+    .viz.ukaton [data-pressure="8"] {
+      -webkit-mask-image: url(../../assets/images/ukaton-pressure-8.svg);
+      mask-image: url(../../assets/images/ukaton-pressure-8.svg);
+    }
+    .viz.ukaton [data-pressure="9"] {
+      -webkit-mask-image: url(../../assets/images/ukaton-pressure-9.svg);
+      mask-image: url(../../assets/images/ukaton-pressure-9.svg);
+    }
+    .viz.ukaton [data-pressure="10"] {
+      -webkit-mask-image: url(../../assets/images/ukaton-pressure-10.svg);
+      mask-image: url(../../assets/images/ukaton-pressure-10.svg);
+    }
+    .viz.ukaton [data-pressure="11"] {
+      -webkit-mask-image: url(../../assets/images/ukaton-pressure-11.svg);
+      mask-image: url(../../assets/images/ukaton-pressure-11.svg);
+    }
+    .viz.ukaton [data-pressure="12"] {
+      -webkit-mask-image: url(../../assets/images/ukaton-pressure-12.svg);
+      mask-image: url(../../assets/images/ukaton-pressure-12.svg);
+    }
+    .viz.ukaton [data-pressure="13"] {
+      -webkit-mask-image: url(../../assets/images/ukaton-pressure-13.svg);
+      mask-image: url(../../assets/images/ukaton-pressure-13.svg);
+    }
+    .viz.ukaton [data-pressure="14"] {
+      -webkit-mask-image: url(../../assets/images/ukaton-pressure-14.svg);
+      mask-image: url(../../assets/images/ukaton-pressure-14.svg);
+    }
+    .viz.ukaton [data-pressure="15"] {
+      -webkit-mask-image: url(../../assets/images/ukaton-pressure-15.svg);
+      mask-image: url(../../assets/images/ukaton-pressure-15.svg);
+    }
+
+    .viz [data-haptics="front"] {
       -webkit-mask-image: url(../../assets/images/haptics-front.svg);
       mask-image: url(../../assets/images/haptics-front.svg);
     }
-    [data-haptics="rear"] {
+    .viz [data-haptics="rear"] {
       -webkit-mask-image: url(../../assets/images/haptics-rear.svg);
       mask-image: url(../../assets/images/haptics-rear.svg);
+    }
+    .viz:not(.ukaton) [data-haptics] {
+      display: none;
     }
 
     .viz {
@@ -101,6 +196,7 @@
       width: 20px;
       height: 20px;
       opacity: 0;
+      z-index: 2;
     }
     .center > div,
     .devicePairCenter > div {
@@ -116,6 +212,13 @@
     }
     .devicePairCenter > div {
       background-color: orange;
+    }
+
+    .viz:not(.ukaton) img.ukaton {
+      display: none;
+    }
+    .viz.ukaton img:not(.ukaton) {
+      display: none;
     }
   </style>
   <body>
@@ -189,10 +292,20 @@
           <div data-pressure="6"></div>
           <div data-pressure="7"></div>
 
+          <div data-pressure="8" class="ukaton"></div>
+          <div data-pressure="9" class="ukaton"></div>
+          <div data-pressure="10" class="ukaton"></div>
+          <div data-pressure="11" class="ukaton"></div>
+          <div data-pressure="12" class="ukaton"></div>
+          <div data-pressure="13" class="ukaton"></div>
+          <div data-pressure="14" class="ukaton"></div>
+          <div data-pressure="15" class="ukaton"></div>
+
           <div data-haptics="front"></div>
           <div data-haptics="rear"></div>
 
           <img src="../../assets/images/right-insole.svg" />
+          <img class="ukaton" src="../../assets/images/ukaton-right-insole.svg" />
         </div>
       </div>
     </template>

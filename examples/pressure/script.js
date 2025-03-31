@@ -141,6 +141,23 @@ devicePair.addEventListener("deviceIsConnected", (event) => {
   togglePressureDataButtons[device.side].disabled = !device.isConnected;
 });
 
+devicePair.addEventListener("deviceIsConnected", (event) => {
+  const { device, side, isConnected } = event.message;
+
+  if (!isConnected) {
+    return;
+  }
+
+  const insoleContainer = insoleContainers[side];
+  const viz = insoleContainer.querySelector(".viz");
+  if (device.deviceInformation.modelNumber.includes("Ukaton")) {
+    viz.classList.add("ukaton");
+  } else {
+    viz.classList.remove("ukaton");
+  }
+  console.log("insoleContainer", insoleContainer);
+});
+
 devicePair.addEventListener("deviceConnectionStatus", (event) => {
   const { device } = event.message;
 
