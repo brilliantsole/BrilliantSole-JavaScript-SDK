@@ -674,6 +674,7 @@ declare class Device {
     get testFirmwareImage(): (imageIndex?: number) => Promise<void>;
     get isServerSide(): boolean;
     set isServerSide(newIsServerSide: boolean);
+    get isUkaton(): boolean;
 }
 
 declare const DeviceManagerEventTypes: readonly ["deviceConnected", "deviceDisconnected", "deviceIsConnected", "availableDevices", "connectedDevices"];

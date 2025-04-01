@@ -771,6 +771,11 @@ class Device {
 
     this.#fileTransferManager.isServerSide = this.isServerSide;
   }
+
+  // UKATON
+  get isUkaton() {
+    return this.deviceInformation.modelNumber.includes("Ukaton");
+  }
 }
 
 export default Device;

@@ -150,7 +150,7 @@ devicePair.addEventListener("deviceIsConnected", (event) => {
 
   const insoleContainer = insoleContainers[side];
   const viz = insoleContainer.querySelector(".viz");
-  if (device.deviceInformation.modelNumber.includes("Ukaton")) {
+  if (device.isUkaton) {
     viz.classList.add("ukaton");
   } else {
     viz.classList.remove("ukaton");

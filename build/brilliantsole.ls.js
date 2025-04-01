@@ -4602,6 +4602,9 @@
             __classPrivateFieldSet(this, _Device_isServerSide, newIsServerSide, "f");
             __classPrivateFieldGet(this, _Device_fileTransferManager, "f").isServerSide = this.isServerSide;
         }
+        get isUkaton() {
+            return this.deviceInformation.modelNumber.includes("Ukaton");
+        }
     }
     _a$1 = Device, _Device_eventDispatcher = new WeakMap(), _Device_connectionManager = new WeakMap(), _Device_isConnected = new WeakMap(), _Device_reconnectOnDisconnection = new WeakMap(), _Device_reconnectIntervalId = new WeakMap(), _Device_deviceInformationManager = new WeakMap(), _Device_batteryLevel = new WeakMap(), _Device_sensorConfigurationManager = new WeakMap(), _Device_clearSensorConfigurationOnLeave = new WeakMap(), _Device_sensorDataManager = new WeakMap(), _Device_vibrationManager = new WeakMap(), _Device_fileTransferManager = new WeakMap(), _Device_tfliteManager = new WeakMap(), _Device_firmwareManager = new WeakMap(), _Device_isServerSide = new WeakMap(), _Device_instances = new WeakSet(), _Device_DefaultConnectionManager = function _Device_DefaultConnectionManager() {
         return new WebBluetoothConnectionManager();
