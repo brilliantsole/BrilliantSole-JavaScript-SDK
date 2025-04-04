@@ -5613,7 +5613,10 @@ createServerMessage("discoveredDevices");
 
 var _BaseServer_instances, _a, _BaseServer_ClearSensorConfigurationsWhenNoClients, _BaseServer_clearSensorConfigurationsWhenNoClients, _BaseServer_boundServerListeners, _BaseServer_onClientConnected, _BaseServer_onClientDisconnected, _BaseServer_boundScannerListeners, _BaseServer_onScannerIsAvailable, _BaseServer_isScanningAvailableMessage_get, _BaseServer_onScannerIsScanning, _BaseServer_isScanningMessage_get, _BaseServer_onScannerDiscoveredDevice, _BaseServer_createDiscoveredDeviceMessage, _BaseServer_onExpiredDiscoveredDevice, _BaseServer_createExpiredDiscoveredDeviceMessage, _BaseServer_discoveredDevicesMessage_get, _BaseServer_connectedDevicesMessage_get, _BaseServer_boundDeviceListeners, _BaseServer_createDeviceMessage, _BaseServer_onDeviceConnectionMessage, _BaseServer_boundDeviceManagerListeners, _BaseServer_onDeviceConnected, _BaseServer_onDeviceDisconnected, _BaseServer_onDeviceIsConnected, _BaseServer_createDeviceIsConnectedMessage, _BaseServer_createDeviceServerMessage, _BaseServer_onClientMessage, _BaseServer_parseClientDeviceMessageCallback;
 const _console$4 = createConsole("BaseServer", { log: false });
-const ServerEventTypes = ["clientConnected", "clientDisconnected"];
+const ServerEventTypes = [
+    "clientConnected",
+    "clientDisconnected",
+];
 class BaseServer {
     get addEventListener() {
         return this.eventDispatcher.addEventListener;
@@ -5697,7 +5700,8 @@ _a = BaseServer, _BaseServer_clearSensorConfigurationsWhenNoClients = new WeakMa
 }, _BaseServer_onClientDisconnected = function _BaseServer_onClientDisconnected(event) {
     event.message.client;
     _console$4.log("onClientDisconnected");
-    if (this.numberOfClients == 0 && this.clearSensorConfigurationsWhenNoClients) {
+    if (this.numberOfClients == 0 &&
+        this.clearSensorConfigurationsWhenNoClients) {
         DeviceManager$1.ConnectedDevices.forEach((device) => {
             device.clearSensorConfiguration();
             device.setTfliteInferencingEnabled(false);
@@ -5706,23 +5710,35 @@ _a = BaseServer, _BaseServer_clearSensorConfigurationsWhenNoClients = new WeakMa
 }, _BaseServer_onScannerIsAvailable = function _BaseServer_onScannerIsAvailable(event) {
     this.broadcastMessage(__classPrivateFieldGet(this, _BaseServer_instances, "a", _BaseServer_isScanningAvailableMessage_get));
 }, _BaseServer_isScanningAvailableMessage_get = function _BaseServer_isScanningAvailableMessage_get() {
-    return createServerMessage({ type: "isScanningAvailable", data: scanner$1.isScanningAvailable });
+    return createServerMessage({
+        type: "isScanningAvailable",
+        data: scanner$1.isScanningAvailable,
+    });
 }, _BaseServer_onScannerIsScanning = function _BaseServer_onScannerIsScanning(event) {
     this.broadcastMessage(__classPrivateFieldGet(this, _BaseServer_instances, "a", _BaseServer_isScanningMessage_get));
 }, _BaseServer_isScanningMessage_get = function _BaseServer_isScanningMessage_get() {
-    return createServerMessage({ type: "isScanning", data: scanner$1.isScanning });
+    return createServerMessage({
+        type: "isScanning",
+        data: scanner$1.isScanning,
+    });
 }, _BaseServer_onScannerDiscoveredDevice = function _BaseServer_onScannerDiscoveredDevice(event) {
     const { discoveredDevice } = event.message;
     _console$4.log(discoveredDevice);
     this.broadcastMessage(__classPrivateFieldGet(this, _BaseServer_instances, "m", _BaseServer_createDiscoveredDeviceMessage).call(this, discoveredDevice));
 }, _BaseServer_createDiscoveredDeviceMessage = function _BaseServer_createDiscoveredDeviceMessage(discoveredDevice) {
-    return createServerMessage({ type: "discoveredDevice", data: discoveredDevice });
+    return createServerMessage({
+        type: "discoveredDevice",
+        data: discoveredDevice,
+    });
 }, _BaseServer_onExpiredDiscoveredDevice = function _BaseServer_onExpiredDiscoveredDevice(event) {
     const { discoveredDevice } = event.message;
     _console$4.log("expired", discoveredDevice);
     this.broadcastMessage(__classPrivateFieldGet(this, _BaseServer_instances, "m", _BaseServer_createExpiredDiscoveredDeviceMessage).call(this, discoveredDevice));
 }, _BaseServer_createExpiredDiscoveredDeviceMessage = function _BaseServer_createExpiredDiscoveredDeviceMessage(discoveredDevice) {
-    return createServerMessage({ type: "expiredDiscoveredDevice", data: discoveredDevice.bluetoothId });
+    return createServerMessage({
+        type: "expiredDiscoveredDevice",
+        data: discoveredDevice.bluetoothId,
+    });
 }, _BaseServer_discoveredDevicesMessage_get = function _BaseServer_discoveredDevicesMessage_get() {
     const serverMessages = scanner$1.discoveredDevicesArray
         .filter((discoveredDevice) => {
@@ -5736,7 +5752,9 @@ _a = BaseServer, _BaseServer_clearSensorConfigurationsWhenNoClients = new WeakMa
 }, _BaseServer_connectedDevicesMessage_get = function _BaseServer_connectedDevicesMessage_get() {
     return createServerMessage({
         type: "connectedDevices",
-        data: JSON.stringify({ connectedDevices: DeviceManager$1.ConnectedDevices.map((device) => device.bluetoothId) }),
+        data: JSON.stringify({
+            connectedDevices: DeviceManager$1.ConnectedDevices.map((device) => device.bluetoothId),
+        }),
     });
 }, _BaseServer_createDeviceMessage = function _BaseServer_createDeviceMessage(device, messageType, dataView) {
     return {
@@ -5765,7 +5783,10 @@ _a = BaseServer, _BaseServer_clearSensorConfigurationsWhenNoClients = new WeakMa
     _console$4.log("onDeviceIsConnected", device.bluetoothId);
     this.broadcastMessage(__classPrivateFieldGet(this, _BaseServer_instances, "m", _BaseServer_createDeviceIsConnectedMessage).call(this, device));
 }, _BaseServer_createDeviceIsConnectedMessage = function _BaseServer_createDeviceIsConnectedMessage(device) {
-    return __classPrivateFieldGet(this, _BaseServer_instances, "m", _BaseServer_createDeviceServerMessage).call(this, device, { type: "isConnected", data: device.isConnected });
+    return __classPrivateFieldGet(this, _BaseServer_instances, "m", _BaseServer_createDeviceServerMessage).call(this, device, {
+        type: "isConnected",
+        data: device.isConnected,
+    });
 }, _BaseServer_createDeviceServerMessage = function _BaseServer_createDeviceServerMessage(device, ...messages) {
     return createServerMessage({
         type: "deviceMessage",

@@ -1,5 +1,9 @@
 import { createConsole } from "../utils/Console.ts";
-import EventDispatcher, { BoundEventListeners, Event, EventMap } from "../utils/EventDispatcher.ts";
+import EventDispatcher, {
+  BoundEventListeners,
+  Event,
+  EventMap,
+} from "../utils/EventDispatcher.ts";
 import {
   createServerMessage,
   ServerMessageTypes,
@@ -8,18 +12,38 @@ import {
   ServerMessageType,
   createDeviceMessage,
 } from "./ServerUtils.ts";
-import Device, { BoundDeviceEventListeners, DeviceEventMap, DeviceEventType } from "../Device.ts";
-import { addEventListeners, removeEventListeners } from "../utils/EventUtils.ts";
+import Device, {
+  BoundDeviceEventListeners,
+  DeviceEventMap,
+  DeviceEventType,
+} from "../Device.ts";
+import {
+  addEventListeners,
+  removeEventListeners,
+} from "../utils/EventUtils.ts";
 import scanner from "../scanner/Scanner.ts";
 import { parseMessage, parseStringFromDataView } from "../utils/ParseUtils.ts";
-import { ConnectionMessageType, ConnectionMessageTypes } from "../connection/BaseConnectionManager.ts";
-import { BoundScannerEventListeners, DiscoveredDevice, ScannerEventMap } from "../scanner/BaseScanner.ts";
+import {
+  ConnectionMessageType,
+  ConnectionMessageTypes,
+} from "../connection/BaseConnectionManager.ts";
+import {
+  BoundScannerEventListeners,
+  DiscoveredDevice,
+  ScannerEventMap,
+} from "../scanner/BaseScanner.ts";
 import { concatenateArrayBuffers } from "../utils/ArrayBufferUtils.ts";
-import DeviceManager, { DeviceManagerEventMap, BoundDeviceManagerEventListeners } from "../DeviceManager.ts";
+import DeviceManager, {
+  DeviceManagerEventMap,
+  BoundDeviceManagerEventListeners,
+} from "../DeviceManager.ts";
 
 const _console = createConsole("BaseServer", { log: false });
 
-export const ServerEventTypes = ["clientConnected", "clientDisconnected"] as const;
+export const ServerEventTypes = [
+  "clientConnected",
+  "clientDisconnected",
+] as const;
 export type ServerEventType = (typeof ServerEventTypes)[number];
 
 interface ServerEventMessages {
@@ -27,14 +51,33 @@ interface ServerEventMessages {
   clientDisconnected: { client: any };
 }
 
-export type ServerEventDispatcher = EventDispatcher<BaseServer, ServerEventType, ServerEventMessages>;
-export type ServerEvent = Event<BaseServer, ServerEventType, ServerEventMessages>;
-export type ServerEventMap = EventMap<BaseServer, ServerEventType, ServerEventMessages>;
-export type BoundServerEventListeners = BoundEventListeners<BaseServer, ServerEventType, ServerEventMessages>;
+export type ServerEventDispatcher = EventDispatcher<
+  BaseServer,
+  ServerEventType,
+  ServerEventMessages
+>;
+export type ServerEvent = Event<
+  BaseServer,
+  ServerEventType,
+  ServerEventMessages
+>;
+export type ServerEventMap = EventMap<
+  BaseServer,
+  ServerEventType,
+  ServerEventMessages
+>;
+export type BoundServerEventListeners = BoundEventListeners<
+  BaseServer,
+  ServerEventType,
+  ServerEventMessages
+>;
 
 abstract class BaseServer {
   // EVENT DISPATCHER
-  protected eventDispatcher: ServerEventDispatcher = new EventDispatcher(this as BaseServer, ServerEventTypes);
+  protected eventDispatcher: ServerEventDispatcher = new EventDispatcher(
+    this as BaseServer,
+    ServerEventTypes
+  );
   get addEventListener() {
     return this.eventDispatcher.addEventListener;
   }
@@ -71,7 +114,8 @@ abstract class BaseServer {
     this.#ClearSensorConfigurationsWhenNoClients = newValue;
   }
 
-  #clearSensorConfigurationsWhenNoClients = BaseServer.#ClearSensorConfigurationsWhenNoClients;
+  #clearSensorConfigurationsWhenNoClients =
+    BaseServer.#ClearSensorConfigurationsWhenNoClients;
   get clearSensorConfigurationsWhenNoClients() {
     return this.#clearSensorConfigurationsWhenNoClients;
   }
@@ -92,7 +136,10 @@ abstract class BaseServer {
   #onClientDisconnected(event: ServerEventMap["clientDisconnected"]) {
     const client = event.message.client;
     _console.log("onClientDisconnected");
-    if (this.numberOfClients == 0 && this.clearSensorConfigurationsWhenNoClients) {
+    if (
+      this.numberOfClients == 0 &&
+      this.clearSensorConfigurationsWhenNoClients
+    ) {
       DeviceManager.ConnectedDevices.forEach((device) => {
         device.clearSensorConfiguration();
         device.setTfliteInferencingEnabled(false);
@@ -117,33 +164,51 @@ abstract class BaseServer {
     this.broadcastMessage(this.#isScanningAvailableMessage);
   }
   get #isScanningAvailableMessage() {
-    return createServerMessage({ type: "isScanningAvailable", data: scanner!.isScanningAvailable });
+    return createServerMessage({
+      type: "isScanningAvailable",
+      data: scanner!.isScanningAvailable,
+    });
   }
 
   #onScannerIsScanning(event: ScannerEventMap["isScanning"]) {
     this.broadcastMessage(this.#isScanningMessage);
   }
   get #isScanningMessage() {
-    return createServerMessage({ type: "isScanning", data: scanner!.isScanning });
+    return createServerMessage({
+      type: "isScanning",
+      data: scanner!.isScanning,
+    });
   }
 
   #onScannerDiscoveredDevice(event: ScannerEventMap["discoveredDevice"]) {
     const { discoveredDevice } = event.message;
     _console.log(discoveredDevice);
 
-    this.broadcastMessage(this.#createDiscoveredDeviceMessage(discoveredDevice));
+    this.broadcastMessage(
+      this.#createDiscoveredDeviceMessage(discoveredDevice)
+    );
   }
   #createDiscoveredDeviceMessage(discoveredDevice: DiscoveredDevice) {
-    return createServerMessage({ type: "discoveredDevice", data: discoveredDevice });
+    return createServerMessage({
+      type: "discoveredDevice",
+      data: discoveredDevice,
+    });
   }
 
-  #onExpiredDiscoveredDevice(event: ScannerEventMap["expiredDiscoveredDevice"]) {
+  #onExpiredDiscoveredDevice(
+    event: ScannerEventMap["expiredDiscoveredDevice"]
+  ) {
     const { discoveredDevice } = event.message;
     _console.log("expired", discoveredDevice);
-    this.broadcastMessage(this.#createExpiredDiscoveredDeviceMessage(discoveredDevice));
+    this.broadcastMessage(
+      this.#createExpiredDiscoveredDeviceMessage(discoveredDevice)
+    );
   }
   #createExpiredDiscoveredDeviceMessage(discoveredDevice: DiscoveredDevice) {
-    return createServerMessage({ type: "expiredDiscoveredDevice", data: discoveredDevice.bluetoothId });
+    return createServerMessage({
+      type: "expiredDiscoveredDevice",
+      data: discoveredDevice.bluetoothId,
+    });
   }
 
   get #discoveredDevicesMessage() {
@@ -163,7 +228,11 @@ abstract class BaseServer {
   get #connectedDevicesMessage() {
     return createServerMessage({
       type: "connectedDevices",
-      data: JSON.stringify({ connectedDevices: DeviceManager.ConnectedDevices.map((device) => device.bluetoothId) }),
+      data: JSON.stringify({
+        connectedDevices: DeviceManager.ConnectedDevices.map(
+          (device) => device.bluetoothId
+        ),
+      }),
     });
   }
 
@@ -173,7 +242,11 @@ abstract class BaseServer {
     connectionMessage: this.#onDeviceConnectionMessage.bind(this),
   };
 
-  #createDeviceMessage(device: Device, messageType: ConnectionMessageType, dataView?: DataView): DeviceMessage {
+  #createDeviceMessage(
+    device: Device,
+    messageType: ConnectionMessageType,
+    dataView?: DataView
+  ): DeviceMessage {
     return {
       type: messageType as DeviceEventType,
       data: dataView || device.latestConnectionMessages.get(messageType),
@@ -191,7 +264,10 @@ abstract class BaseServer {
     const { messageType, dataView } = message;
 
     this.broadcastMessage(
-      this.#createDeviceServerMessage(device, this.#createDeviceMessage(device, messageType, dataView))
+      this.#createDeviceServerMessage(
+        device,
+        this.#createDeviceMessage(device, messageType, dataView)
+      )
     );
   }
 
@@ -202,26 +278,35 @@ abstract class BaseServer {
     deviceIsConnected: this.#onDeviceIsConnected.bind(this),
   };
 
-  #onDeviceConnected(staticDeviceEvent: DeviceManagerEventMap["deviceConnected"]) {
+  #onDeviceConnected(
+    staticDeviceEvent: DeviceManagerEventMap["deviceConnected"]
+  ) {
     const { device } = staticDeviceEvent.message;
     _console.log("onDeviceConnected", device.bluetoothId);
     addEventListeners(device, this.#boundDeviceListeners);
     device.isServerSide = true;
   }
 
-  #onDeviceDisconnected(staticDeviceEvent: DeviceManagerEventMap["deviceDisconnected"]) {
+  #onDeviceDisconnected(
+    staticDeviceEvent: DeviceManagerEventMap["deviceDisconnected"]
+  ) {
     const { device } = staticDeviceEvent.message;
     _console.log("onDeviceDisconnected", device.bluetoothId);
     removeEventListeners(device, this.#boundDeviceListeners);
   }
 
-  #onDeviceIsConnected(staticDeviceEvent: DeviceManagerEventMap["deviceIsConnected"]) {
+  #onDeviceIsConnected(
+    staticDeviceEvent: DeviceManagerEventMap["deviceIsConnected"]
+  ) {
     const { device } = staticDeviceEvent.message;
     _console.log("onDeviceIsConnected", device.bluetoothId);
     this.broadcastMessage(this.#createDeviceIsConnectedMessage(device));
   }
   #createDeviceIsConnectedMessage(device: Device) {
-    return this.#createDeviceServerMessage(device, { type: "isConnected", data: device.isConnected });
+    return this.#createDeviceServerMessage(device, {
+      type: "isConnected",
+      data: device.isConnected,
+    });
   }
 
   #createDeviceServerMessage(device: Device, ...messages: DeviceMessage[]) {
@@ -235,7 +320,13 @@ abstract class BaseServer {
   protected parseClientMessage(dataView: DataView) {
     let responseMessages: ArrayBuffer[] = [];
 
-    parseMessage(dataView, ServerMessageTypes, this.#onClientMessage.bind(this), { responseMessages }, true);
+    parseMessage(
+      dataView,
+      ServerMessageTypes,
+      this.#onClientMessage.bind(this),
+      { responseMessages },
+      true
+    );
 
     responseMessages = responseMessages.filter(Boolean);
 
@@ -244,7 +335,11 @@ abstract class BaseServer {
     }
   }
 
-  #onClientMessage(messageType: ServerMessageType, dataView: DataView, context: { responseMessages: ArrayBuffer[] }) {
+  #onClientMessage(
+    messageType: ServerMessageType,
+    dataView: DataView,
+    context: { responseMessages: ArrayBuffer[] }
+  ) {
     const { responseMessages } = context;
     switch (messageType) {
       case "isScanningAvailable":
@@ -271,7 +366,9 @@ abstract class BaseServer {
       case "disconnectFromDevice":
         {
           const { string: deviceId } = parseStringFromDataView(dataView);
-          const device = DeviceManager.ConnectedDevices.find((device) => device.bluetoothId == deviceId);
+          const device = DeviceManager.ConnectedDevices.find(
+            (device) => device.bluetoothId == deviceId
+          );
           if (!device) {
             _console.error(`no device found with id ${deviceId}`);
             break;
@@ -284,14 +381,23 @@ abstract class BaseServer {
         break;
       case "deviceMessage":
         {
-          const { string: deviceId, byteOffset } = parseStringFromDataView(dataView);
-          const device = DeviceManager.ConnectedDevices.find((device) => device.bluetoothId == deviceId);
+          const { string: deviceId, byteOffset } =
+            parseStringFromDataView(dataView);
+          const device = DeviceManager.ConnectedDevices.find(
+            (device) => device.bluetoothId == deviceId
+          );
           if (!device) {
             _console.error(`no device found with id ${deviceId}`);
             break;
           }
-          const _dataView = new DataView(dataView.buffer, dataView.byteOffset + byteOffset);
-          const responseMessage = this.parseClientDeviceMessage(device, _dataView);
+          const _dataView = new DataView(
+            dataView.buffer,
+            dataView.byteOffset + byteOffset
+          );
+          const responseMessage = this.parseClientDeviceMessage(
+            device,
+            _dataView
+          );
           if (responseMessage) {
             responseMessages.push(responseMessage);
           }
@@ -326,7 +432,9 @@ abstract class BaseServer {
     dataView: DataView,
     context: { responseMessages: DeviceMessage[]; device: Device }
   ) {
-    _console.log(`clientDeviceMessage ${messageType} (${dataView.byteLength} bytes)`);
+    _console.log(
+      `clientDeviceMessage ${messageType} (${dataView.byteLength} bytes)`
+    );
     switch (messageType) {
       case "smp":
         context.device.connectionManager!.sendSmpMessage(dataView.buffer);
@@ -335,7 +443,9 @@ abstract class BaseServer {
         context.device.connectionManager!.sendTxData(dataView.buffer);
         break;
       default:
-        context.responseMessages.push(this.#createDeviceMessage(context.device, messageType));
+        context.responseMessages.push(
+          this.#createDeviceMessage(context.device, messageType)
+        );
         break;
     }
   }
