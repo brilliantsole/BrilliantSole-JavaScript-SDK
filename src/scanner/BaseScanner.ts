@@ -1,4 +1,8 @@
-import EventDispatcher, { BoundEventListeners, Event, EventMap } from "../utils/EventDispatcher.ts";
+import EventDispatcher, {
+  BoundEventListeners,
+  Event,
+  EventMap,
+} from "../utils/EventDispatcher.ts";
 import { addEventListeners } from "../utils/EventUtils.ts";
 import { createConsole } from "../utils/Console.ts";
 import Timer from "../utils/Timer.ts";
@@ -19,6 +23,7 @@ export interface DiscoveredDevice {
   name: string;
   deviceType: DeviceType;
   rssi: number;
+  ipAddress?: string;
 }
 
 interface ScannerDiscoveredDeviceEventMessage {
@@ -32,10 +37,26 @@ export interface ScannerEventMessages {
   isScanning: { isScanning: boolean };
 }
 
-export type ScannerEventDispatcher = EventDispatcher<BaseScanner, ScannerEventType, ScannerEventMessages>;
-export type ScannerEventMap = EventMap<BaseScanner, ScannerEventType, ScannerEventMessages>;
-export type ScannerEvent = Event<BaseScanner, ScannerEventType, ScannerEventMessages>;
-export type BoundScannerEventListeners = BoundEventListeners<BaseScanner, ScannerEventType, ScannerEventMessages>;
+export type ScannerEventDispatcher = EventDispatcher<
+  BaseScanner,
+  ScannerEventType,
+  ScannerEventMessages
+>;
+export type ScannerEventMap = EventMap<
+  BaseScanner,
+  ScannerEventType,
+  ScannerEventMessages
+>;
+export type ScannerEvent = Event<
+  BaseScanner,
+  ScannerEventType,
+  ScannerEventMessages
+>;
+export type BoundScannerEventListeners = BoundEventListeners<
+  BaseScanner,
+  ScannerEventType,
+  ScannerEventMessages
+>;
 
 export type DiscoveredDevicesMap = { [deviceId: string]: DiscoveredDevice };
 
@@ -52,12 +73,18 @@ abstract class BaseScanner {
   }
 
   #assertIsSupported() {
-    _console.assertWithError(this.isSupported, `${this.constructor.name} is not supported`);
+    _console.assertWithError(
+      this.isSupported,
+      `${this.constructor.name} is not supported`
+    );
   }
 
   // CONSTRUCTOR
   #assertIsSubclass() {
-    _console.assertWithError(this.constructor != BaseScanner, `${this.constructor.name} must be subclassed`);
+    _console.assertWithError(
+      this.constructor != BaseScanner,
+      `${this.constructor.name} must be subclassed`
+    );
   }
   constructor() {
     this.#assertIsSubclass();
@@ -71,7 +98,10 @@ abstract class BaseScanner {
   };
 
   // EVENT DISPATCHER
-  #eventDispatcher: ScannerEventDispatcher = new EventDispatcher(this as BaseScanner, ScannerEventTypes);
+  #eventDispatcher: ScannerEventDispatcher = new EventDispatcher(
+    this as BaseScanner,
+    ScannerEventTypes
+  );
   get addEventListener() {
     return this.#eventDispatcher.addEventListener;
   }
@@ -127,7 +157,10 @@ abstract class BaseScanner {
   }
   get discoveredDevicesArray() {
     return Object.values(this.#discoveredDevices).sort((a, b) => {
-      return this.#discoveredDeviceTimestamps[a.bluetoothId] - this.#discoveredDeviceTimestamps[b.bluetoothId];
+      return (
+        this.#discoveredDeviceTimestamps[a.bluetoothId] -
+        this.#discoveredDeviceTimestamps[b.bluetoothId]
+      );
     });
   }
   #assertValidDiscoveredDeviceId(discoveredDeviceId: string) {
@@ -153,7 +186,10 @@ abstract class BaseScanner {
   get #discoveredDeviceExpirationTimeout() {
     return BaseScanner.DiscoveredDeviceExpirationTimeout;
   }
-  #checkDiscoveredDevicesExpirationTimer = new Timer(this.#checkDiscoveredDevicesExpiration.bind(this), 1000);
+  #checkDiscoveredDevicesExpirationTimer = new Timer(
+    this.#checkDiscoveredDevicesExpiration.bind(this),
+    1000
+  );
   #checkDiscoveredDevicesExpiration() {
     const entries = Object.entries(this.#discoveredDevices);
     if (entries.length == 0) {

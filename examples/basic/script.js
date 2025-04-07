@@ -11,7 +11,9 @@ window.device = device;
 
 // GET DEVICES
 /** @type {HTMLTemplateElement} */
-const availableDeviceTemplate = document.getElementById("availableDeviceTemplate");
+const availableDeviceTemplate = document.getElementById(
+  "availableDeviceTemplate"
+);
 const availableDevicesContainer = document.getElementById("availableDevices");
 /** @param {BS.Device[]} availableDevices */
 function onAvailableDevices(availableDevices) {
@@ -23,19 +25,24 @@ function onAvailableDevices(availableDevices) {
       const availableDeviceContainer = availableDeviceTemplate.content
         .cloneNode(true)
         .querySelector(".availableDevice");
-      availableDeviceContainer.querySelector(".name").innerText = availableDevice.name;
-      availableDeviceContainer.querySelector(".type").innerText = availableDevice.type;
+      availableDeviceContainer.querySelector(".name").innerText =
+        availableDevice.name;
+      availableDeviceContainer.querySelector(".type").innerText =
+        availableDevice.type;
 
       /** @type {HTMLButtonElement} */
-      const toggleConnectionButton = availableDeviceContainer.querySelector(".toggleConnection");
+      const toggleConnectionButton =
+        availableDeviceContainer.querySelector(".toggleConnection");
       toggleConnectionButton.addEventListener("click", () => {
         device.connectionManager = availableDevice.connectionManager;
         device.reconnect();
       });
       device.addEventListener("connectionStatus", () => {
-        toggleConnectionButton.disabled = device.connectionStatus != "notConnected";
+        toggleConnectionButton.disabled =
+          device.connectionStatus != "notConnected";
       });
-      toggleConnectionButton.disabled = device.connectionStatus != "notConnected";
+      toggleConnectionButton.disabled =
+        device.connectionStatus != "notConnected";
 
       availableDevicesContainer.appendChild(availableDeviceContainer);
     });
@@ -84,7 +91,9 @@ device.addEventListener("connectionStatus", () => {
     case "connected":
     case "notConnected":
       toggleConnectionButton.disabled = false;
-      toggleConnectionButton.innerText = device.isConnected ? "disconnect" : "connect";
+      toggleConnectionButton.innerText = device.isConnected
+        ? "disconnect"
+        : "connect";
       break;
     case "connecting":
     case "disconnecting":
@@ -95,7 +104,9 @@ device.addEventListener("connectionStatus", () => {
 });
 
 /** @type {HTMLInputElement} */
-const reconnectOnDisconnectionCheckbox = document.getElementById("reconnectOnDisconnection");
+const reconnectOnDisconnectionCheckbox = document.getElementById(
+  "reconnectOnDisconnection"
+);
 reconnectOnDisconnectionCheckbox.addEventListener("input", () => {
   device.reconnectOnDisconnection = reconnectOnDisconnectionCheckbox.checked;
 });
@@ -114,7 +125,11 @@ resetDeviceButton.addEventListener("click", () => {
 /** @type {HTMLPreElement} */
 const deviceInformationPre = document.getElementById("deviceInformationPre");
 device.addEventListener("deviceInformation", () => {
-  deviceInformationPre.textContent = JSON.stringify(device.deviceInformation, null, 2);
+  deviceInformationPre.textContent = JSON.stringify(
+    device.deviceInformation,
+    null,
+    2
+  );
 });
 
 // MTU
@@ -147,7 +162,9 @@ device.addEventListener("getBatteryCurrent", () => {
 });
 
 /** @type {HTMLButtonElement} */
-const updateBatteryCurrentButton = document.getElementById("updateBatteryCurrent");
+const updateBatteryCurrentButton = document.getElementById(
+  "updateBatteryCurrent"
+);
 device.addEventListener("isConnected", () => {
   updateBatteryCurrentButton.disabled = !device.isConnected;
 });
@@ -231,22 +248,33 @@ setTypeButton.addEventListener("click", () => {
 // SENSOR CONFIGURATION
 
 /** @type {HTMLPreElement} */
-const sensorConfigurationPre = document.getElementById("sensorConfigurationPre");
+const sensorConfigurationPre = document.getElementById(
+  "sensorConfigurationPre"
+);
 device.addEventListener("getSensorConfiguration", () => {
-  sensorConfigurationPre.textContent = JSON.stringify(device.sensorConfiguration, null, 2);
+  sensorConfigurationPre.textContent = JSON.stringify(
+    device.sensorConfiguration,
+    null,
+    2
+  );
 });
 
 /** @type {HTMLTemplateElement} */
-const sensorTypeConfigurationTemplate = document.getElementById("sensorTypeConfigurationTemplate");
+const sensorTypeConfigurationTemplate = document.getElementById(
+  "sensorTypeConfigurationTemplate"
+);
 BS.SensorTypes.forEach((sensorType) => {
   /** @type {HTMLElement} */
-  const sensorTypeConfigurationContainer = sensorTypeConfigurationTemplate.content
-    .cloneNode(true)
-    .querySelector(".sensorTypeConfiguration");
-  sensorTypeConfigurationContainer.querySelector(".sensorType").innerText = sensorType;
+  const sensorTypeConfigurationContainer =
+    sensorTypeConfigurationTemplate.content
+      .cloneNode(true)
+      .querySelector(".sensorTypeConfiguration");
+  sensorTypeConfigurationContainer.querySelector(".sensorType").innerText =
+    sensorType;
 
   /** @type {HTMLInputElement} */
-  const sensorRateInput = sensorTypeConfigurationContainer.querySelector(".sensorRate");
+  const sensorRateInput =
+    sensorTypeConfigurationContainer.querySelector(".sensorRate");
   sensorRateInput.value = 0;
   sensorRateInput.max = BS.MaxSensorRate;
   sensorRateInput.step = BS.SensorRateStep;
@@ -264,18 +292,23 @@ BS.SensorTypes.forEach((sensorType) => {
     }
   });
 
-  sensorTypeConfigurationTemplate.parentElement.appendChild(sensorTypeConfigurationContainer);
+  sensorTypeConfigurationTemplate.parentElement.appendChild(
+    sensorTypeConfigurationContainer
+  );
   sensorTypeConfigurationContainer.dataset.sensorType = sensorType;
 });
 device.addEventListener("getSensorConfiguration", () => {
   for (const sensorType in device.sensorConfiguration) {
-    document.querySelector(`.sensorTypeConfiguration[data-sensor-type="${sensorType}"] .input`).value =
-      device.sensorConfiguration[sensorType];
+    document.querySelector(
+      `.sensorTypeConfiguration[data-sensor-type="${sensorType}"] .input`
+    ).value = device.sensorConfiguration[sensorType];
   }
 });
 device.addEventListener("isConnected", () => {
   for (const sensorType in device.sensorConfiguration) {
-    document.querySelector(`[data-sensor-type="${sensorType}"] .input`).disabled = !device.isConnected;
+    document.querySelector(
+      `[data-sensor-type="${sensorType}"] .input`
+    ).disabled = !device.isConnected;
   }
 });
 
@@ -290,9 +323,13 @@ resetPressureRangeButton.addEventListener("click", () => {
 // SENSOR DATA
 
 /** @type {HTMLTemplateElement} */
-const sensorTypeDataTemplate = document.getElementById("sensorTypeDataTemplate");
+const sensorTypeDataTemplate = document.getElementById(
+  "sensorTypeDataTemplate"
+);
 BS.SensorTypes.forEach((sensorType) => {
-  const sensorTypeDataContainer = sensorTypeDataTemplate.content.cloneNode(true).querySelector(".sensorTypeData");
+  const sensorTypeDataContainer = sensorTypeDataTemplate.content
+    .cloneNode(true)
+    .querySelector(".sensorTypeData");
   sensorTypeDataContainer.querySelector(".sensorType").innerText = sensorType;
 
   /** @type {HTMLPreElement} */
@@ -311,38 +348,52 @@ BS.SensorTypes.forEach((sensorType) => {
 const vibrationTemplate = document.getElementById("vibrationTemplate");
 {
   /** @type {HTMLInputElement} */
-  const waveformEffectSequenceLoopCountInput = vibrationTemplate.content.querySelector(
-    ".waveformEffect .sequenceLoopCount"
-  );
-  waveformEffectSequenceLoopCountInput.max = BS.MaxVibrationWaveformEffectSequenceLoopCount;
+  const waveformEffectSequenceLoopCountInput =
+    vibrationTemplate.content.querySelector(
+      ".waveformEffect .sequenceLoopCount"
+    );
+  waveformEffectSequenceLoopCountInput.max =
+    BS.MaxVibrationWaveformEffectSequenceLoopCount;
 }
 /** @type {HTMLTemplateElement} */
-const vibrationLocationTemplate = document.getElementById("vibrationLocationTemplate");
+const vibrationLocationTemplate = document.getElementById(
+  "vibrationLocationTemplate"
+);
 
 /** @type {HTMLTemplateElement} */
-const waveformEffectSegmentTemplate = document.getElementById("waveformEffectSegmentTemplate");
+const waveformEffectSegmentTemplate = document.getElementById(
+  "waveformEffectSegmentTemplate"
+);
 {
   /** @type {HTMLSelectElement} */
-  const waveformEffectSelect = waveformEffectSegmentTemplate.content.querySelector(".effect");
+  const waveformEffectSelect =
+    waveformEffectSegmentTemplate.content.querySelector(".effect");
   const waveformEffectOptgroup = waveformEffectSelect.querySelector("optgroup");
   BS.VibrationWaveformEffects.forEach((waveformEffect) => {
     waveformEffectOptgroup.appendChild(new Option(waveformEffect));
   });
 
   /** @type {HTMLInputElement} */
-  const waveformEffectSegmentDelayInput = waveformEffectSegmentTemplate.content.querySelector(".delay");
-  waveformEffectSegmentDelayInput.max = BS.MaxVibrationWaveformEffectSegmentDelay;
+  const waveformEffectSegmentDelayInput =
+    waveformEffectSegmentTemplate.content.querySelector(".delay");
+  waveformEffectSegmentDelayInput.max =
+    BS.MaxVibrationWaveformEffectSegmentDelay;
 
   /** @type {HTMLInputElement} */
-  const waveformEffectLoopCountInput = waveformEffectSegmentTemplate.content.querySelector(".loopCount");
-  waveformEffectLoopCountInput.max = BS.MaxVibrationWaveformEffectSegmentLoopCount;
+  const waveformEffectLoopCountInput =
+    waveformEffectSegmentTemplate.content.querySelector(".loopCount");
+  waveformEffectLoopCountInput.max =
+    BS.MaxVibrationWaveformEffectSegmentLoopCount;
 }
 
 /** @type {HTMLTemplateElement} */
-const waveformSegmentTemplate = document.getElementById("waveformSegmentTemplate");
+const waveformSegmentTemplate = document.getElementById(
+  "waveformSegmentTemplate"
+);
 {
   /** @type {HTMLInputElement} */
-  const waveformDurationSegmentInput = waveformSegmentTemplate.content.querySelector(".duration");
+  const waveformDurationSegmentInput =
+    waveformSegmentTemplate.content.querySelector(".duration");
   waveformDurationSegmentInput.max = BS.MaxVibrationWaveformSegmentDuration;
 }
 
@@ -350,7 +401,9 @@ const waveformSegmentTemplate = document.getElementById("waveformSegmentTemplate
 const addVibrationButton = document.getElementById("addVibration");
 addVibrationButton.addEventListener("click", () => {
   /** @type {HTMLElement} */
-  const vibrationContainer = vibrationTemplate.content.cloneNode(true).querySelector(".vibration");
+  const vibrationContainer = vibrationTemplate.content
+    .cloneNode(true)
+    .querySelector(".vibration");
 
   /** @type {HTMLButtonElement} */
   const deleteButton = vibrationContainer.querySelector(".delete");
@@ -360,25 +413,33 @@ addVibrationButton.addEventListener("click", () => {
   });
 
   /** @type {HTMLUListElement} */
-  const vibrationLocationsContainer = vibrationContainer.querySelector(".locations");
+  const vibrationLocationsContainer =
+    vibrationContainer.querySelector(".locations");
   BS.VibrationLocations.forEach((vibrationLocation) => {
     const vibrationLocationContainer = vibrationLocationTemplate.content
       .cloneNode(true)
       .querySelector(".vibrationLocation");
-    vibrationLocationContainer.querySelector("span").innerText = vibrationLocation;
-    vibrationLocationContainer.querySelector("input").dataset.vibrationLocation = vibrationLocation;
+    vibrationLocationContainer.querySelector("span").innerText =
+      vibrationLocation;
+    vibrationLocationContainer.querySelector(
+      "input"
+    ).dataset.vibrationLocation = vibrationLocation;
     vibrationLocationsContainer.appendChild(vibrationLocationContainer);
   });
 
   /** @type {HTMLElement} */
-  const waveformEffectContainer = vibrationContainer.querySelector(".waveformEffect");
+  const waveformEffectContainer =
+    vibrationContainer.querySelector(".waveformEffect");
   /** @type {HTMLUListElement} */
-  const waveformEffectSegmentsContainer = waveformEffectContainer.querySelector(".segments");
+  const waveformEffectSegmentsContainer =
+    waveformEffectContainer.querySelector(".segments");
   /** @type {HTMLButtonElement} */
-  const addWaveformEffectSegmentButton = waveformEffectContainer.querySelector(".add");
+  const addWaveformEffectSegmentButton =
+    waveformEffectContainer.querySelector(".add");
   const updateAddWaveformEffectSegmentButton = () => {
     addWaveformEffectSegmentButton.disabled =
-      waveformEffectSegmentsContainer.children.length >= BS.MaxNumberOfVibrationWaveformEffectSegments;
+      waveformEffectSegmentsContainer.children.length >=
+      BS.MaxNumberOfVibrationWaveformEffectSegments;
   };
   addWaveformEffectSegmentButton.addEventListener("click", () => {
     /** @type {HTMLElement} */
@@ -386,11 +447,14 @@ addVibrationButton.addEventListener("click", () => {
       .cloneNode(true)
       .querySelector(".waveformEffectSegment");
 
-    const effectContainer = waveformEffectSegmentContainer.querySelector(".effect").parentElement;
-    const delayContainer = waveformEffectSegmentContainer.querySelector(".delay").parentElement;
+    const effectContainer =
+      waveformEffectSegmentContainer.querySelector(".effect").parentElement;
+    const delayContainer =
+      waveformEffectSegmentContainer.querySelector(".delay").parentElement;
 
     /** @type {HTMLSelectElement} */
-    const waveformEffectTypeSelect = waveformEffectSegmentContainer.querySelector(".type");
+    const waveformEffectTypeSelect =
+      waveformEffectSegmentContainer.querySelector(".type");
     waveformEffectTypeSelect.addEventListener("input", () => {
       let shouldShowEffectContainer = false;
       let shouldShowDelayContainer = false;
@@ -403,7 +467,9 @@ addVibrationButton.addEventListener("click", () => {
           shouldShowDelayContainer = true;
           break;
         default:
-          throw Error(`uncaught waveformEffectTypeSelect value "${waveformEffectTypeSelect.value}"`);
+          throw Error(
+            `uncaught waveformEffectTypeSelect value "${waveformEffectTypeSelect.value}"`
+          );
       }
 
       effectContainer.style.display = shouldShowEffectContainer ? "" : "none";
@@ -411,10 +477,12 @@ addVibrationButton.addEventListener("click", () => {
     });
     waveformEffectTypeSelect.dispatchEvent(new Event("input"));
 
-    waveformEffectSegmentContainer.querySelector(".delete").addEventListener("click", () => {
-      waveformEffectSegmentContainer.remove();
-      updateAddWaveformEffectSegmentButton();
-    });
+    waveformEffectSegmentContainer
+      .querySelector(".delete")
+      .addEventListener("click", () => {
+        waveformEffectSegmentContainer.remove();
+        updateAddWaveformEffectSegmentButton();
+      });
 
     waveformEffectSegmentsContainer.appendChild(waveformEffectSegmentContainer);
     updateAddWaveformEffectSegmentButton();
@@ -423,22 +491,28 @@ addVibrationButton.addEventListener("click", () => {
   /** @type {HTMLElement} */
   const waveformContainer = vibrationContainer.querySelector(".waveform");
   /** @type {HTMLUListElement} */
-  const waveformSegmentsContainer = waveformContainer.querySelector(".segments");
+  const waveformSegmentsContainer =
+    waveformContainer.querySelector(".segments");
 
   /** @type {HTMLButtonElement} */
   const addWaveformSegmentButton = waveformContainer.querySelector(".add");
   const updateAddWaveformSegmentButton = () => {
     addWaveformSegmentButton.disabled =
-      waveformSegmentsContainer.children.length >= BS.MaxNumberOfVibrationWaveformSegments;
+      waveformSegmentsContainer.children.length >=
+      BS.MaxNumberOfVibrationWaveformSegments;
   };
   addWaveformSegmentButton.addEventListener("click", () => {
     /** @type {HTMLElement} */
-    const waveformSegmentContainer = waveformSegmentTemplate.content.cloneNode(true).querySelector(".waveformSegment");
+    const waveformSegmentContainer = waveformSegmentTemplate.content
+      .cloneNode(true)
+      .querySelector(".waveformSegment");
 
-    waveformSegmentContainer.querySelector(".delete").addEventListener("click", () => {
-      waveformSegmentContainer.remove();
-      updateAddWaveformSegmentButton();
-    });
+    waveformSegmentContainer
+      .querySelector(".delete")
+      .addEventListener("click", () => {
+        waveformSegmentContainer.remove();
+        updateAddWaveformSegmentButton();
+      });
 
     waveformSegmentsContainer.appendChild(waveformSegmentContainer);
     updateAddWaveformSegmentButton();
@@ -447,7 +521,8 @@ addVibrationButton.addEventListener("click", () => {
   /** @type {HTMLSelectElement} */
   const vibrationTypeSelect = vibrationContainer.querySelector(".type");
   /** @type {HTMLOptGroupElement} */
-  const vibrationTypeSelectOptgroup = vibrationTypeSelect.querySelector("optgroup");
+  const vibrationTypeSelectOptgroup =
+    vibrationTypeSelect.querySelector("optgroup");
   BS.VibrationTypes.forEach((vibrationType) => {
     vibrationTypeSelectOptgroup.appendChild(new Option(vibrationType));
   });
@@ -469,7 +544,9 @@ addVibrationButton.addEventListener("click", () => {
         throw Error(`invalid vibrationType "${vibrationType}"`);
     }
 
-    waveformEffectContainer.style.display = showWaveformEffectContainer ? "" : "none";
+    waveformEffectContainer.style.display = showWaveformEffectContainer
+      ? ""
+      : "none";
     waveformContainer.style.display = showWaveformContainer ? "" : "none";
   });
   vibrationTypeSelect.dispatchEvent(new Event("input"));
@@ -484,40 +561,60 @@ triggerVibrationsButton.addEventListener("click", () => {
   /** @type {BS.VibrationConfiguration[]} */
   let vibrationConfigurations = [];
   Array.from(vibrationTemplate.parentElement.querySelectorAll(".vibration"))
-    .filter((vibrationContainer) => vibrationContainer.querySelector(".shouldTrigger").checked)
+    .filter(
+      (vibrationContainer) =>
+        vibrationContainer.querySelector(".shouldTrigger").checked
+    )
     .forEach((vibrationContainer) => {
       /** @type {BS.VibrationConfiguration} */
       const vibrationConfiguration = {
         locations: [],
       };
-      Array.from(vibrationContainer.querySelectorAll(`[data-vibration-location]`))
+      Array.from(
+        vibrationContainer.querySelectorAll(`[data-vibration-location]`)
+      )
         .filter((input) => input.checked)
         .forEach((input) => {
-          vibrationConfiguration.locations.push(input.dataset.vibrationLocation);
+          vibrationConfiguration.locations.push(
+            input.dataset.vibrationLocation
+          );
         });
       if (vibrationConfiguration.locations.length == 0) {
         return;
       }
 
-      vibrationConfiguration.type = vibrationContainer.querySelector("select.type").value;
+      vibrationConfiguration.type =
+        vibrationContainer.querySelector("select.type").value;
       switch (vibrationConfiguration.type) {
         case "waveformEffect":
           vibrationConfiguration.segments = Array.from(
-            vibrationContainer.querySelectorAll(".waveformEffect .waveformEffectSegment")
+            vibrationContainer.querySelectorAll(
+              ".waveformEffect .waveformEffectSegment"
+            )
           ).map((waveformEffectSegmentContainer) => {
             /** @type {BS.VibrationWaveformEffectSegment} */
             const waveformEffectSegment = {
-              loopCount: Number(waveformEffectSegmentContainer.querySelector(".loopCount").value),
+              loopCount: Number(
+                waveformEffectSegmentContainer.querySelector(".loopCount").value
+              ),
             };
-            if (waveformEffectSegmentContainer.querySelector(".type").value == "effect") {
-              waveformEffectSegment.effect = waveformEffectSegmentContainer.querySelector(".effect").value;
+            if (
+              waveformEffectSegmentContainer.querySelector(".type").value ==
+              "effect"
+            ) {
+              waveformEffectSegment.effect =
+                waveformEffectSegmentContainer.querySelector(".effect").value;
             } else {
-              waveformEffectSegment.delay = Number(waveformEffectSegmentContainer.querySelector(".delay").value);
+              waveformEffectSegment.delay = Number(
+                waveformEffectSegmentContainer.querySelector(".delay").value
+              );
             }
             return waveformEffectSegment;
           });
           vibrationConfiguration.loopCount = Number(
-            vibrationContainer.querySelector(".waveformEffect .sequenceLoopCount").value
+            vibrationContainer.querySelector(
+              ".waveformEffect .sequenceLoopCount"
+            ).value
           );
           break;
         case "waveform":
@@ -525,8 +622,12 @@ triggerVibrationsButton.addEventListener("click", () => {
             vibrationContainer.querySelectorAll(".waveform .waveformSegment")
           ).map((waveformSegmentContainer) => {
             return {
-              amplitude: Number(waveformSegmentContainer.querySelector(".amplitude").value),
-              duration: Number(waveformSegmentContainer.querySelector(".duration").value),
+              amplitude: Number(
+                waveformSegmentContainer.querySelector(".amplitude").value
+              ),
+              duration: Number(
+                waveformSegmentContainer.querySelector(".duration").value
+              ),
             };
           });
           break;
@@ -546,7 +647,8 @@ device.addEventListener("isConnected", () => {
 
 function updateTriggerVibrationsButtonDisabled() {
   triggerVibrationsButton.disabled =
-    !device.isConnected || vibrationTemplate.parentElement.querySelectorAll(".vibration").length == 0;
+    !device.isConnected ||
+    vibrationTemplate.parentElement.querySelectorAll(".vibration").length == 0;
 }
 
 // FILE TRANSFER
@@ -590,7 +692,8 @@ fileTransferTypesSelect.addEventListener("input", () => {
   }
 });
 /** @type {HTMLOptGroupElement} */
-const fileTransferTypesOptgroup = fileTransferTypesSelect.querySelector("optgroup");
+const fileTransferTypesOptgroup =
+  fileTransferTypesSelect.querySelector("optgroup");
 BS.FileTypes.forEach((fileType) => {
   fileTransferTypesOptgroup.appendChild(new Option(fileType));
 });
@@ -627,7 +730,8 @@ toggleFileTransferButton.addEventListener("click", async () => {
   }
 });
 const updateToggleFileTransferButton = () => {
-  const enabled = device.isConnected && (file || fileTransferDirection == "receive");
+  const enabled =
+    device.isConnected && (file || fileTransferDirection == "receive");
   toggleFileTransferButton.disabled = !enabled;
 
   /** @type {String} */
@@ -655,7 +759,9 @@ device.addEventListener("fileTransferStatus", () => {
 /** @type {BS.FileTransferDirection} */
 let fileTransferDirection;
 /** @type {HTMLSelectElement} */
-const fileTransferDirectionSelect = document.getElementById("fileTransferDirection");
+const fileTransferDirectionSelect = document.getElementById(
+  "fileTransferDirection"
+);
 fileTransferDirectionSelect.addEventListener("input", () => {
   fileTransferDirection = fileTransferDirectionSelect.value;
   console.log({ fileTransferDirection });
@@ -759,9 +865,13 @@ device.addEventListener("getTfliteInferencingEnabled", () => {
 /** @type {HTMLSpanElement} */
 const tfliteSampleRateSpan = document.getElementById("tfliteSampleRate");
 /** @type {HTMLInputElement} */
-const setTfliteSampleRateInput = document.getElementById("setTfliteSampleRateInput");
+const setTfliteSampleRateInput = document.getElementById(
+  "setTfliteSampleRateInput"
+);
 /** @type {HTMLButtonElement} */
-const setTfliteSampleRateButton = document.getElementById("setTfliteSampleRateButton");
+const setTfliteSampleRateButton = document.getElementById(
+  "setTfliteSampleRateButton"
+);
 
 device.addEventListener("isConnected", () => {
   const disabled = !device.isConnected;
@@ -793,16 +903,22 @@ device.addEventListener("getTfliteInferencingEnabled", () => {
 
 const tfliteSensorTypesContainer = document.getElementById("tfliteSensorTypes");
 /** @type {HTMLTemplateElement} */
-const tfliteSensorTypeTemplate = document.getElementById("tfliteSensorTypeTemplate");
+const tfliteSensorTypeTemplate = document.getElementById(
+  "tfliteSensorTypeTemplate"
+);
 /** @type {Object.<string, HTMLElement>} */
 const tfliteSensorTypeContainers = {};
 /** @type {BS.SensorType[]} */
 let tfliteSensorTypes = [];
 /** @type {HTMLButtonElement} */
-const setTfliteSensorTypesButton = document.getElementById("setTfliteSensorTypes");
+const setTfliteSensorTypesButton = document.getElementById(
+  "setTfliteSensorTypes"
+);
 
 BS.TfliteSensorTypes.forEach((sensorType) => {
-  const sensorTypeContainer = tfliteSensorTypeTemplate.content.cloneNode(true).querySelector(".sensorType");
+  const sensorTypeContainer = tfliteSensorTypeTemplate.content
+    .cloneNode(true)
+    .querySelector(".sensorType");
   sensorTypeContainer.querySelector(".name").innerText = sensorType;
 
   /** @type {HTMLInputElement} */
@@ -817,7 +933,8 @@ BS.TfliteSensorTypes.forEach((sensorType) => {
   });
 
   device.addEventListener("getTfliteSensorTypes", () => {
-    isSensorEnabledInput.checked = device.tfliteSensorTypes.includes(sensorType);
+    isSensorEnabledInput.checked =
+      device.tfliteSensorTypes.includes(sensorType);
   });
   isSensorEnabledInput.checked = device.tfliteSensorTypes.includes(sensorType);
 
@@ -852,9 +969,13 @@ device.addEventListener("tfliteIsReady", () => {
 /** @type {HTMLSpanElement} */
 const tfliteThresholdSpan = document.getElementById("tfliteThreshold");
 /** @type {HTMLInputElement} */
-const setTfliteThresholdInput = document.getElementById("setTfliteThresholdInput");
+const setTfliteThresholdInput = document.getElementById(
+  "setTfliteThresholdInput"
+);
 /** @type {HTMLButtonElement} */
-const setTfliteThresholdButton = document.getElementById("setTfliteThresholdButton");
+const setTfliteThresholdButton = document.getElementById(
+  "setTfliteThresholdButton"
+);
 
 device.addEventListener("isConnected", () => {
   const disabled = !device.isConnected;
@@ -884,9 +1005,13 @@ setTfliteThresholdButton.addEventListener("click", () => {
 /** @type {HTMLSpanElement} */
 const tfliteCaptureDelaySpan = document.getElementById("tfliteCaptureDelay");
 /** @type {HTMLInputElement} */
-const setTfliteCaptureDelayInput = document.getElementById("setTfliteCaptureDelayInput");
+const setTfliteCaptureDelayInput = document.getElementById(
+  "setTfliteCaptureDelayInput"
+);
 /** @type {HTMLButtonElement} */
-const setTfliteCaptureDelayButton = document.getElementById("setTfliteCaptureDelayButton");
+const setTfliteCaptureDelayButton = document.getElementById(
+  "setTfliteCaptureDelayButton"
+);
 
 device.addEventListener("isConnected", () => {
   const disabled = !device.isConnected;
@@ -914,18 +1039,23 @@ setTfliteCaptureDelayButton.addEventListener("click", () => {
 });
 
 /** @type {HTMLInputElement} */
-const tfliteInferencingEnabledInput = document.getElementById("tfliteInferencingEnabled");
+const tfliteInferencingEnabledInput = document.getElementById(
+  "tfliteInferencingEnabled"
+);
 /** @type {HTMLButtonElement} */
-const toggleTfliteInferencingEnabledButton = document.getElementById("toggleTfliteInferencingEnabled");
+const toggleTfliteInferencingEnabledButton = document.getElementById(
+  "toggleTfliteInferencingEnabled"
+);
 
 device.addEventListener("tfliteIsReady", () => {
   toggleTfliteInferencingEnabledButton.disabled = !device.tfliteIsReady;
 });
 device.addEventListener("getTfliteInferencingEnabled", () => {
   tfliteInferencingEnabledInput.checked = device.tfliteInferencingEnabled;
-  toggleTfliteInferencingEnabledButton.innerText = device.tfliteInferencingEnabled
-    ? "disable inferencing"
-    : "enable inferencing";
+  toggleTfliteInferencingEnabledButton.innerText =
+    device.tfliteInferencingEnabled
+      ? "disable inferencing"
+      : "enable inferencing";
 });
 
 toggleTfliteInferencingEnabledButton.addEventListener("click", () => {
@@ -958,7 +1088,8 @@ device.addEventListener("tfliteInference", (event) => {
   tfliteInferencePre.textContent = JSON.stringify(tfliteInference, null, 2);
 
   if (device.tfliteTask == "classification") {
-    topInferenceClassElement.innerText = inferenceClasses[tfliteInference.maxIndex - 1] ?? "";
+    topInferenceClassElement.innerText =
+      inferenceClasses[tfliteInference.maxIndex - 1] ?? "";
   }
 });
 
@@ -974,7 +1105,9 @@ firmwareInput.addEventListener("input", () => {
   updateToggleFirmwareUploadButton();
 });
 /** @type {HTMLButtonElement} */
-const toggleFirmwareUploadButton = document.getElementById("toggleFirmwareUpload");
+const toggleFirmwareUploadButton = document.getElementById(
+  "toggleFirmwareUpload"
+);
 toggleFirmwareUploadButton.addEventListener("click", () => {
   device.uploadFirmware(firmware);
 });
@@ -987,20 +1120,28 @@ device.addEventListener("isConnected", () => {
 });
 
 /** @type {HTMLProgressElement} */
-const firmwareUploadProgress = document.getElementById("firmwareUploadProgress");
+const firmwareUploadProgress = document.getElementById(
+  "firmwareUploadProgress"
+);
 /** @type {HTMLSpanElement} */
-const firmwareUploadProgressPercentageSpan = document.getElementById("firmwareUploadProgressPercentage");
+const firmwareUploadProgressPercentageSpan = document.getElementById(
+  "firmwareUploadProgressPercentage"
+);
 device.addEventListener("firmwareUploadProgress", (event) => {
   const progress = event.message.progress;
   firmwareUploadProgress.value = progress;
-  firmwareUploadProgressPercentageSpan.innerText = `${Math.floor(100 * progress)}%`;
+  firmwareUploadProgressPercentageSpan.innerText = `${Math.floor(
+    100 * progress
+  )}%`;
 });
 device.addEventListener("firmwareUploadComplete", () => {
   firmwareUploadProgress.value = 0;
 });
 device.addEventListener("firmwareStatus", () => {
   const isUploading = device.firmwareStatus == "uploading";
-  firmwareUploadProgressPercentageSpan.style.display = isUploading ? "" : "none";
+  firmwareUploadProgressPercentageSpan.style.display = isUploading
+    ? ""
+    : "none";
 });
 
 /** @type {HTMLPreElement} */
@@ -1054,12 +1195,15 @@ const updateTestFirmwareImageButton = () => {
 };
 
 /** @type {HTMLButtonElement} */
-const confirmFirmwareImageButton = document.getElementById("confirmFirmwareImage");
+const confirmFirmwareImageButton = document.getElementById(
+  "confirmFirmwareImage"
+);
 confirmFirmwareImageButton.addEventListener("click", () => {
   device.confirmFirmwareImage(selectedImageIndex);
 });
 const updateConfirmFirmwareImageButton = () => {
-  const enabled = device.firmwareStatus == "testing" || device.firmwareStatus == "uploaded";
+  const enabled =
+    device.firmwareStatus == "testing" || device.firmwareStatus == "uploaded";
   confirmFirmwareImageButton.disabled = !enabled;
 };
 
@@ -1080,7 +1224,10 @@ const imageSelectionOptGroup = imageSelectionSelect.querySelector("optgroup");
 device.addEventListener("firmwareImages", () => {
   imageSelectionOptGroup.innerHTML = "";
   device.firmwareImages.forEach((firmwareImage, index) => {
-    const option = new Option(`${firmwareImage.version} (slot ${index})`, index);
+    const option = new Option(
+      `${firmwareImage.version} (slot ${index})`,
+      index
+    );
     option.disabled = firmwareImage.empty;
     imageSelectionOptGroup.appendChild(option);
   });
@@ -1105,3 +1252,122 @@ function updateSelectImageSelect() {
   }
   imageSelectionSelect.disabled = !enabled;
 }
+
+// WIFI
+
+/** @type {HTMLSpanElement} */
+const isWifiAvailableSpan = document.getElementById("isWifiAvailable");
+device.addEventListener("isWifiAvailable", (event) => {
+  isWifiAvailableSpan.innerText = event.message.isWifiAvailable;
+});
+
+/** @type {HTMLSpanElement} */
+const wifiSSIDSpan = document.getElementById("wifiSSID");
+device.addEventListener("getWifiSSID", (event) => {
+  wifiSSIDSpan.innerText = event.message.wifiSSID;
+});
+/** @type {HTMLInputElement} */
+const setWifiSSIDInput = document.getElementById("setWifiSSIDInput");
+setWifiSSIDInput.min = BS.MinWifiSSIDLength;
+setWifiSSIDInput.max = BS.MaxWifiSSIDLength;
+setWifiSSIDInput.addEventListener("input", () => {
+  setWifiSSIDButton.disabled =
+    setWifiSSIDInput.value.length > BS.MinWifiSSIDLength &&
+    setWifiSSIDInput.value.length < BS.MaxWifiSSIDLength;
+});
+/** @type {HTMLButtonElement} */
+const setWifiSSIDButton = document.getElementById("setWifiSSIDButton");
+setWifiSSIDButton.addEventListener("click", async () => {
+  setWifiSSIDButton.disabled = true;
+  setWifiSSIDButton.innerText = "setting wifi ssid";
+  await device.setWifiSSID(setWifiSSIDInput.value);
+  setWifiSSIDInput.value = "";
+  setWifiSSIDButton.disabled = false;
+  setWifiSSIDButton.innerText = "set wifi ssid";
+});
+
+/** @type {HTMLSpanElement} */
+const wifiPasswordSpan = document.getElementById("wifiPassword");
+device.addEventListener("getWifiPassword", (event) => {
+  wifiPasswordSpan.innerText = event.message.wifiPassword;
+});
+/** @type {HTMLInputElement} */
+const setWifiPasswordInput = document.getElementById("setWifiPasswordInput");
+setWifiPasswordInput.min = BS.MinWifiPasswordLength;
+setWifiPasswordInput.max = BS.MaxWifiPasswordLength;
+setWifiPasswordInput.addEventListener("input", () => {
+  const length = setWifiPasswordInput.value.length;
+  setWifiPasswordButton.disabled = !(
+    length == 0 ||
+    (length > BS.MinWifiPasswordLength && length < BS.MaxWifiPasswordLength)
+  );
+});
+/** @type {HTMLButtonElement} */
+const setWifiPasswordButton = document.getElementById("setWifiPasswordButton");
+setWifiPasswordButton.addEventListener("click", async () => {
+  setWifiPasswordButton.disabled = true;
+  setWifiPasswordButton.innerText = "setting wifi password";
+  await device.setWifiPassword(setWifiPasswordInput.value);
+  setWifiPasswordInput.value = "";
+  setWifiPasswordButton.disabled = false;
+  setWifiPasswordButton.innerText = "set wifi password";
+});
+
+const updateWifiInputs = () => {
+  const enabled =
+    device.isConnected &&
+    device.isWifiAvailable &&
+    !device.wifiConnectionEnabled;
+  const disabled = !enabled;
+
+  setWifiPasswordInput.disabled = disabled;
+  setWifiPasswordButton.disabled = disabled;
+
+  setWifiSSIDInput.disabled = disabled;
+  setWifiSSIDButton.disabled = disabled;
+
+  toggleWifiConnectionButton.disabled = !(
+    device.isConnected && device.isWifiAvailable
+  );
+};
+device.addEventListener("isConnected", () => {
+  updateWifiInputs();
+});
+device.addEventListener("getEnableWifiConnection", () => {
+  updateWifiInputs();
+});
+
+/** @type {HTMLSpanElement} */
+const wifiConnectionEnabledSpan = document.getElementById(
+  "wifiConnectionEnabled"
+);
+device.addEventListener("getEnableWifiConnection", (event) => {
+  wifiConnectionEnabledSpan.innerText = event.message.wifiConnectionEnabled;
+});
+
+/** @type {HTMLSpanElement} */
+const isWifiConnectedSpan = document.getElementById("isWifiConnected");
+device.addEventListener("isWifiConnected", (event) => {
+  isWifiConnectedSpan.innerText = event.message.isWifiConnected;
+});
+
+/** @type {HTMLSpanElement} */
+const ipAddressSpan = document.getElementById("ipAddress");
+device.addEventListener("ipAddress", (event) => {
+  ipAddressSpan.innerText = event.message.ipAddress;
+});
+
+/** @type {HTMLButtonElement} */
+const toggleWifiConnectionButton = document.getElementById(
+  "toggleWifiConnection"
+);
+toggleWifiConnectionButton.addEventListener("click", async () => {
+  toggleWifiConnectionButton.disabled = true;
+  await device.toggleWifiConnection();
+  toggleWifiConnectionButton.disabled = false;
+});
+device.addEventListener("getEnableWifiConnection", (event) => {
+  toggleWifiConnectionButton.innerText = event.message.wifiConnectionEnabled
+    ? "disable wifi connection"
+    : "enable wifi connection";
+});

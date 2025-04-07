@@ -13,7 +13,7 @@ import axios from "axios";
 
 process.on("warning", (e) => console.warn(e.stack));
 
-//BS.setAllConsoleLevelFlags({ log: true });
+BS.setAllConsoleLevelFlags({ log: true });
 //BS.setConsoleLevelFlagsForType("UDPServer", { log: true });
 
 // HTTPS SERVER
@@ -40,7 +40,11 @@ app.use(express.json());
 app.post("/bottango", async (req, res) => {
   const { port, identifier, value } = req.body;
 
-  if (typeof port !== "number" || typeof identifier !== "string" || typeof value !== "number") {
+  if (
+    typeof port !== "number" ||
+    typeof identifier !== "string" ||
+    typeof value !== "number"
+  ) {
     return res.status(400).send("Invalid request data");
   }
 

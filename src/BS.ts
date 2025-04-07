@@ -1,4 +1,7 @@
-export { setAllConsoleLevelFlags, setConsoleLevelFlagsForType } from "./utils/Console.ts";
+export {
+  setAllConsoleLevelFlags,
+  setConsoleLevelFlagsForType,
+} from "./utils/Console.ts";
 export * as Environment from "./utils/environment.ts";
 export { Vector2, Vector3, Quaternion, Euler } from "./utils/MathUtils.ts";
 
@@ -18,11 +21,36 @@ export {
 } from "./DeviceManager.ts";
 
 export { DeviceInformation } from "./DeviceInformationManager.ts";
-export { DeviceType, DeviceTypes, MinNameLength, MaxNameLength, Sides, Side } from "./InformationManager.ts";
-export { SensorType, SensorTypes, ContinuousSensorType, ContinuousSensorTypes } from "./sensor/SensorDataManager.ts";
-export { MaxSensorRate, SensorRateStep, SensorConfiguration } from "./sensor/SensorConfigurationManager.ts";
+export {
+  DeviceType,
+  DeviceTypes,
+  MinNameLength,
+  MaxNameLength,
+  Sides,
+  Side,
+} from "./InformationManager.ts";
+export {
+  MinWifiSSIDLength,
+  MaxWifiSSIDLength,
+  MinWifiPasswordLength,
+  MaxWifiPasswordLength,
+} from "./WifiManager.ts";
+export {
+  SensorType,
+  SensorTypes,
+  ContinuousSensorType,
+  ContinuousSensorTypes,
+} from "./sensor/SensorDataManager.ts";
+export {
+  MaxSensorRate,
+  SensorRateStep,
+  SensorConfiguration,
+} from "./sensor/SensorConfigurationManager.ts";
 
-export { DefaultNumberOfPressureSensors, PressureData } from "./sensor/PressureSensorDataManager.ts";
+export {
+  DefaultNumberOfPressureSensors,
+  PressureData,
+} from "./sensor/PressureSensorDataManager.ts";
 export { CenterOfPressure } from "./utils/CenterOfPressureHelper.ts";
 export {
   VibrationConfiguration,
@@ -37,10 +65,23 @@ export {
   MaxNumberOfVibrationWaveformSegments,
   MaxVibrationWaveformEffectSequenceLoopCount,
 } from "./vibration/VibrationManager.ts";
-export { VibrationWaveformEffect, VibrationWaveformEffects } from "./vibration/VibrationWaveformEffects.ts";
+export {
+  VibrationWaveformEffect,
+  VibrationWaveformEffects,
+} from "./vibration/VibrationWaveformEffects.ts";
 
-export { FileType, FileTypes, FileTransferDirection, FileTransferDirections } from "./FileTransferManager.ts";
-export { TfliteSensorType, TfliteSensorTypes, TfliteTask, TfliteTasks } from "./TfliteManager.ts";
+export {
+  FileType,
+  FileTypes,
+  FileTransferDirection,
+  FileTransferDirections,
+} from "./FileTransferManager.ts";
+export {
+  TfliteSensorType,
+  TfliteSensorTypes,
+  TfliteTask,
+  TfliteTasks,
+} from "./TfliteManager.ts";
 
 export {
   default as DevicePair,

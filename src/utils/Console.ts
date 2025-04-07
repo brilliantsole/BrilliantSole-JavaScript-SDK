@@ -133,21 +133,41 @@ class Console {
 
   /** @throws {Error} if value's type doesn't match */
   assertTypeWithError(value: any, type: string) {
-    this.assertWithError(typeof value == type, `value ${value} of type "${typeof value}" not of type "${type}"`);
+    this.assertWithError(
+      typeof value == type,
+      `value ${value} of type "${typeof value}" not of type "${type}"`
+    );
   }
 
   /** @throws {Error} if value's type doesn't match */
   assertEnumWithError(value: string, enumeration: readonly string[]) {
-    this.assertWithError(enumeration.includes(value), `invalid enum "${value}"`);
+    this.assertWithError(
+      enumeration.includes(value),
+      `invalid enum "${value}"`
+    );
+  }
+
+  /** @throws {Error} if value is not within some range */
+  assertRangeWithError(name: string, value: number, min: number, max: number) {
+    this.assertWithError(
+      value >= min && value <= max,
+      `${name} ${value} must be within ${min}-${max}`
+    );
   }
 }
 
-export function createConsole(type: string, levelFlags?: ConsoleLevelFlags): Console {
+export function createConsole(
+  type: string,
+  levelFlags?: ConsoleLevelFlags
+): Console {
   return Console.create(type, levelFlags);
 }
 
 /** @throws {Error} if no console with type is found */
-export function setConsoleLevelFlagsForType(type: string, levelFlags: ConsoleLevelFlags) {
+export function setConsoleLevelFlagsForType(
+  type: string,
+  levelFlags: ConsoleLevelFlags
+) {
   Console.setLevelFlagsForType(type, levelFlags);
 }
 

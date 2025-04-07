@@ -10,16 +10,26 @@ import { InformationMessageTypes } from "../InformationManager.ts";
 import { VibrationMessageTypes } from "../vibration/VibrationManager.ts";
 import { SensorConfigurationMessageTypes } from "../sensor/SensorConfigurationManager.ts";
 import { SensorDataMessageTypes } from "../sensor/SensorDataManager.ts";
+import { WifiMessageTypes } from "../WifiManager.ts";
 
 const _console = createConsole("BaseConnectionManager", { log: false });
 
 export const ConnectionTypes = ["webBluetooth", "noble", "client"] as const;
 export type ConnectionType = (typeof ConnectionTypes)[number];
 
-export const ConnectionStatuses = ["notConnected", "connecting", "connected", "disconnecting"] as const;
+export const ConnectionStatuses = [
+  "notConnected",
+  "connecting",
+  "connected",
+  "disconnecting",
+] as const;
 export type ConnectionStatus = (typeof ConnectionStatuses)[number];
 
-export const ConnectionEventTypes = [...ConnectionStatuses, "connectionStatus", "isConnected"] as const;
+export const ConnectionEventTypes = [
+  ...ConnectionStatuses,
+  "connectionStatus",
+  "isConnected",
+] as const;
 export type ConnectionEventType = (typeof ConnectionEventTypes)[number];
 
 export interface ConnectionStatusEventMessages {
@@ -43,6 +53,7 @@ export const TxRxMessageTypes = [
   ...VibrationMessageTypes,
   ...TfliteMessageTypes,
   ...FileTransferMessageTypes,
+  ...WifiMessageTypes,
 ] as const;
 export type TxRxMessageType = (typeof TxRxMessageTypes)[number];
 
@@ -53,7 +64,8 @@ export const BatteryLevelMessageTypes = ["batteryLevel"] as const;
 export type BatteryLevelMessageType = (typeof BatteryLevelMessageTypes)[number];
 
 export const MetaConnectionMessageTypes = ["rx", "tx"] as const;
-export type MetaConnectionMessageType = (typeof MetaConnectionMessageTypes)[number];
+export type MetaConnectionMessageType =
+  (typeof MetaConnectionMessageTypes)[number];
 
 export const ConnectionMessageTypes = [
   ...BatteryLevelMessageTypes,
@@ -65,7 +77,10 @@ export const ConnectionMessageTypes = [
 export type ConnectionMessageType = (typeof ConnectionMessageTypes)[number];
 
 export type ConnectionStatusCallback = (status: ConnectionStatus) => void;
-export type MessageReceivedCallback = (messageType: ConnectionMessageType, dataView: DataView) => void;
+export type MessageReceivedCallback = (
+  messageType: ConnectionMessageType,
+  dataView: DataView
+) => void;
 export type MessagesReceivedCallback = () => void;
 
 abstract class BaseConnectionManager {
@@ -101,7 +116,10 @@ abstract class BaseConnectionManager {
 
   /** @throws {Error} if not supported */
   #assertIsSupported() {
-    _console.assertWithError(this.isSupported, `${this.constructor.name} is not supported`);
+    _console.assertWithError(
+      this.isSupported,
+      `${this.constructor.name} is not supported`
+    );
   }
 
   constructor() {
@@ -115,7 +133,9 @@ abstract class BaseConnectionManager {
   protected set status(newConnectionStatus) {
     _console.assertEnumWithError(newConnectionStatus, ConnectionStatuses);
     if (this.#status == newConnectionStatus) {
-      _console.log(`tried to assign same connection status "${newConnectionStatus}"`);
+      _console.log(
+        `tried to assign same connection status "${newConnectionStatus}"`
+      );
       return;
     }
     _console.log(`new connection status "${newConnectionStatus}"`);
@@ -147,7 +167,10 @@ abstract class BaseConnectionManager {
   }
   /** @throws {Error} if connecting */
   #assertIsNotConnecting() {
-    _console.assertWithError(this.status != "connecting", "device is already connecting");
+    _console.assertWithError(
+      this.status != "connecting",
+      "device is already connecting"
+    );
   }
   /** @throws {Error} if not connected */
   #assertIsConnected() {
@@ -155,7 +178,10 @@ abstract class BaseConnectionManager {
   }
   /** @throws {Error} if disconnecting */
   #assertIsNotDisconnecting() {
-    _console.assertWithError(this.status != "disconnecting", "device is already disconnecting");
+    _console.assertWithError(
+      this.status != "disconnecting",
+      "device is already disconnecting"
+    );
   }
   /** @throws {Error} if not connected or is disconnecting */
   #assertIsConnectedAndNotDisconnecting() {
@@ -190,7 +216,10 @@ abstract class BaseConnectionManager {
 
   #pendingMessages: TxMessage[] = [];
   #isSendingMessages = false;
-  async sendTxMessages(messages: TxMessage[] | undefined, sendImmediately: boolean = true) {
+  async sendTxMessages(
+    messages: TxMessage[] | undefined,
+    sendImmediately: boolean = true
+  ) {
     this.#assertIsConnectedAndNotDisconnecting();
 
     if (messages) {
@@ -222,7 +251,11 @@ abstract class BaseConnectionManager {
 
     if (this.mtu) {
       while (arrayBuffers.length > 0) {
-        if (arrayBuffers.every((arrayBuffer) => arrayBuffer.byteLength > this.mtu! - 3)) {
+        if (
+          arrayBuffers.every(
+            (arrayBuffer) => arrayBuffer.byteLength > this.mtu! - 3
+          )
+        ) {
           _console.log("every arrayBuffer is too big to send");
           break;
         }
@@ -231,10 +264,14 @@ abstract class BaseConnectionManager {
         let arrayBufferCount = 0;
         arrayBuffers.some((arrayBuffer) => {
           if (arrayBufferByteLength + arrayBuffer.byteLength > this.mtu! - 3) {
-            _console.log(`stopping appending arrayBuffers ( length ${arrayBuffer.byteLength} too much)`);
+            _console.log(
+              `stopping appending arrayBuffers ( length ${arrayBuffer.byteLength} too much)`
+            );
             return true;
           }
-          _console.log(`allowing arrayBuffer with length ${arrayBuffer.byteLength}`);
+          _console.log(
+            `allowing arrayBuffer with length ${arrayBuffer.byteLength}`
+          );
           arrayBufferCount++;
           arrayBufferByteLength += arrayBuffer.byteLength;
         });
@@ -263,7 +300,13 @@ abstract class BaseConnectionManager {
   }
 
   parseRxMessage(dataView: DataView) {
-    parseMessage(dataView, TxRxMessageTypes, this.#onRxMessage.bind(this), null, true);
+    parseMessage(
+      dataView,
+      TxRxMessageTypes,
+      this.#onRxMessage.bind(this),
+      null,
+      true
+    );
     this.onMessagesReceived!();
   }
 

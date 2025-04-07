@@ -7,6 +7,7 @@ export interface DiscoveredDevice {
     name: string;
     deviceType: DeviceType;
     rssi: number;
+    ipAddress?: string;
 }
 interface ScannerDiscoveredDeviceEventMessage {
     discoveredDevice: DiscoveredDevice;

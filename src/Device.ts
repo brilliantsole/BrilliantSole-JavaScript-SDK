@@ -1,5 +1,10 @@
 import { createConsole } from "./utils/Console.ts";
-import EventDispatcher, { BoundEventListeners, Event, EventListenerMap, EventMap } from "./utils/EventDispatcher.ts";
+import EventDispatcher, {
+  BoundEventListeners,
+  Event,
+  EventListenerMap,
+  EventMap,
+} from "./utils/EventDispatcher.ts";
 import BaseConnectionManager, {
   TxMessage,
   TxRxMessageType,
@@ -77,8 +82,17 @@ import InformationManager, {
 } from "./InformationManager.ts";
 import { FileLike } from "./utils/ArrayBufferUtils.ts";
 import DeviceManager from "./DeviceManager.ts";
+import WifiManager, {
+  RequiredWifiMessageTypes,
+  SendWifiMessageCallback,
+  WifiEventDispatcher,
+  WifiEventMessages,
+  WifiEventTypes,
+  WifiMessageType,
+  WifiMessageTypes,
+} from "./WifiManager.ts";
 
-const _console = createConsole("Device", { log: true });
+const _console = createConsole("Device", { log: false });
 
 export const DeviceEventTypes = [
   "connectionMessage",
@@ -91,6 +105,7 @@ export const DeviceEventTypes = [
   ...SensorDataEventTypes,
   ...FileTransferEventTypes,
   ...TfliteEventTypes,
+  ...WifiEventTypes,
   ...FirmwareEventTypes,
 ] as const;
 export type DeviceEventType = (typeof DeviceEventTypes)[number];
@@ -103,6 +118,7 @@ export interface DeviceEventMessages
     SensorConfigurationEventMessages,
     TfliteEventMessages,
     FileTransferEventMessages,
+    WifiEventMessages,
     FirmwareEventMessages {
   batteryLevel: { batteryLevel: number };
   connectionMessage: { messageType: ConnectionMessageType; dataView: DataView };
@@ -115,11 +131,27 @@ export type SendMessageCallback<MessageType extends string> = (
 
 export type SendSmpMessageCallback = (data: ArrayBuffer) => Promise<void>;
 
-export type DeviceEventDispatcher = EventDispatcher<Device, DeviceEventType, DeviceEventMessages>;
+export type DeviceEventDispatcher = EventDispatcher<
+  Device,
+  DeviceEventType,
+  DeviceEventMessages
+>;
 export type DeviceEvent = Event<Device, DeviceEventType, DeviceEventMessages>;
-export type DeviceEventMap = EventMap<Device, DeviceEventType, DeviceEventMessages>;
-export type DeviceEventListenerMap = EventListenerMap<Device, DeviceEventType, DeviceEventMessages>;
-export type BoundDeviceEventListeners = BoundEventListeners<Device, DeviceEventType, DeviceEventMessages>;
+export type DeviceEventMap = EventMap<
+  Device,
+  DeviceEventType,
+  DeviceEventMessages
+>;
+export type DeviceEventListenerMap = EventListenerMap<
+  Device,
+  DeviceEventType,
+  DeviceEventMessages
+>;
+export type BoundDeviceEventListeners = BoundEventListeners<
+  Device,
+  DeviceEventType,
+  DeviceEventMessages
+>;
 
 export const RequiredInformationConnectionMessages: TxRxMessageType[] = [
   "isCharging",
@@ -148,6 +180,8 @@ export const RequiredInformationConnectionMessages: TxRxMessageType[] = [
   "getTfliteCaptureDelay",
   "getTfliteThreshold",
   "getTfliteInferencingEnabled",
+
+  "isWifiAvailable",
 ];
 
 class Device {
@@ -160,26 +194,44 @@ class Device {
   }
 
   constructor() {
-    this.#deviceInformationManager.eventDispatcher = this.#eventDispatcher as DeviceInformationEventDispatcher;
+    this.#deviceInformationManager.eventDispatcher = this
+      .#eventDispatcher as DeviceInformationEventDispatcher;
 
-    this._informationManager.sendMessage = this.sendTxMessages as SendInformationMessageCallback;
-    this._informationManager.eventDispatcher = this.#eventDispatcher as InformationEventDispatcher;
+    this._informationManager.sendMessage = this
+      .sendTxMessages as SendInformationMessageCallback;
+    this._informationManager.eventDispatcher = this
+      .#eventDispatcher as InformationEventDispatcher;
 
-    this.#sensorConfigurationManager.sendMessage = this.sendTxMessages as SendSensorConfigurationMessageCallback;
-    this.#sensorConfigurationManager.eventDispatcher = this.#eventDispatcher as SensorConfigurationEventDispatcher;
+    this.#sensorConfigurationManager.sendMessage = this
+      .sendTxMessages as SendSensorConfigurationMessageCallback;
+    this.#sensorConfigurationManager.eventDispatcher = this
+      .#eventDispatcher as SensorConfigurationEventDispatcher;
 
-    this.#sensorDataManager.eventDispatcher = this.#eventDispatcher as SensorDataEventDispatcher;
+    this.#sensorDataManager.eventDispatcher = this
+      .#eventDispatcher as SensorDataEventDispatcher;
 
-    this.#vibrationManager.sendMessage = this.sendTxMessages as SendVibrationMessageCallback;
+    this.#vibrationManager.sendMessage = this
+      .sendTxMessages as SendVibrationMessageCallback;
 
-    this.#tfliteManager.sendMessage = this.sendTxMessages as SendTfliteMessageCallback;
-    this.#tfliteManager.eventDispatcher = this.#eventDispatcher as TfliteEventDispatcher;
+    this.#tfliteManager.sendMessage = this
+      .sendTxMessages as SendTfliteMessageCallback;
+    this.#tfliteManager.eventDispatcher = this
+      .#eventDispatcher as TfliteEventDispatcher;
 
-    this.#fileTransferManager.sendMessage = this.sendTxMessages as SendFileTransferMessageCallback;
-    this.#fileTransferManager.eventDispatcher = this.#eventDispatcher as FileTransferEventDispatcher;
+    this.#fileTransferManager.sendMessage = this
+      .sendTxMessages as SendFileTransferMessageCallback;
+    this.#fileTransferManager.eventDispatcher = this
+      .#eventDispatcher as FileTransferEventDispatcher;
 
-    this.#firmwareManager.sendMessage = this.sendSmpMessage as SendSmpMessageCallback;
-    this.#firmwareManager.eventDispatcher = this.#eventDispatcher as FirmwareEventDispatcher;
+    this.#wifiManager.sendMessage = this
+      .sendTxMessages as SendWifiMessageCallback;
+    this.#wifiManager.eventDispatcher = this
+      .#eventDispatcher as WifiEventDispatcher;
+
+    this.#firmwareManager.sendMessage = this
+      .sendSmpMessage as SendSmpMessageCallback;
+    this.#firmwareManager.eventDispatcher = this
+      .#eventDispatcher as FirmwareEventDispatcher;
 
     this.addEventListener("getMtu", () => {
       this.#firmwareManager.mtu = this.mtu;
@@ -208,7 +260,10 @@ class Device {
     return new WebBluetoothConnectionManager();
   }
 
-  #eventDispatcher: DeviceEventDispatcher = new EventDispatcher(this as Device, DeviceEventTypes);
+  #eventDispatcher: DeviceEventDispatcher = new EventDispatcher(
+    this as Device,
+    DeviceEventTypes
+  );
   get addEventListener() {
     return this.#eventDispatcher.addEventListener;
   }
@@ -246,9 +301,12 @@ class Device {
       this.connectionManager.onMessagesReceived = undefined;
     }
     if (newConnectionManager) {
-      newConnectionManager.onStatusUpdated = this.#onConnectionStatusUpdated.bind(this);
-      newConnectionManager.onMessageReceived = this.#onConnectionMessageReceived.bind(this);
-      newConnectionManager.onMessagesReceived = this.#onConnectionMessagesReceived.bind(this);
+      newConnectionManager.onStatusUpdated =
+        this.#onConnectionStatusUpdated.bind(this);
+      newConnectionManager.onMessageReceived =
+        this.#onConnectionMessageReceived.bind(this);
+      newConnectionManager.onMessagesReceived =
+        this.#onConnectionMessagesReceived.bind(this);
     }
 
     this.#connectionManager = newConnectionManager;
@@ -275,19 +333,34 @@ class Device {
     _console.assertWithError(this.isConnected, "notConnected");
   }
 
-  get #hasRequiredInformation() {
-    return RequiredInformationConnectionMessages.every((messageType) => {
-      const hasConnectionMessage = this.latestConnectionMessages.has(messageType);
+  #didReceiveMessageTypes(messageTypes: ConnectionMessageType[]) {
+    return messageTypes.every((messageType) => {
+      const hasConnectionMessage =
+        this.latestConnectionMessages.has(messageType);
       if (!hasConnectionMessage) {
         _console.log(`didn't receive "${messageType}" message`);
       }
       return hasConnectionMessage;
     });
   }
+  get #hasRequiredInformation() {
+    let hasRequiredInformation = this.#didReceiveMessageTypes(
+      RequiredInformationConnectionMessages
+    );
+    if (hasRequiredInformation && this.isWifiAvailable) {
+      hasRequiredInformation = this.#didReceiveMessageTypes(
+        RequiredWifiMessageTypes
+      );
+    }
+    return hasRequiredInformation;
+  }
   #requestRequiredInformation() {
-    const messages: TxMessage[] = RequiredInformationConnectionMessages.map((messageType) => ({
-      type: messageType,
-    }));
+    _console.log("requesting required information");
+    const messages: TxMessage[] = RequiredInformationConnectionMessages.map(
+      (messageType) => ({
+        type: messageType,
+      })
+    );
     this.#sendTxMessages(messages);
   }
 
@@ -370,7 +443,10 @@ class Device {
     }
   }
   get isConnectionBusy() {
-    return this.connectionStatus == "connecting" || this.connectionStatus == "disconnecting";
+    return (
+      this.connectionStatus == "connecting" ||
+      this.connectionStatus == "disconnecting"
+    );
   }
 
   #onConnectionStatusUpdated(connectionStatus: ConnectionStatus) {
@@ -404,7 +480,9 @@ class Device {
   }
 
   #dispatchConnectionEvents(includeIsConnected: boolean = false) {
-    this.#dispatchEvent("connectionStatus", { connectionStatus: this.connectionStatus });
+    this.#dispatchEvent("connectionStatus", {
+      connectionStatus: this.connectionStatus,
+    });
     this.#dispatchEvent(this.connectionStatus, {});
     if (includeIsConnected) {
       this.#dispatchEvent("isConnected", { isConnected: this.isConnected });
@@ -435,13 +513,17 @@ class Device {
     this.#clearConnection();
     this._informationManager.clear();
     this.#deviceInformationManager.clear();
+    this.#wifiManager.clear();
   }
   #clearConnection() {
     this.connectionManager?.clear();
     this.latestConnectionMessages.clear();
   }
 
-  #onConnectionMessageReceived(messageType: ConnectionMessageType, dataView: DataView) {
+  #onConnectionMessageReceived(
+    messageType: ConnectionMessageType,
+    dataView: DataView
+  ) {
     _console.log({ messageType, dataView });
     switch (messageType) {
       case "batteryLevel":
@@ -451,20 +533,68 @@ class Device {
         break;
 
       default:
-        if (FileTransferMessageTypes.includes(messageType as FileTransferMessageType)) {
-          this.#fileTransferManager.parseMessage(messageType as FileTransferMessageType, dataView);
-        } else if (TfliteMessageTypes.includes(messageType as TfliteMessageType)) {
-          this.#tfliteManager.parseMessage(messageType as TfliteMessageType, dataView);
-        } else if (SensorDataMessageTypes.includes(messageType as SensorDataMessageType)) {
-          this.#sensorDataManager.parseMessage(messageType as SensorDataMessageType, dataView);
-        } else if (FirmwareMessageTypes.includes(messageType as FirmwareMessageType)) {
-          this.#firmwareManager.parseMessage(messageType as FirmwareMessageType, dataView);
-        } else if (DeviceInformationMessageTypes.includes(messageType as DeviceInformationMessageType)) {
-          this.#deviceInformationManager.parseMessage(messageType as DeviceInformationMessageType, dataView);
-        } else if (InformationMessageTypes.includes(messageType as InformationMessageType)) {
-          this._informationManager.parseMessage(messageType as InformationMessageType, dataView);
-        } else if (SensorConfigurationMessageTypes.includes(messageType as SensorConfigurationMessageType)) {
-          this.#sensorConfigurationManager.parseMessage(messageType as SensorConfigurationMessageType, dataView);
+        if (
+          FileTransferMessageTypes.includes(
+            messageType as FileTransferMessageType
+          )
+        ) {
+          this.#fileTransferManager.parseMessage(
+            messageType as FileTransferMessageType,
+            dataView
+          );
+        } else if (
+          TfliteMessageTypes.includes(messageType as TfliteMessageType)
+        ) {
+          this.#tfliteManager.parseMessage(
+            messageType as TfliteMessageType,
+            dataView
+          );
+        } else if (
+          SensorDataMessageTypes.includes(messageType as SensorDataMessageType)
+        ) {
+          this.#sensorDataManager.parseMessage(
+            messageType as SensorDataMessageType,
+            dataView
+          );
+        } else if (
+          FirmwareMessageTypes.includes(messageType as FirmwareMessageType)
+        ) {
+          this.#firmwareManager.parseMessage(
+            messageType as FirmwareMessageType,
+            dataView
+          );
+        } else if (
+          DeviceInformationMessageTypes.includes(
+            messageType as DeviceInformationMessageType
+          )
+        ) {
+          this.#deviceInformationManager.parseMessage(
+            messageType as DeviceInformationMessageType,
+            dataView
+          );
+        } else if (
+          InformationMessageTypes.includes(
+            messageType as InformationMessageType
+          )
+        ) {
+          this._informationManager.parseMessage(
+            messageType as InformationMessageType,
+            dataView
+          );
+        } else if (
+          SensorConfigurationMessageTypes.includes(
+            messageType as SensorConfigurationMessageType
+          )
+        ) {
+          this.#sensorConfigurationManager.parseMessage(
+            messageType as SensorConfigurationMessageType,
+            dataView
+          );
+        } else if (WifiMessageTypes.includes(messageType as WifiMessageType)) {
+          this.#wifiManager.parseMessage(
+            messageType as WifiMessageType,
+            dataView
+          );
         } else {
           throw Error(`uncaught messageType ${messageType}`);
         }
@@ -558,7 +688,9 @@ class Device {
     return Object.keys(this.sensorConfiguration) as SensorType[];
   }
   get continuousSensorTypes() {
-    return ContinuousSensorTypes.filter((sensorType) => this.sensorTypes.includes(sensorType));
+    return ContinuousSensorTypes.filter((sensorType) =>
+      this.sensorTypes.includes(sensorType)
+    );
   }
 
   // SENSOR CONFIGURATION
@@ -569,8 +701,14 @@ class Device {
     return this.#sensorConfigurationManager.configuration;
   }
 
-  async setSensorConfiguration(newSensorConfiguration: SensorConfiguration, clearRest?: boolean) {
-    await this.#sensorConfigurationManager.setConfiguration(newSensorConfiguration, clearRest);
+  async setSensorConfiguration(
+    newSensorConfiguration: SensorConfiguration,
+    clearRest?: boolean
+  ) {
+    await this.#sensorConfigurationManager.setConfiguration(
+      newSensorConfiguration,
+      clearRest
+    );
   }
 
   async clearSensorConfiguration() {
@@ -581,7 +719,9 @@ class Device {
   static get ClearSensorConfigurationOnLeave() {
     return this.#ClearSensorConfigurationOnLeave;
   }
-  static set ClearSensorConfigurationOnLeave(newClearSensorConfigurationOnLeave) {
+  static set ClearSensorConfigurationOnLeave(
+    newClearSensorConfigurationOnLeave
+  ) {
     _console.assertTypeWithError(newClearSensorConfigurationOnLeave, "boolean");
     this.#ClearSensorConfigurationOnLeave = newClearSensorConfigurationOnLeave;
   }
@@ -608,8 +748,14 @@ class Device {
 
   // VIBRATION
   #vibrationManager = new VibrationManager();
-  async triggerVibration(vibrationConfigurations: VibrationConfiguration[], sendImmediately?: boolean) {
-    this.#vibrationManager.triggerVibration(vibrationConfigurations, sendImmediately);
+  async triggerVibration(
+    vibrationConfigurations: VibrationConfiguration[],
+    sendImmediately?: boolean
+  ) {
+    this.#vibrationManager.triggerVibration(
+      vibrationConfigurations,
+      sendImmediately
+    );
   }
 
   // FILE TRANSFER
@@ -665,7 +811,9 @@ class Device {
     return this.#tfliteManager.sensorTypes;
   }
   get allowedTfliteSensorTypes() {
-    return this.sensorTypes.filter((sensorType) => TfliteSensorTypes.includes(sensorType));
+    return this.sensorTypes.filter((sensorType) =>
+      TfliteSensorTypes.includes(sensorType)
+    );
   }
   get setTfliteSensorTypes() {
     return this.#tfliteManager.setSensorTypes;
@@ -775,6 +923,46 @@ class Device {
   // UKATON
   get isUkaton() {
     return this.deviceInformation.modelNumber.includes("Ukaton");
+  }
+
+  // WIFI MANAGER
+  #wifiManager = new WifiManager();
+  // FILL - is available, etc
+  get isWifiAvailable() {
+    return this.#wifiManager.isWifiAvailable;
+  }
+  get wifiSSID() {
+    return this.#wifiManager.wifiSSID;
+  }
+  async setWifiSSID(newWifiSSID: string) {
+    return this.#wifiManager.setWifiSSID(newWifiSSID);
+  }
+  get wifiPassword() {
+    return this.#wifiManager.wifiPassword;
+  }
+  async setWifiPassword(newWifiPassword: string) {
+    return this.#wifiManager.setWifiPassword(newWifiPassword);
+  }
+  get isWifiConnected() {
+    return this.#wifiManager.isWifiConnected;
+  }
+  get ipAddress() {
+    return this.#wifiManager.ipAddress;
+  }
+  get wifiConnectionEnabled() {
+    return this.#wifiManager.wifiConnectionEnabled;
+  }
+  get enableWifiConnection() {
+    return this.#wifiManager.enableWifiConnection;
+  }
+  get setWifiConnectionEnabled {
+    return this.#wifiManager.setWifiConnectionEnabled;
+  }
+  get disableWifiConnection() {
+    return this.#wifiManager.disableWifiConnection;
+  }
+  get toggleWifiConnection() {
+    return this.#wifiManager.toggleWifiConnection;
   }
 }
 

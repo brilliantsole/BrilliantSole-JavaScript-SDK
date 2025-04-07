@@ -8,7 +8,14 @@ import autoBind from "auto-bind";
 
 const _console = createConsole("InformationManager", { log: false });
 
-export const DeviceTypes = ["leftInsole", "rightInsole", "leftGlove", "rightGlove", "glasses", "generic"] as const;
+export const DeviceTypes = [
+  "leftInsole",
+  "rightInsole",
+  "leftGlove",
+  "rightGlove",
+  "glasses",
+  "generic",
+] as const;
 export type DeviceType = (typeof DeviceTypes)[number];
 
 export const Sides = ["left", "right"] as const;
@@ -44,8 +51,13 @@ export interface InformationEventMessages {
   getCurrentTime: { currentTime: number };
 }
 
-export type InformationEventDispatcher = EventDispatcher<Device, InformationEventType, InformationEventMessages>;
-export type SendInformationMessageCallback = SendMessageCallback<InformationMessageType>;
+export type InformationEventDispatcher = EventDispatcher<
+  Device,
+  InformationEventType,
+  InformationEventMessages
+>;
+export type SendInformationMessageCallback =
+  SendMessageCallback<InformationMessageType>;
 
 class InformationManager {
   constructor() {
@@ -89,7 +101,9 @@ class InformationManager {
     _console.assertTypeWithError(updatedBatteryCurrent, "number");
     this.#batteryCurrent = updatedBatteryCurrent;
     _console.log({ batteryCurrent: this.#batteryCurrent });
-    this.#dispatchEvent("getBatteryCurrent", { batteryCurrent: this.#batteryCurrent });
+    this.#dispatchEvent("getBatteryCurrent", {
+      batteryCurrent: this.#batteryCurrent,
+    });
   }
 
   #id!: string;
@@ -116,13 +130,11 @@ class InformationManager {
   }
   async setName(newName: string) {
     _console.assertTypeWithError(newName, "string");
-    _console.assertWithError(
-      newName.length >= MinNameLength,
-      `name must be greater than ${MinNameLength} characters long ("${newName}" is ${newName.length} characters long)`
-    );
-    _console.assertWithError(
-      newName.length < MaxNameLength,
-      `name must be less than ${MaxNameLength} characters long ("${newName}" is ${newName.length} characters long)`
+    _console.assertRangeWithError(
+      "newName",
+      newName.length,
+      MinNameLength,
+      MaxNameLength
     );
     const setNameData = textEncoder.encode(newName);
     _console.log({ setNameData });
@@ -145,7 +157,10 @@ class InformationManager {
   }
   #assertValidDeviceTypeEnum(typeEnum: number) {
     _console.assertTypeWithError(typeEnum, "number");
-    _console.assertWithError(typeEnum in DeviceTypes, `invalid typeEnum ${typeEnum}`);
+    _console.assertWithError(
+      typeEnum in DeviceTypes,
+      `invalid typeEnum ${typeEnum}`
+    );
   }
   updateType(updatedType: DeviceType) {
     this.#assertValidDeviceType(updatedType);
@@ -227,7 +242,8 @@ class InformationManager {
 
   #onCurrentTime(currentTime: number) {
     _console.log({ currentTime });
-    this.#isCurrentTimeSet = currentTime != 0 || Math.abs(Date.now() - currentTime) < Uint16Max;
+    this.#isCurrentTimeSet =
+      currentTime != 0 || Math.abs(Date.now() - currentTime) < Uint16Max;
     if (!this.#isCurrentTimeSet) {
       this.#setCurrentTime(false);
     }
@@ -237,7 +253,10 @@ class InformationManager {
     const dataView = new DataView(new ArrayBuffer(8));
     dataView.setBigUint64(0, BigInt(Date.now()), true);
     const promise = this.waitForEvent("getCurrentTime");
-    this.sendMessage([{ type: "setCurrentTime", data: dataView.buffer }], sendImmediately);
+    this.sendMessage(
+      [{ type: "setCurrentTime", data: dataView.buffer }],
+      sendImmediately
+    );
     await promise;
   }
 
