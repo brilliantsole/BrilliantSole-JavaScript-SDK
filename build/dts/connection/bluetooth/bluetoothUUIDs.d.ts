@@ -1,6 +1,6 @@
 export type BluetoothServiceName = "deviceInformation" | "battery" | "main" | "smp";
-import { DeviceInformationMessageType } from "../../DeviceInformationManager.ts";
-export type BluetoothCharacteristicName = DeviceInformationMessageType | "batteryLevel" | "rx" | "tx" | "smp";
+import { DeviceInformationType } from "../../DeviceInformationManager.ts";
+export type BluetoothCharacteristicName = DeviceInformationType | "batteryLevel" | "rx" | "tx" | "smp";
 export declare const serviceUUIDs: BluetoothServiceUUID[];
 export declare const optionalServiceUUIDs: BluetoothServiceUUID[];
 export declare const allServiceUUIDs: BluetoothServiceUUID[];

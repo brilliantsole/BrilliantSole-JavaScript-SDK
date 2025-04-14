@@ -4,10 +4,16 @@ import { textDecoder } from "./Text.ts";
 
 const _console = createConsole("ParseUtils", { log: false });
 
-export function parseStringFromDataView(dataView: DataView, byteOffset: number = 0) {
+export function parseStringFromDataView(
+  dataView: DataView,
+  byteOffset: number = 0
+) {
   const stringLength = dataView.getUint8(byteOffset++);
   const string = textDecoder.decode(
-    dataView.buffer.slice(dataView.byteOffset + byteOffset, dataView.byteOffset + byteOffset + stringLength)
+    dataView.buffer.slice(
+      dataView.byteOffset + byteOffset,
+      dataView.byteOffset + byteOffset + stringLength
+    )
   );
   byteOffset += stringLength;
   return { string, byteOffset };
@@ -16,14 +22,21 @@ export function parseStringFromDataView(dataView: DataView, byteOffset: number =
 export function parseMessage<MessageType extends string>(
   dataView: DataView,
   messageTypes: readonly MessageType[],
-  callback: (messageType: MessageType, dataView: DataView, context?: any) => void,
+  callback: (
+    messageType: MessageType,
+    dataView: DataView,
+    context?: any
+  ) => void,
   context?: any,
   parseMessageLengthAsUint16: boolean = false
 ) {
   let byteOffset = 0;
   while (byteOffset < dataView.byteLength) {
     const messageTypeEnum = dataView.getUint8(byteOffset++);
-    _console.assertWithError(messageTypeEnum in messageTypes, `invalid messageTypeEnum ${messageTypeEnum}`);
+    _console.assertWithError(
+      messageTypeEnum in messageTypes,
+      `invalid messageTypeEnum ${messageTypeEnum}`
+    );
     const messageType = messageTypes[messageTypeEnum];
 
     let messageLength: number;
@@ -34,7 +47,13 @@ export function parseMessage<MessageType extends string>(
       messageLength = dataView.getUint8(byteOffset++);
     }
 
-    _console.log({ messageTypeEnum, messageType, messageLength, dataView, byteOffset });
+    _console.log({
+      messageTypeEnum,
+      messageType,
+      messageLength,
+      dataView,
+      byteOffset,
+    });
 
     const _dataView = sliceDataView(dataView, byteOffset, messageLength);
     _console.log({ _dataView });

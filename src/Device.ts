@@ -14,6 +14,9 @@ import BaseConnectionManager, {
   BatteryLevelMessageTypes,
   ConnectionEventTypes,
   ConnectionStatusEventMessages,
+  ConnectionTypes,
+  ConnectionType,
+  ConnectOptions,
 } from "./connection/BaseConnectionManager.ts";
 import { isInBrowser, isInNode } from "./utils/environment.ts";
 import WebBluetoothConnectionManager from "./connection/bluetooth/WebBluetoothConnectionManager.ts";
@@ -47,6 +50,7 @@ import FileTransferManager, {
   FileTransferMessageTypes,
   FileTransferMessageType,
   FileType,
+  FileTypes,
 } from "./FileTransferManager.ts";
 import TfliteManager, {
   TfliteEventTypes,
@@ -67,8 +71,8 @@ import FirmwareManager, {
 import DeviceInformationManager, {
   DeviceInformationEventDispatcher,
   DeviceInformationEventTypes,
-  DeviceInformationMessageType,
-  DeviceInformationMessageTypes,
+  DeviceInformationType,
+  DeviceInformationTypes,
   DeviceInformationEventMessages,
 } from "./DeviceInformationManager.ts";
 import InformationManager, {
@@ -91,6 +95,7 @@ import WifiManager, {
   WifiMessageType,
   WifiMessageTypes,
 } from "./WifiManager.ts";
+import WebSocketConnectionManager from "./connection/websocket/WebSocketConnectionManager.ts";
 
 const _console = createConsole("Device", { log: false });
 
@@ -317,7 +322,24 @@ class Device {
   }
   private sendTxMessages = this.#sendTxMessages.bind(this);
 
-  async connect() {
+  async connect(options?: ConnectOptions) {
+    if (options) {
+      _console.log("connect options", options);
+      switch (options.type) {
+        case "webBluetooth":
+          this.connectionManager = new WebBluetoothConnectionManager();
+          break;
+        case "webSocket":
+          this.connectionManager = new WebSocketConnectionManager(
+            options.ipAddress,
+            options.isSecure
+          );
+          break;
+        case "udp":
+          // FILL
+          break;
+      }
+    }
     if (!this.connectionManager) {
       this.connectionManager = Device.#DefaultConnectionManager();
     }
@@ -564,12 +586,10 @@ class Device {
             dataView
           );
         } else if (
-          DeviceInformationMessageTypes.includes(
-            messageType as DeviceInformationMessageType
-          )
+          DeviceInformationTypes.includes(messageType as DeviceInformationType)
         ) {
           this.#deviceInformationManager.parseMessage(
-            messageType as DeviceInformationMessageType,
+            messageType as DeviceInformationType,
             dataView
           );
         } else if (
@@ -764,8 +784,20 @@ class Device {
   get maxFileLength() {
     return this.#fileTransferManager.maxLength;
   }
+  get validFileTypes() {
+    return FileTypes.filter((fileType) => {
+      if (fileType.includes("wifi") && !this.isWifiAvailable) {
+        return false;
+      }
+      return true;
+    });
+  }
 
   async sendFile(fileType: FileType, file: FileLike) {
+    _console.assertWithError(
+      this.validFileTypes.includes(fileType),
+      `invalid fileType ${fileType}`
+    );
     const promise = this.waitForEvent("fileTransferComplete");
     this.#fileTransferManager.send(fileType, file);
     await promise;
@@ -876,8 +908,14 @@ class Device {
     this.#assertCanUpdateFirmware();
     return this.#firmwareManager.uploadFirmware;
   }
+  get canReset() {
+    return this.canUpdateFirmware;
+  }
   async reset() {
-    this.#assertCanUpdateFirmware();
+    _console.assertWithError(
+      this.canReset,
+      "reset is not enabled for this device"
+    );
     await this.#firmwareManager.reset();
     return this.#connectionManager!.disconnect();
   }
@@ -955,7 +993,7 @@ class Device {
   get enableWifiConnection() {
     return this.#wifiManager.enableWifiConnection;
   }
-  get setWifiConnectionEnabled {
+  get setWifiConnectionEnabled() {
     return this.#wifiManager.setWifiConnectionEnabled;
   }
   get disableWifiConnection() {

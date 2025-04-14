@@ -1,18 +1,26 @@
 import { createConsole } from "../utils/Console.ts";
 import { isInBrowser } from "../utils/environment.ts";
-import BaseConnectionManager, { ConnectionType, ConnectionMessageType } from "./BaseConnectionManager.ts";
+import BaseConnectionManager, {
+  ConnectionType,
+  ConnectionMessageType,
+} from "./BaseConnectionManager.ts";
 import { DeviceEventTypes } from "../Device.ts";
 import { parseMessage } from "../utils/ParseUtils.ts";
-import { DeviceInformationMessageTypes } from "../DeviceInformationManager.ts";
+import { DeviceInformationTypes } from "../DeviceInformationManager.ts";
 import { DeviceEventType } from "../Device.ts";
 import { ClientDeviceMessage } from "../server/ServerUtils.ts";
 import BaseClient from "../server/BaseClient.ts";
 
 const _console = createConsole("ClientConnectionManager", { log: false });
 
-export type SendClientMessageCallback = (...messages: ClientDeviceMessage[]) => void;
+export type SendClientMessageCallback = (
+  ...messages: ClientDeviceMessage[]
+) => void;
 
-const ClientDeviceInformationMessageTypes: ConnectionMessageType[] = [...DeviceInformationMessageTypes, "batteryLevel"];
+const ClientDeviceInformationMessageTypes: ConnectionMessageType[] = [
+  ...DeviceInformationTypes,
+  "batteryLevel",
+];
 
 class ClientConnectionManager extends BaseConnectionManager {
   static get isSupported() {
@@ -79,7 +87,6 @@ class ClientConnectionManager extends BaseConnectionManager {
   }
   async reconnect() {
     await super.reconnect();
-    _console.log("attempting to reconnect...");
     this.connect();
   }
 
@@ -106,7 +113,13 @@ class ClientConnectionManager extends BaseConnectionManager {
 
   onClientMessage(dataView: DataView) {
     _console.log({ dataView });
-    parseMessage(dataView, DeviceEventTypes, this.#onClientMessageCallback.bind(this), null, true);
+    parseMessage(
+      dataView,
+      DeviceEventTypes,
+      this.#onClientMessageCallback.bind(this),
+      null,
+      true
+    );
     this.onMessagesReceived!();
   }
 

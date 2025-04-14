@@ -24,13 +24,17 @@ export const FileTransferMessageTypes = [
 ] as const;
 export type FileTransferMessageType = (typeof FileTransferMessageTypes)[number];
 
-export const FileTypes = ["tflite"] as const;
+export const FileTypes = ["tflite", "wifiServerCert", "wifiServerKey"] as const;
 export type FileType = (typeof FileTypes)[number];
 
 export const FileTransferStatuses = ["idle", "sending", "receiving"] as const;
 export type FileTransferStatus = (typeof FileTransferStatuses)[number];
 
-export const FileTransferCommands = ["startSend", "startReceive", "cancel"] as const;
+export const FileTransferCommands = [
+  "startSend",
+  "startReceive",
+  "cancel",
+] as const;
 export type FileTransferCommand = (typeof FileTransferCommands)[number];
 
 export const FileTransferDirections = ["sending", "receiving"] as const;
@@ -56,8 +60,13 @@ export interface FileTransferEventMessages {
   fileReceived: { file: File | Blob };
 }
 
-export type FileTransferEventDispatcher = EventDispatcher<Device, FileTransferEventType, FileTransferEventMessages>;
-export type SendFileTransferMessageCallback = SendMessageCallback<FileTransferMessageType>;
+export type FileTransferEventDispatcher = EventDispatcher<
+  Device,
+  FileTransferEventType,
+  FileTransferEventMessages
+>;
+export type SendFileTransferMessageCallback =
+  SendMessageCallback<FileTransferMessageType>;
 
 class FileTransferManager {
   constructor() {
@@ -83,11 +92,17 @@ class FileTransferManager {
     _console.assertEnumWithError(type, FileTypes);
   }
   #assertValidTypeEnum(typeEnum: number) {
-    _console.assertWithError(typeEnum in FileTypes, `invalid typeEnum ${typeEnum}`);
+    _console.assertWithError(
+      typeEnum in FileTypes,
+      `invalid typeEnum ${typeEnum}`
+    );
   }
 
   #assertValidStatusEnum(statusEnum: number) {
-    _console.assertWithError(statusEnum in FileTransferStatuses, `invalid statusEnum ${statusEnum}`);
+    _console.assertWithError(
+      statusEnum in FileTransferStatuses,
+      `invalid statusEnum ${statusEnum}`
+    );
   }
   #assertValidCommand(command: FileTransferCommand) {
     _console.assertEnumWithError(command, FileTransferCommands);
@@ -146,7 +161,10 @@ class FileTransferManager {
     const promise = this.waitForEvent("getFileType");
 
     const typeEnum = FileTypes.indexOf(newType);
-    this.sendMessage([{ type: "setFileType", data: Uint8Array.from([typeEnum]).buffer }], sendImmediately);
+    this.sendMessage(
+      [{ type: "setFileType", data: Uint8Array.from([typeEnum]).buffer }],
+      sendImmediately
+    );
 
     await promise;
   }
@@ -178,7 +196,10 @@ class FileTransferManager {
 
     const dataView = new DataView(new ArrayBuffer(4));
     dataView.setUint32(0, newLength, true);
-    this.sendMessage([{ type: "setFileLength", data: dataView.buffer }], sendImmediately);
+    this.sendMessage(
+      [{ type: "setFileLength", data: dataView.buffer }],
+      sendImmediately
+    );
 
     await promise;
   }
@@ -208,7 +229,10 @@ class FileTransferManager {
 
     const dataView = new DataView(new ArrayBuffer(4));
     dataView.setUint32(0, newChecksum, true);
-    this.sendMessage([{ type: "setFileChecksum", data: dataView.buffer }], sendImmediately);
+    this.sendMessage(
+      [{ type: "setFileChecksum", data: dataView.buffer }],
+      sendImmediately
+    );
 
     await promise;
   }
@@ -220,7 +244,12 @@ class FileTransferManager {
     _console.log(`setting command ${command}`);
     const commandEnum = FileTransferCommands.indexOf(command);
     this.sendMessage(
-      [{ type: "setFileTransferCommand", data: Uint8Array.from([commandEnum]).buffer }],
+      [
+        {
+          type: "setFileTransferCommand",
+          data: Uint8Array.from([commandEnum]).buffer,
+        },
+      ],
       sendImmediately
     );
 
@@ -259,10 +288,15 @@ class FileTransferManager {
     _console.log("parseFileBlock", dataView);
     this.#receivedBlocks.push(dataView.buffer);
 
-    const bytesReceived = this.#receivedBlocks.reduce((sum, arrayBuffer) => (sum += arrayBuffer.byteLength), 0);
+    const bytesReceived = this.#receivedBlocks.reduce(
+      (sum, arrayBuffer) => (sum += arrayBuffer.byteLength),
+      0
+    );
     const progress = bytesReceived / this.#length;
 
-    _console.log(`received ${bytesReceived} of ${this.#length} bytes (${progress * 100}%)`);
+    _console.log(
+      `received ${bytesReceived} of ${this.#length} bytes (${progress * 100}%)`
+    );
 
     this.#dispatchEvent("fileTransferProgress", { progress });
 
@@ -273,7 +307,9 @@ class FileTransferManager {
       if (this.isServerSide) {
         return;
       }
-      await this.sendMessage([{ type: "fileBytesTransferred", data: dataView.buffer }]);
+      await this.sendMessage([
+        { type: "fileBytesTransferred", data: dataView.buffer },
+      ]);
       return;
     }
 
@@ -283,6 +319,12 @@ class FileTransferManager {
     switch (this.type) {
       case "tflite":
         fileName += ".tflite";
+        break;
+      case "wifiServerCert":
+        fileName += "_server.crt";
+        break;
+      case "wifiServerKey":
+        fileName += "_server.key";
         break;
     }
 
@@ -298,7 +340,9 @@ class FileTransferManager {
     _console.log({ checksum });
 
     if (checksum != this.#checksum) {
-      _console.error(`wrong checksum - expected ${this.#checksum}, got ${checksum}`);
+      _console.error(
+        `wrong checksum - expected ${this.#checksum}, got ${checksum}`
+      );
       return;
     }
 
@@ -393,7 +437,9 @@ class FileTransferManager {
 
     const progress = 1 - bytesLeft / buffer.byteLength;
     _console.log(
-      `sending bytes ${offset}-${offset + slicedBuffer.byteLength} of ${buffer.byteLength} bytes (${progress * 100}%)`
+      `sending bytes ${offset}-${offset + slicedBuffer.byteLength} of ${
+        buffer.byteLength
+      } bytes (${progress * 100}%)`
     );
     this.#dispatchEvent("fileTransferProgress", { progress });
     if (slicedBuffer.byteLength == 0) {
@@ -415,7 +461,11 @@ class FileTransferManager {
       return;
     }
     if (!this.isServerSide && this.#bytesTransferred != bytesTransferred) {
-      _console.error(`bytesTransferred are not equal - got ${bytesTransferred}, expected ${this.#bytesTransferred}`);
+      _console.error(
+        `bytesTransferred are not equal - got ${bytesTransferred}, expected ${
+          this.#bytesTransferred
+        }`
+      );
       this.cancel();
       return;
     }

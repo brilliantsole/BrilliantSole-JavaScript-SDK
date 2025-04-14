@@ -3,7 +3,7 @@ import Device, { SendMessageCallback } from "./Device.ts";
 import EventDispatcher from "./utils/EventDispatcher.ts";
 export declare const FileTransferMessageTypes: readonly ["maxFileLength", "getFileType", "setFileType", "getFileLength", "setFileLength", "getFileChecksum", "setFileChecksum", "setFileTransferCommand", "fileTransferStatus", "getFileBlock", "setFileBlock", "fileBytesTransferred"];
 export type FileTransferMessageType = (typeof FileTransferMessageTypes)[number];
-export declare const FileTypes: readonly ["tflite"];
+export declare const FileTypes: readonly ["tflite", "wifiServerCert", "wifiServerKey"];
 export type FileType = (typeof FileTypes)[number];
 export declare const FileTransferStatuses: readonly ["idle", "sending", "receiving"];
 export type FileTransferStatus = (typeof FileTransferStatuses)[number];
@@ -69,7 +69,7 @@ declare class FileTransferManager {
     static get MaxLength(): number;
     /** kB */
     get maxLength(): number;
-    get type(): "tflite" | undefined;
+    get type(): "tflite" | "wifiServerCert" | "wifiServerKey" | undefined;
     get length(): number;
     get checksum(): number;
     get status(): "idle" | "sending" | "receiving";

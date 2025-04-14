@@ -15,11 +15,16 @@ if (isInBrowser) {
 
 function generateBluetoothUUID(value: string): BluetoothServiceUUID {
   _console.assertTypeWithError(value, "string");
-  _console.assertWithError(value.length == 4, "value must be 4 characters long");
+  _console.assertWithError(
+    value.length == 4,
+    "value must be 4 characters long"
+  );
   return `ea6da725-${value}-4f9b-893d-c3913e33b39f`;
 }
 
-function stringToCharacteristicUUID(identifier: string): BluetoothCharacteristicUUID {
+function stringToCharacteristicUUID(
+  identifier: string
+): BluetoothCharacteristicUUID {
   return BluetoothUUID?.getCharacteristic?.(identifier);
 }
 
@@ -27,19 +32,32 @@ function stringToServiceUUID(identifier: string): BluetoothServiceUUID {
   return BluetoothUUID?.getService?.(identifier);
 }
 
-export type BluetoothServiceName = "deviceInformation" | "battery" | "main" | "smp";
-import { DeviceInformationMessageType } from "../../DeviceInformationManager.ts";
-export type BluetoothCharacteristicName = DeviceInformationMessageType | "batteryLevel" | "rx" | "tx" | "smp";
+export type BluetoothServiceName =
+  | "deviceInformation"
+  | "battery"
+  | "main"
+  | "smp";
+import { DeviceInformationType } from "../../DeviceInformationManager.ts";
+export type BluetoothCharacteristicName =
+  | DeviceInformationType
+  | "batteryLevel"
+  | "rx"
+  | "tx"
+  | "smp";
 
 interface BluetoothCharacteristicInformation {
   uuid: BluetoothCharacteristicUUID;
 }
 interface BluetoothServiceInformation {
   uuid: BluetoothServiceUUID;
-  characteristics: { [characteristicName in BluetoothCharacteristicName]?: BluetoothCharacteristicInformation };
+  characteristics: {
+    [characteristicName in BluetoothCharacteristicName]?: BluetoothCharacteristicInformation;
+  };
 }
 interface BluetoothServicesInformation {
-  services: { [serviceName in BluetoothServiceName]: BluetoothServiceInformation };
+  services: {
+    [serviceName in BluetoothServiceName]: BluetoothServiceInformation;
+  };
 }
 const bluetoothUUIDs: BluetoothServicesInformation = Object.freeze({
   services: {
@@ -101,9 +119,13 @@ export const optionalServiceUUIDs = [
 ];
 export const allServiceUUIDs = [...serviceUUIDs, ...optionalServiceUUIDs];
 
-export function getServiceNameFromUUID(serviceUUID: BluetoothServiceUUID): BluetoothServiceName | undefined {
+export function getServiceNameFromUUID(
+  serviceUUID: BluetoothServiceUUID
+): BluetoothServiceName | undefined {
   serviceUUID = serviceUUID.toString().toLowerCase();
-  const serviceNames = Object.keys(bluetoothUUIDs.services) as BluetoothServiceName[];
+  const serviceNames = Object.keys(
+    bluetoothUUIDs.services
+  ) as BluetoothServiceName[];
   return serviceNames.find((serviceName) => {
     const serviceInfo = bluetoothUUIDs.services[serviceName];
     let serviceInfoUUID = serviceInfo.uuid.toString();
@@ -127,7 +149,9 @@ Object.values(bluetoothUUIDs.services).forEach((serviceInfo) => {
   if (!serviceInfo.characteristics) {
     return;
   }
-  const characteristicNames = Object.keys(serviceInfo.characteristics) as BluetoothCharacteristicName[];
+  const characteristicNames = Object.keys(
+    serviceInfo.characteristics
+  ) as BluetoothCharacteristicName[];
   characteristicNames.forEach((characteristicName) => {
     const characteristicInfo = serviceInfo.characteristics[characteristicName]!;
     if (serviceUUIDs.includes(serviceInfo.uuid)) {
@@ -148,9 +172,12 @@ export function getCharacteristicNameFromUUID(
   characteristicUUID = characteristicUUID.toString().toLowerCase();
   var characteristicName: BluetoothCharacteristicName | undefined;
   Object.values(bluetoothUUIDs.services).some((serviceInfo) => {
-    const characteristicNames = Object.keys(serviceInfo.characteristics) as BluetoothCharacteristicName[];
+    const characteristicNames = Object.keys(
+      serviceInfo.characteristics
+    ) as BluetoothCharacteristicName[];
     characteristicName = characteristicNames.find((_characteristicName) => {
-      const characteristicInfo = serviceInfo.characteristics[_characteristicName]!;
+      const characteristicInfo =
+        serviceInfo.characteristics[_characteristicName]!;
       let characteristicInfoUUID = characteristicInfo.uuid.toString();
       if (characteristicUUID.length == 4) {
         characteristicInfoUUID = characteristicInfoUUID.slice(4, 8);

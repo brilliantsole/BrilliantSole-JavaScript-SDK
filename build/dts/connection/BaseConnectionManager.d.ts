@@ -1,5 +1,24 @@
-export declare const ConnectionTypes: readonly ["webBluetooth", "noble", "client"];
+export declare const ConnectionTypes: readonly ["webBluetooth", "noble", "client", "webSocket", "udp"];
 export type ConnectionType = (typeof ConnectionTypes)[number];
+interface BaseConnectOptions {
+    type: "webBluetooth" | "webSocket" | "udp";
+}
+export interface WebBluetoothConnectOptions extends BaseConnectOptions {
+    type: "webBluetooth";
+}
+interface BaseWifiConnectOptions extends BaseConnectOptions {
+    ipAddress: string;
+}
+export interface WebSocketConnectOptions extends BaseWifiConnectOptions {
+    type: "webSocket";
+    isSecure?: boolean;
+}
+export interface UDPConnectOptions extends BaseWifiConnectOptions {
+    type: "udp";
+    sendPort: number;
+    receivePort?: number;
+}
+export type ConnectOptions = WebBluetoothConnectOptions | WebSocketConnectOptions | UDPConnectOptions;
 export declare const ConnectionStatuses: readonly ["notConnected", "connecting", "connected", "disconnecting"];
 export type ConnectionStatus = (typeof ConnectionStatuses)[number];
 export declare const ConnectionEventTypes: readonly ["notConnected", "connecting", "connected", "disconnecting", "connectionStatus", "isConnected"];
@@ -20,7 +39,7 @@ export interface TxMessage {
     type: TxRxMessageType;
     data?: ArrayBuffer;
 }
-export declare const TxRxMessageTypes: readonly ["isCharging", "getBatteryCurrent", "getMtu", "getId", "getName", "setName", "getType", "setType", "getCurrentTime", "setCurrentTime", "getSensorConfiguration", "setSensorConfiguration", "getPressurePositions", "getSensorScalars", "sensorData", "triggerVibration", "getTfliteName", "setTfliteName", "getTfliteTask", "setTfliteTask", "getTfliteSampleRate", "setTfliteSampleRate", "getTfliteSensorTypes", "setTfliteSensorTypes", "tfliteIsReady", "getTfliteCaptureDelay", "setTfliteCaptureDelay", "getTfliteThreshold", "setTfliteThreshold", "getTfliteInferencingEnabled", "setTfliteInferencingEnabled", "tfliteInference", "maxFileLength", "getFileType", "setFileType", "getFileLength", "setFileLength", "getFileChecksum", "setFileChecksum", "setFileTransferCommand", "fileTransferStatus", "getFileBlock", "setFileBlock", "fileBytesTransferred", "isWifiAvailable", "getWifiSSID", "setWifiSSID", "getWifiPassword", "setWifiPassword", "getEnableWifiConnection", "setEnableWifiConnection", "isWifiConnected", "ipAddress"];
+export declare const TxRxMessageTypes: readonly ["isCharging", "getBatteryCurrent", "getMtu", "getId", "getName", "setName", "getType", "setType", "getCurrentTime", "setCurrentTime", "getSensorConfiguration", "setSensorConfiguration", "getPressurePositions", "getSensorScalars", "sensorData", "triggerVibration", "getTfliteName", "setTfliteName", "getTfliteTask", "setTfliteTask", "getTfliteSampleRate", "setTfliteSampleRate", "getTfliteSensorTypes", "setTfliteSensorTypes", "tfliteIsReady", "getTfliteCaptureDelay", "setTfliteCaptureDelay", "getTfliteThreshold", "setTfliteThreshold", "getTfliteInferencingEnabled", "setTfliteInferencingEnabled", "tfliteInference", "maxFileLength", "getFileType", "setFileType", "getFileLength", "setFileLength", "getFileChecksum", "setFileChecksum", "setFileTransferCommand", "fileTransferStatus", "getFileBlock", "setFileBlock", "fileBytesTransferred", "isWifiAvailable", "getWifiSSID", "setWifiSSID", "getWifiPassword", "setWifiPassword", "getEnableWifiConnection", "setEnableWifiConnection", "isWifiConnected", "ipAddress", "isWifiSecure"];
 export type TxRxMessageType = (typeof TxRxMessageTypes)[number];
 export declare const SMPMessageTypes: readonly ["smp"];
 export type SMPMessageType = (typeof SMPMessageTypes)[number];
@@ -28,7 +47,7 @@ export declare const BatteryLevelMessageTypes: readonly ["batteryLevel"];
 export type BatteryLevelMessageType = (typeof BatteryLevelMessageTypes)[number];
 export declare const MetaConnectionMessageTypes: readonly ["rx", "tx"];
 export type MetaConnectionMessageType = (typeof MetaConnectionMessageTypes)[number];
-export declare const ConnectionMessageTypes: readonly ["batteryLevel", "manufacturerName", "modelNumber", "softwareRevision", "hardwareRevision", "firmwareRevision", "pnpId", "serialNumber", "rx", "tx", "isCharging", "getBatteryCurrent", "getMtu", "getId", "getName", "setName", "getType", "setType", "getCurrentTime", "setCurrentTime", "getSensorConfiguration", "setSensorConfiguration", "getPressurePositions", "getSensorScalars", "sensorData", "triggerVibration", "getTfliteName", "setTfliteName", "getTfliteTask", "setTfliteTask", "getTfliteSampleRate", "setTfliteSampleRate", "getTfliteSensorTypes", "setTfliteSensorTypes", "tfliteIsReady", "getTfliteCaptureDelay", "setTfliteCaptureDelay", "getTfliteThreshold", "setTfliteThreshold", "getTfliteInferencingEnabled", "setTfliteInferencingEnabled", "tfliteInference", "maxFileLength", "getFileType", "setFileType", "getFileLength", "setFileLength", "getFileChecksum", "setFileChecksum", "setFileTransferCommand", "fileTransferStatus", "getFileBlock", "setFileBlock", "fileBytesTransferred", "isWifiAvailable", "getWifiSSID", "setWifiSSID", "getWifiPassword", "setWifiPassword", "getEnableWifiConnection", "setEnableWifiConnection", "isWifiConnected", "ipAddress", "smp"];
+export declare const ConnectionMessageTypes: readonly ["batteryLevel", "manufacturerName", "modelNumber", "hardwareRevision", "firmwareRevision", "softwareRevision", "pnpId", "serialNumber", "rx", "tx", "isCharging", "getBatteryCurrent", "getMtu", "getId", "getName", "setName", "getType", "setType", "getCurrentTime", "setCurrentTime", "getSensorConfiguration", "setSensorConfiguration", "getPressurePositions", "getSensorScalars", "sensorData", "triggerVibration", "getTfliteName", "setTfliteName", "getTfliteTask", "setTfliteTask", "getTfliteSampleRate", "setTfliteSampleRate", "getTfliteSensorTypes", "setTfliteSensorTypes", "tfliteIsReady", "getTfliteCaptureDelay", "setTfliteCaptureDelay", "getTfliteThreshold", "setTfliteThreshold", "getTfliteInferencingEnabled", "setTfliteInferencingEnabled", "tfliteInference", "maxFileLength", "getFileType", "setFileType", "getFileLength", "setFileLength", "getFileChecksum", "setFileChecksum", "setFileTransferCommand", "fileTransferStatus", "getFileBlock", "setFileBlock", "fileBytesTransferred", "isWifiAvailable", "getWifiSSID", "setWifiSSID", "getWifiPassword", "setWifiPassword", "getEnableWifiConnection", "setEnableWifiConnection", "isWifiConnected", "ipAddress", "isWifiSecure", "smp"];
 export type ConnectionMessageType = (typeof ConnectionMessageTypes)[number];
 export type ConnectionStatusCallback = (status: ConnectionStatus) => void;
 export type MessageReceivedCallback = (messageType: ConnectionMessageType, dataView: DataView) => void;
@@ -50,12 +69,19 @@ declare abstract class BaseConnectionManager {
     protected set status(newConnectionStatus: "notConnected" | "connecting" | "connected" | "disconnecting");
     get isConnected(): boolean;
     get isAvailable(): boolean;
+    /** @throws {Error} if connected */
+    protected assertIsNotConnected(): void;
+    /** @throws {Error} if not connected */
+    protected assertIsConnected(): void;
+    /** @throws {Error} if not connected or is disconnecting */
+    assertIsConnectedAndNotDisconnecting(): void;
     connect(): Promise<void>;
     get canReconnect(): boolean;
     reconnect(): Promise<void>;
     disconnect(): Promise<void>;
     sendSmpMessage(data: ArrayBuffer): Promise<void>;
     sendTxMessages(messages: TxMessage[] | undefined, sendImmediately?: boolean): Promise<void>;
+    protected defaultMtu: number;
     mtu?: number;
     sendTxData(data: ArrayBuffer): Promise<void>;
     parseRxMessage(dataView: DataView): void;

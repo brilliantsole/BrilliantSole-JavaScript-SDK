@@ -5,7 +5,7 @@ import { FileTransferMessageTypes } from "../FileTransferManager.ts";
 import { TfliteMessageTypes } from "../TfliteManager.ts";
 import { concatenateArrayBuffers } from "../utils/ArrayBufferUtils.ts";
 import { parseMessage } from "../utils/ParseUtils.ts";
-import { DeviceInformationMessageTypes } from "../DeviceInformationManager.ts";
+import { DeviceInformationTypes } from "../DeviceInformationManager.ts";
 import { InformationMessageTypes } from "../InformationManager.ts";
 import { VibrationMessageTypes } from "../vibration/VibrationManager.ts";
 import { SensorConfigurationMessageTypes } from "../sensor/SensorConfigurationManager.ts";
@@ -14,8 +14,37 @@ import { WifiMessageTypes } from "../WifiManager.ts";
 
 const _console = createConsole("BaseConnectionManager", { log: false });
 
-export const ConnectionTypes = ["webBluetooth", "noble", "client"] as const;
+export const ConnectionTypes = [
+  "webBluetooth",
+  "noble",
+  "client",
+  "webSocket",
+  "udp",
+] as const;
 export type ConnectionType = (typeof ConnectionTypes)[number];
+
+interface BaseConnectOptions {
+  type: "webBluetooth" | "webSocket" | "udp";
+}
+export interface WebBluetoothConnectOptions extends BaseConnectOptions {
+  type: "webBluetooth";
+}
+interface BaseWifiConnectOptions extends BaseConnectOptions {
+  ipAddress: string;
+}
+export interface WebSocketConnectOptions extends BaseWifiConnectOptions {
+  type: "webSocket";
+  isSecure?: boolean;
+}
+export interface UDPConnectOptions extends BaseWifiConnectOptions {
+  type: "udp";
+  sendPort: number;
+  receivePort?: number;
+}
+export type ConnectOptions =
+  | WebBluetoothConnectOptions
+  | WebSocketConnectOptions
+  | UDPConnectOptions;
 
 export const ConnectionStatuses = [
   "notConnected",
@@ -69,7 +98,7 @@ export type MetaConnectionMessageType =
 
 export const ConnectionMessageTypes = [
   ...BatteryLevelMessageTypes,
-  ...DeviceInformationMessageTypes,
+  ...DeviceInformationTypes,
   ...MetaConnectionMessageTypes,
   ...TxRxMessageTypes,
   ...SMPMessageTypes,
@@ -149,7 +178,7 @@ abstract class BaseConnectionManager {
     }
 
     if (this.#status == "notConnected") {
-      this.mtu = this.#defaultMtu;
+      this.mtu = this.defaultMtu;
     }
   }
 
@@ -162,7 +191,7 @@ abstract class BaseConnectionManager {
   }
 
   /** @throws {Error} if connected */
-  #assertIsNotConnected() {
+  protected assertIsNotConnected() {
     _console.assertWithError(!this.isConnected, "device is already connected");
   }
   /** @throws {Error} if connecting */
@@ -173,7 +202,7 @@ abstract class BaseConnectionManager {
     );
   }
   /** @throws {Error} if not connected */
-  #assertIsConnected() {
+  protected assertIsConnected() {
     _console.assertWithError(this.isConnected, "device is not connected");
   }
   /** @throws {Error} if disconnecting */
@@ -184,13 +213,13 @@ abstract class BaseConnectionManager {
     );
   }
   /** @throws {Error} if not connected or is disconnecting */
-  #assertIsConnectedAndNotDisconnecting() {
-    this.#assertIsConnected();
+  assertIsConnectedAndNotDisconnecting() {
+    this.assertIsConnected();
     this.#assertIsNotDisconnecting();
   }
 
   async connect() {
-    this.#assertIsNotConnected();
+    this.assertIsNotConnected();
     this.#assertIsNotConnecting();
     this.status = "connecting";
   }
@@ -198,19 +227,21 @@ abstract class BaseConnectionManager {
     return false;
   }
   async reconnect() {
-    this.#assertIsNotConnected();
+    this.assertIsNotConnected();
     this.#assertIsNotConnecting();
-    _console.assert(this.canReconnect, "unable to reconnect");
+    _console.assertWithError(this.canReconnect, "unable to reconnect");
+    this.status = "connecting";
+    _console.log("attempting to reconnect...");
   }
   async disconnect() {
-    this.#assertIsConnected();
+    this.assertIsConnected();
     this.#assertIsNotDisconnecting();
     this.status = "disconnecting";
     _console.log("disconnecting from device...");
   }
 
   async sendSmpMessage(data: ArrayBuffer) {
-    this.#assertIsConnectedAndNotDisconnecting();
+    this.assertIsConnectedAndNotDisconnecting();
     _console.log("sending smp message", data);
   }
 
@@ -220,7 +251,7 @@ abstract class BaseConnectionManager {
     messages: TxMessage[] | undefined,
     sendImmediately: boolean = true
   ) {
-    this.#assertIsConnectedAndNotDisconnecting();
+    this.assertIsConnectedAndNotDisconnecting();
 
     if (messages) {
       this.#pendingMessages.push(...messages);
@@ -291,9 +322,9 @@ abstract class BaseConnectionManager {
     this.#isSendingMessages = false;
   }
 
-  #defaultMtu = 23;
+  protected defaultMtu = 23;
   //mtu?: number;
-  mtu?: number = this.#defaultMtu;
+  mtu?: number = this.defaultMtu;
 
   async sendTxData(data: ArrayBuffer) {
     _console.log("sendTxData", data);

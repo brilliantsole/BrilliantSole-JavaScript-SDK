@@ -114,7 +114,7 @@ reconnectOnDisconnectionCheckbox.addEventListener("input", () => {
 /** @type {HTMLButtonElement} */
 const resetDeviceButton = document.getElementById("resetDevice");
 device.addEventListener("isConnected", () => {
-  resetDeviceButton.disabled = !device.isConnected;
+  resetDeviceButton.disabled = !device.isConnected || !device.canReset;
 });
 resetDeviceButton.addEventListener("click", () => {
   device.reset();
@@ -689,6 +689,12 @@ fileTransferTypesSelect.addEventListener("input", () => {
     case "tflite":
       fileInput.accept = ".tflite";
       break;
+    case "wifiServerCert":
+      fileInput.accept = ".crt";
+      break;
+    case "wifiServerKey":
+      fileInput.accept = ".key";
+      break;
   }
 });
 /** @type {HTMLOptGroupElement} */
@@ -1181,7 +1187,7 @@ resetButton.addEventListener("click", () => {
 const updateResetButton = () => {
   const status = device.firmwareStatus;
   const enabled = status == "pending" || status == "testing";
-  resetButton.disabled = !enabled;
+  resetButton.disabled = !enabled || !device.canReset;
 };
 
 /** @type {HTMLButtonElement} */
@@ -1271,9 +1277,10 @@ const setWifiSSIDInput = document.getElementById("setWifiSSIDInput");
 setWifiSSIDInput.min = BS.MinWifiSSIDLength;
 setWifiSSIDInput.max = BS.MaxWifiSSIDLength;
 setWifiSSIDInput.addEventListener("input", () => {
-  setWifiSSIDButton.disabled =
+  setWifiSSIDButton.disabled = !(
     setWifiSSIDInput.value.length > BS.MinWifiSSIDLength &&
-    setWifiSSIDInput.value.length < BS.MaxWifiSSIDLength;
+    setWifiSSIDInput.value.length < BS.MaxWifiSSIDLength
+  );
 });
 /** @type {HTMLButtonElement} */
 const setWifiSSIDButton = document.getElementById("setWifiSSIDButton");

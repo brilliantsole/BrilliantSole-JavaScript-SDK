@@ -4,7 +4,7 @@ import EventDispatcher from "./utils/EventDispatcher.ts";
 import { textDecoder, textEncoder } from "./utils/Text.ts";
 import autoBind from "auto-bind";
 
-const _console = createConsole("WifiManager", { log: true });
+const _console = createConsole("WifiManager", { log: false });
 
 export const MinWifiSSIDLength = 1;
 export const MaxWifiSSIDLength = 32;
@@ -22,6 +22,7 @@ export const WifiMessageTypes = [
   "setEnableWifiConnection",
   "isWifiConnected",
   "ipAddress",
+  "isWifiSecure",
 ] as const;
 export type WifiMessageType = (typeof WifiMessageTypes)[number];
 
@@ -31,6 +32,7 @@ export const RequiredWifiMessageTypes: WifiMessageType[] = [
   "getEnableWifiConnection",
   "isWifiConnected",
   "ipAddress",
+  "isWifiSecure",
 ];
 
 export const WifiEventTypes = WifiMessageTypes;
@@ -247,6 +249,20 @@ class WifiManager {
     });
   }
 
+  // IS WIFI SECURE
+  #isWifiSecure = false;
+  get isWifiSecure() {
+    return this.#isWifiSecure;
+  }
+  #updateIsWifiSecure(updatedIsWifiSecure: boolean) {
+    _console.assertTypeWithError(updatedIsWifiSecure, "boolean");
+    this.#isWifiSecure = updatedIsWifiSecure;
+    _console.log({ isWifiSecure: this.#isWifiSecure });
+    this.#dispatchEvent("isWifiSecure", {
+      isWifiSecure: this.#isWifiSecure,
+    });
+  }
+
   // MESSAGE
   parseMessage(messageType: WifiMessageType, dataView: DataView) {
     _console.log({ messageType });
@@ -284,6 +300,11 @@ class WifiManager {
         const ipAddress = new Uint8Array(dataView.buffer.slice(0, 4)).join(".");
         _console.log({ ipAddress });
         this.#updateIpAddress(ipAddress);
+        break;
+      case "isWifiSecure":
+        const isWifiSecure = Boolean(dataView.getUint8(0));
+        _console.log({ isWifiSecure });
+        this.#updateIsWifiSecure(isWifiSecure);
         break;
       default:
         throw Error(`uncaught messageType ${messageType}`);

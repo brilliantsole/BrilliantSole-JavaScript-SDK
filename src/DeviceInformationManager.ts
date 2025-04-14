@@ -22,19 +22,23 @@ export interface DeviceInformation {
   serialNumber: string;
 }
 
-export const DeviceInformationMessageTypes = [
+export const DeviceInformationTypes = [
   "manufacturerName",
   "modelNumber",
-  "softwareRevision",
   "hardwareRevision",
   "firmwareRevision",
+  "softwareRevision",
   "pnpId",
   "serialNumber",
 ] as const;
-export type DeviceInformationMessageType = (typeof DeviceInformationMessageTypes)[number];
+export type DeviceInformationType = (typeof DeviceInformationTypes)[number];
 
-export const DeviceInformationEventTypes = [...DeviceInformationMessageTypes, "deviceInformation"] as const;
-export type DeviceInformationEventType = (typeof DeviceInformationEventTypes)[number];
+export const DeviceInformationEventTypes = [
+  ...DeviceInformationTypes,
+  "deviceInformation",
+] as const;
+export type DeviceInformationEventType =
+  (typeof DeviceInformationEventTypes)[number];
 
 export interface DeviceInformationEventMessages {
   manufacturerName: { manufacturerName: string };
@@ -67,18 +71,21 @@ class DeviceInformationManager {
     this.#information = {};
   }
   get #isComplete() {
-    return DeviceInformationMessageTypes.filter((key) => key != "serialNumber").every(
+    return DeviceInformationTypes.filter((key) => key != "serialNumber").every(
       (key) => key in this.#information
     );
   }
 
   #update(partialDeviceInformation: Partial<DeviceInformation>) {
     _console.log({ partialDeviceInformation });
-    const deviceInformationNames = Object.keys(partialDeviceInformation) as (keyof DeviceInformation)[];
+    const deviceInformationNames = Object.keys(
+      partialDeviceInformation
+    ) as (keyof DeviceInformation)[];
     deviceInformationNames.forEach((deviceInformationName) => {
       // @ts-expect-error
       this.#dispatchEvent(deviceInformationName, {
-        [deviceInformationName]: partialDeviceInformation[deviceInformationName],
+        [deviceInformationName]:
+          partialDeviceInformation[deviceInformationName],
       });
     });
 
@@ -86,11 +93,13 @@ class DeviceInformationManager {
     _console.log({ deviceInformation: this.#information });
     if (this.#isComplete) {
       _console.log("completed deviceInformation");
-      this.#dispatchEvent("deviceInformation", { deviceInformation: this.information });
+      this.#dispatchEvent("deviceInformation", {
+        deviceInformation: this.information,
+      });
     }
   }
 
-  parseMessage(messageType: DeviceInformationMessageType, dataView: DataView) {
+  parseMessage(messageType: DeviceInformationType, dataView: DataView) {
     _console.log({ messageType });
 
     switch (messageType) {
