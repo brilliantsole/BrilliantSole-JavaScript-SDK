@@ -9,16 +9,28 @@ import {
   ServerMessageType,
 } from "./ServerUtils.ts";
 import { parseMessage, parseStringFromDataView } from "../utils/ParseUtils.ts";
-import EventDispatcher, { BoundEventListeners, Event } from "../utils/EventDispatcher.ts";
+import EventDispatcher, {
+  BoundEventListeners,
+  Event,
+} from "../utils/EventDispatcher.ts";
 import Device from "../Device.ts";
 import { sliceDataView } from "../utils/ArrayBufferUtils.ts";
-import { DiscoveredDevice, DiscoveredDevicesMap, ScannerEventMessages } from "../scanner/BaseScanner.ts";
+import {
+  DiscoveredDevice,
+  DiscoveredDevicesMap,
+  ScannerEventMessages,
+} from "../scanner/BaseScanner.ts";
 import ClientConnectionManager from "../connection/ClientConnectionManager.ts";
 import { DeviceManager } from "../BS.ts";
 
 const _console = createConsole("BaseClient", { log: false });
 
-export const ClientConnectionStatuses = ["notConnected", "connecting", "connected", "disconnecting"] as const;
+export const ClientConnectionStatuses = [
+  "notConnected",
+  "connecting",
+  "connected",
+  "disconnecting",
+] as const;
 export type ClientConnectionStatus = (typeof ClientConnectionStatuses)[number];
 
 export const ClientEventTypes = [
@@ -37,11 +49,24 @@ interface ClientConnectionEventMessages {
   isConnected: { isConnected: boolean };
 }
 
-export type ClientEventMessages = ClientConnectionEventMessages & ScannerEventMessages;
+export type ClientEventMessages = ClientConnectionEventMessages &
+  ScannerEventMessages;
 
-export type ClientEventDispatcher = EventDispatcher<BaseClient, ClientEventType, ClientEventMessages>;
-export type ClientEvent = Event<BaseClient, ClientEventType, ClientEventMessages>;
-export type BoundClientEventListeners = BoundEventListeners<BaseClient, ClientEventType, ClientEventMessages>;
+export type ClientEventDispatcher = EventDispatcher<
+  BaseClient,
+  ClientEventType,
+  ClientEventMessages
+>;
+export type ClientEvent = Event<
+  BaseClient,
+  ClientEventType,
+  ClientEventMessages
+>;
+export type BoundClientEventListeners = BoundEventListeners<
+  BaseClient,
+  ClientEventType,
+  ClientEventMessages
+>;
 
 export type ServerURL = string | URL;
 
@@ -57,7 +82,8 @@ abstract class BaseClient {
     this.#isScanning = false;
     for (const id in this.#devices) {
       const device = this.#devices[id];
-      const connectionManager = device.connectionManager! as ClientConnectionManager;
+      const connectionManager =
+        device.connectionManager! as ClientConnectionManager;
       connectionManager.isConnected = false;
       //device.removeAllEventListeners();
     }
@@ -71,7 +97,10 @@ abstract class BaseClient {
     return this.#devices;
   }
 
-  #eventDispatcher: ClientEventDispatcher = new EventDispatcher(this as BaseClient, ClientEventTypes);
+  #eventDispatcher: ClientEventDispatcher = new EventDispatcher(
+    this as BaseClient,
+    ClientEventTypes
+  );
   get addEventListener() {
     return this.#eventDispatcher.addEventListener;
   }
@@ -109,7 +138,8 @@ abstract class BaseClient {
     this._reconnectOnDisconnection = newReconnectOnDisconnection;
   }
 
-  protected _reconnectOnDisconnection = this.baseConstructor.ReconnectOnDisconnection;
+  protected _reconnectOnDisconnection =
+    this.baseConstructor.ReconnectOnDisconnection;
   get reconnectOnDisconnection() {
     return this._reconnectOnDisconnection;
   }
@@ -130,7 +160,9 @@ abstract class BaseClient {
     _console.log({ newConnectionStatus });
     this.#_connectionStatus = newConnectionStatus;
 
-    this.dispatchEvent("connectionStatus", { connectionStatus: this.connectionStatus });
+    this.dispatchEvent("connectionStatus", {
+      connectionStatus: this.connectionStatus,
+    });
     this.dispatchEvent(this.connectionStatus, {});
 
     switch (newConnectionStatus) {
@@ -149,7 +181,11 @@ abstract class BaseClient {
     return this._connectionStatus;
   }
 
-  static #RequiredMessageTypes: ServerMessage[] = ["isScanningAvailable", "discoveredDevices", "connectedDevices"];
+  static #RequiredMessageTypes: ServerMessage[] = [
+    "isScanningAvailable",
+    "discoveredDevices",
+    "connectedDevices",
+  ];
   get #requiredMessageTypes(): ServerMessage[] {
     return BaseClient.#RequiredMessageTypes;
   }
@@ -183,7 +219,13 @@ abstract class BaseClient {
 
   protected parseMessage(dataView: DataView) {
     _console.log("parseMessage", { dataView });
-    parseMessage(dataView, ServerMessageTypes, this.#parseMessageCallback.bind(this), null, true);
+    parseMessage(
+      dataView,
+      ServerMessageTypes,
+      this.#parseMessageCallback.bind(this),
+      null,
+      true
+    );
     this.#checkIfFullyConnected();
   }
 
@@ -209,10 +251,15 @@ abstract class BaseClient {
         break;
       case "discoveredDevice":
         {
-          const { string: discoveredDeviceString } = parseStringFromDataView(dataView, byteOffset);
+          const { string: discoveredDeviceString } = parseStringFromDataView(
+            dataView,
+            byteOffset
+          );
           _console.log({ discoveredDeviceString });
 
-          const discoveredDevice: DiscoveredDevice = JSON.parse(discoveredDeviceString);
+          const discoveredDevice: DiscoveredDevice = JSON.parse(
+            discoveredDeviceString
+          );
           _console.log({ discoveredDevice });
 
           this.onDiscoveredDevice(discoveredDevice);
@@ -220,7 +267,10 @@ abstract class BaseClient {
         break;
       case "expiredDiscoveredDevice":
         {
-          const { string: bluetoothId } = parseStringFromDataView(dataView, byteOffset);
+          const { string: bluetoothId } = parseStringFromDataView(
+            dataView,
+            byteOffset
+          );
           this.#onExpiredDiscoveredDevice(bluetoothId);
         }
         break;
@@ -229,20 +279,28 @@ abstract class BaseClient {
           if (dataView.byteLength == 0) {
             break;
           }
-          const { string: connectedBluetoothDeviceIdStrings } = parseStringFromDataView(dataView, byteOffset);
+          const { string: connectedBluetoothDeviceIdStrings } =
+            parseStringFromDataView(dataView, byteOffset);
           _console.log({ connectedBluetoothDeviceIdStrings });
-          const connectedBluetoothDeviceIds = JSON.parse(connectedBluetoothDeviceIdStrings).connectedDevices;
+          const connectedBluetoothDeviceIds = JSON.parse(
+            connectedBluetoothDeviceIdStrings
+          ).connectedDevices;
           _console.log({ connectedBluetoothDeviceIds });
           this.onConnectedBluetoothDeviceIds(connectedBluetoothDeviceIds);
         }
         break;
       case "deviceMessage":
         {
-          const { string: bluetoothId, byteOffset: _byteOffset } = parseStringFromDataView(dataView, byteOffset);
+          const { string: bluetoothId, byteOffset: _byteOffset } =
+            parseStringFromDataView(dataView, byteOffset);
           byteOffset = _byteOffset;
           const device = this.#devices[bluetoothId];
-          _console.assertWithError(device, `no device found for id ${bluetoothId}`);
-          const connectionManager = device.connectionManager! as ClientConnectionManager;
+          _console.assertWithError(
+            device,
+            `no device found for id ${bluetoothId}`
+          );
+          const connectionManager =
+            device.connectionManager! as ClientConnectionManager;
           const _dataView = sliceDataView(dataView, byteOffset);
           connectionManager.onClientMessage(_dataView);
         }
@@ -265,7 +323,9 @@ abstract class BaseClient {
   set #isScanningAvailable(newIsAvailable) {
     _console.assertTypeWithError(newIsAvailable, "boolean");
     this.#_isScanningAvailable = newIsAvailable;
-    this.dispatchEvent("isScanningAvailable", { isScanningAvailable: this.isScanningAvailable });
+    this.dispatchEvent("isScanningAvailable", {
+      isScanningAvailable: this.isScanningAvailable,
+    });
     if (this.isScanningAvailable) {
       this.#requestIsScanning();
     }
@@ -275,7 +335,10 @@ abstract class BaseClient {
   }
   #assertIsScanningAvailable() {
     this.assertConnection();
-    _console.assertWithError(this.isScanningAvailable, "scanning is not available");
+    _console.assertWithError(
+      this.isScanningAvailable,
+      "scanning is not available"
+    );
   }
   protected requestIsScanningAvailable() {
     this.sendServerMessage("isScanningAvailable");
@@ -369,9 +432,14 @@ abstract class BaseClient {
     const clientConnectionManager = new ClientConnectionManager();
     clientConnectionManager.client = this;
     clientConnectionManager.bluetoothId = bluetoothId;
-    clientConnectionManager.sendClientMessage = this.sendDeviceMessage.bind(this, bluetoothId);
-    clientConnectionManager.sendClientConnectMessage = this.sendConnectToDeviceMessage.bind(this, bluetoothId);
-    clientConnectionManager.sendClientDisconnectMessage = this.sendDisconnectFromDeviceMessage.bind(this, bluetoothId);
+    clientConnectionManager.sendClientMessage = this.sendDeviceMessage.bind(
+      this,
+      bluetoothId
+    );
+    clientConnectionManager.sendClientConnectMessage =
+      this.sendConnectToDeviceMessage.bind(this, bluetoothId);
+    clientConnectionManager.sendClientDisconnectMessage =
+      this.sendDisconnectFromDeviceMessage.bind(this, bluetoothId);
     device.connectionManager = clientConnectionManager;
     return device;
   }
@@ -388,7 +456,8 @@ abstract class BaseClient {
     _console.log({ bluetoothIds });
     bluetoothIds.forEach((bluetoothId) => {
       const device = this.#getOrCreateDevice(bluetoothId);
-      const connectionManager = device.connectionManager! as ClientConnectionManager;
+      const connectionManager =
+        device.connectionManager! as ClientConnectionManager;
       connectionManager.isConnected = true;
       DeviceManager._CheckDeviceAvailability(device);
     });
@@ -409,7 +478,10 @@ abstract class BaseClient {
     this.sendServerMessage({ type: "disconnectFromDevice", data: bluetoothId });
   }
 
-  protected sendDeviceMessage(bluetoothId: string, ...messages: ClientDeviceMessage[]) {
+  protected sendDeviceMessage(
+    bluetoothId: string,
+    ...messages: ClientDeviceMessage[]
+  ) {
     this.sendServerMessage({
       type: "deviceMessage",
       data: [bluetoothId, createClientDeviceMessage(...messages)],

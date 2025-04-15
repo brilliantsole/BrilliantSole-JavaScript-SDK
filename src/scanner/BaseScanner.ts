@@ -24,7 +24,7 @@ export interface DiscoveredDevice {
   deviceType: DeviceType;
   rssi: number;
   ipAddress?: string;
-  isSecure?: boolean;
+  isWifiSecure?: boolean;
 }
 
 interface ScannerDiscoveredDeviceEventMessage {

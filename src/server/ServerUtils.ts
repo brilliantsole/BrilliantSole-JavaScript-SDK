@@ -1,5 +1,8 @@
 import { DeviceEventTypes } from "../Device.ts";
-import { ConnectionMessageType, ConnectionMessageTypes } from "../connection/BaseConnectionManager.ts";
+import {
+  ConnectionMessageType,
+  ConnectionMessageTypes,
+} from "../connection/BaseConnectionManager.ts";
 import { concatenateArrayBuffers } from "../utils/ArrayBufferUtils.ts";
 import { createConsole } from "../utils/Console.ts";
 import { DeviceEventType } from "../Device.ts";
@@ -21,12 +24,25 @@ export const ServerMessageTypes = [
 ] as const;
 export type ServerMessageType = (typeof ServerMessageTypes)[number];
 
-export const DeviceMessageTypes = ["connectionStatus", "batteryLevel", "deviceInformation", "rx", "smp"] as const;
+export const DeviceMessageTypes = [
+  "connectionStatus",
+  "batteryLevel",
+  "deviceInformation",
+  "rx",
+  "smp",
+] as const;
 export type DeviceMessageType = (typeof DeviceMessageTypes)[number];
 
 // MESSAGING
 
-export type MessageLike = number | number[] | ArrayBufferLike | DataView | boolean | string | any;
+export type MessageLike =
+  | number
+  | number[]
+  | ArrayBufferLike
+  | DataView
+  | boolean
+  | string
+  | any;
 
 export interface Message<MessageType extends string> {
   type: MessageType;
@@ -59,9 +75,17 @@ export function createMessage<MessageType extends string>(
     const messageTypeEnum = enumeration.indexOf(message.type);
 
     const messageDataLengthDataView = new DataView(new ArrayBuffer(2));
-    messageDataLengthDataView.setUint16(0, messageDataArrayBufferByteLength, true);
+    messageDataLengthDataView.setUint16(
+      0,
+      messageDataArrayBufferByteLength,
+      true
+    );
 
-    return concatenateArrayBuffers(messageTypeEnum, messageDataLengthDataView, messageDataArrayBuffer);
+    return concatenateArrayBuffers(
+      messageTypeEnum,
+      messageDataLengthDataView,
+      messageDataArrayBuffer
+    );
   });
   _console.log("messageBuffers", ...messageBuffers);
   return concatenateArrayBuffers(...messageBuffers);
@@ -79,15 +103,20 @@ export function createDeviceMessage(...messages: DeviceMessage[]) {
   return createMessage(DeviceEventTypes, ...messages);
 }
 
-export type ClientDeviceMessage = ConnectionMessageType | Message<ConnectionMessageType>;
+export type ClientDeviceMessage =
+  | ConnectionMessageType
+  | Message<ConnectionMessageType>;
 export function createClientDeviceMessage(...messages: ClientDeviceMessage[]) {
   _console.log("createClientDeviceMessage", ...messages);
   return createMessage(ConnectionMessageTypes, ...messages);
 }
 
 // STATIC MESSAGES
-export const isScanningAvailableRequestMessage = createServerMessage("isScanningAvailable");
+export const isScanningAvailableRequestMessage = createServerMessage(
+  "isScanningAvailable"
+);
 export const isScanningRequestMessage = createServerMessage("isScanning");
 export const startScanRequestMessage = createServerMessage("startScan");
 export const stopScanRequestMessage = createServerMessage("stopScan");
-export const discoveredDevicesMessage = createServerMessage("discoveredDevices");
+export const discoveredDevicesMessage =
+  createServerMessage("discoveredDevices");

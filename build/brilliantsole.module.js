@@ -18,8 +18,9 @@ typeof SuppressedError === "function" ? SuppressedError : function (error, suppr
     return e.name = "SuppressedError", e.error = error, e.suppressed = suppressed, e;
 };
 
-const isInProduction = "__BRILLIANTSOLE__PROD__" == "__BRILLIANTSOLE__PROD__";
-const isInDev = "__BRILLIANTSOLE__PROD__" == "__BRILLIANTSOLE__DEV__";
+const __BRILLIANTSOLE__ENVIRONMENT__ = "__BRILLIANTSOLE__DEV__";
+const isInProduction = __BRILLIANTSOLE__ENVIRONMENT__ == "__BRILLIANTSOLE__PROD__";
+const isInDev = __BRILLIANTSOLE__ENVIRONMENT__ == "__BRILLIANTSOLE__DEV__";
 const isInBrowser = typeof window !== "undefined" && typeof window?.document !== "undefined";
 const isInNode = typeof process !== "undefined" && process?.versions?.node != null;
 const userAgent = (isInBrowser && navigator.userAgent) || "";
@@ -68,6 +69,29 @@ if (isInLensStudio) {
 else {
     __console = console;
 }
+function getCallerFunctionPath() {
+    const stack = new Error().stack;
+    if (!stack)
+        return "";
+    const lines = stack.split("\n");
+    const callerLine = lines[3] || lines[2];
+    const match = callerLine.match(/at (.*?) \(/) || callerLine.match(/at (.*)/);
+    if (!match)
+        return "";
+    const fullFn = match[1].trim();
+    return `[${fullFn}]`;
+}
+function wrapWithLocation(fn) {
+    return (...args) => {
+        if (isInNode) {
+            const functionPath = getCallerFunctionPath();
+            fn(functionPath, ...args);
+        }
+        else {
+            fn(...args);
+        }
+    };
+}
 if (!__console.assert) {
     const assert = (condition, ...data) => {
         if (!condition) {
@@ -83,10 +107,10 @@ if (!__console.table) {
     __console.table = table;
 }
 function emptyFunction() { }
-const log = __console.log.bind(__console);
-const warn = __console.warn.bind(__console);
-const error = __console.error.bind(__console);
-const table = __console.table.bind(__console);
+const log = wrapWithLocation(__console.log.bind(__console));
+const warn = wrapWithLocation(__console.warn.bind(__console));
+const error = wrapWithLocation(__console.error.bind(__console));
+const table = wrapWithLocation(__console.table.bind(__console));
 const assert = __console.assert.bind(__console);
 class Console {
     constructor(type) {
@@ -118,6 +142,9 @@ class Console {
     }
     static create(type, levelFlags) {
         const console = __classPrivateFieldGet(this, _a$6, "f", _Console_consoles)[type] || new _a$6(type);
+        if (levelFlags) {
+            console.setLevelFlags(levelFlags);
+        }
         return console;
     }
     get log() {
@@ -2037,7 +2064,8 @@ class InformationManager {
                 break;
             case "getMtu":
                 let mtu = dataView.getUint16(0, true);
-                if (isInBrowser && this.connectionType == "webBluetooth") {
+                if (this.connectionType != "webSocket" &&
+                    this.connectionType != "udp") {
                     mtu = Math.min(mtu, 512);
                 }
                 _console$k.log({ mtu });
@@ -4240,7 +4268,7 @@ _FirmwareManager_status = new WeakMap(), _FirmwareManager_images = new WeakMap()
 };
 
 var _DeviceManager_instances, _DeviceManager_boundDeviceEventListeners, _DeviceManager_onDeviceType, _DeviceManager_ConnectedDevices, _DeviceManager_UseLocalStorage, _DeviceManager_DefaultLocalStorageConfiguration, _DeviceManager_LocalStorageConfiguration, _DeviceManager_AssertLocalStorage, _DeviceManager_LocalStorageKey, _DeviceManager_SaveToLocalStorage, _DeviceManager_LoadFromLocalStorage, _DeviceManager_UpdateLocalStorageConfigurationForDevice, _DeviceManager_AvailableDevices, _DeviceManager_EventDispatcher, _DeviceManager_DispatchEvent_get, _DeviceManager_OnDeviceIsConnected, _DeviceManager_DispatchAvailableDevices, _DeviceManager_DispatchConnectedDevices;
-const _console$a = createConsole("DeviceManager", { log: true });
+const _console$a = createConsole("DeviceManager", { log: false });
 const DeviceManagerEventTypes = [
     "deviceConnected",
     "deviceDisconnected",
@@ -4758,7 +4786,7 @@ _WebSocketConnectionManager_webSocket = new WeakMap(), _WebSocketConnectionManag
 };
 
 var _Device_instances, _a$2, _Device_DefaultConnectionManager, _Device_eventDispatcher, _Device_dispatchEvent_get, _Device_connectionManager, _Device_sendTxMessages, _Device_isConnected, _Device_assertIsConnected, _Device_didReceiveMessageTypes, _Device_hasRequiredInformation_get, _Device_requestRequiredInformation, _Device_assertCanReconnect, _Device_ReconnectOnDisconnection, _Device_reconnectOnDisconnection, _Device_reconnectIntervalId, _Device_onConnectionStatusUpdated, _Device_dispatchConnectionEvents, _Device_checkConnection, _Device_clear, _Device_clearConnection, _Device_onConnectionMessageReceived, _Device_onConnectionMessagesReceived, _Device_deviceInformationManager, _Device_batteryLevel, _Device_updateBatteryLevel, _Device_sensorConfigurationManager, _Device_ClearSensorConfigurationOnLeave, _Device_clearSensorConfigurationOnLeave, _Device_sensorDataManager, _Device_vibrationManager, _Device_fileTransferManager, _Device_tfliteManager, _Device_firmwareManager, _Device_assertCanUpdateFirmware, _Device_sendSmpMessage, _Device_isServerSide, _Device_wifiManager;
-const _console$6 = createConsole("Device", { log: false });
+const _console$6 = createConsole("Device", { log: true });
 const DeviceEventTypes = [
     "connectionMessage",
     ...ConnectionEventTypes,
@@ -5258,6 +5286,7 @@ class Device {
     async reconnectViaWebSockets() {
         _console$6.assertWithError(this.isWifiConnected, "wifi is not connected");
         _console$6.assertWithError(this.connectionType != "webSocket", "already connected via webSockets");
+        _console$6.assertTypeWithError(this.ipAddress, "string");
         _console$6.log("reconnecting via websockets...");
         await this.disconnect();
         await this.connect({
@@ -5790,7 +5819,7 @@ class ClientConnectionManager extends BaseConnectionManager {
     }
     async reconnect() {
         await super.reconnect();
-        this.connect();
+        this.sendClientConnectMessage();
     }
     async sendSmpMessage(data) {
         super.sendSmpMessage(data);
@@ -5831,7 +5860,12 @@ _ClientConnectionManager_bluetoothId = new WeakMap(), _ClientConnectionManager_i
 
 var _BaseClient_instances, _a, _BaseClient_reset, _BaseClient_devices, _BaseClient_eventDispatcher, _BaseClient__connectionStatus, _BaseClient_RequiredMessageTypes, _BaseClient_requiredMessageTypes_get, _BaseClient_receivedMessageTypes, _BaseClient_checkIfFullyConnected, _BaseClient_parseMessageCallback, _BaseClient__isScanningAvailable, _BaseClient_isScanningAvailable_get, _BaseClient_isScanningAvailable_set, _BaseClient_assertIsScanningAvailable, _BaseClient__isScanning, _BaseClient_isScanning_get, _BaseClient_isScanning_set, _BaseClient_requestIsScanning, _BaseClient_assertIsScanning, _BaseClient_assertIsNotScanning, _BaseClient_discoveredDevices, _BaseClient_onExpiredDiscoveredDevice, _BaseClient_getOrCreateDevice;
 const _console$1 = createConsole("BaseClient", { log: false });
-const ClientConnectionStatuses = ["notConnected", "connecting", "connected", "disconnecting"];
+const ClientConnectionStatuses = [
+    "notConnected",
+    "connecting",
+    "connected",
+    "disconnecting",
+];
 const ClientEventTypes = [
     ...ClientConnectionStatuses,
     "connectionStatus",
@@ -5898,7 +5932,9 @@ class BaseClient {
         _console$1.assertTypeWithError(newConnectionStatus, "string");
         _console$1.log({ newConnectionStatus });
         __classPrivateFieldSet(this, _BaseClient__connectionStatus, newConnectionStatus, "f");
-        this.dispatchEvent("connectionStatus", { connectionStatus: this.connectionStatus });
+        this.dispatchEvent("connectionStatus", {
+            connectionStatus: this.connectionStatus,
+        });
         this.dispatchEvent(this.connectionStatus, {});
         switch (newConnectionStatus) {
             case "connected":
@@ -5979,8 +6015,10 @@ class BaseClient {
         clientConnectionManager.client = this;
         clientConnectionManager.bluetoothId = bluetoothId;
         clientConnectionManager.sendClientMessage = this.sendDeviceMessage.bind(this, bluetoothId);
-        clientConnectionManager.sendClientConnectMessage = this.sendConnectToDeviceMessage.bind(this, bluetoothId);
-        clientConnectionManager.sendClientDisconnectMessage = this.sendDisconnectFromDeviceMessage.bind(this, bluetoothId);
+        clientConnectionManager.sendClientConnectMessage =
+            this.sendConnectToDeviceMessage.bind(this, bluetoothId);
+        clientConnectionManager.sendClientDisconnectMessage =
+            this.sendDisconnectFromDeviceMessage.bind(this, bluetoothId);
         device.connectionManager = clientConnectionManager;
         return device;
     }
@@ -6110,7 +6148,9 @@ _a = BaseClient, _BaseClient_devices = new WeakMap(), _BaseClient_eventDispatche
 }, _BaseClient_isScanningAvailable_set = function _BaseClient_isScanningAvailable_set(newIsAvailable) {
     _console$1.assertTypeWithError(newIsAvailable, "boolean");
     __classPrivateFieldSet(this, _BaseClient__isScanningAvailable, newIsAvailable, "f");
-    this.dispatchEvent("isScanningAvailable", { isScanningAvailable: this.isScanningAvailable });
+    this.dispatchEvent("isScanningAvailable", {
+        isScanningAvailable: this.isScanningAvailable,
+    });
     if (this.isScanningAvailable) {
         __classPrivateFieldGet(this, _BaseClient_instances, "m", _BaseClient_requestIsScanning).call(this);
     }
@@ -6148,7 +6188,11 @@ _a = BaseClient, _BaseClient_devices = new WeakMap(), _BaseClient_eventDispatche
     return device;
 };
 BaseClient._reconnectOnDisconnection = true;
-_BaseClient_RequiredMessageTypes = { value: ["isScanningAvailable", "discoveredDevices", "connectedDevices"] };
+_BaseClient_RequiredMessageTypes = { value: [
+        "isScanningAvailable",
+        "discoveredDevices",
+        "connectedDevices",
+    ] };
 
 var _WebSocketClient_instances, _WebSocketClient_webSocket, _WebSocketClient_sendWebSocketMessage, _WebSocketClient_boundWebSocketEventListeners, _WebSocketClient_onWebSocketOpen, _WebSocketClient_onWebSocketMessage, _WebSocketClient_onWebSocketClose, _WebSocketClient_onWebSocketError, _WebSocketClient_parseWebSocketMessage, _WebSocketClient_onServerMessage, _WebSocketClient_pingTimer, _WebSocketClient_ping, _WebSocketClient_pong;
 const _console = createConsole("WebSocketClient", { log: false });

@@ -1013,11 +1013,12 @@ class Device {
       this.connectionType != "webSocket",
       "already connected via webSockets"
     );
+    _console.assertTypeWithError(this.ipAddress, "string");
     _console.log("reconnecting via websockets...");
     await this.disconnect();
     await this.connect({
       type: "webSocket",
-      ipAddress: this.ipAddress,
+      ipAddress: this.ipAddress!,
       isSecure: this.isWifiSecure,
     });
   }

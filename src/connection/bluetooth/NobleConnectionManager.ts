@@ -106,7 +106,7 @@ class NobleConnectionManager extends BluetoothConnectionManager {
   }
   async reconnect() {
     await super.reconnect();
-    this.connect();
+    await this.#noblePeripheral!.connectAsync();
   }
 
   // NOBLE

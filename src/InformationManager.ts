@@ -296,7 +296,10 @@ class InformationManager {
         break;
       case "getMtu":
         let mtu = dataView.getUint16(0, true);
-        if (isInBrowser && this.connectionType == "webBluetooth") {
+        if (
+          this.connectionType != "webSocket" &&
+          this.connectionType != "udp"
+        ) {
           mtu = Math.min(mtu, 512);
         }
         _console.log({ mtu });

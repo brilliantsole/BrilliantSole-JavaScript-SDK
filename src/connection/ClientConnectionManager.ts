@@ -87,7 +87,7 @@ class ClientConnectionManager extends BaseConnectionManager {
   }
   async reconnect() {
     await super.reconnect();
-    this.connect();
+    this.sendClientConnectMessage();
   }
 
   sendClientMessage!: SendClientMessageCallback;

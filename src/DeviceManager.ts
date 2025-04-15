@@ -12,7 +12,7 @@ import EventDispatcher, {
 } from "./utils/EventDispatcher.ts";
 import { addEventListeners } from "./utils/EventUtils.ts";
 
-const _console = createConsole("DeviceManager", { log: true });
+const _console = createConsole("DeviceManager", { log: false });
 
 export interface LocalStorageDeviceInformation {
   type: DeviceType;

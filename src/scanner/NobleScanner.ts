@@ -105,7 +105,7 @@ class NobleScanner extends BaseScanner {
 
     let deviceType;
     let ipAddress;
-    let isSecure;
+    let isWifiSecure;
     const { manufacturerData, serviceData } = noblePeripheral.advertisement;
     if (manufacturerData) {
       _console.log("manufacturerData", manufacturerData);
@@ -121,8 +121,8 @@ class NobleScanner extends BaseScanner {
         //_console.log({ ipAddress });
       }
       if (manufacturerData.byteLength >= 3 + 4 + 1) {
-        isSecure = manufacturerData.readUint8(3 + 4) != 0;
-        _console.log({ isSecure });
+        isWifiSecure = manufacturerData.readUint8(3 + 4) != 0;
+        _console.log({ isWifiSecure });
       }
     }
     if (serviceData) {
@@ -147,7 +147,7 @@ class NobleScanner extends BaseScanner {
       deviceType,
       rssi: noblePeripheral.rssi,
       ipAddress,
-      isSecure,
+      isWifiSecure,
     };
     this.dispatchEvent("discoveredDevice", { discoveredDevice });
   }

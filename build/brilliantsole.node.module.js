@@ -22,8 +22,9 @@ typeof SuppressedError === "function" ? SuppressedError : function (error, suppr
     return e.name = "SuppressedError", e.error = error, e.suppressed = suppressed, e;
 };
 
-const isInProduction = "__BRILLIANTSOLE__PROD__" == "__BRILLIANTSOLE__PROD__";
-const isInDev = "__BRILLIANTSOLE__PROD__" == "__BRILLIANTSOLE__DEV__";
+const __BRILLIANTSOLE__ENVIRONMENT__ = "__BRILLIANTSOLE__DEV__";
+const isInProduction = __BRILLIANTSOLE__ENVIRONMENT__ == "__BRILLIANTSOLE__PROD__";
+const isInDev = __BRILLIANTSOLE__ENVIRONMENT__ == "__BRILLIANTSOLE__DEV__";
 const isInBrowser = typeof window !== "undefined" && typeof window?.document !== "undefined";
 const isInNode = typeof process !== "undefined" && process?.versions?.node != null;
 const userAgent = (isInBrowser && navigator.userAgent) || "";
@@ -72,6 +73,29 @@ if (isInLensStudio) {
 else {
     __console = console;
 }
+function getCallerFunctionPath() {
+    const stack = new Error().stack;
+    if (!stack)
+        return "";
+    const lines = stack.split("\n");
+    const callerLine = lines[3] || lines[2];
+    const match = callerLine.match(/at (.*?) \(/) || callerLine.match(/at (.*)/);
+    if (!match)
+        return "";
+    const fullFn = match[1].trim();
+    return `[${fullFn}]`;
+}
+function wrapWithLocation(fn) {
+    return (...args) => {
+        if (isInNode) {
+            const functionPath = getCallerFunctionPath();
+            fn(functionPath, ...args);
+        }
+        else {
+            fn(...args);
+        }
+    };
+}
 if (!__console.assert) {
     const assert = (condition, ...data) => {
         if (!condition) {
@@ -87,10 +111,10 @@ if (!__console.table) {
     __console.table = table;
 }
 function emptyFunction() { }
-const log = __console.log.bind(__console);
-const warn = __console.warn.bind(__console);
-const error = __console.error.bind(__console);
-const table = __console.table.bind(__console);
+const log = wrapWithLocation(__console.log.bind(__console));
+const warn = wrapWithLocation(__console.warn.bind(__console));
+const error = wrapWithLocation(__console.error.bind(__console));
+const table = wrapWithLocation(__console.table.bind(__console));
 const assert = __console.assert.bind(__console);
 class Console {
     constructor(type) {
@@ -122,6 +146,9 @@ class Console {
     }
     static create(type, levelFlags) {
         const console = __classPrivateFieldGet(this, _a$7, "f", _Console_consoles)[type] || new _a$7(type);
+        if (levelFlags) {
+            console.setLevelFlags(levelFlags);
+        }
         return console;
     }
     get log() {
@@ -2044,7 +2071,8 @@ class InformationManager {
                 break;
             case "getMtu":
                 let mtu = dataView.getUint16(0, true);
-                if (isInBrowser && this.connectionType == "webBluetooth") {
+                if (this.connectionType != "webSocket" &&
+                    this.connectionType != "udp") {
                     mtu = Math.min(mtu, 512);
                 }
                 _console$p.log({ mtu });
@@ -4248,7 +4276,7 @@ _FirmwareManager_status = new WeakMap(), _FirmwareManager_images = new WeakMap()
 };
 
 var _DeviceManager_instances, _DeviceManager_boundDeviceEventListeners, _DeviceManager_onDeviceType, _DeviceManager_ConnectedDevices, _DeviceManager_UseLocalStorage, _DeviceManager_DefaultLocalStorageConfiguration, _DeviceManager_LocalStorageConfiguration, _DeviceManager_AssertLocalStorage, _DeviceManager_LocalStorageKey, _DeviceManager_SaveToLocalStorage, _DeviceManager_LoadFromLocalStorage, _DeviceManager_UpdateLocalStorageConfigurationForDevice, _DeviceManager_AvailableDevices, _DeviceManager_EventDispatcher, _DeviceManager_DispatchEvent_get, _DeviceManager_OnDeviceIsConnected, _DeviceManager_DispatchAvailableDevices, _DeviceManager_DispatchConnectedDevices;
-const _console$f = createConsole("DeviceManager", { log: true });
+const _console$f = createConsole("DeviceManager", { log: false });
 const DeviceManagerEventTypes = [
     "deviceConnected",
     "deviceDisconnected",
@@ -5265,6 +5293,7 @@ class Device {
     async reconnectViaWebSockets() {
         _console$b.assertWithError(this.isWifiConnected, "wifi is not connected");
         _console$b.assertWithError(this.connectionType != "webSocket", "already connected via webSockets");
+        _console$b.assertTypeWithError(this.ipAddress, "string");
         _console$b.log("reconnecting via websockets...");
         await this.disconnect();
         await this.connect({
@@ -5920,7 +5949,7 @@ class NobleConnectionManager extends BluetoothConnectionManager {
     }
     async reconnect() {
         await super.reconnect();
-        this.connect();
+        await __classPrivateFieldGet(this, _NobleConnectionManager_noblePeripheral, "f").connectAsync();
     }
     get noblePeripheral() {
         return __classPrivateFieldGet(this, _NobleConnectionManager_noblePeripheral, "f");
@@ -6169,7 +6198,7 @@ _NobleScanner__isScanning = new WeakMap(), _NobleScanner__nobleState = new WeakM
     _console$5.log("advertisement", noblePeripheral.advertisement);
     let deviceType;
     let ipAddress;
-    let isSecure;
+    let isWifiSecure;
     const { manufacturerData, serviceData } = noblePeripheral.advertisement;
     if (manufacturerData) {
         _console$5.log("manufacturerData", manufacturerData);
@@ -6181,8 +6210,8 @@ _NobleScanner__isScanning = new WeakMap(), _NobleScanner__nobleState = new WeakM
             ipAddress = new Uint8Array(manufacturerData.buffer.slice(3, 3 + 4)).join(".");
         }
         if (manufacturerData.byteLength >= 3 + 4 + 1) {
-            isSecure = manufacturerData.readUint8(3 + 4) != 0;
-            _console$5.log({ isSecure });
+            isWifiSecure = manufacturerData.readUint8(3 + 4) != 0;
+            _console$5.log({ isWifiSecure });
         }
     }
     if (serviceData) {
@@ -6206,7 +6235,7 @@ _NobleScanner__isScanning = new WeakMap(), _NobleScanner__nobleState = new WeakM
         deviceType,
         rssi: noblePeripheral.rssi,
         ipAddress,
-        isSecure,
+        isWifiSecure,
     };
     this.dispatchEvent("discoveredDevice", { discoveredDevice });
 }, _NobleScanner_onExpiredDiscoveredDevice = function _NobleScanner_onExpiredDiscoveredDevice(event) {
