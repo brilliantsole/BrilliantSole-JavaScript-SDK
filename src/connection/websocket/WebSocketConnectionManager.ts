@@ -17,7 +17,7 @@ import BaseConnectionManager, {
 } from "../BaseConnectionManager.ts";
 import type * as ws from "ws";
 
-const _console = createConsole("WebSocketConnectionManager", { log: true });
+const _console = createConsole("WebSocketConnectionManager", { log: false });
 
 const WebSocketMessageTypes = [
   "ping",
@@ -44,7 +44,7 @@ class WebSocketConnectionManager extends BaseConnectionManager {
     return ""; // FILL
   }
 
-  defaultMtu = 2 ** 16;
+  defaultMtu = 2 ** 10;
 
   constructor(ipAddress: string, isSecure: boolean = false) {
     super();
@@ -196,7 +196,7 @@ class WebSocketConnectionManager extends BaseConnectionManager {
     this.#pingTimer.stop();
   }
   #onWebSocketError(event: ws.ErrorEvent) {
-    _console.error("webSocket.error", event.message);
+    _console.error("webSocket.error", event);
   }
 
   // PARSING
@@ -211,6 +211,9 @@ class WebSocketConnectionManager extends BaseConnectionManager {
   }
 
   #onMessage(messageType: WebSocketMessageType, dataView: DataView) {
+    _console.log(
+      `received "${messageType}" message (${dataView.byteLength} bytes)`
+    );
     switch (messageType) {
       case "ping":
         this.#pong();
@@ -225,12 +228,12 @@ class WebSocketConnectionManager extends BaseConnectionManager {
           dataView,
           DeviceInformationTypes,
           (deviceInformationType, dataView) => {
-            this.onMessageReceived?.(deviceInformationType, dataView);
+            this.onMessageReceived!(deviceInformationType, dataView);
           }
         );
+        this.onMessagesReceived!();
         break;
       case "message":
-        console.log("PARSING MESSAGE", dataView);
         this.parseRxMessage(dataView);
         break;
       default:
@@ -240,11 +243,13 @@ class WebSocketConnectionManager extends BaseConnectionManager {
   }
 
   // PING
-  #pingTimer = new Timer(this.#ping.bind(this), webSocketPingTimeout);
+  #pingTimer = new Timer(this.#ping.bind(this), webSocketPingTimeout - 1_000);
   #ping() {
+    _console.log("pinging");
     this.#sendWebSocketMessage("ping");
   }
   #pong() {
+    _console.log("ponging");
     this.#sendWebSocketMessage("pong");
   }
 

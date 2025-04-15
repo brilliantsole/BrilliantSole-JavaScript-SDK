@@ -235,7 +235,7 @@ class WifiManager {
   }
 
   // IP ADDRESS
-  #ipAddress = "";
+  #ipAddress?: string;
   get ipAddress() {
     return this.#ipAddress;
   }

@@ -47,6 +47,19 @@
       <h2>connection</h2>
       <button id="toggleConnection">connect</button>
       <button id="reconnect" disabled>reconnect</button>
+      <label>
+        ip address:
+        <input
+          id="connectIpAddress"
+          placeholder="0.0.0.0"
+          type="text"
+          minlength="7"
+          maxlength="15"
+          size="15"
+          pattern="^((\d|[1-9]\d|1\d\d|2[0-4]\d|25[0-5])\.){3}(\d|[1-9]\d|1\d\d|2[0-4]\d|25[0-5])$"
+        />
+      </label>
+      <button id="connectViaIpAddress" disabled>connect via webSockets</button>
       <label
         >reconnect on disconnection?
         <input id="reconnectOnDisconnection" type="checkbox"
@@ -107,6 +120,8 @@
         <b>ip address</b>
         <span id="ipAddress"></span>
       </label>
+
+      <button disabled id="connectViaWebSockets">connect via webSockets</button>
     </div>
 
     <div>

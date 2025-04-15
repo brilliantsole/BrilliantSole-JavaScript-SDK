@@ -1,3 +1,4 @@
+import { ConnectionType } from "./connection/BaseConnectionManager.ts";
 import Device, { SendMessageCallback } from "./Device.ts";
 import { createConsole } from "./utils/Console.ts";
 import { isInBrowser } from "./utils/environment.ts";
@@ -295,7 +296,7 @@ class InformationManager {
         break;
       case "getMtu":
         let mtu = dataView.getUint16(0, true);
-        if (isInBrowser) {
+        if (isInBrowser && this.connectionType == "webBluetooth") {
           mtu = Math.min(mtu, 512);
         }
         _console.log({ mtu });
@@ -314,6 +315,8 @@ class InformationManager {
   clear() {
     this.#isCurrentTimeSet = false;
   }
+
+  connectionType?: ConnectionType;
 }
 
 export default InformationManager;

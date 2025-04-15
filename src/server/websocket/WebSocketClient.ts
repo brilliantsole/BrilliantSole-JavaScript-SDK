@@ -157,7 +157,7 @@ class WebSocketClient extends BaseClient {
     }
   }
   #onWebSocketError(event: ws.ErrorEvent) {
-    _console.error("webSocket.error", event.message);
+    _console.error("webSocket.error", event);
   }
 
   // PARSING

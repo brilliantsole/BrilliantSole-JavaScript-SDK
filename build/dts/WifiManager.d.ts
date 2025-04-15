@@ -52,7 +52,7 @@ declare class WifiManager {
     enableWifiConnection(): Promise<void>;
     disableWifiConnection(): Promise<void>;
     get isWifiConnected(): boolean;
-    get ipAddress(): string;
+    get ipAddress(): string | undefined;
     get isWifiSecure(): boolean;
     parseMessage(messageType: WifiMessageType, dataView: DataView): void;
     clear(): void;

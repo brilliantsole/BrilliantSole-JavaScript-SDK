@@ -1,3 +1,4 @@
+import { ConnectionType } from "./connection/BaseConnectionManager.ts";
 import Device, { SendMessageCallback } from "./Device.ts";
 import EventDispatcher from "./utils/EventDispatcher.ts";
 export declare const DeviceTypes: readonly ["leftInsole", "rightInsole", "leftGlove", "rightGlove", "glasses", "generic"];
@@ -63,5 +64,6 @@ declare class InformationManager {
     get isCurrentTimeSet(): boolean;
     parseMessage(messageType: InformationMessageType, dataView: DataView): void;
     clear(): void;
+    connectionType?: ConnectionType;
 }
 export default InformationManager;

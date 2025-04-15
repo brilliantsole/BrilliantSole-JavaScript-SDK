@@ -272,6 +272,7 @@ class FileTransferManager {
     this.#status = status;
     this.#dispatchEvent("fileTransferStatus", { fileTransferStatus: status });
     this.#receivedBlocks.length = 0;
+    this.#isCancelling = false;
   }
   #assertIsIdle() {
     _console.assertWithError(this.#status == "idle", "status is not idle");
@@ -421,6 +422,10 @@ class FileTransferManager {
     if (this.status != "sending") {
       return;
     }
+    if (this.#isCancelling) {
+      _console.error("not sending block - busy cancelling");
+      return;
+    }
     if (!this.#buffer) {
       if (!this.isServerSide) {
         _console.error("no buffer defined");
@@ -481,9 +486,11 @@ class FileTransferManager {
     await this.#setCommand("startReceive");
   }
 
+  #isCancelling = false;
   async cancel() {
     this.#assertIsNotIdle();
     _console.log("cancelling file transfer...");
+    this.#isCancelling = true;
     await this.#setCommand("cancel");
   }
 

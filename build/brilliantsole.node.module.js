@@ -22,9 +22,8 @@ typeof SuppressedError === "function" ? SuppressedError : function (error, suppr
     return e.name = "SuppressedError", e.error = error, e.suppressed = suppressed, e;
 };
 
-const __BRILLIANTSOLE__ENVIRONMENT__ = "__BRILLIANTSOLE__DEV__";
-const isInProduction = __BRILLIANTSOLE__ENVIRONMENT__ == "__BRILLIANTSOLE__PROD__";
-const isInDev = __BRILLIANTSOLE__ENVIRONMENT__ == "__BRILLIANTSOLE__DEV__";
+const isInProduction = "__BRILLIANTSOLE__PROD__" == "__BRILLIANTSOLE__PROD__";
+const isInDev = "__BRILLIANTSOLE__PROD__" == "__BRILLIANTSOLE__DEV__";
 const isInBrowser = typeof window !== "undefined" && typeof window?.document !== "undefined";
 const isInNode = typeof process !== "undefined" && process?.versions?.node != null;
 const userAgent = (isInBrowser && navigator.userAgent) || "";
@@ -123,9 +122,6 @@ class Console {
     }
     static create(type, levelFlags) {
         const console = __classPrivateFieldGet(this, _a$7, "f", _Console_consoles)[type] || new _a$7(type);
-        if (levelFlags) {
-            console.setLevelFlags(levelFlags);
-        }
         return console;
     }
     get log() {
@@ -314,7 +310,7 @@ class Timer {
             _console$B.log("interval already running");
             return;
         }
-        _console$B.log("starting interval");
+        _console$B.log(`starting interval every ${__classPrivateFieldGet(this, _Timer_interval, "f")}ms`);
         __classPrivateFieldSet(this, _Timer_intervalId, setInterval(__classPrivateFieldGet(this, _Timer_callback, "f"), __classPrivateFieldGet(this, _Timer_interval, "f")), "f");
         if (immediately) {
             __classPrivateFieldGet(this, _Timer_callback, "f").call(this);
@@ -482,7 +478,7 @@ async function getFileBuffer(file) {
     return fileBuffer;
 }
 
-var _FileTransferManager_instances, _a$6, _FileTransferManager_dispatchEvent_get, _FileTransferManager_assertValidType, _FileTransferManager_assertValidTypeEnum, _FileTransferManager_assertValidStatusEnum, _FileTransferManager_assertValidCommand, _FileTransferManager_MaxLength, _FileTransferManager_maxLength, _FileTransferManager_parseMaxLength, _FileTransferManager_updateMaxLength, _FileTransferManager_assertValidLength, _FileTransferManager_type, _FileTransferManager_parseType, _FileTransferManager_updateType, _FileTransferManager_setType, _FileTransferManager_length, _FileTransferManager_parseLength, _FileTransferManager_updateLength, _FileTransferManager_setLength, _FileTransferManager_checksum, _FileTransferManager_parseChecksum, _FileTransferManager_updateChecksum, _FileTransferManager_setChecksum, _FileTransferManager_setCommand, _FileTransferManager_status, _FileTransferManager_parseStatus, _FileTransferManager_updateStatus, _FileTransferManager_assertIsIdle, _FileTransferManager_assertIsNotIdle, _FileTransferManager_receivedBlocks, _FileTransferManager_parseBlock, _FileTransferManager_buffer, _FileTransferManager_bytesTransferred, _FileTransferManager_send, _FileTransferManager_sendBlock, _FileTransferManager_parseBytesTransferred, _FileTransferManager_isServerSide;
+var _FileTransferManager_instances, _a$6, _FileTransferManager_dispatchEvent_get, _FileTransferManager_assertValidType, _FileTransferManager_assertValidTypeEnum, _FileTransferManager_assertValidStatusEnum, _FileTransferManager_assertValidCommand, _FileTransferManager_MaxLength, _FileTransferManager_maxLength, _FileTransferManager_parseMaxLength, _FileTransferManager_updateMaxLength, _FileTransferManager_assertValidLength, _FileTransferManager_type, _FileTransferManager_parseType, _FileTransferManager_updateType, _FileTransferManager_setType, _FileTransferManager_length, _FileTransferManager_parseLength, _FileTransferManager_updateLength, _FileTransferManager_setLength, _FileTransferManager_checksum, _FileTransferManager_parseChecksum, _FileTransferManager_updateChecksum, _FileTransferManager_setChecksum, _FileTransferManager_setCommand, _FileTransferManager_status, _FileTransferManager_parseStatus, _FileTransferManager_updateStatus, _FileTransferManager_assertIsIdle, _FileTransferManager_assertIsNotIdle, _FileTransferManager_receivedBlocks, _FileTransferManager_parseBlock, _FileTransferManager_buffer, _FileTransferManager_bytesTransferred, _FileTransferManager_send, _FileTransferManager_sendBlock, _FileTransferManager_parseBytesTransferred, _FileTransferManager_isCancelling, _FileTransferManager_isServerSide;
 const _console$z = createConsole("FileTransferManager", { log: false });
 const FileTransferMessageTypes = [
     "maxFileLength",
@@ -523,6 +519,7 @@ class FileTransferManager {
         _FileTransferManager_receivedBlocks.set(this, []);
         _FileTransferManager_buffer.set(this, void 0);
         _FileTransferManager_bytesTransferred.set(this, 0);
+        _FileTransferManager_isCancelling.set(this, false);
         _FileTransferManager_isServerSide.set(this, false);
         autoBind$1(this);
     }
@@ -608,6 +605,7 @@ class FileTransferManager {
     async cancel() {
         __classPrivateFieldGet(this, _FileTransferManager_instances, "m", _FileTransferManager_assertIsNotIdle).call(this);
         _console$z.log("cancelling file transfer...");
+        __classPrivateFieldSet(this, _FileTransferManager_isCancelling, true, "f");
         await __classPrivateFieldGet(this, _FileTransferManager_instances, "m", _FileTransferManager_setCommand).call(this, "cancel");
     }
     get isServerSide() {
@@ -622,7 +620,7 @@ class FileTransferManager {
         __classPrivateFieldSet(this, _FileTransferManager_isServerSide, newIsServerSide, "f");
     }
 }
-_a$6 = FileTransferManager, _FileTransferManager_maxLength = new WeakMap(), _FileTransferManager_type = new WeakMap(), _FileTransferManager_length = new WeakMap(), _FileTransferManager_checksum = new WeakMap(), _FileTransferManager_status = new WeakMap(), _FileTransferManager_receivedBlocks = new WeakMap(), _FileTransferManager_buffer = new WeakMap(), _FileTransferManager_bytesTransferred = new WeakMap(), _FileTransferManager_isServerSide = new WeakMap(), _FileTransferManager_instances = new WeakSet(), _FileTransferManager_dispatchEvent_get = function _FileTransferManager_dispatchEvent_get() {
+_a$6 = FileTransferManager, _FileTransferManager_maxLength = new WeakMap(), _FileTransferManager_type = new WeakMap(), _FileTransferManager_length = new WeakMap(), _FileTransferManager_checksum = new WeakMap(), _FileTransferManager_status = new WeakMap(), _FileTransferManager_receivedBlocks = new WeakMap(), _FileTransferManager_buffer = new WeakMap(), _FileTransferManager_bytesTransferred = new WeakMap(), _FileTransferManager_isCancelling = new WeakMap(), _FileTransferManager_isServerSide = new WeakMap(), _FileTransferManager_instances = new WeakSet(), _FileTransferManager_dispatchEvent_get = function _FileTransferManager_dispatchEvent_get() {
     return this.eventDispatcher.dispatchEvent;
 }, _FileTransferManager_assertValidType = function _FileTransferManager_assertValidType(type) {
     _console$z.assertEnumWithError(type, FileTypes);
@@ -725,6 +723,7 @@ _a$6 = FileTransferManager, _FileTransferManager_maxLength = new WeakMap(), _Fil
     __classPrivateFieldSet(this, _FileTransferManager_status, status, "f");
     __classPrivateFieldGet(this, _FileTransferManager_instances, "a", _FileTransferManager_dispatchEvent_get).call(this, "fileTransferStatus", { fileTransferStatus: status });
     __classPrivateFieldGet(this, _FileTransferManager_receivedBlocks, "f").length = 0;
+    __classPrivateFieldSet(this, _FileTransferManager_isCancelling, false, "f");
 }, _FileTransferManager_assertIsIdle = function _FileTransferManager_assertIsIdle() {
     _console$z.assertWithError(__classPrivateFieldGet(this, _FileTransferManager_status, "f") == "idle", "status is not idle");
 }, _FileTransferManager_assertIsNotIdle = function _FileTransferManager_assertIsNotIdle() {
@@ -784,6 +783,10 @@ _a$6 = FileTransferManager, _FileTransferManager_maxLength = new WeakMap(), _Fil
     return __classPrivateFieldGet(this, _FileTransferManager_instances, "m", _FileTransferManager_sendBlock).call(this);
 }, _FileTransferManager_sendBlock = async function _FileTransferManager_sendBlock() {
     if (this.status != "sending") {
+        return;
+    }
+    if (__classPrivateFieldGet(this, _FileTransferManager_isCancelling, "f")) {
+        _console$z.error("not sending block - busy cancelling");
         return;
     }
     if (!__classPrivateFieldGet(this, _FileTransferManager_buffer, "f")) {
@@ -1446,7 +1449,12 @@ const TfliteMessageTypes = [
 ];
 const TfliteEventTypes = TfliteMessageTypes;
 const TfliteTasks = ["classification", "regression"];
-const TfliteSensorTypes = ["pressure", "linearAcceleration", "gyroscope", "magnetometer"];
+const TfliteSensorTypes = [
+    "pressure",
+    "linearAcceleration",
+    "gyroscope",
+    "magnetometer",
+];
 class TfliteManager {
     constructor() {
         _TfliteManager_instances.add(this);
@@ -1527,9 +1535,16 @@ class TfliteManager {
         });
         const promise = this.waitForEvent("getTfliteSensorTypes");
         newSensorTypes = arrayWithoutDuplicates(newSensorTypes);
-        const newSensorTypeEnums = newSensorTypes.map((sensorType) => SensorTypes.indexOf(sensorType)).sort();
+        const newSensorTypeEnums = newSensorTypes
+            .map((sensorType) => SensorTypes.indexOf(sensorType))
+            .sort();
         _console$r.log(newSensorTypes, newSensorTypeEnums);
-        this.sendMessage([{ type: "setTfliteSensorTypes", data: Uint8Array.from(newSensorTypeEnums).buffer }], sendImmediately);
+        this.sendMessage([
+            {
+                type: "setTfliteSensorTypes",
+                data: Uint8Array.from(newSensorTypeEnums).buffer,
+            },
+        ], sendImmediately);
         await promise;
     }
     get isReady() {
@@ -1676,7 +1691,9 @@ _TfliteManager_name = new WeakMap(), _TfliteManager_task = new WeakMap(), _Tflit
 }, _TfliteManager_updateSampleRate = function _TfliteManager_updateSampleRate(sampleRate) {
     _console$r.log({ sampleRate });
     __classPrivateFieldSet(this, _TfliteManager_sampleRate, sampleRate, "f");
-    __classPrivateFieldGet(this, _TfliteManager_instances, "a", _TfliteManager_dispatchEvent_get).call(this, "getTfliteSampleRate", { tfliteSampleRate: sampleRate });
+    __classPrivateFieldGet(this, _TfliteManager_instances, "a", _TfliteManager_dispatchEvent_get).call(this, "getTfliteSampleRate", {
+        tfliteSampleRate: sampleRate,
+    });
 }, _TfliteManager_parseSensorTypes = function _TfliteManager_parseSensorTypes(dataView) {
     _console$r.log("parseSensorTypes", dataView);
     const sensorTypes = [];
@@ -1694,7 +1711,9 @@ _TfliteManager_name = new WeakMap(), _TfliteManager_task = new WeakMap(), _Tflit
 }, _TfliteManager_updateSensorTypes = function _TfliteManager_updateSensorTypes(sensorTypes) {
     _console$r.log({ sensorTypes });
     __classPrivateFieldSet(this, _TfliteManager_sensorTypes, sensorTypes, "f");
-    __classPrivateFieldGet(this, _TfliteManager_instances, "a", _TfliteManager_dispatchEvent_get).call(this, "getTfliteSensorTypes", { tfliteSensorTypes: sensorTypes });
+    __classPrivateFieldGet(this, _TfliteManager_instances, "a", _TfliteManager_dispatchEvent_get).call(this, "getTfliteSensorTypes", {
+        tfliteSensorTypes: sensorTypes,
+    });
 }, _TfliteManager_parseIsReady = function _TfliteManager_parseIsReady(dataView) {
     _console$r.log("parseIsReady", dataView);
     const isReady = Boolean(dataView.getUint8(0));
@@ -1712,7 +1731,9 @@ _TfliteManager_name = new WeakMap(), _TfliteManager_task = new WeakMap(), _Tflit
 }, _TfliteManager_updateCaptueDelay = function _TfliteManager_updateCaptueDelay(captureDelay) {
     _console$r.log({ captureDelay });
     __classPrivateFieldSet(this, _TfliteManager_captureDelay, captureDelay, "f");
-    __classPrivateFieldGet(this, _TfliteManager_instances, "a", _TfliteManager_dispatchEvent_get).call(this, "getTfliteCaptureDelay", { tfliteCaptureDelay: captureDelay });
+    __classPrivateFieldGet(this, _TfliteManager_instances, "a", _TfliteManager_dispatchEvent_get).call(this, "getTfliteCaptureDelay", {
+        tfliteCaptureDelay: captureDelay,
+    });
 }, _TfliteManager_parseThreshold = function _TfliteManager_parseThreshold(dataView) {
     _console$r.log("parseThreshold", dataView);
     const threshold = dataView.getFloat32(0, true);
@@ -1728,7 +1749,9 @@ _TfliteManager_name = new WeakMap(), _TfliteManager_task = new WeakMap(), _Tflit
 }, _TfliteManager_updateInferencingEnabled = function _TfliteManager_updateInferencingEnabled(inferencingEnabled) {
     _console$r.log({ inferencingEnabled });
     __classPrivateFieldSet(this, _TfliteManager_inferencingEnabled, inferencingEnabled, "f");
-    __classPrivateFieldGet(this, _TfliteManager_instances, "a", _TfliteManager_dispatchEvent_get).call(this, "getTfliteInferencingEnabled", { tfliteInferencingEnabled: inferencingEnabled });
+    __classPrivateFieldGet(this, _TfliteManager_instances, "a", _TfliteManager_dispatchEvent_get).call(this, "getTfliteInferencingEnabled", {
+        tfliteInferencingEnabled: inferencingEnabled,
+    });
 }, _TfliteManager_parseInference = function _TfliteManager_parseInference(dataView) {
     _console$r.log("parseInference", dataView);
     const timestamp = parseTimestamp(dataView, 0);
@@ -2021,7 +2044,7 @@ class InformationManager {
                 break;
             case "getMtu":
                 let mtu = dataView.getUint16(0, true);
-                if (isInBrowser) {
+                if (isInBrowser && this.connectionType == "webBluetooth") {
                     mtu = Math.min(mtu, 512);
                 }
                 _console$p.log({ mtu });
@@ -2435,7 +2458,7 @@ class WifiManager {
         _WifiManager_wifiPassword.set(this, "");
         _WifiManager_wifiConnectionEnabled.set(this, void 0);
         _WifiManager_isWifiConnected.set(this, false);
-        _WifiManager_ipAddress.set(this, "");
+        _WifiManager_ipAddress.set(this, void 0);
         _WifiManager_isWifiSecure.set(this, false);
         autoBind$1(this);
     }
@@ -4225,7 +4248,7 @@ _FirmwareManager_status = new WeakMap(), _FirmwareManager_images = new WeakMap()
 };
 
 var _DeviceManager_instances, _DeviceManager_boundDeviceEventListeners, _DeviceManager_onDeviceType, _DeviceManager_ConnectedDevices, _DeviceManager_UseLocalStorage, _DeviceManager_DefaultLocalStorageConfiguration, _DeviceManager_LocalStorageConfiguration, _DeviceManager_AssertLocalStorage, _DeviceManager_LocalStorageKey, _DeviceManager_SaveToLocalStorage, _DeviceManager_LoadFromLocalStorage, _DeviceManager_UpdateLocalStorageConfigurationForDevice, _DeviceManager_AvailableDevices, _DeviceManager_EventDispatcher, _DeviceManager_DispatchEvent_get, _DeviceManager_OnDeviceIsConnected, _DeviceManager_DispatchAvailableDevices, _DeviceManager_DispatchConnectedDevices;
-const _console$f = createConsole("DeviceManager", { log: false });
+const _console$f = createConsole("DeviceManager", { log: true });
 const DeviceManagerEventTypes = [
     "deviceConnected",
     "deviceDisconnected",
@@ -4260,7 +4283,9 @@ class DeviceManager {
         addEventListeners(device, __classPrivateFieldGet(this, _DeviceManager_boundDeviceEventListeners, "f"));
     }
     OnDeviceConnectionStatusUpdated(device, connectionStatus) {
-        if (connectionStatus == "notConnected" && !device.canReconnect && __classPrivateFieldGet(this, _DeviceManager_AvailableDevices, "f").includes(device)) {
+        if (connectionStatus == "notConnected" &&
+            !device.canReconnect &&
+            __classPrivateFieldGet(this, _DeviceManager_AvailableDevices, "f").includes(device)) {
             const deviceIndex = __classPrivateFieldGet(this, _DeviceManager_AvailableDevices, "f").indexOf(device);
             this.AvailableDevices.splice(deviceIndex, 1);
             __classPrivateFieldGet(this, _DeviceManager_instances, "m", _DeviceManager_DispatchAvailableDevices).call(this);
@@ -4332,7 +4357,8 @@ class DeviceManager {
             const existingAvailableDevice = this.AvailableDevices.filter((device) => device.connectionType == "webBluetooth").find((device) => device.bluetoothId == bluetoothDevice.id);
             if (existingAvailableDevice) {
                 if (existingConnectedDevice &&
-                    existingConnectedDevice?.bluetoothId == existingAvailableDevice.bluetoothId &&
+                    existingConnectedDevice?.bluetoothId ==
+                        existingAvailableDevice.bluetoothId &&
                     existingConnectedDevice != existingAvailableDevice) {
                     this.AvailableDevices[__classPrivateFieldGet(this, _DeviceManager_AvailableDevices, "f").indexOf(existingAvailableDevice)] = existingConnectedDevice;
                 }
@@ -4368,7 +4394,9 @@ class DeviceManager {
         return __classPrivateFieldGet(this, _DeviceManager_EventDispatcher, "f").removeAllEventListeners;
     }
     _CheckDeviceAvailability(device) {
-        if (!device.isConnected && !device.isAvailable && __classPrivateFieldGet(this, _DeviceManager_AvailableDevices, "f").includes(device)) {
+        if (!device.isConnected &&
+            !device.isAvailable &&
+            __classPrivateFieldGet(this, _DeviceManager_AvailableDevices, "f").includes(device)) {
             _console$f.log("removing device from availableDevices...");
             __classPrivateFieldGet(this, _DeviceManager_AvailableDevices, "f").splice(__classPrivateFieldGet(this, _DeviceManager_AvailableDevices, "f").indexOf(device), 1);
             __classPrivateFieldGet(this, _DeviceManager_instances, "m", _DeviceManager_DispatchAvailableDevices).call(this);
@@ -4417,7 +4445,8 @@ _DeviceManager_boundDeviceEventListeners = new WeakMap(), _DeviceManager_Connect
     if (deviceInformationIndex == -1) {
         return;
     }
-    __classPrivateFieldGet(this, _DeviceManager_LocalStorageConfiguration, "f").devices[deviceInformationIndex].type = device.type;
+    __classPrivateFieldGet(this, _DeviceManager_LocalStorageConfiguration, "f").devices[deviceInformationIndex].type =
+        device.type;
     __classPrivateFieldGet(this, _DeviceManager_instances, "m", _DeviceManager_SaveToLocalStorage).call(this);
 }, _DeviceManager_DispatchEvent_get = function _DeviceManager_DispatchEvent_get() {
     return __classPrivateFieldGet(this, _DeviceManager_EventDispatcher, "f").dispatchEvent;
@@ -4431,13 +4460,16 @@ _DeviceManager_boundDeviceEventListeners = new WeakMap(), _DeviceManager_Connect
                 const deviceInformation = {
                     type: device.type,
                     bluetoothId: device.bluetoothId,
+                    ipAddress: device.ipAddress,
+                    isWifiSecure: device.isWifiSecure,
                 };
                 const deviceInformationIndex = __classPrivateFieldGet(this, _DeviceManager_LocalStorageConfiguration, "f").devices.findIndex((_deviceInformation) => _deviceInformation.bluetoothId == deviceInformation.bluetoothId);
                 if (deviceInformationIndex == -1) {
                     __classPrivateFieldGet(this, _DeviceManager_LocalStorageConfiguration, "f").devices.push(deviceInformation);
                 }
                 else {
-                    __classPrivateFieldGet(this, _DeviceManager_LocalStorageConfiguration, "f").devices[deviceInformationIndex] = deviceInformation;
+                    __classPrivateFieldGet(this, _DeviceManager_LocalStorageConfiguration, "f").devices[deviceInformationIndex] =
+                        deviceInformation;
                 }
                 __classPrivateFieldGet(this, _DeviceManager_instances, "m", _DeviceManager_SaveToLocalStorage).call(this);
             }
@@ -4478,10 +4510,14 @@ _DeviceManager_boundDeviceEventListeners = new WeakMap(), _DeviceManager_Connect
     this._CheckDeviceAvailability(device);
 }, _DeviceManager_DispatchAvailableDevices = function _DeviceManager_DispatchAvailableDevices() {
     _console$f.log({ AvailableDevices: this.AvailableDevices });
-    __classPrivateFieldGet(this, _DeviceManager_instances, "a", _DeviceManager_DispatchEvent_get).call(this, "availableDevices", { availableDevices: this.AvailableDevices });
+    __classPrivateFieldGet(this, _DeviceManager_instances, "a", _DeviceManager_DispatchEvent_get).call(this, "availableDevices", {
+        availableDevices: this.AvailableDevices,
+    });
 }, _DeviceManager_DispatchConnectedDevices = function _DeviceManager_DispatchConnectedDevices() {
     _console$f.log({ ConnectedDevices: this.ConnectedDevices });
-    __classPrivateFieldGet(this, _DeviceManager_instances, "a", _DeviceManager_DispatchEvent_get).call(this, "connectedDevices", { connectedDevices: this.ConnectedDevices });
+    __classPrivateFieldGet(this, _DeviceManager_instances, "a", _DeviceManager_DispatchEvent_get).call(this, "connectedDevices", {
+        connectedDevices: this.ConnectedDevices,
+    });
 };
 DeviceManager.shared = new DeviceManager();
 var DeviceManager$1 = DeviceManager.shared;
@@ -4540,7 +4576,7 @@ createServerMessage("stopScan");
 createServerMessage("discoveredDevices");
 
 const _console$d = createConsole("WebSocketUtils", { log: false });
-const webSocketPingTimeout = 30_000_000;
+const webSocketPingTimeout = 30_000;
 const WebSocketMessageTypes$1 = ["ping", "pong", "serverMessage"];
 function createWebSocketMessage$1(...messages) {
     _console$d.log("createWebSocketMessage", ...messages);
@@ -4550,7 +4586,7 @@ const webSocketPingMessage = createWebSocketMessage$1("ping");
 const webSocketPongMessage = createWebSocketMessage$1("pong");
 
 var _WebSocketConnectionManager_instances, _WebSocketConnectionManager_webSocket, _WebSocketConnectionManager_ipAddress, _WebSocketConnectionManager_isSecure, _WebSocketConnectionManager_sendMessage, _WebSocketConnectionManager_sendWebSocketMessage, _WebSocketConnectionManager_boundWebSocketEventListeners, _WebSocketConnectionManager_onWebSocketOpen, _WebSocketConnectionManager_onWebSocketMessage, _WebSocketConnectionManager_onWebSocketClose, _WebSocketConnectionManager_onWebSocketError, _WebSocketConnectionManager_parseWebSocketMessage, _WebSocketConnectionManager_onMessage, _WebSocketConnectionManager_pingTimer, _WebSocketConnectionManager_ping, _WebSocketConnectionManager_pong, _WebSocketConnectionManager_requestDeviceInformation;
-const _console$c = createConsole("WebSocketConnectionManager", { log: true });
+const _console$c = createConsole("WebSocketConnectionManager", { log: false });
 const WebSocketMessageTypes = [
     "ping",
     "pong",
@@ -4573,7 +4609,7 @@ class WebSocketConnectionManager extends BaseConnectionManager {
     constructor(ipAddress, isSecure = false) {
         super();
         _WebSocketConnectionManager_instances.add(this);
-        this.defaultMtu = 2 ** 16;
+        this.defaultMtu = 2 ** 10;
         _WebSocketConnectionManager_webSocket.set(this, void 0);
         _WebSocketConnectionManager_ipAddress.set(this, void 0);
         _WebSocketConnectionManager_isSecure.set(this, false);
@@ -4583,7 +4619,7 @@ class WebSocketConnectionManager extends BaseConnectionManager {
             close: __classPrivateFieldGet(this, _WebSocketConnectionManager_instances, "m", _WebSocketConnectionManager_onWebSocketClose).bind(this),
             error: __classPrivateFieldGet(this, _WebSocketConnectionManager_instances, "m", _WebSocketConnectionManager_onWebSocketError).bind(this),
         });
-        _WebSocketConnectionManager_pingTimer.set(this, new Timer(__classPrivateFieldGet(this, _WebSocketConnectionManager_instances, "m", _WebSocketConnectionManager_ping).bind(this), webSocketPingTimeout));
+        _WebSocketConnectionManager_pingTimer.set(this, new Timer(__classPrivateFieldGet(this, _WebSocketConnectionManager_instances, "m", _WebSocketConnectionManager_ping).bind(this), webSocketPingTimeout - 1_000));
         this.ipAddress = ipAddress;
         this.isSecure = isSecure;
         this.mtu = this.defaultMtu;
@@ -4691,10 +4727,11 @@ _WebSocketConnectionManager_webSocket = new WeakMap(), _WebSocketConnectionManag
     this.status = "notConnected";
     __classPrivateFieldGet(this, _WebSocketConnectionManager_pingTimer, "f").stop();
 }, _WebSocketConnectionManager_onWebSocketError = function _WebSocketConnectionManager_onWebSocketError(event) {
-    _console$c.error("webSocket.error", event.message);
+    _console$c.error("webSocket.error", event);
 }, _WebSocketConnectionManager_parseWebSocketMessage = function _WebSocketConnectionManager_parseWebSocketMessage(dataView) {
     parseMessage(dataView, WebSocketMessageTypes, __classPrivateFieldGet(this, _WebSocketConnectionManager_instances, "m", _WebSocketConnectionManager_onMessage).bind(this), null, true);
 }, _WebSocketConnectionManager_onMessage = function _WebSocketConnectionManager_onMessage(messageType, dataView) {
+    _console$c.log(`received "${messageType}" message (${dataView.byteLength} bytes)`);
     switch (messageType) {
         case "ping":
             __classPrivateFieldGet(this, _WebSocketConnectionManager_instances, "m", _WebSocketConnectionManager_pong).call(this);
@@ -4706,11 +4743,11 @@ _WebSocketConnectionManager_webSocket = new WeakMap(), _WebSocketConnectionManag
             break;
         case "deviceInformation":
             parseMessage(dataView, DeviceInformationTypes, (deviceInformationType, dataView) => {
-                this.onMessageReceived?.(deviceInformationType, dataView);
+                this.onMessageReceived(deviceInformationType, dataView);
             });
+            this.onMessagesReceived();
             break;
         case "message":
-            console.log("PARSING MESSAGE", dataView);
             this.parseRxMessage(dataView);
             break;
         default:
@@ -4718,8 +4755,10 @@ _WebSocketConnectionManager_webSocket = new WeakMap(), _WebSocketConnectionManag
             break;
     }
 }, _WebSocketConnectionManager_ping = function _WebSocketConnectionManager_ping() {
+    _console$c.log("pinging");
     __classPrivateFieldGet(this, _WebSocketConnectionManager_instances, "m", _WebSocketConnectionManager_sendWebSocketMessage).call(this, "ping");
 }, _WebSocketConnectionManager_pong = function _WebSocketConnectionManager_pong() {
+    _console$c.log("ponging");
     __classPrivateFieldGet(this, _WebSocketConnectionManager_instances, "m", _WebSocketConnectionManager_sendWebSocketMessage).call(this, "pong");
 }, _WebSocketConnectionManager_requestDeviceInformation = function _WebSocketConnectionManager_requestDeviceInformation() {
     __classPrivateFieldGet(this, _WebSocketConnectionManager_instances, "m", _WebSocketConnectionManager_sendWebSocketMessage).call(this, ...WebSocketDeviceInformationMessageTypes);
@@ -4877,6 +4916,7 @@ class Device {
         }
         __classPrivateFieldSet(this, _Device_connectionManager, newConnectionManager, "f");
         _console$b.log("assigned new connectionManager", __classPrivateFieldGet(this, _Device_connectionManager, "f"));
+        this._informationManager.connectionType = this.connectionType;
     }
     async connect(options) {
         if (options) {
@@ -5218,6 +5258,20 @@ class Device {
     }
     get toggleWifiConnection() {
         return __classPrivateFieldGet(this, _Device_wifiManager, "f").toggleWifiConnection;
+    }
+    get isWifiSecure() {
+        return __classPrivateFieldGet(this, _Device_wifiManager, "f").isWifiSecure;
+    }
+    async reconnectViaWebSockets() {
+        _console$b.assertWithError(this.isWifiConnected, "wifi is not connected");
+        _console$b.assertWithError(this.connectionType != "webSocket", "already connected via webSockets");
+        _console$b.log("reconnecting via websockets...");
+        await this.disconnect();
+        await this.connect({
+            type: "webSocket",
+            ipAddress: this.ipAddress,
+            isSecure: this.isWifiSecure,
+        });
     }
 }
 _a$3 = Device, _Device_eventDispatcher = new WeakMap(), _Device_connectionManager = new WeakMap(), _Device_isConnected = new WeakMap(), _Device_reconnectOnDisconnection = new WeakMap(), _Device_reconnectIntervalId = new WeakMap(), _Device_deviceInformationManager = new WeakMap(), _Device_batteryLevel = new WeakMap(), _Device_sensorConfigurationManager = new WeakMap(), _Device_clearSensorConfigurationOnLeave = new WeakMap(), _Device_sensorDataManager = new WeakMap(), _Device_vibrationManager = new WeakMap(), _Device_fileTransferManager = new WeakMap(), _Device_tfliteManager = new WeakMap(), _Device_firmwareManager = new WeakMap(), _Device_isServerSide = new WeakMap(), _Device_wifiManager = new WeakMap(), _Device_instances = new WeakSet(), _Device_DefaultConnectionManager = function _Device_DefaultConnectionManager() {

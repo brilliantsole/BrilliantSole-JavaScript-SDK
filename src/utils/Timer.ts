@@ -52,7 +52,7 @@ class Timer {
       _console.log("interval already running");
       return;
     }
-    _console.log("starting interval");
+    _console.log(`starting interval every ${this.#interval}ms`);
     this.#intervalId = setInterval(this.#callback, this.#interval);
     if (immediately) {
       this.#callback();

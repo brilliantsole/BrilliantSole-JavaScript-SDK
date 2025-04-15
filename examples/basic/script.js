@@ -104,6 +104,25 @@ device.addEventListener("connectionStatus", () => {
 });
 
 /** @type {HTMLInputElement} */
+const connectIpAddressInput = document.getElementById("connectIpAddress");
+connectIpAddressInput.addEventListener("input", () => {
+  const isValid = connectIpAddressInput.checkValidity();
+  connectViaIpAddressButton.disabled = !isValid;
+});
+/** @type {HTMLButtonElement} */
+const connectViaIpAddressButton = document.getElementById(
+  "connectViaIpAddress"
+);
+connectViaIpAddressButton.addEventListener("click", () => {
+  connectViaIpAddressButton.disabled = true;
+  device.connect({ type: "webSocket", ipAddress: connectIpAddressInput.value });
+});
+device.addEventListener("isConnected", () => {
+  connectIpAddressInput.disabled = device.isConnected;
+  connectViaIpAddressButton.disabled = device.isConnected;
+});
+
+/** @type {HTMLInputElement} */
 const reconnectOnDisconnectionCheckbox = document.getElementById(
   "reconnectOnDisconnection"
 );
@@ -1378,3 +1397,26 @@ device.addEventListener("getEnableWifiConnection", (event) => {
     ? "disable wifi connection"
     : "enable wifi connection";
 });
+
+/** @type {HTMLButtonElement} */
+const connectViaWebSocketsButton = document.getElementById(
+  "connectViaWebSockets"
+);
+connectViaWebSocketsButton.addEventListener("click", async () => {
+  toggleWifiConnectionButton.disabled = true;
+  device.reconnectViaWebSockets();
+});
+const updateConnectViaWebSocketsButton = () => {
+  const enabled =
+    device.isConnected &&
+    device.connectionType == "webBluetooth" &&
+    device.isWifiConnected;
+  console.log({ enabled });
+  connectViaWebSocketsButton.disabled = !enabled;
+};
+device.addEventListener("isWifiConnected", () =>
+  updateConnectViaWebSocketsButton()
+);
+device.addEventListener("isConnected", () =>
+  updateConnectViaWebSocketsButton()
+);

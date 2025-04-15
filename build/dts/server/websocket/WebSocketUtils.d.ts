@@ -1,5 +1,5 @@
 import { Message } from "../ServerUtils.ts";
-export declare const webSocketPingTimeout = 30000000;
+export declare const webSocketPingTimeout = 30000;
 export declare const webSocketReconnectTimeout = 3000;
 export declare const WebSocketMessageTypes: readonly ["ping", "pong", "serverMessage"];
 export type WebSocketMessageType = (typeof WebSocketMessageTypes)[number];

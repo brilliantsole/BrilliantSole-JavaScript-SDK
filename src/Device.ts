@@ -316,6 +316,8 @@ class Device {
 
     this.#connectionManager = newConnectionManager;
     _console.log("assigned new connectionManager", this.#connectionManager);
+
+    this._informationManager.connectionType = this.connectionType;
   }
   async #sendTxMessages(messages?: TxMessage[], sendImmediately?: boolean) {
     await this.#connectionManager?.sendTxMessages(messages, sendImmediately);
@@ -965,7 +967,6 @@ class Device {
 
   // WIFI MANAGER
   #wifiManager = new WifiManager();
-  // FILL - is available, etc
   get isWifiAvailable() {
     return this.#wifiManager.isWifiAvailable;
   }
@@ -1001,6 +1002,24 @@ class Device {
   }
   get toggleWifiConnection() {
     return this.#wifiManager.toggleWifiConnection;
+  }
+  get isWifiSecure() {
+    return this.#wifiManager.isWifiSecure;
+  }
+
+  async reconnectViaWebSockets() {
+    _console.assertWithError(this.isWifiConnected, "wifi is not connected");
+    _console.assertWithError(
+      this.connectionType != "webSocket",
+      "already connected via webSockets"
+    );
+    _console.log("reconnecting via websockets...");
+    await this.disconnect();
+    await this.connect({
+      type: "webSocket",
+      ipAddress: this.ipAddress,
+      isSecure: this.isWifiSecure,
+    });
   }
 }
 
