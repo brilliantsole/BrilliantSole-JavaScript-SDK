@@ -90,7 +90,9 @@ class WebSocketConnectionManager extends BaseConnectionManager {
       }
     }
 
-    addEventListeners(newWebSocket, this.#boundWebSocketEventListeners);
+    if (newWebSocket) {
+      addEventListeners(newWebSocket, this.#boundWebSocketEventListeners);
+    }
     this.#webSocket = newWebSocket;
 
     _console.log("assigned webSocket");
@@ -264,6 +266,11 @@ class WebSocketConnectionManager extends BaseConnectionManager {
   // DEVICE INFORMATION
   #requestDeviceInformation() {
     this.#sendWebSocketMessage(...WebSocketDeviceInformationMessageTypes);
+  }
+
+  remove() {
+    super.remove();
+    this.webSocket = undefined;
   }
 }
 

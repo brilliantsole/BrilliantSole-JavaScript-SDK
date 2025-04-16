@@ -74,7 +74,7 @@ class WebBluetoothConnectionManager extends BluetoothConnectionManager {
     return "webBluetooth";
   }
 
-  #device!: BluetoothDevice | undefined;
+  #device?: BluetoothDevice;
   get device() {
     return this.#device;
   }
@@ -327,6 +327,11 @@ class WebBluetoothConnectionManager extends BluetoothConnectionManager {
       _console.log("unable to reconnect");
       this.status = "notConnected";
     }
+  }
+
+  remove() {
+    super.remove();
+    this.device = undefined;
   }
 }
 

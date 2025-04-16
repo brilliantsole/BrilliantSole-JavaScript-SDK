@@ -98,7 +98,7 @@ import WifiManager, {
 import WebSocketConnectionManager from "./connection/websocket/WebSocketConnectionManager.ts";
 import ClientConnectionManager from "./connection/ClientConnectionManager.ts";
 
-const _console = createConsole("Device", { log: false });
+const _console = createConsole("Device", { log: true });
 
 export const DeviceEventTypes = [
   "connectionMessage",
@@ -312,9 +312,7 @@ class Device {
     }
 
     if (this.connectionManager) {
-      this.connectionManager.onStatusUpdated = undefined;
-      this.connectionManager.onMessageReceived = undefined;
-      this.connectionManager.onMessagesReceived = undefined;
+      this.connectionManager.remove();
     }
     if (newConnectionManager) {
       newConnectionManager.onStatusUpdated =

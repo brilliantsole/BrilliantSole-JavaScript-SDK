@@ -20,5 +20,6 @@ declare class WebSocketConnectionManager extends BaseConnectionManager {
     reconnect(): Promise<void>;
     sendSmpMessage(data: ArrayBuffer): Promise<void>;
     sendTxData(data: ArrayBuffer): Promise<void>;
+    remove(): void;
 }
 export default WebSocketConnectionManager;

@@ -17,5 +17,6 @@ declare class WebBluetoothConnectionManager extends BluetoothConnectionManager {
     writeCharacteristic(characteristicName: BluetoothCharacteristicName, data: ArrayBuffer): Promise<void>;
     get canReconnect(): boolean;
     reconnect(): Promise<void>;
+    remove(): void;
 }
 export default WebBluetoothConnectionManager;

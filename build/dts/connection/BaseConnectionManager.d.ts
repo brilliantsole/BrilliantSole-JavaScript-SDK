@@ -91,5 +91,6 @@ declare abstract class BaseConnectionManager {
     sendTxData(data: ArrayBuffer): Promise<void>;
     parseRxMessage(dataView: DataView): void;
     clear(): void;
+    remove(): void;
 }
 export default BaseConnectionManager;

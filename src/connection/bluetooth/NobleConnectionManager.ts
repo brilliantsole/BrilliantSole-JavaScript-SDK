@@ -110,18 +110,20 @@ class NobleConnectionManager extends BluetoothConnectionManager {
   }
 
   // NOBLE
-  #noblePeripheral!: NoblePeripheral | undefined;
-  get noblePeripheral(): NoblePeripheral | undefined {
+  #noblePeripheral?: NoblePeripheral;
+  get noblePeripheral() {
     return this.#noblePeripheral;
   }
-  set noblePeripheral(newNoblePeripheral: NoblePeripheral) {
-    _console.assertTypeWithError(newNoblePeripheral, "object");
+  set noblePeripheral(newNoblePeripheral) {
+    if (newNoblePeripheral) {
+      _console.assertTypeWithError(newNoblePeripheral, "object");
+    }
     if (this.noblePeripheral == newNoblePeripheral) {
       _console.log("attempted to assign duplicate noblePeripheral");
       return;
     }
 
-    _console.log("newNoblePeripheral", newNoblePeripheral.id);
+    _console.log("newNoblePeripheral", newNoblePeripheral?.id);
 
     if (this.#noblePeripheral) {
       removeEventListeners(
@@ -408,6 +410,11 @@ class NobleConnectionManager extends BluetoothConnectionManager {
       characteristic.uuid,
       isSubscribed
     );
+  }
+
+  remove() {
+    super.remove();
+    this.noblePeripheral = undefined;
   }
 }
 

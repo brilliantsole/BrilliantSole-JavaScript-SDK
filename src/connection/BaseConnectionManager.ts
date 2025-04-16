@@ -367,6 +367,14 @@ abstract class BaseConnectionManager {
     this.#isSendingMessages = false;
     this.#pendingMessages.length = 0;
   }
+
+  remove() {
+    this.clear();
+
+    this.onStatusUpdated = undefined;
+    this.onMessageReceived = undefined;
+    this.onMessagesReceived = undefined;
+  }
 }
 
 export default BaseConnectionManager;
