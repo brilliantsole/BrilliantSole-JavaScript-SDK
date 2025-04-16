@@ -40,17 +40,23 @@ const WebSocketDeviceInformationMessageTypes: WebSocketMessageType[] = [
 ];
 
 class WebSocketConnectionManager extends BaseConnectionManager {
+  #bluetoothId?: string;
   get bluetoothId() {
-    return ""; // FILL
+    return this.#bluetoothId ?? "";
   }
 
   defaultMtu = 2 ** 10;
 
-  constructor(ipAddress: string, isSecure: boolean = false) {
+  constructor(
+    ipAddress: string,
+    isSecure: boolean = false,
+    bluetoothId?: string
+  ) {
     super();
     this.ipAddress = ipAddress;
     this.isSecure = isSecure;
     this.mtu = this.defaultMtu;
+    this.#bluetoothId = bluetoothId;
   }
 
   get isAvailable() {
@@ -132,6 +138,8 @@ class WebSocketConnectionManager extends BaseConnectionManager {
   }
   async disconnect() {
     await super.disconnect();
+    _console.log("closing websocket");
+    this.#pingTimer.stop();
     this.#webSocket?.close();
   }
 
@@ -150,7 +158,7 @@ class WebSocketConnectionManager extends BaseConnectionManager {
   }
 
   async sendTxData(data: ArrayBuffer) {
-    super.sendTxData(data);
+    await super.sendTxData(data);
     if (data.byteLength == 0) {
       return;
     }
@@ -160,6 +168,7 @@ class WebSocketConnectionManager extends BaseConnectionManager {
   // WEBSOCKET MESSAGING
   #sendMessage(message: MessageLike) {
     this.assertIsConnected();
+    _console.log("sending webSocket message", message);
     this.#webSocket!.send(message);
     this.#pingTimer.restart();
   }
@@ -183,11 +192,11 @@ class WebSocketConnectionManager extends BaseConnectionManager {
     this.#requestDeviceInformation();
   }
   async #onWebSocketMessage(event: ws.MessageEvent) {
-    _console.log("webSocket.message", event);
     // this.#pingTimer.restart();
     //@ts-expect-error
     const arrayBuffer = await event.data.arrayBuffer();
     const dataView = new DataView(arrayBuffer);
+    _console.log(`webSocket.message (${dataView.byteLength} bytes)`);
     this.#parseWebSocketMessage(dataView);
   }
   #onWebSocketClose(event: ws.CloseEvent) {
@@ -231,7 +240,6 @@ class WebSocketConnectionManager extends BaseConnectionManager {
             this.onMessageReceived!(deviceInformationType, dataView);
           }
         );
-        this.onMessagesReceived!();
         break;
       case "message":
         this.parseRxMessage(dataView);

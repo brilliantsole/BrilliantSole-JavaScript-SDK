@@ -350,7 +350,7 @@ interface DeviceInformationEventMessages {
 declare const ConnectionTypes: readonly ["webBluetooth", "noble", "client", "webSocket", "udp"];
 type ConnectionType = (typeof ConnectionTypes)[number];
 interface BaseConnectOptions {
-    type: "webBluetooth" | "webSocket" | "udp";
+    type: "client" | "webBluetooth" | "webSocket" | "udp";
 }
 interface WebBluetoothConnectOptions extends BaseConnectOptions {
     type: "webBluetooth";
@@ -358,16 +358,19 @@ interface WebBluetoothConnectOptions extends BaseConnectOptions {
 interface BaseWifiConnectOptions extends BaseConnectOptions {
     ipAddress: string;
 }
+interface ClientConnectOptions extends BaseConnectOptions {
+    type: "client";
+    subType?: "noble" | "webSocket" | "udp";
+}
 interface WebSocketConnectOptions extends BaseWifiConnectOptions {
     type: "webSocket";
-    isSecure?: boolean;
+    isWifiSecure?: boolean;
 }
 interface UDPConnectOptions extends BaseWifiConnectOptions {
     type: "udp";
-    sendPort: number;
     receivePort?: number;
 }
-type ConnectOptions = WebBluetoothConnectOptions | WebSocketConnectOptions | UDPConnectOptions;
+type ConnectOptions = WebBluetoothConnectOptions | WebSocketConnectOptions | UDPConnectOptions | ClientConnectOptions;
 declare const ConnectionStatuses: readonly ["notConnected", "connecting", "connected", "disconnecting"];
 type ConnectionStatus = (typeof ConnectionStatuses)[number];
 interface ConnectionStatusEventMessages {
@@ -659,7 +662,7 @@ declare class Device {
     static set ReconnectOnDisconnection(newReconnectOnDisconnection: boolean);
     get reconnectOnDisconnection(): boolean;
     set reconnectOnDisconnection(newReconnectOnDisconnection: boolean);
-    get connectionType(): "webBluetooth" | "webSocket" | "udp" | "noble" | "client" | undefined;
+    get connectionType(): "webBluetooth" | "webSocket" | "udp" | "client" | "noble" | undefined;
     disconnect(): Promise<void>;
     toggleConnection(): void;
     get connectionStatus(): ConnectionStatus;
@@ -945,7 +948,7 @@ declare abstract class BaseScanner {
     get discoveredDevices(): Readonly<DiscoveredDevicesMap>;
     get discoveredDevicesArray(): DiscoveredDevice[];
     static get DiscoveredDeviceExpirationTimeout(): number;
-    connectToDevice(deviceId: string): Promise<void>;
+    connectToDevice(deviceId: string, connectionType?: ConnectionType): Promise<void>;
     get canReset(): boolean;
     reset(): void;
 }

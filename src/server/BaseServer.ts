@@ -26,6 +26,8 @@ import { parseMessage, parseStringFromDataView } from "../utils/ParseUtils.ts";
 import {
   ConnectionMessageType,
   ConnectionMessageTypes,
+  ConnectionType,
+  ConnectionTypes,
 } from "../connection/BaseConnectionManager.ts";
 import {
   BoundScannerEventListeners,
@@ -359,8 +361,13 @@ abstract class BaseServer {
         break;
       case "connectToDevice":
         {
-          const { string: deviceId } = parseStringFromDataView(dataView);
-          scanner!.connectToDevice(deviceId);
+          const { string: deviceId, byteOffset } =
+            parseStringFromDataView(dataView);
+          let connectionType = undefined;
+          if (byteOffset < dataView.byteLength) {
+            connectionType = ConnectionTypes[dataView.getUint8(byteOffset)];
+          }
+          scanner!.connectToDevice(deviceId, connectionType);
         }
         break;
       case "disconnectFromDevice":

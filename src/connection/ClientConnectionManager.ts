@@ -3,6 +3,7 @@ import { isInBrowser } from "../utils/environment.ts";
 import BaseConnectionManager, {
   ConnectionType,
   ConnectionMessageType,
+  ClientConnectionType,
 } from "./BaseConnectionManager.ts";
 import { DeviceEventTypes } from "../Device.ts";
 import { parseMessage } from "../utils/ParseUtils.ts";
@@ -10,11 +11,16 @@ import { DeviceInformationTypes } from "../DeviceInformationManager.ts";
 import { DeviceEventType } from "../Device.ts";
 import { ClientDeviceMessage } from "../server/ServerUtils.ts";
 import BaseClient from "../server/BaseClient.ts";
+import { DiscoveredDevice } from "../BS.ts";
 
 const _console = createConsole("ClientConnectionManager", { log: false });
 
 export type SendClientMessageCallback = (
   ...messages: ClientDeviceMessage[]
+) => void;
+
+export type SendClientConnectMessageCallback = (
+  connectionType?: ClientConnectionType
 ) => void;
 
 const ClientDeviceInformationMessageTypes: ConnectionMessageType[] = [
@@ -30,12 +36,15 @@ class ClientConnectionManager extends BaseConnectionManager {
     return "client";
   }
 
+  subType?: ClientConnectionType;
+
   get canUpdateFirmware() {
     // FIX - how to know if it has an smp characteristic?
     return false;
   }
 
   client!: BaseClient;
+  discoveredDevice!: DiscoveredDevice;
 
   #bluetoothId!: string;
   get bluetoothId() {
@@ -75,7 +84,7 @@ class ClientConnectionManager extends BaseConnectionManager {
 
   async connect() {
     await super.connect();
-    this.sendClientConnectMessage();
+    this.sendClientConnectMessage(this.subType);
   }
   async disconnect() {
     await super.disconnect();
@@ -91,7 +100,7 @@ class ClientConnectionManager extends BaseConnectionManager {
   }
 
   sendClientMessage!: SendClientMessageCallback;
-  sendClientConnectMessage!: Function;
+  sendClientConnectMessage!: SendClientConnectMessageCallback;
   sendClientDisconnectMessage!: Function;
 
   async sendSmpMessage(data: ArrayBuffer) {

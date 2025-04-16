@@ -21,6 +21,10 @@ let isSupported = false;
 import noble from "@abandonware/noble";
 import { DeviceTypes } from "../InformationManager.ts";
 import DeviceManager from "../DeviceManager.ts";
+import {
+  ClientConnectionType,
+  ConnectionType,
+} from "../connection/BaseConnectionManager.ts";
 isSupported = true;
 /** NODE_END */
 
@@ -211,8 +215,11 @@ class NobleScanner extends BaseScanner {
   }
 
   // DEVICES
-  async connectToDevice(deviceId: string) {
-    super.connectToDevice(deviceId);
+  async connectToDevice(
+    deviceId: string,
+    connectionType?: ClientConnectionType
+  ) {
+    super.connectToDevice(deviceId, connectionType);
     this.#assertValidNoblePeripheralId(deviceId);
     const noblePeripheral = this.#noblePeripherals[deviceId];
     _console.log("connecting to discoveredDevice...", deviceId);
@@ -222,7 +229,13 @@ class NobleScanner extends BaseScanner {
     ).find((device) => device.bluetoothId == deviceId);
     if (!device) {
       device = this.#createDevice(noblePeripheral);
-      await device.connect();
+      const { ipAddress, isWifiSecure } =
+        this.discoveredDevices[device.bluetoothId!];
+      if (connectionType && connectionType != "noble" && ipAddress) {
+        await device.connect({ type: connectionType, ipAddress, isWifiSecure });
+      } else {
+        await device.connect();
+      }
     } else {
       await device.reconnect();
     }

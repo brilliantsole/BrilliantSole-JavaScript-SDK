@@ -7,6 +7,7 @@ import { addEventListeners } from "../utils/EventUtils.ts";
 import { createConsole } from "../utils/Console.ts";
 import Timer from "../utils/Timer.ts";
 import { DeviceType } from "../InformationManager.ts";
+import { ConnectionType } from "../connection/BaseConnectionManager.ts";
 
 const _console = createConsole("BaseScanner");
 
@@ -210,7 +211,7 @@ abstract class BaseScanner {
   }
 
   // DEVICE CONNECTION
-  async connectToDevice(deviceId: string) {
+  async connectToDevice(deviceId: string, connectionType?: ConnectionType) {
     this.#assertIsAvailable();
   }
 

@@ -69,7 +69,7 @@ class WifiManager {
     return this.eventDispatcher.waitForEvent;
   }
 
-  #requestRequiredInformation() {
+  requestRequiredInformation() {
     _console.log("requesting required wifi information");
     const messages = RequiredWifiMessageTypes.map((messageType) => ({
       type: messageType,
@@ -90,9 +90,6 @@ class WifiManager {
     this.#dispatchEvent("isWifiAvailable", {
       isWifiAvailable: this.#isWifiAvailable,
     });
-    if (this.isWifiAvailable) {
-      this.#requestRequiredInformation();
-    }
   }
 
   #assertWifiIsAvailable() {
@@ -316,6 +313,7 @@ class WifiManager {
     this.#wifiPassword = "";
     this.#ipAddress = "";
     this.#isWifiConnected = false;
+    this.#isWifiAvailable = false;
   }
 }
 

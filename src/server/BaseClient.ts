@@ -14,7 +14,11 @@ import EventDispatcher, {
   Event,
 } from "../utils/EventDispatcher.ts";
 import Device from "../Device.ts";
-import { sliceDataView } from "../utils/ArrayBufferUtils.ts";
+import {
+  concatenateArrayBuffers,
+  sliceDataView,
+  stringToArrayBuffer,
+} from "../utils/ArrayBufferUtils.ts";
 import {
   DiscoveredDevice,
   DiscoveredDevicesMap,
@@ -22,6 +26,10 @@ import {
 } from "../scanner/BaseScanner.ts";
 import ClientConnectionManager from "../connection/ClientConnectionManager.ts";
 import { DeviceManager } from "../BS.ts";
+import {
+  ClientConnectionType,
+  ConnectionTypes,
+} from "../connection/BaseConnectionManager.ts";
 
 const _console = createConsole("BaseClient", { log: false });
 
@@ -412,24 +420,49 @@ abstract class BaseClient {
   }
 
   // DEVICE CONNECTION
-  connectToDevice(bluetoothId: string) {
-    return this.requestConnectionToDevice(bluetoothId);
+  connectToDevice(bluetoothId: string, connectionType?: ClientConnectionType) {
+    return this.requestConnectionToDevice(bluetoothId, connectionType);
   }
-  protected requestConnectionToDevice(bluetoothId: string) {
+  protected requestConnectionToDevice(
+    bluetoothId: string,
+    connectionType?: ClientConnectionType
+  ) {
     this.assertConnection();
     _console.assertTypeWithError(bluetoothId, "string");
     const device = this.#getOrCreateDevice(bluetoothId);
-    device.connect();
+    if (connectionType) {
+      device.connect({ type: "client", subType: connectionType });
+    } else {
+      device.connect();
+    }
     return device;
   }
-  protected sendConnectToDeviceMessage(bluetoothId: string) {
-    this.sendServerMessage({ type: "connectToDevice", data: bluetoothId });
+  protected sendConnectToDeviceMessage(
+    bluetoothId: string,
+    connectionType?: ClientConnectionType
+  ) {
+    if (connectionType) {
+      this.sendServerMessage({
+        type: "connectToDevice",
+        data: concatenateArrayBuffers(
+          stringToArrayBuffer(bluetoothId),
+          ConnectionTypes.indexOf(connectionType)
+        ),
+      });
+    } else {
+      this.sendServerMessage({ type: "connectToDevice", data: bluetoothId });
+    }
   }
 
   // DEVICE CONNECTION
   createDevice(bluetoothId: string) {
     const device = new Device();
+    const discoveredDevice = this.#discoveredDevices[bluetoothId];
     const clientConnectionManager = new ClientConnectionManager();
+    clientConnectionManager.discoveredDevice = Object.assign(
+      {},
+      discoveredDevice
+    );
     clientConnectionManager.client = this;
     clientConnectionManager.bluetoothId = bluetoothId;
     clientConnectionManager.sendClientMessage = this.sendDeviceMessage.bind(

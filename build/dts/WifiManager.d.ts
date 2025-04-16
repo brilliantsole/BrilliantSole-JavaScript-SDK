@@ -41,6 +41,7 @@ declare class WifiManager {
         target: Device;
         message: WifiEventMessages[T];
     }>;
+    requestRequiredInformation(): void;
     get isWifiAvailable(): boolean;
     get wifiSSID(): string;
     setWifiSSID(newWifiSSID: string): Promise<void>;

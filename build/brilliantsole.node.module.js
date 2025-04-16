@@ -2451,7 +2451,7 @@ _VibrationManager_instances = new WeakSet(), _VibrationManager_verifyLocation = 
     return data;
 };
 
-var _WifiManager_instances, _WifiManager_dispatchEvent_get, _WifiManager_requestRequiredInformation, _WifiManager_isWifiAvailable, _WifiManager_updateIsWifiAvailable, _WifiManager_assertWifiIsAvailable, _WifiManager_wifiSSID, _WifiManager_updateWifiSSID, _WifiManager_wifiPassword, _WifiManager_updateWifiPassword, _WifiManager_wifiConnectionEnabled, _WifiManager_updateWifiConnectionEnabled, _WifiManager_isWifiConnected, _WifiManager_updateIsWifiConnected, _WifiManager_ipAddress, _WifiManager_updateIpAddress, _WifiManager_isWifiSecure, _WifiManager_updateIsWifiSecure;
+var _WifiManager_instances, _WifiManager_dispatchEvent_get, _WifiManager_isWifiAvailable, _WifiManager_updateIsWifiAvailable, _WifiManager_assertWifiIsAvailable, _WifiManager_wifiSSID, _WifiManager_updateWifiSSID, _WifiManager_wifiPassword, _WifiManager_updateWifiPassword, _WifiManager_wifiConnectionEnabled, _WifiManager_updateWifiConnectionEnabled, _WifiManager_isWifiConnected, _WifiManager_updateIsWifiConnected, _WifiManager_ipAddress, _WifiManager_updateIpAddress, _WifiManager_isWifiSecure, _WifiManager_updateIsWifiSecure;
 const _console$n = createConsole("WifiManager", { log: false });
 const MinWifiSSIDLength = 1;
 const MaxWifiSSIDLength = 32;
@@ -2492,6 +2492,13 @@ class WifiManager {
     }
     get waitForEvent() {
         return this.eventDispatcher.waitForEvent;
+    }
+    requestRequiredInformation() {
+        _console$n.log("requesting required wifi information");
+        const messages = RequiredWifiMessageTypes.map((messageType) => ({
+            type: messageType,
+        }));
+        this.sendMessage(messages, false);
     }
     get isWifiAvailable() {
         return __classPrivateFieldGet(this, _WifiManager_isWifiAvailable, "f");
@@ -2621,16 +2628,11 @@ class WifiManager {
         __classPrivateFieldSet(this, _WifiManager_wifiPassword, "", "f");
         __classPrivateFieldSet(this, _WifiManager_ipAddress, "", "f");
         __classPrivateFieldSet(this, _WifiManager_isWifiConnected, false, "f");
+        __classPrivateFieldSet(this, _WifiManager_isWifiAvailable, false, "f");
     }
 }
 _WifiManager_isWifiAvailable = new WeakMap(), _WifiManager_wifiSSID = new WeakMap(), _WifiManager_wifiPassword = new WeakMap(), _WifiManager_wifiConnectionEnabled = new WeakMap(), _WifiManager_isWifiConnected = new WeakMap(), _WifiManager_ipAddress = new WeakMap(), _WifiManager_isWifiSecure = new WeakMap(), _WifiManager_instances = new WeakSet(), _WifiManager_dispatchEvent_get = function _WifiManager_dispatchEvent_get() {
     return this.eventDispatcher.dispatchEvent;
-}, _WifiManager_requestRequiredInformation = function _WifiManager_requestRequiredInformation() {
-    _console$n.log("requesting required wifi information");
-    const messages = RequiredWifiMessageTypes.map((messageType) => ({
-        type: messageType,
-    }));
-    this.sendMessage(messages, false);
 }, _WifiManager_updateIsWifiAvailable = function _WifiManager_updateIsWifiAvailable(updatedIsWifiAvailable) {
     _console$n.assertTypeWithError(updatedIsWifiAvailable, "boolean");
     __classPrivateFieldSet(this, _WifiManager_isWifiAvailable, updatedIsWifiAvailable, "f");
@@ -2638,9 +2640,6 @@ _WifiManager_isWifiAvailable = new WeakMap(), _WifiManager_wifiSSID = new WeakMa
     __classPrivateFieldGet(this, _WifiManager_instances, "a", _WifiManager_dispatchEvent_get).call(this, "isWifiAvailable", {
         isWifiAvailable: __classPrivateFieldGet(this, _WifiManager_isWifiAvailable, "f"),
     });
-    if (this.isWifiAvailable) {
-        __classPrivateFieldGet(this, _WifiManager_instances, "m", _WifiManager_requestRequiredInformation).call(this);
-    }
 }, _WifiManager_assertWifiIsAvailable = function _WifiManager_assertWifiIsAvailable() {
     _console$n.assertWithError(__classPrivateFieldGet(this, _WifiManager_isWifiAvailable, "f"), "wifi is not available");
 }, _WifiManager_updateWifiSSID = function _WifiManager_updateWifiSSID(updatedWifiSSID) {
@@ -2685,7 +2684,14 @@ _WifiManager_isWifiAvailable = new WeakMap(), _WifiManager_wifiSSID = new WeakMa
 };
 
 var _BaseConnectionManager_instances, _a$4, _BaseConnectionManager_AssertValidTxRxMessageType, _BaseConnectionManager_assertIsSupported, _BaseConnectionManager_status, _BaseConnectionManager_assertIsNotConnecting, _BaseConnectionManager_assertIsNotDisconnecting, _BaseConnectionManager_pendingMessages, _BaseConnectionManager_isSendingMessages, _BaseConnectionManager_onRxMessage, _BaseConnectionManager_timer, _BaseConnectionManager_checkConnection;
-const _console$m = createConsole("BaseConnectionManager", { log: false });
+const _console$m = createConsole("BaseConnectionManager", { log: true });
+const ConnectionTypes = [
+    "webBluetooth",
+    "noble",
+    "client",
+    "webSocket",
+    "udp",
+];
 const ConnectionStatuses = [
     "notConnected",
     "connecting",
@@ -4613,7 +4619,7 @@ function createWebSocketMessage$1(...messages) {
 const webSocketPingMessage = createWebSocketMessage$1("ping");
 const webSocketPongMessage = createWebSocketMessage$1("pong");
 
-var _WebSocketConnectionManager_instances, _WebSocketConnectionManager_webSocket, _WebSocketConnectionManager_ipAddress, _WebSocketConnectionManager_isSecure, _WebSocketConnectionManager_sendMessage, _WebSocketConnectionManager_sendWebSocketMessage, _WebSocketConnectionManager_boundWebSocketEventListeners, _WebSocketConnectionManager_onWebSocketOpen, _WebSocketConnectionManager_onWebSocketMessage, _WebSocketConnectionManager_onWebSocketClose, _WebSocketConnectionManager_onWebSocketError, _WebSocketConnectionManager_parseWebSocketMessage, _WebSocketConnectionManager_onMessage, _WebSocketConnectionManager_pingTimer, _WebSocketConnectionManager_ping, _WebSocketConnectionManager_pong, _WebSocketConnectionManager_requestDeviceInformation;
+var _WebSocketConnectionManager_instances, _WebSocketConnectionManager_bluetoothId, _WebSocketConnectionManager_webSocket, _WebSocketConnectionManager_ipAddress, _WebSocketConnectionManager_isSecure, _WebSocketConnectionManager_sendMessage, _WebSocketConnectionManager_sendWebSocketMessage, _WebSocketConnectionManager_boundWebSocketEventListeners, _WebSocketConnectionManager_onWebSocketOpen, _WebSocketConnectionManager_onWebSocketMessage, _WebSocketConnectionManager_onWebSocketClose, _WebSocketConnectionManager_onWebSocketError, _WebSocketConnectionManager_parseWebSocketMessage, _WebSocketConnectionManager_onMessage, _WebSocketConnectionManager_pingTimer, _WebSocketConnectionManager_ping, _WebSocketConnectionManager_pong, _WebSocketConnectionManager_requestDeviceInformation;
 const _console$c = createConsole("WebSocketConnectionManager", { log: false });
 const WebSocketMessageTypes = [
     "ping",
@@ -4632,11 +4638,12 @@ const WebSocketDeviceInformationMessageTypes = [
 ];
 class WebSocketConnectionManager extends BaseConnectionManager {
     get bluetoothId() {
-        return "";
+        return __classPrivateFieldGet(this, _WebSocketConnectionManager_bluetoothId, "f") ?? "";
     }
-    constructor(ipAddress, isSecure = false) {
+    constructor(ipAddress, isSecure = false, bluetoothId) {
         super();
         _WebSocketConnectionManager_instances.add(this);
+        _WebSocketConnectionManager_bluetoothId.set(this, void 0);
         this.defaultMtu = 2 ** 10;
         _WebSocketConnectionManager_webSocket.set(this, void 0);
         _WebSocketConnectionManager_ipAddress.set(this, void 0);
@@ -4651,6 +4658,7 @@ class WebSocketConnectionManager extends BaseConnectionManager {
         this.ipAddress = ipAddress;
         this.isSecure = isSecure;
         this.mtu = this.defaultMtu;
+        __classPrivateFieldSet(this, _WebSocketConnectionManager_bluetoothId, bluetoothId, "f");
     }
     get isAvailable() {
         return true;
@@ -4713,6 +4721,8 @@ class WebSocketConnectionManager extends BaseConnectionManager {
     }
     async disconnect() {
         await super.disconnect();
+        _console$c.log("closing websocket");
+        __classPrivateFieldGet(this, _WebSocketConnectionManager_pingTimer, "f").stop();
         __classPrivateFieldGet(this, _WebSocketConnectionManager_webSocket, "f")?.close();
     }
     get canReconnect() {
@@ -4727,15 +4737,16 @@ class WebSocketConnectionManager extends BaseConnectionManager {
         _console$c.error("smp not supported on webSockets");
     }
     async sendTxData(data) {
-        super.sendTxData(data);
+        await super.sendTxData(data);
         if (data.byteLength == 0) {
             return;
         }
         __classPrivateFieldGet(this, _WebSocketConnectionManager_instances, "m", _WebSocketConnectionManager_sendWebSocketMessage).call(this, { type: "message", data });
     }
 }
-_WebSocketConnectionManager_webSocket = new WeakMap(), _WebSocketConnectionManager_ipAddress = new WeakMap(), _WebSocketConnectionManager_isSecure = new WeakMap(), _WebSocketConnectionManager_boundWebSocketEventListeners = new WeakMap(), _WebSocketConnectionManager_pingTimer = new WeakMap(), _WebSocketConnectionManager_instances = new WeakSet(), _WebSocketConnectionManager_sendMessage = function _WebSocketConnectionManager_sendMessage(message) {
+_WebSocketConnectionManager_bluetoothId = new WeakMap(), _WebSocketConnectionManager_webSocket = new WeakMap(), _WebSocketConnectionManager_ipAddress = new WeakMap(), _WebSocketConnectionManager_isSecure = new WeakMap(), _WebSocketConnectionManager_boundWebSocketEventListeners = new WeakMap(), _WebSocketConnectionManager_pingTimer = new WeakMap(), _WebSocketConnectionManager_instances = new WeakSet(), _WebSocketConnectionManager_sendMessage = function _WebSocketConnectionManager_sendMessage(message) {
     this.assertIsConnected();
+    _console$c.log("sending webSocket message", message);
     __classPrivateFieldGet(this, _WebSocketConnectionManager_webSocket, "f").send(message);
     __classPrivateFieldGet(this, _WebSocketConnectionManager_pingTimer, "f").restart();
 }, _WebSocketConnectionManager_sendWebSocketMessage = function _WebSocketConnectionManager_sendWebSocketMessage(...messages) {
@@ -4746,9 +4757,9 @@ _WebSocketConnectionManager_webSocket = new WeakMap(), _WebSocketConnectionManag
     this.status = "connected";
     __classPrivateFieldGet(this, _WebSocketConnectionManager_instances, "m", _WebSocketConnectionManager_requestDeviceInformation).call(this);
 }, _WebSocketConnectionManager_onWebSocketMessage = async function _WebSocketConnectionManager_onWebSocketMessage(event) {
-    _console$c.log("webSocket.message", event);
     const arrayBuffer = await event.data.arrayBuffer();
     const dataView = new DataView(arrayBuffer);
+    _console$c.log(`webSocket.message (${dataView.byteLength} bytes)`);
     __classPrivateFieldGet(this, _WebSocketConnectionManager_instances, "m", _WebSocketConnectionManager_parseWebSocketMessage).call(this, dataView);
 }, _WebSocketConnectionManager_onWebSocketClose = function _WebSocketConnectionManager_onWebSocketClose(event) {
     _console$c.log("webSocket.close", event);
@@ -4773,7 +4784,6 @@ _WebSocketConnectionManager_webSocket = new WeakMap(), _WebSocketConnectionManag
             parseMessage(dataView, DeviceInformationTypes, (deviceInformationType, dataView) => {
                 this.onMessageReceived(deviceInformationType, dataView);
             });
-            this.onMessagesReceived();
             break;
         case "message":
             this.parseRxMessage(dataView);
@@ -4793,7 +4803,7 @@ _WebSocketConnectionManager_webSocket = new WeakMap(), _WebSocketConnectionManag
 };
 
 var _Device_instances, _a$3, _Device_DefaultConnectionManager, _Device_eventDispatcher, _Device_dispatchEvent_get, _Device_connectionManager, _Device_sendTxMessages, _Device_isConnected, _Device_assertIsConnected, _Device_didReceiveMessageTypes, _Device_hasRequiredInformation_get, _Device_requestRequiredInformation, _Device_assertCanReconnect, _Device_ReconnectOnDisconnection, _Device_reconnectOnDisconnection, _Device_reconnectIntervalId, _Device_onConnectionStatusUpdated, _Device_dispatchConnectionEvents, _Device_checkConnection, _Device_clear, _Device_clearConnection, _Device_onConnectionMessageReceived, _Device_onConnectionMessagesReceived, _Device_deviceInformationManager, _Device_batteryLevel, _Device_updateBatteryLevel, _Device_sensorConfigurationManager, _Device_ClearSensorConfigurationOnLeave, _Device_clearSensorConfigurationOnLeave, _Device_sensorDataManager, _Device_vibrationManager, _Device_fileTransferManager, _Device_tfliteManager, _Device_firmwareManager, _Device_assertCanUpdateFirmware, _Device_sendSmpMessage, _Device_isServerSide, _Device_wifiManager;
-const _console$b = createConsole("Device", { log: false });
+const _console$b = createConsole("Device", { log: true });
 const DeviceEventTypes = [
     "connectionMessage",
     ...ConnectionEventTypes,
@@ -4890,6 +4900,14 @@ class Device {
             __classPrivateFieldGet(this, _Device_fileTransferManager, "f").mtu = this.mtu;
             this.connectionManager.mtu = this.mtu;
         });
+        this.addEventListener("isWifiAvailable", () => {
+            if (this.connectionType == "client" && !isInNode) {
+                return;
+            }
+            if (this.isWifiAvailable) {
+                __classPrivateFieldGet(this, _Device_wifiManager, "f").requestRequiredInformation();
+            }
+        });
         DeviceManager$1.onDevice(this);
         if (isInBrowser) {
             window.addEventListener("beforeunload", () => {
@@ -4954,7 +4972,7 @@ class Device {
                     this.connectionManager = new WebBluetoothConnectionManager();
                     break;
                 case "webSocket":
-                    this.connectionManager = new WebSocketConnectionManager(options.ipAddress, options.isSecure);
+                    this.connectionManager = new WebSocketConnectionManager(options.ipAddress, options.isWifiSecure, this.bluetoothId);
                     break;
             }
         }
@@ -4962,6 +4980,13 @@ class Device {
             this.connectionManager = __classPrivateFieldGet(_a$3, _a$3, "m", _Device_DefaultConnectionManager).call(_a$3);
         }
         __classPrivateFieldGet(this, _Device_instances, "m", _Device_clear).call(this);
+        if (options?.type == "client") {
+            _console$b.assertWithError(this.connectionType == "client", "expected clientConnectionManager");
+            const clientConnectionManager = this
+                .connectionManager;
+            clientConnectionManager.subType = options.subType;
+            return clientConnectionManager.connect();
+        }
         return this.connectionManager.connect();
     }
     get isConnected() {
@@ -5299,7 +5324,7 @@ class Device {
         await this.connect({
             type: "webSocket",
             ipAddress: this.ipAddress,
-            isSecure: this.isWifiSecure,
+            isWifiSecure: this.isWifiSecure,
         });
     }
 }
@@ -5831,7 +5856,7 @@ class BaseScanner {
     static get DiscoveredDeviceExpirationTimeout() {
         return __classPrivateFieldGet(this, _a$1, "f", _BaseScanner_DiscoveredDeviceExpirationTimeout);
     }
-    async connectToDevice(deviceId) {
+    async connectToDevice(deviceId, connectionType) {
         __classPrivateFieldGet(this, _BaseScanner_instances, "m", _BaseScanner_assertIsAvailable).call(this);
     }
     get canReset() {
@@ -6142,15 +6167,21 @@ class NobleScanner extends BaseScanner {
         super.reset();
         noble.reset();
     }
-    async connectToDevice(deviceId) {
-        super.connectToDevice(deviceId);
+    async connectToDevice(deviceId, connectionType) {
+        super.connectToDevice(deviceId, connectionType);
         __classPrivateFieldGet(this, _NobleScanner_instances, "m", _NobleScanner_assertValidNoblePeripheralId).call(this, deviceId);
         const noblePeripheral = __classPrivateFieldGet(this, _NobleScanner_noblePeripherals, "f")[deviceId];
         _console$5.log("connecting to discoveredDevice...", deviceId);
         let device = DeviceManager$1.AvailableDevices.filter((device) => device.connectionType == "noble").find((device) => device.bluetoothId == deviceId);
         if (!device) {
             device = __classPrivateFieldGet(this, _NobleScanner_instances, "m", _NobleScanner_createDevice).call(this, noblePeripheral);
-            await device.connect();
+            const { ipAddress, isWifiSecure } = this.discoveredDevices[device.bluetoothId];
+            if (connectionType && connectionType != "noble" && ipAddress) {
+                await device.connect({ type: connectionType, ipAddress, isWifiSecure });
+            }
+            else {
+                await device.connect();
+            }
         }
         else {
             await device.reconnect();
@@ -6467,8 +6498,12 @@ _a = BaseServer, _BaseServer_clearSensorConfigurationsWhenNoClients = new WeakMa
             break;
         case "connectToDevice":
             {
-                const { string: deviceId } = parseStringFromDataView(dataView);
-                scanner$1.connectToDevice(deviceId);
+                const { string: deviceId, byteOffset } = parseStringFromDataView(dataView);
+                let connectionType = undefined;
+                if (byteOffset < dataView.byteLength) {
+                    connectionType = ConnectionTypes[dataView.getUint8(byteOffset)];
+                }
+                scanner$1.connectToDevice(deviceId, connectionType);
             }
             break;
         case "disconnectFromDevice":

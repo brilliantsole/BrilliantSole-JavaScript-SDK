@@ -1,7 +1,9 @@
 export declare const ConnectionTypes: readonly ["webBluetooth", "noble", "client", "webSocket", "udp"];
 export type ConnectionType = (typeof ConnectionTypes)[number];
+export declare const ClientConnectionTypes: readonly ["noble", "webSocket", "udp"];
+export type ClientConnectionType = (typeof ClientConnectionTypes)[number];
 interface BaseConnectOptions {
-    type: "webBluetooth" | "webSocket" | "udp";
+    type: "client" | "webBluetooth" | "webSocket" | "udp";
 }
 export interface WebBluetoothConnectOptions extends BaseConnectOptions {
     type: "webBluetooth";
@@ -9,16 +11,19 @@ export interface WebBluetoothConnectOptions extends BaseConnectOptions {
 interface BaseWifiConnectOptions extends BaseConnectOptions {
     ipAddress: string;
 }
+export interface ClientConnectOptions extends BaseConnectOptions {
+    type: "client";
+    subType?: "noble" | "webSocket" | "udp";
+}
 export interface WebSocketConnectOptions extends BaseWifiConnectOptions {
     type: "webSocket";
-    isSecure?: boolean;
+    isWifiSecure?: boolean;
 }
 export interface UDPConnectOptions extends BaseWifiConnectOptions {
     type: "udp";
-    sendPort: number;
     receivePort?: number;
 }
-export type ConnectOptions = WebBluetoothConnectOptions | WebSocketConnectOptions | UDPConnectOptions;
+export type ConnectOptions = WebBluetoothConnectOptions | WebSocketConnectOptions | UDPConnectOptions | ClientConnectOptions;
 export declare const ConnectionStatuses: readonly ["notConnected", "connecting", "connected", "disconnecting"];
 export type ConnectionStatus = (typeof ConnectionStatuses)[number];
 export declare const ConnectionEventTypes: readonly ["notConnected", "connecting", "connected", "disconnecting", "connectionStatus", "isConnected"];

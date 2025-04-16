@@ -129,8 +129,8 @@ client.addEventListener("discoveredDevice", (event) => {
         device.toggleConnection();
       } else {
         device = client.connectToDevice(discoveredDevice.bluetoothId);
+        onDevice(device);
       }
-      onDevice(device);
     });
 
     /** @type {HTMLButtonElement} */
@@ -140,12 +140,15 @@ client.addEventListener("discoveredDevice", (event) => {
     connectViaWebSocketsButton.addEventListener("click", () => {
       let device = client.devices[discoveredDevice.bluetoothId];
       if (device) {
-        // device.toggleConnection();
+        device.connect({ type: "client", subType: "webSocket" });
       } else {
-        // FIX
-        device = client.connectToDevice(discoveredDevice.bluetoothId);
+        device = client.connectToDevice(
+          discoveredDevice.bluetoothId,
+          "webSocket"
+        );
+        onDevice(device);
       }
-      onDevice(device);
+      connectViaWebSocketsButton.disabled = true;
     });
 
     /** @param {BS.Device} device */
@@ -293,7 +296,6 @@ BS.DeviceManager.AddEventListener("connectedDevices", (event) => {
     if (device.connectionType != "client" || !device.bluetoothId) {
       return;
     }
-    console.log("AHHH", device.bluetoothId);
     let connectedDeviceContainer =
       connectedDeviceContainers[device.bluetoothId];
     if (!connectedDeviceContainer) {

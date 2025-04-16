@@ -3,7 +3,7 @@ declare class WebSocketConnectionManager extends BaseConnectionManager {
     #private;
     get bluetoothId(): string;
     defaultMtu: number;
-    constructor(ipAddress: string, isSecure?: boolean);
+    constructor(ipAddress: string, isSecure?: boolean, bluetoothId?: string);
     get isAvailable(): boolean;
     static get isSupported(): boolean;
     static get type(): ConnectionType;

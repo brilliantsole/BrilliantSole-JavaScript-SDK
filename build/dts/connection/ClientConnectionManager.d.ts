@@ -1,13 +1,17 @@
-import BaseConnectionManager, { ConnectionType } from "./BaseConnectionManager.ts";
+import BaseConnectionManager, { ConnectionType, ClientConnectionType } from "./BaseConnectionManager.ts";
 import { ClientDeviceMessage } from "../server/ServerUtils.ts";
 import BaseClient from "../server/BaseClient.ts";
+import { DiscoveredDevice } from "../BS.ts";
 export type SendClientMessageCallback = (...messages: ClientDeviceMessage[]) => void;
+export type SendClientConnectMessageCallback = (connectionType?: ClientConnectionType) => void;
 declare class ClientConnectionManager extends BaseConnectionManager {
     #private;
     static get isSupported(): boolean;
     static get type(): ConnectionType;
+    subType?: ClientConnectionType;
     get canUpdateFirmware(): boolean;
     client: BaseClient;
+    discoveredDevice: DiscoveredDevice;
     get bluetoothId(): string;
     set bluetoothId(newBluetoothId: string);
     get isConnected(): boolean;
@@ -18,7 +22,7 @@ declare class ClientConnectionManager extends BaseConnectionManager {
     get canReconnect(): boolean;
     reconnect(): Promise<void>;
     sendClientMessage: SendClientMessageCallback;
-    sendClientConnectMessage: Function;
+    sendClientConnectMessage: SendClientConnectMessageCallback;
     sendClientDisconnectMessage: Function;
     sendSmpMessage(data: ArrayBuffer): Promise<void>;
     sendTxData(data: ArrayBuffer): Promise<void>;

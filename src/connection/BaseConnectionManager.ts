@@ -12,7 +12,7 @@ import { SensorConfigurationMessageTypes } from "../sensor/SensorConfigurationMa
 import { SensorDataMessageTypes } from "../sensor/SensorDataManager.ts";
 import { WifiMessageTypes } from "../WifiManager.ts";
 
-const _console = createConsole("BaseConnectionManager", { log: false });
+const _console = createConsole("BaseConnectionManager", { log: true });
 
 export const ConnectionTypes = [
   "webBluetooth",
@@ -23,8 +23,11 @@ export const ConnectionTypes = [
 ] as const;
 export type ConnectionType = (typeof ConnectionTypes)[number];
 
+export const ClientConnectionTypes = ["noble", "webSocket", "udp"] as const;
+export type ClientConnectionType = (typeof ClientConnectionTypes)[number];
+
 interface BaseConnectOptions {
-  type: "webBluetooth" | "webSocket" | "udp";
+  type: "client" | "webBluetooth" | "webSocket" | "udp";
 }
 export interface WebBluetoothConnectOptions extends BaseConnectOptions {
   type: "webBluetooth";
@@ -32,19 +35,24 @@ export interface WebBluetoothConnectOptions extends BaseConnectOptions {
 interface BaseWifiConnectOptions extends BaseConnectOptions {
   ipAddress: string;
 }
+export interface ClientConnectOptions extends BaseConnectOptions {
+  type: "client";
+  subType?: "noble" | "webSocket" | "udp";
+}
 export interface WebSocketConnectOptions extends BaseWifiConnectOptions {
   type: "webSocket";
-  isSecure?: boolean;
+  isWifiSecure?: boolean;
 }
 export interface UDPConnectOptions extends BaseWifiConnectOptions {
   type: "udp";
-  sendPort: number;
+  //sendPort: number;
   receivePort?: number;
 }
 export type ConnectOptions =
   | WebBluetoothConnectOptions
   | WebSocketConnectOptions
-  | UDPConnectOptions;
+  | UDPConnectOptions
+  | ClientConnectOptions;
 
 export const ConnectionStatuses = [
   "notConnected",

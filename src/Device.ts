@@ -96,8 +96,9 @@ import WifiManager, {
   WifiMessageTypes,
 } from "./WifiManager.ts";
 import WebSocketConnectionManager from "./connection/websocket/WebSocketConnectionManager.ts";
+import ClientConnectionManager from "./connection/ClientConnectionManager.ts";
 
-const _console = createConsole("Device", { log: false });
+const _console = createConsole("Device", { log: true });
 
 export const DeviceEventTypes = [
   "connectionMessage",
@@ -243,6 +244,14 @@ class Device {
       this.#fileTransferManager.mtu = this.mtu;
       this.connectionManager!.mtu = this.mtu;
     });
+    this.addEventListener("isWifiAvailable", () => {
+      if (this.connectionType == "client" && !isInNode) {
+        return;
+      }
+      if (this.isWifiAvailable) {
+        this.#wifiManager.requestRequiredInformation();
+      }
+    });
     DeviceManager.onDevice(this);
     if (isInBrowser) {
       window.addEventListener("beforeunload", () => {
@@ -334,7 +343,8 @@ class Device {
         case "webSocket":
           this.connectionManager = new WebSocketConnectionManager(
             options.ipAddress,
-            options.isSecure
+            options.isWifiSecure,
+            this.bluetoothId
           );
           break;
         case "udp":
@@ -346,6 +356,17 @@ class Device {
       this.connectionManager = Device.#DefaultConnectionManager();
     }
     this.#clear();
+
+    if (options?.type == "client") {
+      _console.assertWithError(
+        this.connectionType == "client",
+        "expected clientConnectionManager"
+      );
+      const clientConnectionManager = this
+        .connectionManager as ClientConnectionManager;
+      clientConnectionManager.subType = options.subType;
+      return clientConnectionManager.connect();
+    }
     return this.connectionManager.connect();
   }
   #isConnected = false;
@@ -1019,7 +1040,7 @@ class Device {
     await this.connect({
       type: "webSocket",
       ipAddress: this.ipAddress!,
-      isSecure: this.isWifiSecure,
+      isWifiSecure: this.isWifiSecure,
     });
   }
 }
