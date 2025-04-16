@@ -1,5 +1,6 @@
 import Device, { SendMessageCallback } from "./Device.ts";
 import { createConsole } from "./utils/Console.ts";
+import { isInNode } from "./utils/environment.ts";
 import EventDispatcher from "./utils/EventDispatcher.ts";
 import { textDecoder, textEncoder } from "./utils/Text.ts";
 import autoBind from "auto-bind";

@@ -18,9 +18,8 @@ typeof SuppressedError === "function" ? SuppressedError : function (error, suppr
     return e.name = "SuppressedError", e.error = error, e.suppressed = suppressed, e;
 };
 
-const __BRILLIANTSOLE__ENVIRONMENT__ = "__BRILLIANTSOLE__DEV__";
-const isInProduction = __BRILLIANTSOLE__ENVIRONMENT__ == "__BRILLIANTSOLE__PROD__";
-const isInDev = __BRILLIANTSOLE__ENVIRONMENT__ == "__BRILLIANTSOLE__DEV__";
+const isInProduction = "__BRILLIANTSOLE__PROD__" == "__BRILLIANTSOLE__PROD__";
+const isInDev = "__BRILLIANTSOLE__PROD__" == "__BRILLIANTSOLE__DEV__";
 const isInBrowser = typeof window !== "undefined" && typeof window?.document !== "undefined";
 const isInNode = typeof process !== "undefined" && process?.versions?.node != null;
 const userAgent = (isInBrowser && navigator.userAgent) || "";
@@ -107,10 +106,18 @@ if (!__console.table) {
     __console.table = table;
 }
 function emptyFunction() { }
-const log = wrapWithLocation(__console.log.bind(__console));
-const warn = wrapWithLocation(__console.warn.bind(__console));
-const error = wrapWithLocation(__console.error.bind(__console));
-const table = wrapWithLocation(__console.table.bind(__console));
+const log = isInNode
+    ? wrapWithLocation(__console.log.bind(__console))
+    : __console.log.bind(__console);
+const warn = isInNode
+    ? wrapWithLocation(__console.warn.bind(__console))
+    : __console.warn.bind(__console);
+const error = isInNode
+    ? wrapWithLocation(__console.error.bind(__console))
+    : __console.error.bind(__console);
+const table = isInNode
+    ? wrapWithLocation(__console.table.bind(__console))
+    : __console.table.bind(__console);
 const assert = __console.assert.bind(__console);
 class Console {
     constructor(type) {
@@ -142,9 +149,6 @@ class Console {
     }
     static create(type, levelFlags) {
         const console = __classPrivateFieldGet(this, _a$6, "f", _Console_consoles)[type] || new _a$6(type);
-        if (levelFlags) {
-            console.setLevelFlags(levelFlags);
-        }
         return console;
     }
     get log() {
@@ -2677,7 +2681,7 @@ _WifiManager_isWifiAvailable = new WeakMap(), _WifiManager_wifiSSID = new WeakMa
 };
 
 var _BaseConnectionManager_instances, _a$3, _BaseConnectionManager_AssertValidTxRxMessageType, _BaseConnectionManager_assertIsSupported, _BaseConnectionManager_status, _BaseConnectionManager_assertIsNotConnecting, _BaseConnectionManager_assertIsNotDisconnecting, _BaseConnectionManager_pendingMessages, _BaseConnectionManager_isSendingMessages, _BaseConnectionManager_onRxMessage, _BaseConnectionManager_timer, _BaseConnectionManager_checkConnection;
-const _console$h = createConsole("BaseConnectionManager", { log: true });
+const _console$h = createConsole("BaseConnectionManager", { log: false });
 const ConnectionTypes = [
     "webBluetooth",
     "noble",

@@ -79,10 +79,18 @@ if (!__console.table) {
 
 function emptyFunction() {}
 
-const log: LogFunction = wrapWithLocation(__console.log!.bind(__console));
-const warn: LogFunction = wrapWithLocation(__console.warn!.bind(__console));
-const error: LogFunction = wrapWithLocation(__console.error!.bind(__console));
-const table: LogFunction = wrapWithLocation(__console.table!.bind(__console));
+const log: LogFunction = isInNode
+  ? wrapWithLocation(__console.log!.bind(__console))
+  : __console.log!.bind(__console);
+const warn: LogFunction = isInNode
+  ? wrapWithLocation(__console.warn!.bind(__console))
+  : __console.warn!.bind(__console);
+const error: LogFunction = isInNode
+  ? wrapWithLocation(__console.error!.bind(__console))
+  : __console.error!.bind(__console);
+const table: LogFunction = isInNode
+  ? wrapWithLocation(__console.table!.bind(__console))
+  : __console.table!.bind(__console);
 const assert: AssertLogFunction = __console.assert.bind(__console);
 
 class Console {
