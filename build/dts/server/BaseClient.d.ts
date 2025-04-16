@@ -83,5 +83,6 @@ declare abstract class BaseClient {
     protected requestDisconnectionFromDevice(bluetoothId: string): Device;
     protected sendDisconnectFromDeviceMessage(bluetoothId: string): void;
     protected sendDeviceMessage(bluetoothId: string, ...messages: ClientDeviceMessage[]): void;
+    protected sendRequiredDeviceInformationMessage(bluetoothId: string): void;
 }
 export default BaseClient;

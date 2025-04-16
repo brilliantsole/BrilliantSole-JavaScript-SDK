@@ -469,6 +469,8 @@ abstract class BaseClient {
       this,
       bluetoothId
     );
+    clientConnectionManager.sendRequiredDeviceInformationMessage =
+      this.sendRequiredDeviceInformationMessage.bind(this, bluetoothId);
     clientConnectionManager.sendClientConnectMessage =
       this.sendConnectToDeviceMessage.bind(this, bluetoothId);
     clientConnectionManager.sendClientDisconnectMessage =
@@ -518,6 +520,13 @@ abstract class BaseClient {
     this.sendServerMessage({
       type: "deviceMessage",
       data: [bluetoothId, createClientDeviceMessage(...messages)],
+    });
+  }
+
+  protected sendRequiredDeviceInformationMessage(bluetoothId: string) {
+    this.sendServerMessage({
+      type: "requiredDeviceInformation",
+      data: [bluetoothId],
     });
   }
 }

@@ -21,6 +21,7 @@ export const ServerMessageTypes = [
   "disconnectFromDevice",
   "connectedDevices",
   "deviceMessage",
+  "requiredDeviceInformation",
 ] as const;
 export type ServerMessageType = (typeof ServerMessageTypes)[number];
 

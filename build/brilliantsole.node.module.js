@@ -22,8 +22,9 @@ typeof SuppressedError === "function" ? SuppressedError : function (error, suppr
     return e.name = "SuppressedError", e.error = error, e.suppressed = suppressed, e;
 };
 
-const isInProduction = "__BRILLIANTSOLE__PROD__" == "__BRILLIANTSOLE__PROD__";
-const isInDev = "__BRILLIANTSOLE__PROD__" == "__BRILLIANTSOLE__DEV__";
+const __BRILLIANTSOLE__ENVIRONMENT__ = "__BRILLIANTSOLE__DEV__";
+const isInProduction = __BRILLIANTSOLE__ENVIRONMENT__ == "__BRILLIANTSOLE__PROD__";
+const isInDev = __BRILLIANTSOLE__ENVIRONMENT__ == "__BRILLIANTSOLE__DEV__";
 const isInBrowser = typeof window !== "undefined" && typeof window?.document !== "undefined";
 const isInNode = typeof process !== "undefined" && process?.versions?.node != null;
 const userAgent = (isInBrowser && navigator.userAgent) || "";
@@ -153,6 +154,9 @@ class Console {
     }
     static create(type, levelFlags) {
         const console = __classPrivateFieldGet(this, _a$7, "f", _Console_consoles)[type] || new _a$7(type);
+        if (levelFlags) {
+            console.setLevelFlags(levelFlags);
+        }
         return console;
     }
     get log() {
@@ -4573,6 +4577,7 @@ const ServerMessageTypes = [
     "disconnectFromDevice",
     "connectedDevices",
     "deviceMessage",
+    "requiredDeviceInformation",
 ];
 function createMessage(enumeration, ...messages) {
     _console$e.log("createMessage", ...messages);
@@ -4807,7 +4812,7 @@ _WebSocketConnectionManager_bluetoothId = new WeakMap(), _WebSocketConnectionMan
 };
 
 var _Device_instances, _a$3, _Device_DefaultConnectionManager, _Device_eventDispatcher, _Device_dispatchEvent_get, _Device_connectionManager, _Device_sendTxMessages, _Device_isConnected, _Device_assertIsConnected, _Device_didReceiveMessageTypes, _Device_hasRequiredInformation_get, _Device_requestRequiredInformation, _Device_assertCanReconnect, _Device_ReconnectOnDisconnection, _Device_reconnectOnDisconnection, _Device_reconnectIntervalId, _Device_onConnectionStatusUpdated, _Device_dispatchConnectionEvents, _Device_checkConnection, _Device_clear, _Device_clearConnection, _Device_onConnectionMessageReceived, _Device_onConnectionMessagesReceived, _Device_deviceInformationManager, _Device_batteryLevel, _Device_updateBatteryLevel, _Device_sensorConfigurationManager, _Device_ClearSensorConfigurationOnLeave, _Device_clearSensorConfigurationOnLeave, _Device_sensorDataManager, _Device_vibrationManager, _Device_fileTransferManager, _Device_tfliteManager, _Device_firmwareManager, _Device_assertCanUpdateFirmware, _Device_sendSmpMessage, _Device_isServerSide, _Device_wifiManager;
-const _console$b = createConsole("Device", { log: true });
+const _console$b = createConsole("Device", { log: false });
 const DeviceEventTypes = [
     "connectionMessage",
     ...ConnectionEventTypes,
@@ -4909,7 +4914,9 @@ class Device {
                 return;
             }
             if (this.isWifiAvailable) {
-                __classPrivateFieldGet(this, _Device_wifiManager, "f").requestRequiredInformation();
+                if (this.connectionType != "client") {
+                    __classPrivateFieldGet(this, _Device_wifiManager, "f").requestRequiredInformation();
+                }
             }
         });
         DeviceManager$1.onDevice(this);
@@ -5383,7 +5390,9 @@ _a$3 = Device, _Device_eventDispatcher = new WeakMap(), _Device_connectionManage
     }
     __classPrivateFieldGet(this, _Device_instances, "m", _Device_checkConnection).call(this);
     if (connectionStatus == "connected" && !__classPrivateFieldGet(this, _Device_isConnected, "f")) {
-        __classPrivateFieldGet(this, _Device_instances, "m", _Device_requestRequiredInformation).call(this);
+        if (this.connectionType != "client") {
+            __classPrivateFieldGet(this, _Device_instances, "m", _Device_requestRequiredInformation).call(this);
+        }
     }
     DeviceManager$1.OnDeviceConnectionStatusUpdated(this, connectionStatus);
 }, _Device_dispatchConnectionEvents = function _Device_dispatchConnectionEvents(includeIsConnected = false) {
@@ -5457,6 +5466,10 @@ _a$3 = Device, _Device_eventDispatcher = new WeakMap(), _Device_connectionManage
             }
     }
     this.latestConnectionMessages.set(messageType, dataView);
+    if (messageType.startsWith("set")) {
+        this.latestConnectionMessages.set(
+        messageType.replace("set", "get"), dataView);
+    }
     __classPrivateFieldGet(this, _Device_instances, "a", _Device_dispatchEvent_get).call(this, "connectionMessage", { messageType, dataView });
 }, _Device_onConnectionMessagesReceived = function _Device_onConnectionMessagesReceived() {
     if (!this.isConnected && __classPrivateFieldGet(this, _Device_instances, "a", _Device_hasRequiredInformation_get)) {
@@ -6302,6 +6315,11 @@ else {
 var scanner$1 = scanner;
 
 var _BaseServer_instances, _a, _BaseServer_ClearSensorConfigurationsWhenNoClients, _BaseServer_clearSensorConfigurationsWhenNoClients, _BaseServer_boundServerListeners, _BaseServer_onClientConnected, _BaseServer_onClientDisconnected, _BaseServer_boundScannerListeners, _BaseServer_onScannerIsAvailable, _BaseServer_isScanningAvailableMessage_get, _BaseServer_onScannerIsScanning, _BaseServer_isScanningMessage_get, _BaseServer_onScannerDiscoveredDevice, _BaseServer_createDiscoveredDeviceMessage, _BaseServer_onExpiredDiscoveredDevice, _BaseServer_createExpiredDiscoveredDeviceMessage, _BaseServer_discoveredDevicesMessage_get, _BaseServer_connectedDevicesMessage_get, _BaseServer_boundDeviceListeners, _BaseServer_createDeviceMessage, _BaseServer_onDeviceConnectionMessage, _BaseServer_boundDeviceManagerListeners, _BaseServer_onDeviceConnected, _BaseServer_onDeviceDisconnected, _BaseServer_onDeviceIsConnected, _BaseServer_createDeviceIsConnectedMessage, _BaseServer_createDeviceServerMessage, _BaseServer_onClientMessage, _BaseServer_parseClientDeviceMessageCallback;
+const RequiredDeviceInformationMessageTypes = [
+    ...DeviceInformationTypes,
+    "batteryLevel",
+    ...RequiredInformationConnectionMessages,
+];
 const _console$3 = createConsole("BaseServer", { log: false });
 const ServerEventTypes = [
     "clientConnected",
@@ -6483,6 +6501,7 @@ _a = BaseServer, _BaseServer_clearSensorConfigurationsWhenNoClients = new WeakMa
         data: [device.bluetoothId, createDeviceMessage(...messages)],
     });
 }, _BaseServer_onClientMessage = function _BaseServer_onClientMessage(messageType, dataView, context) {
+    _console$3.log(`onClientMessage "${messageType}" (${dataView.byteLength} bytes)`);
     const { responseMessages } = context;
     switch (messageType) {
         case "isScanningAvailable":
@@ -6534,6 +6553,26 @@ _a = BaseServer, _BaseServer_clearSensorConfigurationsWhenNoClients = new WeakMa
                 }
                 const _dataView = new DataView(dataView.buffer, dataView.byteOffset + byteOffset);
                 const responseMessage = this.parseClientDeviceMessage(device, _dataView);
+                if (responseMessage) {
+                    responseMessages.push(responseMessage);
+                }
+            }
+            break;
+        case "requiredDeviceInformation":
+            {
+                const { string: deviceId } = parseStringFromDataView(dataView);
+                const device = DeviceManager$1.ConnectedDevices.find((device) => device.bluetoothId == deviceId);
+                if (!device) {
+                    _console$3.error(`no device found with id ${deviceId}`);
+                    break;
+                }
+                const messages = RequiredDeviceInformationMessageTypes.map((messageType) => __classPrivateFieldGet(this, _BaseServer_instances, "m", _BaseServer_createDeviceMessage).call(this, device, messageType));
+                if (device.isWifiAvailable) {
+                    RequiredWifiMessageTypes.forEach((messageType) => {
+                        messages.push(__classPrivateFieldGet(this, _BaseServer_instances, "m", _BaseServer_createDeviceMessage).call(this, device, messageType));
+                    });
+                }
+                const responseMessage = __classPrivateFieldGet(this, _BaseServer_instances, "m", _BaseServer_createDeviceServerMessage).call(this, device, ...messages);
                 if (responseMessage) {
                     responseMessages.push(responseMessage);
                 }

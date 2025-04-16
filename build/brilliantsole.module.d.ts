@@ -917,7 +917,7 @@ type DiscoveredDevicesMap = {
     [deviceId: string]: DiscoveredDevice;
 };
 
-declare const ServerMessageTypes: readonly ["isScanningAvailable", "isScanning", "startScan", "stopScan", "discoveredDevice", "discoveredDevices", "expiredDiscoveredDevice", "connectToDevice", "disconnectFromDevice", "connectedDevices", "deviceMessage"];
+declare const ServerMessageTypes: readonly ["isScanningAvailable", "isScanning", "startScan", "stopScan", "discoveredDevice", "discoveredDevices", "expiredDiscoveredDevice", "connectToDevice", "disconnectFromDevice", "connectedDevices", "deviceMessage", "requiredDeviceInformation"];
 type ServerMessageType = (typeof ServerMessageTypes)[number];
 type MessageLike = number | number[] | ArrayBufferLike | DataView | boolean | string | any;
 interface Message<MessageType extends string> {
@@ -1002,6 +1002,7 @@ declare abstract class BaseClient {
     protected requestDisconnectionFromDevice(bluetoothId: string): Device;
     protected sendDisconnectFromDeviceMessage(bluetoothId: string): void;
     protected sendDeviceMessage(bluetoothId: string, ...messages: ClientDeviceMessage[]): void;
+    protected sendRequiredDeviceInformationMessage(bluetoothId: string): void;
 }
 
 declare class WebSocketClient extends BaseClient {

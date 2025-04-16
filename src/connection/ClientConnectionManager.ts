@@ -102,6 +102,7 @@ class ClientConnectionManager extends BaseConnectionManager {
   sendClientMessage!: SendClientMessageCallback;
   sendClientConnectMessage!: SendClientConnectMessageCallback;
   sendClientDisconnectMessage!: Function;
+  sendRequiredDeviceInformationMessage!: Function;
 
   async sendSmpMessage(data: ArrayBuffer) {
     super.sendSmpMessage(data);
@@ -117,7 +118,8 @@ class ClientConnectionManager extends BaseConnectionManager {
   }
 
   #requestDeviceInformation() {
-    this.sendClientMessage(...ClientDeviceInformationMessageTypes);
+    //this.sendClientMessage(...ClientDeviceInformationMessageTypes);
+    this.sendRequiredDeviceInformationMessage();
   }
 
   onClientMessage(dataView: DataView) {

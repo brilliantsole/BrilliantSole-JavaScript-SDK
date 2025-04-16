@@ -16,6 +16,7 @@ import Device, {
   BoundDeviceEventListeners,
   DeviceEventMap,
   DeviceEventType,
+  RequiredInformationConnectionMessages,
 } from "../Device.ts";
 import {
   addEventListeners,
@@ -39,6 +40,14 @@ import DeviceManager, {
   DeviceManagerEventMap,
   BoundDeviceManagerEventListeners,
 } from "../DeviceManager.ts";
+import { RequiredWifiMessageTypes } from "../WifiManager.ts";
+import { DeviceInformationTypes } from "../DeviceInformationManager.ts";
+
+const RequiredDeviceInformationMessageTypes: ConnectionMessageType[] = [
+  ...DeviceInformationTypes,
+  "batteryLevel",
+  ...RequiredInformationConnectionMessages,
+];
 
 const _console = createConsole("BaseServer", { log: false });
 
@@ -342,6 +351,9 @@ abstract class BaseServer {
     dataView: DataView,
     context: { responseMessages: ArrayBuffer[] }
   ) {
+    _console.log(
+      `onClientMessage "${messageType}" (${dataView.byteLength} bytes)`
+    );
     const { responseMessages } = context;
     switch (messageType) {
       case "isScanningAvailable":
@@ -404,6 +416,34 @@ abstract class BaseServer {
           const responseMessage = this.parseClientDeviceMessage(
             device,
             _dataView
+          );
+          if (responseMessage) {
+            responseMessages.push(responseMessage);
+          }
+        }
+        break;
+      case "requiredDeviceInformation":
+        {
+          const { string: deviceId } = parseStringFromDataView(dataView);
+          const device = DeviceManager.ConnectedDevices.find(
+            (device) => device.bluetoothId == deviceId
+          );
+          if (!device) {
+            _console.error(`no device found with id ${deviceId}`);
+            break;
+          }
+
+          const messages = RequiredDeviceInformationMessageTypes.map(
+            (messageType) => this.#createDeviceMessage(device, messageType)
+          );
+          if (device.isWifiAvailable) {
+            RequiredWifiMessageTypes.forEach((messageType) => {
+              messages.push(this.#createDeviceMessage(device, messageType));
+            });
+          }
+          const responseMessage = this.#createDeviceServerMessage(
+            device,
+            ...messages
           );
           if (responseMessage) {
             responseMessages.push(responseMessage);

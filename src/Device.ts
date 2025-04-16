@@ -98,7 +98,7 @@ import WifiManager, {
 import WebSocketConnectionManager from "./connection/websocket/WebSocketConnectionManager.ts";
 import ClientConnectionManager from "./connection/ClientConnectionManager.ts";
 
-const _console = createConsole("Device", { log: true });
+const _console = createConsole("Device", { log: false });
 
 export const DeviceEventTypes = [
   "connectionMessage",
@@ -249,7 +249,9 @@ class Device {
         return;
       }
       if (this.isWifiAvailable) {
-        this.#wifiManager.requestRequiredInformation();
+        if (this.connectionType != "client") {
+          this.#wifiManager.requestRequiredInformation();
+        }
       }
     });
     DeviceManager.onDevice(this);
@@ -518,7 +520,9 @@ class Device {
     this.#checkConnection();
 
     if (connectionStatus == "connected" && !this.#isConnected) {
-      this.#requestRequiredInformation();
+      if (this.connectionType != "client") {
+        this.#requestRequiredInformation();
+      }
     }
 
     DeviceManager.OnDeviceConnectionStatusUpdated(this, connectionStatus);
@@ -644,6 +648,13 @@ class Device {
     }
 
     this.latestConnectionMessages.set(messageType, dataView);
+    if (messageType.startsWith("set")) {
+      this.latestConnectionMessages.set(
+        // @ts-expect-error
+        messageType.replace("set", "get"),
+        dataView
+      );
+    }
     this.#dispatchEvent("connectionMessage", { messageType, dataView });
   }
   #onConnectionMessagesReceived() {
