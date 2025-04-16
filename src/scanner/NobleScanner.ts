@@ -237,7 +237,18 @@ class NobleScanner extends BaseScanner {
         await device.connect();
       }
     } else {
-      await device.reconnect();
+      const { ipAddress, isWifiSecure } =
+        this.discoveredDevices[device.bluetoothId!];
+      if (
+        connectionType &&
+        connectionType != "noble" &&
+        connectionType != device.connectionType &&
+        ipAddress
+      ) {
+        await device.connect({ type: connectionType, ipAddress, isWifiSecure });
+      } else {
+        await device.reconnect();
+      }
     }
   }
 

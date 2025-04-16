@@ -98,7 +98,7 @@ import WifiManager, {
 import WebSocketConnectionManager from "./connection/websocket/WebSocketConnectionManager.ts";
 import ClientConnectionManager from "./connection/ClientConnectionManager.ts";
 
-const _console = createConsole("Device", { log: true });
+const _console = createConsole("Device", { log: false });
 
 export const DeviceEventTypes = [
   "connectionMessage",
@@ -334,18 +334,29 @@ class Device {
   private sendTxMessages = this.#sendTxMessages.bind(this);
 
   async connect(options?: ConnectOptions) {
+    _console.log("connect options", options);
     if (options) {
-      _console.log("connect options", options);
       switch (options.type) {
         case "webBluetooth":
-          this.connectionManager = new WebBluetoothConnectionManager();
+          if (this.connectionType != "webBluetooth") {
+            this.connectionManager = new WebBluetoothConnectionManager();
+          }
           break;
         case "webSocket":
-          this.connectionManager = new WebSocketConnectionManager(
-            options.ipAddress,
-            options.isWifiSecure,
-            this.bluetoothId
-          );
+          if (this.connectionType != "webSocket") {
+            const connectionManager = this
+              .connectionManager as WebSocketConnectionManager;
+            if (
+              connectionManager.ipAddress != options.ipAddress ||
+              connectionManager.isSecure != options.isWifiSecure
+            ) {
+              this.connectionManager = new WebSocketConnectionManager(
+                options.ipAddress,
+                options.isWifiSecure,
+                this.bluetoothId
+              );
+            }
+          }
           break;
         case "udp":
           // FILL
@@ -367,6 +378,7 @@ class Device {
       clientConnectionManager.subType = options.subType;
       return clientConnectionManager.connect();
     }
+    _console.log("connectionManager type", this.connectionManager.type);
     return this.connectionManager.connect();
   }
   #isConnected = false;

@@ -22,9 +22,8 @@ typeof SuppressedError === "function" ? SuppressedError : function (error, suppr
     return e.name = "SuppressedError", e.error = error, e.suppressed = suppressed, e;
 };
 
-const __BRILLIANTSOLE__ENVIRONMENT__ = "__BRILLIANTSOLE__DEV__";
-const isInProduction = __BRILLIANTSOLE__ENVIRONMENT__ == "__BRILLIANTSOLE__PROD__";
-const isInDev = __BRILLIANTSOLE__ENVIRONMENT__ == "__BRILLIANTSOLE__DEV__";
+const isInProduction = "__BRILLIANTSOLE__PROD__" == "__BRILLIANTSOLE__PROD__";
+const isInDev = "__BRILLIANTSOLE__PROD__" == "__BRILLIANTSOLE__DEV__";
 const isInBrowser = typeof window !== "undefined" && typeof window?.document !== "undefined";
 const isInNode = typeof process !== "undefined" && process?.versions?.node != null;
 const userAgent = (isInBrowser && navigator.userAgent) || "";
@@ -154,9 +153,6 @@ class Console {
     }
     static create(type, levelFlags) {
         const console = __classPrivateFieldGet(this, _a$7, "f", _Console_consoles)[type] || new _a$7(type);
-        if (levelFlags) {
-            console.setLevelFlags(levelFlags);
-        }
         return console;
     }
     get log() {
@@ -4828,7 +4824,7 @@ _WebSocketConnectionManager_bluetoothId = new WeakMap(), _WebSocketConnectionMan
 };
 
 var _Device_instances, _a$3, _Device_DefaultConnectionManager, _Device_eventDispatcher, _Device_dispatchEvent_get, _Device_connectionManager, _Device_sendTxMessages, _Device_isConnected, _Device_assertIsConnected, _Device_didReceiveMessageTypes, _Device_hasRequiredInformation_get, _Device_requestRequiredInformation, _Device_assertCanReconnect, _Device_ReconnectOnDisconnection, _Device_reconnectOnDisconnection, _Device_reconnectIntervalId, _Device_onConnectionStatusUpdated, _Device_dispatchConnectionEvents, _Device_checkConnection, _Device_clear, _Device_clearConnection, _Device_onConnectionMessageReceived, _Device_onConnectionMessagesReceived, _Device_deviceInformationManager, _Device_batteryLevel, _Device_updateBatteryLevel, _Device_sensorConfigurationManager, _Device_ClearSensorConfigurationOnLeave, _Device_clearSensorConfigurationOnLeave, _Device_sensorDataManager, _Device_vibrationManager, _Device_fileTransferManager, _Device_tfliteManager, _Device_firmwareManager, _Device_assertCanUpdateFirmware, _Device_sendSmpMessage, _Device_isServerSide, _Device_wifiManager;
-const _console$b = createConsole("Device", { log: true });
+const _console$b = createConsole("Device", { log: false });
 const DeviceEventTypes = [
     "connectionMessage",
     ...ConnectionEventTypes,
@@ -4990,14 +4986,23 @@ class Device {
         this._informationManager.connectionType = this.connectionType;
     }
     async connect(options) {
+        _console$b.log("connect options", options);
         if (options) {
-            _console$b.log("connect options", options);
             switch (options.type) {
                 case "webBluetooth":
-                    this.connectionManager = new WebBluetoothConnectionManager();
+                    if (this.connectionType != "webBluetooth") {
+                        this.connectionManager = new WebBluetoothConnectionManager();
+                    }
                     break;
                 case "webSocket":
-                    this.connectionManager = new WebSocketConnectionManager(options.ipAddress, options.isWifiSecure, this.bluetoothId);
+                    if (this.connectionType != "webSocket") {
+                        const connectionManager = this
+                            .connectionManager;
+                        if (connectionManager.ipAddress != options.ipAddress ||
+                            connectionManager.isSecure != options.isWifiSecure) {
+                            this.connectionManager = new WebSocketConnectionManager(options.ipAddress, options.isWifiSecure, this.bluetoothId);
+                        }
+                    }
                     break;
             }
         }
@@ -5012,6 +5017,7 @@ class Device {
             clientConnectionManager.subType = options.subType;
             return clientConnectionManager.connect();
         }
+        _console$b.log("connectionManager type", this.connectionManager.type);
         return this.connectionManager.connect();
     }
     get isConnected() {
@@ -6221,7 +6227,16 @@ class NobleScanner extends BaseScanner {
             }
         }
         else {
-            await device.reconnect();
+            const { ipAddress, isWifiSecure } = this.discoveredDevices[device.bluetoothId];
+            if (connectionType &&
+                connectionType != "noble" &&
+                connectionType != device.connectionType &&
+                ipAddress) {
+                await device.connect({ type: connectionType, ipAddress, isWifiSecure });
+            }
+            else {
+                await device.reconnect();
+            }
         }
     }
 }
@@ -6545,6 +6560,7 @@ _a = BaseServer, _BaseServer_clearSensorConfigurationsWhenNoClients = new WeakMa
                 let connectionType = undefined;
                 if (byteOffset < dataView.byteLength) {
                     connectionType = ConnectionTypes[dataView.getUint8(byteOffset)];
+                    console.log(`connectToDevice via ${connectionType}`);
                 }
                 scanner$1.connectToDevice(deviceId, connectionType);
             }

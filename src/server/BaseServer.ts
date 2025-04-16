@@ -378,6 +378,7 @@ abstract class BaseServer {
           let connectionType = undefined;
           if (byteOffset < dataView.byteLength) {
             connectionType = ConnectionTypes[dataView.getUint8(byteOffset)];
+            console.log(`connectToDevice via ${connectionType}`);
           }
           scanner!.connectToDevice(deviceId, connectionType);
         }

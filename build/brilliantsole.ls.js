@@ -2868,6 +2868,12 @@
             __classPrivateFieldSet(this, _BaseConnectionManager_isSendingMessages, false, "f");
             __classPrivateFieldGet(this, _BaseConnectionManager_pendingMessages, "f").length = 0;
         }
+        remove() {
+            this.clear();
+            this.onStatusUpdated = undefined;
+            this.onMessageReceived = undefined;
+            this.onMessagesReceived = undefined;
+        }
     }
     _a$2 = BaseConnectionManager, _BaseConnectionManager_status = new WeakMap(), _BaseConnectionManager_pendingMessages = new WeakMap(), _BaseConnectionManager_isSendingMessages = new WeakMap(), _BaseConnectionManager_timer = new WeakMap(), _BaseConnectionManager_instances = new WeakSet(), _BaseConnectionManager_AssertValidTxRxMessageType = function _BaseConnectionManager_AssertValidTxRxMessageType(messageType) {
         _console$e.assertEnumWithError(messageType, TxRxMessageTypes);
@@ -3227,6 +3233,10 @@
                 _console$a.log("unable to reconnect");
                 this.status = "notConnected";
             }
+        }
+        remove() {
+            super.remove();
+            this.device = undefined;
         }
     }
     _WebBluetoothConnectionManager_boundBluetoothCharacteristicEventListeners = new WeakMap(), _WebBluetoothConnectionManager_boundBluetoothDeviceEventListeners = new WeakMap(), _WebBluetoothConnectionManager_device = new WeakMap(), _WebBluetoothConnectionManager_services = new WeakMap(), _WebBluetoothConnectionManager_characteristics = new WeakMap(), _WebBluetoothConnectionManager_instances = new WeakSet(), _WebBluetoothConnectionManager_getServicesAndCharacteristics = async function _WebBluetoothConnectionManager_getServicesAndCharacteristics() {
@@ -4558,6 +4568,7 @@
         "disconnectFromDevice",
         "connectedDevices",
         "deviceMessage",
+        "requiredDeviceInformation",
     ];
     function createMessage(enumeration, ...messages) {
         _console$6.log("createMessage", ...messages);
@@ -4669,7 +4680,9 @@
                     __classPrivateFieldGet(this, _WebSocketConnectionManager_webSocket, "f").close();
                 }
             }
-            addEventListeners(newWebSocket, __classPrivateFieldGet(this, _WebSocketConnectionManager_boundWebSocketEventListeners, "f"));
+            if (newWebSocket) {
+                addEventListeners(newWebSocket, __classPrivateFieldGet(this, _WebSocketConnectionManager_boundWebSocketEventListeners, "f"));
+            }
             __classPrivateFieldSet(this, _WebSocketConnectionManager_webSocket, newWebSocket, "f");
             _console$4.log("assigned webSocket");
         }
@@ -4727,6 +4740,10 @@
                 return;
             }
             __classPrivateFieldGet(this, _WebSocketConnectionManager_instances, "m", _WebSocketConnectionManager_sendWebSocketMessage).call(this, { type: "message", data });
+        }
+        remove() {
+            super.remove();
+            this.webSocket = undefined;
         }
     }
     _WebSocketConnectionManager_bluetoothId = new WeakMap(), _WebSocketConnectionManager_webSocket = new WeakMap(), _WebSocketConnectionManager_ipAddress = new WeakMap(), _WebSocketConnectionManager_isSecure = new WeakMap(), _WebSocketConnectionManager_boundWebSocketEventListeners = new WeakMap(), _WebSocketConnectionManager_pingTimer = new WeakMap(), _WebSocketConnectionManager_instances = new WeakSet(), _WebSocketConnectionManager_sendMessage = function _WebSocketConnectionManager_sendMessage(message) {
@@ -4788,7 +4805,7 @@
     };
 
     var _Device_instances, _a$1, _Device_DefaultConnectionManager, _Device_eventDispatcher, _Device_dispatchEvent_get, _Device_connectionManager, _Device_sendTxMessages, _Device_isConnected, _Device_assertIsConnected, _Device_didReceiveMessageTypes, _Device_hasRequiredInformation_get, _Device_requestRequiredInformation, _Device_assertCanReconnect, _Device_ReconnectOnDisconnection, _Device_reconnectOnDisconnection, _Device_reconnectIntervalId, _Device_onConnectionStatusUpdated, _Device_dispatchConnectionEvents, _Device_checkConnection, _Device_clear, _Device_clearConnection, _Device_onConnectionMessageReceived, _Device_onConnectionMessagesReceived, _Device_deviceInformationManager, _Device_batteryLevel, _Device_updateBatteryLevel, _Device_sensorConfigurationManager, _Device_ClearSensorConfigurationOnLeave, _Device_clearSensorConfigurationOnLeave, _Device_sensorDataManager, _Device_vibrationManager, _Device_fileTransferManager, _Device_tfliteManager, _Device_firmwareManager, _Device_assertCanUpdateFirmware, _Device_sendSmpMessage, _Device_isServerSide, _Device_wifiManager;
-    const _console$3 = createConsole("Device", { log: true });
+    const _console$3 = createConsole("Device", { log: false });
     const DeviceEventTypes = [
         "connectionMessage",
         ...ConnectionEventTypes,
@@ -4890,7 +4907,9 @@
                     return;
                 }
                 if (this.isWifiAvailable) {
-                    __classPrivateFieldGet(this, _Device_wifiManager, "f").requestRequiredInformation();
+                    if (this.connectionType != "client") {
+                        __classPrivateFieldGet(this, _Device_wifiManager, "f").requestRequiredInformation();
+                    }
                 }
             });
             DeviceManager$1.onDevice(this);
@@ -4933,9 +4952,7 @@
                 return;
             }
             if (this.connectionManager) {
-                this.connectionManager.onStatusUpdated = undefined;
-                this.connectionManager.onMessageReceived = undefined;
-                this.connectionManager.onMessagesReceived = undefined;
+                this.connectionManager.remove();
             }
             if (newConnectionManager) {
                 newConnectionManager.onStatusUpdated =
@@ -4950,14 +4967,23 @@
             this._informationManager.connectionType = this.connectionType;
         }
         async connect(options) {
+            _console$3.log("connect options", options);
             if (options) {
-                _console$3.log("connect options", options);
                 switch (options.type) {
                     case "webBluetooth":
-                        this.connectionManager = new WebBluetoothConnectionManager();
+                        if (this.connectionType != "webBluetooth") {
+                            this.connectionManager = new WebBluetoothConnectionManager();
+                        }
                         break;
                     case "webSocket":
-                        this.connectionManager = new WebSocketConnectionManager(options.ipAddress, options.isWifiSecure, this.bluetoothId);
+                        if (this.connectionType != "webSocket") {
+                            const connectionManager = this
+                                .connectionManager;
+                            if (connectionManager.ipAddress != options.ipAddress ||
+                                connectionManager.isSecure != options.isWifiSecure) {
+                                this.connectionManager = new WebSocketConnectionManager(options.ipAddress, options.isWifiSecure, this.bluetoothId);
+                            }
+                        }
                         break;
                 }
             }
@@ -4972,6 +4998,7 @@
                 clientConnectionManager.subType = options.subType;
                 return clientConnectionManager.connect();
             }
+            _console$3.log("connectionManager type", this.connectionManager.type);
             return this.connectionManager.connect();
         }
         get isConnected() {
@@ -5364,7 +5391,9 @@
         }
         __classPrivateFieldGet(this, _Device_instances, "m", _Device_checkConnection).call(this);
         if (connectionStatus == "connected" && !__classPrivateFieldGet(this, _Device_isConnected, "f")) {
-            __classPrivateFieldGet(this, _Device_instances, "m", _Device_requestRequiredInformation).call(this);
+            if (this.connectionType != "client") {
+                __classPrivateFieldGet(this, _Device_instances, "m", _Device_requestRequiredInformation).call(this);
+            }
         }
         DeviceManager$1.OnDeviceConnectionStatusUpdated(this, connectionStatus);
     }, _Device_dispatchConnectionEvents = function _Device_dispatchConnectionEvents(includeIsConnected = false) {
@@ -5438,6 +5467,10 @@
                 }
         }
         this.latestConnectionMessages.set(messageType, dataView);
+        if (messageType.startsWith("set")) {
+            this.latestConnectionMessages.set(
+            messageType.replace("set", "get"), dataView);
+        }
         __classPrivateFieldGet(this, _Device_instances, "a", _Device_dispatchEvent_get).call(this, "connectionMessage", { messageType, dataView });
     }, _Device_onConnectionMessagesReceived = function _Device_onConnectionMessagesReceived() {
         if (!this.isConnected && __classPrivateFieldGet(this, _Device_instances, "a", _Device_hasRequiredInformation_get)) {
