@@ -6581,7 +6581,7 @@ _a = BaseServer, _BaseServer_clearSensorConfigurationsWhenNoClients = new WeakMa
                 let connectionType = undefined;
                 if (byteOffset < dataView.byteLength) {
                     connectionType = ConnectionTypes[dataView.getUint8(byteOffset)];
-                    console.log(`connectToDevice via ${connectionType}`);
+                    _console$3.log(`connectToDevice via ${connectionType}`);
                 }
                 scanner$1.connectToDevice(deviceId, connectionType);
             }
