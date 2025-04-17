@@ -237,7 +237,7 @@ class NobleConnectionManager extends BluetoothConnectionManager {
     rssi: number
   ) {
     _console.log("onNoblePeripheralRssiUpdate", noblePeripheral.id, rssi);
-    // FILL
+    // TODO: - can this be useful?
   }
 
   async #onNoblePeripheralServicesDiscover(
@@ -392,7 +392,7 @@ class NobleConnectionManager extends BluetoothConnectionManager {
   }
   onNobleCharacteristicWrite(characteristic: NobleCharacteristic) {
     _console.log("onNobleCharacteristicWrite", characteristic.uuid);
-    // FILL
+    // TODO: - can this be useful?
   }
 
   #onNobleCharacteristicNotify(

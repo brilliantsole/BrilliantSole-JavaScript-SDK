@@ -151,6 +151,20 @@ client.addEventListener("discoveredDevice", (event) => {
       connectViaWebSocketsButton.disabled = true;
     });
 
+    /** @type {HTMLButtonElement} */
+    const connectViaUDPButton =
+      discoveredDeviceContainer.querySelector(".connectViaUDP");
+    connectViaUDPButton.addEventListener("click", () => {
+      let device = client.devices[discoveredDevice.bluetoothId];
+      if (device) {
+        device.connect({ type: "client", subType: "udp" });
+      } else {
+        device = client.connectToDevice(discoveredDevice.bluetoothId, "udp");
+        onDevice(device);
+      }
+      connectViaUDPButton.disabled = true;
+    });
+
     /** @param {BS.Device} device */
     const onDevice = (device) => {
       device.addEventListener("connectionStatus", () => {
@@ -180,6 +194,7 @@ client.addEventListener("discoveredDevice", (event) => {
           break;
       }
       connectViaWebSocketsButton.disabled = device.isConnected;
+      connectViaUDPButton.disabled = device.isConnected;
     };
 
     discoveredDeviceContainers[discoveredDevice.bluetoothId] =
@@ -210,15 +225,19 @@ function updateDiscoveredDeviceContainer(discoveredDevice) {
   const connectViaWebSocketsButton = discoveredDeviceContainer.querySelector(
     ".connectViaWebSockets"
   );
+  const connectViaUDPButton =
+    discoveredDeviceContainer.querySelector(".connectViaUDP");
 
   const ipAddressSpan = discoveredDeviceContainer.querySelector(".ipAddress");
   if (discoveredDevice.ipAddress) {
     ipAddressSpan.closest("label").classList.remove("hidden");
     ipAddressSpan.innerText = discoveredDevice.ipAddress;
     connectViaWebSocketsButton.classList.remove("hidden");
+    connectViaUDPButton.classList.remove("hidden");
   } else {
     ipAddressSpan.closest("label").classList.add("hidden");
     connectViaWebSocketsButton.classList.add("hidden");
+    connectViaUDPButton.classList.add("hidden");
   }
 
   const isWifiSecureSpan =

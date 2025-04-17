@@ -18,8 +18,9 @@ typeof SuppressedError === "function" ? SuppressedError : function (error, suppr
     return e.name = "SuppressedError", e.error = error, e.suppressed = suppressed, e;
 };
 
-const isInProduction = "__BRILLIANTSOLE__PROD__" == "__BRILLIANTSOLE__PROD__";
-const isInDev = "__BRILLIANTSOLE__PROD__" == "__BRILLIANTSOLE__DEV__";
+const __BRILLIANTSOLE__ENVIRONMENT__ = "__BRILLIANTSOLE__DEV__";
+const isInProduction = __BRILLIANTSOLE__ENVIRONMENT__ == "__BRILLIANTSOLE__PROD__";
+const isInDev = __BRILLIANTSOLE__ENVIRONMENT__ == "__BRILLIANTSOLE__DEV__";
 const isInBrowser = typeof window !== "undefined" && typeof window?.document !== "undefined";
 const isInNode = typeof process !== "undefined" && process?.versions?.node != null;
 const userAgent = (isInBrowser && navigator.userAgent) || "";
@@ -149,6 +150,9 @@ class Console {
     }
     static create(type, levelFlags) {
         const console = __classPrivateFieldGet(this, _a$6, "f", _Console_consoles)[type] || new _a$6(type);
+        if (levelFlags) {
+            console.setLevelFlags(levelFlags);
+        }
         return console;
     }
     get log() {
@@ -4736,7 +4740,7 @@ class WebSocketConnectionManager extends BaseConnectionManager {
         __classPrivateFieldGet(this, _WebSocketConnectionManager_webSocket, "f")?.close();
     }
     get canReconnect() {
-        return true;
+        return Boolean(this.webSocket);
     }
     async reconnect() {
         await super.reconnect();
@@ -4995,6 +4999,16 @@ class Device {
                             connectionManager.isSecure != options.isWifiSecure) {
                             this.connectionManager = new WebSocketConnectionManager(options.ipAddress, options.isWifiSecure, this.bluetoothId);
                         }
+                    }
+                    break;
+                case "udp":
+                    if (this.connectionType != "udp") {
+                        const connectionManager = this
+                            .connectionManager;
+                        if (connectionManager.ipAddress != options.ipAddress) {
+                            this.connectionManager = new UDPConnectionManager(options.ipAddress, this.bluetoothId);
+                        }
+                        this.reconnectOnDisconnection = true;
                     }
                     break;
             }
@@ -5349,6 +5363,18 @@ class Device {
             type: "webSocket",
             ipAddress: this.ipAddress,
             isWifiSecure: this.isWifiSecure,
+        });
+    }
+    async reconnectViaUDP() {
+        _console$6.assertWithError(isInNode, "udp is only available in node");
+        _console$6.assertWithError(this.isWifiConnected, "wifi is not connected");
+        _console$6.assertWithError(this.connectionType != "udp", "already connected via udp");
+        _console$6.assertTypeWithError(this.ipAddress, "string");
+        _console$6.log("reconnecting via udp...");
+        await this.disconnect();
+        await this.connect({
+            type: "udp",
+            ipAddress: this.ipAddress,
         });
     }
 }

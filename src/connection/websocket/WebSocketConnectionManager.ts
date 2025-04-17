@@ -146,7 +146,7 @@ class WebSocketConnectionManager extends BaseConnectionManager {
   }
 
   get canReconnect() {
-    return true;
+    return Boolean(this.webSocket);
   }
   async reconnect() {
     await super.reconnect();

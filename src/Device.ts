@@ -97,6 +97,9 @@ import WifiManager, {
 } from "./WifiManager.ts";
 import WebSocketConnectionManager from "./connection/websocket/WebSocketConnectionManager.ts";
 import ClientConnectionManager from "./connection/ClientConnectionManager.ts";
+/** NODE_START */
+import UDPConnectionManager from "./connection/udp/UDPConnectionManager.ts";
+/** NODE_END */
 
 const _console = createConsole("Device", { log: false });
 
@@ -359,7 +362,17 @@ class Device {
           }
           break;
         case "udp":
-          // FILL
+          if (this.connectionType != "udp") {
+            const connectionManager = this
+              .connectionManager as UDPConnectionManager;
+            if (connectionManager.ipAddress != options.ipAddress) {
+              this.connectionManager = new UDPConnectionManager(
+                options.ipAddress,
+                this.bluetoothId
+              );
+            }
+            this.reconnectOnDisconnection = true;
+          }
           break;
       }
     }
@@ -1062,6 +1075,22 @@ class Device {
       type: "webSocket",
       ipAddress: this.ipAddress!,
       isWifiSecure: this.isWifiSecure,
+    });
+  }
+
+  async reconnectViaUDP() {
+    _console.assertWithError(isInNode, "udp is only available in node");
+    _console.assertWithError(this.isWifiConnected, "wifi is not connected");
+    _console.assertWithError(
+      this.connectionType != "udp",
+      "already connected via udp"
+    );
+    _console.assertTypeWithError(this.ipAddress, "string");
+    _console.log("reconnecting via udp...");
+    await this.disconnect();
+    await this.connect({
+      type: "udp",
+      ipAddress: this.ipAddress!,
     });
   }
 }
