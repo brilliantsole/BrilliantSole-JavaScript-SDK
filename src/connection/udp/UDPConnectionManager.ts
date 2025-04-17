@@ -18,10 +18,9 @@ import BaseConnectionManager, {
 
 import * as dgram from "dgram";
 
-const _console = createConsole("UDPConnectionManager", { log: true });
+const _console = createConsole("UDPConnectionManager", { log: false });
 
 export const UDPSendPort = 3000;
-export const DefaultUDPReceivePort = 3002;
 
 export const UDPPingInterval = 2_000;
 
@@ -54,16 +53,14 @@ class UDPConnectionManager extends BaseConnectionManager {
 
   defaultMtu = 2 ** 10;
 
-  constructor(
-    ipAddress: string,
-    bluetoothId?: string,
-    receivePort = DefaultUDPReceivePort
-  ) {
+  constructor(ipAddress: string, bluetoothId?: string, receivePort?: number) {
     super();
     this.ipAddress = ipAddress;
     this.mtu = this.defaultMtu;
     this.#bluetoothId = bluetoothId;
-    this.receivePort = receivePort;
+    if (receivePort) {
+      this.receivePort = receivePort;
+    }
   }
 
   get isAvailable() {
@@ -92,7 +89,7 @@ class UDPConnectionManager extends BaseConnectionManager {
   }
 
   // RECEIVE PORT
-  #receivePort!: number;
+  #receivePort?: number;
   get receivePort() {
     return this.#receivePort;
   }
@@ -105,7 +102,7 @@ class UDPConnectionManager extends BaseConnectionManager {
     this.#receivePort = newReceivePort;
     _console.log(`updated receivePort to ${this.#receivePort}`);
     if (this.#receivePort) {
-      this.#setRemoteReceivePortDataView.setUint16(0, this.receivePort, true);
+      this.#setRemoteReceivePortDataView.setUint16(0, this.#receivePort, true);
     }
   }
 
@@ -205,6 +202,8 @@ class UDPConnectionManager extends BaseConnectionManager {
   #onSocketListening() {
     const address = this.socket!.address();
     _console.log(`socket.listening on ${address.address}:${address.port}`);
+    this.receivePort = address.port;
+    this.socket!.connect(UDPSendPort, this.ipAddress);
   }
   #onSocketMessage(message: Buffer, remoteInfo: dgram.RemoteInfo) {
     this.#pongTimeoutTimer.stop();
@@ -228,9 +227,11 @@ class UDPConnectionManager extends BaseConnectionManager {
       type: "udp4",
     });
     try {
-      this.socket.bind(this.receivePort, () => {
-        this.socket!.connect(UDPSendPort, this.ipAddress);
-      });
+      if (this.receivePort) {
+        this.socket.bind(this.receivePort);
+      } else {
+        this.socket.bind();
+      }
     } catch (error) {
       _console.error(error);
       this.disconnect();

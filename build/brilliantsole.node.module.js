@@ -23,9 +23,8 @@ typeof SuppressedError === "function" ? SuppressedError : function (error, suppr
     return e.name = "SuppressedError", e.error = error, e.suppressed = suppressed, e;
 };
 
-const __BRILLIANTSOLE__ENVIRONMENT__ = "__BRILLIANTSOLE__DEV__";
-const isInProduction = __BRILLIANTSOLE__ENVIRONMENT__ == "__BRILLIANTSOLE__PROD__";
-const isInDev = __BRILLIANTSOLE__ENVIRONMENT__ == "__BRILLIANTSOLE__DEV__";
+const isInProduction = "__BRILLIANTSOLE__PROD__" == "__BRILLIANTSOLE__PROD__";
+const isInDev = "__BRILLIANTSOLE__PROD__" == "__BRILLIANTSOLE__DEV__";
 const isInBrowser = typeof window !== "undefined" && typeof window?.document !== "undefined";
 const isInNode = typeof process !== "undefined" && process?.versions?.node != null;
 const userAgent = (isInBrowser && navigator.userAgent) || "";
@@ -155,9 +154,6 @@ class Console {
     }
     static create(type, levelFlags) {
         const console = __classPrivateFieldGet(this, _a$7, "f", _Console_consoles)[type] || new _a$7(type);
-        if (levelFlags) {
-            console.setLevelFlags(levelFlags);
-        }
         return console;
     }
     get log() {
@@ -4829,9 +4825,8 @@ _WebSocketConnectionManager_bluetoothId = new WeakMap(), _WebSocketConnectionMan
 };
 
 var _UDPConnectionManager_instances, _UDPConnectionManager_bluetoothId, _UDPConnectionManager_ipAddress, _UDPConnectionManager_receivePort, _UDPConnectionManager_didSetRemoteReceivePort, _UDPConnectionManager_setRemoteReceivePortDataView, _UDPConnectionManager_parseReceivePort, _UDPConnectionManager_socket, _UDPConnectionManager_sendMessage, _UDPConnectionManager_sendSocketMessage, _UDPConnectionManager_boundSocketEventListeners, _UDPConnectionManager_onSocketClose, _UDPConnectionManager_onSocketConnect, _UDPConnectionManager_onSocketError, _UDPConnectionManager_onSocketListening, _UDPConnectionManager_onSocketMessage, _UDPConnectionManager_setupSocket, _UDPConnectionManager_parseSocketMessage, _UDPConnectionManager_onMessage, _UDPConnectionManager_pingTimer, _UDPConnectionManager_ping, _UDPConnectionManager_pong, _UDPConnectionManager_pongTimeout, _UDPConnectionManager_pongTimeoutTimer, _UDPConnectionManager_requestDeviceInformation;
-const _console$c = createConsole("UDPConnectionManager", { log: true });
+const _console$c = createConsole("UDPConnectionManager", { log: false });
 const UDPSendPort = 3000;
-const DefaultUDPReceivePort = 3002;
 const UDPPingInterval = 2_000;
 const SocketMessageTypes = [
     "ping",
@@ -4853,7 +4848,7 @@ class UDPConnectionManager extends BaseConnectionManager {
     get bluetoothId() {
         return __classPrivateFieldGet(this, _UDPConnectionManager_bluetoothId, "f") ?? "";
     }
-    constructor(ipAddress, bluetoothId, receivePort = DefaultUDPReceivePort) {
+    constructor(ipAddress, bluetoothId, receivePort) {
         super();
         _UDPConnectionManager_instances.add(this);
         _UDPConnectionManager_bluetoothId.set(this, void 0);
@@ -4875,7 +4870,9 @@ class UDPConnectionManager extends BaseConnectionManager {
         this.ipAddress = ipAddress;
         this.mtu = this.defaultMtu;
         __classPrivateFieldSet(this, _UDPConnectionManager_bluetoothId, bluetoothId, "f");
-        this.receivePort = receivePort;
+        if (receivePort) {
+            this.receivePort = receivePort;
+        }
     }
     get isAvailable() {
         return true;
@@ -4910,7 +4907,7 @@ class UDPConnectionManager extends BaseConnectionManager {
         __classPrivateFieldSet(this, _UDPConnectionManager_receivePort, newReceivePort, "f");
         _console$c.log(`updated receivePort to ${__classPrivateFieldGet(this, _UDPConnectionManager_receivePort, "f")}`);
         if (__classPrivateFieldGet(this, _UDPConnectionManager_receivePort, "f")) {
-            __classPrivateFieldGet(this, _UDPConnectionManager_setRemoteReceivePortDataView, "f").setUint16(0, this.receivePort, true);
+            __classPrivateFieldGet(this, _UDPConnectionManager_setRemoteReceivePortDataView, "f").setUint16(0, __classPrivateFieldGet(this, _UDPConnectionManager_receivePort, "f"), true);
         }
     }
     get socket() {
@@ -5008,6 +5005,8 @@ _UDPConnectionManager_bluetoothId = new WeakMap(), _UDPConnectionManager_ipAddre
 }, _UDPConnectionManager_onSocketListening = function _UDPConnectionManager_onSocketListening() {
     const address = this.socket.address();
     _console$c.log(`socket.listening on ${address.address}:${address.port}`);
+    this.receivePort = address.port;
+    this.socket.connect(UDPSendPort, this.ipAddress);
 }, _UDPConnectionManager_onSocketMessage = function _UDPConnectionManager_onSocketMessage(message, remoteInfo) {
     __classPrivateFieldGet(this, _UDPConnectionManager_pongTimeoutTimer, "f").stop();
     _console$c.log("socket.message", message.byteLength, remoteInfo);
@@ -5024,9 +5023,12 @@ _UDPConnectionManager_bluetoothId = new WeakMap(), _UDPConnectionManager_ipAddre
         type: "udp4",
     });
     try {
-        this.socket.bind(this.receivePort, () => {
-            this.socket.connect(UDPSendPort, this.ipAddress);
-        });
+        if (this.receivePort) {
+            this.socket.bind(this.receivePort);
+        }
+        else {
+            this.socket.bind();
+        }
     }
     catch (error) {
         _console$c.error(error);

@@ -1,7 +1,6 @@
 import BaseConnectionManager, { ConnectionType } from "../BaseConnectionManager.ts";
 import * as dgram from "dgram";
 export declare const UDPSendPort = 3000;
-export declare const DefaultUDPReceivePort = 3002;
 export declare const UDPPingInterval = 2000;
 declare class UDPConnectionManager extends BaseConnectionManager {
     #private;
@@ -13,8 +12,8 @@ declare class UDPConnectionManager extends BaseConnectionManager {
     static get type(): ConnectionType;
     get ipAddress(): string;
     set ipAddress(newIpAddress: string);
-    get receivePort(): number;
-    set receivePort(newReceivePort: number);
+    get receivePort(): number | undefined;
+    set receivePort(newReceivePort: number | undefined);
     get socket(): dgram.Socket | undefined;
     set socket(newSocket: dgram.Socket | undefined);
     sendSmpMessage(data: ArrayBuffer): Promise<void>;

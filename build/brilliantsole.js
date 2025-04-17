@@ -4742,7 +4742,7 @@
 	        __classPrivateFieldGet(this, _WebSocketConnectionManager_webSocket, "f")?.close();
 	    }
 	    get canReconnect() {
-	        return true;
+	        return Boolean(this.webSocket);
 	    }
 	    async reconnect() {
 	        await super.reconnect();
@@ -5001,6 +5001,16 @@
 	                            connectionManager.isSecure != options.isWifiSecure) {
 	                            this.connectionManager = new WebSocketConnectionManager(options.ipAddress, options.isWifiSecure, this.bluetoothId);
 	                        }
+	                    }
+	                    break;
+	                case "udp":
+	                    if (this.connectionType != "udp") {
+	                        const connectionManager = this
+	                            .connectionManager;
+	                        if (connectionManager.ipAddress != options.ipAddress) {
+	                            this.connectionManager = new UDPConnectionManager(options.ipAddress, this.bluetoothId);
+	                        }
+	                        this.reconnectOnDisconnection = true;
 	                    }
 	                    break;
 	            }
@@ -5355,6 +5365,18 @@
 	            type: "webSocket",
 	            ipAddress: this.ipAddress,
 	            isWifiSecure: this.isWifiSecure,
+	        });
+	    }
+	    async reconnectViaUDP() {
+	        _console$6.assertWithError(isInNode, "udp is only available in node");
+	        _console$6.assertWithError(this.isWifiConnected, "wifi is not connected");
+	        _console$6.assertWithError(this.connectionType != "udp", "already connected via udp");
+	        _console$6.assertTypeWithError(this.ipAddress, "string");
+	        _console$6.log("reconnecting via udp...");
+	        await this.disconnect();
+	        await this.connect({
+	            type: "udp",
+	            ipAddress: this.ipAddress,
 	        });
 	    }
 	}
