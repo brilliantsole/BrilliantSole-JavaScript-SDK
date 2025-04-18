@@ -47,7 +47,23 @@
       <h2>connection</h2>
       <button id="toggleConnection">connect</button>
       <button id="reconnect" disabled>reconnect</button>
-      <label>reconnect on disconnection? <input id="reconnectOnDisconnection" type="checkbox" /></label>
+      <label>
+        ip address:
+        <input
+          id="connectIpAddress"
+          placeholder="0.0.0.0"
+          type="text"
+          minlength="7"
+          maxlength="15"
+          size="15"
+          pattern="^((\d|[1-9]\d|1\d\d|2[0-4]\d|25[0-5])\.){3}(\d|[1-9]\d|1\d\d|2[0-4]\d|25[0-5])$"
+        />
+      </label>
+      <button id="connectViaIpAddress" disabled>connect via webSockets</button>
+      <label
+        >reconnect on disconnection?
+        <input id="reconnectOnDisconnection" type="checkbox"
+      /></label>
       <button id="resetDevice" disabled>reset</button>
     </div>
 
@@ -65,7 +81,15 @@
 
     <div>
       <label><b>name:</b> <span id="name"></span></label>
-      <label> <b>new name: </b> <input id="setNameInput" type="text" placeholder="type in a name" disabled /> </label>
+      <label>
+        <b>new name: </b>
+        <input
+          id="setNameInput"
+          type="text"
+          placeholder="type in a name"
+          disabled
+        />
+      </label>
       <button id="setNameButton" disabled>set name</button>
     </div>
 
@@ -141,14 +165,22 @@
             <ol class="segments"></ol>
             <label>
               sequence loop count
-              <input class="sequenceLoopCount" type="number" min="0" value="0" step="1" />
+              <input
+                class="sequenceLoopCount"
+                type="number"
+                min="0"
+                value="0"
+                step="1"
+              />
             </label>
           </div>
           <div class="waveform">
             <button class="add">add segment</button>
             <ol class="segments"></ol>
           </div>
-          <label>trigger? <input class="shouldTrigger" type="checkbox" /></label>
+          <label
+            >trigger? <input class="shouldTrigger" type="checkbox"
+          /></label>
           <ul class="locations"></ul>
           <button class="delete">delete vibration</button>
         </div>
@@ -190,11 +222,24 @@
         <li class="waveformSegment">
           <label>
             amplitude
-            <input class="amplitude" type="number" min="0" max="1" value="0.5" step="0.01" />
+            <input
+              class="amplitude"
+              type="number"
+              min="0"
+              max="1"
+              value="0.5"
+              step="0.01"
+            />
           </label>
           <label>
             duration
-            <input class="duration" type="number" min="10" value="100" step="10" />ms
+            <input
+              class="duration"
+              type="number"
+              min="10"
+              value="100"
+              step="10"
+            />ms
           </label>
           <button class="delete">delete segment</button>
         </li>
@@ -209,7 +254,10 @@
           <optgroup label="file transfer type"></optgroup>
         </select>
       </label>
-      <label>file (max <span id="maxFileLength">0</span>kb) <input id="file" type="file" accept=".tflite" /></label>
+      <label>
+        file (max <span id="maxFileLength">0</span>kb)
+        <input id="file" type="file" accept=".tflite" />
+      </label>
       <label>
         file transfer direction
         <select id="fileTransferDirection">
@@ -230,7 +278,12 @@
         <label><b>name:</b> <span id="tfliteName"></span></label>
         <label>
           <b>new name: </b>
-          <input id="setTfliteNameInput" type="text" placeholder="type in a name" disabled />
+          <input
+            id="setTfliteNameInput"
+            type="text"
+            placeholder="type in a name"
+            disabled
+          />
         </label>
         <button id="setTfliteNameButton" disabled>set name</button>
       </div>
@@ -250,7 +303,15 @@
         <label><b>sample rate:</b> <span id="tfliteSampleRate"></span></label>
         <label>
           <b>new sample rate: </b>
-          <input id="setTfliteSampleRateInput" type="number" min="5" value="20" max="1000" step="5" disabled />
+          <input
+            id="setTfliteSampleRateInput"
+            type="number"
+            min="5"
+            value="20"
+            max="1000"
+            step="5"
+            disabled
+          />
         </label>
         <button id="setTfliteSampleRateButton" disabled>set sample rate</button>
       </div>
@@ -271,25 +332,47 @@
       </div>
 
       <div>
-        <label><b>is ready?</b> <input type="checkbox" id="tfliteIsReady" disabled /></label>
+        <label
+          ><b>is ready?</b> <input type="checkbox" id="tfliteIsReady" disabled
+        /></label>
       </div>
 
       <div>
         <label><b>threshold:</b> <span id="tfliteThreshold"></span></label>
         <label>
           <b>new threshold: </b>
-          <input id="setTfliteThresholdInput" type="number" min="0" value="0" max="1" step="0.1" disabled />
+          <input
+            id="setTfliteThresholdInput"
+            type="number"
+            min="0"
+            value="0"
+            max="1"
+            step="0.1"
+            disabled
+          />
         </label>
         <button id="setTfliteThresholdButton" disabled>set threshold</button>
       </div>
 
       <div>
-        <label><b>capture delay:</b> <span id="tfliteCaptureDelay"></span></label>
+        <label
+          ><b>capture delay:</b> <span id="tfliteCaptureDelay"></span
+        ></label>
         <label>
           <b>new capture delay: </b>
-          <input id="setTfliteCaptureDelayInput" type="number" min="0" value="0" max="2000" step="1" disabled />
+          <input
+            id="setTfliteCaptureDelayInput"
+            type="number"
+            min="0"
+            value="0"
+            max="2000"
+            step="1"
+            disabled
+          />
         </label>
-        <button id="setTfliteCaptureDelayButton" disabled>set capture delay</button>
+        <button id="setTfliteCaptureDelayButton" disabled>
+          set capture delay
+        </button>
       </div>
 
       <div>
@@ -297,7 +380,9 @@
           <b>inferencing enabled? </b>
           <input id="tfliteInferencingEnabled" type="checkbox" disabled />
         </label>
-        <button id="toggleTfliteInferencingEnabled" disabled>enable inferencing</button>
+        <button id="toggleTfliteInferencingEnabled" disabled>
+          enable inferencing
+        </button>
       </div>
 
       <div>
@@ -318,11 +403,70 @@
     </div>
 
     <div>
+      <h2>wifi</h2>
+
+      <label>
+        <b>is wifi available?</b>
+        <span id="isWifiAvailable"></span>
+      </label>
+
+      <label><b>wifi ssid:</b> <span id="wifiSSID"></span></label>
+      <label>
+        <b>new wifi ssid: </b>
+        <input
+          id="setWifiSSIDInput"
+          type="text"
+          placeholder="type in an ssid"
+          disabled
+        />
+      </label>
+      <button id="setWifiSSIDButton" disabled>set wifi ssid</button>
+
+      <label><b>wifi password:</b> <span id="wifiPassword"></span></label>
+      <label>
+        <b>new wifi password: </b>
+        <input
+          id="setWifiPasswordInput"
+          type="text"
+          placeholder="type in a password"
+          disabled
+        />
+      </label>
+      <button id="setWifiPasswordButton" disabled>set wifi password</button>
+
+      <label>
+        <b>is wifi connection enabled?</b>
+        <span id="wifiConnectionEnabled"></span>
+      </label>
+
+      <label>
+        <b>toggle wifi connection</b>
+        <button id="toggleWifiConnection" disabled>
+          enable wifi connection
+        </button>
+      </label>
+
+      <label>
+        <b>is wifi connected?</b>
+        <span id="isWifiConnected"></span>
+      </label>
+
+      <label>
+        <b>ip address</b>
+        <span id="ipAddress"></span>
+      </label>
+
+      <button disabled id="connectViaWebSockets">connect via webSockets</button>
+    </div>
+
+    <div>
       <h2>firmware update</h2>
 
       <label><b>status:</b> <span id="firmwareStatus"></span></label>
 
-      <label>firmware <input id="firmwareInput" type="file" accept=".bin" /></label>
+      <label
+        >firmware <input id="firmwareInput" type="file" accept=".bin"
+      /></label>
       <button id="toggleFirmwareUpload" disabled>upload firmware</button>
       <progress value="0" id="firmwareUploadProgress"></progress>
       <span id="firmwareUploadProgressPercentage" style="display: none"></span>

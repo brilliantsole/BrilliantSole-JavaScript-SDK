@@ -1,18 +1,32 @@
 import { createConsole } from "../utils/Console.ts";
 import { isInBrowser } from "../utils/environment.ts";
-import BaseConnectionManager, { ConnectionType, ConnectionMessageType } from "./BaseConnectionManager.ts";
+import BaseConnectionManager, {
+  ConnectionType,
+  ConnectionMessageType,
+  ClientConnectionType,
+} from "./BaseConnectionManager.ts";
 import { DeviceEventTypes } from "../Device.ts";
 import { parseMessage } from "../utils/ParseUtils.ts";
-import { DeviceInformationMessageTypes } from "../DeviceInformationManager.ts";
+import { DeviceInformationTypes } from "../DeviceInformationManager.ts";
 import { DeviceEventType } from "../Device.ts";
 import { ClientDeviceMessage } from "../server/ServerUtils.ts";
 import BaseClient from "../server/BaseClient.ts";
+import { DiscoveredDevice } from "../BS.ts";
 
 const _console = createConsole("ClientConnectionManager", { log: false });
 
-export type SendClientMessageCallback = (...messages: ClientDeviceMessage[]) => void;
+export type SendClientMessageCallback = (
+  ...messages: ClientDeviceMessage[]
+) => void;
 
-const ClientDeviceInformationMessageTypes: ConnectionMessageType[] = [...DeviceInformationMessageTypes, "batteryLevel"];
+export type SendClientConnectMessageCallback = (
+  connectionType?: ClientConnectionType
+) => void;
+
+const ClientDeviceInformationMessageTypes: ConnectionMessageType[] = [
+  ...DeviceInformationTypes,
+  "batteryLevel",
+];
 
 class ClientConnectionManager extends BaseConnectionManager {
   static get isSupported() {
@@ -22,12 +36,15 @@ class ClientConnectionManager extends BaseConnectionManager {
     return "client";
   }
 
+  subType?: ClientConnectionType;
+
   get canUpdateFirmware() {
     // FIX - how to know if it has an smp characteristic?
     return false;
   }
 
   client!: BaseClient;
+  discoveredDevice!: DiscoveredDevice;
 
   #bluetoothId!: string;
   get bluetoothId() {
@@ -67,7 +84,7 @@ class ClientConnectionManager extends BaseConnectionManager {
 
   async connect() {
     await super.connect();
-    this.sendClientConnectMessage();
+    this.sendClientConnectMessage(this.subType);
   }
   async disconnect() {
     await super.disconnect();
@@ -79,13 +96,13 @@ class ClientConnectionManager extends BaseConnectionManager {
   }
   async reconnect() {
     await super.reconnect();
-    _console.log("attempting to reconnect...");
-    this.connect();
+    this.sendClientConnectMessage();
   }
 
   sendClientMessage!: SendClientMessageCallback;
-  sendClientConnectMessage!: Function;
+  sendClientConnectMessage!: SendClientConnectMessageCallback;
   sendClientDisconnectMessage!: Function;
+  sendRequiredDeviceInformationMessage!: Function;
 
   async sendSmpMessage(data: ArrayBuffer) {
     super.sendSmpMessage(data);
@@ -101,12 +118,19 @@ class ClientConnectionManager extends BaseConnectionManager {
   }
 
   #requestDeviceInformation() {
-    this.sendClientMessage(...ClientDeviceInformationMessageTypes);
+    //this.sendClientMessage(...ClientDeviceInformationMessageTypes);
+    this.sendRequiredDeviceInformationMessage();
   }
 
   onClientMessage(dataView: DataView) {
     _console.log({ dataView });
-    parseMessage(dataView, DeviceEventTypes, this.#onClientMessageCallback.bind(this), null, true);
+    parseMessage(
+      dataView,
+      DeviceEventTypes,
+      this.#onClientMessageCallback.bind(this),
+      null,
+      true
+    );
     this.onMessagesReceived!();
   }
 

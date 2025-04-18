@@ -5,6 +5,8 @@ import EventDispatcher, { BoundEventListeners, Event, EventListenerMap, EventMap
 export interface LocalStorageDeviceInformation {
     type: DeviceType;
     bluetoothId: string;
+    ipAddress?: string;
+    isWifiSecure?: boolean;
 }
 export interface LocalStorageConfiguration {
     devices: LocalStorageDeviceInformation[];

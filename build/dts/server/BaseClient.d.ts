@@ -2,6 +2,7 @@ import { ServerMessage, ClientDeviceMessage } from "./ServerUtils.ts";
 import EventDispatcher, { BoundEventListeners, Event } from "../utils/EventDispatcher.ts";
 import Device from "../Device.ts";
 import { DiscoveredDevice, DiscoveredDevicesMap, ScannerEventMessages } from "../scanner/BaseScanner.ts";
+import { ClientConnectionType } from "../connection/BaseConnectionManager.ts";
 export declare const ClientConnectionStatuses: readonly ["notConnected", "connecting", "connected", "disconnecting"];
 export type ClientConnectionStatus = (typeof ClientConnectionStatuses)[number];
 export declare const ClientEventTypes: readonly ["notConnected", "connecting", "connected", "disconnecting", "connectionStatus", "isConnected", "isScanningAvailable", "isScanning", "discoveredDevice", "expiredDiscoveredDevice"];
@@ -73,14 +74,15 @@ declare abstract class BaseClient {
     get discoveredDevices(): Readonly<DiscoveredDevicesMap>;
     protected onDiscoveredDevice(discoveredDevice: DiscoveredDevice): void;
     requestDiscoveredDevices(): void;
-    connectToDevice(bluetoothId: string): Device;
-    protected requestConnectionToDevice(bluetoothId: string): Device;
-    protected sendConnectToDeviceMessage(bluetoothId: string): void;
+    connectToDevice(bluetoothId: string, connectionType?: ClientConnectionType): Device;
+    protected requestConnectionToDevice(bluetoothId: string, connectionType?: ClientConnectionType): Device;
+    protected sendConnectToDeviceMessage(bluetoothId: string, connectionType?: ClientConnectionType): void;
     createDevice(bluetoothId: string): Device;
     protected onConnectedBluetoothDeviceIds(bluetoothIds: string[]): void;
     disconnectFromDevice(bluetoothId: string): void;
     protected requestDisconnectionFromDevice(bluetoothId: string): Device;
     protected sendDisconnectFromDeviceMessage(bluetoothId: string): void;
     protected sendDeviceMessage(bluetoothId: string, ...messages: ClientDeviceMessage[]): void;
+    protected sendRequiredDeviceInformationMessage(bluetoothId: string): void;
 }
 export default BaseClient;

@@ -1,6 +1,14 @@
 import { createConsole } from "../utils/Console.ts";
-import EventDispatcher, { BoundEventListeners, Event, EventListenerMap, EventMap } from "../utils/EventDispatcher.ts";
-import { addEventListeners, removeEventListeners } from "../utils/EventUtils.ts";
+import EventDispatcher, {
+  BoundEventListeners,
+  Event,
+  EventListenerMap,
+  EventMap,
+} from "../utils/EventDispatcher.ts";
+import {
+  addEventListeners,
+  removeEventListeners,
+} from "../utils/EventUtils.ts";
 import Device, {
   DeviceEvent,
   DeviceEventType,
@@ -9,13 +17,22 @@ import Device, {
   BoundDeviceEventListeners,
   DeviceEventMap,
 } from "../Device.ts";
-import DevicePairSensorDataManager, { DevicePairSensorDataEventDispatcher } from "./DevicePairSensorDataManager.ts";
+import DevicePairSensorDataManager, {
+  DevicePairSensorDataEventDispatcher,
+} from "./DevicePairSensorDataManager.ts";
 import { capitalizeFirstCharacter } from "../utils/stringUtils.ts";
 import { Side, Sides } from "../InformationManager.ts";
 import { VibrationConfiguration } from "../vibration/VibrationManager.ts";
 import { SensorConfiguration } from "../sensor/SensorConfigurationManager.ts";
-import { DevicePairSensorDataEventMessages, DevicePairSensorDataEventTypes } from "./DevicePairSensorDataManager.ts";
-import { AddPrefixToInterfaceKeys, ExtendInterfaceValues, KeyOf } from "../utils/TypeScriptUtils.ts";
+import {
+  DevicePairSensorDataEventMessages,
+  DevicePairSensorDataEventTypes,
+} from "./DevicePairSensorDataManager.ts";
+import {
+  AddPrefixToInterfaceKeys,
+  ExtendInterfaceValues,
+  KeyOf,
+} from "../utils/TypeScriptUtils.ts";
 import DeviceManager from "../DeviceManager.ts";
 
 const _console = createConsole("DevicePair", { log: false });
@@ -30,14 +47,17 @@ type DevicePairDeviceEventMessages = ExtendInterfaceValues<
 >;
 type DevicePairDeviceEventType = KeyOf<DevicePairDeviceEventMessages>;
 function getDevicePairDeviceEventType(deviceEventType: DeviceEventType) {
-  return `device${capitalizeFirstCharacter(deviceEventType)}` as DevicePairDeviceEventType;
+  return `device${capitalizeFirstCharacter(
+    deviceEventType
+  )}` as DevicePairDeviceEventType;
 }
 const DevicePairDeviceEventTypes = DeviceEventTypes.map((eventType) =>
   getDevicePairDeviceEventType(eventType)
 ) as DevicePairDeviceEventType[];
 
 export const DevicePairConnectionEventTypes = ["isConnected"] as const;
-export type DevicePairConnectionEventType = (typeof DevicePairConnectionEventTypes)[number];
+export type DevicePairConnectionEventType =
+  (typeof DevicePairConnectionEventTypes)[number];
 
 export interface DevicePairConnectionEventMessages {
   isConnected: { isConnected: boolean };
@@ -54,11 +74,31 @@ export type DevicePairEventMessages = DevicePairConnectionEventMessages &
   DevicePairSensorDataEventMessages &
   DevicePairDeviceEventMessages;
 
-export type DevicePairEventDispatcher = EventDispatcher<DevicePair, DevicePairEventType, DevicePairEventMessages>;
-export type DevicePairEventMap = EventMap<DevicePair, DeviceEventType, DevicePairEventMessages>;
-export type DevicePairEventListenerMap = EventListenerMap<DevicePair, DeviceEventType, DevicePairEventMessages>;
-export type DevicePairEvent = Event<DevicePair, DeviceEventType, DevicePairEventMessages>;
-export type BoundDevicePairEventListeners = BoundEventListeners<DevicePair, DeviceEventType, DevicePairEventMessages>;
+export type DevicePairEventDispatcher = EventDispatcher<
+  DevicePair,
+  DevicePairEventType,
+  DevicePairEventMessages
+>;
+export type DevicePairEventMap = EventMap<
+  DevicePair,
+  DeviceEventType,
+  DevicePairEventMessages
+>;
+export type DevicePairEventListenerMap = EventListenerMap<
+  DevicePair,
+  DeviceEventType,
+  DevicePairEventMessages
+>;
+export type DevicePairEvent = Event<
+  DevicePair,
+  DeviceEventType,
+  DevicePairEventMessages
+>;
+export type BoundDevicePairEventListeners = BoundEventListeners<
+  DevicePair,
+  DeviceEventType,
+  DevicePairEventMessages
+>;
 
 export const DevicePairTypes = ["insoles", "gloves"] as const;
 export type DevicePairType = (typeof DevicePairTypes)[number];
@@ -66,7 +106,8 @@ export type DevicePairType = (typeof DevicePairTypes)[number];
 class DevicePair {
   constructor(type: DevicePairType) {
     this.#type = type;
-    this.#sensorDataManager.eventDispatcher = this.#eventDispatcher as DevicePairSensorDataEventDispatcher;
+    this.#sensorDataManager.eventDispatcher = this
+      .#eventDispatcher as DevicePairSensorDataEventDispatcher;
   }
 
   get sides() {
@@ -78,7 +119,10 @@ class DevicePair {
     return this.#type;
   }
 
-  #eventDispatcher: DevicePairEventDispatcher = new EventDispatcher(this as DevicePair, DevicePairEventTypes);
+  #eventDispatcher: DevicePairEventDispatcher = new EventDispatcher(
+    this as DevicePair,
+    DevicePairEventTypes
+  );
   get addEventListener() {
     return this.#eventDispatcher.addEventListener;
   }
@@ -133,7 +177,9 @@ class DevicePair {
 
   assignDevice(device: Device) {
     if (!this.#isDeviceCorrectType(device)) {
-      _console.warn(`device is incorrect type ${device.type} for ${this.type} devicePair`);
+      _console.log(
+        `device is incorrect type ${device.type} for ${this.type} devicePair`
+      );
       return;
     }
     const side = device.side;
@@ -159,12 +205,16 @@ class DevicePair {
         break;
     }
 
-    _console.log(`assigned ${side} device`, device);
+    _console.log(`assigned ${side} ${this.type} device`, device);
 
     this.resetPressureRange();
 
     this.#dispatchEvent("isConnected", { isConnected: this.isConnected });
-    this.#dispatchEvent("deviceIsConnected", { device, isConnected: device.isConnected, side });
+    this.#dispatchEvent("deviceIsConnected", {
+      device,
+      isConnected: device.isConnected,
+      side,
+    });
 
     return currentDevice;
   }
@@ -173,14 +223,20 @@ class DevicePair {
     addEventListeners(device, this.#boundDeviceEventListeners);
     DeviceEventTypes.forEach((deviceEventType) => {
       // @ts-expect-error
-      device.addEventListener(deviceEventType, this.#redispatchDeviceEvent.bind(this));
+      device.addEventListener(
+        deviceEventType,
+        this.#redispatchDeviceEvent.bind(this)
+      );
     });
   }
   #removeDeviceEventListeners(device: Device) {
     removeEventListeners(device, this.#boundDeviceEventListeners);
     DeviceEventTypes.forEach((deviceEventType) => {
-      // @ts-expect-error
-      device.removeEventListener(deviceEventType, this.#redispatchDeviceEvent.bind(this));
+      device.removeEventListener(
+        // @ts-expect-error
+        deviceEventType,
+        this.#redispatchDeviceEvent.bind(this)
+      );
     });
   }
 
@@ -190,9 +246,17 @@ class DevicePair {
         return false;
       }
 
-      _console.log(`removing ${side} device`, device);
+      _console.log(`removing ${side} ${this.type} device`, device);
       removeEventListeners(device, this.#boundDeviceEventListeners);
-      delete this[side];
+
+      switch (side) {
+        case "left":
+          this.#left = undefined;
+          break;
+        case "right":
+          this.#right = undefined;
+          break;
+      }
 
       return true;
     });
@@ -256,9 +320,15 @@ class DevicePair {
   }
 
   // VIBRATION
-  async triggerVibration(vibrationConfigurations: VibrationConfiguration[], sendImmediately?: boolean) {
+  async triggerVibration(
+    vibrationConfigurations: VibrationConfiguration[],
+    sendImmediately?: boolean
+  ) {
     const promises = Sides.map((side) => {
-      return this[side]?.triggerVibration(vibrationConfigurations, sendImmediately);
+      return this[side]?.triggerVibration(
+        vibrationConfigurations,
+        sendImmediately
+      );
     }).filter(Boolean);
     return Promise.allSettled(promises);
   }

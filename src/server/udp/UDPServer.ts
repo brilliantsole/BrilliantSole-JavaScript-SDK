@@ -1,6 +1,12 @@
-import { concatenateArrayBuffers, dataToArrayBuffer } from "../../utils/ArrayBufferUtils.ts";
+import {
+  concatenateArrayBuffers,
+  dataToArrayBuffer,
+} from "../../utils/ArrayBufferUtils.ts";
 import { createConsole } from "../../utils/Console.ts";
-import { addEventListeners, removeEventListeners } from "../../utils/EventUtils.ts";
+import {
+  addEventListeners,
+  removeEventListeners,
+} from "../../utils/EventUtils.ts";
 import { parseMessage } from "../../utils/ParseUtils.ts";
 import BaseServer from "../BaseServer.ts";
 import {
@@ -11,10 +17,10 @@ import {
   UDPServerMessageType,
   UDPServerMessageTypes,
 } from "./UDPUtils.ts";
+import Timer from "../../utils/Timer.ts";
 
 /** NODE_START */
 import type * as dgram from "dgram";
-import Timer from "../../utils/Timer.ts";
 /** NODE_END */
 
 const _console = createConsole("UDPServer", { log: false });
@@ -38,14 +44,22 @@ class UDPServer extends BaseServer {
     return this.#clients.length;
   }
 
-  #getClientByRemoteInfo(remoteInfo: dgram.RemoteInfo, createIfNotFound = false) {
+  #getClientByRemoteInfo(
+    remoteInfo: dgram.RemoteInfo,
+    createIfNotFound = false
+  ) {
     const { address, port } = remoteInfo;
-    let client = this.#clients.find((client) => client.address == address && client.port == port);
+    let client = this.#clients.find(
+      (client) => client.address == address && client.port == port
+    );
     if (!client && createIfNotFound) {
       client = {
         ...remoteInfo,
         isAlive: true,
-        removeSelfTimer: new Timer(() => this.#removeClient(client!), removeUDPClientTimeout),
+        removeSelfTimer: new Timer(
+          () => this.#removeClient(client!),
+          removeUDPClientTimeout
+        ),
         lastTimeSentData: 0,
       };
       _console.log("created new client", client);
@@ -114,7 +128,11 @@ class UDPServer extends BaseServer {
     _console.log(`socket listening on port ${address.address}:${address.port}`);
   }
   #onSocketMessage(message: Buffer, remoteInfo: dgram.RemoteInfo) {
-    _console.log(`received ${message.length} bytes from ${this.#remoteInfoToString(remoteInfo)}`);
+    _console.log(
+      `received ${message.length} bytes from ${this.#remoteInfoToString(
+        remoteInfo
+      )}`
+    );
     const client = this.#getClientByRemoteInfo(remoteInfo, true);
     if (!client) {
       _console.error("no client found");
@@ -127,7 +145,12 @@ class UDPServer extends BaseServer {
 
   // PARSING
   #onClientData(client: UDPClient, dataView: DataView) {
-    _console.log(`parsing ${dataView.byteLength} bytes from ${this.#clientToString(client)}`, dataView.buffer);
+    _console.log(
+      `parsing ${dataView.byteLength} bytes from ${this.#clientToString(
+        client
+      )}`,
+      dataView.buffer
+    );
     let responseMessages: ArrayBuffer[] = [];
     parseMessage(
       dataView,
@@ -153,9 +176,15 @@ class UDPServer extends BaseServer {
     _console.log(`responding with ${response.byteLength} bytes...`, response);
     this.#sendToClient(client, response);
   }
-  #onClientUDPMessage(messageType: UDPServerMessageType, dataView: DataView, context: UDPClientContext) {
+  #onClientUDPMessage(
+    messageType: UDPServerMessageType,
+    dataView: DataView,
+    context: UDPClientContext
+  ) {
     const { client, responseMessages } = context;
-    _console.log(`received "${messageType}" message from ${client.address}:${client.port}`);
+    _console.log(
+      `received "${messageType}" message from ${client.address}:${client.port}`
+    );
     switch (messageType) {
       case "ping":
         responseMessages.push(this.#createPongMessage(context));
@@ -168,7 +197,12 @@ class UDPServer extends BaseServer {
       case "serverMessage":
         const responseMessage = this.parseClientMessage(dataView);
         if (responseMessage) {
-          responseMessages.push(createUDPServerMessage({ type: "serverMessage", data: responseMessage }));
+          responseMessages.push(
+            createUDPServerMessage({
+              type: "serverMessage",
+              data: responseMessage,
+            })
+          );
         }
         break;
 
@@ -187,24 +221,38 @@ class UDPServer extends BaseServer {
   #parseRemoteReceivePort(dataView: DataView, client: UDPClient) {
     const receivePort = dataView.getUint16(0);
     client.receivePort = receivePort;
-    _console.log(`updated ${client.address}:${client.port} receivePort to ${receivePort}`);
+    _console.log(
+      `updated ${client.address}:${client.port} receivePort to ${receivePort}`
+    );
     const responseDataView = new DataView(new ArrayBuffer(2));
     responseDataView.setUint16(0, client.receivePort);
-    return createUDPServerMessage({ type: "setRemoteReceivePort", data: responseDataView });
+    return createUDPServerMessage({
+      type: "setRemoteReceivePort",
+      data: responseDataView,
+    });
   }
 
   // CLIENT MESSAGING
   #sendToClient(client: UDPClient, message: ArrayBuffer) {
-    _console.log(`sending ${message.byteLength} bytes to ${this.#clientToString(client)}...`);
+    _console.log(
+      `sending ${message.byteLength} bytes to ${this.#clientToString(
+        client
+      )}...`
+    );
     try {
-      this.#socket!.send(new Uint8Array(message), client.receivePort, client.address, (error, bytes) => {
-        if (error) {
-          _console.error("error sending data", error);
-          return;
+      this.#socket!.send(
+        new Uint8Array(message),
+        client.receivePort,
+        client.address,
+        (error, bytes) => {
+          if (error) {
+            _console.error("error sending data", error);
+            return;
+          }
+          _console.log(`sent ${bytes} bytes`);
+          client.lastTimeSentData = Date.now();
         }
-        _console.log(`sent ${bytes} bytes`);
-        client.lastTimeSentData = Date.now();
-      });
+      );
     } catch (error) {
       _console.error("serious error sending data", error);
     }
@@ -212,7 +260,10 @@ class UDPServer extends BaseServer {
   broadcastMessage(message: ArrayBuffer) {
     super.broadcastMessage(message);
     this.#clients.forEach((client) => {
-      this.#sendToClient(client, createUDPServerMessage({ type: "serverMessage", data: message }));
+      this.#sendToClient(
+        client,
+        createUDPServerMessage({ type: "serverMessage", data: message })
+      );
     });
   }
 

@@ -1,5 +1,6 @@
 import EventDispatcher, { BoundEventListeners, Event, EventMap } from "../utils/EventDispatcher.ts";
 import { DeviceType } from "../InformationManager.ts";
+import { ConnectionType } from "../connection/BaseConnectionManager.ts";
 export declare const ScannerEventTypes: readonly ["isScanningAvailable", "isScanning", "discoveredDevice", "expiredDiscoveredDevice"];
 export type ScannerEventType = (typeof ScannerEventTypes)[number];
 export interface DiscoveredDevice {
@@ -7,6 +8,8 @@ export interface DiscoveredDevice {
     name: string;
     deviceType: DeviceType;
     rssi: number;
+    ipAddress?: string;
+    isWifiSecure?: boolean;
 }
 interface ScannerDiscoveredDeviceEventMessage {
     discoveredDevice: DiscoveredDevice;
@@ -59,7 +62,7 @@ declare abstract class BaseScanner {
     get discoveredDevices(): Readonly<DiscoveredDevicesMap>;
     get discoveredDevicesArray(): DiscoveredDevice[];
     static get DiscoveredDeviceExpirationTimeout(): number;
-    connectToDevice(deviceId: string): Promise<void>;
+    connectToDevice(deviceId: string, connectionType?: ConnectionType): Promise<void>;
     get canReset(): boolean;
     reset(): void;
 }

@@ -11,7 +11,9 @@ console.log({ BS });
 // GET DEVICES
 
 /** @type {HTMLTemplateElement} */
-const availableDeviceTemplate = document.getElementById("availableDeviceTemplate");
+const availableDeviceTemplate = document.getElementById(
+  "availableDeviceTemplate"
+);
 const availableDevicesContainer = document.getElementById("availableDevices");
 /** @param {BS.Device[]} availableDevices */
 function onAvailableDevices(availableDevices) {
@@ -20,12 +22,17 @@ function onAvailableDevices(availableDevices) {
     availableDevicesContainer.innerText = "no devices available";
   } else {
     availableDevices.forEach((availableDevice) => {
-      let availableDeviceContainer = availableDeviceTemplate.content.cloneNode(true).querySelector(".availableDevice");
-      availableDeviceContainer.querySelector(".name").innerText = availableDevice.name;
-      availableDeviceContainer.querySelector(".type").innerText = availableDevice.type;
+      let availableDeviceContainer = availableDeviceTemplate.content
+        .cloneNode(true)
+        .querySelector(".availableDevice");
+      availableDeviceContainer.querySelector(".name").innerText =
+        availableDevice.name;
+      availableDeviceContainer.querySelector(".type").innerText =
+        availableDevice.type;
 
       /** @type {HTMLButtonElement} */
-      const toggleConnectionButton = availableDeviceContainer.querySelector(".toggleConnection");
+      const toggleConnectionButton =
+        availableDeviceContainer.querySelector(".toggleConnection");
       toggleConnectionButton.addEventListener("click", () => {
         availableDevice.toggleConnection();
       });
@@ -34,7 +41,9 @@ function onAvailableDevices(availableDevices) {
           case "connected":
           case "notConnected":
             toggleConnectionButton.disabled = false;
-            toggleConnectionButton.innerText = availableDevice.isConnected ? "disconnect" : "connect";
+            toggleConnectionButton.innerText = availableDevice.isConnected
+              ? "disconnect"
+              : "connect";
             break;
           case "connecting":
           case "disconnecting":
@@ -43,7 +52,9 @@ function onAvailableDevices(availableDevices) {
             break;
         }
       };
-      availableDevice.addEventListener("connectionStatus", () => onConnectionStatusUpdate());
+      availableDevice.addEventListener("connectionStatus", () =>
+        onConnectionStatusUpdate()
+      );
       onConnectionStatusUpdate();
       availableDevicesContainer.appendChild(availableDeviceContainer);
     });
@@ -88,7 +99,9 @@ window.positionScalar = 0.1;
 
 devicePair.sides.forEach((side) => {
   /** @type {HTMLElement} */
-  const gloveContainer = gloveTemplate.content.cloneNode(true).querySelector(".glove");
+  const gloveContainer = gloveTemplate.content
+    .cloneNode(true)
+    .querySelector(".glove");
   gloveContainer.classList.add(side);
   gloveContainer.dataset.side = side;
   /** @type {HTMLIFrameElement} */
@@ -110,7 +123,9 @@ function onIFrameLoaded(gloveContainer) {
   const targetPositionEntity = targetEntity.querySelector(".position");
   const targetRotationEntity = targetEntity.querySelector(".rotation");
   const gloveEntity = targetEntity.querySelector(".glove");
-  const pressureEntities = Array.from(targetEntity.querySelectorAll("[data-pressure]"))
+  const pressureEntities = Array.from(
+    targetEntity.querySelectorAll("[data-pressure]")
+  )
     .sort((a, b) => a.dataset.pressure - b.dataset.pressure)
     .map((entity) => entity.querySelector("a-sphere"));
   //pressureEntities.forEach((entity) => entity.setAttribute("opacity", "0.0"));
@@ -121,7 +136,8 @@ function onIFrameLoaded(gloveContainer) {
   });
 
   /** @type {HTMLButtonElement} */
-  const toggleConnectionButton = gloveContainer.querySelector(".toggleConnection");
+  const toggleConnectionButton =
+    gloveContainer.querySelector(".toggleConnection");
   toggleConnectionButton.addEventListener("click", () => {
     devicePair[side].toggleConnection();
   });
@@ -134,7 +150,9 @@ function onIFrameLoaded(gloveContainer) {
     if (device.isConnected) {
       toggleConnectionButton.disabled = false;
     }
-    toggleConnectionButton.innerText = device.isConnected ? "disconnect" : "reconnect";
+    toggleConnectionButton.innerText = device.isConnected
+      ? "disconnect"
+      : "reconnect";
   });
 
   devicePair.addEventListener("deviceConnectionStatus", (event) => {
@@ -147,7 +165,9 @@ function onIFrameLoaded(gloveContainer) {
       case "connected":
       case "notConnected":
         toggleConnectionButton.disabled = false;
-        toggleConnectionButton.innerText = device.isConnected ? "disconnect" : "reconnect";
+        toggleConnectionButton.innerText = device.isConnected
+          ? "disconnect"
+          : "reconnect";
         break;
       case "connecting":
       case "disconnecting":
@@ -161,7 +181,12 @@ function onIFrameLoaded(gloveContainer) {
   const orientationSelect = gloveContainer.querySelector(".orientation");
   orientationSelect.addEventListener("input", () => {
     /** @type {BS.SensorConfiguration} */
-    const configuration = { gameRotation: 0, rotation: 0, gyroscope: 0, orientation: 0 };
+    const configuration = {
+      gameRotation: 0,
+      rotation: 0,
+      gyroscope: 0,
+      orientation: 0,
+    };
 
     switch (orientationSelect.value) {
       case "none":
@@ -179,7 +204,9 @@ function onIFrameLoaded(gloveContainer) {
         configuration.gyroscope = sensorRate;
         break;
       default:
-        console.error(`uncaught orientationSelect value "${orientationSelect.value}"`);
+        console.error(
+          `uncaught orientationSelect value "${orientationSelect.value}"`
+        );
         break;
     }
 
@@ -187,7 +214,8 @@ function onIFrameLoaded(gloveContainer) {
   });
 
   /** @type {HTMLButtonElement} */
-  const resetOrientationButton = gloveContainer.querySelector(".resetOrientation");
+  const resetOrientationButton =
+    gloveContainer.querySelector(".resetOrientation");
   resetOrientationButton.addEventListener("click", () => {
     resetOrientation();
   });
@@ -204,7 +232,11 @@ function onIFrameLoaded(gloveContainer) {
   const positionSelect = gloveContainer.querySelector(".position");
   positionSelect.addEventListener("input", () => {
     /** @type {BS.SensorConfiguration} */
-    const configuration = { acceleration: 0, gravity: 0, linearAcceleration: 0 };
+    const configuration = {
+      acceleration: 0,
+      gravity: 0,
+      linearAcceleration: 0,
+    };
 
     switch (positionSelect.value) {
       case "none":
@@ -219,7 +251,9 @@ function onIFrameLoaded(gloveContainer) {
         configuration.linearAcceleration = sensorRate;
         break;
       default:
-        console.error(`uncaught positionSelect value "${positionSelect.value}"`);
+        console.error(
+          `uncaught positionSelect value "${positionSelect.value}"`
+        );
         break;
     }
 
@@ -276,7 +310,10 @@ function onIFrameLoaded(gloveContainer) {
   /** @param {BS.Vector3} position */
   const updatePosition = (position) => {
     _position.copy(position).multiplyScalar(window.positionScalar);
-    targetPositionEntity.object3D.position.lerp(_position, window.interpolationSmoothing);
+    targetPositionEntity.object3D.position.lerp(
+      _position,
+      window.interpolationSmoothing
+    );
   };
 
   devicePair.addEventListener("deviceAcceleration", (event) => {
@@ -326,7 +363,10 @@ function onIFrameLoaded(gloveContainer) {
     if (applyOffset) {
       targetQuaternion.premultiply(offsetQuaternion);
     }
-    targetRotationEntity.object3D.quaternion.slerp(targetQuaternion, window.interpolationSmoothing);
+    targetRotationEntity.object3D.quaternion.slerp(
+      targetQuaternion,
+      window.interpolationSmoothing
+    );
   };
   devicePair.addEventListener("deviceGameRotation", (event) => {
     const device = event.message.device;
@@ -360,7 +400,9 @@ function onIFrameLoaded(gloveContainer) {
     }
 
     const orientation = event.message.orientation;
-    orientationVector3.set(orientation.pitch, orientation.heading, orientation.roll).multiplyScalar(Math.PI / 180);
+    orientationVector3
+      .set(orientation.pitch, orientation.heading, orientation.roll)
+      .multiplyScalar(Math.PI / 180);
     orientationEuler.setFromVector3(orientationVector3);
     orientationQuaternion.setFromEuler(orientationEuler);
     updateQuaternion(orientationQuaternion);
@@ -398,7 +440,8 @@ function onIFrameLoaded(gloveContainer) {
     devicePair[side].setSensorConfiguration(configuration);
   };
   const togglePressure = () => {
-    const isPressureEnabled = devicePair[side].sensorConfiguration.pressure != 0;
+    const isPressureEnabled =
+      devicePair[side].sensorConfiguration.pressure != 0;
     setIsPressureEnabled(!isPressureEnabled);
   };
   devicePair.addEventListener("deviceGetSensorConfiguration", (event) => {
@@ -406,7 +449,10 @@ function onIFrameLoaded(gloveContainer) {
       return;
     }
     const { sensorConfiguration } = event.message;
-    togglePressureButton.innerText = sensorConfiguration.pressure == 0 ? "enable pressure" : "disable pressure";
+    togglePressureButton.innerText =
+      sensorConfiguration.pressure == 0
+        ? "enable pressure"
+        : "disable pressure";
   });
   /** @type {HTMLButtonElement} */
   const resetPressureButton = gloveContainer.querySelector(".resetPressure");
@@ -429,7 +475,7 @@ function onIFrameLoaded(gloveContainer) {
     }
     const { pressure } = event.message;
     pressure.sensors.forEach((sensor, index) => {
-      pressureEntities[index].setAttribute("opacity", sensor.normalizedValue);
+      pressureEntities[index]?.setAttribute("opacity", sensor.normalizedValue);
     });
   });
 
@@ -442,7 +488,9 @@ function onIFrameLoaded(gloveContainer) {
   });
   const setIsCursorEnabled = (newIsCursorEnabled) => {
     isCursorEnabled = newIsCursorEnabled;
-    toggleCursorButton.innerText = isCursorEnabled ? "disable cursor" : "enable cursor";
+    toggleCursorButton.innerText = isCursorEnabled
+      ? "disable cursor"
+      : "enable cursor";
     if (isCursorEnabled) {
       orientationSelect.value = "gyroscope";
     } else {
@@ -514,11 +562,16 @@ function onIFrameLoaded(gloveContainer) {
     }
   };
   const updateCursorEntity = () => {
-    cursorRaycaster.setFromCamera(cursor2DPosition, cursorCameraEntity.object3D.children[0]);
+    cursorRaycaster.setFromCamera(
+      cursor2DPosition,
+      cursorCameraEntity.object3D.children[0]
+    );
     cursorRaycaster.ray.at(1, cursor3DPosition);
     cursorEntity.object3D.position.copy(cursor3DPosition);
   };
-  const cursorIntersectableEntities = Array.from(scene.querySelectorAll(".intersectable"));
+  const cursorIntersectableEntities = Array.from(
+    scene.querySelectorAll(".intersectable")
+  );
 
   const dragEntityPosition = new THREE.Vector3();
   const dragEntity = () => {
@@ -531,7 +584,10 @@ function onIFrameLoaded(gloveContainer) {
   const intersectEntities = () => {
     intersectedEntities.length = 0;
     cursorIntersectableEntities.forEach((entity) => {
-      const intersections = cursorRaycaster.intersectObject(entity.object3D, true);
+      const intersections = cursorRaycaster.intersectObject(
+        entity.object3D,
+        true
+      );
       const intersection = intersections[0];
       if (intersection) {
         intersectedEntities.push(entity);
@@ -559,13 +615,19 @@ function onIFrameLoaded(gloveContainer) {
   let draggingEntity;
   const setIsCursorDown = (newIsCursorDown) => {
     isCursorDown = newIsCursorDown;
-    cursorMeshEntity.setAttribute("color", isCursorDown ? "black" : cursorMeshEntity.dataset.color);
+    cursorMeshEntity.setAttribute(
+      "color",
+      isCursorDown ? "black" : cursorMeshEntity.dataset.color
+    );
     if (isCursorDown && intersectedEntities[0]) {
       draggingEntity = intersectedEntities[0];
       console.log("dragging entity");
       draggingEntity.setAttribute("color", "green");
       cursorHandleEntity.setAttribute("static-body", "");
-      draggingEntity.setAttribute("constraint", "target: .cursorHandle; collideConnected: false; type: pointToPoint;");
+      draggingEntity.setAttribute(
+        "constraint",
+        "target: .cursorHandle; collideConnected: false; type: pointToPoint;"
+      );
     }
     if (!isCursorDown && draggingEntity) {
       console.log("removing draggingEntity");
@@ -592,12 +654,16 @@ function onIFrameLoaded(gloveContainer) {
 
 const websocketClient = new BS.WebSocketClient();
 /** @type {HTMLButtonElement} */
-const toggleServerConnectionButton = document.getElementById("toggleServerConnection");
+const toggleServerConnectionButton = document.getElementById(
+  "toggleServerConnection"
+);
 toggleServerConnectionButton.addEventListener("click", () => {
   websocketClient.toggleConnection();
 });
 websocketClient.addEventListener("isConnected", () => {
-  toggleServerConnectionButton.innerText = websocketClient.isConnected ? "disconnect from server" : "connect to server";
+  toggleServerConnectionButton.innerText = websocketClient.isConnected
+    ? "disconnect from server"
+    : "connect to server";
 });
 websocketClient.addEventListener("connectionStatus", () => {
   let disabled;

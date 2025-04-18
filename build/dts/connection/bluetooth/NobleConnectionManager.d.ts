@@ -30,7 +30,7 @@ declare class NobleConnectionManager extends BluetoothConnectionManager {
     get canReconnect(): boolean;
     reconnect(): Promise<void>;
     get noblePeripheral(): NoblePeripheral | undefined;
-    set noblePeripheral(newNoblePeripheral: NoblePeripheral);
+    set noblePeripheral(newNoblePeripheral: NoblePeripheral | undefined);
     onNoblePeripheralConnect(noblePeripheral: NoblePeripheral): Promise<void>;
     onNoblePeripheralDisconnect(noblePeripheral: NoblePeripheral): Promise<void>;
     onNoblePeripheralRssiUpdate(noblePeripheral: NoblePeripheral, rssi: number): Promise<void>;
@@ -39,5 +39,6 @@ declare class NobleConnectionManager extends BluetoothConnectionManager {
     onNobleCharacteristicData(characteristic: NobleCharacteristic, data: Buffer, isNotification: boolean): void;
     onNobleCharacteristicWrite(characteristic: NobleCharacteristic): void;
     onNobleCharacteristicNotify(characteristic: NobleCharacteristic, isSubscribed: boolean): void;
+    remove(): void;
 }
 export default NobleConnectionManager;

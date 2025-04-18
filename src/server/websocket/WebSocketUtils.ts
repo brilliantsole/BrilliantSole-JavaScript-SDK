@@ -3,13 +3,15 @@ import { createMessage, Message } from "../ServerUtils.ts";
 
 const _console = createConsole("WebSocketUtils", { log: false });
 
-export const webSocketPingTimeout = 30_000_000;
+export const webSocketPingTimeout = 30_000;
 export const webSocketReconnectTimeout = 3_000;
 
 export const WebSocketMessageTypes = ["ping", "pong", "serverMessage"] as const;
 export type WebSocketMessageType = (typeof WebSocketMessageTypes)[number];
 
-export type WebSocketMessage = WebSocketMessageType | Message<WebSocketMessageType>;
+export type WebSocketMessage =
+  | WebSocketMessageType
+  | Message<WebSocketMessageType>;
 export function createWebSocketMessage(...messages: WebSocketMessage[]) {
   _console.log("createWebSocketMessage", ...messages);
   return createMessage(WebSocketMessageTypes, ...messages);

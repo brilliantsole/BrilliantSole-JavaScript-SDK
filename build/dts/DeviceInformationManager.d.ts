@@ -15,9 +15,9 @@ export interface DeviceInformation {
     pnpId: PnpId;
     serialNumber: string;
 }
-export declare const DeviceInformationMessageTypes: readonly ["manufacturerName", "modelNumber", "softwareRevision", "hardwareRevision", "firmwareRevision", "pnpId", "serialNumber"];
-export type DeviceInformationMessageType = (typeof DeviceInformationMessageTypes)[number];
-export declare const DeviceInformationEventTypes: readonly ["manufacturerName", "modelNumber", "softwareRevision", "hardwareRevision", "firmwareRevision", "pnpId", "serialNumber", "deviceInformation"];
+export declare const DeviceInformationTypes: readonly ["manufacturerName", "modelNumber", "hardwareRevision", "firmwareRevision", "softwareRevision", "pnpId", "serialNumber"];
+export type DeviceInformationType = (typeof DeviceInformationTypes)[number];
+export declare const DeviceInformationEventTypes: readonly ["manufacturerName", "modelNumber", "hardwareRevision", "firmwareRevision", "softwareRevision", "pnpId", "serialNumber", "deviceInformation"];
 export type DeviceInformationEventType = (typeof DeviceInformationEventTypes)[number];
 export interface DeviceInformationEventMessages {
     manufacturerName: {
@@ -51,6 +51,6 @@ declare class DeviceInformationManager {
     eventDispatcher: DeviceInformationEventDispatcher;
     get information(): DeviceInformation;
     clear(): void;
-    parseMessage(messageType: DeviceInformationMessageType, dataView: DataView): void;
+    parseMessage(messageType: DeviceInformationType, dataView: DataView): void;
 }
 export default DeviceInformationManager;

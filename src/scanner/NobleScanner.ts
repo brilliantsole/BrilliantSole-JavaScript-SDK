@@ -1,9 +1,17 @@
-import BaseScanner, { DiscoveredDevice, ScannerEventMap } from "./BaseScanner.ts";
+import BaseScanner, {
+  DiscoveredDevice,
+  ScannerEventMap,
+} from "./BaseScanner.ts";
 import { createConsole } from "../utils/Console.ts";
 import { addEventListeners } from "../utils/EventUtils.ts";
-import { serviceDataUUID, serviceUUIDs } from "../connection/bluetooth/bluetoothUUIDs.ts";
+import {
+  serviceDataUUID,
+  serviceUUIDs,
+} from "../connection/bluetooth/bluetoothUUIDs.ts";
 import Device from "../Device.ts";
-import NobleConnectionManager, { NoblePeripheral } from "../connection/bluetooth/NobleConnectionManager.ts";
+import NobleConnectionManager, {
+  NoblePeripheral,
+} from "../connection/bluetooth/NobleConnectionManager.ts";
 
 const _console = createConsole("NobleScanner", { log: false });
 
@@ -13,10 +21,21 @@ let isSupported = false;
 import noble from "@abandonware/noble";
 import { DeviceTypes } from "../InformationManager.ts";
 import DeviceManager from "../DeviceManager.ts";
+import {
+  ClientConnectionType,
+  ConnectionType,
+} from "../connection/BaseConnectionManager.ts";
 isSupported = true;
 /** NODE_END */
 
-export const NobleStates = ["unknown", "resetting", "unsupported", "unauthorized", "poweredOff", "poweredOn"] as const;
+export const NobleStates = [
+  "unknown",
+  "resetting",
+  "unsupported",
+  "unauthorized",
+  "poweredOff",
+  "poweredOn",
+] as const;
 export type NobleState = (typeof NobleStates)[number];
 
 class NobleScanner extends BaseScanner {
@@ -55,7 +74,9 @@ class NobleScanner extends BaseScanner {
     }
     this.#_nobleState = newNobleState;
     _console.log({ newNobleState });
-    this.dispatchEvent("isScanningAvailable", { isScanningAvailable: this.isScanningAvailable });
+    this.dispatchEvent("isScanningAvailable", {
+      isScanningAvailable: this.isScanningAvailable,
+    });
   }
 
   // NOBLE LISTENERS
@@ -84,13 +105,28 @@ class NobleScanner extends BaseScanner {
       this.#noblePeripherals[noblePeripheral.id] = noblePeripheral;
     }
 
+    _console.log("advertisement", noblePeripheral.advertisement);
+
     let deviceType;
+    let ipAddress;
+    let isWifiSecure;
     const { manufacturerData, serviceData } = noblePeripheral.advertisement;
     if (manufacturerData) {
       _console.log("manufacturerData", manufacturerData);
       if (manufacturerData.byteLength >= 3) {
         const deviceTypeEnum = manufacturerData.readUint8(2);
         deviceType = DeviceTypes[deviceTypeEnum];
+        _console;
+      }
+      if (manufacturerData.byteLength >= 3 + 4) {
+        ipAddress = new Uint8Array(
+          manufacturerData.buffer.slice(3, 3 + 4)
+        ).join(".");
+        //_console.log({ ipAddress });
+      }
+      if (manufacturerData.byteLength >= 3 + 4 + 1) {
+        isWifiSecure = manufacturerData.readUint8(3 + 4) != 0;
+        _console.log({ isWifiSecure });
       }
     }
     if (serviceData) {
@@ -105,6 +141,7 @@ class NobleScanner extends BaseScanner {
       }
     }
     if (deviceType == undefined) {
+      _console.log("skipping device - no deviceType");
       return;
     }
 
@@ -113,6 +150,8 @@ class NobleScanner extends BaseScanner {
       bluetoothId: noblePeripheral.id,
       deviceType,
       rssi: noblePeripheral.rssi,
+      ipAddress,
+      isWifiSecure,
     };
     this.dispatchEvent("discoveredDevice", { discoveredDevice });
   }
@@ -153,9 +192,12 @@ class NobleScanner extends BaseScanner {
     expiredDiscoveredDevice: this.#onExpiredDiscoveredDevice.bind(this),
   };
 
-  #onExpiredDiscoveredDevice(event: ScannerEventMap["expiredDiscoveredDevice"]) {
+  #onExpiredDiscoveredDevice(
+    event: ScannerEventMap["expiredDiscoveredDevice"]
+  ) {
     const { discoveredDevice } = event.message;
-    const noblePeripheral = this.#noblePeripherals[discoveredDevice.bluetoothId];
+    const noblePeripheral =
+      this.#noblePeripherals[discoveredDevice.bluetoothId];
     if (noblePeripheral) {
       // disconnect?
       delete this.#noblePeripherals[discoveredDevice.bluetoothId];
@@ -173,20 +215,40 @@ class NobleScanner extends BaseScanner {
   }
 
   // DEVICES
-  async connectToDevice(deviceId: string) {
-    super.connectToDevice(deviceId);
+  async connectToDevice(
+    deviceId: string,
+    connectionType?: ClientConnectionType
+  ) {
+    super.connectToDevice(deviceId, connectionType);
     this.#assertValidNoblePeripheralId(deviceId);
     const noblePeripheral = this.#noblePeripherals[deviceId];
     _console.log("connecting to discoveredDevice...", deviceId);
 
-    let device = DeviceManager.AvailableDevices.filter((device) => device.connectionType == "noble").find(
-      (device) => device.bluetoothId == deviceId
-    );
+    let device = DeviceManager.AvailableDevices.filter(
+      (device) => device.connectionType == "noble"
+    ).find((device) => device.bluetoothId == deviceId);
     if (!device) {
       device = this.#createDevice(noblePeripheral);
-      await device.connect();
+      const { ipAddress, isWifiSecure } =
+        this.discoveredDevices[device.bluetoothId!];
+      if (connectionType && connectionType != "noble" && ipAddress) {
+        await device.connect({ type: connectionType, ipAddress, isWifiSecure });
+      } else {
+        await device.connect();
+      }
     } else {
-      await device.reconnect();
+      const { ipAddress, isWifiSecure } =
+        this.discoveredDevices[device.bluetoothId!];
+      if (
+        connectionType &&
+        connectionType != "noble" &&
+        connectionType != device.connectionType &&
+        ipAddress
+      ) {
+        await device.connect({ type: connectionType, ipAddress, isWifiSecure });
+      } else {
+        await device.reconnect();
+      }
     }
   }
 

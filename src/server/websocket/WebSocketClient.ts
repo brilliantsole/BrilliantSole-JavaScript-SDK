@@ -1,6 +1,13 @@
 import { createConsole } from "../../utils/Console.ts";
-import { createServerMessage, MessageLike, ServerMessage } from "../ServerUtils.ts";
-import { addEventListeners, removeEventListeners } from "../../utils/EventUtils.ts";
+import {
+  createServerMessage,
+  MessageLike,
+  ServerMessage,
+} from "../ServerUtils.ts";
+import {
+  addEventListeners,
+  removeEventListeners,
+} from "../../utils/EventUtils.ts";
 import ClientConnectionManager from "../../connection/ClientConnectionManager.ts";
 import BaseClient, { ServerURL } from "../BaseClient.ts";
 import type * as ws from "ws";
@@ -93,10 +100,16 @@ class WebSocketClient extends BaseClient {
   sendMessage(message: MessageLike) {
     this.assertConnection();
     this.#webSocket!.send(message);
+    this.#pingTimer.restart();
   }
 
   sendServerMessage(...messages: ServerMessage[]) {
-    this.sendMessage(createWebSocketMessage({ type: "serverMessage", data: createServerMessage(...messages) }));
+    this.sendMessage(
+      createWebSocketMessage({
+        type: "serverMessage",
+        data: createServerMessage(...messages),
+      })
+    );
   }
 
   #sendWebSocketMessage(...messages: WebSocketMessage[]) {
@@ -119,7 +132,7 @@ class WebSocketClient extends BaseClient {
   }
   async #onWebSocketMessage(event: ws.MessageEvent) {
     _console.log("webSocket.message", event);
-    this.#pingTimer.restart();
+    //this.#pingTimer.restart();
     //@ts-expect-error
     const arrayBuffer = await event.data.arrayBuffer();
     const dataView = new DataView(arrayBuffer);
@@ -131,7 +144,8 @@ class WebSocketClient extends BaseClient {
     this._connectionStatus = "notConnected";
 
     Object.entries(this.devices).forEach(([id, device]) => {
-      const connectionManager = device.connectionManager! as ClientConnectionManager;
+      const connectionManager =
+        device.connectionManager! as ClientConnectionManager;
       connectionManager.isConnected = false;
     });
 
@@ -143,12 +157,18 @@ class WebSocketClient extends BaseClient {
     }
   }
   #onWebSocketError(event: ws.ErrorEvent) {
-    _console.error("webSocket.error", event.message);
+    _console.error("webSocket.error", event);
   }
 
   // PARSING
   #parseWebSocketMessage(dataView: DataView) {
-    parseMessage(dataView, WebSocketMessageTypes, this.#onServerMessage.bind(this), null, true);
+    parseMessage(
+      dataView,
+      WebSocketMessageTypes,
+      this.#onServerMessage.bind(this),
+      null,
+      true
+    );
   }
 
   #onServerMessage(messageType: WebSocketMessageType, dataView: DataView) {

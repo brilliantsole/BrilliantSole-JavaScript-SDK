@@ -1,4 +1,4 @@
-import { isInDev, isInLensStudio } from "./environment.ts";
+import { isInDev, isInLensStudio, isInNode } from "./environment.ts";
 
 declare var Studio: any | undefined;
 
@@ -34,6 +34,31 @@ if (isInLensStudio) {
   __console = console;
 }
 
+function getCallerFunctionPath(): string {
+  const stack = new Error().stack;
+  if (!stack) return "";
+
+  const lines = stack.split("\n");
+  const callerLine = lines[3] || lines[2];
+
+  const match = callerLine.match(/at (.*?) \(/) || callerLine.match(/at (.*)/);
+  if (!match) return "";
+
+  const fullFn = match[1].trim();
+  return `[${fullFn}]`;
+}
+
+function wrapWithLocation(fn: LogFunction): LogFunction {
+  return (...args: any[]) => {
+    if (isInNode) {
+      const functionPath = getCallerFunctionPath();
+      fn(functionPath, ...args);
+    } else {
+      fn(...args);
+    }
+  };
+}
+
 // console.assert not supported in WebBLE
 if (!__console.assert) {
   const assert: AssertLogFunction = (condition, ...data) => {
@@ -54,10 +79,18 @@ if (!__console.table) {
 
 function emptyFunction() {}
 
-const log: LogFunction = __console.log!.bind(__console);
-const warn: LogFunction = __console.warn!.bind(__console);
-const error: LogFunction = __console.error!.bind(__console);
-const table: LogFunction = __console.table!.bind(__console);
+const log: LogFunction = isInNode
+  ? wrapWithLocation(__console.log!.bind(__console))
+  : __console.log!.bind(__console);
+const warn: LogFunction = isInNode
+  ? wrapWithLocation(__console.warn!.bind(__console))
+  : __console.warn!.bind(__console);
+const error: LogFunction = isInNode
+  ? wrapWithLocation(__console.error!.bind(__console))
+  : __console.error!.bind(__console);
+const table: LogFunction = isInNode
+  ? wrapWithLocation(__console.table!.bind(__console))
+  : __console.table!.bind(__console);
 const assert: AssertLogFunction = __console.assert.bind(__console);
 
 class Console {
@@ -133,21 +166,41 @@ class Console {
 
   /** @throws {Error} if value's type doesn't match */
   assertTypeWithError(value: any, type: string) {
-    this.assertWithError(typeof value == type, `value ${value} of type "${typeof value}" not of type "${type}"`);
+    this.assertWithError(
+      typeof value == type,
+      `value ${value} of type "${typeof value}" not of type "${type}"`
+    );
   }
 
   /** @throws {Error} if value's type doesn't match */
   assertEnumWithError(value: string, enumeration: readonly string[]) {
-    this.assertWithError(enumeration.includes(value), `invalid enum "${value}"`);
+    this.assertWithError(
+      enumeration.includes(value),
+      `invalid enum "${value}"`
+    );
+  }
+
+  /** @throws {Error} if value is not within some range */
+  assertRangeWithError(name: string, value: number, min: number, max: number) {
+    this.assertWithError(
+      value >= min && value <= max,
+      `${name} ${value} must be within ${min}-${max}`
+    );
   }
 }
 
-export function createConsole(type: string, levelFlags?: ConsoleLevelFlags): Console {
+export function createConsole(
+  type: string,
+  levelFlags?: ConsoleLevelFlags
+): Console {
   return Console.create(type, levelFlags);
 }
 
 /** @throws {Error} if no console with type is found */
-export function setConsoleLevelFlagsForType(type: string, levelFlags: ConsoleLevelFlags) {
+export function setConsoleLevelFlagsForType(
+  type: string,
+  levelFlags: ConsoleLevelFlags
+) {
   Console.setLevelFlagsForType(type, levelFlags);
 }
 

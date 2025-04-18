@@ -4,7 +4,12 @@ import Device, { BoundDeviceEventListeners, DeviceEventMap } from "./Device.ts";
 import { DeviceType } from "./InformationManager.ts";
 import { createConsole } from "./utils/Console.ts";
 import { isInBluefy, isInBrowser } from "./utils/environment.ts";
-import EventDispatcher, { BoundEventListeners, Event, EventListenerMap, EventMap } from "./utils/EventDispatcher.ts";
+import EventDispatcher, {
+  BoundEventListeners,
+  Event,
+  EventListenerMap,
+  EventMap,
+} from "./utils/EventDispatcher.ts";
 import { addEventListeners } from "./utils/EventUtils.ts";
 
 const _console = createConsole("DeviceManager", { log: false });
@@ -12,6 +17,8 @@ const _console = createConsole("DeviceManager", { log: false });
 export interface LocalStorageDeviceInformation {
   type: DeviceType;
   bluetoothId: string;
+  ipAddress?: string;
+  isWifiSecure?: boolean;
 }
 
 export interface LocalStorageConfiguration {
@@ -43,13 +50,21 @@ export type DeviceManagerEventDispatcher = EventDispatcher<
   DeviceManagerEventType,
   DeviceManagerEventMessages
 >;
-export type DeviceManagerEventMap = EventMap<typeof Device, DeviceManagerEventType, DeviceManagerEventMessages>;
+export type DeviceManagerEventMap = EventMap<
+  typeof Device,
+  DeviceManagerEventType,
+  DeviceManagerEventMessages
+>;
 export type DeviceManagerEventListenerMap = EventListenerMap<
   typeof Device,
   DeviceManagerEventType,
   DeviceManagerEventMessages
 >;
-export type DeviceManagerEvent = Event<typeof Device, DeviceManagerEventType, DeviceManagerEventMessages>;
+export type DeviceManagerEvent = Event<
+  typeof Device,
+  DeviceManagerEventType,
+  DeviceManagerEventMessages
+>;
 export type BoundDeviceManagerEventListeners = BoundEventListeners<
   typeof Device,
   DeviceManagerEventType,
@@ -87,8 +102,15 @@ class DeviceManager {
 
   // CONNECTION STATUS
   /** @private */
-  OnDeviceConnectionStatusUpdated(device: Device, connectionStatus: ConnectionStatus) {
-    if (connectionStatus == "notConnected" && !device.canReconnect && this.#AvailableDevices.includes(device)) {
+  OnDeviceConnectionStatusUpdated(
+    device: Device,
+    connectionStatus: ConnectionStatus
+  ) {
+    if (
+      connectionStatus == "notConnected" &&
+      !device.canReconnect &&
+      this.#AvailableDevices.includes(device)
+    ) {
       const deviceIndex = this.#AvailableDevices.indexOf(device);
       this.AvailableDevices.splice(deviceIndex, 1);
       this.#DispatchAvailableDevices();
@@ -125,20 +147,29 @@ class DeviceManager {
   }
 
   #AssertLocalStorage() {
-    _console.assertWithError(isInBrowser, "localStorage is only available in the browser");
+    _console.assertWithError(
+      isInBrowser,
+      "localStorage is only available in the browser"
+    );
     _console.assertWithError(window.localStorage, "localStorage not found");
   }
   #LocalStorageKey = "BS.Device";
   #SaveToLocalStorage() {
     this.#AssertLocalStorage();
-    localStorage.setItem(this.#LocalStorageKey, JSON.stringify(this.#LocalStorageConfiguration));
+    localStorage.setItem(
+      this.#LocalStorageKey,
+      JSON.stringify(this.#LocalStorageConfiguration)
+    );
   }
   async #LoadFromLocalStorage() {
     this.#AssertLocalStorage();
     let localStorageString = localStorage.getItem(this.#LocalStorageKey);
     if (typeof localStorageString != "string") {
       _console.log("no info found in localStorage");
-      this.#LocalStorageConfiguration = Object.assign({}, this.#DefaultLocalStorageConfiguration);
+      this.#LocalStorageConfiguration = Object.assign(
+        {},
+        this.#DefaultLocalStorageConfiguration
+      );
       this.#SaveToLocalStorage();
       return;
     }
@@ -160,13 +191,17 @@ class DeviceManager {
       return;
     }
     this.#AssertLocalStorage();
-    const deviceInformationIndex = this.#LocalStorageConfiguration!.devices.findIndex((deviceInformation) => {
-      return deviceInformation.bluetoothId == device.bluetoothId;
-    });
+    const deviceInformationIndex =
+      this.#LocalStorageConfiguration!.devices.findIndex(
+        (deviceInformation) => {
+          return deviceInformation.bluetoothId == device.bluetoothId;
+        }
+      );
     if (deviceInformationIndex == -1) {
       return;
     }
-    this.#LocalStorageConfiguration!.devices[deviceInformationIndex].type = device.type;
+    this.#LocalStorageConfiguration!.devices[deviceInformationIndex].type =
+      device.type;
     this.#SaveToLocalStorage();
   }
 
@@ -229,7 +264,8 @@ class DeviceManager {
         return;
       }
       let deviceInformation = configuration.devices.find(
-        (deviceInformation) => bluetoothDevice.id == deviceInformation.bluetoothId
+        (deviceInformation) =>
+          bluetoothDevice.id == deviceInformation.bluetoothId
       );
       if (!deviceInformation) {
         return;
@@ -245,10 +281,13 @@ class DeviceManager {
       if (existingAvailableDevice) {
         if (
           existingConnectedDevice &&
-          existingConnectedDevice?.bluetoothId == existingAvailableDevice.bluetoothId &&
+          existingConnectedDevice?.bluetoothId ==
+            existingAvailableDevice.bluetoothId &&
           existingConnectedDevice != existingAvailableDevice
         ) {
-          this.AvailableDevices[this.#AvailableDevices.indexOf(existingAvailableDevice)] = existingConnectedDevice;
+          this.AvailableDevices[
+            this.#AvailableDevices.indexOf(existingAvailableDevice)
+          ] = existingConnectedDevice;
         }
         return;
       }
@@ -274,7 +313,10 @@ class DeviceManager {
 
   // STATIC EVENTLISTENERS
 
-  #EventDispatcher: DeviceManagerEventDispatcher = new EventDispatcher(this as DeviceManager, DeviceManagerEventTypes);
+  #EventDispatcher: DeviceManagerEventDispatcher = new EventDispatcher(
+    this as DeviceManager,
+    DeviceManagerEventTypes
+  );
 
   get AddEventListener() {
     return this.#EventDispatcher.addEventListener;
@@ -302,14 +344,19 @@ class DeviceManager {
           const deviceInformation: LocalStorageDeviceInformation = {
             type: device.type,
             bluetoothId: device.bluetoothId!,
+            ipAddress: device.ipAddress,
+            isWifiSecure: device.isWifiSecure,
           };
-          const deviceInformationIndex = this.#LocalStorageConfiguration!.devices.findIndex(
-            (_deviceInformation) => _deviceInformation.bluetoothId == deviceInformation.bluetoothId
-          );
+          const deviceInformationIndex =
+            this.#LocalStorageConfiguration!.devices.findIndex(
+              (_deviceInformation) =>
+                _deviceInformation.bluetoothId == deviceInformation.bluetoothId
+            );
           if (deviceInformationIndex == -1) {
             this.#LocalStorageConfiguration!.devices.push(deviceInformation);
           } else {
-            this.#LocalStorageConfiguration!.devices[deviceInformationIndex] = deviceInformation;
+            this.#LocalStorageConfiguration!.devices[deviceInformationIndex] =
+              deviceInformation;
           }
           this.#SaveToLocalStorage();
         }
@@ -322,7 +369,10 @@ class DeviceManager {
     } else {
       if (this.#ConnectedDevices.includes(device)) {
         _console.log("removing device", device);
-        this.#ConnectedDevices.splice(this.#ConnectedDevices.indexOf(device), 1);
+        this.#ConnectedDevices.splice(
+          this.#ConnectedDevices.indexOf(device),
+          1
+        );
         this.#DispatchEvent("deviceDisconnected", { device });
         this.#DispatchEvent("deviceIsConnected", { device });
         this.#DispatchConnectedDevices();
@@ -339,7 +389,9 @@ class DeviceManager {
       );
       _console.log({ existingAvailableDevice });
       if (existingAvailableDevice) {
-        this.AvailableDevices[this.AvailableDevices.indexOf(existingAvailableDevice)] = device;
+        this.AvailableDevices[
+          this.AvailableDevices.indexOf(existingAvailableDevice)
+        ] = device;
       } else {
         this.AvailableDevices.push(device);
       }
@@ -349,7 +401,11 @@ class DeviceManager {
   }
 
   _CheckDeviceAvailability(device: Device) {
-    if (!device.isConnected && !device.isAvailable && this.#AvailableDevices.includes(device)) {
+    if (
+      !device.isConnected &&
+      !device.isAvailable &&
+      this.#AvailableDevices.includes(device)
+    ) {
       _console.log("removing device from availableDevices...");
       this.#AvailableDevices.splice(this.#AvailableDevices.indexOf(device), 1);
       this.#DispatchAvailableDevices();
@@ -358,11 +414,15 @@ class DeviceManager {
 
   #DispatchAvailableDevices() {
     _console.log({ AvailableDevices: this.AvailableDevices });
-    this.#DispatchEvent("availableDevices", { availableDevices: this.AvailableDevices });
+    this.#DispatchEvent("availableDevices", {
+      availableDevices: this.AvailableDevices,
+    });
   }
   #DispatchConnectedDevices() {
     _console.log({ ConnectedDevices: this.ConnectedDevices });
-    this.#DispatchEvent("connectedDevices", { connectedDevices: this.ConnectedDevices });
+    this.#DispatchEvent("connectedDevices", {
+      connectedDevices: this.ConnectedDevices,
+    });
   }
 }
 

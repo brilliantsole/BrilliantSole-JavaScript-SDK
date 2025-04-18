@@ -5,21 +5,68 @@ import { FileTransferMessageTypes } from "../FileTransferManager.ts";
 import { TfliteMessageTypes } from "../TfliteManager.ts";
 import { concatenateArrayBuffers } from "../utils/ArrayBufferUtils.ts";
 import { parseMessage } from "../utils/ParseUtils.ts";
-import { DeviceInformationMessageTypes } from "../DeviceInformationManager.ts";
+import { DeviceInformationTypes } from "../DeviceInformationManager.ts";
 import { InformationMessageTypes } from "../InformationManager.ts";
 import { VibrationMessageTypes } from "../vibration/VibrationManager.ts";
 import { SensorConfigurationMessageTypes } from "../sensor/SensorConfigurationManager.ts";
 import { SensorDataMessageTypes } from "../sensor/SensorDataManager.ts";
+import { WifiMessageTypes } from "../WifiManager.ts";
 
 const _console = createConsole("BaseConnectionManager", { log: false });
 
-export const ConnectionTypes = ["webBluetooth", "noble", "client"] as const;
+export const ConnectionTypes = [
+  "webBluetooth",
+  "noble",
+  "client",
+  "webSocket",
+  "udp",
+] as const;
 export type ConnectionType = (typeof ConnectionTypes)[number];
 
-export const ConnectionStatuses = ["notConnected", "connecting", "connected", "disconnecting"] as const;
+export const ClientConnectionTypes = ["noble", "webSocket", "udp"] as const;
+export type ClientConnectionType = (typeof ClientConnectionTypes)[number];
+
+interface BaseConnectOptions {
+  type: "client" | "webBluetooth" | "webSocket" | "udp";
+}
+export interface WebBluetoothConnectOptions extends BaseConnectOptions {
+  type: "webBluetooth";
+}
+interface BaseWifiConnectOptions extends BaseConnectOptions {
+  ipAddress: string;
+}
+export interface ClientConnectOptions extends BaseConnectOptions {
+  type: "client";
+  subType?: "noble" | "webSocket" | "udp";
+}
+export interface WebSocketConnectOptions extends BaseWifiConnectOptions {
+  type: "webSocket";
+  isWifiSecure?: boolean;
+}
+export interface UDPConnectOptions extends BaseWifiConnectOptions {
+  type: "udp";
+  //sendPort: number;
+  receivePort?: number;
+}
+export type ConnectOptions =
+  | WebBluetoothConnectOptions
+  | WebSocketConnectOptions
+  | UDPConnectOptions
+  | ClientConnectOptions;
+
+export const ConnectionStatuses = [
+  "notConnected",
+  "connecting",
+  "connected",
+  "disconnecting",
+] as const;
 export type ConnectionStatus = (typeof ConnectionStatuses)[number];
 
-export const ConnectionEventTypes = [...ConnectionStatuses, "connectionStatus", "isConnected"] as const;
+export const ConnectionEventTypes = [
+  ...ConnectionStatuses,
+  "connectionStatus",
+  "isConnected",
+] as const;
 export type ConnectionEventType = (typeof ConnectionEventTypes)[number];
 
 export interface ConnectionStatusEventMessages {
@@ -43,6 +90,7 @@ export const TxRxMessageTypes = [
   ...VibrationMessageTypes,
   ...TfliteMessageTypes,
   ...FileTransferMessageTypes,
+  ...WifiMessageTypes,
 ] as const;
 export type TxRxMessageType = (typeof TxRxMessageTypes)[number];
 
@@ -53,11 +101,12 @@ export const BatteryLevelMessageTypes = ["batteryLevel"] as const;
 export type BatteryLevelMessageType = (typeof BatteryLevelMessageTypes)[number];
 
 export const MetaConnectionMessageTypes = ["rx", "tx"] as const;
-export type MetaConnectionMessageType = (typeof MetaConnectionMessageTypes)[number];
+export type MetaConnectionMessageType =
+  (typeof MetaConnectionMessageTypes)[number];
 
 export const ConnectionMessageTypes = [
   ...BatteryLevelMessageTypes,
-  ...DeviceInformationMessageTypes,
+  ...DeviceInformationTypes,
   ...MetaConnectionMessageTypes,
   ...TxRxMessageTypes,
   ...SMPMessageTypes,
@@ -65,7 +114,10 @@ export const ConnectionMessageTypes = [
 export type ConnectionMessageType = (typeof ConnectionMessageTypes)[number];
 
 export type ConnectionStatusCallback = (status: ConnectionStatus) => void;
-export type MessageReceivedCallback = (messageType: ConnectionMessageType, dataView: DataView) => void;
+export type MessageReceivedCallback = (
+  messageType: ConnectionMessageType,
+  dataView: DataView
+) => void;
 export type MessagesReceivedCallback = () => void;
 
 abstract class BaseConnectionManager {
@@ -101,7 +153,10 @@ abstract class BaseConnectionManager {
 
   /** @throws {Error} if not supported */
   #assertIsSupported() {
-    _console.assertWithError(this.isSupported, `${this.constructor.name} is not supported`);
+    _console.assertWithError(
+      this.isSupported,
+      `${this.constructor.name} is not supported`
+    );
   }
 
   constructor() {
@@ -115,7 +170,9 @@ abstract class BaseConnectionManager {
   protected set status(newConnectionStatus) {
     _console.assertEnumWithError(newConnectionStatus, ConnectionStatuses);
     if (this.#status == newConnectionStatus) {
-      _console.log(`tried to assign same connection status "${newConnectionStatus}"`);
+      _console.log(
+        `tried to assign same connection status "${newConnectionStatus}"`
+      );
       return;
     }
     _console.log(`new connection status "${newConnectionStatus}"`);
@@ -129,7 +186,7 @@ abstract class BaseConnectionManager {
     }
 
     if (this.#status == "notConnected") {
-      this.mtu = this.#defaultMtu;
+      this.mtu = this.defaultMtu;
     }
   }
 
@@ -142,29 +199,35 @@ abstract class BaseConnectionManager {
   }
 
   /** @throws {Error} if connected */
-  #assertIsNotConnected() {
+  protected assertIsNotConnected() {
     _console.assertWithError(!this.isConnected, "device is already connected");
   }
   /** @throws {Error} if connecting */
   #assertIsNotConnecting() {
-    _console.assertWithError(this.status != "connecting", "device is already connecting");
+    _console.assertWithError(
+      this.status != "connecting",
+      "device is already connecting"
+    );
   }
   /** @throws {Error} if not connected */
-  #assertIsConnected() {
+  protected assertIsConnected() {
     _console.assertWithError(this.isConnected, "device is not connected");
   }
   /** @throws {Error} if disconnecting */
   #assertIsNotDisconnecting() {
-    _console.assertWithError(this.status != "disconnecting", "device is already disconnecting");
+    _console.assertWithError(
+      this.status != "disconnecting",
+      "device is already disconnecting"
+    );
   }
   /** @throws {Error} if not connected or is disconnecting */
-  #assertIsConnectedAndNotDisconnecting() {
-    this.#assertIsConnected();
+  assertIsConnectedAndNotDisconnecting() {
+    this.assertIsConnected();
     this.#assertIsNotDisconnecting();
   }
 
   async connect() {
-    this.#assertIsNotConnected();
+    this.assertIsNotConnected();
     this.#assertIsNotConnecting();
     this.status = "connecting";
   }
@@ -172,26 +235,31 @@ abstract class BaseConnectionManager {
     return false;
   }
   async reconnect() {
-    this.#assertIsNotConnected();
+    this.assertIsNotConnected();
     this.#assertIsNotConnecting();
-    _console.assert(this.canReconnect, "unable to reconnect");
+    _console.assertWithError(this.canReconnect, "unable to reconnect");
+    this.status = "connecting";
+    _console.log("attempting to reconnect...");
   }
   async disconnect() {
-    this.#assertIsConnected();
+    this.assertIsConnected();
     this.#assertIsNotDisconnecting();
     this.status = "disconnecting";
     _console.log("disconnecting from device...");
   }
 
   async sendSmpMessage(data: ArrayBuffer) {
-    this.#assertIsConnectedAndNotDisconnecting();
+    this.assertIsConnectedAndNotDisconnecting();
     _console.log("sending smp message", data);
   }
 
   #pendingMessages: TxMessage[] = [];
   #isSendingMessages = false;
-  async sendTxMessages(messages: TxMessage[] | undefined, sendImmediately: boolean = true) {
-    this.#assertIsConnectedAndNotDisconnecting();
+  async sendTxMessages(
+    messages: TxMessage[] | undefined,
+    sendImmediately: boolean = true
+  ) {
+    this.assertIsConnectedAndNotDisconnecting();
 
     if (messages) {
       this.#pendingMessages.push(...messages);
@@ -222,7 +290,11 @@ abstract class BaseConnectionManager {
 
     if (this.mtu) {
       while (arrayBuffers.length > 0) {
-        if (arrayBuffers.every((arrayBuffer) => arrayBuffer.byteLength > this.mtu! - 3)) {
+        if (
+          arrayBuffers.every(
+            (arrayBuffer) => arrayBuffer.byteLength > this.mtu! - 3
+          )
+        ) {
           _console.log("every arrayBuffer is too big to send");
           break;
         }
@@ -231,10 +303,14 @@ abstract class BaseConnectionManager {
         let arrayBufferCount = 0;
         arrayBuffers.some((arrayBuffer) => {
           if (arrayBufferByteLength + arrayBuffer.byteLength > this.mtu! - 3) {
-            _console.log(`stopping appending arrayBuffers ( length ${arrayBuffer.byteLength} too much)`);
+            _console.log(
+              `stopping appending arrayBuffers ( length ${arrayBuffer.byteLength} too much)`
+            );
             return true;
           }
-          _console.log(`allowing arrayBuffer with length ${arrayBuffer.byteLength}`);
+          _console.log(
+            `allowing arrayBuffer with length ${arrayBuffer.byteLength}`
+          );
           arrayBufferCount++;
           arrayBufferByteLength += arrayBuffer.byteLength;
         });
@@ -254,16 +330,22 @@ abstract class BaseConnectionManager {
     this.#isSendingMessages = false;
   }
 
-  #defaultMtu = 23;
+  protected defaultMtu = 23;
   //mtu?: number;
-  mtu?: number = this.#defaultMtu;
+  mtu?: number = this.defaultMtu;
 
   async sendTxData(data: ArrayBuffer) {
     _console.log("sendTxData", data);
   }
 
   parseRxMessage(dataView: DataView) {
-    parseMessage(dataView, TxRxMessageTypes, this.#onRxMessage.bind(this), null, true);
+    parseMessage(
+      dataView,
+      TxRxMessageTypes,
+      this.#onRxMessage.bind(this),
+      null,
+      true
+    );
     this.onMessagesReceived!();
   }
 
@@ -284,6 +366,14 @@ abstract class BaseConnectionManager {
   clear() {
     this.#isSendingMessages = false;
     this.#pendingMessages.length = 0;
+  }
+
+  remove() {
+    this.clear();
+
+    this.onStatusUpdated = undefined;
+    this.onMessageReceived = undefined;
+    this.onMessagesReceived = undefined;
   }
 }
 

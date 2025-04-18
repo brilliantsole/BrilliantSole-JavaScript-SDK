@@ -26,6 +26,8 @@ declare class Console {
     assertTypeWithError(value: any, type: string): void;
     /** @throws {Error} if value's type doesn't match */
     assertEnumWithError(value: string, enumeration: readonly string[]): void;
+    /** @throws {Error} if value is not within some range */
+    assertRangeWithError(name: string, value: number, min: number, max: number): void;
 }
 export declare function createConsole(type: string, levelFlags?: ConsoleLevelFlags): Console;
 /** @throws {Error} if no console with type is found */
