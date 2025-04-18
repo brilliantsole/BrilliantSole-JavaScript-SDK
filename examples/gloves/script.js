@@ -210,7 +210,7 @@ function onIFrameLoaded(gloveContainer) {
         break;
     }
 
-    devicePair[side].setSensorConfiguration(configuration);
+    devicePair[side]?.setSensorConfiguration(configuration);
   });
 
   /** @type {HTMLButtonElement} */
@@ -259,7 +259,7 @@ function onIFrameLoaded(gloveContainer) {
 
     console.log({ configuration });
 
-    devicePair[side].setSensorConfiguration(configuration);
+    devicePair[side]?.setSensorConfiguration(configuration);
   });
   devicePair.addEventListener("deviceIsConnected", (event) => {
     const device = event.message.device;
@@ -437,7 +437,7 @@ function onIFrameLoaded(gloveContainer) {
   const setIsPressureEnabled = (newIsPressureEnabled) => {
     /** @type {BS.SensorConfiguration} */
     const configuration = { pressure: newIsPressureEnabled ? 20 : 0 };
-    devicePair[side].setSensorConfiguration(configuration);
+    devicePair[side]?.setSensorConfiguration(configuration);
   };
   const togglePressure = () => {
     const isPressureEnabled =
@@ -486,25 +486,61 @@ function onIFrameLoaded(gloveContainer) {
   toggleCursorButton.addEventListener("click", () => {
     setIsCursorEnabled(!isCursorEnabled);
   });
+  /** @type {HTMLButtonElement} */
+  const resetCursorButton = gloveContainer.querySelector(".resetCursor");
+  resetCursorButton.addEventListener("click", () => {
+    cursorIntersectableEntities.forEach((entity) => {
+      entity.removeAttribute("dynamic-body");
+      entity.object3D.position.set(0, 1, -20);
+      entity.setAttribute("dynamic-body", "");
+    });
+  });
+
+  let checkCursorIntersectableEntitiesIntervalId;
+  const checkCursorIntersectableEntitiesInterval = 1000;
+  const xThreshold = 10;
+  const checkCursorIntersectableEntities = () => {
+    cursorIntersectableEntities.forEach((entity) => {
+      const position = entity.object3D.position;
+      if (!isCursorDown && Math.abs(position.x) > xThreshold) {
+        entity.removeAttribute("dynamic-body");
+        entity.object3D.position.set(0, 1, -20);
+        entity.setAttribute("dynamic-body", "");
+      }
+    });
+  };
   const setIsCursorEnabled = (newIsCursorEnabled) => {
     isCursorEnabled = newIsCursorEnabled;
     toggleCursorButton.innerText = isCursorEnabled
       ? "disable cursor"
       : "enable cursor";
-    if (isCursorEnabled) {
-      orientationSelect.value = "gyroscope";
-    } else {
-      orientationSelect.value = "none";
+
+    if (devicePair[side]?.isConnected) {
+      if (isCursorEnabled) {
+        orientationSelect.value = "gyroscope";
+      } else {
+        orientationSelect.value = "none";
+      }
+      orientationSelect.dispatchEvent(new Event("input"));
+      setIsPressureEnabled(isCursorEnabled);
     }
-    orientationSelect.dispatchEvent(new Event("input"));
-    setIsPressureEnabled(isCursorEnabled);
     onCursorIsEnabled();
+
+    if (isCursorEnabled) {
+      checkCursorIntersectableEntitiesIntervalId = setInterval(
+        () => checkCursorIntersectableEntities(),
+        checkCursorIntersectableEntitiesInterval
+      );
+    } else {
+      clearInterval(checkCursorIntersectableEntitiesIntervalId);
+    }
   };
+
   const onCursorIsEnabled = () => {
     if (isCursorEnabled) {
       targetEntity.setAttribute("visible", "false");
       cursorExample.setAttribute("visible", "true");
-      cameraEntity.setAttribute("orbit-controls", { enabled: false });
+      //cameraEntity.setAttribute("orbit-controls", { enabled: false });
       cameraEntity.setAttribute("camera", { active: false });
       cursorCameraEntity.setAttribute("camera", { active: true });
     } else {
@@ -512,7 +548,7 @@ function onIFrameLoaded(gloveContainer) {
       cursorExample.setAttribute("visible", "false");
       cursorCameraEntity.setAttribute("camera", { active: false });
       cameraEntity.setAttribute("camera", { active: true });
-      cameraEntity.setAttribute("orbit-controls", { enabled: true });
+      //cameraEntity.setAttribute("orbit-controls", { enabled: true });
     }
   };
 
@@ -521,7 +557,7 @@ function onIFrameLoaded(gloveContainer) {
     if (device.side != side) {
       return;
     }
-    toggleCursorButton.disabled = !device.isConnected;
+    //toggleCursorButton.disabled = !device.isConnected;
   });
 
   const cameraEntity = scene.querySelector(".camera");
