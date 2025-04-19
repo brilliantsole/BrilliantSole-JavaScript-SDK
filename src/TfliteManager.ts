@@ -63,12 +63,12 @@ export type TfliteEventDispatcher = EventDispatcher<
 >;
 export type SendTfliteMessageCallback = SendMessageCallback<TfliteMessageType>;
 
-export const TfliteSensorTypes: SensorType[] = [
+export const TfliteSensorTypes = [
   "pressure",
   "linearAcceleration",
   "gyroscope",
   "magnetometer",
-] as const;
+] as const satisfies readonly SensorType[];
 export type TfliteSensorType = (typeof TfliteSensorTypes)[number];
 
 class TfliteManager {
@@ -212,8 +212,9 @@ class TfliteManager {
 
   static AssertValidSensorType(sensorType: SensorType) {
     SensorDataManager.AssertValidSensorType(sensorType);
+    const tfliteSensorType = sensorType as TfliteSensorType;
     _console.assertWithError(
-      TfliteSensorTypes.includes(sensorType),
+      TfliteSensorTypes.includes(tfliteSensorType),
       `invalid tflite sensorType "${sensorType}"`
     );
   }

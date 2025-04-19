@@ -494,7 +494,12 @@ class Device {
     if (this.isConnected) {
       this.disconnect();
     } else if (this.canReconnect) {
-      this.reconnect();
+      try {
+        this.reconnect();
+      } catch (error) {
+        _console.error("error trying to reconnect", error);
+        this.connect();
+      }
     } else {
       this.connect();
     }

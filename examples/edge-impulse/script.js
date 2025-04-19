@@ -14,7 +14,9 @@ window.device = device;
 // GET DEVICES
 
 /** @type {HTMLTemplateElement} */
-const availableDeviceTemplate = document.getElementById("availableDeviceTemplate");
+const availableDeviceTemplate = document.getElementById(
+  "availableDeviceTemplate"
+);
 const availableDevicesContainer = document.getElementById("availableDevices");
 /** @param {BS.Device[]} availableDevices */
 function onAvailableDevices(availableDevices) {
@@ -26,19 +28,24 @@ function onAvailableDevices(availableDevices) {
       const availableDeviceContainer = availableDeviceTemplate.content
         .cloneNode(true)
         .querySelector(".availableDevice");
-      availableDeviceContainer.querySelector(".name").innerText = availableDevice.name;
-      availableDeviceContainer.querySelector(".type").innerText = availableDevice.type;
+      availableDeviceContainer.querySelector(".name").innerText =
+        availableDevice.name;
+      availableDeviceContainer.querySelector(".type").innerText =
+        availableDevice.type;
 
       /** @type {HTMLButtonElement} */
-      const toggleConnectionButton = availableDeviceContainer.querySelector(".toggleConnection");
+      const toggleConnectionButton =
+        availableDeviceContainer.querySelector(".toggleConnection");
       toggleConnectionButton.addEventListener("click", () => {
         device.connectionManager = availableDevice.connectionManager;
         device.reconnect();
       });
       device.addEventListener("connectionStatus", () => {
-        toggleConnectionButton.disabled = device.connectionStatus != "notConnected";
+        toggleConnectionButton.disabled =
+          device.connectionStatus != "notConnected";
       });
-      toggleConnectionButton.disabled = device.connectionStatus != "notConnected";
+      toggleConnectionButton.disabled =
+        device.connectionStatus != "notConnected";
 
       availableDevicesContainer.appendChild(availableDeviceContainer);
     });
@@ -87,7 +94,9 @@ device.addEventListener("connectionStatus", () => {
     case "connected":
     case "notConnected":
       toggleConnectionButton.disabled = false;
-      toggleConnectionButton.innerText = device.isConnected ? "disconnect" : "connect";
+      toggleConnectionButton.innerText = device.isConnected
+        ? "disconnect"
+        : "connect";
       break;
     case "connecting":
     case "disconnecting":
@@ -98,7 +107,9 @@ device.addEventListener("connectionStatus", () => {
 });
 
 /** @type {HTMLInputElement} */
-const reconnectOnDisconnectionCheckbox = document.getElementById("reconnectOnDisconnection");
+const reconnectOnDisconnectionCheckbox = document.getElementById(
+  "reconnectOnDisconnection"
+);
 reconnectOnDisconnectionCheckbox.addEventListener("input", () => {
   device.reconnectOnDisconnection = reconnectOnDisconnectionCheckbox.checked;
 });
@@ -108,13 +119,23 @@ reconnectOnDisconnectionCheckbox.addEventListener("input", () => {
 /** @type {HTMLPreElement} */
 const deviceInformationPre = document.getElementById("deviceInformationPre");
 device.addEventListener("deviceInformation", () => {
-  deviceInformationPre.textContent = JSON.stringify(device.deviceInformation, null, 2);
+  deviceInformationPre.textContent = JSON.stringify(
+    device.deviceInformation,
+    null,
+    2
+  );
 });
 
 /** @type {HTMLPreElement} */
-const sensorConfigurationPre = document.getElementById("sensorConfigurationPre");
+const sensorConfigurationPre = document.getElementById(
+  "sensorConfigurationPre"
+);
 device.addEventListener("getSensorConfiguration", () => {
-  sensorConfigurationPre.textContent = JSON.stringify(device.sensorConfiguration, null, 2);
+  sensorConfigurationPre.textContent = JSON.stringify(
+    device.sensorConfiguration,
+    null,
+    2
+  );
 });
 
 /** @type {HTMLSpanElement} */
@@ -148,7 +169,12 @@ function setUrlParam(key, value) {
       searchParams.delete(key);
     }
     let newUrl =
-      window.location.protocol + "//" + window.location.host + window.location.pathname + "?" + searchParams.toString();
+      window.location.protocol +
+      "//" +
+      window.location.host +
+      window.location.pathname +
+      "?" +
+      searchParams.toString();
     window.history.pushState({ path: newUrl }, "", newUrl);
   }
 }
@@ -268,7 +294,9 @@ const sensorTypeTemplate = document.getElementById("sensorTypeTemplate");
 const sensorTypeContainers = {};
 
 BS.TfliteSensorTypes.forEach((sensorType) => {
-  const sensorTypeContainer = sensorTypeTemplate.content.cloneNode(true).querySelector(".sensorType");
+  const sensorTypeContainer = sensorTypeTemplate.content
+    .cloneNode(true)
+    .querySelector(".sensorType");
   sensorTypeContainer.querySelector(".name").innerText = sensorType;
 
   /** @type {HTMLInputElement} */
@@ -403,16 +431,24 @@ toggleSamplingButton.addEventListener("click", () => {
 
 function updateToggleSamplingButton() {
   const enabled =
-    device.isConnected && isRemoteManagementConnected() && sensorTypes.length > 0 && label.length > 0 && !isSampling;
+    device.isConnected &&
+    isRemoteManagementConnected() &&
+    sensorTypes.length > 0 &&
+    label.length > 0 &&
+    !isSampling;
   toggleSamplingButton.disabled = !enabled;
-  toggleSamplingButton.innerText = isSampling ? "sampling..." : "start sampling";
+  toggleSamplingButton.innerText = isSampling
+    ? "sampling..."
+    : "start sampling";
 }
 
-["isSampling", "remoteManagementConnection", "sensortypes", "label"].forEach((eventType) => {
-  window.addEventListener(eventType, () => {
-    updateToggleSamplingButton();
-  });
-});
+["isSampling", "remoteManagementConnection", "sensortypes", "label"].forEach(
+  (eventType) => {
+    window.addEventListener(eventType, () => {
+      updateToggleSamplingButton();
+    });
+  }
+);
 device.addEventListener("isConnected", () => {
   updateToggleSamplingButton();
 });
@@ -451,7 +487,9 @@ async function getProjects() {
     x.open("GET", `${studioEndpoint}/v1/api/projects`);
     x.onload = () => {
       if (x.status !== 200) {
-        reject("No projects found: " + x.status + " - " + JSON.stringify(x.response));
+        reject(
+          "No projects found: " + x.status + " - " + JSON.stringify(x.response)
+        );
       } else {
         if (!x.response.success) {
           reject(x.response.error);
@@ -459,7 +497,9 @@ async function getProjects() {
           const projects = x.response.projects;
           console.log("projects", projects);
           resolve(projects);
-          window.dispatchEvent(new CustomEvent("edgeImpulseProjects", { detail: { projects } }));
+          window.dispatchEvent(
+            new CustomEvent("edgeImpulseProjects", { detail: { projects } })
+          );
         }
       }
     };
@@ -476,7 +516,9 @@ async function getProject() {
     x.open("GET", `${studioEndpoint}/v1/api/${projectId}/public-info`);
     x.onload = () => {
       if (x.status !== 200) {
-        reject("No projects found: " + x.status + " - " + JSON.stringify(x.response));
+        reject(
+          "No projects found: " + x.status + " - " + JSON.stringify(x.response)
+        );
       } else {
         if (!x.response.success) {
           reject(x.response.error);
@@ -484,7 +526,9 @@ async function getProject() {
           const project = x.response;
           console.log("project", project);
           resolve(project);
-          window.dispatchEvent(new CustomEvent("edgeImpulseProject", { detail: { project } }));
+          window.dispatchEvent(
+            new CustomEvent("edgeImpulseProject", { detail: { project } })
+          );
         }
       }
     };
@@ -503,7 +547,12 @@ async function getHmacKey() {
     x.open("GET", `${studioEndpoint}/v1/api/${projectId}/devkeys`);
     x.onload = () => {
       if (x.status !== 200) {
-        reject("No development keys found: " + x.status + " - " + JSON.stringify(x.response));
+        reject(
+          "No development keys found: " +
+            x.status +
+            " - " +
+            JSON.stringify(x.response)
+        );
       } else {
         if (!x.response.success) {
           reject(x.response.error);
@@ -609,10 +658,14 @@ async function connectToRemoteManagement() {
       console.log("samplingDetails", samplingDetails);
 
       /** @type {BS.ContinuousSensorType[]} */
-      const sensorTypes = samplingDetails.sensor.split(sensorCombinationSeparator);
+      const sensorTypes = samplingDetails.sensor.split(
+        sensorCombinationSeparator
+      );
       console.log("sensorTypes", sensorTypes);
 
-      const invalidSensors = sensorTypes.filter((sensorType) => !device.allowedTfliteSensorTypes.includes(sensorType));
+      const invalidSensors = sensorTypes.filter(
+        (sensorType) => !device.allowedTfliteSensorTypes.includes(sensorType)
+      );
       if (invalidSensors.length > 0) {
         console.error("invalid sensorTypes", invalidSensors);
         return;
@@ -707,7 +760,7 @@ function remoteManagementHelloMessage() {
         return {
           name: sensorCombination,
           maxSampleLengthS: 1 * 60,
-          frequencies: [50.0, 25.0, 12.5], // 20ms, 40ms, 80ms
+          frequencies: [100.0, 50.0, 25.0, 12.5], // 10ms, 20ms, 40ms, 80ms
         };
       }),
       supportsSnapshotStreaming: false,
@@ -716,11 +769,16 @@ function remoteManagementHelloMessage() {
 }
 
 function isRemoteManagementConnected() {
-  return remoteManagementWebSocket?.readyState == WebSocket.OPEN && remoteManagementWebSocket?._isConnected;
+  return (
+    remoteManagementWebSocket?.readyState == WebSocket.OPEN &&
+    remoteManagementWebSocket?._isConnected
+  );
 }
 
 /** @type {HTMLButtonElement} */
-const toggleRemoteManagementConnectionButton = document.getElementById("toggleRemoteManagementConnection");
+const toggleRemoteManagementConnectionButton = document.getElementById(
+  "toggleRemoteManagementConnection"
+);
 toggleRemoteManagementConnectionButton.addEventListener("click", () => {
   if (isRemoteManagementConnected()) {
     remoteManagementWebSocket.dontReconnect = true;
@@ -756,13 +814,20 @@ let reconnectRemoteManagementOnDisconnection = false;
 const reconnectRemoteManagementOnDisconnectionInput = document.getElementById(
   "reconnectRemoteManagementOnDisconnection"
 );
-reconnectRemoteManagementOnDisconnectionInput.addEventListener("input", (event) => {
-  setReconnectRemoteManagementOnDisconnection(event.target.checked);
-});
-reconnectRemoteManagementOnDisconnectionInput.checked = reconnectRemoteManagementOnDisconnection;
+reconnectRemoteManagementOnDisconnectionInput.addEventListener(
+  "input",
+  (event) => {
+    setReconnectRemoteManagementOnDisconnection(event.target.checked);
+  }
+);
+reconnectRemoteManagementOnDisconnectionInput.checked =
+  reconnectRemoteManagementOnDisconnection;
 /** @param {boolean} newReconnectRemoteManagementOnDisconnection */
-function setReconnectRemoteManagementOnDisconnection(newReconnectRemoteManagementOnDisconnection) {
-  reconnectRemoteManagementOnDisconnection = newReconnectRemoteManagementOnDisconnection;
+function setReconnectRemoteManagementOnDisconnection(
+  newReconnectRemoteManagementOnDisconnection
+) {
+  reconnectRemoteManagementOnDisconnection =
+    newReconnectRemoteManagementOnDisconnection;
   console.log({ reconnectRemoteManagementOnDisconnection });
   dispatchEvent(new Event("reconnectRemoteManagementOnDisconnection"));
 }
@@ -843,7 +908,9 @@ async function uploadData(sensorTypes, deviceData) {
       case "linearAcceleration":
       case "gyroscope":
       case "magnetometer":
-        names = ["x", "y", "z"].map((component) => `${sensorType}.${component}`);
+        names = ["x", "y", "z"].map(
+          (component) => `${sensorType}.${component}`
+        );
         switch (sensorType) {
           case "linearAcceleration":
             units = "g/s";
@@ -891,8 +958,15 @@ async function uploadData(sensorTypes, deviceData) {
           });
           break;
         case "pressure":
-          for (let pressureIndex = 0; pressureIndex < device.numberOfPressureSensors; pressureIndex++) {
-            value.push(sensorSamples[sampleIndex].sensors[pressureIndex].rawValue * scalar);
+          for (
+            let pressureIndex = 0;
+            pressureIndex < device.numberOfPressureSensors;
+            pressureIndex++
+          ) {
+            value.push(
+              sensorSamples[sampleIndex].sensors[pressureIndex].rawValue *
+                scalar
+            );
           }
           break;
         default:
@@ -928,7 +1002,11 @@ async function uploadData(sensorTypes, deviceData) {
   console.log("signature", data.signature);
 
   const formData = new FormData();
-  formData.append("message", new Blob([JSON.stringify(data)], { type: "application/json" }), "message.json");
+  formData.append(
+    "message",
+    new Blob([JSON.stringify(data)], { type: "application/json" }),
+    "message.json"
+  );
 
   return new Promise((resolve, reject) => {
     let xml = new XMLHttpRequest();
@@ -936,7 +1014,12 @@ async function uploadData(sensorTypes, deviceData) {
       if (xml.status === 200) {
         resolve(xml.responseText);
       } else {
-        reject("Failed to upload (status code " + xml.status + "): " + xml.responseText);
+        reject(
+          "Failed to upload (status code " +
+            xml.status +
+            "): " +
+            xml.responseText
+        );
       }
     };
     xml.onerror = () => reject(undefined);
@@ -980,10 +1063,16 @@ async function createSignature(hmacKey, data) {
     ["sign", "verify"] // what this key can do
   );
   // Create signature for encoded input data
-  const signature = await crypto.subtle.sign("HMAC", key, textEncoder.encode(JSON.stringify(data)));
+  const signature = await crypto.subtle.sign(
+    "HMAC",
+    key,
+    textEncoder.encode(JSON.stringify(data))
+  );
   // Convert back to Hex
   const b = new Uint8Array(signature);
-  return Array.prototype.map.call(b, (x) => ("00" + x.toString(16)).slice(-2)).join("");
+  return Array.prototype.map
+    .call(b, (x) => ("00" + x.toString(16)).slice(-2))
+    .join("");
 }
 
 // EDGE IMPULSE CONFIG
@@ -1012,7 +1101,9 @@ function loadConfigFromLocalStorage() {
 loadConfigFromLocalStorage();
 
 function saveConfigToLocalStorage() {
-  const isConfigDifferent = !loadedConfig || Object.entries(loadedConfig).some(([key, value]) => config[key] != value);
+  const isConfigDifferent =
+    !loadedConfig ||
+    Object.entries(loadedConfig).some(([key, value]) => config[key] != value);
   if (!isConfigDifferent) {
     return;
   }

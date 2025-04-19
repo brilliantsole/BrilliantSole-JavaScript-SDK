@@ -44,7 +44,7 @@ export interface TfliteInference {
 }
 export type TfliteEventDispatcher = EventDispatcher<Device, TfliteEventType, TfliteEventMessages>;
 export type SendTfliteMessageCallback = SendMessageCallback<TfliteMessageType>;
-export declare const TfliteSensorTypes: SensorType[];
+export declare const TfliteSensorTypes: readonly ["pressure", "linearAcceleration", "gyroscope", "magnetometer"];
 export type TfliteSensorType = (typeof TfliteSensorTypes)[number];
 declare class TfliteManager {
     #private;

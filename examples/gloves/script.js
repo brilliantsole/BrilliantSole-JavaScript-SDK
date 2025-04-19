@@ -192,16 +192,16 @@ function onIFrameLoaded(gloveContainer) {
       case "none":
         break;
       case "gameRotation":
-        configuration.gameRotation = sensorRate;
+        configuration.gameRotation = pinchSensorRate;
         break;
       case "rotation":
-        configuration.rotation = sensorRate;
+        configuration.rotation = pinchSensorRate;
         break;
       case "orientation":
-        configuration.orientation = sensorRate;
+        configuration.orientation = pinchSensorRate;
         break;
       case "gyroscope":
-        configuration.gyroscope = sensorRate;
+        configuration.gyroscope = pinchSensorRate;
         break;
       default:
         console.error(
@@ -242,13 +242,13 @@ function onIFrameLoaded(gloveContainer) {
       case "none":
         break;
       case "acceleration":
-        configuration.acceleration = sensorRate;
+        configuration.acceleration = pinchSensorRate;
         break;
       case "gravity":
-        configuration.gravity = sensorRate;
+        configuration.gravity = pinchSensorRate;
         break;
       case "linearAcceleration":
-        configuration.linearAcceleration = sensorRate;
+        configuration.linearAcceleration = pinchSensorRate;
         break;
       default:
         console.error(
@@ -498,7 +498,7 @@ function onIFrameLoaded(gloveContainer) {
 
   let checkCursorIntersectableEntitiesIntervalId;
   const checkCursorIntersectableEntitiesInterval = 1000;
-  const xThreshold = 10;
+  const xThreshold = 4.5;
   const checkCursorIntersectableEntities = () => {
     cursorIntersectableEntities.forEach((entity) => {
       const position = entity.object3D.position;
@@ -516,13 +516,33 @@ function onIFrameLoaded(gloveContainer) {
       : "enable cursor";
 
     if (devicePair[side]?.isConnected) {
-      if (isCursorEnabled) {
-        orientationSelect.value = "gyroscope";
+      const device = devicePair[side];
+      if (device.isUkaton) {
+        if (isCursorEnabled) {
+          device.setSensorConfiguration(pinchSensorConfiguration);
+        } else {
+          device.clearSensorConfiguration();
+        }
       } else {
-        orientationSelect.value = "none";
+        if (isCursorEnabled) {
+          orientationSelect.value = "gyroscope";
+        } else {
+          orientationSelect.value = "none";
+        }
+        orientationSelect.dispatchEvent(new Event("input"));
+        setIsPressureEnabled(isCursorEnabled);
       }
-      orientationSelect.dispatchEvent(new Event("input"));
-      setIsPressureEnabled(isCursorEnabled);
+
+      if (devicePair[side]?.isUkaton) {
+        if (isCursorEnabled) {
+          positionSelect.value = "linearAcceleration";
+        } else {
+          positionSelect.value = "none";
+        }
+        positionSelect.dispatchEvent(new Event("input"));
+      } else {
+        setIsPressureEnabled(isCursorEnabled);
+      }
     }
     onCursorIsEnabled();
 
@@ -535,6 +555,11 @@ function onIFrameLoaded(gloveContainer) {
       clearInterval(checkCursorIntersectableEntitiesIntervalId);
     }
   };
+  window.addEventListener("pinch", () => {
+    if (isCursorDown || intersectedEntities[0]) {
+      setIsCursorDown(!isCursorDown);
+    }
+  });
 
   const onCursorIsEnabled = () => {
     if (isCursorEnabled) {
@@ -715,3 +740,186 @@ websocketClient.addEventListener("connectionStatus", () => {
   }
   toggleServerConnectionButton.disabled = disabled;
 });
+
+// PINCH CONFIG
+
+const pinchSensorRate = 20;
+/** @type {BS.TfliteSensorType[]} */
+const pinchSensorTypes = ["linearAcceleration", "gyroscope"];
+/** @type {BS.SensorConfiguration} */
+const pinchSensorConfiguration = {};
+pinchSensorTypes.forEach((sensorType) => {
+  pinchSensorConfiguration[sensorType] = pinchSensorRate;
+});
+
+/** @param {BS.DeviceEventMap["sensorData"]} event */
+const onDeviceSensorData = (event) => {
+  let data = [];
+  switch (event.message.sensorType) {
+    case "pressure":
+      data = event.message.pressure.sensors.map((sensor) => sensor.rawValue);
+      break;
+    case "linearAcceleration":
+      {
+        const { x, y, z } = event.message.linearAcceleration;
+        data = [x, y, z];
+      }
+      break;
+    case "gyroscope":
+      {
+        const { x, y, z } = event.message.gyroscope;
+        data = [x, y, z];
+      }
+      break;
+    case "magnetometer":
+      {
+        const { x, y, z } = event.message.magnetometer;
+        data = [x, y, z];
+      }
+      break;
+  }
+  data = data.map(
+    (value) => value * pinchSensorScalars[event.message.sensorType]
+  );
+  appendData(event.message.timestamp, event.message.sensorType, data);
+};
+devicePair.addEventListener("deviceIsConnected", (event) => {
+  const { device, isConnected, side } = event.message;
+  if (side != "right") {
+    return;
+  }
+  if (isConnected) {
+    console.log("ADD!");
+    device.addEventListener("sensorData", onDeviceSensorData);
+  } else {
+    device.removeEventListener("sensorData", onDeviceSensorData);
+  }
+});
+
+const pinchSensorScalars = {
+  pressure: 1 / (2 ** 16 - 1),
+  linearAcceleration: 1 / 4,
+  gyroscope: 1 / 720,
+  magnetometer: 1 / 2500,
+};
+
+// MODEL
+
+let classifier;
+async function loadClassifier() {
+  if (classifier) {
+    return;
+  }
+  classifier = new EdgeImpulseClassifier();
+  await classifier.init();
+
+  let project = classifier.getProjectInfo();
+  console.log("loaded classifier", project);
+
+  window.classifier = classifier;
+}
+
+devicePair.addEventListener("deviceIsConnected", (event) => {
+  if (event.message.device.isUkaton) {
+    loadClassifier();
+  }
+});
+
+/** @param {number[]} features */
+function classify(features) {
+  try {
+    let res = classifier.classify(features);
+    // console.log(res);
+    const didPinch = res.results[1].value > 0.5;
+    if (didPinch) {
+      console.log("pinch");
+      window.dispatchEvent(new Event("pinch"));
+      lastTimeGestureRecognized = Date.now();
+    }
+  } catch (ex) {
+    console.error("Failed to classify", ex);
+  }
+}
+
+// PINCH MODEL BUFFER
+const time = 600; // ms
+const numberOfSamples = time / pinchSensorRate;
+const numberOfFeaturesInEachSensorType = {};
+BS.TfliteSensorTypes.forEach((sensorType) => {
+  switch (sensorType) {
+    case "pressure":
+      numberOfFeaturesInEachSensorType[sensorType] = 8; // change to 16 for ukaton
+      break;
+    case "linearAcceleration":
+    case "gyroscope":
+    case "magnetometer":
+      numberOfFeaturesInEachSensorType[sensorType] = 3;
+      break;
+  }
+});
+let numberOfFeaturesInOneSample = 0;
+pinchSensorTypes.forEach((sensorType) => {
+  numberOfFeaturesInOneSample += numberOfFeaturesInEachSensorType[sensorType];
+});
+const numberOfFeatures = numberOfFeaturesInOneSample * numberOfSamples;
+console.log({
+  time,
+  numberOfSamples,
+  numberOfFeaturesInOneSample,
+  numberOfFeatures,
+});
+const samples = [];
+let pendingSample;
+let lastTimeClassified = 0;
+let lastTimeGestureRecognized = 0;
+let classificationDelay = 0;
+let gestureDelay = 500;
+let isClassifying = false;
+/**
+ * @param {number} timestamp
+ * @param {BS.TfliteSensorType} sensorType
+ * @param {number[]} data
+ */
+function appendData(timestamp, sensorType, data) {
+  //console.log({ timestamp, sensorType, data });
+  if (!pendingSample || timestamp != pendingSample.timestamp) {
+    pendingSample = { timestamp };
+    //console.log("pendingSample", pendingSample);
+  }
+  pendingSample[sensorType] = data;
+  const gotAllSensorSamples = pinchSensorTypes.every(
+    (sensorType) => sensorType in pendingSample
+  );
+  if (gotAllSensorSamples) {
+    //console.log("got all samples");
+    samples.push(pendingSample);
+    pendingSample = undefined;
+  }
+
+  while (samples.length > numberOfSamples) {
+    samples.shift();
+  }
+
+  if (!isClassifying && samples.length == numberOfSamples) {
+    const now = Date.now();
+    if (
+      now - lastTimeGestureRecognized < gestureDelay ||
+      now - lastTimeClassified < classificationDelay
+    ) {
+      return;
+    }
+    const features = [];
+    samples.forEach((sample) => {
+      const _features = [];
+      pinchSensorTypes.forEach((sensorType) => {
+        _features.push(...sample[sensorType]);
+        features.push(..._features);
+      });
+    });
+    isClassifying = true;
+    //console.log("classifying", features);
+    classify(features);
+    isClassifying = false;
+    lastTimeClassified = now;
+  }
+}

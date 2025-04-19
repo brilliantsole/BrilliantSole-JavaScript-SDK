@@ -1578,7 +1578,8 @@ class TfliteManager {
     }
     static AssertValidSensorType(sensorType) {
         SensorDataManager.AssertValidSensorType(sensorType);
-        _console$s.assertWithError(TfliteSensorTypes.includes(sensorType), `invalid tflite sensorType "${sensorType}"`);
+        const tfliteSensorType = sensorType;
+        _console$s.assertWithError(TfliteSensorTypes.includes(tfliteSensorType), `invalid tflite sensorType "${sensorType}"`);
     }
     get sensorTypes() {
         return __classPrivateFieldGet(this, _TfliteManager_sensorTypes, "f").slice();
@@ -5364,7 +5365,13 @@ class Device {
             this.disconnect();
         }
         else if (this.canReconnect) {
-            this.reconnect();
+            try {
+                this.reconnect();
+            }
+            catch (error) {
+                _console$b.error("error trying to reconnect", error);
+                this.connect();
+            }
         }
         else {
             this.connect();
@@ -7275,6 +7282,8 @@ exports.VibrationLocations = VibrationLocations;
 exports.VibrationTypes = VibrationTypes;
 exports.VibrationWaveformEffects = VibrationWaveformEffects;
 exports.WebSocketServer = WebSocketServer;
+exports.addEventListeners = addEventListeners;
+exports.removeEventListeners = removeEventListeners;
 exports.setAllConsoleLevelFlags = setAllConsoleLevelFlags;
 exports.setConsoleLevelFlagsForType = setConsoleLevelFlagsForType;
 //# sourceMappingURL=brilliantsole.cjs.map
