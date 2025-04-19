@@ -128,7 +128,7 @@ function onIFrameLoaded(gloveContainer) {
   )
     .sort((a, b) => a.dataset.pressure - b.dataset.pressure)
     .map((entity) => entity.querySelector("a-sphere"));
-  //pressureEntities.forEach((entity) => entity.setAttribute("opacity", "0.0"));
+  pressureEntities.forEach((entity) => entity.setAttribute("opacity", "0.0"));
   scene.addEventListener("loaded", () => {
     if (side == "left") {
       targetEntity.object3D.scale.x *= -1;
@@ -608,7 +608,7 @@ function onIFrameLoaded(gloveContainer) {
     const { gyroscope } = event.message;
     const { x: yawDegrees, y: pitchDegrees, z: rollDegrees } = gyroscope;
     // console.log({ yawDegrees, pitchDegrees, rollDegrees });
-    setCursorPosition(yawDegrees * 0.001, pitchDegrees * 0.001, true);
+    setCursorPosition(yawDegrees * 0.002, pitchDegrees * 0.003, true);
   });
   const cursorRaycaster = new THREE.Raycaster();
   const cursor2DPosition = new THREE.Vector2();
@@ -880,7 +880,7 @@ let pendingSample;
 let lastTimeClassified = 0;
 let lastTimeGestureRecognized = 0;
 let classificationDelay = 0;
-let gestureDelay = 500;
+let gestureDelay = 1000;
 let isClassifying = false;
 /**
  * @param {number} timestamp
