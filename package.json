@@ -53,6 +53,7 @@
     "@types/web-bluetooth": "^0.0.20",
     "@types/ws": "^8.5.10",
     "axios": "^1.7.7",
+    "bonjour": "^3.5.0",
     "cors": "^2.8.5",
     "express": "^4.18.3",
     "ip": "^2.0.1",

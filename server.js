@@ -10,6 +10,7 @@ import * as dgram from "dgram";
 import nocache from "nocache";
 import cors from "cors";
 import axios from "axios";
+import bonjour from "bonjour";
 
 process.on("warning", (e) => console.warn(e.stack));
 
@@ -19,14 +20,18 @@ process.on("warning", (e) => console.warn(e.stack));
 // HTTPS SERVER
 app.use(nocache());
 app.use(function (req, res, next) {
-  res.header("Cross-Origin-Opener-Policy", "same-origin");
-  res.header("x-frame-options", "same-origin");
+  //res.setHeader("Cross-Origin-Opener-Policy", "same-origin");
+  //res.setHeader("Cross-Origin-Embedder-Policy", "require-corp");
+  res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
+  //res.setHeader("X-Frame-Options", "SAMEORIGIN");
 
   // Add CORS headers
   res.header("Access-Control-Allow-Origin", "https://localhost"); // Adjust this to your allowed origin
-  res.header("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS"); // Allowed HTTP methods
-  res.header("Access-Control-Allow-Headers", "Content-Type, Authorization"); // Allowed headers
-  res.header("Access-Control-Allow-Credentials", "true"); // Allow cookies or other credentials if needed
+  res.header("Access-Control-Allow-Origin", "http://bs.local"); // Adjust this to your allowed origin
+  res.header("Access-Control-Allow-Origin", "https://bs.local"); // Adjust this to your allowed origin
+  res.setHeader("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS"); // Allowed HTTP methods
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization"); // Allowed headers
+  res.setHeader("Access-Control-Allow-Credentials", "true"); // Allow cookies or other credentials if needed
 
   // Handle preflight requests (OPTIONS)
   if (req.method === "OPTIONS") {
@@ -63,16 +68,34 @@ app.post("/bottango", async (req, res) => {
   }
 });
 
-const serverOptions = {
-  key: fs.readFileSync("./sec/key.pem"),
-  cert: fs.readFileSync("./sec/cert.pem"),
-};
+let serverOptions;
+if (true) {
+  serverOptions = {
+    key: fs.readFileSync("./sec/key.pem"),
+    cert: fs.readFileSync("./sec/cert.pem"),
+  };
+} else {
+  serverOptions = {
+    key: fs.readFileSync("./sec/bs.local-key.pem"),
+    cert: fs.readFileSync("./sec/bs.local.pem"),
+  };
+}
 
 const httpServer = http.createServer(app);
 httpServer.listen(80);
 const httpsServer = https.createServer(serverOptions, app);
 httpsServer.listen(443, () => {
   console.log(`server listening on https://${ip.address()}`);
+
+  const bonjourService = bonjour();
+  bonjourService.publish({
+    name: "Brilliant Sole Server",
+    type: "https",
+    port: 443,
+    host: "bs.local",
+  });
+
+  console.log("Advertised as bs.local");
 });
 
 // WEBSOCKET

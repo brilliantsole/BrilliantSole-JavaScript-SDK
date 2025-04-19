@@ -346,13 +346,21 @@ class Device {
           }
           break;
         case "webSocket":
-          if (this.connectionType != "webSocket") {
-            const connectionManager = this
-              .connectionManager as WebSocketConnectionManager;
-            if (
-              connectionManager.ipAddress != options.ipAddress ||
-              connectionManager.isSecure != options.isWifiSecure
-            ) {
+          {
+            let createConnectionManager = false;
+            if (this.connectionType == "webSocket") {
+              const connectionManager = this
+                .connectionManager as WebSocketConnectionManager;
+              if (
+                connectionManager.ipAddress != options.ipAddress ||
+                connectionManager.isSecure != options.isWifiSecure
+              ) {
+                createConnectionManager = true;
+              }
+            } else {
+              createConnectionManager = true;
+            }
+            if (createConnectionManager) {
               this.connectionManager = new WebSocketConnectionManager(
                 options.ipAddress,
                 options.isWifiSecure,
@@ -360,18 +368,27 @@ class Device {
               );
             }
           }
+
           break;
         case "udp":
-          if (this.connectionType != "udp") {
-            const connectionManager = this
-              .connectionManager as UDPConnectionManager;
-            if (connectionManager.ipAddress != options.ipAddress) {
+          {
+            let createConnectionManager = false;
+            if (this.connectionType == "udp") {
+              const connectionManager = this
+                .connectionManager as UDPConnectionManager;
+              if (connectionManager.ipAddress != options.ipAddress) {
+                createConnectionManager = true;
+              }
+              this.reconnectOnDisconnection = true;
+            } else {
+              createConnectionManager = true;
+            }
+            if (createConnectionManager) {
               this.connectionManager = new UDPConnectionManager(
                 options.ipAddress,
                 this.bluetoothId
               );
             }
-            this.reconnectOnDisconnection = true;
           }
           break;
       }

@@ -115,6 +115,7 @@ const connectViaIpAddressButton = document.getElementById(
 );
 connectViaIpAddressButton.addEventListener("click", () => {
   connectViaIpAddressButton.disabled = true;
+  console.log(`connecting via ipAddress "${connectIpAddressInput.value}"`);
   device.connect({ type: "webSocket", ipAddress: connectIpAddressInput.value });
 });
 device.addEventListener("isConnected", () => {
