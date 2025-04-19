@@ -558,6 +558,13 @@ function onIFrameLoaded(gloveContainer) {
   window.addEventListener("pinch", () => {
     if (isCursorDown || intersectedEntities[0]) {
       setIsCursorDown(!isCursorDown);
+      devicePair[side]?.triggerVibration([
+        {
+          type: "waveformEffect",
+          locations: ["rear"],
+          segments: [{ effect: "buzz100" }],
+        },
+      ]);
     }
   });
 
