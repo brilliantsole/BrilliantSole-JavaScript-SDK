@@ -13,7 +13,7 @@ export { CenterOfPressure } from "./utils/CenterOfPressureHelper.ts";
 export { VibrationConfiguration, VibrationLocation, VibrationLocations, VibrationType, VibrationTypes, MaxNumberOfVibrationWaveformEffectSegments, MaxVibrationWaveformSegmentDuration, MaxVibrationWaveformEffectSegmentDelay, MaxVibrationWaveformEffectSegmentLoopCount, MaxNumberOfVibrationWaveformSegments, MaxVibrationWaveformEffectSequenceLoopCount, } from "./vibration/VibrationManager.ts";
 export { VibrationWaveformEffect, VibrationWaveformEffects, } from "./vibration/VibrationWaveformEffects.ts";
 export { FileType, FileTypes, FileTransferDirection, FileTransferDirections, } from "./FileTransferManager.ts";
-export { TfliteSensorType, TfliteSensorTypes, TfliteTask, TfliteTasks, } from "./TfliteManager.ts";
+export { TfliteSensorType, TfliteSensorTypes, TfliteTask, TfliteTasks, TfliteFileConfiguration as TfliteFileConfiguration, } from "./TfliteManager.ts";
 export { default as DevicePair, DevicePairEvent, DevicePairEventMap, DevicePairEventListenerMap, BoundDevicePairEventListeners, DevicePairType, DevicePairTypes, } from "./devicePair/DevicePair.ts";
 export { addEventListeners, removeEventListeners } from "./utils/EventUtils.ts";
 export { DiscoveredDevice } from "./scanner/BaseScanner.ts";

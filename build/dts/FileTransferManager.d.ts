@@ -13,6 +13,10 @@ export declare const FileTransferDirections: readonly ["sending", "receiving"];
 export type FileTransferDirection = (typeof FileTransferDirections)[number];
 export declare const FileTransferEventTypes: readonly ["maxFileLength", "getFileType", "setFileType", "getFileLength", "setFileLength", "getFileChecksum", "setFileChecksum", "setFileTransferCommand", "fileTransferStatus", "getFileBlock", "setFileBlock", "fileBytesTransferred", "fileTransferProgress", "fileTransferComplete", "fileReceived"];
 export type FileTransferEventType = (typeof FileTransferEventTypes)[number];
+export interface FileConfiguration {
+    file: FileLike;
+    type: FileType;
+}
 export interface FileTransferEventMessages {
     maxFileLength: {
         maxFileLength: number;
@@ -74,7 +78,7 @@ declare class FileTransferManager {
     get checksum(): number;
     get status(): "idle" | "sending" | "receiving";
     parseMessage(messageType: FileTransferMessageType, dataView: DataView): void;
-    send(type: FileType, file: FileLike): Promise<void>;
+    send(type: FileType, file: FileLike): Promise<boolean>;
     mtu: number;
     receive(type: FileType): Promise<void>;
     cancel(): Promise<void>;

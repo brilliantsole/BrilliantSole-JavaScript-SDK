@@ -265,6 +265,46 @@ interface AnySensorDataEventMessages {
 }
 type SensorDataEventMessages = _SensorDataEventMessages & AnySensorDataEventMessages;
 
+declare const FileTypes: readonly ["tflite", "wifiServerCert", "wifiServerKey"];
+type FileType = (typeof FileTypes)[number];
+declare const FileTransferStatuses: readonly ["idle", "sending", "receiving"];
+type FileTransferStatus = (typeof FileTransferStatuses)[number];
+declare const FileTransferDirections: readonly ["sending", "receiving"];
+type FileTransferDirection = (typeof FileTransferDirections)[number];
+interface FileConfiguration {
+    file: FileLike;
+    type: FileType;
+}
+interface FileTransferEventMessages {
+    maxFileLength: {
+        maxFileLength: number;
+    };
+    getFileType: {
+        fileType: FileType;
+    };
+    getFileLength: {
+        fileLength: number;
+    };
+    getFileChecksum: {
+        fileChecksum: number;
+    };
+    fileTransferStatus: {
+        fileTransferStatus: FileTransferStatus;
+    };
+    getFileBlock: {
+        fileTransferBlock: DataView;
+    };
+    fileTransferProgress: {
+        progress: number;
+    };
+    fileTransferComplete: {
+        direction: FileTransferDirection;
+    };
+    fileReceived: {
+        file: File | Blob;
+    };
+}
+
 declare const TfliteTasks: readonly ["classification", "regression"];
 type TfliteTask = (typeof TfliteTasks)[number];
 interface TfliteEventMessages {
@@ -301,9 +341,23 @@ interface TfliteInference {
     values: number[];
     maxValue?: number;
     maxIndex?: number;
+    maxClass?: string;
+    classValues?: {
+        [key: string]: number;
+    };
 }
 declare const TfliteSensorTypes: readonly ["pressure", "linearAcceleration", "gyroscope", "magnetometer"];
 type TfliteSensorType = (typeof TfliteSensorTypes)[number];
+interface TfliteFileConfiguration extends FileConfiguration {
+    type: "tflite";
+    name: string;
+    sensorTypes: TfliteSensorType[];
+    task: TfliteTask;
+    sampleRate: number;
+    captureDelay?: number;
+    threshold?: number;
+    classes?: string[];
+}
 
 interface PnpId {
     source: "Bluetooth" | "USB";
@@ -480,42 +534,6 @@ interface VibrationWaveformConfiguration extends BaseVibrationConfiguration {
     segments: VibrationWaveformSegment[];
 }
 type VibrationConfiguration = VibrationWaveformEffectConfiguration | VibrationWaveformConfiguration;
-
-declare const FileTypes: readonly ["tflite", "wifiServerCert", "wifiServerKey"];
-type FileType = (typeof FileTypes)[number];
-declare const FileTransferStatuses: readonly ["idle", "sending", "receiving"];
-type FileTransferStatus = (typeof FileTransferStatuses)[number];
-declare const FileTransferDirections: readonly ["sending", "receiving"];
-type FileTransferDirection = (typeof FileTransferDirections)[number];
-interface FileTransferEventMessages {
-    maxFileLength: {
-        maxFileLength: number;
-    };
-    getFileType: {
-        fileType: FileType;
-    };
-    getFileLength: {
-        fileLength: number;
-    };
-    getFileChecksum: {
-        fileChecksum: number;
-    };
-    fileTransferStatus: {
-        fileTransferStatus: FileTransferStatus;
-    };
-    getFileBlock: {
-        fileTransferBlock: DataView;
-    };
-    fileTransferProgress: {
-        progress: number;
-    };
-    fileTransferComplete: {
-        direction: FileTransferDirection;
-    };
-    fileReceived: {
-        file: File | Blob;
-    };
-}
 
 declare const DeviceTypes: readonly ["leftInsole", "rightInsole", "leftGlove", "rightGlove", "glasses", "generic"];
 type DeviceType = (typeof DeviceTypes)[number];
@@ -705,11 +723,12 @@ declare class Device {
     cancelFileTransfer(): void;
     get tfliteName(): string;
     get setTfliteName(): (newName: string, sendImmediately?: boolean) => Promise<void>;
+    sendTfliteConfiguration(configuration: TfliteFileConfiguration): Promise<void>;
     get tfliteTask(): "classification" | "regression";
     get setTfliteTask(): (newTask: TfliteTask, sendImmediately?: boolean) => Promise<void>;
     get tfliteSampleRate(): number;
     get setTfliteSampleRate(): (newSampleRate: number, sendImmediately?: boolean) => Promise<void>;
-    get tfliteSensorTypes(): ("pressure" | "acceleration" | "gravity" | "linearAcceleration" | "gyroscope" | "magnetometer" | "gameRotation" | "rotation" | "orientation" | "activity" | "stepCounter" | "stepDetector" | "deviceOrientation" | "barometer")[];
+    get tfliteSensorTypes(): ("pressure" | "linearAcceleration" | "gyroscope" | "magnetometer")[];
     get allowedTfliteSensorTypes(): ("pressure" | "acceleration" | "gravity" | "linearAcceleration" | "gyroscope" | "magnetometer" | "gameRotation" | "rotation" | "orientation" | "activity" | "stepCounter" | "stepDetector" | "deviceOrientation" | "barometer")[];
     get setTfliteSensorTypes(): (newSensorTypes: SensorType[], sendImmediately?: boolean) => Promise<void>;
     get tfliteIsReady(): boolean;
@@ -1024,4 +1043,4 @@ declare class UDPServer extends BaseServer {
     broadcastMessage(message: ArrayBuffer): void;
 }
 
-export { type BoundDeviceEventListeners, type BoundDeviceManagerEventListeners, type BoundDevicePairEventListeners, type CenterOfPressure, type ContinuousSensorType, ContinuousSensorTypes, DefaultNumberOfPressureSensors, Device, type DeviceEvent, type DeviceEventListenerMap, type DeviceEventMap, type DeviceInformation, _default as DeviceManager, type DeviceManagerEvent, type DeviceManagerEventListenerMap, type DeviceManagerEventMap, DevicePair, type DevicePairEvent, type DevicePairEventListenerMap, type DevicePairEventMap, type DevicePairType, DevicePairTypes, type DeviceType, DeviceTypes, type DiscoveredDevice, environment_d as Environment, type Euler, type FileTransferDirection, FileTransferDirections, type FileType, FileTypes, MaxNameLength, MaxNumberOfVibrationWaveformEffectSegments, MaxNumberOfVibrationWaveformSegments, MaxSensorRate, MaxVibrationWaveformEffectSegmentDelay, MaxVibrationWaveformEffectSegmentLoopCount, MaxVibrationWaveformEffectSequenceLoopCount, MaxVibrationWaveformSegmentDuration, MaxWifiPasswordLength, MaxWifiSSIDLength, MinNameLength, MinWifiPasswordLength, MinWifiSSIDLength, type PressureData, type Quaternion, RangeHelper, scanner as Scanner, type SensorConfiguration, SensorRateStep, type SensorType, SensorTypes, type Side, Sides, type TfliteSensorType, TfliteSensorTypes, type TfliteTask, TfliteTasks, UDPServer, type Vector2, type Vector3, type VibrationConfiguration, type VibrationLocation, VibrationLocations, type VibrationType, VibrationTypes, type VibrationWaveformEffect, VibrationWaveformEffects, WebSocketServer, addEventListeners, removeEventListeners, setAllConsoleLevelFlags, setConsoleLevelFlagsForType };
+export { type BoundDeviceEventListeners, type BoundDeviceManagerEventListeners, type BoundDevicePairEventListeners, type CenterOfPressure, type ContinuousSensorType, ContinuousSensorTypes, DefaultNumberOfPressureSensors, Device, type DeviceEvent, type DeviceEventListenerMap, type DeviceEventMap, type DeviceInformation, _default as DeviceManager, type DeviceManagerEvent, type DeviceManagerEventListenerMap, type DeviceManagerEventMap, DevicePair, type DevicePairEvent, type DevicePairEventListenerMap, type DevicePairEventMap, type DevicePairType, DevicePairTypes, type DeviceType, DeviceTypes, type DiscoveredDevice, environment_d as Environment, type Euler, type FileTransferDirection, FileTransferDirections, type FileType, FileTypes, MaxNameLength, MaxNumberOfVibrationWaveformEffectSegments, MaxNumberOfVibrationWaveformSegments, MaxSensorRate, MaxVibrationWaveformEffectSegmentDelay, MaxVibrationWaveformEffectSegmentLoopCount, MaxVibrationWaveformEffectSequenceLoopCount, MaxVibrationWaveformSegmentDuration, MaxWifiPasswordLength, MaxWifiSSIDLength, MinNameLength, MinWifiPasswordLength, MinWifiSSIDLength, type PressureData, type Quaternion, RangeHelper, scanner as Scanner, type SensorConfiguration, SensorRateStep, type SensorType, SensorTypes, type Side, Sides, type TfliteFileConfiguration, type TfliteSensorType, TfliteSensorTypes, type TfliteTask, TfliteTasks, UDPServer, type Vector2, type Vector3, type VibrationConfiguration, type VibrationLocation, VibrationLocations, type VibrationType, VibrationTypes, type VibrationWaveformEffect, VibrationWaveformEffects, WebSocketServer, addEventListeners, removeEventListeners, setAllConsoleLevelFlags, setConsoleLevelFlagsForType };

@@ -644,19 +644,35 @@
             }
         }
         async send(type, file) {
-            __classPrivateFieldGet(this, _FileTransferManager_instances, "m", _FileTransferManager_assertIsIdle).call(this);
-            __classPrivateFieldGet(this, _FileTransferManager_instances, "m", _FileTransferManager_assertValidType).call(this, type);
+            {
+                __classPrivateFieldGet(this, _FileTransferManager_instances, "m", _FileTransferManager_assertIsIdle).call(this);
+                __classPrivateFieldGet(this, _FileTransferManager_instances, "m", _FileTransferManager_assertValidType).call(this, type);
+            }
             const fileBuffer = await getFileBuffer(file);
+            const fileLength = fileBuffer.byteLength;
+            const checksum = crc32(fileBuffer);
+            if (type != this.type) {
+                _console$r.log("different fileTypes - sending");
+            }
+            else if (fileLength != this.length) {
+                _console$r.log("different fileLengths - sending");
+            }
+            else if (checksum != this.checksum) {
+                _console$r.log("different fileChecksums - sending");
+            }
+            else {
+                _console$r.log("already sent file");
+                return false;
+            }
             const promises = [];
             promises.push(__classPrivateFieldGet(this, _FileTransferManager_instances, "m", _FileTransferManager_setType).call(this, type, false));
-            const fileLength = fileBuffer.byteLength;
             promises.push(__classPrivateFieldGet(this, _FileTransferManager_instances, "m", _FileTransferManager_setLength).call(this, fileLength, false));
-            const checksum = crc32(fileBuffer);
             promises.push(__classPrivateFieldGet(this, _FileTransferManager_instances, "m", _FileTransferManager_setChecksum).call(this, checksum, false));
             promises.push(__classPrivateFieldGet(this, _FileTransferManager_instances, "m", _FileTransferManager_setCommand).call(this, "startSend", false));
             this.sendMessage();
             await Promise.all(promises);
             await __classPrivateFieldGet(this, _FileTransferManager_instances, "m", _FileTransferManager_send).call(this, fileBuffer);
+            return true;
         }
         async receive(type) {
             __classPrivateFieldGet(this, _FileTransferManager_instances, "m", _FileTransferManager_assertIsIdle).call(this);
@@ -1451,8 +1467,8 @@
         });
     })();
 
-    var _TfliteManager_instances, _TfliteManager_assertValidTask, _TfliteManager_assertValidTaskEnum, _TfliteManager_dispatchEvent_get, _TfliteManager_name, _TfliteManager_parseName, _TfliteManager_updateName, _TfliteManager_task, _TfliteManager_parseTask, _TfliteManager_updateTask, _TfliteManager_sampleRate, _TfliteManager_parseSampleRate, _TfliteManager_updateSampleRate, _TfliteManager_sensorTypes, _TfliteManager_parseSensorTypes, _TfliteManager_updateSensorTypes, _TfliteManager_isReady, _TfliteManager_parseIsReady, _TfliteManager_updateIsReady, _TfliteManager_assertIsReady, _TfliteManager_captureDelay, _TfliteManager_parseCaptureDelay, _TfliteManager_updateCaptueDelay, _TfliteManager_threshold, _TfliteManager_parseThreshold, _TfliteManager_updateThreshold, _TfliteManager_inferencingEnabled, _TfliteManager_parseInferencingEnabled, _TfliteManager_updateInferencingEnabled, _TfliteManager_parseInference;
-    const _console$j = createConsole("TfliteManager", { log: false });
+    var _TfliteManager_instances, _TfliteManager_assertValidTask, _TfliteManager_assertValidTaskEnum, _TfliteManager_dispatchEvent_get, _TfliteManager_name, _TfliteManager_parseName, _TfliteManager_updateName, _TfliteManager_task, _TfliteManager_parseTask, _TfliteManager_updateTask, _TfliteManager_sampleRate, _TfliteManager_parseSampleRate, _TfliteManager_updateSampleRate, _TfliteManager_sensorTypes, _TfliteManager_parseSensorTypes, _TfliteManager_updateSensorTypes, _TfliteManager_isReady, _TfliteManager_parseIsReady, _TfliteManager_updateIsReady, _TfliteManager_assertIsReady, _TfliteManager_captureDelay, _TfliteManager_parseCaptureDelay, _TfliteManager_updateCaptueDelay, _TfliteManager_threshold, _TfliteManager_parseThreshold, _TfliteManager_updateThreshold, _TfliteManager_inferencingEnabled, _TfliteManager_parseInferencingEnabled, _TfliteManager_updateInferencingEnabled, _TfliteManager_parseInference, _TfliteManager_configuration;
+    const _console$j = createConsole("TfliteManager", { log: true });
     const TfliteMessageTypes = [
         "getTfliteName",
         "setTfliteName",
@@ -1490,6 +1506,7 @@
             _TfliteManager_captureDelay.set(this, void 0);
             _TfliteManager_threshold.set(this, void 0);
             _TfliteManager_inferencingEnabled.set(this, void 0);
+            _TfliteManager_configuration.set(this, void 0);
             autoBind(this);
         }
         get addEventListenter() {
@@ -1684,8 +1701,40 @@
                     throw Error(`uncaught messageType ${messageType}`);
             }
         }
+        get configuration() {
+            return __classPrivateFieldGet(this, _TfliteManager_configuration, "f");
+        }
+        sendConfiguration(configuration, sendImmediately) {
+            if (configuration == __classPrivateFieldGet(this, _TfliteManager_configuration, "f")) {
+                _console$j.log("redundant tflite configuration assignment");
+                return;
+            }
+            __classPrivateFieldSet(this, _TfliteManager_configuration, configuration, "f");
+            _console$j.log("assigned new tflite configuration", this.configuration);
+            if (!this.configuration) {
+                return;
+            }
+            const { name, task, captureDelay, sampleRate, threshold, sensorTypes } = this.configuration;
+            this.setName(name, false);
+            this.setTask(task, false);
+            if (captureDelay != undefined) {
+                this.setCaptureDelay(captureDelay, false);
+            }
+            this.setSampleRate(sampleRate, false);
+            if (threshold != undefined) {
+                this.setThreshold(threshold, false);
+            }
+            this.setSensorTypes(sensorTypes, sendImmediately);
+        }
+        clear() {
+            __classPrivateFieldSet(this, _TfliteManager_configuration, undefined, "f");
+            __classPrivateFieldSet(this, _TfliteManager_inferencingEnabled, false, "f");
+            __classPrivateFieldSet(this, _TfliteManager_sensorTypes, [], "f");
+            __classPrivateFieldSet(this, _TfliteManager_sampleRate, 0, "f");
+            __classPrivateFieldSet(this, _TfliteManager_isReady, false, "f");
+        }
     }
-    _TfliteManager_name = new WeakMap(), _TfliteManager_task = new WeakMap(), _TfliteManager_sampleRate = new WeakMap(), _TfliteManager_sensorTypes = new WeakMap(), _TfliteManager_isReady = new WeakMap(), _TfliteManager_captureDelay = new WeakMap(), _TfliteManager_threshold = new WeakMap(), _TfliteManager_inferencingEnabled = new WeakMap(), _TfliteManager_instances = new WeakSet(), _TfliteManager_assertValidTask = function _TfliteManager_assertValidTask(task) {
+    _TfliteManager_name = new WeakMap(), _TfliteManager_task = new WeakMap(), _TfliteManager_sampleRate = new WeakMap(), _TfliteManager_sensorTypes = new WeakMap(), _TfliteManager_isReady = new WeakMap(), _TfliteManager_captureDelay = new WeakMap(), _TfliteManager_threshold = new WeakMap(), _TfliteManager_inferencingEnabled = new WeakMap(), _TfliteManager_configuration = new WeakMap(), _TfliteManager_instances = new WeakSet(), _TfliteManager_assertValidTask = function _TfliteManager_assertValidTask(task) {
         _console$j.assertEnumWithError(task, TfliteTasks);
     }, _TfliteManager_assertValidTaskEnum = function _TfliteManager_assertValidTaskEnum(taskEnum) {
         _console$j.assertWithError(taskEnum in TfliteTasks, `invalid taskEnum ${taskEnum}`);
@@ -1726,7 +1775,12 @@
             const sensorTypeEnum = dataView.getUint8(index);
             const sensorType = SensorTypes[sensorTypeEnum];
             if (sensorType) {
-                sensorTypes.push(sensorType);
+                if (TfliteSensorTypes.includes(sensorType)) {
+                    sensorTypes.push(sensorType);
+                }
+                else {
+                    _console$j.error(`invalid tfliteSensorType ${sensorType}`);
+                }
             }
             else {
                 _console$j.error(`invalid sensorTypeEnum ${sensorTypeEnum}`);
@@ -1803,6 +1857,15 @@
             _console$j.log({ maxIndex, maxValue });
             inference.maxIndex = maxIndex;
             inference.maxValue = maxValue;
+            if (__classPrivateFieldGet(this, _TfliteManager_configuration, "f")?.classes) {
+                const { classes } = __classPrivateFieldGet(this, _TfliteManager_configuration, "f");
+                inference.maxClass = classes[maxIndex];
+                inference.classValues = {};
+                values.forEach((value, index) => {
+                    const key = classes[index];
+                    inference.classValues[key] = value;
+                });
+            }
         }
         __classPrivateFieldGet(this, _TfliteManager_instances, "a", _TfliteManager_dispatchEvent_get).call(this, "tfliteInference", { tfliteInference: inference });
     };
@@ -5220,6 +5283,14 @@
         get setTfliteName() {
             return __classPrivateFieldGet(this, _Device_tfliteManager, "f").setName;
         }
+        async sendTfliteConfiguration(configuration) {
+            configuration.type = "tflite";
+            __classPrivateFieldGet(this, _Device_tfliteManager, "f").sendConfiguration(configuration, false);
+            const didSendFile = await __classPrivateFieldGet(this, _Device_fileTransferManager, "f").send(configuration.type, configuration.file);
+            if (!didSendFile) {
+                __classPrivateFieldGet(this, _Device_instances, "m", _Device_sendTxMessages).call(this);
+            }
+        }
         get tfliteTask() {
             return __classPrivateFieldGet(this, _Device_tfliteManager, "f").task;
         }
@@ -5472,6 +5543,7 @@
         __classPrivateFieldGet(this, _Device_instances, "m", _Device_clearConnection).call(this);
         this._informationManager.clear();
         __classPrivateFieldGet(this, _Device_deviceInformationManager, "f").clear();
+        __classPrivateFieldGet(this, _Device_tfliteManager, "f").clear();
         __classPrivateFieldGet(this, _Device_wifiManager, "f").clear();
     }, _Device_clearConnection = function _Device_clearConnection() {
         this.connectionManager?.clear();

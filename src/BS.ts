@@ -81,6 +81,7 @@ export {
   TfliteSensorTypes,
   TfliteTask,
   TfliteTasks,
+  TfliteFileConfiguration as TfliteFileConfiguration,
 } from "./TfliteManager.ts";
 
 export {

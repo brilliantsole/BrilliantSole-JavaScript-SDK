@@ -48,6 +48,11 @@ export const FileTransferEventTypes = [
 ] as const;
 export type FileTransferEventType = (typeof FileTransferEventTypes)[number];
 
+export interface FileConfiguration {
+  file: FileLike;
+  type: FileType;
+}
+
 export interface FileTransferEventMessages {
   maxFileLength: { maxFileLength: number };
   getFileType: { fileType: FileType };
@@ -90,6 +95,9 @@ class FileTransferManager {
 
   #assertValidType(type: FileType) {
     _console.assertEnumWithError(type, FileTypes);
+  }
+  #isValidType(type: FileType) {
+    return FileTypes.includes(type);
   }
   #assertValidTypeEnum(typeEnum: number) {
     _console.assertWithError(
@@ -388,17 +396,39 @@ class FileTransferManager {
   }
 
   async send(type: FileType, file: FileLike) {
-    this.#assertIsIdle();
+    if (true) {
+      this.#assertIsIdle();
+      this.#assertValidType(type);
+    } else {
+      if (this.status != "idle") {
+        _console.warn(`cannot send file - status is ${this.status}`);
+        return false;
+      }
+      if (!this.#isValidType(type)) {
+        _console.warn(`invalid fileType ${type}`);
+        return false;
+      }
+    }
 
-    this.#assertValidType(type);
     const fileBuffer = await getFileBuffer(file);
+    const fileLength = fileBuffer.byteLength;
+    const checksum = crc32(fileBuffer);
+
+    if (type != this.type) {
+      _console.log("different fileTypes - sending");
+    } else if (fileLength != this.length) {
+      _console.log("different fileLengths - sending");
+    } else if (checksum != this.checksum) {
+      _console.log("different fileChecksums - sending");
+    } else {
+      _console.log("already sent file");
+      return false;
+    }
 
     const promises: Promise<any>[] = [];
 
     promises.push(this.#setType(type, false));
-    const fileLength = fileBuffer.byteLength;
     promises.push(this.#setLength(fileLength, false));
-    const checksum = crc32(fileBuffer);
     promises.push(this.#setChecksum(checksum, false));
     promises.push(this.#setCommand("startSend", false));
 
@@ -407,6 +437,8 @@ class FileTransferManager {
     await Promise.all(promises);
 
     await this.#send(fileBuffer);
+
+    return true;
   }
 
   #buffer?: ArrayBuffer;

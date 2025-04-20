@@ -60,6 +60,8 @@ import TfliteManager, {
   TfliteMessageTypes,
   TfliteMessageType,
   TfliteSensorTypes,
+  TfliteFileConfiguration,
+  TfliteSensorType,
 } from "./TfliteManager.ts";
 import FirmwareManager, {
   FirmwareEventDispatcher,
@@ -607,6 +609,7 @@ class Device {
     this.#clearConnection();
     this._informationManager.clear();
     this.#deviceInformationManager.clear();
+    this.#tfliteManager.clear();
     this.#wifiManager.clear();
   }
   #clearConnection() {
@@ -905,6 +908,18 @@ class Device {
     return this.#tfliteManager.setName;
   }
 
+  async sendTfliteConfiguration(configuration: TfliteFileConfiguration) {
+    configuration.type = "tflite";
+    this.#tfliteManager.sendConfiguration(configuration, false);
+    const didSendFile = await this.#fileTransferManager.send(
+      configuration.type,
+      configuration.file
+    );
+    if (!didSendFile) {
+      this.#sendTxMessages();
+    }
+  }
+
   // TFLITE MODEL CONFIG
   get tfliteTask() {
     return this.#tfliteManager.task;
@@ -923,7 +938,7 @@ class Device {
   }
   get allowedTfliteSensorTypes() {
     return this.sensorTypes.filter((sensorType) =>
-      TfliteSensorTypes.includes(sensorType)
+      TfliteSensorTypes.includes(sensorType as TfliteSensorType)
     );
   }
   get setTfliteSensorTypes() {

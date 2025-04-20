@@ -1,0 +1,122 @@
+<html>
+  <head>
+    <title>Punch | BrilliantSole JavaScript SDK</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico" />
+    <script type="module" src="./script.js"></script>
+    <script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script>
+    <script src="../utils/aframe/force-pushable.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/c-frame/aframe-physics-system@v4.2.3/dist/aframe-physics-system.min.js"></script>
+  </head>
+  <style>
+    #scene {
+      width: 700px;
+      height: 700px;
+      margin: auto;
+      border-radius: 2rem;
+      overflow: hidden;
+      border: solid black;
+      box-sizing: border-box;
+    }
+  </style>
+  <body>
+    <nav>
+      <a href="../../">home</a>
+    </nav>
+
+    <h1>Punch | BrilliantSole JavaScript SDK</h1>
+
+    <button id="toggleConnection">connect</button>
+
+    <progress value="0" id="fileTransferProgress"></progress>
+
+    <label>
+      is model ready <input type="checkbox" disabled id="isModelReady" />
+    </label>
+
+    <b><span id="maxClass"></span></b>
+
+    <a-scene
+      id="scene"
+      physics="debug: false"
+      embedded
+      xr-mode-ui="enabled: false;"
+      device-orientation-permission-ui="enabled: false"
+    >
+      <a-assets></a-assets>
+
+      <a-camera
+        id="camera"
+        look-controls="enabled: false;"
+        wasd-controls="enabled: false"
+        position="0 0.2 0.65"
+        rotation="-20 0 0"
+      ></a-camera>
+      <a-sky></a-sky>
+
+      <a-entity position="0 -0.55 0">
+        <a-sphere
+          id="punchingBag2"
+          class="punchingBag 2"
+          data-section="2"
+          radius="0.125"
+          color="#777"
+          position="0 0.75 0"
+          dynamic-body
+          force-pushable
+          constraint="type: coneTwist;
+                 target: #punchingBag1;
+                 pivot: 0 -0.13 0;       
+                 targetPivot: 0 0.13 0;   
+                 axis: 0 1 0;
+                 targetAxis: 0 1 0"
+        ></a-sphere>
+        <a-box
+          id="punchingBag1"
+          class="punchingBag 1"
+          data-section="1"
+          width="0.5"
+          height="0.25"
+          depth="0.25"
+          color="#B00"
+          position="0 0.5 0"
+          dynamic-body
+          force-pushable
+          constraint="type: coneTwist;
+                 target: #punchingBag0;
+                 pivot: 0 -0.13 0;       
+                 targetPivot: 0 0.13 0;   
+                 axis: 0 1 0;
+                 targetAxis: 0 1 0"
+        >
+        </a-box>
+        <a-box
+          id="punchingBag0"
+          class="punchingBag"
+          data-section="0"
+          width="0.25"
+          height="0.25"
+          depth="0.25"
+          color="#F00"
+          position="0 0.25 0"
+          dynamic-body
+          force-pushable
+          constraint="type: coneTwist;
+                 target: #punchingBagBase;
+                 pivot: 0 -0.125 0;       
+                 targetPivot: 0 0.125 0;   
+                 axis: 0 1 0;
+                 targetAxis: 0 1 0"
+        >
+        </a-box>
+        <a-sphere
+          id="punchingBagBase"
+          radius="0.125"
+          color="#777"
+          position="0 0 0"
+          static-body
+        ></a-sphere>
+      </a-entity>
+    </a-scene>
+  </body>
+</html>

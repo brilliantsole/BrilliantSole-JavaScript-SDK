@@ -22,8 +22,14 @@
       renderer="colorManagement: true;"
     >
       <a-assets>
-        <a-asset-item id="leftInsole" src="../../assets/3d/leftInsole.glb"></a-asset-item>
-        <a-asset-item id="rightInsole" src="../../assets/3d/rightInsole.glb"></a-asset-item>
+        <a-asset-item
+          id="leftInsole"
+          src="../../assets/3d/leftInsole.glb"
+        ></a-asset-item>
+        <a-asset-item
+          id="rightInsole"
+          src="../../assets/3d/rightInsole.glb"
+        ></a-asset-item>
       </a-assets>
       <a-light type="directional" position="2 2 -2" target=".target"></a-light>
       <a-light type="directional" position="-2 2 2" target=".target"></a-light>
@@ -51,7 +57,11 @@
       <a-entity class="target">
         <a-entity class="rotation">
           <a-entity class="position" position="0 0 0.005">
-            <a-entity class="insole" gltf-model="#rightInsole" visible="true"></a-entity>
+            <a-entity
+              class="insole"
+              gltf-model="#rightInsole"
+              visible="true"
+            ></a-entity>
           </a-entity>
         </a-entity>
       </a-entity>
@@ -65,8 +75,12 @@
         const isDark = params.has("dark");
         if (isDark) {
           document.querySelector("a-sky").setAttribute("color", "black");
-          document.querySelector("a-camera").setAttribute("orbit-controls", "enableRotate", "false");
-          document.querySelector("a-camera").setAttribute("orbit-controls", "enableRotate", "false");
+          document
+            .querySelector("a-camera")
+            .setAttribute("orbit-controls", "enableRotate", "false");
+          document
+            .querySelector("a-camera")
+            .setAttribute("orbit-controls", "enableRotate", "false");
           document.querySelector("a-camera").setAttribute("position", "0 0 1");
         }
       };

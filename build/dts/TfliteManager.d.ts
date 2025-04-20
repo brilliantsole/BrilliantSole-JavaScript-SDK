@@ -1,6 +1,7 @@
 import EventDispatcher from "./utils/EventDispatcher.ts";
 import { SensorType } from "./sensor/SensorDataManager.ts";
 import Device, { SendMessageCallback } from "./Device.ts";
+import { FileConfiguration as BaseFileConfiguration } from "./FileTransferManager.ts";
 export declare const TfliteMessageTypes: readonly ["getTfliteName", "setTfliteName", "getTfliteTask", "setTfliteTask", "getTfliteSampleRate", "setTfliteSampleRate", "getTfliteSensorTypes", "setTfliteSensorTypes", "tfliteIsReady", "getTfliteCaptureDelay", "setTfliteCaptureDelay", "getTfliteThreshold", "setTfliteThreshold", "getTfliteInferencingEnabled", "setTfliteInferencingEnabled", "tfliteInference"];
 export type TfliteMessageType = (typeof TfliteMessageTypes)[number];
 export declare const TfliteEventTypes: readonly ["getTfliteName", "setTfliteName", "getTfliteTask", "setTfliteTask", "getTfliteSampleRate", "setTfliteSampleRate", "getTfliteSensorTypes", "setTfliteSensorTypes", "tfliteIsReady", "getTfliteCaptureDelay", "setTfliteCaptureDelay", "getTfliteThreshold", "setTfliteThreshold", "getTfliteInferencingEnabled", "setTfliteInferencingEnabled", "tfliteInference"];
@@ -41,11 +42,25 @@ export interface TfliteInference {
     values: number[];
     maxValue?: number;
     maxIndex?: number;
+    maxClass?: string;
+    classValues?: {
+        [key: string]: number;
+    };
 }
 export type TfliteEventDispatcher = EventDispatcher<Device, TfliteEventType, TfliteEventMessages>;
 export type SendTfliteMessageCallback = SendMessageCallback<TfliteMessageType>;
 export declare const TfliteSensorTypes: readonly ["pressure", "linearAcceleration", "gyroscope", "magnetometer"];
 export type TfliteSensorType = (typeof TfliteSensorTypes)[number];
+export interface TfliteFileConfiguration extends BaseFileConfiguration {
+    type: "tflite";
+    name: string;
+    sensorTypes: TfliteSensorType[];
+    task: TfliteTask;
+    sampleRate: number;
+    captureDelay?: number;
+    threshold?: number;
+    classes?: string[];
+}
 declare class TfliteManager {
     #private;
     constructor();
@@ -75,7 +90,7 @@ declare class TfliteManager {
     get sampleRate(): number;
     setSampleRate(newSampleRate: number, sendImmediately?: boolean): Promise<void>;
     static AssertValidSensorType(sensorType: SensorType): void;
-    get sensorTypes(): ("pressure" | "acceleration" | "gravity" | "linearAcceleration" | "gyroscope" | "magnetometer" | "gameRotation" | "rotation" | "orientation" | "activity" | "stepCounter" | "stepDetector" | "deviceOrientation" | "barometer")[];
+    get sensorTypes(): ("pressure" | "linearAcceleration" | "gyroscope" | "magnetometer")[];
     setSensorTypes(newSensorTypes: SensorType[], sendImmediately?: boolean): Promise<void>;
     get isReady(): boolean;
     get captureDelay(): number;
@@ -88,5 +103,8 @@ declare class TfliteManager {
     enableInferencing(): Promise<void>;
     disableInferencing(): Promise<void>;
     parseMessage(messageType: TfliteMessageType, dataView: DataView): void;
+    get configuration(): TfliteFileConfiguration | undefined;
+    sendConfiguration(configuration: TfliteFileConfiguration, sendImmediately?: boolean): void;
+    clear(): void;
 }
 export default TfliteManager;

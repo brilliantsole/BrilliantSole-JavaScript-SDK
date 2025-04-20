@@ -40,6 +40,16 @@ app.use(function (req, res, next) {
 
   next();
 });
+app.use((req, res, next) => {
+  const host = req.headers.host;
+  if (false && host.endsWith(".local")) {
+    return res.redirect(301, `https://${ip.address()}${req.url}`);
+  }
+  if (false && req.protocol !== "https") {
+    return res.redirect(301, "https://" + req.headers.host + req.url); // Always redirect to HTTPS
+  }
+  next();
+});
 app.use(express.static("./"));
 app.use(express.json());
 app.post("/bottango", async (req, res) => {

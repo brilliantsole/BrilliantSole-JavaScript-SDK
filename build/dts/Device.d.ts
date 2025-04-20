@@ -4,7 +4,7 @@ import { SensorConfiguration, SensorConfigurationEventMessages } from "./sensor/
 import { SensorDataEventMessages, SensorType } from "./sensor/SensorDataManager.ts";
 import { VibrationConfiguration } from "./vibration/VibrationManager.ts";
 import { FileTransferEventMessages, FileType } from "./FileTransferManager.ts";
-import { TfliteEventMessages } from "./TfliteManager.ts";
+import { TfliteEventMessages, TfliteFileConfiguration } from "./TfliteManager.ts";
 import { FirmwareEventMessages } from "./FirmwareManager.ts";
 import { DeviceInformationEventMessages } from "./DeviceInformationManager.ts";
 import InformationManager, { DeviceType, InformationEventMessages } from "./InformationManager.ts";
@@ -110,11 +110,12 @@ declare class Device {
     cancelFileTransfer(): void;
     get tfliteName(): string;
     get setTfliteName(): (newName: string, sendImmediately?: boolean) => Promise<void>;
+    sendTfliteConfiguration(configuration: TfliteFileConfiguration): Promise<void>;
     get tfliteTask(): "classification" | "regression";
     get setTfliteTask(): (newTask: import("./TfliteManager.ts").TfliteTask, sendImmediately?: boolean) => Promise<void>;
     get tfliteSampleRate(): number;
     get setTfliteSampleRate(): (newSampleRate: number, sendImmediately?: boolean) => Promise<void>;
-    get tfliteSensorTypes(): ("pressure" | "acceleration" | "gravity" | "linearAcceleration" | "gyroscope" | "magnetometer" | "gameRotation" | "rotation" | "orientation" | "activity" | "stepCounter" | "stepDetector" | "deviceOrientation" | "barometer")[];
+    get tfliteSensorTypes(): ("pressure" | "linearAcceleration" | "gyroscope" | "magnetometer")[];
     get allowedTfliteSensorTypes(): ("pressure" | "acceleration" | "gravity" | "linearAcceleration" | "gyroscope" | "magnetometer" | "gameRotation" | "rotation" | "orientation" | "activity" | "stepCounter" | "stepDetector" | "deviceOrientation" | "barometer")[];
     get setTfliteSensorTypes(): (newSensorTypes: SensorType[], sendImmediately?: boolean) => Promise<void>;
     get tfliteIsReady(): boolean;

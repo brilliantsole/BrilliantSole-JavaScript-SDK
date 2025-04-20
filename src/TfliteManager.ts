@@ -8,8 +8,9 @@ import { parseTimestamp } from "./utils/MathUtils.ts";
 import { SensorType } from "./sensor/SensorDataManager.ts";
 import Device, { SendMessageCallback } from "./Device.ts";
 import autoBind from "auto-bind";
+import { FileConfiguration as BaseFileConfiguration } from "./FileTransferManager.ts";
 
-const _console = createConsole("TfliteManager", { log: false });
+const _console = createConsole("TfliteManager", { log: true });
 
 export const TfliteMessageTypes = [
   "getTfliteName",
@@ -54,6 +55,8 @@ export interface TfliteInference {
   values: number[];
   maxValue?: number;
   maxIndex?: number;
+  maxClass?: string;
+  classValues?: { [key: string]: number };
 }
 
 export type TfliteEventDispatcher = EventDispatcher<
@@ -70,6 +73,17 @@ export const TfliteSensorTypes = [
   "magnetometer",
 ] as const satisfies readonly SensorType[];
 export type TfliteSensorType = (typeof TfliteSensorTypes)[number];
+
+export interface TfliteFileConfiguration extends BaseFileConfiguration {
+  type: "tflite";
+  name: string;
+  sensorTypes: TfliteSensorType[];
+  task: TfliteTask;
+  sampleRate: number;
+  captureDelay?: number;
+  threshold?: number;
+  classes?: string[];
+}
 
 class TfliteManager {
   constructor() {
@@ -219,25 +233,29 @@ class TfliteManager {
     );
   }
 
-  #sensorTypes: SensorType[] = [];
+  #sensorTypes: TfliteSensorType[] = [];
   get sensorTypes() {
     return this.#sensorTypes.slice();
   }
   #parseSensorTypes(dataView: DataView) {
     _console.log("parseSensorTypes", dataView);
-    const sensorTypes: SensorType[] = [];
+    const sensorTypes: TfliteSensorType[] = [];
     for (let index = 0; index < dataView.byteLength; index++) {
       const sensorTypeEnum = dataView.getUint8(index);
-      const sensorType = SensorTypes[sensorTypeEnum];
+      const sensorType = SensorTypes[sensorTypeEnum] as TfliteSensorType;
       if (sensorType) {
-        sensorTypes.push(sensorType);
+        if (TfliteSensorTypes.includes(sensorType)) {
+          sensorTypes.push(sensorType);
+        } else {
+          _console.error(`invalid tfliteSensorType ${sensorType}`);
+        }
       } else {
         _console.error(`invalid sensorTypeEnum ${sensorTypeEnum}`);
       }
     }
     this.#updateSensorTypes(sensorTypes);
   }
-  #updateSensorTypes(sensorTypes: SensorType[]) {
+  #updateSensorTypes(sensorTypes: TfliteSensorType[]) {
     _console.log({ sensorTypes });
     this.#sensorTypes = sensorTypes;
     this.#dispatchEvent("getTfliteSensorTypes", {
@@ -459,6 +477,15 @@ class TfliteManager {
       _console.log({ maxIndex, maxValue });
       inference.maxIndex = maxIndex;
       inference.maxValue = maxValue;
+      if (this.#configuration?.classes) {
+        const { classes } = this.#configuration;
+        inference.maxClass = classes[maxIndex];
+        inference.classValues = {};
+        values.forEach((value, index) => {
+          const key = classes[index];
+          inference.classValues![key] = value;
+        });
+      }
     }
 
     this.#dispatchEvent("tfliteInference", { tfliteInference: inference });
@@ -505,6 +532,45 @@ class TfliteManager {
       default:
         throw Error(`uncaught messageType ${messageType}`);
     }
+  }
+
+  #configuration?: TfliteFileConfiguration;
+  get configuration() {
+    return this.#configuration;
+  }
+  sendConfiguration(
+    configuration: TfliteFileConfiguration,
+    sendImmediately?: boolean
+  ) {
+    if (configuration == this.#configuration) {
+      _console.log("redundant tflite configuration assignment");
+      return;
+    }
+    this.#configuration = configuration;
+    _console.log("assigned new tflite configuration", this.configuration);
+    if (!this.configuration) {
+      return;
+    }
+    const { name, task, captureDelay, sampleRate, threshold, sensorTypes } =
+      this.configuration;
+    this.setName(name, false);
+    this.setTask(task, false);
+    if (captureDelay != undefined) {
+      this.setCaptureDelay(captureDelay, false);
+    }
+    this.setSampleRate(sampleRate, false);
+    if (threshold != undefined) {
+      this.setThreshold(threshold, false);
+    }
+    this.setSensorTypes(sensorTypes, sendImmediately);
+  }
+
+  clear() {
+    this.#configuration = undefined;
+    this.#inferencingEnabled = false;
+    this.#sensorTypes = [];
+    this.#sampleRate = 0;
+    this.#isReady = false;
   }
 }
 
