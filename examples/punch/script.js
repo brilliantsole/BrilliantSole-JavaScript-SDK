@@ -52,11 +52,16 @@ device.addEventListener("fileTransferStatus", () => {
 
 /** @type {HTMLSpanElement} */
 const maxClassSpan = document.getElementById("maxClass");
+let gestureTimeout;
 device.addEventListener("tfliteInference", (event) => {
-  maxClassSpan.innerText = event.message.tfliteInference.maxClass;
-  setTimeout(() => {
+  maxClassSpan.innerText =
+    event.message.tfliteInference.maxClass.toUpperCase() + "!";
+  if (gestureTimeout) {
+    clearTimeout(gestureTimeout);
+  }
+  gestureTimeout = setTimeout(() => {
     maxClassSpan.innerText = "";
-  }, punchConfiguration.captureDelay - 50);
+  }, 600);
 });
 
 // GLOVE
@@ -66,7 +71,7 @@ const punchConfiguration = {
   task: "classification",
   sensorTypes: ["gyroscope", "linearAcceleration"],
   sampleRate: 20,
-  captureDelay: 500,
+  captureDelay: 200,
   classes: ["idle", "punch", "hook", "uppercut"],
 };
 fetch("./punch.tflite")
@@ -122,14 +127,31 @@ const forces = {
 function punch() {
   window.force = forces.punch;
   punchingBagEntities[1].click();
+  triggerWaveformEffect("strongClick100");
 }
 function hook() {
   window.force = forces.hook;
   punchingBagEntities[2].click();
+  triggerWaveformEffect("strongBuzz100");
 }
 function uppercut() {
   window.force = forces.uppercut;
   punchingBagEntities[2].click();
+  triggerWaveformEffect("pulsingStrong100");
+}
+
+/** @param {BS.VibrationWaveformEffect} waveformEffect */
+function triggerWaveformEffect(waveformEffect) {
+  if (!device.isConnected) {
+    return;
+  }
+  device.triggerVibration([
+    {
+      type: "waveformEffect",
+      locations: ["rear"],
+      segments: [{ effect: waveformEffect }],
+    },
+  ]);
 }
 
 document.addEventListener("keydown", (event) => {

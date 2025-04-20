@@ -18,6 +18,17 @@
       border: solid black;
       box-sizing: border-box;
     }
+
+    #title {
+      margin: auto;
+      height: 70px;
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      justify-content: center;
+
+      font-size: xx-large;
+    }
   </style>
   <body>
     <nav>
@@ -34,7 +45,9 @@
       is model ready <input type="checkbox" disabled id="isModelReady" />
     </label>
 
-    <b><span id="maxClass"></span></b>
+    <div id="title">
+      <h1 id="maxClass">Punch</h1>
+    </div>
 
     <a-scene
       id="scene"
