@@ -9,11 +9,16 @@
     <script src="../utils/aframe/grabbable-physics-body.js"></script>
     <script src="../utils/aframe/grabbable-listener.js"></script>
     <script src="../utils/aframe/grabbable-anchor.js"></script>
+    <script src="../utils/aframe/occlude-hand-tracking-controls.js"></script>
+    <script src="../utils/aframe/palm-up-detector.js"></script>
+    <script src="../utils/aframe/grow-shrink.js"></script>
+    <script src="./components/platter.js"></script>
+    <script src="../utils/aframe/occlude-mesh.js"></script>
   </head>
   <style>
     #scene {
       width: 500px;
-      height: 500px;
+      height: 400px;
       margin: auto;
       border-radius: 2rem;
       overflow: hidden;
@@ -61,7 +66,11 @@
       real-world-meshing="meshMixin: realWorldMeshMixin; meshesEnabled: true; planeMixin: realWorldPlaneMixin; planesEnabled: true;"
       device-orientation-permission-ui="enabled: false"
     >
-      <a-assets></a-assets>
+      <a-assets>
+        <a-mixin id="realWorldPlaneMixin" static-body visible="false">
+        </a-mixin>
+        <a-mixin id="realWorldMeshMixin" occlude-mesh static-body></a-mixin>
+      </a-assets>
       <a-camera id="camera" position="0 1.6 0" rotation="0 0 0"></a-camera>
 
       <a-sphere
@@ -71,9 +80,6 @@
         position="-0.2 1 -0.3"
         grabbable-physics-body="type: dynamic;"
       ></a-sphere>
-
-      <a-mixin id="realWorldPlaneMixin" static-body visible="false"> </a-mixin>
-      <a-mixin id="realWorldMeshMixin" static-body visible="false"> </a-mixin>
 
       <a-box
         id="anchoredBox"
@@ -85,12 +91,49 @@
         grabbable-anchor
       ></a-box>
 
+      <a-entity class="enemy goomba" id="goombaTemplate" position="0 1.6 -1">
+        <a-sphere
+          class="leftFoot"
+          color="#301700"
+          radius="0.05"
+          position="-0.045 -0.07 0"
+          scale="0.8 0.530 1"
+        ></a-sphere>
+        <a-sphere
+          class="rightFoot"
+          color="#301700"
+          radius="0.05"
+          position="0.045 -0.07 0"
+          rotation="0 0 0"
+          scale="0.8 0.530 1"
+        ></a-sphere>
+        <a-sphere
+          class="body"
+          color="#a14e00"
+          radius="0.1"
+          scale="1 0.75 1"
+        ></a-sphere>
+      </a-entity>
+      <a-entity id="koopa"></a-entity>
+
       <a-entity
         id="leftHand"
+        hand-tracking-controls="model-opacity: 0;"
         hand-tracking-grab-controls="hand: left;"
-      ></a-entity>
+      >
+        <a-entity
+          id="platter"
+          scale="0 0 0"
+          platter
+          rotation="0 0 34.3"
+          position="0 -0.03 -0.07"
+        >
+          <a-cylinder color="grey" height="0.01" radius="0.15"></a-cylinder>
+        </a-entity>
+      </a-entity>
       <a-entity
         id="rightHand"
+        occlude-hand-tracking-controls
         hand-tracking-grab-controls="hand: right;"
       ></a-entity>
     </a-scene>
