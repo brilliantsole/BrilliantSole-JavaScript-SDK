@@ -7,6 +7,8 @@
     <script src="../utils/aframe/aframe-master.min.js"></script>
     <script src="https://cdn.jsdelivr.net/gh/c-frame/aframe-physics-system@v4.2.3/dist/aframe-physics-system.min.js"></script>
     <script src="../utils/aframe/grabbable-physics-body.js"></script>
+    <script src="../utils/aframe/grabbable-listener.js"></script>
+    <script src="../utils/aframe/grabbable-anchor.js"></script>
   </head>
   <style>
     #scene {
@@ -52,8 +54,8 @@
     <a-scene
       id="scene"
       physics="debug: false; restitution: 0.4"
-      grabbable-physics-body
       embedded
+      grabbable-listener
       obb-collider="showColliders: false"
       xr-mode-ui="enabled: true; XRMode: ar;"
       real-world-meshing="meshMixin: realWorldMeshMixin; meshesEnabled: true; planeMixin: realWorldPlaneMixin; planesEnabled: true;"
@@ -66,12 +68,22 @@
         color="red"
         radius="0.1"
         grabbable
-        position="0 1 -0.3"
+        position="-0.2 1 -0.3"
         grabbable-physics-body="type: dynamic;"
       ></a-sphere>
 
       <a-mixin id="realWorldPlaneMixin" static-body visible="false"> </a-mixin>
       <a-mixin id="realWorldMeshMixin" static-body visible="false"> </a-mixin>
+
+      <a-box
+        id="anchoredBox"
+        anchored="persistent: true"
+        color="blue"
+        scale="0.1 0.1 0.1"
+        position="0.2 1 -0.3"
+        grabbable
+        grabbable-anchor
+      ></a-box>
 
       <a-entity
         id="leftHand"

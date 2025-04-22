@@ -1,24 +1,6 @@
-AFRAME.registerSystem("grabbable-physics-body", {
-  schema: {},
-
-  init: function () {
-    this.allGrabControls = Array.from(
-      document.querySelectorAll("[hand-tracking-grab-controls]")
-    );
-    this.allGrabControls.forEach((grabControls) => {
-      grabControls.addEventListener("grabstarted", (event) => {
-        const { grabbedEl } = event.detail;
-        grabbedEl.emit(event.type);
-      });
-      grabControls.addEventListener("grabended", (event) => {
-        const { grabbedEl } = event.detail;
-        grabbedEl.emit(event.type);
-      });
-    });
-  },
-});
-
 AFRAME.registerComponent("grabbable-physics-body", {
+  dependencies: ["grabbable"],
+
   schema: {
     type: {
       default: "static",
@@ -60,6 +42,7 @@ AFRAME.registerComponent("grabbable-physics-body", {
       if (this.data.type === "static") {
         this.el.setAttribute("static-body", this.data.staticBody);
       } else {
+        console.log("setting attribute", this.data.dynamicBody);
         this.el.setAttribute("dynamic-body", this.data.dynamicBody);
         this.el.addEventListener(
           "body-loaded",
