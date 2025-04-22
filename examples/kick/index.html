@@ -4,13 +4,83 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico" />
     <script type="module" src="./script.js"></script>
+    <script src="../utils/aframe/aframe-master.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/c-frame/aframe-physics-system@v4.2.3/dist/aframe-physics-system.min.js"></script>
+    <script src="../utils/aframe/grabbable-physics-body.js"></script>
   </head>
-  <style></style>
+  <style>
+    #scene {
+      width: 500px;
+      height: 500px;
+      margin: auto;
+      border-radius: 2rem;
+      overflow: hidden;
+      border: solid black;
+      box-sizing: border-box;
+    }
+
+    #title {
+      margin: auto;
+      height: 70px;
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      justify-content: center;
+
+      font-size: xx-large;
+    }
+  </style>
   <body>
     <nav>
       <a href="../../">home</a>
     </nav>
 
     <h1>Kick | BrilliantSole JavaScript SDK</h1>
+
+    <button id="toggleConnection">connect</button>
+
+    <progress value="0" id="fileTransferProgress"></progress>
+
+    <label>
+      is model ready <input type="checkbox" disabled id="isModelReady" />
+    </label>
+
+    <div id="title">
+      <h1 id="maxClass">Kick</h1>
+    </div>
+
+    <a-scene
+      id="scene"
+      physics="debug: true"
+      grabbable-physics-body
+      embedded
+      obb-collider="showColliders: false"
+      xr-mode-ui="enabled: true; XRMode: ar;"
+      real-world-meshing="meshMixin: realWorldMeshMixin; meshesEnabled: true; planeMixin: realWorldPlaneMixin; planesEnabled: true;"
+      device-orientation-permission-ui="enabled: false"
+    >
+      <a-assets></a-assets>
+      <a-camera id="camera" position="0 1.6 0" rotation="0 0 0"></a-camera>
+
+      <a-sphere
+        color="red"
+        radius="0.1"
+        grabbable
+        position="0 1 -0.3"
+        grabbable-physics-body="type: dynamic;"
+      ></a-sphere>
+
+      <a-mixin id="realWorldPlaneMixin" static-body visible="false"> </a-mixin>
+      <a-mixin id="realWorldMeshMixin" static-body visible="false"> </a-mixin>
+
+      <a-entity
+        id="leftHand"
+        hand-tracking-grab-controls="hand: left;"
+      ></a-entity>
+      <a-entity
+        id="rightHand"
+        hand-tracking-grab-controls="hand: right;"
+      ></a-entity>
+    </a-scene>
   </body>
 </html>
