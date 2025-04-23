@@ -72,10 +72,17 @@
         </a-mixin>
         <a-mixin id="realWorldMeshMixin" occlude-mesh static-body></a-mixin>
       </a-assets>
-      <a-camera id="camera" position="0 1.6 0" rotation="0 0 0"></a-camera>
+      <a-camera
+        class="lookAt"
+        id="camera"
+        position="0 1 0"
+        rotation="0 0 0"
+      ></a-camera>
 
       <a-sphere
+        class="lookAt"
         color="red"
+        id="redBall"
         radius="0.1"
         grabbable
         position="-0.2 1 -0.3"
@@ -83,6 +90,7 @@
       ></a-sphere>
 
       <a-box
+        class="lookAt"
         id="anchoredBox"
         anchored="persistent: true"
         color="blue"
@@ -92,10 +100,10 @@
         grabbable-anchor
       ></a-box>
 
-      <a-entity goomba position="0 1.6 -0.2"></a-entity>
+      <a-entity goomba position="0 1 -0.2"></a-entity>
 
       <template id="goombaTemplate">
-        <a-entity class="enemy goomba">
+        <a-entity class="enemy goomba" grabbable>
           <a-sphere
             class="body"
             color="#a14e00"
@@ -143,6 +151,7 @@
 
       <a-entity
         id="leftHand"
+        class="lookAt"
         hand-tracking-controls="model-opacity: 0;"
         hand-tracking-grab-controls="hand: left;"
       >
@@ -158,6 +167,7 @@
       </a-entity>
       <a-entity
         id="rightHand"
+        class="lookAt"
         occlude-hand-tracking-controls
         hand-tracking-grab-controls="hand: right;"
       ></a-entity>
