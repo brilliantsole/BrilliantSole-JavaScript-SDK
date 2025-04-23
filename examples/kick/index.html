@@ -13,6 +13,7 @@
     <script src="../utils/aframe/palm-up-detector.js"></script>
     <script src="../utils/aframe/grow-shrink.js"></script>
     <script src="./components/platter.js"></script>
+    <script src="./components/goomba.js"></script>
     <script src="../utils/aframe/occlude-mesh.js"></script>
   </head>
   <style>
@@ -91,29 +92,53 @@
         grabbable-anchor
       ></a-box>
 
-      <a-entity class="enemy goomba" id="goombaTemplate" position="0 1.6 -1">
-        <a-sphere
-          class="leftFoot"
-          color="#301700"
-          radius="0.05"
-          position="-0.045 -0.07 0"
-          scale="0.8 0.530 1"
-        ></a-sphere>
-        <a-sphere
-          class="rightFoot"
-          color="#301700"
-          radius="0.05"
-          position="0.045 -0.07 0"
-          rotation="0 0 0"
-          scale="0.8 0.530 1"
-        ></a-sphere>
-        <a-sphere
-          class="body"
-          color="#a14e00"
-          radius="0.1"
-          scale="1 0.75 1"
-        ></a-sphere>
-      </a-entity>
+      <a-entity goomba position="0 1.6 -0.2"></a-entity>
+
+      <template id="goombaTemplate">
+        <a-entity class="enemy goomba">
+          <a-sphere
+            class="body"
+            color="#a14e00"
+            radius="0.1"
+            scale="0.9 0.75 0.8"
+          ></a-sphere>
+
+          <a-entity
+            class="eye left"
+            position="-0.02535 0.01077 0.065"
+            rotation="-11.205 -20.900 0"
+          >
+            <a-entity class="scalar" scale="1.460 1.690 0.940">
+              <a-sphere class="white" color="#fafafa" radius="0.017"></a-sphere>
+              <a-entity class="controller">
+                <a-sphere
+                  class="black"
+                  color="#000000"
+                  position="0 0 0.015"
+                  radius="0.008"
+                  scale="1 1 -0.600"
+                >
+                </a-sphere>
+              </a-entity>
+            </a-entity>
+          </a-entity>
+
+          <a-entity
+            class="left leg"
+            position="-0.036 -0.026 0"
+            rotation="0 -16.292 -8.000"
+          >
+            <a-sphere
+              class="foot"
+              color="#301700"
+              radius="0.05"
+              position="0 -0.048 0"
+              scale="0.8 0.418 1"
+            ></a-sphere>
+          </a-entity>
+        </a-entity>
+      </template>
+
       <a-entity id="koopa"></a-entity>
 
       <a-entity
