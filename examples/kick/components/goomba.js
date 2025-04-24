@@ -105,12 +105,12 @@ AFRAME.registerComponent("goomba", {
       rotation.yaw
     );
 
+    this.clearEyeRotationAnimation(side);
     if (dur == 0) {
       pitch = THREE.MathUtils.degToRad(pitch);
       yaw = THREE.MathUtils.degToRad(yaw);
       entity.object3D.rotation.set(pitch, yaw, 0);
     } else {
-      this.clearEyeRotationAnimation(side);
       entity.setAttribute("animation__rot", {
         property: "rotation",
         to: `${pitch} ${yaw} 0`,
@@ -176,10 +176,10 @@ AFRAME.registerComponent("goomba", {
       scale.height
     );
 
+    this.clearEyeScaleAnimation(side);
     if (dur == 0) {
       entity.object3D.scale.set(width, height, 1);
     } else {
-      this.clearEyeRotationAnimation(side);
       entity.setAttribute("animation__scale", {
         property: "scale",
         to: `${width} ${height} 1`,
@@ -237,11 +237,11 @@ AFRAME.registerComponent("goomba", {
       rotation.roll
     );
 
+    this.clearEyeRollAnimation(side);
     if (dur == 0) {
       roll = THREE.MathUtils.degToRad(roll);
       entity.object3D.rotation.set(0, 0, roll);
     } else {
-      this.clearEyeRollAnimation(side);
       entity.setAttribute("animation__rot", {
         property: "rotation",
         to: `0 0 ${roll}`,
@@ -281,7 +281,7 @@ AFRAME.registerComponent("goomba", {
   lookAtRefocusVector: new THREE.Vector3(),
   lookAtRefocusAxis: new THREE.Vector3(),
   lookAtRefocusEuler: new THREE.Euler(),
-  lookAtRefocusScalar: 0.01,
+  lookAtRefocusScalar: 0.025,
   lookAtRefocusScalarRange: { min: 0.0, max: 0.02 },
 
   eyeTickInterval: 100,
@@ -291,17 +291,20 @@ AFRAME.registerComponent("goomba", {
   wanderEyesIntervalRange: { min: 2000, max: 5000 },
   wanderEyesInterval: 2000,
 
+  lookAtEuler: new THREE.Euler(),
+  tempLookAtEuler: new THREE.Euler(),
   lookAt: function (position, refocus = false) {
     this.lookAtPosition.copy(position);
     if (refocus) {
       if (true) {
         this.goomba.object3D.getWorldQuaternion(this.worldQuaternion);
 
-        const scalar = THREE.MathUtils.inverseLerp(
+        const intervalInterpolation = THREE.MathUtils.inverseLerp(
           0,
           this.eyeRefocusIntervalRange.max,
           this.eyeRefocusInterval
         );
+        const scalar = 1 - intervalInterpolation;
 
         const randomX =
           THREE.MathUtils.lerp(
@@ -335,7 +338,25 @@ AFRAME.registerComponent("goomba", {
       this.lookAtPosition.add(this.lookAtRefocusVector);
     }
     this.sides.forEach((side) => {
-      this.eyeControllers[side].object3D.lookAt(this.lookAtPosition);
+      const entity = this.eyeControllers[side];
+      if (true) {
+        this.tempLookAtEuler.copy(entity.object3D.rotation);
+        entity.object3D.lookAt(this.lookAtPosition);
+        this.lookAtEuler.copy(entity.object3D.rotation);
+        entity.object3D.rotation.copy(this.tempLookAtEuler);
+        entity.setAttribute("animation__rot", {
+          property: "rotation",
+          to: this.lookAtEuler
+            .toArray()
+            .slice(0, 3)
+            .map((value) => THREE.MathUtils.radToDeg(value))
+            .join(" "),
+          dur: 100,
+          easing: "easeOutCubic",
+        });
+      } else {
+        entity.object3D.lookAt(this.lookAtPosition);
+      }
     });
   },
   lookAtObject: function (object) {
@@ -343,6 +364,9 @@ AFRAME.registerComponent("goomba", {
       return;
     }
     this.objectToLookAt = object;
+    if (!this.objectToLookAt) {
+      this.resetEyes();
+    }
   },
   stopLookingAtObject: function () {
     this.objectToLookAt = undefined;
@@ -364,6 +388,7 @@ AFRAME.registerComponent("goomba", {
     yaw: { min: -0.7, max: 0.7 },
   },
 
+  objectToLookAtDistance: 0,
   checkObjectToLookAt: function () {
     let closestEntity;
     let closestDistance = 1;
@@ -445,9 +470,8 @@ AFRAME.registerComponent("goomba", {
       closestEntity = entity;
       closestDistance = distance;
     });
-    if (closestEntity) {
-      this.lookAtObject(closestEntity);
-    }
+    this.objectToLookAtDistance = closestDistance;
+    this.lookAtObject(closestEntity);
   },
 
   // LEG
@@ -483,11 +507,11 @@ AFRAME.registerComponent("goomba", {
       );
     }
 
+    this.clearLegRotationAnimation(side);
     if (dur == 0) {
       pitch = THREE.MathUtils.degToRad(pitch);
       entity.object3D.rotation.set(pitch, 0, 0);
     } else {
-      this.clearLegRotationAnimation(side);
       const options = {
         property: "rotation",
         to: `${pitch} 0 0`,
