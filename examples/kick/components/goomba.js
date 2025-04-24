@@ -11,10 +11,11 @@ AFRAME.registerComponent("goomba", {
     this.el.addEventListener("loaded", () => {
       const template = this.data.template.content.cloneNode(true);
       Array.from(template.children).forEach((entity) => {
-        console.log("appending", entity);
         this.el.appendChild(entity);
       });
       this.goomba = this.el.querySelector(".goomba");
+      this.goomba.addEventListener("grabstarted", () => this.onGrabStarted());
+      this.goomba.addEventListener("grabended", () => this.onGrabEnded());
       this.el.querySelectorAll(".left").forEach((entity) => {
         const duplicate = entity.cloneNode(true);
         duplicate.addEventListener("loaded", () => {
@@ -49,6 +50,21 @@ AFRAME.registerComponent("goomba", {
     });
   },
 
+  onGrabStarted: function () {
+    switch (this.status) {
+      default:
+        this.setStatus("grabbed");
+        break;
+    }
+  },
+  onGrabEnded: function () {
+    switch (this.status) {
+      default:
+        this.setStatus("idle");
+        break;
+    }
+  },
+
   flip: function (entity) {
     const position = entity.getAttribute("position");
     position.x *= -1;
@@ -70,7 +86,8 @@ AFRAME.registerComponent("goomba", {
     rotation,
     dur = 50,
     easing = "linear",
-    loop = false
+    loop = false,
+    dir = "normal"
   ) {
     const entity = this.eyeControllers[side];
     if (!entity) {
@@ -93,19 +110,39 @@ AFRAME.registerComponent("goomba", {
       yaw = THREE.MathUtils.degToRad(yaw);
       entity.object3D.rotation.set(pitch, yaw, 0);
     } else {
-      entity.removeAttribute("animation__rot");
+      this.clearEyeRotationAnimation(side);
       entity.setAttribute("animation__rot", {
         property: "rotation",
         to: `${pitch} ${yaw} 0`,
+        from: dir == "alternate" ? `${-pitch} ${-yaw} 0` : undefined,
         dur: dur,
         easing,
         loop,
+        dur,
+        dir,
       });
     }
   },
   setEyesRotation: function (rotation, dur, easing, loop) {
     this.sides.forEach((side) => {
       this.setEyeRotation(side, ...arguments);
+    });
+  },
+  resetEyes: function () {
+    this.setEyesRotation({ pitch: 0.5, yaw: 0.5 });
+    this.setEyesRoll({ roll: 0.5 });
+    this.setEyesScale({ width: 1, height: 1 });
+  },
+  clearEyeRotationAnimation: function (side) {
+    const entity = this.eyeControllers[side];
+    if (!entity) {
+      return;
+    }
+    entity.removeAttribute("animation__rot");
+  },
+  clearEyesRotationAnimation: function () {
+    this.sides.forEach((side) => {
+      this.clearEyeRotationAnimation(side);
     });
   },
 
@@ -120,7 +157,8 @@ AFRAME.registerComponent("goomba", {
     scale,
     dur = 50,
     easing = "linear",
-    loop = false
+    loop = false,
+    dir = "normal"
   ) {
     const entity = this.eyeScales[side];
     if (!entity) {
@@ -141,19 +179,37 @@ AFRAME.registerComponent("goomba", {
     if (dur == 0) {
       entity.object3D.scale.set(width, height, 1);
     } else {
-      entity.removeAttribute("animation__scale");
+      this.clearEyeRotationAnimation(side);
       entity.setAttribute("animation__scale", {
         property: "scale",
         to: `${width} ${height} 1`,
+        from: dir == "alternate" ? `1 1 1` : undefined,
         dur: dur,
         easing,
         loop,
+        dir,
       });
     }
   },
-  setEyesScale: function (scale, dur, easing, loop) {
+  setEyesScale: function (scale, dur, easing, loop, dir) {
     this.sides.forEach((side) => {
       this.setEyeScale(side, ...arguments);
+    });
+  },
+
+  resetEyesScale: function () {
+    this.setEyesScale({ width: 1, height: 1 });
+  },
+  clearEyeScaleAnimation: function (side) {
+    const entity = this.eyeScales[side];
+    if (!entity) {
+      return;
+    }
+    entity.removeAttribute("animation__scale");
+  },
+  clearEyesScaleAnimation: function () {
+    this.sides.forEach((side) => {
+      this.clearEyeScaleAnimation(side);
     });
   },
 
@@ -167,7 +223,8 @@ AFRAME.registerComponent("goomba", {
     rotation,
     dur = 50,
     easing = "linear",
-    loop = false
+    loop = false,
+    dir = "normal"
   ) {
     const entity = this.eyeRotators[side];
     if (!entity) {
@@ -182,24 +239,43 @@ AFRAME.registerComponent("goomba", {
 
     if (dur == 0) {
       roll = THREE.MathUtils.degToRad(roll);
-      console.log("rot", roll, entity);
       entity.object3D.rotation.set(0, 0, roll);
     } else {
-      entity.removeAttribute("animation__rot");
+      this.clearEyeRollAnimation(side);
       entity.setAttribute("animation__rot", {
         property: "rotation",
         to: `0 0 ${roll}`,
+        from: dir == "alternate" ? `0 0 ${-roll}` : undefined,
         dur: dur,
         easing,
         loop,
+        dir,
       });
     }
   },
-  setEyesRoll: function (rotation, dur, easing, loop) {
+  setEyesRoll: function (rotation, dur, easing, loop, dir) {
     this.sides.forEach((side) => {
       this.setEyeRoll(side, ...arguments);
     });
   },
+
+  resetEyesRoll: function () {
+    this.setEyesRoll({ roll: 0.5 });
+  },
+  clearEyeRollAnimation: function (side) {
+    const entity = this.eyeRotators[side];
+    if (!entity) {
+      return;
+    }
+    entity.removeAttribute("animation__rot");
+  },
+  clearEyesRollAnimation: function () {
+    this.sides.forEach((side) => {
+      this.clearEyeRollAnimation(side);
+    });
+  },
+
+  // LookAt
 
   lookAtPosition: new THREE.Vector3(),
   lookAtRefocusVector: new THREE.Vector3(),
@@ -266,7 +342,6 @@ AFRAME.registerComponent("goomba", {
     if (object == this.objectToLookAt) {
       return;
     }
-    console.log("lookAt", object);
     this.objectToLookAt = object;
   },
   stopLookingAtObject: function () {
@@ -386,9 +461,9 @@ AFRAME.registerComponent("goomba", {
     dur = 50,
     easing = "linear",
     loop = false,
+    dir = "normal",
     invert = false
   ) {
-    console.log({ invert });
     const entity = this.legs[side];
     if (!entity) {
       return;
@@ -399,29 +474,59 @@ AFRAME.registerComponent("goomba", {
       this.legRotationRange.pitch.max,
       invert ? 1 - rotation.pitch : rotation.pitch
     );
+    let pitch2;
+    if (rotation.pitch2 != undefined) {
+      pitch2 = THREE.MathUtils.lerp(
+        this.legRotationRange.pitch.min,
+        this.legRotationRange.pitch.max,
+        invert ? 1 - rotation.pitch2 : rotation.pitch2
+      );
+    }
 
     if (dur == 0) {
       pitch = THREE.MathUtils.degToRad(pitch);
       entity.object3D.rotation.set(pitch, 0, 0);
     } else {
-      entity.removeAttribute("animation__rot");
-      entity.setAttribute("animation__rot", {
+      this.clearLegRotationAnimation(side);
+      const options = {
         property: "rotation",
         to: `${pitch} 0 0`,
+        from: dir == "alternate" ? `${-pitch} 0 0` : undefined,
         dur: dur,
+        dir: dir,
         easing,
         loop,
-      });
+      };
+      if (pitch2 != undefined) {
+        options.from = `${pitch2} 0 0`;
+      }
+      entity.setAttribute("animation__rot", options);
     }
   },
-  setLegsRotation: function (rotation, dur, easing, loop, invert = false) {
+  setLegsRotation: function (rotation, dur, easing, loop, dir, invert = false) {
     this.sides.forEach((side) => {
       if (invert) {
         const invert = side == "left";
-        this.setLegRotation(side, rotation, dur, easing, loop, invert);
+        this.setLegRotation(side, rotation, dur, easing, loop, dir, invert);
       } else {
         this.setLegRotation(side, ...arguments);
       }
+    });
+  },
+
+  resetLegs: function () {
+    this.setLegsRotation({ pitch: 0.5 });
+  },
+  clearLegRotationAnimation: function (side) {
+    const entity = this.legs[side];
+    if (!entity) {
+      return;
+    }
+    entity.removeAttribute("animation__rot");
+  },
+  clearLegsRotationAnimation: function () {
+    this.sides.forEach((side) => {
+      this.clearLegRotationAnimation(side);
     });
   },
 
@@ -433,54 +538,111 @@ AFRAME.registerComponent("goomba", {
   changeLookAtInterval: 100,
 
   tick: function (time, timeDelta) {
-    if (time - this.lastChangeLookAtTick > this.changeLookAtInterval) {
-      this.lastChangeLookAtTick = time;
-      this.checkObjectToLookAt();
-    }
-
-    if (time - this.lastEyeTick > this.eyeTickInterval) {
-      this.lastEyeTick = time;
-
-      let refocus = false;
-      if (time - this.lastEyeRefocusTick > this.eyeRefocusInterval) {
-        refocus = true;
-        this.lastEyeRefocusTick = time;
-        this.eyeRefocusInterval = THREE.MathUtils.lerp(
-          this.eyeRefocusIntervalRange.min,
-          this.eyeRefocusIntervalRange.max,
-          Math.random()
-        );
+    if (this.status == "idle" || this.status == "grabbed") {
+      if (time - this.lastChangeLookAtTick > this.changeLookAtInterval) {
+        this.lastChangeLookAtTick = time;
+        this.checkObjectToLookAt();
       }
+      if (time - this.lastEyeTick > this.eyeTickInterval) {
+        this.lastEyeTick = time;
 
-      if (this.objectToLookAt) {
-        if (this.objectToLookAt.components["hand-tracking-controls"]) {
-          this.lookAt(
-            this.objectToLookAt.components["hand-tracking-controls"]
-              .indexTipPosition,
-            refocus
-          );
-        } else {
-          this.lookAt(
-            this.objectToLookAt.object3D.getWorldPosition(
-              this.otherWorldPosition
-            ),
-            refocus
-          );
-        }
-      } else {
-        let changeFocus = false;
-        if (time - this.lastWanderEyesTick > this.wanderEyesInterval) {
-          changeFocus = true;
-          this.lastWanderEyesTick = time;
-          this.wanderEyesInterval = THREE.MathUtils.lerp(
-            this.wanderEyesIntervalRange.min,
-            this.wanderEyesIntervalRange.max,
+        let refocus = false;
+        if (time - this.lastEyeRefocusTick > this.eyeRefocusInterval) {
+          refocus = true;
+          this.lastEyeRefocusTick = time;
+          this.eyeRefocusInterval = THREE.MathUtils.lerp(
+            this.eyeRefocusIntervalRange.min,
+            this.eyeRefocusIntervalRange.max,
             Math.random()
           );
         }
-        // FILL - change point to look at (raycast from eyes)
-        // FILL - wander around
+
+        if (this.objectToLookAt) {
+          if (this.objectToLookAt.components["hand-tracking-controls"]) {
+            this.lookAt(
+              this.objectToLookAt.components["hand-tracking-controls"]
+                .indexTipPosition,
+              refocus
+            );
+          } else {
+            this.lookAt(
+              this.objectToLookAt.object3D.getWorldPosition(
+                this.otherWorldPosition
+              ),
+              refocus
+            );
+          }
+        } else {
+          let changeFocus = false;
+          if (time - this.lastWanderEyesTick > this.wanderEyesInterval) {
+            changeFocus = true;
+            this.lastWanderEyesTick = time;
+            this.wanderEyesInterval = THREE.MathUtils.lerp(
+              this.wanderEyesIntervalRange.min,
+              this.wanderEyesIntervalRange.max,
+              Math.random()
+            );
+          }
+          // FILL - change point to look at (raycast from eyes)
+          // FILL - wander around
+        }
       }
+    }
+  },
+
+  statuses: [
+    "idle",
+    "grabbed",
+    "falling",
+    "walking",
+    "kicked",
+    "wall",
+    "stomp",
+    "shocked",
+  ],
+  status: "idle",
+  setStatus: function (newStatus) {
+    if (this.status == newStatus) {
+      return;
+    }
+    if (!this.statuses.includes(newStatus)) {
+      console.error(`invalid status "${newStatus}"`);
+      return;
+    }
+    this.status = newStatus;
+
+    this.clearEyesRotationAnimation();
+    this.clearEyesRollAnimation();
+    this.clearEyesScaleAnimation();
+    this.clearLegsRotationAnimation();
+
+    this.resetLegs();
+    this.resetEyes();
+
+    switch (this.status) {
+      case "grabbed":
+        this.setLegRotation(
+          "left",
+          { pitch: 0.5, pitch2: 0.7 },
+          900,
+          "easeInOutCirc",
+          true,
+          "alternate",
+          true
+        );
+        this.setLegRotation(
+          "right",
+          { pitch: 0.3, pitch2: 0.8 },
+          920,
+          "easeInOutCirc",
+          true,
+          "alternate",
+          true
+        );
+        break;
+      default:
+        // FILL - reset eyes/legs
+        break;
     }
   },
 });
