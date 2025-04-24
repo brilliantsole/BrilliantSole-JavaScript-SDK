@@ -64,10 +64,14 @@
       grabbable-listener
       obb-collider="showColliders: false"
       xr-mode-ui="enabled: true; XRMode: ar;"
-      real-world-meshing="meshMixin: realWorldMeshMixin; meshesEnabled: true; planeMixin: realWorldPlaneMixin; planesEnabled: true;"
+      real-world-meshing="meshMixin: realWorldMeshMixin; meshesEnabled: false; planeMixin: realWorldPlaneMixin; planesEnabled: true; filterLabels: table, wall, floor;"
       device-orientation-permission-ui="enabled: false"
     >
       <a-assets>
+        <a-asset-item
+          id="anchorModel"
+          src="../../assets/3d/anchor.glb"
+        ></a-asset-item>
         <a-mixin id="realWorldPlaneMixin" static-body visible="false">
         </a-mixin>
         <a-mixin id="realWorldMeshMixin" occlude-mesh static-body></a-mixin>
@@ -79,7 +83,7 @@
         rotation="0 0 0"
       ></a-camera>
 
-      <a-sphere
+      <!-- <a-sphere
         class="lookAt"
         color="red"
         id="redBall"
@@ -87,18 +91,22 @@
         grabbable
         position="-0.2 1 -0.3"
         grabbable-physics-body="type: dynamic;"
-      ></a-sphere>
+      ></a-sphere> -->
 
-      <a-box
+      <a-entity
         class="lookAt"
-        id="anchoredBox"
+        id="anchor"
         anchored="persistent: true"
-        color="blue"
-        scale="0.1 0.1 0.1"
         position="0.2 1 -0.3"
         grabbable
         grabbable-anchor
-      ></a-box>
+      >
+        <a-entity
+          gltf-model="#anchorModel"
+          scale="0.020 0.020 0.020"
+          rotation="90 0 0"
+        ></a-entity>
+      </a-entity>
 
       <a-entity
         goomba="grabbable: true;"
@@ -154,15 +162,15 @@
       <a-entity
         id="leftHand"
         class="lookAt"
-        hand-tracking-controls="model-opacity: 0;"
-        hand-tracking-grab-controls="hand: left;"
+        hand-tracking-controls="hand: left; model-opacity: 0;"
+        _hand-tracking-grab-controls="hand: left;"
         occlude-hand-tracking-controls
       >
         <a-entity
           id="platter"
           scale="0 0 0"
           platter
-          rotation="220 0 -34.3"
+          rotation="200 0 -34.3"
           position="0 -0.03 -0.07"
         >
           <a-cylinder color="grey" height="0.01" radius="0.15"></a-cylinder>

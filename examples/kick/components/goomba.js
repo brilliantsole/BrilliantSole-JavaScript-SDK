@@ -1,20 +1,28 @@
 AFRAME.registerComponent("goomba", {
   schema: {
     template: { default: "#goombaTemplate", type: "selector" },
-    lookAt: { default: ".lookAt", type: "selectorAll" },
+    lookAt: { default: ".lookAt" },
     grabbable: { default: false },
+    dontTick: { default: false },
   },
 
   sides: ["left", "right"],
 
   init: function () {
+    this.updateLookAtTargets();
+    this.lookAtSelectorInterval = setInterval(
+      () => this.updateLookAtTargets(),
+      1000
+    );
+
     this.eyeControllers = {};
     this.eyeScales = {};
     this.eyeRotators = {};
 
-    this.dontTick = false;
+    this.dontTick = this.data.dontTick;
 
     this.el.classList.add("goomba");
+    this.el.classList.add("lookAt");
 
     this.eyeTickInterval = 100;
     this.eyeRefocusInterval = 100;
@@ -442,7 +450,7 @@ AFRAME.registerComponent("goomba", {
       .set(1, 0, 0)
       .applyQuaternion(this.worldQuaternion)
       .normalize();
-    this.data.lookAt.forEach((entity) => {
+    this.lookAtTargets.forEach((entity) => {
       if (!entity.object3D.visible) {
         return;
       }
@@ -702,5 +710,14 @@ AFRAME.registerComponent("goomba", {
         // FILL - reset eyes/legs
         break;
     }
+  },
+
+  updateLookAtTargets() {
+    this.lookAtTargets = Array.from(
+      this.el.sceneEl.querySelectorAll(this.data.lookAt)
+    );
+  },
+  remove() {
+    clearInterval(this.lookAtSelectorInterval);
   },
 });

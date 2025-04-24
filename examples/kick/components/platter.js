@@ -2,6 +2,7 @@ AFRAME.registerComponent("platter", {
   schema: {},
 
   init: function () {
+    this.auxMatrix = new THREE.Matrix4();
     this.goombaTransform = {
       position: new THREE.Vector3(),
       quaternion: new THREE.Quaternion(),
@@ -13,22 +14,32 @@ AFRAME.registerComponent("platter", {
 
     this.el.setAttribute("grow-shrink", "");
     this.hand = this.el.closest("[hand-tracking-controls]");
+
     this.hand.setAttribute("palm-up-detector", "");
     this.hand.addEventListener("palmupon", () => {
       this.isOpen = true;
-      this.addGoomba();
-      this.goomba.setAttribute("grabbable", "");
+      if (this.goomba) {
+        this.goomba.setAttribute("visible", "true");
+      }
+      setTimeout(() => {
+        this.addGoomba();
+        if (this.goomba && !this.isGrabbed) {
+          this.goomba.setAttribute("grabbable", "");
+          this.goomba.components["goomba"].dontTick = false;
+        }
+      }, 200);
       this.el.emit("grow");
-      this.goomba.components["goomba"].dontTick = false;
       this.hand.setAttribute("occlude-hand-tracking-controls", {
         enabled: false,
       });
     });
     this.hand.addEventListener("palmupoff", () => {
       this.isOpen = false;
-      this.goomba.removeAttribute("grabbable");
+      if (this.goomba && !this.isGrabbed) {
+        this.goomba.removeAttribute("grabbable");
+        this.goomba.components["goomba"].dontTick = true;
+      }
       this.el.emit("shrink");
-      this.goomba.components["goomba"].dontTick = true;
       this.hand.setAttribute("occlude-hand-tracking-controls", {
         enabled: true,
       });
@@ -36,52 +47,48 @@ AFRAME.registerComponent("platter", {
   },
 
   addGoomba: function () {
-    if (this.didAddGoomba) {
-      return;
-    }
     if (!this.goomba) {
-      console.log("creating goomba");
       this.goomba = document.createElement("a-entity");
-      this.goomba.setAttribute("goomba", "grabbable: true;");
+      console.log("creating goomba", this.goomba);
+      this.goomba.addEventListener("loaded", () => {
+        this.setOwner(this.el.object3D);
+        this.goomba.setAttribute("position", "0 0.1 0");
+        this.goomba.setAttribute("rotation", "0 180 0");
+      });
+      this.goomba.setAttribute("goomba", "dontTick: true;");
       this.goomba.addEventListener(
-        "loaded",
+        "grabstarted",
         (event) => {
-          if (event.target != this.goomba) {
-            return;
-          }
-          this.goomba.components["goomba"].dontTick = true;
+          this.isGrabbed = true;
+          console.log("grabstarted goomba");
+          event.detail.grab.originalParent = this.el.sceneEl.object3D;
         },
         { once: true }
       );
-      this.goomba.addEventListener("grabstarted", (event) => {
-        if (event.target != this.goomba) {
-          console.log("fuck", this.goomba, event.target, event);
-          return;
-        }
-        // FILL - add him to the scene, and remove self
-        // FILL - set newParent
-        console.log(event.detail.grab);
-        event.detail.grab.newParent = this.sceneEl;
-      });
-      this.goomba.addEventListener("grabended", () => {
-        if (event.target != this.goomba) {
-          return;
-        }
-        // FILL - add him to the scene, and remove self
-        console.log("adding goomba to scene");
-        const { goomba } = this;
-
-        if (!goomba) {
-          return;
-        }
-
-        goomba.components["goomba"].dontTick = false;
-        this.goomba = undefined;
-      });
-      this.el.appendChild(this.goomba);
+      this.goomba.addEventListener(
+        "grabended",
+        () => {
+          this.isGrabbed = false;
+          console.log("grabended goomba");
+          console.log("adding goomba to scene", this.goomba);
+          this.goomba.components["goomba"].dontTick = false;
+          this.goomba.setAttribute("grabbable", "");
+          this.goomba = undefined;
+          this.addGoomba();
+          this.goomba.setAttribute("visible", "false");
+        },
+        { once: true }
+      );
+      this.el.sceneEl.appendChild(this.goomba);
     }
+  },
 
-    this.goomba.setAttribute("position", "0 0.1 0");
-    this.goomba.setAttribute("rotation", "0 180 0");
+  setOwner: function (newParent) {
+    var child = this.goomba.object3D;
+    var parent = child.parent;
+    child.applyMatrix4(parent.matrixWorld);
+    child.applyMatrix4(this.auxMatrix.copy(newParent.matrixWorld).invert());
+    parent.remove(child);
+    newParent.add(child);
   },
 });
