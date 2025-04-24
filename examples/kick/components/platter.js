@@ -7,9 +7,15 @@ AFRAME.registerComponent("platter", {
     this.hand.setAttribute("palm-up-detector", "");
     this.hand.addEventListener("palmupon", () => {
       this.el.emit("grow");
+      this.hand.setAttribute("occlude-hand-tracking-controls", {
+        enabled: false,
+      });
     });
     this.hand.addEventListener("palmupoff", () => {
       this.el.emit("shrink");
+      this.hand.setAttribute("occlude-hand-tracking-controls", {
+        enabled: true,
+      });
     });
   },
 });

@@ -13,10 +13,30 @@ AFRAME.registerComponent("grabbable-anchor", {
     });
   },
 
-  tick: function () {
-    if (this.shouldCreateAnchor && this.el.components.anchored.createAnchor) {
-      this.shouldCreateAnchor = false;
+  deleteAnchor: async function () {
+    this.isDeletingAnchor = true;
+    const uuid = localStorage.getItem(this.el.id);
+    if (uuid) {
+      const frame = this.el.sceneEl.renderer.xr.getFrame();
+      console.log("removing persistant anchor");
+      try {
+        await frame.session.deletePersistentAnchor(uuid);
+      } catch (e) {
+        console.log(e);
+      }
+      localStorage.removeItem(this.el.id);
+    }
+    this.isDeletingAnchor = false;
+  },
 
+  tick: function () {
+    if (this.shouldCreateAnchor && this.el.components.anchored?.createAnchor) {
+      this.deleteAnchor();
+      if (this.isDeletingAnchor) {
+        return;
+      }
+      console.log("creating anchor");
+      this.shouldCreateAnchor = false;
       const position = new THREE.Vector3();
       this.el.object3D.getWorldPosition(position);
       const quaternion = new THREE.Quaternion();

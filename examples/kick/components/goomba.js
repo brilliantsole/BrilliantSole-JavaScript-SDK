@@ -205,29 +205,57 @@ AFRAME.registerComponent("goomba", {
   lookAtRefocusVector: new THREE.Vector3(),
   lookAtRefocusAxis: new THREE.Vector3(),
   lookAtRefocusEuler: new THREE.Euler(),
+  lookAtRefocusScalar: 0.01,
   lookAtRefocusScalarRange: { min: 0.0, max: 0.02 },
 
   eyeTickInterval: 100,
 
   eyeRefocusIntervalRange: { min: 100, max: 800 },
-  eyeRefocusInterval: 200,
+  eyeRefocusInterval: 100,
   wanderEyesIntervalRange: { min: 2000, max: 5000 },
   wanderEyesInterval: 2000,
 
   lookAt: function (position, refocus = false) {
     this.lookAtPosition.copy(position);
     if (refocus) {
-      const scalar = THREE.MathUtils.lerp(
-        this.lookAtRefocusScalarRange.min,
-        this.lookAtRefocusScalarRange.max,
-        Math.random()
-      );
-      this.lookAtRefocusVector.set(scalar, 0, 0);
-      this.lookAtRefocusAxis
-        .set(Math.random(), Math.random(), Math.random())
-        .normalize();
-      const angle = Math.random() * Math.PI * 2;
-      this.lookAtRefocusVector.applyAxisAngle(this.lookAtRefocusAxis, angle);
+      if (true) {
+        this.goomba.object3D.getWorldQuaternion(this.worldQuaternion);
+
+        const scalar = THREE.MathUtils.inverseLerp(
+          0,
+          this.eyeRefocusIntervalRange.max,
+          this.eyeRefocusInterval
+        );
+
+        const randomX =
+          THREE.MathUtils.lerp(
+            -this.lookAtRefocusScalar,
+            this.lookAtRefocusScalar,
+            Math.random()
+          ) * scalar;
+        const randomY =
+          THREE.MathUtils.lerp(
+            -this.lookAtRefocusScalar,
+            this.lookAtRefocusScalar,
+            Math.random()
+          ) * scalar;
+
+        this.lookAtRefocusVector.set(randomX, randomY, 0);
+        this.lookAtRefocusVector.applyQuaternion(this.worldQuaternion);
+      } else {
+        const scalar = THREE.MathUtils.lerp(
+          this.lookAtRefocusScalarRange.min,
+          this.lookAtRefocusScalarRange.max,
+          Math.random()
+        );
+        this.lookAtRefocusVector.set(scalar, 0, 0);
+        this.lookAtRefocusAxis
+          .set(Math.random(), Math.random(), Math.random())
+          .normalize();
+        const angle = Math.random() * Math.PI * 2;
+        this.lookAtRefocusVector.applyAxisAngle(this.lookAtRefocusAxis, angle);
+      }
+
       this.lookAtPosition.add(this.lookAtRefocusVector);
     }
     this.sides.forEach((side) => {
@@ -243,6 +271,108 @@ AFRAME.registerComponent("goomba", {
   },
   stopLookingAtObject: function () {
     this.objectToLookAt = undefined;
+  },
+
+  worldPosition: new THREE.Vector3(),
+  otherWorldPosition: new THREE.Vector3(),
+  distanceRange: { min: 0.15, max: 4 },
+
+  forwardVector: new THREE.Vector3(0, 0, 1),
+  upVector: new THREE.Vector3(0, 1, 0),
+  rightVector: new THREE.Vector3(1, 0, 0),
+  toVector: new THREE.Vector3(),
+  worldQuaternion: new THREE.Quaternion(),
+  angleThreshold: 0.75,
+
+  angleThresholds: {
+    pitch: { min: -0.7, max: 0.7 },
+    yaw: { min: -0.7, max: 0.7 },
+  },
+
+  checkObjectToLookAt: function () {
+    let closestEntity;
+    let closestDistance = 1;
+    this.goomba.object3D.getWorldPosition(this.worldPosition);
+    this.goomba.object3D.getWorldQuaternion(this.worldQuaternion);
+    this.forwardVector
+      .set(0, 0, 1)
+      .applyQuaternion(this.worldQuaternion)
+      .normalize();
+    this.upVector
+      .set(0, 1, 0)
+      .applyQuaternion(this.worldQuaternion)
+      .normalize();
+    this.rightVector
+      .set(1, 0, 0)
+      .applyQuaternion(this.worldQuaternion)
+      .normalize();
+    this.data.lookAt.forEach((entity) => {
+      if (!entity.object3D.visible) {
+        return;
+      }
+      if (entity.components["hand-tracking-controls"]) {
+        if (!entity.components["hand-tracking-controls"].controllerPresent) {
+          return;
+        }
+        this.otherWorldPosition.copy(
+          entity.components["hand-tracking-controls"].indexTipPosition
+        );
+      } else {
+        entity.object3D.getWorldPosition(this.otherWorldPosition);
+      }
+
+      this.toVector.subVectors(this.otherWorldPosition, this.worldPosition);
+
+      const distance = this.toVector.length();
+      if (
+        distance < this.distanceRange.min ||
+        distance > this.distanceRange.max
+      ) {
+        return;
+      }
+      if (distance > closestDistance) {
+        return;
+      }
+
+      this.toVector.normalize();
+
+      const angle = this.forwardVector.dot(this.toVector);
+      if (angle < this.angleThreshold) {
+        return;
+      }
+
+      const cosYaw = THREE.MathUtils.clamp(
+        this.rightVector.dot(this.toVector),
+        -1,
+        1
+      );
+      let yaw =
+        Math.sign(this.forwardVector.dot(this.toVector)) >= 0
+          ? Math.acos(cosYaw) // point is above the horizon
+          : -Math.acos(cosYaw); // below – give negative yaw
+      yaw -= Math.PI / 2;
+
+      const pitch = Math.asin(this.upVector.dot(this.toVector)); // between −π/2 and π/2
+
+      if (
+        pitch < this.angleThresholds.pitch.min ||
+        pitch > this.angleThresholds.pitch.max
+      ) {
+        return;
+      }
+      if (
+        yaw < this.angleThresholds.yaw.min ||
+        yaw > this.angleThresholds.yaw.max
+      ) {
+        return;
+      }
+
+      closestEntity = entity;
+      closestDistance = distance;
+    });
+    if (closestEntity) {
+      this.lookAtObject(closestEntity);
+    }
   },
 
   // LEG
@@ -301,48 +431,11 @@ AFRAME.registerComponent("goomba", {
 
   lastChangeLookAtTick: 0,
   changeLookAtInterval: 100,
-  worldPosition: new THREE.Vector3(),
-  otherWorldPosition: new THREE.Vector3(),
-  distanceRange: { min: 0.05, max: 4 },
 
   tick: function (time, timeDelta) {
     if (time - this.lastChangeLookAtTick > this.changeLookAtInterval) {
       this.lastChangeLookAtTick = time;
-      let closestEntity;
-      let closestDistance = 1;
-      this.goomba.object3D.getWorldPosition(this.worldPosition);
-      this.data.lookAt.forEach((entity) => {
-        if (!entity.object3D.visible) {
-          return;
-        }
-        if (entity.components["hand-tracking-controls"]) {
-          if (!entity.components["hand-tracking-controls"].controllerPresent) {
-            return;
-          }
-          this.otherWorldPosition.copy(
-            entity.components["hand-tracking-controls"].indexTipPosition
-          );
-        } else {
-          entity.object3D.getWorldPosition(this.otherWorldPosition);
-        }
-
-        let distance = this.worldPosition.distanceTo(this.otherWorldPosition);
-        distance = THREE.MathUtils.inverseLerp(
-          this.distanceRange.min,
-          this.distanceRange.max,
-          distance
-        );
-        if (distance > 0 && distance < 1) {
-          // FILL - check if is in front of entity
-          if (distance < closestDistance) {
-            closestEntity = entity;
-            closestDistance = distance;
-          }
-        }
-      });
-      if (closestEntity) {
-        this.lookAtObject(closestEntity);
-      }
+      this.checkObjectToLookAt();
     }
 
     if (time - this.lastEyeTick > this.eyeTickInterval) {
@@ -367,7 +460,12 @@ AFRAME.registerComponent("goomba", {
             refocus
           );
         } else {
-          this.lookAt(this.objectToLookAt.object3D.position, refocus);
+          this.lookAt(
+            this.objectToLookAt.object3D.getWorldPosition(
+              this.otherWorldPosition
+            ),
+            refocus
+          );
         }
       } else {
         let changeFocus = false;
