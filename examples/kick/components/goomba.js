@@ -3,7 +3,6 @@ AFRAME.registerComponent("goomba", {
     template: { default: "#goombaTemplate", type: "selector" },
     lookAt: { default: ".lookAt" },
     grabbable: { default: false },
-    dontTick: { default: false },
   },
 
   sides: ["left", "right"],
@@ -18,8 +17,6 @@ AFRAME.registerComponent("goomba", {
     this.eyeControllers = {};
     this.eyeScales = {};
     this.eyeRotators = {};
-
-    this.dontTick = this.data.dontTick;
 
     this.el.classList.add("goomba");
     this.el.classList.add("lookAt");
@@ -599,9 +596,6 @@ AFRAME.registerComponent("goomba", {
   },
 
   tick: function (time, timeDelta) {
-    if (this.dontTick) {
-      return;
-    }
     if (this.status == "idle" || this.status == "grabbed") {
       if (time - this.lastChangeLookAtTick > this.changeLookAtInterval) {
         this.lastChangeLookAtTick = time;

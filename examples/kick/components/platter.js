@@ -25,7 +25,7 @@ AFRAME.registerComponent("platter", {
         this.addGoomba();
         if (this.goomba && !this.isGrabbed) {
           this.goomba.setAttribute("grabbable", "");
-          this.goomba.components["goomba"].dontTick = false;
+          this.goomba.play();
         }
       }, 200);
       this.el.emit("grow");
@@ -37,7 +37,7 @@ AFRAME.registerComponent("platter", {
       this.isOpen = false;
       if (this.goomba && !this.isGrabbed) {
         this.goomba.removeAttribute("grabbable");
-        this.goomba.components["goomba"].dontTick = true;
+        this.goomba.pause();
       }
       this.el.emit("shrink");
       this.hand.setAttribute("occlude-hand-tracking-controls", {
@@ -55,7 +55,7 @@ AFRAME.registerComponent("platter", {
         this.goomba.setAttribute("position", "0 0.1 0");
         this.goomba.setAttribute("rotation", "0 180 0");
       });
-      this.goomba.setAttribute("goomba", "dontTick: true;");
+      this.goomba.setAttribute("goomba", "");
       this.goomba.addEventListener(
         "grabstarted",
         (event) => {
@@ -71,7 +71,7 @@ AFRAME.registerComponent("platter", {
           this.isGrabbed = false;
           console.log("grabended goomba");
           console.log("adding goomba to scene", this.goomba);
-          this.goomba.components["goomba"].dontTick = false;
+          this.goomba.play();
           this.goomba.setAttribute("grabbable", "");
           this.goomba = undefined;
           this.addGoomba();
