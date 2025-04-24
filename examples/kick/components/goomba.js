@@ -2,20 +2,56 @@ AFRAME.registerComponent("goomba", {
   schema: {
     template: { default: "#goombaTemplate", type: "selector" },
     lookAt: { default: ".lookAt", type: "selectorAll" },
+    grabbable: { default: false },
   },
 
   sides: ["left", "right"],
 
   init: function () {
-    window.g = this;
+    this.eyeControllers = {};
+    this.eyeScales = {};
+    this.eyeRotators = {};
+
+    this.dontTick = false;
+
+    this.el.classList.add("goomba");
+
+    this.eyeTickInterval = 100;
+    this.eyeRefocusInterval = 100;
+    this.wanderEyesInterval = 2000;
+
+    this.lookAtEuler = new THREE.Euler();
+    this.tempLookAtEuler = new THREE.Euler();
+
+    this.objectToLookAtDistance = 0;
+
+    this.worldPosition = new THREE.Vector3();
+    this.otherWorldPosition = new THREE.Vector3();
+
+    this.legs = {};
+
+    this.lastEyeTick = 0;
+    this.lastEyeRefocusTick = 0;
+    this.lastWanderEyesTick = 0;
+
+    this.lastChangeLookAtTick = 0;
+    this.changeLookAtInterval = 100;
+
+    this.status = "idle";
+
+    window.goombas = window.goombas || [];
+    window.goombas.push(this);
     this.el.addEventListener("loaded", () => {
-      const template = this.data.template.content.cloneNode(true);
+      const template = this.data.template.content
+        .querySelector("a-entity")
+        .cloneNode(true);
       Array.from(template.children).forEach((entity) => {
         this.el.appendChild(entity);
       });
-      this.goomba = this.el.querySelector(".goomba");
-      this.goomba.addEventListener("grabstarted", () => this.onGrabStarted());
-      this.goomba.addEventListener("grabended", () => this.onGrabEnded());
+      this.template = template;
+      this.el = this.el;
+      this.el.addEventListener("grabstarted", () => this.onGrabStarted());
+      this.el.addEventListener("grabended", () => this.onGrabEnded());
       this.el.querySelectorAll(".left").forEach((entity) => {
         const duplicate = entity.cloneNode(true);
         duplicate.addEventListener("loaded", () => {
@@ -37,6 +73,10 @@ AFRAME.registerComponent("goomba", {
               this.eyeScales[side] = this.el.querySelector(
                 `.${side}.eye .white`
               );
+
+              if (side == "left") {
+                this.setEyeScale(side, this.sideEyeScale);
+              }
             });
           }
           if (entity.classList.contains("leg")) {
@@ -47,6 +87,11 @@ AFRAME.registerComponent("goomba", {
         });
         entity.parentEl.appendChild(duplicate);
       });
+      setTimeout(() => {
+        if (this.data.grabbable) {
+          this.el.setAttribute("grabbable", "");
+        }
+      }, 1);
     });
   },
 
@@ -80,7 +125,7 @@ AFRAME.registerComponent("goomba", {
     pitch: { min: -50, max: 50 },
     yaw: { min: -50, max: 50 },
   },
-  eyeControllers: {},
+
   setEyeRotation: function (
     side,
     rotation,
@@ -128,10 +173,13 @@ AFRAME.registerComponent("goomba", {
       this.setEyeRotation(side, ...arguments);
     });
   },
+  sideEyeScale: { height: 0.93, width: 1.07 },
   resetEyes: function () {
     this.setEyesRotation({ pitch: 0.5, yaw: 0.5 });
     this.setEyesRoll({ roll: 0.5 });
-    this.setEyesScale({ width: 1, height: 1 });
+
+    this.setEyeScale("left", this.sideEyeScale);
+    this.setEyeScale("right", { width: 1, height: 1 });
   },
   clearEyeRotationAnimation: function (side) {
     const entity = this.eyeControllers[side];
@@ -151,7 +199,6 @@ AFRAME.registerComponent("goomba", {
     width: { min: 0, max: 1 },
     height: { min: 0, max: 1 },
   },
-  eyeScales: {},
   setEyeScale: function (
     side,
     scale,
@@ -164,7 +211,6 @@ AFRAME.registerComponent("goomba", {
     if (!entity) {
       return;
     }
-
     const width = THREE.MathUtils.lerp(
       this.eyeScaleRange.width.min,
       this.eyeScaleRange.width.max,
@@ -217,7 +263,6 @@ AFRAME.registerComponent("goomba", {
   eyeRotatorsRange: {
     roll: { min: -50, max: 50 },
   },
-  eyeRotators: {},
   setEyeRoll: function (
     side,
     rotation,
@@ -284,20 +329,14 @@ AFRAME.registerComponent("goomba", {
   lookAtRefocusScalar: 0.025,
   lookAtRefocusScalarRange: { min: 0.0, max: 0.02 },
 
-  eyeTickInterval: 100,
-
   eyeRefocusIntervalRange: { min: 100, max: 800 },
-  eyeRefocusInterval: 100,
   wanderEyesIntervalRange: { min: 2000, max: 5000 },
-  wanderEyesInterval: 2000,
 
-  lookAtEuler: new THREE.Euler(),
-  tempLookAtEuler: new THREE.Euler(),
   lookAt: function (position, refocus = false) {
     this.lookAtPosition.copy(position);
     if (refocus) {
       if (true) {
-        this.goomba.object3D.getWorldQuaternion(this.worldQuaternion);
+        this.el.object3D.getWorldQuaternion(this.worldQuaternion);
 
         const intervalInterpolation = THREE.MathUtils.inverseLerp(
           0,
@@ -372,8 +411,6 @@ AFRAME.registerComponent("goomba", {
     this.objectToLookAt = undefined;
   },
 
-  worldPosition: new THREE.Vector3(),
-  otherWorldPosition: new THREE.Vector3(),
   distanceRange: { min: 0.15, max: 4 },
 
   forwardVector: new THREE.Vector3(0, 0, 1),
@@ -388,12 +425,11 @@ AFRAME.registerComponent("goomba", {
     yaw: { min: -0.7, max: 0.7 },
   },
 
-  objectToLookAtDistance: 0,
   checkObjectToLookAt: function () {
     let closestEntity;
     let closestDistance = 1;
-    this.goomba.object3D.getWorldPosition(this.worldPosition);
-    this.goomba.object3D.getWorldQuaternion(this.worldQuaternion);
+    this.el.object3D.getWorldPosition(this.worldPosition);
+    this.el.object3D.getWorldQuaternion(this.worldQuaternion);
     this.forwardVector
       .set(0, 0, 1)
       .applyQuaternion(this.worldQuaternion)
@@ -478,7 +514,7 @@ AFRAME.registerComponent("goomba", {
   legRotationRange: {
     pitch: { min: 50, max: -50 },
   },
-  legs: {},
+
   setLegRotation: function (
     side,
     rotation,
@@ -554,14 +590,10 @@ AFRAME.registerComponent("goomba", {
     });
   },
 
-  lastEyeTick: 0,
-  lastEyeRefocusTick: 0,
-  lastWanderEyesTick: 0,
-
-  lastChangeLookAtTick: 0,
-  changeLookAtInterval: 100,
-
   tick: function (time, timeDelta) {
+    if (this.dontTick) {
+      return;
+    }
     if (this.status == "idle" || this.status == "grabbed") {
       if (time - this.lastChangeLookAtTick > this.changeLookAtInterval) {
         this.lastChangeLookAtTick = time;
@@ -624,7 +656,7 @@ AFRAME.registerComponent("goomba", {
     "stomp",
     "shocked",
   ],
-  status: "idle",
+
   setStatus: function (newStatus) {
     if (this.status == newStatus) {
       return;
@@ -641,7 +673,6 @@ AFRAME.registerComponent("goomba", {
     this.clearLegsRotationAnimation();
 
     this.resetLegs();
-    this.resetEyes();
 
     switch (this.status) {
       case "grabbed":
@@ -664,7 +695,10 @@ AFRAME.registerComponent("goomba", {
           true
         );
         break;
+      case "idle":
+        break;
       default:
+        this.resetEyes();
         // FILL - reset eyes/legs
         break;
     }

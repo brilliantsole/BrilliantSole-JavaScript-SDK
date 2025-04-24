@@ -59,7 +59,7 @@
 
     <a-scene
       id="scene"
-      physics="debug: false; restitution: 0.4"
+      physics="debug: false; restitution: 0.4;"
       embedded
       grabbable-listener
       obb-collider="showColliders: false"
@@ -100,10 +100,14 @@
         grabbable-anchor
       ></a-box>
 
-      <a-entity goomba position="0 1 -0.2"></a-entity>
+      <a-entity
+        goomba="grabbable: true;"
+        id="goomba1"
+        position="0 1 -0.2"
+      ></a-entity>
 
       <template id="goombaTemplate">
-        <a-entity class="enemy goomba" grabbable>
+        <a-entity>
           <a-sphere
             class="body"
             color="#a14e00"
@@ -147,8 +151,6 @@
         </a-entity>
       </template>
 
-      <a-entity id="koopa"></a-entity>
-
       <a-entity
         id="leftHand"
         class="lookAt"
@@ -160,7 +162,7 @@
           id="platter"
           scale="0 0 0"
           platter
-          rotation="0 0 34.3"
+          rotation="220 0 -34.3"
           position="0 -0.03 -0.07"
         >
           <a-cylinder color="grey" height="0.01" radius="0.15"></a-cylinder>
