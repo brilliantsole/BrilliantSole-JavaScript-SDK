@@ -4,6 +4,7 @@ AFRAME.registerComponent("goomba", {
     lookAt: { default: ".lookAt" },
     lookAtRaycast: { default: "[data-world-mesh]" },
     grabbable: { default: false },
+    physics: { default: false },
   },
 
   sides: ["left", "right"],
@@ -123,14 +124,30 @@ AFRAME.registerComponent("goomba", {
     switch (this.status) {
       default:
         this.setStatus("grabbed");
+        if (this.data.physics) {
+          this.setPhysicsEnabled(false);
+        }
         break;
     }
   },
   onGrabEnded: function () {
     switch (this.status) {
       default:
-        this.setStatus("idle");
+        if (this.data.physics) {
+          this.setPhysicsEnabled(true);
+          this.setStatus("falling");
+        } else {
+          this.setStatus("idle");
+        }
         break;
+    }
+  },
+
+  setPhysicsEnabled: function (enabled) {
+    if (enabled) {
+      this.el.setAttribute("dynamic-body", "");
+    } else {
+      this.el.removeAttribute("dynamic-body");
     }
   },
 
@@ -624,7 +641,11 @@ AFRAME.registerComponent("goomba", {
   },
 
   tick: function (time, timeDelta) {
-    if (this.status == "idle" || this.status == "grabbed") {
+    if (
+      this.status == "idle" ||
+      this.status == "grabbed" ||
+      this.status == "falling"
+    ) {
       if (time - this.lastChangeLookAtTick > this.changeLookAtInterval) {
         this.lastChangeLookAtTick = time;
         this.checkObjectToLookAt();
@@ -783,7 +804,6 @@ AFRAME.registerComponent("goomba", {
         break;
       default:
         this.resetEyes();
-        // FILL - reset eyes/legs
         break;
     }
   },

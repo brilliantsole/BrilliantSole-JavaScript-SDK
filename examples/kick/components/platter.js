@@ -70,7 +70,7 @@ AFRAME.registerComponent("platter", {
   addGoomba: function () {
     if (!this.goomba) {
       this.goomba = document.createElement("a-entity");
-      console.log("creating goomba", this.goomba);
+      //console.log("creating goomba", this.goomba);
       this.goomba.addEventListener("loaded", () => {
         this.setOwner(this.el.object3D);
         setTimeout(() => {
@@ -80,12 +80,12 @@ AFRAME.registerComponent("platter", {
           this.goomba.pause();
         }, 1);
       });
-      this.goomba.setAttribute("goomba", "");
+      this.goomba.setAttribute("goomba", "physics: true;");
       this.goomba.addEventListener(
         "grabstarted",
         (event) => {
           this.isGrabbed = true;
-          console.log("grabstarted goomba");
+          //console.log("grabstarted goomba");
           event.detail.grab.originalParent = this.el.sceneEl.object3D;
         },
         { once: true }
@@ -94,8 +94,7 @@ AFRAME.registerComponent("platter", {
         "grabended",
         () => {
           this.isGrabbed = false;
-          console.log("grabended goomba");
-          console.log("adding goomba to scene", this.goomba);
+          //console.log("grabended goomba");
           this.goomba.play();
           this.goomba.setAttribute("grabbable", "");
           this.goomba = undefined;

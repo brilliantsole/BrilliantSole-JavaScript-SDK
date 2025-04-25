@@ -42,7 +42,6 @@ AFRAME.registerComponent("grabbable-physics-body", {
       if (this.data.type === "static") {
         this.el.setAttribute("static-body", this.data.staticBody);
       } else {
-        console.log("setting attribute", this.data.dynamicBody);
         this.el.setAttribute("dynamic-body", this.data.dynamicBody);
         this.el.addEventListener(
           "body-loaded",
