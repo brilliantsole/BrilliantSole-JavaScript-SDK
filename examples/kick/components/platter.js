@@ -17,6 +17,7 @@ AFRAME.registerComponent("platter", {
 
     this.hand.setAttribute("palm-up-detector", "");
     this.hand.addEventListener("palmupon", () => {
+      this.setGrabEnabled(false);
       this.isGrabbed = false;
       this.isOpen = true;
       if (this.goomba) {
@@ -38,6 +39,7 @@ AFRAME.registerComponent("platter", {
       });
     });
     this.hand.addEventListener("palmupoff", () => {
+      this.setGrabEnabled(true);
       this.isOpen = false;
       if (this.goomba && !this.isGrabbed) {
         this.goomba.removeAttribute("grabbable");
@@ -49,6 +51,20 @@ AFRAME.registerComponent("platter", {
       });
       this.isGrabbed = false;
     });
+  },
+
+  setGrabEnabled: function (enabled) {
+    if (!this.originalObbColliderAttribute) {
+      this.originalObbColliderAttribute = Object.assign(
+        {},
+        this.hand.getAttribute("obb-collider")
+      );
+    }
+    if (enabled) {
+      this.hand.setAttribute("obb-collider", this.originalObbColliderAttribute);
+    } else {
+      this.hand.removeAttribute("obb-collider");
+    }
   },
 
   addGoomba: function () {
