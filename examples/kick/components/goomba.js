@@ -12,6 +12,8 @@ AFRAME.registerComponent("goomba", {
   showHitSphere: false,
 
   init: function () {
+    this.scale = 1;
+
     this.hitSphere = document.createElement("a-sphere");
     this.hitSphere.setAttribute("color", "blue");
     this.hitSphere.setAttribute("visible", "false");
@@ -66,6 +68,9 @@ AFRAME.registerComponent("goomba", {
 
     window.goombas = window.goombas || [];
     window.goombas.push(this);
+
+    this.el.addEventListener("collide", (event) => this.onCollide(event));
+
     this.el.addEventListener("loaded", () => {
       const template = this.data.template.content
         .querySelector("a-entity")
@@ -74,9 +79,7 @@ AFRAME.registerComponent("goomba", {
         this.el.appendChild(entity);
       });
       this.template = template;
-      this.el = this.el;
-      this.el.addEventListener("grabstarted", () => this.onGrabStarted());
-      this.el.addEventListener("grabended", () => this.onGrabEnded());
+
       this.el.querySelectorAll(".left").forEach((entity) => {
         const duplicate = entity.cloneNode(true);
         duplicate.addEventListener("loaded", () => {
@@ -118,6 +121,39 @@ AFRAME.registerComponent("goomba", {
         }
       }, 1);
     });
+
+    this.el.addEventListener("grabstarted", () => this.onGrabStarted());
+    this.el.addEventListener("grabended", () => this.onGrabEnded());
+  },
+
+  validWorldMeshTypes: ["floor", "table"],
+
+  onCollide: function (event) {
+    const realWorldMesh = event.detail.body.el;
+    if (this.validWorldMeshTypes.includes(realWorldMesh.dataset.worldMesh)) {
+      this.setFloor(realWorldMesh);
+    }
+  },
+
+  setFloor: function (newFloor) {
+    if (this.floor == newFloor) {
+      return;
+    }
+    this.floor = newFloor;
+    clearInterval(this.floorInterval);
+    if (this.floor) {
+      this.floorInterval = setTimeout(() => {
+        const stopped =
+          this.el.components["dynamic-body"].body.velocity.length() < 0.001;
+        if (stopped) {
+          console.log("stopped");
+          clearInterval(this.floorInterval);
+          this.setPhysicsEnabled(false);
+        }
+      }, 500);
+    } else {
+      this.setPhysicsEnabled(false);
+    }
   },
 
   onGrabStarted: function () {
@@ -781,6 +817,7 @@ AFRAME.registerComponent("goomba", {
 
     switch (this.status) {
       case "grabbed":
+        //this.setScale(1, 500);
         this.setLegRotation(
           "left",
           { pitch: 0.5, pitch2: 0.7 },
@@ -802,9 +839,36 @@ AFRAME.registerComponent("goomba", {
         break;
       case "idle":
         break;
+      case "falling":
+        this.setLegsRotation(
+          { pitch: 0, pitch2: 1 },
+          200,
+          "easeInOutQuad",
+          true,
+          "alternate",
+          true
+        );
+        //this.setScale(1.5, 1000);
+        break;
       default:
         this.resetEyes();
         break;
+    }
+  },
+
+  setScale: function (scale, dur, easing = "easeOutQuad") {
+    this.scale = scale;
+    const entity = this.el;
+    if (dur == 0) {
+      entity.object3D.scale.set(scale, scale, scale);
+    } else {
+      entity.setAttribute("animation__scale", {
+        property: "scale",
+        to: `${scale} ${scale} ${scale}`,
+        from: "1 1 1",
+        dur,
+        easing,
+      });
     }
   },
 
