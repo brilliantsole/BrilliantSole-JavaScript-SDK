@@ -354,7 +354,7 @@ AFRAME.registerComponent("goomba", {
   lookAtRefocusScalarRange: { min: 0.0, max: 0.02 },
 
   eyeRefocusIntervalRange: { min: 100, max: 800 },
-  wanderEyesIntervalRange: { min: 500, max: 2300 },
+  wanderEyesIntervalRange: { min: 750, max: 2300 },
   wanderRefocusScalar: 3,
 
   wanderEyesEulerRange: {
