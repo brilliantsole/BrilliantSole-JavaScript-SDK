@@ -2,17 +2,36 @@ AFRAME.registerComponent("goomba", {
   schema: {
     template: { default: "#goombaTemplate", type: "selector" },
     lookAt: { default: ".lookAt" },
+    lookAtRaycast: { default: "[data-world-mesh]" },
     grabbable: { default: false },
   },
 
   sides: ["left", "right"],
 
+  showHitSphere: false,
+
   init: function () {
+    this.hitSphere = document.createElement("a-sphere");
+    this.hitSphere.setAttribute("color", "blue");
+    this.hitSphere.setAttribute("visible", "false");
+    this.hitSphere.setAttribute("radius", "0.05");
+    this.el.sceneEl.appendChild(this.hitSphere);
+
     this.updateLookAtTargets();
     this.lookAtSelectorInterval = setInterval(
       () => this.updateLookAtTargets(),
       1000
     );
+    this.updateLookAtRaycastTargets();
+    this.lookAtRaycastSelectorInterval = setInterval(
+      () => this.updateLookAtRaycastTargets(),
+      1000
+    );
+
+    this.pointToLookAt = new THREE.Vector3();
+    this.raycaster = new THREE.Raycaster();
+    this.ray = new THREE.Vector3();
+    this.rayEuler = new THREE.Euler();
 
     this.eyeControllers = {};
     this.eyeScales = {};
@@ -127,8 +146,8 @@ AFRAME.registerComponent("goomba", {
 
   // EYE CONTROLLER
   eyeControllersRange: {
-    pitch: { min: -50, max: 50 },
-    yaw: { min: -50, max: 50 },
+    pitch: { min: -40, max: 40 },
+    yaw: { min: -40, max: 40 },
   },
 
   setEyeRotation: function (
@@ -335,9 +354,15 @@ AFRAME.registerComponent("goomba", {
   lookAtRefocusScalarRange: { min: 0.0, max: 0.02 },
 
   eyeRefocusIntervalRange: { min: 100, max: 800 },
-  wanderEyesIntervalRange: { min: 2000, max: 5000 },
+  wanderEyesIntervalRange: { min: 500, max: 2300 },
+  wanderRefocusScalar: 3,
 
-  lookAt: function (position, refocus = false) {
+  wanderEyesEulerRange: {
+    pitch: { min: -50, max: 50 },
+    yaw: { min: -50, max: 50 },
+  },
+
+  lookAt: function (position, refocus = false, refocusScalar = 1) {
     this.lookAtPosition.copy(position);
     if (refocus) {
       if (true) {
@@ -348,7 +373,7 @@ AFRAME.registerComponent("goomba", {
           this.eyeRefocusIntervalRange.max,
           this.eyeRefocusInterval
         );
-        const scalar = 1 - intervalInterpolation;
+        const scalar = refocusScalar * (1 - intervalInterpolation);
 
         const randomX =
           THREE.MathUtils.lerp(
@@ -449,6 +474,9 @@ AFRAME.registerComponent("goomba", {
       .normalize();
     this.lookAtTargets.forEach((entity) => {
       if (!entity.object3D.visible) {
+        return;
+      }
+      if (!entity.isPlaying) {
         return;
       }
       if (entity.components["hand-tracking-controls"]) {
@@ -632,7 +660,11 @@ AFRAME.registerComponent("goomba", {
           }
         } else {
           let changeFocus = false;
-          if (time - this.lastWanderEyesTick > this.wanderEyesInterval) {
+          // FILL - check if view angle is off (rotated too far off)
+          if (
+            changeFocus ||
+            time - this.lastWanderEyesTick > this.wanderEyesInterval
+          ) {
             changeFocus = true;
             this.lastWanderEyesTick = time;
             this.wanderEyesInterval = THREE.MathUtils.lerp(
@@ -640,9 +672,59 @@ AFRAME.registerComponent("goomba", {
               this.wanderEyesIntervalRange.max,
               Math.random()
             );
+
+            this.el.object3D.getWorldPosition(this.worldPosition);
+            this.el.object3D.getWorldQuaternion(this.worldQuaternion);
+            this.ray
+              .set(0, 0, 1)
+              .applyQuaternion(this.worldQuaternion)
+              .normalize();
+            const pitch = THREE.MathUtils.lerp(
+              this.wanderEyesEulerRange.pitch.min,
+              this.wanderEyesEulerRange.pitch.max,
+              Math.random()
+            );
+            const yaw = THREE.MathUtils.lerp(
+              this.wanderEyesEulerRange.yaw.min,
+              this.wanderEyesEulerRange.yaw.max,
+              Math.random()
+            );
+            this.rayEuler.set(
+              THREE.MathUtils.degToRad(pitch),
+              THREE.MathUtils.degToRad(yaw),
+              0
+            );
+            this.ray.applyEuler(this.rayEuler);
+            this.raycaster.set(this.worldPosition, this.ray);
+            this.raycaster.far = 10;
+
+            const intersections = this.raycaster.intersectObjects(
+              this.lookAtRaycastTargetObjects,
+              true
+            );
+
+            const hasPointToLookAt = intersections.length > 0;
+
+            if (this.hasPointToLookAt != hasPointToLookAt) {
+              this.hasPointToLookAt = hasPointToLookAt;
+              if (!this.hasPointToLookAt) {
+                this.resetEyes();
+              }
+              if (this.hasPointToLookAt && this.showHitSphere) {
+                this.hitSphere.object3D.visible = this.hasPointToLookAt;
+              }
+            }
+
+            if (this.hasPointToLookAt) {
+              const intersection = intersections[0];
+              //console.log("Hit:", intersection, intersection.point);
+              this.pointToLookAt.copy(intersection.point);
+              this.hitSphere.object3D.position.copy(this.pointToLookAt);
+            }
           }
-          // FILL - change point to look at (raycast from eyes)
-          // FILL - wander around
+          if (this.hasPointToLookAt) {
+            this.lookAt(this.pointToLookAt, refocus, this.wanderRefocusScalar);
+          }
         }
       }
     }
@@ -711,7 +793,19 @@ AFRAME.registerComponent("goomba", {
       this.el.sceneEl.querySelectorAll(this.data.lookAt)
     );
   },
+  updateLookAtRaycastTargets() {
+    this.lookAtRaycastTargets = Array.from(
+      this.el.sceneEl.querySelectorAll(this.data.lookAtRaycast)
+    );
+    this.lookAtRaycastTargetObjects = this.lookAtRaycastTargets.map(
+      (entity) => entity.object3D
+    );
+    if (this.lookAtRaycastTargetObjects.length > 0) {
+      clearInterval(this.lookAtRaycastSelectorInterval);
+    }
+  },
   remove() {
     clearInterval(this.lookAtSelectorInterval);
+    clearInterval(this.lookAtRaycastSelectorInterval);
   },
 });

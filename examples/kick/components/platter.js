@@ -61,6 +61,7 @@ AFRAME.registerComponent("platter", {
           this.goomba.setAttribute("position", "0 0.1 0");
           this.goomba.setAttribute("scale", "1 1 1");
           this.goomba.setAttribute("rotation", "0 180 0");
+          this.goomba.pause();
         }, 1);
       });
       this.goomba.setAttribute("goomba", "");
