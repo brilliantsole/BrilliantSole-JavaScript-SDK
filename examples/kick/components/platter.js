@@ -17,11 +17,15 @@ AFRAME.registerComponent("platter", {
 
     this.hand.setAttribute("palm-up-detector", "");
     this.hand.addEventListener("palmupon", () => {
+      this.isGrabbed = false;
       this.isOpen = true;
       if (this.goomba) {
         this.goomba.setAttribute("visible", "true");
       }
       setTimeout(() => {
+        if (!this.isOpen) {
+          return;
+        }
         this.addGoomba();
         if (this.goomba && !this.isGrabbed) {
           this.goomba.setAttribute("grabbable", "");
@@ -43,6 +47,7 @@ AFRAME.registerComponent("platter", {
       this.hand.setAttribute("occlude-hand-tracking-controls", {
         enabled: true,
       });
+      this.isGrabbed = false;
     });
   },
 
@@ -52,8 +57,11 @@ AFRAME.registerComponent("platter", {
       console.log("creating goomba", this.goomba);
       this.goomba.addEventListener("loaded", () => {
         this.setOwner(this.el.object3D);
-        this.goomba.setAttribute("position", "0 0.1 0");
-        this.goomba.setAttribute("rotation", "0 180 0");
+        setTimeout(() => {
+          this.goomba.setAttribute("position", "0 0.1 0");
+          this.goomba.setAttribute("scale", "1 1 1");
+          this.goomba.setAttribute("rotation", "0 180 0");
+        }, 1);
       });
       this.goomba.setAttribute("goomba", "");
       this.goomba.addEventListener(
