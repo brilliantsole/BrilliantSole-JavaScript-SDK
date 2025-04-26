@@ -148,10 +148,7 @@ AFRAME.registerComponent("goomba", {
 
   onCollide: function (event) {
     const realWorldMesh = event.detail.body.el;
-    if (
-      true ||
-      this.validWorldMeshTypes.includes(realWorldMesh.dataset.worldMesh)
-    ) {
+    if (this.validWorldMeshTypes.includes(realWorldMesh.dataset.worldMesh)) {
       this.setFloor(realWorldMesh);
     }
   },
@@ -175,7 +172,7 @@ AFRAME.registerComponent("goomba", {
           this.setPhysicsEnabled(false);
           setTimeout(() => {
             this.setStatus("getting up");
-          }, 0); // FIX
+          }, 500);
         }
       };
       this.floorInterval = setInterval(() => {
@@ -885,8 +882,8 @@ AFRAME.registerComponent("goomba", {
     "upright",
     "leftSide",
     "rightSide",
-    "faceDown",
-    "back",
+    "frontSide",
+    "backSide",
     "upsideDown",
   ],
   worldBasis: {
@@ -915,15 +912,15 @@ AFRAME.registerComponent("goomba", {
 
     let newOrientation = "upright";
     if (Math.abs(forwardAngle - Math.PI) < this.orientationAngleThreshold) {
-      newOrientation = "faceDown";
+      newOrientation = "frontSide";
     } else if (forwardAngle < this.orientationAngleThreshold) {
-      newOrientation = "back";
+      newOrientation = "backSide";
     } else if (
       Math.abs(rightAngle - Math.PI) < this.orientationAngleThreshold
     ) {
-      newOrientation = "left";
+      newOrientation = "leftSide";
     } else if (rightAngle < this.orientationAngleThreshold) {
-      newOrientation = "right";
+      newOrientation = "rightSide";
     } else if (Math.abs(upAngle - Math.PI) < this.orientationAngleThreshold) {
       newOrientation = "upsideDown";
     } else {
@@ -943,13 +940,64 @@ AFRAME.registerComponent("goomba", {
       return;
     }
     this.orientation = newOrientation;
-    console.log(`updated orientation to ${this.orientation}`);
-    // FILL
+    console.log(`updated orientation to "${this.orientation}"`);
   },
-  getUp: function () {
-    // FILL
-    console.log("GET UP");
+  getUp: async function (dur = 1500, easing = "easeInOutElastic") {
     this.checkOrientation();
+
+    if (this.orientation == "upright") {
+      return;
+    }
+
+    this.getUpEuler = this.getUpEuler || new THREE.Euler();
+    let reorder = "XYZ";
+    switch (this.orientation) {
+      case "rightSide":
+      case "leftSide":
+        reorder = "XYZ";
+        break;
+      case "frontSide":
+      case "backSide":
+        reorder = "YXZ";
+        break;
+    }
+    this.getUpEuler.copy(this.el.object3D.rotation).reorder(reorder);
+    const pitch = THREE.MathUtils.radToDeg(this.getUpEuler.x);
+    let yaw = THREE.MathUtils.radToDeg(this.getUpEuler.y);
+
+    console.log({ pitch, yaw });
+
+    // FILL - determine distance to roll
+    let from = [0, yaw, 0];
+    switch (this.orientation) {
+      case "rightSide":
+        from[2] = 90;
+        break;
+      case "leftSide":
+        from[2] = -90;
+        break;
+      case "upsideDown":
+        from[0] = -180;
+        from[1] *= -1;
+        yaw *= -1;
+        break;
+      case "frontSide":
+        from[0] = 90;
+        break;
+      case "backSide":
+        from[0] = -90;
+        break;
+      default:
+        break;
+    }
+    from = from.join(" ");
+    this.el.setAttribute("animation__rollUpright", {
+      property: "rotation",
+      to: `0 ${yaw} 0`,
+      from,
+      dur,
+      easing,
+    });
   },
 
   statuses: [
