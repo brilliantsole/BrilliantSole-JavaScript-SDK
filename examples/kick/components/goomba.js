@@ -16,6 +16,8 @@ AFRAME.registerComponent("goomba", {
   init: function () {
     this.orientation = "upright";
     this.scale = 1;
+    this.lastBlinkTick = 0;
+    this.blinkInterval = 5000;
 
     const eyeScalesOffset =
       Math.random() * this.eyeScalesRange - this.eyeScalesRange / 2;
@@ -23,7 +25,6 @@ AFRAME.registerComponent("goomba", {
       left: { height: 1 + eyeScalesOffset, width: 1 },
       right: { height: 1 - eyeScalesOffset, width: 1 },
     };
-    // FILL - randomize
 
     this.hitSphere = document.createElement("a-sphere");
     this.hitSphere.setAttribute("color", "blue");
@@ -375,10 +376,17 @@ AFRAME.registerComponent("goomba", {
     });
   },
 
+  blinkIntervalRange: { min: 3000, max: 5000 },
   blink: async function (dur = 110, easing = "easeInBack") {
     if (this.isBlinking) {
       return;
     }
+    this.lastBlinkTick = this.latestTick;
+    this.blinkInterval = THREE.MathUtils.lerp(
+      this.blinkIntervalRange.min,
+      this.blinkIntervalRange.max,
+      Math.random()
+    );
     this.isBlinking = true;
     const promises = this.sides.map(async (side) => {
       const firstSide = Math.round(Math.random()) ? "left" : "right";
@@ -737,12 +745,18 @@ AFRAME.registerComponent("goomba", {
   },
 
   tick: function (time, timeDelta) {
+    this.latestTick = time;
     if (
-      !this.isBlinking &&
-      (this.status == "idle" ||
-        this.status == "grabbed" ||
-        this.status == "falling")
+      this.status == "idle" ||
+      this.status == "grabbed" ||
+      this.status == "falling"
     ) {
+      if (time - this.lastBlinkTick > this.blinkInterval) {
+        this.blink();
+      }
+      if (this.isBlinking) {
+        return;
+      }
       if (time - this.lastChangeLookAtTick > this.changeLookAtInterval) {
         this.lastChangeLookAtTick = time;
         this.checkObjectToLookAt();
