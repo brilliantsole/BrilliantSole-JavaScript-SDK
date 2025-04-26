@@ -148,7 +148,10 @@ AFRAME.registerComponent("goomba", {
 
   onCollide: function (event) {
     const realWorldMesh = event.detail.body.el;
-    if (this.validWorldMeshTypes.includes(realWorldMesh.dataset.worldMesh)) {
+    if (
+      true ||
+      this.validWorldMeshTypes.includes(realWorldMesh.dataset.worldMesh)
+    ) {
       this.setFloor(realWorldMesh);
     }
   },
@@ -160,9 +163,9 @@ AFRAME.registerComponent("goomba", {
     this.floor = newFloor;
     clearInterval(this.floorInterval);
     if (this.floor) {
-      this.floorInterval = setInterval(() => {
+      const checkIfStoppedMoving = () => {
         const stoppedMoving =
-          this.el.components["dynamic-body"].body.velocity.length() < 0.001;
+          this.el.components["dynamic-body"].body.velocity.length() < 0.01;
         const stoppedRotating =
           this.el.components["dynamic-body"].body.angularVelocity.length() <
           0.01;
@@ -172,9 +175,13 @@ AFRAME.registerComponent("goomba", {
           this.setPhysicsEnabled(false);
           setTimeout(() => {
             this.setStatus("getting up");
-          }, 500);
+          }, 0); // FIX
         }
+      };
+      this.floorInterval = setInterval(() => {
+        checkIfStoppedMoving();
       }, 500);
+      checkIfStoppedMoving();
     } else {
       this.setPhysicsEnabled(false);
     }
@@ -796,7 +803,6 @@ AFRAME.registerComponent("goomba", {
           }
         } else {
           let changeFocus = false;
-          // FILL - check if view angle is off (rotated too far off)
           this.forwardVector
             .set(0, 0, 1)
             .applyQuaternion(this.worldQuaternion)
@@ -883,8 +889,50 @@ AFRAME.registerComponent("goomba", {
     "back",
     "upsideDown",
   ],
-  updateOrientation: function () {
-    // FILL
+  worldBasis: {
+    forward: new THREE.Vector3(0, 0, 1),
+    up: new THREE.Vector3(0, 1, 0),
+    right: new THREE.Vector3(1, 0, 0),
+  },
+  orientationAngleThreshold: 0.01,
+  checkOrientation: function () {
+    if (!this.orientationVectors) {
+      this.orientationVectors = {
+        forward: new THREE.Vector3(),
+        up: new THREE.Vector3(),
+        right: new THREE.Vector3(),
+      };
+    }
+    const { forward, up, right } = this.orientationVectors;
+    this.el.object3D.getWorldQuaternion(this.worldQuaternion);
+    forward.set(0, 0, 1).applyQuaternion(this.worldQuaternion).normalize();
+    up.set(0, 1, 0).applyQuaternion(this.worldQuaternion).normalize();
+    right.set(1, 0, 0).applyQuaternion(this.worldQuaternion).normalize();
+
+    const upAngle = this.worldBasis.up.angleTo(up);
+    const rightAngle = this.worldBasis.up.angleTo(right);
+    const forwardAngle = this.worldBasis.up.angleTo(forward);
+
+    let newOrientation = "upright";
+    if (Math.abs(forwardAngle - Math.PI) < this.orientationAngleThreshold) {
+      newOrientation = "faceDown";
+    } else if (forwardAngle < this.orientationAngleThreshold) {
+      newOrientation = "back";
+    } else if (
+      Math.abs(rightAngle - Math.PI) < this.orientationAngleThreshold
+    ) {
+      newOrientation = "left";
+    } else if (rightAngle < this.orientationAngleThreshold) {
+      newOrientation = "right";
+    } else if (Math.abs(upAngle - Math.PI) < this.orientationAngleThreshold) {
+      newOrientation = "upsideDown";
+    } else {
+      newOrientation = "upright";
+    }
+
+    console.log({ newOrientation });
+
+    this.setOrientation(newOrientation);
   },
   setOrientation: function (newOrientation) {
     if (!this.orientations.includes(newOrientation)) {
@@ -900,6 +948,8 @@ AFRAME.registerComponent("goomba", {
   },
   getUp: function () {
     // FILL
+    console.log("GET UP");
+    this.checkOrientation();
   },
 
   statuses: [
