@@ -942,6 +942,7 @@ AFRAME.registerComponent("goomba", {
     this.orientation = newOrientation;
     console.log(`updated orientation to "${this.orientation}"`);
   },
+  rollDistance: 0.15,
   getUp: async function (dur = 1500, easing = "easeInOutElastic") {
     this.checkOrientation();
 
@@ -960,14 +961,17 @@ AFRAME.registerComponent("goomba", {
       case "backSide":
         reorder = "YXZ";
         break;
+      case "upsideDown":
+        reorder = "XYZ";
+        break;
     }
     this.getUpEuler.copy(this.el.object3D.rotation).reorder(reorder);
-    const pitch = THREE.MathUtils.radToDeg(this.getUpEuler.x);
     let yaw = THREE.MathUtils.radToDeg(this.getUpEuler.y);
 
-    console.log({ pitch, yaw });
+    if (this.orientation == "upsideDown") {
+      yaw = this.getEntityYaw();
+    }
 
-    // FILL - determine distance to roll
     let from = [0, yaw, 0];
     switch (this.orientation) {
       case "rightSide":
@@ -978,8 +982,8 @@ AFRAME.registerComponent("goomba", {
         break;
       case "upsideDown":
         from[0] = -180;
-        from[1] *= -1;
-        yaw *= -1;
+        //from[1] *= -1;
+        //yaw *= -1;
         break;
       case "frontSide":
         from[0] = 90;
@@ -991,6 +995,7 @@ AFRAME.registerComponent("goomba", {
         break;
     }
     from = from.join(" ");
+    console.log({ from });
     this.el.setAttribute("animation__rollUpright", {
       property: "rotation",
       to: `0 ${yaw} 0`,
@@ -998,6 +1003,58 @@ AFRAME.registerComponent("goomba", {
       dur,
       easing,
     });
+
+    let rollScalar = 1;
+    switch (this.orientation) {
+      case "frontSide":
+        rollScalar = -1;
+        break;
+      case "leftSide":
+        rollScalar = -1;
+        break;
+    }
+
+    this.el.object3D.getWorldPosition(this.worldPosition);
+    console.log("before", this.worldPosition);
+    this.getUpPosition = this.getUpPosition || new THREE.Vector3();
+    switch (this.orientation) {
+      case "frontSide":
+      case "backSide":
+        this.getUpPosition.set(0, 0, rollScalar * this.rollDistance);
+        break;
+      case "rightSide":
+      case "leftSide":
+        this.getUpPosition.set(rollScalar * this.rollDistance, 0, 0);
+        break;
+      case "upsideDown":
+        this.getUpPosition.set(0, 0, rollScalar * this.rollDistance);
+        break;
+    }
+    this.getUpEuler.set(0, THREE.MathUtils.degToRad(yaw), 0);
+    this.getUpPosition.applyEuler(this.getUpEuler);
+    this.getUpPosition.add(this.worldPosition);
+    this.el.setAttribute("animation__moveUpright", {
+      property: "position",
+      to: this.getUpPosition.toArray().join(" "),
+      from: this.worldPosition
+        .toArray()
+        .map((value) => (Math.abs(value) < 0.001 ? 0 : value))
+        .join(" "),
+      dur,
+      easing,
+    });
+  },
+
+  getEntityYaw: function () {
+    const forward = new THREE.Vector3(0, 0, -1); // Local forward
+    forward.applyQuaternion(this.worldQuaternion); // Transform it into world space
+
+    forward.y = 0; // Flatten onto XZ plane
+    forward.normalize();
+
+    const yaw = Math.atan2(forward.x, forward.z); // X first, then Z
+    console.log({ yaw });
+    return THREE.MathUtils.radToDeg(yaw); // In radians
   },
 
   statuses: [
