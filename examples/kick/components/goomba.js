@@ -11,8 +11,19 @@ AFRAME.registerComponent("goomba", {
 
   showHitSphere: false,
 
+  eyeScalesRange: 0.09,
+
   init: function () {
+    this.orientation = "upright";
     this.scale = 1;
+
+    const eyeScalesOffset =
+      Math.random() * this.eyeScalesRange - this.eyeScalesRange / 2;
+    this.eyesScales = {
+      left: { height: 1 + eyeScalesOffset, width: 1 },
+      right: { height: 1 - eyeScalesOffset, width: 1 },
+    };
+    // FILL - randomize
 
     this.hitSphere = document.createElement("a-sphere");
     this.hitSphere.setAttribute("color", "blue");
@@ -38,6 +49,7 @@ AFRAME.registerComponent("goomba", {
 
     this.eyeControllers = {};
     this.eyeScales = {};
+    this.eyePupils = {};
     this.eyeRotators = {};
 
     this.el.classList.add("goomba");
@@ -101,10 +113,11 @@ AFRAME.registerComponent("goomba", {
               this.eyeScales[side] = this.el.querySelector(
                 `.${side}.eye .white`
               );
+              this.eyePupils[side] = this.el.querySelector(
+                `.${side}.eye .black`
+              );
 
-              if (side == "left") {
-                this.setEyeScale(side, this.sideEyeScale);
-              }
+              this.setEyeScale(side, this.eyesScales[side]);
             });
           }
           if (entity.classList.contains("leg")) {
@@ -142,13 +155,20 @@ AFRAME.registerComponent("goomba", {
     this.floor = newFloor;
     clearInterval(this.floorInterval);
     if (this.floor) {
-      this.floorInterval = setTimeout(() => {
-        const stopped =
+      this.floorInterval = setInterval(() => {
+        const stoppedMoving =
           this.el.components["dynamic-body"].body.velocity.length() < 0.001;
+        const stoppedRotating =
+          this.el.components["dynamic-body"].body.angularVelocity.length() <
+          0.01;
+        const stopped = stoppedMoving && stoppedRotating;
         if (stopped) {
           console.log("stopped");
           clearInterval(this.floorInterval);
           this.setPhysicsEnabled(false);
+          setTimeout(() => {
+            this.setStatus("getting up");
+          }, 500);
         }
       }, 500);
     } else {
@@ -250,13 +270,12 @@ AFRAME.registerComponent("goomba", {
       this.setEyeRotation(side, ...arguments);
     });
   },
-  sideEyeScale: { height: 0.93, width: 1.07 },
   resetEyes: function () {
     this.setEyesRotation({ pitch: 0.5, yaw: 0.5 });
     this.setEyesRoll({ roll: 0.5 });
 
-    this.setEyeScale("left", this.sideEyeScale);
-    this.setEyeScale("right", { width: 1, height: 1 });
+    this.setEyeScale("left", this.eyesScales.left);
+    this.setEyeScale("right", this.eyesScales.right);
   },
   clearEyeRotationAnimation: function (side) {
     const entity = this.eyeControllers[side];
@@ -276,41 +295,58 @@ AFRAME.registerComponent("goomba", {
     width: { min: 0, max: 1 },
     height: { min: 0, max: 1 },
   },
-  setEyeScale: function (
+  setEyeScale: async function (
     side,
     scale,
     dur = 50,
     easing = "linear",
     loop = false,
-    dir = "normal"
+    dir = "normal",
+    wholeEye = false
   ) {
-    const entity = this.eyeScales[side];
+    let entity = this.eyeScales[side];
     if (!entity) {
       return;
     }
-    const width = THREE.MathUtils.lerp(
-      this.eyeScaleRange.width.min,
-      this.eyeScaleRange.width.max,
-      scale.width
-    );
-    const height = THREE.MathUtils.lerp(
-      this.eyeScaleRange.height.min,
-      this.eyeScaleRange.height.max,
-      scale.height
-    );
+    let width = 1;
+    let height = 1;
+    if (wholeEye) {
+      entity = entity.closest(".eye");
+      width = scale.width;
+      height = scale.height;
+    } else {
+      width = THREE.MathUtils.lerp(
+        this.eyeScaleRange.width.min,
+        this.eyeScaleRange.width.max,
+        scale.width
+      );
+      height = THREE.MathUtils.lerp(
+        this.eyeScaleRange.height.min,
+        this.eyeScaleRange.height.max,
+        scale.height
+      );
+    }
 
-    this.clearEyeScaleAnimation(side);
+    this.clearEyeScaleAnimation(side, wholeEye);
     if (dur == 0) {
       entity.object3D.scale.set(width, height, 1);
     } else {
       entity.setAttribute("animation__scale", {
         property: "scale",
         to: `${width} ${height} 1`,
-        from: dir == "alternate" ? `1 1 1` : undefined,
+        from:
+          dir == "alternate"
+            ? `${this.eyesScales[side].width} ${this.eyesScales[side].height} 1`
+            : undefined,
         dur: dur,
         easing,
         loop,
         dir,
+      });
+      return new Promise((resolve) => {
+        entity.addEventListener("animationcomplete__scale", () => {
+          resolve();
+        });
       });
     }
   },
@@ -323,10 +359,13 @@ AFRAME.registerComponent("goomba", {
   resetEyesScale: function () {
     this.setEyesScale({ width: 1, height: 1 });
   },
-  clearEyeScaleAnimation: function (side) {
-    const entity = this.eyeScales[side];
+  clearEyeScaleAnimation: function (side, wholeEye = false) {
+    let entity = this.eyeScales[side];
     if (!entity) {
       return;
+    }
+    if (wholeEye) {
+      entity = entity.closest(".eye");
     }
     entity.removeAttribute("animation__scale");
   },
@@ -334,6 +373,27 @@ AFRAME.registerComponent("goomba", {
     this.sides.forEach((side) => {
       this.clearEyeScaleAnimation(side);
     });
+  },
+
+  blink: async function (dur = 110, easing = "easeInBack") {
+    if (this.isBlinking) {
+      return;
+    }
+    this.isBlinking = true;
+    const promises = this.sides.map(async (side) => {
+      const firstSide = Math.round(Math.random()) ? "left" : "right";
+      await this.setEyeScale(
+        side,
+        { height: 0, width: 1 },
+        side == firstSide ? dur : dur + 15,
+        easing,
+        1,
+        "alternate",
+        true
+      );
+    });
+    await Promise.all(promises);
+    this.isBlinking = false;
   },
 
   // EYE ROTATOR
@@ -678,9 +738,10 @@ AFRAME.registerComponent("goomba", {
 
   tick: function (time, timeDelta) {
     if (
-      this.status == "idle" ||
-      this.status == "grabbed" ||
-      this.status == "falling"
+      !this.isBlinking &&
+      (this.status == "idle" ||
+        this.status == "grabbed" ||
+        this.status == "falling")
     ) {
       if (time - this.lastChangeLookAtTick > this.changeLookAtInterval) {
         this.lastChangeLookAtTick = time;
@@ -787,10 +848,38 @@ AFRAME.registerComponent("goomba", {
     }
   },
 
+  orientations: [
+    "upright",
+    "leftSide",
+    "rightSide",
+    "faceDown",
+    "back",
+    "upsideDown",
+  ],
+  updateOrientation: function () {
+    // FILL
+  },
+  setOrientation: function (newOrientation) {
+    if (!this.orientations.includes(newOrientation)) {
+      console.error(`invalid orientation ${newOrientation}`);
+      return;
+    }
+    if (newOrientation == this.orientation) {
+      return;
+    }
+    this.orientation = newOrientation;
+    console.log(`updated orientation to ${this.orientation}`);
+    // FILL
+  },
+  getUp: function () {
+    // FILL
+  },
+
   statuses: [
     "idle",
     "grabbed",
     "falling",
+    "getting up",
     "walking",
     "kicked",
     "wall",
@@ -836,6 +925,10 @@ AFRAME.registerComponent("goomba", {
           "alternate",
           true
         );
+        this.setFloor();
+        break;
+      case "getting up":
+        this.getUp();
         break;
       case "idle":
         break;
