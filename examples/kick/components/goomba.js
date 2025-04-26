@@ -675,9 +675,11 @@ AFRAME.registerComponent("goomba", {
   // LEG
   legRotationRange: {
     pitch: { min: 50, max: -50 },
+    roll: { min: 50, max: -50 },
+    yaw: { min: 50, max: -50 },
   },
 
-  setLegRotation: function (
+  setLegRotation: async function (
     side,
     rotation,
     dur = 50,
@@ -705,15 +707,34 @@ AFRAME.registerComponent("goomba", {
       );
     }
 
+    if (rotation.yaw == undefined) {
+      rotation.yaw = 0.5;
+    }
+    let yaw = THREE.MathUtils.lerp(
+      this.legRotationRange.yaw.min,
+      this.legRotationRange.yaw.max,
+      invert ? 1 - rotation.yaw : rotation.yaw
+    );
+    if (rotation.roll == undefined) {
+      rotation.roll = 0.5;
+    }
+    let roll = THREE.MathUtils.lerp(
+      this.legRotationRange.roll.min,
+      this.legRotationRange.roll.max,
+      invert ? 1 - rotation.roll : rotation.roll
+    );
+
     this.clearLegRotationAnimation(side);
     if (dur == 0) {
       pitch = THREE.MathUtils.degToRad(pitch);
-      entity.object3D.rotation.set(pitch, 0, 0);
+      yaw = THREE.MathUtils.degToRad(yaw);
+      roll = THREE.MathUtils.degToRad(roll);
+      entity.object3D.rotation.set(pitch, yaw, roll);
     } else {
       const options = {
         property: "rotation",
-        to: `${pitch} 0 0`,
-        from: dir == "alternate" ? `${-pitch} 0 0` : undefined,
+        to: `${pitch} ${yaw} ${roll}`,
+        from: dir == "alternate" ? `${-pitch} ${-yaw} ${-roll}` : undefined,
         dur: dur,
         dir: dir,
         easing,
@@ -723,6 +744,11 @@ AFRAME.registerComponent("goomba", {
         options.from = `${pitch2} 0 0`;
       }
       entity.setAttribute("animation__rot", options);
+      return new Promise((resolve) => {
+        entity.addEventListener("animationcomplete__rot", () => {
+          resolve();
+        });
+      });
     }
   },
   setLegsRotation: function (rotation, dur, easing, loop, dir, invert = false) {
@@ -755,6 +781,7 @@ AFRAME.registerComponent("goomba", {
   tick: function (time, timeDelta) {
     this.latestTick = time;
     if (
+      true ||
       this.status == "idle" ||
       this.status == "grabbed" ||
       this.status == "falling"
@@ -995,7 +1022,6 @@ AFRAME.registerComponent("goomba", {
         break;
     }
     from = from.join(" ");
-    console.log({ from });
     this.el.setAttribute("animation__rollUpright", {
       property: "rotation",
       to: `0 ${yaw} 0`,
@@ -1015,7 +1041,6 @@ AFRAME.registerComponent("goomba", {
     }
 
     this.el.object3D.getWorldPosition(this.worldPosition);
-    console.log("before", this.worldPosition);
     this.getUpPosition = this.getUpPosition || new THREE.Vector3();
     switch (this.orientation) {
       case "frontSide":
@@ -1043,9 +1068,41 @@ AFRAME.registerComponent("goomba", {
       dur,
       easing,
     });
+
+    const dominantSide = Math.round(Math.random()) ? "left" : "right";
+    this.sides.forEach((side) => {
+      const offsetDur = side != dominantSide ? 0 : 350;
+      setTimeout(async () => {
+        await this.setLegRotation(
+          side,
+          { pitch: 1 },
+          dur * 0.1,
+          "easeInOutQuad"
+        );
+        await this.setLegRotation(
+          side,
+          { pitch: 0.3 },
+          dur * 0.1,
+          "easeInOutQuad"
+        );
+        await this.setLegRotation(
+          side,
+          { pitch: 0.5 },
+          dur * 0.1,
+          "easeInOutQuad"
+        );
+      }, (dur + offsetDur) * 0.3);
+    });
+
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        resolve();
+      }, dur);
+    });
   },
 
   getEntityYaw: function () {
+    this.forwardVector.set(0, 0, -1);
     const forward = new THREE.Vector3(0, 0, -1); // Local forward
     forward.applyQuaternion(this.worldQuaternion); // Transform it into world space
 
@@ -1053,7 +1110,6 @@ AFRAME.registerComponent("goomba", {
     forward.normalize();
 
     const yaw = Math.atan2(forward.x, forward.z); // X first, then Z
-    console.log({ yaw });
     return THREE.MathUtils.radToDeg(yaw); // In radians
   },
 
@@ -1089,8 +1145,9 @@ AFRAME.registerComponent("goomba", {
     switch (this.status) {
       case "grabbed":
         //this.setScale(1, 500);
+        const rightDominant = Math.round(Math.random());
         this.setLegRotation(
-          "left",
+          !rightDominant ? "right" : "left",
           { pitch: 0.5, pitch2: 0.7 },
           900,
           "easeInOutCirc",
@@ -1099,7 +1156,7 @@ AFRAME.registerComponent("goomba", {
           true
         );
         this.setLegRotation(
-          "right",
+          rightDominant ? "right" : "left",
           { pitch: 0.3, pitch2: 0.8 },
           920,
           "easeInOutCirc",
