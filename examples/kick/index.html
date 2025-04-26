@@ -64,7 +64,7 @@
       grabbable-listener
       obb-collider="showColliders: false"
       xr-mode-ui="enabled: true; XRMode: ar;"
-      real-world-meshing="meshMixin: realWorldMeshMixin; meshesEnabled: false; planeMixin: realWorldPlaneMixin; planesEnabled: true; filterLabels: table, wall, floor, ceiling;"
+      real-world-meshing="meshMixin: realWorldMeshMixin; meshesEnabled: true; planeMixin: realWorldPlaneMixin; planesEnabled: true; filterLabels: table, wall, floor, ceiling;"
       device-orientation-permission-ui="enabled: false"
     >
       <a-assets>
@@ -74,7 +74,7 @@
         ></a-asset-item>
         <a-mixin id="realWorldPlaneMixin" static-body visible="false">
         </a-mixin>
-        <a-mixin id="realWorldMeshMixin" occlude-mesh static-body></a-mixin>
+        <a-mixin id="realWorldMeshMixin" occlude-mesh></a-mixin>
       </a-assets>
       <a-camera
         class="lookAt"
@@ -102,16 +102,16 @@
         goomba="grabbable: true;"
         id="goomba1"
         position="0 1 -0.2"
-        rotation="0 0 -90"
+        rotation="0 0 0"
       ></a-entity>
-      <a-plane
+      <!-- <a-plane
         width="1"
         height="1"
         rotation="90 0 0"
         static-body
         position="0 0.8 -0.2"
         data-world-mesh="floor"
-      ></a-plane>
+      ></a-plane> -->
 
       <template id="goombaTemplate">
         <a-entity>

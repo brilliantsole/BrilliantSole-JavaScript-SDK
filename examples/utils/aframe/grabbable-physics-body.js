@@ -70,18 +70,20 @@ AFRAME.registerComponent("grabbable-physics-body", {
           const body = this.el.body;
           if (body) {
             setTimeout(() => {
+              // console.log("setting velocity", this.velocity);
               body.velocity.set(
                 this.velocity.x * this.velocityScalar,
                 this.velocity.y * this.velocityScalar,
                 this.velocity.z * this.velocityScalar
               );
 
+              // console.log("setting angularVelocity", this.angularVelocity);
               body.angularVelocity.set(
                 this.angularVelocity.x * this.angularVelocityScalar,
                 this.angularVelocity.y * this.angularVelocityScalar,
                 this.angularVelocity.z * this.angularVelocityScalar
               );
-            }, 1);
+            }, 0);
           }
           return Boolean(body);
         };
