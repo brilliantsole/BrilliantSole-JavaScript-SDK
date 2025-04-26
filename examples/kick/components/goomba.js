@@ -954,8 +954,6 @@ AFRAME.registerComponent("goomba", {
       newOrientation = "upright";
     }
 
-    console.log({ newOrientation });
-
     this.setOrientation(newOrientation);
   },
   setOrientation: function (newOrientation) {
@@ -1069,29 +1067,82 @@ AFRAME.registerComponent("goomba", {
       easing,
     });
 
-    const dominantSide = Math.round(Math.random()) ? "left" : "right";
+    let dominantSide = "right";
+    switch (this.orientation) {
+      case "leftSide":
+        dominantSide = "right";
+        break;
+      case "rightSide":
+        dominantSide = "left";
+        break;
+      default:
+        dominantSide = Math.round(Math.random()) ? "left" : "right";
+        break;
+    }
     this.sides.forEach((side) => {
-      const offsetDur = side != dominantSide ? 0 : 350;
+      let offsetDur = 1;
+      switch (this.orientation) {
+        case "leftSide":
+        case "rightSide":
+          offsetDur = 1;
+          break;
+        default:
+          offsetDur = side != dominantSide ? 1.0 : 1.1;
+          break;
+      }
+
       setTimeout(async () => {
+        let pitch = 0.5;
+        let roll = 0.5;
+        switch (this.orientation) {
+          case "frontSide":
+            pitch = 0;
+            break;
+          case "rightSide":
+            roll = 0.2;
+            break;
+          case "leftSide":
+            roll = 0.8;
+            break;
+          default:
+            pitch = 1;
+            break;
+        }
         await this.setLegRotation(
           side,
-          { pitch: 1 },
+          { pitch, roll },
+          dur * 0.1,
+          "easeInOutQuad"
+        );
+        pitch = 0.5;
+        roll = 0.5;
+        switch (this.orientation) {
+          case "frontSide":
+            pitch = 0.7;
+            break;
+          case "rightSide":
+            roll = 0.8;
+            break;
+          case "leftSide":
+            roll = 0.2;
+            break;
+          default:
+            pitch = 0.3;
+            break;
+        }
+        await this.setLegRotation(
+          side,
+          { pitch, roll },
           dur * 0.1,
           "easeInOutQuad"
         );
         await this.setLegRotation(
           side,
-          { pitch: 0.3 },
+          { pitch: 0.5, roll: 0.5 },
           dur * 0.1,
           "easeInOutQuad"
         );
-        await this.setLegRotation(
-          side,
-          { pitch: 0.5 },
-          dur * 0.1,
-          "easeInOutQuad"
-        );
-      }, (dur + offsetDur) * 0.3);
+      }, dur * 0.3 * offsetDur);
     });
 
     return new Promise((resolve) => {
