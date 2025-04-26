@@ -133,6 +133,9 @@ AFRAME.registerComponent("goomba", {
         if (this.data.grabbable) {
           this.el.setAttribute("grabbable", "");
         }
+        if (this.data.physics) {
+          this.el.setAttribute("grabbable-physics-body", "type: dynamic;");
+        }
       }, 1);
     });
 
@@ -164,7 +167,6 @@ AFRAME.registerComponent("goomba", {
           0.01;
         const stopped = stoppedMoving && stoppedRotating;
         if (stopped) {
-          console.log("stopped");
           clearInterval(this.floorInterval);
           this.setPhysicsEnabled(false);
           setTimeout(() => {
@@ -181,9 +183,9 @@ AFRAME.registerComponent("goomba", {
     switch (this.status) {
       default:
         this.setStatus("grabbed");
-        if (this.data.physics) {
-          this.setPhysicsEnabled(false);
-        }
+        // if (this.data.physics) {
+        //   this.setPhysicsEnabled(false);
+        // }
         break;
     }
   },
@@ -191,7 +193,7 @@ AFRAME.registerComponent("goomba", {
     switch (this.status) {
       default:
         if (this.data.physics) {
-          this.setPhysicsEnabled(true);
+          // this.setPhysicsEnabled(true);
           this.setStatus("falling");
         } else {
           this.setStatus("idle");
@@ -393,7 +395,7 @@ AFRAME.registerComponent("goomba", {
       await this.setEyeScale(
         side,
         { height: 0, width: 1 },
-        side == firstSide ? dur : dur + 15,
+        side == firstSide ? dur : dur + 18,
         easing,
         1,
         "alternate",

@@ -38,27 +38,37 @@ AFRAME.registerComponent("grabbable-physics-body", {
         }
       }
 
+      console.log("positionHistory", this.positionHistory);
+
       // Re-add physics and apply velocity
       if (this.data.type === "static") {
         this.el.setAttribute("static-body", this.data.staticBody);
       } else {
         this.el.setAttribute("dynamic-body", this.data.dynamicBody);
-        this.el.addEventListener(
-          "body-loaded",
-          () => {
-            const body = this.el.body;
-            if (body) {
-              setTimeout(() => {
-                body.velocity.set(
-                  this.velocity.x * this.velocityScalar,
-                  this.velocity.y * this.velocityScalar,
-                  this.velocity.z * this.velocityScalar
-                );
-              }, 1);
-            }
-          },
-          { once: true }
-        );
+        const setVelocity = () => {
+          const body = this.el.body;
+          console.log("body", body);
+          if (body) {
+            console.log("setting velocity", this.velocity);
+            setTimeout(() => {
+              body.velocity.set(
+                this.velocity.x * this.velocityScalar,
+                this.velocity.y * this.velocityScalar,
+                this.velocity.z * this.velocityScalar
+              );
+            }, 1);
+          }
+          return Boolean(body);
+        };
+        if (!setVelocity()) {
+          this.el.addEventListener(
+            "body-loaded",
+            () => {
+              setVelocity();
+            },
+            { once: true }
+          );
+        }
       }
     });
   },
