@@ -44,6 +44,7 @@ AFRAME.registerComponent("goomba", {
     );
 
     this.pointToLookAt = new THREE.Vector3();
+    this.normalizedPointToLookAt = new THREE.Vector3();
     this.raycaster = new THREE.Raycaster();
     this.ray = new THREE.Vector3();
     this.rayEuler = new THREE.Euler();
@@ -479,6 +480,7 @@ AFRAME.registerComponent("goomba", {
   eyeRefocusIntervalRange: { min: 100, max: 800 },
   wanderEyesIntervalRange: { min: 750, max: 2300 },
   wanderRefocusScalar: 3,
+  pointToLookAtAngleThreshold: THREE.MathUtils.degToRad(70),
 
   wanderEyesEulerRange: {
     pitch: { min: -50, max: 50 },
@@ -795,6 +797,14 @@ AFRAME.registerComponent("goomba", {
         } else {
           let changeFocus = false;
           // FILL - check if view angle is off (rotated too far off)
+          this.forwardVector
+            .set(0, 0, 1)
+            .applyQuaternion(this.worldQuaternion)
+            .normalize();
+          const dot = Math.abs(
+            this.forwardVector.angleTo(this.normalizedPointToLookAt)
+          );
+          changeFocus = dot > this.pointToLookAtAngleThreshold;
           if (
             changeFocus ||
             time - this.lastWanderEyesTick > this.wanderEyesInterval
@@ -853,6 +863,7 @@ AFRAME.registerComponent("goomba", {
               const intersection = intersections[0];
               //console.log("Hit:", intersection, intersection.point);
               this.pointToLookAt.copy(intersection.point);
+              this.normalizedPointToLookAt.copy(this.pointToLookAt).normalize();
               this.hitSphere.object3D.position.copy(this.pointToLookAt);
             }
           }
