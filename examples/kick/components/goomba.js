@@ -1553,6 +1553,9 @@ AFRAME.registerComponent("goomba", {
           true
         );
         setTimeout(async () => {
+          if (this.status != "grabbed") {
+            return;
+          }
           await this.setLegRotation(
             !rightDominant ? "right" : "left",
             { pitch: 0.4 },
@@ -1586,6 +1589,9 @@ AFRAME.registerComponent("goomba", {
           true
         );
         setTimeout(async () => {
+          if (this.status != "grabbed") {
+            return;
+          }
           await this.setLegRotation(
             rightDominant ? "right" : "left",
             { pitch: 0.4 },
