@@ -14,6 +14,9 @@ AFRAME.registerComponent("goomba", {
   eyeScalesRange: 0.09,
 
   init: function () {
+    this.squashLookAtQuaternion1 = new THREE.Quaternion();
+    this.squashLookAtQuaternion2 = new THREE.Quaternion();
+
     this.orientation = "upright";
     this.scale = 1;
     this.lastBlinkTick = 0;
@@ -70,6 +73,7 @@ AFRAME.registerComponent("goomba", {
     this.otherWorldPosition = new THREE.Vector3();
 
     this.legs = {};
+    this.feet = {};
 
     this.lastEyeTick = 0;
     this.lastEyeRefocusTick = 0;
@@ -93,6 +97,8 @@ AFRAME.registerComponent("goomba", {
         this.el.appendChild(entity);
       });
       this.template = template;
+
+      this.squash = this.el.querySelector(".squash");
 
       this.el.querySelectorAll(".left").forEach((entity) => {
         const duplicate = entity.cloneNode(true);
@@ -125,6 +131,7 @@ AFRAME.registerComponent("goomba", {
           if (entity.classList.contains("leg")) {
             this.sides.forEach((side) => {
               this.legs[side] = this.el.querySelector(`.${side}.leg`);
+              this.feet[side] = this.el.querySelector(`.${side}.leg .foot`);
             });
           }
         });
@@ -149,6 +156,7 @@ AFRAME.registerComponent("goomba", {
   onCollide: async function (event) {
     const realWorldMesh = event.detail.body.el;
     if (this.validWorldMeshTypes.includes(realWorldMesh.dataset.worldMesh)) {
+      this.resetLegs();
       this.setFloor(realWorldMesh);
     }
   },
@@ -172,7 +180,7 @@ AFRAME.registerComponent("goomba", {
           this.setPhysicsEnabled(false);
           setTimeout(() => {
             this.setStatus("getting up");
-          }, 100);
+          }, 0);
         }
       };
       this.floorInterval = setInterval(() => {
@@ -271,7 +279,6 @@ AFRAME.registerComponent("goomba", {
         dur: dur,
         easing,
         loop,
-        dur,
         dir,
       });
     }
@@ -387,7 +394,7 @@ AFRAME.registerComponent("goomba", {
   },
 
   blinkIntervalRange: { min: 3000, max: 5000 },
-  blink: async function (dur = 110, easing = "easeInBack") {
+  blink: async function (dur = 110, easing = "easeInBack", height = 0) {
     if (this.isBlinking) {
       return;
     }
@@ -402,7 +409,7 @@ AFRAME.registerComponent("goomba", {
       const firstSide = Math.round(Math.random()) ? "left" : "right";
       await this.setEyeScale(
         side,
-        { height: 0, width: 1 },
+        { height, width: 1 },
         side == firstSide ? dur : dur + 18,
         easing,
         1,
@@ -522,6 +529,17 @@ AFRAME.registerComponent("goomba", {
 
         this.lookAtRefocusVector.set(randomX, randomY, 0);
         this.lookAtRefocusVector.applyQuaternion(this.worldQuaternion);
+
+        if (false) {
+          const entity = this.squash;
+          this.squashLookAtQuaternion1.copy(entity.object3D.quaternion);
+          this.tempLookAtEuler.copy(entity.object3D.rotation);
+          entity.object3D.lookAt(this.lookAtPosition);
+          this.squashLookAtQuaternion2.copy(entity.object3D.quaternion);
+          entity.object3D.rotation.copy(this.tempLookAtEuler);
+          this.squashLookAtStartTime = this.latestTick;
+          this.isRotatingSquash = true;
+        }
       } else {
         const scalar = THREE.MathUtils.lerp(
           this.lookAtRefocusScalarRange.min,
@@ -689,11 +707,15 @@ AFRAME.registerComponent("goomba", {
     easing = "linear",
     loop = false,
     dir = "normal",
-    invert = false
+    invert = false,
+    isFoot = false
   ) {
-    const entity = this.legs[side];
+    let entity = this.legs[side];
     if (!entity) {
       return;
+    }
+    if (isFoot) {
+      entity = this.feet[side];
     }
 
     let pitch = THREE.MathUtils.lerp(
@@ -718,6 +740,15 @@ AFRAME.registerComponent("goomba", {
       this.legRotationRange.yaw.max,
       invert ? 1 - rotation.yaw : rotation.yaw
     );
+    let yaw2 = 0;
+    if (rotation.yaw2 != undefined) {
+      yaw2 = THREE.MathUtils.lerp(
+        this.legRotationRange.yaw.min,
+        this.legRotationRange.yaw.max,
+        invert ? 1 - rotation.yaw2 : rotation.yaw2
+      );
+    }
+
     if (rotation.roll == undefined) {
       rotation.roll = 0.5;
     }
@@ -726,8 +757,16 @@ AFRAME.registerComponent("goomba", {
       this.legRotationRange.roll.max,
       invert ? 1 - rotation.roll : rotation.roll
     );
+    let roll2 = 0;
+    if (rotation.roll2 != undefined) {
+      roll2 = THREE.MathUtils.lerp(
+        this.legRotationRange.roll.min,
+        this.legRotationRange.roll.max,
+        invert ? 1 - rotation.roll2 : rotation.roll2
+      );
+    }
 
-    this.clearLegRotationAnimation(side);
+    this.clearLegRotationAnimation(side, isFoot);
     if (dur == 0) {
       pitch = THREE.MathUtils.degToRad(pitch);
       yaw = THREE.MathUtils.degToRad(yaw);
@@ -744,7 +783,7 @@ AFRAME.registerComponent("goomba", {
         loop,
       };
       if (pitch2 != undefined) {
-        options.from = `${pitch2} 0 0`;
+        options.from = `${pitch2} ${yaw2} ${roll2}`;
       }
       entity.setAttribute("animation__rot", options);
       return new Promise((resolve) => {
@@ -754,32 +793,65 @@ AFRAME.registerComponent("goomba", {
       });
     }
   },
-  setLegsRotation: function (rotation, dur, easing, loop, dir, invert = false) {
-    this.sides.forEach((side) => {
+  setLegsRotation: async function (
+    rotation,
+    dur,
+    easing,
+    loop,
+    dir,
+    invert = false,
+    isFoot = false
+  ) {
+    const promises = this.sides.map((side) => {
       if (invert) {
         const invert = side == "left";
-        this.setLegRotation(side, rotation, dur, easing, loop, dir, invert);
+        return this.setLegRotation(
+          side,
+          rotation,
+          dur,
+          easing,
+          loop,
+          dir,
+          invert,
+          isFoot
+        );
       } else {
-        this.setLegRotation(side, ...arguments);
+        return this.setLegRotation(side, ...arguments);
       }
     });
+    const x = Date.now();
+    await Promise.all(promises);
   },
 
   resetLegs: function () {
     this.setLegsRotation({ pitch: 0.5 });
+    this.setLegsRotation(
+      { pitch: 0.5 },
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      false,
+      true
+    );
   },
-  clearLegRotationAnimation: function (side) {
-    const entity = this.legs[side];
+  clearLegRotationAnimation: function (side, isFoot) {
+    let entity = this.legs[side];
     if (!entity) {
       return;
     }
+    if (isFoot) {
+      entity = this.feet[side];
+    }
     entity.removeAttribute("animation__rot");
   },
-  clearLegsRotationAnimation: function () {
+  clearLegsRotationAnimation: function (isFoot = true) {
     this.sides.forEach((side) => {
-      this.clearLegRotationAnimation(side);
+      this.clearLegRotationAnimation(side, isFoot);
     });
   },
+
+  squashLookAtInterval: 300,
 
   tick: function (time, timeDelta) {
     if ("updatePhysicsEnabledFlag" in this) {
@@ -805,6 +877,29 @@ AFRAME.registerComponent("goomba", {
       if (this.isBlinking) {
         return;
       }
+      if (this.isRotatingSquash) {
+        if (
+          this.latestTick - this.squashLookAtStartTime <
+          this.squashLookAtInterval
+        ) {
+          const enitity = this.squash;
+          let interpolation = THREE.MathUtils.inverseLerp(
+            this.squashLookAtStartTime,
+            this.squashLookAtStartTime + this.squashLookAtInterval,
+            this.latestTick
+          );
+          const t = interpolation;
+          interpolation = t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
+          enitity.object3D.quaternion.slerpQuaternions(
+            this.squashLookAtQuaternion1,
+            this.squashLookAtQuaternion2,
+            interpolation
+          );
+        } else {
+          this.isRotatingSquash = false;
+        }
+      }
+
       if (time - this.lastChangeLookAtTick > this.changeLookAtInterval) {
         this.lastChangeLookAtTick = time;
         this.checkObjectToLookAt();
@@ -1177,6 +1272,112 @@ AFRAME.registerComponent("goomba", {
     return THREE.MathUtils.radToDeg(yaw); // In radians
   },
 
+  walkingStepScalar: 0.5,
+  startWalking: async function (
+    dur = 320,
+    pitch = 0.7,
+    easing = "easeInOutQuad"
+  ) {
+    const legPromise = new Promise(async (resolve) => {
+      await this.setLegsRotation({ pitch }, dur, easing, false, "normal", true);
+      await this.setLegsRotation(
+        { pitch: 1 - pitch, pitch2: pitch },
+        dur,
+        easing,
+        true,
+        "alternate",
+        true
+      );
+      resolve();
+    });
+    const footPromise = new Promise((resolve) => {
+      const footEasing = "easeInCubic";
+      const footPitches = [0.2, 0.7];
+      const footRolls = [0.4, 0.6];
+      const footDur = dur;
+      setTimeout(async () => {
+        const promises = this.sides.map(async (side) => {
+          let footPitch, footPitch2;
+          if (side == "right") {
+            footPitch = footPitches[0];
+            footPitch2 = footPitches[1];
+          } else {
+            footPitch = footPitches[0];
+            footPitch2 = footPitches[1];
+          }
+
+          let footRoll, footRoll2;
+          if (side == "right") {
+            footRoll = footRolls[1];
+            footRoll2 = footRolls[0];
+          } else {
+            footRoll = footRolls[0];
+            footRoll2 = footRolls[1];
+          }
+          if (side == "left") {
+            await this.setLegRotation(
+              side,
+              { pitch: footPitch, roll: footRoll },
+              footDur,
+              footEasing,
+              false,
+              "normal",
+              false,
+              true
+            );
+          }
+          await this.setLegRotation(
+            side,
+            {
+              pitch: footPitch,
+              pitch2: footPitch2,
+              roll: footRoll,
+              roll2: footRoll2,
+            },
+            footDur,
+            footEasing,
+            true,
+            "alternate",
+            false,
+            true
+          );
+        });
+        await Promise.all(promises);
+        resolve();
+      }, dur * 0.2);
+    });
+
+    this.squash.removeAttribute("animation__rot");
+    this.squash.setAttribute("animation__rot", {
+      property: "rotation",
+      to: "0 0 1",
+      from: "0 0 -1",
+      dur: dur,
+      easing,
+      loop: true,
+      dir: "alternate",
+    });
+
+    this.squash.removeAttribute("animation__scale");
+    this.squash.setAttribute("animation__scale", {
+      property: "scale",
+      to: "1 0.98 1",
+      from: "1 1 1",
+      dur: dur / 2,
+      easing: "easeInOutQuad",
+      loop: true,
+      dir: "alternate",
+    });
+
+    await Promise.all([legPromise, footPromise]);
+  },
+
+  stopWalking: async function () {
+    this.squash.removeAttribute("animation__scale");
+    this.squash.removeAttribute("animation__rot");
+    this.resetLegs();
+  },
+
   statuses: [
     "idle",
     "grabbed",
@@ -1189,7 +1390,7 @@ AFRAME.registerComponent("goomba", {
     "shocked",
   ],
 
-  setStatus: function (newStatus) {
+  setStatus: async function (newStatus) {
     if (this.status == newStatus) {
       return;
     }
@@ -1198,11 +1399,13 @@ AFRAME.registerComponent("goomba", {
       return;
     }
     this.status = newStatus;
+    console.log(`new status "${this.status}"`);
 
     this.clearEyesRotationAnimation();
     this.clearEyesRollAnimation();
     this.clearEyesScaleAnimation();
     this.clearLegsRotationAnimation();
+    this.clearLegsRotationAnimation(true);
 
     this.resetLegs();
 
@@ -1231,7 +1434,8 @@ AFRAME.registerComponent("goomba", {
         this.setFloor();
         break;
       case "getting up":
-        this.getUp();
+        await this.getUp();
+        this.setStatus("walking");
         break;
       case "idle":
         break;
@@ -1245,6 +1449,9 @@ AFRAME.registerComponent("goomba", {
           true
         );
         //this.setScale(1.5, 1000);
+        break;
+      case "walking":
+        this.startWalking();
         break;
       default:
         this.resetEyes();
