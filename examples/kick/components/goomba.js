@@ -1084,26 +1084,24 @@ AFRAME.registerComponent("goomba", {
     }
 
     this.getUpEuler = this.getUpEuler || new THREE.Euler();
-    let reorder = "XYZ";
-    switch (this.orientation) {
-      case "rightSide":
-      case "leftSide":
-        reorder = "XYZ";
-        break;
-      case "frontSide":
-      case "backSide":
-        reorder = "YXZ";
-        break;
-      case "upsideDown":
-        reorder = "XYZ";
-        break;
-    }
-    this.getUpEuler.copy(this.el.object3D.rotation).reorder(reorder);
-    let yaw = THREE.MathUtils.radToDeg(this.getUpEuler.y);
+    // let reorder = "XYZ";
+    // switch (this.orientation) {
+    //   case "rightSide":
+    //   case "leftSide":
+    //     reorder = "XYZ";
+    //     break;
+    //   case "frontSide":
+    //   case "backSide":
+    //     reorder = "YZX";
+    //     break;
+    //   case "upsideDown":
+    //     reorder = "XYZ";
+    //     break;
+    // }
+    // this.getUpEuler.copy(this.el.object3D.rotation).reorder(reorder);
+    // let yaw = THREE.MathUtils.radToDeg(this.getUpEuler.y);
 
-    if (this.orientation == "upsideDown") {
-      yaw = this.getEntityYaw();
-    }
+    let yaw = this.getEntityYaw();
 
     let from = [0, yaw, 0];
     switch (this.orientation) {
@@ -1114,7 +1112,7 @@ AFRAME.registerComponent("goomba", {
         from[2] = -90;
         break;
       case "upsideDown":
-        from[0] = -180;
+        from[0] = 180;
         //from[1] *= -1;
         //yaw *= -1;
         break;
@@ -1127,11 +1125,27 @@ AFRAME.registerComponent("goomba", {
       default:
         break;
     }
-    from = from.join(" ");
-    this.el.setAttribute("animation__rollUpright", {
-      property: "rotation",
-      to: `0 ${yaw} 0`,
-      from,
+    const to = [0, yaw, 0];
+    // console.log("from", from);
+    // console.log("to", to);
+    this.el.setAttribute("animation__rollUprightx", {
+      property: "object3D.rotation.x",
+      to: to[0],
+      from: from[0],
+      dur,
+      easing,
+    });
+    this.el.setAttribute("animation__rollUprighty", {
+      property: "object3D.rotation.y",
+      to: to[1],
+      from: from[1],
+      dur,
+      easing,
+    });
+    this.el.setAttribute("animation__rollUprightz", {
+      property: "object3D.rotation.z",
+      to: to[2],
+      from: from[2],
       dur,
       easing,
     });
@@ -1142,6 +1156,9 @@ AFRAME.registerComponent("goomba", {
         rollScalar = -1;
         break;
       case "leftSide":
+        rollScalar = -1;
+        break;
+      case "upsideDown":
         rollScalar = -1;
         break;
     }
@@ -1261,8 +1278,27 @@ AFRAME.registerComponent("goomba", {
   },
 
   getEntityYaw: function () {
-    this.forwardVector.set(0, 0, -1);
     const forward = new THREE.Vector3(0, 0, -1); // Local forward
+    switch (this.orientation) {
+      case "upright":
+        forward.set(0, 0, -1);
+        break;
+      case "leftSide":
+        forward.set(0, 0, 1);
+        break;
+      case "rightSide":
+        forward.set(0, 0, 1);
+        break;
+      case "upsideDown":
+        forward.set(0, 0, -1);
+        break;
+      case "backSide":
+        forward.set(0, -1, 0);
+        break;
+      case "frontSide":
+        forward.set(0, 1, 0);
+        break;
+    }
     forward.applyQuaternion(this.worldQuaternion); // Transform it into world space
 
     forward.y = 0; // Flatten onto XZ plane
