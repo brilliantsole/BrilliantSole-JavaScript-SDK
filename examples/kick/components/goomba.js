@@ -51,7 +51,7 @@ AFRAME.registerComponent("goomba", {
     );
 
     this.pointToLookAt = new THREE.Vector3();
-    this.normalizedPointToLookAt = new THREE.Vector3();
+    this.pointToLookAtDirection = new THREE.Vector3();
     this.raycaster = new THREE.Raycaster();
     this.ray = new THREE.Vector3();
     this.rayEuler = new THREE.Euler();
@@ -498,7 +498,7 @@ AFRAME.registerComponent("goomba", {
   eyeRefocusIntervalRange: { min: 100, max: 800 },
   wanderEyesIntervalRange: { min: 750, max: 2300 },
   wanderRefocusScalar: 3,
-  pointToLookAtAngleThreshold: THREE.MathUtils.degToRad(80),
+  pointToLookAtAngleThreshold: THREE.MathUtils.degToRad(60),
 
   wanderEyesEulerRange: {
     pitch: { min: -50, max: 50 },
@@ -869,6 +869,12 @@ AFRAME.registerComponent("goomba", {
     }
 
     this.latestTick = time;
+
+    if (this.status == "walking") {
+      // FILL - find next point on floor to walk to
+      // FILL - check if it needs to stop to look at somthing
+    }
+
     if (this.isRolling) {
       if (this.latestTick - this.startRollingTime < this.rollDuration) {
         const enitity = this.el;
@@ -958,13 +964,25 @@ AFRAME.registerComponent("goomba", {
         } else {
           let changeFocus = false;
           this.forwardVector
-            .set(0, 0, 1)
+            .set(0, 0, -1)
             .applyQuaternion(this.worldQuaternion)
             .normalize();
-          const dot = Math.abs(
-            this.forwardVector.angleTo(this.normalizedPointToLookAt)
-          );
-          changeFocus = dot > this.pointToLookAtAngleThreshold;
+          this.pointToLookAtDirection
+            .subVectors(this.worldPosition, this.pointToLookAt)
+            .normalize();
+          let angle = this.forwardVector.angleTo(this.pointToLookAtDirection);
+          if (false)
+            console.log(
+              `angle from ${this.forwardVector
+                .toArray()
+                .map((value) => value.toFixed(3))
+                .join(",")} to ${this.pointToLookAtDirection
+                .toArray()
+                .map((value) => value.toFixed(3))
+                .join(",")}: ${THREE.MathUtils.radToDeg(angle)}}`
+            );
+          changeFocus =
+            this.hasPointToLookAt && angle > this.pointToLookAtAngleThreshold;
           if (
             changeFocus ||
             time - this.lastWanderEyesTick > this.wanderEyesInterval
@@ -1007,7 +1025,8 @@ AFRAME.registerComponent("goomba", {
               true
             );
 
-            const hasPointToLookAt = intersections.length > 0;
+            let hasPointToLookAt = intersections.length > 0;
+            hasPointToLookAt = true; // just set some arbitrary distance
 
             if (this.hasPointToLookAt != hasPointToLookAt) {
               this.hasPointToLookAt = hasPointToLookAt;
@@ -1021,9 +1040,12 @@ AFRAME.registerComponent("goomba", {
 
             if (this.hasPointToLookAt) {
               const intersection = intersections[0];
-              //console.log("Hit:", intersection, intersection.point);
-              this.pointToLookAt.copy(intersection.point);
-              this.normalizedPointToLookAt.copy(this.pointToLookAt).normalize();
+              if (intersection) {
+                //console.log("Hit:", intersection, intersection.point);
+                this.pointToLookAt.copy(intersection.point);
+              } else {
+                this.pointToLookAt.copy(this.ray).setLength(4);
+              }
               this.hitSphere.object3D.position.copy(this.pointToLookAt);
             }
           }
@@ -1485,6 +1507,9 @@ AFRAME.registerComponent("goomba", {
     if (!this.statuses.includes(newStatus)) {
       console.error(`invalid status "${newStatus}"`);
       return;
+    }
+    if (this.status == "walking") {
+      this.stopWalking();
     }
     this.status = newStatus;
     console.log(`new status "${this.status}"`);

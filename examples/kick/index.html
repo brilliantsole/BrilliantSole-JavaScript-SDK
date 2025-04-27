@@ -62,7 +62,7 @@
       physics="debug: false; restitution: 0.4;"
       embedded
       grabbable-listener
-      obb-collider="showColliders: false"
+      obb-collider="showColliders: false;"
       xr-mode-ui="enabled: true; XRMode: ar;"
       real-world-meshing="meshMixin: realWorldMeshMixin; meshesEnabled: true; planeMixin: realWorldPlaneMixin; planesEnabled: true; filterLabels: table, wall, floor, ceiling;"
       device-orientation-permission-ui="enabled: false"
@@ -100,17 +100,16 @@
       <a-entity
         goomba="grabbable: true;"
         id="goomba1"
-        position="0 1.0 -0.2"
+        position="0 1.0 -0.5"
         rotation="0 0 0"
       ></a-entity>
-      <!-- <a-plane
-        width="1"
-        height="1"
-        rotation="90 0 0"
+      <a-box
+        scale="1 0.05 1"
         static-body
-        position="0 0.8 -0.2"
+        position="0 0.8 -0.5"
         data-world-mesh="floor"
-      ></a-plane> -->
+        color="red"
+      ></a-box>
 
       <template id="goombaTemplate">
         <a-entity>
