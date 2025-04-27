@@ -21,6 +21,7 @@ AFRAME.registerComponent("grabbable-physics-body", {
     this.angularVelocity = new THREE.Vector3();
 
     this.el.addEventListener("grabstarted", () => {
+      this.grabStartTime = Date.now();
       this.isGrabbed = true;
 
       this.positionHistory = [];
@@ -35,6 +36,7 @@ AFRAME.registerComponent("grabbable-physics-body", {
 
     this.el.addEventListener("grabended", () => {
       this.isGrabbed = false;
+      const now = Date.now();
 
       // Compute velocity from position history
       const history = this.positionHistory;
@@ -59,6 +61,11 @@ AFRAME.registerComponent("grabbable-physics-body", {
           last.rot,
           dt
         );
+      }
+
+      if (now - this.grabStartTime < 10) {
+        this.velocity.set(0, 0, 0);
+        this.angularVelocity.set(0, 0, 0);
       }
 
       // Re-add physics and apply velocity

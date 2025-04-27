@@ -14,6 +14,10 @@ AFRAME.registerComponent("goomba", {
   eyeScalesRange: 0.09,
 
   init: function () {
+    this.rollQuaternionFrom = new THREE.Quaternion();
+    this.rollQuaternionTo = new THREE.Quaternion();
+    this.rollTempEuler = new THREE.Euler();
+
     this.squashLookAtQuaternion1 = new THREE.Quaternion();
     this.squashLookAtQuaternion2 = new THREE.Quaternion();
 
@@ -494,7 +498,7 @@ AFRAME.registerComponent("goomba", {
   eyeRefocusIntervalRange: { min: 100, max: 800 },
   wanderEyesIntervalRange: { min: 750, max: 2300 },
   wanderRefocusScalar: 3,
-  pointToLookAtAngleThreshold: THREE.MathUtils.degToRad(70),
+  pointToLookAtAngleThreshold: THREE.MathUtils.degToRad(80),
 
   wanderEyesEulerRange: {
     pitch: { min: -50, max: 50 },
@@ -865,6 +869,24 @@ AFRAME.registerComponent("goomba", {
     }
 
     this.latestTick = time;
+    if (this.isRolling) {
+      if (this.latestTick - this.startRollingTime < this.rollDuration) {
+        const enitity = this.el;
+        let interpolation = THREE.MathUtils.inverseLerp(
+          this.startRollingTime,
+          this.startRollingTime + this.rollDuration,
+          this.latestTick
+        );
+        interpolation = this.easeInOutElastic(interpolation);
+        enitity.object3D.quaternion.slerpQuaternions(
+          this.rollQuaternionFrom,
+          this.rollQuaternionTo,
+          interpolation
+        );
+      } else {
+        this.isRolling = false;
+      }
+    }
     if (
       true ||
       this.status == "idle" ||
@@ -1076,7 +1098,23 @@ AFRAME.registerComponent("goomba", {
     // console.log(`updated orientation to "${this.orientation}"`);
   },
   rollDistance: 0.15,
+  easeInOutElastic: function (x) {
+    const c5 = (2 * Math.PI) / 4.5;
+
+    return x === 0
+      ? 0
+      : x === 1
+      ? 1
+      : x < 0.5
+      ? -(Math.pow(2, 20 * x - 10) * Math.sin((20 * x - 11.125) * c5)) / 2
+      : (Math.pow(2, -20 * x + 10) * Math.sin((20 * x - 11.125) * c5)) / 2 + 1;
+  },
   getUp: async function (dur = 1500, easing = "easeInOutElastic") {
+    this.el.removeAttribute("grabbable");
+    setTimeout(() => {
+      this.el.setAttribute("grabbable", "");
+    }, dur);
+
     this.checkOrientation();
 
     if (this.orientation == "upright") {
@@ -1126,29 +1164,43 @@ AFRAME.registerComponent("goomba", {
         break;
     }
     const to = [0, yaw, 0];
-    // console.log("from", from);
-    // console.log("to", to);
-    this.el.setAttribute("animation__rollUprightx", {
-      property: "object3D.rotation.x",
-      to: to[0],
-      from: from[0],
-      dur,
-      easing,
-    });
-    this.el.setAttribute("animation__rollUprighty", {
-      property: "object3D.rotation.y",
-      to: to[1],
-      from: from[1],
-      dur,
-      easing,
-    });
-    this.el.setAttribute("animation__rollUprightz", {
-      property: "object3D.rotation.z",
-      to: to[2],
-      from: from[2],
-      dur,
-      easing,
-    });
+    from = from;
+
+    if (true) {
+      // this.rollTempEuler.set(
+      //   ...from.map((value) => THREE.MathUtils.degToRad(value))
+      // );
+      // this.rollQuaternionFrom.setFromEuler(this.rollTempEuler);
+      this.rollQuaternionFrom.copy(this.el.object3D.quaternion);
+
+      this.rollTempEuler.set(
+        ...to.map((value) => THREE.MathUtils.degToRad(value))
+      );
+      this.rollQuaternionTo.setFromEuler(this.rollTempEuler);
+
+      this.isRolling = true;
+      this.startRollingTime = this.latestTick;
+      this.rollDuration = dur;
+    } else {
+      const components = ["x", "y", "z"];
+      components.forEach((component, index) => {
+        const attribute = `animation__rollUpright${component}`;
+        this.el.removeAttribute(attribute);
+        if (to[index] == from[index]) {
+          console.log("direct assignment", component, to[index]);
+          //this.el.object3D.rotation[component] = to[index];
+        } else {
+          console.log("interpolating", component, from[index], to[index]);
+          this.el.setAttribute(attribute, {
+            property: `object3D.rotation.${component}`,
+            to: to[index],
+            from: from[index],
+            dur,
+            easing,
+          });
+        }
+      });
+    }
 
     let rollScalar = 1;
     switch (this.orientation) {
