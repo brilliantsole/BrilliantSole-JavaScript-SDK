@@ -72,8 +72,7 @@
           id="anchorModel"
           src="../../assets/3d/anchor.glb"
         ></a-asset-item>
-        <a-mixin id="realWorldPlaneMixin" static-body visible="false">
-        </a-mixin>
+        <a-mixin id="realWorldPlaneMixin" static-body> </a-mixin>
         <a-mixin id="realWorldMeshMixin" occlude-mesh></a-mixin>
       </a-assets>
       <a-camera
@@ -184,4 +183,32 @@
       ></a-entity>
     </a-scene>
   </body>
+  <script>
+    const scene = document.querySelector("a-scene");
+    scene.addEventListener("loaded", () => {
+      return;
+      setTimeout(() => {
+        const lights = Array.from(document.querySelectorAll("[light]"));
+        console.log(lights);
+        lights.forEach((light) => {
+          if (light.getAttribute("light").type != "ambient") {
+            console.log(light.getAttribute("light").type);
+            light.setAttribute("light", { castShadow: true });
+          }
+        });
+
+        const interval = setInterval(() => {
+          const realWorldMeshes = Array.from(
+            document.querySelectorAll("[data-world-mesh]")
+          );
+          if (realWorldMeshes.length > 0) {
+            clearInterval(interval);
+            realWorldMeshes.forEach((entity) => {
+              entity.setAttribute("shadow", "cast: false; receive: true;");
+            });
+          }
+        }, 100);
+      }, 1);
+    });
+  </script>
 </html>

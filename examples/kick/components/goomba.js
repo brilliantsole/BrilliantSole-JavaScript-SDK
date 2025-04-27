@@ -83,7 +83,7 @@ AFRAME.registerComponent("goomba", {
     window.goombas = window.goombas || [];
     window.goombas.push(this);
 
-    this.el.addEventListener("collide", (event) => this.onCollide(event));
+    this.el.addEventListener("collide", this.onCollide.bind(this));
 
     this.el.addEventListener("loaded", () => {
       const template = this.data.template.content
@@ -146,7 +146,7 @@ AFRAME.registerComponent("goomba", {
 
   validWorldMeshTypes: ["floor", "table"],
 
-  onCollide: function (event) {
+  onCollide: async function (event) {
     const realWorldMesh = event.detail.body.el;
     if (this.validWorldMeshTypes.includes(realWorldMesh.dataset.worldMesh)) {
       this.setFloor(realWorldMesh);
@@ -172,12 +172,12 @@ AFRAME.registerComponent("goomba", {
           this.setPhysicsEnabled(false);
           setTimeout(() => {
             this.setStatus("getting up");
-          }, 500);
+          }, 100);
         }
       };
       this.floorInterval = setInterval(() => {
         checkIfStoppedMoving();
-      }, 500);
+      }, 100);
       checkIfStoppedMoving();
     } else {
       this.setPhysicsEnabled(false);
@@ -208,6 +208,9 @@ AFRAME.registerComponent("goomba", {
   },
 
   setPhysicsEnabled: function (enabled) {
+    this.updatePhysicsEnabledFlag = enabled;
+  },
+  updatePhysicsEnabled: function (enabled) {
     if (enabled) {
       this.el.setAttribute("dynamic-body", "");
     } else {
@@ -779,6 +782,16 @@ AFRAME.registerComponent("goomba", {
   },
 
   tick: function (time, timeDelta) {
+    if ("updatePhysicsEnabledFlag" in this) {
+      const enabled = this.updatePhysicsEnabledFlag;
+      if (enabled) {
+        this.el.setAttribute("dynamic-body", "");
+      } else {
+        this.el.removeAttribute("dynamic-body");
+      }
+      delete this.updatePhysicsEnabledFlag;
+    }
+
     this.latestTick = time;
     if (
       true ||
@@ -965,7 +978,7 @@ AFRAME.registerComponent("goomba", {
       return;
     }
     this.orientation = newOrientation;
-    console.log(`updated orientation to "${this.orientation}"`);
+    // console.log(`updated orientation to "${this.orientation}"`);
   },
   rollDistance: 0.15,
   getUp: async function (dur = 1500, easing = "easeInOutElastic") {
