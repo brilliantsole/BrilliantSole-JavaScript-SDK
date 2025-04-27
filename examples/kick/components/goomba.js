@@ -158,10 +158,19 @@ AFRAME.registerComponent("goomba", {
   validWorldMeshTypes: ["floor", "table"],
 
   onCollide: async function (event) {
-    const realWorldMesh = event.detail.body.el;
-    if (this.validWorldMeshTypes.includes(realWorldMesh.dataset.worldMesh)) {
-      this.resetLegs();
-      this.setFloor(realWorldMesh);
+    const collidedEntity = event.detail.body.el;
+    switch (this.status) {
+      case "falling":
+        if (
+          this.validWorldMeshTypes.includes(collidedEntity.dataset.worldMesh)
+        ) {
+          this.resetLegs();
+          this.setFloor(collidedEntity);
+        }
+        break;
+      case "walking":
+        // FILL - change direction
+        break;
     }
   },
 
@@ -871,6 +880,10 @@ AFRAME.registerComponent("goomba", {
     this.latestTick = time;
 
     if (this.status == "walking") {
+      // FILL - interval to update destination
+      // FILL - generate random distance/angle to walk in
+      // FILL - check if destination is near the edge of the floor
+      // FILL - move towards destination
       // FILL - find next point on floor to walk to
       // FILL - check if it needs to stop to look at somthing
     }
@@ -1525,25 +1538,75 @@ AFRAME.registerComponent("goomba", {
     switch (this.status) {
       case "grabbed":
         //this.setScale(1, 500);
-        const rightDominant = Math.round(Math.random());
+        const easing = "easeInOutQuad";
+        const dur1 = 900;
+        const durDelay = 0.5;
+        let rightDominant = Math.round(Math.random());
+        rightDominant = true;
         this.setLegRotation(
           !rightDominant ? "right" : "left",
           { pitch: 0.5, pitch2: 0.7 },
-          900,
-          "easeInOutCirc",
+          dur1,
+          easing,
           true,
           "alternate",
           true
         );
+        setTimeout(async () => {
+          await this.setLegRotation(
+            !rightDominant ? "right" : "left",
+            { pitch: 0.4 },
+            dur1,
+            easing,
+            0,
+            "normal",
+            true,
+            true
+          );
+          await this.setLegRotation(
+            !rightDominant ? "right" : "left",
+            { pitch: 0.5, pitch2: 0.4 },
+            dur1,
+            easing,
+            true,
+            "alternate",
+            true,
+            true
+          );
+        }, dur1 * durDelay);
+
+        const dur2 = 920;
         this.setLegRotation(
           rightDominant ? "right" : "left",
           { pitch: 0.3, pitch2: 0.8 },
-          920,
-          "easeInOutCirc",
+          dur2,
+          easing,
           true,
           "alternate",
           true
         );
+        setTimeout(async () => {
+          await this.setLegRotation(
+            rightDominant ? "right" : "left",
+            { pitch: 0.4 },
+            dur2,
+            easing,
+            0,
+            "normal",
+            true,
+            true
+          );
+          await this.setLegRotation(
+            rightDominant ? "right" : "left",
+            { pitch: 0.5, pitch2: 0.4 },
+            dur2,
+            easing,
+            true,
+            "alternate",
+            true,
+            true
+          );
+        }, dur2 * durDelay);
         this.setFloor();
         break;
       case "getting up":
