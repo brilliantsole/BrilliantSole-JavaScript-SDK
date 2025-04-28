@@ -80,8 +80,14 @@ AFRAME.registerComponent("grabbable-physics-body", {
         const shapeMain = this.el.shapeMain;
         if (shapeMain) {
           // console.log("shape__main", shapeMain);
-          this.el.setAttribute("shape__main", shapeMain);
+          //this.el.setAttribute("shape__main", shapeMain);
         }
+        this.el.setAttribute(
+          "shape__main",
+          `shape: box;
+          halfExtents: 0.1 0.091 0.09;
+          offset: 0 0 0;`
+        );
         const setVelocity = () => {
           const body = this.el.body;
           if (body) {
