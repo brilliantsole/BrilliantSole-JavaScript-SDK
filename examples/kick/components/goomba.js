@@ -11,9 +11,27 @@ AFRAME.registerComponent("goomba", {
 
   showHitSphere: false,
 
-  eyeScalesRange: 0.09,
+  eyeScalesRange: 0.08,
 
   init: function () {
+    this.pointToWalkFrom = new THREE.Vector3();
+    this.pointToWalkTo = new THREE.Vector3();
+    this.tempPointToWalkTo = new THREE.Vector3();
+    this.clampedTempPointToWalkTo = new THREE.Vector3();
+    this.quaternionToTurnFrom = new THREE.Quaternion();
+    this.quaternionToTurnTo = new THREE.Quaternion();
+    this.tempEuler = new THREE.Euler();
+
+    this.pointToWalkToOffset = new THREE.Vector3();
+    this.pointToWalkToSphere = document.createElement("a-sphere");
+    this.pointToWalkToSphere.setAttribute("color", "green");
+    this.pointToWalkToSphere.setAttribute("visible", "false");
+    this.pointToWalkToSphere.setAttribute("radius", "0.01");
+    this.el.sceneEl.appendChild(this.pointToWalkToSphere);
+
+    this.floorBox = new THREE.Box3();
+    this.lastWalkTick = 0;
+
     this.rollQuaternionFrom = new THREE.Quaternion();
     this.rollQuaternionTo = new THREE.Quaternion();
     this.rollTempEuler = new THREE.Euler();
@@ -169,7 +187,10 @@ AFRAME.registerComponent("goomba", {
         }
         break;
       case "walking":
-        // FILL - change direction
+        if (collidedEntity.components["goomba"]) {
+          console.log("collided with goomba");
+          // FILL - change direction
+        }
         break;
     }
   },
@@ -180,7 +201,10 @@ AFRAME.registerComponent("goomba", {
     }
     this.floor = newFloor;
     clearInterval(this.floorInterval);
+    this.floorBox.makeEmpty();
     if (this.floor) {
+      this.floorBox.expandByObject(this.floor.object3D);
+      console.log("floorBox", this.floorBox);
       const checkIfStoppedMoving = () => {
         const stoppedMoving =
           this.el.components["dynamic-body"].body.velocity.length() < 0.01;
@@ -604,7 +628,7 @@ AFRAME.registerComponent("goomba", {
     this.objectToLookAt = undefined;
   },
 
-  distanceRange: { min: 0.15, max: 4 },
+  distanceRange: { min: 0.15, max: 5 },
 
   forwardVector: new THREE.Vector3(0, 0, 1),
   upVector: new THREE.Vector3(0, 1, 0),
@@ -866,6 +890,11 @@ AFRAME.registerComponent("goomba", {
 
   squashLookAtInterval: 300,
 
+  walkInterval: 100,
+  walkSpeed: 0.00015,
+  walkIntervalRange: { min: 100, max: 1200 },
+  walkAngleRange: { min: -30, max: 30 },
+
   tick: function (time, timeDelta) {
     if ("updatePhysicsEnabledFlag" in this) {
       const enabled = this.updatePhysicsEnabledFlag;
@@ -880,11 +909,96 @@ AFRAME.registerComponent("goomba", {
     this.latestTick = time;
 
     if (this.status == "walking") {
-      // FILL - interval to update destination
-      // FILL - generate random distance/angle to walk in
-      // FILL - check if destination is near the edge of the floor
+      if (time - this.lastWalkTick > this.walkInterval) {
+        this.lastWalkTick = time;
+        this.walkInterval = THREE.MathUtils.lerp(
+          this.walkIntervalRange.min,
+          this.walkIntervalRange.max,
+          Math.random()
+        );
+
+        const distance = this.walkInterval * this.walkSpeed;
+        let angle = THREE.MathUtils.lerp(
+          this.walkAngleRange.min,
+          this.walkAngleRange.max,
+          Math.random()
+        );
+
+        this.el.object3D.getWorldPosition(this.tempPointToWalkTo);
+
+        this.pointToWalkToOffset.set(0, 0, distance);
+        this.pointToWalkToOffset.applyAxisAngle(
+          this.worldBasis.up,
+          THREE.MathUtils.degToRad(angle)
+        );
+
+        this.el.object3D.getWorldQuaternion(this.worldQuaternion);
+        this.pointToWalkToOffset.applyQuaternion(this.worldQuaternion);
+
+        this.tempPointToWalkTo.add(this.pointToWalkToOffset);
+        this.floorBox.clampPoint(
+          this.tempPointToWalkTo,
+          this.clampedTempPointToWalkTo
+        );
+
+        let turnedAround = false;
+        if (
+          Math.abs(this.clampedTempPointToWalkTo.x - this.tempPointToWalkTo.x) >
+            0.001 ||
+          Math.abs(this.clampedTempPointToWalkTo.z - this.tempPointToWalkTo.z) >
+            0.001
+        ) {
+          turnedAround = true;
+          this.tempPointToWalkTo.sub(this.pointToWalkToOffset);
+          this.tempPointToWalkTo.sub(this.pointToWalkToOffset);
+        }
+
+        this.pointToWalkTo.copy(this.tempPointToWalkTo);
+        this.pointToWalkFrom.copy(this.el.object3D.position);
+
+        this.pointToWalkToSphere.object3D.position.copy(this.pointToWalkTo);
+
+        const headingScalar = turnedAround ? -1 : 1;
+        let heading = Math.atan2(
+          this.pointToWalkToOffset.x * headingScalar,
+          this.pointToWalkToOffset.z * headingScalar
+        );
+
+        this.tempEuler.set(0, heading, 0);
+        this.quaternionToTurnTo.setFromEuler(this.tempEuler);
+        this.quaternionToTurnFrom.copy(this.el.object3D.quaternion);
+
+        // FILL - check if destination is near the edge of the floor
+      }
+
+      let interpolation = THREE.MathUtils.inverseLerp(
+        this.lastWalkTick,
+        this.lastWalkTick + this.walkInterval,
+        this.latestTick
+      );
+      this.el.object3D.position.lerpVectors(
+        this.pointToWalkFrom,
+        this.pointToWalkTo,
+        interpolation
+      );
+
+      interpolation = THREE.MathUtils.inverseLerp(
+        this.lastWalkTick,
+        this.lastWalkTick + 200,
+        this.latestTick
+      );
+      if (interpolation <= 1) {
+        this.el.object3D.quaternion.slerpQuaternions(
+          this.quaternionToTurnFrom,
+          this.quaternionToTurnTo,
+          interpolation
+        );
+      }
+
+      // FILL - interpolate turn
+
       // FILL - move towards destination
-      // FILL - find next point on floor to walk to
+
       // FILL - check if it needs to stop to look at somthing
     }
 
@@ -1525,7 +1639,9 @@ AFRAME.registerComponent("goomba", {
       this.stopWalking();
     }
     this.status = newStatus;
-    console.log(`new status "${this.status}"`);
+    //console.log(`new status "${this.status}"`);
+
+    this.el.removeAttribute("animation__turn");
 
     this.clearEyesRotationAnimation();
     this.clearEyesRollAnimation();
@@ -1534,6 +1650,8 @@ AFRAME.registerComponent("goomba", {
     this.clearLegsRotationAnimation(true);
 
     this.resetLegs();
+
+    this.pointToWalkToSphere.setAttribute("visible", false);
 
     switch (this.status) {
       case "grabbed":
@@ -1633,6 +1751,7 @@ AFRAME.registerComponent("goomba", {
         //this.setScale(1.5, 1000);
         break;
       case "walking":
+        //this.pointToWalkToSphere.setAttribute("visible", true);
         this.startWalking();
         break;
       default:
