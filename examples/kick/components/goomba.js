@@ -13,6 +13,7 @@ AFRAME.registerComponent("goomba", {
 
   eyeScalesRange: 0.08,
 
+  staticBody: "shape: none;",
   dynamicBody: "shape: none;",
   body: "type: dynamic; shape: none;",
   shapeMain: `shape: box;
@@ -254,11 +255,14 @@ AFRAME.registerComponent("goomba", {
     const otherGoomba = collidedEntity.components["goomba"];
     switch (this.status) {
       case "walking":
-        if (
-          otherGoomba &&
-          !this.collidedWhenWalking &&
-          !otherGoomba.collidedWhenWalking
-        ) {
+        if (otherGoomba) {
+          if (
+            otherGoomba.status == "walking" &&
+            this.collidedWhenWalking &&
+            otherGoomba.collidedWhenWalking
+          ) {
+            return;
+          }
           this.collidedWhenWalking = true;
           otherGoomba.collidedWhenWalking = true;
 
@@ -268,7 +272,11 @@ AFRAME.registerComponent("goomba", {
           this.lastWalkTick = 0;
           otherGoomba.lastWalkTick = 0;
 
-          // console.log("collided with other goomba");
+          console.log(
+            "collided with other goomba",
+            this.collidedNewAngle,
+            otherGoomba.collidedNewAngle
+          );
         }
         break;
     }
@@ -334,10 +342,17 @@ AFRAME.registerComponent("goomba", {
   },
   updatePhysicsEnabled: function (enabled) {
     if (enabled) {
+      if (this.status == "walking") {
+        console.log("static body!");
+        this.el.setAttribute("static-body", this.staticBody);
+      } else {
+        this.el.setAttribute("dynamic-body", this.dynamicBody);
+      }
       this.el.setAttribute("dynamic-body", this.dynamicBody);
       this.el.setAttribute("shape__main", this.shapeMain);
     } else {
       this.el.removeAttribute("dynamic-body");
+      this.el.removeAttribute("static-body");
       this.el.removeAttribute("shape__main");
     }
   },
@@ -1054,7 +1069,7 @@ AFRAME.registerComponent("goomba", {
         let isAngleRelative = true;
         if (
           this.collidedWhenWalking &&
-          this.latestTick - this.lastTimeCollidedWhenWalking > 500
+          this.latestTick - this.lastTimeCollidedWhenWalking > 100
         ) {
           this.collidedWhenWalking = false;
           this.lastTimeCollidedWhenWalking = this.latestTick;
@@ -1922,6 +1937,7 @@ AFRAME.registerComponent("goomba", {
         //this.setScale(1.5, 1000);
         break;
       case "walking":
+        // this.setPhysicsEnabled(true);
         //this.pointToWalkToSphere.setAttribute("visible", true);
         this.startWalking();
         break;
