@@ -59,7 +59,7 @@
 
     <a-scene
       id="scene"
-      physics="debug: false; restitution: 0.4;"
+      physics="debug: true; restitution: 0.4;"
       embedded
       grabbable-listener
       obb-collider="showColliders: false;"
@@ -118,14 +118,27 @@
 
       <template id="goombaTemplate">
         <a-entity>
+          <a-sphere
+            class="pet"
+            color="black"
+            radius="0.02"
+            position="0 0.065 0"
+            visible="false"
+          ></a-sphere>
           <a-entity class="squash" position="0 -0.07 0">
             <a-entity class="squashOffset" position="0 0.07 0">
+              <a-box
+                visible="false"
+                class="collider"
+                scale="0.2 0.18 0.18"
+              ></a-box>
               <a-sphere
                 class="body"
                 color="#a14e00"
                 radius="0.1"
                 scale="0.9 0.75 0.8"
-              ></a-sphere>
+              >
+              </a-sphere>
               <a-sphere
                 radius="0.2"
                 class="raycastable"

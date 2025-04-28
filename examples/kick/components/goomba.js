@@ -20,6 +20,13 @@ AFRAME.registerComponent("goomba", {
         offset: 0 0 0;`,
 
   init: function () {
+    this.hands = {};
+
+    this.lastPetTick = 0;
+    this.petPosition = new THREE.Vector3();
+
+    this.lastTimeCollidedWhenWalking = 0;
+
     this.el.shapeMain = this.shapeMain;
 
     this.pointToWalkFrom = new THREE.Vector3();
@@ -139,6 +146,11 @@ AFRAME.registerComponent("goomba", {
       });
       this.template = template;
 
+      this.el.collider = this.el.querySelector(".collider").object3D;
+      this.el.setAttribute("obb-collider", "trackedObject3D: collider");
+
+      this.petEntity = this.el.querySelector(".pet");
+
       this.el.addEventListener("raycaster-intersected", (event) => {
         //console.log("looked at", event);
         this.isLookedAt = true;
@@ -152,9 +164,6 @@ AFRAME.registerComponent("goomba", {
       this.squash = this.el.querySelector(".squash");
 
       this.camera = document.querySelector("a-camera");
-      this.raycastable = this.el.querySelector(".raycastable");
-      //this.raycastable.remove();
-      this.raycastableParent = this.raycastable.parentEl;
 
       this.el.querySelectorAll(".left").forEach((entity) => {
         const duplicate = entity.cloneNode(true);
@@ -209,6 +218,14 @@ AFRAME.registerComponent("goomba", {
           this.camera.removeAttribute("raycaster");
           this.camera.setAttribute("raycaster", raycaster);
         }
+
+        Array.from(
+          document.querySelectorAll("[hand-tracking-controls]")
+        ).forEach((entity) => {
+          const component = entity.components["hand-tracking-controls"];
+          const side = component.data.hand;
+          this.hands[side] = component;
+        });
       }, 1);
     });
 
@@ -237,9 +254,21 @@ AFRAME.registerComponent("goomba", {
     const otherGoomba = collidedEntity.components["goomba"];
     switch (this.status) {
       case "walking":
-        if (otherGoomba) {
-          this.needsToTurnAround = true;
+        if (
+          otherGoomba &&
+          !this.collidedWhenWalking &&
+          !otherGoomba.collidedWhenWalking
+        ) {
+          this.collidedWhenWalking = true;
+          otherGoomba.collidedWhenWalking = true;
+
+          this.collidedNewAngle = otherGoomba.angle;
+          otherGoomba.collidedNewAngle = this.angle;
+
           this.lastWalkTick = 0;
+          otherGoomba.lastWalkTick = 0;
+
+          // console.log("collided with other goomba");
         }
         break;
     }
@@ -305,16 +334,8 @@ AFRAME.registerComponent("goomba", {
   },
   updatePhysicsEnabled: function (enabled) {
     if (enabled) {
-      //this.raycastable.remove();
       this.el.setAttribute("dynamic-body", this.dynamicBody);
       this.el.setAttribute("shape__main", this.shapeMain);
-      this.el.addEventListener(
-        "body-loaded",
-        () => {
-          //this.raycastableParent.appendChild(this.raycastable);
-        },
-        { once: true }
-      );
     } else {
       this.el.removeAttribute("dynamic-body");
       this.el.removeAttribute("shape__main");
@@ -961,6 +982,9 @@ AFRAME.registerComponent("goomba", {
 
   idleToWalkingTime: 1000,
 
+  petInterval: 500,
+  petDistanceThreshold: 0.1,
+
   tick: function (time, timeDelta) {
     if ("updatePhysicsEnabledFlag" in this) {
       const enabled = this.updatePhysicsEnabledFlag;
@@ -969,6 +993,42 @@ AFRAME.registerComponent("goomba", {
     }
 
     this.latestTick = time;
+
+    if (this.latestTick - this.lastPetTick > this.petInterval) {
+      this.lastPetTick = this.latestTick;
+      if (this.status == "idle") {
+        for (const side in this.hands) {
+          const hand = this.hands[side];
+          if (hand.controllerPresent) {
+            this.petEntity.object3D.getWorldPosition(this.petPosition);
+            const distance = hand.indexTipPosition.distanceTo(this.petPosition);
+            // console.log({ side, distance });
+            if (distance < this.petDistanceThreshold) {
+              this.petSide = side;
+              this.setStatus("petting");
+              break;
+            }
+          }
+        }
+      }
+      if (this.status == "petting") {
+        const hand = this.hands[this.petSide];
+        if (hand.controllerPresent) {
+          this.petEntity.object3D.getWorldPosition(this.petPosition);
+          const distance = hand.indexTipPosition.distanceTo(this.petPosition);
+          // console.log({ side, distance });
+          if (distance > this.petDistanceThreshold) {
+            this.setStatus("idle");
+          } else {
+            // FILL - get local position of fingertip to pet entity
+            // FILL - set scale.y, rotation.x, and rotation.z
+            // FILL - set eyes scale.y, eyes roll
+          }
+        } else {
+          this.setStatus("idle");
+        }
+      }
+    }
 
     if (this.status == "walking") {
       if (time - this.lastWalkTick > this.walkInterval) {
@@ -979,70 +1039,81 @@ AFRAME.registerComponent("goomba", {
           Math.random()
         );
 
+        this.el.object3D.getWorldQuaternion(this.worldQuaternion);
+
         const distance = this.walkInterval * this.walkSpeed;
-        let angle = THREE.MathUtils.lerp(
+
+        let angleOffset = 0;
+
+        angleOffset = THREE.MathUtils.lerp(
           this.walkAngleRange.min,
           this.walkAngleRange.max,
           Math.random()
         );
 
+        let isAngleRelative = true;
         if (
-          this.needsToTurnAround &&
-          this.latestTick - this.lastTimeTurnedAround > 1000
+          this.collidedWhenWalking &&
+          this.latestTick - this.lastTimeCollidedWhenWalking > 500
         ) {
-          this.needsToTurnAround = false;
-          this.lastTimeTurnedAround = this.latestTick;
-          angle = 180;
+          this.collidedWhenWalking = false;
+          this.lastTimeCollidedWhenWalking = this.latestTick;
+          if (this.collidedNewAngle != undefined) {
+            isAngleRelative = false;
+            // console.log({ collidedNewAngle: this.collidedNewAngle });
+            angleOffset = this.collidedNewAngle;
+            this.collidedNewAngle = undefined;
+          } else {
+            angleOffset = 180;
+          }
+          // console.log("collided angleOffset", angleOffset);
         }
 
-        this.el.object3D.getWorldPosition(this.tempPointToWalkTo);
+        let attempts = 0;
+        const turnScalar = Math.round(Math.random()) ? 1 : -1;
+        do {
+          this.pointToWalkToOffset.set(0, 0, distance);
+          this.pointToWalkToOffset.applyAxisAngle(
+            this.worldBasis.up,
+            THREE.MathUtils.degToRad(angleOffset + attempts * 45 * turnScalar)
+          );
+          attempts++;
+          // console.log({ attempts });
+          if (isAngleRelative) {
+            this.pointToWalkToOffset.applyQuaternion(this.worldQuaternion);
+          }
 
-        this.pointToWalkToOffset.set(0, 0, distance);
-        this.pointToWalkToOffset.applyAxisAngle(
-          this.worldBasis.up,
-          THREE.MathUtils.degToRad(angle)
-        );
-
-        this.el.object3D.getWorldQuaternion(this.worldQuaternion);
-        this.pointToWalkToOffset.applyQuaternion(this.worldQuaternion);
-
-        this.tempPointToWalkTo.add(this.pointToWalkToOffset);
-        this.floor.components["obb-collider"].obb.clampPoint(
-          this.tempPointToWalkTo,
-          this.clampedTempPointToWalkTo
-        );
-
-        let turnAround = false;
-        if (
+          this.el.object3D.getWorldPosition(this.tempPointToWalkTo);
+          this.tempPointToWalkTo.add(this.pointToWalkToOffset);
+          this.floor.components["obb-collider"].obb.clampPoint(
+            this.tempPointToWalkTo,
+            this.clampedTempPointToWalkTo
+          );
+        } while (
           Math.abs(this.clampedTempPointToWalkTo.x - this.tempPointToWalkTo.x) >
             0.001 ||
           Math.abs(this.clampedTempPointToWalkTo.z - this.tempPointToWalkTo.z) >
             0.001
-        ) {
-          // FILL - turn 90 degrees until fine
-          turnAround = true;
-          this.tempPointToWalkTo.sub(this.pointToWalkToOffset);
-          this.tempPointToWalkTo.sub(this.pointToWalkToOffset);
-        }
+        );
 
         this.pointToWalkTo.copy(this.tempPointToWalkTo);
         this.pointToWalkFrom.copy(this.el.object3D.position);
 
         this.pointToWalkToSphere.object3D.position.copy(this.pointToWalkTo);
 
-        const headingScalar = turnAround ? -1 : 1;
-        let heading = Math.atan2(
-          this.pointToWalkToOffset.x * headingScalar,
-          this.pointToWalkToOffset.z * headingScalar
+        let angle = Math.atan2(
+          this.pointToWalkToOffset.x,
+          this.pointToWalkToOffset.z
         );
 
-        this.tempEuler.set(0, heading, 0);
-        this.quaternionToTurnTo.setFromEuler(this.tempEuler);
         this.quaternionToTurnFrom.copy(this.el.object3D.quaternion);
+        this.tempEuler.set(0, angle, 0);
+        this.quaternionToTurnTo.setFromEuler(this.tempEuler);
 
         if (this.objectToLookAt == this.camera && this.isLookedAt) {
           this.setStatus("idle");
         }
+        this.angle = THREE.MathUtils.radToDeg(angle);
       }
 
       let interpolation = THREE.MathUtils.inverseLerp(
@@ -1716,6 +1787,7 @@ AFRAME.registerComponent("goomba", {
     "falling",
     "getting up",
     "walking",
+    "petting",
     "kicked",
     "wall",
     "stomp",
