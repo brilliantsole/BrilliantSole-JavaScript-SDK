@@ -13,7 +13,15 @@ AFRAME.registerComponent("goomba", {
 
   eyeScalesRange: 0.08,
 
+  dynamicBody: "shape: none;",
+  body: "type: dynamic; shape: none;",
+  shapeMain: `shape: box;
+        halfExtents: 0.1 0.091 0.09;
+        offset: 0 0 0;`,
+
   init: function () {
+    this.el.shapeMain = this.shapeMain;
+
     this.pointToWalkFrom = new THREE.Vector3();
     this.pointToWalkTo = new THREE.Vector3();
     this.tempPointToWalkTo = new THREE.Vector3();
@@ -22,6 +30,8 @@ AFRAME.registerComponent("goomba", {
     this.quaternionToTurnTo = new THREE.Quaternion();
     this.tempEuler = new THREE.Euler();
 
+    this.lastTimeTurnedAround = 0;
+
     this.pointToWalkToOffset = new THREE.Vector3();
     this.pointToWalkToSphere = document.createElement("a-sphere");
     this.pointToWalkToSphere.setAttribute("color", "green");
@@ -29,7 +39,6 @@ AFRAME.registerComponent("goomba", {
     this.pointToWalkToSphere.setAttribute("radius", "0.01");
     this.el.sceneEl.appendChild(this.pointToWalkToSphere);
 
-    this.floorBox = new THREE.Box3();
     this.lastWalkTick = 0;
 
     this.rollQuaternionFrom = new THREE.Quaternion();
@@ -110,17 +119,42 @@ AFRAME.registerComponent("goomba", {
     window.goombas.push(this);
 
     this.el.addEventListener("collide", this.onCollide.bind(this));
+    this.el.addEventListener(
+      "obbcollisionstarted",
+      this.onObbCollisionStarted.bind(this)
+    );
+
+    this.lastTimeLookedAt = 0;
 
     this.el.addEventListener("loaded", () => {
       const template = this.data.template.content
         .querySelector("a-entity")
         .cloneNode(true);
+      template.classList.forEach((_class) => {
+        console.log(`adding class ${_class}`);
+        this.el.classList.add(_class);
+      });
       Array.from(template.children).forEach((entity) => {
         this.el.appendChild(entity);
       });
       this.template = template;
 
+      this.el.addEventListener("raycaster-intersected", (event) => {
+        //console.log("looked at", event);
+        this.isLookedAt = true;
+      });
+      this.el.addEventListener("raycaster-intersected-cleared", (event) => {
+        //console.log("stopped looked at", event);
+        this.isLookedAt = false;
+        this.lastTimeLookedAt = this.latestTick;
+      });
+
       this.squash = this.el.querySelector(".squash");
+
+      this.camera = document.querySelector("a-camera");
+      this.raycastable = this.el.querySelector(".raycastable");
+      //this.raycastable.remove();
+      this.raycastableParent = this.raycastable.parentEl;
 
       this.el.querySelectorAll(".left").forEach((entity) => {
         const duplicate = entity.cloneNode(true);
@@ -164,7 +198,16 @@ AFRAME.registerComponent("goomba", {
           this.el.setAttribute("grabbable", "");
         }
         if (this.data.physics) {
-          this.el.setAttribute("grabbable-physics-body", "type: dynamic;");
+          this.el.setAttribute(
+            "grabbable-physics-body",
+            `type: dynamic; dynamic-body: "shape: none;";`
+          );
+        }
+
+        if (window.goombas.indexOf(this) == window.goombas.length - 1) {
+          const raycaster = this.camera.getAttribute("_raycaster");
+          this.camera.removeAttribute("raycaster");
+          this.camera.setAttribute("raycaster", raycaster);
         }
       }, 1);
     });
@@ -186,10 +229,17 @@ AFRAME.registerComponent("goomba", {
           this.setFloor(collidedEntity);
         }
         break;
+    }
+  },
+
+  onObbCollisionStarted: async function (event) {
+    const collidedEntity = event.detail.withEl;
+    const otherGoomba = collidedEntity.components["goomba"];
+    switch (this.status) {
       case "walking":
-        if (collidedEntity.components["goomba"]) {
-          console.log("collided with goomba");
-          // FILL - change direction
+        if (otherGoomba) {
+          this.needsToTurnAround = true;
+          this.lastWalkTick = 0;
         }
         break;
     }
@@ -201,10 +251,7 @@ AFRAME.registerComponent("goomba", {
     }
     this.floor = newFloor;
     clearInterval(this.floorInterval);
-    this.floorBox.makeEmpty();
     if (this.floor) {
-      this.floorBox.expandByObject(this.floor.object3D, true);
-      console.log("floorBox", this.floorBox);
       const checkIfStoppedMoving = () => {
         const stoppedMoving =
           this.el.components["dynamic-body"].body.velocity.length() < 0.01;
@@ -213,6 +260,7 @@ AFRAME.registerComponent("goomba", {
           0.01;
         const stopped = stoppedMoving && stoppedRotating;
         if (stopped) {
+          this.landed = true;
           clearInterval(this.floorInterval);
           this.setPhysicsEnabled(false);
           setTimeout(() => {
@@ -257,9 +305,19 @@ AFRAME.registerComponent("goomba", {
   },
   updatePhysicsEnabled: function (enabled) {
     if (enabled) {
-      this.el.setAttribute("dynamic-body", "");
+      //this.raycastable.remove();
+      this.el.setAttribute("dynamic-body", this.dynamicBody);
+      this.el.setAttribute("shape__main", this.shapeMain);
+      this.el.addEventListener(
+        "body-loaded",
+        () => {
+          //this.raycastableParent.appendChild(this.raycastable);
+        },
+        { once: true }
+      );
     } else {
       this.el.removeAttribute("dynamic-body");
+      this.el.removeAttribute("shape__main");
     }
   },
 
@@ -534,7 +592,7 @@ AFRAME.registerComponent("goomba", {
   pointToLookAtAngleThreshold: THREE.MathUtils.degToRad(60),
 
   wanderEyesEulerRange: {
-    pitch: { min: -50, max: 50 },
+    pitch: { min: -40, max: 10 },
     yaw: { min: -50, max: 50 },
   },
 
@@ -638,7 +696,7 @@ AFRAME.registerComponent("goomba", {
   angleThreshold: 0.75,
 
   angleThresholds: {
-    pitch: { min: -0.7, max: 0.7 },
+    pitch: { min: -0.1, max: 0.7 },
     yaw: { min: -0.7, max: 0.7 },
   },
 
@@ -709,6 +767,12 @@ AFRAME.registerComponent("goomba", {
       yaw -= Math.PI / 2;
 
       const pitch = Math.asin(this.upVector.dot(this.toVector)); // between −π/2 and π/2
+
+      if (entity.components["hand-tracking-controls"]) {
+        if (pitch < 0.01) {
+          return;
+        }
+      }
 
       if (
         pitch < this.angleThresholds.pitch.min ||
@@ -895,14 +959,12 @@ AFRAME.registerComponent("goomba", {
   walkIntervalRange: { min: 100, max: 1200 },
   walkAngleRange: { min: -30, max: 30 },
 
+  idleToWalkingTime: 1000,
+
   tick: function (time, timeDelta) {
     if ("updatePhysicsEnabledFlag" in this) {
       const enabled = this.updatePhysicsEnabledFlag;
-      if (enabled) {
-        this.el.setAttribute("dynamic-body", "");
-      } else {
-        this.el.removeAttribute("dynamic-body");
-      }
+      this.updatePhysicsEnabled(enabled);
       delete this.updatePhysicsEnabledFlag;
     }
 
@@ -924,6 +986,15 @@ AFRAME.registerComponent("goomba", {
           Math.random()
         );
 
+        if (
+          this.needsToTurnAround &&
+          this.latestTick - this.lastTimeTurnedAround > 1000
+        ) {
+          this.needsToTurnAround = false;
+          this.lastTimeTurnedAround = this.latestTick;
+          angle = 180;
+        }
+
         this.el.object3D.getWorldPosition(this.tempPointToWalkTo);
 
         this.pointToWalkToOffset.set(0, 0, distance);
@@ -936,7 +1007,7 @@ AFRAME.registerComponent("goomba", {
         this.pointToWalkToOffset.applyQuaternion(this.worldQuaternion);
 
         this.tempPointToWalkTo.add(this.pointToWalkToOffset);
-        this.floorBox.clampPoint(
+        this.floor.components["obb-collider"].obb.clampPoint(
           this.tempPointToWalkTo,
           this.clampedTempPointToWalkTo
         );
@@ -948,6 +1019,7 @@ AFRAME.registerComponent("goomba", {
           Math.abs(this.clampedTempPointToWalkTo.z - this.tempPointToWalkTo.z) >
             0.001
         ) {
+          // FILL - turn 90 degrees until fine
           turnAround = true;
           this.tempPointToWalkTo.sub(this.pointToWalkToOffset);
           this.tempPointToWalkTo.sub(this.pointToWalkToOffset);
@@ -968,7 +1040,9 @@ AFRAME.registerComponent("goomba", {
         this.quaternionToTurnTo.setFromEuler(this.tempEuler);
         this.quaternionToTurnFrom.copy(this.el.object3D.quaternion);
 
-        // FILL - check if destination is near the edge of the floor
+        if (this.objectToLookAt == this.camera && this.isLookedAt) {
+          this.setStatus("idle");
+        }
       }
 
       let interpolation = THREE.MathUtils.inverseLerp(
@@ -994,12 +1068,16 @@ AFRAME.registerComponent("goomba", {
           interpolation
         );
       }
+    }
 
-      // FILL - interpolate turn
-
-      // FILL - move towards destination
-
-      // FILL - check if it needs to stop to look at somthing
+    if (
+      this.status == "idle" &&
+      this.floor &&
+      this.landed &&
+      !this.isLookedAt &&
+      time - this.lastTimeLookedAt > this.idleToWalkingTime
+    ) {
+      this.setStatus("walking");
     }
 
     if (this.isRolling) {
@@ -1089,13 +1167,16 @@ AFRAME.registerComponent("goomba", {
             );
           }
         } else {
+          this.el.object3D.getWorldPosition(this.worldPosition);
+          this.el.object3D.getWorldQuaternion(this.worldQuaternion);
+
           let changeFocus = false;
           this.forwardVector
-            .set(0, 0, -1)
+            .set(0, 0, 1)
             .applyQuaternion(this.worldQuaternion)
             .normalize();
           this.pointToLookAtDirection
-            .subVectors(this.worldPosition, this.pointToLookAt)
+            .subVectors(this.pointToLookAt, this.worldPosition)
             .normalize();
           let angle = this.forwardVector.angleTo(this.pointToLookAtDirection);
           if (false)
@@ -1122,12 +1203,7 @@ AFRAME.registerComponent("goomba", {
               Math.random()
             );
 
-            this.el.object3D.getWorldPosition(this.worldPosition);
-            this.el.object3D.getWorldQuaternion(this.worldQuaternion);
-            this.ray
-              .set(0, 0, 1)
-              .applyQuaternion(this.worldQuaternion)
-              .normalize();
+            this.ray.set(0, 0, 1);
             const pitch = THREE.MathUtils.lerp(
               this.wanderEyesEulerRange.pitch.min,
               this.wanderEyesEulerRange.pitch.max,
@@ -1138,12 +1214,16 @@ AFRAME.registerComponent("goomba", {
               this.wanderEyesEulerRange.yaw.max,
               Math.random()
             );
+            //console.log({ pitch, yaw });
+
             this.rayEuler.set(
               THREE.MathUtils.degToRad(pitch),
               THREE.MathUtils.degToRad(yaw),
-              0
+              0,
+              "YXZ"
             );
             this.ray.applyEuler(this.rayEuler);
+            this.ray.applyQuaternion(this.worldQuaternion).normalize();
             this.raycaster.set(this.worldPosition, this.ray);
             this.raycaster.far = 10;
 
@@ -1171,7 +1251,10 @@ AFRAME.registerComponent("goomba", {
                 //console.log("Hit:", intersection, intersection.point);
                 this.pointToLookAt.copy(intersection.point);
               } else {
-                this.pointToLookAt.copy(this.ray).setLength(4);
+                this.pointToLookAt
+                  .copy(this.ray)
+                  .setLength(4)
+                  .add(this.worldPosition);
               }
               this.hitSphere.object3D.position.copy(this.pointToLookAt);
             }
@@ -1516,7 +1599,13 @@ AFRAME.registerComponent("goomba", {
     easing = "easeInOutQuad"
   ) {
     const legPromise = new Promise(async (resolve) => {
+      if (this.status != "walking") {
+        return;
+      }
       await this.setLegsRotation({ pitch }, dur, easing, false, "normal", true);
+      if (this.status != "walking") {
+        return;
+      }
       await this.setLegsRotation(
         { pitch: 1 - pitch, pitch2: pitch },
         dur,
@@ -1552,6 +1641,9 @@ AFRAME.registerComponent("goomba", {
             footRoll2 = footRolls[1];
           }
           if (side == "left") {
+            if (this.status != "walking") {
+              return;
+            }
             await this.setLegRotation(
               side,
               { pitch: footPitch, roll: footRoll },
@@ -1562,6 +1654,9 @@ AFRAME.registerComponent("goomba", {
               false,
               true
             );
+          }
+          if (this.status != "walking") {
+            return;
           }
           await this.setLegRotation(
             side,
@@ -1637,7 +1732,7 @@ AFRAME.registerComponent("goomba", {
     }
     this.stopWalking();
     this.status = newStatus;
-    //console.log(`new status "${this.status}"`);
+    console.log(`new status "${this.status}"`);
 
     this.el.removeAttribute("animation__turn");
 

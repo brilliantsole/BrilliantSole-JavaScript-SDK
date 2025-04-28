@@ -72,7 +72,14 @@ AFRAME.registerComponent("grabbable-physics-body", {
       if (this.data.type === "static") {
         this.el.setAttribute("static-body", this.data.staticBody);
       } else {
-        this.el.setAttribute("dynamic-body", this.data.dynamicBody);
+        console.log("setting dynamic body", this.data.dynamicBody);
+        //this.el.setAttribute("dynamic-body", this.data.dynamicBody);
+        this.el.setAttribute("dynamic-body", "shape: none;");
+        const shapeMain = this.el.shapeMain;
+        if (shapeMain) {
+          console.log("shape__main", shapeMain);
+          this.el.setAttribute("shape__main", shapeMain);
+        }
         const setVelocity = () => {
           const body = this.el.body;
           if (body) {

@@ -72,7 +72,8 @@
           id="anchorModel"
           src="../../assets/3d/anchor.glb"
         ></a-asset-item>
-        <a-mixin id="realWorldPlaneMixin" static-body occlude-mesh> </a-mixin>
+        <a-mixin id="realWorldPlaneMixin" obb-collider static-body occlude-mesh>
+        </a-mixin>
         <a-mixin id="realWorldMeshMixin" occlude-mesh></a-mixin>
       </a-assets>
       <a-camera
@@ -80,10 +81,12 @@
         id="camera"
         position="0 1 0"
         rotation="0 0 0"
-      ></a-camera>
+        _raycaster="objects: .raycastable; interval: 100;"
+      >
+        <!-- <a-sphere color="black" radius="0.001" position="0 0 -0.1"></a-sphere> -->
+      </a-camera>
 
       <a-entity
-        class="lookAt"
         id="anchor"
         anchored="persistent: true"
         position="0.2 1 -0.3"
@@ -108,7 +111,9 @@
         static-body
         position="0 0.8 -0.5"
         data-world-mesh="floor"
-        color="red"
+        color="blue"
+        obb-collider
+        id="testBox"
       ></a-box> -->
 
       <template id="goombaTemplate">
@@ -120,6 +125,12 @@
                 color="#a14e00"
                 radius="0.1"
                 scale="0.9 0.75 0.8"
+              ></a-sphere>
+              <a-sphere
+                radius="0.2"
+                class="raycastable"
+                color="yellow"
+                visible="false"
               ></a-sphere>
               <a-entity
                 class="eye left"
