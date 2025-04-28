@@ -203,7 +203,7 @@ AFRAME.registerComponent("goomba", {
     clearInterval(this.floorInterval);
     this.floorBox.makeEmpty();
     if (this.floor) {
-      this.floorBox.expandByObject(this.floor.object3D);
+      this.floorBox.expandByObject(this.floor.object3D, true);
       console.log("floorBox", this.floorBox);
       const checkIfStoppedMoving = () => {
         const stoppedMoving =
@@ -941,14 +941,14 @@ AFRAME.registerComponent("goomba", {
           this.clampedTempPointToWalkTo
         );
 
-        let turnedAround = false;
+        let turnAround = false;
         if (
           Math.abs(this.clampedTempPointToWalkTo.x - this.tempPointToWalkTo.x) >
             0.001 ||
           Math.abs(this.clampedTempPointToWalkTo.z - this.tempPointToWalkTo.z) >
             0.001
         ) {
-          turnedAround = true;
+          turnAround = true;
           this.tempPointToWalkTo.sub(this.pointToWalkToOffset);
           this.tempPointToWalkTo.sub(this.pointToWalkToOffset);
         }
@@ -958,7 +958,7 @@ AFRAME.registerComponent("goomba", {
 
         this.pointToWalkToSphere.object3D.position.copy(this.pointToWalkTo);
 
-        const headingScalar = turnedAround ? -1 : 1;
+        const headingScalar = turnAround ? -1 : 1;
         let heading = Math.atan2(
           this.pointToWalkToOffset.x * headingScalar,
           this.pointToWalkToOffset.z * headingScalar
@@ -1635,9 +1635,7 @@ AFRAME.registerComponent("goomba", {
       console.error(`invalid status "${newStatus}"`);
       return;
     }
-    if (this.status == "walking") {
-      this.stopWalking();
-    }
+    this.stopWalking();
     this.status = newStatus;
     //console.log(`new status "${this.status}"`);
 
@@ -1684,6 +1682,9 @@ AFRAME.registerComponent("goomba", {
             true,
             true
           );
+          if (this.status != "grabbed") {
+            return;
+          }
           await this.setLegRotation(
             !rightDominant ? "right" : "left",
             { pitch: 0.5, pitch2: 0.4 },
@@ -1720,6 +1721,9 @@ AFRAME.registerComponent("goomba", {
             true,
             true
           );
+          if (this.status != "grabbed") {
+            return;
+          }
           await this.setLegRotation(
             rightDominant ? "right" : "left",
             { pitch: 0.5, pitch2: 0.4 },
