@@ -12,6 +12,7 @@ AFRAME.registerComponent("goomba", {
   showHitSphere: false,
 
   eyeScalesRange: 0.08,
+  defaultEyeHeight: 1.69,
 
   staticBody: "shape: none;",
   dynamicBody: "shape: none;",
@@ -30,6 +31,7 @@ AFRAME.registerComponent("goomba", {
 
     this.lastPetTick = 0;
     this.petPosition = new THREE.Vector3();
+    this.localPetPosition = new THREE.Vector3();
 
     this.lastTimeCollidedWhenWalking;
 
@@ -487,9 +489,7 @@ AFRAME.registerComponent("goomba", {
   resetEyes: function () {
     this.setEyesRotation({ pitch: 0.5, yaw: 0.5 });
     this.setEyesRoll({ roll: 0.5 });
-
-    this.setEyeScale("left", this.eyesScales.left);
-    this.setEyeScale("right", this.eyesScales.right);
+    this.resetEyesScale();
   },
   clearEyeRotationAnimation: function (side) {
     const entity = this.eyeControllers[side];
@@ -521,6 +521,12 @@ AFRAME.registerComponent("goomba", {
     let entity = this.eyeScales[side];
     if (!entity) {
       return;
+    }
+    if (scale.width == undefined) {
+      scale.width = 1;
+    }
+    if (scale.height == undefined) {
+      scale.height = 1;
     }
     let width = 1;
     let height = 1;
@@ -564,14 +570,23 @@ AFRAME.registerComponent("goomba", {
       });
     }
   },
-  setEyesScale: function (scale, dur, easing, loop, dir) {
+  setEyesScale: function (scale, dur, easing, loop, dir, wholeEye) {
     this.sides.forEach((side) => {
       this.setEyeScale(side, ...arguments);
     });
   },
 
   resetEyesScale: function () {
-    this.setEyesScale({ width: 1, height: 1 });
+    this.setEyeScale("left", this.eyesScales.left);
+    this.setEyeScale("right", this.eyesScales.right);
+    this.setEyesScale(
+      { height: 1, width: 1 },
+      100,
+      undefined,
+      undefined,
+      undefined,
+      true
+    );
   },
   clearEyeScaleAnimation: function (side, wholeEye = false) {
     let entity = this.eyeScales[side];
@@ -627,7 +642,8 @@ AFRAME.registerComponent("goomba", {
     dur = 50,
     easing = "linear",
     loop = false,
-    dir = "normal"
+    dir = "normal",
+    invert = false
   ) {
     const entity = this.eyeRotators[side];
     if (!entity) {
@@ -637,7 +653,7 @@ AFRAME.registerComponent("goomba", {
     let roll = THREE.MathUtils.lerp(
       this.eyeRotatorsRange.roll.min,
       this.eyeRotatorsRange.roll.max,
-      rotation.roll
+      invert ? 1 - rotation.roll : rotation.roll
     );
 
     this.clearEyeRollAnimation(side);
@@ -656,9 +672,14 @@ AFRAME.registerComponent("goomba", {
       });
     }
   },
-  setEyesRoll: function (rotation, dur, easing, loop, dir) {
+  setEyesRoll: async function (rotation, dur, easing, loop, dir, invert) {
     this.sides.forEach((side) => {
-      this.setEyeRoll(side, ...arguments);
+      if (invert) {
+        const invert = side == "left";
+        return this.setEyeRoll(side, rotation, dur, easing, loop, dir, invert);
+      } else {
+        return this.setEyeRoll(side, ...arguments);
+      }
     });
   },
 
@@ -758,6 +779,7 @@ AFRAME.registerComponent("goomba", {
         this.tempLookAtEuler.copy(entity.object3D.rotation);
         entity.object3D.lookAt(this.lookAtPosition);
         this.lookAtEuler.copy(entity.object3D.rotation);
+        this.lookAtEuler.z = 0;
         entity.object3D.rotation.copy(this.tempLookAtEuler);
         entity.setAttribute("animation__rot", {
           property: "rotation",
@@ -1070,8 +1092,13 @@ AFRAME.registerComponent("goomba", {
 
   idleToWalkingTime: 1000,
 
-  petInterval: 500,
-  petDistanceThreshold: 0.1,
+  petInterval: 50,
+  petDistanceThreshold: { start: 0.03, end: 0.15 },
+  petSquashRange: { min: -0.04, max: 0.01 },
+  petSquashYRange: { min: 0.7, max: 1 },
+  petSquashEyesHeightRange: { min: 0.1, max: 1 },
+  petSquashEyesRollRange: { min: 0.4, max: 0.6 },
+  petEyeSquashRange: { min: -0.03, max: 0.01 },
 
   tick: function (time, timeDelta) {
     this.el.object3D.getWorldPosition(this.worldPosition);
@@ -1086,40 +1113,116 @@ AFRAME.registerComponent("goomba", {
 
     this.latestTick = time;
 
-    if (this.latestTick - this.lastPetTick > this.petInterval) {
-      this.lastPetTick = this.latestTick;
-      if (this.status == "idle") {
-        for (const side in this.hands) {
-          const hand = this.hands[side];
+    if (this.status == "idle" || this.status == "petting") {
+      if (this.latestTick - this.lastPetTick > this.petInterval) {
+        this.lastPetTick = this.latestTick;
+        if (this.status == "idle") {
+          for (const side in this.hands) {
+            const hand = this.hands[side];
+            if (hand.controllerPresent) {
+              this.petEntity.object3D.getWorldPosition(this.petPosition);
+              const distance = hand.indexTipPosition.distanceTo(
+                this.petPosition
+              );
+              // console.log({ side, distance });
+              if (distance < this.petDistanceThreshold.start) {
+                this.petSide = side;
+                this.setStatus("petting");
+                this.isLockedToCamera = true;
+                this.lookAtObject(this.camera);
+                break;
+              }
+            }
+          }
+        }
+        if (this.status == "petting") {
+          const hand = this.hands[this.petSide];
           if (hand.controllerPresent) {
             this.petEntity.object3D.getWorldPosition(this.petPosition);
             const distance = hand.indexTipPosition.distanceTo(this.petPosition);
             // console.log({ side, distance });
-            if (distance < this.petDistanceThreshold) {
-              this.petSide = side;
-              this.setStatus("petting");
-              this.isLockedToCamera = true;
-              this.lookAtObject(this.camera);
-              break;
+            if (distance > this.petDistanceThreshold.end) {
+              this.setStatus("idle");
+            } else {
+              const easing = "easeOutQuad";
+              const dur = 40;
+
+              this.localPetPosition.copy(hand.indexTipPosition);
+              this.petEntity.object3D.worldToLocal(this.localPetPosition);
+
+              let squashInterpolation = THREE.MathUtils.inverseLerp(
+                this.petSquashRange.min,
+                this.petSquashRange.max,
+                this.localPetPosition.y
+              );
+              let clampedSquashInterpolation = THREE.MathUtils.clamp(
+                squashInterpolation,
+                0,
+                1
+              );
+              const squashInterpolationY = THREE.MathUtils.lerp(
+                this.petSquashYRange.min,
+                this.petSquashYRange.max,
+                clampedSquashInterpolation
+              );
+
+              if (true) {
+                this.squash.removeAttribute("animation__scale");
+                this.squash.setAttribute("animation__scale", {
+                  property: "scale",
+                  to: `1 ${squashInterpolationY} 1`,
+                  dur: dur,
+                  easing: easing,
+                });
+              } else {
+                this.squash.object3D.scale.y = squashInterpolationY;
+              }
+
+              squashInterpolation = THREE.MathUtils.inverseLerp(
+                this.petEyeSquashRange.min,
+                this.petEyeSquashRange.max,
+                this.localPetPosition.y
+              );
+              clampedSquashInterpolation = THREE.MathUtils.clamp(
+                squashInterpolation,
+                0,
+                1
+              );
+              const eyesScaleHeight = THREE.MathUtils.lerp(
+                this.petSquashEyesHeightRange.min,
+                this.petSquashEyesHeightRange.max,
+                clampedSquashInterpolation
+              );
+
+              this.setEyesScale(
+                { height: eyesScaleHeight, width: 1 },
+                dur,
+                easing,
+                undefined,
+                undefined,
+                true
+              );
+
+              // FILL - roll eyes
+              // FILL - body roll/pitch
+
+              const eyesRoll = THREE.MathUtils.lerp(
+                this.petSquashEyesRollRange.min,
+                this.petSquashEyesRollRange.max,
+                clampedSquashInterpolation
+              );
+              this.setEyesRoll(
+                { roll: eyesRoll },
+                dur,
+                easing,
+                false,
+                undefined,
+                true
+              ); // FIX
             }
-          }
-        }
-      }
-      if (this.status == "petting") {
-        const hand = this.hands[this.petSide];
-        if (hand.controllerPresent) {
-          this.petEntity.object3D.getWorldPosition(this.petPosition);
-          const distance = hand.indexTipPosition.distanceTo(this.petPosition);
-          // console.log({ side, distance });
-          if (distance > this.petDistanceThreshold) {
-            this.setStatus("idle");
           } else {
-            // FILL - get local position of fingertip to pet entity
-            // FILL - set scale.y, rotation.x, and rotation.z
-            // FILL - set eyes scale.y, eyes roll
+            this.setStatus("idle");
           }
-        } else {
-          this.setStatus("idle");
         }
       }
     }
@@ -1296,9 +1399,13 @@ AFRAME.registerComponent("goomba", {
       this.status == "grabbed" ||
       this.status == "falling" ||
       this.status == "walking" ||
-      this.status == "getting up"
+      this.status == "getting up" ||
+      this.status == "petting"
     ) {
-      if (time - this.lastBlinkTick > this.blinkInterval) {
+      if (
+        this.status != "petting" &&
+        time - this.lastBlinkTick > this.blinkInterval
+      ) {
         this.blink();
       }
       if (this.isBlinking) {
@@ -1940,17 +2047,32 @@ AFRAME.registerComponent("goomba", {
       return;
     }
     this.isLockedToCamera = false;
-    this.stopWalking();
+    if (this.status == "walking") {
+      this.stopWalking();
+    }
     this.status = newStatus;
     //console.log(`new status "${this.status}"`);
 
     this.el.removeAttribute("animation__turn");
+
+    this.squash.removeAttribute("animation__rot");
+    if (this.squash.hasAttribute("animation__scale")) {
+      this.squash.removeAttribute("animation__scale");
+      this.squash.setAttribute("animation__scale", {
+        property: "scale",
+        to: `1 1 1`,
+        dur: 200,
+        easing: "easeOutQuad",
+      });
+    }
 
     this.clearEyesRotationAnimation();
     this.clearEyesRollAnimation();
     this.clearEyesScaleAnimation();
     this.clearLegsRotationAnimation();
     this.clearLegsRotationAnimation(true);
+
+    this.resetEyesScale();
 
     this.resetLegs();
 
