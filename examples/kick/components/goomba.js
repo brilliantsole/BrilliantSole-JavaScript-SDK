@@ -1100,6 +1100,12 @@ AFRAME.registerComponent("goomba", {
   petSquashEyesRollRange: { min: 0.4, max: 0.6 },
   petEyeSquashRange: { min: -0.03, max: 0.01 },
 
+  petBodyPitchRange: { min: -0.05, max: 0.05 },
+  petSquashBodyPitchRange: { min: -10, max: 5 },
+
+  petBodyRollRange: { min: -0.05, max: 0.05 },
+  petSquashBodyRollRange: { min: 5, max: -5 },
+
   tick: function (time, timeDelta) {
     this.el.object3D.getWorldPosition(this.worldPosition);
     this.el.object3D.getWorldQuaternion(this.worldQuaternion);
@@ -1113,10 +1119,14 @@ AFRAME.registerComponent("goomba", {
 
     this.latestTick = time;
 
-    if (this.status == "idle" || this.status == "petting") {
+    if (
+      this.status == "idle" ||
+      this.status == "petting" ||
+      this.status == "walking"
+    ) {
       if (this.latestTick - this.lastPetTick > this.petInterval) {
         this.lastPetTick = this.latestTick;
-        if (this.status == "idle") {
+        if (this.status == "idle" || this.status == "walking") {
           for (const side in this.hands) {
             const hand = this.hands[side];
             if (hand.controllerPresent) {
@@ -1203,22 +1213,68 @@ AFRAME.registerComponent("goomba", {
                 true
               );
 
-              // FILL - roll eyes
-              // FILL - body roll/pitch
-
-              const eyesRoll = THREE.MathUtils.lerp(
-                this.petSquashEyesRollRange.min,
-                this.petSquashEyesRollRange.max,
+              squashInterpolation = THREE.MathUtils.inverseLerp(
+                this.petBodyPitchRange.min,
+                this.petBodyPitchRange.max,
+                this.localPetPosition.z
+              );
+              clampedSquashInterpolation = THREE.MathUtils.clamp(
+                squashInterpolation,
+                0,
+                1
+              );
+              const bodyPitch = THREE.MathUtils.lerp(
+                this.petSquashBodyPitchRange.min,
+                this.petSquashBodyPitchRange.max,
                 clampedSquashInterpolation
               );
-              this.setEyesRoll(
-                { roll: eyesRoll },
-                dur,
-                easing,
-                false,
-                undefined,
-                true
-              ); // FIX
+
+              squashInterpolation = THREE.MathUtils.inverseLerp(
+                this.petBodyRollRange.min,
+                this.petBodyRollRange.max,
+                this.localPetPosition.x
+              );
+              clampedSquashInterpolation = THREE.MathUtils.clamp(
+                squashInterpolation,
+                0,
+                1
+              );
+              const bodyRoll = THREE.MathUtils.lerp(
+                this.petSquashBodyRollRange.min,
+                this.petSquashBodyRollRange.max,
+                clampedSquashInterpolation
+              );
+
+              if (true) {
+                this.squash.removeAttribute("animation__rot");
+                this.squash.setAttribute("animation__rot", {
+                  property: "rotation",
+                  to: `${bodyPitch} 0 ${bodyRoll}`,
+                  dur: dur,
+                  easing: easing,
+                });
+              } else {
+                this.squash.object3D.rotation.x =
+                  THREE.MathUtils.degToRad(bodyPitch);
+                this.squash.object3D.rotation.z =
+                  THREE.MathUtils.degToRad(bodyRoll);
+              }
+
+              if (false) {
+                const eyesRoll = THREE.MathUtils.lerp(
+                  this.petSquashEyesRollRange.min,
+                  this.petSquashEyesRollRange.max,
+                  clampedSquashInterpolation
+                );
+                this.setEyesRoll(
+                  { roll: eyesRoll },
+                  dur,
+                  easing,
+                  false,
+                  undefined,
+                  true
+                );
+              }
             }
           } else {
             this.setStatus("idle");
@@ -2038,6 +2094,16 @@ AFRAME.registerComponent("goomba", {
     "shocked",
   ],
 
+  resetSquashRotation: function () {
+    this.squash.removeAttribute("animation__rot");
+    this.squash.setAttribute("animation__rot", {
+      property: "rotation",
+      to: `0 0 0`,
+      dur: 300,
+      easing: "easeOutQuad",
+    });
+  },
+
   setStatus: async function (newStatus) {
     if (this.status == newStatus) {
       return;
@@ -2075,6 +2141,8 @@ AFRAME.registerComponent("goomba", {
     this.resetEyesScale();
 
     this.resetLegs();
+
+    this.resetSquashRotation();
 
     this.pointToWalkToSphere.setAttribute("visible", false);
 
