@@ -22,7 +22,7 @@ AFRAME.registerComponent("goomba", {
 
   init: function () {
     this.sphere = new THREE.Sphere();
-    this.sphere.radius = 0.3;
+    this.sphere.radius = 0.2;
 
     this.hands = {};
 
@@ -1056,7 +1056,7 @@ AFRAME.registerComponent("goomba", {
   squashLookAtInterval: 300,
 
   walkInterval: 100,
-  walkSpeed: 0.00015,
+  walkSpeed: 0.0001,
   walkIntervalRange: { min: 100, max: 1200 },
   walkAngleRange: { min: -30, max: 30 },
 
@@ -1066,7 +1066,8 @@ AFRAME.registerComponent("goomba", {
   petDistanceThreshold: 0.1,
 
   tick: function (time, timeDelta) {
-    this.sphere.center.copy(this.el.object3D.position);
+    this.el.object3D.getWorldPosition(this.worldPosition);
+    this.sphere.center.copy(this.worldPosition);
 
     if ("updatePhysicsEnabledFlag" in this) {
       const enabled = this.updatePhysicsEnabledFlag;
@@ -1161,36 +1162,44 @@ AFRAME.registerComponent("goomba", {
 
         const distance = this.walkInterval * this.walkSpeed;
 
-        // FILL - make sure movement is not within some distance of other goombas
-        let attempts = 0;
-        const turnSections = 8;
+        let attempts = -1;
+        const turnSections = 12;
         const turnAngle = 360 / turnSections;
         const turnScalar = Math.round(Math.random()) ? 1 : -1;
+        let didIntersectGoomba = false;
         do {
+          attempts++;
           let angle = turnAngle * turnScalar * attempts + angleOffset;
+          let shouldBreak = false;
           if (attempts == turnSections) {
-            console.log("turned too many times - just gonna turn around");
             angle = 180;
-            isAngleRelative = false;
+            isAngleRelative = true;
+            shouldBreak = true;
           }
           this.pointToWalkToOffset.set(0, 0, distance);
           this.pointToWalkToOffset.applyAxisAngle(
             this.worldBasis.up,
             THREE.MathUtils.degToRad(angle)
           );
-          attempts++;
           if (isAngleRelative) {
             this.pointToWalkToOffset.applyQuaternion(this.worldQuaternion);
           }
           // console.log({ attempts });
 
-          this.el.object3D.getWorldPosition(this.tempPointToWalkTo);
+          this.tempPointToWalkTo.copy(this.worldPosition);
           this.tempPointToWalkTo.add(this.pointToWalkToOffset);
           this.floor.components["obb-collider"].obb.clampPoint(
             this.tempPointToWalkTo,
             this.clampedTempPointToWalkTo
           );
+          if (shouldBreak) {
+            break;
+          }
+          didIntersectGoomba = this.doesPointIntersectAnyGoombas(
+            this.tempPointToWalkTo
+          );
         } while (
+          didIntersectGoomba ||
           Math.abs(this.clampedTempPointToWalkTo.x - this.tempPointToWalkTo.x) >
             0.001 ||
           Math.abs(this.clampedTempPointToWalkTo.z - this.tempPointToWalkTo.z) >
@@ -1212,8 +1221,10 @@ AFRAME.registerComponent("goomba", {
         this.quaternionToTurnTo.setFromEuler(this.tempEuler);
 
         if (this.slowDown) {
-          //this.setStatus("idle"); // FIX
+          this.setStatus("idle");
           this.slowDown = false;
+          this.isLockedToCamera = true;
+          this.lookAtObject(this.camera);
         }
         this.angle = THREE.MathUtils.radToDeg(angle);
       }
@@ -1272,10 +1283,11 @@ AFRAME.registerComponent("goomba", {
       }
     }
     if (
-      true ||
       this.status == "idle" ||
       this.status == "grabbed" ||
-      this.status == "falling"
+      this.status == "falling" ||
+      this.status == "walking" ||
+      this.status == "getting up"
     ) {
       if (time - this.lastBlinkTick > this.blinkInterval) {
         this.blink();
@@ -1306,7 +1318,10 @@ AFRAME.registerComponent("goomba", {
         }
       }
 
-      if (time - this.lastChangeLookAtTick > this.changeLookAtInterval) {
+      if (
+        !this.isLockedToCamera &&
+        time - this.lastChangeLookAtTick > this.changeLookAtInterval
+      ) {
         this.lastChangeLookAtTick = time;
         this.checkObjectToLookAt();
       }
@@ -1438,6 +1453,16 @@ AFRAME.registerComponent("goomba", {
         }
       }
     }
+  },
+
+  doesPointIntersectAnyGoombas: function (point) {
+    const index = window.goombas.indexOf(this);
+    return window.goombas
+      .filter((goomba, _index) => _index < index)
+      .filter((goomba) => goomba != this)
+      .some((goomba) => {
+        return goomba.sphere.containsPoint(point);
+      });
   },
 
   orientations: [
@@ -1904,6 +1929,7 @@ AFRAME.registerComponent("goomba", {
       console.error(`invalid status "${newStatus}"`);
       return;
     }
+    this.isLockedToCamera = false;
     this.stopWalking();
     this.status = newStatus;
     //console.log(`new status "${this.status}"`);
@@ -2008,6 +2034,8 @@ AFRAME.registerComponent("goomba", {
         break;
       case "getting up":
         await this.getUp();
+        this.lastChangeLookAtTick = 0;
+        this.lastEyeRefocusTick = 0;
         this.setStatus("walking");
         break;
       case "idle":
