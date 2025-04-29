@@ -23,10 +23,12 @@ AFRAME.registerComponent("goomba", {
   init: function () {
     this.hands = {};
 
+    this.collisionVector = new THREE.Vector3();
+
     this.lastPetTick = 0;
     this.petPosition = new THREE.Vector3();
 
-    this.lastTimeCollidedWhenWalking = 0;
+    this.lastTimeCollidedWhenWalking;
 
     this.el.shapeMain = this.shapeMain;
 
@@ -165,6 +167,7 @@ AFRAME.registerComponent("goomba", {
       });
 
       this.squash = this.el.querySelector(".squash");
+      this.body = this.el.querySelector(".body");
 
       this.el.querySelectorAll(".left").forEach((entity) => {
         const duplicate = entity.cloneNode(true);
@@ -250,6 +253,8 @@ AFRAME.registerComponent("goomba", {
     }
   },
 
+  debugColors: false,
+
   onObbCollisionStarted: async function (event) {
     const collidedEntity = event.detail.withEl;
     const otherGoomba = collidedEntity.components["goomba"];
@@ -263,20 +268,78 @@ AFRAME.registerComponent("goomba", {
           ) {
             return;
           }
+          if (
+            this.lastTimeCollidedWhenWalking != undefined &&
+            this.latestTick - this.lastTimeCollidedWhenWalking < 200
+          ) {
+            return;
+          }
+          if (
+            otherGoomba.lastTimeCollidedWhenWalking != undefined &&
+            otherGoomba.latestTick - otherGoomba.lastTimeCollidedWhenWalking <
+              200
+          ) {
+            return;
+          }
+          if (
+            this.lastCollisionGoomba == otherGoomba &&
+            otherGoomba.lastCollisionGoomba == this
+          ) {
+            return;
+          }
+
+          if (this.debugColors) {
+            this.body.setAttribute("color", "yellow");
+            otherGoomba.body.setAttribute("color", "yellow");
+          }
+
           this.collidedWhenWalking = true;
           otherGoomba.collidedWhenWalking = true;
 
-          this.collidedNewAngle = otherGoomba.angle;
-          otherGoomba.collidedNewAngle = this.angle;
+          if (true) {
+            if (true) {
+              this.collisionVector.subVectors(
+                otherGoomba.el.object3D.position,
+                this.el.object3D.position
+              );
+              let angle = Math.atan2(
+                this.collisionVector.x,
+                this.collisionVector.z
+              );
+              angle = THREE.MathUtils.radToDeg(angle);
 
-          this.lastWalkTick = 0;
-          otherGoomba.lastWalkTick = 0;
+              let offset = 90;
+              if (
+                Math.abs(this.angle - (angle + offset)) >
+                Math.abs(this.angle - (angle - offset))
+              ) {
+                offset = -90;
+              }
 
-          console.log(
-            "collided with other goomba",
-            this.collidedNewAngle,
-            otherGoomba.collidedNewAngle
-          );
+              this.collidedNewAngle = angle + offset;
+              otherGoomba.collidedNewAngle = angle + 180 + offset;
+            } else {
+              this.collidedNewAngle = this.angle + offset;
+              otherGoomba.collidedNewAngle = otherGoomba.angle + offset;
+            }
+          } else {
+            const sign = Math.round(Math.random()) ? 1 : -1;
+            const offset = 90 * sign;
+            this.collidedNewAngle = otherGoomba.angle;
+            otherGoomba.collidedNewAngle = this.angle;
+          }
+
+          this.lastCollisionGoomba = otherGoomba;
+          otherGoomba.lastCollisionGoomba = this;
+
+          this.lastWalkTick = -this.walkInterval;
+          otherGoomba.lastWalkTick = -otherGoomba.walkInterval;
+
+          // console.log(
+          //   "collided with other goomba",
+          //   this.collidedNewAngle,
+          //   otherGoomba.collidedNewAngle
+          // );
         }
         break;
     }
@@ -1073,26 +1136,27 @@ AFRAME.registerComponent("goomba", {
         );
 
         let isAngleRelative = true;
-        if (
-          this.collidedWhenWalking &&
-          this.latestTick - this.lastTimeCollidedWhenWalking > 1000
-        ) {
+        if (this.collidedWhenWalking) {
+          if (this.debugColors) {
+            this.body.setAttribute("color", "#a14e00");
+          }
+
           this.collidedWhenWalking = false;
           this.lastTimeCollidedWhenWalking = this.latestTick;
           if (this.collidedNewAngle != undefined) {
             isAngleRelative = false;
-            // console.log({ collidedNewAngle: this.collidedNewAngle });
             angleOffset = this.collidedNewAngle;
             this.collidedNewAngle = undefined;
           } else {
             angleOffset = 180;
           }
-          this.walkInterval = 1000;
+          this.walkInterval = 300;
           // console.log("collided angleOffset", angleOffset);
         }
 
         const distance = this.walkInterval * this.walkSpeed;
 
+        // FILL - make sure movement is not within some distance of other goombas
         let attempts = 0;
         const turnScalar = Math.round(Math.random()) ? 1 : -1;
         do {
@@ -1102,10 +1166,10 @@ AFRAME.registerComponent("goomba", {
             THREE.MathUtils.degToRad(angleOffset + attempts * 45 * turnScalar)
           );
           attempts++;
-          // console.log({ attempts });
           if (isAngleRelative) {
             this.pointToWalkToOffset.applyQuaternion(this.worldQuaternion);
           }
+          // console.log({ attempts });
 
           this.el.object3D.getWorldPosition(this.tempPointToWalkTo);
           this.tempPointToWalkTo.add(this.pointToWalkToOffset);

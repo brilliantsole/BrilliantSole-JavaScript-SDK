@@ -76,15 +76,15 @@
         </a-mixin>
         <a-mixin id="realWorldMeshMixin" occlude-mesh></a-mixin>
       </a-assets>
-      <a-camera
-        class="lookAt"
-        id="camera"
-        position="0 1 0"
-        rotation="0 0 0"
-        _raycaster="objects: .raycastable; interval: 100;"
-      >
-        <!-- <a-sphere color="black" radius="0.001" position="0 0 -0.1"></a-sphere> -->
-      </a-camera>
+      <a-entity rotation="-90 0 0" position="0 2 1">
+        <a-camera
+          class="lookAt"
+          id="camera"
+          _raycaster="objects: .raycastable; interval: 100;"
+        >
+          <!-- <a-sphere color="black" radius="0.001" position="0 0 -0.1"></a-sphere> -->
+        </a-camera>
+      </a-entity>
 
       <a-entity
         id="anchor"
@@ -100,20 +100,20 @@
         ></a-entity>
       </a-entity>
 
-      <a-entity
+      <!-- <a-entity
         goomba="grabbable: true;"
         id="goomba1"
-        position="0.1 1.0 -0.5"
-        rotation="0 0 0"
+        position="0 1.0 -0.3"
+        rotation="0 -180 0"
       ></a-entity>
       <a-entity
         goomba="grabbable: true;"
         id="goomba2"
-        position="-0.1 1.0 -0.5"
+        position="0 1.0 -0.6"
         rotation="0 0 0"
-      ></a-entity>
+      ></a-entity> -->
       <a-box
-        scale="0.5 0.05 0.5"
+        scale="2 0.05 2"
         static-body
         position="0 0.8 -0.5"
         data-world-mesh="floor"
@@ -246,12 +246,12 @@
       }, 1);
     });
 
-    for (let i = 0; i < 0; i++) {
+    for (let i = 0; i < 10; i++) {
       const goomba = document.createElement("a-entity");
       goomba.setAttribute("goomba", "");
       goomba.setAttribute(
         "position",
-        `${Math.random() * 0.25 - 0.125} 1 ${Math.random() * 0.25 - 0.125}`
+        `${Math.random() * 1 - 0.5} 1.1 ${Math.random() * 1 - 0.5 - 0.5}`
       );
       goomba.setAttribute("rotation", `0 ${Math.random() * 360} 0`);
       scene.appendChild(goomba);
