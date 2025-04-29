@@ -21,6 +21,9 @@ AFRAME.registerComponent("goomba", {
         offset: 0 0 0;`,
 
   init: function () {
+    this.sphere = new THREE.Sphere();
+    this.sphere.radius = 0.3;
+
     this.hands = {};
 
     this.collisionVector = new THREE.Vector3();
@@ -1063,6 +1066,8 @@ AFRAME.registerComponent("goomba", {
   petDistanceThreshold: 0.1,
 
   tick: function (time, timeDelta) {
+    this.sphere.center.copy(this.el.object3D.position);
+
     if ("updatePhysicsEnabledFlag" in this) {
       const enabled = this.updatePhysicsEnabledFlag;
       this.updatePhysicsEnabled(enabled);
@@ -1158,12 +1163,20 @@ AFRAME.registerComponent("goomba", {
 
         // FILL - make sure movement is not within some distance of other goombas
         let attempts = 0;
+        const turnSections = 8;
+        const turnAngle = 360 / turnSections;
         const turnScalar = Math.round(Math.random()) ? 1 : -1;
         do {
+          let angle = turnAngle * turnScalar * attempts + angleOffset;
+          if (attempts == turnSections) {
+            console.log("turned too many times - just gonna turn around");
+            angle = 180;
+            isAngleRelative = false;
+          }
           this.pointToWalkToOffset.set(0, 0, distance);
           this.pointToWalkToOffset.applyAxisAngle(
             this.worldBasis.up,
-            THREE.MathUtils.degToRad(angleOffset + attempts * 45 * turnScalar)
+            THREE.MathUtils.degToRad(angle)
           );
           attempts++;
           if (isAngleRelative) {
