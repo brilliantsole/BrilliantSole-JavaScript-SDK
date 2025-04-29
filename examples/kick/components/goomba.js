@@ -778,6 +778,7 @@ AFRAME.registerComponent("goomba", {
     if (object == this.objectToLookAt) {
       return;
     }
+
     this.objectToLookAt = object;
     if (!this.objectToLookAt) {
       this.resetEyes();
@@ -824,6 +825,14 @@ AFRAME.registerComponent("goomba", {
       }
       if (!entity.isPlaying) {
         return;
+      }
+      if (this.isLockedToCamera) {
+        if (
+          entity != this.camera &&
+          !entity.components["hand-tracking-controls"]
+        ) {
+          return;
+        }
       }
       if (entity.components["hand-tracking-controls"]) {
         if (!entity.components["hand-tracking-controls"].controllerPresent) {
@@ -1089,6 +1098,8 @@ AFRAME.registerComponent("goomba", {
             if (distance < this.petDistanceThreshold) {
               this.petSide = side;
               this.setStatus("petting");
+              this.isLockedToCamera = true;
+              this.lookAtObject(this.camera);
               break;
             }
           }
@@ -1318,10 +1329,7 @@ AFRAME.registerComponent("goomba", {
         }
       }
 
-      if (
-        !this.isLockedToCamera &&
-        time - this.lastChangeLookAtTick > this.changeLookAtInterval
-      ) {
+      if (time - this.lastChangeLookAtTick > this.changeLookAtInterval) {
         this.lastChangeLookAtTick = time;
         this.checkObjectToLookAt();
       }

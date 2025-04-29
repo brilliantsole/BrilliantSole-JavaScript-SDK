@@ -30,7 +30,7 @@ AFRAME.registerComponent("grabbable-physics-body", {
       this.angularVelocity.set(0, 0, 0);
       this.rotationHistory = [];
 
-      console.log("removing physics");
+      // console.log("removing physics");
       this.el.removeAttribute("static-body");
       this.el.removeAttribute("dynamic-body");
     });
@@ -69,7 +69,7 @@ AFRAME.registerComponent("grabbable-physics-body", {
         this.angularVelocity.set(0, 0, 0);
       }
 
-      console.log("adding physics", this.data.type);
+      // console.log("adding physics", this.data.type);
       // Re-add physics and apply velocity
       if (this.data.type === "static") {
         this.el.setAttribute("static-body", this.data.staticBody);
