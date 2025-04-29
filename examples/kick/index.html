@@ -59,7 +59,7 @@
 
     <a-scene
       id="scene"
-      physics="debug: true; restitution: 0.4;"
+      physics="debug: false; restitution: 0.4;"
       embedded
       grabbable-listener
       obb-collider="showColliders: false;"
@@ -103,18 +103,24 @@
       <a-entity
         goomba="grabbable: true;"
         id="goomba1"
-        position="0 1.0 -0.5"
+        position="0.1 1.0 -0.5"
         rotation="0 0 0"
       ></a-entity>
-      <!-- <a-box
-        scale="1 0.05 1"
+      <a-entity
+        goomba="grabbable: true;"
+        id="goomba2"
+        position="-0.1 1.0 -0.5"
+        rotation="0 0 0"
+      ></a-entity>
+      <a-box
+        scale="0.5 0.05 0.5"
         static-body
         position="0 0.8 -0.5"
         data-world-mesh="floor"
         color="blue"
         obb-collider
         id="testBox"
-      ></a-box> -->
+      ></a-box>
 
       <template id="goombaTemplate">
         <a-entity>
@@ -140,7 +146,7 @@
               >
               </a-sphere>
               <a-sphere
-                radius="0.2"
+                radius="0.3"
                 class="raycastable"
                 color="yellow"
                 visible="false"
@@ -172,7 +178,7 @@
           </a-entity>
           <a-entity
             class="left leg"
-            position="-0.036 -0.026 0"
+            position="-0.036 -0.026 0.005"
             rotation="0 -16.292 -8.000"
           >
             <a-sphere
@@ -238,6 +244,24 @@
           }
         }, 100);
       }, 1);
+    });
+
+    for (let i = 0; i < 0; i++) {
+      const goomba = document.createElement("a-entity");
+      goomba.setAttribute("goomba", "");
+      goomba.setAttribute(
+        "position",
+        `${Math.random() * 0.25 - 0.125} 1 ${Math.random() * 0.25 - 0.125}`
+      );
+      goomba.setAttribute("rotation", `0 ${Math.random() * 360} 0`);
+      scene.appendChild(goomba);
+    }
+
+    scene.addEventListener("loaded", () => {
+      goombas.forEach((goomba) => {
+        goomba.updatePhysicsEnabled(true);
+        goomba.setStatus("falling");
+      });
     });
   </script>
 </html>

@@ -134,12 +134,14 @@ AFRAME.registerComponent("goomba", {
 
     this.lastTimeLookedAt = 0;
 
+    this.camera = document.querySelector("a-camera");
+
     this.el.addEventListener("loaded", () => {
       const template = this.data.template.content
         .querySelector("a-entity")
         .cloneNode(true);
       template.classList.forEach((_class) => {
-        console.log(`adding class ${_class}`);
+        // console.log(`adding class ${_class}`);
         this.el.classList.add(_class);
       });
       Array.from(template.children).forEach((entity) => {
@@ -163,8 +165,6 @@ AFRAME.registerComponent("goomba", {
       });
 
       this.squash = this.el.querySelector(".squash");
-
-      this.camera = document.querySelector("a-camera");
 
       this.el.querySelectorAll(".left").forEach((entity) => {
         const duplicate = entity.cloneNode(true);
@@ -343,7 +343,6 @@ AFRAME.registerComponent("goomba", {
   updatePhysicsEnabled: function (enabled) {
     if (enabled) {
       if (this.status == "walking") {
-        console.log("static body!");
         this.el.setAttribute("static-body", this.staticBody);
       } else {
         this.el.setAttribute("dynamic-body", this.dynamicBody);
@@ -1046,6 +1045,15 @@ AFRAME.registerComponent("goomba", {
     }
 
     if (this.status == "walking") {
+      if (!this.slowDown) {
+        this.slowDown =
+          this.slowDown ||
+          (this.objectToLookAt == this.camera && this.isLookedAt);
+        if (this.slowDown) {
+          //this.walkInterval *= 2;
+        }
+      }
+
       if (time - this.lastWalkTick > this.walkInterval) {
         this.lastWalkTick = time;
         this.walkInterval = THREE.MathUtils.lerp(
@@ -1055,8 +1063,6 @@ AFRAME.registerComponent("goomba", {
         );
 
         this.el.object3D.getWorldQuaternion(this.worldQuaternion);
-
-        const distance = this.walkInterval * this.walkSpeed;
 
         let angleOffset = 0;
 
@@ -1069,7 +1075,7 @@ AFRAME.registerComponent("goomba", {
         let isAngleRelative = true;
         if (
           this.collidedWhenWalking &&
-          this.latestTick - this.lastTimeCollidedWhenWalking > 100
+          this.latestTick - this.lastTimeCollidedWhenWalking > 1000
         ) {
           this.collidedWhenWalking = false;
           this.lastTimeCollidedWhenWalking = this.latestTick;
@@ -1081,8 +1087,11 @@ AFRAME.registerComponent("goomba", {
           } else {
             angleOffset = 180;
           }
+          this.walkInterval = 1000;
           // console.log("collided angleOffset", angleOffset);
         }
+
+        const distance = this.walkInterval * this.walkSpeed;
 
         let attempts = 0;
         const turnScalar = Math.round(Math.random()) ? 1 : -1;
@@ -1125,8 +1134,9 @@ AFRAME.registerComponent("goomba", {
         this.tempEuler.set(0, angle, 0);
         this.quaternionToTurnTo.setFromEuler(this.tempEuler);
 
-        if (this.objectToLookAt == this.camera && this.isLookedAt) {
-          this.setStatus("idle");
+        if (this.slowDown) {
+          //this.setStatus("idle"); // FIX
+          this.slowDown = false;
         }
         this.angle = THREE.MathUtils.radToDeg(angle);
       }
@@ -1819,7 +1829,7 @@ AFRAME.registerComponent("goomba", {
     }
     this.stopWalking();
     this.status = newStatus;
-    console.log(`new status "${this.status}"`);
+    //console.log(`new status "${this.status}"`);
 
     this.el.removeAttribute("animation__turn");
 

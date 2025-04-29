@@ -81,6 +81,7 @@ AFRAME.registerComponent("grabbable-physics-body", {
         if (shapeMain) {
           // console.log("shape__main", shapeMain);
           //this.el.setAttribute("shape__main", shapeMain);
+          // should wait for 'goomba' component to load
         }
         this.el.setAttribute(
           "shape__main",
