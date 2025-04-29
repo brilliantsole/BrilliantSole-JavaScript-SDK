@@ -701,7 +701,7 @@ AFRAME.registerComponent("goomba", {
     this.lookAtPosition.copy(position);
     if (refocus) {
       if (true) {
-        this.el.object3D.getWorldQuaternion(this.worldQuaternion);
+        // this.el.object3D.getWorldQuaternion(this.worldQuaternion);
 
         const intervalInterpolation = THREE.MathUtils.inverseLerp(
           0,
@@ -805,8 +805,6 @@ AFRAME.registerComponent("goomba", {
   checkObjectToLookAt: function () {
     let closestEntity;
     let closestDistance = 1;
-    this.el.object3D.getWorldPosition(this.worldPosition);
-    this.el.object3D.getWorldQuaternion(this.worldQuaternion);
     this.forwardVector
       .set(0, 0, 1)
       .applyQuaternion(this.worldQuaternion)
@@ -826,14 +824,6 @@ AFRAME.registerComponent("goomba", {
       if (!entity.isPlaying) {
         return;
       }
-      if (this.isLockedToCamera) {
-        if (
-          entity != this.camera &&
-          !entity.components["hand-tracking-controls"]
-        ) {
-          return;
-        }
-      }
       if (entity.components["hand-tracking-controls"]) {
         if (!entity.components["hand-tracking-controls"].controllerPresent) {
           return;
@@ -843,6 +833,15 @@ AFRAME.registerComponent("goomba", {
         );
       } else {
         entity.object3D.getWorldPosition(this.otherWorldPosition);
+      }
+
+      if (this.isLockedToCamera) {
+        if (
+          entity != this.camera &&
+          !entity.components["hand-tracking-controls"]
+        ) {
+          return;
+        }
       }
 
       this.toVector.subVectors(this.otherWorldPosition, this.worldPosition);
@@ -1076,6 +1075,7 @@ AFRAME.registerComponent("goomba", {
 
   tick: function (time, timeDelta) {
     this.el.object3D.getWorldPosition(this.worldPosition);
+    this.el.object3D.getWorldQuaternion(this.worldQuaternion);
     this.sphere.center.copy(this.worldPosition);
 
     if ("updatePhysicsEnabledFlag" in this) {
@@ -1141,8 +1141,6 @@ AFRAME.registerComponent("goomba", {
           this.walkIntervalRange.max,
           Math.random()
         );
-
-        this.el.object3D.getWorldQuaternion(this.worldQuaternion);
 
         let angleOffset = 0;
 
@@ -1363,9 +1361,6 @@ AFRAME.registerComponent("goomba", {
             );
           }
         } else {
-          this.el.object3D.getWorldPosition(this.worldPosition);
-          this.el.object3D.getWorldQuaternion(this.worldQuaternion);
-
           let changeFocus = false;
           this.forwardVector
             .set(0, 0, 1)
@@ -1496,7 +1491,7 @@ AFRAME.registerComponent("goomba", {
       };
     }
     const { forward, up, right } = this.orientationVectors;
-    this.el.object3D.getWorldQuaternion(this.worldQuaternion);
+    // this.el.object3D.getWorldQuaternion(this.worldQuaternion);
     forward.set(0, 0, 1).applyQuaternion(this.worldQuaternion).normalize();
     up.set(0, 1, 0).applyQuaternion(this.worldQuaternion).normalize();
     right.set(1, 0, 0).applyQuaternion(this.worldQuaternion).normalize();
@@ -1548,6 +1543,7 @@ AFRAME.registerComponent("goomba", {
       : (Math.pow(2, -20 * x + 10) * Math.sin((20 * x - 11.125) * c5)) / 2 + 1;
   },
   getUp: async function (dur = 1500, easing = "easeInOutElastic") {
+    // this.el.object3D.getWorldQuaternion(this.worldQuaternion);
     this.el.removeAttribute("grabbable");
     setTimeout(() => {
       this.el.setAttribute("grabbable", "");
@@ -1605,15 +1601,21 @@ AFRAME.registerComponent("goomba", {
     from = from;
 
     if (true) {
-      // this.rollTempEuler.set(
-      //   ...from.map((value) => THREE.MathUtils.degToRad(value))
-      // );
-      // this.rollQuaternionFrom.setFromEuler(this.rollTempEuler);
-      this.rollQuaternionFrom.copy(this.el.object3D.quaternion);
+      if (true) {
+        this.rollTempEuler.set(
+          ...from.map((value) => THREE.MathUtils.degToRad(value)),
+          "YXZ"
+        );
+        console.log(this.rollTempEuler);
+        this.rollQuaternionFrom.setFromEuler(this.rollTempEuler);
+      } else {
+        this.rollQuaternionFrom.copy(this.el.object3D.quaternion);
+      }
 
       this.rollTempEuler.set(
         ...to.map((value) => THREE.MathUtils.degToRad(value))
       );
+
       this.rollQuaternionTo.setFromEuler(this.rollTempEuler);
 
       this.isRolling = true;
@@ -1653,7 +1655,6 @@ AFRAME.registerComponent("goomba", {
         break;
     }
 
-    this.el.object3D.getWorldPosition(this.worldPosition);
     this.getUpPosition = this.getUpPosition || new THREE.Vector3();
     switch (this.orientation) {
       case "frontSide":
@@ -1794,8 +1795,9 @@ AFRAME.registerComponent("goomba", {
     forward.y = 0; // Flatten onto XZ plane
     forward.normalize();
 
-    const yaw = Math.atan2(forward.x, forward.z); // X first, then Z
-    return THREE.MathUtils.radToDeg(yaw); // In radians
+    let yaw = Math.atan2(forward.x, forward.z); // X first, then Z
+    yaw = THREE.MathUtils.radToDeg(yaw); // In radians
+    return yaw;
   },
 
   walkingStepScalar: 0.5,
