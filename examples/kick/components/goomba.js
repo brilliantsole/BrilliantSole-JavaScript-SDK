@@ -146,6 +146,8 @@ AFRAME.registerComponent("goomba", {
     this.el.addEventListener("loaded", () => {
       this.el.addEventListener("punch", this.onPunch.bind(this));
 
+      this.el.addEventListener("body-loaded", this.onBodyLoaded.bind(this));
+
       const template = this.data.template.content
         .querySelector("a-entity")
         .cloneNode(true);
@@ -248,9 +250,61 @@ AFRAME.registerComponent("goomba", {
 
   onPunch: function (event) {
     const { velocity, position } = event.detail;
+    this.punch(velocity, position);
+  },
+
+  punch: function (velocity, position) {
+    if (!position) {
+      position = this.el.object3D.getWorldPosition(new THREE.Vector3());
+    }
     console.log("punched", velocity, position);
-    // FILL - add physics body
-    // FILL - apply velocity and random rotation
+    this.physicsOptions = { velocity, position };
+    this.setPhysicsEnabled(true);
+  },
+
+  velocityScalar: 4,
+
+  onBodyLoaded: function () {
+    console.log("onBodyLoaded");
+    if (this.physicsOptions) {
+      const { position, velocity } = this.physicsOptions;
+      this.physicsOptions = undefined;
+
+      const body = this.el.body;
+      if (body) {
+        setTimeout(() => {
+          this.setPhysicsEnabled(true);
+          this.setStatus("falling");
+          this.landed = false;
+          this.floor = undefined;
+
+          if (true) {
+            console.log("applying impulse", velocity, position);
+            body.applyImpulse(
+              new CANNON.Vec3().copy(velocity.multiplyScalar(this.punchScalar)),
+              position
+            );
+          } else {
+            console.log("setting velocity", velocity);
+            body.velocity.set(
+              velocity.x * this.velocityScalar,
+              velocity.y * this.velocityScalar,
+              velocity.z * this.velocityScalar
+            );
+
+            const angularVelocity = new THREE.Vector3();
+            console.log("setting angularVelocity", this.angularVelocity);
+            body.angularVelocity.set(
+              angularVelocity.x,
+              angularVelocity.y,
+              angularVelocity.z
+            );
+          }
+        }, 1);
+      } else {
+        console.error("body not found");
+      }
+    }
   },
 
   onCollide: async function (event) {
@@ -414,6 +468,8 @@ AFRAME.registerComponent("goomba", {
     }
   },
 
+  punchScalar: 2,
+
   setPhysicsEnabled: function (enabled) {
     this.updatePhysicsEnabledFlag = enabled;
   },
@@ -421,11 +477,12 @@ AFRAME.registerComponent("goomba", {
     if (enabled) {
       if (this.status == "walking") {
         this.el.setAttribute("static-body", this.staticBody);
+        this.el.setAttribute("shape__main", this.shapeMain);
       } else {
+        console.log("setting dynamic-body");
         this.el.setAttribute("dynamic-body", this.dynamicBody);
+        this.el.setAttribute("shape__main", this.shapeMain);
       }
-      this.el.setAttribute("dynamic-body", this.dynamicBody);
-      this.el.setAttribute("shape__main", this.shapeMain);
     } else {
       this.el.removeAttribute("dynamic-body");
       this.el.removeAttribute("static-body");
@@ -1716,16 +1773,17 @@ AFRAME.registerComponent("goomba", {
   },
   getUp: async function (dur = 1500, easing = "easeInOutElastic") {
     // this.el.object3D.getWorldQuaternion(this.worldQuaternion);
-    this.el.removeAttribute("grabbable");
-    setTimeout(() => {
-      this.el.setAttribute("grabbable", "");
-    }, dur);
 
     this.checkOrientation();
 
     if (this.orientation == "upright") {
       return;
     }
+
+    this.el.removeAttribute("grabbable");
+    setTimeout(() => {
+      this.el.setAttribute("grabbable", "");
+    }, dur);
 
     this.getUpEuler = this.getUpEuler || new THREE.Euler();
     // let reorder = "XYZ";

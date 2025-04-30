@@ -20,6 +20,8 @@ AFRAME.registerComponent("grabbable-physics-body", {
     this.angularVelocityScalar = 1.0;
     this.angularVelocity = new THREE.Vector3();
 
+    this.el.addEventListener("body-loaded", this.onBodyLoaded.bind(this));
+
     this.el.addEventListener("grabstarted", () => {
       this.grabStartTime = Date.now();
       this.isGrabbed = true;
@@ -69,11 +71,22 @@ AFRAME.registerComponent("grabbable-physics-body", {
         this.angularVelocity.set(0, 0, 0);
       }
 
+      this.el.removeAttribute("dynamic-body");
+      this.el.removeAttribute("static-body");
+      this.el.removeAttribute("shape__main");
+
       // console.log("adding physics", this.data.type);
       // Re-add physics and apply velocity
       if (this.data.type === "static") {
         this.el.setAttribute("static-body", this.data.staticBody);
+        this.el.setAttribute(
+          "shape__main",
+          `shape: box;
+          halfExtents: 0.1 0.091 0.09;
+          offset: 0 0 0;`
+        );
       } else {
+        this.shouldSetVelocity = true;
         //console.log("setting dynamic body", this.data.dynamicBody);
         //this.el.setAttribute("dynamic-body", this.data.dynamicBody);
         this.el.setAttribute("dynamic-body", "shape: none;");
@@ -89,38 +102,36 @@ AFRAME.registerComponent("grabbable-physics-body", {
           halfExtents: 0.1 0.091 0.09;
           offset: 0 0 0;`
         );
-        const setVelocity = () => {
-          const body = this.el.body;
-          if (body) {
-            setTimeout(() => {
-              // console.log("setting velocity", this.velocity);
-              body.velocity.set(
-                this.velocity.x * this.velocityScalar,
-                this.velocity.y * this.velocityScalar,
-                this.velocity.z * this.velocityScalar
-              );
-
-              // console.log("setting angularVelocity", this.angularVelocity);
-              body.angularVelocity.set(
-                this.angularVelocity.x * this.angularVelocityScalar,
-                this.angularVelocity.y * this.angularVelocityScalar,
-                this.angularVelocity.z * this.angularVelocityScalar
-              );
-            }, 1);
-          }
-          return Boolean(body);
-        };
-        if (!setVelocity()) {
-          this.el.addEventListener(
-            "body-loaded",
-            () => {
-              setVelocity();
-            },
-            { once: true }
-          );
-        }
       }
     });
+  },
+
+  onBodyLoaded: function () {
+    if (!this.shouldSetVelocity) {
+      return;
+    }
+    console.log("grabbable physics onBodyLoaded");
+    this.shouldSetVelocity = false;
+    const body = this.el.body;
+    if (body) {
+      setTimeout(() => {
+        // console.log("setting velocity", this.velocity);
+        body.velocity.set(
+          this.velocity.x * this.velocityScalar,
+          this.velocity.y * this.velocityScalar,
+          this.velocity.z * this.velocityScalar
+        );
+
+        // console.log("setting angularVelocity", this.angularVelocity);
+        body.angularVelocity.set(
+          this.angularVelocity.x * this.angularVelocityScalar,
+          this.angularVelocity.y * this.angularVelocityScalar,
+          this.angularVelocity.z * this.angularVelocityScalar
+        );
+      }, 1);
+    } else {
+      console.error("body not found");
+    }
   },
 
   getAngularVelocityFromQuaternions: function (q1, q2, deltaTime) {
