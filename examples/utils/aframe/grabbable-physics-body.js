@@ -114,7 +114,9 @@ AFRAME.registerComponent("grabbable-physics-body", {
     this.shouldSetVelocity = false;
     const body = this.el.body;
     if (body) {
+      body.wakeUp();
       setTimeout(() => {
+        body.wakeUp();
         // console.log("setting velocity", this.velocity);
         body.velocity.set(
           this.velocity.x * this.velocityScalar,

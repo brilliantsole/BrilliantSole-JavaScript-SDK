@@ -18,10 +18,11 @@ AFRAME.registerComponent("goomba", {
   dynamicBody: "shape: none;",
   body: "type: dynamic; shape: none;",
   shapeMain: `shape: box;
-        halfExtents: 0.1 0.091 0.09;
-        offset: 0 0 0;`,
+          halfExtents: 0.1 0.091 0.09;
+          offset: 0 0 0;`,
 
   init: function () {
+    this.lastTimePunched = 0;
     this.sphere = new THREE.Sphere();
     this.sphere.radius = 0.2;
 
@@ -253,7 +254,14 @@ AFRAME.registerComponent("goomba", {
     this.punch(velocity, position);
   },
 
+  ignorePunchStatuses: ["falling", "getting up", "petting"],
+
   punch: function (velocity, position) {
+    if (this.ignorePunchStatuses.includes(this.status)) {
+      return;
+    }
+    this.setStatus("idle");
+    this.lastTimePunched = this.latestTick;
     if (!position) {
       position = this.el.object3D.getWorldPosition(new THREE.Vector3());
     }
@@ -272,17 +280,18 @@ AFRAME.registerComponent("goomba", {
 
       const body = this.el.body;
       if (body) {
+        body.wakeUp();
         setTimeout(() => {
-          this.setPhysicsEnabled(true);
+          body.wakeUp();
           this.setStatus("falling");
           this.landed = false;
           this.floor = undefined;
 
-          if (true) {
+          if (false) {
             console.log("applying impulse", velocity, position);
             body.applyImpulse(
               new CANNON.Vec3().copy(velocity.multiplyScalar(this.punchScalar)),
-              position
+              new CANNON.Vec3().copy(position)
             );
           } else {
             console.log("setting velocity", velocity);
@@ -309,11 +318,15 @@ AFRAME.registerComponent("goomba", {
 
   onCollide: async function (event) {
     const collidedEntity = event.detail.body.el;
+    // console.log("collided with", collidedEntity);
     switch (this.status) {
       case "falling":
         if (
           this.validWorldMeshTypes.includes(collidedEntity.dataset.worldMesh)
         ) {
+          if (this.latestTick - this.lastTimePunched < 100) {
+            return;
+          }
           this.resetLegs();
           this.setFloor(collidedEntity);
         }
@@ -428,6 +441,7 @@ AFRAME.registerComponent("goomba", {
           0.01;
         const stopped = stoppedMoving && stoppedRotating;
         if (stopped) {
+          // console.log("stopped");
           this.landed = true;
           clearInterval(this.floorInterval);
           this.setPhysicsEnabled(false);
@@ -468,18 +482,21 @@ AFRAME.registerComponent("goomba", {
     }
   },
 
-  punchScalar: 2,
+  punchScalar: 5,
 
   setPhysicsEnabled: function (enabled) {
     this.updatePhysicsEnabledFlag = enabled;
   },
   updatePhysicsEnabled: function (enabled) {
     if (enabled) {
+      this.el.removeAttribute("dynamic-body");
+      this.el.removeAttribute("static-body");
+      this.el.removeAttribute("shape__main");
+
       if (this.status == "walking") {
         this.el.setAttribute("static-body", this.staticBody);
         this.el.setAttribute("shape__main", this.shapeMain);
       } else {
-        console.log("setting dynamic-body");
         this.el.setAttribute("dynamic-body", this.dynamicBody);
         this.el.setAttribute("shape__main", this.shapeMain);
       }
@@ -1184,6 +1201,10 @@ AFRAME.registerComponent("goomba", {
     }
 
     this.latestTick = time;
+
+    if (this.latestTick - this.lastTimePunched < 100) {
+      return;
+    }
 
     if (
       this.status == "idle" ||

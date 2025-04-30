@@ -60,7 +60,7 @@
 
     <a-scene
       id="scene"
-      physics="debug: true; restitution: 0.4;"
+      physics="debug: false; restitution: 0.4;"
       embedded
       grabbable-listener
       obb-collider="showColliders: false;"
@@ -73,7 +73,12 @@
           id="anchorModel"
           src="../../assets/3d/anchor.glb"
         ></a-asset-item>
-        <a-mixin id="realWorldPlaneMixin" obb-collider static-body occlude-mesh>
+        <a-mixin
+          id="realWorldPlaneMixin"
+          obb-collider
+          static-body
+          visible="false"
+        >
         </a-mixin>
         <a-mixin id="realWorldMeshMixin" occlude-mesh></a-mixin>
       </a-assets>
