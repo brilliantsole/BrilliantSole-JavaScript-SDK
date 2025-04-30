@@ -248,6 +248,7 @@ AFRAME.registerComponent("goomba", {
   },
 
   validWorldMeshTypes: ["floor", "table"],
+  validHitWorldMeshTypes: ["wall"],
 
   onPunch: function (event) {
     const { velocity, position } = event.detail;
@@ -262,6 +263,7 @@ AFRAME.registerComponent("goomba", {
     }
     this.setStatus("idle");
     this.lastTimePunched = this.latestTick;
+    this.punched = true;
     if (!position) {
       position = this.el.object3D.getWorldPosition(new THREE.Vector3());
     }
@@ -301,8 +303,9 @@ AFRAME.registerComponent("goomba", {
               velocity.z * this.velocityScalar
             );
 
-            const angularVelocity = new THREE.Vector3();
-            console.log("setting angularVelocity", this.angularVelocity);
+            const strength = velocity.length();
+            const angularVelocity = new THREE.Vector3(-strength * 20, 0, 0);
+            console.log("setting angularVelocity", angularVelocity);
             body.angularVelocity.set(
               angularVelocity.x,
               angularVelocity.y,
@@ -324,13 +327,24 @@ AFRAME.registerComponent("goomba", {
         if (
           this.validWorldMeshTypes.includes(collidedEntity.dataset.worldMesh)
         ) {
-          if (this.latestTick - this.lastTimePunched < 100) {
-            return;
-          }
           this.resetLegs();
           this.setFloor(collidedEntity);
+        } else if (
+          this.validHitWorldMeshTypes.includes(
+            collidedEntity.dataset.worldMesh
+          ) &&
+          this.punched
+        ) {
+          this.shouldDie = true;
         }
         break;
+    }
+  },
+
+  remove: function () {
+    if (window.goombas.includes(this)) {
+      console.log("removing goomba");
+      window.goombas.splice(window.goombas.indexOf(this), 1);
     }
   },
 
@@ -442,6 +456,9 @@ AFRAME.registerComponent("goomba", {
         const stopped = stoppedMoving && stoppedRotating;
         if (stopped) {
           // console.log("stopped");
+          if (this.punched) {
+            this.punched = false;
+          }
           this.landed = true;
           clearInterval(this.floorInterval);
           this.setPhysicsEnabled(false);
@@ -1190,6 +1207,11 @@ AFRAME.registerComponent("goomba", {
   petSquashBodyRollRange: { min: 5, max: -5 },
 
   tick: function (time, timeDelta) {
+    if (this.shouldDie) {
+      this.el.remove();
+      // FILL - add squashed goomba
+      return;
+    }
     this.el.object3D.getWorldPosition(this.worldPosition);
     this.el.object3D.getWorldQuaternion(this.worldQuaternion);
     this.sphere.center.copy(this.worldPosition);
@@ -1202,7 +1224,7 @@ AFRAME.registerComponent("goomba", {
 
     this.latestTick = time;
 
-    if (this.latestTick - this.lastTimePunched < 100) {
+    if (this.latestTick - this.lastTimePunched < 10) {
       return;
     }
 

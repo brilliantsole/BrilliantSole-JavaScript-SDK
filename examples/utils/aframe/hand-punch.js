@@ -1,7 +1,7 @@
 AFRAME.registerComponent("hand-punch", {
   schema: {
     punchable: { default: ".punchable" },
-    velocityThreshold: { default: 1 },
+    velocityThreshold: { default: 1.5 },
     velocityScalar: { default: 1 },
     punchTimeout: { default: 500 },
   },
@@ -46,7 +46,6 @@ AFRAME.registerComponent("hand-punch", {
       velocity.multiplyScalar(this.data.velocityScalar);
 
       const length = velocity.length();
-      console.log({ length });
       if (length < this.data.velocityThreshold) {
         return;
       }
