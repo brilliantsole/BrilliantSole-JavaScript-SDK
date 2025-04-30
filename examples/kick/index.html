@@ -9,6 +9,7 @@
     <script src="../utils/aframe/grabbable-physics-body.js"></script>
     <script src="../utils/aframe/grabbable-listener.js"></script>
     <script src="../utils/aframe/grabbable-anchor.js"></script>
+    <script src="../utils/aframe/hand-punch.js"></script>
     <script src="../utils/aframe/occlude-hand-tracking-controls.js"></script>
     <script src="../utils/aframe/palm-up-detector.js"></script>
     <script src="../utils/aframe/grow-shrink.js"></script>
@@ -113,6 +114,7 @@
         goomba="grabbable: true;"
         id="goomba1"
         position="0 1.0 -0.3"
+        class="punchable"
         rotation="0 0 0"
       ></a-entity>
       <!--
@@ -211,6 +213,7 @@
         hand-tracking-controls="hand: left; model-opacity: 0;"
         hand-tracking-grab-controls="hand: left;"
         occlude-hand-tracking-controls
+        hand-punch
       >
         <a-entity
           id="platter"
@@ -224,6 +227,7 @@
       </a-entity>
       <a-entity
         id="rightHand"
+        hand-punch
         class="lookAt"
         hand-tracking-controls="hand: right;"
         occlude-hand-tracking-controls

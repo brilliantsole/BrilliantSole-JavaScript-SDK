@@ -106,7 +106,7 @@ AFRAME.registerComponent("grabbable-physics-body", {
                 this.angularVelocity.y * this.angularVelocityScalar,
                 this.angularVelocity.z * this.angularVelocityScalar
               );
-            }, 0);
+            }, 1);
           }
           return Boolean(body);
         };

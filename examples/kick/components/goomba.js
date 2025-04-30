@@ -144,6 +144,8 @@ AFRAME.registerComponent("goomba", {
     this.camera = document.querySelector("a-camera");
 
     this.el.addEventListener("loaded", () => {
+      this.el.addEventListener("punch", this.onPunch.bind(this));
+
       const template = this.data.template.content
         .querySelector("a-entity")
         .cloneNode(true);
@@ -243,6 +245,13 @@ AFRAME.registerComponent("goomba", {
   },
 
   validWorldMeshTypes: ["floor", "table"],
+
+  onPunch: function (event) {
+    const { velocity, position } = event.detail;
+    console.log("punched", velocity, position);
+    // FILL - add physics body
+    // FILL - apply velocity and random rotation
+  },
 
   onCollide: async function (event) {
     const collidedEntity = event.detail.body.el;
