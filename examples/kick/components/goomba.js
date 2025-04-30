@@ -1154,7 +1154,7 @@ AFRAME.registerComponent("goomba", {
             if (distance > this.petDistanceThreshold.end) {
               this.setStatus("idle");
             } else {
-              const easing = "easeOutQuad";
+              const easing = "linear";
               const dur = 40;
 
               this.localPetPosition.copy(hand.indexTipPosition);
@@ -1769,7 +1769,7 @@ AFRAME.registerComponent("goomba", {
           ...from.map((value) => THREE.MathUtils.degToRad(value)),
           "YXZ"
         );
-        console.log(this.rollTempEuler);
+        // console.log(this.rollTempEuler);
         this.rollQuaternionFrom.setFromEuler(this.rollTempEuler);
       } else {
         this.rollQuaternionFrom.copy(this.el.object3D.quaternion);
