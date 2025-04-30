@@ -15,6 +15,7 @@
     <script src="../utils/aframe/grow-shrink.js"></script>
     <script src="./components/platter.js"></script>
     <script src="./components/goomba.js"></script>
+    <script src="./components/squashed-goomba.js"></script>
     <script src="../utils/aframe/occlude-mesh.js"></script>
   </head>
   <style>
@@ -115,13 +116,55 @@
         ></a-entity>
       </a-entity>
 
+      <template id="squashedGoombaTemplate">
+        <a-entity>
+          <a-sphere class="body" color="#a14e00" radius="0.1" scale="1 1 0.3">
+          </a-sphere>
+
+          <a-entity
+            class="eye left"
+            position="-0.02535 0.01077 0.065"
+            rotation="-11.205 -20.900 0"
+          >
+            <a-entity class="scalar" scale="1.460 1.690 0.940">
+              <a-sphere class="white" color="#fafafa" radius="0.017"></a-sphere>
+              <a-entity class="controller">
+                <a-sphere
+                  class="black"
+                  color="#000000"
+                  position="0 0 0.015"
+                  radius="0.008"
+                  scale="1 1 -0.600"
+                >
+                </a-sphere>
+              </a-entity>
+            </a-entity>
+          </a-entity>
+
+          <a-sphere
+            class="left foot"
+            color="#301700"
+            radius="0.05"
+            position="-0.040 -0.070 0.020"
+            scale="0.790 1 0.400"
+            rotation="0 0 -13.900"
+          ></a-sphere>
+        </a-entity>
+      </template>
+
       <a-entity
+        id="squashedGoomba1"
+        squashed-goomba
+        position="0 1.0 -0.3"
+      ></a-entity>
+
+      <!-- <a-entity
         goomba="grabbable: true;"
         id="goomba1"
         position="0 1.0 -0.3"
         class="punchable"
         rotation="0 0 0"
-      ></a-entity>
+      ></a-entity> -->
       <!--
       <a-entity
         goomba="grabbable: true;"
