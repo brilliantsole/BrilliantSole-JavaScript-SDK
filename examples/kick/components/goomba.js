@@ -304,13 +304,17 @@ AFRAME.registerComponent("goomba", {
             );
 
             const strength = velocity.length();
-            const angularVelocity = new THREE.Vector3(-strength * 20, 0, 0);
-            console.log("setting angularVelocity", angularVelocity);
-            body.angularVelocity.set(
-              angularVelocity.x,
-              angularVelocity.y,
-              angularVelocity.z
+            const angularVelocity = new THREE.Vector3(strength * 20, 0, 0);
+            const normalizedVelocity = velocity.clone().normalize();
+            const angle = Math.atan2(
+              normalizedVelocity.x,
+              normalizedVelocity.z
             );
+            const euler = new THREE.Euler(0, angle, 0);
+            angularVelocity.applyEuler(euler);
+            console.log("setting angularVelocity", angularVelocity);
+            console.log(body);
+            body.angularVelocity.set(...angularVelocity.toArray().slice(0, 3));
           }
         }, 1);
       } else {
@@ -335,7 +339,9 @@ AFRAME.registerComponent("goomba", {
           ) &&
           this.punched
         ) {
+          this.deathCollidedEntity = collidedEntity;
           this.shouldDie = true;
+          this.deathVelocity = this.el.body.velocity.clone();
         }
         break;
     }
@@ -1207,13 +1213,45 @@ AFRAME.registerComponent("goomba", {
   petSquashBodyRollRange: { min: 5, max: -5 },
 
   tick: function (time, timeDelta) {
-    if (this.shouldDie) {
-      this.el.remove();
-      // FILL - add squashed goomba
-      return;
-    }
     this.el.object3D.getWorldPosition(this.worldPosition);
     this.el.object3D.getWorldQuaternion(this.worldQuaternion);
+    if (this.shouldDie) {
+      this.el.remove();
+      const squashedGoomba = document.createElement("a-entity");
+      squashedGoomba.setAttribute("squashed-goomba", "");
+      const position = new THREE.Vector3();
+      if (false) {
+        this.deathCollidedEntity.components["obb-collider"].obb.clampPoint(
+          this.worldPosition,
+          position
+        );
+      } else {
+        position.copy(this.worldPosition);
+
+        if (false) {
+          const ray = new THREE.Ray(this.worldPosition, this.deathVelocity);
+          this.deathCollidedEntity.components["obb-collider"].aabb.intersectRay(
+            ray,
+            position
+          );
+        } else {
+          this.ray.copy(this.deathVelocity);
+          this.raycaster.set(this.worldPosition, this.ray);
+          this.raycaster.near = 0;
+          this.raycaster.far = 1;
+          const intersections = this.raycaster.intersectObjects(
+            this.lookAtRaycastTargetObjects,
+            true
+          );
+          if (intersections[0]) {
+            position.copy(intersections[0].point);
+          }
+        }
+      }
+      squashedGoomba.setAttribute("position", position.toArray().join(" "));
+      this.el.sceneEl.appendChild(squashedGoomba);
+      return;
+    }
     this.sphere.center.copy(this.worldPosition);
 
     if ("updatePhysicsEnabledFlag" in this) {

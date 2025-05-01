@@ -123,7 +123,7 @@
 
           <a-entity
             class="eye left"
-            position="-0.02535 0.01077 0.065"
+            position="-0.02535 0.01077 0.02"
             rotation="-11.205 -20.900 0"
           >
             <a-entity class="scalar" scale="1.460 1.690 0.940">
@@ -152,19 +152,19 @@
         </a-entity>
       </template>
 
-      <a-entity
+      <!-- <a-entity
         id="squashedGoomba1"
         squashed-goomba
         position="0 1.0 -0.3"
-      ></a-entity>
+      ></a-entity> -->
 
-      <!-- <a-entity
+      <a-entity
         goomba="grabbable: true;"
         id="goomba1"
         position="0 1.0 -0.3"
         class="punchable"
         rotation="0 0 0"
-      ></a-entity> -->
+      ></a-entity>
       <!--
       <a-entity
         goomba="grabbable: true;"
@@ -173,15 +173,34 @@
         rotation="0 0 0"
       ></a-entity>
       -->
-      <!-- <a-box
+      <a-box
         scale="1 0.05 1"
         static-body
         position="0 0.8 -0.5"
         data-world-mesh="floor"
         color="blue"
         obb-collider
-        id="testBox"
-      ></a-box> -->
+        id="testFloor"
+      ></a-box>
+      <a-box
+        scale="2 2 0.05"
+        static-body
+        position="0 1 -1"
+        data-world-mesh="wall"
+        color="yellow"
+        obb-collider
+        id="testWall"
+      ></a-box>
+      <a-box
+        scale="2 2 0.05"
+        static-body
+        position="-1 1 0"
+        rotation="0 90 0"
+        data-world-mesh="wall"
+        color="yellow"
+        obb-collider
+        id="testLeftWall"
+      ></a-box>
 
       <template id="goombaTemplate">
         <a-entity>

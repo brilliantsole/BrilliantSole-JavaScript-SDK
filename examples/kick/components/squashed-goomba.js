@@ -4,11 +4,11 @@ AFRAME.registerComponent("squashed-goomba", {
   },
 
   bodyScaleRange: {
-    x: { min: 0.9, max: 1.1 },
-    y: { min: 0.9, max: 1.1 },
+    x: { min: 0.7, max: 1.2 },
+    y: { min: 0.7, max: 1.2 },
   },
   bodyRotationRange: {
-    z: { min: -0.5, max: 0.5 },
+    z: { min: -0.7, max: 0.7 },
   },
 
   eyeRotationRange: {
@@ -16,7 +16,7 @@ AFRAME.registerComponent("squashed-goomba", {
   },
   eyePositionRange: {
     x: { min: 0, max: 0.04 },
-    y: { min: -0.01, max: 0.06 },
+    y: { min: 0, max: 0.06 },
   },
 
   footRotationRange: {
@@ -39,7 +39,6 @@ AFRAME.registerComponent("squashed-goomba", {
   init: function () {
     this.el.addEventListener("loaded", () => {
       this.el.object3D.rotation.z = this.randomRange(this.bodyRotationRange.z);
-      console.log(this.el.object3D.rotation.z);
 
       const template = this.data.template.content
         .querySelector("a-entity")
@@ -102,8 +101,6 @@ AFRAME.registerComponent("squashed-goomba", {
             );
           }
           if (entity.classList.contains("foot")) {
-            // FILL - randomize position/rotation
-
             const value = Math.random();
             [entity, duplicate].forEach((entity, index) => {
               entity.object3D.rotation.z = this.randomRange(
@@ -131,6 +128,16 @@ AFRAME.registerComponent("squashed-goomba", {
         });
         entity.parentEl.appendChild(duplicate);
       });
+      setTimeout(() => {
+        this.el.setAttribute("animation__scale", {
+          property: "scale",
+          to: "1 1 0.7",
+          dur: 120,
+          easing: "easeInOutSine",
+          loop: 3,
+          dir: "alternate",
+        });
+      }, 1);
     });
   },
 
