@@ -43,6 +43,8 @@ AFRAME.registerComponent("squashed-goomba", {
   },
 
   init: function () {
+    this.camera = document.querySelector("a-camera");
+
     this.el.addEventListener("loaded", () => {
       this.el.object3D.rotation.z = this.randomRange(this.bodyRotationRange.z);
 
@@ -135,7 +137,6 @@ AFRAME.registerComponent("squashed-goomba", {
         entity.parentEl.appendChild(duplicate);
       });
       setTimeout(() => {
-        // FILL - create coin in front of it
         const coin = document.createElement("a-entity");
         coin.setAttribute("coin", "");
         {
@@ -143,8 +144,17 @@ AFRAME.registerComponent("squashed-goomba", {
           coin.setAttribute("position", [x, y - 0.07, z].join(" "));
         }
         {
-          const { x, y, z } = this.el.getAttribute("rotation");
-          coin.setAttribute("rotation", [0, y, 0].join(" "));
+          if (true) {
+            const { x, y, z } = this.camera.object3D.rotation;
+            coin.setAttribute(
+              "rotation",
+              [0, THREE.MathUtils.radToDeg(y), 0].join(" ")
+            );
+          } else {
+            const { x, y, z } = this.el.getAttribute("rotation");
+            coin.setAttribute("rotation", [0, y, 0].join(" "));
+          }
+          const { x, y, z } = this.camera.object3D.rotation;
         }
         this.el.sceneEl.appendChild(coin);
 

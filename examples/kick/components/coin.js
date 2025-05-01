@@ -17,7 +17,6 @@ AFRAME.registerComponent("coin", {
       });
       this.template = template;
 
-      // FILL - animate
       this.el.querySelector(".rotation").setAttribute("animation__rot", {
         property: "rotation",
         to: `0 180 0`,

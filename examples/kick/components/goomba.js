@@ -267,7 +267,7 @@ AFRAME.registerComponent("goomba", {
     if (!position) {
       position = this.el.object3D.getWorldPosition(new THREE.Vector3());
     }
-    console.log("punched", velocity, position);
+    // console.log("punched", velocity, position);
     this.physicsOptions = { velocity, position };
     this.setPhysicsEnabled(true);
   },
@@ -275,7 +275,7 @@ AFRAME.registerComponent("goomba", {
   velocityScalar: 4,
 
   onBodyLoaded: function () {
-    console.log("onBodyLoaded");
+    // console.log("onBodyLoaded");
     if (this.physicsOptions) {
       const { position, velocity } = this.physicsOptions;
       this.physicsOptions = undefined;
