@@ -16,6 +16,7 @@
     <script src="./components/platter.js"></script>
     <script src="./components/goomba.js"></script>
     <script src="./components/squashed-goomba.js"></script>
+    <script src="./components/coin.js"></script>
     <script src="../utils/aframe/occlude-mesh.js"></script>
   </head>
   <style>
@@ -74,6 +75,10 @@
           id="anchorModel"
           src="../../assets/3d/anchor.glb"
         ></a-asset-item>
+        <a-asset-item
+          id="coinModel"
+          src="../../assets/3d/coin.glb"
+        ></a-asset-item>
         <a-mixin
           id="realWorldPlaneMixin"
           obb-collider
@@ -115,6 +120,21 @@
           rotation="90 0 0"
         ></a-entity>
       </a-entity>
+
+      <template id="coinTemplate">
+        <a-entity>
+          <a-entity class="position">
+            <a-entity class="rotation">
+              <a-entity class="scale">
+                <a-entity
+                  gltf-model="#coinModel"
+                  scale="0.22 0.22 0.22"
+                ></a-entity>
+              </a-entity>
+            </a-entity>
+          </a-entity>
+        </a-entity>
+      </template>
 
       <template id="squashedGoombaTemplate">
         <a-entity>
@@ -165,15 +185,14 @@
         class="punchable"
         rotation="0 0 0"
       ></a-entity>
-      <!--
+      <!-- 
       <a-entity
         goomba="grabbable: true;"
         id="goomba2"
         position="0 1.0 -0.6"
         rotation="0 0 0"
-      ></a-entity>
-      -->
-      <a-box
+      ></a-entity> -->
+      <!-- <a-box
         scale="1 0.05 1"
         static-body
         position="0 0.8 -0.5"
@@ -181,17 +200,18 @@
         color="blue"
         obb-collider
         id="testFloor"
-      ></a-box>
-      <a-box
+      ></a-box> -->
+      <!-- <a-box
         scale="2 2 0.05"
         static-body
         position="0 1 -1"
         data-world-mesh="wall"
         color="yellow"
         obb-collider
+        rotation="0 0 0"
         id="testWall"
-      ></a-box>
-      <a-box
+      ></a-box> -->
+      <!-- <a-box
         scale="2 2 0.05"
         static-body
         position="-1 1 0"
@@ -200,7 +220,7 @@
         color="yellow"
         obb-collider
         id="testLeftWall"
-      ></a-box>
+      ></a-box> -->
 
       <template id="goombaTemplate">
         <a-entity>

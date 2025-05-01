@@ -296,7 +296,7 @@ AFRAME.registerComponent("goomba", {
               new CANNON.Vec3().copy(position)
             );
           } else {
-            console.log("setting velocity", velocity);
+            // console.log("setting velocity", velocity);
             body.velocity.set(
               velocity.x * this.velocityScalar,
               velocity.y * this.velocityScalar,
@@ -312,8 +312,7 @@ AFRAME.registerComponent("goomba", {
             );
             const euler = new THREE.Euler(0, angle, 0);
             angularVelocity.applyEuler(euler);
-            console.log("setting angularVelocity", angularVelocity);
-            console.log(body);
+            // console.log("setting angularVelocity", angularVelocity);
             body.angularVelocity.set(...angularVelocity.toArray().slice(0, 3));
           }
         }, 1);
@@ -326,6 +325,7 @@ AFRAME.registerComponent("goomba", {
   onCollide: async function (event) {
     const collidedEntity = event.detail.body.el;
     // console.log("collided with", collidedEntity);
+
     switch (this.status) {
       case "falling":
         if (
@@ -342,6 +342,7 @@ AFRAME.registerComponent("goomba", {
           this.deathCollidedEntity = collidedEntity;
           this.shouldDie = true;
           this.deathVelocity = this.el.body.velocity.clone();
+          this.deathNormal = event.detail.contact.ni.clone();
         }
         break;
     }
@@ -1220,6 +1221,7 @@ AFRAME.registerComponent("goomba", {
       const squashedGoomba = document.createElement("a-entity");
       squashedGoomba.setAttribute("squashed-goomba", "");
       const position = new THREE.Vector3();
+      console.log(this.deathCollidedEntity);
       if (false) {
         this.deathCollidedEntity.components["obb-collider"].obb.clampPoint(
           this.worldPosition,
@@ -1249,6 +1251,22 @@ AFRAME.registerComponent("goomba", {
         }
       }
       squashedGoomba.setAttribute("position", position.toArray().join(" "));
+      {
+        const { x, y, z } = this.deathNormal;
+
+        const yaw = Math.atan2(x, z);
+        const pitch = Math.atan2(y, Math.sqrt(x * x + z * z));
+        // console.log("death", { yaw, pitch });
+
+        squashedGoomba.setAttribute(
+          "rotation",
+          [
+            -THREE.MathUtils.radToDeg(pitch),
+            THREE.MathUtils.radToDeg(yaw),
+            0,
+          ].join(" ")
+        );
+      }
       this.el.sceneEl.appendChild(squashedGoomba);
       return;
     }

@@ -1,6 +1,12 @@
 AFRAME.registerComponent("squashed-goomba", {
   schema: {
     template: { default: "#squashedGoombaTemplate", type: "selector" },
+    duration: { default: 1000 },
+    originalScale: { default: 1 },
+    amplitude: { default: 0.8 },
+    frequency: { default: 5 },
+    damping: { default: 4 },
+    lifetime: { default: 1000 },
   },
 
   bodyScaleRange: {
@@ -129,15 +135,21 @@ AFRAME.registerComponent("squashed-goomba", {
         entity.parentEl.appendChild(duplicate);
       });
       setTimeout(() => {
-        this.el.setAttribute("animation__scale", {
-          property: "scale",
-          to: "1 1 0.7",
-          dur: 120,
-          easing: "easeInOutSine",
-          loop: 3,
-          dir: "alternate",
-        });
-      }, 1);
+        // FILL - create coin in front of it
+        const coin = document.createElement("a-entity");
+        coin.setAttribute("coin", "");
+        {
+          const { x, y, z } = this.el.object3D.position;
+          coin.setAttribute("position", [x, y - 0.07, z].join(" "));
+        }
+        {
+          const { x, y, z } = this.el.getAttribute("rotation");
+          coin.setAttribute("rotation", [0, y, 0].join(" "));
+        }
+        this.el.sceneEl.appendChild(coin);
+
+        this.el.remove();
+      }, this.data.lifetime);
     });
   },
 
@@ -152,10 +164,22 @@ AFRAME.registerComponent("squashed-goomba", {
   },
 
   tick: function (time, timeDelta) {
-    // FILL
-  },
-
-  remove() {
-    // FILL
+    if (this.startTime == undefined) {
+      this.startTime = time;
+    }
+    if (this.isDone) {
+      return;
+    }
+    const t = (time - this.startTime) / 1000; // seconds
+    const dampingFactor = Math.exp(-this.data.damping * t);
+    const scaleY =
+      this.data.originalScale +
+      this.data.amplitude *
+        Math.sin(this.data.frequency * t * Math.PI * 2) *
+        dampingFactor;
+    this.el.object3D.scale.z = scaleY;
+    if (dampingFactor < 0.01) {
+      this.isDone = true;
+    }
   },
 });
