@@ -248,7 +248,7 @@ AFRAME.registerComponent("goomba", {
   },
 
   validWorldMeshTypes: ["floor", "table"],
-  validHitWorldMeshTypes: ["wall"],
+  validHitWorldMeshTypes: ["floor", "table", "wall", "ceiling", "floor"],
 
   onPunch: function (event) {
     const { velocity, position } = event.detail;
@@ -257,8 +257,19 @@ AFRAME.registerComponent("goomba", {
 
   ignorePunchStatuses: ["falling", "getting up", "petting"],
 
+  punchDownPitchThreshold: THREE.MathUtils.degToRad(-50),
   punch: function (velocity, position) {
     if (this.ignorePunchStatuses.includes(this.status)) {
+      return;
+    }
+    const { x, y, z } = velocity;
+    const pitch = Math.atan2(y, Math.sqrt(x * x + z * z));
+    // console.log({ pitch, threshold: this.punchDownPitchThreshold });
+    if (pitch < this.punchDownPitchThreshold && this.floor) {
+      this.deathCollidedEntity = this.floor;
+      this.shouldDie = true;
+      this.deathVelocity = velocity.clone();
+      this.deathNormal = new THREE.Vector3(0, 1, 0);
       return;
     }
     this.setStatus("idle");
@@ -326,6 +337,17 @@ AFRAME.registerComponent("goomba", {
     const collidedEntity = event.detail.body.el;
     // console.log("collided with", collidedEntity);
 
+    if (
+      this.punched &&
+      this.validHitWorldMeshTypes.includes(collidedEntity.dataset.worldMesh) &&
+      collidedEntity != this.floor
+    ) {
+      this.deathCollidedEntity = collidedEntity;
+      this.shouldDie = true;
+      this.deathVelocity = this.el.body.velocity.clone();
+      this.deathNormal = event.detail.contact.ni.clone();
+    }
+
     switch (this.status) {
       case "falling":
         if (
@@ -333,16 +355,6 @@ AFRAME.registerComponent("goomba", {
         ) {
           this.resetLegs();
           this.setFloor(collidedEntity);
-        } else if (
-          this.validHitWorldMeshTypes.includes(
-            collidedEntity.dataset.worldMesh
-          ) &&
-          this.punched
-        ) {
-          this.deathCollidedEntity = collidedEntity;
-          this.shouldDie = true;
-          this.deathVelocity = this.el.body.velocity.clone();
-          this.deathNormal = event.detail.contact.ni.clone();
         }
         break;
     }
@@ -1199,10 +1211,11 @@ AFRAME.registerComponent("goomba", {
 
   idleToWalkingTime: 1000,
 
-  petInterval: 50,
+  petInterval: { short: 50, long: 50 },
   petDistanceThreshold: { start: 0.03, end: 0.15 },
-  petSquashRange: { min: -0.04, max: 0.01 },
-  petSquashYRange: { min: 0.7, max: 1 },
+  petSquashRange: { min: -0.04, max: 0.02 },
+  petSquashYRange: { min: 0.65, max: 1 },
+  petSquashXZRange: { min: 1, max: 1.1 },
   petSquashEyesHeightRange: { min: 0.1, max: 1 },
   petSquashEyesRollRange: { min: 0.4, max: 0.6 },
   petEyeSquashRange: { min: -0.03, max: 0.01 },
@@ -1289,7 +1302,12 @@ AFRAME.registerComponent("goomba", {
       this.status == "petting" ||
       this.status == "walking"
     ) {
-      if (this.latestTick - this.lastPetTick > this.petInterval) {
+      if (
+        this.latestTick - this.lastPetTick >
+        (this.status == "petting"
+          ? this.petInterval.short
+          : this.petInterval.long)
+      ) {
         this.lastPetTick = this.latestTick;
         if (this.status == "idle" || this.status == "walking") {
           for (const side in this.hands) {
@@ -1340,12 +1358,17 @@ AFRAME.registerComponent("goomba", {
                 this.petSquashYRange.max,
                 clampedSquashInterpolation
               );
+              const squashInterpolationXZ = THREE.MathUtils.lerp(
+                this.petSquashXZRange.min,
+                this.petSquashXZRange.max,
+                1 - clampedSquashInterpolation
+              );
 
               if (true) {
                 this.squash.removeAttribute("animation__scale");
                 this.squash.setAttribute("animation__scale", {
                   property: "scale",
-                  to: `1 ${squashInterpolationY} 1`,
+                  to: `${squashInterpolationXZ} ${squashInterpolationY} ${squashInterpolationXZ}`,
                   dur: dur,
                   easing: easing,
                 });
@@ -2247,18 +2270,7 @@ AFRAME.registerComponent("goomba", {
     this.resetLegs();
   },
 
-  statuses: [
-    "idle",
-    "grabbed",
-    "falling",
-    "getting up",
-    "walking",
-    "petting",
-    "kicked",
-    "wall",
-    "stomp",
-    "shocked",
-  ],
+  statuses: ["idle", "grabbed", "falling", "getting up", "walking", "petting"],
 
   resetSquashRotation: function () {
     this.squash.removeAttribute("animation__rot");
@@ -2463,5 +2475,6 @@ AFRAME.registerComponent("goomba", {
   remove() {
     clearInterval(this.lookAtSelectorInterval);
     clearInterval(this.lookAtRaycastSelectorInterval);
+    clearInterval(this.floorInterval);
   },
 });
