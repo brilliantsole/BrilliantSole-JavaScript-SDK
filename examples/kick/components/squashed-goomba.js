@@ -139,16 +139,29 @@ AFRAME.registerComponent("squashed-goomba", {
       setTimeout(() => {
         const coin = document.createElement("a-entity");
         coin.setAttribute("coin", "");
+        let pitch = this.el.object3D.rotation.reorder("XYZ").x;
+        let flip = false;
         {
           const { x, y, z } = this.el.object3D.position;
-          coin.setAttribute("position", [x, y - 0.07, z].join(" "));
+          const position = new THREE.Vector3(x, y - 0.07, z);
+          if (pitch < THREE.MathUtils.degToRad(-80)) {
+            position.y += 0.1;
+          } else if (pitch > THREE.MathUtils.degToRad(80)) {
+            if (false) {
+              position.y -= 0.15;
+            } else {
+              flip = true;
+              position.y += 0.05;
+            }
+          }
+          coin.setAttribute("position", position.toArray().join(" "));
         }
         {
           if (true) {
             const { x, y, z } = this.camera.object3D.rotation;
             coin.setAttribute(
               "rotation",
-              [0, THREE.MathUtils.radToDeg(y), 0].join(" ")
+              [flip ? 180 : 0, THREE.MathUtils.radToDeg(y), 0].join(" ")
             );
           } else {
             const { x, y, z } = this.el.getAttribute("rotation");

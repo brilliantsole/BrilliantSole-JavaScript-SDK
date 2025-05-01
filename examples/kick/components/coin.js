@@ -23,9 +23,14 @@ AFRAME.registerComponent("coin", {
         dur: this.data.lifetime * 0.9,
         easing: "easeInOutBack",
       });
+
+      const offset = new THREE.Vector3(0, 0.14, 0);
       this.el.querySelector(".position").setAttribute("animation__pos", {
         property: "position",
-        to: `0 ${0.14} 0`,
+        to: offset
+          .toArray()
+          .map((value) => (value < 0.0001 ? 0 : value))
+          .join(" "),
         dur: this.data.lifetime * 0.9,
         loop: 0,
         dir: "alternate",

@@ -1234,7 +1234,7 @@ AFRAME.registerComponent("goomba", {
       const squashedGoomba = document.createElement("a-entity");
       squashedGoomba.setAttribute("squashed-goomba", "");
       const position = new THREE.Vector3();
-      console.log(this.deathCollidedEntity);
+      // console.log(this.deathCollidedEntity);
       if (false) {
         this.deathCollidedEntity.components["obb-collider"].obb.clampPoint(
           this.worldPosition,
