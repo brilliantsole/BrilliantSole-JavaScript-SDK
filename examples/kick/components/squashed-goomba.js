@@ -139,11 +139,11 @@ AFRAME.registerComponent("squashed-goomba", {
       setTimeout(() => {
         const coin = document.createElement("a-entity");
         coin.setAttribute("coin", "");
-        let pitch = this.el.object3D.rotation.reorder("XYZ").x;
+        let pitch = this.el.object3D.rotation.reorder("YXZ").x;
         let flip = false;
         {
           const { x, y, z } = this.el.object3D.position;
-          const position = new THREE.Vector3(x, y - 0.07, z);
+          const position = new THREE.Vector3(x, y - 0.04, z);
           if (pitch < THREE.MathUtils.degToRad(-80)) {
             position.y += 0.1;
           } else if (pitch > THREE.MathUtils.degToRad(80)) {
