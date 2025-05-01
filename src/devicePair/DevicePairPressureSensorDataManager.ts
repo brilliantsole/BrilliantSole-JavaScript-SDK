@@ -1,12 +1,18 @@
 import { createConsole } from "../utils/Console.ts";
 import CenterOfPressureHelper from "../utils/CenterOfPressureHelper.ts";
-import { PressureData, PressureSensorPosition, PressureSensorValue } from "../sensor/PressureSensorDataManager.ts";
+import {
+  PressureData,
+  PressureSensorPosition,
+  PressureSensorValue,
+} from "../sensor/PressureSensorDataManager.ts";
 import { CenterOfPressure } from "../utils/CenterOfPressureHelper.ts";
 import { Side, Sides } from "../InformationManager.ts";
 import { DeviceEventMap } from "../Device.ts";
 import { RangeHelper } from "../BS.ts";
 
-const _console = createConsole("DevicePairPressureSensorDataManager", { log: false });
+const _console = createConsole("DevicePairPressureSensorDataManager", {
+  log: false,
+});
 
 export type DevicePairRawPressureData = { [side in Side]: PressureData };
 
@@ -59,14 +65,22 @@ class DevicePairPressureSensorDataManager {
   }
 
   #updatePressureData() {
-    const pressure: DevicePairPressureData = { scaledSum: 0, normalizedSum: 0, sensors: { left: [], right: [] } };
+    const pressure: DevicePairPressureData = {
+      scaledSum: 0,
+      normalizedSum: 0,
+      sensors: { left: [], right: [] },
+    };
 
     Sides.forEach((side) => {
       const sidePressure = this.#rawPressure[side]!;
       pressure.scaledSum += sidePressure.scaledSum;
       //pressure.normalizedSum += this.#rawPressure[side]!.normalizedSum;
     });
-    pressure.normalizedSum += this.#normalizedSumRangeHelper.updateAndGetNormalization(pressure.scaledSum, false);
+    pressure.normalizedSum +=
+      this.#normalizedSumRangeHelper.updateAndGetNormalization(
+        pressure.scaledSum,
+        false
+      );
 
     if (pressure.scaledSum > 0) {
       pressure.center = { x: 0, y: 0 };
@@ -74,10 +88,12 @@ class DevicePairPressureSensorDataManager {
         const sidePressure = this.#rawPressure[side]!;
 
         if (false) {
-          const sidePressureWeight = sidePressure.scaledSum / pressure.scaledSum;
+          const sidePressureWeight =
+            sidePressure.scaledSum / pressure.scaledSum;
           if (sidePressureWeight > 0) {
             if (sidePressure.normalizedCenter?.y != undefined) {
-              pressure.center!.y += sidePressure.normalizedCenter!.y * sidePressureWeight;
+              pressure.center!.y +=
+                sidePressure.normalizedCenter!.y * sidePressureWeight;
             }
             if (side == "right") {
               pressure.center!.x = sidePressureWeight;
@@ -100,7 +116,11 @@ class DevicePairPressureSensorDataManager {
         }
       });
 
-      pressure.normalizedCenter = this.#centerOfPressureHelper.updateAndGetNormalization(pressure.center, false);
+      pressure.normalizedCenter =
+        this.#centerOfPressureHelper.updateAndGetNormalization(
+          pressure.center,
+          false
+        );
     }
 
     _console.log({ devicePairPressure: pressure });

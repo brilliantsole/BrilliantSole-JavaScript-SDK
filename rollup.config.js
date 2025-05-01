@@ -58,7 +58,11 @@ function replaceEnvironment() {
   });
 }
 
-const _plugins = [typescript(), cleanup({ comments: "none", extensions: ["js", "ts"] }), header()];
+const _plugins = [
+  typescript(),
+  cleanup({ comments: "none", extensions: ["js", "ts"] }),
+  header(),
+];
 
 if (production) {
   _plugins.push(replaceEnvironment());
@@ -66,7 +70,14 @@ if (production) {
 
 const _browserPlugins = [resolve(), commonjs(), removeLines("browser")];
 const _nodePlugins = [removeLines("node")];
-const nodeExternal = ["webbluetooth", "debounce", "ws", "@abandonware/noble", "auto-bind", "dgram"];
+const nodeExternal = [
+  "webbluetooth",
+  "debounce",
+  "ws",
+  "@abandonware/noble",
+  "auto-bind",
+  "dgram",
+];
 
 const lensStudioPlugins = [
   removeLines("ls"),
@@ -124,8 +135,16 @@ const builds = [
       dts(),
       copy({
         targets: [
-          { src: "build/index.d.ts", dest: "build", rename: "brilliantsole.module.d.ts" },
-          { src: "build/index.d.ts", dest: "build", rename: "brilliantsole.module.min.d.ts" },
+          {
+            src: "build/index.d.ts",
+            dest: "build",
+            rename: "brilliantsole.module.d.ts",
+          },
+          {
+            src: "build/index.d.ts",
+            dest: "build",
+            rename: "brilliantsole.module.min.d.ts",
+          },
         ],
       }),
     ],
@@ -153,7 +172,13 @@ const builds = [
       removeLines("node"),
       dts(),
       copy({
-        targets: [{ src: "build/index.node.d.ts", dest: "build", rename: "brilliantsole.node.module.d.ts" }],
+        targets: [
+          {
+            src: "build/index.node.d.ts",
+            dest: "build",
+            rename: "brilliantsole.node.module.d.ts",
+          },
+        ],
       }),
     ],
     ...defaultBuild,

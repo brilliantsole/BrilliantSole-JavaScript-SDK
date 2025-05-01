@@ -136,7 +136,12 @@ class WebSocketConnectionManager extends BaseConnectionManager {
   // CONNECTION
   async connect() {
     await super.connect();
-    this.webSocket = new WebSocket(this.url);
+    try {
+      this.webSocket = new WebSocket(this.url);
+    } catch (error) {
+      _console.error("error connecting to webSocket", error);
+      this.status = "notConnected";
+    }
   }
   async disconnect() {
     await super.disconnect();

@@ -9,7 +9,7 @@
     <script src="../utils/aframe/grabbable-physics-body.js"></script>
     <script src="../utils/aframe/grabbable-listener.js"></script>
     <script src="../utils/aframe/grabbable-anchor.js"></script>
-    <script src="../utils/aframe/hand-punch.js"></script>
+    <script src="../utils/aframe/hand-punch.js" type="module"></script>
     <script src="../utils/aframe/occlude-hand-tracking-controls.js"></script>
     <script src="../utils/aframe/palm-up-detector.js"></script>
     <script src="../utils/aframe/grow-shrink.js"></script>
@@ -18,6 +18,7 @@
     <script src="./components/squashed-goomba.js"></script>
     <script src="./components/coin.js"></script>
     <script src="../utils/aframe/occlude-mesh.js"></script>
+    <script src="../utils/aframe/bs-vibration.js" type="module"></script>
   </head>
   <style>
     #scene {
@@ -48,17 +49,29 @@
 
     <h1>Kick | BrilliantSole JavaScript SDK</h1>
 
-    <button id="toggleConnection">connect</button>
+    <template id="connectToDeviceTemplate">
+      <div class="connectToDevice">
+        <label>
+          ip address:
+          <input
+            class="ipAddress"
+            placeholder="127.0.0.1"
+            type="text"
+            minlength="7"
+            maxlength="15"
+            size="15"
+          />
+        </label>
+        <button class="toggleConnection">connect</button>
+        <progress hidden value="0" class="fileTransferProgress"></progress>
+        <label hidden>
+          is model ready <input type="checkbox" disabled class="isModelReady" />
+        </label>
+        <label hidden> gesture: <b class="maxClass"></b> </label>
+      </div>
+    </template>
 
-    <progress value="0" id="fileTransferProgress"></progress>
-
-    <label>
-      is model ready <input type="checkbox" disabled id="isModelReady" />
-    </label>
-
-    <div id="title">
-      <h1 id="maxClass">Kick</h1>
-    </div>
+    <div id="connectToDeviceContainers"></div>
 
     <a-scene
       id="scene"
@@ -324,6 +337,7 @@
       <a-entity
         id="rightHand"
         hand-punch
+        bs-vibration
         class="lookAt"
         hand-tracking-controls="hand: right;"
         occlude-hand-tracking-controls

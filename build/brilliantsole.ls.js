@@ -4779,7 +4779,13 @@
         }
         async connect() {
             await super.connect();
-            this.webSocket = new WebSocket(this.url);
+            try {
+                this.webSocket = new WebSocket(this.url);
+            }
+            catch (error) {
+                _console$4.error("error connecting to webSocket", error);
+                this.status = "notConnected";
+            }
         }
         async disconnect() {
             await super.disconnect();
@@ -5618,7 +5624,9 @@
     _Device_ClearSensorConfigurationOnLeave = { value: true };
 
     var _DevicePairPressureSensorDataManager_instances, _DevicePairPressureSensorDataManager_rawPressure, _DevicePairPressureSensorDataManager_centerOfPressureHelper, _DevicePairPressureSensorDataManager_normalizedSumRangeHelper, _DevicePairPressureSensorDataManager_hasAllPressureData_get, _DevicePairPressureSensorDataManager_updatePressureData;
-    const _console$2 = createConsole("DevicePairPressureSensorDataManager", { log: false });
+    const _console$2 = createConsole("DevicePairPressureSensorDataManager", {
+        log: false,
+    });
     class DevicePairPressureSensorDataManager {
         constructor() {
             _DevicePairPressureSensorDataManager_instances.add(this);
@@ -5647,12 +5655,17 @@
     _DevicePairPressureSensorDataManager_rawPressure = new WeakMap(), _DevicePairPressureSensorDataManager_centerOfPressureHelper = new WeakMap(), _DevicePairPressureSensorDataManager_normalizedSumRangeHelper = new WeakMap(), _DevicePairPressureSensorDataManager_instances = new WeakSet(), _DevicePairPressureSensorDataManager_hasAllPressureData_get = function _DevicePairPressureSensorDataManager_hasAllPressureData_get() {
         return Sides.every((side) => side in __classPrivateFieldGet(this, _DevicePairPressureSensorDataManager_rawPressure, "f"));
     }, _DevicePairPressureSensorDataManager_updatePressureData = function _DevicePairPressureSensorDataManager_updatePressureData() {
-        const pressure = { scaledSum: 0, normalizedSum: 0, sensors: { left: [], right: [] } };
+        const pressure = {
+            scaledSum: 0,
+            normalizedSum: 0,
+            sensors: { left: [], right: [] },
+        };
         Sides.forEach((side) => {
             const sidePressure = __classPrivateFieldGet(this, _DevicePairPressureSensorDataManager_rawPressure, "f")[side];
             pressure.scaledSum += sidePressure.scaledSum;
         });
-        pressure.normalizedSum += __classPrivateFieldGet(this, _DevicePairPressureSensorDataManager_normalizedSumRangeHelper, "f").updateAndGetNormalization(pressure.scaledSum, false);
+        pressure.normalizedSum +=
+            __classPrivateFieldGet(this, _DevicePairPressureSensorDataManager_normalizedSumRangeHelper, "f").updateAndGetNormalization(pressure.scaledSum, false);
         if (pressure.scaledSum > 0) {
             pressure.center = { x: 0, y: 0 };
             Sides.forEach((side) => {
@@ -5673,7 +5686,8 @@
                     });
                 }
             });
-            pressure.normalizedCenter = __classPrivateFieldGet(this, _DevicePairPressureSensorDataManager_centerOfPressureHelper, "f").updateAndGetNormalization(pressure.center, false);
+            pressure.normalizedCenter =
+                __classPrivateFieldGet(this, _DevicePairPressureSensorDataManager_centerOfPressureHelper, "f").updateAndGetNormalization(pressure.center, false);
         }
         _console$2.log({ devicePairPressure: pressure });
         return pressure;
@@ -5857,7 +5871,8 @@
     }, _DevicePair_addDeviceEventListeners = function _DevicePair_addDeviceEventListeners(device) {
         addEventListeners(device, __classPrivateFieldGet(this, _DevicePair_boundDeviceEventListeners, "f"));
         DeviceEventTypes.forEach((deviceEventType) => {
-            device.addEventListener(deviceEventType, __classPrivateFieldGet(this, _DevicePair_instances, "m", _DevicePair_redispatchDeviceEvent).bind(this));
+            device.addEventListener(
+            deviceEventType, __classPrivateFieldGet(this, _DevicePair_instances, "m", _DevicePair_redispatchDeviceEvent).bind(this));
         });
     }, _DevicePair_removeDeviceEventListeners = function _DevicePair_removeDeviceEventListeners(device) {
         removeEventListeners(device, __classPrivateFieldGet(this, _DevicePair_boundDeviceEventListeners, "f"));

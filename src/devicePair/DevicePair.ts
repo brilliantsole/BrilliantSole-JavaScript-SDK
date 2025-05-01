@@ -222,8 +222,8 @@ class DevicePair {
   #addDeviceEventListeners(device: Device) {
     addEventListeners(device, this.#boundDeviceEventListeners);
     DeviceEventTypes.forEach((deviceEventType) => {
-      // @ts-expect-error
       device.addEventListener(
+        // @ts-expect-error
         deviceEventType,
         this.#redispatchDeviceEvent.bind(this)
       );

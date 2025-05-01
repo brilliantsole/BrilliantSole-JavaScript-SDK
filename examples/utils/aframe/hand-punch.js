@@ -1,3 +1,5 @@
+import * as BS from "../../../build/brilliantsole.module.js";
+
 AFRAME.registerComponent("hand-punch", {
   schema: {
     punchable: { default: ".punchable" },
@@ -6,9 +8,12 @@ AFRAME.registerComponent("hand-punch", {
     punchTimeout: { default: 500 },
   },
 
-  dependencies: ["hand-tracking-grab-controls"],
+  dependencies: ["hand-tracking-controls", "hand-tracking-grab-controls"],
 
   init() {
+    this.hand = this.el.components["hand-tracking-controls"];
+    this.side = this.hand.data.hand;
+
     this.lastTimePunched = 0;
     this.positionHistory = [];
 
@@ -51,6 +56,14 @@ AFRAME.registerComponent("hand-punch", {
       }
 
       withEl.emit("punch", { velocity, position });
+
+      /** @type {BS.VibrationWaveformEffect} */
+      let waveformEffect = "strongClick100";
+      this.el.sceneEl.emit("bs-trigger-vibration", {
+        side: this.side,
+        type: "glove",
+        waveformEffect,
+      });
     }
   },
 

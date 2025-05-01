@@ -2294,8 +2294,15 @@ AFRAME.registerComponent("goomba", {
     if (this.status == "walking") {
       this.stopWalking();
     }
+    if (this.status == "petting") {
+      this.el.sceneEl.emit("stopPetting", { side: this.petSide });
+    }
     this.status = newStatus;
     //console.log(`new status "${this.status}"`);
+
+    if (this.status == "petting") {
+      this.el.sceneEl.emit("startPetting", { side: this.petSide });
+    }
 
     this.el.removeAttribute("animation__turn");
 
@@ -2476,5 +2483,9 @@ AFRAME.registerComponent("goomba", {
     clearInterval(this.lookAtSelectorInterval);
     clearInterval(this.lookAtRaycastSelectorInterval);
     clearInterval(this.floorInterval);
+
+    if (this.status == "petting") {
+      this.el.sceneEl.emit("stopPetting", { side: this.petSide });
+    }
   },
 });
