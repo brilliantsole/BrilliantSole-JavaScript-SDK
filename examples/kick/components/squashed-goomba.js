@@ -45,6 +45,13 @@ AFRAME.registerComponent("squashed-goomba", {
   init: function () {
     this.camera = document.querySelector("a-camera");
 
+    console.log(this.el.sceneEl.components);
+
+    this.sound = this.el.sceneEl.components["pool__splat"].requestEntity();
+    this.sound.object3D.position.copy(this.el.object3D.position);
+    this.sound.play();
+    this.sound.components.sound.playSound();
+
     this.el.addEventListener("loaded", () => {
       this.el.object3D.rotation.z = this.randomRange(this.bodyRotationRange.z);
 
@@ -159,15 +166,19 @@ AFRAME.registerComponent("squashed-goomba", {
         {
           if (true) {
             const { x, y, z } = this.camera.object3D.rotation;
+            const cameraToCoin = new THREE.Vector3().subVectors(
+              this.camera.object3D.position,
+              this.el.object3D.position
+            );
+            const yaw = Math.atan2(cameraToCoin.x, cameraToCoin.z);
             coin.setAttribute(
               "rotation",
-              [flip ? 180 : 0, THREE.MathUtils.radToDeg(y), 0].join(" ")
+              [flip ? 180 : 0, THREE.MathUtils.radToDeg(yaw), 0].join(" ")
             );
           } else {
             const { x, y, z } = this.el.getAttribute("rotation");
             coin.setAttribute("rotation", [0, y, 0].join(" "));
           }
-          const { x, y, z } = this.camera.object3D.rotation;
         }
         this.el.sceneEl.appendChild(coin);
 
@@ -204,5 +215,9 @@ AFRAME.registerComponent("squashed-goomba", {
     if (dampingFactor < 0.01) {
       this.isDone = true;
     }
+  },
+
+  remove: function () {
+    this.el.sceneEl.components["pool__splat"].returnEntity(this.sound);
   },
 });

@@ -156,6 +156,9 @@ AFRAME.registerComponent("goomba", {
         // console.log(`adding class ${_class}`);
         this.el.classList.add(_class);
       });
+      if (this.el.classList.contains("punchable")) {
+        this.punchable = true;
+      }
       Array.from(template.children).forEach((entity) => {
         this.el.appendChild(entity);
       });
@@ -255,7 +258,7 @@ AFRAME.registerComponent("goomba", {
     this.punch(velocity, position);
   },
 
-  ignorePunchStatuses: ["falling", "getting up", "petting"],
+  ignorePunchStatuses: ["falling", "getting up"],
 
   punchDownPitchThreshold: THREE.MathUtils.degToRad(-50),
   punch: function (velocity, position) {
@@ -275,6 +278,7 @@ AFRAME.registerComponent("goomba", {
     this.setStatus("idle");
     this.lastTimePunched = this.latestTick;
     this.punched = true;
+    this.punchedFloor = this.floor;
     if (!position) {
       position = this.el.object3D.getWorldPosition(new THREE.Vector3());
     }
@@ -340,8 +344,9 @@ AFRAME.registerComponent("goomba", {
     if (
       this.punched &&
       this.validHitWorldMeshTypes.includes(collidedEntity.dataset.worldMesh) &&
-      collidedEntity != this.floor
+      collidedEntity != this.punchedFloor
     ) {
+      //console.log("died colliding with", collidedEntity);
       this.deathCollidedEntity = collidedEntity;
       this.shouldDie = true;
       this.deathVelocity = this.el.body.velocity.clone();
@@ -468,10 +473,10 @@ AFRAME.registerComponent("goomba", {
     if (this.floor) {
       const checkIfStoppedMoving = () => {
         const stoppedMoving =
-          this.el.components["dynamic-body"].body.velocity.length() < 0.01;
+          this.el.components["dynamic-body"].body.velocity.length() < 0.0001;
         const stoppedRotating =
           this.el.components["dynamic-body"].body.angularVelocity.length() <
-          0.01;
+          0.0001;
         const stopped = stoppedMoving && stoppedRotating;
         if (stopped) {
           // console.log("stopped");
@@ -2304,9 +2309,25 @@ AFRAME.registerComponent("goomba", {
       this.el.sceneEl.emit("startPetting", { side: this.petSide });
     }
 
+    if (true || this.punchable) {
+      if (this.ignorePunchStatuses.includes(this.status)) {
+        this.el.classList.remove("punchable");
+      } else {
+        this.el.classList.add("punchable");
+      }
+    }
+
     this.el.removeAttribute("animation__turn");
 
-    this.squash.removeAttribute("animation__rot");
+    if (this.squash.hasAttribute("animation__rot")) {
+      this.squash.removeAttribute("animation__rot");
+      this.squash.setAttribute("animation__rot", {
+        property: "rotation",
+        to: `0 0 0`,
+        dur: 200,
+        easing: "easeOutQuad",
+      });
+    }
     if (this.squash.hasAttribute("animation__scale")) {
       this.squash.removeAttribute("animation__scale");
       this.squash.setAttribute("animation__scale", {

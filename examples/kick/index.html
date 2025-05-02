@@ -74,6 +74,8 @@
     <div id="connectToDeviceContainers"></div>
 
     <a-scene
+      pool__splat="mixin: splatMixin; size: 10"
+      pool__coin="mixin: coinMixin; size: 10"
       id="scene"
       physics="debug: false; restitution: 0.4;"
       embedded
@@ -100,6 +102,23 @@
         >
         </a-mixin>
         <a-mixin id="realWorldMeshMixin" occlude-mesh></a-mixin>
+        <audio
+          id="coinAudio"
+          src="../../assets/audio/coin.wav"
+          preload="auto"
+        ></audio>
+        <audio
+          id="splatAudio"
+          src="../../assets/audio/splat.wav"
+          preload="auto"
+        ></audio>
+        <audio
+          id="punchAudio"
+          src="../../assets/audio/punch.wav"
+          preload="auto"
+        ></audio>
+        <a-mixin id="coinMixin" sound="src: #coinAudio"></a-mixin>
+        <a-mixin id="splatMixin" sound="src: #splatAudio"></a-mixin>
       </a-assets>
       <!--<a-entity rotation="-90 0 0" position="0 2 1">
         <a-camera
@@ -151,8 +170,12 @@
 
       <template id="squashedGoombaTemplate">
         <a-entity>
-          <a-sphere class="body" color="#a14e00" radius="0.1" scale="1 1 0.3">
-          </a-sphere>
+          <a-sphere
+            class="body"
+            color="#a14e00"
+            radius="0.1"
+            scale="1 1 0.3"
+          ></a-sphere>
 
           <a-entity
             class="eye left"
@@ -232,6 +255,7 @@
         obb-collider
         rotation="0 0 0"
         id="testWall"
+        visible="false"
       ></a-box> -->
       <!-- <a-box
         scale="2 2 0.05"

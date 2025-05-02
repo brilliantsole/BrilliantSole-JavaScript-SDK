@@ -4,6 +4,11 @@ AFRAME.registerComponent("coin", {
     lifetime: { default: 800 },
   },
   init: function () {
+    this.sound = this.el.sceneEl.components["pool__coin"].requestEntity();
+    this.sound.play();
+    this.sound.object3D.position.copy(this.el.object3D.position);
+    this.sound.components.sound.playSound();
+
     this.el.addEventListener("loaded", () => {
       const template = this.data.template.content
         .querySelector("a-entity")
@@ -20,7 +25,7 @@ AFRAME.registerComponent("coin", {
       this.el.querySelector(".rotation").setAttribute("animation__rot", {
         property: "rotation",
         to: `0 180 0`,
-        dur: this.data.lifetime * 0.9,
+        dur: this.data.lifetime * 0.7,
         easing: "easeInOutBack",
       });
 
@@ -48,5 +53,9 @@ AFRAME.registerComponent("coin", {
         this.el.remove();
       }, this.data.lifetime);
     });
+  },
+
+  remove: function () {
+    this.el.sceneEl.components["pool__coin"].returnEntity(this.sound);
   },
 });
