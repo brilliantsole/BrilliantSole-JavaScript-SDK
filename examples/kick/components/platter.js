@@ -108,6 +108,17 @@ AFRAME.registerComponent("platter", {
   addGoomba: function () {
     if (!this.goomba) {
       this.goomba = document.createElement("a-entity");
+      const goomba = this.goomba;
+      goomba.addEventListener(
+        "die",
+        () => {
+          if (this.goomba == goomba) {
+            this.goomba = undefined;
+            this.addGoomba();
+          }
+        },
+        { once: true }
+      );
       this.goomba.platter = this;
       //console.log("creating goomba", this.goomba);
       this.goomba.addEventListener("loaded", () => {
@@ -137,7 +148,6 @@ AFRAME.registerComponent("platter", {
           this.goomba.play();
           this.goomba.setAttribute("grabbable", "");
           this.goomba.classList.add("punchable");
-          this.goomba.platter = undefined;
           this.goomba = undefined;
           this.addGoomba();
           this.goomba.setAttribute("visible", "false");

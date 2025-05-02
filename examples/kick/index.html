@@ -81,6 +81,9 @@
       pool__grab="mixin: grabMixin; size: 2; dynamic: true;"
       pool__release="mixin: releaseMixin; size: 2; dynamic: true;"
       pool__punchsqueak="mixin: punchSqueakMixin; size: 2; dynamic: true;"
+      pool__bounceweak="mixin: bounceWeakMixin; size: 3; dynamic: true;"
+      pool__bouncemedium="mixin: bounceMediumMixin; size: 3; dynamic: true;"
+      pool__bouncestrong="mixin: bounceStrongMixin; size: 3; dynamic: true;"
       id="scene"
       physics="debug: false; restitution: 0.4;"
       embedded
@@ -169,7 +172,7 @@
         ></audio>
         <a-mixin
           id="releaseMixin"
-          sound="src: #releaseAudio; volume: 0.2;"
+          sound="src: #releaseAudio; volume: 0.4;"
         ></a-mixin>
 
         <audio
@@ -180,6 +183,36 @@
         <a-mixin
           id="punchSqueakMixin"
           sound="src: #punchSqueakAudio; volume: 1;"
+        ></a-mixin>
+
+        <audio
+          id="bounceWeakAudio"
+          src="../../assets/audio/bounceWeak.wav"
+          preload="auto"
+        ></audio>
+        <a-mixin
+          id="bounceWeakMixin"
+          sound="src: #bounceWeakAudio; volume: 1;"
+        ></a-mixin>
+
+        <audio
+          id="bounceMediumAudio"
+          src="../../assets/audio/bounceMedium.wav"
+          preload="auto"
+        ></audio>
+        <a-mixin
+          id="bounceMediumMixin"
+          sound="src: #bounceMediumAudio; volume: 1;"
+        ></a-mixin>
+
+        <audio
+          id="bounceStrongAudio"
+          src="../../assets/audio/bounceStrong.wav"
+          preload="auto"
+        ></audio>
+        <a-mixin
+          id="bounceStrongMixin"
+          sound="src: #bounceStrongAudio; volume: 1;"
         ></a-mixin>
       </a-assets>
       <!--<a-entity rotation="-90 0 0" position="0 2 1">

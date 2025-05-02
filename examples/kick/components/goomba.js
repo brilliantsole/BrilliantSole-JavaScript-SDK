@@ -24,11 +24,16 @@ AFRAME.registerComponent("goomba", {
   init: function () {
     this.playGrabSound = AFRAME.utils.throttle(
       this.playGrabSound.bind(this),
-      400
+      500
     );
     this.playReleaseSound = AFRAME.utils.throttle(
       this.playReleaseSound.bind(this),
-      400
+      500
+    );
+
+    this.playBounceSound = AFRAME.utils.throttle(
+      this.playBounceSound.bind(this),
+      300
     );
 
     this.lastTimePunched = 0;
@@ -371,7 +376,25 @@ AFRAME.registerComponent("goomba", {
           this.resetLegs();
           this.setFloor(collidedEntity);
         }
+
+        if (!this.punched) {
+          const velocity = this.el.body.velocity;
+          this.playBounceSound(velocity);
+        }
         break;
+    }
+  },
+
+  playBounceSound: function (velocity) {
+    // FILL - set poolName based on velocity
+  },
+  returnBounceSound: function () {
+    if (this.bounceSound) {
+      this.bounceSound.components["sound"].stopSound();
+      this.el.sceneEl.components[bounceSound.poolName].returnEntity(
+        this.bounceSound
+      );
+      this.bounceSound = undefined;
     }
   },
 
@@ -380,6 +403,21 @@ AFRAME.registerComponent("goomba", {
       // console.log("removing goomba");
       window.goombas.splice(window.goombas.indexOf(this), 1);
     }
+
+    clearInterval(this.lookAtSelectorInterval);
+    clearInterval(this.lookAtRaycastSelectorInterval);
+    clearInterval(this.floorInterval);
+
+    if (this.status == "petting") {
+      this.el.sceneEl.emit("stopPetting", { side: this.petSide });
+    }
+    if (this.purrSound) {
+      this.returnPurrSound();
+      this.playPurrFadeOutSound();
+    }
+    this.returnGrabSound();
+    this.returnReleaseSound();
+    this.returnBounceSound();
   },
 
   debugColors: false,
@@ -1247,6 +1285,7 @@ AFRAME.registerComponent("goomba", {
     this.el.object3D.getWorldPosition(this.worldPosition);
     this.el.object3D.getWorldQuaternion(this.worldQuaternion);
     if (this.shouldDie) {
+      this.el.emit("die");
       this.el.remove();
       const squashedGoomba = document.createElement("a-entity");
       squashedGoomba.setAttribute("squashed-goomba", "");
@@ -1319,10 +1358,9 @@ AFRAME.registerComponent("goomba", {
     }
 
     if (
-      !this.el.platter &&
-      (this.status == "idle" ||
-        this.status == "petting" ||
-        this.status == "walking")
+      this.status == "idle" ||
+      this.status == "petting" ||
+      this.status == "walking"
     ) {
       if (
         this.latestTick - this.lastPetTick >
@@ -2349,14 +2387,6 @@ AFRAME.registerComponent("goomba", {
       this.playGrabSound();
     }
 
-    if (true || this.punchable) {
-      if (this.ignorePunchStatuses.includes(this.status)) {
-        this.el.classList.remove("punchable");
-      } else {
-        this.el.classList.add("punchable");
-      }
-    }
-
     this.el.removeAttribute("animation__turn");
 
     if (this.squash.hasAttribute("animation__rot")) {
@@ -2506,6 +2536,14 @@ AFRAME.registerComponent("goomba", {
         this.resetEyes();
         break;
     }
+
+    if (this.punchable) {
+      if (this.ignorePunchStatuses.includes(this.status)) {
+        this.el.classList.remove("punchable");
+      } else {
+        this.el.classList.add("punchable");
+      }
+    }
   },
 
   setScale: function (scale, dur, easing = "easeOutQuad") {
@@ -2521,6 +2559,20 @@ AFRAME.registerComponent("goomba", {
         dur,
         easing,
       });
+    }
+  },
+
+  playPurrSound: function () {
+    this.purrSound = this.el.sceneEl.components["pool__purr"].requestEntity();
+    this.purrSound.object3D.position.copy(this.el.object3D.position);
+    this.purrSound.play();
+    this.purrSound.components.sound.playSound();
+  },
+  returnPurrSound: function () {
+    if (this.purrSound) {
+      this.purrSound.components["sound"].stopSound();
+      this.el.sceneEl.components["pool__purr"].returnEntity(this.purrSound);
+      this.purrSound = undefined;
     }
   },
 
@@ -2549,26 +2601,17 @@ AFRAME.registerComponent("goomba", {
     }
   },
 
-  playPurrSound: function () {
-    this.purrSound = this.el.sceneEl.components["pool__purr"].requestEntity();
-    this.purrSound.object3D.position.copy(this.el.object3D.position);
-    this.purrSound.play();
-    this.purrSound.components.sound.playSound();
-  },
-  returnPurrSound: function () {
-    if (this.purrSound) {
-      this.purrSound.components["sound"].stopSound();
-      this.el.sceneEl.components["pool__purr"].returnEntity(this.purrSound);
-      this.purrSound = undefined;
-    }
-  },
-
   playGrabSound: function () {
     this.returnReleaseSound();
     this.grabSound = this.el.sceneEl.components["pool__grab"].requestEntity();
     this.el.object3D.getWorldPosition(this.grabSound.object3D.position);
     this.grabSound.play();
     this.grabSound.components.sound.playSound();
+    this.grabSound.addEventListener(
+      "sound-ended",
+      () => this.returnGrabSound(),
+      { once: true }
+    );
   },
   returnGrabSound: function () {
     if (this.grabSound) {
@@ -2585,6 +2628,11 @@ AFRAME.registerComponent("goomba", {
     this.el.object3D.getWorldPosition(this.releaseSound.object3D.position);
     this.releaseSound.play();
     this.releaseSound.components.sound.playSound();
+    this.releaseSound.addEventListener(
+      "sound-ended",
+      () => this.returnReleaseSound(),
+      { once: true }
+    );
   },
   returnReleaseSound: function () {
     if (this.releaseSound) {
@@ -2633,20 +2681,5 @@ AFRAME.registerComponent("goomba", {
     if (this.lookAtRaycastTargetObjects.length > 0) {
       clearInterval(this.lookAtRaycastSelectorInterval);
     }
-  },
-  remove() {
-    clearInterval(this.lookAtSelectorInterval);
-    clearInterval(this.lookAtRaycastSelectorInterval);
-    clearInterval(this.floorInterval);
-
-    if (this.status == "petting") {
-      this.el.sceneEl.emit("stopPetting", { side: this.petSide });
-    }
-    if (this.purrSound) {
-      this.returnPurrSound();
-      this.playPurrFadeOutSound();
-    }
-    this.returnGrabSound();
-    this.returnReleaseSound();
   },
 });
