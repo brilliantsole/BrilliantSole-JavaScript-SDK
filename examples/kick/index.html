@@ -76,6 +76,8 @@
     <a-scene
       pool__splat="mixin: splatMixin; size: 10"
       pool__coin="mixin: coinMixin; size: 10"
+      pool__purr="mixin: purrMixin; size: 2; dynamic: true;"
+      pool__purrfadeout="mixin: purrFadeOutMixin; size: 2; dynamic: true;"
       id="scene"
       physics="debug: false; restitution: 0.4;"
       embedded
@@ -107,18 +109,37 @@
           src="../../assets/audio/coin.wav"
           preload="auto"
         ></audio>
+        <a-mixin id="coinMixin" sound="src: #coinAudio"></a-mixin>
+
         <audio
           id="splatAudio"
           src="../../assets/audio/splat.wav"
           preload="auto"
         ></audio>
+        <a-mixin id="splatMixin" sound="src: #splatAudio"></a-mixin>
+
         <audio
           id="punchAudio"
           src="../../assets/audio/punch.wav"
           preload="auto"
         ></audio>
-        <a-mixin id="coinMixin" sound="src: #coinAudio"></a-mixin>
-        <a-mixin id="splatMixin" sound="src: #splatAudio"></a-mixin>
+
+        <audio
+          id="purrAudio"
+          src="../../assets/audio/purr.wav"
+          preload="auto"
+        ></audio>
+        <a-mixin id="purrMixin" sound="src: #purrAudio; loop: true;"></a-mixin>
+
+        <audio
+          id="purrFadeOutAudio"
+          src="../../assets/audio/purrFadeOut.wav"
+          preload="auto"
+        ></audio>
+        <a-mixin
+          id="purrFadeOutMixin"
+          sound="src: #purrFadeOutAudio;"
+        ></a-mixin>
       </a-assets>
       <!--<a-entity rotation="-90 0 0" position="0 2 1">
         <a-camera

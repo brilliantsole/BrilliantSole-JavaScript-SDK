@@ -367,7 +367,7 @@ AFRAME.registerComponent("goomba", {
 
   remove: function () {
     if (window.goombas.includes(this)) {
-      console.log("removing goomba");
+      // console.log("removing goomba");
       window.goombas.splice(window.goombas.indexOf(this), 1);
     }
   },
@@ -1317,7 +1317,7 @@ AFRAME.registerComponent("goomba", {
         if (this.status == "idle" || this.status == "walking") {
           for (const side in this.hands) {
             const hand = this.hands[side];
-            if (hand.controllerPresent) {
+            if (hand?.controllerPresent) {
               this.petEntity.object3D.getWorldPosition(this.petPosition);
               const distance = hand.indexTipPosition.distanceTo(
                 this.petPosition
@@ -1335,7 +1335,7 @@ AFRAME.registerComponent("goomba", {
         }
         if (this.status == "petting") {
           const hand = this.hands[this.petSide];
-          if (hand.controllerPresent) {
+          if (hand?.controllerPresent) {
             this.petEntity.object3D.getWorldPosition(this.petPosition);
             const distance = hand.indexTipPosition.distanceTo(this.petPosition);
             // console.log({ side, distance });
@@ -2301,12 +2301,18 @@ AFRAME.registerComponent("goomba", {
     }
     if (this.status == "petting") {
       this.el.sceneEl.emit("stopPetting", { side: this.petSide });
+      if (this.purrSound) {
+        this.returnPurrSound();
+        this.playPurrFadeOutSound();
+      }
     }
     this.status = newStatus;
     //console.log(`new status "${this.status}"`);
 
     if (this.status == "petting") {
       this.el.sceneEl.emit("startPetting", { side: this.petSide });
+
+      this.playPurrSound();
     }
 
     if (true || this.punchable) {
@@ -2484,6 +2490,42 @@ AFRAME.registerComponent("goomba", {
     }
   },
 
+  playPurrFadeOutSound: function () {
+    this.fadeOutPurrSound =
+      this.el.sceneEl.components["pool__purrfadeout"].requestEntity();
+    this.fadeOutPurrSound.object3D.position.copy(this.el.object3D.position);
+    this.fadeOutPurrSound.play();
+    this.fadeOutPurrSound.components["sound"].playSound();
+    this.fadeOutPurrSound.addEventListener(
+      "sound-ended",
+      () => this.returnFadeOutPurrSound(),
+      { once: true }
+    );
+  },
+  returnFadeOutPurrSound: function () {
+    if (this.fadeOutPurrSound) {
+      this.fadeOutPurrSound.components["sound"].stopSound();
+      this.el.sceneEl.components["pool__purrfadeout"].returnEntity(
+        this.fadeOutPurrSound
+      );
+      this.fadeOutPurrSound = undefined;
+    }
+  },
+
+  playPurrSound: function () {
+    this.purrSound = this.el.sceneEl.components["pool__purr"].requestEntity();
+    this.purrSound.object3D.position.copy(this.el.object3D.position);
+    this.purrSound.play();
+    this.purrSound.components.sound.playSound();
+  },
+  returnPurrSound: function () {
+    if (this.purrSound) {
+      this.purrSound.components["sound"].stopSound();
+      this.el.sceneEl.components["pool__purr"].returnEntity(this.purrSound);
+      this.purrSound = undefined;
+    }
+  },
+
   updateLookAtTargets() {
     this.lookAtTargets = Array.from(
       this.el.sceneEl.querySelectorAll(this.data.lookAt)
@@ -2507,6 +2549,10 @@ AFRAME.registerComponent("goomba", {
 
     if (this.status == "petting") {
       this.el.sceneEl.emit("stopPetting", { side: this.petSide });
+    }
+    if (this.purrSound) {
+      this.returnPurrSound();
+      this.playPurrFadeOutSound();
     }
   },
 });

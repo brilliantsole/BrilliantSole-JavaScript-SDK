@@ -3,7 +3,7 @@ import * as BS from "../../../build/brilliantsole.module.js";
 AFRAME.registerComponent("hand-punch", {
   schema: {
     punchable: { default: ".punchable" },
-    velocityThreshold: { default: 1.5 },
+    velocityThreshold: { default: 1.2 },
     velocityScalar: { default: 1 },
     punchTimeout: { default: 500 },
     soundSelector: { default: "#punchAudio" },
