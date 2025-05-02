@@ -1,5 +1,10 @@
 AFRAME.registerComponent("platter", {
-  schema: {},
+  schema: {
+    fadeInSoundSelector: { default: "#platterFadeInAudio" },
+    fadeOutSoundSelector: { default: "#platterFadeOutAudio" },
+    fadeInSoundVolume: { default: 0.3 },
+    fadeOutSoundVolume: { default: 0.3 },
+  },
 
   init: function () {
     this.auxMatrix = new THREE.Matrix4();
@@ -20,6 +25,7 @@ AFRAME.registerComponent("platter", {
       this.setGrabEnabled(false);
       this.isGrabbed = false;
       this.isOpen = true;
+      this.playFadeInSound();
       if (this.goomba) {
         this.goomba.setAttribute("visible", "true");
       }
@@ -41,6 +47,7 @@ AFRAME.registerComponent("platter", {
     this.hand.addEventListener("palmupoff", () => {
       this.setGrabEnabled(true);
       this.isOpen = false;
+      this.playFadeOutSound();
       if (this.goomba && !this.isGrabbed) {
         this.goomba.removeAttribute("grabbable");
         this.goomba.pause();
@@ -51,6 +58,20 @@ AFRAME.registerComponent("platter", {
       });
       this.isGrabbed = false;
     });
+
+    this.fadeInSound = document.createElement("a-entity");
+    this.fadeInSound.setAttribute(
+      "sound",
+      `src: ${this.data.fadeInSoundSelector}; volume: ${this.data.fadeInSoundVolume}`
+    );
+    this.el.sceneEl.appendChild(this.fadeInSound);
+
+    this.fadeOutSound = document.createElement("a-entity");
+    this.fadeOutSound.setAttribute(
+      "sound",
+      `src: ${this.data.fadeOutSoundSelector};  volume: ${this.data.fadeOutSoundVolume}`
+    );
+    this.el.sceneEl.appendChild(this.fadeOutSound);
   },
 
   setGrabEnabled: function (enabled) {
@@ -65,6 +86,23 @@ AFRAME.registerComponent("platter", {
     } else {
       this.hand.removeAttribute("obb-collider");
     }
+  },
+
+  playFadeInSound: function () {
+    this.stopFadeOutSound();
+    this.el.object3D.getWorldPosition(this.fadeInSound.object3D.position);
+    this.fadeInSound.components.sound.playSound();
+  },
+  stopFadeInSound: function () {
+    this.fadeInSound.components.sound.stopSound();
+  },
+  playFadeOutSound: function () {
+    this.stopFadeInSound();
+    this.el.object3D.getWorldPosition(this.fadeOutSound.object3D.position);
+    this.fadeOutSound.components.sound.playSound();
+  },
+  stopFadeOutSound: function () {
+    this.fadeOutSound.components.sound.stopSound();
   },
 
   addGoomba: function () {
