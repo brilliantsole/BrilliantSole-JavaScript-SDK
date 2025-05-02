@@ -108,6 +108,7 @@ AFRAME.registerComponent("platter", {
   addGoomba: function () {
     if (!this.goomba) {
       this.goomba = document.createElement("a-entity");
+      this.goomba.platter = this;
       //console.log("creating goomba", this.goomba);
       this.goomba.addEventListener("loaded", () => {
         this.setOwner(this.el.object3D);
@@ -136,6 +137,7 @@ AFRAME.registerComponent("platter", {
           this.goomba.play();
           this.goomba.setAttribute("grabbable", "");
           this.goomba.classList.add("punchable");
+          this.goomba.platter = undefined;
           this.goomba = undefined;
           this.addGoomba();
           this.goomba.setAttribute("visible", "false");

@@ -22,6 +22,15 @@ AFRAME.registerComponent("goomba", {
           offset: 0 0 0;`,
 
   init: function () {
+    this.playGrabSound = AFRAME.utils.throttle(
+      this.playGrabSound.bind(this),
+      400
+    );
+    this.playReleaseSound = AFRAME.utils.throttle(
+      this.playReleaseSound.bind(this),
+      400
+    );
+
     this.lastTimePunched = 0;
     this.sphere = new THREE.Sphere();
     this.sphere.radius = 0.2;
@@ -1305,9 +1314,10 @@ AFRAME.registerComponent("goomba", {
     }
 
     if (
-      this.status == "idle" ||
-      this.status == "petting" ||
-      this.status == "walking"
+      !this.el.platter &&
+      (this.status == "idle" ||
+        this.status == "petting" ||
+        this.status == "walking")
     ) {
       if (
         this.latestTick - this.lastPetTick >
@@ -2312,6 +2322,9 @@ AFRAME.registerComponent("goomba", {
     if (this.status == "walking") {
       this.stopWalking();
     }
+    if (this.status == "grabbed") {
+      this.playReleaseSound();
+    }
     if (this.status == "petting") {
       this.el.sceneEl.emit("stopPetting", { side: this.petSide });
       if (this.purrSound) {
@@ -2324,8 +2337,11 @@ AFRAME.registerComponent("goomba", {
 
     if (this.status == "petting") {
       this.el.sceneEl.emit("startPetting", { side: this.petSide });
-
       this.playPurrSound();
+    }
+
+    if (this.status == "grabbed") {
+      this.playGrabSound();
     }
 
     if (true || this.punchable) {
@@ -2542,6 +2558,39 @@ AFRAME.registerComponent("goomba", {
     }
   },
 
+  playGrabSound: function () {
+    this.returnReleaseSound();
+    this.grabSound = this.el.sceneEl.components["pool__grab"].requestEntity();
+    this.el.object3D.getWorldPosition(this.grabSound.object3D.position);
+    this.grabSound.play();
+    this.grabSound.components.sound.playSound();
+  },
+  returnGrabSound: function () {
+    if (this.grabSound) {
+      this.grabSound.components["sound"].stopSound();
+      this.el.sceneEl.components["pool__grab"].returnEntity(this.grabSound);
+      this.grabSound = undefined;
+    }
+  },
+
+  playReleaseSound: function () {
+    this.returnGrabSound();
+    this.releaseSound =
+      this.el.sceneEl.components["pool__release"].requestEntity();
+    this.el.object3D.getWorldPosition(this.releaseSound.object3D.position);
+    this.releaseSound.play();
+    this.releaseSound.components.sound.playSound();
+  },
+  returnReleaseSound: function () {
+    if (this.releaseSound) {
+      this.releaseSound.components["sound"].stopSound();
+      this.el.sceneEl.components["pool__release"].returnEntity(
+        this.releaseSound
+      );
+      this.releaseSound = undefined;
+    }
+  },
+
   updateLookAtTargets() {
     this.lookAtTargets = Array.from(
       this.el.sceneEl.querySelectorAll(this.data.lookAt)
@@ -2570,5 +2619,7 @@ AFRAME.registerComponent("goomba", {
       this.returnPurrSound();
       this.playPurrFadeOutSound();
     }
+    this.returnGrabSound();
+    this.returnReleaseSound();
   },
 });
