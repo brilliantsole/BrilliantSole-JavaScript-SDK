@@ -1225,6 +1225,8 @@ AFRAME.registerComponent("goomba", {
   petSquashEyesRollRange: { min: 0.4, max: 0.6 },
   petEyeSquashRange: { min: -0.03, max: 0.01 },
 
+  petSquashPurrRange: { min: 1.2, max: 0.05 },
+
   petBodyPitchRange: { min: -0.05, max: 0.05 },
   petSquashBodyPitchRange: { min: -10, max: 5 },
 
@@ -1358,6 +1360,17 @@ AFRAME.registerComponent("goomba", {
                 0,
                 1
               );
+              if (this.purrSound) {
+                const purrSoundInterpolation = THREE.MathUtils.lerp(
+                  this.petSquashPurrRange.min,
+                  this.petSquashPurrRange.max,
+                  clampedSquashInterpolation
+                );
+                this.latestPurrVolume = purrSoundInterpolation;
+                this.purrSound.components.sound.pool.children[0].setVolume(
+                  purrSoundInterpolation
+                );
+              }
               const squashInterpolationY = THREE.MathUtils.lerp(
                 this.petSquashYRange.min,
                 this.petSquashYRange.max,
@@ -2495,6 +2508,9 @@ AFRAME.registerComponent("goomba", {
       this.el.sceneEl.components["pool__purrfadeout"].requestEntity();
     this.fadeOutPurrSound.object3D.position.copy(this.el.object3D.position);
     this.fadeOutPurrSound.play();
+    this.fadeOutPurrSound.components.sound.pool.children[0].setVolume(
+      this.latestPurrVolume
+    );
     this.fadeOutPurrSound.components["sound"].playSound();
     this.fadeOutPurrSound.addEventListener(
       "sound-ended",
