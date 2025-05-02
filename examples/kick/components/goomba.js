@@ -274,6 +274,7 @@ AFRAME.registerComponent("goomba", {
     if (this.ignorePunchStatuses.includes(this.status)) {
       return;
     }
+    this.playPunchSqueakSound();
     const { x, y, z } = velocity;
     const pitch = Math.atan2(y, Math.sqrt(x * x + z * z));
     // console.log({ pitch, threshold: this.punchDownPitchThreshold });
@@ -1300,6 +1301,10 @@ AFRAME.registerComponent("goomba", {
       return;
     }
     this.sphere.center.copy(this.worldPosition);
+
+    if (this.punchSqueakSound) {
+      this.punchSqueakSound.object3D.position.copy(this.worldPosition);
+    }
 
     if ("updatePhysicsEnabledFlag" in this) {
       const enabled = this.updatePhysicsEnabledFlag;
@@ -2588,6 +2593,28 @@ AFRAME.registerComponent("goomba", {
         this.releaseSound
       );
       this.releaseSound = undefined;
+    }
+  },
+
+  playPunchSqueakSound: function () {
+    this.punchSqueakSound =
+      this.el.sceneEl.components["pool__punchsqueak"].requestEntity();
+    this.el.object3D.getWorldPosition(this.punchSqueakSound.object3D.position);
+    this.punchSqueakSound.play();
+    this.punchSqueakSound.components.sound.playSound();
+    this.punchSqueakSound.addEventListener(
+      "sound-ended",
+      () => this.returnPunchSqueakSound(),
+      { once: true }
+    );
+  },
+  returnPunchSqueakSound: function () {
+    if (this.punchSqueakSound) {
+      this.punchSqueakSound.components["sound"].stopSound();
+      this.el.sceneEl.components["pool__punchsqueak"].returnEntity(
+        this.punchSqueakSound
+      );
+      this.punchSqueakSound = undefined;
     }
   },
 

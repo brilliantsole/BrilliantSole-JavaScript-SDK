@@ -80,6 +80,7 @@
       pool__purrfadeout="mixin: purrFadeOutMixin; size: 2; dynamic: true;"
       pool__grab="mixin: grabMixin; size: 2; dynamic: true;"
       pool__release="mixin: releaseMixin; size: 2; dynamic: true;"
+      pool__punchsqueak="mixin: punchSqueakMixin; size: 2; dynamic: true;"
       id="scene"
       physics="debug: false; restitution: 0.4;"
       embedded
@@ -160,6 +161,7 @@
           preload="auto"
         ></audio>
         <a-mixin id="grabMixin" sound="src: #grabAudio; volume: 0.2;"></a-mixin>
+
         <audio
           id="releaseAudio"
           src="../../assets/audio/release.wav"
@@ -168,6 +170,16 @@
         <a-mixin
           id="releaseMixin"
           sound="src: #releaseAudio; volume: 0.2;"
+        ></a-mixin>
+
+        <audio
+          id="punchSqueakAudio"
+          src="../../assets/audio/punchSqueak.wav"
+          preload="auto"
+        ></audio>
+        <a-mixin
+          id="punchSqueakMixin"
+          sound="src: #punchSqueakAudio; volume: 1;"
         ></a-mixin>
       </a-assets>
       <!--<a-entity rotation="-90 0 0" position="0 2 1">
