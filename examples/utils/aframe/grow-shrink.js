@@ -6,20 +6,20 @@ AFRAME.registerComponent("grow-shrink", {
 
   init() {
     this.el.addEventListener("grow", () => {
-      this.animateScale(this.data.targetScale);
+      this.animateScale(this.data.targetScale, undefined, "easeOutBack");
     });
     this.el.addEventListener("shrink", () => {
       this.animateScale({ x: 0, y: 0, z: 0 });
     });
   },
 
-  animateScale(to, duration) {
+  animateScale(to, duration, easing = "easeInOutQuad") {
     this.el.removeAttribute("animation__scale"); // clear existing animation if any
     this.el.setAttribute("animation__scale", {
       property: "scale",
       to: `${to.x} ${to.y} ${to.z}`,
       dur: duration || this.data.duration,
-      easing: "easeInOutQuad",
+      easing,
     });
   },
 });
