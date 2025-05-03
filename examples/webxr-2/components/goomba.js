@@ -581,7 +581,7 @@ AFRAME.registerComponent("goomba", {
           0.01;
         const isFlat = this.isFlatOnOneSide();
         const stopped = stoppedMoving && stoppedRotating && isFlat;
-        console.log({ stoppedMoving, stoppedRotating, isFlat });
+        // console.log({ stoppedMoving, stoppedRotating, isFlat });
         if (stopped) {
           // console.log("stopped");
           if (this.punched) {
@@ -1645,6 +1645,7 @@ AFRAME.registerComponent("goomba", {
         const turnAngle = 360 / turnSections;
         const turnScalar = Math.round(Math.random()) ? 1 : -1;
         let didIntersectGoomba = false;
+        let didIntersectMesh = false;
         do {
           attempts++;
           let angle = turnAngle * turnScalar * attempts + angleOffset;
@@ -1676,7 +1677,11 @@ AFRAME.registerComponent("goomba", {
           didIntersectGoomba = this.doesPointIntersectAnyGoombas(
             this.tempPointToWalkTo
           );
+          didIntersectMesh = this.doesPointIntersectAnyMeshes(
+            this.tempPointToWalkTo
+          );
         } while (
+          didIntersectMesh ||
           didIntersectGoomba ||
           Math.abs(this.clampedTempPointToWalkTo.x - this.tempPointToWalkTo.x) >
             0.001 ||
@@ -1938,6 +1943,22 @@ AFRAME.registerComponent("goomba", {
       .filter((goomba) => goomba != this)
       .some((goomba) => {
         return goomba.sphere.containsPoint(point);
+      });
+  },
+
+  doesPointIntersectAnyMeshes: function (point) {
+    return this.lookAtRaycastTargets
+      .filter((entity) => entity.getAttribute("mixin") == "realWorldMeshMixin")
+      .some((entity) => {
+        const containsPoint =
+          entity.components["my-obb-collider"].obb.containsPoint(point);
+        if (containsPoint) {
+          console.log(
+            "congtains point with",
+            entity.getAttribute("data-world-mesh")
+          );
+        }
+        return containsPoint;
       });
   },
 

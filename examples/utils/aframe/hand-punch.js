@@ -46,7 +46,6 @@ AFRAME.registerComponent("hand-punch", {
     }
     const position = trackedObject3D.position.clone();
     if (withEl.classList.contains("punchable")) {
-      console.log("punching", withEl.components["goomba"].status);
       // Compute velocity from position history
       const velocity = new THREE.Vector3();
       const history = this.positionHistory;

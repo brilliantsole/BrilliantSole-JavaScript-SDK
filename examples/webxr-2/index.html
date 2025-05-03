@@ -19,6 +19,7 @@
     <script src="./components/coin.js"></script>
     <script src="../utils/aframe/occlude-mesh.js"></script>
     <script src="../utils/aframe/bs-vibration.js" type="module"></script>
+    <script src="../utils/aframe/my-obb-collider.js"></script>
   </head>
   <style>
     #scene {
@@ -117,7 +118,12 @@
           visible="false"
         >
         </a-mixin>
-        <a-mixin id="realWorldMeshMixin" occlude-mesh></a-mixin>
+        <a-mixin
+          id="realWorldMeshMixin"
+          occlude-mesh
+          visible="true"
+          my-obb-collider
+        ></a-mixin>
         <audio
           id="coinAudio"
           src="../../assets/audio/coin.wav"
@@ -701,6 +707,9 @@
     const clearEntitiesButton = document.getElementById("clearEntities");
     clearEntitiesButton.addEventListener("click", () => {
       window.goombas.forEach((goomba) => {
+        if (goomba.el.id || goomba.el.platter) {
+          return;
+        }
         goomba.el.remove();
       });
       saveEntities();
