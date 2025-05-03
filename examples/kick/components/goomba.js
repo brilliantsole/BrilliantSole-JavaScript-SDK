@@ -260,8 +260,13 @@ AFRAME.registerComponent("goomba", {
       }, 1);
     });
 
-    this.el.addEventListener("grabstarted", () => this.onGrabStarted());
-    this.el.addEventListener("grabended", () => this.onGrabEnded());
+    this.setGrabEnabled = AFRAME.utils.throttleLeadingAndTrailing(
+      this.setGrabEnabled.bind(this),
+      70
+    );
+
+    this.el.addEventListener("grabstarted", () => this.setGrabEnabled(true));
+    this.el.addEventListener("grabended", () => this.setGrabEnabled(false));
   },
 
   validWorldMeshTypes: ["floor", "table"],
@@ -270,6 +275,14 @@ AFRAME.registerComponent("goomba", {
   onPunch: function (event) {
     const { velocity, position } = event.detail;
     this.punch(velocity, position);
+  },
+
+  setGrabEnabled: function (enabled) {
+    if (enabled) {
+      this.onGrabStarted();
+    } else {
+      this.onGrabEnded();
+    }
   },
 
   ignorePunchStatuses: ["falling", "getting up"],
@@ -583,7 +596,7 @@ AFRAME.registerComponent("goomba", {
   },
 
   onGrabStarted: function () {
-    console.log("onGrabStarted");
+    // console.log("onGrabStarted");
     switch (this.status) {
       default:
         this.setStatus("grabbed");
@@ -594,7 +607,7 @@ AFRAME.registerComponent("goomba", {
     }
   },
   onGrabEnded: function () {
-    console.log("onGrabEnded");
+    // console.log("onGrabEnded");
     switch (this.status) {
       default:
         if (this.data.physics) {
@@ -2419,7 +2432,7 @@ AFRAME.registerComponent("goomba", {
       }
     }
     this.status = newStatus;
-    console.log(`new status "${this.status}"`);
+    // console.log(`new status "${this.status}"`);
 
     if (this.status == "petting") {
       this.el.sceneEl.emit("startPetting", { side: this.petSide });
@@ -2472,11 +2485,6 @@ AFRAME.registerComponent("goomba", {
         this.el.classList.add("punchable");
       }
     }
-    console.log(
-      this.status,
-      this.punchable,
-      this.el.classList.contains("punchable")
-    );
 
     switch (this.status) {
       case "grabbed":
