@@ -71,6 +71,11 @@
       </div>
     </template>
 
+    <label>
+      persist entities <input type="checkbox" id="persistEntities" />
+    </label>
+    <button id="clearEntities">clear entities</button>
+
     <div id="connectToDeviceContainers"></div>
 
     <a-scene
@@ -331,13 +336,13 @@
         position="0 1.0 -0.3"
       ></a-entity> -->
 
-      <a-entity
+      <!-- <a-entity
         goomba="grabbable: true;"
         id="goomba1"
         position="0 1.0 -0.3"
         class="punchable"
         rotation="0 0 0"
-      ></a-entity>
+      ></a-entity> -->
 
       <!-- <a-entity
         goomba="grabbable: true;"
@@ -531,6 +536,174 @@
         goomba.updatePhysicsEnabled(true);
         goomba.setStatus("falling");
       });
+    });
+
+    const persistEntitiesKey = "webxr-2-persist";
+    const persistedEntitiesKey = "webxr-2-entities";
+    const persistEntitiesCheckbox = document.getElementById("persistEntities");
+    persistEntitiesCheckbox.addEventListener("input", () => {
+      if (persistEntitiesCheckbox.checked) {
+        localStorage.setItem(persistEntitiesKey, "");
+      } else {
+        localStorage.removeItem(persistEntitiesKey);
+        localStorage.removeItem(persistedEntitiesKey);
+      }
+    });
+    const anchor = document.getElementById("anchor");
+    const waitForAnchor = async () => {
+      return new Promise((resolve) => {
+        let intervalId, timeoutId;
+        intervalId = setInterval(() => {
+          if (anchor.components["anchored"]?.anchor) {
+            clearTimeout(timeoutId);
+            resolve(true);
+          }
+        }, 200);
+
+        timeoutId = setTimeout(() => {
+          clearInterval(intervalId);
+          console.log("no anchor found");
+          resolve(false);
+        }, 3000);
+      });
+    };
+    const saveEntities = () => {
+      let transforms = [];
+      const relativeMatrix = new THREE.Matrix4();
+      const inverseRelativeMatrix = new THREE.Matrix4()
+        .copy(anchor.object3D.matrixWorld)
+        .invert();
+      const relativePosition = new THREE.Vector3();
+      const relativeQuaternion = new THREE.Quaternion();
+      const relativeScale = new THREE.Vector3();
+      window.goombas.forEach((goomba) => {
+        // don't save entites that weren't created from the platter
+        if (goomba.el.id || goomba.el.platter) {
+          return;
+        }
+
+        relativeMatrix.multiplyMatrices(
+          inverseRelativeMatrix,
+          goomba.el.object3D.matrixWorld
+        );
+
+        relativeMatrix.decompose(
+          relativePosition,
+          relativeQuaternion,
+          relativeScale
+        );
+
+        const transform = {
+          position: relativePosition.toArray(),
+          quaternion: relativeQuaternion.toArray(),
+          scale: relativeScale.toArray(),
+        };
+        console.log("saving transform", transform);
+        transforms.push(transform);
+      });
+      console.log("saving transforms", transforms);
+      localStorage.setItem(persistedEntitiesKey, JSON.stringify(transforms));
+    };
+    window.addEventListener("beforeunload", () => {
+      if (persistEntitiesCheckbox.checked) {
+        saveEntities();
+      }
+    });
+    const loadEntities = async () => {
+      const hasAnchor = await waitForAnchor();
+      if (!hasAnchor) {
+        console.log("no anchor found");
+        return;
+      }
+      const entityTransformsString = localStorage.getItem(persistedEntitiesKey);
+      if (!entityTransformsString) {
+        return;
+      }
+      try {
+        const entityTransforms = JSON.parse(entityTransformsString);
+
+        const relativePosition = new THREE.Vector3();
+        const relativeQuaternion = new THREE.Quaternion();
+        const relativeScale = new THREE.Vector3();
+
+        const worldPosition = new THREE.Vector3();
+        const worldQuaternion = new THREE.Quaternion();
+        const worldScale = new THREE.Vector3();
+
+        const localMatrix = new THREE.Matrix4();
+        const referenceMatrix = new THREE.Matrix4().copy(
+          anchor.object3D.matrixWorld
+        );
+        const worldMatrix = new THREE.Matrix4();
+
+        entityTransforms.forEach((entityTransform) => {
+          console.log("entityTransform", entityTransform);
+
+          const {
+            position: positionArray,
+            quaternion: quaternionArray,
+            scale: scaleArray,
+          } = entityTransform;
+          relativePosition.set(...positionArray);
+          relativeQuaternion.set(...quaternionArray);
+          relativeScale.set(...scaleArray);
+
+          localMatrix.compose(
+            relativePosition,
+            relativeQuaternion,
+            relativeScale
+          );
+          worldMatrix.multiplyMatrices(referenceMatrix, localMatrix);
+          worldMatrix.decompose(worldPosition, worldQuaternion, worldScale);
+
+          const goomba = document.createElement("a-entity");
+          // goomba.setAttribute("position", worldPosition.toArray().join(" "));
+          // goomba.setAttribute("scale", worldScale.join(" "));
+          goomba.classList.add("punchable");
+          goomba.setAttribute("visible", "false");
+          goomba.setAttribute("goomba", "physics: true; grabbable: true;");
+
+          const position = worldPosition.clone();
+          const quaternion = worldQuaternion.clone();
+          const scalar = worldScale.clone();
+          goomba.addEventListener(
+            "goomba-loaded",
+            () => {
+              goomba.object3D.position.copy(position);
+              //goomba.object3D.scale.copy(scale);
+              goomba.object3D.quaternion.copy(quaternion);
+              goomba.object3D.visible = true;
+              goomba.object3D.position.y += 0.05;
+              goomba.components["goomba"].setPhysicsEnabled(true);
+              goomba.components["goomba"].setStatus("falling");
+            },
+            { once: true }
+          );
+          scene.appendChild(goomba);
+        });
+      } catch (error) {
+        console.error("error parsing persisted entities", error);
+      }
+    };
+
+    scene.addEventListener(
+      "enter-vr",
+      () => {
+        // FIX - wait until anchor is loaded
+        loadEntities();
+      },
+      { once: true }
+    );
+    if (localStorage.getItem(persistEntitiesKey) != undefined) {
+      persistEntitiesCheckbox.checked = true;
+    }
+
+    const clearEntitiesButton = document.getElementById("clearEntities");
+    clearEntitiesButton.addEventListener("click", () => {
+      window.goombas.forEach((goomba) => {
+        goomba.el.remove();
+      });
+      saveEntities();
     });
   </script>
 </html>

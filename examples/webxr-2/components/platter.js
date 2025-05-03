@@ -148,6 +148,7 @@ AFRAME.registerComponent("platter", {
           this.goomba.play();
           this.goomba.setAttribute("grabbable", "");
           this.goomba.components["goomba"].punchable = true;
+          this.goomba.platter = undefined;
           this.goomba = undefined;
           this.addGoomba();
           this.goomba.setAttribute("visible", "false");

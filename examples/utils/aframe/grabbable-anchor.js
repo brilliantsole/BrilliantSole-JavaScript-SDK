@@ -35,7 +35,6 @@ AFRAME.registerComponent("grabbable-anchor", {
       if (this.isDeletingAnchor) {
         return;
       }
-      console.log("creating anchor");
       this.shouldCreateAnchor = false;
       const position = new THREE.Vector3();
       this.el.object3D.getWorldPosition(position);

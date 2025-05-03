@@ -33,7 +33,7 @@ AFRAME.registerComponent("goomba", {
 
     this.playBounceSoundName = AFRAME.utils.throttle(
       this.playBounceSoundName.bind(this),
-      300
+      200
     );
 
     this.lastTimePunched = 0;
@@ -257,6 +257,8 @@ AFRAME.registerComponent("goomba", {
           const side = component.data.hand;
           this.hands[side] = component;
         });
+
+        this.el.emit("goomba-loaded");
       }, 1);
     });
 
@@ -573,12 +575,13 @@ AFRAME.registerComponent("goomba", {
     if (this.floor) {
       const checkIfStoppedMoving = () => {
         const stoppedMoving =
-          this.el.components["dynamic-body"].body.velocity.length() < 0.0001;
+          this.el.components["dynamic-body"].body.velocity.length() < 0.01;
         const stoppedRotating =
           this.el.components["dynamic-body"].body.angularVelocity.length() <
-          0.0001;
+          0.01;
         const isFlat = this.isFlatOnOneSide();
         const stopped = stoppedMoving && stoppedRotating && isFlat;
+        console.log({ stoppedMoving, stoppedRotating, isFlat });
         if (stopped) {
           // console.log("stopped");
           if (this.punched) {
@@ -2597,7 +2600,6 @@ AFRAME.registerComponent("goomba", {
         this.startWalking();
         break;
       default:
-        this.resetEyes();
         break;
     }
   },
