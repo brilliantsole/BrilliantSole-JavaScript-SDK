@@ -31,9 +31,9 @@ AFRAME.registerComponent("goomba", {
       500
     );
 
-    this.playBounceSound = AFRAME.utils.throttle(
-      this.playBounceSound.bind(this),
-      300
+    this.playBounceSoundName = AFRAME.utils.throttle(
+      this.playBounceSoundName.bind(this),
+      200
     );
 
     this.lastTimePunched = 0;
@@ -385,13 +385,47 @@ AFRAME.registerComponent("goomba", {
     }
   },
 
+  bounceThresholds: {
+    strong: 4,
+    medium: 2,
+    weak: 0.2,
+  },
   playBounceSound: function (velocity) {
-    // FILL - set poolName based on velocity
+    const length = velocity.length();
+
+    let poolName;
+    if (length > this.bounceThresholds.strong) {
+      poolName = "pool__bouncestrong";
+    } else if (length > this.bounceThresholds.medium) {
+      poolName = "pool__bouncemedium";
+    } else if (length > this.bounceThresholds.weak) {
+      poolName = "pool__bounceweak";
+    }
+
+    // console.log("bounce", length, poolName);
+
+    if (!poolName) {
+      return;
+    }
+
+    this.playBounceSoundName(poolName);
+  },
+  playBounceSoundName: function (poolName) {
+    this.bounceSound = this.el.sceneEl.components[poolName].requestEntity();
+    this.bounceSound.poolName = poolName;
+    this.bounceSound.object3D.position.copy(this.el.object3D.position);
+    this.bounceSound.play();
+    this.bounceSound.components.sound.playSound();
+    this.bounceSound.addEventListener(
+      "sound-ended",
+      () => this.returnBounceSound(),
+      { once: true }
+    );
   },
   returnBounceSound: function () {
     if (this.bounceSound) {
       this.bounceSound.components["sound"].stopSound();
-      this.el.sceneEl.components[bounceSound.poolName].returnEntity(
+      this.el.sceneEl.components[this.bounceSound.poolName].returnEntity(
         this.bounceSound
       );
       this.bounceSound = undefined;
@@ -2383,7 +2417,7 @@ AFRAME.registerComponent("goomba", {
       }
     }
     this.status = newStatus;
-    //console.log(`new status "${this.status}"`);
+    console.log(`new status "${this.status}"`);
 
     if (this.status == "petting") {
       this.el.sceneEl.emit("startPetting", { side: this.petSide });
@@ -2428,6 +2462,14 @@ AFRAME.registerComponent("goomba", {
     this.resetSquashRotation();
 
     this.pointToWalkToSphere.setAttribute("visible", false);
+
+    if (this.punchable) {
+      if (this.ignorePunchStatuses.includes(this.status)) {
+        this.el.classList.remove("punchable");
+      } else {
+        this.el.classList.add("punchable");
+      }
+    }
 
     switch (this.status) {
       case "grabbed":
@@ -2542,14 +2584,6 @@ AFRAME.registerComponent("goomba", {
       default:
         this.resetEyes();
         break;
-    }
-
-    if (this.punchable) {
-      if (this.ignorePunchStatuses.includes(this.status)) {
-        this.el.classList.remove("punchable");
-      } else {
-        this.el.classList.add("punchable");
-      }
     }
   },
 
