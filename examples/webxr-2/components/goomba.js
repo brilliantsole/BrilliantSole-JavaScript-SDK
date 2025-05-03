@@ -287,7 +287,6 @@ AFRAME.registerComponent("goomba", {
 
   ignorePunchStatuses: ["falling", "getting up"],
 
-  punchDownPitchThreshold: THREE.MathUtils.degToRad(-50),
   punchDownPitchThreshold: THREE.MathUtils.degToRad(-40),
   punch: function (velocity, position) {
     if (this.ignorePunchStatuses.includes(this.status)) {
