@@ -74,17 +74,17 @@
     <div id="connectToDeviceContainers"></div>
 
     <a-scene
-      pool__splat="mixin: splatMixin; size: 10"
-      pool__coin="mixin: coinMixin; size: 10"
-      pool__purr="mixin: purrMixin; size: 2; dynamic: true;"
-      pool__purrfadeout="mixin: purrFadeOutMixin; size: 2; dynamic: true;"
-      pool__getup="mixin: getUpMixin; size: 5; dynamic: true;"
-      pool__grab="mixin: grabMixin; size: 2; dynamic: true;"
-      pool__release="mixin: releaseMixin; size: 2; dynamic: true;"
-      pool__punchsqueak="mixin: punchSqueakMixin; size: 2; dynamic: true;"
-      pool__bounceweak="mixin: bounceWeakMixin; size: 5; dynamic: true;"
-      pool__bouncemedium="mixin: bounceMediumMixin; size: 5; dynamic: true;"
-      pool__bouncestrong="mixin: bounceStrongMixin; size: 5; dynamic: true;"
+      pool__splatsound="mixin: splatSoundMixin; size: 10"
+      pool__coinsound="mixin: coinSoundMixin; size: 10"
+      pool__purrsound="mixin: purrSoundMixin; size: 2; dynamic: true;"
+      pool__purrsoundfadeout="mixin: purrFadeOutSoundMixin; size: 2; dynamic: true;"
+      pool__getupsound="mixin: getUpSoundMixin; size: 5; dynamic: true;"
+      pool__grabsound="mixin: grabSoundMixin; size: 2; dynamic: true;"
+      pool__releasesound="mixin: releaseSoundMixin; size: 2; dynamic: true;"
+      pool__punchsqueaksound="mixin: punchSqueakSoundMixin; size: 2; dynamic: true;"
+      pool__bounceweaksound="mixin: bounceWeakSoundMixin; size: 5; dynamic: true;"
+      pool__bouncemediumsound="mixin: bounceMediumSoundMixin; size: 5; dynamic: true;"
+      pool__bouncestrongsound="mixin: bounceStrongSoundMixin; size: 5; dynamic: true;"
       id="scene"
       physics="debug: false; restitution: 0.4;"
       embedded
@@ -116,14 +116,14 @@
           src="../../assets/audio/coin.wav"
           preload="auto"
         ></audio>
-        <a-mixin id="coinMixin" sound="src: #coinAudio"></a-mixin>
+        <a-mixin id="coinSoundMixin" sound="src: #coinAudio"></a-mixin>
 
         <audio
           id="splatAudio"
           src="../../assets/audio/splat.wav"
           preload="auto"
         ></audio>
-        <a-mixin id="splatMixin" sound="src: #splatAudio"></a-mixin>
+        <a-mixin id="splatSoundMixin" sound="src: #splatAudio"></a-mixin>
 
         <audio
           id="punchAudio"
@@ -136,7 +136,10 @@
           src="../../assets/audio/purr.wav"
           preload="auto"
         ></audio>
-        <a-mixin id="purrMixin" sound="src: #purrAudio; loop: true;"></a-mixin>
+        <a-mixin
+          id="purrSoundMixin"
+          sound="src: #purrAudio; loop: true;"
+        ></a-mixin>
 
         <audio
           id="purrFadeOutAudio"
@@ -144,7 +147,7 @@
           preload="auto"
         ></audio>
         <a-mixin
-          id="purrFadeOutMixin"
+          id="purrFadeOutSoundMixin"
           sound="src: #purrFadeOutAudio;"
         ></a-mixin>
 
@@ -154,7 +157,7 @@
           preload="auto"
         ></audio>
         <a-mixin
-          id="getUpMixin"
+          id="getUpSoundMixin"
           sound="src: #getUpAudio; volume: 0.7;"
         ></a-mixin>
 
@@ -174,7 +177,10 @@
           src="../../assets/audio/grab.wav"
           preload="auto"
         ></audio>
-        <a-mixin id="grabMixin" sound="src: #grabAudio; volume: 0.2;"></a-mixin>
+        <a-mixin
+          id="grabSoundMixin"
+          sound="src: #grabAudio; volume: 0.2;"
+        ></a-mixin>
 
         <audio
           id="releaseAudio"
@@ -182,7 +188,7 @@
           preload="auto"
         ></audio>
         <a-mixin
-          id="releaseMixin"
+          id="releaseSoundMixin"
           sound="src: #releaseAudio; volume: 0.4;"
         ></a-mixin>
 
@@ -192,7 +198,7 @@
           preload="auto"
         ></audio>
         <a-mixin
-          id="punchSqueakMixin"
+          id="punchSqueakSoundMixin"
           sound="src: #punchSqueakAudio; volume: 1;"
         ></a-mixin>
 
@@ -202,7 +208,7 @@
           preload="auto"
         ></audio>
         <a-mixin
-          id="bounceWeakMixin"
+          id="bounceWeakSoundMixin"
           sound="src: #bounceWeakAudio; volume: 0.5;"
         ></a-mixin>
 
@@ -212,7 +218,7 @@
           preload="auto"
         ></audio>
         <a-mixin
-          id="bounceMediumMixin"
+          id="bounceMediumSoundMixin"
           sound="src: #bounceMediumAudio; volume: 0.5;"
         ></a-mixin>
 
@@ -222,7 +228,7 @@
           preload="auto"
         ></audio>
         <a-mixin
-          id="bounceStrongMixin"
+          id="bounceStrongSoundMixin"
           sound="src: #bounceStrongAudio; volume: 0.5;"
         ></a-mixin>
       </a-assets>

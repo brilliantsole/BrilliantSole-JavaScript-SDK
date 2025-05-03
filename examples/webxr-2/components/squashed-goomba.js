@@ -47,7 +47,7 @@ AFRAME.registerComponent("squashed-goomba", {
 
     console.log(this.el.sceneEl.components);
 
-    this.sound = this.el.sceneEl.components["pool__splat"].requestEntity();
+    this.sound = this.el.sceneEl.components["pool__splatsound"].requestEntity();
     this.sound.object3D.position.copy(this.el.object3D.position);
     this.sound.play();
     this.sound.components.sound.playSound();
@@ -218,6 +218,6 @@ AFRAME.registerComponent("squashed-goomba", {
   },
 
   remove: function () {
-    this.el.sceneEl.components["pool__splat"].returnEntity(this.sound);
+    this.el.sceneEl.components["pool__splatsound"].returnEntity(this.sound);
   },
 });

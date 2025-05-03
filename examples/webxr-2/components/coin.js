@@ -4,7 +4,7 @@ AFRAME.registerComponent("coin", {
     lifetime: { default: 800 },
   },
   init: function () {
-    this.sound = this.el.sceneEl.components["pool__coin"].requestEntity();
+    this.sound = this.el.sceneEl.components["pool__coinsound"].requestEntity();
     this.sound.play();
     this.sound.object3D.position.copy(this.el.object3D.position);
     this.sound.components.sound.playSound();
@@ -56,6 +56,6 @@ AFRAME.registerComponent("coin", {
   },
 
   remove: function () {
-    this.el.sceneEl.components["pool__coin"].returnEntity(this.sound);
+    this.el.sceneEl.components["pool__coinsound"].returnEntity(this.sound);
   },
 });

@@ -408,11 +408,11 @@ AFRAME.registerComponent("goomba", {
 
     let poolName;
     if (length > this.bounceThresholds.strong) {
-      poolName = "pool__bouncestrong";
+      poolName = "pool__bouncestrongsound";
     } else if (length > this.bounceThresholds.medium) {
-      poolName = "pool__bouncemedium";
+      poolName = "pool__bouncemediumsound";
     } else if (length > this.bounceThresholds.weak) {
-      poolName = "pool__bounceweak";
+      poolName = "pool__bounceweaksound";
     }
 
     // console.log("bounce", length, poolName);
@@ -2619,7 +2619,8 @@ AFRAME.registerComponent("goomba", {
   },
 
   playGetUpSound: function () {
-    this.getUpSound = this.el.sceneEl.components["pool__getup"].requestEntity();
+    this.getUpSound =
+      this.el.sceneEl.components["pool__getupsound"].requestEntity();
     this.getUpSound.object3D.position.copy(this.el.object3D.position);
     this.getUpSound.play();
     this.getUpSound.components.sound.playSound();
@@ -2632,13 +2633,16 @@ AFRAME.registerComponent("goomba", {
   returnGetUpSound: function () {
     if (this.getUpSound) {
       this.getUpSound.components["sound"].stopSound();
-      this.el.sceneEl.components["pool__getup"].returnEntity(this.getUpSound);
+      this.el.sceneEl.components["pool__getupsound"].returnEntity(
+        this.getUpSound
+      );
       this.getUpSound = undefined;
     }
   },
 
   playPurrSound: function () {
-    this.purrSound = this.el.sceneEl.components["pool__purr"].requestEntity();
+    this.purrSound =
+      this.el.sceneEl.components["pool__purrsound"].requestEntity();
     this.purrSound.object3D.position.copy(this.el.object3D.position);
     this.purrSound.play();
     this.purrSound.components.sound.playSound();
@@ -2646,14 +2650,16 @@ AFRAME.registerComponent("goomba", {
   returnPurrSound: function () {
     if (this.purrSound) {
       this.purrSound.components["sound"].stopSound();
-      this.el.sceneEl.components["pool__purr"].returnEntity(this.purrSound);
+      this.el.sceneEl.components["pool__purrsound"].returnEntity(
+        this.purrSound
+      );
       this.purrSound = undefined;
     }
   },
 
   playPurrFadeOutSound: function () {
     this.fadeOutPurrSound =
-      this.el.sceneEl.components["pool__purrfadeout"].requestEntity();
+      this.el.sceneEl.components["pool__purrsoundfadeout"].requestEntity();
     this.fadeOutPurrSound.object3D.position.copy(this.el.object3D.position);
     this.fadeOutPurrSound.play();
     this.fadeOutPurrSound.components.sound.pool.children[0].setVolume(
@@ -2669,7 +2675,7 @@ AFRAME.registerComponent("goomba", {
   returnFadeOutPurrSound: function () {
     if (this.fadeOutPurrSound) {
       this.fadeOutPurrSound.components["sound"].stopSound();
-      this.el.sceneEl.components["pool__purrfadeout"].returnEntity(
+      this.el.sceneEl.components["pool__purrsoundfadeout"].returnEntity(
         this.fadeOutPurrSound
       );
       this.fadeOutPurrSound = undefined;
@@ -2678,7 +2684,8 @@ AFRAME.registerComponent("goomba", {
 
   playGrabSound: function () {
     this.returnReleaseSound();
-    this.grabSound = this.el.sceneEl.components["pool__grab"].requestEntity();
+    this.grabSound =
+      this.el.sceneEl.components["pool__grabsound"].requestEntity();
     this.el.object3D.getWorldPosition(this.grabSound.object3D.position);
     this.grabSound.play();
     this.grabSound.components.sound.playSound();
@@ -2691,7 +2698,9 @@ AFRAME.registerComponent("goomba", {
   returnGrabSound: function () {
     if (this.grabSound) {
       this.grabSound.components["sound"].stopSound();
-      this.el.sceneEl.components["pool__grab"].returnEntity(this.grabSound);
+      this.el.sceneEl.components["pool__grabsound"].returnEntity(
+        this.grabSound
+      );
       this.grabSound = undefined;
     }
   },
@@ -2699,7 +2708,7 @@ AFRAME.registerComponent("goomba", {
   playReleaseSound: function () {
     this.returnGrabSound();
     this.releaseSound =
-      this.el.sceneEl.components["pool__release"].requestEntity();
+      this.el.sceneEl.components["pool__releasesound"].requestEntity();
     this.el.object3D.getWorldPosition(this.releaseSound.object3D.position);
     this.releaseSound.play();
     this.releaseSound.components.sound.playSound();
@@ -2712,7 +2721,7 @@ AFRAME.registerComponent("goomba", {
   returnReleaseSound: function () {
     if (this.releaseSound) {
       this.releaseSound.components["sound"].stopSound();
-      this.el.sceneEl.components["pool__release"].returnEntity(
+      this.el.sceneEl.components["pool__releasesound"].returnEntity(
         this.releaseSound
       );
       this.releaseSound = undefined;
@@ -2721,7 +2730,7 @@ AFRAME.registerComponent("goomba", {
 
   playPunchSqueakSound: function () {
     this.punchSqueakSound =
-      this.el.sceneEl.components["pool__punchsqueak"].requestEntity();
+      this.el.sceneEl.components["pool__punchsqueaksound"].requestEntity();
     this.el.object3D.getWorldPosition(this.punchSqueakSound.object3D.position);
     this.punchSqueakSound.play();
     this.punchSqueakSound.components.sound.playSound();
@@ -2734,7 +2743,7 @@ AFRAME.registerComponent("goomba", {
   returnPunchSqueakSound: function () {
     if (this.punchSqueakSound) {
       this.punchSqueakSound.components["sound"].stopSound();
-      this.el.sceneEl.components["pool__punchsqueak"].returnEntity(
+      this.el.sceneEl.components["pool__punchsqueaksound"].returnEntity(
         this.punchSqueakSound
       );
       this.punchSqueakSound = undefined;
