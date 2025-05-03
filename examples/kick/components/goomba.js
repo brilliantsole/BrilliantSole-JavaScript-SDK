@@ -33,7 +33,7 @@ AFRAME.registerComponent("goomba", {
 
     this.playBounceSoundName = AFRAME.utils.throttle(
       this.playBounceSoundName.bind(this),
-      200
+      300
     );
 
     this.lastTimePunched = 0;
@@ -583,6 +583,7 @@ AFRAME.registerComponent("goomba", {
   },
 
   onGrabStarted: function () {
+    console.log("onGrabStarted");
     switch (this.status) {
       default:
         this.setStatus("grabbed");
@@ -593,6 +594,7 @@ AFRAME.registerComponent("goomba", {
     }
   },
   onGrabEnded: function () {
+    console.log("onGrabEnded");
     switch (this.status) {
       default:
         if (this.data.physics) {
@@ -2470,6 +2472,11 @@ AFRAME.registerComponent("goomba", {
         this.el.classList.add("punchable");
       }
     }
+    console.log(
+      this.status,
+      this.punchable,
+      this.el.classList.contains("punchable")
+    );
 
     switch (this.status) {
       case "grabbed":

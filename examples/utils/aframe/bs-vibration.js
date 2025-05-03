@@ -100,11 +100,11 @@ AFRAME.registerComponent("bs-vibration", {
     /** @type {BS.Device?} */
     const device = this.devicePair[this.side];
     if (!device?.isConnected) {
-      console.log(
-        `${this.side} ${this.type} not connected`,
-        device,
-        this.devicePair
-      );
+      // console.log(
+      //   `${this.side} ${this.type} not connected`,
+      //   device,
+      //   this.devicePair
+      // );
       return;
     }
 

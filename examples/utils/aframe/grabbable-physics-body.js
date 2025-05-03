@@ -110,7 +110,7 @@ AFRAME.registerComponent("grabbable-physics-body", {
     if (!this.shouldSetVelocity) {
       return;
     }
-    console.log("grabbable physics onBodyLoaded");
+    // console.log("grabbable physics onBodyLoaded");
     this.shouldSetVelocity = false;
     const body = this.el.body;
     if (body) {
