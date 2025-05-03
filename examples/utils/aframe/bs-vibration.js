@@ -28,8 +28,15 @@ AFRAME.registerComponent("bs-vibration", {
       case "glove":
         this.devicePair = BS.DevicePair.gloves;
 
-        this.el.addEventListener("grabstarted", this.onGrabStarted.bind(this));
-        this.el.addEventListener("grabended", this.onGrabEnded.bind(this));
+        this.el.addEventListener("grabstarted", () =>
+          this.setGrabEnabled(true)
+        );
+        this.el.addEventListener("grabended", () => this.setGrabEnabled(false));
+
+        this.setGrabEnabled = AFRAME.utils.throttleLeadingAndTrailing(
+          this.setGrabEnabled.bind(this),
+          70
+        );
 
         this.el.sceneEl.addEventListener(
           "startPetting",
@@ -49,6 +56,14 @@ AFRAME.registerComponent("bs-vibration", {
       "bs-trigger-vibration",
       this.onVibrate.bind(this)
     );
+  },
+
+  setGrabEnabled: function (enabled) {
+    if (enabled) {
+      this.onGrabStarted();
+    } else {
+      this.onGrabEnded();
+    }
   },
 
   onGrabStarted: function (event) {
