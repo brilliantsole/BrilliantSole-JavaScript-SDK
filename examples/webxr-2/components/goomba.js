@@ -559,6 +559,11 @@ AFRAME.registerComponent("goomba", {
     }
   },
 
+  isFlatOnOneSide: function () {
+    this.checkOrientation();
+    return this.orientation != "unknown";
+  },
+
   setFloor: function (newFloor) {
     if (this.floor == newFloor) {
       return;
@@ -572,8 +577,7 @@ AFRAME.registerComponent("goomba", {
         const stoppedRotating =
           this.el.components["dynamic-body"].body.angularVelocity.length() <
           0.0001;
-        console.log(this.el.components["dynamic-body"].body);
-        const isFlat = true; // FILL
+        const isFlat = this.isFlatOnOneSide();
         const stopped = stoppedMoving && stoppedRotating && isFlat;
         if (stopped) {
           // console.log("stopped");
@@ -1941,13 +1945,14 @@ AFRAME.registerComponent("goomba", {
     "frontSide",
     "backSide",
     "upsideDown",
+    "unknown",
   ],
   worldBasis: {
     forward: new THREE.Vector3(0, 0, 1),
     up: new THREE.Vector3(0, 1, 0),
     right: new THREE.Vector3(1, 0, 0),
   },
-  orientationAngleThreshold: 0.01,
+  orientationAngleThreshold: THREE.MathUtils.degToRad(10),
   checkOrientation: function () {
     if (!this.orientationVectors) {
       this.orientationVectors = {
@@ -1966,7 +1971,7 @@ AFRAME.registerComponent("goomba", {
     const rightAngle = this.worldBasis.up.angleTo(right);
     const forwardAngle = this.worldBasis.up.angleTo(forward);
 
-    let newOrientation = "upright";
+    let newOrientation = "unknown";
     if (Math.abs(forwardAngle - Math.PI) < this.orientationAngleThreshold) {
       newOrientation = "frontSide";
     } else if (forwardAngle < this.orientationAngleThreshold) {
@@ -1979,7 +1984,7 @@ AFRAME.registerComponent("goomba", {
       newOrientation = "rightSide";
     } else if (Math.abs(upAngle - Math.PI) < this.orientationAngleThreshold) {
       newOrientation = "upsideDown";
-    } else {
+    } else if (upAngle < this.orientationAngleThreshold) {
       newOrientation = "upright";
     }
 
