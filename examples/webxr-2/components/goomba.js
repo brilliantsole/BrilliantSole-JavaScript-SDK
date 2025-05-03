@@ -288,6 +288,7 @@ AFRAME.registerComponent("goomba", {
   ignorePunchStatuses: ["falling", "getting up"],
 
   punchDownPitchThreshold: THREE.MathUtils.degToRad(-50),
+  punchDownPitchThreshold: THREE.MathUtils.degToRad(-40),
   punch: function (velocity, position) {
     if (this.ignorePunchStatuses.includes(this.status)) {
       return;
@@ -572,7 +573,9 @@ AFRAME.registerComponent("goomba", {
         const stoppedRotating =
           this.el.components["dynamic-body"].body.angularVelocity.length() <
           0.0001;
-        const stopped = stoppedMoving && stoppedRotating;
+        console.log(this.el.components["dynamic-body"].body);
+        const isFlat = true; // FILL
+        const stopped = stoppedMoving && stoppedRotating && isFlat;
         if (stopped) {
           // console.log("stopped");
           if (this.punched) {
@@ -1336,8 +1339,9 @@ AFRAME.registerComponent("goomba", {
     if (this.shouldDie) {
       this.el.emit("die");
       this.el.remove();
-      const squashedGoomba = document.createElement("a-entity");
-      squashedGoomba.setAttribute("squashed-goomba", "");
+      const squashedGoomba =
+        this.el.sceneEl.components["pool__squashedgoomba"].requestEntity();
+      squashedGoomba.play();
       const position = new THREE.Vector3();
       // console.log(this.deathCollidedEntity);
       if (false) {
@@ -1368,24 +1372,16 @@ AFRAME.registerComponent("goomba", {
           }
         }
       }
-      squashedGoomba.setAttribute("position", position.toArray().join(" "));
+      squashedGoomba.object3D.position.copy(position);
       {
         const { x, y, z } = this.deathNormal;
 
         const yaw = Math.atan2(x, z);
         const pitch = Math.atan2(y, Math.sqrt(x * x + z * z));
         // console.log("death", { yaw, pitch });
-
-        squashedGoomba.setAttribute(
-          "rotation",
-          [
-            -THREE.MathUtils.radToDeg(pitch),
-            THREE.MathUtils.radToDeg(yaw),
-            0,
-          ].join(" ")
-        );
+        squashedGoomba.object3D.rotation.set(-pitch, yaw, 0, "YXZ");
       }
-      this.el.sceneEl.appendChild(squashedGoomba);
+      squashedGoomba.components["squashed-goomba"].start();
       return;
     }
     this.sphere.center.copy(this.worldPosition);

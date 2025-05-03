@@ -85,8 +85,10 @@
       pool__bounceweaksound="mixin: bounceWeakSoundMixin; size: 5; dynamic: true;"
       pool__bouncemediumsound="mixin: bounceMediumSoundMixin; size: 5; dynamic: true;"
       pool__bouncestrongsound="mixin: bounceStrongSoundMixin; size: 5; dynamic: true;"
+      pool__coin="mixin: coinMixin; size: 5; dynamic: true;"
+      pool__squashedgoomba="mixin: squashedGoombaMixin; size: 5; dynamic: true;"
       id="scene"
-      physics="debug: false; restitution: 0.4;"
+      physics="debug: true; restitution: 0.4;"
       embedded
       grabbable-listener
       obb-collider="showColliders: false;"
@@ -231,6 +233,9 @@
           id="bounceStrongSoundMixin"
           sound="src: #bounceStrongAudio; volume: 0.5;"
         ></a-mixin>
+
+        <a-mixin id="coinMixin" coin></a-mixin>
+        <a-mixin id="squashedGoombaMixin" squashed-goomba></a-mixin>
       </a-assets>
       <!--<a-entity rotation="-90 0 0" position="0 2 1">
         <a-camera
@@ -333,8 +338,8 @@
         class="punchable"
         rotation="0 0 0"
       ></a-entity>
-      <!-- 
-      <a-entity
+
+      <!-- <a-entity
         goomba="grabbable: true;"
         id="goomba2"
         position="0 1.0 -0.6"

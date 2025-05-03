@@ -45,16 +45,10 @@ AFRAME.registerComponent("squashed-goomba", {
   init: function () {
     this.camera = document.querySelector("a-camera");
 
-    console.log(this.el.sceneEl.components);
-
-    this.sound = this.el.sceneEl.components["pool__splatsound"].requestEntity();
-    this.sound.object3D.position.copy(this.el.object3D.position);
-    this.sound.play();
-    this.sound.components.sound.playSound();
+    this.eyes = [];
+    this.feet = [];
 
     this.el.addEventListener("loaded", () => {
-      this.el.object3D.rotation.z = this.randomRange(this.bodyRotationRange.z);
-
       const template = this.data.template.content
         .querySelector("a-entity")
         .cloneNode(true);
@@ -68,17 +62,6 @@ AFRAME.registerComponent("squashed-goomba", {
       this.template = template;
 
       this.body = this.el.querySelector(".body");
-      this.body.addEventListener("loaded", () => {
-        const value = Math.random();
-        this.body.object3D.scale.x = this.valueInRange(
-          value,
-          this.bodyScaleRange.x
-        );
-        this.body.object3D.scale.y = this.valueInRange(
-          1 - value,
-          this.bodyScaleRange.y
-        );
-      });
 
       this.el.querySelectorAll(".left").forEach((entity) => {
         const duplicate = entity.cloneNode(true);
@@ -91,100 +74,87 @@ AFRAME.registerComponent("squashed-goomba", {
             .forEach((entity) => this.flip(entity));
 
           if (entity.classList.contains("eye")) {
-            const value = Math.random();
-            [entity, duplicate].forEach((entity, index) => {
-              entity.object3D.rotation.z = this.randomRange(
-                this.eyeRotationRange.z
-              );
-              if (true) {
-                entity.object3D.position.y += this.randomRange(
-                  this.eyePositionRange.y
-                );
-              } else {
-                entity.object3D.position.y += this.valueInRange(
-                  index == 0 ? value : 1 - value,
-                  this.eyePositionRange.y
-                );
-              }
-            });
-
-            entity.object3D.position.x -= this.randomRange(
-              this.eyePositionRange.x
-            );
-            duplicate.object3D.position.x += this.randomRange(
-              this.eyePositionRange.x
+            this.eyes.push(entity, duplicate);
+            this.eyePositions = this.eyes.map((entity) =>
+              entity.object3D.position.clone()
             );
           }
           if (entity.classList.contains("foot")) {
-            const value = Math.random();
-            [entity, duplicate].forEach((entity, index) => {
-              entity.object3D.rotation.z = this.randomRange(
-                this.footRotationRange.z
-              );
-              if (true) {
-                entity.object3D.position.y += this.randomRange(
-                  this.footPositionRange.y
-                );
-              } else {
-                entity.object3D.position.y += this.valueInRange(
-                  index == 0 ? value : 1 - value,
-                  this.footPositionRange.y
-                );
-              }
-            });
-
-            entity.object3D.position.x -= this.randomRange(
-              this.footPositionRange.x
-            );
-            duplicate.object3D.position.x += this.randomRange(
-              this.footPositionRange.x
+            this.feet.push(entity, duplicate);
+            this.feetPositions = this.feet.map((entity) =>
+              entity.object3D.position.clone()
             );
           }
         });
         entity.parentEl.appendChild(duplicate);
       });
-      setTimeout(() => {
-        const coin = document.createElement("a-entity");
-        coin.setAttribute("coin", "");
-        let pitch = this.el.object3D.rotation.reorder("YXZ").x;
-        let flip = false;
-        {
-          const { x, y, z } = this.el.object3D.position;
-          const position = new THREE.Vector3(x, y - 0.04, z);
-          if (pitch < THREE.MathUtils.degToRad(-80)) {
-            position.y += 0.1;
-          } else if (pitch > THREE.MathUtils.degToRad(80)) {
-            if (false) {
-              position.y -= 0.15;
-            } else {
-              flip = true;
-              position.y += 0.05;
-            }
-          }
-          coin.setAttribute("position", position.toArray().join(" "));
-        }
-        {
-          if (true) {
-            const { x, y, z } = this.camera.object3D.rotation;
-            const cameraToCoin = new THREE.Vector3().subVectors(
-              this.camera.object3D.position,
-              this.el.object3D.position
-            );
-            const yaw = Math.atan2(cameraToCoin.x, cameraToCoin.z);
-            coin.setAttribute(
-              "rotation",
-              [flip ? 180 : 0, THREE.MathUtils.radToDeg(yaw), 0].join(" ")
-            );
-          } else {
-            const { x, y, z } = this.el.getAttribute("rotation");
-            coin.setAttribute("rotation", [0, y, 0].join(" "));
-          }
-        }
-        this.el.sceneEl.appendChild(coin);
-
-        this.el.remove();
-      }, this.data.lifetime);
     });
+  },
+
+  randomize: function () {
+    this.el.object3D.rotation.z = this.randomRange(this.bodyRotationRange.z);
+
+    {
+      const value = Math.random();
+      this.body.object3D.scale.x = this.valueInRange(
+        value,
+        this.bodyScaleRange.x
+      );
+      this.body.object3D.scale.y = this.valueInRange(
+        1 - value,
+        this.bodyScaleRange.y
+      );
+    }
+
+    {
+      const value = Math.random();
+      this.eyes.forEach((entity, index) => {
+        entity.object3D.rotation.z = this.randomRange(this.eyeRotationRange.z);
+        entity.object3D.position.copy(this.eyePositions[index]);
+        if (true) {
+          entity.object3D.position.y += this.randomRange(
+            this.eyePositionRange.y
+          );
+        } else {
+          entity.object3D.position.y += this.valueInRange(
+            index == 0 ? value : 1 - value,
+            this.eyePositionRange.y
+          );
+        }
+      });
+
+      this.eyes[0].object3D.position.x -= this.randomRange(
+        this.eyePositionRange.x
+      );
+      this.eyes[1].object3D.position.x += this.randomRange(
+        this.eyePositionRange.x
+      );
+    }
+
+    {
+      const value = Math.random();
+      this.feet.forEach((entity, index) => {
+        entity.object3D.position.copy(this.feetPositions[index]);
+        entity.object3D.rotation.z = this.randomRange(this.footRotationRange.z);
+        if (true) {
+          entity.object3D.position.y += this.randomRange(
+            this.footPositionRange.y
+          );
+        } else {
+          entity.object3D.position.y += this.valueInRange(
+            index == 0 ? value : 1 - value,
+            this.footPositionRange.y
+          );
+        }
+      });
+
+      this.feet[0].object3D.position.x -= this.randomRange(
+        this.footPositionRange.x
+      );
+      this.feet[1].object3D.position.x += this.randomRange(
+        this.footPositionRange.x
+      );
+    }
   },
 
   flip: function (entity) {
@@ -217,7 +187,63 @@ AFRAME.registerComponent("squashed-goomba", {
     }
   },
 
+  start: function () {
+    this.randomize();
+
+    this.startTime = undefined;
+    this.isDone = false;
+
+    this.sound = this.el.sceneEl.components["pool__splatsound"].requestEntity();
+    this.sound.object3D.position.copy(this.el.object3D.position);
+    this.sound.play();
+    this.sound.components.sound.playSound();
+
+    setTimeout(() => {
+      const coin = this.el.sceneEl.components["pool__coin"].requestEntity();
+      coin.play();
+      let pitch = this.el.object3D.rotation.reorder("YXZ").x;
+      let flip = false;
+      {
+        const { x, y, z } = this.el.object3D.position;
+        const position = new THREE.Vector3(x, y - 0.04, z);
+        if (pitch < THREE.MathUtils.degToRad(-80)) {
+          position.y += 0.1;
+        } else if (pitch > THREE.MathUtils.degToRad(80)) {
+          if (false) {
+            position.y -= 0.15;
+          } else {
+            flip = true;
+            position.y += 0.05;
+          }
+        }
+        coin.object3D.position.copy(position);
+      }
+      {
+        if (true) {
+          const { x, y, z } = this.camera.object3D.rotation;
+          const cameraToCoin = new THREE.Vector3().subVectors(
+            this.camera.object3D.position,
+            this.el.object3D.position
+          );
+          const yaw = Math.atan2(cameraToCoin.x, cameraToCoin.z);
+          coin.object3D.rotation.set(flip ? Math.PI : 0, yaw, 0, "YXZ");
+        } else {
+          const { x, y, z } = this.el.getAttribute("rotation");
+          coin.setAttribute("rotation", [0, y, 0].join(" "));
+        }
+      }
+      coin.components.coin.start();
+
+      this.removeSelf();
+    }, this.data.lifetime);
+  },
+
   remove: function () {
+    this.removeSelf();
+  },
+
+  removeSelf: function () {
+    this.el.sceneEl.components["pool__squashedgoomba"].returnEntity(this.el);
     this.el.sceneEl.components["pool__splatsound"].returnEntity(this.sound);
   },
 });
