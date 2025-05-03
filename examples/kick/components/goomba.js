@@ -1973,6 +1973,10 @@ AFRAME.registerComponent("goomba", {
       return;
     }
 
+    setTimeout(() => {
+      this.playGetUpSound();
+    }, dur * 0.36);
+
     this.el.removeAttribute("grabbable");
     setTimeout(() => {
       this.el.setAttribute("grabbable", "");
@@ -2368,6 +2372,9 @@ AFRAME.registerComponent("goomba", {
     if (this.status == "grabbed") {
       this.playReleaseSound();
     }
+    if (false && this.status == "getting up") {
+      this.returnGetUpSound();
+    }
     if (this.status == "petting") {
       this.el.sceneEl.emit("stopPetting", { side: this.petSide });
       if (this.purrSound) {
@@ -2559,6 +2566,25 @@ AFRAME.registerComponent("goomba", {
         dur,
         easing,
       });
+    }
+  },
+
+  playGetUpSound: function () {
+    this.getUpSound = this.el.sceneEl.components["pool__getup"].requestEntity();
+    this.getUpSound.object3D.position.copy(this.el.object3D.position);
+    this.getUpSound.play();
+    this.getUpSound.components.sound.playSound();
+    this.getUpSound.addEventListener(
+      "sound-ended",
+      () => this.returnGetUpSound(),
+      { once: true }
+    );
+  },
+  returnGetUpSound: function () {
+    if (this.getUpSound) {
+      this.getUpSound.components["sound"].stopSound();
+      this.el.sceneEl.components["pool__getup"].returnEntity(this.getUpSound);
+      this.getUpSound = undefined;
     }
   },
 

@@ -78,6 +78,7 @@
       pool__coin="mixin: coinMixin; size: 10"
       pool__purr="mixin: purrMixin; size: 2; dynamic: true;"
       pool__purrfadeout="mixin: purrFadeOutMixin; size: 2; dynamic: true;"
+      pool__getup="mixin: getUpMixin; size: 5; dynamic: true;"
       pool__grab="mixin: grabMixin; size: 2; dynamic: true;"
       pool__release="mixin: releaseMixin; size: 2; dynamic: true;"
       pool__punchsqueak="mixin: punchSqueakMixin; size: 2; dynamic: true;"
@@ -146,6 +147,13 @@
           id="purrFadeOutMixin"
           sound="src: #purrFadeOutAudio;"
         ></a-mixin>
+
+        <audio
+          id="getUpAudio"
+          src="../../assets/audio/getUp.wav"
+          preload="auto"
+        ></audio>
+        <a-mixin id="getUpMixin" sound="src: #getUpAudio;"></a-mixin>
 
         <audio
           id="platterFadeInAudio"
@@ -314,7 +322,7 @@
         id="goomba1"
         position="0 1.0 -0.3"
         class="punchable"
-        rotation="0 0 0"
+        rotation="-90 0 0"
       ></a-entity>
       <!-- 
       <a-entity
@@ -323,7 +331,7 @@
         position="0 1.0 -0.6"
         rotation="0 0 0"
       ></a-entity> -->
-      <!-- <a-box
+      <a-box
         scale="1 0.05 1"
         static-body
         position="0 0.8 -0.5"
@@ -331,7 +339,7 @@
         color="blue"
         obb-collider
         id="testFloor"
-      ></a-box> -->
+      ></a-box>
       <!-- <a-box
         scale="1 0.05 1"
         static-body
