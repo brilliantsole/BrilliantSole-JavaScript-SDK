@@ -19,6 +19,7 @@
     <script src="./components/coin.js"></script>
     <script src="../utils/aframe/occlude-mesh.js"></script>
     <script src="../utils/aframe/bs-vibration.js" type="module"></script>
+    <script src="./components/bs-ankle.js" type="module"></script>
     <script src="../utils/aframe/my-obb-collider.js"></script>
   </head>
   <style>
@@ -80,14 +81,14 @@
     <div id="connectToDeviceContainers"></div>
 
     <a-scene
-      pool__splatsound="mixin: splatSoundMixin; size: 10"
-      pool__coinsound="mixin: coinSoundMixin; size: 10"
+      pool__splatsound="mixin: splatSoundMixin; size: 5;  dynamic: true;"
+      pool__coinsound="mixin: coinSoundMixin; size: 5;  dynamic: true;"
       pool__purrsound="mixin: purrSoundMixin; size: 2; dynamic: true;"
       pool__purrsoundfadeout="mixin: purrFadeOutSoundMixin; size: 2; dynamic: true;"
       pool__getupsound="mixin: getUpSoundMixin; size: 5; dynamic: true;"
       pool__grabsound="mixin: grabSoundMixin; size: 2; dynamic: true;"
       pool__releasesound="mixin: releaseSoundMixin; size: 2; dynamic: true;"
-      pool__punchsqueaksound="mixin: punchSqueakSoundMixin; size: 2; dynamic: true;"
+      pool__punchsqueaksound="mixin: punchSqueakSoundMixin; size: 5; dynamic: true;"
       pool__bounceweaksound="mixin: bounceWeakSoundMixin; size: 5; dynamic: true;"
       pool__bouncemediumsound="mixin: bounceMediumSoundMixin; size: 5; dynamic: true;"
       pool__bouncestrongsound="mixin: bounceStrongSoundMixin; size: 5; dynamic: true;"
@@ -171,7 +172,7 @@
         ></audio>
         <a-mixin
           id="getUpSoundMixin"
-          sound="src: #getUpAudio; volume: 0.7;"
+          sound="src: #getUpAudio; volume: 0.5;"
         ></a-mixin>
 
         <audio
@@ -247,17 +248,32 @@
 
         <a-mixin id="coinMixin" coin></a-mixin>
         <a-mixin id="squashedGoombaMixin" squashed-goomba></a-mixin>
+
+        <audio
+          id="stompAudio"
+          src="../../assets/audio/stomp.wav"
+          preload="auto"
+        ></audio>
+        <audio
+          id="kickAudio"
+          src="../../assets/audio/kick.wav"
+          preload="auto"
+        ></audio>
       </a-assets>
-      <!--<a-entity rotation="-90 0 0" position="0 2 1">
+      <!-- <a-entity rotation="-90 0 0" position="0 5 1">
         <a-camera
           class="lookAt"
           id="camera"
           _raycaster="objects: .raycastable; interval: 100;"
         >
-          <a-sphere color="black" radius="0.001" position="0 0 -0.1"></a-sphere>
+          <a-sphere
+            color="black"
+            visible="false"
+            radius="0.001"
+            position="0 0 -0.1"
+          ></a-sphere>
         </a-camera>
-      </a-entity>
-    -->
+      </a-entity> -->
 
       <a-camera
         class="lookAt"
@@ -342,13 +358,13 @@
         position="0 1.0 -0.3"
       ></a-entity> -->
 
-      <!-- <a-entity
+      <a-entity
         goomba="grabbable: true;"
         id="goomba1"
         position="0 1.0 -0.3"
         class="punchable"
         rotation="0 0 0"
-      ></a-entity> -->
+      ></a-entity>
 
       <!-- <a-entity
         goomba="grabbable: true;"
@@ -357,7 +373,7 @@
         rotation="0 0 0"
       ></a-entity> -->
       <!-- <a-box
-        scale="1 0.05 1"
+        scale="5 0.05 5"
         static-body
         position="0 0.8 -0.5"
         data-world-mesh="floor"
@@ -468,6 +484,8 @@
         </a-entity>
       </template>
 
+      <a-entity bs-ankle id="ankle"></a-entity>
+
       <a-entity
         id="leftHand"
         class="lookAt"
@@ -525,24 +543,30 @@
       }, 1);
     });
 
-    for (let i = 0; i < 0; i++) {
+    let goombasTest = false;
+    let goombasTestSize = 3;
+
+    for (let i = 0; i < (goombasTest ? 10 : 0); i++) {
       const goomba = document.createElement("a-entity");
       goomba.setAttribute("goomba", "");
       goomba.setAttribute(
         "position",
-        `${Math.random() * 2 - 1} 1.1 ${Math.random() * 2 - 1 - 0.5}`
+        `${Math.random() * goombasTestSize - goombasTestSize / 2} 1.1 ${
+          Math.random() * goombasTestSize - goombasTestSize / 2 - 0.5
+        }`
       );
       goomba.setAttribute("rotation", `0 ${Math.random() * 360} 0`);
       scene.appendChild(goomba);
     }
 
-    scene.addEventListener("loaded", () => {
-      return;
-      goombas.forEach((goomba) => {
-        goomba.updatePhysicsEnabled(true);
-        goomba.setStatus("falling");
+    if (goombasTest) {
+      scene.addEventListener("loaded", () => {
+        goombas.forEach((goomba) => {
+          goomba.updatePhysicsEnabled(true);
+          goomba.setStatus("falling");
+        });
       });
-    });
+    }
 
     const persistEntitiesKey = "webxr-2-persist";
     const persistedEntitiesKey = "webxr-2-entities";

@@ -7,8 +7,8 @@ const kickConfiguration = {
   task: "classification",
   sensorTypes: ["gyroscope", "linearAcceleration"],
   sampleRate: 20,
-  captureDelay: 200,
-  classes: ["idle", "kick", "knee", "stomp"], // FIX - kick and stomp
+  captureDelay: 500,
+  classes: ["idle", "kick", "stomp"],
 };
 fetch("./kick.tflite")
   .then((response) => response.arrayBuffer())
@@ -121,10 +121,12 @@ for (let i = 0; i < 2; i++) {
   });
 
   device.addEventListener("tfliteIsReady", () => {
+    console.log("tfliteIsReady?", device.tfliteIsReady, device.type);
     if (device.type != "generic") {
       return;
     }
     if (device.tfliteIsReady) {
+      console.log("enabling inferencing");
       device.enableTfliteInferencing();
     }
   });
@@ -133,7 +135,7 @@ for (let i = 0; i < 2; i++) {
   const maxClassLabel = maxClassSpan.closest("label");
   let gestureTimeout;
   device.addEventListener("tfliteInference", (event) => {
-    console.log(event);
+    // console.log(event);
     maxClassLabel.removeAttribute("hidden");
     maxClassSpan.innerText =
       event.message.tfliteInference.maxClass.toUpperCase() + "!";

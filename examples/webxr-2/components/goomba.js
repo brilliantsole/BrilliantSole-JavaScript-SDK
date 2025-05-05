@@ -22,6 +22,7 @@ AFRAME.registerComponent("goomba", {
           offset: 0 0 0;`,
 
   init: function () {
+    this.worldQuaternion = new THREE.Quaternion();
     this.playGrabSound = AFRAME.utils.throttle(
       this.playGrabSound.bind(this),
       500
@@ -161,6 +162,9 @@ AFRAME.registerComponent("goomba", {
     this.el.addEventListener("loaded", () => {
       this.el.addEventListener("punch", this.onPunch.bind(this));
 
+      this.el.addEventListener("kick", this.onKick.bind(this));
+      this.el.addEventListener("stomp", this.onStomp.bind(this));
+
       this.el.addEventListener("body-loaded", this.onBodyLoaded.bind(this));
 
       const template = this.data.template.content
@@ -277,6 +281,77 @@ AFRAME.registerComponent("goomba", {
   onPunch: function (event) {
     const { velocity, position } = event.detail;
     this.punch(velocity, position);
+  },
+
+  onKick: function (event) {
+    const { velocity } = event.detail;
+    console.log("onKick", { velocity });
+    this.punch(velocity);
+  },
+
+  // adjust values as needed
+  stompDistanceRange: { min: 0.3, max: 5 },
+  stompDistanceInterpolationPower: 1,
+  stompDelayRange: { min: 0, max: 350 },
+  stompVelocityLengthRange: { min: 0.15, max: 1 },
+  stompVelocityPitchRange: {
+    min: THREE.MathUtils.degToRad(10),
+    max: THREE.MathUtils.degToRad(0),
+  },
+  onStomp: function (event) {
+    const { distance, yaw, kill } = event.detail;
+    console.log("onStomp", { distance, kill });
+    if (kill) {
+      this.deathCollidedEntity = this.floor;
+      this.shouldDie = true;
+      this.deathVelocity = new THREE.Vector3(0, -1, 0);
+      this.deathNormal = new THREE.Vector3(0, 1, 0);
+    } else {
+      if (false) {
+        this.playPunchSqueakSound();
+      }
+      let distanceInterpolation = THREE.MathUtils.inverseLerp(
+        this.stompDistanceRange.min,
+        this.stompDistanceRange.max,
+        distance
+      );
+      distanceInterpolation = THREE.MathUtils.clamp(
+        distanceInterpolation,
+        0,
+        1
+      );
+      distanceInterpolation = Math.pow(
+        distanceInterpolation,
+        this.stompDistanceInterpolationPower
+      );
+      console.log({ distanceInterpolation });
+      const delay = THREE.MathUtils.lerp(
+        this.stompDelayRange.min,
+        this.stompDelayRange.max,
+        distanceInterpolation
+      );
+      console.log({ delay });
+      setTimeout(() => {
+        this.setStatus("idle");
+        // console.log("stomped", velocity);
+        const velocityLength = THREE.MathUtils.lerp(
+          this.stompVelocityLengthRange.min,
+          this.stompVelocityLengthRange.max,
+          1 - distanceInterpolation
+        );
+        const pitch = THREE.MathUtils.lerp(
+          this.stompVelocityPitchRange.min,
+          this.stompVelocityPitchRange.max,
+          distanceInterpolation
+        );
+
+        const velocity = new THREE.Vector3(0, velocityLength, 0);
+        const euler = new THREE.Euler(pitch, yaw, 0, "YXZ");
+        velocity.applyEuler(euler);
+        this.physicsOptions = { velocity };
+        this.setPhysicsEnabled(true);
+      }, delay);
+    }
   },
 
   setGrabEnabled: function (enabled) {
@@ -592,12 +667,12 @@ AFRAME.registerComponent("goomba", {
           this.setPhysicsEnabled(false);
           setTimeout(() => {
             this.setStatus("getting up");
-          }, 0);
+          }, 1);
         }
       };
       this.floorInterval = setInterval(() => {
         checkIfStoppedMoving();
-      }, 100);
+      }, 50);
       checkIfStoppedMoving();
     } else {
       this.setPhysicsEnabled(false);
@@ -1046,7 +1121,6 @@ AFRAME.registerComponent("goomba", {
   upVector: new THREE.Vector3(0, 1, 0),
   rightVector: new THREE.Vector3(1, 0, 0),
   toVector: new THREE.Vector3(),
-  worldQuaternion: new THREE.Quaternion(),
   angleThreshold: 0.75,
 
   angleThresholds: {
