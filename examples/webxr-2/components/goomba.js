@@ -276,8 +276,10 @@ AFRAME.registerComponent("goomba", {
     this.el.addEventListener("grabended", () => this.setGrabEnabled(false));
   },
 
-  validWorldMeshTypes: ["floor", "table"],
-  validHitWorldMeshTypes: ["floor", "table", "wall", "ceiling", "floor"],
+  // validFloorMeshTypes: ["floor", "table"],
+  validFloorMeshTypes: ["floor", "table", "desk"],
+  validHitWorldMeshTypes: [],
+  //validHitWorldMeshTypes: ["floor", "table", "wall", "ceiling"],
 
   onPunch: function (event) {
     const { velocity, position } = event.detail;
@@ -477,13 +479,17 @@ AFRAME.registerComponent("goomba", {
     }
   },
 
+  floorCollisionNormalThreshold: THREE.MathUtils.degToRad(10),
   onCollide: async function (event) {
     const collidedEntity = event.detail.body.el;
     // console.log("collided with", collidedEntity);
 
     if (
       this.punched &&
-      this.validHitWorldMeshTypes.includes(collidedEntity.dataset.worldMesh) &&
+      (this.validHitWorldMeshTypes.length == 0 ||
+        this.validHitWorldMeshTypes.includes(
+          collidedEntity.dataset.worldMesh
+        )) &&
       collidedEntity != this.punchedFloor
     ) {
       //console.log("died colliding with", collidedEntity);
@@ -496,10 +502,17 @@ AFRAME.registerComponent("goomba", {
     switch (this.status) {
       case "falling":
         if (
-          this.validWorldMeshTypes.includes(collidedEntity.dataset.worldMesh)
+          this.validFloorMeshTypes.length == 0 ||
+          this.validFloorMeshTypes.includes(collidedEntity.dataset.worldMesh)
         ) {
-          this.resetLegs();
-          this.setFloor(collidedEntity);
+          const normal = event.detail.contact.ni;
+          const upAngle = this.worldBasis.up.angleTo(
+            new THREE.Vector3(normal.x, normal.y, normal.z)
+          );
+          if (upAngle <= this.floorCollisionNormalThreshold) {
+            this.resetLegs();
+            this.setFloor(collidedEntity);
+          }
         }
 
         if (!this.punched) {
@@ -682,12 +695,14 @@ AFRAME.registerComponent("goomba", {
   },
 
   setFloor: function (newFloor) {
+    clearInterval(this.floor);
     if (this.floor == newFloor) {
       return;
     }
     this.floor = newFloor;
-    clearInterval(this.floorInterval);
+    // console.log("setting floor", newFloor);
     if (this.floor) {
+      clearInterval(this.floorInterval);
       const checkIfStoppedMoving = () => {
         const stoppedMoving =
           this.el.components["dynamic-body"].body.velocity.length() < 0.01;
@@ -698,7 +713,7 @@ AFRAME.registerComponent("goomba", {
         const stopped = stoppedMoving && stoppedRotating && isFlat;
         // console.log({ stoppedMoving, stoppedRotating, isFlat });
         if (stopped) {
-          // console.log("stopped");
+          console.log("stopped");
           if (this.punched) {
             this.punched = false;
           }
@@ -1718,7 +1733,7 @@ AFRAME.registerComponent("goomba", {
       }
     }
 
-    if (this.status == "walking" && this.floor && false) {
+    if (this.status == "walking" && this.floor) {
       if (!this.slowDown) {
         this.slowDown =
           this.slowDown ||
@@ -1792,7 +1807,7 @@ AFRAME.registerComponent("goomba", {
 
           this.tempPointToWalkTo.copy(this.worldPosition);
           this.tempPointToWalkTo.add(this.pointToWalkToOffset);
-          this.floor.components["obb-collider"].obb.clampPoint(
+          this.floor.components["my-obb-collider"].obb.clampPoint(
             this.tempPointToWalkTo,
             this.clampedTempPointToWalkTo
           );
@@ -2074,6 +2089,7 @@ AFRAME.registerComponent("goomba", {
   doesPointIntersectAnyMeshes: function (point) {
     return this.lookAtRaycastTargets
       .filter((entity) => entity.getAttribute("mixin") == "realWorldMeshMixin")
+      .filter((entity) => entity != this.floor)
       .some((entity) => {
         const containsPoint =
           entity.components["my-obb-collider"].obb.containsPoint(point);

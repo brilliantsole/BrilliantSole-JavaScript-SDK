@@ -27,6 +27,8 @@ AFRAME.registerComponent("hand-punch", {
     this.sound = document.createElement("a-entity");
     this.sound.setAttribute("sound", `src: ${this.data.soundSelector}`);
     this.el.sceneEl.appendChild(this.sound);
+
+    this.el.components["obb-collider"].showCollider();
   },
 
   playSound: function (punchedEntity) {

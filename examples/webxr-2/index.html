@@ -100,7 +100,7 @@
       grabbable-listener
       obb-collider="showColliders: false;"
       xr-mode-ui="enabled: true; XRMode: ar;"
-      real-world-meshing="meshMixin: realWorldMeshMixin; meshesEnabled: true; planeMixin: realWorldPlaneMixin; planesEnabled: true; filterLabels: table, wall, floor, ceiling;"
+      real-world-meshing="meshMixin: realWorldMeshMixin; meshesEnabled: true; planeMixin: realWorldPlaneMixin; planesEnabled: true; filterLabels: table, wall, desk, floor, ceiling;"
       device-orientation-permission-ui="enabled: false"
     >
       <a-assets>
@@ -114,16 +114,16 @@
         ></a-asset-item>
         <a-mixin
           id="realWorldPlaneMixin"
-          obb-collider
+          my-obb-collider
           static-body
           visible="false"
         >
         </a-mixin>
         <a-mixin
           id="realWorldMeshMixin"
-          occlude-mesh
-          visible="true"
           my-obb-collider
+          static-body
+          visible="false"
         ></a-mixin>
         <audio
           id="coinAudio"

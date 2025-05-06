@@ -29,8 +29,6 @@ AFRAME.registerComponent("my-obb-collider", {
       }
     }, 100);
 
-    window.x = this;
-
     // this.system.addCollider(this.el);
   },
 
