@@ -9,7 +9,11 @@ AFRAME.registerComponent("hand-punch", {
     soundSelector: { default: "#punchAudio" },
   },
 
-  dependencies: ["hand-tracking-controls", "hand-tracking-grab-controls"],
+  dependencies: [
+    "hand-tracking-controls",
+    "hand-tracking-grab-controls",
+    "obb-collider",
+  ],
 
   init() {
     this.hand = this.el.components["hand-tracking-controls"];
@@ -39,7 +43,7 @@ AFRAME.registerComponent("hand-punch", {
   onCollisionStarted: function (event) {
     const now = Date.now();
     if (now - this.lastTimePunched < this.data.punchTimeout) {
-      return;
+      //return;
     }
     this.lastTimePunched = now;
     const { withEl, trackedObject3D } = event.detail;

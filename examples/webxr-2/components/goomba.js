@@ -486,6 +486,7 @@ AFRAME.registerComponent("goomba", {
 
     if (
       this.punched &&
+      collidedEntity.dataset.worldMesh &&
       (this.validHitWorldMeshTypes.length == 0 ||
         this.validHitWorldMeshTypes.includes(
           collidedEntity.dataset.worldMesh
@@ -1733,7 +1734,8 @@ AFRAME.registerComponent("goomba", {
       }
     }
 
-    if (this.status == "walking" && this.floor) {
+    if (this.status == "walking" && this.floor && false) {
+      // fix
       if (!this.slowDown) {
         this.slowDown =
           this.slowDown ||
