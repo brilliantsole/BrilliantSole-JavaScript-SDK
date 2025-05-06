@@ -1734,8 +1734,7 @@ AFRAME.registerComponent("goomba", {
       }
     }
 
-    if (this.status == "walking" && this.floor && false) {
-      // fix
+    if (this.status == "walking" && this.floor) {
       if (!this.slowDown) {
         this.slowDown =
           this.slowDown ||

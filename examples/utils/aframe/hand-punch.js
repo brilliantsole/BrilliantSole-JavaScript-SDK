@@ -5,7 +5,7 @@ AFRAME.registerComponent("hand-punch", {
     punchable: { default: ".punchable" },
     velocityThreshold: { default: 1.2 },
     velocityScalar: { default: 1 },
-    punchTimeout: { default: 500 },
+    punchTimeout: { default: 50 },
     soundSelector: { default: "#punchAudio" },
   },
 
@@ -22,17 +22,41 @@ AFRAME.registerComponent("hand-punch", {
     this.lastTimePunched = 0;
     this.positionHistory = [];
 
-    this.onCollisionStarted = this.onCollisionStarted.bind(this);
-    this.el.addEventListener("obbcollisionstarted", this.onCollisionStarted);
+    if (true) {
+      this.collider = document.createElement("a-box");
+      this.collider.setAttribute("visible", "false");
 
+      let trackedObject3DVariable;
+      if (this.side === "right") {
+        trackedObject3DVariable =
+          "parentEl.components.hand-tracking-controls.bones.11";
+      } else {
+        trackedObject3DVariable =
+          "parentEl.components.hand-tracking-controls.bones.13";
+      }
+
+      this.collider.addEventListener("loaded", () => {
+        this.collider.setAttribute("obb-collider", {
+          trackedObject3D: trackedObject3DVariable,
+          size: 0.12,
+        });
+      });
+
+      this.el.appendChild(this.collider);
+    } else {
+      this.collider = this.el;
+    }
+    this.onCollisionStarted = this.onCollisionStarted.bind(this);
     this.onCollisionEnded = this.onCollisionEnded.bind(this);
-    this.el.addEventListener("obbcollisionended", this.onCollisionEnded);
+    this.collider.addEventListener(
+      "obbcollisionstarted",
+      this.onCollisionStarted
+    );
+    this.collider.addEventListener("obbcollisionended", this.onCollisionEnded);
 
     this.sound = document.createElement("a-entity");
     this.sound.setAttribute("sound", `src: ${this.data.soundSelector}`);
     this.el.sceneEl.appendChild(this.sound);
-
-    this.el.components["obb-collider"].showCollider();
   },
 
   playSound: function (punchedEntity) {
@@ -41,6 +65,7 @@ AFRAME.registerComponent("hand-punch", {
   },
 
   onCollisionStarted: function (event) {
+    // console.log(this, event);
     const now = Date.now();
     if (now - this.lastTimePunched < this.data.punchTimeout) {
       //return;
@@ -88,8 +113,7 @@ AFRAME.registerComponent("hand-punch", {
   onCollisionEnded: function () {},
 
   tick: function (time, delta) {
-    const object =
-      this.el.components?.["hand-tracking-controls"]?.wristObject3D;
+    const object = this.collider.object3D;
     if (!object) {
       return;
     }
