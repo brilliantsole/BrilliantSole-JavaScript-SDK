@@ -713,7 +713,7 @@ AFRAME.registerComponent("goomba", {
         const stopped = stoppedMoving && stoppedRotating && isFlat;
         // console.log({ stoppedMoving, stoppedRotating, isFlat });
         if (stopped) {
-          console.log("stopped");
+          // console.log("stopped");
           if (this.punched) {
             this.punched = false;
           }

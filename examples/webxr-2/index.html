@@ -604,6 +604,7 @@
         intervalId = setInterval(() => {
           if (anchor.components["anchored"]?.anchor) {
             clearTimeout(timeoutId);
+            clearInterval(intervalId);
             resolve(true);
           }
         }, 200);
@@ -737,7 +738,6 @@
     scene.addEventListener(
       "enter-vr",
       () => {
-        // FIX - wait until anchor is loaded
         loadEntities();
       },
       { once: true }
@@ -756,5 +756,97 @@
       });
       saveEntities();
     });
+
+    let worldMeshes = [];
+    const waitForWorldMeshes = async () => {
+      return new Promise((resolve) => {
+        let intervalId, timeoutId;
+        intervalId = setInterval(() => {
+          worldMeshes = Array.from(
+            scene.querySelectorAll(
+              "[data-world-mesh][mixin='realWorldMeshMixin']"
+            )
+          );
+          if (worldMeshes.length > 0) {
+            console.log("worldMeshes", worldMeshes);
+            clearTimeout(timeoutId);
+            clearInterval(intervalId);
+            resolve(true);
+          }
+        }, 200);
+
+        timeoutId = setTimeout(() => {
+          clearInterval(intervalId);
+          console.log("no world meshes found");
+          resolve(false);
+        }, 3000);
+      });
+    };
+    let planeMeshes = [];
+    const waitForPlaneMeshes = async () => {
+      return new Promise((resolve) => {
+        let intervalId, timeoutId;
+        intervalId = setInterval(() => {
+          planeMeshes = Array.from(
+            scene.querySelectorAll(
+              "[data-world-mesh][mixin='realWorldPlaneMixin']"
+            )
+          );
+          if (planeMeshes.length > 0) {
+            console.log("planeMeshes", planeMeshes);
+            clearTimeout(timeoutId);
+            clearInterval(intervalId);
+            resolve(true);
+          }
+        }, 200);
+
+        timeoutId = setTimeout(() => {
+          clearInterval(intervalId);
+          console.log("no plane meshes found");
+          resolve(false);
+        }, 3000);
+      });
+    };
+    const fixWorldMeshes = async () => {
+      await Promise.all([waitForPlaneMeshes(), waitForWorldMeshes()]);
+      const surfaces = ["table"];
+      planeMeshes
+        .filter((entity) => surfaces.includes(entity.dataset.worldMesh))
+        .forEach((planeMesh) => {
+          const similarMesh = worldMeshes
+            .filter(
+              (worldMesh) =>
+                worldMesh.dataset.worldMesh == planeMesh.dataset.worldMesh
+            )
+            .find((worldMesh) => {
+              console.log(
+                "comparing",
+                worldMesh.components["my-obb-collider"].obb,
+                "with",
+                planeMesh.components["my-obb-collider"].obb
+              );
+              return worldMesh.components["my-obb-collider"].obb.intersectsOBB(
+                planeMesh.components["my-obb-collider"].obb
+              );
+            });
+          if (!similarMesh) {
+            return;
+          }
+          if (true) {
+            console.log("removing plane", planeMesh);
+            planeMesh.remove();
+          } else {
+            planeMesh.removeAttribute("static-body");
+            planeMesh.removeAttribute("my-obb-collider");
+          }
+        });
+    };
+    scene.addEventListener(
+      "enter-vr",
+      () => {
+        fixWorldMeshes();
+      },
+      { once: true }
+    );
   </script>
 </html>
