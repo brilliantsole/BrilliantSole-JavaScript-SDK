@@ -796,7 +796,6 @@ devicePair.addEventListener("deviceIsConnected", (event) => {
     return;
   }
   if (isConnected) {
-    console.log("ADD!");
     device.addEventListener("sensorData", onDeviceSensorData);
   } else {
     device.removeEventListener("sensorData", onDeviceSensorData);

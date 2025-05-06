@@ -36,6 +36,7 @@ AFRAME.registerComponent("goomba", {
       this.playBounceSoundName.bind(this),
       200
     );
+    this.returnBounceSound = this.returnBounceSound.bind(this);
 
     this.lastTimePunched = 0;
     this.sphere = new THREE.Sphere();
@@ -285,7 +286,7 @@ AFRAME.registerComponent("goomba", {
 
   onKick: function (event) {
     const { velocity } = event.detail;
-    console.log("onKick", { velocity });
+    //console.log("onKick", { velocity });
     this.punch(velocity);
   },
 
@@ -295,12 +296,22 @@ AFRAME.registerComponent("goomba", {
   stompDelayRange: { min: 0, max: 350 },
   stompVelocityLengthRange: { min: 0.15, max: 1 },
   stompVelocityPitchRange: {
-    min: THREE.MathUtils.degToRad(10),
+    min: THREE.MathUtils.degToRad(2),
     max: THREE.MathUtils.degToRad(0),
   },
+  ignoreStompStatuses: ["getting up", "falling", "petting"],
   onStomp: function (event) {
     const { distance, yaw, kill } = event.detail;
-    console.log("onStomp", { distance, kill });
+    //console.log("onStomp", { distance, yaw, kill });
+    this.stomp(distance, yaw, kill);
+  },
+  stomp: function (distance, yaw, kill) {
+    this.stompOptions = { distance, yaw, kill };
+  },
+  _stomp: function (distance, yaw, kill) {
+    if (!this.floor || this.ignoreStompStatuses.includes(this.status)) {
+      return;
+    }
     if (kill) {
       this.deathCollidedEntity = this.floor;
       this.shouldDie = true;
@@ -324,14 +335,14 @@ AFRAME.registerComponent("goomba", {
         distanceInterpolation,
         this.stompDistanceInterpolationPower
       );
-      console.log({ distanceInterpolation });
+      // console.log({ distanceInterpolation });
       const delay = THREE.MathUtils.lerp(
         this.stompDelayRange.min,
         this.stompDelayRange.max,
         distanceInterpolation
       );
-      console.log({ delay });
-      setTimeout(() => {
+      // console.log({ delay });
+      const applyStomp = () => {
         this.setStatus("idle");
         // console.log("stomped", velocity);
         const velocityLength = THREE.MathUtils.lerp(
@@ -339,18 +350,39 @@ AFRAME.registerComponent("goomba", {
           this.stompVelocityLengthRange.max,
           1 - distanceInterpolation
         );
-        const pitch = THREE.MathUtils.lerp(
-          this.stompVelocityPitchRange.min,
-          this.stompVelocityPitchRange.max,
-          distanceInterpolation
-        );
+        let pitch = 0;
+        if (true) {
+          pitch = THREE.MathUtils.lerp(
+            this.stompVelocityPitchRange.min,
+            this.stompVelocityPitchRange.max,
+            Math.random()
+          );
+        } else {
+          pitch = THREE.MathUtils.lerp(
+            this.stompVelocityPitchRange.min,
+            this.stompVelocityPitchRange.max,
+            distanceInterpolation
+          );
+        }
+
+        let _yaw = 0;
+        if (true) {
+          _yaw = Math.random() * Math.PI * 2;
+        } else {
+          _yaw = yaw;
+        }
 
         const velocity = new THREE.Vector3(0, velocityLength, 0);
-        const euler = new THREE.Euler(pitch, yaw, 0, "YXZ");
+        const euler = new THREE.Euler(pitch, _yaw, 0, "YXZ");
         velocity.applyEuler(euler);
         this.physicsOptions = { velocity };
         this.setPhysicsEnabled(true);
-      }, delay);
+      };
+      if (true) {
+        applyStomp();
+      } else {
+        setTimeout(() => applyStomp(), delay);
+      }
     }
   },
 
@@ -366,6 +398,9 @@ AFRAME.registerComponent("goomba", {
 
   punchDownPitchThreshold: THREE.MathUtils.degToRad(-40),
   punch: function (velocity, position) {
+    this.punchOptions = { velocity, position };
+  },
+  _punch: function (velocity, position) {
     if (this.ignorePunchStatuses.includes(this.status)) {
       return;
     }
@@ -500,20 +535,25 @@ AFRAME.registerComponent("goomba", {
 
     this.playBounceSoundName(poolName);
   },
-  playBounceSoundName: function (poolName) {
+  playBounceSoundName: async function (poolName) {
+    this.returnBounceSound();
+
     this.bounceSound = this.el.sceneEl.components[poolName].requestEntity();
     this.bounceSound.poolName = poolName;
     this.bounceSound.object3D.position.copy(this.el.object3D.position);
     this.bounceSound.play();
+    await this.waitForSoundToLoad(this.bounceSound);
     this.bounceSound.components.sound.playSound();
-    this.bounceSound.addEventListener(
-      "sound-ended",
-      () => this.returnBounceSound(),
-      { once: true }
-    );
+    this.bounceSound.addEventListener("sound-ended", this.returnBounceSound, {
+      once: true,
+    });
   },
   returnBounceSound: function () {
     if (this.bounceSound) {
+      this.bounceSound.removeEventListener(
+        "sound-ended",
+        this.returnBounceSound
+      );
       this.bounceSound.components["sound"].stopSound();
       this.el.sceneEl.components[this.bounceSound.poolName].returnEntity(
         this.bounceSound
@@ -1466,6 +1506,17 @@ AFRAME.registerComponent("goomba", {
     }
     this.sphere.center.copy(this.worldPosition);
 
+    if (this.punchOptions) {
+      const { velocity, position } = this.punchOptions;
+      this.punchOptions = undefined;
+      this._punch(velocity, position);
+    }
+    if (this.stompOptions) {
+      const { distance, yaw, kill } = this.stompOptions;
+      this.stompOptions = undefined;
+      this._stomp(distance, yaw, kill);
+    }
+
     if (this.punchSqueakSound) {
       this.punchSqueakSound.object3D.position.copy(this.worldPosition);
     }
@@ -1667,7 +1718,7 @@ AFRAME.registerComponent("goomba", {
       }
     }
 
-    if (this.status == "walking") {
+    if (this.status == "walking" && this.floor && false) {
       if (!this.slowDown) {
         this.slowDown =
           this.slowDown ||
@@ -2027,10 +2078,10 @@ AFRAME.registerComponent("goomba", {
         const containsPoint =
           entity.components["my-obb-collider"].obb.containsPoint(point);
         if (containsPoint) {
-          console.log(
-            "congtains point with",
-            entity.getAttribute("data-world-mesh")
-          );
+          // console.log(
+          //   "congtains point with",
+          //   entity.getAttribute("data-world-mesh")
+          // );
         }
         return containsPoint;
       });
@@ -2715,11 +2766,33 @@ AFRAME.registerComponent("goomba", {
     }
   },
 
-  playGetUpSound: function () {
+  waitForSoundToLoad: async function (entity) {
+    return new Promise((resolve) => {
+      if (entity.components.sound) {
+        resolve();
+      } else {
+        let onComponentInitialized = (event) => {
+          if (event.detail.name == "sound") {
+            entity.removeEventListener(
+              "componentinitialized",
+              onComponentInitialized
+            );
+            resolve();
+          }
+        };
+        onComponentInitialized = onComponentInitialized.bind(this);
+
+        entity.addEventListener("componentinitialized", onComponentInitialized);
+      }
+    });
+  },
+
+  playGetUpSound: async function () {
     this.getUpSound =
       this.el.sceneEl.components["pool__getupsound"].requestEntity();
     this.getUpSound.object3D.position.copy(this.el.object3D.position);
     this.getUpSound.play();
+    await this.waitForSoundToLoad(this.getUpSound);
     this.getUpSound.components.sound.playSound();
     this.getUpSound.addEventListener(
       "sound-ended",

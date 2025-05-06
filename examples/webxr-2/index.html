@@ -281,6 +281,15 @@
         position="0 1 0"
         _raycaster="objects: .raycastable; interval: 100;"
       >
+        <a-text
+          visible="false"
+          id="debugText"
+          value="hello\nworld"
+          position="0 0 -0.5"
+          scale="0.5 0.5 0.5"
+          color="green"
+          align="center"
+        ></a-text>
       </a-camera>
 
       <a-entity
@@ -351,6 +360,15 @@
           ></a-sphere>
         </a-entity>
       </template>
+
+      <a-entity id="debugCone" visible="false" position="0 1 -1">
+        <a-cone
+          height="0.1"
+          rotation="-90 0 0"
+          radius-bottom="0.1"
+          color="green"
+        ></a-cone>
+      </a-entity>
 
       <!-- <a-entity
         id="squashedGoomba1"
