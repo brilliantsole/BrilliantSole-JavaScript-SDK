@@ -338,7 +338,6 @@
             color="#a14e00"
             radius="0.1"
             scale="1 1 0.3"
-            shadow="cast: true; receive: false;"
           ></a-sphere>
 
           <a-entity
@@ -408,7 +407,6 @@
         data-world-mesh="floor"
         color="blue"
         obb-collider
-        shadow="receive: true; cast: false;"
         id="testFloor"
       ></a-box> -->
       <!-- <a-box
@@ -464,7 +462,6 @@
                 color="#a14e00"
                 radius="0.1"
                 scale="0.9 0.75 0.8"
-                shadow="cast: true; receive: false;"
               >
               </a-sphere>
               <a-sphere
@@ -840,7 +837,7 @@
               return;
             }
             console.log("removing plane", planeMesh);
-            if (false) {
+            if (true) {
               planeMesh.remove();
             } else {
               planeMesh.removeAttribute("static-body");

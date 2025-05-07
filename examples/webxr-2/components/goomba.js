@@ -412,6 +412,7 @@ AFRAME.registerComponent("goomba", {
     // console.log({ pitch, threshold: this.punchDownPitchThreshold });
     if (pitch < this.punchDownPitchThreshold && this.floor) {
       this.deathCollidedEntity = this.floor;
+      //console.log("punching down on floor", this.deathCollidedEntity);
       this.shouldDie = true;
       this.deathVelocity = velocity.clone();
       this.deathNormal = new THREE.Vector3(0, 1, 0);
@@ -1500,12 +1501,17 @@ AFRAME.registerComponent("goomba", {
           this.raycaster.set(this.worldPosition, this.ray);
           this.raycaster.near = 0;
           this.raycaster.far = 1;
+          const intersectable =
+            this.floor?.components["occlude-mesh"].raycastMesh;
+          console.log("intersectable", intersectable);
           const intersections = this.raycaster.intersectObjects(
-            this.lookAtRaycastTargetObjects,
+            intersectable ? [intersectable] : this.lookAtRaycastTargetObjects,
             true
           );
           if (intersections[0]) {
             position.copy(intersections[0].point);
+          } else {
+            console.log("no intersections found for death punch");
           }
         }
       }
