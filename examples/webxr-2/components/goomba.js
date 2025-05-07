@@ -22,6 +22,8 @@ AFRAME.registerComponent("goomba", {
           offset: 0 0 0;`,
 
   init: function () {
+    this.emotion = "default";
+
     this.lookAtPosition = new THREE.Vector3();
     this.lookAtRefocusVector = new THREE.Vector3();
     this.lookAtRefocusAxis = new THREE.Vector3();
@@ -613,6 +615,17 @@ AFRAME.registerComponent("goomba", {
     this.returnBounceSound();
   },
 
+  pause: function () {
+    if (this.status == "petting") {
+      this.el.sceneEl.emit("stopPetting", { side: this.petSide });
+    }
+
+    if (this.purrSound) {
+      this.returnPurrSound();
+      this.playPurrFadeOutSound();
+    }
+  },
+
   debugColors: false,
 
   onObbCollisionStarted: async function (event) {
@@ -952,27 +965,98 @@ AFRAME.registerComponent("goomba", {
     });
   },
 
-  setEyeLowerLid: function (side, value, options = {}) {
-    // FILL
-    this.eyeWhites[side].removeAttribute("animation__thetalength");
-    this.eyeWhites[side].setAttribute("animation__thetalength", {
-      property: "theta-length",
-      to: value,
-      dur: 0,
-      easing: "easeInOutQuad",
+  setWhiteEyeRoll: function (
+    side,
+    { roll },
+    options = { dur: 100, easing: "easeInOutQuad" }
+  ) {
+    if (side == "left") {
+      roll *= -1;
+    }
+    const eyeWhite = this.eyeWhites[side];
+    eyeWhite.removeAttribute("animation__roll");
+    eyeWhite.setAttribute("animation__roll", {
+      property: "rotation",
+      to: `0 0 ${roll}`,
       ...options,
     });
   },
-  setEyeLid: function (side, isUpper, value, options = {}) {
-    // FILL
-    this.eyeWhites[side].removeAttribute("animation__thetalength");
-    this.eyeWhites[side].setAttribute("animation__thetalength", {
-      property: "theta-length",
-      to: value,
-      dur: 0,
-      easing: "easeInOutQuad",
+  setWhiteEyesRoll: function () {
+    this.sides.forEach((side) => {
+      this.setWhiteEyeRoll(side, ...arguments);
+    });
+  },
+
+  setEyelid: function (
+    side,
+    { upper, lower },
+    options = { dur: 100, easing: "easeInOutQuad" }
+  ) {
+    lower = 1 - lower;
+    lower = Math.max(lower, upper);
+
+    let eyeHeight = lower - upper; // [0, 1]
+    const thetaLength = eyeHeight * 180;
+
+    let eyeYOffset = upper; // [0, 1]
+    const thetaStart = eyeYOffset * 180;
+
+    const eyeWhite = this.eyeWhites[side];
+
+    eyeWhite.removeAttribute("animation__thetalength");
+    eyeWhite.setAttribute("animation__thetalength", {
+      property: "geometry.thetaLength",
+      //from: eyeWhite.getAttribute("theta-length"),
+      to: thetaLength.toString(),
       ...options,
     });
+
+    eyeWhite.removeAttribute("animation__thetastart");
+    eyeWhite.setAttribute("animation__thetastart", {
+      property: "geometry.thetaStart",
+      // from: eyeWhite.getAttribute("theta-start"),
+      to: thetaStart.toString(),
+      ...options,
+    });
+  },
+  setEyelids: function () {
+    this.sides.forEach((side) => {
+      this.setEyelid(side, ...arguments);
+    });
+  },
+
+  emotions: ["default", "happy", "angry", "sad"],
+  setEmotion: function (newEmotion) {
+    if (this.emotion == newEmotion) {
+      return;
+    }
+    if (!this.emotions.includes(newEmotion)) {
+      console.error(`invalid emotion "${newEmotion}"`);
+      return;
+    }
+    this.emotion = newEmotion;
+
+    this.blink();
+    switch (this.emotion) {
+      case "happy":
+        this.setEyelids({ upper: 0, lower: 0.3 });
+        this.setWhiteEyesRoll({ roll: 8 });
+        break;
+      case "sad":
+        this.setEyelids({ upper: 0.3, lower: 0.0 });
+        this.setWhiteEyesRoll({ roll: -15 });
+        break;
+      case "angry":
+        this.setEyelids({ upper: 0.3, lower: 0.2 });
+        this.setWhiteEyesRoll({ roll: 12 });
+        break;
+      case "default":
+        this.setEyelids({ upper: 0, lower: 0 });
+        this.setWhiteEyesRoll({ roll: 0 });
+        break;
+      default:
+        break;
+    }
   },
 
   resetEyesScale: function () {
@@ -1582,6 +1666,13 @@ AFRAME.registerComponent("goomba", {
 
     if (this.latestTick - this.lastTimePunched < 10) {
       return;
+    }
+
+    if (this.status == "falling") {
+      if (this.worldPosition.y < -40) {
+        console.log("fell through floor");
+        this.el.remove();
+      }
     }
 
     if (
@@ -2684,12 +2775,24 @@ AFRAME.registerComponent("goomba", {
         this.playPurrFadeOutSound();
       }
     }
+
+    if (this.status == "petting") {
+      this.blink();
+      setTimeout(() => {
+        this.setEmotion("default");
+      }, 200);
+    }
+
     this.status = newStatus;
     // console.log(`new status "${this.status}"`);
 
     if (this.status == "petting") {
       this.el.sceneEl.emit("startPetting", { side: this.petSide });
       this.playPurrSound();
+    }
+
+    if (this.status == "petting") {
+      this.setEmotion("happy");
     }
 
     if (this.status == "grabbed") {
