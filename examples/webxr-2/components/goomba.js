@@ -1458,7 +1458,7 @@ AFRAME.registerComponent("goomba", {
   petSquashYRange: { min: 0.65, max: 1 },
   petSquashXZRange: { min: 1, max: 1.1 },
   petSquashEyesHeightRange: { min: 0.1, max: 1 },
-  petSquashEyesHeightBiasRange: { min: -0.25, max: 0.25 },
+  petSquashEyesHeightBiasRange: { min: -0.2, max: 0.2 },
   petSquashEyesRollRange: { min: 0.4, max: 0.6 },
   petEyeSquashRange: { min: -0.03, max: 0.01 },
 
