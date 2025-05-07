@@ -504,7 +504,7 @@ AFRAME.registerComponent("goomba", {
         )) &&
       collidedEntity != this.punchedFloor
     ) {
-      console.log("died colliding with", collidedEntity);
+      // console.log("died colliding with", collidedEntity);
       this.deathCollidedEntity = collidedEntity;
       this.shouldDie = true;
       this.deathVelocity = this.el.body.velocity.clone();
@@ -1833,6 +1833,11 @@ AFRAME.registerComponent("goomba", {
         const turnScalar = Math.round(Math.random()) ? 1 : -1;
         let didIntersectGoomba = false;
         let didIntersectMesh = false;
+        this.tempPointToWalkTo2 =
+          this.tempPointToWalkTo2 || new THREE.Vector3();
+        this.pointToWalkToOffset2 =
+          this.pointToWalkToOffset2 || new THREE.Vector3();
+
         do {
           attempts++;
           let angle = turnAngle * turnScalar * attempts + angleOffset;
@@ -1854,26 +1859,35 @@ AFRAME.registerComponent("goomba", {
 
           this.tempPointToWalkTo.copy(this.worldPosition);
           this.tempPointToWalkTo.add(this.pointToWalkToOffset);
+          this.pointToWalkToOffset2
+            .copy(this.pointToWalkToOffset)
+            .setLength(0.25);
+          this.tempPointToWalkTo2
+            .copy(this.worldPosition)
+            .add(this.pointToWalkToOffset2);
           this.floor.components["my-obb-collider"].obb.clampPoint(
-            this.tempPointToWalkTo,
+            this.tempPointToWalkTo2,
             this.clampedTempPointToWalkTo
           );
           if (shouldBreak) {
             break;
           }
+
           didIntersectGoomba = this.doesPointIntersectAnyGoombas(
-            this.tempPointToWalkTo
+            this.tempPointToWalkTo2
           );
           didIntersectMesh = this.doesPointIntersectAnyMeshes(
-            this.tempPointToWalkTo
+            this.tempPointToWalkTo2
           );
         } while (
           didIntersectMesh ||
           didIntersectGoomba ||
-          Math.abs(this.clampedTempPointToWalkTo.x - this.tempPointToWalkTo.x) >
-            0.001 ||
-          Math.abs(this.clampedTempPointToWalkTo.z - this.tempPointToWalkTo.z) >
-            0.001
+          Math.abs(
+            this.clampedTempPointToWalkTo.x - this.tempPointToWalkTo2.x
+          ) > 0.001 ||
+          Math.abs(
+            this.clampedTempPointToWalkTo.z - this.tempPointToWalkTo2.z
+          ) > 0.001
         );
 
         this.pointToWalkTo.copy(this.tempPointToWalkTo);
