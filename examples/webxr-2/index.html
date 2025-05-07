@@ -821,17 +821,16 @@
                   worldMesh.dataset.worldMesh == planeMesh.dataset.worldMesh
               )
               .find((worldMesh) => {
-                console.log(
-                  "comparing",
-                  worldMesh.components["my-obb-collider"].obb,
-                  "with",
-                  planeMesh.components["my-obb-collider"].obb
-                );
-                return worldMesh.components[
-                  "my-obb-collider"
-                ].obb.intersectsOBB(
-                  planeMesh.components["my-obb-collider"].obb
-                );
+                const obbA = worldMesh.components["my-obb-collider"].obb;
+                const obbB = planeMesh.components["my-obb-collider"].obb;
+                console.log("comparing", obbA, "with", obbB);
+                if (obbA.center.distanceTo(obbB.center) < 0.1) {
+                  return true;
+                }
+                if (obbA.intersectsOBB(obbB)) {
+                  return true;
+                }
+                return false;
               });
             if (!similarMesh) {
               return;
@@ -853,7 +852,7 @@
             entity.setAttribute("shadow", "cast: false; receive: true;");
           });
         }
-      }, 1);
+      }, 10);
     };
     scene.addEventListener(
       "enter-vr",

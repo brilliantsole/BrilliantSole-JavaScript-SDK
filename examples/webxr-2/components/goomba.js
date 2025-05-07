@@ -504,7 +504,7 @@ AFRAME.registerComponent("goomba", {
         )) &&
       collidedEntity != this.punchedFloor
     ) {
-      //console.log("died colliding with", collidedEntity);
+      console.log("died colliding with", collidedEntity);
       this.deathCollidedEntity = collidedEntity;
       this.shouldDie = true;
       this.deathVelocity = this.el.body.velocity.clone();
@@ -1780,8 +1780,7 @@ AFRAME.registerComponent("goomba", {
       }
     }
 
-    if (this.status == "walking" && this.floor && false) {
-      // fix
+    if (this.status == "walking" && this.floor) {
       if (!this.slowDown) {
         this.slowDown =
           this.slowDown ||

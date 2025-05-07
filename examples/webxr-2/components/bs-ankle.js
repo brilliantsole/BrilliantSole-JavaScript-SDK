@@ -23,9 +23,9 @@ AFRAME.registerComponent("bs-ankle", {
 
     this.debugCone = this.el.sceneEl.querySelector("#debugCone");
     this.debugText = this.el.sceneEl.querySelector("#debugText");
-    this.debug = true;
+    this.debug = false;
     this.debugKick = false;
-    this.debugGesture = true;
+    this.debugGesture = false;
     if (this.debug) {
       this.debugText.setAttribute("visible", "false");
       if (this.debugKick) {
