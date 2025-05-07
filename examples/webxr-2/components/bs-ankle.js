@@ -142,18 +142,17 @@ AFRAME.registerComponent("bs-ankle", {
     if (!intersection) {
       return;
     }
+    // console.log("intersection", intersection);
     const { point, object } = intersection;
     const floor = object.el || object.parent.el;
     if (!floor) {
       return;
     }
 
-    console.log("intersection", intersection);
-
     const goombasOnFloor = window.goombas.filter(
       (goomba) => goomba.floor == floor
     );
-    console.log("goombasOnFloor", goombasOnFloor);
+    // console.log("goombasOnFloor", goombasOnFloor);
 
     return { point, floor, goombasOnFloor };
   },
@@ -255,7 +254,7 @@ AFRAME.registerComponent("bs-ankle", {
 
       return true;
     });
-    console.log("goombasToKick", goombasToKick);
+    // console.log("goombasToKick", goombasToKick);
 
     if (goombasToKick.length > 0) {
       /** @type {BS.VibrationWaveformEffect} */
