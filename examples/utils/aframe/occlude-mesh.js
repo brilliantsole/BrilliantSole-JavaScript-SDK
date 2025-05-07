@@ -9,6 +9,7 @@ AFRAME.registerComponent("occlude-mesh", {
     this.occludedMaterial = new THREE.MeshBasicMaterial({
       colorWrite: false,
       depthWrite: true,
+      side: THREE.BackSide, // Only occlude with back faces
     });
     this.updateMesh();
   },
