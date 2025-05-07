@@ -13,7 +13,9 @@ AFRAME.registerComponent("occlude-hand-tracking-controls", {
       this.occludedMaterial = new THREE.MeshBasicMaterial({
         colorWrite: false,
         depthWrite: true,
+        depthTest: true,
       });
+      this.skinnedMesh.renderOrder = 0;
       this.updateSkinnedMesh();
     });
   },

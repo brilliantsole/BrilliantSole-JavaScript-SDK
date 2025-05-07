@@ -22,6 +22,7 @@ AFRAME.registerComponent("platter", {
 
     this.hand.setAttribute("palm-up-detector", "");
     this.hand.addEventListener("palmupon", () => {
+      this.hand.components["hand-tracking-grab-controls"].setDisabled(true);
       this.setGrabEnabled(false);
       this.isGrabbed = false;
       this.isOpen = true;
@@ -45,6 +46,7 @@ AFRAME.registerComponent("platter", {
       });
     });
     this.hand.addEventListener("palmupoff", () => {
+      this.hand.components["hand-tracking-grab-controls"].setDisabled(false);
       this.setGrabEnabled(true);
       this.isOpen = false;
       this.playFadeOutSound();
@@ -120,7 +122,7 @@ AFRAME.registerComponent("platter", {
         { once: true }
       );
       this.goomba.platter = this;
-      //console.log("creating goomba", this.goomba);
+      console.log("adding goomba", this.goomba);
       this.goomba.addEventListener("loaded", () => {
         this.setOwner(this.el.object3D);
         setTimeout(() => {

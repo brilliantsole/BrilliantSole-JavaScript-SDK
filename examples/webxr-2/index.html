@@ -18,7 +18,9 @@
     <script src="./components/squashed-goomba.js"></script>
     <script src="./components/coin.js"></script>
     <script src="../utils/aframe/occlude-mesh.js"></script>
+    <script src="../utils/aframe/shadow-material.js"></script>
     <script src="../utils/aframe/bs-vibration.js" type="module"></script>
+    <script src="../utils/aframe/soft-shadow-light.js"></script>
     <script src="./components/bs-ankle.js" type="module"></script>
     <script src="../utils/aframe/my-obb-collider.js"></script>
   </head>
@@ -95,14 +97,22 @@
       pool__coin="mixin: coinMixin; size: 5; dynamic: true;"
       pool__squashedgoomba="mixin: squashedGoombaMixin; size: 5; dynamic: true;"
       id="scene"
+      light="defaultLightsEnabled: false"
       physics="debug: false; restitution: 0.4;"
       embedded
       grabbable-listener
       obb-collider="showColliders: false;"
       xr-mode-ui="enabled: true; XRMode: ar;"
-      real-world-meshing="meshMixin: realWorldMeshMixin; meshesEnabled: true; planeMixin: realWorldPlaneMixin; planesEnabled: true; filterLabels: table, wall, floor, ceiling;"
+      real-world-meshing="meshMixin: realWorldMeshMixin; meshesEnabled: true; planeMixin: realWorldPlaneMixin; planesEnabled: true; filterLabels: table, wall, desk, floor, ceiling;"
       device-orientation-permission-ui="enabled: false"
     >
+      <a-entity light="color: #BBB; type: ambient;"></a-entity>
+      <a-entity
+        light="type: directional; color: #FFF; intensity: 1.884; castShadow: false;"
+        position="-0.5 1 1"
+      >
+      </a-entity>
+
       <a-assets>
         <a-asset-item
           id="anchorModel"
@@ -114,16 +124,16 @@
         ></a-asset-item>
         <a-mixin
           id="realWorldPlaneMixin"
-          obb-collider
+          my-obb-collider
           static-body
-          visible="false"
+          occlude-mesh
         >
         </a-mixin>
         <a-mixin
           id="realWorldMeshMixin"
-          occlude-mesh
-          visible="true"
           my-obb-collider
+          static-body
+          occlude-mesh
         ></a-mixin>
         <audio
           id="coinAudio"
@@ -281,6 +291,15 @@
         position="0 1 0"
         _raycaster="objects: .raycastable; interval: 100;"
       >
+        <a-text
+          visible="false"
+          id="debugText"
+          value="hello\nworld"
+          position="0 0 -0.5"
+          scale="0.5 0.5 0.5"
+          color="green"
+          align="center"
+        ></a-text>
       </a-camera>
 
       <a-entity
@@ -352,19 +371,28 @@
         </a-entity>
       </template>
 
+      <a-entity id="debugCone" visible="false" position="0 1 -1">
+        <a-cone
+          height="0.1"
+          rotation="-90 0 0"
+          radius-bottom="0.1"
+          color="green"
+        ></a-cone>
+      </a-entity>
+
       <!-- <a-entity
         id="squashedGoomba1"
         squashed-goomba
         position="0 1.0 -0.3"
       ></a-entity> -->
 
-      <!-- <a-entity
+      <a-entity
         goomba="grabbable: true;"
         id="goomba1"
         position="0 1.0 -0.3"
         class="punchable"
         rotation="0 0 0"
-      ></a-entity> -->
+      ></a-entity>
 
       <!-- <a-entity
         goomba="grabbable: true;"
@@ -517,31 +545,22 @@
   </body>
   <script>
     const scene = document.querySelector("a-scene");
-    scene.addEventListener("loaded", () => {
-      return;
-      setTimeout(() => {
-        const lights = Array.from(document.querySelectorAll("[light]"));
-        console.log(lights);
-        lights.forEach((light) => {
-          if (light.getAttribute("light").type != "ambient") {
-            console.log(light.getAttribute("light").type);
-            light.setAttribute("light", { castShadow: true });
-          }
-        });
-
-        const interval = setInterval(() => {
-          const realWorldMeshes = Array.from(
-            document.querySelectorAll("[data-world-mesh]")
-          );
-          if (realWorldMeshes.length > 0) {
-            clearInterval(interval);
-            realWorldMeshes.forEach((entity) => {
-              entity.setAttribute("shadow", "cast: false; receive: true;");
-            });
-          }
-        }, 100);
-      }, 1);
-    });
+    let useShadows = false;
+    if (useShadows) {
+      scene.addEventListener("loaded", () => {
+        return;
+        setTimeout(() => {
+          const lights = Array.from(document.querySelectorAll("[light]"));
+          console.log(lights);
+          lights.forEach((light) => {
+            if (light.getAttribute("light").type != "ambient") {
+              console.log(light.getAttribute("light").type);
+              light.setAttribute("light", { castShadow: true });
+            }
+          });
+        }, 1);
+      });
+    }
 
     let goombasTest = false;
     let goombasTestSize = 3;
@@ -586,6 +605,7 @@
         intervalId = setInterval(() => {
           if (anchor.components["anchored"]?.anchor) {
             clearTimeout(timeoutId);
+            clearInterval(intervalId);
             resolve(true);
           }
         }, 200);
@@ -719,7 +739,6 @@
     scene.addEventListener(
       "enter-vr",
       () => {
-        // FIX - wait until anchor is loaded
         loadEntities();
       },
       { once: true }
@@ -738,5 +757,109 @@
       });
       saveEntities();
     });
+
+    let worldMeshes = [];
+    const waitForWorldMeshes = async () => {
+      return new Promise((resolve) => {
+        let intervalId, timeoutId;
+        intervalId = setInterval(() => {
+          worldMeshes = Array.from(
+            scene.querySelectorAll(
+              "[data-world-mesh][mixin='realWorldMeshMixin']"
+            )
+          );
+          if (worldMeshes.length > 0) {
+            console.log("worldMeshes", worldMeshes);
+            clearTimeout(timeoutId);
+            clearInterval(intervalId);
+            resolve(true);
+          }
+        }, 200);
+
+        timeoutId = setTimeout(() => {
+          clearInterval(intervalId);
+          console.log("no world meshes found");
+          resolve(false);
+        }, 3000);
+      });
+    };
+    let planeMeshes = [];
+    const waitForPlaneMeshes = async () => {
+      return new Promise((resolve) => {
+        let intervalId, timeoutId;
+        intervalId = setInterval(() => {
+          planeMeshes = Array.from(
+            scene.querySelectorAll(
+              "[data-world-mesh][mixin='realWorldPlaneMixin']"
+            )
+          );
+          if (planeMeshes.length > 0) {
+            console.log("planeMeshes", planeMeshes);
+            clearTimeout(timeoutId);
+            clearInterval(intervalId);
+            resolve(true);
+          }
+        }, 200);
+
+        timeoutId = setTimeout(() => {
+          clearInterval(intervalId);
+          console.log("no plane meshes found");
+          resolve(false);
+        }, 3000);
+      });
+    };
+    const fixWorldMeshes = async () => {
+      await Promise.all([waitForPlaneMeshes(), waitForWorldMeshes()]);
+      const surfaces = ["table"];
+      setTimeout(() => {
+        planeMeshes
+          .filter((entity) => surfaces.includes(entity.dataset.worldMesh))
+          .forEach((planeMesh) => {
+            const similarMesh = worldMeshes
+              .filter(
+                (worldMesh) =>
+                  worldMesh.dataset.worldMesh == planeMesh.dataset.worldMesh
+              )
+              .find((worldMesh) => {
+                const obbA = worldMesh.components["my-obb-collider"].obb;
+                const obbB = planeMesh.components["my-obb-collider"].obb;
+                console.log("comparing", obbA, "with", obbB);
+                if (obbA.center.distanceTo(obbB.center) < 0.1) {
+                  return true;
+                }
+                if (obbA.intersectsOBB(obbB)) {
+                  return true;
+                }
+                return false;
+              });
+            if (!similarMesh) {
+              return;
+            }
+            console.log("removing plane", planeMesh);
+            if (true) {
+              planeMesh.remove();
+            } else {
+              planeMesh.removeAttribute("static-body");
+              planeMesh.removeAttribute("my-obb-collider");
+            }
+            planeMeshes = planeMeshes.filter(
+              (_planeMesh) => planeMesh != planeMesh
+            );
+          });
+
+        if (useShadows) {
+          [...planeMeshes, ...worldMeshes].forEach((entity) => {
+            entity.setAttribute("shadow", "cast: false; receive: true;");
+          });
+        }
+      }, 10);
+    };
+    scene.addEventListener(
+      "enter-vr",
+      () => {
+        fixWorldMeshes();
+      },
+      { once: true }
+    );
   </script>
 </html>

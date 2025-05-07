@@ -8,9 +8,10 @@ const kickConfiguration = {
   sensorTypes: ["gyroscope", "linearAcceleration"],
   sampleRate: 20,
   captureDelay: 500,
+  threshold: 0.55,
   classes: ["idle", "kick", "stomp"],
 };
-fetch("./kick.tflite")
+fetch("./kick2.tflite")
   .then((response) => response.arrayBuffer())
   .then((buffer) => {
     kickConfiguration.file = buffer;

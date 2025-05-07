@@ -7,18 +7,40 @@ AFRAME.registerComponent("bs-ankle", {
       oneOf: BS.DeviceTypes.slice(),
     },
     name: { default: "" },
-    angleThreshold: { default: THREE.MathUtils.degToRad(40) },
-    distanceThreshold: { default: 0.3 },
+    angleThreshold: { default: THREE.MathUtils.degToRad(30) },
+    kickDistanceLowerThreshold: { default: 0.4 },
+    kickDistanceUpperThreshold: { default: 0.9 },
     stompDistanceThreshold: { default: 0.2 },
     velocityLength: { default: 2 },
-    velocityHeight: { default: 1 },
+    velocityPitch: { default: THREE.MathUtils.degToRad(40) },
     kickSoundSelector: { default: "#kickAudio" },
     stompSoundSelector: { default: "#stompAudio" },
+    impactSoundSelector: { default: "#punchAudio" },
   },
 
   init() {
+    this.kickEuler = new THREE.Euler(0, 0, 0, "YXZ");
+
+    this.debugCone = this.el.sceneEl.querySelector("#debugCone");
+    this.debugText = this.el.sceneEl.querySelector("#debugText");
+    this.debug = false;
+    this.debugKick = false;
+    this.debugGesture = false;
+    if (this.debug) {
+      this.debugText.setAttribute("visible", "false");
+      if (this.debugKick) {
+        setInterval(() => {
+          this.kick(true);
+        }, 100);
+      }
+    }
+
     this.raycaster = new THREE.Raycaster();
     this.ray = new THREE.Vector3(0, -1, 0);
+
+    this.cameraQuaternion = new THREE.Quaternion();
+    this.cameraEuler = new THREE.Euler(0, 0, 0, "YXZ");
+    this.cameraPosition = new THREE.Vector3();
 
     this.camera = this.el.sceneEl.querySelector("a-camera");
     this.cameraDirection = new THREE.Vector3();
@@ -42,6 +64,13 @@ AFRAME.registerComponent("bs-ankle", {
       `src: ${this.data.stompSoundSelector}`
     );
     this.el.sceneEl.appendChild(this.stompSound);
+
+    this.impactSound = document.createElement("a-entity");
+    this.impactSound.setAttribute(
+      "sound",
+      `src: ${this.data.impactSoundSelector}`
+    );
+    this.el.sceneEl.appendChild(this.impactSound);
   },
 
   playKickSound: function (position) {
@@ -76,7 +105,14 @@ AFRAME.registerComponent("bs-ankle", {
 
   /** @param {BS.DeviceEventMap["tfliteInference"]} event */
   onTfliteInference: function (event) {
-    const { maxClass } = event.message.tfliteInference;
+    const { maxClass, maxValue, timestamp } = event.message.tfliteInference;
+    if (this.debug && this.debugGesture) {
+      this.debugText.setAttribute("visible", "true");
+      this.debugText.setAttribute(
+        "value",
+        `${maxClass}\n${maxValue.toFixed(3)}`
+      );
+    }
     switch (maxClass) {
       case "kick":
         this.kick();
@@ -96,79 +132,140 @@ AFRAME.registerComponent("bs-ankle", {
     ).filter(Boolean);
     const floorObjects = floorEntities.map((entity) => entity.object3D);
 
-    this.raycaster.set(this.camera.object3D.position, this.ray);
+    this.camera.object3D.getWorldPosition(this.cameraPosition);
+
+    this.raycaster.set(this.cameraPosition, this.ray);
     this.raycaster.near = 0;
-    this.raycaster.far = 2;
+    this.raycaster.far = 5;
     const intersections = this.raycaster.intersectObjects(floorObjects, true);
     const intersection = intersections[0];
     if (!intersection) {
       return;
     }
+    // console.log("intersection", intersection);
     const { point, object } = intersection;
-    const { el: floor } = object;
+    const floor = object.el || object.parent.el;
+    if (!floor) {
+      return;
+    }
 
     const goombasOnFloor = window.goombas.filter(
       (goomba) => goomba.floor == floor
     );
-    console.log("goombasOnFloor", goombasOnFloor);
+    // console.log("goombasOnFloor", goombasOnFloor);
 
     return { point, floor, goombasOnFloor };
   },
 
-  kick: function () {
+  kick: function (isDebug) {
     const metadata = this.getFloorMetadata();
     if (!metadata) {
       return;
     }
     const { point, floor, goombasOnFloor } = metadata;
 
+    this.camera.object3D.getWorldQuaternion(this.cameraQuaternion);
+    this.cameraEuler.setFromQuaternion(this.cameraQuaternion);
+
+    let cameraYaw = this.cameraEuler.y;
+    while (cameraYaw < 0) {
+      cameraYaw += 2 * Math.PI;
+    }
+
+    const kickOffsetEuler = new THREE.Euler(0, cameraYaw, 0);
+    const kickOffset = new THREE.Vector3(0, 0, -0.3);
+    kickOffset.applyEuler(kickOffsetEuler);
+
     const kickPosition = new THREE.Vector3()
-      .addVectors(point, this.camera.object3D.position)
-      .multiplyScalar(0.5);
-    this.playKickSound(kickPosition);
+      .addVectors(point, this.cameraPosition)
+      .multiplyScalar(0.5)
+      .add(kickOffset);
+
+    if (!isDebug) {
+      this.playKickSound(kickPosition);
+    }
 
     if (goombasOnFloor.length == 0) {
       return;
     }
 
-    this.cameraDirection.set(0, 0, -1);
-    this.cameraDirection.applyQuaternion(this.camera.object3D.quaternion);
-    this.cameraDirection.y = 0;
-    this.cameraDirection.normalize();
+    const goombaPosition = new THREE.Vector3();
 
     const goombasToKick = goombasOnFloor.filter((goomba) => {
-      this.cameraToGoomba.subVectors(
-        goomba.el.object3D.position,
-        this.camera.object3D.position
-      );
+      goomba.el.object3D.getWorldPosition(goombaPosition);
+      //   const v = new THREE.Vector3();
+      //   v.copy(goombaPosition);
+      //   this.camera.object3D.worldToLocal(v);
+      this.cameraToGoomba.subVectors(this.cameraPosition, goombaPosition);
       this.cameraToGoomba.y = 0;
       const distance = this.cameraToGoomba.length();
-      console.log({ distance });
-      if (distance > this.data.distanceThreshold) {
+      if (distance > this.data.kickDistanceUpperThreshold) {
+        if (this.debugKick) {
+          this.debugText.setAttribute("value", `far ${distance.toFixed(2)}`);
+        }
         return false;
       }
       this.cameraToGoomba.normalize();
-
-      const angle = this.cameraDirection.angleTo(this.cameraToGoomba);
-      console.log({ angle });
-      if (angle > this.data.angleThreshold) {
-        return false;
+      let goombaYaw = Math.atan2(this.cameraToGoomba.x, this.cameraToGoomba.z);
+      while (goombaYaw < 0) {
+        goombaYaw += 2 * Math.PI;
       }
 
-      const velocity = this.cameraToGoomba.clone();
-      velocity.y = this.data.velocityHeight;
-      velocity.setLength(this.data.velocityLength);
+      if (distance > this.data.kickDistanceLowerThreshold) {
+        const angle = Math.abs(cameraYaw - goombaYaw);
+        if (this.debugKick) {
+          this.debugText.setAttribute(
+            "value",
+            [
+              `d: ${distance.toFixed(3)}`,
+              `c: ${THREE.MathUtils.radToDeg(cameraYaw).toFixed(0)}`,
+              `g: ${THREE.MathUtils.radToDeg(goombaYaw).toFixed(0)}`,
+              `a: ${THREE.MathUtils.radToDeg(angle).toFixed(0)}`,
+            ].join("\n")
+          );
+        }
+        if (angle > this.data.angleThreshold) {
+          return false;
+        }
+      } else {
+        if (this.debugKick) {
+          this.debugText.setAttribute("value", `${distance.toFixed(2)}`);
+        }
+      }
+
+      this.kickEuler.set(0, 0, 0);
+      this.kickEuler.x = this.data.velocityPitch;
+      if (false) {
+        this.kickEuler.y = goombaYaw;
+      } else {
+        this.kickEuler.y = cameraYaw;
+      }
+      const velocity = new THREE.Vector3(0, 0, -this.data.velocityLength);
+      velocity.applyEuler(this.kickEuler);
+      if (this.debugKick) {
+        this.debugCone.setAttribute("visible", "true");
+        this.debugCone.object3D.position.copy(goombaPosition);
+        this.debugCone.object3D.rotation.copy(this.kickEuler);
+      }
+      if (isDebug) {
+        return false;
+      }
       goomba.el.emit("kick", { velocity });
 
       return true;
     });
-    console.log("goombasToKick", goombasToKick);
+    // console.log("goombasToKick", goombasToKick);
 
     if (goombasToKick.length > 0) {
       /** @type {BS.VibrationWaveformEffect} */
       let waveformEffect = "strongClick100";
       this.vibrate(waveformEffect);
+      this.playSound(kickPosition);
     }
+  },
+  playSound: function (kickPosition) {
+    this.impactSound.object3D.position.copy(kickPosition);
+    this.impactSound.components.sound.playSound();
   },
   stomp: function () {
     /** @type {BS.VibrationWaveformEffect} */
@@ -184,13 +281,13 @@ AFRAME.registerComponent("bs-ankle", {
     if (false) {
       goombas = goombasOnFloor;
     }
-    console.log(point);
+    // console.log(point);
     this.playStompSound(point);
 
     goombas.forEach((goomba) => {
       this.cameraToGoomba.subVectors(
         goomba.el.object3D.position,
-        this.camera.object3D.position
+        this.cameraPosition
       );
       this.cameraToGoomba.y = 0;
       const direction = this.cameraToGoomba;

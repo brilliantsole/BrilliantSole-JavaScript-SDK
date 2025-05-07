@@ -16,12 +16,22 @@ AFRAME.registerComponent("goomba", {
 
   staticBody: "shape: none;",
   dynamicBody: "shape: none;",
-  body: "type: dynamic; shape: none;",
+  bodyString: "type: dynamic; shape: none;",
   shapeMain: `shape: box;
           halfExtents: 0.1 0.091 0.09;
           offset: 0 0 0;`,
 
   init: function () {
+    this.lookAtPosition = new THREE.Vector3();
+    this.lookAtRefocusVector = new THREE.Vector3();
+    this.lookAtRefocusAxis = new THREE.Vector3();
+    this.lookAtRefocusEuler = new THREE.Euler();
+
+    this.forwardVector = new THREE.Vector3(0, 0, 1);
+    this.upVector = new THREE.Vector3(0, 1, 0);
+    this.rightVector = new THREE.Vector3(1, 0, 0);
+    this.toVector = new THREE.Vector3();
+
     this.worldQuaternion = new THREE.Quaternion();
     this.playGrabSound = AFRAME.utils.throttle(
       this.playGrabSound.bind(this),
@@ -36,6 +46,7 @@ AFRAME.registerComponent("goomba", {
       this.playBounceSoundName.bind(this),
       200
     );
+    this.returnBounceSound = this.returnBounceSound.bind(this);
 
     this.lastTimePunched = 0;
     this.sphere = new THREE.Sphere();
@@ -275,8 +286,10 @@ AFRAME.registerComponent("goomba", {
     this.el.addEventListener("grabended", () => this.setGrabEnabled(false));
   },
 
-  validWorldMeshTypes: ["floor", "table"],
-  validHitWorldMeshTypes: ["floor", "table", "wall", "ceiling", "floor"],
+  // validFloorMeshTypes: ["floor", "table"],
+  validFloorMeshTypes: ["floor", "table", "desk"],
+  validHitWorldMeshTypes: [],
+  //validHitWorldMeshTypes: ["floor", "table", "wall", "ceiling"],
 
   onPunch: function (event) {
     const { velocity, position } = event.detail;
@@ -285,7 +298,7 @@ AFRAME.registerComponent("goomba", {
 
   onKick: function (event) {
     const { velocity } = event.detail;
-    console.log("onKick", { velocity });
+    //console.log("onKick", { velocity });
     this.punch(velocity);
   },
 
@@ -295,12 +308,22 @@ AFRAME.registerComponent("goomba", {
   stompDelayRange: { min: 0, max: 350 },
   stompVelocityLengthRange: { min: 0.15, max: 1 },
   stompVelocityPitchRange: {
-    min: THREE.MathUtils.degToRad(10),
+    min: THREE.MathUtils.degToRad(2),
     max: THREE.MathUtils.degToRad(0),
   },
+  ignoreStompStatuses: ["getting up", "falling", "petting"],
   onStomp: function (event) {
     const { distance, yaw, kill } = event.detail;
-    console.log("onStomp", { distance, kill });
+    //console.log("onStomp", { distance, yaw, kill });
+    this.stomp(distance, yaw, kill);
+  },
+  stomp: function (distance, yaw, kill) {
+    this.stompOptions = { distance, yaw, kill };
+  },
+  _stomp: function (distance, yaw, kill) {
+    if (!this.floor || this.ignoreStompStatuses.includes(this.status)) {
+      return;
+    }
     if (kill) {
       this.deathCollidedEntity = this.floor;
       this.shouldDie = true;
@@ -324,14 +347,14 @@ AFRAME.registerComponent("goomba", {
         distanceInterpolation,
         this.stompDistanceInterpolationPower
       );
-      console.log({ distanceInterpolation });
+      // console.log({ distanceInterpolation });
       const delay = THREE.MathUtils.lerp(
         this.stompDelayRange.min,
         this.stompDelayRange.max,
         distanceInterpolation
       );
-      console.log({ delay });
-      setTimeout(() => {
+      // console.log({ delay });
+      const applyStomp = () => {
         this.setStatus("idle");
         // console.log("stomped", velocity);
         const velocityLength = THREE.MathUtils.lerp(
@@ -339,18 +362,39 @@ AFRAME.registerComponent("goomba", {
           this.stompVelocityLengthRange.max,
           1 - distanceInterpolation
         );
-        const pitch = THREE.MathUtils.lerp(
-          this.stompVelocityPitchRange.min,
-          this.stompVelocityPitchRange.max,
-          distanceInterpolation
-        );
+        let pitch = 0;
+        if (true) {
+          pitch = THREE.MathUtils.lerp(
+            this.stompVelocityPitchRange.min,
+            this.stompVelocityPitchRange.max,
+            Math.random()
+          );
+        } else {
+          pitch = THREE.MathUtils.lerp(
+            this.stompVelocityPitchRange.min,
+            this.stompVelocityPitchRange.max,
+            distanceInterpolation
+          );
+        }
+
+        let _yaw = 0;
+        if (true) {
+          _yaw = Math.random() * Math.PI * 2;
+        } else {
+          _yaw = yaw;
+        }
 
         const velocity = new THREE.Vector3(0, velocityLength, 0);
-        const euler = new THREE.Euler(pitch, yaw, 0, "YXZ");
+        const euler = new THREE.Euler(pitch, _yaw, 0, "YXZ");
         velocity.applyEuler(euler);
         this.physicsOptions = { velocity };
         this.setPhysicsEnabled(true);
-      }, delay);
+      };
+      if (true) {
+        applyStomp();
+      } else {
+        setTimeout(() => applyStomp(), delay);
+      }
     }
   },
 
@@ -366,6 +410,9 @@ AFRAME.registerComponent("goomba", {
 
   punchDownPitchThreshold: THREE.MathUtils.degToRad(-40),
   punch: function (velocity, position) {
+    this.punchOptions = { velocity, position };
+  },
+  _punch: function (velocity, position) {
     if (this.ignorePunchStatuses.includes(this.status)) {
       return;
     }
@@ -375,6 +422,7 @@ AFRAME.registerComponent("goomba", {
     // console.log({ pitch, threshold: this.punchDownPitchThreshold });
     if (pitch < this.punchDownPitchThreshold && this.floor) {
       this.deathCollidedEntity = this.floor;
+      //console.log("punching down on floor", this.deathCollidedEntity);
       this.shouldDie = true;
       this.deathVelocity = velocity.clone();
       this.deathNormal = new THREE.Vector3(0, 1, 0);
@@ -442,16 +490,21 @@ AFRAME.registerComponent("goomba", {
     }
   },
 
+  floorCollisionNormalThreshold: THREE.MathUtils.degToRad(10),
   onCollide: async function (event) {
     const collidedEntity = event.detail.body.el;
     // console.log("collided with", collidedEntity);
 
     if (
       this.punched &&
-      this.validHitWorldMeshTypes.includes(collidedEntity.dataset.worldMesh) &&
+      collidedEntity.dataset.worldMesh &&
+      (this.validHitWorldMeshTypes.length == 0 ||
+        this.validHitWorldMeshTypes.includes(
+          collidedEntity.dataset.worldMesh
+        )) &&
       collidedEntity != this.punchedFloor
     ) {
-      //console.log("died colliding with", collidedEntity);
+      console.log("died colliding with", collidedEntity);
       this.deathCollidedEntity = collidedEntity;
       this.shouldDie = true;
       this.deathVelocity = this.el.body.velocity.clone();
@@ -461,10 +514,17 @@ AFRAME.registerComponent("goomba", {
     switch (this.status) {
       case "falling":
         if (
-          this.validWorldMeshTypes.includes(collidedEntity.dataset.worldMesh)
+          this.validFloorMeshTypes.length == 0 ||
+          this.validFloorMeshTypes.includes(collidedEntity.dataset.worldMesh)
         ) {
-          this.resetLegs();
-          this.setFloor(collidedEntity);
+          const normal = event.detail.contact.ni;
+          const upAngle = this.worldBasis.up.angleTo(
+            new THREE.Vector3(normal.x, normal.y, normal.z)
+          );
+          if (upAngle <= this.floorCollisionNormalThreshold) {
+            this.resetLegs();
+            this.setFloor(collidedEntity);
+          }
         }
 
         if (!this.punched) {
@@ -500,20 +560,25 @@ AFRAME.registerComponent("goomba", {
 
     this.playBounceSoundName(poolName);
   },
-  playBounceSoundName: function (poolName) {
+  playBounceSoundName: async function (poolName) {
+    this.returnBounceSound();
+
     this.bounceSound = this.el.sceneEl.components[poolName].requestEntity();
     this.bounceSound.poolName = poolName;
     this.bounceSound.object3D.position.copy(this.el.object3D.position);
     this.bounceSound.play();
+    await this.waitForSoundToLoad(this.bounceSound);
     this.bounceSound.components.sound.playSound();
-    this.bounceSound.addEventListener(
-      "sound-ended",
-      () => this.returnBounceSound(),
-      { once: true }
-    );
+    this.bounceSound.addEventListener("sound-ended", this.returnBounceSound, {
+      once: true,
+    });
   },
   returnBounceSound: function () {
     if (this.bounceSound) {
+      this.bounceSound.removeEventListener(
+        "sound-ended",
+        this.returnBounceSound
+      );
       this.bounceSound.components["sound"].stopSound();
       this.el.sceneEl.components[this.bounceSound.poolName].returnEntity(
         this.bounceSound
@@ -642,12 +707,14 @@ AFRAME.registerComponent("goomba", {
   },
 
   setFloor: function (newFloor) {
+    clearInterval(this.floor);
     if (this.floor == newFloor) {
       return;
     }
     this.floor = newFloor;
-    clearInterval(this.floorInterval);
+    // console.log("setting floor", newFloor);
     if (this.floor) {
+      clearInterval(this.floorInterval);
       const checkIfStoppedMoving = () => {
         const stoppedMoving =
           this.el.components["dynamic-body"].body.velocity.length() < 0.01;
@@ -1006,10 +1073,6 @@ AFRAME.registerComponent("goomba", {
 
   // LookAt
 
-  lookAtPosition: new THREE.Vector3(),
-  lookAtRefocusVector: new THREE.Vector3(),
-  lookAtRefocusAxis: new THREE.Vector3(),
-  lookAtRefocusEuler: new THREE.Euler(),
   lookAtRefocusScalar: 0.025,
   lookAtRefocusScalarRange: { min: 0.0, max: 0.02 },
 
@@ -1116,11 +1179,6 @@ AFRAME.registerComponent("goomba", {
   },
 
   distanceRange: { min: 0.15, max: 5 },
-
-  forwardVector: new THREE.Vector3(0, 0, 1),
-  upVector: new THREE.Vector3(0, 1, 0),
-  rightVector: new THREE.Vector3(1, 0, 0),
-  toVector: new THREE.Vector3(),
   angleThreshold: 0.75,
 
   angleThresholds: {
@@ -1402,6 +1460,7 @@ AFRAME.registerComponent("goomba", {
   petSquashYRange: { min: 0.65, max: 1 },
   petSquashXZRange: { min: 1, max: 1.1 },
   petSquashEyesHeightRange: { min: 0.1, max: 1 },
+  petSquashEyesHeightBiasRange: { min: -0.2, max: 0.2 },
   petSquashEyesRollRange: { min: 0.4, max: 0.6 },
   petEyeSquashRange: { min: -0.03, max: 0.01 },
 
@@ -1443,12 +1502,17 @@ AFRAME.registerComponent("goomba", {
           this.raycaster.set(this.worldPosition, this.ray);
           this.raycaster.near = 0;
           this.raycaster.far = 1;
+          const intersectable =
+            this.floor?.components["occlude-mesh"].raycastMesh;
+          console.log("intersectable", intersectable);
           const intersections = this.raycaster.intersectObjects(
-            this.lookAtRaycastTargetObjects,
+            intersectable ? [intersectable] : this.lookAtRaycastTargetObjects,
             true
           );
           if (intersections[0]) {
             position.copy(intersections[0].point);
+          } else {
+            console.log("no intersections found for death punch");
           }
         }
       }
@@ -1465,6 +1529,17 @@ AFRAME.registerComponent("goomba", {
       return;
     }
     this.sphere.center.copy(this.worldPosition);
+
+    if (this.punchOptions) {
+      const { velocity, position } = this.punchOptions;
+      this.punchOptions = undefined;
+      this._punch(velocity, position);
+    }
+    if (this.stompOptions) {
+      const { distance, yaw, kill } = this.stompOptions;
+      this.stompOptions = undefined;
+      this._stomp(distance, yaw, kill);
+    }
 
     if (this.punchSqueakSound) {
       this.punchSqueakSound.object3D.position.copy(this.worldPosition);
@@ -1588,15 +1663,6 @@ AFRAME.registerComponent("goomba", {
                 clampedSquashInterpolation
               );
 
-              this.setEyesScale(
-                { height: eyesScaleHeight, width: 1 },
-                dur,
-                easing,
-                undefined,
-                undefined,
-                true
-              );
-
               squashInterpolation = THREE.MathUtils.inverseLerp(
                 this.petBodyPitchRange.min,
                 this.petBodyPitchRange.max,
@@ -1644,6 +1710,53 @@ AFRAME.registerComponent("goomba", {
                   THREE.MathUtils.degToRad(bodyRoll);
               }
 
+              if (true) {
+                const dominantSide = bodyRoll > 0 ? "left" : "right";
+                const otherSide = dominantSide == "left" ? "right" : "left";
+
+                let rollEyeHeightBias = THREE.MathUtils.lerp(
+                  this.petSquashEyesHeightBiasRange.min,
+                  this.petSquashEyesHeightBiasRange.max,
+                  clampedSquashInterpolation
+                );
+                rollEyeHeightBias = Math.abs(rollEyeHeightBias);
+
+                this.setEyeScale(
+                  dominantSide,
+                  { height: eyesScaleHeight, width: 1 },
+                  dur,
+                  easing,
+                  undefined,
+                  undefined,
+                  true
+                );
+                this.setEyeScale(
+                  otherSide,
+                  {
+                    height: THREE.MathUtils.clamp(
+                      eyesScaleHeight + rollEyeHeightBias,
+                      0,
+                      1
+                    ),
+                    width: 1,
+                  },
+                  dur,
+                  easing,
+                  undefined,
+                  undefined,
+                  true
+                );
+              } else {
+                this.setEyesScale(
+                  { height: eyesScaleHeight, width: 1 },
+                  dur,
+                  easing,
+                  undefined,
+                  undefined,
+                  true
+                );
+              }
+
               if (false) {
                 const eyesRoll = THREE.MathUtils.lerp(
                   this.petSquashEyesRollRange.min,
@@ -1667,7 +1780,7 @@ AFRAME.registerComponent("goomba", {
       }
     }
 
-    if (this.status == "walking") {
+    if (this.status == "walking" && this.floor) {
       if (!this.slowDown) {
         this.slowDown =
           this.slowDown ||
@@ -1741,7 +1854,7 @@ AFRAME.registerComponent("goomba", {
 
           this.tempPointToWalkTo.copy(this.worldPosition);
           this.tempPointToWalkTo.add(this.pointToWalkToOffset);
-          this.floor.components["obb-collider"].obb.clampPoint(
+          this.floor.components["my-obb-collider"].obb.clampPoint(
             this.tempPointToWalkTo,
             this.clampedTempPointToWalkTo
           );
@@ -2023,14 +2136,15 @@ AFRAME.registerComponent("goomba", {
   doesPointIntersectAnyMeshes: function (point) {
     return this.lookAtRaycastTargets
       .filter((entity) => entity.getAttribute("mixin") == "realWorldMeshMixin")
+      .filter((entity) => entity != this.floor)
       .some((entity) => {
         const containsPoint =
           entity.components["my-obb-collider"].obb.containsPoint(point);
         if (containsPoint) {
-          console.log(
-            "congtains point with",
-            entity.getAttribute("data-world-mesh")
-          );
+          // console.log(
+          //   "congtains point with",
+          //   entity.getAttribute("data-world-mesh")
+          // );
         }
         return containsPoint;
       });
@@ -2715,11 +2829,33 @@ AFRAME.registerComponent("goomba", {
     }
   },
 
-  playGetUpSound: function () {
+  waitForSoundToLoad: async function (entity) {
+    return new Promise((resolve) => {
+      if (entity.components.sound) {
+        resolve();
+      } else {
+        let onComponentInitialized = (event) => {
+          if (event.detail.name == "sound") {
+            entity.removeEventListener(
+              "componentinitialized",
+              onComponentInitialized
+            );
+            resolve();
+          }
+        };
+        onComponentInitialized = onComponentInitialized.bind(this);
+
+        entity.addEventListener("componentinitialized", onComponentInitialized);
+      }
+    });
+  },
+
+  playGetUpSound: async function () {
     this.getUpSound =
       this.el.sceneEl.components["pool__getupsound"].requestEntity();
     this.getUpSound.object3D.position.copy(this.el.object3D.position);
     this.getUpSound.play();
+    await this.waitForSoundToLoad(this.getUpSound);
     this.getUpSound.components.sound.playSound();
     this.getUpSound.addEventListener(
       "sound-ended",
