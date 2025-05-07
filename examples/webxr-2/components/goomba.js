@@ -16,12 +16,22 @@ AFRAME.registerComponent("goomba", {
 
   staticBody: "shape: none;",
   dynamicBody: "shape: none;",
-  body: "type: dynamic; shape: none;",
+  bodyString: "type: dynamic; shape: none;",
   shapeMain: `shape: box;
           halfExtents: 0.1 0.091 0.09;
           offset: 0 0 0;`,
 
   init: function () {
+    this.lookAtPosition = new THREE.Vector3();
+    this.lookAtRefocusVector = new THREE.Vector3();
+    this.lookAtRefocusAxis = new THREE.Vector3();
+    this.lookAtRefocusEuler = new THREE.Euler();
+
+    this.forwardVector = new THREE.Vector3(0, 0, 1);
+    this.upVector = new THREE.Vector3(0, 1, 0);
+    this.rightVector = new THREE.Vector3(1, 0, 0);
+    this.toVector = new THREE.Vector3();
+
     this.worldQuaternion = new THREE.Quaternion();
     this.playGrabSound = AFRAME.utils.throttle(
       this.playGrabSound.bind(this),
@@ -1063,10 +1073,6 @@ AFRAME.registerComponent("goomba", {
 
   // LookAt
 
-  lookAtPosition: new THREE.Vector3(),
-  lookAtRefocusVector: new THREE.Vector3(),
-  lookAtRefocusAxis: new THREE.Vector3(),
-  lookAtRefocusEuler: new THREE.Euler(),
   lookAtRefocusScalar: 0.025,
   lookAtRefocusScalarRange: { min: 0.0, max: 0.02 },
 
@@ -1173,11 +1179,6 @@ AFRAME.registerComponent("goomba", {
   },
 
   distanceRange: { min: 0.15, max: 5 },
-
-  forwardVector: new THREE.Vector3(0, 0, 1),
-  upVector: new THREE.Vector3(0, 1, 0),
-  rightVector: new THREE.Vector3(1, 0, 0),
-  toVector: new THREE.Vector3(),
   angleThreshold: 0.75,
 
   angleThresholds: {

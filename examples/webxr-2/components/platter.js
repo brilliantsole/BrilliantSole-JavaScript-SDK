@@ -122,7 +122,7 @@ AFRAME.registerComponent("platter", {
         { once: true }
       );
       this.goomba.platter = this;
-      //console.log("creating goomba", this.goomba);
+      console.log("adding goomba", this.goomba);
       this.goomba.addEventListener("loaded", () => {
         this.setOwner(this.el.object3D);
         setTimeout(() => {

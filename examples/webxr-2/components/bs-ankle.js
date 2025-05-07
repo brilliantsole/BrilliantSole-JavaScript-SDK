@@ -22,14 +22,17 @@ AFRAME.registerComponent("bs-ankle", {
     this.kickEuler = new THREE.Euler(0, 0, 0, "YXZ");
 
     this.debugCone = this.el.sceneEl.querySelector("#debugCone");
-
     this.debugText = this.el.sceneEl.querySelector("#debugText");
-    this.debug = false;
+    this.debug = true;
+    this.debugKick = false;
+    this.debugGesture = true;
     if (this.debug) {
       this.debugText.setAttribute("visible", "false");
-      setInterval(() => {
-        this.kick(true);
-      }, 100);
+      if (this.debugKick) {
+        setInterval(() => {
+          this.kick(true);
+        }, 100);
+      }
     }
 
     this.raycaster = new THREE.Raycaster();
@@ -102,7 +105,14 @@ AFRAME.registerComponent("bs-ankle", {
 
   /** @param {BS.DeviceEventMap["tfliteInference"]} event */
   onTfliteInference: function (event) {
-    const { maxClass } = event.message.tfliteInference;
+    const { maxClass, maxValue, timestamp } = event.message.tfliteInference;
+    if (this.debug && this.debugGesture) {
+      this.debugText.setAttribute("visible", "true");
+      this.debugText.setAttribute(
+        "value",
+        `${maxClass}\n${maxValue.toFixed(3)}`
+      );
+    }
     switch (maxClass) {
       case "kick":
         this.kick();
@@ -126,19 +136,24 @@ AFRAME.registerComponent("bs-ankle", {
 
     this.raycaster.set(this.cameraPosition, this.ray);
     this.raycaster.near = 0;
-    this.raycaster.far = 10;
+    this.raycaster.far = 5;
     const intersections = this.raycaster.intersectObjects(floorObjects, true);
     const intersection = intersections[0];
     if (!intersection) {
       return;
     }
     const { point, object } = intersection;
-    const { el: floor } = object;
+    const floor = object.el || object.parent.el;
+    if (!floor) {
+      return;
+    }
+
+    console.log("intersection", intersection);
 
     const goombasOnFloor = window.goombas.filter(
       (goomba) => goomba.floor == floor
     );
-    //console.log("goombasOnFloor", goombasOnFloor);
+    console.log("goombasOnFloor", goombasOnFloor);
 
     return { point, floor, goombasOnFloor };
   },
@@ -186,7 +201,7 @@ AFRAME.registerComponent("bs-ankle", {
       this.cameraToGoomba.y = 0;
       const distance = this.cameraToGoomba.length();
       if (distance > this.data.kickDistanceUpperThreshold) {
-        if (this.debug) {
+        if (this.debugKick) {
           this.debugText.setAttribute("value", `far ${distance.toFixed(2)}`);
         }
         return false;
@@ -199,7 +214,7 @@ AFRAME.registerComponent("bs-ankle", {
 
       if (distance > this.data.kickDistanceLowerThreshold) {
         const angle = Math.abs(cameraYaw - goombaYaw);
-        if (this.debug) {
+        if (this.debugKick) {
           this.debugText.setAttribute(
             "value",
             [
@@ -214,7 +229,7 @@ AFRAME.registerComponent("bs-ankle", {
           return false;
         }
       } else {
-        if (this.debug) {
+        if (this.debugKick) {
           this.debugText.setAttribute("value", `${distance.toFixed(2)}`);
         }
       }
@@ -228,7 +243,7 @@ AFRAME.registerComponent("bs-ankle", {
       }
       const velocity = new THREE.Vector3(0, 0, -this.data.velocityLength);
       velocity.applyEuler(this.kickEuler);
-      if (this.debug) {
+      if (this.debugKick) {
         this.debugCone.setAttribute("visible", "true");
         this.debugCone.object3D.position.copy(goombaPosition);
         this.debugCone.object3D.rotation.copy(this.kickEuler);
@@ -240,7 +255,7 @@ AFRAME.registerComponent("bs-ankle", {
 
       return true;
     });
-    //console.log("goombasToKick", goombasToKick);
+    console.log("goombasToKick", goombasToKick);
 
     if (goombasToKick.length > 0) {
       /** @type {BS.VibrationWaveformEffect} */
