@@ -23,6 +23,7 @@ AFRAME.registerComponent("occlude-mesh", {
     this.raycastMesh.material = new THREE.MeshBasicMaterial({
       colorWrite: false,
       depthWrite: true,
+      side: THREE.FrontSide,
     });
     this.raycastMesh.visible = false;
     this.mesh.raycast = () => {};
