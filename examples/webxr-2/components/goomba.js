@@ -1458,6 +1458,7 @@ AFRAME.registerComponent("goomba", {
   petSquashYRange: { min: 0.65, max: 1 },
   petSquashXZRange: { min: 1, max: 1.1 },
   petSquashEyesHeightRange: { min: 0.1, max: 1 },
+  petSquashEyesHeightBiasRange: { min: -0.25, max: 0.25 },
   petSquashEyesRollRange: { min: 0.4, max: 0.6 },
   petEyeSquashRange: { min: -0.03, max: 0.01 },
 
@@ -1655,15 +1656,6 @@ AFRAME.registerComponent("goomba", {
                 clampedSquashInterpolation
               );
 
-              this.setEyesScale(
-                { height: eyesScaleHeight, width: 1 },
-                dur,
-                easing,
-                undefined,
-                undefined,
-                true
-              );
-
               squashInterpolation = THREE.MathUtils.inverseLerp(
                 this.petBodyPitchRange.min,
                 this.petBodyPitchRange.max,
@@ -1711,6 +1703,53 @@ AFRAME.registerComponent("goomba", {
                   THREE.MathUtils.degToRad(bodyRoll);
               }
 
+              if (true) {
+                const dominantSide = bodyRoll > 0 ? "left" : "right";
+                const otherSide = dominantSide == "left" ? "right" : "left";
+
+                let rollEyeHeightBias = THREE.MathUtils.lerp(
+                  this.petSquashEyesHeightBiasRange.min,
+                  this.petSquashEyesHeightBiasRange.max,
+                  clampedSquashInterpolation
+                );
+                rollEyeHeightBias = Math.abs(rollEyeHeightBias);
+
+                this.setEyeScale(
+                  dominantSide,
+                  { height: eyesScaleHeight, width: 1 },
+                  dur,
+                  easing,
+                  undefined,
+                  undefined,
+                  true
+                );
+                this.setEyeScale(
+                  otherSide,
+                  {
+                    height: THREE.MathUtils.clamp(
+                      eyesScaleHeight + rollEyeHeightBias,
+                      0,
+                      1
+                    ),
+                    width: 1,
+                  },
+                  dur,
+                  easing,
+                  undefined,
+                  undefined,
+                  true
+                );
+              } else {
+                this.setEyesScale(
+                  { height: eyesScaleHeight, width: 1 },
+                  dur,
+                  easing,
+                  undefined,
+                  undefined,
+                  true
+                );
+              }
+
               if (false) {
                 const eyesRoll = THREE.MathUtils.lerp(
                   this.petSquashEyesRollRange.min,
@@ -1734,7 +1773,8 @@ AFRAME.registerComponent("goomba", {
       }
     }
 
-    if (this.status == "walking" && this.floor) {
+    if (this.status == "walking" && this.floor && false) {
+      // fix
       if (!this.slowDown) {
         this.slowDown =
           this.slowDown ||
