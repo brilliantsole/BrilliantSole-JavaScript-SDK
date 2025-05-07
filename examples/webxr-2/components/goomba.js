@@ -128,6 +128,7 @@ AFRAME.registerComponent("goomba", {
     this.eyeControllers = {};
     this.eyeScales = {};
     this.eyePupils = {};
+    this.eyeWhites = {};
     this.eyeRotators = {};
 
     this.el.classList.add("goomba");
@@ -234,6 +235,9 @@ AFRAME.registerComponent("goomba", {
               );
               this.eyePupils[side] = this.el.querySelector(
                 `.${side}.eye .black`
+              );
+              this.eyeWhites[side] = this.el.querySelector(
+                `.${side}.eye .white`
               );
 
               this.setEyeScale(side, this.eyesScales[side]);
@@ -945,6 +949,29 @@ AFRAME.registerComponent("goomba", {
   setEyesScale: function (scale, dur, easing, loop, dir, wholeEye) {
     this.sides.forEach((side) => {
       this.setEyeScale(side, ...arguments);
+    });
+  },
+
+  setEyeLowerLid: function (side, value, options = {}) {
+    // FILL
+    this.eyeWhites[side].removeAttribute("animation__thetalength");
+    this.eyeWhites[side].setAttribute("animation__thetalength", {
+      property: "theta-length",
+      to: value,
+      dur: 0,
+      easing: "easeInOutQuad",
+      ...options,
+    });
+  },
+  setEyeLid: function (side, isUpper, value, options = {}) {
+    // FILL
+    this.eyeWhites[side].removeAttribute("animation__thetalength");
+    this.eyeWhites[side].setAttribute("animation__thetalength", {
+      property: "theta-length",
+      to: value,
+      dur: 0,
+      easing: "easeInOutQuad",
+      ...options,
     });
   },
 

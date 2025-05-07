@@ -23,6 +23,7 @@
     <script src="../utils/aframe/soft-shadow-light.js"></script>
     <script src="./components/bs-ankle.js" type="module"></script>
     <script src="../utils/aframe/my-obb-collider.js"></script>
+    <script src="./components/shell.js"></script>
   </head>
   <style>
     #scene {
@@ -386,13 +387,13 @@
         position="0 1.0 -0.3"
       ></a-entity> -->
 
-      <!-- <a-entity
+      <a-entity
         goomba="grabbable: true;"
         id="goomba1"
         position="0 1.0 -0.3"
         class="punchable"
         rotation="0 0 0"
-      ></a-entity> -->
+      ></a-entity>
 
       <!-- <a-entity
         goomba="grabbable: true;"
@@ -440,6 +441,33 @@
         id="testLeftWall"
       ></a-box> -->
 
+      <template id="shellTemplate">
+        <a-entity>
+          <a-entity scale="0.781 0.645 1">
+            <a-sphere
+              color="#29eb1c"
+              radius="0.1"
+              theta-length="100"
+            ></a-sphere>
+            <a-torus
+              radius="0.100"
+              radius-tubular="0.010"
+              rotation="90 0 0"
+              color="white"
+              position="0 -0.018 0"
+            ></a-torus>
+            <a-sphere
+              color="#ffea8c"
+              radius="0.1"
+              theta-length="80"
+              theta-start="100"
+            ></a-sphere>
+          </a-entity>
+        </a-entity>
+      </template>
+
+      <a-entity visible="false" position="0 1 -0.5" id="shell" shell></a-entity>
+
       <template id="goombaTemplate">
         <a-entity>
           <!-- <a-sphere color="green" opacity="0.1" radius="0.15"></a-sphere> -->
@@ -478,12 +506,14 @@
               >
                 <a-entity class="scalar" scale="1.460 1.690 0.940">
                   <a-sphere
+                    phi-length="180"
                     class="white"
                     color="#fafafa"
                     radius="0.017"
                   ></a-sphere>
                   <a-entity class="controller">
                     <a-sphere
+                      phi-start="180"
                       class="black"
                       color="#000000"
                       position="0 0 0.015"
