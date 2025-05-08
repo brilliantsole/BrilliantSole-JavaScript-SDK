@@ -18,6 +18,7 @@
     <script src="./components/squashed-goomba.js"></script>
     <script src="./components/coin.js"></script>
     <script src="../utils/aframe/occlude-mesh.js"></script>
+    <script src="./components/custom-wrap.js"></script>
     <script src="../utils/aframe/shadow-material.js"></script>
     <script src="../utils/aframe/bs-vibration.js" type="module"></script>
     <script src="../utils/aframe/soft-shadow-light.js"></script>
@@ -270,6 +271,8 @@
           src="../../assets/audio/kick.wav"
           preload="auto"
         ></audio>
+
+        <img id="shellTexture" src="./assets/images/shellTexture.png" />
       </a-assets>
       <!-- <a-entity rotation="-90 0 0" position="0 5 1">
         <a-camera
@@ -387,13 +390,13 @@
         position="0 1.0 -0.3"
       ></a-entity> -->
 
-      <a-entity
+      <!-- <a-entity
         goomba="grabbable: true;"
         id="goomba1"
         position="0 1.0 -0.3"
         class="punchable"
         rotation="0 0 0"
-      ></a-entity>
+      ></a-entity> -->
 
       <!-- <a-entity
         goomba="grabbable: true;"
@@ -445,28 +448,38 @@
         <a-entity>
           <a-entity scale="0.781 0.645 1">
             <a-sphere
-              color="#29eb1c"
+              rotation="-90 0 0"
               radius="0.1"
-              theta-length="100"
-            ></a-sphere>
+              phi-length="180"
+              material="color: #29eb1c; src: #shellTexture; transparent: true"
+            >
+            </a-sphere>
             <a-torus
               radius="0.100"
-              radius-tubular="0.010"
+              radius-tubular="0.006"
               rotation="90 0 0"
               color="white"
-              position="0 -0.018 0"
+              position="0 -0.012 0"
             ></a-torus>
             <a-sphere
-              color="#ffea8c"
+              rotation="90 0 0"
               radius="0.1"
-              theta-length="80"
-              theta-start="100"
-            ></a-sphere>
+              phi-length="180"
+              color="#e3c76b"
+              scale="1 1 0.9"
+            >
+            </a-sphere>
           </a-entity>
         </a-entity>
       </template>
 
-      <a-entity visible="false" position="0 1 -0.5" id="shell" shell></a-entity>
+      <a-entity
+        visible="true"
+        rotation="0 0 0"
+        position="0 1 -0.5"
+        id="shell"
+        shell
+      ></a-entity>
 
       <template id="goombaTemplate">
         <a-entity>
