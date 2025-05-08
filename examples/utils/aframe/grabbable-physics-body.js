@@ -130,6 +130,11 @@ AFRAME.registerComponent("grabbable-physics-body", {
             this.angularVelocity.z * this.angularVelocityScalar
           );
         }
+
+        this.el.emit("toss", {
+          velocity: body.velocity.clone(),
+          angularVelocity: body.angularVelocity.clone(),
+        });
       }, 1);
     } else {
       console.error("body not found");

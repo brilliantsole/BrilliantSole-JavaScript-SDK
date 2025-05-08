@@ -86,7 +86,7 @@
     <div id="connectToDeviceContainers"></div>
 
     <a-scene
-      init-shell-material
+      pool__shellhitsound="mixin: shellHitAudioMixin; size: 10;  dynamic: true;"
       pool__splatsound="mixin: splatSoundMixin; size: 5;  dynamic: true;"
       pool__coinsound="mixin: coinSoundMixin; size: 5;  dynamic: true;"
       pool__purrsound="mixin: purrSoundMixin; size: 2; dynamic: true;"
@@ -274,6 +274,25 @@
           preload="auto"
         ></audio>
 
+        <audio
+          id="shellKickAudio"
+          src="./assets/audio/shellKick.wav"
+          preload="auto"
+        ></audio>
+
+        <audio
+          id="shellBounceAudio"
+          src="./assets/audio/shellBounce.wav"
+          preload="auto"
+        ></audio>
+
+        <audio
+          id="shellHitAudio"
+          src="./assets/audio/shellHit.wav"
+          preload="auto"
+        ></audio>
+        <a-mixin id="shellHitAudioMixin" sound="src: #shellHitAudio"></a-mixin>
+
         <img id="shellTexture" src="./assets/images/shellTexture.png" />
       </a-assets>
       <!-- <a-entity rotation="-90 0 0" position="0 5 1">
@@ -406,15 +425,16 @@
         position="0 1.0 -0.6"
         rotation="0 0 0"
       ></a-entity> -->
-      <!-- <a-box
+      <a-box
         scale="5 0.05 5"
         static-body
+        rotation="0 0 0"
         position="0 0.8 -0.5"
         data-world-mesh="floor"
         color="blue"
         my-obb-collider
         id="testFloor"
-      ></a-box> -->
+      ></a-box>
       <!-- <a-box
         scale="1 0.05 1"
         static-body
@@ -791,6 +811,7 @@
       "enter-vr",
       () => {
         loadEntities();
+        anchor.setAttribute("visible", "true");
       },
       { once: true }
     );
@@ -894,7 +915,7 @@
               planeMesh.removeAttribute("my-obb-collider");
             }
             planeMeshes = planeMeshes.filter(
-              (_planeMesh) => planeMesh != planeMesh
+              (_planeMesh) => planeMesh != _planeMesh
             );
           });
 
@@ -903,6 +924,7 @@
             entity.setAttribute("shadow", "cast: false; receive: true;");
           });
         }
+        scene.emit("world-meshes", { planeMeshes, worldMeshes });
       }, 10);
     };
     scene.addEventListener(

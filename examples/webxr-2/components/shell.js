@@ -1,6 +1,8 @@
 AFRAME.registerComponent("shell", {
   schema: {
     template: { default: "#shellTemplate", type: "selector" },
+    kickSoundSelector: { default: "#shellKickAudio" },
+    bounceSoundSelector: { default: "#shellBounceAudio" },
   },
 
   shapeMain: `shape: cylinder;
@@ -13,6 +15,42 @@ AFRAME.registerComponent("shell", {
   init: function () {
     this.el.sceneEl.emit("shell-init");
     this.el.shapeMain = this.shapeMain;
+
+    this.collisionNormal = new THREE.Vector3();
+    this.velocityVector = new THREE.Vector3();
+
+    this.velocity2D = new THREE.Vector3();
+
+    this.quaternion = new THREE.Quaternion();
+    this.euler = new THREE.Euler();
+    this.releaseEuler = new THREE.Euler();
+    this.releaseQuaternion = new THREE.Quaternion();
+
+    this.spinQuaternion = new THREE.Quaternion();
+    this.spinEuler = new THREE.Euler();
+
+    this.targetEuler = new THREE.Quaternion();
+    this.targetQuaternion = new THREE.Quaternion();
+
+    this.el.addEventListener("punch", this.onPunch.bind(this));
+    this.el.addEventListener("kick", this.onKick.bind(this));
+    this.el.addEventListener("stomp", this.onStomp.bind(this));
+
+    this.setGrabEnabled = AFRAME.utils.throttleLeadingAndTrailing(
+      this.setGrabEnabled.bind(this),
+      70
+    );
+
+    this.el.addEventListener("grabstarted", () => this.setGrabEnabled(true));
+    this.el.addEventListener("grabended", () => this.setGrabEnabled(false));
+
+    this.el.addEventListener("collide", this.onCollide.bind(this));
+    this.el.addEventListener(
+      "obbcollisionstarted",
+      this.onObbCollisionStarted.bind(this)
+    );
+
+    this.el.addEventListener("toss", this.onToss.bind(this));
 
     this.el.addEventListener("body-loaded", this.onBodyLoaded.bind(this));
     this.el.addEventListener("loaded", () => {
@@ -35,29 +73,174 @@ AFRAME.registerComponent("shell", {
         );
       }, 1);
     });
+
+    this.kickSound = document.createElement("a-entity");
+    this.kickSound.setAttribute("sound", `src: ${this.data.kickSoundSelector}`);
+    this.el.sceneEl.appendChild(this.kickSound);
+
+    this.bounceSound = document.createElement("a-entity");
+    this.bounceSound.setAttribute(
+      "sound",
+      `src: ${this.data.bounceSoundSelector}`
+    );
+    this.el.sceneEl.appendChild(this.bounceSound);
+
+    this.playBounceSound = AFRAME.utils.throttleLeadingAndTrailing(
+      this.playBounceSound.bind(this),
+      50
+    );
+  },
+
+  onToss: function (event) {
+    // console.log("toss", event);
+    const { velocity, angularVelocity } = event.detail;
+  },
+
+  setGrabEnabled: function (enabled) {
+    if (enabled) {
+      this.onGrabStarted();
+    } else {
+      this.onGrabEnded();
+    }
+  },
+  onGrabStarted: function () {
+    // console.log("onGrabStarted");
+    this.isGrabbed = true;
+  },
+  onGrabEnded: function () {
+    // console.log("onGrabEnded");
+    this.isGrabbed = false;
+  },
+
+  collisionAngleThreshold: THREE.MathUtils.degToRad(20),
+  collisionVelocityThreshold: 0.1,
+  onCollide: async function (event) {
+    const collidedEntity = event.detail.body.el;
+    //console.log("collided with", collidedEntity);
+    const worldMesh = collidedEntity.dataset.worldMesh;
+    if (worldMesh) {
+      let playBounce = false;
+      if (worldMesh == "wall") {
+        playBounce = true;
+      } else {
+        this.collisionNormal.copy(event.detail.contact.ni).multiplyScalar(-1);
+        this.velocityVector.copy(this.body.velocity);
+        const angle = this.collisionNormal.angleTo(this.velocityVector);
+        const velocityLength = this.velocityVector.length();
+        playBounce =
+          angle < this.collisionAngleThreshold &&
+          velocityLength > this.collisionVelocityThreshold;
+      }
+
+      if (playBounce) {
+        this.playBounceSound();
+      }
+    }
+  },
+
+  playBounceSound: function () {
+    this.bounceSound.object3D.position.copy(this.el.object3D.position);
+    this.bounceSound.components.sound.playSound();
+  },
+  playKickSound: function () {
+    this.kickSound.object3D.position.copy(this.el.object3D.position);
+    this.kickSound.components.sound.playSound();
+  },
+  playHitSound: function (entity) {
+    // FILL
+  },
+
+  onPunch: function (event) {
+    const { velocity, position } = event.detail;
+    // FILL
+  },
+  onKick: function (event) {
+    const { velocity } = event.detail;
+    // FILL
+  },
+  onStomp: function (event) {
+    const { distance, yaw, kill } = event.detail;
+    //console.log("onStomp", { distance, yaw, kill });
+    // FILL
+  },
+
+  onObbCollisionStarted: async function (event) {
+    const collidedEntity = event.detail.withEl;
+    const goomba = collidedEntity.components["goomba"];
+    if (goomba) {
+      // FILL - toss goomba in air
+      // FILL - play goomba sound
+      this.playHitSound(goomba);
+    }
   },
 
   onBodyLoaded: function (event) {
     const { body } = event.detail;
-    console.log("body", body);
-    //body.fixedRotation = true;
+    // console.log("body", body);
+    this.body = body;
+    if (this.manualRotate) {
+      body.fixedRotation = true;
+    }
     body.linearDamping = 0;
     body.angularDamping = 0;
     body.material =
       this.el.sceneEl.systems["physics"].driver.getMaterial("shell");
-    body.angularVelocity.set(0, 10, 0);
+    if (!this.manualRotate) {
+      body.angularVelocity.set(0, 10, 0);
+    }
+
+    this.releaseQuaternion.copy(this.el.object3D.quaternion);
+    this.releaseEuler.copy(this.el.object3D.rotation);
+    this.releaseTime = this.latestTick;
+    this.restoredRotationTime = this.releaseTime + this.restoreRotationDuration;
+    this.didRestoreRotation = false;
   },
 
   start: function () {
-    // FILL - request sound
+    // FILL - request sounds
   },
 
   removeSelf: function () {
-    // FILL - return sound
+    // FILL - return sounds
   },
 
+  spinScalar: 0.000006,
+  manualRotate: true,
+  restoreRotationDuration: 200,
+
   tick: function (time, timeDelta) {
-    // FILL
+    this.latestTick = time;
+
+    if (!this.isGrabbed && this.body && this.manualRotate) {
+      this.velocity2D.copy(this.body.velocity);
+      this.velocity2D.y = 0;
+      const spinSpeed = this.velocity2D.length() * this.spinScalar;
+      const spinYaw = (time * spinSpeed) % (2 * Math.PI);
+      this.spinEuler.set(0, spinYaw, 0);
+      this.spinQuaternion.setFromEuler(this.spinEuler);
+
+      if (!this.didRestoreRotation) {
+        let interpolation = THREE.MathUtils.inverseLerp(
+          this.releaseTime,
+          this.restoredRotationTime,
+          this.latestTick
+        );
+        interpolation = THREE.MathUtils.clamp(interpolation, 0, 1);
+        this.quaternion.slerpQuaternions(
+          this.releaseQuaternion,
+          this.targetQuaternion,
+          interpolation
+        );
+        if (interpolation >= 1) {
+          this.didRestoreRotation = true;
+        }
+      }
+
+      if (this.manualRotate) {
+        this.quaternion.multiply(this.spinQuaternion);
+        this.body.quaternion.copy(this.quaternion);
+      }
+    }
   },
 
   remove: function () {
