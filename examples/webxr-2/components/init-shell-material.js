@@ -14,6 +14,11 @@ AFRAME.registerSystem("init-shell-material", {
       system.driver.materials["shell"] = shellMaterial;
       // console.log("added material", material, system.driver.materials);
 
+      const goombaMaterial = new CANNON.Material("goomba");
+      // goombaMaterial.friction = -1;
+      // goombaMaterial.restitution = -1;
+      system.driver.materials["goomba"] = goombaMaterial;
+
       const bounceWallMaterial = new CANNON.Material("bounceWall");
       bounceWallMaterial.friction = 0.0;
       bounceWallMaterial.restitution = 1; // adjust bounce if needed
@@ -79,6 +84,14 @@ AFRAME.registerSystem("init-shell-material", {
       );
       system.driver.world.addContactMaterial(bounceWallContact);
       // console.log("added bounceWall contact material", bounceWallContact);
+
+      const goombaMaterial = system.driver.materials["goomba"];
+      const goombaBounceWallContact = new CANNON.ContactMaterial(
+        goombaMaterial,
+        bounceWallMaterial,
+        { friction: 0.3, restitution: 0 }
+      );
+      system.driver.world.addContactMaterial(goombaBounceWallContact);
     }
   },
 });

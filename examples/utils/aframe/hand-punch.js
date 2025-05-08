@@ -6,7 +6,6 @@ AFRAME.registerComponent("hand-punch", {
     velocityThreshold: { default: 1.2 },
     velocityScalar: { default: 1 },
     punchTimeout: { default: 50 },
-    soundSelector: { default: "#punchAudio" },
   },
 
   dependencies: [
@@ -53,15 +52,6 @@ AFRAME.registerComponent("hand-punch", {
       this.onCollisionStarted
     );
     this.collider.addEventListener("obbcollisionended", this.onCollisionEnded);
-
-    this.sound = document.createElement("a-entity");
-    this.sound.setAttribute("sound", `src: ${this.data.soundSelector}`);
-    this.el.sceneEl.appendChild(this.sound);
-  },
-
-  playSound: function (punchedEntity) {
-    punchedEntity.object3D.getWorldPosition(this.sound.object3D.position);
-    this.sound.components.sound.playSound();
   },
 
   onCollisionStarted: function (event) {
@@ -97,8 +87,6 @@ AFRAME.registerComponent("hand-punch", {
       }
 
       withEl.emit("punch", { velocity, position });
-
-      this.playSound(withEl);
 
       /** @type {BS.VibrationWaveformEffect} */
       let waveformEffect = "strongClick100";

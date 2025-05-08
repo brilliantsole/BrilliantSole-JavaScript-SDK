@@ -86,6 +86,7 @@
     <div id="connectToDeviceContainers"></div>
 
     <a-scene
+      pool__punchsound="mixin: punchSoundMixin; size: 10;  dynamic: true;"
       pool__shellhitsound="mixin: shellHitAudioMixin; size: 10;  dynamic: true;"
       pool__splatsound="mixin: splatSoundMixin; size: 5;  dynamic: true;"
       pool__coinsound="mixin: coinSoundMixin; size: 5;  dynamic: true;"
@@ -102,7 +103,7 @@
       pool__squashedgoomba="mixin: squashedGoombaMixin; size: 5; dynamic: true;"
       id="scene"
       light="defaultLightsEnabled: false"
-      physics="debug: false; restitution: 0.4;"
+      physics="debug: true; restitution: 0.4;"
       embedded
       grabbable-listener
       obb-collider="showColliders: false;"
@@ -158,6 +159,7 @@
           src="../../assets/audio/punch.wav"
           preload="auto"
         ></audio>
+        <a-mixin id="punchSoundMixin" sound="src: #punchAudio;"></a-mixin>
 
         <audio
           id="purrAudio"
@@ -395,7 +397,7 @@
           ></a-sphere>
         </a-entity>
       </template>
-
+      <!-- 
       <a-entity id="debugCone" visible="false" position="0 1 -1">
         <a-cone
           height="0.1"
@@ -403,7 +405,7 @@
           radius-bottom="0.1"
           color="green"
         ></a-cone>
-      </a-entity>
+      </a-entity> -->
 
       <!-- <a-entity
         id="squashedGoomba1"
@@ -411,13 +413,13 @@
         position="0 1.0 -0.3"
       ></a-entity> -->
 
-      <!-- <a-entity
+      <a-entity
         goomba="grabbable: true;"
         id="goomba1"
         position="0 1.0 -0.3"
         class="punchable"
         rotation="0 0 0"
-      ></a-entity> -->
+      ></a-entity>
 
       <!-- <a-entity
         goomba="grabbable: true;"
@@ -425,7 +427,7 @@
         position="0 1.0 -0.6"
         rotation="0 0 0"
       ></a-entity> -->
-      <a-box
+      <!-- <a-box
         scale="5 0.05 5"
         static-body
         rotation="0 0 0"
@@ -434,7 +436,7 @@
         color="blue"
         my-obb-collider
         id="testFloor"
-      ></a-box>
+      ></a-box> -->
       <!-- <a-box
         scale="1 0.05 1"
         static-body
@@ -501,13 +503,13 @@
         </a-entity>
       </template>
 
-      <a-entity
+      <!-- <a-entity
         visible="true"
         rotation="0 0 45"
         position="0 1 -0.5"
         id="shell"
         shell
-      ></a-entity>
+      ></a-entity> -->
 
       <template id="goombaTemplate">
         <a-entity>
