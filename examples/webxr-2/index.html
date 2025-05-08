@@ -22,6 +22,7 @@
     <script src="../utils/aframe/shadow-material.js"></script>
     <script src="../utils/aframe/bs-vibration.js" type="module"></script>
     <script src="../utils/aframe/soft-shadow-light.js"></script>
+    <script src="./components/init-shell-material.js"></script>
     <script src="./components/bs-ankle.js" type="module"></script>
     <script src="../utils/aframe/my-obb-collider.js"></script>
     <script src="./components/shell.js"></script>
@@ -85,6 +86,7 @@
     <div id="connectToDeviceContainers"></div>
 
     <a-scene
+      init-shell-material
       pool__splatsound="mixin: splatSoundMixin; size: 5;  dynamic: true;"
       pool__coinsound="mixin: coinSoundMixin; size: 5;  dynamic: true;"
       pool__purrsound="mixin: purrSoundMixin; size: 2; dynamic: true;"
@@ -410,7 +412,7 @@
         position="0 0.8 -0.5"
         data-world-mesh="floor"
         color="blue"
-        obb-collider
+        my-obb-collider
         id="testFloor"
       ></a-box> -->
       <!-- <a-box
@@ -445,28 +447,34 @@
       ></a-box> -->
 
       <template id="shellTemplate">
-        <a-entity>
-          <a-entity scale="0.781 0.645 1">
+        <a-entity scale="1.1 1.1 1.1">
+          <a-entity scale="0.86 0.85 1">
             <a-sphere
               rotation="-90 0 0"
+              scale="1 1 0.850"
               radius="0.1"
               phi-length="180"
+              segments-height="12"
+              segments-width="8"
+              roughness="0.8"
+              repeat="0.420 0.550"
+              offset="0.040 0.160"
               material="color: #29eb1c; src: #shellTexture; transparent: true"
             >
             </a-sphere>
             <a-torus
-              radius="0.100"
+              radius="0.096"
               radius-tubular="0.006"
               rotation="90 0 0"
               color="white"
-              position="0 -0.012 0"
+              position="0 -0.005 0"
             ></a-torus>
             <a-sphere
               rotation="90 0 0"
               radius="0.1"
               phi-length="180"
               color="#e3c76b"
-              scale="1 1 0.9"
+              scale="1 1 0.55"
             >
             </a-sphere>
           </a-entity>
@@ -475,7 +483,7 @@
 
       <a-entity
         visible="true"
-        rotation="0 0 0"
+        rotation="0 0 45"
         position="0 1 -0.5"
         id="shell"
         shell

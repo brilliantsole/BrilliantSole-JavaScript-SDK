@@ -1614,7 +1614,7 @@ AFRAME.registerComponent("goomba", {
           this.raycaster.near = 0;
           this.raycaster.far = 1;
           const intersectable =
-            this.floor?.components["occlude-mesh"].raycastMesh;
+            this.floor?.components["occlude-mesh"]?.raycastMesh;
           console.log("intersectable", intersectable);
           const intersections = this.raycaster.intersectObjects(
             intersectable ? [intersectable] : this.lookAtRaycastTargetObjects,

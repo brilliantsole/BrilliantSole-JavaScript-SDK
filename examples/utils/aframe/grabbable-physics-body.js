@@ -8,6 +8,7 @@ AFRAME.registerComponent("grabbable-physics-body", {
     },
     staticBody: { default: "" },
     dynamicBody: { default: "" },
+    enableAngularVelocity: { default: true },
   },
 
   init: function () {
@@ -89,19 +90,16 @@ AFRAME.registerComponent("grabbable-physics-body", {
         this.shouldSetVelocity = true;
         //console.log("setting dynamic body", this.data.dynamicBody);
         //this.el.setAttribute("dynamic-body", this.data.dynamicBody);
-        this.el.setAttribute("dynamic-body", "shape: none;");
         const shapeMain = this.el.shapeMain;
         if (shapeMain) {
+          this.el.setAttribute("dynamic-body", "shape: none;");
           // console.log("shape__main", shapeMain);
           //this.el.setAttribute("shape__main", shapeMain);
           // should wait for 'goomba' component to load
+          this.el.setAttribute("shape__main", shapeMain);
+        } else {
+          this.el.setAttribute("dynamic-body", "");
         }
-        this.el.setAttribute(
-          "shape__main",
-          `shape: box;
-          halfExtents: 0.1 0.091 0.09;
-          offset: 0 0 0;`
-        );
       }
     });
   },
@@ -124,12 +122,14 @@ AFRAME.registerComponent("grabbable-physics-body", {
           this.velocity.z * this.velocityScalar
         );
 
-        // console.log("setting angularVelocity", this.angularVelocity);
-        body.angularVelocity.set(
-          this.angularVelocity.x * this.angularVelocityScalar,
-          this.angularVelocity.y * this.angularVelocityScalar,
-          this.angularVelocity.z * this.angularVelocityScalar
-        );
+        if (this.data.enableAngularVelocity) {
+          // console.log("setting angularVelocity", this.angularVelocity);
+          body.angularVelocity.set(
+            this.angularVelocity.x * this.angularVelocityScalar,
+            this.angularVelocity.y * this.angularVelocityScalar,
+            this.angularVelocity.z * this.angularVelocityScalar
+          );
+        }
       }, 1);
     } else {
       console.error("body not found");
