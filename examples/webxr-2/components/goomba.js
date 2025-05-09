@@ -85,6 +85,12 @@ AFRAME.registerComponent("goomba", {
     this.pointToWalkToSphere.setAttribute("radius", "0.01");
     this.el.sceneEl.appendChild(this.pointToWalkToSphere);
 
+    this.wallIntersectionSphere = document.createElement("a-sphere");
+    this.wallIntersectionSphere.setAttribute("color", "green");
+    this.wallIntersectionSphere.setAttribute("visible", "false");
+    this.wallIntersectionSphere.setAttribute("radius", "0.01");
+    this.el.sceneEl.appendChild(this.wallIntersectionSphere);
+
     this.lastWalkTick = 0;
 
     this.rollQuaternionFrom = new THREE.Quaternion();
@@ -2051,6 +2057,7 @@ AFRAME.registerComponent("goomba", {
         const turnScalar = Math.round(Math.random()) ? 1 : -1;
         let didIntersectGoomba = false;
         let didIntersectMesh = false;
+        let didIntersectWall = false;
         this.tempPointToWalkTo2 =
           this.tempPointToWalkTo2 || new THREE.Vector3();
         this.pointToWalkToOffset2 =
@@ -2094,10 +2101,18 @@ AFRAME.registerComponent("goomba", {
           didIntersectGoomba = this.doesPointIntersectAnyGoombas(
             this.tempPointToWalkTo2
           );
-          didIntersectMesh = this.doesPointIntersectAnyMeshes(
-            this.tempPointToWalkTo2
-          );
+          if (!didIntersectGoomba) {
+            didIntersectWall = this.doesDirectionIntersectAnyWalls(
+              this.pointToWalkToOffset.clone().normalize()
+            );
+          }
+          if (!didIntersectGoomba && !didIntersectWall) {
+            didIntersectMesh = this.doesPointIntersectAnyMeshes(
+              this.tempPointToWalkTo2
+            );
+          }
         } while (
+          didIntersectWall ||
           didIntersectMesh ||
           didIntersectGoomba ||
           Math.abs(
@@ -2362,6 +2377,43 @@ AFRAME.registerComponent("goomba", {
       .filter((goomba) => goomba != this)
       .some((goomba) => {
         return goomba.sphere.containsPoint(point);
+      });
+  },
+
+  wallIntersectionThreshold: 0.2,
+  doesDirectionIntersectAnyWalls: function (direction) {
+    this.wallRay = this.wallRay || new THREE.Ray();
+    this.wallRay.set(this.worldPosition, direction);
+    this.wallIntersection = this.wallIntersection || new THREE.Vector3();
+    this.wallDistance = this.wallDistance || new THREE.Vector3();
+    return this.lookAtRaycastTargets
+      .filter(
+        (entity) =>
+          entity.getAttribute("mixin") == "realWorldMeshMixin" ||
+          entity.dataset.worldMesh == "wall"
+      )
+      .some((entity) => {
+        const wallIntersection = entity.components[
+          "my-obb-collider"
+        ].obb.intersectRay(this.wallRay, this.wallIntersection);
+        let intersectsWall = false;
+        if (wallIntersection) {
+          //this.wallIntersectionSphere.object3D.position.copy(wallIntersection);
+          //this.wallIntersectionSphere.object3D.visible = true;
+          const distanceToPoint =
+            this.worldPosition.distanceTo(wallIntersection);
+          intersectsWall = distanceToPoint < this.wallIntersectionThreshold;
+          console.log({ distanceToPoint });
+        } else {
+          //this.wallIntersectionSphere.object3D.visible = false;
+        }
+        if (intersectsWall) {
+          // console.log(
+          //   "intersects wall",
+          //   entity.getAttribute("data-world-mesh")
+          // );
+        }
+        return intersectsWall;
       });
   },
 
