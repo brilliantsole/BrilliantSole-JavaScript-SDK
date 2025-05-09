@@ -7,6 +7,9 @@ AFRAME.registerComponent("goomba", {
     physics: { default: false },
   },
 
+  collisionFilterGroup: 1 << 1,
+  collisionFilterMask: 1 << 0,
+
   sides: ["left", "right"],
 
   showHitSphere: false,
@@ -315,13 +318,67 @@ AFRAME.registerComponent("goomba", {
   shellHit: function (velocity, position) {
     this.shellHitOptions = { velocity, position };
   },
+  shellVelocityPitchRange: {
+    min: THREE.MathUtils.degToRad(2),
+    max: THREE.MathUtils.degToRad(0),
+  },
+  shellVelocityInterpolationRange: {
+    min: 0,
+    max: 3,
+  },
+  shellVelocityLengthRange: {
+    min: 0.7,
+    max: 1,
+  },
   _shellHit: function (velocity, position) {
     if (this.ignorePunchStatuses.includes(this.status)) {
       return;
     }
     this.playShellHitSound();
-    // FILL - apply vector
-    // FILL - isPunched
+
+    this.setStatus("idle");
+    this.lastTimePunched = this.latestTick;
+    this.punched = true;
+    this.shelled = true;
+    this.punchedFloor = this.floor;
+
+    let pitch = 0;
+    if (true) {
+      pitch = THREE.MathUtils.lerp(
+        this.shellVelocityPitchRange.min,
+        this.shellVelocityPitchRange.max,
+        Math.random()
+      );
+    }
+
+    let _yaw = 0;
+    if (false) {
+      _yaw = Math.random() * Math.PI * 2;
+    } else {
+      _yaw = Math.atan2(velocity.x, velocity.z);
+    }
+
+    const velocityLength = velocity.length();
+    let velocityInterpolation = THREE.MathUtils.inverseLerp(
+      this.shellVelocityInterpolationRange.min,
+      this.shellVelocityInterpolationRange.max,
+      velocityLength
+    );
+    velocityInterpolation = THREE.MathUtils.clamp(velocityInterpolation, 0, 1);
+    console.log("velocityInterpolation", velocityInterpolation);
+
+    let newVelocityLength = THREE.MathUtils.lerp(
+      this.shellVelocityLengthRange.min,
+      this.shellVelocityLengthRange.max,
+      velocityInterpolation
+    );
+    console.log("newVelocityLength", newVelocityLength);
+
+    const newVelocity = new THREE.Vector3(0, newVelocityLength, 0);
+    const euler = new THREE.Euler(pitch, _yaw, 0, "YXZ");
+    newVelocity.applyEuler(euler);
+    this.physicsOptions = { velocity: newVelocity };
+    this.setPhysicsEnabled(true);
   },
 
   // adjust values as needed
@@ -467,12 +524,14 @@ AFRAME.registerComponent("goomba", {
 
   onBodyLoaded: function (event) {
     const { body } = event.detail;
+    body.collisionFilterGroup = this.collisionFilterGroup;
+    body.collisionFilterMask = this.collisionFilterMask;
     //body.linearDamping = 0;
     //body.angularDamping = 0;
     this.physicsBody = body;
     body.material =
       this.el.sceneEl.systems["physics"].driver.getMaterial("goomba");
-    console.log(body.material);
+    // console.log(body.material);
     // console.log("onBodyLoaded");
     if (this.physicsOptions) {
       const { position, velocity } = this.physicsOptions;
@@ -526,6 +585,7 @@ AFRAME.registerComponent("goomba", {
     // console.log("collided with", collidedEntity, event.detail);
     // console.log(this.physicsBody.material, event.detail.body.material);
 
+    // FIX - make sure intersection from raycaster actually has intersection (e.g. hitting edge of table)
     if (
       this.punched &&
       collidedEntity.dataset.worldMesh &&
@@ -1617,7 +1677,7 @@ AFRAME.registerComponent("goomba", {
           this.raycaster.far = 1;
           const intersectable =
             this.floor?.components["occlude-mesh"]?.raycastMesh;
-          console.log("intersectable", intersectable);
+          // console.log("intersectable", intersectable);
           // FIX - a goomba nearing the edge of a table may have a raycaster not hit the table.
           const intersections = this.raycaster.intersectObjects(
             intersectable ? [intersectable] : this.lookAtRaycastTargetObjects,
@@ -1626,7 +1686,7 @@ AFRAME.registerComponent("goomba", {
           if (intersections[0]) {
             position.copy(intersections[0].point);
           } else {
-            console.log("no intersections found for death punch");
+            // console.log("no intersections found for death punch");
           }
         }
       }

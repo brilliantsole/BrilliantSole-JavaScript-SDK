@@ -5,6 +5,9 @@ AFRAME.registerComponent("shell", {
     bounceSoundSelector: { default: "#shellBounceAudio" },
   },
 
+  collisionFilterGroup: 1 << 2,
+  collisionFilterMask: 1 << 0,
+
   shapeMain: `shape: cylinder;
   radiusTop: 0.12;
   radiusBottom: 0.12;
@@ -46,6 +49,11 @@ AFRAME.registerComponent("shell", {
     this.setGrabEnabled = AFRAME.utils.throttleLeadingAndTrailing(
       this.setGrabEnabled.bind(this),
       70
+    );
+
+    this.checkVelocity = AFRAME.utils.throttleLeadingAndTrailing(
+      this.checkVelocity.bind(this),
+      100
     );
 
     this.el.addEventListener("grabstarted", () => this.setGrabEnabled(true));
@@ -196,9 +204,14 @@ AFRAME.registerComponent("shell", {
     this.kickVelocity.applyEuler(this.kickEuler);
     this.body.velocity.copy(this.kickVelocity);
     //this.body.velocity.set(0, 2, 0);
+
+    // FILL - play stomp animation
   },
 
   onObbCollisionStarted: async function (event) {
+    if (!this.body) {
+      return;
+    }
     const collidedEntity = event.detail.withEl;
     const goomba = collidedEntity.components["goomba"];
     if (goomba) {
@@ -211,6 +224,8 @@ AFRAME.registerComponent("shell", {
 
   onBodyLoaded: function (event) {
     const { body } = event.detail;
+    body.collisionFilterGroup = this.collisionFilterGroup;
+    body.collisionFilterMask = this.collisionFilterMask;
     // console.log("body", body);
     this.body = body;
     if (this.manualRotate) {
@@ -232,20 +247,27 @@ AFRAME.registerComponent("shell", {
     this.didRestoreRotation = false;
   },
 
-  start: function () {
-    // FILL - request sounds
-  },
-
-  removeSelf: function () {
-    // FILL - return sounds
-  },
-
   spinScalar: 0.01,
   manualRotate: true,
   restoreRotationDuration: 200,
 
+  speedMax: 5,
+
+  checkVelocity: function () {
+    if (this.body.velocity.length() > this.speedMax) {
+      console.log("speed too fast");
+      this.velocityVector.copy(this.body.velocity);
+      this.velocityVector.setLength(this.speedMax - 1);
+      this.body.velocity.copy(this.velocityVector);
+    }
+  },
+
   tick: function (time, timeDelta) {
     this.latestTick = time;
+
+    if (!this.isGrabbed && this.body) {
+      this.checkVelocity();
+    }
 
     if (!this.isGrabbed && this.body && this.manualRotate) {
       this.velocity2D.copy(this.body.velocity);

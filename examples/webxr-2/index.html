@@ -103,12 +103,12 @@
       pool__squashedgoomba="mixin: squashedGoombaMixin; size: 5; dynamic: true;"
       id="scene"
       light="defaultLightsEnabled: false"
-      physics="debug: false; restitution: 0.4;"
+      physics="debug: true; restitution: 0.4;"
       embedded
       grabbable-listener
       obb-collider="showColliders: false;"
       xr-mode-ui="enabled: true; XRMode: ar;"
-      real-world-meshing="meshMixin: realWorldMeshMixin; meshesEnabled: true; planeMixin: realWorldPlaneMixin; planesEnabled: true; filterLabels: table, wall, desk, floor, ceiling;"
+      real-world-meshing="meshMixin: realWorldMeshMixin; meshesEnabled: true; planeMixin: realWorldPlaneMixin; planesEnabled: true; filterLabels: table, wall, desk, floor, ceiling, storage, other, plant, screen, lamp, couch, bed, screen;"
       device-orientation-permission-ui="enabled: false"
     >
       <a-entity light="color: #BBB; type: ambient;"></a-entity>
@@ -442,7 +442,7 @@
         scale="1 0.05 1"
         static-body
         position="0 2 -0.5"
-        data-world-mesh="floor"
+        data-world-mesh="ceiling"
         color="blue"
         obb-collider
         id="testCeiling"
