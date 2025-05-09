@@ -10,12 +10,11 @@ AFRAME.registerComponent("bs-ankle", {
     angleThreshold: { default: THREE.MathUtils.degToRad(30) },
     kickDistanceLowerThreshold: { default: 0.4 },
     kickDistanceUpperThreshold: { default: 0.9 },
-    stompDistanceThreshold: { default: 0.2 },
+    stompDistanceThreshold: { default: 0.3 },
     velocityLength: { default: 2 },
     velocityPitch: { default: THREE.MathUtils.degToRad(40) },
     kickSoundSelector: { default: "#kickAudio" },
     stompSoundSelector: { default: "#stompAudio" },
-    impactSoundSelector: { default: "#punchAudio" },
   },
 
   init() {
@@ -24,10 +23,11 @@ AFRAME.registerComponent("bs-ankle", {
     this.debugCone = this.el.sceneEl.querySelector("#debugCone");
     this.debugText = this.el.sceneEl.querySelector("#debugText");
     this.debug = false;
+    this.debugStomp = false;
     this.debugKick = false;
     this.debugGesture = false;
     if (this.debug) {
-      this.debugText.setAttribute("visible", "false");
+      this.debugText.setAttribute("visible", "true");
       if (this.debugKick) {
         setInterval(() => {
           this.kick(true);
@@ -64,13 +64,6 @@ AFRAME.registerComponent("bs-ankle", {
       `src: ${this.data.stompSoundSelector}`
     );
     this.el.sceneEl.appendChild(this.stompSound);
-
-    this.impactSound = document.createElement("a-entity");
-    this.impactSound.setAttribute(
-      "sound",
-      `src: ${this.data.impactSoundSelector}`
-    );
-    this.el.sceneEl.appendChild(this.impactSound);
   },
 
   playKickSound: function (position) {
@@ -260,12 +253,7 @@ AFRAME.registerComponent("bs-ankle", {
       /** @type {BS.VibrationWaveformEffect} */
       let waveformEffect = "strongClick100";
       this.vibrate(waveformEffect);
-      this.playSound(kickPosition);
     }
-  },
-  playSound: function (kickPosition) {
-    this.impactSound.object3D.position.copy(kickPosition);
-    this.impactSound.components.sound.playSound();
   },
   stomp: function () {
     /** @type {BS.VibrationWaveformEffect} */
@@ -295,6 +283,9 @@ AFRAME.registerComponent("bs-ankle", {
       direction.normalize();
       const yaw = Math.atan2(direction.x, direction.z);
       let kill = false;
+      if (this.debugStomp) {
+        this.debugText.setAttribute("value", `${distance.toFixed(2)}`);
+      }
       if (goombasOnFloor.includes(goomba)) {
         kill = distance <= this.data.stompDistanceThreshold;
       }

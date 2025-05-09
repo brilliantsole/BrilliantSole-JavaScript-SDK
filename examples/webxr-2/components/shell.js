@@ -204,7 +204,7 @@ AFRAME.registerComponent("shell", {
     // FILL - return sounds
   },
 
-  spinScalar: 0.000006,
+  spinScalar: 0.000004,
   manualRotate: true,
   restoreRotationDuration: 200,
 

@@ -81,7 +81,7 @@ AFRAME.registerSystem("init-shell-material", {
         { friction: 0, restitution: 0 }
       );
       system.driver.world.addContactMaterial(shellDefaultContact);
-      console.log("added shellDefaultContact", shellDefaultContact);
+      // console.log("added shellDefaultContact", shellDefaultContact);
 
       const shellStaticContact = new CANNON.ContactMaterial(
         shellMaterial,
@@ -89,7 +89,7 @@ AFRAME.registerSystem("init-shell-material", {
         { friction: 0, restitution: 0 }
       );
       system.driver.world.addContactMaterial(shellStaticContact);
-      console.log("added shellStaticContact", shellStaticContact);
+      // console.log("added shellStaticContact", shellStaticContact);
 
       const bounceWallMaterial = system.driver.materials["bounceWall"];
       const bounceWallContact = new CANNON.ContactMaterial(
@@ -103,7 +103,7 @@ AFRAME.registerSystem("init-shell-material", {
         }
       );
       system.driver.world.addContactMaterial(bounceWallContact);
-      console.log("added bounceWallContact", bounceWallContact);
+      // console.log("added bounceWallContact", bounceWallContact);
 
       const defaultBounceWallContact = new CANNON.ContactMaterial(
         defaultMaterial,
@@ -113,7 +113,7 @@ AFRAME.registerSystem("init-shell-material", {
         }
       );
       system.driver.world.addContactMaterial(defaultBounceWallContact);
-      console.log("added defaultBounceWallContact", defaultBounceWallContact);
+      // console.log("added defaultBounceWallContact", defaultBounceWallContact);
 
       const goombaMaterial = system.driver.materials["goomba"];
       const goombaBounceWallContact = new CANNON.ContactMaterial(
@@ -122,7 +122,7 @@ AFRAME.registerSystem("init-shell-material", {
         { ...system.driver.contactMaterial }
       );
       system.driver.world.addContactMaterial(goombaBounceWallContact);
-      console.log("added goombaBounceWallContact", goombaBounceWallContact);
+      // console.log("added goombaBounceWallContact", goombaBounceWallContact);
 
       const goombaStaticContact = new CANNON.ContactMaterial(
         goombaMaterial,
@@ -130,7 +130,7 @@ AFRAME.registerSystem("init-shell-material", {
         { ...system.driver.contactMaterial }
       );
       system.driver.world.addContactMaterial(goombaStaticContact);
-      console.log("added goombaStaticContact", goombaStaticContact);
+      // console.log("added goombaStaticContact", goombaStaticContact);
 
       const goombaDefaultContact = new CANNON.ContactMaterial(
         goombaMaterial,
@@ -138,7 +138,7 @@ AFRAME.registerSystem("init-shell-material", {
         { ...system.driver.contactMaterial }
       );
       system.driver.world.addContactMaterial(goombaDefaultContact);
-      console.log("added goombaDefaultContact", goombaDefaultContact);
+      // console.log("added goombaDefaultContact", goombaDefaultContact);
     }
   },
 });
