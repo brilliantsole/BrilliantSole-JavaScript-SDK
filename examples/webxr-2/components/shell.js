@@ -85,6 +85,10 @@ AFRAME.registerComponent("shell", {
       });
       setTimeout(() => {
         this.bodyEl = this.el.querySelector(".body");
+        this.bodyEl.addEventListener(
+          "animationcomplete",
+          this.onAnimationComplete.bind(this)
+        );
         this.el.setAttribute("grabbable", "");
         this.el.setAttribute(
           "grabbable-physics-body",
@@ -109,6 +113,8 @@ AFRAME.registerComponent("shell", {
       50
     );
   },
+
+  onAnimationComplete: function (event) {},
 
   onToss: function (event) {
     // console.log("toss", event);
@@ -207,7 +213,9 @@ AFRAME.registerComponent("shell", {
     this.body.velocity.copy(this.kickVelocity);
     //this.body.velocity.set(0, 2, 0);
 
-    // FILL - play stomp animation
+    this.isStomped = true;
+    this.stompStartTime = this.latestTick;
+    this.stompFinishTime = this.stompStartTime + this.stompDuration;
   },
 
   onObbCollisionStarted: async function (event) {
@@ -264,6 +272,12 @@ AFRAME.registerComponent("shell", {
     }
   },
 
+  stompScalars: { pitch: 0.4, roll: 0.4 },
+  stompDelay: { pitch: 0, roll: 0 },
+  stompInterpolationOffsets: { pitch: 0, roll: 0.25 },
+  stompInterpolationScalars: { pitch: 1.75, roll: 1.75 },
+  stompDuration: 700,
+
   tick: function (time, timeDelta) {
     this.latestTick = time;
 
@@ -297,13 +311,51 @@ AFRAME.registerComponent("shell", {
         }
       }
 
-      if (this.manualRotate) {
+      if (this.manualRotate && !this.isStomped) {
         this.bodyEl.object3D.rotation.copy(this.spinEuler);
         //this.quaternion.multiply(this.spinQuaternion);
         this.body.quaternion.copy(this.quaternion);
       }
 
-      if (this.el.object3D.y < -40) {
+      if (this.isStomped) {
+        let interpolation = THREE.MathUtils.inverseLerp(
+          this.stompStartTime,
+          this.stompFinishTime,
+          this.latestTick
+        );
+        interpolation = THREE.MathUtils.clamp(interpolation, 0, 1);
+
+        let pitchInterpolation =
+          this.stompInterpolationScalars.pitch * interpolation +
+          this.stompInterpolationOffsets.pitch;
+        pitchInterpolation = THREE.MathUtils.clamp(pitchInterpolation, 0, 1);
+
+        let rollInterpolation =
+          this.stompInterpolationScalars.roll * interpolation +
+          this.stompInterpolationOffsets.roll;
+        rollInterpolation = THREE.MathUtils.clamp(rollInterpolation, 0, 1);
+
+        const pitch =
+          Math.sin(pitchInterpolation * 2 * Math.PI) *
+          this.stompScalars.pitch *
+          (1 - interpolation);
+        const roll =
+          Math.sin(rollInterpolation * 2 * Math.PI) *
+          this.stompScalars.roll *
+          (1 - interpolation);
+
+        console.log({ pitch, roll });
+
+        this.spinEuler.set(pitch, 0, roll);
+        this.bodyEl.object3D.rotation.copy(this.spinEuler);
+
+        if (interpolation >= 1) {
+          console.log("finished stomp animation");
+          this.isStomped = false;
+        }
+      }
+
+      if (this.el.object3D.position.y < -40) {
         console.log("fell through floor");
         this.body.velocity.set(0, 0, 0);
         this.body.position.copy(this.camera.object3D.position);

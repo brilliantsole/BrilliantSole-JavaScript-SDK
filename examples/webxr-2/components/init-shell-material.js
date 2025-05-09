@@ -48,6 +48,7 @@ AFRAME.registerSystem("init-shell-material", {
 
       const testFloor = document.getElementById("testFloor");
       if (testFloor) {
+        return;
         testFloor.components["static-body"].body.material = bounceWallMaterial;
         testFloor.addEventListener("body-loaded", (event) => {
           const { body } = event.detail;
@@ -106,7 +107,7 @@ AFRAME.registerSystem("init-shell-material", {
         frictionEquationRegularization: 3,
       };
 
-      console.log("shellMaterial", shellMaterial);
+      // console.log("shellMaterial", shellMaterial);
 
       const shellDefaultContact = new CANNON.ContactMaterial(
         shellMaterial,
