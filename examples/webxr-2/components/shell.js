@@ -13,7 +13,14 @@ AFRAME.registerComponent("shell", {
   `,
 
   init: function () {
+    this.yaw = 0;
+    window.shells = window.shells || [];
+    window.shells.push(this);
+
     this.el.shapeMain = this.shapeMain;
+
+    this.kickVelocity = new THREE.Vector3();
+    this.kickEuler = new THREE.Euler();
 
     this.collisionNormal = new THREE.Vector3();
     this.velocityVector = new THREE.Vector3();
@@ -31,7 +38,6 @@ AFRAME.registerComponent("shell", {
     this.targetEuler = new THREE.Quaternion();
     this.targetQuaternion = new THREE.Quaternion();
 
-    this.el.addEventListener("punch", this.onPunch.bind(this));
     this.el.addEventListener("kick", this.onKick.bind(this));
     this.el.addEventListener("stomp", this.onStomp.bind(this));
 
@@ -158,22 +164,35 @@ AFRAME.registerComponent("shell", {
     this.kickSound.object3D.position.copy(this.el.object3D.position);
     this.kickSound.components.sound.playSound();
   },
-  playHitSound: function (entity) {
-    // FILL
-  },
 
-  onPunch: function (event) {
-    const { velocity, position } = event.detail;
-    // FILL
-  },
   onKick: function (event) {
-    const { velocity } = event.detail;
-    // FILL
+    if (this.isGrabbed) {
+      return;
+    }
+    const { velocity, yaw } = event.detail;
+    // console.log("onKick", yaw);
+    this.playKickSound();
+    this.kickVelocity.set(0, 1, -3);
+    this.kickEuler.set(0, yaw, 0);
+    this.kickVelocity.applyEuler(this.kickEuler);
+    this.body.velocity.copy(this.kickVelocity);
   },
   onStomp: function (event) {
+    if (this.isGrabbed) {
+      return;
+    }
+
     const { distance, yaw, kill } = event.detail;
-    //console.log("onStomp", { distance, yaw, kill });
-    // FILL
+    // console.log("onStomp", { distance, yaw, kill });
+
+    this.playKickSound();
+
+    this.kickVelocity.set(0, 3, -0.0);
+    this.kickEuler.set(0, -yaw, 0);
+    this.kickVelocity.applyEuler(this.kickEuler);
+    this.body.velocity.copy(this.kickVelocity);
+    // FILL - apply vertical
+    //this.body.velocity.set(0, 2, 0);
   },
 
   onObbCollisionStarted: async function (event) {
@@ -182,7 +201,6 @@ AFRAME.registerComponent("shell", {
     if (goomba) {
       // FILL - toss goomba in air
       // FILL - play goomba sound
-      this.playHitSound(goomba);
     }
   },
 
@@ -216,7 +234,7 @@ AFRAME.registerComponent("shell", {
     // FILL - return sounds
   },
 
-  spinScalar: 0.000004,
+  spinScalar: 0.000005,
   manualRotate: true,
   restoreRotationDuration: 200,
 
@@ -227,8 +245,9 @@ AFRAME.registerComponent("shell", {
       this.velocity2D.copy(this.body.velocity);
       this.velocity2D.y = 0;
       const spinSpeed = this.velocity2D.length() * this.spinScalar;
-      const spinYaw = (time * spinSpeed) % (2 * Math.PI);
-      this.spinEuler.set(0, spinYaw, 0);
+      this.yaw += timeDelta * spinSpeed;
+      this.yaw %= 2 * Math.PI;
+      this.spinEuler.set(0, this.yaw, 0);
       this.spinQuaternion.setFromEuler(this.spinEuler);
 
       if (!this.didRestoreRotation) {

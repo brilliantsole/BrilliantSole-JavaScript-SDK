@@ -178,75 +178,80 @@ AFRAME.registerComponent("bs-ankle", {
       this.playKickSound(kickPosition);
     }
 
-    if (goombasOnFloor.length == 0) {
+    if (goombasOnFloor.length == 0 && !window.shells[0].body) {
       return;
     }
 
     const goombaPosition = new THREE.Vector3();
 
-    const goombasToKick = goombasOnFloor.filter((goomba) => {
-      goomba.el.object3D.getWorldPosition(goombaPosition);
-      //   const v = new THREE.Vector3();
-      //   v.copy(goombaPosition);
-      //   this.camera.object3D.worldToLocal(v);
-      this.cameraToGoomba.subVectors(this.cameraPosition, goombaPosition);
-      this.cameraToGoomba.y = 0;
-      const distance = this.cameraToGoomba.length();
-      if (distance > this.data.kickDistanceUpperThreshold) {
-        if (this.debugKick) {
-          this.debugText.setAttribute("value", `far ${distance.toFixed(2)}`);
-        }
-        return false;
-      }
-      this.cameraToGoomba.normalize();
-      let goombaYaw = Math.atan2(this.cameraToGoomba.x, this.cameraToGoomba.z);
-      while (goombaYaw < 0) {
-        goombaYaw += 2 * Math.PI;
-      }
-
-      if (distance > this.data.kickDistanceLowerThreshold) {
-        const angle = Math.abs(cameraYaw - goombaYaw);
-        if (this.debugKick) {
-          this.debugText.setAttribute(
-            "value",
-            [
-              `d: ${distance.toFixed(3)}`,
-              `c: ${THREE.MathUtils.radToDeg(cameraYaw).toFixed(0)}`,
-              `g: ${THREE.MathUtils.radToDeg(goombaYaw).toFixed(0)}`,
-              `a: ${THREE.MathUtils.radToDeg(angle).toFixed(0)}`,
-            ].join("\n")
-          );
-        }
-        if (angle > this.data.angleThreshold) {
+    const goombasToKick = [...goombasOnFloor, ...window.shells].filter(
+      (goomba) => {
+        goomba.el.object3D.getWorldPosition(goombaPosition);
+        //   const v = new THREE.Vector3();
+        //   v.copy(goombaPosition);
+        //   this.camera.object3D.worldToLocal(v);
+        this.cameraToGoomba.subVectors(this.cameraPosition, goombaPosition);
+        this.cameraToGoomba.y = 0;
+        const distance = this.cameraToGoomba.length();
+        if (distance > this.data.kickDistanceUpperThreshold) {
+          if (this.debugKick) {
+            this.debugText.setAttribute("value", `far ${distance.toFixed(2)}`);
+          }
           return false;
         }
-      } else {
-        if (this.debugKick) {
-          this.debugText.setAttribute("value", `${distance.toFixed(2)}`);
+        this.cameraToGoomba.normalize();
+        let goombaYaw = Math.atan2(
+          this.cameraToGoomba.x,
+          this.cameraToGoomba.z
+        );
+        while (goombaYaw < 0) {
+          goombaYaw += 2 * Math.PI;
         }
-      }
 
-      this.kickEuler.set(0, 0, 0);
-      this.kickEuler.x = this.data.velocityPitch;
-      if (false) {
-        this.kickEuler.y = goombaYaw;
-      } else {
-        this.kickEuler.y = cameraYaw;
-      }
-      const velocity = new THREE.Vector3(0, 0, -this.data.velocityLength);
-      velocity.applyEuler(this.kickEuler);
-      if (this.debugKick) {
-        this.debugCone.setAttribute("visible", "true");
-        this.debugCone.object3D.position.copy(goombaPosition);
-        this.debugCone.object3D.rotation.copy(this.kickEuler);
-      }
-      if (isDebug) {
-        return false;
-      }
-      goomba.el.emit("kick", { velocity });
+        if (distance > this.data.kickDistanceLowerThreshold) {
+          const angle = Math.abs(cameraYaw - goombaYaw);
+          if (this.debugKick) {
+            this.debugText.setAttribute(
+              "value",
+              [
+                `d: ${distance.toFixed(3)}`,
+                `c: ${THREE.MathUtils.radToDeg(cameraYaw).toFixed(0)}`,
+                `g: ${THREE.MathUtils.radToDeg(goombaYaw).toFixed(0)}`,
+                `a: ${THREE.MathUtils.radToDeg(angle).toFixed(0)}`,
+              ].join("\n")
+            );
+          }
+          if (angle > this.data.angleThreshold) {
+            return false;
+          }
+        } else {
+          if (this.debugKick) {
+            this.debugText.setAttribute("value", `${distance.toFixed(2)}`);
+          }
+        }
 
-      return true;
-    });
+        this.kickEuler.set(0, 0, 0);
+        this.kickEuler.x = this.data.velocityPitch;
+        if (false) {
+          this.kickEuler.y = goombaYaw;
+        } else {
+          this.kickEuler.y = cameraYaw;
+        }
+        const velocity = new THREE.Vector3(0, 0, -this.data.velocityLength);
+        velocity.applyEuler(this.kickEuler);
+        if (this.debugKick) {
+          this.debugCone.setAttribute("visible", "true");
+          this.debugCone.object3D.position.copy(goombaPosition);
+          this.debugCone.object3D.rotation.copy(this.kickEuler);
+        }
+        if (isDebug) {
+          return false;
+        }
+        goomba.el.emit("kick", { velocity, yaw: this.kickEuler.y });
+
+        return true;
+      }
+    );
     // console.log("goombasToKick", goombasToKick);
 
     if (goombasToKick.length > 0) {
@@ -272,7 +277,7 @@ AFRAME.registerComponent("bs-ankle", {
     // console.log(point);
     this.playStompSound(point);
 
-    goombas.forEach((goomba) => {
+    [...goombas, ...window.shells].forEach((goomba) => {
       this.cameraToGoomba.subVectors(
         goomba.el.object3D.position,
         this.cameraPosition
