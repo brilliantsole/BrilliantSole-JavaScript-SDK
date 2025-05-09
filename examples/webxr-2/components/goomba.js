@@ -506,7 +506,8 @@ AFRAME.registerComponent("goomba", {
   floorCollisionNormalThreshold: THREE.MathUtils.degToRad(10),
   onCollide: async function (event) {
     const collidedEntity = event.detail.body.el;
-    // console.log("collided with", collidedEntity);
+    // console.log("collided with", collidedEntity, event.detail);
+    // console.log(this.physicsBody.material, event.detail.body.material);
 
     if (
       this.punched &&

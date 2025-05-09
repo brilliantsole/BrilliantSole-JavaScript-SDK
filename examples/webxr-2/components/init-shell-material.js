@@ -1,5 +1,18 @@
 AFRAME.registerSystem("init-shell-material", {
-  init: function () {
+  waitForPhysics: async function () {
+    return new Promise((resolve) => {
+      let interval = setInterval(() => {
+        const sceneEl = this.el.sceneEl;
+        const system = sceneEl.systems.physics;
+        if (system) {
+          clearInterval(interval);
+          resolve();
+        }
+      }, 100);
+    });
+  },
+  init: async function () {
+    await this.waitForPhysics();
     const sceneEl = this.el.sceneEl;
     const system = sceneEl.systems.physics;
 
@@ -29,10 +42,19 @@ AFRAME.registerSystem("init-shell-material", {
       system.driver.materials["bounceWall"] = bounceWallMaterial;
       system.driver.world.addMaterial(bounceWallMaterial);
 
-      sceneEl.addEventListener("shell-init", () => this.addContactMaterial(), {
-        once: true,
-      });
+      this.addContactMaterial();
+
       sceneEl.addEventListener("world-meshes", this.onWorldMeshes.bind(this));
+
+      const testFloor = document.getElementById("testFloor");
+      if (testFloor) {
+        testFloor.components["static-body"].body.material = bounceWallMaterial;
+        testFloor.addEventListener("body-loaded", (event) => {
+          const { body } = event.detail;
+          console.log(body);
+          body.material = bounceWallMaterial;
+        });
+      }
     }
   },
   onWorldMeshes: function (event) {
@@ -75,6 +97,17 @@ AFRAME.registerSystem("init-shell-material", {
       const defaultMaterial = system.driver.materials["defaultMaterial"];
       const staticMaterial = system.driver.materials["staticMaterial"];
 
+      const defaultContactMaterial = {
+        friction: 0.01,
+        restitution: 0.3,
+        contactEquationStiffness: 1e8,
+        contactEquationRelaxation: 3,
+        frictionEquationStiffness: 1e8,
+        frictionEquationRegularization: 3,
+      };
+
+      console.log("shellMaterial", shellMaterial);
+
       const shellDefaultContact = new CANNON.ContactMaterial(
         shellMaterial,
         defaultMaterial,
@@ -108,9 +141,7 @@ AFRAME.registerSystem("init-shell-material", {
       const defaultBounceWallContact = new CANNON.ContactMaterial(
         defaultMaterial,
         bounceWallMaterial,
-        {
-          ...system.driver.contactMaterial,
-        }
+        { ...defaultContactMaterial }
       );
       system.driver.world.addContactMaterial(defaultBounceWallContact);
       // console.log("added defaultBounceWallContact", defaultBounceWallContact);
@@ -119,7 +150,7 @@ AFRAME.registerSystem("init-shell-material", {
       const goombaBounceWallContact = new CANNON.ContactMaterial(
         goombaMaterial,
         bounceWallMaterial,
-        { ...system.driver.contactMaterial }
+        { ...defaultContactMaterial }
       );
       system.driver.world.addContactMaterial(goombaBounceWallContact);
       // console.log("added goombaBounceWallContact", goombaBounceWallContact);
@@ -127,7 +158,7 @@ AFRAME.registerSystem("init-shell-material", {
       const goombaStaticContact = new CANNON.ContactMaterial(
         goombaMaterial,
         system.driver.materials.staticMaterial,
-        { ...system.driver.contactMaterial }
+        { ...defaultContactMaterial }
       );
       system.driver.world.addContactMaterial(goombaStaticContact);
       // console.log("added goombaStaticContact", goombaStaticContact);
@@ -135,7 +166,7 @@ AFRAME.registerSystem("init-shell-material", {
       const goombaDefaultContact = new CANNON.ContactMaterial(
         goombaMaterial,
         system.driver.materials.defaultMaterial,
-        { ...system.driver.contactMaterial }
+        { ...defaultContactMaterial }
       );
       system.driver.world.addContactMaterial(goombaDefaultContact);
       // console.log("added goombaDefaultContact", goombaDefaultContact);

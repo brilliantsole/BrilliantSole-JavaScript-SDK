@@ -13,7 +13,6 @@ AFRAME.registerComponent("shell", {
   `,
 
   init: function () {
-    this.el.sceneEl.emit("shell-init");
     this.el.shapeMain = this.shapeMain;
 
     this.collisionNormal = new THREE.Vector3();
@@ -112,9 +111,16 @@ AFRAME.registerComponent("shell", {
     this.isGrabbed = false;
   },
 
+  worldBasis: {
+    forward: new THREE.Vector3(0, 0, 1),
+    up: new THREE.Vector3(0, 1, 0),
+    right: new THREE.Vector3(1, 0, 0),
+  },
+
   collisionAngleThreshold: THREE.MathUtils.degToRad(20),
   collisionVelocityThreshold: 0.1,
   onCollide: async function (event) {
+    const { contact } = event.detail;
     const collidedEntity = event.detail.body.el;
     //console.log("collided with", collidedEntity);
     const worldMesh = collidedEntity.dataset.worldMesh;
@@ -123,13 +129,19 @@ AFRAME.registerComponent("shell", {
       if (worldMesh == "wall") {
         playBounce = true;
       } else {
-        this.collisionNormal.copy(event.detail.contact.ni).multiplyScalar(-1);
+        this.collisionNormal.copy(contact.ni);
+        if (contact.bi != this.body) {
+          this.collisionNormal.multiplyScalar(-1);
+        }
         this.velocityVector.copy(this.body.velocity);
         const angle = this.collisionNormal.angleTo(this.velocityVector);
         const velocityLength = this.velocityVector.length();
         playBounce =
           angle < this.collisionAngleThreshold &&
           velocityLength > this.collisionVelocityThreshold;
+        if (!playBounce) {
+          // console.log({ angle, velocityLength, playBounce });
+        }
       }
 
       if (playBounce) {
