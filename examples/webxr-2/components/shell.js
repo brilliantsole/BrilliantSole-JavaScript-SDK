@@ -17,6 +17,8 @@ AFRAME.registerComponent("shell", {
     window.shells = window.shells || [];
     window.shells.push(this);
 
+    this.camera = document.querySelector("a-camera");
+
     this.el.shapeMain = this.shapeMain;
 
     this.kickVelocity = new THREE.Vector3();
@@ -63,6 +65,7 @@ AFRAME.registerComponent("shell", {
         .querySelector("a-entity")
         .cloneNode(true);
       this.el.setAttribute("scale", template.getAttribute("scale"));
+
       template.classList.forEach((_class) => {
         //console.log(`adding class ${_class}`);
         this.el.classList.add(_class);
@@ -71,6 +74,7 @@ AFRAME.registerComponent("shell", {
         this.el.appendChild(entity);
       });
       setTimeout(() => {
+        this.bodyEl = this.el.querySelector(".body");
         this.el.setAttribute("grabbable", "");
         this.el.setAttribute(
           "grabbable-physics-body",
@@ -187,11 +191,10 @@ AFRAME.registerComponent("shell", {
 
     this.playKickSound();
 
-    this.kickVelocity.set(0, 3, -0.0);
+    this.kickVelocity.set(0, 3, 0);
     this.kickEuler.set(0, -yaw, 0);
     this.kickVelocity.applyEuler(this.kickEuler);
     this.body.velocity.copy(this.kickVelocity);
-    // FILL - apply vertical
     //this.body.velocity.set(0, 2, 0);
   },
 
@@ -199,8 +202,10 @@ AFRAME.registerComponent("shell", {
     const collidedEntity = event.detail.withEl;
     const goomba = collidedEntity.components["goomba"];
     if (goomba) {
-      // FILL - toss goomba in air
-      // FILL - play goomba sound
+      goomba.el.emit("shell", {
+        velocity: this.body.velocity.clone(),
+        position: this.el.object3D.position,
+      });
     }
   },
 
@@ -210,6 +215,7 @@ AFRAME.registerComponent("shell", {
     this.body = body;
     if (this.manualRotate) {
       body.fixedRotation = true;
+      body.updateMassProperties();
     }
     body.linearDamping = 0;
     body.angularDamping = 0;
@@ -234,7 +240,7 @@ AFRAME.registerComponent("shell", {
     // FILL - return sounds
   },
 
-  spinScalar: 0.000005,
+  spinScalar: 0.01,
   manualRotate: true,
   restoreRotationDuration: 200,
 
@@ -248,7 +254,7 @@ AFRAME.registerComponent("shell", {
       this.yaw += timeDelta * spinSpeed;
       this.yaw %= 2 * Math.PI;
       this.spinEuler.set(0, this.yaw, 0);
-      this.spinQuaternion.setFromEuler(this.spinEuler);
+      //this.spinQuaternion.setFromEuler(this.spinEuler);
 
       if (!this.didRestoreRotation) {
         let interpolation = THREE.MathUtils.inverseLerp(
@@ -268,8 +274,15 @@ AFRAME.registerComponent("shell", {
       }
 
       if (this.manualRotate) {
-        this.quaternion.multiply(this.spinQuaternion);
+        this.bodyEl.object3D.rotation.copy(this.spinEuler);
+        //this.quaternion.multiply(this.spinQuaternion);
         this.body.quaternion.copy(this.quaternion);
+      }
+
+      if (this.el.object3D.y < -40) {
+        console.log("fell through floor");
+        this.body.velocity.set(0, 0, 0);
+        this.body.position.copy(this.camera.object3D.position);
       }
     }
   },

@@ -139,6 +139,7 @@
           my-obb-collider
           static-body
           occlude-mesh
+          visible="false"
         ></a-mixin>
         <audio
           id="coinAudio"
@@ -470,7 +471,7 @@
 
       <template id="shellTemplate">
         <a-entity scale="1.1 1.1 1.1">
-          <a-entity scale="0.86 0.85 1">
+          <a-entity scale="0.86 0.85 1" class="body">
             <a-sphere
               rotation="-90 0 0"
               scale="1 1 0.850"

@@ -174,6 +174,7 @@ AFRAME.registerComponent("goomba", {
 
     this.el.addEventListener("loaded", () => {
       this.el.addEventListener("punch", this.onPunch.bind(this));
+      this.el.addEventListener("shell", this.onShell.bind(this));
 
       this.el.addEventListener("kick", this.onKick.bind(this));
       this.el.addEventListener("stomp", this.onStomp.bind(this));
@@ -305,6 +306,22 @@ AFRAME.registerComponent("goomba", {
     const { velocity } = event.detail;
     //console.log("onKick", { velocity });
     this.punch(velocity);
+  },
+
+  onShell: function (event) {
+    const { velocity, position } = event.detail;
+    this.shellHit(velocity, position);
+  },
+  shellHit: function (velocity, position) {
+    this.shellHitOptions = { velocity, position };
+  },
+  _shellHit: function (velocity, position) {
+    if (this.ignorePunchStatuses.includes(this.status)) {
+      return;
+    }
+    this.playShellHitSound();
+    // FILL - apply vector
+    // FILL - isPunched
   },
 
   // adjust values as needed
@@ -1631,6 +1648,11 @@ AFRAME.registerComponent("goomba", {
       const { velocity, position } = this.punchOptions;
       this.punchOptions = undefined;
       this._punch(velocity, position);
+    }
+    if (this.shellHitOptions) {
+      const { velocity, position } = this.shellHitOptions;
+      this.shellHitOptions = undefined;
+      this._shellHit(velocity, position);
     }
     if (this.stompOptions) {
       const { distance, yaw, kill } = this.stompOptions;
@@ -3025,6 +3047,10 @@ AFRAME.registerComponent("goomba", {
       this.el.sceneEl.components[sound.poolName].returnEntity(sound);
       this[name] = undefined;
     }
+  },
+
+  playShellHitSound: function () {
+    this.playSound("shellHitSound");
   },
 
   playPunchSound: function () {
