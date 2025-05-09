@@ -503,13 +503,13 @@
         </a-entity>
       </template>
 
-      <!-- <a-entity
+      <a-entity
         visible="true"
         rotation="0 0 45"
         position="0 1 -0.5"
         id="shell"
         shell
-      ></a-entity> -->
+      ></a-entity>
 
       <template id="goombaTemplate">
         <a-entity>
@@ -909,16 +909,18 @@
             if (!similarMesh) {
               return;
             }
-            console.log("removing plane", planeMesh);
             if (true) {
-              planeMesh.remove();
-            } else {
-              planeMesh.removeAttribute("static-body");
-              planeMesh.removeAttribute("my-obb-collider");
+              console.log("removing plane", planeMesh);
+              if (true) {
+                planeMesh.remove();
+              } else {
+                planeMesh.removeAttribute("static-body");
+                planeMesh.removeAttribute("my-obb-collider");
+              }
+              planeMeshes = planeMeshes.filter(
+                (_planeMesh) => planeMesh != _planeMesh
+              );
             }
-            planeMeshes = planeMeshes.filter(
-              (_planeMesh) => planeMesh != _planeMesh
-            );
           });
 
         if (useShadows) {

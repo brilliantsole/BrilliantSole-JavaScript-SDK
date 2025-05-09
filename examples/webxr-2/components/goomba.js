@@ -455,6 +455,7 @@ AFRAME.registerComponent("goomba", {
     this.physicsBody = body;
     body.material =
       this.el.sceneEl.systems["physics"].driver.getMaterial("goomba");
+    console.log(body.material);
     // console.log("onBodyLoaded");
     if (this.physicsOptions) {
       const { position, velocity } = this.physicsOptions;
@@ -505,7 +506,7 @@ AFRAME.registerComponent("goomba", {
   floorCollisionNormalThreshold: THREE.MathUtils.degToRad(10),
   onCollide: async function (event) {
     const collidedEntity = event.detail.body.el;
-    //console.log("collided with", collidedEntity);
+    // console.log("collided with", collidedEntity);
 
     if (
       this.punched &&
@@ -1599,6 +1600,7 @@ AFRAME.registerComponent("goomba", {
           const intersectable =
             this.floor?.components["occlude-mesh"]?.raycastMesh;
           console.log("intersectable", intersectable);
+          // FIX - a goomba nearing the edge of a table may have a raycaster not hit the table.
           const intersections = this.raycaster.intersectObjects(
             intersectable ? [intersectable] : this.lookAtRaycastTargetObjects,
             true
