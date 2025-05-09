@@ -20,6 +20,8 @@ AFRAME.registerComponent("shell", {
     window.shells = window.shells || [];
     window.shells.push(this);
 
+    this.el.classList.add("lookAt");
+
     this.camera = document.querySelector("a-camera");
 
     this.el.shapeMain = this.shapeMain;

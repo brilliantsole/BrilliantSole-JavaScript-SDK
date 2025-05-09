@@ -323,12 +323,12 @@ AFRAME.registerComponent("goomba", {
     max: THREE.MathUtils.degToRad(0),
   },
   shellVelocityInterpolationRange: {
-    min: 0,
-    max: 3,
+    min: 0.5,
+    max: 4,
   },
   shellVelocityLengthRange: {
-    min: 0.7,
-    max: 1,
+    min: 0.8,
+    max: 1.1,
   },
   _shellHit: function (velocity, position) {
     if (this.ignorePunchStatuses.includes(this.status)) {
@@ -338,9 +338,12 @@ AFRAME.registerComponent("goomba", {
 
     this.setStatus("idle");
     this.lastTimePunched = this.latestTick;
-    this.punched = true;
-    this.shelled = true;
-    this.punchedFloor = this.floor;
+    if (true) {
+      this.shelled = true;
+    } else {
+      this.punched = true;
+      this.punchedFloor = this.floor;
+    }
 
     let pitch = 0;
     if (true) {
@@ -1703,6 +1706,35 @@ AFRAME.registerComponent("goomba", {
       return;
     }
     this.sphere.center.copy(this.worldPosition);
+
+    if (this.shelled && this.status == "falling") {
+      if (this.physicsBody.velocity.y < 0) {
+        console.log("die");
+
+        const coin = this.el.sceneEl.components["pool__coin"].requestEntity();
+        coin.play();
+        {
+          const cameraToCoin = new THREE.Vector3().subVectors(
+            this.camera.object3D.position,
+            this.el.object3D.position
+          );
+          const yaw = Math.atan2(cameraToCoin.x, cameraToCoin.z);
+          coin.object3D.rotation.set(0, yaw, 0, "YXZ");
+          console.log("rotation", coin.object3D.rotation);
+        }
+        {
+          const { x, y, z } = this.el.object3D.position;
+          const position = new THREE.Vector3(x, y - 0.04, z);
+          coin.object3D.position.copy(position);
+          console.log("position", coin.object3D.position);
+        }
+        console.log("coin", coin);
+        coin.components.coin.start();
+
+        this.el.emit("die");
+        this.el.remove();
+      }
+    }
 
     if (this.punchOptions) {
       const { velocity, position } = this.punchOptions;
