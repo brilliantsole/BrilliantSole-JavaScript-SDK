@@ -180,19 +180,19 @@ AFRAME.registerComponent("shell", {
   },
 
   onKick: function (event) {
-    if (this.isGrabbed) {
+    if (this.isGrabbed || !this.body) {
       return;
     }
     const { velocity, yaw } = event.detail;
     // console.log("onKick", yaw);
     this.playKickSound();
-    this.kickVelocity.set(0, 1, -3);
+    this.kickVelocity.set(0, 1, -3.5);
     this.kickEuler.set(0, yaw, 0);
     this.kickVelocity.applyEuler(this.kickEuler);
     this.body.velocity.copy(this.kickVelocity);
   },
   onStomp: function (event) {
-    if (this.isGrabbed) {
+    if (this.isGrabbed || !this.body) {
       return;
     }
 

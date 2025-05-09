@@ -9,7 +9,7 @@ AFRAME.registerComponent("bs-ankle", {
     name: { default: "" },
     angleThreshold: { default: THREE.MathUtils.degToRad(30) },
     kickDistanceLowerThreshold: { default: 0.4 },
-    kickDistanceUpperThreshold: { default: 0.9 },
+    kickDistanceUpperThreshold: { default: 1 },
     stompDistanceThreshold: { default: 0.3 },
     velocityLength: { default: 2 },
     velocityPitch: { default: THREE.MathUtils.degToRad(40) },

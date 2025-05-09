@@ -103,7 +103,7 @@
       pool__squashedgoomba="mixin: squashedGoombaMixin; size: 5; dynamic: true;"
       id="scene"
       light="defaultLightsEnabled: false"
-      physics="debug: true; restitution: 0.4;"
+      physics="debug: false; restitution: 0.4;"
       embedded
       grabbable-listener
       obb-collider="showColliders: false;"
@@ -139,7 +139,7 @@
           my-obb-collider
           static-body
           occlude-mesh
-          visible="false"
+          visible="true"
         ></a-mixin>
         <audio
           id="coinAudio"
@@ -898,7 +898,7 @@
               .find((worldMesh) => {
                 const obbA = worldMesh.components["my-obb-collider"].obb;
                 const obbB = planeMesh.components["my-obb-collider"].obb;
-                console.log("comparing", obbA, "with", obbB);
+                // console.log("comparing", obbA, "with", obbB);
                 if (obbA.center.distanceTo(obbB.center) < 0.1) {
                   return true;
                 }
@@ -911,18 +911,20 @@
               return;
             }
             if (true) {
-              console.log("removing plane", planeMesh);
+              // console.log("removing plane", planeMesh);
               if (true) {
                 planeMesh.remove();
               } else {
                 planeMesh.removeAttribute("static-body");
                 planeMesh.removeAttribute("my-obb-collider");
               }
-              planeMeshes = planeMeshes.filter(
-                (_planeMesh) => planeMesh != _planeMesh
-              );
+              planeMesh.shouldRemove = true;
             }
           });
+
+        planeMeshes = planeMeshes.filter(
+          (planeMesh) => !planeMesh.shouldRemove
+        );
 
         if (useShadows) {
           [...planeMeshes, ...worldMeshes].forEach((entity) => {
