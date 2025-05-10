@@ -6,7 +6,7 @@ AFRAME.registerComponent("shell", {
   },
 
   collisionFilterGroup: 1 << 2,
-  collisionFilterMask: 1 << 0,
+  collisionFilterMask: (1 << 0) | (1 << 2),
 
   shapeMain: `shape: cylinder;
   radiusTop: 0.12;
@@ -346,7 +346,7 @@ AFRAME.registerComponent("shell", {
 
         console.log({ pitch, roll });
 
-        this.spinEuler.set(pitch, 0, roll);
+        this.spinEuler.set(pitch, this.yaw, roll);
         this.bodyEl.object3D.rotation.copy(this.spinEuler);
 
         if (interpolation >= 1) {

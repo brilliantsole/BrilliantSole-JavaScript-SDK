@@ -8,7 +8,7 @@ const kickConfiguration = {
   sensorTypes: ["gyroscope", "linearAcceleration"],
   sampleRate: 20,
   captureDelay: 500,
-  threshold: 0.55,
+  threshold: 0.7,
   classes: ["idle", "kick", "stomp"],
 };
 fetch("./kick2.tflite")

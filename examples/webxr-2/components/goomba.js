@@ -8,7 +8,7 @@ AFRAME.registerComponent("goomba", {
   },
 
   collisionFilterGroup: 1 << 1,
-  collisionFilterMask: 1 << 0,
+  collisionFilterMask: (1 << 0) | (1 << 1),
 
   sides: ["left", "right"],
 
@@ -341,6 +341,7 @@ AFRAME.registerComponent("goomba", {
       return;
     }
     this.playShellHitSound();
+    this.playPunchSqueakSound();
 
     this.setStatus("idle");
     this.lastTimePunched = this.latestTick;

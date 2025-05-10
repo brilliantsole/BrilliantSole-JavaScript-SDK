@@ -294,7 +294,7 @@
           src="./assets/audio/shellHit.wav"
           preload="auto"
         ></audio>
-        <a-mixin id="shellHitAudioMixin" sound="src: #shellHitAudio"></a-mixin>
+        <a-mixin id="shellHitAudioMixin" sound="src: #shellHitAudio;"></a-mixin>
 
         <img id="shellTexture" src="./assets/images/shellTexture.png" />
       </a-assets>
@@ -479,7 +479,6 @@
               phi-length="180"
               segments-height="12"
               segments-width="8"
-              roughness="0.8"
               repeat="0.420 0.550"
               offset="0.040 0.160"
               material="color: #29eb1c; src: #shellTexture; transparent: true"
@@ -506,8 +505,8 @@
 
       <a-entity
         visible="true"
-        rotation="0 0 45"
-        position="0 1 -0.5"
+        rotation="0 0 0"
+        position="0.5 1 -0.5"
         id="shell"
         shell
       ></a-entity>
