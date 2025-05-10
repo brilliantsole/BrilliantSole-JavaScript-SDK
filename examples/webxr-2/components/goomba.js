@@ -605,11 +605,38 @@ AFRAME.registerComponent("goomba", {
         )) &&
       collidedEntity != this.punchedFloor
     ) {
-      // console.log("died colliding with", collidedEntity);
-      this.deathCollidedEntity = collidedEntity;
-      this.shouldDie = true;
-      this.deathVelocity = this.el.body.velocity.clone();
-      this.deathNormal = event.detail.contact.ni.clone();
+      let didDie = false;
+      if (true) {
+        this.ray.copy(this.el.body.velocity);
+        this.raycaster.set(this.el.object3D.position, this.ray);
+        this.raycaster.near = 0;
+        this.raycaster.far = 1;
+
+        const intersectable =
+          collidedEntity.components["occlude-mesh"]?.raycastMesh;
+        if (intersectable) {
+          const intersections = this.raycaster.intersectObjects(
+            [intersectable],
+            true
+          );
+          if (intersections[0]) {
+            console.log("death intersection", intersections[0]);
+            didDie = true;
+          } else {
+            console.log("no intersections found for death punch");
+          }
+        }
+      } else {
+        didDie = true;
+      }
+
+      if (didDie) {
+        console.log("died colliding with", collidedEntity);
+        this.deathCollidedEntity = collidedEntity;
+        this.shouldDie = true;
+        this.deathVelocity = this.el.body.velocity.clone();
+        this.deathNormal = event.detail.contact.ni.clone();
+      }
     }
 
     switch (this.status) {
@@ -1685,10 +1712,9 @@ AFRAME.registerComponent("goomba", {
           this.raycaster.set(this.worldPosition, this.ray);
           this.raycaster.near = 0;
           this.raycaster.far = 1;
-          const intersectable =
-            this.floor?.components["occlude-mesh"]?.raycastMesh;
+          let intersectable =
+            this.deathCollidedEntity.components["occlude-mesh"]?.raycastMesh;
           // console.log("intersectable", intersectable);
-          // FIX - a goomba nearing the edge of a table may have a raycaster not hit the table.
           const intersections = this.raycaster.intersectObjects(
             intersectable ? [intersectable] : this.lookAtRaycastTargetObjects,
             true
@@ -2404,7 +2430,7 @@ AFRAME.registerComponent("goomba", {
           const distanceToPoint =
             this.worldPosition.distanceTo(wallIntersection);
           intersectsWall = distanceToPoint < this.wallIntersectionThreshold;
-          console.log({ distanceToPoint });
+          // console.log({ distanceToPoint });
         } else {
           //this.wallIntersectionSphere.object3D.visible = false;
         }

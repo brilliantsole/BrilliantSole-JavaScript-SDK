@@ -32,7 +32,7 @@ AFRAME.registerSystem("init-shell-material", {
 
       const goombaMaterial = new CANNON.Material("goomba");
       goombaMaterial.friction = -1;
-      goombaMaterial.restitution = -1;
+      goombaMaterial.restitution = 0.5;
       system.driver.materials["goomba"] = goombaMaterial;
       system.driver.world.addMaterial(goombaMaterial);
 
@@ -151,7 +151,7 @@ AFRAME.registerSystem("init-shell-material", {
       const goombaBounceWallContact = new CANNON.ContactMaterial(
         goombaMaterial,
         bounceWallMaterial,
-        { ...defaultContactMaterial }
+        { ...defaultContactMaterial, restitution: goombaMaterial.restitution }
       );
       system.driver.world.addContactMaterial(goombaBounceWallContact);
       // console.log("added goombaBounceWallContact", goombaBounceWallContact);
@@ -159,7 +159,7 @@ AFRAME.registerSystem("init-shell-material", {
       const goombaStaticContact = new CANNON.ContactMaterial(
         goombaMaterial,
         system.driver.materials.staticMaterial,
-        { ...defaultContactMaterial }
+        { ...defaultContactMaterial, restitution: goombaMaterial.restitution }
       );
       system.driver.world.addContactMaterial(goombaStaticContact);
       // console.log("added goombaStaticContact", goombaStaticContact);
@@ -167,7 +167,7 @@ AFRAME.registerSystem("init-shell-material", {
       const goombaDefaultContact = new CANNON.ContactMaterial(
         goombaMaterial,
         system.driver.materials.defaultMaterial,
-        { ...defaultContactMaterial }
+        { ...defaultContactMaterial, restitution: goombaMaterial.restitution }
       );
       system.driver.world.addContactMaterial(goombaDefaultContact);
       // console.log("added goombaDefaultContact", goombaDefaultContact);
