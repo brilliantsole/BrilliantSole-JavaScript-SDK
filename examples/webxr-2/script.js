@@ -1,5 +1,41 @@
 import * as BS from "../../build/brilliantsole.module.js";
 
+let runModelInBrowser = false;
+const setRunModelInBrowser = (newRunMoelInBrowser) => {
+  runModelInBrowser = newRunMoelInBrowser;
+  console.log({ newRunMoelInBrowser });
+  if (runModelInBrowser) {
+    localStorage.setItem(runModelInBrowserKey, "");
+  } else {
+    localStorage.removeItem(runModelInBrowserKey);
+  }
+
+  BS.DeviceManager.ConnectedDevices.forEach((device) => {
+    if (device.type != "generic") {
+      return;
+    }
+
+    if (runModelInBrowser) {
+      if (device.tfliteIsReady && !runModelInBrowserCheckbox.checked) {
+        console.log("enabling inferencing");
+        device.enableTfliteInferencing();
+      }
+    } else {
+      device.disableTfliteInferencing();
+    }
+  });
+};
+
+const runModelInBrowserKey = "run-model-in-browser";
+const runModelInBrowserCheckbox = document.getElementById("runModelInBrowser");
+runModelInBrowserCheckbox.addEventListener("input", () => {
+  setRunModelInBrowser(runModelInBrowserCheckbox.checked);
+});
+if (localStorage.getItem(runModelInBrowserKey) != undefined) {
+  runModelInBrowserCheckbox.checked = true;
+  setRunModelInBrowser(true);
+}
+
 // KICK MODEL
 /** @type {BS.TfliteFileConfiguration} */
 const kickConfiguration = {
@@ -126,7 +162,7 @@ for (let i = 0; i < 2; i++) {
     if (device.type != "generic") {
       return;
     }
-    if (device.tfliteIsReady) {
+    if (device.tfliteIsReady && !runModelInBrowserCheckbox.checked) {
       console.log("enabling inferencing");
       device.enableTfliteInferencing();
     }

@@ -78,6 +78,11 @@
       </div>
     </template>
 
+    <label
+      >run model in browser
+      <input type="checkbox" id="runModelInBrowser" />
+    </label>
+    <br />
     <label>
       persist entities <input type="checkbox" id="persistEntities" />
     </label>
@@ -146,7 +151,10 @@
           src="../../assets/audio/coin.wav"
           preload="auto"
         ></audio>
-        <a-mixin id="coinSoundMixin" sound="src: #coinAudio"></a-mixin>
+        <a-mixin
+          id="coinSoundMixin"
+          sound="src: #coinAudio; volume: 0.8;"
+        ></a-mixin>
 
         <audio
           id="splatAudio"

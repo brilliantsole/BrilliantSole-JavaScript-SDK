@@ -2,8 +2,8 @@ AFRAME.registerComponent("platter", {
   schema: {
     fadeInSoundSelector: { default: "#platterFadeInAudio" },
     fadeOutSoundSelector: { default: "#platterFadeOutAudio" },
-    fadeInSoundVolume: { default: 0.3 },
-    fadeOutSoundVolume: { default: 0.3 },
+    fadeInSoundVolume: { default: 0.2 },
+    fadeOutSoundVolume: { default: 0.2 },
   },
 
   init: function () {
