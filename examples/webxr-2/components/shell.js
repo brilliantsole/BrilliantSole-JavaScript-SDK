@@ -355,7 +355,7 @@ AFRAME.registerComponent("shell", {
         }
       }
 
-      if (this.el.object3D.position.y < -40) {
+      if (this.el.object3D.position.y < -10) {
         console.log("fell through floor");
         this.body.velocity.set(0, 0, 0);
         this.body.position.copy(this.camera.object3D.position);
