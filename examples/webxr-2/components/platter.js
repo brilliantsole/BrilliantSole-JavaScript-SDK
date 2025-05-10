@@ -2,8 +2,8 @@ AFRAME.registerComponent("platter", {
   schema: {
     fadeInSoundSelector: { default: "#platterFadeInAudio" },
     fadeOutSoundSelector: { default: "#platterFadeOutAudio" },
-    fadeInSoundVolume: { default: 0.3 },
-    fadeOutSoundVolume: { default: 0.3 },
+    fadeInSoundVolume: { default: 0.2 },
+    fadeOutSoundVolume: { default: 0.2 },
   },
 
   init: function () {
@@ -122,7 +122,7 @@ AFRAME.registerComponent("platter", {
         { once: true }
       );
       this.goomba.platter = this;
-      console.log("adding goomba", this.goomba);
+      // console.log("adding goomba", this.goomba);
       this.goomba.addEventListener("loaded", () => {
         this.setOwner(this.el.object3D);
         setTimeout(() => {

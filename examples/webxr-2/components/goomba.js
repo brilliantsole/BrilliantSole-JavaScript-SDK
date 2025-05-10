@@ -7,6 +7,9 @@ AFRAME.registerComponent("goomba", {
     physics: { default: false },
   },
 
+  collisionFilterGroup: 1 << 1,
+  collisionFilterMask: (1 << 0) | (1 << 1),
+
   sides: ["left", "right"],
 
   showHitSphere: false,
@@ -22,6 +25,8 @@ AFRAME.registerComponent("goomba", {
           offset: 0 0 0;`,
 
   init: function () {
+    this.emotion = "default";
+
     this.lookAtPosition = new THREE.Vector3();
     this.lookAtRefocusVector = new THREE.Vector3();
     this.lookAtRefocusAxis = new THREE.Vector3();
@@ -46,7 +51,6 @@ AFRAME.registerComponent("goomba", {
       this.playBounceSoundName.bind(this),
       200
     );
-    this.returnBounceSound = this.returnBounceSound.bind(this);
 
     this.lastTimePunched = 0;
     this.sphere = new THREE.Sphere();
@@ -80,6 +84,12 @@ AFRAME.registerComponent("goomba", {
     this.pointToWalkToSphere.setAttribute("visible", "false");
     this.pointToWalkToSphere.setAttribute("radius", "0.01");
     this.el.sceneEl.appendChild(this.pointToWalkToSphere);
+
+    this.wallIntersectionSphere = document.createElement("a-sphere");
+    this.wallIntersectionSphere.setAttribute("color", "green");
+    this.wallIntersectionSphere.setAttribute("visible", "false");
+    this.wallIntersectionSphere.setAttribute("radius", "0.01");
+    this.el.sceneEl.appendChild(this.wallIntersectionSphere);
 
     this.lastWalkTick = 0;
 
@@ -128,6 +138,7 @@ AFRAME.registerComponent("goomba", {
     this.eyeControllers = {};
     this.eyeScales = {};
     this.eyePupils = {};
+    this.eyeWhites = {};
     this.eyeRotators = {};
 
     this.el.classList.add("goomba");
@@ -172,6 +183,7 @@ AFRAME.registerComponent("goomba", {
 
     this.el.addEventListener("loaded", () => {
       this.el.addEventListener("punch", this.onPunch.bind(this));
+      this.el.addEventListener("shell", this.onShell.bind(this));
 
       this.el.addEventListener("kick", this.onKick.bind(this));
       this.el.addEventListener("stomp", this.onStomp.bind(this));
@@ -234,6 +246,9 @@ AFRAME.registerComponent("goomba", {
               );
               this.eyePupils[side] = this.el.querySelector(
                 `.${side}.eye .black`
+              );
+              this.eyeWhites[side] = this.el.querySelector(
+                `.${side}.eye .white`
               );
 
               this.setEyeScale(side, this.eyesScales[side]);
@@ -300,6 +315,80 @@ AFRAME.registerComponent("goomba", {
     const { velocity } = event.detail;
     //console.log("onKick", { velocity });
     this.punch(velocity);
+  },
+
+  onShell: function (event) {
+    const { velocity, position } = event.detail;
+    this.shellHit(velocity, position);
+  },
+  shellHit: function (velocity, position) {
+    this.shellHitOptions = { velocity, position };
+  },
+  shellVelocityPitchRange: {
+    min: THREE.MathUtils.degToRad(2),
+    max: THREE.MathUtils.degToRad(0),
+  },
+  shellVelocityInterpolationRange: {
+    min: 0.5,
+    max: 4,
+  },
+  shellVelocityLengthRange: {
+    min: 0.8,
+    max: 1.1,
+  },
+  _shellHit: function (velocity, position) {
+    if (this.ignorePunchStatuses.includes(this.status)) {
+      return;
+    }
+    this.playShellHitSound();
+    this.playPunchSqueakSound();
+
+    this.setStatus("idle");
+    this.lastTimePunched = this.latestTick;
+    if (true) {
+      this.shelled = true;
+    } else {
+      this.punched = true;
+      this.punchedFloor = this.floor;
+    }
+
+    let pitch = 0;
+    if (true) {
+      pitch = THREE.MathUtils.lerp(
+        this.shellVelocityPitchRange.min,
+        this.shellVelocityPitchRange.max,
+        Math.random()
+      );
+    }
+
+    let _yaw = 0;
+    if (false) {
+      _yaw = Math.random() * Math.PI * 2;
+    } else {
+      _yaw = Math.atan2(velocity.x, velocity.z);
+    }
+
+    const velocityLength = velocity.length();
+    let velocityInterpolation = THREE.MathUtils.inverseLerp(
+      this.shellVelocityInterpolationRange.min,
+      this.shellVelocityInterpolationRange.max,
+      velocityLength
+    );
+    velocityInterpolation = THREE.MathUtils.clamp(velocityInterpolation, 0, 1);
+    console.log("velocityInterpolation", velocityInterpolation);
+
+    let newVelocityLength = THREE.MathUtils.lerp(
+      this.shellVelocityLengthRange.min,
+      this.shellVelocityLengthRange.max,
+      velocityInterpolation
+    );
+    console.log("newVelocityLength", newVelocityLength);
+
+    const newVelocity = new THREE.Vector3(0, newVelocityLength, 0);
+    const euler = new THREE.Euler(pitch, _yaw, 0, "YXZ");
+    newVelocity.applyEuler(euler);
+    this.physicsOptions = { velocity: newVelocity };
+    this.setPhysicsEnabled(true);
   },
 
   // adjust values as needed
@@ -417,6 +506,7 @@ AFRAME.registerComponent("goomba", {
       return;
     }
     this.playPunchSqueakSound();
+    this.playPunchSound();
     const { x, y, z } = velocity;
     const pitch = Math.atan2(y, Math.sqrt(x * x + z * z));
     // console.log({ pitch, threshold: this.punchDownPitchThreshold });
@@ -442,7 +532,16 @@ AFRAME.registerComponent("goomba", {
 
   velocityScalar: 4,
 
-  onBodyLoaded: function () {
+  onBodyLoaded: function (event) {
+    const { body } = event.detail;
+    body.collisionFilterGroup = this.collisionFilterGroup;
+    body.collisionFilterMask = this.collisionFilterMask;
+    //body.linearDamping = 0;
+    //body.angularDamping = 0;
+    this.physicsBody = body;
+    body.material =
+      this.el.sceneEl.systems["physics"].driver.getMaterial("goomba");
+    // console.log(body.material);
     // console.log("onBodyLoaded");
     if (this.physicsOptions) {
       const { position, velocity } = this.physicsOptions;
@@ -493,8 +592,10 @@ AFRAME.registerComponent("goomba", {
   floorCollisionNormalThreshold: THREE.MathUtils.degToRad(10),
   onCollide: async function (event) {
     const collidedEntity = event.detail.body.el;
-    // console.log("collided with", collidedEntity);
+    // console.log("collided with", collidedEntity, event.detail);
+    // console.log(this.physicsBody.material, event.detail.body.material);
 
+    // FIX - make sure intersection from raycaster actually has intersection (e.g. hitting edge of table)
     if (
       this.punched &&
       collidedEntity.dataset.worldMesh &&
@@ -504,11 +605,38 @@ AFRAME.registerComponent("goomba", {
         )) &&
       collidedEntity != this.punchedFloor
     ) {
-      console.log("died colliding with", collidedEntity);
-      this.deathCollidedEntity = collidedEntity;
-      this.shouldDie = true;
-      this.deathVelocity = this.el.body.velocity.clone();
-      this.deathNormal = event.detail.contact.ni.clone();
+      let didDie = false;
+      if (true) {
+        this.ray.copy(this.el.body.velocity);
+        this.raycaster.set(this.el.object3D.position, this.ray);
+        this.raycaster.near = 0;
+        this.raycaster.far = 1;
+
+        const intersectable =
+          collidedEntity.components["occlude-mesh"]?.raycastMesh;
+        if (intersectable) {
+          const intersections = this.raycaster.intersectObjects(
+            [intersectable],
+            true
+          );
+          if (intersections[0]) {
+            console.log("death intersection", intersections[0]);
+            didDie = true;
+          } else {
+            console.log("no intersections found for death punch");
+          }
+        }
+      } else {
+        didDie = true;
+      }
+
+      if (didDie) {
+        console.log("died colliding with", collidedEntity);
+        this.deathCollidedEntity = collidedEntity;
+        this.shouldDie = true;
+        this.deathVelocity = this.el.body.velocity.clone();
+        this.deathNormal = event.detail.contact.ni.clone();
+      }
     }
 
     switch (this.status) {
@@ -543,48 +671,29 @@ AFRAME.registerComponent("goomba", {
   playBounceSound: function (velocity) {
     const length = velocity.length();
 
-    let poolName;
+    let soundName;
     if (length > this.bounceThresholds.strong) {
-      poolName = "pool__bouncestrongsound";
+      soundName = "bounceStrongSound";
     } else if (length > this.bounceThresholds.medium) {
-      poolName = "pool__bouncemediumsound";
+      soundName = "bounceMediumSound";
     } else if (length > this.bounceThresholds.weak) {
-      poolName = "pool__bounceweaksound";
+      soundName = "bounceWeakSound";
     }
 
-    // console.log("bounce", length, poolName);
+    // console.log("bounce", length, soundName);
 
-    if (!poolName) {
+    if (!soundName) {
       return;
     }
 
-    this.playBounceSoundName(poolName);
+    this.playBounceSoundName(soundName);
   },
-  playBounceSoundName: async function (poolName) {
-    this.returnBounceSound();
+  playBounceSoundName: async function (soundName) {
+    this.returnSound("bounceWeakSound");
+    this.returnSound("bounceMediumSound");
+    this.returnSound("bounceStrongSound");
 
-    this.bounceSound = this.el.sceneEl.components[poolName].requestEntity();
-    this.bounceSound.poolName = poolName;
-    this.bounceSound.object3D.position.copy(this.el.object3D.position);
-    this.bounceSound.play();
-    await this.waitForSoundToLoad(this.bounceSound);
-    this.bounceSound.components.sound.playSound();
-    this.bounceSound.addEventListener("sound-ended", this.returnBounceSound, {
-      once: true,
-    });
-  },
-  returnBounceSound: function () {
-    if (this.bounceSound) {
-      this.bounceSound.removeEventListener(
-        "sound-ended",
-        this.returnBounceSound
-      );
-      this.bounceSound.components["sound"].stopSound();
-      this.el.sceneEl.components[this.bounceSound.poolName].returnEntity(
-        this.bounceSound
-      );
-      this.bounceSound = undefined;
-    }
+    this.playSound(soundName);
   },
 
   remove: function () {
@@ -601,12 +710,19 @@ AFRAME.registerComponent("goomba", {
       this.el.sceneEl.emit("stopPetting", { side: this.petSide });
     }
     if (this.purrSound) {
-      this.returnPurrSound();
+      this.stopPurrSound();
+    }
+  },
+
+  pause: function () {
+    if (this.status == "petting") {
+      this.el.sceneEl.emit("stopPetting", { side: this.petSide });
+    }
+
+    if (this.purrSound) {
+      this.stopPurrSound();
       this.playPurrFadeOutSound();
     }
-    this.returnGrabSound();
-    this.returnReleaseSound();
-    this.returnBounceSound();
   },
 
   debugColors: false,
@@ -946,6 +1062,100 @@ AFRAME.registerComponent("goomba", {
     this.sides.forEach((side) => {
       this.setEyeScale(side, ...arguments);
     });
+  },
+
+  setWhiteEyeRoll: function (
+    side,
+    { roll },
+    options = { dur: 100, easing: "easeInOutQuad" }
+  ) {
+    if (side == "left") {
+      roll *= -1;
+    }
+    const eyeWhite = this.eyeWhites[side];
+    eyeWhite.removeAttribute("animation__roll");
+    eyeWhite.setAttribute("animation__roll", {
+      property: "rotation",
+      to: `0 0 ${roll}`,
+      ...options,
+    });
+  },
+  setWhiteEyesRoll: function () {
+    this.sides.forEach((side) => {
+      this.setWhiteEyeRoll(side, ...arguments);
+    });
+  },
+
+  setEyelid: function (
+    side,
+    { upper, lower },
+    options = { dur: 100, easing: "easeInOutQuad" }
+  ) {
+    lower = 1 - lower;
+    lower = Math.max(lower, upper);
+
+    let eyeHeight = lower - upper; // [0, 1]
+    const thetaLength = eyeHeight * 180;
+
+    let eyeYOffset = upper; // [0, 1]
+    const thetaStart = eyeYOffset * 180;
+
+    const eyeWhite = this.eyeWhites[side];
+
+    eyeWhite.removeAttribute("animation__thetalength");
+    eyeWhite.setAttribute("animation__thetalength", {
+      property: "geometry.thetaLength",
+      //from: eyeWhite.getAttribute("theta-length"),
+      to: thetaLength.toString(),
+      ...options,
+    });
+
+    eyeWhite.removeAttribute("animation__thetastart");
+    eyeWhite.setAttribute("animation__thetastart", {
+      property: "geometry.thetaStart",
+      // from: eyeWhite.getAttribute("theta-start"),
+      to: thetaStart.toString(),
+      ...options,
+    });
+  },
+  setEyelids: function () {
+    this.sides.forEach((side) => {
+      this.setEyelid(side, ...arguments);
+    });
+  },
+
+  emotions: ["default", "happy", "angry", "sad"],
+  setEmotion: function (newEmotion) {
+    if (this.emotion == newEmotion) {
+      return;
+    }
+    if (!this.emotions.includes(newEmotion)) {
+      console.error(`invalid emotion "${newEmotion}"`);
+      return;
+    }
+    this.emotion = newEmotion;
+
+    this.blink();
+    switch (this.emotion) {
+      case "happy":
+        this.setEyelids({ upper: 0, lower: 0.3 });
+        this.setWhiteEyesRoll({ roll: 8 });
+        break;
+      case "sad":
+        this.setEyelids({ upper: 0.3, lower: 0.0 });
+        this.setWhiteEyesRoll({ roll: -15 });
+        break;
+      case "angry":
+        this.setEyelids({ upper: 0.3, lower: 0.2 });
+        this.setWhiteEyesRoll({ roll: 12 });
+        break;
+      case "default":
+        this.setEyelids({ upper: 0, lower: 0 });
+        this.setWhiteEyesRoll({ roll: 0 });
+        break;
+      default:
+        break;
+    }
   },
 
   resetEyesScale: function () {
@@ -1502,9 +1712,9 @@ AFRAME.registerComponent("goomba", {
           this.raycaster.set(this.worldPosition, this.ray);
           this.raycaster.near = 0;
           this.raycaster.far = 1;
-          const intersectable =
-            this.floor?.components["occlude-mesh"].raycastMesh;
-          console.log("intersectable", intersectable);
+          let intersectable =
+            this.deathCollidedEntity.components["occlude-mesh"]?.raycastMesh;
+          // console.log("intersectable", intersectable);
           const intersections = this.raycaster.intersectObjects(
             intersectable ? [intersectable] : this.lookAtRaycastTargetObjects,
             true
@@ -1512,7 +1722,7 @@ AFRAME.registerComponent("goomba", {
           if (intersections[0]) {
             position.copy(intersections[0].point);
           } else {
-            console.log("no intersections found for death punch");
+            // console.log("no intersections found for death punch");
           }
         }
       }
@@ -1530,10 +1740,44 @@ AFRAME.registerComponent("goomba", {
     }
     this.sphere.center.copy(this.worldPosition);
 
+    if (this.shelled && this.status == "falling") {
+      if (this.physicsBody.velocity.y < 0) {
+        console.log("die");
+
+        const coin = this.el.sceneEl.components["pool__coin"].requestEntity();
+        coin.play();
+        {
+          const cameraToCoin = new THREE.Vector3().subVectors(
+            this.camera.object3D.position,
+            this.el.object3D.position
+          );
+          const yaw = Math.atan2(cameraToCoin.x, cameraToCoin.z);
+          coin.object3D.rotation.set(0, yaw, 0, "YXZ");
+          console.log("rotation", coin.object3D.rotation);
+        }
+        {
+          const { x, y, z } = this.el.object3D.position;
+          const position = new THREE.Vector3(x, y - 0.04, z);
+          coin.object3D.position.copy(position);
+          console.log("position", coin.object3D.position);
+        }
+        console.log("coin", coin);
+        coin.components.coin.start();
+
+        this.el.emit("die");
+        this.el.remove();
+      }
+    }
+
     if (this.punchOptions) {
       const { velocity, position } = this.punchOptions;
       this.punchOptions = undefined;
       this._punch(velocity, position);
+    }
+    if (this.shellHitOptions) {
+      const { velocity, position } = this.shellHitOptions;
+      this.shellHitOptions = undefined;
+      this._shellHit(velocity, position);
     }
     if (this.stompOptions) {
       const { distance, yaw, kill } = this.stompOptions;
@@ -1555,6 +1799,13 @@ AFRAME.registerComponent("goomba", {
 
     if (this.latestTick - this.lastTimePunched < 10) {
       return;
+    }
+
+    if (this.status == "falling") {
+      if (this.worldPosition.y < -40) {
+        console.log("fell through floor");
+        this.el.remove();
+      }
     }
 
     if (
@@ -1833,6 +2084,12 @@ AFRAME.registerComponent("goomba", {
         const turnScalar = Math.round(Math.random()) ? 1 : -1;
         let didIntersectGoomba = false;
         let didIntersectMesh = false;
+        let didIntersectWall = false;
+        this.tempPointToWalkTo2 =
+          this.tempPointToWalkTo2 || new THREE.Vector3();
+        this.pointToWalkToOffset2 =
+          this.pointToWalkToOffset2 || new THREE.Vector3();
+
         do {
           attempts++;
           let angle = turnAngle * turnScalar * attempts + angleOffset;
@@ -1854,26 +2111,43 @@ AFRAME.registerComponent("goomba", {
 
           this.tempPointToWalkTo.copy(this.worldPosition);
           this.tempPointToWalkTo.add(this.pointToWalkToOffset);
+          this.pointToWalkToOffset2
+            .copy(this.pointToWalkToOffset)
+            .setLength(0.25);
+          this.tempPointToWalkTo2
+            .copy(this.worldPosition)
+            .add(this.pointToWalkToOffset2);
           this.floor.components["my-obb-collider"].obb.clampPoint(
-            this.tempPointToWalkTo,
+            this.tempPointToWalkTo2,
             this.clampedTempPointToWalkTo
           );
           if (shouldBreak) {
             break;
           }
+
           didIntersectGoomba = this.doesPointIntersectAnyGoombas(
-            this.tempPointToWalkTo
+            this.tempPointToWalkTo2
           );
-          didIntersectMesh = this.doesPointIntersectAnyMeshes(
-            this.tempPointToWalkTo
-          );
+          if (!didIntersectGoomba) {
+            didIntersectWall = this.doesDirectionIntersectAnyWalls(
+              this.pointToWalkToOffset.clone().normalize()
+            );
+          }
+          if (!didIntersectGoomba && !didIntersectWall) {
+            didIntersectMesh = this.doesPointIntersectAnyMeshes(
+              this.tempPointToWalkTo2
+            );
+          }
         } while (
+          didIntersectWall ||
           didIntersectMesh ||
           didIntersectGoomba ||
-          Math.abs(this.clampedTempPointToWalkTo.x - this.tempPointToWalkTo.x) >
-            0.001 ||
-          Math.abs(this.clampedTempPointToWalkTo.z - this.tempPointToWalkTo.z) >
-            0.001
+          Math.abs(
+            this.clampedTempPointToWalkTo.x - this.tempPointToWalkTo2.x
+          ) > 0.001 ||
+          Math.abs(
+            this.clampedTempPointToWalkTo.z - this.tempPointToWalkTo2.z
+          ) > 0.001
         );
 
         this.pointToWalkTo.copy(this.tempPointToWalkTo);
@@ -2130,6 +2404,43 @@ AFRAME.registerComponent("goomba", {
       .filter((goomba) => goomba != this)
       .some((goomba) => {
         return goomba.sphere.containsPoint(point);
+      });
+  },
+
+  wallIntersectionThreshold: 0.2,
+  doesDirectionIntersectAnyWalls: function (direction) {
+    this.wallRay = this.wallRay || new THREE.Ray();
+    this.wallRay.set(this.worldPosition, direction);
+    this.wallIntersection = this.wallIntersection || new THREE.Vector3();
+    this.wallDistance = this.wallDistance || new THREE.Vector3();
+    return this.lookAtRaycastTargets
+      .filter(
+        (entity) =>
+          entity.getAttribute("mixin") == "realWorldMeshMixin" ||
+          entity.dataset.worldMesh == "wall"
+      )
+      .some((entity) => {
+        const wallIntersection = entity.components[
+          "my-obb-collider"
+        ].obb.intersectRay(this.wallRay, this.wallIntersection);
+        let intersectsWall = false;
+        if (wallIntersection) {
+          //this.wallIntersectionSphere.object3D.position.copy(wallIntersection);
+          //this.wallIntersectionSphere.object3D.visible = true;
+          const distanceToPoint =
+            this.worldPosition.distanceTo(wallIntersection);
+          intersectsWall = distanceToPoint < this.wallIntersectionThreshold;
+          // console.log({ distanceToPoint });
+        } else {
+          //this.wallIntersectionSphere.object3D.visible = false;
+        }
+        if (intersectsWall) {
+          // console.log(
+          //   "intersects wall",
+          //   entity.getAttribute("data-world-mesh")
+          // );
+        }
+        return intersectsWall;
       });
   },
 
@@ -2634,21 +2945,33 @@ AFRAME.registerComponent("goomba", {
       this.playReleaseSound();
     }
     if (false && this.status == "getting up") {
-      this.returnGetUpSound();
+      //this.returnGetUpSound();
     }
     if (this.status == "petting") {
       this.el.sceneEl.emit("stopPetting", { side: this.petSide });
       if (this.purrSound) {
-        this.returnPurrSound();
+        this.stopPurrSound();
         this.playPurrFadeOutSound();
       }
     }
+
+    if (this.status == "petting") {
+      this.blink();
+      setTimeout(() => {
+        this.setEmotion("default");
+      }, 200);
+    }
+
     this.status = newStatus;
     // console.log(`new status "${this.status}"`);
 
     if (this.status == "petting") {
       this.el.sceneEl.emit("startPetting", { side: this.petSide });
       this.playPurrSound();
+    }
+
+    if (this.status == "petting") {
+      this.setEmotion("happy");
     }
 
     if (this.status == "grabbed") {
@@ -2850,137 +3173,62 @@ AFRAME.registerComponent("goomba", {
     });
   },
 
-  playGetUpSound: async function () {
-    this.getUpSound =
-      this.el.sceneEl.components["pool__getupsound"].requestEntity();
-    this.getUpSound.object3D.position.copy(this.el.object3D.position);
-    this.getUpSound.play();
-    await this.waitForSoundToLoad(this.getUpSound);
-    this.getUpSound.components.sound.playSound();
-    this.getUpSound.addEventListener(
-      "sound-ended",
-      () => this.returnGetUpSound(),
-      { once: true }
-    );
-  },
-  returnGetUpSound: function () {
-    if (this.getUpSound) {
-      this.getUpSound.components["sound"].stopSound();
-      this.el.sceneEl.components["pool__getupsound"].returnEntity(
-        this.getUpSound
-      );
-      this.getUpSound = undefined;
-    }
+  playGetUpSound: function () {
+    this.playSound("getUpSound");
   },
 
   playPurrSound: function () {
-    this.purrSound =
-      this.el.sceneEl.components["pool__purrsound"].requestEntity();
-    this.purrSound.object3D.position.copy(this.el.object3D.position);
-    this.purrSound.play();
-    this.purrSound.components.sound.playSound();
+    this.playSound("purrSound");
   },
-  returnPurrSound: function () {
-    if (this.purrSound) {
-      this.purrSound.components["sound"].stopSound();
-      this.el.sceneEl.components["pool__purrsound"].returnEntity(
-        this.purrSound
-      );
-      this.purrSound = undefined;
-    }
+  stopPurrSound: function () {
+    this.returnSound("purrSound");
   },
 
   playPurrFadeOutSound: function () {
-    this.fadeOutPurrSound =
-      this.el.sceneEl.components["pool__purrsoundfadeout"].requestEntity();
-    this.fadeOutPurrSound.object3D.position.copy(this.el.object3D.position);
-    this.fadeOutPurrSound.play();
-    this.fadeOutPurrSound.components.sound.pool.children[0].setVolume(
-      this.latestPurrVolume
-    );
-    this.fadeOutPurrSound.components["sound"].playSound();
-    this.fadeOutPurrSound.addEventListener(
-      "sound-ended",
-      () => this.returnFadeOutPurrSound(),
-      { once: true }
-    );
-  },
-  returnFadeOutPurrSound: function () {
-    if (this.fadeOutPurrSound) {
-      this.fadeOutPurrSound.components["sound"].stopSound();
-      this.el.sceneEl.components["pool__purrsoundfadeout"].returnEntity(
-        this.fadeOutPurrSound
-      );
-      this.fadeOutPurrSound = undefined;
-    }
+    this.playSound("purrSoundFadeOut");
   },
 
   playGrabSound: function () {
-    this.returnReleaseSound();
-    this.grabSound =
-      this.el.sceneEl.components["pool__grabsound"].requestEntity();
-    this.el.object3D.getWorldPosition(this.grabSound.object3D.position);
-    this.grabSound.play();
-    this.grabSound.components.sound.playSound();
-    this.grabSound.addEventListener(
-      "sound-ended",
-      () => this.returnGrabSound(),
-      { once: true }
-    );
+    this.returnSound("releaseSound");
+    this.playSound("grabSound");
   },
-  returnGrabSound: function () {
-    if (this.grabSound) {
-      this.grabSound.components["sound"].stopSound();
-      this.el.sceneEl.components["pool__grabsound"].returnEntity(
-        this.grabSound
-      );
-      this.grabSound = undefined;
-    }
-  },
-
   playReleaseSound: function () {
-    this.returnGrabSound();
-    this.releaseSound =
-      this.el.sceneEl.components["pool__releasesound"].requestEntity();
-    this.el.object3D.getWorldPosition(this.releaseSound.object3D.position);
-    this.releaseSound.play();
-    this.releaseSound.components.sound.playSound();
-    this.releaseSound.addEventListener(
-      "sound-ended",
-      () => this.returnReleaseSound(),
-      { once: true }
-    );
+    this.returnSound("grabSound");
+    this.playSound("releaseSound");
   },
-  returnReleaseSound: function () {
-    if (this.releaseSound) {
-      this.releaseSound.components["sound"].stopSound();
-      this.el.sceneEl.components["pool__releasesound"].returnEntity(
-        this.releaseSound
-      );
-      this.releaseSound = undefined;
+
+  playSound: async function (name) {
+    this.returnSound(name);
+    const poolName = `pool__${name.toLowerCase()}`;
+    const sound = (this[name] =
+      this.el.sceneEl.components[poolName].requestEntity());
+    sound.poolName = poolName;
+    this.el.object3D.getWorldPosition(sound.object3D.position);
+    sound.play();
+    await this.waitForSoundToLoad(sound);
+    sound.components.sound.playSound();
+    sound.addEventListener("sound-ended", () => this.returnSound(name), {
+      once: true,
+    });
+  },
+  returnSound: function (name) {
+    const sound = this[name];
+    if (sound) {
+      sound.components["sound"].stopSound();
+      this.el.sceneEl.components[sound.poolName].returnEntity(sound);
+      this[name] = undefined;
     }
   },
 
-  playPunchSqueakSound: function () {
-    this.punchSqueakSound =
-      this.el.sceneEl.components["pool__punchsqueaksound"].requestEntity();
-    this.el.object3D.getWorldPosition(this.punchSqueakSound.object3D.position);
-    this.punchSqueakSound.play();
-    this.punchSqueakSound.components.sound.playSound();
-    this.punchSqueakSound.addEventListener(
-      "sound-ended",
-      () => this.returnPunchSqueakSound(),
-      { once: true }
-    );
+  playShellHitSound: function () {
+    this.playSound("shellHitSound");
   },
-  returnPunchSqueakSound: function () {
-    if (this.punchSqueakSound) {
-      this.punchSqueakSound.components["sound"].stopSound();
-      this.el.sceneEl.components["pool__punchsqueaksound"].returnEntity(
-        this.punchSqueakSound
-      );
-      this.punchSqueakSound = undefined;
-    }
+
+  playPunchSound: function () {
+    this.playSound("punchSound");
+  },
+  playPunchSqueakSound: function () {
+    this.playSound("punchSqueakSound");
   },
 
   updateLookAtTargets() {

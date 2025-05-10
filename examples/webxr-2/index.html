@@ -3,7 +3,6 @@
     <title>WebXR 2 | BrilliantSole JavaScript SDK</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico" />
-    <script type="module" src="./script.js"></script>
     <script src="../utils/aframe/aframe-master.min.js"></script>
     <script src="https://cdn.jsdelivr.net/gh/c-frame/aframe-physics-system@v4.2.3/dist/aframe-physics-system.min.js"></script>
     <script src="../utils/aframe/grabbable-physics-body.js"></script>
@@ -18,11 +17,18 @@
     <script src="./components/squashed-goomba.js"></script>
     <script src="./components/coin.js"></script>
     <script src="../utils/aframe/occlude-mesh.js"></script>
+    <script src="./components/custom-wrap.js"></script>
     <script src="../utils/aframe/shadow-material.js"></script>
     <script src="../utils/aframe/bs-vibration.js" type="module"></script>
     <script src="../utils/aframe/soft-shadow-light.js"></script>
+    <script src="./components/init-shell-material.js"></script>
     <script src="./components/bs-ankle.js" type="module"></script>
     <script src="../utils/aframe/my-obb-collider.js"></script>
+    <script src="./components/shell.js"></script>
+
+    <script src="./edge-impulse-standalone.js"></script>
+    <script src="./run-impulse.js"></script>
+    <script type="module" src="./script.js"></script>
   </head>
   <style>
     #scene {
@@ -75,6 +81,11 @@
       </div>
     </template>
 
+    <label
+      >run model in browser
+      <input type="checkbox" id="runModelInBrowser" />
+    </label>
+    <br />
     <label>
       persist entities <input type="checkbox" id="persistEntities" />
     </label>
@@ -83,6 +94,8 @@
     <div id="connectToDeviceContainers"></div>
 
     <a-scene
+      pool__punchsound="mixin: punchSoundMixin; size: 10;  dynamic: true;"
+      pool__shellhitsound="mixin: shellHitAudioMixin; size: 10;  dynamic: true;"
       pool__splatsound="mixin: splatSoundMixin; size: 5;  dynamic: true;"
       pool__coinsound="mixin: coinSoundMixin; size: 5;  dynamic: true;"
       pool__purrsound="mixin: purrSoundMixin; size: 2; dynamic: true;"
@@ -103,7 +116,7 @@
       grabbable-listener
       obb-collider="showColliders: false;"
       xr-mode-ui="enabled: true; XRMode: ar;"
-      real-world-meshing="meshMixin: realWorldMeshMixin; meshesEnabled: true; planeMixin: realWorldPlaneMixin; planesEnabled: true; filterLabels: table, wall, desk, floor, ceiling;"
+      real-world-meshing="meshMixin: realWorldMeshMixin; meshesEnabled: true; planeMixin: realWorldPlaneMixin; planesEnabled: true; filterLabels: table, wall, desk, floor, ceiling, storage, other, plant, screen, lamp, couch, bed, screen;"
       device-orientation-permission-ui="enabled: false"
     >
       <a-entity light="color: #BBB; type: ambient;"></a-entity>
@@ -134,13 +147,17 @@
           my-obb-collider
           static-body
           occlude-mesh
+          visible="true"
         ></a-mixin>
         <audio
           id="coinAudio"
           src="../../assets/audio/coin.wav"
           preload="auto"
         ></audio>
-        <a-mixin id="coinSoundMixin" sound="src: #coinAudio"></a-mixin>
+        <a-mixin
+          id="coinSoundMixin"
+          sound="src: #coinAudio; volume: 0.8;"
+        ></a-mixin>
 
         <audio
           id="splatAudio"
@@ -154,6 +171,7 @@
           src="../../assets/audio/punch.wav"
           preload="auto"
         ></audio>
+        <a-mixin id="punchSoundMixin" sound="src: #punchAudio;"></a-mixin>
 
         <audio
           id="purrAudio"
@@ -269,6 +287,27 @@
           src="../../assets/audio/kick.wav"
           preload="auto"
         ></audio>
+
+        <audio
+          id="shellKickAudio"
+          src="./assets/audio/shellKick.wav"
+          preload="auto"
+        ></audio>
+
+        <audio
+          id="shellBounceAudio"
+          src="./assets/audio/shellBounce.wav"
+          preload="auto"
+        ></audio>
+
+        <audio
+          id="shellHitAudio"
+          src="./assets/audio/shellHit.wav"
+          preload="auto"
+        ></audio>
+        <a-mixin id="shellHitAudioMixin" sound="src: #shellHitAudio;"></a-mixin>
+
+        <img id="shellTexture" src="./assets/images/shellTexture.png" />
       </a-assets>
       <!-- <a-entity rotation="-90 0 0" position="0 5 1">
         <a-camera
@@ -370,7 +409,7 @@
           ></a-sphere>
         </a-entity>
       </template>
-
+      <!-- 
       <a-entity id="debugCone" visible="false" position="0 1 -1">
         <a-cone
           height="0.1"
@@ -378,7 +417,7 @@
           radius-bottom="0.1"
           color="green"
         ></a-cone>
-      </a-entity>
+      </a-entity> -->
 
       <!-- <a-entity
         id="squashedGoomba1"
@@ -386,13 +425,13 @@
         position="0 1.0 -0.3"
       ></a-entity> -->
 
-      <!-- <a-entity
+      <a-entity
         goomba="grabbable: true;"
         id="goomba1"
         position="0 1.0 -0.3"
         class="punchable"
         rotation="0 0 0"
-      ></a-entity> -->
+      ></a-entity>
 
       <!-- <a-entity
         goomba="grabbable: true;"
@@ -401,19 +440,31 @@
         rotation="0 0 0"
       ></a-entity> -->
       <!-- <a-box
-        scale="5 0.05 5"
+        scale="1 0.05 1"
         static-body
+        rotation="0 0 0"
         position="0 0.8 -0.5"
         data-world-mesh="floor"
         color="blue"
-        obb-collider
+        my-obb-collider
         id="testFloor"
+        opacity="1"
+      ></a-box> -->
+      <!-- <a-box
+        scale="5 0.05 5"
+        static-body
+        rotation="0 0 0"
+        position="0 0.3 -0.5"
+        data-world-mesh="floor"
+        color="yellow"
+        my-obb-collider
+        id="testFloor2"
       ></a-box> -->
       <!-- <a-box
         scale="1 0.05 1"
         static-body
         position="0 2 -0.5"
-        data-world-mesh="floor"
+        data-world-mesh="ceiling"
         color="blue"
         obb-collider
         id="testCeiling"
@@ -427,7 +478,7 @@
         obb-collider
         rotation="0 0 0"
         id="testWall"
-        visible="false"
+        visible="true"
       ></a-box> -->
       <!-- <a-box
         scale="2 2 0.05"
@@ -439,6 +490,48 @@
         obb-collider
         id="testLeftWall"
       ></a-box> -->
+
+      <template id="shellTemplate">
+        <a-entity scale="1.1 1.1 1.1">
+          <a-entity scale="0.86 0.85 1" class="body">
+            <a-sphere
+              rotation="-90 0 0"
+              scale="1 1 0.850"
+              radius="0.1"
+              phi-length="180"
+              segments-height="12"
+              segments-width="8"
+              repeat="0.420 0.550"
+              offset="0.040 0.160"
+              material="color: #29eb1c; src: #shellTexture; transparent: true"
+            >
+            </a-sphere>
+            <a-torus
+              radius="0.096"
+              radius-tubular="0.006"
+              rotation="90 0 0"
+              color="white"
+              position="0 -0.005 0"
+            ></a-torus>
+            <a-sphere
+              rotation="90 0 0"
+              radius="0.1"
+              phi-length="180"
+              color="#e3c76b"
+              scale="1 1 0.55"
+            >
+            </a-sphere>
+          </a-entity>
+        </a-entity>
+      </template>
+
+      <a-entity
+        visible="true"
+        rotation="0 0 0"
+        position="0.5 1 -0.5"
+        id="shell"
+        shell
+      ></a-entity>
 
       <template id="goombaTemplate">
         <a-entity>
@@ -478,12 +571,14 @@
               >
                 <a-entity class="scalar" scale="1.460 1.690 0.940">
                   <a-sphere
+                    phi-length="180"
                     class="white"
                     color="#fafafa"
                     radius="0.017"
                   ></a-sphere>
                   <a-entity class="controller">
                     <a-sphere
+                      phi-start="180"
                       class="black"
                       color="#000000"
                       position="0 0 0.015"
@@ -740,6 +835,7 @@
       "enter-vr",
       () => {
         loadEntities();
+        anchor.setAttribute("visible", "true");
       },
       { once: true }
     );
@@ -823,7 +919,7 @@
               .find((worldMesh) => {
                 const obbA = worldMesh.components["my-obb-collider"].obb;
                 const obbB = planeMesh.components["my-obb-collider"].obb;
-                console.log("comparing", obbA, "with", obbB);
+                // console.log("comparing", obbA, "with", obbB);
                 if (obbA.center.distanceTo(obbB.center) < 0.1) {
                   return true;
                 }
@@ -835,23 +931,28 @@
             if (!similarMesh) {
               return;
             }
-            console.log("removing plane", planeMesh);
             if (true) {
-              planeMesh.remove();
-            } else {
-              planeMesh.removeAttribute("static-body");
-              planeMesh.removeAttribute("my-obb-collider");
+              // console.log("removing plane", planeMesh);
+              if (true) {
+                planeMesh.remove();
+              } else {
+                planeMesh.removeAttribute("static-body");
+                planeMesh.removeAttribute("my-obb-collider");
+              }
+              planeMesh.shouldRemove = true;
             }
-            planeMeshes = planeMeshes.filter(
-              (_planeMesh) => planeMesh != planeMesh
-            );
           });
+
+        planeMeshes = planeMeshes.filter(
+          (planeMesh) => !planeMesh.shouldRemove
+        );
 
         if (useShadows) {
           [...planeMeshes, ...worldMeshes].forEach((entity) => {
             entity.setAttribute("shadow", "cast: false; receive: true;");
           });
         }
+        scene.emit("world-meshes", { planeMeshes, worldMeshes });
       }, 10);
     };
     scene.addEventListener(
@@ -861,5 +962,18 @@
       },
       { once: true }
     );
+  </script>
+
+  <script>
+    if (false)
+      setTimeout(() => {
+        goombas[0].setPhysicsEnabled(true);
+        goombas[0].setStatus("falling");
+      }, 100);
+
+    if (false)
+      setTimeout(() => {
+        shell.setAttribute("dynamic-body", "");
+      }, 200);
   </script>
 </html>
