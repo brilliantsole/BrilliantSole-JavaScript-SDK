@@ -10,7 +10,7 @@ import Device, { SendMessageCallback } from "./Device.ts";
 import autoBind from "auto-bind";
 import { FileConfiguration as BaseFileConfiguration } from "./FileTransferManager.ts";
 
-const _console = createConsole("TfliteManager", { log: true });
+const _console = createConsole("TfliteManager", { log: false });
 
 export const TfliteMessageTypes = [
   "getTfliteName",

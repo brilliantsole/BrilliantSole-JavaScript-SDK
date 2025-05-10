@@ -222,11 +222,17 @@ AFRAME.registerComponent("shell", {
     if (!this.body) {
       return;
     }
+    if (this.isGrabbed) {
+      // TODO: - should it kill a goomba if you're just holding it?
+      //return;
+    }
+    const velocity = this.body.velocity.clone();
+    // TODO: - should it kill a goomba if not moving?
     const collidedEntity = event.detail.withEl;
     const goomba = collidedEntity.components["goomba"];
     if (goomba) {
       goomba.el.emit("shell", {
-        velocity: this.body.velocity.clone(),
+        velocity,
         position: this.el.object3D.position,
       });
     }
