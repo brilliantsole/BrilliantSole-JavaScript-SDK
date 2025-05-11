@@ -188,6 +188,17 @@ AFRAME.registerComponent("bs-ankle", {
       ...window.shells,
       ...window.soccerBalls,
     ].filter((goomba) => {
+      if (goomba.el.components.shell) {
+        if (!goomba.el.components.shell.body) {
+          return false;
+        }
+      }
+      if (goomba.el.components["soccer-ball"]) {
+        if (!goomba.el.components["soccer-ball"].body) {
+          return false;
+        }
+      }
+
       goomba.el.object3D.getWorldPosition(goombaPosition);
       //   const v = new THREE.Vector3();
       //   v.copy(goombaPosition);
