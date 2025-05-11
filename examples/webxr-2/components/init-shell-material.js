@@ -36,6 +36,12 @@ AFRAME.registerSystem("init-shell-material", {
       system.driver.materials["goomba"] = goombaMaterial;
       system.driver.world.addMaterial(goombaMaterial);
 
+      const soccerBallMaterial = new CANNON.Material("soccerBall");
+      soccerBallMaterial.friction = 0.2;
+      soccerBallMaterial.restitution = 0.6;
+      system.driver.materials["soccerBall"] = soccerBallMaterial;
+      system.driver.world.addMaterial(soccerBallMaterial);
+
       const bounceWallMaterial = new CANNON.Material("bounceWall");
       bounceWallMaterial.friction = 0.0;
       bounceWallMaterial.restitution = 1; // adjust bounce if needed
@@ -148,10 +154,14 @@ AFRAME.registerSystem("init-shell-material", {
       // console.log("added defaultBounceWallContact", defaultBounceWallContact);
 
       const goombaMaterial = system.driver.materials["goomba"];
+      const goombaDefaultContactMaterial = {
+        ...defaultContactMaterial,
+        restitution: goombaMaterial.restitution,
+      };
       const goombaBounceWallContact = new CANNON.ContactMaterial(
         goombaMaterial,
         bounceWallMaterial,
-        { ...defaultContactMaterial, restitution: goombaMaterial.restitution }
+        { ...goombaDefaultContactMaterial }
       );
       system.driver.world.addContactMaterial(goombaBounceWallContact);
       // console.log("added goombaBounceWallContact", goombaBounceWallContact);
@@ -159,7 +169,7 @@ AFRAME.registerSystem("init-shell-material", {
       const goombaStaticContact = new CANNON.ContactMaterial(
         goombaMaterial,
         system.driver.materials.staticMaterial,
-        { ...defaultContactMaterial, restitution: goombaMaterial.restitution }
+        { ...goombaDefaultContactMaterial }
       );
       system.driver.world.addContactMaterial(goombaStaticContact);
       // console.log("added goombaStaticContact", goombaStaticContact);
@@ -167,10 +177,39 @@ AFRAME.registerSystem("init-shell-material", {
       const goombaDefaultContact = new CANNON.ContactMaterial(
         goombaMaterial,
         system.driver.materials.defaultMaterial,
-        { ...defaultContactMaterial, restitution: goombaMaterial.restitution }
+        { ...goombaDefaultContactMaterial }
       );
       system.driver.world.addContactMaterial(goombaDefaultContact);
       // console.log("added goombaDefaultContact", goombaDefaultContact);
+
+      const soccerBallMaterial = system.driver.materials["soccerBall"];
+      const soccerBallDefaultContactMaterial = {
+        ...defaultContactMaterial,
+        restitution: soccerBallMaterial.restitution,
+      };
+      const soccerBallBounceWallContact = new CANNON.ContactMaterial(
+        soccerBallMaterial,
+        bounceWallMaterial,
+        { ...soccerBallDefaultContactMaterial }
+      );
+      system.driver.world.addContactMaterial(soccerBallBounceWallContact);
+      // console.log("added soccerBallBounceWallContact", soccerBallBounceWallContact);
+
+      const soccerBallStaticContact = new CANNON.ContactMaterial(
+        soccerBallMaterial,
+        system.driver.materials.staticMaterial,
+        { ...soccerBallDefaultContactMaterial }
+      );
+      system.driver.world.addContactMaterial(soccerBallStaticContact);
+      // console.log("added soccerBallStaticContact", soccerBallStaticContact);
+
+      const soccerBallDefaultContact = new CANNON.ContactMaterial(
+        soccerBallMaterial,
+        system.driver.materials.defaultMaterial,
+        { ...soccerBallDefaultContactMaterial }
+      );
+      system.driver.world.addContactMaterial(soccerBallDefaultContact);
+      // console.log("added soccerBallDefaultContact", soccerBallDefaultContact);
     }
   },
 });

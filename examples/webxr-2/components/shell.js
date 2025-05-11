@@ -53,7 +53,7 @@ AFRAME.registerComponent("shell", {
       70
     );
 
-    this.checkVelocity = AFRAME.utils.throttleLeadingAndTrailing(
+    this.checkVelocity = AFRAME.utils.throttle(
       this.checkVelocity.bind(this),
       100
     );
@@ -108,7 +108,7 @@ AFRAME.registerComponent("shell", {
     );
     this.el.sceneEl.appendChild(this.bounceSound);
 
-    this.playBounceSound = AFRAME.utils.throttleLeadingAndTrailing(
+    this.playBounceSound = AFRAME.utils.throttle(
       this.playBounceSound.bind(this),
       50
     );

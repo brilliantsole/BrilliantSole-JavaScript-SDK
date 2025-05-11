@@ -25,6 +25,7 @@
     <script src="./components/bs-ankle.js" type="module"></script>
     <script src="../utils/aframe/my-obb-collider.js"></script>
     <script src="./components/shell.js"></script>
+    <script src="./components/soccer-ball.js"></script>
 
     <script src="./edge-impulse-standalone.js"></script>
     <script src="./run-impulse.js"></script>
@@ -135,6 +136,10 @@
         <a-asset-item
           id="coinModel"
           src="../../assets/3d/coin.glb"
+        ></a-asset-item>
+        <a-asset-item
+          id="soccerBallModel"
+          src="./assets/3d/soccerBall.glb"
         ></a-asset-item>
         <a-mixin
           id="realWorldPlaneMixin"
@@ -294,10 +299,20 @@
           src="./assets/audio/shellKick.wav"
           preload="auto"
         ></audio>
-
         <audio
           id="shellBounceAudio"
           src="./assets/audio/shellBounce.wav"
+          preload="auto"
+        ></audio>
+
+        <audio
+          id="soccerKickAudio"
+          src="./assets/audio/soccerKick.mp3"
+          preload="auto"
+        ></audio>
+        <audio
+          id="soccerBounceAudio"
+          src="./assets/audio/soccerBounce.wav"
           preload="auto"
         ></audio>
 
@@ -371,6 +386,17 @@
         </a-entity>
       </template>
 
+      <template id="soccerTemplate">
+        <a-entity>
+          <a-entity
+            scale="0.11 0.11 0.11"
+            gltf-model="#soccerBallModel"
+          ></a-entity>
+        </a-entity>
+      </template>
+
+      <a-entity soccer-ball id="soccerBall" position="0 1 -0.5"> </a-entity>
+
       <template id="squashedGoombaTemplate">
         <a-entity>
           <a-sphere
@@ -441,7 +467,7 @@
         rotation="0 0 0"
       ></a-entity> -->
       <!-- <a-box
-        scale="1 0.05 1"
+        scale="4 0.05 4"
         static-body
         rotation="0 0 0"
         position="0 0.8 -0.5"
@@ -450,16 +476,6 @@
         my-obb-collider
         id="testFloor"
         opacity="1"
-      ></a-box> -->
-      <!-- <a-box
-        scale="5 0.05 5"
-        static-body
-        rotation="0 0 0"
-        position="0 0.3 -0.5"
-        data-world-mesh="floor"
-        color="yellow"
-        my-obb-collider
-        id="testFloor2"
       ></a-box> -->
       <!-- <a-box
         scale="1 0.05 1"
