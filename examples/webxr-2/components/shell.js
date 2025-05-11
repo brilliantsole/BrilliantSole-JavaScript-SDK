@@ -223,8 +223,7 @@ AFRAME.registerComponent("shell", {
       return;
     }
     if (this.isGrabbed) {
-      // TODO: - should it kill a goomba if you're just holding it?
-      //return;
+      return;
     }
     const velocity = this.body.velocity.clone();
     // TODO: - should it kill a goomba if not moving?

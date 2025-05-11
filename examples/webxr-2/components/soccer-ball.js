@@ -121,7 +121,7 @@ AFRAME.registerComponent("soccer-ball", {
     //console.log("collided with", collidedEntity);
     const worldMesh = collidedEntity.dataset.worldMesh;
     let volume = 1;
-    if (worldMesh) {
+    if (worldMesh || collidedEntity.components.shell) {
       let playBounce = false;
       if (worldMesh == "wall") {
         playBounce = true;
@@ -160,6 +160,7 @@ AFRAME.registerComponent("soccer-ball", {
     this.kickSound.components.sound.playSound();
   },
 
+  kickHeightRange: { min: 1, max: 4 },
   onKick: function (event) {
     if (this.isGrabbed || !this.body) {
       return;
@@ -167,7 +168,12 @@ AFRAME.registerComponent("soccer-ball", {
     const { velocity, yaw } = event.detail;
     // console.log("onKick", yaw);
     this.playKickSound();
-    this.kickVelocity.set(0, 1, -5);
+    const kickHeight = THREE.MathUtils.lerp(
+      this.kickHeightRange.min,
+      this.kickHeightRange.max,
+      Math.random()
+    );
+    this.kickVelocity.set(0, kickHeight, -5);
     this.kickEuler.set(0, yaw, 0);
     this.kickVelocity.applyEuler(this.kickEuler);
     this.body.velocity.copy(this.kickVelocity);
@@ -201,7 +207,16 @@ AFRAME.registerComponent("soccer-ball", {
     if (this.isGrabbed) {
       return;
     }
-    // FILL - game mechanics, etc
+    const velocity = this.body.velocity.clone();
+    // TODO: - should it kill a goomba if not moving?
+    const collidedEntity = event.detail.withEl;
+    const goomba = collidedEntity.components["goomba"];
+    if (goomba) {
+      goomba.el.emit("shell", {
+        velocity,
+        position: this.el.object3D.position,
+      });
+    }
   },
 
   onBodyLoaded: function (event) {

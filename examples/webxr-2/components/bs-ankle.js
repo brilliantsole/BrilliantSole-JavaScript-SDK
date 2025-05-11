@@ -61,7 +61,7 @@ AFRAME.registerComponent("bs-ankle", {
     this.stompSound = document.createElement("a-entity");
     this.stompSound.setAttribute(
       "sound",
-      `src: ${this.data.stompSoundSelector}`
+      `src: ${this.data.stompSoundSelector}; volume: 0.8;`
     );
     this.el.sceneEl.appendChild(this.stompSound);
   },
@@ -174,15 +174,11 @@ AFRAME.registerComponent("bs-ankle", {
       .multiplyScalar(0.5)
       .add(kickOffset);
 
-    if (
-      goombasOnFloor.length == 0 &&
-      !window.shells[0].body &&
-      !window.soccerBalls[0].body
-    ) {
-      if (!isDebug) {
-        this.playKickSound(kickPosition);
-      }
-      return;
+    if (goombasOnFloor.length == 0) {
+      //return;
+    }
+    if (!window.shells[0].body && !window.soccerBalls[0].body) {
+      //return;
     }
 
     const goombaPosition = new THREE.Vector3();
@@ -256,10 +252,14 @@ AFRAME.registerComponent("bs-ankle", {
     });
     // console.log("goombasToKick", goombasToKick);
 
-    if (goombasToKick.length > 0) {
-      /** @type {BS.VibrationWaveformEffect} */
-      let waveformEffect = "strongClick100";
-      this.vibrate(waveformEffect);
+    if (!isDebug) {
+      if (goombasToKick.length > 0) {
+        /** @type {BS.VibrationWaveformEffect} */
+        let waveformEffect = "strongClick100";
+        this.vibrate(waveformEffect);
+      } else {
+        this.playKickSound(kickPosition);
+      }
     }
   },
   stomp: function () {
