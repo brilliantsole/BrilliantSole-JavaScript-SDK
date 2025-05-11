@@ -190,7 +190,7 @@ AFRAME.registerSystem("init-shell-material", {
       const soccerBallBounceWallContact = new CANNON.ContactMaterial(
         soccerBallMaterial,
         bounceWallMaterial,
-        { ...soccerBallDefaultContactMaterial }
+        { ...soccerBallDefaultContactMaterial, friction: 0, restitution: 1 }
       );
       system.driver.world.addContactMaterial(soccerBallBounceWallContact);
       // console.log("added soccerBallBounceWallContact", soccerBallBounceWallContact);

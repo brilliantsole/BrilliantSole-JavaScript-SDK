@@ -154,8 +154,8 @@ AFRAME.registerComponent("soccer-ball", {
     this.bounceSound.components.sound.playSound();
   },
   playKickSound: function () {
-    //this.kickSound.components.sound.stopSound();
-    this.kickSound.components.sound.pool.children[0].setVolume(5);
+    this.kickSound.components.sound.stopSound();
+    this.kickSound.components.sound.pool.children[0].setVolume(4);
     this.kickSound.object3D.position.copy(this.el.object3D.position);
     this.kickSound.components.sound.playSound();
   },

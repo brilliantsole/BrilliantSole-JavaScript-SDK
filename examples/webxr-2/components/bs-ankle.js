@@ -174,15 +174,14 @@ AFRAME.registerComponent("bs-ankle", {
       .multiplyScalar(0.5)
       .add(kickOffset);
 
-    if (!isDebug) {
-      this.playKickSound(kickPosition);
-    }
-
     if (
       goombasOnFloor.length == 0 &&
       !window.shells[0].body &&
       !window.soccerBalls[0].body
     ) {
+      if (!isDebug) {
+        this.playKickSound(kickPosition);
+      }
       return;
     }
 
