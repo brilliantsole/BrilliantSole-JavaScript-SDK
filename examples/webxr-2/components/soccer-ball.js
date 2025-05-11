@@ -186,18 +186,18 @@ AFRAME.registerComponent("soccer-ball", {
     const { distance, yaw, kill } = event.detail;
     // console.log("onStomp", { distance, yaw, kill });
 
+    console.log({ yaw });
+
     this.kickVelocity.set(0, 4, 0);
-    this.kickEuler.set(0, -yaw, 0);
+    this.kickEuler.set(0, yaw, 0);
     this.kickVelocity.applyEuler(this.kickEuler);
     this.body.velocity.copy(this.kickVelocity);
 
     const strength = this.kickVelocity.length();
-    const angularVelocity = new THREE.Vector3(strength * 1, 0, 0);
-    const normalizedVelocity = this.kickVelocity.clone().normalize();
-    const angle = Math.atan2(normalizedVelocity.x, normalizedVelocity.z);
-    const euler = new THREE.Euler(0, angle, 0);
-    angularVelocity.applyEuler(euler);
-    this.body.angularVelocity.set(...angularVelocity.toArray().slice(0, 3));
+    const angularVelocity = new THREE.Vector3(strength * 0.8, 0, 0);
+    angularVelocity.applyEuler(this.kickEuler);
+    // console.log("angularVelocity", angularVelocity);
+    this.body.angularVelocity.set(...angularVelocity.toArray());
   },
 
   onObbCollisionStarted: async function (event) {
