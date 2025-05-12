@@ -18,6 +18,9 @@ AFRAME.registerComponent("bs-ankle", {
   },
 
   init() {
+    window.shells = window.shells || [];
+    window.soccerBalls = window.soccerBalls || [];
+
     this.kickEuler = new THREE.Euler(0, 0, 0, "YXZ");
 
     this.debugCone = this.el.sceneEl.querySelector("#debugCone");
@@ -174,12 +177,12 @@ AFRAME.registerComponent("bs-ankle", {
       .multiplyScalar(0.5)
       .add(kickOffset);
 
-    if (goombasOnFloor.length == 0) {
-      //return;
-    }
-    if (!window.shells[0].body && !window.soccerBalls[0].body) {
-      //return;
-    }
+    // if (goombasOnFloor.length == 0) {
+    //   //return;
+    // }
+    // if (!window.shells[0].body && !window.soccerBalls[0].body) {
+    //   //return;
+    // }
 
     const goombaPosition = new THREE.Vector3();
 

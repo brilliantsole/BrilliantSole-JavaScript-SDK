@@ -69,7 +69,7 @@ const connectToDeviceTemplate = document.getElementById(
   "connectToDeviceTemplate"
 );
 
-let ipAddresses = ["192.168.4.23", ""];
+let ipAddresses = ["192.168.1.180", ""];
 function updateIpAddress(ipAddress, index) {
   ipAddresses[index] = ipAddress;
   const url = new URL(window.location);
