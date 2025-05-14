@@ -1,7 +1,7 @@
 import { createConsole } from "../../utils/Console.ts";
 import BaseConnectionManager from "../BaseConnectionManager.ts";
 
-const _console = createConsole("BluetoothConnectionManager", { log: false });
+const _console = createConsole("BluetoothConnectionManager", { log: true });
 
 import { BluetoothCharacteristicName } from "./bluetoothUUIDs.ts";
 
@@ -13,7 +13,10 @@ abstract class BluetoothConnectionManager extends BaseConnectionManager {
 
   isInRange = true;
 
-  protected onCharacteristicValueChanged(characteristicName: BluetoothCharacteristicName, dataView: DataView) {
+  protected onCharacteristicValueChanged(
+    characteristicName: BluetoothCharacteristicName,
+    dataView: DataView
+  ) {
     if (characteristicName == "rx") {
       this.parseRxMessage(dataView);
     } else {
@@ -21,7 +24,10 @@ abstract class BluetoothConnectionManager extends BaseConnectionManager {
     }
   }
 
-  protected async writeCharacteristic(characteristicName: BluetoothCharacteristicName, data: ArrayBuffer) {
+  protected async writeCharacteristic(
+    characteristicName: BluetoothCharacteristicName,
+    data: ArrayBuffer
+  ) {
     _console.log("writeCharacteristic", ...arguments);
   }
 

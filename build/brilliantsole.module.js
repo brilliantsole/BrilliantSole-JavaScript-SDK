@@ -18,8 +18,9 @@ typeof SuppressedError === "function" ? SuppressedError : function (error, suppr
     return e.name = "SuppressedError", e.error = error, e.suppressed = suppressed, e;
 };
 
-const isInProduction = "__BRILLIANTSOLE__PROD__" == "__BRILLIANTSOLE__PROD__";
-const isInDev = "__BRILLIANTSOLE__PROD__" == "__BRILLIANTSOLE__DEV__";
+const __BRILLIANTSOLE__ENVIRONMENT__ = "__BRILLIANTSOLE__DEV__";
+const isInProduction = __BRILLIANTSOLE__ENVIRONMENT__ == "__BRILLIANTSOLE__PROD__";
+const isInDev = __BRILLIANTSOLE__ENVIRONMENT__ == "__BRILLIANTSOLE__DEV__";
 const isInBrowser = typeof window !== "undefined" && typeof window?.document !== "undefined";
 const isInNode = typeof process !== "undefined" && process?.versions?.node != null;
 const userAgent = (isInBrowser && navigator.userAgent) || "";
@@ -149,6 +150,9 @@ class Console {
     }
     static create(type, levelFlags) {
         const console = __classPrivateFieldGet(this, _a$6, "f", _Console_consoles)[type] || new _a$6(type);
+        if (levelFlags) {
+            console.setLevelFlags(levelFlags);
+        }
         return console;
     }
     get log() {
@@ -2993,7 +2997,7 @@ if (isInBrowser) {
 function generateBluetoothUUID(value) {
     _console$f.assertTypeWithError(value, "string");
     _console$f.assertWithError(value.length == 4, "value must be 4 characters long");
-    return `ea6da725-${value}-4f9b-893d-c3913e33b39f`;
+    return `ea6d${value}-a725-4f9b-893d-c3913e33b39f`;
 }
 function stringToCharacteristicUUID(identifier) {
     return BluetoothUUID?.getCharacteristic?.(identifier);
@@ -3149,7 +3153,7 @@ function getCharacteristicProperties(characteristicName) {
     return properties;
 }
 
-const _console$e = createConsole("BluetoothConnectionManager", { log: false });
+const _console$e = createConsole("BluetoothConnectionManager", { log: true });
 class BluetoothConnectionManager extends BaseConnectionManager {
     constructor() {
         super(...arguments);
@@ -3183,7 +3187,7 @@ class BluetoothConnectionManager extends BaseConnectionManager {
 }
 
 var _WebBluetoothConnectionManager_instances, _WebBluetoothConnectionManager_boundBluetoothCharacteristicEventListeners, _WebBluetoothConnectionManager_boundBluetoothDeviceEventListeners, _WebBluetoothConnectionManager_device, _WebBluetoothConnectionManager_services, _WebBluetoothConnectionManager_characteristics, _WebBluetoothConnectionManager_getServicesAndCharacteristics, _WebBluetoothConnectionManager_removeEventListeners, _WebBluetoothConnectionManager_onCharacteristicvaluechanged, _WebBluetoothConnectionManager_onCharacteristicValueChanged, _WebBluetoothConnectionManager_onGattserverdisconnected;
-const _console$d = createConsole("WebBluetoothConnectionManager", { log: false });
+const _console$d = createConsole("WebBluetoothConnectionManager", { log: true });
 var bluetooth;
 if (isInBrowser) {
     bluetooth = window.navigator.bluetooth;

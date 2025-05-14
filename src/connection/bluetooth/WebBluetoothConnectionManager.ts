@@ -23,7 +23,7 @@ import {
 } from "./bluetoothUUIDs.ts";
 import { ConnectionType } from "../BaseConnectionManager.ts";
 
-const _console = createConsole("WebBluetoothConnectionManager", { log: false });
+const _console = createConsole("WebBluetoothConnectionManager", { log: true });
 
 type WebBluetoothInterface = webbluetooth.Bluetooth | Bluetooth;
 
