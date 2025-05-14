@@ -580,7 +580,7 @@ AFRAME.registerComponent("goomba", {
             const euler = new THREE.Euler(0, angle, 0);
             angularVelocity.applyEuler(euler);
             // console.log("setting angularVelocity", angularVelocity);
-            body.angularVelocity.set(...angularVelocity.toArray().slice(0, 3));
+            body.angularVelocity.set(...angularVelocity.toArray());
           }
         }, 1);
       } else {

@@ -1,30 +1,24 @@
-AFRAME.registerComponent("shell", {
+AFRAME.registerComponent("soccer-ball", {
   schema: {
-    template: { default: "#shellTemplate", type: "selector" },
-    kickSoundSelector: { default: "#shellKickAudio" },
-    bounceSoundSelector: { default: "#shellBounceAudio" },
+    template: { default: "#soccerTemplate", type: "selector" },
+    kickSoundSelector: { default: "#soccerKickAudio" },
+    bounceSoundSelector: { default: "#soccerBounceAudio" },
   },
 
   collisionFilterGroup: 1 << 2,
   collisionFilterMask: (1 << 0) | (1 << 2),
 
-  shapeMain: `shape: cylinder;
-  radiusTop: 0.12;
-  radiusBottom: 0.12;
-  height: 0.12;
-  offset: 0 0.01 0;
-  `,
+  shapeMain: `shape: sphere; radius: 0.112;`,
 
   init: function () {
-    this.yaw = 0;
-    window.shells = window.shells || [];
-    window.shells.push(this);
+    window.soccerBalls = window.soccerBalls || [];
+    window.soccerBalls.push(this);
+
+    this.el.shapeMain = this.shapeMain;
 
     this.el.classList.add("lookAt");
 
     this.camera = document.querySelector("a-camera");
-
-    this.el.shapeMain = this.shapeMain;
 
     this.kickVelocity = new THREE.Vector3();
     this.kickEuler = new THREE.Euler();
@@ -32,30 +26,12 @@ AFRAME.registerComponent("shell", {
     this.collisionNormal = new THREE.Vector3();
     this.velocityVector = new THREE.Vector3();
 
-    this.velocity2D = new THREE.Vector3();
-
-    this.quaternion = new THREE.Quaternion();
-    this.euler = new THREE.Euler();
-    this.releaseEuler = new THREE.Euler();
-    this.releaseQuaternion = new THREE.Quaternion();
-
-    this.spinQuaternion = new THREE.Quaternion();
-    this.spinEuler = new THREE.Euler();
-
-    this.targetEuler = new THREE.Quaternion();
-    this.targetQuaternion = new THREE.Quaternion();
-
     this.el.addEventListener("kick", this.onKick.bind(this));
     this.el.addEventListener("stomp", this.onStomp.bind(this));
 
     this.setGrabEnabled = AFRAME.utils.throttleLeadingAndTrailing(
       this.setGrabEnabled.bind(this),
       70
-    );
-
-    this.checkVelocity = AFRAME.utils.throttle(
-      this.checkVelocity.bind(this),
-      100
     );
 
     this.el.addEventListener("grabstarted", () => this.setGrabEnabled(true));
@@ -85,15 +61,8 @@ AFRAME.registerComponent("shell", {
       });
       setTimeout(() => {
         this.bodyEl = this.el.querySelector(".body");
-        this.bodyEl.addEventListener(
-          "animationcomplete",
-          this.onAnimationComplete.bind(this)
-        );
         this.el.setAttribute("grabbable", "");
-        this.el.setAttribute(
-          "grabbable-physics-body",
-          `type: dynamic; enable-angular-velocity: false;`
-        );
+        this.el.setAttribute("grabbable-physics-body", `type: dynamic; `);
       }, 1);
     });
 
@@ -110,7 +79,7 @@ AFRAME.registerComponent("shell", {
 
     this.playBounceSound = AFRAME.utils.throttle(
       this.playBounceSound.bind(this),
-      50
+      200
     );
   },
 
@@ -144,13 +113,15 @@ AFRAME.registerComponent("shell", {
   },
 
   collisionAngleThreshold: THREE.MathUtils.degToRad(20),
-  collisionVelocityThreshold: 0.1,
+  collisionVelocityThreshold: 0.4,
+  collisionVelocityVolumeScalar: 1,
   onCollide: async function (event) {
     const { contact } = event.detail;
     const collidedEntity = event.detail.body.el;
     //console.log("collided with", collidedEntity);
     const worldMesh = collidedEntity.dataset.worldMesh;
-    if (worldMesh) {
+    let volume = 1;
+    if (worldMesh || collidedEntity.components.shell) {
       let playBounce = false;
       if (worldMesh == "wall") {
         playBounce = true;
@@ -165,26 +136,31 @@ AFRAME.registerComponent("shell", {
         playBounce =
           angle < this.collisionAngleThreshold &&
           velocityLength > this.collisionVelocityThreshold;
-        if (!playBounce) {
-          // console.log({ angle, velocityLength, playBounce });
+        if (playBounce) {
+          volume = velocityLength * this.collisionVelocityVolumeScalar;
         }
       }
 
       if (playBounce) {
-        this.playBounceSound();
+        this.playBounceSound(volume);
       }
     }
   },
 
-  playBounceSound: function () {
+  playBounceSound: function (volume = 1) {
+    this.bounceSound.components.sound.stopSound();
+    this.bounceSound.components.sound.pool.children[0].setVolume(volume);
     this.bounceSound.object3D.position.copy(this.el.object3D.position);
     this.bounceSound.components.sound.playSound();
   },
   playKickSound: function () {
+    this.kickSound.components.sound.stopSound();
+    this.kickSound.components.sound.pool.children[0].setVolume(4);
     this.kickSound.object3D.position.copy(this.el.object3D.position);
     this.kickSound.components.sound.playSound();
   },
 
+  kickHeightRange: { min: 1, max: 4 },
   onKick: function (event) {
     if (this.isGrabbed || !this.body) {
       return;
@@ -192,7 +168,12 @@ AFRAME.registerComponent("shell", {
     const { velocity, yaw } = event.detail;
     // console.log("onKick", yaw);
     this.playKickSound();
-    this.kickVelocity.set(0, 1, -3.5);
+    const kickHeight = THREE.MathUtils.lerp(
+      this.kickHeightRange.min,
+      this.kickHeightRange.max,
+      Math.random()
+    );
+    this.kickVelocity.set(0, kickHeight, -5);
     this.kickEuler.set(0, yaw, 0);
     this.kickVelocity.applyEuler(this.kickEuler);
     this.body.velocity.copy(this.kickVelocity);
@@ -205,17 +186,18 @@ AFRAME.registerComponent("shell", {
     const { distance, yaw, kill } = event.detail;
     // console.log("onStomp", { distance, yaw, kill });
 
-    this.playKickSound();
+    console.log({ yaw });
 
-    this.kickVelocity.set(0, 3, 0);
-    this.kickEuler.set(0, -yaw, 0);
+    this.kickVelocity.set(0, 4, 0);
+    this.kickEuler.set(0, yaw, 0);
     this.kickVelocity.applyEuler(this.kickEuler);
     this.body.velocity.copy(this.kickVelocity);
-    //this.body.velocity.set(0, 2, 0);
 
-    this.isStomped = true;
-    this.stompStartTime = this.latestTick;
-    this.stompFinishTime = this.stompStartTime + this.stompDuration;
+    const strength = this.kickVelocity.length();
+    const angularVelocity = new THREE.Vector3(strength * 0.8, 0, 0);
+    angularVelocity.applyEuler(this.kickEuler);
+    // console.log("angularVelocity", angularVelocity);
+    this.body.angularVelocity.set(...angularVelocity.toArray());
   },
 
   onObbCollisionStarted: async function (event) {
@@ -239,127 +221,21 @@ AFRAME.registerComponent("shell", {
 
   onBodyLoaded: function (event) {
     const { body } = event.detail;
+    // body.mass = 1;
     body.collisionFilterGroup = this.collisionFilterGroup;
     body.collisionFilterMask = this.collisionFilterMask;
     // console.log("body", body);
     this.body = body;
-    if (this.manualRotate) {
-      body.fixedRotation = true;
-      body.updateMassProperties();
-    }
-    body.linearDamping = 0;
-    body.angularDamping = 0;
+    body.linearDamping = 0.15;
+    body.angularDamping = 0.4;
     body.material =
-      this.el.sceneEl.systems["physics"].driver.getMaterial("shell");
-    if (!this.manualRotate) {
-      body.angularVelocity.set(0, 10, 0);
-    }
-
-    this.releaseQuaternion.copy(this.el.object3D.quaternion);
-    this.releaseEuler.copy(this.el.object3D.rotation);
-    this.releaseTime = this.latestTick;
-    this.restoredRotationTime = this.releaseTime + this.restoreRotationDuration;
-    this.didRestoreRotation = false;
+      this.el.sceneEl.systems["physics"].driver.getMaterial("soccerBall");
   },
-
-  spinScalar: 0.01,
-  manualRotate: true,
-  restoreRotationDuration: 200,
-
-  speedMax: 5,
-
-  checkVelocity: function () {
-    if (this.body.velocity.length() > this.speedMax) {
-      console.log("speed too fast");
-      this.velocityVector.copy(this.body.velocity);
-      this.velocityVector.setLength(this.speedMax - 1);
-      this.body.velocity.copy(this.velocityVector);
-    }
-  },
-
-  stompScalars: { pitch: 0.4, roll: 0.4 },
-  stompDelay: { pitch: 0, roll: 0 },
-  stompInterpolationOffsets: { pitch: 0, roll: 0.25 },
-  stompInterpolationScalars: { pitch: 1.75, roll: 1.75 },
-  stompDuration: 700,
 
   tick: function (time, timeDelta) {
     this.latestTick = time;
 
     if (!this.isGrabbed && this.body) {
-      this.checkVelocity();
-    }
-
-    if (!this.isGrabbed && this.body && this.manualRotate) {
-      this.velocity2D.copy(this.body.velocity);
-      this.velocity2D.y = 0;
-      const spinSpeed = this.velocity2D.length() * this.spinScalar;
-      this.yaw += timeDelta * spinSpeed;
-      this.yaw %= 2 * Math.PI;
-      this.spinEuler.set(0, this.yaw, 0);
-      //this.spinQuaternion.setFromEuler(this.spinEuler);
-
-      if (!this.didRestoreRotation) {
-        let interpolation = THREE.MathUtils.inverseLerp(
-          this.releaseTime,
-          this.restoredRotationTime,
-          this.latestTick
-        );
-        interpolation = THREE.MathUtils.clamp(interpolation, 0, 1);
-        this.quaternion.slerpQuaternions(
-          this.releaseQuaternion,
-          this.targetQuaternion,
-          interpolation
-        );
-        if (interpolation >= 1) {
-          this.didRestoreRotation = true;
-        }
-      }
-
-      if (this.manualRotate && !this.isStomped) {
-        this.bodyEl.object3D.rotation.copy(this.spinEuler);
-        //this.quaternion.multiply(this.spinQuaternion);
-        this.body.quaternion.copy(this.quaternion);
-      }
-
-      if (this.isStomped) {
-        let interpolation = THREE.MathUtils.inverseLerp(
-          this.stompStartTime,
-          this.stompFinishTime,
-          this.latestTick
-        );
-        interpolation = THREE.MathUtils.clamp(interpolation, 0, 1);
-
-        let pitchInterpolation =
-          this.stompInterpolationScalars.pitch * interpolation +
-          this.stompInterpolationOffsets.pitch;
-        pitchInterpolation = THREE.MathUtils.clamp(pitchInterpolation, 0, 1);
-
-        let rollInterpolation =
-          this.stompInterpolationScalars.roll * interpolation +
-          this.stompInterpolationOffsets.roll;
-        rollInterpolation = THREE.MathUtils.clamp(rollInterpolation, 0, 1);
-
-        const pitch =
-          Math.sin(pitchInterpolation * 2 * Math.PI) *
-          this.stompScalars.pitch *
-          (1 - interpolation);
-        const roll =
-          Math.sin(rollInterpolation * 2 * Math.PI) *
-          this.stompScalars.roll *
-          (1 - interpolation);
-
-        console.log({ pitch, roll });
-
-        this.spinEuler.set(pitch, this.yaw, roll);
-        this.bodyEl.object3D.rotation.copy(this.spinEuler);
-
-        if (interpolation >= 1) {
-          console.log("finished stomp animation");
-          this.isStomped = false;
-        }
-      }
-
       if (this.el.object3D.position.y < -10) {
         console.log("fell through floor");
         this.body.velocity.set(0, 0, 0);
