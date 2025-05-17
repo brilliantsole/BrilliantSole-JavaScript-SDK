@@ -2859,8 +2859,8 @@ const TxRxMessageTypes = [
     ...SensorConfigurationMessageTypes,
     ...SensorDataMessageTypes,
     ...VibrationMessageTypes,
-    ...TfliteMessageTypes,
     ...FileTransferMessageTypes,
+    ...TfliteMessageTypes,
     ...WifiMessageTypes,
 ];
 const SMPMessageTypes = ["smp"];

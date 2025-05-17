@@ -2589,7 +2589,9 @@ _VibrationManager_vibrationLocations = new WeakMap(), _VibrationManager_instance
 }, _VibrationManager_onVibrationLocations = function _VibrationManager_onVibrationLocations(vibrationLocations) {
     __classPrivateFieldSet(this, _VibrationManager_vibrationLocations, vibrationLocations, "f");
     _console$j.log("vibrationLocations", vibrationLocations);
-    __classPrivateFieldGet(this, _VibrationManager_instances, "a", _VibrationManager_dispatchEvent_get).call(this, "getVibrationLocations", { vibrationLocations: __classPrivateFieldGet(this, _VibrationManager_vibrationLocations, "f") });
+    __classPrivateFieldGet(this, _VibrationManager_instances, "a", _VibrationManager_dispatchEvent_get).call(this, "getVibrationLocations", {
+        vibrationLocations: __classPrivateFieldGet(this, _VibrationManager_vibrationLocations, "f"),
+    });
 };
 
 var _WifiManager_instances, _WifiManager_dispatchEvent_get, _WifiManager_isWifiAvailable, _WifiManager_updateIsWifiAvailable, _WifiManager_assertWifiIsAvailable, _WifiManager_wifiSSID, _WifiManager_updateWifiSSID, _WifiManager_wifiPassword, _WifiManager_updateWifiPassword, _WifiManager_wifiConnectionEnabled, _WifiManager_updateWifiConnectionEnabled, _WifiManager_isWifiConnected, _WifiManager_updateIsWifiConnected, _WifiManager_ipAddress, _WifiManager_updateIpAddress, _WifiManager_isWifiSecure, _WifiManager_updateIsWifiSecure;
@@ -2849,8 +2851,8 @@ const TxRxMessageTypes = [
     ...SensorConfigurationMessageTypes,
     ...SensorDataMessageTypes,
     ...VibrationMessageTypes,
-    ...TfliteMessageTypes,
     ...FileTransferMessageTypes,
+    ...TfliteMessageTypes,
     ...WifiMessageTypes,
 ];
 const SMPMessageTypes = ["smp"];

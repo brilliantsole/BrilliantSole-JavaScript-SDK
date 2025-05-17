@@ -88,8 +88,8 @@ export const TxRxMessageTypes = [
   ...SensorConfigurationMessageTypes,
   ...SensorDataMessageTypes,
   ...VibrationMessageTypes,
-  ...TfliteMessageTypes,
   ...FileTransferMessageTypes,
+  ...TfliteMessageTypes,
   ...WifiMessageTypes,
 ] as const;
 export type TxRxMessageType = (typeof TxRxMessageTypes)[number];
