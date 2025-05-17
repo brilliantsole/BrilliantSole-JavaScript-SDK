@@ -2382,7 +2382,7 @@ const VibrationWaveformEffects = [
     "smoothHum10",
 ];
 
-var _VibrationManager_instances, _VibrationManager_verifyLocation, _VibrationManager_verifyLocations, _VibrationManager_createLocationsBitmask, _VibrationManager_assertNonEmptyArray, _VibrationManager_verifyWaveformEffect, _VibrationManager_verifyWaveformEffectSegment, _VibrationManager_verifyWaveformEffectSegmentLoopCount, _VibrationManager_verifyWaveformEffectSegments, _VibrationManager_verifyWaveformEffectSequenceLoopCount, _VibrationManager_verifyWaveformSegment, _VibrationManager_verifyWaveformSegments, _VibrationManager_createWaveformEffectsData, _VibrationManager_createWaveformData, _VibrationManager_verifyVibrationType, _VibrationManager_createData;
+var _VibrationManager_instances, _VibrationManager_dispatchEvent_get, _VibrationManager_verifyLocation, _VibrationManager_verifyLocations, _VibrationManager_createLocationsBitmask, _VibrationManager_assertNonEmptyArray, _VibrationManager_verifyWaveformEffect, _VibrationManager_verifyWaveformEffectSegment, _VibrationManager_verifyWaveformEffectSegmentLoopCount, _VibrationManager_verifyWaveformEffectSegments, _VibrationManager_verifyWaveformEffectSequenceLoopCount, _VibrationManager_verifyWaveformSegment, _VibrationManager_verifyWaveformSegments, _VibrationManager_createWaveformEffectsData, _VibrationManager_createWaveformData, _VibrationManager_verifyVibrationType, _VibrationManager_createData, _VibrationManager_vibrationLocations, _VibrationManager_onVibrationLocations;
 const _console$p = createConsole("VibrationManager");
 const VibrationLocations = ["front", "rear"];
 const VibrationTypes = ["waveformEffect", "waveform"];
@@ -2390,6 +2390,7 @@ const VibrationMessageTypes = [
     "getVibrationLocations",
     "triggerVibration",
 ];
+const VibrationEventTypes = VibrationMessageTypes;
 const MaxNumberOfVibrationWaveformEffectSegments = 8;
 const MaxVibrationWaveformSegmentDuration = 2550;
 const MaxVibrationWaveformEffectSegmentDelay = 1270;
@@ -2399,7 +2400,11 @@ const MaxVibrationWaveformEffectSequenceLoopCount = 6;
 class VibrationManager {
     constructor() {
         _VibrationManager_instances.add(this);
+        _VibrationManager_vibrationLocations.set(this, []);
         autoBind$1(this);
+    }
+    get waitForEvent() {
+        return this.eventDispatcher.waitForEvent;
     }
     async triggerVibration(vibrationConfigurations, sendImmediately = true) {
         let triggerVibrationData;
@@ -2429,8 +2434,26 @@ class VibrationManager {
         });
         await this.sendMessage([{ type: "triggerVibration", data: triggerVibrationData }], sendImmediately);
     }
+    get vibrationLocations() {
+        return __classPrivateFieldGet(this, _VibrationManager_vibrationLocations, "f");
+    }
+    parseMessage(messageType, dataView) {
+        _console$p.log({ messageType });
+        switch (messageType) {
+            case "getVibrationLocations":
+                const vibrationLocations = Array.from(new Uint8Array(dataView.buffer))
+                    .map((index) => VibrationLocations[index])
+                    .filter(Boolean);
+                __classPrivateFieldGet(this, _VibrationManager_instances, "m", _VibrationManager_onVibrationLocations).call(this, vibrationLocations);
+                break;
+            default:
+                throw Error(`uncaught messageType ${messageType}`);
+        }
+    }
 }
-_VibrationManager_instances = new WeakSet(), _VibrationManager_verifyLocation = function _VibrationManager_verifyLocation(location) {
+_VibrationManager_vibrationLocations = new WeakMap(), _VibrationManager_instances = new WeakSet(), _VibrationManager_dispatchEvent_get = function _VibrationManager_dispatchEvent_get() {
+    return this.eventDispatcher.dispatchEvent;
+}, _VibrationManager_verifyLocation = function _VibrationManager_verifyLocation(location) {
     _console$p.assertTypeWithError(location, "string");
     _console$p.assertWithError(VibrationLocations.includes(location), `invalid location "${location}"`);
 }, _VibrationManager_verifyLocations = function _VibrationManager_verifyLocations(locations) {
@@ -2571,6 +2594,12 @@ _VibrationManager_instances = new WeakSet(), _VibrationManager_verifyLocation = 
     const data = concatenateArrayBuffers(locationsBitmask, vibrationTypeIndex, dataView.byteLength, dataView);
     _console$p.log({ data });
     return data;
+}, _VibrationManager_onVibrationLocations = function _VibrationManager_onVibrationLocations(vibrationLocations) {
+    __classPrivateFieldSet(this, _VibrationManager_vibrationLocations, vibrationLocations, "f");
+    _console$p.log("vibrationLocations", vibrationLocations);
+    __classPrivateFieldGet(this, _VibrationManager_instances, "a", _VibrationManager_dispatchEvent_get).call(this, "getVibrationLocations", {
+        vibrationLocations: __classPrivateFieldGet(this, _VibrationManager_vibrationLocations, "f"),
+    });
 };
 
 var _WifiManager_instances, _WifiManager_dispatchEvent_get, _WifiManager_isWifiAvailable, _WifiManager_updateIsWifiAvailable, _WifiManager_assertWifiIsAvailable, _WifiManager_wifiSSID, _WifiManager_updateWifiSSID, _WifiManager_wifiPassword, _WifiManager_updateWifiPassword, _WifiManager_wifiConnectionEnabled, _WifiManager_updateWifiConnectionEnabled, _WifiManager_isWifiConnected, _WifiManager_updateIsWifiConnected, _WifiManager_ipAddress, _WifiManager_updateIpAddress, _WifiManager_isWifiSecure, _WifiManager_updateIsWifiSecure;
@@ -5226,6 +5255,7 @@ const DeviceEventTypes = [
     ...DeviceInformationEventTypes,
     ...SensorConfigurationEventTypes,
     ...SensorDataEventTypes,
+    ...VibrationEventTypes,
     ...FileTransferEventTypes,
     ...TfliteEventTypes,
     ...WifiEventTypes,
@@ -5296,6 +5326,7 @@ class Device {
         __classPrivateFieldGet(this, _Device_sensorDataManager, "f").eventDispatcher = __classPrivateFieldGet(this, _Device_eventDispatcher, "f");
         __classPrivateFieldGet(this, _Device_vibrationManager, "f").sendMessage = this
             .sendTxMessages;
+        __classPrivateFieldGet(this, _Device_vibrationManager, "f").eventDispatcher = __classPrivateFieldGet(this, _Device_eventDispatcher, "f");
         __classPrivateFieldGet(this, _Device_tfliteManager, "f").sendMessage = this
             .sendTxMessages;
         __classPrivateFieldGet(this, _Device_tfliteManager, "f").eventDispatcher = __classPrivateFieldGet(this, _Device_eventDispatcher, "f");
@@ -5610,6 +5641,9 @@ class Device {
     }
     resetPressureRange() {
         __classPrivateFieldGet(this, _Device_sensorDataManager, "f").pressureSensorDataManager.resetRange();
+    }
+    get vibrationLocations() {
+        return __classPrivateFieldGet(this, _Device_vibrationManager, "f").vibrationLocations;
     }
     async triggerVibration(vibrationConfigurations, sendImmediately) {
         __classPrivateFieldGet(this, _Device_vibrationManager, "f").triggerVibration(vibrationConfigurations, sendImmediately);
@@ -5945,6 +5979,9 @@ _a$3 = Device, _Device_eventDispatcher = new WeakMap(), _Device_connectionManage
             }
             else if (SensorConfigurationMessageTypes.includes(messageType)) {
                 __classPrivateFieldGet(this, _Device_sensorConfigurationManager, "f").parseMessage(messageType, dataView);
+            }
+            else if (VibrationMessageTypes.includes(messageType)) {
+                __classPrivateFieldGet(this, _Device_vibrationManager, "f").parseMessage(messageType, dataView);
             }
             else if (WifiMessageTypes.includes(messageType)) {
                 __classPrivateFieldGet(this, _Device_wifiManager, "f").parseMessage(messageType, dataView);

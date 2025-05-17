@@ -42,6 +42,10 @@ import SensorDataManager, {
 import VibrationManager, {
   SendVibrationMessageCallback,
   VibrationConfiguration,
+  VibrationEventDispatcher,
+  VibrationEventTypes,
+  VibrationMessageType,
+  VibrationMessageTypes,
 } from "./vibration/VibrationManager.ts";
 import FileTransferManager, {
   FileTransferEventTypes,
@@ -115,6 +119,7 @@ export const DeviceEventTypes = [
   ...DeviceInformationEventTypes,
   ...SensorConfigurationEventTypes,
   ...SensorDataEventTypes,
+  ...VibrationEventTypes,
   ...FileTransferEventTypes,
   ...TfliteEventTypes,
   ...WifiEventTypes,
@@ -226,6 +231,8 @@ class Device {
 
     this.#vibrationManager.sendMessage = this
       .sendTxMessages as SendVibrationMessageCallback;
+    this.#vibrationManager.eventDispatcher = this
+      .#eventDispatcher as VibrationEventDispatcher;
 
     this.#tfliteManager.sendMessage = this
       .sendTxMessages as SendTfliteMessageCallback;
@@ -710,6 +717,13 @@ class Device {
             messageType as SensorConfigurationMessageType,
             dataView
           );
+        } else if (
+          VibrationMessageTypes.includes(messageType as VibrationMessageType)
+        ) {
+          this.#vibrationManager.parseMessage(
+            messageType as VibrationMessageType,
+            dataView
+          );
         } else if (WifiMessageTypes.includes(messageType as WifiMessageType)) {
           this.#wifiManager.parseMessage(
             messageType as WifiMessageType,
@@ -874,7 +888,9 @@ class Device {
   }
 
   // VIBRATION
-  // FILL - getVibrationLocations
+  get vibrationLocations() {
+    return this.#vibrationManager.vibrationLocations;
+  }
 
   #vibrationManager = new VibrationManager();
   async triggerVibration(

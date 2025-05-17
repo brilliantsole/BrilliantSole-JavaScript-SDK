@@ -4,8 +4,9 @@ import {
   VibrationWaveformEffects,
 } from "./VibrationWaveformEffects.ts";
 import { concatenateArrayBuffers } from "../utils/ArrayBufferUtils.ts";
-import { SendMessageCallback } from "../Device.ts";
+import Device, { SendMessageCallback } from "../Device.ts";
 import autoBind from "auto-bind";
+import EventDispatcher from "../utils/EventDispatcher.ts";
 
 const _console = createConsole("VibrationManager");
 
@@ -31,6 +32,13 @@ export const VibrationMessageTypes = [
   "triggerVibration",
 ] as const;
 export type VibrationMessageType = (typeof VibrationMessageTypes)[number];
+
+export const VibrationEventTypes = VibrationMessageTypes;
+export type VibrationEventType = (typeof VibrationEventTypes)[number];
+
+export interface VibrationEventMessages {
+  getVibrationLocations: { vibrationLocations: VibrationLocation[] };
+}
 
 export const MaxNumberOfVibrationWaveformEffectSegments = 8;
 export const MaxVibrationWaveformSegmentDuration = 2550;
@@ -64,11 +72,25 @@ export type VibrationConfiguration =
 export type SendVibrationMessageCallback =
   SendMessageCallback<VibrationMessageType>;
 
+export type VibrationEventDispatcher = EventDispatcher<
+  Device,
+  VibrationEventType,
+  VibrationEventMessages
+>;
+
 class VibrationManager {
   constructor() {
     autoBind(this);
   }
   sendMessage!: SendVibrationMessageCallback;
+
+  eventDispatcher!: VibrationEventDispatcher;
+  get #dispatchEvent() {
+    return this.eventDispatcher.dispatchEvent;
+  }
+  get waitForEvent() {
+    return this.eventDispatcher.waitForEvent;
+  }
 
   #verifyLocation(location: VibrationLocation) {
     _console.assertTypeWithError(location, "string");
@@ -375,6 +397,34 @@ class VibrationManager {
       [{ type: "triggerVibration", data: triggerVibrationData }],
       sendImmediately
     );
+  }
+
+  #vibrationLocations: VibrationLocation[] = [];
+  get vibrationLocations() {
+    return this.#vibrationLocations;
+  }
+  #onVibrationLocations(vibrationLocations: VibrationLocation[]) {
+    this.#vibrationLocations = vibrationLocations;
+    _console.log("vibrationLocations", vibrationLocations);
+    this.#dispatchEvent("getVibrationLocations", {
+      vibrationLocations: this.#vibrationLocations,
+    });
+  }
+
+  // MESSAGE
+  parseMessage(messageType: VibrationMessageType, dataView: DataView) {
+    _console.log({ messageType });
+
+    switch (messageType) {
+      case "getVibrationLocations":
+        const vibrationLocations = Array.from(new Uint8Array(dataView.buffer))
+          .map((index) => VibrationLocations[index])
+          .filter(Boolean);
+        this.#onVibrationLocations(vibrationLocations);
+        break;
+      default:
+        throw Error(`uncaught messageType ${messageType}`);
+    }
   }
 }
 
