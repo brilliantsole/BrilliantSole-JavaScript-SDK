@@ -12,7 +12,7 @@ import { SensorConfigurationMessageTypes } from "../sensor/SensorConfigurationMa
 import { SensorDataMessageTypes } from "../sensor/SensorDataManager.ts";
 import { WifiMessageTypes } from "../WifiManager.ts";
 
-const _console = createConsole("BaseConnectionManager", { log: false });
+const _console = createConsole("BaseConnectionManager", { log: true });
 
 export const ConnectionTypes = [
   "webBluetooth",
@@ -275,6 +275,10 @@ abstract class BaseConnectionManager {
       _console.log("already sending messages - waiting until later");
       return;
     }
+    if (this.#pendingMessages.length == 0) {
+      _console.log("no pendingMessages");
+      return;
+    }
     this.#isSendingMessages = true;
 
     _console.log("sendTxMessages", this.#pendingMessages.slice());
@@ -328,6 +332,8 @@ abstract class BaseConnectionManager {
     }
 
     this.#isSendingMessages = false;
+
+    this.sendTxMessages(undefined, true);
   }
 
   protected defaultMtu = 23;

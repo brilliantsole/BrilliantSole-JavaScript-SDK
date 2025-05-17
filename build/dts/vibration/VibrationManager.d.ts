@@ -13,7 +13,7 @@ export interface VibrationWaveformSegment {
     duration: number;
     amplitude: number;
 }
-export declare const VibrationMessageTypes: readonly ["triggerVibration"];
+export declare const VibrationMessageTypes: readonly ["getVibrationLocations", "triggerVibration"];
 export type VibrationMessageType = (typeof VibrationMessageTypes)[number];
 export declare const MaxNumberOfVibrationWaveformEffectSegments = 8;
 export declare const MaxVibrationWaveformSegmentDuration = 2550;

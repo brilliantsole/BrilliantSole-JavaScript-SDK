@@ -37,6 +37,7 @@ import SensorDataManager, {
   SensorType,
   ContinuousSensorTypes,
   SensorDataEventDispatcher,
+  RequiredPressureMessageTypes,
 } from "./sensor/SensorDataManager.ts";
 import VibrationManager, {
   SendVibrationMessageCallback,
@@ -175,7 +176,9 @@ export const RequiredInformationConnectionMessages: TxRxMessageType[] = [
   "getCurrentTime",
   "getSensorConfiguration",
   "getSensorScalars",
-  "getPressurePositions",
+  // "getPressurePositions",
+
+  "getVibrationLocations",
 
   "maxFileLength",
   "getFileLength",
@@ -249,7 +252,24 @@ class Device {
       this.#fileTransferManager.mtu = this.mtu;
       this.connectionManager!.mtu = this.mtu;
     });
+    this.addEventListener("getSensorConfiguration", () => {
+      if (this.connectionStatus != "connecting") {
+        return;
+      }
+      if (this.sensorTypes.includes("pressure")) {
+        _console.log("requesting required pressure information");
+        const messages = RequiredPressureMessageTypes.map((messageType) => ({
+          type: messageType,
+        }));
+        this.sendTxMessages(messages, false);
+      } else {
+        _console.log("don't need to request pressure infomration");
+      }
+    });
     this.addEventListener("isWifiAvailable", () => {
+      if (this.connectionStatus != "connecting") {
+        return;
+      }
       if (this.connectionType == "client" && !isInNode) {
         return;
       }
@@ -436,6 +456,11 @@ class Device {
     let hasRequiredInformation = this.#didReceiveMessageTypes(
       RequiredInformationConnectionMessages
     );
+    if (hasRequiredInformation && this.sensorTypes.includes("pressure")) {
+      hasRequiredInformation = this.#didReceiveMessageTypes(
+        RequiredPressureMessageTypes
+      );
+    }
     if (hasRequiredInformation && this.isWifiAvailable) {
       hasRequiredInformation = this.#didReceiveMessageTypes(
         RequiredWifiMessageTypes
@@ -849,6 +874,8 @@ class Device {
   }
 
   // VIBRATION
+  // FILL - getVibrationLocations
+
   #vibrationManager = new VibrationManager();
   async triggerVibration(
     vibrationConfigurations: VibrationConfiguration[],

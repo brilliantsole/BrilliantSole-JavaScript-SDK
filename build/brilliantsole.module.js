@@ -1058,17 +1058,28 @@ class PressureSensorDataManager {
         __classPrivateFieldGet(this, _PressureSensorDataManager_normalizedSumRangeHelper, "f").reset();
     }
     parseData(dataView, scalar) {
-        const pressure = { sensors: [], scaledSum: 0, normalizedSum: 0 };
+        const pressure = {
+            sensors: [],
+            scaledSum: 0,
+            normalizedSum: 0,
+        };
         for (let index = 0, byteOffset = 0; byteOffset < dataView.byteLength; index++, byteOffset += 2) {
             const rawValue = dataView.getUint16(byteOffset, true);
             let scaledValue = (rawValue * scalar) / this.numberOfSensors;
             const rangeHelper = __classPrivateFieldGet(this, _PressureSensorDataManager_sensorRangeHelpers, "f")[index];
             const normalizedValue = rangeHelper.updateAndGetNormalization(scaledValue, false);
             const position = this.positions[index];
-            pressure.sensors[index] = { rawValue, scaledValue, normalizedValue, position, weightedValue: 0 };
+            pressure.sensors[index] = {
+                rawValue,
+                scaledValue,
+                normalizedValue,
+                position,
+                weightedValue: 0,
+            };
             pressure.scaledSum += scaledValue;
         }
-        pressure.normalizedSum = __classPrivateFieldGet(this, _PressureSensorDataManager_normalizedSumRangeHelper, "f").updateAndGetNormalization(pressure.scaledSum, false);
+        pressure.normalizedSum =
+            __classPrivateFieldGet(this, _PressureSensorDataManager_normalizedSumRangeHelper, "f").updateAndGetNormalization(pressure.scaledSum, false);
         if (pressure.scaledSum > 0) {
             pressure.center = { x: 0, y: 0 };
             pressure.sensors.forEach((sensor) => {
@@ -1076,7 +1087,8 @@ class PressureSensorDataManager {
                 pressure.center.x += sensor.position.x * sensor.weightedValue;
                 pressure.center.y += sensor.position.y * sensor.weightedValue;
             });
-            pressure.normalizedCenter = __classPrivateFieldGet(this, _PressureSensorDataManager_centerOfPressureHelper, "f").updateAndGetNormalization(pressure.center, false);
+            pressure.normalizedCenter =
+                __classPrivateFieldGet(this, _PressureSensorDataManager_centerOfPressureHelper, "f").updateAndGetNormalization(pressure.center, false);
         }
         _console$s.log({ pressure });
         return pressure;
@@ -1238,14 +1250,28 @@ function parseMessage(dataView, messageTypes, callback, context, parseMessageLen
 
 var _SensorDataManager_scalars;
 const _console$o = createConsole("SensorDataManager", { log: false });
-const SensorTypes = [...PressureSensorTypes, ...MotionSensorTypes, ...BarometerSensorTypes];
+const SensorTypes = [
+    ...PressureSensorTypes,
+    ...MotionSensorTypes,
+    ...BarometerSensorTypes,
+];
 const ContinuousSensorTypes = [
     ...ContinuousPressureSensorTypes,
     ...ContinuousMotionTypes,
     ...ContinuousBarometerSensorTypes,
 ];
-const SensorDataMessageTypes = ["getPressurePositions", "getSensorScalars", "sensorData"];
-const SensorDataEventTypes = [...SensorDataMessageTypes, ...SensorTypes];
+const SensorDataMessageTypes = [
+    "getPressurePositions",
+    "getSensorScalars",
+    "sensorData",
+];
+const RequiredPressureMessageTypes = [
+    "getPressurePositions",
+];
+const SensorDataEventTypes = [
+    ...SensorDataMessageTypes,
+    ...SensorTypes,
+];
 class SensorDataManager {
     constructor() {
         this.pressureSensorDataManager = new PressureSensorDataManager();
@@ -1298,7 +1324,9 @@ class SensorDataManager {
         const timestamp = parseTimestamp(dataView, byteOffset);
         byteOffset += 2;
         const _dataView = new DataView(dataView.buffer, byteOffset);
-        parseMessage(_dataView, SensorTypes, this.parseDataCallback.bind(this), { timestamp });
+        parseMessage(_dataView, SensorTypes, this.parseDataCallback.bind(this), {
+            timestamp,
+        });
     }
     parseDataCallback(sensorType, dataView, { timestamp }) {
         const scalar = __classPrivateFieldGet(this, _SensorDataManager_scalars, "f").get(sensorType) || 1;
@@ -1331,7 +1359,8 @@ class SensorDataManager {
                 sensorData = this.motionSensorDataManager.parseActivity(dataView);
                 break;
             case "deviceOrientation":
-                sensorData = this.motionSensorDataManager.parseDeviceOrientation(dataView);
+                sensorData =
+                    this.motionSensorDataManager.parseDeviceOrientation(dataView);
                 break;
             case "barometer":
                 sensorData = this.barometerSensorDataManager.parseData(dataView, scalar);
@@ -1341,8 +1370,16 @@ class SensorDataManager {
         }
         _console$o.assertWithError(sensorData != null, `no sensorData defined for sensorType "${sensorType}"`);
         _console$o.log({ sensorType, sensorData });
-        this.dispatchEvent(sensorType, { sensorType, [sensorType]: sensorData, timestamp });
-        this.dispatchEvent("sensorData", { sensorType, [sensorType]: sensorData, timestamp });
+        this.dispatchEvent(sensorType, {
+            sensorType,
+            [sensorType]: sensorData,
+            timestamp,
+        });
+        this.dispatchEvent("sensorData", {
+            sensorType,
+            [sensorType]: sensorData,
+            timestamp,
+        });
     }
 }
 _SensorDataManager_scalars = new WeakMap();
@@ -1973,7 +2010,7 @@ _DeviceInformationManager_information = new WeakMap(), _DeviceInformationManager
 };
 
 var _InformationManager_instances, _InformationManager_dispatchEvent_get, _InformationManager_isCharging, _InformationManager_updateIsCharging, _InformationManager_batteryCurrent, _InformationManager_updateBatteryCurrent, _InformationManager_id, _InformationManager_updateId, _InformationManager_name, _InformationManager_type, _InformationManager_assertValidDeviceType, _InformationManager_assertValidDeviceTypeEnum, _InformationManager_setTypeEnum, _InformationManager_mtu, _InformationManager_updateMtu, _InformationManager_isCurrentTimeSet, _InformationManager_onCurrentTime, _InformationManager_setCurrentTime;
-const _console$k = createConsole("InformationManager", { log: false });
+const _console$k = createConsole("InformationManager", { log: true });
 const DeviceTypes = [
     "leftInsole",
     "rightInsole",
@@ -2341,7 +2378,10 @@ var _VibrationManager_instances, _VibrationManager_verifyLocation, _VibrationMan
 const _console$j = createConsole("VibrationManager");
 const VibrationLocations = ["front", "rear"];
 const VibrationTypes = ["waveformEffect", "waveform"];
-const VibrationMessageTypes = ["triggerVibration"];
+const VibrationMessageTypes = [
+    "getVibrationLocations",
+    "triggerVibration",
+];
 const MaxNumberOfVibrationWaveformEffectSegments = 8;
 const MaxVibrationWaveformSegmentDuration = 2550;
 const MaxVibrationWaveformEffectSegmentDelay = 1270;
@@ -2425,17 +2465,20 @@ _VibrationManager_instances = new WeakSet(), _VibrationManager_verifyLocation = 
 }, _VibrationManager_verifyWaveformEffectSegmentLoopCount = function _VibrationManager_verifyWaveformEffectSegmentLoopCount(waveformEffectSegmentLoopCount) {
     _console$j.assertTypeWithError(waveformEffectSegmentLoopCount, "number");
     _console$j.assertWithError(waveformEffectSegmentLoopCount >= 0, `waveformEffectSegmentLoopCount must be 0 or greater (got ${waveformEffectSegmentLoopCount})`);
-    _console$j.assertWithError(waveformEffectSegmentLoopCount <= MaxVibrationWaveformEffectSegmentLoopCount, `waveformEffectSegmentLoopCount must be ${MaxVibrationWaveformEffectSegmentLoopCount} or fewer (got ${waveformEffectSegmentLoopCount})`);
+    _console$j.assertWithError(waveformEffectSegmentLoopCount <=
+        MaxVibrationWaveformEffectSegmentLoopCount, `waveformEffectSegmentLoopCount must be ${MaxVibrationWaveformEffectSegmentLoopCount} or fewer (got ${waveformEffectSegmentLoopCount})`);
 }, _VibrationManager_verifyWaveformEffectSegments = function _VibrationManager_verifyWaveformEffectSegments(waveformEffectSegments) {
     __classPrivateFieldGet(this, _VibrationManager_instances, "m", _VibrationManager_assertNonEmptyArray).call(this, waveformEffectSegments);
-    _console$j.assertWithError(waveformEffectSegments.length <= MaxNumberOfVibrationWaveformEffectSegments, `must have ${MaxNumberOfVibrationWaveformEffectSegments} waveformEffectSegments or fewer (got ${waveformEffectSegments.length})`);
+    _console$j.assertWithError(waveformEffectSegments.length <=
+        MaxNumberOfVibrationWaveformEffectSegments, `must have ${MaxNumberOfVibrationWaveformEffectSegments} waveformEffectSegments or fewer (got ${waveformEffectSegments.length})`);
     waveformEffectSegments.forEach((waveformEffectSegment) => {
         __classPrivateFieldGet(this, _VibrationManager_instances, "m", _VibrationManager_verifyWaveformEffectSegment).call(this, waveformEffectSegment);
     });
 }, _VibrationManager_verifyWaveformEffectSequenceLoopCount = function _VibrationManager_verifyWaveformEffectSequenceLoopCount(waveformEffectSequenceLoopCount) {
     _console$j.assertTypeWithError(waveformEffectSequenceLoopCount, "number");
     _console$j.assertWithError(waveformEffectSequenceLoopCount >= 0, `waveformEffectSequenceLoopCount must be 0 or greater (got ${waveformEffectSequenceLoopCount})`);
-    _console$j.assertWithError(waveformEffectSequenceLoopCount <= MaxVibrationWaveformEffectSequenceLoopCount, `waveformEffectSequenceLoopCount must be ${MaxVibrationWaveformEffectSequenceLoopCount} or fewer (got ${waveformEffectSequenceLoopCount})`);
+    _console$j.assertWithError(waveformEffectSequenceLoopCount <=
+        MaxVibrationWaveformEffectSequenceLoopCount, `waveformEffectSequenceLoopCount must be ${MaxVibrationWaveformEffectSequenceLoopCount} or fewer (got ${waveformEffectSequenceLoopCount})`);
 }, _VibrationManager_verifyWaveformSegment = function _VibrationManager_verifyWaveformSegment(waveformSegment) {
     _console$j.assertTypeWithError(waveformSegment.amplitude, "number");
     _console$j.assertWithError(waveformSegment.amplitude >= 0, `amplitude must be 0 or greater (got ${waveformSegment.amplitude})`);
@@ -2458,13 +2501,18 @@ _VibrationManager_instances = new WeakSet(), _VibrationManager_verifyLocation = 
         const { loopCount } = waveformEffectSegment;
         return loopCount != undefined && loopCount > 0;
     });
-    const includeAllWaveformEffectSegments = hasAtLeast1WaveformEffectWithANonzeroLoopCount || waveformEffectSequenceLoopCount != 0;
+    const includeAllWaveformEffectSegments = hasAtLeast1WaveformEffectWithANonzeroLoopCount ||
+        waveformEffectSequenceLoopCount != 0;
     for (let index = 0; index < waveformEffectSegments.length ||
-        (includeAllWaveformEffectSegments && index < MaxNumberOfVibrationWaveformEffectSegments); index++) {
-        const waveformEffectSegment = waveformEffectSegments[index] || { effect: "none" };
+        (includeAllWaveformEffectSegments &&
+            index < MaxNumberOfVibrationWaveformEffectSegments); index++) {
+        const waveformEffectSegment = waveformEffectSegments[index] || {
+            effect: "none",
+        };
         if (waveformEffectSegment.effect != undefined) {
             const waveformEffect = waveformEffectSegment.effect;
-            dataArray[byteOffset++] = VibrationWaveformEffects.indexOf(waveformEffect);
+            dataArray[byteOffset++] =
+                VibrationWaveformEffects.indexOf(waveformEffect);
         }
         else if (waveformEffectSegment.delay != undefined) {
             const { delay } = waveformEffectSegment;
@@ -2476,7 +2524,8 @@ _VibrationManager_instances = new WeakSet(), _VibrationManager_verifyLocation = 
     }
     const includeAllWaveformEffectSegmentLoopCounts = waveformEffectSequenceLoopCount != 0;
     for (let index = 0; index < waveformEffectSegments.length ||
-        (includeAllWaveformEffectSegmentLoopCounts && index < MaxNumberOfVibrationWaveformEffectSegments); index++) {
+        (includeAllWaveformEffectSegmentLoopCounts &&
+            index < MaxNumberOfVibrationWaveformEffectSegments); index++) {
         const waveformEffectSegmentLoopCount = waveformEffectSegments[index]?.loopCount || 0;
         if (index == 0 || index == 4) {
             dataArray[byteOffset] = 0;
@@ -2749,7 +2798,7 @@ _WifiManager_isWifiAvailable = new WeakMap(), _WifiManager_wifiSSID = new WeakMa
 };
 
 var _BaseConnectionManager_instances, _a$3, _BaseConnectionManager_AssertValidTxRxMessageType, _BaseConnectionManager_assertIsSupported, _BaseConnectionManager_status, _BaseConnectionManager_assertIsNotConnecting, _BaseConnectionManager_assertIsNotDisconnecting, _BaseConnectionManager_pendingMessages, _BaseConnectionManager_isSendingMessages, _BaseConnectionManager_onRxMessage, _BaseConnectionManager_timer, _BaseConnectionManager_checkConnection;
-const _console$h = createConsole("BaseConnectionManager", { log: false });
+const _console$h = createConsole("BaseConnectionManager", { log: true });
 const ConnectionTypes = [
     "webBluetooth",
     "noble",
@@ -2890,6 +2939,10 @@ class BaseConnectionManager {
             _console$h.log("already sending messages - waiting until later");
             return;
         }
+        if (__classPrivateFieldGet(this, _BaseConnectionManager_pendingMessages, "f").length == 0) {
+            _console$h.log("no pendingMessages");
+            return;
+        }
         __classPrivateFieldSet(this, _BaseConnectionManager_isSendingMessages, true, "f");
         _console$h.log("sendTxMessages", __classPrivateFieldGet(this, _BaseConnectionManager_pendingMessages, "f").slice());
         const arrayBuffers = __classPrivateFieldGet(this, _BaseConnectionManager_pendingMessages, "f").map((message) => {
@@ -2931,6 +2984,7 @@ class BaseConnectionManager {
             await this.sendTxData(arrayBuffer);
         }
         __classPrivateFieldSet(this, _BaseConnectionManager_isSendingMessages, false, "f");
+        this.sendTxMessages(undefined, true);
     }
     async sendTxData(data) {
         _console$h.log("sendTxData", data);
@@ -4916,7 +4970,7 @@ const RequiredInformationConnectionMessages = [
     "getCurrentTime",
     "getSensorConfiguration",
     "getSensorScalars",
-    "getPressurePositions",
+    "getVibrationLocations",
     "maxFileLength",
     "getFileLength",
     "getFileChecksum",
@@ -4988,7 +5042,25 @@ class Device {
             __classPrivateFieldGet(this, _Device_fileTransferManager, "f").mtu = this.mtu;
             this.connectionManager.mtu = this.mtu;
         });
+        this.addEventListener("getSensorConfiguration", () => {
+            if (this.connectionStatus != "connecting") {
+                return;
+            }
+            if (this.sensorTypes.includes("pressure")) {
+                _console$6.log("requesting required pressure information");
+                const messages = RequiredPressureMessageTypes.map((messageType) => ({
+                    type: messageType,
+                }));
+                this.sendTxMessages(messages, false);
+            }
+            else {
+                _console$6.log("don't need to request pressure infomration");
+            }
+        });
         this.addEventListener("isWifiAvailable", () => {
+            if (this.connectionStatus != "connecting") {
+                return;
+            }
             if (this.connectionType == "client" && !isInNode) {
                 return;
             }
@@ -5498,6 +5570,9 @@ _a$2 = Device, _Device_eventDispatcher = new WeakMap(), _Device_connectionManage
     });
 }, _Device_hasRequiredInformation_get = function _Device_hasRequiredInformation_get() {
     let hasRequiredInformation = __classPrivateFieldGet(this, _Device_instances, "m", _Device_didReceiveMessageTypes).call(this, RequiredInformationConnectionMessages);
+    if (hasRequiredInformation && this.sensorTypes.includes("pressure")) {
+        hasRequiredInformation = __classPrivateFieldGet(this, _Device_instances, "m", _Device_didReceiveMessageTypes).call(this, RequiredPressureMessageTypes);
+    }
     if (hasRequiredInformation && this.isWifiAvailable) {
         hasRequiredInformation = __classPrivateFieldGet(this, _Device_instances, "m", _Device_didReceiveMessageTypes).call(this, RequiredWifiMessageTypes);
     }

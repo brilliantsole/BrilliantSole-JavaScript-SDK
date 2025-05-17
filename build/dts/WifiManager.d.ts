@@ -36,7 +36,7 @@ declare class WifiManager {
     constructor();
     sendMessage: SendWifiMessageCallback;
     eventDispatcher: WifiEventDispatcher;
-    get waitForEvent(): <T extends "isWifiAvailable" | "getWifiSSID" | "getWifiPassword" | "getEnableWifiConnection" | "isWifiConnected" | "ipAddress" | "setWifiSSID" | "setWifiPassword" | "setEnableWifiConnection" | "isWifiSecure">(type: T) => Promise<{
+    get waitForEvent(): <T extends "isWifiAvailable" | "getWifiSSID" | "setWifiSSID" | "getWifiPassword" | "setWifiPassword" | "getEnableWifiConnection" | "setEnableWifiConnection" | "isWifiConnected" | "ipAddress" | "isWifiSecure">(type: T) => Promise<{
         type: T;
         target: Device;
         message: WifiEventMessages[T];

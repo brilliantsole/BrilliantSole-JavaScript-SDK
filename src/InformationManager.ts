@@ -7,7 +7,7 @@ import { Uint16Max } from "./utils/MathUtils.ts";
 import { textDecoder, textEncoder } from "./utils/Text.ts";
 import autoBind from "auto-bind";
 
-const _console = createConsole("InformationManager", { log: false });
+const _console = createConsole("InformationManager", { log: true });
 
 export const DeviceTypes = [
   "leftInsole",

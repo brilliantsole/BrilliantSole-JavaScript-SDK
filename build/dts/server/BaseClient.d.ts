@@ -27,20 +27,20 @@ declare abstract class BaseClient {
     #private;
     protected get baseConstructor(): typeof BaseClient;
     get devices(): Readonly<DevicesMap>;
-    get addEventListener(): <T extends "connecting" | "connected" | "disconnecting" | "isConnected" | "notConnected" | "connectionStatus" | "isScanningAvailable" | "isScanning" | "discoveredDevice" | "expiredDiscoveredDevice">(type: T, listener: (event: {
+    get addEventListener(): <T extends "notConnected" | "connecting" | "connected" | "disconnecting" | "connectionStatus" | "isConnected" | "isScanningAvailable" | "isScanning" | "discoveredDevice" | "expiredDiscoveredDevice">(type: T, listener: (event: {
         type: T;
         target: BaseClient;
         message: ClientEventMessages[T];
     }) => void, options?: {
         once?: boolean;
     }) => void;
-    protected get dispatchEvent(): <T extends "connecting" | "connected" | "disconnecting" | "isConnected" | "notConnected" | "connectionStatus" | "isScanningAvailable" | "isScanning" | "discoveredDevice" | "expiredDiscoveredDevice">(type: T, message: ClientEventMessages[T]) => void;
-    get removeEventListener(): <T extends "connecting" | "connected" | "disconnecting" | "isConnected" | "notConnected" | "connectionStatus" | "isScanningAvailable" | "isScanning" | "discoveredDevice" | "expiredDiscoveredDevice">(type: T, listener: (event: {
+    protected get dispatchEvent(): <T extends "notConnected" | "connecting" | "connected" | "disconnecting" | "connectionStatus" | "isConnected" | "isScanningAvailable" | "isScanning" | "discoveredDevice" | "expiredDiscoveredDevice">(type: T, message: ClientEventMessages[T]) => void;
+    get removeEventListener(): <T extends "notConnected" | "connecting" | "connected" | "disconnecting" | "connectionStatus" | "isConnected" | "isScanningAvailable" | "isScanning" | "discoveredDevice" | "expiredDiscoveredDevice">(type: T, listener: (event: {
         type: T;
         target: BaseClient;
         message: ClientEventMessages[T];
     }) => void) => void;
-    get waitForEvent(): <T extends "connecting" | "connected" | "disconnecting" | "isConnected" | "notConnected" | "connectionStatus" | "isScanningAvailable" | "isScanning" | "discoveredDevice" | "expiredDiscoveredDevice">(type: T) => Promise<{
+    get waitForEvent(): <T extends "notConnected" | "connecting" | "connected" | "disconnecting" | "connectionStatus" | "isConnected" | "isScanningAvailable" | "isScanning" | "discoveredDevice" | "expiredDiscoveredDevice">(type: T) => Promise<{
         type: T;
         target: BaseClient;
         message: ClientEventMessages[T];
@@ -60,9 +60,9 @@ declare abstract class BaseClient {
     get reconnectOnDisconnection(): boolean;
     set reconnectOnDisconnection(newReconnectOnDisconnection: boolean);
     abstract sendServerMessage(...messages: ServerMessage[]): void;
-    protected get _connectionStatus(): "connecting" | "connected" | "disconnecting" | "notConnected";
-    protected set _connectionStatus(newConnectionStatus: "connecting" | "connected" | "disconnecting" | "notConnected");
-    get connectionStatus(): "connecting" | "connected" | "disconnecting" | "notConnected";
+    protected get _connectionStatus(): "notConnected" | "connecting" | "connected" | "disconnecting";
+    protected set _connectionStatus(newConnectionStatus: "notConnected" | "connecting" | "connected" | "disconnecting");
+    get connectionStatus(): "notConnected" | "connecting" | "connected" | "disconnecting";
     protected _sendRequiredMessages(): void;
     protected parseMessage(dataView: DataView): void;
     get isScanningAvailable(): boolean;
