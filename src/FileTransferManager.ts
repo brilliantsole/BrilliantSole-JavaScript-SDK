@@ -9,6 +9,7 @@ import autoBind from "auto-bind";
 const _console = createConsole("FileTransferManager", { log: false });
 
 export const FileTransferMessageTypes = [
+  "getFileTypes",
   "maxFileLength",
   "getFileType",
   "setFileType",
@@ -54,6 +55,7 @@ export interface FileConfiguration {
 }
 
 export interface FileTransferEventMessages {
+  getFileTypes: { fileTypes: FileType[] };
   maxFileLength: { maxFileLength: number };
   getFileType: { fileType: FileType };
   getFileLength: { fileLength: number };
@@ -114,6 +116,21 @@ class FileTransferManager {
   }
   #assertValidCommand(command: FileTransferCommand) {
     _console.assertEnumWithError(command, FileTransferCommands);
+  }
+
+  #fileTypes: FileType[] = [];
+  get fileTypes() {
+    return this.#fileTypes;
+  }
+  #parseFileTypes(dataView: DataView) {
+    const fileTypes = Array.from(new Uint8Array(dataView.buffer))
+      .map((index) => FileTypes[index])
+      .filter(Boolean);
+    this.#fileTypes = fileTypes;
+    _console.log("fileTypes", fileTypes);
+    this.#dispatchEvent("getFileTypes", {
+      fileTypes: this.#fileTypes,
+    });
   }
 
   static #MaxLength = 0; // kB
@@ -366,6 +383,9 @@ class FileTransferManager {
     _console.log({ messageType });
 
     switch (messageType) {
+      case "getFileTypes":
+        this.#parseFileTypes(dataView);
+        break;
       case "maxFileLength":
         this.#parseMaxLength(dataView);
         break;

@@ -358,6 +358,7 @@ class VibrationManager {
     vibrationConfigurations: VibrationConfiguration[],
     sendImmediately: boolean = true
   ) {
+    // FILL - filter locations
     let triggerVibrationData!: ArrayBuffer;
     vibrationConfigurations.forEach((vibrationConfiguration) => {
       const { type } = vibrationConfiguration;

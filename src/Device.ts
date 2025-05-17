@@ -906,6 +906,9 @@ class Device {
   // FILE TRANSFER
   #fileTransferManager = new FileTransferManager();
 
+  get fileTypes() {
+    return this.#fileTransferManager.fileTypes;
+  }
   get maxFileLength() {
     return this.#fileTransferManager.maxLength;
   }

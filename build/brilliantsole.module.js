@@ -538,9 +538,10 @@ function autoBind(self, {include, exclude} = {}) {
 	return self;
 }
 
-var _FileTransferManager_instances, _a$5, _FileTransferManager_dispatchEvent_get, _FileTransferManager_assertValidType, _FileTransferManager_assertValidTypeEnum, _FileTransferManager_assertValidStatusEnum, _FileTransferManager_assertValidCommand, _FileTransferManager_MaxLength, _FileTransferManager_maxLength, _FileTransferManager_parseMaxLength, _FileTransferManager_updateMaxLength, _FileTransferManager_assertValidLength, _FileTransferManager_type, _FileTransferManager_parseType, _FileTransferManager_updateType, _FileTransferManager_setType, _FileTransferManager_length, _FileTransferManager_parseLength, _FileTransferManager_updateLength, _FileTransferManager_setLength, _FileTransferManager_checksum, _FileTransferManager_parseChecksum, _FileTransferManager_updateChecksum, _FileTransferManager_setChecksum, _FileTransferManager_setCommand, _FileTransferManager_status, _FileTransferManager_parseStatus, _FileTransferManager_updateStatus, _FileTransferManager_assertIsIdle, _FileTransferManager_assertIsNotIdle, _FileTransferManager_receivedBlocks, _FileTransferManager_parseBlock, _FileTransferManager_buffer, _FileTransferManager_bytesTransferred, _FileTransferManager_send, _FileTransferManager_sendBlock, _FileTransferManager_parseBytesTransferred, _FileTransferManager_isCancelling, _FileTransferManager_isServerSide;
+var _FileTransferManager_instances, _a$5, _FileTransferManager_dispatchEvent_get, _FileTransferManager_assertValidType, _FileTransferManager_assertValidTypeEnum, _FileTransferManager_assertValidStatusEnum, _FileTransferManager_assertValidCommand, _FileTransferManager_fileTypes, _FileTransferManager_parseFileTypes, _FileTransferManager_MaxLength, _FileTransferManager_maxLength, _FileTransferManager_parseMaxLength, _FileTransferManager_updateMaxLength, _FileTransferManager_assertValidLength, _FileTransferManager_type, _FileTransferManager_parseType, _FileTransferManager_updateType, _FileTransferManager_setType, _FileTransferManager_length, _FileTransferManager_parseLength, _FileTransferManager_updateLength, _FileTransferManager_setLength, _FileTransferManager_checksum, _FileTransferManager_parseChecksum, _FileTransferManager_updateChecksum, _FileTransferManager_setChecksum, _FileTransferManager_setCommand, _FileTransferManager_status, _FileTransferManager_parseStatus, _FileTransferManager_updateStatus, _FileTransferManager_assertIsIdle, _FileTransferManager_assertIsNotIdle, _FileTransferManager_receivedBlocks, _FileTransferManager_parseBlock, _FileTransferManager_buffer, _FileTransferManager_bytesTransferred, _FileTransferManager_send, _FileTransferManager_sendBlock, _FileTransferManager_parseBytesTransferred, _FileTransferManager_isCancelling, _FileTransferManager_isServerSide;
 const _console$u = createConsole("FileTransferManager", { log: false });
 const FileTransferMessageTypes = [
+    "getFileTypes",
     "maxFileLength",
     "getFileType",
     "setFileType",
@@ -571,6 +572,7 @@ const FileTransferEventTypes = [
 class FileTransferManager {
     constructor() {
         _FileTransferManager_instances.add(this);
+        _FileTransferManager_fileTypes.set(this, []);
         _FileTransferManager_maxLength.set(this, _a$5.MaxLength);
         _FileTransferManager_type.set(this, void 0);
         _FileTransferManager_length.set(this, 0);
@@ -591,6 +593,9 @@ class FileTransferManager {
     }
     get waitForEvent() {
         return this.eventDispatcher.waitForEvent;
+    }
+    get fileTypes() {
+        return __classPrivateFieldGet(this, _FileTransferManager_fileTypes, "f");
     }
     static get MaxLength() {
         return __classPrivateFieldGet(this, _a$5, "f", _FileTransferManager_MaxLength);
@@ -613,6 +618,9 @@ class FileTransferManager {
     parseMessage(messageType, dataView) {
         _console$u.log({ messageType });
         switch (messageType) {
+            case "getFileTypes":
+                __classPrivateFieldGet(this, _FileTransferManager_instances, "m", _FileTransferManager_parseFileTypes).call(this, dataView);
+                break;
             case "maxFileLength":
                 __classPrivateFieldGet(this, _FileTransferManager_instances, "m", _FileTransferManager_parseMaxLength).call(this, dataView);
                 break;
@@ -696,7 +704,7 @@ class FileTransferManager {
         __classPrivateFieldSet(this, _FileTransferManager_isServerSide, newIsServerSide, "f");
     }
 }
-_a$5 = FileTransferManager, _FileTransferManager_maxLength = new WeakMap(), _FileTransferManager_type = new WeakMap(), _FileTransferManager_length = new WeakMap(), _FileTransferManager_checksum = new WeakMap(), _FileTransferManager_status = new WeakMap(), _FileTransferManager_receivedBlocks = new WeakMap(), _FileTransferManager_buffer = new WeakMap(), _FileTransferManager_bytesTransferred = new WeakMap(), _FileTransferManager_isCancelling = new WeakMap(), _FileTransferManager_isServerSide = new WeakMap(), _FileTransferManager_instances = new WeakSet(), _FileTransferManager_dispatchEvent_get = function _FileTransferManager_dispatchEvent_get() {
+_a$5 = FileTransferManager, _FileTransferManager_fileTypes = new WeakMap(), _FileTransferManager_maxLength = new WeakMap(), _FileTransferManager_type = new WeakMap(), _FileTransferManager_length = new WeakMap(), _FileTransferManager_checksum = new WeakMap(), _FileTransferManager_status = new WeakMap(), _FileTransferManager_receivedBlocks = new WeakMap(), _FileTransferManager_buffer = new WeakMap(), _FileTransferManager_bytesTransferred = new WeakMap(), _FileTransferManager_isCancelling = new WeakMap(), _FileTransferManager_isServerSide = new WeakMap(), _FileTransferManager_instances = new WeakSet(), _FileTransferManager_dispatchEvent_get = function _FileTransferManager_dispatchEvent_get() {
     return this.eventDispatcher.dispatchEvent;
 }, _FileTransferManager_assertValidType = function _FileTransferManager_assertValidType(type) {
     _console$u.assertEnumWithError(type, FileTypes);
@@ -706,6 +714,15 @@ _a$5 = FileTransferManager, _FileTransferManager_maxLength = new WeakMap(), _Fil
     _console$u.assertWithError(statusEnum in FileTransferStatuses, `invalid statusEnum ${statusEnum}`);
 }, _FileTransferManager_assertValidCommand = function _FileTransferManager_assertValidCommand(command) {
     _console$u.assertEnumWithError(command, FileTransferCommands);
+}, _FileTransferManager_parseFileTypes = function _FileTransferManager_parseFileTypes(dataView) {
+    const fileTypes = Array.from(new Uint8Array(dataView.buffer))
+        .map((index) => FileTypes[index])
+        .filter(Boolean);
+    __classPrivateFieldSet(this, _FileTransferManager_fileTypes, fileTypes, "f");
+    _console$u.log("fileTypes", fileTypes);
+    __classPrivateFieldGet(this, _FileTransferManager_instances, "a", _FileTransferManager_dispatchEvent_get).call(this, "getFileTypes", {
+        fileTypes: __classPrivateFieldGet(this, _FileTransferManager_fileTypes, "f"),
+    });
 }, _FileTransferManager_parseMaxLength = function _FileTransferManager_parseMaxLength(dataView) {
     _console$u.log("parseFileMaxLength", dataView);
     const maxLength = dataView.getUint32(0, true);
@@ -5376,6 +5393,9 @@ class Device {
     }
     async triggerVibration(vibrationConfigurations, sendImmediately) {
         __classPrivateFieldGet(this, _Device_vibrationManager, "f").triggerVibration(vibrationConfigurations, sendImmediately);
+    }
+    get fileTypes() {
+        return __classPrivateFieldGet(this, _Device_fileTransferManager, "f").fileTypes;
     }
     get maxFileLength() {
         return __classPrivateFieldGet(this, _Device_fileTransferManager, "f").maxLength;
