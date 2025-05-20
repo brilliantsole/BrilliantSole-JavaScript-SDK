@@ -12,7 +12,7 @@ import { SensorConfigurationMessageTypes } from "../sensor/SensorConfigurationMa
 import { SensorDataMessageTypes } from "../sensor/SensorDataManager.ts";
 import { WifiMessageTypes } from "../WifiManager.ts";
 
-const _console = createConsole("BaseConnectionManager", { log: true });
+const _console = createConsole("BaseConnectionManager", { log: false });
 
 export const ConnectionTypes = [
   "webBluetooth",

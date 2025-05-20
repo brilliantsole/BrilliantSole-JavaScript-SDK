@@ -6,6 +6,7 @@ export declare const TfliteMessageTypes: readonly ["getTfliteName", "setTfliteNa
 export type TfliteMessageType = (typeof TfliteMessageTypes)[number];
 export declare const TfliteEventTypes: readonly ["getTfliteName", "setTfliteName", "getTfliteTask", "setTfliteTask", "getTfliteSampleRate", "setTfliteSampleRate", "getTfliteSensorTypes", "setTfliteSensorTypes", "tfliteIsReady", "getTfliteCaptureDelay", "setTfliteCaptureDelay", "getTfliteThreshold", "setTfliteThreshold", "getTfliteInferencingEnabled", "setTfliteInferencingEnabled", "tfliteInference"];
 export type TfliteEventType = (typeof TfliteEventTypes)[number];
+export declare const RequiredTfliteMessageTypes: TfliteMessageType[];
 export declare const TfliteTasks: readonly ["classification", "regression"];
 export type TfliteTask = (typeof TfliteTasks)[number];
 export interface TfliteEventMessages {
@@ -106,5 +107,6 @@ declare class TfliteManager {
     get configuration(): TfliteFileConfiguration | undefined;
     sendConfiguration(configuration: TfliteFileConfiguration, sendImmediately?: boolean): void;
     clear(): void;
+    requestRequiredInformation(): void;
 }
 export default TfliteManager;

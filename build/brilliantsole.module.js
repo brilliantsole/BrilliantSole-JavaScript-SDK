@@ -1127,6 +1127,7 @@ const MotionSensorTypes = [
     "stepCounter",
     "stepDetector",
     "deviceOrientation",
+    "tapDetector",
 ];
 const ContinuousMotionTypes = [
     "acceleration",
@@ -1136,8 +1137,16 @@ const ContinuousMotionTypes = [
     "magnetometer",
     "gameRotation",
     "rotation",
+    "orientation",
 ];
-const ActivityTypes = ["still", "walking", "running", "bicycle", "vehicle", "tilting"];
+const ActivityTypes = [
+    "still",
+    "walking",
+    "running",
+    "bicycle",
+    "vehicle",
+    "tilting",
+];
 const DeviceOrientations = [
     "portraitUpright",
     "landscapeLeft",
@@ -1147,7 +1156,11 @@ const DeviceOrientations = [
 ];
 class MotionSensorDataManager {
     parseVector3(dataView, scalar) {
-        let [x, y, z] = [dataView.getInt16(0, true), dataView.getInt16(2, true), dataView.getInt16(4, true)].map((value) => value * scalar);
+        let [x, y, z] = [
+            dataView.getInt16(0, true),
+            dataView.getInt16(2, true),
+            dataView.getInt16(4, true),
+        ].map((value) => value * scalar);
         const vector = { x, y, z };
         _console$r.log({ vector });
         return vector;
@@ -1379,6 +1392,9 @@ class SensorDataManager {
                 sensorData =
                     this.motionSensorDataManager.parseDeviceOrientation(dataView);
                 break;
+            case "tapDetector":
+                sensorData = {};
+                break;
             case "barometer":
                 sensorData = this.barometerSensorDataManager.parseData(dataView, scalar);
                 break;
@@ -1546,6 +1562,16 @@ const TfliteMessageTypes = [
     "tfliteInference",
 ];
 const TfliteEventTypes = TfliteMessageTypes;
+const RequiredTfliteMessageTypes = [
+    "getTfliteName",
+    "getTfliteTask",
+    "getTfliteSampleRate",
+    "getTfliteSensorTypes",
+    "tfliteIsReady",
+    "getTfliteCaptureDelay",
+    "getTfliteThreshold",
+    "getTfliteInferencingEnabled",
+];
 const TfliteTasks = ["classification", "regression"];
 const TfliteSensorTypes = [
     "pressure",
@@ -1791,6 +1817,13 @@ class TfliteManager {
         __classPrivateFieldSet(this, _TfliteManager_sampleRate, 0, "f");
         __classPrivateFieldSet(this, _TfliteManager_isReady, false, "f");
     }
+    requestRequiredInformation() {
+        _console$m.log("requesting required tflite information");
+        const messages = RequiredTfliteMessageTypes.map((messageType) => ({
+            type: messageType,
+        }));
+        this.sendMessage(messages, false);
+    }
 }
 _TfliteManager_name = new WeakMap(), _TfliteManager_task = new WeakMap(), _TfliteManager_sampleRate = new WeakMap(), _TfliteManager_sensorTypes = new WeakMap(), _TfliteManager_isReady = new WeakMap(), _TfliteManager_captureDelay = new WeakMap(), _TfliteManager_threshold = new WeakMap(), _TfliteManager_inferencingEnabled = new WeakMap(), _TfliteManager_configuration = new WeakMap(), _TfliteManager_instances = new WeakSet(), _TfliteManager_assertValidTask = function _TfliteManager_assertValidTask(task) {
     _console$m.assertEnumWithError(task, TfliteTasks);
@@ -2027,7 +2060,7 @@ _DeviceInformationManager_information = new WeakMap(), _DeviceInformationManager
 };
 
 var _InformationManager_instances, _InformationManager_dispatchEvent_get, _InformationManager_isCharging, _InformationManager_updateIsCharging, _InformationManager_batteryCurrent, _InformationManager_updateBatteryCurrent, _InformationManager_id, _InformationManager_updateId, _InformationManager_name, _InformationManager_type, _InformationManager_assertValidDeviceType, _InformationManager_assertValidDeviceTypeEnum, _InformationManager_setTypeEnum, _InformationManager_mtu, _InformationManager_updateMtu, _InformationManager_isCurrentTimeSet, _InformationManager_onCurrentTime, _InformationManager_setCurrentTime;
-const _console$k = createConsole("InformationManager", { log: true });
+const _console$k = createConsole("InformationManager", { log: false });
 const DeviceTypes = [
     "leftInsole",
     "rightInsole",
@@ -2392,7 +2425,7 @@ const VibrationWaveformEffects = [
 ];
 
 var _VibrationManager_instances, _VibrationManager_dispatchEvent_get, _VibrationManager_verifyLocation, _VibrationManager_verifyLocations, _VibrationManager_createLocationsBitmask, _VibrationManager_assertNonEmptyArray, _VibrationManager_verifyWaveformEffect, _VibrationManager_verifyWaveformEffectSegment, _VibrationManager_verifyWaveformEffectSegmentLoopCount, _VibrationManager_verifyWaveformEffectSegments, _VibrationManager_verifyWaveformEffectSequenceLoopCount, _VibrationManager_verifyWaveformSegment, _VibrationManager_verifyWaveformSegments, _VibrationManager_createWaveformEffectsData, _VibrationManager_createWaveformData, _VibrationManager_verifyVibrationType, _VibrationManager_createData, _VibrationManager_vibrationLocations, _VibrationManager_onVibrationLocations;
-const _console$j = createConsole("VibrationManager");
+const _console$j = createConsole("VibrationManager", { log: false });
 const VibrationLocations = ["front", "rear"];
 const VibrationTypes = ["waveformEffect", "waveform"];
 const VibrationMessageTypes = [
@@ -2844,7 +2877,7 @@ _WifiManager_isWifiAvailable = new WeakMap(), _WifiManager_wifiSSID = new WeakMa
 };
 
 var _BaseConnectionManager_instances, _a$3, _BaseConnectionManager_AssertValidTxRxMessageType, _BaseConnectionManager_assertIsSupported, _BaseConnectionManager_status, _BaseConnectionManager_assertIsNotConnecting, _BaseConnectionManager_assertIsNotDisconnecting, _BaseConnectionManager_pendingMessages, _BaseConnectionManager_isSendingMessages, _BaseConnectionManager_onRxMessage, _BaseConnectionManager_timer, _BaseConnectionManager_checkConnection;
-const _console$h = createConsole("BaseConnectionManager", { log: true });
+const _console$h = createConsole("BaseConnectionManager", { log: false });
 const ConnectionTypes = [
     "webBluetooth",
     "noble",
@@ -3253,7 +3286,7 @@ function getCharacteristicProperties(characteristicName) {
     return properties;
 }
 
-const _console$e = createConsole("BluetoothConnectionManager", { log: true });
+const _console$e = createConsole("BluetoothConnectionManager", { log: false });
 class BluetoothConnectionManager extends BaseConnectionManager {
     constructor() {
         super(...arguments);
@@ -3287,7 +3320,7 @@ class BluetoothConnectionManager extends BaseConnectionManager {
 }
 
 var _WebBluetoothConnectionManager_instances, _WebBluetoothConnectionManager_boundBluetoothCharacteristicEventListeners, _WebBluetoothConnectionManager_boundBluetoothDeviceEventListeners, _WebBluetoothConnectionManager_device, _WebBluetoothConnectionManager_services, _WebBluetoothConnectionManager_characteristics, _WebBluetoothConnectionManager_getServicesAndCharacteristics, _WebBluetoothConnectionManager_removeEventListeners, _WebBluetoothConnectionManager_onCharacteristicvaluechanged, _WebBluetoothConnectionManager_onCharacteristicValueChanged, _WebBluetoothConnectionManager_onGattserverdisconnected;
-const _console$d = createConsole("WebBluetoothConnectionManager", { log: true });
+const _console$d = createConsole("WebBluetoothConnectionManager", { log: false });
 var bluetooth;
 if (isInBrowser) {
     bluetooth = window.navigator.bluetooth;
@@ -4991,7 +5024,7 @@ _WebSocketConnectionManager_bluetoothId = new WeakMap(), _WebSocketConnectionMan
 };
 
 var _Device_instances, _a$2, _Device_DefaultConnectionManager, _Device_eventDispatcher, _Device_dispatchEvent_get, _Device_connectionManager, _Device_sendTxMessages, _Device_isConnected, _Device_assertIsConnected, _Device_didReceiveMessageTypes, _Device_hasRequiredInformation_get, _Device_requestRequiredInformation, _Device_assertCanReconnect, _Device_ReconnectOnDisconnection, _Device_reconnectOnDisconnection, _Device_reconnectIntervalId, _Device_onConnectionStatusUpdated, _Device_dispatchConnectionEvents, _Device_checkConnection, _Device_clear, _Device_clearConnection, _Device_onConnectionMessageReceived, _Device_onConnectionMessagesReceived, _Device_deviceInformationManager, _Device_batteryLevel, _Device_updateBatteryLevel, _Device_sensorConfigurationManager, _Device_ClearSensorConfigurationOnLeave, _Device_clearSensorConfigurationOnLeave, _Device_sensorDataManager, _Device_vibrationManager, _Device_fileTransferManager, _Device_tfliteManager, _Device_firmwareManager, _Device_assertCanUpdateFirmware, _Device_sendSmpMessage, _Device_isServerSide, _Device_wifiManager;
-const _console$6 = createConsole("Device", { log: true });
+const _console$6 = createConsole("Device", { log: false });
 const DeviceEventTypes = [
     "connectionMessage",
     ...ConnectionEventTypes,
@@ -5018,19 +5051,12 @@ const RequiredInformationConnectionMessages = [
     "getSensorConfiguration",
     "getSensorScalars",
     "getVibrationLocations",
+    "getFileTypes",
     "maxFileLength",
     "getFileLength",
     "getFileChecksum",
     "getFileType",
     "fileTransferStatus",
-    "getTfliteName",
-    "getTfliteTask",
-    "getTfliteSampleRate",
-    "getTfliteSensorTypes",
-    "tfliteIsReady",
-    "getTfliteCaptureDelay",
-    "getTfliteThreshold",
-    "getTfliteInferencingEnabled",
     "isWifiAvailable",
 ];
 class Device {
@@ -5103,6 +5129,14 @@ class Device {
             }
             else {
                 _console$6.log("don't need to request pressure infomration");
+            }
+        });
+        this.addEventListener("getFileTypes", () => {
+            if (this.connectionStatus != "connecting") {
+                return;
+            }
+            if (this.fileTypes.includes("tflite")) {
+                __classPrivateFieldGet(this, _Device_tfliteManager, "f").requestRequiredInformation();
             }
         });
         this.addEventListener("isWifiAvailable", () => {

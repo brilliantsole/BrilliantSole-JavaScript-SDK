@@ -15,6 +15,7 @@ export const MotionSensorTypes = [
   "stepCounter",
   "stepDetector",
   "deviceOrientation",
+  "tapDetector",
 ] as const;
 export type MotionSensorType = (typeof MotionSensorTypes)[number];
 
@@ -26,6 +27,7 @@ export const ContinuousMotionTypes = [
   "magnetometer",
   "gameRotation",
   "rotation",
+  "orientation",
 ] as const;
 export type ContinuousMotionType = (typeof ContinuousMotionTypes)[number];
 
@@ -36,7 +38,14 @@ export const Vector2Size = 2 * 2;
 export const Vector3Size = 3 * 2;
 export const QuaternionSize = 4 * 2;
 
-export const ActivityTypes = ["still", "walking", "running", "bicycle", "vehicle", "tilting"] as const;
+export const ActivityTypes = [
+  "still",
+  "walking",
+  "running",
+  "bicycle",
+  "vehicle",
+  "tilting",
+] as const;
 export type ActivityType = (typeof ActivityTypes)[number];
 
 export interface Activity {
@@ -70,15 +79,19 @@ export interface MotionSensorDataEventMessages {
   stepCounter: { stepCounter: number };
   activity: { activity: Activity };
   deviceOrientation: { deviceOrientation: DeviceOrientation };
+  tapDetector: { tapDetector: Object };
 }
 
-export type MotionSensorDataEventMessage = ValueOf<MotionSensorDataEventMessages>;
+export type MotionSensorDataEventMessage =
+  ValueOf<MotionSensorDataEventMessages>;
 
 class MotionSensorDataManager {
   parseVector3(dataView: DataView, scalar: number): Vector3 {
-    let [x, y, z] = [dataView.getInt16(0, true), dataView.getInt16(2, true), dataView.getInt16(4, true)].map(
-      (value) => value * scalar
-    );
+    let [x, y, z] = [
+      dataView.getInt16(0, true),
+      dataView.getInt16(2, true),
+      dataView.getInt16(4, true),
+    ].map((value) => value * scalar);
 
     const vector: Vector3 = { x, y, z };
 

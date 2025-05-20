@@ -108,7 +108,7 @@ import ClientConnectionManager from "./connection/ClientConnectionManager.ts";
 import UDPConnectionManager from "./connection/udp/UDPConnectionManager.ts";
 /** NODE_END */
 
-const _console = createConsole("Device", { log: true });
+const _console = createConsole("Device", { log: false });
 
 export const DeviceEventTypes = [
   "connectionMessage",
@@ -185,20 +185,21 @@ export const RequiredInformationConnectionMessages: TxRxMessageType[] = [
 
   "getVibrationLocations",
 
+  "getFileTypes",
   "maxFileLength",
   "getFileLength",
   "getFileChecksum",
   "getFileType",
   "fileTransferStatus",
 
-  "getTfliteName",
-  "getTfliteTask",
-  "getTfliteSampleRate",
-  "getTfliteSensorTypes",
-  "tfliteIsReady",
-  "getTfliteCaptureDelay",
-  "getTfliteThreshold",
-  "getTfliteInferencingEnabled",
+  // "getTfliteName",
+  // "getTfliteTask",
+  // "getTfliteSampleRate",
+  // "getTfliteSensorTypes",
+  // "tfliteIsReady",
+  // "getTfliteCaptureDelay",
+  // "getTfliteThreshold",
+  // "getTfliteInferencingEnabled",
 
   "isWifiAvailable",
 ];
@@ -271,6 +272,14 @@ class Device {
         this.sendTxMessages(messages, false);
       } else {
         _console.log("don't need to request pressure infomration");
+      }
+    });
+    this.addEventListener("getFileTypes", () => {
+      if (this.connectionStatus != "connecting") {
+        return;
+      }
+      if (this.fileTypes.includes("tflite")) {
+        this.#tfliteManager.requestRequiredInformation();
       }
     });
     this.addEventListener("isWifiAvailable", () => {

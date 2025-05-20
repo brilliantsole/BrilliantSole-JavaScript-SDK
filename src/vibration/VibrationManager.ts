@@ -8,7 +8,7 @@ import Device, { SendMessageCallback } from "../Device.ts";
 import autoBind from "auto-bind";
 import EventDispatcher from "../utils/EventDispatcher.ts";
 
-const _console = createConsole("VibrationManager");
+const _console = createConsole("VibrationManager", { log: false });
 
 export const VibrationLocations = ["front", "rear"] as const;
 export type VibrationLocation = (typeof VibrationLocations)[number];

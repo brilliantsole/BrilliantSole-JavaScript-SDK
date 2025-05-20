@@ -205,6 +205,9 @@ class SensorDataManager {
         sensorData =
           this.motionSensorDataManager.parseDeviceOrientation(dataView);
         break;
+      case "tapDetector":
+        sensorData = {};
+        break;
       case "barometer":
         sensorData = this.barometerSensorDataManager.parseData(
           dataView,
