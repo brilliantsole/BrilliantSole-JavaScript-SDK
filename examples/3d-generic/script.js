@@ -44,6 +44,13 @@ const scene = document.querySelector("a-scene");
 const targetEntity = scene.querySelector(".target");
 const targetPositionEntity = targetEntity.querySelector(".position");
 const targetRotationEntity = targetEntity.querySelector(".rotation");
+const modelEntities = Array.from(targetEntity.querySelectorAll("[gltf-model]"));
+
+device.addEventListener("connected", () => {
+  modelEntities.forEach((entity) => {
+    entity.setAttribute("visible", entity.dataset.type == device.type);
+  });
+});
 
 /** @type {HTMLSelectElement} */
 const orientationSelect = document.querySelector(".orientation");
