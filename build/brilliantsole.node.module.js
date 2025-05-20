@@ -1271,9 +1271,6 @@ const SensorDataMessageTypes = [
     "getSensorScalars",
     "sensorData",
 ];
-const RequiredPressureMessageTypes = [
-    "getPressurePositions",
-];
 const SensorDataEventTypes = [
     ...SensorDataMessageTypes,
     ...SensorTypes,
@@ -2440,7 +2437,6 @@ const VibrationMessageTypes = [
     "getVibrationLocations",
     "triggerVibration",
 ];
-const VibrationEventTypes = VibrationMessageTypes;
 const MaxNumberOfVibrationWaveformEffectSegments = 8;
 const MaxVibrationWaveformSegmentDuration = 2550;
 const MaxVibrationWaveformEffectSegmentDelay = 1270;
@@ -5295,7 +5291,7 @@ _UDPConnectionManager_bluetoothId = new WeakMap(), _UDPConnectionManager_ipAddre
 };
 
 var _Device_instances, _a$3, _Device_DefaultConnectionManager, _Device_eventDispatcher, _Device_dispatchEvent_get, _Device_connectionManager, _Device_sendTxMessages, _Device_isConnected, _Device_assertIsConnected, _Device_didReceiveMessageTypes, _Device_hasRequiredInformation_get, _Device_requestRequiredInformation, _Device_assertCanReconnect, _Device_ReconnectOnDisconnection, _Device_reconnectOnDisconnection, _Device_reconnectIntervalId, _Device_onConnectionStatusUpdated, _Device_dispatchConnectionEvents, _Device_checkConnection, _Device_clear, _Device_clearConnection, _Device_onConnectionMessageReceived, _Device_onConnectionMessagesReceived, _Device_deviceInformationManager, _Device_batteryLevel, _Device_updateBatteryLevel, _Device_sensorConfigurationManager, _Device_ClearSensorConfigurationOnLeave, _Device_clearSensorConfigurationOnLeave, _Device_sensorDataManager, _Device_vibrationManager, _Device_fileTransferManager, _Device_tfliteManager, _Device_firmwareManager, _Device_assertCanUpdateFirmware, _Device_sendSmpMessage, _Device_isServerSide, _Device_wifiManager;
-const _console$b = createConsole("Device", { log: false });
+const _console$b = createConsole("Device", { log: true });
 const DeviceEventTypes = [
     "connectionMessage",
     ...ConnectionEventTypes,
@@ -5305,7 +5301,6 @@ const DeviceEventTypes = [
     ...DeviceInformationEventTypes,
     ...SensorConfigurationEventTypes,
     ...SensorDataEventTypes,
-    ...VibrationEventTypes,
     ...FileTransferEventTypes,
     ...TfliteEventTypes,
     ...WifiEventTypes,
@@ -5321,13 +5316,20 @@ const RequiredInformationConnectionMessages = [
     "getCurrentTime",
     "getSensorConfiguration",
     "getSensorScalars",
-    "getVibrationLocations",
-    "getFileTypes",
+    "getPressurePositions",
     "maxFileLength",
     "getFileLength",
     "getFileChecksum",
     "getFileType",
     "fileTransferStatus",
+    "getTfliteName",
+    "getTfliteTask",
+    "getTfliteSampleRate",
+    "getTfliteSensorTypes",
+    "tfliteIsReady",
+    "getTfliteCaptureDelay",
+    "getTfliteThreshold",
+    "getTfliteInferencingEnabled",
     "isWifiAvailable",
 ];
 class Device {
@@ -5369,7 +5371,6 @@ class Device {
         __classPrivateFieldGet(this, _Device_sensorDataManager, "f").eventDispatcher = __classPrivateFieldGet(this, _Device_eventDispatcher, "f");
         __classPrivateFieldGet(this, _Device_vibrationManager, "f").sendMessage = this
             .sendTxMessages;
-        __classPrivateFieldGet(this, _Device_vibrationManager, "f").eventDispatcher = __classPrivateFieldGet(this, _Device_eventDispatcher, "f");
         __classPrivateFieldGet(this, _Device_tfliteManager, "f").sendMessage = this
             .sendTxMessages;
         __classPrivateFieldGet(this, _Device_tfliteManager, "f").eventDispatcher = __classPrivateFieldGet(this, _Device_eventDispatcher, "f");
@@ -5387,33 +5388,7 @@ class Device {
             __classPrivateFieldGet(this, _Device_fileTransferManager, "f").mtu = this.mtu;
             this.connectionManager.mtu = this.mtu;
         });
-        this.addEventListener("getSensorConfiguration", () => {
-            if (this.connectionStatus != "connecting") {
-                return;
-            }
-            if (this.sensorTypes.includes("pressure")) {
-                _console$b.log("requesting required pressure information");
-                const messages = RequiredPressureMessageTypes.map((messageType) => ({
-                    type: messageType,
-                }));
-                this.sendTxMessages(messages, false);
-            }
-            else {
-                _console$b.log("don't need to request pressure infomration");
-            }
-        });
-        this.addEventListener("getFileTypes", () => {
-            if (this.connectionStatus != "connecting") {
-                return;
-            }
-            if (this.fileTypes.includes("tflite")) {
-                __classPrivateFieldGet(this, _Device_tfliteManager, "f").requestRequiredInformation();
-            }
-        });
         this.addEventListener("isWifiAvailable", () => {
-            if (this.connectionStatus != "connecting") {
-                return;
-            }
             if (this.connectionType == "client" && !isInNode) {
                 return;
             }
@@ -5693,14 +5668,8 @@ class Device {
     resetPressureRange() {
         __classPrivateFieldGet(this, _Device_sensorDataManager, "f").pressureSensorDataManager.resetRange();
     }
-    get vibrationLocations() {
-        return __classPrivateFieldGet(this, _Device_vibrationManager, "f").vibrationLocations;
-    }
     async triggerVibration(vibrationConfigurations, sendImmediately) {
         __classPrivateFieldGet(this, _Device_vibrationManager, "f").triggerVibration(vibrationConfigurations, sendImmediately);
-    }
-    get fileTypes() {
-        return __classPrivateFieldGet(this, _Device_fileTransferManager, "f").fileTypes;
     }
     get maxFileLength() {
         return __classPrivateFieldGet(this, _Device_fileTransferManager, "f").maxLength;
@@ -5929,9 +5898,6 @@ _a$3 = Device, _Device_eventDispatcher = new WeakMap(), _Device_connectionManage
     });
 }, _Device_hasRequiredInformation_get = function _Device_hasRequiredInformation_get() {
     let hasRequiredInformation = __classPrivateFieldGet(this, _Device_instances, "m", _Device_didReceiveMessageTypes).call(this, RequiredInformationConnectionMessages);
-    if (hasRequiredInformation && this.sensorTypes.includes("pressure")) {
-        hasRequiredInformation = __classPrivateFieldGet(this, _Device_instances, "m", _Device_didReceiveMessageTypes).call(this, RequiredPressureMessageTypes);
-    }
     if (hasRequiredInformation && this.isWifiAvailable) {
         hasRequiredInformation = __classPrivateFieldGet(this, _Device_instances, "m", _Device_didReceiveMessageTypes).call(this, RequiredWifiMessageTypes);
     }
@@ -6033,9 +5999,6 @@ _a$3 = Device, _Device_eventDispatcher = new WeakMap(), _Device_connectionManage
             }
             else if (SensorConfigurationMessageTypes.includes(messageType)) {
                 __classPrivateFieldGet(this, _Device_sensorConfigurationManager, "f").parseMessage(messageType, dataView);
-            }
-            else if (VibrationMessageTypes.includes(messageType)) {
-                __classPrivateFieldGet(this, _Device_vibrationManager, "f").parseMessage(messageType, dataView);
             }
             else if (WifiMessageTypes.includes(messageType)) {
                 __classPrivateFieldGet(this, _Device_wifiManager, "f").parseMessage(messageType, dataView);
