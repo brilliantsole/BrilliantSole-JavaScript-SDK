@@ -161,7 +161,7 @@ declare class Device {
     reconnectViaWebSockets(): Promise<void>;
     reconnectViaUDP(): Promise<void>;
     get hasCamera(): boolean;
-    get cameraStatus(): "idle" | "takingPicture" | "takingPictures" | "asleep";
+    get cameraStatus(): "idle" | "takingPicture" | "asleep";
     takePicture(): Promise<void>;
 }
 export default Device;

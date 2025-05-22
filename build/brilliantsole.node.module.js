@@ -1256,22 +1256,11 @@ function parseMessage(dataView, messageTypes, callback, context, parseMessageLen
     }
 }
 
-var _CameraManager_instances, _CameraManager_dispatchEvent_get, _CameraManager_cameraStatus, _CameraManager_parseCameraStatus, _CameraManager_updateCameraStatus, _CameraManager_sendCameraCommand, _CameraManager_parseCameraData, _CameraManager_onCameraData, _CameraManager_headerSize, _CameraManager_headerData, _CameraManager_headerProgress, _CameraManager_imageSize, _CameraManager_imageData, _CameraManager_imageProgress, _CameraManager_footerSize, _CameraManager_footerData, _CameraManager_footerProgress, _CameraManager_buildImage;
+var _CameraManager_instances, _CameraManager_dispatchEvent_get, _CameraManager_cameraStatus, _CameraManager_parseCameraStatus, _CameraManager_updateCameraStatus, _CameraManager_sendCameraCommand, _CameraManager_parseCameraData, _CameraManager_onCameraData, _CameraManager_headerSize, _CameraManager_headerData, _CameraManager_headerProgress, _CameraManager_imageSize, _CameraManager_imageData, _CameraManager_imageProgress, _CameraManager_footerSize, _CameraManager_footerData, _CameraManager_footerProgress, _CameraManager_didBuildImage, _CameraManager_buildImage;
 const _console$v = createConsole("CameraManager", { log: true });
 const CameraSensorTypes = ["camera"];
-const CameraCommands = [
-    "takePicture",
-    "takePictures",
-    "stop",
-    "sleep",
-    "wake",
-];
-const CameraStatuses = [
-    "idle",
-    "takingPicture",
-    "takingPictures",
-    "asleep",
-];
+const CameraCommands = ["takePicture", "stop", "sleep", "wake"];
+const CameraStatuses = ["idle", "takingPicture", "asleep"];
 const CameraDataTypes = [
     "headerSize",
     "header",
@@ -1307,6 +1296,7 @@ class CameraManager {
         _CameraManager_footerSize.set(this, 0);
         _CameraManager_footerData.set(this, void 0);
         _CameraManager_footerProgress.set(this, 0);
+        _CameraManager_didBuildImage.set(this, false);
         autoBind$1(this);
     }
     get waitForEvent() {
@@ -1344,7 +1334,7 @@ class CameraManager {
         __classPrivateFieldSet(this, _CameraManager_footerProgress, 0, "f");
     }
 }
-_CameraManager_cameraStatus = new WeakMap(), _CameraManager_headerSize = new WeakMap(), _CameraManager_headerData = new WeakMap(), _CameraManager_headerProgress = new WeakMap(), _CameraManager_imageSize = new WeakMap(), _CameraManager_imageData = new WeakMap(), _CameraManager_imageProgress = new WeakMap(), _CameraManager_footerSize = new WeakMap(), _CameraManager_footerData = new WeakMap(), _CameraManager_footerProgress = new WeakMap(), _CameraManager_instances = new WeakSet(), _CameraManager_dispatchEvent_get = function _CameraManager_dispatchEvent_get() {
+_CameraManager_cameraStatus = new WeakMap(), _CameraManager_headerSize = new WeakMap(), _CameraManager_headerData = new WeakMap(), _CameraManager_headerProgress = new WeakMap(), _CameraManager_imageSize = new WeakMap(), _CameraManager_imageData = new WeakMap(), _CameraManager_imageProgress = new WeakMap(), _CameraManager_footerSize = new WeakMap(), _CameraManager_footerData = new WeakMap(), _CameraManager_footerProgress = new WeakMap(), _CameraManager_didBuildImage = new WeakMap(), _CameraManager_instances = new WeakSet(), _CameraManager_dispatchEvent_get = function _CameraManager_dispatchEvent_get() {
     return this.eventDispatcher.dispatchEvent;
 }, _CameraManager_parseCameraStatus = function _CameraManager_parseCameraStatus(dataView) {
     const cameraStatusIndex = dataView.getUint8(0);
@@ -1355,6 +1345,11 @@ _CameraManager_cameraStatus = new WeakMap(), _CameraManager_headerSize = new Wea
     __classPrivateFieldSet(this, _CameraManager_cameraStatus, newCameraStatus, "f");
     _console$v.log(`updated cameraStatus to "${this.cameraStatus}"`);
     __classPrivateFieldGet(this, _CameraManager_instances, "a", _CameraManager_dispatchEvent_get).call(this, "cameraStatus", { cameraStatus: this.cameraStatus });
+    if (__classPrivateFieldGet(this, _CameraManager_cameraStatus, "f") != "takingPicture" &&
+        __classPrivateFieldGet(this, _CameraManager_imageProgress, "f") > 0 &&
+        !__classPrivateFieldGet(this, _CameraManager_didBuildImage, "f")) {
+        __classPrivateFieldGet(this, _CameraManager_instances, "m", _CameraManager_buildImage).call(this);
+    }
 }, _CameraManager_sendCameraCommand =
 async function _CameraManager_sendCameraCommand(command, sendImmediately) {
     _console$v.assertEnumWithError(command, CameraCommands);
@@ -1395,6 +1390,7 @@ async function _CameraManager_sendCameraCommand(command, sendImmediately) {
             _console$v.log({ imageSize: __classPrivateFieldGet(this, _CameraManager_imageSize, "f") });
             __classPrivateFieldSet(this, _CameraManager_imageData, undefined, "f");
             __classPrivateFieldGet(this, _CameraManager_imageProgress, "f") == 0;
+            __classPrivateFieldSet(this, _CameraManager_didBuildImage, false, "f");
             break;
         case "image":
             __classPrivateFieldSet(this, _CameraManager_imageData, concatenateArrayBuffers(__classPrivateFieldGet(this, _CameraManager_imageData, "f"), dataView), "f");
@@ -1436,6 +1432,7 @@ async function _CameraManager_sendCameraCommand(command, sendImmediately) {
     const url = URL.createObjectURL(blob);
     _console$v.log("created url", url);
     __classPrivateFieldGet(this, _CameraManager_instances, "a", _CameraManager_dispatchEvent_get).call(this, "cameraImage", { url, blob });
+    __classPrivateFieldSet(this, _CameraManager_didBuildImage, true, "f");
 };
 
 var _SensorDataManager_scalars;

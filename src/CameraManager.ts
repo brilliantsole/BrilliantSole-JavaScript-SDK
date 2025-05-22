@@ -11,21 +11,10 @@ const _console = createConsole("CameraManager", { log: true });
 export const CameraSensorTypes = ["camera"] as const;
 export type CameraSensorType = (typeof CameraSensorTypes)[number];
 
-export const CameraCommands = [
-  "takePicture",
-  "takePictures",
-  "stop",
-  "sleep",
-  "wake",
-] as const;
+export const CameraCommands = ["takePicture", "stop", "sleep", "wake"] as const;
 export type CameraCommand = (typeof CameraCommands)[number];
 
-export const CameraStatuses = [
-  "idle",
-  "takingPicture",
-  "takingPictures",
-  "asleep",
-] as const;
+export const CameraStatuses = ["idle", "takingPicture", "asleep"] as const;
 export type CameraStatus = (typeof CameraStatuses)[number];
 
 export const CameraDataTypes = [
@@ -113,6 +102,14 @@ class CameraManager {
     this.#cameraStatus = newCameraStatus;
     _console.log(`updated cameraStatus to "${this.cameraStatus}"`);
     this.#dispatchEvent("cameraStatus", { cameraStatus: this.cameraStatus });
+
+    if (
+      this.#cameraStatus != "takingPicture" &&
+      this.#imageProgress > 0 &&
+      !this.#didBuildImage
+    ) {
+      this.#buildImage();
+    }
   }
 
   // CAMERA COMMAND
@@ -173,6 +170,7 @@ class CameraManager {
         _console.log({ imageSize: this.#imageSize });
         this.#imageData = undefined;
         this.#imageProgress == 0;
+        this.#didBuildImage = false;
         break;
       case "image":
         this.#imageData = concatenateArrayBuffers(this.#imageData, dataView);
@@ -219,6 +217,7 @@ class CameraManager {
   #footerData?: ArrayBuffer;
   #footerProgress: number = 0;
 
+  #didBuildImage: boolean = false;
   #buildImage() {
     _console.log("building image...");
     const imageData = concatenateArrayBuffers(
@@ -237,6 +236,8 @@ class CameraManager {
     // FILL - header stuff
 
     this.#dispatchEvent("cameraImage", { url, blob });
+
+    this.#didBuildImage = true;
   }
 
   // MESSAGE
