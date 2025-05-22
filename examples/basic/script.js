@@ -1421,3 +1421,34 @@ device.addEventListener("isWifiConnected", () =>
 device.addEventListener("isConnected", () =>
   updateConnectViaWebSocketsButton()
 );
+
+// CAMERA
+/** @type {HTMLSpanElement} */
+const isCameraAvailableSpan = document.getElementById("isCameraAvailable");
+device.addEventListener("connected", () => {
+  isCameraAvailableSpan.innerText = device.hasCamera;
+});
+
+/** @type {HTMLSpanElement} */
+const cameraStatusSpan = document.getElementById("cameraStatus");
+device.addEventListener("cameraStatus", () => {
+  cameraStatusSpan.innerText = device.cameraStatus;
+});
+
+/** @type {HTMLButtonElement} */
+const takePictureButton = document.getElementById("takePicture");
+takePictureButton.addEventListener("click", () => {
+  device.takePicture();
+});
+device.addEventListener("connected", () => {
+  takePictureButton.disabled = !device.hasCamera;
+});
+
+/** @type {HTMLImageElement} */
+const cameraImage = document.getElementById("cameraImage");
+device.addEventListener("cameraImage", (event) => {
+  cameraImage.src = event.message.url;
+});
+device.addEventListener("cameraImageProgress", (event) => {
+  // FILL
+});

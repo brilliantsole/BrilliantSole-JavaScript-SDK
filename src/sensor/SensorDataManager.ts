@@ -29,6 +29,7 @@ import {
   ExtendInterfaceValues,
   ValueOf,
 } from "../utils/TypeScriptUtils.ts";
+import { CameraSensorTypes } from "../CameraManager.ts";
 
 const _console = createConsole("SensorDataManager", { log: false });
 
@@ -36,6 +37,7 @@ export const SensorTypes = [
   ...PressureSensorTypes,
   ...MotionSensorTypes,
   ...BarometerSensorTypes,
+  ...CameraSensorTypes,
 ] as const;
 export type SensorType = (typeof SensorTypes)[number];
 
@@ -55,7 +57,7 @@ export type SensorDataMessageType = (typeof SensorDataMessageTypes)[number];
 
 export const RequiredPressureMessageTypes: SensorDataMessageType[] = [
   "getPressurePositions",
-];
+] as const;
 
 export const SensorDataEventTypes = [
   ...SensorDataMessageTypes,
@@ -214,6 +216,9 @@ class SensorDataManager {
           scalar
         );
         break;
+      case "camera":
+        // we parse camera data using CameraManager
+        return;
       default:
         _console.error(`uncaught sensorType "${sensorType}"`);
     }

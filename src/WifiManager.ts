@@ -34,7 +34,7 @@ export const RequiredWifiMessageTypes: WifiMessageType[] = [
   "isWifiConnected",
   "ipAddress",
   "isWifiSecure",
-];
+] as const;
 
 export const WifiEventTypes = WifiMessageTypes;
 export type WifiEventType = (typeof WifiEventTypes)[number];

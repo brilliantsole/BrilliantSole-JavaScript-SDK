@@ -244,7 +244,7 @@ const orientationQuaternion = new THREE.Quaternion();
 device.addEventListener("orientation", (event) => {
   const orientation = event.message.orientation;
   orientationVector3
-    .set(orientation.pitch, 0, orientation.roll)
+    .set(orientation.pitch, orientation.heading, orientation.roll)
     .multiplyScalar(THREE.MathUtils.DEG2RAD);
   orientationEuler.setFromVector3(orientationVector3);
   orientationQuaternion.setFromEuler(orientationEuler);

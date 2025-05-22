@@ -11,6 +11,7 @@ import { VibrationMessageTypes } from "../vibration/VibrationManager.ts";
 import { SensorConfigurationMessageTypes } from "../sensor/SensorConfigurationManager.ts";
 import { SensorDataMessageTypes } from "../sensor/SensorDataManager.ts";
 import { WifiMessageTypes } from "../WifiManager.ts";
+import { CameraMessageTypes } from "../CameraManager.ts";
 
 const _console = createConsole("BaseConnectionManager", { log: false });
 
@@ -91,6 +92,7 @@ export const TxRxMessageTypes = [
   ...FileTransferMessageTypes,
   ...TfliteMessageTypes,
   ...WifiMessageTypes,
+  ...CameraMessageTypes,
 ] as const;
 export type TxRxMessageType = (typeof TxRxMessageTypes)[number];
 

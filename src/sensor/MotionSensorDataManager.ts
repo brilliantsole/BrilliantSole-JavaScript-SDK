@@ -122,7 +122,9 @@ class MotionSensorDataManager {
 
     pitch *= -1;
     heading *= -1;
-    heading += 360;
+    if (heading < 0) {
+      heading += 360;
+    }
 
     const euler: Euler = { heading, pitch, roll };
 

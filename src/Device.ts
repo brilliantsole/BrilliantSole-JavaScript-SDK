@@ -93,6 +93,15 @@ import InformationManager, {
 } from "./InformationManager.ts";
 import { FileLike } from "./utils/ArrayBufferUtils.ts";
 import DeviceManager from "./DeviceManager.ts";
+import CameraManager, {
+  CameraEventDispatcher,
+  CameraEventMessages,
+  CameraEventTypes,
+  CameraMessageType,
+  CameraMessageTypes,
+  RequiredCameraMessageTypes,
+  SendCameraMessageCallback,
+} from "./CameraManager.ts";
 import WifiManager, {
   RequiredWifiMessageTypes,
   SendWifiMessageCallback,
@@ -104,6 +113,7 @@ import WifiManager, {
 } from "./WifiManager.ts";
 import WebSocketConnectionManager from "./connection/websocket/WebSocketConnectionManager.ts";
 import ClientConnectionManager from "./connection/ClientConnectionManager.ts";
+
 /** NODE_START */
 import UDPConnectionManager from "./connection/udp/UDPConnectionManager.ts";
 /** NODE_END */
@@ -123,6 +133,7 @@ export const DeviceEventTypes = [
   ...FileTransferEventTypes,
   ...TfliteEventTypes,
   ...WifiEventTypes,
+  ...CameraEventTypes,
   ...FirmwareEventTypes,
 ] as const;
 export type DeviceEventType = (typeof DeviceEventTypes)[number];
@@ -136,6 +147,7 @@ export interface DeviceEventMessages
     TfliteEventMessages,
     FileTransferEventMessages,
     WifiEventMessages,
+    CameraEventMessages,
     FirmwareEventMessages {
   batteryLevel: { batteryLevel: number };
   connectionMessage: { messageType: ConnectionMessageType; dataView: DataView };
@@ -250,6 +262,11 @@ class Device {
     this.#wifiManager.eventDispatcher = this
       .#eventDispatcher as WifiEventDispatcher;
 
+    this.#cameraManager.sendMessage = this
+      .sendTxMessages as SendCameraMessageCallback;
+    this.#cameraManager.eventDispatcher = this
+      .#eventDispatcher as CameraEventDispatcher;
+
     this.#firmwareManager.sendMessage = this
       .sendSmpMessage as SendSmpMessageCallback;
     this.#firmwareManager.eventDispatcher = this
@@ -272,6 +289,16 @@ class Device {
         this.sendTxMessages(messages, false);
       } else {
         _console.log("don't need to request pressure infomration");
+      }
+
+      if (this.sensorTypes.includes("camera")) {
+        _console.log("requesting required camera information");
+        const messages = RequiredCameraMessageTypes.map((messageType) => ({
+          type: messageType,
+        }));
+        this.sendTxMessages(messages, false);
+      } else {
+        _console.log("don't need to request camera infomration");
       }
     });
     this.addEventListener("getFileTypes", () => {
@@ -482,6 +509,11 @@ class Device {
         RequiredWifiMessageTypes
       );
     }
+    if (hasRequiredInformation && this.hasCamera) {
+      hasRequiredInformation = this.#didReceiveMessageTypes(
+        RequiredCameraMessageTypes
+      );
+    }
     return hasRequiredInformation;
   }
   #requestRequiredInformation() {
@@ -652,6 +684,7 @@ class Device {
     this.#deviceInformationManager.clear();
     this.#tfliteManager.clear();
     this.#wifiManager.clear();
+    this.#cameraManager.clear();
   }
   #clearConnection() {
     this.connectionManager?.clear();
@@ -736,6 +769,13 @@ class Device {
         } else if (WifiMessageTypes.includes(messageType as WifiMessageType)) {
           this.#wifiManager.parseMessage(
             messageType as WifiMessageType,
+            dataView
+          );
+        } else if (
+          CameraMessageTypes.includes(messageType as CameraMessageType)
+        ) {
+          this.#cameraManager.parseMessage(
+            messageType as CameraMessageType,
             dataView
           );
         } else {
@@ -1185,6 +1225,23 @@ class Device {
       ipAddress: this.ipAddress!,
     });
   }
+
+  // CAMERA MANAGER
+  #cameraManager = new CameraManager();
+  get hasCamera() {
+    return this.sensorTypes.includes("camera");
+  }
+  get cameraStatus() {
+    return this.#cameraManager.cameraStatus;
+  }
+  #assertHasCamera() {
+    _console.assertWithError(this.hasCamera, "camera not available");
+  }
+  async takePicture() {
+    this.#assertHasCamera();
+    await this.#cameraManager.takePicture();
+  }
+  // FILL - take picture, etc
 }
 
 export default Device;
