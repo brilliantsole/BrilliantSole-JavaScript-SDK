@@ -1241,7 +1241,20 @@ class Device {
     this.#assertHasCamera();
     await this.#cameraManager.takePicture();
   }
-  // FILL - take picture, etc
+
+  get cameraConfiguration() {
+    return this.#cameraManager.cameraConfiguration;
+  }
+  get availableCameraConfigurationTypes() {
+    return this.#cameraManager.availableCameraConfigurationTypes;
+  }
+  get cameraConfigurationRanges() {
+    return this.#cameraManager.cameraConfigurationRanges;
+  }
+
+  get setCameraConfiguration() {
+    return this.#cameraManager.setCameraConfiguration;
+  }
 }
 
 export default Device;

@@ -108,21 +108,6 @@
     </div>
 
     <div>
-      <h2>camera</h2>
-
-      <label>
-        <b>is camera available?</b>
-        <span id="isCameraAvailable"></span>
-      </label>
-
-      <label><b>status:</b> <span id="cameraStatus"></span></label>
-
-      <button disabled id="takePicture">take picture</button>
-
-      <img id="cameraImage" />
-    </div>
-
-    <div>
       <label>
         <b>sensor configuration: </b>
         <pre id="sensorConfigurationPre"></pre>
@@ -145,6 +130,55 @@
           </select>
         </label>
       </template>
+    </div>
+
+    <div>
+      <h2>camera</h2>
+
+      <label>
+        <b>is camera available?</b>
+        <span id="isCameraAvailable"></span>
+      </label>
+
+      <label><b>status:</b> <span id="cameraStatus"></span></label>
+
+      <label>auto picture: <input type="checkbox" id="autoPicture" /> </label>
+
+      <button disabled id="takePicture">take picture</button>
+      <progress value="0" id="cameraImageProgress"></progress>
+      <br />
+
+      <div style="display: flex; flex-direction: row">
+        <div>
+          <label>
+            <b>camera configuration: </b>
+            <pre id="cameraConfigurationPre"></pre>
+          </label>
+          <br />
+
+          <label>
+            take picture after update?
+            <input type="checkbox" id="takePictureAfterUpdate" />
+          </label>
+
+          <div id="cameraConfiguration">
+            <template id="cameraConfigurationTypeTemplate">
+              <label class="cameraConfigurationType">
+                <b class="type"></b> <span></span>
+                <br />
+                <input class="value" type="range" value="" disabled />
+              </label>
+            </template>
+          </div>
+          <label>
+            <b>white balance</b>
+            <input type="color" id="cameraWhiteBalance" disabled />
+          </label>
+        </div>
+        <div>
+          <img id="cameraImage" />
+        </div>
+      </div>
     </div>
 
     <div>

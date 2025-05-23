@@ -14,8 +14,18 @@ export { VibrationConfiguration, VibrationLocation, VibrationLocations, Vibratio
 export { VibrationWaveformEffect, VibrationWaveformEffects, } from "./vibration/VibrationWaveformEffects.ts";
 export { FileType, FileTypes, FileTransferDirection, FileTransferDirections, } from "./FileTransferManager.ts";
 export { TfliteSensorType, TfliteSensorTypes, TfliteTask, TfliteTasks, TfliteFileConfiguration as TfliteFileConfiguration, } from "./TfliteManager.ts";
+export { CameraConfiguration, CameraCommand, CameraCommands, CameraConfigurationType, CameraConfigurationTypes, } from "./CameraManager.ts";
 export { default as DevicePair, DevicePairEvent, DevicePairEventMap, DevicePairEventListenerMap, BoundDevicePairEventListeners, DevicePairType, DevicePairTypes, } from "./devicePair/DevicePair.ts";
-export { addEventListeners, removeEventListeners } from "./utils/EventUtils.ts";
+import { addEventListeners, removeEventListeners } from "./utils/EventUtils.ts";
+export declare const EventUtils: {
+    addEventListeners: typeof addEventListeners;
+    removeEventListeners: typeof removeEventListeners;
+};
+import { throttle, debounce } from "./utils/ThrottleUtils.ts";
+export declare const ThrottleUtils: {
+    throttle: typeof throttle;
+    debounce: typeof debounce;
+};
 export { DiscoveredDevice } from "./scanner/BaseScanner.ts";
 /** NODE_START */
 export { default as Scanner } from "./scanner/Scanner.ts";

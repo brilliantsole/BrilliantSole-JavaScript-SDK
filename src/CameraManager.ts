@@ -6,7 +6,7 @@ import autoBind from "auto-bind";
 import { parseMessage } from "./utils/ParseUtils.ts";
 import { concatenateArrayBuffers } from "./utils/ArrayBufferUtils.ts";
 
-const _console = createConsole("CameraManager", { log: true });
+const _console = createConsole("CameraManager", { log: false });
 
 export const CameraSensorTypes = ["camera"] as const;
 export type CameraSensorType = (typeof CameraSensorTypes)[number];
@@ -27,14 +27,38 @@ export const CameraDataTypes = [
 ] as const;
 export type CameraDataType = (typeof CameraDataTypes)[number];
 
+export const CameraConfigurationTypes = [
+  "resolution",
+  "qualityFactor",
+  "shutter",
+  "gain",
+  "redGain",
+  "greenGain",
+  "blueGain",
+] as const;
+export type CameraConfigurationType = (typeof CameraConfigurationTypes)[number];
+
 export const CameraMessageTypes = [
-  "cameraCommand",
   "cameraStatus",
+  "cameraCommand",
+  "getCameraConfiguration",
+  "setCameraConfiguration",
   "cameraData",
 ] as const;
 export type CameraMessageType = (typeof CameraMessageTypes)[number];
 
+export type CameraConfiguration = {
+  [cameraConfigurationType in CameraConfigurationType]?: number;
+};
+export type CameraConfigurationRanges = {
+  [cameraConfigurationType in CameraConfigurationType]: {
+    min: number;
+    max: number;
+  };
+};
+
 export const RequiredCameraMessageTypes: CameraMessageType[] = [
+  "getCameraConfiguration",
   "cameraStatus",
 ] as const;
 
@@ -45,12 +69,11 @@ export const CameraEventTypes = [
 ] as const;
 export type CameraEventType = (typeof CameraEventTypes)[number];
 
-console.log(CameraEventTypes);
-
 export interface CameraEventMessages {
   cameraStatus: { cameraStatus: CameraStatus };
-  cameraImageProgress: { progress: number };
-  cameraImage: { blob: Blob; url: string }; //  FIX
+  getCameraConfiguration: { cameraConfiguration: CameraConfiguration };
+  cameraImageProgress: { progress: number; type: CameraDataType };
+  cameraImage: { blob: Blob; url: string };
 }
 
 export type CameraEventDispatcher = EventDispatcher<
@@ -161,6 +184,10 @@ class CameraManager {
         _console.log({ headerData: this.#headerData });
         this.#headerProgress = this.#headerData?.byteLength / this.#headerSize;
         _console.log({ headerProgress: this.#headerProgress });
+        this.#dispatchEvent("cameraImageProgress", {
+          progress: this.#headerProgress,
+          type: "header",
+        });
         if (this.#headerProgress == 1) {
           _console.log("finished getting header data");
         }
@@ -183,6 +210,10 @@ class CameraManager {
             this.#buildImage();
           }
         }
+        this.#dispatchEvent("cameraImageProgress", {
+          progress: this.#imageProgress,
+          type: "image",
+        });
         break;
       case "footerSize":
         this.#footerSize = dataView.getUint16(0, true);
@@ -195,6 +226,10 @@ class CameraManager {
         _console.log({ footerData: this.#footerData });
         this.#footerProgress = this.#footerData?.byteLength / this.#footerSize;
         _console.log({ footerProgress: this.#footerProgress });
+        this.#dispatchEvent("cameraImageProgress", {
+          progress: this.#footerProgress,
+          type: "footer",
+        });
         if (this.#footerProgress == 1) {
           _console.log("finished getting footer data");
           if (this.#imageProgress == 1) {
@@ -240,6 +275,151 @@ class CameraManager {
     this.#didBuildImage = true;
   }
 
+  // CONFIG
+  #cameraConfiguration!: CameraConfiguration;
+  get cameraConfiguration() {
+    return this.#cameraConfiguration;
+  }
+  #availableCameraConfigurationTypes!: CameraConfigurationType[];
+  get availableCameraConfigurationTypes() {
+    return this.#availableCameraConfigurationTypes;
+  }
+
+  #cameraConfigurationRanges: CameraConfigurationRanges = {
+    resolution: { min: 100, max: 720 },
+    qualityFactor: { min: 15, max: 60 },
+    shutter: { min: 4, max: 16383 },
+    gain: { min: 1, max: 248 },
+    redGain: { min: 0, max: 1023 },
+    greenGain: { min: 0, max: 1023 },
+    blueGain: { min: 0, max: 1023 },
+  };
+  get cameraConfigurationRanges() {
+    return this.#cameraConfigurationRanges;
+  }
+
+  #parseCameraConfiguration(dataView: DataView) {
+    const parsedCameraConfiguration: CameraConfiguration = {};
+
+    let byteOffset = 0;
+    while (byteOffset < dataView.byteLength) {
+      const cameraConfigurationTypeIndex = dataView.getUint8(byteOffset++);
+      const cameraConfigurationType =
+        CameraConfigurationTypes[cameraConfigurationTypeIndex];
+      _console.assertWithError(
+        cameraConfigurationType,
+        `invalid cameraConfigurationTypeIndex ${cameraConfigurationTypeIndex}`
+      );
+      parsedCameraConfiguration[cameraConfigurationType] = dataView.getUint16(
+        byteOffset,
+        true
+      );
+      byteOffset += 2;
+    }
+
+    _console.log({ parsedCameraConfiguration });
+    this.#availableCameraConfigurationTypes = Object.keys(
+      parsedCameraConfiguration
+    ) as CameraConfigurationType[];
+    this.#cameraConfiguration = parsedCameraConfiguration;
+    this.#dispatchEvent("getCameraConfiguration", {
+      cameraConfiguration: this.#cameraConfiguration,
+    });
+  }
+
+  #isCameraConfigurationRedundant(cameraConfiguration: CameraConfiguration) {
+    let cameraConfigurationTypes = Object.keys(
+      cameraConfiguration
+    ) as CameraConfigurationType[];
+    return cameraConfigurationTypes.every((cameraConfigurationType) => {
+      return (
+        this.cameraConfiguration[cameraConfigurationType] ==
+        cameraConfiguration[cameraConfigurationType]
+      );
+    });
+  }
+  async setCameraConfiguration(newCameraConfiguration: CameraConfiguration) {
+    _console.log({ newCameraConfiguration });
+    if (this.#isCameraConfigurationRedundant(newCameraConfiguration)) {
+      _console.log("redundant camera configuration");
+      return;
+    }
+    const setCameraConfigurationData = this.#createData(newCameraConfiguration);
+    _console.log({ setCameraConfigurationData });
+
+    const promise = this.waitForEvent("getCameraConfiguration");
+    this.sendMessage([
+      {
+        type: "setCameraConfiguration",
+        data: setCameraConfigurationData.buffer,
+      },
+    ]);
+    await promise;
+  }
+
+  #assertAvailableCameraConfigurationType(
+    cameraConfigurationType: CameraConfigurationType
+  ) {
+    _console.assertWithError(
+      this.#availableCameraConfigurationTypes,
+      "must get initial cameraConfiguration"
+    );
+    const isCameraConfigurationTypeAvailable =
+      this.#availableCameraConfigurationTypes?.includes(
+        cameraConfigurationType
+      );
+    _console.assertWithError(
+      isCameraConfigurationTypeAvailable,
+      `unavailable camera configuration type "${cameraConfigurationType}"`
+    );
+    return isCameraConfigurationTypeAvailable;
+  }
+
+  static AssertValidCameraConfigurationType(
+    cameraConfigurationType: CameraConfigurationType
+  ) {
+    _console.assertEnumWithError(
+      cameraConfigurationType,
+      CameraConfigurationTypes
+    );
+  }
+  static AssertValidCameraConfigurationTypeEnum(
+    cameraConfigurationTypeEnum: number
+  ) {
+    _console.assertTypeWithError(cameraConfigurationTypeEnum, "number");
+    _console.assertWithError(
+      cameraConfigurationTypeEnum in CameraConfigurationTypes,
+      `invalid cameraConfigurationTypeEnum ${cameraConfigurationTypeEnum}`
+    );
+  }
+
+  #createData(cameraConfiguration: CameraConfiguration) {
+    let cameraConfigurationTypes = Object.keys(
+      cameraConfiguration
+    ) as CameraConfigurationType[];
+    cameraConfigurationTypes = cameraConfigurationTypes.filter(
+      (cameraConfigurationType) =>
+        this.#assertAvailableCameraConfigurationType(cameraConfigurationType)
+    );
+
+    const dataView = new DataView(
+      new ArrayBuffer(cameraConfigurationTypes.length * 3)
+    );
+    cameraConfigurationTypes.forEach((cameraConfigurationType, index) => {
+      CameraManager.AssertValidCameraConfigurationType(cameraConfigurationType);
+      const cameraConfigurationTypeEnum = CameraConfigurationTypes.indexOf(
+        cameraConfigurationType
+      );
+      dataView.setUint8(index * 3, cameraConfigurationTypeEnum);
+
+      const value = cameraConfiguration[cameraConfigurationType]!;
+      //this.#assertValidCameraConfigurationValue(cameraConfigurationType, value);
+      dataView.setUint16(index * 3 + 1, value, true);
+    });
+    _console.log({ sensorConfigurationData: dataView });
+    return dataView;
+  }
+
   // MESSAGE
   parseMessage(messageType: CameraMessageType, dataView: DataView) {
     _console.log({ messageType, dataView });
@@ -247,6 +427,10 @@ class CameraManager {
     switch (messageType) {
       case "cameraStatus":
         this.#parseCameraStatus(dataView);
+        break;
+      case "getCameraConfiguration":
+      case "setCameraConfiguration":
+        this.#parseCameraConfiguration(dataView);
         break;
       case "cameraData":
         this.#parseCameraData(dataView);

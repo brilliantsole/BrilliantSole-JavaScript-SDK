@@ -52,19 +52,19 @@ declare class DeviceManager {
      * _only available on web-bluetooth enabled browsers_
      */
     GetDevices(): Promise<Device[] | undefined>;
-    get AddEventListener(): <T extends "deviceConnected" | "deviceDisconnected" | "deviceIsConnected" | "availableDevices" | "connectedDevices">(type: T, listener: (event: {
+    get AddEventListener(): <T extends "connectedDevices" | "deviceConnected" | "deviceIsConnected" | "deviceDisconnected" | "availableDevices">(type: T, listener: (event: {
         type: T;
         target: DeviceManager;
         message: DeviceManagerEventMessages[T];
     }) => void, options?: {
         once?: boolean;
     }) => void;
-    get RemoveEventListener(): <T extends "deviceConnected" | "deviceDisconnected" | "deviceIsConnected" | "availableDevices" | "connectedDevices">(type: T, listener: (event: {
+    get RemoveEventListener(): <T extends "connectedDevices" | "deviceConnected" | "deviceIsConnected" | "deviceDisconnected" | "availableDevices">(type: T, listener: (event: {
         type: T;
         target: DeviceManager;
         message: DeviceManagerEventMessages[T];
     }) => void) => void;
-    get RemoveEventListeners(): <T extends "deviceConnected" | "deviceDisconnected" | "deviceIsConnected" | "availableDevices" | "connectedDevices">(type: T) => void;
+    get RemoveEventListeners(): <T extends "connectedDevices" | "deviceConnected" | "deviceIsConnected" | "deviceDisconnected" | "availableDevices">(type: T) => void;
     get RemoveAllEventListeners(): () => void;
     _CheckDeviceAvailability(device: Device): void;
 }

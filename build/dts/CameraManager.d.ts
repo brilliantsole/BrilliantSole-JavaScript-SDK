@@ -8,17 +8,32 @@ export declare const CameraStatuses: readonly ["idle", "takingPicture", "asleep"
 export type CameraStatus = (typeof CameraStatuses)[number];
 export declare const CameraDataTypes: readonly ["headerSize", "header", "imageSize", "image", "footerSize", "footer"];
 export type CameraDataType = (typeof CameraDataTypes)[number];
-export declare const CameraMessageTypes: readonly ["cameraCommand", "cameraStatus", "cameraData"];
+export declare const CameraConfigurationTypes: readonly ["resolution", "qualityFactor", "shutter", "gain", "redGain", "greenGain", "blueGain"];
+export type CameraConfigurationType = (typeof CameraConfigurationTypes)[number];
+export declare const CameraMessageTypes: readonly ["cameraStatus", "cameraCommand", "getCameraConfiguration", "setCameraConfiguration", "cameraData"];
 export type CameraMessageType = (typeof CameraMessageTypes)[number];
+export type CameraConfiguration = {
+    [cameraConfigurationType in CameraConfigurationType]?: number;
+};
+export type CameraConfigurationRanges = {
+    [cameraConfigurationType in CameraConfigurationType]: {
+        min: number;
+        max: number;
+    };
+};
 export declare const RequiredCameraMessageTypes: CameraMessageType[];
-export declare const CameraEventTypes: readonly ["cameraCommand", "cameraStatus", "cameraData", "cameraImageProgress", "cameraImage"];
+export declare const CameraEventTypes: readonly ["cameraStatus", "cameraCommand", "getCameraConfiguration", "setCameraConfiguration", "cameraData", "cameraImageProgress", "cameraImage"];
 export type CameraEventType = (typeof CameraEventTypes)[number];
 export interface CameraEventMessages {
     cameraStatus: {
         cameraStatus: CameraStatus;
     };
+    getCameraConfiguration: {
+        cameraConfiguration: CameraConfiguration;
+    };
     cameraImageProgress: {
         progress: number;
+        type: CameraDataType;
     };
     cameraImage: {
         blob: Blob;
@@ -32,7 +47,7 @@ declare class CameraManager {
     constructor();
     sendMessage: SendCameraMessageCallback;
     eventDispatcher: CameraEventDispatcher;
-    get waitForEvent(): <T extends "cameraCommand" | "cameraStatus" | "cameraData" | "cameraImageProgress" | "cameraImage">(type: T) => Promise<{
+    get waitForEvent(): <T extends "cameraStatus" | "cameraCommand" | "getCameraConfiguration" | "setCameraConfiguration" | "cameraData" | "cameraImageProgress" | "cameraImage">(type: T) => Promise<{
         type: T;
         target: Device;
         message: CameraEventMessages[T];
@@ -40,6 +55,12 @@ declare class CameraManager {
     requestRequiredInformation(): void;
     get cameraStatus(): "idle" | "takingPicture" | "asleep";
     takePicture(): Promise<void>;
+    get cameraConfiguration(): CameraConfiguration;
+    get availableCameraConfigurationTypes(): ("resolution" | "qualityFactor" | "shutter" | "gain" | "redGain" | "greenGain" | "blueGain")[];
+    get cameraConfigurationRanges(): CameraConfigurationRanges;
+    setCameraConfiguration(newCameraConfiguration: CameraConfiguration): Promise<void>;
+    static AssertValidCameraConfigurationType(cameraConfigurationType: CameraConfigurationType): void;
+    static AssertValidCameraConfigurationTypeEnum(cameraConfigurationTypeEnum: number): void;
     parseMessage(messageType: CameraMessageType, dataView: DataView): void;
     clear(): void;
 }
