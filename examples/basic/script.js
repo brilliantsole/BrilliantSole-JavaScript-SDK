@@ -1593,7 +1593,28 @@ cameraImage.addEventListener("load", () => {
 
 /** @type {HTMLInputElement} */
 const cameraWhiteBalanceInput = document.getElementById("cameraWhiteBalance");
-cameraWhiteBalanceInput.addEventListener("change", () => {
+const updateWhiteBalance = BS.ThrottleUtils.throttle(
+  (config) => {
+    if (device.cameraStatus != "idle") {
+      return;
+    }
+
+    device.setCameraConfiguration(config);
+
+    if (takePictureAfterUpdate) {
+      device.addEventListener(
+        "getCameraConfiguration",
+        () => {
+          setTimeout(() => device.takePicture()), 100;
+        },
+        { once: true }
+      );
+    }
+  },
+  200,
+  true
+);
+cameraWhiteBalanceInput.addEventListener("input", () => {
   let [redGain, greenGain, blueGain] = cameraWhiteBalanceInput.value
     .replace("#", "")
     .match(/.{1,2}/g)
@@ -1602,21 +1623,20 @@ cameraWhiteBalanceInput.addEventListener("change", () => {
     .map((value) => value * device.cameraConfigurationRanges.blueGain.max)
     .map((value) => Math.round(value));
 
-  device.setCameraConfiguration({ redGain, greenGain, blueGain });
-
-  if (takePictureAfterUpdate) {
-    device.addEventListener(
-      "getCameraConfiguration",
-      () => {
-        setTimeout(() => device.takePicture()), 100;
-      },
-      { once: true }
-    );
-  }
+  updateWhiteBalance({ redGain, greenGain, blueGain });
 });
 const updateCameraWhiteBalanceInput = () => {
   cameraWhiteBalanceInput.disabled =
     !device.isConnected || !device.hasCamera || device.cameraStatus != "idle";
+
+  const { redGain, blueGain, greenGain } = device.cameraConfiguration;
+
+  cameraWhiteBalanceInput.value = `#${[redGain, blueGain, greenGain]
+    .map((value) => value / device.cameraConfigurationRanges.redGain.max)
+    .map((value) => value * 255)
+    .map((value) => Math.round(value))
+    .map((value) => value.toString(16))
+    .join("")}`;
 };
 device.addEventListener("isConnected", () => {
   updateCameraWhiteBalanceInput();
