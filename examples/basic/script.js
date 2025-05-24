@@ -1638,7 +1638,7 @@ const updateCameraWhiteBalanceInput = () => {
     .map((value) => value.toString(16))
     .join("")}`;
 };
-device.addEventListener("isConnected", () => {
+device.addEventListener("connected", () => {
   updateCameraWhiteBalanceInput();
 });
 device.addEventListener("getCameraConfiguration", () => {

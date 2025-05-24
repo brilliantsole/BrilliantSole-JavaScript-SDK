@@ -1241,6 +1241,22 @@ class Device {
     this.#assertHasCamera();
     await this.#cameraManager.takePicture();
   }
+  async focusCamera() {
+    this.#assertHasCamera();
+    await this.#cameraManager.focus();
+  }
+  async stopCamera() {
+    this.#assertHasCamera();
+    await this.#cameraManager.stop();
+  }
+  async wakeCamera() {
+    this.#assertHasCamera();
+    await this.#cameraManager.wake();
+  }
+  async sleepCamera() {
+    this.#assertHasCamera();
+    await this.#cameraManager.sleep();
+  }
 
   get cameraConfiguration() {
     return this.#cameraManager.cameraConfiguration;

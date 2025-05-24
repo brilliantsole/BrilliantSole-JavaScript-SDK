@@ -11,10 +11,21 @@ const _console = createConsole("CameraManager", { log: false });
 export const CameraSensorTypes = ["camera"] as const;
 export type CameraSensorType = (typeof CameraSensorTypes)[number];
 
-export const CameraCommands = ["takePicture", "stop", "sleep", "wake"] as const;
+export const CameraCommands = [
+  "focus",
+  "takePicture",
+  "stop",
+  "sleep",
+  "wake",
+] as const;
 export type CameraCommand = (typeof CameraCommands)[number];
 
-export const CameraStatuses = ["idle", "takingPicture", "asleep"] as const;
+export const CameraStatuses = [
+  "idle",
+  "focusing",
+  "takingPicture",
+  "asleep",
+] as const;
 export type CameraStatus = (typeof CameraStatuses)[number];
 
 export const CameraDataTypes = [
@@ -155,8 +166,37 @@ class CameraManager {
 
     await promise;
   }
+  #assertIsAsleep() {
+    _console.assertWithError(
+      this.#cameraStatus == "asleep",
+      `camera is not asleep - currently ${this.#cameraStatus}`
+    );
+  }
+  #assertIsAwake() {
+    _console.assertWithError(
+      this.#cameraStatus != "asleep",
+      `camera is not awake - currently ${this.#cameraStatus}`
+    );
+  }
+  async focus() {
+    this.#assertIsAwake();
+    await this.#sendCameraCommand("focus");
+  }
   async takePicture() {
+    this.#assertIsAwake();
     await this.#sendCameraCommand("takePicture");
+  }
+  async stop() {
+    this.#assertIsAwake();
+    await this.#sendCameraCommand("stop");
+  }
+  async sleep() {
+    this.#assertIsAwake();
+    await this.#sendCameraCommand("sleep");
+  }
+  async wake() {
+    this.#assertIsAsleep();
+    await this.#sendCameraCommand("wake");
   }
 
   // CAMERA DATA

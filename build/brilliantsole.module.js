@@ -1280,11 +1280,22 @@ function parseMessage(dataView, messageTypes, callback, context, parseMessageLen
     }
 }
 
-var _CameraManager_instances, _a$5, _CameraManager_dispatchEvent_get, _CameraManager_cameraStatus, _CameraManager_parseCameraStatus, _CameraManager_updateCameraStatus, _CameraManager_sendCameraCommand, _CameraManager_parseCameraData, _CameraManager_onCameraData, _CameraManager_headerSize, _CameraManager_headerData, _CameraManager_headerProgress, _CameraManager_imageSize, _CameraManager_imageData, _CameraManager_imageProgress, _CameraManager_footerSize, _CameraManager_footerData, _CameraManager_footerProgress, _CameraManager_didBuildImage, _CameraManager_buildImage, _CameraManager_cameraConfiguration, _CameraManager_availableCameraConfigurationTypes, _CameraManager_cameraConfigurationRanges, _CameraManager_parseCameraConfiguration, _CameraManager_isCameraConfigurationRedundant, _CameraManager_assertAvailableCameraConfigurationType, _CameraManager_createData;
+var _CameraManager_instances, _a$5, _CameraManager_dispatchEvent_get, _CameraManager_cameraStatus, _CameraManager_parseCameraStatus, _CameraManager_updateCameraStatus, _CameraManager_sendCameraCommand, _CameraManager_assertIsAsleep, _CameraManager_assertIsAwake, _CameraManager_parseCameraData, _CameraManager_onCameraData, _CameraManager_headerSize, _CameraManager_headerData, _CameraManager_headerProgress, _CameraManager_imageSize, _CameraManager_imageData, _CameraManager_imageProgress, _CameraManager_footerSize, _CameraManager_footerData, _CameraManager_footerProgress, _CameraManager_didBuildImage, _CameraManager_buildImage, _CameraManager_cameraConfiguration, _CameraManager_availableCameraConfigurationTypes, _CameraManager_cameraConfigurationRanges, _CameraManager_parseCameraConfiguration, _CameraManager_isCameraConfigurationRedundant, _CameraManager_assertAvailableCameraConfigurationType, _CameraManager_createData;
 const _console$p = createConsole("CameraManager", { log: false });
 const CameraSensorTypes = ["camera"];
-const CameraCommands = ["takePicture", "stop", "sleep", "wake"];
-const CameraStatuses = ["idle", "takingPicture", "asleep"];
+const CameraCommands = [
+    "focus",
+    "takePicture",
+    "stop",
+    "sleep",
+    "wake",
+];
+const CameraStatuses = [
+    "idle",
+    "focusing",
+    "takingPicture",
+    "asleep",
+];
 const CameraDataTypes = [
     "headerSize",
     "header",
@@ -1358,8 +1369,25 @@ class CameraManager {
     get cameraStatus() {
         return __classPrivateFieldGet(this, _CameraManager_cameraStatus, "f");
     }
+    async focus() {
+        __classPrivateFieldGet(this, _CameraManager_instances, "m", _CameraManager_assertIsAwake).call(this);
+        await __classPrivateFieldGet(this, _CameraManager_instances, "m", _CameraManager_sendCameraCommand).call(this, "focus");
+    }
     async takePicture() {
+        __classPrivateFieldGet(this, _CameraManager_instances, "m", _CameraManager_assertIsAwake).call(this);
         await __classPrivateFieldGet(this, _CameraManager_instances, "m", _CameraManager_sendCameraCommand).call(this, "takePicture");
+    }
+    async stop() {
+        __classPrivateFieldGet(this, _CameraManager_instances, "m", _CameraManager_assertIsAwake).call(this);
+        await __classPrivateFieldGet(this, _CameraManager_instances, "m", _CameraManager_sendCameraCommand).call(this, "stop");
+    }
+    async sleep() {
+        __classPrivateFieldGet(this, _CameraManager_instances, "m", _CameraManager_assertIsAwake).call(this);
+        await __classPrivateFieldGet(this, _CameraManager_instances, "m", _CameraManager_sendCameraCommand).call(this, "sleep");
+    }
+    async wake() {
+        __classPrivateFieldGet(this, _CameraManager_instances, "m", _CameraManager_assertIsAsleep).call(this);
+        await __classPrivateFieldGet(this, _CameraManager_instances, "m", _CameraManager_sendCameraCommand).call(this, "wake");
     }
     get cameraConfiguration() {
         return __classPrivateFieldGet(this, _CameraManager_cameraConfiguration, "f");
@@ -1447,6 +1475,10 @@ async function _CameraManager_sendCameraCommand(command, sendImmediately) {
         },
     ], sendImmediately);
     await promise;
+}, _CameraManager_assertIsAsleep = function _CameraManager_assertIsAsleep() {
+    _console$p.assertWithError(__classPrivateFieldGet(this, _CameraManager_cameraStatus, "f") == "asleep", `camera is not asleep - currently ${__classPrivateFieldGet(this, _CameraManager_cameraStatus, "f")}`);
+}, _CameraManager_assertIsAwake = function _CameraManager_assertIsAwake() {
+    _console$p.assertWithError(__classPrivateFieldGet(this, _CameraManager_cameraStatus, "f") != "asleep", `camera is not awake - currently ${__classPrivateFieldGet(this, _CameraManager_cameraStatus, "f")}`);
 }, _CameraManager_parseCameraData = function _CameraManager_parseCameraData(dataView) {
     _console$p.log("parsing camera data", dataView);
     parseMessage(dataView, CameraDataTypes, __classPrivateFieldGet(this, _CameraManager_instances, "m", _CameraManager_onCameraData).bind(this), null, true);
@@ -5969,6 +6001,22 @@ class Device {
     async takePicture() {
         __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertHasCamera).call(this);
         await __classPrivateFieldGet(this, _Device_cameraManager, "f").takePicture();
+    }
+    async focusCamera() {
+        __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertHasCamera).call(this);
+        await __classPrivateFieldGet(this, _Device_cameraManager, "f").focus();
+    }
+    async stopCamera() {
+        __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertHasCamera).call(this);
+        await __classPrivateFieldGet(this, _Device_cameraManager, "f").stop();
+    }
+    async wakeCamera() {
+        __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertHasCamera).call(this);
+        await __classPrivateFieldGet(this, _Device_cameraManager, "f").wake();
+    }
+    async sleepCamera() {
+        __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertHasCamera).call(this);
+        await __classPrivateFieldGet(this, _Device_cameraManager, "f").sleep();
     }
     get cameraConfiguration() {
         return __classPrivateFieldGet(this, _Device_cameraManager, "f").cameraConfiguration;
