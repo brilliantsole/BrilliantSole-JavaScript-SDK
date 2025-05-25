@@ -435,7 +435,7 @@ addVibrationButton.addEventListener("click", () => {
   /** @type {HTMLUListElement} */
   const vibrationLocationsContainer =
     vibrationContainer.querySelector(".locations");
-  BS.VibrationLocations.forEach((vibrationLocation) => {
+  device.vibrationLocations.forEach((vibrationLocation) => {
     const vibrationLocationContainer = vibrationLocationTemplate.content
       .cloneNode(true)
       .querySelector(".vibrationLocation");
@@ -724,6 +724,13 @@ BS.FileTypes.forEach((fileType) => {
   fileTransferTypesOptgroup.appendChild(new Option(fileType));
 });
 fileTransferTypesSelect.dispatchEvent(new Event("input"));
+device.addEventListener("connected", () => {
+  fileTransferTypesSelect.querySelectorAll("option").forEach((option) => {
+    option.hidden =
+      BS.FileTypes.includes(option.value) &&
+      !device.fileTypes.includes(option.value);
+  });
+});
 
 /** @type {HTMLProgressElement} */
 const fileTransferProgress = document.getElementById("fileTransferProgress");
@@ -1531,6 +1538,9 @@ BS.CameraConfigurationTypes.forEach((cameraConfigurationType) => {
   };
 
   device.addEventListener("connected", () => {
+    if (!device.hasCamera) {
+      return;
+    }
     const range = device.cameraConfigurationRanges[cameraConfigurationType];
     input.min = range.min;
     input.max = range.max;
@@ -1626,6 +1636,9 @@ cameraWhiteBalanceInput.addEventListener("input", () => {
   updateWhiteBalance({ redGain, greenGain, blueGain });
 });
 const updateCameraWhiteBalanceInput = () => {
+  if (!device.hasCamera) {
+    return;
+  }
   cameraWhiteBalanceInput.disabled =
     !device.isConnected || !device.hasCamera || device.cameraStatus != "idle";
 

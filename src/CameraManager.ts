@@ -316,7 +316,7 @@ class CameraManager {
   }
 
   // CONFIG
-  #cameraConfiguration!: CameraConfiguration;
+  #cameraConfiguration: CameraConfiguration = {};
   get cameraConfiguration() {
     return this.#cameraConfiguration;
   }

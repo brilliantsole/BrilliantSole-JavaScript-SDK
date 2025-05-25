@@ -1343,7 +1343,7 @@ class CameraManager {
         _CameraManager_footerData.set(this, void 0);
         _CameraManager_footerProgress.set(this, 0);
         _CameraManager_didBuildImage.set(this, false);
-        _CameraManager_cameraConfiguration.set(this, void 0);
+        _CameraManager_cameraConfiguration.set(this, {});
         _CameraManager_availableCameraConfigurationTypes.set(this, void 0);
         _CameraManager_cameraConfigurationRanges.set(this, {
             resolution: { min: 100, max: 720 },
@@ -2790,7 +2790,8 @@ class VibrationManager {
         vibrationConfigurations.forEach((vibrationConfiguration) => {
             const { type } = vibrationConfiguration;
             let { locations } = vibrationConfiguration;
-            locations = locations || VibrationLocations.slice();
+            locations = locations || this.vibrationLocations.slice();
+            locations = locations.filter((location) => this.vibrationLocations.includes(location));
             let arrayBuffer;
             switch (type) {
                 case "waveformEffect":
