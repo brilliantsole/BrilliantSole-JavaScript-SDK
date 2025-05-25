@@ -1445,7 +1445,11 @@ device.addEventListener("cameraStatus", () => {
 /** @type {HTMLButtonElement} */
 const takePictureButton = document.getElementById("takePicture");
 takePictureButton.addEventListener("click", () => {
-  device.takePicture();
+  if (device.cameraStatus == "idle") {
+    device.takePicture();
+  } else {
+    device.stopCamera();
+  }
 });
 device.addEventListener("connected", () => {
   updateTakePictureButton();
@@ -1455,8 +1459,78 @@ device.addEventListener("getSensorConfiguration", () => {
 });
 const updateTakePictureButton = () => {
   takePictureButton.disabled =
-    device.isConnected && device.sensorConfiguration.camera == 0;
+    !device.isConnected ||
+    device.sensorConfiguration.camera == 0 ||
+    device.cameraStatus != "idle";
 };
+device.addEventListener("cameraStatus", () => {
+  updateTakePictureButton();
+});
+
+/** @type {HTMLButtonElement} */
+const focusCameraButton = document.getElementById("focusCamera");
+focusCameraButton.addEventListener("click", () => {
+  if (device.cameraStatus == "idle") {
+    device.focusCamera();
+  } else {
+    device.stopCamera();
+  }
+});
+device.addEventListener("connected", () => {
+  updateFocusCameraButton();
+});
+device.addEventListener("getSensorConfiguration", () => {
+  updateFocusCameraButton();
+});
+const updateFocusCameraButton = () => {
+  focusCameraButton.disabled =
+    !device.isConnected ||
+    device.sensorConfiguration.camera == 0 ||
+    device.cameraStatus != "idle";
+};
+device.addEventListener("cameraStatus", (event) => {
+  updateFocusCameraButton();
+  if (
+    device.cameraStatus == "idle" &&
+    event.message.previousCameraStatus == "focusing"
+  ) {
+    device.takePicture();
+  }
+});
+
+/** @type {HTMLButtonElement} */
+const sleepCameraButton = document.getElementById("sleepCamera");
+sleepCameraButton.addEventListener("click", () => {
+  if (device.cameraStatus == "asleep") {
+    device.wakeCamera();
+  } else {
+    device.sleepCamera();
+  }
+});
+device.addEventListener("connected", () => {
+  updateSleepCameraButton();
+});
+device.addEventListener("getSensorConfiguration", () => {
+  updateSleepCameraButton();
+});
+const updateSleepCameraButton = () => {
+  let disabled = !device.isConnected || !device.hasCamera;
+  switch (device.cameraStatus) {
+    case "asleep":
+      sleepCameraButton.innerText = "wake camera";
+      break;
+    case "idle":
+      sleepCameraButton.innerText = "sleep camera";
+      break;
+    default:
+      disabled = true;
+      break;
+  }
+  sleepCameraButton.disabled = disabled;
+};
+device.addEventListener("cameraStatus", () => {
+  updateSleepCameraButton();
+});
 
 /** @type {HTMLImageElement} */
 const cameraImage = document.getElementById("cameraImage");

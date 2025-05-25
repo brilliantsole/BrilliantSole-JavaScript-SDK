@@ -32,7 +32,7 @@ declare class SensorDataManager {
     static AssertValidSensorType(sensorType: SensorType): void;
     static AssertValidSensorTypeEnum(sensorTypeEnum: number): void;
     eventDispatcher: SensorDataEventDispatcher;
-    get dispatchEvent(): <T extends "camera" | "getPressurePositions" | "getSensorScalars" | "sensorData" | "pressure" | "acceleration" | "gravity" | "linearAcceleration" | "gyroscope" | "magnetometer" | "gameRotation" | "rotation" | "orientation" | "activity" | "stepCounter" | "stepDetector" | "deviceOrientation" | "tapDetector" | "barometer">(type: T, message: SensorDataEventMessages[T]) => void;
+    get dispatchEvent(): <T extends "pressure" | "acceleration" | "gravity" | "linearAcceleration" | "gyroscope" | "magnetometer" | "gameRotation" | "rotation" | "orientation" | "activity" | "stepCounter" | "stepDetector" | "deviceOrientation" | "tapDetector" | "barometer" | "camera" | "sensorData" | "getPressurePositions" | "getSensorScalars">(type: T, message: SensorDataEventMessages[T]) => void;
     parseMessage(messageType: SensorDataMessageType, dataView: DataView): void;
     parseScalars(dataView: DataView): void;
     private parseData;

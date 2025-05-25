@@ -1332,7 +1332,7 @@ const CameraEventTypes = [
 class CameraManager {
     constructor() {
         _CameraManager_instances.add(this);
-        _CameraManager_cameraStatus.set(this, "idle");
+        _CameraManager_cameraStatus.set(this, void 0);
         _CameraManager_headerSize.set(this, 0);
         _CameraManager_headerData.set(this, void 0);
         _CameraManager_headerProgress.set(this, 0);
@@ -1440,6 +1440,7 @@ class CameraManager {
         }
     }
     clear() {
+        __classPrivateFieldSet(this, _CameraManager_cameraStatus, undefined, "f");
         __classPrivateFieldSet(this, _CameraManager_headerProgress, 0, "f");
         __classPrivateFieldSet(this, _CameraManager_imageProgress, 0, "f");
         __classPrivateFieldSet(this, _CameraManager_footerProgress, 0, "f");
@@ -1453,9 +1454,17 @@ _a$5 = CameraManager, _CameraManager_cameraStatus = new WeakMap(), _CameraManage
     __classPrivateFieldGet(this, _CameraManager_instances, "m", _CameraManager_updateCameraStatus).call(this, newCameraStatus);
 }, _CameraManager_updateCameraStatus = function _CameraManager_updateCameraStatus(newCameraStatus) {
     _console$p.assertEnumWithError(newCameraStatus, CameraStatuses);
+    if (newCameraStatus == __classPrivateFieldGet(this, _CameraManager_cameraStatus, "f")) {
+        _console$p.log(`redundant cameraStatus ${newCameraStatus}`);
+        return;
+    }
+    const previousCameraStatus = __classPrivateFieldGet(this, _CameraManager_cameraStatus, "f");
     __classPrivateFieldSet(this, _CameraManager_cameraStatus, newCameraStatus, "f");
     _console$p.log(`updated cameraStatus to "${this.cameraStatus}"`);
-    __classPrivateFieldGet(this, _CameraManager_instances, "a", _CameraManager_dispatchEvent_get).call(this, "cameraStatus", { cameraStatus: this.cameraStatus });
+    __classPrivateFieldGet(this, _CameraManager_instances, "a", _CameraManager_dispatchEvent_get).call(this, "cameraStatus", {
+        cameraStatus: this.cameraStatus,
+        previousCameraStatus,
+    });
     if (__classPrivateFieldGet(this, _CameraManager_cameraStatus, "f") != "takingPicture" &&
         __classPrivateFieldGet(this, _CameraManager_imageProgress, "f") > 0 &&
         !__classPrivateFieldGet(this, _CameraManager_didBuildImage, "f")) {
@@ -1757,7 +1766,7 @@ class SensorConfigurationManager {
     constructor() {
         _SensorConfigurationManager_instances.add(this);
         _SensorConfigurationManager_availableSensorTypes.set(this, void 0);
-        _SensorConfigurationManager_configuration.set(this, void 0);
+        _SensorConfigurationManager_configuration.set(this, {});
         autoBind(this);
     }
     get addEventListener() {

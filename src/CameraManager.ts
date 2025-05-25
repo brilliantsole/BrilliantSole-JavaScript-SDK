@@ -81,7 +81,10 @@ export const CameraEventTypes = [
 export type CameraEventType = (typeof CameraEventTypes)[number];
 
 export interface CameraEventMessages {
-  cameraStatus: { cameraStatus: CameraStatus };
+  cameraStatus: {
+    cameraStatus: CameraStatus;
+    previousCameraStatus: CameraStatus;
+  };
   getCameraConfiguration: { cameraConfiguration: CameraConfiguration };
   cameraImageProgress: { progress: number; type: CameraDataType };
   cameraImage: { blob: Blob; url: string };
@@ -118,7 +121,7 @@ class CameraManager {
   }
 
   // CAMERA STATUS
-  #cameraStatus: CameraStatus = "idle";
+  #cameraStatus!: CameraStatus;
   get cameraStatus() {
     return this.#cameraStatus;
   }
@@ -129,13 +132,17 @@ class CameraManager {
   }
   #updateCameraStatus(newCameraStatus: CameraStatus) {
     _console.assertEnumWithError(newCameraStatus, CameraStatuses);
-    if (false && newCameraStatus == this.#cameraStatus) {
+    if (newCameraStatus == this.#cameraStatus) {
       _console.log(`redundant cameraStatus ${newCameraStatus}`);
       return;
     }
+    const previousCameraStatus = this.#cameraStatus;
     this.#cameraStatus = newCameraStatus;
     _console.log(`updated cameraStatus to "${this.cameraStatus}"`);
-    this.#dispatchEvent("cameraStatus", { cameraStatus: this.cameraStatus });
+    this.#dispatchEvent("cameraStatus", {
+      cameraStatus: this.cameraStatus,
+      previousCameraStatus,
+    });
 
     if (
       this.#cameraStatus != "takingPicture" &&
@@ -481,6 +488,8 @@ class CameraManager {
   }
 
   clear() {
+    // @ts-ignore
+    this.#cameraStatus = undefined;
     this.#headerProgress = 0;
     this.#imageProgress = 0;
     this.#footerProgress = 0;

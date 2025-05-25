@@ -71,7 +71,7 @@ class SensorConfigurationManager {
     return isSensorTypeAvailable;
   }
 
-  #configuration!: SensorConfiguration;
+  #configuration: SensorConfiguration = {};
   get configuration() {
     return this.#configuration;
   }

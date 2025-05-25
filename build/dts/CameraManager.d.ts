@@ -27,6 +27,7 @@ export type CameraEventType = (typeof CameraEventTypes)[number];
 export interface CameraEventMessages {
     cameraStatus: {
         cameraStatus: CameraStatus;
+        previousCameraStatus: CameraStatus;
     };
     getCameraConfiguration: {
         cameraConfiguration: CameraConfiguration;
@@ -47,7 +48,7 @@ declare class CameraManager {
     constructor();
     sendMessage: SendCameraMessageCallback;
     eventDispatcher: CameraEventDispatcher;
-    get waitForEvent(): <T extends "cameraStatus" | "cameraCommand" | "getCameraConfiguration" | "setCameraConfiguration" | "cameraData" | "cameraImageProgress" | "cameraImage">(type: T) => Promise<{
+    get waitForEvent(): <T extends "cameraStatus" | "getCameraConfiguration" | "cameraImageProgress" | "cameraImage" | "cameraCommand" | "setCameraConfiguration" | "cameraData">(type: T) => Promise<{
         type: T;
         target: Device;
         message: CameraEventMessages[T];
