@@ -19,8 +19,8 @@ export const WifiMessageTypes = [
   "setWifiSSID",
   "getWifiPassword",
   "setWifiPassword",
-  "getEnableWifiConnection",
-  "setEnableWifiConnection",
+  "getWifiConnectionEnabled",
+  "setWifiConnectionEnabled",
   "isWifiConnected",
   "ipAddress",
   "isWifiSecure",
@@ -30,7 +30,7 @@ export type WifiMessageType = (typeof WifiMessageTypes)[number];
 export const RequiredWifiMessageTypes: WifiMessageType[] = [
   "getWifiSSID",
   "getWifiPassword",
-  "getEnableWifiConnection",
+  "getWifiConnectionEnabled",
   "isWifiConnected",
   "ipAddress",
   "isWifiSecure",
@@ -179,7 +179,7 @@ class WifiManager {
   #updateWifiConnectionEnabled(wifiConnectionEnabled: boolean) {
     _console.log({ wifiConnectionEnabled });
     this.#wifiConnectionEnabled = wifiConnectionEnabled;
-    this.#dispatchEvent("getEnableWifiConnection", {
+    this.#dispatchEvent("getWifiConnectionEnabled", {
       wifiConnectionEnabled: wifiConnectionEnabled,
     });
   }
@@ -196,11 +196,11 @@ class WifiManager {
       return;
     }
 
-    const promise = this.waitForEvent("getEnableWifiConnection");
+    const promise = this.waitForEvent("getWifiConnectionEnabled");
     this.sendMessage(
       [
         {
-          type: "setEnableWifiConnection",
+          type: "setWifiConnectionEnabled",
           data: Uint8Array.from([Number(newWifiConnectionEnabled)]).buffer,
         },
       ],
@@ -283,8 +283,8 @@ class WifiManager {
         _console.log({ password });
         this.#updateWifiPassword(password);
         break;
-      case "getEnableWifiConnection":
-      case "setEnableWifiConnection":
+      case "getWifiConnectionEnabled":
+      case "setWifiConnectionEnabled":
         const enableWifiConnection = Boolean(dataView.getUint8(0));
         _console.log({ enableWifiConnection });
         this.#updateWifiConnectionEnabled(enableWifiConnection);

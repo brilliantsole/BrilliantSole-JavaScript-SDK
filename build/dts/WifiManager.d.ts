@@ -4,10 +4,10 @@ export declare const MinWifiSSIDLength = 1;
 export declare const MaxWifiSSIDLength = 32;
 export declare const MinWifiPasswordLength = 8;
 export declare const MaxWifiPasswordLength = 64;
-export declare const WifiMessageTypes: readonly ["isWifiAvailable", "getWifiSSID", "setWifiSSID", "getWifiPassword", "setWifiPassword", "getEnableWifiConnection", "setEnableWifiConnection", "isWifiConnected", "ipAddress", "isWifiSecure"];
+export declare const WifiMessageTypes: readonly ["isWifiAvailable", "getWifiSSID", "setWifiSSID", "getWifiPassword", "setWifiPassword", "getWifiConnectionEnabled", "setWifiConnectionEnabled", "isWifiConnected", "ipAddress", "isWifiSecure"];
 export type WifiMessageType = (typeof WifiMessageTypes)[number];
 export declare const RequiredWifiMessageTypes: WifiMessageType[];
-export declare const WifiEventTypes: readonly ["isWifiAvailable", "getWifiSSID", "setWifiSSID", "getWifiPassword", "setWifiPassword", "getEnableWifiConnection", "setEnableWifiConnection", "isWifiConnected", "ipAddress", "isWifiSecure"];
+export declare const WifiEventTypes: readonly ["isWifiAvailable", "getWifiSSID", "setWifiSSID", "getWifiPassword", "setWifiPassword", "getWifiConnectionEnabled", "setWifiConnectionEnabled", "isWifiConnected", "ipAddress", "isWifiSecure"];
 export type WifiEventType = (typeof WifiEventTypes)[number];
 export interface WifiEventMessages {
     isWifiAvailable: {
@@ -36,7 +36,7 @@ declare class WifiManager {
     constructor();
     sendMessage: SendWifiMessageCallback;
     eventDispatcher: WifiEventDispatcher;
-    get waitForEvent(): <T extends "isWifiAvailable" | "getWifiSSID" | "getWifiPassword" | "getEnableWifiConnection" | "isWifiConnected" | "ipAddress" | "setWifiSSID" | "setWifiPassword" | "setEnableWifiConnection" | "isWifiSecure">(type: T) => Promise<{
+    get waitForEvent(): <T extends "isWifiAvailable" | "getWifiSSID" | "setWifiSSID" | "getWifiPassword" | "setWifiPassword" | "getWifiConnectionEnabled" | "setWifiConnectionEnabled" | "isWifiConnected" | "ipAddress" | "isWifiSecure">(type: T) => Promise<{
         type: T;
         target: Device;
         message: WifiEventMessages[T];

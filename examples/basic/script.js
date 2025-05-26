@@ -1367,7 +1367,7 @@ const updateWifiInputs = () => {
 device.addEventListener("isConnected", () => {
   updateWifiInputs();
 });
-device.addEventListener("getEnableWifiConnection", () => {
+device.addEventListener("getWifiConnectionEnabled", () => {
   updateWifiInputs();
 });
 
@@ -1375,7 +1375,7 @@ device.addEventListener("getEnableWifiConnection", () => {
 const wifiConnectionEnabledSpan = document.getElementById(
   "wifiConnectionEnabled"
 );
-device.addEventListener("getEnableWifiConnection", (event) => {
+device.addEventListener("getWifiConnectionEnabled", (event) => {
   wifiConnectionEnabledSpan.innerText = event.message.wifiConnectionEnabled;
 });
 
@@ -1400,7 +1400,7 @@ toggleWifiConnectionButton.addEventListener("click", async () => {
   await device.toggleWifiConnection();
   toggleWifiConnectionButton.disabled = false;
 });
-device.addEventListener("getEnableWifiConnection", (event) => {
+device.addEventListener("getWifiConnectionEnabled", (event) => {
   toggleWifiConnectionButton.innerText = event.message.wifiConnectionEnabled
     ? "disable wifi connection"
     : "enable wifi connection";

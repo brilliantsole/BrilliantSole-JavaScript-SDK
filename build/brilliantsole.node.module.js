@@ -545,6 +545,13 @@ const FileTransferEventTypes = [
     "fileTransferComplete",
     "fileReceived",
 ];
+const RequiredFileTransferMessageTypes = [
+    "maxFileLength",
+    "getFileLength",
+    "getFileChecksum",
+    "getFileType",
+    "fileTransferStatus",
+];
 class FileTransferManager {
     constructor() {
         _FileTransferManager_instances.add(this);
@@ -678,6 +685,13 @@ class FileTransferManager {
         }
         _console$B.log({ newIsServerSide });
         __classPrivateFieldSet(this, _FileTransferManager_isServerSide, newIsServerSide, "f");
+    }
+    requestRequiredInformation() {
+        _console$B.log("requesting required fileTransfer information");
+        const messages = RequiredFileTransferMessageTypes.map((messageType) => ({
+            type: messageType,
+        }));
+        this.sendMessage(messages, false);
     }
 }
 _a$7 = FileTransferManager, _FileTransferManager_fileTypes = new WeakMap(), _FileTransferManager_maxLength = new WeakMap(), _FileTransferManager_type = new WeakMap(), _FileTransferManager_length = new WeakMap(), _FileTransferManager_checksum = new WeakMap(), _FileTransferManager_status = new WeakMap(), _FileTransferManager_receivedBlocks = new WeakMap(), _FileTransferManager_buffer = new WeakMap(), _FileTransferManager_bytesTransferred = new WeakMap(), _FileTransferManager_isCancelling = new WeakMap(), _FileTransferManager_isServerSide = new WeakMap(), _FileTransferManager_instances = new WeakSet(), _FileTransferManager_dispatchEvent_get = function _FileTransferManager_dispatchEvent_get() {
@@ -3011,8 +3025,8 @@ const WifiMessageTypes = [
     "setWifiSSID",
     "getWifiPassword",
     "setWifiPassword",
-    "getEnableWifiConnection",
-    "setEnableWifiConnection",
+    "getWifiConnectionEnabled",
+    "setWifiConnectionEnabled",
     "isWifiConnected",
     "ipAddress",
     "isWifiSecure",
@@ -3020,7 +3034,7 @@ const WifiMessageTypes = [
 const RequiredWifiMessageTypes = [
     "getWifiSSID",
     "getWifiPassword",
-    "getEnableWifiConnection",
+    "getWifiConnectionEnabled",
     "isWifiConnected",
     "ipAddress",
     "isWifiSecure",
@@ -3099,10 +3113,10 @@ class WifiManager {
             _console$o.log(`redundant wifiConnectionEnabled assignment ${newWifiConnectionEnabled}`);
             return;
         }
-        const promise = this.waitForEvent("getEnableWifiConnection");
+        const promise = this.waitForEvent("getWifiConnectionEnabled");
         this.sendMessage([
             {
-                type: "setEnableWifiConnection",
+                type: "setWifiConnectionEnabled",
                 data: Uint8Array.from([Number(newWifiConnectionEnabled)]).buffer,
             },
         ], sendImmediately);
@@ -3146,8 +3160,8 @@ class WifiManager {
                 _console$o.log({ password });
                 __classPrivateFieldGet(this, _WifiManager_instances, "m", _WifiManager_updateWifiPassword).call(this, password);
                 break;
-            case "getEnableWifiConnection":
-            case "setEnableWifiConnection":
+            case "getWifiConnectionEnabled":
+            case "setWifiConnectionEnabled":
                 const enableWifiConnection = Boolean(dataView.getUint8(0));
                 _console$o.log({ enableWifiConnection });
                 __classPrivateFieldGet(this, _WifiManager_instances, "m", _WifiManager_updateWifiConnectionEnabled).call(this, enableWifiConnection);
@@ -3205,7 +3219,7 @@ _WifiManager_isWifiAvailable = new WeakMap(), _WifiManager_wifiSSID = new WeakMa
 }, _WifiManager_updateWifiConnectionEnabled = function _WifiManager_updateWifiConnectionEnabled(wifiConnectionEnabled) {
     _console$o.log({ wifiConnectionEnabled });
     __classPrivateFieldSet(this, _WifiManager_wifiConnectionEnabled, wifiConnectionEnabled, "f");
-    __classPrivateFieldGet(this, _WifiManager_instances, "a", _WifiManager_dispatchEvent_get).call(this, "getEnableWifiConnection", {
+    __classPrivateFieldGet(this, _WifiManager_instances, "a", _WifiManager_dispatchEvent_get).call(this, "getWifiConnectionEnabled", {
         wifiConnectionEnabled: wifiConnectionEnabled,
     });
 }, _WifiManager_updateIsWifiConnected = function _WifiManager_updateIsWifiConnected(updatedIsWifiConnected) {
@@ -5672,11 +5686,6 @@ const RequiredInformationConnectionMessages = [
     "getSensorScalars",
     "getVibrationLocations",
     "getFileTypes",
-    "maxFileLength",
-    "getFileLength",
-    "getFileChecksum",
-    "getFileType",
-    "fileTransferStatus",
     "isWifiAvailable",
 ];
 class Device {
@@ -5768,6 +5777,9 @@ class Device {
         this.addEventListener("getFileTypes", () => {
             if (this.connectionStatus != "connecting") {
                 return;
+            }
+            if (this.fileTypes.length > 0) {
+                __classPrivateFieldGet(this, _Device_fileTransferManager, "f").requestRequiredInformation();
             }
             if (this.fileTypes.includes("tflite")) {
                 __classPrivateFieldGet(this, _Device_tfliteManager, "f").requestRequiredInformation();

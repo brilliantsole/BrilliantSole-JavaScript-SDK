@@ -49,6 +49,14 @@ export const FileTransferEventTypes = [
 ] as const;
 export type FileTransferEventType = (typeof FileTransferEventTypes)[number];
 
+export const RequiredFileTransferMessageTypes: FileTransferMessageType[] = [
+  "maxFileLength",
+  "getFileLength",
+  "getFileChecksum",
+  "getFileType",
+  "fileTransferStatus",
+];
+
 export interface FileConfiguration {
   file: FileLike;
   type: FileType;
@@ -558,6 +566,14 @@ class FileTransferManager {
     }
     _console.log({ newIsServerSide });
     this.#isServerSide = newIsServerSide;
+  }
+
+  requestRequiredInformation() {
+    _console.log("requesting required fileTransfer information");
+    const messages = RequiredFileTransferMessageTypes.map((messageType) => ({
+      type: messageType,
+    }));
+    this.sendMessage(messages, false);
   }
 }
 

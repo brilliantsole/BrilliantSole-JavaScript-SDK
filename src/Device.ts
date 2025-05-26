@@ -193,25 +193,10 @@ export const RequiredInformationConnectionMessages: TxRxMessageType[] = [
   "getCurrentTime",
   "getSensorConfiguration",
   "getSensorScalars",
-  // "getPressurePositions",
 
   "getVibrationLocations",
 
   "getFileTypes",
-  "maxFileLength",
-  "getFileLength",
-  "getFileChecksum",
-  "getFileType",
-  "fileTransferStatus",
-
-  // "getTfliteName",
-  // "getTfliteTask",
-  // "getTfliteSampleRate",
-  // "getTfliteSensorTypes",
-  // "tfliteIsReady",
-  // "getTfliteCaptureDelay",
-  // "getTfliteThreshold",
-  // "getTfliteInferencingEnabled",
 
   "isWifiAvailable",
 ];
@@ -304,6 +289,9 @@ class Device {
     this.addEventListener("getFileTypes", () => {
       if (this.connectionStatus != "connecting") {
         return;
+      }
+      if (this.fileTypes.length > 0) {
+        this.#fileTransferManager.requestRequiredInformation();
       }
       if (this.fileTypes.includes("tflite")) {
         this.#tfliteManager.requestRequiredInformation();
