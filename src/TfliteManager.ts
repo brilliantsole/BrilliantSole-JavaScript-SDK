@@ -35,6 +35,17 @@ export type TfliteMessageType = (typeof TfliteMessageTypes)[number];
 export const TfliteEventTypes = TfliteMessageTypes;
 export type TfliteEventType = (typeof TfliteEventTypes)[number];
 
+export const RequiredTfliteMessageTypes: TfliteMessageType[] = [
+  "getTfliteName",
+  "getTfliteTask",
+  "getTfliteSampleRate",
+  "getTfliteSensorTypes",
+  "tfliteIsReady",
+  "getTfliteCaptureDelay",
+  "getTfliteThreshold",
+  "getTfliteInferencingEnabled",
+];
+
 export const TfliteTasks = ["classification", "regression"] as const;
 export type TfliteTask = (typeof TfliteTasks)[number];
 
@@ -571,6 +582,14 @@ class TfliteManager {
     this.#sensorTypes = [];
     this.#sampleRate = 0;
     this.#isReady = false;
+  }
+
+  requestRequiredInformation() {
+    _console.log("requesting required tflite information");
+    const messages = RequiredTfliteMessageTypes.map((messageType) => ({
+      type: messageType,
+    }));
+    this.sendMessage(messages, false);
   }
 }
 

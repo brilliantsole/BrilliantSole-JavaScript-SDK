@@ -85,6 +85,14 @@ export {
 } from "./TfliteManager.ts";
 
 export {
+  CameraConfiguration,
+  CameraCommand,
+  CameraCommands,
+  CameraConfigurationType,
+  CameraConfigurationTypes,
+} from "./CameraManager.ts";
+
+export {
   default as DevicePair,
   DevicePairEvent,
   DevicePairEventMap,
@@ -94,7 +102,17 @@ export {
   DevicePairTypes,
 } from "./devicePair/DevicePair.ts";
 
-export { addEventListeners, removeEventListeners } from "./utils/EventUtils.ts";
+import { addEventListeners, removeEventListeners } from "./utils/EventUtils.ts";
+export const EventUtils = {
+  addEventListeners,
+  removeEventListeners,
+};
+
+import { throttle, debounce } from "./utils/ThrottleUtils.ts";
+export const ThrottleUtils = {
+  throttle,
+  debounce,
+};
 
 export { DiscoveredDevice } from "./scanner/BaseScanner.ts";
 /** NODE_START */

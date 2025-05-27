@@ -1,6 +1,6 @@
-export declare const MotionSensorTypes: readonly ["acceleration", "gravity", "linearAcceleration", "gyroscope", "magnetometer", "gameRotation", "rotation", "orientation", "activity", "stepCounter", "stepDetector", "deviceOrientation"];
+export declare const MotionSensorTypes: readonly ["acceleration", "gravity", "linearAcceleration", "gyroscope", "magnetometer", "gameRotation", "rotation", "orientation", "activity", "stepCounter", "stepDetector", "deviceOrientation", "tapDetector"];
 export type MotionSensorType = (typeof MotionSensorTypes)[number];
-export declare const ContinuousMotionTypes: readonly ["acceleration", "gravity", "linearAcceleration", "gyroscope", "magnetometer", "gameRotation", "rotation"];
+export declare const ContinuousMotionTypes: readonly ["acceleration", "gravity", "linearAcceleration", "gyroscope", "magnetometer", "gameRotation", "rotation", "orientation"];
 export type ContinuousMotionType = (typeof ContinuousMotionTypes)[number];
 import { Vector3, Quaternion, Euler } from "../utils/MathUtils.ts";
 import { ValueOf } from "../utils/TypeScriptUtils.ts";
@@ -55,6 +55,9 @@ export interface MotionSensorDataEventMessages {
     };
     deviceOrientation: {
         deviceOrientation: DeviceOrientation;
+    };
+    tapDetector: {
+        tapDetector: Object;
     };
 }
 export type MotionSensorDataEventMessage = ValueOf<MotionSensorDataEventMessages>;

@@ -37,10 +37,15 @@ import SensorDataManager, {
   SensorType,
   ContinuousSensorTypes,
   SensorDataEventDispatcher,
+  RequiredPressureMessageTypes,
 } from "./sensor/SensorDataManager.ts";
 import VibrationManager, {
   SendVibrationMessageCallback,
   VibrationConfiguration,
+  VibrationEventDispatcher,
+  VibrationEventTypes,
+  VibrationMessageType,
+  VibrationMessageTypes,
 } from "./vibration/VibrationManager.ts";
 import FileTransferManager, {
   FileTransferEventTypes,
@@ -51,6 +56,7 @@ import FileTransferManager, {
   FileTransferMessageType,
   FileType,
   FileTypes,
+  RequiredFileTransferMessageTypes,
 } from "./FileTransferManager.ts";
 import TfliteManager, {
   TfliteEventTypes,
@@ -62,6 +68,7 @@ import TfliteManager, {
   TfliteSensorTypes,
   TfliteFileConfiguration,
   TfliteSensorType,
+  RequiredTfliteMessageTypes,
 } from "./TfliteManager.ts";
 import FirmwareManager, {
   FirmwareEventDispatcher,
@@ -88,6 +95,15 @@ import InformationManager, {
 } from "./InformationManager.ts";
 import { FileLike } from "./utils/ArrayBufferUtils.ts";
 import DeviceManager from "./DeviceManager.ts";
+import CameraManager, {
+  CameraEventDispatcher,
+  CameraEventMessages,
+  CameraEventTypes,
+  CameraMessageType,
+  CameraMessageTypes,
+  RequiredCameraMessageTypes,
+  SendCameraMessageCallback,
+} from "./CameraManager.ts";
 import WifiManager, {
   RequiredWifiMessageTypes,
   SendWifiMessageCallback,
@@ -99,11 +115,12 @@ import WifiManager, {
 } from "./WifiManager.ts";
 import WebSocketConnectionManager from "./connection/websocket/WebSocketConnectionManager.ts";
 import ClientConnectionManager from "./connection/ClientConnectionManager.ts";
+
 /** NODE_START */
 import UDPConnectionManager from "./connection/udp/UDPConnectionManager.ts";
 /** NODE_END */
 
-const _console = createConsole("Device", { log: true });
+const _console = createConsole("Device", { log: false });
 
 export const DeviceEventTypes = [
   "connectionMessage",
@@ -114,9 +131,11 @@ export const DeviceEventTypes = [
   ...DeviceInformationEventTypes,
   ...SensorConfigurationEventTypes,
   ...SensorDataEventTypes,
+  ...VibrationEventTypes,
   ...FileTransferEventTypes,
   ...TfliteEventTypes,
   ...WifiEventTypes,
+  ...CameraEventTypes,
   ...FirmwareEventTypes,
 ] as const;
 export type DeviceEventType = (typeof DeviceEventTypes)[number];
@@ -130,6 +149,7 @@ export interface DeviceEventMessages
     TfliteEventMessages,
     FileTransferEventMessages,
     WifiEventMessages,
+    CameraEventMessages,
     FirmwareEventMessages {
   batteryLevel: { batteryLevel: number };
   connectionMessage: { messageType: ConnectionMessageType; dataView: DataView };
@@ -175,22 +195,10 @@ export const RequiredInformationConnectionMessages: TxRxMessageType[] = [
   "getCurrentTime",
   "getSensorConfiguration",
   "getSensorScalars",
-  "getPressurePositions",
 
-  "maxFileLength",
-  "getFileLength",
-  "getFileChecksum",
-  "getFileType",
-  "fileTransferStatus",
+  "getVibrationLocations",
 
-  "getTfliteName",
-  "getTfliteTask",
-  "getTfliteSampleRate",
-  "getTfliteSensorTypes",
-  "tfliteIsReady",
-  "getTfliteCaptureDelay",
-  "getTfliteThreshold",
-  "getTfliteInferencingEnabled",
+  "getFileTypes",
 
   "isWifiAvailable",
 ];
@@ -223,6 +231,8 @@ class Device {
 
     this.#vibrationManager.sendMessage = this
       .sendTxMessages as SendVibrationMessageCallback;
+    this.#vibrationManager.eventDispatcher = this
+      .#eventDispatcher as VibrationEventDispatcher;
 
     this.#tfliteManager.sendMessage = this
       .sendTxMessages as SendTfliteMessageCallback;
@@ -239,6 +249,11 @@ class Device {
     this.#wifiManager.eventDispatcher = this
       .#eventDispatcher as WifiEventDispatcher;
 
+    this.#cameraManager.sendMessage = this
+      .sendTxMessages as SendCameraMessageCallback;
+    this.#cameraManager.eventDispatcher = this
+      .#eventDispatcher as CameraEventDispatcher;
+
     this.#firmwareManager.sendMessage = this
       .sendSmpMessage as SendSmpMessageCallback;
     this.#firmwareManager.eventDispatcher = this
@@ -249,7 +264,45 @@ class Device {
       this.#fileTransferManager.mtu = this.mtu;
       this.connectionManager!.mtu = this.mtu;
     });
+    this.addEventListener("getSensorConfiguration", () => {
+      if (this.connectionStatus != "connecting") {
+        return;
+      }
+      if (this.sensorTypes.includes("pressure")) {
+        _console.log("requesting required pressure information");
+        const messages = RequiredPressureMessageTypes.map((messageType) => ({
+          type: messageType,
+        }));
+        this.sendTxMessages(messages, false);
+      } else {
+        _console.log("don't need to request pressure infomration");
+      }
+
+      if (this.sensorTypes.includes("camera")) {
+        _console.log("requesting required camera information");
+        const messages = RequiredCameraMessageTypes.map((messageType) => ({
+          type: messageType,
+        }));
+        this.sendTxMessages(messages, false);
+      } else {
+        _console.log("don't need to request camera infomration");
+      }
+    });
+    this.addEventListener("getFileTypes", () => {
+      if (this.connectionStatus != "connecting") {
+        return;
+      }
+      if (this.fileTypes.length > 0) {
+        this.#fileTransferManager.requestRequiredInformation();
+      }
+      if (this.fileTypes.includes("tflite")) {
+        this.#tfliteManager.requestRequiredInformation();
+      }
+    });
     this.addEventListener("isWifiAvailable", () => {
+      if (this.connectionStatus != "connecting") {
+        return;
+      }
       if (this.connectionType == "client" && !isInNode) {
         return;
       }
@@ -436,9 +489,29 @@ class Device {
     let hasRequiredInformation = this.#didReceiveMessageTypes(
       RequiredInformationConnectionMessages
     );
+    if (hasRequiredInformation && this.sensorTypes.includes("pressure")) {
+      hasRequiredInformation = this.#didReceiveMessageTypes(
+        RequiredPressureMessageTypes
+      );
+    }
     if (hasRequiredInformation && this.isWifiAvailable) {
       hasRequiredInformation = this.#didReceiveMessageTypes(
         RequiredWifiMessageTypes
+      );
+    }
+    if (hasRequiredInformation && this.fileTypes.length > 0) {
+      hasRequiredInformation = this.#didReceiveMessageTypes(
+        RequiredFileTransferMessageTypes
+      );
+    }
+    if (hasRequiredInformation && this.fileTypes.includes("tflite")) {
+      hasRequiredInformation = this.#didReceiveMessageTypes(
+        RequiredTfliteMessageTypes
+      );
+    }
+    if (hasRequiredInformation && this.hasCamera) {
+      hasRequiredInformation = this.#didReceiveMessageTypes(
+        RequiredCameraMessageTypes
       );
     }
     return hasRequiredInformation;
@@ -611,6 +684,7 @@ class Device {
     this.#deviceInformationManager.clear();
     this.#tfliteManager.clear();
     this.#wifiManager.clear();
+    this.#cameraManager.clear();
   }
   #clearConnection() {
     this.connectionManager?.clear();
@@ -685,9 +759,23 @@ class Device {
             messageType as SensorConfigurationMessageType,
             dataView
           );
+        } else if (
+          VibrationMessageTypes.includes(messageType as VibrationMessageType)
+        ) {
+          this.#vibrationManager.parseMessage(
+            messageType as VibrationMessageType,
+            dataView
+          );
         } else if (WifiMessageTypes.includes(messageType as WifiMessageType)) {
           this.#wifiManager.parseMessage(
             messageType as WifiMessageType,
+            dataView
+          );
+        } else if (
+          CameraMessageTypes.includes(messageType as CameraMessageType)
+        ) {
+          this.#cameraManager.parseMessage(
+            messageType as CameraMessageType,
             dataView
           );
         } else {
@@ -849,6 +937,10 @@ class Device {
   }
 
   // VIBRATION
+  get vibrationLocations() {
+    return this.#vibrationManager.vibrationLocations;
+  }
+
   #vibrationManager = new VibrationManager();
   async triggerVibration(
     vibrationConfigurations: VibrationConfiguration[],
@@ -863,6 +955,9 @@ class Device {
   // FILE TRANSFER
   #fileTransferManager = new FileTransferManager();
 
+  get fileTypes() {
+    return this.#fileTransferManager.fileTypes;
+  }
   get maxFileLength() {
     return this.#fileTransferManager.maxLength;
   }
@@ -1129,6 +1224,52 @@ class Device {
       type: "udp",
       ipAddress: this.ipAddress!,
     });
+  }
+
+  // CAMERA MANAGER
+  #cameraManager = new CameraManager();
+  get hasCamera() {
+    return this.sensorTypes.includes("camera");
+  }
+  get cameraStatus() {
+    return this.#cameraManager.cameraStatus;
+  }
+  #assertHasCamera() {
+    _console.assertWithError(this.hasCamera, "camera not available");
+  }
+  async takePicture() {
+    this.#assertHasCamera();
+    await this.#cameraManager.takePicture();
+  }
+  async focusCamera() {
+    this.#assertHasCamera();
+    await this.#cameraManager.focus();
+  }
+  async stopCamera() {
+    this.#assertHasCamera();
+    await this.#cameraManager.stop();
+  }
+  async wakeCamera() {
+    this.#assertHasCamera();
+    await this.#cameraManager.wake();
+  }
+  async sleepCamera() {
+    this.#assertHasCamera();
+    await this.#cameraManager.sleep();
+  }
+
+  get cameraConfiguration() {
+    return this.#cameraManager.cameraConfiguration;
+  }
+  get availableCameraConfigurationTypes() {
+    return this.#cameraManager.availableCameraConfigurationTypes;
+  }
+  get cameraConfigurationRanges() {
+    return this.#cameraManager.cameraConfigurationRanges;
+  }
+
+  get setCameraConfiguration() {
+    return this.#cameraManager.setCameraConfiguration;
   }
 }
 

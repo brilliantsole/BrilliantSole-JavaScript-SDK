@@ -1,5 +1,6 @@
 import { VibrationWaveformEffect } from "./VibrationWaveformEffects.ts";
-import { SendMessageCallback } from "../Device.ts";
+import Device, { SendMessageCallback } from "../Device.ts";
+import EventDispatcher from "../utils/EventDispatcher.ts";
 export declare const VibrationLocations: readonly ["front", "rear"];
 export type VibrationLocation = (typeof VibrationLocations)[number];
 export declare const VibrationTypes: readonly ["waveformEffect", "waveform"];
@@ -13,8 +14,15 @@ export interface VibrationWaveformSegment {
     duration: number;
     amplitude: number;
 }
-export declare const VibrationMessageTypes: readonly ["triggerVibration"];
+export declare const VibrationMessageTypes: readonly ["getVibrationLocations", "triggerVibration"];
 export type VibrationMessageType = (typeof VibrationMessageTypes)[number];
+export declare const VibrationEventTypes: readonly ["getVibrationLocations", "triggerVibration"];
+export type VibrationEventType = (typeof VibrationEventTypes)[number];
+export interface VibrationEventMessages {
+    getVibrationLocations: {
+        vibrationLocations: VibrationLocation[];
+    };
+}
 export declare const MaxNumberOfVibrationWaveformEffectSegments = 8;
 export declare const MaxVibrationWaveformSegmentDuration = 2550;
 export declare const MaxVibrationWaveformEffectSegmentDelay = 1270;
@@ -36,10 +44,19 @@ export interface VibrationWaveformConfiguration extends BaseVibrationConfigurati
 }
 export type VibrationConfiguration = VibrationWaveformEffectConfiguration | VibrationWaveformConfiguration;
 export type SendVibrationMessageCallback = SendMessageCallback<VibrationMessageType>;
+export type VibrationEventDispatcher = EventDispatcher<Device, VibrationEventType, VibrationEventMessages>;
 declare class VibrationManager {
     #private;
     constructor();
     sendMessage: SendVibrationMessageCallback;
+    eventDispatcher: VibrationEventDispatcher;
+    get waitForEvent(): <T extends "getVibrationLocations" | "triggerVibration">(type: T) => Promise<{
+        type: T;
+        target: Device;
+        message: VibrationEventMessages[T];
+    }>;
     triggerVibration(vibrationConfigurations: VibrationConfiguration[], sendImmediately?: boolean): Promise<void>;
+    get vibrationLocations(): ("front" | "rear")[];
+    parseMessage(messageType: VibrationMessageType, dataView: DataView): void;
 }
 export default VibrationManager;

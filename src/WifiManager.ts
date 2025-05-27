@@ -19,8 +19,8 @@ export const WifiMessageTypes = [
   "setWifiSSID",
   "getWifiPassword",
   "setWifiPassword",
-  "getEnableWifiConnection",
-  "setEnableWifiConnection",
+  "getWifiConnectionEnabled",
+  "setWifiConnectionEnabled",
   "isWifiConnected",
   "ipAddress",
   "isWifiSecure",
@@ -30,11 +30,11 @@ export type WifiMessageType = (typeof WifiMessageTypes)[number];
 export const RequiredWifiMessageTypes: WifiMessageType[] = [
   "getWifiSSID",
   "getWifiPassword",
-  "getEnableWifiConnection",
+  "getWifiConnectionEnabled",
   "isWifiConnected",
   "ipAddress",
   "isWifiSecure",
-];
+] as const;
 
 export const WifiEventTypes = WifiMessageTypes;
 export type WifiEventType = (typeof WifiEventTypes)[number];
@@ -45,7 +45,7 @@ export interface WifiEventMessages {
   getWifiPassword: { wifiPassword: string };
   getEnableWifiConnection: { wifiConnectionEnabled: boolean };
   isWifiConnected: { isWifiConnected: boolean };
-  ipAddress: { ipAddress: string };
+  ipAddress: { ipAddress?: string };
 }
 
 export type WifiEventDispatcher = EventDispatcher<
@@ -179,7 +179,7 @@ class WifiManager {
   #updateWifiConnectionEnabled(wifiConnectionEnabled: boolean) {
     _console.log({ wifiConnectionEnabled });
     this.#wifiConnectionEnabled = wifiConnectionEnabled;
-    this.#dispatchEvent("getEnableWifiConnection", {
+    this.#dispatchEvent("getWifiConnectionEnabled", {
       wifiConnectionEnabled: wifiConnectionEnabled,
     });
   }
@@ -196,11 +196,11 @@ class WifiManager {
       return;
     }
 
-    const promise = this.waitForEvent("getEnableWifiConnection");
+    const promise = this.waitForEvent("getWifiConnectionEnabled");
     this.sendMessage(
       [
         {
-          type: "setEnableWifiConnection",
+          type: "setWifiConnectionEnabled",
           data: Uint8Array.from([Number(newWifiConnectionEnabled)]).buffer,
         },
       ],
@@ -238,8 +238,7 @@ class WifiManager {
     return this.#ipAddress;
   }
 
-  #updateIpAddress(updatedIpAddress: string) {
-    _console.assertTypeWithError(updatedIpAddress, "string");
+  #updateIpAddress(updatedIpAddress?: string) {
     this.#ipAddress = updatedIpAddress;
     _console.log({ ipAddress: this.#ipAddress });
     this.#dispatchEvent("ipAddress", {
@@ -283,8 +282,8 @@ class WifiManager {
         _console.log({ password });
         this.#updateWifiPassword(password);
         break;
-      case "getEnableWifiConnection":
-      case "setEnableWifiConnection":
+      case "getWifiConnectionEnabled":
+      case "setWifiConnectionEnabled":
         const enableWifiConnection = Boolean(dataView.getUint8(0));
         _console.log({ enableWifiConnection });
         this.#updateWifiConnectionEnabled(enableWifiConnection);
@@ -295,7 +294,10 @@ class WifiManager {
         this.#updateIsWifiConnected(isWifiConnected);
         break;
       case "ipAddress":
-        const ipAddress = new Uint8Array(dataView.buffer.slice(0, 4)).join(".");
+        let ipAddress: string | undefined = undefined;
+        if (dataView.byteLength == 4) {
+          ipAddress = new Uint8Array(dataView.buffer.slice(0, 4)).join(".");
+        }
         _console.log({ ipAddress });
         this.#updateIpAddress(ipAddress);
         break;

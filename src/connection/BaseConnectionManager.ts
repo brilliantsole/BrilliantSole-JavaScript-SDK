@@ -11,6 +11,7 @@ import { VibrationMessageTypes } from "../vibration/VibrationManager.ts";
 import { SensorConfigurationMessageTypes } from "../sensor/SensorConfigurationManager.ts";
 import { SensorDataMessageTypes } from "../sensor/SensorDataManager.ts";
 import { WifiMessageTypes } from "../WifiManager.ts";
+import { CameraMessageTypes } from "../CameraManager.ts";
 
 const _console = createConsole("BaseConnectionManager", { log: false });
 
@@ -88,9 +89,10 @@ export const TxRxMessageTypes = [
   ...SensorConfigurationMessageTypes,
   ...SensorDataMessageTypes,
   ...VibrationMessageTypes,
-  ...TfliteMessageTypes,
   ...FileTransferMessageTypes,
+  ...TfliteMessageTypes,
   ...WifiMessageTypes,
+  ...CameraMessageTypes,
 ] as const;
 export type TxRxMessageType = (typeof TxRxMessageTypes)[number];
 
@@ -275,6 +277,10 @@ abstract class BaseConnectionManager {
       _console.log("already sending messages - waiting until later");
       return;
     }
+    if (this.#pendingMessages.length == 0) {
+      _console.log("no pendingMessages");
+      return;
+    }
     this.#isSendingMessages = true;
 
     _console.log("sendTxMessages", this.#pendingMessages.slice());
@@ -328,6 +334,8 @@ abstract class BaseConnectionManager {
     }
 
     this.#isSendingMessages = false;
+
+    this.sendTxMessages(undefined, true);
   }
 
   protected defaultMtu = 23;

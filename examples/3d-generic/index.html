@@ -1,0 +1,144 @@
+<html>
+  <head>
+    <title>3D | BrilliantSole JavaScript SDK</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico" />
+    <!-- <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script> -->
+    <script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script>
+    <!-- required to get aframe-orbit-controls-component to work -->
+    <script>
+      THREE.Quaternion.prototype.inverse = THREE.Quaternion.prototype.invert;
+      THREE.Math = THREE.MathUtils;
+    </script>
+    <!-- https://github.com/tizzle/aframe-orbit-controls-component -->
+    <script src="https://cdn.rawgit.com/tizzle/aframe-orbit-controls-component/v0.1.14/dist/aframe-orbit-controls-component.min.js"></script>
+    <script type="module" src="./script.js"></script>
+  </head>
+
+  <style>
+    a-scene {
+      width: 500px;
+      height: 500px;
+      margin: auto;
+      border-radius: 2rem;
+      overflow: hidden;
+      border: solid black;
+      box-sizing: border-box;
+    }
+  </style>
+
+  <body>
+    <nav>
+      <a href="../../">home</a>
+    </nav>
+
+    <h1>3D (generic) | BrilliantSole JavaScript SDK</h1>
+
+    <button id="toggleConnection">connect</button>
+
+    <p>
+      <select class="orientation" disabled>
+        <optgroup label="orientation">
+          <option value="none">no orientation</option>
+          <option>gameRotation</option>
+          <option>rotation</option>
+          <option>orientation</option>
+          <option>gyroscope</option>
+        </optgroup>
+      </select>
+      <button disabled class="resetOrientation">reset orientation</button>
+      <br />
+      <select class="position" disabled>
+        <optgroup label="position">
+          <option value="none">no position</option>
+          <option>acceleration</option>
+          <option>gravity</option>
+          <option>linearAcceleration</option>
+        </optgroup>
+      </select>
+    </p>
+
+    <a-scene
+      embedded
+      xr-mode-ui="enabled: false;"
+      device-orientation-permission-ui="enabled: false"
+      renderer="colorManagement: true;"
+    >
+      <a-assets>
+        <a-asset-item
+          id="leftInsoleModel"
+          src="../../assets/3d/leftInsole.glb"
+        ></a-asset-item>
+        <a-asset-item
+          id="rightInsoleModel"
+          src="../../assets/3d/rightInsole.glb"
+        ></a-asset-item>
+        <a-asset-item
+          id="rightHandModel"
+          src="../../assets/3d/rightHand.glb"
+        ></a-asset-item>
+        <a-asset-item
+          id="glassesModel"
+          src="../../assets/3d/glasses.glb"
+        ></a-asset-item>
+      </a-assets>
+      <a-light type="directional" position="2 2 -2" target=".target"></a-light>
+      <a-light type="directional" position="-2 2 2" target=".target"></a-light>
+      <a-light type="directional" position="2 -2 2" target=".target"></a-light>
+
+      <a-entity light="color: #BBB; type: ambient;"></a-entity>
+
+      <a-camera
+        class="camera"
+        camera="fov: 50; zoom: 3.2;"
+        position="0 0 1"
+        orbit-controls="
+        enableZoom: true;
+        autoRotate: false;
+        
+        target: .target;
+        enableDamping: true;
+        dampingFactor: 0.125;
+        rotateSpeed:0.25;
+        minDistance:0.75;
+        maxDistance:2;
+      "
+      ></a-camera>
+
+      <a-sky></a-sky>
+
+      <a-entity class="target">
+        <a-entity class="rotation">
+          <a-entity class="position" position="0 0 0.005">
+            <a-entity
+              gltf-model="#rightInsoleModel"
+              visible="false"
+              data-type="rightInsole"
+            ></a-entity>
+            <a-entity
+              gltf-model="#leftInsoleModel"
+              visible="false"
+              data-type="leftInsole"
+            ></a-entity>
+            <a-entity
+              gltf-model="#glassesModel"
+              visible="false"
+              data-type="glasses"
+            ></a-entity>
+            <a-entity
+              gltf-model="#rightHandModel"
+              visible="false"
+              data-type="rightGlove"
+            ></a-entity>
+            <a-entity
+              gltf-model="#rightHandModel"
+              visible="false"
+              scale="-1 1 1"
+              data-type="leftGlove"
+            ></a-entity>
+          </a-entity>
+        </a-entity>
+      </a-entity>
+    </a-scene>
+  </body>
+</html>

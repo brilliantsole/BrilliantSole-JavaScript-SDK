@@ -1,19 +1,44 @@
 import { createConsole } from "../utils/Console.ts";
 import { parseTimestamp } from "../utils/MathUtils.ts";
-import PressureSensorDataManager, { PressureDataEventMessages } from "./PressureSensorDataManager.ts";
-import MotionSensorDataManager, { MotionSensorDataEventMessages } from "./MotionSensorDataManager.ts";
-import BarometerSensorDataManager, { BarometerSensorDataEventMessages } from "./BarometerSensorDataManager.ts";
+import PressureSensorDataManager, {
+  PressureDataEventMessages,
+} from "./PressureSensorDataManager.ts";
+import MotionSensorDataManager, {
+  MotionSensorDataEventMessages,
+} from "./MotionSensorDataManager.ts";
+import BarometerSensorDataManager, {
+  BarometerSensorDataEventMessages,
+} from "./BarometerSensorDataManager.ts";
 import { parseMessage } from "../utils/ParseUtils.ts";
 import EventDispatcher from "../utils/EventDispatcher.ts";
-import { MotionSensorTypes, ContinuousMotionTypes } from "./MotionSensorDataManager.ts";
-import { PressureSensorTypes, ContinuousPressureSensorTypes } from "./PressureSensorDataManager.ts";
-import { BarometerSensorTypes, ContinuousBarometerSensorTypes } from "./BarometerSensorDataManager.ts";
+import {
+  MotionSensorTypes,
+  ContinuousMotionTypes,
+} from "./MotionSensorDataManager.ts";
+import {
+  PressureSensorTypes,
+  ContinuousPressureSensorTypes,
+} from "./PressureSensorDataManager.ts";
+import {
+  BarometerSensorTypes,
+  ContinuousBarometerSensorTypes,
+} from "./BarometerSensorDataManager.ts";
 import Device from "../Device.ts";
-import { AddKeysAsPropertyToInterface, ExtendInterfaceValues, ValueOf } from "../utils/TypeScriptUtils.ts";
+import {
+  AddKeysAsPropertyToInterface,
+  ExtendInterfaceValues,
+  ValueOf,
+} from "../utils/TypeScriptUtils.ts";
+import { CameraSensorTypes } from "../CameraManager.ts";
 
 const _console = createConsole("SensorDataManager", { log: false });
 
-export const SensorTypes = [...PressureSensorTypes, ...MotionSensorTypes, ...BarometerSensorTypes] as const;
+export const SensorTypes = [
+  ...PressureSensorTypes,
+  ...MotionSensorTypes,
+  ...BarometerSensorTypes,
+  ...CameraSensorTypes,
+] as const;
 export type SensorType = (typeof SensorTypes)[number];
 
 export const ContinuousSensorTypes = [
@@ -23,10 +48,21 @@ export const ContinuousSensorTypes = [
 ] as const;
 export type ContinuousSensorType = (typeof ContinuousSensorTypes)[number];
 
-export const SensorDataMessageTypes = ["getPressurePositions", "getSensorScalars", "sensorData"] as const;
+export const SensorDataMessageTypes = [
+  "getPressurePositions",
+  "getSensorScalars",
+  "sensorData",
+] as const;
 export type SensorDataMessageType = (typeof SensorDataMessageTypes)[number];
 
-export const SensorDataEventTypes = [...SensorDataMessageTypes, ...SensorTypes] as const;
+export const RequiredPressureMessageTypes: SensorDataMessageType[] = [
+  "getPressurePositions",
+] as const;
+
+export const SensorDataEventTypes = [
+  ...SensorDataMessageTypes,
+  ...SensorTypes,
+] as const;
 export type SensorDataEventType = (typeof SensorDataEventTypes)[number];
 
 interface BaseSensorDataEventMessage {
@@ -44,9 +80,14 @@ export type SensorDataEventMessage = ValueOf<_SensorDataEventMessages>;
 interface AnySensorDataEventMessages {
   sensorData: SensorDataEventMessage;
 }
-export type SensorDataEventMessages = _SensorDataEventMessages & AnySensorDataEventMessages;
+export type SensorDataEventMessages = _SensorDataEventMessages &
+  AnySensorDataEventMessages;
 
-export type SensorDataEventDispatcher = EventDispatcher<Device, SensorDataEventType, SensorDataEventMessages>;
+export type SensorDataEventDispatcher = EventDispatcher<
+  Device,
+  SensorDataEventType,
+  SensorDataEventMessages
+>;
 
 class SensorDataManager {
   pressureSensorDataManager = new PressureSensorDataManager();
@@ -60,7 +101,10 @@ class SensorDataManager {
   }
   static AssertValidSensorTypeEnum(sensorTypeEnum: number) {
     _console.assertTypeWithError(sensorTypeEnum, "number");
-    _console.assertWithError(sensorTypeEnum in SensorTypes, `invalid sensorTypeEnum ${sensorTypeEnum}`);
+    _console.assertWithError(
+      sensorTypeEnum in SensorTypes,
+      `invalid sensorTypeEnum ${sensorTypeEnum}`
+    );
   }
 
   eventDispatcher!: SensorDataEventDispatcher;
@@ -87,7 +131,11 @@ class SensorDataManager {
   }
 
   parseScalars(dataView: DataView) {
-    for (let byteOffset = 0; byteOffset < dataView.byteLength; byteOffset += 5) {
+    for (
+      let byteOffset = 0;
+      byteOffset < dataView.byteLength;
+      byteOffset += 5
+    ) {
       const sensorTypeIndex = dataView.getUint8(byteOffset);
       const sensorType = SensorTypes[sensorTypeIndex];
       if (!sensorType) {
@@ -109,10 +157,16 @@ class SensorDataManager {
 
     const _dataView = new DataView(dataView.buffer, byteOffset);
 
-    parseMessage(_dataView, SensorTypes, this.parseDataCallback.bind(this), { timestamp });
+    parseMessage(_dataView, SensorTypes, this.parseDataCallback.bind(this), {
+      timestamp,
+    });
   }
 
-  private parseDataCallback(sensorType: SensorType, dataView: DataView, { timestamp }: { timestamp: number }) {
+  private parseDataCallback(
+    sensorType: SensorType,
+    dataView: DataView,
+    { timestamp }: { timestamp: number }
+  ) {
     const scalar = this.#scalars.get(sensorType) || 1;
 
     let sensorData = null;
@@ -125,11 +179,17 @@ class SensorDataManager {
       case "linearAcceleration":
       case "gyroscope":
       case "magnetometer":
-        sensorData = this.motionSensorDataManager.parseVector3(dataView, scalar);
+        sensorData = this.motionSensorDataManager.parseVector3(
+          dataView,
+          scalar
+        );
         break;
       case "gameRotation":
       case "rotation":
-        sensorData = this.motionSensorDataManager.parseQuaternion(dataView, scalar);
+        sensorData = this.motionSensorDataManager.parseQuaternion(
+          dataView,
+          scalar
+        );
         break;
       case "orientation":
         sensorData = this.motionSensorDataManager.parseEuler(dataView, scalar);
@@ -144,22 +204,43 @@ class SensorDataManager {
         sensorData = this.motionSensorDataManager.parseActivity(dataView);
         break;
       case "deviceOrientation":
-        sensorData = this.motionSensorDataManager.parseDeviceOrientation(dataView);
+        sensorData =
+          this.motionSensorDataManager.parseDeviceOrientation(dataView);
+        break;
+      case "tapDetector":
+        sensorData = {};
         break;
       case "barometer":
-        sensorData = this.barometerSensorDataManager.parseData(dataView, scalar);
+        sensorData = this.barometerSensorDataManager.parseData(
+          dataView,
+          scalar
+        );
         break;
+      case "camera":
+        // we parse camera data using CameraManager
+        return;
       default:
         _console.error(`uncaught sensorType "${sensorType}"`);
     }
 
-    _console.assertWithError(sensorData != null, `no sensorData defined for sensorType "${sensorType}"`);
+    _console.assertWithError(
+      sensorData != null,
+      `no sensorData defined for sensorType "${sensorType}"`
+    );
 
     _console.log({ sensorType, sensorData });
     // @ts-expect-error
-    this.dispatchEvent(sensorType, { sensorType, [sensorType]: sensorData, timestamp });
+    this.dispatchEvent(sensorType, {
+      sensorType,
+      [sensorType]: sensorData,
+      timestamp,
+    });
     // @ts-expect-error
-    this.dispatchEvent("sensorData", { sensorType, [sensorType]: sensorData, timestamp });
+    this.dispatchEvent("sensorData", {
+      sensorType,
+      [sensorType]: sensorData,
+      timestamp,
+    });
   }
 }
 
