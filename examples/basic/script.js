@@ -1388,7 +1388,7 @@ device.addEventListener("isWifiConnected", (event) => {
 /** @type {HTMLSpanElement} */
 const ipAddressSpan = document.getElementById("ipAddress");
 device.addEventListener("ipAddress", (event) => {
-  ipAddressSpan.innerText = event.message.ipAddress;
+  ipAddressSpan.innerText = event.message.ipAddress || "none";
 });
 
 /** @type {HTMLButtonElement} */

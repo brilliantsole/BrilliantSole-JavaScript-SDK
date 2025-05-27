@@ -56,6 +56,7 @@ import FileTransferManager, {
   FileTransferMessageType,
   FileType,
   FileTypes,
+  RequiredFileTransferMessageTypes,
 } from "./FileTransferManager.ts";
 import TfliteManager, {
   TfliteEventTypes,
@@ -67,6 +68,7 @@ import TfliteManager, {
   TfliteSensorTypes,
   TfliteFileConfiguration,
   TfliteSensorType,
+  RequiredTfliteMessageTypes,
 } from "./TfliteManager.ts";
 import FirmwareManager, {
   FirmwareEventDispatcher,
@@ -495,6 +497,16 @@ class Device {
     if (hasRequiredInformation && this.isWifiAvailable) {
       hasRequiredInformation = this.#didReceiveMessageTypes(
         RequiredWifiMessageTypes
+      );
+    }
+    if (hasRequiredInformation && this.fileTypes.length > 0) {
+      hasRequiredInformation = this.#didReceiveMessageTypes(
+        RequiredFileTransferMessageTypes
+      );
+    }
+    if (hasRequiredInformation && this.fileTypes.includes("tflite")) {
+      hasRequiredInformation = this.#didReceiveMessageTypes(
+        RequiredTfliteMessageTypes
       );
     }
     if (hasRequiredInformation && this.hasCamera) {

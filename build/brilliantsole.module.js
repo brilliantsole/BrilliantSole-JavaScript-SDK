@@ -3164,7 +3164,10 @@ class WifiManager {
                 __classPrivateFieldGet(this, _WifiManager_instances, "m", _WifiManager_updateIsWifiConnected).call(this, isWifiConnected);
                 break;
             case "ipAddress":
-                const ipAddress = new Uint8Array(dataView.buffer.slice(0, 4)).join(".");
+                let ipAddress = undefined;
+                if (dataView.byteLength == 4) {
+                    ipAddress = new Uint8Array(dataView.buffer.slice(0, 4)).join(".");
+                }
                 _console$i.log({ ipAddress });
                 __classPrivateFieldGet(this, _WifiManager_instances, "m", _WifiManager_updateIpAddress).call(this, ipAddress);
                 break;
@@ -3222,7 +3225,6 @@ _WifiManager_isWifiAvailable = new WeakMap(), _WifiManager_wifiSSID = new WeakMa
         isWifiConnected: __classPrivateFieldGet(this, _WifiManager_isWifiConnected, "f"),
     });
 }, _WifiManager_updateIpAddress = function _WifiManager_updateIpAddress(updatedIpAddress) {
-    _console$i.assertTypeWithError(updatedIpAddress, "string");
     __classPrivateFieldSet(this, _WifiManager_ipAddress, updatedIpAddress, "f");
     _console$i.log({ ipAddress: __classPrivateFieldGet(this, _WifiManager_ipAddress, "f") });
     __classPrivateFieldGet(this, _WifiManager_instances, "a", _WifiManager_dispatchEvent_get).call(this, "ipAddress", {
@@ -6076,6 +6078,12 @@ _a$2 = Device, _Device_eventDispatcher = new WeakMap(), _Device_connectionManage
     }
     if (hasRequiredInformation && this.isWifiAvailable) {
         hasRequiredInformation = __classPrivateFieldGet(this, _Device_instances, "m", _Device_didReceiveMessageTypes).call(this, RequiredWifiMessageTypes);
+    }
+    if (hasRequiredInformation && this.fileTypes.length > 0) {
+        hasRequiredInformation = __classPrivateFieldGet(this, _Device_instances, "m", _Device_didReceiveMessageTypes).call(this, RequiredFileTransferMessageTypes);
+    }
+    if (hasRequiredInformation && this.fileTypes.includes("tflite")) {
+        hasRequiredInformation = __classPrivateFieldGet(this, _Device_instances, "m", _Device_didReceiveMessageTypes).call(this, RequiredTfliteMessageTypes);
     }
     if (hasRequiredInformation && this.hasCamera) {
         hasRequiredInformation = __classPrivateFieldGet(this, _Device_instances, "m", _Device_didReceiveMessageTypes).call(this, RequiredCameraMessageTypes);

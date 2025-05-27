@@ -45,7 +45,7 @@ export interface WifiEventMessages {
   getWifiPassword: { wifiPassword: string };
   getEnableWifiConnection: { wifiConnectionEnabled: boolean };
   isWifiConnected: { isWifiConnected: boolean };
-  ipAddress: { ipAddress: string };
+  ipAddress: { ipAddress?: string };
 }
 
 export type WifiEventDispatcher = EventDispatcher<
@@ -238,8 +238,7 @@ class WifiManager {
     return this.#ipAddress;
   }
 
-  #updateIpAddress(updatedIpAddress: string) {
-    _console.assertTypeWithError(updatedIpAddress, "string");
+  #updateIpAddress(updatedIpAddress?: string) {
     this.#ipAddress = updatedIpAddress;
     _console.log({ ipAddress: this.#ipAddress });
     this.#dispatchEvent("ipAddress", {
@@ -295,7 +294,10 @@ class WifiManager {
         this.#updateIsWifiConnected(isWifiConnected);
         break;
       case "ipAddress":
-        const ipAddress = new Uint8Array(dataView.buffer.slice(0, 4)).join(".");
+        let ipAddress: string | undefined = undefined;
+        if (dataView.byteLength == 4) {
+          ipAddress = new Uint8Array(dataView.buffer.slice(0, 4)).join(".");
+        }
         _console.log({ ipAddress });
         this.#updateIpAddress(ipAddress);
         break;

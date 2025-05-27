@@ -26,7 +26,7 @@ export interface WifiEventMessages {
         isWifiConnected: boolean;
     };
     ipAddress: {
-        ipAddress: string;
+        ipAddress?: string;
     };
 }
 export type WifiEventDispatcher = EventDispatcher<Device, WifiEventType, WifiEventMessages>;
