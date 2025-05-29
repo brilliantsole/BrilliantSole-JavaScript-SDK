@@ -6,6 +6,10 @@ import {
 
 import { registerModel } from "./utils.js";
 
+let gestureRecognizer = undefined;
+let drawingUtils;
+let runningMode = "VIDEO";
+
 registerModel(
   "gesture recognition",
   () => {
@@ -56,10 +60,6 @@ registerModel(
     }
   }
 );
-
-let gestureRecognizer = undefined;
-let drawingUtils;
-let runningMode = "VIDEO";
 
 const createGestureRecognizer = async () => {
   const vision = await FilesetResolver.forVisionTasks(

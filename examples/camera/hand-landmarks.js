@@ -5,6 +5,9 @@ import {
 
 import { registerModel } from "./utils.js";
 
+let handLandmarker = undefined;
+let runningMode = "VIDEO";
+
 registerModel(
   "hand landmarks",
   () => {
@@ -32,9 +35,6 @@ registerModel(
     }
   }
 );
-
-let handLandmarker = undefined;
-let runningMode = "VIDEO";
 
 const createHandLandmarker = async () => {
   const vision = await FilesetResolver.forVisionTasks(
