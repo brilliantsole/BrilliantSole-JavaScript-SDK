@@ -1654,27 +1654,6 @@ takePictureAfterUpdateCheckbox.addEventListener("input", () => {
   console.log({ takePictureAfterUpdate });
 });
 
-let barcodeDetector;
-BarcodeDetector.getSupportedFormats().then((supportedFormats) => {
-  console.log({ supportedFormats });
-  // create new detector
-  barcodeDetector = new BarcodeDetector({
-    formats: supportedFormats,
-  });
-});
-cameraImage.addEventListener("load", () => {
-  if (barcodeDetector) {
-    barcodeDetector
-      .detect(cameraImage)
-      .then((barcodes) => {
-        barcodes.forEach((barcode) => console.log(barcode.rawValue));
-      })
-      .catch((err) => {
-        console.log(err);
-      });
-  }
-});
-
 /** @type {HTMLInputElement} */
 const cameraWhiteBalanceInput = document.getElementById("cameraWhiteBalance");
 const updateWhiteBalance = BS.ThrottleUtils.throttle(

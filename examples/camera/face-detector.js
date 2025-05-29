@@ -16,11 +16,6 @@ registerModel(
       createFaceDetector();
     }
   },
-  /**
-   * @param {HTMLImageElement} image
-   * @param {HTMLCanvasElement} canvas
-   * @param {CanvasRenderingContext2D} context
-   */
   async (image, canvas, context) => {
     if (!faceDetector) {
       console.error("faceDetector not created yet");
@@ -34,6 +29,7 @@ registerModel(
 
     //console.log("faceDetectorResult", faceDetectorResult);
 
+    context.save();
     for (const detection of faceDetectorResult.detections) {
       const { boundingBox, keypoints } = detection;
 
@@ -64,6 +60,7 @@ registerModel(
         context.fill();
       });
     }
+    context.restore();
   }
 );
 

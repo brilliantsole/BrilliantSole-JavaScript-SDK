@@ -32,6 +32,11 @@ cameraImage.addEventListener("load", () => {
   );
 });
 
+/**
+ * @param {string} name
+ * @param {() => void} onSelect
+ * @param {(image: HTMLImageElement, canvas: HTMLCanvasElement, context: CanvasRenderingContext2D, modelResultsElement: HTMLElement) => void} onImage
+ */
 export function registerModel(name, onSelect, onImage) {
   modelTypeOptgroup.appendChild(new Option(name));
   modelTypeSelectedCallbacks[name] = onSelect;
