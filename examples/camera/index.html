@@ -14,6 +14,7 @@
       crossorigin="anonymous"
     ></script>
     <script type="module" src="./hand-landmarks.js"></script>
+    <script type="module" src="./gesture-recognition.js"></script>
   </head>
   <style>
     img,
@@ -92,9 +93,12 @@
           <input type="color" id="cameraWhiteBalance" disabled />
         </label>
       </div>
-      <div id="imageContainer">
-        <canvas width="300" height="300" id="imageOverlay"></canvas>
-        <img id="cameraImage" />
+      <div>
+        <div id="imageContainer">
+          <canvas width="300" height="300" id="imageOverlay"></canvas>
+          <img id="cameraImage" />
+        </div>
+        <h2 id="modelResults"></h2>
       </div>
     </div>
   </body>

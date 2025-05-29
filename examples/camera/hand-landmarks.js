@@ -6,13 +6,13 @@ import {
 import { registerModel } from "./utils.js";
 
 registerModel(
-  "hand-landmarks",
+  "hand landmarks",
   () => {
     if (!handLandmarker) {
       createHandLandmarker();
     }
   },
-  async (image, canvas, cxt) => {
+  async (image, canvas, context) => {
     if (!handLandmarker) {
       console.error("handLandmarker not created yet");
       return;
@@ -24,11 +24,11 @@ registerModel(
     );
 
     for (const landmarks of handLandmarkerResult.landmarks) {
-      drawConnectors(cxt, landmarks, HAND_CONNECTIONS, {
+      drawConnectors(context, landmarks, HAND_CONNECTIONS, {
         color: "#00FF00",
         lineWidth: 5,
       });
-      drawLandmarks(cxt, landmarks, { color: "#FF0000", lineWidth: 1 });
+      drawLandmarks(context, landmarks, { color: "#FF0000", lineWidth: 1 });
     }
   }
 );

@@ -4,6 +4,8 @@ const cameraImage = document.getElementById("cameraImage");
 const imageOverlay = document.getElementById("imageOverlay");
 const imageOverlayContext = imageOverlay.getContext("2d");
 
+const modelResultsElement = document.getElementById("modelResults");
+
 /** @type {HTMLSelectElement} */
 const modelTypeSelect = document.getElementById("modelType");
 /** @type {HTMLOptGroupElement} */
@@ -21,7 +23,13 @@ modelTypeSelect.addEventListener("input", () => {
 const imageCallbacks = {};
 cameraImage.addEventListener("load", () => {
   imageOverlayContext.clearRect(0, 0, imageOverlay.width, imageOverlay.height);
-  imageCallbacks[modelType]?.(cameraImage, imageOverlay, imageOverlayContext);
+  modelResultsElement.innerText = "";
+  imageCallbacks[modelType]?.(
+    cameraImage,
+    imageOverlay,
+    imageOverlayContext,
+    modelResultsElement
+  );
 });
 
 export function registerModel(name, onSelect, onImage) {
