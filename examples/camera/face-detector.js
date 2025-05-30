@@ -4,7 +4,7 @@ import {
   DrawingUtils,
 } from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0";
 
-import { registerModel } from "./utils.js";
+import { drawBox, drawPoint, registerModel } from "./utils.js";
 
 let faceDetector = undefined;
 let runningMode = "VIDEO";
@@ -33,31 +33,10 @@ registerModel(
     for (const detection of faceDetectorResult.detections) {
       const { boundingBox, keypoints } = detection;
 
-      const { originX, originY, width, height } = boundingBox;
-      const _originX = (originX / image.naturalWidth) * canvas.width;
-      const _originY = (originY / image.naturalHeight) * canvas.height;
+      drawBox(boundingBox, image, canvas, context);
 
-      const _width = (width / image.naturalWidth) * canvas.width;
-      const _height = (height / image.naturalHeight) * canvas.height;
-
-      context.fillStyle = "rgba(0, 191, 255, 0.4)";
-      context.fillRect(_originX, _originY, _width, _height);
-
-      context.strokeStyle = "white";
-      context.lineWidth = 2;
-      context.strokeRect(_originX, _originY, _width, _height);
-
-      keypoints.forEach((keypoint, index) => {
-        const { x, y, score, label } = keypoint;
-
-        const _x = x * canvas.width;
-        const _y = y * canvas.height;
-
-        context.beginPath();
-        context.arc(_x, _y, 5, 0, 2 * Math.PI);
-
-        context.fillStyle = "red";
-        context.fill();
+      keypoints.forEach((keypoint) => {
+        drawPoint(keypoint, image, canvas, context);
       });
     }
     context.restore();

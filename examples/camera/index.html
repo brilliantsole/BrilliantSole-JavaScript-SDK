@@ -18,18 +18,23 @@
     <script type="module" src="./face-detector.js"></script>
     <script type="module" src="./barcode-detector.js"></script>
     <script type="module" src="./face-landmark.js"></script>
+    <script type="module" src="./pose-landmark.js"></script>
+    <script type="module" src="./object-detection.js"></script>
+    <!-- <script type="module" src="./document-answering.js"></script> -->
   </head>
   <style>
     img,
     canvas {
-      aspect-ratio: 1;
-      width: 300;
-      height: 300;
+      width: 100%;
+      height: 100%;
     }
 
     #imageContainer {
       position: relative;
       display: inline-block;
+      width: 300;
+      height: 300;
+      aspect-ratio: 1;
     }
     #imageOverlay {
       position: absolute;
@@ -101,7 +106,7 @@
           <canvas width="300" height="300" id="imageOverlay"></canvas>
           <img id="cameraImage" />
         </div>
-        <h2 id="modelResults"></h2>
+        <pre id="modelResults"></pre>
       </div>
     </div>
   </body>
