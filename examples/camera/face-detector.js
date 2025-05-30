@@ -54,7 +54,7 @@ registerModel(
         const _y = y * canvas.height;
 
         context.beginPath();
-        context.arc(_x, _y, 3, 0, 2 * Math.PI);
+        context.arc(_x, _y, 5, 0, 2 * Math.PI);
 
         context.fillStyle = "red";
         context.fill();

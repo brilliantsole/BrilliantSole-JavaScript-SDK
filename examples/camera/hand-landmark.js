@@ -9,7 +9,7 @@ let handLandmarker = undefined;
 let runningMode = "VIDEO";
 
 registerModel(
-  "hand landmarks",
+  "hand landmark",
   () => {
     if (!handLandmarker) {
       createHandLandmarker();

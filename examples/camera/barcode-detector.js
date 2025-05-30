@@ -2,6 +2,7 @@ import { registerModel } from "./utils.js";
 
 let barcodeDetector;
 let drawBarcode = false;
+
 registerModel(
   "barcode detector",
   () => {
