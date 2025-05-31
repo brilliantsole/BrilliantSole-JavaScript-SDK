@@ -93,6 +93,15 @@ export {
 } from "./CameraManager.ts";
 
 export {
+  MicrophoneConfiguration,
+  MicrophoneCommand,
+  MicrophoneCommands,
+  MicrophoneConfigurationType,
+  MicrophoneConfigurationTypes,
+  MicrophoneConfigurationValues,
+} from "./MicrophoneManager.ts";
+
+export {
   default as DevicePair,
   DevicePairEvent,
   DevicePairEventMap,

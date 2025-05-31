@@ -104,6 +104,15 @@ import CameraManager, {
   RequiredCameraMessageTypes,
   SendCameraMessageCallback,
 } from "./CameraManager.ts";
+import MicrophoneManager, {
+  MicrophoneEventDispatcher,
+  MicrophoneEventMessages,
+  MicrophoneEventTypes,
+  MicrophoneMessageType,
+  MicrophoneMessageTypes,
+  RequiredMicrophoneMessageTypes,
+  SendMicrophoneMessageCallback,
+} from "./MicrophoneManager.ts";
 import WifiManager, {
   RequiredWifiMessageTypes,
   SendWifiMessageCallback,
@@ -136,6 +145,7 @@ export const DeviceEventTypes = [
   ...TfliteEventTypes,
   ...WifiEventTypes,
   ...CameraEventTypes,
+  ...MicrophoneEventTypes,
   ...FirmwareEventTypes,
 ] as const;
 export type DeviceEventType = (typeof DeviceEventTypes)[number];
@@ -150,6 +160,7 @@ export interface DeviceEventMessages
     FileTransferEventMessages,
     WifiEventMessages,
     CameraEventMessages,
+    MicrophoneEventMessages,
     FirmwareEventMessages {
   batteryLevel: { batteryLevel: number };
   connectionMessage: { messageType: ConnectionMessageType; dataView: DataView };
@@ -254,6 +265,11 @@ class Device {
     this.#cameraManager.eventDispatcher = this
       .#eventDispatcher as CameraEventDispatcher;
 
+    this.#microphoneManager.sendMessage = this
+      .sendTxMessages as SendMicrophoneMessageCallback;
+    this.#microphoneManager.eventDispatcher = this
+      .#eventDispatcher as MicrophoneEventDispatcher;
+
     this.#firmwareManager.sendMessage = this
       .sendSmpMessage as SendSmpMessageCallback;
     this.#firmwareManager.eventDispatcher = this
@@ -286,6 +302,16 @@ class Device {
         this.sendTxMessages(messages, false);
       } else {
         _console.log("don't need to request camera infomration");
+      }
+
+      if (this.sensorTypes.includes("microphone")) {
+        _console.log("requesting required microphone information");
+        const messages = RequiredMicrophoneMessageTypes.map((messageType) => ({
+          type: messageType,
+        }));
+        this.sendTxMessages(messages, false);
+      } else {
+        _console.log("don't need to request microphone infomration");
       }
     });
     this.addEventListener("getFileTypes", () => {
@@ -685,6 +711,7 @@ class Device {
     this.#tfliteManager.clear();
     this.#wifiManager.clear();
     this.#cameraManager.clear();
+    this.#microphoneManager.clear();
   }
   #clearConnection() {
     this.connectionManager?.clear();
@@ -776,6 +803,13 @@ class Device {
         ) {
           this.#cameraManager.parseMessage(
             messageType as CameraMessageType,
+            dataView
+          );
+        } else if (
+          MicrophoneMessageTypes.includes(messageType as MicrophoneMessageType)
+        ) {
+          this.#microphoneManager.parseMessage(
+            messageType as MicrophoneMessageType,
             dataView
           );
         } else {
@@ -1270,6 +1304,78 @@ class Device {
 
   get setCameraConfiguration() {
     return this.#cameraManager.setCameraConfiguration;
+  }
+
+  // MICROPHONE
+  #microphoneManager = new MicrophoneManager();
+  get hasMicrophone() {
+    return this.sensorTypes.includes("microphone");
+  }
+  get microphoneStatus() {
+    return this.#microphoneManager.microphoneStatus;
+  }
+  #assertHasMicrophone() {
+    _console.assertWithError(this.hasMicrophone, "microphone not available");
+  }
+
+  async startMicrophone() {
+    this.#assertHasMicrophone();
+    await this.#microphoneManager.start();
+  }
+  async stopMicrophone() {
+    this.#assertHasMicrophone();
+    await this.#microphoneManager.stop();
+  }
+  async toggleMicrophone() {
+    this.#assertHasMicrophone();
+    await this.#microphoneManager.toggle();
+  }
+
+  get microphoneConfiguration() {
+    return this.#microphoneManager.microphoneConfiguration;
+  }
+  get availableMicrophoneConfigurationTypes() {
+    return this.#microphoneManager.availableMicrophoneConfigurationTypes;
+  }
+  get setMicrophoneConfiguration() {
+    return this.#microphoneManager.setMicrophoneConfiguration;
+  }
+
+  #assertWebAudioSupport() {
+    _console.assertWithError(AudioContext, "WebAudio is not supported");
+  }
+
+  get audioContext() {
+    this.#assertWebAudioSupport();
+    return this.#microphoneManager.audioContext;
+  }
+  set audioContext(newAudioContext) {
+    this.#assertWebAudioSupport();
+    this.#microphoneManager.audioContext = newAudioContext;
+  }
+  get microphoneMediaStreamDestination() {
+    this.#assertWebAudioSupport();
+    return this.#microphoneManager.mediaStreamDestination;
+  }
+  get microphoneGainNode() {
+    this.#assertWebAudioSupport();
+    return this.#microphoneManager.gainNode;
+  }
+
+  get isRecordingMicrophone() {
+    return this.#microphoneManager.isRecording;
+  }
+  startRecordingMicrophone() {
+    this.#assertWebAudioSupport();
+    this.#microphoneManager.startRecording();
+  }
+  stopRecordingMicrophone() {
+    this.#assertWebAudioSupport();
+    this.#microphoneManager.stopRecording();
+  }
+  toggleMicrophoneRecording() {
+    this.#assertWebAudioSupport();
+    this.#microphoneManager.toggleRecording();
   }
 }
 

@@ -38,12 +38,13 @@ registerModel(
           GestureRecognizer.HAND_CONNECTIONS,
           {
             color: "#00FF00",
-            lineWidth: 5,
+            lineWidth: 3,
           }
         );
         drawingUtils.drawLandmarks(landmarks, {
           color: "#FF0000",
-          lineWidth: 2,
+          lineWidth: 0,
+          radius: 3,
         });
       }
     }

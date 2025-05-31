@@ -117,7 +117,7 @@
         <label class="sensorTypeConfiguration">
           <b class="sensorType"></b>
           <!-- <input class="sensorRate" type="number" min="0" value="" disabled />ms -->
-          <select class="sensorRate input">
+          <select disabled class="sensorRate input">
             <optgroup label="sensor rate (ms)">
               <option value="0">0ms</option>
               <option value="5">5ms</option>
@@ -130,6 +130,55 @@
           </select>
         </label>
       </template>
+    </div>
+
+    <div>
+      <h2>microphone</h2>
+
+      <label>
+        <b>is microphone available?</b>
+        <span id="isMicrophoneAvailable"></span>
+      </label>
+
+      <label><b>status:</b> <span id="microphoneStatus"></span></label>
+
+      <button disabled id="toggleMicrophone">start microphone</button>
+      <button disabled id="toggleMicrophoneRecording">start recording</button>
+
+      <div>
+        <label>
+          <b>microphone configuration: </b>
+          <pre id="microphoneConfigurationPre"></pre>
+        </label>
+        <br />
+
+        <div id="microphoneConfiguration">
+          <template id="microphoneConfigurationTypeTemplate">
+            <label class="microphoneConfigurationType">
+              <b class="type"></b> <span hidden></span>
+              <select disabled>
+                <optgroup></optgroup>
+              </select>
+            </label>
+          </template>
+        </div>
+
+        <div>
+          <b>stream</b>
+          <br />
+          <audio id="microphoneStream" controls autoplay></audio>
+        </div>
+
+        <div>
+          <b>recording</b>
+          <label>
+            auto play
+            <input type="checkbox" id="autoPlayMicrphoneRecording" />
+          </label>
+          <br />
+          <audio id="microphoneRecording" controls></audio>
+        </div>
+      </div>
     </div>
 
     <div>

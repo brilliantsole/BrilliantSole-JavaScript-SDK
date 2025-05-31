@@ -29,9 +29,13 @@ registerModel(
     for (const landmarks of handLandmarkerResult.landmarks) {
       drawConnectors(context, landmarks, HAND_CONNECTIONS, {
         color: "#00FF00",
-        lineWidth: 5,
+        lineWidth: 3,
       });
-      drawLandmarks(context, landmarks, { color: "#FF0000", lineWidth: 1 });
+      drawLandmarks(context, landmarks, {
+        color: "#FF0000",
+        lineWidth: 0,
+        radius: 3,
+      });
     }
   }
 );

@@ -315,8 +315,6 @@ class CameraManager {
     const url = URL.createObjectURL(blob);
     _console.log("created url", url);
 
-    // FILL - header stuff
-
     this.#dispatchEvent("cameraImage", { url, blob });
 
     this.#didBuildImage = true;

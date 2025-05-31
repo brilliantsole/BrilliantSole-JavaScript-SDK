@@ -1710,3 +1710,213 @@ device.addEventListener("connected", () => {
 device.addEventListener("getCameraConfiguration", () => {
   updateCameraWhiteBalanceInput();
 });
+
+// MICROPHONE
+
+/** @type {HTMLSpanElement} */
+const isMicrophoneAvailableSpan = document.getElementById(
+  "isMicrophoneAvailable"
+);
+device.addEventListener("connected", () => {
+  isMicrophoneAvailableSpan.innerText = device.hasMicrophone;
+});
+
+/** @type {HTMLSpanElement} */
+const microphoneStatusSpan = document.getElementById("microphoneStatus");
+device.addEventListener("microphoneStatus", () => {
+  microphoneStatusSpan.innerText = device.microphoneStatus;
+});
+
+/** @type {HTMLPreElement} */
+const microphoneConfigurationPre = document.getElementById(
+  "microphoneConfigurationPre"
+);
+device.addEventListener("getMicrophoneConfiguration", () => {
+  microphoneConfigurationPre.textContent = JSON.stringify(
+    device.microphoneConfiguration,
+    null,
+    2
+  );
+});
+
+const microphoneConfigurationContainer = document.getElementById(
+  "microphoneConfiguration"
+);
+/** @type {HTMLTemplateElement} */
+const microphoneConfigurationTypeTemplate = document.getElementById(
+  "microphoneConfigurationTypeTemplate"
+);
+BS.MicrophoneConfigurationTypes.forEach((microphoneConfigurationType) => {
+  const microphoneConfigurationTypeContainer =
+    microphoneConfigurationTypeTemplate.content
+      .cloneNode(true)
+      .querySelector(".microphoneConfigurationType");
+
+  microphoneConfigurationContainer.appendChild(
+    microphoneConfigurationTypeContainer
+  );
+
+  microphoneConfigurationTypeContainer.querySelector(".type").innerText =
+    microphoneConfigurationType;
+
+  /** @type {HTMLSelectElement} */
+  const select = microphoneConfigurationTypeContainer.querySelector("select");
+  /** @type {HTMLOptGroupElement} */
+  const optgroup = select.querySelector("optgroup");
+  optgroup.label = microphoneConfigurationType;
+
+  BS.MicrophoneConfigurationValues[microphoneConfigurationType].forEach(
+    (value) => {
+      optgroup.appendChild(new Option(value));
+    }
+  );
+
+  /** @type {HTMLSpanElement} */
+  const span = microphoneConfigurationTypeContainer.querySelector("span");
+
+  device.addEventListener("isConnected", () => {
+    updateisInputDisabled();
+  });
+  device.addEventListener("microphoneStatus", () => {
+    updateisInputDisabled();
+  });
+  const updateisInputDisabled = () => {
+    select.disabled =
+      !device.isConnected ||
+      !device.hasMicrophone ||
+      device.microphoneStatus != "idle";
+  };
+
+  const updateSelect = () => {
+    const value = device.microphoneConfiguration[microphoneConfigurationType];
+    span.innerText = value;
+    select.value = value;
+  };
+
+  device.addEventListener("connected", () => {
+    if (!device.hasMicrophone) {
+      return;
+    }
+    updateSelect();
+  });
+
+  device.addEventListener("getMicrophoneConfiguration", () => {
+    updateSelect();
+  });
+
+  select.addEventListener("input", () => {
+    const value = select.value;
+    // console.log(`updating ${microphoneConfigurationType} to ${value}`);
+    device.setMicrophoneConfiguration({
+      [microphoneConfigurationType]: value,
+    });
+  });
+});
+
+/** @type {HTMLButtonElement} */
+const toggleMicrophoneButton = document.getElementById("toggleMicrophone");
+toggleMicrophoneButton.addEventListener("click", () => {
+  device.toggleMicrophone();
+});
+device.addEventListener("connected", () => {
+  updateToggleMicrophoneButton();
+});
+device.addEventListener("getSensorConfiguration", () => {
+  updateToggleMicrophoneButton();
+});
+const updateToggleMicrophoneButton = () => {
+  let disabled =
+    !device.isConnected ||
+    device.sensorConfiguration.microphone == 0 ||
+    !device.hasMicrophone;
+
+  switch (device.microphoneStatus) {
+    case "streaming":
+      toggleMicrophoneButton.innerText = "stop microphone";
+      break;
+    case "idle":
+      toggleMicrophoneButton.innerText = "start microphone";
+      break;
+  }
+  toggleMicrophoneButton.disabled = disabled;
+};
+device.addEventListener("microphoneStatus", () => {
+  updateToggleMicrophoneButton();
+});
+
+const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+const checkAudioContextState = () => {
+  const { state } = audioContext;
+  console.log({ audioContextState: state });
+  if (state != "running") {
+    document.addEventListener("click", () => audioContext.resume(), {
+      once: true,
+    });
+  }
+};
+audioContext.addEventListener("statechange", () => {
+  checkAudioContextState();
+});
+checkAudioContextState();
+
+device.audioContext = audioContext;
+
+/** @type {HTMLAudioElement} */
+const microphoneStreamAudioElement =
+  document.getElementById("microphoneStream");
+microphoneStreamAudioElement.srcObject =
+  device.microphoneMediaStreamDestination.stream;
+
+/** @type {HTMLAudioElement} */
+const microphoneRecordingAudioElement = document.getElementById(
+  "microphoneRecording"
+);
+/** @type {HTMLInputElement} */
+const autoPlayMicrphoneRecordingCheckbox = document.getElementById(
+  "autoPlayMicrphoneRecording"
+);
+let autoPlayMicrphoneRecording = autoPlayMicrphoneRecordingCheckbox.checked;
+console.log("autoPlayMicrphoneRecording", autoPlayMicrphoneRecording);
+autoPlayMicrphoneRecordingCheckbox.addEventListener("input", () => {
+  autoPlayMicrphoneRecording = autoPlayMicrphoneRecordingCheckbox.checked;
+  console.log({ autoPlayMicrphoneRecording });
+});
+device.addEventListener("microphoneRecording", (event) => {
+  microphoneRecordingAudioElement.src = event.message.url;
+  if (autoPlayMicrphoneRecording) {
+    microphoneRecordingAudioElement.play();
+  }
+});
+
+/** @type {HTMLButtonElement} */
+const toggleMicrophoneRecordingButton = document.getElementById(
+  "toggleMicrophoneRecording"
+);
+toggleMicrophoneRecordingButton.addEventListener("click", () => {
+  device.toggleMicrophoneRecording();
+});
+device.addEventListener("connected", () => {
+  updateToggleMicrophoneRecordingButton();
+});
+device.addEventListener("getSensorConfiguration", () => {
+  updateToggleMicrophoneRecordingButton();
+});
+const updateToggleMicrophoneRecordingButton = () => {
+  let disabled =
+    !device.isConnected ||
+    device.sensorConfiguration.microphone == 0 ||
+    !device.hasMicrophone ||
+    device.microphoneStatus != "streaming";
+
+  toggleMicrophoneRecordingButton.innerText = device.isRecordingMicrophone
+    ? "stop recording"
+    : "start recording";
+
+  toggleMicrophoneRecordingButton.disabled = disabled;
+};
+device.addEventListener("isRecordingMicrophone", () => {
+  updateToggleMicrophoneRecordingButton();
+});
+device.addEventListener("microphoneStatus", () => {
+  updateToggleMicrophoneRecordingButton();
+});
