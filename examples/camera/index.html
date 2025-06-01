@@ -20,13 +20,23 @@
     <script type="module" src="./face-landmark.js"></script>
     <script type="module" src="./pose-landmark.js"></script>
     <script type="module" src="./object-detection.js"></script>
-    <!-- <script type="module" src="./document-answering.js"></script> -->
+    <script type="module" src="./image-to-text.js"></script>
+    <script type="module" src="./image-upscale.js"></script>
+    <script type="module" src="./depth-estimation.js"></script>
+    <script type="module" src="./yolo.js"></script>
+    <!-- <script type="module" src="./yolo-tiny.js"></script> -->
+    <script type="module" src="./image-segmentation.js"></script>
   </head>
   <style>
     img,
     canvas {
       width: 100%;
       height: 100%;
+    }
+
+    #generatedImage {
+      width: 300;
+      height: 300;
     }
 
     #imageContainer {
@@ -106,6 +116,12 @@
           <canvas width="300" height="300" id="imageOverlay"></canvas>
           <img id="cameraImage" />
         </div>
+        <canvas
+          display="none"
+          width="300"
+          height="300"
+          id="generatedImage"
+        ></canvas>
         <pre id="modelResults"></pre>
       </div>
     </div>

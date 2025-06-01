@@ -1515,16 +1515,16 @@ async function _CameraManager_sendCameraCommand(command, sendImmediately) {
             _console$w.log({ imageData: __classPrivateFieldGet(this, _CameraManager_imageData, "f") });
             __classPrivateFieldSet(this, _CameraManager_imageProgress, __classPrivateFieldGet(this, _CameraManager_imageData, "f")?.byteLength / __classPrivateFieldGet(this, _CameraManager_imageSize, "f"), "f");
             _console$w.log({ imageProgress: __classPrivateFieldGet(this, _CameraManager_imageProgress, "f") });
+            __classPrivateFieldGet(this, _CameraManager_instances, "a", _CameraManager_dispatchEvent_get).call(this, "cameraImageProgress", {
+                progress: __classPrivateFieldGet(this, _CameraManager_imageProgress, "f"),
+                type: "image",
+            });
             if (__classPrivateFieldGet(this, _CameraManager_imageProgress, "f") == 1) {
                 _console$w.log("finished getting image data");
                 if (__classPrivateFieldGet(this, _CameraManager_headerProgress, "f") == 1) {
                     __classPrivateFieldGet(this, _CameraManager_instances, "m", _CameraManager_buildImage).call(this);
                 }
             }
-            __classPrivateFieldGet(this, _CameraManager_instances, "a", _CameraManager_dispatchEvent_get).call(this, "cameraImageProgress", {
-                progress: __classPrivateFieldGet(this, _CameraManager_imageProgress, "f"),
-                type: "image",
-            });
             break;
         case "footerSize":
             __classPrivateFieldSet(this, _CameraManager_footerSize, dataView.getUint16(0, true), "f");
