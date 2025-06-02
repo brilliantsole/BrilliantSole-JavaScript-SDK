@@ -1,0 +1,134 @@
+<html>
+  <head>
+    <title>WebXR Camera | BrilliantSole JavaScript SDK</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico" />
+    <script src="../utils/aframe/aframe-master.min.js"></script>
+    <script src="../utils/aframe/occlude-hand-tracking-controls.js"></script>
+    <script src="./components/bs-camera.js" type="module"></script>
+
+    <script type="module" src="./script.js"></script>
+  </head>
+
+  <style>
+    a-scene {
+      width: 500px;
+      height: 400px;
+      margin: auto;
+      border-radius: 2rem;
+      overflow: hidden;
+      border: solid black;
+      box-sizing: border-box;
+    }
+  </style>
+
+  <body>
+    <nav>
+      <a href="../../">home</a>
+    </nav>
+
+    <h1>WebXR Camera | BrilliantSole JavaScript SDK</h1>
+
+    <div>
+      <label
+        >webSocket url
+        <input id="webSocketUrl" type="url" placeholder="localhost"
+      /></label>
+      <button id="toggleConnection">connect</button>
+    </div>
+
+    <div>
+      <label>
+        is scanning available?
+        <input id="isScanningAvailable" type="checkbox" readonly disabled />
+      </label>
+      <button id="toggleScan" disabled>scan</button>
+    </div>
+
+    <div>
+      <h2>camera</h2>
+
+      <label>
+        <b>is camera available?</b>
+        <span id="isCameraAvailable"></span>
+      </label>
+
+      <label><b>status:</b> <span id="cameraStatus"></span></label>
+      <br />
+
+      <label>auto picture: <input type="checkbox" id="autoPicture" /> </label>
+
+      <button disabled id="takePicture">take picture</button>
+      <progress value="0" id="cameraImageProgress"></progress>
+      <br />
+      <button disabled id="focusCamera">focus camera</button>
+      <br />
+      <button disabled id="sleepCamera">sleep camera</button>
+
+      <div style="display: flex; flex-direction: row">
+        <div>
+          <label>
+            <b>camera configuration: </b>
+            <pre id="cameraConfigurationPre"></pre>
+          </label>
+          <br />
+
+          <label>
+            take picture after update?
+            <input type="checkbox" id="takePictureAfterUpdate" />
+          </label>
+
+          <div id="cameraConfiguration">
+            <template id="cameraConfigurationTypeTemplate">
+              <label class="cameraConfigurationType">
+                <input class="value" type="range" value="" disabled />
+                <b class="type"></b> <span></span>
+                <br />
+              </label>
+            </template>
+          </div>
+          <label>
+            <b>white balance</b>
+            <input type="color" id="cameraWhiteBalance" disabled />
+          </label>
+        </div>
+        <div>
+          <img id="cameraImage" />
+        </div>
+      </div>
+    </div>
+
+    <a-scene
+      embedded
+      obb-collider="showColliders: false;"
+      xr-mode-ui="enabled: true; XRMode: ar"
+      device-orientation-permission-ui="enabled: false"
+    >
+      <a-assets></a-assets>
+
+      <a-camera position="0 1.6 0">
+        <a-image
+          grabbable
+          width="0.15"
+          height="0.15"
+          position="0 0 -0.5"
+          bs-camera
+        ></a-image>
+      </a-camera>
+
+      <a-entity
+        class="left hand"
+        hand-tracking-grab-controls="hand: left;"
+        occlude-hand-tracking-controls
+      ></a-entity>
+
+      <a-entity
+        class="right hand"
+        hand-tracking-grab-controls="hand: right;"
+        occlude-hand-tracking-controls
+      ></a-entity>
+
+      <a-sky hide-on-enter-ar color="black"></a-sky>
+    </a-scene>
+  </body>
+</html>

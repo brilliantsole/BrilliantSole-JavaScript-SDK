@@ -133,55 +133,6 @@
     </div>
 
     <div>
-      <h2>microphone</h2>
-
-      <label>
-        <b>is microphone available?</b>
-        <span id="isMicrophoneAvailable"></span>
-      </label>
-
-      <label><b>status:</b> <span id="microphoneStatus"></span></label>
-
-      <button disabled id="toggleMicrophone">start microphone</button>
-      <button disabled id="toggleMicrophoneRecording">start recording</button>
-
-      <div>
-        <label>
-          <b>microphone configuration: </b>
-          <pre id="microphoneConfigurationPre"></pre>
-        </label>
-        <br />
-
-        <div id="microphoneConfiguration">
-          <template id="microphoneConfigurationTypeTemplate">
-            <label class="microphoneConfigurationType">
-              <b class="type"></b> <span hidden></span>
-              <select disabled>
-                <optgroup></optgroup>
-              </select>
-            </label>
-          </template>
-        </div>
-
-        <div>
-          <b>stream</b>
-          <br />
-          <audio id="microphoneStream" controls autoplay></audio>
-        </div>
-
-        <div>
-          <b>recording</b>
-          <label>
-            auto play
-            <input type="checkbox" id="autoPlayMicrphoneRecording" />
-          </label>
-          <br />
-          <audio id="microphoneRecording" controls></audio>
-        </div>
-      </div>
-    </div>
-
-    <div>
       <h2>Pressure</h2>
       <button id="resetPressureRange">reset pressure range</button>
     </div>
@@ -555,6 +506,55 @@
         </div>
         <div>
           <img id="cameraImage" />
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <h2>microphone</h2>
+
+      <label>
+        <b>is microphone available?</b>
+        <span id="isMicrophoneAvailable"></span>
+      </label>
+
+      <label><b>status:</b> <span id="microphoneStatus"></span></label>
+
+      <button disabled id="toggleMicrophone">start microphone</button>
+      <button disabled id="toggleMicrophoneRecording">start recording</button>
+
+      <div>
+        <label>
+          <b>microphone configuration: </b>
+          <pre id="microphoneConfigurationPre"></pre>
+        </label>
+        <br />
+
+        <div id="microphoneConfiguration">
+          <template id="microphoneConfigurationTypeTemplate">
+            <label class="microphoneConfigurationType">
+              <b class="type"></b> <span hidden></span>
+              <select disabled>
+                <optgroup></optgroup>
+              </select>
+            </label>
+          </template>
+        </div>
+
+        <div>
+          <b>stream</b>
+          <br />
+          <audio id="microphoneStream" controls autoplay></audio>
+        </div>
+
+        <div>
+          <b>recording</b>
+          <label>
+            auto play
+            <input type="checkbox" id="autoPlayMicrphoneRecording" />
+          </label>
+          <br />
+          <audio id="microphoneRecording" controls></audio>
         </div>
       </div>
     </div>
