@@ -81,7 +81,7 @@ var environment = /*#__PURE__*/Object.freeze({
     isSafari: isSafari
 });
 
-var _a$8, _Console_consoles, _Console_levelFlags;
+var _a$9, _Console_consoles, _Console_levelFlags;
 var __console;
 if (isInLensStudio) {
     const log = function (...args) {
@@ -155,27 +155,27 @@ class Console {
             error: true,
             table: true,
         });
-        if (__classPrivateFieldGet(_a$8, _a$8, "f", _Console_consoles)[type]) {
+        if (__classPrivateFieldGet(_a$9, _a$9, "f", _Console_consoles)[type]) {
             throw new Error(`"${type}" console already exists`);
         }
-        __classPrivateFieldGet(_a$8, _a$8, "f", _Console_consoles)[type] = this;
+        __classPrivateFieldGet(_a$9, _a$9, "f", _Console_consoles)[type] = this;
     }
     setLevelFlags(levelFlags) {
         Object.assign(__classPrivateFieldGet(this, _Console_levelFlags, "f"), levelFlags);
     }
     static setLevelFlagsForType(type, levelFlags) {
-        if (!__classPrivateFieldGet(this, _a$8, "f", _Console_consoles)[type]) {
+        if (!__classPrivateFieldGet(this, _a$9, "f", _Console_consoles)[type]) {
             throw new Error(`no console found with type "${type}"`);
         }
-        __classPrivateFieldGet(this, _a$8, "f", _Console_consoles)[type].setLevelFlags(levelFlags);
+        __classPrivateFieldGet(this, _a$9, "f", _Console_consoles)[type].setLevelFlags(levelFlags);
     }
     static setAllLevelFlags(levelFlags) {
-        for (const type in __classPrivateFieldGet(this, _a$8, "f", _Console_consoles)) {
-            __classPrivateFieldGet(this, _a$8, "f", _Console_consoles)[type].setLevelFlags(levelFlags);
+        for (const type in __classPrivateFieldGet(this, _a$9, "f", _Console_consoles)) {
+            __classPrivateFieldGet(this, _a$9, "f", _Console_consoles)[type].setLevelFlags(levelFlags);
         }
     }
     static create(type, levelFlags) {
-        const console = __classPrivateFieldGet(this, _a$8, "f", _Console_consoles)[type] || new _a$8(type);
+        const console = __classPrivateFieldGet(this, _a$9, "f", _Console_consoles)[type] || new _a$9(type);
         return console;
     }
     get log() {
@@ -208,7 +208,7 @@ class Console {
         this.assertWithError(value >= min && value <= max, `${name} ${value} must be within ${min}-${max}`);
     }
 }
-_a$8 = Console, _Console_levelFlags = new WeakMap();
+_a$9 = Console, _Console_levelFlags = new WeakMap();
 _Console_consoles = { value: {} };
 function createConsole(type, levelFlags) {
     return Console.create(type, levelFlags);
@@ -220,7 +220,7 @@ function setAllConsoleLevelFlags(levelFlags) {
     Console.setAllLevelFlags(levelFlags);
 }
 
-const _console$E = createConsole("EventDispatcher", { log: false });
+const _console$F = createConsole("EventDispatcher", { log: false });
 class EventDispatcher {
     constructor(target, validEventTypes) {
         this.target = target;
@@ -241,7 +241,7 @@ class EventDispatcher {
             return;
         this.listeners[type] = this.listeners[type].filter((listenerObj) => {
             if (listenerObj.shouldRemove) {
-                _console$E.log(`removing "${type}" eventListener`, listenerObj);
+                _console$F.log(`removing "${type}" eventListener`, listenerObj);
             }
             return !listenerObj.shouldRemove;
         });
@@ -252,18 +252,18 @@ class EventDispatcher {
         }
         if (!this.listeners[type]) {
             this.listeners[type] = [];
-            _console$E.log(`creating "${type}" listeners array`, this.listeners[type]);
+            _console$F.log(`creating "${type}" listeners array`, this.listeners[type]);
         }
         const alreadyAdded = this.listeners[type].find((listenerObject) => {
             return listenerObject.listener == listener && listenerObject.once == options.once;
         });
         if (alreadyAdded) {
-            _console$E.log("already added listener");
+            _console$F.log("already added listener");
             return;
         }
-        _console$E.log(`adding "${type}" listener`, listener, options);
+        _console$F.log(`adding "${type}" listener`, listener, options);
         this.listeners[type].push({ listener, once: options.once });
-        _console$E.log(`currently have ${this.listeners[type].length} "${type}" listeners`);
+        _console$F.log(`currently have ${this.listeners[type].length} "${type}" listeners`);
     }
     removeEventListener(type, listener) {
         if (!this.isValidEventType(type)) {
@@ -271,11 +271,11 @@ class EventDispatcher {
         }
         if (!this.listeners[type])
             return;
-        _console$E.log(`removing "${type}" listener...`, listener);
+        _console$F.log(`removing "${type}" listener...`, listener);
         this.listeners[type].forEach((listenerObj) => {
             const isListenerToRemove = listenerObj.listener === listener;
             if (isListenerToRemove) {
-                _console$E.log(`flagging "${type}" listener`, listener);
+                _console$F.log(`flagging "${type}" listener`, listener);
                 listenerObj.shouldRemove = true;
             }
         });
@@ -287,11 +287,11 @@ class EventDispatcher {
         }
         if (!this.listeners[type])
             return;
-        _console$E.log(`removing "${type}" listeners...`);
+        _console$F.log(`removing "${type}" listeners...`);
         this.listeners[type] = [];
     }
     removeAllEventListeners() {
-        _console$E.log(`removing listeners...`);
+        _console$F.log(`removing listeners...`);
         this.listeners = {};
     }
     dispatchEvent(type, message) {
@@ -304,10 +304,10 @@ class EventDispatcher {
             if (listenerObj.shouldRemove) {
                 return;
             }
-            _console$E.log(`dispatching "${type}" listener`, listenerObj);
+            _console$F.log(`dispatching "${type}" listener`, listenerObj);
             listenerObj.listener({ type, target: this.target, message });
             if (listenerObj.once) {
-                _console$E.log(`flagging "${type}" listener`, listenerObj);
+                _console$F.log(`flagging "${type}" listener`, listenerObj);
                 listenerObj.shouldRemove = true;
             }
         });
@@ -324,14 +324,14 @@ class EventDispatcher {
 }
 
 var _Timer_callback, _Timer_interval, _Timer_intervalId;
-const _console$D = createConsole("Timer", { log: false });
+const _console$E = createConsole("Timer", { log: false });
 class Timer {
     get callback() {
         return __classPrivateFieldGet(this, _Timer_callback, "f");
     }
     set callback(newCallback) {
-        _console$D.assertTypeWithError(newCallback, "function");
-        _console$D.log({ newCallback });
+        _console$E.assertTypeWithError(newCallback, "function");
+        _console$E.log({ newCallback });
         __classPrivateFieldSet(this, _Timer_callback, newCallback, "f");
         if (this.isRunning) {
             this.restart();
@@ -341,9 +341,9 @@ class Timer {
         return __classPrivateFieldGet(this, _Timer_interval, "f");
     }
     set interval(newInterval) {
-        _console$D.assertTypeWithError(newInterval, "number");
-        _console$D.assertWithError(newInterval > 0, "interval must be above 0");
-        _console$D.log({ newInterval });
+        _console$E.assertTypeWithError(newInterval, "number");
+        _console$E.assertWithError(newInterval > 0, "interval must be above 0");
+        _console$E.log({ newInterval });
         __classPrivateFieldSet(this, _Timer_interval, newInterval, "f");
         if (this.isRunning) {
             this.restart();
@@ -361,10 +361,10 @@ class Timer {
     }
     start(immediately = false) {
         if (this.isRunning) {
-            _console$D.log("interval already running");
+            _console$E.log("interval already running");
             return;
         }
-        _console$D.log(`starting interval every ${__classPrivateFieldGet(this, _Timer_interval, "f")}ms`);
+        _console$E.log(`starting interval every ${__classPrivateFieldGet(this, _Timer_interval, "f")}ms`);
         __classPrivateFieldSet(this, _Timer_intervalId, setInterval(__classPrivateFieldGet(this, _Timer_callback, "f"), __classPrivateFieldGet(this, _Timer_interval, "f")), "f");
         if (immediately) {
             __classPrivateFieldGet(this, _Timer_callback, "f").call(this);
@@ -372,10 +372,10 @@ class Timer {
     }
     stop() {
         if (!this.isRunning) {
-            _console$D.log("interval already not running");
+            _console$E.log("interval already not running");
             return;
         }
-        _console$D.log("stopping interval");
+        _console$E.log("stopping interval");
         clearInterval(__classPrivateFieldGet(this, _Timer_intervalId, "f"));
         __classPrivateFieldSet(this, _Timer_intervalId, undefined, "f");
     }
@@ -441,7 +441,7 @@ else {
 const textEncoder = new _TextEncoder();
 const textDecoder = new _TextDecoder();
 
-const _console$C = createConsole("ArrayBufferUtils", { log: false });
+const _console$D = createConsole("ArrayBufferUtils", { log: false });
 function concatenateArrayBuffers(...arrayBuffers) {
     arrayBuffers = arrayBuffers.filter((arrayBuffer) => arrayBuffer != undefined || arrayBuffer != null);
     arrayBuffers = arrayBuffers.map((arrayBuffer) => {
@@ -505,7 +505,7 @@ function sliceDataView(dataView, begin, length) {
     if (length != undefined) {
         end = dataView.byteOffset + begin + length;
     }
-    _console$C.log({ dataView, begin, end, length });
+    _console$D.log({ dataView, begin, end, length });
     return new DataView(dataView.buffer.slice(dataView.byteOffset + begin, end));
 }
 async function getFileBuffer(file) {
@@ -532,8 +532,8 @@ async function getFileBuffer(file) {
     return fileBuffer;
 }
 
-var _FileTransferManager_instances, _a$7, _FileTransferManager_dispatchEvent_get, _FileTransferManager_assertValidType, _FileTransferManager_assertValidTypeEnum, _FileTransferManager_assertValidStatusEnum, _FileTransferManager_assertValidCommand, _FileTransferManager_fileTypes, _FileTransferManager_parseFileTypes, _FileTransferManager_MaxLength, _FileTransferManager_maxLength, _FileTransferManager_parseMaxLength, _FileTransferManager_updateMaxLength, _FileTransferManager_assertValidLength, _FileTransferManager_type, _FileTransferManager_parseType, _FileTransferManager_updateType, _FileTransferManager_setType, _FileTransferManager_length, _FileTransferManager_parseLength, _FileTransferManager_updateLength, _FileTransferManager_setLength, _FileTransferManager_checksum, _FileTransferManager_parseChecksum, _FileTransferManager_updateChecksum, _FileTransferManager_setChecksum, _FileTransferManager_setCommand, _FileTransferManager_status, _FileTransferManager_parseStatus, _FileTransferManager_updateStatus, _FileTransferManager_assertIsIdle, _FileTransferManager_assertIsNotIdle, _FileTransferManager_receivedBlocks, _FileTransferManager_parseBlock, _FileTransferManager_buffer, _FileTransferManager_bytesTransferred, _FileTransferManager_send, _FileTransferManager_sendBlock, _FileTransferManager_parseBytesTransferred, _FileTransferManager_isCancelling, _FileTransferManager_isServerSide;
-const _console$B = createConsole("FileTransferManager", { log: false });
+var _FileTransferManager_instances, _a$8, _FileTransferManager_dispatchEvent_get, _FileTransferManager_assertValidType, _FileTransferManager_assertValidTypeEnum, _FileTransferManager_assertValidStatusEnum, _FileTransferManager_assertValidCommand, _FileTransferManager_fileTypes, _FileTransferManager_parseFileTypes, _FileTransferManager_MaxLength, _FileTransferManager_maxLength, _FileTransferManager_parseMaxLength, _FileTransferManager_updateMaxLength, _FileTransferManager_assertValidLength, _FileTransferManager_type, _FileTransferManager_parseType, _FileTransferManager_updateType, _FileTransferManager_setType, _FileTransferManager_length, _FileTransferManager_parseLength, _FileTransferManager_updateLength, _FileTransferManager_setLength, _FileTransferManager_checksum, _FileTransferManager_parseChecksum, _FileTransferManager_updateChecksum, _FileTransferManager_setChecksum, _FileTransferManager_setCommand, _FileTransferManager_status, _FileTransferManager_parseStatus, _FileTransferManager_updateStatus, _FileTransferManager_assertIsIdle, _FileTransferManager_assertIsNotIdle, _FileTransferManager_receivedBlocks, _FileTransferManager_parseBlock, _FileTransferManager_buffer, _FileTransferManager_bytesTransferred, _FileTransferManager_send, _FileTransferManager_sendBlock, _FileTransferManager_parseBytesTransferred, _FileTransferManager_isCancelling, _FileTransferManager_isServerSide;
+const _console$C = createConsole("FileTransferManager", { log: false });
 const FileTransferMessageTypes = [
     "getFileTypes",
     "maxFileLength",
@@ -574,7 +574,7 @@ class FileTransferManager {
     constructor() {
         _FileTransferManager_instances.add(this);
         _FileTransferManager_fileTypes.set(this, []);
-        _FileTransferManager_maxLength.set(this, _a$7.MaxLength);
+        _FileTransferManager_maxLength.set(this, _a$8.MaxLength);
         _FileTransferManager_type.set(this, void 0);
         _FileTransferManager_length.set(this, 0);
         _FileTransferManager_checksum.set(this, 0);
@@ -599,7 +599,7 @@ class FileTransferManager {
         return __classPrivateFieldGet(this, _FileTransferManager_fileTypes, "f");
     }
     static get MaxLength() {
-        return __classPrivateFieldGet(this, _a$7, "f", _FileTransferManager_MaxLength);
+        return __classPrivateFieldGet(this, _a$8, "f", _FileTransferManager_MaxLength);
     }
     get maxLength() {
         return __classPrivateFieldGet(this, _FileTransferManager_maxLength, "f");
@@ -617,7 +617,7 @@ class FileTransferManager {
         return __classPrivateFieldGet(this, _FileTransferManager_status, "f");
     }
     parseMessage(messageType, dataView) {
-        _console$B.log({ messageType });
+        _console$C.log({ messageType });
         switch (messageType) {
             case "getFileTypes":
                 __classPrivateFieldGet(this, _FileTransferManager_instances, "m", _FileTransferManager_parseFileTypes).call(this, dataView);
@@ -659,16 +659,16 @@ class FileTransferManager {
         const fileLength = fileBuffer.byteLength;
         const checksum = crc32(fileBuffer);
         if (type != this.type) {
-            _console$B.log("different fileTypes - sending");
+            _console$C.log("different fileTypes - sending");
         }
         else if (fileLength != this.length) {
-            _console$B.log("different fileLengths - sending");
+            _console$C.log("different fileLengths - sending");
         }
         else if (checksum != this.checksum) {
-            _console$B.log("different fileChecksums - sending");
+            _console$C.log("different fileChecksums - sending");
         }
         else {
-            _console$B.log("already sent file");
+            _console$C.log("already sent file");
             return false;
         }
         const promises = [];
@@ -689,7 +689,7 @@ class FileTransferManager {
     }
     async cancel() {
         __classPrivateFieldGet(this, _FileTransferManager_instances, "m", _FileTransferManager_assertIsNotIdle).call(this);
-        _console$B.log("cancelling file transfer...");
+        _console$C.log("cancelling file transfer...");
         __classPrivateFieldSet(this, _FileTransferManager_isCancelling, true, "f");
         await __classPrivateFieldGet(this, _FileTransferManager_instances, "m", _FileTransferManager_setCommand).call(this, "cancel");
     }
@@ -698,64 +698,64 @@ class FileTransferManager {
     }
     set isServerSide(newIsServerSide) {
         if (__classPrivateFieldGet(this, _FileTransferManager_isServerSide, "f") == newIsServerSide) {
-            _console$B.log("redundant isServerSide assignment");
+            _console$C.log("redundant isServerSide assignment");
             return;
         }
-        _console$B.log({ newIsServerSide });
+        _console$C.log({ newIsServerSide });
         __classPrivateFieldSet(this, _FileTransferManager_isServerSide, newIsServerSide, "f");
     }
     requestRequiredInformation() {
-        _console$B.log("requesting required fileTransfer information");
+        _console$C.log("requesting required fileTransfer information");
         const messages = RequiredFileTransferMessageTypes.map((messageType) => ({
             type: messageType,
         }));
         this.sendMessage(messages, false);
     }
 }
-_a$7 = FileTransferManager, _FileTransferManager_fileTypes = new WeakMap(), _FileTransferManager_maxLength = new WeakMap(), _FileTransferManager_type = new WeakMap(), _FileTransferManager_length = new WeakMap(), _FileTransferManager_checksum = new WeakMap(), _FileTransferManager_status = new WeakMap(), _FileTransferManager_receivedBlocks = new WeakMap(), _FileTransferManager_buffer = new WeakMap(), _FileTransferManager_bytesTransferred = new WeakMap(), _FileTransferManager_isCancelling = new WeakMap(), _FileTransferManager_isServerSide = new WeakMap(), _FileTransferManager_instances = new WeakSet(), _FileTransferManager_dispatchEvent_get = function _FileTransferManager_dispatchEvent_get() {
+_a$8 = FileTransferManager, _FileTransferManager_fileTypes = new WeakMap(), _FileTransferManager_maxLength = new WeakMap(), _FileTransferManager_type = new WeakMap(), _FileTransferManager_length = new WeakMap(), _FileTransferManager_checksum = new WeakMap(), _FileTransferManager_status = new WeakMap(), _FileTransferManager_receivedBlocks = new WeakMap(), _FileTransferManager_buffer = new WeakMap(), _FileTransferManager_bytesTransferred = new WeakMap(), _FileTransferManager_isCancelling = new WeakMap(), _FileTransferManager_isServerSide = new WeakMap(), _FileTransferManager_instances = new WeakSet(), _FileTransferManager_dispatchEvent_get = function _FileTransferManager_dispatchEvent_get() {
     return this.eventDispatcher.dispatchEvent;
 }, _FileTransferManager_assertValidType = function _FileTransferManager_assertValidType(type) {
-    _console$B.assertEnumWithError(type, FileTypes);
+    _console$C.assertEnumWithError(type, FileTypes);
 }, _FileTransferManager_assertValidTypeEnum = function _FileTransferManager_assertValidTypeEnum(typeEnum) {
-    _console$B.assertWithError(typeEnum in FileTypes, `invalid typeEnum ${typeEnum}`);
+    _console$C.assertWithError(typeEnum in FileTypes, `invalid typeEnum ${typeEnum}`);
 }, _FileTransferManager_assertValidStatusEnum = function _FileTransferManager_assertValidStatusEnum(statusEnum) {
-    _console$B.assertWithError(statusEnum in FileTransferStatuses, `invalid statusEnum ${statusEnum}`);
+    _console$C.assertWithError(statusEnum in FileTransferStatuses, `invalid statusEnum ${statusEnum}`);
 }, _FileTransferManager_assertValidCommand = function _FileTransferManager_assertValidCommand(command) {
-    _console$B.assertEnumWithError(command, FileTransferCommands);
+    _console$C.assertEnumWithError(command, FileTransferCommands);
 }, _FileTransferManager_parseFileTypes = function _FileTransferManager_parseFileTypes(dataView) {
     const fileTypes = Array.from(new Uint8Array(dataView.buffer))
         .map((index) => FileTypes[index])
         .filter(Boolean);
     __classPrivateFieldSet(this, _FileTransferManager_fileTypes, fileTypes, "f");
-    _console$B.log("fileTypes", fileTypes);
+    _console$C.log("fileTypes", fileTypes);
     __classPrivateFieldGet(this, _FileTransferManager_instances, "a", _FileTransferManager_dispatchEvent_get).call(this, "getFileTypes", {
         fileTypes: __classPrivateFieldGet(this, _FileTransferManager_fileTypes, "f"),
     });
 }, _FileTransferManager_parseMaxLength = function _FileTransferManager_parseMaxLength(dataView) {
-    _console$B.log("parseFileMaxLength", dataView);
+    _console$C.log("parseFileMaxLength", dataView);
     const maxLength = dataView.getUint32(0, true);
-    _console$B.log(`maxLength: ${maxLength / 1024}kB`);
+    _console$C.log(`maxLength: ${maxLength / 1024}kB`);
     __classPrivateFieldGet(this, _FileTransferManager_instances, "m", _FileTransferManager_updateMaxLength).call(this, maxLength);
 }, _FileTransferManager_updateMaxLength = function _FileTransferManager_updateMaxLength(maxLength) {
-    _console$B.log({ maxLength });
+    _console$C.log({ maxLength });
     __classPrivateFieldSet(this, _FileTransferManager_maxLength, maxLength, "f");
     __classPrivateFieldGet(this, _FileTransferManager_instances, "a", _FileTransferManager_dispatchEvent_get).call(this, "maxFileLength", { maxFileLength: maxLength });
 }, _FileTransferManager_assertValidLength = function _FileTransferManager_assertValidLength(length) {
-    _console$B.assertWithError(length <= this.maxLength, `file length ${length}kB too large - must be ${this.maxLength}kB or less`);
+    _console$C.assertWithError(length <= this.maxLength, `file length ${length}kB too large - must be ${this.maxLength}kB or less`);
 }, _FileTransferManager_parseType = function _FileTransferManager_parseType(dataView) {
-    _console$B.log("parseFileType", dataView);
+    _console$C.log("parseFileType", dataView);
     const typeEnum = dataView.getUint8(0);
     __classPrivateFieldGet(this, _FileTransferManager_instances, "m", _FileTransferManager_assertValidTypeEnum).call(this, typeEnum);
     const type = FileTypes[typeEnum];
     __classPrivateFieldGet(this, _FileTransferManager_instances, "m", _FileTransferManager_updateType).call(this, type);
 }, _FileTransferManager_updateType = function _FileTransferManager_updateType(type) {
-    _console$B.log({ fileTransferType: type });
+    _console$C.log({ fileTransferType: type });
     __classPrivateFieldSet(this, _FileTransferManager_type, type, "f");
     __classPrivateFieldGet(this, _FileTransferManager_instances, "a", _FileTransferManager_dispatchEvent_get).call(this, "getFileType", { fileType: type });
 }, _FileTransferManager_setType = async function _FileTransferManager_setType(newType, sendImmediately) {
     __classPrivateFieldGet(this, _FileTransferManager_instances, "m", _FileTransferManager_assertValidType).call(this, newType);
     if (this.type == newType) {
-        _console$B.log(`redundant type assignment ${newType}`);
+        _console$C.log(`redundant type assignment ${newType}`);
         return;
     }
     const promise = this.waitForEvent("getFileType");
@@ -763,18 +763,18 @@ _a$7 = FileTransferManager, _FileTransferManager_fileTypes = new WeakMap(), _Fil
     this.sendMessage([{ type: "setFileType", data: Uint8Array.from([typeEnum]).buffer }], sendImmediately);
     await promise;
 }, _FileTransferManager_parseLength = function _FileTransferManager_parseLength(dataView) {
-    _console$B.log("parseFileLength", dataView);
+    _console$C.log("parseFileLength", dataView);
     const length = dataView.getUint32(0, true);
     __classPrivateFieldGet(this, _FileTransferManager_instances, "m", _FileTransferManager_updateLength).call(this, length);
 }, _FileTransferManager_updateLength = function _FileTransferManager_updateLength(length) {
-    _console$B.log(`length: ${length / 1024}kB`);
+    _console$C.log(`length: ${length / 1024}kB`);
     __classPrivateFieldSet(this, _FileTransferManager_length, length, "f");
     __classPrivateFieldGet(this, _FileTransferManager_instances, "a", _FileTransferManager_dispatchEvent_get).call(this, "getFileLength", { fileLength: length });
 }, _FileTransferManager_setLength = async function _FileTransferManager_setLength(newLength, sendImmediately) {
-    _console$B.assertTypeWithError(newLength, "number");
+    _console$C.assertTypeWithError(newLength, "number");
     __classPrivateFieldGet(this, _FileTransferManager_instances, "m", _FileTransferManager_assertValidLength).call(this, newLength);
     if (this.length == newLength) {
-        _console$B.log(`redundant length assignment ${newLength}`);
+        _console$C.log(`redundant length assignment ${newLength}`);
         return;
     }
     const promise = this.waitForEvent("getFileLength");
@@ -783,17 +783,17 @@ _a$7 = FileTransferManager, _FileTransferManager_fileTypes = new WeakMap(), _Fil
     this.sendMessage([{ type: "setFileLength", data: dataView.buffer }], sendImmediately);
     await promise;
 }, _FileTransferManager_parseChecksum = function _FileTransferManager_parseChecksum(dataView) {
-    _console$B.log("checksum", dataView);
+    _console$C.log("checksum", dataView);
     const checksum = dataView.getUint32(0, true);
     __classPrivateFieldGet(this, _FileTransferManager_instances, "m", _FileTransferManager_updateChecksum).call(this, checksum);
 }, _FileTransferManager_updateChecksum = function _FileTransferManager_updateChecksum(checksum) {
-    _console$B.log({ checksum });
+    _console$C.log({ checksum });
     __classPrivateFieldSet(this, _FileTransferManager_checksum, checksum, "f");
     __classPrivateFieldGet(this, _FileTransferManager_instances, "a", _FileTransferManager_dispatchEvent_get).call(this, "getFileChecksum", { fileChecksum: checksum });
 }, _FileTransferManager_setChecksum = async function _FileTransferManager_setChecksum(newChecksum, sendImmediately) {
-    _console$B.assertTypeWithError(newChecksum, "number");
+    _console$C.assertTypeWithError(newChecksum, "number");
     if (this.checksum == newChecksum) {
-        _console$B.log(`redundant checksum assignment ${newChecksum}`);
+        _console$C.log(`redundant checksum assignment ${newChecksum}`);
         return;
     }
     const promise = this.waitForEvent("getFileChecksum");
@@ -804,7 +804,7 @@ _a$7 = FileTransferManager, _FileTransferManager_fileTypes = new WeakMap(), _Fil
 }, _FileTransferManager_setCommand = async function _FileTransferManager_setCommand(command, sendImmediately) {
     __classPrivateFieldGet(this, _FileTransferManager_instances, "m", _FileTransferManager_assertValidCommand).call(this, command);
     const promise = this.waitForEvent("fileTransferStatus");
-    _console$B.log(`setting command ${command}`);
+    _console$C.log(`setting command ${command}`);
     const commandEnum = FileTransferCommands.indexOf(command);
     this.sendMessage([
         {
@@ -814,27 +814,27 @@ _a$7 = FileTransferManager, _FileTransferManager_fileTypes = new WeakMap(), _Fil
     ], sendImmediately);
     await promise;
 }, _FileTransferManager_parseStatus = function _FileTransferManager_parseStatus(dataView) {
-    _console$B.log("parseFileStatus", dataView);
+    _console$C.log("parseFileStatus", dataView);
     const statusEnum = dataView.getUint8(0);
     __classPrivateFieldGet(this, _FileTransferManager_instances, "m", _FileTransferManager_assertValidStatusEnum).call(this, statusEnum);
     const status = FileTransferStatuses[statusEnum];
     __classPrivateFieldGet(this, _FileTransferManager_instances, "m", _FileTransferManager_updateStatus).call(this, status);
 }, _FileTransferManager_updateStatus = function _FileTransferManager_updateStatus(status) {
-    _console$B.log({ status });
+    _console$C.log({ status });
     __classPrivateFieldSet(this, _FileTransferManager_status, status, "f");
     __classPrivateFieldGet(this, _FileTransferManager_instances, "a", _FileTransferManager_dispatchEvent_get).call(this, "fileTransferStatus", { fileTransferStatus: status });
     __classPrivateFieldGet(this, _FileTransferManager_receivedBlocks, "f").length = 0;
     __classPrivateFieldSet(this, _FileTransferManager_isCancelling, false, "f");
 }, _FileTransferManager_assertIsIdle = function _FileTransferManager_assertIsIdle() {
-    _console$B.assertWithError(__classPrivateFieldGet(this, _FileTransferManager_status, "f") == "idle", "status is not idle");
+    _console$C.assertWithError(__classPrivateFieldGet(this, _FileTransferManager_status, "f") == "idle", "status is not idle");
 }, _FileTransferManager_assertIsNotIdle = function _FileTransferManager_assertIsNotIdle() {
-    _console$B.assertWithError(__classPrivateFieldGet(this, _FileTransferManager_status, "f") != "idle", "status is idle");
+    _console$C.assertWithError(__classPrivateFieldGet(this, _FileTransferManager_status, "f") != "idle", "status is idle");
 }, _FileTransferManager_parseBlock = async function _FileTransferManager_parseBlock(dataView) {
-    _console$B.log("parseFileBlock", dataView);
+    _console$C.log("parseFileBlock", dataView);
     __classPrivateFieldGet(this, _FileTransferManager_receivedBlocks, "f").push(dataView.buffer);
     const bytesReceived = __classPrivateFieldGet(this, _FileTransferManager_receivedBlocks, "f").reduce((sum, arrayBuffer) => (sum += arrayBuffer.byteLength), 0);
     const progress = bytesReceived / __classPrivateFieldGet(this, _FileTransferManager_length, "f");
-    _console$B.log(`received ${bytesReceived} of ${__classPrivateFieldGet(this, _FileTransferManager_length, "f")} bytes (${progress * 100}%)`);
+    _console$C.log(`received ${bytesReceived} of ${__classPrivateFieldGet(this, _FileTransferManager_length, "f")} bytes (${progress * 100}%)`);
     __classPrivateFieldGet(this, _FileTransferManager_instances, "a", _FileTransferManager_dispatchEvent_get).call(this, "fileTransferProgress", { progress });
     if (bytesReceived != __classPrivateFieldGet(this, _FileTransferManager_length, "f")) {
         const dataView = new DataView(new ArrayBuffer(4));
@@ -847,7 +847,7 @@ _a$7 = FileTransferManager, _FileTransferManager_fileTypes = new WeakMap(), _Fil
         ]);
         return;
     }
-    _console$B.log("file transfer complete");
+    _console$C.log("file transfer complete");
     let fileName = new Date().toLocaleString();
     switch (this.type) {
         case "tflite":
@@ -869,12 +869,12 @@ _a$7 = FileTransferManager, _FileTransferManager_fileTypes = new WeakMap(), _Fil
     }
     const arrayBuffer = await file.arrayBuffer();
     const checksum = crc32(arrayBuffer);
-    _console$B.log({ checksum });
+    _console$C.log({ checksum });
     if (checksum != __classPrivateFieldGet(this, _FileTransferManager_checksum, "f")) {
-        _console$B.error(`wrong checksum - expected ${__classPrivateFieldGet(this, _FileTransferManager_checksum, "f")}, got ${checksum}`);
+        _console$C.error(`wrong checksum - expected ${__classPrivateFieldGet(this, _FileTransferManager_checksum, "f")}, got ${checksum}`);
         return;
     }
-    _console$B.log("received file", file);
+    _console$C.log("received file", file);
     __classPrivateFieldGet(this, _FileTransferManager_instances, "a", _FileTransferManager_dispatchEvent_get).call(this, "getFileBlock", { fileTransferBlock: dataView });
     __classPrivateFieldGet(this, _FileTransferManager_instances, "a", _FileTransferManager_dispatchEvent_get).call(this, "fileTransferComplete", { direction: "receiving" });
     __classPrivateFieldGet(this, _FileTransferManager_instances, "a", _FileTransferManager_dispatchEvent_get).call(this, "fileReceived", { file });
@@ -887,25 +887,25 @@ _a$7 = FileTransferManager, _FileTransferManager_fileTypes = new WeakMap(), _Fil
         return;
     }
     if (__classPrivateFieldGet(this, _FileTransferManager_isCancelling, "f")) {
-        _console$B.error("not sending block - busy cancelling");
+        _console$C.error("not sending block - busy cancelling");
         return;
     }
     if (!__classPrivateFieldGet(this, _FileTransferManager_buffer, "f")) {
         if (!this.isServerSide) {
-            _console$B.error("no buffer defined");
+            _console$C.error("no buffer defined");
         }
         return;
     }
     const buffer = __classPrivateFieldGet(this, _FileTransferManager_buffer, "f");
     let offset = __classPrivateFieldGet(this, _FileTransferManager_bytesTransferred, "f");
     const slicedBuffer = buffer.slice(offset, offset + (this.mtu - 3 - 3));
-    _console$B.log("slicedBuffer", slicedBuffer);
+    _console$C.log("slicedBuffer", slicedBuffer);
     const bytesLeft = buffer.byteLength - offset;
     const progress = 1 - bytesLeft / buffer.byteLength;
-    _console$B.log(`sending bytes ${offset}-${offset + slicedBuffer.byteLength} of ${buffer.byteLength} bytes (${progress * 100}%)`);
+    _console$C.log(`sending bytes ${offset}-${offset + slicedBuffer.byteLength} of ${buffer.byteLength} bytes (${progress * 100}%)`);
     __classPrivateFieldGet(this, _FileTransferManager_instances, "a", _FileTransferManager_dispatchEvent_get).call(this, "fileTransferProgress", { progress });
     if (slicedBuffer.byteLength == 0) {
-        _console$B.log("finished sending buffer");
+        _console$C.log("finished sending buffer");
         __classPrivateFieldGet(this, _FileTransferManager_instances, "a", _FileTransferManager_dispatchEvent_get).call(this, "fileTransferComplete", { direction: "sending" });
     }
     else {
@@ -913,15 +913,15 @@ _a$7 = FileTransferManager, _FileTransferManager_fileTypes = new WeakMap(), _Fil
         __classPrivateFieldSet(this, _FileTransferManager_bytesTransferred, offset + slicedBuffer.byteLength, "f");
     }
 }, _FileTransferManager_parseBytesTransferred = async function _FileTransferManager_parseBytesTransferred(dataView) {
-    _console$B.log("parseBytesTransferred", dataView);
+    _console$C.log("parseBytesTransferred", dataView);
     const bytesTransferred = dataView.getUint32(0, true);
-    _console$B.log({ bytesTransferred });
+    _console$C.log({ bytesTransferred });
     if (this.status != "sending") {
-        _console$B.error(`not currently sending file`);
+        _console$C.error(`not currently sending file`);
         return;
     }
     if (!this.isServerSide && __classPrivateFieldGet(this, _FileTransferManager_bytesTransferred, "f") != bytesTransferred) {
-        _console$B.error(`bytesTransferred are not equal - got ${bytesTransferred}, expected ${__classPrivateFieldGet(this, _FileTransferManager_bytesTransferred, "f")}`);
+        _console$C.error(`bytesTransferred are not equal - got ${bytesTransferred}, expected ${__classPrivateFieldGet(this, _FileTransferManager_bytesTransferred, "f")}`);
         this.cancel();
         return;
     }
@@ -929,7 +929,7 @@ _a$7 = FileTransferManager, _FileTransferManager_fileTypes = new WeakMap(), _Fil
 };
 _FileTransferManager_MaxLength = { value: 0 };
 
-const _console$A = createConsole("MathUtils", { log: false });
+const _console$B = createConsole("MathUtils", { log: false });
 function getInterpolation(value, min, max, span) {
     if (span == undefined) {
         span = max - min;
@@ -948,7 +948,7 @@ function parseTimestamp(dataView, byteOffset) {
     const lower2Bytes = dataView.getUint16(byteOffset, true);
     let timestamp = nowWithoutLower2Bytes + lower2Bytes;
     if (Math.abs(now - timestamp) > timestampThreshold) {
-        _console$A.log("correcting timestamp delta");
+        _console$B.log("correcting timestamp delta");
         timestamp += Uint16Max * Math.sign(now - timestamp);
     }
     return timestamp;
@@ -1047,7 +1047,7 @@ function arrayWithoutDuplicates(array) {
 }
 
 var _PressureSensorDataManager_positions, _PressureSensorDataManager_sensorRangeHelpers, _PressureSensorDataManager_normalizedSumRangeHelper, _PressureSensorDataManager_centerOfPressureHelper;
-const _console$z = createConsole("PressureDataManager", { log: false });
+const _console$A = createConsole("PressureDataManager", { log: false });
 const PressureSensorTypes = ["pressure"];
 const ContinuousPressureSensorTypes = PressureSensorTypes;
 const DefaultNumberOfPressureSensors = 8;
@@ -1072,7 +1072,7 @@ class PressureSensorDataManager {
                 y: dataView.getUint8(byteOffset + 1) / 2 ** 8,
             });
         }
-        _console$z.log({ positions });
+        _console$A.log({ positions });
         __classPrivateFieldSet(this, _PressureSensorDataManager_positions, positions, "f");
         __classPrivateFieldSet(this, _PressureSensorDataManager_sensorRangeHelpers, createArray(this.numberOfSensors, () => new RangeHelper()), "f");
         this.resetRange();
@@ -1115,13 +1115,13 @@ class PressureSensorDataManager {
             pressure.normalizedCenter =
                 __classPrivateFieldGet(this, _PressureSensorDataManager_centerOfPressureHelper, "f").updateAndGetNormalization(pressure.center, false);
         }
-        _console$z.log({ pressure });
+        _console$A.log({ pressure });
         return pressure;
     }
 }
 _PressureSensorDataManager_positions = new WeakMap(), _PressureSensorDataManager_sensorRangeHelpers = new WeakMap(), _PressureSensorDataManager_normalizedSumRangeHelper = new WeakMap(), _PressureSensorDataManager_centerOfPressureHelper = new WeakMap();
 
-const _console$y = createConsole("MotionSensorDataManager", { log: false });
+const _console$z = createConsole("MotionSensorDataManager", { log: false });
 const MotionSensorTypes = [
     "acceleration",
     "gravity",
@@ -1170,7 +1170,7 @@ class MotionSensorDataManager {
             dataView.getInt16(4, true),
         ].map((value) => value * scalar);
         const vector = { x, y, z };
-        _console$y.log({ vector });
+        _console$z.log({ vector });
         return vector;
     }
     parseQuaternion(dataView, scalar) {
@@ -1181,7 +1181,7 @@ class MotionSensorDataManager {
             dataView.getInt16(6, true),
         ].map((value) => value * scalar);
         const quaternion = { x, y, z, w };
-        _console$y.log({ quaternion });
+        _console$z.log({ quaternion });
         return quaternion;
     }
     parseEuler(dataView, scalar) {
@@ -1196,32 +1196,32 @@ class MotionSensorDataManager {
             heading += 360;
         }
         const euler = { heading, pitch, roll };
-        _console$y.log({ euler });
+        _console$z.log({ euler });
         return euler;
     }
     parseStepCounter(dataView) {
-        _console$y.log("parseStepCounter", dataView);
+        _console$z.log("parseStepCounter", dataView);
         const stepCount = dataView.getUint32(0, true);
-        _console$y.log({ stepCount });
+        _console$z.log({ stepCount });
         return stepCount;
     }
     parseActivity(dataView) {
-        _console$y.log("parseActivity", dataView);
+        _console$z.log("parseActivity", dataView);
         const activity = {};
         const activityBitfield = dataView.getUint8(0);
-        _console$y.log("activityBitfield", activityBitfield.toString(2));
+        _console$z.log("activityBitfield", activityBitfield.toString(2));
         ActivityTypes.forEach((activityType, index) => {
             activity[activityType] = Boolean(activityBitfield & (1 << index));
         });
-        _console$y.log("activity", activity);
+        _console$z.log("activity", activity);
         return activity;
     }
     parseDeviceOrientation(dataView) {
-        _console$y.log("parseDeviceOrientation", dataView);
+        _console$z.log("parseDeviceOrientation", dataView);
         const index = dataView.getUint8(0);
         const deviceOrientation = DeviceOrientations[index];
-        _console$y.assertWithError(deviceOrientation, "undefined deviceOrientation");
-        _console$y.log({ deviceOrientation });
+        _console$z.assertWithError(deviceOrientation, "undefined deviceOrientation");
+        _console$z.log({ deviceOrientation });
         return deviceOrientation;
     }
 }
@@ -1229,7 +1229,7 @@ class MotionSensorDataManager {
 var _BarometerSensorDataManager_instances, _BarometerSensorDataManager_calculcateAltitude;
 const BarometerSensorTypes = ["barometer"];
 const ContinuousBarometerSensorTypes = BarometerSensorTypes;
-const _console$x = createConsole("BarometerSensorDataManager", { log: false });
+const _console$y = createConsole("BarometerSensorDataManager", { log: false });
 class BarometerSensorDataManager {
     constructor() {
         _BarometerSensorDataManager_instances.add(this);
@@ -1237,7 +1237,7 @@ class BarometerSensorDataManager {
     parseData(dataView, scalar) {
         const pressure = dataView.getUint32(0, true) * scalar;
         const altitude = __classPrivateFieldGet(this, _BarometerSensorDataManager_instances, "m", _BarometerSensorDataManager_calculcateAltitude).call(this, pressure);
-        _console$x.log({ pressure, altitude });
+        _console$y.log({ pressure, altitude });
         return { pressure };
     }
 }
@@ -1253,7 +1253,7 @@ _BarometerSensorDataManager_instances = new WeakSet(), _BarometerSensorDataManag
     return h;
 };
 
-const _console$w = createConsole("ParseUtils", { log: false });
+const _console$x = createConsole("ParseUtils", { log: false });
 function parseStringFromDataView(dataView, byteOffset = 0) {
     const stringLength = dataView.getUint8(byteOffset++);
     const string = textDecoder.decode(dataView.buffer.slice(dataView.byteOffset + byteOffset, dataView.byteOffset + byteOffset + stringLength));
@@ -1264,7 +1264,7 @@ function parseMessage(dataView, messageTypes, callback, context, parseMessageLen
     let byteOffset = 0;
     while (byteOffset < dataView.byteLength) {
         const messageTypeEnum = dataView.getUint8(byteOffset++);
-        _console$w.assertWithError(messageTypeEnum in messageTypes, `invalid messageTypeEnum ${messageTypeEnum}`);
+        _console$x.assertWithError(messageTypeEnum in messageTypes, `invalid messageTypeEnum ${messageTypeEnum}`);
         const messageType = messageTypes[messageTypeEnum];
         let messageLength;
         if (parseMessageLengthAsUint16) {
@@ -1274,7 +1274,7 @@ function parseMessage(dataView, messageTypes, callback, context, parseMessageLen
         else {
             messageLength = dataView.getUint8(byteOffset++);
         }
-        _console$w.log({
+        _console$x.log({
             messageTypeEnum,
             messageType,
             messageLength,
@@ -1282,14 +1282,14 @@ function parseMessage(dataView, messageTypes, callback, context, parseMessageLen
             byteOffset,
         });
         const _dataView = sliceDataView(dataView, byteOffset, messageLength);
-        _console$w.log({ _dataView });
+        _console$x.log({ _dataView });
         callback(messageType, _dataView, context);
         byteOffset += messageLength;
     }
 }
 
-var _CameraManager_instances, _a$6, _CameraManager_dispatchEvent_get, _CameraManager_cameraStatus, _CameraManager_parseCameraStatus, _CameraManager_updateCameraStatus, _CameraManager_sendCameraCommand, _CameraManager_assertIsAsleep, _CameraManager_assertIsAwake, _CameraManager_parseCameraData, _CameraManager_onCameraData, _CameraManager_headerSize, _CameraManager_headerData, _CameraManager_headerProgress, _CameraManager_imageSize, _CameraManager_imageData, _CameraManager_imageProgress, _CameraManager_footerSize, _CameraManager_footerData, _CameraManager_footerProgress, _CameraManager_didBuildImage, _CameraManager_buildImage, _CameraManager_cameraConfiguration, _CameraManager_availableCameraConfigurationTypes, _CameraManager_cameraConfigurationRanges, _CameraManager_parseCameraConfiguration, _CameraManager_isCameraConfigurationRedundant, _CameraManager_assertAvailableCameraConfigurationType, _CameraManager_createData;
-const _console$v = createConsole("CameraManager", { log: false });
+var _CameraManager_instances, _a$7, _CameraManager_dispatchEvent_get, _CameraManager_cameraStatus, _CameraManager_parseCameraStatus, _CameraManager_updateCameraStatus, _CameraManager_sendCameraCommand, _CameraManager_assertIsAsleep, _CameraManager_assertIsAwake, _CameraManager_parseCameraData, _CameraManager_onCameraData, _CameraManager_headerSize, _CameraManager_headerData, _CameraManager_headerProgress, _CameraManager_imageSize, _CameraManager_imageData, _CameraManager_imageProgress, _CameraManager_footerSize, _CameraManager_footerData, _CameraManager_footerProgress, _CameraManager_didBuildImage, _CameraManager_buildImage, _CameraManager_cameraConfiguration, _CameraManager_availableCameraConfigurationTypes, _CameraManager_cameraConfigurationRanges, _CameraManager_parseCameraConfiguration, _CameraManager_isCameraConfigurationRedundant, _CameraManager_assertAvailableCameraConfigurationType, _CameraManager_createData;
+const _console$w = createConsole("CameraManager", { log: false });
 const CameraSensorTypes = ["camera"];
 const CameraCommands = [
     "focus",
@@ -1368,7 +1368,7 @@ class CameraManager {
         return this.eventDispatcher.waitForEvent;
     }
     requestRequiredInformation() {
-        _console$v.log("requesting required camera information");
+        _console$w.log("requesting required camera information");
         const messages = RequiredCameraMessageTypes.map((messageType) => ({
             type: messageType,
         }));
@@ -1407,13 +1407,13 @@ class CameraManager {
         return __classPrivateFieldGet(this, _CameraManager_cameraConfigurationRanges, "f");
     }
     async setCameraConfiguration(newCameraConfiguration) {
-        _console$v.log({ newCameraConfiguration });
+        _console$w.log({ newCameraConfiguration });
         if (__classPrivateFieldGet(this, _CameraManager_instances, "m", _CameraManager_isCameraConfigurationRedundant).call(this, newCameraConfiguration)) {
-            _console$v.log("redundant camera configuration");
+            _console$w.log("redundant camera configuration");
             return;
         }
         const setCameraConfigurationData = __classPrivateFieldGet(this, _CameraManager_instances, "m", _CameraManager_createData).call(this, newCameraConfiguration);
-        _console$v.log({ setCameraConfigurationData });
+        _console$w.log({ setCameraConfigurationData });
         const promise = this.waitForEvent("getCameraConfiguration");
         this.sendMessage([
             {
@@ -1424,14 +1424,14 @@ class CameraManager {
         await promise;
     }
     static AssertValidCameraConfigurationType(cameraConfigurationType) {
-        _console$v.assertEnumWithError(cameraConfigurationType, CameraConfigurationTypes);
+        _console$w.assertEnumWithError(cameraConfigurationType, CameraConfigurationTypes);
     }
     static AssertValidCameraConfigurationTypeEnum(cameraConfigurationTypeEnum) {
-        _console$v.assertTypeWithError(cameraConfigurationTypeEnum, "number");
-        _console$v.assertWithError(cameraConfigurationTypeEnum in CameraConfigurationTypes, `invalid cameraConfigurationTypeEnum ${cameraConfigurationTypeEnum}`);
+        _console$w.assertTypeWithError(cameraConfigurationTypeEnum, "number");
+        _console$w.assertWithError(cameraConfigurationTypeEnum in CameraConfigurationTypes, `invalid cameraConfigurationTypeEnum ${cameraConfigurationTypeEnum}`);
     }
     parseMessage(messageType, dataView) {
-        _console$v.log({ messageType, dataView });
+        _console$w.log({ messageType, dataView });
         switch (messageType) {
             case "cameraStatus":
                 __classPrivateFieldGet(this, _CameraManager_instances, "m", _CameraManager_parseCameraStatus).call(this, dataView);
@@ -1454,21 +1454,21 @@ class CameraManager {
         __classPrivateFieldSet(this, _CameraManager_footerProgress, 0, "f");
     }
 }
-_a$6 = CameraManager, _CameraManager_cameraStatus = new WeakMap(), _CameraManager_headerSize = new WeakMap(), _CameraManager_headerData = new WeakMap(), _CameraManager_headerProgress = new WeakMap(), _CameraManager_imageSize = new WeakMap(), _CameraManager_imageData = new WeakMap(), _CameraManager_imageProgress = new WeakMap(), _CameraManager_footerSize = new WeakMap(), _CameraManager_footerData = new WeakMap(), _CameraManager_footerProgress = new WeakMap(), _CameraManager_didBuildImage = new WeakMap(), _CameraManager_cameraConfiguration = new WeakMap(), _CameraManager_availableCameraConfigurationTypes = new WeakMap(), _CameraManager_cameraConfigurationRanges = new WeakMap(), _CameraManager_instances = new WeakSet(), _CameraManager_dispatchEvent_get = function _CameraManager_dispatchEvent_get() {
+_a$7 = CameraManager, _CameraManager_cameraStatus = new WeakMap(), _CameraManager_headerSize = new WeakMap(), _CameraManager_headerData = new WeakMap(), _CameraManager_headerProgress = new WeakMap(), _CameraManager_imageSize = new WeakMap(), _CameraManager_imageData = new WeakMap(), _CameraManager_imageProgress = new WeakMap(), _CameraManager_footerSize = new WeakMap(), _CameraManager_footerData = new WeakMap(), _CameraManager_footerProgress = new WeakMap(), _CameraManager_didBuildImage = new WeakMap(), _CameraManager_cameraConfiguration = new WeakMap(), _CameraManager_availableCameraConfigurationTypes = new WeakMap(), _CameraManager_cameraConfigurationRanges = new WeakMap(), _CameraManager_instances = new WeakSet(), _CameraManager_dispatchEvent_get = function _CameraManager_dispatchEvent_get() {
     return this.eventDispatcher.dispatchEvent;
 }, _CameraManager_parseCameraStatus = function _CameraManager_parseCameraStatus(dataView) {
     const cameraStatusIndex = dataView.getUint8(0);
     const newCameraStatus = CameraStatuses[cameraStatusIndex];
     __classPrivateFieldGet(this, _CameraManager_instances, "m", _CameraManager_updateCameraStatus).call(this, newCameraStatus);
 }, _CameraManager_updateCameraStatus = function _CameraManager_updateCameraStatus(newCameraStatus) {
-    _console$v.assertEnumWithError(newCameraStatus, CameraStatuses);
+    _console$w.assertEnumWithError(newCameraStatus, CameraStatuses);
     if (newCameraStatus == __classPrivateFieldGet(this, _CameraManager_cameraStatus, "f")) {
-        _console$v.log(`redundant cameraStatus ${newCameraStatus}`);
+        _console$w.log(`redundant cameraStatus ${newCameraStatus}`);
         return;
     }
     const previousCameraStatus = __classPrivateFieldGet(this, _CameraManager_cameraStatus, "f");
     __classPrivateFieldSet(this, _CameraManager_cameraStatus, newCameraStatus, "f");
-    _console$v.log(`updated cameraStatus to "${this.cameraStatus}"`);
+    _console$w.log(`updated cameraStatus to "${this.cameraStatus}"`);
     __classPrivateFieldGet(this, _CameraManager_instances, "a", _CameraManager_dispatchEvent_get).call(this, "cameraStatus", {
         cameraStatus: this.cameraStatus,
         previousCameraStatus,
@@ -1480,10 +1480,10 @@ _a$6 = CameraManager, _CameraManager_cameraStatus = new WeakMap(), _CameraManage
     }
 }, _CameraManager_sendCameraCommand =
 async function _CameraManager_sendCameraCommand(command, sendImmediately) {
-    _console$v.assertEnumWithError(command, CameraCommands);
-    _console$v.log(`sending camera command "${command}"`);
+    _console$w.assertEnumWithError(command, CameraCommands);
+    _console$w.log(`sending camera command "${command}"`);
     const promise = this.waitForEvent("cameraStatus");
-    _console$v.log(`setting command "${command}"`);
+    _console$w.log(`setting command "${command}"`);
     const commandEnum = CameraCommands.indexOf(command);
     this.sendMessage([
         {
@@ -1493,74 +1493,74 @@ async function _CameraManager_sendCameraCommand(command, sendImmediately) {
     ], sendImmediately);
     await promise;
 }, _CameraManager_assertIsAsleep = function _CameraManager_assertIsAsleep() {
-    _console$v.assertWithError(__classPrivateFieldGet(this, _CameraManager_cameraStatus, "f") == "asleep", `camera is not asleep - currently ${__classPrivateFieldGet(this, _CameraManager_cameraStatus, "f")}`);
+    _console$w.assertWithError(__classPrivateFieldGet(this, _CameraManager_cameraStatus, "f") == "asleep", `camera is not asleep - currently ${__classPrivateFieldGet(this, _CameraManager_cameraStatus, "f")}`);
 }, _CameraManager_assertIsAwake = function _CameraManager_assertIsAwake() {
-    _console$v.assertWithError(__classPrivateFieldGet(this, _CameraManager_cameraStatus, "f") != "asleep", `camera is not awake - currently ${__classPrivateFieldGet(this, _CameraManager_cameraStatus, "f")}`);
+    _console$w.assertWithError(__classPrivateFieldGet(this, _CameraManager_cameraStatus, "f") != "asleep", `camera is not awake - currently ${__classPrivateFieldGet(this, _CameraManager_cameraStatus, "f")}`);
 }, _CameraManager_parseCameraData = function _CameraManager_parseCameraData(dataView) {
-    _console$v.log("parsing camera data", dataView);
+    _console$w.log("parsing camera data", dataView);
     parseMessage(dataView, CameraDataTypes, __classPrivateFieldGet(this, _CameraManager_instances, "m", _CameraManager_onCameraData).bind(this), null, true);
 }, _CameraManager_onCameraData = function _CameraManager_onCameraData(cameraDataType, dataView) {
-    _console$v.log({ cameraDataType, dataView });
+    _console$w.log({ cameraDataType, dataView });
     switch (cameraDataType) {
         case "headerSize":
             __classPrivateFieldSet(this, _CameraManager_headerSize, dataView.getUint16(0, true), "f");
-            _console$v.log({ headerSize: __classPrivateFieldGet(this, _CameraManager_headerSize, "f") });
+            _console$w.log({ headerSize: __classPrivateFieldGet(this, _CameraManager_headerSize, "f") });
             __classPrivateFieldSet(this, _CameraManager_headerData, undefined, "f");
             __classPrivateFieldGet(this, _CameraManager_headerProgress, "f") == 0;
             break;
         case "header":
             __classPrivateFieldSet(this, _CameraManager_headerData, concatenateArrayBuffers(__classPrivateFieldGet(this, _CameraManager_headerData, "f"), dataView), "f");
-            _console$v.log({ headerData: __classPrivateFieldGet(this, _CameraManager_headerData, "f") });
+            _console$w.log({ headerData: __classPrivateFieldGet(this, _CameraManager_headerData, "f") });
             __classPrivateFieldSet(this, _CameraManager_headerProgress, __classPrivateFieldGet(this, _CameraManager_headerData, "f")?.byteLength / __classPrivateFieldGet(this, _CameraManager_headerSize, "f"), "f");
-            _console$v.log({ headerProgress: __classPrivateFieldGet(this, _CameraManager_headerProgress, "f") });
+            _console$w.log({ headerProgress: __classPrivateFieldGet(this, _CameraManager_headerProgress, "f") });
             __classPrivateFieldGet(this, _CameraManager_instances, "a", _CameraManager_dispatchEvent_get).call(this, "cameraImageProgress", {
                 progress: __classPrivateFieldGet(this, _CameraManager_headerProgress, "f"),
                 type: "header",
             });
             if (__classPrivateFieldGet(this, _CameraManager_headerProgress, "f") == 1) {
-                _console$v.log("finished getting header data");
+                _console$w.log("finished getting header data");
             }
             break;
         case "imageSize":
             __classPrivateFieldSet(this, _CameraManager_imageSize, dataView.getUint16(0, true), "f");
-            _console$v.log({ imageSize: __classPrivateFieldGet(this, _CameraManager_imageSize, "f") });
+            _console$w.log({ imageSize: __classPrivateFieldGet(this, _CameraManager_imageSize, "f") });
             __classPrivateFieldSet(this, _CameraManager_imageData, undefined, "f");
             __classPrivateFieldGet(this, _CameraManager_imageProgress, "f") == 0;
             __classPrivateFieldSet(this, _CameraManager_didBuildImage, false, "f");
             break;
         case "image":
             __classPrivateFieldSet(this, _CameraManager_imageData, concatenateArrayBuffers(__classPrivateFieldGet(this, _CameraManager_imageData, "f"), dataView), "f");
-            _console$v.log({ imageData: __classPrivateFieldGet(this, _CameraManager_imageData, "f") });
+            _console$w.log({ imageData: __classPrivateFieldGet(this, _CameraManager_imageData, "f") });
             __classPrivateFieldSet(this, _CameraManager_imageProgress, __classPrivateFieldGet(this, _CameraManager_imageData, "f")?.byteLength / __classPrivateFieldGet(this, _CameraManager_imageSize, "f"), "f");
-            _console$v.log({ imageProgress: __classPrivateFieldGet(this, _CameraManager_imageProgress, "f") });
-            if (__classPrivateFieldGet(this, _CameraManager_imageProgress, "f") == 1) {
-                _console$v.log("finished getting image data");
-                if (__classPrivateFieldGet(this, _CameraManager_headerProgress, "f") == 1) {
-                    __classPrivateFieldGet(this, _CameraManager_instances, "m", _CameraManager_buildImage).call(this);
-                }
-            }
+            _console$w.log({ imageProgress: __classPrivateFieldGet(this, _CameraManager_imageProgress, "f") });
             __classPrivateFieldGet(this, _CameraManager_instances, "a", _CameraManager_dispatchEvent_get).call(this, "cameraImageProgress", {
                 progress: __classPrivateFieldGet(this, _CameraManager_imageProgress, "f"),
                 type: "image",
             });
+            if (__classPrivateFieldGet(this, _CameraManager_imageProgress, "f") == 1) {
+                _console$w.log("finished getting image data");
+                if (__classPrivateFieldGet(this, _CameraManager_headerProgress, "f") == 1) {
+                    __classPrivateFieldGet(this, _CameraManager_instances, "m", _CameraManager_buildImage).call(this);
+                }
+            }
             break;
         case "footerSize":
             __classPrivateFieldSet(this, _CameraManager_footerSize, dataView.getUint16(0, true), "f");
-            _console$v.log({ footerSize: __classPrivateFieldGet(this, _CameraManager_footerSize, "f") });
+            _console$w.log({ footerSize: __classPrivateFieldGet(this, _CameraManager_footerSize, "f") });
             __classPrivateFieldSet(this, _CameraManager_footerData, undefined, "f");
             __classPrivateFieldGet(this, _CameraManager_footerProgress, "f") == 0;
             break;
         case "footer":
             __classPrivateFieldSet(this, _CameraManager_footerData, concatenateArrayBuffers(__classPrivateFieldGet(this, _CameraManager_footerData, "f"), dataView), "f");
-            _console$v.log({ footerData: __classPrivateFieldGet(this, _CameraManager_footerData, "f") });
+            _console$w.log({ footerData: __classPrivateFieldGet(this, _CameraManager_footerData, "f") });
             __classPrivateFieldSet(this, _CameraManager_footerProgress, __classPrivateFieldGet(this, _CameraManager_footerData, "f")?.byteLength / __classPrivateFieldGet(this, _CameraManager_footerSize, "f"), "f");
-            _console$v.log({ footerProgress: __classPrivateFieldGet(this, _CameraManager_footerProgress, "f") });
+            _console$w.log({ footerProgress: __classPrivateFieldGet(this, _CameraManager_footerProgress, "f") });
             __classPrivateFieldGet(this, _CameraManager_instances, "a", _CameraManager_dispatchEvent_get).call(this, "cameraImageProgress", {
                 progress: __classPrivateFieldGet(this, _CameraManager_footerProgress, "f"),
                 type: "footer",
             });
             if (__classPrivateFieldGet(this, _CameraManager_footerProgress, "f") == 1) {
-                _console$v.log("finished getting footer data");
+                _console$w.log("finished getting footer data");
                 if (__classPrivateFieldGet(this, _CameraManager_imageProgress, "f") == 1) {
                     __classPrivateFieldGet(this, _CameraManager_instances, "m", _CameraManager_buildImage).call(this);
                 }
@@ -1568,13 +1568,13 @@ async function _CameraManager_sendCameraCommand(command, sendImmediately) {
             break;
     }
 }, _CameraManager_buildImage = function _CameraManager_buildImage() {
-    _console$v.log("building image...");
+    _console$w.log("building image...");
     const imageData = concatenateArrayBuffers(__classPrivateFieldGet(this, _CameraManager_headerData, "f"), __classPrivateFieldGet(this, _CameraManager_imageData, "f"), __classPrivateFieldGet(this, _CameraManager_footerData, "f"));
-    _console$v.log({ imageData });
+    _console$w.log({ imageData });
     let blob = new Blob([imageData], { type: "image/jpeg" });
-    _console$v.log("created blob", blob);
+    _console$w.log("created blob", blob);
     const url = URL.createObjectURL(blob);
-    _console$v.log("created url", url);
+    _console$w.log("created url", url);
     __classPrivateFieldGet(this, _CameraManager_instances, "a", _CameraManager_dispatchEvent_get).call(this, "cameraImage", { url, blob });
     __classPrivateFieldSet(this, _CameraManager_didBuildImage, true, "f");
 }, _CameraManager_parseCameraConfiguration = function _CameraManager_parseCameraConfiguration(dataView) {
@@ -1583,11 +1583,11 @@ async function _CameraManager_sendCameraCommand(command, sendImmediately) {
     while (byteOffset < dataView.byteLength) {
         const cameraConfigurationTypeIndex = dataView.getUint8(byteOffset++);
         const cameraConfigurationType = CameraConfigurationTypes[cameraConfigurationTypeIndex];
-        _console$v.assertWithError(cameraConfigurationType, `invalid cameraConfigurationTypeIndex ${cameraConfigurationTypeIndex}`);
+        _console$w.assertWithError(cameraConfigurationType, `invalid cameraConfigurationTypeIndex ${cameraConfigurationTypeIndex}`);
         parsedCameraConfiguration[cameraConfigurationType] = dataView.getUint16(byteOffset, true);
         byteOffset += 2;
     }
-    _console$v.log({ parsedCameraConfiguration });
+    _console$w.log({ parsedCameraConfiguration });
     __classPrivateFieldSet(this, _CameraManager_availableCameraConfigurationTypes, Object.keys(parsedCameraConfiguration), "f");
     __classPrivateFieldSet(this, _CameraManager_cameraConfiguration, parsedCameraConfiguration, "f");
     __classPrivateFieldGet(this, _CameraManager_instances, "a", _CameraManager_dispatchEvent_get).call(this, "getCameraConfiguration", {
@@ -1600,20 +1600,426 @@ async function _CameraManager_sendCameraCommand(command, sendImmediately) {
             cameraConfiguration[cameraConfigurationType]);
     });
 }, _CameraManager_assertAvailableCameraConfigurationType = function _CameraManager_assertAvailableCameraConfigurationType(cameraConfigurationType) {
-    _console$v.assertWithError(__classPrivateFieldGet(this, _CameraManager_availableCameraConfigurationTypes, "f"), "must get initial cameraConfiguration");
+    _console$w.assertWithError(__classPrivateFieldGet(this, _CameraManager_availableCameraConfigurationTypes, "f"), "must get initial cameraConfiguration");
     const isCameraConfigurationTypeAvailable = __classPrivateFieldGet(this, _CameraManager_availableCameraConfigurationTypes, "f")?.includes(cameraConfigurationType);
-    _console$v.assertWithError(isCameraConfigurationTypeAvailable, `unavailable camera configuration type "${cameraConfigurationType}"`);
+    _console$w.assertWithError(isCameraConfigurationTypeAvailable, `unavailable camera configuration type "${cameraConfigurationType}"`);
     return isCameraConfigurationTypeAvailable;
 }, _CameraManager_createData = function _CameraManager_createData(cameraConfiguration) {
     let cameraConfigurationTypes = Object.keys(cameraConfiguration);
     cameraConfigurationTypes = cameraConfigurationTypes.filter((cameraConfigurationType) => __classPrivateFieldGet(this, _CameraManager_instances, "m", _CameraManager_assertAvailableCameraConfigurationType).call(this, cameraConfigurationType));
     const dataView = new DataView(new ArrayBuffer(cameraConfigurationTypes.length * 3));
     cameraConfigurationTypes.forEach((cameraConfigurationType, index) => {
-        _a$6.AssertValidCameraConfigurationType(cameraConfigurationType);
+        _a$7.AssertValidCameraConfigurationType(cameraConfigurationType);
         const cameraConfigurationTypeEnum = CameraConfigurationTypes.indexOf(cameraConfigurationType);
         dataView.setUint8(index * 3, cameraConfigurationTypeEnum);
         const value = cameraConfiguration[cameraConfigurationType];
         dataView.setUint16(index * 3 + 1, value, true);
+    });
+    _console$w.log({ sensorConfigurationData: dataView });
+    return dataView;
+};
+
+createConsole("AudioUtils", { log: true });
+function float32ArrayToWav(audioData, sampleRate, numChannels) {
+    const wavBuffer = encodeWAV(audioData, sampleRate, numChannels);
+    return new Blob([wavBuffer], { type: "audio/wav" });
+}
+function encodeWAV(interleaved, sampleRate, numChannels) {
+    const buffer = new ArrayBuffer(44 + interleaved.length * 2);
+    const view = new DataView(buffer);
+    writeString(view, 0, "RIFF");
+    view.setUint32(4, 36 + interleaved.length * 2, true);
+    writeString(view, 8, "WAVE");
+    writeString(view, 12, "fmt ");
+    view.setUint32(16, 16, true);
+    view.setUint16(20, 1, true);
+    view.setUint16(22, numChannels, true);
+    view.setUint32(24, sampleRate, true);
+    view.setUint32(28, sampleRate * numChannels * 2, true);
+    view.setUint16(32, numChannels * 2, true);
+    view.setUint16(34, 16, true);
+    writeString(view, 36, "data");
+    view.setUint32(40, interleaved.length * 2, true);
+    for (let i = 0; i < interleaved.length; i++) {
+        view.setInt16(44 + i * 2, interleaved[i] * 0x7fff, true);
+    }
+    return buffer;
+}
+function writeString(view, offset, string) {
+    for (let i = 0; i < string.length; i++) {
+        view.setUint8(offset + i, string.charCodeAt(i));
+    }
+}
+
+var _MicrophoneManager_instances, _a$6, _MicrophoneManager_dispatchEvent_get, _MicrophoneManager_microphoneStatus, _MicrophoneManager_parseMicrophoneStatus, _MicrophoneManager_updateMicrophoneStatus, _MicrophoneManager_sendMicrophoneCommand, _MicrophoneManager_assertIsNotIdle, _MicrophoneManager_assertValidBitDepth, _MicrophoneManager_fadeDuration, _MicrophoneManager_playbackTime, _MicrophoneManager_parseMicrophoneData, _MicrophoneManager_bytesPerSample_get, _MicrophoneManager_microphoneConfiguration, _MicrophoneManager_availableMicrophoneConfigurationTypes, _MicrophoneManager_parseMicrophoneConfiguration, _MicrophoneManager_isMicrophoneConfigurationRedundant, _MicrophoneManager_assertAvailableMicrophoneConfigurationType, _MicrophoneManager_createData, _MicrophoneManager_audioContext, _MicrophoneManager_gainNode, _MicrophoneManager_mediaStreamDestination, _MicrophoneManager_isRecording, _MicrophoneManager_microphoneRecordingData;
+const _console$v = createConsole("MicrophoneManager", { log: false });
+const MicrophoneSensorTypes = ["microphone"];
+const MicrophoneCommands = ["start", "stop", "vad"];
+const MicrophoneStatuses = ["idle", "streaming", "vad"];
+const MicrophoneConfigurationTypes = ["sampleRate", "bitDepth"];
+const MicrophoneSampleRates = ["8000", "16000"];
+const MicrophoneBitDepths = ["8", "16"];
+const MicrophoneMessageTypes = [
+    "microphoneStatus",
+    "microphoneCommand",
+    "getMicrophoneConfiguration",
+    "setMicrophoneConfiguration",
+    "microphoneData",
+];
+const MicrophoneConfigurationValues = {
+    sampleRate: MicrophoneSampleRates,
+    bitDepth: MicrophoneBitDepths,
+};
+const RequiredMicrophoneMessageTypes = [
+    "getMicrophoneConfiguration",
+    "microphoneStatus",
+];
+const MicrophoneEventTypes = [
+    ...MicrophoneMessageTypes,
+    "isRecordingMicrophone",
+    "microphoneRecording",
+];
+class MicrophoneManager {
+    constructor() {
+        _MicrophoneManager_instances.add(this);
+        _MicrophoneManager_microphoneStatus.set(this, void 0);
+        _MicrophoneManager_fadeDuration.set(this, 0.001);
+        _MicrophoneManager_playbackTime.set(this, 0);
+        _MicrophoneManager_microphoneConfiguration.set(this, {});
+        _MicrophoneManager_availableMicrophoneConfigurationTypes.set(this, void 0);
+        _MicrophoneManager_audioContext.set(this, void 0);
+        _MicrophoneManager_gainNode.set(this, void 0);
+        _MicrophoneManager_mediaStreamDestination.set(this, void 0);
+        _MicrophoneManager_isRecording.set(this, false);
+        _MicrophoneManager_microphoneRecordingData.set(this, void 0);
+        autoBind$1(this);
+    }
+    get waitForEvent() {
+        return this.eventDispatcher.waitForEvent;
+    }
+    requestRequiredInformation() {
+        _console$v.log("requesting required microphone information");
+        const messages = RequiredMicrophoneMessageTypes.map((messageType) => ({
+            type: messageType,
+        }));
+        this.sendMessage(messages, false);
+    }
+    get microphoneStatus() {
+        return __classPrivateFieldGet(this, _MicrophoneManager_microphoneStatus, "f");
+    }
+    async start() {
+        await __classPrivateFieldGet(this, _MicrophoneManager_instances, "m", _MicrophoneManager_sendMicrophoneCommand).call(this, "start");
+    }
+    async stop() {
+        __classPrivateFieldGet(this, _MicrophoneManager_instances, "m", _MicrophoneManager_assertIsNotIdle).call(this);
+        await __classPrivateFieldGet(this, _MicrophoneManager_instances, "m", _MicrophoneManager_sendMicrophoneCommand).call(this, "stop");
+    }
+    async vad() {
+        await __classPrivateFieldGet(this, _MicrophoneManager_instances, "m", _MicrophoneManager_sendMicrophoneCommand).call(this, "vad");
+    }
+    async toggle() {
+        switch (this.microphoneStatus) {
+            case "idle":
+                this.start();
+                break;
+            case "streaming":
+                this.stop();
+                break;
+        }
+    }
+    get microphoneConfiguration() {
+        return __classPrivateFieldGet(this, _MicrophoneManager_microphoneConfiguration, "f");
+    }
+    get availableMicrophoneConfigurationTypes() {
+        return __classPrivateFieldGet(this, _MicrophoneManager_availableMicrophoneConfigurationTypes, "f");
+    }
+    get bitDepth() {
+        return __classPrivateFieldGet(this, _MicrophoneManager_microphoneConfiguration, "f").bitDepth;
+    }
+    get sampleRate() {
+        return __classPrivateFieldGet(this, _MicrophoneManager_microphoneConfiguration, "f").sampleRate;
+    }
+    async setMicrophoneConfiguration(newMicrophoneConfiguration) {
+        _console$v.log({ newMicrophoneConfiguration });
+        if (__classPrivateFieldGet(this, _MicrophoneManager_instances, "m", _MicrophoneManager_isMicrophoneConfigurationRedundant).call(this, newMicrophoneConfiguration)) {
+            _console$v.log("redundant microphone configuration");
+            return;
+        }
+        const setMicrophoneConfigurationData = __classPrivateFieldGet(this, _MicrophoneManager_instances, "m", _MicrophoneManager_createData).call(this, newMicrophoneConfiguration);
+        _console$v.log({ setMicrophoneConfigurationData });
+        const promise = this.waitForEvent("getMicrophoneConfiguration");
+        this.sendMessage([
+            {
+                type: "setMicrophoneConfiguration",
+                data: setMicrophoneConfigurationData.buffer,
+            },
+        ]);
+        await promise;
+    }
+    static AssertValidMicrophoneConfigurationType(microphoneConfigurationType) {
+        _console$v.assertEnumWithError(microphoneConfigurationType, MicrophoneConfigurationTypes);
+    }
+    static AssertValidMicrophoneConfigurationTypeEnum(microphoneConfigurationTypeEnum) {
+        _console$v.assertTypeWithError(microphoneConfigurationTypeEnum, "number");
+        _console$v.assertWithError(microphoneConfigurationTypeEnum in MicrophoneConfigurationTypes, `invalid microphoneConfigurationTypeEnum ${microphoneConfigurationTypeEnum}`);
+    }
+    parseMessage(messageType, dataView) {
+        _console$v.log({ messageType, dataView });
+        switch (messageType) {
+            case "microphoneStatus":
+                __classPrivateFieldGet(this, _MicrophoneManager_instances, "m", _MicrophoneManager_parseMicrophoneStatus).call(this, dataView);
+                break;
+            case "getMicrophoneConfiguration":
+            case "setMicrophoneConfiguration":
+                __classPrivateFieldGet(this, _MicrophoneManager_instances, "m", _MicrophoneManager_parseMicrophoneConfiguration).call(this, dataView);
+                break;
+            case "microphoneData":
+                __classPrivateFieldGet(this, _MicrophoneManager_instances, "m", _MicrophoneManager_parseMicrophoneData).call(this, dataView);
+                break;
+            default:
+                throw Error(`uncaught messageType ${messageType}`);
+        }
+    }
+    get audioContext() {
+        return __classPrivateFieldGet(this, _MicrophoneManager_audioContext, "f");
+    }
+    set audioContext(newAudioContext) {
+        if (__classPrivateFieldGet(this, _MicrophoneManager_audioContext, "f") == newAudioContext) {
+            _console$v.log("redundant audioContext assignment", __classPrivateFieldGet(this, _MicrophoneManager_audioContext, "f"));
+            return;
+        }
+        __classPrivateFieldSet(this, _MicrophoneManager_audioContext, newAudioContext, "f");
+        _console$v.log("assigned new audioContext", __classPrivateFieldGet(this, _MicrophoneManager_audioContext, "f"));
+        if (__classPrivateFieldGet(this, _MicrophoneManager_audioContext, "f")) {
+            __classPrivateFieldSet(this, _MicrophoneManager_playbackTime, __classPrivateFieldGet(this, _MicrophoneManager_audioContext, "f").currentTime, "f");
+        }
+        else {
+            if (__classPrivateFieldGet(this, _MicrophoneManager_mediaStreamDestination, "f")) {
+                __classPrivateFieldGet(this, _MicrophoneManager_mediaStreamDestination, "f").disconnect();
+                __classPrivateFieldSet(this, _MicrophoneManager_mediaStreamDestination, undefined, "f");
+            }
+            if (__classPrivateFieldGet(this, _MicrophoneManager_gainNode, "f")) {
+                __classPrivateFieldGet(this, _MicrophoneManager_gainNode, "f").disconnect();
+                __classPrivateFieldSet(this, _MicrophoneManager_gainNode, undefined, "f");
+            }
+        }
+    }
+    get gainNode() {
+        _console$v.assertWithError(__classPrivateFieldGet(this, _MicrophoneManager_audioContext, "f"), "audioContext assignment required for gainNode");
+        if (!__classPrivateFieldGet(this, _MicrophoneManager_gainNode, "f")) {
+            _console$v.log("creating gainNode...");
+            __classPrivateFieldSet(this, _MicrophoneManager_gainNode, __classPrivateFieldGet(this, _MicrophoneManager_audioContext, "f").createGain(), "f");
+            _console$v.log("created gainNode", __classPrivateFieldGet(this, _MicrophoneManager_gainNode, "f"));
+        }
+        return __classPrivateFieldGet(this, _MicrophoneManager_gainNode, "f");
+    }
+    get mediaStreamDestination() {
+        _console$v.assertWithError(__classPrivateFieldGet(this, _MicrophoneManager_audioContext, "f"), "audioContext assignment required for mediaStreamDestination");
+        if (!__classPrivateFieldGet(this, _MicrophoneManager_mediaStreamDestination, "f")) {
+            _console$v.log("creating mediaStreamDestination...");
+            __classPrivateFieldSet(this, _MicrophoneManager_mediaStreamDestination, __classPrivateFieldGet(this, _MicrophoneManager_audioContext, "f").createMediaStreamDestination(), "f");
+            this.gainNode?.connect(__classPrivateFieldGet(this, _MicrophoneManager_mediaStreamDestination, "f"));
+            _console$v.log("created mediaStreamDestination", __classPrivateFieldGet(this, _MicrophoneManager_mediaStreamDestination, "f"));
+        }
+        return __classPrivateFieldGet(this, _MicrophoneManager_mediaStreamDestination, "f");
+    }
+    get isRecording() {
+        return __classPrivateFieldGet(this, _MicrophoneManager_isRecording, "f");
+    }
+    startRecording() {
+        if (this.isRecording) {
+            _console$v.log("already recording");
+            return;
+        }
+        __classPrivateFieldSet(this, _MicrophoneManager_microphoneRecordingData, [], "f");
+        __classPrivateFieldSet(this, _MicrophoneManager_isRecording, true, "f");
+        __classPrivateFieldGet(this, _MicrophoneManager_instances, "a", _MicrophoneManager_dispatchEvent_get).call(this, "isRecordingMicrophone", {
+            isRecordingMicrophone: this.isRecording,
+        });
+    }
+    stopRecording() {
+        if (!this.isRecording) {
+            _console$v.log("already not recording");
+            return;
+        }
+        __classPrivateFieldSet(this, _MicrophoneManager_isRecording, false, "f");
+        if (__classPrivateFieldGet(this, _MicrophoneManager_microphoneRecordingData, "f") &&
+            __classPrivateFieldGet(this, _MicrophoneManager_microphoneRecordingData, "f").length > 0) {
+            _console$v.log("parsing microphone data...", __classPrivateFieldGet(this, _MicrophoneManager_microphoneRecordingData, "f").length);
+            const arrayBuffer = concatenateArrayBuffers(...__classPrivateFieldGet(this, _MicrophoneManager_microphoneRecordingData, "f"));
+            const samples = new Float32Array(arrayBuffer);
+            const blob = float32ArrayToWav(samples, Number(this.sampleRate), 1);
+            const url = URL.createObjectURL(blob);
+            __classPrivateFieldGet(this, _MicrophoneManager_instances, "a", _MicrophoneManager_dispatchEvent_get).call(this, "microphoneRecording", {
+                samples,
+                sampleRate: this.sampleRate,
+                bitDepth: this.bitDepth,
+                blob,
+                url,
+            });
+        }
+        __classPrivateFieldSet(this, _MicrophoneManager_microphoneRecordingData, undefined, "f");
+        __classPrivateFieldGet(this, _MicrophoneManager_instances, "a", _MicrophoneManager_dispatchEvent_get).call(this, "isRecordingMicrophone", {
+            isRecordingMicrophone: this.isRecording,
+        });
+    }
+    toggleRecording() {
+        if (__classPrivateFieldGet(this, _MicrophoneManager_isRecording, "f")) {
+            this.stopRecording();
+        }
+        else {
+            this.startRecording();
+        }
+    }
+    clear() {
+        __classPrivateFieldSet(this, _MicrophoneManager_microphoneStatus, undefined, "f");
+        __classPrivateFieldSet(this, _MicrophoneManager_microphoneConfiguration, {}, "f");
+        if (this.isRecording) {
+            this.stopRecording();
+        }
+    }
+}
+_a$6 = MicrophoneManager, _MicrophoneManager_microphoneStatus = new WeakMap(), _MicrophoneManager_fadeDuration = new WeakMap(), _MicrophoneManager_playbackTime = new WeakMap(), _MicrophoneManager_microphoneConfiguration = new WeakMap(), _MicrophoneManager_availableMicrophoneConfigurationTypes = new WeakMap(), _MicrophoneManager_audioContext = new WeakMap(), _MicrophoneManager_gainNode = new WeakMap(), _MicrophoneManager_mediaStreamDestination = new WeakMap(), _MicrophoneManager_isRecording = new WeakMap(), _MicrophoneManager_microphoneRecordingData = new WeakMap(), _MicrophoneManager_instances = new WeakSet(), _MicrophoneManager_dispatchEvent_get = function _MicrophoneManager_dispatchEvent_get() {
+    return this.eventDispatcher.dispatchEvent;
+}, _MicrophoneManager_parseMicrophoneStatus = function _MicrophoneManager_parseMicrophoneStatus(dataView) {
+    const microphoneStatusIndex = dataView.getUint8(0);
+    const newMicrophoneStatus = MicrophoneStatuses[microphoneStatusIndex];
+    __classPrivateFieldGet(this, _MicrophoneManager_instances, "m", _MicrophoneManager_updateMicrophoneStatus).call(this, newMicrophoneStatus);
+}, _MicrophoneManager_updateMicrophoneStatus = function _MicrophoneManager_updateMicrophoneStatus(newMicrophoneStatus) {
+    _console$v.assertEnumWithError(newMicrophoneStatus, MicrophoneStatuses);
+    if (newMicrophoneStatus == __classPrivateFieldGet(this, _MicrophoneManager_microphoneStatus, "f")) {
+        _console$v.log(`redundant microphoneStatus ${newMicrophoneStatus}`);
+        return;
+    }
+    const previousMicrophoneStatus = __classPrivateFieldGet(this, _MicrophoneManager_microphoneStatus, "f");
+    __classPrivateFieldSet(this, _MicrophoneManager_microphoneStatus, newMicrophoneStatus, "f");
+    _console$v.log(`updated microphoneStatus to "${this.microphoneStatus}"`);
+    __classPrivateFieldGet(this, _MicrophoneManager_instances, "a", _MicrophoneManager_dispatchEvent_get).call(this, "microphoneStatus", {
+        microphoneStatus: this.microphoneStatus,
+        previousMicrophoneStatus,
+    });
+}, _MicrophoneManager_sendMicrophoneCommand =
+async function _MicrophoneManager_sendMicrophoneCommand(command, sendImmediately) {
+    _console$v.assertEnumWithError(command, MicrophoneCommands);
+    _console$v.log(`sending microphone command "${command}"`);
+    const promise = this.waitForEvent("microphoneStatus");
+    _console$v.log(`setting command "${command}"`);
+    const commandEnum = MicrophoneCommands.indexOf(command);
+    this.sendMessage([
+        {
+            type: "microphoneCommand",
+            data: Uint8Array.from([commandEnum]).buffer,
+        },
+    ], sendImmediately);
+    await promise;
+}, _MicrophoneManager_assertIsNotIdle = function _MicrophoneManager_assertIsNotIdle() {
+    _console$v.assertWithError(__classPrivateFieldGet(this, _MicrophoneManager_microphoneStatus, "f") != "idle", `microphone is idle`);
+}, _MicrophoneManager_assertValidBitDepth = function _MicrophoneManager_assertValidBitDepth() {
+    _console$v.assertEnumWithError(this.bitDepth, MicrophoneBitDepths);
+}, _MicrophoneManager_parseMicrophoneData = function _MicrophoneManager_parseMicrophoneData(dataView) {
+    __classPrivateFieldGet(this, _MicrophoneManager_instances, "m", _MicrophoneManager_assertValidBitDepth).call(this);
+    _console$v.log("parsing microphone data", dataView);
+    const numberOfSamples = dataView.byteLength / __classPrivateFieldGet(this, _MicrophoneManager_instances, "a", _MicrophoneManager_bytesPerSample_get);
+    const samples = new Float32Array(numberOfSamples);
+    for (let i = 0; i < numberOfSamples; i++) {
+        let sample;
+        switch (this.bitDepth) {
+            case "16":
+                sample = dataView.getInt16(i * 2, true);
+                samples[i] = sample / 2 ** 15;
+                break;
+            case "8":
+                sample = dataView.getInt8(i);
+                samples[i] = sample / 2 ** 7;
+                break;
+        }
+    }
+    _console$v.log("samples", samples);
+    if (__classPrivateFieldGet(this, _MicrophoneManager_isRecording, "f") && __classPrivateFieldGet(this, _MicrophoneManager_microphoneRecordingData, "f")) {
+        __classPrivateFieldGet(this, _MicrophoneManager_microphoneRecordingData, "f").push(samples);
+    }
+    if (__classPrivateFieldGet(this, _MicrophoneManager_audioContext, "f")) {
+        if (__classPrivateFieldGet(this, _MicrophoneManager_gainNode, "f")) {
+            const audioBuffer = __classPrivateFieldGet(this, _MicrophoneManager_audioContext, "f").createBuffer(1, samples.length, Number(this.sampleRate));
+            audioBuffer.getChannelData(0).set(samples);
+            const bufferSource = __classPrivateFieldGet(this, _MicrophoneManager_audioContext, "f").createBufferSource();
+            bufferSource.buffer = audioBuffer;
+            const channelData = audioBuffer.getChannelData(0);
+            const sampleRate = Number(this.sampleRate);
+            for (let i = 0; i < __classPrivateFieldGet(this, _MicrophoneManager_fadeDuration, "f") * sampleRate; i++) {
+                channelData[i] *= i / (__classPrivateFieldGet(this, _MicrophoneManager_fadeDuration, "f") * sampleRate);
+            }
+            for (let i = channelData.length - 1; i >= channelData.length - __classPrivateFieldGet(this, _MicrophoneManager_fadeDuration, "f") * sampleRate; i--) {
+                channelData[i] *=
+                    (channelData.length - i) / (__classPrivateFieldGet(this, _MicrophoneManager_fadeDuration, "f") * sampleRate);
+            }
+            bufferSource.connect(__classPrivateFieldGet(this, _MicrophoneManager_gainNode, "f"));
+            if (__classPrivateFieldGet(this, _MicrophoneManager_playbackTime, "f") < __classPrivateFieldGet(this, _MicrophoneManager_audioContext, "f").currentTime) {
+                __classPrivateFieldSet(this, _MicrophoneManager_playbackTime, __classPrivateFieldGet(this, _MicrophoneManager_audioContext, "f").currentTime, "f");
+            }
+            bufferSource.start(__classPrivateFieldGet(this, _MicrophoneManager_playbackTime, "f"));
+            __classPrivateFieldSet(this, _MicrophoneManager_playbackTime, __classPrivateFieldGet(this, _MicrophoneManager_playbackTime, "f") + audioBuffer.duration, "f");
+        }
+    }
+    __classPrivateFieldGet(this, _MicrophoneManager_instances, "a", _MicrophoneManager_dispatchEvent_get).call(this, "microphoneData", {
+        samples,
+        sampleRate: this.sampleRate,
+        bitDepth: this.bitDepth,
+    });
+}, _MicrophoneManager_bytesPerSample_get = function _MicrophoneManager_bytesPerSample_get() {
+    switch (this.bitDepth) {
+        case "8":
+            return 1;
+        case "16":
+            return 2;
+    }
+}, _MicrophoneManager_parseMicrophoneConfiguration = function _MicrophoneManager_parseMicrophoneConfiguration(dataView) {
+    const parsedMicrophoneConfiguration = {};
+    let byteOffset = 0;
+    while (byteOffset < dataView.byteLength) {
+        const microphoneConfigurationTypeIndex = dataView.getUint8(byteOffset++);
+        const microphoneConfigurationType = MicrophoneConfigurationTypes[microphoneConfigurationTypeIndex];
+        _console$v.assertWithError(microphoneConfigurationType, `invalid microphoneConfigurationTypeIndex ${microphoneConfigurationTypeIndex}`);
+        let rawValue = dataView.getUint8(byteOffset++);
+        const values = MicrophoneConfigurationValues[microphoneConfigurationType];
+        const value = values[rawValue];
+        _console$v.assertEnumWithError(value, values);
+        _console$v.log({ microphoneConfigurationType, value });
+        parsedMicrophoneConfiguration[microphoneConfigurationType] = value;
+    }
+    _console$v.log({ parsedMicrophoneConfiguration });
+    __classPrivateFieldSet(this, _MicrophoneManager_availableMicrophoneConfigurationTypes, Object.keys(parsedMicrophoneConfiguration), "f");
+    __classPrivateFieldSet(this, _MicrophoneManager_microphoneConfiguration, parsedMicrophoneConfiguration, "f");
+    __classPrivateFieldGet(this, _MicrophoneManager_instances, "a", _MicrophoneManager_dispatchEvent_get).call(this, "getMicrophoneConfiguration", {
+        microphoneConfiguration: __classPrivateFieldGet(this, _MicrophoneManager_microphoneConfiguration, "f"),
+    });
+}, _MicrophoneManager_isMicrophoneConfigurationRedundant = function _MicrophoneManager_isMicrophoneConfigurationRedundant(microphoneConfiguration) {
+    let microphoneConfigurationTypes = Object.keys(microphoneConfiguration);
+    return microphoneConfigurationTypes.every((microphoneConfigurationType) => {
+        return (this.microphoneConfiguration[microphoneConfigurationType] ==
+            microphoneConfiguration[microphoneConfigurationType]);
+    });
+}, _MicrophoneManager_assertAvailableMicrophoneConfigurationType = function _MicrophoneManager_assertAvailableMicrophoneConfigurationType(microphoneConfigurationType) {
+    _console$v.assertWithError(__classPrivateFieldGet(this, _MicrophoneManager_availableMicrophoneConfigurationTypes, "f"), "must get initial microphoneConfiguration");
+    const isMicrophoneConfigurationTypeAvailable = __classPrivateFieldGet(this, _MicrophoneManager_availableMicrophoneConfigurationTypes, "f")?.includes(microphoneConfigurationType);
+    _console$v.assertWithError(isMicrophoneConfigurationTypeAvailable, `unavailable microphone configuration type "${microphoneConfigurationType}"`);
+    return isMicrophoneConfigurationTypeAvailable;
+}, _MicrophoneManager_createData = function _MicrophoneManager_createData(microphoneConfiguration) {
+    let microphoneConfigurationTypes = Object.keys(microphoneConfiguration);
+    microphoneConfigurationTypes = microphoneConfigurationTypes.filter((microphoneConfigurationType) => __classPrivateFieldGet(this, _MicrophoneManager_instances, "m", _MicrophoneManager_assertAvailableMicrophoneConfigurationType).call(this, microphoneConfigurationType));
+    const dataView = new DataView(new ArrayBuffer(microphoneConfigurationTypes.length * 2));
+    microphoneConfigurationTypes.forEach((microphoneConfigurationType, index) => {
+        _a$6.AssertValidMicrophoneConfigurationType(microphoneConfigurationType);
+        const microphoneConfigurationTypeEnum = MicrophoneConfigurationTypes.indexOf(microphoneConfigurationType);
+        dataView.setUint8(index * 2, microphoneConfigurationTypeEnum);
+        let value = microphoneConfiguration[microphoneConfigurationType];
+        if (typeof value == "number") {
+            value = value.toString();
+        }
+        const values = MicrophoneConfigurationValues[microphoneConfigurationType];
+        _console$v.assertEnumWithError(value, values);
+        const rawValue = values.indexOf(value);
+        dataView.setUint8(index * 2 + 1, rawValue);
     });
     _console$v.log({ sensorConfigurationData: dataView });
     return dataView;
@@ -1626,6 +2032,7 @@ const SensorTypes = [
     ...MotionSensorTypes,
     ...BarometerSensorTypes,
     ...CameraSensorTypes,
+    ...MicrophoneSensorTypes,
 ];
 const ContinuousSensorTypes = [
     ...ContinuousPressureSensorTypes,
@@ -1741,6 +2148,8 @@ class SensorDataManager {
                 sensorData = this.barometerSensorDataManager.parseData(dataView, scalar);
                 break;
             case "camera":
+                return;
+            case "microphone":
                 return;
             default:
                 _console$u.error(`uncaught sensorType "${sensorType}"`);
@@ -3294,6 +3703,7 @@ const TxRxMessageTypes = [
     ...TfliteMessageTypes,
     ...WifiMessageTypes,
     ...CameraMessageTypes,
+    ...MicrophoneMessageTypes,
 ];
 const SMPMessageTypes = ["smp"];
 const BatteryLevelMessageTypes = ["batteryLevel"];
@@ -5676,7 +6086,7 @@ _UDPConnectionManager_bluetoothId = new WeakMap(), _UDPConnectionManager_ipAddre
     __classPrivateFieldGet(this, _UDPConnectionManager_instances, "m", _UDPConnectionManager_sendSocketMessage).call(this, ...SocketDeviceInformationMessageTypes);
 };
 
-var _Device_instances, _a$3, _Device_DefaultConnectionManager, _Device_eventDispatcher, _Device_dispatchEvent_get, _Device_connectionManager, _Device_sendTxMessages, _Device_isConnected, _Device_assertIsConnected, _Device_didReceiveMessageTypes, _Device_hasRequiredInformation_get, _Device_requestRequiredInformation, _Device_assertCanReconnect, _Device_ReconnectOnDisconnection, _Device_reconnectOnDisconnection, _Device_reconnectIntervalId, _Device_onConnectionStatusUpdated, _Device_dispatchConnectionEvents, _Device_checkConnection, _Device_clear, _Device_clearConnection, _Device_onConnectionMessageReceived, _Device_onConnectionMessagesReceived, _Device_deviceInformationManager, _Device_batteryLevel, _Device_updateBatteryLevel, _Device_sensorConfigurationManager, _Device_ClearSensorConfigurationOnLeave, _Device_clearSensorConfigurationOnLeave, _Device_sensorDataManager, _Device_vibrationManager, _Device_fileTransferManager, _Device_tfliteManager, _Device_firmwareManager, _Device_assertCanUpdateFirmware, _Device_sendSmpMessage, _Device_isServerSide, _Device_wifiManager, _Device_cameraManager, _Device_assertHasCamera;
+var _Device_instances, _a$3, _Device_DefaultConnectionManager, _Device_eventDispatcher, _Device_dispatchEvent_get, _Device_connectionManager, _Device_sendTxMessages, _Device_isConnected, _Device_assertIsConnected, _Device_didReceiveMessageTypes, _Device_hasRequiredInformation_get, _Device_requestRequiredInformation, _Device_assertCanReconnect, _Device_ReconnectOnDisconnection, _Device_reconnectOnDisconnection, _Device_reconnectIntervalId, _Device_onConnectionStatusUpdated, _Device_dispatchConnectionEvents, _Device_checkConnection, _Device_clear, _Device_clearConnection, _Device_onConnectionMessageReceived, _Device_onConnectionMessagesReceived, _Device_deviceInformationManager, _Device_batteryLevel, _Device_updateBatteryLevel, _Device_sensorConfigurationManager, _Device_ClearSensorConfigurationOnLeave, _Device_clearSensorConfigurationOnLeave, _Device_sensorDataManager, _Device_vibrationManager, _Device_fileTransferManager, _Device_tfliteManager, _Device_firmwareManager, _Device_assertCanUpdateFirmware, _Device_sendSmpMessage, _Device_isServerSide, _Device_wifiManager, _Device_cameraManager, _Device_assertHasCamera, _Device_microphoneManager, _Device_assertHasMicrophone, _Device_assertWebAudioSupport;
 const _console$b = createConsole("Device", { log: false });
 const DeviceEventTypes = [
     "connectionMessage",
@@ -5692,6 +6102,7 @@ const DeviceEventTypes = [
     ...TfliteEventTypes,
     ...WifiEventTypes,
     ...CameraEventTypes,
+    ...MicrophoneEventTypes,
     ...FirmwareEventTypes,
 ];
 const RequiredInformationConnectionMessages = [
@@ -5738,6 +6149,7 @@ class Device {
         _Device_isServerSide.set(this, false);
         _Device_wifiManager.set(this, new WifiManager());
         _Device_cameraManager.set(this, new CameraManager());
+        _Device_microphoneManager.set(this, new MicrophoneManager());
         __classPrivateFieldGet(this, _Device_deviceInformationManager, "f").eventDispatcher = __classPrivateFieldGet(this, _Device_eventDispatcher, "f");
         this._informationManager.sendMessage = this
             .sendTxMessages;
@@ -5761,6 +6173,9 @@ class Device {
         __classPrivateFieldGet(this, _Device_cameraManager, "f").sendMessage = this
             .sendTxMessages;
         __classPrivateFieldGet(this, _Device_cameraManager, "f").eventDispatcher = __classPrivateFieldGet(this, _Device_eventDispatcher, "f");
+        __classPrivateFieldGet(this, _Device_microphoneManager, "f").sendMessage = this
+            .sendTxMessages;
+        __classPrivateFieldGet(this, _Device_microphoneManager, "f").eventDispatcher = __classPrivateFieldGet(this, _Device_eventDispatcher, "f");
         __classPrivateFieldGet(this, _Device_firmwareManager, "f").sendMessage = this
             .sendSmpMessage;
         __classPrivateFieldGet(this, _Device_firmwareManager, "f").eventDispatcher = __classPrivateFieldGet(this, _Device_eventDispatcher, "f");
@@ -5792,6 +6207,16 @@ class Device {
             }
             else {
                 _console$b.log("don't need to request camera infomration");
+            }
+            if (this.sensorTypes.includes("microphone")) {
+                _console$b.log("requesting required microphone information");
+                const messages = RequiredMicrophoneMessageTypes.map((messageType) => ({
+                    type: messageType,
+                }));
+                this.sendTxMessages(messages, false);
+            }
+            else {
+                _console$b.log("don't need to request microphone infomration");
             }
         });
         this.addEventListener("getFileTypes", () => {
@@ -6343,8 +6768,70 @@ class Device {
     get setCameraConfiguration() {
         return __classPrivateFieldGet(this, _Device_cameraManager, "f").setCameraConfiguration;
     }
+    get hasMicrophone() {
+        return this.sensorTypes.includes("microphone");
+    }
+    get microphoneStatus() {
+        return __classPrivateFieldGet(this, _Device_microphoneManager, "f").microphoneStatus;
+    }
+    async startMicrophone() {
+        __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertHasMicrophone).call(this);
+        await __classPrivateFieldGet(this, _Device_microphoneManager, "f").start();
+    }
+    async stopMicrophone() {
+        __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertHasMicrophone).call(this);
+        await __classPrivateFieldGet(this, _Device_microphoneManager, "f").stop();
+    }
+    async enableMicrophoneVad() {
+        __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertHasMicrophone).call(this);
+        await __classPrivateFieldGet(this, _Device_microphoneManager, "f").vad();
+    }
+    async toggleMicrophone() {
+        __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertHasMicrophone).call(this);
+        await __classPrivateFieldGet(this, _Device_microphoneManager, "f").toggle();
+    }
+    get microphoneConfiguration() {
+        return __classPrivateFieldGet(this, _Device_microphoneManager, "f").microphoneConfiguration;
+    }
+    get availableMicrophoneConfigurationTypes() {
+        return __classPrivateFieldGet(this, _Device_microphoneManager, "f").availableMicrophoneConfigurationTypes;
+    }
+    get setMicrophoneConfiguration() {
+        return __classPrivateFieldGet(this, _Device_microphoneManager, "f").setMicrophoneConfiguration;
+    }
+    get audioContext() {
+        __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertWebAudioSupport).call(this);
+        return __classPrivateFieldGet(this, _Device_microphoneManager, "f").audioContext;
+    }
+    set audioContext(newAudioContext) {
+        __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertWebAudioSupport).call(this);
+        __classPrivateFieldGet(this, _Device_microphoneManager, "f").audioContext = newAudioContext;
+    }
+    get microphoneMediaStreamDestination() {
+        __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertWebAudioSupport).call(this);
+        return __classPrivateFieldGet(this, _Device_microphoneManager, "f").mediaStreamDestination;
+    }
+    get microphoneGainNode() {
+        __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertWebAudioSupport).call(this);
+        return __classPrivateFieldGet(this, _Device_microphoneManager, "f").gainNode;
+    }
+    get isRecordingMicrophone() {
+        return __classPrivateFieldGet(this, _Device_microphoneManager, "f").isRecording;
+    }
+    startRecordingMicrophone() {
+        __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertWebAudioSupport).call(this);
+        __classPrivateFieldGet(this, _Device_microphoneManager, "f").startRecording();
+    }
+    stopRecordingMicrophone() {
+        __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertWebAudioSupport).call(this);
+        __classPrivateFieldGet(this, _Device_microphoneManager, "f").stopRecording();
+    }
+    toggleMicrophoneRecording() {
+        __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertWebAudioSupport).call(this);
+        __classPrivateFieldGet(this, _Device_microphoneManager, "f").toggleRecording();
+    }
 }
-_a$3 = Device, _Device_eventDispatcher = new WeakMap(), _Device_connectionManager = new WeakMap(), _Device_isConnected = new WeakMap(), _Device_reconnectOnDisconnection = new WeakMap(), _Device_reconnectIntervalId = new WeakMap(), _Device_deviceInformationManager = new WeakMap(), _Device_batteryLevel = new WeakMap(), _Device_sensorConfigurationManager = new WeakMap(), _Device_clearSensorConfigurationOnLeave = new WeakMap(), _Device_sensorDataManager = new WeakMap(), _Device_vibrationManager = new WeakMap(), _Device_fileTransferManager = new WeakMap(), _Device_tfliteManager = new WeakMap(), _Device_firmwareManager = new WeakMap(), _Device_isServerSide = new WeakMap(), _Device_wifiManager = new WeakMap(), _Device_cameraManager = new WeakMap(), _Device_instances = new WeakSet(), _Device_DefaultConnectionManager = function _Device_DefaultConnectionManager() {
+_a$3 = Device, _Device_eventDispatcher = new WeakMap(), _Device_connectionManager = new WeakMap(), _Device_isConnected = new WeakMap(), _Device_reconnectOnDisconnection = new WeakMap(), _Device_reconnectIntervalId = new WeakMap(), _Device_deviceInformationManager = new WeakMap(), _Device_batteryLevel = new WeakMap(), _Device_sensorConfigurationManager = new WeakMap(), _Device_clearSensorConfigurationOnLeave = new WeakMap(), _Device_sensorDataManager = new WeakMap(), _Device_vibrationManager = new WeakMap(), _Device_fileTransferManager = new WeakMap(), _Device_tfliteManager = new WeakMap(), _Device_firmwareManager = new WeakMap(), _Device_isServerSide = new WeakMap(), _Device_wifiManager = new WeakMap(), _Device_cameraManager = new WeakMap(), _Device_microphoneManager = new WeakMap(), _Device_instances = new WeakSet(), _Device_DefaultConnectionManager = function _Device_DefaultConnectionManager() {
     return new WebBluetoothConnectionManager();
 }, _Device_dispatchEvent_get = function _Device_dispatchEvent_get() {
     return __classPrivateFieldGet(this, _Device_eventDispatcher, "f").dispatchEvent;
@@ -6444,6 +6931,7 @@ _a$3 = Device, _Device_eventDispatcher = new WeakMap(), _Device_connectionManage
     __classPrivateFieldGet(this, _Device_tfliteManager, "f").clear();
     __classPrivateFieldGet(this, _Device_wifiManager, "f").clear();
     __classPrivateFieldGet(this, _Device_cameraManager, "f").clear();
+    __classPrivateFieldGet(this, _Device_microphoneManager, "f").clear();
 }, _Device_clearConnection = function _Device_clearConnection() {
     this.connectionManager?.clear();
     this.latestConnectionMessages.clear();
@@ -6486,6 +6974,9 @@ _a$3 = Device, _Device_eventDispatcher = new WeakMap(), _Device_connectionManage
             else if (CameraMessageTypes.includes(messageType)) {
                 __classPrivateFieldGet(this, _Device_cameraManager, "f").parseMessage(messageType, dataView);
             }
+            else if (MicrophoneMessageTypes.includes(messageType)) {
+                __classPrivateFieldGet(this, _Device_microphoneManager, "f").parseMessage(messageType, dataView);
+            }
             else {
                 throw Error(`uncaught messageType ${messageType}`);
             }
@@ -6520,6 +7011,10 @@ _a$3 = Device, _Device_eventDispatcher = new WeakMap(), _Device_connectionManage
     return __classPrivateFieldGet(this, _Device_connectionManager, "f").sendSmpMessage(data);
 }, _Device_assertHasCamera = function _Device_assertHasCamera() {
     _console$b.assertWithError(this.hasCamera, "camera not available");
+}, _Device_assertHasMicrophone = function _Device_assertHasMicrophone() {
+    _console$b.assertWithError(this.hasMicrophone, "microphone not available");
+}, _Device_assertWebAudioSupport = function _Device_assertWebAudioSupport() {
+    _console$b.assertWithError(AudioContext, "WebAudio is not supported");
 };
 _Device_ReconnectOnDisconnection = { value: false };
 _Device_ClearSensorConfigurationOnLeave = { value: true };
@@ -8029,6 +8524,9 @@ exports.MaxVibrationWaveformEffectSequenceLoopCount = MaxVibrationWaveformEffect
 exports.MaxVibrationWaveformSegmentDuration = MaxVibrationWaveformSegmentDuration;
 exports.MaxWifiPasswordLength = MaxWifiPasswordLength;
 exports.MaxWifiSSIDLength = MaxWifiSSIDLength;
+exports.MicrophoneCommands = MicrophoneCommands;
+exports.MicrophoneConfigurationTypes = MicrophoneConfigurationTypes;
+exports.MicrophoneConfigurationValues = MicrophoneConfigurationValues;
 exports.MinNameLength = MinNameLength;
 exports.MinWifiPasswordLength = MinWifiPasswordLength;
 exports.MinWifiSSIDLength = MinWifiSSIDLength;

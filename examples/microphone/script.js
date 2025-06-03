@@ -164,6 +164,44 @@ device.addEventListener("microphoneStatus", () => {
   updateToggleMicrophoneButton();
 });
 
+/** @type {HTMLButtonElement} */
+const startMicrophoneButton = document.getElementById("startMicrophone");
+startMicrophoneButton.addEventListener("click", () => {
+  device.startMicrophone();
+});
+/** @type {HTMLButtonElement} */
+const stopMicrophoneButton = document.getElementById("stopMicrophone");
+stopMicrophoneButton.addEventListener("click", () => {
+  device.stopMicrophone();
+});
+/** @type {HTMLButtonElement} */
+const enableMicrophoneVadButton = document.getElementById("enableMicrphoneVad");
+enableMicrophoneVadButton.addEventListener("click", () => {
+  device.enableMicrophoneVad();
+});
+
+const updateMicrophoneButtons = () => {
+  let disabled =
+    !device.isConnected ||
+    device.sensorConfiguration.microphone == 0 ||
+    !device.hasMicrophone;
+
+  startMicrophoneButton.disabled =
+    disabled || device.microphoneStatus == "streaming";
+  stopMicrophoneButton.disabled = disabled || device.microphoneStatus == "idle";
+  enableMicrophoneVadButton.disabled =
+    disabled || device.microphoneStatus == "vad";
+};
+device.addEventListener("microphoneStatus", () => {
+  updateMicrophoneButtons();
+});
+device.addEventListener("connected", () => {
+  updateMicrophoneButtons();
+});
+device.addEventListener("getSensorConfiguration", () => {
+  updateMicrophoneButtons();
+});
+
 const audioContext = new (window.AudioContext || window.webkitAudioContext)({
   sampleRate: 16_000,
 });

@@ -10,10 +10,10 @@ const _console = createConsole("MicrophoneManager", { log: false });
 export const MicrophoneSensorTypes = ["microphone"] as const;
 export type MicrophoneSensorType = (typeof MicrophoneSensorTypes)[number];
 
-export const MicrophoneCommands = ["start", "stop"] as const;
+export const MicrophoneCommands = ["start", "stop", "vad"] as const;
 export type MicrophoneCommand = (typeof MicrophoneCommands)[number];
 
-export const MicrophoneStatuses = ["idle", "streaming"] as const;
+export const MicrophoneStatuses = ["idle", "streaming", "vad"] as const;
 export type MicrophoneStatus = (typeof MicrophoneStatuses)[number];
 
 export const MicrophoneConfigurationTypes = ["sampleRate", "bitDepth"] as const;
@@ -167,6 +167,12 @@ class MicrophoneManager {
       `microphone is not idle - currently ${this.#microphoneStatus}`
     );
   }
+  #assertIsNotIdle() {
+    _console.assertWithError(
+      this.#microphoneStatus != "idle",
+      `microphone is idle`
+    );
+  }
   #assertIsStreaming() {
     _console.assertWithError(
       this.#microphoneStatus == "streaming",
@@ -175,12 +181,14 @@ class MicrophoneManager {
   }
 
   async start() {
-    this.#assertIsIdle();
     await this.#sendMicrophoneCommand("start");
   }
   async stop() {
-    this.#assertIsStreaming();
+    this.#assertIsNotIdle();
     await this.#sendMicrophoneCommand("stop");
+  }
+  async vad() {
+    await this.#sendMicrophoneCommand("vad");
   }
   async toggle() {
     switch (this.microphoneStatus) {

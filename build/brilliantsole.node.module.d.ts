@@ -149,9 +149,9 @@ declare class EventDispatcher<Target extends any, EventType extends string, Even
     }>;
 }
 
-declare const MicrophoneCommands: readonly ["start", "stop"];
+declare const MicrophoneCommands: readonly ["start", "stop", "vad"];
 type MicrophoneCommand = (typeof MicrophoneCommands)[number];
-declare const MicrophoneStatuses: readonly ["idle", "streaming"];
+declare const MicrophoneStatuses: readonly ["idle", "streaming", "vad"];
 type MicrophoneStatus = (typeof MicrophoneStatuses)[number];
 declare const MicrophoneConfigurationTypes: readonly ["sampleRate", "bitDepth"];
 type MicrophoneConfigurationType = (typeof MicrophoneConfigurationTypes)[number];
@@ -868,9 +868,10 @@ declare class Device {
     get cameraConfigurationRanges(): CameraConfigurationRanges;
     get setCameraConfiguration(): (newCameraConfiguration: CameraConfiguration) => Promise<void>;
     get hasMicrophone(): boolean;
-    get microphoneStatus(): "idle" | "streaming";
+    get microphoneStatus(): "vad" | "idle" | "streaming";
     startMicrophone(): Promise<void>;
     stopMicrophone(): Promise<void>;
+    enableMicrophoneVad(): Promise<void>;
     toggleMicrophone(): Promise<void>;
     get microphoneConfiguration(): MicrophoneConfiguration;
     get availableMicrophoneConfigurationTypes(): ("sampleRate" | "bitDepth")[];

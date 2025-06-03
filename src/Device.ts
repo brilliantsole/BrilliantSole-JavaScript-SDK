@@ -1326,6 +1326,10 @@ class Device {
     this.#assertHasMicrophone();
     await this.#microphoneManager.stop();
   }
+  async enableMicrophoneVad() {
+    this.#assertHasMicrophone();
+    await this.#microphoneManager.vad();
+  }
   async toggleMicrophone() {
     this.#assertHasMicrophone();
     await this.#microphoneManager.toggle();
