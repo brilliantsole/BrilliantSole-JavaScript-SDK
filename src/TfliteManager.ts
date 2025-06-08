@@ -9,6 +9,7 @@ import { SensorType } from "./sensor/SensorDataManager.ts";
 import Device, { SendMessageCallback } from "./Device.ts";
 import autoBind from "auto-bind";
 import { FileConfiguration as BaseFileConfiguration } from "./FileTransferManager.ts";
+import { UInt8ByteBuffer } from "./utils/ArrayBufferUtils.ts";
 
 const _console = createConsole("TfliteManager", { log: false });
 
@@ -187,8 +188,9 @@ class TfliteManager {
     const promise = this.waitForEvent("getTfliteTask");
 
     const taskEnum = TfliteTasks.indexOf(newTask);
+    ≈
     this.sendMessage(
-      [{ type: "setTfliteTask", data: Uint8Array.from([taskEnum]).buffer }],
+      [{ type: "setTfliteTask", data: UInt8ByteBuffer(commandEnum) }],
       sendImmediately
     );
 
@@ -429,7 +431,8 @@ class TfliteManager {
       [
         {
           type: "setTfliteInferencingEnabled",
-          data: Uint8Array.from([Number(newInferencingEnabled)]).buffer,
+          
+          data: UInt8ByteBuffer(Number(newInferencingEnabled)),
         },
       ],
       sendImmediately

@@ -3,7 +3,12 @@ import { createConsole } from "./Console.ts";
 
 const _console = createConsole("MathUtils", { log: false });
 
-export function getInterpolation(value: number, min: number, max: number, span: number) {
+export function getInterpolation(
+  value: number,
+  min: number,
+  max: number,
+  span: number
+) {
   if (span == undefined) {
     span = max - min;
   }
@@ -53,7 +58,10 @@ export interface Euler {
   roll: number;
 }
 
-export function computeVoronoiWeights(points: PressureSensorPosition[], sampleCount = 100000) {
+export function computeVoronoiWeights(
+  points: PressureSensorPosition[],
+  sampleCount = 100000
+) {
   const n = points.length;
   const counts = new Array(n).fill(0);
 
@@ -80,4 +88,8 @@ export function computeVoronoiWeights(points: PressureSensorPosition[], sampleCo
 
   // Convert counts to weights (sum to 1)
   return counts.map((c) => c / sampleCount);
+}
+
+export function clamp(value: number, min: number = 0, max: number = 1) {
+  return Math.min(Math.max(value, min), max);
 }

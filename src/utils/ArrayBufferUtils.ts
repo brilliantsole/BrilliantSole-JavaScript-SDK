@@ -4,7 +4,9 @@ import { textEncoder } from "./Text.ts";
 const _console = createConsole("ArrayBufferUtils", { log: false });
 
 export function concatenateArrayBuffers(...arrayBuffers: any[]): ArrayBuffer {
-  arrayBuffers = arrayBuffers.filter((arrayBuffer) => arrayBuffer != undefined || arrayBuffer != null);
+  arrayBuffers = arrayBuffers.filter(
+    (arrayBuffer) => arrayBuffer != undefined || arrayBuffer != null
+  );
   arrayBuffers = arrayBuffers.map((arrayBuffer) => {
     if (typeof arrayBuffer == "number") {
       const number = arrayBuffer;
@@ -20,7 +22,10 @@ export function concatenateArrayBuffers(...arrayBuffers: any[]): ArrayBuffer {
       return concatenateArrayBuffers(...array);
     } else if (arrayBuffer instanceof ArrayBuffer) {
       return arrayBuffer;
-    } else if ("buffer" in arrayBuffer && arrayBuffer.buffer instanceof ArrayBuffer) {
+    } else if (
+      "buffer" in arrayBuffer &&
+      arrayBuffer.buffer instanceof ArrayBuffer
+    ) {
       const bufferContainer = arrayBuffer;
       return bufferContainer.buffer;
     } else if (arrayBuffer instanceof DataView) {
@@ -33,8 +38,13 @@ export function concatenateArrayBuffers(...arrayBuffers: any[]): ArrayBuffer {
       return arrayBuffer;
     }
   });
-  arrayBuffers = arrayBuffers.filter((arrayBuffer) => arrayBuffer && "byteLength" in arrayBuffer);
-  const length = arrayBuffers.reduce((length, arrayBuffer) => length + arrayBuffer.byteLength, 0);
+  arrayBuffers = arrayBuffers.filter(
+    (arrayBuffer) => arrayBuffer && "byteLength" in arrayBuffer
+  );
+  const length = arrayBuffers.reduce(
+    (length, arrayBuffer) => length + arrayBuffer.byteLength,
+    0
+  );
   const uint8Array = new Uint8Array(length);
   let byteOffset = 0;
   arrayBuffers.forEach((arrayBuffer) => {
@@ -57,7 +67,11 @@ export function objectToArrayBuffer(object: object) {
   return stringToArrayBuffer(JSON.stringify(object));
 }
 
-export function sliceDataView(dataView: DataView, begin: number, length?: number) {
+export function sliceDataView(
+  dataView: DataView,
+  begin: number,
+  length?: number
+) {
   let end;
   if (length != undefined) {
     end = dataView.byteOffset + begin + length;
@@ -85,4 +99,8 @@ export async function getFileBuffer(file: FileLike) {
     throw { error: "invalid file type", file };
   }
   return fileBuffer;
+}
+
+export function UInt8ByteBuffer(value: number) {
+  return Uint8Array.from([value]).buffer;
 }

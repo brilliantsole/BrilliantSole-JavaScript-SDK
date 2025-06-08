@@ -13,6 +13,7 @@ import { SensorDataMessageTypes } from "../sensor/SensorDataManager.ts";
 import { WifiMessageTypes } from "../WifiManager.ts";
 import { CameraMessageTypes } from "../CameraManager.ts";
 import { MicrophoneMessageTypes } from "../MicrophoneManager.ts";
+import { DisplayMessageTypes } from "../DisplayManager.ts";
 
 const _console = createConsole("BaseConnectionManager", { log: false });
 
@@ -95,6 +96,7 @@ export const TxRxMessageTypes = [
   ...WifiMessageTypes,
   ...CameraMessageTypes,
   ...MicrophoneMessageTypes,
+  ...DisplayMessageTypes,
 ] as const;
 export type TxRxMessageType = (typeof TxRxMessageTypes)[number];
 

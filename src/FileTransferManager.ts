@@ -1,6 +1,6 @@
 import { createConsole } from "./utils/Console.ts";
 import { crc32 } from "./utils/checksum.ts";
-import { getFileBuffer } from "./utils/ArrayBufferUtils.ts";
+import { getFileBuffer, UInt8ByteBuffer } from "./utils/ArrayBufferUtils.ts";
 import { FileLike } from "./utils/ArrayBufferUtils.ts";
 import Device, { SendMessageCallback } from "./Device.ts";
 import EventDispatcher from "./utils/EventDispatcher.ts";
@@ -194,8 +194,9 @@ class FileTransferManager {
     const promise = this.waitForEvent("getFileType");
 
     const typeEnum = FileTypes.indexOf(newType);
+
     this.sendMessage(
-      [{ type: "setFileType", data: Uint8Array.from([typeEnum]).buffer }],
+      [{ type: "setFileType", data: UInt8ByteBuffer(typeEnum) }],
       sendImmediately
     );
 
@@ -276,11 +277,12 @@ class FileTransferManager {
     const promise = this.waitForEvent("fileTransferStatus");
     _console.log(`setting command ${command}`);
     const commandEnum = FileTransferCommands.indexOf(command);
+
     this.sendMessage(
       [
         {
           type: "setFileTransferCommand",
-          data: Uint8Array.from([commandEnum]).buffer,
+          data: UInt8ByteBuffer(commandEnum),
         },
       ],
       sendImmediately

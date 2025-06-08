@@ -16,6 +16,7 @@ export { FileType, FileTypes, FileTransferDirection, FileTransferDirections, } f
 export { TfliteSensorType, TfliteSensorTypes, TfliteTask, TfliteTasks, TfliteFileConfiguration as TfliteFileConfiguration, } from "./TfliteManager.ts";
 export { CameraConfiguration, CameraCommand, CameraCommands, CameraConfigurationType, CameraConfigurationTypes, } from "./CameraManager.ts";
 export { MicrophoneConfiguration, MicrophoneCommand, MicrophoneCommands, MicrophoneConfigurationType, MicrophoneConfigurationTypes, MicrophoneConfigurationValues, } from "./MicrophoneManager.ts";
+export { DisplayBrightness, DisplayBrightnesses, DisplaySize, DisplayColorRGB, } from "./DisplayManager.ts";
 export { default as DevicePair, DevicePairEvent, DevicePairEventMap, DevicePairEventListenerMap, BoundDevicePairEventListeners, DevicePairType, DevicePairTypes, } from "./devicePair/DevicePair.ts";
 import { addEventListeners, removeEventListeners } from "./utils/EventUtils.ts";
 export declare const EventUtils: {

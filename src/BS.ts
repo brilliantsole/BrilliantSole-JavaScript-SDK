@@ -102,6 +102,13 @@ export {
 } from "./MicrophoneManager.ts";
 
 export {
+  DisplayBrightness,
+  DisplayBrightnesses,
+  DisplaySize,
+  DisplayColorRGB,
+} from "./DisplayManager.ts";
+
+export {
   default as DevicePair,
   DevicePairEvent,
   DevicePairEventMap,

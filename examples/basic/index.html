@@ -20,6 +20,13 @@
     .hidden {
       display: none;
     }
+    #displayColors {
+      display: flex;
+      flex-wrap: wrap;
+    }
+    .displayColor {
+      flex: 0 0 120px;
+    }
   </style>
   <body>
     <nav>
@@ -130,6 +137,66 @@
           </select>
         </label>
       </template>
+    </div>
+
+    <div>
+      <h2>display</h2>
+
+      <label>
+        <b>is display available?</b>
+        <span id="isDisplayAvailable"></span>
+      </label>
+
+      <label><b>status:</b> <span id="displayStatus"></span></label>
+
+      <button disabled id="toggleDisplay">disable display</button>
+
+      <div>
+        <label>
+          <b>display information: </b>
+          <pre id="displayInformationPre"></pre>
+        </label>
+      </div>
+
+      <div>
+        <label><b>brightness:</b> <span id="displayBrightness"></span></label>
+        <label>
+          <b>new brightness: </b>
+          <select id="setDisplayBrightnessSelect" disabled>
+            <optgroup label="select brightness"></optgroup>
+          </select>
+          <button id="setDisplayBrightnessButton" disabled>
+            set brightness
+          </button>
+        </label>
+      </div>
+
+      <div id="displayColors">
+        <template id="displayColorTemplate">
+          <label class="displayColor">
+            <b class="colorIndex"></b>
+            <input type="color" value="#000000" />
+          </label>
+        </template>
+      </div>
+
+      <div id="displayColorOpacities">
+        <template id="displayColorOpacityTemplate">
+          <label class="displayColorOpacity">
+            <b class="colorIndex"></b>
+            <input type="range" min="0" max="1" step="0.01" value="1" />
+            <span>100</span>%
+          </label>
+        </template>
+      </div>
+
+      <div>
+        <label id="displayOpacity">
+          <b>opacity</b>
+          <input disabled type="range" min="0" max="1" step="0.01" value="1" />
+          <span>100</span>%
+        </label>
+      </div>
     </div>
 
     <div>

@@ -1958,3 +1958,226 @@ device.addEventListener("isRecordingMicrophone", () => {
 device.addEventListener("microphoneStatus", () => {
   updateToggleMicrophoneRecordingButton();
 });
+
+// DISPLAY
+
+/** @type {HTMLSpanElement} */
+const isDisplayAvailableSpan = document.getElementById("isDisplayAvailable");
+device.addEventListener("connected", () => {
+  isDisplayAvailableSpan.innerText = device.isDisplayAvailable;
+});
+
+/** @type {HTMLSpanElement} */
+const displayStatusSpan = document.getElementById("displayStatus");
+device.addEventListener("displayStatus", () => {
+  if (!device.isDisplayAvailable) {
+    return;
+  }
+  displayStatusSpan.innerText = device.displayStatus;
+});
+
+/** @type {HTMLButtonElement} */
+const toggleDisplayButton = document.getElementById("toggleDisplay");
+toggleDisplayButton.addEventListener("click", () => {
+  device.toggleDisplay();
+});
+device.addEventListener("connected", () => {
+  updateToggleDisplayButton();
+});
+device.addEventListener("displayStatus", () => {
+  updateToggleDisplayButton();
+});
+const updateToggleDisplayButton = () => {
+  if (!device.isDisplayAvailable) {
+    return;
+  }
+  let disabled = !device.isConnected || !device.isDisplayAvailable;
+  switch (device.displayStatus) {
+    case "asleep":
+      toggleDisplayButton.innerText = "enable display";
+      break;
+    case "awake":
+      toggleDisplayButton.innerText = "disable display";
+      break;
+    default:
+      disabled = true;
+      break;
+  }
+  toggleDisplayButton.disabled = disabled;
+};
+
+/** @type {HTMLPreElement} */
+const displayInformationPre = document.getElementById("displayInformationPre");
+device.addEventListener("displayInformation", () => {
+  displayInformationPre.textContent = JSON.stringify(
+    device.displayInformation,
+    null,
+    2
+  );
+});
+
+/** @type {HTMLSpanElement} */
+const displayBrightnessSpan = document.getElementById("displayBrightness");
+device.addEventListener("getDisplayBrightness", () => {
+  if (!device.isDisplayAvailable) {
+    return;
+  }
+  console.log(`displayBrightness updated to ${device.displayBrightness}`);
+  displayBrightnessSpan.innerText = device.displayBrightness;
+});
+
+/** @type {HTMLButtonElement} */
+const setDisplayBrightnessButton = document.getElementById(
+  "setDisplayBrightnessButton"
+);
+
+/** @type {HTMLSelectElement} */
+const setDisplayBrightnessSelect = document.getElementById(
+  "setDisplayBrightnessSelect"
+);
+/** @type {HTMLOptGroupElement} */
+const setDisplayBrightnessSelectOptgroup =
+  setDisplayBrightnessSelect.querySelector("optgroup");
+BS.DisplayBrightnesses.forEach((displayBrightness) => {
+  setDisplayBrightnessSelectOptgroup.appendChild(new Option(displayBrightness));
+});
+
+device.addEventListener("isConnected", () => {
+  setDisplayBrightnessSelect.disabled = !device.isConnected;
+});
+
+device.addEventListener("getDisplayBrightness", () => {
+  setDisplayBrightnessSelect.value = device.displayBrightness;
+});
+
+setDisplayBrightnessSelect.addEventListener("input", () => {
+  setDisplayBrightnessButton.disabled =
+    setDisplayBrightnessSelect.value == device.displayBrightness;
+});
+
+setDisplayBrightnessButton.addEventListener("click", () => {
+  console.log(
+    `setting displayBrightness to ${setDisplayBrightnessSelect.value}`
+  );
+  device.setDisplayBrightness(setDisplayBrightnessSelect.value);
+  setDisplayBrightnessButton.disabled = true;
+});
+
+/** @type {HTMLTemplateElement} */
+const displayColorTemplate = document.getElementById("displayColorTemplate");
+const displayColorsContainer = document.getElementById("displayColors");
+const setDisplayColor = BS.ThrottleUtils.throttle(
+  (colorIndex, colorString) => {
+    console.log({ colorIndex, colorString });
+    device.setDisplayColor(colorIndex, colorString, true);
+  },
+  100,
+  true
+);
+device.addEventListener("notConnected", () => {
+  displayColorsContainer.innerHTML = "";
+});
+device.addEventListener("connected", () => {
+  displayColorsContainer.innerHTML = "";
+  if (device.isDisplayAvailable) {
+    for (
+      let colorIndex = 0;
+      colorIndex < device.numberOfDisplayColors;
+      colorIndex++
+    ) {
+      const displayColorContainer = displayColorTemplate.content
+        .cloneNode(true)
+        .querySelector(".displayColor");
+
+      const displayColorIndex =
+        displayColorContainer.querySelector(".colorIndex");
+      displayColorIndex.innerText = `color #${colorIndex}`;
+      const displayColorInput = displayColorContainer.querySelector("input");
+      displayColorInput.addEventListener("input", () => {
+        setDisplayColor(colorIndex, displayColorInput.value);
+      });
+      displayColorsContainer.appendChild(displayColorContainer);
+    }
+  }
+});
+
+/** @type {HTMLTemplateElement} */
+const displayColorOpacityTemplate = document.getElementById(
+  "displayColorOpacityTemplate"
+);
+const displayColorOpacitiesContainer = document.getElementById(
+  "displayColorOpacities"
+);
+const setDisplayColorOpacity = BS.ThrottleUtils.throttle(
+  (colorIndex, opacity) => {
+    console.log({ colorIndex, opacity });
+    device.setDisplayColorOpacity(colorIndex, opacity, true);
+  },
+  100,
+  true
+);
+device.addEventListener("notConnected", () => {
+  displayColorOpacitiesContainer.innerHTML = "";
+});
+device.addEventListener("connected", () => {
+  displayColorOpacitiesContainer.innerHTML = "";
+  if (device.isDisplayAvailable) {
+    for (
+      let colorIndex = 0;
+      colorIndex < device.numberOfDisplayColors;
+      colorIndex++
+    ) {
+      const displayColorOpacityContainer = displayColorOpacityTemplate.content
+        .cloneNode(true)
+        .querySelector(".displayColorOpacity");
+
+      const displayColorOpacityIndex =
+        displayColorOpacityContainer.querySelector(".colorIndex");
+      displayColorOpacityIndex.innerText = `color opacity #${colorIndex}`;
+      const displayColorOpacityInput =
+        displayColorOpacityContainer.querySelector("input");
+      const displayColorOpacitySpan =
+        displayColorOpacityContainer.querySelector("span");
+      displayColorOpacityInput.addEventListener("input", () => {
+        const opacity = Number(displayColorOpacityInput.value);
+        displayColorOpacitySpan.innerText = Math.round(opacity * 100);
+        setDisplayColorOpacity(colorIndex, opacity);
+      });
+      displayColorOpacitiesContainer.appendChild(displayColorOpacityContainer);
+    }
+  }
+});
+
+const displayOpacityContainer = document.getElementById("displayOpacity");
+const displayOpacitySpan = displayOpacityContainer.querySelector("span");
+const displayOpacityInput = displayOpacityContainer.querySelector("input");
+
+const setDisplayOpacity = BS.ThrottleUtils.throttle(
+  (opacity) => {
+    console.log({ opacity });
+    device.setDisplayOpacity(opacity, true);
+  },
+  100,
+  true
+);
+displayOpacityInput.addEventListener("input", () => {
+  const opacity = Number(displayOpacityInput.value);
+  displayOpacitySpan.innerText = Math.round(opacity * 100);
+  setDisplayOpacity(opacity);
+  displayColorOpacitiesContainer
+    .querySelectorAll(".displayColorOpacity")
+    .forEach((container) => {
+      const input = container.querySelector("input");
+      const span = container.querySelector("span");
+      input.value = opacity;
+      span.innerText = Math.round(opacity * 100);
+    });
+});
+
+device.addEventListener("isConnected", () => {
+  const enabled = device.isConnected && device.isDisplayAvailable;
+  displayOpacityInput.disabled = !enabled;
+});
+
+// FILL - colors
+// FILL - draw rect

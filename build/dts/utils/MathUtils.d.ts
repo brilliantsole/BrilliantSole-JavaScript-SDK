@@ -21,3 +21,4 @@ export interface Euler {
     roll: number;
 }
 export declare function computeVoronoiWeights(points: PressureSensorPosition[], sampleCount?: number): number[];
+export declare function clamp(value: number, min?: number, max?: number): number;

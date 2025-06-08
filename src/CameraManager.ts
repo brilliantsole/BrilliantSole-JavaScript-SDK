@@ -4,7 +4,10 @@ import { isInNode } from "./utils/environment.ts";
 import EventDispatcher from "./utils/EventDispatcher.ts";
 import autoBind from "auto-bind";
 import { parseMessage } from "./utils/ParseUtils.ts";
-import { concatenateArrayBuffers } from "./utils/ArrayBufferUtils.ts";
+import {
+  concatenateArrayBuffers,
+  UInt8ByteBuffer,
+} from "./utils/ArrayBufferUtils.ts";
 
 const _console = createConsole("CameraManager", { log: false });
 
@@ -161,11 +164,12 @@ class CameraManager {
     const promise = this.waitForEvent("cameraStatus");
     _console.log(`setting command "${command}"`);
     const commandEnum = CameraCommands.indexOf(command);
+
     this.sendMessage(
       [
         {
           type: "cameraCommand",
-          data: Uint8Array.from([commandEnum]).buffer,
+          data: UInt8ByteBuffer(commandEnum),
         },
       ],
       sendImmediately

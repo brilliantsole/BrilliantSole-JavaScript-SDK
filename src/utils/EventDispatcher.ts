@@ -8,14 +8,22 @@ export type EventMap<
   EventType extends string,
   EventMessages extends Partial<Record<EventType, any>>
 > = {
-  [T in keyof EventMessages]: { type: T; target: Target; message: EventMessages[T] };
+  [T in keyof EventMessages]: {
+    type: T;
+    target: Target;
+    message: EventMessages[T];
+  };
 };
 export type EventListenerMap<
   Target extends any,
   EventType extends string,
   EventMessages extends Partial<Record<EventType, any>>
 > = {
-  [T in keyof EventMessages]: (event: { type: T; target: Target; message: EventMessages[T] }) => void;
+  [T in keyof EventMessages]: (event: {
+    type: T;
+    target: Target;
+    message: EventMessages[T];
+  }) => void;
 };
 
 export type Event<
@@ -29,7 +37,11 @@ type SpecificEvent<
   EventType extends string,
   EventMessages extends Partial<Record<EventType, any>>,
   SpecificEventType extends EventType
-> = { type: SpecificEventType; target: Target; message: EventMessages[SpecificEventType] };
+> = {
+  type: SpecificEventType;
+  target: Target;
+  message: EventMessages[SpecificEventType];
+};
 
 export type BoundEventListeners<
   Target extends any,
@@ -49,13 +61,20 @@ class EventDispatcher<
 > {
   private listeners: {
     [T in EventType]?: {
-      listener: (event: { type: T; target: Target; message: EventMessages[T] }) => void;
+      listener: (event: {
+        type: T;
+        target: Target;
+        message: EventMessages[T];
+      }) => void;
       once?: boolean;
       shouldRemove?: boolean;
     }[];
   } = {};
 
-  constructor(private target: Target, private validEventTypes: readonly EventType[]) {
+  constructor(
+    private target: Target,
+    private validEventTypes: readonly EventType[]
+  ) {
     this.addEventListener = this.addEventListener.bind(this);
     this.removeEventListener = this.removeEventListener.bind(this);
     this.removeEventListeners = this.removeEventListeners.bind(this);
@@ -80,7 +99,11 @@ class EventDispatcher<
 
   addEventListener<T extends EventType>(
     type: T,
-    listener: (event: { type: T; target: Target; message: EventMessages[T] }) => void,
+    listener: (event: {
+      type: T;
+      target: Target;
+      message: EventMessages[T];
+    }) => void,
     options: { once?: boolean } = { once: false }
   ): void {
     if (!this.isValidEventType(type)) {
@@ -92,7 +115,10 @@ class EventDispatcher<
       _console.log(`creating "${type}" listeners array`, this.listeners[type]!);
     }
     const alreadyAdded = this.listeners[type].find((listenerObject) => {
-      return listenerObject.listener == listener && listenerObject.once == options.once;
+      return (
+        listenerObject.listener == listener &&
+        listenerObject.once == options.once
+      );
     });
     if (alreadyAdded) {
       _console.log("already added listener");
@@ -101,12 +127,18 @@ class EventDispatcher<
     _console.log(`adding "${type}" listener`, listener, options);
     this.listeners[type]!.push({ listener, once: options.once });
 
-    _console.log(`currently have ${this.listeners[type]!.length} "${type}" listeners`);
+    _console.log(
+      `currently have ${this.listeners[type]!.length} "${type}" listeners`
+    );
   }
 
   removeEventListener<T extends EventType>(
     type: T,
-    listener: (event: { type: T; target: Target; message: EventMessages[T] }) => void
+    listener: (event: {
+      type: T;
+      target: Target;
+      message: EventMessages[T];
+    }) => void
   ): void {
     if (!this.isValidEventType(type)) {
       throw new Error(`Invalid event type: ${type}`);
@@ -155,7 +187,11 @@ class EventDispatcher<
       }
 
       _console.log(`dispatching "${type}" listener`, listenerObj);
-      listenerObj.listener({ type, target: this.target, message });
+      try {
+        listenerObj.listener({ type, target: this.target, message });
+      } catch (error) {
+        console.error(error);
+      }
 
       if (listenerObj.once) {
         _console.log(`flagging "${type}" listener`, listenerObj);
@@ -165,9 +201,15 @@ class EventDispatcher<
     this.updateEventListeners(type);
   }
 
-  waitForEvent<T extends EventType>(type: T): Promise<{ type: T; target: Target; message: EventMessages[T] }> {
+  waitForEvent<T extends EventType>(
+    type: T
+  ): Promise<{ type: T; target: Target; message: EventMessages[T] }> {
     return new Promise((resolve) => {
-      const onceListener = (event: { type: T; target: Target; message: EventMessages[T] }) => {
+      const onceListener = (event: {
+        type: T;
+        target: Target;
+        message: EventMessages[T];
+      }) => {
         resolve(event);
       };
 
