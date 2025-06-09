@@ -4068,11 +4068,11 @@ async function _DisplayManager_sendDisplayCommand(command, sendImmediately) {
 }, _DisplayManager_assertValidOpacity = function _DisplayManager_assertValidOpacity(value) {
     _console$o.assertRangeWithError("opacity", value, 0, 1);
 }, _DisplayManager_clampX = function _DisplayManager_clampX(x) {
-    return clamp(x, 0, this.width);
+    return clamp(x, 0, this.width - 1);
 }, _DisplayManager_clampWidth = function _DisplayManager_clampWidth(x, width) {
     return clamp(width, 1, this.width - x);
 }, _DisplayManager_clampY = function _DisplayManager_clampY(y) {
-    return clamp(y, 0, this.height);
+    return clamp(y, 0, this.height - 1);
 }, _DisplayManager_clampHeight = function _DisplayManager_clampHeight(y, height) {
     return clamp(height, 1, this.height - y);
 }, _DisplayManager_clampBox = function _DisplayManager_clampBox(x, y, width, height) {

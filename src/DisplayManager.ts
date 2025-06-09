@@ -529,13 +529,13 @@ class DisplayManager {
   }
 
   #clampX(x: number) {
-    return clamp(x, 0, this.width);
+    return clamp(x, 0, this.width - 1);
   }
   #clampWidth(x: number, width: number) {
     return clamp(width, 1, this.width - x);
   }
   #clampY(y: number) {
-    return clamp(y, 0, this.height);
+    return clamp(y, 0, this.height - 1);
   }
   #clampHeight(y: number, height: number) {
     return clamp(height, 1, this.height - y);

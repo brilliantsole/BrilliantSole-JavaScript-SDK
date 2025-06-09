@@ -197,6 +197,67 @@
           <span>100</span>%
         </label>
       </div>
+
+      <div>
+        <label id="fillColor">
+          <b>fill color</b>
+          <select>
+            <optgroup label="select fill color"></optgroup>
+          </select>
+          <input disabled type="color" />
+        </label>
+
+        <label id="strokeColor">
+          <b>stroke color</b>
+          <select>
+            <optgroup label="select stroke color"></optgroup>
+          </select>
+          <input disabled type="color" />
+        </label>
+      </div>
+
+      <div>
+        <label id="drawX">
+          x
+          <input type="range" min="0" max="640" step="1" value="0" />
+          <span>0</span>px
+        </label>
+        <label id="drawY">
+          y
+          <input type="range" min="0" max="400" step="1" value="0" />
+          <span>0</span>px
+        </label>
+        <label id="drawWidth">
+          width
+          <input type="range" min="1" max="640" step="1" value="100" />
+          <span>100</span>px
+        </label>
+        <label id="drawHeight">
+          height
+          <input type="range" min="1" max="400" step="1" value="100" />
+          <span>100</span>px
+        </label>
+        <label id="drawBorderRadius">
+          border radius
+          <input type="range" min="0" max="100" step="1" value="0" />
+          <span>0</span>px
+        </label>
+        <label>
+          shape type
+          <select id="drawShapeType">
+            <optgroup label="draw shape">
+              <option selected>fillRect</option>
+              <option>strokeRect</option>
+              <option>fillCircle</option>
+              <option>strokeCircle</option>
+              <option>fillRoundRect</option>
+              <option>strokeRoundRect</option>
+            </optgroup>
+          </select>
+        </label>
+
+        <button id="drawShape" disabled>draw shape</button>
+      </div>
     </div>
 
     <div>
