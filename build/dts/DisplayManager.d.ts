@@ -72,7 +72,7 @@ declare class DisplayManager {
     }>;
     requestRequiredInformation(): void;
     get isDisplayAvailable(): boolean;
-    get displayStatus(): "awake" | "asleep";
+    get displayStatus(): "asleep" | "awake";
     get isDisplayAwake(): boolean;
     wake(): Promise<void>;
     sleep(): Promise<void>;
