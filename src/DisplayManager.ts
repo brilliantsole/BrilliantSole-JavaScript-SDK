@@ -664,6 +664,88 @@ class DisplayManager {
     );
   }
 
+  setCropTop(cropTop: number, sendImmediately: boolean) {
+    const dataView = new DataView(new ArrayBuffer(2));
+    _console.log({ cropTop });
+    dataView.setUint16(0, cropTop, true);
+    this.#sendDisplayContextCommand(
+      "setCropTop",
+      dataView.buffer,
+      sendImmediately
+    );
+  }
+  setCropRight(cropRight: number, sendImmediately: boolean) {
+    const dataView = new DataView(new ArrayBuffer(2));
+    _console.log({ cropRight });
+    dataView.setUint16(0, cropRight, true);
+    this.#sendDisplayContextCommand(
+      "setCropRight",
+      dataView.buffer,
+      sendImmediately
+    );
+  }
+  setCropBottom(cropBottom: number, sendImmediately: boolean) {
+    const dataView = new DataView(new ArrayBuffer(2));
+    _console.log({ cropBottom });
+    dataView.setUint16(0, cropBottom, true);
+    this.#sendDisplayContextCommand(
+      "setCropBottom",
+      dataView.buffer,
+      sendImmediately
+    );
+  }
+  setCropLeft(cropLeft: number, sendImmediately: boolean) {
+    const dataView = new DataView(new ArrayBuffer(2));
+    _console.log({ cropLeft });
+    dataView.setUint16(0, cropLeft, true);
+    this.#sendDisplayContextCommand(
+      "setCropLeft",
+      dataView.buffer,
+      sendImmediately
+    );
+  }
+
+  setRotationCropTop(cropTop: number, sendImmediately: boolean) {
+    const dataView = new DataView(new ArrayBuffer(2));
+    _console.log({ cropTop });
+    dataView.setUint16(0, cropTop, true);
+    this.#sendDisplayContextCommand(
+      "setRotationCropTop",
+      dataView.buffer,
+      sendImmediately
+    );
+  }
+  setRotationCropRight(cropRight: number, sendImmediately: boolean) {
+    const dataView = new DataView(new ArrayBuffer(2));
+    _console.log({ cropRight });
+    dataView.setUint16(0, cropRight, true);
+    this.#sendDisplayContextCommand(
+      "setRotationCropRight",
+      dataView.buffer,
+      sendImmediately
+    );
+  }
+  setRotationCropBottom(cropBottom: number, sendImmediately: boolean) {
+    const dataView = new DataView(new ArrayBuffer(2));
+    _console.log({ cropBottom });
+    dataView.setUint16(0, cropBottom, true);
+    this.#sendDisplayContextCommand(
+      "setRotationCropBottom",
+      dataView.buffer,
+      sendImmediately
+    );
+  }
+  setRotationCropLeft(cropLeft: number, sendImmediately: boolean) {
+    const dataView = new DataView(new ArrayBuffer(2));
+    _console.log({ cropLeft });
+    dataView.setUint16(0, cropLeft, true);
+    this.#sendDisplayContextCommand(
+      "setRotationCropLeft",
+      dataView.buffer,
+      sendImmediately
+    );
+  }
+
   #clampX(x: number) {
     return clamp(x, 0, this.width - 1);
   }

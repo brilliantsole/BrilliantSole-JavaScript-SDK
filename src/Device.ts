@@ -1568,6 +1568,40 @@ class Device {
     return this.#displayManager.setSegmentRadius;
   }
 
+  get setDisplayCropTop() {
+    this.#assertDisplayIsAvailable();
+    return this.#displayManager.setCropTop;
+  }
+  get setDisplayCropRight() {
+    this.#assertDisplayIsAvailable();
+    return this.#displayManager.setCropRight;
+  }
+  get setDisplayCropBottom() {
+    this.#assertDisplayIsAvailable();
+    return this.#displayManager.setCropBottom;
+  }
+  get setDisplayCropLeft() {
+    this.#assertDisplayIsAvailable();
+    return this.#displayManager.setCropLeft;
+  }
+
+  get setDisplayRotationCropTop() {
+    this.#assertDisplayIsAvailable();
+    return this.#displayManager.setRotationCropTop;
+  }
+  get setDisplayRotationCropRight() {
+    this.#assertDisplayIsAvailable();
+    return this.#displayManager.setRotationCropRight;
+  }
+  get setDisplayRotationCropBottom() {
+    this.#assertDisplayIsAvailable();
+    return this.#displayManager.setRotationCropBottom;
+  }
+  get setDisplayRotationCropLeft() {
+    this.#assertDisplayIsAvailable();
+    return this.#displayManager.setRotationCropLeft;
+  }
+
   get drawDisplayRect() {
     this.#assertDisplayIsAvailable();
     return this.#displayManager.drawRect;

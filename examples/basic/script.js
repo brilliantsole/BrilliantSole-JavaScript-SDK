@@ -2280,6 +2280,33 @@ const drawShape = BS.ThrottleUtils.throttle(
       if (updatedParams?.includes("segmentEndRadius")) {
         device.setDisplaySegmentEndRadius(drawSegmentEndRadius);
       }
+
+      if (updatedParams?.includes("cropTop")) {
+        device.setDisplayCropTop(drawCropTop);
+      }
+      if (updatedParams?.includes("cropRight")) {
+        device.setDisplayCropRight(drawCropRight);
+      }
+      if (updatedParams?.includes("cropBottom")) {
+        device.setDisplayCropBottom(drawCropBottom);
+      }
+      if (updatedParams?.includes("cropLeft")) {
+        device.setDisplayCropLeft(drawCropLeft);
+      }
+
+      if (updatedParams?.includes("rotationCropTop")) {
+        device.setDisplayRotationCropTop(drawRotationCropTop);
+      }
+      if (updatedParams?.includes("rotationCropRight")) {
+        device.setDisplayRotationCropRight(drawRotationCropRight);
+      }
+      if (updatedParams?.includes("rotationCropBottom")) {
+        device.setDisplayRotationCropBottom(drawRotationCropBottom);
+      }
+      if (updatedParams?.includes("rotationCropLeft")) {
+        device.setDisplayRotationCropLeft(drawRotationCropLeft);
+      }
+
       switch (drawShapeType) {
         case "drawRect":
           device.drawDisplayRect(drawX, drawY, drawWidth, drawHeight);
@@ -2409,6 +2436,118 @@ drawSegmentEndRadiusInput.addEventListener("input", () => {
   //console.log({ drawSegmentEndRadius });
   drawSegmentEndRadiusSpan.innerText = drawSegmentEndRadius;
   drawShape(["segmentEndRadius"]);
+});
+
+const drawCropTopContainer = document.getElementById("drawCropTop");
+const drawCropTopInput = drawCropTopContainer.querySelector("input");
+const drawCropTopSpan = drawCropTopContainer.querySelector("span");
+let drawCropTop = Number(drawCropTopInput.value);
+
+drawCropTopInput.addEventListener("input", () => {
+  drawCropTop = Number(drawCropTopInput.value);
+  //console.log({ drawCropTop });
+  drawCropTopSpan.innerText = drawCropTop;
+  drawShape(["cropTop"]);
+});
+
+const drawCropRightContainer = document.getElementById("drawCropRight");
+const drawCropRightInput = drawCropRightContainer.querySelector("input");
+const drawCropRightSpan = drawCropRightContainer.querySelector("span");
+let drawCropRight = Number(drawCropRightInput.value);
+
+drawCropRightInput.addEventListener("input", () => {
+  drawCropRight = Number(drawCropRightInput.value);
+  //console.log({ drawCropRight });
+  drawCropRightSpan.innerText = drawCropRight;
+  drawShape(["cropRight"]);
+});
+
+const drawCropBottomContainer = document.getElementById("drawCropBottom");
+const drawCropBottomInput = drawCropBottomContainer.querySelector("input");
+const drawCropBottomSpan = drawCropBottomContainer.querySelector("span");
+let drawCropBottom = Number(drawCropBottomInput.value);
+
+drawCropBottomInput.addEventListener("input", () => {
+  drawCropBottom = Number(drawCropBottomInput.value);
+  //console.log({ drawCropBottom });
+  drawCropBottomSpan.innerText = drawCropBottom;
+  drawShape(["cropBottom"]);
+});
+
+const drawCropLeftContainer = document.getElementById("drawCropLeft");
+const drawCropLeftInput = drawCropLeftContainer.querySelector("input");
+const drawCropLeftSpan = drawCropLeftContainer.querySelector("span");
+let drawCropLeft = Number(drawCropLeftInput.value);
+
+drawCropLeftInput.addEventListener("input", () => {
+  drawCropLeft = Number(drawCropLeftInput.value);
+  //console.log({ drawCropLeft });
+  drawCropLeftSpan.innerText = drawCropLeft;
+  drawShape(["cropLeft"]);
+});
+
+const drawRotationCropTopContainer = document.getElementById(
+  "drawRotationCropTop"
+);
+const drawRotationCropTopInput =
+  drawRotationCropTopContainer.querySelector("input");
+const drawRotationCropTopSpan =
+  drawRotationCropTopContainer.querySelector("span");
+let drawRotationCropTop = Number(drawRotationCropTopInput.value);
+
+drawRotationCropTopInput.addEventListener("input", () => {
+  drawRotationCropTop = Number(drawRotationCropTopInput.value);
+  //console.log({ drawRotationCropTop });
+  drawRotationCropTopSpan.innerText = drawRotationCropTop;
+  drawShape(["rotationCropTop"]);
+});
+
+const drawRotationCropRightContainer = document.getElementById(
+  "drawRotationCropRight"
+);
+const drawRotationCropRightInput =
+  drawRotationCropRightContainer.querySelector("input");
+const drawRotationCropRightSpan =
+  drawRotationCropRightContainer.querySelector("span");
+let drawRotationCropRight = Number(drawRotationCropRightInput.value);
+
+drawRotationCropRightInput.addEventListener("input", () => {
+  drawRotationCropRight = Number(drawRotationCropRightInput.value);
+  //console.log({ drawRotationCropRight });
+  drawRotationCropRightSpan.innerText = drawRotationCropRight;
+  drawShape(["rotationCropRight"]);
+});
+
+const drawRotationCropBottomContainer = document.getElementById(
+  "drawRotationCropBottom"
+);
+const drawRotationCropBottomInput =
+  drawRotationCropBottomContainer.querySelector("input");
+const drawRotationCropBottomSpan =
+  drawRotationCropBottomContainer.querySelector("span");
+let drawRotationCropBottom = Number(drawRotationCropBottomInput.value);
+
+drawRotationCropBottomInput.addEventListener("input", () => {
+  drawRotationCropBottom = Number(drawRotationCropBottomInput.value);
+  //console.log({ drawRotationCropBottom });
+  drawRotationCropBottomSpan.innerText = drawRotationCropBottom;
+  drawShape(["rotationCropBottom"]);
+});
+
+const drawRotationCropLeftContainer = document.getElementById(
+  "drawRotationCropLeft"
+);
+const drawRotationCropLeftInput =
+  drawRotationCropLeftContainer.querySelector("input");
+const drawRotationCropLeftSpan =
+  drawRotationCropLeftContainer.querySelector("span");
+let drawRotationCropLeft = Number(drawRotationCropLeftInput.value);
+
+drawRotationCropLeftInput.addEventListener("input", () => {
+  drawRotationCropLeft = Number(drawRotationCropLeftInput.value);
+  //console.log({ drawRotationCropLeft });
+  drawRotationCropLeftSpan.innerText = drawRotationCropLeft;
+  drawShape(["rotationCropLeft"]);
 });
 
 const drawXContainer = document.getElementById("drawX");

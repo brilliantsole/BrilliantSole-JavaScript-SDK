@@ -108,6 +108,14 @@ declare class DisplayManager {
     setSegmentStartRadius(lineEndRadius: number, sendImmediately: boolean): void;
     setSegmentEndRadius(segmentStartRadius: number, sendImmediately: boolean): void;
     setSegmentRadius(segmentRadius: number, sendImmediately: boolean): void;
+    setCropTop(cropTop: number, sendImmediately: boolean): void;
+    setCropRight(cropRight: number, sendImmediately: boolean): void;
+    setCropBottom(cropBottom: number, sendImmediately: boolean): void;
+    setCropLeft(cropLeft: number, sendImmediately: boolean): void;
+    setRotationCropTop(cropTop: number, sendImmediately: boolean): void;
+    setRotationCropRight(cropRight: number, sendImmediately: boolean): void;
+    setRotationCropBottom(cropBottom: number, sendImmediately: boolean): void;
+    setRotationCropLeft(cropLeft: number, sendImmediately: boolean): void;
     clearRect(x: number, y: number, width: number, height: number, sendImmediately: boolean): void;
     drawRect(x: number, y: number, width: number, height: number, sendImmediately: boolean): void;
     drawRoundRect(x: number, y: number, width: number, height: number, borderRadius: number, sendImmediately: boolean): void;

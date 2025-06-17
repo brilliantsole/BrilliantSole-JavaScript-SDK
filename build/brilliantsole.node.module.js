@@ -3967,6 +3967,54 @@ class DisplayManager {
         dataView.setUint16(0, segmentRadius, true);
         __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "setSegmentRadius", dataView.buffer, sendImmediately);
     }
+    setCropTop(cropTop, sendImmediately) {
+        const dataView = new DataView(new ArrayBuffer(2));
+        _console$o.log({ cropTop });
+        dataView.setUint16(0, cropTop, true);
+        __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "setCropTop", dataView.buffer, sendImmediately);
+    }
+    setCropRight(cropRight, sendImmediately) {
+        const dataView = new DataView(new ArrayBuffer(2));
+        _console$o.log({ cropRight });
+        dataView.setUint16(0, cropRight, true);
+        __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "setCropRight", dataView.buffer, sendImmediately);
+    }
+    setCropBottom(cropBottom, sendImmediately) {
+        const dataView = new DataView(new ArrayBuffer(2));
+        _console$o.log({ cropBottom });
+        dataView.setUint16(0, cropBottom, true);
+        __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "setCropBottom", dataView.buffer, sendImmediately);
+    }
+    setCropLeft(cropLeft, sendImmediately) {
+        const dataView = new DataView(new ArrayBuffer(2));
+        _console$o.log({ cropLeft });
+        dataView.setUint16(0, cropLeft, true);
+        __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "setCropLeft", dataView.buffer, sendImmediately);
+    }
+    setRotationCropTop(cropTop, sendImmediately) {
+        const dataView = new DataView(new ArrayBuffer(2));
+        _console$o.log({ cropTop });
+        dataView.setUint16(0, cropTop, true);
+        __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "setRotationCropTop", dataView.buffer, sendImmediately);
+    }
+    setRotationCropRight(cropRight, sendImmediately) {
+        const dataView = new DataView(new ArrayBuffer(2));
+        _console$o.log({ cropRight });
+        dataView.setUint16(0, cropRight, true);
+        __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "setRotationCropRight", dataView.buffer, sendImmediately);
+    }
+    setRotationCropBottom(cropBottom, sendImmediately) {
+        const dataView = new DataView(new ArrayBuffer(2));
+        _console$o.log({ cropBottom });
+        dataView.setUint16(0, cropBottom, true);
+        __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "setRotationCropBottom", dataView.buffer, sendImmediately);
+    }
+    setRotationCropLeft(cropLeft, sendImmediately) {
+        const dataView = new DataView(new ArrayBuffer(2));
+        _console$o.log({ cropLeft });
+        dataView.setUint16(0, cropLeft, true);
+        __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "setRotationCropLeft", dataView.buffer, sendImmediately);
+    }
     clearRect(x, y, width, height, sendImmediately) {
         const { x: _x, y: _y, width: _width, height: _height, } = __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_clampBox).call(this, x, y, width, height);
         const dataView = new DataView(new ArrayBuffer(2 * 4));
@@ -7510,6 +7558,38 @@ class Device {
     get setDisplaySegmentRadius() {
         __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertDisplayIsAvailable).call(this);
         return __classPrivateFieldGet(this, _Device_displayManager, "f").setSegmentRadius;
+    }
+    get setDisplayCropTop() {
+        __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertDisplayIsAvailable).call(this);
+        return __classPrivateFieldGet(this, _Device_displayManager, "f").setCropTop;
+    }
+    get setDisplayCropRight() {
+        __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertDisplayIsAvailable).call(this);
+        return __classPrivateFieldGet(this, _Device_displayManager, "f").setCropRight;
+    }
+    get setDisplayCropBottom() {
+        __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertDisplayIsAvailable).call(this);
+        return __classPrivateFieldGet(this, _Device_displayManager, "f").setCropBottom;
+    }
+    get setDisplayCropLeft() {
+        __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertDisplayIsAvailable).call(this);
+        return __classPrivateFieldGet(this, _Device_displayManager, "f").setCropLeft;
+    }
+    get setDisplayRotationCropTop() {
+        __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertDisplayIsAvailable).call(this);
+        return __classPrivateFieldGet(this, _Device_displayManager, "f").setRotationCropTop;
+    }
+    get setDisplayRotationCropRight() {
+        __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertDisplayIsAvailable).call(this);
+        return __classPrivateFieldGet(this, _Device_displayManager, "f").setRotationCropRight;
+    }
+    get setDisplayRotationCropBottom() {
+        __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertDisplayIsAvailable).call(this);
+        return __classPrivateFieldGet(this, _Device_displayManager, "f").setRotationCropBottom;
+    }
+    get setDisplayRotationCropLeft() {
+        __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertDisplayIsAvailable).call(this);
+        return __classPrivateFieldGet(this, _Device_displayManager, "f").setRotationCropLeft;
     }
     get drawDisplayRect() {
         __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertDisplayIsAvailable).call(this);
