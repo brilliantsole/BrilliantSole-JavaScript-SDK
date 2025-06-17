@@ -3703,7 +3703,7 @@ function hexToRGB(hex) {
     return { r, g, b };
 }
 
-var _DisplayManager_instances, _DisplayManager_dispatchEvent_get, _DisplayManager_isDisplayAvailable, _DisplayManager_assertDisplayIsAvailable, _DisplayManager_parseIsDisplayAvailable, _DisplayManager_displayStatus, _DisplayManager_parseDisplayStatus, _DisplayManager_updateDisplayStatus, _DisplayManager_sendDisplayCommand, _DisplayManager_assertIsAwake, _DisplayManager_assertIsNotAwake, _DisplayManager_displayInformation, _DisplayManager_parseDisplayInformation, _DisplayManager_displayBrightness, _DisplayManager_parseDisplayBrightness, _DisplayManager_assertValidDisplayBrightness, _DisplayManager_assertValidDisplayContextCommand, _DisplayManager_displayContextCommandBuffers, _DisplayManager_sendDisplayContextCommand, _DisplayManager_sendDisplayContextCommands, _DisplayManager_assertValidColor, _DisplayManager_assertValidColorValue, _DisplayManager_assertValidColorIndex, _DisplayManager_assertValidOpacity, _DisplayManager_clampX, _DisplayManager_clampWidth, _DisplayManager_clampY, _DisplayManager_clampHeight, _DisplayManager_clampBox, _DisplayManager_mtu;
+var _DisplayManager_instances, _DisplayManager_dispatchEvent_get, _DisplayManager_isDisplayAvailable, _DisplayManager_assertDisplayIsAvailable, _DisplayManager_parseIsDisplayAvailable, _DisplayManager_displayStatus, _DisplayManager_parseDisplayStatus, _DisplayManager_updateDisplayStatus, _DisplayManager_sendDisplayCommand, _DisplayManager_assertIsAwake, _DisplayManager_assertIsNotAwake, _DisplayManager_displayInformation, _DisplayManager_parseDisplayInformation, _DisplayManager_displayBrightness, _DisplayManager_parseDisplayBrightness, _DisplayManager_assertValidDisplayBrightness, _DisplayManager_assertValidDisplayContextCommand, _DisplayManager_displayContextCommandBuffers, _DisplayManager_sendDisplayContextCommand, _DisplayManager_sendDisplayContextCommands, _DisplayManager_assertValidColor, _DisplayManager_assertValidColorValue, _DisplayManager_assertValidColorIndex, _DisplayManager_assertValidOpacity, _DisplayManager_assertValidLineWidth, _DisplayManager_clampX, _DisplayManager_clampWidth, _DisplayManager_clampY, _DisplayManager_clampHeight, _DisplayManager_clampBox, _DisplayManager_clampRadius, _DisplayManager_radiansToUint16, _DisplayManager_mtu;
 const _console$o = createConsole("DisplayManager", { log: true });
 const DisplayCommands = ["sleep", "wake"];
 const DisplayStatuses = ["awake", "asleep"];
@@ -3749,16 +3749,17 @@ const DisplayContextCommands = [
     "saveContext",
     "restoreContext",
     "selectFillColor",
-    "selectStrokeColor",
+    "selectLineColor",
+    "setLineWidth",
     "clearRect",
-    "fillRect",
-    "fillRoundRect",
-    "fillCircle",
-    "fillEllipse",
+    "drawRect",
+    "drawRoundRect",
+    "drawCircle",
+    "drawEllipse",
     "selectSpriteSheet",
     "sprite",
     "selectFont",
-    "text",
+    "drawText",
 ];
 const RequiredDisplayMessageTypes = [
     "isDisplayAvailable",
@@ -3895,9 +3896,15 @@ class DisplayManager {
         __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_assertValidColorIndex).call(this, colorIndex);
         __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "selectFillColor", UInt8ByteBuffer(colorIndex), sendImmediately);
     }
-    selectStrokeColor(colorIndex, sendImmediately) {
+    selectLineColor(colorIndex, sendImmediately) {
         __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_assertValidColorIndex).call(this, colorIndex);
-        __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "selectStrokeColor", UInt8ByteBuffer(colorIndex), sendImmediately);
+        __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "selectLineColor", UInt8ByteBuffer(colorIndex), sendImmediately);
+    }
+    setLineWidth(lineWidth, sendImmediately) {
+        __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_assertValidLineWidth).call(this, lineWidth);
+        const dataView = new DataView(new ArrayBuffer(2));
+        dataView.setUint16(0, lineWidth, true);
+        __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "setLineWidth", dataView.buffer, sendImmediately);
     }
     clearRect(x, y, width, height, sendImmediately) {
         const { x: _x, y: _y, width: _width, height: _height, } = __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_clampBox).call(this, x, y, width, height);
@@ -3908,21 +3915,46 @@ class DisplayManager {
         dataView.setUint16(6, _height, true);
         __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "clearRect", dataView.buffer, sendImmediately);
     }
-    fillRect(x, y, width, height, sendImmediately) {
+    drawRect(x, y, width, height, sendImmediately) {
         const { x: _x, y: _y, width: _width, height: _height, } = __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_clampBox).call(this, x, y, width, height);
         const dataView = new DataView(new ArrayBuffer(2 * 4));
         dataView.setUint16(0, _x, true);
         dataView.setUint16(2, _y, true);
         dataView.setUint16(4, _width, true);
         dataView.setUint16(6, _height, true);
-        _console$o.log("fillRectData", dataView);
-        __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "fillRect", dataView.buffer, sendImmediately);
+        _console$o.log("drawRect data", dataView);
+        __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "drawRect", dataView.buffer, sendImmediately);
     }
-    fillRoundRect(x, y, width, height, sendImmediately) {
+    drawRoundRect(x, y, width, height, borderRadius, sendImmediately) {
+        const { x: _x, y: _y, width: _width, height: _height, } = __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_clampBox).call(this, x, y, width, height);
+        const dataView = new DataView(new ArrayBuffer(2 * 4 + 1));
+        dataView.setUint16(0, _x, true);
+        dataView.setUint16(2, _y, true);
+        dataView.setUint16(4, _width, true);
+        dataView.setUint16(6, _height, true);
+        dataView.setUint8(8, borderRadius);
+        _console$o.log("drawRoundRect data", dataView);
+        __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "drawRoundRect", dataView.buffer, sendImmediately);
     }
-    fillCircle(x, y, width, height, sendImmediately) {
+    drawCircle(x, y, radius, sendImmediately) {
+        const { x: _x, y: _y, radius: _radius } = __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_clampRadius).call(this, x, y, radius);
+        const dataView = new DataView(new ArrayBuffer(2 * 3));
+        dataView.setUint16(0, _x, true);
+        dataView.setUint16(2, _y, true);
+        dataView.setUint16(4, _radius, true);
+        _console$o.log("drawCircle data", dataView);
+        __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "drawCircle", dataView.buffer, sendImmediately);
     }
-    fillEllipse(x, y, width, height, sendImmediately) {
+    drawEllipse(x, y, radiusX, radiusY, rotation, sendImmediately) {
+        const dataView = new DataView(new ArrayBuffer(2 * 5));
+        rotation = __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_radiansToUint16).call(this, rotation);
+        dataView.setUint16(0, x, true);
+        dataView.setUint16(2, y, true);
+        dataView.setUint16(4, radiusX, true);
+        dataView.setUint16(6, radiusY, true);
+        dataView.setUint16(8, rotation, true);
+        _console$o.log("drawEllipse data", dataView);
+        __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "drawEllipse", dataView.buffer, sendImmediately);
     }
     selectSpriteSheet(index, sendImmediately) {
     }
@@ -4071,7 +4103,7 @@ async function _DisplayManager_sendDisplayCommand(command, sendImmediately) {
         await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommands).call(this);
     }
 }, _DisplayManager_sendDisplayContextCommands = async function _DisplayManager_sendDisplayContextCommands() {
-    _console$o.log(`sending displayContextCommands`);
+    _console$o.log(`sending displayContextCommands`, __classPrivateFieldGet(this, _DisplayManager_displayContextCommandBuffers, "f"));
     const data = concatenateArrayBuffers(__classPrivateFieldGet(this, _DisplayManager_displayContextCommandBuffers, "f"));
     await this.sendMessage([{ type: "displayContextCommands", data }], true);
     __classPrivateFieldGet(this, _DisplayManager_displayContextCommandBuffers, "f").length = 0;
@@ -4085,6 +4117,8 @@ async function _DisplayManager_sendDisplayCommand(command, sendImmediately) {
     _console$o.assertRangeWithError("colorIndex", colorIndex, 0, this.numberOfColors);
 }, _DisplayManager_assertValidOpacity = function _DisplayManager_assertValidOpacity(value) {
     _console$o.assertRangeWithError("opacity", value, 0, 1);
+}, _DisplayManager_assertValidLineWidth = function _DisplayManager_assertValidLineWidth(lineWidth) {
+    _console$o.assertRangeWithError("lineWidth", lineWidth, 0, this.width);
 }, _DisplayManager_clampX = function _DisplayManager_clampX(x) {
     return clamp(x, 0, this.width - 1);
 }, _DisplayManager_clampWidth = function _DisplayManager_clampWidth(x, width) {
@@ -4100,6 +4134,14 @@ async function _DisplayManager_sendDisplayCommand(command, sendImmediately) {
     height = __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_clampHeight).call(this, y, height);
     _console$o.log("clampBox", { x, y, width, height });
     return { x, y, width, height };
+}, _DisplayManager_clampRadius = function _DisplayManager_clampRadius(_x, _y, radius) {
+    const { x, y, width, height } = __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_clampBox).call(this, _x, _y, radius, radius);
+    return { x, y, radius: Math.min(width, height) };
+}, _DisplayManager_radiansToUint16 = function _DisplayManager_radiansToUint16(radians) {
+    const UINT16_MAX = 0xffff;
+    const TWO_PI = 2 * Math.PI;
+    const normalized = ((radians % TWO_PI) + TWO_PI) % TWO_PI;
+    return Math.round((normalized / TWO_PI) * UINT16_MAX);
 };
 
 var _BaseConnectionManager_instances, _a$4, _BaseConnectionManager_AssertValidTxRxMessageType, _BaseConnectionManager_assertIsSupported, _BaseConnectionManager_status, _BaseConnectionManager_assertIsNotConnecting, _BaseConnectionManager_assertIsNotDisconnecting, _BaseConnectionManager_pendingMessages, _BaseConnectionManager_isSendingMessages, _BaseConnectionManager_onRxMessage, _BaseConnectionManager_timer, _BaseConnectionManager_checkConnection;
@@ -7358,21 +7400,37 @@ class Device {
         __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertDisplayIsAvailable).call(this);
         return __classPrivateFieldGet(this, _Device_displayManager, "f").restoreContext;
     }
-    get selectDisplayFillColor() {
-        __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertDisplayIsAvailable).call(this);
-        return __classPrivateFieldGet(this, _Device_displayManager, "f").selectFillColor;
-    }
-    get selectDisplayStrokeColor() {
-        __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertDisplayIsAvailable).call(this);
-        return __classPrivateFieldGet(this, _Device_displayManager, "f").selectStrokeColor;
-    }
     get clearDisplayRect() {
         __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertDisplayIsAvailable).call(this);
         return __classPrivateFieldGet(this, _Device_displayManager, "f").clearRect;
     }
-    get fillDisplayRect() {
+    get selectDisplayFillColor() {
         __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertDisplayIsAvailable).call(this);
-        return __classPrivateFieldGet(this, _Device_displayManager, "f").fillRect;
+        return __classPrivateFieldGet(this, _Device_displayManager, "f").selectFillColor;
+    }
+    get selectDisplayLineColor() {
+        __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertDisplayIsAvailable).call(this);
+        return __classPrivateFieldGet(this, _Device_displayManager, "f").selectLineColor;
+    }
+    get setDisplayLineWidth() {
+        __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertDisplayIsAvailable).call(this);
+        return __classPrivateFieldGet(this, _Device_displayManager, "f").setLineWidth;
+    }
+    get drawDisplayRect() {
+        __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertDisplayIsAvailable).call(this);
+        return __classPrivateFieldGet(this, _Device_displayManager, "f").drawRect;
+    }
+    get drawDisplayCircle() {
+        __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertDisplayIsAvailable).call(this);
+        return __classPrivateFieldGet(this, _Device_displayManager, "f").drawCircle;
+    }
+    get drawDisplayEllipse() {
+        __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertDisplayIsAvailable).call(this);
+        return __classPrivateFieldGet(this, _Device_displayManager, "f").drawEllipse;
+    }
+    get drawDisplayRoundRect() {
+        __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertDisplayIsAvailable).call(this);
+        return __classPrivateFieldGet(this, _Device_displayManager, "f").drawRoundRect;
     }
 }
 _a$3 = Device, _Device_eventDispatcher = new WeakMap(), _Device_connectionManager = new WeakMap(), _Device_isConnected = new WeakMap(), _Device_reconnectOnDisconnection = new WeakMap(), _Device_reconnectIntervalId = new WeakMap(), _Device_deviceInformationManager = new WeakMap(), _Device_batteryLevel = new WeakMap(), _Device_sensorConfigurationManager = new WeakMap(), _Device_clearSensorConfigurationOnLeave = new WeakMap(), _Device_sensorDataManager = new WeakMap(), _Device_vibrationManager = new WeakMap(), _Device_fileTransferManager = new WeakMap(), _Device_tfliteManager = new WeakMap(), _Device_firmwareManager = new WeakMap(), _Device_isServerSide = new WeakMap(), _Device_wifiManager = new WeakMap(), _Device_cameraManager = new WeakMap(), _Device_microphoneManager = new WeakMap(), _Device_displayManager = new WeakMap(), _Device_instances = new WeakSet(), _Device_DefaultConnectionManager = function _Device_DefaultConnectionManager() {

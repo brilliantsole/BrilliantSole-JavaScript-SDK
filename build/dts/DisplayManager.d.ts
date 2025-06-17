@@ -14,6 +14,8 @@ export declare const DisplayBrightnesses: readonly ["veryLow", "low", "medium", 
 export type DisplayBrightness = (typeof DisplayBrightnesses)[number];
 export declare const DisplayMessageTypes: readonly ["isDisplayAvailable", "displayStatus", "displayInformation", "displayCommand", "getDisplayBrightness", "setDisplayBrightness", "displayContextCommands"];
 export type DisplayMessageType = (typeof DisplayMessageTypes)[number];
+export declare const DisplaySegmentCaps: readonly ["flat", "round"];
+export type DisplaySegmentCap = (typeof DisplaySegmentCaps)[number];
 export type DisplaySize = {
     width: number;
     height: number;
@@ -38,7 +40,7 @@ export declare const DisplayInformationValues: {
     type: readonly ["none", "monocularLeft", "monocularRight", "binocular"];
     pixelDepth: readonly ["1", "2", "4"];
 };
-export declare const DisplayContextCommands: readonly ["show", "clear", "setColor", "setColorOpacity", "setOpacity", "saveContext", "restoreContext", "selectFillColor", "selectStrokeColor", "clearRect", "fillRect", "fillRoundRect", "fillCircle", "fillEllipse", "selectSpriteSheet", "sprite", "selectFont", "text"];
+export declare const DisplayContextCommands: readonly ["show", "clear", "setColor", "setColorOpacity", "setOpacity", "saveContext", "restoreContext", "selectFillColor", "selectLineColor", "setLineWidth", "setRotation", "setStartSegmentCap", "setEndSegmentCap", "setSegmentCap", "setSegmentRadiusStart", "setSegmentRadiusEnd", "setSegmentRadius", "setCropTop", "setCropRight", "setCropBottom", "setCropLeft", "setRotationCropTop", "setRotationCropRight", "setRotationCropBottom", "setRotationCropLeft", "clearRect", "drawRect", "drawRoundRect", "drawCircle", "drawEllipse", "drawPolygon", "drawLine", "selectSpriteSheet", "sprite", "selectFont", "drawText"];
 export type DisplayContextCommand = (typeof DisplayContextCommands)[number];
 export declare const RequiredDisplayMessageTypes: DisplayMessageType[];
 export declare const DisplayEventTypes: readonly ["isDisplayAvailable", "displayStatus", "displayInformation", "displayCommand", "getDisplayBrightness", "setDisplayBrightness", "displayContextCommands"];
@@ -97,12 +99,22 @@ declare class DisplayManager {
     saveContext(sendImmediately: boolean): void;
     restoreContext(sendImmediately: boolean): void;
     selectFillColor(colorIndex: number, sendImmediately: boolean): void;
-    selectStrokeColor(colorIndex: number, sendImmediately: boolean): void;
+    selectLineColor(colorIndex: number, sendImmediately: boolean): void;
+    setLineWidth(lineWidth: number, sendImmediately: boolean): void;
+    setRotation(rotation: number, isRadians: boolean, sendImmediately: boolean): void;
+    setSegmentStartCap(segmentStartCap: DisplaySegmentCap, sendImmediately: boolean): void;
+    setSegmentEndCap(segmentEndCap: DisplaySegmentCap, sendImmediately: boolean): void;
+    setSegmentCap(segmentCap: DisplaySegmentCap, sendImmediately: boolean): void;
+    setSegmentStartRadius(lineEndRadius: number, sendImmediately: boolean): void;
+    setSegmentEndRadius(segmentStartRadius: number, sendImmediately: boolean): void;
+    setSegmentRadius(segmentRadius: number, sendImmediately: boolean): void;
     clearRect(x: number, y: number, width: number, height: number, sendImmediately: boolean): void;
-    fillRect(x: number, y: number, width: number, height: number, sendImmediately: boolean): void;
-    fillRoundRect(x: number, y: number, width: number, height: number, sendImmediately: boolean): void;
-    fillCircle(x: number, y: number, width: number, height: number, sendImmediately: boolean): void;
-    fillEllipse(x: number, y: number, width: number, height: number, sendImmediately: boolean): void;
+    drawRect(x: number, y: number, width: number, height: number, sendImmediately: boolean): void;
+    drawRoundRect(x: number, y: number, width: number, height: number, borderRadius: number, sendImmediately: boolean): void;
+    drawCircle(x: number, y: number, radius: number, sendImmediately: boolean): void;
+    drawEllipse(x: number, y: number, radiusX: number, radiusY: number, sendImmediately: boolean): void;
+    drawPolygon(x: number, y: number, radius: number, numberOfSides: number, sendImmediately: boolean): void;
+    drawLine(startX: number, startY: number, endX: number, endY: number, sendImmediately: boolean): void;
     selectSpriteSheet(index: number, sendImmediately: boolean): void;
     drawSprite(index: number, x: number, y: number, sendImmediately: boolean): void;
     parseMessage(messageType: DisplayMessageType, dataView: DataView): void;

@@ -207,25 +207,60 @@
           <input disabled type="color" />
         </label>
 
-        <label id="strokeColor">
-          <b>stroke color</b>
+        <label id="lineColor">
+          <b>line color</b>
           <select>
-            <optgroup label="select stroke color"></optgroup>
+            <optgroup label="select line color"></optgroup>
           </select>
           <input disabled type="color" />
+        </label>
+
+        <label id="lineWidth">
+          <b>line width</b>
+          <input type="range" min="0" max="50" step="1" value="0" />
+          <span>0</span>px
+        </label>
+
+        <label id="rotation">
+          <b>rotation</b>
+          <input type="range" min="0" max="360" step="1" value="0" />
+          <span>0</span>deg
+        </label>
+
+        <label id="segmentStartCap">
+          <b>segment start cap</b>
+          <select>
+            <optgroup label="start segment cap"></optgroup>
+          </select>
+        </label>
+        <label id="segmentEndCap">
+          <b>segment end cap</b>
+          <select>
+            <optgroup label="end segment cap"></optgroup>
+          </select>
+        </label>
+        <label id="drawSegmentStartRadius">
+          segment start radius
+          <input type="range" min="0" max="200" step="1" value="1" />
+          <span>1</span>px
+        </label>
+        <label id="drawSegmentEndRadius">
+          segment end radius
+          <input type="range" min="0" max="200" step="1" value="1" />
+          <span>1</span>px
         </label>
       </div>
 
       <div>
         <label id="drawX">
           x
-          <input type="range" min="0" max="640" step="1" value="0" />
-          <span>0</span>px
+          <input type="range" min="0" max="640" step="1" value="50" />
+          <span>50</span>px
         </label>
         <label id="drawY">
           y
-          <input type="range" min="0" max="400" step="1" value="0" />
-          <span>0</span>px
+          <input type="range" min="0" max="400" step="1" value="50" />
+          <span>50</span>px
         </label>
         <label id="drawWidth">
           width
@@ -237,21 +272,41 @@
           <input type="range" min="1" max="400" step="1" value="100" />
           <span>100</span>px
         </label>
+        <label id="drawRadius">
+          radius
+          <input type="range" min="1" max="200" step="1" value="32" />
+          <span>32</span>px
+        </label>
         <label id="drawBorderRadius">
           border radius
           <input type="range" min="0" max="100" step="1" value="0" />
           <span>0</span>px
         </label>
+        <label id="drawNumberOfSides">
+          number of sides
+          <input type="range" min="3" max="10" step="1" value="3" />
+          <span>3</span>
+        </label>
+        <label id="drawEndX">
+          end x
+          <input type="range" min="0" max="640" step="1" value="50" />
+          <span>50</span>px
+        </label>
+        <label id="drawEndY">
+          end y
+          <input type="range" min="0" max="400" step="1" value="50" />
+          <span>50</span>px
+        </label>
         <label>
           shape type
           <select id="drawShapeType">
             <optgroup label="draw shape">
-              <option selected>fillRect</option>
-              <option>strokeRect</option>
-              <option>fillCircle</option>
-              <option>strokeCircle</option>
-              <option>fillRoundRect</option>
-              <option>strokeRoundRect</option>
+              <option>drawRect</option>
+              <option>drawCircle</option>
+              <option>drawRoundRect</option>
+              <option>drawEllipse</option>
+              <option>drawPolygon</option>
+              <option selected>drawLine</option>
             </optgroup>
           </select>
         </label>

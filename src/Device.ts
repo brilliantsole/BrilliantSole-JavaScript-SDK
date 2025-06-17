@@ -1520,23 +1520,80 @@ class Device {
     return this.#displayManager.restoreContext;
   }
 
-  get selectDisplayFillColor() {
-    this.#assertDisplayIsAvailable();
-    return this.#displayManager.selectFillColor;
-  }
-  get selectDisplayStrokeColor() {
-    this.#assertDisplayIsAvailable();
-    return this.#displayManager.selectStrokeColor;
-  }
-
   get clearDisplayRect() {
     this.#assertDisplayIsAvailable();
     return this.#displayManager.clearRect;
   }
-  get fillDisplayRect() {
+
+  get selectDisplayFillColor() {
     this.#assertDisplayIsAvailable();
-    return this.#displayManager.fillRect;
+    return this.#displayManager.selectFillColor;
   }
+  get selectDisplayLineColor() {
+    this.#assertDisplayIsAvailable();
+    return this.#displayManager.selectLineColor;
+  }
+  get setDisplayLineWidth() {
+    this.#assertDisplayIsAvailable();
+    return this.#displayManager.setLineWidth;
+  }
+  get setDisplayRotation() {
+    this.#assertDisplayIsAvailable();
+    return this.#displayManager.setRotation;
+  }
+
+  get setDisplaySegmentStartCap() {
+    this.#assertDisplayIsAvailable();
+    return this.#displayManager.setSegmentStartCap;
+  }
+  get setDisplaySegmentEndCap() {
+    this.#assertDisplayIsAvailable();
+    return this.#displayManager.setSegmentEndCap;
+  }
+  get setDisplaySegmentCap() {
+    this.#assertDisplayIsAvailable();
+    return this.#displayManager.setSegmentCap;
+  }
+
+  get setDisplaySegmentStartRadius() {
+    this.#assertDisplayIsAvailable();
+    return this.#displayManager.setSegmentStartRadius;
+  }
+  get setDisplaySegmentEndRadius() {
+    this.#assertDisplayIsAvailable();
+    return this.#displayManager.setSegmentEndRadius;
+  }
+  get setDisplaySegmentRadius() {
+    this.#assertDisplayIsAvailable();
+    return this.#displayManager.setSegmentRadius;
+  }
+
+  get drawDisplayRect() {
+    this.#assertDisplayIsAvailable();
+    return this.#displayManager.drawRect;
+  }
+  get drawDisplayCircle() {
+    this.#assertDisplayIsAvailable();
+    return this.#displayManager.drawCircle;
+  }
+  get drawDisplayEllipse() {
+    this.#assertDisplayIsAvailable();
+    return this.#displayManager.drawEllipse;
+  }
+  get drawDisplayRoundRect() {
+    this.#assertDisplayIsAvailable();
+    return this.#displayManager.drawRoundRect;
+  }
+  get drawDisplayPolygon() {
+    this.#assertDisplayIsAvailable();
+    return this.#displayManager.drawPolygon;
+  }
+  get drawDisplayLine() {
+    this.#assertDisplayIsAvailable();
+    return this.#displayManager.drawLine;
+  }
+
+  // FILL - spritesheet, text, etc
 }
 
 export default Device;

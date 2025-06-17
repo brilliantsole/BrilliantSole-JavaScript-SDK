@@ -16,7 +16,7 @@ export { FileType, FileTypes, FileTransferDirection, FileTransferDirections, } f
 export { TfliteSensorType, TfliteSensorTypes, TfliteTask, TfliteTasks, TfliteFileConfiguration as TfliteFileConfiguration, } from "./TfliteManager.ts";
 export { CameraConfiguration, CameraCommand, CameraCommands, CameraConfigurationType, CameraConfigurationTypes, } from "./CameraManager.ts";
 export { MicrophoneConfiguration, MicrophoneCommand, MicrophoneCommands, MicrophoneConfigurationType, MicrophoneConfigurationTypes, MicrophoneConfigurationValues, } from "./MicrophoneManager.ts";
-export { DisplayBrightness, DisplayBrightnesses, DisplaySize, DisplayColorRGB, } from "./DisplayManager.ts";
+export { DisplayBrightness, DisplayBrightnesses, DisplaySize, DisplayColorRGB, DisplaySegmentCap, DisplaySegmentCaps, } from "./DisplayManager.ts";
 export { default as DevicePair, DevicePairEvent, DevicePairEventMap, DevicePairEventListenerMap, BoundDevicePairEventListeners, DevicePairType, DevicePairTypes, } from "./devicePair/DevicePair.ts";
 import { addEventListeners, removeEventListeners } from "./utils/EventUtils.ts";
 export declare const EventUtils: {
@@ -37,4 +37,7 @@ export { default as UDPServer } from "./server/udp/UDPServer.ts";
 /** BROWSER_START */
 export { default as WebSocketClient } from "./server/websocket/WebSocketClient.ts";
 /** BROWSER_END */
+/** LS_START */
+export { default as WebSocketClient } from "./server/websocket/WebSocketClient.ts";
+/** LS_END */
 export { default as RangeHelper } from "./utils/RangeHelper.ts";

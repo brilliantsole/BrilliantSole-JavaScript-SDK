@@ -85,7 +85,21 @@ const lensStudioPlugins = [
   commonjs(),
   babel({
     babelHelpers: "bundled",
+    extensions: [".ts", ".js"], // <-- important
     exclude: "node_modules/**",
+    presets: [
+      [
+        "@babel/preset-env",
+        {
+          targets: "> 0.25%, not dead",
+        },
+      ],
+      "@babel/preset-typescript",
+    ],
+    plugins: [
+      "@babel/plugin-proposal-optional-chaining",
+      "@babel/plugin-proposal-nullish-coalescing-operator",
+    ],
   }),
 ];
 

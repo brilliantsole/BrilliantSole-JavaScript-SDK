@@ -2098,8 +2098,8 @@ device.addEventListener("connected", () => {
         if (colorIndex == fillColorIndex) {
           fillColorInput.value = displayColorInput.value;
         }
-        if (colorIndex == strokeColorIndex) {
-          strokeColorInput.value = displayColorInput.value;
+        if (colorIndex == lineColorIndex) {
+          lineColorInput.value = displayColorInput.value;
         }
       });
       displayColorsContainer.appendChild(displayColorContainer);
@@ -2207,7 +2207,8 @@ let fillColorIndex = 1;
 fillColorSelect.addEventListener("input", () => {
   fillColorIndex = Number(fillColorSelect.value);
   console.log({ fillColorIndex });
-  device.selectDisplayFillColor(fillColorIndex, true);
+  device.selectDisplayFillColor(fillColorIndex);
+  drawShape();
   fillColorInput.value = displayColorsContainer.querySelectorAll(
     ".displayColor input"
   )[fillColorIndex].value;
@@ -2217,40 +2218,41 @@ device.addEventListener("isConnected", () => {
   fillColorSelect.disabled = !enabled;
 });
 
-const strokeColorContainer = document.getElementById("strokeColor");
-const strokeColorSelect = strokeColorContainer.querySelector("select");
-const strokeColorOptgroup = strokeColorSelect.querySelector("optgroup");
-let strokeColorIndex = 1;
+const lineColorContainer = document.getElementById("lineColor");
+const lineColorSelect = lineColorContainer.querySelector("select");
+const lineColorOptgroup = lineColorSelect.querySelector("optgroup");
+let lineColorIndex = 1;
 device.addEventListener("connected", () => {
   if (!device.isDisplayAvailable) {
     return;
   }
-  strokeColorOptgroup.innerHTML = "";
+  lineColorOptgroup.innerHTML = "";
   for (
     let colorIndex = 0;
     colorIndex < device.numberOfDisplayColors;
     colorIndex++
   ) {
-    strokeColorOptgroup.appendChild(new Option(colorIndex));
+    lineColorOptgroup.appendChild(new Option(colorIndex));
   }
-  strokeColorSelect.value = strokeColorIndex;
+  lineColorSelect.value = lineColorIndex;
 });
-const strokeColorInput = strokeColorContainer.querySelector("input");
-strokeColorSelect.addEventListener("input", () => {
-  strokeColorIndex = Number(strokeColorSelect.value);
-  console.log({ strokeColorIndex });
-  device.selectDisplayStrokeColor(strokeColorIndex, true);
-  strokeColorInput.value = displayColorsContainer.querySelectorAll(
+const lineColorInput = lineColorContainer.querySelector("input");
+lineColorSelect.addEventListener("input", () => {
+  lineColorIndex = Number(lineColorSelect.value);
+  console.log({ lineColorIndex });
+  device.selectDisplayLineColor(lineColorIndex);
+  drawShape();
+  lineColorInput.value = displayColorsContainer.querySelectorAll(
     ".displayColor input"
-  )[strokeColorIndex].value;
+  )[lineColorIndex].value;
 });
 device.addEventListener("isConnected", () => {
   const enabled = device.isConnected && device.isDisplayAvailable;
-  strokeColorSelect.disabled = !enabled;
+  lineColorSelect.disabled = !enabled;
 });
 
 const drawShape = BS.ThrottleUtils.throttle(
-  () => {
+  (updatedParams) => {
     if (device.isConnected && device.isDisplayAvailable) {
       console.log("draw", {
         drawShapeType,
@@ -2260,25 +2262,53 @@ const drawShape = BS.ThrottleUtils.throttle(
         drawY,
         drawBorderRadius,
       });
+      if (updatedParams?.includes("lineWidth")) {
+        device.setDisplayLineWidth(lineWidth);
+      }
+      if (updatedParams?.includes("rotation")) {
+        device.setDisplayRotation(rotation);
+      }
+      if (updatedParams?.includes("segmentStartCap")) {
+        device.setDisplaySegmentStartCap(segmentStartCap);
+      }
+      if (updatedParams?.includes("segmentEndCap")) {
+        device.setDisplaySegmentEndCap(segmentEndCap);
+      }
+      if (updatedParams?.includes("segmentStartRadius")) {
+        device.setDisplaySegmentStartRadius(drawSegmentStartRadius);
+      }
+      if (updatedParams?.includes("segmentEndRadius")) {
+        device.setDisplaySegmentEndRadius(drawSegmentEndRadius);
+      }
       switch (drawShapeType) {
-        case "fillRect":
-          // FILL
-          device.fillDisplayRect(drawX, drawY, drawWidth, drawHeight);
+        case "drawRect":
+          device.drawDisplayRect(drawX, drawY, drawWidth, drawHeight);
           break;
-        case "strokeRect":
-          // FILL
+        case "drawRoundRect":
+          device.drawDisplayRoundRect(
+            drawX,
+            drawY,
+            drawWidth,
+            drawHeight,
+            drawBorderRadius
+          );
           break;
-        case "fillCircle":
-          // FILL
+        case "drawCircle":
+          device.drawDisplayCircle(drawX, drawY, drawRadius);
           break;
-        case "strokeCircle":
-          // FILL
+        case "drawEllipse":
+          device.drawDisplayEllipse(drawX, drawY, drawWidth, drawHeight);
           break;
-        case "fillRoundRect":
-          // FILL
+        case "drawPolygon":
+          device.drawDisplayPolygon(
+            drawX,
+            drawY,
+            drawRadius,
+            drawNumberOfSides
+          );
           break;
-        case "strokeRoundRect":
-          // FILL
+        case "drawLine":
+          device.drawDisplayLine(drawX, drawY, drawEndX, drawEndY);
           break;
         default:
           console.error(`uncaught drawShapeType ${drawShapeType}`);
@@ -2290,6 +2320,96 @@ const drawShape = BS.ThrottleUtils.throttle(
   100,
   true
 );
+
+const lineWidthContainer = document.getElementById("lineWidth");
+const lineWidthInput = lineWidthContainer.querySelector("input");
+const lineWidthSpan = lineWidthContainer.querySelector("span");
+let lineWidth = Number(lineWidthInput.value);
+
+lineWidthInput.addEventListener("input", () => {
+  lineWidth = Number(lineWidthInput.value);
+  //console.log({ lineWidth });
+  lineWidthSpan.innerText = lineWidth;
+
+  drawShape(["lineWidth"]);
+});
+
+const rotationContainer = document.getElementById("rotation");
+const rotationInput = rotationContainer.querySelector("input");
+const rotationSpan = rotationContainer.querySelector("span");
+let rotation = Number(rotationInput.value);
+
+rotationInput.addEventListener("input", () => {
+  rotation = Number(rotationInput.value);
+  // console.log({ rotation });
+  rotationSpan.innerText = rotation;
+
+  drawShape(["rotation"]);
+});
+
+const segmentStartCapContainer = document.getElementById("segmentStartCap");
+const segmentStartCapSelect = segmentStartCapContainer.querySelector("select");
+const segmentStartCapOptgroup = segmentStartCapSelect.querySelector("optgroup");
+
+BS.DisplaySegmentCaps.forEach((segmentStartCap) => {
+  segmentStartCapOptgroup.appendChild(new Option(segmentStartCap));
+});
+let segmentStartCap = segmentStartCapSelect.value;
+console.log({ segmentStartCap });
+
+segmentStartCapSelect.addEventListener("input", () => {
+  segmentStartCap = segmentStartCapSelect.value;
+  console.log({ segmentStartCap });
+  drawShape(["segmentStartCap"]);
+});
+
+const segmentEndCapContainer = document.getElementById("segmentEndCap");
+const segmentEndCapSelect = segmentEndCapContainer.querySelector("select");
+const segmentEndCapOptgroup = segmentEndCapSelect.querySelector("optgroup");
+
+BS.DisplaySegmentCaps.forEach((segmentEndCap) => {
+  segmentEndCapOptgroup.appendChild(new Option(segmentEndCap));
+});
+let segmentEndCap = segmentEndCapSelect.value;
+console.log({ segmentEndCap });
+
+segmentEndCapSelect.addEventListener("input", () => {
+  segmentEndCap = segmentEndCapSelect.value;
+  console.log({ segmentEndCap });
+  drawShape(["segmentEndCap"]);
+});
+
+const drawSegmentStartRadiusContainer = document.getElementById(
+  "drawSegmentStartRadius"
+);
+const drawSegmentStartRadiusInput =
+  drawSegmentStartRadiusContainer.querySelector("input");
+const drawSegmentStartRadiusSpan =
+  drawSegmentStartRadiusContainer.querySelector("span");
+let drawSegmentStartRadius = Number(drawSegmentStartRadiusInput.value);
+
+drawSegmentStartRadiusInput.addEventListener("input", () => {
+  drawSegmentStartRadius = Number(drawSegmentStartRadiusInput.value);
+  //console.log({ drawSegmentStartRadius });
+  drawSegmentStartRadiusSpan.innerText = drawSegmentStartRadius;
+  drawShape(["segmentStartRadius"]);
+});
+
+const drawSegmentEndRadiusContainer = document.getElementById(
+  "drawSegmentEndRadius"
+);
+const drawSegmentEndRadiusInput =
+  drawSegmentEndRadiusContainer.querySelector("input");
+const drawSegmentEndRadiusSpan =
+  drawSegmentEndRadiusContainer.querySelector("span");
+let drawSegmentEndRadius = Number(drawSegmentEndRadiusInput.value);
+
+drawSegmentEndRadiusInput.addEventListener("input", () => {
+  drawSegmentEndRadius = Number(drawSegmentEndRadiusInput.value);
+  //console.log({ drawSegmentEndRadius });
+  drawSegmentEndRadiusSpan.innerText = drawSegmentEndRadius;
+  drawShape(["segmentEndRadius"]);
+});
 
 const drawXContainer = document.getElementById("drawX");
 const drawXInput = drawXContainer.querySelector("input");
@@ -2339,6 +2459,18 @@ drawHeightInput.addEventListener("input", () => {
   drawShape();
 });
 
+const drawRadiusContainer = document.getElementById("drawRadius");
+const drawRadiusInput = drawRadiusContainer.querySelector("input");
+const drawRadiusSpan = drawRadiusContainer.querySelector("span");
+let drawRadius = Number(drawRadiusInput.value);
+
+drawRadiusInput.addEventListener("input", () => {
+  drawRadius = Number(drawRadiusInput.value);
+  //console.log({ drawRadius });
+  drawRadiusSpan.innerText = drawRadius;
+  drawShape();
+});
+
 const drawBorderRadiusContainer = document.getElementById("drawBorderRadius");
 const drawBorderRadiusInput = drawBorderRadiusContainer.querySelector("input");
 const drawBorderRadiusSpan = drawBorderRadiusContainer.querySelector("span");
@@ -2348,7 +2480,44 @@ drawBorderRadiusInput.addEventListener("input", () => {
   drawBorderRadius = Number(drawBorderRadiusInput.value);
   //console.log({ drawBorderRadius });
   drawBorderRadiusSpan.innerText = drawBorderRadius;
-  //drawShape();
+  drawShape();
+});
+
+const drawNumberOfSidesContainer = document.getElementById("drawNumberOfSides");
+const drawNumberOfSidesInput =
+  drawNumberOfSidesContainer.querySelector("input");
+const drawNumberOfSidesSpan = drawNumberOfSidesContainer.querySelector("span");
+let drawNumberOfSides = Number(drawNumberOfSidesInput.value);
+
+drawNumberOfSidesInput.addEventListener("input", () => {
+  drawNumberOfSides = Number(drawNumberOfSidesInput.value);
+  //console.log({ drawNumberOfSides });
+  drawNumberOfSidesSpan.innerText = drawNumberOfSides;
+  drawShape();
+});
+
+const drawEndXContainer = document.getElementById("drawEndX");
+const drawEndXInput = drawEndXContainer.querySelector("input");
+const drawEndXSpan = drawEndXContainer.querySelector("span");
+let drawEndX = Number(drawEndXInput.value);
+
+drawEndXInput.addEventListener("input", () => {
+  drawEndX = Number(drawEndXInput.value);
+  //console.log({ drawEndX });
+  drawEndXSpan.innerText = drawEndX;
+  drawShape();
+});
+
+const drawEndYContainer = document.getElementById("drawEndY");
+const drawEndYInput = drawEndYContainer.querySelector("input");
+const drawEndYSpan = drawEndYContainer.querySelector("span");
+let drawEndY = Number(drawEndYInput.value);
+
+drawEndYInput.addEventListener("input", () => {
+  drawEndY = Number(drawEndYInput.value);
+  //console.log({ drawEndY });
+  drawEndYSpan.innerText = drawEndY;
+  drawShape();
 });
 
 /** @type {HTMLButtonElement} */
@@ -2380,4 +2549,9 @@ device.addEventListener("connected", () => {
 
   drawWidthInput.max = device.displayInformation.width;
   drawHeightInput.max = device.displayInformation.height;
+
+  drawRadiusInput.max = Math.min(
+    device.displayInformation.height / 2,
+    device.displayInformation.width / 2
+  );
 });

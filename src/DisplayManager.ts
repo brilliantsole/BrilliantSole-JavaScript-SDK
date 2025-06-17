@@ -6,7 +6,7 @@ import {
 import { createConsole } from "./utils/Console.ts";
 import EventDispatcher from "./utils/EventDispatcher.ts";
 import autoBind from "auto-bind";
-import { clamp } from "./utils/MathUtils.ts";
+import { clamp, Uint16Max } from "./utils/MathUtils.ts";
 import { hexToRGB } from "./utils/ColorUtils.ts";
 
 const _console = createConsole("DisplayManager", { log: true });
@@ -56,6 +56,9 @@ export const DisplayMessageTypes = [
 ] as const;
 export type DisplayMessageType = (typeof DisplayMessageTypes)[number];
 
+export const DisplaySegmentCaps = ["flat", "round"] as const;
+export type DisplaySegmentCap = (typeof DisplaySegmentCaps)[number];
+
 export type DisplaySize = {
   width: number;
   height: number;
@@ -95,21 +98,42 @@ export const DisplayContextCommands = [
   "restoreContext",
 
   "selectFillColor",
-  "selectStrokeColor",
+  "selectLineColor",
+  "setLineWidth",
+  "setRotation",
+
+  "setStartSegmentCap",
+  "setEndSegmentCap",
+  "setSegmentCap",
+
+  "setSegmentRadiusStart",
+  "setSegmentRadiusEnd",
+  "setSegmentRadius",
+
+  "setCropTop",
+  "setCropRight",
+  "setCropBottom",
+  "setCropLeft",
+
+  "setRotationCropTop",
+  "setRotationCropRight",
+  "setRotationCropBottom",
+  "setRotationCropLeft",
 
   "clearRect",
 
-  "fillRect",
-  "fillRoundRect",
-
-  "fillCircle",
-  "fillEllipse",
+  "drawRect",
+  "drawRoundRect",
+  "drawCircle",
+  "drawEllipse",
+  "drawPolygon",
+  "drawLine",
 
   "selectSpriteSheet",
   "sprite",
 
   "selectFont",
-  "text",
+  "drawText",
 ] as const;
 export type DisplayContextCommand = (typeof DisplayContextCommands)[number];
 
@@ -426,7 +450,10 @@ class DisplayManager {
     }
   }
   async #sendDisplayContextCommands() {
-    _console.log(`sending displayContextCommands`);
+    _console.log(
+      `sending displayContextCommands`,
+      this.#displayContextCommandBuffers
+    );
     const data = concatenateArrayBuffers(this.#displayContextCommandBuffers);
     await this.sendMessage([{ type: "displayContextCommands", data }], true);
     this.#displayContextCommandBuffers.length = 0;
@@ -519,11 +546,120 @@ class DisplayManager {
       sendImmediately
     );
   }
-  selectStrokeColor(colorIndex: number, sendImmediately: boolean) {
+  selectLineColor(colorIndex: number, sendImmediately: boolean) {
     this.#assertValidColorIndex(colorIndex);
     this.#sendDisplayContextCommand(
-      "selectStrokeColor",
+      "selectLineColor",
       UInt8ByteBuffer(colorIndex),
+      sendImmediately
+    );
+  }
+  #assertValidLineWidth(lineWidth: number) {
+    _console.assertRangeWithError("lineWidth", lineWidth, 0, this.width);
+  }
+  setLineWidth(lineWidth: number, sendImmediately: boolean) {
+    this.#assertValidLineWidth(lineWidth);
+    const dataView = new DataView(new ArrayBuffer(2));
+    dataView.setUint16(0, lineWidth, true);
+    this.#sendDisplayContextCommand(
+      "setLineWidth",
+      dataView.buffer,
+      sendImmediately
+    );
+  }
+  setRotation(rotation: number, isRadians: boolean, sendImmediately: boolean) {
+    const dataView = new DataView(new ArrayBuffer(2));
+    if (isRadians) {
+      const rotationRad = rotation;
+      _console.log({ rotationRad });
+      rotation %= 2 * Math.PI;
+      rotation /= 2 * Math.PI;
+    } else {
+      const rotationDeg = rotation;
+      _console.log({ rotationDeg });
+      rotation %= 360;
+      rotation /= 360;
+    }
+    rotation *= Uint16Max;
+    _console.log({ rotation });
+    dataView.setUint16(0, rotation, true);
+    this.#sendDisplayContextCommand(
+      "setRotation",
+      dataView.buffer,
+      sendImmediately
+    );
+  }
+
+  #assertValidSegmentCap(segmentCap: DisplaySegmentCap) {
+    _console.assertEnumWithError(segmentCap, DisplaySegmentCaps);
+  }
+  setSegmentStartCap(
+    segmentStartCap: DisplaySegmentCap,
+    sendImmediately: boolean
+  ) {
+    this.#assertValidSegmentCap(segmentStartCap);
+    const dataView = new DataView(new ArrayBuffer(1));
+    _console.log({ segmentStartCap });
+    const segmentCapEnum = DisplaySegmentCaps.indexOf(segmentStartCap);
+    dataView.setUint8(0, segmentCapEnum);
+    this.#sendDisplayContextCommand(
+      "setStartSegmentCap",
+      dataView.buffer,
+      sendImmediately
+    );
+  }
+  setSegmentEndCap(segmentEndCap: DisplaySegmentCap, sendImmediately: boolean) {
+    this.#assertValidSegmentCap(segmentEndCap);
+    const dataView = new DataView(new ArrayBuffer(1));
+    _console.log({ segmentEndCap });
+    const segmentCapEnum = DisplaySegmentCaps.indexOf(segmentEndCap);
+    dataView.setUint8(0, segmentCapEnum);
+    this.#sendDisplayContextCommand(
+      "setEndSegmentCap",
+      dataView.buffer,
+      sendImmediately
+    );
+  }
+  setSegmentCap(segmentCap: DisplaySegmentCap, sendImmediately: boolean) {
+    this.#assertValidSegmentCap(segmentCap);
+    const dataView = new DataView(new ArrayBuffer(1));
+    _console.log({ segmentCap });
+    const segmentCapEnum = DisplaySegmentCaps.indexOf(segmentCap);
+    dataView.setUint8(0, segmentCapEnum);
+    this.#sendDisplayContextCommand(
+      "setSegmentCap",
+      dataView.buffer,
+      sendImmediately
+    );
+  }
+
+  setSegmentStartRadius(lineEndRadius: number, sendImmediately: boolean) {
+    const dataView = new DataView(new ArrayBuffer(2));
+    _console.log({ lineEndRadius });
+    dataView.setUint16(0, lineEndRadius, true);
+    this.#sendDisplayContextCommand(
+      "setSegmentRadiusStart",
+      dataView.buffer,
+      sendImmediately
+    );
+  }
+  setSegmentEndRadius(segmentStartRadius: number, sendImmediately: boolean) {
+    const dataView = new DataView(new ArrayBuffer(2));
+    _console.log({ segmentStartRadius });
+    dataView.setUint16(0, segmentStartRadius, true);
+    this.#sendDisplayContextCommand(
+      "setSegmentRadiusEnd",
+      dataView.buffer,
+      sendImmediately
+    );
+  }
+  setSegmentRadius(segmentRadius: number, sendImmediately: boolean) {
+    const dataView = new DataView(new ArrayBuffer(2));
+    _console.log({ segmentRadius });
+    dataView.setUint16(0, segmentRadius, true);
+    this.#sendDisplayContextCommand(
+      "setSegmentRadius",
+      dataView.buffer,
       sendImmediately
     );
   }
@@ -542,9 +678,9 @@ class DisplayManager {
   }
   #clampBox(x: number, y: number, width: number, height: number) {
     x = this.#clampX(x);
-    width = this.#clampWidth(x, width);
+    //width = this.#clampWidth(x, width);
     y = this.#clampY(y);
-    height = this.#clampHeight(y, height);
+    //height = this.#clampHeight(y, height);
 
     _console.log("clampBox", { x, y, width, height });
 
@@ -574,7 +710,7 @@ class DisplayManager {
       sendImmediately
     );
   }
-  fillRect(
+  drawRect(
     x: number,
     y: number,
     width: number,
@@ -592,39 +728,112 @@ class DisplayManager {
     dataView.setUint16(2, _y, true);
     dataView.setUint16(4, _width, true);
     dataView.setUint16(6, _height, true);
-    _console.log("fillRectData", dataView);
+    _console.log("drawRect data", dataView);
     this.#sendDisplayContextCommand(
-      "fillRect",
+      "drawRect",
       dataView.buffer,
       sendImmediately
     );
   }
-  fillRoundRect(
+  drawRoundRect(
     x: number,
     y: number,
     width: number,
     height: number,
+    borderRadius: number,
     sendImmediately: boolean
   ) {
-    // FILL
+    const {
+      x: _x,
+      y: _y,
+      width: _width,
+      height: _height,
+    } = this.#clampBox(x, y, width, height);
+    const dataView = new DataView(new ArrayBuffer(2 * 4 + 1));
+    dataView.setUint16(0, _x, true);
+    dataView.setUint16(2, _y, true);
+    dataView.setUint16(4, _width, true);
+    dataView.setUint16(6, _height, true);
+    dataView.setUint8(8, borderRadius);
+    _console.log("drawRoundRect data", dataView);
+    this.#sendDisplayContextCommand(
+      "drawRoundRect",
+      dataView.buffer,
+      sendImmediately
+    );
   }
-  fillCircle(
-    x: number,
-    y: number,
-    width: number,
-    height: number,
-    sendImmediately: boolean
-  ) {
-    // FILL
+  drawCircle(x: number, y: number, radius: number, sendImmediately: boolean) {
+    x = this.#clampX(x);
+    y = this.#clampY(y);
+    const dataView = new DataView(new ArrayBuffer(2 * 3));
+    dataView.setUint16(0, x, true);
+    dataView.setUint16(2, y, true);
+    dataView.setUint16(4, radius, true);
+    _console.log("drawCircle data", dataView);
+    this.#sendDisplayContextCommand(
+      "drawCircle",
+      dataView.buffer,
+      sendImmediately
+    );
   }
-  fillEllipse(
+  drawEllipse(
     x: number,
     y: number,
-    width: number,
-    height: number,
+    radiusX: number,
+    radiusY: number,
     sendImmediately: boolean
   ) {
-    // FILL
+    const dataView = new DataView(new ArrayBuffer(2 * 4));
+    dataView.setUint16(0, x, true);
+    dataView.setUint16(2, y, true);
+    dataView.setUint16(4, radiusX, true);
+    dataView.setUint16(6, radiusY, true);
+    _console.log("drawEllipse data", dataView);
+    this.#sendDisplayContextCommand(
+      "drawEllipse",
+      dataView.buffer,
+      sendImmediately
+    );
+  }
+  drawPolygon(
+    x: number,
+    y: number,
+    radius: number,
+    numberOfSides: number,
+    sendImmediately: boolean
+  ) {
+    const dataView = new DataView(new ArrayBuffer(2 * 3 + 1));
+    dataView.setUint16(0, x, true);
+    dataView.setUint16(2, y, true);
+    dataView.setUint16(4, radius, true);
+    dataView.setUint8(6, numberOfSides);
+    _console.log("drawPolygon data", dataView);
+    this.#sendDisplayContextCommand(
+      "drawPolygon",
+      dataView.buffer,
+      sendImmediately
+    );
+  }
+
+  drawLine(
+    startX: number,
+    startY: number,
+    endX: number,
+    endY: number,
+    sendImmediately: boolean
+  ) {
+    const dataView = new DataView(new ArrayBuffer(2 * 4));
+    _console.log({ startX, startY, endX, endY });
+    dataView.setUint16(0, startX, true);
+    dataView.setUint16(2, startY, true);
+    dataView.setUint16(4, endX, true);
+    dataView.setUint16(6, endY, true);
+    _console.log("drawLine data", dataView);
+    this.#sendDisplayContextCommand(
+      "drawLine",
+      dataView.buffer,
+      sendImmediately
+    );
   }
 
   // SPRITE SHEET
