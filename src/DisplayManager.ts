@@ -101,6 +101,7 @@ export const DisplayContextCommands = [
   "selectLineColor",
   "setLineWidth",
   "setRotation",
+  "clearRotation",
 
   "setSegmentStartCap",
   "setSegmentEndCap",
@@ -114,11 +115,13 @@ export const DisplayContextCommands = [
   "setCropRight",
   "setCropBottom",
   "setCropLeft",
+  "clearCrop",
 
   "setRotationCropTop",
   "setRotationCropRight",
   "setRotationCropBottom",
   "setRotationCropLeft",
+  "clearRotationCrop",
 
   "clearRect",
 
@@ -589,6 +592,13 @@ class DisplayManager {
       sendImmediately
     );
   }
+  clearRotation(sendImmediately: boolean) {
+    this.#sendDisplayContextCommand(
+      "clearRotation",
+      undefined,
+      sendImmediately
+    );
+  }
 
   #assertValidSegmentCap(segmentCap: DisplaySegmentCap) {
     _console.assertEnumWithError(segmentCap, DisplaySegmentCaps);
@@ -704,6 +714,9 @@ class DisplayManager {
       sendImmediately
     );
   }
+  clearCrop(sendImmediately: boolean) {
+    this.#sendDisplayContextCommand("clearCrop", undefined, sendImmediately);
+  }
 
   setRotationCropTop(cropTop: number, sendImmediately: boolean) {
     const dataView = new DataView(new ArrayBuffer(2));
@@ -742,6 +755,13 @@ class DisplayManager {
     this.#sendDisplayContextCommand(
       "setRotationCropLeft",
       dataView.buffer,
+      sendImmediately
+    );
+  }
+  clearRotationCrop(sendImmediately: boolean) {
+    this.#sendDisplayContextCommand(
+      "clearRotationCrop",
+      undefined,
       sendImmediately
     );
   }

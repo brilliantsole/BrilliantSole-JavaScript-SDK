@@ -1541,6 +1541,10 @@ class Device {
     this.#assertDisplayIsAvailable();
     return this.#displayManager.setRotation;
   }
+  get clearDisplayRotation() {
+    this.#assertDisplayIsAvailable();
+    return this.#displayManager.clearRotation;
+  }
 
   get setDisplaySegmentStartCap() {
     this.#assertDisplayIsAvailable();
@@ -1584,6 +1588,10 @@ class Device {
     this.#assertDisplayIsAvailable();
     return this.#displayManager.setCropLeft;
   }
+  get clearDisplayCrop() {
+    this.#assertDisplayIsAvailable();
+    return this.#displayManager.clearCrop;
+  }
 
   get setDisplayRotationCropTop() {
     this.#assertDisplayIsAvailable();
@@ -1600,6 +1608,10 @@ class Device {
   get setDisplayRotationCropLeft() {
     this.#assertDisplayIsAvailable();
     return this.#displayManager.setRotationCropLeft;
+  }
+  get clearDisplayRotationCrop() {
+    this.#assertDisplayIsAvailable();
+    return this.#displayManager.clearRotationCrop;
   }
 
   get drawDisplayRect() {

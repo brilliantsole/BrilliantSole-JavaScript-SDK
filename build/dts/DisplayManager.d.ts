@@ -40,7 +40,7 @@ export declare const DisplayInformationValues: {
     type: readonly ["none", "monocularLeft", "monocularRight", "binocular"];
     pixelDepth: readonly ["1", "2", "4"];
 };
-export declare const DisplayContextCommands: readonly ["show", "clear", "setColor", "setColorOpacity", "setOpacity", "saveContext", "restoreContext", "selectFillColor", "selectLineColor", "setLineWidth", "setRotation", "setSegmentStartCap", "setSegmentEndCap", "setSegmentCap", "setSegmentStartRadius", "setSegmentEndRadius", "setSegmentRadius", "setCropTop", "setCropRight", "setCropBottom", "setCropLeft", "setRotationCropTop", "setRotationCropRight", "setRotationCropBottom", "setRotationCropLeft", "clearRect", "drawRect", "drawRoundRect", "drawCircle", "drawEllipse", "drawPolygon", "drawSegment", "selectSpriteSheet", "sprite", "selectFont", "drawText"];
+export declare const DisplayContextCommands: readonly ["show", "clear", "setColor", "setColorOpacity", "setOpacity", "saveContext", "restoreContext", "selectFillColor", "selectLineColor", "setLineWidth", "setRotation", "clearRotation", "setSegmentStartCap", "setSegmentEndCap", "setSegmentCap", "setSegmentStartRadius", "setSegmentEndRadius", "setSegmentRadius", "setCropTop", "setCropRight", "setCropBottom", "setCropLeft", "clearCrop", "setRotationCropTop", "setRotationCropRight", "setRotationCropBottom", "setRotationCropLeft", "clearRotationCrop", "clearRect", "drawRect", "drawRoundRect", "drawCircle", "drawEllipse", "drawPolygon", "drawSegment", "selectSpriteSheet", "sprite", "selectFont", "drawText"];
 export type DisplayContextCommand = (typeof DisplayContextCommands)[number];
 export declare const RequiredDisplayMessageTypes: DisplayMessageType[];
 export declare const DisplayEventTypes: readonly ["isDisplayAvailable", "displayStatus", "displayInformation", "displayCommand", "getDisplayBrightness", "setDisplayBrightness", "displayContextCommands"];
@@ -74,7 +74,7 @@ declare class DisplayManager {
     }>;
     requestRequiredInformation(): void;
     get isDisplayAvailable(): boolean;
-    get displayStatus(): "awake" | "asleep";
+    get displayStatus(): "asleep" | "awake";
     get isDisplayAwake(): boolean;
     wake(): Promise<void>;
     sleep(): Promise<void>;
@@ -102,6 +102,7 @@ declare class DisplayManager {
     selectLineColor(colorIndex: number, sendImmediately: boolean): void;
     setLineWidth(lineWidth: number, sendImmediately: boolean): void;
     setRotation(rotation: number, isRadians: boolean, sendImmediately: boolean): void;
+    clearRotation(sendImmediately: boolean): void;
     setSegmentStartCap(segmentStartCap: DisplaySegmentCap, sendImmediately: boolean): void;
     setSegmentEndCap(segmentEndCap: DisplaySegmentCap, sendImmediately: boolean): void;
     setSegmentCap(segmentCap: DisplaySegmentCap, sendImmediately: boolean): void;
@@ -112,10 +113,12 @@ declare class DisplayManager {
     setCropRight(cropRight: number, sendImmediately: boolean): void;
     setCropBottom(cropBottom: number, sendImmediately: boolean): void;
     setCropLeft(cropLeft: number, sendImmediately: boolean): void;
+    clearCrop(sendImmediately: boolean): void;
     setRotationCropTop(cropTop: number, sendImmediately: boolean): void;
     setRotationCropRight(cropRight: number, sendImmediately: boolean): void;
     setRotationCropBottom(cropBottom: number, sendImmediately: boolean): void;
     setRotationCropLeft(cropLeft: number, sendImmediately: boolean): void;
+    clearRotationCrop(sendImmediately: boolean): void;
     clearRect(x: number, y: number, width: number, height: number, sendImmediately: boolean): void;
     drawRect(x: number, y: number, width: number, height: number, sendImmediately: boolean): void;
     drawRoundRect(x: number, y: number, width: number, height: number, borderRadius: number, sendImmediately: boolean): void;
