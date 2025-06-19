@@ -102,12 +102,12 @@ export const DisplayContextCommands = [
   "setLineWidth",
   "setRotation",
 
-  "setStartSegmentCap",
-  "setEndSegmentCap",
+  "setSegmentStartCap",
+  "setSegmentEndCap",
   "setSegmentCap",
 
-  "setSegmentRadiusStart",
-  "setSegmentRadiusEnd",
+  "setSegmentStartRadius",
+  "setSegmentEndRadius",
   "setSegmentRadius",
 
   "setCropTop",
@@ -127,7 +127,7 @@ export const DisplayContextCommands = [
   "drawCircle",
   "drawEllipse",
   "drawPolygon",
-  "drawLine",
+  "drawSegment",
 
   "selectSpriteSheet",
   "sprite",
@@ -603,7 +603,7 @@ class DisplayManager {
     const segmentCapEnum = DisplaySegmentCaps.indexOf(segmentStartCap);
     dataView.setUint8(0, segmentCapEnum);
     this.#sendDisplayContextCommand(
-      "setStartSegmentCap",
+      "setSegmentStartCap",
       dataView.buffer,
       sendImmediately
     );
@@ -615,7 +615,7 @@ class DisplayManager {
     const segmentCapEnum = DisplaySegmentCaps.indexOf(segmentEndCap);
     dataView.setUint8(0, segmentCapEnum);
     this.#sendDisplayContextCommand(
-      "setEndSegmentCap",
+      "setSegmentEndCap",
       dataView.buffer,
       sendImmediately
     );
@@ -633,22 +633,22 @@ class DisplayManager {
     );
   }
 
-  setSegmentStartRadius(lineEndRadius: number, sendImmediately: boolean) {
-    const dataView = new DataView(new ArrayBuffer(2));
-    _console.log({ lineEndRadius });
-    dataView.setUint16(0, lineEndRadius, true);
-    this.#sendDisplayContextCommand(
-      "setSegmentRadiusStart",
-      dataView.buffer,
-      sendImmediately
-    );
-  }
-  setSegmentEndRadius(segmentStartRadius: number, sendImmediately: boolean) {
+  setSegmentStartRadius(segmentStartRadius: number, sendImmediately: boolean) {
     const dataView = new DataView(new ArrayBuffer(2));
     _console.log({ segmentStartRadius });
     dataView.setUint16(0, segmentStartRadius, true);
     this.#sendDisplayContextCommand(
-      "setSegmentRadiusEnd",
+      "setSegmentStartRadius",
+      dataView.buffer,
+      sendImmediately
+    );
+  }
+  setSegmentEndRadius(segmentEndRadius: number, sendImmediately: boolean) {
+    const dataView = new DataView(new ArrayBuffer(2));
+    _console.log({ segmentEndRadius });
+    dataView.setUint16(0, segmentEndRadius, true);
+    this.#sendDisplayContextCommand(
+      "setSegmentEndRadius",
       dataView.buffer,
       sendImmediately
     );
@@ -759,9 +759,9 @@ class DisplayManager {
     return clamp(height, 1, this.height - y);
   }
   #clampBox(x: number, y: number, width: number, height: number) {
-    x = this.#clampX(x);
+    //x = this.#clampX(x);
     //width = this.#clampWidth(x, width);
-    y = this.#clampY(y);
+    //y = this.#clampY(y);
     //height = this.#clampHeight(y, height);
 
     _console.log("clampBox", { x, y, width, height });
@@ -806,8 +806,8 @@ class DisplayManager {
       height: _height,
     } = this.#clampBox(x, y, width, height);
     const dataView = new DataView(new ArrayBuffer(2 * 4));
-    dataView.setUint16(0, _x, true);
-    dataView.setUint16(2, _y, true);
+    dataView.setInt16(0, _x, true);
+    dataView.setInt16(2, _y, true);
     dataView.setUint16(4, _width, true);
     dataView.setUint16(6, _height, true);
     _console.log("drawRect data", dataView);
@@ -832,8 +832,8 @@ class DisplayManager {
       height: _height,
     } = this.#clampBox(x, y, width, height);
     const dataView = new DataView(new ArrayBuffer(2 * 4 + 1));
-    dataView.setUint16(0, _x, true);
-    dataView.setUint16(2, _y, true);
+    dataView.setInt16(0, _x, true);
+    dataView.setInt16(2, _y, true);
     dataView.setUint16(4, _width, true);
     dataView.setUint16(6, _height, true);
     dataView.setUint8(8, borderRadius);
@@ -845,11 +845,11 @@ class DisplayManager {
     );
   }
   drawCircle(x: number, y: number, radius: number, sendImmediately: boolean) {
-    x = this.#clampX(x);
-    y = this.#clampY(y);
+    //x = this.#clampX(x);
+    //y = this.#clampY(y);
     const dataView = new DataView(new ArrayBuffer(2 * 3));
-    dataView.setUint16(0, x, true);
-    dataView.setUint16(2, y, true);
+    dataView.setInt16(0, x, true);
+    dataView.setInt16(2, y, true);
     dataView.setUint16(4, radius, true);
     _console.log("drawCircle data", dataView);
     this.#sendDisplayContextCommand(
@@ -866,8 +866,8 @@ class DisplayManager {
     sendImmediately: boolean
   ) {
     const dataView = new DataView(new ArrayBuffer(2 * 4));
-    dataView.setUint16(0, x, true);
-    dataView.setUint16(2, y, true);
+    dataView.setInt16(0, x, true);
+    dataView.setInt16(2, y, true);
     dataView.setUint16(4, radiusX, true);
     dataView.setUint16(6, radiusY, true);
     _console.log("drawEllipse data", dataView);
@@ -885,8 +885,8 @@ class DisplayManager {
     sendImmediately: boolean
   ) {
     const dataView = new DataView(new ArrayBuffer(2 * 3 + 1));
-    dataView.setUint16(0, x, true);
-    dataView.setUint16(2, y, true);
+    dataView.setInt16(0, x, true);
+    dataView.setInt16(2, y, true);
     dataView.setUint16(4, radius, true);
     dataView.setUint8(6, numberOfSides);
     _console.log("drawPolygon data", dataView);
@@ -897,7 +897,7 @@ class DisplayManager {
     );
   }
 
-  drawLine(
+  drawSegment(
     startX: number,
     startY: number,
     endX: number,
@@ -906,13 +906,13 @@ class DisplayManager {
   ) {
     const dataView = new DataView(new ArrayBuffer(2 * 4));
     _console.log({ startX, startY, endX, endY });
-    dataView.setUint16(0, startX, true);
-    dataView.setUint16(2, startY, true);
-    dataView.setUint16(4, endX, true);
-    dataView.setUint16(6, endY, true);
-    _console.log("drawLine data", dataView);
+    dataView.setInt16(0, startX, true);
+    dataView.setInt16(2, startY, true);
+    dataView.setInt16(4, endX, true);
+    dataView.setInt16(6, endY, true);
+    _console.log("drawSegment data", dataView);
     this.#sendDisplayContextCommand(
-      "drawLine",
+      "drawSegment",
       dataView.buffer,
       sendImmediately
     );
@@ -950,6 +950,7 @@ class DisplayManager {
   }
 
   clear() {
+    _console.log("clearing displayManager");
     // @ts-ignore
     this.#displayStatus = undefined;
     this.#isDisplayAvailable = false;
@@ -957,6 +958,7 @@ class DisplayManager {
     // @ts-ignore
     this.#displayBrightness = undefined;
     this.#displayContextCommandBuffers = [];
+    this.#isDisplayAvailable = false;
   }
 
   // MTU

@@ -93,7 +93,8 @@ class SensorConfigurationManager {
 
   async setConfiguration(
     newSensorConfiguration: SensorConfiguration,
-    clearRest?: boolean
+    clearRest?: boolean,
+    sendImmediately?: boolean
   ) {
     if (clearRest) {
       newSensorConfiguration = Object.assign(
@@ -110,12 +111,15 @@ class SensorConfigurationManager {
     _console.log({ setSensorConfigurationData });
 
     const promise = this.waitForEvent("getSensorConfiguration");
-    this.sendMessage([
-      {
-        type: "setSensorConfiguration",
-        data: setSensorConfigurationData.buffer,
-      },
-    ]);
+    this.sendMessage(
+      [
+        {
+          type: "setSensorConfiguration",
+          data: setSensorConfigurationData.buffer,
+        },
+      ],
+      sendImmediately
+    );
     await promise;
   }
 

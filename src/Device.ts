@@ -984,14 +984,8 @@ class Device {
     return this.#sensorConfigurationManager.configuration;
   }
 
-  async setSensorConfiguration(
-    newSensorConfiguration: SensorConfiguration,
-    clearRest?: boolean
-  ) {
-    await this.#sensorConfigurationManager.setConfiguration(
-      newSensorConfiguration,
-      clearRest
-    );
+  get setSensorConfiguration() {
+    return this.#sensorConfigurationManager.setConfiguration;
   }
 
   async clearSensorConfiguration() {
@@ -1330,12 +1324,18 @@ class Device {
   #assertHasCamera() {
     _console.assertWithError(this.hasCamera, "camera not available");
   }
-  async takePicture() {
+  async takePicture(sensorRate: number = 10) {
     this.#assertHasCamera();
+    if (this.sensorConfiguration.camera == 0) {
+      this.setSensorConfiguration({ camera: sensorRate }, false, false);
+    }
     await this.#cameraManager.takePicture();
   }
-  async focusCamera() {
+  async focusCamera(sensorRate: number = 10) {
     this.#assertHasCamera();
+    if (this.sensorConfiguration.camera == 0) {
+      this.setSensorConfiguration({ camera: sensorRate }, false, false);
+    }
     await this.#cameraManager.focus();
   }
   async stopCamera() {
@@ -1622,9 +1622,9 @@ class Device {
     this.#assertDisplayIsAvailable();
     return this.#displayManager.drawPolygon;
   }
-  get drawDisplayLine() {
+  get drawDisplaySegment() {
     this.#assertDisplayIsAvailable();
-    return this.#displayManager.drawLine;
+    return this.#displayManager.drawSegment;
   }
 
   // FILL - spritesheet, text, etc

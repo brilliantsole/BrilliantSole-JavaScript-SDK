@@ -166,10 +166,10 @@ class InformationManager {
   }
   updateType(updatedType: DeviceType) {
     this.#assertValidDeviceType(updatedType);
-    if (updatedType == this.type) {
-      _console.log("redundant type assignment");
-      return;
-    }
+    // if (updatedType == this.type) {
+    //   _console.log("redundant type assignment");
+    //   return;
+    // }
     this.#type = updatedType;
     _console.log({ updatedType: this.#type });
 

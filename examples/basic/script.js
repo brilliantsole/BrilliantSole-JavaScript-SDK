@@ -1460,7 +1460,7 @@ device.addEventListener("getSensorConfiguration", () => {
 const updateTakePictureButton = () => {
   takePictureButton.disabled =
     !device.isConnected ||
-    device.sensorConfiguration.camera == 0 ||
+    //device.sensorConfiguration.camera == 0 ||
     device.cameraStatus != "idle";
 };
 device.addEventListener("cameraStatus", () => {
@@ -1485,7 +1485,7 @@ device.addEventListener("getSensorConfiguration", () => {
 const updateFocusCameraButton = () => {
   focusCameraButton.disabled =
     !device.isConnected ||
-    device.sensorConfiguration.camera == 0 ||
+    //device.sensorConfiguration.camera == 0 ||
     device.cameraStatus != "idle";
 };
 device.addEventListener("cameraStatus", (event) => {
@@ -2216,6 +2216,7 @@ fillColorSelect.addEventListener("input", () => {
 device.addEventListener("isConnected", () => {
   const enabled = device.isConnected && device.isDisplayAvailable;
   fillColorSelect.disabled = !enabled;
+  console.log({ enabled });
 });
 
 const lineColorContainer = document.getElementById("lineColor");
@@ -2334,8 +2335,8 @@ const drawShape = BS.ThrottleUtils.throttle(
             drawNumberOfSides
           );
           break;
-        case "drawLine":
-          device.drawDisplayLine(drawX, drawY, drawEndX, drawEndY);
+        case "drawSegment":
+          device.drawDisplaySegment(drawX, drawY, drawEndX, drawEndY);
           break;
         default:
           console.error(`uncaught drawShapeType ${drawShapeType}`);
@@ -2683,8 +2684,8 @@ device.addEventListener("connected", () => {
   if (!device.isDisplayAvailable) {
     return;
   }
-  drawXInput.max = device.displayInformation.width;
-  drawYInput.max = device.displayInformation.height;
+  drawXInput.max = device.displayInformation.width + 50;
+  drawYInput.max = device.displayInformation.height + 50;
 
   drawWidthInput.max = device.displayInformation.width;
   drawHeightInput.max = device.displayInformation.height;
