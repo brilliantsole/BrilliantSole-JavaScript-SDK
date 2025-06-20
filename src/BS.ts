@@ -110,6 +110,8 @@ export {
   DisplaySegmentCaps,
 } from "./DisplayManager.ts";
 
+export { rgbToHex, hexToRGB } from "./utils/ColorUtils.ts";
+
 export {
   default as DevicePair,
   DevicePairEvent,

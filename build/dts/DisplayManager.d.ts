@@ -36,6 +36,25 @@ export type DisplayColorYCbCr = {
     cb: number;
     cr: number;
 };
+export type DisplayContextState = {
+    fillColorIndex: number;
+    lineColorIndex: number;
+    lineWidth: number;
+    rotation: number;
+    segmentStartCap: DisplaySegmentCap;
+    segmentEndCap: DisplaySegmentCap;
+    segmentStartRadius: number;
+    segmentEndRadius: number;
+    cropTop: number;
+    cropRight: number;
+    cropBottom: number;
+    cropLeft: number;
+    rotationCropTop: number;
+    rotationCropRight: number;
+    rotationCropBottom: number;
+    rotationCropLeft: number;
+};
+export declare const DefaultDisplayContextState: DisplayContextState;
 export declare const DisplayInformationValues: {
     type: readonly ["none", "monocularLeft", "monocularRight", "binocular"];
     pixelDepth: readonly ["1", "2", "4"];
@@ -74,7 +93,8 @@ declare class DisplayManager {
     }>;
     requestRequiredInformation(): void;
     get isDisplayAvailable(): boolean;
-    get displayStatus(): "asleep" | "awake";
+    get displayContextState(): DisplayContextState;
+    get displayStatus(): "awake" | "asleep";
     get isDisplayAwake(): boolean;
     wake(): Promise<void>;
     sleep(): Promise<void>;
@@ -93,7 +113,9 @@ declare class DisplayManager {
     setDisplayBrightness(newDisplayBrightness: DisplayBrightness): Promise<void>;
     showDisplay(sendImmediately?: boolean): void;
     clearDisplay(sendImmediately?: boolean): void;
+    get colors(): string[];
     setColor(colorIndex: number, color: DisplayColorRGB | string, sendImmediately: boolean): void;
+    get opacities(): number[];
     setColorOpacity(index: number, opacity: number, sendImmediately: boolean): void;
     setOpacity(opacity: number, sendImmediately: boolean): void;
     saveContext(sendImmediately: boolean): void;
@@ -114,10 +136,10 @@ declare class DisplayManager {
     setCropBottom(cropBottom: number, sendImmediately: boolean): void;
     setCropLeft(cropLeft: number, sendImmediately: boolean): void;
     clearCrop(sendImmediately: boolean): void;
-    setRotationCropTop(cropTop: number, sendImmediately: boolean): void;
-    setRotationCropRight(cropRight: number, sendImmediately: boolean): void;
-    setRotationCropBottom(cropBottom: number, sendImmediately: boolean): void;
-    setRotationCropLeft(cropLeft: number, sendImmediately: boolean): void;
+    setRotationCropTop(rotationCropTop: number, sendImmediately: boolean): void;
+    setRotationCropRight(rotationCropRight: number, sendImmediately: boolean): void;
+    setRotationCropBottom(rotationCropBottom: number, sendImmediately: boolean): void;
+    setRotationCropLeft(rotationCropLeft: number, sendImmediately: boolean): void;
     clearRotationCrop(sendImmediately: boolean): void;
     clearRect(x: number, y: number, width: number, height: number, sendImmediately: boolean): void;
     drawRect(x: number, y: number, width: number, height: number, sendImmediately: boolean): void;

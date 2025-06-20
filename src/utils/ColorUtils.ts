@@ -24,3 +24,15 @@ export function hexToRGB(hex: string): DisplayColorRGB {
 
   return { r, g, b };
 }
+
+export function rgbToHex({ r, g, b }: DisplayColorRGB): string {
+  const toHex = (value: number) =>
+    value.toString(16).padStart(2, "0").toUpperCase();
+
+  _console.assertWithError(
+    [r, g, b].every((v) => v >= 0 && v <= 255),
+    `RGB values must be between 0 and 255 (got r=${r}, g=${g}, b=${b})`
+  );
+
+  return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+}

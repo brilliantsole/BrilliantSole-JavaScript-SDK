@@ -3669,8 +3669,13 @@ function hexToRGB(hex) {
     const b = parseInt(hex.substring(4, 6), 16);
     return { r, g, b };
 }
+function rgbToHex({ r, g, b }) {
+    const toHex = (value) => value.toString(16).padStart(2, "0").toUpperCase();
+    _console$j.assertWithError([r, g, b].every((v) => v >= 0 && v <= 255), `RGB values must be between 0 and 255 (got r=${r}, g=${g}, b=${b})`);
+    return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+}
 
-var _DisplayManager_instances, _DisplayManager_dispatchEvent_get, _DisplayManager_isDisplayAvailable, _DisplayManager_assertDisplayIsAvailable, _DisplayManager_parseIsDisplayAvailable, _DisplayManager_displayStatus, _DisplayManager_parseDisplayStatus, _DisplayManager_updateDisplayStatus, _DisplayManager_sendDisplayCommand, _DisplayManager_assertIsAwake, _DisplayManager_assertIsNotAwake, _DisplayManager_displayInformation, _DisplayManager_parseDisplayInformation, _DisplayManager_displayBrightness, _DisplayManager_parseDisplayBrightness, _DisplayManager_assertValidDisplayBrightness, _DisplayManager_assertValidDisplayContextCommand, _DisplayManager_displayContextCommandBuffers, _DisplayManager_sendDisplayContextCommand, _DisplayManager_sendDisplayContextCommands, _DisplayManager_assertValidColor, _DisplayManager_assertValidColorValue, _DisplayManager_assertValidColorIndex, _DisplayManager_assertValidOpacity, _DisplayManager_assertValidLineWidth, _DisplayManager_assertValidSegmentCap, _DisplayManager_clampBox, _DisplayManager_mtu;
+var _DisplayManager_instances, _DisplayManager_dispatchEvent_get, _DisplayManager_isDisplayAvailable, _DisplayManager_assertDisplayIsAvailable, _DisplayManager_parseIsDisplayAvailable, _DisplayManager_displayContextState, _DisplayManager_displayStatus, _DisplayManager_parseDisplayStatus, _DisplayManager_updateDisplayStatus, _DisplayManager_sendDisplayCommand, _DisplayManager_assertIsAwake, _DisplayManager_assertIsNotAwake, _DisplayManager_displayInformation, _DisplayManager_parseDisplayInformation, _DisplayManager_displayBrightness, _DisplayManager_parseDisplayBrightness, _DisplayManager_assertValidDisplayBrightness, _DisplayManager_assertValidDisplayContextCommand, _DisplayManager_displayContextCommandBuffers, _DisplayManager_sendDisplayContextCommand, _DisplayManager_sendDisplayContextCommands, _DisplayManager_assertValidColor, _DisplayManager_assertValidColorValue, _DisplayManager_assertValidColorIndex, _DisplayManager_colors, _DisplayManager_assertValidOpacity, _DisplayManager_opacities, _DisplayManager_assertValidLineWidth, _DisplayManager_assertValidSegmentCap, _DisplayManager_clampBox, _DisplayManager_mtu;
 const _console$i = createConsole("DisplayManager", { log: true });
 const DisplayCommands = ["sleep", "wake"];
 const DisplayStatuses = ["awake", "asleep"];
@@ -3704,6 +3709,24 @@ const DisplayMessageTypes = [
     "displayContextCommands",
 ];
 const DisplaySegmentCaps = ["flat", "round"];
+const DefaultDisplayContextState = {
+    fillColorIndex: 1,
+    lineColorIndex: 1,
+    lineWidth: 0,
+    rotation: 0,
+    segmentStartCap: "flat",
+    segmentEndCap: "flat",
+    segmentStartRadius: 1,
+    segmentEndRadius: 1,
+    cropTop: 0,
+    cropRight: 0,
+    cropBottom: 0,
+    cropLeft: 0,
+    rotationCropTop: 0,
+    rotationCropRight: 0,
+    rotationCropBottom: 0,
+    rotationCropLeft: 0,
+};
 const DisplayInformationValues = {
     type: DisplayTypes,
     pixelDepth: DisplayPixelDepths,
@@ -3760,10 +3783,13 @@ class DisplayManager {
     constructor() {
         _DisplayManager_instances.add(this);
         _DisplayManager_isDisplayAvailable.set(this, false);
+        _DisplayManager_displayContextState.set(this, Object.assign({}, DefaultDisplayContextState));
         _DisplayManager_displayStatus.set(this, void 0);
         _DisplayManager_displayInformation.set(this, void 0);
         _DisplayManager_displayBrightness.set(this, void 0);
         _DisplayManager_displayContextCommandBuffers.set(this, []);
+        _DisplayManager_colors.set(this, []);
+        _DisplayManager_opacities.set(this, []);
         _DisplayManager_mtu.set(this, void 0);
         autoBind(this);
     }
@@ -3779,6 +3805,9 @@ class DisplayManager {
     }
     get isDisplayAvailable() {
         return __classPrivateFieldGet(this, _DisplayManager_isDisplayAvailable, "f");
+    }
+    get displayContextState() {
+        return __classPrivateFieldGet(this, _DisplayManager_displayContextState, "f");
     }
     get displayStatus() {
         return __classPrivateFieldGet(this, _DisplayManager_displayStatus, "f");
@@ -3848,9 +3877,17 @@ class DisplayManager {
     clearDisplay(sendImmediately = true) {
         __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "clear", undefined, sendImmediately);
     }
+    get colors() {
+        return __classPrivateFieldGet(this, _DisplayManager_colors, "f");
+    }
     setColor(colorIndex, color, sendImmediately) {
         if (typeof color == "string") {
             color = hexToRGB(color);
+        }
+        const colorHex = rgbToHex(color);
+        if (this.colors[colorIndex] == colorHex) {
+            _console$i.log(`redundant color #${colorIndex} ${colorHex}`);
+            return;
         }
         _console$i.log(`setting color #${colorIndex}`, color);
         __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_assertValidColorIndex).call(this, colorIndex);
@@ -3861,14 +3898,23 @@ class DisplayManager {
         dataView.setUint8(2, color.g);
         dataView.setUint8(3, color.b);
         __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "setColor", dataView.buffer, sendImmediately);
+        this.colors[colorIndex] = colorHex;
+    }
+    get opacities() {
+        return __classPrivateFieldGet(this, _DisplayManager_opacities, "f");
     }
     setColorOpacity(index, opacity, sendImmediately) {
         __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_assertValidColorIndex).call(this, index);
         __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_assertValidOpacity).call(this, opacity);
+        if (Math.floor(255 * __classPrivateFieldGet(this, _DisplayManager_opacities, "f")[index]) == Math.floor(255 * opacity)) {
+            _console$i.log(`redundant opacity #${index} ${opacity}`);
+            return;
+        }
         const dataView = new DataView(new ArrayBuffer(2));
         dataView.setUint8(0, index);
         dataView.setUint8(1, opacity * 255);
         __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "setColorOpacity", dataView.buffer, sendImmediately);
+        __classPrivateFieldGet(this, _DisplayManager_opacities, "f")[index] = opacity;
     }
     setOpacity(opacity, sendImmediately) {
         __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_assertValidOpacity).call(this, opacity);
@@ -3882,17 +3928,32 @@ class DisplayManager {
     }
     selectFillColor(colorIndex, sendImmediately) {
         __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_assertValidColorIndex).call(this, colorIndex);
+        if (__classPrivateFieldGet(this, _DisplayManager_displayContextState, "f").fillColorIndex == colorIndex) {
+            _console$i.log(`redundant fillColor ${colorIndex}`);
+            return;
+        }
         __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "selectFillColor", UInt8ByteBuffer(colorIndex), sendImmediately);
+        __classPrivateFieldGet(this, _DisplayManager_displayContextState, "f").fillColorIndex = colorIndex;
     }
     selectLineColor(colorIndex, sendImmediately) {
         __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_assertValidColorIndex).call(this, colorIndex);
+        if (__classPrivateFieldGet(this, _DisplayManager_displayContextState, "f").fillColorIndex == colorIndex) {
+            _console$i.log(`redundant lineColor ${colorIndex}`);
+            return;
+        }
         __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "selectLineColor", UInt8ByteBuffer(colorIndex), sendImmediately);
+        __classPrivateFieldGet(this, _DisplayManager_displayContextState, "f").lineColorIndex = colorIndex;
     }
     setLineWidth(lineWidth, sendImmediately) {
         __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_assertValidLineWidth).call(this, lineWidth);
+        if (__classPrivateFieldGet(this, _DisplayManager_displayContextState, "f").lineWidth == lineWidth) {
+            _console$i.log(`redundant lineWidth ${lineWidth}`);
+            return;
+        }
         const dataView = new DataView(new ArrayBuffer(2));
         dataView.setUint16(0, lineWidth, true);
         __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "setLineWidth", dataView.buffer, sendImmediately);
+        __classPrivateFieldGet(this, _DisplayManager_displayContextState, "f").lineWidth = lineWidth;
     }
     setRotation(rotation, isRadians, sendImmediately) {
         const dataView = new DataView(new ArrayBuffer(2));
@@ -3909,108 +3970,215 @@ class DisplayManager {
             rotation /= 360;
         }
         rotation *= Uint16Max;
+        rotation = Math.floor(rotation);
         _console$i.log({ rotation });
+        if (__classPrivateFieldGet(this, _DisplayManager_displayContextState, "f").rotation == rotation) {
+            _console$i.log(`redundant rotation ${rotation}`);
+            return;
+        }
         dataView.setUint16(0, rotation, true);
         __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "setRotation", dataView.buffer, sendImmediately);
+        __classPrivateFieldGet(this, _DisplayManager_displayContextState, "f").rotation = rotation;
     }
     clearRotation(sendImmediately) {
+        if (__classPrivateFieldGet(this, _DisplayManager_displayContextState, "f").rotation == 0) {
+            _console$i.log(`redundant rotation 0`);
+            return;
+        }
         __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "clearRotation", undefined, sendImmediately);
+        __classPrivateFieldGet(this, _DisplayManager_displayContextState, "f").rotation = 0;
     }
     setSegmentStartCap(segmentStartCap, sendImmediately) {
         __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_assertValidSegmentCap).call(this, segmentStartCap);
+        if (__classPrivateFieldGet(this, _DisplayManager_displayContextState, "f").segmentStartCap == segmentStartCap) {
+            _console$i.log(`redundant segmentStartCap ${segmentStartCap}`);
+            return;
+        }
         const dataView = new DataView(new ArrayBuffer(1));
         _console$i.log({ segmentStartCap });
         const segmentCapEnum = DisplaySegmentCaps.indexOf(segmentStartCap);
         dataView.setUint8(0, segmentCapEnum);
         __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "setSegmentStartCap", dataView.buffer, sendImmediately);
+        __classPrivateFieldGet(this, _DisplayManager_displayContextState, "f").segmentStartCap = segmentStartCap;
     }
     setSegmentEndCap(segmentEndCap, sendImmediately) {
         __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_assertValidSegmentCap).call(this, segmentEndCap);
+        if (__classPrivateFieldGet(this, _DisplayManager_displayContextState, "f").segmentEndCap == segmentEndCap) {
+            _console$i.log(`redundant segmentEndCap ${segmentEndCap}`);
+            return;
+        }
         const dataView = new DataView(new ArrayBuffer(1));
         _console$i.log({ segmentEndCap });
         const segmentCapEnum = DisplaySegmentCaps.indexOf(segmentEndCap);
         dataView.setUint8(0, segmentCapEnum);
         __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "setSegmentEndCap", dataView.buffer, sendImmediately);
+        __classPrivateFieldGet(this, _DisplayManager_displayContextState, "f").segmentEndCap = segmentEndCap;
     }
     setSegmentCap(segmentCap, sendImmediately) {
         __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_assertValidSegmentCap).call(this, segmentCap);
+        if (__classPrivateFieldGet(this, _DisplayManager_displayContextState, "f").segmentStartCap == segmentCap &&
+            __classPrivateFieldGet(this, _DisplayManager_displayContextState, "f").segmentEndCap == segmentCap) {
+            _console$i.log(`redundant segmentCap ${segmentCap}`);
+            return;
+        }
         const dataView = new DataView(new ArrayBuffer(1));
         _console$i.log({ segmentCap });
         const segmentCapEnum = DisplaySegmentCaps.indexOf(segmentCap);
         dataView.setUint8(0, segmentCapEnum);
         __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "setSegmentCap", dataView.buffer, sendImmediately);
+        __classPrivateFieldGet(this, _DisplayManager_displayContextState, "f").segmentStartCap = segmentCap;
+        __classPrivateFieldGet(this, _DisplayManager_displayContextState, "f").segmentEndCap = segmentCap;
     }
     setSegmentStartRadius(segmentStartRadius, sendImmediately) {
+        if (__classPrivateFieldGet(this, _DisplayManager_displayContextState, "f").segmentStartRadius == segmentStartRadius) {
+            _console$i.log(`redundant segmentStartRadius ${segmentStartRadius}`);
+            return;
+        }
         const dataView = new DataView(new ArrayBuffer(2));
         _console$i.log({ segmentStartRadius });
         dataView.setUint16(0, segmentStartRadius, true);
         __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "setSegmentStartRadius", dataView.buffer, sendImmediately);
+        __classPrivateFieldGet(this, _DisplayManager_displayContextState, "f").segmentStartRadius = segmentStartRadius;
     }
     setSegmentEndRadius(segmentEndRadius, sendImmediately) {
+        if (__classPrivateFieldGet(this, _DisplayManager_displayContextState, "f").segmentEndRadius == segmentEndRadius) {
+            _console$i.log(`redundant segmentEndRadius ${segmentEndRadius}`);
+            return;
+        }
         const dataView = new DataView(new ArrayBuffer(2));
         _console$i.log({ segmentEndRadius });
         dataView.setUint16(0, segmentEndRadius, true);
         __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "setSegmentEndRadius", dataView.buffer, sendImmediately);
+        __classPrivateFieldGet(this, _DisplayManager_displayContextState, "f").segmentEndRadius = segmentEndRadius;
     }
     setSegmentRadius(segmentRadius, sendImmediately) {
+        if (__classPrivateFieldGet(this, _DisplayManager_displayContextState, "f").segmentStartRadius == segmentRadius &&
+            __classPrivateFieldGet(this, _DisplayManager_displayContextState, "f").segmentEndRadius == segmentRadius) {
+            _console$i.log(`redundant segmentRadius ${segmentRadius}`);
+            return;
+        }
         const dataView = new DataView(new ArrayBuffer(2));
         _console$i.log({ segmentRadius });
         dataView.setUint16(0, segmentRadius, true);
         __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "setSegmentRadius", dataView.buffer, sendImmediately);
+        __classPrivateFieldGet(this, _DisplayManager_displayContextState, "f").segmentStartRadius = segmentRadius;
+        __classPrivateFieldGet(this, _DisplayManager_displayContextState, "f").segmentEndRadius = segmentRadius;
     }
     setCropTop(cropTop, sendImmediately) {
+        if (__classPrivateFieldGet(this, _DisplayManager_displayContextState, "f").cropTop == cropTop) {
+            _console$i.log(`redundant cropTop ${cropTop}`);
+            return;
+        }
         const dataView = new DataView(new ArrayBuffer(2));
         _console$i.log({ cropTop });
         dataView.setUint16(0, cropTop, true);
         __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "setCropTop", dataView.buffer, sendImmediately);
+        __classPrivateFieldGet(this, _DisplayManager_displayContextState, "f").cropTop = cropTop;
     }
     setCropRight(cropRight, sendImmediately) {
+        if (__classPrivateFieldGet(this, _DisplayManager_displayContextState, "f").cropTop == cropRight) {
+            _console$i.log(`redundant cropRight ${cropRight}`);
+            return;
+        }
         const dataView = new DataView(new ArrayBuffer(2));
         _console$i.log({ cropRight });
         dataView.setUint16(0, cropRight, true);
         __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "setCropRight", dataView.buffer, sendImmediately);
+        __classPrivateFieldGet(this, _DisplayManager_displayContextState, "f").cropRight = cropRight;
     }
     setCropBottom(cropBottom, sendImmediately) {
+        if (__classPrivateFieldGet(this, _DisplayManager_displayContextState, "f").cropBottom == cropBottom) {
+            _console$i.log(`redundant cropBottom ${cropBottom}`);
+            return;
+        }
         const dataView = new DataView(new ArrayBuffer(2));
         _console$i.log({ cropBottom });
         dataView.setUint16(0, cropBottom, true);
         __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "setCropBottom", dataView.buffer, sendImmediately);
+        __classPrivateFieldGet(this, _DisplayManager_displayContextState, "f").cropBottom = cropBottom;
     }
     setCropLeft(cropLeft, sendImmediately) {
+        if (__classPrivateFieldGet(this, _DisplayManager_displayContextState, "f").cropLeft == cropLeft) {
+            _console$i.log(`redundant cropLeft ${cropLeft}`);
+            return;
+        }
         const dataView = new DataView(new ArrayBuffer(2));
         _console$i.log({ cropLeft });
         dataView.setUint16(0, cropLeft, true);
         __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "setCropLeft", dataView.buffer, sendImmediately);
+        __classPrivateFieldGet(this, _DisplayManager_displayContextState, "f").cropLeft = cropLeft;
     }
     clearCrop(sendImmediately) {
+        if (__classPrivateFieldGet(this, _DisplayManager_displayContextState, "f").cropTop == 0 &&
+            __classPrivateFieldGet(this, _DisplayManager_displayContextState, "f").cropRight == 0 &&
+            __classPrivateFieldGet(this, _DisplayManager_displayContextState, "f").cropBottom == 0 &&
+            __classPrivateFieldGet(this, _DisplayManager_displayContextState, "f").cropLeft == 0) {
+            _console$i.log(`redundant crop ${0}`);
+            return;
+        }
         __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "clearCrop", undefined, sendImmediately);
+        __classPrivateFieldGet(this, _DisplayManager_displayContextState, "f").cropTop = 0;
+        __classPrivateFieldGet(this, _DisplayManager_displayContextState, "f").cropRight = 0;
+        __classPrivateFieldGet(this, _DisplayManager_displayContextState, "f").cropBottom = 0;
+        __classPrivateFieldGet(this, _DisplayManager_displayContextState, "f").cropLeft = 0;
     }
-    setRotationCropTop(cropTop, sendImmediately) {
+    setRotationCropTop(rotationCropTop, sendImmediately) {
+        if (__classPrivateFieldGet(this, _DisplayManager_displayContextState, "f").rotationCropTop == rotationCropTop) {
+            _console$i.log(`redundant rotationCropTop ${rotationCropTop}`);
+            return;
+        }
         const dataView = new DataView(new ArrayBuffer(2));
-        _console$i.log({ cropTop });
-        dataView.setUint16(0, cropTop, true);
+        _console$i.log({ rotationCropTop });
+        dataView.setUint16(0, rotationCropTop, true);
         __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "setRotationCropTop", dataView.buffer, sendImmediately);
+        __classPrivateFieldGet(this, _DisplayManager_displayContextState, "f").rotationCropTop = rotationCropTop;
     }
-    setRotationCropRight(cropRight, sendImmediately) {
+    setRotationCropRight(rotationCropRight, sendImmediately) {
+        if (__classPrivateFieldGet(this, _DisplayManager_displayContextState, "f").rotationCropTop == rotationCropRight) {
+            _console$i.log(`redundant rotationCropRight ${rotationCropRight}`);
+            return;
+        }
         const dataView = new DataView(new ArrayBuffer(2));
-        _console$i.log({ cropRight });
-        dataView.setUint16(0, cropRight, true);
+        _console$i.log({ rotationCropRight });
+        dataView.setUint16(0, rotationCropRight, true);
         __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "setRotationCropRight", dataView.buffer, sendImmediately);
+        __classPrivateFieldGet(this, _DisplayManager_displayContextState, "f").rotationCropRight = rotationCropRight;
     }
-    setRotationCropBottom(cropBottom, sendImmediately) {
+    setRotationCropBottom(rotationCropBottom, sendImmediately) {
+        if (__classPrivateFieldGet(this, _DisplayManager_displayContextState, "f").rotationCropBottom == rotationCropBottom) {
+            _console$i.log(`redundant rotationCropBottom ${rotationCropBottom}`);
+            return;
+        }
         const dataView = new DataView(new ArrayBuffer(2));
-        _console$i.log({ cropBottom });
-        dataView.setUint16(0, cropBottom, true);
+        _console$i.log({ rotationCropBottom });
+        dataView.setUint16(0, rotationCropBottom, true);
         __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "setRotationCropBottom", dataView.buffer, sendImmediately);
+        __classPrivateFieldGet(this, _DisplayManager_displayContextState, "f").rotationCropBottom = rotationCropBottom;
     }
-    setRotationCropLeft(cropLeft, sendImmediately) {
+    setRotationCropLeft(rotationCropLeft, sendImmediately) {
+        if (__classPrivateFieldGet(this, _DisplayManager_displayContextState, "f").rotationCropLeft == rotationCropLeft) {
+            _console$i.log(`redundant rotationCropLeft ${rotationCropLeft}`);
+            return;
+        }
         const dataView = new DataView(new ArrayBuffer(2));
-        _console$i.log({ cropLeft });
-        dataView.setUint16(0, cropLeft, true);
+        _console$i.log({ rotationCropLeft });
+        dataView.setUint16(0, rotationCropLeft, true);
         __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "setRotationCropLeft", dataView.buffer, sendImmediately);
+        __classPrivateFieldGet(this, _DisplayManager_displayContextState, "f").rotationCropLeft = rotationCropLeft;
     }
     clearRotationCrop(sendImmediately) {
+        if (__classPrivateFieldGet(this, _DisplayManager_displayContextState, "f").rotationCropTop == 0 &&
+            __classPrivateFieldGet(this, _DisplayManager_displayContextState, "f").rotationCropRight == 0 &&
+            __classPrivateFieldGet(this, _DisplayManager_displayContextState, "f").rotationCropBottom == 0 &&
+            __classPrivateFieldGet(this, _DisplayManager_displayContextState, "f").rotationCropLeft == 0) {
+            _console$i.log(`redundant rotationCrop ${0}`);
+            return;
+        }
         __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "clearRotationCrop", undefined, sendImmediately);
+        __classPrivateFieldGet(this, _DisplayManager_displayContextState, "f").rotationCropTop = 0;
+        __classPrivateFieldGet(this, _DisplayManager_displayContextState, "f").rotationCropRight = 0;
+        __classPrivateFieldGet(this, _DisplayManager_displayContextState, "f").rotationCropBottom = 0;
+        __classPrivateFieldGet(this, _DisplayManager_displayContextState, "f").rotationCropLeft = 0;
     }
     clearRect(x, y, width, height, sendImmediately) {
         const { x: _x, y: _y, width: _width, height: _height, } = __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_clampBox).call(this, x, y, width, height);
@@ -4110,6 +4278,9 @@ class DisplayManager {
         __classPrivateFieldSet(this, _DisplayManager_displayBrightness, undefined, "f");
         __classPrivateFieldSet(this, _DisplayManager_displayContextCommandBuffers, [], "f");
         __classPrivateFieldSet(this, _DisplayManager_isDisplayAvailable, false, "f");
+        __classPrivateFieldSet(this, _DisplayManager_displayContextState, Object.assign({}, DefaultDisplayContextState), "f");
+        __classPrivateFieldGet(this, _DisplayManager_colors, "f").length = 0;
+        __classPrivateFieldGet(this, _DisplayManager_opacities, "f").length = 0;
     }
     get mtu() {
         return __classPrivateFieldGet(this, _DisplayManager_mtu, "f");
@@ -4118,7 +4289,7 @@ class DisplayManager {
         __classPrivateFieldSet(this, _DisplayManager_mtu, newMtu, "f");
     }
 }
-_DisplayManager_isDisplayAvailable = new WeakMap(), _DisplayManager_displayStatus = new WeakMap(), _DisplayManager_displayInformation = new WeakMap(), _DisplayManager_displayBrightness = new WeakMap(), _DisplayManager_displayContextCommandBuffers = new WeakMap(), _DisplayManager_mtu = new WeakMap(), _DisplayManager_instances = new WeakSet(), _DisplayManager_dispatchEvent_get = function _DisplayManager_dispatchEvent_get() {
+_DisplayManager_isDisplayAvailable = new WeakMap(), _DisplayManager_displayContextState = new WeakMap(), _DisplayManager_displayStatus = new WeakMap(), _DisplayManager_displayInformation = new WeakMap(), _DisplayManager_displayBrightness = new WeakMap(), _DisplayManager_displayContextCommandBuffers = new WeakMap(), _DisplayManager_colors = new WeakMap(), _DisplayManager_opacities = new WeakMap(), _DisplayManager_mtu = new WeakMap(), _DisplayManager_instances = new WeakSet(), _DisplayManager_dispatchEvent_get = function _DisplayManager_dispatchEvent_get() {
     return this.eventDispatcher.dispatchEvent;
 }, _DisplayManager_assertDisplayIsAvailable = function _DisplayManager_assertDisplayIsAvailable() {
     _console$i.assertWithError(__classPrivateFieldGet(this, _DisplayManager_isDisplayAvailable, "f"), "display is not available");
@@ -4197,6 +4368,8 @@ async function _DisplayManager_sendDisplayCommand(command, sendImmediately) {
     const missingDisplayInformationType = DisplayInformationTypes.find((type) => !(type in parsedDisplayInformation));
     _console$i.assertWithError(!missingDisplayInformationType, `missingDisplayInformationType ${missingDisplayInformationType}`);
     __classPrivateFieldSet(this, _DisplayManager_displayInformation, parsedDisplayInformation, "f");
+    __classPrivateFieldSet(this, _DisplayManager_colors, new Array(this.numberOfColors).fill("#000000"), "f");
+    __classPrivateFieldSet(this, _DisplayManager_opacities, new Array(this.numberOfColors).fill(1), "f");
     __classPrivateFieldGet(this, _DisplayManager_instances, "a", _DisplayManager_dispatchEvent_get).call(this, "displayInformation", {
         displayInformation: __classPrivateFieldGet(this, _DisplayManager_displayInformation, "f"),
     });
@@ -7185,6 +7358,15 @@ class Device {
     get isDisplayAvailable() {
         return __classPrivateFieldGet(this, _Device_displayManager, "f").isDisplayAvailable;
     }
+    get displayContextState() {
+        return __classPrivateFieldGet(this, _Device_displayManager, "f").displayContextState;
+    }
+    get displayColors() {
+        return __classPrivateFieldGet(this, _Device_displayManager, "f").colors;
+    }
+    get displayColorOpacities() {
+        return __classPrivateFieldGet(this, _Device_displayManager, "f").opacities;
+    }
     get displayStatus() {
         __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertDisplayIsAvailable).call(this);
         return __classPrivateFieldGet(this, _Device_displayManager, "f").displayStatus;
@@ -7313,6 +7495,10 @@ class Device {
         __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertDisplayIsAvailable).call(this);
         return __classPrivateFieldGet(this, _Device_displayManager, "f").setCropLeft;
     }
+    get clearDisplayCrop() {
+        __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertDisplayIsAvailable).call(this);
+        return __classPrivateFieldGet(this, _Device_displayManager, "f").clearCrop;
+    }
     get setDisplayRotationCropTop() {
         __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertDisplayIsAvailable).call(this);
         return __classPrivateFieldGet(this, _Device_displayManager, "f").setRotationCropTop;
@@ -7328,6 +7514,10 @@ class Device {
     get setDisplayRotationCropLeft() {
         __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertDisplayIsAvailable).call(this);
         return __classPrivateFieldGet(this, _Device_displayManager, "f").setRotationCropLeft;
+    }
+    get clearDisplayRotationCrop() {
+        __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertDisplayIsAvailable).call(this);
+        return __classPrivateFieldGet(this, _Device_displayManager, "f").clearRotationCrop;
     }
     get drawDisplayRect() {
         __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertDisplayIsAvailable).call(this);
@@ -8526,5 +8716,5 @@ const ThrottleUtils = {
     debounce,
 };
 
-export { CameraCommands, CameraConfigurationTypes, ContinuousSensorTypes, DefaultNumberOfPressureSensors, Device, DeviceManager$1 as DeviceManager, DevicePair, DevicePairTypes, DeviceTypes, DisplayBrightnesses, DisplaySegmentCaps, environment as Environment, EventUtils, FileTransferDirections, FileTypes, MaxNameLength, MaxNumberOfVibrationWaveformEffectSegments, MaxNumberOfVibrationWaveformSegments, MaxSensorRate, MaxVibrationWaveformEffectSegmentDelay, MaxVibrationWaveformEffectSegmentLoopCount, MaxVibrationWaveformEffectSequenceLoopCount, MaxVibrationWaveformSegmentDuration, MaxWifiPasswordLength, MaxWifiSSIDLength, MicrophoneCommands, MicrophoneConfigurationTypes, MicrophoneConfigurationValues, MinNameLength, MinWifiPasswordLength, MinWifiSSIDLength, RangeHelper, SensorRateStep, SensorTypes, Sides, TfliteSensorTypes, TfliteTasks, ThrottleUtils, VibrationLocations, VibrationTypes, VibrationWaveformEffects, WebSocketClient, setAllConsoleLevelFlags, setConsoleLevelFlagsForType };
+export { CameraCommands, CameraConfigurationTypes, ContinuousSensorTypes, DefaultNumberOfPressureSensors, Device, DeviceManager$1 as DeviceManager, DevicePair, DevicePairTypes, DeviceTypes, DisplayBrightnesses, DisplaySegmentCaps, environment as Environment, EventUtils, FileTransferDirections, FileTypes, MaxNameLength, MaxNumberOfVibrationWaveformEffectSegments, MaxNumberOfVibrationWaveformSegments, MaxSensorRate, MaxVibrationWaveformEffectSegmentDelay, MaxVibrationWaveformEffectSegmentLoopCount, MaxVibrationWaveformEffectSequenceLoopCount, MaxVibrationWaveformSegmentDuration, MaxWifiPasswordLength, MaxWifiSSIDLength, MicrophoneCommands, MicrophoneConfigurationTypes, MicrophoneConfigurationValues, MinNameLength, MinWifiPasswordLength, MinWifiSSIDLength, RangeHelper, SensorRateStep, SensorTypes, Sides, TfliteSensorTypes, TfliteTasks, ThrottleUtils, VibrationLocations, VibrationTypes, VibrationWaveformEffects, WebSocketClient, hexToRGB, rgbToHex, setAllConsoleLevelFlags, setConsoleLevelFlagsForType };
 //# sourceMappingURL=brilliantsole.module.js.map

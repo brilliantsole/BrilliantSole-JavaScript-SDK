@@ -7,7 +7,7 @@ import { createConsole } from "./utils/Console.ts";
 import EventDispatcher from "./utils/EventDispatcher.ts";
 import autoBind from "auto-bind";
 import { clamp, Uint16Max } from "./utils/MathUtils.ts";
-import { hexToRGB } from "./utils/ColorUtils.ts";
+import { hexToRGB, rgbToHex } from "./utils/ColorUtils.ts";
 
 const _console = createConsole("DisplayManager", { log: true });
 
@@ -79,6 +79,57 @@ export type DisplayColorYCbCr = {
   y: number;
   cb: number;
   cr: number;
+};
+
+export type DisplayContextState = {
+  fillColorIndex: number;
+  lineColorIndex: number;
+  lineWidth: number;
+
+  rotation: number;
+
+  segmentStartCap: DisplaySegmentCap;
+  segmentEndCap: DisplaySegmentCap;
+
+  segmentStartRadius: number;
+  segmentEndRadius: number;
+
+  cropTop: number;
+  cropRight: number;
+  cropBottom: number;
+  cropLeft: number;
+
+  rotationCropTop: number;
+  rotationCropRight: number;
+  rotationCropBottom: number;
+  rotationCropLeft: number;
+
+  // FILL - text stuff
+};
+
+export const DefaultDisplayContextState: DisplayContextState = {
+  fillColorIndex: 1,
+
+  lineColorIndex: 1,
+  lineWidth: 0,
+
+  rotation: 0,
+
+  segmentStartCap: "flat",
+  segmentEndCap: "flat",
+
+  segmentStartRadius: 1,
+  segmentEndRadius: 1,
+
+  cropTop: 0,
+  cropRight: 0,
+  cropBottom: 0,
+  cropLeft: 0,
+
+  rotationCropTop: 0,
+  rotationCropRight: 0,
+  rotationCropBottom: 0,
+  rotationCropLeft: 0,
 };
 
 export const DisplayInformationValues = {
@@ -215,6 +266,15 @@ class DisplayManager {
     this.#dispatchEvent("isDisplayAvailable", {
       isDisplayAvailable: this.#isDisplayAvailable,
     });
+  }
+
+  // DISPLAY CONTEXT STATE
+  #displayContextState: DisplayContextState = Object.assign(
+    {},
+    DefaultDisplayContextState
+  );
+  get displayContextState() {
+    return this.#displayContextState;
   }
 
   // DISPLAY STATUS
@@ -377,6 +437,8 @@ class DisplayManager {
       `missingDisplayInformationType ${missingDisplayInformationType}`
     );
     this.#displayInformation = parsedDisplayInformation;
+    this.#colors = new Array(this.numberOfColors).fill("#000000");
+    this.#opacities = new Array(this.numberOfColors).fill(1);
     this.#dispatchEvent("displayInformation", {
       displayInformation: this.#displayInformation,
     });
@@ -484,6 +546,10 @@ class DisplayManager {
       this.numberOfColors
     );
   }
+  #colors: string[] = [];
+  get colors() {
+    return this.#colors;
+  }
   setColor(
     colorIndex: number,
     color: DisplayColorRGB | string,
@@ -492,6 +558,12 @@ class DisplayManager {
     if (typeof color == "string") {
       color = hexToRGB(color);
     }
+    const colorHex = rgbToHex(color);
+    if (this.colors[colorIndex] == colorHex) {
+      _console.log(`redundant color #${colorIndex} ${colorHex}`);
+      return;
+    }
+
     _console.log(`setting color #${colorIndex}`, color);
     this.#assertValidColorIndex(colorIndex);
     this.#assertValidColor(color);
@@ -505,13 +577,22 @@ class DisplayManager {
       dataView.buffer,
       sendImmediately
     );
+    this.colors[colorIndex] = colorHex;
   }
   #assertValidOpacity(value: number) {
     _console.assertRangeWithError("opacity", value, 0, 1);
   }
+  #opacities: number[] = [];
+  get opacities() {
+    return this.#opacities;
+  }
   setColorOpacity(index: number, opacity: number, sendImmediately: boolean) {
     this.#assertValidColorIndex(index);
     this.#assertValidOpacity(opacity);
+    if (Math.floor(255 * this.#opacities[index]) == Math.floor(255 * opacity)) {
+      _console.log(`redundant opacity #${index} ${opacity}`);
+      return;
+    }
     const dataView = new DataView(new ArrayBuffer(2));
     dataView.setUint8(0, index);
     dataView.setUint8(1, opacity * 255);
@@ -520,6 +601,7 @@ class DisplayManager {
       dataView.buffer,
       sendImmediately
     );
+    this.#opacities[index] = opacity;
   }
   setOpacity(opacity: number, sendImmediately: boolean) {
     this.#assertValidOpacity(opacity);
@@ -543,25 +625,39 @@ class DisplayManager {
 
   selectFillColor(colorIndex: number, sendImmediately: boolean) {
     this.#assertValidColorIndex(colorIndex);
+    if (this.#displayContextState.fillColorIndex == colorIndex) {
+      _console.log(`redundant fillColor ${colorIndex}`);
+      return;
+    }
     this.#sendDisplayContextCommand(
       "selectFillColor",
       UInt8ByteBuffer(colorIndex),
       sendImmediately
     );
+    this.#displayContextState.fillColorIndex = colorIndex;
   }
   selectLineColor(colorIndex: number, sendImmediately: boolean) {
     this.#assertValidColorIndex(colorIndex);
+    if (this.#displayContextState.fillColorIndex == colorIndex) {
+      _console.log(`redundant lineColor ${colorIndex}`);
+      return;
+    }
     this.#sendDisplayContextCommand(
       "selectLineColor",
       UInt8ByteBuffer(colorIndex),
       sendImmediately
     );
+    this.#displayContextState.lineColorIndex = colorIndex;
   }
   #assertValidLineWidth(lineWidth: number) {
     _console.assertRangeWithError("lineWidth", lineWidth, 0, this.width);
   }
   setLineWidth(lineWidth: number, sendImmediately: boolean) {
     this.#assertValidLineWidth(lineWidth);
+    if (this.#displayContextState.lineWidth == lineWidth) {
+      _console.log(`redundant lineWidth ${lineWidth}`);
+      return;
+    }
     const dataView = new DataView(new ArrayBuffer(2));
     dataView.setUint16(0, lineWidth, true);
     this.#sendDisplayContextCommand(
@@ -569,6 +665,7 @@ class DisplayManager {
       dataView.buffer,
       sendImmediately
     );
+    this.#displayContextState.lineWidth = lineWidth;
   }
   setRotation(rotation: number, isRadians: boolean, sendImmediately: boolean) {
     const dataView = new DataView(new ArrayBuffer(2));
@@ -584,20 +681,34 @@ class DisplayManager {
       rotation /= 360;
     }
     rotation *= Uint16Max;
+    rotation = Math.floor(rotation);
     _console.log({ rotation });
+
+    if (this.#displayContextState.rotation == rotation) {
+      _console.log(`redundant rotation ${rotation}`);
+      return;
+    }
+
     dataView.setUint16(0, rotation, true);
     this.#sendDisplayContextCommand(
       "setRotation",
       dataView.buffer,
       sendImmediately
     );
+
+    this.#displayContextState.rotation = rotation;
   }
   clearRotation(sendImmediately: boolean) {
+    if (this.#displayContextState.rotation == 0) {
+      _console.log(`redundant rotation 0`);
+      return;
+    }
     this.#sendDisplayContextCommand(
       "clearRotation",
       undefined,
       sendImmediately
     );
+    this.#displayContextState.rotation = 0;
   }
 
   #assertValidSegmentCap(segmentCap: DisplaySegmentCap) {
@@ -608,6 +719,10 @@ class DisplayManager {
     sendImmediately: boolean
   ) {
     this.#assertValidSegmentCap(segmentStartCap);
+    if (this.#displayContextState.segmentStartCap == segmentStartCap) {
+      _console.log(`redundant segmentStartCap ${segmentStartCap}`);
+      return;
+    }
     const dataView = new DataView(new ArrayBuffer(1));
     _console.log({ segmentStartCap });
     const segmentCapEnum = DisplaySegmentCaps.indexOf(segmentStartCap);
@@ -617,9 +732,14 @@ class DisplayManager {
       dataView.buffer,
       sendImmediately
     );
+    this.#displayContextState.segmentStartCap = segmentStartCap;
   }
   setSegmentEndCap(segmentEndCap: DisplaySegmentCap, sendImmediately: boolean) {
     this.#assertValidSegmentCap(segmentEndCap);
+    if (this.#displayContextState.segmentEndCap == segmentEndCap) {
+      _console.log(`redundant segmentEndCap ${segmentEndCap}`);
+      return;
+    }
     const dataView = new DataView(new ArrayBuffer(1));
     _console.log({ segmentEndCap });
     const segmentCapEnum = DisplaySegmentCaps.indexOf(segmentEndCap);
@@ -629,9 +749,17 @@ class DisplayManager {
       dataView.buffer,
       sendImmediately
     );
+    this.#displayContextState.segmentEndCap = segmentEndCap;
   }
   setSegmentCap(segmentCap: DisplaySegmentCap, sendImmediately: boolean) {
     this.#assertValidSegmentCap(segmentCap);
+    if (
+      this.#displayContextState.segmentStartCap == segmentCap &&
+      this.#displayContextState.segmentEndCap == segmentCap
+    ) {
+      _console.log(`redundant segmentCap ${segmentCap}`);
+      return;
+    }
     const dataView = new DataView(new ArrayBuffer(1));
     _console.log({ segmentCap });
     const segmentCapEnum = DisplaySegmentCaps.indexOf(segmentCap);
@@ -641,9 +769,15 @@ class DisplayManager {
       dataView.buffer,
       sendImmediately
     );
+    this.#displayContextState.segmentStartCap = segmentCap;
+    this.#displayContextState.segmentEndCap = segmentCap;
   }
 
   setSegmentStartRadius(segmentStartRadius: number, sendImmediately: boolean) {
+    if (this.#displayContextState.segmentStartRadius == segmentStartRadius) {
+      _console.log(`redundant segmentStartRadius ${segmentStartRadius}`);
+      return;
+    }
     const dataView = new DataView(new ArrayBuffer(2));
     _console.log({ segmentStartRadius });
     dataView.setUint16(0, segmentStartRadius, true);
@@ -652,8 +786,13 @@ class DisplayManager {
       dataView.buffer,
       sendImmediately
     );
+    this.#displayContextState.segmentStartRadius = segmentStartRadius;
   }
   setSegmentEndRadius(segmentEndRadius: number, sendImmediately: boolean) {
+    if (this.#displayContextState.segmentEndRadius == segmentEndRadius) {
+      _console.log(`redundant segmentEndRadius ${segmentEndRadius}`);
+      return;
+    }
     const dataView = new DataView(new ArrayBuffer(2));
     _console.log({ segmentEndRadius });
     dataView.setUint16(0, segmentEndRadius, true);
@@ -662,8 +801,16 @@ class DisplayManager {
       dataView.buffer,
       sendImmediately
     );
+    this.#displayContextState.segmentEndRadius = segmentEndRadius;
   }
   setSegmentRadius(segmentRadius: number, sendImmediately: boolean) {
+    if (
+      this.#displayContextState.segmentStartRadius == segmentRadius &&
+      this.#displayContextState.segmentEndRadius == segmentRadius
+    ) {
+      _console.log(`redundant segmentRadius ${segmentRadius}`);
+      return;
+    }
     const dataView = new DataView(new ArrayBuffer(2));
     _console.log({ segmentRadius });
     dataView.setUint16(0, segmentRadius, true);
@@ -672,9 +819,15 @@ class DisplayManager {
       dataView.buffer,
       sendImmediately
     );
+    this.#displayContextState.segmentStartRadius = segmentRadius;
+    this.#displayContextState.segmentEndRadius = segmentRadius;
   }
 
   setCropTop(cropTop: number, sendImmediately: boolean) {
+    if (this.#displayContextState.cropTop == cropTop) {
+      _console.log(`redundant cropTop ${cropTop}`);
+      return;
+    }
     const dataView = new DataView(new ArrayBuffer(2));
     _console.log({ cropTop });
     dataView.setUint16(0, cropTop, true);
@@ -683,8 +836,13 @@ class DisplayManager {
       dataView.buffer,
       sendImmediately
     );
+    this.#displayContextState.cropTop = cropTop;
   }
   setCropRight(cropRight: number, sendImmediately: boolean) {
+    if (this.#displayContextState.cropTop == cropRight) {
+      _console.log(`redundant cropRight ${cropRight}`);
+      return;
+    }
     const dataView = new DataView(new ArrayBuffer(2));
     _console.log({ cropRight });
     dataView.setUint16(0, cropRight, true);
@@ -693,8 +851,13 @@ class DisplayManager {
       dataView.buffer,
       sendImmediately
     );
+    this.#displayContextState.cropRight = cropRight;
   }
   setCropBottom(cropBottom: number, sendImmediately: boolean) {
+    if (this.#displayContextState.cropBottom == cropBottom) {
+      _console.log(`redundant cropBottom ${cropBottom}`);
+      return;
+    }
     const dataView = new DataView(new ArrayBuffer(2));
     _console.log({ cropBottom });
     dataView.setUint16(0, cropBottom, true);
@@ -703,8 +866,13 @@ class DisplayManager {
       dataView.buffer,
       sendImmediately
     );
+    this.#displayContextState.cropBottom = cropBottom;
   }
   setCropLeft(cropLeft: number, sendImmediately: boolean) {
+    if (this.#displayContextState.cropLeft == cropLeft) {
+      _console.log(`redundant cropLeft ${cropLeft}`);
+      return;
+    }
     const dataView = new DataView(new ArrayBuffer(2));
     _console.log({ cropLeft });
     dataView.setUint16(0, cropLeft, true);
@@ -713,57 +881,104 @@ class DisplayManager {
       dataView.buffer,
       sendImmediately
     );
+    this.#displayContextState.cropLeft = cropLeft;
   }
   clearCrop(sendImmediately: boolean) {
+    if (
+      this.#displayContextState.cropTop == 0 &&
+      this.#displayContextState.cropRight == 0 &&
+      this.#displayContextState.cropBottom == 0 &&
+      this.#displayContextState.cropLeft == 0
+    ) {
+      _console.log(`redundant crop ${0}`);
+      return;
+    }
     this.#sendDisplayContextCommand("clearCrop", undefined, sendImmediately);
+    this.#displayContextState.cropTop = 0;
+    this.#displayContextState.cropRight = 0;
+    this.#displayContextState.cropBottom = 0;
+    this.#displayContextState.cropLeft = 0;
   }
 
-  setRotationCropTop(cropTop: number, sendImmediately: boolean) {
+  setRotationCropTop(rotationCropTop: number, sendImmediately: boolean) {
+    if (this.#displayContextState.rotationCropTop == rotationCropTop) {
+      _console.log(`redundant rotationCropTop ${rotationCropTop}`);
+      return;
+    }
     const dataView = new DataView(new ArrayBuffer(2));
-    _console.log({ cropTop });
-    dataView.setUint16(0, cropTop, true);
+    _console.log({ rotationCropTop });
+    dataView.setUint16(0, rotationCropTop, true);
     this.#sendDisplayContextCommand(
       "setRotationCropTop",
       dataView.buffer,
       sendImmediately
     );
+    this.#displayContextState.rotationCropTop = rotationCropTop;
   }
-  setRotationCropRight(cropRight: number, sendImmediately: boolean) {
+  setRotationCropRight(rotationCropRight: number, sendImmediately: boolean) {
+    if (this.#displayContextState.rotationCropTop == rotationCropRight) {
+      _console.log(`redundant rotationCropRight ${rotationCropRight}`);
+      return;
+    }
     const dataView = new DataView(new ArrayBuffer(2));
-    _console.log({ cropRight });
-    dataView.setUint16(0, cropRight, true);
+    _console.log({ rotationCropRight });
+    dataView.setUint16(0, rotationCropRight, true);
     this.#sendDisplayContextCommand(
       "setRotationCropRight",
       dataView.buffer,
       sendImmediately
     );
+    this.#displayContextState.rotationCropRight = rotationCropRight;
   }
-  setRotationCropBottom(cropBottom: number, sendImmediately: boolean) {
+  setRotationCropBottom(rotationCropBottom: number, sendImmediately: boolean) {
+    if (this.#displayContextState.rotationCropBottom == rotationCropBottom) {
+      _console.log(`redundant rotationCropBottom ${rotationCropBottom}`);
+      return;
+    }
     const dataView = new DataView(new ArrayBuffer(2));
-    _console.log({ cropBottom });
-    dataView.setUint16(0, cropBottom, true);
+    _console.log({ rotationCropBottom });
+    dataView.setUint16(0, rotationCropBottom, true);
     this.#sendDisplayContextCommand(
       "setRotationCropBottom",
       dataView.buffer,
       sendImmediately
     );
+    this.#displayContextState.rotationCropBottom = rotationCropBottom;
   }
-  setRotationCropLeft(cropLeft: number, sendImmediately: boolean) {
+  setRotationCropLeft(rotationCropLeft: number, sendImmediately: boolean) {
+    if (this.#displayContextState.rotationCropLeft == rotationCropLeft) {
+      _console.log(`redundant rotationCropLeft ${rotationCropLeft}`);
+      return;
+    }
     const dataView = new DataView(new ArrayBuffer(2));
-    _console.log({ cropLeft });
-    dataView.setUint16(0, cropLeft, true);
+    _console.log({ rotationCropLeft });
+    dataView.setUint16(0, rotationCropLeft, true);
     this.#sendDisplayContextCommand(
       "setRotationCropLeft",
       dataView.buffer,
       sendImmediately
     );
+    this.#displayContextState.rotationCropLeft = rotationCropLeft;
   }
   clearRotationCrop(sendImmediately: boolean) {
+    if (
+      this.#displayContextState.rotationCropTop == 0 &&
+      this.#displayContextState.rotationCropRight == 0 &&
+      this.#displayContextState.rotationCropBottom == 0 &&
+      this.#displayContextState.rotationCropLeft == 0
+    ) {
+      _console.log(`redundant rotationCrop ${0}`);
+      return;
+    }
     this.#sendDisplayContextCommand(
       "clearRotationCrop",
       undefined,
       sendImmediately
     );
+    this.#displayContextState.rotationCropTop = 0;
+    this.#displayContextState.rotationCropRight = 0;
+    this.#displayContextState.rotationCropBottom = 0;
+    this.#displayContextState.rotationCropLeft = 0;
   }
 
   #clampX(x: number) {
@@ -979,6 +1194,10 @@ class DisplayManager {
     this.#displayBrightness = undefined;
     this.#displayContextCommandBuffers = [];
     this.#isDisplayAvailable = false;
+
+    this.#displayContextState = Object.assign({}, DefaultDisplayContextState);
+    this.#colors.length = 0;
+    this.#opacities.length = 0;
   }
 
   // MTU

@@ -1447,6 +1447,15 @@ class Device {
   get isDisplayAvailable() {
     return this.#displayManager.isDisplayAvailable;
   }
+  get displayContextState() {
+    return this.#displayManager.displayContextState;
+  }
+  get displayColors() {
+    return this.#displayManager.colors;
+  }
+  get displayColorOpacities() {
+    return this.#displayManager.opacities;
+  }
   #assertDisplayIsAvailable() {
     _console.assertWithError(this.isDisplayAvailable, "display not available");
   }
