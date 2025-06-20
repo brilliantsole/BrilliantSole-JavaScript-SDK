@@ -198,7 +198,10 @@ export const RequiredDisplayMessageTypes: DisplayMessageType[] = [
   "getDisplayBrightness",
 ] as const;
 
-export const DisplayEventTypes = [...DisplayMessageTypes] as const;
+export const DisplayEventTypes = [
+  ...DisplayMessageTypes,
+  "displayContextState",
+] as const;
 export type DisplayEventType = (typeof DisplayEventTypes)[number];
 
 export interface DisplayEventMessages {
@@ -212,6 +215,9 @@ export interface DisplayEventMessages {
   };
   getDisplayBrightness: {
     displayBrightness: DisplayBrightness;
+  };
+  displayContextState: {
+    displayContextState: DisplayContextState;
   };
 }
 
@@ -275,6 +281,11 @@ class DisplayManager {
   );
   get displayContextState() {
     return this.#displayContextState;
+  }
+  #onDisplayContextStateUpdate() {
+    this.#dispatchEvent("displayContextState", {
+      displayContextState: Object.assign({}, this.#displayContextState),
+    });
   }
 
   // DISPLAY STATUS
@@ -635,6 +646,7 @@ class DisplayManager {
       sendImmediately
     );
     this.#displayContextState.fillColorIndex = colorIndex;
+    this.#onDisplayContextStateUpdate();
   }
   selectLineColor(colorIndex: number, sendImmediately: boolean) {
     this.#assertValidColorIndex(colorIndex);
@@ -648,6 +660,7 @@ class DisplayManager {
       sendImmediately
     );
     this.#displayContextState.lineColorIndex = colorIndex;
+    this.#onDisplayContextStateUpdate();
   }
   #assertValidLineWidth(lineWidth: number) {
     _console.assertRangeWithError("lineWidth", lineWidth, 0, this.width);
@@ -666,6 +679,7 @@ class DisplayManager {
       sendImmediately
     );
     this.#displayContextState.lineWidth = lineWidth;
+    this.#onDisplayContextStateUpdate();
   }
   setRotation(rotation: number, isRadians: boolean, sendImmediately: boolean) {
     const dataView = new DataView(new ArrayBuffer(2));
@@ -697,6 +711,7 @@ class DisplayManager {
     );
 
     this.#displayContextState.rotation = rotation;
+    this.#onDisplayContextStateUpdate();
   }
   clearRotation(sendImmediately: boolean) {
     if (this.#displayContextState.rotation == 0) {
@@ -709,6 +724,7 @@ class DisplayManager {
       sendImmediately
     );
     this.#displayContextState.rotation = 0;
+    this.#onDisplayContextStateUpdate();
   }
 
   #assertValidSegmentCap(segmentCap: DisplaySegmentCap) {
@@ -733,6 +749,7 @@ class DisplayManager {
       sendImmediately
     );
     this.#displayContextState.segmentStartCap = segmentStartCap;
+    this.#onDisplayContextStateUpdate();
   }
   setSegmentEndCap(segmentEndCap: DisplaySegmentCap, sendImmediately: boolean) {
     this.#assertValidSegmentCap(segmentEndCap);
@@ -750,6 +767,7 @@ class DisplayManager {
       sendImmediately
     );
     this.#displayContextState.segmentEndCap = segmentEndCap;
+    this.#onDisplayContextStateUpdate();
   }
   setSegmentCap(segmentCap: DisplaySegmentCap, sendImmediately: boolean) {
     this.#assertValidSegmentCap(segmentCap);
@@ -771,6 +789,7 @@ class DisplayManager {
     );
     this.#displayContextState.segmentStartCap = segmentCap;
     this.#displayContextState.segmentEndCap = segmentCap;
+    this.#onDisplayContextStateUpdate();
   }
 
   setSegmentStartRadius(segmentStartRadius: number, sendImmediately: boolean) {
@@ -787,6 +806,7 @@ class DisplayManager {
       sendImmediately
     );
     this.#displayContextState.segmentStartRadius = segmentStartRadius;
+    this.#onDisplayContextStateUpdate();
   }
   setSegmentEndRadius(segmentEndRadius: number, sendImmediately: boolean) {
     if (this.#displayContextState.segmentEndRadius == segmentEndRadius) {
@@ -802,6 +822,7 @@ class DisplayManager {
       sendImmediately
     );
     this.#displayContextState.segmentEndRadius = segmentEndRadius;
+    this.#onDisplayContextStateUpdate();
   }
   setSegmentRadius(segmentRadius: number, sendImmediately: boolean) {
     if (
@@ -821,6 +842,7 @@ class DisplayManager {
     );
     this.#displayContextState.segmentStartRadius = segmentRadius;
     this.#displayContextState.segmentEndRadius = segmentRadius;
+    this.#onDisplayContextStateUpdate();
   }
 
   setCropTop(cropTop: number, sendImmediately: boolean) {
@@ -837,6 +859,7 @@ class DisplayManager {
       sendImmediately
     );
     this.#displayContextState.cropTop = cropTop;
+    this.#onDisplayContextStateUpdate();
   }
   setCropRight(cropRight: number, sendImmediately: boolean) {
     if (this.#displayContextState.cropTop == cropRight) {
@@ -852,6 +875,7 @@ class DisplayManager {
       sendImmediately
     );
     this.#displayContextState.cropRight = cropRight;
+    this.#onDisplayContextStateUpdate();
   }
   setCropBottom(cropBottom: number, sendImmediately: boolean) {
     if (this.#displayContextState.cropBottom == cropBottom) {
@@ -867,6 +891,7 @@ class DisplayManager {
       sendImmediately
     );
     this.#displayContextState.cropBottom = cropBottom;
+    this.#onDisplayContextStateUpdate();
   }
   setCropLeft(cropLeft: number, sendImmediately: boolean) {
     if (this.#displayContextState.cropLeft == cropLeft) {
@@ -882,6 +907,7 @@ class DisplayManager {
       sendImmediately
     );
     this.#displayContextState.cropLeft = cropLeft;
+    this.#onDisplayContextStateUpdate();
   }
   clearCrop(sendImmediately: boolean) {
     if (
@@ -898,6 +924,7 @@ class DisplayManager {
     this.#displayContextState.cropRight = 0;
     this.#displayContextState.cropBottom = 0;
     this.#displayContextState.cropLeft = 0;
+    this.#onDisplayContextStateUpdate();
   }
 
   setRotationCropTop(rotationCropTop: number, sendImmediately: boolean) {
@@ -914,6 +941,7 @@ class DisplayManager {
       sendImmediately
     );
     this.#displayContextState.rotationCropTop = rotationCropTop;
+    this.#onDisplayContextStateUpdate();
   }
   setRotationCropRight(rotationCropRight: number, sendImmediately: boolean) {
     if (this.#displayContextState.rotationCropTop == rotationCropRight) {
@@ -929,6 +957,7 @@ class DisplayManager {
       sendImmediately
     );
     this.#displayContextState.rotationCropRight = rotationCropRight;
+    this.#onDisplayContextStateUpdate();
   }
   setRotationCropBottom(rotationCropBottom: number, sendImmediately: boolean) {
     if (this.#displayContextState.rotationCropBottom == rotationCropBottom) {
@@ -944,6 +973,7 @@ class DisplayManager {
       sendImmediately
     );
     this.#displayContextState.rotationCropBottom = rotationCropBottom;
+    this.#onDisplayContextStateUpdate();
   }
   setRotationCropLeft(rotationCropLeft: number, sendImmediately: boolean) {
     if (this.#displayContextState.rotationCropLeft == rotationCropLeft) {
@@ -959,6 +989,7 @@ class DisplayManager {
       sendImmediately
     );
     this.#displayContextState.rotationCropLeft = rotationCropLeft;
+    this.#onDisplayContextStateUpdate();
   }
   clearRotationCrop(sendImmediately: boolean) {
     if (
@@ -979,6 +1010,7 @@ class DisplayManager {
     this.#displayContextState.rotationCropRight = 0;
     this.#displayContextState.rotationCropBottom = 0;
     this.#displayContextState.rotationCropLeft = 0;
+    this.#onDisplayContextStateUpdate();
   }
 
   #clampX(x: number) {

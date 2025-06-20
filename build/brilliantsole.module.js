@@ -3675,7 +3675,7 @@ function rgbToHex({ r, g, b }) {
     return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
 }
 
-var _DisplayManager_instances, _DisplayManager_dispatchEvent_get, _DisplayManager_isDisplayAvailable, _DisplayManager_assertDisplayIsAvailable, _DisplayManager_parseIsDisplayAvailable, _DisplayManager_displayContextState, _DisplayManager_displayStatus, _DisplayManager_parseDisplayStatus, _DisplayManager_updateDisplayStatus, _DisplayManager_sendDisplayCommand, _DisplayManager_assertIsAwake, _DisplayManager_assertIsNotAwake, _DisplayManager_displayInformation, _DisplayManager_parseDisplayInformation, _DisplayManager_displayBrightness, _DisplayManager_parseDisplayBrightness, _DisplayManager_assertValidDisplayBrightness, _DisplayManager_assertValidDisplayContextCommand, _DisplayManager_displayContextCommandBuffers, _DisplayManager_sendDisplayContextCommand, _DisplayManager_sendDisplayContextCommands, _DisplayManager_assertValidColor, _DisplayManager_assertValidColorValue, _DisplayManager_assertValidColorIndex, _DisplayManager_colors, _DisplayManager_assertValidOpacity, _DisplayManager_opacities, _DisplayManager_assertValidLineWidth, _DisplayManager_assertValidSegmentCap, _DisplayManager_clampBox, _DisplayManager_mtu;
+var _DisplayManager_instances, _DisplayManager_dispatchEvent_get, _DisplayManager_isDisplayAvailable, _DisplayManager_assertDisplayIsAvailable, _DisplayManager_parseIsDisplayAvailable, _DisplayManager_displayContextState, _DisplayManager_onDisplayContextStateUpdate, _DisplayManager_displayStatus, _DisplayManager_parseDisplayStatus, _DisplayManager_updateDisplayStatus, _DisplayManager_sendDisplayCommand, _DisplayManager_assertIsAwake, _DisplayManager_assertIsNotAwake, _DisplayManager_displayInformation, _DisplayManager_parseDisplayInformation, _DisplayManager_displayBrightness, _DisplayManager_parseDisplayBrightness, _DisplayManager_assertValidDisplayBrightness, _DisplayManager_assertValidDisplayContextCommand, _DisplayManager_displayContextCommandBuffers, _DisplayManager_sendDisplayContextCommand, _DisplayManager_sendDisplayContextCommands, _DisplayManager_assertValidColor, _DisplayManager_assertValidColorValue, _DisplayManager_assertValidColorIndex, _DisplayManager_colors, _DisplayManager_assertValidOpacity, _DisplayManager_opacities, _DisplayManager_assertValidLineWidth, _DisplayManager_assertValidSegmentCap, _DisplayManager_clampBox, _DisplayManager_mtu;
 const _console$i = createConsole("DisplayManager", { log: true });
 const DisplayCommands = ["sleep", "wake"];
 const DisplayStatuses = ["awake", "asleep"];
@@ -3778,7 +3778,10 @@ const RequiredDisplayMessageTypes = [
     "displayStatus",
     "getDisplayBrightness",
 ];
-const DisplayEventTypes = [...DisplayMessageTypes];
+const DisplayEventTypes = [
+    ...DisplayMessageTypes,
+    "displayContextState",
+];
 class DisplayManager {
     constructor() {
         _DisplayManager_instances.add(this);
@@ -3934,6 +3937,7 @@ class DisplayManager {
         }
         __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "selectFillColor", UInt8ByteBuffer(colorIndex), sendImmediately);
         __classPrivateFieldGet(this, _DisplayManager_displayContextState, "f").fillColorIndex = colorIndex;
+        __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_onDisplayContextStateUpdate).call(this);
     }
     selectLineColor(colorIndex, sendImmediately) {
         __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_assertValidColorIndex).call(this, colorIndex);
@@ -3943,6 +3947,7 @@ class DisplayManager {
         }
         __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "selectLineColor", UInt8ByteBuffer(colorIndex), sendImmediately);
         __classPrivateFieldGet(this, _DisplayManager_displayContextState, "f").lineColorIndex = colorIndex;
+        __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_onDisplayContextStateUpdate).call(this);
     }
     setLineWidth(lineWidth, sendImmediately) {
         __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_assertValidLineWidth).call(this, lineWidth);
@@ -3954,6 +3959,7 @@ class DisplayManager {
         dataView.setUint16(0, lineWidth, true);
         __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "setLineWidth", dataView.buffer, sendImmediately);
         __classPrivateFieldGet(this, _DisplayManager_displayContextState, "f").lineWidth = lineWidth;
+        __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_onDisplayContextStateUpdate).call(this);
     }
     setRotation(rotation, isRadians, sendImmediately) {
         const dataView = new DataView(new ArrayBuffer(2));
@@ -3979,6 +3985,7 @@ class DisplayManager {
         dataView.setUint16(0, rotation, true);
         __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "setRotation", dataView.buffer, sendImmediately);
         __classPrivateFieldGet(this, _DisplayManager_displayContextState, "f").rotation = rotation;
+        __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_onDisplayContextStateUpdate).call(this);
     }
     clearRotation(sendImmediately) {
         if (__classPrivateFieldGet(this, _DisplayManager_displayContextState, "f").rotation == 0) {
@@ -3987,6 +3994,7 @@ class DisplayManager {
         }
         __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "clearRotation", undefined, sendImmediately);
         __classPrivateFieldGet(this, _DisplayManager_displayContextState, "f").rotation = 0;
+        __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_onDisplayContextStateUpdate).call(this);
     }
     setSegmentStartCap(segmentStartCap, sendImmediately) {
         __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_assertValidSegmentCap).call(this, segmentStartCap);
@@ -4000,6 +4008,7 @@ class DisplayManager {
         dataView.setUint8(0, segmentCapEnum);
         __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "setSegmentStartCap", dataView.buffer, sendImmediately);
         __classPrivateFieldGet(this, _DisplayManager_displayContextState, "f").segmentStartCap = segmentStartCap;
+        __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_onDisplayContextStateUpdate).call(this);
     }
     setSegmentEndCap(segmentEndCap, sendImmediately) {
         __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_assertValidSegmentCap).call(this, segmentEndCap);
@@ -4013,6 +4022,7 @@ class DisplayManager {
         dataView.setUint8(0, segmentCapEnum);
         __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "setSegmentEndCap", dataView.buffer, sendImmediately);
         __classPrivateFieldGet(this, _DisplayManager_displayContextState, "f").segmentEndCap = segmentEndCap;
+        __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_onDisplayContextStateUpdate).call(this);
     }
     setSegmentCap(segmentCap, sendImmediately) {
         __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_assertValidSegmentCap).call(this, segmentCap);
@@ -4028,6 +4038,7 @@ class DisplayManager {
         __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "setSegmentCap", dataView.buffer, sendImmediately);
         __classPrivateFieldGet(this, _DisplayManager_displayContextState, "f").segmentStartCap = segmentCap;
         __classPrivateFieldGet(this, _DisplayManager_displayContextState, "f").segmentEndCap = segmentCap;
+        __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_onDisplayContextStateUpdate).call(this);
     }
     setSegmentStartRadius(segmentStartRadius, sendImmediately) {
         if (__classPrivateFieldGet(this, _DisplayManager_displayContextState, "f").segmentStartRadius == segmentStartRadius) {
@@ -4039,6 +4050,7 @@ class DisplayManager {
         dataView.setUint16(0, segmentStartRadius, true);
         __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "setSegmentStartRadius", dataView.buffer, sendImmediately);
         __classPrivateFieldGet(this, _DisplayManager_displayContextState, "f").segmentStartRadius = segmentStartRadius;
+        __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_onDisplayContextStateUpdate).call(this);
     }
     setSegmentEndRadius(segmentEndRadius, sendImmediately) {
         if (__classPrivateFieldGet(this, _DisplayManager_displayContextState, "f").segmentEndRadius == segmentEndRadius) {
@@ -4050,6 +4062,7 @@ class DisplayManager {
         dataView.setUint16(0, segmentEndRadius, true);
         __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "setSegmentEndRadius", dataView.buffer, sendImmediately);
         __classPrivateFieldGet(this, _DisplayManager_displayContextState, "f").segmentEndRadius = segmentEndRadius;
+        __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_onDisplayContextStateUpdate).call(this);
     }
     setSegmentRadius(segmentRadius, sendImmediately) {
         if (__classPrivateFieldGet(this, _DisplayManager_displayContextState, "f").segmentStartRadius == segmentRadius &&
@@ -4063,6 +4076,7 @@ class DisplayManager {
         __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "setSegmentRadius", dataView.buffer, sendImmediately);
         __classPrivateFieldGet(this, _DisplayManager_displayContextState, "f").segmentStartRadius = segmentRadius;
         __classPrivateFieldGet(this, _DisplayManager_displayContextState, "f").segmentEndRadius = segmentRadius;
+        __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_onDisplayContextStateUpdate).call(this);
     }
     setCropTop(cropTop, sendImmediately) {
         if (__classPrivateFieldGet(this, _DisplayManager_displayContextState, "f").cropTop == cropTop) {
@@ -4074,6 +4088,7 @@ class DisplayManager {
         dataView.setUint16(0, cropTop, true);
         __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "setCropTop", dataView.buffer, sendImmediately);
         __classPrivateFieldGet(this, _DisplayManager_displayContextState, "f").cropTop = cropTop;
+        __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_onDisplayContextStateUpdate).call(this);
     }
     setCropRight(cropRight, sendImmediately) {
         if (__classPrivateFieldGet(this, _DisplayManager_displayContextState, "f").cropTop == cropRight) {
@@ -4085,6 +4100,7 @@ class DisplayManager {
         dataView.setUint16(0, cropRight, true);
         __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "setCropRight", dataView.buffer, sendImmediately);
         __classPrivateFieldGet(this, _DisplayManager_displayContextState, "f").cropRight = cropRight;
+        __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_onDisplayContextStateUpdate).call(this);
     }
     setCropBottom(cropBottom, sendImmediately) {
         if (__classPrivateFieldGet(this, _DisplayManager_displayContextState, "f").cropBottom == cropBottom) {
@@ -4096,6 +4112,7 @@ class DisplayManager {
         dataView.setUint16(0, cropBottom, true);
         __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "setCropBottom", dataView.buffer, sendImmediately);
         __classPrivateFieldGet(this, _DisplayManager_displayContextState, "f").cropBottom = cropBottom;
+        __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_onDisplayContextStateUpdate).call(this);
     }
     setCropLeft(cropLeft, sendImmediately) {
         if (__classPrivateFieldGet(this, _DisplayManager_displayContextState, "f").cropLeft == cropLeft) {
@@ -4107,6 +4124,7 @@ class DisplayManager {
         dataView.setUint16(0, cropLeft, true);
         __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "setCropLeft", dataView.buffer, sendImmediately);
         __classPrivateFieldGet(this, _DisplayManager_displayContextState, "f").cropLeft = cropLeft;
+        __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_onDisplayContextStateUpdate).call(this);
     }
     clearCrop(sendImmediately) {
         if (__classPrivateFieldGet(this, _DisplayManager_displayContextState, "f").cropTop == 0 &&
@@ -4121,6 +4139,7 @@ class DisplayManager {
         __classPrivateFieldGet(this, _DisplayManager_displayContextState, "f").cropRight = 0;
         __classPrivateFieldGet(this, _DisplayManager_displayContextState, "f").cropBottom = 0;
         __classPrivateFieldGet(this, _DisplayManager_displayContextState, "f").cropLeft = 0;
+        __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_onDisplayContextStateUpdate).call(this);
     }
     setRotationCropTop(rotationCropTop, sendImmediately) {
         if (__classPrivateFieldGet(this, _DisplayManager_displayContextState, "f").rotationCropTop == rotationCropTop) {
@@ -4132,6 +4151,7 @@ class DisplayManager {
         dataView.setUint16(0, rotationCropTop, true);
         __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "setRotationCropTop", dataView.buffer, sendImmediately);
         __classPrivateFieldGet(this, _DisplayManager_displayContextState, "f").rotationCropTop = rotationCropTop;
+        __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_onDisplayContextStateUpdate).call(this);
     }
     setRotationCropRight(rotationCropRight, sendImmediately) {
         if (__classPrivateFieldGet(this, _DisplayManager_displayContextState, "f").rotationCropTop == rotationCropRight) {
@@ -4143,6 +4163,7 @@ class DisplayManager {
         dataView.setUint16(0, rotationCropRight, true);
         __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "setRotationCropRight", dataView.buffer, sendImmediately);
         __classPrivateFieldGet(this, _DisplayManager_displayContextState, "f").rotationCropRight = rotationCropRight;
+        __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_onDisplayContextStateUpdate).call(this);
     }
     setRotationCropBottom(rotationCropBottom, sendImmediately) {
         if (__classPrivateFieldGet(this, _DisplayManager_displayContextState, "f").rotationCropBottom == rotationCropBottom) {
@@ -4154,6 +4175,7 @@ class DisplayManager {
         dataView.setUint16(0, rotationCropBottom, true);
         __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "setRotationCropBottom", dataView.buffer, sendImmediately);
         __classPrivateFieldGet(this, _DisplayManager_displayContextState, "f").rotationCropBottom = rotationCropBottom;
+        __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_onDisplayContextStateUpdate).call(this);
     }
     setRotationCropLeft(rotationCropLeft, sendImmediately) {
         if (__classPrivateFieldGet(this, _DisplayManager_displayContextState, "f").rotationCropLeft == rotationCropLeft) {
@@ -4165,6 +4187,7 @@ class DisplayManager {
         dataView.setUint16(0, rotationCropLeft, true);
         __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "setRotationCropLeft", dataView.buffer, sendImmediately);
         __classPrivateFieldGet(this, _DisplayManager_displayContextState, "f").rotationCropLeft = rotationCropLeft;
+        __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_onDisplayContextStateUpdate).call(this);
     }
     clearRotationCrop(sendImmediately) {
         if (__classPrivateFieldGet(this, _DisplayManager_displayContextState, "f").rotationCropTop == 0 &&
@@ -4179,6 +4202,7 @@ class DisplayManager {
         __classPrivateFieldGet(this, _DisplayManager_displayContextState, "f").rotationCropRight = 0;
         __classPrivateFieldGet(this, _DisplayManager_displayContextState, "f").rotationCropBottom = 0;
         __classPrivateFieldGet(this, _DisplayManager_displayContextState, "f").rotationCropLeft = 0;
+        __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_onDisplayContextStateUpdate).call(this);
     }
     clearRect(x, y, width, height, sendImmediately) {
         const { x: _x, y: _y, width: _width, height: _height, } = __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_clampBox).call(this, x, y, width, height);
@@ -4299,6 +4323,10 @@ _DisplayManager_isDisplayAvailable = new WeakMap(), _DisplayManager_displayConte
     _console$i.log({ isDisplayAvailable: __classPrivateFieldGet(this, _DisplayManager_isDisplayAvailable, "f") });
     __classPrivateFieldGet(this, _DisplayManager_instances, "a", _DisplayManager_dispatchEvent_get).call(this, "isDisplayAvailable", {
         isDisplayAvailable: __classPrivateFieldGet(this, _DisplayManager_isDisplayAvailable, "f"),
+    });
+}, _DisplayManager_onDisplayContextStateUpdate = function _DisplayManager_onDisplayContextStateUpdate() {
+    __classPrivateFieldGet(this, _DisplayManager_instances, "a", _DisplayManager_dispatchEvent_get).call(this, "displayContextState", {
+        displayContextState: Object.assign({}, __classPrivateFieldGet(this, _DisplayManager_displayContextState, "f")),
     });
 }, _DisplayManager_parseDisplayStatus = function _DisplayManager_parseDisplayStatus(dataView) {
     const displayStatusIndex = dataView.getUint8(0);
