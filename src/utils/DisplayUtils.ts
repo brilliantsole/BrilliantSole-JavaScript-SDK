@@ -1,0 +1,82 @@
+import {
+  DisplayBrightness,
+  DisplayBrightnesses,
+  DisplayColorRGB,
+  DisplayCommand,
+  DisplayContextCommand,
+  DisplaySegmentCap,
+  DisplaySegmentCaps,
+} from "../DisplayManager.ts";
+import { createConsole } from "./Console.ts";
+import { Uint16Max } from "./MathUtils.ts";
+
+const _console = createConsole("DisplayUtils", { log: true });
+
+export function normalizeRotation(rotation: number, isRadians?: boolean) {
+  if (isRadians) {
+    const rotationRad = rotation;
+    _console.log({ rotationRad });
+    rotation %= 2 * Math.PI;
+    rotation /= 2 * Math.PI;
+  } else {
+    const rotationDeg = rotation;
+    _console.log({ rotationDeg });
+    rotation %= 360;
+    rotation /= 360;
+  }
+  rotation *= Uint16Max;
+  rotation = Math.floor(rotation);
+  //   _console.log({ rotation });
+  return rotation;
+}
+
+export function assertValidSegmentCap(segmentCap: DisplaySegmentCap) {
+  _console.assertEnumWithError(segmentCap, DisplaySegmentCaps);
+}
+
+export function assertValidDisplayBrightness(
+  displayBrightness: DisplayBrightness
+) {
+  _console.assertEnumWithError(displayBrightness, DisplayBrightnesses);
+}
+
+export function assertValidColorValue(name: string, value: number) {
+  _console.assertRangeWithError(name, value, 0, 255);
+}
+export function assertValidColor(color: DisplayColorRGB) {
+  assertValidColorValue("red", color.r);
+  assertValidColorValue("green", color.g);
+  assertValidColorValue("blue", color.b);
+}
+
+export function assertValidOpacity(value: number) {
+  _console.assertRangeWithError("opacity", value, 0, 1);
+}
+
+export const DisplayCropDirections = [
+  "top",
+  "right",
+  "bottom",
+  "left",
+] as const;
+export type DisplayCropDirection = (typeof DisplayCropDirections)[number];
+
+export const DisplayCropDirectionToCommand: Record<
+  DisplayCropDirection,
+  DisplayContextCommand
+> = {
+  top: "setCropTop",
+  right: "setCropRight",
+  bottom: "setCropBottom",
+  left: "setCropLeft",
+};
+
+export const DisplayRotationCropDirectionToCommand: Record<
+  DisplayCropDirection,
+  DisplayContextCommand
+> = {
+  top: "setRotationCropTop",
+  right: "setRotationCropRight",
+  bottom: "setRotationCropBottom",
+  left: "setRotationCropLeft",
+};

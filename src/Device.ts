@@ -1537,6 +1537,10 @@ class Device {
     this.#assertDisplayIsAvailable();
     return this.#displayManager.setRotation;
   }
+  get setDisplayNormalizedRotation() {
+    this.#assertDisplayIsAvailable();
+    return this.#displayManager.setNormalizedRotation;
+  }
   get clearDisplayRotation() {
     this.#assertDisplayIsAvailable();
     return this.#displayManager.clearRotation;
@@ -1584,6 +1588,10 @@ class Device {
     this.#assertDisplayIsAvailable();
     return this.#displayManager.setCropLeft;
   }
+  get setDisplayCrop() {
+    this.#assertDisplayIsAvailable();
+    return this.#displayManager.setCrop;
+  }
   get clearDisplayCrop() {
     this.#assertDisplayIsAvailable();
     return this.#displayManager.clearCrop;
@@ -1604,6 +1612,10 @@ class Device {
   get setDisplayRotationCropLeft() {
     this.#assertDisplayIsAvailable();
     return this.#displayManager.setRotationCropLeft;
+  }
+  get setDisplayRotationCrop() {
+    this.#assertDisplayIsAvailable();
+    return this.#displayManager.setRotationCrop;
   }
   get clearDisplayRotationCrop() {
     this.#assertDisplayIsAvailable();

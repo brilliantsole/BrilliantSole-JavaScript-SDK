@@ -1,5 +1,6 @@
 import Device, { SendMessageCallback } from "./Device.ts";
 import EventDispatcher from "./utils/EventDispatcher.ts";
+import { DisplayCropDirection } from "./utils/DisplayUtils.ts";
 export declare const DisplayCommands: readonly ["sleep", "wake"];
 export type DisplayCommand = (typeof DisplayCommands)[number];
 export declare const DisplayStatuses: readonly ["awake", "asleep"];
@@ -92,7 +93,7 @@ declare class DisplayManager {
     constructor();
     sendMessage: SendDisplayMessageCallback;
     eventDispatcher: DisplayEventDispatcher;
-    get waitForEvent(): <T extends "isDisplayAvailable" | "displayStatus" | "displayInformation" | "displayCommand" | "getDisplayBrightness" | "setDisplayBrightness" | "displayContextCommands" | "displayContextState">(type: T) => Promise<{
+    get waitForEvent(): <T extends "displayContextState" | "isDisplayAvailable" | "displayStatus" | "displayInformation" | "displayCommand" | "getDisplayBrightness" | "setDisplayBrightness" | "displayContextCommands">(type: T) => Promise<{
         type: T;
         target: Device;
         message: DisplayEventMessages[T];
@@ -125,11 +126,12 @@ declare class DisplayManager {
     get opacities(): number[];
     setColorOpacity(colorIndex: number, opacity: number, sendImmediately?: boolean): void;
     setOpacity(opacity: number, sendImmediately?: boolean): void;
-    saveContext(sendImmediately: boolean): void;
-    restoreContext(sendImmediately: boolean): void;
+    saveContext(sendImmediately?: boolean): void;
+    restoreContext(sendImmediately?: boolean): void;
     selectFillColor(fillColorIndex: number, sendImmediately?: boolean): void;
     selectLineColor(lineColorIndex: number, sendImmediately?: boolean): void;
     setLineWidth(lineWidth: number, sendImmediately?: boolean): void;
+    setNormalizedRotation(rotation: number, sendImmediately?: boolean): void;
     setRotation(rotation: number, isRadians?: boolean, sendImmediately?: boolean): void;
     clearRotation(sendImmediately?: boolean): void;
     setSegmentStartCap(segmentStartCap: DisplaySegmentCap, sendImmediately?: boolean): void;
@@ -138,25 +140,27 @@ declare class DisplayManager {
     setSegmentStartRadius(segmentStartRadius: number, sendImmediately?: boolean): void;
     setSegmentEndRadius(segmentEndRadius: number, sendImmediately?: boolean): void;
     setSegmentRadius(segmentRadius: number, sendImmediately?: boolean): void;
+    setCrop(cropDirection: DisplayCropDirection, crop: number, sendImmediately?: boolean): void;
     setCropTop(cropTop: number, sendImmediately?: boolean): void;
     setCropRight(cropRight: number, sendImmediately?: boolean): void;
     setCropBottom(cropBottom: number, sendImmediately?: boolean): void;
     setCropLeft(cropLeft: number, sendImmediately?: boolean): void;
     clearCrop(sendImmediately?: boolean): void;
+    setRotationCrop(cropDirection: DisplayCropDirection, crop: number, sendImmediately?: boolean): void;
     setRotationCropTop(rotationCropTop: number, sendImmediately?: boolean): void;
     setRotationCropRight(rotationCropRight: number, sendImmediately?: boolean): void;
     setRotationCropBottom(rotationCropBottom: number, sendImmediately?: boolean): void;
     setRotationCropLeft(rotationCropLeft: number, sendImmediately?: boolean): void;
     clearRotationCrop(sendImmediately?: boolean): void;
-    clearRect(x: number, y: number, width: number, height: number, sendImmediately: boolean): void;
-    drawRect(x: number, y: number, width: number, height: number, sendImmediately: boolean): void;
-    drawRoundRect(x: number, y: number, width: number, height: number, borderRadius: number, sendImmediately: boolean): void;
+    clearRect(x: number, y: number, width: number, height: number, sendImmediately?: boolean): void;
+    drawRect(x: number, y: number, width: number, height: number, sendImmediately?: boolean): void;
+    drawRoundRect(x: number, y: number, width: number, height: number, borderRadius: number, sendImmediately?: boolean): void;
     drawCircle(x: number, y: number, radius: number, sendImmediately?: boolean): void;
-    drawEllipse(x: number, y: number, radiusX: number, radiusY: number, sendImmediately: boolean): void;
-    drawPolygon(x: number, y: number, radius: number, numberOfSides: number, sendImmediately: boolean): void;
-    drawSegment(startX: number, startY: number, endX: number, endY: number, sendImmediately: boolean): void;
-    selectSpriteSheet(index: number, sendImmediately: boolean): void;
-    drawSprite(index: number, x: number, y: number, sendImmediately: boolean): void;
+    drawEllipse(x: number, y: number, radiusX: number, radiusY: number, sendImmediately?: boolean): void;
+    drawPolygon(x: number, y: number, radius: number, numberOfSides: number, sendImmediately?: boolean): void;
+    drawSegment(startX: number, startY: number, endX: number, endY: number, sendImmediately?: boolean): void;
+    selectSpriteSheet(index: number, sendImmediately?: boolean): void;
+    drawSprite(index: number, x: number, y: number, sendImmediately?: boolean): void;
     parseMessage(messageType: DisplayMessageType, dataView: DataView): void;
     clear(): void;
     get mtu(): number;

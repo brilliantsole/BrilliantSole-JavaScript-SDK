@@ -1,0 +1,11 @@
+import { DisplayBrightness, DisplayColorRGB, DisplayContextCommand, DisplaySegmentCap } from "../DisplayManager.ts";
+export declare function normalizeRotation(rotation: number, isRadians?: boolean): number;
+export declare function assertValidSegmentCap(segmentCap: DisplaySegmentCap): void;
+export declare function assertValidDisplayBrightness(displayBrightness: DisplayBrightness): void;
+export declare function assertValidColorValue(name: string, value: number): void;
+export declare function assertValidColor(color: DisplayColorRGB): void;
+export declare function assertValidOpacity(value: number): void;
+export declare const DisplayCropDirections: readonly ["top", "right", "bottom", "left"];
+export type DisplayCropDirection = (typeof DisplayCropDirections)[number];
+export declare const DisplayCropDirectionToCommand: Record<DisplayCropDirection, DisplayContextCommand>;
+export declare const DisplayRotationCropDirectionToCommand: Record<DisplayCropDirection, DisplayContextCommand>;
