@@ -8290,7 +8290,7 @@ class DisplayCanvasHelper {
     }
     drawSegment(startX, startY, endX, endY, sendImmediately) {
         if (this.device?.isConnected) {
-            this.device.drawDisplayPolygon(x, y, radius, numberOfSides, sendImmediately);
+            this.device.drawDisplaySegment(startX, startY, endX, endY, sendImmediately);
         }
     }
     get brightness() {

@@ -579,7 +579,7 @@ class DisplayManager {
   async #sendDisplayContextCommand(
     displayContextCommand: DisplayContextCommand,
     arrayBuffer?: ArrayBuffer,
-    sendImmediately?: boolean = false
+    sendImmediately?: boolean
   ) {
     this.#assertValidDisplayContextCommand(displayContextCommand);
     const displayContextCommandEnum = DisplayContextCommands.indexOf(
