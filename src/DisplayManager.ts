@@ -614,6 +614,9 @@ class DisplayManager {
     await this.sendMessage([{ type: "displayContextCommands", data }], true);
     this.#displayContextCommandBuffers.length = 0;
   }
+  get flushDisplayContextCommands() {
+    return this.#sendDisplayContextCommands;
+  }
   showDisplay(sendImmediately = true) {
     this.#sendDisplayContextCommand("show", undefined, sendImmediately);
   }

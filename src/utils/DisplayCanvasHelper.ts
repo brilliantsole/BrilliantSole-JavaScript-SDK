@@ -73,6 +73,7 @@ export type BoundDisplayCanvasHelperEventListeners = BoundEventListeners<
 class DisplayCanvasHelper {
   constructor() {
     this.numberOfColors = 16;
+    this.#bufferContext = this.#bufferCanvas.getContext("2d")!;
   }
 
   // EVENT DISPATCHER
@@ -100,6 +101,15 @@ class DisplayCanvasHelper {
   }
 
   // CANVAS
+  #bufferCanvas = document.createElement("canvas");
+  get bufferCanvas() {
+    return this.#bufferCanvas;
+  }
+  #bufferContext!: CanvasRenderingContext2D;
+  get bufferContext() {
+    return this.#bufferContext;
+  }
+
   #canvas?: HTMLCanvasElement;
   get canvas() {
     return this.#canvas;
@@ -117,6 +127,9 @@ class DisplayCanvasHelper {
     _console.log("assigned canvas", this.canvas);
 
     this.#context = this.#canvas?.getContext("2d")!;
+
+    this.#bufferCanvas.width = this.width;
+    this.#bufferCanvas.height = this.height;
 
     this.#updateCanvas();
   }
@@ -141,8 +154,12 @@ class DisplayCanvasHelper {
     }
 
     const { width, height } = this.device.displayInformation!;
+
     this.canvas.width = width;
     this.canvas.height = height;
+
+    this.#bufferCanvas.width = width;
+    this.#bufferCanvas.height = height;
   }
 
   // DEVICE
@@ -203,6 +220,10 @@ class DisplayCanvasHelper {
     return this.#numberOfColors;
   }
   set numberOfColors(newNumberOfColors) {
+    if (this.#numberOfColors == newNumberOfColors) {
+      return;
+    }
+
     this.#numberOfColors = newNumberOfColors;
     _console.log({ numberOfColors: this.numberOfColors });
 
@@ -286,6 +307,21 @@ class DisplayCanvasHelper {
     this.device?.setDisplayContextState(this.contextState);
   }
 
+  showDisplay(sendImmediately = true) {
+    this.#context.drawImage(this.#bufferCanvas, 0, 0);
+    this.#bufferContext.clearRect(0, 0, this.width, this.height);
+    if (this.device?.isConnected) {
+      this.device.showDisplay(sendImmediately);
+    }
+  }
+  clearDisplay(sendImmediately = true) {
+    this.#context.clearRect(0, 0, this.width, this.height);
+    this.#bufferContext.clearRect(0, 0, this.width, this.height);
+    if (this.device?.isConnected) {
+      this.device.clearDisplay(sendImmediately);
+    }
+  }
+
   setColor(
     colorIndex: number,
     color: DisplayColorRGB | string,
@@ -308,8 +344,18 @@ class DisplayCanvasHelper {
       this.device.setDisplayColor(colorIndex, color, sendImmediately);
     }
 
+    // FILL - set background if colorIndex is 0
+
     this.colors[colorIndex] = colorHex;
+
+    if (this.contextState.fillColorIndex == colorIndex) {
+      this.#updateFillStyle();
+    }
+    if (this.contextState.lineColorIndex == colorIndex) {
+      this.#updateStrokeStyle();
+    }
   }
+
   setColorOpacity(
     colorIndex: number,
     opacity: number,
@@ -346,11 +392,15 @@ class DisplayCanvasHelper {
     if (differences.length == 0) {
       return;
     }
-    this.context.fillStyle = this.colors[fillColorIndex];
+    this.#updateFillStyle();
     if (this.device?.isConnected) {
       this.device.selectDisplayFillColor(fillColorIndex, sendImmediately);
     }
     this.#onDisplayContextStateUpdate(differences);
+  }
+  #updateFillStyle() {
+    this.#bufferContext.fillStyle =
+      this.colors[this.contextState.fillColorIndex];
   }
   selectLineColor(lineColorIndex: number, sendImmediately?: boolean) {
     this.#assertValidColorIndex(lineColorIndex);
@@ -360,11 +410,16 @@ class DisplayCanvasHelper {
     if (differences.length == 0) {
       return;
     }
-    this.context.strokeStyle = this.colors[lineColorIndex];
+    this.#updateStrokeStyle();
+    this.#bufferContext.strokeStyle = this.colors[lineColorIndex];
     if (this.device?.isConnected) {
       this.device.selectDisplayLineColor(lineColorIndex, sendImmediately);
     }
     this.#onDisplayContextStateUpdate(differences);
+  }
+  #updateStrokeStyle() {
+    this.#bufferContext.strokeStyle =
+      this.colors[this.contextState.lineColorIndex];
   }
   #assertValidLineWidth(lineWidth: number) {
     _console.assertRangeWithError("lineWidth", lineWidth, 0, this.width);
@@ -377,7 +432,7 @@ class DisplayCanvasHelper {
     if (differences.length == 0) {
       return;
     }
-    this.context.lineWidth = lineWidth;
+    this.#bufferContext.lineWidth = lineWidth;
     if (this.device?.isConnected) {
       this.device.setDisplayLineWidth(lineWidth, sendImmediately);
     }
@@ -609,7 +664,7 @@ class DisplayCanvasHelper {
     height: number,
     sendImmediately?: boolean
   ) {
-    // FILL
+    this.bufferContext.clearRect(0, 0, width, height);
     if (this.device?.isConnected) {
       this.device.clearDisplayRect(x, y, width, height, sendImmediately);
     }
@@ -621,7 +676,10 @@ class DisplayCanvasHelper {
     height: number,
     sendImmediately?: boolean
   ) {
-    // FILL
+    // FILL - note line
+    if (this.contextState.lineWidth) {
+    }
+    this.bufferContext.fillRect(0, 0, width, height);
     if (this.device?.isConnected) {
       this.device.drawDisplayRect(x, y, width, height, sendImmediately);
     }
@@ -701,7 +759,7 @@ class DisplayCanvasHelper {
     }
   }
 
-  // FILL - draw commands
+  // FILL - sprites
 
   #brightness: DisplayBrightness = "medium";
   get brightness() {
@@ -741,7 +799,7 @@ class DisplayCanvasHelper {
     this.#updateGlobalAlpha();
   }
   #updateGlobalAlpha() {
-    this.context.globalAlpha = this.#brightnessAlpha;
+    this.#bufferContext.globalAlpha = this.#brightnessAlpha;
   }
   #resetBrightness() {
     this.setBrightness("medium");

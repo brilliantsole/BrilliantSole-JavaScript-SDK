@@ -37,6 +37,8 @@ declare class DisplayCanvasHelper {
     }>;
     get removeEventListeners(): <T extends "displayContextState">(type: T) => void;
     get removeAllEventListeners(): () => void;
+    get bufferCanvas(): HTMLCanvasElement;
+    get bufferContext(): CanvasRenderingContext2D;
     get canvas(): HTMLCanvasElement | undefined;
     set canvas(newCanvas: HTMLCanvasElement | undefined);
     get context(): CanvasRenderingContext2D;
@@ -50,6 +52,8 @@ declare class DisplayCanvasHelper {
     get opacities(): number[];
     get displayContextState(): DisplayContextState;
     get contextState(): DisplayContextState;
+    showDisplay(sendImmediately?: boolean): void;
+    clearDisplay(sendImmediately?: boolean): void;
     setColor(colorIndex: number, color: DisplayColorRGB | string, sendImmediately?: boolean): void;
     setColorOpacity(colorIndex: number, opacity: number, sendImmediately?: boolean): void;
     setOpacity(opacity: number, sendImmediately?: boolean): void;

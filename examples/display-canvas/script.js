@@ -42,3 +42,5 @@ device.addEventListener("connected", () => {
     device.disconnect();
   }
 });
+
+//document.body.appendChild(displayCanvasHelper.bufferCanvas);

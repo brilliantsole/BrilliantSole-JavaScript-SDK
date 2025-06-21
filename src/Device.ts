@@ -1621,6 +1621,10 @@ class Device {
     this.#assertDisplayIsAvailable();
     return this.#displayManager.clearRotationCrop;
   }
+  get flushDisplayContextCommands() {
+    this.#assertDisplayIsAvailable();
+    return this.#displayManager.flushDisplayContextCommands;
+  }
 
   get drawDisplayRect() {
     this.#assertDisplayIsAvailable();

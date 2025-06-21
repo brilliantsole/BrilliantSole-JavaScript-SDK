@@ -4036,6 +4036,9 @@ class DisplayManager {
         this.sendMessage([{ type: "setDisplayBrightness", data: newDisplayBrightnessData }], sendImmediately);
         await promise;
     }
+    get flushDisplayContextCommands() {
+        return __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommands);
+    }
     showDisplay(sendImmediately = true) {
         __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "show", undefined, sendImmediately);
     }
@@ -7916,6 +7919,10 @@ class Device {
     get clearDisplayRotationCrop() {
         __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertDisplayIsAvailable).call(this);
         return __classPrivateFieldGet(this, _Device_displayManager, "f").clearRotationCrop;
+    }
+    get flushDisplayContextCommands() {
+        __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertDisplayIsAvailable).call(this);
+        return __classPrivateFieldGet(this, _Device_displayManager, "f").flushDisplayContextCommands;
     }
     get drawDisplayRect() {
         __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertDisplayIsAvailable).call(this);

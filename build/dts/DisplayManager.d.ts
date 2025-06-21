@@ -93,7 +93,7 @@ declare class DisplayManager {
     constructor();
     sendMessage: SendDisplayMessageCallback;
     eventDispatcher: DisplayEventDispatcher;
-    get waitForEvent(): <T extends "isDisplayAvailable" | "displayStatus" | "displayInformation" | "displayCommand" | "getDisplayBrightness" | "setDisplayBrightness" | "displayContextCommands" | "displayContextState">(type: T) => Promise<{
+    get waitForEvent(): <T extends "displayContextState" | "isDisplayAvailable" | "displayStatus" | "displayInformation" | "displayCommand" | "getDisplayBrightness" | "setDisplayBrightness" | "displayContextCommands">(type: T) => Promise<{
         type: T;
         target: Device;
         message: DisplayEventMessages[T];
@@ -119,6 +119,7 @@ declare class DisplayManager {
     get type(): "none" | "generic" | "monocularLeft" | "monocularRight" | "binocular";
     get displayBrightness(): "veryLow" | "low" | "medium" | "high" | "veryHigh";
     setDisplayBrightness(newDisplayBrightness: DisplayBrightness, sendImmediately?: boolean): Promise<void>;
+    get flushDisplayContextCommands(): () => Promise<void>;
     showDisplay(sendImmediately?: boolean): void;
     clearDisplay(sendImmediately?: boolean): void;
     get colors(): string[];
