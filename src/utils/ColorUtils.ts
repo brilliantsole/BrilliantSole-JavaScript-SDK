@@ -25,7 +25,8 @@ export function hexToRGB(hex: string): DisplayColorRGB {
   return { r, g, b };
 }
 
-export function colorNameToRGBObject(colorName: string) {
+const blackColor: DisplayColorRGB = { r: 0, g: 0, b: 0 };
+export function colorNameToRGB(colorName: string): DisplayColorRGB {
   const temp = document.createElement("div");
   temp.style.color = colorName;
   document.body.appendChild(temp);
@@ -35,13 +36,21 @@ export function colorNameToRGBObject(colorName: string) {
 
   // Match "rgb(r, g, b)" or "rgba(r, g, b, a)"
   const match = computedColor.match(/^rgba?\((\d+), (\d+), (\d+)/);
-  if (!match) return;
+  if (!match) return blackColor;
 
   return {
     r: parseInt(match[1], 10),
     g: parseInt(match[2], 10),
     b: parseInt(match[3], 10),
   };
+}
+
+export function stringToRGB(string: string): DisplayColorRGB {
+  if (string.startsWith("#")) {
+    return hexToRGB(string);
+  } else {
+    return colorNameToRGB(string);
+  }
 }
 
 export function rgbToHex({ r, g, b }: DisplayColorRGB): string {

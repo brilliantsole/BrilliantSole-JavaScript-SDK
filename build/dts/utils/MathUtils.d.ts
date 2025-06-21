@@ -22,3 +22,5 @@ export interface Euler {
 }
 export declare function computeVoronoiWeights(points: PressureSensorPosition[], sampleCount?: number): number[];
 export declare function clamp(value: number, min?: number, max?: number): number;
+export declare function degToRad(deg: number): number;
+export declare function radToDeg(rad: number): number;

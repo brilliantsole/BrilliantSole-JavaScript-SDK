@@ -10,7 +10,7 @@ import {
   DisplayContextStateKey,
   DisplaySegmentCap,
 } from "../DisplayManager.ts";
-import { hexToRGB, rgbToHex } from "./ColorUtils.ts";
+import { hexToRGB, rgbToHex, stringToRGB } from "./ColorUtils.ts";
 import { createConsole } from "./Console.ts";
 import DisplayContextStateHelper from "./DisplayContextStateHelper.ts";
 import {
@@ -30,6 +30,7 @@ import EventDispatcher, {
   EventMap,
 } from "./EventDispatcher.ts";
 import { addEventListeners, removeEventListeners } from "./EventUtils.ts";
+import { radToDeg, Uint16Max } from "./MathUtils.ts";
 
 const _console = createConsole("DisplayCanvasHelper", { log: true });
 
@@ -127,11 +128,18 @@ class DisplayCanvasHelper {
     _console.log("assigned canvas", this.canvas);
 
     this.#context = this.#canvas?.getContext("2d")!;
+    this.#updateBufferCanvasSize();
+
+    this.#updateCanvas();
+  }
+  #updateBufferCanvasSize() {
+    const { lineWidth, fillStyle, strokeStyle } = this.#bufferContext;
+    _console.log({ lineWidth, fillStyle, strokeStyle });
 
     this.#bufferCanvas.width = this.width;
     this.#bufferCanvas.height = this.height;
 
-    this.#updateCanvas();
+    Object.assign(this.#bufferContext, { lineWidth, fillStyle, strokeStyle });
   }
   #context!: CanvasRenderingContext2D;
   get context() {
@@ -154,12 +162,12 @@ class DisplayCanvasHelper {
     }
 
     const { width, height } = this.device.displayInformation!;
+    console.log({ width, height });
 
     this.canvas.width = width;
     this.canvas.height = height;
 
-    this.#bufferCanvas.width = width;
-    this.#bufferCanvas.height = height;
+    this.#updateBufferCanvasSize();
   }
 
   // DEVICE
@@ -188,12 +196,11 @@ class DisplayCanvasHelper {
     this.#device = newDevice;
     addEventListeners(this.#device, this.#boundDeviceEventListeners);
     _console.log("assigned device", this.device);
-
-    this.#updateCanvas();
     if (this.device) {
       this.numberOfColors = this.device.numberOfDisplayColors!;
+      this.#updateCanvas();
+      this.#updateDevice();
     }
-    this.#updateDeviceContextState();
   }
 
   // DEVICE EVENTLISTENERS
@@ -204,14 +211,18 @@ class DisplayCanvasHelper {
   #onDeviceConnected(event: DeviceEventMap["connected"]) {
     _console.log("device connected");
     this.#updateCanvas();
-    this.#updateDeviceColors();
-    this.#updateDeviceOpacity();
-    this.#updateDeviceContextState();
-    this.#updateDeviceBrightness();
+    this.#updateDevice();
     // FIX - messages flushed properly?
   }
   #onDeviceNotConnected(event: DeviceEventMap["notConnected"]) {
     _console.log("device not connected");
+  }
+
+  #updateDevice() {
+    this.#updateDeviceColors();
+    this.#updateDeviceOpacity();
+    this.#updateDeviceContextState();
+    this.#updateDeviceBrightness();
   }
 
   // NUMBER OF COLORS
@@ -248,7 +259,7 @@ class DisplayCanvasHelper {
     this.#colors.length = 0;
   }
   #updateDeviceColors(sendImmediately?: boolean) {
-    if (this.device?.isConnected) {
+    if (!this.device?.isConnected) {
       return;
     }
     this.colors.forEach((color, index) => {
@@ -270,7 +281,7 @@ class DisplayCanvasHelper {
   }
 
   #updateDeviceOpacity(sendImmediately?: boolean) {
-    if (this.device?.isConnected) {
+    if (!this.device?.isConnected) {
       return;
     }
     this.#opacities.forEach((opacity, index) => {
@@ -300,7 +311,7 @@ class DisplayCanvasHelper {
     this.#displayContextStateHelper.reset();
   }
   #updateDeviceContextState() {
-    if (this.device?.isConnected) {
+    if (!this.device?.isConnected) {
       return;
     }
     _console.log("updateDeviceContextState");
@@ -308,6 +319,8 @@ class DisplayCanvasHelper {
   }
 
   showDisplay(sendImmediately = true) {
+    _console.log("showDisplay");
+    this.#context.clearRect(0, 0, this.width, this.height);
     this.#context.drawImage(this.#bufferCanvas, 0, 0);
     this.#bufferContext.clearRect(0, 0, this.width, this.height);
     if (this.device?.isConnected) {
@@ -315,6 +328,7 @@ class DisplayCanvasHelper {
     }
   }
   clearDisplay(sendImmediately = true) {
+    _console.log("clearDisplay");
     this.#context.clearRect(0, 0, this.width, this.height);
     this.#bufferContext.clearRect(0, 0, this.width, this.height);
     if (this.device?.isConnected) {
@@ -328,7 +342,7 @@ class DisplayCanvasHelper {
     sendImmediately?: boolean
   ) {
     if (typeof color == "string") {
-      color = hexToRGB(color);
+      color = stringToRGB(color);
     }
     const colorHex = rgbToHex(color);
     if (this.colors[colorIndex] == colorHex) {
@@ -399,6 +413,7 @@ class DisplayCanvasHelper {
     this.#onDisplayContextStateUpdate(differences);
   }
   #updateFillStyle() {
+    // FILL - apply opacity and brightness
     this.#bufferContext.fillStyle =
       this.colors[this.contextState.fillColorIndex];
   }
@@ -418,6 +433,7 @@ class DisplayCanvasHelper {
     this.#onDisplayContextStateUpdate(differences);
   }
   #updateStrokeStyle() {
+    // FILL - apply opacity and brightness
     this.#bufferContext.strokeStyle =
       this.colors[this.contextState.lineColorIndex];
   }
@@ -453,11 +469,17 @@ class DisplayCanvasHelper {
       return;
     }
 
+    this.#rotationRadians = this.#getRotationRadians();
+
     if (this.device?.isConnected) {
-      this.device.setDisplayNormalizedRotation(rotation, sendImmediately);
+      this.device.setDisplayRawRotation(rotation, sendImmediately);
     }
 
     this.#onDisplayContextStateUpdate(differences);
+  }
+  #rotationRadians = 0;
+  #getRotationRadians() {
+    return (this.contextState.rotation / Uint16Max) * Math.PI * 2; // FIX?
   }
   clearRotation(sendImmediately?: boolean) {
     const differences = this.#displayContextStateHelper.update({
@@ -669,19 +691,53 @@ class DisplayCanvasHelper {
       this.device.clearDisplayRect(x, y, width, height, sendImmediately);
     }
   }
+  #getBoundingBox(
+    centerX: number,
+    centerY: number,
+    width: number,
+    height: number
+  ) {
+    return {
+      x: centerX - width / 2,
+      y: centerY - height / 2,
+    };
+  }
+  #transformContext(centerX: number, centerY: number, callback: Function) {
+    const ctx = this.#bufferContext;
+
+    ctx.save();
+    ctx.translate(centerX, centerY);
+    ctx.rotate(this.#rotationRadians);
+    callback();
+    ctx.restore(); // Restore the state
+  }
   drawRect(
-    x: number,
-    y: number,
+    centerX: number,
+    centerY: number,
     width: number,
     height: number,
     sendImmediately?: boolean
   ) {
-    // FILL - note line
-    if (this.contextState.lineWidth) {
-    }
-    this.bufferContext.fillRect(0, 0, width, height);
+    // FILL - crop
+    // FILL - rotationCrop
+
+    this.#transformContext(centerX, centerY, () => {
+      const x = -width / 2;
+      const y = -height / 2;
+      this.bufferContext.fillRect(x, y, width, height);
+      if (this.contextState.lineWidth > 0) {
+        this.bufferContext.strokeRect(x, y, width, height);
+      }
+    });
+
     if (this.device?.isConnected) {
-      this.device.drawDisplayRect(x, y, width, height, sendImmediately);
+      this.device.drawDisplayRect(
+        centerX,
+        centerY,
+        width,
+        height,
+        sendImmediately
+      );
     }
   }
   drawRoundRect(
@@ -773,19 +829,15 @@ class DisplayCanvasHelper {
     this.#applyBrightnessToGlobalAlpha = newValue;
     this.#updateGlobalAlpha();
   }
-  #brightnessAlphaMap: Record<DisplayBrightness, number> = {
+  #brightnessOpacities: Record<DisplayBrightness, number> = {
     veryLow: 0.3,
     low: 0.5,
     medium: 0.8,
     high: 0.9,
     veryHigh: 1,
   };
-  get #brightnessAlpha() {
-    if (this.#applyBrightnessToGlobalAlpha) {
-      return this.#brightnessAlphaMap[this.brightness];
-    } else {
-      return 1;
-    }
+  get #brightnessOpacity() {
+    return this.#brightnessOpacities[this.brightness];
   }
   setBrightness(newBrightness: DisplayBrightness, sendImmediately?: boolean) {
     if (this.#brightness == newBrightness) {
@@ -799,13 +851,13 @@ class DisplayCanvasHelper {
     this.#updateGlobalAlpha();
   }
   #updateGlobalAlpha() {
-    this.#bufferContext.globalAlpha = this.#brightnessAlpha;
+    // FILL
   }
   #resetBrightness() {
     this.setBrightness("medium");
   }
   #updateDeviceBrightness() {
-    if (this.device?.isConnected) {
+    if (!this.device?.isConnected) {
       return;
     }
     _console.log("updateDeviceBrightness");

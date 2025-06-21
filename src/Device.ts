@@ -1537,9 +1537,9 @@ class Device {
     this.#assertDisplayIsAvailable();
     return this.#displayManager.setRotation;
   }
-  get setDisplayNormalizedRotation() {
+  get setDisplayRawRotation() {
     this.#assertDisplayIsAvailable();
-    return this.#displayManager.setNormalizedRotation;
+    return this.#displayManager.setRawRotation;
   }
   get clearDisplayRotation() {
     this.#assertDisplayIsAvailable();

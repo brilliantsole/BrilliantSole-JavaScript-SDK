@@ -7,7 +7,7 @@ import { createConsole } from "./utils/Console.ts";
 import EventDispatcher from "./utils/EventDispatcher.ts";
 import autoBind from "auto-bind";
 import { clamp, Uint16Max } from "./utils/MathUtils.ts";
-import { hexToRGB, rgbToHex } from "./utils/ColorUtils.ts";
+import { hexToRGB, rgbToHex, stringToRGB } from "./utils/ColorUtils.ts";
 import DisplayContextStateHelper from "./utils/DisplayContextStateHelper.ts";
 import {
   assertValidColor,
@@ -318,7 +318,7 @@ class DisplayManager {
           this.setLineWidth(newState.lineWidth!);
           break;
         case "rotation":
-          this.setNormalizedRotation(newState.rotation!);
+          this.setRawRotation(newState.rotation!);
           break;
         case "segmentStartCap":
           this.setSegmentStartCap(newState.segmentStartCap!);
@@ -642,7 +642,7 @@ class DisplayManager {
     sendImmediately?: boolean
   ) {
     if (typeof color == "string") {
-      color = hexToRGB(color);
+      color = stringToRGB(color);
     }
     const colorHex = rgbToHex(color);
     if (this.colors[colorIndex] == colorHex) {
@@ -764,7 +764,7 @@ class DisplayManager {
     this.#onDisplayContextStateUpdate(differences);
   }
 
-  setNormalizedRotation(rotation: number, sendImmediately?: boolean) {
+  setRawRotation(rotation: number, sendImmediately?: boolean) {
     const differences = this.#displayContextStateHelper.update({
       rotation,
     });
@@ -788,7 +788,7 @@ class DisplayManager {
   ) {
     rotation = normalizeRotation(rotation, isRadians);
     _console.log({ rotation });
-    this.setNormalizedRotation(rotation, sendImmediately);
+    this.setRawRotation(rotation, sendImmediately);
   }
   clearRotation(sendImmediately?: boolean) {
     const differences = this.#displayContextStateHelper.update({
@@ -1073,23 +1073,17 @@ class DisplayManager {
     );
   }
   drawRect(
-    x: number,
-    y: number,
+    centerX: number,
+    centerY: number,
     width: number,
     height: number,
     sendImmediately?: boolean
   ) {
-    const {
-      x: _x,
-      y: _y,
-      width: _width,
-      height: _height,
-    } = this.#clampBox(x, y, width, height);
     const dataView = new DataView(new ArrayBuffer(2 * 4));
-    dataView.setInt16(0, _x, true);
-    dataView.setInt16(2, _y, true);
-    dataView.setUint16(4, _width, true);
-    dataView.setUint16(6, _height, true);
+    dataView.setInt16(0, centerX, true);
+    dataView.setInt16(2, centerY, true);
+    dataView.setUint16(4, width, true);
+    dataView.setUint16(6, height, true);
     _console.log("drawRect data", dataView);
     this.#sendDisplayContextCommand(
       "drawRect",
@@ -1098,24 +1092,18 @@ class DisplayManager {
     );
   }
   drawRoundRect(
-    x: number,
-    y: number,
+    centerX: number,
+    centerY: number,
     width: number,
     height: number,
     borderRadius: number,
     sendImmediately?: boolean
   ) {
-    const {
-      x: _x,
-      y: _y,
-      width: _width,
-      height: _height,
-    } = this.#clampBox(x, y, width, height);
     const dataView = new DataView(new ArrayBuffer(2 * 4 + 1));
-    dataView.setInt16(0, _x, true);
-    dataView.setInt16(2, _y, true);
-    dataView.setUint16(4, _width, true);
-    dataView.setUint16(6, _height, true);
+    dataView.setInt16(0, centerX, true);
+    dataView.setInt16(2, centerY, true);
+    dataView.setUint16(4, width, true);
+    dataView.setUint16(6, height, true);
     dataView.setUint8(8, borderRadius);
     _console.log("drawRoundRect data", dataView);
     this.#sendDisplayContextCommand(
@@ -1124,12 +1112,15 @@ class DisplayManager {
       sendImmediately
     );
   }
-  drawCircle(x: number, y: number, radius: number, sendImmediately?: boolean) {
-    //x = this.#clampX(x);
-    //y = this.#clampY(y);
+  drawCircle(
+    centerX: number,
+    centerY: number,
+    radius: number,
+    sendImmediately?: boolean
+  ) {
     const dataView = new DataView(new ArrayBuffer(2 * 3));
-    dataView.setInt16(0, x, true);
-    dataView.setInt16(2, y, true);
+    dataView.setInt16(0, centerX, true);
+    dataView.setInt16(2, centerY, true);
     dataView.setUint16(4, radius, true);
     _console.log("drawCircle data", dataView);
     this.#sendDisplayContextCommand(
@@ -1139,15 +1130,15 @@ class DisplayManager {
     );
   }
   drawEllipse(
-    x: number,
-    y: number,
+    centerX: number,
+    centerY: number,
     radiusX: number,
     radiusY: number,
     sendImmediately?: boolean
   ) {
     const dataView = new DataView(new ArrayBuffer(2 * 4));
-    dataView.setInt16(0, x, true);
-    dataView.setInt16(2, y, true);
+    dataView.setInt16(0, centerX, true);
+    dataView.setInt16(2, centerY, true);
     dataView.setUint16(4, radiusX, true);
     dataView.setUint16(6, radiusY, true);
     _console.log("drawEllipse data", dataView);
@@ -1158,15 +1149,15 @@ class DisplayManager {
     );
   }
   drawPolygon(
-    x: number,
-    y: number,
+    centerX: number,
+    centerY: number,
     radius: number,
     numberOfSides: number,
     sendImmediately?: boolean
   ) {
     const dataView = new DataView(new ArrayBuffer(2 * 3 + 1));
-    dataView.setInt16(0, x, true);
-    dataView.setInt16(2, y, true);
+    dataView.setInt16(0, centerX, true);
+    dataView.setInt16(2, centerY, true);
     dataView.setUint16(4, radius, true);
     dataView.setUint8(6, numberOfSides);
     _console.log("drawPolygon data", dataView);

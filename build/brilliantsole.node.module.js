@@ -3677,6 +3677,30 @@ function hexToRGB(hex) {
     const b = parseInt(hex.substring(4, 6), 16);
     return { r, g, b };
 }
+const blackColor = { r: 0, g: 0, b: 0 };
+function colorNameToRGB(colorName) {
+    const temp = document.createElement("div");
+    temp.style.color = colorName;
+    document.body.appendChild(temp);
+    const computedColor = getComputedStyle(temp).color;
+    document.body.removeChild(temp);
+    const match = computedColor.match(/^rgba?\((\d+), (\d+), (\d+)/);
+    if (!match)
+        return blackColor;
+    return {
+        r: parseInt(match[1], 10),
+        g: parseInt(match[2], 10),
+        b: parseInt(match[3], 10),
+    };
+}
+function stringToRGB(string) {
+    if (string.startsWith("#")) {
+        return hexToRGB(string);
+    }
+    else {
+        return colorNameToRGB(string);
+    }
+}
 function rgbToHex({ r, g, b }) {
     const toHex = (value) => value.toString(16).padStart(2, "0").toUpperCase();
     _console$r.assertWithError([r, g, b].every((v) => v >= 0 && v <= 255), `RGB values must be between 0 and 255 (got r=${r}, g=${g}, b=${b})`);
@@ -3930,7 +3954,7 @@ class DisplayManager {
                     this.setLineWidth(newState.lineWidth);
                     break;
                 case "rotation":
-                    this.setNormalizedRotation(newState.rotation);
+                    this.setRawRotation(newState.rotation);
                     break;
                 case "segmentStartCap":
                     this.setSegmentStartCap(newState.segmentStartCap);
@@ -4050,7 +4074,7 @@ class DisplayManager {
     }
     setColor(colorIndex, color, sendImmediately) {
         if (typeof color == "string") {
-            color = hexToRGB(color);
+            color = stringToRGB(color);
         }
         const colorHex = rgbToHex(color);
         if (this.colors[colorIndex] == colorHex) {
@@ -4130,7 +4154,7 @@ class DisplayManager {
         __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "setLineWidth", dataView.buffer, sendImmediately);
         __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_onDisplayContextStateUpdate).call(this, differences);
     }
-    setNormalizedRotation(rotation, sendImmediately) {
+    setRawRotation(rotation, sendImmediately) {
         const differences = __classPrivateFieldGet(this, _DisplayManager_displayContextStateHelper, "f").update({
             rotation,
         });
@@ -4145,7 +4169,7 @@ class DisplayManager {
     setRotation(rotation, isRadians, sendImmediately) {
         rotation = normalizeRotation(rotation, isRadians);
         _console$o.log({ rotation });
-        this.setNormalizedRotation(rotation, sendImmediately);
+        this.setRawRotation(rotation, sendImmediately);
     }
     clearRotation(sendImmediately) {
         const differences = __classPrivateFieldGet(this, _DisplayManager_displayContextStateHelper, "f").update({
@@ -4332,39 +4356,37 @@ class DisplayManager {
         dataView.setUint16(6, _height, true);
         __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "clearRect", dataView.buffer, sendImmediately);
     }
-    drawRect(x, y, width, height, sendImmediately) {
-        const { x: _x, y: _y, width: _width, height: _height, } = __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_clampBox).call(this, x, y, width, height);
+    drawRect(centerX, centerY, width, height, sendImmediately) {
         const dataView = new DataView(new ArrayBuffer(2 * 4));
-        dataView.setInt16(0, _x, true);
-        dataView.setInt16(2, _y, true);
-        dataView.setUint16(4, _width, true);
-        dataView.setUint16(6, _height, true);
+        dataView.setInt16(0, centerX, true);
+        dataView.setInt16(2, centerY, true);
+        dataView.setUint16(4, width, true);
+        dataView.setUint16(6, height, true);
         _console$o.log("drawRect data", dataView);
         __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "drawRect", dataView.buffer, sendImmediately);
     }
-    drawRoundRect(x, y, width, height, borderRadius, sendImmediately) {
-        const { x: _x, y: _y, width: _width, height: _height, } = __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_clampBox).call(this, x, y, width, height);
+    drawRoundRect(centerX, centerY, width, height, borderRadius, sendImmediately) {
         const dataView = new DataView(new ArrayBuffer(2 * 4 + 1));
-        dataView.setInt16(0, _x, true);
-        dataView.setInt16(2, _y, true);
-        dataView.setUint16(4, _width, true);
-        dataView.setUint16(6, _height, true);
+        dataView.setInt16(0, centerX, true);
+        dataView.setInt16(2, centerY, true);
+        dataView.setUint16(4, width, true);
+        dataView.setUint16(6, height, true);
         dataView.setUint8(8, borderRadius);
         _console$o.log("drawRoundRect data", dataView);
         __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "drawRoundRect", dataView.buffer, sendImmediately);
     }
-    drawCircle(x, y, radius, sendImmediately) {
+    drawCircle(centerX, centerY, radius, sendImmediately) {
         const dataView = new DataView(new ArrayBuffer(2 * 3));
-        dataView.setInt16(0, x, true);
-        dataView.setInt16(2, y, true);
+        dataView.setInt16(0, centerX, true);
+        dataView.setInt16(2, centerY, true);
         dataView.setUint16(4, radius, true);
         _console$o.log("drawCircle data", dataView);
         __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "drawCircle", dataView.buffer, sendImmediately);
     }
-    drawEllipse(x, y, radiusX, radiusY, sendImmediately) {
+    drawEllipse(centerX, centerY, radiusX, radiusY, sendImmediately) {
         const dataView = new DataView(new ArrayBuffer(2 * 4));
-        dataView.setInt16(0, x, true);
-        dataView.setInt16(2, y, true);
+        dataView.setInt16(0, centerX, true);
+        dataView.setInt16(2, centerY, true);
         dataView.setUint16(4, radiusX, true);
         dataView.setUint16(6, radiusY, true);
         _console$o.log("drawEllipse data", dataView);
@@ -7840,9 +7862,9 @@ class Device {
         __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertDisplayIsAvailable).call(this);
         return __classPrivateFieldGet(this, _Device_displayManager, "f").setRotation;
     }
-    get setDisplayNormalizedRotation() {
+    get setDisplayRawRotation() {
         __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertDisplayIsAvailable).call(this);
-        return __classPrivateFieldGet(this, _Device_displayManager, "f").setNormalizedRotation;
+        return __classPrivateFieldGet(this, _Device_displayManager, "f").setRawRotation;
     }
     get clearDisplayRotation() {
         __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertDisplayIsAvailable).call(this);
