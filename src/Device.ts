@@ -366,19 +366,6 @@ class Device {
         }
       }
     });
-    this.addEventListener("isDisplayAvailable", () => {
-      if (this.connectionStatus != "connecting") {
-        return;
-      }
-      if (this.connectionType == "client" && !isInNode) {
-        return;
-      }
-      if (this.isDisplayAvailable) {
-        if (this.connectionType != "client") {
-          this.#displayManager.requestRequiredInformation();
-        }
-      }
-    });
     DeviceManager.onDevice(this);
     if (isInBrowser) {
       window.addEventListener("beforeunload", () => {
@@ -1646,6 +1633,11 @@ class Device {
   get drawDisplaySegment() {
     this.#assertDisplayIsAvailable();
     return this.#displayManager.drawSegment;
+  }
+
+  get setDisplayContextState() {
+    this.#assertDisplayIsAvailable();
+    return this.#displayManager.setContextState;
   }
 
   // FILL - spritesheet, text, etc

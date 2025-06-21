@@ -1,0 +1,54 @@
+<html>
+  <head>
+    <title>Display Canvas | BrilliantSole JavaScript SDK</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico" />
+    <script type="module" src="./script.js"></script>
+  </head>
+  <style>
+    #displayContainer {
+      width: 640px;
+      height: 400px;
+      position: relative;
+      background-color: black;
+    }
+    #displayContainer > * {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+    }
+  </style>
+  <body>
+    <nav>
+      <a href="../../">home</a>
+    </nav>
+
+    <h1>Display Canvas | BrilliantSole JavaScript SDK</h1>
+
+    <button id="toggleConnection">connect</button>
+
+    <label>
+      preview mode
+      <select id="previewMode">
+        <optgroup label="preview mode">
+          <option selected>blank</option>
+          <option>camera</option>
+        </optgroup>
+      </select>
+    </label>
+
+    <label hidden>
+      camera
+      <select id="camera">
+        <optgroup label="camera"></optgroup>
+      </select>
+    </label>
+
+    <div id="displayContainer">
+      <canvas id="display" width="640" height="400"></canvas>
+      <video id="camera"></video>
+    </div>
+  </body>
+</html>

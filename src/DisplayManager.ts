@@ -8,6 +8,7 @@ import EventDispatcher from "./utils/EventDispatcher.ts";
 import autoBind from "auto-bind";
 import { clamp, Uint16Max } from "./utils/MathUtils.ts";
 import { hexToRGB, rgbToHex } from "./utils/ColorUtils.ts";
+import DisplayContextStateHelper from "./utils/DisplayContextStateHelper.ts";
 
 const _console = createConsole("DisplayManager", { log: true });
 
@@ -27,6 +28,7 @@ export type DisplayInformationType = (typeof DisplayInformationTypes)[number];
 
 export const DisplayTypes = [
   "none",
+  "generic",
   "monocularLeft",
   "monocularRight",
   "binocular",
@@ -106,6 +108,8 @@ export type DisplayContextState = {
 
   // FILL - text stuff
 };
+export type DisplayContextStateKey = keyof DisplayContextState;
+export type PartialDisplayContextState = Partial<DisplayContextState>;
 
 export const DefaultDisplayContextState: DisplayContextState = {
   fillColorIndex: 1,
@@ -218,6 +222,7 @@ export interface DisplayEventMessages {
   };
   displayContextState: {
     displayContextState: DisplayContextState;
+    differences: DisplayContextStateKey[];
   };
 }
 
@@ -275,17 +280,74 @@ class DisplayManager {
   }
 
   // DISPLAY CONTEXT STATE
-  #displayContextState: DisplayContextState = Object.assign(
-    {},
-    DefaultDisplayContextState
-  );
+  #displayContextStateHelper = new DisplayContextStateHelper();
   get displayContextState() {
-    return this.#displayContextState;
+    return this.#displayContextStateHelper.state;
   }
-  #onDisplayContextStateUpdate() {
+  #onDisplayContextStateUpdate(differences: DisplayContextStateKey[]) {
     this.#dispatchEvent("displayContextState", {
-      displayContextState: Object.assign({}, this.#displayContextState),
+      displayContextState: Object.assign({}, this.displayContextState),
+      differences,
     });
+  }
+  async setContextState(newState: PartialDisplayContextState) {
+    const differences = this.#displayContextStateHelper.diff(newState);
+    if (differences.length == 0) {
+      return;
+    }
+    differences.forEach((difference) => {
+      switch (difference) {
+        case "fillColorIndex":
+          this.selectFillColor(newState.fillColorIndex!);
+          break;
+        case "lineColorIndex":
+          this.selectLineColor(newState.lineColorIndex!);
+          break;
+        case "lineWidth":
+          this.setLineWidth(newState.lineWidth!);
+          break;
+        case "rotation":
+          this.setRotation(newState.rotation!);
+          break;
+        case "segmentStartCap":
+          this.setSegmentStartCap(newState.segmentStartCap!);
+          break;
+        case "segmentEndCap":
+          this.setSegmentEndCap(newState.segmentEndCap!);
+          break;
+        case "segmentStartRadius":
+          this.setSegmentStartRadius(newState.segmentStartRadius!);
+          break;
+        case "segmentEndRadius":
+          this.setSegmentEndRadius(newState.segmentEndRadius!);
+          break;
+        case "cropTop":
+          this.setCropTop(newState.cropTop!);
+          break;
+        case "cropRight":
+          this.setCropRight(newState.cropRight!);
+          break;
+        case "cropBottom":
+          this.setCropBottom(newState.cropBottom!);
+          break;
+        case "cropLeft":
+          this.setCropLeft(newState.cropLeft!);
+          break;
+        case "rotationCropTop":
+          this.setRotationCropTop(newState.rotationCropTop!);
+          break;
+        case "rotationCropRight":
+          this.setRotationCropRight(newState.rotationCropRight!);
+          break;
+        case "rotationCropBottom":
+          this.setRotationCropBottom(newState.rotationCropBottom!);
+          break;
+        case "rotationCropLeft":
+          this.setRotationCropLeft(newState.rotationCropLeft!);
+          break;
+      }
+    });
+    await this.#sendDisplayContextCommands();
   }
 
   // DISPLAY STATUS
@@ -477,17 +539,25 @@ class DisplayManager {
     _console.assertEnumWithError(displayBrightness, DisplayBrightnesses);
   }
 
-  async setDisplayBrightness(newDisplayBrightness: DisplayBrightness) {
+  async setDisplayBrightness(
+    newDisplayBrightness: DisplayBrightness,
+    sendImmediately?: boolean
+  ) {
     this.#assertDisplayIsAvailable();
     this.#assertValidDisplayBrightness(newDisplayBrightness);
+    if (this.displayBrightness == newDisplayBrightness) {
+      _console.log(`redundant displayBrightness ${newDisplayBrightness}`);
+      return;
+    }
     const newDisplayBrightnessEnum =
       DisplayBrightnesses.indexOf(newDisplayBrightness);
     const newDisplayBrightnessData = UInt8ByteBuffer(newDisplayBrightnessEnum);
 
     const promise = this.waitForEvent("getDisplayBrightness");
-    this.sendMessage([
-      { type: "setDisplayBrightness", data: newDisplayBrightnessData },
-    ]);
+    this.sendMessage(
+      [{ type: "setDisplayBrightness", data: newDisplayBrightnessData }],
+      sendImmediately
+    );
     await promise;
   }
 
@@ -526,6 +596,9 @@ class DisplayManager {
     }
   }
   async #sendDisplayContextCommands() {
+    if (this.#displayContextCommandBuffers.length == 0) {
+      return;
+    }
     _console.log(
       `sending displayContextCommands`,
       this.#displayContextCommandBuffers
@@ -564,7 +637,7 @@ class DisplayManager {
   setColor(
     colorIndex: number,
     color: DisplayColorRGB | string,
-    sendImmediately: boolean
+    sendImmediately?: boolean
   ) {
     if (typeof color == "string") {
       color = hexToRGB(color);
@@ -597,30 +670,37 @@ class DisplayManager {
   get opacities() {
     return this.#opacities;
   }
-  setColorOpacity(index: number, opacity: number, sendImmediately: boolean) {
-    this.#assertValidColorIndex(index);
+  setColorOpacity(
+    colorIndex: number,
+    opacity: number,
+    sendImmediately?: boolean
+  ) {
+    this.#assertValidColorIndex(colorIndex);
     this.#assertValidOpacity(opacity);
-    if (Math.floor(255 * this.#opacities[index]) == Math.floor(255 * opacity)) {
-      _console.log(`redundant opacity #${index} ${opacity}`);
+    if (
+      Math.floor(255 * this.#opacities[colorIndex]) == Math.floor(255 * opacity)
+    ) {
+      _console.log(`redundant opacity #${colorIndex} ${opacity}`);
       return;
     }
     const dataView = new DataView(new ArrayBuffer(2));
-    dataView.setUint8(0, index);
+    dataView.setUint8(0, colorIndex);
     dataView.setUint8(1, opacity * 255);
     this.#sendDisplayContextCommand(
       "setColorOpacity",
       dataView.buffer,
       sendImmediately
     );
-    this.#opacities[index] = opacity;
+    this.#opacities[colorIndex] = opacity;
   }
-  setOpacity(opacity: number, sendImmediately: boolean) {
+  setOpacity(opacity: number, sendImmediately?: boolean) {
     this.#assertValidOpacity(opacity);
     this.#sendDisplayContextCommand(
       "setOpacity",
       UInt8ByteBuffer(Math.round(opacity * 255)),
       sendImmediately
     );
+    this.#opacities.fill(opacity);
   }
 
   saveContext(sendImmediately: boolean) {
@@ -634,41 +714,45 @@ class DisplayManager {
     );
   }
 
-  selectFillColor(colorIndex: number, sendImmediately: boolean) {
-    this.#assertValidColorIndex(colorIndex);
-    if (this.#displayContextState.fillColorIndex == colorIndex) {
-      _console.log(`redundant fillColor ${colorIndex}`);
+  selectFillColor(fillColorIndex: number, sendImmediately?: boolean) {
+    this.#assertValidColorIndex(fillColorIndex);
+    const differences = this.#displayContextStateHelper.update({
+      fillColorIndex,
+    });
+    if (differences.length == 0) {
       return;
     }
     this.#sendDisplayContextCommand(
       "selectFillColor",
-      UInt8ByteBuffer(colorIndex),
+      UInt8ByteBuffer(fillColorIndex),
       sendImmediately
     );
-    this.#displayContextState.fillColorIndex = colorIndex;
-    this.#onDisplayContextStateUpdate();
+    this.#onDisplayContextStateUpdate(differences);
   }
-  selectLineColor(colorIndex: number, sendImmediately: boolean) {
-    this.#assertValidColorIndex(colorIndex);
-    if (this.#displayContextState.fillColorIndex == colorIndex) {
-      _console.log(`redundant lineColor ${colorIndex}`);
+  selectLineColor(lineColorIndex: number, sendImmediately?: boolean) {
+    this.#assertValidColorIndex(lineColorIndex);
+    const differences = this.#displayContextStateHelper.update({
+      lineColorIndex,
+    });
+    if (differences.length == 0) {
       return;
     }
     this.#sendDisplayContextCommand(
       "selectLineColor",
-      UInt8ByteBuffer(colorIndex),
+      UInt8ByteBuffer(lineColorIndex),
       sendImmediately
     );
-    this.#displayContextState.lineColorIndex = colorIndex;
-    this.#onDisplayContextStateUpdate();
+    this.#onDisplayContextStateUpdate(differences);
   }
   #assertValidLineWidth(lineWidth: number) {
     _console.assertRangeWithError("lineWidth", lineWidth, 0, this.width);
   }
-  setLineWidth(lineWidth: number, sendImmediately: boolean) {
+  setLineWidth(lineWidth: number, sendImmediately?: boolean) {
     this.#assertValidLineWidth(lineWidth);
-    if (this.#displayContextState.lineWidth == lineWidth) {
-      _console.log(`redundant lineWidth ${lineWidth}`);
+    const differences = this.#displayContextStateHelper.update({
+      lineWidth,
+    });
+    if (differences.length == 0) {
       return;
     }
     const dataView = new DataView(new ArrayBuffer(2));
@@ -678,10 +762,13 @@ class DisplayManager {
       dataView.buffer,
       sendImmediately
     );
-    this.#displayContextState.lineWidth = lineWidth;
-    this.#onDisplayContextStateUpdate();
+    this.#onDisplayContextStateUpdate(differences);
   }
-  setRotation(rotation: number, isRadians: boolean, sendImmediately: boolean) {
+  setRotation(
+    rotation: number,
+    isRadians?: boolean,
+    sendImmediately?: boolean
+  ) {
     const dataView = new DataView(new ArrayBuffer(2));
     if (isRadians) {
       const rotationRad = rotation;
@@ -698,8 +785,10 @@ class DisplayManager {
     rotation = Math.floor(rotation);
     _console.log({ rotation });
 
-    if (this.#displayContextState.rotation == rotation) {
-      _console.log(`redundant rotation ${rotation}`);
+    const differences = this.#displayContextStateHelper.update({
+      rotation,
+    });
+    if (differences.length == 0) {
       return;
     }
 
@@ -710,12 +799,13 @@ class DisplayManager {
       sendImmediately
     );
 
-    this.#displayContextState.rotation = rotation;
-    this.#onDisplayContextStateUpdate();
+    this.#onDisplayContextStateUpdate(differences);
   }
-  clearRotation(sendImmediately: boolean) {
-    if (this.#displayContextState.rotation == 0) {
-      _console.log(`redundant rotation 0`);
+  clearRotation(sendImmediately?: boolean) {
+    const differences = this.#displayContextStateHelper.update({
+      rotation: 0,
+    });
+    if (differences.length == 0) {
       return;
     }
     this.#sendDisplayContextCommand(
@@ -723,8 +813,7 @@ class DisplayManager {
       undefined,
       sendImmediately
     );
-    this.#displayContextState.rotation = 0;
-    this.#onDisplayContextStateUpdate();
+    this.#onDisplayContextStateUpdate(differences);
   }
 
   #assertValidSegmentCap(segmentCap: DisplaySegmentCap) {
@@ -732,11 +821,13 @@ class DisplayManager {
   }
   setSegmentStartCap(
     segmentStartCap: DisplaySegmentCap,
-    sendImmediately: boolean
+    sendImmediately?: boolean
   ) {
     this.#assertValidSegmentCap(segmentStartCap);
-    if (this.#displayContextState.segmentStartCap == segmentStartCap) {
-      _console.log(`redundant segmentStartCap ${segmentStartCap}`);
+    const differences = this.#displayContextStateHelper.update({
+      segmentStartCap,
+    });
+    if (differences.length == 0) {
       return;
     }
     const dataView = new DataView(new ArrayBuffer(1));
@@ -748,15 +839,20 @@ class DisplayManager {
       dataView.buffer,
       sendImmediately
     );
-    this.#displayContextState.segmentStartCap = segmentStartCap;
-    this.#onDisplayContextStateUpdate();
+    this.#onDisplayContextStateUpdate(differences);
   }
-  setSegmentEndCap(segmentEndCap: DisplaySegmentCap, sendImmediately: boolean) {
+  setSegmentEndCap(
+    segmentEndCap: DisplaySegmentCap,
+    sendImmediately?: boolean
+  ) {
     this.#assertValidSegmentCap(segmentEndCap);
-    if (this.#displayContextState.segmentEndCap == segmentEndCap) {
-      _console.log(`redundant segmentEndCap ${segmentEndCap}`);
+    const differences = this.#displayContextStateHelper.update({
+      segmentEndCap,
+    });
+    if (differences.length == 0) {
       return;
     }
+
     const dataView = new DataView(new ArrayBuffer(1));
     _console.log({ segmentEndCap });
     const segmentCapEnum = DisplaySegmentCaps.indexOf(segmentEndCap);
@@ -766,16 +862,15 @@ class DisplayManager {
       dataView.buffer,
       sendImmediately
     );
-    this.#displayContextState.segmentEndCap = segmentEndCap;
-    this.#onDisplayContextStateUpdate();
+    this.#onDisplayContextStateUpdate(differences);
   }
-  setSegmentCap(segmentCap: DisplaySegmentCap, sendImmediately: boolean) {
+  setSegmentCap(segmentCap: DisplaySegmentCap, sendImmediately?: boolean) {
     this.#assertValidSegmentCap(segmentCap);
-    if (
-      this.#displayContextState.segmentStartCap == segmentCap &&
-      this.#displayContextState.segmentEndCap == segmentCap
-    ) {
-      _console.log(`redundant segmentCap ${segmentCap}`);
+    const differences = this.#displayContextStateHelper.update({
+      segmentStartCap: segmentCap,
+      segmentEndCap: segmentCap,
+    });
+    if (differences.length == 0) {
       return;
     }
     const dataView = new DataView(new ArrayBuffer(1));
@@ -787,14 +882,14 @@ class DisplayManager {
       dataView.buffer,
       sendImmediately
     );
-    this.#displayContextState.segmentStartCap = segmentCap;
-    this.#displayContextState.segmentEndCap = segmentCap;
-    this.#onDisplayContextStateUpdate();
+    this.#onDisplayContextStateUpdate(differences);
   }
 
-  setSegmentStartRadius(segmentStartRadius: number, sendImmediately: boolean) {
-    if (this.#displayContextState.segmentStartRadius == segmentStartRadius) {
-      _console.log(`redundant segmentStartRadius ${segmentStartRadius}`);
+  setSegmentStartRadius(segmentStartRadius: number, sendImmediately?: boolean) {
+    const differences = this.#displayContextStateHelper.update({
+      segmentStartRadius,
+    });
+    if (differences.length == 0) {
       return;
     }
     const dataView = new DataView(new ArrayBuffer(2));
@@ -805,12 +900,13 @@ class DisplayManager {
       dataView.buffer,
       sendImmediately
     );
-    this.#displayContextState.segmentStartRadius = segmentStartRadius;
-    this.#onDisplayContextStateUpdate();
+    this.#onDisplayContextStateUpdate(differences);
   }
-  setSegmentEndRadius(segmentEndRadius: number, sendImmediately: boolean) {
-    if (this.#displayContextState.segmentEndRadius == segmentEndRadius) {
-      _console.log(`redundant segmentEndRadius ${segmentEndRadius}`);
+  setSegmentEndRadius(segmentEndRadius: number, sendImmediately?: boolean) {
+    const differences = this.#displayContextStateHelper.update({
+      segmentEndRadius,
+    });
+    if (differences.length == 0) {
       return;
     }
     const dataView = new DataView(new ArrayBuffer(2));
@@ -821,15 +917,14 @@ class DisplayManager {
       dataView.buffer,
       sendImmediately
     );
-    this.#displayContextState.segmentEndRadius = segmentEndRadius;
-    this.#onDisplayContextStateUpdate();
+    this.#onDisplayContextStateUpdate(differences);
   }
-  setSegmentRadius(segmentRadius: number, sendImmediately: boolean) {
-    if (
-      this.#displayContextState.segmentStartRadius == segmentRadius &&
-      this.#displayContextState.segmentEndRadius == segmentRadius
-    ) {
-      _console.log(`redundant segmentRadius ${segmentRadius}`);
+  setSegmentRadius(segmentRadius: number, sendImmediately?: boolean) {
+    const differences = this.#displayContextStateHelper.update({
+      segmentStartRadius: segmentRadius,
+      segmentEndRadius: segmentRadius,
+    });
+    if (differences.length == 0) {
       return;
     }
     const dataView = new DataView(new ArrayBuffer(2));
@@ -840,14 +935,14 @@ class DisplayManager {
       dataView.buffer,
       sendImmediately
     );
-    this.#displayContextState.segmentStartRadius = segmentRadius;
-    this.#displayContextState.segmentEndRadius = segmentRadius;
-    this.#onDisplayContextStateUpdate();
+    this.#onDisplayContextStateUpdate(differences);
   }
 
-  setCropTop(cropTop: number, sendImmediately: boolean) {
-    if (this.#displayContextState.cropTop == cropTop) {
-      _console.log(`redundant cropTop ${cropTop}`);
+  setCropTop(cropTop: number, sendImmediately?: boolean) {
+    const differences = this.#displayContextStateHelper.update({
+      cropTop,
+    });
+    if (differences.length == 0) {
       return;
     }
     const dataView = new DataView(new ArrayBuffer(2));
@@ -858,12 +953,13 @@ class DisplayManager {
       dataView.buffer,
       sendImmediately
     );
-    this.#displayContextState.cropTop = cropTop;
-    this.#onDisplayContextStateUpdate();
+    this.#onDisplayContextStateUpdate(differences);
   }
-  setCropRight(cropRight: number, sendImmediately: boolean) {
-    if (this.#displayContextState.cropTop == cropRight) {
-      _console.log(`redundant cropRight ${cropRight}`);
+  setCropRight(cropRight: number, sendImmediately?: boolean) {
+    const differences = this.#displayContextStateHelper.update({
+      cropRight,
+    });
+    if (differences.length == 0) {
       return;
     }
     const dataView = new DataView(new ArrayBuffer(2));
@@ -874,12 +970,13 @@ class DisplayManager {
       dataView.buffer,
       sendImmediately
     );
-    this.#displayContextState.cropRight = cropRight;
-    this.#onDisplayContextStateUpdate();
+    this.#onDisplayContextStateUpdate(differences);
   }
-  setCropBottom(cropBottom: number, sendImmediately: boolean) {
-    if (this.#displayContextState.cropBottom == cropBottom) {
-      _console.log(`redundant cropBottom ${cropBottom}`);
+  setCropBottom(cropBottom: number, sendImmediately?: boolean) {
+    const differences = this.#displayContextStateHelper.update({
+      cropBottom,
+    });
+    if (differences.length == 0) {
       return;
     }
     const dataView = new DataView(new ArrayBuffer(2));
@@ -890,12 +987,13 @@ class DisplayManager {
       dataView.buffer,
       sendImmediately
     );
-    this.#displayContextState.cropBottom = cropBottom;
-    this.#onDisplayContextStateUpdate();
+    this.#onDisplayContextStateUpdate(differences);
   }
-  setCropLeft(cropLeft: number, sendImmediately: boolean) {
-    if (this.#displayContextState.cropLeft == cropLeft) {
-      _console.log(`redundant cropLeft ${cropLeft}`);
+  setCropLeft(cropLeft: number, sendImmediately?: boolean) {
+    const differences = this.#displayContextStateHelper.update({
+      cropLeft,
+    });
+    if (differences.length == 0) {
       return;
     }
     const dataView = new DataView(new ArrayBuffer(2));
@@ -906,30 +1004,27 @@ class DisplayManager {
       dataView.buffer,
       sendImmediately
     );
-    this.#displayContextState.cropLeft = cropLeft;
-    this.#onDisplayContextStateUpdate();
+    this.#onDisplayContextStateUpdate(differences);
   }
-  clearCrop(sendImmediately: boolean) {
-    if (
-      this.#displayContextState.cropTop == 0 &&
-      this.#displayContextState.cropRight == 0 &&
-      this.#displayContextState.cropBottom == 0 &&
-      this.#displayContextState.cropLeft == 0
-    ) {
-      _console.log(`redundant crop ${0}`);
+  clearCrop(sendImmediately?: boolean) {
+    const differences = this.#displayContextStateHelper.update({
+      cropTop: 0,
+      cropRight: 0,
+      cropBottom: 0,
+      cropLeft: 0,
+    });
+    if (differences.length == 0) {
       return;
     }
     this.#sendDisplayContextCommand("clearCrop", undefined, sendImmediately);
-    this.#displayContextState.cropTop = 0;
-    this.#displayContextState.cropRight = 0;
-    this.#displayContextState.cropBottom = 0;
-    this.#displayContextState.cropLeft = 0;
-    this.#onDisplayContextStateUpdate();
+    this.#onDisplayContextStateUpdate(differences);
   }
 
-  setRotationCropTop(rotationCropTop: number, sendImmediately: boolean) {
-    if (this.#displayContextState.rotationCropTop == rotationCropTop) {
-      _console.log(`redundant rotationCropTop ${rotationCropTop}`);
+  setRotationCropTop(rotationCropTop: number, sendImmediately?: boolean) {
+    const differences = this.#displayContextStateHelper.update({
+      rotationCropTop,
+    });
+    if (differences.length == 0) {
       return;
     }
     const dataView = new DataView(new ArrayBuffer(2));
@@ -940,12 +1035,13 @@ class DisplayManager {
       dataView.buffer,
       sendImmediately
     );
-    this.#displayContextState.rotationCropTop = rotationCropTop;
-    this.#onDisplayContextStateUpdate();
+    this.#onDisplayContextStateUpdate(differences);
   }
-  setRotationCropRight(rotationCropRight: number, sendImmediately: boolean) {
-    if (this.#displayContextState.rotationCropTop == rotationCropRight) {
-      _console.log(`redundant rotationCropRight ${rotationCropRight}`);
+  setRotationCropRight(rotationCropRight: number, sendImmediately?: boolean) {
+    const differences = this.#displayContextStateHelper.update({
+      rotationCropRight,
+    });
+    if (differences.length == 0) {
       return;
     }
     const dataView = new DataView(new ArrayBuffer(2));
@@ -956,12 +1052,13 @@ class DisplayManager {
       dataView.buffer,
       sendImmediately
     );
-    this.#displayContextState.rotationCropRight = rotationCropRight;
-    this.#onDisplayContextStateUpdate();
+    this.#onDisplayContextStateUpdate(differences);
   }
-  setRotationCropBottom(rotationCropBottom: number, sendImmediately: boolean) {
-    if (this.#displayContextState.rotationCropBottom == rotationCropBottom) {
-      _console.log(`redundant rotationCropBottom ${rotationCropBottom}`);
+  setRotationCropBottom(rotationCropBottom: number, sendImmediately?: boolean) {
+    const differences = this.#displayContextStateHelper.update({
+      rotationCropBottom,
+    });
+    if (differences.length == 0) {
       return;
     }
     const dataView = new DataView(new ArrayBuffer(2));
@@ -972,12 +1069,13 @@ class DisplayManager {
       dataView.buffer,
       sendImmediately
     );
-    this.#displayContextState.rotationCropBottom = rotationCropBottom;
-    this.#onDisplayContextStateUpdate();
+    this.#onDisplayContextStateUpdate(differences);
   }
-  setRotationCropLeft(rotationCropLeft: number, sendImmediately: boolean) {
-    if (this.#displayContextState.rotationCropLeft == rotationCropLeft) {
-      _console.log(`redundant rotationCropLeft ${rotationCropLeft}`);
+  setRotationCropLeft(rotationCropLeft: number, sendImmediately?: boolean) {
+    const differences = this.#displayContextStateHelper.update({
+      rotationCropLeft,
+    });
+    if (differences.length == 0) {
       return;
     }
     const dataView = new DataView(new ArrayBuffer(2));
@@ -988,17 +1086,16 @@ class DisplayManager {
       dataView.buffer,
       sendImmediately
     );
-    this.#displayContextState.rotationCropLeft = rotationCropLeft;
-    this.#onDisplayContextStateUpdate();
+    this.#onDisplayContextStateUpdate(differences);
   }
-  clearRotationCrop(sendImmediately: boolean) {
-    if (
-      this.#displayContextState.rotationCropTop == 0 &&
-      this.#displayContextState.rotationCropRight == 0 &&
-      this.#displayContextState.rotationCropBottom == 0 &&
-      this.#displayContextState.rotationCropLeft == 0
-    ) {
-      _console.log(`redundant rotationCrop ${0}`);
+  clearRotationCrop(sendImmediately?: boolean) {
+    const differences = this.#displayContextStateHelper.update({
+      rotationCropTop: 0,
+      rotationCropRight: 0,
+      rotationCropBottom: 0,
+      rotationCropLeft: 0,
+    });
+    if (differences.length == 0) {
       return;
     }
     this.#sendDisplayContextCommand(
@@ -1006,11 +1103,7 @@ class DisplayManager {
       undefined,
       sendImmediately
     );
-    this.#displayContextState.rotationCropTop = 0;
-    this.#displayContextState.rotationCropRight = 0;
-    this.#displayContextState.rotationCropBottom = 0;
-    this.#displayContextState.rotationCropLeft = 0;
-    this.#onDisplayContextStateUpdate();
+    this.#onDisplayContextStateUpdate(differences);
   }
 
   #clampX(x: number) {
@@ -1111,7 +1204,7 @@ class DisplayManager {
       sendImmediately
     );
   }
-  drawCircle(x: number, y: number, radius: number, sendImmediately: boolean) {
+  drawCircle(x: number, y: number, radius: number, sendImmediately?: boolean) {
     //x = this.#clampX(x);
     //y = this.#clampY(y);
     const dataView = new DataView(new ArrayBuffer(2 * 3));
@@ -1227,7 +1320,7 @@ class DisplayManager {
     this.#displayContextCommandBuffers = [];
     this.#isDisplayAvailable = false;
 
-    this.#displayContextState = Object.assign({}, DefaultDisplayContextState);
+    this.#displayContextStateHelper.reset();
     this.#colors.length = 0;
     this.#opacities.length = 0;
   }

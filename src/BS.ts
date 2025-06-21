@@ -110,6 +110,13 @@ export {
   DisplaySegmentCaps,
 } from "./DisplayManager.ts";
 
+export {
+  default as DisplayCanvasHelper,
+  DisplayCanvasHelperEvent,
+  DisplayCanvasHelperEventMap,
+  DisplayCanvasHelperEventListenerMap,
+} from "./utils/DisplayCanvasHelper.ts";
+
 export { rgbToHex, hexToRGB } from "./utils/ColorUtils.ts";
 
 export {
@@ -122,6 +129,7 @@ export {
   DevicePairTypes,
 } from "./devicePair/DevicePair.ts";
 
+import DisplayCanvasHelper from "./utils/DisplayCanvasHelper.ts";
 import { addEventListeners, removeEventListeners } from "./utils/EventUtils.ts";
 export const EventUtils = {
   addEventListeners,
