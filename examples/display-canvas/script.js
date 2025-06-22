@@ -43,8 +43,6 @@ device.addEventListener("connected", () => {
   }
 });
 
-document.body.appendChild(displayCanvasHelper.bufferCanvas);
-
 window.test = (centerX, centerY) => {
   displayCanvasHelper.setLineWidth(10);
   displayCanvasHelper.setColor(1, "red");

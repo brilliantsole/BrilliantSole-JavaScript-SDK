@@ -7904,17 +7904,17 @@ _a$2 = Device, _Device_eventDispatcher = new WeakMap(), _Device_connectionManage
 _Device_ReconnectOnDisconnection = { value: false };
 _Device_ClearSensorConfigurationOnLeave = { value: true };
 
-var _DisplayCanvasHelper_instances, _DisplayCanvasHelper_eventDispatcher, _DisplayCanvasHelper_dispatchEvent_get, _DisplayCanvasHelper_bufferCanvas, _DisplayCanvasHelper_bufferContext, _DisplayCanvasHelper_canvas, _DisplayCanvasHelper_updateBufferCanvasSize, _DisplayCanvasHelper_context, _DisplayCanvasHelper_updateCanvas, _DisplayCanvasHelper_device, _DisplayCanvasHelper_boundDeviceEventListeners, _DisplayCanvasHelper_onDeviceConnected, _DisplayCanvasHelper_onDeviceNotConnected, _DisplayCanvasHelper_updateDevice, _DisplayCanvasHelper_numberOfColors, _DisplayCanvasHelper_assertValidColorIndex, _DisplayCanvasHelper_colors, _DisplayCanvasHelper_updateDeviceColors, _DisplayCanvasHelper_opacities, _DisplayCanvasHelper_updateDeviceOpacity, _DisplayCanvasHelper_displayContextStateHelper, _DisplayCanvasHelper_onDisplayContextStateUpdate, _DisplayCanvasHelper_updateDeviceContextState, _DisplayCanvasHelper_updateFillStyle, _DisplayCanvasHelper_updateStrokeStyle, _DisplayCanvasHelper_assertValidLineWidth, _DisplayCanvasHelper_rotationRadians, _DisplayCanvasHelper_getRotationRadians, _DisplayCanvasHelper_transformContext, _DisplayCanvasHelper_brightness, _DisplayCanvasHelper_applyBrightnessToGlobalAlpha, _DisplayCanvasHelper_brightnessOpacities, _DisplayCanvasHelper_updateGlobalAlpha, _DisplayCanvasHelper_updateDeviceBrightness;
+var _DisplayCanvasHelper_instances, _DisplayCanvasHelper_eventDispatcher, _DisplayCanvasHelper_dispatchEvent_get, _DisplayCanvasHelper_canvas, _DisplayCanvasHelper_context, _DisplayCanvasHelper_updateCanvas, _DisplayCanvasHelper_frontDrawStack, _DisplayCanvasHelper_rearDrawStack, _DisplayCanvasHelper_drawFrontDrawStack, _DisplayCanvasHelper_device, _DisplayCanvasHelper_boundDeviceEventListeners, _DisplayCanvasHelper_onDeviceConnected, _DisplayCanvasHelper_onDeviceNotConnected, _DisplayCanvasHelper_updateDevice, _DisplayCanvasHelper_numberOfColors, _DisplayCanvasHelper_assertValidColorIndex, _DisplayCanvasHelper_colors, _DisplayCanvasHelper_updateDeviceColors, _DisplayCanvasHelper_opacities, _DisplayCanvasHelper_updateDeviceOpacity, _DisplayCanvasHelper_displayContextStateHelper, _DisplayCanvasHelper_onDisplayContextStateUpdate, _DisplayCanvasHelper_updateDeviceContextState, _DisplayCanvasHelper_assertValidLineWidth, _DisplayCanvasHelper_rotationRadians, _DisplayCanvasHelper_getRotationRadians, _DisplayCanvasHelper_save, _DisplayCanvasHelper_restore, _DisplayCanvasHelper_transformContext, _DisplayCanvasHelper_getRectBoundingBox, _DisplayCanvasHelper_hexToRgba, _DisplayCanvasHelper_colorIndexToRgba, _DisplayCanvasHelper_updateContext, _DisplayCanvasHelper_drawRectToCanvas, _DisplayCanvasHelper_brightness, _DisplayCanvasHelper_brightnessOpacities, _DisplayCanvasHelper_brightnessOpacity_get, _DisplayCanvasHelper_updateGlobalAlpha, _DisplayCanvasHelper_updateDeviceBrightness;
 const _console$6 = createConsole("DisplayCanvasHelper", { log: true });
 const DisplayCanvasHelperEventTypes = ["displayContextState"];
 class DisplayCanvasHelper {
     constructor() {
         _DisplayCanvasHelper_instances.add(this);
         _DisplayCanvasHelper_eventDispatcher.set(this, new EventDispatcher(this, DisplayCanvasHelperEventTypes));
-        _DisplayCanvasHelper_bufferCanvas.set(this, document.createElement("canvas"));
-        _DisplayCanvasHelper_bufferContext.set(this, void 0);
         _DisplayCanvasHelper_canvas.set(this, void 0);
         _DisplayCanvasHelper_context.set(this, void 0);
+        _DisplayCanvasHelper_frontDrawStack.set(this, []);
+        _DisplayCanvasHelper_rearDrawStack.set(this, []);
         _DisplayCanvasHelper_device.set(this, void 0);
         _DisplayCanvasHelper_boundDeviceEventListeners.set(this, {
             connected: __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_onDeviceConnected).bind(this),
@@ -7926,16 +7926,14 @@ class DisplayCanvasHelper {
         _DisplayCanvasHelper_displayContextStateHelper.set(this, new DisplayContextStateHelper());
         _DisplayCanvasHelper_rotationRadians.set(this, 0);
         _DisplayCanvasHelper_brightness.set(this, "medium");
-        _DisplayCanvasHelper_applyBrightnessToGlobalAlpha.set(this, true);
         _DisplayCanvasHelper_brightnessOpacities.set(this, {
-            veryLow: 0.3,
-            low: 0.5,
-            medium: 0.8,
-            high: 0.9,
+            veryLow: 0.5,
+            low: 0.7,
+            medium: 0.9,
+            high: 0.95,
             veryHigh: 1,
         });
         this.numberOfColors = 16;
-        __classPrivateFieldSet(this, _DisplayCanvasHelper_bufferContext, __classPrivateFieldGet(this, _DisplayCanvasHelper_bufferCanvas, "f").getContext("2d"), "f");
     }
     get addEventListener() {
         return __classPrivateFieldGet(this, _DisplayCanvasHelper_eventDispatcher, "f").addEventListener;
@@ -7952,12 +7950,6 @@ class DisplayCanvasHelper {
     get removeAllEventListeners() {
         return __classPrivateFieldGet(this, _DisplayCanvasHelper_eventDispatcher, "f").removeAllEventListeners;
     }
-    get bufferCanvas() {
-        return __classPrivateFieldGet(this, _DisplayCanvasHelper_bufferCanvas, "f");
-    }
-    get bufferContext() {
-        return __classPrivateFieldGet(this, _DisplayCanvasHelper_bufferContext, "f");
-    }
     get canvas() {
         return __classPrivateFieldGet(this, _DisplayCanvasHelper_canvas, "f");
     }
@@ -7970,7 +7962,7 @@ class DisplayCanvasHelper {
         __classPrivateFieldSet(this, _DisplayCanvasHelper_canvas, newCanvas, "f");
         _console$6.log("assigned canvas", this.canvas);
         __classPrivateFieldSet(this, _DisplayCanvasHelper_context, __classPrivateFieldGet(this, _DisplayCanvasHelper_canvas, "f")?.getContext("2d"), "f");
-        __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_updateBufferCanvasSize).call(this);
+        __classPrivateFieldGet(this, _DisplayCanvasHelper_context, "f").imageSmoothingEnabled = false;
         __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_updateCanvas).call(this);
     }
     get context() {
@@ -8032,9 +8024,9 @@ class DisplayCanvasHelper {
     }
     showDisplay(sendImmediately = true) {
         _console$6.log("showDisplay");
-        __classPrivateFieldGet(this, _DisplayCanvasHelper_context, "f").clearRect(0, 0, this.width, this.height);
-        __classPrivateFieldGet(this, _DisplayCanvasHelper_context, "f").drawImage(__classPrivateFieldGet(this, _DisplayCanvasHelper_bufferCanvas, "f"), 0, 0);
-        __classPrivateFieldGet(this, _DisplayCanvasHelper_bufferContext, "f").clearRect(0, 0, this.width, this.height);
+        __classPrivateFieldSet(this, _DisplayCanvasHelper_frontDrawStack, __classPrivateFieldGet(this, _DisplayCanvasHelper_rearDrawStack, "f").slice(), "f");
+        __classPrivateFieldGet(this, _DisplayCanvasHelper_rearDrawStack, "f").length = 0;
+        __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_drawFrontDrawStack).call(this);
         if (this.device?.isConnected) {
             this.device.showDisplay(sendImmediately);
         }
@@ -8042,7 +8034,6 @@ class DisplayCanvasHelper {
     clearDisplay(sendImmediately = true) {
         _console$6.log("clearDisplay");
         __classPrivateFieldGet(this, _DisplayCanvasHelper_context, "f").clearRect(0, 0, this.width, this.height);
-        __classPrivateFieldGet(this, _DisplayCanvasHelper_bufferContext, "f").clearRect(0, 0, this.width, this.height);
         if (this.device?.isConnected) {
             this.device.clearDisplay(sendImmediately);
         }
@@ -8063,12 +8054,6 @@ class DisplayCanvasHelper {
             this.device.setDisplayColor(colorIndex, color, sendImmediately);
         }
         this.colors[colorIndex] = colorHex;
-        if (this.contextState.fillColorIndex == colorIndex) {
-            __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_updateFillStyle).call(this);
-        }
-        if (this.contextState.lineColorIndex == colorIndex) {
-            __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_updateStrokeStyle).call(this);
-        }
     }
     setColorOpacity(colorIndex, opacity, sendImmediately) {
         __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_assertValidColorIndex).call(this, colorIndex);
@@ -8097,7 +8082,6 @@ class DisplayCanvasHelper {
         if (differences.length == 0) {
             return;
         }
-        __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_updateFillStyle).call(this);
         if (this.device?.isConnected) {
             this.device.selectDisplayFillColor(fillColorIndex, sendImmediately);
         }
@@ -8111,8 +8095,6 @@ class DisplayCanvasHelper {
         if (differences.length == 0) {
             return;
         }
-        __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_updateStrokeStyle).call(this);
-        __classPrivateFieldGet(this, _DisplayCanvasHelper_bufferContext, "f").strokeStyle = this.colors[lineColorIndex];
         if (this.device?.isConnected) {
             this.device.selectDisplayLineColor(lineColorIndex, sendImmediately);
         }
@@ -8126,7 +8108,6 @@ class DisplayCanvasHelper {
         if (differences.length == 0) {
             return;
         }
-        __classPrivateFieldGet(this, _DisplayCanvasHelper_bufferContext, "f").lineWidth = lineWidth;
         if (this.device?.isConnected) {
             this.device.setDisplayLineWidth(lineWidth, sendImmediately);
         }
@@ -8327,20 +8308,12 @@ class DisplayCanvasHelper {
         __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_onDisplayContextStateUpdate).call(this, differences);
     }
     clearRect(x, y, width, height, sendImmediately) {
-        this.bufferContext.clearRect(0, 0, width, height);
         if (this.device?.isConnected) {
             this.device.clearDisplayRect(x, y, width, height, sendImmediately);
         }
     }
     drawRect(centerX, centerY, width, height, sendImmediately) {
-        __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_transformContext).call(this, centerX, centerY, () => {
-            const x = -width / 2;
-            const y = -height / 2;
-            this.bufferContext.fillRect(x, y, width, height);
-            if (this.contextState.lineWidth > 0) {
-                this.bufferContext.strokeRect(x, y, width, height);
-            }
-        });
+        __classPrivateFieldGet(this, _DisplayCanvasHelper_rearDrawStack, "f").push(() => __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_drawRectToCanvas).call(this, centerX, centerY, width, height, Object.assign({}, this.contextState), __classPrivateFieldGet(this, _DisplayCanvasHelper_rotationRadians, "f")));
         if (this.device?.isConnected) {
             this.device.drawDisplayRect(centerX, centerY, width, height, sendImmediately);
         }
@@ -8373,13 +8346,6 @@ class DisplayCanvasHelper {
     get brightness() {
         return __classPrivateFieldGet(this, _DisplayCanvasHelper_brightness, "f");
     }
-    get applyBrightnessToGlobalAlpha() {
-        return __classPrivateFieldGet(this, _DisplayCanvasHelper_applyBrightnessToGlobalAlpha, "f");
-    }
-    set applyBrightnessToGlobalAlpha(newValue) {
-        __classPrivateFieldSet(this, _DisplayCanvasHelper_applyBrightnessToGlobalAlpha, newValue, "f");
-        __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_updateGlobalAlpha).call(this);
-    }
     setBrightness(newBrightness, sendImmediately) {
         if (__classPrivateFieldGet(this, _DisplayCanvasHelper_brightness, "f") == newBrightness) {
             _console$6.log(`redundant brightness ${newBrightness}`);
@@ -8392,14 +8358,8 @@ class DisplayCanvasHelper {
         __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_updateGlobalAlpha).call(this);
     }
 }
-_DisplayCanvasHelper_eventDispatcher = new WeakMap(), _DisplayCanvasHelper_bufferCanvas = new WeakMap(), _DisplayCanvasHelper_bufferContext = new WeakMap(), _DisplayCanvasHelper_canvas = new WeakMap(), _DisplayCanvasHelper_context = new WeakMap(), _DisplayCanvasHelper_device = new WeakMap(), _DisplayCanvasHelper_boundDeviceEventListeners = new WeakMap(), _DisplayCanvasHelper_numberOfColors = new WeakMap(), _DisplayCanvasHelper_colors = new WeakMap(), _DisplayCanvasHelper_opacities = new WeakMap(), _DisplayCanvasHelper_displayContextStateHelper = new WeakMap(), _DisplayCanvasHelper_rotationRadians = new WeakMap(), _DisplayCanvasHelper_brightness = new WeakMap(), _DisplayCanvasHelper_applyBrightnessToGlobalAlpha = new WeakMap(), _DisplayCanvasHelper_brightnessOpacities = new WeakMap(), _DisplayCanvasHelper_instances = new WeakSet(), _DisplayCanvasHelper_dispatchEvent_get = function _DisplayCanvasHelper_dispatchEvent_get() {
+_DisplayCanvasHelper_eventDispatcher = new WeakMap(), _DisplayCanvasHelper_canvas = new WeakMap(), _DisplayCanvasHelper_context = new WeakMap(), _DisplayCanvasHelper_frontDrawStack = new WeakMap(), _DisplayCanvasHelper_rearDrawStack = new WeakMap(), _DisplayCanvasHelper_device = new WeakMap(), _DisplayCanvasHelper_boundDeviceEventListeners = new WeakMap(), _DisplayCanvasHelper_numberOfColors = new WeakMap(), _DisplayCanvasHelper_colors = new WeakMap(), _DisplayCanvasHelper_opacities = new WeakMap(), _DisplayCanvasHelper_displayContextStateHelper = new WeakMap(), _DisplayCanvasHelper_rotationRadians = new WeakMap(), _DisplayCanvasHelper_brightness = new WeakMap(), _DisplayCanvasHelper_brightnessOpacities = new WeakMap(), _DisplayCanvasHelper_instances = new WeakSet(), _DisplayCanvasHelper_dispatchEvent_get = function _DisplayCanvasHelper_dispatchEvent_get() {
     return __classPrivateFieldGet(this, _DisplayCanvasHelper_eventDispatcher, "f").dispatchEvent;
-}, _DisplayCanvasHelper_updateBufferCanvasSize = function _DisplayCanvasHelper_updateBufferCanvasSize() {
-    const { lineWidth, fillStyle, strokeStyle } = __classPrivateFieldGet(this, _DisplayCanvasHelper_bufferContext, "f");
-    _console$6.log({ lineWidth, fillStyle, strokeStyle });
-    __classPrivateFieldGet(this, _DisplayCanvasHelper_bufferCanvas, "f").width = this.width;
-    __classPrivateFieldGet(this, _DisplayCanvasHelper_bufferCanvas, "f").height = this.height;
-    Object.assign(__classPrivateFieldGet(this, _DisplayCanvasHelper_bufferContext, "f"), { lineWidth, fillStyle, strokeStyle });
 }, _DisplayCanvasHelper_updateCanvas = function _DisplayCanvasHelper_updateCanvas() {
     if (!this.device?.isConnected) {
         return;
@@ -8411,7 +8371,9 @@ _DisplayCanvasHelper_eventDispatcher = new WeakMap(), _DisplayCanvasHelper_buffe
     console.log({ width, height });
     this.canvas.width = width;
     this.canvas.height = height;
-    __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_updateBufferCanvasSize).call(this);
+}, _DisplayCanvasHelper_drawFrontDrawStack = function _DisplayCanvasHelper_drawFrontDrawStack() {
+    __classPrivateFieldGet(this, _DisplayCanvasHelper_context, "f").clearRect(0, 0, this.width, this.height);
+    __classPrivateFieldGet(this, _DisplayCanvasHelper_frontDrawStack, "f").forEach((callback) => callback());
 }, _DisplayCanvasHelper_onDeviceConnected = function _DisplayCanvasHelper_onDeviceConnected(event) {
     _console$6.log("device connected");
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_updateCanvas).call(this);
@@ -8450,23 +8412,61 @@ _DisplayCanvasHelper_eventDispatcher = new WeakMap(), _DisplayCanvasHelper_buffe
     }
     _console$6.log("updateDeviceContextState");
     this.device?.setDisplayContextState(this.contextState);
-}, _DisplayCanvasHelper_updateFillStyle = function _DisplayCanvasHelper_updateFillStyle() {
-    __classPrivateFieldGet(this, _DisplayCanvasHelper_bufferContext, "f").fillStyle =
-        this.colors[this.contextState.fillColorIndex];
-}, _DisplayCanvasHelper_updateStrokeStyle = function _DisplayCanvasHelper_updateStrokeStyle() {
-    __classPrivateFieldGet(this, _DisplayCanvasHelper_bufferContext, "f").strokeStyle =
-        this.colors[this.contextState.lineColorIndex];
 }, _DisplayCanvasHelper_assertValidLineWidth = function _DisplayCanvasHelper_assertValidLineWidth(lineWidth) {
     _console$6.assertRangeWithError("lineWidth", lineWidth, 0, this.width);
 }, _DisplayCanvasHelper_getRotationRadians = function _DisplayCanvasHelper_getRotationRadians() {
     return (this.contextState.rotation / Uint16Max) * Math.PI * 2;
-}, _DisplayCanvasHelper_transformContext = function _DisplayCanvasHelper_transformContext(centerX, centerY, callback) {
-    const ctx = __classPrivateFieldGet(this, _DisplayCanvasHelper_bufferContext, "f");
+}, _DisplayCanvasHelper_save = function _DisplayCanvasHelper_save() {
+    const ctx = __classPrivateFieldGet(this, _DisplayCanvasHelper_context, "f");
     ctx.save();
-    ctx.translate(centerX, centerY);
-    ctx.rotate(__classPrivateFieldGet(this, _DisplayCanvasHelper_rotationRadians, "f"));
-    callback();
+}, _DisplayCanvasHelper_restore = function _DisplayCanvasHelper_restore() {
+    const ctx = __classPrivateFieldGet(this, _DisplayCanvasHelper_context, "f");
     ctx.restore();
+}, _DisplayCanvasHelper_transformContext = function _DisplayCanvasHelper_transformContext(centerX, centerY, rotationRadians) {
+    const ctx = __classPrivateFieldGet(this, _DisplayCanvasHelper_context, "f");
+    ctx.translate(centerX, centerY);
+    ctx.rotate(rotationRadians);
+}, _DisplayCanvasHelper_getRectBoundingBox = function _DisplayCanvasHelper_getRectBoundingBox(centerX, centerY, width, height) {
+    __classPrivateFieldGet(this, _DisplayCanvasHelper_rotationRadians, "f");
+    const outerPadding = this.contextState.lineWidth / 2;
+    return {
+        x: centerX - width / 2 - outerPadding,
+        y: centerY - height / 2 - outerPadding,
+        width: width + outerPadding * 2,
+        height: height + outerPadding * 2,
+    };
+}, _DisplayCanvasHelper_hexToRgba = function _DisplayCanvasHelper_hexToRgba(hex, opacity) {
+    if (hex.length === 4) {
+        hex = "#" + [...hex.slice(1)].map((c) => c + c).join("");
+    }
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+    const darken = (c) => Math.round(c * opacity);
+    const dr = darken(r);
+    const dg = darken(g);
+    const db = darken(b);
+    return `rgb(${dr}, ${dg}, ${db})`;
+}, _DisplayCanvasHelper_colorIndexToRgba = function _DisplayCanvasHelper_colorIndexToRgba(colorIndex) {
+    return __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_hexToRgba).call(this, this.colors[colorIndex], this.opacities[colorIndex] * __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "a", _DisplayCanvasHelper_brightnessOpacity_get));
+}, _DisplayCanvasHelper_updateContext = function _DisplayCanvasHelper_updateContext({ lineWidth, fillColorIndex, lineColorIndex, }) {
+    this.context.fillStyle = __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_colorIndexToRgba).call(this, fillColorIndex);
+    this.context.strokeStyle = __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_colorIndexToRgba).call(this, lineColorIndex);
+    this.context.lineWidth = lineWidth;
+}, _DisplayCanvasHelper_drawRectToCanvas = function _DisplayCanvasHelper_drawRectToCanvas(centerX, centerY, width, height, contextState, rotationRadians) {
+    __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_updateContext).call(this, contextState);
+    __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_save).call(this);
+    const box = __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_getRectBoundingBox).call(this, centerX, centerY, width, height);
+    __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_transformContext).call(this, centerX, centerY, rotationRadians);
+    const x = -box.width / 2;
+    const y = -box.height / 2;
+    this.context.fillRect(x, y, width, height);
+    if (this.contextState.lineWidth > 0) {
+        this.context.strokeRect(x, y, width, height);
+    }
+    __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_restore).call(this);
+}, _DisplayCanvasHelper_brightnessOpacity_get = function _DisplayCanvasHelper_brightnessOpacity_get() {
+    return __classPrivateFieldGet(this, _DisplayCanvasHelper_brightnessOpacities, "f")[this.brightness];
 }, _DisplayCanvasHelper_updateGlobalAlpha = function _DisplayCanvasHelper_updateGlobalAlpha() {
 }, _DisplayCanvasHelper_updateDeviceBrightness = function _DisplayCanvasHelper_updateDeviceBrightness() {
     if (!this.device?.isConnected) {

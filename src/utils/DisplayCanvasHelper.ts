@@ -71,10 +71,16 @@ export type BoundDisplayCanvasHelperEventListeners = BoundEventListeners<
   DisplayCanvasHelperEventMessages
 >;
 
+export type DisplayBoundingBox = {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+};
+
 class DisplayCanvasHelper {
   constructor() {
     this.numberOfColors = 16;
-    this.#bufferContext = this.#bufferCanvas.getContext("2d")!;
   }
 
   // EVENT DISPATCHER
@@ -102,15 +108,6 @@ class DisplayCanvasHelper {
   }
 
   // CANVAS
-  #bufferCanvas = document.createElement("canvas");
-  get bufferCanvas() {
-    return this.#bufferCanvas;
-  }
-  #bufferContext!: CanvasRenderingContext2D;
-  get bufferContext() {
-    return this.#bufferContext;
-  }
-
   #canvas?: HTMLCanvasElement;
   get canvas() {
     return this.#canvas;
@@ -128,18 +125,8 @@ class DisplayCanvasHelper {
     _console.log("assigned canvas", this.canvas);
 
     this.#context = this.#canvas?.getContext("2d")!;
-    this.#updateBufferCanvasSize();
-
+    this.#context.imageSmoothingEnabled = false;
     this.#updateCanvas();
-  }
-  #updateBufferCanvasSize() {
-    const { lineWidth, fillStyle, strokeStyle } = this.#bufferContext;
-    _console.log({ lineWidth, fillStyle, strokeStyle });
-
-    this.#bufferCanvas.width = this.width;
-    this.#bufferCanvas.height = this.height;
-
-    Object.assign(this.#bufferContext, { lineWidth, fillStyle, strokeStyle });
   }
   #context!: CanvasRenderingContext2D;
   get context() {
@@ -166,8 +153,16 @@ class DisplayCanvasHelper {
 
     this.canvas.width = width;
     this.canvas.height = height;
+  }
 
-    this.#updateBufferCanvasSize();
+  // CONTEXT STACK
+  #frontDrawStack: Function[] = [];
+  #rearDrawStack: Function[] = [];
+  #drawFrontDrawStack() {
+    this.#context.clearRect(0, 0, this.width, this.height);
+
+    // FILL - draw background
+    this.#frontDrawStack.forEach((callback) => callback());
   }
 
   // DEVICE
@@ -320,9 +315,12 @@ class DisplayCanvasHelper {
 
   showDisplay(sendImmediately = true) {
     _console.log("showDisplay");
-    this.#context.clearRect(0, 0, this.width, this.height);
-    this.#context.drawImage(this.#bufferCanvas, 0, 0);
-    this.#bufferContext.clearRect(0, 0, this.width, this.height);
+
+    this.#frontDrawStack = this.#rearDrawStack.slice();
+    this.#rearDrawStack.length = 0;
+
+    this.#drawFrontDrawStack();
+
     if (this.device?.isConnected) {
       this.device.showDisplay(sendImmediately);
     }
@@ -330,7 +328,6 @@ class DisplayCanvasHelper {
   clearDisplay(sendImmediately = true) {
     _console.log("clearDisplay");
     this.#context.clearRect(0, 0, this.width, this.height);
-    this.#bufferContext.clearRect(0, 0, this.width, this.height);
     if (this.device?.isConnected) {
       this.device.clearDisplay(sendImmediately);
     }
@@ -358,16 +355,9 @@ class DisplayCanvasHelper {
       this.device.setDisplayColor(colorIndex, color, sendImmediately);
     }
 
-    // FILL - set background if colorIndex is 0
+    // FILL - redraw
 
     this.colors[colorIndex] = colorHex;
-
-    if (this.contextState.fillColorIndex == colorIndex) {
-      this.#updateFillStyle();
-    }
-    if (this.contextState.lineColorIndex == colorIndex) {
-      this.#updateStrokeStyle();
-    }
   }
 
   setColorOpacity(
@@ -406,16 +396,10 @@ class DisplayCanvasHelper {
     if (differences.length == 0) {
       return;
     }
-    this.#updateFillStyle();
     if (this.device?.isConnected) {
       this.device.selectDisplayFillColor(fillColorIndex, sendImmediately);
     }
     this.#onDisplayContextStateUpdate(differences);
-  }
-  #updateFillStyle() {
-    // FILL - apply opacity and brightness
-    this.#bufferContext.fillStyle =
-      this.colors[this.contextState.fillColorIndex];
   }
   selectLineColor(lineColorIndex: number, sendImmediately?: boolean) {
     this.#assertValidColorIndex(lineColorIndex);
@@ -425,17 +409,10 @@ class DisplayCanvasHelper {
     if (differences.length == 0) {
       return;
     }
-    this.#updateStrokeStyle();
-    this.#bufferContext.strokeStyle = this.colors[lineColorIndex];
     if (this.device?.isConnected) {
       this.device.selectDisplayLineColor(lineColorIndex, sendImmediately);
     }
     this.#onDisplayContextStateUpdate(differences);
-  }
-  #updateStrokeStyle() {
-    // FILL - apply opacity and brightness
-    this.#bufferContext.strokeStyle =
-      this.colors[this.contextState.lineColorIndex];
   }
   #assertValidLineWidth(lineWidth: number) {
     _console.assertRangeWithError("lineWidth", lineWidth, 0, this.width);
@@ -448,7 +425,6 @@ class DisplayCanvasHelper {
     if (differences.length == 0) {
       return;
     }
-    this.#bufferContext.lineWidth = lineWidth;
     if (this.device?.isConnected) {
       this.device.setDisplayLineWidth(lineWidth, sendImmediately);
     }
@@ -686,7 +662,7 @@ class DisplayCanvasHelper {
     height: number,
     sendImmediately?: boolean
   ) {
-    this.bufferContext.clearRect(0, 0, width, height);
+    // FILL
     if (this.device?.isConnected) {
       this.device.clearDisplayRect(x, y, width, height, sendImmediately);
     }
@@ -702,14 +678,100 @@ class DisplayCanvasHelper {
       y: centerY - height / 2,
     };
   }
-  #transformContext(centerX: number, centerY: number, callback: Function) {
-    const ctx = this.#bufferContext;
-
+  #save() {
+    const ctx = this.#context;
     ctx.save();
+  }
+  #restore() {
+    const ctx = this.#context;
+    ctx.restore();
+  }
+  #transformContext(centerX: number, centerY: number, rotationRadians: number) {
+    const ctx = this.#context;
     ctx.translate(centerX, centerY);
-    ctx.rotate(this.#rotationRadians);
-    callback();
-    ctx.restore(); // Restore the state
+    ctx.rotate(rotationRadians);
+  }
+  #getRectBoundingBox(
+    centerX: number,
+    centerY: number,
+    width: number,
+    height: number
+  ): DisplayBoundingBox {
+    const rotationRadians = this.#rotationRadians;
+    // FILL - apply radians
+    const outerPadding = this.contextState.lineWidth / 2;
+    return {
+      x: centerX - width / 2 - outerPadding,
+      y: centerY - height / 2 - outerPadding,
+      width: width + outerPadding * 2,
+      height: height + outerPadding * 2,
+    };
+  }
+  #applyClip({ x, y, height, width }: DisplayBoundingBox) {
+    const ctx = this.#context;
+
+    const { cropTop, cropRight, cropBottom, cropLeft } = this.contextState;
+    ctx.beginPath();
+    ctx.rect(x + cropLeft, y + cropTop, width - cropRight, height - cropBottom);
+    ctx.clip();
+  }
+  #hexToRgba(hex: string, opacity: number) {
+    // Expand shorthand hex (#f00 → #ff0000)
+    if (hex.length === 4) {
+      hex = "#" + [...hex.slice(1)].map((c) => c + c).join("");
+    }
+
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+
+    // Darken color by blending toward black
+    const darken = (c: number) => Math.round(c * opacity);
+
+    const dr = darken(r);
+    const dg = darken(g);
+    const db = darken(b);
+
+    return `rgb(${dr}, ${dg}, ${db})`;
+  }
+  #colorIndexToRgba(colorIndex: number) {
+    return this.#hexToRgba(
+      this.colors[colorIndex],
+      this.opacities[colorIndex] * this.#brightnessOpacity
+    );
+  }
+  #updateContext({
+    lineWidth,
+    fillColorIndex,
+    lineColorIndex,
+  }: DisplayContextState) {
+    this.context.fillStyle = this.#colorIndexToRgba(fillColorIndex);
+    this.context.strokeStyle = this.#colorIndexToRgba(lineColorIndex);
+    this.context.lineWidth = lineWidth;
+  }
+  #drawRectToCanvas(
+    centerX: number,
+    centerY: number,
+    width: number,
+    height: number,
+    contextState: DisplayContextState,
+    rotationRadians: number
+  ) {
+    this.#updateContext(contextState);
+
+    this.#save();
+    const box = this.#getRectBoundingBox(centerX, centerY, width, height);
+    //this.#applyClip(box);
+
+    this.#transformContext(centerX, centerY, rotationRadians);
+
+    const x = -box.width / 2;
+    const y = -box.height / 2;
+    this.context.fillRect(x, y, width, height);
+    if (this.contextState.lineWidth > 0) {
+      this.context.strokeRect(x, y, width, height);
+    }
+    this.#restore();
   }
   drawRect(
     centerX: number,
@@ -718,17 +780,16 @@ class DisplayCanvasHelper {
     height: number,
     sendImmediately?: boolean
   ) {
-    // FILL - crop
-    // FILL - rotationCrop
-
-    this.#transformContext(centerX, centerY, () => {
-      const x = -width / 2;
-      const y = -height / 2;
-      this.bufferContext.fillRect(x, y, width, height);
-      if (this.contextState.lineWidth > 0) {
-        this.bufferContext.strokeRect(x, y, width, height);
-      }
-    });
+    this.#rearDrawStack.push(() =>
+      this.#drawRectToCanvas(
+        centerX,
+        centerY,
+        width,
+        height,
+        Object.assign({}, this.contextState),
+        this.#rotationRadians
+      )
+    );
 
     if (this.device?.isConnected) {
       this.device.drawDisplayRect(
@@ -821,19 +882,11 @@ class DisplayCanvasHelper {
   get brightness() {
     return this.#brightness;
   }
-  #applyBrightnessToGlobalAlpha = true;
-  get applyBrightnessToGlobalAlpha() {
-    return this.#applyBrightnessToGlobalAlpha;
-  }
-  set applyBrightnessToGlobalAlpha(newValue) {
-    this.#applyBrightnessToGlobalAlpha = newValue;
-    this.#updateGlobalAlpha();
-  }
   #brightnessOpacities: Record<DisplayBrightness, number> = {
-    veryLow: 0.3,
-    low: 0.5,
-    medium: 0.8,
-    high: 0.9,
+    veryLow: 0.5,
+    low: 0.7,
+    medium: 0.9,
+    high: 0.95,
     veryHigh: 1,
   };
   get #brightnessOpacity() {

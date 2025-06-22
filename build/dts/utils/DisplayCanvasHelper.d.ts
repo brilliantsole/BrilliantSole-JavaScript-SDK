@@ -15,6 +15,12 @@ export type DisplayCanvasHelperEvent = Event<DisplayCanvasHelper, DisplayCanvasH
 export type DisplayCanvasHelperEventMap = EventMap<DisplayCanvasHelper, DisplayCanvasHelperEventType, DisplayCanvasHelperEventMessages>;
 export type DisplayCanvasHelperEventListenerMap = EventListenerMap<DisplayCanvasHelper, DisplayCanvasHelperEventType, DisplayCanvasHelperEventMessages>;
 export type BoundDisplayCanvasHelperEventListeners = BoundEventListeners<DisplayCanvasHelper, DisplayCanvasHelperEventType, DisplayCanvasHelperEventMessages>;
+export type DisplayBoundingBox = {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+};
 declare class DisplayCanvasHelper {
     #private;
     constructor();
@@ -37,8 +43,6 @@ declare class DisplayCanvasHelper {
     }>;
     get removeEventListeners(): <T extends "displayContextState">(type: T) => void;
     get removeAllEventListeners(): () => void;
-    get bufferCanvas(): HTMLCanvasElement;
-    get bufferContext(): CanvasRenderingContext2D;
     get canvas(): HTMLCanvasElement | undefined;
     set canvas(newCanvas: HTMLCanvasElement | undefined);
     get context(): CanvasRenderingContext2D;
@@ -88,8 +92,6 @@ declare class DisplayCanvasHelper {
     drawPolygon(x: number, y: number, radius: number, numberOfSides: number, sendImmediately?: boolean): void;
     drawSegment(startX: number, startY: number, endX: number, endY: number, sendImmediately?: boolean): void;
     get brightness(): "veryLow" | "low" | "medium" | "high" | "veryHigh";
-    get applyBrightnessToGlobalAlpha(): boolean;
-    set applyBrightnessToGlobalAlpha(newValue: boolean);
     setBrightness(newBrightness: DisplayBrightness, sendImmediately?: boolean): void;
 }
 export default DisplayCanvasHelper;
