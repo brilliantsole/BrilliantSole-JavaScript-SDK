@@ -6,7 +6,12 @@ import {
 import { createConsole } from "./utils/Console.ts";
 import EventDispatcher from "./utils/EventDispatcher.ts";
 import autoBind from "auto-bind";
-import { clamp, Uint16Max } from "./utils/MathUtils.ts";
+import {
+  clamp,
+  degToRad,
+  normalizeRadians,
+  Uint16Max,
+} from "./utils/MathUtils.ts";
 import { hexToRGB, rgbToHex, stringToRGB } from "./utils/ColorUtils.ts";
 import DisplayContextStateHelper from "./utils/DisplayContextStateHelper.ts";
 import {
@@ -18,7 +23,7 @@ import {
   DisplayCropDirections,
   DisplayCropDirectionToCommand,
   DisplayRotationCropDirectionToCommand,
-  normalizeRotation,
+  formatRotation,
 } from "./utils/DisplayUtils.ts";
 
 const _console = createConsole("DisplayManager", { log: true });
@@ -318,7 +323,7 @@ class DisplayManager {
           this.setLineWidth(newState.lineWidth!);
           break;
         case "rotation":
-          this.setRawRotation(newState.rotation!);
+          this.setRotation(newState.rotation!, true);
           break;
         case "segmentStartCap":
           this.setSegmentStartCap(newState.segmentStartCap!);
@@ -764,7 +769,15 @@ class DisplayManager {
     this.#onDisplayContextStateUpdate(differences);
   }
 
-  setRawRotation(rotation: number, sendImmediately?: boolean) {
+  setRotation(
+    rotation: number,
+    isRadians?: boolean,
+    sendImmediately?: boolean
+  ) {
+    rotation = isRadians ? rotation : degToRad(rotation);
+    rotation = normalizeRadians(rotation);
+    _console.log({ rotation });
+
     const differences = this.#displayContextStateHelper.update({
       rotation,
     });
@@ -772,7 +785,7 @@ class DisplayManager {
       return;
     }
     const dataView = new DataView(new ArrayBuffer(2));
-    dataView.setUint16(0, rotation, true);
+    dataView.setUint16(0, formatRotation(rotation, true), true);
     this.#sendDisplayContextCommand(
       "setRotation",
       dataView.buffer,
@@ -780,15 +793,6 @@ class DisplayManager {
     );
 
     this.#onDisplayContextStateUpdate(differences);
-  }
-  setRotation(
-    rotation: number,
-    isRadians?: boolean,
-    sendImmediately?: boolean
-  ) {
-    rotation = normalizeRotation(rotation, isRadians);
-    _console.log({ rotation });
-    this.setRawRotation(rotation, sendImmediately);
   }
   clearRotation(sendImmediately?: boolean) {
     const differences = this.#displayContextStateHelper.update({

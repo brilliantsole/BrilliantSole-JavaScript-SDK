@@ -21,7 +21,7 @@ import {
   DisplayCropDirections,
   DisplayCropDirectionToCommand,
   DisplayRotationCropDirectionToCommand,
-  normalizeRotation,
+  formatRotation,
 } from "./DisplayUtils.ts";
 import EventDispatcher, {
   BoundEventListeners,
@@ -30,7 +30,12 @@ import EventDispatcher, {
   EventMap,
 } from "./EventDispatcher.ts";
 import { addEventListeners, removeEventListeners } from "./EventUtils.ts";
-import { radToDeg, Uint16Max } from "./MathUtils.ts";
+import {
+  degToRad,
+  normalizeRadians,
+  radToDeg,
+  Uint16Max,
+} from "./MathUtils.ts";
 
 const _console = createConsole("DisplayCanvasHelper", { log: true });
 
@@ -430,12 +435,9 @@ class DisplayCanvasHelper {
     }
     this.#onDisplayContextStateUpdate(differences);
   }
-  setRotation(
-    rotation: number,
-    isRadians?: boolean,
-    sendImmediately?: boolean
-  ) {
-    rotation = normalizeRotation(rotation, isRadians);
+  setRotation(rotation: number, isRadians: boolean, sendImmediately?: boolean) {
+    rotation = isRadians ? rotation : degToRad(rotation);
+    rotation = normalizeRadians(rotation);
     _console.log({ rotation });
 
     const differences = this.#displayContextStateHelper.update({
@@ -445,17 +447,11 @@ class DisplayCanvasHelper {
       return;
     }
 
-    this.#rotationRadians = this.#getRotationRadians();
-
     if (this.device?.isConnected) {
-      this.device.setDisplayRawRotation(rotation, sendImmediately);
+      this.device.setDisplayRotation(rotation, true, sendImmediately);
     }
 
     this.#onDisplayContextStateUpdate(differences);
-  }
-  #rotationRadians = 0;
-  #getRotationRadians() {
-    return (this.contextState.rotation / Uint16Max) * Math.PI * 2; // FIX?
   }
   clearRotation(sendImmediately?: boolean) {
     const differences = this.#displayContextStateHelper.update({
@@ -686,18 +682,18 @@ class DisplayCanvasHelper {
     const ctx = this.#context;
     ctx.restore();
   }
-  #transformContext(centerX: number, centerY: number, rotationRadians: number) {
+  #transformContext(centerX: number, centerY: number, rotation: number) {
     const ctx = this.#context;
     ctx.translate(centerX, centerY);
-    ctx.rotate(rotationRadians);
+    ctx.rotate(rotation);
   }
   #getRectBoundingBox(
     centerX: number,
     centerY: number,
     width: number,
-    height: number
+    height: number,
+    contextState: DisplayContextState
   ): DisplayBoundingBox {
-    const rotationRadians = this.#rotationRadians;
     // FILL - apply radians
     const outerPadding = this.contextState.lineWidth / 2;
     return {
@@ -754,16 +750,21 @@ class DisplayCanvasHelper {
     centerY: number,
     width: number,
     height: number,
-    contextState: DisplayContextState,
-    rotationRadians: number
+    contextState: DisplayContextState
   ) {
     this.#updateContext(contextState);
 
     this.#save();
-    const box = this.#getRectBoundingBox(centerX, centerY, width, height);
-    //this.#applyClip(box);
+    const box = this.#getRectBoundingBox(
+      centerX,
+      centerY,
+      width,
+      height,
+      contextState
+    );
+    this.#applyClip(box);
 
-    this.#transformContext(centerX, centerY, rotationRadians);
+    this.#transformContext(centerX, centerY, contextState.rotation);
 
     const x = -box.width / 2;
     const y = -box.height / 2;
@@ -786,8 +787,7 @@ class DisplayCanvasHelper {
         centerY,
         width,
         height,
-        Object.assign({}, this.contextState),
-        this.#rotationRadians
+        Object.assign({}, this.contextState)
       )
     );
 
@@ -901,10 +901,6 @@ class DisplayCanvasHelper {
     if (this.device?.isConnected) {
       this.device.setDisplayBrightness(newBrightness, sendImmediately);
     }
-    this.#updateGlobalAlpha();
-  }
-  #updateGlobalAlpha() {
-    // FILL
   }
   #resetBrightness() {
     this.setBrightness("medium");

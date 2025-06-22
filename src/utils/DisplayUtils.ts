@@ -12,7 +12,7 @@ import { Uint16Max } from "./MathUtils.ts";
 
 const _console = createConsole("DisplayUtils", { log: true });
 
-export function normalizeRotation(rotation: number, isRadians?: boolean) {
+export function formatRotation(rotation: number, isRadians?: boolean) {
   if (isRadians) {
     const rotationRad = rotation;
     _console.log({ rotationRad });

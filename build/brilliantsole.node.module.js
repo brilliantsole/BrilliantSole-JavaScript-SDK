@@ -945,6 +945,13 @@ function parseTimestamp(dataView, byteOffset) {
     }
     return timestamp;
 }
+function degToRad(deg) {
+    return deg * (Math.PI / 180);
+}
+const twoPi = Math.PI * 2;
+function normalizeRadians(rad) {
+    return ((rad % twoPi) + twoPi) % twoPi;
+}
 
 var _RangeHelper_instances, _RangeHelper_range, _RangeHelper_updateSpan;
 const initialRange = { min: Infinity, max: -Infinity, span: 0 };
@@ -3746,18 +3753,12 @@ class DisplayContextStateHelper {
 _DisplayContextStateHelper_state = new WeakMap();
 
 const _console$p = createConsole("DisplayUtils", { log: true });
-function normalizeRotation(rotation, isRadians) {
-    if (isRadians) {
+function formatRotation(rotation, isRadians) {
+    {
         const rotationRad = rotation;
         _console$p.log({ rotationRad });
         rotation %= 2 * Math.PI;
         rotation /= 2 * Math.PI;
-    }
-    else {
-        const rotationDeg = rotation;
-        _console$p.log({ rotationDeg });
-        rotation %= 360;
-        rotation /= 360;
     }
     rotation *= Uint16Max;
     rotation = Math.floor(rotation);
@@ -3954,7 +3955,7 @@ class DisplayManager {
                     this.setLineWidth(newState.lineWidth);
                     break;
                 case "rotation":
-                    this.setRawRotation(newState.rotation);
+                    this.setRotation(newState.rotation, true);
                     break;
                 case "segmentStartCap":
                     this.setSegmentStartCap(newState.segmentStartCap);
@@ -4154,7 +4155,10 @@ class DisplayManager {
         __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "setLineWidth", dataView.buffer, sendImmediately);
         __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_onDisplayContextStateUpdate).call(this, differences);
     }
-    setRawRotation(rotation, sendImmediately) {
+    setRotation(rotation, isRadians, sendImmediately) {
+        rotation = isRadians ? rotation : degToRad(rotation);
+        rotation = normalizeRadians(rotation);
+        _console$o.log({ rotation });
         const differences = __classPrivateFieldGet(this, _DisplayManager_displayContextStateHelper, "f").update({
             rotation,
         });
@@ -4162,14 +4166,9 @@ class DisplayManager {
             return;
         }
         const dataView = new DataView(new ArrayBuffer(2));
-        dataView.setUint16(0, rotation, true);
+        dataView.setUint16(0, formatRotation(rotation), true);
         __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "setRotation", dataView.buffer, sendImmediately);
         __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_onDisplayContextStateUpdate).call(this, differences);
-    }
-    setRotation(rotation, isRadians, sendImmediately) {
-        rotation = normalizeRotation(rotation, isRadians);
-        _console$o.log({ rotation });
-        this.setRawRotation(rotation, sendImmediately);
     }
     clearRotation(sendImmediately) {
         const differences = __classPrivateFieldGet(this, _DisplayManager_displayContextStateHelper, "f").update({
@@ -4392,10 +4391,10 @@ class DisplayManager {
         _console$o.log("drawEllipse data", dataView);
         __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "drawEllipse", dataView.buffer, sendImmediately);
     }
-    drawPolygon(x, y, radius, numberOfSides, sendImmediately) {
+    drawPolygon(centerX, centerY, radius, numberOfSides, sendImmediately) {
         const dataView = new DataView(new ArrayBuffer(2 * 3 + 1));
-        dataView.setInt16(0, x, true);
-        dataView.setInt16(2, y, true);
+        dataView.setInt16(0, centerX, true);
+        dataView.setInt16(2, centerY, true);
         dataView.setUint16(4, radius, true);
         dataView.setUint8(6, numberOfSides);
         _console$o.log("drawPolygon data", dataView);
@@ -7861,10 +7860,6 @@ class Device {
     get setDisplayRotation() {
         __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertDisplayIsAvailable).call(this);
         return __classPrivateFieldGet(this, _Device_displayManager, "f").setRotation;
-    }
-    get setDisplayRawRotation() {
-        __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertDisplayIsAvailable).call(this);
-        return __classPrivateFieldGet(this, _Device_displayManager, "f").setRawRotation;
     }
     get clearDisplayRotation() {
         __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertDisplayIsAvailable).call(this);

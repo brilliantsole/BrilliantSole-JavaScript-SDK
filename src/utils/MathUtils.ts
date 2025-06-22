@@ -101,3 +101,8 @@ export function degToRad(deg: number) {
 export function radToDeg(rad: number) {
   return rad * (180 / Math.PI);
 }
+
+const twoPi = Math.PI * 2;
+export function normalizeRadians(rad: number): number {
+  return ((rad % twoPi) + twoPi) % twoPi;
+}

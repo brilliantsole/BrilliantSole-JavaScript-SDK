@@ -24,3 +24,4 @@ export declare function computeVoronoiWeights(points: PressureSensorPosition[], 
 export declare function clamp(value: number, min?: number, max?: number): number;
 export declare function degToRad(deg: number): number;
 export declare function radToDeg(rad: number): number;
+export declare function normalizeRadians(rad: number): number;

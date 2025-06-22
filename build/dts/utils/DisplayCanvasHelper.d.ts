@@ -64,7 +64,7 @@ declare class DisplayCanvasHelper {
     selectFillColor(fillColorIndex: number, sendImmediately?: boolean): void;
     selectLineColor(lineColorIndex: number, sendImmediately?: boolean): void;
     setLineWidth(lineWidth: number, sendImmediately?: boolean): void;
-    setRotation(rotation: number, isRadians?: boolean, sendImmediately?: boolean): void;
+    setRotation(rotation: number, isRadians: boolean, sendImmediately?: boolean): void;
     clearRotation(sendImmediately?: boolean): void;
     setSegmentStartCap(segmentStartCap: DisplaySegmentCap, sendImmediately?: boolean): void;
     setSegmentEndCap(segmentEndCap: DisplaySegmentCap, sendImmediately?: boolean): void;
