@@ -22,7 +22,9 @@ import {
   DisplayCropDirection,
   DisplayCropDirections,
   DisplayCropDirectionToCommand,
+  DisplayCropDirectionToStateKey,
   DisplayRotationCropDirectionToCommand,
+  DisplayRotationCropDirectionToStateKey,
   formatRotation,
 } from "./utils/DisplayUtils.ts";
 
@@ -935,8 +937,9 @@ class DisplayManager {
   ) {
     _console.assertEnumWithError(cropDirection, DisplayCropDirections);
     const cropCommand = DisplayCropDirectionToCommand[cropDirection];
+    const cropKey = DisplayCropDirectionToStateKey[cropDirection];
     const differences = this.#displayContextStateHelper.update({
-      [cropCommand]: crop,
+      [cropKey]: crop,
     });
     if (differences.length == 0) {
       return;
@@ -984,8 +987,9 @@ class DisplayManager {
   ) {
     _console.assertEnumWithError(cropDirection, DisplayCropDirections);
     const cropCommand = DisplayRotationCropDirectionToCommand[cropDirection];
+    const cropKey = DisplayRotationCropDirectionToStateKey[cropDirection];
     const differences = this.#displayContextStateHelper.update({
-      [cropCommand]: crop,
+      [cropKey]: crop,
     });
     if (differences.length == 0) {
       return;

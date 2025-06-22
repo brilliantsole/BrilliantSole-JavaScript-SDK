@@ -3779,11 +3779,23 @@ const DisplayCropDirections = [
     "bottom",
     "left",
 ];
+const DisplayCropDirectionToStateKey = {
+    top: "cropTop",
+    right: "cropRight",
+    bottom: "cropBottom",
+    left: "cropLeft",
+};
 const DisplayCropDirectionToCommand = {
     top: "setCropTop",
     right: "setCropRight",
     bottom: "setCropBottom",
     left: "setCropLeft",
+};
+const DisplayRotationCropDirectionToStateKey = {
+    top: "rotationCropTop",
+    right: "rotationCropRight",
+    bottom: "rotationCropBottom",
+    left: "rotationCropLeft",
 };
 const DisplayRotationCropDirectionToCommand = {
     top: "setRotationCropTop",
@@ -4261,8 +4273,9 @@ class DisplayManager {
     setCrop(cropDirection, crop, sendImmediately) {
         _console$j.assertEnumWithError(cropDirection, DisplayCropDirections);
         const cropCommand = DisplayCropDirectionToCommand[cropDirection];
+        const cropKey = DisplayCropDirectionToStateKey[cropDirection];
         const differences = __classPrivateFieldGet(this, _DisplayManager_displayContextStateHelper, "f").update({
-            [cropCommand]: crop,
+            [cropKey]: crop,
         });
         if (differences.length == 0) {
             return;
@@ -4301,8 +4314,9 @@ class DisplayManager {
     setRotationCrop(cropDirection, crop, sendImmediately) {
         _console$j.assertEnumWithError(cropDirection, DisplayCropDirections);
         const cropCommand = DisplayRotationCropDirectionToCommand[cropDirection];
+        const cropKey = DisplayRotationCropDirectionToStateKey[cropDirection];
         const differences = __classPrivateFieldGet(this, _DisplayManager_displayContextStateHelper, "f").update({
-            [cropCommand]: crop,
+            [cropKey]: crop,
         });
         if (differences.length == 0) {
             return;
@@ -7899,7 +7913,7 @@ _a$2 = Device, _Device_eventDispatcher = new WeakMap(), _Device_connectionManage
 _Device_ReconnectOnDisconnection = { value: false };
 _Device_ClearSensorConfigurationOnLeave = { value: true };
 
-var _DisplayCanvasHelper_instances, _DisplayCanvasHelper_eventDispatcher, _DisplayCanvasHelper_dispatchEvent_get, _DisplayCanvasHelper_canvas, _DisplayCanvasHelper_context, _DisplayCanvasHelper_updateCanvas, _DisplayCanvasHelper_frontDrawStack, _DisplayCanvasHelper_rearDrawStack, _DisplayCanvasHelper_drawFrontDrawStack, _DisplayCanvasHelper_device, _DisplayCanvasHelper_boundDeviceEventListeners, _DisplayCanvasHelper_onDeviceConnected, _DisplayCanvasHelper_onDeviceNotConnected, _DisplayCanvasHelper_updateDevice, _DisplayCanvasHelper_numberOfColors, _DisplayCanvasHelper_assertValidColorIndex, _DisplayCanvasHelper_colors, _DisplayCanvasHelper_updateDeviceColors, _DisplayCanvasHelper_opacities, _DisplayCanvasHelper_updateDeviceOpacity, _DisplayCanvasHelper_displayContextStateHelper, _DisplayCanvasHelper_onDisplayContextStateUpdate, _DisplayCanvasHelper_updateDeviceContextState, _DisplayCanvasHelper_assertValidLineWidth, _DisplayCanvasHelper_save, _DisplayCanvasHelper_restore, _DisplayCanvasHelper_transformContext, _DisplayCanvasHelper_getRectBoundingBox, _DisplayCanvasHelper_applyClip, _DisplayCanvasHelper_hexToRgba, _DisplayCanvasHelper_colorIndexToRgba, _DisplayCanvasHelper_updateContext, _DisplayCanvasHelper_drawRectToCanvas, _DisplayCanvasHelper_brightness, _DisplayCanvasHelper_brightnessOpacities, _DisplayCanvasHelper_brightnessOpacity_get, _DisplayCanvasHelper_updateDeviceBrightness;
+var _DisplayCanvasHelper_instances, _DisplayCanvasHelper_eventDispatcher, _DisplayCanvasHelper_dispatchEvent_get, _DisplayCanvasHelper_canvas, _DisplayCanvasHelper_context, _DisplayCanvasHelper_updateCanvas, _DisplayCanvasHelper_frontDrawStack, _DisplayCanvasHelper_rearDrawStack, _DisplayCanvasHelper_drawFrontDrawStack, _DisplayCanvasHelper_device, _DisplayCanvasHelper_boundDeviceEventListeners, _DisplayCanvasHelper_onDeviceConnected, _DisplayCanvasHelper_onDeviceNotConnected, _DisplayCanvasHelper_updateDevice, _DisplayCanvasHelper_numberOfColors, _DisplayCanvasHelper_assertValidColorIndex, _DisplayCanvasHelper_colors, _DisplayCanvasHelper_updateDeviceColors, _DisplayCanvasHelper_opacities, _DisplayCanvasHelper_updateDeviceOpacity, _DisplayCanvasHelper_displayContextStateHelper, _DisplayCanvasHelper_onDisplayContextStateUpdate, _DisplayCanvasHelper_updateDeviceContextState, _DisplayCanvasHelper_assertValidLineWidth, _DisplayCanvasHelper_save, _DisplayCanvasHelper_restore, _DisplayCanvasHelper_transformContext, _DisplayCanvasHelper_rotateBoundingBox, _DisplayCanvasHelper_getRectBoundingBox, _DisplayCanvasHelper_applyClip, _DisplayCanvasHelper_applyRotationClip, _DisplayCanvasHelper_hexToRgba, _DisplayCanvasHelper_colorIndexToRgba, _DisplayCanvasHelper_updateContext, _DisplayCanvasHelper_drawRectToCanvas, _DisplayCanvasHelper_brightness, _DisplayCanvasHelper_brightnessOpacities, _DisplayCanvasHelper_brightnessOpacity_get, _DisplayCanvasHelper_updateDeviceBrightness;
 const _console$6 = createConsole("DisplayCanvasHelper", { log: true });
 const DisplayCanvasHelperEventTypes = ["displayContextState"];
 class DisplayCanvasHelper {
@@ -8220,8 +8234,9 @@ class DisplayCanvasHelper {
     setCrop(cropDirection, crop, sendImmediately) {
         _console$6.assertEnumWithError(cropDirection, DisplayCropDirections);
         const cropCommand = DisplayCropDirectionToCommand[cropDirection];
+        const cropKey = DisplayCropDirectionToStateKey[cropDirection];
         const differences = __classPrivateFieldGet(this, _DisplayCanvasHelper_displayContextStateHelper, "f").update({
-            [cropCommand]: crop,
+            [cropKey]: crop,
         });
         if (differences.length == 0) {
             return;
@@ -8262,8 +8277,9 @@ class DisplayCanvasHelper {
     setRotationCrop(cropDirection, crop, sendImmediately) {
         _console$6.assertEnumWithError(cropDirection, DisplayCropDirections);
         const cropCommand = DisplayRotationCropDirectionToCommand[cropDirection];
+        const cropKey = DisplayRotationCropDirectionToStateKey[cropDirection];
         const differences = __classPrivateFieldGet(this, _DisplayCanvasHelper_displayContextStateHelper, "f").update({
-            [cropCommand]: crop,
+            [cropKey]: crop,
         });
         if (differences.length == 0) {
             return;
@@ -8417,19 +8433,53 @@ _DisplayCanvasHelper_eventDispatcher = new WeakMap(), _DisplayCanvasHelper_canva
     const ctx = __classPrivateFieldGet(this, _DisplayCanvasHelper_context, "f");
     ctx.translate(centerX, centerY);
     ctx.rotate(rotation);
-}, _DisplayCanvasHelper_getRectBoundingBox = function _DisplayCanvasHelper_getRectBoundingBox(centerX, centerY, width, height, contextState) {
-    const outerPadding = this.contextState.lineWidth / 2;
+}, _DisplayCanvasHelper_rotateBoundingBox = function _DisplayCanvasHelper_rotateBoundingBox(box, rotation) {
+    const centerX = box.x + box.width / 2;
+    const centerY = box.y + box.height / 2;
+    const hw = box.width / 2;
+    const hh = box.height / 2;
+    const cos = Math.cos(rotation);
+    const sin = Math.sin(rotation);
+    const corners = [
+        { x: -hw, y: -hh },
+        { x: hw, y: -hh },
+        { x: hw, y: hh },
+        { x: -hw, y: hh },
+    ];
+    const rotated = corners.map(({ x, y }) => ({
+        x: x * cos - y * sin,
+        y: x * sin + y * cos,
+    }));
+    const xs = rotated.map((p) => p.x);
+    const ys = rotated.map((p) => p.y);
+    const minX = Math.min(...xs);
+    const maxX = Math.max(...xs);
+    const minY = Math.min(...ys);
+    const maxY = Math.max(...ys);
     return {
+        x: centerX + minX,
+        y: centerY + minY,
+        width: maxX - minX,
+        height: maxY - minY,
+    };
+}, _DisplayCanvasHelper_getRectBoundingBox = function _DisplayCanvasHelper_getRectBoundingBox(centerX, centerY, width, height, { lineWidth }) {
+    const outerPadding = (lineWidth + 1) / 2;
+    const boundingBox = {
         x: centerX - width / 2 - outerPadding,
         y: centerY - height / 2 - outerPadding,
         width: width + outerPadding * 2,
         height: height + outerPadding * 2,
     };
-}, _DisplayCanvasHelper_applyClip = function _DisplayCanvasHelper_applyClip({ x, y, height, width }) {
+    return boundingBox;
+}, _DisplayCanvasHelper_applyClip = function _DisplayCanvasHelper_applyClip({ x, y, height, width }, { cropTop, cropRight, cropBottom, cropLeft }) {
     const ctx = __classPrivateFieldGet(this, _DisplayCanvasHelper_context, "f");
-    const { cropTop, cropRight, cropBottom, cropLeft } = this.contextState;
     ctx.beginPath();
     ctx.rect(x + cropLeft, y + cropTop, width - cropRight, height - cropBottom);
+    ctx.clip();
+}, _DisplayCanvasHelper_applyRotationClip = function _DisplayCanvasHelper_applyRotationClip({ x, y, height, width }, { rotationCropTop, rotationCropRight, rotationCropBottom, rotationCropLeft, }) {
+    const ctx = __classPrivateFieldGet(this, _DisplayCanvasHelper_context, "f");
+    ctx.beginPath();
+    ctx.rect(-width / 2 + rotationCropLeft, -height / 2 + rotationCropTop, width - rotationCropRight, height - rotationCropBottom);
     ctx.clip();
 }, _DisplayCanvasHelper_hexToRgba = function _DisplayCanvasHelper_hexToRgba(hex, opacity) {
     if (hex.length === 4) {
@@ -8453,10 +8503,12 @@ _DisplayCanvasHelper_eventDispatcher = new WeakMap(), _DisplayCanvasHelper_canva
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_updateContext).call(this, contextState);
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_save).call(this);
     const box = __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_getRectBoundingBox).call(this, centerX, centerY, width, height, contextState);
-    __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_applyClip).call(this, box);
+    const rotatedBox = __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_rotateBoundingBox).call(this, box, contextState.rotation);
+    __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_applyClip).call(this, rotatedBox, contextState);
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_transformContext).call(this, centerX, centerY, contextState.rotation);
-    const x = -box.width / 2;
-    const y = -box.height / 2;
+    __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_applyRotationClip).call(this, box, contextState);
+    const x = -width / 2;
+    const y = -height / 2;
     this.context.fillRect(x, y, width, height);
     if (this.contextState.lineWidth > 0) {
         this.context.strokeRect(x, y, width, height);

@@ -3787,11 +3787,23 @@ const DisplayCropDirections = [
     "bottom",
     "left",
 ];
+const DisplayCropDirectionToStateKey = {
+    top: "cropTop",
+    right: "cropRight",
+    bottom: "cropBottom",
+    left: "cropLeft",
+};
 const DisplayCropDirectionToCommand = {
     top: "setCropTop",
     right: "setCropRight",
     bottom: "setCropBottom",
     left: "setCropLeft",
+};
+const DisplayRotationCropDirectionToStateKey = {
+    top: "rotationCropTop",
+    right: "rotationCropRight",
+    bottom: "rotationCropBottom",
+    left: "rotationCropLeft",
 };
 const DisplayRotationCropDirectionToCommand = {
     top: "setRotationCropTop",
@@ -4269,8 +4281,9 @@ class DisplayManager {
     setCrop(cropDirection, crop, sendImmediately) {
         _console$o.assertEnumWithError(cropDirection, DisplayCropDirections);
         const cropCommand = DisplayCropDirectionToCommand[cropDirection];
+        const cropKey = DisplayCropDirectionToStateKey[cropDirection];
         const differences = __classPrivateFieldGet(this, _DisplayManager_displayContextStateHelper, "f").update({
-            [cropCommand]: crop,
+            [cropKey]: crop,
         });
         if (differences.length == 0) {
             return;
@@ -4309,8 +4322,9 @@ class DisplayManager {
     setRotationCrop(cropDirection, crop, sendImmediately) {
         _console$o.assertEnumWithError(cropDirection, DisplayCropDirections);
         const cropCommand = DisplayRotationCropDirectionToCommand[cropDirection];
+        const cropKey = DisplayRotationCropDirectionToStateKey[cropDirection];
         const differences = __classPrivateFieldGet(this, _DisplayManager_displayContextStateHelper, "f").update({
-            [cropCommand]: crop,
+            [cropKey]: crop,
         });
         if (differences.length == 0) {
             return;

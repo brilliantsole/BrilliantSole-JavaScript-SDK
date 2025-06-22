@@ -20,7 +20,9 @@ import {
   DisplayCropDirection,
   DisplayCropDirections,
   DisplayCropDirectionToCommand,
+  DisplayCropDirectionToStateKey,
   DisplayRotationCropDirectionToCommand,
+  DisplayRotationCropDirectionToStateKey,
   formatRotation,
 } from "./DisplayUtils.ts";
 import EventDispatcher, {
@@ -564,8 +566,9 @@ class DisplayCanvasHelper {
   ) {
     _console.assertEnumWithError(cropDirection, DisplayCropDirections);
     const cropCommand = DisplayCropDirectionToCommand[cropDirection];
+    const cropKey = DisplayCropDirectionToStateKey[cropDirection];
     const differences = this.#displayContextStateHelper.update({
-      [cropCommand]: crop,
+      [cropKey]: crop,
     });
     if (differences.length == 0) {
       return;
@@ -611,8 +614,9 @@ class DisplayCanvasHelper {
   ) {
     _console.assertEnumWithError(cropDirection, DisplayCropDirections);
     const cropCommand = DisplayRotationCropDirectionToCommand[cropDirection];
+    const cropKey = DisplayRotationCropDirectionToStateKey[cropDirection];
     const differences = this.#displayContextStateHelper.update({
-      [cropCommand]: crop,
+      [cropKey]: crop,
     });
     if (differences.length == 0) {
       return;
@@ -687,28 +691,87 @@ class DisplayCanvasHelper {
     ctx.translate(centerX, centerY);
     ctx.rotate(rotation);
   }
+  #rotateBoundingBox(
+    box: DisplayBoundingBox,
+    rotation: number
+  ): DisplayBoundingBox {
+    const centerX = box.x + box.width / 2;
+    const centerY = box.y + box.height / 2;
+    const hw = box.width / 2;
+    const hh = box.height / 2;
+
+    const cos = Math.cos(rotation);
+    const sin = Math.sin(rotation);
+
+    const corners = [
+      { x: -hw, y: -hh },
+      { x: hw, y: -hh },
+      { x: hw, y: hh },
+      { x: -hw, y: hh },
+    ];
+
+    const rotated = corners.map(({ x, y }) => ({
+      x: x * cos - y * sin,
+      y: x * sin + y * cos,
+    }));
+
+    const xs = rotated.map((p) => p.x);
+    const ys = rotated.map((p) => p.y);
+
+    const minX = Math.min(...xs);
+    const maxX = Math.max(...xs);
+    const minY = Math.min(...ys);
+    const maxY = Math.max(...ys);
+
+    return {
+      x: centerX + minX,
+      y: centerY + minY,
+      width: maxX - minX,
+      height: maxY - minY,
+    };
+  }
   #getRectBoundingBox(
     centerX: number,
     centerY: number,
     width: number,
     height: number,
-    contextState: DisplayContextState
+    { lineWidth }: DisplayContextState
   ): DisplayBoundingBox {
-    // FILL - apply radians
-    const outerPadding = this.contextState.lineWidth / 2;
-    return {
+    const outerPadding = (lineWidth + 1) / 2;
+    const boundingBox = {
       x: centerX - width / 2 - outerPadding,
       y: centerY - height / 2 - outerPadding,
       width: width + outerPadding * 2,
       height: height + outerPadding * 2,
     };
+    return boundingBox;
   }
-  #applyClip({ x, y, height, width }: DisplayBoundingBox) {
+  #applyClip(
+    { x, y, height, width }: DisplayBoundingBox,
+    { cropTop, cropRight, cropBottom, cropLeft }: DisplayContextState
+  ) {
     const ctx = this.#context;
-
-    const { cropTop, cropRight, cropBottom, cropLeft } = this.contextState;
     ctx.beginPath();
     ctx.rect(x + cropLeft, y + cropTop, width - cropRight, height - cropBottom);
+    ctx.clip();
+  }
+  #applyRotationClip(
+    { x, y, height, width }: DisplayBoundingBox,
+    {
+      rotationCropTop,
+      rotationCropRight,
+      rotationCropBottom,
+      rotationCropLeft,
+    }: DisplayContextState
+  ) {
+    const ctx = this.#context;
+    ctx.beginPath();
+    ctx.rect(
+      -width / 2 + rotationCropLeft,
+      -height / 2 + rotationCropTop,
+      width / 2 - rotationCropRight,
+      height / 2 - rotationCropBottom
+    );
     ctx.clip();
   }
   #hexToRgba(hex: string, opacity: number) {
@@ -762,12 +825,15 @@ class DisplayCanvasHelper {
       height,
       contextState
     );
-    this.#applyClip(box);
+    const rotatedBox = this.#rotateBoundingBox(box, contextState.rotation);
+    this.#applyClip(rotatedBox, contextState);
 
     this.#transformContext(centerX, centerY, contextState.rotation);
 
-    const x = -box.width / 2;
-    const y = -box.height / 2;
+    this.#applyRotationClip(box, contextState);
+
+    const x = -width / 2;
+    const y = -height / 2;
     this.context.fillRect(x, y, width, height);
     if (this.contextState.lineWidth > 0) {
       this.context.strokeRect(x, y, width, height);

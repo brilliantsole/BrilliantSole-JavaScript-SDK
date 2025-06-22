@@ -4,6 +4,7 @@ import {
   DisplayColorRGB,
   DisplayCommand,
   DisplayContextCommand,
+  DisplayContextStateKey,
   DisplaySegmentCap,
   DisplaySegmentCaps,
 } from "../DisplayManager.ts";
@@ -61,6 +62,15 @@ export const DisplayCropDirections = [
 ] as const;
 export type DisplayCropDirection = (typeof DisplayCropDirections)[number];
 
+export const DisplayCropDirectionToStateKey: Record<
+  DisplayCropDirection,
+  DisplayContextStateKey
+> = {
+  top: "cropTop",
+  right: "cropRight",
+  bottom: "cropBottom",
+  left: "cropLeft",
+};
 export const DisplayCropDirectionToCommand: Record<
   DisplayCropDirection,
   DisplayContextCommand
@@ -71,6 +81,15 @@ export const DisplayCropDirectionToCommand: Record<
   left: "setCropLeft",
 };
 
+export const DisplayRotationCropDirectionToStateKey: Record<
+  DisplayCropDirection,
+  DisplayContextStateKey
+> = {
+  top: "rotationCropTop",
+  right: "rotationCropRight",
+  bottom: "rotationCropBottom",
+  left: "rotationCropLeft",
+};
 export const DisplayRotationCropDirectionToCommand: Record<
   DisplayCropDirection,
   DisplayContextCommand

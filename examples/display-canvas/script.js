@@ -43,13 +43,15 @@ device.addEventListener("connected", () => {
   }
 });
 
-window.test = (centerX, centerY) => {
+window.test = (centerX, centerY, width, height) => {
   displayCanvasHelper.setLineWidth(10);
   displayCanvasHelper.setColor(1, "red");
   displayCanvasHelper.setColor(2, "blue");
   displayCanvasHelper.selectLineColor(2);
-  displayCanvasHelper.setRotation(45);
-  displayCanvasHelper.drawRect(centerX, centerY, 100, 100);
+  displayCanvasHelper.setRotation(60);
+  //displayCanvasHelper.setCropTop(50);
+  displayCanvasHelper.setRotationCropTop(20);
+  displayCanvasHelper.drawRect(centerX, centerY, width, height);
   displayCanvasHelper.showDisplay();
 };
-test(100, 100);
+test(100, 100, 100, 100);
