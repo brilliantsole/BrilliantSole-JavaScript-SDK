@@ -86,7 +86,7 @@ declare class DisplayCanvasHelper {
     clearRotationCrop(sendImmediately?: boolean): void;
     clearRect(x: number, y: number, width: number, height: number, sendImmediately?: boolean): void;
     drawRect(centerX: number, centerY: number, width: number, height: number, sendImmediately?: boolean): void;
-    drawRoundRect(x: number, y: number, width: number, height: number, borderRadius: number, sendImmediately?: boolean): void;
+    drawRoundRect(centerX: number, centerY: number, width: number, height: number, borderRadius: number, sendImmediately?: boolean): void;
     drawCircle(x: number, y: number, radius: number, sendImmediately?: boolean): void;
     drawEllipse(x: number, y: number, radiusX: number, radiusY: number, sendImmediately?: boolean): void;
     drawPolygon(x: number, y: number, radius: number, numberOfSides: number, sendImmediately?: boolean): void;

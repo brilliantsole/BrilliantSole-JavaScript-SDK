@@ -667,17 +667,6 @@ class DisplayCanvasHelper {
       this.device.clearDisplayRect(x, y, width, height, sendImmediately);
     }
   }
-  #getBoundingBox(
-    centerX: number,
-    centerY: number,
-    width: number,
-    height: number
-  ) {
-    return {
-      x: centerX - width / 2,
-      y: centerY - height / 2,
-    };
-  }
   #save() {
     const ctx = this.#context;
     ctx.save();
@@ -769,8 +758,8 @@ class DisplayCanvasHelper {
     ctx.rect(
       -width / 2 + rotationCropLeft,
       -height / 2 + rotationCropTop,
-      width / 2 - rotationCropRight,
-      height / 2 - rotationCropBottom
+      width - rotationCropLeft - rotationCropRight,
+      height - rotationCropTop - rotationCropBottom
     );
     ctx.clip();
   }
@@ -867,19 +856,63 @@ class DisplayCanvasHelper {
       );
     }
   }
+  #drawRoundRectToCanvas(
+    centerX: number,
+    centerY: number,
+    width: number,
+    height: number,
+    borderRadius: number,
+    contextState: DisplayContextState
+  ) {
+    this.#updateContext(contextState);
+
+    this.#save();
+    const box = this.#getRectBoundingBox(
+      centerX,
+      centerY,
+      width,
+      height,
+      contextState
+    );
+    const rotatedBox = this.#rotateBoundingBox(box, contextState.rotation);
+    this.#applyClip(rotatedBox, contextState);
+
+    this.#transformContext(centerX, centerY, contextState.rotation);
+
+    this.#applyRotationClip(box, contextState);
+
+    const x = -width / 2;
+    const y = -height / 2;
+
+    this.context.beginPath();
+    this.context.roundRect(x, y, width, height, borderRadius);
+    this.context.fill();
+    this.context.stroke();
+    this.#restore();
+  }
   drawRoundRect(
-    x: number,
-    y: number,
+    centerX: number,
+    centerY: number,
     width: number,
     height: number,
     borderRadius: number,
     sendImmediately?: boolean
   ) {
-    // FILL
+    _console.log({ centerX, centerY, width, height, borderRadius });
+    this.#rearDrawStack.push(() =>
+      this.#drawRoundRectToCanvas(
+        centerX,
+        centerY,
+        width,
+        height,
+        borderRadius,
+        Object.assign({}, this.contextState)
+      )
+    );
     if (this.device?.isConnected) {
       this.device.drawDisplayRoundRect(
-        x,
-        y,
+        centerX,
+        centerY,
         width,
         height,
         borderRadius,
