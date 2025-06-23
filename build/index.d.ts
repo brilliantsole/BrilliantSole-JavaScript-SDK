@@ -1120,7 +1120,7 @@ declare class DisplayCanvasHelper {
     drawRect(centerX: number, centerY: number, width: number, height: number, sendImmediately?: boolean): void;
     drawRoundRect(centerX: number, centerY: number, width: number, height: number, borderRadius: number, sendImmediately?: boolean): void;
     drawCircle(centerX: number, centerY: number, radius: number, sendImmediately?: boolean): void;
-    drawEllipse(x: number, y: number, radiusX: number, radiusY: number, sendImmediately?: boolean): void;
+    drawEllipse(centerX: number, centerY: number, radiusX: number, radiusY: number, sendImmediately?: boolean): void;
     drawPolygon(x: number, y: number, radius: number, numberOfSides: number, sendImmediately?: boolean): void;
     drawSegment(startX: number, startY: number, endX: number, endY: number, sendImmediately?: boolean): void;
     get brightness(): "veryLow" | "low" | "medium" | "high" | "veryHigh";

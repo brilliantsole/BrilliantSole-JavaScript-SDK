@@ -979,16 +979,78 @@ class DisplayCanvasHelper {
       this.device.drawDisplayCircle(centerX, centerY, radius, sendImmediately);
     }
   }
+  #getEllipseBoundingBox(
+    centerX: number,
+    centerY: number,
+    radiusX: number,
+    radiusY: number,
+    contextState: DisplayContextState
+  ): DisplayBoundingBox {
+    const diameterX = radiusX * 2;
+    const diameterY = radiusY * 2;
+    return this.#getRectBoundingBox(
+      centerX,
+      centerY,
+      diameterX,
+      diameterY,
+      contextState
+    );
+  }
+  #drawEllipseToCanvas(
+    centerX: number,
+    centerY: number,
+    radiusX: number,
+    radiusY: number,
+    contextState: DisplayContextState
+  ) {
+    this.#updateContext(contextState);
+
+    this.#save();
+    const box = this.#getEllipseBoundingBox(
+      centerX,
+      centerY,
+      radiusX,
+      radiusY,
+      contextState
+    );
+
+    const rotatedBox = this.#rotateBoundingBox(box, contextState.rotation);
+    this.#applyClip(rotatedBox, contextState);
+
+    this.#transformContext(centerX, centerY, contextState.rotation);
+
+    this.#applyRotationClip(box, contextState);
+
+    this.context.beginPath();
+    this.context.ellipse(0, 0, radiusX, radiusY, 0, 0, 2 * Math.PI);
+    this.context.fill();
+    this.context.stroke();
+    this.#restore();
+  }
   drawEllipse(
-    x: number,
-    y: number,
+    centerX: number,
+    centerY: number,
     radiusX: number,
     radiusY: number,
     sendImmediately?: boolean
   ) {
-    // FILL
+    this.#rearDrawStack.push(() =>
+      this.#drawEllipseToCanvas(
+        centerX,
+        centerY,
+        radiusX,
+        radiusY,
+        Object.assign({}, this.contextState)
+      )
+    );
     if (this.device?.isConnected) {
-      this.device.drawDisplayEllipse(x, y, radiusX, radiusY, sendImmediately);
+      this.device.drawDisplayEllipse(
+        centerX,
+        centerY,
+        radiusX,
+        radiusY,
+        sendImmediately
+      );
     }
   }
   drawPolygon(
