@@ -4472,7 +4472,7 @@ _DisplayManager_isDisplayAvailable = new WeakMap(), _DisplayManager_displayConte
     });
 }, _DisplayManager_onDisplayContextStateUpdate = function _DisplayManager_onDisplayContextStateUpdate(differences) {
     __classPrivateFieldGet(this, _DisplayManager_instances, "a", _DisplayManager_dispatchEvent_get).call(this, "displayContextState", {
-        displayContextState: Object.assign({}, this.displayContextState),
+        displayContextState: { ...this.displayContextState },
         differences,
     });
 }, _DisplayManager_parseDisplayStatus = function _DisplayManager_parseDisplayStatus(dataView) {
@@ -7913,7 +7913,7 @@ _a$2 = Device, _Device_eventDispatcher = new WeakMap(), _Device_connectionManage
 _Device_ReconnectOnDisconnection = { value: false };
 _Device_ClearSensorConfigurationOnLeave = { value: true };
 
-var _DisplayCanvasHelper_instances, _DisplayCanvasHelper_eventDispatcher, _DisplayCanvasHelper_dispatchEvent_get, _DisplayCanvasHelper_canvas, _DisplayCanvasHelper_context, _DisplayCanvasHelper_updateCanvas, _DisplayCanvasHelper_frontDrawStack, _DisplayCanvasHelper_rearDrawStack, _DisplayCanvasHelper_drawFrontDrawStack, _DisplayCanvasHelper_device, _DisplayCanvasHelper_boundDeviceEventListeners, _DisplayCanvasHelper_onDeviceConnected, _DisplayCanvasHelper_onDeviceNotConnected, _DisplayCanvasHelper_updateDevice, _DisplayCanvasHelper_numberOfColors, _DisplayCanvasHelper_assertValidColorIndex, _DisplayCanvasHelper_colors, _DisplayCanvasHelper_updateDeviceColors, _DisplayCanvasHelper_opacities, _DisplayCanvasHelper_updateDeviceOpacity, _DisplayCanvasHelper_displayContextStateHelper, _DisplayCanvasHelper_onDisplayContextStateUpdate, _DisplayCanvasHelper_updateDeviceContextState, _DisplayCanvasHelper_assertValidLineWidth, _DisplayCanvasHelper_save, _DisplayCanvasHelper_restore, _DisplayCanvasHelper_transformContext, _DisplayCanvasHelper_rotateBoundingBox, _DisplayCanvasHelper_getRectBoundingBox, _DisplayCanvasHelper_applyClip, _DisplayCanvasHelper_applyRotationClip, _DisplayCanvasHelper_hexToRgba, _DisplayCanvasHelper_colorIndexToRgba, _DisplayCanvasHelper_updateContext, _DisplayCanvasHelper_drawRectToCanvas, _DisplayCanvasHelper_drawRoundRectToCanvas, _DisplayCanvasHelper_getCircleBoundingBox, _DisplayCanvasHelper_drawCircleToCanvas, _DisplayCanvasHelper_getEllipseBoundingBox, _DisplayCanvasHelper_drawEllipseToCanvas, _DisplayCanvasHelper_brightness, _DisplayCanvasHelper_brightnessOpacities, _DisplayCanvasHelper_brightnessOpacity_get, _DisplayCanvasHelper_updateDeviceBrightness;
+var _DisplayCanvasHelper_instances, _DisplayCanvasHelper_eventDispatcher, _DisplayCanvasHelper_dispatchEvent_get, _DisplayCanvasHelper_canvas, _DisplayCanvasHelper_context, _DisplayCanvasHelper_updateCanvas, _DisplayCanvasHelper_frontDrawStack, _DisplayCanvasHelper_rearDrawStack, _DisplayCanvasHelper_drawFrontDrawStack, _DisplayCanvasHelper_device, _DisplayCanvasHelper_boundDeviceEventListeners, _DisplayCanvasHelper_onDeviceConnected, _DisplayCanvasHelper_onDeviceNotConnected, _DisplayCanvasHelper_updateDevice, _DisplayCanvasHelper_numberOfColors, _DisplayCanvasHelper_assertValidColorIndex, _DisplayCanvasHelper_colors, _DisplayCanvasHelper_updateDeviceColors, _DisplayCanvasHelper_opacities, _DisplayCanvasHelper_updateDeviceOpacity, _DisplayCanvasHelper_displayContextStateHelper, _DisplayCanvasHelper_onDisplayContextStateUpdate, _DisplayCanvasHelper_updateDeviceContextState, _DisplayCanvasHelper_assertValidLineWidth, _DisplayCanvasHelper_save, _DisplayCanvasHelper_restore, _DisplayCanvasHelper_transformContext, _DisplayCanvasHelper_rotateBoundingBox, _DisplayCanvasHelper_getRectBoundingBox, _DisplayCanvasHelper_applyClip, _DisplayCanvasHelper_applyRotationClip, _DisplayCanvasHelper_hexToRgba, _DisplayCanvasHelper_colorIndexToRgba, _DisplayCanvasHelper_updateContext, _DisplayCanvasHelper_drawRectToCanvas, _DisplayCanvasHelper_drawRoundRectToCanvas, _DisplayCanvasHelper_getCircleBoundingBox, _DisplayCanvasHelper_drawCircleToCanvas, _DisplayCanvasHelper_getEllipseBoundingBox, _DisplayCanvasHelper_drawEllipseToCanvas, _DisplayCanvasHelper_getPolygonBoundingBox, _DisplayCanvasHelper_drawPolygonToCanvas, _DisplayCanvasHelper_brightness, _DisplayCanvasHelper_brightnessOpacities, _DisplayCanvasHelper_brightnessOpacity_get, _DisplayCanvasHelper_updateDeviceBrightness;
 const _console$6 = createConsole("DisplayCanvasHelper", { log: true });
 const DisplayCanvasHelperEventTypes = ["displayContextState"];
 class DisplayCanvasHelper {
@@ -8023,9 +8023,6 @@ class DisplayCanvasHelper {
     }
     get opacities() {
         return __classPrivateFieldGet(this, _DisplayCanvasHelper_opacities, "f");
-    }
-    get displayContextState() {
-        return __classPrivateFieldGet(this, _DisplayCanvasHelper_displayContextStateHelper, "f").state;
     }
     get contextState() {
         return __classPrivateFieldGet(this, _DisplayCanvasHelper_displayContextStateHelper, "f").state;
@@ -8323,32 +8320,42 @@ class DisplayCanvasHelper {
         }
     }
     drawRect(centerX, centerY, width, height, sendImmediately) {
-        __classPrivateFieldGet(this, _DisplayCanvasHelper_rearDrawStack, "f").push(() => __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_drawRectToCanvas).call(this, centerX, centerY, width, height, Object.assign({}, this.contextState)));
+        const contextState = { ...this.contextState };
+        __classPrivateFieldGet(this, _DisplayCanvasHelper_rearDrawStack, "f").push(() => __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_drawRectToCanvas).call(this, centerX, centerY, width, height, contextState));
         if (this.device?.isConnected) {
             this.device.drawDisplayRect(centerX, centerY, width, height, sendImmediately);
         }
     }
     drawRoundRect(centerX, centerY, width, height, borderRadius, sendImmediately) {
-        __classPrivateFieldGet(this, _DisplayCanvasHelper_rearDrawStack, "f").push(() => __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_drawRoundRectToCanvas).call(this, centerX, centerY, width, height, borderRadius, Object.assign({}, this.contextState)));
+        const contextState = { ...this.contextState };
+        __classPrivateFieldGet(this, _DisplayCanvasHelper_rearDrawStack, "f").push(() => __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_drawRoundRectToCanvas).call(this, centerX, centerY, width, height, borderRadius, contextState));
         if (this.device?.isConnected) {
             this.device.drawDisplayRoundRect(centerX, centerY, width, height, borderRadius, sendImmediately);
         }
     }
     drawCircle(centerX, centerY, radius, sendImmediately) {
-        __classPrivateFieldGet(this, _DisplayCanvasHelper_rearDrawStack, "f").push(() => __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_drawCircleToCanvas).call(this, centerX, centerY, radius, Object.assign({}, this.contextState)));
+        const contextState = { ...this.contextState };
+        __classPrivateFieldGet(this, _DisplayCanvasHelper_rearDrawStack, "f").push(() => __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_drawCircleToCanvas).call(this, centerX, centerY, radius, contextState));
         if (this.device?.isConnected) {
             this.device.drawDisplayCircle(centerX, centerY, radius, sendImmediately);
         }
     }
     drawEllipse(centerX, centerY, radiusX, radiusY, sendImmediately) {
-        __classPrivateFieldGet(this, _DisplayCanvasHelper_rearDrawStack, "f").push(() => __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_drawEllipseToCanvas).call(this, centerX, centerY, radiusX, radiusY, Object.assign({}, this.contextState)));
+        const contextState = { ...this.contextState };
+        __classPrivateFieldGet(this, _DisplayCanvasHelper_rearDrawStack, "f").push(() => __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_drawEllipseToCanvas).call(this, centerX, centerY, radiusX, radiusY, contextState));
         if (this.device?.isConnected) {
             this.device.drawDisplayEllipse(centerX, centerY, radiusX, radiusY, sendImmediately);
         }
     }
-    drawPolygon(x, y, radius, numberOfSides, sendImmediately) {
+    drawPolygon(centerX, centerY, radius, numberOfSides, sendImmediately) {
+        if (numberOfSides < 3) {
+            _console$6.error(`invalid numberOfSides ${numberOfSides}`);
+            return;
+        }
+        const contextState = { ...this.contextState };
+        __classPrivateFieldGet(this, _DisplayCanvasHelper_rearDrawStack, "f").push(() => __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_drawPolygonToCanvas).call(this, centerX, centerY, radius, numberOfSides, contextState));
         if (this.device?.isConnected) {
-            this.device.drawDisplayPolygon(x, y, radius, numberOfSides, sendImmediately);
+            this.device.drawDisplayPolygon(centerX, centerY, radius, numberOfSides, sendImmediately);
         }
     }
     drawSegment(startX, startY, endX, endY, sendImmediately) {
@@ -8415,7 +8422,7 @@ _DisplayCanvasHelper_eventDispatcher = new WeakMap(), _DisplayCanvasHelper_canva
     });
 }, _DisplayCanvasHelper_onDisplayContextStateUpdate = function _DisplayCanvasHelper_onDisplayContextStateUpdate(differences) {
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "a", _DisplayCanvasHelper_dispatchEvent_get).call(this, "displayContextState", {
-        displayContextState: Object.assign({}, this.displayContextState),
+        displayContextState: { ...this.contextState },
         differences,
     });
 }, _DisplayCanvasHelper_updateDeviceContextState = function _DisplayCanvasHelper_updateDeviceContextState() {
@@ -8513,7 +8520,7 @@ _DisplayCanvasHelper_eventDispatcher = new WeakMap(), _DisplayCanvasHelper_canva
     const x = -width / 2;
     const y = -height / 2;
     this.context.fillRect(x, y, width, height);
-    if (this.contextState.lineWidth > 0) {
+    if (contextState.lineWidth > 0) {
         this.context.strokeRect(x, y, width, height);
     }
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_restore).call(this);
@@ -8530,7 +8537,9 @@ _DisplayCanvasHelper_eventDispatcher = new WeakMap(), _DisplayCanvasHelper_canva
     this.context.beginPath();
     this.context.roundRect(x, y, width, height, borderRadius);
     this.context.fill();
-    this.context.stroke();
+    if (contextState.lineWidth > 0) {
+        this.context.stroke();
+    }
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_restore).call(this);
 }, _DisplayCanvasHelper_getCircleBoundingBox = function _DisplayCanvasHelper_getCircleBoundingBox(centerX, centerY, radius, contextState) {
     const diameter = radius * 2;
@@ -8545,7 +8554,9 @@ _DisplayCanvasHelper_eventDispatcher = new WeakMap(), _DisplayCanvasHelper_canva
     this.context.beginPath();
     this.context.arc(0, 0, radius, 0, 2 * Math.PI);
     this.context.fill();
-    this.context.stroke();
+    if (contextState.lineWidth) {
+        this.context.stroke();
+    }
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_restore).call(this);
 }, _DisplayCanvasHelper_getEllipseBoundingBox = function _DisplayCanvasHelper_getEllipseBoundingBox(centerX, centerY, radiusX, radiusY, contextState) {
     const diameterX = radiusX * 2;
@@ -8562,7 +8573,47 @@ _DisplayCanvasHelper_eventDispatcher = new WeakMap(), _DisplayCanvasHelper_canva
     this.context.beginPath();
     this.context.ellipse(0, 0, radiusX, radiusY, 0, 0, 2 * Math.PI);
     this.context.fill();
-    this.context.stroke();
+    if (contextState.lineWidth > 0) {
+        this.context.stroke();
+    }
+    __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_restore).call(this);
+}, _DisplayCanvasHelper_getPolygonBoundingBox = function _DisplayCanvasHelper_getPolygonBoundingBox(centerX, centerY, radius, numberOfSides, { lineWidth }) {
+    let outerPadding = (lineWidth + 1) / 2;
+    const shapeFactor = 1 / Math.cos(Math.PI / numberOfSides);
+    outerPadding = outerPadding * shapeFactor + 0.5;
+    const diameter = radius * 2;
+    const boundingBox = {
+        x: centerX - radius - outerPadding,
+        y: centerY - radius - outerPadding,
+        width: diameter + outerPadding * 2,
+        height: diameter + outerPadding * 2,
+    };
+    return boundingBox;
+}, _DisplayCanvasHelper_drawPolygonToCanvas = function _DisplayCanvasHelper_drawPolygonToCanvas(centerX, centerY, radius, numberOfSides, contextState) {
+    __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_updateContext).call(this, contextState);
+    __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_save).call(this);
+    const box = __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_getPolygonBoundingBox).call(this, centerX, centerY, radius, numberOfSides, contextState);
+    __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_applyClip).call(this, box, contextState);
+    __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_transformContext).call(this, centerX, centerY, contextState.rotation);
+    __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_applyRotationClip).call(this, box, contextState);
+    this.context.beginPath();
+    const angleStep = (Math.PI * 2) / numberOfSides;
+    for (let i = 0; i < numberOfSides; i++) {
+        const angle = i * angleStep;
+        const x = radius * Math.cos(angle);
+        const y = radius * Math.sin(angle);
+        if (i === 0) {
+            this.context.moveTo(x, y);
+        }
+        else {
+            this.context.lineTo(x, y);
+        }
+    }
+    this.context.closePath();
+    this.context.fill();
+    if (contextState.lineWidth > 0) {
+        this.context.stroke();
+    }
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_restore).call(this);
 }, _DisplayCanvasHelper_brightnessOpacity_get = function _DisplayCanvasHelper_brightnessOpacity_get() {
     return __classPrivateFieldGet(this, _DisplayCanvasHelper_brightnessOpacities, "f")[this.brightness];

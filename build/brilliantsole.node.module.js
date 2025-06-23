@@ -4480,7 +4480,7 @@ _DisplayManager_isDisplayAvailable = new WeakMap(), _DisplayManager_displayConte
     });
 }, _DisplayManager_onDisplayContextStateUpdate = function _DisplayManager_onDisplayContextStateUpdate(differences) {
     __classPrivateFieldGet(this, _DisplayManager_instances, "a", _DisplayManager_dispatchEvent_get).call(this, "displayContextState", {
-        displayContextState: Object.assign({}, this.displayContextState),
+        displayContextState: { ...this.displayContextState },
         differences,
     });
 }, _DisplayManager_parseDisplayStatus = function _DisplayManager_parseDisplayStatus(dataView) {

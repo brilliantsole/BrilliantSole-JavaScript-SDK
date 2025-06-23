@@ -48,10 +48,15 @@ window.test = (centerX, centerY, width, height) => {
   displayCanvasHelper.setColor(1, "red");
   displayCanvasHelper.setColor(2, "blue");
   displayCanvasHelper.selectLineColor(2);
-  displayCanvasHelper.setRotation(45);
+  //displayCanvasHelper.setRotation(45);
   //displayCanvasHelper.setCropTop(80);
-  displayCanvasHelper.setRotationCropTop(50);
-  displayCanvasHelper.drawEllipse(centerX, centerY, width, height);
+  //displayCanvasHelper.setRotationCropTop(50);
+  displayCanvasHelper.drawRect(200, 200, 50, 50);
+  displayCanvasHelper.setColor(3, "yellow");
+  displayCanvasHelper.selectLineColor(3);
+  displayCanvasHelper.setRotationCropTop(60);
+  displayCanvasHelper.setRotation(30);
+  displayCanvasHelper.drawPolygon(centerX, centerY, width, 3);
   displayCanvasHelper.showDisplay();
 };
 test(100, 100, 50, 80);

@@ -54,7 +54,6 @@ declare class DisplayCanvasHelper {
     set numberOfColors(newNumberOfColors: number);
     get colors(): string[];
     get opacities(): number[];
-    get displayContextState(): DisplayContextState;
     get contextState(): DisplayContextState;
     showDisplay(sendImmediately?: boolean): void;
     clearDisplay(sendImmediately?: boolean): void;
@@ -89,7 +88,7 @@ declare class DisplayCanvasHelper {
     drawRoundRect(centerX: number, centerY: number, width: number, height: number, borderRadius: number, sendImmediately?: boolean): void;
     drawCircle(centerX: number, centerY: number, radius: number, sendImmediately?: boolean): void;
     drawEllipse(centerX: number, centerY: number, radiusX: number, radiusY: number, sendImmediately?: boolean): void;
-    drawPolygon(x: number, y: number, radius: number, numberOfSides: number, sendImmediately?: boolean): void;
+    drawPolygon(centerX: number, centerY: number, radius: number, numberOfSides: number, sendImmediately?: boolean): void;
     drawSegment(startX: number, startY: number, endX: number, endY: number, sendImmediately?: boolean): void;
     get brightness(): "veryLow" | "low" | "medium" | "high" | "veryHigh";
     setBrightness(newBrightness: DisplayBrightness, sendImmediately?: boolean): void;

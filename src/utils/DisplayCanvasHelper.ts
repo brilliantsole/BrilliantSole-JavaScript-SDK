@@ -297,15 +297,12 @@ class DisplayCanvasHelper {
 
   // CONEXT STATE
   #displayContextStateHelper = new DisplayContextStateHelper();
-  get displayContextState() {
-    return this.#displayContextStateHelper.state;
-  }
   get contextState() {
     return this.#displayContextStateHelper.state;
   }
   #onDisplayContextStateUpdate(differences: DisplayContextStateKey[]) {
     this.#dispatchEvent("displayContextState", {
-      displayContextState: Object.assign({}, this.displayContextState),
+      displayContextState: { ...this.contextState },
       differences,
     });
   }
@@ -824,7 +821,7 @@ class DisplayCanvasHelper {
     const x = -width / 2;
     const y = -height / 2;
     this.context.fillRect(x, y, width, height);
-    if (this.contextState.lineWidth > 0) {
+    if (contextState.lineWidth > 0) {
       this.context.strokeRect(x, y, width, height);
     }
     this.#restore();
@@ -836,14 +833,9 @@ class DisplayCanvasHelper {
     height: number,
     sendImmediately?: boolean
   ) {
+    const contextState = { ...this.contextState };
     this.#rearDrawStack.push(() =>
-      this.#drawRectToCanvas(
-        centerX,
-        centerY,
-        width,
-        height,
-        Object.assign({}, this.contextState)
-      )
+      this.#drawRectToCanvas(centerX, centerY, width, height, contextState)
     );
 
     if (this.device?.isConnected) {
@@ -887,7 +879,9 @@ class DisplayCanvasHelper {
     this.context.beginPath();
     this.context.roundRect(x, y, width, height, borderRadius);
     this.context.fill();
-    this.context.stroke();
+    if (contextState.lineWidth > 0) {
+      this.context.stroke();
+    }
     this.#restore();
   }
   drawRoundRect(
@@ -898,6 +892,7 @@ class DisplayCanvasHelper {
     borderRadius: number,
     sendImmediately?: boolean
   ) {
+    const contextState = { ...this.contextState };
     this.#rearDrawStack.push(() =>
       this.#drawRoundRectToCanvas(
         centerX,
@@ -905,7 +900,7 @@ class DisplayCanvasHelper {
         width,
         height,
         borderRadius,
-        Object.assign({}, this.contextState)
+        contextState
       )
     );
     if (this.device?.isConnected) {
@@ -958,7 +953,9 @@ class DisplayCanvasHelper {
     this.context.beginPath();
     this.context.arc(0, 0, radius, 0, 2 * Math.PI);
     this.context.fill();
-    this.context.stroke();
+    if (contextState.lineWidth) {
+      this.context.stroke();
+    }
     this.#restore();
   }
   drawCircle(
@@ -967,13 +964,9 @@ class DisplayCanvasHelper {
     radius: number,
     sendImmediately?: boolean
   ) {
+    const contextState = { ...this.contextState };
     this.#rearDrawStack.push(() =>
-      this.#drawCircleToCanvas(
-        centerX,
-        centerY,
-        radius,
-        Object.assign({}, this.contextState)
-      )
+      this.#drawCircleToCanvas(centerX, centerY, radius, contextState)
     );
     if (this.device?.isConnected) {
       this.device.drawDisplayCircle(centerX, centerY, radius, sendImmediately);
@@ -1024,7 +1017,9 @@ class DisplayCanvasHelper {
     this.context.beginPath();
     this.context.ellipse(0, 0, radiusX, radiusY, 0, 0, 2 * Math.PI);
     this.context.fill();
-    this.context.stroke();
+    if (contextState.lineWidth > 0) {
+      this.context.stroke();
+    }
     this.#restore();
   }
   drawEllipse(
@@ -1034,13 +1029,14 @@ class DisplayCanvasHelper {
     radiusY: number,
     sendImmediately?: boolean
   ) {
+    const contextState = { ...this.contextState };
     this.#rearDrawStack.push(() =>
       this.#drawEllipseToCanvas(
         centerX,
         centerY,
         radiusX,
         radiusY,
-        Object.assign({}, this.contextState)
+        contextState
       )
     );
     if (this.device?.isConnected) {
@@ -1053,18 +1049,95 @@ class DisplayCanvasHelper {
       );
     }
   }
+  #getPolygonBoundingBox(
+    centerX: number,
+    centerY: number,
+    radius: number,
+    numberOfSides: number,
+    { lineWidth }: DisplayContextState
+  ): DisplayBoundingBox {
+    let outerPadding = (lineWidth + 1) / 2;
+    const shapeFactor = 1 / Math.cos(Math.PI / numberOfSides);
+    outerPadding = outerPadding * shapeFactor + 0.5;
+
+    const diameter = radius * 2;
+    const boundingBox = {
+      x: centerX - radius - outerPadding,
+      y: centerY - radius - outerPadding,
+      width: diameter + outerPadding * 2,
+      height: diameter + outerPadding * 2,
+    };
+    return boundingBox;
+  }
+  #drawPolygonToCanvas(
+    centerX: number,
+    centerY: number,
+    radius: number,
+    numberOfSides: number,
+    contextState: DisplayContextState
+  ) {
+    this.#updateContext(contextState);
+
+    this.#save();
+    const box = this.#getPolygonBoundingBox(
+      centerX,
+      centerY,
+      radius,
+      numberOfSides,
+      contextState
+    );
+
+    this.#applyClip(box, contextState);
+
+    this.#transformContext(centerX, centerY, contextState.rotation);
+
+    this.#applyRotationClip(box, contextState);
+
+    this.context.beginPath();
+    const angleStep = (Math.PI * 2) / numberOfSides;
+    for (let i = 0; i < numberOfSides; i++) {
+      const angle = i * angleStep;
+      const x = radius * Math.cos(angle);
+      const y = radius * Math.sin(angle);
+      if (i === 0) {
+        this.context.moveTo(x, y);
+      } else {
+        this.context.lineTo(x, y);
+      }
+    }
+    this.context.closePath();
+
+    this.context.fill();
+    if (contextState.lineWidth > 0) {
+      this.context.stroke();
+    }
+    this.#restore();
+  }
   drawPolygon(
-    x: number,
-    y: number,
+    centerX: number,
+    centerY: number,
     radius: number,
     numberOfSides: number,
     sendImmediately?: boolean
   ) {
-    // FILL
+    if (numberOfSides < 3) {
+      _console.error(`invalid numberOfSides ${numberOfSides}`);
+      return;
+    }
+    const contextState = { ...this.contextState };
+    this.#rearDrawStack.push(() =>
+      this.#drawPolygonToCanvas(
+        centerX,
+        centerY,
+        radius,
+        numberOfSides,
+        contextState
+      )
+    );
     if (this.device?.isConnected) {
       this.device.drawDisplayPolygon(
-        x,
-        y,
+        centerX,
+        centerY,
         radius,
         numberOfSides,
         sendImmediately

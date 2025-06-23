@@ -304,7 +304,7 @@ class DisplayManager {
   }
   #onDisplayContextStateUpdate(differences: DisplayContextStateKey[]) {
     this.#dispatchEvent("displayContextState", {
-      displayContextState: Object.assign({}, this.displayContextState),
+      displayContextState: { ...this.displayContextState },
       differences,
     });
   }
