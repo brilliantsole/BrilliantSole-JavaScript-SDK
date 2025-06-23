@@ -898,7 +898,6 @@ class DisplayCanvasHelper {
     borderRadius: number,
     sendImmediately?: boolean
   ) {
-    _console.log({ centerX, centerY, width, height, borderRadius });
     this.#rearDrawStack.push(() =>
       this.#drawRoundRectToCanvas(
         centerX,
@@ -920,10 +919,64 @@ class DisplayCanvasHelper {
       );
     }
   }
-  drawCircle(x: number, y: number, radius: number, sendImmediately?: boolean) {
-    // FILL
+  #getCircleBoundingBox(
+    centerX: number,
+    centerY: number,
+    radius: number,
+    contextState: DisplayContextState
+  ): DisplayBoundingBox {
+    const diameter = radius * 2;
+    return this.#getRectBoundingBox(
+      centerX,
+      centerY,
+      diameter,
+      diameter,
+      contextState
+    );
+  }
+  #drawCircleToCanvas(
+    centerX: number,
+    centerY: number,
+    radius: number,
+    contextState: DisplayContextState
+  ) {
+    this.#updateContext(contextState);
+
+    this.#save();
+    const box = this.#getCircleBoundingBox(
+      centerX,
+      centerY,
+      radius,
+      contextState
+    );
+    this.#applyClip(box, contextState);
+
+    this.#transformContext(centerX, centerY, contextState.rotation);
+
+    this.#applyRotationClip(box, contextState);
+
+    this.context.beginPath();
+    this.context.arc(0, 0, radius, 0, 2 * Math.PI);
+    this.context.fill();
+    this.context.stroke();
+    this.#restore();
+  }
+  drawCircle(
+    centerX: number,
+    centerY: number,
+    radius: number,
+    sendImmediately?: boolean
+  ) {
+    this.#rearDrawStack.push(() =>
+      this.#drawCircleToCanvas(
+        centerX,
+        centerY,
+        radius,
+        Object.assign({}, this.contextState)
+      )
+    );
     if (this.device?.isConnected) {
-      this.device.drawDisplayCircle(x, y, radius, sendImmediately);
+      this.device.drawDisplayCircle(centerX, centerY, radius, sendImmediately);
     }
   }
   drawEllipse(
