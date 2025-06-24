@@ -969,6 +969,23 @@ function parseTimestamp(dataView, byteOffset) {
     }
     return timestamp;
 }
+function getVector2Length(vector) {
+    const { x, y } = vector;
+    return Math.sqrt(x ** 2 + y ** 2);
+}
+function getVector2Angle(vector) {
+    const { x, y } = vector;
+    return Math.atan2(y, x);
+}
+function multiplyVector2ByScalar(vector, scalar) {
+    let { x, y } = vector;
+    x *= scalar;
+    y *= scalar;
+    return { x, y };
+}
+function normalizedVector2(vector) {
+    return multiplyVector2ByScalar(vector, 1 / getVector2Length(vector));
+}
 function degToRad(deg) {
     return deg * (Math.PI / 180);
 }
@@ -7913,7 +7930,7 @@ _a$2 = Device, _Device_eventDispatcher = new WeakMap(), _Device_connectionManage
 _Device_ReconnectOnDisconnection = { value: false };
 _Device_ClearSensorConfigurationOnLeave = { value: true };
 
-var _DisplayCanvasHelper_instances, _DisplayCanvasHelper_eventDispatcher, _DisplayCanvasHelper_dispatchEvent_get, _DisplayCanvasHelper_canvas, _DisplayCanvasHelper_context, _DisplayCanvasHelper_updateCanvas, _DisplayCanvasHelper_frontDrawStack, _DisplayCanvasHelper_rearDrawStack, _DisplayCanvasHelper_drawFrontDrawStack, _DisplayCanvasHelper_device, _DisplayCanvasHelper_boundDeviceEventListeners, _DisplayCanvasHelper_onDeviceConnected, _DisplayCanvasHelper_onDeviceNotConnected, _DisplayCanvasHelper_updateDevice, _DisplayCanvasHelper_numberOfColors, _DisplayCanvasHelper_assertValidColorIndex, _DisplayCanvasHelper_colors, _DisplayCanvasHelper_updateDeviceColors, _DisplayCanvasHelper_opacities, _DisplayCanvasHelper_updateDeviceOpacity, _DisplayCanvasHelper_displayContextStateHelper, _DisplayCanvasHelper_onDisplayContextStateUpdate, _DisplayCanvasHelper_updateDeviceContextState, _DisplayCanvasHelper_assertValidLineWidth, _DisplayCanvasHelper_save, _DisplayCanvasHelper_restore, _DisplayCanvasHelper_transformContext, _DisplayCanvasHelper_rotateBoundingBox, _DisplayCanvasHelper_getRectBoundingBox, _DisplayCanvasHelper_applyClip, _DisplayCanvasHelper_applyRotationClip, _DisplayCanvasHelper_hexToRgba, _DisplayCanvasHelper_colorIndexToRgba, _DisplayCanvasHelper_updateContext, _DisplayCanvasHelper_drawRectToCanvas, _DisplayCanvasHelper_drawRoundRectToCanvas, _DisplayCanvasHelper_getCircleBoundingBox, _DisplayCanvasHelper_drawCircleToCanvas, _DisplayCanvasHelper_getEllipseBoundingBox, _DisplayCanvasHelper_drawEllipseToCanvas, _DisplayCanvasHelper_getPolygonBoundingBox, _DisplayCanvasHelper_drawPolygonToCanvas, _DisplayCanvasHelper_brightness, _DisplayCanvasHelper_brightnessOpacities, _DisplayCanvasHelper_brightnessOpacity_get, _DisplayCanvasHelper_updateDeviceBrightness;
+var _DisplayCanvasHelper_instances, _DisplayCanvasHelper_eventDispatcher, _DisplayCanvasHelper_dispatchEvent_get, _DisplayCanvasHelper_canvas, _DisplayCanvasHelper_context, _DisplayCanvasHelper_updateCanvas, _DisplayCanvasHelper_frontDrawStack, _DisplayCanvasHelper_rearDrawStack, _DisplayCanvasHelper_drawFrontDrawStack, _DisplayCanvasHelper_device, _DisplayCanvasHelper_boundDeviceEventListeners, _DisplayCanvasHelper_onDeviceConnected, _DisplayCanvasHelper_onDeviceNotConnected, _DisplayCanvasHelper_updateDevice, _DisplayCanvasHelper_numberOfColors, _DisplayCanvasHelper_assertValidColorIndex, _DisplayCanvasHelper_colors, _DisplayCanvasHelper_updateDeviceColors, _DisplayCanvasHelper_opacities, _DisplayCanvasHelper_updateDeviceOpacity, _DisplayCanvasHelper_displayContextStateHelper, _DisplayCanvasHelper_onDisplayContextStateUpdate, _DisplayCanvasHelper_updateDeviceContextState, _DisplayCanvasHelper_assertValidLineWidth, _DisplayCanvasHelper_save, _DisplayCanvasHelper_restore, _DisplayCanvasHelper_transformContext, _DisplayCanvasHelper_rotateBoundingBox, _DisplayCanvasHelper_getRectBoundingBox, _DisplayCanvasHelper_applyClip, _DisplayCanvasHelper_applyRotationClip, _DisplayCanvasHelper_hexToRgba, _DisplayCanvasHelper_colorIndexToRgba, _DisplayCanvasHelper_updateContext, _DisplayCanvasHelper_drawRectToCanvas, _DisplayCanvasHelper_drawRoundRectToCanvas, _DisplayCanvasHelper_getCircleBoundingBox, _DisplayCanvasHelper_drawCircleToCanvas, _DisplayCanvasHelper_getEllipseBoundingBox, _DisplayCanvasHelper_drawEllipseToCanvas, _DisplayCanvasHelper_getPolygonBoundingBox, _DisplayCanvasHelper_drawPolygonToCanvas, _DisplayCanvasHelper_getSegmentBoundingBox, _DisplayCanvasHelper_getSegmentMidpoint, _DisplayCanvasHelper_getOrientedSegmentBoundingBox, _DisplayCanvasHelper_applySegmentRotationClip, _DisplayCanvasHelper_drawSegmentToCanvas, _DisplayCanvasHelper_brightness, _DisplayCanvasHelper_brightnessOpacities, _DisplayCanvasHelper_brightnessOpacity_get, _DisplayCanvasHelper_updateDeviceBrightness;
 const _console$6 = createConsole("DisplayCanvasHelper", { log: true });
 const DisplayCanvasHelperEventTypes = ["displayContextState"];
 class DisplayCanvasHelper {
@@ -8359,6 +8376,12 @@ class DisplayCanvasHelper {
         }
     }
     drawSegment(startX, startY, endX, endY, sendImmediately) {
+        if (startX == endX && startY == endY) {
+            _console$6.error(`cannot draw segment of length 0`);
+            return;
+        }
+        const contextState = { ...this.contextState };
+        __classPrivateFieldGet(this, _DisplayCanvasHelper_rearDrawStack, "f").push(() => __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_drawSegmentToCanvas).call(this, startX, startY, endX, endY, contextState));
         if (this.device?.isConnected) {
             this.device.drawDisplaySegment(startX, startY, endX, endY, sendImmediately);
         }
@@ -8387,7 +8410,7 @@ _DisplayCanvasHelper_eventDispatcher = new WeakMap(), _DisplayCanvasHelper_canva
         return;
     }
     const { width, height } = this.device.displayInformation;
-    console.log({ width, height });
+    _console$6.log({ width, height });
     this.canvas.width = width;
     this.canvas.height = height;
 }, _DisplayCanvasHelper_drawFrontDrawStack = function _DisplayCanvasHelper_drawFrontDrawStack() {
@@ -8473,7 +8496,7 @@ _DisplayCanvasHelper_eventDispatcher = new WeakMap(), _DisplayCanvasHelper_canva
         height: maxY - minY,
     };
 }, _DisplayCanvasHelper_getRectBoundingBox = function _DisplayCanvasHelper_getRectBoundingBox(centerX, centerY, width, height, { lineWidth }) {
-    const outerPadding = (lineWidth + 1) / 2;
+    const outerPadding = Math.ceil(lineWidth / 2);
     const boundingBox = {
         x: centerX - width / 2 - outerPadding,
         y: centerY - height / 2 - outerPadding,
@@ -8578,9 +8601,9 @@ _DisplayCanvasHelper_eventDispatcher = new WeakMap(), _DisplayCanvasHelper_canva
     }
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_restore).call(this);
 }, _DisplayCanvasHelper_getPolygonBoundingBox = function _DisplayCanvasHelper_getPolygonBoundingBox(centerX, centerY, radius, numberOfSides, { lineWidth }) {
-    let outerPadding = (lineWidth + 1) / 2;
+    let outerPadding = Math.ceil(lineWidth / 2);
     const shapeFactor = 1 / Math.cos(Math.PI / numberOfSides);
-    outerPadding = outerPadding * shapeFactor + 0.5;
+    outerPadding = Math.ceil(outerPadding * shapeFactor);
     const diameter = radius * 2;
     const boundingBox = {
         x: centerX - radius - outerPadding,
@@ -8612,6 +8635,154 @@ _DisplayCanvasHelper_eventDispatcher = new WeakMap(), _DisplayCanvasHelper_canva
     this.context.closePath();
     this.context.fill();
     if (contextState.lineWidth > 0) {
+        this.context.stroke();
+    }
+    __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_restore).call(this);
+}, _DisplayCanvasHelper_getSegmentBoundingBox = function _DisplayCanvasHelper_getSegmentBoundingBox(startX, startY, endX, endY, { lineWidth, segmentStartRadius, segmentEndRadius }) {
+    const outerPadding = (lineWidth + 1) / 2;
+    const vector = {
+        x: endX - startX,
+        y: endY - startY,
+    };
+    const length = getVector2Length(vector);
+    const maxRadius = Math.max(segmentStartRadius, segmentEndRadius) + outerPadding;
+    const extent = (Math.abs(vector.x / length) + Math.abs(vector.y / length)) * maxRadius;
+    const minX = Math.min(startX, endX) - extent;
+    const maxX = Math.max(startX, endX) + extent;
+    const minY = Math.min(startY, endY) - extent;
+    const maxY = Math.max(startY, endY) + extent;
+    const boundingBox = {
+        x: minX,
+        y: minY,
+        width: maxX - minX,
+        height: maxY - minY,
+    };
+    return boundingBox;
+}, _DisplayCanvasHelper_getSegmentMidpoint = function _DisplayCanvasHelper_getSegmentMidpoint(startX, startY, endX, endY, { lineWidth, segmentStartRadius, segmentEndRadius, segmentEndCap, segmentStartCap, }) {
+    const outerPadding = (lineWidth + 1) / 2;
+    const vector = {
+        x: endX - startX,
+        y: endY - startY,
+    };
+    const segmentStartLength = segmentStartCap == "round"
+        ? segmentStartRadius + outerPadding
+        : outerPadding;
+    const segmentEndLength = segmentEndCap == "round" ? segmentEndRadius + outerPadding : outerPadding;
+    const unitVector = normalizedVector2(vector);
+    const innerStartX = startX - unitVector.x * segmentStartLength;
+    const innerStartY = startY - unitVector.y * segmentStartLength;
+    const innerEndX = endX + unitVector.x * segmentEndLength;
+    const innerEndY = endY + unitVector.y * segmentEndLength;
+    const midpoint = {
+        x: (innerStartX + innerEndX) / 2,
+        y: (innerStartY + innerEndY) / 2,
+    };
+    _console$6.log("midpoint", midpoint);
+    return midpoint;
+}, _DisplayCanvasHelper_getOrientedSegmentBoundingBox = function _DisplayCanvasHelper_getOrientedSegmentBoundingBox(startX, startY, endX, endY, { lineWidth, segmentStartRadius, segmentEndRadius, segmentEndCap, segmentStartCap, }) {
+    const outerPadding = (lineWidth + 1) / 2;
+    const vector = {
+        x: endX - startX,
+        y: endY - startY,
+    };
+    const segmentStartLength = segmentStartCap == "round"
+        ? segmentStartRadius + outerPadding
+        : outerPadding;
+    const segmentEndLength = segmentEndCap == "round" ? segmentEndRadius + outerPadding : outerPadding;
+    const length = getVector2Length(vector) + segmentStartLength + segmentEndLength;
+    const width = (Math.max(segmentStartRadius, segmentEndRadius) + outerPadding) * 2;
+    const boundingBox = {
+        x: -width / 2,
+        y: -length / 2,
+        width: width,
+        height: length,
+    };
+    return boundingBox;
+}, _DisplayCanvasHelper_applySegmentRotationClip = function _DisplayCanvasHelper_applySegmentRotationClip(startX, startY, endX, endY, contextState) {
+    const vector = {
+        x: endX - startX,
+        y: endY - startY,
+    };
+    const rotation = getVector2Angle(vector);
+    const midpoint = __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_getSegmentMidpoint).call(this, startX, startY, endX, endY, contextState);
+    this.context.translate(midpoint.x, midpoint.y);
+    this.context.rotate(-rotation);
+    const box = __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_getOrientedSegmentBoundingBox).call(this, startX, startY, endX, endY, contextState);
+    __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_applyRotationClip).call(this, box, contextState);
+    this.context.resetTransform();
+}, _DisplayCanvasHelper_drawSegmentToCanvas = function _DisplayCanvasHelper_drawSegmentToCanvas(startX, startY, endX, endY, contextState) {
+    __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_updateContext).call(this, contextState);
+    __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_save).call(this);
+    const box = __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_getSegmentBoundingBox).call(this, startX, startY, endX, endY, contextState);
+    __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_applyClip).call(this, box, contextState);
+    __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_applySegmentRotationClip).call(this, startX, startY, endX, endY, contextState);
+    const x0 = startX;
+    const x1 = endX;
+    const y0 = startY;
+    const y1 = endY;
+    const r0 = contextState.segmentStartRadius;
+    const r1 = contextState.segmentEndRadius;
+    const dx = x1 - x0;
+    const dy = y1 - y0;
+    const len = Math.sqrt(dx * dx + dy * dy);
+    if (len === 0)
+        return;
+    const ux = dx / len;
+    const uy = dy / len;
+    const px = -uy;
+    const py = ux;
+    const sx1 = x0 + px * r0;
+    const sy1 = y0 + py * r0;
+    const sx2 = x0 - px * r0;
+    const sy2 = y0 - py * r0;
+    const ex1 = x1 + px * r1;
+    const ey1 = y1 + py * r1;
+    const ex2 = x1 - px * r1;
+    const ey2 = y1 - py * r1;
+    if (contextState.segmentStartCap == "round") {
+        this.context.beginPath();
+        this.context.arc(x0, y0, r0, 0, Math.PI * 2);
+        this.context.closePath();
+        this.context.fill();
+        if (contextState.lineWidth > 0) {
+            this.context.stroke();
+        }
+    }
+    if (contextState.segmentEndCap == "round") {
+        this.context.beginPath();
+        this.context.arc(x1, y1, r1, 0, Math.PI * 2);
+        this.context.closePath();
+        this.context.fill();
+        if (contextState.lineWidth > 0) {
+            this.context.stroke();
+        }
+    }
+    this.context.beginPath();
+    this.context.moveTo(sx1, sy1);
+    this.context.lineTo(ex1, ey1);
+    this.context.lineTo(ex2, ey2);
+    this.context.lineTo(sx2, sy2);
+    this.context.closePath();
+    this.context.fill();
+    if (contextState.lineWidth > 0) {
+        this.context.beginPath();
+        this.context.moveTo(sx1, sy1);
+        this.context.lineTo(ex1, ey1);
+        if (contextState.segmentEndCap === "flat") {
+            this.context.lineTo(ex2, ey2);
+        }
+        else {
+            this.context.moveTo(ex2, ey2);
+        }
+        this.context.lineTo(sx2, sy2);
+        if (contextState.segmentStartCap === "flat" &&
+            contextState.segmentEndCap === "flat") {
+            this.context.closePath();
+        }
+        else if (contextState.segmentStartCap === "flat") {
+            this.context.lineTo(sx1, sy1);
+            this.context.lineTo(ex1, ey1);
+        }
         this.context.stroke();
     }
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_restore).call(this);

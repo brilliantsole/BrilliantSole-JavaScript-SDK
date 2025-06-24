@@ -41,6 +41,29 @@ export interface Vector2 {
   y: number;
 }
 
+export function getVector2Length(vector: Vector2) {
+  const { x, y } = vector;
+  return Math.sqrt(x ** 2 + y ** 2);
+}
+
+export function getVector2Angle(vector: Vector2) {
+  const { x, y } = vector;
+  return Math.atan2(y, x);
+}
+
+export function multiplyVector2ByScalar(
+  vector: Vector2,
+  scalar: number
+): Vector2 {
+  let { x, y } = vector;
+  x *= scalar;
+  y *= scalar;
+  return { x, y };
+}
+export function normalizedVector2(vector: Vector2): Vector2 {
+  return multiplyVector2ByScalar(vector, 1 / getVector2Length(vector));
+}
+
 export interface Vector3 extends Vector2 {
   z: number;
 }

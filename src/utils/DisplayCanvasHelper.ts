@@ -34,9 +34,14 @@ import EventDispatcher, {
 import { addEventListeners, removeEventListeners } from "./EventUtils.ts";
 import {
   degToRad,
+  getVector2Angle,
+  getVector2Length,
+  multiplyVector2ByScalar,
+  normalizedVector2,
   normalizeRadians,
   radToDeg,
   Uint16Max,
+  Vector2,
 } from "./MathUtils.ts";
 
 const _console = createConsole("DisplayCanvasHelper", { log: true });
@@ -156,7 +161,7 @@ class DisplayCanvasHelper {
     }
 
     const { width, height } = this.device.displayInformation!;
-    console.log({ width, height });
+    _console.log({ width, height });
 
     this.canvas.width = width;
     this.canvas.height = height;
@@ -723,7 +728,7 @@ class DisplayCanvasHelper {
     height: number,
     { lineWidth }: DisplayContextState
   ): DisplayBoundingBox {
-    const outerPadding = (lineWidth + 1) / 2;
+    const outerPadding = Math.ceil(lineWidth / 2);
     const boundingBox = {
       x: centerX - width / 2 - outerPadding,
       y: centerY - height / 2 - outerPadding,
@@ -1056,9 +1061,9 @@ class DisplayCanvasHelper {
     numberOfSides: number,
     { lineWidth }: DisplayContextState
   ): DisplayBoundingBox {
-    let outerPadding = (lineWidth + 1) / 2;
+    let outerPadding = Math.ceil(lineWidth / 2);
     const shapeFactor = 1 / Math.cos(Math.PI / numberOfSides);
-    outerPadding = outerPadding * shapeFactor + 0.5;
+    outerPadding = Math.ceil(outerPadding * shapeFactor);
 
     const diameter = radius * 2;
     const boundingBox = {
@@ -1144,6 +1149,261 @@ class DisplayCanvasHelper {
       );
     }
   }
+  #getSegmentBoundingBox(
+    startX: number,
+    startY: number,
+    endX: number,
+    endY: number,
+    { lineWidth, segmentStartRadius, segmentEndRadius }: DisplayContextState
+  ): DisplayBoundingBox {
+    const outerPadding = (lineWidth + 1) / 2;
+    const vector: Vector2 = {
+      x: endX - startX,
+      y: endY - startY,
+    };
+    const length = getVector2Length(vector);
+    const maxRadius =
+      Math.max(segmentStartRadius, segmentEndRadius) + outerPadding;
+    const extent =
+      (Math.abs(vector.x / length) + Math.abs(vector.y / length)) * maxRadius;
+
+    const minX = Math.min(startX, endX) - extent;
+    const maxX = Math.max(startX, endX) + extent;
+    const minY = Math.min(startY, endY) - extent;
+    const maxY = Math.max(startY, endY) + extent;
+
+    const boundingBox = {
+      x: minX,
+      y: minY,
+      width: maxX - minX,
+      height: maxY - minY,
+    };
+    return boundingBox;
+  }
+  #getSegmentMidpoint(
+    startX: number,
+    startY: number,
+    endX: number,
+    endY: number,
+    {
+      lineWidth,
+      segmentStartRadius,
+      segmentEndRadius,
+      segmentEndCap,
+      segmentStartCap,
+    }: DisplayContextState
+  ): Vector2 {
+    const outerPadding = (lineWidth + 1) / 2;
+    const vector: Vector2 = {
+      x: endX - startX,
+      y: endY - startY,
+    };
+    const segmentStartLength =
+      segmentStartCap == "round"
+        ? segmentStartRadius + outerPadding
+        : outerPadding;
+    const segmentEndLength =
+      segmentEndCap == "round" ? segmentEndRadius + outerPadding : outerPadding;
+    const unitVector = normalizedVector2(vector);
+
+    const innerStartX = startX - unitVector.x * segmentStartLength;
+    const innerStartY = startY - unitVector.y * segmentStartLength;
+    const innerEndX = endX + unitVector.x * segmentEndLength;
+    const innerEndY = endY + unitVector.y * segmentEndLength;
+
+    const midpoint: Vector2 = {
+      x: (innerStartX + innerEndX) / 2,
+      y: (innerStartY + innerEndY) / 2,
+    };
+    _console.log("midpoint", midpoint);
+    return midpoint;
+  }
+  #getOrientedSegmentBoundingBox(
+    startX: number,
+    startY: number,
+    endX: number,
+    endY: number,
+    {
+      lineWidth,
+      segmentStartRadius,
+      segmentEndRadius,
+      segmentEndCap,
+      segmentStartCap,
+    }: DisplayContextState
+  ): DisplayBoundingBox {
+    const outerPadding = (lineWidth + 1) / 2;
+    const vector: Vector2 = {
+      x: endX - startX,
+      y: endY - startY,
+    };
+    const segmentStartLength =
+      segmentStartCap == "round"
+        ? segmentStartRadius + outerPadding
+        : outerPadding;
+    const segmentEndLength =
+      segmentEndCap == "round" ? segmentEndRadius + outerPadding : outerPadding;
+    const length =
+      getVector2Length(vector) + segmentStartLength + segmentEndLength;
+    const width =
+      (Math.max(segmentStartRadius, segmentEndRadius) + outerPadding) * 2;
+
+    const boundingBox = {
+      x: -width / 2,
+      y: -length / 2,
+      width: width,
+      height: length,
+    };
+    return boundingBox;
+  }
+  #applySegmentRotationClip(
+    startX: number,
+    startY: number,
+    endX: number,
+    endY: number,
+    contextState: DisplayContextState
+  ) {
+    const vector: Vector2 = {
+      x: endX - startX,
+      y: endY - startY,
+    };
+    const rotation = getVector2Angle(vector);
+    const midpoint: Vector2 = this.#getSegmentMidpoint(
+      startX,
+      startY,
+      endX,
+      endY,
+      contextState
+    );
+    this.context.translate(midpoint.x, midpoint.y);
+    this.context.rotate(-rotation);
+    const box = this.#getOrientedSegmentBoundingBox(
+      startX,
+      startY,
+      endX,
+      endY,
+      contextState
+    );
+    this.#applyRotationClip(box, contextState);
+    this.context.resetTransform();
+  }
+  #drawSegmentToCanvas(
+    startX: number,
+    startY: number,
+    endX: number,
+    endY: number,
+    contextState: DisplayContextState
+  ) {
+    this.#updateContext(contextState);
+
+    this.#save();
+    const box = this.#getSegmentBoundingBox(
+      startX,
+      startY,
+      endX,
+      endY,
+      contextState
+    );
+
+    this.#applyClip(box, contextState);
+
+    this.#applySegmentRotationClip(startX, startY, endX, endY, contextState);
+
+    const x0 = startX;
+    const x1 = endX;
+    const y0 = startY;
+    const y1 = endY;
+
+    const r0 = contextState.segmentStartRadius;
+    const r1 = contextState.segmentEndRadius;
+
+    const dx = x1 - x0;
+    const dy = y1 - y0;
+    const len = Math.sqrt(dx * dx + dy * dy);
+    if (len === 0) return;
+
+    const ux = dx / len;
+    const uy = dy / len;
+
+    // Perpendicular vector
+    const px = -uy;
+    const py = ux;
+
+    // Start circle edge points
+    const sx1 = x0 + px * r0;
+    const sy1 = y0 + py * r0;
+    const sx2 = x0 - px * r0;
+    const sy2 = y0 - py * r0;
+
+    // End circle edge points
+    const ex1 = x1 + px * r1;
+    const ey1 = y1 + py * r1;
+    const ex2 = x1 - px * r1;
+    const ey2 = y1 - py * r1;
+
+    if (contextState.segmentStartCap == "round") {
+      this.context.beginPath();
+      this.context.arc(x0, y0, r0, 0, Math.PI * 2);
+      this.context.closePath();
+      this.context.fill();
+      if (contextState.lineWidth > 0) {
+        this.context.stroke();
+      }
+    }
+    if (contextState.segmentEndCap == "round") {
+      this.context.beginPath();
+      this.context.arc(x1, y1, r1, 0, Math.PI * 2);
+      this.context.closePath();
+      this.context.fill();
+      if (contextState.lineWidth > 0) {
+        this.context.stroke();
+      }
+    }
+
+    // Fill the full trapezoid
+    this.context.beginPath();
+    this.context.moveTo(sx1, sy1);
+    this.context.lineTo(ex1, ey1);
+    this.context.lineTo(ex2, ey2);
+    this.context.lineTo(sx2, sy2);
+    this.context.closePath();
+    this.context.fill();
+
+    // Stroke only the side edges
+    if (contextState.lineWidth > 0) {
+      this.context.beginPath();
+
+      // Start edge → end edge
+      this.context.moveTo(sx1, sy1);
+      this.context.lineTo(ex1, ey1);
+
+      // End cap (flat or not)
+      if (contextState.segmentEndCap === "flat") {
+        this.context.lineTo(ex2, ey2);
+      } else {
+        this.context.moveTo(ex2, ey2);
+      }
+
+      // Back to start side
+      this.context.lineTo(sx2, sy2);
+
+      // If both ends are flat, close the loop
+      if (
+        contextState.segmentStartCap === "flat" &&
+        contextState.segmentEndCap === "flat"
+      ) {
+        this.context.closePath();
+      }
+      // If only the start is flat, manually return to start to avoid gaps
+      else if (contextState.segmentStartCap === "flat") {
+        this.context.lineTo(sx1, sy1);
+        this.context.lineTo(ex1, ey1);
+      }
+
+      this.context.stroke();
+    }
+
+    this.#restore();
+  }
   drawSegment(
     startX: number,
     startY: number,
@@ -1151,7 +1411,14 @@ class DisplayCanvasHelper {
     endY: number,
     sendImmediately?: boolean
   ) {
-    // FILL
+    if (startX == endX && startY == endY) {
+      _console.error(`cannot draw segment of length 0`);
+      return;
+    }
+    const contextState = { ...this.contextState };
+    this.#rearDrawStack.push(() =>
+      this.#drawSegmentToCanvas(startX, startY, endX, endY, contextState)
+    );
     if (this.device?.isConnected) {
       this.device.drawDisplaySegment(
         startX,

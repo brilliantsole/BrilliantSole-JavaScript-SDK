@@ -44,19 +44,26 @@ device.addEventListener("connected", () => {
 });
 
 window.test = (centerX, centerY, width, height) => {
-  displayCanvasHelper.setLineWidth(10);
+  displayCanvasHelper.setLineWidth(0);
   displayCanvasHelper.setColor(1, "red");
   displayCanvasHelper.setColor(2, "blue");
   displayCanvasHelper.selectLineColor(2);
   //displayCanvasHelper.setRotation(45);
   //displayCanvasHelper.setCropTop(80);
   //displayCanvasHelper.setRotationCropTop(50);
-  displayCanvasHelper.drawRect(200, 200, 50, 50);
+  //displayCanvasHelper.drawRect(200, 200, 50, 50);
   displayCanvasHelper.setColor(3, "yellow");
   displayCanvasHelper.selectLineColor(3);
-  displayCanvasHelper.setRotationCropTop(60);
+  //displayCanvasHelper.setCropTop(0);
+  displayCanvasHelper.setRotationCropTop(5);
+  displayCanvasHelper.setLineWidth(5);
+  displayCanvasHelper.setSegmentStartRadius(10);
+  displayCanvasHelper.setSegmentEndRadius(30);
+  displayCanvasHelper.setSegmentStartCap("round");
+  displayCanvasHelper.setSegmentEndCap("round");
   displayCanvasHelper.setRotation(30);
-  displayCanvasHelper.drawPolygon(centerX, centerY, width, 3);
+  //displayCanvasHelper.drawPolygon(centerX, centerY, width, 3);
+  displayCanvasHelper.drawSegment(centerX, centerY, 300, 300);
   displayCanvasHelper.showDisplay();
 };
 test(100, 100, 50, 80);

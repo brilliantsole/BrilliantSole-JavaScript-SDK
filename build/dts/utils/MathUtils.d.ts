@@ -6,6 +6,10 @@ export interface Vector2 {
     x: number;
     y: number;
 }
+export declare function getVector2Length(vector: Vector2): number;
+export declare function getVector2Angle(vector: Vector2): number;
+export declare function multiplyVector2ByScalar(vector: Vector2, scalar: number): Vector2;
+export declare function normalizedVector2(vector: Vector2): Vector2;
 export interface Vector3 extends Vector2 {
     z: number;
 }
