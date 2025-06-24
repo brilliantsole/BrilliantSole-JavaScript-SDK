@@ -54,10 +54,10 @@ window.test = (centerX, centerY, width, height) => {
   //displayCanvasHelper.drawRect(200, 200, 50, 50);
   displayCanvasHelper.setColor(3, "yellow");
   displayCanvasHelper.selectLineColor(3);
-  //displayCanvasHelper.setCropTop(0);
-  displayCanvasHelper.setRotationCropTop(5);
+  displayCanvasHelper.setCropTop(10);
+  displayCanvasHelper.setRotationCropTop(0);
   displayCanvasHelper.setLineWidth(5);
-  displayCanvasHelper.setSegmentStartRadius(10);
+  displayCanvasHelper.setSegmentStartRadius(30);
   displayCanvasHelper.setSegmentEndRadius(30);
   displayCanvasHelper.setSegmentStartCap("round");
   displayCanvasHelper.setSegmentEndCap("round");

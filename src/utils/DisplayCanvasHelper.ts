@@ -721,6 +721,10 @@ class DisplayCanvasHelper {
       height: maxY - minY,
     };
   }
+  #clearBoundingBoxOnDraw = true;
+  #clearBoundingBox({ x, y, width, height }: DisplayBoundingBox) {
+    this.context.clearRect(x, y, width, height);
+  }
   #getRectBoundingBox(
     centerX: number,
     centerY: number,
@@ -816,6 +820,9 @@ class DisplayCanvasHelper {
       height,
       contextState
     );
+    if (this.#clearBoundingBoxOnDraw) {
+      this.#clearBoundingBox(box);
+    }
     const rotatedBox = this.#rotateBoundingBox(box, contextState.rotation);
     this.#applyClip(rotatedBox, contextState);
 
@@ -871,6 +878,9 @@ class DisplayCanvasHelper {
       height,
       contextState
     );
+    if (this.#clearBoundingBoxOnDraw) {
+      this.#clearBoundingBox(box);
+    }
     const rotatedBox = this.#rotateBoundingBox(box, contextState.rotation);
     this.#applyClip(rotatedBox, contextState);
 
@@ -949,6 +959,9 @@ class DisplayCanvasHelper {
       radius,
       contextState
     );
+    if (this.#clearBoundingBoxOnDraw) {
+      this.#clearBoundingBox(box);
+    }
     this.#applyClip(box, contextState);
 
     this.#transformContext(centerX, centerY, contextState.rotation);
@@ -1011,6 +1024,9 @@ class DisplayCanvasHelper {
       radiusY,
       contextState
     );
+    if (this.#clearBoundingBoxOnDraw) {
+      this.#clearBoundingBox(box);
+    }
 
     const rotatedBox = this.#rotateBoundingBox(box, contextState.rotation);
     this.#applyClip(rotatedBox, contextState);
@@ -1091,6 +1107,9 @@ class DisplayCanvasHelper {
       numberOfSides,
       contextState
     );
+    if (this.#clearBoundingBoxOnDraw) {
+      this.#clearBoundingBox(box);
+    }
 
     this.#applyClip(box, contextState);
 
@@ -1303,6 +1322,10 @@ class DisplayCanvasHelper {
       endY,
       contextState
     );
+    if (this.#clearBoundingBoxOnDraw) {
+      console.log(box);
+      this.#clearBoundingBox(box);
+    }
 
     this.#applyClip(box, contextState);
 

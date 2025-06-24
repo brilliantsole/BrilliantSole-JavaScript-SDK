@@ -7930,7 +7930,7 @@ _a$2 = Device, _Device_eventDispatcher = new WeakMap(), _Device_connectionManage
 _Device_ReconnectOnDisconnection = { value: false };
 _Device_ClearSensorConfigurationOnLeave = { value: true };
 
-var _DisplayCanvasHelper_instances, _DisplayCanvasHelper_eventDispatcher, _DisplayCanvasHelper_dispatchEvent_get, _DisplayCanvasHelper_canvas, _DisplayCanvasHelper_context, _DisplayCanvasHelper_updateCanvas, _DisplayCanvasHelper_frontDrawStack, _DisplayCanvasHelper_rearDrawStack, _DisplayCanvasHelper_drawFrontDrawStack, _DisplayCanvasHelper_device, _DisplayCanvasHelper_boundDeviceEventListeners, _DisplayCanvasHelper_onDeviceConnected, _DisplayCanvasHelper_onDeviceNotConnected, _DisplayCanvasHelper_updateDevice, _DisplayCanvasHelper_numberOfColors, _DisplayCanvasHelper_assertValidColorIndex, _DisplayCanvasHelper_colors, _DisplayCanvasHelper_updateDeviceColors, _DisplayCanvasHelper_opacities, _DisplayCanvasHelper_updateDeviceOpacity, _DisplayCanvasHelper_displayContextStateHelper, _DisplayCanvasHelper_onDisplayContextStateUpdate, _DisplayCanvasHelper_updateDeviceContextState, _DisplayCanvasHelper_assertValidLineWidth, _DisplayCanvasHelper_save, _DisplayCanvasHelper_restore, _DisplayCanvasHelper_transformContext, _DisplayCanvasHelper_rotateBoundingBox, _DisplayCanvasHelper_getRectBoundingBox, _DisplayCanvasHelper_applyClip, _DisplayCanvasHelper_applyRotationClip, _DisplayCanvasHelper_hexToRgba, _DisplayCanvasHelper_colorIndexToRgba, _DisplayCanvasHelper_updateContext, _DisplayCanvasHelper_drawRectToCanvas, _DisplayCanvasHelper_drawRoundRectToCanvas, _DisplayCanvasHelper_getCircleBoundingBox, _DisplayCanvasHelper_drawCircleToCanvas, _DisplayCanvasHelper_getEllipseBoundingBox, _DisplayCanvasHelper_drawEllipseToCanvas, _DisplayCanvasHelper_getPolygonBoundingBox, _DisplayCanvasHelper_drawPolygonToCanvas, _DisplayCanvasHelper_getSegmentBoundingBox, _DisplayCanvasHelper_getSegmentMidpoint, _DisplayCanvasHelper_getOrientedSegmentBoundingBox, _DisplayCanvasHelper_applySegmentRotationClip, _DisplayCanvasHelper_drawSegmentToCanvas, _DisplayCanvasHelper_brightness, _DisplayCanvasHelper_brightnessOpacities, _DisplayCanvasHelper_brightnessOpacity_get, _DisplayCanvasHelper_updateDeviceBrightness;
+var _DisplayCanvasHelper_instances, _DisplayCanvasHelper_eventDispatcher, _DisplayCanvasHelper_dispatchEvent_get, _DisplayCanvasHelper_canvas, _DisplayCanvasHelper_context, _DisplayCanvasHelper_updateCanvas, _DisplayCanvasHelper_frontDrawStack, _DisplayCanvasHelper_rearDrawStack, _DisplayCanvasHelper_drawFrontDrawStack, _DisplayCanvasHelper_device, _DisplayCanvasHelper_boundDeviceEventListeners, _DisplayCanvasHelper_onDeviceConnected, _DisplayCanvasHelper_onDeviceNotConnected, _DisplayCanvasHelper_updateDevice, _DisplayCanvasHelper_numberOfColors, _DisplayCanvasHelper_assertValidColorIndex, _DisplayCanvasHelper_colors, _DisplayCanvasHelper_updateDeviceColors, _DisplayCanvasHelper_opacities, _DisplayCanvasHelper_updateDeviceOpacity, _DisplayCanvasHelper_displayContextStateHelper, _DisplayCanvasHelper_onDisplayContextStateUpdate, _DisplayCanvasHelper_updateDeviceContextState, _DisplayCanvasHelper_assertValidLineWidth, _DisplayCanvasHelper_save, _DisplayCanvasHelper_restore, _DisplayCanvasHelper_transformContext, _DisplayCanvasHelper_rotateBoundingBox, _DisplayCanvasHelper_clearBoundingBoxOnDraw, _DisplayCanvasHelper_clearBoundingBox, _DisplayCanvasHelper_getRectBoundingBox, _DisplayCanvasHelper_applyClip, _DisplayCanvasHelper_applyRotationClip, _DisplayCanvasHelper_hexToRgba, _DisplayCanvasHelper_colorIndexToRgba, _DisplayCanvasHelper_updateContext, _DisplayCanvasHelper_drawRectToCanvas, _DisplayCanvasHelper_drawRoundRectToCanvas, _DisplayCanvasHelper_getCircleBoundingBox, _DisplayCanvasHelper_drawCircleToCanvas, _DisplayCanvasHelper_getEllipseBoundingBox, _DisplayCanvasHelper_drawEllipseToCanvas, _DisplayCanvasHelper_getPolygonBoundingBox, _DisplayCanvasHelper_drawPolygonToCanvas, _DisplayCanvasHelper_getSegmentBoundingBox, _DisplayCanvasHelper_getSegmentMidpoint, _DisplayCanvasHelper_getOrientedSegmentBoundingBox, _DisplayCanvasHelper_applySegmentRotationClip, _DisplayCanvasHelper_drawSegmentToCanvas, _DisplayCanvasHelper_brightness, _DisplayCanvasHelper_brightnessOpacities, _DisplayCanvasHelper_brightnessOpacity_get, _DisplayCanvasHelper_updateDeviceBrightness;
 const _console$6 = createConsole("DisplayCanvasHelper", { log: true });
 const DisplayCanvasHelperEventTypes = ["displayContextState"];
 class DisplayCanvasHelper {
@@ -7950,6 +7950,7 @@ class DisplayCanvasHelper {
         _DisplayCanvasHelper_colors.set(this, []);
         _DisplayCanvasHelper_opacities.set(this, []);
         _DisplayCanvasHelper_displayContextStateHelper.set(this, new DisplayContextStateHelper());
+        _DisplayCanvasHelper_clearBoundingBoxOnDraw.set(this, true);
         _DisplayCanvasHelper_brightness.set(this, "medium");
         _DisplayCanvasHelper_brightnessOpacities.set(this, {
             veryLow: 0.5,
@@ -8400,7 +8401,7 @@ class DisplayCanvasHelper {
         }
     }
 }
-_DisplayCanvasHelper_eventDispatcher = new WeakMap(), _DisplayCanvasHelper_canvas = new WeakMap(), _DisplayCanvasHelper_context = new WeakMap(), _DisplayCanvasHelper_frontDrawStack = new WeakMap(), _DisplayCanvasHelper_rearDrawStack = new WeakMap(), _DisplayCanvasHelper_device = new WeakMap(), _DisplayCanvasHelper_boundDeviceEventListeners = new WeakMap(), _DisplayCanvasHelper_numberOfColors = new WeakMap(), _DisplayCanvasHelper_colors = new WeakMap(), _DisplayCanvasHelper_opacities = new WeakMap(), _DisplayCanvasHelper_displayContextStateHelper = new WeakMap(), _DisplayCanvasHelper_brightness = new WeakMap(), _DisplayCanvasHelper_brightnessOpacities = new WeakMap(), _DisplayCanvasHelper_instances = new WeakSet(), _DisplayCanvasHelper_dispatchEvent_get = function _DisplayCanvasHelper_dispatchEvent_get() {
+_DisplayCanvasHelper_eventDispatcher = new WeakMap(), _DisplayCanvasHelper_canvas = new WeakMap(), _DisplayCanvasHelper_context = new WeakMap(), _DisplayCanvasHelper_frontDrawStack = new WeakMap(), _DisplayCanvasHelper_rearDrawStack = new WeakMap(), _DisplayCanvasHelper_device = new WeakMap(), _DisplayCanvasHelper_boundDeviceEventListeners = new WeakMap(), _DisplayCanvasHelper_numberOfColors = new WeakMap(), _DisplayCanvasHelper_colors = new WeakMap(), _DisplayCanvasHelper_opacities = new WeakMap(), _DisplayCanvasHelper_displayContextStateHelper = new WeakMap(), _DisplayCanvasHelper_clearBoundingBoxOnDraw = new WeakMap(), _DisplayCanvasHelper_brightness = new WeakMap(), _DisplayCanvasHelper_brightnessOpacities = new WeakMap(), _DisplayCanvasHelper_instances = new WeakSet(), _DisplayCanvasHelper_dispatchEvent_get = function _DisplayCanvasHelper_dispatchEvent_get() {
     return __classPrivateFieldGet(this, _DisplayCanvasHelper_eventDispatcher, "f").dispatchEvent;
 }, _DisplayCanvasHelper_updateCanvas = function _DisplayCanvasHelper_updateCanvas() {
     if (!this.device?.isConnected) {
@@ -8495,6 +8496,8 @@ _DisplayCanvasHelper_eventDispatcher = new WeakMap(), _DisplayCanvasHelper_canva
         width: maxX - minX,
         height: maxY - minY,
     };
+}, _DisplayCanvasHelper_clearBoundingBox = function _DisplayCanvasHelper_clearBoundingBox({ x, y, width, height }) {
+    this.context.clearRect(x, y, width, height);
 }, _DisplayCanvasHelper_getRectBoundingBox = function _DisplayCanvasHelper_getRectBoundingBox(centerX, centerY, width, height, { lineWidth }) {
     const outerPadding = Math.ceil(lineWidth / 2);
     const boundingBox = {
@@ -8536,6 +8539,9 @@ _DisplayCanvasHelper_eventDispatcher = new WeakMap(), _DisplayCanvasHelper_canva
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_updateContext).call(this, contextState);
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_save).call(this);
     const box = __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_getRectBoundingBox).call(this, centerX, centerY, width, height, contextState);
+    if (__classPrivateFieldGet(this, _DisplayCanvasHelper_clearBoundingBoxOnDraw, "f")) {
+        __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_clearBoundingBox).call(this, box);
+    }
     const rotatedBox = __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_rotateBoundingBox).call(this, box, contextState.rotation);
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_applyClip).call(this, rotatedBox, contextState);
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_transformContext).call(this, centerX, centerY, contextState.rotation);
@@ -8551,6 +8557,9 @@ _DisplayCanvasHelper_eventDispatcher = new WeakMap(), _DisplayCanvasHelper_canva
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_updateContext).call(this, contextState);
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_save).call(this);
     const box = __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_getRectBoundingBox).call(this, centerX, centerY, width, height, contextState);
+    if (__classPrivateFieldGet(this, _DisplayCanvasHelper_clearBoundingBoxOnDraw, "f")) {
+        __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_clearBoundingBox).call(this, box);
+    }
     const rotatedBox = __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_rotateBoundingBox).call(this, box, contextState.rotation);
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_applyClip).call(this, rotatedBox, contextState);
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_transformContext).call(this, centerX, centerY, contextState.rotation);
@@ -8571,6 +8580,9 @@ _DisplayCanvasHelper_eventDispatcher = new WeakMap(), _DisplayCanvasHelper_canva
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_updateContext).call(this, contextState);
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_save).call(this);
     const box = __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_getCircleBoundingBox).call(this, centerX, centerY, radius, contextState);
+    if (__classPrivateFieldGet(this, _DisplayCanvasHelper_clearBoundingBoxOnDraw, "f")) {
+        __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_clearBoundingBox).call(this, box);
+    }
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_applyClip).call(this, box, contextState);
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_transformContext).call(this, centerX, centerY, contextState.rotation);
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_applyRotationClip).call(this, box, contextState);
@@ -8589,6 +8601,9 @@ _DisplayCanvasHelper_eventDispatcher = new WeakMap(), _DisplayCanvasHelper_canva
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_updateContext).call(this, contextState);
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_save).call(this);
     const box = __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_getEllipseBoundingBox).call(this, centerX, centerY, radiusX, radiusY, contextState);
+    if (__classPrivateFieldGet(this, _DisplayCanvasHelper_clearBoundingBoxOnDraw, "f")) {
+        __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_clearBoundingBox).call(this, box);
+    }
     const rotatedBox = __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_rotateBoundingBox).call(this, box, contextState.rotation);
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_applyClip).call(this, rotatedBox, contextState);
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_transformContext).call(this, centerX, centerY, contextState.rotation);
@@ -8616,6 +8631,9 @@ _DisplayCanvasHelper_eventDispatcher = new WeakMap(), _DisplayCanvasHelper_canva
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_updateContext).call(this, contextState);
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_save).call(this);
     const box = __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_getPolygonBoundingBox).call(this, centerX, centerY, radius, numberOfSides, contextState);
+    if (__classPrivateFieldGet(this, _DisplayCanvasHelper_clearBoundingBoxOnDraw, "f")) {
+        __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_clearBoundingBox).call(this, box);
+    }
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_applyClip).call(this, box, contextState);
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_transformContext).call(this, centerX, centerY, contextState.rotation);
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_applyRotationClip).call(this, box, contextState);
@@ -8714,6 +8732,10 @@ _DisplayCanvasHelper_eventDispatcher = new WeakMap(), _DisplayCanvasHelper_canva
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_updateContext).call(this, contextState);
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_save).call(this);
     const box = __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_getSegmentBoundingBox).call(this, startX, startY, endX, endY, contextState);
+    if (__classPrivateFieldGet(this, _DisplayCanvasHelper_clearBoundingBoxOnDraw, "f")) {
+        console.log(box);
+        __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_clearBoundingBox).call(this, box);
+    }
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_applyClip).call(this, box, contextState);
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_applySegmentRotationClip).call(this, startX, startY, endX, endY, contextState);
     const x0 = startX;
