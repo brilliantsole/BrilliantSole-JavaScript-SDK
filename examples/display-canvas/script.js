@@ -54,15 +54,15 @@ window.test = (centerX, centerY, width, height) => {
   //displayCanvasHelper.drawRect(200, 200, 50, 50);
   displayCanvasHelper.setColor(3, "yellow");
   displayCanvasHelper.selectLineColor(3);
-  displayCanvasHelper.setCropTop(10);
+  displayCanvasHelper.setCropTop(0);
   displayCanvasHelper.setRotationCropTop(0);
   displayCanvasHelper.setLineWidth(5);
   displayCanvasHelper.setSegmentStartRadius(30);
-  displayCanvasHelper.setSegmentEndRadius(30);
+  displayCanvasHelper.setSegmentEndRadius(0);
   displayCanvasHelper.setSegmentStartCap("round");
   displayCanvasHelper.setSegmentEndCap("round");
   displayCanvasHelper.setRotation(30);
-  //displayCanvasHelper.drawPolygon(centerX, centerY, width, 3);
+  displayCanvasHelper.drawCircle(centerX, centerY, 50);
   displayCanvasHelper.drawSegment(centerX, centerY, 300, 300);
   displayCanvasHelper.showDisplay();
 };

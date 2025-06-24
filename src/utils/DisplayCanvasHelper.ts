@@ -1175,21 +1175,25 @@ class DisplayCanvasHelper {
     endY: number,
     { lineWidth, segmentStartRadius, segmentEndRadius }: DisplayContextState
   ): DisplayBoundingBox {
-    const outerPadding = (lineWidth + 1) / 2;
-    const vector: Vector2 = {
-      x: endX - startX,
-      y: endY - startY,
-    };
-    const length = getVector2Length(vector);
-    const maxRadius =
-      Math.max(segmentStartRadius, segmentEndRadius) + outerPadding;
-    const extent =
-      (Math.abs(vector.x / length) + Math.abs(vector.y / length)) * maxRadius;
-
-    const minX = Math.min(startX, endX) - extent;
-    const maxX = Math.max(startX, endX) + extent;
-    const minY = Math.min(startY, endY) - extent;
-    const maxY = Math.max(startY, endY) + extent;
+    const outerPadding = Math.floor(lineWidth / 2);
+    const segmentStartFullRadius = segmentStartRadius + outerPadding;
+    const segmentEndFullRadius = segmentEndRadius + outerPadding;
+    const minX =
+      startX < endX
+        ? startX - segmentStartFullRadius
+        : endX - segmentEndFullRadius;
+    const maxX =
+      startX > endX
+        ? startX + segmentStartFullRadius
+        : endX + segmentEndFullRadius;
+    const minY =
+      startY < endY
+        ? startY - segmentStartFullRadius
+        : endY - segmentEndFullRadius;
+    const maxY =
+      startY > endY
+        ? startY + segmentStartFullRadius
+        : endY + segmentEndFullRadius;
 
     const boundingBox = {
       x: minX,
