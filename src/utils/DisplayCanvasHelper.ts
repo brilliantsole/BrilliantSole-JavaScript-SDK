@@ -46,14 +46,39 @@ import {
 
 const _console = createConsole("DisplayCanvasHelper", { log: true });
 
-export const DisplayCanvasHelperEventTypes = ["displayContextState"] as const;
+export const DisplayCanvasHelperEventTypes = [
+  "contextState",
+  "numberOfColors",
+  "brightness",
+  "color",
+  "colorOpacity",
+  "opacity",
+] as const;
 export type DisplayCanvasHelperEventType =
   (typeof DisplayCanvasHelperEventTypes)[number];
 
 export interface DisplayCanvasHelperEventMessages {
-  displayContextState: {
-    displayContextState: DisplayContextState;
+  contextState: {
+    contextState: DisplayContextState;
     differences: DisplayContextStateKey[];
+  };
+  numberOfColors: {
+    numberOfColors: number;
+  };
+  brightness: {
+    brightness: DisplayBrightness;
+  };
+  color: {
+    colorIndex: number;
+    color: DisplayColorRGB;
+    colorHex: string;
+  };
+  colorOpacity: {
+    opacity: number;
+    colorIndex: number;
+  };
+  opacity: {
+    opacity: number;
   };
 }
 
@@ -165,6 +190,8 @@ class DisplayCanvasHelper {
 
     this.canvas.width = width;
     this.canvas.height = height;
+
+    this.clearDisplay();
   }
 
   // CONTEXT STACK
@@ -173,8 +200,15 @@ class DisplayCanvasHelper {
   #drawFrontDrawStack() {
     this.#context.clearRect(0, 0, this.width, this.height);
 
-    // FILL - draw background
+    this.#drawBackground();
     this.#frontDrawStack.forEach((callback) => callback());
+  }
+
+  #drawBackground() {
+    this.#save();
+    this.context.fillStyle = this.#colorIndexToRgba(0);
+    this.context.fillRect(0, 0, this.width, this.height);
+    this.#restore();
   }
 
   // DEVICE
@@ -247,6 +281,10 @@ class DisplayCanvasHelper {
 
     this.#colors = new Array(this.numberOfColors).fill("#000000");
     this.#opacities = new Array(this.numberOfColors).fill(1);
+
+    this.#dispatchEvent("numberOfColors", {
+      numberOfColors: this.numberOfColors,
+    });
   }
 
   // COLORS
@@ -306,8 +344,8 @@ class DisplayCanvasHelper {
     return this.#displayContextStateHelper.state;
   }
   #onDisplayContextStateUpdate(differences: DisplayContextStateKey[]) {
-    this.#dispatchEvent("displayContextState", {
-      displayContextState: { ...this.contextState },
+    this.#dispatchEvent("contextState", {
+      contextState: { ...this.contextState },
       differences,
     });
   }
@@ -336,6 +374,7 @@ class DisplayCanvasHelper {
   }
   clearDisplay(sendImmediately = true) {
     _console.log("clearDisplay");
+    this.showDisplay();
     this.#context.clearRect(0, 0, this.width, this.height);
     if (this.device?.isConnected) {
       this.device.clearDisplay(sendImmediately);
@@ -364,9 +403,9 @@ class DisplayCanvasHelper {
       this.device.setDisplayColor(colorIndex, color, sendImmediately);
     }
 
-    // FILL - redraw
-
     this.colors[colorIndex] = colorHex;
+    this.#drawFrontDrawStack();
+    this.#dispatchEvent("color", { colorIndex, colorHex, color });
   }
 
   setColorOpacity(
@@ -387,6 +426,8 @@ class DisplayCanvasHelper {
     }
 
     this.#opacities[colorIndex] = opacity;
+    this.#drawFrontDrawStack();
+    this.#dispatchEvent("colorOpacity", { colorIndex, opacity });
   }
   setOpacity(opacity: number, sendImmediately?: boolean) {
     assertValidOpacity(opacity);
@@ -394,6 +435,8 @@ class DisplayCanvasHelper {
       this.device.setDisplayOpacity(opacity, sendImmediately);
     }
     this.#opacities.fill(opacity);
+    this.#drawFrontDrawStack();
+    this.#dispatchEvent("opacity", { opacity });
   }
 
   // CONTEXT COMMANDS
@@ -657,6 +700,13 @@ class DisplayCanvasHelper {
     this.#onDisplayContextStateUpdate(differences);
   }
 
+  #clearRectToCanvas(x: number, y: number, width: number, height: number) {
+    this.#save();
+    this.context.resetTransform();
+    this.context.fillStyle = this.#colorIndexToRgba(0);
+    this.context.fillRect(x, y, width, height);
+    this.#restore();
+  }
   clearRect(
     x: number,
     y: number,
@@ -664,7 +714,9 @@ class DisplayCanvasHelper {
     height: number,
     sendImmediately?: boolean
   ) {
-    // FILL
+    this.#rearDrawStack.push(() =>
+      this.#clearRectToCanvas(x, y, width, height)
+    );
     if (this.device?.isConnected) {
       this.device.clearDisplayRect(x, y, width, height, sendImmediately);
     }
@@ -723,7 +775,7 @@ class DisplayCanvasHelper {
   }
   #clearBoundingBoxOnDraw = true;
   #clearBoundingBox({ x, y, width, height }: DisplayBoundingBox) {
-    this.context.clearRect(x, y, width, height);
+    this.#clearRectToCanvas(x, y, width, height);
   }
   #getRectBoundingBox(
     centerX: number,
@@ -1479,9 +1531,12 @@ class DisplayCanvasHelper {
       return;
     }
     this.#brightness = newBrightness;
+    _console.log({ brightness: this.brightness });
     if (this.device?.isConnected) {
       this.device.setDisplayBrightness(newBrightness, sendImmediately);
     }
+    this.#drawFrontDrawStack();
+    this.#dispatchEvent("brightness", { brightness: this.brightness });
   }
   #resetBrightness() {
     this.setBrightness("medium");

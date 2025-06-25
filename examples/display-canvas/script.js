@@ -43,8 +43,145 @@ device.addEventListener("connected", () => {
   }
 });
 
+// BRIGHTNESS
+/** @type {HTMLSelectElement} */
+const setDisplayBrightnessSelect = document.getElementById(
+  "setDisplayBrightnessSelect"
+);
+/** @type {HTMLOptGroupElement} */
+const setDisplayBrightnessSelectOptgroup =
+  setDisplayBrightnessSelect.querySelector("optgroup");
+BS.DisplayBrightnesses.forEach((displayBrightness) => {
+  setDisplayBrightnessSelectOptgroup.appendChild(new Option(displayBrightness));
+});
+setDisplayBrightnessSelect.addEventListener("input", () => {
+  displayCanvasHelper.setBrightness(setDisplayBrightnessSelect.value);
+});
+
+setDisplayBrightnessSelect.value = displayCanvasHelper.brightness;
+
+// COLORS
+
+/** @type {HTMLTemplateElement} */
+const displayColorTemplate = document.getElementById("displayColorTemplate");
+const displayColorsContainer = document.getElementById("displayColors");
+const setDisplayColor = BS.ThrottleUtils.throttle(
+  (colorIndex, colorString) => {
+    console.log({ colorIndex, colorString });
+    displayCanvasHelper.setColor(colorIndex, colorString, true);
+  },
+  100,
+  true
+);
+/** @type {HTMLInputElement[]} */
+const displayColorInputs = [];
+const setupColors = () => {
+  displayColorsContainer.innerHTML = "";
+  for (
+    let colorIndex = 0;
+    colorIndex < displayCanvasHelper.numberOfColors;
+    colorIndex++
+  ) {
+    const displayColorContainer = displayColorTemplate.content
+      .cloneNode(true)
+      .querySelector(".displayColor");
+
+    const colorIndexSpan = displayColorContainer.querySelector(".colorIndex");
+    colorIndexSpan.innerText = `color #${colorIndex}`;
+    const colorInput = displayColorContainer.querySelector("input");
+    displayColorInputs[colorIndex] = colorInput;
+    colorInput.addEventListener("input", () => {
+      setDisplayColor(colorIndex, colorInput.value);
+    });
+    displayColorsContainer.appendChild(displayColorContainer);
+  }
+};
+setupColors();
+displayCanvasHelper.addEventListener("numberOfColors", () => setupColors());
+displayCanvasHelper.addEventListener("color", (event) => {
+  const { colorHex, colorIndex } = event.message;
+  displayColorInputs[colorIndex].value = colorHex;
+});
+
+// OPACITIES
+
+/** @type {HTMLTemplateElement} */
+const displayColorOpacityTemplate = document.getElementById(
+  "displayColorOpacityTemplate"
+);
+const displayColorOpacitiesContainer = document.getElementById(
+  "displayColorOpacities"
+);
+const setDisplayColorOpacity = BS.ThrottleUtils.throttle(
+  (colorIndex, opacity) => {
+    console.log({ colorIndex, opacity });
+    displayCanvasHelper.setColorOpacity(colorIndex, opacity, true);
+  },
+  100,
+  true
+);
+const setupColorOpacities = () => {
+  displayColorOpacitiesContainer.innerHTML = "";
+  for (
+    let colorIndex = 0;
+    colorIndex < displayCanvasHelper.numberOfColors;
+    colorIndex++
+  ) {
+    const displayColorOpacityContainer = displayColorOpacityTemplate.content
+      .cloneNode(true)
+      .querySelector(".displayColorOpacity");
+
+    const displayColorOpacityIndex =
+      displayColorOpacityContainer.querySelector(".colorIndex");
+    displayColorOpacityIndex.innerText = `color opacity #${colorIndex}`;
+    const displayColorOpacityInput =
+      displayColorOpacityContainer.querySelector("input");
+    const displayColorOpacitySpan =
+      displayColorOpacityContainer.querySelector("span");
+    displayColorOpacityInput.addEventListener("input", () => {
+      const opacity = Number(displayColorOpacityInput.value);
+      displayColorOpacitySpan.innerText = Math.round(opacity * 100);
+      setDisplayColorOpacity(colorIndex, opacity);
+    });
+    displayColorOpacitiesContainer.appendChild(displayColorOpacityContainer);
+  }
+};
+displayCanvasHelper.addEventListener("numberOfColors", () =>
+  setupColorOpacities()
+);
+setupColorOpacities();
+
+const displayOpacityContainer = document.getElementById("displayOpacity");
+const displayOpacitySpan = displayOpacityContainer.querySelector("span");
+const displayOpacityInput = displayOpacityContainer.querySelector("input");
+
+const setDisplayOpacity = BS.ThrottleUtils.throttle(
+  (opacity) => {
+    console.log({ opacity });
+    displayCanvasHelper.setOpacity(opacity, true);
+  },
+  100,
+  true
+);
+displayOpacityInput.addEventListener("input", () => {
+  const opacity = Number(displayOpacityInput.value);
+  displayOpacitySpan.innerText = Math.round(opacity * 100);
+  setDisplayOpacity(opacity);
+  displayColorOpacitiesContainer
+    .querySelectorAll(".displayColorOpacity")
+    .forEach((container) => {
+      const input = container.querySelector("input");
+      const span = container.querySelector("span");
+      input.value = opacity;
+      span.innerText = Math.round(opacity * 100);
+    });
+});
+
+// TEST
+
 window.test = (centerX, centerY, width, height) => {
   displayCanvasHelper.setLineWidth(0);
+  displayCanvasHelper.setColor(0, "black");
   displayCanvasHelper.setColor(1, "red");
   displayCanvasHelper.setColor(2, "blue");
   displayCanvasHelper.selectLineColor(2);

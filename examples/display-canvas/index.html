@@ -46,6 +46,42 @@
       </select>
     </label>
 
+    <br />
+
+    <label>
+      brightness
+      <select id="setDisplayBrightnessSelect">
+        <optgroup label="select brightness"></optgroup>
+      </select>
+    </label>
+
+    <div id="displayColors">
+      <template id="displayColorTemplate">
+        <label class="displayColor">
+          <span class="colorIndex"></span>
+          <input type="color" value="#000000" />
+        </label>
+      </template>
+    </div>
+
+    <div id="displayColorOpacities">
+      <template id="displayColorOpacityTemplate">
+        <label class="displayColorOpacity">
+          <span class="colorIndex"></span>
+          <input type="range" min="0" max="1" step="0.01" value="1" />
+          <span>100</span>%
+        </label>
+      </template>
+    </div>
+
+    <div>
+      <label id="displayOpacity">
+        opacity
+        <input type="range" min="0" max="1" step="0.01" value="1" />
+        <span>100</span>%
+      </label>
+    </div>
+
     <div id="displayContainer">
       <canvas id="display" width="640" height="400"></canvas>
       <video id="camera"></video>

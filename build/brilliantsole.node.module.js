@@ -3919,6 +3919,9 @@ const RequiredDisplayMessageTypes = [
 const DisplayEventTypes = [
     ...DisplayMessageTypes,
     "displayContextState",
+    "displayColor",
+    "displayColorOpacity",
+    "displayOpacity",
 ];
 class DisplayManager {
     constructor() {
@@ -4104,6 +4107,7 @@ class DisplayManager {
         dataView.setUint8(3, color.b);
         __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "setColor", dataView.buffer, sendImmediately);
         this.colors[colorIndex] = colorHex;
+        __classPrivateFieldGet(this, _DisplayManager_instances, "a", _DisplayManager_dispatchEvent_get).call(this, "displayColor", { colorIndex, color, colorHex });
     }
     get opacities() {
         return __classPrivateFieldGet(this, _DisplayManager_opacities, "f");
@@ -4120,6 +4124,7 @@ class DisplayManager {
         dataView.setUint8(1, opacity * 255);
         __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "setColorOpacity", dataView.buffer, sendImmediately);
         __classPrivateFieldGet(this, _DisplayManager_opacities, "f")[colorIndex] = opacity;
+        __classPrivateFieldGet(this, _DisplayManager_instances, "a", _DisplayManager_dispatchEvent_get).call(this, "displayColorOpacity", { colorIndex, opacity });
     }
     setOpacity(opacity, sendImmediately) {
         assertValidOpacity(opacity);

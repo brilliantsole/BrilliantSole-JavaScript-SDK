@@ -2016,21 +2016,6 @@ device.addEventListener("displayInformation", () => {
   );
 });
 
-/** @type {HTMLSpanElement} */
-const displayBrightnessSpan = document.getElementById("displayBrightness");
-device.addEventListener("getDisplayBrightness", () => {
-  if (!device.isDisplayAvailable) {
-    return;
-  }
-  console.log(`displayBrightness updated to ${device.displayBrightness}`);
-  displayBrightnessSpan.innerText = device.displayBrightness;
-});
-
-/** @type {HTMLButtonElement} */
-const setDisplayBrightnessButton = document.getElementById(
-  "setDisplayBrightnessButton"
-);
-
 /** @type {HTMLSelectElement} */
 const setDisplayBrightnessSelect = document.getElementById(
   "setDisplayBrightnessSelect"
@@ -2051,16 +2036,7 @@ device.addEventListener("getDisplayBrightness", () => {
 });
 
 setDisplayBrightnessSelect.addEventListener("input", () => {
-  setDisplayBrightnessButton.disabled =
-    setDisplayBrightnessSelect.value == device.displayBrightness;
-});
-
-setDisplayBrightnessButton.addEventListener("click", () => {
-  console.log(
-    `setting displayBrightness to ${setDisplayBrightnessSelect.value}`
-  );
   device.setDisplayBrightness(setDisplayBrightnessSelect.value);
-  setDisplayBrightnessButton.disabled = true;
 });
 
 /** @type {HTMLTemplateElement} */

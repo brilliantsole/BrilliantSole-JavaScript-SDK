@@ -223,6 +223,9 @@ export const RequiredDisplayMessageTypes: DisplayMessageType[] = [
 export const DisplayEventTypes = [
   ...DisplayMessageTypes,
   "displayContextState",
+  "displayColor",
+  "displayColorOpacity",
+  "displayOpacity",
 ] as const;
 export type DisplayEventType = (typeof DisplayEventTypes)[number];
 
@@ -241,6 +244,18 @@ export interface DisplayEventMessages {
   displayContextState: {
     displayContextState: DisplayContextState;
     differences: DisplayContextStateKey[];
+  };
+  displayColor: {
+    colorIndex: number;
+    color: DisplayColorRGB;
+    colorHex: string;
+  };
+  displayColorOpacity: {
+    opacity: number;
+    colorIndex: number;
+  };
+  displayOpacity: {
+    opacity: number;
   };
 }
 
@@ -671,6 +686,7 @@ class DisplayManager {
       sendImmediately
     );
     this.colors[colorIndex] = colorHex;
+    this.#dispatchEvent("displayColor", { colorIndex, color, colorHex });
   }
   #opacities: number[] = [];
   get opacities() {
@@ -698,6 +714,7 @@ class DisplayManager {
       sendImmediately
     );
     this.#opacities[colorIndex] = opacity;
+    this.#dispatchEvent("displayColorOpacity", { colorIndex, opacity });
   }
   setOpacity(opacity: number, sendImmediately?: boolean) {
     assertValidOpacity(opacity);
@@ -707,6 +724,7 @@ class DisplayManager {
       sendImmediately
     );
     this.#opacities.fill(opacity);
+    this.#dispatchEvent("displayOpacity", { opacity });
   }
 
   saveContext(sendImmediately?: boolean) {
