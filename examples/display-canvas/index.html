@@ -19,6 +19,9 @@
       width: 100%;
       height: 100%;
     }
+    #display0 {
+      z-index: 1;
+    }
   </style>
   <body>
     <nav>
@@ -33,16 +36,30 @@
       preview mode
       <select id="previewMode">
         <optgroup label="preview mode">
-          <option selected>blank</option>
+          <option selected>none</option>
+          <option>image</option>
+          <option>video</option>
           <option>camera</option>
+          <option>vr</option>
+          <option>ar</option>
         </optgroup>
       </select>
     </label>
 
-    <label hidden>
+    <label data-preview-mode="image">
+      image
+      <input type="file" id="imageInput" accept="image/*" />
+    </label>
+
+    <label data-preview-mode="video">
+      video
+      <input type="file" id="videoInput" accept="video/*" />
+    </label>
+
+    <label data-preview-mode="camera">
       camera
-      <select id="camera">
-        <optgroup label="camera"></optgroup>
+      <select id="cameraInput">
+        <optgroup label="select camera"></optgroup>
       </select>
     </label>
 
@@ -69,7 +86,7 @@
         <label class="displayColorOpacity">
           <span class="colorIndex"></span>
           <input type="range" min="0" max="1" step="0.01" value="1" />
-          <span>100</span>%
+          <span class="opacity">100</span>%
         </label>
       </template>
     </div>
@@ -84,7 +101,9 @@
 
     <div id="displayContainer">
       <canvas id="display" width="640" height="400"></canvas>
-      <video id="camera"></video>
+      <img id="image" />
+      <video id="video" loop autoplay muted></video>
+      <video id="cameraVideo" autoplay muted></video>
     </div>
   </body>
 </html>

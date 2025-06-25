@@ -6,7 +6,7 @@ import {
 } from "../DisplayManager.ts";
 import { createConsole } from "./Console.ts";
 
-const _console = createConsole("DisplayContextStateHelper", { log: true });
+const _console = createConsole("DisplayContextStateHelper", { log: false });
 
 class DisplayContextStateHelper {
   #state: DisplayContextState = Object.assign({}, DefaultDisplayContextState);

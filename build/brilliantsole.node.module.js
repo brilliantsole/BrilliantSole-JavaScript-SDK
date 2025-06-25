@@ -3715,7 +3715,7 @@ function rgbToHex({ r, g, b }) {
 }
 
 var _DisplayContextStateHelper_state;
-const _console$q = createConsole("DisplayContextStateHelper", { log: true });
+const _console$q = createConsole("DisplayContextStateHelper", { log: false });
 class DisplayContextStateHelper {
     constructor() {
         _DisplayContextStateHelper_state.set(this, Object.assign({}, DefaultDisplayContextState));
@@ -4130,6 +4130,7 @@ class DisplayManager {
         assertValidOpacity(opacity);
         __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "setOpacity", UInt8ByteBuffer(Math.round(opacity * 255)), sendImmediately);
         __classPrivateFieldGet(this, _DisplayManager_opacities, "f").fill(opacity);
+        __classPrivateFieldGet(this, _DisplayManager_instances, "a", _DisplayManager_dispatchEvent_get).call(this, "displayOpacity", { opacity });
     }
     saveContext(sendImmediately) {
         __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "saveContext", undefined, sendImmediately);

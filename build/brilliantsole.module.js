@@ -3724,7 +3724,7 @@ function rgbToHex({ r, g, b }) {
 }
 
 var _DisplayContextStateHelper_state;
-const _console$l = createConsole("DisplayContextStateHelper", { log: true });
+const _console$l = createConsole("DisplayContextStateHelper", { log: false });
 class DisplayContextStateHelper {
     constructor() {
         _DisplayContextStateHelper_state.set(this, Object.assign({}, DefaultDisplayContextState));

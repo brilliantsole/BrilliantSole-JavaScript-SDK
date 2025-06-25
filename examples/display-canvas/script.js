@@ -137,7 +137,7 @@ const setupColorOpacities = () => {
     const displayColorOpacityInput =
       displayColorOpacityContainer.querySelector("input");
     const displayColorOpacitySpan =
-      displayColorOpacityContainer.querySelector("span");
+      displayColorOpacityContainer.querySelector(".opacity");
     displayColorOpacityInput.addEventListener("input", () => {
       const opacity = Number(displayColorOpacityInput.value);
       displayColorOpacitySpan.innerText = Math.round(opacity * 100);
@@ -176,6 +176,153 @@ displayOpacityInput.addEventListener("input", () => {
       span.innerText = Math.round(opacity * 100);
     });
 });
+
+// PREVIEW MODE
+
+/** @type {HTMLInputElement} */
+const imageInput = document.getElementById("imageInput");
+/** @type {HTMLImageElement} */
+const image = document.getElementById("image");
+imageInput.addEventListener("input", (event) => {
+  const file = imageInput.files[0];
+  if (!file) return;
+  loadImage(file);
+});
+const loadImage = (file) => {
+  const reader = new FileReader();
+  reader.onload = () => {
+    image.src = reader.result;
+  };
+  reader.readAsDataURL(file);
+};
+
+/** @type {HTMLInputElement} */
+const videoInput = document.getElementById("videoInput");
+/** @type {HTMLVideoElement} */
+const video = document.getElementById("video");
+videoInput.addEventListener("input", (event) => {
+  const file = videoInput.files[0];
+  if (!file) return;
+  loadVideo(file);
+});
+const loadVideo = (file) => {
+  const reader = new FileReader();
+  reader.onload = () => {
+    video.src = reader.result;
+  };
+  reader.readAsDataURL(file);
+};
+
+window.addEventListener("dragover", (e) => {
+  e.preventDefault();
+});
+
+window.addEventListener("drop", (e) => {
+  e.preventDefault();
+  const file = e.dataTransfer.files[0];
+  if (file) {
+    if (file.type.startsWith("image/")) {
+      setPreviewMode("image");
+      loadImage(file);
+    } else if (file.type.startsWith("video/")) {
+      setPreviewMode("video");
+      loadVideo(file);
+    }
+  }
+});
+
+/** @type {HTMLVideoElement} */
+const cameraVideo = document.getElementById("cameraVideo");
+/** @type {HTMLSelectElement} */
+const cameraInput = document.getElementById("cameraInput");
+const cameraInputOptgroup = cameraInput.querySelector("optgroup");
+cameraInput.addEventListener("input", () => {
+  selectCameraInput(cameraInput.value);
+});
+const updateCameraSources = async () => {
+  cameraInputOptgroup.innerHTML = "";
+  const devices = await navigator.mediaDevices.enumerateDevices();
+  devices
+    .filter((device) => device.kind == "videoinput")
+    .forEach((videoInputDevice) => {
+      console.log(videoInputDevice);
+      cameraInputOptgroup.appendChild(
+        new Option(videoInputDevice.label, videoInputDevice.deviceId)
+      );
+    });
+  if (previewMode == "camera") {
+    selectCameraInput(cameraInput.value);
+  }
+};
+/** @type {MediaStream?} */
+let cameraStream;
+const selectCameraInput = async (deviceId) => {
+  stopCameraStream();
+  cameraStream = await navigator.mediaDevices.getUserMedia({
+    video: { deviceId: { exact: deviceId } },
+  });
+
+  cameraVideo.srcObject = cameraStream;
+  console.log("got cameraStream", deviceId, cameraStream);
+};
+const stopCameraStream = () => {
+  if (cameraStream) {
+    console.log("stopping cameraStream");
+    cameraStream.getVideoTracks().forEach((track) => track.stop());
+  }
+  cameraStream = undefined;
+};
+navigator.mediaDevices.addEventListener("devicechange", () =>
+  updateCameraSources()
+);
+updateCameraSources();
+
+/** @type {HTMLSelectElement} */
+const previewModeSelect = document.getElementById("previewMode");
+/** @typedef {"none" | "image" | "video" | "camera" | "vr" | "ar"} PreviewMode */
+/** @type {PreviewMode} */
+let previewMode = "none";
+previewModeSelect.addEventListener("input", () => {
+  setPreviewMode(previewModeSelect.value);
+});
+/** @param {PreviewMode} newPreviewMode */
+const setPreviewMode = (newPreviewMode) => {
+  previewMode = newPreviewMode;
+  if (previewModeSelect.value != previewMode) {
+    previewModeSelect.value = previewMode;
+  }
+  console.log({ previewMode });
+  document.querySelectorAll("[data-preview-mode]").forEach((container) => {
+    container.style.display =
+      container.dataset.previewMode == previewMode ? "" : "none";
+  });
+
+  cameraVideo.style.display = previewMode == "camera" ? "" : "none";
+  video.style.display = previewMode == "video" ? "" : "none";
+  image.style.display = previewMode == "image" ? "" : "none";
+
+  if (previewMode == "camera") {
+    selectCameraInput(cameraInput.value);
+  } else {
+    stopCameraStream();
+  }
+
+  switch (previewMode) {
+    case "none":
+      break;
+    case "image":
+      break;
+    case "video":
+      break;
+    case "camera":
+      break;
+    case "vr":
+      break;
+    case "ar":
+      break;
+  }
+};
+setPreviewMode("none");
 
 // TEST
 
