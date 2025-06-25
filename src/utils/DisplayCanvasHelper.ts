@@ -161,7 +161,9 @@ class DisplayCanvasHelper {
     this.#canvas = newCanvas;
     _console.log("assigned canvas", this.canvas);
 
-    this.#context = this.#canvas?.getContext("2d")!;
+    this.#context = this.#canvas?.getContext("2d", {
+      willReadFrequently: true,
+    })!;
     this.#context.imageSmoothingEnabled = false;
     this.#updateCanvas();
   }
@@ -178,10 +180,11 @@ class DisplayCanvasHelper {
   }
 
   #updateCanvas() {
-    if (!this.device?.isConnected) {
+    if (!this.canvas) {
       return;
     }
-    if (!this.canvas) {
+    this.canvas!.style.aspectRatio = `${this.width / this.height}`;
+    if (!this.device?.isConnected) {
       return;
     }
 
@@ -190,6 +193,7 @@ class DisplayCanvasHelper {
 
     this.canvas.width = width;
     this.canvas.height = height;
+    this.canvas.style.aspectRatio = `${width / height}`;
 
     this.clearDisplay();
   }
@@ -202,6 +206,31 @@ class DisplayCanvasHelper {
 
     this.#drawBackground();
     this.#frontDrawStack.forEach((callback) => callback());
+    // FILL
+    if (this.#applyTransparency) {
+      this.#applyTransparencyToCanvas();
+    }
+  }
+  #applyTransparencyToCanvas() {
+    const ctx = this.context;
+    const imageData = ctx.getImageData(
+      0,
+      0,
+      this.canvas!.width,
+      this.canvas!.height
+    );
+    const data = imageData.data;
+
+    for (let i = 0; i < data.length; i += 4) {
+      const r = data[i];
+      const g = data[i + 1];
+      const b = data[i + 2];
+
+      const alpha = Math.max(r, g, b);
+      data[i + 3] = alpha;
+    }
+
+    ctx.putImageData(imageData, 0, 0);
   }
 
   #drawBackground() {
@@ -209,6 +238,15 @@ class DisplayCanvasHelper {
     this.context.fillStyle = this.#colorIndexToRgba(0);
     this.context.fillRect(0, 0, this.width, this.height);
     this.#restore();
+  }
+  #applyTransparency = false;
+  get applyTransparency() {
+    return this.#applyTransparency;
+  }
+  set applyTransparency(newValue) {
+    this.#applyTransparency = newValue;
+    console.log({ applyTransparency: this.applyTransparency });
+    this.#drawFrontDrawStack();
   }
 
   // DEVICE
@@ -379,6 +417,7 @@ class DisplayCanvasHelper {
     if (this.device?.isConnected) {
       this.device.clearDisplay(sendImmediately);
     }
+    this.#drawBackground();
   }
 
   setColor(
@@ -722,15 +761,15 @@ class DisplayCanvasHelper {
     }
   }
   #save() {
-    const ctx = this.#context;
+    const ctx = this.context;
     ctx.save();
   }
   #restore() {
-    const ctx = this.#context;
+    const ctx = this.context;
     ctx.restore();
   }
   #transformContext(centerX: number, centerY: number, rotation: number) {
-    const ctx = this.#context;
+    const ctx = this.context;
     ctx.translate(centerX, centerY);
     ctx.rotate(rotation);
   }
@@ -797,7 +836,7 @@ class DisplayCanvasHelper {
     { x, y, height, width }: DisplayBoundingBox,
     { cropTop, cropRight, cropBottom, cropLeft }: DisplayContextState
   ) {
-    const ctx = this.#context;
+    const ctx = this.context;
     ctx.beginPath();
     ctx.rect(x + cropLeft, y + cropTop, width - cropRight, height - cropBottom);
     ctx.clip();
@@ -811,7 +850,7 @@ class DisplayCanvasHelper {
       rotationCropLeft,
     }: DisplayContextState
   ) {
-    const ctx = this.#context;
+    const ctx = this.context;
     ctx.beginPath();
     ctx.rect(
       -width / 2 + rotationCropLeft,
@@ -1290,7 +1329,7 @@ class DisplayCanvasHelper {
       x: (innerStartX + innerEndX) / 2,
       y: (innerStartY + innerEndY) / 2,
     };
-    _console.log("midpoint", midpoint);
+    //_console.log("midpoint", midpoint);
     return midpoint;
   }
   #getOrientedSegmentBoundingBox(

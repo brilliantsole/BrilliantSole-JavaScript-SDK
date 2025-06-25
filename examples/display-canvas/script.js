@@ -245,7 +245,6 @@ const updateCameraSources = async () => {
   devices
     .filter((device) => device.kind == "videoinput")
     .forEach((videoInputDevice) => {
-      console.log(videoInputDevice);
       cameraInputOptgroup.appendChild(
         new Option(videoInputDevice.label, videoInputDevice.deviceId)
       );
@@ -285,6 +284,7 @@ let previewMode = "none";
 previewModeSelect.addEventListener("input", () => {
   setPreviewMode(previewModeSelect.value);
 });
+const displayContainer = document.getElementById("displayContainer");
 /** @param {PreviewMode} newPreviewMode */
 const setPreviewMode = (newPreviewMode) => {
   previewMode = newPreviewMode;
@@ -301,26 +301,26 @@ const setPreviewMode = (newPreviewMode) => {
   video.style.display = previewMode == "video" ? "" : "none";
   image.style.display = previewMode == "image" ? "" : "none";
 
+  switch (previewMode) {
+    case "camera":
+    case "image":
+    case "video":
+      displayContainer.classList.add("shrink");
+      break;
+    default:
+      displayContainer.classList.remove("shrink");
+      break;
+  }
+
+  image.style.display = previewMode == "image" ? "" : "none";
+
   if (previewMode == "camera") {
     selectCameraInput(cameraInput.value);
   } else {
     stopCameraStream();
   }
 
-  switch (previewMode) {
-    case "none":
-      break;
-    case "image":
-      break;
-    case "video":
-      break;
-    case "camera":
-      break;
-    case "vr":
-      break;
-    case "ar":
-      break;
-  }
+  displayCanvasHelper.applyTransparency = previewMode != "none";
 };
 setPreviewMode("none");
 

@@ -1098,6 +1098,8 @@ declare class DisplayCanvasHelper {
     get context(): CanvasRenderingContext2D;
     get width(): number;
     get height(): number;
+    get applyTransparency(): boolean;
+    set applyTransparency(newValue: boolean);
     get device(): Device | undefined;
     set device(newDevice: Device | undefined);
     get numberOfColors(): number;
