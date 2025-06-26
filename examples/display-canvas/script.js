@@ -296,10 +296,55 @@ window.addEventListener("paste", (event) => {
 // VR/AR
 const sceneEntity = document.getElementById("scene");
 const modelEntity = document.getElementById("model");
+window.addEventListener(
+  "keydown",
+  function (e) {
+    if (previewMode != "ar" && previewMode != "vr") {
+      return;
+    }
+    const keysToPrevent = [
+      "ArrowUp",
+      "ArrowDown",
+      "ArrowLeft",
+      "ArrowRight",
+      " ",
+    ];
+
+    if (keysToPrevent.includes(e.key)) {
+      e.preventDefault();
+    }
+  },
+  { passive: false }
+);
+const sampleModelEntity = document.getElementById("sampleModel");
+modelEntity.addEventListener("model-loaded", () => {
+  sampleModelEntity.remove();
+});
+const displayPlaneEntity = document.getElementById("displayPlane");
+const redrawDisplayPlaneEntity = () => {
+  let material = displayPlaneEntity.getObject3D("mesh").material;
+  if (!material.map) return;
+  else material.map.needsUpdate = true;
+};
+const resizeDisplayPlaneEntity = () => {
+  displayPlaneEntity.setAttribute(
+    "width",
+    displayPlaneEntityHeight * displayCanvasHelper.aspectRatio
+  );
+};
+let displayPlaneEntityHeight = 0.2;
+displayPlaneEntity.addEventListener("loaded", () => {
+  displayCanvasHelper.addEventListener("update", () => {
+    redrawDisplayPlaneEntity();
+  });
+  displayCanvasHelper.addEventListener("resize", () => {
+    resizeDisplayPlaneEntity();
+  });
+});
+
 const loadModel = (file) => {
   const reader = new FileReader();
   reader.onload = () => {
-    console.log("reader.result", reader.result);
     modelEntity.setAttribute("gltf-model", reader.result);
   };
   reader.readAsDataURL(file);
@@ -384,15 +429,20 @@ const setPreviewMode = (newPreviewMode) => {
   video.style.display = previewMode == "video" ? "" : "none";
   image.style.display = previewMode == "image" ? "" : "none";
   modelEntity.object3D.visible = previewMode == "vr";
-  sceneEntity.style.visibility =
-    previewMode == "vr" || previewMode == "ar" ? "visible" : "hidden";
+  sampleModelEntity.object3D.visible = previewMode == "vr";
+
+  if (previewMode == "vr" || previewMode == "ar") {
+    sceneEntity.style.visibility = "visible";
+    displayCanvas.style.display = "none";
+  } else {
+    sceneEntity.style.visibility = "hidden";
+    displayCanvas.style.display = "";
+  }
 
   switch (previewMode) {
     case "camera":
     case "image":
     case "video":
-    case "vr":
-    case "ar":
       displayContainer.classList.add("shrink");
       break;
     default:

@@ -1042,7 +1042,7 @@ declare class DeviceManager {
 }
 declare const _default: DeviceManager;
 
-declare const DisplayCanvasHelperEventTypes: readonly ["contextState", "numberOfColors", "brightness", "color", "colorOpacity", "opacity"];
+declare const DisplayCanvasHelperEventTypes: readonly ["contextState", "numberOfColors", "brightness", "color", "colorOpacity", "opacity", "resize", "update"];
 type DisplayCanvasHelperEventType = (typeof DisplayCanvasHelperEventTypes)[number];
 interface DisplayCanvasHelperEventMessages {
     contextState: {
@@ -1067,6 +1067,10 @@ interface DisplayCanvasHelperEventMessages {
     opacity: {
         opacity: number;
     };
+    resize: {
+        width: number;
+        height: number;
+    };
 }
 type DisplayCanvasHelperEvent = Event<DisplayCanvasHelper, DisplayCanvasHelperEventType, DisplayCanvasHelperEventMessages>;
 type DisplayCanvasHelperEventMap = EventMap<DisplayCanvasHelper, DisplayCanvasHelperEventType, DisplayCanvasHelperEventMessages>;
@@ -1074,30 +1078,31 @@ type DisplayCanvasHelperEventListenerMap = EventListenerMap<DisplayCanvasHelper,
 declare class DisplayCanvasHelper {
     #private;
     constructor();
-    get addEventListener(): <T extends "contextState" | "numberOfColors" | "brightness" | "color" | "colorOpacity" | "opacity">(type: T, listener: (event: {
+    get addEventListener(): <T extends "contextState" | "numberOfColors" | "brightness" | "color" | "colorOpacity" | "opacity" | "resize" | "update">(type: T, listener: (event: {
         type: T;
         target: DisplayCanvasHelper;
         message: DisplayCanvasHelperEventMessages[T];
     }) => void, options?: {
         once?: boolean;
     }) => void;
-    get removeEventListener(): <T extends "contextState" | "numberOfColors" | "brightness" | "color" | "colorOpacity" | "opacity">(type: T, listener: (event: {
+    get removeEventListener(): <T extends "contextState" | "numberOfColors" | "brightness" | "color" | "colorOpacity" | "opacity" | "resize" | "update">(type: T, listener: (event: {
         type: T;
         target: DisplayCanvasHelper;
         message: DisplayCanvasHelperEventMessages[T];
     }) => void) => void;
-    get waitForEvent(): <T extends "contextState" | "numberOfColors" | "brightness" | "color" | "colorOpacity" | "opacity">(type: T) => Promise<{
+    get waitForEvent(): <T extends "contextState" | "numberOfColors" | "brightness" | "color" | "colorOpacity" | "opacity" | "resize" | "update">(type: T) => Promise<{
         type: T;
         target: DisplayCanvasHelper;
         message: DisplayCanvasHelperEventMessages[T];
     }>;
-    get removeEventListeners(): <T extends "contextState" | "numberOfColors" | "brightness" | "color" | "colorOpacity" | "opacity">(type: T) => void;
+    get removeEventListeners(): <T extends "contextState" | "numberOfColors" | "brightness" | "color" | "colorOpacity" | "opacity" | "resize" | "update">(type: T) => void;
     get removeAllEventListeners(): () => void;
     get canvas(): HTMLCanvasElement | undefined;
     set canvas(newCanvas: HTMLCanvasElement | undefined);
     get context(): CanvasRenderingContext2D;
     get width(): number;
     get height(): number;
+    get aspectRatio(): number;
     get applyTransparency(): boolean;
     set applyTransparency(newValue: boolean);
     get device(): Device | undefined;

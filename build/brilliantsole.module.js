@@ -7945,6 +7945,8 @@ const DisplayCanvasHelperEventTypes = [
     "color",
     "colorOpacity",
     "opacity",
+    "resize",
+    "update",
 ];
 class DisplayCanvasHelper {
     constructor() {
@@ -8015,6 +8017,9 @@ class DisplayCanvasHelper {
     }
     get height() {
         return this.canvas?.height || 0;
+    }
+    get aspectRatio() {
+        return this.width / this.height;
     }
     get applyTransparency() {
         return __classPrivateFieldGet(this, _DisplayCanvasHelper_applyTransparency, "f");
@@ -8455,6 +8460,7 @@ _DisplayCanvasHelper_eventDispatcher = new WeakMap(), _DisplayCanvasHelper_canva
     this.canvas.width = width;
     this.canvas.height = height;
     this.canvas.style.aspectRatio = `${width / height}`;
+    __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "a", _DisplayCanvasHelper_dispatchEvent_get).call(this, "resize", { width: this.width, height: this.height });
     this.clearDisplay();
 }, _DisplayCanvasHelper_drawFrontDrawStack = function _DisplayCanvasHelper_drawFrontDrawStack() {
     __classPrivateFieldGet(this, _DisplayCanvasHelper_context, "f").clearRect(0, 0, this.width, this.height);
@@ -8463,6 +8469,7 @@ _DisplayCanvasHelper_eventDispatcher = new WeakMap(), _DisplayCanvasHelper_canva
     if (__classPrivateFieldGet(this, _DisplayCanvasHelper_applyTransparency, "f")) {
         __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_applyTransparencyToCanvas).call(this);
     }
+    __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "a", _DisplayCanvasHelper_dispatchEvent_get).call(this, "update", {});
 }, _DisplayCanvasHelper_applyTransparencyToCanvas = function _DisplayCanvasHelper_applyTransparencyToCanvas() {
     const ctx = this.context;
     const imageData = ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
@@ -8749,7 +8756,7 @@ _DisplayCanvasHelper_eventDispatcher = new WeakMap(), _DisplayCanvasHelper_canva
     };
     return boundingBox;
 }, _DisplayCanvasHelper_getSegmentMidpoint = function _DisplayCanvasHelper_getSegmentMidpoint(startX, startY, endX, endY, { lineWidth, segmentStartRadius, segmentEndRadius, segmentEndCap, segmentStartCap, }) {
-    const outerPadding = (lineWidth + 1) / 2;
+    const outerPadding = Math.ceil(lineWidth / 2);
     const vector = {
         x: endX - startX,
         y: endY - startY,
@@ -8769,7 +8776,7 @@ _DisplayCanvasHelper_eventDispatcher = new WeakMap(), _DisplayCanvasHelper_canva
     };
     return midpoint;
 }, _DisplayCanvasHelper_getOrientedSegmentBoundingBox = function _DisplayCanvasHelper_getOrientedSegmentBoundingBox(startX, startY, endX, endY, { lineWidth, segmentStartRadius, segmentEndRadius, segmentEndCap, segmentStartCap, }) {
-    const outerPadding = (lineWidth + 1) / 2;
+    const outerPadding = Math.ceil(lineWidth / 2);
     const vector = {
         x: endX - startX,
         y: endY - startY,

@@ -9,6 +9,7 @@ import {
   DisplayContextState,
   DisplayContextStateKey,
   DisplaySegmentCap,
+  DisplaySize,
 } from "../DisplayManager.ts";
 import { hexToRGB, rgbToHex, stringToRGB } from "./ColorUtils.ts";
 import { createConsole } from "./Console.ts";
@@ -53,6 +54,8 @@ export const DisplayCanvasHelperEventTypes = [
   "color",
   "colorOpacity",
   "opacity",
+  "resize",
+  "update",
 ] as const;
 export type DisplayCanvasHelperEventType =
   (typeof DisplayCanvasHelperEventTypes)[number];
@@ -79,6 +82,10 @@ export interface DisplayCanvasHelperEventMessages {
   };
   opacity: {
     opacity: number;
+  };
+  resize: {
+    width: number;
+    height: number;
   };
 }
 
@@ -178,12 +185,15 @@ class DisplayCanvasHelper {
   get height() {
     return this.canvas?.height || 0;
   }
+  get aspectRatio() {
+    return this.width / this.height;
+  }
 
   #updateCanvas() {
     if (!this.canvas) {
       return;
     }
-    this.canvas!.style.aspectRatio = `${this.width / this.height}`;
+    this.canvas!.style.aspectRatio = `${this.aspectRatio}`;
     if (!this.device?.isConnected) {
       return;
     }
@@ -194,6 +204,8 @@ class DisplayCanvasHelper {
     this.canvas.width = width;
     this.canvas.height = height;
     this.canvas.style.aspectRatio = `${width / height}`;
+
+    this.#dispatchEvent("resize", { width: this.width, height: this.height });
 
     this.clearDisplay();
   }
@@ -206,10 +218,10 @@ class DisplayCanvasHelper {
 
     this.#drawBackground();
     this.#frontDrawStack.forEach((callback) => callback());
-    // FILL
     if (this.#applyTransparency) {
       this.#applyTransparencyToCanvas();
     }
+    this.#dispatchEvent("update", {});
   }
   #applyTransparencyToCanvas() {
     const ctx = this.context;
@@ -1307,7 +1319,7 @@ class DisplayCanvasHelper {
       segmentStartCap,
     }: DisplayContextState
   ): Vector2 {
-    const outerPadding = (lineWidth + 1) / 2;
+    const outerPadding = Math.ceil(lineWidth / 2);
     const vector: Vector2 = {
       x: endX - startX,
       y: endY - startY,
@@ -1345,7 +1357,7 @@ class DisplayCanvasHelper {
       segmentStartCap,
     }: DisplayContextState
   ): DisplayBoundingBox {
-    const outerPadding = (lineWidth + 1) / 2;
+    const outerPadding = Math.ceil(lineWidth / 2);
     const vector: Vector2 = {
       x: endX - startX,
       y: endY - startY,
