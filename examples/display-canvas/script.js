@@ -177,7 +177,7 @@ displayOpacityInput.addEventListener("input", () => {
     });
 });
 
-// PREVIEW MODE
+// IMAGE PREVIEW
 
 /** @type {HTMLInputElement} */
 const imageInput = document.getElementById("imageInput");
@@ -196,6 +196,7 @@ const loadImage = (file) => {
   reader.readAsDataURL(file);
 };
 
+// VIDEO PREVIEW
 /** @type {HTMLInputElement} */
 const videoInput = document.getElementById("videoInput");
 /** @type {HTMLVideoElement} */
@@ -213,6 +214,7 @@ const loadVideo = (file) => {
   reader.readAsDataURL(file);
 };
 
+// DRAGOVER
 window.addEventListener("dragover", (e) => {
   e.preventDefault();
 });
@@ -234,6 +236,7 @@ window.addEventListener("drop", (e) => {
   }
 });
 
+// PASTE
 function isValidUrl(string) {
   try {
     new URL(string);
@@ -290,15 +293,26 @@ window.addEventListener("paste", (event) => {
   }
 });
 
+// VR/AR
+const sceneEntity = document.getElementById("scene");
 const modelEntity = document.getElementById("model");
 const loadModel = (file) => {
   const reader = new FileReader();
   reader.onload = () => {
+    console.log("reader.result", reader.result);
     modelEntity.setAttribute("gltf-model", reader.result);
   };
   reader.readAsDataURL(file);
 };
+/** @type {HTMLInputElement} */
+const modelInput = document.getElementById("modelInput");
+modelInput.addEventListener("input", (event) => {
+  const file = modelInput.files[0];
+  if (!file) return;
+  loadModel(file);
+});
 
+// CAMERA
 /** @type {HTMLVideoElement} */
 const cameraVideo = document.getElementById("cameraVideo");
 /** @type {HTMLSelectElement} */
@@ -344,6 +358,7 @@ navigator.mediaDevices.addEventListener("devicechange", () =>
 );
 updateCameraSources();
 
+// PREVIEW MODE
 /** @type {HTMLSelectElement} */
 const previewModeSelect = document.getElementById("previewMode");
 /** @typedef {"none" | "image" | "video" | "camera" | "vr" | "ar"} PreviewMode */
@@ -369,11 +384,15 @@ const setPreviewMode = (newPreviewMode) => {
   video.style.display = previewMode == "video" ? "" : "none";
   image.style.display = previewMode == "image" ? "" : "none";
   modelEntity.object3D.visible = previewMode == "vr";
+  sceneEntity.style.visibility =
+    previewMode == "vr" || previewMode == "ar" ? "visible" : "hidden";
 
   switch (previewMode) {
     case "camera":
     case "image":
     case "video":
+    case "vr":
+    case "ar":
       displayContainer.classList.add("shrink");
       break;
     default:

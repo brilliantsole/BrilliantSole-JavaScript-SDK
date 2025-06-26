@@ -12,7 +12,6 @@
       width: 640px;
       height: 400px;
       position: relative;
-      background-color: black;
     }
     #displayContainer > * {
       position: absolute;
@@ -23,6 +22,10 @@
     }
     #display {
       z-index: 1;
+      pointer-events: none;
+    }
+    #displayContainer:not(.shrink) {
+      background-color: black;
     }
     #displayContainer.shrink {
       width: calc(640px * 2);
@@ -76,6 +79,11 @@
       </select>
     </label>
 
+    <label data-preview-mode="vr">
+      model
+      <input type="file" id="modelInput" accept=".glb,model/gltf-binary" />
+    </label>
+
     <br />
 
     <label>
@@ -117,10 +125,9 @@
       <img id="image" />
       <video id="video" loop autoplay muted controls></video>
       <video id="cameraVideo" autoplay muted></video>
+      <a-scene id="scene" embedded>
+        <a-entity id="model" position="0 1.6 0"></a-entity>
+      </a-scene>
     </div>
-
-    <a-scene embedded>
-      <a-entity id="model" position="0 1.6 0"></a-entity>
-    </a-scene>
   </body>
 </html>
