@@ -323,7 +323,10 @@ class DisplayManager {
       differences,
     });
   }
-  async setContextState(newState: PartialDisplayContextState) {
+  async setContextState(
+    newState: PartialDisplayContextState,
+    sendImmediately?: boolean
+  ) {
     const differences = this.#displayContextStateHelper.diff(newState);
     if (differences.length == 0) {
       return;
@@ -380,7 +383,9 @@ class DisplayManager {
           break;
       }
     });
-    await this.#sendDisplayContextCommands();
+    if (sendImmediately) {
+      await this.#sendDisplayContextCommands();
+    }
   }
 
   // DISPLAY STATUS
@@ -636,8 +641,8 @@ class DisplayManager {
     await this.sendMessage([{ type: "displayContextCommands", data }], true);
     this.#displayContextCommandBuffers.length = 0;
   }
-  get flushDisplayContextCommands() {
-    return this.#sendDisplayContextCommands;
+  flushDisplayContextCommands() {
+    this.#sendDisplayContextCommands();
   }
   showDisplay(sendImmediately = true) {
     this.#sendDisplayContextCommand("show", undefined, sendImmediately);

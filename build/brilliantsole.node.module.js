@@ -3953,7 +3953,7 @@ class DisplayManager {
     get displayContextState() {
         return __classPrivateFieldGet(this, _DisplayManager_displayContextStateHelper, "f").state;
     }
-    async setContextState(newState) {
+    async setContextState(newState, sendImmediately) {
         const differences = __classPrivateFieldGet(this, _DisplayManager_displayContextStateHelper, "f").diff(newState);
         if (differences.length == 0) {
             return;
@@ -4010,7 +4010,9 @@ class DisplayManager {
                     break;
             }
         });
-        await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommands).call(this);
+        if (sendImmediately) {
+            await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommands).call(this);
+        }
     }
     get displayStatus() {
         return __classPrivateFieldGet(this, _DisplayManager_displayStatus, "f");
@@ -4076,8 +4078,8 @@ class DisplayManager {
         this.sendMessage([{ type: "setDisplayBrightness", data: newDisplayBrightnessData }], sendImmediately);
         await promise;
     }
-    get flushDisplayContextCommands() {
-        return __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommands);
+    flushDisplayContextCommands() {
+        __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommands).call(this);
     }
     showDisplay(sendImmediately = true) {
         __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "show", undefined, sendImmediately);

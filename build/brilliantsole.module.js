@@ -3962,7 +3962,7 @@ class DisplayManager {
     get displayContextState() {
         return __classPrivateFieldGet(this, _DisplayManager_displayContextStateHelper, "f").state;
     }
-    async setContextState(newState) {
+    async setContextState(newState, sendImmediately) {
         const differences = __classPrivateFieldGet(this, _DisplayManager_displayContextStateHelper, "f").diff(newState);
         if (differences.length == 0) {
             return;
@@ -4019,7 +4019,9 @@ class DisplayManager {
                     break;
             }
         });
-        await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommands).call(this);
+        if (sendImmediately) {
+            await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommands).call(this);
+        }
     }
     get displayStatus() {
         return __classPrivateFieldGet(this, _DisplayManager_displayStatus, "f");
@@ -4085,8 +4087,8 @@ class DisplayManager {
         this.sendMessage([{ type: "setDisplayBrightness", data: newDisplayBrightnessData }], sendImmediately);
         await promise;
     }
-    get flushDisplayContextCommands() {
-        return __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommands);
+    flushDisplayContextCommands() {
+        __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommands).call(this);
     }
     showDisplay(sendImmediately = true) {
         __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "show", undefined, sendImmediately);
@@ -8451,7 +8453,7 @@ _DisplayCanvasHelper_eventDispatcher = new WeakMap(), _DisplayCanvasHelper_canva
     if (!this.canvas) {
         return;
     }
-    this.canvas.style.aspectRatio = `${this.width / this.height}`;
+    this.canvas.style.aspectRatio = `${this.aspectRatio}`;
     if (!this.device?.isConnected) {
         return;
     }
@@ -8494,10 +8496,10 @@ _DisplayCanvasHelper_eventDispatcher = new WeakMap(), _DisplayCanvasHelper_canva
 }, _DisplayCanvasHelper_onDeviceNotConnected = function _DisplayCanvasHelper_onDeviceNotConnected(event) {
     _console$6.log("device not connected");
 }, _DisplayCanvasHelper_updateDevice = function _DisplayCanvasHelper_updateDevice() {
-    __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_updateDeviceColors).call(this);
-    __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_updateDeviceOpacity).call(this);
-    __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_updateDeviceContextState).call(this);
-    __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_updateDeviceBrightness).call(this);
+    __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_updateDeviceColors).call(this, true);
+    __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_updateDeviceOpacity).call(this, true);
+    __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_updateDeviceContextState).call(this, true);
+    __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_updateDeviceBrightness).call(this, true);
 }, _DisplayCanvasHelper_assertValidColorIndex = function _DisplayCanvasHelper_assertValidColorIndex(colorIndex) {
     _console$6.assertRangeWithError("colorIndex", colorIndex, 0, this.numberOfColors);
 }, _DisplayCanvasHelper_updateDeviceColors = function _DisplayCanvasHelper_updateDeviceColors(sendImmediately) {
@@ -8505,8 +8507,11 @@ _DisplayCanvasHelper_eventDispatcher = new WeakMap(), _DisplayCanvasHelper_canva
         return;
     }
     this.colors.forEach((color, index) => {
-        this.device?.setDisplayColor(index, color, sendImmediately && index == this.colors.length - 1);
+        this.device?.setDisplayColor(index, color, sendImmediately);
     });
+    if (sendImmediately) {
+        __classPrivateFieldGet(this, _DisplayCanvasHelper_device, "f")?.flushDisplayContextCommands();
+    }
 }, _DisplayCanvasHelper_updateDeviceOpacity = function _DisplayCanvasHelper_updateDeviceOpacity(sendImmediately) {
     if (!this.device?.isConnected) {
         return;
@@ -8519,12 +8524,12 @@ _DisplayCanvasHelper_eventDispatcher = new WeakMap(), _DisplayCanvasHelper_canva
         contextState: { ...this.contextState },
         differences,
     });
-}, _DisplayCanvasHelper_updateDeviceContextState = function _DisplayCanvasHelper_updateDeviceContextState() {
+}, _DisplayCanvasHelper_updateDeviceContextState = function _DisplayCanvasHelper_updateDeviceContextState(sendImmediately) {
     if (!this.device?.isConnected) {
         return;
     }
     _console$6.log("updateDeviceContextState");
-    this.device?.setDisplayContextState(this.contextState);
+    this.device?.setDisplayContextState(this.contextState, sendImmediately);
 }, _DisplayCanvasHelper_assertValidLineWidth = function _DisplayCanvasHelper_assertValidLineWidth(lineWidth) {
     _console$6.assertRangeWithError("lineWidth", lineWidth, 0, this.width);
 }, _DisplayCanvasHelper_clearRectToCanvas = function _DisplayCanvasHelper_clearRectToCanvas(x, y, width, height) {
@@ -8888,12 +8893,12 @@ _DisplayCanvasHelper_eventDispatcher = new WeakMap(), _DisplayCanvasHelper_canva
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_restore).call(this);
 }, _DisplayCanvasHelper_brightnessOpacity_get = function _DisplayCanvasHelper_brightnessOpacity_get() {
     return __classPrivateFieldGet(this, _DisplayCanvasHelper_brightnessOpacities, "f")[this.brightness];
-}, _DisplayCanvasHelper_updateDeviceBrightness = function _DisplayCanvasHelper_updateDeviceBrightness() {
+}, _DisplayCanvasHelper_updateDeviceBrightness = function _DisplayCanvasHelper_updateDeviceBrightness(sendImmediately) {
     if (!this.device?.isConnected) {
         return;
     }
     _console$6.log("updateDeviceBrightness");
-    this.device?.setDisplayBrightness(this.brightness);
+    this.device?.setDisplayBrightness(this.brightness, sendImmediately);
 };
 
 var _DevicePairPressureSensorDataManager_instances, _DevicePairPressureSensorDataManager_rawPressure, _DevicePairPressureSensorDataManager_centerOfPressureHelper, _DevicePairPressureSensorDataManager_normalizedSumRangeHelper, _DevicePairPressureSensorDataManager_hasAllPressureData_get, _DevicePairPressureSensorDataManager_updatePressureData;

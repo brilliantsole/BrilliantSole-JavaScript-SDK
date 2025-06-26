@@ -310,10 +310,10 @@ class DisplayCanvasHelper {
   }
 
   #updateDevice() {
-    this.#updateDeviceColors();
-    this.#updateDeviceOpacity();
-    this.#updateDeviceContextState();
-    this.#updateDeviceBrightness();
+    this.#updateDeviceColors(true);
+    this.#updateDeviceOpacity(true);
+    this.#updateDeviceContextState(true);
+    this.#updateDeviceBrightness(true);
   }
 
   // NUMBER OF COLORS
@@ -358,12 +358,11 @@ class DisplayCanvasHelper {
       return;
     }
     this.colors.forEach((color, index) => {
-      this.device?.setDisplayColor(
-        index,
-        color,
-        sendImmediately && index == this.colors.length - 1
-      );
+      this.device?.setDisplayColor(index, color, sendImmediately);
     });
+    if (sendImmediately) {
+      this.#device?.flushDisplayContextCommands();
+    }
   }
 
   // OPACITIES
@@ -402,12 +401,12 @@ class DisplayCanvasHelper {
   #resetContextState() {
     this.#displayContextStateHelper.reset();
   }
-  #updateDeviceContextState() {
+  #updateDeviceContextState(sendImmediately?: boolean) {
     if (!this.device?.isConnected) {
       return;
     }
     _console.log("updateDeviceContextState");
-    this.device?.setDisplayContextState(this.contextState);
+    this.device?.setDisplayContextState(this.contextState, sendImmediately);
   }
 
   showDisplay(sendImmediately = true) {
@@ -1592,12 +1591,12 @@ class DisplayCanvasHelper {
   #resetBrightness() {
     this.setBrightness("medium");
   }
-  #updateDeviceBrightness() {
+  #updateDeviceBrightness(sendImmediately?: boolean) {
     if (!this.device?.isConnected) {
       return;
     }
     _console.log("updateDeviceBrightness");
-    this.device?.setDisplayBrightness(this.brightness);
+    this.device?.setDisplayBrightness(this.brightness, sendImmediately);
   }
 
   #reset() {

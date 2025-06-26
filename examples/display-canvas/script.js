@@ -488,4 +488,37 @@ window.test = (centerX, centerY, width, height) => {
   displayCanvasHelper.drawSegment(centerX, centerY, 300, 300);
   displayCanvasHelper.showDisplay();
 };
-test(100, 100, 50, 80);
+//test(100, 100, 50, 80);
+
+// SAMPLE ANIMATION LOOP
+displayCanvasHelper.setColor(0, "white");
+
+let lastDrawTime = 0;
+const draw = () => {
+  const now = Date.now();
+  const timeSinceLastDrawTime = now - lastDrawTime;
+  lastDrawTime = now;
+
+  // FILL -
+
+  displayCanvasHelper.showDisplay();
+};
+let interval = 100;
+const updateInterval = (newInterval) => {
+  interval = newInterval;
+  startDrawing();
+};
+window.updateInterval = updateInterval;
+let intervalId;
+const startDrawing = () => {
+  stopDrawing();
+  setInterval(() => draw(), interval);
+};
+const stopDrawing = () => {
+  if (intervalId != undefined) {
+    clearInterval(intervalId);
+    intervalId = undefined;
+  }
+};
+//startDrawing();
+draw();
