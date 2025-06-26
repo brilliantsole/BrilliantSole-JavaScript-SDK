@@ -24,9 +24,13 @@
     #display {
       z-index: 1;
     }
+    #displayContainer.shrink {
+      width: calc(640px * 2);
+      height: calc(400px * 2);
+    }
     #displayContainer.shrink #display {
-      width: 30%;
-      height: 30%;
+      width: calc(100% / 2.5);
+      height: calc(100% / 2.5);
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);

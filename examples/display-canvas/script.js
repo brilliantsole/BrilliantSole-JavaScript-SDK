@@ -308,8 +308,8 @@ cameraInput.addEventListener("input", () => {
   selectCameraInput(cameraInput.value);
 });
 const updateCameraSources = async () => {
-  cameraInputOptgroup.innerHTML = "";
   const devices = await navigator.mediaDevices.enumerateDevices();
+  cameraInputOptgroup.innerHTML = "";
   devices
     .filter((device) => device.kind == "videoinput")
     .forEach((videoInputDevice) => {
