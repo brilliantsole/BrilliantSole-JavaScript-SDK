@@ -227,9 +227,77 @@ window.addEventListener("drop", (e) => {
     } else if (file.type.startsWith("video/")) {
       setPreviewMode("video");
       loadVideo(file);
+    } else if (file.name.endsWith("glb")) {
+      setPreviewMode("vr");
+      loadModel(file);
     }
   }
 });
+
+function isValidUrl(string) {
+  try {
+    new URL(string);
+    return true;
+  } catch (_) {
+    return false;
+  }
+}
+window.addEventListener("paste", (event) => {
+  const string = event.clipboardData.getData("text");
+  if (!isValidUrl(string)) {
+    return;
+  }
+
+  switch (previewMode) {
+    case "image":
+      image.src = string;
+      break;
+    case "video":
+      video.src = string;
+      break;
+    case "vr":
+      modelEntity.setAttribute("gltf-model", string);
+      break;
+  }
+});
+window.addEventListener("paste", (event) => {
+  const items = event.clipboardData.items;
+  for (let i = 0; i < items.length; i++) {
+    const item = items[i];
+    switch (previewMode) {
+      case "image":
+        if (item.type.startsWith("image/")) {
+          const file = item.getAsFile();
+          loadImage(file);
+          return;
+        }
+        break;
+      case "video":
+        if (item.type.startsWith("video/")) {
+          const file = item.getAsFile();
+          loadVideo(file);
+          return;
+        }
+        break;
+      case "vr":
+        const file = item.getAsFile();
+        if (["glb"].some((extension) => file.name.endsWith(extension))) {
+          loadModel(file);
+          return;
+        }
+        break;
+    }
+  }
+});
+
+const modelEntity = document.getElementById("model");
+const loadModel = (file) => {
+  const reader = new FileReader();
+  reader.onload = () => {
+    modelEntity.setAttribute("gltf-model", reader.result);
+  };
+  reader.readAsDataURL(file);
+};
 
 /** @type {HTMLVideoElement} */
 const cameraVideo = document.getElementById("cameraVideo");
@@ -300,6 +368,7 @@ const setPreviewMode = (newPreviewMode) => {
   cameraVideo.style.display = previewMode == "camera" ? "" : "none";
   video.style.display = previewMode == "video" ? "" : "none";
   image.style.display = previewMode == "image" ? "" : "none";
+  modelEntity.object3D.visible = previewMode == "vr";
 
   switch (previewMode) {
     case "camera":

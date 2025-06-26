@@ -4,6 +4,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico" />
     <script type="module" src="./script.js"></script>
+    <script src="./aframe.js"></script>
+    <script src="https://quadjr.github.io/aframe-gaussian-splatting/index.js"></script>
   </head>
   <style>
     #displayContainer {
@@ -21,8 +23,6 @@
     }
     #display {
       z-index: 1;
-    }
-    #displayContainer.shrink {
     }
     #displayContainer.shrink #display {
       width: 30%;
@@ -111,8 +111,12 @@
     <div id="displayContainer">
       <canvas id="display" width="640" height="400"></canvas>
       <img id="image" />
-      <video id="video" loop autoplay muted></video>
+      <video id="video" loop autoplay muted controls></video>
       <video id="cameraVideo" autoplay muted></video>
     </div>
+
+    <a-scene embedded>
+      <a-entity id="model" position="0 1.6 0"></a-entity>
+    </a-scene>
   </body>
 </html>
