@@ -8804,19 +8804,22 @@ _DisplayCanvasHelper_eventDispatcher = new WeakMap(), _DisplayCanvasHelper_canva
         x: endX - startX,
         y: endY - startY,
     };
-    const rotation = getVector2Angle(vector);
+    let rotation = getVector2Angle(vector);
+    rotation -= Math.PI / 2;
+    _console$6.log({ segmentRotation: rotation });
     const midpoint = __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_getSegmentMidpoint).call(this, startX, startY, endX, endY, contextState);
     this.context.translate(midpoint.x, midpoint.y);
-    this.context.rotate(-rotation);
+    this.context.rotate(rotation);
     const box = __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_getOrientedSegmentBoundingBox).call(this, startX, startY, endX, endY, contextState);
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_applyRotationClip).call(this, box, contextState);
     this.context.resetTransform();
 }, _DisplayCanvasHelper_drawSegmentToCanvas = function _DisplayCanvasHelper_drawSegmentToCanvas(startX, startY, endX, endY, contextState) {
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_updateContext).call(this, contextState);
+    _console$6.log({ startX, startY, endX, endY });
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_save).call(this);
     const box = __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_getSegmentBoundingBox).call(this, startX, startY, endX, endY, contextState);
     if (__classPrivateFieldGet(this, _DisplayCanvasHelper_clearBoundingBoxOnDraw, "f")) {
-        console.log(box);
+        _console$6.log("segmentBoundingBox", box);
         __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_clearBoundingBox).call(this, box);
     }
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_applyClip).call(this, box, contextState);

@@ -1391,7 +1391,9 @@ class DisplayCanvasHelper {
       x: endX - startX,
       y: endY - startY,
     };
-    const rotation = getVector2Angle(vector);
+    let rotation = getVector2Angle(vector);
+    rotation -= Math.PI / 2;
+    _console.log({ segmentRotation: rotation });
     const midpoint: Vector2 = this.#getSegmentMidpoint(
       startX,
       startY,
@@ -1400,7 +1402,7 @@ class DisplayCanvasHelper {
       contextState
     );
     this.context.translate(midpoint.x, midpoint.y);
-    this.context.rotate(-rotation);
+    this.context.rotate(rotation);
     const box = this.#getOrientedSegmentBoundingBox(
       startX,
       startY,
@@ -1420,6 +1422,8 @@ class DisplayCanvasHelper {
   ) {
     this.#updateContext(contextState);
 
+    _console.log({ startX, startY, endX, endY });
+
     this.#save();
     const box = this.#getSegmentBoundingBox(
       startX,
@@ -1429,7 +1433,7 @@ class DisplayCanvasHelper {
       contextState
     );
     if (this.#clearBoundingBoxOnDraw) {
-      console.log(box);
+      _console.log("segmentBoundingBox", box);
       this.#clearBoundingBox(box);
     }
 

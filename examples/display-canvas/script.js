@@ -476,32 +476,241 @@ window.test = (centerX, centerY, width, height) => {
   //displayCanvasHelper.drawRect(200, 200, 50, 50);
   displayCanvasHelper.setColor(3, "yellow");
   displayCanvasHelper.selectLineColor(3);
-  displayCanvasHelper.setCropTop(0);
+  displayCanvasHelper.setCropTop(20);
   displayCanvasHelper.setRotationCropTop(0);
   displayCanvasHelper.setLineWidth(5);
   displayCanvasHelper.setSegmentStartRadius(30);
-  displayCanvasHelper.setSegmentEndRadius(0);
+  displayCanvasHelper.setSegmentEndRadius(30);
   displayCanvasHelper.setSegmentStartCap("round");
   displayCanvasHelper.setSegmentEndCap("round");
   displayCanvasHelper.setRotation(30);
-  displayCanvasHelper.drawCircle(centerX, centerY, 50);
+  //displayCanvasHelper.drawCircle(centerX, centerY, 50);
+  //displayCanvasHelper.drawSegment(50, 50, 75, 100);
+  //displayCanvasHelper.drawSegment(300, 100, 400, 100);
   displayCanvasHelper.drawSegment(centerX, centerY, 300, 300);
   displayCanvasHelper.showDisplay();
 };
-//test(100, 100, 50, 80);
 
 // SAMPLE ANIMATION LOOP
-displayCanvasHelper.setColor(0, "white");
+let baseColorIndex = 0;
+const backgroundColorIndex = baseColorIndex++;
+const whiteColorIndex = baseColorIndex++;
+displayCanvasHelper.setColor(whiteColorIndex, "white");
+const pupilColorIndex = baseColorIndex++;
+displayCanvasHelper.setColor(pupilColorIndex, "#cc9a04");
+const pupilOutlineColorIndex = baseColorIndex++;
+displayCanvasHelper.setColor(pupilOutlineColorIndex, "#008f05");
+const hairColorIndex = baseColorIndex++;
+displayCanvasHelper.setColor(hairColorIndex, "#bd6e00");
+const hairOutlineColorIndex = baseColorIndex++;
+displayCanvasHelper.setColor(hairOutlineColorIndex, "#803e00");
+const skinColorIndex = baseColorIndex++;
+displayCanvasHelper.setColor(skinColorIndex, "#ebbd59");
+
+/** @type {import("../utils/three/three.module.min")} */
+const THREE = window.THREE;
+
+/** @typedef {import("../utils/three/three.module.min").Vector2} TVector2 */
+/** @typedef {import("../utils/three/three.module.min").Quaternion} TQuaternion */
+/** @typedef {import("../utils/three/three.module.min").Euler} TEuler */
+
+const faceParams = {
+  position: new THREE.Vector2(0, 0),
+  rotation: {
+    yaw: 0,
+    pitch: 0,
+    roll: 0,
+  },
+  eyebrowCap: {
+    /** @type {BS.DisplaySegmentCap} */
+    start: "round",
+    /** @type {BS.DisplaySegmentCap} */
+    end: "round",
+  },
+  eyebrowRadius: {
+    start: 10,
+    end: 10,
+  },
+  eyeLineWidth: 5,
+  pupilLineWidth: 5,
+  eyebrowLineWidth: 5,
+  eyeTilt: 0.1,
+  eyeSpacing: 200,
+  eyes: {
+    left: {
+      open: 1,
+      maxHeight: 50,
+      maxWidth: 80,
+      topCrop: 0,
+      bottomCrop: 0,
+      pupil: {
+        maxRadius: 10,
+        position: {
+          x: 0,
+          y: 0,
+        },
+      },
+      eyebrow: {
+        position: {
+          x: 0,
+          y: -50,
+        },
+        rotation: 0,
+        maxLength: 100,
+      },
+    },
+    right: {
+      open: 1,
+      maxHeight: 52,
+      maxWidth: 80,
+      topCrop: 0,
+      bottomCrop: 0,
+      pupil: {
+        maxRadius: 10,
+        position: {
+          x: 0,
+          y: 0,
+        },
+      },
+      eyebrow: {
+        position: {
+          x: 0,
+          y: -50,
+        },
+        rotation: 0,
+        maxLength: 100,
+      },
+    },
+  },
+};
+
+/** @typedef {"left" | "right"} Side */
 
 let lastDrawTime = 0;
+const ctx = displayCanvasHelper;
+/**
+ * @param {Side} side
+ * @param {TVector2} center
+ */
+const drawEye = (side, center) => {
+  const { maxHeight, maxWidth, open, topCrop, bottomCrop } =
+    faceParams.eyes[side];
+
+  const isLeft = side == "left";
+  const eyePosition = new THREE.Vector2(faceParams.eyeSpacing / 2, 0);
+  eyePosition.x *= isLeft ? -1 : 1;
+  eyePosition.add(center);
+  eyePosition.rotateAround(center, faceParams.rotation.roll);
+  ctx.selectFillColor(backgroundColorIndex);
+  ctx.selectLineColor(whiteColorIndex);
+  ctx.setLineWidth(faceParams.eyeLineWidth);
+  ctx.setRotationCropTop(topCrop);
+  ctx.setRotationCropBottom(bottomCrop);
+  ctx.setRotation(
+    faceParams.eyeTilt * (isLeft ? 1 : -1) + faceParams.rotation.roll,
+    true
+  );
+
+  ctx.drawEllipse(eyePosition.x, eyePosition.y, maxWidth, maxHeight * open);
+  ctx.clearRotationCrop();
+};
+/**
+ * @param {Side} side
+ * @param {TVector2} center
+ */
+const drawPupil = (side, center) => {
+  const { open, pupil } = faceParams.eyes[side];
+  const { maxRadius, position } = pupil;
+
+  const isLeft = side == "left";
+  const eyePosition = new THREE.Vector2(faceParams.eyeSpacing / 2, 0);
+  eyePosition.x *= isLeft ? -1 : 1;
+  eyePosition.add(center);
+  const pupilPosition = new THREE.Vector2(position.x, position.y);
+  pupilPosition.add(eyePosition);
+  pupilPosition.rotateAround(center, faceParams.rotation.roll);
+
+  // FIX
+  if (open < 0.3) {
+    return;
+  }
+
+  ctx.selectFillColor(backgroundColorIndex);
+  ctx.selectLineColor(pupilOutlineColorIndex);
+  ctx.setLineWidth(faceParams.pupilLineWidth);
+
+  ctx.drawCircle(pupilPosition.x, pupilPosition.y, maxRadius);
+};
+/**
+ * @param {Side} side
+ * @param {TVector2} center
+ */
+const drawEyebrow = (side, center) => {
+  const { eyebrowCap, eyebrowLineWidth, eyebrowRadius, eyes } = faceParams;
+  const { open, eyebrow } = eyes[side];
+  const { position, rotation, maxLength } = eyebrow;
+
+  const isLeft = side == "left";
+  const eyePosition = new THREE.Vector2(faceParams.eyeSpacing / 2, 0);
+  eyePosition.x *= isLeft ? -1 : 1;
+  eyePosition.add(center);
+
+  const eyebrowPosition = new THREE.Vector2(position.x, position.y);
+  eyebrowPosition.add(eyePosition);
+
+  console.log("eyebrowPosition", side, eyebrowPosition);
+
+  const eyebrowLength = maxLength;
+
+  const sign = isLeft ? 1 : -1;
+  const eyebrowStartPosition = new THREE.Vector2((sign * eyebrowLength) / 2, 0);
+  const eyebrowEndPosition = new THREE.Vector2((-sign * eyebrowLength) / 2, 0);
+
+  // FILL - rotate around midpoint
+
+  eyebrowStartPosition.add(eyebrowPosition);
+  eyebrowEndPosition.add(eyebrowPosition);
+
+  console.log("eyebrowFromEnd", side, eyebrowStartPosition, eyebrowEndPosition);
+
+  eyebrowStartPosition.rotateAround(center, faceParams.rotation.roll);
+  eyebrowEndPosition.rotateAround(center, faceParams.rotation.roll);
+
+  ctx.selectFillColor(hairColorIndex);
+  ctx.selectLineColor(hairOutlineColorIndex);
+  ctx.setLineWidth(eyebrowLineWidth);
+
+  ctx.setSegmentStartCap(eyebrowCap.start);
+  ctx.setSegmentEndCap(eyebrowCap.end);
+  ctx.setSegmentStartRadius(eyebrowRadius.start);
+  ctx.setSegmentEndRadius(eyebrowRadius.end);
+
+  ctx.drawSegment(
+    eyebrowStartPosition.x,
+    eyebrowStartPosition.y,
+    eyebrowEndPosition.x,
+    eyebrowEndPosition.y
+  );
+};
 const draw = () => {
   const now = Date.now();
   const timeSinceLastDrawTime = now - lastDrawTime;
   lastDrawTime = now;
 
-  // FILL -
+  const { width, height } = ctx;
+  const center = new THREE.Vector2(
+    width / 2 + faceParams.position.x,
+    height / 2 + faceParams.position.y
+  );
 
-  displayCanvasHelper.showDisplay();
+  drawEye("left", center);
+  drawEye("right", center);
+  drawPupil("left", center);
+  drawPupil("right", center);
+  drawEyebrow("left", center);
+  drawEyebrow("right", center);
+
+  ctx.showDisplay();
 };
 let interval = 100;
 const updateInterval = (newInterval) => {
@@ -522,3 +731,6 @@ const stopDrawing = () => {
 };
 //startDrawing();
 draw();
+window.draw = draw;
+
+//test(100, 100, 50, 80);
