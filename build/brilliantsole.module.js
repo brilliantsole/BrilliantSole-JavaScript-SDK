@@ -8738,27 +8738,22 @@ _DisplayCanvasHelper_eventDispatcher = new WeakMap(), _DisplayCanvasHelper_canva
     }
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_restore).call(this);
 }, _DisplayCanvasHelper_getSegmentBoundingBox = function _DisplayCanvasHelper_getSegmentBoundingBox(startX, startY, endX, endY, { lineWidth, segmentStartRadius, segmentEndRadius }) {
-    const outerPadding = Math.floor(lineWidth / 2);
+    const outerPadding = Math.ceil(lineWidth / 2);
     const segmentStartFullRadius = segmentStartRadius + outerPadding;
     const segmentEndFullRadius = segmentEndRadius + outerPadding;
-    const minX = startX < endX
-        ? startX - segmentStartFullRadius
-        : endX - segmentEndFullRadius;
-    const maxX = startX > endX
-        ? startX + segmentStartFullRadius
-        : endX + segmentEndFullRadius;
-    const minY = startY < endY
-        ? startY - segmentStartFullRadius
-        : endY - segmentEndFullRadius;
-    const maxY = startY > endY
-        ? startY + segmentStartFullRadius
-        : endY + segmentEndFullRadius;
+    _console$6.log({ segmentStartFullRadius, segmentEndFullRadius });
+    const minX = Math.min(startX - segmentStartFullRadius, endX - segmentEndFullRadius);
+    const maxX = Math.max(startX + segmentStartFullRadius, endX + segmentEndFullRadius);
+    const minY = Math.min(startY - segmentStartFullRadius, endY - segmentEndFullRadius);
+    const maxY = Math.max(startY + segmentStartFullRadius, endY + segmentEndFullRadius);
+    _console$6.log("segmentBounds", { minX, minY, maxX, maxY });
     const boundingBox = {
         x: minX,
         y: minY,
         width: maxX - minX,
         height: maxY - minY,
     };
+    _console$6.log("getSegmentBoundingBox", boundingBox);
     return boundingBox;
 }, _DisplayCanvasHelper_getSegmentMidpoint = function _DisplayCanvasHelper_getSegmentMidpoint(startX, startY, endX, endY, { lineWidth, segmentStartRadius, segmentEndRadius, segmentEndCap, segmentStartCap, }) {
     const outerPadding = Math.ceil(lineWidth / 2);
@@ -8815,11 +8810,10 @@ _DisplayCanvasHelper_eventDispatcher = new WeakMap(), _DisplayCanvasHelper_canva
     this.context.resetTransform();
 }, _DisplayCanvasHelper_drawSegmentToCanvas = function _DisplayCanvasHelper_drawSegmentToCanvas(startX, startY, endX, endY, contextState) {
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_updateContext).call(this, contextState);
-    _console$6.log({ startX, startY, endX, endY });
+    _console$6.log("drawSegmentToCanvas", { startX, startY, endX, endY });
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_save).call(this);
     const box = __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_getSegmentBoundingBox).call(this, startX, startY, endX, endY, contextState);
     if (__classPrivateFieldGet(this, _DisplayCanvasHelper_clearBoundingBoxOnDraw, "f")) {
-        _console$6.log("segmentBoundingBox", box);
         __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_clearBoundingBox).call(this, box);
     }
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_applyClip).call(this, box, contextState);

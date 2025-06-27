@@ -1277,25 +1277,29 @@ class DisplayCanvasHelper {
     endY: number,
     { lineWidth, segmentStartRadius, segmentEndRadius }: DisplayContextState
   ): DisplayBoundingBox {
-    const outerPadding = Math.floor(lineWidth / 2);
+    const outerPadding = Math.ceil(lineWidth / 2);
     const segmentStartFullRadius = segmentStartRadius + outerPadding;
     const segmentEndFullRadius = segmentEndRadius + outerPadding;
-    const minX =
-      startX < endX
-        ? startX - segmentStartFullRadius
-        : endX - segmentEndFullRadius;
-    const maxX =
-      startX > endX
-        ? startX + segmentStartFullRadius
-        : endX + segmentEndFullRadius;
-    const minY =
-      startY < endY
-        ? startY - segmentStartFullRadius
-        : endY - segmentEndFullRadius;
-    const maxY =
-      startY > endY
-        ? startY + segmentStartFullRadius
-        : endY + segmentEndFullRadius;
+    _console.log({ segmentStartFullRadius, segmentEndFullRadius });
+
+    const minX = Math.min(
+      startX - segmentStartFullRadius,
+      endX - segmentEndFullRadius
+    );
+    const maxX = Math.max(
+      startX + segmentStartFullRadius,
+      endX + segmentEndFullRadius
+    );
+    const minY = Math.min(
+      startY - segmentStartFullRadius,
+      endY - segmentEndFullRadius
+    );
+    const maxY = Math.max(
+      startY + segmentStartFullRadius,
+      endY + segmentEndFullRadius
+    );
+
+    _console.log("segmentBounds", { minX, minY, maxX, maxY });
 
     const boundingBox = {
       x: minX,
@@ -1303,6 +1307,7 @@ class DisplayCanvasHelper {
       width: maxX - minX,
       height: maxY - minY,
     };
+    _console.log("getSegmentBoundingBox", boundingBox);
     return boundingBox;
   }
   #getSegmentMidpoint(
@@ -1422,7 +1427,7 @@ class DisplayCanvasHelper {
   ) {
     this.#updateContext(contextState);
 
-    _console.log({ startX, startY, endX, endY });
+    _console.log("drawSegmentToCanvas", { startX, startY, endX, endY });
 
     this.#save();
     const box = this.#getSegmentBoundingBox(
@@ -1433,7 +1438,6 @@ class DisplayCanvasHelper {
       contextState
     );
     if (this.#clearBoundingBoxOnDraw) {
-      _console.log("segmentBoundingBox", box);
       this.#clearBoundingBox(box);
     }
 

@@ -476,18 +476,18 @@ window.test = (centerX, centerY, width, height) => {
   //displayCanvasHelper.drawRect(200, 200, 50, 50);
   displayCanvasHelper.setColor(3, "yellow");
   displayCanvasHelper.selectLineColor(3);
-  displayCanvasHelper.setCropTop(20);
+  displayCanvasHelper.setCropTop(0);
   displayCanvasHelper.setRotationCropTop(0);
   displayCanvasHelper.setLineWidth(5);
   displayCanvasHelper.setSegmentStartRadius(30);
-  displayCanvasHelper.setSegmentEndRadius(30);
+  displayCanvasHelper.setSegmentEndRadius(10);
   displayCanvasHelper.setSegmentStartCap("round");
   displayCanvasHelper.setSegmentEndCap("round");
   displayCanvasHelper.setRotation(30);
   //displayCanvasHelper.drawCircle(centerX, centerY, 50);
   //displayCanvasHelper.drawSegment(50, 50, 75, 100);
-  //displayCanvasHelper.drawSegment(300, 100, 400, 100);
-  displayCanvasHelper.drawSegment(centerX, centerY, 300, 300);
+  displayCanvasHelper.drawSegment(50, 50, 300, 50);
+  //displayCanvasHelper.drawSegment(centerX, centerY, 300, 300);
   displayCanvasHelper.showDisplay();
 };
 
@@ -499,7 +499,7 @@ displayCanvasHelper.setColor(whiteColorIndex, "white");
 const pupilColorIndex = baseColorIndex++;
 displayCanvasHelper.setColor(pupilColorIndex, "#cc9a04");
 const pupilOutlineColorIndex = baseColorIndex++;
-displayCanvasHelper.setColor(pupilOutlineColorIndex, "#008f05");
+displayCanvasHelper.setColor(pupilOutlineColorIndex, "#00f008");
 const hairColorIndex = baseColorIndex++;
 displayCanvasHelper.setColor(hairColorIndex, "#bd6e00");
 const hairOutlineColorIndex = baseColorIndex++;
@@ -528,14 +528,14 @@ const faceParams = {
     end: "round",
   },
   eyebrowRadius: {
-    start: 10,
-    end: 10,
+    start: 15,
+    end: 5,
   },
-  eyeLineWidth: 5,
+  eyeLineWidth: 7,
   pupilLineWidth: 5,
   eyebrowLineWidth: 5,
   eyeTilt: 0.1,
-  eyeSpacing: 200,
+  eyeSpacing: 215,
   eyes: {
     left: {
       open: 1,
@@ -544,7 +544,7 @@ const faceParams = {
       topCrop: 0,
       bottomCrop: 0,
       pupil: {
-        maxRadius: 10,
+        maxRadius: 15,
         position: {
           x: 0,
           y: 0,
@@ -553,10 +553,10 @@ const faceParams = {
       eyebrow: {
         position: {
           x: 0,
-          y: -50,
+          y: -60,
         },
         rotation: 0,
-        maxLength: 100,
+        maxLength: 150,
       },
     },
     right: {
@@ -566,7 +566,7 @@ const faceParams = {
       topCrop: 0,
       bottomCrop: 0,
       pupil: {
-        maxRadius: 10,
+        maxRadius: 15,
         position: {
           x: 0,
           y: 0,
@@ -575,10 +575,10 @@ const faceParams = {
       eyebrow: {
         position: {
           x: 0,
-          y: -50,
+          y: -80,
         },
         rotation: 0,
-        maxLength: 100,
+        maxLength: 150,
       },
     },
   },
