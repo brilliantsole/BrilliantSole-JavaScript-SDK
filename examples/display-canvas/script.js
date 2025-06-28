@@ -518,9 +518,11 @@ const faceParams = {
   position: new THREE.Vector2(0, 0),
   rotation: {
     yaw: 0,
-    pitch: 0,
     roll: 0,
   },
+  yawXScalars: { min: -10, max: 80 },
+  yawWidthScalars: { min: 0.6, max: 0.1 },
+  pupilYawWidthScalars: { min: 0.4, max: 0.1 },
   eyebrowCap: {
     /** @type {BS.DisplaySegmentCap} */
     start: "round",
@@ -555,8 +557,8 @@ const faceParams = {
           x: 0,
           y: -60,
         },
-        rotation: 0,
-        maxLength: 150,
+        rotation: 0.1,
+        maxLength: 160,
       },
     },
     right: {
@@ -577,41 +579,81 @@ const faceParams = {
           x: 0,
           y: -80,
         },
-        rotation: 0,
-        maxLength: 150,
+        rotation: 0.2,
+        maxLength: 160,
       },
     },
   },
 };
+window.faceParams = faceParams;
 
 /** @typedef {"left" | "right"} Side */
 
 let lastDrawTime = 0;
 const ctx = displayCanvasHelper;
+
+/**
+ * @param {Side} side
+ * @param {{min: number, max: number}} range
+ */
+const getYawInterpolation = (side, range) => {
+  const isLeft = side == "left";
+  let { yaw } = faceParams.rotation;
+  let yawScalar = 1;
+  if ((yaw < 0 && isLeft) || (yaw > 0 && !isLeft)) {
+    yawScalar = range.min;
+  } else {
+    yawScalar = range.max;
+  }
+  const yawInterpolation = Math.abs(yaw) * yawScalar;
+
+  return yawInterpolation;
+};
+/**
+ * @param {Side} side
+ * @param {TVector2} center
+ */
+const getEyePosition = (side, center) => {
+  const isLeft = side == "left";
+  const eyePosition = new THREE.Vector2(faceParams.eyeSpacing / 2, 0);
+  eyePosition.x *= isLeft ? -1 : 1;
+
+  let yawXOffset = getYawInterpolation(side, faceParams.yawXScalars);
+  if (!isLeft) {
+    yawXOffset *= -1;
+  }
+  eyePosition.x += yawXOffset;
+
+  eyePosition.add(center);
+  return eyePosition;
+};
 /**
  * @param {Side} side
  * @param {TVector2} center
  */
 const drawEye = (side, center) => {
+  const { pitch, roll, yaw } = faceParams.rotation;
   const { maxHeight, maxWidth, open, topCrop, bottomCrop } =
     faceParams.eyes[side];
 
   const isLeft = side == "left";
-  const eyePosition = new THREE.Vector2(faceParams.eyeSpacing / 2, 0);
-  eyePosition.x *= isLeft ? -1 : 1;
-  eyePosition.add(center);
-  eyePosition.rotateAround(center, faceParams.rotation.roll);
+  const eyePosition = getEyePosition(side, center);
+  eyePosition.rotateAround(center, roll);
   ctx.selectFillColor(backgroundColorIndex);
   ctx.selectLineColor(whiteColorIndex);
   ctx.setLineWidth(faceParams.eyeLineWidth);
   ctx.setRotationCropTop(topCrop);
   ctx.setRotationCropBottom(bottomCrop);
-  ctx.setRotation(
-    faceParams.eyeTilt * (isLeft ? 1 : -1) + faceParams.rotation.roll,
-    true
-  );
+  ctx.setRotation(faceParams.eyeTilt * (isLeft ? 1 : -1) + roll, true);
 
-  ctx.drawEllipse(eyePosition.x, eyePosition.y, maxWidth, maxHeight * open);
+  const widthScalar = 1 - getYawInterpolation(side, faceParams.yawWidthScalars);
+
+  ctx.drawEllipse(
+    eyePosition.x,
+    eyePosition.y,
+    maxWidth * widthScalar,
+    maxHeight * open
+  );
   ctx.clearRotationCrop();
 };
 /**
@@ -619,27 +661,42 @@ const drawEye = (side, center) => {
  * @param {TVector2} center
  */
 const drawPupil = (side, center) => {
-  const { open, pupil } = faceParams.eyes[side];
+  const { open, pupil, maxWidth, maxHeight } = faceParams.eyes[side];
   const { maxRadius, position } = pupil;
-
   const isLeft = side == "left";
-  const eyePosition = new THREE.Vector2(faceParams.eyeSpacing / 2, 0);
-  eyePosition.x *= isLeft ? -1 : 1;
-  eyePosition.add(center);
-  const pupilPosition = new THREE.Vector2(position.x, position.y);
-  pupilPosition.add(eyePosition);
-  pupilPosition.rotateAround(center, faceParams.rotation.roll);
 
   // FIX
   if (open < 0.3) {
     return;
   }
 
+  const widthScalar =
+    1 - getYawInterpolation(side, faceParams.pupilYawWidthScalars);
+
+  const eyeWidthScalar =
+    1 - getYawInterpolation(side, faceParams.yawWidthScalars);
+  const eyeWidth = eyeWidthScalar * maxWidth;
+
+  const eyeHeight = open * maxHeight;
+
+  const eyePosition = getEyePosition(side, center);
+  const pupilPosition = new THREE.Vector2(
+    position.x * eyeWidth,
+    position.y * eyeHeight
+  );
+  pupilPosition.add(eyePosition);
+  pupilPosition.rotateAround(center, faceParams.rotation.roll);
+
   ctx.selectFillColor(backgroundColorIndex);
   ctx.selectLineColor(pupilOutlineColorIndex);
   ctx.setLineWidth(faceParams.pupilLineWidth);
 
-  ctx.drawCircle(pupilPosition.x, pupilPosition.y, maxRadius);
+  ctx.drawEllipse(
+    pupilPosition.x,
+    pupilPosition.y,
+    maxRadius * widthScalar,
+    maxRadius
+  );
 };
 /**
  * @param {Side} side
@@ -651,27 +708,34 @@ const drawEyebrow = (side, center) => {
   const { position, rotation, maxLength } = eyebrow;
 
   const isLeft = side == "left";
-  const eyePosition = new THREE.Vector2(faceParams.eyeSpacing / 2, 0);
-  eyePosition.x *= isLeft ? -1 : 1;
-  eyePosition.add(center);
+  const eyePosition = getEyePosition(side, center);
 
   const eyebrowPosition = new THREE.Vector2(position.x, position.y);
   eyebrowPosition.add(eyePosition);
-
-  console.log("eyebrowPosition", side, eyebrowPosition);
-
   const eyebrowLength = maxLength;
 
   const sign = isLeft ? 1 : -1;
   const eyebrowStartPosition = new THREE.Vector2((sign * eyebrowLength) / 2, 0);
   const eyebrowEndPosition = new THREE.Vector2((-sign * eyebrowLength) / 2, 0);
 
-  // FILL - rotate around midpoint
+  const eyebrowMidpoint = new THREE.Vector2()
+    .addVectors(eyebrowStartPosition, eyebrowEndPosition)
+    .multiplyScalar(0.5);
+  eyebrowStartPosition.rotateAround(eyebrowMidpoint, rotation);
+  eyebrowEndPosition.rotateAround(eyebrowMidpoint, rotation);
+
+  const widthScalar = 1 - getYawInterpolation(side, faceParams.yawWidthScalars);
+
+  let eyebrowStartXOffset = eyebrowStartPosition.x - eyebrowMidpoint.x;
+  eyebrowStartXOffset *= widthScalar;
+  eyebrowStartPosition.x = eyebrowStartXOffset + eyebrowMidpoint.x;
+
+  let eyebrowEndXOffset = eyebrowEndPosition.x - eyebrowMidpoint.x;
+  eyebrowEndXOffset *= widthScalar;
+  eyebrowEndPosition.x = eyebrowEndXOffset + eyebrowMidpoint.x;
 
   eyebrowStartPosition.add(eyebrowPosition);
   eyebrowEndPosition.add(eyebrowPosition);
-
-  console.log("eyebrowFromEnd", side, eyebrowStartPosition, eyebrowEndPosition);
 
   eyebrowStartPosition.rotateAround(center, faceParams.rotation.roll);
   eyebrowEndPosition.rotateAround(center, faceParams.rotation.roll);
