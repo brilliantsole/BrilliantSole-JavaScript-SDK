@@ -443,6 +443,7 @@ const setPreviewMode = (newPreviewMode) => {
     case "camera":
     case "image":
     case "video":
+    case "vr":
       displayContainer.classList.add("shrink");
       break;
     default:
@@ -616,7 +617,13 @@ const lookAt = (target) => {
 };
 window.lookAt = lookAt;
 
-const lookAtVector = { x: 0, y: 0, z: 0 };
+const faceYawInput = document.getElementById("faceYaw");
+faceYawInput.addEventListener("input", () => {
+  const yaw = Number(faceYawInput.value);
+  faceParams.rotation.yaw = yaw;
+  throttledDraw();
+});
+const lookAtVector = { x: 0, y: 0, z: 0.3 };
 const faceXInput = document.getElementById("faceX");
 faceXInput.addEventListener("input", () => {
   const x = Number(faceXInput.value);
@@ -812,10 +819,6 @@ const drawEyebrow = (side, center) => {
   );
 };
 const draw = () => {
-  const now = Date.now();
-  const timeSinceLastDrawTime = now - lastDrawTime;
-  lastDrawTime = now;
-
   const { width, height } = ctx;
   const center = new THREE.Vector2(
     width / 2 + faceParams.position.x,
@@ -840,7 +843,15 @@ window.updateInterval = updateInterval;
 let intervalId;
 const startDrawing = () => {
   stopDrawing();
-  setInterval(() => draw(), interval);
+  setInterval(() => {
+    const now = Date.now();
+    const timeSinceLastDrawTime = now - lastDrawTime;
+    lastDrawTime = now;
+
+    // FILL - eye saccades
+
+    draw();
+  }, interval);
 };
 const stopDrawing = () => {
   if (intervalId != undefined) {
@@ -849,8 +860,9 @@ const stopDrawing = () => {
   }
 };
 const throttledDraw = BS.ThrottleUtils.throttle(draw, 100, true);
-//startDrawing();
-draw();
+if (true) {
+  draw();
+} else {
+  startDrawing();
+}
 window.draw = draw;
-
-//test(100, 100, 50, 80);

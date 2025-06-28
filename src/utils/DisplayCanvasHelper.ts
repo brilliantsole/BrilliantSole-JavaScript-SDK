@@ -238,7 +238,15 @@ class DisplayCanvasHelper {
       const g = data[i + 1];
       const b = data[i + 2];
 
-      const alpha = Math.max(r, g, b);
+      // Perceived brightness (0 = black, 255 = white)
+      const brightness = 0.299 * r + 0.587 * g + 0.114 * b;
+      const alpha = brightness;
+
+      // Normalize colors so they don’t appear dark through transparency
+      const scale = alpha > 0 ? 255 / alpha : 0;
+      data[i] = Math.min(255, r * scale);
+      data[i + 1] = Math.min(255, g * scale);
+      data[i + 2] = Math.min(255, b * scale);
       data[i + 3] = alpha;
     }
 
