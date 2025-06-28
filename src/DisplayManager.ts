@@ -633,11 +633,12 @@ class DisplayManager {
     if (this.#displayContextCommandBuffers.length == 0) {
       return;
     }
+    const data = concatenateArrayBuffers(this.#displayContextCommandBuffers);
     _console.log(
       `sending displayContextCommands`,
-      this.#displayContextCommandBuffers
+      this.#displayContextCommandBuffers,
+      data
     );
-    const data = concatenateArrayBuffers(this.#displayContextCommandBuffers);
     await this.sendMessage([{ type: "displayContextCommands", data }], true);
     this.#displayContextCommandBuffers.length = 0;
   }

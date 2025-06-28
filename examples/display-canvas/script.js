@@ -511,6 +511,7 @@ displayCanvasHelper.setColor(skinColorIndex, "#ebbd59");
 const THREE = window.THREE;
 
 /** @typedef {import("../utils/three/three.module.min").Vector2} TVector2 */
+/** @typedef {import("../utils/three/three.module.min").Vector3} TVector3 */
 /** @typedef {import("../utils/three/three.module.min").Quaternion} TQuaternion */
 /** @typedef {import("../utils/three/three.module.min").Euler} TEuler */
 
@@ -586,6 +587,57 @@ const faceParams = {
   },
 };
 window.faceParams = faceParams;
+
+/** @param {{x:number,y:number,z:number}} target */
+const lookAt = (target) => {
+  const leftPosition = faceParams.eyes.left.pupil.position;
+  const rightPosition = faceParams.eyes.right.pupil.position;
+
+  leftPosition.y = target.y;
+  rightPosition.y = target.y;
+
+  const eyeSeparation = 0.06; // 6 cm eye distance; adjust as needed
+  const maxAngle = Math.PI / 4; // 45 degrees range maps to x ∈ [-1, 1]
+
+  // Eye centers in face-space
+  const leftEyeX = -eyeSeparation / 2;
+  const rightEyeX = eyeSeparation / 2;
+
+  // Function to calculate normalized gaze angle for one eye
+  const computePupilX = (eyeX) => {
+    const dx = target.x - eyeX;
+    const dz = target.z;
+    const angle = Math.atan2(dx, dz);
+    return Math.max(-1, Math.min(1, angle / maxAngle));
+  };
+
+  leftPosition.x = computePupilX(leftEyeX);
+  rightPosition.x = computePupilX(rightEyeX);
+};
+window.lookAt = lookAt;
+
+const lookAtVector = { x: 0, y: 0, z: 0 };
+const faceXInput = document.getElementById("faceX");
+faceXInput.addEventListener("input", () => {
+  const x = Number(faceXInput.value);
+  lookAtVector.x = x;
+  lookAt(lookAtVector);
+  throttledDraw();
+});
+const faceYInput = document.getElementById("faceY");
+faceYInput.addEventListener("input", () => {
+  const y = Number(faceYInput.value);
+  lookAtVector.y = y;
+  lookAt(lookAtVector);
+  throttledDraw();
+});
+const faceZInput = document.getElementById("faceZ");
+faceZInput.addEventListener("input", () => {
+  const z = Number(faceZInput.value);
+  lookAtVector.z = z;
+  lookAt(lookAtVector);
+  throttledDraw();
+});
 
 /** @typedef {"left" | "right"} Side */
 
@@ -673,11 +725,14 @@ const drawPupil = (side, center) => {
   const widthScalar =
     1 - getYawInterpolation(side, faceParams.pupilYawWidthScalars);
 
+  const radiusX = maxRadius * widthScalar;
+  const radiusY = maxRadius;
+
   const eyeWidthScalar =
     1 - getYawInterpolation(side, faceParams.yawWidthScalars);
-  const eyeWidth = eyeWidthScalar * maxWidth;
+  const eyeWidth = eyeWidthScalar * (maxWidth - radiusX * 2);
 
-  const eyeHeight = open * maxHeight;
+  const eyeHeight = open * (maxHeight - radiusY * 1.5);
 
   const eyePosition = getEyePosition(side, center);
   const pupilPosition = new THREE.Vector2(
@@ -793,6 +848,7 @@ const stopDrawing = () => {
     intervalId = undefined;
   }
 };
+const throttledDraw = BS.ThrottleUtils.throttle(draw, 100, true);
 //startDrawing();
 draw();
 window.draw = draw;
