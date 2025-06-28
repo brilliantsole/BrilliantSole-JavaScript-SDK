@@ -233,16 +233,18 @@ class DisplayCanvasHelper {
     );
     const data = imageData.data;
 
+    const alphaBoost = 1.1; // >1 = more opaque, try 1.1–1.5 for subtlety
+
     for (let i = 0; i < data.length; i += 4) {
       const r = data[i];
       const g = data[i + 1];
       const b = data[i + 2];
 
-      // Perceived brightness (0 = black, 255 = white)
+      // Perceived brightness
       const brightness = 0.299 * r + 0.587 * g + 0.114 * b;
-      const alpha = brightness;
+      const alpha = Math.min(255, brightness * alphaBoost);
 
-      // Normalize colors so they don’t appear dark through transparency
+      // Unpremultiply for clarity
       const scale = alpha > 0 ? 255 / alpha : 0;
       data[i] = Math.min(255, r * scale);
       data[i + 1] = Math.min(255, g * scale);

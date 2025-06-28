@@ -8476,12 +8476,13 @@ _DisplayCanvasHelper_eventDispatcher = new WeakMap(), _DisplayCanvasHelper_canva
     const ctx = this.context;
     const imageData = ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
     const data = imageData.data;
+    const alphaBoost = 1.3;
     for (let i = 0; i < data.length; i += 4) {
         const r = data[i];
         const g = data[i + 1];
         const b = data[i + 2];
         const brightness = 0.299 * r + 0.587 * g + 0.114 * b;
-        const alpha = brightness;
+        const alpha = Math.min(255, brightness * alphaBoost);
         const scale = alpha > 0 ? 255 / alpha : 0;
         data[i] = Math.min(255, r * scale);
         data[i + 1] = Math.min(255, g * scale);
