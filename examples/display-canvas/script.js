@@ -517,6 +517,7 @@ const THREE = window.THREE;
 /** @typedef {import("../utils/three/three.module.min").Euler} TEuler */
 
 const faceParams = {
+  lookAt: { x: 0, y: 0, z: 0.3 },
   position: new THREE.Vector2(0, 0),
   rotation: {
     yaw: 0,
@@ -540,6 +541,44 @@ const faceParams = {
   eyebrowLineWidth: 5,
   eyeTilt: 0.1,
   eyeSpacing: 215,
+  blink: {
+    isBlinking: false,
+    lastUpdateTime: 0,
+    offset: 0,
+    offsetRange: { min: 15, max: 15 },
+    /** @type {Side} */
+    dominantSide: "left",
+    nextTime: 0,
+    timeRange: { min: 1000, max: 3000 },
+    duration: 0,
+    durationRange: { min: 2, max: 2 },
+  },
+  lookAround: {
+    lastUpdateTime: 0,
+    nextTime: 0,
+    timeRange: { min: 2000, max: 3000 },
+    duration: 0,
+    durationRange: { min: 2, max: 3 },
+    isMoving: false,
+    startLookAt: { x: 0, y: 0, z: 0 },
+    targetLookAt: { x: 0, y: 0, z: 0 },
+  },
+  turnAround: {
+    lastUpdateTime: 0,
+    timeRange: { min: 500, max: 2000 },
+    nextTime: 0,
+  },
+  refocus: {
+    scalar: 1,
+    scalarX: 0.025,
+    scalarY: 0.05,
+    scalarZ: 0.025,
+    lastUpdateTime: 0,
+    zRange: { min: 0.8, max: 1 },
+    timeRange: { min: 50, max: 500 },
+    nextTime: 0,
+    offset: { x: 0, y: 0, z: 0 },
+  },
   eyes: {
     left: {
       open: 1,
@@ -557,16 +596,16 @@ const faceParams = {
       eyebrow: {
         position: {
           x: 0,
-          y: -60,
+          y: -80,
         },
-        rotation: 0.1,
+        rotation: -0.0,
         maxLength: 160,
       },
     },
     right: {
       open: 1,
-      maxHeight: 52,
-      maxWidth: 80,
+      maxHeight: 55,
+      maxWidth: 75,
       topCrop: 0,
       bottomCrop: 0,
       pupil: {
@@ -581,7 +620,7 @@ const faceParams = {
           x: 0,
           y: -80,
         },
-        rotation: 0.2,
+        rotation: 0.0,
         maxLength: 160,
       },
     },
@@ -623,26 +662,25 @@ faceYawInput.addEventListener("input", () => {
   faceParams.rotation.yaw = yaw;
   throttledDraw();
 });
-const lookAtVector = { x: 0, y: 0, z: 0.3 };
 const faceXInput = document.getElementById("faceX");
 faceXInput.addEventListener("input", () => {
   const x = Number(faceXInput.value);
-  lookAtVector.x = x;
-  lookAt(lookAtVector);
+  faceParams.lookAt.x = x;
+  updateLookAt();
   throttledDraw();
 });
 const faceYInput = document.getElementById("faceY");
 faceYInput.addEventListener("input", () => {
   const y = Number(faceYInput.value);
-  lookAtVector.y = y;
-  lookAt(lookAtVector);
+  faceParams.lookAt.y = y;
+  updateLookAt();
   throttledDraw();
 });
 const faceZInput = document.getElementById("faceZ");
 faceZInput.addEventListener("input", () => {
   const z = Number(faceZInput.value);
-  lookAtVector.z = z;
-  lookAt(lookAtVector);
+  faceParams.lookAt.z = z;
+  updateLookAt();
   throttledDraw();
 });
 
@@ -721,11 +759,11 @@ const drawEye = (side, center) => {
  */
 const drawPupil = (side, center) => {
   const { open, pupil, maxWidth, maxHeight } = faceParams.eyes[side];
+
   const { maxRadius, position } = pupil;
   const isLeft = side == "left";
 
-  // FIX
-  if (open < 0.3) {
+  if (open < 0.5) {
     return;
   }
 
@@ -767,13 +805,24 @@ const drawPupil = (side, center) => {
 const drawEyebrow = (side, center) => {
   const { eyebrowCap, eyebrowLineWidth, eyebrowRadius, eyes } = faceParams;
   const { open, eyebrow } = eyes[side];
-  const { position, rotation, maxLength } = eyebrow;
+  const { isBlinking } = faceParams.blink;
+  let { position, rotation, maxLength } = eyebrow;
 
   const isLeft = side == "left";
   const eyePosition = getEyePosition(side, center);
 
+  const blinkInterpolation = 1 - open; // FIX
+
+  if (isBlinking) {
+    const sign = isLeft ? 1 : -1;
+    rotation += sign * blinkInterpolation * 0.03;
+  }
+
   const eyebrowPosition = new THREE.Vector2(position.x, position.y);
   eyebrowPosition.add(eyePosition);
+  if (isBlinking) {
+    eyebrowPosition.y += blinkInterpolation * 5;
+  }
   const eyebrowLength = maxLength;
 
   const sign = isLeft ? 1 : -1;
@@ -834,9 +883,234 @@ const draw = () => {
 
   ctx.showDisplay();
 };
-let interval = 100;
+function easeInOut(t) {
+  return t * t * (3 - 2 * t);
+}
+function easeInOutCubic(t) {
+  return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+}
+function easeOutCubic(t) {
+  return 1 - Math.pow(1 - t, 3);
+}
+const tick = () => {
+  const now = Date.now();
+  const timeSinceLastDrawTime = now - lastDrawTime;
+  lastDrawTime = now;
+
+  const { refocus } = faceParams;
+  {
+    let {
+      timeRange,
+      nextTime,
+      offset,
+      scalar,
+      scalarX,
+      scalarY,
+      scalarZ,
+      zRange,
+    } = refocus;
+    if (now >= nextTime) {
+      refocus.lastUpdateTime = now;
+      const interval = THREE.MathUtils.lerp(
+        timeRange.min,
+        timeRange.max,
+        Math.random()
+      );
+      const intervalInterpolation = THREE.MathUtils.inverseLerp(
+        0,
+        timeRange.max,
+        interval
+      );
+      refocus.nextTime = now + interval;
+      scalar *= 1 - intervalInterpolation;
+
+      const zScalar = THREE.MathUtils.lerp(
+        zRange.min,
+        zRange.max,
+        faceParams.lookAt.z
+      );
+
+      const x =
+        THREE.MathUtils.lerp(-scalarX, scalarX, Math.random()) *
+        scalar *
+        zScalar;
+      const y =
+        THREE.MathUtils.lerp(-scalarY, scalarY, Math.random()) *
+        scalar *
+        zScalar;
+      const z = THREE.MathUtils.lerp(-scalarZ, scalarZ, Math.random()) * scalar;
+      offset.x = x;
+      offset.y = y;
+      //offset.z = z;
+
+      updateLookAt();
+    }
+  }
+
+  const { blink } = faceParams;
+  {
+    let { timeRange, nextTime, isBlinking, durationRange, offsetRange } = blink;
+    if (now >= nextTime) {
+      blink.lastUpdateTime = now;
+      const interval = THREE.MathUtils.lerp(
+        timeRange.min,
+        timeRange.max,
+        Math.random()
+      );
+      blink.nextTime = now + interval;
+
+      blink.dominantSide = Math.round(Math.random()) ? "left" : "right";
+      blink.offset = THREE.MathUtils.lerp(
+        offsetRange.min,
+        offsetRange.max,
+        Math.random()
+      );
+
+      blink.duration =
+        THREE.MathUtils.lerp(
+          durationRange.min,
+          durationRange.max,
+          Math.random()
+        ) *
+          throttleInterval *
+          2 +
+        blink.offset;
+
+      blink.isBlinking = true;
+    }
+
+    if (isBlinking) {
+      let { duration, lastUpdateTime, offset, dominantSide } = blink;
+
+      let blinkInterpolation = THREE.MathUtils.inverseLerp(
+        lastUpdateTime,
+        lastUpdateTime + duration,
+        now
+      );
+      blinkInterpolation = THREE.MathUtils.clamp(blinkInterpolation, 0, 1);
+      //blinkInterpolation = easeInOutCubic(blinkInterpolation);
+
+      if (blinkInterpolation >= 1) {
+        blink.isBlinking = false;
+        faceParams.eyes.left.open = 1;
+        faceParams.eyes.right.open = 1;
+        return;
+      }
+
+      const getOpen = (isDominant) => {
+        let _blinkInterpolation = THREE.MathUtils.inverseLerp(
+          lastUpdateTime + (isDominant ? 0 : offset),
+          lastUpdateTime + duration - (isDominant ? offset : 0),
+          now
+        );
+        _blinkInterpolation = THREE.MathUtils.clamp(_blinkInterpolation, 0, 1);
+        _blinkInterpolation = easeInOutCubic(_blinkInterpolation);
+
+        let open = 1;
+        if (_blinkInterpolation < 0.5) {
+          open = _blinkInterpolation;
+          open *= 2;
+          open = 1 - open;
+        } else {
+          open = _blinkInterpolation - 0.5;
+          open *= 2;
+        }
+        return open;
+      };
+
+      let leftOpen = getOpen(dominantSide == "left");
+      let rightOpen = getOpen(dominantSide == "right");
+
+      faceParams.eyes.left.open = leftOpen;
+      faceParams.eyes.right.open = rightOpen;
+    }
+  }
+
+  const { lookAround } = faceParams;
+  {
+    let {
+      timeRange,
+      nextTime,
+      isMoving,
+      durationRange,
+      targetLookAt,
+      startLookAt,
+    } = lookAround;
+    if (now >= nextTime) {
+      lookAround.lastUpdateTime = now;
+      const interval = THREE.MathUtils.lerp(
+        timeRange.min,
+        timeRange.max,
+        Math.random()
+      );
+      lookAround.nextTime = now + interval;
+
+      lookAround.duration =
+        THREE.MathUtils.lerp(
+          durationRange.min,
+          durationRange.max,
+          Math.random()
+        ) * throttleInterval;
+
+      lookAround.isMoving = true;
+
+      targetLookAt.x = THREE.MathUtils.lerp(-0.3, 0.7, Math.random());
+      targetLookAt.y = THREE.MathUtils.lerp(-0.3, 0.7, Math.random());
+      targetLookAt.z = THREE.MathUtils.lerp(0.2, 0.9, Math.random());
+
+      Object.assign(startLookAt, faceParams.lookAt);
+    }
+
+    if (isMoving) {
+      let { duration, lastUpdateTime } = lookAround;
+      const { lookAt } = faceParams;
+
+      let interpolation = THREE.MathUtils.inverseLerp(
+        lastUpdateTime,
+        lastUpdateTime + duration,
+        now
+      );
+      interpolation = THREE.MathUtils.clamp(interpolation, 0, 1);
+      interpolation = easeOutCubic(interpolation);
+
+      if (interpolation >= 1) {
+        lookAround.isMoving = false;
+        Object.assign(lookAt, targetLookAt);
+        return;
+      }
+
+      lookAt.x = THREE.MathUtils.lerp(
+        startLookAt.x,
+        targetLookAt.x,
+        interpolation
+      );
+      lookAt.y = THREE.MathUtils.lerp(
+        startLookAt.y,
+        targetLookAt.y,
+        interpolation
+      );
+      lookAt.z = THREE.MathUtils.lerp(
+        startLookAt.z,
+        targetLookAt.z,
+        interpolation
+      );
+      updateLookAt();
+    }
+  }
+
+  // FILL - lookAround
+  // FILL - turnAround
+};
+const updateLookAt = () => {
+  const target = { ...faceParams.lookAt };
+  target.x += faceParams.refocus.offset.x;
+  target.y += faceParams.refocus.offset.y;
+  target.z += faceParams.refocus.offset.z;
+  lookAt(target);
+};
+let throttleInterval = 120;
 const updateInterval = (newInterval) => {
-  interval = newInterval;
+  throttleInterval = newInterval;
   startDrawing();
 };
 window.updateInterval = updateInterval;
@@ -844,14 +1118,9 @@ let intervalId;
 const startDrawing = () => {
   stopDrawing();
   setInterval(() => {
-    const now = Date.now();
-    const timeSinceLastDrawTime = now - lastDrawTime;
-    lastDrawTime = now;
-
-    // FILL - eye saccades
-
-    draw();
-  }, interval);
+    tick();
+    throttledDraw();
+  }, throttleInterval);
 };
 const stopDrawing = () => {
   if (intervalId != undefined) {
@@ -859,8 +1128,8 @@ const stopDrawing = () => {
     intervalId = undefined;
   }
 };
-const throttledDraw = BS.ThrottleUtils.throttle(draw, 100, true);
-if (true) {
+const throttledDraw = BS.ThrottleUtils.throttle(draw, throttleInterval, true);
+if (false) {
   draw();
 } else {
   startDrawing();

@@ -28,7 +28,7 @@ import {
   formatRotation,
 } from "./utils/DisplayUtils.ts";
 
-const _console = createConsole("DisplayManager", { log: true });
+const _console = createConsole("DisplayManager", { log: false });
 
 export const DisplayCommands = ["sleep", "wake"] as const;
 export type DisplayCommand = (typeof DisplayCommands)[number];

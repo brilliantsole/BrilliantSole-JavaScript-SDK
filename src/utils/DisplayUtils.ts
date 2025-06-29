@@ -11,7 +11,7 @@ import {
 import { createConsole } from "./Console.ts";
 import { Uint16Max } from "./MathUtils.ts";
 
-const _console = createConsole("DisplayUtils", { log: true });
+const _console = createConsole("DisplayUtils", { log: false });
 
 export function formatRotation(rotation: number, isRadians?: boolean) {
   if (isRadians) {
