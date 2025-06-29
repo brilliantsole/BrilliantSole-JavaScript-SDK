@@ -527,6 +527,12 @@ const faceParams = {
   yawXScalars: { min: -10, max: 80 },
   yawWidthScalars: { min: 0.6, max: 0.1 },
   pupilYawWidthScalars: { min: 0.4, max: 0.1 },
+  cheekCap: {
+    /** @type {BS.DisplaySegmentCap} */
+    start: "round",
+    /** @type {BS.DisplaySegmentCap} */
+    end: "round",
+  },
   eyebrowCap: {
     /** @type {BS.DisplaySegmentCap} */
     start: "round",
@@ -534,8 +540,12 @@ const faceParams = {
     end: "round",
   },
   eyebrowRadius: {
-    start: 15,
-    end: 5,
+    start: { min: 10, max: 15 },
+    end: { min: 2, max: 5 },
+  },
+  cheekRadius: {
+    start: 5,
+    end: 2,
   },
   eyeLineWidth: 7,
   pupilLineWidth: 5,
@@ -550,7 +560,7 @@ const faceParams = {
     /** @type {Side} */
     dominantSide: "left",
     nextTime: 0,
-    timeRange: { min: 1000, max: 3500 },
+    timeRange: { min: 1000, max: 5000 },
     duration: 0,
     durationRange: { min: 2, max: 2 },
   },
@@ -577,18 +587,18 @@ const faceParams = {
   pose: {
     eyebrowRotationRange: { min: -0.1, max: 0.1 },
     eyebrowYRange: { min: -55, max: -105 },
+    cheekRotationRange: { min: -0.1, max: 0.1 },
+    cheekYRange: { min: 60, max: 70 },
     lastUpdateTime: 0,
     nextTime: 0,
     timeRange: { min: 3000, max: 5000 },
     duration: 0,
     durationRange: { min: 3, max: 3 },
     isMoving: false,
-    cheekYRange: { min: 0, max: 0 },
-    cheekYRotation: { min: -0.1, max: 0.1 },
     startPose: {
       cheeks: {
-        left: { y: 0, rotation: 0 },
-        right: { y: 0, rotation: 0 },
+        left: { y: 0, rotation: 0, show: false },
+        right: { y: 0, rotation: 0, show: false },
       },
       eyebrows: {
         left: {
@@ -603,8 +613,8 @@ const faceParams = {
     },
     targetPose: {
       cheeks: {
-        left: { y: 0, rotation: 0 },
-        right: { y: 0, rotation: 0 },
+        left: { y: 0, rotation: 0, show: false },
+        right: { y: 0, rotation: 0, show: false },
       },
       eyebrows: {
         left: {
@@ -635,9 +645,11 @@ const faceParams = {
       cheek: {
         position: {
           x: 0,
-          y: 60,
+          y: 80,
         },
-        maxHeight: 30,
+        rotation: 0,
+        widthScalar: 0.9,
+        lineWidth: 0,
       },
       open: 1,
       maxHeight: 50,
@@ -664,9 +676,11 @@ const faceParams = {
       cheek: {
         position: {
           x: 0,
-          y: 60,
+          y: 80,
         },
-        maxHeight: 30,
+        rotation: 0,
+        widthScalar: 1,
+        lineWidth: 0,
       },
       open: 1,
       maxHeight: 55,
@@ -876,7 +890,7 @@ const drawEyebrow = (side, center) => {
   const isLeft = side == "left";
   const eyePosition = getEyePosition(side, center);
 
-  const blinkInterpolation = 1 - open; // FIX
+  const blinkInterpolation = 1 - open;
 
   if (isBlinking) {
     const sign = isLeft ? 1 : -1;
@@ -900,7 +914,12 @@ const drawEyebrow = (side, center) => {
   eyebrowStartPosition.rotateAround(eyebrowMidpoint, rotation);
   eyebrowEndPosition.rotateAround(eyebrowMidpoint, rotation);
 
-  const widthScalar = 1 - getYawInterpolation(side, faceParams.yawWidthScalars);
+  const yawInterpolation = getYawInterpolation(
+    side,
+    faceParams.yawWidthScalars
+  );
+
+  const widthScalar = 1 - yawInterpolation;
 
   let eyebrowStartXOffset = eyebrowStartPosition.x - eyebrowMidpoint.x;
   eyebrowStartXOffset *= widthScalar;
@@ -922,8 +941,19 @@ const drawEyebrow = (side, center) => {
 
   ctx.setSegmentStartCap(eyebrowCap.start);
   ctx.setSegmentEndCap(eyebrowCap.end);
-  ctx.setSegmentStartRadius(eyebrowRadius.start);
-  ctx.setSegmentEndRadius(eyebrowRadius.end);
+  const eyebrowRadiusInterpolation = 1 - yawInterpolation;
+  const startRadius = THREE.MathUtils.lerp(
+    eyebrowRadius.start.min,
+    eyebrowRadius.start.max,
+    eyebrowRadiusInterpolation
+  );
+  const endRadius = THREE.MathUtils.lerp(
+    eyebrowRadius.end.min,
+    eyebrowRadius.end.max,
+    eyebrowRadiusInterpolation
+  );
+  ctx.setSegmentStartRadius(startRadius);
+  ctx.setSegmentEndRadius(endRadius);
 
   ctx.drawSegment(
     eyebrowStartPosition.x,
@@ -937,31 +967,91 @@ const drawEyebrow = (side, center) => {
  * @param {TVector2} center
  */
 const drawCheek = (side, center) => {
+  const { eyes, cheekCap, cheekRadius } = faceParams;
   const { roll } = faceParams.rotation;
-  const { open, cheek, maxWidth } = faceParams.eyes[side];
-  const { position, maxHeight } = cheek;
+  const { open, cheek, maxWidth, maxHeight } = eyes[side];
+  const { isBlinking } = faceParams.blink;
+  let { position, widthScalar, rotation, lineWidth } = cheek;
+
+  if (lineWidth == 0) {
+    return;
+  }
 
   const isLeft = side == "left";
   const eyePosition = getEyePosition(side, center);
+
+  const blinkInterpolation = 1 - open;
+
   const cheekPosition = new THREE.Vector2(position.x, position.y);
   cheekPosition.add(eyePosition);
-  cheekPosition.rotateAround(center, roll);
 
-  const widthScalar = 1 - getYawInterpolation(side, faceParams.yawWidthScalars);
-  const width = maxWidth * widthScalar * 1.5;
+  const sign = isLeft ? 1 : -1;
 
-  // FILL - just draw line
+  const eyeWidthScalar =
+    1 - getYawInterpolation(side, faceParams.yawWidthScalars);
+  const eyeWidth = maxWidth * eyeWidthScalar;
+  const cheekLength = eyeWidth * widthScalar;
 
-  ctx.selectFillColor(backgroundColorIndex);
-  ctx.selectLineColor(skinColorIndex);
-  ctx.setLineWidth(faceParams.cheekLineWidth);
-  ctx.setRotationCropLeft(width - maxWidth);
-  ctx.setRotationCropRight(width - maxWidth);
-  ctx.setRotationCropBottom(maxHeight * 1.5);
-  ctx.setRotation(faceParams.eyeTilt * (isLeft ? 1 : -1) + roll, true);
+  if (isBlinking) {
+    cheekPosition.y -= blinkInterpolation * maxHeight;
+  }
 
-  ctx.drawEllipse(cheekPosition.x, cheekPosition.y, width, maxHeight);
-  ctx.clearRotationCrop();
+  if (true) {
+    cheekPosition.rotateAround(center, roll);
+
+    const height = maxHeight * 0.4;
+
+    ctx.selectFillColor(backgroundColorIndex);
+    ctx.selectLineColor(skinColorIndex);
+    ctx.setLineWidth(lineWidth);
+    ctx.setRotationCropBottom(height * 1.5);
+
+    ctx.setRotation(
+      faceParams.eyeTilt * (isLeft ? 1 : -1) + roll + rotation,
+      true
+    );
+
+    ctx.drawEllipse(cheekPosition.x, cheekPosition.y, cheekLength, height);
+    ctx.clearRotationCrop();
+  } else {
+    const cheekStartPosition = new THREE.Vector2(sign * cheekLength, 0);
+    const cheekEndPosition = new THREE.Vector2(-sign * cheekLength, 0);
+
+    const cheekMidpoint = new THREE.Vector2()
+      .addVectors(cheekStartPosition, cheekEndPosition)
+      .multiplyScalar(0.5);
+    cheekStartPosition.rotateAround(cheekMidpoint, rotation);
+    cheekEndPosition.rotateAround(cheekMidpoint, rotation);
+
+    let cheekStartXOffset = cheekStartPosition.x - cheekMidpoint.x;
+    cheekStartXOffset *= eyeWidthScalar;
+    cheekStartPosition.x = cheekStartXOffset + cheekMidpoint.x;
+
+    let cheekEndXOffset = cheekEndPosition.x - cheekMidpoint.x;
+    cheekEndXOffset *= eyeWidthScalar;
+    cheekEndPosition.x = cheekEndXOffset + cheekMidpoint.x;
+
+    cheekStartPosition.add(cheekPosition);
+    cheekEndPosition.add(cheekPosition);
+
+    cheekStartPosition.rotateAround(center, faceParams.rotation.roll);
+    cheekEndPosition.rotateAround(center, faceParams.rotation.roll);
+
+    ctx.selectFillColor(skinColorIndex);
+    ctx.setLineWidth(0);
+
+    ctx.setSegmentStartCap(cheekCap.start);
+    ctx.setSegmentEndCap(cheekCap.end);
+    ctx.setSegmentStartRadius(cheekRadius.start);
+    ctx.setSegmentEndRadius(cheekRadius.end);
+
+    ctx.drawSegment(
+      cheekStartPosition.x,
+      cheekStartPosition.y,
+      cheekEndPosition.x,
+      cheekEndPosition.y
+    );
+  }
 };
 const draw = () => {
   const { width, height } = ctx;
@@ -976,8 +1066,8 @@ const draw = () => {
   drawPupil("right", center);
   drawEyebrow("left", center);
   drawEyebrow("right", center);
-  //drawCheek("left", center);
-  //drawCheek("right", center);
+  drawCheek("left", center);
+  drawCheek("right", center);
 
   ctx.showDisplay();
 };
@@ -1266,6 +1356,7 @@ const tick = () => {
   const { pose } = faceParams;
   {
     let { timeRange, nextTime, isMoving, durationRange } = pose;
+    const { cheekLineWidth } = faceParams;
     if (!isMoving && now >= nextTime && startedBlinking) {
       pose.lastUpdateTime = now;
       const interval = THREE.MathUtils.lerp(
@@ -1284,7 +1375,7 @@ const tick = () => {
 
       pose.isMoving = true;
 
-      const { eyebrows } = pose.targetPose;
+      const { eyebrows, cheeks } = pose.targetPose;
       eyebrows.left.rotation = THREE.MathUtils.lerp(
         pose.eyebrowRotationRange.min,
         pose.eyebrowRotationRange.max,
@@ -1307,7 +1398,30 @@ const tick = () => {
         Math.random()
       );
 
-      // FILL - cheeks
+      cheeks.left.rotation = THREE.MathUtils.lerp(
+        pose.eyebrowRotationRange.min,
+        pose.eyebrowRotationRange.max,
+        Math.random()
+      );
+      cheeks.right.rotation = THREE.MathUtils.lerp(
+        pose.cheekRotationRange.min,
+        pose.cheekRotationRange.max,
+        Math.random()
+      );
+
+      cheeks.left.y = THREE.MathUtils.lerp(
+        pose.cheekYRange.min,
+        pose.cheekYRange.max,
+        Math.random()
+      );
+      cheeks.right.y = THREE.MathUtils.lerp(
+        pose.cheekYRange.min,
+        pose.cheekYRange.max,
+        Math.random()
+      );
+
+      cheeks.left.show = Math.round(Math.random() * 0.7);
+      cheeks.right.show = Math.round(Math.random() * 0.7);
     }
 
     if (isMoving) {
@@ -1331,7 +1445,18 @@ const tick = () => {
         faceParams.eyes.right.eyebrow.rotation =
           targetPose.eyebrows.right.rotation;
 
-        // FILL - cheeks
+        faceParams.eyes.left.cheek.rotation = targetPose.cheeks.left.rotation;
+        faceParams.eyes.right.cheek.rotation = targetPose.cheeks.right.rotation;
+
+        faceParams.eyes.left.cheek.position.y = targetPose.cheeks.left.y;
+        faceParams.eyes.right.cheek.position.y = targetPose.cheeks.right.y;
+
+        faceParams.eyes.left.cheek.lineWidth = targetPose.cheeks.left.show
+          ? cheekLineWidth
+          : 0;
+        faceParams.eyes.right.cheek.lineWidth = targetPose.cheeks.right.show
+          ? cheekLineWidth
+          : 0;
         return;
       }
 
@@ -1357,7 +1482,38 @@ const tick = () => {
         interpolation
       );
 
-      // FILL - cheeks
+      faceParams.eyes.left.cheek.position.y = THREE.MathUtils.lerp(
+        startPose.cheeks.left.y,
+        targetPose.cheeks.left.y,
+        interpolation
+      );
+      faceParams.eyes.right.cheek.position.y = THREE.MathUtils.lerp(
+        startPose.cheeks.right.y,
+        targetPose.cheeks.right.y,
+        interpolation
+      );
+
+      faceParams.eyes.left.cheek.rotation = THREE.MathUtils.lerp(
+        startPose.cheeks.left.rotation,
+        targetPose.cheeks.left.rotation,
+        interpolation
+      );
+      faceParams.eyes.right.cheek.rotation = THREE.MathUtils.lerp(
+        startPose.cheeks.right.rotation,
+        targetPose.cheeks.right.rotation,
+        interpolation
+      );
+
+      faceParams.eyes.left.cheek.lineWidth = THREE.MathUtils.lerp(
+        startPose.cheeks.left.show ? cheekLineWidth : 0,
+        targetPose.cheeks.left.show ? cheekLineWidth : 0,
+        interpolation
+      );
+      faceParams.eyes.right.cheek.lineWidth = THREE.MathUtils.lerp(
+        startPose.cheeks.right.show ? cheekLineWidth : 0,
+        targetPose.cheeks.right.show ? cheekLineWidth : 0,
+        interpolation
+      );
     }
   }
 };

@@ -4288,6 +4288,7 @@ class DisplayManager {
     }
     setCrop(cropDirection, crop, sendImmediately) {
         _console$o.assertEnumWithError(cropDirection, DisplayCropDirections);
+        crop = Math.max(0, crop);
         const cropCommand = DisplayCropDirectionToCommand[cropDirection];
         const cropKey = DisplayCropDirectionToStateKey[cropDirection];
         const differences = __classPrivateFieldGet(this, _DisplayManager_displayContextStateHelper, "f").update({

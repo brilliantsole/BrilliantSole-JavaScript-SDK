@@ -960,6 +960,7 @@ class DisplayManager {
     sendImmediately?: boolean
   ) {
     _console.assertEnumWithError(cropDirection, DisplayCropDirections);
+    crop = Math.max(0, crop);
     const cropCommand = DisplayCropDirectionToCommand[cropDirection];
     const cropKey = DisplayCropDirectionToStateKey[cropDirection];
     const differences = this.#displayContextStateHelper.update({
