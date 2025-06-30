@@ -214,6 +214,9 @@ class DisplayCanvasHelper {
   #frontDrawStack: Function[] = [];
   #rearDrawStack: Function[] = [];
   #drawFrontDrawStack() {
+    if (!this.context) {
+      return;
+    }
     this.#context.clearRect(0, 0, this.width, this.height);
 
     this.#drawBackground();

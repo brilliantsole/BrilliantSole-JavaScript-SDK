@@ -163,6 +163,7 @@ const displayCanvas = document.getElementById("display");
 
 // DISPLAY CANVAS HELPER
 const displayCanvasHelper = new BS.DisplayCanvasHelper();
+displayCanvasHelper.setBrightness("veryLow");
 displayCanvasHelper.canvas = displayCanvas;
 window.displayCanvasHelper = displayCanvasHelper;
 

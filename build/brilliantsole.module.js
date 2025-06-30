@@ -8463,6 +8463,9 @@ _DisplayCanvasHelper_eventDispatcher = new WeakMap(), _DisplayCanvasHelper_canva
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "a", _DisplayCanvasHelper_dispatchEvent_get).call(this, "resize", { width: this.width, height: this.height });
     this.clearDisplay();
 }, _DisplayCanvasHelper_drawFrontDrawStack = function _DisplayCanvasHelper_drawFrontDrawStack() {
+    if (!this.context) {
+        return;
+    }
     __classPrivateFieldGet(this, _DisplayCanvasHelper_context, "f").clearRect(0, 0, this.width, this.height);
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_drawBackground).call(this);
     __classPrivateFieldGet(this, _DisplayCanvasHelper_frontDrawStack, "f").forEach((callback) => callback());
