@@ -7186,13 +7186,8 @@ class Device {
             if (this.connectionStatus != "connecting") {
                 return;
             }
-            if (this.connectionType == "client" && !isInNode) {
-                return;
-            }
             if (this.type == "glasses") {
-                if (this.connectionType != "client") {
-                    __classPrivateFieldGet(this, _Device_displayManager, "f").requestRequiredInformation();
-                }
+                __classPrivateFieldGet(this, _Device_displayManager, "f").requestRequiredInformation();
             }
         });
         DeviceManager$1.onDevice(this);
@@ -8163,7 +8158,8 @@ _a$3 = Device, _Device_eventDispatcher = new WeakMap(), _Device_connectionManage
     if (!this.isConnected && __classPrivateFieldGet(this, _Device_instances, "a", _Device_hasRequiredInformation_get)) {
         __classPrivateFieldGet(this, _Device_instances, "m", _Device_checkConnection).call(this);
     }
-    if (this.connectionStatus == "notConnected") {
+    if (this.connectionStatus == "notConnected" ||
+        this.connectionStatus == "disconnecting") {
         return;
     }
     __classPrivateFieldGet(this, _Device_instances, "m", _Device_sendTxMessages).call(this);

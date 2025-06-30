@@ -357,13 +357,8 @@ class Device {
       if (this.connectionStatus != "connecting") {
         return;
       }
-      if (this.connectionType == "client" && !isInNode) {
-        return;
-      }
       if (this.type == "glasses") {
-        if (this.connectionType != "client") {
-          this.#displayManager.requestRequiredInformation();
-        }
+        this.#displayManager.requestRequiredInformation();
       }
     });
     DeviceManager.onDevice(this);
@@ -877,7 +872,10 @@ class Device {
     if (!this.isConnected && this.#hasRequiredInformation) {
       this.#checkConnection();
     }
-    if (this.connectionStatus == "notConnected") {
+    if (
+      this.connectionStatus == "notConnected" ||
+      this.connectionStatus == "disconnecting"
+    ) {
       return;
     }
     this.#sendTxMessages();

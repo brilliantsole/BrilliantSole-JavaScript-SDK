@@ -31,12 +31,12 @@
       background-color: black;
     }
     #displayContainer.shrink {
-      width: calc(640px * 2);
-      height: calc(400px * 2);
+      width: calc(640px * 1.5);
+      height: calc(400px * 1.5);
     }
     #displayContainer.shrink #display {
-      width: calc(100% / 2.5);
-      height: calc(100% / 2.5);
+      width: calc(100% / 1.5);
+      height: calc(100% / 1.5);
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
@@ -49,6 +49,20 @@
     </nav>
 
     <h1>Display Canvas | BrilliantSole JavaScript SDK</h1>
+
+    <div>
+      <label
+        >webSocket url
+        <input id="webSocketUrl" type="url" placeholder="localhost"
+      /></label>
+      <button id="toggleClientConnection">connect</button>
+
+      <label>
+        is scanning available?
+        <input id="isScanningAvailable" type="checkbox" readonly disabled />
+      </label>
+      <button id="toggleScan" disabled>scan</button>
+    </div>
 
     <button id="toggleConnection">connect</button>
 
@@ -166,6 +180,7 @@
     </div>
 
     <div>
+      <label> auto <input type="checkbox" checked id="autoAnimate" /> </label>
       <label>
         yaw
         <input

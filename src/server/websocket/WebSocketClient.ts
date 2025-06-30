@@ -23,7 +23,7 @@ import {
 import { parseMessage } from "../../utils/ParseUtils.ts";
 import { isInLensStudio, isInBrowser } from "../../utils/environment.ts";
 
-const _console = createConsole("WebSocketClient", { log: true });
+const _console = createConsole("WebSocketClient", { log: false });
 
 class WebSocketClient extends BaseClient {
   // WEBSOCKET

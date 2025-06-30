@@ -3,6 +3,7 @@ import * as BS from "../../build/brilliantsole.module.js";
 // DEVICE
 const device = new BS.Device();
 window.device = device;
+window.BS = BS;
 
 // CONNECT
 
@@ -23,6 +24,137 @@ device.addEventListener("connectionStatus", () => {
   }
   toggleConnectionButton.disabled = disabled;
   toggleConnectionButton.innerText = innerText;
+});
+
+// WEBSOCKET CLIENT
+
+const client = new BS.WebSocketClient();
+window.client = client;
+
+// WEBSOCKET URL SEARCH PARAMS
+
+const url = new URL(location);
+function setUrlParam(key, value) {
+  if (history.pushState) {
+    let searchParams = new URLSearchParams(window.location.search);
+    if (value) {
+      searchParams.set(key, value);
+    } else {
+      searchParams.delete(key);
+    }
+    let newUrl =
+      window.location.protocol +
+      "//" +
+      window.location.host +
+      window.location.pathname +
+      "?" +
+      searchParams.toString();
+    window.history.pushState({ path: newUrl }, "", newUrl);
+  }
+}
+client.addEventListener("isConnected", () => {
+  if (client.isConnected) {
+    setUrlParam("webSocketUrl", client.webSocket.url);
+    webSocketUrlInput.value = client.webSocket.url;
+    webSocketUrlInput.dispatchEvent(new Event("input"));
+  } else {
+    setUrlParam("webSocketUrl");
+  }
+});
+
+// WEBSOCKET SERVER URL
+
+/** @type {HTMLInputElement} */
+const webSocketUrlInput = document.getElementById("webSocketUrl");
+webSocketUrlInput.value = url.searchParams.get("webSocketUrl") || "";
+webSocketUrlInput.dispatchEvent(new Event("input"));
+
+// WEBSOCKET CONNECTION
+
+/** @type {HTMLButtonElement} */
+const toggleClientConnectionButton = document.getElementById(
+  "toggleClientConnection"
+);
+toggleClientConnectionButton.addEventListener("click", () => {
+  if (client.isConnected) {
+    client.disconnect();
+  } else {
+    /** @type {string?} */
+    let webSocketUrl;
+    if (webSocketUrlInput.value.length > 0) {
+      webSocketUrl = webSocketUrlInput.value;
+    }
+    client.connect(webSocketUrl);
+  }
+});
+client.addEventListener("connectionStatus", () => {
+  switch (client.connectionStatus) {
+    case "connected":
+    case "notConnected":
+      toggleClientConnectionButton.disabled = false;
+      toggleClientConnectionButton.innerText = client.isConnected
+        ? "disconnect"
+        : "connect";
+      break;
+    case "connecting":
+    case "disconnecting":
+      toggleClientConnectionButton.innerText = client.connectionStatus;
+      toggleClientConnectionButton.disabled = true;
+      break;
+  }
+});
+
+// WEBSOCKET SCANNER
+
+/** @type {HTMLInputElement} */
+const isScanningAvailableCheckbox = document.getElementById(
+  "isScanningAvailable"
+);
+client.addEventListener("isScanningAvailable", () => {
+  isScanningAvailableCheckbox.checked = client.isScanningAvailable;
+});
+
+/** @type {HTMLButtonElement} */
+const toggleScanButton = document.getElementById("toggleScan");
+toggleScanButton.addEventListener("click", () => {
+  client.toggleScan();
+});
+client.addEventListener("isScanningAvailable", () => {
+  toggleScanButton.disabled = !client.isScanningAvailable;
+});
+client.addEventListener("isScanning", () => {
+  toggleScanButton.innerText = client.isScanning ? "stop scanning" : "scan";
+});
+
+/** @type {BS.Device?} */
+let clientDevice;
+client.addEventListener("discoveredDevice", (event) => {
+  console.log(event);
+  if (clientDevice) {
+    return;
+  }
+  const { discoveredDevice } = event.message;
+  if (discoveredDevice.deviceType == "glasses") {
+    console.log("connecting to discoveredDevice", discoveredDevice);
+    clientDevice = client.connectToDevice(discoveredDevice.bluetoothId);
+  }
+});
+
+// DEVICE
+BS.DeviceManager.AddEventListener("deviceConnected", (event) => {
+  if (event.message.device.connectionType != "client") {
+    return;
+  }
+  if (event.message.device.isDisplayAvailable) {
+    clientDevice = event.message.device;
+    if (client.isScanning) {
+      client.stopScan();
+    }
+    displayCanvasHelper.device = clientDevice;
+  } else {
+    console.log("display not available");
+    // event.message.device.disconnect();
+  }
 });
 
 // CANVAS
@@ -333,7 +465,7 @@ const resizeDisplayPlaneEntity = () => {
   );
   displayPlaneEntity.setAttribute("height", displayPlaneEntityHeight);
 };
-let displayPlaneEntityHeight = 0.3;
+let displayPlaneEntityHeight = 0.2;
 displayPlaneEntity.addEventListener("loaded", () => {
   displayCanvasHelper.addEventListener("update", () => {
     redrawDisplayPlaneEntity();
@@ -507,7 +639,7 @@ displayCanvasHelper.setColor(hairColorIndex, "#bd6e00");
 const hairOutlineColorIndex = baseColorIndex++;
 displayCanvasHelper.setColor(hairOutlineColorIndex, "#803e00");
 const skinColorIndex = baseColorIndex++;
-displayCanvasHelper.setColor(skinColorIndex, "#ebbd59");
+displayCanvasHelper.setColor(skinColorIndex, "#f2bb45");
 
 /** @type {import("../utils/three/three.module.min")} */
 const THREE = window.THREE;
@@ -709,6 +841,10 @@ window.faceParams = faceParams;
 
 /** @param {{x:number,y:number,z:number}} target */
 const lookAt = (target) => {
+  faceXInput.value = target.x;
+  faceYInput.value = target.y;
+  faceZInput.value = target.z;
+
   const leftPosition = faceParams.eyes.left.pupil.position;
   const rightPosition = faceParams.eyes.right.pupil.position;
 
@@ -735,6 +871,13 @@ const lookAt = (target) => {
 };
 window.lookAt = lookAt;
 
+const autoAnimateInput = document.getElementById("autoAnimate");
+let autoAnimate = true;
+autoAnimateInput.checked = autoAnimate;
+autoAnimateInput.addEventListener("input", () => {
+  autoAnimate = autoAnimateInput.checked;
+  console.log({ autoAnimate });
+});
 const faceYawInput = document.getElementById("faceYaw");
 faceYawInput.addEventListener("input", () => {
   const yaw = Number(faceYawInput.value);
@@ -1081,6 +1224,9 @@ function easeOutCubic(t) {
   return 1 - Math.pow(1 - t, 3);
 }
 const tick = () => {
+  if (!autoAnimate) {
+    return;
+  }
   const now = Date.now();
   const timeSinceLastDrawTime = now - lastDrawTime;
   lastDrawTime = now;
@@ -1337,6 +1483,7 @@ const tick = () => {
       if (interpolation >= 1) {
         turnAround.isTurning = false;
         Object.assign(rotation, targetRotation);
+        faceYawInput.value = rotation.yaw;
         return;
       }
 
@@ -1345,6 +1492,7 @@ const tick = () => {
         targetRotation.yaw,
         interpolation
       );
+      faceYawInput.value = rotation.yaw;
       rotation.roll = THREE.MathUtils.lerp(
         startRotation.roll,
         targetRotation.roll,

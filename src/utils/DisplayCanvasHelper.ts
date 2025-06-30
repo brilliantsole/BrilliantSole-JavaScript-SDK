@@ -233,7 +233,7 @@ class DisplayCanvasHelper {
     );
     const data = imageData.data;
 
-    const alphaBoost = 1.1; // >1 = more opaque, try 1.1–1.5 for subtlety
+    const alphaBoost = 1.5; // >1 = more opaque, try 1.1–1.5 for subtlety
 
     for (let i = 0; i < data.length; i += 4) {
       const r = data[i];
@@ -267,7 +267,7 @@ class DisplayCanvasHelper {
   }
   set applyTransparency(newValue) {
     this.#applyTransparency = newValue;
-    console.log({ applyTransparency: this.applyTransparency });
+    _console.log({ applyTransparency: this.applyTransparency });
     this.#drawFrontDrawStack();
   }
 
@@ -904,7 +904,7 @@ class DisplayCanvasHelper {
   #colorIndexToRgba(colorIndex: number) {
     return this.#hexToRgba(
       this.colors[colorIndex],
-      this.opacities[colorIndex] * this.#brightnessOpacity
+      1 || this.opacities[colorIndex] * this.#brightnessOpacity
     );
   }
   #updateContext({
