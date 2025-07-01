@@ -494,6 +494,45 @@ modelInput.addEventListener("input", (event) => {
 // CAMERA
 /** @type {HTMLVideoElement} */
 const cameraVideo = document.getElementById("cameraVideo");
+cameraVideo.addEventListener("loadedmetadata", () => {
+  const { videoWidth, videoHeight } = cameraVideo;
+  cameraVideoFaceTrackingCanvas.width = videoWidth;
+  cameraVideoFaceTrackingCanvas.height = videoHeight;
+});
+/** @type {HTMLCanvasElement} */
+const cameraVideoFaceTrackingCanvas = document.getElementById(
+  "cameraVideoFaceTracking"
+);
+const cameraVideoFaceTrackingContext =
+  cameraVideoFaceTrackingCanvas.getContext("2d");
+const toggleMirrorCameraButton = document.getElementById("toggleMirrorCamera");
+let mirrorCamera = false;
+const setMirrorCamera = (newMirrorCamera) => {
+  mirrorCamera = newMirrorCamera;
+  console.log({ mirrorCamera });
+  cameraVideo.style.transform = mirrorCamera ? "scaleX(-1)" : "";
+  cameraVideoFaceTrackingCanvas.style.transform = mirrorCamera
+    ? "scaleX(-1)"
+    : "";
+  toggleMirrorCameraButton.innerText = mirrorCamera
+    ? "unmirror camera"
+    : "mirror camera";
+};
+toggleMirrorCameraButton.addEventListener("click", () => {
+  setMirrorCamera(!mirrorCamera);
+});
+const toggleCanvasButton = document.getElementById("toggleCanvas");
+let showCanvas = true;
+const setShowCanvas = (newShowCanvas) => {
+  showCanvas = newShowCanvas;
+  console.log({ showCanvas });
+  displayCanvas.style.display = showCanvas ? "" : "none";
+  toggleCanvasButton.innerText = showCanvas ? "hide canvas" : "show canvas";
+};
+toggleCanvasButton.addEventListener("click", () => {
+  setShowCanvas(!showCanvas);
+});
+
 /** @type {HTMLSelectElement} */
 const cameraInput = document.getElementById("cameraInput");
 const cameraInputOptgroup = cameraInput.querySelector("optgroup");
@@ -519,7 +558,11 @@ let cameraStream;
 const selectCameraInput = async (deviceId) => {
   stopCameraStream();
   cameraStream = await navigator.mediaDevices.getUserMedia({
-    video: { deviceId: { exact: deviceId } },
+    video: {
+      deviceId: { exact: deviceId },
+      width: { ideal: 1000 },
+      height: { ideal: 1000 },
+    },
   });
 
   cameraVideo.srcObject = cameraStream;
@@ -560,6 +603,9 @@ const setPreviewMode = (newPreviewMode) => {
   });
 
   cameraVideo.style.display = previewMode == "camera" ? "" : "none";
+  cameraVideoFaceTrackingCanvas.style.display =
+    previewMode == "camera" && faceTrackingEnabled ? "" : "none";
+
   video.style.display = previewMode == "video" ? "" : "none";
   image.style.display = previewMode == "image" ? "" : "none";
   modelEntity.object3D.visible = previewMode == "vr";
@@ -720,6 +766,7 @@ const faceParams = {
   pose: {
     eyebrowRotationRange: { min: -0.1, max: 0.1 },
     eyebrowYRange: { min: -55, max: -105 },
+    eyebrowYRange2: { min: -55, max: -90 },
     cheekRotationRange: { min: -0.1, max: 0.1 },
     cheekYRange: { min: 60, max: 70 },
     lastUpdateTime: 0,
@@ -874,15 +921,25 @@ window.lookAt = lookAt;
 
 const autoAnimateInput = document.getElementById("autoAnimate");
 let autoAnimate = true;
+const setAutoAnimate = (newAutoAnimate) => {
+  autoAnimate = newAutoAnimate;
+  console.log({ autoAnimate });
+  autoAnimateInput.checked = autoAnimate;
+};
 autoAnimateInput.checked = autoAnimate;
 autoAnimateInput.addEventListener("input", () => {
-  autoAnimate = autoAnimateInput.checked;
-  console.log({ autoAnimate });
+  setAutoAnimate(autoAnimateInput.checked);
 });
 const faceYawInput = document.getElementById("faceYaw");
 faceYawInput.addEventListener("input", () => {
   const yaw = Number(faceYawInput.value);
   faceParams.rotation.yaw = yaw;
+  throttledDraw();
+});
+const faceRollInput = document.getElementById("faceRoll");
+faceRollInput.addEventListener("input", () => {
+  const roll = Number(faceRollInput.value);
+  faceParams.rotation.roll = roll;
   throttledDraw();
 });
 const faceXInput = document.getElementById("faceX");
@@ -986,7 +1043,7 @@ const drawPupil = (side, center) => {
   const { maxRadius, position } = pupil;
   const isLeft = side == "left";
 
-  if (open < 0.5) {
+  if (open < 0.4) {
     return;
   }
 
@@ -1136,7 +1193,7 @@ const drawCheek = (side, center) => {
   const eyeWidth = maxWidth * eyeWidthScalar;
   const cheekLength = eyeWidth * widthScalar;
 
-  if (isBlinking) {
+  if (isBlinking || faceTrackingEnabled) {
     cheekPosition.y -= blinkInterpolation * maxHeight;
   }
 
@@ -1485,6 +1542,7 @@ const tick = () => {
         turnAround.isTurning = false;
         Object.assign(rotation, targetRotation);
         faceYawInput.value = rotation.yaw;
+        faceRollInput.value = rotation.roll;
         return;
       }
 
@@ -1499,6 +1557,7 @@ const tick = () => {
         targetRotation.roll,
         interpolation
       );
+      faceRollInput.value = rotation.roll;
     }
   }
 
@@ -1700,3 +1759,447 @@ if (false) {
   startDrawing();
 }
 window.draw = draw;
+
+// FACE TRACKING
+
+import vision from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3";
+const { FaceLandmarker, FilesetResolver, DrawingUtils } = vision;
+
+let faceLandmarker;
+const createFaceLandmarker = async () => {
+  const filesetResolver = await FilesetResolver.forVisionTasks(
+    "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3/wasm"
+  );
+  faceLandmarker = await FaceLandmarker.createFromOptions(filesetResolver, {
+    baseOptions: {
+      modelAssetPath: `https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task`,
+      delegate: "GPU",
+    },
+    outputFaceBlendshapes: true,
+    runningMode: "VIDEO",
+    numFaces: 1,
+    minFaceDetectionConfidence: 0.5,
+    minFacePresenceConfidence: 0.5,
+    minTrackingConfidence: 0.5,
+    outputFacialTransformationMatrixes: false,
+  });
+  console.log("created faceLandmarker", faceLandmarker);
+};
+
+/** @type {HTMLButtonElement} */
+const toggleFaceTrackingButton = document.getElementById("toggleFaceTracking");
+let faceTrackingEnabled = false;
+const setFaceTrackingEnabled = async (newFaceTrackingEnabled) => {
+  faceTrackingEnabled = newFaceTrackingEnabled;
+  console.log({ faceTrackingEnabled });
+  toggleFaceTrackingButton.innerText = faceTrackingEnabled
+    ? "disable face tracking"
+    : "enable face tracking";
+
+  cameraVideoFaceTrackingCanvas.style.display = faceTrackingEnabled
+    ? ""
+    : "none";
+
+  if (faceTrackingEnabled && !faceLandmarker) {
+    toggleFaceTrackingButton.disabled = true;
+    await createFaceLandmarker();
+    toggleFaceTrackingButton.disabled = false;
+  }
+
+  if (faceTrackingEnabled && faceLandmarker) {
+    faceTrackingRenderLoop();
+  }
+
+  if (faceTrackingEnabled) {
+    setAutoAnimate(false);
+  }
+};
+toggleFaceTrackingButton.addEventListener("click", () => {
+  setFaceTrackingEnabled(!faceTrackingEnabled);
+});
+
+/** @type {HTMLButtonElement} */
+const toggleShowFaceTrackingButton = document.getElementById(
+  "toggleShowFaceTracking"
+);
+let showFaceTracking = true;
+const setShowFaceTracking = (newShowFaceTracking) => {
+  showFaceTracking = newShowFaceTracking;
+  console.log({ showFaceTracking });
+  toggleShowFaceTrackingButton.innerText = showFaceTracking
+    ? "hide face tracking"
+    : "show face tracking";
+};
+toggleShowFaceTrackingButton.addEventListener("click", () => {
+  setShowFaceTracking(!showFaceTracking);
+});
+setShowFaceTracking(true);
+
+let lastFaceTrackingTime;
+let drawingUtils;
+const eyeBlinkRangeHelpers = {
+  left: new BS.RangeHelper(),
+  right: new BS.RangeHelper(),
+};
+eyeBlinkRangeHelpers.left.update(0.01);
+eyeBlinkRangeHelpers.right.update(0.01);
+eyeBlinkRangeHelpers.left.update(0.6);
+eyeBlinkRangeHelpers.right.update(0.6);
+const eyebrowRangeHelpers = {
+  left: new BS.RangeHelper(),
+  right: new BS.RangeHelper(),
+};
+eyebrowRangeHelpers.left.update(0.0);
+eyebrowRangeHelpers.right.update(0.0);
+eyebrowRangeHelpers.left.update(0.6);
+eyebrowRangeHelpers.right.update(0.6);
+
+const cheekRangeHelpers = {
+  left: new BS.RangeHelper(),
+  right: new BS.RangeHelper(),
+};
+cheekRangeHelpers.left.update(0.0);
+cheekRangeHelpers.left.update(0.032);
+cheekRangeHelpers.right.update(0.0);
+cheekRangeHelpers.right.update(0.032);
+const faceTrackingRenderLoop = () => {
+  if (
+    cameraVideo.currentTime !== lastFaceTrackingTime &&
+    cameraStream &&
+    !cameraVideo.paused
+  ) {
+    const results = faceLandmarker.detectForVideo(
+      cameraVideo,
+      performance.now()
+    );
+    // console.log("results", results);
+    lastFaceTrackingTime = cameraVideo.currentTime;
+
+    const context = cameraVideoFaceTrackingContext;
+    const canvas = cameraVideoFaceTrackingCanvas;
+
+    drawingUtils = drawingUtils || new DrawingUtils(context);
+    context.clearRect(0, 0, canvas.width, canvas.height);
+
+    if (results.faceLandmarks) {
+      if (showFaceTracking) {
+        for (const landmarks of results.faceLandmarks) {
+          drawingUtils.drawConnectors(
+            landmarks,
+            FaceLandmarker.FACE_LANDMARKS_TESSELATION,
+            { color: "#C0C0C070", lineWidth: 1 }
+          );
+          drawingUtils.drawConnectors(
+            landmarks,
+            FaceLandmarker.FACE_LANDMARKS_RIGHT_EYE,
+            { color: "#FF3030", lineWidth: 1 }
+          );
+          drawingUtils.drawConnectors(
+            landmarks,
+            FaceLandmarker.FACE_LANDMARKS_RIGHT_EYEBROW,
+            { color: "#FF3030", lineWidth: 1 }
+          );
+          drawingUtils.drawConnectors(
+            landmarks,
+            FaceLandmarker.FACE_LANDMARKS_LEFT_EYE,
+            { color: "#30FF30", lineWidth: 1 }
+          );
+          drawingUtils.drawConnectors(
+            landmarks,
+            FaceLandmarker.FACE_LANDMARKS_LEFT_EYEBROW,
+            { color: "#30FF30", lineWidth: 1 }
+          );
+          drawingUtils.drawConnectors(
+            landmarks,
+            FaceLandmarker.FACE_LANDMARKS_FACE_OVAL,
+            { color: "#E0E0E0", lineWidth: 1 }
+          );
+          drawingUtils.drawConnectors(
+            landmarks,
+            FaceLandmarker.FACE_LANDMARKS_LIPS,
+            { color: "#E0E0E0", lineWidth: 1 }
+          );
+          drawingUtils.drawConnectors(
+            landmarks,
+            FaceLandmarker.FACE_LANDMARKS_RIGHT_IRIS,
+            { color: "#FF3030", lineWidth: 1 }
+          );
+          drawingUtils.drawConnectors(
+            landmarks,
+            FaceLandmarker.FACE_LANDMARKS_LEFT_IRIS,
+            { color: "#30FF30", lineWidth: 1 }
+          );
+        }
+      }
+
+      let shouldDraw = false;
+      if (results.faceLandmarks[0]) {
+        const faceLandmarks = results.faceLandmarks[0];
+        const leftEye = faceLandmarks[33];
+        const rightEye = faceLandmarks[263];
+
+        const dx = rightEye.x - leftEye.x;
+        const dz = rightEye.z - leftEye.z;
+
+        let yaw = Math.atan2(dz, dx);
+        yaw *= 1.8;
+        yaw = THREE.MathUtils.clamp(yaw, -1, 1);
+        if (mirrorCamera) {
+          yaw *= -1;
+        }
+
+        faceYawInput.value = yaw;
+        faceParams.rotation.yaw = yaw;
+
+        const dy = rightEye.y - leftEye.y;
+        const dxRoll = rightEye.x - leftEye.x;
+
+        let roll = Math.atan2(dy, dxRoll);
+        roll = THREE.MathUtils.clamp(roll, -1, 1);
+        if (mirrorCamera) {
+          roll *= -1;
+        }
+        faceRollInput.value = roll;
+        faceParams.rotation.roll = roll;
+
+        if (true) {
+          const rightPupil = getIrisOffsetXy(
+            faceLandmarks,
+            468,
+            33,
+            133,
+            159,
+            145,
+            roll,
+            mirrorCamera
+              ? faceParams.eyes.left.open
+              : faceParams.eyes.right.open
+          );
+
+          const leftPupil = getIrisOffsetXy(
+            faceLandmarks,
+            473,
+            362,
+            263,
+            386,
+            374,
+            roll,
+            mirrorCamera
+              ? faceParams.eyes.right.open
+              : faceParams.eyes.left.open
+          );
+
+          if (mirrorCamera) {
+            Object.assign(faceParams.eyes.left.pupil.position, rightPupil);
+            Object.assign(faceParams.eyes.right.pupil.position, leftPupil);
+          } else {
+            Object.assign(faceParams.eyes.left.pupil.position, leftPupil);
+            Object.assign(faceParams.eyes.right.pupil.position, rightPupil);
+          }
+        }
+
+        shouldDraw = true;
+      }
+      if (results.faceBlendshapes[0]) {
+        const blendShapeCategories = results.faceBlendshapes[0].categories;
+        //console.log("blendShapeCategories", blendShapeCategories);
+
+        let eyeBlinkLeft = blendShapeCategories[9].score;
+        let eyeBlinkRight = blendShapeCategories[10].score;
+
+        eyeBlinkLeft = eyeBlinkRangeHelpers.left.getNormalization(eyeBlinkLeft);
+        eyeBlinkRight =
+          eyeBlinkRangeHelpers.right.getNormalization(eyeBlinkRight);
+
+        eyeBlinkLeft = THREE.MathUtils.clamp(eyeBlinkLeft, 0, 1);
+        eyeBlinkRight = THREE.MathUtils.clamp(eyeBlinkRight, 0, 1);
+
+        if (mirrorCamera) {
+          faceParams.eyes.right.open = 1 - eyeBlinkRight;
+          faceParams.eyes.left.open = 1 - eyeBlinkLeft;
+        } else {
+          faceParams.eyes.right.open = 1 - eyeBlinkLeft;
+          faceParams.eyes.left.open = 1 - eyeBlinkRight;
+        }
+
+        let browDownLeft = blendShapeCategories[1].score;
+        let browDownRight = blendShapeCategories[2].score;
+        let browInnerUp = blendShapeCategories[3].score;
+        let browOuterUpLeft = blendShapeCategories[4].score;
+        let browOuterUpRight = blendShapeCategories[5].score;
+
+        browDownLeft = eyebrowRangeHelpers.left.getNormalization(browDownLeft);
+        browDownRight =
+          eyebrowRangeHelpers.right.getNormalization(browDownRight);
+
+        let browLeftY = THREE.MathUtils.lerp(
+          faceParams.pose.eyebrowYRange2.min,
+          faceParams.pose.eyebrowYRange2.max,
+          1 - browDownLeft
+        );
+        let browRightY = THREE.MathUtils.lerp(
+          faceParams.pose.eyebrowYRange2.min,
+          faceParams.pose.eyebrowYRange2.max,
+          1 - browDownRight
+        );
+
+        if (mirrorCamera) {
+          faceParams.eyes.right.eyebrow.position.y = browRightY;
+          faceParams.eyes.left.eyebrow.position.y = browLeftY;
+        } else {
+          faceParams.eyes.right.eyebrow.position.y = browLeftY;
+          faceParams.eyes.left.eyebrow.position.y = browRightY;
+        }
+
+        // Simulate coordinates (x, y) for each eyebrow
+        const pOuterLeft = { x: -1, y: browOuterUpLeft };
+        const pInnerLeft = { x: 0, y: browInnerUp };
+        const pInnerRight = { x: 0, y: browInnerUp };
+        const pOuterRight = { x: 1, y: browOuterUpRight };
+
+        // Calculate angles in radians using atan2
+        const angleLeft = Math.atan2(
+          pInnerLeft.y - pOuterLeft.y,
+          pInnerLeft.x - pOuterLeft.x
+        );
+        const angleRight = Math.atan2(
+          pOuterRight.y - pInnerRight.y,
+          pOuterRight.x - pInnerRight.x
+        );
+
+        if (mirrorCamera) {
+          faceParams.eyes.right.eyebrow.rotation = angleRight;
+          faceParams.eyes.left.eyebrow.rotation = angleLeft;
+        } else {
+          faceParams.eyes.right.eyebrow.rotation = angleRight;
+          faceParams.eyes.left.eyebrow.rotation = angleLeft;
+        }
+
+        let cheekPuff = blendShapeCategories[6].score;
+        let cheekSquintLeft = blendShapeCategories[7].score;
+        let cheekSquintRight = blendShapeCategories[8].score;
+        let mouthSmileLeft = blendShapeCategories[44].score;
+        let mouthSmileRight = blendShapeCategories[45].score;
+        let eyeSquintLeft = blendShapeCategories[19].score;
+        let eyeSquintRight = blendShapeCategories[20].score;
+        let mouthUpperUpLeft = blendShapeCategories[48].score;
+        let mouthUpperUpRight = blendShapeCategories[49].score;
+        let mouthDimpleLeft = blendShapeCategories[28].score;
+        let mouthDimpleRight = blendShapeCategories[29].score;
+        let mouthPressLeft = blendShapeCategories[36].score;
+        let mouthPressRight = blendShapeCategories[37].score;
+
+        // console.log({ mouthUpperUpLeft, mouthUpperUpRight });
+        // console.log({ mouthDimpleLeft, mouthDimpleRight });
+        // console.log({ mouthPressLeft, mouthPressRight });
+
+        let cheekLeft =
+          cheekRangeHelpers.left.getNormalization(mouthDimpleLeft);
+        cheekLeft = THREE.MathUtils.clamp(cheekLeft, 0, 1);
+        let cheekRight =
+          cheekRangeHelpers.right.getNormalization(mouthDimpleRight);
+        cheekRight = THREE.MathUtils.clamp(cheekRight, 0, 1);
+
+        // console.log({
+        //   cheekLeft,
+        //   cheekRight,
+        // });
+
+        let cheekLeftY = THREE.MathUtils.lerp(
+          faceParams.pose.cheekYRange.min,
+          faceParams.pose.cheekYRange.max,
+          1 - cheekLeft
+        );
+        let cheekRightY = THREE.MathUtils.lerp(
+          faceParams.pose.cheekYRange.min,
+          faceParams.pose.cheekYRange.max,
+          1 - cheekRight
+        );
+        const showLeftCheek = cheekLeft > 0.4;
+        const showRightCheek = cheekRight > 0.4;
+
+        cheekLeft *= 1.1;
+        cheekRight *= 1.1;
+
+        const cheekLineWidth = faceParams.cheekLineWidth;
+
+        // console.log({ showLeftCheek, showRightCheek });
+
+        if (mirrorCamera) {
+          faceParams.eyes.right.cheek.position.y = cheekRightY;
+          faceParams.eyes.left.cheek.position.y = cheekLeftY;
+
+          faceParams.eyes.right.cheek.lineWidth = showRightCheek
+            ? cheekLineWidth
+            : 0;
+          faceParams.eyes.left.cheek.lineWidth = showLeftCheek
+            ? cheekLineWidth
+            : 0;
+        } else {
+          faceParams.eyes.right.cheek.position.y = cheekLeftY;
+          faceParams.eyes.left.cheek.position.y = cheekRightY;
+        }
+
+        shouldDraw = true;
+      }
+      if (shouldDraw) {
+        throttledDraw();
+      }
+    }
+  }
+
+  if (faceTrackingEnabled) {
+    requestAnimationFrame(() => {
+      faceTrackingRenderLoop();
+    });
+  }
+};
+
+function getIrisOffsetXy(
+  landmarks,
+  centerIdx,
+  leftIdx,
+  rightIdx,
+  topIdx,
+  bottomIdx,
+  roll,
+  open
+) {
+  const center = landmarks[centerIdx];
+  const left = landmarks[leftIdx];
+  const right = landmarks[rightIdx];
+  const top = landmarks[topIdx];
+  const bottom = landmarks[bottomIdx];
+
+  // Horizontal offset: -1 (left) to 1 (right)
+  let xOffset = ((center.x - left.x) / (right.x - left.x)) * 2 - 1;
+
+  // Vertical offset: -1 (top) to 1 (bottom)
+  let yOffset = ((center.y - top.y) / (bottom.y - top.y)) * 2 - 1;
+
+  // Apply inverse head roll
+  const v = new THREE.Vector2(xOffset, yOffset);
+  v.rotateAround(new THREE.Vector2(0, 0), roll); // rotate to un-tilt
+
+  xOffset = v.x;
+  xOffset *= 2;
+  xOffset = THREE.MathUtils.clamp(xOffset, -1, 1);
+
+  yOffset = v.y;
+  const verticalBias = open * 0.02;
+  yOffset -= verticalBias;
+  yOffset *= 2;
+  yOffset = THREE.MathUtils.clamp(yOffset, -1, 1);
+
+  if (mirrorCamera) {
+    xOffset *= -1;
+  }
+
+  return { x: xOffset, y: yOffset };
+}
+// setPreviewMode("camera");
+// setMirrorCamera(true);
+// setFaceTrackingEnabled(true);
+// setAutoAnimate(false);
+// setShowFaceTracking(false);
+// setShowCanvas(false);

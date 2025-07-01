@@ -31,7 +31,7 @@
       background-color: black;
     }
     #displayContainer.shrink {
-      width: calc(640px * 1.5);
+      width: calc(640px * 1);
       height: calc(400px * 1.5);
     }
     #displayContainer.shrink #display {
@@ -97,6 +97,20 @@
       </select>
     </label>
 
+    <button data-preview-mode="camera" id="toggleFaceTracking">
+      enable face tracking
+    </button>
+
+    <button data-preview-mode="camera" id="toggleShowFaceTracking">
+      show face tracking
+    </button>
+
+    <button data-preview-mode="camera" id="toggleMirrorCamera">
+      mirror camera
+    </button>
+
+    <button data-preview-mode="camera" id="toggleCanvas">hide canvas</button>
+
     <label data-preview-mode="vr">
       model
       <input type="file" id="modelInput" accept=".glb,model/gltf-binary" />
@@ -120,7 +134,7 @@
       </template>
     </div>
 
-    <div id="displayColorOpacities">
+    <div id="displayColorOpacities" hidden>
       <template id="displayColorOpacityTemplate">
         <label class="displayColorOpacity">
           <span class="colorIndex"></span>
@@ -142,6 +156,10 @@
       <canvas id="display" width="640" height="400"></canvas>
       <img id="image" />
       <video id="video" loop autoplay muted controls></video>
+      <canvas
+        id="cameraVideoFaceTracking"
+        style="object-fit: contain; z-index: 1"
+      ></canvas>
       <video id="cameraVideo" autoplay muted></video>
       <a-scene id="scene" embedded xr-mode-ui="enabled: true; XRMode: ar;">
         <a-camera>
@@ -185,6 +203,17 @@
         yaw
         <input
           id="faceYaw"
+          type="range"
+          min="-1"
+          max="1"
+          value="0"
+          step="0.01"
+        />
+      </label>
+      <label>
+        roll
+        <input
+          id="faceRoll"
           type="range"
           min="-1"
           max="1"
