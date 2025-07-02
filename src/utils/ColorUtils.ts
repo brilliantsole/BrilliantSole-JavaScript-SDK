@@ -1,7 +1,7 @@
 import { DisplayColorRGB } from "../DisplayManager.ts";
 import { createConsole } from "./Console.ts";
 
-const _console = createConsole("ColorUtils", { log: true });
+const _console = createConsole("ColorUtils", { log: false });
 
 export function hexToRGB(hex: string): DisplayColorRGB {
   hex = hex.replace(/^#/, "");

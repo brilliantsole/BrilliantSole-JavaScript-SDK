@@ -1,6 +1,6 @@
 import { createConsole } from "./Console.ts";
 
-const _console = createConsole("AudioUtils", { log: true });
+const _console = createConsole("AudioUtils", { log: false });
 
 export function float32ArrayToWav(
   audioData: Float32Array,

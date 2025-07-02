@@ -3678,7 +3678,7 @@ _WifiManager_isWifiAvailable = new WeakMap(), _WifiManager_wifiSSID = new WeakMa
     });
 };
 
-const _console$m = createConsole("ColorUtils", { log: true });
+const _console$m = createConsole("ColorUtils", { log: false });
 function hexToRGB(hex) {
     hex = hex.replace(/^#/, "");
     if (hex.length == 3) {

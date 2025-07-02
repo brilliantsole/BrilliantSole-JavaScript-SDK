@@ -1618,7 +1618,7 @@ async function _CameraManager_sendCameraCommand(command, sendImmediately) {
     return dataView;
 };
 
-createConsole("AudioUtils", { log: true });
+createConsole("AudioUtils", { log: false });
 function float32ArrayToWav(audioData, sampleRate, numChannels) {
     const wavBuffer = encodeWAV(audioData, sampleRate, numChannels);
     return new Blob([wavBuffer], { type: "audio/wav" });
@@ -3669,7 +3669,7 @@ _WifiManager_isWifiAvailable = new WeakMap(), _WifiManager_wifiSSID = new WeakMa
     });
 };
 
-const _console$r = createConsole("ColorUtils", { log: true });
+const _console$r = createConsole("ColorUtils", { log: false });
 function hexToRGB(hex) {
     hex = hex.replace(/^#/, "");
     if (hex.length == 3) {
@@ -9021,6 +9021,7 @@ _NobleScanner__isScanning = new WeakMap(), _NobleScanner__nobleState = new WeakM
         }
         if (manufacturerData.byteLength >= 3 + 4) {
             ipAddress = new Uint8Array(manufacturerData.buffer.slice(3, 3 + 4)).join(".");
+            _console$5.log({ ipAddress });
         }
         if (manufacturerData.byteLength >= 3 + 4 + 1) {
             isWifiSecure = manufacturerData.readUint8(3 + 4) != 0;
@@ -9488,7 +9489,7 @@ _WebSocketServer_server = new WeakMap(), _WebSocketServer_boundWebSocketServerLi
 };
 
 const _console$1 = createConsole("UDPUtils", { log: false });
-const removeUDPClientTimeout = 3_000;
+const removeUDPClientTimeout = 4_000;
 const UDPServerMessageTypes = [
     "ping",
     "pong",
@@ -9552,7 +9553,10 @@ _UDPServer_clients = new WeakMap(), _UDPServer_socket = new WeakMap(), _UDPServe
         client = {
             ...remoteInfo,
             isAlive: true,
-            removeSelfTimer: new Timer(() => __classPrivateFieldGet(this, _UDPServer_instances, "m", _UDPServer_removeClient).call(this, client), removeUDPClientTimeout),
+            removeSelfTimer: new Timer(() => {
+                _console.log("removing client due to timeout...");
+                __classPrivateFieldGet(this, _UDPServer_instances, "m", _UDPServer_removeClient).call(this, client);
+            }, removeUDPClientTimeout),
             lastTimeSentData: 0,
         };
         _console.log("created new client", client);
