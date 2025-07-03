@@ -8113,26 +8113,26 @@ class DisplayCanvasHelper {
     get contextState() {
         return __classPrivateFieldGet(this, _DisplayCanvasHelper_displayContextStateHelper, "f").state;
     }
-    showDisplay(sendImmediately = true) {
+    async showDisplay(sendImmediately = true) {
         _console$6.log("showDisplay");
         __classPrivateFieldSet(this, _DisplayCanvasHelper_frontDrawStack, __classPrivateFieldGet(this, _DisplayCanvasHelper_rearDrawStack, "f").slice(), "f");
         __classPrivateFieldGet(this, _DisplayCanvasHelper_rearDrawStack, "f").length = 0;
         __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_drawFrontDrawStack).call(this);
         if (this.device?.isConnected) {
-            this.device.showDisplay(sendImmediately);
+            await this.device.showDisplay(sendImmediately);
         }
     }
-    clearDisplay(sendImmediately = true) {
+    async clearDisplay(sendImmediately = true) {
         _console$6.log("clearDisplay");
         __classPrivateFieldGet(this, _DisplayCanvasHelper_frontDrawStack, "f").length = 0;
         __classPrivateFieldGet(this, _DisplayCanvasHelper_rearDrawStack, "f").length = 0;
         __classPrivateFieldGet(this, _DisplayCanvasHelper_context, "f").clearRect(0, 0, this.width, this.height);
         if (this.device?.isConnected) {
-            this.device.clearDisplay(sendImmediately);
+            await this.device.clearDisplay(sendImmediately);
         }
         __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_drawBackground).call(this);
     }
-    setColor(colorIndex, color, sendImmediately) {
+    async setColor(colorIndex, color, sendImmediately) {
         if (typeof color == "string") {
             color = stringToRGB(color);
         }
@@ -8145,13 +8145,13 @@ class DisplayCanvasHelper {
         __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_assertValidColorIndex).call(this, colorIndex);
         assertValidColor(color);
         if (this.device?.isConnected) {
-            this.device.setDisplayColor(colorIndex, color, sendImmediately);
+            await this.device.setDisplayColor(colorIndex, color, sendImmediately);
         }
         this.colors[colorIndex] = colorHex;
         __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_drawFrontDrawStack).call(this);
         __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "a", _DisplayCanvasHelper_dispatchEvent_get).call(this, "color", { colorIndex, colorHex, color });
     }
-    setColorOpacity(colorIndex, opacity, sendImmediately) {
+    async setColorOpacity(colorIndex, opacity, sendImmediately) {
         __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_assertValidColorIndex).call(this, colorIndex);
         assertValidOpacity(opacity);
         if (Math.floor(255 * __classPrivateFieldGet(this, _DisplayCanvasHelper_opacities, "f")[colorIndex]) == Math.floor(255 * opacity)) {
@@ -8159,22 +8159,22 @@ class DisplayCanvasHelper {
             return;
         }
         if (this.device?.isConnected) {
-            this.device.setDisplayColorOpacity(colorIndex, opacity, sendImmediately);
+            await this.device.setDisplayColorOpacity(colorIndex, opacity, sendImmediately);
         }
         __classPrivateFieldGet(this, _DisplayCanvasHelper_opacities, "f")[colorIndex] = opacity;
         __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_drawFrontDrawStack).call(this);
         __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "a", _DisplayCanvasHelper_dispatchEvent_get).call(this, "colorOpacity", { colorIndex, opacity });
     }
-    setOpacity(opacity, sendImmediately) {
+    async setOpacity(opacity, sendImmediately) {
         assertValidOpacity(opacity);
         if (this.device?.isConnected) {
-            this.device.setDisplayOpacity(opacity, sendImmediately);
+            await this.device.setDisplayOpacity(opacity, sendImmediately);
         }
         __classPrivateFieldGet(this, _DisplayCanvasHelper_opacities, "f").fill(opacity);
         __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_drawFrontDrawStack).call(this);
         __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "a", _DisplayCanvasHelper_dispatchEvent_get).call(this, "opacity", { opacity });
     }
-    selectFillColor(fillColorIndex, sendImmediately) {
+    async selectFillColor(fillColorIndex, sendImmediately) {
         __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_assertValidColorIndex).call(this, fillColorIndex);
         const differences = __classPrivateFieldGet(this, _DisplayCanvasHelper_displayContextStateHelper, "f").update({
             fillColorIndex,
@@ -8183,11 +8183,11 @@ class DisplayCanvasHelper {
             return;
         }
         if (this.device?.isConnected) {
-            this.device.selectDisplayFillColor(fillColorIndex, sendImmediately);
+            await this.device.selectDisplayFillColor(fillColorIndex, sendImmediately);
         }
         __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_onDisplayContextStateUpdate).call(this, differences);
     }
-    selectLineColor(lineColorIndex, sendImmediately) {
+    async selectLineColor(lineColorIndex, sendImmediately) {
         __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_assertValidColorIndex).call(this, lineColorIndex);
         const differences = __classPrivateFieldGet(this, _DisplayCanvasHelper_displayContextStateHelper, "f").update({
             lineColorIndex,
@@ -8196,11 +8196,11 @@ class DisplayCanvasHelper {
             return;
         }
         if (this.device?.isConnected) {
-            this.device.selectDisplayLineColor(lineColorIndex, sendImmediately);
+            await this.device.selectDisplayLineColor(lineColorIndex, sendImmediately);
         }
         __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_onDisplayContextStateUpdate).call(this, differences);
     }
-    setLineWidth(lineWidth, sendImmediately) {
+    async setLineWidth(lineWidth, sendImmediately) {
         __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_assertValidLineWidth).call(this, lineWidth);
         const differences = __classPrivateFieldGet(this, _DisplayCanvasHelper_displayContextStateHelper, "f").update({
             lineWidth,
@@ -8209,11 +8209,11 @@ class DisplayCanvasHelper {
             return;
         }
         if (this.device?.isConnected) {
-            this.device.setDisplayLineWidth(lineWidth, sendImmediately);
+            await this.device.setDisplayLineWidth(lineWidth, sendImmediately);
         }
         __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_onDisplayContextStateUpdate).call(this, differences);
     }
-    setRotation(rotation, isRadians, sendImmediately) {
+    async setRotation(rotation, isRadians, sendImmediately) {
         rotation = isRadians ? rotation : degToRad(rotation);
         rotation = normalizeRadians(rotation);
         _console$6.log({ rotation });
@@ -8224,11 +8224,11 @@ class DisplayCanvasHelper {
             return;
         }
         if (this.device?.isConnected) {
-            this.device.setDisplayRotation(rotation, true, sendImmediately);
+            await this.device.setDisplayRotation(rotation, true, sendImmediately);
         }
         __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_onDisplayContextStateUpdate).call(this, differences);
     }
-    clearRotation(sendImmediately) {
+    async clearRotation(sendImmediately) {
         const differences = __classPrivateFieldGet(this, _DisplayCanvasHelper_displayContextStateHelper, "f").update({
             rotation: 0,
         });
@@ -8236,11 +8236,11 @@ class DisplayCanvasHelper {
             return;
         }
         if (this.device?.isConnected) {
-            this.device.clearDisplayRotation(sendImmediately);
+            await this.device.clearDisplayRotation(sendImmediately);
         }
         __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_onDisplayContextStateUpdate).call(this, differences);
     }
-    setSegmentStartCap(segmentStartCap, sendImmediately) {
+    async setSegmentStartCap(segmentStartCap, sendImmediately) {
         assertValidSegmentCap(segmentStartCap);
         const differences = __classPrivateFieldGet(this, _DisplayCanvasHelper_displayContextStateHelper, "f").update({
             segmentStartCap,
@@ -8250,11 +8250,11 @@ class DisplayCanvasHelper {
         }
         _console$6.log({ segmentStartCap });
         if (this.device?.isConnected) {
-            this.device.setDisplaySegmentStartCap(segmentStartCap, sendImmediately);
+            await this.device.setDisplaySegmentStartCap(segmentStartCap, sendImmediately);
         }
         __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_onDisplayContextStateUpdate).call(this, differences);
     }
-    setSegmentEndCap(segmentEndCap, sendImmediately) {
+    async setSegmentEndCap(segmentEndCap, sendImmediately) {
         assertValidSegmentCap(segmentEndCap);
         const differences = __classPrivateFieldGet(this, _DisplayCanvasHelper_displayContextStateHelper, "f").update({
             segmentEndCap,
@@ -8264,11 +8264,11 @@ class DisplayCanvasHelper {
         }
         _console$6.log({ segmentEndCap });
         if (this.device?.isConnected) {
-            this.device.setDisplaySegmentEndCap(segmentEndCap, sendImmediately);
+            await this.device.setDisplaySegmentEndCap(segmentEndCap, sendImmediately);
         }
         __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_onDisplayContextStateUpdate).call(this, differences);
     }
-    setSegmentCap(segmentCap, sendImmediately) {
+    async setSegmentCap(segmentCap, sendImmediately) {
         assertValidSegmentCap(segmentCap);
         const differences = __classPrivateFieldGet(this, _DisplayCanvasHelper_displayContextStateHelper, "f").update({
             segmentStartCap: segmentCap,
@@ -8279,11 +8279,11 @@ class DisplayCanvasHelper {
         }
         _console$6.log({ segmentCap });
         if (this.device?.isConnected) {
-            this.device.setDisplaySegmentCap(segmentCap, sendImmediately);
+            await this.device.setDisplaySegmentCap(segmentCap, sendImmediately);
         }
         __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_onDisplayContextStateUpdate).call(this, differences);
     }
-    setSegmentStartRadius(segmentStartRadius, sendImmediately) {
+    async setSegmentStartRadius(segmentStartRadius, sendImmediately) {
         const differences = __classPrivateFieldGet(this, _DisplayCanvasHelper_displayContextStateHelper, "f").update({
             segmentStartRadius,
         });
@@ -8292,11 +8292,11 @@ class DisplayCanvasHelper {
         }
         _console$6.log({ segmentStartRadius });
         if (this.device?.isConnected) {
-            this.device.setDisplaySegmentStartRadius(segmentStartRadius, sendImmediately);
+            await this.device.setDisplaySegmentStartRadius(segmentStartRadius, sendImmediately);
         }
         __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_onDisplayContextStateUpdate).call(this, differences);
     }
-    setSegmentEndRadius(segmentEndRadius, sendImmediately) {
+    async setSegmentEndRadius(segmentEndRadius, sendImmediately) {
         const differences = __classPrivateFieldGet(this, _DisplayCanvasHelper_displayContextStateHelper, "f").update({
             segmentEndRadius,
         });
@@ -8305,11 +8305,11 @@ class DisplayCanvasHelper {
         }
         _console$6.log({ segmentEndRadius });
         if (this.device?.isConnected) {
-            this.device.setDisplaySegmentEndRadius(segmentEndRadius, sendImmediately);
+            await this.device.setDisplaySegmentEndRadius(segmentEndRadius, sendImmediately);
         }
         __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_onDisplayContextStateUpdate).call(this, differences);
     }
-    setSegmentRadius(segmentRadius, sendImmediately) {
+    async setSegmentRadius(segmentRadius, sendImmediately) {
         const differences = __classPrivateFieldGet(this, _DisplayCanvasHelper_displayContextStateHelper, "f").update({
             segmentStartRadius: segmentRadius,
             segmentEndRadius: segmentRadius,
@@ -8319,11 +8319,11 @@ class DisplayCanvasHelper {
         }
         _console$6.log({ segmentRadius });
         if (this.device?.isConnected) {
-            this.device.setDisplaySegmentRadius(segmentRadius, sendImmediately);
+            await this.device.setDisplaySegmentRadius(segmentRadius, sendImmediately);
         }
         __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_onDisplayContextStateUpdate).call(this, differences);
     }
-    setCrop(cropDirection, crop, sendImmediately) {
+    async setCrop(cropDirection, crop, sendImmediately) {
         _console$6.assertEnumWithError(cropDirection, DisplayCropDirections);
         crop = Math.max(0, crop);
         const cropCommand = DisplayCropDirectionToCommand[cropDirection];
@@ -8336,23 +8336,23 @@ class DisplayCanvasHelper {
         }
         _console$6.log({ [cropCommand]: crop });
         if (this.device?.isConnected) {
-            this.device.setDisplayCrop(cropDirection, crop, sendImmediately);
+            await this.device.setDisplayCrop(cropDirection, crop, sendImmediately);
         }
         __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_onDisplayContextStateUpdate).call(this, differences);
     }
-    setCropTop(cropTop, sendImmediately) {
-        this.setCrop("top", cropTop, sendImmediately);
+    async setCropTop(cropTop, sendImmediately) {
+        await this.setCrop("top", cropTop, sendImmediately);
     }
-    setCropRight(cropRight, sendImmediately) {
-        this.setCrop("right", cropRight, sendImmediately);
+    async setCropRight(cropRight, sendImmediately) {
+        await this.setCrop("right", cropRight, sendImmediately);
     }
-    setCropBottom(cropBottom, sendImmediately) {
-        this.setCrop("bottom", cropBottom, sendImmediately);
+    async setCropBottom(cropBottom, sendImmediately) {
+        await this.setCrop("bottom", cropBottom, sendImmediately);
     }
-    setCropLeft(cropLeft, sendImmediately) {
-        this.setCrop("left", cropLeft, sendImmediately);
+    async setCropLeft(cropLeft, sendImmediately) {
+        await this.setCrop("left", cropLeft, sendImmediately);
     }
-    clearCrop(sendImmediately) {
+    async clearCrop(sendImmediately) {
         const differences = __classPrivateFieldGet(this, _DisplayCanvasHelper_displayContextStateHelper, "f").update({
             cropTop: 0,
             cropRight: 0,
@@ -8363,11 +8363,11 @@ class DisplayCanvasHelper {
             return;
         }
         if (this.device?.isConnected) {
-            this.device.clearDisplayCrop(sendImmediately);
+            await this.device.clearDisplayCrop(sendImmediately);
         }
         __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_onDisplayContextStateUpdate).call(this, differences);
     }
-    setRotationCrop(cropDirection, crop, sendImmediately) {
+    async setRotationCrop(cropDirection, crop, sendImmediately) {
         _console$6.assertEnumWithError(cropDirection, DisplayCropDirections);
         const cropCommand = DisplayRotationCropDirectionToCommand[cropDirection];
         const cropKey = DisplayRotationCropDirectionToStateKey[cropDirection];
@@ -8379,23 +8379,23 @@ class DisplayCanvasHelper {
         }
         _console$6.log({ [cropCommand]: crop });
         if (this.device?.isConnected) {
-            this.device.setDisplayRotationCrop(cropDirection, crop, sendImmediately);
+            await this.device.setDisplayRotationCrop(cropDirection, crop, sendImmediately);
         }
         __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_onDisplayContextStateUpdate).call(this, differences);
     }
-    setRotationCropTop(rotationCropTop, sendImmediately) {
-        this.setRotationCrop("top", rotationCropTop, sendImmediately);
+    async setRotationCropTop(rotationCropTop, sendImmediately) {
+        await this.setRotationCrop("top", rotationCropTop, sendImmediately);
     }
-    setRotationCropRight(rotationCropRight, sendImmediately) {
-        this.setRotationCrop("right", rotationCropRight, sendImmediately);
+    async setRotationCropRight(rotationCropRight, sendImmediately) {
+        await this.setRotationCrop("right", rotationCropRight, sendImmediately);
     }
-    setRotationCropBottom(rotationCropBottom, sendImmediately) {
-        this.setRotationCrop("bottom", rotationCropBottom, sendImmediately);
+    async setRotationCropBottom(rotationCropBottom, sendImmediately) {
+        await this.setRotationCrop("bottom", rotationCropBottom, sendImmediately);
     }
-    setRotationCropLeft(rotationCropLeft, sendImmediately) {
-        this.setRotationCrop("left", rotationCropLeft, sendImmediately);
+    async setRotationCropLeft(rotationCropLeft, sendImmediately) {
+        await this.setRotationCrop("left", rotationCropLeft, sendImmediately);
     }
-    clearRotationCrop(sendImmediately) {
+    async clearRotationCrop(sendImmediately) {
         const differences = __classPrivateFieldGet(this, _DisplayCanvasHelper_displayContextStateHelper, "f").update({
             rotationCropTop: 0,
             rotationCropRight: 0,
@@ -8406,45 +8406,45 @@ class DisplayCanvasHelper {
             return;
         }
         if (this.device?.isConnected) {
-            this.device.clearDisplayRotationCrop(sendImmediately);
+            await this.device.clearDisplayRotationCrop(sendImmediately);
         }
         __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_onDisplayContextStateUpdate).call(this, differences);
     }
-    clearRect(x, y, width, height, sendImmediately) {
+    async clearRect(x, y, width, height, sendImmediately) {
         __classPrivateFieldGet(this, _DisplayCanvasHelper_rearDrawStack, "f").push(() => __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_clearRectToCanvas).call(this, x, y, width, height));
         if (this.device?.isConnected) {
-            this.device.clearDisplayRect(x, y, width, height, sendImmediately);
+            await this.device.clearDisplayRect(x, y, width, height, sendImmediately);
         }
     }
-    drawRect(centerX, centerY, width, height, sendImmediately) {
+    async drawRect(centerX, centerY, width, height, sendImmediately) {
         const contextState = { ...this.contextState };
         __classPrivateFieldGet(this, _DisplayCanvasHelper_rearDrawStack, "f").push(() => __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_drawRectToCanvas).call(this, centerX, centerY, width, height, contextState));
         if (this.device?.isConnected) {
-            this.device.drawDisplayRect(centerX, centerY, width, height, sendImmediately);
+            await this.device.drawDisplayRect(centerX, centerY, width, height, sendImmediately);
         }
     }
-    drawRoundRect(centerX, centerY, width, height, borderRadius, sendImmediately) {
+    async drawRoundRect(centerX, centerY, width, height, borderRadius, sendImmediately) {
         const contextState = { ...this.contextState };
         __classPrivateFieldGet(this, _DisplayCanvasHelper_rearDrawStack, "f").push(() => __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_drawRoundRectToCanvas).call(this, centerX, centerY, width, height, borderRadius, contextState));
         if (this.device?.isConnected) {
-            this.device.drawDisplayRoundRect(centerX, centerY, width, height, borderRadius, sendImmediately);
+            await this.device.drawDisplayRoundRect(centerX, centerY, width, height, borderRadius, sendImmediately);
         }
     }
-    drawCircle(centerX, centerY, radius, sendImmediately) {
+    async drawCircle(centerX, centerY, radius, sendImmediately) {
         const contextState = { ...this.contextState };
         __classPrivateFieldGet(this, _DisplayCanvasHelper_rearDrawStack, "f").push(() => __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_drawCircleToCanvas).call(this, centerX, centerY, radius, contextState));
         if (this.device?.isConnected) {
-            this.device.drawDisplayCircle(centerX, centerY, radius, sendImmediately);
+            await this.device.drawDisplayCircle(centerX, centerY, radius, sendImmediately);
         }
     }
-    drawEllipse(centerX, centerY, radiusX, radiusY, sendImmediately) {
+    async drawEllipse(centerX, centerY, radiusX, radiusY, sendImmediately) {
         const contextState = { ...this.contextState };
         __classPrivateFieldGet(this, _DisplayCanvasHelper_rearDrawStack, "f").push(() => __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_drawEllipseToCanvas).call(this, centerX, centerY, radiusX, radiusY, contextState));
         if (this.device?.isConnected) {
-            this.device.drawDisplayEllipse(centerX, centerY, radiusX, radiusY, sendImmediately);
+            await this.device.drawDisplayEllipse(centerX, centerY, radiusX, radiusY, sendImmediately);
         }
     }
-    drawPolygon(centerX, centerY, radius, numberOfSides, sendImmediately) {
+    async drawPolygon(centerX, centerY, radius, numberOfSides, sendImmediately) {
         if (numberOfSides < 3) {
             _console$6.error(`invalid numberOfSides ${numberOfSides}`);
             return;
@@ -8452,10 +8452,10 @@ class DisplayCanvasHelper {
         const contextState = { ...this.contextState };
         __classPrivateFieldGet(this, _DisplayCanvasHelper_rearDrawStack, "f").push(() => __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_drawPolygonToCanvas).call(this, centerX, centerY, radius, numberOfSides, contextState));
         if (this.device?.isConnected) {
-            this.device.drawDisplayPolygon(centerX, centerY, radius, numberOfSides, sendImmediately);
+            await this.device.drawDisplayPolygon(centerX, centerY, radius, numberOfSides, sendImmediately);
         }
     }
-    drawSegment(startX, startY, endX, endY, sendImmediately) {
+    async drawSegment(startX, startY, endX, endY, sendImmediately) {
         if (startX == endX && startY == endY) {
             _console$6.error(`cannot draw segment of length 0`);
             return;
@@ -8463,7 +8463,7 @@ class DisplayCanvasHelper {
         const contextState = { ...this.contextState };
         __classPrivateFieldGet(this, _DisplayCanvasHelper_rearDrawStack, "f").push(() => __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_drawSegmentToCanvas).call(this, startX, startY, endX, endY, contextState));
         if (this.device?.isConnected) {
-            this.device.drawDisplaySegment(startX, startY, endX, endY, sendImmediately);
+            await this.device.drawDisplaySegment(startX, startY, endX, endY, sendImmediately);
         }
     }
     async drawSegments(segments, sendImmediately) {
@@ -8478,7 +8478,7 @@ class DisplayCanvasHelper {
     get brightness() {
         return __classPrivateFieldGet(this, _DisplayCanvasHelper_brightness, "f");
     }
-    setBrightness(newBrightness, sendImmediately) {
+    async setBrightness(newBrightness, sendImmediately) {
         if (__classPrivateFieldGet(this, _DisplayCanvasHelper_brightness, "f") == newBrightness) {
             _console$6.log(`redundant brightness ${newBrightness}`);
             return;
@@ -8486,7 +8486,7 @@ class DisplayCanvasHelper {
         __classPrivateFieldSet(this, _DisplayCanvasHelper_brightness, newBrightness, "f");
         _console$6.log({ brightness: this.brightness });
         if (this.device?.isConnected) {
-            this.device.setDisplayBrightness(newBrightness, sendImmediately);
+            await this.device.setDisplayBrightness(newBrightness, sendImmediately);
         }
         __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_drawFrontDrawStack).call(this);
         __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "a", _DisplayCanvasHelper_dispatchEvent_get).call(this, "brightness", { brightness: this.brightness });
@@ -8557,23 +8557,26 @@ _DisplayCanvasHelper_eventDispatcher = new WeakMap(), _DisplayCanvasHelper_canva
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_updateDeviceBrightness).call(this, true);
 }, _DisplayCanvasHelper_assertValidColorIndex = function _DisplayCanvasHelper_assertValidColorIndex(colorIndex) {
     _console$6.assertRangeWithError("colorIndex", colorIndex, 0, this.numberOfColors);
-}, _DisplayCanvasHelper_updateDeviceColors = function _DisplayCanvasHelper_updateDeviceColors(sendImmediately) {
+}, _DisplayCanvasHelper_updateDeviceColors = async function _DisplayCanvasHelper_updateDeviceColors(sendImmediately) {
     if (!this.device?.isConnected) {
         return;
     }
-    this.colors.forEach((color, index) => {
-        this.device?.setDisplayColor(index, color, sendImmediately);
-    });
+    for (const [index, color] of this.colors.entries()) {
+        await this.device?.setDisplayColor(index, color, false);
+    }
     if (sendImmediately) {
-        __classPrivateFieldGet(this, _DisplayCanvasHelper_device, "f")?.flushDisplayContextCommands();
+        await __classPrivateFieldGet(this, _DisplayCanvasHelper_device, "f")?.flushDisplayContextCommands();
     }
-}, _DisplayCanvasHelper_updateDeviceOpacity = function _DisplayCanvasHelper_updateDeviceOpacity(sendImmediately) {
+}, _DisplayCanvasHelper_updateDeviceOpacity = async function _DisplayCanvasHelper_updateDeviceOpacity(sendImmediately) {
     if (!this.device?.isConnected) {
         return;
     }
-    __classPrivateFieldGet(this, _DisplayCanvasHelper_opacities, "f").forEach((opacity, index) => {
-        this.device?.setDisplayColorOpacity(index, opacity, sendImmediately && index == this.colors.length - 1);
-    });
+    for (const [index, opacity] of __classPrivateFieldGet(this, _DisplayCanvasHelper_opacities, "f").entries()) {
+        await this.device?.setDisplayColorOpacity(index, opacity, false);
+    }
+    if (sendImmediately) {
+        await __classPrivateFieldGet(this, _DisplayCanvasHelper_device, "f")?.flushDisplayContextCommands();
+    }
 }, _DisplayCanvasHelper_onDisplayContextStateUpdate = function _DisplayCanvasHelper_onDisplayContextStateUpdate(differences) {
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "a", _DisplayCanvasHelper_dispatchEvent_get).call(this, "contextState", {
         contextState: { ...this.contextState },
@@ -8952,12 +8955,12 @@ _DisplayCanvasHelper_eventDispatcher = new WeakMap(), _DisplayCanvasHelper_canva
             __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_drawSegmentToCanvas).call(this, previousSegment.x, previousSegment.y, segment.x, segment.y, contextState);
         }
     });
-}, _DisplayCanvasHelper_updateDeviceBrightness = function _DisplayCanvasHelper_updateDeviceBrightness(sendImmediately) {
+}, _DisplayCanvasHelper_updateDeviceBrightness = async function _DisplayCanvasHelper_updateDeviceBrightness(sendImmediately) {
     if (!this.device?.isConnected) {
         return;
     }
     _console$6.log("updateDeviceBrightness");
-    this.device?.setDisplayBrightness(this.brightness, sendImmediately);
+    await this.device?.setDisplayBrightness(this.brightness, sendImmediately);
 };
 
 var _DevicePairPressureSensorDataManager_instances, _DevicePairPressureSensorDataManager_rawPressure, _DevicePairPressureSensorDataManager_centerOfPressureHelper, _DevicePairPressureSensorDataManager_normalizedSumRangeHelper, _DevicePairPressureSensorDataManager_hasAllPressureData_get, _DevicePairPressureSensorDataManager_updatePressureData;

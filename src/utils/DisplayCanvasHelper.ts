@@ -368,15 +368,15 @@ class DisplayCanvasHelper {
   #resetColors() {
     this.#colors.length = 0;
   }
-  #updateDeviceColors(sendImmediately?: boolean) {
+  async #updateDeviceColors(sendImmediately?: boolean) {
     if (!this.device?.isConnected) {
       return;
     }
-    this.colors.forEach((color, index) => {
-      this.device?.setDisplayColor(index, color, sendImmediately);
-    });
+    for (const [index, color] of this.colors.entries()) {
+      await this.device?.setDisplayColor(index, color, false);
+    }
     if (sendImmediately) {
-      this.#device?.flushDisplayContextCommands();
+      await this.#device?.flushDisplayContextCommands();
     }
   }
 
@@ -389,17 +389,16 @@ class DisplayCanvasHelper {
     this.#opacities.length = 0;
   }
 
-  #updateDeviceOpacity(sendImmediately?: boolean) {
+  async #updateDeviceOpacity(sendImmediately?: boolean) {
     if (!this.device?.isConnected) {
       return;
     }
-    this.#opacities.forEach((opacity, index) => {
-      this.device?.setDisplayColorOpacity(
-        index,
-        opacity,
-        sendImmediately && index == this.colors.length - 1
-      );
-    });
+    for (const [index, opacity] of this.#opacities.entries()) {
+      await this.device?.setDisplayColorOpacity(index, opacity, false);
+    }
+    if (sendImmediately) {
+      await this.#device?.flushDisplayContextCommands();
+    }
   }
 
   // CONEXT STATE
@@ -424,7 +423,7 @@ class DisplayCanvasHelper {
     this.device?.setDisplayContextState(this.contextState, sendImmediately);
   }
 
-  showDisplay(sendImmediately = true) {
+  async showDisplay(sendImmediately = true) {
     _console.log("showDisplay");
 
     this.#frontDrawStack = this.#rearDrawStack.slice();
@@ -433,10 +432,10 @@ class DisplayCanvasHelper {
     this.#drawFrontDrawStack();
 
     if (this.device?.isConnected) {
-      this.device.showDisplay(sendImmediately);
+      await this.device.showDisplay(sendImmediately);
     }
   }
-  clearDisplay(sendImmediately = true) {
+  async clearDisplay(sendImmediately = true) {
     _console.log("clearDisplay");
 
     this.#frontDrawStack.length = 0;
@@ -444,12 +443,12 @@ class DisplayCanvasHelper {
 
     this.#context.clearRect(0, 0, this.width, this.height);
     if (this.device?.isConnected) {
-      this.device.clearDisplay(sendImmediately);
+      await this.device.clearDisplay(sendImmediately);
     }
     this.#drawBackground();
   }
 
-  setColor(
+  async setColor(
     colorIndex: number,
     color: DisplayColorRGB | string,
     sendImmediately?: boolean
@@ -468,7 +467,7 @@ class DisplayCanvasHelper {
     assertValidColor(color);
 
     if (this.device?.isConnected) {
-      this.device.setDisplayColor(colorIndex, color, sendImmediately);
+      await this.device.setDisplayColor(colorIndex, color, sendImmediately);
     }
 
     this.colors[colorIndex] = colorHex;
@@ -476,7 +475,7 @@ class DisplayCanvasHelper {
     this.#dispatchEvent("color", { colorIndex, colorHex, color });
   }
 
-  setColorOpacity(
+  async setColorOpacity(
     colorIndex: number,
     opacity: number,
     sendImmediately?: boolean
@@ -490,17 +489,21 @@ class DisplayCanvasHelper {
       return;
     }
     if (this.device?.isConnected) {
-      this.device.setDisplayColorOpacity(colorIndex, opacity, sendImmediately);
+      await this.device.setDisplayColorOpacity(
+        colorIndex,
+        opacity,
+        sendImmediately
+      );
     }
 
     this.#opacities[colorIndex] = opacity;
     this.#drawFrontDrawStack();
     this.#dispatchEvent("colorOpacity", { colorIndex, opacity });
   }
-  setOpacity(opacity: number, sendImmediately?: boolean) {
+  async setOpacity(opacity: number, sendImmediately?: boolean) {
     assertValidOpacity(opacity);
     if (this.device?.isConnected) {
-      this.device.setDisplayOpacity(opacity, sendImmediately);
+      await this.device.setDisplayOpacity(opacity, sendImmediately);
     }
     this.#opacities.fill(opacity);
     this.#drawFrontDrawStack();
@@ -508,7 +511,7 @@ class DisplayCanvasHelper {
   }
 
   // CONTEXT COMMANDS
-  selectFillColor(fillColorIndex: number, sendImmediately?: boolean) {
+  async selectFillColor(fillColorIndex: number, sendImmediately?: boolean) {
     this.#assertValidColorIndex(fillColorIndex);
     const differences = this.#displayContextStateHelper.update({
       fillColorIndex,
@@ -517,11 +520,11 @@ class DisplayCanvasHelper {
       return;
     }
     if (this.device?.isConnected) {
-      this.device.selectDisplayFillColor(fillColorIndex, sendImmediately);
+      await this.device.selectDisplayFillColor(fillColorIndex, sendImmediately);
     }
     this.#onDisplayContextStateUpdate(differences);
   }
-  selectLineColor(lineColorIndex: number, sendImmediately?: boolean) {
+  async selectLineColor(lineColorIndex: number, sendImmediately?: boolean) {
     this.#assertValidColorIndex(lineColorIndex);
     const differences = this.#displayContextStateHelper.update({
       lineColorIndex,
@@ -530,14 +533,14 @@ class DisplayCanvasHelper {
       return;
     }
     if (this.device?.isConnected) {
-      this.device.selectDisplayLineColor(lineColorIndex, sendImmediately);
+      await this.device.selectDisplayLineColor(lineColorIndex, sendImmediately);
     }
     this.#onDisplayContextStateUpdate(differences);
   }
   #assertValidLineWidth(lineWidth: number) {
     _console.assertRangeWithError("lineWidth", lineWidth, 0, this.width);
   }
-  setLineWidth(lineWidth: number, sendImmediately?: boolean) {
+  async setLineWidth(lineWidth: number, sendImmediately?: boolean) {
     this.#assertValidLineWidth(lineWidth);
     const differences = this.#displayContextStateHelper.update({
       lineWidth,
@@ -546,11 +549,15 @@ class DisplayCanvasHelper {
       return;
     }
     if (this.device?.isConnected) {
-      this.device.setDisplayLineWidth(lineWidth, sendImmediately);
+      await this.device.setDisplayLineWidth(lineWidth, sendImmediately);
     }
     this.#onDisplayContextStateUpdate(differences);
   }
-  setRotation(rotation: number, isRadians: boolean, sendImmediately?: boolean) {
+  async setRotation(
+    rotation: number,
+    isRadians: boolean,
+    sendImmediately?: boolean
+  ) {
     rotation = isRadians ? rotation : degToRad(rotation);
     rotation = normalizeRadians(rotation);
     _console.log({ rotation });
@@ -563,12 +570,12 @@ class DisplayCanvasHelper {
     }
 
     if (this.device?.isConnected) {
-      this.device.setDisplayRotation(rotation, true, sendImmediately);
+      await this.device.setDisplayRotation(rotation, true, sendImmediately);
     }
 
     this.#onDisplayContextStateUpdate(differences);
   }
-  clearRotation(sendImmediately?: boolean) {
+  async clearRotation(sendImmediately?: boolean) {
     const differences = this.#displayContextStateHelper.update({
       rotation: 0,
     });
@@ -576,11 +583,11 @@ class DisplayCanvasHelper {
       return;
     }
     if (this.device?.isConnected) {
-      this.device.clearDisplayRotation(sendImmediately);
+      await this.device.clearDisplayRotation(sendImmediately);
     }
     this.#onDisplayContextStateUpdate(differences);
   }
-  setSegmentStartCap(
+  async setSegmentStartCap(
     segmentStartCap: DisplaySegmentCap,
     sendImmediately?: boolean
   ) {
@@ -593,11 +600,14 @@ class DisplayCanvasHelper {
     }
     _console.log({ segmentStartCap });
     if (this.device?.isConnected) {
-      this.device.setDisplaySegmentStartCap(segmentStartCap, sendImmediately);
+      await this.device.setDisplaySegmentStartCap(
+        segmentStartCap,
+        sendImmediately
+      );
     }
     this.#onDisplayContextStateUpdate(differences);
   }
-  setSegmentEndCap(
+  async setSegmentEndCap(
     segmentEndCap: DisplaySegmentCap,
     sendImmediately?: boolean
   ) {
@@ -610,11 +620,14 @@ class DisplayCanvasHelper {
     }
     _console.log({ segmentEndCap });
     if (this.device?.isConnected) {
-      this.device.setDisplaySegmentEndCap(segmentEndCap, sendImmediately);
+      await this.device.setDisplaySegmentEndCap(segmentEndCap, sendImmediately);
     }
     this.#onDisplayContextStateUpdate(differences);
   }
-  setSegmentCap(segmentCap: DisplaySegmentCap, sendImmediately?: boolean) {
+  async setSegmentCap(
+    segmentCap: DisplaySegmentCap,
+    sendImmediately?: boolean
+  ) {
     assertValidSegmentCap(segmentCap);
     const differences = this.#displayContextStateHelper.update({
       segmentStartCap: segmentCap,
@@ -625,11 +638,14 @@ class DisplayCanvasHelper {
     }
     _console.log({ segmentCap });
     if (this.device?.isConnected) {
-      this.device.setDisplaySegmentCap(segmentCap, sendImmediately);
+      await this.device.setDisplaySegmentCap(segmentCap, sendImmediately);
     }
     this.#onDisplayContextStateUpdate(differences);
   }
-  setSegmentStartRadius(segmentStartRadius: number, sendImmediately?: boolean) {
+  async setSegmentStartRadius(
+    segmentStartRadius: number,
+    sendImmediately?: boolean
+  ) {
     const differences = this.#displayContextStateHelper.update({
       segmentStartRadius,
     });
@@ -638,14 +654,17 @@ class DisplayCanvasHelper {
     }
     _console.log({ segmentStartRadius });
     if (this.device?.isConnected) {
-      this.device.setDisplaySegmentStartRadius(
+      await this.device.setDisplaySegmentStartRadius(
         segmentStartRadius,
         sendImmediately
       );
     }
     this.#onDisplayContextStateUpdate(differences);
   }
-  setSegmentEndRadius(segmentEndRadius: number, sendImmediately?: boolean) {
+  async setSegmentEndRadius(
+    segmentEndRadius: number,
+    sendImmediately?: boolean
+  ) {
     const differences = this.#displayContextStateHelper.update({
       segmentEndRadius,
     });
@@ -654,11 +673,15 @@ class DisplayCanvasHelper {
     }
     _console.log({ segmentEndRadius });
     if (this.device?.isConnected) {
-      this.device.setDisplaySegmentEndRadius(segmentEndRadius, sendImmediately);
+      await this.device.setDisplaySegmentEndRadius(
+        segmentEndRadius,
+        sendImmediately
+      );
     }
     this.#onDisplayContextStateUpdate(differences);
   }
-  setSegmentRadius(segmentRadius: number, sendImmediately?: boolean) {
+  // START
+  async setSegmentRadius(segmentRadius: number, sendImmediately?: boolean) {
     const differences = this.#displayContextStateHelper.update({
       segmentStartRadius: segmentRadius,
       segmentEndRadius: segmentRadius,
@@ -668,11 +691,11 @@ class DisplayCanvasHelper {
     }
     _console.log({ segmentRadius });
     if (this.device?.isConnected) {
-      this.device.setDisplaySegmentRadius(segmentRadius, sendImmediately);
+      await this.device.setDisplaySegmentRadius(segmentRadius, sendImmediately);
     }
     this.#onDisplayContextStateUpdate(differences);
   }
-  setCrop(
+  async setCrop(
     cropDirection: DisplayCropDirection,
     crop: number,
     sendImmediately?: boolean
@@ -689,23 +712,23 @@ class DisplayCanvasHelper {
     }
     _console.log({ [cropCommand]: crop });
     if (this.device?.isConnected) {
-      this.device.setDisplayCrop(cropDirection, crop, sendImmediately);
+      await this.device.setDisplayCrop(cropDirection, crop, sendImmediately);
     }
     this.#onDisplayContextStateUpdate(differences);
   }
-  setCropTop(cropTop: number, sendImmediately?: boolean) {
-    this.setCrop("top", cropTop, sendImmediately);
+  async setCropTop(cropTop: number, sendImmediately?: boolean) {
+    await this.setCrop("top", cropTop, sendImmediately);
   }
-  setCropRight(cropRight: number, sendImmediately?: boolean) {
-    this.setCrop("right", cropRight, sendImmediately);
+  async setCropRight(cropRight: number, sendImmediately?: boolean) {
+    await this.setCrop("right", cropRight, sendImmediately);
   }
-  setCropBottom(cropBottom: number, sendImmediately?: boolean) {
-    this.setCrop("bottom", cropBottom, sendImmediately);
+  async setCropBottom(cropBottom: number, sendImmediately?: boolean) {
+    await this.setCrop("bottom", cropBottom, sendImmediately);
   }
-  setCropLeft(cropLeft: number, sendImmediately?: boolean) {
-    this.setCrop("left", cropLeft, sendImmediately);
+  async setCropLeft(cropLeft: number, sendImmediately?: boolean) {
+    await this.setCrop("left", cropLeft, sendImmediately);
   }
-  clearCrop(sendImmediately?: boolean) {
+  async clearCrop(sendImmediately?: boolean) {
     const differences = this.#displayContextStateHelper.update({
       cropTop: 0,
       cropRight: 0,
@@ -716,12 +739,12 @@ class DisplayCanvasHelper {
       return;
     }
     if (this.device?.isConnected) {
-      this.device.clearDisplayCrop(sendImmediately);
+      await this.device.clearDisplayCrop(sendImmediately);
     }
     this.#onDisplayContextStateUpdate(differences);
   }
 
-  setRotationCrop(
+  async setRotationCrop(
     cropDirection: DisplayCropDirection,
     crop: number,
     sendImmediately?: boolean
@@ -737,23 +760,36 @@ class DisplayCanvasHelper {
     }
     _console.log({ [cropCommand]: crop });
     if (this.device?.isConnected) {
-      this.device.setDisplayRotationCrop(cropDirection, crop, sendImmediately);
+      await this.device.setDisplayRotationCrop(
+        cropDirection,
+        crop,
+        sendImmediately
+      );
     }
     this.#onDisplayContextStateUpdate(differences);
   }
-  setRotationCropTop(rotationCropTop: number, sendImmediately?: boolean) {
-    this.setRotationCrop("top", rotationCropTop, sendImmediately);
+  async setRotationCropTop(rotationCropTop: number, sendImmediately?: boolean) {
+    await this.setRotationCrop("top", rotationCropTop, sendImmediately);
   }
-  setRotationCropRight(rotationCropRight: number, sendImmediately?: boolean) {
-    this.setRotationCrop("right", rotationCropRight, sendImmediately);
+  async setRotationCropRight(
+    rotationCropRight: number,
+    sendImmediately?: boolean
+  ) {
+    await this.setRotationCrop("right", rotationCropRight, sendImmediately);
   }
-  setRotationCropBottom(rotationCropBottom: number, sendImmediately?: boolean) {
-    this.setRotationCrop("bottom", rotationCropBottom, sendImmediately);
+  async setRotationCropBottom(
+    rotationCropBottom: number,
+    sendImmediately?: boolean
+  ) {
+    await this.setRotationCrop("bottom", rotationCropBottom, sendImmediately);
   }
-  setRotationCropLeft(rotationCropLeft: number, sendImmediately?: boolean) {
-    this.setRotationCrop("left", rotationCropLeft, sendImmediately);
+  async setRotationCropLeft(
+    rotationCropLeft: number,
+    sendImmediately?: boolean
+  ) {
+    await this.setRotationCrop("left", rotationCropLeft, sendImmediately);
   }
-  clearRotationCrop(sendImmediately?: boolean) {
+  async clearRotationCrop(sendImmediately?: boolean) {
     const differences = this.#displayContextStateHelper.update({
       rotationCropTop: 0,
       rotationCropRight: 0,
@@ -764,7 +800,7 @@ class DisplayCanvasHelper {
       return;
     }
     if (this.device?.isConnected) {
-      this.device.clearDisplayRotationCrop(sendImmediately);
+      await this.device.clearDisplayRotationCrop(sendImmediately);
     }
     this.#onDisplayContextStateUpdate(differences);
   }
@@ -776,7 +812,7 @@ class DisplayCanvasHelper {
     this.context.fillRect(x, y, width, height);
     this.#restore();
   }
-  clearRect(
+  async clearRect(
     x: number,
     y: number,
     width: number,
@@ -787,7 +823,7 @@ class DisplayCanvasHelper {
       this.#clearRectToCanvas(x, y, width, height)
     );
     if (this.device?.isConnected) {
-      this.device.clearDisplayRect(x, y, width, height, sendImmediately);
+      await this.device.clearDisplayRect(x, y, width, height, sendImmediately);
     }
   }
   #save() {
@@ -959,7 +995,7 @@ class DisplayCanvasHelper {
     }
     this.#restore();
   }
-  drawRect(
+  async drawRect(
     centerX: number,
     centerY: number,
     width: number,
@@ -972,7 +1008,7 @@ class DisplayCanvasHelper {
     );
 
     if (this.device?.isConnected) {
-      this.device.drawDisplayRect(
+      await this.device.drawDisplayRect(
         centerX,
         centerY,
         width,
@@ -1020,7 +1056,7 @@ class DisplayCanvasHelper {
     }
     this.#restore();
   }
-  drawRoundRect(
+  async drawRoundRect(
     centerX: number,
     centerY: number,
     width: number,
@@ -1040,7 +1076,7 @@ class DisplayCanvasHelper {
       )
     );
     if (this.device?.isConnected) {
-      this.device.drawDisplayRoundRect(
+      await this.device.drawDisplayRoundRect(
         centerX,
         centerY,
         width,
@@ -1097,7 +1133,7 @@ class DisplayCanvasHelper {
     }
     this.#restore();
   }
-  drawCircle(
+  async drawCircle(
     centerX: number,
     centerY: number,
     radius: number,
@@ -1108,7 +1144,12 @@ class DisplayCanvasHelper {
       this.#drawCircleToCanvas(centerX, centerY, radius, contextState)
     );
     if (this.device?.isConnected) {
-      this.device.drawDisplayCircle(centerX, centerY, radius, sendImmediately);
+      await this.device.drawDisplayCircle(
+        centerX,
+        centerY,
+        radius,
+        sendImmediately
+      );
     }
   }
   #getEllipseBoundingBox(
@@ -1164,7 +1205,7 @@ class DisplayCanvasHelper {
     }
     this.#restore();
   }
-  drawEllipse(
+  async drawEllipse(
     centerX: number,
     centerY: number,
     radiusX: number,
@@ -1182,7 +1223,7 @@ class DisplayCanvasHelper {
       )
     );
     if (this.device?.isConnected) {
-      this.device.drawDisplayEllipse(
+      await this.device.drawDisplayEllipse(
         centerX,
         centerY,
         radiusX,
@@ -1258,7 +1299,7 @@ class DisplayCanvasHelper {
     }
     this.#restore();
   }
-  drawPolygon(
+  async drawPolygon(
     centerX: number,
     centerY: number,
     radius: number,
@@ -1280,7 +1321,7 @@ class DisplayCanvasHelper {
       )
     );
     if (this.device?.isConnected) {
-      this.device.drawDisplayPolygon(
+      await this.device.drawDisplayPolygon(
         centerX,
         centerY,
         radius,
@@ -1560,7 +1601,7 @@ class DisplayCanvasHelper {
 
     this.#restore();
   }
-  drawSegment(
+  async drawSegment(
     startX: number,
     startY: number,
     endX: number,
@@ -1576,7 +1617,7 @@ class DisplayCanvasHelper {
       this.#drawSegmentToCanvas(startX, startY, endX, endY, contextState)
     );
     if (this.device?.isConnected) {
-      this.device.drawDisplaySegment(
+      await this.device.drawDisplaySegment(
         startX,
         startY,
         endX,
@@ -1634,7 +1675,10 @@ class DisplayCanvasHelper {
   get #brightnessOpacity() {
     return this.#brightnessOpacities[this.brightness];
   }
-  setBrightness(newBrightness: DisplayBrightness, sendImmediately?: boolean) {
+  async setBrightness(
+    newBrightness: DisplayBrightness,
+    sendImmediately?: boolean
+  ) {
     if (this.#brightness == newBrightness) {
       _console.log(`redundant brightness ${newBrightness}`);
       return;
@@ -1642,20 +1686,20 @@ class DisplayCanvasHelper {
     this.#brightness = newBrightness;
     _console.log({ brightness: this.brightness });
     if (this.device?.isConnected) {
-      this.device.setDisplayBrightness(newBrightness, sendImmediately);
+      await this.device.setDisplayBrightness(newBrightness, sendImmediately);
     }
     this.#drawFrontDrawStack();
     this.#dispatchEvent("brightness", { brightness: this.brightness });
   }
-  #resetBrightness() {
-    this.setBrightness("medium");
+  async #resetBrightness() {
+    await this.setBrightness("medium");
   }
-  #updateDeviceBrightness(sendImmediately?: boolean) {
+  async #updateDeviceBrightness(sendImmediately?: boolean) {
     if (!this.device?.isConnected) {
       return;
     }
     _console.log("updateDeviceBrightness");
-    this.device?.setDisplayBrightness(this.brightness, sendImmediately);
+    await this.device?.setDisplayBrightness(this.brightness, sendImmediately);
   }
 
   #reset() {

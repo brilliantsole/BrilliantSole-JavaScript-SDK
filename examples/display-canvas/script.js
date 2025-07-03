@@ -163,7 +163,7 @@ const displayCanvas = document.getElementById("display");
 
 // DISPLAY CANVAS HELPER
 const displayCanvasHelper = new BS.DisplayCanvasHelper();
-displayCanvasHelper.setBrightness("veryLow");
+// displayCanvasHelper.setBrightness("veryLow");
 displayCanvasHelper.canvas = displayCanvas;
 window.displayCanvasHelper = displayCanvasHelper;
 
@@ -560,8 +560,8 @@ const selectCameraInput = async (deviceId) => {
   cameraStream = await navigator.mediaDevices.getUserMedia({
     video: {
       deviceId: { exact: deviceId },
-      width: { ideal: 1000 },
-      height: { ideal: 1000 },
+      // width: { ideal: 1280 },
+      // height: { ideal: 720 },
     },
   });
 
