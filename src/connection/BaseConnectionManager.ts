@@ -15,7 +15,7 @@ import { CameraMessageTypes } from "../CameraManager.ts";
 import { MicrophoneMessageTypes } from "../MicrophoneManager.ts";
 import { DisplayMessageTypes } from "../DisplayManager.ts";
 
-const _console = createConsole("BaseConnectionManager", { log: false });
+const _console = createConsole("BaseConnectionManager", { log: true });
 
 export const ConnectionTypes = [
   "webBluetooth",
@@ -330,6 +330,7 @@ abstract class BaseConnectionManager {
         const arrayBuffer = concatenateArrayBuffers(...arrayBuffersToSend);
         _console.log("sending arrayBuffer (partitioned)", arrayBuffer);
         await this.sendTxData(arrayBuffer);
+        // FILL - wait
       }
     } else {
       const arrayBuffer = concatenateArrayBuffers(...arrayBuffers);

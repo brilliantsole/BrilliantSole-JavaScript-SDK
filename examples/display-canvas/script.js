@@ -1756,7 +1756,7 @@ const throttledDraw = BS.ThrottleUtils.throttle(draw, throttleInterval, true);
 if (false) {
   draw();
 } else {
-  startDrawing();
+  //startDrawing();
 }
 window.draw = draw;
 

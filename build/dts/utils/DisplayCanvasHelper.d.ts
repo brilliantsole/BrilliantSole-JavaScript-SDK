@@ -116,7 +116,7 @@ declare class DisplayCanvasHelper {
     drawEllipse(centerX: number, centerY: number, radiusX: number, radiusY: number, sendImmediately?: boolean): void;
     drawPolygon(centerX: number, centerY: number, radius: number, numberOfSides: number, sendImmediately?: boolean): void;
     drawSegment(startX: number, startY: number, endX: number, endY: number, sendImmediately?: boolean): void;
-    drawSegments(segments: Vector2[], sendImmediately?: boolean): void;
+    drawSegments(segments: Vector2[], sendImmediately?: boolean): Promise<void>;
     get brightness(): "veryLow" | "low" | "medium" | "high" | "veryHigh";
     setBrightness(newBrightness: DisplayBrightness, sendImmediately?: boolean): void;
 }

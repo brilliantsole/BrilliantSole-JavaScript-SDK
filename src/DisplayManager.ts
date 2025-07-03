@@ -29,7 +29,7 @@ import {
   formatRotation,
 } from "./utils/DisplayUtils.ts";
 
-const _console = createConsole("DisplayManager", { log: false });
+const _console = createConsole("DisplayManager", { log: true });
 
 export const DisplayCommands = ["sleep", "wake"] as const;
 export type DisplayCommand = (typeof DisplayCommands)[number];
@@ -604,6 +604,9 @@ class DisplayManager {
     _console.assertEnumWithError(displayContextCommand, DisplayContextCommands);
   }
 
+  get #maxCommandDataLength() {
+    return this.mtu - 7;
+  }
   #displayContextCommandBuffers: ArrayBuffer[] = [];
   async #sendDisplayContextCommand(
     displayContextCommand: DisplayContextCommand,
@@ -611,6 +614,11 @@ class DisplayManager {
     sendImmediately?: boolean
   ) {
     this.#assertValidDisplayContextCommand(displayContextCommand);
+    _console.log(
+      "sendDisplayContextCommand",
+      { displayContextCommand, sendImmediately },
+      arrayBuffer
+    );
     const displayContextCommandEnum = DisplayContextCommands.indexOf(
       displayContextCommand
     );
@@ -622,7 +630,7 @@ class DisplayManager {
       (sum, buffer) => sum + buffer.byteLength,
       _arrayBuffer.byteLength
     );
-    if (newLength > this.mtu - 6) {
+    if (newLength > this.#maxCommandDataLength) {
       _console.log("displayContextCommandBuffers too full - sending now");
       await this.#sendDisplayContextCommands();
     }
@@ -638,20 +646,22 @@ class DisplayManager {
     const data = concatenateArrayBuffers(this.#displayContextCommandBuffers);
     _console.log(
       `sending displayContextCommands`,
-      this.#displayContextCommandBuffers,
+      this.#displayContextCommandBuffers.slice(),
       data
     );
-    await this.sendMessage([{ type: "displayContextCommands", data }], true);
     this.#displayContextCommandBuffers.length = 0;
+    await this.sendMessage([{ type: "displayContextCommands", data }], true);
   }
-  flushDisplayContextCommands() {
-    this.#sendDisplayContextCommands();
+  async flushDisplayContextCommands() {
+    await this.#sendDisplayContextCommands();
   }
-  showDisplay(sendImmediately = true) {
-    this.#sendDisplayContextCommand("show", undefined, sendImmediately);
+  async showDisplay(sendImmediately = true) {
+    _console.log("showDisplay");
+    await this.#sendDisplayContextCommand("show", undefined, sendImmediately);
   }
-  clearDisplay(sendImmediately = true) {
-    this.#sendDisplayContextCommand("clear", undefined, sendImmediately);
+  async clearDisplay(sendImmediately = true) {
+    _console.log("clearDisplay");
+    await this.#sendDisplayContextCommand("clear", undefined, sendImmediately);
   }
 
   #assertValidColorIndex(colorIndex: number) {
@@ -666,7 +676,7 @@ class DisplayManager {
   get colors() {
     return this.#colors;
   }
-  setColor(
+  async setColor(
     colorIndex: number,
     color: DisplayColorRGB | string,
     sendImmediately?: boolean
@@ -688,7 +698,7 @@ class DisplayManager {
     dataView.setUint8(1, color.r);
     dataView.setUint8(2, color.g);
     dataView.setUint8(3, color.b);
-    this.#sendDisplayContextCommand(
+    await this.#sendDisplayContextCommand(
       "setColor",
       dataView.buffer,
       sendImmediately
@@ -700,7 +710,7 @@ class DisplayManager {
   get opacities() {
     return this.#opacities;
   }
-  setColorOpacity(
+  async setColorOpacity(
     colorIndex: number,
     opacity: number,
     sendImmediately?: boolean
@@ -716,7 +726,7 @@ class DisplayManager {
     const dataView = new DataView(new ArrayBuffer(2));
     dataView.setUint8(0, colorIndex);
     dataView.setUint8(1, opacity * 255);
-    this.#sendDisplayContextCommand(
+    await this.#sendDisplayContextCommand(
       "setColorOpacity",
       dataView.buffer,
       sendImmediately
@@ -724,9 +734,9 @@ class DisplayManager {
     this.#opacities[colorIndex] = opacity;
     this.#dispatchEvent("displayColorOpacity", { colorIndex, opacity });
   }
-  setOpacity(opacity: number, sendImmediately?: boolean) {
+  async setOpacity(opacity: number, sendImmediately?: boolean) {
     assertValidOpacity(opacity);
-    this.#sendDisplayContextCommand(
+    await this.#sendDisplayContextCommand(
       "setOpacity",
       UInt8ByteBuffer(Math.round(opacity * 255)),
       sendImmediately
@@ -735,18 +745,22 @@ class DisplayManager {
     this.#dispatchEvent("displayOpacity", { opacity });
   }
 
-  saveContext(sendImmediately?: boolean) {
-    this.#sendDisplayContextCommand("saveContext", undefined, sendImmediately);
+  async saveContext(sendImmediately?: boolean) {
+    await this.#sendDisplayContextCommand(
+      "saveContext",
+      undefined,
+      sendImmediately
+    );
   }
-  restoreContext(sendImmediately?: boolean) {
-    this.#sendDisplayContextCommand(
+  async restoreContext(sendImmediately?: boolean) {
+    await this.#sendDisplayContextCommand(
       "restoreContext",
       undefined,
       sendImmediately
     );
   }
 
-  selectFillColor(fillColorIndex: number, sendImmediately?: boolean) {
+  async selectFillColor(fillColorIndex: number, sendImmediately?: boolean) {
     this.#assertValidColorIndex(fillColorIndex);
     const differences = this.#displayContextStateHelper.update({
       fillColorIndex,
@@ -754,14 +768,14 @@ class DisplayManager {
     if (differences.length == 0) {
       return;
     }
-    this.#sendDisplayContextCommand(
+    await this.#sendDisplayContextCommand(
       "selectFillColor",
       UInt8ByteBuffer(fillColorIndex),
       sendImmediately
     );
     this.#onDisplayContextStateUpdate(differences);
   }
-  selectLineColor(lineColorIndex: number, sendImmediately?: boolean) {
+  async selectLineColor(lineColorIndex: number, sendImmediately?: boolean) {
     this.#assertValidColorIndex(lineColorIndex);
     const differences = this.#displayContextStateHelper.update({
       lineColorIndex,
@@ -769,7 +783,7 @@ class DisplayManager {
     if (differences.length == 0) {
       return;
     }
-    this.#sendDisplayContextCommand(
+    await this.#sendDisplayContextCommand(
       "selectLineColor",
       UInt8ByteBuffer(lineColorIndex),
       sendImmediately
@@ -779,7 +793,7 @@ class DisplayManager {
   #assertValidLineWidth(lineWidth: number) {
     _console.assertRangeWithError("lineWidth", lineWidth, 0, this.width);
   }
-  setLineWidth(lineWidth: number, sendImmediately?: boolean) {
+  async setLineWidth(lineWidth: number, sendImmediately?: boolean) {
     this.#assertValidLineWidth(lineWidth);
     const differences = this.#displayContextStateHelper.update({
       lineWidth,
@@ -789,7 +803,7 @@ class DisplayManager {
     }
     const dataView = new DataView(new ArrayBuffer(2));
     dataView.setUint16(0, lineWidth, true);
-    this.#sendDisplayContextCommand(
+    await this.#sendDisplayContextCommand(
       "setLineWidth",
       dataView.buffer,
       sendImmediately
@@ -797,7 +811,7 @@ class DisplayManager {
     this.#onDisplayContextStateUpdate(differences);
   }
 
-  setRotation(
+  async setRotation(
     rotation: number,
     isRadians?: boolean,
     sendImmediately?: boolean
@@ -814,7 +828,7 @@ class DisplayManager {
     }
     const dataView = new DataView(new ArrayBuffer(2));
     dataView.setUint16(0, formatRotation(rotation, true), true);
-    this.#sendDisplayContextCommand(
+    await this.#sendDisplayContextCommand(
       "setRotation",
       dataView.buffer,
       sendImmediately
@@ -822,14 +836,14 @@ class DisplayManager {
 
     this.#onDisplayContextStateUpdate(differences);
   }
-  clearRotation(sendImmediately?: boolean) {
+  async clearRotation(sendImmediately?: boolean) {
     const differences = this.#displayContextStateHelper.update({
       rotation: 0,
     });
     if (differences.length == 0) {
       return;
     }
-    this.#sendDisplayContextCommand(
+    await this.#sendDisplayContextCommand(
       "clearRotation",
       undefined,
       sendImmediately
@@ -837,7 +851,7 @@ class DisplayManager {
     this.#onDisplayContextStateUpdate(differences);
   }
 
-  setSegmentStartCap(
+  async setSegmentStartCap(
     segmentStartCap: DisplaySegmentCap,
     sendImmediately?: boolean
   ) {
@@ -852,14 +866,14 @@ class DisplayManager {
     const dataView = new DataView(new ArrayBuffer(1));
     const segmentCapEnum = DisplaySegmentCaps.indexOf(segmentStartCap);
     dataView.setUint8(0, segmentCapEnum);
-    this.#sendDisplayContextCommand(
+    await this.#sendDisplayContextCommand(
       "setSegmentStartCap",
       dataView.buffer,
       sendImmediately
     );
     this.#onDisplayContextStateUpdate(differences);
   }
-  setSegmentEndCap(
+  async setSegmentEndCap(
     segmentEndCap: DisplaySegmentCap,
     sendImmediately?: boolean
   ) {
@@ -875,14 +889,17 @@ class DisplayManager {
     const dataView = new DataView(new ArrayBuffer(1));
     const segmentCapEnum = DisplaySegmentCaps.indexOf(segmentEndCap);
     dataView.setUint8(0, segmentCapEnum);
-    this.#sendDisplayContextCommand(
+    await this.#sendDisplayContextCommand(
       "setSegmentEndCap",
       dataView.buffer,
       sendImmediately
     );
     this.#onDisplayContextStateUpdate(differences);
   }
-  setSegmentCap(segmentCap: DisplaySegmentCap, sendImmediately?: boolean) {
+  async setSegmentCap(
+    segmentCap: DisplaySegmentCap,
+    sendImmediately?: boolean
+  ) {
     assertValidSegmentCap(segmentCap);
     const differences = this.#displayContextStateHelper.update({
       segmentStartCap: segmentCap,
@@ -895,7 +912,7 @@ class DisplayManager {
     const dataView = new DataView(new ArrayBuffer(1));
     const segmentCapEnum = DisplaySegmentCaps.indexOf(segmentCap);
     dataView.setUint8(0, segmentCapEnum);
-    this.#sendDisplayContextCommand(
+    await this.#sendDisplayContextCommand(
       "setSegmentCap",
       dataView.buffer,
       sendImmediately
@@ -903,7 +920,10 @@ class DisplayManager {
     this.#onDisplayContextStateUpdate(differences);
   }
 
-  setSegmentStartRadius(segmentStartRadius: number, sendImmediately?: boolean) {
+  async setSegmentStartRadius(
+    segmentStartRadius: number,
+    sendImmediately?: boolean
+  ) {
     const differences = this.#displayContextStateHelper.update({
       segmentStartRadius,
     });
@@ -913,14 +933,17 @@ class DisplayManager {
     _console.log({ segmentStartRadius });
     const dataView = new DataView(new ArrayBuffer(2));
     dataView.setUint16(0, segmentStartRadius, true);
-    this.#sendDisplayContextCommand(
+    await this.#sendDisplayContextCommand(
       "setSegmentStartRadius",
       dataView.buffer,
       sendImmediately
     );
     this.#onDisplayContextStateUpdate(differences);
   }
-  setSegmentEndRadius(segmentEndRadius: number, sendImmediately?: boolean) {
+  async setSegmentEndRadius(
+    segmentEndRadius: number,
+    sendImmediately?: boolean
+  ) {
     const differences = this.#displayContextStateHelper.update({
       segmentEndRadius,
     });
@@ -930,14 +953,14 @@ class DisplayManager {
     _console.log({ segmentEndRadius });
     const dataView = new DataView(new ArrayBuffer(2));
     dataView.setUint16(0, segmentEndRadius, true);
-    this.#sendDisplayContextCommand(
+    await this.#sendDisplayContextCommand(
       "setSegmentEndRadius",
       dataView.buffer,
       sendImmediately
     );
     this.#onDisplayContextStateUpdate(differences);
   }
-  setSegmentRadius(segmentRadius: number, sendImmediately?: boolean) {
+  async setSegmentRadius(segmentRadius: number, sendImmediately?: boolean) {
     const differences = this.#displayContextStateHelper.update({
       segmentStartRadius: segmentRadius,
       segmentEndRadius: segmentRadius,
@@ -948,7 +971,7 @@ class DisplayManager {
     _console.log({ segmentRadius });
     const dataView = new DataView(new ArrayBuffer(2));
     dataView.setUint16(0, segmentRadius, true);
-    this.#sendDisplayContextCommand(
+    await this.#sendDisplayContextCommand(
       "setSegmentRadius",
       dataView.buffer,
       sendImmediately
@@ -956,7 +979,7 @@ class DisplayManager {
     this.#onDisplayContextStateUpdate(differences);
   }
 
-  setCrop(
+  async setCrop(
     cropDirection: DisplayCropDirection,
     crop: number,
     sendImmediately?: boolean
@@ -974,26 +997,26 @@ class DisplayManager {
     _console.log({ [cropCommand]: crop });
     const dataView = new DataView(new ArrayBuffer(2));
     dataView.setUint16(0, crop, true);
-    this.#sendDisplayContextCommand(
+    await this.#sendDisplayContextCommand(
       cropCommand,
       dataView.buffer,
       sendImmediately
     );
     this.#onDisplayContextStateUpdate(differences);
   }
-  setCropTop(cropTop: number, sendImmediately?: boolean) {
-    this.setCrop("top", cropTop, sendImmediately);
+  async setCropTop(cropTop: number, sendImmediately?: boolean) {
+    await this.setCrop("top", cropTop, sendImmediately);
   }
-  setCropRight(cropRight: number, sendImmediately?: boolean) {
-    this.setCrop("right", cropRight, sendImmediately);
+  async setCropRight(cropRight: number, sendImmediately?: boolean) {
+    await this.setCrop("right", cropRight, sendImmediately);
   }
-  setCropBottom(cropBottom: number, sendImmediately?: boolean) {
-    this.setCrop("bottom", cropBottom, sendImmediately);
+  async setCropBottom(cropBottom: number, sendImmediately?: boolean) {
+    await this.setCrop("bottom", cropBottom, sendImmediately);
   }
-  setCropLeft(cropLeft: number, sendImmediately?: boolean) {
-    this.setCrop("left", cropLeft, sendImmediately);
+  async setCropLeft(cropLeft: number, sendImmediately?: boolean) {
+    await this.setCrop("left", cropLeft, sendImmediately);
   }
-  clearCrop(sendImmediately?: boolean) {
+  async clearCrop(sendImmediately?: boolean) {
     const differences = this.#displayContextStateHelper.update({
       cropTop: 0,
       cropRight: 0,
@@ -1003,11 +1026,15 @@ class DisplayManager {
     if (differences.length == 0) {
       return;
     }
-    this.#sendDisplayContextCommand("clearCrop", undefined, sendImmediately);
+    await this.#sendDisplayContextCommand(
+      "clearCrop",
+      undefined,
+      sendImmediately
+    );
     this.#onDisplayContextStateUpdate(differences);
   }
 
-  setRotationCrop(
+  async setRotationCrop(
     cropDirection: DisplayCropDirection,
     crop: number,
     sendImmediately?: boolean
@@ -1024,26 +1051,35 @@ class DisplayManager {
     _console.log({ [cropCommand]: crop });
     const dataView = new DataView(new ArrayBuffer(2));
     dataView.setUint16(0, crop, true);
-    this.#sendDisplayContextCommand(
+    await this.#sendDisplayContextCommand(
       cropCommand,
       dataView.buffer,
       sendImmediately
     );
     this.#onDisplayContextStateUpdate(differences);
   }
-  setRotationCropTop(rotationCropTop: number, sendImmediately?: boolean) {
-    this.setRotationCrop("top", rotationCropTop, sendImmediately);
+  async setRotationCropTop(rotationCropTop: number, sendImmediately?: boolean) {
+    await this.setRotationCrop("top", rotationCropTop, sendImmediately);
   }
-  setRotationCropRight(rotationCropRight: number, sendImmediately?: boolean) {
-    this.setRotationCrop("right", rotationCropRight, sendImmediately);
+  async setRotationCropRight(
+    rotationCropRight: number,
+    sendImmediately?: boolean
+  ) {
+    await this.setRotationCrop("right", rotationCropRight, sendImmediately);
   }
-  setRotationCropBottom(rotationCropBottom: number, sendImmediately?: boolean) {
-    this.setRotationCrop("bottom", rotationCropBottom, sendImmediately);
+  async setRotationCropBottom(
+    rotationCropBottom: number,
+    sendImmediately?: boolean
+  ) {
+    await this.setRotationCrop("bottom", rotationCropBottom, sendImmediately);
   }
-  setRotationCropLeft(rotationCropLeft: number, sendImmediately?: boolean) {
-    this.setRotationCrop("left", rotationCropLeft, sendImmediately);
+  async setRotationCropLeft(
+    rotationCropLeft: number,
+    sendImmediately?: boolean
+  ) {
+    await this.setRotationCrop("left", rotationCropLeft, sendImmediately);
   }
-  clearRotationCrop(sendImmediately?: boolean) {
+  async clearRotationCrop(sendImmediately?: boolean) {
     const differences = this.#displayContextStateHelper.update({
       rotationCropTop: 0,
       rotationCropRight: 0,
@@ -1053,7 +1089,7 @@ class DisplayManager {
     if (differences.length == 0) {
       return;
     }
-    this.#sendDisplayContextCommand(
+    await this.#sendDisplayContextCommand(
       "clearRotationCrop",
       undefined,
       sendImmediately
@@ -1083,7 +1119,7 @@ class DisplayManager {
 
     return { x, y, width, height };
   }
-  clearRect(
+  async clearRect(
     x: number,
     y: number,
     width: number,
@@ -1101,13 +1137,13 @@ class DisplayManager {
     dataView.setUint16(2, _y, true);
     dataView.setUint16(4, _width, true);
     dataView.setUint16(6, _height, true);
-    this.#sendDisplayContextCommand(
+    await this.#sendDisplayContextCommand(
       "clearRect",
       dataView.buffer,
       sendImmediately
     );
   }
-  drawRect(
+  async drawRect(
     centerX: number,
     centerY: number,
     width: number,
@@ -1120,13 +1156,13 @@ class DisplayManager {
     dataView.setUint16(4, width, true);
     dataView.setUint16(6, height, true);
     _console.log("drawRect data", dataView);
-    this.#sendDisplayContextCommand(
+    await this.#sendDisplayContextCommand(
       "drawRect",
       dataView.buffer,
       sendImmediately
     );
   }
-  drawRoundRect(
+  async drawRoundRect(
     centerX: number,
     centerY: number,
     width: number,
@@ -1141,13 +1177,13 @@ class DisplayManager {
     dataView.setUint16(6, height, true);
     dataView.setUint8(8, borderRadius);
     _console.log("drawRoundRect data", dataView);
-    this.#sendDisplayContextCommand(
+    await this.#sendDisplayContextCommand(
       "drawRoundRect",
       dataView.buffer,
       sendImmediately
     );
   }
-  drawCircle(
+  async drawCircle(
     centerX: number,
     centerY: number,
     radius: number,
@@ -1158,13 +1194,13 @@ class DisplayManager {
     dataView.setInt16(2, centerY, true);
     dataView.setUint16(4, radius, true);
     _console.log("drawCircle data", dataView);
-    this.#sendDisplayContextCommand(
+    await this.#sendDisplayContextCommand(
       "drawCircle",
       dataView.buffer,
       sendImmediately
     );
   }
-  drawEllipse(
+  async drawEllipse(
     centerX: number,
     centerY: number,
     radiusX: number,
@@ -1177,13 +1213,13 @@ class DisplayManager {
     dataView.setUint16(4, radiusX, true);
     dataView.setUint16(6, radiusY, true);
     _console.log("drawEllipse data", dataView);
-    this.#sendDisplayContextCommand(
+    await this.#sendDisplayContextCommand(
       "drawEllipse",
       dataView.buffer,
       sendImmediately
     );
   }
-  drawPolygon(
+  async drawPolygon(
     centerX: number,
     centerY: number,
     radius: number,
@@ -1196,14 +1232,14 @@ class DisplayManager {
     dataView.setUint16(4, radius, true);
     dataView.setUint8(6, numberOfSides);
     _console.log("drawPolygon data", dataView);
-    this.#sendDisplayContextCommand(
+    await this.#sendDisplayContextCommand(
       "drawPolygon",
       dataView.buffer,
       sendImmediately
     );
   }
 
-  drawSegment(
+  async drawSegment(
     startX: number,
     startY: number,
     endX: number,
@@ -1217,16 +1253,28 @@ class DisplayManager {
     dataView.setInt16(4, endX, true);
     dataView.setInt16(6, endY, true);
     _console.log("drawSegment data", dataView);
-    this.#sendDisplayContextCommand(
+    await this.#sendDisplayContextCommand(
       "drawSegment",
       dataView.buffer,
       sendImmediately
     );
   }
-  drawSegments(segments: Vector2[], sendImmediately?: boolean) {
+  async drawSegments(segments: Vector2[], sendImmediately?: boolean) {
     _console.assertRangeWithError("segmentsLength", segments.length, 2, 255);
     _console.log({ segments });
-    const dataView = new DataView(new ArrayBuffer(1 + segments.length * 4));
+    const dataViewLength = 1 + segments.length * 4;
+    if (dataViewLength > this.#maxCommandDataLength) {
+      const mid = Math.floor(segments.length / 2);
+      const firstHalf = segments.slice(0, mid + 1);
+      const secondHalf = segments.slice(mid);
+      _console.log({ firstHalf, secondHalf });
+      _console.log("sending first half", firstHalf);
+      await this.drawSegments(firstHalf, false);
+      _console.log("sending second half", secondHalf);
+      await this.drawSegments(secondHalf, sendImmediately);
+      return;
+    }
+    const dataView = new DataView(new ArrayBuffer(dataViewLength));
     let offset = 0;
     dataView.setUint8(offset++, segments.length);
     segments.forEach((segment) => {
@@ -1236,7 +1284,7 @@ class DisplayManager {
       offset += 2;
     });
     _console.log("drawSegments data", dataView);
-    this.#sendDisplayContextCommand(
+    await this.#sendDisplayContextCommand(
       "drawSegments",
       dataView.buffer,
       sendImmediately

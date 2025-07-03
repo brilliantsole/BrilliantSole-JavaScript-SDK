@@ -198,6 +198,8 @@ class DisplayCanvasHelper {
       return;
     }
 
+    _console.log("updateCanvas");
+
     const { width, height } = this.device.displayInformation!;
     _console.log({ width, height });
 
@@ -436,7 +438,10 @@ class DisplayCanvasHelper {
   }
   clearDisplay(sendImmediately = true) {
     _console.log("clearDisplay");
-    this.showDisplay();
+
+    this.#frontDrawStack.length = 0;
+    this.#rearDrawStack.length = 0;
+
     this.#context.clearRect(0, 0, this.width, this.height);
     if (this.device?.isConnected) {
       this.device.clearDisplay(sendImmediately);
@@ -1601,7 +1606,7 @@ class DisplayCanvasHelper {
       }
     });
   }
-  drawSegments(segments: Vector2[], sendImmediately?: boolean) {
+  async drawSegments(segments: Vector2[], sendImmediately?: boolean) {
     _console.assertRangeWithError("segmentsLength", segments.length, 2, 255);
     _console.log({ segments });
     const contextState = { ...this.contextState };
@@ -1609,7 +1614,7 @@ class DisplayCanvasHelper {
       this.#drawSegmentsToCanvas(segments, contextState)
     );
     if (this.device?.isConnected) {
-      this.device.drawDisplaySegments(segments, sendImmediately);
+      await this.device.drawDisplaySegments(segments, sendImmediately);
     }
   }
 
