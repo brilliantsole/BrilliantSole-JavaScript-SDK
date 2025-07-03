@@ -1,5 +1,6 @@
 import Device, { SendMessageCallback } from "./Device.ts";
 import EventDispatcher from "./utils/EventDispatcher.ts";
+import { Vector2 } from "./utils/MathUtils.ts";
 import { DisplayCropDirection } from "./utils/DisplayUtils.ts";
 export declare const DisplayCommands: readonly ["sleep", "wake"];
 export type DisplayCommand = (typeof DisplayCommands)[number];
@@ -62,7 +63,7 @@ export declare const DisplayInformationValues: {
     type: readonly ["none", "generic", "monocularLeft", "monocularRight", "binocular"];
     pixelDepth: readonly ["1", "2", "4"];
 };
-export declare const DisplayContextCommands: readonly ["show", "clear", "setColor", "setColorOpacity", "setOpacity", "saveContext", "restoreContext", "selectFillColor", "selectLineColor", "setLineWidth", "setRotation", "clearRotation", "setSegmentStartCap", "setSegmentEndCap", "setSegmentCap", "setSegmentStartRadius", "setSegmentEndRadius", "setSegmentRadius", "setCropTop", "setCropRight", "setCropBottom", "setCropLeft", "clearCrop", "setRotationCropTop", "setRotationCropRight", "setRotationCropBottom", "setRotationCropLeft", "clearRotationCrop", "clearRect", "drawRect", "drawRoundRect", "drawCircle", "drawEllipse", "drawPolygon", "drawSegment", "selectSpriteSheet", "sprite", "selectFont", "drawText"];
+export declare const DisplayContextCommands: readonly ["show", "clear", "setColor", "setColorOpacity", "setOpacity", "saveContext", "restoreContext", "selectFillColor", "selectLineColor", "setLineWidth", "setRotation", "clearRotation", "setSegmentStartCap", "setSegmentEndCap", "setSegmentCap", "setSegmentStartRadius", "setSegmentEndRadius", "setSegmentRadius", "setCropTop", "setCropRight", "setCropBottom", "setCropLeft", "clearCrop", "setRotationCropTop", "setRotationCropRight", "setRotationCropBottom", "setRotationCropLeft", "clearRotationCrop", "clearRect", "drawRect", "drawRoundRect", "drawCircle", "drawEllipse", "drawPolygon", "drawSegment", "drawSegments", "selectSpriteSheet", "sprite", "selectFont", "drawText"];
 export type DisplayContextCommand = (typeof DisplayContextCommands)[number];
 export declare const RequiredDisplayMessageTypes: DisplayMessageType[];
 export declare const DisplayEventTypes: readonly ["isDisplayAvailable", "displayStatus", "displayInformation", "displayCommand", "getDisplayBrightness", "setDisplayBrightness", "displayContextCommands", "displayContextState", "displayColor", "displayColorOpacity", "displayOpacity"];
@@ -171,6 +172,7 @@ declare class DisplayManager {
     drawEllipse(centerX: number, centerY: number, radiusX: number, radiusY: number, sendImmediately?: boolean): void;
     drawPolygon(centerX: number, centerY: number, radius: number, numberOfSides: number, sendImmediately?: boolean): void;
     drawSegment(startX: number, startY: number, endX: number, endY: number, sendImmediately?: boolean): void;
+    drawSegments(segments: Vector2[], sendImmediately?: boolean): void;
     selectSpriteSheet(index: number, sendImmediately?: boolean): void;
     drawSprite(index: number, x: number, y: number, sendImmediately?: boolean): void;
     parseMessage(messageType: DisplayMessageType, dataView: DataView): void;

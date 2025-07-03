@@ -11,6 +11,7 @@ import {
   degToRad,
   normalizeRadians,
   Uint16Max,
+  Vector2,
 } from "./utils/MathUtils.ts";
 import { hexToRGB, rgbToHex, stringToRGB } from "./utils/ColorUtils.ts";
 import DisplayContextStateHelper from "./utils/DisplayContextStateHelper.ts";
@@ -204,6 +205,7 @@ export const DisplayContextCommands = [
   "drawEllipse",
   "drawPolygon",
   "drawSegment",
+  "drawSegments",
 
   "selectSpriteSheet",
   "sprite",
@@ -1217,6 +1219,25 @@ class DisplayManager {
     _console.log("drawSegment data", dataView);
     this.#sendDisplayContextCommand(
       "drawSegment",
+      dataView.buffer,
+      sendImmediately
+    );
+  }
+  drawSegments(segments: Vector2[], sendImmediately?: boolean) {
+    _console.assertRangeWithError("segmentsLength", segments.length, 2, 255);
+    _console.log({ segments });
+    const dataView = new DataView(new ArrayBuffer(1 + segments.length * 4));
+    let offset = 0;
+    dataView.setUint8(offset++, segments.length);
+    segments.forEach((segment) => {
+      dataView.setInt16(offset, segment.x, true);
+      offset += 2;
+      dataView.setInt16(offset, segment.y, true);
+      offset += 2;
+    });
+    _console.log("drawSegments data", dataView);
+    this.#sendDisplayContextCommand(
+      "drawSegments",
       dataView.buffer,
       sendImmediately
     );

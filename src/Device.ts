@@ -1644,6 +1644,10 @@ class Device {
     this.#assertDisplayIsAvailable();
     return this.#displayManager.drawSegment;
   }
+  get drawDisplaySegments() {
+    this.#assertDisplayIsAvailable();
+    return this.#displayManager.drawSegments;
+  }
 
   get setDisplayContextState() {
     this.#assertDisplayIsAvailable();

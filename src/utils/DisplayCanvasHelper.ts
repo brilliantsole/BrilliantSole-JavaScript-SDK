@@ -1580,6 +1580,38 @@ class DisplayCanvasHelper {
       );
     }
   }
+  #drawSegmentsToCanvas(
+    segments: Vector2[],
+    contextState: DisplayContextState
+  ) {
+    this.#updateContext(contextState);
+
+    _console.log("drawSegmentsToCanvas", { segments });
+
+    segments.forEach((segment, index) => {
+      if (index > 0) {
+        const previousSegment = segments[index - 1];
+        this.#drawSegmentToCanvas(
+          previousSegment.x,
+          previousSegment.y,
+          segment.x,
+          segment.y,
+          contextState
+        );
+      }
+    });
+  }
+  drawSegments(segments: Vector2[], sendImmediately?: boolean) {
+    _console.assertRangeWithError("segmentsLength", segments.length, 2, 255);
+    _console.log({ segments });
+    const contextState = { ...this.contextState };
+    this.#rearDrawStack.push(() =>
+      this.#drawSegmentsToCanvas(segments, contextState)
+    );
+    if (this.device?.isConnected) {
+      this.device.drawDisplaySegments(segments, sendImmediately);
+    }
+  }
 
   // FILL - sprites
 

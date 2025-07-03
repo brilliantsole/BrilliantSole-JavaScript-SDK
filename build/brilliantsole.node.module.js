@@ -3905,6 +3905,7 @@ const DisplayContextCommands = [
     "drawEllipse",
     "drawPolygon",
     "drawSegment",
+    "drawSegments",
     "selectSpriteSheet",
     "sprite",
     "selectFont",
@@ -4432,6 +4433,21 @@ class DisplayManager {
         dataView.setInt16(6, endY, true);
         _console$o.log("drawSegment data", dataView);
         __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "drawSegment", dataView.buffer, sendImmediately);
+    }
+    drawSegments(segments, sendImmediately) {
+        _console$o.assertRangeWithError("segmentsLength", segments.length, 2, 255);
+        _console$o.log({ segments });
+        const dataView = new DataView(new ArrayBuffer(1 + segments.length * 4));
+        let offset = 0;
+        dataView.setUint8(offset++, segments.length);
+        segments.forEach((segment) => {
+            dataView.setInt16(offset, segment.x, true);
+            offset += 2;
+            dataView.setInt16(offset, segment.y, true);
+            offset += 2;
+        });
+        _console$o.log("drawSegments data", dataView);
+        __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "drawSegments", dataView.buffer, sendImmediately);
     }
     selectSpriteSheet(index, sendImmediately) {
     }
@@ -7982,6 +7998,10 @@ class Device {
     get drawDisplaySegment() {
         __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertDisplayIsAvailable).call(this);
         return __classPrivateFieldGet(this, _Device_displayManager, "f").drawSegment;
+    }
+    get drawDisplaySegments() {
+        __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertDisplayIsAvailable).call(this);
+        return __classPrivateFieldGet(this, _Device_displayManager, "f").drawSegments;
     }
     get setDisplayContextState() {
         __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertDisplayIsAvailable).call(this);

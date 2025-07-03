@@ -2,6 +2,7 @@ import Device from "../Device.ts";
 import { DisplayBrightness, DisplayColorRGB, DisplayContextState, DisplayContextStateKey, DisplaySegmentCap } from "../DisplayManager.ts";
 import { DisplayCropDirection } from "./DisplayUtils.ts";
 import EventDispatcher, { BoundEventListeners, Event, EventListenerMap, EventMap } from "./EventDispatcher.ts";
+import { Vector2 } from "./MathUtils.ts";
 export declare const DisplayCanvasHelperEventTypes: readonly ["contextState", "numberOfColors", "brightness", "color", "colorOpacity", "opacity", "resize", "update"];
 export type DisplayCanvasHelperEventType = (typeof DisplayCanvasHelperEventTypes)[number];
 export interface DisplayCanvasHelperEventMessages {
@@ -115,6 +116,7 @@ declare class DisplayCanvasHelper {
     drawEllipse(centerX: number, centerY: number, radiusX: number, radiusY: number, sendImmediately?: boolean): void;
     drawPolygon(centerX: number, centerY: number, radius: number, numberOfSides: number, sendImmediately?: boolean): void;
     drawSegment(startX: number, startY: number, endX: number, endY: number, sendImmediately?: boolean): void;
+    drawSegments(segments: Vector2[], sendImmediately?: boolean): void;
     get brightness(): "veryLow" | "low" | "medium" | "high" | "veryHigh";
     setBrightness(newBrightness: DisplayBrightness, sendImmediately?: boolean): void;
 }
