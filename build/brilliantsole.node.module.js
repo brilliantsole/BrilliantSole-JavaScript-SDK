@@ -3820,7 +3820,7 @@ const DisplayRotationCropDirectionToCommand = {
     left: "setRotationCropLeft",
 };
 
-var _DisplayManager_instances, _DisplayManager_dispatchEvent_get, _DisplayManager_isDisplayAvailable, _DisplayManager_assertDisplayIsAvailable, _DisplayManager_parseIsDisplayAvailable, _DisplayManager_displayContextStateHelper, _DisplayManager_onDisplayContextStateUpdate, _DisplayManager_displayStatus, _DisplayManager_parseDisplayStatus, _DisplayManager_updateDisplayStatus, _DisplayManager_sendDisplayCommand, _DisplayManager_assertIsAwake, _DisplayManager_assertIsNotAwake, _DisplayManager_displayInformation, _DisplayManager_parseDisplayInformation, _DisplayManager_displayBrightness, _DisplayManager_parseDisplayBrightness, _DisplayManager_assertValidDisplayContextCommand, _DisplayManager_maxCommandDataLength_get, _DisplayManager_displayContextCommandBuffers, _DisplayManager_sendDisplayContextCommand, _DisplayManager_sendDisplayContextCommands, _DisplayManager_assertValidColorIndex, _DisplayManager_colors, _DisplayManager_opacities, _DisplayManager_assertValidLineWidth, _DisplayManager_clampBox, _DisplayManager_mtu;
+var _DisplayManager_instances, _DisplayManager_dispatchEvent_get, _DisplayManager_isDisplayAvailable, _DisplayManager_assertDisplayIsAvailable, _DisplayManager_parseIsDisplayAvailable, _DisplayManager_displayContextStateHelper, _DisplayManager_onDisplayContextStateUpdate, _DisplayManager_displayStatus, _DisplayManager_parseDisplayStatus, _DisplayManager_updateDisplayStatus, _DisplayManager_sendDisplayCommand, _DisplayManager_assertIsAwake, _DisplayManager_assertIsNotAwake, _DisplayManager_displayInformation, _DisplayManager_parseDisplayInformation, _DisplayManager_displayBrightness, _DisplayManager_parseDisplayBrightness, _DisplayManager_assertValidDisplayContextCommand, _DisplayManager_maxCommandDataLength_get, _DisplayManager_displayContextCommandBuffers, _DisplayManager_sendDisplayContextCommand, _DisplayManager_sendDisplayContextCommands, _DisplayManager_assertValidColorIndex, _DisplayManager_colors, _DisplayManager_opacities, _DisplayManager_assertValidLineWidth, _DisplayManager_clampBox, _DisplayManager_isDisplayReady, _DisplayManager_parseDisplayReady, _DisplayManager_mtu;
 const _console$o = createConsole("DisplayManager", { log: true });
 const DisplayCommands = ["sleep", "wake"];
 const DisplayStatuses = ["awake", "asleep"];
@@ -3853,6 +3853,7 @@ const DisplayMessageTypes = [
     "getDisplayBrightness",
     "setDisplayBrightness",
     "displayContextCommands",
+    "displayReady",
 ];
 const DisplaySegmentCaps = ["flat", "round"];
 const DefaultDisplayContextState = {
@@ -3946,6 +3947,7 @@ class DisplayManager {
         _DisplayManager_displayContextCommandBuffers.set(this, []);
         _DisplayManager_colors.set(this, []);
         _DisplayManager_opacities.set(this, []);
+        _DisplayManager_isDisplayReady.set(this, true);
         _DisplayManager_mtu.set(this, void 0);
         autoBind$1(this);
     }
@@ -4095,10 +4097,12 @@ class DisplayManager {
     }
     async showDisplay(sendImmediately = true) {
         _console$o.log("showDisplay");
+        __classPrivateFieldSet(this, _DisplayManager_isDisplayReady, false, "f");
         await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "show", undefined, sendImmediately);
     }
     async clearDisplay(sendImmediately = true) {
         _console$o.log("clearDisplay");
+        __classPrivateFieldSet(this, _DisplayManager_isDisplayReady, false, "f");
         await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "clear", undefined, sendImmediately);
     }
     get colors() {
@@ -4499,7 +4503,7 @@ class DisplayManager {
         angleOffset = clamp(angleOffset, -twoPi, twoPi);
         _console$o.log({ startAngle, angleOffset });
         angleOffset /= twoPi;
-        angleOffset *= (angleOffset > 0 ? Int16Min : Int16Max) - 1;
+        angleOffset *= (angleOffset > 0 ? Int16Max : -Int16Min) - 1;
         const dataView = new DataView(new ArrayBuffer(2 * 6));
         dataView.setInt16(0, centerX, true);
         dataView.setInt16(2, centerY, true);
@@ -4513,6 +4517,9 @@ class DisplayManager {
     selectSpriteSheet(index, sendImmediately) {
     }
     drawSprite(index, x, y, sendImmediately) {
+    }
+    get isDisplayReady() {
+        return this.isDisplayAvailable && __classPrivateFieldGet(this, _DisplayManager_isDisplayReady, "f");
     }
     parseMessage(messageType, dataView) {
         _console$o.log({ messageType, dataView });
@@ -4530,6 +4537,9 @@ class DisplayManager {
             case "setDisplayBrightness":
                 __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_parseDisplayBrightness).call(this, dataView);
                 break;
+            case "displayReady":
+                __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_parseDisplayReady).call(this, dataView);
+                break;
             default:
                 throw Error(`uncaught messageType ${messageType}`);
         }
@@ -4545,6 +4555,7 @@ class DisplayManager {
         __classPrivateFieldGet(this, _DisplayManager_displayContextStateHelper, "f").reset();
         __classPrivateFieldGet(this, _DisplayManager_colors, "f").length = 0;
         __classPrivateFieldGet(this, _DisplayManager_opacities, "f").length = 0;
+        __classPrivateFieldSet(this, _DisplayManager_isDisplayReady, true, "f");
     }
     get mtu() {
         return __classPrivateFieldGet(this, _DisplayManager_mtu, "f");
@@ -4553,7 +4564,7 @@ class DisplayManager {
         __classPrivateFieldSet(this, _DisplayManager_mtu, newMtu, "f");
     }
 }
-_DisplayManager_isDisplayAvailable = new WeakMap(), _DisplayManager_displayContextStateHelper = new WeakMap(), _DisplayManager_displayStatus = new WeakMap(), _DisplayManager_displayInformation = new WeakMap(), _DisplayManager_displayBrightness = new WeakMap(), _DisplayManager_displayContextCommandBuffers = new WeakMap(), _DisplayManager_colors = new WeakMap(), _DisplayManager_opacities = new WeakMap(), _DisplayManager_mtu = new WeakMap(), _DisplayManager_instances = new WeakSet(), _DisplayManager_dispatchEvent_get = function _DisplayManager_dispatchEvent_get() {
+_DisplayManager_isDisplayAvailable = new WeakMap(), _DisplayManager_displayContextStateHelper = new WeakMap(), _DisplayManager_displayStatus = new WeakMap(), _DisplayManager_displayInformation = new WeakMap(), _DisplayManager_displayBrightness = new WeakMap(), _DisplayManager_displayContextCommandBuffers = new WeakMap(), _DisplayManager_colors = new WeakMap(), _DisplayManager_opacities = new WeakMap(), _DisplayManager_isDisplayReady = new WeakMap(), _DisplayManager_mtu = new WeakMap(), _DisplayManager_instances = new WeakSet(), _DisplayManager_dispatchEvent_get = function _DisplayManager_dispatchEvent_get() {
     return this.eventDispatcher.dispatchEvent;
 }, _DisplayManager_assertDisplayIsAvailable = function _DisplayManager_assertDisplayIsAvailable() {
     _console$o.assertWithError(__classPrivateFieldGet(this, _DisplayManager_isDisplayAvailable, "f"), "display is not available");
@@ -4684,6 +4695,9 @@ async function _DisplayManager_sendDisplayCommand(command, sendImmediately) {
 }, _DisplayManager_clampBox = function _DisplayManager_clampBox(x, y, width, height) {
     _console$o.log("clampBox", { x, y, width, height });
     return { x, y, width, height };
+}, _DisplayManager_parseDisplayReady = function _DisplayManager_parseDisplayReady(dataView) {
+    __classPrivateFieldSet(this, _DisplayManager_isDisplayReady, true, "f");
+    __classPrivateFieldGet(this, _DisplayManager_instances, "a", _DisplayManager_dispatchEvent_get).call(this, "displayReady", {});
 };
 
 var _BaseConnectionManager_instances, _a$4, _BaseConnectionManager_AssertValidTxRxMessageType, _BaseConnectionManager_assertIsSupported, _BaseConnectionManager_status, _BaseConnectionManager_assertIsNotConnecting, _BaseConnectionManager_assertIsNotDisconnecting, _BaseConnectionManager_pendingMessages, _BaseConnectionManager_isSendingMessages, _BaseConnectionManager_onRxMessage, _BaseConnectionManager_timer, _BaseConnectionManager_checkConnection;
@@ -7865,6 +7879,9 @@ class Device {
     }
     get isDisplayAvailable() {
         return __classPrivateFieldGet(this, _Device_displayManager, "f").isDisplayAvailable;
+    }
+    get isDisplayReady() {
+        return __classPrivateFieldGet(this, _Device_displayManager, "f").isDisplayReady;
     }
     get displayContextState() {
         return __classPrivateFieldGet(this, _Device_displayManager, "f").displayContextState;

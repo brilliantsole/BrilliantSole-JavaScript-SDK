@@ -14,7 +14,7 @@ export declare const DisplayPixelDepths: readonly ["1", "2", "4"];
 export type DisplayPixelDepth = (typeof DisplayPixelDepths)[number];
 export declare const DisplayBrightnesses: readonly ["veryLow", "low", "medium", "high", "veryHigh"];
 export type DisplayBrightness = (typeof DisplayBrightnesses)[number];
-export declare const DisplayMessageTypes: readonly ["isDisplayAvailable", "displayStatus", "displayInformation", "displayCommand", "getDisplayBrightness", "setDisplayBrightness", "displayContextCommands"];
+export declare const DisplayMessageTypes: readonly ["isDisplayAvailable", "displayStatus", "displayInformation", "displayCommand", "getDisplayBrightness", "setDisplayBrightness", "displayContextCommands", "displayReady"];
 export type DisplayMessageType = (typeof DisplayMessageTypes)[number];
 export declare const DisplaySegmentCaps: readonly ["flat", "round"];
 export type DisplaySegmentCap = (typeof DisplaySegmentCaps)[number];
@@ -66,7 +66,7 @@ export declare const DisplayInformationValues: {
 export declare const DisplayContextCommands: readonly ["show", "clear", "setColor", "setColorOpacity", "setOpacity", "saveContext", "restoreContext", "selectFillColor", "selectLineColor", "setLineWidth", "setRotation", "clearRotation", "setSegmentStartCap", "setSegmentEndCap", "setSegmentCap", "setSegmentStartRadius", "setSegmentEndRadius", "setSegmentRadius", "setCropTop", "setCropRight", "setCropBottom", "setCropLeft", "clearCrop", "setRotationCropTop", "setRotationCropRight", "setRotationCropBottom", "setRotationCropLeft", "clearRotationCrop", "clearRect", "drawRect", "drawRoundRect", "drawCircle", "drawEllipse", "drawPolygon", "drawSegment", "drawSegments", "drawArc", "drawArcEllipse", "drawBitmap", "selectSpriteSheet", "sprite", "selectFont", "drawText"];
 export type DisplayContextCommand = (typeof DisplayContextCommands)[number];
 export declare const RequiredDisplayMessageTypes: DisplayMessageType[];
-export declare const DisplayEventTypes: readonly ["isDisplayAvailable", "displayStatus", "displayInformation", "displayCommand", "getDisplayBrightness", "setDisplayBrightness", "displayContextCommands", "displayContextState", "displayColor", "displayColorOpacity", "displayOpacity"];
+export declare const DisplayEventTypes: readonly ["isDisplayAvailable", "displayStatus", "displayInformation", "displayCommand", "getDisplayBrightness", "setDisplayBrightness", "displayContextCommands", "displayReady", "displayContextState", "displayColor", "displayColorOpacity", "displayOpacity"];
 export type DisplayEventType = (typeof DisplayEventTypes)[number];
 export interface DisplayEventMessages {
     isDisplayAvailable: {
@@ -98,6 +98,7 @@ export interface DisplayEventMessages {
     displayOpacity: {
         opacity: number;
     };
+    displayReady: {};
 }
 export type DisplayEventDispatcher = EventDispatcher<Device, DisplayEventType, DisplayEventMessages>;
 export type SendDisplayMessageCallback = SendMessageCallback<DisplayMessageType>;
@@ -106,7 +107,7 @@ declare class DisplayManager {
     constructor();
     sendMessage: SendDisplayMessageCallback;
     eventDispatcher: DisplayEventDispatcher;
-    get waitForEvent(): <T extends "isDisplayAvailable" | "displayStatus" | "displayInformation" | "displayCommand" | "getDisplayBrightness" | "setDisplayBrightness" | "displayContextCommands" | "displayContextState" | "displayColor" | "displayColorOpacity" | "displayOpacity">(type: T) => Promise<{
+    get waitForEvent(): <T extends "isDisplayAvailable" | "displayStatus" | "displayInformation" | "displayCommand" | "getDisplayBrightness" | "setDisplayBrightness" | "displayContextCommands" | "displayReady" | "displayContextState" | "displayColor" | "displayColorOpacity" | "displayOpacity">(type: T) => Promise<{
         type: T;
         target: Device;
         message: DisplayEventMessages[T];
@@ -115,7 +116,7 @@ declare class DisplayManager {
     get isDisplayAvailable(): boolean;
     get displayContextState(): DisplayContextState;
     setContextState(newState: PartialDisplayContextState, sendImmediately?: boolean): Promise<void>;
-    get displayStatus(): "awake" | "asleep";
+    get displayStatus(): "asleep" | "awake";
     get isDisplayAwake(): boolean;
     wake(): Promise<void>;
     sleep(): Promise<void>;
@@ -129,7 +130,7 @@ declare class DisplayManager {
         width: number;
         height: number;
     };
-    get type(): "none" | "generic" | "monocularLeft" | "monocularRight" | "binocular";
+    get type(): "generic" | "none" | "monocularLeft" | "monocularRight" | "binocular";
     get displayBrightness(): "veryLow" | "low" | "medium" | "high" | "veryHigh";
     setDisplayBrightness(newDisplayBrightness: DisplayBrightness, sendImmediately?: boolean): Promise<void>;
     flushDisplayContextCommands(): Promise<void>;
@@ -177,6 +178,7 @@ declare class DisplayManager {
     drawArcEllipse(centerX: number, centerY: number, radiusX: number, radiusY: number, startAngle: number, angleOffset: number, isRadians?: boolean, sendImmediately?: boolean): Promise<void>;
     selectSpriteSheet(index: number, sendImmediately?: boolean): void;
     drawSprite(index: number, x: number, y: number, sendImmediately?: boolean): void;
+    get isDisplayReady(): boolean;
     parseMessage(messageType: DisplayMessageType, dataView: DataView): void;
     clear(): void;
     get mtu(): number;

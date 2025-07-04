@@ -1432,6 +1432,9 @@ class Device {
   get isDisplayAvailable() {
     return this.#displayManager.isDisplayAvailable;
   }
+  get isDisplayReady() {
+    return this.#displayManager.isDisplayReady;
+  }
   get displayContextState() {
     return this.#displayManager.displayContextState;
   }

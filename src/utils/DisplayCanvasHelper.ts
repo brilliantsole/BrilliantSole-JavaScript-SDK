@@ -1557,7 +1557,7 @@ class DisplayCanvasHelper {
       }
     }
 
-    // Fill the full trapezoid
+    // full trapezoid
     this.context.beginPath();
     this.context.moveTo(sx1, sy1);
     this.context.lineTo(ex1, ey1);

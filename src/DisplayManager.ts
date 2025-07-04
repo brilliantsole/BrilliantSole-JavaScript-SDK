@@ -77,6 +77,7 @@ export const DisplayMessageTypes = [
   "getDisplayBrightness",
   "setDisplayBrightness",
   "displayContextCommands",
+  "displayReady",
 ] as const;
 export type DisplayMessageType = (typeof DisplayMessageTypes)[number];
 
@@ -266,6 +267,7 @@ export interface DisplayEventMessages {
   displayOpacity: {
     opacity: number;
   };
+  displayReady: {};
 }
 
 export type DisplayEventDispatcher = EventDispatcher<
@@ -664,10 +666,12 @@ class DisplayManager {
   }
   async showDisplay(sendImmediately = true) {
     _console.log("showDisplay");
+    this.#isDisplayReady = false;
     await this.#sendDisplayContextCommand("show", undefined, sendImmediately);
   }
   async clearDisplay(sendImmediately = true) {
     _console.log("clearDisplay");
+    this.#isDisplayReady = false;
     await this.#sendDisplayContextCommand("clear", undefined, sendImmediately);
   }
 
@@ -1350,7 +1354,7 @@ class DisplayManager {
     _console.log({ startAngle, angleOffset });
 
     angleOffset /= twoPi;
-    angleOffset *= (angleOffset > 0 ? Int16Min : Int16Max) - 1;
+    angleOffset *= (angleOffset > 0 ? Int16Max : -Int16Min) - 1;
 
     const dataView = new DataView(new ArrayBuffer(2 * 6));
     dataView.setInt16(0, centerX, true);
@@ -1375,6 +1379,15 @@ class DisplayManager {
     // FILL
   }
 
+  #isDisplayReady = true;
+  get isDisplayReady() {
+    return this.isDisplayAvailable && this.#isDisplayReady;
+  }
+  #parseDisplayReady(dataView: DataView) {
+    this.#isDisplayReady = true;
+    this.#dispatchEvent("displayReady", {});
+  }
+
   // MESSAGE
   parseMessage(messageType: DisplayMessageType, dataView: DataView) {
     _console.log({ messageType, dataView });
@@ -1392,6 +1405,9 @@ class DisplayManager {
       case "getDisplayBrightness":
       case "setDisplayBrightness":
         this.#parseDisplayBrightness(dataView);
+        break;
+      case "displayReady":
+        this.#parseDisplayReady(dataView);
         break;
       default:
         throw Error(`uncaught messageType ${messageType}`);
@@ -1412,6 +1428,8 @@ class DisplayManager {
     this.#displayContextStateHelper.reset();
     this.#colors.length = 0;
     this.#opacities.length = 0;
+
+    this.#isDisplayReady = true;
   }
 
   // MTU
