@@ -4490,7 +4490,7 @@ class DisplayManager {
     async drawArc(centerX, centerY, radius, startAngle, angleOffset, isRadians, sendImmediately) {
         startAngle = isRadians ? startAngle : degToRad(startAngle);
         startAngle = normalizeRadians(startAngle);
-        angleOffset = isRadians ? startAngle : degToRad(angleOffset);
+        angleOffset = isRadians ? angleOffset : degToRad(angleOffset);
         angleOffset = clamp(angleOffset, -twoPi, twoPi);
         _console$j.log({ startAngle, angleOffset });
         angleOffset /= twoPi;
@@ -4508,7 +4508,7 @@ class DisplayManager {
     async drawArcEllipse(centerX, centerY, radiusX, radiusY, startAngle, angleOffset, isRadians, sendImmediately) {
         startAngle = isRadians ? startAngle : degToRad(startAngle);
         startAngle = normalizeRadians(startAngle);
-        angleOffset = isRadians ? startAngle : degToRad(angleOffset);
+        angleOffset = isRadians ? angleOffset : degToRad(angleOffset);
         angleOffset = clamp(angleOffset, -twoPi, twoPi);
         _console$j.log({ startAngle, angleOffset });
         angleOffset /= twoPi;
@@ -8548,17 +8548,21 @@ class DisplayCanvasHelper {
         }
     }
     async drawArc(centerX, centerY, radius, startAngle, angleOffset, isRadians, sendImmediately) {
+        startAngle = isRadians ? startAngle : degToRad(startAngle);
+        angleOffset = isRadians ? angleOffset : degToRad(angleOffset);
         const contextState = { ...this.contextState };
-        __classPrivateFieldGet(this, _DisplayCanvasHelper_rearDrawStack, "f").push(() => __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_drawArcToCanvas).call(this, centerX, centerY, radius, startAngle, angleOffset, isRadians || false, contextState));
+        __classPrivateFieldGet(this, _DisplayCanvasHelper_rearDrawStack, "f").push(() => __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_drawArcToCanvas).call(this, centerX, centerY, radius, startAngle, angleOffset, true, contextState));
         if (this.device?.isConnected) {
-            await this.device.drawDisplayArc(centerX, centerY, radius, startAngle, angleOffset, isRadians, sendImmediately);
+            await this.device.drawDisplayArc(centerX, centerY, radius, startAngle, angleOffset, true, sendImmediately);
         }
     }
     async drawArcEllipse(centerX, centerY, radiusX, radiusY, startAngle, angleOffset, isRadians, sendImmediately) {
+        startAngle = isRadians ? startAngle : degToRad(startAngle);
+        angleOffset = isRadians ? angleOffset : degToRad(angleOffset);
         const contextState = { ...this.contextState };
-        __classPrivateFieldGet(this, _DisplayCanvasHelper_rearDrawStack, "f").push(() => __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_drawArcEllipseToCanvas).call(this, centerX, centerY, radiusX, radiusY, startAngle, angleOffset, isRadians || false, contextState));
+        __classPrivateFieldGet(this, _DisplayCanvasHelper_rearDrawStack, "f").push(() => __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_drawArcEllipseToCanvas).call(this, centerX, centerY, radiusX, radiusY, startAngle, angleOffset, true, contextState));
         if (this.device?.isConnected) {
-            await this.device.drawDisplayArcEllipse(centerX, centerY, radiusX, radiusY, startAngle, angleOffset, isRadians, sendImmediately);
+            await this.device.drawDisplayArcEllipse(centerX, centerY, radiusX, radiusY, startAngle, angleOffset, true, sendImmediately);
         }
     }
     get brightness() {
@@ -9059,7 +9063,46 @@ _DisplayCanvasHelper_eventDispatcher = new WeakMap(), _DisplayCanvasHelper_canva
         }
     });
 }, _DisplayCanvasHelper_drawArcToCanvas = function _DisplayCanvasHelper_drawArcToCanvas(centerX, centerY, radius, startAngle, angleOffset, isRadians, contextState) {
+    __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_updateContext).call(this, contextState);
+    __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_save).call(this);
+    const box = __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_getCircleBoundingBox).call(this, centerX, centerY, radius, contextState);
+    if (__classPrivateFieldGet(this, _DisplayCanvasHelper_clearBoundingBoxOnDraw, "f")) {
+        __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_clearBoundingBox).call(this, box);
+    }
+    __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_applyClip).call(this, box, contextState);
+    __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_transformContext).call(this, centerX, centerY, contextState.rotation);
+    __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_applyRotationClip).call(this, box, contextState);
+    this.context.beginPath();
+    this.context.moveTo(0, 0);
+    const clockwise = angleOffset > 0;
+    this.context.arc(0, 0, radius, startAngle, startAngle + angleOffset, !clockwise);
+    this.context.closePath();
+    this.context.fill();
+    if (contextState.lineWidth) {
+        this.context.stroke();
+    }
+    __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_restore).call(this);
 }, _DisplayCanvasHelper_drawArcEllipseToCanvas = function _DisplayCanvasHelper_drawArcEllipseToCanvas(centerX, centerY, radiusX, radiusY, startAngle, angleOffset, isRadians, contextState) {
+    __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_updateContext).call(this, contextState);
+    __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_save).call(this);
+    const box = __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_getEllipseBoundingBox).call(this, centerX, centerY, radiusX, radiusY, contextState);
+    if (__classPrivateFieldGet(this, _DisplayCanvasHelper_clearBoundingBoxOnDraw, "f")) {
+        __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_clearBoundingBox).call(this, box);
+    }
+    const rotatedBox = __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_rotateBoundingBox).call(this, box, contextState.rotation);
+    __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_applyClip).call(this, rotatedBox, contextState);
+    __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_transformContext).call(this, centerX, centerY, contextState.rotation);
+    __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_applyRotationClip).call(this, box, contextState);
+    this.context.beginPath();
+    this.context.moveTo(0, 0);
+    const clockwise = angleOffset > 0;
+    this.context.ellipse(0, 0, radiusX, radiusY, 0, startAngle, startAngle + angleOffset, !clockwise);
+    this.context.closePath();
+    this.context.fill();
+    if (contextState.lineWidth > 0) {
+        this.context.stroke();
+    }
+    __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_restore).call(this);
 }, _DisplayCanvasHelper_updateDeviceBrightness = async function _DisplayCanvasHelper_updateDeviceBrightness(sendImmediately) {
     if (!this.device?.isConnected) {
         return;

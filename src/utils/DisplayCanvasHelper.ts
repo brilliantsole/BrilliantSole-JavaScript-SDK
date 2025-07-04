@@ -41,6 +41,7 @@ import {
   normalizedVector2,
   normalizeRadians,
   radToDeg,
+  twoPi,
   Uint16Max,
   Vector2,
 } from "./MathUtils.ts";
@@ -1694,7 +1695,42 @@ class DisplayCanvasHelper {
     isRadians: boolean,
     contextState: DisplayContextState
   ) {
-    // FILL
+    this.#updateContext(contextState);
+
+    this.#save();
+    const box = this.#getCircleBoundingBox(
+      centerX,
+      centerY,
+      radius,
+      contextState
+    );
+    if (this.#clearBoundingBoxOnDraw) {
+      this.#clearBoundingBox(box);
+    }
+    this.#applyClip(box, contextState);
+
+    this.#transformContext(centerX, centerY, contextState.rotation);
+
+    this.#applyRotationClip(box, contextState);
+
+    this.context.beginPath();
+    this.context.moveTo(0, 0);
+    const clockwise = angleOffset > 0;
+    this.context.arc(
+      0,
+      0,
+      radius,
+      startAngle,
+      startAngle + angleOffset,
+      !clockwise
+    );
+    this.context.closePath();
+
+    this.context.fill();
+    if (contextState.lineWidth) {
+      this.context.stroke();
+    }
+    this.#restore();
   }
   async drawArc(
     centerX: number,
@@ -1705,6 +1741,9 @@ class DisplayCanvasHelper {
     isRadians?: boolean,
     sendImmediately?: boolean
   ) {
+    startAngle = isRadians ? startAngle : degToRad(startAngle);
+    angleOffset = isRadians ? angleOffset : degToRad(angleOffset);
+
     const contextState = { ...this.contextState };
     this.#rearDrawStack.push(() =>
       this.#drawArcToCanvas(
@@ -1713,7 +1752,7 @@ class DisplayCanvasHelper {
         radius,
         startAngle,
         angleOffset,
-        isRadians || false,
+        true,
         contextState
       )
     );
@@ -1724,7 +1763,7 @@ class DisplayCanvasHelper {
         radius,
         startAngle,
         angleOffset,
-        isRadians,
+        true,
         sendImmediately
       );
     }
@@ -1739,7 +1778,46 @@ class DisplayCanvasHelper {
     isRadians: boolean,
     contextState: DisplayContextState
   ) {
-    // FILL
+    this.#updateContext(contextState);
+
+    this.#save();
+    const box = this.#getEllipseBoundingBox(
+      centerX,
+      centerY,
+      radiusX,
+      radiusY,
+      contextState
+    );
+    if (this.#clearBoundingBoxOnDraw) {
+      this.#clearBoundingBox(box);
+    }
+
+    const rotatedBox = this.#rotateBoundingBox(box, contextState.rotation);
+    this.#applyClip(rotatedBox, contextState);
+
+    this.#transformContext(centerX, centerY, contextState.rotation);
+
+    this.#applyRotationClip(box, contextState);
+
+    this.context.beginPath();
+    this.context.moveTo(0, 0);
+    const clockwise = angleOffset > 0;
+    this.context.ellipse(
+      0,
+      0,
+      radiusX,
+      radiusY,
+      0,
+      startAngle,
+      startAngle + angleOffset,
+      !clockwise
+    );
+    this.context.closePath();
+    this.context.fill();
+    if (contextState.lineWidth > 0) {
+      this.context.stroke();
+    }
+    this.#restore();
   }
   async drawArcEllipse(
     centerX: number,
@@ -1751,6 +1829,9 @@ class DisplayCanvasHelper {
     isRadians?: boolean,
     sendImmediately?: boolean
   ) {
+    startAngle = isRadians ? startAngle : degToRad(startAngle);
+    angleOffset = isRadians ? angleOffset : degToRad(angleOffset);
+
     const contextState = { ...this.contextState };
     this.#rearDrawStack.push(() =>
       this.#drawArcEllipseToCanvas(
@@ -1760,7 +1841,7 @@ class DisplayCanvasHelper {
         radiusY,
         startAngle,
         angleOffset,
-        isRadians || false,
+        true,
         contextState
       )
     );
@@ -1772,7 +1853,7 @@ class DisplayCanvasHelper {
         radiusY,
         startAngle,
         angleOffset,
-        isRadians,
+        true,
         sendImmediately
       );
     }

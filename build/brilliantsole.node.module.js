@@ -4481,7 +4481,7 @@ class DisplayManager {
     async drawArc(centerX, centerY, radius, startAngle, angleOffset, isRadians, sendImmediately) {
         startAngle = isRadians ? startAngle : degToRad(startAngle);
         startAngle = normalizeRadians(startAngle);
-        angleOffset = isRadians ? startAngle : degToRad(angleOffset);
+        angleOffset = isRadians ? angleOffset : degToRad(angleOffset);
         angleOffset = clamp(angleOffset, -twoPi, twoPi);
         _console$o.log({ startAngle, angleOffset });
         angleOffset /= twoPi;
@@ -4499,7 +4499,7 @@ class DisplayManager {
     async drawArcEllipse(centerX, centerY, radiusX, radiusY, startAngle, angleOffset, isRadians, sendImmediately) {
         startAngle = isRadians ? startAngle : degToRad(startAngle);
         startAngle = normalizeRadians(startAngle);
-        angleOffset = isRadians ? startAngle : degToRad(angleOffset);
+        angleOffset = isRadians ? angleOffset : degToRad(angleOffset);
         angleOffset = clamp(angleOffset, -twoPi, twoPi);
         _console$o.log({ startAngle, angleOffset });
         angleOffset /= twoPi;

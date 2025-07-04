@@ -1314,7 +1314,7 @@ class DisplayManager {
     startAngle = isRadians ? startAngle : degToRad(startAngle);
     startAngle = normalizeRadians(startAngle);
 
-    angleOffset = isRadians ? startAngle : degToRad(angleOffset);
+    angleOffset = isRadians ? angleOffset : degToRad(angleOffset);
     angleOffset = clamp(angleOffset, -twoPi, twoPi);
     _console.log({ startAngle, angleOffset });
 
@@ -1349,7 +1349,7 @@ class DisplayManager {
     startAngle = isRadians ? startAngle : degToRad(startAngle);
     startAngle = normalizeRadians(startAngle);
 
-    angleOffset = isRadians ? startAngle : degToRad(angleOffset);
+    angleOffset = isRadians ? angleOffset : degToRad(angleOffset);
     angleOffset = clamp(angleOffset, -twoPi, twoPi);
     _console.log({ startAngle, angleOffset });
 
