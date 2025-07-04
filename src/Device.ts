@@ -1615,6 +1615,10 @@ class Device {
     this.#assertDisplayIsAvailable();
     return this.#displayManager.clearRotationCrop;
   }
+  get setDisplayArcClockwise() {
+    this.#assertDisplayIsAvailable();
+    return this.#displayManager.setArcClockwise;
+  }
   get flushDisplayContextCommands() {
     this.#assertDisplayIsAvailable();
     return this.#displayManager.flushDisplayContextCommands;
@@ -1647,6 +1651,14 @@ class Device {
   get drawDisplaySegments() {
     this.#assertDisplayIsAvailable();
     return this.#displayManager.drawSegments;
+  }
+  get drawDisplayArc() {
+    this.#assertDisplayIsAvailable();
+    return this.#displayManager.drawArc;
+  }
+  get drawDisplayArcEllipse() {
+    this.#assertDisplayIsAvailable();
+    return this.#displayManager.drawArcEllipse;
   }
 
   get setDisplayContextState() {

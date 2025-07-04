@@ -2238,6 +2238,9 @@ const drawShape = BS.ThrottleUtils.throttle(
         drawX,
         drawY,
         drawBorderRadius,
+        drawArcClockwise,
+        drawStartAngle,
+        drawEndAngle,
       });
       if (updatedParams?.includes("lineWidth")) {
         device.setDisplayLineWidth(lineWidth);
@@ -2284,6 +2287,10 @@ const drawShape = BS.ThrottleUtils.throttle(
         device.setDisplayRotationCropLeft(drawRotationCropLeft);
       }
 
+      if (updatedParams?.includes("arcClockwise")) {
+        device.setDisplayArcClockwise(drawArcClockwise);
+      }
+
       switch (drawShapeType) {
         case "drawRect":
           device.drawDisplayRect(drawX, drawY, drawWidth, drawHeight);
@@ -2313,6 +2320,25 @@ const drawShape = BS.ThrottleUtils.throttle(
           break;
         case "drawSegment":
           device.drawDisplaySegment(drawX, drawY, drawEndX, drawEndY);
+          break;
+        case "drawArc":
+          device.drawDisplayArc(
+            drawX,
+            drawY,
+            drawRadius,
+            drawStartAngle,
+            drawEndAngle
+          );
+          break;
+        case "drawArcEllipse":
+          device.drawDisplayArcEllipse(
+            drawX,
+            drawY,
+            drawWidth,
+            drawHeight,
+            drawStartAngle,
+            drawEndAngle
+          );
           break;
         default:
           console.error(`uncaught drawShapeType ${drawShapeType}`);
@@ -2527,6 +2553,16 @@ drawRotationCropLeftInput.addEventListener("input", () => {
   drawShape(["rotationCropLeft"]);
 });
 
+const drawArcClockwiseContainer = document.getElementById("drawArcClockwise");
+const drawArcClockwiseInput = drawArcClockwiseContainer.querySelector("input");
+let drawArcClockwise = drawArcClockwiseInput.checked;
+
+drawArcClockwiseInput.addEventListener("input", () => {
+  drawArcClockwise = drawArcClockwiseInput.checked;
+  //console.log({ drawArcClockwise });
+  drawShape(["arcClockwise"]);
+});
+
 const drawXContainer = document.getElementById("drawX");
 const drawXInput = drawXContainer.querySelector("input");
 const drawXSpan = drawXContainer.querySelector("span");
@@ -2633,6 +2669,30 @@ drawEndYInput.addEventListener("input", () => {
   drawEndY = Number(drawEndYInput.value);
   //console.log({ drawEndY });
   drawEndYSpan.innerText = drawEndY;
+  drawShape();
+});
+
+const drawStartAngleContainer = document.getElementById("drawStartAngle");
+const drawStartAngleInput = drawStartAngleContainer.querySelector("input");
+const drawStartAngleSpan = drawStartAngleContainer.querySelector("span");
+let drawStartAngle = Number(drawStartAngleInput.value);
+
+drawStartAngleInput.addEventListener("input", () => {
+  drawStartAngle = Number(drawStartAngleInput.value);
+  //console.log({ drawStartAngle });
+  drawStartAngleSpan.innerText = drawStartAngle;
+  drawShape();
+});
+
+const drawEndAngleContainer = document.getElementById("drawEndAngle");
+const drawEndAngleInput = drawEndAngleContainer.querySelector("input");
+const drawEndAngleSpan = drawEndAngleContainer.querySelector("span");
+let drawEndAngle = Number(drawEndAngleInput.value);
+
+drawEndAngleInput.addEventListener("input", () => {
+  drawEndAngle = Number(drawEndAngleInput.value);
+  //console.log({ drawEndAngle });
+  drawEndAngleSpan.innerText = drawEndAngle;
   drawShape();
 });
 

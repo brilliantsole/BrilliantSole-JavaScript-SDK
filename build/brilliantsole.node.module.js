@@ -3864,6 +3864,7 @@ const DefaultDisplayContextState = {
     rotationCropRight: 0,
     rotationCropBottom: 0,
     rotationCropLeft: 0,
+    arcClockwise: false,
 };
 const DisplayInformationValues = {
     type: DisplayTypes,
@@ -3898,6 +3899,7 @@ const DisplayContextCommands = [
     "setRotationCropBottom",
     "setRotationCropLeft",
     "clearRotationCrop",
+    "setArcClockwise",
     "clearRect",
     "drawRect",
     "drawRoundRect",
@@ -3906,6 +3908,9 @@ const DisplayContextCommands = [
     "drawPolygon",
     "drawSegment",
     "drawSegments",
+    "drawArc",
+    "drawArcEllipse",
+    "drawBitmap",
     "selectSpriteSheet",
     "sprite",
     "selectFont",
@@ -4008,6 +4013,9 @@ class DisplayManager {
                     break;
                 case "rotationCropLeft":
                     this.setRotationCropLeft(newState.rotationCropLeft);
+                    break;
+                case "arcClockwise":
+                    this.setArcClockwise(newState.arcClockwise);
                     break;
             }
         });
@@ -4372,6 +4380,19 @@ class DisplayManager {
         await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "clearRotationCrop", undefined, sendImmediately);
         __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_onDisplayContextStateUpdate).call(this, differences);
     }
+    async setArcClockwise(arcClockwise, sendImmediately) {
+        _console$o.log({ arcClockwise });
+        const differences = __classPrivateFieldGet(this, _DisplayManager_displayContextStateHelper, "f").update({
+            arcClockwise,
+        });
+        if (differences.length == 0) {
+            return;
+        }
+        const dataView = new DataView(new ArrayBuffer(1));
+        dataView.setUint8(0, arcClockwise ? 1 : 0);
+        await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "setArcClockwise", dataView.buffer, sendImmediately);
+        __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_onDisplayContextStateUpdate).call(this, differences);
+    }
     async clearRect(x, y, width, height, sendImmediately) {
         const { x: _x, y: _y, width: _width, height: _height, } = __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_clampBox).call(this, x, y, width, height);
         const dataView = new DataView(new ArrayBuffer(2 * 4));
@@ -4436,14 +4457,14 @@ class DisplayManager {
         _console$o.log("drawSegment data", dataView);
         await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "drawSegment", dataView.buffer, sendImmediately);
     }
-    async drawSegments(segments, sendImmediately) {
-        _console$o.assertRangeWithError("segmentsLength", segments.length, 2, 255);
-        _console$o.log({ segments });
-        const dataViewLength = 1 + segments.length * 4;
+    async drawSegments(points, sendImmediately) {
+        _console$o.assertRangeWithError("numberOfPoints", points.length, 2, 255);
+        _console$o.log({ points });
+        const dataViewLength = 1 + points.length * 4;
         if (dataViewLength > __classPrivateFieldGet(this, _DisplayManager_instances, "a", _DisplayManager_maxCommandDataLength_get)) {
-            const mid = Math.floor(segments.length / 2);
-            const firstHalf = segments.slice(0, mid + 1);
-            const secondHalf = segments.slice(mid);
+            const mid = Math.floor(points.length / 2);
+            const firstHalf = points.slice(0, mid + 1);
+            const secondHalf = points.slice(mid);
             _console$o.log({ firstHalf, secondHalf });
             _console$o.log("sending first half", firstHalf);
             await this.drawSegments(firstHalf, false);
@@ -4453,8 +4474,8 @@ class DisplayManager {
         }
         const dataView = new DataView(new ArrayBuffer(dataViewLength));
         let offset = 0;
-        dataView.setUint8(offset++, segments.length);
-        segments.forEach((segment) => {
+        dataView.setUint8(offset++, points.length);
+        points.forEach((segment) => {
             dataView.setInt16(offset, segment.x, true);
             offset += 2;
             dataView.setInt16(offset, segment.y, true);
@@ -4462,6 +4483,37 @@ class DisplayManager {
         });
         _console$o.log("drawSegments data", dataView);
         await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "drawSegments", dataView.buffer, sendImmediately);
+    }
+    async drawArc(centerX, centerY, radius, startAngle, endAngle, isRadians, sendImmediately) {
+        startAngle = isRadians ? startAngle : degToRad(startAngle);
+        startAngle = normalizeRadians(startAngle);
+        endAngle = isRadians ? startAngle : degToRad(endAngle);
+        endAngle = normalizeRadians(endAngle);
+        _console$o.log({ startAngle, endAngle });
+        const dataView = new DataView(new ArrayBuffer(2 * 5));
+        dataView.setInt16(0, centerX, true);
+        dataView.setInt16(2, centerY, true);
+        dataView.setUint16(4, radius, true);
+        dataView.setUint16(6, formatRotation(startAngle), true);
+        dataView.setUint16(8, formatRotation(endAngle), true);
+        _console$o.log("drawArc data", dataView);
+        await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "drawArc", dataView.buffer, sendImmediately);
+    }
+    async drawArcEllipse(centerX, centerY, radiusX, radiusY, startAngle, endAngle, isRadians, sendImmediately) {
+        startAngle = isRadians ? startAngle : degToRad(startAngle);
+        startAngle = normalizeRadians(startAngle);
+        endAngle = isRadians ? startAngle : degToRad(endAngle);
+        endAngle = normalizeRadians(endAngle);
+        _console$o.log({ startAngle, endAngle });
+        const dataView = new DataView(new ArrayBuffer(2 * 6));
+        dataView.setInt16(0, centerX, true);
+        dataView.setInt16(2, centerY, true);
+        dataView.setUint16(4, radiusX, true);
+        dataView.setUint16(6, radiusY, true);
+        dataView.setUint16(8, startAngle, true);
+        dataView.setUint16(10, endAngle, true);
+        _console$o.log("drawArcEllipse data", dataView);
+        await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "drawArcEllipse", dataView.buffer, sendImmediately);
     }
     selectSpriteSheet(index, sendImmediately) {
     }
@@ -4640,7 +4692,7 @@ async function _DisplayManager_sendDisplayCommand(command, sendImmediately) {
 };
 
 var _BaseConnectionManager_instances, _a$4, _BaseConnectionManager_AssertValidTxRxMessageType, _BaseConnectionManager_assertIsSupported, _BaseConnectionManager_status, _BaseConnectionManager_assertIsNotConnecting, _BaseConnectionManager_assertIsNotDisconnecting, _BaseConnectionManager_pendingMessages, _BaseConnectionManager_isSendingMessages, _BaseConnectionManager_onRxMessage, _BaseConnectionManager_timer, _BaseConnectionManager_checkConnection;
-const _console$n = createConsole("BaseConnectionManager", { log: true });
+const _console$n = createConsole("BaseConnectionManager", { log: false });
 const ConnectionTypes = [
     "webBluetooth",
     "noble",
@@ -7988,6 +8040,10 @@ class Device {
         __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertDisplayIsAvailable).call(this);
         return __classPrivateFieldGet(this, _Device_displayManager, "f").clearRotationCrop;
     }
+    get setDisplayArcClockwise() {
+        __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertDisplayIsAvailable).call(this);
+        return __classPrivateFieldGet(this, _Device_displayManager, "f").setArcClockwise;
+    }
     get flushDisplayContextCommands() {
         __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertDisplayIsAvailable).call(this);
         return __classPrivateFieldGet(this, _Device_displayManager, "f").flushDisplayContextCommands;
@@ -8019,6 +8075,14 @@ class Device {
     get drawDisplaySegments() {
         __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertDisplayIsAvailable).call(this);
         return __classPrivateFieldGet(this, _Device_displayManager, "f").drawSegments;
+    }
+    get drawDisplayArc() {
+        __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertDisplayIsAvailable).call(this);
+        return __classPrivateFieldGet(this, _Device_displayManager, "f").drawArc;
+    }
+    get drawDisplayArcEllipse() {
+        __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertDisplayIsAvailable).call(this);
+        return __classPrivateFieldGet(this, _Device_displayManager, "f").drawArcEllipse;
     }
     get setDisplayContextState() {
         __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertDisplayIsAvailable).call(this);

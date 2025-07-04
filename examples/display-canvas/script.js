@@ -1008,7 +1008,7 @@ const getEyePosition = (side, center) => {
  * @param {Side} side
  * @param {TVector2} center
  */
-const drawEye = (side, center) => {
+const drawEye = async (side, center) => {
   const { pitch, roll, yaw } = faceParams.rotation;
   const { maxHeight, maxWidth, open, topCrop, bottomCrop } =
     faceParams.eyes[side];
@@ -1016,28 +1016,28 @@ const drawEye = (side, center) => {
   const isLeft = side == "left";
   const eyePosition = getEyePosition(side, center);
   eyePosition.rotateAround(center, roll);
-  ctx.selectFillColor(backgroundColorIndex);
-  ctx.selectLineColor(whiteColorIndex);
-  ctx.setLineWidth(faceParams.eyeLineWidth);
-  ctx.setRotationCropTop(topCrop);
-  ctx.setRotationCropBottom(bottomCrop);
-  ctx.setRotation(faceParams.eyeTilt * (isLeft ? 1 : -1) + roll, true);
+  await ctx.selectFillColor(backgroundColorIndex);
+  await ctx.selectLineColor(whiteColorIndex);
+  await ctx.setLineWidth(faceParams.eyeLineWidth);
+  await ctx.setRotationCropTop(topCrop);
+  await ctx.setRotationCropBottom(bottomCrop);
+  await ctx.setRotation(faceParams.eyeTilt * (isLeft ? 1 : -1) + roll, true);
 
   const widthScalar = 1 - getYawInterpolation(side, faceParams.yawWidthScalars);
 
-  ctx.drawEllipse(
+  await ctx.drawEllipse(
     eyePosition.x,
     eyePosition.y,
     maxWidth * widthScalar,
     maxHeight * open
   );
-  ctx.clearRotationCrop();
+  await ctx.clearRotationCrop();
 };
 /**
  * @param {Side} side
  * @param {TVector2} center
  */
-const drawPupil = (side, center) => {
+const drawPupil = async (side, center) => {
   const { open, pupil, maxWidth, maxHeight } = faceParams.eyes[side];
 
   const { maxRadius, position } = pupil;
@@ -1067,11 +1067,11 @@ const drawPupil = (side, center) => {
   pupilPosition.add(eyePosition);
   pupilPosition.rotateAround(center, faceParams.rotation.roll);
 
-  ctx.selectFillColor(backgroundColorIndex);
-  ctx.selectLineColor(pupilOutlineColorIndex);
-  ctx.setLineWidth(faceParams.pupilLineWidth);
+  await ctx.selectFillColor(backgroundColorIndex);
+  await ctx.selectLineColor(pupilOutlineColorIndex);
+  await ctx.setLineWidth(faceParams.pupilLineWidth);
 
-  ctx.drawEllipse(
+  await ctx.drawEllipse(
     pupilPosition.x,
     pupilPosition.y,
     maxRadius * widthScalar,
@@ -1082,7 +1082,7 @@ const drawPupil = (side, center) => {
  * @param {Side} side
  * @param {TVector2} center
  */
-const drawEyebrow = (side, center) => {
+const drawEyebrow = async (side, center) => {
   const { eyebrowCap, eyebrowLineWidth, eyebrowRadius, eyes } = faceParams;
   const { open, eyebrow } = eyes[side];
   const { isBlinking } = faceParams.blink;
@@ -1136,12 +1136,12 @@ const drawEyebrow = (side, center) => {
   eyebrowStartPosition.rotateAround(center, faceParams.rotation.roll);
   eyebrowEndPosition.rotateAround(center, faceParams.rotation.roll);
 
-  ctx.selectFillColor(hairColorIndex);
-  ctx.selectLineColor(hairOutlineColorIndex);
-  ctx.setLineWidth(eyebrowLineWidth);
+  await ctx.selectFillColor(hairColorIndex);
+  await ctx.selectLineColor(hairOutlineColorIndex);
+  await ctx.setLineWidth(eyebrowLineWidth);
 
-  ctx.setSegmentStartCap(eyebrowCap.start);
-  ctx.setSegmentEndCap(eyebrowCap.end);
+  await ctx.setSegmentStartCap(eyebrowCap.start);
+  await ctx.setSegmentEndCap(eyebrowCap.end);
   const eyebrowRadiusInterpolation = 1 - yawInterpolation;
   const startRadius = THREE.MathUtils.lerp(
     eyebrowRadius.start.min,
@@ -1153,10 +1153,10 @@ const drawEyebrow = (side, center) => {
     eyebrowRadius.end.max,
     eyebrowRadiusInterpolation
   );
-  ctx.setSegmentStartRadius(startRadius);
-  ctx.setSegmentEndRadius(endRadius);
+  await ctx.setSegmentStartRadius(startRadius);
+  await ctx.setSegmentEndRadius(endRadius);
 
-  ctx.drawSegment(
+  await ctx.drawSegment(
     eyebrowStartPosition.x,
     eyebrowStartPosition.y,
     eyebrowEndPosition.x,
@@ -1167,7 +1167,7 @@ const drawEyebrow = (side, center) => {
  * @param {Side} side
  * @param {TVector2} center
  */
-const drawCheek = (side, center) => {
+const drawCheek = async (side, center) => {
   const { eyes, cheekCap, cheekRadius } = faceParams;
   const { roll } = faceParams.rotation;
   const { open, cheek, maxWidth, maxHeight } = eyes[side];
@@ -1202,18 +1202,23 @@ const drawCheek = (side, center) => {
 
     const height = maxHeight * 0.4;
 
-    ctx.selectFillColor(backgroundColorIndex);
-    ctx.selectLineColor(skinColorIndex);
-    ctx.setLineWidth(lineWidth);
-    ctx.setRotationCropBottom(height * 1.5);
+    await ctx.selectFillColor(backgroundColorIndex);
+    await ctx.selectLineColor(skinColorIndex);
+    await ctx.setLineWidth(lineWidth);
+    await ctx.setRotationCropBottom(height * 1.5);
 
-    ctx.setRotation(
+    await ctx.setRotation(
       faceParams.eyeTilt * (isLeft ? 1 : -1) + roll + rotation,
       true
     );
 
-    ctx.drawEllipse(cheekPosition.x, cheekPosition.y, cheekLength, height);
-    ctx.clearRotationCrop();
+    await ctx.drawEllipse(
+      cheekPosition.x,
+      cheekPosition.y,
+      cheekLength,
+      height
+    );
+    await ctx.clearRotationCrop();
   } else {
     const cheekStartPosition = new THREE.Vector2(sign * cheekLength, 0);
     const cheekEndPosition = new THREE.Vector2(-sign * cheekLength, 0);
@@ -1254,23 +1259,23 @@ const drawCheek = (side, center) => {
     );
   }
 };
-const draw = () => {
+const draw = async () => {
   const { width, height } = ctx;
   const center = new THREE.Vector2(
     width / 2 + faceParams.position.x,
     height / 2 + faceParams.position.y
   );
 
-  drawEye("left", center);
-  drawEye("right", center);
-  drawPupil("left", center);
-  drawPupil("right", center);
-  drawEyebrow("left", center);
-  drawEyebrow("right", center);
-  drawCheek("left", center);
-  drawCheek("right", center);
+  await drawEye("left", center);
+  await drawEye("right", center);
+  await drawPupil("left", center);
+  await drawPupil("right", center);
+  await drawEyebrow("left", center);
+  await drawEyebrow("right", center);
+  await drawCheek("left", center);
+  await drawCheek("right", center);
 
-  ctx.showDisplay();
+  await ctx.showDisplay();
 };
 function easeInOut(t) {
   return t * t * (3 - 2 * t);
@@ -1732,7 +1737,7 @@ const updateLookAt = () => {
   target.z += faceParams.refocus.offset.z;
   lookAt(target);
 };
-let throttleInterval = 120;
+let throttleInterval = 110;
 const updateInterval = (newInterval) => {
   throttleInterval = newInterval;
   startDrawing();

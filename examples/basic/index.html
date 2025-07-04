@@ -720,6 +720,11 @@
           <input type="range" min="0" max="200" step="1" value="0" />
           <span>0</span>px
         </label>
+
+        <label id="drawArcClockwise">
+          <b>arc clockwise</b>
+          <input type="checkbox" />
+        </label>
       </div>
 
       <div>
@@ -768,16 +773,28 @@
           <input type="range" min="0" max="400" step="1" value="50" />
           <span>50</span>px
         </label>
+        <label id="drawStartAngle">
+          start angle
+          <input type="range" min="0" max="360" step="1" value="0" />
+          <span>0</span>deg
+        </label>
+        <label id="drawEndAngle">
+          end angle
+          <input type="range" min="0" max="360" step="1" value="360" />
+          <span>360</span>deg
+        </label>
         <label>
           shape type
           <select id="drawShapeType">
             <optgroup label="draw shape">
               <option>drawRect</option>
               <option>drawCircle</option>
-              <option selected>drawRoundRect</option>
+              <option>drawRoundRect</option>
               <option>drawEllipse</option>
               <option>drawPolygon</option>
               <option>drawSegment</option>
+              <option selected>drawArc</option>
+              <option>drawArcEllipse</option>
             </optgroup>
           </select>
         </label>

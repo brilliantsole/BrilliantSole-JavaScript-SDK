@@ -45,7 +45,7 @@ import {
   Vector2,
 } from "./MathUtils.ts";
 
-const _console = createConsole("DisplayCanvasHelper", { log: false });
+const _console = createConsole("DisplayCanvasHelper", { log: true });
 
 export const DisplayCanvasHelperEventTypes = [
   "contextState",
@@ -804,6 +804,18 @@ class DisplayCanvasHelper {
     }
     this.#onDisplayContextStateUpdate(differences);
   }
+  async setArcClockwise(arcClockwise: boolean, sendImmediately?: boolean) {
+    const differences = this.#displayContextStateHelper.update({
+      arcClockwise,
+    });
+    if (differences.length == 0) {
+      return;
+    }
+    if (this.device?.isConnected) {
+      await this.device.setDisplayArcClockwise(arcClockwise, sendImmediately);
+    }
+    this.#onDisplayContextStateUpdate(differences);
+  }
 
   #clearRectToCanvas(x: number, y: number, width: number, height: number) {
     this.#save();
@@ -1483,7 +1495,8 @@ class DisplayCanvasHelper {
     startY: number,
     endX: number,
     endY: number,
-    contextState: DisplayContextState
+    contextState: DisplayContextState,
+    clearBoundingBox = true
   ) {
     this.#updateContext(contextState);
 
@@ -1497,7 +1510,7 @@ class DisplayCanvasHelper {
       endY,
       contextState
     );
-    if (this.#clearBoundingBoxOnDraw) {
+    if (this.#clearBoundingBoxOnDraw && clearBoundingBox) {
       this.#clearBoundingBox(box);
     }
 
@@ -1626,36 +1639,154 @@ class DisplayCanvasHelper {
       );
     }
   }
-  #drawSegmentsToCanvas(
-    segments: Vector2[],
-    contextState: DisplayContextState
-  ) {
+  #drawSegmentsToCanvas(points: Vector2[], contextState: DisplayContextState) {
     this.#updateContext(contextState);
 
-    _console.log("drawSegmentsToCanvas", { segments });
+    _console.log("drawSegmentsToCanvas", { segments: points });
 
-    segments.forEach((segment, index) => {
+    points.forEach((segment, index) => {
       if (index > 0) {
-        const previousSegment = segments[index - 1];
-        this.#drawSegmentToCanvas(
-          previousSegment.x,
-          previousSegment.y,
-          segment.x,
-          segment.y,
+        const previousPoint = points[index - 1];
+
+        const startX = previousPoint.x;
+        const startY = previousPoint.y;
+        const endX = segment.x;
+        const endY = segment.y;
+
+        const box = this.#getSegmentBoundingBox(
+          startX,
+          startY,
+          endX,
+          endY,
           contextState
+        );
+        if (this.#clearBoundingBoxOnDraw) {
+          this.#clearBoundingBox(box);
+        }
+      }
+    });
+
+    points.forEach((segment, index) => {
+      if (index > 0) {
+        const previousPoint = points[index - 1];
+
+        const startX = previousPoint.x;
+        const startY = previousPoint.y;
+        const endX = segment.x;
+        const endY = segment.y;
+
+        this.#drawSegmentToCanvas(
+          startX,
+          startY,
+          endX,
+          endY,
+          contextState,
+          false
         );
       }
     });
   }
-  async drawSegments(segments: Vector2[], sendImmediately?: boolean) {
-    _console.assertRangeWithError("segmentsLength", segments.length, 2, 255);
-    _console.log({ segments });
+  async drawSegments(points: Vector2[], sendImmediately?: boolean) {
+    _console.assertRangeWithError("numberOfPoints", points.length, 2, 255);
+    _console.log({ points });
     const contextState = { ...this.contextState };
     this.#rearDrawStack.push(() =>
-      this.#drawSegmentsToCanvas(segments, contextState)
+      this.#drawSegmentsToCanvas(points, contextState)
     );
     if (this.device?.isConnected) {
-      await this.device.drawDisplaySegments(segments, sendImmediately);
+      await this.device.drawDisplaySegments(points, sendImmediately);
+    }
+  }
+  #drawArcToCanvas(
+    centerX: number,
+    centerY: number,
+    radius: number,
+    startAngle: number,
+    endAngle: number,
+    isRadians: boolean,
+    contextState: DisplayContextState
+  ) {
+    // FILL
+  }
+  async drawArc(
+    centerX: number,
+    centerY: number,
+    radius: number,
+    startAngle: number,
+    endAngle: number,
+    isRadians?: boolean,
+    sendImmediately?: boolean
+  ) {
+    const contextState = { ...this.contextState };
+    this.#rearDrawStack.push(() =>
+      this.#drawArcToCanvas(
+        centerX,
+        centerY,
+        radius,
+        startAngle,
+        endAngle,
+        isRadians || false,
+        contextState
+      )
+    );
+    if (this.device?.isConnected) {
+      await this.device.drawDisplayArc(
+        centerX,
+        centerY,
+        radius,
+        startAngle,
+        endAngle,
+        isRadians,
+        sendImmediately
+      );
+    }
+  }
+  #drawArcEllipseToCanvas(
+    centerX: number,
+    centerY: number,
+    radiusX: number,
+    radiusY: number,
+    startAngle: number,
+    endAngle: number,
+    isRadians: boolean,
+    contextState: DisplayContextState
+  ) {
+    // FILL
+  }
+  async drawArcEllipse(
+    centerX: number,
+    centerY: number,
+    radiusX: number,
+    radiusY: number,
+    startAngle: number,
+    endAngle: number,
+    isRadians?: boolean,
+    sendImmediately?: boolean
+  ) {
+    const contextState = { ...this.contextState };
+    this.#rearDrawStack.push(() =>
+      this.#drawArcEllipseToCanvas(
+        centerX,
+        centerY,
+        radiusX,
+        radiusY,
+        startAngle,
+        endAngle,
+        isRadians || false,
+        contextState
+      )
+    );
+    if (this.device?.isConnected) {
+      await this.device.drawDisplayArcEllipse(
+        centerX,
+        centerY,
+        radiusX,
+        radiusY,
+        startAngle,
+        endAngle,
+        isRadians,
+        sendImmediately
+      );
     }
   }
 
