@@ -16,6 +16,8 @@ export function getInterpolation(
 }
 
 export const Uint16Max = 2 ** 16;
+export const Int16Max = 2 ** 15;
+export const Int16Min = -(2 ** 15) - 1;
 
 function removeLower2Bytes(number: number) {
   const lower2Bytes = number % Uint16Max;
@@ -125,7 +127,7 @@ export function radToDeg(rad: number) {
   return rad * (180 / Math.PI);
 }
 
-const twoPi = Math.PI * 2;
+export const twoPi = Math.PI * 2;
 export function normalizeRadians(rad: number): number {
   return ((rad % twoPi) + twoPi) % twoPi;
 }

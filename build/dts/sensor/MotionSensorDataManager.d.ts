@@ -67,6 +67,6 @@ declare class MotionSensorDataManager {
     parseEuler(dataView: DataView, scalar: number): Euler;
     parseStepCounter(dataView: DataView): number;
     parseActivity(dataView: DataView): Activity;
-    parseDeviceOrientation(dataView: DataView): "portraitUpright" | "landscapeLeft" | "portraitUpsideDown" | "landscapeRight" | "unknown";
+    parseDeviceOrientation(dataView: DataView): "unknown" | "portraitUpright" | "landscapeLeft" | "portraitUpsideDown" | "landscapeRight";
 }
 export default MotionSensorDataManager;

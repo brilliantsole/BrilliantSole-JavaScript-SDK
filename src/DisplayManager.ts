@@ -9,7 +9,10 @@ import autoBind from "auto-bind";
 import {
   clamp,
   degToRad,
+  Int16Max,
+  Int16Min,
   normalizeRadians,
+  twoPi,
   Uint16Max,
   Vector2,
 } from "./utils/MathUtils.ts";
@@ -125,8 +128,6 @@ export type DisplayContextState = {
   rotationCropBottom: number;
   rotationCropLeft: number;
 
-  arcClockwise: boolean;
-
   // FILL - text stuff
 };
 export type DisplayContextStateKey = keyof DisplayContextState;
@@ -155,8 +156,6 @@ export const DefaultDisplayContextState: DisplayContextState = {
   rotationCropRight: 0,
   rotationCropBottom: 0,
   rotationCropLeft: 0,
-
-  arcClockwise: false,
 };
 
 export const DisplayInformationValues = {
@@ -200,8 +199,6 @@ export const DisplayContextCommands = [
   "setRotationCropBottom",
   "setRotationCropLeft",
   "clearRotationCrop",
-
-  "setArcClockwise",
 
   "clearRect",
 
@@ -392,9 +389,6 @@ class DisplayManager {
           break;
         case "rotationCropLeft":
           this.setRotationCropLeft(newState.rotationCropLeft!);
-          break;
-        case "arcClockwise":
-          this.setArcClockwise(newState.arcClockwise!);
           break;
       }
     });
@@ -1109,25 +1103,6 @@ class DisplayManager {
     );
     this.#onDisplayContextStateUpdate(differences);
   }
-  async setArcClockwise(arcClockwise: boolean, sendImmediately?: boolean) {
-    _console.log({ arcClockwise });
-
-    const differences = this.#displayContextStateHelper.update({
-      arcClockwise,
-    });
-    if (differences.length == 0) {
-      return;
-    }
-    const dataView = new DataView(new ArrayBuffer(1));
-    dataView.setUint8(0, arcClockwise ? 1 : 0);
-    await this.#sendDisplayContextCommand(
-      "setArcClockwise",
-      dataView.buffer,
-      sendImmediately
-    );
-
-    this.#onDisplayContextStateUpdate(differences);
-  }
 
   #clampX(x: number) {
     return clamp(x, 0, this.width - 1);
@@ -1328,22 +1303,28 @@ class DisplayManager {
     centerY: number,
     radius: number,
     startAngle: number,
-    endAngle: number,
+    angleOffset: number,
     isRadians?: boolean,
     sendImmediately?: boolean
   ) {
     startAngle = isRadians ? startAngle : degToRad(startAngle);
     startAngle = normalizeRadians(startAngle);
-    endAngle = isRadians ? startAngle : degToRad(endAngle);
-    endAngle = normalizeRadians(endAngle);
-    _console.log({ startAngle, endAngle });
+
+    angleOffset = isRadians ? startAngle : degToRad(angleOffset);
+    angleOffset = clamp(angleOffset, -twoPi, twoPi);
+    _console.log({ startAngle, angleOffset });
+
+    angleOffset /= twoPi;
+    angleOffset *= (angleOffset > 0 ? Int16Max : -Int16Min) - 1;
+
+    console.log({ angleOffset });
 
     const dataView = new DataView(new ArrayBuffer(2 * 5));
     dataView.setInt16(0, centerX, true);
     dataView.setInt16(2, centerY, true);
     dataView.setUint16(4, radius, true);
     dataView.setUint16(6, formatRotation(startAngle, true), true);
-    dataView.setUint16(8, formatRotation(endAngle, true), true);
+    dataView.setInt16(8, angleOffset, true);
     _console.log("drawArc data", dataView);
     await this.#sendDisplayContextCommand(
       "drawArc",
@@ -1357,23 +1338,27 @@ class DisplayManager {
     radiusX: number,
     radiusY: number,
     startAngle: number,
-    endAngle: number,
+    angleOffset: number,
     isRadians?: boolean,
     sendImmediately?: boolean
   ) {
     startAngle = isRadians ? startAngle : degToRad(startAngle);
     startAngle = normalizeRadians(startAngle);
-    endAngle = isRadians ? startAngle : degToRad(endAngle);
-    endAngle = normalizeRadians(endAngle);
-    _console.log({ startAngle, endAngle });
+
+    angleOffset = isRadians ? startAngle : degToRad(angleOffset);
+    angleOffset = clamp(angleOffset, -twoPi, twoPi);
+    _console.log({ startAngle, angleOffset });
+
+    angleOffset /= twoPi;
+    angleOffset *= (angleOffset > 0 ? Int16Min : Int16Max) - 1;
 
     const dataView = new DataView(new ArrayBuffer(2 * 6));
     dataView.setInt16(0, centerX, true);
     dataView.setInt16(2, centerY, true);
     dataView.setUint16(4, radiusX, true);
     dataView.setUint16(6, radiusY, true);
-    dataView.setUint16(8, startAngle, true);
-    dataView.setUint16(10, endAngle, true);
+    dataView.setUint16(8, formatRotation(startAngle, true), true);
+    dataView.setUint16(10, angleOffset, true);
     _console.log("drawArcEllipse data", dataView);
     await this.#sendDisplayContextCommand(
       "drawArcEllipse",

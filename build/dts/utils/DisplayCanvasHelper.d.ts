@@ -109,7 +109,6 @@ declare class DisplayCanvasHelper {
     setRotationCropBottom(rotationCropBottom: number, sendImmediately?: boolean): Promise<void>;
     setRotationCropLeft(rotationCropLeft: number, sendImmediately?: boolean): Promise<void>;
     clearRotationCrop(sendImmediately?: boolean): Promise<void>;
-    setArcClockwise(arcClockwise: boolean, sendImmediately?: boolean): Promise<void>;
     clearRect(x: number, y: number, width: number, height: number, sendImmediately?: boolean): Promise<void>;
     drawRect(centerX: number, centerY: number, width: number, height: number, sendImmediately?: boolean): Promise<void>;
     drawRoundRect(centerX: number, centerY: number, width: number, height: number, borderRadius: number, sendImmediately?: boolean): Promise<void>;
@@ -118,8 +117,8 @@ declare class DisplayCanvasHelper {
     drawPolygon(centerX: number, centerY: number, radius: number, numberOfSides: number, sendImmediately?: boolean): Promise<void>;
     drawSegment(startX: number, startY: number, endX: number, endY: number, sendImmediately?: boolean): Promise<void>;
     drawSegments(points: Vector2[], sendImmediately?: boolean): Promise<void>;
-    drawArc(centerX: number, centerY: number, radius: number, startAngle: number, endAngle: number, isRadians?: boolean, sendImmediately?: boolean): Promise<void>;
-    drawArcEllipse(centerX: number, centerY: number, radiusX: number, radiusY: number, startAngle: number, endAngle: number, isRadians?: boolean, sendImmediately?: boolean): Promise<void>;
+    drawArc(centerX: number, centerY: number, radius: number, startAngle: number, angleOffset: number, isRadians?: boolean, sendImmediately?: boolean): Promise<void>;
+    drawArcEllipse(centerX: number, centerY: number, radiusX: number, radiusY: number, startAngle: number, angleOffset: number, isRadians?: boolean, sendImmediately?: boolean): Promise<void>;
     get brightness(): "veryLow" | "low" | "medium" | "high" | "veryHigh";
     setBrightness(newBrightness: DisplayBrightness, sendImmediately?: boolean): Promise<void>;
 }

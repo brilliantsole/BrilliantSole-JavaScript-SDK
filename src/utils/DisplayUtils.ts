@@ -9,11 +9,15 @@ import {
   DisplaySegmentCaps,
 } from "../DisplayManager.ts";
 import { createConsole } from "./Console.ts";
-import { Uint16Max } from "./MathUtils.ts";
+import { Int16Max, Uint16Max } from "./MathUtils.ts";
 
 const _console = createConsole("DisplayUtils", { log: false });
 
-export function formatRotation(rotation: number, isRadians?: boolean) {
+export function formatRotation(
+  rotation: number,
+  isRadians?: boolean,
+  isSigned?: boolean
+) {
   if (isRadians) {
     const rotationRad = rotation;
     _console.log({ rotationRad });
@@ -25,9 +29,13 @@ export function formatRotation(rotation: number, isRadians?: boolean) {
     rotation %= 360;
     rotation /= 360;
   }
-  rotation *= Uint16Max;
+  if (isSigned) {
+    rotation *= Int16Max;
+  } else {
+    rotation *= Uint16Max;
+  }
   rotation = Math.floor(rotation);
-  //   _console.log({ rotation });
+  _console.log({ formattedRotation: rotation });
   return rotation;
 }
 

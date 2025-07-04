@@ -804,18 +804,6 @@ class DisplayCanvasHelper {
     }
     this.#onDisplayContextStateUpdate(differences);
   }
-  async setArcClockwise(arcClockwise: boolean, sendImmediately?: boolean) {
-    const differences = this.#displayContextStateHelper.update({
-      arcClockwise,
-    });
-    if (differences.length == 0) {
-      return;
-    }
-    if (this.device?.isConnected) {
-      await this.device.setDisplayArcClockwise(arcClockwise, sendImmediately);
-    }
-    this.#onDisplayContextStateUpdate(differences);
-  }
 
   #clearRectToCanvas(x: number, y: number, width: number, height: number) {
     this.#save();
@@ -1702,7 +1690,7 @@ class DisplayCanvasHelper {
     centerY: number,
     radius: number,
     startAngle: number,
-    endAngle: number,
+    angleOffset: number,
     isRadians: boolean,
     contextState: DisplayContextState
   ) {
@@ -1713,7 +1701,7 @@ class DisplayCanvasHelper {
     centerY: number,
     radius: number,
     startAngle: number,
-    endAngle: number,
+    angleOffset: number,
     isRadians?: boolean,
     sendImmediately?: boolean
   ) {
@@ -1724,7 +1712,7 @@ class DisplayCanvasHelper {
         centerY,
         radius,
         startAngle,
-        endAngle,
+        angleOffset,
         isRadians || false,
         contextState
       )
@@ -1735,7 +1723,7 @@ class DisplayCanvasHelper {
         centerY,
         radius,
         startAngle,
-        endAngle,
+        angleOffset,
         isRadians,
         sendImmediately
       );
@@ -1747,7 +1735,7 @@ class DisplayCanvasHelper {
     radiusX: number,
     radiusY: number,
     startAngle: number,
-    endAngle: number,
+    angleOffset: number,
     isRadians: boolean,
     contextState: DisplayContextState
   ) {
@@ -1759,7 +1747,7 @@ class DisplayCanvasHelper {
     radiusX: number,
     radiusY: number,
     startAngle: number,
-    endAngle: number,
+    angleOffset: number,
     isRadians?: boolean,
     sendImmediately?: boolean
   ) {
@@ -1771,7 +1759,7 @@ class DisplayCanvasHelper {
         radiusX,
         radiusY,
         startAngle,
-        endAngle,
+        angleOffset,
         isRadians || false,
         contextState
       )
@@ -1783,7 +1771,7 @@ class DisplayCanvasHelper {
         radiusX,
         radiusY,
         startAngle,
-        endAngle,
+        angleOffset,
         isRadians,
         sendImmediately
       );

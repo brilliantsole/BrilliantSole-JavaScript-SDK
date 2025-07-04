@@ -1,5 +1,5 @@
 import { DisplayBrightness, DisplayColorRGB, DisplayContextCommand, DisplayContextStateKey, DisplaySegmentCap } from "../DisplayManager.ts";
-export declare function formatRotation(rotation: number, isRadians?: boolean): number;
+export declare function formatRotation(rotation: number, isRadians?: boolean, isSigned?: boolean): number;
 export declare function assertValidSegmentCap(segmentCap: DisplaySegmentCap): void;
 export declare function assertValidDisplayBrightness(displayBrightness: DisplayBrightness): void;
 export declare function assertValidColorValue(name: string, value: number): void;

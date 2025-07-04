@@ -55,7 +55,6 @@ export type DisplayContextState = {
     rotationCropRight: number;
     rotationCropBottom: number;
     rotationCropLeft: number;
-    arcClockwise: boolean;
 };
 export type DisplayContextStateKey = keyof DisplayContextState;
 export type PartialDisplayContextState = Partial<DisplayContextState>;
@@ -64,7 +63,7 @@ export declare const DisplayInformationValues: {
     type: readonly ["none", "generic", "monocularLeft", "monocularRight", "binocular"];
     pixelDepth: readonly ["1", "2", "4"];
 };
-export declare const DisplayContextCommands: readonly ["show", "clear", "setColor", "setColorOpacity", "setOpacity", "saveContext", "restoreContext", "selectFillColor", "selectLineColor", "setLineWidth", "setRotation", "clearRotation", "setSegmentStartCap", "setSegmentEndCap", "setSegmentCap", "setSegmentStartRadius", "setSegmentEndRadius", "setSegmentRadius", "setCropTop", "setCropRight", "setCropBottom", "setCropLeft", "clearCrop", "setRotationCropTop", "setRotationCropRight", "setRotationCropBottom", "setRotationCropLeft", "clearRotationCrop", "setArcClockwise", "clearRect", "drawRect", "drawRoundRect", "drawCircle", "drawEllipse", "drawPolygon", "drawSegment", "drawSegments", "drawArc", "drawArcEllipse", "drawBitmap", "selectSpriteSheet", "sprite", "selectFont", "drawText"];
+export declare const DisplayContextCommands: readonly ["show", "clear", "setColor", "setColorOpacity", "setOpacity", "saveContext", "restoreContext", "selectFillColor", "selectLineColor", "setLineWidth", "setRotation", "clearRotation", "setSegmentStartCap", "setSegmentEndCap", "setSegmentCap", "setSegmentStartRadius", "setSegmentEndRadius", "setSegmentRadius", "setCropTop", "setCropRight", "setCropBottom", "setCropLeft", "clearCrop", "setRotationCropTop", "setRotationCropRight", "setRotationCropBottom", "setRotationCropLeft", "clearRotationCrop", "clearRect", "drawRect", "drawRoundRect", "drawCircle", "drawEllipse", "drawPolygon", "drawSegment", "drawSegments", "drawArc", "drawArcEllipse", "drawBitmap", "selectSpriteSheet", "sprite", "selectFont", "drawText"];
 export type DisplayContextCommand = (typeof DisplayContextCommands)[number];
 export declare const RequiredDisplayMessageTypes: DisplayMessageType[];
 export declare const DisplayEventTypes: readonly ["isDisplayAvailable", "displayStatus", "displayInformation", "displayCommand", "getDisplayBrightness", "setDisplayBrightness", "displayContextCommands", "displayContextState", "displayColor", "displayColorOpacity", "displayOpacity"];
@@ -166,7 +165,6 @@ declare class DisplayManager {
     setRotationCropBottom(rotationCropBottom: number, sendImmediately?: boolean): Promise<void>;
     setRotationCropLeft(rotationCropLeft: number, sendImmediately?: boolean): Promise<void>;
     clearRotationCrop(sendImmediately?: boolean): Promise<void>;
-    setArcClockwise(arcClockwise: boolean, sendImmediately?: boolean): Promise<void>;
     clearRect(x: number, y: number, width: number, height: number, sendImmediately?: boolean): Promise<void>;
     drawRect(centerX: number, centerY: number, width: number, height: number, sendImmediately?: boolean): Promise<void>;
     drawRoundRect(centerX: number, centerY: number, width: number, height: number, borderRadius: number, sendImmediately?: boolean): Promise<void>;
@@ -175,8 +173,8 @@ declare class DisplayManager {
     drawPolygon(centerX: number, centerY: number, radius: number, numberOfSides: number, sendImmediately?: boolean): Promise<void>;
     drawSegment(startX: number, startY: number, endX: number, endY: number, sendImmediately?: boolean): Promise<void>;
     drawSegments(points: Vector2[], sendImmediately?: boolean): Promise<void>;
-    drawArc(centerX: number, centerY: number, radius: number, startAngle: number, endAngle: number, isRadians?: boolean, sendImmediately?: boolean): Promise<void>;
-    drawArcEllipse(centerX: number, centerY: number, radiusX: number, radiusY: number, startAngle: number, endAngle: number, isRadians?: boolean, sendImmediately?: boolean): Promise<void>;
+    drawArc(centerX: number, centerY: number, radius: number, startAngle: number, angleOffset: number, isRadians?: boolean, sendImmediately?: boolean): Promise<void>;
+    drawArcEllipse(centerX: number, centerY: number, radiusX: number, radiusY: number, startAngle: number, angleOffset: number, isRadians?: boolean, sendImmediately?: boolean): Promise<void>;
     selectSpriteSheet(index: number, sendImmediately?: boolean): void;
     drawSprite(index: number, x: number, y: number, sendImmediately?: boolean): void;
     parseMessage(messageType: DisplayMessageType, dataView: DataView): void;

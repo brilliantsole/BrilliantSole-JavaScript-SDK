@@ -1615,10 +1615,6 @@ class Device {
     this.#assertDisplayIsAvailable();
     return this.#displayManager.clearRotationCrop;
   }
-  get setDisplayArcClockwise() {
-    this.#assertDisplayIsAvailable();
-    return this.#displayManager.setArcClockwise;
-  }
   get flushDisplayContextCommands() {
     this.#assertDisplayIsAvailable();
     return this.#displayManager.flushDisplayContextCommands;
