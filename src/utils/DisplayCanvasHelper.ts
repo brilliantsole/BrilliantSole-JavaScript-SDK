@@ -1713,23 +1713,23 @@ class DisplayCanvasHelper {
 
     this.#applyRotationClip(box, contextState);
 
+    // Draw the filled pie slice (includes radial lines)
     this.context.beginPath();
     this.context.moveTo(0, 0);
     const clockwise = angleOffset > 0;
-    this.context.arc(
-      0,
-      0,
-      radius,
-      startAngle,
-      startAngle + angleOffset,
-      !clockwise
-    );
-    this.context.closePath();
+    const endAngle = startAngle + angleOffset;
 
+    this.context.arc(0, 0, radius, startAngle, endAngle, !clockwise);
+    this.context.closePath();
     this.context.fill();
+
+    // Stroke only the arc part
     if (contextState.lineWidth) {
+      this.context.beginPath();
+      this.context.arc(0, 0, radius, startAngle, endAngle, !clockwise);
       this.context.stroke();
     }
+
     this.#restore();
   }
   async drawArc(
@@ -1799,9 +1799,12 @@ class DisplayCanvasHelper {
 
     this.#applyRotationClip(box, contextState);
 
+    // Fill the elliptical pie slice (includes radial lines)
     this.context.beginPath();
     this.context.moveTo(0, 0);
     const clockwise = angleOffset > 0;
+    const endAngle = startAngle + angleOffset;
+
     this.context.ellipse(
       0,
       0,
@@ -1809,14 +1812,28 @@ class DisplayCanvasHelper {
       radiusY,
       0,
       startAngle,
-      startAngle + angleOffset,
+      endAngle,
       !clockwise
     );
     this.context.closePath();
     this.context.fill();
+
+    // Stroke only the elliptical arc
     if (contextState.lineWidth > 0) {
+      this.context.beginPath();
+      this.context.ellipse(
+        0,
+        0,
+        radiusX,
+        radiusY,
+        0,
+        startAngle,
+        endAngle,
+        !clockwise
+      );
       this.context.stroke();
     }
+
     this.#restore();
   }
   async drawArcEllipse(

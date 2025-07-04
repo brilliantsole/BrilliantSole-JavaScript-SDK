@@ -9075,10 +9075,13 @@ _DisplayCanvasHelper_eventDispatcher = new WeakMap(), _DisplayCanvasHelper_canva
     this.context.beginPath();
     this.context.moveTo(0, 0);
     const clockwise = angleOffset > 0;
-    this.context.arc(0, 0, radius, startAngle, startAngle + angleOffset, !clockwise);
+    const endAngle = startAngle + angleOffset;
+    this.context.arc(0, 0, radius, startAngle, endAngle, !clockwise);
     this.context.closePath();
     this.context.fill();
     if (contextState.lineWidth) {
+        this.context.beginPath();
+        this.context.arc(0, 0, radius, startAngle, endAngle, !clockwise);
         this.context.stroke();
     }
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_restore).call(this);
@@ -9096,10 +9099,14 @@ _DisplayCanvasHelper_eventDispatcher = new WeakMap(), _DisplayCanvasHelper_canva
     this.context.beginPath();
     this.context.moveTo(0, 0);
     const clockwise = angleOffset > 0;
-    this.context.ellipse(0, 0, radiusX, radiusY, 0, startAngle, startAngle + angleOffset, !clockwise);
+    const endAngle = startAngle + angleOffset;
+    this.context.ellipse(0, 0, radiusX, radiusY, 0,
+    startAngle, endAngle, !clockwise);
     this.context.closePath();
     this.context.fill();
     if (contextState.lineWidth > 0) {
+        this.context.beginPath();
+        this.context.ellipse(0, 0, radiusX, radiusY, 0, startAngle, endAngle, !clockwise);
         this.context.stroke();
     }
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_restore).call(this);
