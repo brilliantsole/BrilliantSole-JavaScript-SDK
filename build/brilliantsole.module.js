@@ -308,6 +308,12 @@ class EventDispatcher {
 
 var _Timer_callback, _Timer_interval, _Timer_intervalId;
 const _console$D = createConsole("Timer", { log: false });
+async function wait(delay) {
+    _console$D.log(`waiting for ${delay}ms`);
+    return new Promise((resolve) => {
+        setTimeout(() => resolve(), delay);
+    });
+}
 class Timer {
     get callback() {
         return __classPrivateFieldGet(this, _Timer_callback, "f");
@@ -8044,7 +8050,7 @@ _a$2 = Device, _Device_eventDispatcher = new WeakMap(), _Device_connectionManage
 _Device_ReconnectOnDisconnection = { value: false };
 _Device_ClearSensorConfigurationOnLeave = { value: true };
 
-var _DisplayCanvasHelper_instances, _DisplayCanvasHelper_eventDispatcher, _DisplayCanvasHelper_dispatchEvent_get, _DisplayCanvasHelper_canvas, _DisplayCanvasHelper_context, _DisplayCanvasHelper_updateCanvas, _DisplayCanvasHelper_frontDrawStack, _DisplayCanvasHelper_rearDrawStack, _DisplayCanvasHelper_drawFrontDrawStack, _DisplayCanvasHelper_applyTransparencyToCanvas, _DisplayCanvasHelper_drawBackground, _DisplayCanvasHelper_applyTransparency, _DisplayCanvasHelper_device, _DisplayCanvasHelper_boundDeviceEventListeners, _DisplayCanvasHelper_onDeviceConnected, _DisplayCanvasHelper_onDeviceNotConnected, _DisplayCanvasHelper_updateDevice, _DisplayCanvasHelper_numberOfColors, _DisplayCanvasHelper_assertValidColorIndex, _DisplayCanvasHelper_colors, _DisplayCanvasHelper_updateDeviceColors, _DisplayCanvasHelper_opacities, _DisplayCanvasHelper_updateDeviceOpacity, _DisplayCanvasHelper_displayContextStateHelper, _DisplayCanvasHelper_onDisplayContextStateUpdate, _DisplayCanvasHelper_updateDeviceContextState, _DisplayCanvasHelper_assertValidLineWidth, _DisplayCanvasHelper_clearRectToCanvas, _DisplayCanvasHelper_save, _DisplayCanvasHelper_restore, _DisplayCanvasHelper_transformContext, _DisplayCanvasHelper_rotateBoundingBox, _DisplayCanvasHelper_clearBoundingBoxOnDraw, _DisplayCanvasHelper_clearBoundingBox, _DisplayCanvasHelper_getRectBoundingBox, _DisplayCanvasHelper_applyClip, _DisplayCanvasHelper_applyRotationClip, _DisplayCanvasHelper_hexToRgba, _DisplayCanvasHelper_colorIndexToRgba, _DisplayCanvasHelper_updateContext, _DisplayCanvasHelper_drawRectToCanvas, _DisplayCanvasHelper_drawRoundRectToCanvas, _DisplayCanvasHelper_getCircleBoundingBox, _DisplayCanvasHelper_drawCircleToCanvas, _DisplayCanvasHelper_getEllipseBoundingBox, _DisplayCanvasHelper_drawEllipseToCanvas, _DisplayCanvasHelper_getPolygonBoundingBox, _DisplayCanvasHelper_drawPolygonToCanvas, _DisplayCanvasHelper_getSegmentBoundingBox, _DisplayCanvasHelper_getSegmentMidpoint, _DisplayCanvasHelper_getOrientedSegmentBoundingBox, _DisplayCanvasHelper_applySegmentRotationClip, _DisplayCanvasHelper_drawSegmentToCanvas, _DisplayCanvasHelper_drawSegmentsToCanvas, _DisplayCanvasHelper_drawArcToCanvas, _DisplayCanvasHelper_drawArcEllipseToCanvas, _DisplayCanvasHelper_brightness, _DisplayCanvasHelper_brightnessOpacities, _DisplayCanvasHelper_updateDeviceBrightness;
+var _DisplayCanvasHelper_instances, _DisplayCanvasHelper_eventDispatcher, _DisplayCanvasHelper_dispatchEvent_get, _DisplayCanvasHelper_canvas, _DisplayCanvasHelper_context, _DisplayCanvasHelper_updateCanvas, _DisplayCanvasHelper_frontDrawStack, _DisplayCanvasHelper_rearDrawStack, _DisplayCanvasHelper_drawFrontDrawStack, _DisplayCanvasHelper_applyTransparencyToCanvas, _DisplayCanvasHelper_drawBackground, _DisplayCanvasHelper_applyTransparency, _DisplayCanvasHelper_device, _DisplayCanvasHelper_boundDeviceEventListeners, _DisplayCanvasHelper_onDeviceConnected, _DisplayCanvasHelper_onDeviceNotConnected, _DisplayCanvasHelper_onDeviceDisplayReady, _DisplayCanvasHelper_updateDevice, _DisplayCanvasHelper_numberOfColors, _DisplayCanvasHelper_assertValidColorIndex, _DisplayCanvasHelper_colors, _DisplayCanvasHelper_updateDeviceColors, _DisplayCanvasHelper_opacities, _DisplayCanvasHelper_updateDeviceOpacity, _DisplayCanvasHelper_displayContextStateHelper, _DisplayCanvasHelper_onDisplayContextStateUpdate, _DisplayCanvasHelper_updateDeviceContextState, _DisplayCanvasHelper_interval, _DisplayCanvasHelper_isReady, _DisplayCanvasHelper_assertValidLineWidth, _DisplayCanvasHelper_clearRectToCanvas, _DisplayCanvasHelper_save, _DisplayCanvasHelper_restore, _DisplayCanvasHelper_transformContext, _DisplayCanvasHelper_rotateBoundingBox, _DisplayCanvasHelper_clearBoundingBoxOnDraw, _DisplayCanvasHelper_clearBoundingBox, _DisplayCanvasHelper_getRectBoundingBox, _DisplayCanvasHelper_applyClip, _DisplayCanvasHelper_applyRotationClip, _DisplayCanvasHelper_hexToRgba, _DisplayCanvasHelper_colorIndexToRgba, _DisplayCanvasHelper_updateContext, _DisplayCanvasHelper_drawRectToCanvas, _DisplayCanvasHelper_drawRoundRectToCanvas, _DisplayCanvasHelper_getCircleBoundingBox, _DisplayCanvasHelper_drawCircleToCanvas, _DisplayCanvasHelper_getEllipseBoundingBox, _DisplayCanvasHelper_drawEllipseToCanvas, _DisplayCanvasHelper_getPolygonBoundingBox, _DisplayCanvasHelper_drawPolygonToCanvas, _DisplayCanvasHelper_getSegmentBoundingBox, _DisplayCanvasHelper_getSegmentMidpoint, _DisplayCanvasHelper_getOrientedSegmentBoundingBox, _DisplayCanvasHelper_applySegmentRotationClip, _DisplayCanvasHelper_drawSegmentToCanvas, _DisplayCanvasHelper_drawSegmentsToCanvas, _DisplayCanvasHelper_drawArcToCanvas, _DisplayCanvasHelper_drawArcEllipseToCanvas, _DisplayCanvasHelper_brightness, _DisplayCanvasHelper_brightnessOpacities, _DisplayCanvasHelper_updateDeviceBrightness;
 const _console$6 = createConsole("DisplayCanvasHelper", { log: true });
 const DisplayCanvasHelperEventTypes = [
     "contextState",
@@ -8055,6 +8061,7 @@ const DisplayCanvasHelperEventTypes = [
     "opacity",
     "resize",
     "update",
+    "ready",
 ];
 class DisplayCanvasHelper {
     constructor() {
@@ -8069,11 +8076,14 @@ class DisplayCanvasHelper {
         _DisplayCanvasHelper_boundDeviceEventListeners.set(this, {
             connected: __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_onDeviceConnected).bind(this),
             notConnected: __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_onDeviceNotConnected).bind(this),
+            displayReady: __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_onDeviceDisplayReady).bind(this),
         });
         _DisplayCanvasHelper_numberOfColors.set(this, 0);
         _DisplayCanvasHelper_colors.set(this, []);
         _DisplayCanvasHelper_opacities.set(this, []);
         _DisplayCanvasHelper_displayContextStateHelper.set(this, new DisplayContextStateHelper());
+        _DisplayCanvasHelper_interval.set(this, 100);
+        _DisplayCanvasHelper_isReady.set(this, true);
         _DisplayCanvasHelper_clearBoundingBoxOnDraw.set(this, true);
         _DisplayCanvasHelper_brightness.set(this, "medium");
         _DisplayCanvasHelper_brightnessOpacities.set(this, {
@@ -8151,6 +8161,7 @@ class DisplayCanvasHelper {
         }
         if (__classPrivateFieldGet(this, _DisplayCanvasHelper_device, "f")) {
             removeEventListeners(this.device, __classPrivateFieldGet(this, _DisplayCanvasHelper_boundDeviceEventListeners, "f"));
+            __classPrivateFieldSet(this, _DisplayCanvasHelper_isReady, true, "f");
         }
         __classPrivateFieldSet(this, _DisplayCanvasHelper_device, newDevice, "f");
         addEventListeners(__classPrivateFieldGet(this, _DisplayCanvasHelper_device, "f"), __classPrivateFieldGet(this, _DisplayCanvasHelper_boundDeviceEventListeners, "f"));
@@ -8159,6 +8170,7 @@ class DisplayCanvasHelper {
             this.numberOfColors = this.device.numberOfDisplayColors;
             __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_updateCanvas).call(this);
             __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_updateDevice).call(this);
+            __classPrivateFieldSet(this, _DisplayCanvasHelper_isReady, this.device.isDisplayReady, "f");
         }
     }
     get numberOfColors() {
@@ -8190,19 +8202,41 @@ class DisplayCanvasHelper {
         __classPrivateFieldSet(this, _DisplayCanvasHelper_frontDrawStack, __classPrivateFieldGet(this, _DisplayCanvasHelper_rearDrawStack, "f").slice(), "f");
         __classPrivateFieldGet(this, _DisplayCanvasHelper_rearDrawStack, "f").length = 0;
         __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_drawFrontDrawStack).call(this);
+        __classPrivateFieldSet(this, _DisplayCanvasHelper_isReady, false, "f");
         if (this.device?.isConnected) {
             await this.device.showDisplay(sendImmediately);
         }
+        else {
+            await wait(__classPrivateFieldGet(this, _DisplayCanvasHelper_interval, "f"));
+            __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "a", _DisplayCanvasHelper_dispatchEvent_get).call(this, "ready", {});
+            __classPrivateFieldSet(this, _DisplayCanvasHelper_isReady, true, "f");
+        }
+    }
+    get interval() {
+        return __classPrivateFieldGet(this, _DisplayCanvasHelper_interval, "f");
+    }
+    set interval(newInterval) {
+        __classPrivateFieldSet(this, _DisplayCanvasHelper_interval, newInterval, "f");
+        _console$6.log({ interval: __classPrivateFieldGet(this, _DisplayCanvasHelper_interval, "f") });
+    }
+    get isReady() {
+        return __classPrivateFieldGet(this, _DisplayCanvasHelper_isReady, "f");
     }
     async clearDisplay(sendImmediately = true) {
         _console$6.log("clearDisplay");
         __classPrivateFieldGet(this, _DisplayCanvasHelper_frontDrawStack, "f").length = 0;
         __classPrivateFieldGet(this, _DisplayCanvasHelper_rearDrawStack, "f").length = 0;
+        __classPrivateFieldSet(this, _DisplayCanvasHelper_isReady, false, "f");
         __classPrivateFieldGet(this, _DisplayCanvasHelper_context, "f").clearRect(0, 0, this.width, this.height);
+        __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_drawBackground).call(this);
         if (this.device?.isConnected) {
             await this.device.clearDisplay(sendImmediately);
         }
-        __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_drawBackground).call(this);
+        else {
+            await wait(__classPrivateFieldGet(this, _DisplayCanvasHelper_interval, "f"));
+            __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "a", _DisplayCanvasHelper_dispatchEvent_get).call(this, "ready", {});
+            __classPrivateFieldSet(this, _DisplayCanvasHelper_isReady, true, "f");
+        }
     }
     async setColor(colorIndex, color, sendImmediately) {
         if (typeof color == "string") {
@@ -8582,7 +8616,7 @@ class DisplayCanvasHelper {
         __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "a", _DisplayCanvasHelper_dispatchEvent_get).call(this, "brightness", { brightness: this.brightness });
     }
 }
-_DisplayCanvasHelper_eventDispatcher = new WeakMap(), _DisplayCanvasHelper_canvas = new WeakMap(), _DisplayCanvasHelper_context = new WeakMap(), _DisplayCanvasHelper_frontDrawStack = new WeakMap(), _DisplayCanvasHelper_rearDrawStack = new WeakMap(), _DisplayCanvasHelper_applyTransparency = new WeakMap(), _DisplayCanvasHelper_device = new WeakMap(), _DisplayCanvasHelper_boundDeviceEventListeners = new WeakMap(), _DisplayCanvasHelper_numberOfColors = new WeakMap(), _DisplayCanvasHelper_colors = new WeakMap(), _DisplayCanvasHelper_opacities = new WeakMap(), _DisplayCanvasHelper_displayContextStateHelper = new WeakMap(), _DisplayCanvasHelper_clearBoundingBoxOnDraw = new WeakMap(), _DisplayCanvasHelper_brightness = new WeakMap(), _DisplayCanvasHelper_brightnessOpacities = new WeakMap(), _DisplayCanvasHelper_instances = new WeakSet(), _DisplayCanvasHelper_dispatchEvent_get = function _DisplayCanvasHelper_dispatchEvent_get() {
+_DisplayCanvasHelper_eventDispatcher = new WeakMap(), _DisplayCanvasHelper_canvas = new WeakMap(), _DisplayCanvasHelper_context = new WeakMap(), _DisplayCanvasHelper_frontDrawStack = new WeakMap(), _DisplayCanvasHelper_rearDrawStack = new WeakMap(), _DisplayCanvasHelper_applyTransparency = new WeakMap(), _DisplayCanvasHelper_device = new WeakMap(), _DisplayCanvasHelper_boundDeviceEventListeners = new WeakMap(), _DisplayCanvasHelper_numberOfColors = new WeakMap(), _DisplayCanvasHelper_colors = new WeakMap(), _DisplayCanvasHelper_opacities = new WeakMap(), _DisplayCanvasHelper_displayContextStateHelper = new WeakMap(), _DisplayCanvasHelper_interval = new WeakMap(), _DisplayCanvasHelper_isReady = new WeakMap(), _DisplayCanvasHelper_clearBoundingBoxOnDraw = new WeakMap(), _DisplayCanvasHelper_brightness = new WeakMap(), _DisplayCanvasHelper_brightnessOpacities = new WeakMap(), _DisplayCanvasHelper_instances = new WeakSet(), _DisplayCanvasHelper_dispatchEvent_get = function _DisplayCanvasHelper_dispatchEvent_get() {
     return __classPrivateFieldGet(this, _DisplayCanvasHelper_eventDispatcher, "f").dispatchEvent;
 }, _DisplayCanvasHelper_updateCanvas = function _DisplayCanvasHelper_updateCanvas() {
     if (!this.canvas) {
@@ -8640,6 +8674,10 @@ _DisplayCanvasHelper_eventDispatcher = new WeakMap(), _DisplayCanvasHelper_canva
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_updateDevice).call(this);
 }, _DisplayCanvasHelper_onDeviceNotConnected = function _DisplayCanvasHelper_onDeviceNotConnected(event) {
     _console$6.log("device not connected");
+}, _DisplayCanvasHelper_onDeviceDisplayReady = function _DisplayCanvasHelper_onDeviceDisplayReady(event) {
+    _console$6.log("device display ready");
+    __classPrivateFieldSet(this, _DisplayCanvasHelper_isReady, true, "f");
+    __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "a", _DisplayCanvasHelper_dispatchEvent_get).call(this, "ready", {});
 }, _DisplayCanvasHelper_updateDevice = function _DisplayCanvasHelper_updateDevice() {
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_updateDeviceColors).call(this, true);
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_updateDeviceOpacity).call(this, true);
@@ -9100,8 +9138,7 @@ _DisplayCanvasHelper_eventDispatcher = new WeakMap(), _DisplayCanvasHelper_canva
     this.context.moveTo(0, 0);
     const clockwise = angleOffset > 0;
     const endAngle = startAngle + angleOffset;
-    this.context.ellipse(0, 0, radiusX, radiusY, 0,
-    startAngle, endAngle, !clockwise);
+    this.context.ellipse(0, 0, radiusX, radiusY, 0, startAngle, endAngle, !clockwise);
     this.context.closePath();
     this.context.fill();
     if (contextState.lineWidth > 0) {

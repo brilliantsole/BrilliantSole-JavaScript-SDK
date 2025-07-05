@@ -3,7 +3,7 @@ import { DisplayBrightness, DisplayColorRGB, DisplayContextState, DisplayContext
 import { DisplayCropDirection } from "./DisplayUtils.ts";
 import EventDispatcher, { BoundEventListeners, Event, EventListenerMap, EventMap } from "./EventDispatcher.ts";
 import { Vector2 } from "./MathUtils.ts";
-export declare const DisplayCanvasHelperEventTypes: readonly ["contextState", "numberOfColors", "brightness", "color", "colorOpacity", "opacity", "resize", "update"];
+export declare const DisplayCanvasHelperEventTypes: readonly ["contextState", "numberOfColors", "brightness", "color", "colorOpacity", "opacity", "resize", "update", "ready"];
 export type DisplayCanvasHelperEventType = (typeof DisplayCanvasHelperEventTypes)[number];
 export interface DisplayCanvasHelperEventMessages {
     contextState: {
@@ -32,6 +32,8 @@ export interface DisplayCanvasHelperEventMessages {
         width: number;
         height: number;
     };
+    update: {};
+    ready: {};
 }
 export type DisplayCanvasHelperEventDispatcher = EventDispatcher<DisplayCanvasHelper, DisplayCanvasHelperEventType, DisplayCanvasHelperEventMessages>;
 export type DisplayCanvasHelperEvent = Event<DisplayCanvasHelper, DisplayCanvasHelperEventType, DisplayCanvasHelperEventMessages>;
@@ -47,24 +49,24 @@ export type DisplayBoundingBox = {
 declare class DisplayCanvasHelper {
     #private;
     constructor();
-    get addEventListener(): <T extends "contextState" | "numberOfColors" | "brightness" | "color" | "colorOpacity" | "opacity" | "resize" | "update">(type: T, listener: (event: {
+    get addEventListener(): <T extends "contextState" | "numberOfColors" | "brightness" | "color" | "colorOpacity" | "opacity" | "resize" | "update" | "ready">(type: T, listener: (event: {
         type: T;
         target: DisplayCanvasHelper;
         message: DisplayCanvasHelperEventMessages[T];
     }) => void, options?: {
         once?: boolean;
     }) => void;
-    get removeEventListener(): <T extends "contextState" | "numberOfColors" | "brightness" | "color" | "colorOpacity" | "opacity" | "resize" | "update">(type: T, listener: (event: {
+    get removeEventListener(): <T extends "contextState" | "numberOfColors" | "brightness" | "color" | "colorOpacity" | "opacity" | "resize" | "update" | "ready">(type: T, listener: (event: {
         type: T;
         target: DisplayCanvasHelper;
         message: DisplayCanvasHelperEventMessages[T];
     }) => void) => void;
-    get waitForEvent(): <T extends "contextState" | "numberOfColors" | "brightness" | "color" | "colorOpacity" | "opacity" | "resize" | "update">(type: T) => Promise<{
+    get waitForEvent(): <T extends "contextState" | "numberOfColors" | "brightness" | "color" | "colorOpacity" | "opacity" | "resize" | "update" | "ready">(type: T) => Promise<{
         type: T;
         target: DisplayCanvasHelper;
         message: DisplayCanvasHelperEventMessages[T];
     }>;
-    get removeEventListeners(): <T extends "contextState" | "numberOfColors" | "brightness" | "color" | "colorOpacity" | "opacity" | "resize" | "update">(type: T) => void;
+    get removeEventListeners(): <T extends "contextState" | "numberOfColors" | "brightness" | "color" | "colorOpacity" | "opacity" | "resize" | "update" | "ready">(type: T) => void;
     get removeAllEventListeners(): () => void;
     get canvas(): HTMLCanvasElement | undefined;
     set canvas(newCanvas: HTMLCanvasElement | undefined);
@@ -82,6 +84,9 @@ declare class DisplayCanvasHelper {
     get opacities(): number[];
     get contextState(): DisplayContextState;
     showDisplay(sendImmediately?: boolean): Promise<void>;
+    get interval(): number;
+    set interval(newInterval: number);
+    get isReady(): boolean;
     clearDisplay(sendImmediately?: boolean): Promise<void>;
     setColor(colorIndex: number, color: DisplayColorRGB | string, sendImmediately?: boolean): Promise<void>;
     setColorOpacity(colorIndex: number, opacity: number, sendImmediately?: boolean): Promise<void>;

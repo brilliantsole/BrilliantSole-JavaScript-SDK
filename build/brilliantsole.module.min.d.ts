@@ -146,6 +146,8 @@ declare class EventDispatcher<Target extends any, EventType extends string, Even
     }>;
 }
 
+declare const DisplayStatuses: readonly ["awake", "asleep"];
+type DisplayStatus = (typeof DisplayStatuses)[number];
 declare const DisplayTypes: readonly ["none", "generic", "monocularLeft", "monocularRight", "binocular"];
 type DisplayType = (typeof DisplayTypes)[number];
 declare const DisplayPixelDepths: readonly ["1", "2", "4"];
@@ -189,6 +191,38 @@ type DisplayContextState = {
 };
 type DisplayContextStateKey = keyof DisplayContextState;
 type PartialDisplayContextState = Partial<DisplayContextState>;
+interface DisplayEventMessages {
+    isDisplayAvailable: {
+        isDisplayAvailable: boolean;
+    };
+    displayStatus: {
+        displayStatus: DisplayStatus;
+        previousDisplayStatus: DisplayStatus;
+    };
+    displayInformation: {
+        displayInformation: DisplayInformation;
+    };
+    getDisplayBrightness: {
+        displayBrightness: DisplayBrightness;
+    };
+    displayContextState: {
+        displayContextState: DisplayContextState;
+        differences: DisplayContextStateKey[];
+    };
+    displayColor: {
+        colorIndex: number;
+        color: DisplayColorRGB;
+        colorHex: string;
+    };
+    displayColorOpacity: {
+        opacity: number;
+        colorIndex: number;
+    };
+    displayOpacity: {
+        opacity: number;
+    };
+    displayReady: {};
+}
 
 declare const DisplayCropDirections: readonly ["top", "right", "bottom", "left"];
 type DisplayCropDirection = (typeof DisplayCropDirections)[number];
@@ -758,7 +792,7 @@ interface WifiEventMessages {
 
 declare const DeviceEventTypes: readonly ["connectionMessage", "notConnected", "connecting", "connected", "disconnecting", "connectionStatus", "isConnected", "rx", "tx", "batteryLevel", "isCharging", "getBatteryCurrent", "getMtu", "getId", "getName", "setName", "getType", "setType", "getCurrentTime", "setCurrentTime", "manufacturerName", "modelNumber", "hardwareRevision", "firmwareRevision", "softwareRevision", "pnpId", "serialNumber", "deviceInformation", "getSensorConfiguration", "setSensorConfiguration", "getPressurePositions", "getSensorScalars", "sensorData", "pressure", "acceleration", "gravity", "linearAcceleration", "gyroscope", "magnetometer", "gameRotation", "rotation", "orientation", "activity", "stepCounter", "stepDetector", "deviceOrientation", "tapDetector", "barometer", "camera", "microphone", "getVibrationLocations", "triggerVibration", "getFileTypes", "maxFileLength", "getFileType", "setFileType", "getFileLength", "setFileLength", "getFileChecksum", "setFileChecksum", "setFileTransferCommand", "fileTransferStatus", "getFileBlock", "setFileBlock", "fileBytesTransferred", "fileTransferProgress", "fileTransferComplete", "fileReceived", "getTfliteName", "setTfliteName", "getTfliteTask", "setTfliteTask", "getTfliteSampleRate", "setTfliteSampleRate", "getTfliteSensorTypes", "setTfliteSensorTypes", "tfliteIsReady", "getTfliteCaptureDelay", "setTfliteCaptureDelay", "getTfliteThreshold", "setTfliteThreshold", "getTfliteInferencingEnabled", "setTfliteInferencingEnabled", "tfliteInference", "isWifiAvailable", "getWifiSSID", "setWifiSSID", "getWifiPassword", "setWifiPassword", "getWifiConnectionEnabled", "setWifiConnectionEnabled", "isWifiConnected", "ipAddress", "isWifiSecure", "cameraStatus", "cameraCommand", "getCameraConfiguration", "setCameraConfiguration", "cameraData", "cameraImageProgress", "cameraImage", "microphoneStatus", "microphoneCommand", "getMicrophoneConfiguration", "setMicrophoneConfiguration", "microphoneData", "isRecordingMicrophone", "microphoneRecording", "isDisplayAvailable", "displayStatus", "displayInformation", "displayCommand", "getDisplayBrightness", "setDisplayBrightness", "displayContextCommands", "displayReady", "displayContextState", "displayColor", "displayColorOpacity", "displayOpacity", "smp", "firmwareImages", "firmwareUploadProgress", "firmwareStatus", "firmwareUploadComplete"];
 type DeviceEventType = (typeof DeviceEventTypes)[number];
-interface DeviceEventMessages extends ConnectionStatusEventMessages, DeviceInformationEventMessages, InformationEventMessages, SensorDataEventMessages, SensorConfigurationEventMessages, TfliteEventMessages, FileTransferEventMessages, WifiEventMessages, CameraEventMessages, MicrophoneEventMessages, FirmwareEventMessages {
+interface DeviceEventMessages extends ConnectionStatusEventMessages, DeviceInformationEventMessages, InformationEventMessages, SensorDataEventMessages, SensorConfigurationEventMessages, TfliteEventMessages, FileTransferEventMessages, WifiEventMessages, CameraEventMessages, MicrophoneEventMessages, DisplayEventMessages, FirmwareEventMessages {
     batteryLevel: {
         batteryLevel: number;
     };
@@ -1046,7 +1080,7 @@ declare class DeviceManager {
 }
 declare const _default: DeviceManager;
 
-declare const DisplayCanvasHelperEventTypes: readonly ["contextState", "numberOfColors", "brightness", "color", "colorOpacity", "opacity", "resize", "update"];
+declare const DisplayCanvasHelperEventTypes: readonly ["contextState", "numberOfColors", "brightness", "color", "colorOpacity", "opacity", "resize", "update", "ready"];
 type DisplayCanvasHelperEventType = (typeof DisplayCanvasHelperEventTypes)[number];
 interface DisplayCanvasHelperEventMessages {
     contextState: {
@@ -1075,6 +1109,8 @@ interface DisplayCanvasHelperEventMessages {
         width: number;
         height: number;
     };
+    update: {};
+    ready: {};
 }
 type DisplayCanvasHelperEvent = Event<DisplayCanvasHelper, DisplayCanvasHelperEventType, DisplayCanvasHelperEventMessages>;
 type DisplayCanvasHelperEventMap = EventMap<DisplayCanvasHelper, DisplayCanvasHelperEventType, DisplayCanvasHelperEventMessages>;
@@ -1082,24 +1118,24 @@ type DisplayCanvasHelperEventListenerMap = EventListenerMap<DisplayCanvasHelper,
 declare class DisplayCanvasHelper {
     #private;
     constructor();
-    get addEventListener(): <T extends "contextState" | "numberOfColors" | "brightness" | "color" | "colorOpacity" | "opacity" | "resize" | "update">(type: T, listener: (event: {
+    get addEventListener(): <T extends "contextState" | "numberOfColors" | "brightness" | "color" | "colorOpacity" | "opacity" | "resize" | "update" | "ready">(type: T, listener: (event: {
         type: T;
         target: DisplayCanvasHelper;
         message: DisplayCanvasHelperEventMessages[T];
     }) => void, options?: {
         once?: boolean;
     }) => void;
-    get removeEventListener(): <T extends "contextState" | "numberOfColors" | "brightness" | "color" | "colorOpacity" | "opacity" | "resize" | "update">(type: T, listener: (event: {
+    get removeEventListener(): <T extends "contextState" | "numberOfColors" | "brightness" | "color" | "colorOpacity" | "opacity" | "resize" | "update" | "ready">(type: T, listener: (event: {
         type: T;
         target: DisplayCanvasHelper;
         message: DisplayCanvasHelperEventMessages[T];
     }) => void) => void;
-    get waitForEvent(): <T extends "contextState" | "numberOfColors" | "brightness" | "color" | "colorOpacity" | "opacity" | "resize" | "update">(type: T) => Promise<{
+    get waitForEvent(): <T extends "contextState" | "numberOfColors" | "brightness" | "color" | "colorOpacity" | "opacity" | "resize" | "update" | "ready">(type: T) => Promise<{
         type: T;
         target: DisplayCanvasHelper;
         message: DisplayCanvasHelperEventMessages[T];
     }>;
-    get removeEventListeners(): <T extends "contextState" | "numberOfColors" | "brightness" | "color" | "colorOpacity" | "opacity" | "resize" | "update">(type: T) => void;
+    get removeEventListeners(): <T extends "contextState" | "numberOfColors" | "brightness" | "color" | "colorOpacity" | "opacity" | "resize" | "update" | "ready">(type: T) => void;
     get removeAllEventListeners(): () => void;
     get canvas(): HTMLCanvasElement | undefined;
     set canvas(newCanvas: HTMLCanvasElement | undefined);
@@ -1117,6 +1153,9 @@ declare class DisplayCanvasHelper {
     get opacities(): number[];
     get contextState(): DisplayContextState;
     showDisplay(sendImmediately?: boolean): Promise<void>;
+    get interval(): number;
+    set interval(newInterval: number);
+    get isReady(): boolean;
     clearDisplay(sendImmediately?: boolean): Promise<void>;
     setColor(colorIndex: number, color: DisplayColorRGB | string, sendImmediately?: boolean): Promise<void>;
     setColorOpacity(colorIndex: number, opacity: number, sendImmediately?: boolean): Promise<void>;
@@ -1213,24 +1252,24 @@ declare class DevicePair {
     constructor(type: DevicePairType);
     get sides(): readonly ["left", "right"];
     get type(): "insoles" | "gloves";
-    get addEventListener(): <T extends "isConnected" | "sensorData" | "pressure" | "deviceOrientation" | "deviceConnected" | "deviceIsConnected" | "deviceRotation" | "deviceConnectionMessage" | "deviceNotConnected" | "deviceConnecting" | "deviceDisconnecting" | "deviceConnectionStatus" | "deviceBatteryLevel" | "deviceIsCharging" | "deviceGetBatteryCurrent" | "deviceGetMtu" | "deviceGetId" | "deviceGetName" | "deviceGetType" | "deviceGetCurrentTime" | "deviceManufacturerName" | "deviceModelNumber" | "deviceHardwareRevision" | "deviceFirmwareRevision" | "deviceSoftwareRevision" | "devicePnpId" | "deviceSerialNumber" | "deviceDeviceInformation" | "deviceGetSensorConfiguration" | "deviceSensorData" | "devicePressure" | "deviceAcceleration" | "deviceGravity" | "deviceLinearAcceleration" | "deviceGyroscope" | "deviceMagnetometer" | "deviceGameRotation" | "deviceActivity" | "deviceStepCounter" | "deviceStepDetector" | "deviceDeviceOrientation" | "deviceTapDetector" | "deviceBarometer" | "deviceGetFileTypes" | "deviceMaxFileLength" | "deviceGetFileType" | "deviceGetFileLength" | "deviceGetFileChecksum" | "deviceFileTransferStatus" | "deviceGetFileBlock" | "deviceFileTransferProgress" | "deviceFileTransferComplete" | "deviceFileReceived" | "deviceGetTfliteName" | "deviceGetTfliteTask" | "deviceGetTfliteSampleRate" | "deviceGetTfliteSensorTypes" | "deviceTfliteIsReady" | "deviceGetTfliteCaptureDelay" | "deviceGetTfliteThreshold" | "deviceGetTfliteInferencingEnabled" | "deviceTfliteInference" | "deviceIsWifiAvailable" | "deviceGetWifiSSID" | "deviceGetWifiPassword" | "deviceIsWifiConnected" | "deviceIpAddress" | "deviceCameraStatus" | "deviceGetCameraConfiguration" | "deviceCameraImageProgress" | "deviceCameraImage" | "deviceMicrophoneStatus" | "deviceGetMicrophoneConfiguration" | "deviceMicrophoneData" | "deviceIsRecordingMicrophone" | "deviceMicrophoneRecording" | "deviceSmp" | "deviceFirmwareImages" | "deviceFirmwareUploadProgress" | "deviceFirmwareStatus" | "deviceGetEnableWifiConnection">(type: T, listener: (event: {
+    get addEventListener(): <T extends "isConnected" | "sensorData" | "pressure" | "deviceOrientation" | "deviceConnected" | "deviceIsConnected" | "deviceRotation" | "deviceConnectionMessage" | "deviceNotConnected" | "deviceConnecting" | "deviceDisconnecting" | "deviceConnectionStatus" | "deviceBatteryLevel" | "deviceIsCharging" | "deviceGetBatteryCurrent" | "deviceGetMtu" | "deviceGetId" | "deviceGetName" | "deviceGetType" | "deviceGetCurrentTime" | "deviceManufacturerName" | "deviceModelNumber" | "deviceHardwareRevision" | "deviceFirmwareRevision" | "deviceSoftwareRevision" | "devicePnpId" | "deviceSerialNumber" | "deviceDeviceInformation" | "deviceGetSensorConfiguration" | "deviceSensorData" | "devicePressure" | "deviceAcceleration" | "deviceGravity" | "deviceLinearAcceleration" | "deviceGyroscope" | "deviceMagnetometer" | "deviceGameRotation" | "deviceActivity" | "deviceStepCounter" | "deviceStepDetector" | "deviceDeviceOrientation" | "deviceTapDetector" | "deviceBarometer" | "deviceGetFileTypes" | "deviceMaxFileLength" | "deviceGetFileType" | "deviceGetFileLength" | "deviceGetFileChecksum" | "deviceFileTransferStatus" | "deviceGetFileBlock" | "deviceFileTransferProgress" | "deviceFileTransferComplete" | "deviceFileReceived" | "deviceGetTfliteName" | "deviceGetTfliteTask" | "deviceGetTfliteSampleRate" | "deviceGetTfliteSensorTypes" | "deviceTfliteIsReady" | "deviceGetTfliteCaptureDelay" | "deviceGetTfliteThreshold" | "deviceGetTfliteInferencingEnabled" | "deviceTfliteInference" | "deviceIsWifiAvailable" | "deviceGetWifiSSID" | "deviceGetWifiPassword" | "deviceIsWifiConnected" | "deviceIpAddress" | "deviceCameraStatus" | "deviceGetCameraConfiguration" | "deviceCameraImageProgress" | "deviceCameraImage" | "deviceMicrophoneStatus" | "deviceGetMicrophoneConfiguration" | "deviceMicrophoneData" | "deviceIsRecordingMicrophone" | "deviceMicrophoneRecording" | "deviceIsDisplayAvailable" | "deviceDisplayStatus" | "deviceDisplayInformation" | "deviceGetDisplayBrightness" | "deviceDisplayReady" | "deviceDisplayContextState" | "deviceDisplayColor" | "deviceDisplayColorOpacity" | "deviceDisplayOpacity" | "deviceSmp" | "deviceFirmwareImages" | "deviceFirmwareUploadProgress" | "deviceFirmwareStatus" | "deviceGetEnableWifiConnection">(type: T, listener: (event: {
         type: T;
         target: DevicePair;
         message: DevicePairEventMessages[T];
     }) => void, options?: {
         once?: boolean;
     }) => void;
-    get removeEventListener(): <T extends "isConnected" | "sensorData" | "pressure" | "deviceOrientation" | "deviceConnected" | "deviceIsConnected" | "deviceRotation" | "deviceConnectionMessage" | "deviceNotConnected" | "deviceConnecting" | "deviceDisconnecting" | "deviceConnectionStatus" | "deviceBatteryLevel" | "deviceIsCharging" | "deviceGetBatteryCurrent" | "deviceGetMtu" | "deviceGetId" | "deviceGetName" | "deviceGetType" | "deviceGetCurrentTime" | "deviceManufacturerName" | "deviceModelNumber" | "deviceHardwareRevision" | "deviceFirmwareRevision" | "deviceSoftwareRevision" | "devicePnpId" | "deviceSerialNumber" | "deviceDeviceInformation" | "deviceGetSensorConfiguration" | "deviceSensorData" | "devicePressure" | "deviceAcceleration" | "deviceGravity" | "deviceLinearAcceleration" | "deviceGyroscope" | "deviceMagnetometer" | "deviceGameRotation" | "deviceActivity" | "deviceStepCounter" | "deviceStepDetector" | "deviceDeviceOrientation" | "deviceTapDetector" | "deviceBarometer" | "deviceGetFileTypes" | "deviceMaxFileLength" | "deviceGetFileType" | "deviceGetFileLength" | "deviceGetFileChecksum" | "deviceFileTransferStatus" | "deviceGetFileBlock" | "deviceFileTransferProgress" | "deviceFileTransferComplete" | "deviceFileReceived" | "deviceGetTfliteName" | "deviceGetTfliteTask" | "deviceGetTfliteSampleRate" | "deviceGetTfliteSensorTypes" | "deviceTfliteIsReady" | "deviceGetTfliteCaptureDelay" | "deviceGetTfliteThreshold" | "deviceGetTfliteInferencingEnabled" | "deviceTfliteInference" | "deviceIsWifiAvailable" | "deviceGetWifiSSID" | "deviceGetWifiPassword" | "deviceIsWifiConnected" | "deviceIpAddress" | "deviceCameraStatus" | "deviceGetCameraConfiguration" | "deviceCameraImageProgress" | "deviceCameraImage" | "deviceMicrophoneStatus" | "deviceGetMicrophoneConfiguration" | "deviceMicrophoneData" | "deviceIsRecordingMicrophone" | "deviceMicrophoneRecording" | "deviceSmp" | "deviceFirmwareImages" | "deviceFirmwareUploadProgress" | "deviceFirmwareStatus" | "deviceGetEnableWifiConnection">(type: T, listener: (event: {
+    get removeEventListener(): <T extends "isConnected" | "sensorData" | "pressure" | "deviceOrientation" | "deviceConnected" | "deviceIsConnected" | "deviceRotation" | "deviceConnectionMessage" | "deviceNotConnected" | "deviceConnecting" | "deviceDisconnecting" | "deviceConnectionStatus" | "deviceBatteryLevel" | "deviceIsCharging" | "deviceGetBatteryCurrent" | "deviceGetMtu" | "deviceGetId" | "deviceGetName" | "deviceGetType" | "deviceGetCurrentTime" | "deviceManufacturerName" | "deviceModelNumber" | "deviceHardwareRevision" | "deviceFirmwareRevision" | "deviceSoftwareRevision" | "devicePnpId" | "deviceSerialNumber" | "deviceDeviceInformation" | "deviceGetSensorConfiguration" | "deviceSensorData" | "devicePressure" | "deviceAcceleration" | "deviceGravity" | "deviceLinearAcceleration" | "deviceGyroscope" | "deviceMagnetometer" | "deviceGameRotation" | "deviceActivity" | "deviceStepCounter" | "deviceStepDetector" | "deviceDeviceOrientation" | "deviceTapDetector" | "deviceBarometer" | "deviceGetFileTypes" | "deviceMaxFileLength" | "deviceGetFileType" | "deviceGetFileLength" | "deviceGetFileChecksum" | "deviceFileTransferStatus" | "deviceGetFileBlock" | "deviceFileTransferProgress" | "deviceFileTransferComplete" | "deviceFileReceived" | "deviceGetTfliteName" | "deviceGetTfliteTask" | "deviceGetTfliteSampleRate" | "deviceGetTfliteSensorTypes" | "deviceTfliteIsReady" | "deviceGetTfliteCaptureDelay" | "deviceGetTfliteThreshold" | "deviceGetTfliteInferencingEnabled" | "deviceTfliteInference" | "deviceIsWifiAvailable" | "deviceGetWifiSSID" | "deviceGetWifiPassword" | "deviceIsWifiConnected" | "deviceIpAddress" | "deviceCameraStatus" | "deviceGetCameraConfiguration" | "deviceCameraImageProgress" | "deviceCameraImage" | "deviceMicrophoneStatus" | "deviceGetMicrophoneConfiguration" | "deviceMicrophoneData" | "deviceIsRecordingMicrophone" | "deviceMicrophoneRecording" | "deviceIsDisplayAvailable" | "deviceDisplayStatus" | "deviceDisplayInformation" | "deviceGetDisplayBrightness" | "deviceDisplayReady" | "deviceDisplayContextState" | "deviceDisplayColor" | "deviceDisplayColorOpacity" | "deviceDisplayOpacity" | "deviceSmp" | "deviceFirmwareImages" | "deviceFirmwareUploadProgress" | "deviceFirmwareStatus" | "deviceGetEnableWifiConnection">(type: T, listener: (event: {
         type: T;
         target: DevicePair;
         message: DevicePairEventMessages[T];
     }) => void) => void;
-    get waitForEvent(): <T extends "isConnected" | "sensorData" | "pressure" | "deviceOrientation" | "deviceConnected" | "deviceIsConnected" | "deviceRotation" | "deviceConnectionMessage" | "deviceNotConnected" | "deviceConnecting" | "deviceDisconnecting" | "deviceConnectionStatus" | "deviceBatteryLevel" | "deviceIsCharging" | "deviceGetBatteryCurrent" | "deviceGetMtu" | "deviceGetId" | "deviceGetName" | "deviceGetType" | "deviceGetCurrentTime" | "deviceManufacturerName" | "deviceModelNumber" | "deviceHardwareRevision" | "deviceFirmwareRevision" | "deviceSoftwareRevision" | "devicePnpId" | "deviceSerialNumber" | "deviceDeviceInformation" | "deviceGetSensorConfiguration" | "deviceSensorData" | "devicePressure" | "deviceAcceleration" | "deviceGravity" | "deviceLinearAcceleration" | "deviceGyroscope" | "deviceMagnetometer" | "deviceGameRotation" | "deviceActivity" | "deviceStepCounter" | "deviceStepDetector" | "deviceDeviceOrientation" | "deviceTapDetector" | "deviceBarometer" | "deviceGetFileTypes" | "deviceMaxFileLength" | "deviceGetFileType" | "deviceGetFileLength" | "deviceGetFileChecksum" | "deviceFileTransferStatus" | "deviceGetFileBlock" | "deviceFileTransferProgress" | "deviceFileTransferComplete" | "deviceFileReceived" | "deviceGetTfliteName" | "deviceGetTfliteTask" | "deviceGetTfliteSampleRate" | "deviceGetTfliteSensorTypes" | "deviceTfliteIsReady" | "deviceGetTfliteCaptureDelay" | "deviceGetTfliteThreshold" | "deviceGetTfliteInferencingEnabled" | "deviceTfliteInference" | "deviceIsWifiAvailable" | "deviceGetWifiSSID" | "deviceGetWifiPassword" | "deviceIsWifiConnected" | "deviceIpAddress" | "deviceCameraStatus" | "deviceGetCameraConfiguration" | "deviceCameraImageProgress" | "deviceCameraImage" | "deviceMicrophoneStatus" | "deviceGetMicrophoneConfiguration" | "deviceMicrophoneData" | "deviceIsRecordingMicrophone" | "deviceMicrophoneRecording" | "deviceSmp" | "deviceFirmwareImages" | "deviceFirmwareUploadProgress" | "deviceFirmwareStatus" | "deviceGetEnableWifiConnection">(type: T) => Promise<{
+    get waitForEvent(): <T extends "isConnected" | "sensorData" | "pressure" | "deviceOrientation" | "deviceConnected" | "deviceIsConnected" | "deviceRotation" | "deviceConnectionMessage" | "deviceNotConnected" | "deviceConnecting" | "deviceDisconnecting" | "deviceConnectionStatus" | "deviceBatteryLevel" | "deviceIsCharging" | "deviceGetBatteryCurrent" | "deviceGetMtu" | "deviceGetId" | "deviceGetName" | "deviceGetType" | "deviceGetCurrentTime" | "deviceManufacturerName" | "deviceModelNumber" | "deviceHardwareRevision" | "deviceFirmwareRevision" | "deviceSoftwareRevision" | "devicePnpId" | "deviceSerialNumber" | "deviceDeviceInformation" | "deviceGetSensorConfiguration" | "deviceSensorData" | "devicePressure" | "deviceAcceleration" | "deviceGravity" | "deviceLinearAcceleration" | "deviceGyroscope" | "deviceMagnetometer" | "deviceGameRotation" | "deviceActivity" | "deviceStepCounter" | "deviceStepDetector" | "deviceDeviceOrientation" | "deviceTapDetector" | "deviceBarometer" | "deviceGetFileTypes" | "deviceMaxFileLength" | "deviceGetFileType" | "deviceGetFileLength" | "deviceGetFileChecksum" | "deviceFileTransferStatus" | "deviceGetFileBlock" | "deviceFileTransferProgress" | "deviceFileTransferComplete" | "deviceFileReceived" | "deviceGetTfliteName" | "deviceGetTfliteTask" | "deviceGetTfliteSampleRate" | "deviceGetTfliteSensorTypes" | "deviceTfliteIsReady" | "deviceGetTfliteCaptureDelay" | "deviceGetTfliteThreshold" | "deviceGetTfliteInferencingEnabled" | "deviceTfliteInference" | "deviceIsWifiAvailable" | "deviceGetWifiSSID" | "deviceGetWifiPassword" | "deviceIsWifiConnected" | "deviceIpAddress" | "deviceCameraStatus" | "deviceGetCameraConfiguration" | "deviceCameraImageProgress" | "deviceCameraImage" | "deviceMicrophoneStatus" | "deviceGetMicrophoneConfiguration" | "deviceMicrophoneData" | "deviceIsRecordingMicrophone" | "deviceMicrophoneRecording" | "deviceIsDisplayAvailable" | "deviceDisplayStatus" | "deviceDisplayInformation" | "deviceGetDisplayBrightness" | "deviceDisplayReady" | "deviceDisplayContextState" | "deviceDisplayColor" | "deviceDisplayColorOpacity" | "deviceDisplayOpacity" | "deviceSmp" | "deviceFirmwareImages" | "deviceFirmwareUploadProgress" | "deviceFirmwareStatus" | "deviceGetEnableWifiConnection">(type: T) => Promise<{
         type: T;
         target: DevicePair;
         message: DevicePairEventMessages[T];
     }>;
-    get removeEventListeners(): <T extends "isConnected" | "sensorData" | "pressure" | "deviceOrientation" | "deviceConnected" | "deviceIsConnected" | "deviceRotation" | "deviceConnectionMessage" | "deviceNotConnected" | "deviceConnecting" | "deviceDisconnecting" | "deviceConnectionStatus" | "deviceBatteryLevel" | "deviceIsCharging" | "deviceGetBatteryCurrent" | "deviceGetMtu" | "deviceGetId" | "deviceGetName" | "deviceGetType" | "deviceGetCurrentTime" | "deviceManufacturerName" | "deviceModelNumber" | "deviceHardwareRevision" | "deviceFirmwareRevision" | "deviceSoftwareRevision" | "devicePnpId" | "deviceSerialNumber" | "deviceDeviceInformation" | "deviceGetSensorConfiguration" | "deviceSensorData" | "devicePressure" | "deviceAcceleration" | "deviceGravity" | "deviceLinearAcceleration" | "deviceGyroscope" | "deviceMagnetometer" | "deviceGameRotation" | "deviceActivity" | "deviceStepCounter" | "deviceStepDetector" | "deviceDeviceOrientation" | "deviceTapDetector" | "deviceBarometer" | "deviceGetFileTypes" | "deviceMaxFileLength" | "deviceGetFileType" | "deviceGetFileLength" | "deviceGetFileChecksum" | "deviceFileTransferStatus" | "deviceGetFileBlock" | "deviceFileTransferProgress" | "deviceFileTransferComplete" | "deviceFileReceived" | "deviceGetTfliteName" | "deviceGetTfliteTask" | "deviceGetTfliteSampleRate" | "deviceGetTfliteSensorTypes" | "deviceTfliteIsReady" | "deviceGetTfliteCaptureDelay" | "deviceGetTfliteThreshold" | "deviceGetTfliteInferencingEnabled" | "deviceTfliteInference" | "deviceIsWifiAvailable" | "deviceGetWifiSSID" | "deviceGetWifiPassword" | "deviceIsWifiConnected" | "deviceIpAddress" | "deviceCameraStatus" | "deviceGetCameraConfiguration" | "deviceCameraImageProgress" | "deviceCameraImage" | "deviceMicrophoneStatus" | "deviceGetMicrophoneConfiguration" | "deviceMicrophoneData" | "deviceIsRecordingMicrophone" | "deviceMicrophoneRecording" | "deviceSmp" | "deviceFirmwareImages" | "deviceFirmwareUploadProgress" | "deviceFirmwareStatus" | "deviceGetEnableWifiConnection">(type: T) => void;
+    get removeEventListeners(): <T extends "isConnected" | "sensorData" | "pressure" | "deviceOrientation" | "deviceConnected" | "deviceIsConnected" | "deviceRotation" | "deviceConnectionMessage" | "deviceNotConnected" | "deviceConnecting" | "deviceDisconnecting" | "deviceConnectionStatus" | "deviceBatteryLevel" | "deviceIsCharging" | "deviceGetBatteryCurrent" | "deviceGetMtu" | "deviceGetId" | "deviceGetName" | "deviceGetType" | "deviceGetCurrentTime" | "deviceManufacturerName" | "deviceModelNumber" | "deviceHardwareRevision" | "deviceFirmwareRevision" | "deviceSoftwareRevision" | "devicePnpId" | "deviceSerialNumber" | "deviceDeviceInformation" | "deviceGetSensorConfiguration" | "deviceSensorData" | "devicePressure" | "deviceAcceleration" | "deviceGravity" | "deviceLinearAcceleration" | "deviceGyroscope" | "deviceMagnetometer" | "deviceGameRotation" | "deviceActivity" | "deviceStepCounter" | "deviceStepDetector" | "deviceDeviceOrientation" | "deviceTapDetector" | "deviceBarometer" | "deviceGetFileTypes" | "deviceMaxFileLength" | "deviceGetFileType" | "deviceGetFileLength" | "deviceGetFileChecksum" | "deviceFileTransferStatus" | "deviceGetFileBlock" | "deviceFileTransferProgress" | "deviceFileTransferComplete" | "deviceFileReceived" | "deviceGetTfliteName" | "deviceGetTfliteTask" | "deviceGetTfliteSampleRate" | "deviceGetTfliteSensorTypes" | "deviceTfliteIsReady" | "deviceGetTfliteCaptureDelay" | "deviceGetTfliteThreshold" | "deviceGetTfliteInferencingEnabled" | "deviceTfliteInference" | "deviceIsWifiAvailable" | "deviceGetWifiSSID" | "deviceGetWifiPassword" | "deviceIsWifiConnected" | "deviceIpAddress" | "deviceCameraStatus" | "deviceGetCameraConfiguration" | "deviceCameraImageProgress" | "deviceCameraImage" | "deviceMicrophoneStatus" | "deviceGetMicrophoneConfiguration" | "deviceMicrophoneData" | "deviceIsRecordingMicrophone" | "deviceMicrophoneRecording" | "deviceIsDisplayAvailable" | "deviceDisplayStatus" | "deviceDisplayInformation" | "deviceGetDisplayBrightness" | "deviceDisplayReady" | "deviceDisplayContextState" | "deviceDisplayColor" | "deviceDisplayColorOpacity" | "deviceDisplayOpacity" | "deviceSmp" | "deviceFirmwareImages" | "deviceFirmwareUploadProgress" | "deviceFirmwareStatus" | "deviceGetEnableWifiConnection">(type: T) => void;
     get removeAllEventListeners(): () => void;
     get left(): Device | undefined;
     get right(): Device | undefined;

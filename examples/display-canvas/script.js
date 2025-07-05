@@ -1737,6 +1737,7 @@ const updateLookAt = () => {
   target.z += faceParams.refocus.offset.z;
   lookAt(target);
 };
+// FILL - use "ready"
 let throttleInterval = 110;
 const updateInterval = (newInterval) => {
   throttleInterval = newInterval;

@@ -115,6 +115,7 @@ import MicrophoneManager, {
 } from "./MicrophoneManager.ts";
 import DisplayManager, {
   DisplayEventDispatcher,
+  DisplayEventMessages,
   DisplayEventTypes,
   DisplayMessageType,
   DisplayMessageTypes,
@@ -170,6 +171,7 @@ export interface DeviceEventMessages
     WifiEventMessages,
     CameraEventMessages,
     MicrophoneEventMessages,
+    DisplayEventMessages,
     FirmwareEventMessages {
   batteryLevel: { batteryLevel: number };
   connectionMessage: { messageType: ConnectionMessageType; dataView: DataView };

@@ -45,6 +45,7 @@ import {
   Uint16Max,
   Vector2,
 } from "./MathUtils.ts";
+import Timer, { wait } from "./Timer.ts";
 
 const _console = createConsole("DisplayCanvasHelper", { log: true });
 
@@ -57,6 +58,7 @@ export const DisplayCanvasHelperEventTypes = [
   "opacity",
   "resize",
   "update",
+  "ready",
 ] as const;
 export type DisplayCanvasHelperEventType =
   (typeof DisplayCanvasHelperEventTypes)[number];
@@ -88,6 +90,8 @@ export interface DisplayCanvasHelperEventMessages {
     width: number;
     height: number;
   };
+  update: {};
+  ready: {};
 }
 
 export type DisplayCanvasHelperEventDispatcher = EventDispatcher<
@@ -299,6 +303,7 @@ class DisplayCanvasHelper {
     }
     if (this.#device) {
       removeEventListeners(this.device, this.#boundDeviceEventListeners);
+      this.#isReady = true;
     }
     this.#device = newDevice;
     addEventListeners(this.#device, this.#boundDeviceEventListeners);
@@ -307,6 +312,7 @@ class DisplayCanvasHelper {
       this.numberOfColors = this.device.numberOfDisplayColors!;
       this.#updateCanvas();
       this.#updateDevice();
+      this.#isReady = this.device.isDisplayReady;
     }
   }
 
@@ -314,6 +320,7 @@ class DisplayCanvasHelper {
   #boundDeviceEventListeners: BoundDeviceEventListeners = {
     connected: this.#onDeviceConnected.bind(this),
     notConnected: this.#onDeviceNotConnected.bind(this),
+    displayReady: this.#onDeviceDisplayReady.bind(this),
   };
   #onDeviceConnected(event: DeviceEventMap["connected"]) {
     _console.log("device connected");
@@ -323,6 +330,11 @@ class DisplayCanvasHelper {
   }
   #onDeviceNotConnected(event: DeviceEventMap["notConnected"]) {
     _console.log("device not connected");
+  }
+  #onDeviceDisplayReady(event: DeviceEventMap["displayReady"]) {
+    _console.log("device display ready");
+    this.#isReady = true;
+    this.#dispatchEvent("ready", {});
   }
 
   #updateDevice() {
@@ -432,21 +444,48 @@ class DisplayCanvasHelper {
 
     this.#drawFrontDrawStack();
 
+    this.#isReady = false;
+
     if (this.device?.isConnected) {
       await this.device.showDisplay(sendImmediately);
+    } else {
+      await wait(this.#interval);
+      this.#dispatchEvent("ready", {});
+      this.#isReady = true;
     }
   }
+  #interval = 100;
+  get interval() {
+    return this.#interval;
+  }
+  set interval(newInterval) {
+    this.#interval = newInterval;
+    _console.log({ interval: this.#interval });
+  }
+
+  #isReady = true;
+  get isReady() {
+    return this.#isReady;
+  }
+
   async clearDisplay(sendImmediately = true) {
     _console.log("clearDisplay");
 
     this.#frontDrawStack.length = 0;
     this.#rearDrawStack.length = 0;
 
+    this.#isReady = false;
+
     this.#context.clearRect(0, 0, this.width, this.height);
+    this.#drawBackground();
+
     if (this.device?.isConnected) {
       await this.device.clearDisplay(sendImmediately);
+    } else {
+      await wait(this.#interval);
+      this.#dispatchEvent("ready", {});
+      this.#isReady = true;
     }
-    this.#drawBackground();
   }
 
   async setColor(
