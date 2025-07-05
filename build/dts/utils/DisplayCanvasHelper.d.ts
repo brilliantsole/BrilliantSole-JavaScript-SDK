@@ -1,5 +1,5 @@
 import Device from "../Device.ts";
-import { DisplayBrightness, DisplayColorRGB, DisplayContextState, DisplayContextStateKey, DisplaySegmentCap } from "../DisplayManager.ts";
+import { DisplayBitmapColorPair, DisplayBrightness, DisplayColorRGB, DisplayContextState, DisplayContextStateKey, DisplaySegmentCap } from "../DisplayManager.ts";
 import { DisplayCropDirection } from "./DisplayUtils.ts";
 import EventDispatcher, { BoundEventListeners, Event, EventListenerMap, EventMap } from "./EventDispatcher.ts";
 import { Vector2 } from "./MathUtils.ts";
@@ -114,6 +114,9 @@ declare class DisplayCanvasHelper {
     setRotationCropBottom(rotationCropBottom: number, sendImmediately?: boolean): Promise<void>;
     setRotationCropLeft(rotationCropLeft: number, sendImmediately?: boolean): Promise<void>;
     clearRotationCrop(sendImmediately?: boolean): Promise<void>;
+    selectBitmapColorIndex(bitmapColorIndex: number, colorIndex: number, sendImmediately?: boolean): Promise<void>;
+    selectDisplayBitmapColorIndices(bitmapColors: DisplayBitmapColorPair[], sendImmediately?: boolean): Promise<void>;
+    setBitmapScale(bitmapScale: number, sendImmediately?: boolean): Promise<void>;
     clearRect(x: number, y: number, width: number, height: number, sendImmediately?: boolean): Promise<void>;
     drawRect(centerX: number, centerY: number, width: number, height: number, sendImmediately?: boolean): Promise<void>;
     drawRoundRect(centerX: number, centerY: number, width: number, height: number, borderRadius: number, sendImmediately?: boolean): Promise<void>;

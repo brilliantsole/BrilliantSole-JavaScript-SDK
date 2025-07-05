@@ -1,5 +1,10 @@
 import { DisplayBrightness, DisplayColorRGB, DisplayContextCommand, DisplayContextStateKey, DisplaySegmentCap } from "../DisplayManager.ts";
 export declare function formatRotation(rotation: number, isRadians?: boolean, isSigned?: boolean): number;
+export declare function roundToStep(value: number, step: number): number;
+export declare const maxDisplayBitmapScale = 100;
+export declare const displayBitmapScaleStep = 0.002;
+export declare function formatBitmapScale(bitmapScale: number): number;
+export declare function roundBitmapScale(bitmapScale: number): number;
 export declare function assertValidSegmentCap(segmentCap: DisplaySegmentCap): void;
 export declare function assertValidDisplayBrightness(displayBrightness: DisplayBrightness): void;
 export declare function assertValidColorValue(name: string, value: number): void;

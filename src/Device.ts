@@ -1667,6 +1667,19 @@ class Device {
     return this.#displayManager.setContextState;
   }
 
+  get selectDisplayBitmapColorIndex() {
+    this.#assertDisplayIsAvailable();
+    return this.#displayManager.selectBitmapColorIndex;
+  }
+  get selectDisplayBitmapColorIndices() {
+    this.#assertDisplayIsAvailable();
+    return this.#displayManager.selectBitmapColorIndices;
+  }
+  get setDisplayBitmapScale() {
+    this.#assertDisplayIsAvailable();
+    return this.#displayManager.setBitmapScale;
+  }
+
   // FILL - spritesheet, text, etc
 }
 

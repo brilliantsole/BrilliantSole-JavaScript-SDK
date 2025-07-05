@@ -110,6 +110,8 @@ export {
   DisplaySegmentCaps,
 } from "./DisplayManager.ts";
 
+export { maxDisplayBitmapScale } from "./utils/DisplayUtils.ts";
+
 /** BROWSER_START */
 export {
   default as DisplayCanvasHelper,

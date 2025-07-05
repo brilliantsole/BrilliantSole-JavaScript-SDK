@@ -246,5 +246,8 @@ declare class Device {
     get drawDisplayArc(): (centerX: number, centerY: number, radius: number, startAngle: number, angleOffset: number, isRadians?: boolean, sendImmediately?: boolean) => Promise<void>;
     get drawDisplayArcEllipse(): (centerX: number, centerY: number, radiusX: number, radiusY: number, startAngle: number, angleOffset: number, isRadians?: boolean, sendImmediately?: boolean) => Promise<void>;
     get setDisplayContextState(): (newState: import("./DisplayManager.ts").PartialDisplayContextState, sendImmediately?: boolean) => Promise<void>;
+    get selectDisplayBitmapColorIndex(): (bitmapColorIndex: number, colorIndex: number, sendImmediately?: boolean) => Promise<void>;
+    get selectDisplayBitmapColorIndices(): (bitmapColors: import("./DisplayManager.ts").DisplayBitmapColorPair[], sendImmediately?: boolean) => Promise<void>;
+    get setDisplayBitmapScale(): (bitmapScale: number, sendImmediately?: boolean) => Promise<void>;
 }
 export default Device;

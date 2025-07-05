@@ -4,6 +4,7 @@ import Device, {
 } from "../Device.ts";
 import {
   DefaultDisplayContextState,
+  DisplayBitmapColorPair,
   DisplayBrightness,
   DisplayColorRGB,
   DisplayContextState,
@@ -25,6 +26,8 @@ import {
   DisplayRotationCropDirectionToCommand,
   DisplayRotationCropDirectionToStateKey,
   formatRotation,
+  maxDisplayBitmapScale,
+  roundBitmapScale,
 } from "./DisplayUtils.ts";
 import EventDispatcher, {
   BoundEventListeners,
@@ -34,6 +37,7 @@ import EventDispatcher, {
 } from "./EventDispatcher.ts";
 import { addEventListeners, removeEventListeners } from "./EventUtils.ts";
 import {
+  clamp,
   degToRad,
   getVector2Angle,
   getVector2Length,
@@ -359,6 +363,9 @@ class DisplayCanvasHelper {
 
     this.#colors = new Array(this.numberOfColors).fill("#000000");
     this.#opacities = new Array(this.numberOfColors).fill(1);
+    this.contextState.bitmapColorIndices = new Array(this.numberOfColors).fill(
+      0
+    );
 
     this.#dispatchEvent("numberOfColors", {
       numberOfColors: this.numberOfColors,
@@ -421,7 +428,7 @@ class DisplayCanvasHelper {
   }
   #onDisplayContextStateUpdate(differences: DisplayContextStateKey[]) {
     this.#dispatchEvent("contextState", {
-      contextState: { ...this.contextState },
+      contextState: structuredClone(this.contextState),
       differences,
     });
   }
@@ -845,6 +852,82 @@ class DisplayCanvasHelper {
     this.#onDisplayContextStateUpdate(differences);
   }
 
+  async selectBitmapColorIndex(
+    bitmapColorIndex: number,
+    colorIndex: number,
+    sendImmediately?: boolean
+  ) {
+    this.#assertValidColorIndex(bitmapColorIndex);
+    const bitmapColorIndices = this.contextState.bitmapColorIndices.slice();
+    bitmapColorIndices[bitmapColorIndex] = colorIndex;
+    const differences = this.#displayContextStateHelper.update({
+      bitmapColorIndices,
+    });
+    if (differences.length == 0) {
+      return;
+    }
+
+    if (this.device?.isConnected) {
+      await this.device.selectDisplayBitmapColorIndex(
+        bitmapColorIndex,
+        colorIndex,
+        sendImmediately
+      );
+    }
+    this.#onDisplayContextStateUpdate(differences);
+  }
+
+  async selectDisplayBitmapColorIndices(
+    bitmapColors: DisplayBitmapColorPair[],
+    sendImmediately?: boolean
+  ) {
+    _console.assertRangeWithError(
+      "bitmapColors",
+      bitmapColors.length,
+      1,
+      this.numberOfColors
+    );
+    const bitmapColorIndices = this.contextState.bitmapColorIndices.slice();
+    bitmapColors.forEach(({ bitmapColorIndex, colorIndex }) => {
+      this.#assertValidColorIndex(bitmapColorIndex);
+      this.#assertValidColorIndex(colorIndex);
+      bitmapColorIndices[bitmapColorIndex] = colorIndex;
+    });
+
+    const differences = this.#displayContextStateHelper.update({
+      bitmapColorIndices,
+    });
+    if (differences.length == 0) {
+      return;
+    }
+
+    if (this.device?.isConnected) {
+      await this.device.selectDisplayBitmapColorIndices(
+        bitmapColors,
+        sendImmediately
+      );
+    }
+    this.#onDisplayContextStateUpdate(differences);
+  }
+
+  async setBitmapScale(bitmapScale: number, sendImmediately?: boolean) {
+    bitmapScale = clamp(bitmapScale, 0, maxDisplayBitmapScale);
+    bitmapScale = roundBitmapScale(bitmapScale);
+    _console.log({ bitmapScale });
+    const differences = this.#displayContextStateHelper.update({
+      bitmapScale,
+    });
+    if (differences.length == 0) {
+      return;
+    }
+
+    if (this.device?.isConnected) {
+      await this.device.setDisplayBitmapScale(bitmapScale, sendImmediately);
+    }
+
+    this.#onDisplayContextStateUpdate(differences);
+  }
+
   #clearRectToCanvas(x: number, y: number, width: number, height: number) {
     this.#save();
     this.context.resetTransform();
@@ -1042,7 +1125,7 @@ class DisplayCanvasHelper {
     height: number,
     sendImmediately?: boolean
   ) {
-    const contextState = { ...this.contextState };
+    const contextState = structuredClone(this.contextState);
     this.#rearDrawStack.push(() =>
       this.#drawRectToCanvas(centerX, centerY, width, height, contextState)
     );
@@ -1104,7 +1187,7 @@ class DisplayCanvasHelper {
     borderRadius: number,
     sendImmediately?: boolean
   ) {
-    const contextState = { ...this.contextState };
+    const contextState = structuredClone(this.contextState);
     this.#rearDrawStack.push(() =>
       this.#drawRoundRectToCanvas(
         centerX,
@@ -1179,7 +1262,7 @@ class DisplayCanvasHelper {
     radius: number,
     sendImmediately?: boolean
   ) {
-    const contextState = { ...this.contextState };
+    const contextState = structuredClone(this.contextState);
     this.#rearDrawStack.push(() =>
       this.#drawCircleToCanvas(centerX, centerY, radius, contextState)
     );
@@ -1252,7 +1335,7 @@ class DisplayCanvasHelper {
     radiusY: number,
     sendImmediately?: boolean
   ) {
-    const contextState = { ...this.contextState };
+    const contextState = structuredClone(this.contextState);
     this.#rearDrawStack.push(() =>
       this.#drawEllipseToCanvas(
         centerX,
@@ -1350,7 +1433,7 @@ class DisplayCanvasHelper {
       _console.error(`invalid numberOfSides ${numberOfSides}`);
       return;
     }
-    const contextState = { ...this.contextState };
+    const contextState = structuredClone(this.contextState);
     this.#rearDrawStack.push(() =>
       this.#drawPolygonToCanvas(
         centerX,
@@ -1653,7 +1736,7 @@ class DisplayCanvasHelper {
       _console.error(`cannot draw segment of length 0`);
       return;
     }
-    const contextState = { ...this.contextState };
+    const contextState = structuredClone(this.contextState);
     this.#rearDrawStack.push(() =>
       this.#drawSegmentToCanvas(startX, startY, endX, endY, contextState)
     );
@@ -1717,7 +1800,7 @@ class DisplayCanvasHelper {
   async drawSegments(points: Vector2[], sendImmediately?: boolean) {
     _console.assertRangeWithError("numberOfPoints", points.length, 2, 255);
     _console.log({ points });
-    const contextState = { ...this.contextState };
+    const contextState = structuredClone(this.contextState);
     this.#rearDrawStack.push(() =>
       this.#drawSegmentsToCanvas(points, contextState)
     );
@@ -1783,7 +1866,7 @@ class DisplayCanvasHelper {
     startAngle = isRadians ? startAngle : degToRad(startAngle);
     angleOffset = isRadians ? angleOffset : degToRad(angleOffset);
 
-    const contextState = { ...this.contextState };
+    const contextState = structuredClone(this.contextState);
     this.#rearDrawStack.push(() =>
       this.#drawArcToCanvas(
         centerX,
@@ -1888,7 +1971,7 @@ class DisplayCanvasHelper {
     startAngle = isRadians ? startAngle : degToRad(startAngle);
     angleOffset = isRadians ? angleOffset : degToRad(angleOffset);
 
-    const contextState = { ...this.contextState };
+    const contextState = structuredClone(this.contextState);
     this.#rearDrawStack.push(() =>
       this.#drawArcEllipseToCanvas(
         centerX,

@@ -98,7 +98,7 @@ class SensorConfigurationManager {
   ) {
     if (clearRest) {
       newSensorConfiguration = Object.assign(
-        { ...this.zeroSensorConfiguration },
+        structuredClone(this.zeroSensorConfiguration),
         newSensorConfiguration
       );
     }

@@ -5,6 +5,7 @@ import {
   PartialDisplayContextState,
 } from "../DisplayManager.ts";
 import { createConsole } from "./Console.ts";
+import { deepEqual } from "./ObjectUtils.ts";
 
 const _console = createConsole("DisplayContextStateHelper", { log: false });
 
@@ -19,7 +20,8 @@ class DisplayContextStateHelper {
     const keys = Object.keys(other) as DisplayContextStateKey[];
     keys.forEach((key) => {
       const value = other[key]!;
-      if (this.#state[key] != value) {
+
+      if (!deepEqual(this.#state[key], value)) {
         differences.push(key);
       }
     });

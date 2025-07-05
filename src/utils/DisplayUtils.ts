@@ -39,6 +39,23 @@ export function formatRotation(
   return rotation;
 }
 
+export function roundToStep(value: number, step: number) {
+  const roundedValue = Math.floor(value / step) * step;
+  _console.log(value, step, roundedValue);
+  return roundedValue;
+}
+
+export const maxDisplayBitmapScale = 100;
+export const displayBitmapScaleStep = 0.002;
+export function formatBitmapScale(bitmapScale: number) {
+  bitmapScale /= displayBitmapScaleStep;
+  _console.log({ formattedBitmapScale: bitmapScale });
+  return bitmapScale;
+}
+export function roundBitmapScale(bitmapScale: number) {
+  return roundToStep(bitmapScale, displayBitmapScaleStep);
+}
+
 export function assertValidSegmentCap(segmentCap: DisplaySegmentCap) {
   _console.assertEnumWithError(segmentCap, DisplaySegmentCaps);
 }

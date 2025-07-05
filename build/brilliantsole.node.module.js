@@ -312,7 +312,7 @@ class EventDispatcher {
 }
 
 var _Timer_callback, _Timer_interval, _Timer_intervalId;
-const _console$I = createConsole("Timer", { log: true });
+const _console$I = createConsole("Timer", { log: false });
 class Timer {
     get callback() {
         return __classPrivateFieldGet(this, _Timer_callback, "f");
@@ -2233,7 +2233,7 @@ class SensorConfigurationManager {
     }
     async setConfiguration(newSensorConfiguration, clearRest, sendImmediately) {
         if (clearRest) {
-            newSensorConfiguration = Object.assign({ ...this.zeroSensorConfiguration }, newSensorConfiguration);
+            newSensorConfiguration = Object.assign(structuredClone(this.zeroSensorConfiguration), newSensorConfiguration);
         }
         _console$x.log({ newSensorConfiguration });
         if (__classPrivateFieldGet(this, _SensorConfigurationManager_instances, "m", _SensorConfigurationManager_isRedundant).call(this, newSensorConfiguration)) {
@@ -3719,6 +3719,28 @@ function rgbToHex({ r, g, b }) {
     return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
 }
 
+function deepEqual(obj1, obj2) {
+    if (obj1 === obj2) {
+        return true;
+    }
+    if (typeof obj1 !== "object" ||
+        obj1 === null ||
+        typeof obj2 !== "object" ||
+        obj2 === null) {
+        return false;
+    }
+    const keys1 = Object.keys(obj1);
+    const keys2 = Object.keys(obj2);
+    if (keys1.length !== keys2.length)
+        return false;
+    for (let key of keys1) {
+        if (!keys2.includes(key) || !deepEqual(obj1[key], obj2[key])) {
+            return false;
+        }
+    }
+    return true;
+}
+
 var _DisplayContextStateHelper_state;
 const _console$q = createConsole("DisplayContextStateHelper", { log: false });
 class DisplayContextStateHelper {
@@ -3733,7 +3755,7 @@ class DisplayContextStateHelper {
         const keys = Object.keys(other);
         keys.forEach((key) => {
             const value = other[key];
-            if (__classPrivateFieldGet(this, _DisplayContextStateHelper_state, "f")[key] != value) {
+            if (!deepEqual(__classPrivateFieldGet(this, _DisplayContextStateHelper_state, "f")[key], value)) {
                 differences.push(key);
             }
         });
@@ -3771,6 +3793,21 @@ function formatRotation(rotation, isRadians, isSigned) {
     rotation = Math.floor(rotation);
     _console$p.log({ formattedRotation: rotation });
     return rotation;
+}
+function roundToStep(value, step) {
+    const roundedValue = Math.floor(value / step) * step;
+    _console$p.log(value, step, roundedValue);
+    return roundedValue;
+}
+const maxDisplayBitmapScale = 100;
+const displayBitmapScaleStep = 0.002;
+function formatBitmapScale(bitmapScale) {
+    bitmapScale /= displayBitmapScaleStep;
+    _console$p.log({ formattedBitmapScale: bitmapScale });
+    return bitmapScale;
+}
+function roundBitmapScale(bitmapScale) {
+    return roundToStep(bitmapScale, displayBitmapScaleStep);
 }
 function assertValidSegmentCap(segmentCap) {
     _console$p.assertEnumWithError(segmentCap, DisplaySegmentCaps);
@@ -3873,6 +3910,8 @@ const DefaultDisplayContextState = {
     rotationCropRight: 0,
     rotationCropBottom: 0,
     rotationCropLeft: 0,
+    bitmapColorIndices: new Array(0).fill(0),
+    bitmapScale: 1,
 };
 const DisplayInformationValues = {
     type: DisplayTypes,
@@ -3907,6 +3946,9 @@ const DisplayContextCommands = [
     "setRotationCropBottom",
     "setRotationCropLeft",
     "clearRotationCrop",
+    "selectBitmapColor",
+    "selectBitmapColors",
+    "setBitmapScale",
     "clearRect",
     "drawRect",
     "drawRoundRect",
@@ -4021,6 +4063,16 @@ class DisplayManager {
                     break;
                 case "rotationCropLeft":
                     this.setRotationCropLeft(newState.rotationCropLeft);
+                    break;
+                case "bitmapColorIndices":
+                    const bitmapColors = [];
+                    newState.bitmapColorIndices.forEach((colorIndex, bitmapColorIndex) => {
+                        bitmapColors.push({ bitmapColorIndex, colorIndex });
+                    });
+                    this.selectBitmapColorIndices(bitmapColors);
+                    break;
+                case "bitmapScale":
+                    this.setBitmapScale(newState.bitmapScale);
                     break;
             }
         });
@@ -4387,6 +4439,63 @@ class DisplayManager {
         await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "clearRotationCrop", undefined, sendImmediately);
         __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_onDisplayContextStateUpdate).call(this, differences);
     }
+    async selectBitmapColorIndex(bitmapColorIndex, colorIndex, sendImmediately) {
+        __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_assertValidColorIndex).call(this, bitmapColorIndex);
+        __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_assertValidColorIndex).call(this, colorIndex);
+        const bitmapColorIndices = this.displayContextState.bitmapColorIndices.slice();
+        bitmapColorIndices[bitmapColorIndex] = colorIndex;
+        const differences = __classPrivateFieldGet(this, _DisplayManager_displayContextStateHelper, "f").update({
+            bitmapColorIndices,
+        });
+        if (differences.length == 0) {
+            return;
+        }
+        const dataView = new DataView(new ArrayBuffer(2));
+        dataView.setUint8(0, bitmapColorIndex);
+        dataView.setUint8(1, colorIndex);
+        await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "selectBitmapColor", dataView.buffer, sendImmediately);
+        __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_onDisplayContextStateUpdate).call(this, differences);
+    }
+    async selectBitmapColorIndices(bitmapColors, sendImmediately) {
+        _console$o.assertRangeWithError("bitmapColors", bitmapColors.length, 1, this.numberOfColors);
+        const bitmapColorIndices = this.displayContextState.bitmapColorIndices.slice();
+        bitmapColors.forEach(({ bitmapColorIndex, colorIndex }) => {
+            __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_assertValidColorIndex).call(this, bitmapColorIndex);
+            __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_assertValidColorIndex).call(this, colorIndex);
+            bitmapColorIndices[bitmapColorIndex] = colorIndex;
+        });
+        const differences = __classPrivateFieldGet(this, _DisplayManager_displayContextStateHelper, "f").update({
+            bitmapColorIndices,
+        });
+        if (differences.length == 0) {
+            return;
+        }
+        const dataView = new DataView(new ArrayBuffer(bitmapColors.length * 2 + 1));
+        let offset = 0;
+        dataView.setUint8(offset++, bitmapColors.length);
+        bitmapColors.forEach(({ bitmapColorIndex, colorIndex }, index) => {
+            dataView.setUint8(offset, bitmapColorIndex);
+            dataView.setUint8(offset + 1, colorIndex);
+            offset += 2;
+        });
+        await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "selectBitmapColors", dataView.buffer, sendImmediately);
+        __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_onDisplayContextStateUpdate).call(this, differences);
+    }
+    async setBitmapScale(bitmapScale, sendImmediately) {
+        bitmapScale = clamp(bitmapScale, 0, maxDisplayBitmapScale);
+        bitmapScale = roundBitmapScale(bitmapScale);
+        _console$o.log({ bitmapScale });
+        const differences = __classPrivateFieldGet(this, _DisplayManager_displayContextStateHelper, "f").update({
+            bitmapScale,
+        });
+        if (differences.length == 0) {
+            return;
+        }
+        const dataView = new DataView(new ArrayBuffer(2));
+        dataView.setUint16(0, formatBitmapScale(bitmapScale), true);
+        await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "setBitmapScale", dataView.buffer, sendImmediately);
+        __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_onDisplayContextStateUpdate).call(this, differences);
+    }
     async clearRect(x, y, width, height, sendImmediately) {
         const { x: _x, y: _y, width: _width, height: _height, } = __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_clampBox).call(this, x, y, width, height);
         const dataView = new DataView(new ArrayBuffer(2 * 4));
@@ -4577,7 +4686,7 @@ _DisplayManager_isDisplayAvailable = new WeakMap(), _DisplayManager_displayConte
     });
 }, _DisplayManager_onDisplayContextStateUpdate = function _DisplayManager_onDisplayContextStateUpdate(differences) {
     __classPrivateFieldGet(this, _DisplayManager_instances, "a", _DisplayManager_dispatchEvent_get).call(this, "displayContextState", {
-        displayContextState: { ...this.displayContextState },
+        displayContextState: structuredClone(this.displayContextState),
         differences,
     });
 }, _DisplayManager_parseDisplayStatus = function _DisplayManager_parseDisplayStatus(dataView) {
@@ -4650,6 +4759,7 @@ async function _DisplayManager_sendDisplayCommand(command, sendImmediately) {
     __classPrivateFieldSet(this, _DisplayManager_displayInformation, parsedDisplayInformation, "f");
     __classPrivateFieldSet(this, _DisplayManager_colors, new Array(this.numberOfColors).fill("#000000"), "f");
     __classPrivateFieldSet(this, _DisplayManager_opacities, new Array(this.numberOfColors).fill(1), "f");
+    this.displayContextState.bitmapColorIndices = new Array(this.numberOfColors).fill(0);
     __classPrivateFieldGet(this, _DisplayManager_instances, "a", _DisplayManager_dispatchEvent_get).call(this, "displayInformation", {
         displayInformation: __classPrivateFieldGet(this, _DisplayManager_displayInformation, "f"),
     });
@@ -8096,6 +8206,18 @@ class Device {
         __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertDisplayIsAvailable).call(this);
         return __classPrivateFieldGet(this, _Device_displayManager, "f").setContextState;
     }
+    get selectDisplayBitmapColorIndex() {
+        __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertDisplayIsAvailable).call(this);
+        return __classPrivateFieldGet(this, _Device_displayManager, "f").selectBitmapColorIndex;
+    }
+    get selectDisplayBitmapColorIndices() {
+        __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertDisplayIsAvailable).call(this);
+        return __classPrivateFieldGet(this, _Device_displayManager, "f").selectBitmapColorIndices;
+    }
+    get setDisplayBitmapScale() {
+        __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertDisplayIsAvailable).call(this);
+        return __classPrivateFieldGet(this, _Device_displayManager, "f").setBitmapScale;
+    }
 }
 _a$3 = Device, _Device_eventDispatcher = new WeakMap(), _Device_connectionManager = new WeakMap(), _Device_isConnected = new WeakMap(), _Device_reconnectOnDisconnection = new WeakMap(), _Device_reconnectIntervalId = new WeakMap(), _Device_deviceInformationManager = new WeakMap(), _Device_batteryLevel = new WeakMap(), _Device_sensorConfigurationManager = new WeakMap(), _Device_clearSensorConfigurationOnLeave = new WeakMap(), _Device_sensorDataManager = new WeakMap(), _Device_vibrationManager = new WeakMap(), _Device_fileTransferManager = new WeakMap(), _Device_tfliteManager = new WeakMap(), _Device_firmwareManager = new WeakMap(), _Device_isServerSide = new WeakMap(), _Device_wifiManager = new WeakMap(), _Device_cameraManager = new WeakMap(), _Device_microphoneManager = new WeakMap(), _Device_displayManager = new WeakMap(), _Device_instances = new WeakSet(), _Device_DefaultConnectionManager = function _Device_DefaultConnectionManager() {
     return new WebBluetoothConnectionManager();
@@ -8347,7 +8469,7 @@ _DevicePairPressureSensorDataManager_rawPressure = new WeakMap(), _DevicePairPre
             const sidePressure = __classPrivateFieldGet(this, _DevicePairPressureSensorDataManager_rawPressure, "f")[side];
             {
                 sidePressure.sensors.forEach((sensor) => {
-                    const _sensor = { ...sensor };
+                    const _sensor = structuredClone(sensor);
                     _sensor.weightedValue = sensor.scaledValue / pressure.scaledSum;
                     let { x, y } = sensor.position;
                     x /= 2;
@@ -9784,5 +9906,5 @@ const ThrottleUtils = {
     debounce,
 };
 
-export { CameraCommands, CameraConfigurationTypes, ContinuousSensorTypes, DefaultNumberOfPressureSensors, Device, DeviceManager$1 as DeviceManager, DevicePair, DevicePairTypes, DeviceTypes, DisplayBrightnesses, DisplaySegmentCaps, environment as Environment, EventUtils, FileTransferDirections, FileTypes, MaxNameLength, MaxNumberOfVibrationWaveformEffectSegments, MaxNumberOfVibrationWaveformSegments, MaxSensorRate, MaxVibrationWaveformEffectSegmentDelay, MaxVibrationWaveformEffectSegmentLoopCount, MaxVibrationWaveformEffectSequenceLoopCount, MaxVibrationWaveformSegmentDuration, MaxWifiPasswordLength, MaxWifiSSIDLength, MicrophoneCommands, MicrophoneConfigurationTypes, MicrophoneConfigurationValues, MinNameLength, MinWifiPasswordLength, MinWifiSSIDLength, RangeHelper, scanner$1 as Scanner, SensorRateStep, SensorTypes, Sides, TfliteSensorTypes, TfliteTasks, ThrottleUtils, UDPServer, VibrationLocations, VibrationTypes, VibrationWaveformEffects, WebSocketServer, hexToRGB, rgbToHex, setAllConsoleLevelFlags, setConsoleLevelFlagsForType };
+export { CameraCommands, CameraConfigurationTypes, ContinuousSensorTypes, DefaultNumberOfPressureSensors, Device, DeviceManager$1 as DeviceManager, DevicePair, DevicePairTypes, DeviceTypes, DisplayBrightnesses, DisplaySegmentCaps, environment as Environment, EventUtils, FileTransferDirections, FileTypes, MaxNameLength, MaxNumberOfVibrationWaveformEffectSegments, MaxNumberOfVibrationWaveformSegments, MaxSensorRate, MaxVibrationWaveformEffectSegmentDelay, MaxVibrationWaveformEffectSegmentLoopCount, MaxVibrationWaveformEffectSequenceLoopCount, MaxVibrationWaveformSegmentDuration, MaxWifiPasswordLength, MaxWifiSSIDLength, MicrophoneCommands, MicrophoneConfigurationTypes, MicrophoneConfigurationValues, MinNameLength, MinWifiPasswordLength, MinWifiSSIDLength, RangeHelper, scanner$1 as Scanner, SensorRateStep, SensorTypes, Sides, TfliteSensorTypes, TfliteTasks, ThrottleUtils, UDPServer, VibrationLocations, VibrationTypes, VibrationWaveformEffects, WebSocketServer, hexToRGB, maxDisplayBitmapScale, rgbToHex, setAllConsoleLevelFlags, setConsoleLevelFlagsForType };
 //# sourceMappingURL=brilliantsole.node.module.js.map

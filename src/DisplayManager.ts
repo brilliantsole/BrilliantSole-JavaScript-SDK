@@ -29,7 +29,10 @@ import {
   DisplayCropDirectionToStateKey,
   DisplayRotationCropDirectionToCommand,
   DisplayRotationCropDirectionToStateKey,
+  formatBitmapScale,
   formatRotation,
+  maxDisplayBitmapScale,
+  roundBitmapScale,
 } from "./utils/DisplayUtils.ts";
 
 const _console = createConsole("DisplayManager", { log: true });
@@ -106,6 +109,11 @@ export type DisplayColorYCbCr = {
   cr: number;
 };
 
+export type DisplayBitmapColorPair = {
+  bitmapColorIndex: number;
+  colorIndex: number;
+};
+
 export type DisplayContextState = {
   fillColorIndex: number;
   lineColorIndex: number;
@@ -128,6 +136,9 @@ export type DisplayContextState = {
   rotationCropRight: number;
   rotationCropBottom: number;
   rotationCropLeft: number;
+
+  bitmapColorIndices: number[];
+  bitmapScale: number;
 
   // FILL - text stuff
 };
@@ -157,6 +168,9 @@ export const DefaultDisplayContextState: DisplayContextState = {
   rotationCropRight: 0,
   rotationCropBottom: 0,
   rotationCropLeft: 0,
+
+  bitmapColorIndices: new Array(0).fill(0),
+  bitmapScale: 1,
 };
 
 export const DisplayInformationValues = {
@@ -200,6 +214,10 @@ export const DisplayContextCommands = [
   "setRotationCropBottom",
   "setRotationCropLeft",
   "clearRotationCrop",
+
+  "selectBitmapColor",
+  "selectBitmapColors",
+  "setBitmapScale",
 
   "clearRect",
 
@@ -330,7 +348,7 @@ class DisplayManager {
   }
   #onDisplayContextStateUpdate(differences: DisplayContextStateKey[]) {
     this.#dispatchEvent("displayContextState", {
-      displayContextState: { ...this.displayContextState },
+      displayContextState: structuredClone(this.displayContextState),
       differences,
     });
   }
@@ -391,6 +409,18 @@ class DisplayManager {
           break;
         case "rotationCropLeft":
           this.setRotationCropLeft(newState.rotationCropLeft!);
+          break;
+        case "bitmapColorIndices":
+          const bitmapColors: DisplayBitmapColorPair[] = [];
+          newState.bitmapColorIndices!.forEach(
+            (colorIndex, bitmapColorIndex) => {
+              bitmapColors.push({ bitmapColorIndex, colorIndex });
+            }
+          );
+          this.selectBitmapColorIndices(bitmapColors);
+          break;
+        case "bitmapScale":
+          this.setBitmapScale(newState.bitmapScale!);
           break;
       }
     });
@@ -561,6 +591,9 @@ class DisplayManager {
     this.#displayInformation = parsedDisplayInformation;
     this.#colors = new Array(this.numberOfColors).fill("#000000");
     this.#opacities = new Array(this.numberOfColors).fill(1);
+    this.displayContextState.bitmapColorIndices = new Array(
+      this.numberOfColors
+    ).fill(0);
     this.#dispatchEvent("displayInformation", {
       displayInformation: this.#displayInformation,
     });
@@ -1105,6 +1138,92 @@ class DisplayManager {
       undefined,
       sendImmediately
     );
+    this.#onDisplayContextStateUpdate(differences);
+  }
+
+  async selectBitmapColorIndex(
+    bitmapColorIndex: number,
+    colorIndex: number,
+    sendImmediately?: boolean
+  ) {
+    this.#assertValidColorIndex(bitmapColorIndex);
+    this.#assertValidColorIndex(colorIndex);
+    const bitmapColorIndices =
+      this.displayContextState.bitmapColorIndices.slice();
+    bitmapColorIndices[bitmapColorIndex] = colorIndex;
+    const differences = this.#displayContextStateHelper.update({
+      bitmapColorIndices,
+    });
+    if (differences.length == 0) {
+      return;
+    }
+    const dataView = new DataView(new ArrayBuffer(2));
+    dataView.setUint8(0, bitmapColorIndex);
+    dataView.setUint8(1, colorIndex);
+    await this.#sendDisplayContextCommand(
+      "selectBitmapColor",
+      dataView.buffer,
+      sendImmediately
+    );
+    this.#onDisplayContextStateUpdate(differences);
+  }
+  async selectBitmapColorIndices(
+    bitmapColors: DisplayBitmapColorPair[],
+    sendImmediately?: boolean
+  ) {
+    _console.assertRangeWithError(
+      "bitmapColors",
+      bitmapColors.length,
+      1,
+      this.numberOfColors
+    );
+    const bitmapColorIndices =
+      this.displayContextState.bitmapColorIndices.slice();
+    bitmapColors.forEach(({ bitmapColorIndex, colorIndex }) => {
+      this.#assertValidColorIndex(bitmapColorIndex);
+      this.#assertValidColorIndex(colorIndex);
+      bitmapColorIndices[bitmapColorIndex] = colorIndex;
+    });
+
+    const differences = this.#displayContextStateHelper.update({
+      bitmapColorIndices,
+    });
+    if (differences.length == 0) {
+      return;
+    }
+    const dataView = new DataView(new ArrayBuffer(bitmapColors.length * 2 + 1));
+    let offset = 0;
+    dataView.setUint8(offset++, bitmapColors.length);
+    bitmapColors.forEach(({ bitmapColorIndex, colorIndex }, index) => {
+      dataView.setUint8(offset, bitmapColorIndex);
+      dataView.setUint8(offset + 1, colorIndex);
+      offset += 2;
+    });
+    await this.#sendDisplayContextCommand(
+      "selectBitmapColors",
+      dataView.buffer,
+      sendImmediately
+    );
+    this.#onDisplayContextStateUpdate(differences);
+  }
+  async setBitmapScale(bitmapScale: number, sendImmediately?: boolean) {
+    bitmapScale = clamp(bitmapScale, 0, maxDisplayBitmapScale);
+    bitmapScale = roundBitmapScale(bitmapScale);
+    _console.log({ bitmapScale });
+    const differences = this.#displayContextStateHelper.update({
+      bitmapScale,
+    });
+    if (differences.length == 0) {
+      return;
+    }
+    const dataView = new DataView(new ArrayBuffer(2));
+    dataView.setUint16(0, formatBitmapScale(bitmapScale), true);
+    await this.#sendDisplayContextCommand(
+      "setBitmapScale",
+      dataView.buffer,
+      sendImmediately
+    );
+
     this.#onDisplayContextStateUpdate(differences);
   }
 

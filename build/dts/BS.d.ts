@@ -17,6 +17,7 @@ export { TfliteSensorType, TfliteSensorTypes, TfliteTask, TfliteTasks, TfliteFil
 export { CameraConfiguration, CameraCommand, CameraCommands, CameraConfigurationType, CameraConfigurationTypes, } from "./CameraManager.ts";
 export { MicrophoneConfiguration, MicrophoneCommand, MicrophoneCommands, MicrophoneConfigurationType, MicrophoneConfigurationTypes, MicrophoneConfigurationValues, } from "./MicrophoneManager.ts";
 export { DisplayBrightness, DisplayBrightnesses, DisplaySize, DisplayColorRGB, DisplaySegmentCap, DisplaySegmentCaps, } from "./DisplayManager.ts";
+export { maxDisplayBitmapScale } from "./utils/DisplayUtils.ts";
 /** BROWSER_START */
 export { default as DisplayCanvasHelper, DisplayCanvasHelperEvent, DisplayCanvasHelperEventMap, DisplayCanvasHelperEventListenerMap, } from "./utils/DisplayCanvasHelper.ts";
 /** BROWSER_END */
