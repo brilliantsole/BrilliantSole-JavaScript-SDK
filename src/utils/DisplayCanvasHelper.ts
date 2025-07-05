@@ -45,7 +45,7 @@ import {
   Uint16Max,
   Vector2,
 } from "./MathUtils.ts";
-import Timer, { wait } from "./Timer.ts";
+import { wait } from "./Timer.ts";
 
 const _console = createConsole("DisplayCanvasHelper", { log: true });
 
@@ -450,11 +450,11 @@ class DisplayCanvasHelper {
       await this.device.showDisplay(sendImmediately);
     } else {
       await wait(this.#interval);
-      this.#dispatchEvent("ready", {});
       this.#isReady = true;
+      this.#dispatchEvent("ready", {});
     }
   }
-  #interval = 100;
+  #interval = 50;
   get interval() {
     return this.#interval;
   }
@@ -483,8 +483,8 @@ class DisplayCanvasHelper {
       await this.device.clearDisplay(sendImmediately);
     } else {
       await wait(this.#interval);
-      this.#dispatchEvent("ready", {});
       this.#isReady = true;
+      this.#dispatchEvent("ready", {});
     }
   }
 

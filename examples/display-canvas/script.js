@@ -934,34 +934,34 @@ const faceYawInput = document.getElementById("faceYaw");
 faceYawInput.addEventListener("input", () => {
   const yaw = Number(faceYawInput.value);
   faceParams.rotation.yaw = yaw;
-  throttledDraw();
+  draw();
 });
 const faceRollInput = document.getElementById("faceRoll");
 faceRollInput.addEventListener("input", () => {
   const roll = Number(faceRollInput.value);
   faceParams.rotation.roll = roll;
-  throttledDraw();
+  draw();
 });
 const faceXInput = document.getElementById("faceX");
 faceXInput.addEventListener("input", () => {
   const x = Number(faceXInput.value);
   faceParams.lookAt.x = x;
   updateLookAt();
-  throttledDraw();
+  draw();
 });
 const faceYInput = document.getElementById("faceY");
 faceYInput.addEventListener("input", () => {
   const y = Number(faceYInput.value);
   faceParams.lookAt.y = y;
   updateLookAt();
-  throttledDraw();
+  draw();
 });
 const faceZInput = document.getElementById("faceZ");
 faceZInput.addEventListener("input", () => {
   const z = Number(faceZInput.value);
   faceParams.lookAt.z = z;
   updateLookAt();
-  throttledDraw();
+  draw();
 });
 
 /** @typedef {"left" | "right"} Side */
@@ -1259,21 +1259,52 @@ const drawCheek = async (side, center) => {
     );
   }
 };
+function generateSineSegments(
+  numberOfSegments,
+  xSpacing,
+  yRange,
+  angleScalar = 1,
+  angleOffset = 0
+) {
+  const segments = [];
+  for (let i = 0; i < numberOfSegments; i++) {
+    const x = xSpacing * i;
+    const y = (Math.sin(i * angleScalar + angleOffset) + 1) * yRange;
+    segments.push({ x, y });
+  }
+  return segments;
+}
 const draw = async () => {
-  const { width, height } = ctx;
-  const center = new THREE.Vector2(
-    width / 2 + faceParams.position.x,
-    height / 2 + faceParams.position.y
-  );
+  if (!ctx.isReady) {
+    return;
+  }
 
-  await drawEye("left", center);
-  await drawEye("right", center);
-  await drawPupil("left", center);
-  await drawPupil("right", center);
-  await drawEyebrow("left", center);
-  await drawEyebrow("right", center);
-  await drawCheek("left", center);
-  await drawCheek("right", center);
+  if (false) {
+    await displayCanvasHelper.drawSegments(
+      generateSineSegments(
+        90,
+        5,
+        100,
+        0.2,
+        ((Date.now() % 1000) / 1000) * Math.PI * 2
+      )
+    );
+  } else {
+    const { width, height } = ctx;
+    const center = new THREE.Vector2(
+      width / 2 + faceParams.position.x,
+      height / 2 + faceParams.position.y
+    );
+
+    await drawEye("left", center);
+    await drawEye("right", center);
+    await drawPupil("left", center);
+    await drawPupil("right", center);
+    await drawEyebrow("left", center);
+    await drawEyebrow("right", center);
+    await drawCheek("left", center);
+    await drawCheek("right", center);
+  }
 
   await ctx.showDisplay();
 };
@@ -1370,7 +1401,7 @@ const tick = () => {
           durationRange.max,
           Math.random()
         ) *
-          throttleInterval *
+          frameLength *
           2 +
         blink.offset;
 
@@ -1449,7 +1480,7 @@ const tick = () => {
           durationRange.min,
           durationRange.max,
           Math.random()
-        ) * throttleInterval;
+        ) * frameLength;
 
       lookAround.isMoving = true;
 
@@ -1521,7 +1552,7 @@ const tick = () => {
           durationRange.min,
           durationRange.max,
           Math.random()
-        ) * throttleInterval;
+        ) * frameLength;
 
       turnAround.isTurning = true;
 
@@ -1584,7 +1615,7 @@ const tick = () => {
           durationRange.min,
           durationRange.max,
           Math.random()
-        ) * throttleInterval;
+        ) * frameLength;
 
       pose.isMoving = true;
 
@@ -1737,34 +1768,32 @@ const updateLookAt = () => {
   target.z += faceParams.refocus.offset.z;
   lookAt(target);
 };
-// FILL - use "ready"
-let throttleInterval = 110;
-const updateInterval = (newInterval) => {
-  throttleInterval = newInterval;
-  startDrawing();
+const tickAndDraw = () => {
+  tick();
+  draw();
 };
-window.updateInterval = updateInterval;
-let intervalId;
+displayCanvasHelper.addEventListener("ready", () => {
+  console.log("ready");
+  if (!isDrawing) {
+    return;
+  }
+  tickAndDraw();
+});
+let isDrawing = false;
 const startDrawing = () => {
-  stopDrawing();
-  setInterval(() => {
-    tick();
-    throttledDraw();
-  }, throttleInterval);
-};
-const stopDrawing = () => {
-  if (intervalId != undefined) {
-    clearInterval(intervalId);
-    intervalId = undefined;
+  isDrawing = true;
+  if (displayCanvasHelper.isReady) {
+    tickAndDraw();
   }
 };
-const throttledDraw = BS.ThrottleUtils.throttle(draw, throttleInterval, true);
-if (false) {
-  draw();
-} else {
-  //startDrawing();
-}
+const stopDrawing = () => {
+  isDrawing = false;
+};
+let frameLength = 110;
 window.draw = draw;
+window.tickAndDraw = tickAndDraw;
+window.startDrawing = startDrawing;
+window.stopDrawing = stopDrawing;
 
 // FACE TRACKING
 
@@ -2149,7 +2178,7 @@ const faceTrackingRenderLoop = () => {
         shouldDraw = true;
       }
       if (shouldDraw) {
-        throttledDraw();
+        draw();
       }
     }
   }

@@ -1,6 +1,6 @@
 import { createConsole } from "./Console.ts";
 
-const _console = createConsole("Timer", { log: false });
+const _console = createConsole("Timer", { log: true });
 
 export async function wait(delay: number) {
   _console.log(`waiting for ${delay}ms`);

@@ -312,7 +312,7 @@ class EventDispatcher {
 }
 
 var _Timer_callback, _Timer_interval, _Timer_intervalId;
-const _console$I = createConsole("Timer", { log: false });
+const _console$I = createConsole("Timer", { log: true });
 class Timer {
     get callback() {
         return __classPrivateFieldGet(this, _Timer_callback, "f");

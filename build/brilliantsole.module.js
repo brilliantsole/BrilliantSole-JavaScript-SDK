@@ -307,7 +307,7 @@ class EventDispatcher {
 }
 
 var _Timer_callback, _Timer_interval, _Timer_intervalId;
-const _console$D = createConsole("Timer", { log: false });
+const _console$D = createConsole("Timer", { log: true });
 async function wait(delay) {
     _console$D.log(`waiting for ${delay}ms`);
     return new Promise((resolve) => {
@@ -8082,7 +8082,7 @@ class DisplayCanvasHelper {
         _DisplayCanvasHelper_colors.set(this, []);
         _DisplayCanvasHelper_opacities.set(this, []);
         _DisplayCanvasHelper_displayContextStateHelper.set(this, new DisplayContextStateHelper());
-        _DisplayCanvasHelper_interval.set(this, 100);
+        _DisplayCanvasHelper_interval.set(this, 50);
         _DisplayCanvasHelper_isReady.set(this, true);
         _DisplayCanvasHelper_clearBoundingBoxOnDraw.set(this, true);
         _DisplayCanvasHelper_brightness.set(this, "medium");
@@ -8208,8 +8208,8 @@ class DisplayCanvasHelper {
         }
         else {
             await wait(__classPrivateFieldGet(this, _DisplayCanvasHelper_interval, "f"));
-            __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "a", _DisplayCanvasHelper_dispatchEvent_get).call(this, "ready", {});
             __classPrivateFieldSet(this, _DisplayCanvasHelper_isReady, true, "f");
+            __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "a", _DisplayCanvasHelper_dispatchEvent_get).call(this, "ready", {});
         }
     }
     get interval() {
@@ -8234,8 +8234,8 @@ class DisplayCanvasHelper {
         }
         else {
             await wait(__classPrivateFieldGet(this, _DisplayCanvasHelper_interval, "f"));
-            __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "a", _DisplayCanvasHelper_dispatchEvent_get).call(this, "ready", {});
             __classPrivateFieldSet(this, _DisplayCanvasHelper_isReady, true, "f");
+            __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "a", _DisplayCanvasHelper_dispatchEvent_get).call(this, "ready", {});
         }
     }
     async setColor(colorIndex, color, sendImmediately) {
