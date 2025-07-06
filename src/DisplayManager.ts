@@ -13,10 +13,9 @@ import {
   Int16Min,
   normalizeRadians,
   twoPi,
-  Uint16Max,
   Vector2,
 } from "./utils/MathUtils.ts";
-import { hexToRGB, rgbToHex, stringToRGB } from "./utils/ColorUtils.ts";
+import { rgbToHex, stringToRGB } from "./utils/ColorUtils.ts";
 import DisplayContextStateHelper from "./utils/DisplayContextStateHelper.ts";
 import {
   assertValidColor,

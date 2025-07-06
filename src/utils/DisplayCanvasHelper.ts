@@ -41,12 +41,8 @@ import {
   degToRad,
   getVector2Angle,
   getVector2Length,
-  multiplyVector2ByScalar,
   normalizedVector2,
   normalizeRadians,
-  radToDeg,
-  twoPi,
-  Uint16Max,
   Vector2,
 } from "./MathUtils.ts";
 import { wait } from "./Timer.ts";

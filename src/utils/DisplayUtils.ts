@@ -2,7 +2,6 @@ import {
   DisplayBrightness,
   DisplayBrightnesses,
   DisplayColorRGB,
-  DisplayCommand,
   DisplayContextCommand,
   DisplayContextStateKey,
   DisplaySegmentCap,
