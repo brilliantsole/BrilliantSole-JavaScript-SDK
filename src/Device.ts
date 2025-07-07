@@ -1661,6 +1661,10 @@ class Device {
     this.#assertDisplayIsAvailable();
     return this.#displayManager.drawArcEllipse;
   }
+  get drawDisplayBitmap() {
+    this.#assertDisplayIsAvailable();
+    return this.#displayManager.drawBitmap;
+  }
 
   get setDisplayContextState() {
     this.#assertDisplayIsAvailable();

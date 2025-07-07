@@ -31,6 +31,9 @@ import {
   formatBitmapScale,
   formatRotation,
   maxDisplayBitmapScale,
+  numberOfColorsToPixelDepth,
+  pixelDepthToPixelBitWidth,
+  pixelDepthToPixelsPerByte,
   roundBitmapScale,
 } from "./utils/DisplayUtils.ts";
 
@@ -111,6 +114,12 @@ export type DisplayColorYCbCr = {
 export type DisplayBitmapColorPair = {
   bitmapColorIndex: number;
   colorIndex: number;
+};
+
+export type DisplayBitmap = {
+  width: number;
+  numberOfColors: number;
+  pixels: number[];
 };
 
 export type DisplayContextState = {
@@ -1485,6 +1494,97 @@ class DisplayManager {
     await this.#sendDisplayContextCommand(
       "drawArcEllipse",
       dataView.buffer,
+      sendImmediately
+    );
+  }
+
+  #assertValidNumberOfColors(numberOfColors: number) {
+    _console.assertRangeWithError(
+      "numberOfColors",
+      numberOfColors,
+      2,
+      this.numberOfColors
+    );
+  }
+  #getBitmapNumberOfBytes(bitmap: DisplayBitmap) {
+    const pixelDepth = numberOfColorsToPixelDepth(bitmap.numberOfColors)!;
+    const pixelsPerByte = pixelDepthToPixelsPerByte(pixelDepth);
+    const numberOfPixels = bitmap.pixels.length;
+    const pixelDataLength = Math.ceil(numberOfPixels / pixelsPerByte);
+    _console.log({
+      pixelDepth,
+      pixelsPerByte,
+      numberOfPixels,
+      pixelDataLength,
+    });
+    return pixelDataLength;
+  }
+  #assertValidBitmapPixels(bitmap: DisplayBitmap) {
+    bitmap.pixels.forEach((pixel, index) => {
+      _console.assertRangeWithError(
+        `bitmap.pixels[${index}]`,
+        pixel,
+        0,
+        bitmap.numberOfColors - 1
+      );
+    });
+  }
+  #assertValidBitmap(bitmap: DisplayBitmap, limitToMtu?: boolean) {
+    this.#assertValidNumberOfColors(bitmap.numberOfColors);
+    this.#assertValidBitmapPixels(bitmap);
+    const pixelDataLength = this.#getBitmapNumberOfBytes(bitmap);
+    if (limitToMtu) {
+      _console.assertRangeWithError(
+        "bitmap.pixels.length",
+        pixelDataLength,
+        1,
+        this.#maxCommandDataLength - this.#drawBitmapHeaderLength
+      );
+    }
+  }
+  #getBitmapData(bitmap: DisplayBitmap) {
+    const pixelDataLength = this.#getBitmapNumberOfBytes(bitmap);
+    const dataView = new DataView(new ArrayBuffer(pixelDataLength));
+    const pixelDepth = numberOfColorsToPixelDepth(bitmap.numberOfColors)!;
+    const pixelsPerByte = pixelDepthToPixelsPerByte(pixelDepth);
+    bitmap.pixels.forEach((bitmapColorIndex, pixelIndex) => {
+      const byteIndex = Math.floor(pixelIndex / pixelsPerByte);
+      const byteSlot = pixelIndex % pixelsPerByte;
+      const pixelBitWidth = pixelDepthToPixelBitWidth(pixelDepth);
+      const bitOffset = pixelBitWidth * byteSlot;
+      const shift = 8 - pixelBitWidth - bitOffset;
+      let value = dataView.getUint8(byteIndex);
+      value |= bitmapColorIndex << shift;
+      dataView.setUint8(byteIndex, value);
+    });
+    _console.log("getBitmapData", bitmap, dataView);
+    return dataView;
+  }
+
+  get #drawBitmapHeaderLength() {
+    return 2 + 2 + 2 + 1 + 2; // x, y, width, numberOfColors, dataLength
+  }
+  async drawBitmap(
+    centerX: number,
+    centerY: number,
+    bitmap: DisplayBitmap,
+    sendImmediately?: boolean
+  ) {
+    this.#assertValidBitmap(bitmap, true);
+    const dataView = new DataView(new ArrayBuffer(2 + 2 + 2 + 1 + 2));
+    dataView.setInt16(0, centerX, true);
+    dataView.setInt16(2, centerY, true);
+    dataView.setUint16(4, bitmap.width, true);
+    dataView.setUint8(6, bitmap.numberOfColors);
+
+    const bitmapData = this.#getBitmapData(bitmap);
+    dataView.setUint16(7, bitmapData.byteLength, true);
+
+    const buffer = concatenateArrayBuffers(dataView, bitmapData);
+    _console.log("drawBitmap data", buffer);
+    await this.#sendDisplayContextCommand(
+      "drawBitmap",
+      buffer,
       sendImmediately
     );
   }

@@ -4,6 +4,8 @@ import {
   DisplayColorRGB,
   DisplayContextCommand,
   DisplayContextStateKey,
+  DisplayPixelDepth,
+  DisplayPixelDepths,
   DisplaySegmentCap,
   DisplaySegmentCaps,
 } from "../DisplayManager.ts";
@@ -123,3 +125,18 @@ export const DisplayRotationCropDirectionToCommand: Record<
   bottom: "setRotationCropBottom",
   left: "setRotationCropLeft",
 };
+
+export function pixelDepthToNumberOfColors(pixelDepth: DisplayPixelDepth) {
+  return 2 ** Number(pixelDepth);
+}
+export function pixelDepthToPixelsPerByte(pixelDepth: DisplayPixelDepth) {
+  return 8 / Number(pixelDepth);
+}
+export function pixelDepthToPixelBitWidth(pixelDepth: DisplayPixelDepth) {
+  return Number(pixelDepth);
+}
+export function numberOfColorsToPixelDepth(numberOfColors: number) {
+  return DisplayPixelDepths.find(
+    (pixelDepth) => numberOfColors <= pixelDepthToNumberOfColors(pixelDepth)
+  );
+}

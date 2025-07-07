@@ -3871,8 +3871,20 @@ const DisplayRotationCropDirectionToCommand = {
     bottom: "setRotationCropBottom",
     left: "setRotationCropLeft",
 };
+function pixelDepthToNumberOfColors(pixelDepth) {
+    return 2 ** Number(pixelDepth);
+}
+function pixelDepthToPixelsPerByte(pixelDepth) {
+    return 8 / Number(pixelDepth);
+}
+function pixelDepthToPixelBitWidth(pixelDepth) {
+    return Number(pixelDepth);
+}
+function numberOfColorsToPixelDepth(numberOfColors) {
+    return DisplayPixelDepths.find((pixelDepth) => numberOfColors <= pixelDepthToNumberOfColors(pixelDepth));
+}
 
-var _DisplayManager_instances, _DisplayManager_dispatchEvent_get, _DisplayManager_isDisplayAvailable, _DisplayManager_assertDisplayIsAvailable, _DisplayManager_parseIsDisplayAvailable, _DisplayManager_displayContextStateHelper, _DisplayManager_onDisplayContextStateUpdate, _DisplayManager_displayStatus, _DisplayManager_parseDisplayStatus, _DisplayManager_updateDisplayStatus, _DisplayManager_sendDisplayCommand, _DisplayManager_assertIsAwake, _DisplayManager_assertIsNotAwake, _DisplayManager_displayInformation, _DisplayManager_parseDisplayInformation, _DisplayManager_displayBrightness, _DisplayManager_parseDisplayBrightness, _DisplayManager_assertValidDisplayContextCommand, _DisplayManager_maxCommandDataLength_get, _DisplayManager_displayContextCommandBuffers, _DisplayManager_sendDisplayContextCommand, _DisplayManager_sendDisplayContextCommands, _DisplayManager_assertValidColorIndex, _DisplayManager_colors, _DisplayManager_opacities, _DisplayManager_assertValidLineWidth, _DisplayManager_clampBox, _DisplayManager_isDisplayReady, _DisplayManager_parseDisplayReady, _DisplayManager_mtu;
+var _DisplayManager_instances, _DisplayManager_dispatchEvent_get, _DisplayManager_isDisplayAvailable, _DisplayManager_assertDisplayIsAvailable, _DisplayManager_parseIsDisplayAvailable, _DisplayManager_displayContextStateHelper, _DisplayManager_onDisplayContextStateUpdate, _DisplayManager_displayStatus, _DisplayManager_parseDisplayStatus, _DisplayManager_updateDisplayStatus, _DisplayManager_sendDisplayCommand, _DisplayManager_assertIsAwake, _DisplayManager_assertIsNotAwake, _DisplayManager_displayInformation, _DisplayManager_parseDisplayInformation, _DisplayManager_displayBrightness, _DisplayManager_parseDisplayBrightness, _DisplayManager_assertValidDisplayContextCommand, _DisplayManager_maxCommandDataLength_get, _DisplayManager_displayContextCommandBuffers, _DisplayManager_sendDisplayContextCommand, _DisplayManager_sendDisplayContextCommands, _DisplayManager_assertValidColorIndex, _DisplayManager_colors, _DisplayManager_opacities, _DisplayManager_assertValidLineWidth, _DisplayManager_clampBox, _DisplayManager_assertValidNumberOfColors, _DisplayManager_getBitmapNumberOfBytes, _DisplayManager_assertValidBitmapPixels, _DisplayManager_assertValidBitmap, _DisplayManager_getBitmapData, _DisplayManager_drawBitmapHeaderLength_get, _DisplayManager_isDisplayReady, _DisplayManager_parseDisplayReady, _DisplayManager_mtu;
 const _console$j = createConsole("DisplayManager", { log: true });
 const DisplayCommands = ["sleep", "wake"];
 const DisplayStatuses = ["awake", "asleep"];
@@ -4638,6 +4650,19 @@ class DisplayManager {
         _console$j.log("drawArcEllipse data", dataView);
         await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "drawArcEllipse", dataView.buffer, sendImmediately);
     }
+    async drawBitmap(centerX, centerY, bitmap, sendImmediately) {
+        __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_assertValidBitmap).call(this, bitmap, true);
+        const dataView = new DataView(new ArrayBuffer(2 + 2 + 2 + 1 + 2));
+        dataView.setInt16(0, centerX, true);
+        dataView.setInt16(2, centerY, true);
+        dataView.setUint16(4, bitmap.width, true);
+        dataView.setUint8(6, bitmap.numberOfColors);
+        const bitmapData = __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_getBitmapData).call(this, bitmap);
+        dataView.setUint16(7, bitmapData.byteLength, true);
+        const buffer = concatenateArrayBuffers(dataView, bitmapData);
+        _console$j.log("drawBitmap data", buffer);
+        await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "drawBitmap", buffer, sendImmediately);
+    }
     selectSpriteSheet(index, sendImmediately) {
     }
     drawSprite(index, x, y, sendImmediately) {
@@ -4820,6 +4845,50 @@ async function _DisplayManager_sendDisplayCommand(command, sendImmediately) {
 }, _DisplayManager_clampBox = function _DisplayManager_clampBox(x, y, width, height) {
     _console$j.log("clampBox", { x, y, width, height });
     return { x, y, width, height };
+}, _DisplayManager_assertValidNumberOfColors = function _DisplayManager_assertValidNumberOfColors(numberOfColors) {
+    _console$j.assertRangeWithError("numberOfColors", numberOfColors, 2, this.numberOfColors);
+}, _DisplayManager_getBitmapNumberOfBytes = function _DisplayManager_getBitmapNumberOfBytes(bitmap) {
+    const pixelDepth = numberOfColorsToPixelDepth(bitmap.numberOfColors);
+    const pixelsPerByte = pixelDepthToPixelsPerByte(pixelDepth);
+    const numberOfPixels = bitmap.pixels.length;
+    const pixelDataLength = Math.ceil(numberOfPixels / pixelsPerByte);
+    _console$j.log({
+        pixelDepth,
+        pixelsPerByte,
+        numberOfPixels,
+        pixelDataLength,
+    });
+    return pixelDataLength;
+}, _DisplayManager_assertValidBitmapPixels = function _DisplayManager_assertValidBitmapPixels(bitmap) {
+    bitmap.pixels.forEach((pixel, index) => {
+        _console$j.assertRangeWithError(`bitmap.pixels[${index}]`, pixel, 0, bitmap.numberOfColors - 1);
+    });
+}, _DisplayManager_assertValidBitmap = function _DisplayManager_assertValidBitmap(bitmap, limitToMtu) {
+    __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_assertValidNumberOfColors).call(this, bitmap.numberOfColors);
+    __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_assertValidBitmapPixels).call(this, bitmap);
+    const pixelDataLength = __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_getBitmapNumberOfBytes).call(this, bitmap);
+    if (limitToMtu) {
+        _console$j.assertRangeWithError("bitmap.pixels.length", pixelDataLength, 1, __classPrivateFieldGet(this, _DisplayManager_instances, "a", _DisplayManager_maxCommandDataLength_get) - __classPrivateFieldGet(this, _DisplayManager_instances, "a", _DisplayManager_drawBitmapHeaderLength_get));
+    }
+}, _DisplayManager_getBitmapData = function _DisplayManager_getBitmapData(bitmap) {
+    const pixelDataLength = __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_getBitmapNumberOfBytes).call(this, bitmap);
+    const dataView = new DataView(new ArrayBuffer(pixelDataLength));
+    const pixelDepth = numberOfColorsToPixelDepth(bitmap.numberOfColors);
+    const pixelsPerByte = pixelDepthToPixelsPerByte(pixelDepth);
+    bitmap.pixels.forEach((bitmapColorIndex, pixelIndex) => {
+        const byteIndex = Math.floor(pixelIndex / pixelsPerByte);
+        const byteSlot = pixelIndex % pixelsPerByte;
+        const pixelBitWidth = pixelDepthToPixelBitWidth(pixelDepth);
+        const bitOffset = pixelBitWidth * byteSlot;
+        const shift = 8 - pixelBitWidth - bitOffset;
+        let value = dataView.getUint8(byteIndex);
+        value |= bitmapColorIndex << shift;
+        dataView.setUint8(byteIndex, value);
+    });
+    _console$j.log("getBitmapData", bitmap, dataView);
+    return dataView;
+}, _DisplayManager_drawBitmapHeaderLength_get = function _DisplayManager_drawBitmapHeaderLength_get() {
+    return 2 + 2 + 2 + 1 + 2;
 }, _DisplayManager_parseDisplayReady = function _DisplayManager_parseDisplayReady(dataView) {
     __classPrivateFieldSet(this, _DisplayManager_isDisplayReady, true, "f");
     __classPrivateFieldGet(this, _DisplayManager_instances, "a", _DisplayManager_dispatchEvent_get).call(this, "displayReady", {});
@@ -7954,6 +8023,10 @@ class Device {
         __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertDisplayIsAvailable).call(this);
         return __classPrivateFieldGet(this, _Device_displayManager, "f").drawArcEllipse;
     }
+    get drawDisplayBitmap() {
+        __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertDisplayIsAvailable).call(this);
+        return __classPrivateFieldGet(this, _Device_displayManager, "f").drawBitmap;
+    }
     get setDisplayContextState() {
         __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertDisplayIsAvailable).call(this);
         return __classPrivateFieldGet(this, _Device_displayManager, "f").setContextState;
@@ -10299,5 +10372,5 @@ const ThrottleUtils = {
     debounce,
 };
 
-export { CameraCommands, CameraConfigurationTypes, ContinuousSensorTypes, DefaultNumberOfPressureSensors, Device, DeviceManager$1 as DeviceManager, DevicePair, DevicePairTypes, DeviceTypes, DisplayBrightnesses, DisplayCanvasHelper, DisplaySegmentCaps, environment as Environment, EventUtils, FileTransferDirections, FileTypes, MaxNameLength, MaxNumberOfVibrationWaveformEffectSegments, MaxNumberOfVibrationWaveformSegments, MaxSensorRate, MaxVibrationWaveformEffectSegmentDelay, MaxVibrationWaveformEffectSegmentLoopCount, MaxVibrationWaveformEffectSequenceLoopCount, MaxVibrationWaveformSegmentDuration, MaxWifiPasswordLength, MaxWifiSSIDLength, MicrophoneCommands, MicrophoneConfigurationTypes, MicrophoneConfigurationValues, MinNameLength, MinWifiPasswordLength, MinWifiSSIDLength, RangeHelper, SensorRateStep, SensorTypes, Sides, TfliteSensorTypes, TfliteTasks, ThrottleUtils, VibrationLocations, VibrationTypes, VibrationWaveformEffects, WebSocketClient, hexToRGB, maxDisplayBitmapScale, rgbToHex, setAllConsoleLevelFlags, setConsoleLevelFlagsForType };
+export { CameraCommands, CameraConfigurationTypes, ContinuousSensorTypes, DefaultNumberOfPressureSensors, Device, DeviceManager$1 as DeviceManager, DevicePair, DevicePairTypes, DeviceTypes, DisplayBrightnesses, DisplayCanvasHelper, DisplayPixelDepths, DisplaySegmentCaps, environment as Environment, EventUtils, FileTransferDirections, FileTypes, MaxNameLength, MaxNumberOfVibrationWaveformEffectSegments, MaxNumberOfVibrationWaveformSegments, MaxSensorRate, MaxVibrationWaveformEffectSegmentDelay, MaxVibrationWaveformEffectSegmentLoopCount, MaxVibrationWaveformEffectSequenceLoopCount, MaxVibrationWaveformSegmentDuration, MaxWifiPasswordLength, MaxWifiSSIDLength, MicrophoneCommands, MicrophoneConfigurationTypes, MicrophoneConfigurationValues, MinNameLength, MinWifiPasswordLength, MinWifiSSIDLength, RangeHelper, SensorRateStep, SensorTypes, Sides, TfliteSensorTypes, TfliteTasks, ThrottleUtils, VibrationLocations, VibrationTypes, VibrationWaveformEffects, WebSocketClient, hexToRGB, maxDisplayBitmapScale, rgbToHex, setAllConsoleLevelFlags, setConsoleLevelFlagsForType };
 //# sourceMappingURL=brilliantsole.module.js.map

@@ -1,4 +1,4 @@
-import { DisplayBrightness, DisplayColorRGB, DisplayContextCommand, DisplayContextStateKey, DisplaySegmentCap } from "../DisplayManager.ts";
+import { DisplayBrightness, DisplayColorRGB, DisplayContextCommand, DisplayContextStateKey, DisplayPixelDepth, DisplaySegmentCap } from "../DisplayManager.ts";
 export declare function formatRotation(rotation: number, isRadians?: boolean, isSigned?: boolean): number;
 export declare function roundToStep(value: number, step: number): number;
 export declare const maxDisplayBitmapScale = 100;
@@ -16,3 +16,7 @@ export declare const DisplayCropDirectionToStateKey: Record<DisplayCropDirection
 export declare const DisplayCropDirectionToCommand: Record<DisplayCropDirection, DisplayContextCommand>;
 export declare const DisplayRotationCropDirectionToStateKey: Record<DisplayCropDirection, DisplayContextStateKey>;
 export declare const DisplayRotationCropDirectionToCommand: Record<DisplayCropDirection, DisplayContextCommand>;
+export declare function pixelDepthToNumberOfColors(pixelDepth: DisplayPixelDepth): number;
+export declare function pixelDepthToPixelsPerByte(pixelDepth: DisplayPixelDepth): number;
+export declare function pixelDepthToPixelBitWidth(pixelDepth: DisplayPixelDepth): number;
+export declare function numberOfColorsToPixelDepth(numberOfColors: number): "1" | "2" | "4" | undefined;
