@@ -20,3 +20,6 @@ export declare function pixelDepthToNumberOfColors(pixelDepth: DisplayPixelDepth
 export declare function pixelDepthToPixelsPerByte(pixelDepth: DisplayPixelDepth): number;
 export declare function pixelDepthToPixelBitWidth(pixelDepth: DisplayPixelDepth): number;
 export declare function numberOfColorsToPixelDepth(numberOfColors: number): "1" | "2" | "4" | undefined;
+export declare const DisplayBitmapScaleDirections: readonly ["x", "y", "all"];
+export type DisplayBitmapScaleDirection = (typeof DisplayBitmapScaleDirections)[number];
+export declare const DisplayBitmapScaleDirectionToCommand: Record<DisplayBitmapScaleDirection, DisplayContextCommand>;

@@ -140,3 +140,15 @@ export function numberOfColorsToPixelDepth(numberOfColors: number) {
     (pixelDepth) => numberOfColors <= pixelDepthToNumberOfColors(pixelDepth)
   );
 }
+
+export const DisplayBitmapScaleDirections = ["x", "y", "all"] as const;
+export type DisplayBitmapScaleDirection =
+  (typeof DisplayBitmapScaleDirections)[number];
+export const DisplayBitmapScaleDirectionToCommand: Record<
+  DisplayBitmapScaleDirection,
+  DisplayContextCommand
+> = {
+  x: "setBitmapScaleX",
+  y: "setBitmapScaleY",
+  all: "setBitmapScale",
+};

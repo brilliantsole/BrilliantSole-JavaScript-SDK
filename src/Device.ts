@@ -1679,6 +1679,14 @@ class Device {
     this.#assertDisplayIsAvailable();
     return this.#displayManager.selectBitmapColorIndices;
   }
+  get setDisplayBitmapScaleX() {
+    this.#assertDisplayIsAvailable();
+    return this.#displayManager.setBitmapScaleX;
+  }
+  get setDisplayBitmapScaleY() {
+    this.#assertDisplayIsAvailable();
+    return this.#displayManager.setBitmapScaleY;
+  }
   get setDisplayBitmapScale() {
     this.#assertDisplayIsAvailable();
     return this.#displayManager.setBitmapScale;

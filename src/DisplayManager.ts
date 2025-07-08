@@ -22,6 +22,8 @@ import {
   assertValidDisplayBrightness,
   assertValidOpacity,
   assertValidSegmentCap,
+  DisplayBitmapScaleDirection,
+  DisplayBitmapScaleDirectionToCommand,
   DisplayCropDirection,
   DisplayCropDirections,
   DisplayCropDirectionToCommand,
@@ -146,7 +148,8 @@ export type DisplayContextState = {
   rotationCropLeft: number;
 
   bitmapColorIndices: number[];
-  bitmapScale: number;
+  bitmapScaleX: number;
+  bitmapScaleY: number;
 
   // FILL - text stuff
 };
@@ -178,7 +181,8 @@ export const DefaultDisplayContextState: DisplayContextState = {
   rotationCropLeft: 0,
 
   bitmapColorIndices: new Array(0).fill(0),
-  bitmapScale: 1,
+  bitmapScaleX: 1,
+  bitmapScaleY: 1,
 };
 
 export const DisplayInformationValues = {
@@ -225,6 +229,8 @@ export const DisplayContextCommands = [
 
   "selectBitmapColor",
   "selectBitmapColors",
+  "setBitmapScaleX",
+  "setBitmapScaleY",
   "setBitmapScale",
 
   "clearRect",
@@ -427,8 +433,11 @@ class DisplayManager {
           );
           this.selectBitmapColorIndices(bitmapColors);
           break;
-        case "bitmapScale":
-          this.setBitmapScale(newState.bitmapScale!);
+        case "bitmapScaleX":
+          this.setBitmapScaleX(newState.bitmapScaleX!);
+          break;
+        case "bitmapScaleY":
+          this.setBitmapScaleY(newState.bitmapScaleY!);
           break;
       }
     });
@@ -1214,12 +1223,17 @@ class DisplayManager {
     );
     this.#onDisplayContextStateUpdate(differences);
   }
-  async setBitmapScale(bitmapScale: number, sendImmediately?: boolean) {
+  async #setBitmapScale(
+    direction: DisplayBitmapScaleDirection,
+    bitmapScale: number,
+    sendImmediately?: boolean
+  ) {
     bitmapScale = clamp(bitmapScale, 0, maxDisplayBitmapScale);
     bitmapScale = roundBitmapScale(bitmapScale);
-    _console.log({ bitmapScale });
+    const command = DisplayBitmapScaleDirectionToCommand[direction];
+    _console.log({ command: bitmapScale });
     const differences = this.#displayContextStateHelper.update({
-      bitmapScale,
+      [command]: bitmapScale,
     });
     if (differences.length == 0) {
       return;
@@ -1227,12 +1241,21 @@ class DisplayManager {
     const dataView = new DataView(new ArrayBuffer(2));
     dataView.setUint16(0, formatBitmapScale(bitmapScale), true);
     await this.#sendDisplayContextCommand(
-      "setBitmapScale",
+      command,
       dataView.buffer,
       sendImmediately
     );
 
     this.#onDisplayContextStateUpdate(differences);
+  }
+  async setBitmapScaleX(bitmapScaleX: number, sendImmediately?: boolean) {
+    return this.#setBitmapScale("x", bitmapScaleX, sendImmediately);
+  }
+  async setBitmapScaleY(bitmapScaleY: number, sendImmediately?: boolean) {
+    return this.#setBitmapScale("y", bitmapScaleY, sendImmediately);
+  }
+  async setBitmapScale(bitmapScale: number, sendImmediately?: boolean) {
+    return this.#setBitmapScale("all", bitmapScale, sendImmediately);
   }
 
   #clampX(x: number) {

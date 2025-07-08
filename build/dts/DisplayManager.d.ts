@@ -65,7 +65,8 @@ export type DisplayContextState = {
     rotationCropBottom: number;
     rotationCropLeft: number;
     bitmapColorIndices: number[];
-    bitmapScale: number;
+    bitmapScaleX: number;
+    bitmapScaleY: number;
 };
 export type DisplayContextStateKey = keyof DisplayContextState;
 export type PartialDisplayContextState = Partial<DisplayContextState>;
@@ -74,7 +75,7 @@ export declare const DisplayInformationValues: {
     type: readonly ["none", "generic", "monocularLeft", "monocularRight", "binocular"];
     pixelDepth: readonly ["1", "2", "4"];
 };
-export declare const DisplayContextCommands: readonly ["show", "clear", "setColor", "setColorOpacity", "setOpacity", "saveContext", "restoreContext", "selectFillColor", "selectLineColor", "setLineWidth", "setRotation", "clearRotation", "setSegmentStartCap", "setSegmentEndCap", "setSegmentCap", "setSegmentStartRadius", "setSegmentEndRadius", "setSegmentRadius", "setCropTop", "setCropRight", "setCropBottom", "setCropLeft", "clearCrop", "setRotationCropTop", "setRotationCropRight", "setRotationCropBottom", "setRotationCropLeft", "clearRotationCrop", "selectBitmapColor", "selectBitmapColors", "setBitmapScale", "clearRect", "drawRect", "drawRoundRect", "drawCircle", "drawEllipse", "drawPolygon", "drawSegment", "drawSegments", "drawArc", "drawArcEllipse", "drawBitmap", "selectSpriteSheet", "sprite", "selectFont", "drawText"];
+export declare const DisplayContextCommands: readonly ["show", "clear", "setColor", "setColorOpacity", "setOpacity", "saveContext", "restoreContext", "selectFillColor", "selectLineColor", "setLineWidth", "setRotation", "clearRotation", "setSegmentStartCap", "setSegmentEndCap", "setSegmentCap", "setSegmentStartRadius", "setSegmentEndRadius", "setSegmentRadius", "setCropTop", "setCropRight", "setCropBottom", "setCropLeft", "clearCrop", "setRotationCropTop", "setRotationCropRight", "setRotationCropBottom", "setRotationCropLeft", "clearRotationCrop", "selectBitmapColor", "selectBitmapColors", "setBitmapScaleX", "setBitmapScaleY", "setBitmapScale", "clearRect", "drawRect", "drawRoundRect", "drawCircle", "drawEllipse", "drawPolygon", "drawSegment", "drawSegments", "drawArc", "drawArcEllipse", "drawBitmap", "selectSpriteSheet", "sprite", "selectFont", "drawText"];
 export type DisplayContextCommand = (typeof DisplayContextCommands)[number];
 export declare const RequiredDisplayMessageTypes: DisplayMessageType[];
 export declare const DisplayEventTypes: readonly ["isDisplayAvailable", "displayStatus", "displayInformation", "displayCommand", "getDisplayBrightness", "setDisplayBrightness", "displayContextCommands", "displayReady", "displayContextState", "displayColor", "displayColorOpacity", "displayOpacity"];
@@ -179,6 +180,8 @@ declare class DisplayManager {
     clearRotationCrop(sendImmediately?: boolean): Promise<void>;
     selectBitmapColorIndex(bitmapColorIndex: number, colorIndex: number, sendImmediately?: boolean): Promise<void>;
     selectBitmapColorIndices(bitmapColors: DisplayBitmapColorPair[], sendImmediately?: boolean): Promise<void>;
+    setBitmapScaleX(bitmapScaleX: number, sendImmediately?: boolean): Promise<void>;
+    setBitmapScaleY(bitmapScaleY: number, sendImmediately?: boolean): Promise<void>;
     setBitmapScale(bitmapScale: number, sendImmediately?: boolean): Promise<void>;
     clearRect(x: number, y: number, width: number, height: number, sendImmediately?: boolean): Promise<void>;
     drawRect(centerX: number, centerY: number, width: number, height: number, sendImmediately?: boolean): Promise<void>;
