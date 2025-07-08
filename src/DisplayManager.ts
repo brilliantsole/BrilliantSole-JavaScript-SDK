@@ -232,6 +232,7 @@ export const DisplayContextCommands = [
   "setBitmapScaleX",
   "setBitmapScaleY",
   "setBitmapScale",
+  "resetBitmapScale",
 
   "clearRect",
 
@@ -1232,9 +1233,20 @@ class DisplayManager {
     bitmapScale = roundBitmapScale(bitmapScale);
     const command = DisplayBitmapScaleDirectionToCommand[direction];
     _console.log({ command: bitmapScale });
-    const differences = this.#displayContextStateHelper.update({
-      [command]: bitmapScale,
-    });
+    const newState: PartialDisplayContextState = {};
+    switch (direction) {
+      case "all":
+        newState.bitmapScaleX = bitmapScale;
+        newState.bitmapScaleY = bitmapScale;
+        break;
+      case "x":
+        newState.bitmapScaleX = bitmapScale;
+        break;
+      case "y":
+        newState.bitmapScaleY = bitmapScale;
+        break;
+    }
+    const differences = this.#displayContextStateHelper.update(newState);
     if (differences.length == 0) {
       return;
     }
@@ -1256,6 +1268,21 @@ class DisplayManager {
   }
   async setBitmapScale(bitmapScale: number, sendImmediately?: boolean) {
     return this.#setBitmapScale("all", bitmapScale, sendImmediately);
+  }
+  async resetBitmapScale(sendImmediately?: boolean) {
+    const differences = this.#displayContextStateHelper.update({
+      bitmapScaleX: 1,
+      bitmapScaleY: 1,
+    });
+    if (differences.length == 0) {
+      return;
+    }
+    await this.#sendDisplayContextCommand(
+      "resetBitmapScale",
+      undefined,
+      sendImmediately
+    );
+    this.#onDisplayContextStateUpdate(differences);
   }
 
   #clampX(x: number) {

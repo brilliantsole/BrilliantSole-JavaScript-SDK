@@ -3969,6 +3969,7 @@ const DisplayContextCommands = [
     "setBitmapScaleX",
     "setBitmapScaleY",
     "setBitmapScale",
+    "resetBitmapScale",
     "clearRect",
     "drawRect",
     "drawRoundRect",
@@ -4513,6 +4514,17 @@ class DisplayManager {
     async setBitmapScale(bitmapScale, sendImmediately) {
         return __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_setBitmapScale).call(this, "all", bitmapScale, sendImmediately);
     }
+    async resetBitmapScale(sendImmediately) {
+        const differences = __classPrivateFieldGet(this, _DisplayManager_displayContextStateHelper, "f").update({
+            bitmapScaleX: 1,
+            bitmapScaleY: 1,
+        });
+        if (differences.length == 0) {
+            return;
+        }
+        await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "resetBitmapScale", undefined, sendImmediately);
+        __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_onDisplayContextStateUpdate).call(this, differences);
+    }
     async clearRect(x, y, width, height, sendImmediately) {
         const { x: _x, y: _y, width: _width, height: _height, } = __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_clampBox).call(this, x, y, width, height);
         const dataView = new DataView(new ArrayBuffer(2 * 4));
@@ -4837,9 +4849,20 @@ async function _DisplayManager_sendDisplayCommand(command, sendImmediately) {
     bitmapScale = roundBitmapScale(bitmapScale);
     const command = DisplayBitmapScaleDirectionToCommand[direction];
     _console$o.log({ command: bitmapScale });
-    const differences = __classPrivateFieldGet(this, _DisplayManager_displayContextStateHelper, "f").update({
-        [command]: bitmapScale,
-    });
+    const newState = {};
+    switch (direction) {
+        case "all":
+            newState.bitmapScaleX = bitmapScale;
+            newState.bitmapScaleY = bitmapScale;
+            break;
+        case "x":
+            newState.bitmapScaleX = bitmapScale;
+            break;
+        case "y":
+            newState.bitmapScaleY = bitmapScale;
+            break;
+    }
+    const differences = __classPrivateFieldGet(this, _DisplayManager_displayContextStateHelper, "f").update(newState);
     if (differences.length == 0) {
         return;
     }
@@ -8318,6 +8341,10 @@ class Device {
     get setDisplayBitmapScale() {
         __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertDisplayIsAvailable).call(this);
         return __classPrivateFieldGet(this, _Device_displayManager, "f").setBitmapScale;
+    }
+    get resetDisplayBitmapScale() {
+        __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertDisplayIsAvailable).call(this);
+        return __classPrivateFieldGet(this, _Device_displayManager, "f").resetBitmapScale;
     }
 }
 _a$3 = Device, _Device_eventDispatcher = new WeakMap(), _Device_connectionManager = new WeakMap(), _Device_isConnected = new WeakMap(), _Device_reconnectOnDisconnection = new WeakMap(), _Device_reconnectIntervalId = new WeakMap(), _Device_deviceInformationManager = new WeakMap(), _Device_batteryLevel = new WeakMap(), _Device_sensorConfigurationManager = new WeakMap(), _Device_clearSensorConfigurationOnLeave = new WeakMap(), _Device_sensorDataManager = new WeakMap(), _Device_vibrationManager = new WeakMap(), _Device_fileTransferManager = new WeakMap(), _Device_tfliteManager = new WeakMap(), _Device_firmwareManager = new WeakMap(), _Device_isServerSide = new WeakMap(), _Device_wifiManager = new WeakMap(), _Device_cameraManager = new WeakMap(), _Device_microphoneManager = new WeakMap(), _Device_displayManager = new WeakMap(), _Device_instances = new WeakSet(), _Device_DefaultConnectionManager = function _Device_DefaultConnectionManager() {

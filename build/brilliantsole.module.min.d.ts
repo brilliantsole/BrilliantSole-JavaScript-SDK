@@ -1039,6 +1039,7 @@ declare class Device {
     get setDisplayBitmapScaleX(): (bitmapScaleX: number, sendImmediately?: boolean) => Promise<void>;
     get setDisplayBitmapScaleY(): (bitmapScaleY: number, sendImmediately?: boolean) => Promise<void>;
     get setDisplayBitmapScale(): (bitmapScale: number, sendImmediately?: boolean) => Promise<void>;
+    get resetDisplayBitmapScale(): (sendImmediately?: boolean) => Promise<void>;
 }
 
 declare const DeviceManagerEventTypes: readonly ["deviceConnected", "deviceDisconnected", "deviceIsConnected", "availableDevices", "connectedDevices"];

@@ -1691,6 +1691,10 @@ class Device {
     this.#assertDisplayIsAvailable();
     return this.#displayManager.setBitmapScale;
   }
+  get resetDisplayBitmapScale() {
+    this.#assertDisplayIsAvailable();
+    return this.#displayManager.resetBitmapScale;
+  }
 
   // FILL - spritesheet, text, etc
 }
