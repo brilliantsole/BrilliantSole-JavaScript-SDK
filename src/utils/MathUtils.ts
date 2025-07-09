@@ -115,6 +115,11 @@ export function computeVoronoiWeights(
   return counts.map((c) => c / sampleCount);
 }
 
+export function getVector3Length(vector: Vector3) {
+  const { x, y, z } = vector;
+  return Math.sqrt(x ** 2 + y ** 2 + z ** 2);
+}
+
 export function clamp(value: number, min: number = 0, max: number = 1) {
   return Math.min(Math.max(value, min), max);
 }

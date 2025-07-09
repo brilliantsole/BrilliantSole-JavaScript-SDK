@@ -125,6 +125,10 @@ export {
 } from "./utils/DisplayCanvasHelper.ts";
 /** BROWSER_END */
 
+/** BROWSER_START */
+export { resizeAndQuantizeImage } from "./utils/BitmapUtils.ts";
+/** BROWSER_END */
+
 export { rgbToHex, hexToRGB } from "./utils/ColorUtils.ts";
 
 export {

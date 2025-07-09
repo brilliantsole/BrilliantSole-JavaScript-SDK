@@ -39,6 +39,9 @@ import {
   pixelDepthToPixelsPerByte,
   roundBitmapScale,
 } from "./utils/DisplayUtils.ts";
+import { isInBrowser } from "./utils/environment.ts";
+import { resizeAndQuantizeImage } from "./BS.ts";
+import { imageToBitmap } from "./utils/BitmapUtils.ts";
 
 const _console = createConsole("DisplayManager", { log: true });
 
@@ -1647,6 +1650,22 @@ class DisplayManager {
       "drawBitmap",
       buffer,
       sendImmediately
+    );
+  }
+
+  async imageToBitmap(
+    image: HTMLImageElement,
+    width: number,
+    height: number,
+    numberOfColors?: number
+  ) {
+    return imageToBitmap(
+      image,
+      width,
+      height,
+      this.colors,
+      this.displayContextState,
+      numberOfColors
     );
   }
 

@@ -77,6 +77,7 @@ const nodeExternal = [
   "@abandonware/noble",
   "auto-bind",
   "dgram",
+  "rgbquant",
 ];
 
 const lensStudioPlugins = [

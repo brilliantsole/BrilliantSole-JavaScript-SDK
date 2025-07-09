@@ -1035,6 +1035,10 @@ declare class Device {
     get drawDisplayArc(): (centerX: number, centerY: number, radius: number, startAngle: number, angleOffset: number, isRadians?: boolean, sendImmediately?: boolean) => Promise<void>;
     get drawDisplayArcEllipse(): (centerX: number, centerY: number, radiusX: number, radiusY: number, startAngle: number, angleOffset: number, isRadians?: boolean, sendImmediately?: boolean) => Promise<void>;
     get drawDisplayBitmap(): (centerX: number, centerY: number, bitmap: DisplayBitmap, sendImmediately?: boolean) => Promise<void>;
+    get imageToDisplayBitmap(): (image: HTMLImageElement, width: number, height: number, numberOfColors?: number) => Promise<{
+        blob: Blob;
+        bitmap: DisplayBitmap;
+    }>;
     get setDisplayContextState(): (newState: PartialDisplayContextState, sendImmediately?: boolean) => Promise<void>;
     get selectDisplayBitmapColorIndex(): (bitmapColorIndex: number, colorIndex: number, sendImmediately?: boolean) => Promise<void>;
     get selectDisplayBitmapColorIndices(): (bitmapColors: DisplayBitmapColorPair[], sendImmediately?: boolean) => Promise<void>;

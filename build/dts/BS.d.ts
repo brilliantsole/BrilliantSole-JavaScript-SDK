@@ -21,6 +21,9 @@ export { maxDisplayBitmapScale } from "./utils/DisplayUtils.ts";
 /** BROWSER_START */
 export { default as DisplayCanvasHelper, DisplayCanvasHelperEvent, DisplayCanvasHelperEventMap, DisplayCanvasHelperEventListenerMap, } from "./utils/DisplayCanvasHelper.ts";
 /** BROWSER_END */
+/** BROWSER_START */
+export { resizeAndQuantizeImage } from "./utils/BitmapUtils.ts";
+/** BROWSER_END */
 export { rgbToHex, hexToRGB } from "./utils/ColorUtils.ts";
 export { default as DevicePair, DevicePairEvent, DevicePairEventMap, DevicePairEventListenerMap, BoundDevicePairEventListeners, DevicePairType, DevicePairTypes, } from "./devicePair/DevicePair.ts";
 import { addEventListeners, removeEventListeners } from "./utils/EventUtils.ts";

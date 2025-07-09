@@ -1665,6 +1665,10 @@ class Device {
     this.#assertDisplayIsAvailable();
     return this.#displayManager.drawBitmap;
   }
+  get imageToDisplayBitmap() {
+    this.#assertDisplayIsAvailable();
+    return this.#displayManager.imageToBitmap;
+  }
 
   get setDisplayContextState() {
     this.#assertDisplayIsAvailable();

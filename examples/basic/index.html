@@ -33,6 +33,11 @@
       height: 200px;
       background-color: black;
     }
+    #bitmap img {
+      width: 200px;
+      height: 200px;
+      background-color: black;
+    }
   </style>
   <body>
     <nav>
@@ -396,9 +401,17 @@
           </select>
           <input type="color" class="color" disabled />
         </label>
+        <label style="display: inline-block">
+          <b>image</b>
+          <input id="bitmapImageInput" type="file" accept="image/*" />
+        </label>
+        <button id="quantizeBitmapImage">quantize image</button>
+        <br />
         <button id="clearBitmap">clear</button>
         <br />
         <canvas width="400" height="400"></canvas>
+        <img style="display: none" />
+        <img style="display: none" />
       </div>
     </div>
 

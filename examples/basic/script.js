@@ -2855,6 +2855,11 @@ const onBitmapCanvasSizeUpdate = () => {
   bitmapCanvas.width = bitmapPixelLength * bitmapWidth;
   bitmapCanvas.height = bitmapPixelLength * bitmapHeight;
 
+  bitmapImage.width = bitmapCanvas.width;
+  bitmapImage.height = bitmapCanvas.height;
+  bitmapImage.style.width = `${bitmapCanvas.width}px`;
+  // FILL - update bitmapImage quantize
+
   updateBitmapCanvas();
 };
 const updateBitmapCanvas = () => {
@@ -3060,5 +3065,53 @@ const updateCurrentBitmapColor = () => {
 const clearBitmapButton = document.getElementById("clearBitmap");
 clearBitmapButton.addEventListener("click", () => {
   bitmapPixels.fill(0);
+  updateBitmapCanvas();
+});
+
+/** @type {HTMLInputElement} */
+const bitmapImageInput = document.getElementById("bitmapImageInput");
+bitmapImageInput.addEventListener("input", () => {
+  quantizeBitmapImage();
+});
+/** @type {HTMLButtonElement} */
+const quantizeBitmapImageButton = document.getElementById(
+  "quantizeBitmapImage"
+);
+quantizeBitmapImageButton.addEventListener("click", () => {
+  quantizeBitmapImage();
+});
+const quantizeBitmapImage = () => {
+  const file = bitmapImageInput.files[0];
+  if (!file) {
+    return;
+  }
+  console.log("bitmapImage", file);
+  const reader = new FileReader();
+  reader.onload = function (e) {
+    bitmapImage.style.display = "";
+    bitmapImage.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+};
+
+/** @type {HTMLImageElement} */
+const bitmapImage = bitmapContainer.querySelectorAll("img")[0];
+/** @type {HTMLImageElement} */
+const quantizedBitmapImage = bitmapContainer.querySelectorAll("img")[1];
+bitmapImage.addEventListener("load", async () => {
+  const { blob, bitmap } = await device.imageToDisplayBitmap(
+    bitmapImage,
+    bitmapWidth,
+    bitmapHeight,
+    bitmapNumberOfColors
+  );
+
+  quantizedBitmapImage.width = bitmapWidth;
+  quantizedBitmapImage.height = bitmapHeight;
+
+  quantizedBitmapImage.src = URL.createObjectURL(blob);
+  quantizedBitmapImage.style.display = "";
+
+  bitmapPixels = bitmap.pixels;
   updateBitmapCanvas();
 });

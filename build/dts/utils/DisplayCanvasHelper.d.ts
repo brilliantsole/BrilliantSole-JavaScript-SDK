@@ -49,24 +49,24 @@ export type DisplayBoundingBox = {
 declare class DisplayCanvasHelper {
     #private;
     constructor();
-    get addEventListener(): <T extends "contextState" | "numberOfColors" | "brightness" | "color" | "colorOpacity" | "opacity" | "resize" | "update" | "ready">(type: T, listener: (event: {
+    get addEventListener(): <T extends "opacity" | "numberOfColors" | "resize" | "contextState" | "brightness" | "color" | "colorOpacity" | "update" | "ready">(type: T, listener: (event: {
         type: T;
         target: DisplayCanvasHelper;
         message: DisplayCanvasHelperEventMessages[T];
     }) => void, options?: {
         once?: boolean;
     }) => void;
-    get removeEventListener(): <T extends "contextState" | "numberOfColors" | "brightness" | "color" | "colorOpacity" | "opacity" | "resize" | "update" | "ready">(type: T, listener: (event: {
+    get removeEventListener(): <T extends "opacity" | "numberOfColors" | "resize" | "contextState" | "brightness" | "color" | "colorOpacity" | "update" | "ready">(type: T, listener: (event: {
         type: T;
         target: DisplayCanvasHelper;
         message: DisplayCanvasHelperEventMessages[T];
     }) => void) => void;
-    get waitForEvent(): <T extends "contextState" | "numberOfColors" | "brightness" | "color" | "colorOpacity" | "opacity" | "resize" | "update" | "ready">(type: T) => Promise<{
+    get waitForEvent(): <T extends "opacity" | "numberOfColors" | "resize" | "contextState" | "brightness" | "color" | "colorOpacity" | "update" | "ready">(type: T) => Promise<{
         type: T;
         target: DisplayCanvasHelper;
         message: DisplayCanvasHelperEventMessages[T];
     }>;
-    get removeEventListeners(): <T extends "contextState" | "numberOfColors" | "brightness" | "color" | "colorOpacity" | "opacity" | "resize" | "update" | "ready">(type: T) => void;
+    get removeEventListeners(): <T extends "opacity" | "numberOfColors" | "resize" | "contextState" | "brightness" | "color" | "colorOpacity" | "update" | "ready">(type: T) => void;
     get removeAllEventListeners(): () => void;
     get canvas(): HTMLCanvasElement | undefined;
     set canvas(newCanvas: HTMLCanvasElement | undefined);

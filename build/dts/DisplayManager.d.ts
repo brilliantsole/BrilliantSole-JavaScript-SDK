@@ -129,7 +129,7 @@ declare class DisplayManager {
     get isDisplayAvailable(): boolean;
     get displayContextState(): DisplayContextState;
     setContextState(newState: PartialDisplayContextState, sendImmediately?: boolean): Promise<void>;
-    get displayStatus(): "awake" | "asleep";
+    get displayStatus(): "asleep" | "awake";
     get isDisplayAwake(): boolean;
     wake(): Promise<void>;
     sleep(): Promise<void>;
@@ -143,7 +143,7 @@ declare class DisplayManager {
         width: number;
         height: number;
     };
-    get type(): "none" | "generic" | "monocularLeft" | "monocularRight" | "binocular";
+    get type(): "generic" | "none" | "monocularLeft" | "monocularRight" | "binocular";
     get displayBrightness(): "veryLow" | "low" | "medium" | "high" | "veryHigh";
     setDisplayBrightness(newDisplayBrightness: DisplayBrightness, sendImmediately?: boolean): Promise<void>;
     flushDisplayContextCommands(): Promise<void>;
@@ -196,6 +196,10 @@ declare class DisplayManager {
     drawArc(centerX: number, centerY: number, radius: number, startAngle: number, angleOffset: number, isRadians?: boolean, sendImmediately?: boolean): Promise<void>;
     drawArcEllipse(centerX: number, centerY: number, radiusX: number, radiusY: number, startAngle: number, angleOffset: number, isRadians?: boolean, sendImmediately?: boolean): Promise<void>;
     drawBitmap(centerX: number, centerY: number, bitmap: DisplayBitmap, sendImmediately?: boolean): Promise<void>;
+    imageToBitmap(image: HTMLImageElement, width: number, height: number, numberOfColors?: number): Promise<{
+        blob: Blob;
+        bitmap: DisplayBitmap;
+    }>;
     selectSpriteSheet(index: number, sendImmediately?: boolean): void;
     drawSprite(index: number, x: number, y: number, sendImmediately?: boolean): void;
     get isDisplayReady(): boolean;

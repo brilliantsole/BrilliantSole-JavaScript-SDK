@@ -55,7 +55,7 @@ export function stringToRGB(string: string): DisplayColorRGB {
 
 export function rgbToHex({ r, g, b }: DisplayColorRGB): string {
   const toHex = (value: number) =>
-    value.toString(16).padStart(2, "0").toUpperCase();
+    value.toString(16).padStart(2, "0").toLowerCase();
 
   _console.assertWithError(
     [r, g, b].every((v) => v >= 0 && v <= 255),
