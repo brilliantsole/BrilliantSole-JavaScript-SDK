@@ -1419,7 +1419,7 @@ const updateConnectViaWebSocketsButton = () => {
     device.isConnected &&
     device.connectionType == "webBluetooth" &&
     device.isWifiConnected;
-  console.log({ enabled });
+  // console.log({ enabled });
   connectViaWebSocketsButton.disabled = !enabled;
 };
 device.addEventListener("isWifiConnected", () =>
@@ -2042,10 +2042,14 @@ setDisplayBrightnessSelect.addEventListener("input", () => {
 /** @type {HTMLTemplateElement} */
 const displayColorTemplate = document.getElementById("displayColorTemplate");
 const displayColorsContainer = document.getElementById("displayColors");
+/** @type {string[]} */
+const displayColors = [];
 const setDisplayColor = BS.ThrottleUtils.throttle(
   (colorIndex, colorString) => {
-    console.log({ colorIndex, colorString });
+    displayColors[colorIndex] = colorString;
+    // console.log({ colorIndex, colorString });
     device.setDisplayColor(colorIndex, colorString, true);
+    updateBitmapCanvas();
   },
   100,
   true
@@ -2061,6 +2065,8 @@ device.addEventListener("connected", () => {
       colorIndex < device.numberOfDisplayColors;
       colorIndex++
     ) {
+      displayColors[colorIndex] = "#000000";
+
       const displayColorContainer = displayColorTemplate.content
         .cloneNode(true)
         .querySelector(".displayColor");
@@ -2077,6 +2083,33 @@ device.addEventListener("connected", () => {
         if (colorIndex == lineColorIndex) {
           lineColorInput.value = displayColorInput.value;
         }
+
+        const bitmapColorIndexContainers = Array.from(
+          bitmapColorIndicesContainer.querySelectorAll(".bitmapColorIndex")
+        );
+
+        bitmapColorIndexContainers.forEach(
+          (bitmapColorIndexContainer, bitmapColorIndex) => {
+            if (
+              bitmapColorIndexContainer.querySelector("select").value !=
+              colorIndex
+            ) {
+              return;
+            }
+
+            const bitmapColorIndexColorInput =
+              bitmapColorIndexContainer.querySelector("input");
+            bitmapColorIndexColorInput.value = displayColorInput.value;
+
+            const bitmapColorIndexSelect =
+              bitmapColorIndexContainer.querySelector("select");
+            bitmapColorIndexSelect.value = colorIndex;
+
+            if (bitmapColorIndex == currentBitmapColorIndex) {
+              currentBitmapColorIndexColorInput.value = displayColorInput.value;
+            }
+          }
+        );
       });
       displayColorsContainer.appendChild(displayColorContainer);
     }
@@ -2185,14 +2218,13 @@ fillColorSelect.addEventListener("input", () => {
   console.log({ fillColorIndex });
   device.selectDisplayFillColor(fillColorIndex);
   drawShape();
-  fillColorInput.value = displayColorsContainer.querySelectorAll(
-    ".displayColor input"
-  )[fillColorIndex].value;
+  fillColorInput.value = displayColors[fillColorIndex];
 });
+
 device.addEventListener("isConnected", () => {
   const enabled = device.isConnected && device.isDisplayAvailable;
   fillColorSelect.disabled = !enabled;
-  console.log({ enabled });
+  // console.log({ enabled });
 });
 
 const lineColorContainer = document.getElementById("lineColor");
@@ -2219,9 +2251,7 @@ lineColorSelect.addEventListener("input", () => {
   console.log({ lineColorIndex });
   device.selectDisplayLineColor(lineColorIndex);
   drawShape();
-  lineColorInput.value = displayColorsContainer.querySelectorAll(
-    ".displayColor input"
-  )[lineColorIndex].value;
+  lineColorInput.value = displayColors[lineColorIndex];
 });
 device.addEventListener("isConnected", () => {
   const enabled = device.isConnected && device.isDisplayAvailable;
@@ -2240,6 +2270,9 @@ const drawShape = BS.ThrottleUtils.throttle(
         drawBorderRadius,
         drawStartAngle,
         drawAngleOffset,
+        drawBitmapScaleX,
+        drawBitmapScaleY,
+        drawBitmapScale,
       });
       if (updatedParams?.includes("lineWidth")) {
         device.setDisplayLineWidth(lineWidth);
@@ -2284,6 +2317,16 @@ const drawShape = BS.ThrottleUtils.throttle(
       }
       if (updatedParams?.includes("rotationCropLeft")) {
         device.setDisplayRotationCropLeft(drawRotationCropLeft);
+      }
+
+      if (updatedParams?.includes("bitmapScaleX")) {
+        device.setDisplayBitmapScaleX(drawBitmapScaleX);
+      }
+      if (updatedParams?.includes("bitmapScaleY")) {
+        device.setDisplayBitmapScaleY(drawBitmapScaleY);
+      }
+      if (updatedParams?.includes("bitmapScale")) {
+        device.setDisplayBitmapScale(drawBitmapScale);
       }
 
       switch (drawShapeType) {
@@ -2334,6 +2377,13 @@ const drawShape = BS.ThrottleUtils.throttle(
             drawStartAngle,
             drawAngleOffset
           );
+          break;
+        case "drawBitmap":
+          device.drawDisplayBitmap(drawX, drawY, {
+            numberOfColors: bitmapNumberOfColors,
+            pixels: bitmapPixels,
+            width: bitmapWidth,
+          });
           break;
         default:
           console.error(`uncaught drawShapeType ${drawShapeType}`);
@@ -2548,6 +2598,49 @@ drawRotationCropLeftInput.addEventListener("input", () => {
   drawShape(["rotationCropLeft"]);
 });
 
+const drawBitmapScaleXContainer = document.getElementById("drawBitmapScaleX");
+const drawBitmapScaleXInput = drawBitmapScaleXContainer.querySelector("input");
+const drawBitmapScaleXSpan = drawBitmapScaleXContainer.querySelector("span");
+let drawBitmapScaleX = Number(drawBitmapScaleXInput.value);
+
+drawBitmapScaleXInput.addEventListener("input", () => {
+  drawBitmapScaleX = Number(drawBitmapScaleXInput.value);
+  //console.log({ drawBitmapScaleX });
+  drawBitmapScaleXSpan.innerText = drawBitmapScaleX;
+  drawShape(["bitmapScaleX"]);
+});
+
+const drawBitmapScaleYContainer = document.getElementById("drawBitmapScaleY");
+const drawBitmapScaleYInput = drawBitmapScaleYContainer.querySelector("input");
+const drawBitmapScaleYSpan = drawBitmapScaleYContainer.querySelector("span");
+let drawBitmapScaleY = Number(drawBitmapScaleYInput.value);
+
+drawBitmapScaleYInput.addEventListener("input", () => {
+  drawBitmapScaleY = Number(drawBitmapScaleYInput.value);
+  //console.log({ drawBitmapScaleY });
+  drawBitmapScaleYSpan.innerText = drawBitmapScaleY;
+  drawShape(["bitmapScaleY"]);
+});
+
+const drawBitmapScaleContainer = document.getElementById("drawBitmapScale");
+const drawBitmapScaleInput = drawBitmapScaleContainer.querySelector("input");
+const drawBitmapScaleSpan = drawBitmapScaleContainer.querySelector("span");
+let drawBitmapScale = Number(drawBitmapScaleInput.value);
+
+drawBitmapScaleInput.addEventListener("input", () => {
+  drawBitmapScale = Number(drawBitmapScaleInput.value);
+  //console.log({ drawBitmapScale });
+
+  drawBitmapScaleXSpan.innerText = drawBitmapScale;
+  drawBitmapScaleXInput.value = drawBitmapScale;
+
+  drawBitmapScaleYSpan.innerText = drawBitmapScale;
+  drawBitmapScaleYInput.value = drawBitmapScale;
+
+  drawBitmapScaleSpan.innerText = drawBitmapScale;
+  drawShape(["bitmapScale"]);
+});
+
 const drawXContainer = document.getElementById("drawX");
 const drawXInput = drawXContainer.querySelector("input");
 const drawXSpan = drawXContainer.querySelector("span");
@@ -2715,4 +2808,257 @@ device.addEventListener("connected", () => {
     device.displayInformation.height / 2,
     device.displayInformation.width / 2
   );
+});
+
+// BITMAP
+const bitmapWidthContainer = document.getElementById("bitmapWidth");
+const bitmapWidthInput = bitmapWidthContainer.querySelector("input");
+const bitmapWidthSpan = bitmapWidthContainer.querySelector("span");
+let bitmapWidth = Number(bitmapWidthInput.value);
+
+bitmapWidthInput.addEventListener("input", () => {
+  bitmapWidth = Number(bitmapWidthInput.value);
+  console.log({ bitmapWidth });
+  bitmapWidthSpan.innerText = bitmapWidth;
+  onBitmapCanvasSizeUpdate();
+});
+
+const bitmapHeightContainer = document.getElementById("bitmapHeight");
+const bitmapHeightInput = bitmapHeightContainer.querySelector("input");
+const bitmapHeightSpan = bitmapHeightContainer.querySelector("span");
+let bitmapHeight = Number(bitmapHeightInput.value);
+
+bitmapHeightInput.addEventListener("input", () => {
+  bitmapHeight = Number(bitmapHeightInput.value);
+  console.log({ bitmapHeight });
+  bitmapHeightSpan.innerText = bitmapHeight;
+  onBitmapCanvasSizeUpdate();
+});
+
+let bitmapPixels = [];
+const bitmapContainer = document.getElementById("bitmap");
+const bitmapCanvas = bitmapContainer.querySelector("canvas");
+const bitmapContext = bitmapCanvas.getContext("2d");
+const bitmapCanvasHeight = 200;
+let bitmapPixelLength = bitmapCanvasHeight / bitmapHeight;
+let bitmapAspectRatio = bitmapWidth / bitmapHeight;
+let bitmapCanvasWidth = bitmapCanvasHeight * bitmapAspectRatio;
+const onBitmapCanvasSizeUpdate = () => {
+  bitmapAspectRatio = bitmapWidth / bitmapHeight;
+  bitmapCanvasWidth = bitmapCanvasHeight * bitmapAspectRatio;
+  bitmapCanvas.style.width = `${bitmapCanvasWidth}px`;
+
+  bitmapPixels = new Array(bitmapWidth * bitmapHeight).fill(0);
+
+  bitmapPixelLength = bitmapCanvasHeight / bitmapHeight;
+
+  bitmapCanvas.width = bitmapPixelLength * bitmapWidth;
+  bitmapCanvas.height = bitmapPixelLength * bitmapHeight;
+
+  updateBitmapCanvas();
+};
+const updateBitmapCanvas = () => {
+  bitmapContext.clearRect(0, 0, bitmapCanvasWidth, bitmapCanvasHeight);
+  bitmapContext.fillStyle = displayColors[bitmapColorIndices[0]];
+  bitmapContext.fillRect(0, 0, bitmapCanvasWidth, bitmapCanvasHeight);
+
+  bitmapPixels.forEach((pixel, pixelIndex) => {
+    const pixelX = pixelIndex % bitmapWidth;
+    const pixelY = Math.floor(pixelIndex / bitmapWidth);
+    const x = pixelX * bitmapPixelLength;
+    const y = pixelY * bitmapPixelLength;
+    bitmapContext.fillStyle = displayColors[bitmapColorIndices[pixel]];
+    bitmapContext.fillRect(x, y, bitmapPixelLength, bitmapPixelLength);
+  });
+
+  bitmapContext.lineWidth = 1.5;
+  bitmapContext.strokeStyle = "white";
+  for (let row = 1; row < bitmapHeight; row++) {
+    bitmapContext.beginPath();
+    const y = row * bitmapPixelLength;
+    bitmapContext.moveTo(0, y);
+    bitmapContext.lineTo(bitmapCanvasWidth, y);
+    bitmapContext.stroke();
+  }
+  for (let col = 1; col < bitmapWidth; col++) {
+    bitmapContext.beginPath();
+    const x = col * bitmapPixelLength;
+    bitmapContext.moveTo(x, 0);
+    bitmapContext.lineTo(x, bitmapCanvasHeight);
+    bitmapContext.stroke();
+  }
+
+  drawShape();
+};
+window.addEventListener("load", () => {
+  onBitmapCanvasSizeUpdate();
+});
+let isMouseDown = false;
+window.addEventListener("mousedown", () => {
+  isMouseDown = true;
+});
+window.addEventListener("mouseup", () => {
+  isMouseDown = false;
+});
+bitmapCanvas.addEventListener("mousedown", (event) => {
+  const { offsetX, offsetY } = event;
+  setBitmapPixel(offsetX, offsetY);
+});
+bitmapCanvas.addEventListener("mousemove", (event) => {
+  if (!isMouseDown) {
+    return;
+  }
+  const { offsetX, offsetY } = event;
+  setBitmapPixel(offsetX, offsetY);
+});
+/**
+ * @param {number} offsetX
+ * @param {number} offsetY
+ */
+const setBitmapPixel = (offsetX, offsetY) => {
+  console.log({ offsetX, offsetY, bitmapCanvasWidth, bitmapCanvasHeight });
+  let x = offsetX / bitmapCanvasWidth;
+  let y = offsetY / bitmapCanvasHeight;
+  if (x >= 1 || y >= 1) {
+    return;
+  }
+  // console.log({ x, y });
+  const pixelX = Math.floor(x * bitmapWidth);
+  const pixelY = Math.floor(y * bitmapHeight);
+  // console.log({ pixelX, pixelY });
+
+  const pixelIndex = bitmapWidth * pixelY + pixelX;
+  // console.log({ pixelIndex });
+
+  bitmapPixels[pixelIndex] = currentBitmapColorIndex;
+  updateBitmapCanvas();
+};
+
+const bitmapNumberOfColorsContainer = document.getElementById(
+  "bitmapNumberOfColors"
+);
+const bitmapNumberOfColorsInput =
+  bitmapNumberOfColorsContainer.querySelector("input");
+const bitmapNumberOfColorsSpan =
+  bitmapNumberOfColorsContainer.querySelector("span");
+let bitmapNumberOfColors = Number(bitmapNumberOfColorsInput.value);
+
+bitmapNumberOfColorsInput.addEventListener("input", () => {
+  bitmapNumberOfColors = Number(bitmapNumberOfColorsInput.value);
+  bitmapPixels.fill(0);
+  console.log({ bitmapNumberOfColors });
+  bitmapNumberOfColorsSpan.innerText = bitmapNumberOfColors;
+  updateBitmapColorIndicesContainer();
+  updateCurrentBitmapColorIndex();
+  updateCurrentBitmapColor();
+  updateBitmapCanvas();
+});
+
+const bitmapColorIndicesContainer =
+  document.getElementById("bitmapColorIndices");
+/** @type {number[]} */
+const bitmapColorIndices = [];
+/** @type {HTMLTemplateElement} */
+const bitmapColorIndexTemplate = document.getElementById(
+  "bitmapColorIndexTemplate"
+);
+const updateBitmapColorIndicesContainer = () => {
+  bitmapColorIndicesContainer.innerHTML = "";
+  if (!device.isConnected) {
+    return;
+  }
+  for (
+    let bitmapColorIndex = 0;
+    bitmapColorIndex < bitmapNumberOfColors;
+    bitmapColorIndex++
+  ) {
+    bitmapColorIndices[bitmapColorIndex] = 0;
+
+    /** @type {HTMLElement} */
+    const bitmapColorIndexContainer = bitmapColorIndexTemplate.content
+      .cloneNode(true)
+      .querySelector(".bitmapColorIndex");
+
+    const bitmapColorIndexSpan =
+      bitmapColorIndexContainer.querySelector(".colorIndex");
+    bitmapColorIndexSpan.innerText = `#${bitmapColorIndex}`;
+    const bitmapColorIndexSelect =
+      bitmapColorIndexContainer.querySelector("select");
+    const bitmapColorIndexOptgroup =
+      bitmapColorIndexSelect.querySelector("optgroup");
+    const numberOfDisplayColors = device.isConnected
+      ? device.numberOfDisplayColors
+      : 0;
+    for (let colorIndex = 0; colorIndex < numberOfDisplayColors; colorIndex++) {
+      bitmapColorIndexOptgroup.appendChild(new Option(colorIndex));
+    }
+
+    const bitmapColorIndexColorInput =
+      bitmapColorIndexContainer.querySelector("input");
+
+    bitmapColorIndexSelect.addEventListener("input", () => {
+      const colorIndex = Number(bitmapColorIndexSelect.value);
+      if (device.isConnected) {
+        device.selectDisplayBitmapColorIndex(
+          bitmapColorIndex,
+          colorIndex,
+          true
+        );
+      }
+      bitmapColorIndexColorInput.value = displayColors[colorIndex];
+
+      if (currentBitmapColorIndex == bitmapColorIndex) {
+        updateCurrentBitmapColor();
+      }
+      bitmapColorIndices[bitmapColorIndex] = colorIndex;
+      console.log("bitmapColorIndices", bitmapColorIndices);
+      updateBitmapCanvas();
+    });
+
+    bitmapColorIndicesContainer.appendChild(bitmapColorIndexContainer);
+  }
+};
+device.addEventListener("isConnected", () => {
+  updateBitmapColorIndicesContainer();
+});
+
+const currentBitmapColorIndexContainer = document.getElementById(
+  "currentBitmapColorIndex"
+);
+let currentBitmapColorIndex = 0;
+const currentBitmapColorIndexSelect =
+  currentBitmapColorIndexContainer.querySelector("select");
+const currentBitmapColorIndexOptgroup =
+  currentBitmapColorIndexContainer.querySelector("optgroup");
+const currentBitmapColorIndexColorInput =
+  currentBitmapColorIndexContainer.querySelector("input");
+const updateCurrentBitmapColorIndex = () => {
+  currentBitmapColorIndex = 0;
+  currentBitmapColorIndexOptgroup.innerHTML = "";
+  for (
+    let bitmapColorIndex = 0;
+    bitmapColorIndex < bitmapNumberOfColors;
+    bitmapColorIndex++
+  ) {
+    currentBitmapColorIndexOptgroup.appendChild(new Option(bitmapColorIndex));
+  }
+};
+updateCurrentBitmapColorIndex();
+
+currentBitmapColorIndexSelect.addEventListener("input", () => {
+  currentBitmapColorIndex = Number(currentBitmapColorIndexSelect.value);
+  console.log({ currentBitmapColorIndex });
+  updateCurrentBitmapColor();
+});
+const updateCurrentBitmapColor = () => {
+  currentBitmapColorIndexColorInput.value =
+    bitmapColorIndicesContainer.querySelectorAll(".bitmapColorIndex input")[
+      currentBitmapColorIndex
+    ].value;
+};
+
+const clearBitmapButton = document.getElementById("clearBitmap");
+clearBitmapButton.addEventListener("click", () => {
+  bitmapPixels.fill(0);
+  updateBitmapCanvas();
 });

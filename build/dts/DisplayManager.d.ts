@@ -2,6 +2,7 @@ import Device, { SendMessageCallback } from "./Device.ts";
 import EventDispatcher from "./utils/EventDispatcher.ts";
 import { Vector2 } from "./utils/MathUtils.ts";
 import { DisplayCropDirection } from "./utils/DisplayUtils.ts";
+export declare const DefaultNumberOfDisplayColors = 16;
 export declare const DisplayCommands: readonly ["sleep", "wake"];
 export type DisplayCommand = (typeof DisplayCommands)[number];
 export declare const DisplayStatuses: readonly ["awake", "asleep"];

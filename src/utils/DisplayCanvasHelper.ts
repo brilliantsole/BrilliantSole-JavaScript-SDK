@@ -331,9 +331,10 @@ class DisplayCanvasHelper {
   #onDeviceNotConnected(event: DeviceEventMap["notConnected"]) {
     _console.log("device not connected");
   }
-  #onDeviceDisplayReady(event: DeviceEventMap["displayReady"]) {
+  async #onDeviceDisplayReady(event: DeviceEventMap["displayReady"]) {
     _console.log("device display ready");
     this.#isReady = true;
+    // await wait(5); // we need to wait for some reason
     this.#dispatchEvent("ready", {});
   }
 
@@ -906,12 +907,14 @@ class DisplayCanvasHelper {
     this.#onDisplayContextStateUpdate(differences);
   }
 
+  // FILL - setBitmapScaleX, setBitmapScaleY, resetBitmapScaleX
   async setBitmapScale(bitmapScale: number, sendImmediately?: boolean) {
     bitmapScale = clamp(bitmapScale, 0, maxDisplayBitmapScale);
     bitmapScale = roundBitmapScale(bitmapScale);
     _console.log({ bitmapScale });
     const differences = this.#displayContextStateHelper.update({
-      bitmapScale,
+      bitmapScaleX: bitmapScale,
+      bitmapScaleY: bitmapScale,
     });
     if (differences.length == 0) {
       return;

@@ -24,6 +24,7 @@ import {
   assertValidSegmentCap,
   DisplayBitmapScaleDirection,
   DisplayBitmapScaleDirectionToCommand,
+  displayBitmapScaleStep,
   DisplayCropDirection,
   DisplayCropDirections,
   DisplayCropDirectionToCommand,
@@ -40,6 +41,8 @@ import {
 } from "./utils/DisplayUtils.ts";
 
 const _console = createConsole("DisplayManager", { log: true });
+
+export const DefaultNumberOfDisplayColors = 16;
 
 export const DisplayCommands = ["sleep", "wake"] as const;
 export type DisplayCommand = (typeof DisplayCommands)[number];
@@ -1229,7 +1232,11 @@ class DisplayManager {
     bitmapScale: number,
     sendImmediately?: boolean
   ) {
-    bitmapScale = clamp(bitmapScale, 0, maxDisplayBitmapScale);
+    bitmapScale = clamp(
+      bitmapScale,
+      displayBitmapScaleStep,
+      maxDisplayBitmapScale
+    );
     bitmapScale = roundBitmapScale(bitmapScale);
     const command = DisplayBitmapScaleDirectionToCommand[direction];
     _console.log({ command: bitmapScale });
@@ -1496,7 +1503,7 @@ class DisplayManager {
     _console.log({ startAngle, angleOffset });
 
     angleOffset /= twoPi;
-    angleOffset *= (angleOffset > 0 ? Int16Max : -Int16Min) - 1;
+    angleOffset *= (angleOffset > 0 ? Int16Max - 1 : -Int16Min) - 1;
 
     console.log({ angleOffset });
 
@@ -1612,7 +1619,7 @@ class DisplayManager {
   }
 
   get #drawBitmapHeaderLength() {
-    return 2 + 2 + 2 + 1 + 2; // x, y, width, numberOfColors, dataLength
+    return 2 + 2 + 2 + 2 + 1 + 2; // x, y, width, numberOfPixels, numberOfColors, dataLength
   }
   async drawBitmap(
     centerX: number,
@@ -1621,14 +1628,18 @@ class DisplayManager {
     sendImmediately?: boolean
   ) {
     this.#assertValidBitmap(bitmap, true);
-    const dataView = new DataView(new ArrayBuffer(2 + 2 + 2 + 1 + 2));
+    _console.log("drawBitmap", bitmap);
+    const dataView = new DataView(
+      new ArrayBuffer(this.#drawBitmapHeaderLength)
+    );
     dataView.setInt16(0, centerX, true);
     dataView.setInt16(2, centerY, true);
     dataView.setUint16(4, bitmap.width, true);
-    dataView.setUint8(6, bitmap.numberOfColors);
+    dataView.setUint16(6, bitmap.pixels.length, true);
+    dataView.setUint8(8, bitmap.numberOfColors);
 
     const bitmapData = this.#getBitmapData(bitmap);
-    dataView.setUint16(7, bitmapData.byteLength, true);
+    dataView.setUint16(9, bitmapData.byteLength, true);
 
     const buffer = concatenateArrayBuffers(dataView, bitmapData);
     _console.log("drawBitmap data", buffer);

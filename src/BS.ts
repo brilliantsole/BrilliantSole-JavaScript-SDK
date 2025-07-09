@@ -111,6 +111,7 @@ export {
   DisplayBitmap,
   DisplayBitmapColorPair,
   DisplayPixelDepths,
+  DefaultNumberOfDisplayColors,
 } from "./DisplayManager.ts";
 
 export { maxDisplayBitmapScale } from "./utils/DisplayUtils.ts";

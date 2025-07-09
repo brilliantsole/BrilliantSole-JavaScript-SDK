@@ -3891,6 +3891,7 @@ const DisplayBitmapScaleDirectionToCommand = {
 
 var _DisplayManager_instances, _DisplayManager_dispatchEvent_get, _DisplayManager_isDisplayAvailable, _DisplayManager_assertDisplayIsAvailable, _DisplayManager_parseIsDisplayAvailable, _DisplayManager_displayContextStateHelper, _DisplayManager_onDisplayContextStateUpdate, _DisplayManager_displayStatus, _DisplayManager_parseDisplayStatus, _DisplayManager_updateDisplayStatus, _DisplayManager_sendDisplayCommand, _DisplayManager_assertIsAwake, _DisplayManager_assertIsNotAwake, _DisplayManager_displayInformation, _DisplayManager_parseDisplayInformation, _DisplayManager_displayBrightness, _DisplayManager_parseDisplayBrightness, _DisplayManager_assertValidDisplayContextCommand, _DisplayManager_maxCommandDataLength_get, _DisplayManager_displayContextCommandBuffers, _DisplayManager_sendDisplayContextCommand, _DisplayManager_sendDisplayContextCommands, _DisplayManager_assertValidColorIndex, _DisplayManager_colors, _DisplayManager_opacities, _DisplayManager_assertValidLineWidth, _DisplayManager_setBitmapScale, _DisplayManager_clampBox, _DisplayManager_assertValidNumberOfColors, _DisplayManager_getBitmapNumberOfBytes, _DisplayManager_assertValidBitmapPixels, _DisplayManager_assertValidBitmap, _DisplayManager_getBitmapData, _DisplayManager_drawBitmapHeaderLength_get, _DisplayManager_isDisplayReady, _DisplayManager_parseDisplayReady, _DisplayManager_mtu;
 const _console$j = createConsole("DisplayManager", { log: true });
+const DefaultNumberOfDisplayColors = 16;
 const DisplayCommands = ["sleep", "wake"];
 const DisplayStatuses = ["awake", "asleep"];
 const DisplayInformationTypes = [
@@ -4638,7 +4639,7 @@ class DisplayManager {
         angleOffset = clamp(angleOffset, -twoPi, twoPi);
         _console$j.log({ startAngle, angleOffset });
         angleOffset /= twoPi;
-        angleOffset *= (angleOffset > 0 ? Int16Max : -Int16Min) - 1;
+        angleOffset *= (angleOffset > 0 ? Int16Max - 1 : -Int16Min) - 1;
         console.log({ angleOffset });
         const dataView = new DataView(new ArrayBuffer(2 * 5));
         dataView.setInt16(0, centerX, true);
@@ -4669,13 +4670,15 @@ class DisplayManager {
     }
     async drawBitmap(centerX, centerY, bitmap, sendImmediately) {
         __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_assertValidBitmap).call(this, bitmap, true);
-        const dataView = new DataView(new ArrayBuffer(2 + 2 + 2 + 1 + 2));
+        _console$j.log("drawBitmap", bitmap);
+        const dataView = new DataView(new ArrayBuffer(__classPrivateFieldGet(this, _DisplayManager_instances, "a", _DisplayManager_drawBitmapHeaderLength_get)));
         dataView.setInt16(0, centerX, true);
         dataView.setInt16(2, centerY, true);
         dataView.setUint16(4, bitmap.width, true);
-        dataView.setUint8(6, bitmap.numberOfColors);
+        dataView.setUint16(6, bitmap.pixels.length, true);
+        dataView.setUint8(8, bitmap.numberOfColors);
         const bitmapData = __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_getBitmapData).call(this, bitmap);
-        dataView.setUint16(7, bitmapData.byteLength, true);
+        dataView.setUint16(9, bitmapData.byteLength, true);
         const buffer = concatenateArrayBuffers(dataView, bitmapData);
         _console$j.log("drawBitmap data", buffer);
         await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "drawBitmap", buffer, sendImmediately);
@@ -4860,7 +4863,7 @@ async function _DisplayManager_sendDisplayCommand(command, sendImmediately) {
 }, _DisplayManager_assertValidLineWidth = function _DisplayManager_assertValidLineWidth(lineWidth) {
     _console$j.assertRangeWithError("lineWidth", lineWidth, 0, this.width);
 }, _DisplayManager_setBitmapScale = async function _DisplayManager_setBitmapScale(direction, bitmapScale, sendImmediately) {
-    bitmapScale = clamp(bitmapScale, 0, maxDisplayBitmapScale);
+    bitmapScale = clamp(bitmapScale, displayBitmapScaleStep, maxDisplayBitmapScale);
     bitmapScale = roundBitmapScale(bitmapScale);
     const command = DisplayBitmapScaleDirectionToCommand[direction];
     _console$j.log({ command: bitmapScale });
@@ -4931,7 +4934,7 @@ async function _DisplayManager_sendDisplayCommand(command, sendImmediately) {
     _console$j.log("getBitmapData", bitmap, dataView);
     return dataView;
 }, _DisplayManager_drawBitmapHeaderLength_get = function _DisplayManager_drawBitmapHeaderLength_get() {
-    return 2 + 2 + 2 + 1 + 2;
+    return 2 + 2 + 2 + 2 + 1 + 2;
 }, _DisplayManager_parseDisplayReady = function _DisplayManager_parseDisplayReady(dataView) {
     __classPrivateFieldSet(this, _DisplayManager_isDisplayReady, true, "f");
     __classPrivateFieldGet(this, _DisplayManager_instances, "a", _DisplayManager_dispatchEvent_get).call(this, "displayReady", {});
@@ -8806,7 +8809,8 @@ class DisplayCanvasHelper {
         bitmapScale = roundBitmapScale(bitmapScale);
         _console$6.log({ bitmapScale });
         const differences = __classPrivateFieldGet(this, _DisplayCanvasHelper_displayContextStateHelper, "f").update({
-            bitmapScale,
+            bitmapScaleX: bitmapScale,
+            bitmapScaleY: bitmapScale,
         });
         if (differences.length == 0) {
             return;
@@ -8974,7 +8978,7 @@ _DisplayCanvasHelper_eventDispatcher = new WeakMap(), _DisplayCanvasHelper_canva
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_updateDevice).call(this);
 }, _DisplayCanvasHelper_onDeviceNotConnected = function _DisplayCanvasHelper_onDeviceNotConnected(event) {
     _console$6.log("device not connected");
-}, _DisplayCanvasHelper_onDeviceDisplayReady = function _DisplayCanvasHelper_onDeviceDisplayReady(event) {
+}, _DisplayCanvasHelper_onDeviceDisplayReady = async function _DisplayCanvasHelper_onDeviceDisplayReady(event) {
     _console$6.log("device display ready");
     __classPrivateFieldSet(this, _DisplayCanvasHelper_isReady, true, "f");
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "a", _DisplayCanvasHelper_dispatchEvent_get).call(this, "ready", {});
@@ -10427,5 +10431,5 @@ const ThrottleUtils = {
     debounce,
 };
 
-export { CameraCommands, CameraConfigurationTypes, ContinuousSensorTypes, DefaultNumberOfPressureSensors, Device, DeviceManager$1 as DeviceManager, DevicePair, DevicePairTypes, DeviceTypes, DisplayBrightnesses, DisplayCanvasHelper, DisplayPixelDepths, DisplaySegmentCaps, environment as Environment, EventUtils, FileTransferDirections, FileTypes, MaxNameLength, MaxNumberOfVibrationWaveformEffectSegments, MaxNumberOfVibrationWaveformSegments, MaxSensorRate, MaxVibrationWaveformEffectSegmentDelay, MaxVibrationWaveformEffectSegmentLoopCount, MaxVibrationWaveformEffectSequenceLoopCount, MaxVibrationWaveformSegmentDuration, MaxWifiPasswordLength, MaxWifiSSIDLength, MicrophoneCommands, MicrophoneConfigurationTypes, MicrophoneConfigurationValues, MinNameLength, MinWifiPasswordLength, MinWifiSSIDLength, RangeHelper, SensorRateStep, SensorTypes, Sides, TfliteSensorTypes, TfliteTasks, ThrottleUtils, VibrationLocations, VibrationTypes, VibrationWaveformEffects, WebSocketClient, hexToRGB, maxDisplayBitmapScale, rgbToHex, setAllConsoleLevelFlags, setConsoleLevelFlagsForType };
+export { CameraCommands, CameraConfigurationTypes, ContinuousSensorTypes, DefaultNumberOfDisplayColors, DefaultNumberOfPressureSensors, Device, DeviceManager$1 as DeviceManager, DevicePair, DevicePairTypes, DeviceTypes, DisplayBrightnesses, DisplayCanvasHelper, DisplayPixelDepths, DisplaySegmentCaps, environment as Environment, EventUtils, FileTransferDirections, FileTypes, MaxNameLength, MaxNumberOfVibrationWaveformEffectSegments, MaxNumberOfVibrationWaveformSegments, MaxSensorRate, MaxVibrationWaveformEffectSegmentDelay, MaxVibrationWaveformEffectSegmentLoopCount, MaxVibrationWaveformEffectSequenceLoopCount, MaxVibrationWaveformSegmentDuration, MaxWifiPasswordLength, MaxWifiSSIDLength, MicrophoneCommands, MicrophoneConfigurationTypes, MicrophoneConfigurationValues, MinNameLength, MinWifiPasswordLength, MinWifiSSIDLength, RangeHelper, SensorRateStep, SensorTypes, Sides, TfliteSensorTypes, TfliteTasks, ThrottleUtils, VibrationLocations, VibrationTypes, VibrationWaveformEffects, WebSocketClient, hexToRGB, maxDisplayBitmapScale, rgbToHex, setAllConsoleLevelFlags, setConsoleLevelFlagsForType };
 //# sourceMappingURL=brilliantsole.module.js.map
