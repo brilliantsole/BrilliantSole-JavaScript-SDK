@@ -1443,6 +1443,12 @@ class Device {
   get displayColors() {
     return this.#displayManager.colors;
   }
+  get displayBitmapColors() {
+    return this.#displayManager.bitmapColors;
+  }
+  get displayBitmapColorIndices() {
+    return this.#displayManager.bitmapColorIndices;
+  }
   get displayColorOpacities() {
     return this.#displayManager.opacities;
   }
@@ -1668,6 +1674,10 @@ class Device {
   get imageToDisplayBitmap() {
     this.#assertDisplayIsAvailable();
     return this.#displayManager.imageToBitmap;
+  }
+  get quantizeDisplayImage() {
+    this.#assertDisplayIsAvailable();
+    return this.#displayManager.quantizeImage;
   }
 
   get setDisplayContextState() {

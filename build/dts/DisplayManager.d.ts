@@ -180,6 +180,8 @@ declare class DisplayManager {
     setRotationCropLeft(rotationCropLeft: number, sendImmediately?: boolean): Promise<void>;
     clearRotationCrop(sendImmediately?: boolean): Promise<void>;
     selectBitmapColorIndex(bitmapColorIndex: number, colorIndex: number, sendImmediately?: boolean): Promise<void>;
+    get bitmapColorIndices(): number[];
+    get bitmapColors(): string[];
     selectBitmapColorIndices(bitmapColors: DisplayBitmapColorPair[], sendImmediately?: boolean): Promise<void>;
     setBitmapScaleX(bitmapScaleX: number, sendImmediately?: boolean): Promise<void>;
     setBitmapScaleY(bitmapScaleY: number, sendImmediately?: boolean): Promise<void>;
@@ -199,6 +201,11 @@ declare class DisplayManager {
     imageToBitmap(image: HTMLImageElement, width: number, height: number, numberOfColors?: number): Promise<{
         blob: Blob;
         bitmap: DisplayBitmap;
+    }>;
+    quantizeImage(image: HTMLImageElement, width: number, height: number, numberOfColors: number): Promise<{
+        blob: Blob;
+        colors: string[];
+        colorIndices: number[];
     }>;
     selectSpriteSheet(index: number, sendImmediately?: boolean): void;
     drawSprite(index: number, x: number, y: number, sendImmediately?: boolean): void;

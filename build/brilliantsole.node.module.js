@@ -948,6 +948,10 @@ function parseTimestamp(dataView, byteOffset) {
     }
     return timestamp;
 }
+function getVector3Length(vector) {
+    const { x, y, z } = vector;
+    return Math.sqrt(x ** 2 + y ** 2 + z ** 2);
+}
 function clamp(value, min = 0, max = 1) {
     return Math.min(Math.max(value, min), max);
 }
@@ -3876,8 +3880,9 @@ const DisplayBitmapScaleDirectionToCommand = {
 };
 
 const _console$p = createConsole("BitmapUtils", { log: true });
-async function resizeAndQuantizeImage(image, width, height, colors) {
-    _console$p.assertWithError(colors.length > 1, "colors.length must be greater than 0");
+async function quantizeImage(image, width, height, numberOfColors) {
+    _console$p.assertWithError(numberOfColors > 1, "numberOfColors must be greater than 1");
+    _console$p.log({ numberOfColors });
     const canvas = document.createElement("canvas");
     const ctx = canvas.getContext("2d");
     let { naturalWidth: imageWidth, naturalHeight: imageHeight } = image;
@@ -3899,10 +3904,115 @@ async function resizeAndQuantizeImage(image, width, height, colors) {
     }
     ctx.putImageData(imageData, 0, 0);
     const quantOptions = {
+        method: 0,
+        colors: numberOfColors,
+        dithKern: null,
+        useCache: false,
+        reIndex: true,
+        orDist: "manhattan",
+    };
+    _console$p.log("quantOptions", quantOptions);
+    _console$p.log("quantizeImage options", quantOptions);
+    const quantizer = new RGBQuant(quantOptions);
+    quantizer.sample(imageData);
+    const quantizedPixels = quantizer.reduce(imageData.data);
+    const quantizedImageData = new ImageData(new Uint8ClampedArray(quantizedPixels.buffer), width, height);
+    ctx.putImageData(quantizedImageData, 0, 0);
+    const pixels = quantizedImageData.data;
+    const quantizedPaletteData = quantizer.palette();
+    const numberOfQuantizedPaletteColors = quantizedPaletteData.byteLength / 4;
+    _console$p.log("quantized palette data", quantizedPaletteData);
+    const quantizedPaletteColors = [];
+    let closestColorIndexToBlack = 0;
+    let closestColorDistanceToBlack = Infinity;
+    const vector3 = { x: 0, y: 0, z: 0 };
+    for (let colorIndex = 0; colorIndex < numberOfQuantizedPaletteColors; colorIndex++) {
+        const rgb = {
+            r: quantizedPaletteData[colorIndex * 4],
+            g: quantizedPaletteData[colorIndex * 4 + 1],
+            b: quantizedPaletteData[colorIndex * 4 + 2],
+        };
+        quantizedPaletteColors.push(rgb);
+        vector3.x = rgb.r;
+        vector3.y = rgb.g;
+        vector3.z = rgb.b;
+        const distanceToBlack = getVector3Length(vector3);
+        if (distanceToBlack < closestColorDistanceToBlack) {
+            closestColorDistanceToBlack = distanceToBlack;
+            closestColorIndexToBlack = colorIndex;
+        }
+    }
+    _console$p.log({ closestColorIndexToBlack, closestColorDistanceToBlack });
+    if (closestColorIndexToBlack != 0) {
+        const [currentBlack, newBlack] = [
+            quantizedPaletteColors[0],
+            quantizedPaletteColors[closestColorIndexToBlack],
+        ];
+        quantizedPaletteColors[0] = newBlack;
+        quantizedPaletteColors[closestColorIndexToBlack] = currentBlack;
+    }
+    _console$p.log("quantizedPaletteColors", quantizedPaletteColors);
+    const quantizedColors = quantizedPaletteColors.map((rgb, index) => {
+        const hex = rgbToHex(rgb);
+        return hex;
+    });
+    _console$p.log("quantizedColors", quantizedColors);
+    const quantizedColorIndices = [];
+    for (let i = 0; i < pixels.length; i += 4) {
+        const r = pixels[i];
+        const g = pixels[i + 1];
+        const b = pixels[i + 2];
+        pixels[i + 3];
+        const hex = rgbToHex({ r, g, b });
+        quantizedColorIndices.push(quantizedColors.indexOf(hex));
+    }
+    _console$p.log("quantizedColorIndices", quantizedColorIndices);
+    const promise = new Promise((resolve, reject) => {
+        canvas.toBlob((blob) => {
+            if (blob) {
+                resolve(blob);
+            }
+            else {
+                reject();
+            }
+        }, "image/png");
+    });
+    const blob = await promise;
+    return {
+        blob,
+        colors: quantizedColors,
+        colorIndices: quantizedColorIndices,
+    };
+}
+async function resizeAndQuantizeImage(image, width, height, colors) {
+    _console$p.assertWithError(colors.length > 1, "colors.length must be greater than 1");
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+    let { naturalWidth: imageWidth, naturalHeight: imageHeight } = image;
+    _console$p.log({ imageWidth, imageHeight });
+    canvas.width = width;
+    canvas.height = height;
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(image, 0, 0, width, height);
+    const imageData = ctx.getImageData(0, 0, width, height);
+    const data = imageData.data;
+    for (let i = 0; i < data.length; i += 4) {
+        const alpha = data[i + 3];
+        if (alpha < 255) {
+            data[i] = 0;
+            data[i + 1] = 0;
+            data[i + 2] = 0;
+            data[i + 3] = 255;
+        }
+    }
+    ctx.putImageData(imageData, 0, 0);
+    const quantOptions = {
+        method: 0,
         colors: colors.length,
         dithKern: null,
         useCache: false,
         reIndex: true,
+        orDist: "manhattan",
     };
     _console$p.log("quantOptions", quantOptions);
     quantOptions.palette = colors.map((color) => {
@@ -4577,6 +4687,12 @@ class DisplayManager {
         await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "selectBitmapColor", dataView.buffer, sendImmediately);
         __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_onDisplayContextStateUpdate).call(this, differences);
     }
+    get bitmapColorIndices() {
+        return this.displayContextState.bitmapColorIndices;
+    }
+    get bitmapColors() {
+        return this.bitmapColorIndices.map((colorIndex) => this.colors[colorIndex]);
+    }
     async selectBitmapColorIndices(bitmapColors, sendImmediately) {
         _console$o.assertRangeWithError("bitmapColors", bitmapColors.length, 1, this.numberOfColors);
         const bitmapColorIndices = this.displayContextState.bitmapColorIndices.slice();
@@ -4766,6 +4882,9 @@ class DisplayManager {
     }
     async imageToBitmap(image, width, height, numberOfColors) {
         return imageToBitmap(image, width, height, this.colors, this.displayContextState, numberOfColors);
+    }
+    async quantizeImage(image, width, height, numberOfColors) {
+        return quantizeImage(image, width, height, numberOfColors);
     }
     selectSpriteSheet(index, sendImmediately) {
     }
@@ -8213,6 +8332,12 @@ class Device {
     get displayColors() {
         return __classPrivateFieldGet(this, _Device_displayManager, "f").colors;
     }
+    get displayBitmapColors() {
+        return __classPrivateFieldGet(this, _Device_displayManager, "f").bitmapColors;
+    }
+    get displayBitmapColorIndices() {
+        return __classPrivateFieldGet(this, _Device_displayManager, "f").bitmapColorIndices;
+    }
     get displayColorOpacities() {
         return __classPrivateFieldGet(this, _Device_displayManager, "f").opacities;
     }
@@ -8423,6 +8548,10 @@ class Device {
     get imageToDisplayBitmap() {
         __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertDisplayIsAvailable).call(this);
         return __classPrivateFieldGet(this, _Device_displayManager, "f").imageToBitmap;
+    }
+    get quantizeDisplayImage() {
+        __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertDisplayIsAvailable).call(this);
+        return __classPrivateFieldGet(this, _Device_displayManager, "f").quantizeImage;
     }
     get setDisplayContextState() {
         __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertDisplayIsAvailable).call(this);

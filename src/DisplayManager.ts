@@ -41,7 +41,7 @@ import {
 } from "./utils/DisplayUtils.ts";
 import { isInBrowser } from "./utils/environment.ts";
 import { resizeAndQuantizeImage } from "./BS.ts";
-import { imageToBitmap } from "./utils/BitmapUtils.ts";
+import { imageToBitmap, quantizeImage } from "./utils/BitmapUtils.ts";
 
 const _console = createConsole("DisplayManager", { log: true });
 
@@ -1191,6 +1191,12 @@ class DisplayManager {
     );
     this.#onDisplayContextStateUpdate(differences);
   }
+  get bitmapColorIndices() {
+    return this.displayContextState.bitmapColorIndices;
+  }
+  get bitmapColors() {
+    return this.bitmapColorIndices.map((colorIndex) => this.colors[colorIndex]);
+  }
   async selectBitmapColorIndices(
     bitmapColors: DisplayBitmapColorPair[],
     sendImmediately?: boolean
@@ -1667,6 +1673,14 @@ class DisplayManager {
       this.displayContextState,
       numberOfColors
     );
+  }
+  async quantizeImage(
+    image: HTMLImageElement,
+    width: number,
+    height: number,
+    numberOfColors: number
+  ) {
+    return quantizeImage(image, width, height, numberOfColors);
   }
 
   // SPRITE SHEET

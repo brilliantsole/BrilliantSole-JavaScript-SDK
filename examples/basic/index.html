@@ -37,6 +37,7 @@
       width: 200px;
       height: 200px;
       background-color: black;
+      image-rendering: pixelated;
     }
   </style>
   <body>
@@ -406,6 +407,10 @@
           <input id="bitmapImageInput" type="file" accept="image/*" />
         </label>
         <button id="quantizeBitmapImage">quantize image</button>
+        <label
+          >override display colors?
+          <input id="toggleQuantizeOverrideDisplayColors" type="checkbox" />
+        </label>
         <br />
         <button id="clearBitmap">clear</button>
         <br />
