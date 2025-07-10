@@ -1,0 +1,26 @@
+export declare const DisplaySegmentCaps: readonly ["flat", "round"];
+export type DisplaySegmentCap = (typeof DisplaySegmentCaps)[number];
+export type DisplayContextState = {
+    fillColorIndex: number;
+    lineColorIndex: number;
+    lineWidth: number;
+    rotation: number;
+    segmentStartCap: DisplaySegmentCap;
+    segmentEndCap: DisplaySegmentCap;
+    segmentStartRadius: number;
+    segmentEndRadius: number;
+    cropTop: number;
+    cropRight: number;
+    cropBottom: number;
+    cropLeft: number;
+    rotationCropTop: number;
+    rotationCropRight: number;
+    rotationCropBottom: number;
+    rotationCropLeft: number;
+    bitmapColorIndices: number[];
+    bitmapScaleX: number;
+    bitmapScaleY: number;
+};
+export type DisplayContextStateKey = keyof DisplayContextState;
+export type PartialDisplayContextState = Partial<DisplayContextState>;
+export declare const DefaultDisplayContextState: DisplayContextState;

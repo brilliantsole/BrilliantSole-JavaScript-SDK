@@ -1,4 +1,4 @@
-import { DisplayColorRGB } from "../DisplayManager.ts";
+import { DisplayColorRGB } from "./DisplayUtils.ts";
 export declare function hexToRGB(hex: string): DisplayColorRGB;
 export declare function colorNameToRGB(colorName: string): DisplayColorRGB;
 export declare function stringToRGB(string: string): DisplayColorRGB;

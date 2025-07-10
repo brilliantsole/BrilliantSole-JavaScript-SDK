@@ -1,4 +1,5 @@
-import { DisplayBitmap, DisplayContextState } from "../DisplayManager.ts";
+import { DisplayBitmap } from "../DisplayManager.ts";
+import { DisplayContextState } from "./DisplayContextState.ts";
 export declare function quantizeImage(image: HTMLImageElement, width: number, height: number, numberOfColors: number): Promise<{
     blob: Blob;
     colors: string[];

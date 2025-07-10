@@ -1693,6 +1693,14 @@ class Device {
     this.#assertDisplayIsAvailable();
     return this.#displayManager.selectBitmapColorIndices;
   }
+  get setDisplayBitmapColor() {
+    this.#assertDisplayIsAvailable();
+    return this.#displayManager.setBitmapColor;
+  }
+  get setDisplayBitmapColorOpacity() {
+    this.#assertDisplayIsAvailable();
+    return this.#displayManager.setBitmapColorOpacity;
+  }
 
   get setDisplayBitmapScaleDirection() {
     this.#assertDisplayIsAvailable();

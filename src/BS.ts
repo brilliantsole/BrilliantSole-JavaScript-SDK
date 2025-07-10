@@ -105,16 +105,21 @@ export {
   DisplayBrightness,
   DisplayBrightnesses,
   DisplaySize,
-  DisplayColorRGB,
-  DisplaySegmentCap,
-  DisplaySegmentCaps,
   DisplayBitmap,
   DisplayBitmapColorPair,
   DisplayPixelDepths,
   DefaultNumberOfDisplayColors,
 } from "./DisplayManager.ts";
 
-export { maxDisplayBitmapScale } from "./utils/DisplayUtils.ts";
+export {
+  DisplaySegmentCap,
+  DisplaySegmentCaps,
+} from "./utils/DisplayContextState.ts";
+
+export {
+  maxDisplayBitmapScale,
+  DisplayColorRGB,
+} from "./utils/DisplayUtils.ts";
 
 /** BROWSER_START */
 export {

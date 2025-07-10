@@ -1,16 +1,14 @@
 import RGBQuant from "rgbquant";
 import { createConsole } from "./Console.ts";
 import { hexToRGB, rgbToHex } from "./ColorUtils.ts";
-import {
-  DisplayBitmap,
-  DisplayColorRGB,
-  DisplayContextState,
-} from "../DisplayManager.ts";
+import { DisplayBitmap } from "../DisplayManager.ts";
 import { getVector3Length, Vector3 } from "./MathUtils.ts";
 import {
+  DisplayColorRGB,
   numberOfColorsToPixelDepth,
   pixelDepthToPixelsPerByte,
 } from "./DisplayUtils.ts";
+import { DisplayContextState } from "./DisplayContextState.ts";
 
 const _console = createConsole("BitmapUtils", { log: true });
 
@@ -307,7 +305,7 @@ export function assertValidBitmapPixels(bitmap: DisplayBitmap) {
   _console.assertRangeWithError(
     "bitmap.pixels.length",
     bitmap.pixels.length,
-    1,
+    bitmap.width * (bitmap.height - 1) + 1,
     bitmap.width * bitmap.height
   );
   bitmap.pixels.forEach((pixel, index) => {

@@ -3,10 +3,10 @@
  * @license MIT
  */
 import autoBind$1 from 'auto-bind';
-import RGBQuant from 'rgbquant';
 import * as webbluetooth from 'webbluetooth';
-import * as dgram from 'dgram';
 import noble from '@abandonware/noble';
+import RGBQuant from 'rgbquant';
+import * as dgram from 'dgram';
 
 function __classPrivateFieldGet(receiver, state, kind, f) {
     if (kind === "a" && !f) throw new TypeError("Private accessor was defined without a getter");
@@ -3724,6 +3724,29 @@ function rgbToHex({ r, g, b }) {
     return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
 }
 
+const DisplaySegmentCaps = ["flat", "round"];
+const DefaultDisplayContextState = {
+    fillColorIndex: 1,
+    lineColorIndex: 1,
+    lineWidth: 0,
+    rotation: 0,
+    segmentStartCap: "flat",
+    segmentEndCap: "flat",
+    segmentStartRadius: 1,
+    segmentEndRadius: 1,
+    cropTop: 0,
+    cropRight: 0,
+    cropBottom: 0,
+    cropLeft: 0,
+    rotationCropTop: 0,
+    rotationCropRight: 0,
+    rotationCropBottom: 0,
+    rotationCropLeft: 0,
+    bitmapColorIndices: new Array(0).fill(0),
+    bitmapScaleX: 1,
+    bitmapScaleY: 1,
+};
+
 function deepEqual(obj1, obj2) {
     if (obj1 === obj2) {
         return true;
@@ -4094,74 +4117,13 @@ function getBitmapNumberOfBytes(bitmap) {
     return pixelDataLength;
 }
 function assertValidBitmapPixels(bitmap) {
-    _console$p.assertRangeWithError("bitmap.pixels.length", bitmap.pixels.length, 1, bitmap.width * bitmap.height);
+    _console$p.assertRangeWithError("bitmap.pixels.length", bitmap.pixels.length, bitmap.width * (bitmap.height - 1) + 1, bitmap.width * bitmap.height);
     bitmap.pixels.forEach((pixel, index) => {
         _console$p.assertRangeWithError(`bitmap.pixels[${index}]`, pixel, 0, bitmap.numberOfColors - 1);
     });
 }
 
-var _DisplayManager_instances, _DisplayManager_dispatchEvent_get, _DisplayManager_isDisplayAvailable, _DisplayManager_assertDisplayIsAvailable, _DisplayManager_parseIsDisplayAvailable, _DisplayManager_displayContextStateHelper, _DisplayManager_onDisplayContextStateUpdate, _DisplayManager_displayStatus, _DisplayManager_parseDisplayStatus, _DisplayManager_updateDisplayStatus, _DisplayManager_sendDisplayCommand, _DisplayManager_assertIsAwake, _DisplayManager_assertIsNotAwake, _DisplayManager_displayInformation, _DisplayManager_parseDisplayInformation, _DisplayManager_displayBrightness, _DisplayManager_parseDisplayBrightness, _DisplayManager_assertValidDisplayContextCommand, _DisplayManager_maxCommandDataLength_get, _DisplayManager_displayContextCommandBuffers, _DisplayManager_sendDisplayContextCommand, _DisplayManager_sendDisplayContextCommands, _DisplayManager_assertValidColorIndex, _DisplayManager_colors, _DisplayManager_opacities, _DisplayManager_assertValidLineWidth, _DisplayManager_clampBox, _DisplayManager_assertValidNumberOfColors, _DisplayManager_assertValidBitmap, _DisplayManager_getBitmapData, _DisplayManager_drawBitmapHeaderLength_get, _DisplayManager_isDisplayReady, _DisplayManager_parseDisplayReady, _DisplayManager_mtu;
-const _console$o = createConsole("DisplayManager", { log: true });
-const DefaultNumberOfDisplayColors = 16;
-const DisplayCommands = ["sleep", "wake"];
-const DisplayStatuses = ["awake", "asleep"];
-const DisplayInformationTypes = [
-    "type",
-    "width",
-    "height",
-    "pixelDepth",
-];
-const DisplayTypes = [
-    "none",
-    "generic",
-    "monocularLeft",
-    "monocularRight",
-    "binocular",
-];
-const DisplayPixelDepths = ["1", "2", "4"];
-const DisplayBrightnesses = [
-    "veryLow",
-    "low",
-    "medium",
-    "high",
-    "veryHigh",
-];
-const DisplayMessageTypes = [
-    "isDisplayAvailable",
-    "displayStatus",
-    "displayInformation",
-    "displayCommand",
-    "getDisplayBrightness",
-    "setDisplayBrightness",
-    "displayContextCommands",
-    "displayReady",
-];
-const DisplaySegmentCaps = ["flat", "round"];
-const DefaultDisplayContextState = {
-    fillColorIndex: 1,
-    lineColorIndex: 1,
-    lineWidth: 0,
-    rotation: 0,
-    segmentStartCap: "flat",
-    segmentEndCap: "flat",
-    segmentStartRadius: 1,
-    segmentEndRadius: 1,
-    cropTop: 0,
-    cropRight: 0,
-    cropBottom: 0,
-    cropLeft: 0,
-    rotationCropTop: 0,
-    rotationCropRight: 0,
-    rotationCropBottom: 0,
-    rotationCropLeft: 0,
-    bitmapColorIndices: new Array(0).fill(0),
-    bitmapScaleX: 1,
-    bitmapScaleY: 1,
-};
-const DisplayInformationValues = {
-    type: DisplayTypes,
-    pixelDepth: DisplayPixelDepths,
-};
+createConsole("DisplayContextCommand", { log: false });
 const DisplayContextCommands = [
     "show",
     "clear",
@@ -4213,6 +4175,47 @@ const DisplayContextCommands = [
     "selectFont",
     "drawText",
 ];
+
+var _DisplayManager_instances, _DisplayManager_dispatchEvent_get, _DisplayManager_isDisplayAvailable, _DisplayManager_assertDisplayIsAvailable, _DisplayManager_parseIsDisplayAvailable, _DisplayManager_displayContextStateHelper, _DisplayManager_onDisplayContextStateUpdate, _DisplayManager_displayStatus, _DisplayManager_parseDisplayStatus, _DisplayManager_updateDisplayStatus, _DisplayManager_sendDisplayCommand, _DisplayManager_assertIsAwake, _DisplayManager_assertIsNotAwake, _DisplayManager_displayInformation, _DisplayManager_parseDisplayInformation, _DisplayManager_displayBrightness, _DisplayManager_parseDisplayBrightness, _DisplayManager_assertValidDisplayContextCommand, _DisplayManager_maxCommandDataLength_get, _DisplayManager_displayContextCommandBuffers, _DisplayManager_sendDisplayContextCommand, _DisplayManager_sendDisplayContextCommands, _DisplayManager_assertValidColorIndex, _DisplayManager_colors, _DisplayManager_opacities, _DisplayManager_assertValidLineWidth, _DisplayManager_clampBox, _DisplayManager_assertValidNumberOfColors, _DisplayManager_assertValidBitmap, _DisplayManager_getBitmapData, _DisplayManager_drawBitmapHeaderLength_get, _DisplayManager_isDisplayReady, _DisplayManager_parseDisplayReady, _DisplayManager_mtu;
+const _console$o = createConsole("DisplayManager", { log: true });
+const DefaultNumberOfDisplayColors = 16;
+const DisplayCommands = ["sleep", "wake"];
+const DisplayStatuses = ["awake", "asleep"];
+const DisplayInformationTypes = [
+    "type",
+    "width",
+    "height",
+    "pixelDepth",
+];
+const DisplayTypes = [
+    "none",
+    "generic",
+    "monocularLeft",
+    "monocularRight",
+    "binocular",
+];
+const DisplayPixelDepths = ["1", "2", "4"];
+const DisplayBrightnesses = [
+    "veryLow",
+    "low",
+    "medium",
+    "high",
+    "veryHigh",
+];
+const DisplayMessageTypes = [
+    "isDisplayAvailable",
+    "displayStatus",
+    "displayInformation",
+    "displayCommand",
+    "getDisplayBrightness",
+    "setDisplayBrightness",
+    "displayContextCommands",
+    "displayReady",
+];
+const DisplayInformationValues = {
+    type: DisplayTypes,
+    pixelDepth: DisplayPixelDepths,
+};
 const RequiredDisplayMessageTypes = [
     "isDisplayAvailable",
     "displayInformation",
@@ -4412,25 +4415,33 @@ class DisplayManager {
         return __classPrivateFieldGet(this, _DisplayManager_colors, "f");
     }
     async setColor(colorIndex, color, sendImmediately) {
+        let colorRGB;
         if (typeof color == "string") {
-            color = stringToRGB(color);
+            colorRGB = stringToRGB(color);
         }
-        const colorHex = rgbToHex(color);
+        else {
+            colorRGB = color;
+        }
+        const colorHex = rgbToHex(colorRGB);
         if (this.colors[colorIndex] == colorHex) {
             _console$o.log(`redundant color #${colorIndex} ${colorHex}`);
             return;
         }
-        _console$o.log(`setting color #${colorIndex}`, color);
+        _console$o.log(`setting color #${colorIndex}`, colorRGB);
         __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_assertValidColorIndex).call(this, colorIndex);
-        assertValidColor(color);
+        assertValidColor(colorRGB);
         const dataView = new DataView(new ArrayBuffer(4));
         dataView.setUint8(0, colorIndex);
-        dataView.setUint8(1, color.r);
-        dataView.setUint8(2, color.g);
-        dataView.setUint8(3, color.b);
+        dataView.setUint8(1, colorRGB.r);
+        dataView.setUint8(2, colorRGB.g);
+        dataView.setUint8(3, colorRGB.b);
         await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "setColor", dataView.buffer, sendImmediately);
         this.colors[colorIndex] = colorHex;
-        __classPrivateFieldGet(this, _DisplayManager_instances, "a", _DisplayManager_dispatchEvent_get).call(this, "displayColor", { colorIndex, color, colorHex });
+        __classPrivateFieldGet(this, _DisplayManager_instances, "a", _DisplayManager_dispatchEvent_get).call(this, "displayColor", {
+            colorIndex,
+            colorRGB,
+            colorHex,
+        });
     }
     get opacities() {
         return __classPrivateFieldGet(this, _DisplayManager_opacities, "f");
@@ -4737,6 +4748,12 @@ class DisplayManager {
         });
         await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "selectBitmapColors", dataView.buffer, sendImmediately);
         __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_onDisplayContextStateUpdate).call(this, differences);
+    }
+    async setBitmapColor(bitmapColorIndex, color, sendImmediately) {
+        return this.setColor(this.bitmapColorIndices[bitmapColorIndex], color, sendImmediately);
+    }
+    async setBitmapColorOpacity(bitmapColorIndex, opacity, sendImmediately) {
+        return this.setColorOpacity(this.bitmapColorIndices[bitmapColorIndex], opacity, sendImmediately);
     }
     async setBitmapScaleDirection(direction, bitmapScale, sendImmediately) {
         bitmapScale = clamp(bitmapScale, displayBitmapScaleStep, maxDisplayBitmapScale);
@@ -8561,6 +8578,14 @@ class Device {
     get selectDisplayBitmapColorIndices() {
         __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertDisplayIsAvailable).call(this);
         return __classPrivateFieldGet(this, _Device_displayManager, "f").selectBitmapColorIndices;
+    }
+    get setDisplayBitmapColor() {
+        __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertDisplayIsAvailable).call(this);
+        return __classPrivateFieldGet(this, _Device_displayManager, "f").setBitmapColor;
+    }
+    get setDisplayBitmapColorOpacity() {
+        __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertDisplayIsAvailable).call(this);
+        return __classPrivateFieldGet(this, _Device_displayManager, "f").setBitmapColorOpacity;
     }
     get setDisplayBitmapScaleDirection() {
         __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertDisplayIsAvailable).call(this);

@@ -1,10 +1,10 @@
+import { createConsole } from "./Console.ts";
 import {
   DefaultDisplayContextState,
   DisplayContextState,
   DisplayContextStateKey,
   PartialDisplayContextState,
-} from "../DisplayManager.ts";
-import { createConsole } from "./Console.ts";
+} from "./DisplayContextState.ts";
 import { deepEqual } from "./ObjectUtils.ts";
 
 const _console = createConsole("DisplayContextStateHelper", { log: false });

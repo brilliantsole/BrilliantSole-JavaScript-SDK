@@ -1,0 +1,63 @@
+export const DisplaySegmentCaps = ["flat", "round"] as const;
+export type DisplaySegmentCap = (typeof DisplaySegmentCaps)[number];
+
+export type DisplayContextState = {
+  fillColorIndex: number;
+  lineColorIndex: number;
+  lineWidth: number;
+
+  rotation: number;
+
+  segmentStartCap: DisplaySegmentCap;
+  segmentEndCap: DisplaySegmentCap;
+
+  segmentStartRadius: number;
+  segmentEndRadius: number;
+
+  cropTop: number;
+  cropRight: number;
+  cropBottom: number;
+  cropLeft: number;
+
+  rotationCropTop: number;
+  rotationCropRight: number;
+  rotationCropBottom: number;
+  rotationCropLeft: number;
+
+  bitmapColorIndices: number[];
+  bitmapScaleX: number;
+  bitmapScaleY: number;
+
+  // FILL - drawSprites stuff
+};
+export type DisplayContextStateKey = keyof DisplayContextState;
+export type PartialDisplayContextState = Partial<DisplayContextState>;
+
+export const DefaultDisplayContextState: DisplayContextState = {
+  fillColorIndex: 1,
+
+  lineColorIndex: 1,
+  lineWidth: 0,
+
+  rotation: 0,
+
+  segmentStartCap: "flat",
+  segmentEndCap: "flat",
+
+  segmentStartRadius: 1,
+  segmentEndRadius: 1,
+
+  cropTop: 0,
+  cropRight: 0,
+  cropBottom: 0,
+  cropLeft: 0,
+
+  rotationCropTop: 0,
+  rotationCropRight: 0,
+  rotationCropBottom: 0,
+  rotationCropLeft: 0,
+
+  bitmapColorIndices: new Array(0).fill(0),
+  bitmapScaleX: 1,
+  bitmapScaleY: 1,
+};

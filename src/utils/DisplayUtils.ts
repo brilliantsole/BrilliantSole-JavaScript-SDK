@@ -1,15 +1,16 @@
 import {
   DisplayBrightness,
   DisplayBrightnesses,
-  DisplayColorRGB,
-  DisplayContextCommand,
-  DisplayContextStateKey,
   DisplayPixelDepth,
   DisplayPixelDepths,
-  DisplaySegmentCap,
-  DisplaySegmentCaps,
 } from "../DisplayManager.ts";
 import { createConsole } from "./Console.ts";
+import { DisplayContextCommand } from "./DisplayContextCommand.ts";
+import {
+  DisplayContextStateKey,
+  DisplaySegmentCap,
+  DisplaySegmentCaps,
+} from "./DisplayContextState.ts";
 import { Int16Max, Uint16Max } from "./MathUtils.ts";
 
 const _console = createConsole("DisplayUtils", { log: false });
@@ -151,4 +152,15 @@ export const DisplayBitmapScaleDirectionToCommand: Record<
   x: "setBitmapScaleX",
   y: "setBitmapScaleY",
   all: "setBitmapScale",
+};
+
+export type DisplayColorRGB = {
+  r: number;
+  g: number;
+  b: number;
+};
+export type DisplayColorYCbCr = {
+  y: number;
+  cb: number;
+  cr: number;
 };

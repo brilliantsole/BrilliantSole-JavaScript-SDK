@@ -3,20 +3,19 @@ import Device, {
   DeviceEventMap,
 } from "../Device.ts";
 import {
-  DefaultDisplayContextState,
   DisplayBitmap,
   DisplayBitmapColorPair,
   DisplayBrightness,
-  DisplayColorRGB,
-  DisplayContextState,
-  DisplayContextStateKey,
-  DisplaySegmentCap,
-  DisplaySize,
-  PartialDisplayContextState,
 } from "../DisplayManager.ts";
 import { assertValidBitmapPixels } from "./BitmapUtils.ts";
 import { hexToRGB, rgbToHex, stringToRGB } from "./ColorUtils.ts";
 import { createConsole } from "./Console.ts";
+import {
+  DisplayContextState,
+  DisplayContextStateKey,
+  DisplaySegmentCap,
+  PartialDisplayContextState,
+} from "./DisplayContextState.ts";
 import DisplayContextStateHelper from "./DisplayContextStateHelper.ts";
 import {
   assertValidColor,
@@ -24,6 +23,7 @@ import {
   assertValidSegmentCap,
   DisplayBitmapScaleDirection,
   displayBitmapScaleStep,
+  DisplayColorRGB,
   DisplayCropDirection,
   DisplayCropDirections,
   DisplayCropDirectionToCommand,
@@ -81,7 +81,7 @@ export interface DisplayCanvasHelperEventMessages {
   };
   color: {
     colorIndex: number;
-    color: DisplayColorRGB;
+    colorRGB: DisplayColorRGB;
     colorHex: string;
   };
   colorOpacity: {
@@ -504,10 +504,13 @@ class DisplayCanvasHelper {
     color: DisplayColorRGB | string,
     sendImmediately?: boolean
   ) {
+    let colorRGB: DisplayColorRGB;
     if (typeof color == "string") {
-      color = stringToRGB(color);
+      colorRGB = stringToRGB(color);
+    } else {
+      colorRGB = color;
     }
-    const colorHex = rgbToHex(color);
+    const colorHex = rgbToHex(colorRGB);
     if (this.colors[colorIndex] == colorHex) {
       _console.log(`redundant color #${colorIndex} ${colorHex}`);
       return;
@@ -515,7 +518,7 @@ class DisplayCanvasHelper {
 
     _console.log(`setting color #${colorIndex}`, color);
     this.#assertValidColorIndex(colorIndex);
-    assertValidColor(color);
+    assertValidColor(colorRGB);
 
     if (this.device?.isConnected) {
       await this.device.setDisplayColor(colorIndex, color, sendImmediately);
@@ -523,7 +526,7 @@ class DisplayCanvasHelper {
 
     this.colors[colorIndex] = colorHex;
     this.#drawFrontDrawStack();
-    this.#dispatchEvent("color", { colorIndex, colorHex, color });
+    this.#dispatchEvent("color", { colorIndex, colorHex, colorRGB });
   }
 
   async setColorOpacity(
@@ -918,6 +921,29 @@ class DisplayCanvasHelper {
       );
     }
     this.#onDisplayContextStateUpdate(differences);
+  }
+
+  async setBitmapColor(
+    bitmapColorIndex: number,
+    color: DisplayColorRGB | string,
+    sendImmediately?: boolean
+  ) {
+    return this.setColor(
+      this.bitmapColorIndices[bitmapColorIndex],
+      color,
+      sendImmediately
+    );
+  }
+  async setBitmapColorOpacity(
+    bitmapColorIndex: number,
+    opacity: number,
+    sendImmediately?: boolean
+  ) {
+    return this.setColorOpacity(
+      this.bitmapColorIndices[bitmapColorIndex],
+      opacity,
+      sendImmediately
+    );
   }
 
   async setBitmapScaleDirection(

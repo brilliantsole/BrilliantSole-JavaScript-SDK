@@ -25,6 +25,7 @@ import {
   DisplayBitmapScaleDirection,
   DisplayBitmapScaleDirectionToCommand,
   displayBitmapScaleStep,
+  DisplayColorRGB,
   DisplayCropDirection,
   DisplayCropDirections,
   DisplayCropDirectionToCommand,
@@ -40,13 +41,23 @@ import {
   roundBitmapScale,
 } from "./utils/DisplayUtils.ts";
 import { isInBrowser } from "./utils/environment.ts";
-import { resizeAndQuantizeImage } from "./BS.ts";
+import { DisplaySegmentCaps, resizeAndQuantizeImage } from "./BS.ts";
 import {
   assertValidBitmapPixels,
   getBitmapNumberOfBytes,
   imageToBitmap,
   quantizeImage,
 } from "./utils/BitmapUtils.ts";
+import {
+  DisplayContextState,
+  DisplayContextStateKey,
+  DisplaySegmentCap,
+  PartialDisplayContextState,
+} from "./utils/DisplayContextState.ts";
+import {
+  DisplayContextCommand,
+  DisplayContextCommands,
+} from "./utils/DisplayContextCommand.ts";
 
 const _console = createConsole("DisplayManager", { log: true });
 
@@ -99,9 +110,6 @@ export const DisplayMessageTypes = [
 ] as const;
 export type DisplayMessageType = (typeof DisplayMessageTypes)[number];
 
-export const DisplaySegmentCaps = ["flat", "round"] as const;
-export type DisplaySegmentCap = (typeof DisplaySegmentCaps)[number];
-
 export type DisplaySize = {
   width: number;
   height: number;
@@ -111,17 +119,6 @@ export type DisplayInformation = {
   width: number;
   height: number;
   pixelDepth: DisplayPixelDepth;
-};
-
-export type DisplayColorRGB = {
-  r: number;
-  g: number;
-  b: number;
-};
-export type DisplayColorYCbCr = {
-  y: number;
-  cb: number;
-  cr: number;
 };
 
 export type DisplayBitmapColorPair = {
@@ -136,137 +133,10 @@ export type DisplayBitmap = {
   pixels: number[];
 };
 
-export type DisplayContextState = {
-  fillColorIndex: number;
-  lineColorIndex: number;
-  lineWidth: number;
-
-  rotation: number;
-
-  segmentStartCap: DisplaySegmentCap;
-  segmentEndCap: DisplaySegmentCap;
-
-  segmentStartRadius: number;
-  segmentEndRadius: number;
-
-  cropTop: number;
-  cropRight: number;
-  cropBottom: number;
-  cropLeft: number;
-
-  rotationCropTop: number;
-  rotationCropRight: number;
-  rotationCropBottom: number;
-  rotationCropLeft: number;
-
-  bitmapColorIndices: number[];
-  bitmapScaleX: number;
-  bitmapScaleY: number;
-
-  // FILL - text stuff
-};
-export type DisplayContextStateKey = keyof DisplayContextState;
-export type PartialDisplayContextState = Partial<DisplayContextState>;
-
-export const DefaultDisplayContextState: DisplayContextState = {
-  fillColorIndex: 1,
-
-  lineColorIndex: 1,
-  lineWidth: 0,
-
-  rotation: 0,
-
-  segmentStartCap: "flat",
-  segmentEndCap: "flat",
-
-  segmentStartRadius: 1,
-  segmentEndRadius: 1,
-
-  cropTop: 0,
-  cropRight: 0,
-  cropBottom: 0,
-  cropLeft: 0,
-
-  rotationCropTop: 0,
-  rotationCropRight: 0,
-  rotationCropBottom: 0,
-  rotationCropLeft: 0,
-
-  bitmapColorIndices: new Array(0).fill(0),
-  bitmapScaleX: 1,
-  bitmapScaleY: 1,
-};
-
 export const DisplayInformationValues = {
   type: DisplayTypes,
   pixelDepth: DisplayPixelDepths,
 };
-
-export const DisplayContextCommands = [
-  "show",
-  "clear",
-
-  "setColor",
-  "setColorOpacity",
-  "setOpacity",
-
-  "saveContext",
-  "restoreContext",
-
-  "selectFillColor",
-  "selectLineColor",
-  "setLineWidth",
-  "setRotation",
-  "clearRotation",
-
-  "setSegmentStartCap",
-  "setSegmentEndCap",
-  "setSegmentCap",
-
-  "setSegmentStartRadius",
-  "setSegmentEndRadius",
-  "setSegmentRadius",
-
-  "setCropTop",
-  "setCropRight",
-  "setCropBottom",
-  "setCropLeft",
-  "clearCrop",
-
-  "setRotationCropTop",
-  "setRotationCropRight",
-  "setRotationCropBottom",
-  "setRotationCropLeft",
-  "clearRotationCrop",
-
-  "selectBitmapColor",
-  "selectBitmapColors",
-  "setBitmapScaleX",
-  "setBitmapScaleY",
-  "setBitmapScale",
-  "resetBitmapScale",
-
-  "clearRect",
-
-  "drawRect",
-  "drawRoundRect",
-  "drawCircle",
-  "drawEllipse",
-  "drawPolygon",
-  "drawSegment",
-  "drawSegments",
-
-  "drawArc",
-  "drawArcEllipse",
-  "drawBitmap",
-
-  "selectSpriteSheet",
-  "sprite",
-
-  "selectFont",
-  "drawText",
-] as const;
-export type DisplayContextCommand = (typeof DisplayContextCommands)[number];
 
 export const RequiredDisplayMessageTypes: DisplayMessageType[] = [
   "isDisplayAvailable",
@@ -302,7 +172,7 @@ export interface DisplayEventMessages {
   };
   displayColor: {
     colorIndex: number;
-    color: DisplayColorRGB;
+    colorRGB: DisplayColorRGB;
     colorHex: string;
   };
   displayColorOpacity: {
@@ -755,30 +625,37 @@ class DisplayManager {
     color: DisplayColorRGB | string,
     sendImmediately?: boolean
   ) {
+    let colorRGB: DisplayColorRGB;
     if (typeof color == "string") {
-      color = stringToRGB(color);
+      colorRGB = stringToRGB(color);
+    } else {
+      colorRGB = color;
     }
-    const colorHex = rgbToHex(color);
+    const colorHex = rgbToHex(colorRGB);
     if (this.colors[colorIndex] == colorHex) {
       _console.log(`redundant color #${colorIndex} ${colorHex}`);
       return;
     }
 
-    _console.log(`setting color #${colorIndex}`, color);
+    _console.log(`setting color #${colorIndex}`, colorRGB);
     this.#assertValidColorIndex(colorIndex);
-    assertValidColor(color);
+    assertValidColor(colorRGB);
     const dataView = new DataView(new ArrayBuffer(4));
     dataView.setUint8(0, colorIndex);
-    dataView.setUint8(1, color.r);
-    dataView.setUint8(2, color.g);
-    dataView.setUint8(3, color.b);
+    dataView.setUint8(1, colorRGB.r);
+    dataView.setUint8(2, colorRGB.g);
+    dataView.setUint8(3, colorRGB.b);
     await this.#sendDisplayContextCommand(
       "setColor",
       dataView.buffer,
       sendImmediately
     );
     this.colors[colorIndex] = colorHex;
-    this.#dispatchEvent("displayColor", { colorIndex, color, colorHex });
+    this.#dispatchEvent("displayColor", {
+      colorIndex,
+      colorRGB,
+      colorHex,
+    });
   }
   #opacities: number[] = [];
   get opacities() {
@@ -1241,6 +1118,28 @@ class DisplayManager {
       sendImmediately
     );
     this.#onDisplayContextStateUpdate(differences);
+  }
+  async setBitmapColor(
+    bitmapColorIndex: number,
+    color: DisplayColorRGB | string,
+    sendImmediately?: boolean
+  ) {
+    return this.setColor(
+      this.bitmapColorIndices[bitmapColorIndex],
+      color,
+      sendImmediately
+    );
+  }
+  async setBitmapColorOpacity(
+    bitmapColorIndex: number,
+    opacity: number,
+    sendImmediately?: boolean
+  ) {
+    return this.setColorOpacity(
+      this.bitmapColorIndices[bitmapColorIndex],
+      opacity,
+      sendImmediately
+    );
   }
   async setBitmapScaleDirection(
     direction: DisplayBitmapScaleDirection,

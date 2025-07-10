@@ -1,4 +1,4 @@
-import { DisplayContextState, PartialDisplayContextState } from "../DisplayManager.ts";
+import { DisplayContextState, PartialDisplayContextState } from "./DisplayContextState.ts";
 declare class DisplayContextStateHelper {
     #private;
     get state(): DisplayContextState;

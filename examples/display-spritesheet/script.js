@@ -1,0 +1,63 @@
+import * as BS from "../../build/brilliantsole.module.js";
+
+// DEVICE
+const device = new BS.Device();
+window.device = device;
+window.BS = BS;
+
+// CONNECT
+
+const toggleConnectionButton = document.getElementById("toggleConnection");
+toggleConnectionButton.addEventListener("click", () =>
+  device.toggleConnection()
+);
+device.addEventListener("connectionStatus", () => {
+  let disabled = false;
+  let innerText = device.connectionStatus;
+  switch (device.connectionStatus) {
+    case "notConnected":
+      innerText = "connect";
+      break;
+    case "connected":
+      innerText = "disconnect";
+      break;
+  }
+  toggleConnectionButton.disabled = disabled;
+  toggleConnectionButton.innerText = innerText;
+});
+
+// DEVICE
+BS.DeviceManager.AddEventListener("deviceConnected", (event) => {
+  if (event.message.device.connectionType != "client") {
+    return;
+  }
+  if (event.message.device.isDisplayAvailable) {
+    clientDevice = event.message.device;
+    if (client.isScanning) {
+      client.stopScan();
+    }
+    displayCanvasHelper.device = clientDevice;
+  } else {
+    console.log("display not available");
+    // event.message.device.disconnect();
+  }
+});
+
+// CANVAS
+/** @type {HTMLCanvasElement} */
+const displayCanvas = document.getElementById("display");
+
+// DISPLAY CANVAS HELPER
+const displayCanvasHelper = new BS.DisplayCanvasHelper();
+// displayCanvasHelper.setBrightness("veryLow");
+displayCanvasHelper.canvas = displayCanvas;
+window.displayCanvasHelper = displayCanvasHelper;
+
+device.addEventListener("connected", () => {
+  if (device.isDisplayAvailable) {
+    displayCanvasHelper.device = device;
+  } else {
+    console.error("device doesn't have a display");
+    device.disconnect();
+  }
+});

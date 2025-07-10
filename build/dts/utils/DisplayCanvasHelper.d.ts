@@ -1,6 +1,7 @@
 import Device from "../Device.ts";
-import { DisplayBitmap, DisplayBitmapColorPair, DisplayBrightness, DisplayColorRGB, DisplayContextState, DisplayContextStateKey, DisplaySegmentCap } from "../DisplayManager.ts";
-import { DisplayBitmapScaleDirection, DisplayCropDirection } from "./DisplayUtils.ts";
+import { DisplayBitmap, DisplayBitmapColorPair, DisplayBrightness } from "../DisplayManager.ts";
+import { DisplayContextState, DisplayContextStateKey, DisplaySegmentCap } from "./DisplayContextState.ts";
+import { DisplayBitmapScaleDirection, DisplayColorRGB, DisplayCropDirection } from "./DisplayUtils.ts";
 import EventDispatcher, { BoundEventListeners, Event, EventListenerMap, EventMap } from "./EventDispatcher.ts";
 import { Vector2 } from "./MathUtils.ts";
 export declare const DisplayCanvasHelperEventTypes: readonly ["contextState", "numberOfColors", "brightness", "color", "colorOpacity", "opacity", "resize", "update", "ready"];
@@ -18,7 +19,7 @@ export interface DisplayCanvasHelperEventMessages {
     };
     color: {
         colorIndex: number;
-        color: DisplayColorRGB;
+        colorRGB: DisplayColorRGB;
         colorHex: string;
     };
     colorOpacity: {
@@ -118,6 +119,8 @@ declare class DisplayCanvasHelper {
     get bitmapColors(): string[];
     selectBitmapColorIndex(bitmapColorIndex: number, colorIndex: number, sendImmediately?: boolean): Promise<void>;
     selectDisplayBitmapColorIndices(bitmapColors: DisplayBitmapColorPair[], sendImmediately?: boolean): Promise<void>;
+    setBitmapColor(bitmapColorIndex: number, color: DisplayColorRGB | string, sendImmediately?: boolean): Promise<void>;
+    setBitmapColorOpacity(bitmapColorIndex: number, opacity: number, sendImmediately?: boolean): Promise<void>;
     setBitmapScaleDirection(direction: DisplayBitmapScaleDirection, bitmapScale: number, sendImmediately?: boolean): Promise<void>;
     setBitmapScaleX(bitmapScaleX: number, sendImmediately?: boolean): Promise<void>;
     setBitmapScaleY(bitmapScaleY: number, sendImmediately?: boolean): Promise<void>;

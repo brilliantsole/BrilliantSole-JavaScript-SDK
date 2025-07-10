@@ -1,5 +1,5 @@
-import { DisplayColorRGB } from "../DisplayManager.ts";
 import { createConsole } from "./Console.ts";
+import { DisplayColorRGB } from "./DisplayUtils.ts";
 
 const _console = createConsole("ColorUtils", { log: false });
 

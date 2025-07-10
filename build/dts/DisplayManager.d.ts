@@ -1,7 +1,8 @@
 import Device, { SendMessageCallback } from "./Device.ts";
 import EventDispatcher from "./utils/EventDispatcher.ts";
 import { Vector2 } from "./utils/MathUtils.ts";
-import { DisplayBitmapScaleDirection, DisplayCropDirection } from "./utils/DisplayUtils.ts";
+import { DisplayBitmapScaleDirection, DisplayColorRGB, DisplayCropDirection } from "./utils/DisplayUtils.ts";
+import { DisplayContextState, DisplayContextStateKey, DisplaySegmentCap, PartialDisplayContextState } from "./utils/DisplayContextState.ts";
 export declare const DefaultNumberOfDisplayColors = 16;
 export declare const DisplayCommands: readonly ["sleep", "wake"];
 export type DisplayCommand = (typeof DisplayCommands)[number];
@@ -17,8 +18,6 @@ export declare const DisplayBrightnesses: readonly ["veryLow", "low", "medium", 
 export type DisplayBrightness = (typeof DisplayBrightnesses)[number];
 export declare const DisplayMessageTypes: readonly ["isDisplayAvailable", "displayStatus", "displayInformation", "displayCommand", "getDisplayBrightness", "setDisplayBrightness", "displayContextCommands", "displayReady"];
 export type DisplayMessageType = (typeof DisplayMessageTypes)[number];
-export declare const DisplaySegmentCaps: readonly ["flat", "round"];
-export type DisplaySegmentCap = (typeof DisplaySegmentCaps)[number];
 export type DisplaySize = {
     width: number;
     height: number;
@@ -28,16 +27,6 @@ export type DisplayInformation = {
     width: number;
     height: number;
     pixelDepth: DisplayPixelDepth;
-};
-export type DisplayColorRGB = {
-    r: number;
-    g: number;
-    b: number;
-};
-export type DisplayColorYCbCr = {
-    y: number;
-    cb: number;
-    cr: number;
 };
 export type DisplayBitmapColorPair = {
     bitmapColorIndex: number;
@@ -49,36 +38,10 @@ export type DisplayBitmap = {
     numberOfColors: number;
     pixels: number[];
 };
-export type DisplayContextState = {
-    fillColorIndex: number;
-    lineColorIndex: number;
-    lineWidth: number;
-    rotation: number;
-    segmentStartCap: DisplaySegmentCap;
-    segmentEndCap: DisplaySegmentCap;
-    segmentStartRadius: number;
-    segmentEndRadius: number;
-    cropTop: number;
-    cropRight: number;
-    cropBottom: number;
-    cropLeft: number;
-    rotationCropTop: number;
-    rotationCropRight: number;
-    rotationCropBottom: number;
-    rotationCropLeft: number;
-    bitmapColorIndices: number[];
-    bitmapScaleX: number;
-    bitmapScaleY: number;
-};
-export type DisplayContextStateKey = keyof DisplayContextState;
-export type PartialDisplayContextState = Partial<DisplayContextState>;
-export declare const DefaultDisplayContextState: DisplayContextState;
 export declare const DisplayInformationValues: {
     type: readonly ["none", "generic", "monocularLeft", "monocularRight", "binocular"];
     pixelDepth: readonly ["1", "2", "4"];
 };
-export declare const DisplayContextCommands: readonly ["show", "clear", "setColor", "setColorOpacity", "setOpacity", "saveContext", "restoreContext", "selectFillColor", "selectLineColor", "setLineWidth", "setRotation", "clearRotation", "setSegmentStartCap", "setSegmentEndCap", "setSegmentCap", "setSegmentStartRadius", "setSegmentEndRadius", "setSegmentRadius", "setCropTop", "setCropRight", "setCropBottom", "setCropLeft", "clearCrop", "setRotationCropTop", "setRotationCropRight", "setRotationCropBottom", "setRotationCropLeft", "clearRotationCrop", "selectBitmapColor", "selectBitmapColors", "setBitmapScaleX", "setBitmapScaleY", "setBitmapScale", "resetBitmapScale", "clearRect", "drawRect", "drawRoundRect", "drawCircle", "drawEllipse", "drawPolygon", "drawSegment", "drawSegments", "drawArc", "drawArcEllipse", "drawBitmap", "selectSpriteSheet", "sprite", "selectFont", "drawText"];
-export type DisplayContextCommand = (typeof DisplayContextCommands)[number];
 export declare const RequiredDisplayMessageTypes: DisplayMessageType[];
 export declare const DisplayEventTypes: readonly ["isDisplayAvailable", "displayStatus", "displayInformation", "displayCommand", "getDisplayBrightness", "setDisplayBrightness", "displayContextCommands", "displayReady", "displayContextState", "displayColor", "displayColorOpacity", "displayOpacity"];
 export type DisplayEventType = (typeof DisplayEventTypes)[number];
@@ -102,7 +65,7 @@ export interface DisplayEventMessages {
     };
     displayColor: {
         colorIndex: number;
-        color: DisplayColorRGB;
+        colorRGB: DisplayColorRGB;
         colorHex: string;
     };
     displayColorOpacity: {
@@ -184,6 +147,8 @@ declare class DisplayManager {
     get bitmapColorIndices(): number[];
     get bitmapColors(): string[];
     selectBitmapColorIndices(bitmapColors: DisplayBitmapColorPair[], sendImmediately?: boolean): Promise<void>;
+    setBitmapColor(bitmapColorIndex: number, color: DisplayColorRGB | string, sendImmediately?: boolean): Promise<void>;
+    setBitmapColorOpacity(bitmapColorIndex: number, opacity: number, sendImmediately?: boolean): Promise<void>;
     setBitmapScaleDirection(direction: DisplayBitmapScaleDirection, bitmapScale: number, sendImmediately?: boolean): Promise<void>;
     setBitmapScaleX(bitmapScaleX: number, sendImmediately?: boolean): Promise<void>;
     setBitmapScaleY(bitmapScaleY: number, sendImmediately?: boolean): Promise<void>;
