@@ -1,6 +1,6 @@
 import Device from "../Device.ts";
-import { DisplayBitmapColorPair, DisplayBrightness, DisplayColorRGB, DisplayContextState, DisplayContextStateKey, DisplaySegmentCap } from "../DisplayManager.ts";
-import { DisplayCropDirection } from "./DisplayUtils.ts";
+import { DisplayBitmap, DisplayBitmapColorPair, DisplayBrightness, DisplayColorRGB, DisplayContextState, DisplayContextStateKey, DisplaySegmentCap } from "../DisplayManager.ts";
+import { DisplayBitmapScaleDirection, DisplayCropDirection } from "./DisplayUtils.ts";
 import EventDispatcher, { BoundEventListeners, Event, EventListenerMap, EventMap } from "./EventDispatcher.ts";
 import { Vector2 } from "./MathUtils.ts";
 export declare const DisplayCanvasHelperEventTypes: readonly ["contextState", "numberOfColors", "brightness", "color", "colorOpacity", "opacity", "resize", "update", "ready"];
@@ -114,9 +114,15 @@ declare class DisplayCanvasHelper {
     setRotationCropBottom(rotationCropBottom: number, sendImmediately?: boolean): Promise<void>;
     setRotationCropLeft(rotationCropLeft: number, sendImmediately?: boolean): Promise<void>;
     clearRotationCrop(sendImmediately?: boolean): Promise<void>;
+    get bitmapColorIndices(): number[];
+    get bitmapColors(): string[];
     selectBitmapColorIndex(bitmapColorIndex: number, colorIndex: number, sendImmediately?: boolean): Promise<void>;
     selectDisplayBitmapColorIndices(bitmapColors: DisplayBitmapColorPair[], sendImmediately?: boolean): Promise<void>;
+    setBitmapScaleDirection(direction: DisplayBitmapScaleDirection, bitmapScale: number, sendImmediately?: boolean): Promise<void>;
+    setBitmapScaleX(bitmapScaleX: number, sendImmediately?: boolean): Promise<void>;
+    setBitmapScaleY(bitmapScaleY: number, sendImmediately?: boolean): Promise<void>;
     setBitmapScale(bitmapScale: number, sendImmediately?: boolean): Promise<void>;
+    resetBitmapScale(sendImmediately?: boolean): Promise<void>;
     clearRect(x: number, y: number, width: number, height: number, sendImmediately?: boolean): Promise<void>;
     drawRect(centerX: number, centerY: number, width: number, height: number, sendImmediately?: boolean): Promise<void>;
     drawRoundRect(centerX: number, centerY: number, width: number, height: number, borderRadius: number, sendImmediately?: boolean): Promise<void>;
@@ -127,6 +133,7 @@ declare class DisplayCanvasHelper {
     drawSegments(points: Vector2[], sendImmediately?: boolean): Promise<void>;
     drawArc(centerX: number, centerY: number, radius: number, startAngle: number, angleOffset: number, isRadians?: boolean, sendImmediately?: boolean): Promise<void>;
     drawArcEllipse(centerX: number, centerY: number, radiusX: number, radiusY: number, startAngle: number, angleOffset: number, isRadians?: boolean, sendImmediately?: boolean): Promise<void>;
+    drawBitmap(centerX: number, centerY: number, bitmap: DisplayBitmap, sendImmediately?: boolean): Promise<void>;
     get brightness(): "veryLow" | "low" | "medium" | "high" | "veryHigh";
     setBrightness(newBrightness: DisplayBrightness, sendImmediately?: boolean): Promise<void>;
 }

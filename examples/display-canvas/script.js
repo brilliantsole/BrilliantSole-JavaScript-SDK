@@ -2238,3 +2238,18 @@ function getIrisOffsetXy(
 // setAutoAnimate(false);
 // setShowFaceTracking(false);
 // setShowCanvas(false);
+
+displayCanvasHelper.selectBitmapColorIndex(1, 1);
+displayCanvasHelper.selectBitmapColorIndex(2, 2);
+displayCanvasHelper.setBitmapScale(10);
+displayCanvasHelper.setRotation(45);
+displayCanvasHelper.drawBitmap(50, 50, {
+  pixels: [
+    ...new Array((10 * 10) / 2).fill(1),
+    ...new Array((10 * 10) / 2).fill(2),
+  ],
+  width: 10,
+  height: 10,
+  numberOfColors: 3,
+});
+displayCanvasHelper.showDisplay();

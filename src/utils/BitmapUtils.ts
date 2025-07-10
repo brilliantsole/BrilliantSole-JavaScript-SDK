@@ -7,6 +7,10 @@ import {
   DisplayContextState,
 } from "../DisplayManager.ts";
 import { getVector3Length, Vector3 } from "./MathUtils.ts";
+import {
+  numberOfColorsToPixelDepth,
+  pixelDepthToPixelsPerByte,
+} from "./DisplayUtils.ts";
 
 const _console = createConsole("BitmapUtils", { log: true });
 
@@ -281,6 +285,37 @@ export async function imageToBitmap(
     numberOfColors,
     pixels: bitmapColorIndices,
     width,
+    height,
   };
   return { blob, bitmap };
+}
+
+export function getBitmapNumberOfBytes(bitmap: DisplayBitmap) {
+  const pixelDepth = numberOfColorsToPixelDepth(bitmap.numberOfColors)!;
+  const pixelsPerByte = pixelDepthToPixelsPerByte(pixelDepth);
+  const numberOfPixels = bitmap.pixels.length;
+  const pixelDataLength = Math.ceil(numberOfPixels / pixelsPerByte);
+  _console.log({
+    pixelDepth,
+    pixelsPerByte,
+    numberOfPixels,
+    pixelDataLength,
+  });
+  return pixelDataLength;
+}
+export function assertValidBitmapPixels(bitmap: DisplayBitmap) {
+  _console.assertRangeWithError(
+    "bitmap.pixels.length",
+    bitmap.pixels.length,
+    1,
+    bitmap.width * bitmap.height
+  );
+  bitmap.pixels.forEach((pixel, index) => {
+    _console.assertRangeWithError(
+      `bitmap.pixels[${index}]`,
+      pixel,
+      0,
+      bitmap.numberOfColors - 1
+    );
+  });
 }

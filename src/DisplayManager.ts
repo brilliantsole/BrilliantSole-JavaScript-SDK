@@ -41,7 +41,12 @@ import {
 } from "./utils/DisplayUtils.ts";
 import { isInBrowser } from "./utils/environment.ts";
 import { resizeAndQuantizeImage } from "./BS.ts";
-import { imageToBitmap, quantizeImage } from "./utils/BitmapUtils.ts";
+import {
+  assertValidBitmapPixels,
+  getBitmapNumberOfBytes,
+  imageToBitmap,
+  quantizeImage,
+} from "./utils/BitmapUtils.ts";
 
 const _console = createConsole("DisplayManager", { log: true });
 
@@ -126,6 +131,7 @@ export type DisplayBitmapColorPair = {
 
 export type DisplayBitmap = {
   width: number;
+  height: number;
   numberOfColors: number;
   pixels: number[];
 };
@@ -1236,7 +1242,7 @@ class DisplayManager {
     );
     this.#onDisplayContextStateUpdate(differences);
   }
-  async #setBitmapScale(
+  async setBitmapScaleDirection(
     direction: DisplayBitmapScaleDirection,
     bitmapScale: number,
     sendImmediately?: boolean
@@ -1277,28 +1283,16 @@ class DisplayManager {
     this.#onDisplayContextStateUpdate(differences);
   }
   async setBitmapScaleX(bitmapScaleX: number, sendImmediately?: boolean) {
-    return this.#setBitmapScale("x", bitmapScaleX, sendImmediately);
+    return this.setBitmapScaleDirection("x", bitmapScaleX, sendImmediately);
   }
   async setBitmapScaleY(bitmapScaleY: number, sendImmediately?: boolean) {
-    return this.#setBitmapScale("y", bitmapScaleY, sendImmediately);
+    return this.setBitmapScaleDirection("y", bitmapScaleY, sendImmediately);
   }
   async setBitmapScale(bitmapScale: number, sendImmediately?: boolean) {
-    return this.#setBitmapScale("all", bitmapScale, sendImmediately);
+    return this.setBitmapScaleDirection("all", bitmapScale, sendImmediately);
   }
   async resetBitmapScale(sendImmediately?: boolean) {
-    const differences = this.#displayContextStateHelper.update({
-      bitmapScaleX: 1,
-      bitmapScaleY: 1,
-    });
-    if (differences.length == 0) {
-      return;
-    }
-    await this.#sendDisplayContextCommand(
-      "resetBitmapScale",
-      undefined,
-      sendImmediately
-    );
-    this.#onDisplayContextStateUpdate(differences);
+    return this.setBitmapScaleDirection("all", 1, sendImmediately);
   }
 
   #clampX(x: number) {
@@ -1572,34 +1566,12 @@ class DisplayManager {
       this.numberOfColors
     );
   }
-  #getBitmapNumberOfBytes(bitmap: DisplayBitmap) {
-    const pixelDepth = numberOfColorsToPixelDepth(bitmap.numberOfColors)!;
-    const pixelsPerByte = pixelDepthToPixelsPerByte(pixelDepth);
-    const numberOfPixels = bitmap.pixels.length;
-    const pixelDataLength = Math.ceil(numberOfPixels / pixelsPerByte);
-    _console.log({
-      pixelDepth,
-      pixelsPerByte,
-      numberOfPixels,
-      pixelDataLength,
-    });
-    return pixelDataLength;
-  }
-  #assertValidBitmapPixels(bitmap: DisplayBitmap) {
-    bitmap.pixels.forEach((pixel, index) => {
-      _console.assertRangeWithError(
-        `bitmap.pixels[${index}]`,
-        pixel,
-        0,
-        bitmap.numberOfColors - 1
-      );
-    });
-  }
+
   #assertValidBitmap(bitmap: DisplayBitmap, limitToMtu?: boolean) {
     this.#assertValidNumberOfColors(bitmap.numberOfColors);
-    this.#assertValidBitmapPixels(bitmap);
-    const pixelDataLength = this.#getBitmapNumberOfBytes(bitmap);
+    assertValidBitmapPixels(bitmap);
     if (limitToMtu) {
+      const pixelDataLength = getBitmapNumberOfBytes(bitmap);
       _console.assertRangeWithError(
         "bitmap.pixels.length",
         pixelDataLength,
@@ -1609,7 +1581,7 @@ class DisplayManager {
     }
   }
   #getBitmapData(bitmap: DisplayBitmap) {
-    const pixelDataLength = this.#getBitmapNumberOfBytes(bitmap);
+    const pixelDataLength = getBitmapNumberOfBytes(bitmap);
     const dataView = new DataView(new ArrayBuffer(pixelDataLength));
     const pixelDepth = numberOfColorsToPixelDepth(bitmap.numberOfColors)!;
     const pixelsPerByte = pixelDepthToPixelsPerByte(pixelDepth);

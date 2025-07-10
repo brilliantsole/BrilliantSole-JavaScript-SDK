@@ -2385,6 +2385,7 @@ const drawShape = BS.ThrottleUtils.throttle(
             numberOfColors: bitmapNumberOfColors,
             pixels: bitmapPixels,
             width: bitmapWidth,
+            height: bitmapHeight,
           });
           break;
         default:
@@ -2897,9 +2898,6 @@ const updateBitmapCanvas = () => {
 
   drawShape();
 };
-window.addEventListener("load", () => {
-  onBitmapCanvasSizeUpdate();
-});
 let isMouseDown = false;
 window.addEventListener("mousedown", () => {
   isMouseDown = true;
@@ -3169,3 +3167,4 @@ toggleQuantizeOverrideDisplayColorsCheckbox.addEventListener("input", () => {
   quantizeOverrideDisplayColors =
     toggleQuantizeOverrideDisplayColorsCheckbox.checked;
 });
+onBitmapCanvasSizeUpdate();

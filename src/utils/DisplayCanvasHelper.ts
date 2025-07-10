@@ -4,6 +4,7 @@ import Device, {
 } from "../Device.ts";
 import {
   DefaultDisplayContextState,
+  DisplayBitmap,
   DisplayBitmapColorPair,
   DisplayBrightness,
   DisplayColorRGB,
@@ -11,7 +12,9 @@ import {
   DisplayContextStateKey,
   DisplaySegmentCap,
   DisplaySize,
+  PartialDisplayContextState,
 } from "../DisplayManager.ts";
+import { assertValidBitmapPixels } from "./BitmapUtils.ts";
 import { hexToRGB, rgbToHex, stringToRGB } from "./ColorUtils.ts";
 import { createConsole } from "./Console.ts";
 import DisplayContextStateHelper from "./DisplayContextStateHelper.ts";
@@ -19,6 +22,8 @@ import {
   assertValidColor,
   assertValidOpacity,
   assertValidSegmentCap,
+  DisplayBitmapScaleDirection,
+  displayBitmapScaleStep,
   DisplayCropDirection,
   DisplayCropDirections,
   DisplayCropDirectionToCommand,
@@ -130,6 +135,8 @@ export type DisplayBoundingBox = {
 class DisplayCanvasHelper {
   constructor() {
     this.numberOfColors = 16;
+    this.#bitmapContext = this.#bitmapCanvas.getContext("2d")!;
+    this.#bitmapContext.imageSmoothingEnabled = false;
   }
 
   // EVENT DISPATCHER
@@ -176,7 +183,6 @@ class DisplayCanvasHelper {
     this.#context = this.#canvas?.getContext("2d", {
       willReadFrequently: true,
     })!;
-    this.#context.imageSmoothingEnabled = false;
     this.#updateCanvas();
   }
   #context!: CanvasRenderingContext2D;
@@ -224,6 +230,7 @@ class DisplayCanvasHelper {
     if (!this.context) {
       return;
     }
+    this.#context.imageSmoothingEnabled = false;
     this.#context.clearRect(0, 0, this.width, this.height);
 
     this.#drawBackground();
@@ -243,7 +250,7 @@ class DisplayCanvasHelper {
     );
     const data = imageData.data;
 
-    const alphaBoost = 1.5; // >1 = more opaque, try 1.1–1.5 for subtlety
+    const alphaBoost = 1.0; // >1 = more opaque, try 1.1–1.5 for subtlety
 
     for (let i = 0; i < data.length; i += 4) {
       const r = data[i];
@@ -267,7 +274,7 @@ class DisplayCanvasHelper {
 
   #drawBackground() {
     this.#save();
-    this.context.fillStyle = this.#colorIndexToRgba(0);
+    this.context.fillStyle = this.#colorIndexToRgbString(0);
     this.context.fillRect(0, 0, this.width, this.height);
     this.#restore();
   }
@@ -849,6 +856,12 @@ class DisplayCanvasHelper {
     this.#onDisplayContextStateUpdate(differences);
   }
 
+  get bitmapColorIndices() {
+    return this.contextState.bitmapColorIndices;
+  }
+  get bitmapColors() {
+    return this.bitmapColorIndices.map((colorIndex) => this.colors[colorIndex]);
+  }
   async selectBitmapColorIndex(
     bitmapColorIndex: number,
     colorIndex: number,
@@ -907,30 +920,63 @@ class DisplayCanvasHelper {
     this.#onDisplayContextStateUpdate(differences);
   }
 
-  // FILL - setBitmapScaleX, setBitmapScaleY, resetBitmapScaleX
-  async setBitmapScale(bitmapScale: number, sendImmediately?: boolean) {
-    bitmapScale = clamp(bitmapScale, 0, maxDisplayBitmapScale);
+  async setBitmapScaleDirection(
+    direction: DisplayBitmapScaleDirection,
+    bitmapScale: number,
+    sendImmediately?: boolean
+  ) {
+    bitmapScale = clamp(
+      bitmapScale,
+      displayBitmapScaleStep,
+      maxDisplayBitmapScale
+    );
     bitmapScale = roundBitmapScale(bitmapScale);
-    _console.log({ bitmapScale });
-    const differences = this.#displayContextStateHelper.update({
-      bitmapScaleX: bitmapScale,
-      bitmapScaleY: bitmapScale,
-    });
+    const newState: PartialDisplayContextState = {};
+    switch (direction) {
+      case "all":
+        newState.bitmapScaleX = bitmapScale;
+        newState.bitmapScaleY = bitmapScale;
+        break;
+      case "x":
+        newState.bitmapScaleX = bitmapScale;
+        break;
+      case "y":
+        newState.bitmapScaleY = bitmapScale;
+        break;
+    }
+    const differences = this.#displayContextStateHelper.update(newState);
     if (differences.length == 0) {
       return;
     }
 
     if (this.device?.isConnected) {
-      await this.device.setDisplayBitmapScale(bitmapScale, sendImmediately);
+      await this.device.setDisplayBitmapScaleDirection(
+        direction,
+        bitmapScale,
+        sendImmediately
+      );
     }
 
     this.#onDisplayContextStateUpdate(differences);
   }
 
+  async setBitmapScaleX(bitmapScaleX: number, sendImmediately?: boolean) {
+    return this.setBitmapScaleDirection("x", bitmapScaleX, sendImmediately);
+  }
+  async setBitmapScaleY(bitmapScaleY: number, sendImmediately?: boolean) {
+    return this.setBitmapScaleDirection("y", bitmapScaleY, sendImmediately);
+  }
+  async setBitmapScale(bitmapScale: number, sendImmediately?: boolean) {
+    return this.setBitmapScaleDirection("all", bitmapScale, sendImmediately);
+  }
+  async resetBitmapScale(sendImmediately?: boolean) {
+    return this.setBitmapScaleDirection("all", 1, sendImmediately);
+  }
+
   #clearRectToCanvas(x: number, y: number, width: number, height: number) {
     this.#save();
     this.context.resetTransform();
-    this.context.fillStyle = this.#colorIndexToRgba(0);
+    this.context.fillStyle = this.#colorIndexToRgbString(0);
     this.context.fillRect(x, y, width, height);
     this.#restore();
   }
@@ -1048,7 +1094,8 @@ class DisplayCanvasHelper {
     );
     ctx.clip();
   }
-  #hexToRgba(hex: string, opacity: number) {
+
+  #hexToRgbWithOpacity(hex: string, opacity: number): DisplayColorRGB {
     // Expand shorthand hex (#f00 → #ff0000)
     if (hex.length === 4) {
       hex = "#" + [...hex.slice(1)].map((c) => c + c).join("");
@@ -1065,12 +1112,25 @@ class DisplayCanvasHelper {
     const dg = darken(g);
     const db = darken(b);
 
-    return `rgb(${dr}, ${dg}, ${db})`;
+    return { r: dr, g: dg, b: db };
   }
-  #colorIndexToRgba(colorIndex: number) {
-    return this.#hexToRgba(
+  #hexToRgbStringWithOpacity(hex: string, opacity: number) {
+    const { r, g, b } = this.#hexToRgbWithOpacity(hex, opacity);
+    return `rgb(${r}, ${g}, ${b})`;
+  }
+  #getColorOpacity(colorIndex: number, includeBrightness = true) {
+    return this.opacities[colorIndex] * this.#brightnessOpacity;
+  }
+  #colorIndexToRgbString(colorIndex: number) {
+    return this.#hexToRgbStringWithOpacity(
       this.colors[colorIndex],
-      1 || this.opacities[colorIndex] * this.#brightnessOpacity
+      this.#getColorOpacity(colorIndex, true)
+    );
+  }
+  #colorIndexToRgb(colorIndex: number) {
+    return this.#hexToRgbWithOpacity(
+      this.colors[colorIndex],
+      this.#getColorOpacity(colorIndex, true)
     );
   }
   #updateContext({
@@ -1078,8 +1138,8 @@ class DisplayCanvasHelper {
     fillColorIndex,
     lineColorIndex,
   }: DisplayContextState) {
-    this.context.fillStyle = this.#colorIndexToRgba(fillColorIndex);
-    this.context.strokeStyle = this.#colorIndexToRgba(lineColorIndex);
+    this.context.fillStyle = this.#colorIndexToRgbString(fillColorIndex);
+    this.context.strokeStyle = this.#colorIndexToRgbString(lineColorIndex);
     this.context.lineWidth = lineWidth;
   }
   #drawRectToCanvas(
@@ -1920,7 +1980,7 @@ class DisplayCanvasHelper {
 
     this.#applyRotationClip(box, contextState);
 
-    // Fill the elliptical pie slice (includes radial lines)
+    // draw elliptical pie slice (includes radial lines)
     this.context.beginPath();
     this.context.moveTo(0, 0);
     const clockwise = angleOffset > 0;
@@ -1992,6 +2052,108 @@ class DisplayCanvasHelper {
         startAngle,
         angleOffset,
         true,
+        sendImmediately
+      );
+    }
+  }
+
+  #bitmapCanvas = document.createElement("canvas");
+  #bitmapContext!: CanvasRenderingContext2D;
+  async #drawBitmapToCanvas(
+    centerX: number,
+    centerY: number,
+    bitmap: DisplayBitmap,
+    contextState: DisplayContextState
+  ) {
+    this.#updateContext(contextState);
+
+    // _console.log("drawBitmapToCanvas", { centerX, centerY, bitmap });
+
+    const { bitmapScaleX, bitmapScaleY } = this.contextState;
+    const width = bitmap.width * bitmapScaleX;
+    const height = bitmap.height * bitmapScaleY;
+
+    // _console.log({ width, height });
+
+    this.#save();
+    const box = this.#getRectBoundingBox(
+      centerX,
+      centerY,
+      width,
+      height,
+      contextState
+    );
+    if (this.#clearBoundingBoxOnDraw) {
+      this.#clearBoundingBox(box);
+    }
+    const rotatedBox = this.#rotateBoundingBox(box, contextState.rotation);
+    this.#applyClip(rotatedBox, contextState);
+
+    this.#transformContext(centerX, centerY, contextState.rotation);
+
+    this.#applyRotationClip(box, contextState);
+
+    this.#bitmapCanvas.width = bitmap.width;
+    this.#bitmapCanvas.height = bitmap.height;
+
+    const bitmapImageData = this.#bitmapContext.createImageData(
+      bitmap.width,
+      bitmap.height
+    );
+    const rawBitmapImageData = bitmapImageData.data;
+
+    const x = -width / 2;
+    const y = -height / 2;
+    bitmap.pixels.forEach((pixel, pixelIndex) => {
+      const colorIndex = this.bitmapColorIndices[pixel];
+      const color = hexToRGB(this.colors[colorIndex]);
+      const opacity = this.#getColorOpacity(colorIndex, true);
+
+      const imageDataOffset = pixelIndex * 4;
+
+      rawBitmapImageData[imageDataOffset + 0] = color.r;
+      rawBitmapImageData[imageDataOffset + 1] = color.g;
+      rawBitmapImageData[imageDataOffset + 2] = color.b;
+      rawBitmapImageData[imageDataOffset + 3] = Math.floor(opacity * 255);
+    });
+
+    // console.log("rawBitmapImageData", rawBitmapImageData);
+
+    this.#bitmapContext.putImageData(bitmapImageData, 0, 0);
+    this.#context.drawImage(this.#bitmapCanvas, x, y, width, height);
+
+    this.#restore();
+  }
+
+  #assertValidNumberOfColors(numberOfColors: number) {
+    _console.assertRangeWithError(
+      "numberOfColors",
+      numberOfColors,
+      2,
+      this.numberOfColors
+    );
+  }
+  #assertValidBitmap(bitmap: DisplayBitmap) {
+    this.#assertValidNumberOfColors(bitmap.numberOfColors);
+    assertValidBitmapPixels(bitmap);
+  }
+  async drawBitmap(
+    centerX: number,
+    centerY: number,
+    bitmap: DisplayBitmap,
+    sendImmediately?: boolean
+  ) {
+    this.#assertValidBitmap(bitmap);
+    _console.log("drawBitmap", { centerX, centerY, bitmap, sendImmediately });
+    const contextState = structuredClone(this.contextState);
+    this.#rearDrawStack.push(() =>
+      this.#drawBitmapToCanvas(centerX, centerY, bitmap, contextState)
+    );
+    if (this.device?.isConnected) {
+      await this.device.drawDisplayBitmap(
+        centerX,
+        centerY,
+        bitmap,
         sendImmediately
       );
     }

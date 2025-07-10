@@ -4076,11 +4076,31 @@ async function imageToBitmap(image, width, height, colors, contextState, numberO
         numberOfColors,
         pixels: bitmapColorIndices,
         width,
+        height,
     };
     return { blob, bitmap };
 }
+function getBitmapNumberOfBytes(bitmap) {
+    const pixelDepth = numberOfColorsToPixelDepth(bitmap.numberOfColors);
+    const pixelsPerByte = pixelDepthToPixelsPerByte(pixelDepth);
+    const numberOfPixels = bitmap.pixels.length;
+    const pixelDataLength = Math.ceil(numberOfPixels / pixelsPerByte);
+    _console$p.log({
+        pixelDepth,
+        pixelsPerByte,
+        numberOfPixels,
+        pixelDataLength,
+    });
+    return pixelDataLength;
+}
+function assertValidBitmapPixels(bitmap) {
+    _console$p.assertRangeWithError("bitmap.pixels.length", bitmap.pixels.length, 1, bitmap.width * bitmap.height);
+    bitmap.pixels.forEach((pixel, index) => {
+        _console$p.assertRangeWithError(`bitmap.pixels[${index}]`, pixel, 0, bitmap.numberOfColors - 1);
+    });
+}
 
-var _DisplayManager_instances, _DisplayManager_dispatchEvent_get, _DisplayManager_isDisplayAvailable, _DisplayManager_assertDisplayIsAvailable, _DisplayManager_parseIsDisplayAvailable, _DisplayManager_displayContextStateHelper, _DisplayManager_onDisplayContextStateUpdate, _DisplayManager_displayStatus, _DisplayManager_parseDisplayStatus, _DisplayManager_updateDisplayStatus, _DisplayManager_sendDisplayCommand, _DisplayManager_assertIsAwake, _DisplayManager_assertIsNotAwake, _DisplayManager_displayInformation, _DisplayManager_parseDisplayInformation, _DisplayManager_displayBrightness, _DisplayManager_parseDisplayBrightness, _DisplayManager_assertValidDisplayContextCommand, _DisplayManager_maxCommandDataLength_get, _DisplayManager_displayContextCommandBuffers, _DisplayManager_sendDisplayContextCommand, _DisplayManager_sendDisplayContextCommands, _DisplayManager_assertValidColorIndex, _DisplayManager_colors, _DisplayManager_opacities, _DisplayManager_assertValidLineWidth, _DisplayManager_setBitmapScale, _DisplayManager_clampBox, _DisplayManager_assertValidNumberOfColors, _DisplayManager_getBitmapNumberOfBytes, _DisplayManager_assertValidBitmapPixels, _DisplayManager_assertValidBitmap, _DisplayManager_getBitmapData, _DisplayManager_drawBitmapHeaderLength_get, _DisplayManager_isDisplayReady, _DisplayManager_parseDisplayReady, _DisplayManager_mtu;
+var _DisplayManager_instances, _DisplayManager_dispatchEvent_get, _DisplayManager_isDisplayAvailable, _DisplayManager_assertDisplayIsAvailable, _DisplayManager_parseIsDisplayAvailable, _DisplayManager_displayContextStateHelper, _DisplayManager_onDisplayContextStateUpdate, _DisplayManager_displayStatus, _DisplayManager_parseDisplayStatus, _DisplayManager_updateDisplayStatus, _DisplayManager_sendDisplayCommand, _DisplayManager_assertIsAwake, _DisplayManager_assertIsNotAwake, _DisplayManager_displayInformation, _DisplayManager_parseDisplayInformation, _DisplayManager_displayBrightness, _DisplayManager_parseDisplayBrightness, _DisplayManager_assertValidDisplayContextCommand, _DisplayManager_maxCommandDataLength_get, _DisplayManager_displayContextCommandBuffers, _DisplayManager_sendDisplayContextCommand, _DisplayManager_sendDisplayContextCommands, _DisplayManager_assertValidColorIndex, _DisplayManager_colors, _DisplayManager_opacities, _DisplayManager_assertValidLineWidth, _DisplayManager_clampBox, _DisplayManager_assertValidNumberOfColors, _DisplayManager_assertValidBitmap, _DisplayManager_getBitmapData, _DisplayManager_drawBitmapHeaderLength_get, _DisplayManager_isDisplayReady, _DisplayManager_parseDisplayReady, _DisplayManager_mtu;
 const _console$o = createConsole("DisplayManager", { log: true });
 const DefaultNumberOfDisplayColors = 16;
 const DisplayCommands = ["sleep", "wake"];
@@ -4718,25 +4738,44 @@ class DisplayManager {
         await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "selectBitmapColors", dataView.buffer, sendImmediately);
         __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_onDisplayContextStateUpdate).call(this, differences);
     }
-    async setBitmapScaleX(bitmapScaleX, sendImmediately) {
-        return __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_setBitmapScale).call(this, "x", bitmapScaleX, sendImmediately);
-    }
-    async setBitmapScaleY(bitmapScaleY, sendImmediately) {
-        return __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_setBitmapScale).call(this, "y", bitmapScaleY, sendImmediately);
-    }
-    async setBitmapScale(bitmapScale, sendImmediately) {
-        return __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_setBitmapScale).call(this, "all", bitmapScale, sendImmediately);
-    }
-    async resetBitmapScale(sendImmediately) {
-        const differences = __classPrivateFieldGet(this, _DisplayManager_displayContextStateHelper, "f").update({
-            bitmapScaleX: 1,
-            bitmapScaleY: 1,
-        });
+    async setBitmapScaleDirection(direction, bitmapScale, sendImmediately) {
+        bitmapScale = clamp(bitmapScale, displayBitmapScaleStep, maxDisplayBitmapScale);
+        bitmapScale = roundBitmapScale(bitmapScale);
+        const command = DisplayBitmapScaleDirectionToCommand[direction];
+        _console$o.log({ command: bitmapScale });
+        const newState = {};
+        switch (direction) {
+            case "all":
+                newState.bitmapScaleX = bitmapScale;
+                newState.bitmapScaleY = bitmapScale;
+                break;
+            case "x":
+                newState.bitmapScaleX = bitmapScale;
+                break;
+            case "y":
+                newState.bitmapScaleY = bitmapScale;
+                break;
+        }
+        const differences = __classPrivateFieldGet(this, _DisplayManager_displayContextStateHelper, "f").update(newState);
         if (differences.length == 0) {
             return;
         }
-        await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "resetBitmapScale", undefined, sendImmediately);
+        const dataView = new DataView(new ArrayBuffer(2));
+        dataView.setUint16(0, formatBitmapScale(bitmapScale), true);
+        await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, command, dataView.buffer, sendImmediately);
         __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_onDisplayContextStateUpdate).call(this, differences);
+    }
+    async setBitmapScaleX(bitmapScaleX, sendImmediately) {
+        return this.setBitmapScaleDirection("x", bitmapScaleX, sendImmediately);
+    }
+    async setBitmapScaleY(bitmapScaleY, sendImmediately) {
+        return this.setBitmapScaleDirection("y", bitmapScaleY, sendImmediately);
+    }
+    async setBitmapScale(bitmapScale, sendImmediately) {
+        return this.setBitmapScaleDirection("all", bitmapScale, sendImmediately);
+    }
+    async resetBitmapScale(sendImmediately) {
+        return this.setBitmapScaleDirection("all", 1, sendImmediately);
     }
     async clearRect(x, y, width, height, sendImmediately) {
         const { x: _x, y: _y, width: _width, height: _height, } = __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_clampBox).call(this, x, y, width, height);
@@ -5065,62 +5104,20 @@ async function _DisplayManager_sendDisplayCommand(command, sendImmediately) {
     _console$o.assertRangeWithError("colorIndex", colorIndex, 0, this.numberOfColors);
 }, _DisplayManager_assertValidLineWidth = function _DisplayManager_assertValidLineWidth(lineWidth) {
     _console$o.assertRangeWithError("lineWidth", lineWidth, 0, this.width);
-}, _DisplayManager_setBitmapScale = async function _DisplayManager_setBitmapScale(direction, bitmapScale, sendImmediately) {
-    bitmapScale = clamp(bitmapScale, displayBitmapScaleStep, maxDisplayBitmapScale);
-    bitmapScale = roundBitmapScale(bitmapScale);
-    const command = DisplayBitmapScaleDirectionToCommand[direction];
-    _console$o.log({ command: bitmapScale });
-    const newState = {};
-    switch (direction) {
-        case "all":
-            newState.bitmapScaleX = bitmapScale;
-            newState.bitmapScaleY = bitmapScale;
-            break;
-        case "x":
-            newState.bitmapScaleX = bitmapScale;
-            break;
-        case "y":
-            newState.bitmapScaleY = bitmapScale;
-            break;
-    }
-    const differences = __classPrivateFieldGet(this, _DisplayManager_displayContextStateHelper, "f").update(newState);
-    if (differences.length == 0) {
-        return;
-    }
-    const dataView = new DataView(new ArrayBuffer(2));
-    dataView.setUint16(0, formatBitmapScale(bitmapScale), true);
-    await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, command, dataView.buffer, sendImmediately);
-    __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_onDisplayContextStateUpdate).call(this, differences);
 }, _DisplayManager_clampBox = function _DisplayManager_clampBox(x, y, width, height) {
     _console$o.log("clampBox", { x, y, width, height });
     return { x, y, width, height };
 }, _DisplayManager_assertValidNumberOfColors = function _DisplayManager_assertValidNumberOfColors(numberOfColors) {
     _console$o.assertRangeWithError("numberOfColors", numberOfColors, 2, this.numberOfColors);
-}, _DisplayManager_getBitmapNumberOfBytes = function _DisplayManager_getBitmapNumberOfBytes(bitmap) {
-    const pixelDepth = numberOfColorsToPixelDepth(bitmap.numberOfColors);
-    const pixelsPerByte = pixelDepthToPixelsPerByte(pixelDepth);
-    const numberOfPixels = bitmap.pixels.length;
-    const pixelDataLength = Math.ceil(numberOfPixels / pixelsPerByte);
-    _console$o.log({
-        pixelDepth,
-        pixelsPerByte,
-        numberOfPixels,
-        pixelDataLength,
-    });
-    return pixelDataLength;
-}, _DisplayManager_assertValidBitmapPixels = function _DisplayManager_assertValidBitmapPixels(bitmap) {
-    bitmap.pixels.forEach((pixel, index) => {
-        _console$o.assertRangeWithError(`bitmap.pixels[${index}]`, pixel, 0, bitmap.numberOfColors - 1);
-    });
 }, _DisplayManager_assertValidBitmap = function _DisplayManager_assertValidBitmap(bitmap, limitToMtu) {
     __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_assertValidNumberOfColors).call(this, bitmap.numberOfColors);
-    __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_assertValidBitmapPixels).call(this, bitmap);
-    const pixelDataLength = __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_getBitmapNumberOfBytes).call(this, bitmap);
+    assertValidBitmapPixels(bitmap);
     if (limitToMtu) {
+        const pixelDataLength = getBitmapNumberOfBytes(bitmap);
         _console$o.assertRangeWithError("bitmap.pixels.length", pixelDataLength, 1, __classPrivateFieldGet(this, _DisplayManager_instances, "a", _DisplayManager_maxCommandDataLength_get) - __classPrivateFieldGet(this, _DisplayManager_instances, "a", _DisplayManager_drawBitmapHeaderLength_get));
     }
 }, _DisplayManager_getBitmapData = function _DisplayManager_getBitmapData(bitmap) {
-    const pixelDataLength = __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_getBitmapNumberOfBytes).call(this, bitmap);
+    const pixelDataLength = getBitmapNumberOfBytes(bitmap);
     const dataView = new DataView(new ArrayBuffer(pixelDataLength));
     const pixelDepth = numberOfColorsToPixelDepth(bitmap.numberOfColors);
     const pixelsPerByte = pixelDepthToPixelsPerByte(pixelDepth);
@@ -8564,6 +8561,10 @@ class Device {
     get selectDisplayBitmapColorIndices() {
         __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertDisplayIsAvailable).call(this);
         return __classPrivateFieldGet(this, _Device_displayManager, "f").selectBitmapColorIndices;
+    }
+    get setDisplayBitmapScaleDirection() {
+        __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertDisplayIsAvailable).call(this);
+        return __classPrivateFieldGet(this, _Device_displayManager, "f").setBitmapScaleDirection;
     }
     get setDisplayBitmapScaleX() {
         __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertDisplayIsAvailable).call(this);

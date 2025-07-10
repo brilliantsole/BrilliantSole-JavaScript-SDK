@@ -12,3 +12,5 @@ export declare function imageToBitmap(image: HTMLImageElement, width: number, he
     blob: Blob;
     bitmap: DisplayBitmap;
 }>;
+export declare function getBitmapNumberOfBytes(bitmap: DisplayBitmap): number;
+export declare function assertValidBitmapPixels(bitmap: DisplayBitmap): void;

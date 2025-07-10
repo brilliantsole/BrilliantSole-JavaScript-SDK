@@ -1,7 +1,7 @@
 import Device, { SendMessageCallback } from "./Device.ts";
 import EventDispatcher from "./utils/EventDispatcher.ts";
 import { Vector2 } from "./utils/MathUtils.ts";
-import { DisplayCropDirection } from "./utils/DisplayUtils.ts";
+import { DisplayBitmapScaleDirection, DisplayCropDirection } from "./utils/DisplayUtils.ts";
 export declare const DefaultNumberOfDisplayColors = 16;
 export declare const DisplayCommands: readonly ["sleep", "wake"];
 export type DisplayCommand = (typeof DisplayCommands)[number];
@@ -45,6 +45,7 @@ export type DisplayBitmapColorPair = {
 };
 export type DisplayBitmap = {
     width: number;
+    height: number;
     numberOfColors: number;
     pixels: number[];
 };
@@ -129,7 +130,7 @@ declare class DisplayManager {
     get isDisplayAvailable(): boolean;
     get displayContextState(): DisplayContextState;
     setContextState(newState: PartialDisplayContextState, sendImmediately?: boolean): Promise<void>;
-    get displayStatus(): "asleep" | "awake";
+    get displayStatus(): "awake" | "asleep";
     get isDisplayAwake(): boolean;
     wake(): Promise<void>;
     sleep(): Promise<void>;
@@ -143,7 +144,7 @@ declare class DisplayManager {
         width: number;
         height: number;
     };
-    get type(): "generic" | "none" | "monocularLeft" | "monocularRight" | "binocular";
+    get type(): "none" | "generic" | "monocularLeft" | "monocularRight" | "binocular";
     get displayBrightness(): "veryLow" | "low" | "medium" | "high" | "veryHigh";
     setDisplayBrightness(newDisplayBrightness: DisplayBrightness, sendImmediately?: boolean): Promise<void>;
     flushDisplayContextCommands(): Promise<void>;
@@ -183,6 +184,7 @@ declare class DisplayManager {
     get bitmapColorIndices(): number[];
     get bitmapColors(): string[];
     selectBitmapColorIndices(bitmapColors: DisplayBitmapColorPair[], sendImmediately?: boolean): Promise<void>;
+    setBitmapScaleDirection(direction: DisplayBitmapScaleDirection, bitmapScale: number, sendImmediately?: boolean): Promise<void>;
     setBitmapScaleX(bitmapScaleX: number, sendImmediately?: boolean): Promise<void>;
     setBitmapScaleY(bitmapScaleY: number, sendImmediately?: boolean): Promise<void>;
     setBitmapScale(bitmapScale: number, sendImmediately?: boolean): Promise<void>;
