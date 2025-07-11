@@ -143,6 +143,6 @@ declare class DisplayCanvasHelper implements DisplayManagerInterface {
     drawBitmap(centerX: number, centerY: number, bitmap: DisplayBitmap, sendImmediately?: boolean): Promise<void>;
     get brightness(): "veryLow" | "low" | "medium" | "high" | "veryHigh";
     setBrightness(newBrightness: DisplayBrightness, sendImmediately?: boolean): Promise<void>;
-    runContextCommandMessage(commandMessage: DisplayContextCommandMessage, sendImmediately?: boolean): Promise<void>;
+    runContextCommandMessage(commandMessage: DisplayContextCommandMessage, position?: Vector2, sendImmediately?: boolean): Promise<void>;
 }
 export default DisplayCanvasHelper;

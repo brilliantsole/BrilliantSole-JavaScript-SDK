@@ -2249,9 +2249,15 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
 
   async runContextCommandMessage(
     commandMessage: DisplayContextCommandMessage,
+    position?: Vector2,
     sendImmediately?: boolean
   ) {
-    return runDisplayContextCommand(this, commandMessage, sendImmediately);
+    return runDisplayContextCommand(
+      this,
+      commandMessage,
+      position,
+      sendImmediately
+    );
   }
 
   #reset() {

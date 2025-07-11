@@ -240,13 +240,13 @@ class DisplayManager implements DisplayManagerInterface {
   }
 
   // DISPLAY CONTEXT STATE
-  #displayContextStateHelper = new DisplayContextStateHelper();
-  get displayContextState() {
-    return this.#displayContextStateHelper.state;
+  #contextStateHelper = new DisplayContextStateHelper();
+  get contextState() {
+    return this.#contextStateHelper.state;
   }
-  #onDisplayContextStateUpdate(differences: DisplayContextStateKey[]) {
+  #onContextStateUpdate(differences: DisplayContextStateKey[]) {
     this.#dispatchEvent("displayContextState", {
-      displayContextState: structuredClone(this.displayContextState),
+      displayContextState: structuredClone(this.contextState),
       differences,
     });
   }
@@ -254,7 +254,7 @@ class DisplayManager implements DisplayManagerInterface {
     newState: PartialDisplayContextState,
     sendImmediately?: boolean
   ) {
-    const differences = this.#displayContextStateHelper.diff(newState);
+    const differences = this.#contextStateHelper.diff(newState);
     if (differences.length == 0) {
       return;
     }
@@ -492,18 +492,18 @@ class DisplayManager implements DisplayManagerInterface {
     this.#displayInformation = parsedDisplayInformation;
     this.#colors = new Array(this.numberOfColors).fill("#000000");
     this.#opacities = new Array(this.numberOfColors).fill(1);
-    this.displayContextState.bitmapColorIndices = new Array(
-      this.numberOfColors
-    ).fill(0);
+    this.contextState.bitmapColorIndices = new Array(this.numberOfColors).fill(
+      0
+    );
     this.#dispatchEvent("displayInformation", {
       displayInformation: this.#displayInformation,
     });
   }
 
   // DISPLAY BRIGHTNESS
-  #displayBrightness!: DisplayBrightness;
-  get displayBrightness() {
-    return this.#displayBrightness;
+  #brightness!: DisplayBrightness;
+  get brightness() {
+    return this.#brightness;
   }
 
   #parseDisplayBrightness(dataView: DataView) {
@@ -511,20 +511,20 @@ class DisplayManager implements DisplayManagerInterface {
     const newDisplayBrightness = DisplayBrightnesses[newDisplayBrightnessEnum];
     assertValidDisplayBrightness(newDisplayBrightness);
 
-    this.#displayBrightness = newDisplayBrightness;
-    _console.log({ displayBrightness: this.#displayBrightness });
+    this.#brightness = newDisplayBrightness;
+    _console.log({ displayBrightness: this.#brightness });
     this.#dispatchEvent("getDisplayBrightness", {
-      displayBrightness: this.#displayBrightness,
+      displayBrightness: this.#brightness,
     });
   }
 
-  async setDisplayBrightness(
+  async setBrightness(
     newDisplayBrightness: DisplayBrightness,
     sendImmediately?: boolean
   ) {
     this.#assertDisplayIsAvailable();
     assertValidDisplayBrightness(newDisplayBrightness);
-    if (this.displayBrightness == newDisplayBrightness) {
+    if (this.brightness == newDisplayBrightness) {
       _console.log(`redundant displayBrightness ${newDisplayBrightness}`);
       return;
     }
@@ -714,7 +714,7 @@ class DisplayManager implements DisplayManagerInterface {
 
   async selectFillColor(fillColorIndex: number, sendImmediately?: boolean) {
     this.#assertValidColorIndex(fillColorIndex);
-    const differences = this.#displayContextStateHelper.update({
+    const differences = this.#contextStateHelper.update({
       fillColorIndex,
     });
     if (differences.length == 0) {
@@ -725,11 +725,11 @@ class DisplayManager implements DisplayManagerInterface {
       UInt8ByteBuffer(fillColorIndex),
       sendImmediately
     );
-    this.#onDisplayContextStateUpdate(differences);
+    this.#onContextStateUpdate(differences);
   }
   async selectLineColor(lineColorIndex: number, sendImmediately?: boolean) {
     this.#assertValidColorIndex(lineColorIndex);
-    const differences = this.#displayContextStateHelper.update({
+    const differences = this.#contextStateHelper.update({
       lineColorIndex,
     });
     if (differences.length == 0) {
@@ -740,14 +740,14 @@ class DisplayManager implements DisplayManagerInterface {
       UInt8ByteBuffer(lineColorIndex),
       sendImmediately
     );
-    this.#onDisplayContextStateUpdate(differences);
+    this.#onContextStateUpdate(differences);
   }
   #assertValidLineWidth(lineWidth: number) {
     _console.assertRangeWithError("lineWidth", lineWidth, 0, this.width);
   }
   async setLineWidth(lineWidth: number, sendImmediately?: boolean) {
     this.#assertValidLineWidth(lineWidth);
-    const differences = this.#displayContextStateHelper.update({
+    const differences = this.#contextStateHelper.update({
       lineWidth,
     });
     if (differences.length == 0) {
@@ -760,7 +760,7 @@ class DisplayManager implements DisplayManagerInterface {
       dataView.buffer,
       sendImmediately
     );
-    this.#onDisplayContextStateUpdate(differences);
+    this.#onContextStateUpdate(differences);
   }
 
   async setRotation(
@@ -772,7 +772,7 @@ class DisplayManager implements DisplayManagerInterface {
     rotation = normalizeRadians(rotation);
     _console.log({ rotation });
 
-    const differences = this.#displayContextStateHelper.update({
+    const differences = this.#contextStateHelper.update({
       rotation,
     });
     if (differences.length == 0) {
@@ -786,10 +786,10 @@ class DisplayManager implements DisplayManagerInterface {
       sendImmediately
     );
 
-    this.#onDisplayContextStateUpdate(differences);
+    this.#onContextStateUpdate(differences);
   }
   async clearRotation(sendImmediately?: boolean) {
-    const differences = this.#displayContextStateHelper.update({
+    const differences = this.#contextStateHelper.update({
       rotation: 0,
     });
     if (differences.length == 0) {
@@ -800,7 +800,7 @@ class DisplayManager implements DisplayManagerInterface {
       undefined,
       sendImmediately
     );
-    this.#onDisplayContextStateUpdate(differences);
+    this.#onContextStateUpdate(differences);
   }
 
   async setSegmentStartCap(
@@ -808,7 +808,7 @@ class DisplayManager implements DisplayManagerInterface {
     sendImmediately?: boolean
   ) {
     assertValidSegmentCap(segmentStartCap);
-    const differences = this.#displayContextStateHelper.update({
+    const differences = this.#contextStateHelper.update({
       segmentStartCap,
     });
     if (differences.length == 0) {
@@ -823,14 +823,14 @@ class DisplayManager implements DisplayManagerInterface {
       dataView.buffer,
       sendImmediately
     );
-    this.#onDisplayContextStateUpdate(differences);
+    this.#onContextStateUpdate(differences);
   }
   async setSegmentEndCap(
     segmentEndCap: DisplaySegmentCap,
     sendImmediately?: boolean
   ) {
     assertValidSegmentCap(segmentEndCap);
-    const differences = this.#displayContextStateHelper.update({
+    const differences = this.#contextStateHelper.update({
       segmentEndCap,
     });
     if (differences.length == 0) {
@@ -846,14 +846,14 @@ class DisplayManager implements DisplayManagerInterface {
       dataView.buffer,
       sendImmediately
     );
-    this.#onDisplayContextStateUpdate(differences);
+    this.#onContextStateUpdate(differences);
   }
   async setSegmentCap(
     segmentCap: DisplaySegmentCap,
     sendImmediately?: boolean
   ) {
     assertValidSegmentCap(segmentCap);
-    const differences = this.#displayContextStateHelper.update({
+    const differences = this.#contextStateHelper.update({
       segmentStartCap: segmentCap,
       segmentEndCap: segmentCap,
     });
@@ -869,14 +869,14 @@ class DisplayManager implements DisplayManagerInterface {
       dataView.buffer,
       sendImmediately
     );
-    this.#onDisplayContextStateUpdate(differences);
+    this.#onContextStateUpdate(differences);
   }
 
   async setSegmentStartRadius(
     segmentStartRadius: number,
     sendImmediately?: boolean
   ) {
-    const differences = this.#displayContextStateHelper.update({
+    const differences = this.#contextStateHelper.update({
       segmentStartRadius,
     });
     if (differences.length == 0) {
@@ -890,13 +890,13 @@ class DisplayManager implements DisplayManagerInterface {
       dataView.buffer,
       sendImmediately
     );
-    this.#onDisplayContextStateUpdate(differences);
+    this.#onContextStateUpdate(differences);
   }
   async setSegmentEndRadius(
     segmentEndRadius: number,
     sendImmediately?: boolean
   ) {
-    const differences = this.#displayContextStateHelper.update({
+    const differences = this.#contextStateHelper.update({
       segmentEndRadius,
     });
     if (differences.length == 0) {
@@ -910,10 +910,10 @@ class DisplayManager implements DisplayManagerInterface {
       dataView.buffer,
       sendImmediately
     );
-    this.#onDisplayContextStateUpdate(differences);
+    this.#onContextStateUpdate(differences);
   }
   async setSegmentRadius(segmentRadius: number, sendImmediately?: boolean) {
-    const differences = this.#displayContextStateHelper.update({
+    const differences = this.#contextStateHelper.update({
       segmentStartRadius: segmentRadius,
       segmentEndRadius: segmentRadius,
     });
@@ -928,7 +928,7 @@ class DisplayManager implements DisplayManagerInterface {
       dataView.buffer,
       sendImmediately
     );
-    this.#onDisplayContextStateUpdate(differences);
+    this.#onContextStateUpdate(differences);
   }
 
   async setCrop(
@@ -940,7 +940,7 @@ class DisplayManager implements DisplayManagerInterface {
     crop = Math.max(0, crop);
     const cropCommand = DisplayCropDirectionToCommand[cropDirection];
     const cropKey = DisplayCropDirectionToStateKey[cropDirection];
-    const differences = this.#displayContextStateHelper.update({
+    const differences = this.#contextStateHelper.update({
       [cropKey]: crop,
     });
     if (differences.length == 0) {
@@ -954,7 +954,7 @@ class DisplayManager implements DisplayManagerInterface {
       dataView.buffer,
       sendImmediately
     );
-    this.#onDisplayContextStateUpdate(differences);
+    this.#onContextStateUpdate(differences);
   }
   async setCropTop(cropTop: number, sendImmediately?: boolean) {
     await this.setCrop("top", cropTop, sendImmediately);
@@ -969,7 +969,7 @@ class DisplayManager implements DisplayManagerInterface {
     await this.setCrop("left", cropLeft, sendImmediately);
   }
   async clearCrop(sendImmediately?: boolean) {
-    const differences = this.#displayContextStateHelper.update({
+    const differences = this.#contextStateHelper.update({
       cropTop: 0,
       cropRight: 0,
       cropBottom: 0,
@@ -983,7 +983,7 @@ class DisplayManager implements DisplayManagerInterface {
       undefined,
       sendImmediately
     );
-    this.#onDisplayContextStateUpdate(differences);
+    this.#onContextStateUpdate(differences);
   }
 
   async setRotationCrop(
@@ -994,7 +994,7 @@ class DisplayManager implements DisplayManagerInterface {
     _console.assertEnumWithError(cropDirection, DisplayCropDirections);
     const cropCommand = DisplayRotationCropDirectionToCommand[cropDirection];
     const cropKey = DisplayRotationCropDirectionToStateKey[cropDirection];
-    const differences = this.#displayContextStateHelper.update({
+    const differences = this.#contextStateHelper.update({
       [cropKey]: crop,
     });
     if (differences.length == 0) {
@@ -1008,7 +1008,7 @@ class DisplayManager implements DisplayManagerInterface {
       dataView.buffer,
       sendImmediately
     );
-    this.#onDisplayContextStateUpdate(differences);
+    this.#onContextStateUpdate(differences);
   }
   async setRotationCropTop(rotationCropTop: number, sendImmediately?: boolean) {
     await this.setRotationCrop("top", rotationCropTop, sendImmediately);
@@ -1032,7 +1032,7 @@ class DisplayManager implements DisplayManagerInterface {
     await this.setRotationCrop("left", rotationCropLeft, sendImmediately);
   }
   async clearRotationCrop(sendImmediately?: boolean) {
-    const differences = this.#displayContextStateHelper.update({
+    const differences = this.#contextStateHelper.update({
       rotationCropTop: 0,
       rotationCropRight: 0,
       rotationCropBottom: 0,
@@ -1046,7 +1046,7 @@ class DisplayManager implements DisplayManagerInterface {
       undefined,
       sendImmediately
     );
-    this.#onDisplayContextStateUpdate(differences);
+    this.#onContextStateUpdate(differences);
   }
 
   async selectBitmapColor(
@@ -1056,10 +1056,9 @@ class DisplayManager implements DisplayManagerInterface {
   ) {
     this.#assertValidColorIndex(bitmapColorIndex);
     this.#assertValidColorIndex(colorIndex);
-    const bitmapColorIndices =
-      this.displayContextState.bitmapColorIndices.slice();
+    const bitmapColorIndices = this.contextState.bitmapColorIndices.slice();
     bitmapColorIndices[bitmapColorIndex] = colorIndex;
-    const differences = this.#displayContextStateHelper.update({
+    const differences = this.#contextStateHelper.update({
       bitmapColorIndices,
     });
     if (differences.length == 0) {
@@ -1073,10 +1072,10 @@ class DisplayManager implements DisplayManagerInterface {
       dataView.buffer,
       sendImmediately
     );
-    this.#onDisplayContextStateUpdate(differences);
+    this.#onContextStateUpdate(differences);
   }
   get bitmapColorIndices() {
-    return this.displayContextState.bitmapColorIndices;
+    return this.contextState.bitmapColorIndices;
   }
   get bitmapColors() {
     return this.bitmapColorIndices.map((colorIndex) => this.colors[colorIndex]);
@@ -1091,15 +1090,14 @@ class DisplayManager implements DisplayManagerInterface {
       1,
       this.numberOfColors
     );
-    const bitmapColorIndices =
-      this.displayContextState.bitmapColorIndices.slice();
+    const bitmapColorIndices = this.contextState.bitmapColorIndices.slice();
     bitmapColorPairs.forEach(({ bitmapColorIndex, colorIndex }) => {
       this.#assertValidColorIndex(bitmapColorIndex);
       this.#assertValidColorIndex(colorIndex);
       bitmapColorIndices[bitmapColorIndex] = colorIndex;
     });
 
-    const differences = this.#displayContextStateHelper.update({
+    const differences = this.#contextStateHelper.update({
       bitmapColorIndices,
     });
     if (differences.length == 0) {
@@ -1120,7 +1118,7 @@ class DisplayManager implements DisplayManagerInterface {
       dataView.buffer,
       sendImmediately
     );
-    this.#onDisplayContextStateUpdate(differences);
+    this.#onContextStateUpdate(differences);
   }
   async setBitmapColor(
     bitmapColorIndex: number,
@@ -1170,7 +1168,7 @@ class DisplayManager implements DisplayManagerInterface {
         newState.bitmapScaleY = bitmapScale;
         break;
     }
-    const differences = this.#displayContextStateHelper.update(newState);
+    const differences = this.#contextStateHelper.update(newState);
     if (differences.length == 0) {
       return;
     }
@@ -1182,7 +1180,7 @@ class DisplayManager implements DisplayManagerInterface {
       sendImmediately
     );
 
-    this.#onDisplayContextStateUpdate(differences);
+    this.#onContextStateUpdate(differences);
   }
   async setBitmapScaleX(bitmapScaleX: number, sendImmediately?: boolean) {
     return this.setBitmapScaleDirection("x", bitmapScaleX, sendImmediately);
@@ -1544,7 +1542,7 @@ class DisplayManager implements DisplayManagerInterface {
       width,
       height,
       this.colors,
-      this.displayContextState,
+      this.contextState,
       numberOfColors
     );
   }
@@ -1567,9 +1565,15 @@ class DisplayManager implements DisplayManagerInterface {
 
   async runContextCommandMessage(
     commandMessage: DisplayContextCommandMessage,
+    position?: Vector2,
     sendImmediately?: boolean
   ) {
-    return runDisplayContextCommand(this, commandMessage, sendImmediately);
+    return runDisplayContextCommand(
+      this,
+      commandMessage,
+      position,
+      sendImmediately
+    );
   }
 
   #isReady = true;
@@ -1614,11 +1618,11 @@ class DisplayManager implements DisplayManagerInterface {
     this.#isAvailable = false;
     this.#displayInformation = undefined;
     // @ts-ignore
-    this.#displayBrightness = undefined;
+    this.#brightness = undefined;
     this.#displayContextCommandBuffers = [];
     this.#isAvailable = false;
 
-    this.#displayContextStateHelper.reset();
+    this.#contextStateHelper.reset();
     this.#colors.length = 0;
     this.#opacities.length = 0;
 

@@ -1,6 +1,13 @@
-import { DisplayBitmap, DisplayBitmapColorPair } from "../DisplayManager.ts";
+import {
+  DisplayBitmap,
+  DisplayBitmapColorPair,
+  DisplayBrightness,
+} from "../DisplayManager.ts";
 import { DisplayContextCommandMessage } from "./DisplayContextCommand.ts";
-import { DisplaySegmentCap } from "./DisplayContextState.ts";
+import {
+  DisplayContextState,
+  DisplaySegmentCap,
+} from "./DisplayContextState.ts";
 import {
   DisplayBitmapScaleDirection,
   DisplayColorRGB,
@@ -9,6 +16,16 @@ import {
 import { Vector2 } from "./MathUtils.ts";
 
 export interface DisplayManagerInterface {
+  get isReady(): boolean;
+
+  get contextState(): DisplayContextState;
+
+  get brightness(): DisplayBrightness;
+  setBrightness(
+    newDisplayBrightness: DisplayBrightness,
+    sendImmediately?: boolean
+  ): Promise<void>;
+
   showDisplay(sendImmediately?: boolean): Promise<void>;
   clearDisplay(sendImmediately?: boolean): Promise<void>;
 
@@ -228,17 +245,19 @@ export interface DisplayManagerInterface {
 
   runContextCommandMessage(
     commandMessage: DisplayContextCommandMessage,
+    position?: Vector2,
     sendImmediately?: boolean
   ): Promise<void>;
-
-  get isReady(): boolean;
 }
 
 export async function runDisplayContextCommand(
   displayManager: DisplayManagerInterface,
   commandMessage: DisplayContextCommandMessage,
+  position?: Vector2,
   sendImmediately?: boolean
 ) {
+  const { x: _x, y: _y } = position || { x: 0, y: 0 };
+
   switch (commandMessage.command) {
     case "show":
       await displayManager.showDisplay(sendImmediately);
@@ -455,13 +474,25 @@ export async function runDisplayContextCommand(
     case "clearRect":
       {
         const { x, y, width, height } = commandMessage;
-        await displayManager.clearRect(x, y, width, height, sendImmediately);
+        await displayManager.clearRect(
+          x + _x,
+          y + _y,
+          width,
+          height,
+          sendImmediately
+        );
       }
       break;
     case "drawRect":
       {
         const { x, y, width, height } = commandMessage;
-        await displayManager.drawRect(x, y, width, height, sendImmediately);
+        await displayManager.drawRect(
+          x + _x,
+          y + _y,
+          width,
+          height,
+          sendImmediately
+        );
       }
       break;
     case "drawRoundRect":
@@ -469,8 +500,8 @@ export async function runDisplayContextCommand(
         const { centerX, centerY, width, height, borderRadius } =
           commandMessage;
         await displayManager.drawRoundRect(
-          centerX,
-          centerY,
+          centerX + _x,
+          centerY + _y,
           width,
           height,
           borderRadius,
@@ -482,8 +513,8 @@ export async function runDisplayContextCommand(
       {
         const { centerX, centerY, radius } = commandMessage;
         await displayManager.drawCircle(
-          centerX,
-          centerY,
+          centerX + _x,
+          centerY + _y,
           radius,
           sendImmediately
         );
@@ -493,8 +524,8 @@ export async function runDisplayContextCommand(
       {
         const { centerX, centerY, radiusX, radiusY } = commandMessage;
         await displayManager.drawEllipse(
-          centerX,
-          centerY,
+          centerX + _x,
+          centerY + _y,
           radiusX,
           radiusY,
           sendImmediately
@@ -505,8 +536,8 @@ export async function runDisplayContextCommand(
       {
         const { centerX, centerY, radius, numberOfSides } = commandMessage;
         await displayManager.drawEllipse(
-          centerX,
-          centerY,
+          centerX + _x,
+          centerY + _y,
           radius,
           numberOfSides,
           sendImmediately
@@ -517,10 +548,10 @@ export async function runDisplayContextCommand(
       {
         const { startX, startY, endX, endY } = commandMessage;
         await displayManager.drawSegment(
-          startX,
-          startY,
-          endX,
-          endY,
+          startX + _x,
+          startY + _y,
+          endX + _x,
+          endY + _y,
           sendImmediately
         );
       }
@@ -528,7 +559,10 @@ export async function runDisplayContextCommand(
     case "drawSegments":
       {
         const { points } = commandMessage;
-        await displayManager.drawSegments(points, sendImmediately);
+        await displayManager.drawSegments(
+          points.map(({ x, y }) => ({ x: x + _x, y: y + _y })),
+          sendImmediately
+        );
       }
       break;
     case "drawArc":
@@ -536,8 +570,8 @@ export async function runDisplayContextCommand(
         const { centerX, centerY, radius, startAngle, angleOffset, isRadians } =
           commandMessage;
         await displayManager.drawArc(
-          centerX,
-          centerY,
+          centerX + _x,
+          centerY + _y,
           radius,
           startAngle,
           angleOffset,
@@ -558,8 +592,8 @@ export async function runDisplayContextCommand(
           isRadians,
         } = commandMessage;
         await displayManager.drawArcEllipse(
-          centerX,
-          centerY,
+          centerX + _x,
+          centerY + _y,
           radiusX,
           radiusY,
           startAngle,
@@ -573,8 +607,8 @@ export async function runDisplayContextCommand(
       {
         const { centerX, centerY, bitmap } = commandMessage;
         await displayManager.drawBitmap(
-          centerX,
-          centerY,
+          centerX + _x,
+          centerY + _y,
           bitmap,
           sendImmediately
         );

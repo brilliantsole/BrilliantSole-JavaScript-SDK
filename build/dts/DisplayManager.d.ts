@@ -86,16 +86,16 @@ declare class DisplayManager implements DisplayManagerInterface {
     constructor();
     sendMessage: SendDisplayMessageCallback;
     eventDispatcher: DisplayEventDispatcher;
-    get waitForEvent(): <T extends "isDisplayAvailable" | "displayStatus" | "displayInformation" | "getDisplayBrightness" | "displayContextState" | "displayColor" | "displayColorOpacity" | "displayOpacity" | "displayReady" | "displayCommand" | "setDisplayBrightness" | "displayContextCommands">(type: T) => Promise<{
+    get waitForEvent(): <T extends "isDisplayAvailable" | "displayStatus" | "displayInformation" | "displayCommand" | "getDisplayBrightness" | "setDisplayBrightness" | "displayContextCommands" | "displayReady" | "displayContextState" | "displayColor" | "displayColorOpacity" | "displayOpacity">(type: T) => Promise<{
         type: T;
         target: Device;
         message: DisplayEventMessages[T];
     }>;
     requestRequiredInformation(): void;
     get isAvailable(): boolean;
-    get displayContextState(): DisplayContextState;
+    get contextState(): DisplayContextState;
     setContextState(newState: PartialDisplayContextState, sendImmediately?: boolean): Promise<void>;
-    get displayStatus(): "asleep" | "awake";
+    get displayStatus(): "awake" | "asleep";
     get isDisplayAwake(): boolean;
     wake(): Promise<void>;
     sleep(): Promise<void>;
@@ -109,9 +109,9 @@ declare class DisplayManager implements DisplayManagerInterface {
         width: number;
         height: number;
     };
-    get type(): "generic" | "none" | "monocularLeft" | "monocularRight" | "binocular";
-    get displayBrightness(): "veryLow" | "low" | "medium" | "high" | "veryHigh";
-    setDisplayBrightness(newDisplayBrightness: DisplayBrightness, sendImmediately?: boolean): Promise<void>;
+    get type(): "none" | "generic" | "monocularLeft" | "monocularRight" | "binocular";
+    get brightness(): "veryLow" | "low" | "medium" | "high" | "veryHigh";
+    setBrightness(newDisplayBrightness: DisplayBrightness, sendImmediately?: boolean): Promise<void>;
     flushDisplayContextCommands(): Promise<void>;
     showDisplay(sendImmediately?: boolean): Promise<void>;
     clearDisplay(sendImmediately?: boolean): Promise<void>;
@@ -178,7 +178,7 @@ declare class DisplayManager implements DisplayManagerInterface {
     }>;
     selectSpriteSheet(index: number, sendImmediately?: boolean): void;
     drawSprite(index: number, x: number, y: number, sendImmediately?: boolean): void;
-    runContextCommandMessage(commandMessage: DisplayContextCommandMessage, sendImmediately?: boolean): Promise<void>;
+    runContextCommandMessage(commandMessage: DisplayContextCommandMessage, position?: Vector2, sendImmediately?: boolean): Promise<void>;
     get isReady(): boolean;
     parseMessage(messageType: DisplayMessageType, dataView: DataView): void;
     clear(): void;

@@ -1,9 +1,13 @@
-import { DisplayBitmap, DisplayBitmapColorPair } from "../DisplayManager.ts";
+import { DisplayBitmap, DisplayBitmapColorPair, DisplayBrightness } from "../DisplayManager.ts";
 import { DisplayContextCommandMessage } from "./DisplayContextCommand.ts";
-import { DisplaySegmentCap } from "./DisplayContextState.ts";
+import { DisplayContextState, DisplaySegmentCap } from "./DisplayContextState.ts";
 import { DisplayBitmapScaleDirection, DisplayColorRGB, DisplayCropDirection } from "./DisplayUtils.ts";
 import { Vector2 } from "./MathUtils.ts";
 export interface DisplayManagerInterface {
+    get isReady(): boolean;
+    get contextState(): DisplayContextState;
+    get brightness(): DisplayBrightness;
+    setBrightness(newDisplayBrightness: DisplayBrightness, sendImmediately?: boolean): Promise<void>;
     showDisplay(sendImmediately?: boolean): Promise<void>;
     clearDisplay(sendImmediately?: boolean): Promise<void>;
     get colors(): string[];
@@ -58,7 +62,6 @@ export interface DisplayManagerInterface {
     drawArc(centerX: number, centerY: number, radius: number, startAngle: number, angleOffset: number, isRadians?: boolean, sendImmediately?: boolean): Promise<void>;
     drawArcEllipse(centerX: number, centerY: number, radiusX: number, radiusY: number, startAngle: number, angleOffset: number, isRadians?: boolean, sendImmediately?: boolean): Promise<void>;
     drawBitmap(centerX: number, centerY: number, bitmap: DisplayBitmap, sendImmediately?: boolean): Promise<void>;
-    runContextCommandMessage(commandMessage: DisplayContextCommandMessage, sendImmediately?: boolean): Promise<void>;
-    get isReady(): boolean;
+    runContextCommandMessage(commandMessage: DisplayContextCommandMessage, position?: Vector2, sendImmediately?: boolean): Promise<void>;
 }
-export declare function runDisplayContextCommand(displayManager: DisplayManagerInterface, commandMessage: DisplayContextCommandMessage, sendImmediately?: boolean): Promise<void>;
+export declare function runDisplayContextCommand(displayManager: DisplayManagerInterface, commandMessage: DisplayContextCommandMessage, position?: Vector2, sendImmediately?: boolean): Promise<void>;

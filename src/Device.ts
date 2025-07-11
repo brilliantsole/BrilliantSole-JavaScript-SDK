@@ -1438,7 +1438,7 @@ class Device {
     return this.#displayManager.isReady;
   }
   get displayContextState() {
-    return this.#displayManager.displayContextState;
+    return this.#displayManager.contextState;
   }
   get displayColors() {
     return this.#displayManager.colors;
@@ -1461,11 +1461,11 @@ class Device {
   }
   get displayBrightness() {
     this.#assertDisplayIsAvailable();
-    return this.#displayManager.displayBrightness;
+    return this.#displayManager.brightness;
   }
   get setDisplayBrightness() {
     this.#assertDisplayIsAvailable();
-    return this.#displayManager.setDisplayBrightness;
+    return this.#displayManager.setBrightness;
   }
 
   get displayInformation() {
