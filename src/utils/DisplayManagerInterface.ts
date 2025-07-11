@@ -26,8 +26,8 @@ export interface DisplayManagerInterface {
     sendImmediately?: boolean
   ): Promise<void>;
 
-  showDisplay(sendImmediately?: boolean): Promise<void>;
-  clearDisplay(sendImmediately?: boolean): Promise<void>;
+  show(sendImmediately?: boolean): Promise<void>;
+  clear(sendImmediately?: boolean): Promise<void>;
 
   get colors(): string[];
   setColor(
@@ -260,10 +260,10 @@ export async function runDisplayContextCommand(
 
   switch (commandMessage.command) {
     case "show":
-      await displayManager.showDisplay(sendImmediately);
+      await displayManager.show(sendImmediately);
       break;
     case "clear":
-      await displayManager.clearDisplay(sendImmediately);
+      await displayManager.clear(sendImmediately);
       break;
     case "saveContext":
       await displayManager.saveContext(sendImmediately);
@@ -485,10 +485,10 @@ export async function runDisplayContextCommand(
       break;
     case "drawRect":
       {
-        const { x, y, width, height } = commandMessage;
+        const { centerX, centerY, width, height } = commandMessage;
         await displayManager.drawRect(
-          x + _x,
-          y + _y,
+          centerX + _x,
+          centerY + _y,
           width,
           height,
           sendImmediately

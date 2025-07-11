@@ -8,8 +8,8 @@ export interface DisplayManagerInterface {
     get contextState(): DisplayContextState;
     get brightness(): DisplayBrightness;
     setBrightness(newDisplayBrightness: DisplayBrightness, sendImmediately?: boolean): Promise<void>;
-    showDisplay(sendImmediately?: boolean): Promise<void>;
-    clearDisplay(sendImmediately?: boolean): Promise<void>;
+    show(sendImmediately?: boolean): Promise<void>;
+    clear(sendImmediately?: boolean): Promise<void>;
     get colors(): string[];
     setColor(colorIndex: number, color: DisplayColorRGB | string, sendImmediately?: boolean): Promise<void>;
     get opacities(): number[];

@@ -1,6 +1,9 @@
 import { DisplayBitmap, DisplayBitmapColorPair } from "../DisplayManager.ts";
 import { createConsole } from "./Console.ts";
-import { DisplaySegmentCap } from "./DisplayContextState.ts";
+import {
+  DisplayContextState,
+  DisplaySegmentCap,
+} from "./DisplayContextState.ts";
 import { DisplayColorRGB } from "./DisplayUtils.ts";
 import { Vector2 } from "./MathUtils.ts";
 
@@ -72,6 +75,7 @@ export type DisplayContextCommand = (typeof DisplayContextCommands)[number];
 
 interface BaseDisplayContextCommandMessage {
   command: DisplayContextCommand;
+  contextState: DisplayContextState;
 }
 
 interface SimpleDisplayCommandMessage extends BaseDisplayContextCommandMessage {
@@ -248,7 +252,7 @@ interface BaseDisplayRectCommandMessage
   extends BasePositionDisplayContextCommandMessage,
     BaseSizeDisplayContextCommandMessage {}
 interface BaseDisplayCenterRectCommandMessage
-  extends BasePositionDisplayContextCommandMessage,
+  extends BaseCenterPositionDisplayContextCommandMessage,
     BaseSizeDisplayContextCommandMessage {}
 
 interface ClearDisplayRectCommandMessage extends BaseDisplayRectCommandMessage {

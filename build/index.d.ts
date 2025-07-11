@@ -176,6 +176,7 @@ declare const DisplayContextCommands: readonly ["show", "clear", "setColor", "se
 type DisplayContextCommand = (typeof DisplayContextCommands)[number];
 interface BaseDisplayContextCommandMessage {
     command: DisplayContextCommand;
+    contextState: DisplayContextState;
 }
 interface SimpleDisplayCommandMessage extends BaseDisplayContextCommandMessage {
     command: "show" | "clear" | "saveContext" | "restoreContext" | "clearRotation" | "clearCrop" | "clearRotationCrop" | "resetBitmapScale";
@@ -302,7 +303,7 @@ interface BaseSizeDisplayContextCommandMessage extends BaseDisplayContextCommand
 }
 interface BaseDisplayRectCommandMessage extends BasePositionDisplayContextCommandMessage, BaseSizeDisplayContextCommandMessage {
 }
-interface BaseDisplayCenterRectCommandMessage extends BasePositionDisplayContextCommandMessage, BaseSizeDisplayContextCommandMessage {
+interface BaseDisplayCenterRectCommandMessage extends BaseCenterPositionDisplayContextCommandMessage, BaseSizeDisplayContextCommandMessage {
 }
 interface ClearDisplayRectCommandMessage extends BaseDisplayRectCommandMessage {
     command: "clearRect";
@@ -367,8 +368,8 @@ interface DisplayManagerInterface {
     get contextState(): DisplayContextState;
     get brightness(): DisplayBrightness;
     setBrightness(newDisplayBrightness: DisplayBrightness, sendImmediately?: boolean): Promise<void>;
-    showDisplay(sendImmediately?: boolean): Promise<void>;
-    clearDisplay(sendImmediately?: boolean): Promise<void>;
+    show(sendImmediately?: boolean): Promise<void>;
+    clear(sendImmediately?: boolean): Promise<void>;
     get colors(): string[];
     setColor(colorIndex: number, color: DisplayColorRGB | string, sendImmediately?: boolean): Promise<void>;
     get opacities(): number[];
@@ -1443,11 +1444,11 @@ declare class DisplayCanvasHelper implements DisplayManagerInterface {
     get colors(): string[];
     get opacities(): number[];
     get contextState(): DisplayContextState;
-    showDisplay(sendImmediately?: boolean): Promise<void>;
+    show(sendImmediately?: boolean): Promise<void>;
     get interval(): number;
     set interval(newInterval: number);
     get isReady(): boolean;
-    clearDisplay(sendImmediately?: boolean): Promise<void>;
+    clear(sendImmediately?: boolean): Promise<void>;
     setColor(colorIndex: number, color: DisplayColorRGB | string, sendImmediately?: boolean): Promise<void>;
     setColorOpacity(colorIndex: number, opacity: number, sendImmediately?: boolean): Promise<void>;
     setOpacity(opacity: number, sendImmediately?: boolean): Promise<void>;

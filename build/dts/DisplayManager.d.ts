@@ -113,8 +113,8 @@ declare class DisplayManager implements DisplayManagerInterface {
     get brightness(): "veryLow" | "low" | "medium" | "high" | "veryHigh";
     setBrightness(newDisplayBrightness: DisplayBrightness, sendImmediately?: boolean): Promise<void>;
     flushDisplayContextCommands(): Promise<void>;
-    showDisplay(sendImmediately?: boolean): Promise<void>;
-    clearDisplay(sendImmediately?: boolean): Promise<void>;
+    show(sendImmediately?: boolean): Promise<void>;
+    clear(sendImmediately?: boolean): Promise<void>;
     get colors(): string[];
     setColor(colorIndex: number, color: DisplayColorRGB | string, sendImmediately?: boolean): Promise<void>;
     get opacities(): number[];
@@ -181,7 +181,7 @@ declare class DisplayManager implements DisplayManagerInterface {
     runContextCommandMessage(commandMessage: DisplayContextCommandMessage, position?: Vector2, sendImmediately?: boolean): Promise<void>;
     get isReady(): boolean;
     parseMessage(messageType: DisplayMessageType, dataView: DataView): void;
-    clear(): void;
+    reset(): void;
     get mtu(): number;
     set mtu(newMtu: number);
 }

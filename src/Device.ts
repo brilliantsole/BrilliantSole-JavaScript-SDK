@@ -747,7 +747,7 @@ class Device {
     this.#wifiManager.clear();
     this.#cameraManager.clear();
     this.#microphoneManager.clear();
-    this.#displayManager.clear();
+    this.#displayManager.reset();
   }
   #clearConnection() {
     this.connectionManager?.clear();
@@ -1496,11 +1496,11 @@ class Device {
 
   get showDisplay() {
     this.#assertDisplayIsAvailable();
-    return this.#displayManager.showDisplay;
+    return this.#displayManager.show;
   }
   get clearDisplay() {
     this.#assertDisplayIsAvailable();
-    return this.#displayManager.clearDisplay;
+    return this.#displayManager.clear;
   }
 
   get setDisplayColor() {

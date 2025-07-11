@@ -4178,10 +4178,10 @@ async function runDisplayContextCommand(displayManager, commandMessage, position
     const { x: _x, y: _y } = position || { x: 0, y: 0 };
     switch (commandMessage.command) {
         case "show":
-            await displayManager.showDisplay(sendImmediately);
+            await displayManager.show(sendImmediately);
             break;
         case "clear":
-            await displayManager.clearDisplay(sendImmediately);
+            await displayManager.clear(sendImmediately);
             break;
         case "saveContext":
             await displayManager.saveContext(sendImmediately);
@@ -4365,8 +4365,8 @@ async function runDisplayContextCommand(displayManager, commandMessage, position
             break;
         case "drawRect":
             {
-                const { x, y, width, height } = commandMessage;
-                await displayManager.drawRect(x + _x, y + _y, width, height, sendImmediately);
+                const { centerX, centerY, width, height } = commandMessage;
+                await displayManager.drawRect(centerX + _x, centerY + _y, width, height, sendImmediately);
             }
             break;
         case "drawRoundRect":
@@ -4651,12 +4651,12 @@ class DisplayManager {
     async flushDisplayContextCommands() {
         await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommands).call(this);
     }
-    async showDisplay(sendImmediately = true) {
+    async show(sendImmediately = true) {
         _console$o.log("showDisplay");
         __classPrivateFieldSet(this, _DisplayManager_isReady, false, "f");
         await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "show", undefined, sendImmediately);
     }
-    async clearDisplay(sendImmediately = true) {
+    async clear(sendImmediately = true) {
         _console$o.log("clearDisplay");
         __classPrivateFieldSet(this, _DisplayManager_isReady, false, "f");
         await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "clear", undefined, sendImmediately);
@@ -5225,7 +5225,7 @@ class DisplayManager {
                 throw Error(`uncaught messageType ${messageType}`);
         }
     }
-    clear() {
+    reset() {
         _console$o.log("clearing displayManager");
         __classPrivateFieldSet(this, _DisplayManager_displayStatus, undefined, "f");
         __classPrivateFieldSet(this, _DisplayManager_isAvailable, false, "f");
@@ -8646,11 +8646,11 @@ class Device {
     }
     get showDisplay() {
         __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertDisplayIsAvailable).call(this);
-        return __classPrivateFieldGet(this, _Device_displayManager, "f").showDisplay;
+        return __classPrivateFieldGet(this, _Device_displayManager, "f").show;
     }
     get clearDisplay() {
         __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertDisplayIsAvailable).call(this);
-        return __classPrivateFieldGet(this, _Device_displayManager, "f").clearDisplay;
+        return __classPrivateFieldGet(this, _Device_displayManager, "f").clear;
     }
     get setDisplayColor() {
         __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertDisplayIsAvailable).call(this);
@@ -8968,7 +8968,7 @@ _a$3 = Device, _Device_eventDispatcher = new WeakMap(), _Device_connectionManage
     __classPrivateFieldGet(this, _Device_wifiManager, "f").clear();
     __classPrivateFieldGet(this, _Device_cameraManager, "f").clear();
     __classPrivateFieldGet(this, _Device_microphoneManager, "f").clear();
-    __classPrivateFieldGet(this, _Device_displayManager, "f").clear();
+    __classPrivateFieldGet(this, _Device_displayManager, "f").reset();
 }, _Device_clearConnection = function _Device_clearConnection() {
     this.connectionManager?.clear();
     this.latestConnectionMessages.clear();

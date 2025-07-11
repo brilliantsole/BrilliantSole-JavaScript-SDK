@@ -1,11 +1,12 @@
 import { DisplayBitmap, DisplayBitmapColorPair } from "../DisplayManager.ts";
-import { DisplaySegmentCap } from "./DisplayContextState.ts";
+import { DisplayContextState, DisplaySegmentCap } from "./DisplayContextState.ts";
 import { DisplayColorRGB } from "./DisplayUtils.ts";
 import { Vector2 } from "./MathUtils.ts";
 export declare const DisplayContextCommands: readonly ["show", "clear", "setColor", "setColorOpacity", "setOpacity", "saveContext", "restoreContext", "selectFillColor", "selectLineColor", "setLineWidth", "setRotation", "clearRotation", "setSegmentStartCap", "setSegmentEndCap", "setSegmentCap", "setSegmentStartRadius", "setSegmentEndRadius", "setSegmentRadius", "setCropTop", "setCropRight", "setCropBottom", "setCropLeft", "clearCrop", "setRotationCropTop", "setRotationCropRight", "setRotationCropBottom", "setRotationCropLeft", "clearRotationCrop", "selectBitmapColor", "selectBitmapColors", "setBitmapScaleX", "setBitmapScaleY", "setBitmapScale", "resetBitmapScale", "clearRect", "drawRect", "drawRoundRect", "drawCircle", "drawEllipse", "drawPolygon", "drawSegment", "drawSegments", "drawArc", "drawArcEllipse", "drawBitmap", "selectSpriteSheet", "drawSprite"];
 export type DisplayContextCommand = (typeof DisplayContextCommands)[number];
 interface BaseDisplayContextCommandMessage {
     command: DisplayContextCommand;
+    contextState: DisplayContextState;
 }
 interface SimpleDisplayCommandMessage extends BaseDisplayContextCommandMessage {
     command: "show" | "clear" | "saveContext" | "restoreContext" | "clearRotation" | "clearCrop" | "clearRotationCrop" | "resetBitmapScale";
@@ -132,7 +133,7 @@ interface BaseSizeDisplayContextCommandMessage extends BaseDisplayContextCommand
 }
 interface BaseDisplayRectCommandMessage extends BasePositionDisplayContextCommandMessage, BaseSizeDisplayContextCommandMessage {
 }
-interface BaseDisplayCenterRectCommandMessage extends BasePositionDisplayContextCommandMessage, BaseSizeDisplayContextCommandMessage {
+interface BaseDisplayCenterRectCommandMessage extends BaseCenterPositionDisplayContextCommandMessage, BaseSizeDisplayContextCommandMessage {
 }
 interface ClearDisplayRectCommandMessage extends BaseDisplayRectCommandMessage {
     command: "clearRect";

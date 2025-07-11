@@ -225,7 +225,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
 
     this.#dispatchEvent("resize", { width: this.width, height: this.height });
 
-    this.clearDisplay();
+    this.clear();
   }
 
   // CONTEXT STACK
@@ -452,7 +452,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     this.device?.setDisplayContextState(this.contextState, sendImmediately);
   }
 
-  async showDisplay(sendImmediately = true) {
+  async show(sendImmediately = true) {
     _console.log("showDisplay");
 
     this.#frontDrawStack = this.#rearDrawStack.slice();
@@ -484,7 +484,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     return this.#isReady;
   }
 
-  async clearDisplay(sendImmediately = true) {
+  async clear(sendImmediately = true) {
     _console.log("clearDisplay");
 
     this.#frontDrawStack.length = 0;

@@ -669,7 +669,7 @@ window.test = (centerX, centerY, width, height) => {
   //displayCanvasHelper.drawSegment(50, 50, 75, 100);
   displayCanvasHelper.drawSegment(50, 50, 300, 50);
   //displayCanvasHelper.drawSegment(centerX, centerY, 300, 300);
-  displayCanvasHelper.showDisplay();
+  displayCanvasHelper.show();
 };
 
 // SAMPLE ANIMATION LOOP
@@ -1306,7 +1306,7 @@ const draw = async () => {
     await drawCheek("right", center);
   }
 
-  await ctx.showDisplay();
+  await ctx.show();
 };
 function easeInOut(t) {
   return t * t * (3 - 2 * t);
@@ -2252,4 +2252,4 @@ displayCanvasHelper.drawBitmap(50, 50, {
   height: 10,
   numberOfColors: 3,
 });
-displayCanvasHelper.showDisplay();
+displayCanvasHelper.show();

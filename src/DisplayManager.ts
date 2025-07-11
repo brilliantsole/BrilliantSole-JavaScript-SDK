@@ -598,12 +598,12 @@ class DisplayManager implements DisplayManagerInterface {
   async flushDisplayContextCommands() {
     await this.#sendDisplayContextCommands();
   }
-  async showDisplay(sendImmediately = true) {
+  async show(sendImmediately = true) {
     _console.log("showDisplay");
     this.#isReady = false;
     await this.#sendDisplayContextCommand("show", undefined, sendImmediately);
   }
-  async clearDisplay(sendImmediately = true) {
+  async clear(sendImmediately = true) {
     _console.log("clearDisplay");
     this.#isReady = false;
     await this.#sendDisplayContextCommand("clear", undefined, sendImmediately);
@@ -1611,7 +1611,7 @@ class DisplayManager implements DisplayManagerInterface {
     }
   }
 
-  clear() {
+  reset() {
     _console.log("clearing displayManager");
     // @ts-ignore
     this.#displayStatus = undefined;
