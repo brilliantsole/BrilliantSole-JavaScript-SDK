@@ -4883,12 +4883,261 @@ const DisplayContextCommands = [
     "drawArcEllipse",
     "drawBitmap",
     "selectSpriteSheet",
-    "sprite",
-    "selectFont",
-    "drawText",
+    "drawSprite",
 ];
 
-var _DisplayManager_instances, _DisplayManager_dispatchEvent_get, _DisplayManager_isDisplayAvailable, _DisplayManager_assertDisplayIsAvailable, _DisplayManager_parseIsDisplayAvailable, _DisplayManager_displayContextStateHelper, _DisplayManager_onDisplayContextStateUpdate, _DisplayManager_displayStatus, _DisplayManager_parseDisplayStatus, _DisplayManager_updateDisplayStatus, _DisplayManager_sendDisplayCommand, _DisplayManager_assertIsAwake, _DisplayManager_assertIsNotAwake, _DisplayManager_displayInformation, _DisplayManager_parseDisplayInformation, _DisplayManager_displayBrightness, _DisplayManager_parseDisplayBrightness, _DisplayManager_assertValidDisplayContextCommand, _DisplayManager_maxCommandDataLength_get, _DisplayManager_displayContextCommandBuffers, _DisplayManager_sendDisplayContextCommand, _DisplayManager_sendDisplayContextCommands, _DisplayManager_assertValidColorIndex, _DisplayManager_colors, _DisplayManager_opacities, _DisplayManager_assertValidLineWidth, _DisplayManager_clampBox, _DisplayManager_assertValidNumberOfColors, _DisplayManager_assertValidBitmap, _DisplayManager_getBitmapData, _DisplayManager_drawBitmapHeaderLength_get, _DisplayManager_isDisplayReady, _DisplayManager_parseDisplayReady, _DisplayManager_mtu;
+async function runDisplayContextCommand(displayManager, commandMessage, sendImmediately) {
+    switch (commandMessage.command) {
+        case "show":
+            await displayManager.showDisplay(sendImmediately);
+            break;
+        case "clear":
+            await displayManager.clearDisplay(sendImmediately);
+            break;
+        case "saveContext":
+            await displayManager.saveContext(sendImmediately);
+            break;
+        case "restoreContext":
+            await displayManager.restoreContext(sendImmediately);
+            break;
+        case "clearRotation":
+            await displayManager.clearRotation(sendImmediately);
+            break;
+        case "clearCrop":
+            await displayManager.clearCrop(sendImmediately);
+            break;
+        case "clearRotationCrop":
+            await displayManager.clearRotationCrop(sendImmediately);
+            break;
+        case "resetBitmapScale":
+            await displayManager.resetBitmapScale(sendImmediately);
+            break;
+        case "setColor":
+            {
+                const { colorIndex, color } = commandMessage;
+                await displayManager.setColor(colorIndex, color, sendImmediately);
+            }
+            break;
+        case "setColorOpacity":
+            {
+                const { colorIndex, opacity } = commandMessage;
+                await displayManager.setColorOpacity(colorIndex, opacity, sendImmediately);
+            }
+            break;
+        case "setOpacity":
+            {
+                const { opacity } = commandMessage;
+                await displayManager.setOpacity(opacity, sendImmediately);
+            }
+            break;
+        case "selectFillColor":
+            {
+                const { fillColorIndex } = commandMessage;
+                await displayManager.selectFillColor(fillColorIndex, sendImmediately);
+            }
+            break;
+        case "selectLineColor":
+            {
+                const { lineColorIndex } = commandMessage;
+                await displayManager.selectLineColor(lineColorIndex, sendImmediately);
+            }
+            break;
+        case "setLineWidth":
+            {
+                const { lineWidth } = commandMessage;
+                await displayManager.setLineWidth(lineWidth, sendImmediately);
+            }
+            break;
+        case "setRotation":
+            {
+                const { rotation, isRadians } = commandMessage;
+                await displayManager.setRotation(rotation, isRadians, sendImmediately);
+            }
+            break;
+        case "setSegmentStartCap":
+            {
+                const { segmentStartCap } = commandMessage;
+                await displayManager.setSegmentStartCap(segmentStartCap, sendImmediately);
+            }
+            break;
+        case "setSegmentEndCap":
+            {
+                const { segmentEndCap } = commandMessage;
+                await displayManager.setSegmentEndCap(segmentEndCap, sendImmediately);
+            }
+            break;
+        case "setSegmentCap":
+            {
+                const { segmentCap } = commandMessage;
+                await displayManager.setSegmentCap(segmentCap, sendImmediately);
+            }
+            break;
+        case "setSegmentStartRadius":
+            {
+                const { segmentStartRadius } = commandMessage;
+                await displayManager.setSegmentStartRadius(segmentStartRadius, sendImmediately);
+            }
+            break;
+        case "setSegmentEndRadius":
+            {
+                const { segmentEndRadius } = commandMessage;
+                await displayManager.setSegmentEndRadius(segmentEndRadius, sendImmediately);
+            }
+            break;
+        case "setSegmentRadius":
+            {
+                const { segmentRadius } = commandMessage;
+                await displayManager.setSegmentRadius(segmentRadius, sendImmediately);
+            }
+            break;
+        case "setCropTop":
+            {
+                const { cropTop } = commandMessage;
+                await displayManager.setCropTop(cropTop, sendImmediately);
+            }
+            break;
+        case "setCropRight":
+            {
+                const { cropRight } = commandMessage;
+                await displayManager.setCropRight(cropRight, sendImmediately);
+            }
+            break;
+        case "setCropBottom":
+            {
+                const { cropBottom } = commandMessage;
+                await displayManager.setCropBottom(cropBottom, sendImmediately);
+            }
+            break;
+        case "setCropLeft":
+            {
+                const { cropLeft } = commandMessage;
+                await displayManager.setCropLeft(cropLeft, sendImmediately);
+            }
+            break;
+        case "setRotationCropTop":
+            {
+                const { rotationCropTop } = commandMessage;
+                await displayManager.setRotationCropTop(rotationCropTop, sendImmediately);
+            }
+            break;
+        case "setRotationCropRight":
+            {
+                const { rotationCropRight } = commandMessage;
+                await displayManager.setRotationCropRight(rotationCropRight, sendImmediately);
+            }
+            break;
+        case "setRotationCropBottom":
+            {
+                const { rotationCropBottom } = commandMessage;
+                await displayManager.setRotationCropBottom(rotationCropBottom, sendImmediately);
+            }
+            break;
+        case "setRotationCropLeft":
+            {
+                const { rotationCropLeft } = commandMessage;
+                await displayManager.setRotationCropLeft(rotationCropLeft, sendImmediately);
+            }
+            break;
+        case "selectBitmapColor":
+            {
+                const { bitmapColorIndex, colorIndex } = commandMessage;
+                await displayManager.selectBitmapColor(bitmapColorIndex, colorIndex, sendImmediately);
+            }
+            break;
+        case "selectBitmapColors":
+            {
+                const { bitmapColorPairs } = commandMessage;
+                await displayManager.selectBitmapColors(bitmapColorPairs, sendImmediately);
+            }
+            break;
+        case "setBitmapScaleX":
+            {
+                const { bitmapScaleX } = commandMessage;
+                await displayManager.setBitmapScaleX(bitmapScaleX, sendImmediately);
+            }
+            break;
+        case "setBitmapScaleY":
+            {
+                const { bitmapScaleY } = commandMessage;
+                await displayManager.setBitmapScaleY(bitmapScaleY, sendImmediately);
+            }
+            break;
+        case "setBitmapScale":
+            {
+                const { bitmapScale } = commandMessage;
+                await displayManager.setBitmapScale(bitmapScale, sendImmediately);
+            }
+            break;
+        case "clearRect":
+            {
+                const { x, y, width, height } = commandMessage;
+                await displayManager.clearRect(x, y, width, height, sendImmediately);
+            }
+            break;
+        case "drawRect":
+            {
+                const { x, y, width, height } = commandMessage;
+                await displayManager.drawRect(x, y, width, height, sendImmediately);
+            }
+            break;
+        case "drawRoundRect":
+            {
+                const { centerX, centerY, width, height, borderRadius } = commandMessage;
+                await displayManager.drawRoundRect(centerX, centerY, width, height, borderRadius, sendImmediately);
+            }
+            break;
+        case "drawCircle":
+            {
+                const { centerX, centerY, radius } = commandMessage;
+                await displayManager.drawCircle(centerX, centerY, radius, sendImmediately);
+            }
+            break;
+        case "drawEllipse":
+            {
+                const { centerX, centerY, radiusX, radiusY } = commandMessage;
+                await displayManager.drawEllipse(centerX, centerY, radiusX, radiusY, sendImmediately);
+            }
+            break;
+        case "drawPolygon":
+            {
+                const { centerX, centerY, radius, numberOfSides } = commandMessage;
+                await displayManager.drawEllipse(centerX, centerY, radius, numberOfSides, sendImmediately);
+            }
+            break;
+        case "drawSegment":
+            {
+                const { startX, startY, endX, endY } = commandMessage;
+                await displayManager.drawSegment(startX, startY, endX, endY, sendImmediately);
+            }
+            break;
+        case "drawSegments":
+            {
+                const { points } = commandMessage;
+                await displayManager.drawSegments(points, sendImmediately);
+            }
+            break;
+        case "drawArc":
+            {
+                const { centerX, centerY, radius, startAngle, angleOffset, isRadians } = commandMessage;
+                await displayManager.drawArc(centerX, centerY, radius, startAngle, angleOffset, isRadians, sendImmediately);
+            }
+            break;
+        case "drawArcEllipse":
+            {
+                const { centerX, centerY, radiusX, radiusY, startAngle, angleOffset, isRadians, } = commandMessage;
+                await displayManager.drawArcEllipse(centerX, centerY, radiusX, radiusY, startAngle, angleOffset, isRadians, sendImmediately);
+            }
+            break;
+        case "drawBitmap":
+            {
+                const { centerX, centerY, bitmap } = commandMessage;
+                await displayManager.drawBitmap(centerX, centerY, bitmap, sendImmediately);
+            }
+            break;
+    }
+}
+
+var _DisplayManager_instances, _DisplayManager_dispatchEvent_get, _DisplayManager_isAvailable, _DisplayManager_assertDisplayIsAvailable, _DisplayManager_parseIsDisplayAvailable, _DisplayManager_displayContextStateHelper, _DisplayManager_onDisplayContextStateUpdate, _DisplayManager_displayStatus, _DisplayManager_parseDisplayStatus, _DisplayManager_updateDisplayStatus, _DisplayManager_sendDisplayCommand, _DisplayManager_assertIsAwake, _DisplayManager_assertIsNotAwake, _DisplayManager_displayInformation, _DisplayManager_parseDisplayInformation, _DisplayManager_displayBrightness, _DisplayManager_parseDisplayBrightness, _DisplayManager_assertValidDisplayContextCommand, _DisplayManager_maxCommandDataLength_get, _DisplayManager_displayContextCommandBuffers, _DisplayManager_sendDisplayContextCommand, _DisplayManager_sendDisplayContextCommands, _DisplayManager_assertValidColorIndex, _DisplayManager_colors, _DisplayManager_opacities, _DisplayManager_assertValidLineWidth, _DisplayManager_clampBox, _DisplayManager_assertValidNumberOfColors, _DisplayManager_assertValidBitmap, _DisplayManager_getBitmapData, _DisplayManager_drawBitmapHeaderLength_get, _DisplayManager_isReady, _DisplayManager_parseDisplayReady, _DisplayManager_mtu;
 const _console$j = createConsole("DisplayManager", { log: true });
 const DefaultNumberOfDisplayColors = 16;
 const DisplayCommands = ["sleep", "wake"];
@@ -4944,7 +5193,7 @@ const DisplayEventTypes = [
 class DisplayManager {
     constructor() {
         _DisplayManager_instances.add(this);
-        _DisplayManager_isDisplayAvailable.set(this, false);
+        _DisplayManager_isAvailable.set(this, false);
         _DisplayManager_displayContextStateHelper.set(this, new DisplayContextStateHelper());
         _DisplayManager_displayStatus.set(this, void 0);
         _DisplayManager_displayInformation.set(this, void 0);
@@ -4952,7 +5201,7 @@ class DisplayManager {
         _DisplayManager_displayContextCommandBuffers.set(this, []);
         _DisplayManager_colors.set(this, []);
         _DisplayManager_opacities.set(this, []);
-        _DisplayManager_isDisplayReady.set(this, true);
+        _DisplayManager_isReady.set(this, true);
         _DisplayManager_mtu.set(this, void 0);
         autoBind(this);
     }
@@ -4966,8 +5215,8 @@ class DisplayManager {
         }));
         this.sendMessage(messages, false);
     }
-    get isDisplayAvailable() {
-        return __classPrivateFieldGet(this, _DisplayManager_isDisplayAvailable, "f");
+    get isAvailable() {
+        return __classPrivateFieldGet(this, _DisplayManager_isAvailable, "f");
     }
     get displayContextState() {
         return __classPrivateFieldGet(this, _DisplayManager_displayContextStateHelper, "f").state;
@@ -5032,7 +5281,7 @@ class DisplayManager {
                     newState.bitmapColorIndices.forEach((colorIndex, bitmapColorIndex) => {
                         bitmapColors.push({ bitmapColorIndex, colorIndex });
                     });
-                    this.selectBitmapColorIndices(bitmapColors);
+                    this.selectBitmapColors(bitmapColors);
                     break;
                 case "bitmapScaleX":
                     this.setBitmapScaleX(newState.bitmapScaleX);
@@ -5115,12 +5364,12 @@ class DisplayManager {
     }
     async showDisplay(sendImmediately = true) {
         _console$j.log("showDisplay");
-        __classPrivateFieldSet(this, _DisplayManager_isDisplayReady, false, "f");
+        __classPrivateFieldSet(this, _DisplayManager_isReady, false, "f");
         await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "show", undefined, sendImmediately);
     }
     async clearDisplay(sendImmediately = true) {
         _console$j.log("clearDisplay");
-        __classPrivateFieldSet(this, _DisplayManager_isDisplayReady, false, "f");
+        __classPrivateFieldSet(this, _DisplayManager_isReady, false, "f");
         await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "clear", undefined, sendImmediately);
     }
     get colors() {
@@ -5413,7 +5662,7 @@ class DisplayManager {
         await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "clearRotationCrop", undefined, sendImmediately);
         __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_onDisplayContextStateUpdate).call(this, differences);
     }
-    async selectBitmapColorIndex(bitmapColorIndex, colorIndex, sendImmediately) {
+    async selectBitmapColor(bitmapColorIndex, colorIndex, sendImmediately) {
         __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_assertValidColorIndex).call(this, bitmapColorIndex);
         __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_assertValidColorIndex).call(this, colorIndex);
         const bitmapColorIndices = this.displayContextState.bitmapColorIndices.slice();
@@ -5436,10 +5685,10 @@ class DisplayManager {
     get bitmapColors() {
         return this.bitmapColorIndices.map((colorIndex) => this.colors[colorIndex]);
     }
-    async selectBitmapColorIndices(bitmapColors, sendImmediately) {
-        _console$j.assertRangeWithError("bitmapColors", bitmapColors.length, 1, this.numberOfColors);
+    async selectBitmapColors(bitmapColorPairs, sendImmediately) {
+        _console$j.assertRangeWithError("bitmapColors", bitmapColorPairs.length, 1, this.numberOfColors);
         const bitmapColorIndices = this.displayContextState.bitmapColorIndices.slice();
-        bitmapColors.forEach(({ bitmapColorIndex, colorIndex }) => {
+        bitmapColorPairs.forEach(({ bitmapColorIndex, colorIndex }) => {
             __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_assertValidColorIndex).call(this, bitmapColorIndex);
             __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_assertValidColorIndex).call(this, colorIndex);
             bitmapColorIndices[bitmapColorIndex] = colorIndex;
@@ -5450,10 +5699,10 @@ class DisplayManager {
         if (differences.length == 0) {
             return;
         }
-        const dataView = new DataView(new ArrayBuffer(bitmapColors.length * 2 + 1));
+        const dataView = new DataView(new ArrayBuffer(bitmapColorPairs.length * 2 + 1));
         let offset = 0;
-        dataView.setUint8(offset++, bitmapColors.length);
-        bitmapColors.forEach(({ bitmapColorIndex, colorIndex }, index) => {
+        dataView.setUint8(offset++, bitmapColorPairs.length);
+        bitmapColorPairs.forEach(({ bitmapColorIndex, colorIndex }, index) => {
             dataView.setUint8(offset, bitmapColorIndex);
             dataView.setUint8(offset + 1, colorIndex);
             offset += 2;
@@ -5658,8 +5907,11 @@ class DisplayManager {
     }
     drawSprite(index, x, y, sendImmediately) {
     }
-    get isDisplayReady() {
-        return this.isDisplayAvailable && __classPrivateFieldGet(this, _DisplayManager_isDisplayReady, "f");
+    async runContextCommandMessage(commandMessage, sendImmediately) {
+        return runDisplayContextCommand(this, commandMessage, sendImmediately);
+    }
+    get isReady() {
+        return this.isAvailable && __classPrivateFieldGet(this, _DisplayManager_isReady, "f");
     }
     parseMessage(messageType, dataView) {
         _console$j.log({ messageType, dataView });
@@ -5687,15 +5939,15 @@ class DisplayManager {
     clear() {
         _console$j.log("clearing displayManager");
         __classPrivateFieldSet(this, _DisplayManager_displayStatus, undefined, "f");
-        __classPrivateFieldSet(this, _DisplayManager_isDisplayAvailable, false, "f");
+        __classPrivateFieldSet(this, _DisplayManager_isAvailable, false, "f");
         __classPrivateFieldSet(this, _DisplayManager_displayInformation, undefined, "f");
         __classPrivateFieldSet(this, _DisplayManager_displayBrightness, undefined, "f");
         __classPrivateFieldSet(this, _DisplayManager_displayContextCommandBuffers, [], "f");
-        __classPrivateFieldSet(this, _DisplayManager_isDisplayAvailable, false, "f");
+        __classPrivateFieldSet(this, _DisplayManager_isAvailable, false, "f");
         __classPrivateFieldGet(this, _DisplayManager_displayContextStateHelper, "f").reset();
         __classPrivateFieldGet(this, _DisplayManager_colors, "f").length = 0;
         __classPrivateFieldGet(this, _DisplayManager_opacities, "f").length = 0;
-        __classPrivateFieldSet(this, _DisplayManager_isDisplayReady, true, "f");
+        __classPrivateFieldSet(this, _DisplayManager_isReady, true, "f");
     }
     get mtu() {
         return __classPrivateFieldGet(this, _DisplayManager_mtu, "f");
@@ -5704,16 +5956,16 @@ class DisplayManager {
         __classPrivateFieldSet(this, _DisplayManager_mtu, newMtu, "f");
     }
 }
-_DisplayManager_isDisplayAvailable = new WeakMap(), _DisplayManager_displayContextStateHelper = new WeakMap(), _DisplayManager_displayStatus = new WeakMap(), _DisplayManager_displayInformation = new WeakMap(), _DisplayManager_displayBrightness = new WeakMap(), _DisplayManager_displayContextCommandBuffers = new WeakMap(), _DisplayManager_colors = new WeakMap(), _DisplayManager_opacities = new WeakMap(), _DisplayManager_isDisplayReady = new WeakMap(), _DisplayManager_mtu = new WeakMap(), _DisplayManager_instances = new WeakSet(), _DisplayManager_dispatchEvent_get = function _DisplayManager_dispatchEvent_get() {
+_DisplayManager_isAvailable = new WeakMap(), _DisplayManager_displayContextStateHelper = new WeakMap(), _DisplayManager_displayStatus = new WeakMap(), _DisplayManager_displayInformation = new WeakMap(), _DisplayManager_displayBrightness = new WeakMap(), _DisplayManager_displayContextCommandBuffers = new WeakMap(), _DisplayManager_colors = new WeakMap(), _DisplayManager_opacities = new WeakMap(), _DisplayManager_isReady = new WeakMap(), _DisplayManager_mtu = new WeakMap(), _DisplayManager_instances = new WeakSet(), _DisplayManager_dispatchEvent_get = function _DisplayManager_dispatchEvent_get() {
     return this.eventDispatcher.dispatchEvent;
 }, _DisplayManager_assertDisplayIsAvailable = function _DisplayManager_assertDisplayIsAvailable() {
-    _console$j.assertWithError(__classPrivateFieldGet(this, _DisplayManager_isDisplayAvailable, "f"), "display is not available");
+    _console$j.assertWithError(__classPrivateFieldGet(this, _DisplayManager_isAvailable, "f"), "display is not available");
 }, _DisplayManager_parseIsDisplayAvailable = function _DisplayManager_parseIsDisplayAvailable(dataView) {
     const newIsDisplayAvailable = dataView.getUint8(0) == 1;
-    __classPrivateFieldSet(this, _DisplayManager_isDisplayAvailable, newIsDisplayAvailable, "f");
-    _console$j.log({ isDisplayAvailable: __classPrivateFieldGet(this, _DisplayManager_isDisplayAvailable, "f") });
+    __classPrivateFieldSet(this, _DisplayManager_isAvailable, newIsDisplayAvailable, "f");
+    _console$j.log({ isDisplayAvailable: __classPrivateFieldGet(this, _DisplayManager_isAvailable, "f") });
     __classPrivateFieldGet(this, _DisplayManager_instances, "a", _DisplayManager_dispatchEvent_get).call(this, "isDisplayAvailable", {
-        isDisplayAvailable: __classPrivateFieldGet(this, _DisplayManager_isDisplayAvailable, "f"),
+        isDisplayAvailable: __classPrivateFieldGet(this, _DisplayManager_isAvailable, "f"),
     });
 }, _DisplayManager_onDisplayContextStateUpdate = function _DisplayManager_onDisplayContextStateUpdate(differences) {
     __classPrivateFieldGet(this, _DisplayManager_instances, "a", _DisplayManager_dispatchEvent_get).call(this, "displayContextState", {
@@ -5865,7 +6117,7 @@ async function _DisplayManager_sendDisplayCommand(command, sendImmediately) {
 }, _DisplayManager_drawBitmapHeaderLength_get = function _DisplayManager_drawBitmapHeaderLength_get() {
     return 2 + 2 + 2 + 2 + 1 + 2;
 }, _DisplayManager_parseDisplayReady = function _DisplayManager_parseDisplayReady(dataView) {
-    __classPrivateFieldSet(this, _DisplayManager_isDisplayReady, true, "f");
+    __classPrivateFieldSet(this, _DisplayManager_isReady, true, "f");
     __classPrivateFieldGet(this, _DisplayManager_instances, "a", _DisplayManager_dispatchEvent_get).call(this, "displayReady", {});
 };
 
@@ -8784,10 +9036,10 @@ class Device {
         __classPrivateFieldGet(this, _Device_microphoneManager, "f").toggleRecording();
     }
     get isDisplayAvailable() {
-        return __classPrivateFieldGet(this, _Device_displayManager, "f").isDisplayAvailable;
+        return __classPrivateFieldGet(this, _Device_displayManager, "f").isAvailable;
     }
     get isDisplayReady() {
-        return __classPrivateFieldGet(this, _Device_displayManager, "f").isDisplayReady;
+        return __classPrivateFieldGet(this, _Device_displayManager, "f").isReady;
     }
     get displayContextState() {
         return __classPrivateFieldGet(this, _Device_displayManager, "f").displayContextState;
@@ -9020,13 +9272,13 @@ class Device {
         __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertDisplayIsAvailable).call(this);
         return __classPrivateFieldGet(this, _Device_displayManager, "f").setContextState;
     }
-    get selectDisplayBitmapColorIndex() {
+    get selectDisplayBitmapColor() {
         __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertDisplayIsAvailable).call(this);
-        return __classPrivateFieldGet(this, _Device_displayManager, "f").selectBitmapColorIndex;
+        return __classPrivateFieldGet(this, _Device_displayManager, "f").selectBitmapColor;
     }
-    get selectDisplayBitmapColorIndices() {
+    get selectDisplayBitmapColors() {
         __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertDisplayIsAvailable).call(this);
-        return __classPrivateFieldGet(this, _Device_displayManager, "f").selectBitmapColorIndices;
+        return __classPrivateFieldGet(this, _Device_displayManager, "f").selectBitmapColors;
     }
     get setDisplayBitmapColor() {
         __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertDisplayIsAvailable).call(this);
@@ -9496,6 +9748,16 @@ class DisplayCanvasHelper {
         __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_drawFrontDrawStack).call(this);
         __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "a", _DisplayCanvasHelper_dispatchEvent_get).call(this, "opacity", { opacity });
     }
+    async saveContext(sendImmediately) {
+        if (this.device?.isConnected) {
+            await this.device.saveDisplayContext(sendImmediately);
+        }
+    }
+    async restoreContext(sendImmediately) {
+        if (this.device?.isConnected) {
+            await this.device.restoreDisplayContext(sendImmediately);
+        }
+    }
     async selectFillColor(fillColorIndex, sendImmediately) {
         __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_assertValidColorIndex).call(this, fillColorIndex);
         const differences = __classPrivateFieldGet(this, _DisplayCanvasHelper_displayContextStateHelper, "f").update({
@@ -9738,7 +10000,7 @@ class DisplayCanvasHelper {
     get bitmapColors() {
         return this.bitmapColorIndices.map((colorIndex) => this.colors[colorIndex]);
     }
-    async selectBitmapColorIndex(bitmapColorIndex, colorIndex, sendImmediately) {
+    async selectBitmapColor(bitmapColorIndex, colorIndex, sendImmediately) {
         __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_assertValidColorIndex).call(this, bitmapColorIndex);
         const bitmapColorIndices = this.contextState.bitmapColorIndices.slice();
         bitmapColorIndices[bitmapColorIndex] = colorIndex;
@@ -9749,14 +10011,14 @@ class DisplayCanvasHelper {
             return;
         }
         if (this.device?.isConnected) {
-            await this.device.selectDisplayBitmapColorIndex(bitmapColorIndex, colorIndex, sendImmediately);
+            await this.device.selectDisplayBitmapColor(bitmapColorIndex, colorIndex, sendImmediately);
         }
         __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_onDisplayContextStateUpdate).call(this, differences);
     }
-    async selectDisplayBitmapColorIndices(bitmapColors, sendImmediately) {
-        _console$6.assertRangeWithError("bitmapColors", bitmapColors.length, 1, this.numberOfColors);
+    async selectBitmapColors(bitmapColorPairs, sendImmediately) {
+        _console$6.assertRangeWithError("bitmapColors", bitmapColorPairs.length, 1, this.numberOfColors);
         const bitmapColorIndices = this.contextState.bitmapColorIndices.slice();
-        bitmapColors.forEach(({ bitmapColorIndex, colorIndex }) => {
+        bitmapColorPairs.forEach(({ bitmapColorIndex, colorIndex }) => {
             __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_assertValidColorIndex).call(this, bitmapColorIndex);
             __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_assertValidColorIndex).call(this, colorIndex);
             bitmapColorIndices[bitmapColorIndex] = colorIndex;
@@ -9768,7 +10030,7 @@ class DisplayCanvasHelper {
             return;
         }
         if (this.device?.isConnected) {
-            await this.device.selectDisplayBitmapColorIndices(bitmapColors, sendImmediately);
+            await this.device.selectDisplayBitmapColors(bitmapColorPairs, sendImmediately);
         }
         __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_onDisplayContextStateUpdate).call(this, differences);
     }
@@ -9922,6 +10184,9 @@ class DisplayCanvasHelper {
         }
         __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_drawFrontDrawStack).call(this);
         __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "a", _DisplayCanvasHelper_dispatchEvent_get).call(this, "brightness", { brightness: this.brightness });
+    }
+    async runContextCommandMessage(commandMessage, sendImmediately) {
+        return runDisplayContextCommand(this, commandMessage, sendImmediately);
     }
 }
 _DisplayCanvasHelper_eventDispatcher = new WeakMap(), _DisplayCanvasHelper_canvas = new WeakMap(), _DisplayCanvasHelper_context = new WeakMap(), _DisplayCanvasHelper_frontDrawStack = new WeakMap(), _DisplayCanvasHelper_rearDrawStack = new WeakMap(), _DisplayCanvasHelper_applyTransparency = new WeakMap(), _DisplayCanvasHelper_device = new WeakMap(), _DisplayCanvasHelper_boundDeviceEventListeners = new WeakMap(), _DisplayCanvasHelper_numberOfColors = new WeakMap(), _DisplayCanvasHelper_colors = new WeakMap(), _DisplayCanvasHelper_opacities = new WeakMap(), _DisplayCanvasHelper_displayContextStateHelper = new WeakMap(), _DisplayCanvasHelper_interval = new WeakMap(), _DisplayCanvasHelper_isReady = new WeakMap(), _DisplayCanvasHelper_clearBoundingBoxOnDraw = new WeakMap(), _DisplayCanvasHelper_bitmapCanvas = new WeakMap(), _DisplayCanvasHelper_bitmapContext = new WeakMap(), _DisplayCanvasHelper_brightness = new WeakMap(), _DisplayCanvasHelper_brightnessOpacities = new WeakMap(), _DisplayCanvasHelper_instances = new WeakSet(), _DisplayCanvasHelper_dispatchEvent_get = function _DisplayCanvasHelper_dispatchEvent_get() {

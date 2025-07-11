@@ -48,13 +48,13 @@ declare class CameraManager {
     constructor();
     sendMessage: SendCameraMessageCallback;
     eventDispatcher: CameraEventDispatcher;
-    get waitForEvent(): <T extends "cameraStatus" | "cameraCommand" | "getCameraConfiguration" | "setCameraConfiguration" | "cameraData" | "cameraImageProgress" | "cameraImage">(type: T) => Promise<{
+    get waitForEvent(): <T extends "cameraStatus" | "getCameraConfiguration" | "cameraImageProgress" | "cameraImage" | "cameraCommand" | "setCameraConfiguration" | "cameraData">(type: T) => Promise<{
         type: T;
         target: Device;
         message: CameraEventMessages[T];
     }>;
     requestRequiredInformation(): void;
-    get cameraStatus(): "asleep" | "idle" | "focusing" | "takingPicture";
+    get cameraStatus(): "idle" | "focusing" | "takingPicture" | "asleep";
     focus(): Promise<void>;
     takePicture(): Promise<void>;
     stop(): Promise<void>;

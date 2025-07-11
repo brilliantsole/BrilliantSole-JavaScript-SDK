@@ -1432,10 +1432,10 @@ class Device {
   #displayManager = new DisplayManager();
 
   get isDisplayAvailable() {
-    return this.#displayManager.isDisplayAvailable;
+    return this.#displayManager.isAvailable;
   }
   get isDisplayReady() {
-    return this.#displayManager.isDisplayReady;
+    return this.#displayManager.isReady;
   }
   get displayContextState() {
     return this.#displayManager.displayContextState;
@@ -1685,13 +1685,13 @@ class Device {
     return this.#displayManager.setContextState;
   }
 
-  get selectDisplayBitmapColorIndex() {
+  get selectDisplayBitmapColor() {
     this.#assertDisplayIsAvailable();
-    return this.#displayManager.selectBitmapColorIndex;
+    return this.#displayManager.selectBitmapColor;
   }
-  get selectDisplayBitmapColorIndices() {
+  get selectDisplayBitmapColors() {
     this.#assertDisplayIsAvailable();
-    return this.#displayManager.selectBitmapColorIndices;
+    return this.#displayManager.selectBitmapColors;
   }
   get setDisplayBitmapColor() {
     this.#assertDisplayIsAvailable();

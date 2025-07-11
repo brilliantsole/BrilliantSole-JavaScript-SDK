@@ -2112,7 +2112,7 @@ device.addEventListener("connected", () => {
   }
 });
 device.addEventListener("displayColor", (event) => {
-  const { colorIndex, color, colorHex } = event.message;
+  const { colorIndex, colorRGB, colorHex } = event.message;
   displayColorsContainer
     .querySelectorAll(".displayColor")
     [colorIndex].querySelector("input").value = colorHex;
@@ -3004,11 +3004,7 @@ const updateBitmapColorIndicesContainer = () => {
     bitmapColorIndexSelect.addEventListener("input", () => {
       const colorIndex = Number(bitmapColorIndexSelect.value);
       if (device.isConnected) {
-        device.selectDisplayBitmapColorIndex(
-          bitmapColorIndex,
-          colorIndex,
-          true
-        );
+        device.selectDisplayBitmapColor(bitmapColorIndex, colorIndex, true);
       }
       bitmapColorIndexColorInput.value = device.displayColors[colorIndex];
 
@@ -3117,7 +3113,7 @@ bitmapImage.addEventListener("load", async () => {
 
     colors.forEach((color, colorIndex) => {
       device.setDisplayColor(colorIndex, color);
-      device.selectDisplayBitmapColorIndex(colorIndex, colorIndex);
+      device.selectDisplayBitmapColor(colorIndex, colorIndex);
     });
     device.flushDisplayContextCommands();
   } else {

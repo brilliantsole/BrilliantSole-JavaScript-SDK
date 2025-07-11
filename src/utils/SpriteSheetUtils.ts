@@ -1,11 +1,10 @@
-import { DisplayBitmap } from "../DisplayManager.ts";
 import { createConsole } from "./Console.ts";
 
 const _console = createConsole("SpriteSheetUtils", { log: true });
 
 export type DisplaySprite = {
   name: string;
-  displayCommands: any[];
+  displayCommands: any[]; // FILL
 };
 export type DisplaySpriteSheetPalette = {
   displayColors: string[];

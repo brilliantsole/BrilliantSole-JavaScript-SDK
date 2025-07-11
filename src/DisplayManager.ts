@@ -40,8 +40,7 @@ import {
   pixelDepthToPixelsPerByte,
   roundBitmapScale,
 } from "./utils/DisplayUtils.ts";
-import { isInBrowser } from "./utils/environment.ts";
-import { DisplaySegmentCaps, resizeAndQuantizeImage } from "./BS.ts";
+import { DisplaySegmentCaps } from "./BS.ts";
 import {
   assertValidBitmapPixels,
   getBitmapNumberOfBytes,
@@ -56,8 +55,13 @@ import {
 } from "./utils/DisplayContextState.ts";
 import {
   DisplayContextCommand,
+  DisplayContextCommandMessage,
   DisplayContextCommands,
 } from "./utils/DisplayContextCommand.ts";
+import {
+  DisplayManagerInterface,
+  runDisplayContextCommand,
+} from "./utils/DisplayManagerInterface.ts";
 
 const _console = createConsole("DisplayManager", { log: true });
 
@@ -193,7 +197,7 @@ export type DisplayEventDispatcher = EventDispatcher<
 export type SendDisplayMessageCallback =
   SendMessageCallback<DisplayMessageType>;
 
-class DisplayManager {
+class DisplayManager implements DisplayManagerInterface {
   constructor() {
     autoBind(this);
   }
@@ -217,24 +221,21 @@ class DisplayManager {
   }
 
   // IS DISPLAY AVAILABLE
-  #isDisplayAvailable = false;
-  get isDisplayAvailable() {
-    return this.#isDisplayAvailable;
+  #isAvailable = false;
+  get isAvailable() {
+    return this.#isAvailable;
   }
 
   #assertDisplayIsAvailable() {
-    _console.assertWithError(
-      this.#isDisplayAvailable,
-      "display is not available"
-    );
+    _console.assertWithError(this.#isAvailable, "display is not available");
   }
 
   #parseIsDisplayAvailable(dataView: DataView) {
     const newIsDisplayAvailable = dataView.getUint8(0) == 1;
-    this.#isDisplayAvailable = newIsDisplayAvailable;
-    _console.log({ isDisplayAvailable: this.#isDisplayAvailable });
+    this.#isAvailable = newIsDisplayAvailable;
+    _console.log({ isDisplayAvailable: this.#isAvailable });
     this.#dispatchEvent("isDisplayAvailable", {
-      isDisplayAvailable: this.#isDisplayAvailable,
+      isDisplayAvailable: this.#isAvailable,
     });
   }
 
@@ -314,7 +315,7 @@ class DisplayManager {
               bitmapColors.push({ bitmapColorIndex, colorIndex });
             }
           );
-          this.selectBitmapColorIndices(bitmapColors);
+          this.selectBitmapColors(bitmapColors);
           break;
         case "bitmapScaleX":
           this.setBitmapScaleX(newState.bitmapScaleX!);
@@ -599,12 +600,12 @@ class DisplayManager {
   }
   async showDisplay(sendImmediately = true) {
     _console.log("showDisplay");
-    this.#isDisplayReady = false;
+    this.#isReady = false;
     await this.#sendDisplayContextCommand("show", undefined, sendImmediately);
   }
   async clearDisplay(sendImmediately = true) {
     _console.log("clearDisplay");
-    this.#isDisplayReady = false;
+    this.#isReady = false;
     await this.#sendDisplayContextCommand("clear", undefined, sendImmediately);
   }
 
@@ -1048,7 +1049,7 @@ class DisplayManager {
     this.#onDisplayContextStateUpdate(differences);
   }
 
-  async selectBitmapColorIndex(
+  async selectBitmapColor(
     bitmapColorIndex: number,
     colorIndex: number,
     sendImmediately?: boolean
@@ -1080,19 +1081,19 @@ class DisplayManager {
   get bitmapColors() {
     return this.bitmapColorIndices.map((colorIndex) => this.colors[colorIndex]);
   }
-  async selectBitmapColorIndices(
-    bitmapColors: DisplayBitmapColorPair[],
+  async selectBitmapColors(
+    bitmapColorPairs: DisplayBitmapColorPair[],
     sendImmediately?: boolean
   ) {
     _console.assertRangeWithError(
       "bitmapColors",
-      bitmapColors.length,
+      bitmapColorPairs.length,
       1,
       this.numberOfColors
     );
     const bitmapColorIndices =
       this.displayContextState.bitmapColorIndices.slice();
-    bitmapColors.forEach(({ bitmapColorIndex, colorIndex }) => {
+    bitmapColorPairs.forEach(({ bitmapColorIndex, colorIndex }) => {
       this.#assertValidColorIndex(bitmapColorIndex);
       this.#assertValidColorIndex(colorIndex);
       bitmapColorIndices[bitmapColorIndex] = colorIndex;
@@ -1104,10 +1105,12 @@ class DisplayManager {
     if (differences.length == 0) {
       return;
     }
-    const dataView = new DataView(new ArrayBuffer(bitmapColors.length * 2 + 1));
+    const dataView = new DataView(
+      new ArrayBuffer(bitmapColorPairs.length * 2 + 1)
+    );
     let offset = 0;
-    dataView.setUint8(offset++, bitmapColors.length);
-    bitmapColors.forEach(({ bitmapColorIndex, colorIndex }, index) => {
+    dataView.setUint8(offset++, bitmapColorPairs.length);
+    bitmapColorPairs.forEach(({ bitmapColorIndex, colorIndex }, index) => {
       dataView.setUint8(offset, bitmapColorIndex);
       dataView.setUint8(offset + 1, colorIndex);
       offset += 2;
@@ -1562,12 +1565,19 @@ class DisplayManager {
     // FILL
   }
 
-  #isDisplayReady = true;
-  get isDisplayReady() {
-    return this.isDisplayAvailable && this.#isDisplayReady;
+  async runContextCommandMessage(
+    commandMessage: DisplayContextCommandMessage,
+    sendImmediately?: boolean
+  ) {
+    return runDisplayContextCommand(this, commandMessage, sendImmediately);
+  }
+
+  #isReady = true;
+  get isReady() {
+    return this.isAvailable && this.#isReady;
   }
   #parseDisplayReady(dataView: DataView) {
-    this.#isDisplayReady = true;
+    this.#isReady = true;
     this.#dispatchEvent("displayReady", {});
   }
 
@@ -1601,18 +1611,18 @@ class DisplayManager {
     _console.log("clearing displayManager");
     // @ts-ignore
     this.#displayStatus = undefined;
-    this.#isDisplayAvailable = false;
+    this.#isAvailable = false;
     this.#displayInformation = undefined;
     // @ts-ignore
     this.#displayBrightness = undefined;
     this.#displayContextCommandBuffers = [];
-    this.#isDisplayAvailable = false;
+    this.#isAvailable = false;
 
     this.#displayContextStateHelper.reset();
     this.#colors.length = 0;
     this.#opacities.length = 0;
 
-    this.#isDisplayReady = true;
+    this.#isReady = true;
   }
 
   // MTU

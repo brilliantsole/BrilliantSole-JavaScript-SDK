@@ -10,6 +10,7 @@ import {
 import { assertValidBitmapPixels } from "./BitmapUtils.ts";
 import { hexToRGB, rgbToHex, stringToRGB } from "./ColorUtils.ts";
 import { createConsole } from "./Console.ts";
+import { DisplayContextCommandMessage } from "./DisplayContextCommand.ts";
 import {
   DisplayContextState,
   DisplayContextStateKey,
@@ -17,6 +18,10 @@ import {
   PartialDisplayContextState,
 } from "./DisplayContextState.ts";
 import DisplayContextStateHelper from "./DisplayContextStateHelper.ts";
+import {
+  DisplayManagerInterface,
+  runDisplayContextCommand,
+} from "./DisplayManagerInterface.ts";
 import {
   assertValidColor,
   assertValidOpacity,
@@ -132,7 +137,7 @@ export type DisplayBoundingBox = {
   height: number;
 };
 
-class DisplayCanvasHelper {
+class DisplayCanvasHelper implements DisplayManagerInterface {
   constructor() {
     this.numberOfColors = 16;
     this.#bitmapContext = this.#bitmapCanvas.getContext("2d")!;
@@ -565,6 +570,20 @@ class DisplayCanvasHelper {
   }
 
   // CONTEXT COMMANDS
+  async saveContext(sendImmediately?: boolean) {
+    // FILL
+    if (this.device?.isConnected) {
+      await this.device.saveDisplayContext(sendImmediately);
+    }
+    //this.#onDisplayContextStateUpdate(differences);
+  }
+  async restoreContext(sendImmediately?: boolean) {
+    // FILL
+    if (this.device?.isConnected) {
+      await this.device.restoreDisplayContext(sendImmediately);
+    }
+    //this.#onDisplayContextStateUpdate(differences);
+  }
   async selectFillColor(fillColorIndex: number, sendImmediately?: boolean) {
     this.#assertValidColorIndex(fillColorIndex);
     const differences = this.#displayContextStateHelper.update({
@@ -865,7 +884,7 @@ class DisplayCanvasHelper {
   get bitmapColors() {
     return this.bitmapColorIndices.map((colorIndex) => this.colors[colorIndex]);
   }
-  async selectBitmapColorIndex(
+  async selectBitmapColor(
     bitmapColorIndex: number,
     colorIndex: number,
     sendImmediately?: boolean
@@ -881,7 +900,7 @@ class DisplayCanvasHelper {
     }
 
     if (this.device?.isConnected) {
-      await this.device.selectDisplayBitmapColorIndex(
+      await this.device.selectDisplayBitmapColor(
         bitmapColorIndex,
         colorIndex,
         sendImmediately
@@ -890,18 +909,18 @@ class DisplayCanvasHelper {
     this.#onDisplayContextStateUpdate(differences);
   }
 
-  async selectDisplayBitmapColorIndices(
-    bitmapColors: DisplayBitmapColorPair[],
+  async selectBitmapColors(
+    bitmapColorPairs: DisplayBitmapColorPair[],
     sendImmediately?: boolean
   ) {
     _console.assertRangeWithError(
       "bitmapColors",
-      bitmapColors.length,
+      bitmapColorPairs.length,
       1,
       this.numberOfColors
     );
     const bitmapColorIndices = this.contextState.bitmapColorIndices.slice();
-    bitmapColors.forEach(({ bitmapColorIndex, colorIndex }) => {
+    bitmapColorPairs.forEach(({ bitmapColorIndex, colorIndex }) => {
       this.#assertValidColorIndex(bitmapColorIndex);
       this.#assertValidColorIndex(colorIndex);
       bitmapColorIndices[bitmapColorIndex] = colorIndex;
@@ -915,8 +934,8 @@ class DisplayCanvasHelper {
     }
 
     if (this.device?.isConnected) {
-      await this.device.selectDisplayBitmapColorIndices(
-        bitmapColors,
+      await this.device.selectDisplayBitmapColors(
+        bitmapColorPairs,
         sendImmediately
       );
     }
@@ -2226,6 +2245,13 @@ class DisplayCanvasHelper {
     }
     _console.log("updateDeviceBrightness");
     await this.device?.setDisplayBrightness(this.brightness, sendImmediately);
+  }
+
+  async runContextCommandMessage(
+    commandMessage: DisplayContextCommandMessage,
+    sendImmediately?: boolean
+  ) {
+    return runDisplayContextCommand(this, commandMessage, sendImmediately);
   }
 
   #reset() {

@@ -2239,8 +2239,8 @@ function getIrisOffsetXy(
 // setShowFaceTracking(false);
 // setShowCanvas(false);
 
-displayCanvasHelper.selectBitmapColorIndex(1, 1);
-displayCanvasHelper.selectBitmapColorIndex(2, 2);
+displayCanvasHelper.selectBitmapColor(1, 1);
+displayCanvasHelper.selectBitmapColor(2, 2);
 displayCanvasHelper.setBitmapScale(10);
 displayCanvasHelper.setRotation(45);
 displayCanvasHelper.drawBitmap(50, 50, {
