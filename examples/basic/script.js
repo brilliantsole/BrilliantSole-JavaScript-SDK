@@ -2150,7 +2150,7 @@ device.addEventListener("connected", () => {
 
       const displayColorOpacityIndex =
         displayColorOpacityContainer.querySelector(".colorIndex");
-      displayColorOpacityIndex.innerText = `color opacity #${colorIndex}`;
+      displayColorOpacityIndex.innerText = `opacity #${colorIndex}`;
       const displayColorOpacityInput =
         displayColorOpacityContainer.querySelector("input");
       const displayColorOpacitySpan =
@@ -2185,9 +2185,9 @@ displayOpacityInput.addEventListener("input", () => {
     .querySelectorAll(".displayColorOpacity")
     .forEach((container) => {
       const input = container.querySelector("input");
-      const span = container.querySelector("span");
+      const opacitySpan = container.querySelector("span.opacity");
       input.value = opacity;
-      span.innerText = Math.round(opacity * 100);
+      opacitySpan.innerText = Math.round(opacity * 100);
     });
 });
 

@@ -121,6 +121,14 @@ export {
   DisplayColorRGB,
 } from "./utils/DisplayUtils.ts";
 
+export {} from "./utils/DisplayContextCommand.ts";
+
+export {
+  DisplaySprite,
+  DisplaySpriteSheet,
+  DisplaySpriteSheetPalette,
+} from "./utils/DisplaySpriteSheetUtils.ts";
+
 /** BROWSER_START */
 export {
   default as DisplayCanvasHelper,

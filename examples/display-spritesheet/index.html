@@ -21,6 +21,79 @@
       <button id="toggleConnection">connect</button>
     </div>
 
+    <div>
+      <label>
+        name:
+        <input
+          id="spriteSheetName"
+          type="text"
+          value=""
+          placeholder='e.g. "mySpriteSheet"'
+          min="1"
+          max="30"
+        />
+      </label>
+      <button id="addSprite">add sprite</button>
+      <button id="addColorPalette">add color palette</button>
+      <button id="saveSpriteSheet">save</button>
+      <label>
+        load
+        <input
+          id="loadSpriteSheet"
+          type="file"
+          accept=".json"
+          multiple="false"
+        />
+      </label>
+    </div>
+    <hr />
+    <div id="displayColors">
+      <template id="displayColorTemplate">
+        <label class="displayColor">
+          <span class="colorIndex"></span>
+          <input type="color" value="#000000" />
+        </label>
+      </template>
+    </div>
+
+    <div id="displayColorOpacities" hidden>
+      <template id="displayColorOpacityTemplate">
+        <label class="displayColorOpacity">
+          <span class="colorIndex"></span>
+          <input type="range" min="0" max="1" step="0.01" value="1" />
+          <span class="opacity">100</span>%
+        </label>
+      </template>
+    </div>
+
+    <div hidden>
+      <label id="displayOpacity">
+        opacity
+        <input type="range" min="0" max="1" step="0.01" value="1" />
+        <span>100</span>%
+      </label>
+    </div>
+
+    <div>
+      <label id="fillColor">
+        <b>fill color</b>
+        <select>
+          <optgroup label="select fill color"></optgroup>
+        </select>
+        <input disabled type="color" />
+      </label>
+
+      <label id="lineColor">
+        <b>line color</b>
+        <select>
+          <optgroup label="select line color"></optgroup>
+        </select>
+        <input disabled type="color" />
+      </label>
+    </div>
+
+    <hr />
+
     <canvas id="display" width="640" height="400"></canvas>
   </body>
 </html>

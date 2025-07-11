@@ -19,6 +19,8 @@ export { MicrophoneConfiguration, MicrophoneCommand, MicrophoneCommands, Microph
 export { DisplayBrightness, DisplayBrightnesses, DisplaySize, DisplayBitmap, DisplayBitmapColorPair, DisplayPixelDepths, DefaultNumberOfDisplayColors, } from "./DisplayManager.ts";
 export { DisplaySegmentCap, DisplaySegmentCaps, } from "./utils/DisplayContextState.ts";
 export { maxDisplayBitmapScale, DisplayColorRGB, } from "./utils/DisplayUtils.ts";
+export {} from "./utils/DisplayContextCommand.ts";
+export { DisplaySprite, DisplaySpriteSheet, DisplaySpriteSheetPalette, } from "./utils/DisplaySpriteSheetUtils.ts";
 /** BROWSER_START */
 export { default as DisplayCanvasHelper, DisplayCanvasHelperEvent, DisplayCanvasHelperEventMap, DisplayCanvasHelperEventListenerMap, } from "./utils/DisplayCanvasHelper.ts";
 /** BROWSER_END */
