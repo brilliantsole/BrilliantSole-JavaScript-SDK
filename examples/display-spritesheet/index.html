@@ -23,18 +23,18 @@
 
     <div>
       <label>
-        name:
+        spritesheet name:
         <input
           id="spriteSheetName"
           type="text"
           value=""
           placeholder='e.g. "mySpriteSheet"'
-          min="1"
-          max="30"
+          minlength="1"
+          maxlength="30"
         />
       </label>
       <button id="addSprite">add sprite</button>
-      <button id="addColorPalette">add color palette</button>
+      <button id="addPalette">add palette</button>
       <button id="saveSpriteSheet">save</button>
       <label>
         load
@@ -46,7 +46,27 @@
         />
       </label>
     </div>
+
     <hr />
+
+    <label>
+      palette name
+      <input
+        disabled
+        id="paletteName"
+        type="text"
+        minlength="1"
+        placeholder='e.g. "myPalette"'
+      />
+    </label>
+
+    <label>
+      palette index
+      <select id="selectPalette">
+        <optgroup label="select palette"></optgroup>
+      </select>
+    </label>
+
     <div id="displayColors">
       <template id="displayColorTemplate">
         <label class="displayColor">

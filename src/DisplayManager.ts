@@ -62,6 +62,7 @@ import {
   DisplayManagerInterface,
   runDisplayContextCommand,
 } from "./utils/DisplayManagerInterface.ts";
+import { DisplaySpriteSheet } from "./BS.ts";
 
 const _console = createConsole("DisplayManager", { log: true });
 

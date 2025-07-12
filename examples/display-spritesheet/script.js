@@ -254,8 +254,8 @@ updateLineColorSelect();
 /** @type {BS.DisplaySpriteSheet} */
 const spriteSheet = {
   name: "mySpriteSheet",
-  sprites: {},
-  palettes: {},
+  sprites: [],
+  palettes: [],
 };
 window.spriteSheet = spriteSheet;
 
@@ -271,15 +271,104 @@ spriteSheetNameInput.value = spriteSheet.name;
 
 const addSpriteButton = document.getElementById("addSprite");
 addSpriteButton.addEventListener("click", () => {
-  console.log("addSprite");
-  // FILL
+  addSprite();
 });
 
-const addColorPaletteButton = document.getElementById("addColorPalette");
-addColorPaletteButton.addEventListener("click", () => {
-  console.log("addColorPalette");
-  // FILL
+const addPaletteButton = document.getElementById("addPalette");
+addPaletteButton.addEventListener("click", () => {
+  addPalette();
 });
+
+// PALETTE
+const paletteNameInput = document.getElementById("paletteName");
+let selectedPaletteIndex = -1;
+/** @type {BS.DisplaySpriteSheetPalette} */
+let selectedPalette;
+const addPalette = () => {
+  //console.log("addPalette");
+  spriteSheet.palettes.push({
+    name: `myPalette ${Object.keys(spriteSheet.palettes).length}`,
+    colors: [],
+    opacities: [],
+    fillColorIndex: 1,
+    lineColorIndex: 1,
+    bitmapColorIndices: [],
+  });
+  const paletteIndex = spriteSheet.palettes.length - 1;
+  updateSelectPaletteSelect();
+  setPaletteIndex(paletteIndex);
+};
+const setPaletteIndex = (paletteIndex) => {
+  selectedPaletteIndex = paletteIndex;
+  console.log({ selectedPaletteIndex });
+  selectedPalette = spriteSheet.palettes[selectedPaletteIndex];
+  paletteNameInput.value = selectedPalette?.name ?? "";
+  paletteNameInput.disabled = selectedPalette == undefined;
+  selectPaletteSelect.value = selectedPaletteIndex;
+
+  // FILL - update context
+};
+
+paletteNameInput.addEventListener("input", () => {
+  let paletteName = paletteNameInput.value;
+  selectedPalette.name = paletteName;
+});
+
+/** @type {HTMLSelectElement} */
+const selectPaletteSelect = document.getElementById("selectPalette");
+const selectPaletteOptgroup = selectPaletteSelect.querySelector("optgroup");
+selectPaletteSelect.addEventListener("input", () => {
+  const selectedPaletteIndex = Number(selectPaletteSelect.value);
+  setPaletteIndex(selectedPaletteIndex);
+});
+const updateSelectPaletteSelect = () => {
+  selectPaletteOptgroup.innerHTML = "";
+  selectPaletteOptgroup.appendChild(new Option("none", -1));
+  spriteSheet.palettes.forEach((palette, index) => {
+    selectPaletteOptgroup.appendChild(new Option(palette.name, index));
+  });
+  selectPaletteSelect.value = selectedPaletteIndex;
+};
+updateSelectPaletteSelect();
+paletteNameInput.addEventListener("focusout", () => {
+  updateSelectPaletteSelect();
+});
+
+displayCanvasHelper.addEventListener("color", (event) => {
+  if (!selectedPalette) {
+    return;
+  }
+  const { colorIndex, colorHex } = event.message;
+  selectedPalette.colors[colorIndex] = colorHex;
+});
+displayCanvasHelper.addEventListener("colorOpacity", (event) => {
+  if (!selectedPalette) {
+    return;
+  }
+  const { colorIndex, opacity } = event.message;
+  selectedPalette.opacities[colorIndex] = opacity;
+});
+displayCanvasHelper.addEventListener("contextState", (event) => {
+  if (!selectedPalette) {
+    return;
+  }
+  const { differences, contextState } = event.message;
+  if (differences.includes("fillColorIndex")) {
+    selectedPalette.fillColorIndex = contextState.fillColorIndex;
+  }
+  if (differences.includes("lineColorIndex")) {
+    selectedPalette.lineColorIndex = contextState.lineColorIndex;
+  }
+  if (differences.includes("bitmapColorIndices")) {
+    selectedPalette.bitmapColorIndices = contextState.bitmapColorIndices;
+  }
+});
+
+// SPRITE
+const addSprite = () => {
+  console.log("addSprite");
+  // FILL
+};
 
 // LOAD/SAVE
 

@@ -37,7 +37,10 @@ const isAndroid = isInBrowser && /Android/i.test(userAgent);
 const isSafari = isInBrowser && /Safari/i.test(userAgent) && !/Chrome/i.test(userAgent);
 const isIOS = isInBrowser && /iPad|iPhone|iPod/i.test(userAgent);
 const isMac = isInBrowser && /Macintosh/i.test(userAgent);
-const isInLensStudio = !isInBrowser && !isInNode && typeof global !== "undefined" && typeof Studio !== "undefined";
+const isInLensStudio = !isInBrowser &&
+    !isInNode &&
+    typeof global !== "undefined" &&
+    typeof Studio !== "undefined";
 
 var environment = /*#__PURE__*/Object.freeze({
     __proto__: null,
