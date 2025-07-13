@@ -151,6 +151,28 @@
 
     <hr />
 
+    <label>
+      sprite index
+      <select id="selectSprite">
+        <optgroup label="select sprite"></optgroup>
+      </select>
+    </label>
+
+    <label>
+      sprite name
+      <input
+        disabled
+        id="spriteName"
+        type="text"
+        minlength="1"
+        placeholder='e.g. "mySprite"'
+      />
+    </label>
+
+    <button disabled id="deleteSprite">delete</button>
+
+    <hr />
+
     <canvas id="display" width="640" height="400"></canvas>
   </body>
 </html>

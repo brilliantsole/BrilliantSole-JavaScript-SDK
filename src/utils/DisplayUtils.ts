@@ -5,7 +5,7 @@ import {
   DisplayPixelDepths,
 } from "../DisplayManager.ts";
 import { createConsole } from "./Console.ts";
-import { DisplayContextCommand } from "./DisplayContextCommand.ts";
+import { DisplayContextCommandType } from "./DisplayContextCommand.ts";
 import {
   DisplayContextStateKey,
   DisplaySegmentCap,
@@ -100,7 +100,7 @@ export const DisplayCropDirectionToStateKey: Record<
 };
 export const DisplayCropDirectionToCommand: Record<
   DisplayCropDirection,
-  DisplayContextCommand
+  DisplayContextCommandType
 > = {
   top: "setCropTop",
   right: "setCropRight",
@@ -119,7 +119,7 @@ export const DisplayRotationCropDirectionToStateKey: Record<
 };
 export const DisplayRotationCropDirectionToCommand: Record<
   DisplayCropDirection,
-  DisplayContextCommand
+  DisplayContextCommandType
 > = {
   top: "setRotationCropTop",
   right: "setRotationCropRight",
@@ -147,7 +147,7 @@ export type DisplayBitmapScaleDirection =
   (typeof DisplayBitmapScaleDirections)[number];
 export const DisplayBitmapScaleDirectionToCommand: Record<
   DisplayBitmapScaleDirection,
-  DisplayContextCommand
+  DisplayContextCommandType
 > = {
   x: "setBitmapScaleX",
   y: "setBitmapScaleY",

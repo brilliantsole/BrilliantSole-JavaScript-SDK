@@ -55,14 +55,13 @@ import {
 } from "./utils/DisplayContextState.ts";
 import {
   DisplayContextCommand,
-  DisplayContextCommandMessage,
-  DisplayContextCommands,
+  DisplayContextCommandType,
+  DisplayContextCommandTypes,
 } from "./utils/DisplayContextCommand.ts";
 import {
   DisplayManagerInterface,
   runDisplayContextCommand,
 } from "./utils/DisplayManagerInterface.ts";
-import { DisplaySpriteSheet } from "./utils/DisplaySpriteSheetUtils.ts";
 
 const _console = createConsole("DisplayManager", { log: true });
 
@@ -543,9 +542,12 @@ class DisplayManager implements DisplayManagerInterface {
 
   // DISPLAY CONTEXT
   #assertValidDisplayContextCommand(
-    displayContextCommand: DisplayContextCommand
+    displayContextCommand: DisplayContextCommandType
   ) {
-    _console.assertEnumWithError(displayContextCommand, DisplayContextCommands);
+    _console.assertEnumWithError(
+      displayContextCommand,
+      DisplayContextCommandTypes
+    );
   }
 
   get #maxCommandDataLength() {
@@ -553,7 +555,7 @@ class DisplayManager implements DisplayManagerInterface {
   }
   #displayContextCommandBuffers: ArrayBuffer[] = [];
   async #sendDisplayContextCommand(
-    displayContextCommand: DisplayContextCommand,
+    displayContextCommand: DisplayContextCommandType,
     arrayBuffer?: ArrayBuffer,
     sendImmediately?: boolean
   ) {
@@ -563,7 +565,7 @@ class DisplayManager implements DisplayManagerInterface {
       { displayContextCommand, sendImmediately },
       arrayBuffer
     );
-    const displayContextCommandEnum = DisplayContextCommands.indexOf(
+    const displayContextCommandEnum = DisplayContextCommandTypes.indexOf(
       displayContextCommand
     );
     const _arrayBuffer = concatenateArrayBuffers(
@@ -1565,16 +1567,11 @@ class DisplayManager implements DisplayManagerInterface {
   }
 
   async runContextCommandMessage(
-    commandMessage: DisplayContextCommandMessage,
+    command: DisplayContextCommand,
     position?: Vector2,
     sendImmediately?: boolean
   ) {
-    return runDisplayContextCommand(
-      this,
-      commandMessage,
-      position,
-      sendImmediately
-    );
+    return runDisplayContextCommand(this, command, position, sendImmediately);
   }
 
   #isReady = true;

@@ -10,7 +10,6 @@ import {
 import { assertValidBitmapPixels } from "./DisplayBitmapUtils.ts";
 import { hexToRGB, rgbToHex, stringToRGB } from "./ColorUtils.ts";
 import { createConsole } from "./Console.ts";
-import { DisplayContextCommandMessage } from "./DisplayContextCommand.ts";
 import {
   DisplayContextState,
   DisplayContextStateKey,
@@ -56,6 +55,7 @@ import {
   Vector2,
 } from "./MathUtils.ts";
 import { wait } from "./Timer.ts";
+import { DisplayContextCommand } from "./DisplayContextCommand.ts";
 
 const _console = createConsole("DisplayCanvasHelper", { log: true });
 
@@ -2255,16 +2255,11 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
   }
 
   async runContextCommandMessage(
-    commandMessage: DisplayContextCommandMessage,
+    command: DisplayContextCommand,
     position?: Vector2,
     sendImmediately?: boolean
   ) {
-    return runDisplayContextCommand(
-      this,
-      commandMessage,
-      position,
-      sendImmediately
-    );
+    return runDisplayContextCommand(this, command, position, sendImmediately);
   }
 
   #reset() {

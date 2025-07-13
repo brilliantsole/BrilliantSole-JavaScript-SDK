@@ -9,7 +9,7 @@ import { Vector2 } from "./MathUtils.ts";
 
 const _console = createConsole("DisplayContextCommand", { log: false });
 
-export const DisplayContextCommands = [
+export const DisplayContextCommandTypes = [
   "show",
   "clear",
 
@@ -71,15 +71,16 @@ export const DisplayContextCommands = [
   "selectSpriteSheet",
   "drawSprite",
 ] as const;
-export type DisplayContextCommand = (typeof DisplayContextCommands)[number];
+export type DisplayContextCommandType =
+  (typeof DisplayContextCommandTypes)[number];
 
-interface BaseDisplayContextCommandMessage {
-  command: DisplayContextCommand;
+interface BaseDisplayContextCommand {
+  type: DisplayContextCommandType;
   contextState: DisplayContextState;
 }
 
-interface SimpleDisplayCommandMessage extends BaseDisplayContextCommandMessage {
-  command:
+interface SimpleDisplayCommand extends BaseDisplayContextCommand {
+  type:
     | "show"
     | "clear"
     | "saveContext"
@@ -90,229 +91,204 @@ interface SimpleDisplayCommandMessage extends BaseDisplayContextCommandMessage {
     | "resetBitmapScale";
 }
 
-interface SetDisplayColorCommandMessage
-  extends BaseDisplayContextCommandMessage {
-  command: "setColor";
+interface SetDisplayColorCommand extends BaseDisplayContextCommand {
+  type: "setColor";
   colorIndex: number;
   color: DisplayColorRGB | string;
 }
-interface SetDisplayColorOpacityCommandMessage
-  extends BaseDisplayContextCommandMessage {
-  command: "setColorOpacity";
+interface SetDisplayColorOpacityCommand extends BaseDisplayContextCommand {
+  type: "setColorOpacity";
   colorIndex: number;
   opacity: number;
 }
-interface SetDisplayOpacityCommandMessage
-  extends BaseDisplayContextCommandMessage {
-  command: "setOpacity";
+interface SetDisplayOpacityCommand extends BaseDisplayContextCommand {
+  type: "setOpacity";
   opacity: number;
 }
 
-interface SelectDisplayFillColorCommandMessage
-  extends BaseDisplayContextCommandMessage {
-  command: "selectFillColor";
+interface SelectDisplayFillColorCommand extends BaseDisplayContextCommand {
+  type: "selectFillColor";
   fillColorIndex: number;
 }
-interface SelectDisplayLineColorCommandMessage
-  extends BaseDisplayContextCommandMessage {
-  command: "selectLineColor";
+interface SelectDisplayLineColorCommand extends BaseDisplayContextCommand {
+  type: "selectLineColor";
   lineColorIndex: number;
 }
-interface SetDisplayLineWidthCommandMessage
-  extends BaseDisplayContextCommandMessage {
-  command: "setLineWidth";
+interface SetDisplayLineWidthCommand extends BaseDisplayContextCommand {
+  type: "setLineWidth";
   lineWidth: number;
 }
-interface SetDisplayRotationCommandMessage
-  extends BaseDisplayContextCommandMessage {
-  command: "setRotation";
+interface SetDisplayRotationCommand extends BaseDisplayContextCommand {
+  type: "setRotation";
   rotation: number;
   isRadians?: boolean;
 }
 
-interface SetDisplaySegmentStartCapCommandMessage
-  extends BaseDisplayContextCommandMessage {
-  command: "setSegmentStartCap";
+interface SetDisplaySegmentStartCapCommand extends BaseDisplayContextCommand {
+  type: "setSegmentStartCap";
   segmentStartCap: DisplaySegmentCap;
 }
-interface SetDisplaySegmentEndCapCommandMessage
-  extends BaseDisplayContextCommandMessage {
-  command: "setSegmentEndCap";
+interface SetDisplaySegmentEndCapCommand extends BaseDisplayContextCommand {
+  type: "setSegmentEndCap";
   segmentEndCap: DisplaySegmentCap;
 }
-interface SetDisplaySegmentCapCommandMessage
-  extends BaseDisplayContextCommandMessage {
-  command: "setSegmentCap";
+interface SetDisplaySegmentCapCommand extends BaseDisplayContextCommand {
+  type: "setSegmentCap";
   segmentCap: DisplaySegmentCap;
 }
 
-interface SetDisplaySegmentStartRadiusCommandMessage
-  extends BaseDisplayContextCommandMessage {
-  command: "setSegmentStartRadius";
+interface SetDisplaySegmentStartRadiusCommand
+  extends BaseDisplayContextCommand {
+  type: "setSegmentStartRadius";
   segmentStartRadius: number;
 }
-interface SetDisplaySegmentEndRadiusCommandMessage
-  extends BaseDisplayContextCommandMessage {
-  command: "setSegmentEndRadius";
+interface SetDisplaySegmentEndRadiusCommand extends BaseDisplayContextCommand {
+  type: "setSegmentEndRadius";
   segmentEndRadius: number;
 }
-interface SetDisplaySegmentRadiusCommandMessage
-  extends BaseDisplayContextCommandMessage {
-  command: "setSegmentRadius";
+interface SetDisplaySegmentRadiusCommand extends BaseDisplayContextCommand {
+  type: "setSegmentRadius";
   segmentRadius: number;
 }
 
-interface SetDisplayCropTopCommandMessage
-  extends BaseDisplayContextCommandMessage {
-  command: "setCropTop";
+interface SetDisplayCropTopCommand extends BaseDisplayContextCommand {
+  type: "setCropTop";
   cropTop: number;
 }
-interface SetDisplayCropRightCommandMessage
-  extends BaseDisplayContextCommandMessage {
-  command: "setCropRight";
+interface SetDisplayCropRightCommand extends BaseDisplayContextCommand {
+  type: "setCropRight";
   cropRight: number;
 }
-interface SetDisplayCropBottomCommandMessage
-  extends BaseDisplayContextCommandMessage {
-  command: "setCropBottom";
+interface SetDisplayCropBottomCommand extends BaseDisplayContextCommand {
+  type: "setCropBottom";
   cropBottom: number;
 }
-interface SetDisplayCropLeftCommandMessage
-  extends BaseDisplayContextCommandMessage {
-  command: "setCropLeft";
+interface SetDisplayCropLeftCommand extends BaseDisplayContextCommand {
+  type: "setCropLeft";
   cropLeft: number;
 }
 
-interface SetDisplayRotationCropTopCommandMessage
-  extends BaseDisplayContextCommandMessage {
-  command: "setRotationCropTop";
+interface SetDisplayRotationCropTopCommand extends BaseDisplayContextCommand {
+  type: "setRotationCropTop";
   rotationCropTop: number;
 }
-interface SetDisplayRotationCropRightCommandMessage
-  extends BaseDisplayContextCommandMessage {
-  command: "setRotationCropRight";
+interface SetDisplayRotationCropRightCommand extends BaseDisplayContextCommand {
+  type: "setRotationCropRight";
   rotationCropRight: number;
 }
-interface SetDisplayRotationCropBottomCommandMessage
-  extends BaseDisplayContextCommandMessage {
-  command: "setRotationCropBottom";
+interface SetDisplayRotationCropBottomCommand
+  extends BaseDisplayContextCommand {
+  type: "setRotationCropBottom";
   rotationCropBottom: number;
 }
-interface SetDisplayRotationCropLeftCommandMessage
-  extends BaseDisplayContextCommandMessage {
-  command: "setRotationCropLeft";
+interface SetDisplayRotationCropLeftCommand extends BaseDisplayContextCommand {
+  type: "setRotationCropLeft";
   rotationCropLeft: number;
 }
 
-interface SelectDisplayBitmapColorIndexCommandMessage
-  extends BaseDisplayContextCommandMessage {
-  command: "selectBitmapColor";
+interface SelectDisplayBitmapColorIndexCommand
+  extends BaseDisplayContextCommand {
+  type: "selectBitmapColor";
   bitmapColorIndex: number;
   colorIndex: number;
 }
-interface SelectDisplayBitmapColorIndicesCommandMessage
-  extends BaseDisplayContextCommandMessage {
-  command: "selectBitmapColors";
+interface SelectDisplayBitmapColorIndicesCommand
+  extends BaseDisplayContextCommand {
+  type: "selectBitmapColors";
   bitmapColorPairs: DisplayBitmapColorPair[];
 }
 
-interface SetDisplayBitmapScaleXCommandMessage
-  extends BaseDisplayContextCommandMessage {
-  command: "setBitmapScaleX";
+interface SetDisplayBitmapScaleXCommand extends BaseDisplayContextCommand {
+  type: "setBitmapScaleX";
   bitmapScaleX: number;
 }
-interface SetDisplayBitmapScaleYCommandMessage
-  extends BaseDisplayContextCommandMessage {
-  command: "setBitmapScaleY";
+interface SetDisplayBitmapScaleYCommand extends BaseDisplayContextCommand {
+  type: "setBitmapScaleY";
   bitmapScaleY: number;
 }
-interface SetDisplayBitmapScaleCommandMessage
-  extends BaseDisplayContextCommandMessage {
-  command: "setBitmapScale";
+interface SetDisplayBitmapScaleCommand extends BaseDisplayContextCommand {
+  type: "setBitmapScale";
   bitmapScale: number;
 }
 
-interface BasePositionDisplayContextCommandMessage
-  extends BaseDisplayContextCommandMessage {
+interface BasePositionDisplayContextCommand extends BaseDisplayContextCommand {
   x: number;
   y: number;
 }
-interface BaseCenterPositionDisplayContextCommandMessage
-  extends BaseDisplayContextCommandMessage {
+interface BaseCenterPositionDisplayContextCommand
+  extends BaseDisplayContextCommand {
   centerX: number;
   centerY: number;
 }
-interface BaseSizeDisplayContextCommandMessage
-  extends BaseDisplayContextCommandMessage {
+interface BaseSizeDisplayContextCommand extends BaseDisplayContextCommand {
   width: number;
   height: number;
 }
 
-interface BaseDisplayRectCommandMessage
-  extends BasePositionDisplayContextCommandMessage,
-    BaseSizeDisplayContextCommandMessage {}
-interface BaseDisplayCenterRectCommandMessage
-  extends BaseCenterPositionDisplayContextCommandMessage,
-    BaseSizeDisplayContextCommandMessage {}
+interface BaseDisplayRectCommand
+  extends BasePositionDisplayContextCommand,
+    BaseSizeDisplayContextCommand {}
+interface BaseDisplayCenterRectCommand
+  extends BaseCenterPositionDisplayContextCommand,
+    BaseSizeDisplayContextCommand {}
 
-interface ClearDisplayRectCommandMessage extends BaseDisplayRectCommandMessage {
-  command: "clearRect";
+interface ClearDisplayRectCommand extends BaseDisplayRectCommand {
+  type: "clearRect";
 }
-interface DrawDisplayRectCommandMessage
-  extends BaseDisplayCenterRectCommandMessage {
-  command: "drawRect";
+interface DrawDisplayRectCommand extends BaseDisplayCenterRectCommand {
+  type: "drawRect";
 }
 
-interface DrawDisplayRoundedRectCommandMessage
-  extends BaseCenterPositionDisplayContextCommandMessage,
-    BaseSizeDisplayContextCommandMessage {
-  command: "drawRoundRect";
+interface DrawDisplayRoundedRectCommand
+  extends BaseCenterPositionDisplayContextCommand,
+    BaseSizeDisplayContextCommand {
+  type: "drawRoundRect";
   borderRadius: number;
 }
 
-interface DrawDisplayCircleCommandMessage
-  extends BaseCenterPositionDisplayContextCommandMessage {
-  command: "drawCircle";
+interface DrawDisplayCircleCommand
+  extends BaseCenterPositionDisplayContextCommand {
+  type: "drawCircle";
   radius: number;
 }
-interface DrawDisplayEllipseCommandMessage
-  extends BaseCenterPositionDisplayContextCommandMessage {
-  command: "drawEllipse";
+interface DrawDisplayEllipseCommand
+  extends BaseCenterPositionDisplayContextCommand {
+  type: "drawEllipse";
   radiusX: number;
   radiusY: number;
 }
 
-interface DrawDisplayPolygonCommandMessage
-  extends BaseCenterPositionDisplayContextCommandMessage {
-  command: "drawPolygon";
+interface DrawDisplayPolygonCommand
+  extends BaseCenterPositionDisplayContextCommand {
+  type: "drawPolygon";
   radius: number;
   numberOfSides: number;
 }
-interface DrawDisplaySegmentCommandMessage
-  extends BaseCenterPositionDisplayContextCommandMessage {
-  command: "drawSegment";
+interface DrawDisplaySegmentCommand
+  extends BaseCenterPositionDisplayContextCommand {
+  type: "drawSegment";
   startX: number;
   startY: number;
   endX: number;
   endY: number;
 }
-interface DrawDisplaySegmentsCommandMessage
-  extends BaseCenterPositionDisplayContextCommandMessage {
-  command: "drawSegments";
+interface DrawDisplaySegmentsCommand
+  extends BaseCenterPositionDisplayContextCommand {
+  type: "drawSegments";
   points: Vector2[];
 }
 
-interface DrawDisplayArcCommandMessage
-  extends BaseCenterPositionDisplayContextCommandMessage {
-  command: "drawArc";
+interface DrawDisplayArcCommand
+  extends BaseCenterPositionDisplayContextCommand {
+  type: "drawArc";
   radius: number;
   startAngle: number;
   angleOffset: number;
   isRadians?: boolean;
 }
-interface DrawDisplayArcEllipseCommandMessage
-  extends BaseCenterPositionDisplayContextCommandMessage {
-  command: "drawArcEllipse";
+interface DrawDisplayArcEllipseCommand
+  extends BaseCenterPositionDisplayContextCommand {
+  type: "drawArcEllipse";
   radiusX: number;
   radiusY: number;
   startAngle: number;
@@ -320,50 +296,50 @@ interface DrawDisplayArcEllipseCommandMessage
   isRadians?: boolean;
 }
 
-interface DrawDisplayBitmapCommandMessage
-  extends BaseCenterPositionDisplayContextCommandMessage {
-  command: "drawBitmap";
+interface DrawDisplayBitmapCommand
+  extends BaseCenterPositionDisplayContextCommand {
+  type: "drawBitmap";
   centerX: number;
   centerY: number;
   bitmap: DisplayBitmap;
 }
 
-export type DisplayContextCommandMessage =
-  | SimpleDisplayCommandMessage
-  | SetDisplayColorCommandMessage
-  | SetDisplayColorOpacityCommandMessage
-  | SetDisplayOpacityCommandMessage
-  | SelectDisplayFillColorCommandMessage
-  | SelectDisplayLineColorCommandMessage
-  | SetDisplayLineWidthCommandMessage
-  | SetDisplayRotationCommandMessage
-  | SetDisplaySegmentStartCapCommandMessage
-  | SetDisplaySegmentEndCapCommandMessage
-  | SetDisplaySegmentCapCommandMessage
-  | SetDisplaySegmentStartRadiusCommandMessage
-  | SetDisplaySegmentEndRadiusCommandMessage
-  | SetDisplaySegmentRadiusCommandMessage
-  | SetDisplayCropTopCommandMessage
-  | SetDisplayCropRightCommandMessage
-  | SetDisplayCropBottomCommandMessage
-  | SetDisplayCropLeftCommandMessage
-  | SetDisplayRotationCropTopCommandMessage
-  | SetDisplayRotationCropRightCommandMessage
-  | SetDisplayRotationCropBottomCommandMessage
-  | SetDisplayRotationCropLeftCommandMessage
-  | SelectDisplayBitmapColorIndexCommandMessage
-  | SelectDisplayBitmapColorIndicesCommandMessage
-  | SetDisplayBitmapScaleXCommandMessage
-  | SetDisplayBitmapScaleYCommandMessage
-  | SetDisplayBitmapScaleCommandMessage
-  | ClearDisplayRectCommandMessage
-  | DrawDisplayRectCommandMessage
-  | DrawDisplayRoundedRectCommandMessage
-  | DrawDisplayCircleCommandMessage
-  | DrawDisplayEllipseCommandMessage
-  | DrawDisplayPolygonCommandMessage
-  | DrawDisplaySegmentCommandMessage
-  | DrawDisplaySegmentsCommandMessage
-  | DrawDisplayArcCommandMessage
-  | DrawDisplayArcEllipseCommandMessage
-  | DrawDisplayBitmapCommandMessage;
+export type DisplayContextCommand =
+  | SimpleDisplayCommand
+  | SetDisplayColorCommand
+  | SetDisplayColorOpacityCommand
+  | SetDisplayOpacityCommand
+  | SelectDisplayFillColorCommand
+  | SelectDisplayLineColorCommand
+  | SetDisplayLineWidthCommand
+  | SetDisplayRotationCommand
+  | SetDisplaySegmentStartCapCommand
+  | SetDisplaySegmentEndCapCommand
+  | SetDisplaySegmentCapCommand
+  | SetDisplaySegmentStartRadiusCommand
+  | SetDisplaySegmentEndRadiusCommand
+  | SetDisplaySegmentRadiusCommand
+  | SetDisplayCropTopCommand
+  | SetDisplayCropRightCommand
+  | SetDisplayCropBottomCommand
+  | SetDisplayCropLeftCommand
+  | SetDisplayRotationCropTopCommand
+  | SetDisplayRotationCropRightCommand
+  | SetDisplayRotationCropBottomCommand
+  | SetDisplayRotationCropLeftCommand
+  | SelectDisplayBitmapColorIndexCommand
+  | SelectDisplayBitmapColorIndicesCommand
+  | SetDisplayBitmapScaleXCommand
+  | SetDisplayBitmapScaleYCommand
+  | SetDisplayBitmapScaleCommand
+  | ClearDisplayRectCommand
+  | DrawDisplayRectCommand
+  | DrawDisplayRoundedRectCommand
+  | DrawDisplayCircleCommand
+  | DrawDisplayEllipseCommand
+  | DrawDisplayPolygonCommand
+  | DrawDisplaySegmentCommand
+  | DrawDisplaySegmentsCommand
+  | DrawDisplayArcCommand
+  | DrawDisplayArcEllipseCommand
+  | DrawDisplayBitmapCommand;

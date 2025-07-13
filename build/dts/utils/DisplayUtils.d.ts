@@ -1,5 +1,5 @@
 import { DisplayBrightness, DisplayPixelDepth } from "../DisplayManager.ts";
-import { DisplayContextCommand } from "./DisplayContextCommand.ts";
+import { DisplayContextCommandType } from "./DisplayContextCommand.ts";
 import { DisplayContextStateKey, DisplaySegmentCap } from "./DisplayContextState.ts";
 export declare function formatRotation(rotation: number, isRadians?: boolean, isSigned?: boolean): number;
 export declare function roundToStep(value: number, step: number): number;
@@ -15,16 +15,16 @@ export declare function assertValidOpacity(value: number): void;
 export declare const DisplayCropDirections: readonly ["top", "right", "bottom", "left"];
 export type DisplayCropDirection = (typeof DisplayCropDirections)[number];
 export declare const DisplayCropDirectionToStateKey: Record<DisplayCropDirection, DisplayContextStateKey>;
-export declare const DisplayCropDirectionToCommand: Record<DisplayCropDirection, DisplayContextCommand>;
+export declare const DisplayCropDirectionToCommand: Record<DisplayCropDirection, DisplayContextCommandType>;
 export declare const DisplayRotationCropDirectionToStateKey: Record<DisplayCropDirection, DisplayContextStateKey>;
-export declare const DisplayRotationCropDirectionToCommand: Record<DisplayCropDirection, DisplayContextCommand>;
+export declare const DisplayRotationCropDirectionToCommand: Record<DisplayCropDirection, DisplayContextCommandType>;
 export declare function pixelDepthToNumberOfColors(pixelDepth: DisplayPixelDepth): number;
 export declare function pixelDepthToPixelsPerByte(pixelDepth: DisplayPixelDepth): number;
 export declare function pixelDepthToPixelBitWidth(pixelDepth: DisplayPixelDepth): number;
 export declare function numberOfColorsToPixelDepth(numberOfColors: number): "1" | "2" | "4" | undefined;
 export declare const DisplayBitmapScaleDirections: readonly ["x", "y", "all"];
 export type DisplayBitmapScaleDirection = (typeof DisplayBitmapScaleDirections)[number];
-export declare const DisplayBitmapScaleDirectionToCommand: Record<DisplayBitmapScaleDirection, DisplayContextCommand>;
+export declare const DisplayBitmapScaleDirectionToCommand: Record<DisplayBitmapScaleDirection, DisplayContextCommandType>;
 export type DisplayColorRGB = {
     r: number;
     g: number;

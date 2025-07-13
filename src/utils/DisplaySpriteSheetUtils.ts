@@ -1,5 +1,5 @@
 import { createConsole } from "./Console.ts";
-import { DisplayContextCommandMessage } from "./DisplayContextCommand.ts";
+import { DisplayContextCommand } from "./DisplayContextCommand.ts";
 
 const _console = createConsole("DisplaySpriteSheetUtils", { log: true });
 
@@ -7,7 +7,7 @@ export type DisplaySprite = {
   name: string;
   width: number;
   height: number;
-  displayCommandMessages: DisplayContextCommandMessage[];
+  commands: DisplayContextCommand[];
 };
 export type DisplaySpriteSheetPalette = {
   name: string;

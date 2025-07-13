@@ -371,7 +371,7 @@ addPaletteButton.addEventListener("click", () => {
 
 // PALETTE
 let selectedPaletteIndex = -1;
-/** @type {BS.DisplaySpriteSheetPalette} */
+/** @type {BS.DisplaySpriteSheetPalette?} */
 let selectedPalette;
 const addPalette = () => {
   //console.log("addPalette");
@@ -652,9 +652,73 @@ const deleteSelectedPalette = () => {
 };
 
 // SPRITE
+let selectedSpriteIndex = -1;
+/** @type {BS.DisplaySprite?} */
+let selectedSprite;
 const addSprite = () => {
-  console.log("addSprite");
-  // FILL
+  //console.log("addSprite");
+  spriteSheet.sprites.push({
+    name: `mySprite ${Object.keys(spriteSheet.sprites).length}`,
+    width: 40,
+    height: 40,
+    displayCommandMessages: [],
+  });
+  const spriteIndex = spriteSheet.sprites.length - 1;
+  updateSelectSpriteSelect();
+  setSpriteIndex(spriteIndex);
+};
+const setSpriteIndex = (spriteIndex) => {
+  selectedSpriteIndex = spriteIndex;
+  console.log({ selectedSpriteIndex });
+  selectedSprite = spriteSheet.sprites[selectedSpriteIndex];
+
+  spriteNameInput.value = selectedSprite?.name ?? "";
+  spriteNameInput.disabled = selectedSprite == undefined;
+  selectSpriteSelect.value = selectedSpriteIndex;
+
+  deleteSpriteButton.disabled = selectedSprite == undefined;
+
+  displayCanvasHelper.flushContextCommands();
+};
+
+/** @type {HTMLSelectElement} */
+const selectSpriteSelect = document.getElementById("selectSprite");
+const selectSpriteOptgroup = selectSpriteSelect.querySelector("optgroup");
+selectSpriteSelect.addEventListener("input", () => {
+  const selectedSpriteIndex = Number(selectSpriteSelect.value);
+  setSpriteIndex(selectedSpriteIndex);
+});
+const updateSelectSpriteSelect = () => {
+  selectSpriteOptgroup.innerHTML = "";
+  selectSpriteOptgroup.appendChild(new Option("none", -1));
+  spriteSheet.sprites.forEach((sprite, index) => {
+    selectSpriteOptgroup.appendChild(new Option(sprite.name, index));
+  });
+  selectSpriteSelect.value = selectedSpriteIndex;
+};
+updateSelectSpriteSelect();
+
+const spriteNameInput = document.getElementById("spriteName");
+spriteNameInput.addEventListener("input", () => {
+  let spriteName = spriteNameInput.value;
+  selectedSprite.name = spriteName;
+});
+spriteNameInput.addEventListener("focusout", () => {
+  updateSelectSpriteSelect();
+});
+
+const deleteSpriteButton = document.getElementById("deleteSprite");
+deleteSpriteButton.addEventListener("click", () => {
+  deleteSelectedSprite();
+});
+const deleteSelectedSprite = () => {
+  if (!selectedSprite) {
+    return;
+  }
+  console.log("deleting sprite");
+  spriteSheet.sprites.splice(selectedSpriteIndex, 1);
+  setSpriteIndex(-1);
+  updateSelectSpriteSelect();
 };
 
 // LOAD/SAVE
@@ -666,10 +730,12 @@ const onSpriteSheetString = (spriteSheetString) => {
     /** @type {BS.DisplaySpriteSheet} */
     const _spriteSheet = JSON.parse(spriteSheetString);
     setSpriteSheetName(_spriteSheet.name);
+
     spriteSheet.palettes = _spriteSheet.palettes;
     updateSelectPaletteSelect();
 
-    // FILL - sprites
+    spriteSheet.sprites = _spriteSheet.sprites;
+    updateSelectSpriteSelect();
   } catch (error) {
     console.error("invalid spritesheet json", error);
   }
