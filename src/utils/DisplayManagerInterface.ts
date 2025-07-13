@@ -20,6 +20,8 @@ export interface DisplayManagerInterface {
 
   get contextState(): DisplayContextState;
 
+  flushContextCommands(): Promise<void>;
+
   get brightness(): DisplayBrightness;
   setBrightness(
     newDisplayBrightness: DisplayBrightness,

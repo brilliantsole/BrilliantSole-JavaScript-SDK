@@ -81,6 +81,7 @@ declare class DisplayCanvasHelper implements DisplayManagerInterface {
     set applyTransparency(newValue: boolean);
     get device(): Device | undefined;
     set device(newDevice: Device | undefined);
+    flushContextCommands(): Promise<void>;
     get numberOfColors(): number;
     set numberOfColors(newNumberOfColors: number);
     get colors(): string[];

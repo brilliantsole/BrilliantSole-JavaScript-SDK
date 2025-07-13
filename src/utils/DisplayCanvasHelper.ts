@@ -7,7 +7,7 @@ import {
   DisplayBitmapColorPair,
   DisplayBrightness,
 } from "../DisplayManager.ts";
-import { assertValidBitmapPixels } from "./BitmapUtils.ts";
+import { assertValidBitmapPixels } from "./DisplayBitmapUtils.ts";
 import { hexToRGB, rgbToHex, stringToRGB } from "./ColorUtils.ts";
 import { createConsole } from "./Console.ts";
 import { DisplayContextCommandMessage } from "./DisplayContextCommand.ts";
@@ -325,6 +325,12 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
       this.#updateCanvas();
       this.#updateDevice();
       this.#isReady = this.device.isDisplayReady;
+    }
+  }
+
+  async flushContextCommands() {
+    if (this.#device?.isConnected) {
+      await this.#device.flushDisplayContextCommands();
     }
   }
 

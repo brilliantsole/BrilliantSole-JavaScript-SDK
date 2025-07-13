@@ -112,7 +112,7 @@ declare class DisplayManager implements DisplayManagerInterface {
     get type(): "none" | "generic" | "monocularLeft" | "monocularRight" | "binocular";
     get brightness(): "veryLow" | "low" | "medium" | "high" | "veryHigh";
     setBrightness(newDisplayBrightness: DisplayBrightness, sendImmediately?: boolean): Promise<void>;
-    flushDisplayContextCommands(): Promise<void>;
+    flushContextCommands(): Promise<void>;
     show(sendImmediately?: boolean): Promise<void>;
     clear(sendImmediately?: boolean): Promise<void>;
     get colors(): string[];
@@ -167,15 +167,8 @@ declare class DisplayManager implements DisplayManagerInterface {
     drawArc(centerX: number, centerY: number, radius: number, startAngle: number, angleOffset: number, isRadians?: boolean, sendImmediately?: boolean): Promise<void>;
     drawArcEllipse(centerX: number, centerY: number, radiusX: number, radiusY: number, startAngle: number, angleOffset: number, isRadians?: boolean, sendImmediately?: boolean): Promise<void>;
     drawBitmap(centerX: number, centerY: number, bitmap: DisplayBitmap, sendImmediately?: boolean): Promise<void>;
-    imageToBitmap(image: HTMLImageElement, width: number, height: number, numberOfColors?: number): Promise<{
-        blob: Blob;
-        bitmap: DisplayBitmap;
-    }>;
-    quantizeImage(image: HTMLImageElement, width: number, height: number, numberOfColors: number): Promise<{
-        blob: Blob;
-        colors: string[];
-        colorIndices: number[];
-    }>;
+    imageToBitmap(image: HTMLImageElement, width: number, height: number, numberOfColors?: number): Promise<any>;
+    quantizeImage(image: HTMLImageElement, width: number, height: number, numberOfColors: number): Promise<any>;
     selectSpriteSheet(index: number, sendImmediately?: boolean): void;
     drawSprite(index: number, x: number, y: number, sendImmediately?: boolean): void;
     runContextCommandMessage(commandMessage: DisplayContextCommandMessage, position?: Vector2, sendImmediately?: boolean): Promise<void>;

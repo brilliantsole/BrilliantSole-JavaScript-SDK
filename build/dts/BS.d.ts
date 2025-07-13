@@ -25,7 +25,7 @@ export { DisplaySprite, DisplaySpriteSheet, DisplaySpriteSheetPalette, } from ".
 export { default as DisplayCanvasHelper, DisplayCanvasHelperEvent, DisplayCanvasHelperEventMap, DisplayCanvasHelperEventListenerMap, } from "./utils/DisplayCanvasHelper.ts";
 /** BROWSER_END */
 /** BROWSER_START */
-export { resizeAndQuantizeImage } from "./utils/BitmapUtils.ts";
+export { resizeAndQuantizeImage } from "./utils/DisplayBitmapUtils.ts";
 /** BROWSER_END */
 export { rgbToHex, hexToRGB } from "./utils/ColorUtils.ts";
 export { default as DevicePair, DevicePairEvent, DevicePairEventMap, DevicePairEventListenerMap, BoundDevicePairEventListeners, DevicePairType, DevicePairTypes, } from "./devicePair/DevicePair.ts";

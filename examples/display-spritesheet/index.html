@@ -50,6 +50,13 @@
     <hr />
 
     <label>
+      palette index
+      <select id="selectPalette">
+        <optgroup label="select palette"></optgroup>
+      </select>
+    </label>
+
+    <label>
       palette name
       <input
         disabled
@@ -61,9 +68,16 @@
     </label>
 
     <label>
-      palette index
-      <select id="selectPalette">
-        <optgroup label="select palette"></optgroup>
+      number of palette colors
+      <select disabled id="paletteNumberOfColors">
+        <optgroup label="number of palette colors"></optgroup>
+      </select>
+    </label>
+
+    <label>
+      number of bitmap palette colors
+      <select disabled id="paletteNumberOfBitmapColors">
+        <optgroup label="number of palette bitmap colors"></optgroup>
       </select>
     </label>
 

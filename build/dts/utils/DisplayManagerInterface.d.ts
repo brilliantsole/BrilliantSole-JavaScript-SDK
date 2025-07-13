@@ -6,6 +6,7 @@ import { Vector2 } from "./MathUtils.ts";
 export interface DisplayManagerInterface {
     get isReady(): boolean;
     get contextState(): DisplayContextState;
+    flushContextCommands(): Promise<void>;
     get brightness(): DisplayBrightness;
     setBrightness(newDisplayBrightness: DisplayBrightness, sendImmediately?: boolean): Promise<void>;
     show(sendImmediately?: boolean): Promise<void>;

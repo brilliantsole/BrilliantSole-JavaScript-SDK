@@ -11,11 +11,12 @@ export type DisplaySprite = {
 };
 export type DisplaySpriteSheetPalette = {
   name: string;
-  numberOfColdsors: number;
+  numberOfColors: number;
   colors: string[];
   opacities: number[];
   fillColorIndex: number;
   lineColorIndex: number;
+  numberOfBitmapColors: number;
   bitmapColorIndices: number[];
 };
 export type DisplaySpriteSheet = {

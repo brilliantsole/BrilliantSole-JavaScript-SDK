@@ -10,7 +10,7 @@ import {
 } from "./DisplayUtils.ts";
 import { DisplayContextState } from "./DisplayContextState.ts";
 
-const _console = createConsole("BitmapUtils", { log: true });
+const _console = createConsole("DisplayBitmapUtils", { log: true });
 
 export async function quantizeImage(
   image: HTMLImageElement,

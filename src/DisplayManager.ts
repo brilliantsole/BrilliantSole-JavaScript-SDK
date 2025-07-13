@@ -46,7 +46,7 @@ import {
   getBitmapNumberOfBytes,
   imageToBitmap,
   quantizeImage,
-} from "./utils/BitmapUtils.ts";
+} from "./utils/DisplayBitmapUtils.ts";
 import {
   DisplayContextState,
   DisplayContextStateKey,
@@ -62,7 +62,7 @@ import {
   DisplayManagerInterface,
   runDisplayContextCommand,
 } from "./utils/DisplayManagerInterface.ts";
-import { DisplaySpriteSheet } from "./BS.ts";
+import { DisplaySpriteSheet } from "./utils/DisplaySpriteSheetUtils.ts";
 
 const _console = createConsole("DisplayManager", { log: true });
 
@@ -327,7 +327,7 @@ class DisplayManager implements DisplayManagerInterface {
       }
     });
     if (sendImmediately) {
-      await this.#sendDisplayContextCommands();
+      await this.#sendContextCommands();
     }
   }
 
@@ -576,14 +576,14 @@ class DisplayManager implements DisplayManagerInterface {
     );
     if (newLength > this.#maxCommandDataLength) {
       _console.log("displayContextCommandBuffers too full - sending now");
-      await this.#sendDisplayContextCommands();
+      await this.#sendContextCommands();
     }
     this.#displayContextCommandBuffers.push(_arrayBuffer);
     if (sendImmediately) {
-      await this.#sendDisplayContextCommands();
+      await this.#sendContextCommands();
     }
   }
-  async #sendDisplayContextCommands() {
+  async #sendContextCommands() {
     if (this.#displayContextCommandBuffers.length == 0) {
       return;
     }
@@ -596,8 +596,8 @@ class DisplayManager implements DisplayManagerInterface {
     this.#displayContextCommandBuffers.length = 0;
     await this.sendMessage([{ type: "displayContextCommands", data }], true);
   }
-  async flushDisplayContextCommands() {
-    await this.#sendDisplayContextCommands();
+  async flushContextCommands() {
+    await this.#sendContextCommands();
   }
   async show(sendImmediately = true) {
     _console.log("showDisplay");

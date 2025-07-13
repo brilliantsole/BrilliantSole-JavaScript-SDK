@@ -1628,7 +1628,7 @@ class Device {
   }
   get flushDisplayContextCommands() {
     this.#assertDisplayIsAvailable();
-    return this.#displayManager.flushDisplayContextCommands;
+    return this.#displayManager.flushContextCommands;
   }
 
   get drawDisplayRect() {

@@ -74,8 +74,6 @@ const setDisplayColor = BS.ThrottleUtils.throttle(
   100,
   true
 );
-/** @type {HTMLInputElement[]} */
-const displayColorInputs = [];
 const setupColors = () => {
   displayColorsContainer.innerHTML = "";
   for (
@@ -90,7 +88,6 @@ const setupColors = () => {
     const colorIndexSpan = displayColorContainer.querySelector(".colorIndex");
     colorIndexSpan.innerText = `color #${colorIndex}`;
     const colorInput = displayColorContainer.querySelector("input");
-    displayColorInputs[colorIndex] = colorInput;
     colorInput.addEventListener("input", () => {
       setDisplayColor(colorIndex, colorInput.value);
     });
@@ -101,7 +98,9 @@ setupColors();
 displayCanvasHelper.addEventListener("numberOfColors", () => setupColors());
 displayCanvasHelper.addEventListener("color", (event) => {
   const { colorHex, colorIndex } = event.message;
-  displayColorInputs[colorIndex].value = colorHex;
+  displayColorsContainer.querySelectorAll(".displayColor input")[
+    colorIndex
+  ].value = colorHex;
 });
 
 // OPACITIES
@@ -137,11 +136,8 @@ const setupColorOpacities = () => {
     displayColorOpacityIndex.innerText = `opacity #${colorIndex}`;
     const displayColorOpacityInput =
       displayColorOpacityContainer.querySelector("input");
-    const displayColorOpacitySpan =
-      displayColorOpacityContainer.querySelector(".opacity");
     displayColorOpacityInput.addEventListener("input", () => {
       const opacity = Number(displayColorOpacityInput.value);
-      displayColorOpacitySpan.innerText = Math.round(opacity * 100);
       setDisplayColorOpacity(colorIndex, opacity);
     });
     displayColorOpacitiesContainer.appendChild(displayColorOpacityContainer);
@@ -151,6 +147,16 @@ displayCanvasHelper.addEventListener("numberOfColors", () =>
   setupColorOpacities()
 );
 setupColorOpacities();
+displayCanvasHelper.addEventListener("colorOpacity", (event) => {
+  const { colorIndex, opacity } = event.message;
+  const displayColorOpacityContainer =
+    displayColorOpacitiesContainer.querySelectorAll(".displayColorOpacity")[
+      colorIndex
+    ];
+  displayColorOpacityContainer.querySelector("input").value = opacity;
+  displayColorOpacityContainer.querySelector("span.opacity").innerText =
+    Math.round(opacity * 100);
+});
 
 const displayOpacityContainer = document.getElementById("displayOpacity");
 const displayOpacitySpan = displayOpacityContainer.querySelector("span");
@@ -280,7 +286,6 @@ addPaletteButton.addEventListener("click", () => {
 });
 
 // PALETTE
-const paletteNameInput = document.getElementById("paletteName");
 let selectedPaletteIndex = -1;
 /** @type {BS.DisplaySpriteSheetPalette} */
 let selectedPalette;
@@ -288,31 +293,32 @@ const addPalette = () => {
   //console.log("addPalette");
   spriteSheet.palettes.push({
     name: `myPalette ${Object.keys(spriteSheet.palettes).length}`,
+    numberOfColors: 0,
     colors: [],
     opacities: [],
     fillColorIndex: 1,
     lineColorIndex: 1,
+    numberOfBitmapColors: 0,
     bitmapColorIndices: [],
   });
   const paletteIndex = spriteSheet.palettes.length - 1;
   updateSelectPaletteSelect();
   setPaletteIndex(paletteIndex);
+  setPaletteNumberOfColors(2);
 };
 const setPaletteIndex = (paletteIndex) => {
   selectedPaletteIndex = paletteIndex;
   console.log({ selectedPaletteIndex });
   selectedPalette = spriteSheet.palettes[selectedPaletteIndex];
+
   paletteNameInput.value = selectedPalette?.name ?? "";
   paletteNameInput.disabled = selectedPalette == undefined;
   selectPaletteSelect.value = selectedPaletteIndex;
 
-  // FILL - update context
-};
+  displayCanvasHelper.flushContextCommands();
 
-paletteNameInput.addEventListener("input", () => {
-  let paletteName = paletteNameInput.value;
-  selectedPalette.name = paletteName;
-});
+  onPaletteNumberOfColorsUpdate();
+};
 
 /** @type {HTMLSelectElement} */
 const selectPaletteSelect = document.getElementById("selectPalette");
@@ -330,9 +336,6 @@ const updateSelectPaletteSelect = () => {
   selectPaletteSelect.value = selectedPaletteIndex;
 };
 updateSelectPaletteSelect();
-paletteNameInput.addEventListener("focusout", () => {
-  updateSelectPaletteSelect();
-});
 
 displayCanvasHelper.addEventListener("color", (event) => {
   if (!selectedPalette) {
@@ -362,6 +365,166 @@ displayCanvasHelper.addEventListener("contextState", (event) => {
   if (differences.includes("bitmapColorIndices")) {
     selectedPalette.bitmapColorIndices = contextState.bitmapColorIndices;
   }
+});
+
+const paletteNameInput = document.getElementById("paletteName");
+paletteNameInput.addEventListener("input", () => {
+  let paletteName = paletteNameInput.value;
+  selectedPalette.name = paletteName;
+});
+paletteNameInput.addEventListener("focusout", () => {
+  updateSelectPaletteSelect();
+});
+
+/** @type {HTMLSelectElement} */
+const paletteNumberOfColorsSelect = document.getElementById(
+  "paletteNumberOfColors"
+);
+const paletteNumberOfColorsOptgroup =
+  paletteNumberOfColorsSelect.querySelector("optgroup");
+paletteNumberOfColorsSelect.addEventListener("input", () => {
+  const paletteNumberOfColors = Number(paletteNumberOfColorsSelect.value);
+  setPaletteNumberOfColors(paletteNumberOfColors);
+});
+const setPaletteNumberOfColors = (paletteNumberOfColors) => {
+  console.log({ paletteNumberOfColors });
+
+  if (selectedPalette) {
+    selectedPalette.numberOfColors = paletteNumberOfColors;
+
+    selectedPalette.colors.length = paletteNumberOfColors;
+    selectedPalette.opacities.length = paletteNumberOfColors;
+    for (let colorIndex = 0; colorIndex < paletteNumberOfColors; colorIndex++) {
+      const color = selectedPalette.colors[colorIndex];
+      if (color == undefined) {
+        selectedPalette.colors[colorIndex] = "#000000";
+      }
+
+      const opacity = selectedPalette.opacities[colorIndex];
+      if (opacity == undefined) {
+        selectedPalette.opacities[colorIndex] = 1;
+      }
+    }
+  }
+
+  onPaletteNumberOfColorsUpdate();
+};
+const onPaletteNumberOfColorsUpdate = () => {
+  for (
+    let colorIndex = 0;
+    colorIndex < displayCanvasHelper.numberOfColors;
+    colorIndex++
+  ) {
+    const enabled = selectedPalette
+      ? colorIndex < selectedPalette.numberOfColors
+      : true;
+    displayColorsContainer.querySelectorAll(".displayColor")[
+      colorIndex
+    ].style.display = enabled ? "" : "none";
+    displayColorOpacitiesContainer.querySelectorAll(".displayColorOpacity")[
+      colorIndex
+    ].style.display = enabled ? "" : "none";
+  }
+  for (
+    let bitmapColorIndex = 0;
+    bitmapColorIndex < displayCanvasHelper.numberOfBitmapColors;
+    bitmapColorIndex++
+  ) {
+    const enabled = selectedPalette
+      ? colorIndex < selectedPalette.numberOfBitmapColors
+      : true;
+    // FILL - update bitmapColor selects
+  }
+
+  paletteNumberOfColorsSelect.disabled = selectedPalette == undefined;
+  paletteNumberOfBitmapColorsSelect.disabled = selectedPalette == undefined;
+
+  paletteNumberOfColorsSelect.value = selectedPalette?.numberOfColors ?? 2;
+  paletteNumberOfBitmapColorsSelect.value =
+    selectedPalette?.numberOfBitmapColors ?? 0;
+
+  for (
+    let colorIndex = 0;
+    colorIndex <
+    (selectedPalette?.numberOfColors ?? displayCanvasHelper.numberOfColors);
+    colorIndex++
+  ) {
+    displayCanvasHelper.setColor(
+      colorIndex,
+      selectedPalette?.colors?.[colorIndex] ?? "#000000"
+    );
+    displayCanvasHelper.setColorOpacity(
+      colorIndex,
+      selectedPalette?.opacities[colorIndex] ?? 1
+    );
+  }
+
+  for (
+    let bitmapColorIndex = 0;
+    bitmapColorIndex <
+    (selectedPalette?.numberOfColors ?? displayCanvasHelper.numberOfColors);
+    bitmapColorIndex++
+  ) {
+    displayCanvasHelper.selectBitmapColor(
+      bitmapColorIndex,
+      selectedPalette?.bitmapColorIndices?.[bitmapColorIndex] ?? 0
+    );
+  }
+};
+const updatePaletteNumberOfColorsSelect = () => {
+  paletteNumberOfColorsOptgroup.innerHTML = "";
+  for (
+    let colorIndex = 2;
+    colorIndex < displayCanvasHelper.numberOfColors;
+    colorIndex++
+  ) {
+    paletteNumberOfColorsOptgroup.appendChild(new Option(colorIndex));
+  }
+};
+updatePaletteNumberOfColorsSelect();
+displayCanvasHelper.addEventListener("numberOfColors", () => {
+  updatePaletteNumberOfColorsSelect();
+});
+
+/** @type {HTMLSelectElement} */
+const paletteNumberOfBitmapColorsSelect = document.getElementById(
+  "paletteNumberOfBitmapColors"
+);
+const paletteNumberOfBitmapColorsOptgroup =
+  paletteNumberOfBitmapColorsSelect.querySelector("optgroup");
+paletteNumberOfBitmapColorsSelect.addEventListener("input", () => {
+  const paletteNumberOfBitmapColors = Number(
+    paletteNumberOfBitmapColorsSelect.value
+  );
+  setPaletteNumberOfBitmapColors(paletteNumberOfBitmapColors);
+});
+const setPaletteNumberOfBitmapColors = (paletteNumberOfBitmapColors) => {
+  console.log({ paletteNumberOfBitmapColors });
+  selectedPalette.numberOfBitmapColors = paletteNumberOfBitmapColors;
+
+  for (
+    let bitmapColorIndex = 0;
+    bitmapColorIndex < selectedPalette.numberOfBitmapColors;
+    bitmapColorIndex++
+  ) {
+    // FILL - create selects
+  }
+
+  paletteNumberOfBitmapColorsSelect.disabled = selectedPalette == undefined;
+};
+const updatePaletteNumberOfBitmapColorsSelect = () => {
+  paletteNumberOfBitmapColorsOptgroup.innerHTML = "";
+  for (
+    let colorIndex = 0;
+    colorIndex < displayCanvasHelper.numberOfColors;
+    colorIndex++
+  ) {
+    paletteNumberOfBitmapColorsOptgroup.appendChild(new Option(colorIndex));
+  }
+};
+updatePaletteNumberOfBitmapColorsSelect();
+displayCanvasHelper.addEventListener("numberOfColors", () => {
+  updatePaletteNumberOfBitmapColorsSelect();
 });
 
 // SPRITE

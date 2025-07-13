@@ -4617,7 +4617,7 @@ var rgbquant = {exports: {}};
 var rgbquantExports = rgbquant.exports;
 var RGBQuant = getDefaultExportFromCjs(rgbquantExports);
 
-const _console$k = createConsole("BitmapUtils", { log: true });
+const _console$k = createConsole("DisplayBitmapUtils", { log: true });
 async function quantizeImage(image, width, height, numberOfColors) {
     _console$k.assertWithError(numberOfColors > 1, "numberOfColors must be greater than 1");
     _console$k.log({ numberOfColors });
@@ -5141,7 +5141,7 @@ async function runDisplayContextCommand(displayManager, commandMessage, position
     }
 }
 
-var _DisplayManager_instances, _DisplayManager_dispatchEvent_get, _DisplayManager_isAvailable, _DisplayManager_assertDisplayIsAvailable, _DisplayManager_parseIsDisplayAvailable, _DisplayManager_contextStateHelper, _DisplayManager_onContextStateUpdate, _DisplayManager_displayStatus, _DisplayManager_parseDisplayStatus, _DisplayManager_updateDisplayStatus, _DisplayManager_sendDisplayCommand, _DisplayManager_assertIsAwake, _DisplayManager_assertIsNotAwake, _DisplayManager_displayInformation, _DisplayManager_parseDisplayInformation, _DisplayManager_brightness, _DisplayManager_parseDisplayBrightness, _DisplayManager_assertValidDisplayContextCommand, _DisplayManager_maxCommandDataLength_get, _DisplayManager_displayContextCommandBuffers, _DisplayManager_sendDisplayContextCommand, _DisplayManager_sendDisplayContextCommands, _DisplayManager_assertValidColorIndex, _DisplayManager_colors, _DisplayManager_opacities, _DisplayManager_assertValidLineWidth, _DisplayManager_clampBox, _DisplayManager_assertValidNumberOfColors, _DisplayManager_assertValidBitmap, _DisplayManager_getBitmapData, _DisplayManager_drawBitmapHeaderLength_get, _DisplayManager_isReady, _DisplayManager_parseDisplayReady, _DisplayManager_mtu;
+var _DisplayManager_instances, _DisplayManager_dispatchEvent_get, _DisplayManager_isAvailable, _DisplayManager_assertDisplayIsAvailable, _DisplayManager_parseIsDisplayAvailable, _DisplayManager_contextStateHelper, _DisplayManager_onContextStateUpdate, _DisplayManager_displayStatus, _DisplayManager_parseDisplayStatus, _DisplayManager_updateDisplayStatus, _DisplayManager_sendDisplayCommand, _DisplayManager_assertIsAwake, _DisplayManager_assertIsNotAwake, _DisplayManager_displayInformation, _DisplayManager_parseDisplayInformation, _DisplayManager_brightness, _DisplayManager_parseDisplayBrightness, _DisplayManager_assertValidDisplayContextCommand, _DisplayManager_maxCommandDataLength_get, _DisplayManager_displayContextCommandBuffers, _DisplayManager_sendDisplayContextCommand, _DisplayManager_sendContextCommands, _DisplayManager_assertValidColorIndex, _DisplayManager_colors, _DisplayManager_opacities, _DisplayManager_assertValidLineWidth, _DisplayManager_clampBox, _DisplayManager_assertValidNumberOfColors, _DisplayManager_assertValidBitmap, _DisplayManager_getBitmapData, _DisplayManager_drawBitmapHeaderLength_get, _DisplayManager_isReady, _DisplayManager_parseDisplayReady, _DisplayManager_mtu;
 const _console$j = createConsole("DisplayManager", { log: true });
 const DefaultNumberOfDisplayColors = 16;
 const DisplayCommands = ["sleep", "wake"];
@@ -5296,7 +5296,7 @@ class DisplayManager {
             }
         });
         if (sendImmediately) {
-            await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommands).call(this);
+            await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendContextCommands).call(this);
         }
     }
     get displayStatus() {
@@ -5363,8 +5363,8 @@ class DisplayManager {
         this.sendMessage([{ type: "setDisplayBrightness", data: newDisplayBrightnessData }], sendImmediately);
         await promise;
     }
-    async flushDisplayContextCommands() {
-        await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommands).call(this);
+    async flushContextCommands() {
+        await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendContextCommands).call(this);
     }
     async show(sendImmediately = true) {
         _console$j.log("showDisplay");
@@ -6071,13 +6071,13 @@ async function _DisplayManager_sendDisplayCommand(command, sendImmediately) {
     const newLength = __classPrivateFieldGet(this, _DisplayManager_displayContextCommandBuffers, "f").reduce((sum, buffer) => sum + buffer.byteLength, _arrayBuffer.byteLength);
     if (newLength > __classPrivateFieldGet(this, _DisplayManager_instances, "a", _DisplayManager_maxCommandDataLength_get)) {
         _console$j.log("displayContextCommandBuffers too full - sending now");
-        await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommands).call(this);
+        await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendContextCommands).call(this);
     }
     __classPrivateFieldGet(this, _DisplayManager_displayContextCommandBuffers, "f").push(_arrayBuffer);
     if (sendImmediately) {
-        await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommands).call(this);
+        await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendContextCommands).call(this);
     }
-}, _DisplayManager_sendDisplayContextCommands = async function _DisplayManager_sendDisplayContextCommands() {
+}, _DisplayManager_sendContextCommands = async function _DisplayManager_sendContextCommands() {
     if (__classPrivateFieldGet(this, _DisplayManager_displayContextCommandBuffers, "f").length == 0) {
         return;
     }
@@ -9222,7 +9222,7 @@ class Device {
     }
     get flushDisplayContextCommands() {
         __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertDisplayIsAvailable).call(this);
-        return __classPrivateFieldGet(this, _Device_displayManager, "f").flushDisplayContextCommands;
+        return __classPrivateFieldGet(this, _Device_displayManager, "f").flushContextCommands;
     }
     get drawDisplayRect() {
         __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertDisplayIsAvailable).call(this);
@@ -9638,6 +9638,11 @@ class DisplayCanvasHelper {
             __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_updateCanvas).call(this);
             __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_updateDevice).call(this);
             __classPrivateFieldSet(this, _DisplayCanvasHelper_isReady, this.device.isDisplayReady, "f");
+        }
+    }
+    async flushContextCommands() {
+        if (__classPrivateFieldGet(this, _DisplayCanvasHelper_device, "f")?.isConnected) {
+            await __classPrivateFieldGet(this, _DisplayCanvasHelper_device, "f").flushDisplayContextCommands();
         }
     }
     get numberOfColors() {

@@ -139,7 +139,7 @@ export {
 /** BROWSER_END */
 
 /** BROWSER_START */
-export { resizeAndQuantizeImage } from "./utils/BitmapUtils.ts";
+export { resizeAndQuantizeImage } from "./utils/DisplayBitmapUtils.ts";
 /** BROWSER_END */
 
 export { rgbToHex, hexToRGB } from "./utils/ColorUtils.ts";
