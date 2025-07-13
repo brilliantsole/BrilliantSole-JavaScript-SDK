@@ -45,6 +45,11 @@
           multiple="false"
         />
       </label>
+      <button id="clearLocalStorage">clear localStorage</button>
+      <label>
+        auto save?
+        <input type="checkbox" id="autoSaveToLocalStorage" />
+      </label>
     </div>
 
     <hr />
@@ -81,6 +86,8 @@
       </select>
     </label>
 
+    <button disabled id="deletePalette">delete</button>
+
     <div id="displayColors">
       <template id="displayColorTemplate">
         <label class="displayColor">
@@ -100,6 +107,22 @@
       </template>
     </div>
 
+    <hr />
+
+    <div id="bitmapColorIndices">
+      <template id="bitmapColorIndexTemplate">
+        <label class="bitmapColorIndex">
+          <span class="colorIndex"></span>
+          <select>
+            <optgroup label="select color index"></optgroup>
+          </select>
+          <input disabled type="color" />
+        </label>
+      </template>
+    </div>
+
+    <hr />
+
     <div hidden>
       <label id="displayOpacity">
         opacity
@@ -110,7 +133,7 @@
 
     <div>
       <label id="fillColor">
-        <b>fill color</b>
+        <span>fill color</span>
         <select>
           <optgroup label="select fill color"></optgroup>
         </select>
@@ -118,7 +141,7 @@
       </label>
 
       <label id="lineColor">
-        <b>line color</b>
+        <span>line color</span>
         <select>
           <optgroup label="select line color"></optgroup>
         </select>

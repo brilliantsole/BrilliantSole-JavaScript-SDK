@@ -904,6 +904,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     if (differences.length == 0) {
       return;
     }
+    _console.log({ bitmapColorIndex, colorIndex });
 
     if (this.device?.isConnected) {
       await this.device.selectDisplayBitmapColor(

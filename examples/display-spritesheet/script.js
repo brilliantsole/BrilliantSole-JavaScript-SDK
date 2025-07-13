@@ -256,7 +256,87 @@ displayCanvasHelper.addEventListener("color", (event) => {
 });
 updateLineColorSelect();
 
+// BITMAP COLOR INDICES
+/** @type {HTMLTemplateElement} */
+const bitmapColorIndexTemplate = document.getElementById(
+  "bitmapColorIndexTemplate"
+);
+const bitmapColorIndicesContainer =
+  document.getElementById("bitmapColorIndices");
+const setBitmapColorIndex = BS.ThrottleUtils.throttle(
+  (bitmapColorIndex, colorIndex) => {
+    //console.log({ bitmapColorIndex, colorIndex });
+    displayCanvasHelper.selectBitmapColor(bitmapColorIndex, colorIndex, true);
+  },
+  100,
+  true
+);
+const setupBitmapColors = () => {
+  bitmapColorIndicesContainer.innerHTML = "";
+  for (
+    let bitmapColorIndex = 0;
+    bitmapColorIndex < displayCanvasHelper.numberOfColors;
+    bitmapColorIndex++
+  ) {
+    const bitmapColorIndexContainer = bitmapColorIndexTemplate.content
+      .cloneNode(true)
+      .querySelector(".bitmapColorIndex");
+
+    const colorIndexSpan =
+      bitmapColorIndexContainer.querySelector(".colorIndex");
+    colorIndexSpan.innerText = `bitmap color #${bitmapColorIndex}`;
+    const colorIndexSelect = bitmapColorIndexContainer.querySelector("select");
+    const colorIndexOptgroup = colorIndexSelect.querySelector("optgroup");
+    for (
+      let colorIndex = 0;
+      colorIndex < displayCanvasHelper.numberOfColors;
+      colorIndex++
+    ) {
+      colorIndexOptgroup.appendChild(new Option(colorIndex));
+    }
+    colorIndexSelect.addEventListener("input", () => {
+      const colorIndex = Number(colorIndexSelect.value);
+      setBitmapColorIndex(bitmapColorIndex, colorIndex);
+    });
+    bitmapColorIndicesContainer.appendChild(bitmapColorIndexContainer);
+  }
+};
+setupBitmapColors();
+displayCanvasHelper.addEventListener("numberOfColors", () =>
+  setupBitmapColors()
+);
+displayCanvasHelper.addEventListener("contextState", (event) => {
+  const { differences } = event.message;
+  if (differences.includes("bitmapColorIndices")) {
+    updateBitmapColorIndices();
+  }
+});
+displayCanvasHelper.addEventListener("color", (event) => {
+  if (
+    displayCanvasHelper.bitmapColorIndices.includes(event.message.colorIndex)
+  ) {
+    updateBitmapColorIndices();
+  }
+});
+const updateBitmapColorIndices = () => {
+  displayCanvasHelper.bitmapColorIndices.forEach(
+    (colorIndex, bitmapColorIndex) => {
+      if (selectedPalette) {
+        selectedPalette.bitmapColorIndices[bitmapColorIndex] = colorIndex;
+      }
+      const bitmapColorIndexContainer =
+        bitmapColorIndicesContainer.querySelectorAll(".bitmapColorIndex")[
+          bitmapColorIndex
+        ];
+      bitmapColorIndexContainer.querySelector("select").value = colorIndex;
+      bitmapColorIndexContainer.querySelector("input").value =
+        displayCanvasHelper.bitmapColors[bitmapColorIndex];
+    }
+  );
+};
+
 // SPRITESHEET
+
 /** @type {BS.DisplaySpriteSheet} */
 const spriteSheet = {
   name: "mySpriteSheet",
@@ -267,11 +347,15 @@ window.spriteSheet = spriteSheet;
 
 /** @type {HTMLInputElement} */
 const spriteSheetNameInput = document.getElementById("spriteSheetName");
-spriteSheetNameInput.addEventListener("input", () => {
-  let spriteSheetName = spriteSheetNameInput.value;
+const setSpriteSheetName = (spriteSheetName) => {
   // FIX - assert min/max length
   console.log({ spriteSheetName });
-  spriteSheet.name = spriteSheet;
+  spriteSheet.name = spriteSheetName;
+  spriteSheetNameInput.value = spriteSheet.name;
+};
+spriteSheetNameInput.addEventListener("input", () => {
+  let spriteSheetName = spriteSheetNameInput.value;
+  setSpriteSheetName(spriteSheetName);
 });
 spriteSheetNameInput.value = spriteSheet.name;
 
@@ -305,6 +389,7 @@ const addPalette = () => {
   updateSelectPaletteSelect();
   setPaletteIndex(paletteIndex);
   setPaletteNumberOfColors(2);
+  setPaletteNumberOfBitmapColors(0);
 };
 const setPaletteIndex = (paletteIndex) => {
   selectedPaletteIndex = paletteIndex;
@@ -314,6 +399,8 @@ const setPaletteIndex = (paletteIndex) => {
   paletteNameInput.value = selectedPalette?.name ?? "";
   paletteNameInput.disabled = selectedPalette == undefined;
   selectPaletteSelect.value = selectedPaletteIndex;
+
+  deletePaletteButton.disabled = selectedPalette == undefined;
 
   displayCanvasHelper.flushContextCommands();
 
@@ -427,13 +514,24 @@ const onPaletteNumberOfColorsUpdate = () => {
   }
   for (
     let bitmapColorIndex = 0;
-    bitmapColorIndex < displayCanvasHelper.numberOfBitmapColors;
+    bitmapColorIndex < displayCanvasHelper.numberOfColors;
     bitmapColorIndex++
   ) {
     const enabled = selectedPalette
-      ? colorIndex < selectedPalette.numberOfBitmapColors
+      ? bitmapColorIndex < selectedPalette.numberOfBitmapColors
       : true;
-    // FILL - update bitmapColor selects
+    const bitmapColorIndexContainer =
+      bitmapColorIndicesContainer.querySelectorAll(".bitmapColorIndex")[
+        bitmapColorIndex
+      ];
+    bitmapColorIndexContainer
+      .querySelectorAll("option")
+      .forEach((option, colorIndex) => {
+        option.hidden = selectedPalette
+          ? colorIndex >= selectedPalette.numberOfColors
+          : false;
+      });
+    bitmapColorIndexContainer.style.display = enabled ? "" : "none";
   }
 
   paletteNumberOfColorsSelect.disabled = selectedPalette == undefined;
@@ -500,17 +598,29 @@ paletteNumberOfBitmapColorsSelect.addEventListener("input", () => {
 });
 const setPaletteNumberOfBitmapColors = (paletteNumberOfBitmapColors) => {
   console.log({ paletteNumberOfBitmapColors });
-  selectedPalette.numberOfBitmapColors = paletteNumberOfBitmapColors;
 
-  for (
-    let bitmapColorIndex = 0;
-    bitmapColorIndex < selectedPalette.numberOfBitmapColors;
-    bitmapColorIndex++
-  ) {
-    // FILL - create selects
+  if (selectedPalette) {
+    selectedPalette.numberOfBitmapColors = paletteNumberOfBitmapColors;
+
+    selectedPalette.bitmapColorIndices.length = paletteNumberOfBitmapColors;
+
+    for (
+      let bitmapColorIndex = 0;
+      bitmapColorIndex < paletteNumberOfBitmapColors;
+      bitmapColorIndex++
+    ) {
+      const colorIndex = selectedPalette.bitmapColorIndices[bitmapColorIndex];
+      if (colorIndex == undefined) {
+        selectedPalette.bitmapColorIndices[colorIndex] = 0;
+      }
+    }
   }
 
-  paletteNumberOfBitmapColorsSelect.disabled = selectedPalette == undefined;
+  onPaletteNumberOfBitmapColorsUpdate();
+};
+const onPaletteNumberOfBitmapColorsUpdate = () => {
+  // should refactor onPaletteNumberOfColorsUpdate and remove bitmapIndices stuff
+  onPaletteNumberOfColorsUpdate();
 };
 const updatePaletteNumberOfBitmapColorsSelect = () => {
   paletteNumberOfBitmapColorsOptgroup.innerHTML = "";
@@ -527,6 +637,20 @@ displayCanvasHelper.addEventListener("numberOfColors", () => {
   updatePaletteNumberOfBitmapColorsSelect();
 });
 
+const deletePaletteButton = document.getElementById("deletePalette");
+deletePaletteButton.addEventListener("click", () => {
+  deleteSelectedPalette();
+});
+const deleteSelectedPalette = () => {
+  if (!selectedPalette) {
+    return;
+  }
+  console.log("deleting palette");
+  spriteSheet.palettes.splice(selectedPaletteIndex, 1);
+  setPaletteIndex(-1);
+  updateSelectPaletteSelect();
+};
+
 // SPRITE
 const addSprite = () => {
   console.log("addSprite");
@@ -535,15 +659,61 @@ const addSprite = () => {
 
 // LOAD/SAVE
 
+const onSpriteSheetString = (spriteSheetString) => {
+  console.log("spriteSheetString", spriteSheetString);
+
+  try {
+    /** @type {BS.DisplaySpriteSheet} */
+    const _spriteSheet = JSON.parse(spriteSheetString);
+    setSpriteSheetName(_spriteSheet.name);
+    spriteSheet.palettes = _spriteSheet.palettes;
+    updateSelectPaletteSelect();
+
+    // FILL - sprites
+  } catch (error) {
+    console.error("invalid spritesheet json", error);
+  }
+};
+
 const localStorageKey = "BS.SpriteSheets";
 const saveToLocalStorage = () => {
   console.log("saveToLocalStorage");
-  // FILL
+  localStorage.setItem(localStorageKey, JSON.stringify(spriteSheet));
 };
 const loadFromLocalStorage = () => {
   console.log("loadFromLocalStorage");
-  // FILL
+  const spriteSheetString = localStorage.getItem(localStorageKey);
+  if (!spriteSheetString) {
+    return;
+  }
+  onSpriteSheetString(spriteSheetString);
 };
+const clearLocalStorage = () => {
+  console.log("clearLocalStorage");
+  localStorage.removeItem(localStorageKey);
+};
+loadFromLocalStorage();
+
+/** @type {HTMLInputElement} */
+const autoSaveToLocalStorageCheckbox = document.getElementById(
+  "autoSaveToLocalStorage"
+);
+let autoSaveToLocalStorage = true;
+autoSaveToLocalStorageCheckbox.checked = autoSaveToLocalStorage;
+const setAutoSaveToLocalStorage = (newAutoSaveToLocalStorage) => {
+  autoSaveToLocalStorage = newAutoSaveToLocalStorage;
+  console.log({ autoSaveToLocalStorage });
+  autoSaveToLocalStorageCheckbox.checked = autoSaveToLocalStorage;
+};
+autoSaveToLocalStorageCheckbox.addEventListener("click", () => {
+  setAutoSaveToLocalStorage(autoSaveToLocalStorageCheckbox.checked);
+});
+
+const clearLocalStorageButton = document.getElementById("clearLocalStorage");
+clearLocalStorageButton.addEventListener("click", () => {
+  clearLocalStorage();
+  setAutoSaveToLocalStorage(false);
+});
 
 /** @type {HTMLInputElement} */
 const loadSpriteSheetInput = document.getElementById("loadSpriteSheet");
@@ -553,19 +723,11 @@ loadSpriteSheetInput.addEventListener("input", () => {
 
   const reader = new FileReader();
   reader.onload = (event) => {
-    try {
-      const json = JSON.parse(event.target.result);
-      loadSpriteSheet(json);
-    } catch (error) {
-      console.error("invalid json", error);
-    }
+    const spriteSheetString = event.target.result;
+    onSpriteSheetString(spriteSheetString);
   };
   reader.readAsText(file);
 });
-/** @param {string} json */
-const loadSpriteSheet = (json) => {
-  console.log("loadSpriteSheet", json);
-};
 
 const saveSpriteSheetButton = document.getElementById("saveSpriteSheet");
 saveSpriteSheetButton.addEventListener("click", () => {
@@ -573,5 +735,20 @@ saveSpriteSheetButton.addEventListener("click", () => {
 });
 const saveSpriteSheet = () => {
   console.log("saveSpriteSheet");
-  // FILL - save json as file
+  const spritesheetString = JSON.stringify(spriteSheet, null, 2);
+  const blob = new Blob([spritesheetString], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `spritesheet-${spriteSheet.name}.json`;
+  a.click();
+
+  URL.revokeObjectURL(url);
 };
+
+window.addEventListener("beforeunload", () => {
+  if (autoSaveToLocalStorage) {
+    saveToLocalStorage();
+  }
+});

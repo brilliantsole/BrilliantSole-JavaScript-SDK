@@ -10019,6 +10019,7 @@ class DisplayCanvasHelper {
         if (differences.length == 0) {
             return;
         }
+        _console$6.log({ bitmapColorIndex, colorIndex });
         if (this.device?.isConnected) {
             await this.device.selectDisplayBitmapColor(bitmapColorIndex, colorIndex, sendImmediately);
         }
