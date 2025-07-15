@@ -1,8 +1,13 @@
 import { DisplayContextCommand } from "./DisplayContextCommand.ts";
+export type DisplaySpritePaletteSwap = {
+    name: string;
+    spriteColorIndices: number[];
+};
 export type DisplaySprite = {
     name: string;
     width: number;
     height: number;
+    paletteSwaps: DisplaySpritePaletteSwap[];
     commands: DisplayContextCommand[];
 };
 export type DisplaySpriteSheetPalette = {
@@ -10,10 +15,6 @@ export type DisplaySpriteSheetPalette = {
     numberOfColors: number;
     colors: string[];
     opacities: number[];
-    fillColorIndex: number;
-    lineColorIndex: number;
-    numberOfBitmapColors: number;
-    bitmapColorIndices: number[];
 };
 export type DisplaySpriteSheet = {
     name: string;

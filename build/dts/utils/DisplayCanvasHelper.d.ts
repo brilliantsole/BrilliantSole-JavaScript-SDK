@@ -1,8 +1,8 @@
 import Device from "../Device.ts";
-import { DisplayBitmap, DisplayBitmapColorPair, DisplayBrightness } from "../DisplayManager.ts";
+import { DisplayBitmap, DisplayBitmapColorPair, DisplayBrightness, DisplaySpriteColorPair } from "../DisplayManager.ts";
 import { DisplayContextState, DisplayContextStateKey, DisplaySegmentCap } from "./DisplayContextState.ts";
 import { DisplayManagerInterface } from "./DisplayManagerInterface.ts";
-import { DisplayBitmapScaleDirection, DisplayColorRGB, DisplayCropDirection } from "./DisplayUtils.ts";
+import { DisplayScaleDirection, DisplayColorRGB, DisplayCropDirection } from "./DisplayUtils.ts";
 import EventDispatcher, { BoundEventListeners, Event, EventListenerMap, EventMap } from "./EventDispatcher.ts";
 import { Vector2 } from "./MathUtils.ts";
 import { DisplayContextCommand } from "./DisplayContextCommand.ts";
@@ -52,24 +52,24 @@ export type DisplayBoundingBox = {
 declare class DisplayCanvasHelper implements DisplayManagerInterface {
     #private;
     constructor();
-    get addEventListener(): <T extends "numberOfColors" | "opacity" | "contextState" | "brightness" | "color" | "colorOpacity" | "resize" | "update" | "ready">(type: T, listener: (event: {
+    get addEventListener(): <T extends "contextState" | "numberOfColors" | "brightness" | "color" | "colorOpacity" | "opacity" | "resize" | "update" | "ready">(type: T, listener: (event: {
         type: T;
         target: DisplayCanvasHelper;
         message: DisplayCanvasHelperEventMessages[T];
     }) => void, options?: {
         once?: boolean;
     }) => void;
-    get removeEventListener(): <T extends "numberOfColors" | "opacity" | "contextState" | "brightness" | "color" | "colorOpacity" | "resize" | "update" | "ready">(type: T, listener: (event: {
+    get removeEventListener(): <T extends "contextState" | "numberOfColors" | "brightness" | "color" | "colorOpacity" | "opacity" | "resize" | "update" | "ready">(type: T, listener: (event: {
         type: T;
         target: DisplayCanvasHelper;
         message: DisplayCanvasHelperEventMessages[T];
     }) => void) => void;
-    get waitForEvent(): <T extends "numberOfColors" | "opacity" | "contextState" | "brightness" | "color" | "colorOpacity" | "resize" | "update" | "ready">(type: T) => Promise<{
+    get waitForEvent(): <T extends "contextState" | "numberOfColors" | "brightness" | "color" | "colorOpacity" | "opacity" | "resize" | "update" | "ready">(type: T) => Promise<{
         type: T;
         target: DisplayCanvasHelper;
         message: DisplayCanvasHelperEventMessages[T];
     }>;
-    get removeEventListeners(): <T extends "numberOfColors" | "opacity" | "contextState" | "brightness" | "color" | "colorOpacity" | "resize" | "update" | "ready">(type: T) => void;
+    get removeEventListeners(): <T extends "contextState" | "numberOfColors" | "brightness" | "color" | "colorOpacity" | "opacity" | "resize" | "update" | "ready">(type: T) => void;
     get removeAllEventListeners(): () => void;
     get canvas(): HTMLCanvasElement | undefined;
     set canvas(newCanvas: HTMLCanvasElement | undefined);
@@ -126,11 +126,23 @@ declare class DisplayCanvasHelper implements DisplayManagerInterface {
     selectBitmapColors(bitmapColorPairs: DisplayBitmapColorPair[], sendImmediately?: boolean): Promise<void>;
     setBitmapColor(bitmapColorIndex: number, color: DisplayColorRGB | string, sendImmediately?: boolean): Promise<void>;
     setBitmapColorOpacity(bitmapColorIndex: number, opacity: number, sendImmediately?: boolean): Promise<void>;
-    setBitmapScaleDirection(direction: DisplayBitmapScaleDirection, bitmapScale: number, sendImmediately?: boolean): Promise<void>;
+    setBitmapScaleDirection(direction: DisplayScaleDirection, bitmapScale: number, sendImmediately?: boolean): Promise<void>;
     setBitmapScaleX(bitmapScaleX: number, sendImmediately?: boolean): Promise<void>;
     setBitmapScaleY(bitmapScaleY: number, sendImmediately?: boolean): Promise<void>;
     setBitmapScale(bitmapScale: number, sendImmediately?: boolean): Promise<void>;
     resetBitmapScale(sendImmediately?: boolean): Promise<void>;
+    get spriteColorIndices(): number[];
+    get spriteColors(): string[];
+    selectSpriteColor(spriteColorIndex: number, colorIndex: number, sendImmediately?: boolean): Promise<void>;
+    selectSpriteColors(spriteColorPairs: DisplaySpriteColorPair[], sendImmediately?: boolean): Promise<void>;
+    setSpriteColor(spriteColorIndex: number, color: DisplayColorRGB | string, sendImmediately?: boolean): Promise<void>;
+    setSpriteColorOpacity(spriteColorIndex: number, opacity: number, sendImmediately?: boolean): Promise<void>;
+    resetSpriteColors(sendImmediately?: boolean): Promise<void>;
+    setSpriteScaleDirection(direction: DisplayScaleDirection, spriteScale: number, sendImmediately?: boolean): Promise<void>;
+    setSpriteScaleX(spriteScaleX: number, sendImmediately?: boolean): Promise<void>;
+    setSpriteScaleY(spriteScaleY: number, sendImmediately?: boolean): Promise<void>;
+    setSpriteScale(spriteScale: number, sendImmediately?: boolean): Promise<void>;
+    resetSpriteScale(sendImmediately?: boolean): Promise<void>;
     clearRect(x: number, y: number, width: number, height: number, sendImmediately?: boolean): Promise<void>;
     drawRect(centerX: number, centerY: number, width: number, height: number, sendImmediately?: boolean): Promise<void>;
     drawRoundRect(centerX: number, centerY: number, width: number, height: number, borderRadius: number, sendImmediately?: boolean): Promise<void>;
@@ -142,6 +154,7 @@ declare class DisplayCanvasHelper implements DisplayManagerInterface {
     drawArc(centerX: number, centerY: number, radius: number, startAngle: number, angleOffset: number, isRadians?: boolean, sendImmediately?: boolean): Promise<void>;
     drawArcEllipse(centerX: number, centerY: number, radiusX: number, radiusY: number, startAngle: number, angleOffset: number, isRadians?: boolean, sendImmediately?: boolean): Promise<void>;
     drawBitmap(centerX: number, centerY: number, bitmap: DisplayBitmap, sendImmediately?: boolean): Promise<void>;
+    drawSprite(centerX: number, centerY: number, spriteName: string, sendImmediately?: boolean): Promise<void>;
     get brightness(): "veryLow" | "low" | "medium" | "high" | "veryHigh";
     setBrightness(newBrightness: DisplayBrightness, sendImmediately?: boolean): Promise<void>;
     runContextCommandMessage(command: DisplayContextCommand, position?: Vector2, sendImmediately?: boolean): Promise<void>;

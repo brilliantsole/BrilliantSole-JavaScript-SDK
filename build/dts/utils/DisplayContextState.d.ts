@@ -20,6 +20,9 @@ export type DisplayContextState = {
     bitmapColorIndices: number[];
     bitmapScaleX: number;
     bitmapScaleY: number;
+    spriteColorIndices: number[];
+    spriteScaleX: number;
+    spriteScaleY: number;
 };
 export type DisplayContextStateKey = keyof DisplayContextState;
 export type PartialDisplayContextState = Partial<DisplayContextState>;

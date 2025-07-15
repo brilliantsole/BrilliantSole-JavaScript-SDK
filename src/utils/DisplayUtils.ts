@@ -47,15 +47,15 @@ export function roundToStep(value: number, step: number) {
   return roundedValue;
 }
 
-export const maxDisplayBitmapScale = 100;
-export const displayBitmapScaleStep = 0.002;
-export function formatBitmapScale(bitmapScale: number) {
-  bitmapScale /= displayBitmapScaleStep;
+export const maxDisplayScale = 100;
+export const displayScaleStep = 0.002;
+export function formatScale(bitmapScale: number) {
+  bitmapScale /= displayScaleStep;
   _console.log({ formattedBitmapScale: bitmapScale });
   return bitmapScale;
 }
-export function roundBitmapScale(bitmapScale: number) {
-  return roundToStep(bitmapScale, displayBitmapScaleStep);
+export function roundScale(bitmapScale: number) {
+  return roundToStep(bitmapScale, displayScaleStep);
 }
 
 export function assertValidSegmentCap(segmentCap: DisplaySegmentCap) {
@@ -142,16 +142,25 @@ export function numberOfColorsToPixelDepth(numberOfColors: number) {
   );
 }
 
-export const DisplayBitmapScaleDirections = ["x", "y", "all"] as const;
-export type DisplayBitmapScaleDirection =
-  (typeof DisplayBitmapScaleDirections)[number];
+export const DisplayScaleDirections = ["x", "y", "all"] as const;
+export type DisplayScaleDirection = (typeof DisplayScaleDirections)[number];
+
 export const DisplayBitmapScaleDirectionToCommand: Record<
-  DisplayBitmapScaleDirection,
+  DisplayScaleDirection,
   DisplayContextCommandType
 > = {
   x: "setBitmapScaleX",
   y: "setBitmapScaleY",
   all: "setBitmapScale",
+};
+
+export const DisplaySpriteScaleDirectionToCommand: Record<
+  DisplayScaleDirection,
+  DisplayContextCommandType
+> = {
+  x: "setSpriteScaleX",
+  y: "setSpriteScaleY",
+  all: "setSpriteScale",
 };
 
 export type DisplayColorRGB = {

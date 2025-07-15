@@ -1,9 +1,14 @@
-import { DisplayBitmap, DisplayBitmapColorPair } from "../DisplayManager.ts";
+import {
+  DisplayBitmap,
+  DisplayBitmapColorPair,
+  DisplaySpriteColorPair,
+} from "../DisplayManager.ts";
 import { createConsole } from "./Console.ts";
 import {
   DisplayContextState,
   DisplaySegmentCap,
 } from "./DisplayContextState.ts";
+import { DisplaySpriteSheet } from "./DisplaySpriteSheetUtils.ts";
 import { DisplayColorRGB } from "./DisplayUtils.ts";
 import { Vector2 } from "./MathUtils.ts";
 
@@ -53,6 +58,14 @@ export const DisplayContextCommandTypes = [
   "setBitmapScale",
   "resetBitmapScale",
 
+  "selectSpriteColor",
+  "selectSpriteColors",
+  "reseSpriteColors",
+  "setSpriteScaleX",
+  "setSpriteScaleY",
+  "setSpriteScale",
+  "resetSpriteScale",
+
   "clearRect",
 
   "drawRect",
@@ -70,6 +83,7 @@ export const DisplayContextCommandTypes = [
 
   "selectSpriteSheet",
   "drawSprite",
+  //"drawSprites",
 ] as const;
 export type DisplayContextCommandType =
   (typeof DisplayContextCommandTypes)[number];
@@ -88,7 +102,9 @@ interface SimpleDisplayCommand extends BaseDisplayContextCommand {
     | "clearRotation"
     | "clearCrop"
     | "clearRotationCrop"
-    | "resetBitmapScale";
+    | "resetBitmapScale"
+    | "reseSpriteColors"
+    | "resetSpriteScale";
 }
 
 interface SetDisplayColorCommand extends BaseDisplayContextCommand {
@@ -211,6 +227,31 @@ interface SetDisplayBitmapScaleCommand extends BaseDisplayContextCommand {
   bitmapScale: number;
 }
 
+interface SelectDisplaySpriteColorIndexCommand
+  extends BaseDisplayContextCommand {
+  type: "selectSpriteColor";
+  spriteColorIndex: number;
+  colorIndex: number;
+}
+interface SelectDisplaySpriteColorIndicesCommand
+  extends BaseDisplayContextCommand {
+  type: "selectSpriteColors";
+  spriteColorPairs: DisplaySpriteColorPair[];
+}
+
+interface SetDisplaySpriteScaleXCommand extends BaseDisplayContextCommand {
+  type: "setSpriteScaleX";
+  spriteScaleX: number;
+}
+interface SetDisplaySpriteScaleYCommand extends BaseDisplayContextCommand {
+  type: "setSpriteScaleY";
+  spriteScaleY: number;
+}
+interface SetDisplaySpriteScaleCommand extends BaseDisplayContextCommand {
+  type: "setSpriteScale";
+  spriteScale: number;
+}
+
 interface BasePositionDisplayContextCommand extends BaseDisplayContextCommand {
   x: number;
   y: number;
@@ -299,9 +340,14 @@ interface DrawDisplayArcEllipseCommand
 interface DrawDisplayBitmapCommand
   extends BaseCenterPositionDisplayContextCommand {
   type: "drawBitmap";
-  centerX: number;
-  centerY: number;
   bitmap: DisplayBitmap;
+}
+
+interface DrawDisplaySpriteCommand
+  extends BaseCenterPositionDisplayContextCommand {
+  type: "drawSprite";
+  spriteSheet: DisplaySpriteSheet;
+  spriteName: string;
 }
 
 export type DisplayContextCommand =
@@ -332,6 +378,11 @@ export type DisplayContextCommand =
   | SetDisplayBitmapScaleXCommand
   | SetDisplayBitmapScaleYCommand
   | SetDisplayBitmapScaleCommand
+  | SelectDisplaySpriteColorIndexCommand
+  | SelectDisplaySpriteColorIndicesCommand
+  | SetDisplaySpriteScaleXCommand
+  | SetDisplaySpriteScaleYCommand
+  | SetDisplaySpriteScaleCommand
   | ClearDisplayRectCommand
   | DrawDisplayRectCommand
   | DrawDisplayRoundedRectCommand
@@ -342,4 +393,5 @@ export type DisplayContextCommand =
   | DrawDisplaySegmentsCommand
   | DrawDisplayArcCommand
   | DrawDisplayArcEllipseCommand
-  | DrawDisplayBitmapCommand;
+  | DrawDisplayBitmapCommand
+  | DrawDisplaySpriteCommand;

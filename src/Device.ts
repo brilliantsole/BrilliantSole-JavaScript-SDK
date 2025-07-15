@@ -136,6 +136,7 @@ import ClientConnectionManager from "./connection/ClientConnectionManager.ts";
 
 /** NODE_START */
 import UDPConnectionManager from "./connection/udp/UDPConnectionManager.ts";
+import { DisplayManagerInterface } from "./utils/DisplayManagerInterface.ts";
 /** NODE_END */
 
 const _console = createConsole("Device", { log: false });
@@ -1721,6 +1722,57 @@ class Device {
   get resetDisplayBitmapScale() {
     this.#assertDisplayIsAvailable();
     return this.#displayManager.resetBitmapScale;
+  }
+
+  get selectDisplaySpriteColor() {
+    this.#assertDisplayIsAvailable();
+    return this.#displayManager.selectSpriteColor;
+  }
+  get selectDisplaySpriteColors() {
+    this.#assertDisplayIsAvailable();
+    return this.#displayManager.selectSpriteColors;
+  }
+  get setDisplaySpriteColor() {
+    this.#assertDisplayIsAvailable();
+    return this.#displayManager.setSpriteColor;
+  }
+  get setDisplaySpriteColorOpacity() {
+    this.#assertDisplayIsAvailable();
+    return this.#displayManager.setSpriteColorOpacity;
+  }
+  get resetDisplaySpriteColors() {
+    this.#assertDisplayIsAvailable();
+    return this.#displayManager.resetSpriteColors;
+  }
+
+  get setDisplaySpriteScaleDirection() {
+    this.#assertDisplayIsAvailable();
+    return this.#displayManager.setSpriteScaleDirection;
+  }
+  get setDisplaySpriteScaleX() {
+    this.#assertDisplayIsAvailable();
+    return this.#displayManager.setSpriteScaleX;
+  }
+  get setDisplaySpriteScaleY() {
+    this.#assertDisplayIsAvailable();
+    return this.#displayManager.setSpriteScaleY;
+  }
+  get setDisplaySpriteScale() {
+    this.#assertDisplayIsAvailable();
+    return this.#displayManager.setSpriteScale;
+  }
+  get resetDisplaySpriteScale() {
+    this.#assertDisplayIsAvailable();
+    return this.#displayManager.resetSpriteScale;
+  }
+
+  get drawDisplaySprite() {
+    this.#assertDisplayIsAvailable();
+    return this.#displayManager.drawSprite;
+  }
+
+  get displayManager() {
+    return this.#displayManager as DisplayManagerInterface;
   }
 
   // FILL - spritesheet, text, etc

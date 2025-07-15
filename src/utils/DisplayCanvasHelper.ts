@@ -6,6 +6,7 @@ import {
   DisplayBitmap,
   DisplayBitmapColorPair,
   DisplayBrightness,
+  DisplaySpriteColorPair,
 } from "../DisplayManager.ts";
 import { assertValidBitmapPixels } from "./DisplayBitmapUtils.ts";
 import { hexToRGB, rgbToHex, stringToRGB } from "./ColorUtils.ts";
@@ -25,8 +26,8 @@ import {
   assertValidColor,
   assertValidOpacity,
   assertValidSegmentCap,
-  DisplayBitmapScaleDirection,
-  displayBitmapScaleStep,
+  DisplayScaleDirection,
+  displayScaleStep,
   DisplayColorRGB,
   DisplayCropDirection,
   DisplayCropDirections,
@@ -35,8 +36,8 @@ import {
   DisplayRotationCropDirectionToCommand,
   DisplayRotationCropDirectionToStateKey,
   formatRotation,
-  maxDisplayBitmapScale,
-  roundBitmapScale,
+  maxDisplayScale,
+  roundScale,
 } from "./DisplayUtils.ts";
 import EventDispatcher, {
   BoundEventListeners,
@@ -56,6 +57,7 @@ import {
 } from "./MathUtils.ts";
 import { wait } from "./Timer.ts";
 import { DisplayContextCommand } from "./DisplayContextCommand.ts";
+import { DisplaySpriteSheet } from "./DisplaySpriteSheetUtils.ts";
 
 const _console = createConsole("DisplayCanvasHelper", { log: true });
 
@@ -381,6 +383,9 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     this.contextState.bitmapColorIndices = new Array(this.numberOfColors).fill(
       0
     );
+    this.contextState.spriteColorIndices = new Array(this.numberOfColors)
+      .fill(0)
+      .map((_, index) => index);
 
     this.#dispatchEvent("numberOfColors", {
       numberOfColors: this.numberOfColors,
@@ -437,18 +442,18 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
   }
 
   // CONEXT STATE
-  #displayContextStateHelper = new DisplayContextStateHelper();
+  #contextStateHelper = new DisplayContextStateHelper();
   get contextState() {
-    return this.#displayContextStateHelper.state;
+    return this.#contextStateHelper.state;
   }
-  #onDisplayContextStateUpdate(differences: DisplayContextStateKey[]) {
+  #onContextStateUpdate(differences: DisplayContextStateKey[]) {
     this.#dispatchEvent("contextState", {
       contextState: structuredClone(this.contextState),
       differences,
     });
   }
   #resetContextState() {
-    this.#displayContextStateHelper.reset();
+    this.#contextStateHelper.reset();
   }
   #updateDeviceContextState(sendImmediately?: boolean) {
     if (!this.device?.isConnected) {
@@ -592,7 +597,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
   }
   async selectFillColor(fillColorIndex: number, sendImmediately?: boolean) {
     this.#assertValidColorIndex(fillColorIndex);
-    const differences = this.#displayContextStateHelper.update({
+    const differences = this.#contextStateHelper.update({
       fillColorIndex,
     });
     if (differences.length == 0) {
@@ -601,11 +606,11 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     if (this.device?.isConnected) {
       await this.device.selectDisplayFillColor(fillColorIndex, sendImmediately);
     }
-    this.#onDisplayContextStateUpdate(differences);
+    this.#onContextStateUpdate(differences);
   }
   async selectLineColor(lineColorIndex: number, sendImmediately?: boolean) {
     this.#assertValidColorIndex(lineColorIndex);
-    const differences = this.#displayContextStateHelper.update({
+    const differences = this.#contextStateHelper.update({
       lineColorIndex,
     });
     if (differences.length == 0) {
@@ -614,14 +619,14 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     if (this.device?.isConnected) {
       await this.device.selectDisplayLineColor(lineColorIndex, sendImmediately);
     }
-    this.#onDisplayContextStateUpdate(differences);
+    this.#onContextStateUpdate(differences);
   }
   #assertValidLineWidth(lineWidth: number) {
     _console.assertRangeWithError("lineWidth", lineWidth, 0, this.width);
   }
   async setLineWidth(lineWidth: number, sendImmediately?: boolean) {
     this.#assertValidLineWidth(lineWidth);
-    const differences = this.#displayContextStateHelper.update({
+    const differences = this.#contextStateHelper.update({
       lineWidth,
     });
     if (differences.length == 0) {
@@ -630,7 +635,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     if (this.device?.isConnected) {
       await this.device.setDisplayLineWidth(lineWidth, sendImmediately);
     }
-    this.#onDisplayContextStateUpdate(differences);
+    this.#onContextStateUpdate(differences);
   }
   async setRotation(
     rotation: number,
@@ -641,7 +646,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     rotation = normalizeRadians(rotation);
     _console.log({ rotation });
 
-    const differences = this.#displayContextStateHelper.update({
+    const differences = this.#contextStateHelper.update({
       rotation,
     });
     if (differences.length == 0) {
@@ -652,10 +657,10 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
       await this.device.setDisplayRotation(rotation, true, sendImmediately);
     }
 
-    this.#onDisplayContextStateUpdate(differences);
+    this.#onContextStateUpdate(differences);
   }
   async clearRotation(sendImmediately?: boolean) {
-    const differences = this.#displayContextStateHelper.update({
+    const differences = this.#contextStateHelper.update({
       rotation: 0,
     });
     if (differences.length == 0) {
@@ -664,14 +669,14 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     if (this.device?.isConnected) {
       await this.device.clearDisplayRotation(sendImmediately);
     }
-    this.#onDisplayContextStateUpdate(differences);
+    this.#onContextStateUpdate(differences);
   }
   async setSegmentStartCap(
     segmentStartCap: DisplaySegmentCap,
     sendImmediately?: boolean
   ) {
     assertValidSegmentCap(segmentStartCap);
-    const differences = this.#displayContextStateHelper.update({
+    const differences = this.#contextStateHelper.update({
       segmentStartCap,
     });
     if (differences.length == 0) {
@@ -684,14 +689,14 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
         sendImmediately
       );
     }
-    this.#onDisplayContextStateUpdate(differences);
+    this.#onContextStateUpdate(differences);
   }
   async setSegmentEndCap(
     segmentEndCap: DisplaySegmentCap,
     sendImmediately?: boolean
   ) {
     assertValidSegmentCap(segmentEndCap);
-    const differences = this.#displayContextStateHelper.update({
+    const differences = this.#contextStateHelper.update({
       segmentEndCap,
     });
     if (differences.length == 0) {
@@ -701,14 +706,14 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     if (this.device?.isConnected) {
       await this.device.setDisplaySegmentEndCap(segmentEndCap, sendImmediately);
     }
-    this.#onDisplayContextStateUpdate(differences);
+    this.#onContextStateUpdate(differences);
   }
   async setSegmentCap(
     segmentCap: DisplaySegmentCap,
     sendImmediately?: boolean
   ) {
     assertValidSegmentCap(segmentCap);
-    const differences = this.#displayContextStateHelper.update({
+    const differences = this.#contextStateHelper.update({
       segmentStartCap: segmentCap,
       segmentEndCap: segmentCap,
     });
@@ -719,13 +724,13 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     if (this.device?.isConnected) {
       await this.device.setDisplaySegmentCap(segmentCap, sendImmediately);
     }
-    this.#onDisplayContextStateUpdate(differences);
+    this.#onContextStateUpdate(differences);
   }
   async setSegmentStartRadius(
     segmentStartRadius: number,
     sendImmediately?: boolean
   ) {
-    const differences = this.#displayContextStateHelper.update({
+    const differences = this.#contextStateHelper.update({
       segmentStartRadius,
     });
     if (differences.length == 0) {
@@ -738,13 +743,13 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
         sendImmediately
       );
     }
-    this.#onDisplayContextStateUpdate(differences);
+    this.#onContextStateUpdate(differences);
   }
   async setSegmentEndRadius(
     segmentEndRadius: number,
     sendImmediately?: boolean
   ) {
-    const differences = this.#displayContextStateHelper.update({
+    const differences = this.#contextStateHelper.update({
       segmentEndRadius,
     });
     if (differences.length == 0) {
@@ -757,11 +762,11 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
         sendImmediately
       );
     }
-    this.#onDisplayContextStateUpdate(differences);
+    this.#onContextStateUpdate(differences);
   }
   // START
   async setSegmentRadius(segmentRadius: number, sendImmediately?: boolean) {
-    const differences = this.#displayContextStateHelper.update({
+    const differences = this.#contextStateHelper.update({
       segmentStartRadius: segmentRadius,
       segmentEndRadius: segmentRadius,
     });
@@ -772,7 +777,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     if (this.device?.isConnected) {
       await this.device.setDisplaySegmentRadius(segmentRadius, sendImmediately);
     }
-    this.#onDisplayContextStateUpdate(differences);
+    this.#onContextStateUpdate(differences);
   }
   async setCrop(
     cropDirection: DisplayCropDirection,
@@ -783,7 +788,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     crop = Math.max(0, crop);
     const cropCommand = DisplayCropDirectionToCommand[cropDirection];
     const cropKey = DisplayCropDirectionToStateKey[cropDirection];
-    const differences = this.#displayContextStateHelper.update({
+    const differences = this.#contextStateHelper.update({
       [cropKey]: crop,
     });
     if (differences.length == 0) {
@@ -793,7 +798,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     if (this.device?.isConnected) {
       await this.device.setDisplayCrop(cropDirection, crop, sendImmediately);
     }
-    this.#onDisplayContextStateUpdate(differences);
+    this.#onContextStateUpdate(differences);
   }
   async setCropTop(cropTop: number, sendImmediately?: boolean) {
     await this.setCrop("top", cropTop, sendImmediately);
@@ -808,7 +813,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     await this.setCrop("left", cropLeft, sendImmediately);
   }
   async clearCrop(sendImmediately?: boolean) {
-    const differences = this.#displayContextStateHelper.update({
+    const differences = this.#contextStateHelper.update({
       cropTop: 0,
       cropRight: 0,
       cropBottom: 0,
@@ -820,7 +825,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     if (this.device?.isConnected) {
       await this.device.clearDisplayCrop(sendImmediately);
     }
-    this.#onDisplayContextStateUpdate(differences);
+    this.#onContextStateUpdate(differences);
   }
 
   async setRotationCrop(
@@ -831,7 +836,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     _console.assertEnumWithError(cropDirection, DisplayCropDirections);
     const cropCommand = DisplayRotationCropDirectionToCommand[cropDirection];
     const cropKey = DisplayRotationCropDirectionToStateKey[cropDirection];
-    const differences = this.#displayContextStateHelper.update({
+    const differences = this.#contextStateHelper.update({
       [cropKey]: crop,
     });
     if (differences.length == 0) {
@@ -845,7 +850,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
         sendImmediately
       );
     }
-    this.#onDisplayContextStateUpdate(differences);
+    this.#onContextStateUpdate(differences);
   }
   async setRotationCropTop(rotationCropTop: number, sendImmediately?: boolean) {
     await this.setRotationCrop("top", rotationCropTop, sendImmediately);
@@ -869,7 +874,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     await this.setRotationCrop("left", rotationCropLeft, sendImmediately);
   }
   async clearRotationCrop(sendImmediately?: boolean) {
-    const differences = this.#displayContextStateHelper.update({
+    const differences = this.#contextStateHelper.update({
       rotationCropTop: 0,
       rotationCropRight: 0,
       rotationCropBottom: 0,
@@ -881,7 +886,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     if (this.device?.isConnected) {
       await this.device.clearDisplayRotationCrop(sendImmediately);
     }
-    this.#onDisplayContextStateUpdate(differences);
+    this.#onContextStateUpdate(differences);
   }
 
   get bitmapColorIndices() {
@@ -898,7 +903,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     this.#assertValidColorIndex(bitmapColorIndex);
     const bitmapColorIndices = this.contextState.bitmapColorIndices.slice();
     bitmapColorIndices[bitmapColorIndex] = colorIndex;
-    const differences = this.#displayContextStateHelper.update({
+    const differences = this.#contextStateHelper.update({
       bitmapColorIndices,
     });
     if (differences.length == 0) {
@@ -913,7 +918,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
         sendImmediately
       );
     }
-    this.#onDisplayContextStateUpdate(differences);
+    this.#onContextStateUpdate(differences);
   }
 
   async selectBitmapColors(
@@ -933,7 +938,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
       bitmapColorIndices[bitmapColorIndex] = colorIndex;
     });
 
-    const differences = this.#displayContextStateHelper.update({
+    const differences = this.#contextStateHelper.update({
       bitmapColorIndices,
     });
     if (differences.length == 0) {
@@ -946,7 +951,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
         sendImmediately
       );
     }
-    this.#onDisplayContextStateUpdate(differences);
+    this.#onContextStateUpdate(differences);
   }
 
   async setBitmapColor(
@@ -973,16 +978,12 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
   }
 
   async setBitmapScaleDirection(
-    direction: DisplayBitmapScaleDirection,
+    direction: DisplayScaleDirection,
     bitmapScale: number,
     sendImmediately?: boolean
   ) {
-    bitmapScale = clamp(
-      bitmapScale,
-      displayBitmapScaleStep,
-      maxDisplayBitmapScale
-    );
-    bitmapScale = roundBitmapScale(bitmapScale);
+    bitmapScale = clamp(bitmapScale, displayScaleStep, maxDisplayScale);
+    bitmapScale = roundScale(bitmapScale);
     const newState: PartialDisplayContextState = {};
     switch (direction) {
       case "all":
@@ -996,7 +997,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
         newState.bitmapScaleY = bitmapScale;
         break;
     }
-    const differences = this.#displayContextStateHelper.update(newState);
+    const differences = this.#contextStateHelper.update(newState);
     if (differences.length == 0) {
       return;
     }
@@ -1009,7 +1010,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
       );
     }
 
-    this.#onDisplayContextStateUpdate(differences);
+    this.#onContextStateUpdate(differences);
   }
 
   async setBitmapScaleX(bitmapScaleX: number, sendImmediately?: boolean) {
@@ -1022,7 +1023,189 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     return this.setBitmapScaleDirection("all", bitmapScale, sendImmediately);
   }
   async resetBitmapScale(sendImmediately?: boolean) {
-    return this.setBitmapScaleDirection("all", 1, sendImmediately);
+    //return this.setBitmapScaleDirection("all", 1, sendImmediately);
+
+    const differences = this.#contextStateHelper.update({
+      bitmapScaleX: 1,
+      bitmapScaleY: 1,
+    });
+    if (differences.length == 0) {
+      return;
+    }
+
+    if (this.device?.isConnected) {
+      await this.device.resetDisplayBitmapScale(sendImmediately);
+    }
+
+    this.#onContextStateUpdate(differences);
+  }
+
+  get spriteColorIndices() {
+    return this.contextState.spriteColorIndices;
+  }
+  get spriteColors() {
+    return this.spriteColorIndices.map((colorIndex) => this.colors[colorIndex]);
+  }
+  async selectSpriteColor(
+    spriteColorIndex: number,
+    colorIndex: number,
+    sendImmediately?: boolean
+  ) {
+    this.#assertValidColorIndex(spriteColorIndex);
+    const spriteColorIndices = this.contextState.spriteColorIndices.slice();
+    spriteColorIndices[spriteColorIndex] = colorIndex;
+    const differences = this.#contextStateHelper.update({
+      spriteColorIndices,
+    });
+    if (differences.length == 0) {
+      return;
+    }
+    _console.log({ spriteColorIndex, colorIndex });
+
+    if (this.device?.isConnected) {
+      await this.device.selectDisplaySpriteColor(
+        spriteColorIndex,
+        colorIndex,
+        sendImmediately
+      );
+    }
+    this.#onContextStateUpdate(differences);
+  }
+
+  async selectSpriteColors(
+    spriteColorPairs: DisplaySpriteColorPair[],
+    sendImmediately?: boolean
+  ) {
+    _console.assertRangeWithError(
+      "spriteColors",
+      spriteColorPairs.length,
+      1,
+      this.numberOfColors
+    );
+    const spriteColorIndices = this.contextState.spriteColorIndices.slice();
+    spriteColorPairs.forEach(({ spriteColorIndex, colorIndex }) => {
+      this.#assertValidColorIndex(spriteColorIndex);
+      this.#assertValidColorIndex(colorIndex);
+      spriteColorIndices[spriteColorIndex] = colorIndex;
+    });
+
+    const differences = this.#contextStateHelper.update({
+      spriteColorIndices,
+    });
+    if (differences.length == 0) {
+      return;
+    }
+
+    if (this.device?.isConnected) {
+      await this.device.selectDisplaySpriteColors(
+        spriteColorPairs,
+        sendImmediately
+      );
+    }
+    this.#onContextStateUpdate(differences);
+  }
+
+  async setSpriteColor(
+    spriteColorIndex: number,
+    color: DisplayColorRGB | string,
+    sendImmediately?: boolean
+  ) {
+    return this.setColor(
+      this.spriteColorIndices[spriteColorIndex],
+      color,
+      sendImmediately
+    );
+  }
+  async setSpriteColorOpacity(
+    spriteColorIndex: number,
+    opacity: number,
+    sendImmediately?: boolean
+  ) {
+    return this.setColorOpacity(
+      this.spriteColorIndices[spriteColorIndex],
+      opacity,
+      sendImmediately
+    );
+  }
+
+  async resetSpriteColors(sendImmediately?: boolean) {
+    const spriteColorIndices = new Array(this.numberOfColors)
+      .fill(0)
+      .map((_, index) => index);
+    const differences = this.#contextStateHelper.update({
+      spriteColorIndices,
+    });
+    if (differences.length == 0) {
+      return;
+    }
+
+    if (this.device?.isConnected) {
+      await this.device.resetDisplaySpriteColors(sendImmediately);
+    }
+    this.#onContextStateUpdate(differences);
+  }
+
+  async setSpriteScaleDirection(
+    direction: DisplayScaleDirection,
+    spriteScale: number,
+    sendImmediately?: boolean
+  ) {
+    spriteScale = clamp(spriteScale, displayScaleStep, maxDisplayScale);
+    spriteScale = roundScale(spriteScale);
+    const newState: PartialDisplayContextState = {};
+    switch (direction) {
+      case "all":
+        newState.spriteScaleX = spriteScale;
+        newState.spriteScaleY = spriteScale;
+        break;
+      case "x":
+        newState.spriteScaleX = spriteScale;
+        break;
+      case "y":
+        newState.spriteScaleY = spriteScale;
+        break;
+    }
+    const differences = this.#contextStateHelper.update(newState);
+    if (differences.length == 0) {
+      return;
+    }
+
+    if (this.device?.isConnected) {
+      await this.device.setDisplaySpriteScaleDirection(
+        direction,
+        spriteScale,
+        sendImmediately
+      );
+    }
+
+    this.#onContextStateUpdate(differences);
+  }
+
+  async setSpriteScaleX(spriteScaleX: number, sendImmediately?: boolean) {
+    return this.setSpriteScaleDirection("x", spriteScaleX, sendImmediately);
+  }
+  async setSpriteScaleY(spriteScaleY: number, sendImmediately?: boolean) {
+    return this.setSpriteScaleDirection("y", spriteScaleY, sendImmediately);
+  }
+  async setSpriteScale(spriteScale: number, sendImmediately?: boolean) {
+    return this.setSpriteScaleDirection("all", spriteScale, sendImmediately);
+  }
+  async resetSpriteScale(sendImmediately?: boolean) {
+    //return this.setSpriteScaleDirection("all", 1, sendImmediately);
+
+    const differences = this.#contextStateHelper.update({
+      spriteScaleX: 1,
+      spriteScaleY: 1,
+    });
+    if (differences.length == 0) {
+      return;
+    }
+
+    if (this.device?.isConnected) {
+      await this.device.resetDisplaySpriteScale(sendImmediately);
+    }
+
+    this.#onContextStateUpdate(differences);
   }
 
   #clearRectToCanvas(x: number, y: number, width: number, height: number) {
@@ -2211,7 +2394,14 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     }
   }
 
-  // FILL - sprites
+  async drawSprite(
+    centerX: number,
+    centerY: number,
+    spriteName: string,
+    sendImmediately?: boolean
+  ) {
+    // FILL
+  }
 
   #brightness: DisplayBrightness = "medium";
   get brightness() {

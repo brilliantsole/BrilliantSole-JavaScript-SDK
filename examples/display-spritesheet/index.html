@@ -9,6 +9,11 @@
     #display {
       background-color: black;
     }
+    .verticalLabel {
+      display: inline-flex;
+      flex-direction: column;
+      max-width: fit-content;
+    }
   </style>
   <body>
     <nav>
@@ -35,6 +40,9 @@
       </label>
       <button id="addSprite">add sprite</button>
       <button id="addPalette">add palette</button>
+      <button id="addSpritePaletteSwap" disabled>
+        add sprite palette swap
+      </button>
       <button id="saveSpriteSheet">save</button>
       <label>
         load
@@ -74,15 +82,8 @@
 
     <label>
       number of palette colors
-      <select disabled id="paletteNumberOfColors">
+      <select disabled id="numberOfPaletteColors">
         <optgroup label="number of palette colors"></optgroup>
-      </select>
-    </label>
-
-    <label>
-      number of bitmap palette colors
-      <select disabled id="paletteNumberOfBitmapColors">
-        <optgroup label="number of palette bitmap colors"></optgroup>
       </select>
     </label>
 
@@ -109,9 +110,80 @@
 
     <hr />
 
-    <div id="bitmapColorIndices">
-      <template id="bitmapColorIndexTemplate">
-        <label class="bitmapColorIndex">
+    <div hidden>
+      <label id="displayOpacity">
+        opacity
+        <input type="range" min="0" max="1" step="0.01" value="1" />
+        <span>100</span>%
+      </label>
+    </div>
+
+    <hr hidden />
+
+    <div>
+      <label>
+        sprite index
+        <select id="selectSprite">
+          <optgroup label="select sprite"></optgroup>
+        </select>
+      </label>
+
+      <label>
+        sprite name
+        <input
+          disabled
+          id="spriteName"
+          type="text"
+          minlength="1"
+          placeholder='e.g. "mySprite"'
+        />
+      </label>
+
+      <button disabled id="deleteSprite">delete</button>
+      <br />
+      <label id="spriteWidth">
+        sprite width (<span>20</span>px)
+        <input disabled type="range" min="1" max="100" step="1" value="20" />
+      </label>
+      <label id="spriteHeight">
+        sprite height (<span>20</span>px)
+        <input disabled type="range" min="1" max="100" step="1" value="20" />
+      </label>
+    </div>
+
+    <hr />
+
+    <label>
+      sprite pallete swap index
+      <select id="selectSpritePaletteSwap" disabled>
+        <optgroup label="select sprite palette swap"></optgroup>
+      </select>
+    </label>
+
+    <label>
+      sprite palette swap name
+      <input
+        disabled
+        id="spritePaletteSwapName"
+        type="text"
+        minlength="1"
+        placeholder='e.g. "myPaletteSwap"'
+      />
+    </label>
+
+    <label>
+      number of colors
+      <select disabled id="numberOfSpritePaletteSwapColors">
+        <optgroup label="number of sprite pallete swap colors"></optgroup>
+      </select>
+    </label>
+
+    <button disabled id="deleteSpritePaletteSwap">delete</button>
+    <br />
+
+    <div id="spriteColorIndices">
+      <template id="spriteColorIndexTemplate">
+        <label class="spriteColorIndex">
           <span class="colorIndex"></span>
           <select>
             <optgroup label="select color index"></optgroup>
@@ -123,53 +195,70 @@
 
     <hr />
 
-    <div hidden>
-      <label id="displayOpacity">
-        opacity
-        <input type="range" min="0" max="1" step="0.01" value="1" />
-        <span>100</span>%
-      </label>
-    </div>
-
     <div>
-      <label id="fillColor">
-        <span>fill color</span>
-        <select>
-          <optgroup label="select fill color"></optgroup>
-        </select>
-        <input disabled type="color" />
+      <button id="drawSprite" disabled>draw sprite</button>
+
+      <label id="drawSpriteX" class="verticalLabel">
+        <span>x (<span class="value">50</span>px)</span>
+        <input type="range" min="-50" max="640" step="1" value="50" />
+      </label>
+      <label id="drawSpriteY" class="verticalLabel">
+        <span>y (<span class="value">50</span>px)</span>
+        <input type="range" min="-50" max="400" step="1" value="50" />
       </label>
 
-      <label id="lineColor">
-        <span>line color</span>
-        <select>
-          <optgroup label="select line color"></optgroup>
-        </select>
-        <input disabled type="color" />
+      <label id="drawSpriteRotation" class="verticalLabel">
+        <span>rotation (<span class="value">0</span>deg)</span>
+        <input type="range" min="0" max="360" step="1" value="0" />
+      </label>
+
+      <label id="drawSpriteScaleX" class="verticalLabel">
+        <span>scale x (<span class="value">1</span>x)</span>
+        <input type="range" min="0.01" max="20" step="0.01" value="1.0" />
+      </label>
+      <label id="drawSpriteScaleY" class="verticalLabel">
+        <span>scale y (<span class="value">1</span>x)</span>
+        <input type="range" min="0.01" max="20" step="0.01" value="1.0" />
+      </label>
+      <label id="drawSpriteScale" class="verticalLabel">
+        <span>scale (<span class="value">1</span>x)</span>
+        <input type="range" min="0.01" max="20" step="0.01" value="1.0" />
+      </label>
+
+      <label id="drawSpriteCropTop" class="verticalLabel">
+        <span>crop top (<span class="value">0</span>px)</span>
+        <input type="range" min="0" max="200" step="1" value="0" />
+      </label>
+      <label id="drawSpriteCropRight" class="verticalLabel">
+        <span>crop right (<span class="value">0</span>px)</span>
+        <input type="range" min="0" max="200" step="1" value="0" />
+      </label>
+      <label id="drawSpriteCropBottom" class="verticalLabel">
+        <span>crop bottom (<span class="value">0</span>px)</span>
+        <input type="range" min="0" max="200" step="1" value="0" />
+      </label>
+      <label id="drawSpriteCropLeft" class="verticalLabel">
+        <span>crop left (<span class="value">0</span>px)</span>
+        <input type="range" min="0" max="200" step="1" value="0" />
+      </label>
+
+      <label id="drawSpriteRotationCropTop" class="verticalLabel">
+        <span>rot crop top (<span class="value">0</span>px)</span>
+        <input type="range" min="0" max="200" step="1" value="0" />
+      </label>
+      <label id="drawSpriteRotationCropRight" class="verticalLabel">
+        <span>rot crop right (<span class="value">0</span>px)</span>
+        <input type="range" min="0" max="200" step="1" value="0" />
+      </label>
+      <label id="drawSpriteRotationCropBottom" class="verticalLabel">
+        <span>rot crop bottom (<span class="value">0</span>px)</span>
+        <input type="range" min="0" max="200" step="1" value="0" />
+      </label>
+      <label id="drawSpriteRotationCropLeft" class="verticalLabel">
+        <span>rot crop left (<span class="value">0</span>px)</span>
+        <input type="range" min="0" max="200" step="1" value="0" />
       </label>
     </div>
-
-    <hr />
-
-    <label>
-      sprite index
-      <select id="selectSprite">
-        <optgroup label="select sprite"></optgroup>
-      </select>
-    </label>
-
-    <label>
-      sprite name
-      <input
-        disabled
-        id="spriteName"
-        type="text"
-        minlength="1"
-        placeholder='e.g. "mySprite"'
-      />
-    </label>
-
-    <button disabled id="deleteSprite">delete</button>
 
     <hr />
 

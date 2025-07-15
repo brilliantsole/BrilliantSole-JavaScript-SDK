@@ -22,9 +22,9 @@ import {
   assertValidDisplayBrightness,
   assertValidOpacity,
   assertValidSegmentCap,
-  DisplayBitmapScaleDirection,
+  DisplayScaleDirection,
   DisplayBitmapScaleDirectionToCommand,
-  displayBitmapScaleStep,
+  displayScaleStep as displayScaleStep,
   DisplayColorRGB,
   DisplayCropDirection,
   DisplayCropDirections,
@@ -32,15 +32,16 @@ import {
   DisplayCropDirectionToStateKey,
   DisplayRotationCropDirectionToCommand,
   DisplayRotationCropDirectionToStateKey,
-  formatBitmapScale,
+  formatScale,
   formatRotation,
-  maxDisplayBitmapScale,
+  maxDisplayScale,
   numberOfColorsToPixelDepth,
   pixelDepthToPixelBitWidth,
   pixelDepthToPixelsPerByte,
-  roundBitmapScale,
+  roundScale,
+  DisplaySpriteScaleDirectionToCommand,
 } from "./utils/DisplayUtils.ts";
-import { DisplaySegmentCaps } from "./BS.ts";
+import { DisplaySegmentCaps, DisplaySpriteSheet } from "./BS.ts";
 import {
   assertValidBitmapPixels,
   getBitmapNumberOfBytes,
@@ -127,6 +128,11 @@ export type DisplayInformation = {
 
 export type DisplayBitmapColorPair = {
   bitmapColorIndex: number;
+  colorIndex: number;
+};
+
+export type DisplaySpriteColorPair = {
+  spriteColorIndex: number;
   colorIndex: number;
 };
 
@@ -323,6 +329,21 @@ class DisplayManager implements DisplayManagerInterface {
         case "bitmapScaleY":
           this.setBitmapScaleY(newState.bitmapScaleY!);
           break;
+        case "spriteColorIndices":
+          const spriteColors: DisplaySpriteColorPair[] = [];
+          newState.spriteColorIndices!.forEach(
+            (colorIndex, spriteColorIndex) => {
+              spriteColors.push({ spriteColorIndex, colorIndex });
+            }
+          );
+          this.selectSpriteColors(spriteColors);
+          break;
+        case "spriteScaleX":
+          this.setSpriteScaleY(newState.spriteScaleX!);
+          break;
+        case "spriteScaleY":
+          this.setSpriteScaleY(newState.spriteScaleY!);
+          break;
       }
     });
     if (sendImmediately) {
@@ -495,6 +516,9 @@ class DisplayManager implements DisplayManagerInterface {
     this.contextState.bitmapColorIndices = new Array(this.numberOfColors).fill(
       0
     );
+    this.contextState.spriteColorIndices = new Array(this.numberOfColors)
+      .fill(0)
+      .map((_, index) => index);
     this.#dispatchEvent("displayInformation", {
       displayInformation: this.#displayInformation,
     });
@@ -1146,16 +1170,12 @@ class DisplayManager implements DisplayManagerInterface {
     );
   }
   async setBitmapScaleDirection(
-    direction: DisplayBitmapScaleDirection,
+    direction: DisplayScaleDirection,
     bitmapScale: number,
     sendImmediately?: boolean
   ) {
-    bitmapScale = clamp(
-      bitmapScale,
-      displayBitmapScaleStep,
-      maxDisplayBitmapScale
-    );
-    bitmapScale = roundBitmapScale(bitmapScale);
+    bitmapScale = clamp(bitmapScale, displayScaleStep, maxDisplayScale);
+    bitmapScale = roundScale(bitmapScale);
     const command = DisplayBitmapScaleDirectionToCommand[direction];
     _console.log({ command: bitmapScale });
     const newState: PartialDisplayContextState = {};
@@ -1176,7 +1196,7 @@ class DisplayManager implements DisplayManagerInterface {
       return;
     }
     const dataView = new DataView(new ArrayBuffer(2));
-    dataView.setUint16(0, formatBitmapScale(bitmapScale), true);
+    dataView.setUint16(0, formatScale(bitmapScale), true);
     await this.#sendDisplayContextCommand(
       command,
       dataView.buffer,
@@ -1195,7 +1215,194 @@ class DisplayManager implements DisplayManagerInterface {
     return this.setBitmapScaleDirection("all", bitmapScale, sendImmediately);
   }
   async resetBitmapScale(sendImmediately?: boolean) {
-    return this.setBitmapScaleDirection("all", 1, sendImmediately);
+    //return this.setBitmapScaleDirection("all", 1, sendImmediately);
+
+    const differences = this.#contextStateHelper.update({
+      bitmapScaleX: 1,
+      bitmapScaleY: 1,
+    });
+    if (differences.length == 0) {
+      return;
+    }
+    await this.#sendDisplayContextCommand(
+      "resetBitmapScale",
+      undefined,
+      sendImmediately
+    );
+
+    this.#onContextStateUpdate(differences);
+  }
+
+  async selectSpriteColor(
+    spriteColorIndex: number,
+    colorIndex: number,
+    sendImmediately?: boolean
+  ) {
+    this.#assertValidColorIndex(spriteColorIndex);
+    this.#assertValidColorIndex(colorIndex);
+    const spriteColorIndices = this.contextState.spriteColorIndices.slice();
+    spriteColorIndices[spriteColorIndex] = colorIndex;
+    const differences = this.#contextStateHelper.update({
+      spriteColorIndices,
+    });
+    if (differences.length == 0) {
+      return;
+    }
+    const dataView = new DataView(new ArrayBuffer(2));
+    dataView.setUint8(0, spriteColorIndex);
+    dataView.setUint8(1, colorIndex);
+    await this.#sendDisplayContextCommand(
+      "selectSpriteColor",
+      dataView.buffer,
+      sendImmediately
+    );
+    this.#onContextStateUpdate(differences);
+  }
+  get spriteColorIndices() {
+    return this.contextState.spriteColorIndices;
+  }
+  get spriteColors() {
+    return this.spriteColorIndices.map((colorIndex) => this.colors[colorIndex]);
+  }
+  async selectSpriteColors(
+    spriteColorPairs: DisplaySpriteColorPair[],
+    sendImmediately?: boolean
+  ) {
+    _console.assertRangeWithError(
+      "spriteColors",
+      spriteColorPairs.length,
+      1,
+      this.numberOfColors
+    );
+    const spriteColorIndices = this.contextState.spriteColorIndices.slice();
+    spriteColorPairs.forEach(({ spriteColorIndex, colorIndex }) => {
+      this.#assertValidColorIndex(spriteColorIndex);
+      this.#assertValidColorIndex(colorIndex);
+      spriteColorIndices[spriteColorIndex] = colorIndex;
+    });
+
+    const differences = this.#contextStateHelper.update({
+      spriteColorIndices,
+    });
+    if (differences.length == 0) {
+      return;
+    }
+    const dataView = new DataView(
+      new ArrayBuffer(spriteColorPairs.length * 2 + 1)
+    );
+    let offset = 0;
+    dataView.setUint8(offset++, spriteColorPairs.length);
+    spriteColorPairs.forEach(({ spriteColorIndex, colorIndex }, index) => {
+      dataView.setUint8(offset, spriteColorIndex);
+      dataView.setUint8(offset + 1, colorIndex);
+      offset += 2;
+    });
+    await this.#sendDisplayContextCommand(
+      "selectSpriteColors",
+      dataView.buffer,
+      sendImmediately
+    );
+    this.#onContextStateUpdate(differences);
+  }
+  async setSpriteColor(
+    spriteColorIndex: number,
+    color: DisplayColorRGB | string,
+    sendImmediately?: boolean
+  ) {
+    return this.setColor(
+      this.spriteColorIndices[spriteColorIndex],
+      color,
+      sendImmediately
+    );
+  }
+  async setSpriteColorOpacity(
+    spriteColorIndex: number,
+    opacity: number,
+    sendImmediately?: boolean
+  ) {
+    return this.setColorOpacity(
+      this.spriteColorIndices[spriteColorIndex],
+      opacity,
+      sendImmediately
+    );
+  }
+
+  async resetSpriteColors(sendImmediately?: boolean) {
+    const spriteColorIndices = new Array(this.numberOfColors)
+      .fill(0)
+      .map((_, index) => index);
+    const differences = this.#contextStateHelper.update({
+      spriteColorIndices,
+    });
+    if (differences.length == 0) {
+      return;
+    }
+
+    this.#onContextStateUpdate(differences);
+  }
+
+  async setSpriteScaleDirection(
+    direction: DisplayScaleDirection,
+    spriteScale: number,
+    sendImmediately?: boolean
+  ) {
+    spriteScale = clamp(spriteScale, displayScaleStep, maxDisplayScale);
+    spriteScale = roundScale(spriteScale);
+    const command = DisplaySpriteScaleDirectionToCommand[direction];
+    _console.log({ command: spriteScale });
+    const newState: PartialDisplayContextState = {};
+    switch (direction) {
+      case "all":
+        newState.spriteScaleX = spriteScale;
+        newState.spriteScaleY = spriteScale;
+        break;
+      case "x":
+        newState.spriteScaleX = spriteScale;
+        break;
+      case "y":
+        newState.spriteScaleY = spriteScale;
+        break;
+    }
+    const differences = this.#contextStateHelper.update(newState);
+    if (differences.length == 0) {
+      return;
+    }
+    const dataView = new DataView(new ArrayBuffer(2));
+    dataView.setUint16(0, formatScale(spriteScale), true);
+    await this.#sendDisplayContextCommand(
+      command,
+      dataView.buffer,
+      sendImmediately
+    );
+
+    this.#onContextStateUpdate(differences);
+  }
+  async setSpriteScaleX(spriteScaleX: number, sendImmediately?: boolean) {
+    return this.setSpriteScaleDirection("x", spriteScaleX, sendImmediately);
+  }
+  async setSpriteScaleY(spriteScaleY: number, sendImmediately?: boolean) {
+    return this.setSpriteScaleDirection("y", spriteScaleY, sendImmediately);
+  }
+  async setSpriteScale(spriteScale: number, sendImmediately?: boolean) {
+    return this.setSpriteScaleDirection("all", spriteScale, sendImmediately);
+  }
+  async resetSpriteScale(sendImmediately?: boolean) {
+    //return this.setSpriteScaleDirection("all", 1, sendImmediately);
+
+    const differences = this.#contextStateHelper.update({
+      spriteScaleX: 1,
+      spriteScaleY: 1,
+    });
+    if (differences.length == 0) {
+      return;
+    }
+    await this.#sendDisplayContextCommand(
+      "resetSpriteScale",
+      undefined,
+      sendImmediately
+    );
+
+    this.#onContextStateUpdate(differences);
   }
 
   #clampX(x: number) {
@@ -1461,6 +1668,15 @@ class DisplayManager implements DisplayManagerInterface {
     );
   }
 
+  async drawSprite(
+    centerX: number,
+    centerY: number,
+    spriteName: string,
+    sendImmediately?: boolean
+  ) {
+    // FILL
+  }
+
   #assertValidNumberOfColors(numberOfColors: number) {
     _console.assertRangeWithError(
       "numberOfColors",
@@ -1560,9 +1776,6 @@ class DisplayManager implements DisplayManagerInterface {
 
   // SPRITE SHEET
   selectSpriteSheet(index: number, sendImmediately?: boolean) {
-    // FILL
-  }
-  drawSprite(index: number, x: number, y: number, sendImmediately?: boolean) {
     // FILL
   }
 

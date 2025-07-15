@@ -2,6 +2,7 @@ import {
   DisplayBitmap,
   DisplayBitmapColorPair,
   DisplayBrightness,
+  DisplaySpriteColorPair,
 } from "../DisplayManager.ts";
 import { DisplayContextCommand } from "./DisplayContextCommand.ts";
 import {
@@ -9,7 +10,11 @@ import {
   DisplaySegmentCap,
 } from "./DisplayContextState.ts";
 import {
-  DisplayBitmapScaleDirection,
+  DisplaySprite,
+  DisplaySpriteSheet,
+} from "./DisplaySpriteSheetUtils.ts";
+import {
+  DisplayScaleDirection,
   DisplayColorRGB,
   DisplayCropDirection,
 } from "./DisplayUtils.ts";
@@ -151,7 +156,7 @@ export interface DisplayManagerInterface {
   ): Promise<void>;
 
   setBitmapScaleDirection(
-    direction: DisplayBitmapScaleDirection,
+    direction: DisplayScaleDirection,
     bitmapScale: number,
     sendImmediately?: boolean
   ): Promise<void>;
@@ -165,6 +170,47 @@ export interface DisplayManagerInterface {
   ): Promise<void>;
   setBitmapScale(bitmapScale: number, sendImmediately?: boolean): Promise<void>;
   resetBitmapScale(sendImmediately?: boolean): Promise<void>;
+
+  selectSpriteColor(
+    spriteColorIndex: number,
+    colorIndex: number,
+    sendImmediately?: boolean
+  ): Promise<void>;
+
+  get spriteColorIndices(): number[];
+  get spriteColors(): string[];
+  selectSpriteColors(
+    spriteColorPairs: DisplaySpriteColorPair[],
+    sendImmediately?: boolean
+  ): Promise<void>;
+  resetSpriteColors(sendImmediately?: boolean): Promise<void>;
+
+  setSpriteColor(
+    spriteColorIndex: number,
+    color: DisplayColorRGB | string,
+    sendImmediately?: boolean
+  ): Promise<void>;
+  setSpriteColorOpacity(
+    spriteColorIndex: number,
+    opacity: number,
+    sendImmediately?: boolean
+  ): Promise<void>;
+
+  setSpriteScaleDirection(
+    direction: DisplayScaleDirection,
+    spriteScale: number,
+    sendImmediately?: boolean
+  ): Promise<void>;
+  setSpriteScaleX(
+    spriteScaleX: number,
+    sendImmediately?: boolean
+  ): Promise<void>;
+  setSpriteScaleY(
+    spriteScaleY: number,
+    sendImmediately?: boolean
+  ): Promise<void>;
+  setSpriteScale(spriteScale: number, sendImmediately?: boolean): Promise<void>;
+  resetSpriteScale(sendImmediately?: boolean): Promise<void>;
 
   clearRect(
     x: number,
@@ -245,6 +291,13 @@ export interface DisplayManagerInterface {
     sendImmediately?: boolean
   ): Promise<void>;
 
+  drawSprite(
+    centerX: number,
+    centerY: number,
+    spriteName: string,
+    sendImmediately?: boolean
+  ): Promise<void>;
+
   runContextCommandMessage(
     commandMessage: DisplayContextCommand,
     position?: Vector2,
@@ -284,6 +337,9 @@ export async function runDisplayContextCommand(
       break;
     case "resetBitmapScale":
       await displayManager.resetBitmapScale(sendImmediately);
+      break;
+    case "resetSpriteScale":
+      await displayManager.resetSpriteScale(sendImmediately);
       break;
     case "setColor":
       {
@@ -473,6 +529,43 @@ export async function runDisplayContextCommand(
         await displayManager.setBitmapScale(bitmapScale, sendImmediately);
       }
       break;
+    case "selectSpriteColor":
+      {
+        const { spriteColorIndex, colorIndex } = command;
+        await displayManager.selectSpriteColor(
+          spriteColorIndex,
+          colorIndex,
+          sendImmediately
+        );
+      }
+      break;
+    case "selectSpriteColors":
+      {
+        const { spriteColorPairs } = command;
+        await displayManager.selectSpriteColors(
+          spriteColorPairs,
+          sendImmediately
+        );
+      }
+      break;
+    case "setSpriteScaleX":
+      {
+        const { spriteScaleX } = command;
+        await displayManager.setSpriteScaleX(spriteScaleX, sendImmediately);
+      }
+      break;
+    case "setSpriteScaleY":
+      {
+        const { spriteScaleY } = command;
+        await displayManager.setSpriteScaleY(spriteScaleY, sendImmediately);
+      }
+      break;
+    case "setSpriteScale":
+      {
+        const { spriteScale } = command;
+        await displayManager.setSpriteScale(spriteScale, sendImmediately);
+      }
+      break;
     case "clearRect":
       {
         const { x, y, width, height } = command;
@@ -613,6 +706,12 @@ export async function runDisplayContextCommand(
           bitmap,
           sendImmediately
         );
+      }
+      break;
+    case "drawSprite":
+      {
+        const { centerX, centerY, spriteName } = command;
+        await displayManager.drawSprite(centerX + _x, centerY + _y, spriteName);
       }
       break;
   }

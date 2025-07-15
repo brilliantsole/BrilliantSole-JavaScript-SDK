@@ -3748,6 +3748,9 @@ const DefaultDisplayContextState = {
     bitmapColorIndices: new Array(0).fill(0),
     bitmapScaleX: 1,
     bitmapScaleY: 1,
+    spriteColorIndices: new Array(0).fill(0).map((_, index) => index),
+    spriteScaleX: 1,
+    spriteScaleY: 1,
 };
 
 function deepEqual(obj1, obj2) {
@@ -3830,15 +3833,15 @@ function roundToStep(value, step) {
     _console$q.log(value, step, roundedValue);
     return roundedValue;
 }
-const maxDisplayBitmapScale = 100;
-const displayBitmapScaleStep = 0.002;
-function formatBitmapScale(bitmapScale) {
-    bitmapScale /= displayBitmapScaleStep;
+const maxDisplayScale = 100;
+const displayScaleStep = 0.002;
+function formatScale(bitmapScale) {
+    bitmapScale /= displayScaleStep;
     _console$q.log({ formattedBitmapScale: bitmapScale });
     return bitmapScale;
 }
-function roundBitmapScale(bitmapScale) {
-    return roundToStep(bitmapScale, displayBitmapScaleStep);
+function roundScale(bitmapScale) {
+    return roundToStep(bitmapScale, displayScaleStep);
 }
 function assertValidSegmentCap(segmentCap) {
     _console$q.assertEnumWithError(segmentCap, DisplaySegmentCaps);
@@ -3903,6 +3906,11 @@ const DisplayBitmapScaleDirectionToCommand = {
     x: "setBitmapScaleX",
     y: "setBitmapScaleY",
     all: "setBitmapScale",
+};
+const DisplaySpriteScaleDirectionToCommand = {
+    x: "setSpriteScaleX",
+    y: "setSpriteScaleY",
+    all: "setSpriteScale",
 };
 
 const _console$p = createConsole("DisplayBitmapUtils", { log: true });
@@ -4162,6 +4170,13 @@ const DisplayContextCommandTypes = [
     "setBitmapScaleY",
     "setBitmapScale",
     "resetBitmapScale",
+    "selectSpriteColor",
+    "selectSpriteColors",
+    "reseSpriteColors",
+    "setSpriteScaleX",
+    "setSpriteScaleY",
+    "setSpriteScale",
+    "resetSpriteScale",
     "clearRect",
     "drawRect",
     "drawRoundRect",
@@ -4203,6 +4218,9 @@ async function runDisplayContextCommand(displayManager, command, position, sendI
             break;
         case "resetBitmapScale":
             await displayManager.resetBitmapScale(sendImmediately);
+            break;
+        case "resetSpriteScale":
+            await displayManager.resetSpriteScale(sendImmediately);
             break;
         case "setColor":
             {
@@ -4360,6 +4378,36 @@ async function runDisplayContextCommand(displayManager, command, position, sendI
                 await displayManager.setBitmapScale(bitmapScale, sendImmediately);
             }
             break;
+        case "selectSpriteColor":
+            {
+                const { spriteColorIndex, colorIndex } = command;
+                await displayManager.selectSpriteColor(spriteColorIndex, colorIndex, sendImmediately);
+            }
+            break;
+        case "selectSpriteColors":
+            {
+                const { spriteColorPairs } = command;
+                await displayManager.selectSpriteColors(spriteColorPairs, sendImmediately);
+            }
+            break;
+        case "setSpriteScaleX":
+            {
+                const { spriteScaleX } = command;
+                await displayManager.setSpriteScaleX(spriteScaleX, sendImmediately);
+            }
+            break;
+        case "setSpriteScaleY":
+            {
+                const { spriteScaleY } = command;
+                await displayManager.setSpriteScaleY(spriteScaleY, sendImmediately);
+            }
+            break;
+        case "setSpriteScale":
+            {
+                const { spriteScale } = command;
+                await displayManager.setSpriteScale(spriteScale, sendImmediately);
+            }
+            break;
         case "clearRect":
             {
                 const { x, y, width, height } = command;
@@ -4424,6 +4472,12 @@ async function runDisplayContextCommand(displayManager, command, position, sendI
             {
                 const { centerX, centerY, bitmap } = command;
                 await displayManager.drawBitmap(centerX + _x, centerY + _y, bitmap, sendImmediately);
+            }
+            break;
+        case "drawSprite":
+            {
+                const { centerX, centerY, spriteName } = command;
+                await displayManager.drawSprite(centerX + _x, centerY + _y, spriteName);
             }
             break;
     }
@@ -4580,6 +4634,19 @@ class DisplayManager {
                     break;
                 case "bitmapScaleY":
                     this.setBitmapScaleY(newState.bitmapScaleY);
+                    break;
+                case "spriteColorIndices":
+                    const spriteColors = [];
+                    newState.spriteColorIndices.forEach((colorIndex, spriteColorIndex) => {
+                        spriteColors.push({ spriteColorIndex, colorIndex });
+                    });
+                    this.selectSpriteColors(spriteColors);
+                    break;
+                case "spriteScaleX":
+                    this.setSpriteScaleY(newState.spriteScaleX);
+                    break;
+                case "spriteScaleY":
+                    this.setSpriteScaleY(newState.spriteScaleY);
                     break;
             }
         });
@@ -5009,8 +5076,8 @@ class DisplayManager {
         return this.setColorOpacity(this.bitmapColorIndices[bitmapColorIndex], opacity, sendImmediately);
     }
     async setBitmapScaleDirection(direction, bitmapScale, sendImmediately) {
-        bitmapScale = clamp(bitmapScale, displayBitmapScaleStep, maxDisplayBitmapScale);
-        bitmapScale = roundBitmapScale(bitmapScale);
+        bitmapScale = clamp(bitmapScale, displayScaleStep, maxDisplayScale);
+        bitmapScale = roundScale(bitmapScale);
         const command = DisplayBitmapScaleDirectionToCommand[direction];
         _console$o.log({ command: bitmapScale });
         const newState = {};
@@ -5031,7 +5098,7 @@ class DisplayManager {
             return;
         }
         const dataView = new DataView(new ArrayBuffer(2));
-        dataView.setUint16(0, formatBitmapScale(bitmapScale), true);
+        dataView.setUint16(0, formatScale(bitmapScale), true);
         await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, command, dataView.buffer, sendImmediately);
         __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_onContextStateUpdate).call(this, differences);
     }
@@ -5045,7 +5112,128 @@ class DisplayManager {
         return this.setBitmapScaleDirection("all", bitmapScale, sendImmediately);
     }
     async resetBitmapScale(sendImmediately) {
-        return this.setBitmapScaleDirection("all", 1, sendImmediately);
+        const differences = __classPrivateFieldGet(this, _DisplayManager_contextStateHelper, "f").update({
+            bitmapScaleX: 1,
+            bitmapScaleY: 1,
+        });
+        if (differences.length == 0) {
+            return;
+        }
+        await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "resetBitmapScale", undefined, sendImmediately);
+        __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_onContextStateUpdate).call(this, differences);
+    }
+    async selectSpriteColor(spriteColorIndex, colorIndex, sendImmediately) {
+        __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_assertValidColorIndex).call(this, spriteColorIndex);
+        __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_assertValidColorIndex).call(this, colorIndex);
+        const spriteColorIndices = this.contextState.spriteColorIndices.slice();
+        spriteColorIndices[spriteColorIndex] = colorIndex;
+        const differences = __classPrivateFieldGet(this, _DisplayManager_contextStateHelper, "f").update({
+            spriteColorIndices,
+        });
+        if (differences.length == 0) {
+            return;
+        }
+        const dataView = new DataView(new ArrayBuffer(2));
+        dataView.setUint8(0, spriteColorIndex);
+        dataView.setUint8(1, colorIndex);
+        await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "selectSpriteColor", dataView.buffer, sendImmediately);
+        __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_onContextStateUpdate).call(this, differences);
+    }
+    get spriteColorIndices() {
+        return this.contextState.spriteColorIndices;
+    }
+    get spriteColors() {
+        return this.spriteColorIndices.map((colorIndex) => this.colors[colorIndex]);
+    }
+    async selectSpriteColors(spriteColorPairs, sendImmediately) {
+        _console$o.assertRangeWithError("spriteColors", spriteColorPairs.length, 1, this.numberOfColors);
+        const spriteColorIndices = this.contextState.spriteColorIndices.slice();
+        spriteColorPairs.forEach(({ spriteColorIndex, colorIndex }) => {
+            __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_assertValidColorIndex).call(this, spriteColorIndex);
+            __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_assertValidColorIndex).call(this, colorIndex);
+            spriteColorIndices[spriteColorIndex] = colorIndex;
+        });
+        const differences = __classPrivateFieldGet(this, _DisplayManager_contextStateHelper, "f").update({
+            spriteColorIndices,
+        });
+        if (differences.length == 0) {
+            return;
+        }
+        const dataView = new DataView(new ArrayBuffer(spriteColorPairs.length * 2 + 1));
+        let offset = 0;
+        dataView.setUint8(offset++, spriteColorPairs.length);
+        spriteColorPairs.forEach(({ spriteColorIndex, colorIndex }, index) => {
+            dataView.setUint8(offset, spriteColorIndex);
+            dataView.setUint8(offset + 1, colorIndex);
+            offset += 2;
+        });
+        await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "selectSpriteColors", dataView.buffer, sendImmediately);
+        __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_onContextStateUpdate).call(this, differences);
+    }
+    async setSpriteColor(spriteColorIndex, color, sendImmediately) {
+        return this.setColor(this.spriteColorIndices[spriteColorIndex], color, sendImmediately);
+    }
+    async setSpriteColorOpacity(spriteColorIndex, opacity, sendImmediately) {
+        return this.setColorOpacity(this.spriteColorIndices[spriteColorIndex], opacity, sendImmediately);
+    }
+    async resetSpriteColors(sendImmediately) {
+        const spriteColorIndices = new Array(this.numberOfColors)
+            .fill(0)
+            .map((_, index) => index);
+        const differences = __classPrivateFieldGet(this, _DisplayManager_contextStateHelper, "f").update({
+            spriteColorIndices,
+        });
+        if (differences.length == 0) {
+            return;
+        }
+        __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_onContextStateUpdate).call(this, differences);
+    }
+    async setSpriteScaleDirection(direction, spriteScale, sendImmediately) {
+        spriteScale = clamp(spriteScale, displayScaleStep, maxDisplayScale);
+        spriteScale = roundScale(spriteScale);
+        const command = DisplaySpriteScaleDirectionToCommand[direction];
+        _console$o.log({ command: spriteScale });
+        const newState = {};
+        switch (direction) {
+            case "all":
+                newState.spriteScaleX = spriteScale;
+                newState.spriteScaleY = spriteScale;
+                break;
+            case "x":
+                newState.spriteScaleX = spriteScale;
+                break;
+            case "y":
+                newState.spriteScaleY = spriteScale;
+                break;
+        }
+        const differences = __classPrivateFieldGet(this, _DisplayManager_contextStateHelper, "f").update(newState);
+        if (differences.length == 0) {
+            return;
+        }
+        const dataView = new DataView(new ArrayBuffer(2));
+        dataView.setUint16(0, formatScale(spriteScale), true);
+        await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, command, dataView.buffer, sendImmediately);
+        __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_onContextStateUpdate).call(this, differences);
+    }
+    async setSpriteScaleX(spriteScaleX, sendImmediately) {
+        return this.setSpriteScaleDirection("x", spriteScaleX, sendImmediately);
+    }
+    async setSpriteScaleY(spriteScaleY, sendImmediately) {
+        return this.setSpriteScaleDirection("y", spriteScaleY, sendImmediately);
+    }
+    async setSpriteScale(spriteScale, sendImmediately) {
+        return this.setSpriteScaleDirection("all", spriteScale, sendImmediately);
+    }
+    async resetSpriteScale(sendImmediately) {
+        const differences = __classPrivateFieldGet(this, _DisplayManager_contextStateHelper, "f").update({
+            spriteScaleX: 1,
+            spriteScaleY: 1,
+        });
+        if (differences.length == 0) {
+            return;
+        }
+        await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "resetSpriteScale", undefined, sendImmediately);
+        __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_onContextStateUpdate).call(this, differences);
     }
     async clearRect(x, y, width, height, sendImmediately) {
         const { x: _x, y: _y, width: _width, height: _height, } = __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_clampBox).call(this, x, y, width, height);
@@ -5174,6 +5362,8 @@ class DisplayManager {
         _console$o.log("drawArcEllipse data", dataView);
         await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "drawArcEllipse", dataView.buffer, sendImmediately);
     }
+    async drawSprite(centerX, centerY, spriteName, sendImmediately) {
+    }
     async drawBitmap(centerX, centerY, bitmap, sendImmediately) {
         __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_assertValidBitmap).call(this, bitmap, true);
         _console$o.log("drawBitmap", bitmap);
@@ -5196,8 +5386,6 @@ class DisplayManager {
         return quantizeImage(image, width, height, numberOfColors);
     }
     selectSpriteSheet(index, sendImmediately) {
-    }
-    drawSprite(index, x, y, sendImmediately) {
     }
     async runContextCommandMessage(command, position, sendImmediately) {
         return runDisplayContextCommand(this, command, position, sendImmediately);
@@ -5335,6 +5523,9 @@ async function _DisplayManager_sendDisplayCommand(command, sendImmediately) {
     __classPrivateFieldSet(this, _DisplayManager_colors, new Array(this.numberOfColors).fill("#000000"), "f");
     __classPrivateFieldSet(this, _DisplayManager_opacities, new Array(this.numberOfColors).fill(1), "f");
     this.contextState.bitmapColorIndices = new Array(this.numberOfColors).fill(0);
+    this.contextState.spriteColorIndices = new Array(this.numberOfColors)
+        .fill(0)
+        .map((_, index) => index);
     __classPrivateFieldGet(this, _DisplayManager_instances, "a", _DisplayManager_dispatchEvent_get).call(this, "displayInformation", {
         displayInformation: __classPrivateFieldGet(this, _DisplayManager_displayInformation, "f"),
     });
@@ -8863,6 +9054,53 @@ class Device {
         __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertDisplayIsAvailable).call(this);
         return __classPrivateFieldGet(this, _Device_displayManager, "f").resetBitmapScale;
     }
+    get selectDisplaySpriteColor() {
+        __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertDisplayIsAvailable).call(this);
+        return __classPrivateFieldGet(this, _Device_displayManager, "f").selectSpriteColor;
+    }
+    get selectDisplaySpriteColors() {
+        __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertDisplayIsAvailable).call(this);
+        return __classPrivateFieldGet(this, _Device_displayManager, "f").selectSpriteColors;
+    }
+    get setDisplaySpriteColor() {
+        __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertDisplayIsAvailable).call(this);
+        return __classPrivateFieldGet(this, _Device_displayManager, "f").setSpriteColor;
+    }
+    get setDisplaySpriteColorOpacity() {
+        __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertDisplayIsAvailable).call(this);
+        return __classPrivateFieldGet(this, _Device_displayManager, "f").setSpriteColorOpacity;
+    }
+    get resetDisplaySpriteColors() {
+        __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertDisplayIsAvailable).call(this);
+        return __classPrivateFieldGet(this, _Device_displayManager, "f").resetSpriteColors;
+    }
+    get setDisplaySpriteScaleDirection() {
+        __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertDisplayIsAvailable).call(this);
+        return __classPrivateFieldGet(this, _Device_displayManager, "f").setSpriteScaleDirection;
+    }
+    get setDisplaySpriteScaleX() {
+        __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertDisplayIsAvailable).call(this);
+        return __classPrivateFieldGet(this, _Device_displayManager, "f").setSpriteScaleX;
+    }
+    get setDisplaySpriteScaleY() {
+        __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertDisplayIsAvailable).call(this);
+        return __classPrivateFieldGet(this, _Device_displayManager, "f").setSpriteScaleY;
+    }
+    get setDisplaySpriteScale() {
+        __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertDisplayIsAvailable).call(this);
+        return __classPrivateFieldGet(this, _Device_displayManager, "f").setSpriteScale;
+    }
+    get resetDisplaySpriteScale() {
+        __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertDisplayIsAvailable).call(this);
+        return __classPrivateFieldGet(this, _Device_displayManager, "f").resetSpriteScale;
+    }
+    get drawDisplaySprite() {
+        __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertDisplayIsAvailable).call(this);
+        return __classPrivateFieldGet(this, _Device_displayManager, "f").drawSprite;
+    }
+    get displayManager() {
+        return __classPrivateFieldGet(this, _Device_displayManager, "f");
+    }
 }
 _a$3 = Device, _Device_eventDispatcher = new WeakMap(), _Device_connectionManager = new WeakMap(), _Device_isConnected = new WeakMap(), _Device_reconnectOnDisconnection = new WeakMap(), _Device_reconnectIntervalId = new WeakMap(), _Device_deviceInformationManager = new WeakMap(), _Device_batteryLevel = new WeakMap(), _Device_sensorConfigurationManager = new WeakMap(), _Device_clearSensorConfigurationOnLeave = new WeakMap(), _Device_sensorDataManager = new WeakMap(), _Device_vibrationManager = new WeakMap(), _Device_fileTransferManager = new WeakMap(), _Device_tfliteManager = new WeakMap(), _Device_firmwareManager = new WeakMap(), _Device_isServerSide = new WeakMap(), _Device_wifiManager = new WeakMap(), _Device_cameraManager = new WeakMap(), _Device_microphoneManager = new WeakMap(), _Device_displayManager = new WeakMap(), _Device_instances = new WeakSet(), _Device_DefaultConnectionManager = function _Device_DefaultConnectionManager() {
     return new WebBluetoothConnectionManager();
@@ -10551,5 +10789,5 @@ const ThrottleUtils = {
     debounce,
 };
 
-export { CameraCommands, CameraConfigurationTypes, ContinuousSensorTypes, DefaultNumberOfDisplayColors, DefaultNumberOfPressureSensors, Device, DeviceManager$1 as DeviceManager, DevicePair, DevicePairTypes, DeviceTypes, DisplayBrightnesses, DisplayPixelDepths, DisplaySegmentCaps, environment as Environment, EventUtils, FileTransferDirections, FileTypes, MaxNameLength, MaxNumberOfVibrationWaveformEffectSegments, MaxNumberOfVibrationWaveformSegments, MaxSensorRate, MaxVibrationWaveformEffectSegmentDelay, MaxVibrationWaveformEffectSegmentLoopCount, MaxVibrationWaveformEffectSequenceLoopCount, MaxVibrationWaveformSegmentDuration, MaxWifiPasswordLength, MaxWifiSSIDLength, MicrophoneCommands, MicrophoneConfigurationTypes, MicrophoneConfigurationValues, MinNameLength, MinWifiPasswordLength, MinWifiSSIDLength, RangeHelper, scanner$1 as Scanner, SensorRateStep, SensorTypes, Sides, TfliteSensorTypes, TfliteTasks, ThrottleUtils, UDPServer, VibrationLocations, VibrationTypes, VibrationWaveformEffects, WebSocketServer, hexToRGB, maxDisplayBitmapScale, rgbToHex, setAllConsoleLevelFlags, setConsoleLevelFlagsForType };
+export { CameraCommands, CameraConfigurationTypes, ContinuousSensorTypes, DefaultNumberOfDisplayColors, DefaultNumberOfPressureSensors, Device, DeviceManager$1 as DeviceManager, DevicePair, DevicePairTypes, DeviceTypes, DisplayBrightnesses, DisplayPixelDepths, DisplaySegmentCaps, environment as Environment, EventUtils, FileTransferDirections, FileTypes, MaxNameLength, MaxNumberOfVibrationWaveformEffectSegments, MaxNumberOfVibrationWaveformSegments, MaxSensorRate, MaxVibrationWaveformEffectSegmentDelay, MaxVibrationWaveformEffectSegmentLoopCount, MaxVibrationWaveformEffectSequenceLoopCount, MaxVibrationWaveformSegmentDuration, MaxWifiPasswordLength, MaxWifiSSIDLength, MicrophoneCommands, MicrophoneConfigurationTypes, MicrophoneConfigurationValues, MinNameLength, MinWifiPasswordLength, MinWifiSSIDLength, RangeHelper, scanner$1 as Scanner, SensorRateStep, SensorTypes, Sides, TfliteSensorTypes, TfliteTasks, ThrottleUtils, UDPServer, VibrationLocations, VibrationTypes, VibrationWaveformEffects, WebSocketServer, hexToRGB, maxDisplayScale as maxDisplayBitmapScale, rgbToHex, setAllConsoleLevelFlags, setConsoleLevelFlagsForType };
 //# sourceMappingURL=brilliantsole.node.module.js.map

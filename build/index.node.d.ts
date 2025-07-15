@@ -171,18 +171,44 @@ type DisplayContextState = {
     bitmapColorIndices: number[];
     bitmapScaleX: number;
     bitmapScaleY: number;
+    spriteColorIndices: number[];
+    spriteScaleX: number;
+    spriteScaleY: number;
 };
 type DisplayContextStateKey = keyof DisplayContextState;
 type PartialDisplayContextState = Partial<DisplayContextState>;
 
-declare const DisplayContextCommandTypes: readonly ["show", "clear", "setColor", "setColorOpacity", "setOpacity", "saveContext", "restoreContext", "selectFillColor", "selectLineColor", "setLineWidth", "setRotation", "clearRotation", "setSegmentStartCap", "setSegmentEndCap", "setSegmentCap", "setSegmentStartRadius", "setSegmentEndRadius", "setSegmentRadius", "setCropTop", "setCropRight", "setCropBottom", "setCropLeft", "clearCrop", "setRotationCropTop", "setRotationCropRight", "setRotationCropBottom", "setRotationCropLeft", "clearRotationCrop", "selectBitmapColor", "selectBitmapColors", "setBitmapScaleX", "setBitmapScaleY", "setBitmapScale", "resetBitmapScale", "clearRect", "drawRect", "drawRoundRect", "drawCircle", "drawEllipse", "drawPolygon", "drawSegment", "drawSegments", "drawArc", "drawArcEllipse", "drawBitmap", "selectSpriteSheet", "drawSprite"];
+type DisplaySpritePaletteSwap = {
+    name: string;
+    spriteColorIndices: number[];
+};
+type DisplaySprite = {
+    name: string;
+    width: number;
+    height: number;
+    paletteSwaps: DisplaySpritePaletteSwap[];
+    commands: DisplayContextCommand[];
+};
+type DisplaySpriteSheetPalette = {
+    name: string;
+    numberOfColors: number;
+    colors: string[];
+    opacities: number[];
+};
+type DisplaySpriteSheet = {
+    name: string;
+    palettes: DisplaySpriteSheetPalette[];
+    sprites: DisplaySprite[];
+};
+
+declare const DisplayContextCommandTypes: readonly ["show", "clear", "setColor", "setColorOpacity", "setOpacity", "saveContext", "restoreContext", "selectFillColor", "selectLineColor", "setLineWidth", "setRotation", "clearRotation", "setSegmentStartCap", "setSegmentEndCap", "setSegmentCap", "setSegmentStartRadius", "setSegmentEndRadius", "setSegmentRadius", "setCropTop", "setCropRight", "setCropBottom", "setCropLeft", "clearCrop", "setRotationCropTop", "setRotationCropRight", "setRotationCropBottom", "setRotationCropLeft", "clearRotationCrop", "selectBitmapColor", "selectBitmapColors", "setBitmapScaleX", "setBitmapScaleY", "setBitmapScale", "resetBitmapScale", "selectSpriteColor", "selectSpriteColors", "reseSpriteColors", "setSpriteScaleX", "setSpriteScaleY", "setSpriteScale", "resetSpriteScale", "clearRect", "drawRect", "drawRoundRect", "drawCircle", "drawEllipse", "drawPolygon", "drawSegment", "drawSegments", "drawArc", "drawArcEllipse", "drawBitmap", "selectSpriteSheet", "drawSprite"];
 type DisplayContextCommandType = (typeof DisplayContextCommandTypes)[number];
 interface BaseDisplayContextCommand {
     type: DisplayContextCommandType;
     contextState: DisplayContextState;
 }
 interface SimpleDisplayCommand extends BaseDisplayContextCommand {
-    type: "show" | "clear" | "saveContext" | "restoreContext" | "clearRotation" | "clearCrop" | "clearRotationCrop" | "resetBitmapScale";
+    type: "show" | "clear" | "saveContext" | "restoreContext" | "clearRotation" | "clearCrop" | "clearRotationCrop" | "resetBitmapScale" | "reseSpriteColors" | "resetSpriteScale";
 }
 interface SetDisplayColorCommand extends BaseDisplayContextCommand {
     type: "setColor";
@@ -292,6 +318,27 @@ interface SetDisplayBitmapScaleCommand extends BaseDisplayContextCommand {
     type: "setBitmapScale";
     bitmapScale: number;
 }
+interface SelectDisplaySpriteColorIndexCommand extends BaseDisplayContextCommand {
+    type: "selectSpriteColor";
+    spriteColorIndex: number;
+    colorIndex: number;
+}
+interface SelectDisplaySpriteColorIndicesCommand extends BaseDisplayContextCommand {
+    type: "selectSpriteColors";
+    spriteColorPairs: DisplaySpriteColorPair[];
+}
+interface SetDisplaySpriteScaleXCommand extends BaseDisplayContextCommand {
+    type: "setSpriteScaleX";
+    spriteScaleX: number;
+}
+interface SetDisplaySpriteScaleYCommand extends BaseDisplayContextCommand {
+    type: "setSpriteScaleY";
+    spriteScaleY: number;
+}
+interface SetDisplaySpriteScaleCommand extends BaseDisplayContextCommand {
+    type: "setSpriteScale";
+    spriteScale: number;
+}
 interface BasePositionDisplayContextCommand extends BaseDisplayContextCommand {
     x: number;
     y: number;
@@ -360,11 +407,90 @@ interface DrawDisplayArcEllipseCommand extends BaseCenterPositionDisplayContextC
 }
 interface DrawDisplayBitmapCommand extends BaseCenterPositionDisplayContextCommand {
     type: "drawBitmap";
-    centerX: number;
-    centerY: number;
     bitmap: DisplayBitmap;
 }
-type DisplayContextCommand = SimpleDisplayCommand | SetDisplayColorCommand | SetDisplayColorOpacityCommand | SetDisplayOpacityCommand | SelectDisplayFillColorCommand | SelectDisplayLineColorCommand | SetDisplayLineWidthCommand | SetDisplayRotationCommand | SetDisplaySegmentStartCapCommand | SetDisplaySegmentEndCapCommand | SetDisplaySegmentCapCommand | SetDisplaySegmentStartRadiusCommand | SetDisplaySegmentEndRadiusCommand | SetDisplaySegmentRadiusCommand | SetDisplayCropTopCommand | SetDisplayCropRightCommand | SetDisplayCropBottomCommand | SetDisplayCropLeftCommand | SetDisplayRotationCropTopCommand | SetDisplayRotationCropRightCommand | SetDisplayRotationCropBottomCommand | SetDisplayRotationCropLeftCommand | SelectDisplayBitmapColorIndexCommand | SelectDisplayBitmapColorIndicesCommand | SetDisplayBitmapScaleXCommand | SetDisplayBitmapScaleYCommand | SetDisplayBitmapScaleCommand | ClearDisplayRectCommand | DrawDisplayRectCommand | DrawDisplayRoundedRectCommand | DrawDisplayCircleCommand | DrawDisplayEllipseCommand | DrawDisplayPolygonCommand | DrawDisplaySegmentCommand | DrawDisplaySegmentsCommand | DrawDisplayArcCommand | DrawDisplayArcEllipseCommand | DrawDisplayBitmapCommand;
+interface DrawDisplaySpriteCommand extends BaseCenterPositionDisplayContextCommand {
+    type: "drawSprite";
+    spriteSheet: DisplaySpriteSheet;
+    spriteName: string;
+}
+type DisplayContextCommand = SimpleDisplayCommand | SetDisplayColorCommand | SetDisplayColorOpacityCommand | SetDisplayOpacityCommand | SelectDisplayFillColorCommand | SelectDisplayLineColorCommand | SetDisplayLineWidthCommand | SetDisplayRotationCommand | SetDisplaySegmentStartCapCommand | SetDisplaySegmentEndCapCommand | SetDisplaySegmentCapCommand | SetDisplaySegmentStartRadiusCommand | SetDisplaySegmentEndRadiusCommand | SetDisplaySegmentRadiusCommand | SetDisplayCropTopCommand | SetDisplayCropRightCommand | SetDisplayCropBottomCommand | SetDisplayCropLeftCommand | SetDisplayRotationCropTopCommand | SetDisplayRotationCropRightCommand | SetDisplayRotationCropBottomCommand | SetDisplayRotationCropLeftCommand | SelectDisplayBitmapColorIndexCommand | SelectDisplayBitmapColorIndicesCommand | SetDisplayBitmapScaleXCommand | SetDisplayBitmapScaleYCommand | SetDisplayBitmapScaleCommand | SelectDisplaySpriteColorIndexCommand | SelectDisplaySpriteColorIndicesCommand | SetDisplaySpriteScaleXCommand | SetDisplaySpriteScaleYCommand | SetDisplaySpriteScaleCommand | ClearDisplayRectCommand | DrawDisplayRectCommand | DrawDisplayRoundedRectCommand | DrawDisplayCircleCommand | DrawDisplayEllipseCommand | DrawDisplayPolygonCommand | DrawDisplaySegmentCommand | DrawDisplaySegmentsCommand | DrawDisplayArcCommand | DrawDisplayArcEllipseCommand | DrawDisplayBitmapCommand | DrawDisplaySpriteCommand;
+
+interface DisplayManagerInterface {
+    get isReady(): boolean;
+    get contextState(): DisplayContextState;
+    flushContextCommands(): Promise<void>;
+    get brightness(): DisplayBrightness;
+    setBrightness(newDisplayBrightness: DisplayBrightness, sendImmediately?: boolean): Promise<void>;
+    show(sendImmediately?: boolean): Promise<void>;
+    clear(sendImmediately?: boolean): Promise<void>;
+    get colors(): string[];
+    setColor(colorIndex: number, color: DisplayColorRGB | string, sendImmediately?: boolean): Promise<void>;
+    get opacities(): number[];
+    setColorOpacity(colorIndex: number, opacity: number, sendImmediately?: boolean): Promise<void>;
+    setOpacity(opacity: number, sendImmediately?: boolean): Promise<void>;
+    saveContext(sendImmediately?: boolean): Promise<void>;
+    restoreContext(sendImmediately?: boolean): Promise<void>;
+    selectFillColor(fillColorIndex: number, sendImmediately?: boolean): Promise<void>;
+    selectLineColor(lineColorIndex: number, sendImmediately?: boolean): Promise<void>;
+    setLineWidth(lineWidth: number, sendImmediately?: boolean): Promise<void>;
+    setRotation(rotation: number, isRadians?: boolean, sendImmediately?: boolean): Promise<void>;
+    clearRotation(sendImmediately?: boolean): Promise<void>;
+    setSegmentStartCap(segmentStartCap: DisplaySegmentCap, sendImmediately?: boolean): Promise<void>;
+    setSegmentEndCap(segmentEndCap: DisplaySegmentCap, sendImmediately?: boolean): Promise<void>;
+    setSegmentCap(segmentCap: DisplaySegmentCap, sendImmediately?: boolean): Promise<void>;
+    setSegmentStartRadius(segmentStartRadius: number, sendImmediately?: boolean): Promise<void>;
+    setSegmentEndRadius(segmentEndRadius: number, sendImmediately?: boolean): Promise<void>;
+    setSegmentRadius(segmentRadius: number, sendImmediately?: boolean): Promise<void>;
+    setCrop(cropDirection: DisplayCropDirection, crop: number, sendImmediately?: boolean): Promise<void>;
+    setCropTop(cropTop: number, sendImmediately?: boolean): Promise<void>;
+    setCropRight(cropRight: number, sendImmediately?: boolean): Promise<void>;
+    setCropBottom(cropBottom: number, sendImmediately?: boolean): Promise<void>;
+    setCropLeft(cropLeft: number, sendImmediately?: boolean): Promise<void>;
+    clearCrop(sendImmediately?: boolean): Promise<void>;
+    setRotationCrop(cropDirection: DisplayCropDirection, crop: number, sendImmediately?: boolean): Promise<void>;
+    setRotationCropTop(rotationCropTop: number, sendImmediately?: boolean): Promise<void>;
+    setRotationCropRight(rotationCropRight: number, sendImmediately?: boolean): Promise<void>;
+    setRotationCropBottom(rotationCropBottom: number, sendImmediately?: boolean): Promise<void>;
+    setRotationCropLeft(rotationCropLeft: number, sendImmediately?: boolean): Promise<void>;
+    clearRotationCrop(sendImmediately?: boolean): Promise<void>;
+    selectBitmapColor(bitmapColorIndex: number, colorIndex: number, sendImmediately?: boolean): Promise<void>;
+    get bitmapColorIndices(): number[];
+    get bitmapColors(): string[];
+    selectBitmapColors(bitmapColorPairs: DisplayBitmapColorPair[], sendImmediately?: boolean): Promise<void>;
+    setBitmapColor(bitmapColorIndex: number, color: DisplayColorRGB | string, sendImmediately?: boolean): Promise<void>;
+    setBitmapColorOpacity(bitmapColorIndex: number, opacity: number, sendImmediately?: boolean): Promise<void>;
+    setBitmapScaleDirection(direction: DisplayScaleDirection, bitmapScale: number, sendImmediately?: boolean): Promise<void>;
+    setBitmapScaleX(bitmapScaleX: number, sendImmediately?: boolean): Promise<void>;
+    setBitmapScaleY(bitmapScaleY: number, sendImmediately?: boolean): Promise<void>;
+    setBitmapScale(bitmapScale: number, sendImmediately?: boolean): Promise<void>;
+    resetBitmapScale(sendImmediately?: boolean): Promise<void>;
+    selectSpriteColor(spriteColorIndex: number, colorIndex: number, sendImmediately?: boolean): Promise<void>;
+    get spriteColorIndices(): number[];
+    get spriteColors(): string[];
+    selectSpriteColors(spriteColorPairs: DisplaySpriteColorPair[], sendImmediately?: boolean): Promise<void>;
+    resetSpriteColors(sendImmediately?: boolean): Promise<void>;
+    setSpriteColor(spriteColorIndex: number, color: DisplayColorRGB | string, sendImmediately?: boolean): Promise<void>;
+    setSpriteColorOpacity(spriteColorIndex: number, opacity: number, sendImmediately?: boolean): Promise<void>;
+    setSpriteScaleDirection(direction: DisplayScaleDirection, spriteScale: number, sendImmediately?: boolean): Promise<void>;
+    setSpriteScaleX(spriteScaleX: number, sendImmediately?: boolean): Promise<void>;
+    setSpriteScaleY(spriteScaleY: number, sendImmediately?: boolean): Promise<void>;
+    setSpriteScale(spriteScale: number, sendImmediately?: boolean): Promise<void>;
+    resetSpriteScale(sendImmediately?: boolean): Promise<void>;
+    clearRect(x: number, y: number, width: number, height: number, sendImmediately?: boolean): Promise<void>;
+    drawRect(centerX: number, centerY: number, width: number, height: number, sendImmediately?: boolean): Promise<void>;
+    drawRoundRect(centerX: number, centerY: number, width: number, height: number, borderRadius: number, sendImmediately?: boolean): Promise<void>;
+    drawCircle(centerX: number, centerY: number, radius: number, sendImmediately?: boolean): Promise<void>;
+    drawEllipse(centerX: number, centerY: number, radiusX: number, radiusY: number, sendImmediately?: boolean): Promise<void>;
+    drawPolygon(centerX: number, centerY: number, radius: number, numberOfSides: number, sendImmediately?: boolean): Promise<void>;
+    drawSegment(startX: number, startY: number, endX: number, endY: number, sendImmediately?: boolean): Promise<void>;
+    drawSegments(points: Vector2[], sendImmediately?: boolean): Promise<void>;
+    drawArc(centerX: number, centerY: number, radius: number, startAngle: number, angleOffset: number, isRadians?: boolean, sendImmediately?: boolean): Promise<void>;
+    drawArcEllipse(centerX: number, centerY: number, radiusX: number, radiusY: number, startAngle: number, angleOffset: number, isRadians?: boolean, sendImmediately?: boolean): Promise<void>;
+    drawBitmap(centerX: number, centerY: number, bitmap: DisplayBitmap, sendImmediately?: boolean): Promise<void>;
+    drawSprite(centerX: number, centerY: number, spriteName: string, sendImmediately?: boolean): Promise<void>;
+    runContextCommandMessage(commandMessage: DisplayContextCommand, position?: Vector2, sendImmediately?: boolean): Promise<void>;
+}
 
 declare const DefaultNumberOfDisplayColors = 16;
 declare const DisplayStatuses: readonly ["awake", "asleep"];
@@ -387,6 +513,10 @@ type DisplayInformation = {
 };
 type DisplayBitmapColorPair = {
     bitmapColorIndex: number;
+    colorIndex: number;
+};
+type DisplaySpriteColorPair = {
+    spriteColorIndex: number;
     colorIndex: number;
 };
 type DisplayBitmap = {
@@ -428,11 +558,11 @@ interface DisplayEventMessages {
     displayReady: {};
 }
 
-declare const maxDisplayBitmapScale = 100;
+declare const maxDisplayScale = 100;
 declare const DisplayCropDirections: readonly ["top", "right", "bottom", "left"];
 type DisplayCropDirection = (typeof DisplayCropDirections)[number];
-declare const DisplayBitmapScaleDirections: readonly ["x", "y", "all"];
-type DisplayBitmapScaleDirection = (typeof DisplayBitmapScaleDirections)[number];
+declare const DisplayScaleDirections: readonly ["x", "y", "all"];
+type DisplayScaleDirection = (typeof DisplayScaleDirections)[number];
 type DisplayColorRGB = {
     r: number;
     g: number;
@@ -949,7 +1079,7 @@ declare class InformationManager {
     constructor();
     sendMessage: SendInformationMessageCallback;
     eventDispatcher: InformationEventDispatcher;
-    get waitForEvent(): <T extends "isCharging" | "getBatteryCurrent" | "getMtu" | "getId" | "getName" | "setName" | "getType" | "setType" | "getCurrentTime" | "setCurrentTime">(type: T) => Promise<{
+    get waitForEvent(): <T extends "isCharging" | "getBatteryCurrent" | "getMtu" | "getId" | "getName" | "getType" | "getCurrentTime" | "setName" | "setType" | "setCurrentTime">(type: T) => Promise<{
         type: T;
         target: Device;
         message: InformationEventMessages[T];
@@ -961,7 +1091,7 @@ declare class InformationManager {
     get name(): string;
     updateName(updatedName: string): void;
     setName(newName: string): Promise<void>;
-    get type(): "generic" | "leftInsole" | "rightInsole" | "leftGlove" | "rightGlove" | "glasses";
+    get type(): "leftInsole" | "rightInsole" | "leftGlove" | "rightGlove" | "glasses" | "generic";
     get typeEnum(): number;
     updateType(updatedType: DeviceType): void;
     setType(newType: DeviceType): Promise<void>;
@@ -1024,24 +1154,24 @@ declare class Device {
     get bluetoothId(): string | undefined;
     get isAvailable(): boolean | undefined;
     constructor();
-    get addEventListener(): <T extends "isDisplayAvailable" | "displayStatus" | "displayInformation" | "displayCommand" | "getDisplayBrightness" | "setDisplayBrightness" | "displayContextCommands" | "displayReady" | "displayContextState" | "displayColor" | "displayColorOpacity" | "displayOpacity" | "rotation" | "isConnected" | "connectionMessage" | "notConnected" | "connecting" | "connected" | "disconnecting" | "connectionStatus" | "rx" | "tx" | "batteryLevel" | "isCharging" | "getBatteryCurrent" | "getMtu" | "getId" | "getName" | "setName" | "getType" | "setType" | "getCurrentTime" | "setCurrentTime" | "manufacturerName" | "modelNumber" | "hardwareRevision" | "firmwareRevision" | "softwareRevision" | "pnpId" | "serialNumber" | "deviceInformation" | "getSensorConfiguration" | "setSensorConfiguration" | "getPressurePositions" | "getSensorScalars" | "sensorData" | "pressure" | "acceleration" | "gravity" | "linearAcceleration" | "gyroscope" | "magnetometer" | "gameRotation" | "orientation" | "activity" | "stepCounter" | "stepDetector" | "deviceOrientation" | "tapDetector" | "barometer" | "camera" | "microphone" | "getVibrationLocations" | "triggerVibration" | "getFileTypes" | "maxFileLength" | "getFileType" | "setFileType" | "getFileLength" | "setFileLength" | "getFileChecksum" | "setFileChecksum" | "setFileTransferCommand" | "fileTransferStatus" | "getFileBlock" | "setFileBlock" | "fileBytesTransferred" | "fileTransferProgress" | "fileTransferComplete" | "fileReceived" | "getTfliteName" | "setTfliteName" | "getTfliteTask" | "setTfliteTask" | "getTfliteSampleRate" | "setTfliteSampleRate" | "getTfliteSensorTypes" | "setTfliteSensorTypes" | "tfliteIsReady" | "getTfliteCaptureDelay" | "setTfliteCaptureDelay" | "getTfliteThreshold" | "setTfliteThreshold" | "getTfliteInferencingEnabled" | "setTfliteInferencingEnabled" | "tfliteInference" | "isWifiAvailable" | "getWifiSSID" | "setWifiSSID" | "getWifiPassword" | "setWifiPassword" | "getWifiConnectionEnabled" | "setWifiConnectionEnabled" | "isWifiConnected" | "ipAddress" | "isWifiSecure" | "cameraStatus" | "cameraCommand" | "getCameraConfiguration" | "setCameraConfiguration" | "cameraData" | "cameraImageProgress" | "cameraImage" | "microphoneStatus" | "microphoneCommand" | "getMicrophoneConfiguration" | "setMicrophoneConfiguration" | "microphoneData" | "isRecordingMicrophone" | "microphoneRecording" | "smp" | "firmwareImages" | "firmwareUploadProgress" | "firmwareStatus" | "firmwareUploadComplete">(type: T, listener: (event: {
+    get addEventListener(): <T extends "pressure" | "sensorData" | "isConnected" | "barometer" | "acceleration" | "gravity" | "linearAcceleration" | "gyroscope" | "magnetometer" | "gameRotation" | "rotation" | "orientation" | "stepDetector" | "stepCounter" | "activity" | "deviceOrientation" | "tapDetector" | "batteryLevel" | "connectionMessage" | "notConnected" | "connecting" | "connected" | "disconnecting" | "connectionStatus" | "manufacturerName" | "modelNumber" | "softwareRevision" | "hardwareRevision" | "firmwareRevision" | "pnpId" | "serialNumber" | "deviceInformation" | "isCharging" | "getBatteryCurrent" | "getMtu" | "getId" | "getName" | "getType" | "getCurrentTime" | "getSensorConfiguration" | "getTfliteName" | "getTfliteTask" | "getTfliteSampleRate" | "getTfliteSensorTypes" | "tfliteIsReady" | "getTfliteCaptureDelay" | "getTfliteThreshold" | "getTfliteInferencingEnabled" | "tfliteInference" | "getFileTypes" | "maxFileLength" | "getFileType" | "getFileLength" | "getFileChecksum" | "fileTransferStatus" | "getFileBlock" | "fileTransferProgress" | "fileTransferComplete" | "fileReceived" | "isWifiAvailable" | "getWifiSSID" | "getWifiPassword" | "isWifiConnected" | "ipAddress" | "cameraStatus" | "getCameraConfiguration" | "cameraImageProgress" | "cameraImage" | "microphoneStatus" | "getMicrophoneConfiguration" | "microphoneData" | "isRecordingMicrophone" | "microphoneRecording" | "isDisplayAvailable" | "displayStatus" | "displayInformation" | "getDisplayBrightness" | "displayContextState" | "displayColor" | "displayColorOpacity" | "displayOpacity" | "displayReady" | "smp" | "firmwareImages" | "firmwareUploadProgress" | "firmwareStatus" | "rx" | "tx" | "setName" | "setType" | "setCurrentTime" | "setSensorConfiguration" | "getPressurePositions" | "getSensorScalars" | "camera" | "microphone" | "getVibrationLocations" | "triggerVibration" | "setFileType" | "setFileLength" | "setFileChecksum" | "setFileTransferCommand" | "setFileBlock" | "fileBytesTransferred" | "setTfliteName" | "setTfliteTask" | "setTfliteSampleRate" | "setTfliteSensorTypes" | "setTfliteCaptureDelay" | "setTfliteThreshold" | "setTfliteInferencingEnabled" | "setWifiSSID" | "setWifiPassword" | "getWifiConnectionEnabled" | "setWifiConnectionEnabled" | "isWifiSecure" | "cameraCommand" | "setCameraConfiguration" | "cameraData" | "microphoneCommand" | "setMicrophoneConfiguration" | "displayCommand" | "setDisplayBrightness" | "displayContextCommands" | "firmwareUploadComplete">(type: T, listener: (event: {
         type: T;
         target: Device;
         message: DeviceEventMessages[T];
     }) => void, options?: {
         once?: boolean;
     }) => void;
-    get removeEventListener(): <T extends "isDisplayAvailable" | "displayStatus" | "displayInformation" | "displayCommand" | "getDisplayBrightness" | "setDisplayBrightness" | "displayContextCommands" | "displayReady" | "displayContextState" | "displayColor" | "displayColorOpacity" | "displayOpacity" | "rotation" | "isConnected" | "connectionMessage" | "notConnected" | "connecting" | "connected" | "disconnecting" | "connectionStatus" | "rx" | "tx" | "batteryLevel" | "isCharging" | "getBatteryCurrent" | "getMtu" | "getId" | "getName" | "setName" | "getType" | "setType" | "getCurrentTime" | "setCurrentTime" | "manufacturerName" | "modelNumber" | "hardwareRevision" | "firmwareRevision" | "softwareRevision" | "pnpId" | "serialNumber" | "deviceInformation" | "getSensorConfiguration" | "setSensorConfiguration" | "getPressurePositions" | "getSensorScalars" | "sensorData" | "pressure" | "acceleration" | "gravity" | "linearAcceleration" | "gyroscope" | "magnetometer" | "gameRotation" | "orientation" | "activity" | "stepCounter" | "stepDetector" | "deviceOrientation" | "tapDetector" | "barometer" | "camera" | "microphone" | "getVibrationLocations" | "triggerVibration" | "getFileTypes" | "maxFileLength" | "getFileType" | "setFileType" | "getFileLength" | "setFileLength" | "getFileChecksum" | "setFileChecksum" | "setFileTransferCommand" | "fileTransferStatus" | "getFileBlock" | "setFileBlock" | "fileBytesTransferred" | "fileTransferProgress" | "fileTransferComplete" | "fileReceived" | "getTfliteName" | "setTfliteName" | "getTfliteTask" | "setTfliteTask" | "getTfliteSampleRate" | "setTfliteSampleRate" | "getTfliteSensorTypes" | "setTfliteSensorTypes" | "tfliteIsReady" | "getTfliteCaptureDelay" | "setTfliteCaptureDelay" | "getTfliteThreshold" | "setTfliteThreshold" | "getTfliteInferencingEnabled" | "setTfliteInferencingEnabled" | "tfliteInference" | "isWifiAvailable" | "getWifiSSID" | "setWifiSSID" | "getWifiPassword" | "setWifiPassword" | "getWifiConnectionEnabled" | "setWifiConnectionEnabled" | "isWifiConnected" | "ipAddress" | "isWifiSecure" | "cameraStatus" | "cameraCommand" | "getCameraConfiguration" | "setCameraConfiguration" | "cameraData" | "cameraImageProgress" | "cameraImage" | "microphoneStatus" | "microphoneCommand" | "getMicrophoneConfiguration" | "setMicrophoneConfiguration" | "microphoneData" | "isRecordingMicrophone" | "microphoneRecording" | "smp" | "firmwareImages" | "firmwareUploadProgress" | "firmwareStatus" | "firmwareUploadComplete">(type: T, listener: (event: {
+    get removeEventListener(): <T extends "pressure" | "sensorData" | "isConnected" | "barometer" | "acceleration" | "gravity" | "linearAcceleration" | "gyroscope" | "magnetometer" | "gameRotation" | "rotation" | "orientation" | "stepDetector" | "stepCounter" | "activity" | "deviceOrientation" | "tapDetector" | "batteryLevel" | "connectionMessage" | "notConnected" | "connecting" | "connected" | "disconnecting" | "connectionStatus" | "manufacturerName" | "modelNumber" | "softwareRevision" | "hardwareRevision" | "firmwareRevision" | "pnpId" | "serialNumber" | "deviceInformation" | "isCharging" | "getBatteryCurrent" | "getMtu" | "getId" | "getName" | "getType" | "getCurrentTime" | "getSensorConfiguration" | "getTfliteName" | "getTfliteTask" | "getTfliteSampleRate" | "getTfliteSensorTypes" | "tfliteIsReady" | "getTfliteCaptureDelay" | "getTfliteThreshold" | "getTfliteInferencingEnabled" | "tfliteInference" | "getFileTypes" | "maxFileLength" | "getFileType" | "getFileLength" | "getFileChecksum" | "fileTransferStatus" | "getFileBlock" | "fileTransferProgress" | "fileTransferComplete" | "fileReceived" | "isWifiAvailable" | "getWifiSSID" | "getWifiPassword" | "isWifiConnected" | "ipAddress" | "cameraStatus" | "getCameraConfiguration" | "cameraImageProgress" | "cameraImage" | "microphoneStatus" | "getMicrophoneConfiguration" | "microphoneData" | "isRecordingMicrophone" | "microphoneRecording" | "isDisplayAvailable" | "displayStatus" | "displayInformation" | "getDisplayBrightness" | "displayContextState" | "displayColor" | "displayColorOpacity" | "displayOpacity" | "displayReady" | "smp" | "firmwareImages" | "firmwareUploadProgress" | "firmwareStatus" | "rx" | "tx" | "setName" | "setType" | "setCurrentTime" | "setSensorConfiguration" | "getPressurePositions" | "getSensorScalars" | "camera" | "microphone" | "getVibrationLocations" | "triggerVibration" | "setFileType" | "setFileLength" | "setFileChecksum" | "setFileTransferCommand" | "setFileBlock" | "fileBytesTransferred" | "setTfliteName" | "setTfliteTask" | "setTfliteSampleRate" | "setTfliteSensorTypes" | "setTfliteCaptureDelay" | "setTfliteThreshold" | "setTfliteInferencingEnabled" | "setWifiSSID" | "setWifiPassword" | "getWifiConnectionEnabled" | "setWifiConnectionEnabled" | "isWifiSecure" | "cameraCommand" | "setCameraConfiguration" | "cameraData" | "microphoneCommand" | "setMicrophoneConfiguration" | "displayCommand" | "setDisplayBrightness" | "displayContextCommands" | "firmwareUploadComplete">(type: T, listener: (event: {
         type: T;
         target: Device;
         message: DeviceEventMessages[T];
     }) => void) => void;
-    get waitForEvent(): <T extends "isDisplayAvailable" | "displayStatus" | "displayInformation" | "displayCommand" | "getDisplayBrightness" | "setDisplayBrightness" | "displayContextCommands" | "displayReady" | "displayContextState" | "displayColor" | "displayColorOpacity" | "displayOpacity" | "rotation" | "isConnected" | "connectionMessage" | "notConnected" | "connecting" | "connected" | "disconnecting" | "connectionStatus" | "rx" | "tx" | "batteryLevel" | "isCharging" | "getBatteryCurrent" | "getMtu" | "getId" | "getName" | "setName" | "getType" | "setType" | "getCurrentTime" | "setCurrentTime" | "manufacturerName" | "modelNumber" | "hardwareRevision" | "firmwareRevision" | "softwareRevision" | "pnpId" | "serialNumber" | "deviceInformation" | "getSensorConfiguration" | "setSensorConfiguration" | "getPressurePositions" | "getSensorScalars" | "sensorData" | "pressure" | "acceleration" | "gravity" | "linearAcceleration" | "gyroscope" | "magnetometer" | "gameRotation" | "orientation" | "activity" | "stepCounter" | "stepDetector" | "deviceOrientation" | "tapDetector" | "barometer" | "camera" | "microphone" | "getVibrationLocations" | "triggerVibration" | "getFileTypes" | "maxFileLength" | "getFileType" | "setFileType" | "getFileLength" | "setFileLength" | "getFileChecksum" | "setFileChecksum" | "setFileTransferCommand" | "fileTransferStatus" | "getFileBlock" | "setFileBlock" | "fileBytesTransferred" | "fileTransferProgress" | "fileTransferComplete" | "fileReceived" | "getTfliteName" | "setTfliteName" | "getTfliteTask" | "setTfliteTask" | "getTfliteSampleRate" | "setTfliteSampleRate" | "getTfliteSensorTypes" | "setTfliteSensorTypes" | "tfliteIsReady" | "getTfliteCaptureDelay" | "setTfliteCaptureDelay" | "getTfliteThreshold" | "setTfliteThreshold" | "getTfliteInferencingEnabled" | "setTfliteInferencingEnabled" | "tfliteInference" | "isWifiAvailable" | "getWifiSSID" | "setWifiSSID" | "getWifiPassword" | "setWifiPassword" | "getWifiConnectionEnabled" | "setWifiConnectionEnabled" | "isWifiConnected" | "ipAddress" | "isWifiSecure" | "cameraStatus" | "cameraCommand" | "getCameraConfiguration" | "setCameraConfiguration" | "cameraData" | "cameraImageProgress" | "cameraImage" | "microphoneStatus" | "microphoneCommand" | "getMicrophoneConfiguration" | "setMicrophoneConfiguration" | "microphoneData" | "isRecordingMicrophone" | "microphoneRecording" | "smp" | "firmwareImages" | "firmwareUploadProgress" | "firmwareStatus" | "firmwareUploadComplete">(type: T) => Promise<{
+    get waitForEvent(): <T extends "pressure" | "sensorData" | "isConnected" | "barometer" | "acceleration" | "gravity" | "linearAcceleration" | "gyroscope" | "magnetometer" | "gameRotation" | "rotation" | "orientation" | "stepDetector" | "stepCounter" | "activity" | "deviceOrientation" | "tapDetector" | "batteryLevel" | "connectionMessage" | "notConnected" | "connecting" | "connected" | "disconnecting" | "connectionStatus" | "manufacturerName" | "modelNumber" | "softwareRevision" | "hardwareRevision" | "firmwareRevision" | "pnpId" | "serialNumber" | "deviceInformation" | "isCharging" | "getBatteryCurrent" | "getMtu" | "getId" | "getName" | "getType" | "getCurrentTime" | "getSensorConfiguration" | "getTfliteName" | "getTfliteTask" | "getTfliteSampleRate" | "getTfliteSensorTypes" | "tfliteIsReady" | "getTfliteCaptureDelay" | "getTfliteThreshold" | "getTfliteInferencingEnabled" | "tfliteInference" | "getFileTypes" | "maxFileLength" | "getFileType" | "getFileLength" | "getFileChecksum" | "fileTransferStatus" | "getFileBlock" | "fileTransferProgress" | "fileTransferComplete" | "fileReceived" | "isWifiAvailable" | "getWifiSSID" | "getWifiPassword" | "isWifiConnected" | "ipAddress" | "cameraStatus" | "getCameraConfiguration" | "cameraImageProgress" | "cameraImage" | "microphoneStatus" | "getMicrophoneConfiguration" | "microphoneData" | "isRecordingMicrophone" | "microphoneRecording" | "isDisplayAvailable" | "displayStatus" | "displayInformation" | "getDisplayBrightness" | "displayContextState" | "displayColor" | "displayColorOpacity" | "displayOpacity" | "displayReady" | "smp" | "firmwareImages" | "firmwareUploadProgress" | "firmwareStatus" | "rx" | "tx" | "setName" | "setType" | "setCurrentTime" | "setSensorConfiguration" | "getPressurePositions" | "getSensorScalars" | "camera" | "microphone" | "getVibrationLocations" | "triggerVibration" | "setFileType" | "setFileLength" | "setFileChecksum" | "setFileTransferCommand" | "setFileBlock" | "fileBytesTransferred" | "setTfliteName" | "setTfliteTask" | "setTfliteSampleRate" | "setTfliteSensorTypes" | "setTfliteCaptureDelay" | "setTfliteThreshold" | "setTfliteInferencingEnabled" | "setWifiSSID" | "setWifiPassword" | "getWifiConnectionEnabled" | "setWifiConnectionEnabled" | "isWifiSecure" | "cameraCommand" | "setCameraConfiguration" | "cameraData" | "microphoneCommand" | "setMicrophoneConfiguration" | "displayCommand" | "setDisplayBrightness" | "displayContextCommands" | "firmwareUploadComplete">(type: T) => Promise<{
         type: T;
         target: Device;
         message: DeviceEventMessages[T];
     }>;
-    get removeEventListeners(): <T extends "isDisplayAvailable" | "displayStatus" | "displayInformation" | "displayCommand" | "getDisplayBrightness" | "setDisplayBrightness" | "displayContextCommands" | "displayReady" | "displayContextState" | "displayColor" | "displayColorOpacity" | "displayOpacity" | "rotation" | "isConnected" | "connectionMessage" | "notConnected" | "connecting" | "connected" | "disconnecting" | "connectionStatus" | "rx" | "tx" | "batteryLevel" | "isCharging" | "getBatteryCurrent" | "getMtu" | "getId" | "getName" | "setName" | "getType" | "setType" | "getCurrentTime" | "setCurrentTime" | "manufacturerName" | "modelNumber" | "hardwareRevision" | "firmwareRevision" | "softwareRevision" | "pnpId" | "serialNumber" | "deviceInformation" | "getSensorConfiguration" | "setSensorConfiguration" | "getPressurePositions" | "getSensorScalars" | "sensorData" | "pressure" | "acceleration" | "gravity" | "linearAcceleration" | "gyroscope" | "magnetometer" | "gameRotation" | "orientation" | "activity" | "stepCounter" | "stepDetector" | "deviceOrientation" | "tapDetector" | "barometer" | "camera" | "microphone" | "getVibrationLocations" | "triggerVibration" | "getFileTypes" | "maxFileLength" | "getFileType" | "setFileType" | "getFileLength" | "setFileLength" | "getFileChecksum" | "setFileChecksum" | "setFileTransferCommand" | "fileTransferStatus" | "getFileBlock" | "setFileBlock" | "fileBytesTransferred" | "fileTransferProgress" | "fileTransferComplete" | "fileReceived" | "getTfliteName" | "setTfliteName" | "getTfliteTask" | "setTfliteTask" | "getTfliteSampleRate" | "setTfliteSampleRate" | "getTfliteSensorTypes" | "setTfliteSensorTypes" | "tfliteIsReady" | "getTfliteCaptureDelay" | "setTfliteCaptureDelay" | "getTfliteThreshold" | "setTfliteThreshold" | "getTfliteInferencingEnabled" | "setTfliteInferencingEnabled" | "tfliteInference" | "isWifiAvailable" | "getWifiSSID" | "setWifiSSID" | "getWifiPassword" | "setWifiPassword" | "getWifiConnectionEnabled" | "setWifiConnectionEnabled" | "isWifiConnected" | "ipAddress" | "isWifiSecure" | "cameraStatus" | "cameraCommand" | "getCameraConfiguration" | "setCameraConfiguration" | "cameraData" | "cameraImageProgress" | "cameraImage" | "microphoneStatus" | "microphoneCommand" | "getMicrophoneConfiguration" | "setMicrophoneConfiguration" | "microphoneData" | "isRecordingMicrophone" | "microphoneRecording" | "smp" | "firmwareImages" | "firmwareUploadProgress" | "firmwareStatus" | "firmwareUploadComplete">(type: T) => void;
+    get removeEventListeners(): <T extends "pressure" | "sensorData" | "isConnected" | "barometer" | "acceleration" | "gravity" | "linearAcceleration" | "gyroscope" | "magnetometer" | "gameRotation" | "rotation" | "orientation" | "stepDetector" | "stepCounter" | "activity" | "deviceOrientation" | "tapDetector" | "batteryLevel" | "connectionMessage" | "notConnected" | "connecting" | "connected" | "disconnecting" | "connectionStatus" | "manufacturerName" | "modelNumber" | "softwareRevision" | "hardwareRevision" | "firmwareRevision" | "pnpId" | "serialNumber" | "deviceInformation" | "isCharging" | "getBatteryCurrent" | "getMtu" | "getId" | "getName" | "getType" | "getCurrentTime" | "getSensorConfiguration" | "getTfliteName" | "getTfliteTask" | "getTfliteSampleRate" | "getTfliteSensorTypes" | "tfliteIsReady" | "getTfliteCaptureDelay" | "getTfliteThreshold" | "getTfliteInferencingEnabled" | "tfliteInference" | "getFileTypes" | "maxFileLength" | "getFileType" | "getFileLength" | "getFileChecksum" | "fileTransferStatus" | "getFileBlock" | "fileTransferProgress" | "fileTransferComplete" | "fileReceived" | "isWifiAvailable" | "getWifiSSID" | "getWifiPassword" | "isWifiConnected" | "ipAddress" | "cameraStatus" | "getCameraConfiguration" | "cameraImageProgress" | "cameraImage" | "microphoneStatus" | "getMicrophoneConfiguration" | "microphoneData" | "isRecordingMicrophone" | "microphoneRecording" | "isDisplayAvailable" | "displayStatus" | "displayInformation" | "getDisplayBrightness" | "displayContextState" | "displayColor" | "displayColorOpacity" | "displayOpacity" | "displayReady" | "smp" | "firmwareImages" | "firmwareUploadProgress" | "firmwareStatus" | "rx" | "tx" | "setName" | "setType" | "setCurrentTime" | "setSensorConfiguration" | "getPressurePositions" | "getSensorScalars" | "camera" | "microphone" | "getVibrationLocations" | "triggerVibration" | "setFileType" | "setFileLength" | "setFileChecksum" | "setFileTransferCommand" | "setFileBlock" | "fileBytesTransferred" | "setTfliteName" | "setTfliteTask" | "setTfliteSampleRate" | "setTfliteSensorTypes" | "setTfliteCaptureDelay" | "setTfliteThreshold" | "setTfliteInferencingEnabled" | "setWifiSSID" | "setWifiPassword" | "getWifiConnectionEnabled" | "setWifiConnectionEnabled" | "isWifiSecure" | "cameraCommand" | "setCameraConfiguration" | "cameraData" | "microphoneCommand" | "setMicrophoneConfiguration" | "displayCommand" | "setDisplayBrightness" | "displayContextCommands" | "firmwareUploadComplete">(type: T) => void;
     get removeAllEventListeners(): () => void;
     get connectionManager(): BaseConnectionManager | undefined;
     set connectionManager(newConnectionManager: BaseConnectionManager | undefined);
@@ -1055,7 +1185,7 @@ declare class Device {
     static set ReconnectOnDisconnection(newReconnectOnDisconnection: boolean);
     get reconnectOnDisconnection(): boolean;
     set reconnectOnDisconnection(newReconnectOnDisconnection: boolean);
-    get connectionType(): "noble" | "webSocket" | "udp" | "webBluetooth" | "client" | undefined;
+    get connectionType(): "webBluetooth" | "noble" | "client" | "webSocket" | "udp" | undefined;
     disconnect(): Promise<void>;
     toggleConnection(): void;
     get connectionStatus(): ConnectionStatus;
@@ -1071,14 +1201,14 @@ declare class Device {
     get getBatteryCurrent(): () => Promise<void>;
     get name(): string;
     get setName(): (newName: string) => Promise<void>;
-    get type(): "generic" | "leftInsole" | "rightInsole" | "leftGlove" | "rightGlove" | "glasses";
+    get type(): "leftInsole" | "rightInsole" | "leftGlove" | "rightGlove" | "glasses" | "generic";
     get setType(): (newType: DeviceType) => Promise<void>;
     get isInsole(): boolean;
     get isGlove(): boolean;
-    get side(): "right" | "left";
+    get side(): "left" | "right";
     get mtu(): number;
     get sensorTypes(): SensorType[];
-    get continuousSensorTypes(): ("rotation" | "pressure" | "acceleration" | "gravity" | "linearAcceleration" | "gyroscope" | "magnetometer" | "gameRotation" | "orientation" | "barometer")[];
+    get continuousSensorTypes(): ("pressure" | "barometer" | "acceleration" | "gravity" | "linearAcceleration" | "gyroscope" | "magnetometer" | "gameRotation" | "rotation" | "orientation")[];
     get sensorConfiguration(): SensorConfiguration;
     get setSensorConfiguration(): (newSensorConfiguration: SensorConfiguration, clearRest?: boolean, sendImmediately?: boolean) => Promise<void>;
     clearSensorConfiguration(): Promise<void>;
@@ -1105,7 +1235,7 @@ declare class Device {
     get tfliteSampleRate(): number;
     get setTfliteSampleRate(): (newSampleRate: number, sendImmediately?: boolean) => Promise<void>;
     get tfliteSensorTypes(): ("pressure" | "linearAcceleration" | "gyroscope" | "magnetometer")[];
-    get allowedTfliteSensorTypes(): ("rotation" | "pressure" | "acceleration" | "gravity" | "linearAcceleration" | "gyroscope" | "magnetometer" | "gameRotation" | "orientation" | "activity" | "stepCounter" | "stepDetector" | "deviceOrientation" | "tapDetector" | "barometer" | "camera" | "microphone")[];
+    get allowedTfliteSensorTypes(): ("pressure" | "barometer" | "acceleration" | "gravity" | "linearAcceleration" | "gyroscope" | "magnetometer" | "gameRotation" | "rotation" | "orientation" | "stepDetector" | "stepCounter" | "activity" | "deviceOrientation" | "tapDetector" | "camera" | "microphone")[];
     get setTfliteSensorTypes(): (newSensorTypes: SensorType[], sendImmediately?: boolean) => Promise<void>;
     get tfliteIsReady(): boolean;
     get tfliteInferencingEnabled(): boolean;
@@ -1147,7 +1277,7 @@ declare class Device {
     reconnectViaWebSockets(): Promise<void>;
     reconnectViaUDP(): Promise<void>;
     get hasCamera(): boolean;
-    get cameraStatus(): "asleep" | "idle" | "focusing" | "takingPicture";
+    get cameraStatus(): "idle" | "focusing" | "takingPicture" | "asleep";
     takePicture(sensorRate?: number): Promise<void>;
     focusCamera(sensorRate?: number): Promise<void>;
     stopCamera(): Promise<void>;
@@ -1181,7 +1311,7 @@ declare class Device {
     get displayBitmapColors(): string[];
     get displayBitmapColorIndices(): number[];
     get displayColorOpacities(): number[];
-    get displayStatus(): "awake" | "asleep";
+    get displayStatus(): "asleep" | "awake";
     get displayBrightness(): "veryLow" | "low" | "medium" | "high" | "veryHigh";
     get setDisplayBrightness(): (newDisplayBrightness: DisplayBrightness, sendImmediately?: boolean) => Promise<void>;
     get displayInformation(): DisplayInformation | undefined;
@@ -1239,11 +1369,23 @@ declare class Device {
     get selectDisplayBitmapColors(): (bitmapColorPairs: DisplayBitmapColorPair[], sendImmediately?: boolean) => Promise<void>;
     get setDisplayBitmapColor(): (bitmapColorIndex: number, color: DisplayColorRGB | string, sendImmediately?: boolean) => Promise<void>;
     get setDisplayBitmapColorOpacity(): (bitmapColorIndex: number, opacity: number, sendImmediately?: boolean) => Promise<void>;
-    get setDisplayBitmapScaleDirection(): (direction: DisplayBitmapScaleDirection, bitmapScale: number, sendImmediately?: boolean) => Promise<void>;
+    get setDisplayBitmapScaleDirection(): (direction: DisplayScaleDirection, bitmapScale: number, sendImmediately?: boolean) => Promise<void>;
     get setDisplayBitmapScaleX(): (bitmapScaleX: number, sendImmediately?: boolean) => Promise<void>;
     get setDisplayBitmapScaleY(): (bitmapScaleY: number, sendImmediately?: boolean) => Promise<void>;
     get setDisplayBitmapScale(): (bitmapScale: number, sendImmediately?: boolean) => Promise<void>;
     get resetDisplayBitmapScale(): (sendImmediately?: boolean) => Promise<void>;
+    get selectDisplaySpriteColor(): (spriteColorIndex: number, colorIndex: number, sendImmediately?: boolean) => Promise<void>;
+    get selectDisplaySpriteColors(): (spriteColorPairs: DisplaySpriteColorPair[], sendImmediately?: boolean) => Promise<void>;
+    get setDisplaySpriteColor(): (spriteColorIndex: number, color: DisplayColorRGB | string, sendImmediately?: boolean) => Promise<void>;
+    get setDisplaySpriteColorOpacity(): (spriteColorIndex: number, opacity: number, sendImmediately?: boolean) => Promise<void>;
+    get resetDisplaySpriteColors(): (sendImmediately?: boolean) => Promise<void>;
+    get setDisplaySpriteScaleDirection(): (direction: DisplayScaleDirection, spriteScale: number, sendImmediately?: boolean) => Promise<void>;
+    get setDisplaySpriteScaleX(): (spriteScaleX: number, sendImmediately?: boolean) => Promise<void>;
+    get setDisplaySpriteScaleY(): (spriteScaleY: number, sendImmediately?: boolean) => Promise<void>;
+    get setDisplaySpriteScale(): (spriteScale: number, sendImmediately?: boolean) => Promise<void>;
+    get resetDisplaySpriteScale(): (sendImmediately?: boolean) => Promise<void>;
+    get drawDisplaySprite(): (centerX: number, centerY: number, spriteName: string, sendImmediately?: boolean) => Promise<void>;
+    get displayManager(): DisplayManagerInterface;
 }
 
 declare const DeviceManagerEventTypes: readonly ["deviceConnected", "deviceDisconnected", "deviceIsConnected", "availableDevices", "connectedDevices"];
@@ -1286,45 +1428,23 @@ declare class DeviceManager {
      * _only available on web-bluetooth enabled browsers_
      */
     GetDevices(): Promise<Device[] | undefined>;
-    get AddEventListener(): <T extends "connectedDevices" | "deviceConnected" | "deviceDisconnected" | "deviceIsConnected" | "availableDevices">(type: T, listener: (event: {
+    get AddEventListener(): <T extends "deviceIsConnected" | "deviceConnected" | "connectedDevices" | "deviceDisconnected" | "availableDevices">(type: T, listener: (event: {
         type: T;
         target: DeviceManager;
         message: DeviceManagerEventMessages[T];
     }) => void, options?: {
         once?: boolean;
     }) => void;
-    get RemoveEventListener(): <T extends "connectedDevices" | "deviceConnected" | "deviceDisconnected" | "deviceIsConnected" | "availableDevices">(type: T, listener: (event: {
+    get RemoveEventListener(): <T extends "deviceIsConnected" | "deviceConnected" | "connectedDevices" | "deviceDisconnected" | "availableDevices">(type: T, listener: (event: {
         type: T;
         target: DeviceManager;
         message: DeviceManagerEventMessages[T];
     }) => void) => void;
-    get RemoveEventListeners(): <T extends "connectedDevices" | "deviceConnected" | "deviceDisconnected" | "deviceIsConnected" | "availableDevices">(type: T) => void;
+    get RemoveEventListeners(): <T extends "deviceIsConnected" | "deviceConnected" | "connectedDevices" | "deviceDisconnected" | "availableDevices">(type: T) => void;
     get RemoveAllEventListeners(): () => void;
     _CheckDeviceAvailability(device: Device): void;
 }
 declare const _default: DeviceManager;
-
-type DisplaySprite = {
-    name: string;
-    width: number;
-    height: number;
-    commands: DisplayContextCommand[];
-};
-type DisplaySpriteSheetPalette = {
-    name: string;
-    numberOfColors: number;
-    colors: string[];
-    opacities: number[];
-    fillColorIndex: number;
-    lineColorIndex: number;
-    numberOfBitmapColors: number;
-    bitmapColorIndices: number[];
-};
-type DisplaySpriteSheet = {
-    name: string;
-    palettes: DisplaySpriteSheetPalette[];
-    sprites: DisplaySprite[];
-};
 
 declare function hexToRGB(hex: string): DisplayColorRGB;
 declare function rgbToHex({ r, g, b }: DisplayColorRGB): string;
@@ -1381,24 +1501,24 @@ declare class DevicePair {
     constructor(type: DevicePairType);
     get sides(): readonly ["left", "right"];
     get type(): "insoles" | "gloves";
-    get addEventListener(): <T extends "isConnected" | "sensorData" | "pressure" | "deviceOrientation" | "deviceConnected" | "deviceIsConnected" | "deviceIsDisplayAvailable" | "deviceDisplayStatus" | "deviceDisplayInformation" | "deviceGetDisplayBrightness" | "deviceDisplayReady" | "deviceDisplayContextState" | "deviceDisplayColor" | "deviceDisplayColorOpacity" | "deviceDisplayOpacity" | "deviceRotation" | "deviceConnectionMessage" | "deviceNotConnected" | "deviceConnecting" | "deviceDisconnecting" | "deviceConnectionStatus" | "deviceBatteryLevel" | "deviceIsCharging" | "deviceGetBatteryCurrent" | "deviceGetMtu" | "deviceGetId" | "deviceGetName" | "deviceGetType" | "deviceGetCurrentTime" | "deviceManufacturerName" | "deviceModelNumber" | "deviceHardwareRevision" | "deviceFirmwareRevision" | "deviceSoftwareRevision" | "devicePnpId" | "deviceSerialNumber" | "deviceDeviceInformation" | "deviceGetSensorConfiguration" | "deviceSensorData" | "devicePressure" | "deviceAcceleration" | "deviceGravity" | "deviceLinearAcceleration" | "deviceGyroscope" | "deviceMagnetometer" | "deviceGameRotation" | "deviceActivity" | "deviceStepCounter" | "deviceStepDetector" | "deviceDeviceOrientation" | "deviceTapDetector" | "deviceBarometer" | "deviceGetFileTypes" | "deviceMaxFileLength" | "deviceGetFileType" | "deviceGetFileLength" | "deviceGetFileChecksum" | "deviceFileTransferStatus" | "deviceGetFileBlock" | "deviceFileTransferProgress" | "deviceFileTransferComplete" | "deviceFileReceived" | "deviceGetTfliteName" | "deviceGetTfliteTask" | "deviceGetTfliteSampleRate" | "deviceGetTfliteSensorTypes" | "deviceTfliteIsReady" | "deviceGetTfliteCaptureDelay" | "deviceGetTfliteThreshold" | "deviceGetTfliteInferencingEnabled" | "deviceTfliteInference" | "deviceIsWifiAvailable" | "deviceGetWifiSSID" | "deviceGetWifiPassword" | "deviceIsWifiConnected" | "deviceIpAddress" | "deviceCameraStatus" | "deviceGetCameraConfiguration" | "deviceCameraImageProgress" | "deviceCameraImage" | "deviceMicrophoneStatus" | "deviceGetMicrophoneConfiguration" | "deviceMicrophoneData" | "deviceIsRecordingMicrophone" | "deviceMicrophoneRecording" | "deviceSmp" | "deviceFirmwareImages" | "deviceFirmwareUploadProgress" | "deviceFirmwareStatus" | "deviceGetEnableWifiConnection">(type: T, listener: (event: {
+    get addEventListener(): <T extends "pressure" | "sensorData" | "isConnected" | "deviceOrientation" | "devicePressure" | "deviceSensorData" | "deviceIsConnected" | "deviceBarometer" | "deviceAcceleration" | "deviceGravity" | "deviceLinearAcceleration" | "deviceGyroscope" | "deviceMagnetometer" | "deviceGameRotation" | "deviceRotation" | "deviceStepDetector" | "deviceStepCounter" | "deviceActivity" | "deviceDeviceOrientation" | "deviceTapDetector" | "deviceBatteryLevel" | "deviceConnectionMessage" | "deviceNotConnected" | "deviceConnecting" | "deviceConnected" | "deviceDisconnecting" | "deviceConnectionStatus" | "deviceManufacturerName" | "deviceModelNumber" | "deviceSoftwareRevision" | "deviceHardwareRevision" | "deviceFirmwareRevision" | "devicePnpId" | "deviceSerialNumber" | "deviceDeviceInformation" | "deviceIsCharging" | "deviceGetBatteryCurrent" | "deviceGetMtu" | "deviceGetId" | "deviceGetName" | "deviceGetType" | "deviceGetCurrentTime" | "deviceGetSensorConfiguration" | "deviceGetTfliteName" | "deviceGetTfliteTask" | "deviceGetTfliteSampleRate" | "deviceGetTfliteSensorTypes" | "deviceTfliteIsReady" | "deviceGetTfliteCaptureDelay" | "deviceGetTfliteThreshold" | "deviceGetTfliteInferencingEnabled" | "deviceTfliteInference" | "deviceGetFileTypes" | "deviceMaxFileLength" | "deviceGetFileType" | "deviceGetFileLength" | "deviceGetFileChecksum" | "deviceFileTransferStatus" | "deviceGetFileBlock" | "deviceFileTransferProgress" | "deviceFileTransferComplete" | "deviceFileReceived" | "deviceIsWifiAvailable" | "deviceGetWifiSSID" | "deviceGetWifiPassword" | "deviceGetEnableWifiConnection" | "deviceIsWifiConnected" | "deviceIpAddress" | "deviceCameraStatus" | "deviceGetCameraConfiguration" | "deviceCameraImageProgress" | "deviceCameraImage" | "deviceMicrophoneStatus" | "deviceGetMicrophoneConfiguration" | "deviceMicrophoneData" | "deviceIsRecordingMicrophone" | "deviceMicrophoneRecording" | "deviceIsDisplayAvailable" | "deviceDisplayStatus" | "deviceDisplayInformation" | "deviceGetDisplayBrightness" | "deviceDisplayContextState" | "deviceDisplayColor" | "deviceDisplayColorOpacity" | "deviceDisplayOpacity" | "deviceDisplayReady" | "deviceSmp" | "deviceFirmwareImages" | "deviceFirmwareUploadProgress" | "deviceFirmwareStatus">(type: T, listener: (event: {
         type: T;
         target: DevicePair;
         message: DevicePairEventMessages[T];
     }) => void, options?: {
         once?: boolean;
     }) => void;
-    get removeEventListener(): <T extends "isConnected" | "sensorData" | "pressure" | "deviceOrientation" | "deviceConnected" | "deviceIsConnected" | "deviceIsDisplayAvailable" | "deviceDisplayStatus" | "deviceDisplayInformation" | "deviceGetDisplayBrightness" | "deviceDisplayReady" | "deviceDisplayContextState" | "deviceDisplayColor" | "deviceDisplayColorOpacity" | "deviceDisplayOpacity" | "deviceRotation" | "deviceConnectionMessage" | "deviceNotConnected" | "deviceConnecting" | "deviceDisconnecting" | "deviceConnectionStatus" | "deviceBatteryLevel" | "deviceIsCharging" | "deviceGetBatteryCurrent" | "deviceGetMtu" | "deviceGetId" | "deviceGetName" | "deviceGetType" | "deviceGetCurrentTime" | "deviceManufacturerName" | "deviceModelNumber" | "deviceHardwareRevision" | "deviceFirmwareRevision" | "deviceSoftwareRevision" | "devicePnpId" | "deviceSerialNumber" | "deviceDeviceInformation" | "deviceGetSensorConfiguration" | "deviceSensorData" | "devicePressure" | "deviceAcceleration" | "deviceGravity" | "deviceLinearAcceleration" | "deviceGyroscope" | "deviceMagnetometer" | "deviceGameRotation" | "deviceActivity" | "deviceStepCounter" | "deviceStepDetector" | "deviceDeviceOrientation" | "deviceTapDetector" | "deviceBarometer" | "deviceGetFileTypes" | "deviceMaxFileLength" | "deviceGetFileType" | "deviceGetFileLength" | "deviceGetFileChecksum" | "deviceFileTransferStatus" | "deviceGetFileBlock" | "deviceFileTransferProgress" | "deviceFileTransferComplete" | "deviceFileReceived" | "deviceGetTfliteName" | "deviceGetTfliteTask" | "deviceGetTfliteSampleRate" | "deviceGetTfliteSensorTypes" | "deviceTfliteIsReady" | "deviceGetTfliteCaptureDelay" | "deviceGetTfliteThreshold" | "deviceGetTfliteInferencingEnabled" | "deviceTfliteInference" | "deviceIsWifiAvailable" | "deviceGetWifiSSID" | "deviceGetWifiPassword" | "deviceIsWifiConnected" | "deviceIpAddress" | "deviceCameraStatus" | "deviceGetCameraConfiguration" | "deviceCameraImageProgress" | "deviceCameraImage" | "deviceMicrophoneStatus" | "deviceGetMicrophoneConfiguration" | "deviceMicrophoneData" | "deviceIsRecordingMicrophone" | "deviceMicrophoneRecording" | "deviceSmp" | "deviceFirmwareImages" | "deviceFirmwareUploadProgress" | "deviceFirmwareStatus" | "deviceGetEnableWifiConnection">(type: T, listener: (event: {
+    get removeEventListener(): <T extends "pressure" | "sensorData" | "isConnected" | "deviceOrientation" | "devicePressure" | "deviceSensorData" | "deviceIsConnected" | "deviceBarometer" | "deviceAcceleration" | "deviceGravity" | "deviceLinearAcceleration" | "deviceGyroscope" | "deviceMagnetometer" | "deviceGameRotation" | "deviceRotation" | "deviceStepDetector" | "deviceStepCounter" | "deviceActivity" | "deviceDeviceOrientation" | "deviceTapDetector" | "deviceBatteryLevel" | "deviceConnectionMessage" | "deviceNotConnected" | "deviceConnecting" | "deviceConnected" | "deviceDisconnecting" | "deviceConnectionStatus" | "deviceManufacturerName" | "deviceModelNumber" | "deviceSoftwareRevision" | "deviceHardwareRevision" | "deviceFirmwareRevision" | "devicePnpId" | "deviceSerialNumber" | "deviceDeviceInformation" | "deviceIsCharging" | "deviceGetBatteryCurrent" | "deviceGetMtu" | "deviceGetId" | "deviceGetName" | "deviceGetType" | "deviceGetCurrentTime" | "deviceGetSensorConfiguration" | "deviceGetTfliteName" | "deviceGetTfliteTask" | "deviceGetTfliteSampleRate" | "deviceGetTfliteSensorTypes" | "deviceTfliteIsReady" | "deviceGetTfliteCaptureDelay" | "deviceGetTfliteThreshold" | "deviceGetTfliteInferencingEnabled" | "deviceTfliteInference" | "deviceGetFileTypes" | "deviceMaxFileLength" | "deviceGetFileType" | "deviceGetFileLength" | "deviceGetFileChecksum" | "deviceFileTransferStatus" | "deviceGetFileBlock" | "deviceFileTransferProgress" | "deviceFileTransferComplete" | "deviceFileReceived" | "deviceIsWifiAvailable" | "deviceGetWifiSSID" | "deviceGetWifiPassword" | "deviceGetEnableWifiConnection" | "deviceIsWifiConnected" | "deviceIpAddress" | "deviceCameraStatus" | "deviceGetCameraConfiguration" | "deviceCameraImageProgress" | "deviceCameraImage" | "deviceMicrophoneStatus" | "deviceGetMicrophoneConfiguration" | "deviceMicrophoneData" | "deviceIsRecordingMicrophone" | "deviceMicrophoneRecording" | "deviceIsDisplayAvailable" | "deviceDisplayStatus" | "deviceDisplayInformation" | "deviceGetDisplayBrightness" | "deviceDisplayContextState" | "deviceDisplayColor" | "deviceDisplayColorOpacity" | "deviceDisplayOpacity" | "deviceDisplayReady" | "deviceSmp" | "deviceFirmwareImages" | "deviceFirmwareUploadProgress" | "deviceFirmwareStatus">(type: T, listener: (event: {
         type: T;
         target: DevicePair;
         message: DevicePairEventMessages[T];
     }) => void) => void;
-    get waitForEvent(): <T extends "isConnected" | "sensorData" | "pressure" | "deviceOrientation" | "deviceConnected" | "deviceIsConnected" | "deviceIsDisplayAvailable" | "deviceDisplayStatus" | "deviceDisplayInformation" | "deviceGetDisplayBrightness" | "deviceDisplayReady" | "deviceDisplayContextState" | "deviceDisplayColor" | "deviceDisplayColorOpacity" | "deviceDisplayOpacity" | "deviceRotation" | "deviceConnectionMessage" | "deviceNotConnected" | "deviceConnecting" | "deviceDisconnecting" | "deviceConnectionStatus" | "deviceBatteryLevel" | "deviceIsCharging" | "deviceGetBatteryCurrent" | "deviceGetMtu" | "deviceGetId" | "deviceGetName" | "deviceGetType" | "deviceGetCurrentTime" | "deviceManufacturerName" | "deviceModelNumber" | "deviceHardwareRevision" | "deviceFirmwareRevision" | "deviceSoftwareRevision" | "devicePnpId" | "deviceSerialNumber" | "deviceDeviceInformation" | "deviceGetSensorConfiguration" | "deviceSensorData" | "devicePressure" | "deviceAcceleration" | "deviceGravity" | "deviceLinearAcceleration" | "deviceGyroscope" | "deviceMagnetometer" | "deviceGameRotation" | "deviceActivity" | "deviceStepCounter" | "deviceStepDetector" | "deviceDeviceOrientation" | "deviceTapDetector" | "deviceBarometer" | "deviceGetFileTypes" | "deviceMaxFileLength" | "deviceGetFileType" | "deviceGetFileLength" | "deviceGetFileChecksum" | "deviceFileTransferStatus" | "deviceGetFileBlock" | "deviceFileTransferProgress" | "deviceFileTransferComplete" | "deviceFileReceived" | "deviceGetTfliteName" | "deviceGetTfliteTask" | "deviceGetTfliteSampleRate" | "deviceGetTfliteSensorTypes" | "deviceTfliteIsReady" | "deviceGetTfliteCaptureDelay" | "deviceGetTfliteThreshold" | "deviceGetTfliteInferencingEnabled" | "deviceTfliteInference" | "deviceIsWifiAvailable" | "deviceGetWifiSSID" | "deviceGetWifiPassword" | "deviceIsWifiConnected" | "deviceIpAddress" | "deviceCameraStatus" | "deviceGetCameraConfiguration" | "deviceCameraImageProgress" | "deviceCameraImage" | "deviceMicrophoneStatus" | "deviceGetMicrophoneConfiguration" | "deviceMicrophoneData" | "deviceIsRecordingMicrophone" | "deviceMicrophoneRecording" | "deviceSmp" | "deviceFirmwareImages" | "deviceFirmwareUploadProgress" | "deviceFirmwareStatus" | "deviceGetEnableWifiConnection">(type: T) => Promise<{
+    get waitForEvent(): <T extends "pressure" | "sensorData" | "isConnected" | "deviceOrientation" | "devicePressure" | "deviceSensorData" | "deviceIsConnected" | "deviceBarometer" | "deviceAcceleration" | "deviceGravity" | "deviceLinearAcceleration" | "deviceGyroscope" | "deviceMagnetometer" | "deviceGameRotation" | "deviceRotation" | "deviceStepDetector" | "deviceStepCounter" | "deviceActivity" | "deviceDeviceOrientation" | "deviceTapDetector" | "deviceBatteryLevel" | "deviceConnectionMessage" | "deviceNotConnected" | "deviceConnecting" | "deviceConnected" | "deviceDisconnecting" | "deviceConnectionStatus" | "deviceManufacturerName" | "deviceModelNumber" | "deviceSoftwareRevision" | "deviceHardwareRevision" | "deviceFirmwareRevision" | "devicePnpId" | "deviceSerialNumber" | "deviceDeviceInformation" | "deviceIsCharging" | "deviceGetBatteryCurrent" | "deviceGetMtu" | "deviceGetId" | "deviceGetName" | "deviceGetType" | "deviceGetCurrentTime" | "deviceGetSensorConfiguration" | "deviceGetTfliteName" | "deviceGetTfliteTask" | "deviceGetTfliteSampleRate" | "deviceGetTfliteSensorTypes" | "deviceTfliteIsReady" | "deviceGetTfliteCaptureDelay" | "deviceGetTfliteThreshold" | "deviceGetTfliteInferencingEnabled" | "deviceTfliteInference" | "deviceGetFileTypes" | "deviceMaxFileLength" | "deviceGetFileType" | "deviceGetFileLength" | "deviceGetFileChecksum" | "deviceFileTransferStatus" | "deviceGetFileBlock" | "deviceFileTransferProgress" | "deviceFileTransferComplete" | "deviceFileReceived" | "deviceIsWifiAvailable" | "deviceGetWifiSSID" | "deviceGetWifiPassword" | "deviceGetEnableWifiConnection" | "deviceIsWifiConnected" | "deviceIpAddress" | "deviceCameraStatus" | "deviceGetCameraConfiguration" | "deviceCameraImageProgress" | "deviceCameraImage" | "deviceMicrophoneStatus" | "deviceGetMicrophoneConfiguration" | "deviceMicrophoneData" | "deviceIsRecordingMicrophone" | "deviceMicrophoneRecording" | "deviceIsDisplayAvailable" | "deviceDisplayStatus" | "deviceDisplayInformation" | "deviceGetDisplayBrightness" | "deviceDisplayContextState" | "deviceDisplayColor" | "deviceDisplayColorOpacity" | "deviceDisplayOpacity" | "deviceDisplayReady" | "deviceSmp" | "deviceFirmwareImages" | "deviceFirmwareUploadProgress" | "deviceFirmwareStatus">(type: T) => Promise<{
         type: T;
         target: DevicePair;
         message: DevicePairEventMessages[T];
     }>;
-    get removeEventListeners(): <T extends "isConnected" | "sensorData" | "pressure" | "deviceOrientation" | "deviceConnected" | "deviceIsConnected" | "deviceIsDisplayAvailable" | "deviceDisplayStatus" | "deviceDisplayInformation" | "deviceGetDisplayBrightness" | "deviceDisplayReady" | "deviceDisplayContextState" | "deviceDisplayColor" | "deviceDisplayColorOpacity" | "deviceDisplayOpacity" | "deviceRotation" | "deviceConnectionMessage" | "deviceNotConnected" | "deviceConnecting" | "deviceDisconnecting" | "deviceConnectionStatus" | "deviceBatteryLevel" | "deviceIsCharging" | "deviceGetBatteryCurrent" | "deviceGetMtu" | "deviceGetId" | "deviceGetName" | "deviceGetType" | "deviceGetCurrentTime" | "deviceManufacturerName" | "deviceModelNumber" | "deviceHardwareRevision" | "deviceFirmwareRevision" | "deviceSoftwareRevision" | "devicePnpId" | "deviceSerialNumber" | "deviceDeviceInformation" | "deviceGetSensorConfiguration" | "deviceSensorData" | "devicePressure" | "deviceAcceleration" | "deviceGravity" | "deviceLinearAcceleration" | "deviceGyroscope" | "deviceMagnetometer" | "deviceGameRotation" | "deviceActivity" | "deviceStepCounter" | "deviceStepDetector" | "deviceDeviceOrientation" | "deviceTapDetector" | "deviceBarometer" | "deviceGetFileTypes" | "deviceMaxFileLength" | "deviceGetFileType" | "deviceGetFileLength" | "deviceGetFileChecksum" | "deviceFileTransferStatus" | "deviceGetFileBlock" | "deviceFileTransferProgress" | "deviceFileTransferComplete" | "deviceFileReceived" | "deviceGetTfliteName" | "deviceGetTfliteTask" | "deviceGetTfliteSampleRate" | "deviceGetTfliteSensorTypes" | "deviceTfliteIsReady" | "deviceGetTfliteCaptureDelay" | "deviceGetTfliteThreshold" | "deviceGetTfliteInferencingEnabled" | "deviceTfliteInference" | "deviceIsWifiAvailable" | "deviceGetWifiSSID" | "deviceGetWifiPassword" | "deviceIsWifiConnected" | "deviceIpAddress" | "deviceCameraStatus" | "deviceGetCameraConfiguration" | "deviceCameraImageProgress" | "deviceCameraImage" | "deviceMicrophoneStatus" | "deviceGetMicrophoneConfiguration" | "deviceMicrophoneData" | "deviceIsRecordingMicrophone" | "deviceMicrophoneRecording" | "deviceSmp" | "deviceFirmwareImages" | "deviceFirmwareUploadProgress" | "deviceFirmwareStatus" | "deviceGetEnableWifiConnection">(type: T) => void;
+    get removeEventListeners(): <T extends "pressure" | "sensorData" | "isConnected" | "deviceOrientation" | "devicePressure" | "deviceSensorData" | "deviceIsConnected" | "deviceBarometer" | "deviceAcceleration" | "deviceGravity" | "deviceLinearAcceleration" | "deviceGyroscope" | "deviceMagnetometer" | "deviceGameRotation" | "deviceRotation" | "deviceStepDetector" | "deviceStepCounter" | "deviceActivity" | "deviceDeviceOrientation" | "deviceTapDetector" | "deviceBatteryLevel" | "deviceConnectionMessage" | "deviceNotConnected" | "deviceConnecting" | "deviceConnected" | "deviceDisconnecting" | "deviceConnectionStatus" | "deviceManufacturerName" | "deviceModelNumber" | "deviceSoftwareRevision" | "deviceHardwareRevision" | "deviceFirmwareRevision" | "devicePnpId" | "deviceSerialNumber" | "deviceDeviceInformation" | "deviceIsCharging" | "deviceGetBatteryCurrent" | "deviceGetMtu" | "deviceGetId" | "deviceGetName" | "deviceGetType" | "deviceGetCurrentTime" | "deviceGetSensorConfiguration" | "deviceGetTfliteName" | "deviceGetTfliteTask" | "deviceGetTfliteSampleRate" | "deviceGetTfliteSensorTypes" | "deviceTfliteIsReady" | "deviceGetTfliteCaptureDelay" | "deviceGetTfliteThreshold" | "deviceGetTfliteInferencingEnabled" | "deviceTfliteInference" | "deviceGetFileTypes" | "deviceMaxFileLength" | "deviceGetFileType" | "deviceGetFileLength" | "deviceGetFileChecksum" | "deviceFileTransferStatus" | "deviceGetFileBlock" | "deviceFileTransferProgress" | "deviceFileTransferComplete" | "deviceFileReceived" | "deviceIsWifiAvailable" | "deviceGetWifiSSID" | "deviceGetWifiPassword" | "deviceGetEnableWifiConnection" | "deviceIsWifiConnected" | "deviceIpAddress" | "deviceCameraStatus" | "deviceGetCameraConfiguration" | "deviceCameraImageProgress" | "deviceCameraImage" | "deviceMicrophoneStatus" | "deviceGetMicrophoneConfiguration" | "deviceMicrophoneData" | "deviceIsRecordingMicrophone" | "deviceMicrophoneRecording" | "deviceIsDisplayAvailable" | "deviceDisplayStatus" | "deviceDisplayInformation" | "deviceGetDisplayBrightness" | "deviceDisplayContextState" | "deviceDisplayColor" | "deviceDisplayColorOpacity" | "deviceDisplayOpacity" | "deviceDisplayReady" | "deviceSmp" | "deviceFirmwareImages" | "deviceFirmwareUploadProgress" | "deviceFirmwareStatus">(type: T) => void;
     get removeAllEventListeners(): () => void;
     get left(): Device | undefined;
     get right(): Device | undefined;
@@ -1555,4 +1675,4 @@ declare const ThrottleUtils: {
     debounce: typeof debounce;
 };
 
-export { type BoundDeviceEventListeners, type BoundDeviceManagerEventListeners, type BoundDevicePairEventListeners, type CameraCommand, CameraCommands, type CameraConfiguration, type CameraConfigurationType, CameraConfigurationTypes, type CenterOfPressure, type ContinuousSensorType, ContinuousSensorTypes, DefaultNumberOfDisplayColors, DefaultNumberOfPressureSensors, Device, type DeviceEvent, type DeviceEventListenerMap, type DeviceEventMap, type DeviceInformation, _default as DeviceManager, type DeviceManagerEvent, type DeviceManagerEventListenerMap, type DeviceManagerEventMap, DevicePair, type DevicePairEvent, type DevicePairEventListenerMap, type DevicePairEventMap, type DevicePairType, DevicePairTypes, type DeviceType, DeviceTypes, type DiscoveredDevice, type DisplayBitmap, type DisplayBitmapColorPair, type DisplayBrightness, DisplayBrightnesses, type DisplayColorRGB, DisplayPixelDepths, type DisplaySegmentCap, DisplaySegmentCaps, type DisplaySize, type DisplaySprite, type DisplaySpriteSheet, type DisplaySpriteSheetPalette, environment_d as Environment, type Euler, EventUtils, type FileTransferDirection, FileTransferDirections, type FileType, FileTypes, MaxNameLength, MaxNumberOfVibrationWaveformEffectSegments, MaxNumberOfVibrationWaveformSegments, MaxSensorRate, MaxVibrationWaveformEffectSegmentDelay, MaxVibrationWaveformEffectSegmentLoopCount, MaxVibrationWaveformEffectSequenceLoopCount, MaxVibrationWaveformSegmentDuration, MaxWifiPasswordLength, MaxWifiSSIDLength, type MicrophoneCommand, MicrophoneCommands, type MicrophoneConfiguration, type MicrophoneConfigurationType, MicrophoneConfigurationTypes, MicrophoneConfigurationValues, MinNameLength, MinWifiPasswordLength, MinWifiSSIDLength, type PressureData, type Quaternion, RangeHelper, scanner as Scanner, type SensorConfiguration, SensorRateStep, type SensorType, SensorTypes, type Side, Sides, type TfliteFileConfiguration, type TfliteSensorType, TfliteSensorTypes, type TfliteTask, TfliteTasks, ThrottleUtils, UDPServer, type Vector2, type Vector3, type VibrationConfiguration, type VibrationLocation, VibrationLocations, type VibrationType, VibrationTypes, type VibrationWaveformEffect, VibrationWaveformEffects, WebSocketServer, hexToRGB, maxDisplayBitmapScale, rgbToHex, setAllConsoleLevelFlags, setConsoleLevelFlagsForType };
+export { type BoundDeviceEventListeners, type BoundDeviceManagerEventListeners, type BoundDevicePairEventListeners, type CameraCommand, CameraCommands, type CameraConfiguration, type CameraConfigurationType, CameraConfigurationTypes, type CenterOfPressure, type ContinuousSensorType, ContinuousSensorTypes, DefaultNumberOfDisplayColors, DefaultNumberOfPressureSensors, Device, type DeviceEvent, type DeviceEventListenerMap, type DeviceEventMap, type DeviceInformation, _default as DeviceManager, type DeviceManagerEvent, type DeviceManagerEventListenerMap, type DeviceManagerEventMap, DevicePair, type DevicePairEvent, type DevicePairEventListenerMap, type DevicePairEventMap, type DevicePairType, DevicePairTypes, type DeviceType, DeviceTypes, type DiscoveredDevice, type DisplayBitmap, type DisplayBitmapColorPair, type DisplayBrightness, DisplayBrightnesses, type DisplayColorRGB, DisplayPixelDepths, type DisplaySegmentCap, DisplaySegmentCaps, type DisplaySize, type DisplaySprite, type DisplaySpritePaletteSwap, type DisplaySpriteSheet, type DisplaySpriteSheetPalette, environment_d as Environment, type Euler, EventUtils, type FileTransferDirection, FileTransferDirections, type FileType, FileTypes, MaxNameLength, MaxNumberOfVibrationWaveformEffectSegments, MaxNumberOfVibrationWaveformSegments, MaxSensorRate, MaxVibrationWaveformEffectSegmentDelay, MaxVibrationWaveformEffectSegmentLoopCount, MaxVibrationWaveformEffectSequenceLoopCount, MaxVibrationWaveformSegmentDuration, MaxWifiPasswordLength, MaxWifiSSIDLength, type MicrophoneCommand, MicrophoneCommands, type MicrophoneConfiguration, type MicrophoneConfigurationType, MicrophoneConfigurationTypes, MicrophoneConfigurationValues, MinNameLength, MinWifiPasswordLength, MinWifiSSIDLength, type PressureData, type Quaternion, RangeHelper, scanner as Scanner, type SensorConfiguration, SensorRateStep, type SensorType, SensorTypes, type Side, Sides, type TfliteFileConfiguration, type TfliteSensorType, TfliteSensorTypes, type TfliteTask, TfliteTasks, ThrottleUtils, UDPServer, type Vector2, type Vector3, type VibrationConfiguration, type VibrationLocation, VibrationLocations, type VibrationType, VibrationTypes, type VibrationWaveformEffect, VibrationWaveformEffects, WebSocketServer, hexToRGB, maxDisplayScale as maxDisplayBitmapScale, rgbToHex, setAllConsoleLevelFlags, setConsoleLevelFlagsForType };

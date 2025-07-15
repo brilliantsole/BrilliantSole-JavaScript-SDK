@@ -184,108 +184,37 @@ displayOpacityInput.addEventListener("input", () => {
     });
 });
 
-// FILL COLOR
-const fillColorContainer = document.getElementById("fillColor");
-const fillColorSelect = fillColorContainer.querySelector("select");
-const fillColorOptgroup = fillColorSelect.querySelector("optgroup");
-const fillColorInput = fillColorContainer.querySelector("input");
-let fillColorIndex = 1;
-fillColorSelect.addEventListener("input", () => {
-  fillColorIndex = Number(fillColorSelect.value);
-  console.log({ fillColorIndex });
-  displayCanvasHelper.selectFillColor(fillColorIndex);
-  updateFillColorInput();
-});
-const updateFillColorSelect = () => {
-  fillColorOptgroup.innerHTML = "";
-  for (
-    let colorIndex = 0;
-    colorIndex < displayCanvasHelper.numberOfColors;
-    colorIndex++
-  ) {
-    fillColorOptgroup.appendChild(new Option(colorIndex));
-  }
-  fillColorSelect.value = fillColorIndex;
-};
-const updateFillColorInput = () => {
-  fillColorInput.value = displayCanvasHelper.colors[fillColorIndex];
-};
-displayCanvasHelper.addEventListener("numberOfColors", () =>
-  updateFillColorSelect()
-);
-displayCanvasHelper.addEventListener("color", (event) => {
-  if (event.message.colorIndex == fillColorIndex) {
-    updateFillColorInput();
-  }
-});
-updateFillColorSelect();
+// SPRITE COLORS
 
-// LINE COLOR
-const lineColorContainer = document.getElementById("lineColor");
-const lineColorSelect = lineColorContainer.querySelector("select");
-const lineColorOptgroup = lineColorSelect.querySelector("optgroup");
-const lineColorInput = lineColorContainer.querySelector("input");
-let lineColorIndex = 1;
-lineColorSelect.addEventListener("input", () => {
-  lineColorIndex = Number(lineColorSelect.value);
-  console.log({ lineColorIndex });
-  displayCanvasHelper.selectLineColor(lineColorIndex);
-  updateLineColorInput();
-});
-const updateLineColorSelect = () => {
-  lineColorOptgroup.innerHTML = "";
-  for (
-    let colorIndex = 0;
-    colorIndex < displayCanvasHelper.numberOfColors;
-    colorIndex++
-  ) {
-    lineColorOptgroup.appendChild(new Option(colorIndex));
-  }
-  lineColorSelect.value = lineColorIndex;
-};
-const updateLineColorInput = () => {
-  lineColorInput.value = displayCanvasHelper.colors[lineColorIndex];
-};
-displayCanvasHelper.addEventListener("numberOfColors", () =>
-  updateLineColorSelect()
-);
-displayCanvasHelper.addEventListener("color", (event) => {
-  if (event.message.colorIndex == lineColorIndex) {
-    updateLineColorInput();
-  }
-});
-updateLineColorSelect();
-
-// BITMAP COLOR INDICES
 /** @type {HTMLTemplateElement} */
-const bitmapColorIndexTemplate = document.getElementById(
-  "bitmapColorIndexTemplate"
+const spriteColorIndexTemplate = document.getElementById(
+  "spriteColorIndexTemplate"
 );
-const bitmapColorIndicesContainer =
-  document.getElementById("bitmapColorIndices");
-const setBitmapColorIndex = BS.ThrottleUtils.throttle(
-  (bitmapColorIndex, colorIndex) => {
-    //console.log({ bitmapColorIndex, colorIndex });
-    displayCanvasHelper.selectBitmapColor(bitmapColorIndex, colorIndex, true);
+const spriteColorIndicesContainer =
+  document.getElementById("spriteColorIndices");
+const setSpriteColorIndex = BS.ThrottleUtils.throttle(
+  (spriteColorIndex, colorIndex) => {
+    //console.log({ spriteColorIndex, colorIndex });
+    displayCanvasHelper.selectSpriteColor(spriteColorIndex, colorIndex, true);
   },
   100,
   true
 );
-const setupBitmapColors = () => {
-  bitmapColorIndicesContainer.innerHTML = "";
+const setupSpriteColors = () => {
+  spriteColorIndicesContainer.innerHTML = "";
   for (
-    let bitmapColorIndex = 0;
-    bitmapColorIndex < displayCanvasHelper.numberOfColors;
-    bitmapColorIndex++
+    let spriteColorIndex = 0;
+    spriteColorIndex < displayCanvasHelper.numberOfColors;
+    spriteColorIndex++
   ) {
-    const bitmapColorIndexContainer = bitmapColorIndexTemplate.content
+    const spriteColorIndexContainer = spriteColorIndexTemplate.content
       .cloneNode(true)
-      .querySelector(".bitmapColorIndex");
+      .querySelector(".spriteColorIndex");
 
     const colorIndexSpan =
-      bitmapColorIndexContainer.querySelector(".colorIndex");
-    colorIndexSpan.innerText = `bitmap color #${bitmapColorIndex}`;
-    const colorIndexSelect = bitmapColorIndexContainer.querySelector("select");
+      spriteColorIndexContainer.querySelector(".colorIndex");
+    colorIndexSpan.innerText = `sprite color #${spriteColorIndex}`;
+    const colorIndexSelect = spriteColorIndexContainer.querySelector("select");
     const colorIndexOptgroup = colorIndexSelect.querySelector("optgroup");
     for (
       let colorIndex = 0;
@@ -296,41 +225,41 @@ const setupBitmapColors = () => {
     }
     colorIndexSelect.addEventListener("input", () => {
       const colorIndex = Number(colorIndexSelect.value);
-      setBitmapColorIndex(bitmapColorIndex, colorIndex);
+      setSpriteColorIndex(spriteColorIndex, colorIndex);
     });
-    bitmapColorIndicesContainer.appendChild(bitmapColorIndexContainer);
+    spriteColorIndicesContainer.appendChild(spriteColorIndexContainer);
   }
 };
-setupBitmapColors();
+setupSpriteColors();
 displayCanvasHelper.addEventListener("numberOfColors", () =>
-  setupBitmapColors()
+  setupSpriteColors()
 );
 displayCanvasHelper.addEventListener("contextState", (event) => {
   const { differences } = event.message;
-  if (differences.includes("bitmapColorIndices")) {
-    updateBitmapColorIndices();
+  if (differences.includes("spriteColorIndices")) {
+    updateSpriteColorIndices();
   }
 });
 displayCanvasHelper.addEventListener("color", (event) => {
   if (
-    displayCanvasHelper.bitmapColorIndices.includes(event.message.colorIndex)
+    displayCanvasHelper.spriteColorIndices.includes(event.message.colorIndex)
   ) {
-    updateBitmapColorIndices();
+    updateSpriteColorIndices();
   }
 });
-const updateBitmapColorIndices = () => {
-  displayCanvasHelper.bitmapColorIndices.forEach(
-    (colorIndex, bitmapColorIndex) => {
+const updateSpriteColorIndices = () => {
+  displayCanvasHelper.spriteColorIndices.forEach(
+    (colorIndex, spriteColorIndex) => {
       if (selectedPalette) {
-        selectedPalette.bitmapColorIndices[bitmapColorIndex] = colorIndex;
+        selectedPalette.spriteColorIndices[spriteColorIndex] = colorIndex;
       }
-      const bitmapColorIndexContainer =
-        bitmapColorIndicesContainer.querySelectorAll(".bitmapColorIndex")[
-          bitmapColorIndex
+      const spriteColorIndexContainer =
+        spriteColorIndicesContainer.querySelectorAll(".spriteColorIndex")[
+          spriteColorIndex
         ];
-      bitmapColorIndexContainer.querySelector("select").value = colorIndex;
-      bitmapColorIndexContainer.querySelector("input").value =
-        displayCanvasHelper.bitmapColors[bitmapColorIndex];
+      spriteColorIndexContainer.querySelector("select").value = colorIndex;
+      spriteColorIndexContainer.querySelector("input").value =
+        displayCanvasHelper.spriteColors[spriteColorIndex];
     }
   );
 };
@@ -359,14 +288,24 @@ spriteSheetNameInput.addEventListener("input", () => {
 });
 spriteSheetNameInput.value = spriteSheet.name;
 
+/** @type {HTMLButtonElement} */
 const addSpriteButton = document.getElementById("addSprite");
 addSpriteButton.addEventListener("click", () => {
   addSprite();
 });
 
+/** @type {HTMLButtonElement} */
 const addPaletteButton = document.getElementById("addPalette");
 addPaletteButton.addEventListener("click", () => {
   addPalette();
+});
+
+/** @type {HTMLButtonElement} */
+const addSpritePaletteSwapButton = document.getElementById(
+  "addSpritePaletteSwap"
+);
+addSpritePaletteSwapButton.addEventListener("click", () => {
+  addSpritePaletteSwap();
 });
 
 // PALETTE
@@ -380,16 +319,12 @@ const addPalette = () => {
     numberOfColors: 0,
     colors: [],
     opacities: [],
-    fillColorIndex: 1,
-    lineColorIndex: 1,
-    numberOfBitmapColors: 0,
-    bitmapColorIndices: [],
+    spriteColorIndices: [],
   });
   const paletteIndex = spriteSheet.palettes.length - 1;
   updateSelectPaletteSelect();
   setPaletteIndex(paletteIndex);
-  setPaletteNumberOfColors(2);
-  setPaletteNumberOfBitmapColors(0);
+  setNumberOfPaletteColors(2);
 };
 const setPaletteIndex = (paletteIndex) => {
   selectedPaletteIndex = paletteIndex;
@@ -404,7 +339,7 @@ const setPaletteIndex = (paletteIndex) => {
 
   displayCanvasHelper.flushContextCommands();
 
-  onPaletteNumberOfColorsUpdate();
+  onNumberOfPaletteColorsUpdate();
 };
 
 /** @type {HTMLSelectElement} */
@@ -443,14 +378,8 @@ displayCanvasHelper.addEventListener("contextState", (event) => {
     return;
   }
   const { differences, contextState } = event.message;
-  if (differences.includes("fillColorIndex")) {
-    selectedPalette.fillColorIndex = contextState.fillColorIndex;
-  }
-  if (differences.includes("lineColorIndex")) {
-    selectedPalette.lineColorIndex = contextState.lineColorIndex;
-  }
-  if (differences.includes("bitmapColorIndices")) {
-    selectedPalette.bitmapColorIndices = contextState.bitmapColorIndices;
+  if (differences.includes("spriteColorIndices")) {
+    selectedPalette.spriteColorIndices = contextState.spriteColorIndices;
   }
 });
 
@@ -464,24 +393,24 @@ paletteNameInput.addEventListener("focusout", () => {
 });
 
 /** @type {HTMLSelectElement} */
-const paletteNumberOfColorsSelect = document.getElementById(
-  "paletteNumberOfColors"
+const numberOfPaletteColorsSelect = document.getElementById(
+  "numberOfPaletteColors"
 );
-const paletteNumberOfColorsOptgroup =
-  paletteNumberOfColorsSelect.querySelector("optgroup");
-paletteNumberOfColorsSelect.addEventListener("input", () => {
-  const paletteNumberOfColors = Number(paletteNumberOfColorsSelect.value);
-  setPaletteNumberOfColors(paletteNumberOfColors);
+const numberOfPaletteColorsOptgroup =
+  numberOfPaletteColorsSelect.querySelector("optgroup");
+numberOfPaletteColorsSelect.addEventListener("input", () => {
+  const numberOfPaletteColors = Number(numberOfPaletteColorsSelect.value);
+  setNumberOfPaletteColors(numberOfPaletteColors);
 });
-const setPaletteNumberOfColors = (paletteNumberOfColors) => {
-  console.log({ paletteNumberOfColors });
+const setNumberOfPaletteColors = (numberOfPaletteColors) => {
+  console.log({ numberOfPaletteColors });
 
   if (selectedPalette) {
-    selectedPalette.numberOfColors = paletteNumberOfColors;
+    selectedPalette.numberOfColors = numberOfPaletteColors;
 
-    selectedPalette.colors.length = paletteNumberOfColors;
-    selectedPalette.opacities.length = paletteNumberOfColors;
-    for (let colorIndex = 0; colorIndex < paletteNumberOfColors; colorIndex++) {
+    selectedPalette.colors.length = numberOfPaletteColors;
+    selectedPalette.opacities.length = numberOfPaletteColors;
+    for (let colorIndex = 0; colorIndex < numberOfPaletteColors; colorIndex++) {
       const color = selectedPalette.colors[colorIndex];
       if (color == undefined) {
         selectedPalette.colors[colorIndex] = "#000000";
@@ -494,9 +423,9 @@ const setPaletteNumberOfColors = (paletteNumberOfColors) => {
     }
   }
 
-  onPaletteNumberOfColorsUpdate();
+  onNumberOfPaletteColorsUpdate();
 };
-const onPaletteNumberOfColorsUpdate = () => {
+const onNumberOfPaletteColorsUpdate = () => {
   for (
     let colorIndex = 0;
     colorIndex < displayCanvasHelper.numberOfColors;
@@ -513,33 +442,29 @@ const onPaletteNumberOfColorsUpdate = () => {
     ].style.display = enabled ? "" : "none";
   }
   for (
-    let bitmapColorIndex = 0;
-    bitmapColorIndex < displayCanvasHelper.numberOfColors;
-    bitmapColorIndex++
+    let spriteColorIndex = 0;
+    spriteColorIndex < displayCanvasHelper.numberOfColors;
+    spriteColorIndex++
   ) {
     const enabled = selectedPalette
-      ? bitmapColorIndex < selectedPalette.numberOfBitmapColors
+      ? spriteColorIndex < selectedPalette.numberOfColors
       : true;
-    const bitmapColorIndexContainer =
-      bitmapColorIndicesContainer.querySelectorAll(".bitmapColorIndex")[
-        bitmapColorIndex
+    const spriteColorIndexContainer =
+      spriteColorIndicesContainer.querySelectorAll(".spriteColorIndex")[
+        spriteColorIndex
       ];
-    bitmapColorIndexContainer
+    spriteColorIndexContainer
       .querySelectorAll("option")
       .forEach((option, colorIndex) => {
         option.hidden = selectedPalette
           ? colorIndex >= selectedPalette.numberOfColors
           : false;
       });
-    bitmapColorIndexContainer.style.display = enabled ? "" : "none";
+    spriteColorIndexContainer.style.display = enabled ? "" : "none";
   }
 
-  paletteNumberOfColorsSelect.disabled = selectedPalette == undefined;
-  paletteNumberOfBitmapColorsSelect.disabled = selectedPalette == undefined;
-
-  paletteNumberOfColorsSelect.value = selectedPalette?.numberOfColors ?? 2;
-  paletteNumberOfBitmapColorsSelect.value =
-    selectedPalette?.numberOfBitmapColors ?? 0;
+  numberOfPaletteColorsSelect.disabled = selectedPalette == undefined;
+  numberOfPaletteColorsSelect.value = selectedPalette?.numberOfColors ?? 2;
 
   for (
     let colorIndex = 0;
@@ -556,85 +481,20 @@ const onPaletteNumberOfColorsUpdate = () => {
       selectedPalette?.opacities[colorIndex] ?? 1
     );
   }
-
-  for (
-    let bitmapColorIndex = 0;
-    bitmapColorIndex <
-    (selectedPalette?.numberOfColors ?? displayCanvasHelper.numberOfColors);
-    bitmapColorIndex++
-  ) {
-    displayCanvasHelper.selectBitmapColor(
-      bitmapColorIndex,
-      selectedPalette?.bitmapColorIndices?.[bitmapColorIndex] ?? 0
-    );
-  }
 };
-const updatePaletteNumberOfColorsSelect = () => {
-  paletteNumberOfColorsOptgroup.innerHTML = "";
+const updateNumberOfPaletteColorsSelect = () => {
+  numberOfPaletteColorsOptgroup.innerHTML = "";
   for (
     let colorIndex = 2;
     colorIndex < displayCanvasHelper.numberOfColors;
     colorIndex++
   ) {
-    paletteNumberOfColorsOptgroup.appendChild(new Option(colorIndex));
+    numberOfPaletteColorsOptgroup.appendChild(new Option(colorIndex));
   }
 };
-updatePaletteNumberOfColorsSelect();
+updateNumberOfPaletteColorsSelect();
 displayCanvasHelper.addEventListener("numberOfColors", () => {
-  updatePaletteNumberOfColorsSelect();
-});
-
-/** @type {HTMLSelectElement} */
-const paletteNumberOfBitmapColorsSelect = document.getElementById(
-  "paletteNumberOfBitmapColors"
-);
-const paletteNumberOfBitmapColorsOptgroup =
-  paletteNumberOfBitmapColorsSelect.querySelector("optgroup");
-paletteNumberOfBitmapColorsSelect.addEventListener("input", () => {
-  const paletteNumberOfBitmapColors = Number(
-    paletteNumberOfBitmapColorsSelect.value
-  );
-  setPaletteNumberOfBitmapColors(paletteNumberOfBitmapColors);
-});
-const setPaletteNumberOfBitmapColors = (paletteNumberOfBitmapColors) => {
-  console.log({ paletteNumberOfBitmapColors });
-
-  if (selectedPalette) {
-    selectedPalette.numberOfBitmapColors = paletteNumberOfBitmapColors;
-
-    selectedPalette.bitmapColorIndices.length = paletteNumberOfBitmapColors;
-
-    for (
-      let bitmapColorIndex = 0;
-      bitmapColorIndex < paletteNumberOfBitmapColors;
-      bitmapColorIndex++
-    ) {
-      const colorIndex = selectedPalette.bitmapColorIndices[bitmapColorIndex];
-      if (colorIndex == undefined) {
-        selectedPalette.bitmapColorIndices[colorIndex] = 0;
-      }
-    }
-  }
-
-  onPaletteNumberOfBitmapColorsUpdate();
-};
-const onPaletteNumberOfBitmapColorsUpdate = () => {
-  // should refactor onPaletteNumberOfColorsUpdate and remove bitmapIndices stuff
-  onPaletteNumberOfColorsUpdate();
-};
-const updatePaletteNumberOfBitmapColorsSelect = () => {
-  paletteNumberOfBitmapColorsOptgroup.innerHTML = "";
-  for (
-    let colorIndex = 0;
-    colorIndex < displayCanvasHelper.numberOfColors;
-    colorIndex++
-  ) {
-    paletteNumberOfBitmapColorsOptgroup.appendChild(new Option(colorIndex));
-  }
-};
-updatePaletteNumberOfBitmapColorsSelect();
-displayCanvasHelper.addEventListener("numberOfColors", () => {
-  updatePaletteNumberOfBitmapColorsSelect();
+  updateNumberOfPaletteColorsSelect();
 });
 
 const deletePaletteButton = document.getElementById("deletePalette");
@@ -662,6 +522,7 @@ const addSprite = () => {
     width: 40,
     height: 40,
     displayCommandMessages: [],
+    paletteSwaps: [],
   });
   const spriteIndex = spriteSheet.sprites.length - 1;
   updateSelectSpriteSelect();
@@ -671,14 +532,27 @@ const setSpriteIndex = (spriteIndex) => {
   selectedSpriteIndex = spriteIndex;
   console.log({ selectedSpriteIndex });
   selectedSprite = spriteSheet.sprites[selectedSpriteIndex];
+  console.log("selectedSprite", selectedSprite);
 
   spriteNameInput.value = selectedSprite?.name ?? "";
-  spriteNameInput.disabled = selectedSprite == undefined;
+  spriteNameInput.disabled = !selectedSprite;
   selectSpriteSelect.value = selectedSpriteIndex;
 
-  deleteSpriteButton.disabled = selectedSprite == undefined;
+  deleteSpriteButton.disabled = !selectedSprite;
 
-  displayCanvasHelper.flushContextCommands();
+  selectSpritePaletteSwapSelect.disabled = !selectedSprite;
+  addSpritePaletteSwapButton.disabled = !selectedSprite;
+
+  spriteWidthInput.disabled = !selectedSprite;
+  spriteHeightInput.disabled = !selectedSprite;
+  if (selectedSprite) {
+    setSpriteHeight(selectedSprite.height);
+    setSpriteWidth(selectedSprite.width);
+  }
+
+  drawSpriteButton.disabled = !selectedSprite;
+
+  drawSprite();
 };
 
 /** @type {HTMLSelectElement} */
@@ -719,7 +593,404 @@ const deleteSelectedSprite = () => {
   spriteSheet.sprites.splice(selectedSpriteIndex, 1);
   setSpriteIndex(-1);
   updateSelectSpriteSelect();
+  drawSprite();
 };
+
+const spriteWidthContainer = document.getElementById("spriteWidth");
+const spriteWidthInput = spriteWidthContainer.querySelector("input");
+const spriteWidthSpan = spriteWidthContainer.querySelector("span");
+spriteWidthInput.addEventListener("input", () => {
+  setSpriteWidth(Number(spriteWidthInput.value));
+});
+const setSpriteWidth = (spriteWidth) => {
+  console.log({ spriteWidth });
+  if (selectedSprite) {
+    selectedSprite.width = spriteWidth;
+  }
+  spriteWidthInput.value = spriteWidth;
+  spriteWidthSpan.innerText = spriteWidth;
+  drawSprite();
+};
+
+const spriteHeightContainer = document.getElementById("spriteHeight");
+const spriteHeightInput = spriteHeightContainer.querySelector("input");
+const spriteHeightSpan = spriteHeightContainer.querySelector("span");
+spriteHeightInput.addEventListener("input", () => {
+  setSpriteHeight(Number(spriteHeightInput.value));
+});
+const setSpriteHeight = (spriteHeight) => {
+  console.log({ spriteHeight });
+  if (selectedSprite) {
+    selectedSprite.height = spriteHeight;
+  }
+  spriteHeightInput.value = spriteHeight;
+  spriteHeightSpan.innerText = spriteHeight;
+  drawSprite();
+};
+
+// PALETTE SWAP
+
+let selectedSpritePaletteSwapIndex = -1;
+/** @type {BS.DisplaySpritePaletteSwap?} */
+let selectedSpritePaletteSwap;
+const addSpritePaletteSwap = () => {
+  //console.log("addSpritePaletteSwap");
+  selectedSprite.paletteSwaps.push({
+    name: `myPaletteSwap ${Object.keys(selectedSprite.paletteSwaps).length}`,
+  });
+  const spritePaletteSwapIndex = selectedSprite.paletteSwaps.length - 1;
+  updateSelectSpritePaletteSwapSelect();
+  setSpritePaletteSwapIndex(spritePaletteSwapIndex);
+};
+const setSpritePaletteSwapIndex = (spritePaletteSwapIndex) => {
+  selectedSpritePaletteSwapIndex = spritePaletteSwapIndex;
+  console.log({ selectedSpritePaletteSwapIndex });
+  selectedSpritePaletteSwap =
+    selectedSprite.paletteSwaps[selectedSpritePaletteSwapIndex];
+  console.log("selectedSpritePaletteSwap", selectedSpritePaletteSwap);
+
+  spritePaletteSwapNameInput.value = selectedSpritePaletteSwap?.name ?? "";
+  spritePaletteSwapNameInput.disabled = !selectedSpritePaletteSwap;
+  selectSpritePaletteSwapSelect.value = selectedSpritePaletteSwapIndex;
+
+  deleteSpritePaletteSwapButton.disabled = !selectedSpritePaletteSwap;
+
+  drawSprite();
+};
+
+/** @type {HTMLSelectElement} */
+const selectSpritePaletteSwapSelect = document.getElementById(
+  "selectSpritePaletteSwap"
+);
+const selectSpritePaletteSwapOptgroup =
+  selectSpritePaletteSwapSelect.querySelector("optgroup");
+selectSpritePaletteSwapSelect.addEventListener("input", () => {
+  const selectedSpritePaletteSwapIndex = Number(
+    selectSpritePaletteSwapSelect.value
+  );
+  setSpritePaletteSwapIndex(selectedSpritePaletteSwapIndex);
+});
+const updateSelectSpritePaletteSwapSelect = () => {
+  selectSpritePaletteSwapOptgroup.innerHTML = "";
+  selectSpritePaletteSwapOptgroup.appendChild(new Option("none", -1));
+  selectedSprite?.paletteSwaps.forEach((paletteSwap, index) => {
+    selectSpritePaletteSwapOptgroup.appendChild(
+      new Option(paletteSwap.name, index)
+    );
+  });
+  selectSpritePaletteSwapSelect.value = selectedSpritePaletteSwapIndex;
+};
+updateSelectSpritePaletteSwapSelect();
+
+const spritePaletteSwapNameInput = document.getElementById(
+  "spritePaletteSwapName"
+);
+spritePaletteSwapNameInput.addEventListener("input", () => {
+  let spritePaletteSwapName = spritePaletteSwapNameInput.value;
+  selectedSpritePaletteSwap.name = spritePaletteSwapName;
+});
+spritePaletteSwapNameInput.addEventListener("focusout", () => {
+  updateSelectSpritePaletteSwapSelect();
+});
+
+const deleteSpritePaletteSwapButton = document.getElementById(
+  "deleteSpritePaletteSwap"
+);
+deleteSpritePaletteSwapButton.addEventListener("click", () => {
+  deleteSelectedSpritePaletteSwap();
+});
+const deleteSelectedSpritePaletteSwap = () => {
+  if (!selectedSpritePaletteSwap) {
+    return;
+  }
+  console.log("deleting spritePaletteSwap");
+  selectedSprite.paletteSwaps.splice(selectedSpritePaletteSwapIndex, 1);
+  setSpritePaletteSwapIndex(-1);
+  updateSelectSpritePaletteSwapSelect();
+  drawSprite();
+};
+
+// DRAW SPRITE
+const drawSpriteButton = document.getElementById("drawSprite");
+drawSpriteButton.addEventListener("click", () => {
+  drawSprite();
+});
+let drawWhenReady = false;
+let drawSprite = () => {
+  if (!displayCanvasHelper.isReady) {
+    drawWhenReady = true;
+    return;
+  }
+  console.log("drawSprite");
+
+  if (selectedSprite) {
+    const {
+      x,
+      y,
+      rotation,
+      scaleX,
+      scaleY,
+      cropTop,
+      cropRight,
+      cropBottom,
+      cropLeft,
+      rotationCropTop,
+      rotationCropRight,
+      rotationCropBottom,
+      rotationCropLeft,
+    } = drawSpriteParams;
+
+    displayCanvasHelper.setRotation(rotation, false);
+
+    displayCanvasHelper.setCropTop(cropTop);
+    displayCanvasHelper.setCropRight(cropRight);
+    displayCanvasHelper.setCropBottom(cropBottom);
+    displayCanvasHelper.setCropLeft(cropLeft);
+
+    displayCanvasHelper.setRotationCropTop(rotationCropTop);
+    displayCanvasHelper.setRotationCropRight(rotationCropRight);
+    displayCanvasHelper.setRotationCropBottom(rotationCropBottom);
+    displayCanvasHelper.setRotationCropLeft(rotationCropLeft);
+
+    displayCanvasHelper.setSpriteScaleX(scaleX);
+    displayCanvasHelper.setSpriteScaleY(scaleY);
+    displayCanvasHelper.drawSprite(x, y, selectedSprite, selectedPalette);
+    displayCanvasHelper.show();
+  } else {
+    displayCanvasHelper.clear();
+  }
+};
+displayCanvasHelper.addEventListener("ready", () => {
+  if (drawWhenReady) {
+    drawWhenReady = false;
+    drawSprite();
+  }
+});
+
+const drawSpriteParams = {
+  x: 50,
+  y: 50,
+
+  rotation: 0,
+
+  scaleX: 1,
+  scaleY: 1,
+
+  cropTop: 0,
+  cropRight: 0,
+  cropBottom: 0,
+  cropLeft: 0,
+
+  rotationCropTop: 0,
+  rotationCropRight: 0,
+  rotationCropBottom: 0,
+  rotationCropLeft: 0,
+};
+
+const drawSpriteXContainer = document.getElementById("drawSpriteX");
+const drawSpriteXInput = drawSpriteXContainer.querySelector("input");
+const drawSpriteXSpan = drawSpriteXContainer.querySelector(".value");
+const setSpriteDrawX = (drawSpriteX) => {
+  drawSpriteXInput.value = drawSpriteX;
+  drawSpriteXSpan.innerText = drawSpriteX;
+  drawSpriteParams.x = drawSpriteX;
+};
+drawSpriteXInput.addEventListener("input", () => {
+  setSpriteDrawX(Number(drawSpriteXInput.value));
+});
+
+const drawSpriteYContainer = document.getElementById("drawSpriteY");
+const drawSpriteYInput = drawSpriteYContainer.querySelector("input");
+const drawSpriteYSpan = drawSpriteYContainer.querySelector(".value");
+const setSpriteDrawY = (drawSpriteY) => {
+  drawSpriteYInput.value = drawSpriteY;
+  drawSpriteYSpan.innerText = drawSpriteY;
+  drawSpriteParams.y = drawSpriteY;
+};
+drawSpriteYInput.addEventListener("input", () => {
+  setSpriteDrawY(Number(drawSpriteYInput.value));
+});
+
+const drawSpriteRotationContainer =
+  document.getElementById("drawSpriteRotation");
+const drawSpriteRotationInput =
+  drawSpriteRotationContainer.querySelector("input");
+const drawSpriteRotationSpan =
+  drawSpriteRotationContainer.querySelector(".value");
+const setSpriteDrawRotation = (drawSpriteRotation) => {
+  drawSpriteRotationInput.value = drawSpriteRotation;
+  drawSpriteRotationSpan.innerText = drawSpriteRotation;
+  drawSpriteParams.rotation = drawSpriteRotation;
+};
+drawSpriteRotationInput.addEventListener("input", () => {
+  setSpriteDrawRotation(Number(drawSpriteRotationInput.value));
+});
+
+const drawSpriteScaleXContainer = document.getElementById("drawSpriteScaleX");
+const drawSpriteScaleXInput = drawSpriteScaleXContainer.querySelector("input");
+const drawSpriteScaleXSpan = drawSpriteScaleXContainer.querySelector(".value");
+const setSpriteDrawScaleX = (drawSpriteScaleX) => {
+  drawSpriteScaleXInput.value = drawSpriteScaleX;
+  drawSpriteScaleXSpan.innerText = drawSpriteScaleX;
+  drawSpriteParams.scaleX = drawSpriteScaleX;
+};
+drawSpriteScaleXInput.addEventListener("input", () => {
+  setSpriteDrawScaleX(Number(drawSpriteScaleXInput.value));
+});
+
+const drawSpriteScaleYContainer = document.getElementById("drawSpriteScaleY");
+const drawSpriteScaleYInput = drawSpriteScaleYContainer.querySelector("input");
+const drawSpriteScaleYSpan = drawSpriteScaleYContainer.querySelector(".value");
+const setSpriteDrawScaleY = (drawSpriteScaleY) => {
+  drawSpriteScaleYInput.value = drawSpriteScaleY;
+  drawSpriteScaleYSpan.innerText = drawSpriteScaleY;
+  drawSpriteParams.scaleY = drawSpriteScaleY;
+};
+drawSpriteScaleYInput.addEventListener("input", () => {
+  setSpriteDrawScaleY(Number(drawSpriteScaleYInput.value));
+});
+
+const drawSpriteScaleContainer = document.getElementById("drawSpriteScale");
+const drawSpriteScaleInput = drawSpriteScaleContainer.querySelector("input");
+const drawSpriteScaleSpan = drawSpriteScaleContainer.querySelector(".value");
+const setSpriteDrawScale = (drawSpriteScale) => {
+  drawSpriteScaleInput.value = drawSpriteScale;
+  drawSpriteScaleSpan.innerText = drawSpriteScale;
+  setSpriteDrawScaleX(drawSpriteScale);
+  setSpriteDrawScaleY(drawSpriteScale);
+};
+drawSpriteScaleInput.addEventListener("input", () => {
+  setSpriteDrawScale(Number(drawSpriteScaleInput.value));
+});
+
+const drawSpriteCropTopContainer = document.getElementById("drawSpriteCropTop");
+const drawSpriteCropTopInput =
+  drawSpriteCropTopContainer.querySelector("input");
+const drawSpriteCropTopSpan =
+  drawSpriteCropTopContainer.querySelector(".value");
+const setSpriteDrawCropTop = (drawSpriteCropTop) => {
+  drawSpriteCropTopInput.value = drawSpriteCropTop;
+  drawSpriteCropTopSpan.innerText = drawSpriteCropTop;
+  drawSpriteParams.cropTop = drawSpriteCropTop;
+};
+drawSpriteCropTopInput.addEventListener("input", () => {
+  setSpriteDrawCropTop(Number(drawSpriteCropTopInput.value));
+});
+
+const drawSpriteCropRightContainer = document.getElementById(
+  "drawSpriteCropRight"
+);
+const drawSpriteCropRightInput =
+  drawSpriteCropRightContainer.querySelector("input");
+const drawSpriteCropRightSpan =
+  drawSpriteCropRightContainer.querySelector(".value");
+const setSpriteDrawCropRight = (drawSpriteCropRight) => {
+  drawSpriteCropRightInput.value = drawSpriteCropRight;
+  drawSpriteCropRightSpan.innerText = drawSpriteCropRight;
+  drawSpriteParams.cropRight = drawSpriteCropRight;
+};
+drawSpriteCropRightInput.addEventListener("input", () => {
+  setSpriteDrawCropRight(Number(drawSpriteCropRightInput.value));
+});
+
+const drawSpriteCropBottomContainer = document.getElementById(
+  "drawSpriteCropBottom"
+);
+const drawSpriteCropBottomInput =
+  drawSpriteCropBottomContainer.querySelector("input");
+const drawSpriteCropBottomSpan =
+  drawSpriteCropBottomContainer.querySelector(".value");
+const setSpriteDrawCropBottom = (drawSpriteCropBottom) => {
+  drawSpriteCropBottomInput.value = drawSpriteCropBottom;
+  drawSpriteCropBottomSpan.innerText = drawSpriteCropBottom;
+  drawSpriteParams.cropBottom = drawSpriteCropBottom;
+};
+drawSpriteCropBottomInput.addEventListener("input", () => {
+  setSpriteDrawCropBottom(Number(drawSpriteCropBottomInput.value));
+});
+
+const drawSpriteCropLeftContainer =
+  document.getElementById("drawSpriteCropLeft");
+const drawSpriteCropLeftInput =
+  drawSpriteCropLeftContainer.querySelector("input");
+const drawSpriteCropLeftSpan =
+  drawSpriteCropLeftContainer.querySelector(".value");
+const setSpriteDrawCropLeft = (drawSpriteCropLeft) => {
+  drawSpriteCropLeftInput.value = drawSpriteCropLeft;
+  drawSpriteCropLeftSpan.innerText = drawSpriteCropLeft;
+  drawSpriteParams.cropLeft = drawSpriteCropLeft;
+};
+drawSpriteCropLeftInput.addEventListener("input", () => {
+  setSpriteDrawCropLeft(Number(drawSpriteCropLeftInput.value));
+});
+
+const drawSpriteRotationCropTopContainer = document.getElementById(
+  "drawSpriteRotationCropTop"
+);
+const drawSpriteRotationCropTopInput =
+  drawSpriteRotationCropTopContainer.querySelector("input");
+const drawSpriteRotationCropTopSpan =
+  drawSpriteRotationCropTopContainer.querySelector(".value");
+const setSpriteDrawRotationCropTop = (drawSpriteRotationCropTop) => {
+  drawSpriteRotationCropTopInput.value = drawSpriteRotationCropTop;
+  drawSpriteRotationCropTopSpan.innerText = drawSpriteRotationCropTop;
+  drawSpriteParams.rotationCropTop = drawSpriteRotationCropTop;
+};
+drawSpriteRotationCropTopInput.addEventListener("input", () => {
+  setSpriteDrawRotationCropTop(Number(drawSpriteRotationCropTopInput.value));
+});
+
+const drawSpriteRotationCropRightContainer = document.getElementById(
+  "drawSpriteRotationCropRight"
+);
+const drawSpriteRotationCropRightInput =
+  drawSpriteRotationCropRightContainer.querySelector("input");
+const drawSpriteRotationCropRightSpan =
+  drawSpriteRotationCropRightContainer.querySelector(".value");
+const setSpriteDrawRotationCropRight = (drawSpriteRotationCropRight) => {
+  drawSpriteRotationCropRightInput.value = drawSpriteRotationCropRight;
+  drawSpriteRotationCropRightSpan.innerText = drawSpriteRotationCropRight;
+  drawSpriteParams.rotationCropRight = drawSpriteRotationCropRight;
+};
+drawSpriteRotationCropRightInput.addEventListener("input", () => {
+  setSpriteDrawRotationCropRight(
+    Number(drawSpriteRotationCropRightInput.value)
+  );
+});
+
+const drawSpriteRotationCropBottomContainer = document.getElementById(
+  "drawSpriteRotationCropBottom"
+);
+const drawSpriteRotationCropBottomInput =
+  drawSpriteRotationCropBottomContainer.querySelector("input");
+const drawSpriteRotationCropBottomSpan =
+  drawSpriteRotationCropBottomContainer.querySelector(".value");
+const setSpriteDrawRotationCropBottom = (drawSpriteRotationCropBottom) => {
+  drawSpriteRotationCropBottomInput.value = drawSpriteRotationCropBottom;
+  drawSpriteRotationCropBottomSpan.innerText = drawSpriteRotationCropBottom;
+  drawSpriteParams.rotationCropBottom = drawSpriteRotationCropBottom;
+};
+drawSpriteRotationCropBottomInput.addEventListener("input", () => {
+  setSpriteDrawRotationCropBottom(
+    Number(drawSpriteRotationCropBottomInput.value)
+  );
+});
+
+const drawSpriteRotationCropLeftContainer = document.getElementById(
+  "drawSpriteRotationCropLeft"
+);
+const drawSpriteRotationCropLeftInput =
+  drawSpriteRotationCropLeftContainer.querySelector("input");
+const drawSpriteRotationCropLeftSpan =
+  drawSpriteRotationCropLeftContainer.querySelector(".value");
+const setSpriteDrawRotationCropLeft = (drawSpriteRotationCropLeft) => {
+  drawSpriteRotationCropLeftInput.value = drawSpriteRotationCropLeft;
+  drawSpriteRotationCropLeftSpan.innerText = drawSpriteRotationCropLeft;
+  drawSpriteParams.rotationCropLeft = drawSpriteRotationCropLeft;
+};
+drawSpriteRotationCropLeftInput.addEventListener("input", () => {
+  setSpriteDrawRotationCropLeft(Number(drawSpriteRotationCropLeftInput.value));
+});
 
 // LOAD/SAVE
 

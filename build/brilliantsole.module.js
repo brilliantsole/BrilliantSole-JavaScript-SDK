@@ -3762,6 +3762,9 @@ const DefaultDisplayContextState = {
     bitmapColorIndices: new Array(0).fill(0),
     bitmapScaleX: 1,
     bitmapScaleY: 1,
+    spriteColorIndices: new Array(0).fill(0).map((_, index) => index),
+    spriteScaleX: 1,
+    spriteScaleY: 1,
 };
 
 function deepEqual(obj1, obj2) {
@@ -3844,15 +3847,15 @@ function roundToStep(value, step) {
     _console$l.log(value, step, roundedValue);
     return roundedValue;
 }
-const maxDisplayBitmapScale = 100;
-const displayBitmapScaleStep = 0.002;
-function formatBitmapScale(bitmapScale) {
-    bitmapScale /= displayBitmapScaleStep;
+const maxDisplayScale = 100;
+const displayScaleStep = 0.002;
+function formatScale(bitmapScale) {
+    bitmapScale /= displayScaleStep;
     _console$l.log({ formattedBitmapScale: bitmapScale });
     return bitmapScale;
 }
-function roundBitmapScale(bitmapScale) {
-    return roundToStep(bitmapScale, displayBitmapScaleStep);
+function roundScale(bitmapScale) {
+    return roundToStep(bitmapScale, displayScaleStep);
 }
 function assertValidSegmentCap(segmentCap) {
     _console$l.assertEnumWithError(segmentCap, DisplaySegmentCaps);
@@ -3917,6 +3920,11 @@ const DisplayBitmapScaleDirectionToCommand = {
     x: "setBitmapScaleX",
     y: "setBitmapScaleY",
     all: "setBitmapScale",
+};
+const DisplaySpriteScaleDirectionToCommand = {
+    x: "setSpriteScaleX",
+    y: "setSpriteScaleY",
+    all: "setSpriteScale",
 };
 
 var commonjsGlobal = typeof globalThis !== 'undefined' ? globalThis : typeof window !== 'undefined' ? window : typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : {};
@@ -4874,6 +4882,13 @@ const DisplayContextCommandTypes = [
     "setBitmapScaleY",
     "setBitmapScale",
     "resetBitmapScale",
+    "selectSpriteColor",
+    "selectSpriteColors",
+    "reseSpriteColors",
+    "setSpriteScaleX",
+    "setSpriteScaleY",
+    "setSpriteScale",
+    "resetSpriteScale",
     "clearRect",
     "drawRect",
     "drawRoundRect",
@@ -4915,6 +4930,9 @@ async function runDisplayContextCommand(displayManager, command, position, sendI
             break;
         case "resetBitmapScale":
             await displayManager.resetBitmapScale(sendImmediately);
+            break;
+        case "resetSpriteScale":
+            await displayManager.resetSpriteScale(sendImmediately);
             break;
         case "setColor":
             {
@@ -5072,6 +5090,36 @@ async function runDisplayContextCommand(displayManager, command, position, sendI
                 await displayManager.setBitmapScale(bitmapScale, sendImmediately);
             }
             break;
+        case "selectSpriteColor":
+            {
+                const { spriteColorIndex, colorIndex } = command;
+                await displayManager.selectSpriteColor(spriteColorIndex, colorIndex, sendImmediately);
+            }
+            break;
+        case "selectSpriteColors":
+            {
+                const { spriteColorPairs } = command;
+                await displayManager.selectSpriteColors(spriteColorPairs, sendImmediately);
+            }
+            break;
+        case "setSpriteScaleX":
+            {
+                const { spriteScaleX } = command;
+                await displayManager.setSpriteScaleX(spriteScaleX, sendImmediately);
+            }
+            break;
+        case "setSpriteScaleY":
+            {
+                const { spriteScaleY } = command;
+                await displayManager.setSpriteScaleY(spriteScaleY, sendImmediately);
+            }
+            break;
+        case "setSpriteScale":
+            {
+                const { spriteScale } = command;
+                await displayManager.setSpriteScale(spriteScale, sendImmediately);
+            }
+            break;
         case "clearRect":
             {
                 const { x, y, width, height } = command;
@@ -5136,6 +5184,12 @@ async function runDisplayContextCommand(displayManager, command, position, sendI
             {
                 const { centerX, centerY, bitmap } = command;
                 await displayManager.drawBitmap(centerX + _x, centerY + _y, bitmap, sendImmediately);
+            }
+            break;
+        case "drawSprite":
+            {
+                const { centerX, centerY, spriteName } = command;
+                await displayManager.drawSprite(centerX + _x, centerY + _y, spriteName);
             }
             break;
     }
@@ -5292,6 +5346,19 @@ class DisplayManager {
                     break;
                 case "bitmapScaleY":
                     this.setBitmapScaleY(newState.bitmapScaleY);
+                    break;
+                case "spriteColorIndices":
+                    const spriteColors = [];
+                    newState.spriteColorIndices.forEach((colorIndex, spriteColorIndex) => {
+                        spriteColors.push({ spriteColorIndex, colorIndex });
+                    });
+                    this.selectSpriteColors(spriteColors);
+                    break;
+                case "spriteScaleX":
+                    this.setSpriteScaleY(newState.spriteScaleX);
+                    break;
+                case "spriteScaleY":
+                    this.setSpriteScaleY(newState.spriteScaleY);
                     break;
             }
         });
@@ -5721,8 +5788,8 @@ class DisplayManager {
         return this.setColorOpacity(this.bitmapColorIndices[bitmapColorIndex], opacity, sendImmediately);
     }
     async setBitmapScaleDirection(direction, bitmapScale, sendImmediately) {
-        bitmapScale = clamp(bitmapScale, displayBitmapScaleStep, maxDisplayBitmapScale);
-        bitmapScale = roundBitmapScale(bitmapScale);
+        bitmapScale = clamp(bitmapScale, displayScaleStep, maxDisplayScale);
+        bitmapScale = roundScale(bitmapScale);
         const command = DisplayBitmapScaleDirectionToCommand[direction];
         _console$j.log({ command: bitmapScale });
         const newState = {};
@@ -5743,7 +5810,7 @@ class DisplayManager {
             return;
         }
         const dataView = new DataView(new ArrayBuffer(2));
-        dataView.setUint16(0, formatBitmapScale(bitmapScale), true);
+        dataView.setUint16(0, formatScale(bitmapScale), true);
         await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, command, dataView.buffer, sendImmediately);
         __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_onContextStateUpdate).call(this, differences);
     }
@@ -5757,7 +5824,128 @@ class DisplayManager {
         return this.setBitmapScaleDirection("all", bitmapScale, sendImmediately);
     }
     async resetBitmapScale(sendImmediately) {
-        return this.setBitmapScaleDirection("all", 1, sendImmediately);
+        const differences = __classPrivateFieldGet(this, _DisplayManager_contextStateHelper, "f").update({
+            bitmapScaleX: 1,
+            bitmapScaleY: 1,
+        });
+        if (differences.length == 0) {
+            return;
+        }
+        await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "resetBitmapScale", undefined, sendImmediately);
+        __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_onContextStateUpdate).call(this, differences);
+    }
+    async selectSpriteColor(spriteColorIndex, colorIndex, sendImmediately) {
+        __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_assertValidColorIndex).call(this, spriteColorIndex);
+        __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_assertValidColorIndex).call(this, colorIndex);
+        const spriteColorIndices = this.contextState.spriteColorIndices.slice();
+        spriteColorIndices[spriteColorIndex] = colorIndex;
+        const differences = __classPrivateFieldGet(this, _DisplayManager_contextStateHelper, "f").update({
+            spriteColorIndices,
+        });
+        if (differences.length == 0) {
+            return;
+        }
+        const dataView = new DataView(new ArrayBuffer(2));
+        dataView.setUint8(0, spriteColorIndex);
+        dataView.setUint8(1, colorIndex);
+        await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "selectSpriteColor", dataView.buffer, sendImmediately);
+        __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_onContextStateUpdate).call(this, differences);
+    }
+    get spriteColorIndices() {
+        return this.contextState.spriteColorIndices;
+    }
+    get spriteColors() {
+        return this.spriteColorIndices.map((colorIndex) => this.colors[colorIndex]);
+    }
+    async selectSpriteColors(spriteColorPairs, sendImmediately) {
+        _console$j.assertRangeWithError("spriteColors", spriteColorPairs.length, 1, this.numberOfColors);
+        const spriteColorIndices = this.contextState.spriteColorIndices.slice();
+        spriteColorPairs.forEach(({ spriteColorIndex, colorIndex }) => {
+            __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_assertValidColorIndex).call(this, spriteColorIndex);
+            __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_assertValidColorIndex).call(this, colorIndex);
+            spriteColorIndices[spriteColorIndex] = colorIndex;
+        });
+        const differences = __classPrivateFieldGet(this, _DisplayManager_contextStateHelper, "f").update({
+            spriteColorIndices,
+        });
+        if (differences.length == 0) {
+            return;
+        }
+        const dataView = new DataView(new ArrayBuffer(spriteColorPairs.length * 2 + 1));
+        let offset = 0;
+        dataView.setUint8(offset++, spriteColorPairs.length);
+        spriteColorPairs.forEach(({ spriteColorIndex, colorIndex }, index) => {
+            dataView.setUint8(offset, spriteColorIndex);
+            dataView.setUint8(offset + 1, colorIndex);
+            offset += 2;
+        });
+        await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "selectSpriteColors", dataView.buffer, sendImmediately);
+        __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_onContextStateUpdate).call(this, differences);
+    }
+    async setSpriteColor(spriteColorIndex, color, sendImmediately) {
+        return this.setColor(this.spriteColorIndices[spriteColorIndex], color, sendImmediately);
+    }
+    async setSpriteColorOpacity(spriteColorIndex, opacity, sendImmediately) {
+        return this.setColorOpacity(this.spriteColorIndices[spriteColorIndex], opacity, sendImmediately);
+    }
+    async resetSpriteColors(sendImmediately) {
+        const spriteColorIndices = new Array(this.numberOfColors)
+            .fill(0)
+            .map((_, index) => index);
+        const differences = __classPrivateFieldGet(this, _DisplayManager_contextStateHelper, "f").update({
+            spriteColorIndices,
+        });
+        if (differences.length == 0) {
+            return;
+        }
+        __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_onContextStateUpdate).call(this, differences);
+    }
+    async setSpriteScaleDirection(direction, spriteScale, sendImmediately) {
+        spriteScale = clamp(spriteScale, displayScaleStep, maxDisplayScale);
+        spriteScale = roundScale(spriteScale);
+        const command = DisplaySpriteScaleDirectionToCommand[direction];
+        _console$j.log({ command: spriteScale });
+        const newState = {};
+        switch (direction) {
+            case "all":
+                newState.spriteScaleX = spriteScale;
+                newState.spriteScaleY = spriteScale;
+                break;
+            case "x":
+                newState.spriteScaleX = spriteScale;
+                break;
+            case "y":
+                newState.spriteScaleY = spriteScale;
+                break;
+        }
+        const differences = __classPrivateFieldGet(this, _DisplayManager_contextStateHelper, "f").update(newState);
+        if (differences.length == 0) {
+            return;
+        }
+        const dataView = new DataView(new ArrayBuffer(2));
+        dataView.setUint16(0, formatScale(spriteScale), true);
+        await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, command, dataView.buffer, sendImmediately);
+        __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_onContextStateUpdate).call(this, differences);
+    }
+    async setSpriteScaleX(spriteScaleX, sendImmediately) {
+        return this.setSpriteScaleDirection("x", spriteScaleX, sendImmediately);
+    }
+    async setSpriteScaleY(spriteScaleY, sendImmediately) {
+        return this.setSpriteScaleDirection("y", spriteScaleY, sendImmediately);
+    }
+    async setSpriteScale(spriteScale, sendImmediately) {
+        return this.setSpriteScaleDirection("all", spriteScale, sendImmediately);
+    }
+    async resetSpriteScale(sendImmediately) {
+        const differences = __classPrivateFieldGet(this, _DisplayManager_contextStateHelper, "f").update({
+            spriteScaleX: 1,
+            spriteScaleY: 1,
+        });
+        if (differences.length == 0) {
+            return;
+        }
+        await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "resetSpriteScale", undefined, sendImmediately);
+        __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_onContextStateUpdate).call(this, differences);
     }
     async clearRect(x, y, width, height, sendImmediately) {
         const { x: _x, y: _y, width: _width, height: _height, } = __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_clampBox).call(this, x, y, width, height);
@@ -5886,6 +6074,8 @@ class DisplayManager {
         _console$j.log("drawArcEllipse data", dataView);
         await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "drawArcEllipse", dataView.buffer, sendImmediately);
     }
+    async drawSprite(centerX, centerY, spriteName, sendImmediately) {
+    }
     async drawBitmap(centerX, centerY, bitmap, sendImmediately) {
         __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_assertValidBitmap).call(this, bitmap, true);
         _console$j.log("drawBitmap", bitmap);
@@ -5908,8 +6098,6 @@ class DisplayManager {
         return quantizeImage(image, width, height, numberOfColors);
     }
     selectSpriteSheet(index, sendImmediately) {
-    }
-    drawSprite(index, x, y, sendImmediately) {
     }
     async runContextCommandMessage(command, position, sendImmediately) {
         return runDisplayContextCommand(this, command, position, sendImmediately);
@@ -6047,6 +6235,9 @@ async function _DisplayManager_sendDisplayCommand(command, sendImmediately) {
     __classPrivateFieldSet(this, _DisplayManager_colors, new Array(this.numberOfColors).fill("#000000"), "f");
     __classPrivateFieldSet(this, _DisplayManager_opacities, new Array(this.numberOfColors).fill(1), "f");
     this.contextState.bitmapColorIndices = new Array(this.numberOfColors).fill(0);
+    this.contextState.spriteColorIndices = new Array(this.numberOfColors)
+        .fill(0)
+        .map((_, index) => index);
     __classPrivateFieldGet(this, _DisplayManager_instances, "a", _DisplayManager_dispatchEvent_get).call(this, "displayInformation", {
         displayInformation: __classPrivateFieldGet(this, _DisplayManager_displayInformation, "f"),
     });
@@ -9312,6 +9503,53 @@ class Device {
         __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertDisplayIsAvailable).call(this);
         return __classPrivateFieldGet(this, _Device_displayManager, "f").resetBitmapScale;
     }
+    get selectDisplaySpriteColor() {
+        __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertDisplayIsAvailable).call(this);
+        return __classPrivateFieldGet(this, _Device_displayManager, "f").selectSpriteColor;
+    }
+    get selectDisplaySpriteColors() {
+        __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertDisplayIsAvailable).call(this);
+        return __classPrivateFieldGet(this, _Device_displayManager, "f").selectSpriteColors;
+    }
+    get setDisplaySpriteColor() {
+        __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertDisplayIsAvailable).call(this);
+        return __classPrivateFieldGet(this, _Device_displayManager, "f").setSpriteColor;
+    }
+    get setDisplaySpriteColorOpacity() {
+        __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertDisplayIsAvailable).call(this);
+        return __classPrivateFieldGet(this, _Device_displayManager, "f").setSpriteColorOpacity;
+    }
+    get resetDisplaySpriteColors() {
+        __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertDisplayIsAvailable).call(this);
+        return __classPrivateFieldGet(this, _Device_displayManager, "f").resetSpriteColors;
+    }
+    get setDisplaySpriteScaleDirection() {
+        __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertDisplayIsAvailable).call(this);
+        return __classPrivateFieldGet(this, _Device_displayManager, "f").setSpriteScaleDirection;
+    }
+    get setDisplaySpriteScaleX() {
+        __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertDisplayIsAvailable).call(this);
+        return __classPrivateFieldGet(this, _Device_displayManager, "f").setSpriteScaleX;
+    }
+    get setDisplaySpriteScaleY() {
+        __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertDisplayIsAvailable).call(this);
+        return __classPrivateFieldGet(this, _Device_displayManager, "f").setSpriteScaleY;
+    }
+    get setDisplaySpriteScale() {
+        __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertDisplayIsAvailable).call(this);
+        return __classPrivateFieldGet(this, _Device_displayManager, "f").setSpriteScale;
+    }
+    get resetDisplaySpriteScale() {
+        __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertDisplayIsAvailable).call(this);
+        return __classPrivateFieldGet(this, _Device_displayManager, "f").resetSpriteScale;
+    }
+    get drawDisplaySprite() {
+        __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertDisplayIsAvailable).call(this);
+        return __classPrivateFieldGet(this, _Device_displayManager, "f").drawSprite;
+    }
+    get displayManager() {
+        return __classPrivateFieldGet(this, _Device_displayManager, "f");
+    }
 }
 _a$2 = Device, _Device_eventDispatcher = new WeakMap(), _Device_connectionManager = new WeakMap(), _Device_isConnected = new WeakMap(), _Device_reconnectOnDisconnection = new WeakMap(), _Device_reconnectIntervalId = new WeakMap(), _Device_deviceInformationManager = new WeakMap(), _Device_batteryLevel = new WeakMap(), _Device_sensorConfigurationManager = new WeakMap(), _Device_clearSensorConfigurationOnLeave = new WeakMap(), _Device_sensorDataManager = new WeakMap(), _Device_vibrationManager = new WeakMap(), _Device_fileTransferManager = new WeakMap(), _Device_tfliteManager = new WeakMap(), _Device_firmwareManager = new WeakMap(), _Device_isServerSide = new WeakMap(), _Device_wifiManager = new WeakMap(), _Device_cameraManager = new WeakMap(), _Device_microphoneManager = new WeakMap(), _Device_displayManager = new WeakMap(), _Device_instances = new WeakSet(), _Device_DefaultConnectionManager = function _Device_DefaultConnectionManager() {
     return new WebBluetoothConnectionManager();
@@ -9514,7 +9752,7 @@ _a$2 = Device, _Device_eventDispatcher = new WeakMap(), _Device_connectionManage
 _Device_ReconnectOnDisconnection = { value: false };
 _Device_ClearSensorConfigurationOnLeave = { value: true };
 
-var _DisplayCanvasHelper_instances, _DisplayCanvasHelper_eventDispatcher, _DisplayCanvasHelper_dispatchEvent_get, _DisplayCanvasHelper_canvas, _DisplayCanvasHelper_context, _DisplayCanvasHelper_updateCanvas, _DisplayCanvasHelper_frontDrawStack, _DisplayCanvasHelper_rearDrawStack, _DisplayCanvasHelper_drawFrontDrawStack, _DisplayCanvasHelper_applyTransparencyToCanvas, _DisplayCanvasHelper_drawBackground, _DisplayCanvasHelper_applyTransparency, _DisplayCanvasHelper_device, _DisplayCanvasHelper_boundDeviceEventListeners, _DisplayCanvasHelper_onDeviceConnected, _DisplayCanvasHelper_onDeviceNotConnected, _DisplayCanvasHelper_onDeviceDisplayReady, _DisplayCanvasHelper_updateDevice, _DisplayCanvasHelper_numberOfColors, _DisplayCanvasHelper_assertValidColorIndex, _DisplayCanvasHelper_colors, _DisplayCanvasHelper_updateDeviceColors, _DisplayCanvasHelper_opacities, _DisplayCanvasHelper_updateDeviceOpacity, _DisplayCanvasHelper_displayContextStateHelper, _DisplayCanvasHelper_onDisplayContextStateUpdate, _DisplayCanvasHelper_updateDeviceContextState, _DisplayCanvasHelper_interval, _DisplayCanvasHelper_isReady, _DisplayCanvasHelper_assertValidLineWidth, _DisplayCanvasHelper_clearRectToCanvas, _DisplayCanvasHelper_save, _DisplayCanvasHelper_restore, _DisplayCanvasHelper_transformContext, _DisplayCanvasHelper_rotateBoundingBox, _DisplayCanvasHelper_clearBoundingBoxOnDraw, _DisplayCanvasHelper_clearBoundingBox, _DisplayCanvasHelper_getRectBoundingBox, _DisplayCanvasHelper_applyClip, _DisplayCanvasHelper_applyRotationClip, _DisplayCanvasHelper_hexToRgbWithOpacity, _DisplayCanvasHelper_hexToRgbStringWithOpacity, _DisplayCanvasHelper_getColorOpacity, _DisplayCanvasHelper_colorIndexToRgbString, _DisplayCanvasHelper_updateContext, _DisplayCanvasHelper_drawRectToCanvas, _DisplayCanvasHelper_drawRoundRectToCanvas, _DisplayCanvasHelper_getCircleBoundingBox, _DisplayCanvasHelper_drawCircleToCanvas, _DisplayCanvasHelper_getEllipseBoundingBox, _DisplayCanvasHelper_drawEllipseToCanvas, _DisplayCanvasHelper_getPolygonBoundingBox, _DisplayCanvasHelper_drawPolygonToCanvas, _DisplayCanvasHelper_getSegmentBoundingBox, _DisplayCanvasHelper_getSegmentMidpoint, _DisplayCanvasHelper_getOrientedSegmentBoundingBox, _DisplayCanvasHelper_applySegmentRotationClip, _DisplayCanvasHelper_drawSegmentToCanvas, _DisplayCanvasHelper_drawSegmentsToCanvas, _DisplayCanvasHelper_drawArcToCanvas, _DisplayCanvasHelper_drawArcEllipseToCanvas, _DisplayCanvasHelper_bitmapCanvas, _DisplayCanvasHelper_bitmapContext, _DisplayCanvasHelper_drawBitmapToCanvas, _DisplayCanvasHelper_assertValidNumberOfColors, _DisplayCanvasHelper_assertValidBitmap, _DisplayCanvasHelper_brightness, _DisplayCanvasHelper_brightnessOpacities, _DisplayCanvasHelper_brightnessOpacity_get, _DisplayCanvasHelper_updateDeviceBrightness;
+var _DisplayCanvasHelper_instances, _DisplayCanvasHelper_eventDispatcher, _DisplayCanvasHelper_dispatchEvent_get, _DisplayCanvasHelper_canvas, _DisplayCanvasHelper_context, _DisplayCanvasHelper_updateCanvas, _DisplayCanvasHelper_frontDrawStack, _DisplayCanvasHelper_rearDrawStack, _DisplayCanvasHelper_drawFrontDrawStack, _DisplayCanvasHelper_applyTransparencyToCanvas, _DisplayCanvasHelper_drawBackground, _DisplayCanvasHelper_applyTransparency, _DisplayCanvasHelper_device, _DisplayCanvasHelper_boundDeviceEventListeners, _DisplayCanvasHelper_onDeviceConnected, _DisplayCanvasHelper_onDeviceNotConnected, _DisplayCanvasHelper_onDeviceDisplayReady, _DisplayCanvasHelper_updateDevice, _DisplayCanvasHelper_numberOfColors, _DisplayCanvasHelper_assertValidColorIndex, _DisplayCanvasHelper_colors, _DisplayCanvasHelper_updateDeviceColors, _DisplayCanvasHelper_opacities, _DisplayCanvasHelper_updateDeviceOpacity, _DisplayCanvasHelper_contextStateHelper, _DisplayCanvasHelper_onContextStateUpdate, _DisplayCanvasHelper_updateDeviceContextState, _DisplayCanvasHelper_interval, _DisplayCanvasHelper_isReady, _DisplayCanvasHelper_assertValidLineWidth, _DisplayCanvasHelper_clearRectToCanvas, _DisplayCanvasHelper_save, _DisplayCanvasHelper_restore, _DisplayCanvasHelper_transformContext, _DisplayCanvasHelper_rotateBoundingBox, _DisplayCanvasHelper_clearBoundingBoxOnDraw, _DisplayCanvasHelper_clearBoundingBox, _DisplayCanvasHelper_getRectBoundingBox, _DisplayCanvasHelper_applyClip, _DisplayCanvasHelper_applyRotationClip, _DisplayCanvasHelper_hexToRgbWithOpacity, _DisplayCanvasHelper_hexToRgbStringWithOpacity, _DisplayCanvasHelper_getColorOpacity, _DisplayCanvasHelper_colorIndexToRgbString, _DisplayCanvasHelper_updateContext, _DisplayCanvasHelper_drawRectToCanvas, _DisplayCanvasHelper_drawRoundRectToCanvas, _DisplayCanvasHelper_getCircleBoundingBox, _DisplayCanvasHelper_drawCircleToCanvas, _DisplayCanvasHelper_getEllipseBoundingBox, _DisplayCanvasHelper_drawEllipseToCanvas, _DisplayCanvasHelper_getPolygonBoundingBox, _DisplayCanvasHelper_drawPolygonToCanvas, _DisplayCanvasHelper_getSegmentBoundingBox, _DisplayCanvasHelper_getSegmentMidpoint, _DisplayCanvasHelper_getOrientedSegmentBoundingBox, _DisplayCanvasHelper_applySegmentRotationClip, _DisplayCanvasHelper_drawSegmentToCanvas, _DisplayCanvasHelper_drawSegmentsToCanvas, _DisplayCanvasHelper_drawArcToCanvas, _DisplayCanvasHelper_drawArcEllipseToCanvas, _DisplayCanvasHelper_bitmapCanvas, _DisplayCanvasHelper_bitmapContext, _DisplayCanvasHelper_drawBitmapToCanvas, _DisplayCanvasHelper_assertValidNumberOfColors, _DisplayCanvasHelper_assertValidBitmap, _DisplayCanvasHelper_brightness, _DisplayCanvasHelper_brightnessOpacities, _DisplayCanvasHelper_brightnessOpacity_get, _DisplayCanvasHelper_updateDeviceBrightness;
 const _console$6 = createConsole("DisplayCanvasHelper", { log: true });
 const DisplayCanvasHelperEventTypes = [
     "contextState",
@@ -9545,7 +9783,7 @@ class DisplayCanvasHelper {
         _DisplayCanvasHelper_numberOfColors.set(this, 0);
         _DisplayCanvasHelper_colors.set(this, []);
         _DisplayCanvasHelper_opacities.set(this, []);
-        _DisplayCanvasHelper_displayContextStateHelper.set(this, new DisplayContextStateHelper());
+        _DisplayCanvasHelper_contextStateHelper.set(this, new DisplayContextStateHelper());
         _DisplayCanvasHelper_interval.set(this, 50);
         _DisplayCanvasHelper_isReady.set(this, true);
         _DisplayCanvasHelper_clearBoundingBoxOnDraw.set(this, true);
@@ -9657,6 +9895,9 @@ class DisplayCanvasHelper {
         __classPrivateFieldSet(this, _DisplayCanvasHelper_colors, new Array(this.numberOfColors).fill("#000000"), "f");
         __classPrivateFieldSet(this, _DisplayCanvasHelper_opacities, new Array(this.numberOfColors).fill(1), "f");
         this.contextState.bitmapColorIndices = new Array(this.numberOfColors).fill(0);
+        this.contextState.spriteColorIndices = new Array(this.numberOfColors)
+            .fill(0)
+            .map((_, index) => index);
         __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "a", _DisplayCanvasHelper_dispatchEvent_get).call(this, "numberOfColors", {
             numberOfColors: this.numberOfColors,
         });
@@ -9668,7 +9909,7 @@ class DisplayCanvasHelper {
         return __classPrivateFieldGet(this, _DisplayCanvasHelper_opacities, "f");
     }
     get contextState() {
-        return __classPrivateFieldGet(this, _DisplayCanvasHelper_displayContextStateHelper, "f").state;
+        return __classPrivateFieldGet(this, _DisplayCanvasHelper_contextStateHelper, "f").state;
     }
     async show(sendImmediately = true) {
         _console$6.log("showDisplay");
@@ -9769,7 +10010,7 @@ class DisplayCanvasHelper {
     }
     async selectFillColor(fillColorIndex, sendImmediately) {
         __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_assertValidColorIndex).call(this, fillColorIndex);
-        const differences = __classPrivateFieldGet(this, _DisplayCanvasHelper_displayContextStateHelper, "f").update({
+        const differences = __classPrivateFieldGet(this, _DisplayCanvasHelper_contextStateHelper, "f").update({
             fillColorIndex,
         });
         if (differences.length == 0) {
@@ -9778,11 +10019,11 @@ class DisplayCanvasHelper {
         if (this.device?.isConnected) {
             await this.device.selectDisplayFillColor(fillColorIndex, sendImmediately);
         }
-        __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_onDisplayContextStateUpdate).call(this, differences);
+        __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_onContextStateUpdate).call(this, differences);
     }
     async selectLineColor(lineColorIndex, sendImmediately) {
         __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_assertValidColorIndex).call(this, lineColorIndex);
-        const differences = __classPrivateFieldGet(this, _DisplayCanvasHelper_displayContextStateHelper, "f").update({
+        const differences = __classPrivateFieldGet(this, _DisplayCanvasHelper_contextStateHelper, "f").update({
             lineColorIndex,
         });
         if (differences.length == 0) {
@@ -9791,11 +10032,11 @@ class DisplayCanvasHelper {
         if (this.device?.isConnected) {
             await this.device.selectDisplayLineColor(lineColorIndex, sendImmediately);
         }
-        __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_onDisplayContextStateUpdate).call(this, differences);
+        __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_onContextStateUpdate).call(this, differences);
     }
     async setLineWidth(lineWidth, sendImmediately) {
         __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_assertValidLineWidth).call(this, lineWidth);
-        const differences = __classPrivateFieldGet(this, _DisplayCanvasHelper_displayContextStateHelper, "f").update({
+        const differences = __classPrivateFieldGet(this, _DisplayCanvasHelper_contextStateHelper, "f").update({
             lineWidth,
         });
         if (differences.length == 0) {
@@ -9804,13 +10045,13 @@ class DisplayCanvasHelper {
         if (this.device?.isConnected) {
             await this.device.setDisplayLineWidth(lineWidth, sendImmediately);
         }
-        __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_onDisplayContextStateUpdate).call(this, differences);
+        __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_onContextStateUpdate).call(this, differences);
     }
     async setRotation(rotation, isRadians, sendImmediately) {
         rotation = isRadians ? rotation : degToRad(rotation);
         rotation = normalizeRadians(rotation);
         _console$6.log({ rotation });
-        const differences = __classPrivateFieldGet(this, _DisplayCanvasHelper_displayContextStateHelper, "f").update({
+        const differences = __classPrivateFieldGet(this, _DisplayCanvasHelper_contextStateHelper, "f").update({
             rotation,
         });
         if (differences.length == 0) {
@@ -9819,10 +10060,10 @@ class DisplayCanvasHelper {
         if (this.device?.isConnected) {
             await this.device.setDisplayRotation(rotation, true, sendImmediately);
         }
-        __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_onDisplayContextStateUpdate).call(this, differences);
+        __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_onContextStateUpdate).call(this, differences);
     }
     async clearRotation(sendImmediately) {
-        const differences = __classPrivateFieldGet(this, _DisplayCanvasHelper_displayContextStateHelper, "f").update({
+        const differences = __classPrivateFieldGet(this, _DisplayCanvasHelper_contextStateHelper, "f").update({
             rotation: 0,
         });
         if (differences.length == 0) {
@@ -9831,11 +10072,11 @@ class DisplayCanvasHelper {
         if (this.device?.isConnected) {
             await this.device.clearDisplayRotation(sendImmediately);
         }
-        __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_onDisplayContextStateUpdate).call(this, differences);
+        __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_onContextStateUpdate).call(this, differences);
     }
     async setSegmentStartCap(segmentStartCap, sendImmediately) {
         assertValidSegmentCap(segmentStartCap);
-        const differences = __classPrivateFieldGet(this, _DisplayCanvasHelper_displayContextStateHelper, "f").update({
+        const differences = __classPrivateFieldGet(this, _DisplayCanvasHelper_contextStateHelper, "f").update({
             segmentStartCap,
         });
         if (differences.length == 0) {
@@ -9845,11 +10086,11 @@ class DisplayCanvasHelper {
         if (this.device?.isConnected) {
             await this.device.setDisplaySegmentStartCap(segmentStartCap, sendImmediately);
         }
-        __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_onDisplayContextStateUpdate).call(this, differences);
+        __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_onContextStateUpdate).call(this, differences);
     }
     async setSegmentEndCap(segmentEndCap, sendImmediately) {
         assertValidSegmentCap(segmentEndCap);
-        const differences = __classPrivateFieldGet(this, _DisplayCanvasHelper_displayContextStateHelper, "f").update({
+        const differences = __classPrivateFieldGet(this, _DisplayCanvasHelper_contextStateHelper, "f").update({
             segmentEndCap,
         });
         if (differences.length == 0) {
@@ -9859,11 +10100,11 @@ class DisplayCanvasHelper {
         if (this.device?.isConnected) {
             await this.device.setDisplaySegmentEndCap(segmentEndCap, sendImmediately);
         }
-        __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_onDisplayContextStateUpdate).call(this, differences);
+        __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_onContextStateUpdate).call(this, differences);
     }
     async setSegmentCap(segmentCap, sendImmediately) {
         assertValidSegmentCap(segmentCap);
-        const differences = __classPrivateFieldGet(this, _DisplayCanvasHelper_displayContextStateHelper, "f").update({
+        const differences = __classPrivateFieldGet(this, _DisplayCanvasHelper_contextStateHelper, "f").update({
             segmentStartCap: segmentCap,
             segmentEndCap: segmentCap,
         });
@@ -9874,10 +10115,10 @@ class DisplayCanvasHelper {
         if (this.device?.isConnected) {
             await this.device.setDisplaySegmentCap(segmentCap, sendImmediately);
         }
-        __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_onDisplayContextStateUpdate).call(this, differences);
+        __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_onContextStateUpdate).call(this, differences);
     }
     async setSegmentStartRadius(segmentStartRadius, sendImmediately) {
-        const differences = __classPrivateFieldGet(this, _DisplayCanvasHelper_displayContextStateHelper, "f").update({
+        const differences = __classPrivateFieldGet(this, _DisplayCanvasHelper_contextStateHelper, "f").update({
             segmentStartRadius,
         });
         if (differences.length == 0) {
@@ -9887,10 +10128,10 @@ class DisplayCanvasHelper {
         if (this.device?.isConnected) {
             await this.device.setDisplaySegmentStartRadius(segmentStartRadius, sendImmediately);
         }
-        __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_onDisplayContextStateUpdate).call(this, differences);
+        __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_onContextStateUpdate).call(this, differences);
     }
     async setSegmentEndRadius(segmentEndRadius, sendImmediately) {
-        const differences = __classPrivateFieldGet(this, _DisplayCanvasHelper_displayContextStateHelper, "f").update({
+        const differences = __classPrivateFieldGet(this, _DisplayCanvasHelper_contextStateHelper, "f").update({
             segmentEndRadius,
         });
         if (differences.length == 0) {
@@ -9900,10 +10141,10 @@ class DisplayCanvasHelper {
         if (this.device?.isConnected) {
             await this.device.setDisplaySegmentEndRadius(segmentEndRadius, sendImmediately);
         }
-        __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_onDisplayContextStateUpdate).call(this, differences);
+        __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_onContextStateUpdate).call(this, differences);
     }
     async setSegmentRadius(segmentRadius, sendImmediately) {
-        const differences = __classPrivateFieldGet(this, _DisplayCanvasHelper_displayContextStateHelper, "f").update({
+        const differences = __classPrivateFieldGet(this, _DisplayCanvasHelper_contextStateHelper, "f").update({
             segmentStartRadius: segmentRadius,
             segmentEndRadius: segmentRadius,
         });
@@ -9914,14 +10155,14 @@ class DisplayCanvasHelper {
         if (this.device?.isConnected) {
             await this.device.setDisplaySegmentRadius(segmentRadius, sendImmediately);
         }
-        __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_onDisplayContextStateUpdate).call(this, differences);
+        __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_onContextStateUpdate).call(this, differences);
     }
     async setCrop(cropDirection, crop, sendImmediately) {
         _console$6.assertEnumWithError(cropDirection, DisplayCropDirections);
         crop = Math.max(0, crop);
         const cropCommand = DisplayCropDirectionToCommand[cropDirection];
         const cropKey = DisplayCropDirectionToStateKey[cropDirection];
-        const differences = __classPrivateFieldGet(this, _DisplayCanvasHelper_displayContextStateHelper, "f").update({
+        const differences = __classPrivateFieldGet(this, _DisplayCanvasHelper_contextStateHelper, "f").update({
             [cropKey]: crop,
         });
         if (differences.length == 0) {
@@ -9931,7 +10172,7 @@ class DisplayCanvasHelper {
         if (this.device?.isConnected) {
             await this.device.setDisplayCrop(cropDirection, crop, sendImmediately);
         }
-        __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_onDisplayContextStateUpdate).call(this, differences);
+        __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_onContextStateUpdate).call(this, differences);
     }
     async setCropTop(cropTop, sendImmediately) {
         await this.setCrop("top", cropTop, sendImmediately);
@@ -9946,7 +10187,7 @@ class DisplayCanvasHelper {
         await this.setCrop("left", cropLeft, sendImmediately);
     }
     async clearCrop(sendImmediately) {
-        const differences = __classPrivateFieldGet(this, _DisplayCanvasHelper_displayContextStateHelper, "f").update({
+        const differences = __classPrivateFieldGet(this, _DisplayCanvasHelper_contextStateHelper, "f").update({
             cropTop: 0,
             cropRight: 0,
             cropBottom: 0,
@@ -9958,13 +10199,13 @@ class DisplayCanvasHelper {
         if (this.device?.isConnected) {
             await this.device.clearDisplayCrop(sendImmediately);
         }
-        __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_onDisplayContextStateUpdate).call(this, differences);
+        __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_onContextStateUpdate).call(this, differences);
     }
     async setRotationCrop(cropDirection, crop, sendImmediately) {
         _console$6.assertEnumWithError(cropDirection, DisplayCropDirections);
         const cropCommand = DisplayRotationCropDirectionToCommand[cropDirection];
         const cropKey = DisplayRotationCropDirectionToStateKey[cropDirection];
-        const differences = __classPrivateFieldGet(this, _DisplayCanvasHelper_displayContextStateHelper, "f").update({
+        const differences = __classPrivateFieldGet(this, _DisplayCanvasHelper_contextStateHelper, "f").update({
             [cropKey]: crop,
         });
         if (differences.length == 0) {
@@ -9974,7 +10215,7 @@ class DisplayCanvasHelper {
         if (this.device?.isConnected) {
             await this.device.setDisplayRotationCrop(cropDirection, crop, sendImmediately);
         }
-        __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_onDisplayContextStateUpdate).call(this, differences);
+        __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_onContextStateUpdate).call(this, differences);
     }
     async setRotationCropTop(rotationCropTop, sendImmediately) {
         await this.setRotationCrop("top", rotationCropTop, sendImmediately);
@@ -9989,7 +10230,7 @@ class DisplayCanvasHelper {
         await this.setRotationCrop("left", rotationCropLeft, sendImmediately);
     }
     async clearRotationCrop(sendImmediately) {
-        const differences = __classPrivateFieldGet(this, _DisplayCanvasHelper_displayContextStateHelper, "f").update({
+        const differences = __classPrivateFieldGet(this, _DisplayCanvasHelper_contextStateHelper, "f").update({
             rotationCropTop: 0,
             rotationCropRight: 0,
             rotationCropBottom: 0,
@@ -10001,7 +10242,7 @@ class DisplayCanvasHelper {
         if (this.device?.isConnected) {
             await this.device.clearDisplayRotationCrop(sendImmediately);
         }
-        __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_onDisplayContextStateUpdate).call(this, differences);
+        __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_onContextStateUpdate).call(this, differences);
     }
     get bitmapColorIndices() {
         return this.contextState.bitmapColorIndices;
@@ -10013,7 +10254,7 @@ class DisplayCanvasHelper {
         __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_assertValidColorIndex).call(this, bitmapColorIndex);
         const bitmapColorIndices = this.contextState.bitmapColorIndices.slice();
         bitmapColorIndices[bitmapColorIndex] = colorIndex;
-        const differences = __classPrivateFieldGet(this, _DisplayCanvasHelper_displayContextStateHelper, "f").update({
+        const differences = __classPrivateFieldGet(this, _DisplayCanvasHelper_contextStateHelper, "f").update({
             bitmapColorIndices,
         });
         if (differences.length == 0) {
@@ -10023,7 +10264,7 @@ class DisplayCanvasHelper {
         if (this.device?.isConnected) {
             await this.device.selectDisplayBitmapColor(bitmapColorIndex, colorIndex, sendImmediately);
         }
-        __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_onDisplayContextStateUpdate).call(this, differences);
+        __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_onContextStateUpdate).call(this, differences);
     }
     async selectBitmapColors(bitmapColorPairs, sendImmediately) {
         _console$6.assertRangeWithError("bitmapColors", bitmapColorPairs.length, 1, this.numberOfColors);
@@ -10033,7 +10274,7 @@ class DisplayCanvasHelper {
             __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_assertValidColorIndex).call(this, colorIndex);
             bitmapColorIndices[bitmapColorIndex] = colorIndex;
         });
-        const differences = __classPrivateFieldGet(this, _DisplayCanvasHelper_displayContextStateHelper, "f").update({
+        const differences = __classPrivateFieldGet(this, _DisplayCanvasHelper_contextStateHelper, "f").update({
             bitmapColorIndices,
         });
         if (differences.length == 0) {
@@ -10042,7 +10283,7 @@ class DisplayCanvasHelper {
         if (this.device?.isConnected) {
             await this.device.selectDisplayBitmapColors(bitmapColorPairs, sendImmediately);
         }
-        __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_onDisplayContextStateUpdate).call(this, differences);
+        __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_onContextStateUpdate).call(this, differences);
     }
     async setBitmapColor(bitmapColorIndex, color, sendImmediately) {
         return this.setColor(this.bitmapColorIndices[bitmapColorIndex], color, sendImmediately);
@@ -10051,8 +10292,8 @@ class DisplayCanvasHelper {
         return this.setColorOpacity(this.bitmapColorIndices[bitmapColorIndex], opacity, sendImmediately);
     }
     async setBitmapScaleDirection(direction, bitmapScale, sendImmediately) {
-        bitmapScale = clamp(bitmapScale, displayBitmapScaleStep, maxDisplayBitmapScale);
-        bitmapScale = roundBitmapScale(bitmapScale);
+        bitmapScale = clamp(bitmapScale, displayScaleStep, maxDisplayScale);
+        bitmapScale = roundScale(bitmapScale);
         const newState = {};
         switch (direction) {
             case "all":
@@ -10066,14 +10307,14 @@ class DisplayCanvasHelper {
                 newState.bitmapScaleY = bitmapScale;
                 break;
         }
-        const differences = __classPrivateFieldGet(this, _DisplayCanvasHelper_displayContextStateHelper, "f").update(newState);
+        const differences = __classPrivateFieldGet(this, _DisplayCanvasHelper_contextStateHelper, "f").update(newState);
         if (differences.length == 0) {
             return;
         }
         if (this.device?.isConnected) {
             await this.device.setDisplayBitmapScaleDirection(direction, bitmapScale, sendImmediately);
         }
-        __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_onDisplayContextStateUpdate).call(this, differences);
+        __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_onContextStateUpdate).call(this, differences);
     }
     async setBitmapScaleX(bitmapScaleX, sendImmediately) {
         return this.setBitmapScaleDirection("x", bitmapScaleX, sendImmediately);
@@ -10085,7 +10326,126 @@ class DisplayCanvasHelper {
         return this.setBitmapScaleDirection("all", bitmapScale, sendImmediately);
     }
     async resetBitmapScale(sendImmediately) {
-        return this.setBitmapScaleDirection("all", 1, sendImmediately);
+        const differences = __classPrivateFieldGet(this, _DisplayCanvasHelper_contextStateHelper, "f").update({
+            bitmapScaleX: 1,
+            bitmapScaleY: 1,
+        });
+        if (differences.length == 0) {
+            return;
+        }
+        if (this.device?.isConnected) {
+            await this.device.resetDisplayBitmapScale(sendImmediately);
+        }
+        __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_onContextStateUpdate).call(this, differences);
+    }
+    get spriteColorIndices() {
+        return this.contextState.spriteColorIndices;
+    }
+    get spriteColors() {
+        return this.spriteColorIndices.map((colorIndex) => this.colors[colorIndex]);
+    }
+    async selectSpriteColor(spriteColorIndex, colorIndex, sendImmediately) {
+        __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_assertValidColorIndex).call(this, spriteColorIndex);
+        const spriteColorIndices = this.contextState.spriteColorIndices.slice();
+        spriteColorIndices[spriteColorIndex] = colorIndex;
+        const differences = __classPrivateFieldGet(this, _DisplayCanvasHelper_contextStateHelper, "f").update({
+            spriteColorIndices,
+        });
+        if (differences.length == 0) {
+            return;
+        }
+        _console$6.log({ spriteColorIndex, colorIndex });
+        if (this.device?.isConnected) {
+            await this.device.selectDisplaySpriteColor(spriteColorIndex, colorIndex, sendImmediately);
+        }
+        __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_onContextStateUpdate).call(this, differences);
+    }
+    async selectSpriteColors(spriteColorPairs, sendImmediately) {
+        _console$6.assertRangeWithError("spriteColors", spriteColorPairs.length, 1, this.numberOfColors);
+        const spriteColorIndices = this.contextState.spriteColorIndices.slice();
+        spriteColorPairs.forEach(({ spriteColorIndex, colorIndex }) => {
+            __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_assertValidColorIndex).call(this, spriteColorIndex);
+            __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_assertValidColorIndex).call(this, colorIndex);
+            spriteColorIndices[spriteColorIndex] = colorIndex;
+        });
+        const differences = __classPrivateFieldGet(this, _DisplayCanvasHelper_contextStateHelper, "f").update({
+            spriteColorIndices,
+        });
+        if (differences.length == 0) {
+            return;
+        }
+        if (this.device?.isConnected) {
+            await this.device.selectDisplaySpriteColors(spriteColorPairs, sendImmediately);
+        }
+        __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_onContextStateUpdate).call(this, differences);
+    }
+    async setSpriteColor(spriteColorIndex, color, sendImmediately) {
+        return this.setColor(this.spriteColorIndices[spriteColorIndex], color, sendImmediately);
+    }
+    async setSpriteColorOpacity(spriteColorIndex, opacity, sendImmediately) {
+        return this.setColorOpacity(this.spriteColorIndices[spriteColorIndex], opacity, sendImmediately);
+    }
+    async resetSpriteColors(sendImmediately) {
+        const spriteColorIndices = new Array(this.numberOfColors)
+            .fill(0)
+            .map((_, index) => index);
+        const differences = __classPrivateFieldGet(this, _DisplayCanvasHelper_contextStateHelper, "f").update({
+            spriteColorIndices,
+        });
+        if (differences.length == 0) {
+            return;
+        }
+        if (this.device?.isConnected) {
+            await this.device.resetDisplaySpriteColors(sendImmediately);
+        }
+        __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_onContextStateUpdate).call(this, differences);
+    }
+    async setSpriteScaleDirection(direction, spriteScale, sendImmediately) {
+        spriteScale = clamp(spriteScale, displayScaleStep, maxDisplayScale);
+        spriteScale = roundScale(spriteScale);
+        const newState = {};
+        switch (direction) {
+            case "all":
+                newState.spriteScaleX = spriteScale;
+                newState.spriteScaleY = spriteScale;
+                break;
+            case "x":
+                newState.spriteScaleX = spriteScale;
+                break;
+            case "y":
+                newState.spriteScaleY = spriteScale;
+                break;
+        }
+        const differences = __classPrivateFieldGet(this, _DisplayCanvasHelper_contextStateHelper, "f").update(newState);
+        if (differences.length == 0) {
+            return;
+        }
+        if (this.device?.isConnected) {
+            await this.device.setDisplaySpriteScaleDirection(direction, spriteScale, sendImmediately);
+        }
+        __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_onContextStateUpdate).call(this, differences);
+    }
+    async setSpriteScaleX(spriteScaleX, sendImmediately) {
+        return this.setSpriteScaleDirection("x", spriteScaleX, sendImmediately);
+    }
+    async setSpriteScaleY(spriteScaleY, sendImmediately) {
+        return this.setSpriteScaleDirection("y", spriteScaleY, sendImmediately);
+    }
+    async setSpriteScale(spriteScale, sendImmediately) {
+        return this.setSpriteScaleDirection("all", spriteScale, sendImmediately);
+    }
+    async resetSpriteScale(sendImmediately) {
+        const differences = __classPrivateFieldGet(this, _DisplayCanvasHelper_contextStateHelper, "f").update({
+            spriteScaleX: 1,
+            spriteScaleY: 1,
+        });
+        if (differences.length == 0) {
+            return;
+        }
+        if (this.device?.isConnected) {
+            await this.device.resetDisplaySpriteScale(sendImmediately);
+        }
+        __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_onContextStateUpdate).call(this, differences);
     }
     async clearRect(x, y, width, height, sendImmediately) {
         __classPrivateFieldGet(this, _DisplayCanvasHelper_rearDrawStack, "f").push(() => __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_clearRectToCanvas).call(this, x, y, width, height));
@@ -10179,6 +10539,8 @@ class DisplayCanvasHelper {
             await this.device.drawDisplayBitmap(centerX, centerY, bitmap, sendImmediately);
         }
     }
+    async drawSprite(centerX, centerY, spriteName, sendImmediately) {
+    }
     get brightness() {
         return __classPrivateFieldGet(this, _DisplayCanvasHelper_brightness, "f");
     }
@@ -10199,7 +10561,7 @@ class DisplayCanvasHelper {
         return runDisplayContextCommand(this, command, position, sendImmediately);
     }
 }
-_DisplayCanvasHelper_eventDispatcher = new WeakMap(), _DisplayCanvasHelper_canvas = new WeakMap(), _DisplayCanvasHelper_context = new WeakMap(), _DisplayCanvasHelper_frontDrawStack = new WeakMap(), _DisplayCanvasHelper_rearDrawStack = new WeakMap(), _DisplayCanvasHelper_applyTransparency = new WeakMap(), _DisplayCanvasHelper_device = new WeakMap(), _DisplayCanvasHelper_boundDeviceEventListeners = new WeakMap(), _DisplayCanvasHelper_numberOfColors = new WeakMap(), _DisplayCanvasHelper_colors = new WeakMap(), _DisplayCanvasHelper_opacities = new WeakMap(), _DisplayCanvasHelper_displayContextStateHelper = new WeakMap(), _DisplayCanvasHelper_interval = new WeakMap(), _DisplayCanvasHelper_isReady = new WeakMap(), _DisplayCanvasHelper_clearBoundingBoxOnDraw = new WeakMap(), _DisplayCanvasHelper_bitmapCanvas = new WeakMap(), _DisplayCanvasHelper_bitmapContext = new WeakMap(), _DisplayCanvasHelper_brightness = new WeakMap(), _DisplayCanvasHelper_brightnessOpacities = new WeakMap(), _DisplayCanvasHelper_instances = new WeakSet(), _DisplayCanvasHelper_dispatchEvent_get = function _DisplayCanvasHelper_dispatchEvent_get() {
+_DisplayCanvasHelper_eventDispatcher = new WeakMap(), _DisplayCanvasHelper_canvas = new WeakMap(), _DisplayCanvasHelper_context = new WeakMap(), _DisplayCanvasHelper_frontDrawStack = new WeakMap(), _DisplayCanvasHelper_rearDrawStack = new WeakMap(), _DisplayCanvasHelper_applyTransparency = new WeakMap(), _DisplayCanvasHelper_device = new WeakMap(), _DisplayCanvasHelper_boundDeviceEventListeners = new WeakMap(), _DisplayCanvasHelper_numberOfColors = new WeakMap(), _DisplayCanvasHelper_colors = new WeakMap(), _DisplayCanvasHelper_opacities = new WeakMap(), _DisplayCanvasHelper_contextStateHelper = new WeakMap(), _DisplayCanvasHelper_interval = new WeakMap(), _DisplayCanvasHelper_isReady = new WeakMap(), _DisplayCanvasHelper_clearBoundingBoxOnDraw = new WeakMap(), _DisplayCanvasHelper_bitmapCanvas = new WeakMap(), _DisplayCanvasHelper_bitmapContext = new WeakMap(), _DisplayCanvasHelper_brightness = new WeakMap(), _DisplayCanvasHelper_brightnessOpacities = new WeakMap(), _DisplayCanvasHelper_instances = new WeakSet(), _DisplayCanvasHelper_dispatchEvent_get = function _DisplayCanvasHelper_dispatchEvent_get() {
     return __classPrivateFieldGet(this, _DisplayCanvasHelper_eventDispatcher, "f").dispatchEvent;
 }, _DisplayCanvasHelper_updateCanvas = function _DisplayCanvasHelper_updateCanvas() {
     if (!this.canvas) {
@@ -10289,7 +10651,7 @@ _DisplayCanvasHelper_eventDispatcher = new WeakMap(), _DisplayCanvasHelper_canva
     if (sendImmediately) {
         await __classPrivateFieldGet(this, _DisplayCanvasHelper_device, "f")?.flushDisplayContextCommands();
     }
-}, _DisplayCanvasHelper_onDisplayContextStateUpdate = function _DisplayCanvasHelper_onDisplayContextStateUpdate(differences) {
+}, _DisplayCanvasHelper_onContextStateUpdate = function _DisplayCanvasHelper_onContextStateUpdate(differences) {
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "a", _DisplayCanvasHelper_dispatchEvent_get).call(this, "contextState", {
         contextState: structuredClone(this.contextState),
         differences,
@@ -11756,5 +12118,5 @@ const ThrottleUtils = {
     debounce,
 };
 
-export { CameraCommands, CameraConfigurationTypes, ContinuousSensorTypes, DefaultNumberOfDisplayColors, DefaultNumberOfPressureSensors, Device, DeviceManager$1 as DeviceManager, DevicePair, DevicePairTypes, DeviceTypes, DisplayBrightnesses, DisplayCanvasHelper, DisplayPixelDepths, DisplaySegmentCaps, environment as Environment, EventUtils, FileTransferDirections, FileTypes, MaxNameLength, MaxNumberOfVibrationWaveformEffectSegments, MaxNumberOfVibrationWaveformSegments, MaxSensorRate, MaxVibrationWaveformEffectSegmentDelay, MaxVibrationWaveformEffectSegmentLoopCount, MaxVibrationWaveformEffectSequenceLoopCount, MaxVibrationWaveformSegmentDuration, MaxWifiPasswordLength, MaxWifiSSIDLength, MicrophoneCommands, MicrophoneConfigurationTypes, MicrophoneConfigurationValues, MinNameLength, MinWifiPasswordLength, MinWifiSSIDLength, RangeHelper, SensorRateStep, SensorTypes, Sides, TfliteSensorTypes, TfliteTasks, ThrottleUtils, VibrationLocations, VibrationTypes, VibrationWaveformEffects, WebSocketClient, hexToRGB, maxDisplayBitmapScale, resizeAndQuantizeImage, rgbToHex, setAllConsoleLevelFlags, setConsoleLevelFlagsForType };
+export { CameraCommands, CameraConfigurationTypes, ContinuousSensorTypes, DefaultNumberOfDisplayColors, DefaultNumberOfPressureSensors, Device, DeviceManager$1 as DeviceManager, DevicePair, DevicePairTypes, DeviceTypes, DisplayBrightnesses, DisplayCanvasHelper, DisplayPixelDepths, DisplaySegmentCaps, environment as Environment, EventUtils, FileTransferDirections, FileTypes, MaxNameLength, MaxNumberOfVibrationWaveformEffectSegments, MaxNumberOfVibrationWaveformSegments, MaxSensorRate, MaxVibrationWaveformEffectSegmentDelay, MaxVibrationWaveformEffectSegmentLoopCount, MaxVibrationWaveformEffectSequenceLoopCount, MaxVibrationWaveformSegmentDuration, MaxWifiPasswordLength, MaxWifiSSIDLength, MicrophoneCommands, MicrophoneConfigurationTypes, MicrophoneConfigurationValues, MinNameLength, MinWifiPasswordLength, MinWifiSSIDLength, RangeHelper, SensorRateStep, SensorTypes, Sides, TfliteSensorTypes, TfliteTasks, ThrottleUtils, VibrationLocations, VibrationTypes, VibrationWaveformEffects, WebSocketClient, hexToRGB, maxDisplayScale as maxDisplayBitmapScale, resizeAndQuantizeImage, rgbToHex, setAllConsoleLevelFlags, setConsoleLevelFlagsForType };
 //# sourceMappingURL=brilliantsole.module.js.map

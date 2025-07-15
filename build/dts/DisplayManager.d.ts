@@ -1,7 +1,7 @@
 import Device, { SendMessageCallback } from "./Device.ts";
 import EventDispatcher from "./utils/EventDispatcher.ts";
 import { Vector2 } from "./utils/MathUtils.ts";
-import { DisplayBitmapScaleDirection, DisplayColorRGB, DisplayCropDirection } from "./utils/DisplayUtils.ts";
+import { DisplayScaleDirection, DisplayColorRGB, DisplayCropDirection } from "./utils/DisplayUtils.ts";
 import { DisplayContextState, DisplayContextStateKey, DisplaySegmentCap, PartialDisplayContextState } from "./utils/DisplayContextState.ts";
 import { DisplayContextCommand } from "./utils/DisplayContextCommand.ts";
 import { DisplayManagerInterface } from "./utils/DisplayManagerInterface.ts";
@@ -32,6 +32,10 @@ export type DisplayInformation = {
 };
 export type DisplayBitmapColorPair = {
     bitmapColorIndex: number;
+    colorIndex: number;
+};
+export type DisplaySpriteColorPair = {
+    spriteColorIndex: number;
     colorIndex: number;
 };
 export type DisplayBitmap = {
@@ -86,7 +90,7 @@ declare class DisplayManager implements DisplayManagerInterface {
     constructor();
     sendMessage: SendDisplayMessageCallback;
     eventDispatcher: DisplayEventDispatcher;
-    get waitForEvent(): <T extends "isDisplayAvailable" | "displayStatus" | "displayInformation" | "displayCommand" | "getDisplayBrightness" | "setDisplayBrightness" | "displayContextCommands" | "displayReady" | "displayContextState" | "displayColor" | "displayColorOpacity" | "displayOpacity">(type: T) => Promise<{
+    get waitForEvent(): <T extends "isDisplayAvailable" | "displayStatus" | "displayInformation" | "getDisplayBrightness" | "displayContextState" | "displayColor" | "displayColorOpacity" | "displayOpacity" | "displayReady" | "displayCommand" | "setDisplayBrightness" | "displayContextCommands">(type: T) => Promise<{
         type: T;
         target: Device;
         message: DisplayEventMessages[T];
@@ -95,7 +99,7 @@ declare class DisplayManager implements DisplayManagerInterface {
     get isAvailable(): boolean;
     get contextState(): DisplayContextState;
     setContextState(newState: PartialDisplayContextState, sendImmediately?: boolean): Promise<void>;
-    get displayStatus(): "awake" | "asleep";
+    get displayStatus(): "asleep" | "awake";
     get isDisplayAwake(): boolean;
     wake(): Promise<void>;
     sleep(): Promise<void>;
@@ -109,7 +113,7 @@ declare class DisplayManager implements DisplayManagerInterface {
         width: number;
         height: number;
     };
-    get type(): "none" | "generic" | "monocularLeft" | "monocularRight" | "binocular";
+    get type(): "generic" | "none" | "monocularLeft" | "monocularRight" | "binocular";
     get brightness(): "veryLow" | "low" | "medium" | "high" | "veryHigh";
     setBrightness(newDisplayBrightness: DisplayBrightness, sendImmediately?: boolean): Promise<void>;
     flushContextCommands(): Promise<void>;
@@ -151,11 +155,23 @@ declare class DisplayManager implements DisplayManagerInterface {
     selectBitmapColors(bitmapColorPairs: DisplayBitmapColorPair[], sendImmediately?: boolean): Promise<void>;
     setBitmapColor(bitmapColorIndex: number, color: DisplayColorRGB | string, sendImmediately?: boolean): Promise<void>;
     setBitmapColorOpacity(bitmapColorIndex: number, opacity: number, sendImmediately?: boolean): Promise<void>;
-    setBitmapScaleDirection(direction: DisplayBitmapScaleDirection, bitmapScale: number, sendImmediately?: boolean): Promise<void>;
+    setBitmapScaleDirection(direction: DisplayScaleDirection, bitmapScale: number, sendImmediately?: boolean): Promise<void>;
     setBitmapScaleX(bitmapScaleX: number, sendImmediately?: boolean): Promise<void>;
     setBitmapScaleY(bitmapScaleY: number, sendImmediately?: boolean): Promise<void>;
     setBitmapScale(bitmapScale: number, sendImmediately?: boolean): Promise<void>;
     resetBitmapScale(sendImmediately?: boolean): Promise<void>;
+    selectSpriteColor(spriteColorIndex: number, colorIndex: number, sendImmediately?: boolean): Promise<void>;
+    get spriteColorIndices(): number[];
+    get spriteColors(): string[];
+    selectSpriteColors(spriteColorPairs: DisplaySpriteColorPair[], sendImmediately?: boolean): Promise<void>;
+    setSpriteColor(spriteColorIndex: number, color: DisplayColorRGB | string, sendImmediately?: boolean): Promise<void>;
+    setSpriteColorOpacity(spriteColorIndex: number, opacity: number, sendImmediately?: boolean): Promise<void>;
+    resetSpriteColors(sendImmediately?: boolean): Promise<void>;
+    setSpriteScaleDirection(direction: DisplayScaleDirection, spriteScale: number, sendImmediately?: boolean): Promise<void>;
+    setSpriteScaleX(spriteScaleX: number, sendImmediately?: boolean): Promise<void>;
+    setSpriteScaleY(spriteScaleY: number, sendImmediately?: boolean): Promise<void>;
+    setSpriteScale(spriteScale: number, sendImmediately?: boolean): Promise<void>;
+    resetSpriteScale(sendImmediately?: boolean): Promise<void>;
     clearRect(x: number, y: number, width: number, height: number, sendImmediately?: boolean): Promise<void>;
     drawRect(centerX: number, centerY: number, width: number, height: number, sendImmediately?: boolean): Promise<void>;
     drawRoundRect(centerX: number, centerY: number, width: number, height: number, borderRadius: number, sendImmediately?: boolean): Promise<void>;
@@ -166,11 +182,11 @@ declare class DisplayManager implements DisplayManagerInterface {
     drawSegments(points: Vector2[], sendImmediately?: boolean): Promise<void>;
     drawArc(centerX: number, centerY: number, radius: number, startAngle: number, angleOffset: number, isRadians?: boolean, sendImmediately?: boolean): Promise<void>;
     drawArcEllipse(centerX: number, centerY: number, radiusX: number, radiusY: number, startAngle: number, angleOffset: number, isRadians?: boolean, sendImmediately?: boolean): Promise<void>;
+    drawSprite(centerX: number, centerY: number, spriteName: string, sendImmediately?: boolean): Promise<void>;
     drawBitmap(centerX: number, centerY: number, bitmap: DisplayBitmap, sendImmediately?: boolean): Promise<void>;
     imageToBitmap(image: HTMLImageElement, width: number, height: number, numberOfColors?: number): Promise<any>;
     quantizeImage(image: HTMLImageElement, width: number, height: number, numberOfColors: number): Promise<any>;
     selectSpriteSheet(index: number, sendImmediately?: boolean): void;
-    drawSprite(index: number, x: number, y: number, sendImmediately?: boolean): void;
     runContextCommandMessage(command: DisplayContextCommand, position?: Vector2, sendImmediately?: boolean): Promise<void>;
     get isReady(): boolean;
     parseMessage(messageType: DisplayMessageType, dataView: DataView): void;

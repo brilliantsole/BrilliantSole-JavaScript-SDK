@@ -117,7 +117,7 @@ export {
 } from "./utils/DisplayContextState.ts";
 
 export {
-  maxDisplayBitmapScale,
+  maxDisplayScale as maxDisplayBitmapScale,
   DisplayColorRGB,
 } from "./utils/DisplayUtils.ts";
 
@@ -127,6 +127,7 @@ export {
   DisplaySprite,
   DisplaySpriteSheet,
   DisplaySpriteSheetPalette,
+  DisplaySpritePaletteSwap,
 } from "./utils/DisplaySpriteSheetUtils.ts";
 
 /** BROWSER_START */
