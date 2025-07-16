@@ -446,9 +446,18 @@ const onNumberOfPaletteColorsUpdate = () => {
     spriteColorIndex < displayCanvasHelper.numberOfColors;
     spriteColorIndex++
   ) {
-    const enabled = selectedPalette
+    let enabled = selectedPalette
       ? spriteColorIndex < selectedPalette.numberOfColors
       : true;
+    if (selectedSpritePaletteSwap) {
+      console.log({
+        spriteColorIndex,
+        "selectedSpritePaletteSwap.numberOfColors":
+          selectedSpritePaletteSwap.numberOfColors,
+      });
+      enabled =
+        enabled && spriteColorIndex < selectedSpritePaletteSwap.numberOfColors;
+    }
     const spriteColorIndexContainer =
       spriteColorIndicesContainer.querySelectorAll(".spriteColorIndex")[
         spriteColorIndex
@@ -462,6 +471,7 @@ const onNumberOfPaletteColorsUpdate = () => {
       });
     spriteColorIndexContainer.style.display = enabled ? "" : "none";
   }
+  updateSpriteColorIndices();
 
   numberOfPaletteColorsSelect.disabled = selectedPalette == undefined;
   numberOfPaletteColorsSelect.value = selectedPalette?.numberOfColors ?? 2;
@@ -482,14 +492,16 @@ const onNumberOfPaletteColorsUpdate = () => {
     );
   }
 };
+updateSpriteColorIndices();
+
 const updateNumberOfPaletteColorsSelect = () => {
   numberOfPaletteColorsOptgroup.innerHTML = "";
   for (
-    let colorIndex = 2;
+    let colorIndex = 1;
     colorIndex < displayCanvasHelper.numberOfColors;
     colorIndex++
   ) {
-    numberOfPaletteColorsOptgroup.appendChild(new Option(colorIndex));
+    numberOfPaletteColorsOptgroup.appendChild(new Option(colorIndex + 1));
   }
 };
 updateNumberOfPaletteColorsSelect();
@@ -550,7 +562,14 @@ const setSpriteIndex = (spriteIndex) => {
     setSpriteWidth(selectedSprite.width);
   }
 
+  if (!selectedSprite) {
+    setSpritePaletteSwapIndex(-1);
+    updateSelectSpritePaletteSwapSelect();
+  }
+
   drawSpriteButton.disabled = !selectedSprite;
+
+  updateSelectSpritePaletteSwapSelect();
 
   drawSprite();
 };
@@ -628,7 +647,7 @@ const setSpriteHeight = (spriteHeight) => {
   drawSprite();
 };
 
-// PALETTE SWAP
+// SPRITE PALETTE SWAP
 
 let selectedSpritePaletteSwapIndex = -1;
 /** @type {BS.DisplaySpritePaletteSwap?} */
@@ -637,16 +656,21 @@ const addSpritePaletteSwap = () => {
   //console.log("addSpritePaletteSwap");
   selectedSprite.paletteSwaps.push({
     name: `myPaletteSwap ${Object.keys(selectedSprite.paletteSwaps).length}`,
+    numberOfColors: 0,
+    spriteColorIndices: [],
   });
   const spritePaletteSwapIndex = selectedSprite.paletteSwaps.length - 1;
   updateSelectSpritePaletteSwapSelect();
   setSpritePaletteSwapIndex(spritePaletteSwapIndex);
+  setNumberOfSpritePaletteSwapColors(
+    selectedPalette?.numberOfColors ?? displayCanvasHelper.numberOfColors
+  );
 };
 const setSpritePaletteSwapIndex = (spritePaletteSwapIndex) => {
   selectedSpritePaletteSwapIndex = spritePaletteSwapIndex;
   console.log({ selectedSpritePaletteSwapIndex });
   selectedSpritePaletteSwap =
-    selectedSprite.paletteSwaps[selectedSpritePaletteSwapIndex];
+    selectedSprite?.paletteSwaps?.[selectedSpritePaletteSwapIndex];
   console.log("selectedSpritePaletteSwap", selectedSpritePaletteSwap);
 
   spritePaletteSwapNameInput.value = selectedSpritePaletteSwap?.name ?? "";
@@ -654,6 +678,8 @@ const setSpritePaletteSwapIndex = (spritePaletteSwapIndex) => {
   selectSpritePaletteSwapSelect.value = selectedSpritePaletteSwapIndex;
 
   deleteSpritePaletteSwapButton.disabled = !selectedSpritePaletteSwap;
+
+  updateNumberOfSpritePaletteSwapColorsSelect();
 
   drawSprite();
 };
@@ -691,6 +717,98 @@ spritePaletteSwapNameInput.addEventListener("input", () => {
 });
 spritePaletteSwapNameInput.addEventListener("focusout", () => {
   updateSelectSpritePaletteSwapSelect();
+});
+
+/** @type {HTMLSelectElement} */
+const numberOfSpritePaletteSwapColorsSelect = document.getElementById(
+  "numberOfSpritePaletteSwapColors"
+);
+const numberOfSpritePaletteSwapColorsOptgroup =
+  numberOfSpritePaletteSwapColorsSelect.querySelector("optgroup");
+numberOfSpritePaletteSwapColorsSelect.addEventListener("input", () => {
+  const numberOfSpritePaletteSwapColors = Number(
+    numberOfSpritePaletteSwapColorsSelect.value
+  );
+  setNumberOfSpritePaletteSwapColors(numberOfSpritePaletteSwapColors);
+});
+const setNumberOfSpritePaletteSwapColors = (
+  numberOfSpritePaletteSwapColors
+) => {
+  console.log({ numberOfSpritePaletteSwapColors });
+
+  if (selectedSpritePaletteSwap) {
+    selectedSpritePaletteSwap.numberOfColors = numberOfSpritePaletteSwapColors;
+
+    selectedSpritePaletteSwap.spriteColorIndices.length =
+      numberOfSpritePaletteSwapColors;
+    for (
+      let spriteColorIndex = 0;
+      spriteColorIndex < numberOfSpritePaletteSwapColors;
+      spriteColorIndex++
+    ) {
+      const colorIndex =
+        selectedSpritePaletteSwap.spriteColorIndices[spriteColorIndex];
+      if (colorIndex == undefined) {
+        selectedSpritePaletteSwap.spriteColorIndices[spriteColorIndex] =
+          spriteColorIndex;
+      }
+    }
+  }
+
+  onNumberOfSpritePaletteSwapColorsUpdate();
+};
+const onNumberOfSpritePaletteSwapColorsUpdate = () => {
+  if (!selectedSpritePaletteSwap) {
+    return;
+  }
+
+  for (
+    let spriteColorIndex = 0;
+    spriteColorIndex < selectedSpritePaletteSwap.numberOfColors;
+    spriteColorIndex++
+  ) {
+    const enabled = selectedSpritePaletteSwap
+      ? spriteColorIndex < selectedSpritePaletteSwap.numberOfColors
+      : true;
+    const spriteColorIndexContainer =
+      spriteColorIndicesContainer.querySelectorAll(".spriteColorIndex")[
+        spriteColorIndex
+      ];
+    spriteColorIndexContainer
+      .querySelectorAll("option")
+      .forEach((option, colorIndex) => {
+        option.hidden = selectedSpritePaletteSwap
+          ? colorIndex >= selectedSpritePaletteSwap.numberOfColors
+          : false;
+      });
+    spriteColorIndexContainer.style.display = enabled ? "" : "none";
+  }
+
+  onNumberOfPaletteColorsUpdate(); // FIX
+  updateNumberOfSpritePaletteSwapColorsSelect();
+};
+const updateNumberOfSpritePaletteSwapColorsSelect = () => {
+  numberOfSpritePaletteSwapColorsOptgroup.innerHTML = "";
+  for (
+    let colorIndex = 1;
+    colorIndex < displayCanvasHelper.numberOfColors;
+    colorIndex++
+  ) {
+    numberOfSpritePaletteSwapColorsOptgroup.appendChild(
+      new Option(colorIndex + 1)
+    );
+  }
+
+  numberOfSpritePaletteSwapColorsSelect.disabled =
+    selectedSpritePaletteSwap == undefined;
+  numberOfSpritePaletteSwapColorsSelect.value =
+    selectedSpritePaletteSwap?.numberOfColors ??
+    selectedPalette?.numberOfColors ??
+    displayCanvasHelper.numberOfColors;
+};
+updateNumberOfSpritePaletteSwapColorsSelect();
+displayCanvasHelper.addEventListener("numberOfColors", () => {
+  updateNumberOfSpritePaletteSwapColorsSelect();
 });
 
 const deleteSpritePaletteSwapButton = document.getElementById(
