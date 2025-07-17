@@ -4,10 +4,7 @@ import {
   DisplaySpriteColorPair,
 } from "../DisplayManager.ts";
 import { createConsole } from "./Console.ts";
-import {
-  DisplayContextState,
-  DisplaySegmentCap,
-} from "./DisplayContextState.ts";
+import { DisplaySegmentCap } from "./DisplayContextState.ts";
 import { DisplaySpriteSheet } from "./DisplaySpriteSheetUtils.ts";
 import { DisplayColorRGB } from "./DisplayUtils.ts";
 import { Vector2 } from "./MathUtils.ts";
@@ -61,8 +58,6 @@ export const DisplayContextCommandTypes = [
   "selectSpriteColor",
   "selectSpriteColors",
   "reseSpriteColors",
-  "setSpriteScaleX",
-  "setSpriteScaleY",
   "setSpriteScale",
   "resetSpriteScale",
 
@@ -88,9 +83,60 @@ export const DisplayContextCommandTypes = [
 export type DisplayContextCommandType =
   (typeof DisplayContextCommandTypes)[number];
 
+export const DisplaySpriteContextCommandTypes = [
+  "selectFillColor",
+  "selectLineColor",
+  "setLineWidth",
+  "setRotation",
+  "clearRotation",
+
+  "setSegmentStartCap",
+  "setSegmentEndCap",
+  "setSegmentCap",
+
+  "setSegmentStartRadius",
+  "setSegmentEndRadius",
+  "setSegmentRadius",
+
+  "setCropTop",
+  "setCropRight",
+  "setCropBottom",
+  "setCropLeft",
+  "clearCrop",
+
+  "setRotationCropTop",
+  "setRotationCropRight",
+  "setRotationCropBottom",
+  "setRotationCropLeft",
+  "clearRotationCrop",
+
+  "selectBitmapColor",
+  "selectBitmapColors",
+  "setBitmapScaleX",
+  "setBitmapScaleY",
+  "setBitmapScale",
+  "resetBitmapScale",
+
+  "clearRect",
+
+  "drawRect",
+  "drawRoundRect",
+  "drawCircle",
+  "drawEllipse",
+  "drawPolygon",
+  "drawSegment",
+  "drawSegments",
+
+  "drawArc",
+  "drawArcEllipse",
+
+  "drawBitmap",
+] as const satisfies readonly DisplayContextCommandType[];
+export type DisplaySpriteContextCommandType =
+  (typeof DisplaySpriteContextCommandTypes)[number];
+
 interface BaseDisplayContextCommand {
-  type: DisplayContextCommandType;
-  contextState: DisplayContextState;
+  type: DisplayContextCommandType | "runDisplayContextCommands";
 }
 
 interface SimpleDisplayCommand extends BaseDisplayContextCommand {
@@ -239,14 +285,6 @@ interface SelectDisplaySpriteColorIndicesCommand
   spriteColorPairs: DisplaySpriteColorPair[];
 }
 
-interface SetDisplaySpriteScaleXCommand extends BaseDisplayContextCommand {
-  type: "setSpriteScaleX";
-  spriteScaleX: number;
-}
-interface SetDisplaySpriteScaleYCommand extends BaseDisplayContextCommand {
-  type: "setSpriteScaleY";
-  spriteScaleY: number;
-}
 interface SetDisplaySpriteScaleCommand extends BaseDisplayContextCommand {
   type: "setSpriteScale";
   spriteScale: number;
@@ -264,6 +302,11 @@ interface BaseCenterPositionDisplayContextCommand
 interface BaseSizeDisplayContextCommand extends BaseDisplayContextCommand {
   width: number;
   height: number;
+}
+
+interface BaseScaleDisplayContextCommand extends BaseDisplayContextCommand {
+  scaleX: number;
+  scaleY: number;
 }
 
 interface BaseDisplayRectCommand
@@ -380,8 +423,6 @@ export type DisplayContextCommand =
   | SetDisplayBitmapScaleCommand
   | SelectDisplaySpriteColorIndexCommand
   | SelectDisplaySpriteColorIndicesCommand
-  | SetDisplaySpriteScaleXCommand
-  | SetDisplaySpriteScaleYCommand
   | SetDisplaySpriteScaleCommand
   | ClearDisplayRectCommand
   | DrawDisplayRectCommand

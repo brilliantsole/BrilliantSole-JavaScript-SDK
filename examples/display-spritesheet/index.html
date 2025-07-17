@@ -14,6 +14,19 @@
       flex-direction: column;
       max-width: fit-content;
     }
+    #spritePreview {
+      display: flex;
+      flex-direction: row;
+      flex-wrap: wrap;
+    }
+    #spriteCommandEditor {
+      display: flex;
+      flex-direction: column;
+    }
+    .spriteCommand {
+      display: flex;
+      flex-direction: column;
+    }
   </style>
   <body>
     <nav>
@@ -142,12 +155,14 @@
       <button disabled id="deleteSprite">delete</button>
       <br />
       <label id="spriteWidth">
-        sprite width (<span>20</span>px)
+        sprite width
         <input disabled type="range" min="1" max="100" step="1" value="20" />
+        <span>20</span>px
       </label>
       <label id="spriteHeight">
-        sprite height (<span>20</span>px)
+        sprite height
         <input disabled type="range" min="1" max="100" step="1" value="20" />
+        <span>20</span>px
       </label>
     </div>
 
@@ -212,14 +227,6 @@
         <input type="range" min="0" max="360" step="1" value="0" />
       </label>
 
-      <label id="drawSpriteScaleX" class="verticalLabel">
-        <span>scale x (<span class="value">1</span>x)</span>
-        <input type="range" min="0.01" max="20" step="0.01" value="1.0" />
-      </label>
-      <label id="drawSpriteScaleY" class="verticalLabel">
-        <span>scale y (<span class="value">1</span>x)</span>
-        <input type="range" min="0.01" max="20" step="0.01" value="1.0" />
-      </label>
       <label id="drawSpriteScale" class="verticalLabel">
         <span>scale (<span class="value">1</span>x)</span>
         <input type="range" min="0.01" max="20" step="0.01" value="1.0" />
@@ -262,6 +269,38 @@
 
     <hr />
 
-    <canvas id="display" width="640" height="400"></canvas>
+    <div id="spritePreview">
+      <canvas id="display" width="640" height="400"></canvas>
+      <div id="spriteCommandEditor">
+        <div>
+          <button id="addSpriteCommand" disabled>add command</button>
+          <label>
+            type
+            <select id="spriteCommandType">
+              <optgroup label="command type"></optgroup>
+            </select>
+          </label>
+        </div>
+        <div id="spriteCommands"></div>
+        <template id="spriteCommandTemplate">
+          <div class="spriteCommand">
+            <span>
+              command #<span class="index"></span>: <span class="type"></span>
+            </span>
+
+            <label class="centerX" hidden>
+              <span>centerX</span>
+              <input type="range" min="-50" max="640" step="1" value="50" />
+              <span class="value">50</span>px
+            </label>
+            <label class="centerY" hidden>
+              <span>centerY</span>
+              <input type="range" min="-50" max="640" step="1" value="50" />
+              <span class="value">50</span>px
+            </label>
+          </div>
+        </template>
+      </div>
+    </div>
   </body>
 </html>

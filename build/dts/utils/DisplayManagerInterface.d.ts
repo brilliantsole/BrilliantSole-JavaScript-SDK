@@ -3,6 +3,15 @@ import { DisplayContextCommand } from "./DisplayContextCommand.ts";
 import { DisplayContextState, DisplaySegmentCap } from "./DisplayContextState.ts";
 import { DisplayScaleDirection, DisplayColorRGB, DisplayCropDirection } from "./DisplayUtils.ts";
 import { Vector2 } from "./MathUtils.ts";
+export type DisplayTransform = {
+    rotation: number;
+    scale: number;
+    centerX: number;
+    centerY: number;
+    width: number;
+    height: number;
+};
+export declare const defaultDisplayTransform: DisplayTransform;
 export interface DisplayManagerInterface {
     get isReady(): boolean;
     get contextState(): DisplayContextState;
@@ -59,9 +68,6 @@ export interface DisplayManagerInterface {
     resetSpriteColors(sendImmediately?: boolean): Promise<void>;
     setSpriteColor(spriteColorIndex: number, color: DisplayColorRGB | string, sendImmediately?: boolean): Promise<void>;
     setSpriteColorOpacity(spriteColorIndex: number, opacity: number, sendImmediately?: boolean): Promise<void>;
-    setSpriteScaleDirection(direction: DisplayScaleDirection, spriteScale: number, sendImmediately?: boolean): Promise<void>;
-    setSpriteScaleX(spriteScaleX: number, sendImmediately?: boolean): Promise<void>;
-    setSpriteScaleY(spriteScaleY: number, sendImmediately?: boolean): Promise<void>;
     setSpriteScale(spriteScale: number, sendImmediately?: boolean): Promise<void>;
     resetSpriteScale(sendImmediately?: boolean): Promise<void>;
     clearRect(x: number, y: number, width: number, height: number, sendImmediately?: boolean): Promise<void>;
@@ -76,6 +82,8 @@ export interface DisplayManagerInterface {
     drawArcEllipse(centerX: number, centerY: number, radiusX: number, radiusY: number, startAngle: number, angleOffset: number, isRadians?: boolean, sendImmediately?: boolean): Promise<void>;
     drawBitmap(centerX: number, centerY: number, bitmap: DisplayBitmap, sendImmediately?: boolean): Promise<void>;
     drawSprite(centerX: number, centerY: number, spriteName: string, sendImmediately?: boolean): Promise<void>;
-    runContextCommandMessage(commandMessage: DisplayContextCommand, position?: Vector2, sendImmediately?: boolean): Promise<void>;
+    runContextCommand(command: DisplayContextCommand, sendImmediately?: boolean): Promise<void>;
+    runContextCommands(commands: DisplayContextCommand[], sendImmediately?: boolean): Promise<void>;
 }
-export declare function runDisplayContextCommand(displayManager: DisplayManagerInterface, command: DisplayContextCommand, position?: Vector2, sendImmediately?: boolean): Promise<void>;
+export declare function runDisplayContextCommand(displayManager: DisplayManagerInterface, command: DisplayContextCommand, sendImmediately?: boolean): Promise<void>;
+export declare function runDisplayContextCommands(displayManager: DisplayManagerInterface, commands: DisplayContextCommand[], sendImmediately?: boolean): Promise<void>;

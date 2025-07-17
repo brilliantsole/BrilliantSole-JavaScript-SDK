@@ -20,7 +20,9 @@ import {
 import DisplayContextStateHelper from "./DisplayContextStateHelper.ts";
 import {
   DisplayManagerInterface,
+  DisplayTransform,
   runDisplayContextCommand,
+  runDisplayContextCommands,
 } from "./DisplayManagerInterface.ts";
 import {
   assertValidColor,
@@ -35,7 +37,6 @@ import {
   DisplayCropDirectionToStateKey,
   DisplayRotationCropDirectionToCommand,
   DisplayRotationCropDirectionToStateKey,
-  formatRotation,
   maxDisplayScale,
   roundScale,
 } from "./DisplayUtils.ts";
@@ -238,9 +239,14 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
       return;
     }
     this.#context.imageSmoothingEnabled = false;
+
+    this.#save();
+    this.#context.resetTransform();
     this.#context.clearRect(0, 0, this.width, this.height);
+    this.#restore();
 
     this.#drawBackground();
+
     this.#frontDrawStack.forEach((callback) => callback());
     if (this.#applyTransparency) {
       this.#applyTransparencyToCanvas();
@@ -280,9 +286,11 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
   }
 
   #drawBackground() {
+    _console.log("drawBackground");
     this.#save();
-    this.context.fillStyle = this.#colorIndexToRgbString(0);
-    this.context.fillRect(0, 0, this.width, this.height);
+    this.#context.resetTransform();
+    this.#context.fillStyle = this.#colorIndexToRgbString(0);
+    this.#context.fillRect(0, 0, this.width, this.height);
     this.#restore();
   }
   #applyTransparency = false;
@@ -502,8 +510,10 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     this.#rearDrawStack.length = 0;
 
     this.#isReady = false;
-
+    this.#save();
+    this.#context.resetTransform();
     this.#context.clearRect(0, 0, this.width, this.height);
+    this.#restore();
     this.#drawBackground();
 
     if (this.device?.isConnected) {
@@ -1145,57 +1155,24 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     this.#onContextStateUpdate(differences);
   }
 
-  async setSpriteScaleDirection(
-    direction: DisplayScaleDirection,
-    spriteScale: number,
-    sendImmediately?: boolean
-  ) {
+  async setSpriteScale(spriteScale: number, sendImmediately?: boolean) {
     spriteScale = clamp(spriteScale, displayScaleStep, maxDisplayScale);
     spriteScale = roundScale(spriteScale);
-    const newState: PartialDisplayContextState = {};
-    switch (direction) {
-      case "all":
-        newState.spriteScaleX = spriteScale;
-        newState.spriteScaleY = spriteScale;
-        break;
-      case "x":
-        newState.spriteScaleX = spriteScale;
-        break;
-      case "y":
-        newState.spriteScaleY = spriteScale;
-        break;
-    }
-    const differences = this.#contextStateHelper.update(newState);
+    const differences = this.#contextStateHelper.update({ spriteScale });
     if (differences.length == 0) {
       return;
     }
 
     if (this.device?.isConnected) {
-      await this.device.setDisplaySpriteScaleDirection(
-        direction,
-        spriteScale,
-        sendImmediately
-      );
+      await this.device.setDisplaySpriteScale(spriteScale, sendImmediately);
     }
 
     this.#onContextStateUpdate(differences);
   }
 
-  async setSpriteScaleX(spriteScaleX: number, sendImmediately?: boolean) {
-    return this.setSpriteScaleDirection("x", spriteScaleX, sendImmediately);
-  }
-  async setSpriteScaleY(spriteScaleY: number, sendImmediately?: boolean) {
-    return this.setSpriteScaleDirection("y", spriteScaleY, sendImmediately);
-  }
-  async setSpriteScale(spriteScale: number, sendImmediately?: boolean) {
-    return this.setSpriteScaleDirection("all", spriteScale, sendImmediately);
-  }
   async resetSpriteScale(sendImmediately?: boolean) {
-    //return this.setSpriteScaleDirection("all", 1, sendImmediately);
-
     const differences = this.#contextStateHelper.update({
-      spriteScaleX: 1,
-      spriteScaleY: 1,
+      spriteScale: 1,
     });
     if (differences.length == 0) {
       return;
@@ -1210,7 +1187,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
 
   #clearRectToCanvas(x: number, y: number, width: number, height: number) {
     this.#save();
-    this.context.resetTransform();
+    //this.context.resetTransform();
     this.context.fillStyle = this.#colorIndexToRgbString(0);
     this.context.fillRect(x, y, width, height);
     this.#restore();
@@ -1284,6 +1261,20 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
   #clearBoundingBoxOnDraw = true;
   #clearBoundingBox({ x, y, width, height }: DisplayBoundingBox) {
     this.#clearRectToCanvas(x, y, width, height);
+  }
+  #getBoundingBox(
+    centerX: number,
+    centerY: number,
+    width: number,
+    height: number
+  ): DisplayBoundingBox {
+    const boundingBox = {
+      x: centerX - width / 2,
+      y: centerY - height / 2,
+      width: width,
+      height: height,
+    };
+    return boundingBox;
   }
   #getRectBoundingBox(
     centerX: number,
@@ -1869,6 +1860,8 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     endY: number,
     contextState: DisplayContextState
   ) {
+    this.#save();
+
     const vector: Vector2 = {
       x: endX - startX,
       y: endY - startY,
@@ -1893,7 +1886,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
       contextState
     );
     this.#applyRotationClip(box, contextState);
-    this.context.resetTransform();
+    this.#restore();
   }
   #drawSegmentToCanvas(
     startX: number,
@@ -2352,7 +2345,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
       rawBitmapImageData[imageDataOffset + 3] = Math.floor(opacity * 255);
     });
 
-    // console.log("rawBitmapImageData", rawBitmapImageData);
+    // _console.log("rawBitmapImageData", rawBitmapImageData);
 
     this.#bitmapContext.putImageData(bitmapImageData, 0, 0);
     this.#context.drawImage(this.#bitmapCanvas, x, y, width, height);
@@ -2444,12 +2437,85 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     await this.device?.setDisplayBrightness(this.brightness, sendImmediately);
   }
 
-  async runContextCommandMessage(
+  async runContextCommand(
     command: DisplayContextCommand,
-    position?: Vector2,
     sendImmediately?: boolean
   ) {
-    return runDisplayContextCommand(this, command, position, sendImmediately);
+    return runDisplayContextCommand(this, command, sendImmediately);
+  }
+  async runContextCommands(
+    commands: DisplayContextCommand[],
+    sendImmediately?: boolean
+  ) {
+    return runDisplayContextCommands(this, commands, sendImmediately);
+  }
+
+  setContextTransform(
+    centerX: number,
+    centerY: number,
+    width: number,
+    height: number,
+    scale: number,
+    crop: Record<DisplayCropDirection, number>,
+    rotationCrop: Record<DisplayCropDirection, number>,
+    rotation: number,
+    isRadians?: number
+  ) {
+    rotation = isRadians ? rotation : degToRad(rotation);
+
+    this.#rearDrawStack.push(() => {
+      _console.log("setContextTransform", {
+        centerX,
+        centerY,
+        width,
+        height,
+        scale,
+        rotation,
+        isRadians,
+      });
+
+      this.#save();
+      this.#context.resetTransform();
+
+      this.#context.translate(centerX, centerY);
+      const box = this.#getBoundingBox(0, 0, width * scale, height * scale);
+      const rotatedBox = this.#rotateBoundingBox(box, rotation);
+      //_console.log("rotatedBox", rotatedBox);
+      // @ts-expect-error
+      this.#applyClip(rotatedBox, {
+        cropBottom: crop.bottom,
+        cropTop: crop.top,
+        cropLeft: crop.left,
+        cropRight: crop.right,
+      });
+      this.#context.scale(scale, scale);
+      this.#context.rotate(rotation);
+      // this.#context.beginPath();
+      // this.#context.rect(
+      //   -width / 2 + crop.left,
+      //   -height / 2 + crop.top,
+      //   width - crop.left - crop.right,
+      //   height - crop.top - crop.bottom
+      // );
+      // this.#context.clip();
+
+      // Now define the clip in transformed space
+      this.#context.beginPath();
+      this.#context.rect(
+        -width / 2 + rotationCrop.left / scale,
+        -height / 2 + rotationCrop.top / scale,
+        width - rotationCrop.left / scale - rotationCrop.right / scale,
+        height - rotationCrop.top / scale - rotationCrop.bottom / scale
+      );
+      this.#context.clip();
+    });
+  }
+
+  resetContextTransform() {
+    this.#rearDrawStack.push(() => {
+      _console.log("reset transform");
+      this.#context.restore();
+    });
   }
 
   #reset() {

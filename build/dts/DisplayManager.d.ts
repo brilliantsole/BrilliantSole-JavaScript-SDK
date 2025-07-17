@@ -167,9 +167,6 @@ declare class DisplayManager implements DisplayManagerInterface {
     setSpriteColor(spriteColorIndex: number, color: DisplayColorRGB | string, sendImmediately?: boolean): Promise<void>;
     setSpriteColorOpacity(spriteColorIndex: number, opacity: number, sendImmediately?: boolean): Promise<void>;
     resetSpriteColors(sendImmediately?: boolean): Promise<void>;
-    setSpriteScaleDirection(direction: DisplayScaleDirection, spriteScale: number, sendImmediately?: boolean): Promise<void>;
-    setSpriteScaleX(spriteScaleX: number, sendImmediately?: boolean): Promise<void>;
-    setSpriteScaleY(spriteScaleY: number, sendImmediately?: boolean): Promise<void>;
     setSpriteScale(spriteScale: number, sendImmediately?: boolean): Promise<void>;
     resetSpriteScale(sendImmediately?: boolean): Promise<void>;
     clearRect(x: number, y: number, width: number, height: number, sendImmediately?: boolean): Promise<void>;
@@ -187,7 +184,8 @@ declare class DisplayManager implements DisplayManagerInterface {
     imageToBitmap(image: HTMLImageElement, width: number, height: number, numberOfColors?: number): Promise<any>;
     quantizeImage(image: HTMLImageElement, width: number, height: number, numberOfColors: number): Promise<any>;
     selectSpriteSheet(index: number, sendImmediately?: boolean): void;
-    runContextCommandMessage(command: DisplayContextCommand, position?: Vector2, sendImmediately?: boolean): Promise<void>;
+    runContextCommand(command: DisplayContextCommand, sendImmediately?: boolean): Promise<void>;
+    runContextCommands(commands: DisplayContextCommand[], sendImmediately?: boolean): Promise<void>;
     get isReady(): boolean;
     parseMessage(messageType: DisplayMessageType, dataView: DataView): void;
     reset(): void;

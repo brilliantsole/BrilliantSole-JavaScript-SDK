@@ -533,7 +533,7 @@ const addSprite = () => {
     name: `mySprite ${Object.keys(spriteSheet.sprites).length}`,
     width: 40,
     height: 40,
-    displayCommandMessages: [],
+    commands: [],
     paletteSwaps: [],
   });
   const spriteIndex = spriteSheet.sprites.length - 1;
@@ -554,6 +554,9 @@ const setSpriteIndex = (spriteIndex) => {
 
   selectSpritePaletteSwapSelect.disabled = !selectedSprite;
   addSpritePaletteSwapButton.disabled = !selectedSprite;
+
+  addSpriteCommandButton.disabled = !selectedSprite;
+  updateSpriteCommands();
 
   spriteWidthInput.disabled = !selectedSprite;
   spriteHeightInput.disabled = !selectedSprite;
@@ -846,8 +849,7 @@ let drawSprite = () => {
       x,
       y,
       rotation,
-      scaleX,
-      scaleY,
+      scale,
       cropTop,
       cropRight,
       cropBottom,
@@ -858,21 +860,25 @@ let drawSprite = () => {
       rotationCropLeft,
     } = drawSpriteParams;
 
-    displayCanvasHelper.setRotation(rotation, false);
+    displayCanvasHelper.setContextTransform(
+      x,
+      y,
+      selectedSprite.width,
+      selectedSprite.height,
+      scale,
+      { top: cropTop, right: cropRight, bottom: cropBottom, left: cropLeft },
+      {
+        top: rotationCropTop,
+        right: rotationCropRight,
+        bottom: rotationCropBottom,
+        left: rotationCropLeft,
+      },
+      rotation,
+      false
+    );
+    displayCanvasHelper.runContextCommands(selectedSprite.commands);
+    displayCanvasHelper.resetContextTransform();
 
-    displayCanvasHelper.setCropTop(cropTop);
-    displayCanvasHelper.setCropRight(cropRight);
-    displayCanvasHelper.setCropBottom(cropBottom);
-    displayCanvasHelper.setCropLeft(cropLeft);
-
-    displayCanvasHelper.setRotationCropTop(rotationCropTop);
-    displayCanvasHelper.setRotationCropRight(rotationCropRight);
-    displayCanvasHelper.setRotationCropBottom(rotationCropBottom);
-    displayCanvasHelper.setRotationCropLeft(rotationCropLeft);
-
-    displayCanvasHelper.setSpriteScaleX(scaleX);
-    displayCanvasHelper.setSpriteScaleY(scaleY);
-    displayCanvasHelper.drawSprite(x, y, selectedSprite, selectedPalette);
     displayCanvasHelper.show();
   } else {
     displayCanvasHelper.clear();
@@ -891,8 +897,7 @@ const drawSpriteParams = {
 
   rotation: 0,
 
-  scaleX: 1,
-  scaleY: 1,
+  scale: 1,
 
   cropTop: 0,
   cropRight: 0,
@@ -912,6 +917,7 @@ const setSpriteDrawX = (drawSpriteX) => {
   drawSpriteXInput.value = drawSpriteX;
   drawSpriteXSpan.innerText = drawSpriteX;
   drawSpriteParams.x = drawSpriteX;
+  drawSprite();
 };
 drawSpriteXInput.addEventListener("input", () => {
   setSpriteDrawX(Number(drawSpriteXInput.value));
@@ -924,6 +930,7 @@ const setSpriteDrawY = (drawSpriteY) => {
   drawSpriteYInput.value = drawSpriteY;
   drawSpriteYSpan.innerText = drawSpriteY;
   drawSpriteParams.y = drawSpriteY;
+  drawSprite();
 };
 drawSpriteYInput.addEventListener("input", () => {
   setSpriteDrawY(Number(drawSpriteYInput.value));
@@ -939,33 +946,10 @@ const setSpriteDrawRotation = (drawSpriteRotation) => {
   drawSpriteRotationInput.value = drawSpriteRotation;
   drawSpriteRotationSpan.innerText = drawSpriteRotation;
   drawSpriteParams.rotation = drawSpriteRotation;
+  drawSprite();
 };
 drawSpriteRotationInput.addEventListener("input", () => {
   setSpriteDrawRotation(Number(drawSpriteRotationInput.value));
-});
-
-const drawSpriteScaleXContainer = document.getElementById("drawSpriteScaleX");
-const drawSpriteScaleXInput = drawSpriteScaleXContainer.querySelector("input");
-const drawSpriteScaleXSpan = drawSpriteScaleXContainer.querySelector(".value");
-const setSpriteDrawScaleX = (drawSpriteScaleX) => {
-  drawSpriteScaleXInput.value = drawSpriteScaleX;
-  drawSpriteScaleXSpan.innerText = drawSpriteScaleX;
-  drawSpriteParams.scaleX = drawSpriteScaleX;
-};
-drawSpriteScaleXInput.addEventListener("input", () => {
-  setSpriteDrawScaleX(Number(drawSpriteScaleXInput.value));
-});
-
-const drawSpriteScaleYContainer = document.getElementById("drawSpriteScaleY");
-const drawSpriteScaleYInput = drawSpriteScaleYContainer.querySelector("input");
-const drawSpriteScaleYSpan = drawSpriteScaleYContainer.querySelector(".value");
-const setSpriteDrawScaleY = (drawSpriteScaleY) => {
-  drawSpriteScaleYInput.value = drawSpriteScaleY;
-  drawSpriteScaleYSpan.innerText = drawSpriteScaleY;
-  drawSpriteParams.scaleY = drawSpriteScaleY;
-};
-drawSpriteScaleYInput.addEventListener("input", () => {
-  setSpriteDrawScaleY(Number(drawSpriteScaleYInput.value));
 });
 
 const drawSpriteScaleContainer = document.getElementById("drawSpriteScale");
@@ -974,8 +958,8 @@ const drawSpriteScaleSpan = drawSpriteScaleContainer.querySelector(".value");
 const setSpriteDrawScale = (drawSpriteScale) => {
   drawSpriteScaleInput.value = drawSpriteScale;
   drawSpriteScaleSpan.innerText = drawSpriteScale;
-  setSpriteDrawScaleX(drawSpriteScale);
-  setSpriteDrawScaleY(drawSpriteScale);
+  drawSpriteParams.scale = drawSpriteScale;
+  drawSprite();
 };
 drawSpriteScaleInput.addEventListener("input", () => {
   setSpriteDrawScale(Number(drawSpriteScaleInput.value));
@@ -990,6 +974,7 @@ const setSpriteDrawCropTop = (drawSpriteCropTop) => {
   drawSpriteCropTopInput.value = drawSpriteCropTop;
   drawSpriteCropTopSpan.innerText = drawSpriteCropTop;
   drawSpriteParams.cropTop = drawSpriteCropTop;
+  drawSprite();
 };
 drawSpriteCropTopInput.addEventListener("input", () => {
   setSpriteDrawCropTop(Number(drawSpriteCropTopInput.value));
@@ -1006,6 +991,7 @@ const setSpriteDrawCropRight = (drawSpriteCropRight) => {
   drawSpriteCropRightInput.value = drawSpriteCropRight;
   drawSpriteCropRightSpan.innerText = drawSpriteCropRight;
   drawSpriteParams.cropRight = drawSpriteCropRight;
+  drawSprite();
 };
 drawSpriteCropRightInput.addEventListener("input", () => {
   setSpriteDrawCropRight(Number(drawSpriteCropRightInput.value));
@@ -1022,6 +1008,7 @@ const setSpriteDrawCropBottom = (drawSpriteCropBottom) => {
   drawSpriteCropBottomInput.value = drawSpriteCropBottom;
   drawSpriteCropBottomSpan.innerText = drawSpriteCropBottom;
   drawSpriteParams.cropBottom = drawSpriteCropBottom;
+  drawSprite();
 };
 drawSpriteCropBottomInput.addEventListener("input", () => {
   setSpriteDrawCropBottom(Number(drawSpriteCropBottomInput.value));
@@ -1037,6 +1024,7 @@ const setSpriteDrawCropLeft = (drawSpriteCropLeft) => {
   drawSpriteCropLeftInput.value = drawSpriteCropLeft;
   drawSpriteCropLeftSpan.innerText = drawSpriteCropLeft;
   drawSpriteParams.cropLeft = drawSpriteCropLeft;
+  drawSprite();
 };
 drawSpriteCropLeftInput.addEventListener("input", () => {
   setSpriteDrawCropLeft(Number(drawSpriteCropLeftInput.value));
@@ -1053,6 +1041,7 @@ const setSpriteDrawRotationCropTop = (drawSpriteRotationCropTop) => {
   drawSpriteRotationCropTopInput.value = drawSpriteRotationCropTop;
   drawSpriteRotationCropTopSpan.innerText = drawSpriteRotationCropTop;
   drawSpriteParams.rotationCropTop = drawSpriteRotationCropTop;
+  drawSprite();
 };
 drawSpriteRotationCropTopInput.addEventListener("input", () => {
   setSpriteDrawRotationCropTop(Number(drawSpriteRotationCropTopInput.value));
@@ -1069,6 +1058,7 @@ const setSpriteDrawRotationCropRight = (drawSpriteRotationCropRight) => {
   drawSpriteRotationCropRightInput.value = drawSpriteRotationCropRight;
   drawSpriteRotationCropRightSpan.innerText = drawSpriteRotationCropRight;
   drawSpriteParams.rotationCropRight = drawSpriteRotationCropRight;
+  drawSprite();
 };
 drawSpriteRotationCropRightInput.addEventListener("input", () => {
   setSpriteDrawRotationCropRight(
@@ -1087,6 +1077,7 @@ const setSpriteDrawRotationCropBottom = (drawSpriteRotationCropBottom) => {
   drawSpriteRotationCropBottomInput.value = drawSpriteRotationCropBottom;
   drawSpriteRotationCropBottomSpan.innerText = drawSpriteRotationCropBottom;
   drawSpriteParams.rotationCropBottom = drawSpriteRotationCropBottom;
+  drawSprite();
 };
 drawSpriteRotationCropBottomInput.addEventListener("input", () => {
   setSpriteDrawRotationCropBottom(
@@ -1105,6 +1096,7 @@ const setSpriteDrawRotationCropLeft = (drawSpriteRotationCropLeft) => {
   drawSpriteRotationCropLeftInput.value = drawSpriteRotationCropLeft;
   drawSpriteRotationCropLeftSpan.innerText = drawSpriteRotationCropLeft;
   drawSpriteParams.rotationCropLeft = drawSpriteRotationCropLeft;
+  drawSprite();
 };
 drawSpriteRotationCropLeftInput.addEventListener("input", () => {
   setSpriteDrawRotationCropLeft(Number(drawSpriteRotationCropLeftInput.value));
@@ -1207,3 +1199,108 @@ window.addEventListener("beforeunload", () => {
     saveToLocalStorage();
   }
 });
+
+// SPRITE COMMANDS
+const addSpriteCommandButton = document.getElementById("addSpriteCommand");
+addSpriteCommandButton.addEventListener("click", () => {
+  addSpriteCommand();
+});
+const addSpriteCommand = () => {
+  console.log("addSpriteCommand");
+  if (selectedSprite) {
+    switch (spriteCommandType) {
+      case "drawRect":
+        selectedSprite.commands.push({
+          type: "drawRect",
+          centerX: 0,
+          centerY: 0,
+          width: 100,
+          height: 50,
+        });
+        break;
+      case "drawCircle":
+        selectedSprite.commands.push({
+          type: "drawCircle",
+          centerX: 0,
+          centerY: 0,
+          radius: 50,
+        });
+        break;
+      case "drawEllipse":
+        selectedSprite.commands.push({
+          type: "drawEllipse",
+          centerX: 0,
+          centerY: 0,
+          radiusX: 100,
+          radiusY: 50,
+        });
+        break;
+    }
+  }
+  updateSpriteCommands();
+  drawSprite();
+};
+const spriteCommandsContainer = document.getElementById("spriteCommands");
+/** @type {HTMLTemplateElement} */
+const spriteCommandTemplate = document.getElementById("spriteCommandTemplate");
+const updateSpriteCommands = () => {
+  spriteCommandsContainer.innerHTML = "";
+  if (selectedSprite) {
+    selectedSprite?.commands.forEach((command, index) => {
+      console.log(command);
+      const spriteCommandContainer = spriteCommandTemplate.content
+        .cloneNode(true)
+        .querySelector(".spriteCommand");
+      spriteCommandContainer.querySelector(".index").innerText = index;
+      spriteCommandContainer.querySelector(".type").innerText = command.type;
+
+      let includePosition = "centerX" in command;
+      if (includePosition) {
+        const centerXContainer =
+          spriteCommandContainer.querySelector(".centerX");
+        centerXContainer.removeAttribute("hidden");
+        const centerXInput = centerXContainer.querySelector("input");
+        centerXInput.value = command.centerX;
+        const centerXSpan = centerXContainer.querySelector(".value");
+        centerXSpan.innerText = command.centerX;
+        centerXContainer.addEventListener("input", () => {
+          command.centerX = Number(centerXInput.value);
+          centerXSpan.innerText = command.centerX;
+          drawSprite();
+        });
+
+        const centerYContainer =
+          spriteCommandContainer.querySelector(".centerY");
+        const centerYInput = centerYContainer.querySelector("input");
+        centerYInput.value = command.centerY;
+        const centerYSpan = centerYContainer.querySelector(".value");
+        centerYSpan.innerText = command.centerY;
+        centerYContainer.removeAttribute("hidden");
+        centerYContainer.addEventListener("input", () => {
+          command.centerY = Number(centerYInput.value);
+          centerYSpan.innerText = command.centerY;
+          drawSprite();
+        });
+      }
+
+      // FILL - position, scale, etc
+
+      spriteCommandsContainer.appendChild(spriteCommandContainer);
+    });
+  }
+};
+
+/** @type {HTMLSelectElement} */
+const spriteCommandTypeSelect = document.getElementById("spriteCommandType");
+const spriteCommandTypeOptgroup =
+  spriteCommandTypeSelect.querySelector("optgroup");
+BS.DisplaySpriteContextCommandTypes.forEach((command) => {
+  spriteCommandTypeOptgroup.appendChild(new Option(command));
+});
+/** @type {BS.DisplaySpriteContextCommandType} */
+let spriteCommandType = spriteCommandTypeSelect.value;
+spriteCommandTypeSelect.addEventListener("input", () => {
+  spriteCommandType = spriteCommandTypeSelect.value;
+  console.log({ spriteCommandType });
+});
+// console.log({ spriteCommandType });

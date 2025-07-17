@@ -121,7 +121,13 @@ export {
   DisplayColorRGB,
 } from "./utils/DisplayUtils.ts";
 
-export {} from "./utils/DisplayContextCommand.ts";
+export {
+  DisplayContextCommand,
+  DisplayContextCommandType,
+  DisplayContextCommandTypes,
+  DisplaySpriteContextCommandType,
+  DisplaySpriteContextCommandTypes,
+} from "./utils/DisplayContextCommand.ts";
 
 export {
   DisplaySprite,

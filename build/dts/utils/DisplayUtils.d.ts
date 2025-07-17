@@ -25,7 +25,6 @@ export declare function numberOfColorsToPixelDepth(numberOfColors: number): "1" 
 export declare const DisplayScaleDirections: readonly ["x", "y", "all"];
 export type DisplayScaleDirection = (typeof DisplayScaleDirections)[number];
 export declare const DisplayBitmapScaleDirectionToCommand: Record<DisplayScaleDirection, DisplayContextCommandType>;
-export declare const DisplaySpriteScaleDirectionToCommand: Record<DisplayScaleDirection, DisplayContextCommandType>;
 export type DisplayColorRGB = {
     r: number;
     g: number;

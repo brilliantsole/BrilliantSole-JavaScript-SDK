@@ -39,7 +39,6 @@ import {
   pixelDepthToPixelBitWidth,
   pixelDepthToPixelsPerByte,
   roundScale,
-  DisplaySpriteScaleDirectionToCommand,
 } from "./utils/DisplayUtils.ts";
 import { DisplaySegmentCaps, DisplaySpriteSheet } from "./BS.ts";
 import {
@@ -62,6 +61,7 @@ import {
 import {
   DisplayManagerInterface,
   runDisplayContextCommand,
+  runDisplayContextCommands,
 } from "./utils/DisplayManagerInterface.ts";
 
 const _console = createConsole("DisplayManager", { log: true });
@@ -338,11 +338,8 @@ class DisplayManager implements DisplayManagerInterface {
           );
           this.selectSpriteColors(spriteColors);
           break;
-        case "spriteScaleX":
-          this.setSpriteScaleY(newState.spriteScaleX!);
-          break;
-        case "spriteScaleY":
-          this.setSpriteScaleY(newState.spriteScaleY!);
+        case "spriteScale":
+          this.setSpriteScale(newState.spriteScale!);
           break;
       }
     });
@@ -1341,57 +1338,28 @@ class DisplayManager implements DisplayManagerInterface {
     this.#onContextStateUpdate(differences);
   }
 
-  async setSpriteScaleDirection(
-    direction: DisplayScaleDirection,
-    spriteScale: number,
-    sendImmediately?: boolean
-  ) {
+  async setSpriteScale(spriteScale: number, sendImmediately?: boolean) {
     spriteScale = clamp(spriteScale, displayScaleStep, maxDisplayScale);
     spriteScale = roundScale(spriteScale);
-    const command = DisplaySpriteScaleDirectionToCommand[direction];
-    _console.log({ command: spriteScale });
-    const newState: PartialDisplayContextState = {};
-    switch (direction) {
-      case "all":
-        newState.spriteScaleX = spriteScale;
-        newState.spriteScaleY = spriteScale;
-        break;
-      case "x":
-        newState.spriteScaleX = spriteScale;
-        break;
-      case "y":
-        newState.spriteScaleY = spriteScale;
-        break;
-    }
-    const differences = this.#contextStateHelper.update(newState);
+    const differences = this.#contextStateHelper.update({
+      spriteScale,
+    });
     if (differences.length == 0) {
       return;
     }
     const dataView = new DataView(new ArrayBuffer(2));
     dataView.setUint16(0, formatScale(spriteScale), true);
     await this.#sendDisplayContextCommand(
-      command,
+      "setSpriteScale",
       dataView.buffer,
       sendImmediately
     );
 
     this.#onContextStateUpdate(differences);
   }
-  async setSpriteScaleX(spriteScaleX: number, sendImmediately?: boolean) {
-    return this.setSpriteScaleDirection("x", spriteScaleX, sendImmediately);
-  }
-  async setSpriteScaleY(spriteScaleY: number, sendImmediately?: boolean) {
-    return this.setSpriteScaleDirection("y", spriteScaleY, sendImmediately);
-  }
-  async setSpriteScale(spriteScale: number, sendImmediately?: boolean) {
-    return this.setSpriteScaleDirection("all", spriteScale, sendImmediately);
-  }
   async resetSpriteScale(sendImmediately?: boolean) {
-    //return this.setSpriteScaleDirection("all", 1, sendImmediately);
-
     const differences = this.#contextStateHelper.update({
-      spriteScaleX: 1,
-      spriteScaleY: 1,
+      spriteScale: 1,
     });
     if (differences.length == 0) {
       return;
@@ -1618,7 +1586,7 @@ class DisplayManager implements DisplayManagerInterface {
     angleOffset /= twoPi;
     angleOffset *= (angleOffset > 0 ? Int16Max - 1 : -Int16Min) - 1;
 
-    console.log({ angleOffset });
+    _console.log({ angleOffset });
 
     const dataView = new DataView(new ArrayBuffer(2 * 5));
     dataView.setInt16(0, centerX, true);
@@ -1779,12 +1747,17 @@ class DisplayManager implements DisplayManagerInterface {
     // FILL
   }
 
-  async runContextCommandMessage(
+  async runContextCommand(
     command: DisplayContextCommand,
-    position?: Vector2,
     sendImmediately?: boolean
   ) {
-    return runDisplayContextCommand(this, command, position, sendImmediately);
+    return runDisplayContextCommand(this, command, sendImmediately);
+  }
+  async runContextCommands(
+    commands: DisplayContextCommand[],
+    sendImmediately?: boolean
+  ) {
+    return runDisplayContextCommands(this, commands, sendImmediately);
   }
 
   #isReady = true;

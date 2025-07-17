@@ -72,7 +72,7 @@ declare class Device {
     static set ReconnectOnDisconnection(newReconnectOnDisconnection: boolean);
     get reconnectOnDisconnection(): boolean;
     set reconnectOnDisconnection(newReconnectOnDisconnection: boolean);
-    get connectionType(): "webBluetooth" | "noble" | "client" | "webSocket" | "udp" | undefined;
+    get connectionType(): "noble" | "webSocket" | "udp" | "webBluetooth" | "client" | undefined;
     disconnect(): Promise<void>;
     toggleConnection(): void;
     get connectionStatus(): ConnectionStatus;
@@ -266,9 +266,6 @@ declare class Device {
     get setDisplaySpriteColor(): (spriteColorIndex: number, color: import("./BS.ts").DisplayColorRGB | string, sendImmediately?: boolean) => Promise<void>;
     get setDisplaySpriteColorOpacity(): (spriteColorIndex: number, opacity: number, sendImmediately?: boolean) => Promise<void>;
     get resetDisplaySpriteColors(): (sendImmediately?: boolean) => Promise<void>;
-    get setDisplaySpriteScaleDirection(): (direction: import("./utils/DisplayUtils.ts").DisplayScaleDirection, spriteScale: number, sendImmediately?: boolean) => Promise<void>;
-    get setDisplaySpriteScaleX(): (spriteScaleX: number, sendImmediately?: boolean) => Promise<void>;
-    get setDisplaySpriteScaleY(): (spriteScaleY: number, sendImmediately?: boolean) => Promise<void>;
     get setDisplaySpriteScale(): (spriteScale: number, sendImmediately?: boolean) => Promise<void>;
     get resetDisplaySpriteScale(): (sendImmediately?: boolean) => Promise<void>;
     get drawDisplaySprite(): (centerX: number, centerY: number, spriteName: string, sendImmediately?: boolean) => Promise<void>;

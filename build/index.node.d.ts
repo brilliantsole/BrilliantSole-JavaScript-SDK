@@ -172,8 +172,7 @@ type DisplayContextState = {
     bitmapScaleX: number;
     bitmapScaleY: number;
     spriteColorIndices: number[];
-    spriteScaleX: number;
-    spriteScaleY: number;
+    spriteScale: number;
 };
 type DisplayContextStateKey = keyof DisplayContextState;
 type PartialDisplayContextState = Partial<DisplayContextState>;
@@ -202,11 +201,12 @@ type DisplaySpriteSheet = {
     sprites: DisplaySprite[];
 };
 
-declare const DisplayContextCommandTypes: readonly ["show", "clear", "setColor", "setColorOpacity", "setOpacity", "saveContext", "restoreContext", "selectFillColor", "selectLineColor", "setLineWidth", "setRotation", "clearRotation", "setSegmentStartCap", "setSegmentEndCap", "setSegmentCap", "setSegmentStartRadius", "setSegmentEndRadius", "setSegmentRadius", "setCropTop", "setCropRight", "setCropBottom", "setCropLeft", "clearCrop", "setRotationCropTop", "setRotationCropRight", "setRotationCropBottom", "setRotationCropLeft", "clearRotationCrop", "selectBitmapColor", "selectBitmapColors", "setBitmapScaleX", "setBitmapScaleY", "setBitmapScale", "resetBitmapScale", "selectSpriteColor", "selectSpriteColors", "reseSpriteColors", "setSpriteScaleX", "setSpriteScaleY", "setSpriteScale", "resetSpriteScale", "clearRect", "drawRect", "drawRoundRect", "drawCircle", "drawEllipse", "drawPolygon", "drawSegment", "drawSegments", "drawArc", "drawArcEllipse", "drawBitmap", "selectSpriteSheet", "drawSprite"];
+declare const DisplayContextCommandTypes: readonly ["show", "clear", "setColor", "setColorOpacity", "setOpacity", "saveContext", "restoreContext", "selectFillColor", "selectLineColor", "setLineWidth", "setRotation", "clearRotation", "setSegmentStartCap", "setSegmentEndCap", "setSegmentCap", "setSegmentStartRadius", "setSegmentEndRadius", "setSegmentRadius", "setCropTop", "setCropRight", "setCropBottom", "setCropLeft", "clearCrop", "setRotationCropTop", "setRotationCropRight", "setRotationCropBottom", "setRotationCropLeft", "clearRotationCrop", "selectBitmapColor", "selectBitmapColors", "setBitmapScaleX", "setBitmapScaleY", "setBitmapScale", "resetBitmapScale", "selectSpriteColor", "selectSpriteColors", "reseSpriteColors", "setSpriteScale", "resetSpriteScale", "clearRect", "drawRect", "drawRoundRect", "drawCircle", "drawEllipse", "drawPolygon", "drawSegment", "drawSegments", "drawArc", "drawArcEllipse", "drawBitmap", "selectSpriteSheet", "drawSprite"];
 type DisplayContextCommandType = (typeof DisplayContextCommandTypes)[number];
+declare const DisplaySpriteContextCommandTypes: readonly ["selectFillColor", "selectLineColor", "setLineWidth", "setRotation", "clearRotation", "setSegmentStartCap", "setSegmentEndCap", "setSegmentCap", "setSegmentStartRadius", "setSegmentEndRadius", "setSegmentRadius", "setCropTop", "setCropRight", "setCropBottom", "setCropLeft", "clearCrop", "setRotationCropTop", "setRotationCropRight", "setRotationCropBottom", "setRotationCropLeft", "clearRotationCrop", "selectBitmapColor", "selectBitmapColors", "setBitmapScaleX", "setBitmapScaleY", "setBitmapScale", "resetBitmapScale", "clearRect", "drawRect", "drawRoundRect", "drawCircle", "drawEllipse", "drawPolygon", "drawSegment", "drawSegments", "drawArc", "drawArcEllipse", "drawBitmap"];
+type DisplaySpriteContextCommandType = (typeof DisplaySpriteContextCommandTypes)[number];
 interface BaseDisplayContextCommand {
-    type: DisplayContextCommandType;
-    contextState: DisplayContextState;
+    type: DisplayContextCommandType | "runDisplayContextCommands";
 }
 interface SimpleDisplayCommand extends BaseDisplayContextCommand {
     type: "show" | "clear" | "saveContext" | "restoreContext" | "clearRotation" | "clearCrop" | "clearRotationCrop" | "resetBitmapScale" | "reseSpriteColors" | "resetSpriteScale";
@@ -328,14 +328,6 @@ interface SelectDisplaySpriteColorIndicesCommand extends BaseDisplayContextComma
     type: "selectSpriteColors";
     spriteColorPairs: DisplaySpriteColorPair[];
 }
-interface SetDisplaySpriteScaleXCommand extends BaseDisplayContextCommand {
-    type: "setSpriteScaleX";
-    spriteScaleX: number;
-}
-interface SetDisplaySpriteScaleYCommand extends BaseDisplayContextCommand {
-    type: "setSpriteScaleY";
-    spriteScaleY: number;
-}
 interface SetDisplaySpriteScaleCommand extends BaseDisplayContextCommand {
     type: "setSpriteScale";
     spriteScale: number;
@@ -415,7 +407,7 @@ interface DrawDisplaySpriteCommand extends BaseCenterPositionDisplayContextComma
     spriteSheet: DisplaySpriteSheet;
     spriteName: string;
 }
-type DisplayContextCommand = SimpleDisplayCommand | SetDisplayColorCommand | SetDisplayColorOpacityCommand | SetDisplayOpacityCommand | SelectDisplayFillColorCommand | SelectDisplayLineColorCommand | SetDisplayLineWidthCommand | SetDisplayRotationCommand | SetDisplaySegmentStartCapCommand | SetDisplaySegmentEndCapCommand | SetDisplaySegmentCapCommand | SetDisplaySegmentStartRadiusCommand | SetDisplaySegmentEndRadiusCommand | SetDisplaySegmentRadiusCommand | SetDisplayCropTopCommand | SetDisplayCropRightCommand | SetDisplayCropBottomCommand | SetDisplayCropLeftCommand | SetDisplayRotationCropTopCommand | SetDisplayRotationCropRightCommand | SetDisplayRotationCropBottomCommand | SetDisplayRotationCropLeftCommand | SelectDisplayBitmapColorIndexCommand | SelectDisplayBitmapColorIndicesCommand | SetDisplayBitmapScaleXCommand | SetDisplayBitmapScaleYCommand | SetDisplayBitmapScaleCommand | SelectDisplaySpriteColorIndexCommand | SelectDisplaySpriteColorIndicesCommand | SetDisplaySpriteScaleXCommand | SetDisplaySpriteScaleYCommand | SetDisplaySpriteScaleCommand | ClearDisplayRectCommand | DrawDisplayRectCommand | DrawDisplayRoundedRectCommand | DrawDisplayCircleCommand | DrawDisplayEllipseCommand | DrawDisplayPolygonCommand | DrawDisplaySegmentCommand | DrawDisplaySegmentsCommand | DrawDisplayArcCommand | DrawDisplayArcEllipseCommand | DrawDisplayBitmapCommand | DrawDisplaySpriteCommand;
+type DisplayContextCommand = SimpleDisplayCommand | SetDisplayColorCommand | SetDisplayColorOpacityCommand | SetDisplayOpacityCommand | SelectDisplayFillColorCommand | SelectDisplayLineColorCommand | SetDisplayLineWidthCommand | SetDisplayRotationCommand | SetDisplaySegmentStartCapCommand | SetDisplaySegmentEndCapCommand | SetDisplaySegmentCapCommand | SetDisplaySegmentStartRadiusCommand | SetDisplaySegmentEndRadiusCommand | SetDisplaySegmentRadiusCommand | SetDisplayCropTopCommand | SetDisplayCropRightCommand | SetDisplayCropBottomCommand | SetDisplayCropLeftCommand | SetDisplayRotationCropTopCommand | SetDisplayRotationCropRightCommand | SetDisplayRotationCropBottomCommand | SetDisplayRotationCropLeftCommand | SelectDisplayBitmapColorIndexCommand | SelectDisplayBitmapColorIndicesCommand | SetDisplayBitmapScaleXCommand | SetDisplayBitmapScaleYCommand | SetDisplayBitmapScaleCommand | SelectDisplaySpriteColorIndexCommand | SelectDisplaySpriteColorIndicesCommand | SetDisplaySpriteScaleCommand | ClearDisplayRectCommand | DrawDisplayRectCommand | DrawDisplayRoundedRectCommand | DrawDisplayCircleCommand | DrawDisplayEllipseCommand | DrawDisplayPolygonCommand | DrawDisplaySegmentCommand | DrawDisplaySegmentsCommand | DrawDisplayArcCommand | DrawDisplayArcEllipseCommand | DrawDisplayBitmapCommand | DrawDisplaySpriteCommand;
 
 interface DisplayManagerInterface {
     get isReady(): boolean;
@@ -473,9 +465,6 @@ interface DisplayManagerInterface {
     resetSpriteColors(sendImmediately?: boolean): Promise<void>;
     setSpriteColor(spriteColorIndex: number, color: DisplayColorRGB | string, sendImmediately?: boolean): Promise<void>;
     setSpriteColorOpacity(spriteColorIndex: number, opacity: number, sendImmediately?: boolean): Promise<void>;
-    setSpriteScaleDirection(direction: DisplayScaleDirection, spriteScale: number, sendImmediately?: boolean): Promise<void>;
-    setSpriteScaleX(spriteScaleX: number, sendImmediately?: boolean): Promise<void>;
-    setSpriteScaleY(spriteScaleY: number, sendImmediately?: boolean): Promise<void>;
     setSpriteScale(spriteScale: number, sendImmediately?: boolean): Promise<void>;
     resetSpriteScale(sendImmediately?: boolean): Promise<void>;
     clearRect(x: number, y: number, width: number, height: number, sendImmediately?: boolean): Promise<void>;
@@ -490,7 +479,8 @@ interface DisplayManagerInterface {
     drawArcEllipse(centerX: number, centerY: number, radiusX: number, radiusY: number, startAngle: number, angleOffset: number, isRadians?: boolean, sendImmediately?: boolean): Promise<void>;
     drawBitmap(centerX: number, centerY: number, bitmap: DisplayBitmap, sendImmediately?: boolean): Promise<void>;
     drawSprite(centerX: number, centerY: number, spriteName: string, sendImmediately?: boolean): Promise<void>;
-    runContextCommandMessage(commandMessage: DisplayContextCommand, position?: Vector2, sendImmediately?: boolean): Promise<void>;
+    runContextCommand(command: DisplayContextCommand, sendImmediately?: boolean): Promise<void>;
+    runContextCommands(commands: DisplayContextCommand[], sendImmediately?: boolean): Promise<void>;
 }
 
 declare const DefaultNumberOfDisplayColors = 16;
@@ -1186,7 +1176,7 @@ declare class Device {
     static set ReconnectOnDisconnection(newReconnectOnDisconnection: boolean);
     get reconnectOnDisconnection(): boolean;
     set reconnectOnDisconnection(newReconnectOnDisconnection: boolean);
-    get connectionType(): "webBluetooth" | "noble" | "client" | "webSocket" | "udp" | undefined;
+    get connectionType(): "noble" | "webSocket" | "udp" | "webBluetooth" | "client" | undefined;
     disconnect(): Promise<void>;
     toggleConnection(): void;
     get connectionStatus(): ConnectionStatus;
@@ -1380,9 +1370,6 @@ declare class Device {
     get setDisplaySpriteColor(): (spriteColorIndex: number, color: DisplayColorRGB | string, sendImmediately?: boolean) => Promise<void>;
     get setDisplaySpriteColorOpacity(): (spriteColorIndex: number, opacity: number, sendImmediately?: boolean) => Promise<void>;
     get resetDisplaySpriteColors(): (sendImmediately?: boolean) => Promise<void>;
-    get setDisplaySpriteScaleDirection(): (direction: DisplayScaleDirection, spriteScale: number, sendImmediately?: boolean) => Promise<void>;
-    get setDisplaySpriteScaleX(): (spriteScaleX: number, sendImmediately?: boolean) => Promise<void>;
-    get setDisplaySpriteScaleY(): (spriteScaleY: number, sendImmediately?: boolean) => Promise<void>;
     get setDisplaySpriteScale(): (spriteScale: number, sendImmediately?: boolean) => Promise<void>;
     get resetDisplaySpriteScale(): (sendImmediately?: boolean) => Promise<void>;
     get drawDisplaySprite(): (centerX: number, centerY: number, spriteName: string, sendImmediately?: boolean) => Promise<void>;
@@ -1429,19 +1416,19 @@ declare class DeviceManager {
      * _only available on web-bluetooth enabled browsers_
      */
     GetDevices(): Promise<Device[] | undefined>;
-    get AddEventListener(): <T extends "deviceConnected" | "deviceDisconnected" | "deviceIsConnected" | "availableDevices" | "connectedDevices">(type: T, listener: (event: {
+    get AddEventListener(): <T extends "connectedDevices" | "deviceConnected" | "deviceDisconnected" | "deviceIsConnected" | "availableDevices">(type: T, listener: (event: {
         type: T;
         target: DeviceManager;
         message: DeviceManagerEventMessages[T];
     }) => void, options?: {
         once?: boolean;
     }) => void;
-    get RemoveEventListener(): <T extends "deviceConnected" | "deviceDisconnected" | "deviceIsConnected" | "availableDevices" | "connectedDevices">(type: T, listener: (event: {
+    get RemoveEventListener(): <T extends "connectedDevices" | "deviceConnected" | "deviceDisconnected" | "deviceIsConnected" | "availableDevices">(type: T, listener: (event: {
         type: T;
         target: DeviceManager;
         message: DeviceManagerEventMessages[T];
     }) => void) => void;
-    get RemoveEventListeners(): <T extends "deviceConnected" | "deviceDisconnected" | "deviceIsConnected" | "availableDevices" | "connectedDevices">(type: T) => void;
+    get RemoveEventListeners(): <T extends "connectedDevices" | "deviceConnected" | "deviceDisconnected" | "deviceIsConnected" | "availableDevices">(type: T) => void;
     get RemoveAllEventListeners(): () => void;
     _CheckDeviceAvailability(device: Device): void;
 }
@@ -1676,4 +1663,4 @@ declare const ThrottleUtils: {
     debounce: typeof debounce;
 };
 
-export { type BoundDeviceEventListeners, type BoundDeviceManagerEventListeners, type BoundDevicePairEventListeners, type CameraCommand, CameraCommands, type CameraConfiguration, type CameraConfigurationType, CameraConfigurationTypes, type CenterOfPressure, type ContinuousSensorType, ContinuousSensorTypes, DefaultNumberOfDisplayColors, DefaultNumberOfPressureSensors, Device, type DeviceEvent, type DeviceEventListenerMap, type DeviceEventMap, type DeviceInformation, _default as DeviceManager, type DeviceManagerEvent, type DeviceManagerEventListenerMap, type DeviceManagerEventMap, DevicePair, type DevicePairEvent, type DevicePairEventListenerMap, type DevicePairEventMap, type DevicePairType, DevicePairTypes, type DeviceType, DeviceTypes, type DiscoveredDevice, type DisplayBitmap, type DisplayBitmapColorPair, type DisplayBrightness, DisplayBrightnesses, type DisplayColorRGB, DisplayPixelDepths, type DisplaySegmentCap, DisplaySegmentCaps, type DisplaySize, type DisplaySprite, type DisplaySpritePaletteSwap, type DisplaySpriteSheet, type DisplaySpriteSheetPalette, environment_d as Environment, type Euler, EventUtils, type FileTransferDirection, FileTransferDirections, type FileType, FileTypes, MaxNameLength, MaxNumberOfVibrationWaveformEffectSegments, MaxNumberOfVibrationWaveformSegments, MaxSensorRate, MaxVibrationWaveformEffectSegmentDelay, MaxVibrationWaveformEffectSegmentLoopCount, MaxVibrationWaveformEffectSequenceLoopCount, MaxVibrationWaveformSegmentDuration, MaxWifiPasswordLength, MaxWifiSSIDLength, type MicrophoneCommand, MicrophoneCommands, type MicrophoneConfiguration, type MicrophoneConfigurationType, MicrophoneConfigurationTypes, MicrophoneConfigurationValues, MinNameLength, MinWifiPasswordLength, MinWifiSSIDLength, type PressureData, type Quaternion, RangeHelper, scanner as Scanner, type SensorConfiguration, SensorRateStep, type SensorType, SensorTypes, type Side, Sides, type TfliteFileConfiguration, type TfliteSensorType, TfliteSensorTypes, type TfliteTask, TfliteTasks, ThrottleUtils, UDPServer, type Vector2, type Vector3, type VibrationConfiguration, type VibrationLocation, VibrationLocations, type VibrationType, VibrationTypes, type VibrationWaveformEffect, VibrationWaveformEffects, WebSocketServer, hexToRGB, maxDisplayScale as maxDisplayBitmapScale, rgbToHex, setAllConsoleLevelFlags, setConsoleLevelFlagsForType };
+export { type BoundDeviceEventListeners, type BoundDeviceManagerEventListeners, type BoundDevicePairEventListeners, type CameraCommand, CameraCommands, type CameraConfiguration, type CameraConfigurationType, CameraConfigurationTypes, type CenterOfPressure, type ContinuousSensorType, ContinuousSensorTypes, DefaultNumberOfDisplayColors, DefaultNumberOfPressureSensors, Device, type DeviceEvent, type DeviceEventListenerMap, type DeviceEventMap, type DeviceInformation, _default as DeviceManager, type DeviceManagerEvent, type DeviceManagerEventListenerMap, type DeviceManagerEventMap, DevicePair, type DevicePairEvent, type DevicePairEventListenerMap, type DevicePairEventMap, type DevicePairType, DevicePairTypes, type DeviceType, DeviceTypes, type DiscoveredDevice, type DisplayBitmap, type DisplayBitmapColorPair, type DisplayBrightness, DisplayBrightnesses, type DisplayColorRGB, type DisplayContextCommand, type DisplayContextCommandType, DisplayContextCommandTypes, DisplayPixelDepths, type DisplaySegmentCap, DisplaySegmentCaps, type DisplaySize, type DisplaySprite, type DisplaySpriteContextCommandType, DisplaySpriteContextCommandTypes, type DisplaySpritePaletteSwap, type DisplaySpriteSheet, type DisplaySpriteSheetPalette, environment_d as Environment, type Euler, EventUtils, type FileTransferDirection, FileTransferDirections, type FileType, FileTypes, MaxNameLength, MaxNumberOfVibrationWaveformEffectSegments, MaxNumberOfVibrationWaveformSegments, MaxSensorRate, MaxVibrationWaveformEffectSegmentDelay, MaxVibrationWaveformEffectSegmentLoopCount, MaxVibrationWaveformEffectSequenceLoopCount, MaxVibrationWaveformSegmentDuration, MaxWifiPasswordLength, MaxWifiSSIDLength, type MicrophoneCommand, MicrophoneCommands, type MicrophoneConfiguration, type MicrophoneConfigurationType, MicrophoneConfigurationTypes, MicrophoneConfigurationValues, MinNameLength, MinWifiPasswordLength, MinWifiSSIDLength, type PressureData, type Quaternion, RangeHelper, scanner as Scanner, type SensorConfiguration, SensorRateStep, type SensorType, SensorTypes, type Side, Sides, type TfliteFileConfiguration, type TfliteSensorType, TfliteSensorTypes, type TfliteTask, TfliteTasks, ThrottleUtils, UDPServer, type Vector2, type Vector3, type VibrationConfiguration, type VibrationLocation, VibrationLocations, type VibrationType, VibrationTypes, type VibrationWaveformEffect, VibrationWaveformEffects, WebSocketServer, hexToRGB, maxDisplayScale as maxDisplayBitmapScale, rgbToHex, setAllConsoleLevelFlags, setConsoleLevelFlagsForType };

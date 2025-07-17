@@ -138,9 +138,6 @@ declare class DisplayCanvasHelper implements DisplayManagerInterface {
     setSpriteColor(spriteColorIndex: number, color: DisplayColorRGB | string, sendImmediately?: boolean): Promise<void>;
     setSpriteColorOpacity(spriteColorIndex: number, opacity: number, sendImmediately?: boolean): Promise<void>;
     resetSpriteColors(sendImmediately?: boolean): Promise<void>;
-    setSpriteScaleDirection(direction: DisplayScaleDirection, spriteScale: number, sendImmediately?: boolean): Promise<void>;
-    setSpriteScaleX(spriteScaleX: number, sendImmediately?: boolean): Promise<void>;
-    setSpriteScaleY(spriteScaleY: number, sendImmediately?: boolean): Promise<void>;
     setSpriteScale(spriteScale: number, sendImmediately?: boolean): Promise<void>;
     resetSpriteScale(sendImmediately?: boolean): Promise<void>;
     clearRect(x: number, y: number, width: number, height: number, sendImmediately?: boolean): Promise<void>;
@@ -157,6 +154,9 @@ declare class DisplayCanvasHelper implements DisplayManagerInterface {
     drawSprite(centerX: number, centerY: number, spriteName: string, sendImmediately?: boolean): Promise<void>;
     get brightness(): "veryLow" | "low" | "medium" | "high" | "veryHigh";
     setBrightness(newBrightness: DisplayBrightness, sendImmediately?: boolean): Promise<void>;
-    runContextCommandMessage(command: DisplayContextCommand, position?: Vector2, sendImmediately?: boolean): Promise<void>;
+    runContextCommand(command: DisplayContextCommand, sendImmediately?: boolean): Promise<void>;
+    runContextCommands(commands: DisplayContextCommand[], sendImmediately?: boolean): Promise<void>;
+    setContextTransform(centerX: number, centerY: number, width: number, height: number, scale: number, crop: Record<DisplayCropDirection, number>, rotationCrop: Record<DisplayCropDirection, number>, rotation: number, isRadians?: number): void;
+    resetContextTransform(): void;
 }
 export default DisplayCanvasHelper;
