@@ -52,6 +52,15 @@ const displayCanvasHelper = new BS.DisplayCanvasHelper();
 // displayCanvasHelper.setBrightness("veryLow");
 displayCanvasHelper.canvas = displayCanvas;
 window.displayCanvasHelper = displayCanvasHelper;
+displayCanvasHelper.setBrightness("veryHigh");
+
+displayCanvasHelper.addEventListener("resize", () => {
+  console.log("resize!");
+  displayCanvasHelper.canvas.style.width = `${displayCanvasHelper.width}px`;
+  displayCanvasHelper.canvas.style.height = `${displayCanvasHelper.height}px`;
+});
+displayCanvasHelper.canvas.style.width = `${displayCanvasHelper.width}px`;
+displayCanvasHelper.canvas.style.height = `${displayCanvasHelper.height}px`;
 
 device.addEventListener("connected", () => {
   if (device.isDisplayAvailable) {
@@ -860,7 +869,7 @@ let drawSprite = () => {
       rotationCropLeft,
     } = drawSpriteParams;
 
-    displayCanvasHelper.setContextTransform(
+    displayCanvasHelper.setCanvasContextTransform(
       x,
       y,
       selectedSprite.width,
@@ -877,7 +886,7 @@ let drawSprite = () => {
       false
     );
     displayCanvasHelper.runContextCommands(selectedSprite.commands);
-    displayCanvasHelper.resetContextTransform();
+    displayCanvasHelper.resetCanvasContextTransform();
 
     displayCanvasHelper.show();
   } else {
@@ -1214,8 +1223,17 @@ const addSpriteCommand = () => {
           type: "drawRect",
           centerX: 0,
           centerY: 0,
-          width: 100,
-          height: 50,
+          width: 50,
+          height: 25,
+        });
+        break;
+      case "clearRect":
+        selectedSprite.commands.push({
+          type: "clearRect",
+          x: -25,
+          y: -25,
+          width: 50,
+          height: 25,
         });
         break;
       case "drawCircle":
@@ -1223,7 +1241,7 @@ const addSpriteCommand = () => {
           type: "drawCircle",
           centerX: 0,
           centerY: 0,
-          radius: 50,
+          radius: 25,
         });
         break;
       case "drawEllipse":
@@ -1231,8 +1249,66 @@ const addSpriteCommand = () => {
           type: "drawEllipse",
           centerX: 0,
           centerY: 0,
-          radiusX: 100,
-          radiusY: 50,
+          radiusX: 50,
+          radiusY: 25,
+        });
+        break;
+      case "drawRoundRect":
+        selectedSprite.commands.push({
+          type: "drawRoundRect",
+          centerX: 0,
+          centerY: 0,
+          borderRadius: 5,
+          width: 50,
+          height: 25,
+        });
+        break;
+      case "drawArc":
+        selectedSprite.commands.push({
+          type: "drawArc",
+          centerX: 0,
+          centerY: 0,
+          radius: 25,
+          startAngle: 0,
+          angleOffset: 90,
+        });
+        break;
+      case "drawArcEllipse":
+        selectedSprite.commands.push({
+          type: "drawArcEllipse",
+          centerX: 0,
+          centerY: 0,
+          radiusX: 50,
+          radiusY: 25,
+          startAngle: 0,
+          angleOffset: 90,
+        });
+        break;
+      case "drawPolygon":
+        selectedSprite.commands.push({
+          type: "drawPolygon",
+          centerX: 0,
+          centerY: 0,
+          radius: 25,
+          numberOfSides: 5,
+        });
+        break;
+      case "drawSegment":
+        selectedSprite.commands.push({
+          type: "drawSegment",
+          startX: 0,
+          startY: 0,
+          endX: 25,
+          endY: 25,
+        });
+        break;
+      case "drawSegments":
+        selectedSprite.commands.push({
+          type: "drawSegments",
+          points: [
+            { x: 0, y: 0 },
+            { x: 25, y: 25 },
+          ],
         });
         break;
     }
@@ -1243,19 +1319,53 @@ const addSpriteCommand = () => {
 const spriteCommandsContainer = document.getElementById("spriteCommands");
 /** @type {HTMLTemplateElement} */
 const spriteCommandTemplate = document.getElementById("spriteCommandTemplate");
+/** @type {HTMLTemplateElement} */
+const pointTemplate = document.getElementById("pointTemplate");
 const updateSpriteCommands = () => {
   spriteCommandsContainer.innerHTML = "";
   if (selectedSprite) {
     selectedSprite?.commands.forEach((command, index) => {
-      console.log(command);
+      console.log(index, command);
       const spriteCommandContainer = spriteCommandTemplate.content
         .cloneNode(true)
         .querySelector(".spriteCommand");
       spriteCommandContainer.querySelector(".index").innerText = index;
       spriteCommandContainer.querySelector(".type").innerText = command.type;
 
-      let includePosition = "centerX" in command;
-      if (includePosition) {
+      if (index > 0) {
+        let newIndex = index - 1;
+        const moveUpButton = spriteCommandContainer.querySelector(".moveUp");
+        moveUpButton.disabled = false;
+        moveUpButton.addEventListener("click", () => {
+          const temp = selectedSprite.commands[newIndex];
+          selectedSprite.commands[newIndex] = command;
+          selectedSprite.commands[index] = temp;
+          drawSprite();
+          updateSpriteCommands();
+        });
+      }
+      if (index < selectedSprite.commands.length - 1) {
+        let newIndex = index + 1;
+        const moveDownButton =
+          spriteCommandContainer.querySelector(".moveDown");
+        moveDownButton.disabled = false;
+        moveDownButton.addEventListener("click", () => {
+          const temp = selectedSprite.commands[newIndex];
+          selectedSprite.commands[newIndex] = command;
+          selectedSprite.commands[index] = temp;
+          drawSprite();
+          updateSpriteCommands();
+        });
+      }
+      const removeButton = spriteCommandContainer.querySelector(".remove");
+      removeButton.addEventListener("click", () => {
+        selectedSprite?.commands.splice(index, 1);
+        drawSprite();
+        updateSpriteCommands();
+      });
+
+      const includeCenterPosition = "centerX" in command;
+      if (includeCenterPosition) {
         const centerXContainer =
           spriteCommandContainer.querySelector(".centerX");
         centerXContainer.removeAttribute("hidden");
@@ -1283,7 +1393,296 @@ const updateSpriteCommands = () => {
         });
       }
 
-      // FILL - position, scale, etc
+      const includePosition = "x" in command;
+      if (includePosition) {
+        const xContainer = spriteCommandContainer.querySelector(".x");
+        xContainer.removeAttribute("hidden");
+        const xInput = xContainer.querySelector("input");
+        xInput.value = command.x;
+        const xSpan = xContainer.querySelector(".value");
+        xSpan.innerText = command.x;
+        xContainer.addEventListener("input", () => {
+          command.x = Number(xInput.value);
+          xSpan.innerText = command.x;
+          drawSprite();
+        });
+
+        const yContainer = spriteCommandContainer.querySelector(".y");
+        const yInput = yContainer.querySelector("input");
+        yInput.value = command.y;
+        const ySpan = yContainer.querySelector(".value");
+        ySpan.innerText = command.y;
+        yContainer.removeAttribute("hidden");
+        yContainer.addEventListener("input", () => {
+          command.y = Number(yInput.value);
+          ySpan.innerText = command.y;
+          drawSprite();
+        });
+      }
+
+      const includeSize = "width" in command;
+      if (includeSize) {
+        const widthContainer = spriteCommandContainer.querySelector(".width");
+        const widthInput = widthContainer.querySelector("input");
+        widthInput.value = command.width;
+        const widthSpan = widthContainer.querySelector(".value");
+        widthSpan.innerText = command.width;
+        widthContainer.removeAttribute("hidden");
+        widthContainer.addEventListener("input", () => {
+          command.width = Number(widthInput.value);
+          widthSpan.innerText = command.width;
+          drawSprite();
+        });
+
+        const heightContainer = spriteCommandContainer.querySelector(".height");
+        const heightInput = heightContainer.querySelector("input");
+        heightInput.value = command.height;
+        const heightSpan = heightContainer.querySelector(".value");
+        heightSpan.innerText = command.height;
+        heightContainer.removeAttribute("hidden");
+        heightContainer.addEventListener("input", () => {
+          command.height = Number(heightInput.value);
+          heightSpan.innerText = command.height;
+          drawSprite();
+        });
+      }
+
+      const includeRadius = "radius" in command;
+      if (includeRadius) {
+        const radiusContainer = spriteCommandContainer.querySelector(".radius");
+        const radiusInput = radiusContainer.querySelector("input");
+        radiusInput.value = command.radius;
+        const radiusSpan = radiusContainer.querySelector(".value");
+        radiusSpan.innerText = command.radius;
+        radiusContainer.removeAttribute("hidden");
+        radiusContainer.addEventListener("input", () => {
+          command.radius = Number(radiusInput.value);
+          radiusSpan.innerText = command.radius;
+          drawSprite();
+        });
+      }
+
+      const includeEllipseRadius = "radiusX" in command;
+      if (includeEllipseRadius) {
+        const radiusXContainer =
+          spriteCommandContainer.querySelector(".radiusX");
+        const radiusXInput = radiusXContainer.querySelector("input");
+        radiusXInput.value = command.radiusX;
+        const radiusXSpan = radiusXContainer.querySelector(".value");
+        radiusXSpan.innerText = command.radiusX;
+        radiusXContainer.removeAttribute("hidden");
+        radiusXContainer.addEventListener("input", () => {
+          command.radiusX = Number(radiusXInput.value);
+          radiusXSpan.innerText = command.radiusX;
+          drawSprite();
+        });
+
+        const radiusYContainer =
+          spriteCommandContainer.querySelector(".radiusY");
+        const radiusYInput = radiusYContainer.querySelector("input");
+        radiusYInput.value = command.radiusY;
+        const radiusYSpan = radiusYContainer.querySelector(".value");
+        radiusYSpan.innerText = command.radiusY;
+        radiusYContainer.removeAttribute("hidden");
+        radiusYContainer.addEventListener("input", () => {
+          command.radiusY = Number(radiusYInput.value);
+          radiusYSpan.innerText = command.radiusY;
+          drawSprite();
+        });
+      }
+
+      const includeBorderRadius = "borderRadius" in command;
+      if (includeBorderRadius) {
+        const borderRadiusContainer =
+          spriteCommandContainer.querySelector(".borderRadius");
+        const borderRadiusInput = borderRadiusContainer.querySelector("input");
+        borderRadiusInput.value = command.borderRadius;
+        const borderRadiusSpan = borderRadiusContainer.querySelector(".value");
+        borderRadiusSpan.innerText = command.borderRadius;
+        borderRadiusContainer.removeAttribute("hidden");
+        borderRadiusContainer.addEventListener("input", () => {
+          command.borderRadius = Number(borderRadiusInput.value);
+          borderRadiusSpan.innerText = command.borderRadius;
+          drawSprite();
+        });
+      }
+
+      const includeAngles = "startAngle" in command;
+      if (includeAngles) {
+        const startAngleContainer =
+          spriteCommandContainer.querySelector(".startAngle");
+        const startAngleInput = startAngleContainer.querySelector("input");
+        startAngleInput.value = command.startAngle;
+        const startAngleSpan = startAngleContainer.querySelector(".value");
+        startAngleSpan.innerText = command.startAngle;
+        startAngleContainer.removeAttribute("hidden");
+        startAngleContainer.addEventListener("input", () => {
+          command.startAngle = Number(startAngleInput.value);
+          startAngleSpan.innerText = command.startAngle;
+          drawSprite();
+        });
+
+        const angleOffsetContainer =
+          spriteCommandContainer.querySelector(".angleOffset");
+        const angleOffsetInput = angleOffsetContainer.querySelector("input");
+        angleOffsetInput.value = command.angleOffset;
+        const angleOffsetSpan = angleOffsetContainer.querySelector(".value");
+        angleOffsetSpan.innerText = command.angleOffset;
+        angleOffsetContainer.removeAttribute("hidden");
+        angleOffsetContainer.addEventListener("input", () => {
+          command.angleOffset = Number(angleOffsetInput.value);
+          angleOffsetSpan.innerText = command.angleOffset;
+          drawSprite();
+        });
+      }
+
+      const includeNumberOfSides = "numberOfSides" in command;
+      if (includeNumberOfSides) {
+        const numberOfSidesContainer =
+          spriteCommandContainer.querySelector(".numberOfSides");
+        const numberOfSidesInput =
+          numberOfSidesContainer.querySelector("input");
+        numberOfSidesInput.value = command.numberOfSides;
+        const numberOfSidesSpan =
+          numberOfSidesContainer.querySelector(".value");
+        numberOfSidesSpan.innerText = command.numberOfSides;
+        numberOfSidesContainer.removeAttribute("hidden");
+        numberOfSidesContainer.addEventListener("input", () => {
+          command.numberOfSides = Number(numberOfSidesInput.value);
+          numberOfSidesSpan.innerText = command.numberOfSides;
+          drawSprite();
+        });
+      }
+
+      const includeEndpoints = "startX" in command;
+      if (includeEndpoints) {
+        const startXContainer = spriteCommandContainer.querySelector(".startX");
+        const startXInput = startXContainer.querySelector("input");
+        startXInput.value = command.startX;
+        const startXSpan = startXContainer.querySelector(".value");
+        startXSpan.innerText = command.startX;
+        startXContainer.removeAttribute("hidden");
+        startXContainer.addEventListener("input", () => {
+          command.startX = Number(startXInput.value);
+          startXSpan.innerText = command.startX;
+          drawSprite();
+        });
+
+        const startYContainer = spriteCommandContainer.querySelector(".startY");
+        const startYInput = startYContainer.querySelector("input");
+        startYInput.value = command.startY;
+        const startYSpan = startYContainer.querySelector(".value");
+        startYSpan.innerText = command.startY;
+        startYContainer.removeAttribute("hidden");
+        startYContainer.addEventListener("input", () => {
+          command.startY = Number(startYInput.value);
+          startYSpan.innerText = command.startY;
+          drawSprite();
+        });
+
+        const endXContainer = spriteCommandContainer.querySelector(".endX");
+        const endXInput = endXContainer.querySelector("input");
+        endXInput.value = command.endX;
+        const endXSpan = endXContainer.querySelector(".value");
+        endXSpan.innerText = command.endX;
+        endXContainer.removeAttribute("hidden");
+        endXContainer.addEventListener("input", () => {
+          command.endX = Number(endXInput.value);
+          endXSpan.innerText = command.endX;
+          drawSprite();
+        });
+
+        const endYContainer = spriteCommandContainer.querySelector(".endY");
+        const endYInput = endYContainer.querySelector("input");
+        endYInput.value = command.endY;
+        const endYSpan = endYContainer.querySelector(".value");
+        endYSpan.innerText = command.endY;
+        endYContainer.removeAttribute("hidden");
+        endYContainer.addEventListener("input", () => {
+          command.endY = Number(endYInput.value);
+          endYSpan.innerText = command.endY;
+          drawSprite();
+        });
+      }
+
+      const includePoints = "points" in command;
+      if (includePoints) {
+        const numberOfPointsContainer =
+          spriteCommandContainer.querySelector(".numberOfPoints");
+        const numberOfPointsInput =
+          numberOfPointsContainer.querySelector("input");
+        numberOfPointsInput.value = command.points.length;
+        const numberOfPointsSpan =
+          numberOfPointsContainer.querySelector(".value");
+        numberOfPointsSpan.innerText = command.points.length;
+        numberOfPointsContainer.removeAttribute("hidden");
+        numberOfPointsContainer.addEventListener("input", () => {
+          const numberOfPoints = Number(numberOfPointsInput.value);
+          // console.log({ numberOfPoints });
+          for (let i = 0; i < numberOfPoints; i++) {
+            let point = command.points[i];
+            if (!point) {
+              command.points[i] = { x: 0, y: 0 };
+            }
+          }
+          command.points.length = numberOfPoints;
+          pointContainers.forEach((pointContainer, index) => {
+            // console.log("pointContainer", pointContainer);
+            pointContainer.hidden = index >= command.points.length;
+          });
+          numberOfPointsSpan.innerText = command.points.length;
+          drawSprite();
+        });
+
+        const pointContainers = [];
+        for (let i = 0; i < numberOfPointsInput.max; i++) {
+          const pointContainer = pointTemplate.content
+            .cloneNode(true)
+            .querySelector(".point");
+
+          const point = command.points[i];
+          pointContainer.hidden = !Boolean(point);
+
+          const xContainer = pointContainer.querySelector(".x");
+          xContainer.removeAttribute("hidden");
+          const xInput = xContainer.querySelector("input");
+          const xSpan = xContainer.querySelector(".value");
+          if (point) {
+            xInput.value = point.x;
+            xSpan.innerText = point.x;
+          }
+          xContainer.addEventListener("input", () => {
+            const point = command.points[i];
+            point.x = Number(xInput.value);
+            xSpan.innerText = point.x;
+            drawSprite();
+          });
+
+          const yContainer = pointContainer.querySelector(".y");
+          const yInput = yContainer.querySelector("input");
+          const ySpan = yContainer.querySelector(".value");
+          if (point) {
+            yInput.value = point.y;
+            ySpan.innerText = point.y;
+          }
+          yContainer.removeAttribute("hidden");
+          yContainer.addEventListener("input", () => {
+            const point = command.points[i];
+            point.y = Number(yInput.value);
+            ySpan.innerText = point.y;
+            drawSprite();
+          });
+
+          spriteCommandContainer.appendChild(pointContainer);
+          pointContainers[i] = pointContainer;
+        }
+      }
+
+      // FILL - colors
+      // FILL - lineWidth
+      // FILL - rotation
+      // FILL - crop
+      // FILL - rotationCrop
 
       spriteCommandsContainer.appendChild(spriteCommandContainer);
     });

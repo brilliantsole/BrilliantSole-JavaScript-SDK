@@ -182,11 +182,11 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
       `assigned non-canvas type ${newCanvas?.nodeName}`
     );
     if (this.#canvas == newCanvas) {
-      _console.log("redundant canvas assignment", newCanvas);
+      // _console.log("redundant canvas assignment", newCanvas);
       return;
     }
     this.#canvas = newCanvas;
-    _console.log("assigned canvas", this.canvas);
+    // _console.log("assigned canvas", this.canvas);
 
     this.#context = this.#canvas?.getContext("2d", {
       willReadFrequently: true,
@@ -217,10 +217,10 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
       return;
     }
 
-    _console.log("updateCanvas");
+    // _console.log("updateCanvas");
 
     const { width, height } = this.device.displayInformation!;
-    _console.log({ width, height });
+    // _console.log({ width, height });
 
     this.canvas.width = width;
     this.canvas.height = height;
@@ -286,7 +286,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
   }
 
   #drawBackground() {
-    _console.log("drawBackground");
+    // _console.log("drawBackground");
     this.#save();
     this.#context.resetTransform();
     this.#context.fillStyle = this.#colorIndexToRgbString(0);
@@ -299,7 +299,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
   }
   set applyTransparency(newValue) {
     this.#applyTransparency = newValue;
-    _console.log({ applyTransparency: this.applyTransparency });
+    // _console.log({ applyTransparency: this.applyTransparency });
     this.#drawFrontDrawStack();
   }
 
@@ -310,7 +310,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
   }
   set device(newDevice) {
     if (this.#device == newDevice) {
-      _console.log("redundant device assignment", newDevice);
+      // _console.log("redundant device assignment", newDevice);
       return;
     }
     if (newDevice) {
@@ -329,7 +329,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     }
     this.#device = newDevice;
     addEventListeners(this.#device, this.#boundDeviceEventListeners);
-    _console.log("assigned device", this.device);
+    // _console.log("assigned device", this.device);
     if (this.device) {
       this.numberOfColors = this.device.numberOfDisplayColors!;
       this.#updateCanvas();
@@ -351,16 +351,16 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     displayReady: this.#onDeviceDisplayReady.bind(this),
   };
   #onDeviceConnected(event: DeviceEventMap["connected"]) {
-    _console.log("device connected");
+    // _console.log("device connected");
     this.#updateCanvas();
     this.#updateDevice();
     // FIX - messages flushed properly?
   }
   #onDeviceNotConnected(event: DeviceEventMap["notConnected"]) {
-    _console.log("device not connected");
+    // _console.log("device not connected");
   }
   async #onDeviceDisplayReady(event: DeviceEventMap["displayReady"]) {
-    _console.log("device display ready");
+    // _console.log("device display ready");
     this.#isReady = true;
     // await wait(5); // we need to wait for some reason
     this.#dispatchEvent("ready", {});
@@ -384,7 +384,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     }
 
     this.#numberOfColors = newNumberOfColors;
-    _console.log({ numberOfColors: this.numberOfColors });
+    // _console.log({ numberOfColors: this.numberOfColors });
 
     this.#colors = new Array(this.numberOfColors).fill("#000000");
     this.#opacities = new Array(this.numberOfColors).fill(1);
@@ -467,12 +467,12 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     if (!this.device?.isConnected) {
       return;
     }
-    _console.log("updateDeviceContextState");
+    // _console.log("updateDeviceContextState");
     this.device?.setDisplayContextState(this.contextState, sendImmediately);
   }
 
   async show(sendImmediately = true) {
-    _console.log("showDisplay");
+    // _console.log("showDisplay");
 
     this.#frontDrawStack = this.#rearDrawStack.slice();
     this.#rearDrawStack.length = 0;
@@ -495,7 +495,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
   }
   set interval(newInterval) {
     this.#interval = newInterval;
-    _console.log({ interval: this.#interval });
+    // _console.log({ interval: this.#interval });
   }
 
   #isReady = true;
@@ -504,7 +504,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
   }
 
   async clear(sendImmediately = true) {
-    _console.log("clearDisplay");
+    // _console.log("clearDisplay");
 
     this.#frontDrawStack.length = 0;
     this.#rearDrawStack.length = 0;
@@ -538,11 +538,11 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     }
     const colorHex = rgbToHex(colorRGB);
     if (this.colors[colorIndex] == colorHex) {
-      _console.log(`redundant color #${colorIndex} ${colorHex}`);
+      // _console.log(`redundant color #${colorIndex} ${colorHex}`);
       return;
     }
 
-    _console.log(`setting color #${colorIndex}`, color);
+    // _console.log(`setting color #${colorIndex}`, color);
     this.#assertValidColorIndex(colorIndex);
     assertValidColor(colorRGB);
 
@@ -565,7 +565,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     if (
       Math.floor(255 * this.#opacities[colorIndex]) == Math.floor(255 * opacity)
     ) {
-      _console.log(`redundant opacity #${colorIndex} ${opacity}`);
+      // _console.log(`redundant opacity #${colorIndex} ${opacity}`);
       return;
     }
     if (this.device?.isConnected) {
@@ -654,7 +654,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
   ) {
     rotation = isRadians ? rotation : degToRad(rotation);
     rotation = normalizeRadians(rotation);
-    _console.log({ rotation });
+    // _console.log({ rotation });
 
     const differences = this.#contextStateHelper.update({
       rotation,
@@ -692,7 +692,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     if (differences.length == 0) {
       return;
     }
-    _console.log({ segmentStartCap });
+    // _console.log({ segmentStartCap });
     if (this.device?.isConnected) {
       await this.device.setDisplaySegmentStartCap(
         segmentStartCap,
@@ -712,7 +712,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     if (differences.length == 0) {
       return;
     }
-    _console.log({ segmentEndCap });
+    // _console.log({ segmentEndCap });
     if (this.device?.isConnected) {
       await this.device.setDisplaySegmentEndCap(segmentEndCap, sendImmediately);
     }
@@ -730,7 +730,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     if (differences.length == 0) {
       return;
     }
-    _console.log({ segmentCap });
+    // _console.log({ segmentCap });
     if (this.device?.isConnected) {
       await this.device.setDisplaySegmentCap(segmentCap, sendImmediately);
     }
@@ -746,7 +746,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     if (differences.length == 0) {
       return;
     }
-    _console.log({ segmentStartRadius });
+    // _console.log({ segmentStartRadius });
     if (this.device?.isConnected) {
       await this.device.setDisplaySegmentStartRadius(
         segmentStartRadius,
@@ -765,7 +765,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     if (differences.length == 0) {
       return;
     }
-    _console.log({ segmentEndRadius });
+    // _console.log({ segmentEndRadius });
     if (this.device?.isConnected) {
       await this.device.setDisplaySegmentEndRadius(
         segmentEndRadius,
@@ -783,7 +783,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     if (differences.length == 0) {
       return;
     }
-    _console.log({ segmentRadius });
+    // _console.log({ segmentRadius });
     if (this.device?.isConnected) {
       await this.device.setDisplaySegmentRadius(segmentRadius, sendImmediately);
     }
@@ -804,7 +804,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     if (differences.length == 0) {
       return;
     }
-    _console.log({ [cropCommand]: crop });
+    // _console.log({ [cropCommand]: crop });
     if (this.device?.isConnected) {
       await this.device.setDisplayCrop(cropDirection, crop, sendImmediately);
     }
@@ -852,7 +852,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     if (differences.length == 0) {
       return;
     }
-    _console.log({ [cropCommand]: crop });
+    // _console.log({ [cropCommand]: crop });
     if (this.device?.isConnected) {
       await this.device.setDisplayRotationCrop(
         cropDirection,
@@ -919,7 +919,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     if (differences.length == 0) {
       return;
     }
-    _console.log({ bitmapColorIndex, colorIndex });
+    // _console.log({ bitmapColorIndex, colorIndex });
 
     if (this.device?.isConnected) {
       await this.device.selectDisplayBitmapColor(
@@ -1070,7 +1070,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     if (differences.length == 0) {
       return;
     }
-    _console.log({ spriteColorIndex, colorIndex });
+    // _console.log({ spriteColorIndex, colorIndex });
 
     if (this.device?.isConnected) {
       await this.device.selectDisplaySpriteColor(
@@ -1207,11 +1207,13 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     }
   }
   #save() {
-    const ctx = this.context;
+    //console.trace("save", window.s);
+    const ctx = this.#context;
     ctx.save();
   }
   #restore() {
-    const ctx = this.context;
+    //console.trace("restore");
+    const ctx = this.#context;
     ctx.restore();
   }
   #transformContext(centerX: number, centerY: number, rotation: number) {
@@ -1748,7 +1750,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     const outerPadding = Math.ceil(lineWidth / 2);
     const segmentStartFullRadius = segmentStartRadius + outerPadding;
     const segmentEndFullRadius = segmentEndRadius + outerPadding;
-    _console.log({ segmentStartFullRadius, segmentEndFullRadius });
+    // _console.log({ segmentStartFullRadius, segmentEndFullRadius });
 
     const minX = Math.min(
       startX - segmentStartFullRadius,
@@ -1767,7 +1769,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
       endY + segmentEndFullRadius
     );
 
-    _console.log("segmentBounds", { minX, minY, maxX, maxY });
+    // _console.log("segmentBounds", { minX, minY, maxX, maxY });
 
     const boundingBox = {
       x: minX,
@@ -1775,7 +1777,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
       width: maxX - minX,
       height: maxY - minY,
     };
-    _console.log("getSegmentBoundingBox", boundingBox);
+    // _console.log("getSegmentBoundingBox", boundingBox);
     return boundingBox;
   }
   #getSegmentMidpoint(
@@ -1868,7 +1870,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     };
     let rotation = getVector2Angle(vector);
     rotation -= Math.PI / 2;
-    _console.log({ segmentRotation: rotation });
+    // _console.log({ segmentRotation: rotation });
     const midpoint: Vector2 = this.#getSegmentMidpoint(
       startX,
       startY,
@@ -1898,7 +1900,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
   ) {
     this.#updateContext(contextState);
 
-    _console.log("drawSegmentToCanvas", { startX, startY, endX, endY });
+    // _console.log("drawSegmentToCanvas", { startX, startY, endX, endY });
 
     this.#save();
     const box = this.#getSegmentBoundingBox(
@@ -1927,7 +1929,10 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     const dx = x1 - x0;
     const dy = y1 - y0;
     const len = Math.sqrt(dx * dx + dy * dy);
-    if (len === 0) return;
+    if (len === 0) {
+      this.#restore();
+      return;
+    }
 
     const ux = dx / len;
     const uy = dy / len;
@@ -2040,7 +2045,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
   #drawSegmentsToCanvas(points: Vector2[], contextState: DisplayContextState) {
     this.#updateContext(contextState);
 
-    _console.log("drawSegmentsToCanvas", { segments: points });
+    // _console.log("drawSegmentsToCanvas", { segments: points });
 
     points.forEach((segment, index) => {
       if (index > 0) {
@@ -2086,7 +2091,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
   }
   async drawSegments(points: Vector2[], sendImmediately?: boolean) {
     _console.assertRangeWithError("numberOfPoints", points.length, 2, 255);
-    _console.log({ points });
+    // _console.log({ points });
     const contextState = structuredClone(this.contextState);
     this.#rearDrawStack.push(() =>
       this.#drawSegmentsToCanvas(points, contextState)
@@ -2345,7 +2350,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
       rawBitmapImageData[imageDataOffset + 3] = Math.floor(opacity * 255);
     });
 
-    // _console.log("rawBitmapImageData", rawBitmapImageData);
+    //// _console.log("rawBitmapImageData", rawBitmapImageData);
 
     this.#bitmapContext.putImageData(bitmapImageData, 0, 0);
     this.#context.drawImage(this.#bitmapCanvas, x, y, width, height);
@@ -2372,7 +2377,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     sendImmediately?: boolean
   ) {
     this.#assertValidBitmap(bitmap);
-    _console.log("drawBitmap", { centerX, centerY, bitmap, sendImmediately });
+    // _console.log("drawBitmap", { centerX, centerY, bitmap, sendImmediately });
     const contextState = structuredClone(this.contextState);
     this.#rearDrawStack.push(() =>
       this.#drawBitmapToCanvas(centerX, centerY, bitmap, contextState)
@@ -2415,11 +2420,11 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     sendImmediately?: boolean
   ) {
     if (this.#brightness == newBrightness) {
-      _console.log(`redundant brightness ${newBrightness}`);
+      // _console.log(`redundant brightness ${newBrightness}`);
       return;
     }
     this.#brightness = newBrightness;
-    _console.log({ brightness: this.brightness });
+    // _console.log({ brightness: this.brightness });
     if (this.device?.isConnected) {
       await this.device.setDisplayBrightness(newBrightness, sendImmediately);
     }
@@ -2433,7 +2438,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     if (!this.device?.isConnected) {
       return;
     }
-    _console.log("updateDeviceBrightness");
+    // _console.log("updateDeviceBrightness");
     await this.device?.setDisplayBrightness(this.brightness, sendImmediately);
   }
 
@@ -2450,7 +2455,13 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     return runDisplayContextCommands(this, commands, sendImmediately);
   }
 
-  setContextTransform(
+  get #contextScale() {
+    const transform = this.#context.getTransform();
+    const scaleX = transform.a;
+    const scaleY = transform.d;
+    return { x: scaleX, y: scaleY };
+  }
+  setCanvasContextTransform(
     centerX: number,
     centerY: number,
     width: number,
@@ -2464,6 +2475,8 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     rotation = isRadians ? rotation : degToRad(rotation);
 
     this.#rearDrawStack.push(() => {
+      this.#clearBoundingBoxOnDraw = false;
+
       _console.log("setContextTransform", {
         centerX,
         centerY,
@@ -2475,8 +2488,6 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
       });
 
       this.#save();
-      this.#context.resetTransform();
-
       this.#context.translate(centerX, centerY);
       const box = this.#getBoundingBox(0, 0, width * scale, height * scale);
       const rotatedBox = this.#rotateBoundingBox(box, rotation);
@@ -2511,10 +2522,11 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     });
   }
 
-  resetContextTransform() {
+  resetCanvasContextTransform() {
     this.#rearDrawStack.push(() => {
       _console.log("reset transform");
-      this.#context.restore();
+      this.#restore();
+      this.#clearBoundingBoxOnDraw = true;
     });
   }
 

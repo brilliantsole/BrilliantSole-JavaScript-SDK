@@ -22,6 +22,14 @@
     #spriteCommandEditor {
       display: flex;
       flex-direction: column;
+      gap: 1rem;
+    }
+    #spriteCommands {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      overflow-y: scroll;
+      max-height: 500px;
     }
     .spriteCommand {
       display: flex;
@@ -285,18 +293,119 @@
         <template id="spriteCommandTemplate">
           <div class="spriteCommand">
             <span>
-              command #<span class="index"></span>: <span class="type"></span>
+              <b>
+                #<span class="index"></span>:
+                <span class="type"></span>
+              </b>
             </span>
+
+            <div>
+              <button disabled class="moveUp">move up</button>
+              <button disabled class="moveDown">move down</button>
+              <button class="remove">remove</button>
+            </div>
 
             <label class="centerX" hidden>
               <span>centerX</span>
-              <input type="range" min="-50" max="640" step="1" value="50" />
+              <input type="range" min="-50" max="50" step="1" value="0" />
               <span class="value">50</span>px
             </label>
             <label class="centerY" hidden>
               <span>centerY</span>
-              <input type="range" min="-50" max="640" step="1" value="50" />
+              <input type="range" min="-50" max="50" step="1" value="0" />
               <span class="value">50</span>px
+            </label>
+            <label class="x" hidden>
+              <span>x</span>
+              <input type="range" min="-50" max="50" step="1" value="0" />
+              <span class="value">50</span>px
+            </label>
+            <label class="y" hidden>
+              <span>y</span>
+              <input type="range" min="-50" max="50" step="1" value="0" />
+              <span class="value">50</span>px
+            </label>
+            <label class="width" hidden>
+              width
+              <input type="range" min="1" max="100" step="1" value="25" />
+              <span class="value">100</span>px
+            </label>
+            <label class="height" hidden>
+              height
+              <input type="range" min="1" max="100" step="1" value="25" />
+              <span class="value">100</span>px
+            </label>
+            <label class="radius" hidden>
+              radius
+              <input type="range" min="1" max="200" step="1" value="32" />
+              <span class="value">32</span>px
+            </label>
+            <label class="radiusX" hidden>
+              radiusX
+              <input type="range" min="1" max="200" step="1" value="32" />
+              <span class="value">32</span>px
+            </label>
+            <label class="radiusY" hidden>
+              radiusY
+              <input type="range" min="1" max="200" step="1" value="32" />
+              <span class="value">32</span>px
+            </label>
+            <label class="borderRadius" hidden>
+              borderRadius
+              <input type="range" min="0" max="100" step="1" value="0" />
+              <span class="value">32</span>px
+            </label>
+            <label class="startAngle" hidden>
+              startAngle
+              <input type="range" min="0" max="360" step="1" value="0" />
+              <span class="value">0</span>deg
+            </label>
+            <label class="angleOffset" hidden>
+              angleOffset
+              <input type="range" min="-360" max="360" step="1" value="90" />
+              <span class="value">90</span>deg
+            </label>
+            <label class="numberOfSides" hidden>
+              numberOfSides
+              <input type="range" min="3" max="10" step="1" value="3" />
+              <span class="value">3</span>
+            </label>
+            <label class="startX" hidden>
+              <span>startX</span>
+              <input type="range" min="-50" max="50" step="1" value="0" />
+              <span class="value">0</span>px
+            </label>
+            <label class="startY" hidden>
+              <span>startY</span>
+              <input type="range" min="-50" max="50" step="1" value="0" />
+              <span class="value">0</span>px
+            </label>
+            <label class="endX" hidden>
+              <span>endX</span>
+              <input type="range" min="-50" max="50" step="1" value="10" />
+              <span class="value">10</span>px
+            </label>
+            <label class="endY" hidden>
+              <span>endY</span>
+              <input type="range" min="-50" max="50" step="1" value="10" />
+              <span class="value">10</span>px
+            </label>
+            <label class="numberOfPoints" hidden>
+              <span>numberOfPoints</span>
+              <input type="range" min="2" max="10" step="1" value="2" />
+              <span class="value">2</span>
+            </label>
+          </div>
+        </template>
+        <template id="pointTemplate">
+          <div class="point" hidden>
+            <label class="x verticalLabel">
+              <span>x (<span class="value">50</span>px)</span>
+              <input type="range" min="-50" max="50" step="1" value="0" />
+            </label>
+            <label class="y verticalLabel">
+              <span>y (<span class="value">50</span>px)</span>
+              <input type="range" min="-50" max="50" step="1" value="0" />
             </label>
           </div>
         </template>

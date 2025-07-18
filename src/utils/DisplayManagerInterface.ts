@@ -617,7 +617,7 @@ export async function runDisplayContextCommand(
     case "drawPolygon":
       {
         const { centerX, centerY, radius, numberOfSides } = command;
-        await displayManager.drawEllipse(
+        await displayManager.drawPolygon(
           centerX,
           centerY,
           radius,

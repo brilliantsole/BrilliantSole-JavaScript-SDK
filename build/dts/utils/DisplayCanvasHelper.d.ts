@@ -156,7 +156,7 @@ declare class DisplayCanvasHelper implements DisplayManagerInterface {
     setBrightness(newBrightness: DisplayBrightness, sendImmediately?: boolean): Promise<void>;
     runContextCommand(command: DisplayContextCommand, sendImmediately?: boolean): Promise<void>;
     runContextCommands(commands: DisplayContextCommand[], sendImmediately?: boolean): Promise<void>;
-    setContextTransform(centerX: number, centerY: number, width: number, height: number, scale: number, crop: Record<DisplayCropDirection, number>, rotationCrop: Record<DisplayCropDirection, number>, rotation: number, isRadians?: number): void;
-    resetContextTransform(): void;
+    setCanvasContextTransform(centerX: number, centerY: number, width: number, height: number, scale: number, crop: Record<DisplayCropDirection, number>, rotationCrop: Record<DisplayCropDirection, number>, rotation: number, isRadians?: number): void;
+    resetCanvasContextTransform(): void;
 }
 export default DisplayCanvasHelper;
