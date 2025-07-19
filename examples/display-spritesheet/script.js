@@ -80,6 +80,8 @@ const setDisplayColor = BS.ThrottleUtils.throttle(
     console.log({ colorIndex, colorString });
     displayCanvasHelper.setColor(colorIndex, colorString, true);
     updateBitmapColorInputs();
+    updateFillColorInputs();
+    updateLineColorInputs();
   },
   100,
   true
@@ -208,6 +210,8 @@ const setSpriteColorIndex = BS.ThrottleUtils.throttle(
     displayCanvasHelper.selectSpriteColor(spriteColorIndex, colorIndex, true);
     drawSprite();
     updateBitmapColorInputs();
+    updateFillColorInputs();
+    updateLineColorInputs();
   },
   100,
   true
@@ -1374,6 +1378,31 @@ const addSpriteCommand = () => {
           type: command.type,
         });
         break;
+      case "selectLineColor":
+        selectedSprite.commands.push({
+          type: "selectLineColor",
+          lineColorIndex: 1,
+        });
+        break;
+      case "selectFillColor":
+        selectedSprite.commands.push({
+          type: "selectFillColor",
+          fillColorIndex: 1,
+        });
+        break;
+      case "selectBitmapColor":
+        selectedSprite.commands.push({
+          type: "selectBitmapColor",
+          bitmapColorIndex: 1,
+          colorIndex: 1,
+        });
+        break;
+      case "selectBitmapColors":
+        selectedSprite.commands.push({
+          type: "selectBitmapColors",
+          bitmapColorPairs: [{ bitmapColorIndex: 1, colorIndex: 1 }],
+        });
+        break;
     }
   }
   updateSpriteCommands();
@@ -1882,6 +1911,8 @@ const updateSpriteCommands = () => {
           bitmapSelectedColorIndexContainer.querySelector(".input");
         const bitmapSelectedColorIndexColor =
           bitmapSelectedColorIndexContainer.querySelector(".color");
+        bitmapSelectedColorIndexColor.dataset.bitmapColorIndex =
+          selectedBitmapColorIndex;
         bitmapSelectedColorIndexColor.updateBitmapPixels = updateBitmapPixels;
         bitmapSelectedColorIndexInput.value = selectedBitmapColorIndex;
         const bitmapSelectedColorIndexSpan =
@@ -1900,7 +1931,7 @@ const updateSpriteCommands = () => {
           bitmapSelectedColorIndexSpan.innerText = selectedBitmapColorIndex;
           bitmapSelectedColorIndexColor.value =
             displayCanvasHelper.spriteBitmapColors[selectedBitmapColorIndex];
-          bitmapSelectedColorIndexColor.dataset.colorIndex =
+          bitmapSelectedColorIndexColor.dataset.bitmapColorIndex =
             selectedBitmapColorIndex;
         };
         bitmapSelectedColorIndexColor.value =
@@ -1915,7 +1946,7 @@ const updateSpriteCommands = () => {
         const bitmapNumberOfColorsSpan =
           bitmapNumberOfColorsContainer.querySelector(".value");
         bitmapNumberOfColorsSpan.innerText = command.bitmap.numberOfColors;
-        bitmapNumberOfColorsContainer.addEventListener("input", () => {
+        bitmapNumberOfColorsInput.addEventListener("input", () => {
           const bitmapNumberOfColors = Number(bitmapNumberOfColorsInput.value);
           console.log({ bitmapNumberOfColors });
           bitmapNumberOfColorsSpan.innerText = bitmapNumberOfColors;
@@ -2023,11 +2054,136 @@ const updateSpriteCommands = () => {
         });
       }
 
-      // FILL - colors
-      // FILL - lineWidth
-      // FILL - rotation
+      const includeFillColorIndex = "fillColorIndex" in command;
+      if (includeFillColorIndex) {
+        const fillColorIndexContainer =
+          spriteCommandContainer.querySelector(".fillColorIndex");
+        const fillColorIndexInput =
+          fillColorIndexContainer.querySelector(".input");
+        fillColorIndexInput.value = command.fillColorIndex;
+        const fillColorIndexSpan =
+          fillColorIndexContainer.querySelector(".value");
+        fillColorIndexSpan.innerText = command.fillColorIndex;
+        fillColorIndexContainer.removeAttribute("hidden");
+        fillColorIndexInput.addEventListener("input", () => {
+          command.fillColorIndex = Number(fillColorIndexInput.value);
+          fillColorIndexSpan.innerText = command.fillColorIndex;
+          updateFillColorIndexColor();
+          drawSprite();
+        });
+
+        const fillColorIndexColor =
+          fillColorIndexContainer.querySelector(".color");
+        const updateFillColorIndexColor = () => {
+          console.log(
+            "fillColor",
+            command.fillColorIndex,
+            displayCanvasHelper.spriteColors[command.fillColorIndex],
+            fillColorIndexColor
+          );
+          fillColorIndexColor.dataset.colorIndex = command.fillColorIndex;
+          fillColorIndexColor.value =
+            displayCanvasHelper.spriteColors[command.fillColorIndex];
+        };
+        updateFillColorIndexColor();
+      }
+
+      const includeLineColorIndex = "lineColorIndex" in command;
+      if (includeLineColorIndex) {
+        const lineColorIndexContainer =
+          spriteCommandContainer.querySelector(".lineColorIndex");
+        const lineColorIndexInput =
+          lineColorIndexContainer.querySelector(".input");
+        lineColorIndexInput.value = command.lineColorIndex;
+        const lineColorIndexSpan =
+          lineColorIndexContainer.querySelector(".value");
+        lineColorIndexSpan.innerText = command.lineColorIndex;
+        lineColorIndexContainer.removeAttribute("hidden");
+        lineColorIndexInput.addEventListener("input", () => {
+          command.lineColorIndex = Number(lineColorIndexInput.value);
+          lineColorIndexSpan.innerText = command.lineColorIndex;
+          updateFillColorIndexColor();
+          drawSprite();
+        });
+
+        const lineColorIndexColor =
+          lineColorIndexContainer.querySelector(".color");
+        const updateFillColorIndexColor = () => {
+          console.log(
+            "lineColor",
+            command.lineColorIndex,
+            displayCanvasHelper.spriteColors[command.lineColorIndex],
+            lineColorIndexColor
+          );
+          lineColorIndexColor.dataset.colorIndex = command.lineColorIndex;
+          lineColorIndexColor.value =
+            displayCanvasHelper.spriteColors[command.lineColorIndex];
+        };
+        updateFillColorIndexColor();
+      }
+
+      const includeBitmapColorIndex = "bitmapColorIndex" in command;
+      if (includeBitmapColorIndex) {
+        const bitmapColorIndexContainer =
+          spriteCommandContainer.querySelector(".selectBitmapColor");
+        bitmapColorIndexContainer.removeAttribute("hidden");
+
+        const bitmapColorIndexInput = bitmapColorIndexContainer.querySelector(
+          ".bitmapColorIndex .input"
+        );
+        bitmapColorIndexInput.value = command.bitmapColorIndex;
+        const bitmapColorIndexSpan = bitmapColorIndexContainer.querySelector(
+          ".bitmapColorIndex .value"
+        );
+        bitmapColorIndexSpan.innerText = command.bitmapColorIndex;
+        bitmapColorIndexInput.addEventListener("input", () => {
+          update();
+        });
+
+        const colorIndexInput =
+          bitmapColorIndexContainer.querySelector(".colorIndex .input");
+        colorIndexInput.value = command.colorIndex;
+        const colorIndexSpan =
+          bitmapColorIndexContainer.querySelector(".colorIndex .value");
+        colorIndexSpan.innerText = command.colorIndex;
+        colorIndexInput.addEventListener("input", () => {
+          update();
+        });
+
+        const update = () => {
+          command.bitmapColorIndex = Number(bitmapColorIndexInput.value);
+          bitmapColorIndexSpan.innerText = command.bitmapColorIndex;
+
+          command.colorIndex = Number(colorIndexInput.value);
+          colorIndexSpan.innerText = command.colorIndex;
+
+          updateBitmapColorIndexColor();
+          drawSprite();
+        };
+
+        const bitmapColorIndexColor =
+          bitmapColorIndexContainer.querySelector(".color");
+        const updateBitmapColorIndexColor = () => {
+          console.log(
+            "bitmapColor",
+            command.bitmapColorIndex,
+            displayCanvasHelper.spriteColors[command.colorIndex],
+            bitmapColorIndexColor
+          );
+          bitmapColorIndexColor.dataset.colorIndex = command.colorIndex;
+          bitmapColorIndexColor.value =
+            displayCanvasHelper.spriteColors[command.colorIndex];
+        };
+        updateBitmapColorIndexColor();
+      }
+
+      // FILL - bitmapColor
+      // FILL - bitmapColors
+
       // FILL - crop
       // FILL - rotationCrop
+
+      // FILL - segment cap/radius
 
       spriteCommandsContainer.appendChild(spriteCommandContainer);
     });
@@ -2040,10 +2196,29 @@ const updateBitmapColorInputs = () => {
     .forEach((bitmapSelectedColorIndexColor) => {
       bitmapSelectedColorIndexColor.value =
         displayCanvasHelper.spriteBitmapColors[
-          bitmapSelectedColorIndexColor.dataset.colorIndex
+          bitmapSelectedColorIndexColor.dataset.bitmapColorIndex
         ];
       bitmapSelectedColorIndexColor.updateBitmapPixels();
     });
+
+  document.querySelectorAll(".bitmapColor").forEach((bitmapColorIndexColor) => {
+    bitmapColorIndexColor.value =
+      displayCanvasHelper.spriteColors[
+        bitmapColorIndexColor.dataset.colorIndex
+      ];
+  });
+};
+const updateFillColorInputs = () => {
+  document.querySelectorAll(".fillColor").forEach((fillColorIndexColor) => {
+    fillColorIndexColor.value =
+      displayCanvasHelper.spriteColors[fillColorIndexColor.dataset.colorIndex];
+  });
+};
+const updateLineColorInputs = () => {
+  document.querySelectorAll(".lineColor").forEach((lineColorIndexColor) => {
+    lineColorIndexColor.value =
+      displayCanvasHelper.spriteColors[lineColorIndexColor.dataset.colorIndex];
+  });
 };
 
 /** @type {HTMLSelectElement} */
