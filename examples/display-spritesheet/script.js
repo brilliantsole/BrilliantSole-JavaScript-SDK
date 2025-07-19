@@ -1413,6 +1413,10 @@ const spriteCommandsContainer = document.getElementById("spriteCommands");
 const spriteCommandTemplate = document.getElementById("spriteCommandTemplate");
 /** @type {HTMLTemplateElement} */
 const pointTemplate = document.getElementById("pointTemplate");
+/** @type {HTMLTemplateElement} */
+const bitmapColorPairTemplate = document.getElementById(
+  "bitmapColorPairTemplate"
+);
 const updateSpriteCommands = () => {
   spriteCommandsContainer.innerHTML = "";
   if (selectedSprite) {
@@ -1968,6 +1972,7 @@ const updateSpriteCommands = () => {
 
         const clearBitmapButton =
           spriteCommandContainer.querySelector(".clearBitmap");
+        clearBitmapButton.removeAttribute("hidden");
         clearBitmapButton.addEventListener("click", () => {
           command.bitmap.pixels.fill(0);
           updateBitmapCanvasPixels();
@@ -2177,8 +2182,119 @@ const updateSpriteCommands = () => {
         updateBitmapColorIndexColor();
       }
 
-      // FILL - bitmapColor
-      // FILL - bitmapColors
+      const includeBitmapColorPairs = "bitmapColorPairs" in command;
+      if (includeBitmapColorPairs) {
+        // FILL
+        const numberOfBitmapColorPairsContainer =
+          spriteCommandContainer.querySelector(".numberOfBitmapColorPairs");
+        const numberOfBitmapColorPairsInput =
+          numberOfBitmapColorPairsContainer.querySelector("input");
+        numberOfBitmapColorPairsInput.value = command.bitmapColorPairs.length;
+        const numberOfBitmapColorPairsSpan =
+          numberOfBitmapColorPairsContainer.querySelector(".value");
+        numberOfBitmapColorPairsSpan.innerText =
+          command.bitmapColorPairs.length;
+        numberOfBitmapColorPairsContainer.removeAttribute("hidden");
+        numberOfBitmapColorPairsContainer.addEventListener("input", () => {
+          const numberOfBitmapColorPairs = Number(
+            numberOfBitmapColorPairsInput.value
+          );
+          // console.log({ numberOfBitmapColorPairs });
+          for (let i = 0; i < numberOfBitmapColorPairs; i++) {
+            let bitmapColorPair = command.bitmapColorPairs[i];
+            if (!bitmapColorPair) {
+              command.bitmapColorPairs[i] = {
+                bitmapColorIndex: i,
+                colorIndex: 0,
+              };
+            }
+          }
+          command.bitmapColorPairs.length = numberOfBitmapColorPairs;
+          bitmapColorPairContainers.forEach(
+            (bitmapColorPairContainer, index) => {
+              // console.log("bitmapColorPairContainer", bitmapColorPairContainer);
+              bitmapColorPairContainer.hidden =
+                index >= command.bitmapColorPairs.length;
+            }
+          );
+          numberOfBitmapColorPairsSpan.innerText =
+            command.bitmapColorPairs.length;
+          drawSprite();
+        });
+
+        const bitmapColorPairContainers = [];
+        for (let i = 0; i < numberOfBitmapColorPairsInput.max; i++) {
+          const bitmapColorPairContainer = bitmapColorPairTemplate.content
+            .cloneNode(true)
+            .querySelector(".bitmapColorPair");
+
+          const bitmapColorPair = command.bitmapColorPairs[i];
+          bitmapColorPairContainer.hidden = !Boolean(bitmapColorPair);
+
+          const bitmapColorIndexContainer =
+            bitmapColorPairContainer.querySelector(".bitmapColorIndex");
+          bitmapColorIndexContainer.removeAttribute("hidden");
+          const bitmapColorIndexInput =
+            bitmapColorIndexContainer.querySelector("input");
+          const bitmapColorIndexSpan =
+            bitmapColorIndexContainer.querySelector(".value");
+          if (bitmapColorPair) {
+            bitmapColorIndexInput.value = bitmapColorPair.bitmapColorIndex;
+            bitmapColorIndexSpan.innerText = bitmapColorPair.bitmapColorIndex;
+          }
+          bitmapColorIndexContainer.addEventListener("input", () => {
+            update();
+          });
+
+          const colorIndexContainer =
+            bitmapColorPairContainer.querySelector(".colorIndex");
+          colorIndexContainer.removeAttribute("hidden");
+          const colorIndexInput = colorIndexContainer.querySelector("input");
+          const colorIndexSpan = colorIndexContainer.querySelector(".value");
+          if (bitmapColorPair) {
+            colorIndexInput.value = bitmapColorPair.colorIndex;
+            colorIndexSpan.innerText = bitmapColorPair.colorIndex;
+          }
+          colorIndexContainer.addEventListener("input", () => {
+            update();
+          });
+
+          const update = () => {
+            const bitmapColorPair = command.bitmapColorPairs[i];
+            if (!bitmapColorPair) {
+              return;
+            }
+
+            bitmapColorPair.bitmapColorIndex = Number(
+              bitmapColorIndexInput.value
+            );
+            bitmapColorIndexSpan.innerText = bitmapColorPair.bitmapColorIndex;
+
+            bitmapColorPair.colorIndex = Number(colorIndexInput.value);
+            colorIndexSpan.innerText = bitmapColorPair.colorIndex;
+
+            updateBitmapColorIndexColor();
+            drawSprite();
+          };
+
+          const bitmapColorIndexColor =
+            bitmapColorPairContainer.querySelector(".color");
+          const updateBitmapColorIndexColor = () => {
+            const bitmapColorPair = command.bitmapColorPairs[i];
+            if (!bitmapColorPair) {
+              return;
+            }
+            bitmapColorIndexColor.dataset.colorIndex =
+              bitmapColorPair.colorIndex;
+            bitmapColorIndexColor.value =
+              displayCanvasHelper.spriteColors[bitmapColorPair.colorIndex];
+          };
+          updateBitmapColorIndexColor();
+
+          spriteCommandContainer.appendChild(bitmapColorPairContainer);
+          bitmapColorPairContainers[i] = bitmapColorPairContainer;
+        }
+      }
 
       // FILL - crop
       // FILL - rotationCrop

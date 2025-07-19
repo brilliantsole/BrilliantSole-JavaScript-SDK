@@ -534,6 +534,12 @@
 
               <input type="color" class="color lineColor" disabled />
             </label>
+
+            <label class="numberOfBitmapColorPairs" hidden>
+              <span>numberOfBitmapColorPairs</span>
+              <input type="range" min="1" max="16" step="1" value="1" />
+              <span class="value">1</span>
+            </label>
           </div>
         </template>
         <template id="pointTemplate">
@@ -546,6 +552,34 @@
               <span>y (<span class="value">50</span>px)</span>
               <input type="range" min="-50" max="50" step="1" value="0" />
             </label>
+          </div>
+        </template>
+        <template id="bitmapColorPairTemplate">
+          <div class="bitmapColorPair">
+            <label class="bitmapColorIndex verticalLabel">
+              <span>bitmapColorIndex <span class="value">1</span></span>
+              <input
+                type="range"
+                class="input"
+                min="0"
+                max="16"
+                step="1"
+                value="1"
+              />
+            </label>
+            <label class="colorIndex verticalLabel">
+              <span>colorIndex <span class="value">1</span></span>
+              <input
+                type="range"
+                class="input"
+                min="0"
+                max="16"
+                step="1"
+                value="1"
+              />
+            </label>
+
+            <input type="color" class="color lineColor" disabled />
           </div>
         </template>
       </div>
