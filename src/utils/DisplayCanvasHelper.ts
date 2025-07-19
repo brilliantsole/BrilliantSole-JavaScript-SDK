@@ -1056,6 +1056,16 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
   get spriteColors() {
     return this.spriteColorIndices.map((colorIndex) => this.colors[colorIndex]);
   }
+  get spriteBitmapColorIndices() {
+    return this.bitmapColorIndices.map(
+      (colorIndex) => this.spriteColorIndices[colorIndex]
+    );
+  }
+  get spriteBitmapColors() {
+    return this.spriteBitmapColorIndices.map(
+      (colorIndex) => this.colors[colorIndex]
+    );
+  }
   async selectSpriteColor(
     spriteColorIndex: number,
     colorIndex: number,
@@ -1217,8 +1227,15 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     ctx.restore();
   }
   #transformContext(centerX: number, centerY: number, rotation: number) {
+    this.#translateContext(centerX, centerY);
+    this.#rotateContext(rotation);
+  }
+  #translateContext(centerX: number, centerY: number) {
     const ctx = this.context;
     ctx.translate(centerX, centerY);
+  }
+  #rotateContext(rotation: number) {
+    const ctx = this.context;
     ctx.rotate(rotation);
   }
   #rotateBoundingBox(
@@ -1262,7 +1279,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
   }
   #clearBoundingBoxOnDraw = true;
   #clearBoundingBox({ x, y, width, height }: DisplayBoundingBox) {
-    this.#clearRectToCanvas(x, y, width, height);
+    this.#clearRectToCanvas(-width / 2, -height / 2, width, height);
   }
   #getBoundingBox(
     centerX: number,
@@ -1366,6 +1383,10 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     fillColorIndex,
     lineColorIndex,
   }: DisplayContextState) {
+    if (this.#useSpriteColorIndices) {
+      fillColorIndex = this.spriteColorIndices[fillColorIndex];
+      lineColorIndex = this.spriteColorIndices[lineColorIndex];
+    }
     this.context.fillStyle = this.#colorIndexToRgbString(fillColorIndex);
     this.context.strokeStyle = this.#colorIndexToRgbString(lineColorIndex);
     this.context.lineWidth = lineWidth;
@@ -1387,13 +1408,13 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
       height,
       contextState
     );
-    if (this.#clearBoundingBoxOnDraw) {
-      this.#clearBoundingBox(box);
-    }
     const rotatedBox = this.#rotateBoundingBox(box, contextState.rotation);
     this.#applyClip(rotatedBox, contextState);
 
     this.#transformContext(centerX, centerY, contextState.rotation);
+    if (this.#clearBoundingBoxOnDraw) {
+      this.#clearBoundingBox(box);
+    }
 
     this.#applyRotationClip(box, contextState);
 
@@ -1445,13 +1466,14 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
       height,
       contextState
     );
-    if (this.#clearBoundingBoxOnDraw) {
-      this.#clearBoundingBox(box);
-    }
+
     const rotatedBox = this.#rotateBoundingBox(box, contextState.rotation);
     this.#applyClip(rotatedBox, contextState);
 
     this.#transformContext(centerX, centerY, contextState.rotation);
+    if (this.#clearBoundingBoxOnDraw) {
+      this.#clearBoundingBox(box);
+    }
 
     this.#applyRotationClip(box, contextState);
 
@@ -1526,12 +1548,12 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
       radius,
       contextState
     );
-    if (this.#clearBoundingBoxOnDraw) {
-      this.#clearBoundingBox(box);
-    }
     this.#applyClip(box, contextState);
 
     this.#transformContext(centerX, centerY, contextState.rotation);
+    if (this.#clearBoundingBoxOnDraw) {
+      this.#clearBoundingBox(box);
+    }
 
     this.#applyRotationClip(box, contextState);
 
@@ -1596,14 +1618,14 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
       radiusY,
       contextState
     );
-    if (this.#clearBoundingBoxOnDraw) {
-      this.#clearBoundingBox(box);
-    }
 
     const rotatedBox = this.#rotateBoundingBox(box, contextState.rotation);
     this.#applyClip(rotatedBox, contextState);
 
     this.#transformContext(centerX, centerY, contextState.rotation);
+    if (this.#clearBoundingBoxOnDraw) {
+      this.#clearBoundingBox(box);
+    }
 
     this.#applyRotationClip(box, contextState);
 
@@ -1679,13 +1701,12 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
       numberOfSides,
       contextState
     );
-    if (this.#clearBoundingBoxOnDraw) {
-      this.#clearBoundingBox(box);
-    }
-
     this.#applyClip(box, contextState);
 
     this.#transformContext(centerX, centerY, contextState.rotation);
+    if (this.#clearBoundingBoxOnDraw) {
+      this.#clearBoundingBox(box);
+    }
 
     this.#applyRotationClip(box, contextState);
 
@@ -2118,12 +2139,12 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
       radius,
       contextState
     );
-    if (this.#clearBoundingBoxOnDraw) {
-      this.#clearBoundingBox(box);
-    }
     this.#applyClip(box, contextState);
 
     this.#transformContext(centerX, centerY, contextState.rotation);
+    if (this.#clearBoundingBoxOnDraw) {
+      this.#clearBoundingBox(box);
+    }
 
     this.#applyRotationClip(box, contextState);
 
@@ -2202,14 +2223,14 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
       radiusY,
       contextState
     );
-    if (this.#clearBoundingBoxOnDraw) {
-      this.#clearBoundingBox(box);
-    }
 
     const rotatedBox = this.#rotateBoundingBox(box, contextState.rotation);
     this.#applyClip(rotatedBox, contextState);
 
     this.#transformContext(centerX, centerY, contextState.rotation);
+    if (this.#clearBoundingBoxOnDraw) {
+      this.#clearBoundingBox(box);
+    }
 
     this.#applyRotationClip(box, contextState);
 
@@ -2302,7 +2323,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
 
     // _console.log("drawBitmapToCanvas", { centerX, centerY, bitmap });
 
-    const { bitmapScaleX, bitmapScaleY } = this.contextState;
+    const { bitmapScaleX, bitmapScaleY } = contextState;
     const width = bitmap.width * bitmapScaleX;
     const height = bitmap.height * bitmapScaleY;
 
@@ -2316,13 +2337,13 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
       height,
       contextState
     );
-    if (this.#clearBoundingBoxOnDraw) {
-      this.#clearBoundingBox(box);
-    }
     const rotatedBox = this.#rotateBoundingBox(box, contextState.rotation);
     this.#applyClip(rotatedBox, contextState);
 
     this.#transformContext(centerX, centerY, contextState.rotation);
+    if (this.#clearBoundingBoxOnDraw) {
+      this.#clearBoundingBox(box);
+    }
 
     this.#applyRotationClip(box, contextState);
 
@@ -2338,7 +2359,10 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     const x = -width / 2;
     const y = -height / 2;
     bitmap.pixels.forEach((pixel, pixelIndex) => {
-      const colorIndex = this.bitmapColorIndices[pixel];
+      let colorIndex = this.bitmapColorIndices[pixel];
+      if (this.#useSpriteColorIndices) {
+        colorIndex = this.spriteColorIndices[colorIndex];
+      }
       const color = hexToRGB(this.colors[colorIndex]);
       const opacity = this.#getColorOpacity(colorIndex, true);
 
@@ -2350,7 +2374,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
       rawBitmapImageData[imageDataOffset + 3] = Math.floor(opacity * 255);
     });
 
-    //// _console.log("rawBitmapImageData", rawBitmapImageData);
+    // _console.log("rawBitmapImageData", rawBitmapImageData);
 
     this.#bitmapContext.putImageData(bitmapImageData, 0, 0);
     this.#context.drawImage(this.#bitmapCanvas, x, y, width, height);
@@ -2475,8 +2499,6 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     rotation = isRadians ? rotation : degToRad(rotation);
 
     this.#rearDrawStack.push(() => {
-      this.#clearBoundingBoxOnDraw = false;
-
       _console.log("setContextTransform", {
         centerX,
         centerY,
@@ -2521,16 +2543,31 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
       this.#context.clip();
     });
   }
-
   resetCanvasContextTransform() {
     this.#rearDrawStack.push(() => {
       _console.log("reset transform");
       this.#restore();
-      this.#clearBoundingBoxOnDraw = true;
+    });
+  }
+
+  setClearCanvasBoundingBoxOnDraw(clearBoundingBoxOnDraw: boolean) {
+    this.#rearDrawStack.push(() => {
+      _console.log({ clearBoundingBoxOnDraw });
+      this.#clearBoundingBoxOnDraw = clearBoundingBoxOnDraw;
+    });
+  }
+
+  #useSpriteColorIndices = false;
+  setUseSpriteColorIndices(useSpriteColorIndices: boolean) {
+    this.#rearDrawStack.push(() => {
+      _console.log({ useSpriteColorIndices });
+      this.#useSpriteColorIndices = useSpriteColorIndices;
     });
   }
 
   #reset() {
+    this.#useSpriteColorIndices = false;
+    this.#clearBoundingBoxOnDraw = true;
     this.#resetColors();
     this.#resetOpacities();
     this.#resetContextState();

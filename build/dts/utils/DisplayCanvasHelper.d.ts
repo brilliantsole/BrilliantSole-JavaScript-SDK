@@ -133,6 +133,8 @@ declare class DisplayCanvasHelper implements DisplayManagerInterface {
     resetBitmapScale(sendImmediately?: boolean): Promise<void>;
     get spriteColorIndices(): number[];
     get spriteColors(): string[];
+    get spriteBitmapColorIndices(): number[];
+    get spriteBitmapColors(): string[];
     selectSpriteColor(spriteColorIndex: number, colorIndex: number, sendImmediately?: boolean): Promise<void>;
     selectSpriteColors(spriteColorPairs: DisplaySpriteColorPair[], sendImmediately?: boolean): Promise<void>;
     setSpriteColor(spriteColorIndex: number, color: DisplayColorRGB | string, sendImmediately?: boolean): Promise<void>;
@@ -158,5 +160,7 @@ declare class DisplayCanvasHelper implements DisplayManagerInterface {
     runContextCommands(commands: DisplayContextCommand[], sendImmediately?: boolean): Promise<void>;
     setCanvasContextTransform(centerX: number, centerY: number, width: number, height: number, scale: number, crop: Record<DisplayCropDirection, number>, rotationCrop: Record<DisplayCropDirection, number>, rotation: number, isRadians?: number): void;
     resetCanvasContextTransform(): void;
+    setClearCanvasBoundingBoxOnDraw(clearBoundingBoxOnDraw: boolean): void;
+    setUseSpriteColorIndices(useSpriteColorIndices: boolean): void;
 }
 export default DisplayCanvasHelper;

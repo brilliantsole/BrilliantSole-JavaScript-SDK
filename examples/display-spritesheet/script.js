@@ -79,6 +79,7 @@ const setDisplayColor = BS.ThrottleUtils.throttle(
   (colorIndex, colorString) => {
     console.log({ colorIndex, colorString });
     displayCanvasHelper.setColor(colorIndex, colorString, true);
+    updateBitmapColorInputs();
   },
   100,
   true
@@ -205,6 +206,8 @@ const setSpriteColorIndex = BS.ThrottleUtils.throttle(
   (spriteColorIndex, colorIndex) => {
     //console.log({ spriteColorIndex, colorIndex });
     displayCanvasHelper.selectSpriteColor(spriteColorIndex, colorIndex, true);
+    drawSprite();
+    updateBitmapColorInputs();
   },
   100,
   true
@@ -885,7 +888,11 @@ let drawSprite = () => {
       rotation,
       false
     );
+    displayCanvasHelper.setClearCanvasBoundingBoxOnDraw(true);
+    displayCanvasHelper.setUseSpriteColorIndices(true);
     displayCanvasHelper.runContextCommands(selectedSprite.commands);
+    displayCanvasHelper.setUseSpriteColorIndices(false);
+    displayCanvasHelper.setClearCanvasBoundingBoxOnDraw(false);
     displayCanvasHelper.resetCanvasContextTransform();
 
     displayCanvasHelper.show();
@@ -1311,6 +1318,62 @@ const addSpriteCommand = () => {
           ],
         });
         break;
+      case "drawBitmap":
+        selectedSprite.commands.push({
+          type: "drawBitmap",
+          centerX: 0,
+          centerY: 0,
+          bitmap: {
+            width: 10,
+            height: 10,
+            pixels: new Array(100).fill(0),
+            numberOfColors: 2,
+          },
+        });
+        break;
+      case "setBitmapScale":
+        selectedSprite.commands.push({
+          type: "setBitmapScale",
+          bitmapScale: 1,
+        });
+        break;
+      case "setBitmapScaleX":
+        selectedSprite.commands.push({
+          type: "setBitmapScaleX",
+          bitmapScaleX: 1,
+        });
+        break;
+      case "setBitmapScaleY":
+        selectedSprite.commands.push({
+          type: "setBitmapScaleY",
+          bitmapScaleY: 1,
+        });
+        break;
+      case "setRotation":
+        selectedSprite.commands.push({
+          type: "setRotation",
+          rotation: 0,
+        });
+        break;
+      case "setLineWidth":
+        selectedSprite.commands.push({
+          type: "setLineWidth",
+          lineWidth: 0,
+        });
+        break;
+      case "clearRotation":
+        selectedSprite.commands.push({
+          type: "clearRotation",
+        });
+        break;
+      case "clearRotation":
+      case "clearCrop":
+      case "clearRotationCrop":
+      case "resetBitmapScale":
+        selectedSprite.commands.push({
+          type: command.type,
+        });
+        break;
     }
   }
   updateSpriteCommands();
@@ -1678,6 +1741,288 @@ const updateSpriteCommands = () => {
         }
       }
 
+      const includeBitmap = "bitmap" in command;
+      if (includeBitmap) {
+        /** @type {HTMLCanvasElement} */
+        const bitmapCanvas =
+          spriteCommandContainer.querySelector(".bitmapCanvas");
+        bitmapCanvas.removeAttribute("hidden");
+        const bitmapContext = bitmapCanvas.getContext("2d");
+        const pixelLength = 10;
+
+        const updateBitmapCanvasSize = () => {
+          const { width, height } = command.bitmap;
+          bitmapCanvas.width = width * pixelLength + (width - 1);
+          bitmapCanvas.height = height * pixelLength + (height - 1);
+
+          bitmapCanvas.style.height = `${bitmapCanvas.height}px`;
+          bitmapCanvas.style.width = `${bitmapCanvas.width}px`;
+        };
+
+        bitmapCanvas.addEventListener("mousedown", (event) => {
+          const { offsetX, offsetY } = event;
+          setBitmapPixel(offsetX, offsetY);
+        });
+        bitmapCanvas.addEventListener("mousemove", (event) => {
+          if (!isMouseDown) {
+            return;
+          }
+          const { offsetX, offsetY } = event;
+          setBitmapPixel(offsetX, offsetY);
+        });
+        /**
+         * @param {number} offsetX
+         * @param {number} offsetY
+         */
+        const setBitmapPixel = (offsetX, offsetY) => {
+          const canvasWidth = bitmapCanvas.width;
+          const canvasHeight = bitmapCanvas.height;
+
+          const { width, height, pixels } = command.bitmap;
+
+          console.log({
+            offsetX,
+            offsetY,
+            canvasWidth,
+            canvasHeight,
+          });
+          let x = offsetX / canvasWidth;
+          let y = offsetY / canvasHeight;
+          if (x >= 1 || y >= 1) {
+            return;
+          }
+          // console.log({ x, y });
+          const pixelX = Math.floor(x * width);
+          const pixelY = Math.floor(y * height);
+          console.log({ pixelX, pixelY });
+
+          const pixelIndex = width * pixelY + pixelX;
+          console.log({ pixelIndex });
+
+          pixels[pixelIndex] = selectedBitmapColorIndex;
+          updateBitmapCanvasPixels();
+        };
+
+        const updateBitmapCanvasPixels = () => {
+          bitmapContext.imageSmoothingEnabled = false;
+
+          const { width, height, pixels } = command.bitmap;
+
+          const canvasWidth = bitmapCanvas.width;
+          const canvasHeight = bitmapCanvas.height;
+
+          bitmapContext.clearRect(0, 0, canvasWidth, canvasHeight);
+          bitmapContext.fillStyle = displayCanvasHelper.spriteBitmapColors[0];
+          bitmapContext.fillRect(0, 0, canvasWidth, canvasHeight);
+
+          pixels.forEach((pixel, pixelIndex) => {
+            const pixelX = pixelIndex % width;
+            const pixelY = Math.floor(pixelIndex / width);
+            const x = pixelX * (pixelLength + 1);
+            const y = pixelY * (pixelLength + 1);
+            bitmapContext.fillStyle =
+              displayCanvasHelper.spriteBitmapColors[pixel];
+            bitmapContext.fillRect(x, y, pixelLength, pixelLength);
+          });
+
+          bitmapContext.lineWidth = 1;
+          bitmapContext.fillStyle = "gray";
+          for (let row = 1; row < height; row++) {
+            const y = row * (pixelLength + 1) - 1;
+            bitmapContext.fillRect(0, y, canvasWidth, 1);
+          }
+          for (let col = 1; col < width; col++) {
+            const x = col * (pixelLength + 1) - 1;
+            bitmapContext.fillRect(x, 0, 1, canvasHeight);
+          }
+          drawSprite();
+        };
+
+        updateBitmapCanvasSize();
+        updateBitmapCanvasPixels();
+        const updateBitmapPixels = () => {
+          const { width, height } = command.bitmap;
+          command.bitmap.pixels = new Array(width * height).fill(0);
+          updateBitmapCanvasSize();
+          updateBitmapCanvasPixels();
+        };
+        const bitmapWidthContainer =
+          spriteCommandContainer.querySelector(".bitmapWidth");
+        bitmapWidthContainer.removeAttribute("hidden");
+        const bitmapWidthInput = bitmapWidthContainer.querySelector("input");
+        bitmapWidthInput.value = command.bitmap.width;
+        const bitmapWidthSpan = bitmapWidthContainer.querySelector(".value");
+        bitmapWidthSpan.innerText = command.bitmap.width;
+        bitmapWidthContainer.addEventListener("input", () => {
+          command.bitmap.width = Number(bitmapWidthInput.value);
+          updateBitmapPixels();
+          bitmapWidthSpan.innerText = command.bitmap.width;
+          drawSprite();
+        });
+
+        const bitmapHeightContainer =
+          spriteCommandContainer.querySelector(".bitmapHeight");
+        bitmapHeightContainer.removeAttribute("hidden");
+        const bitmapHeightInput = bitmapHeightContainer.querySelector("input");
+        bitmapHeightInput.value = command.bitmap.height;
+        const bitmapHeightSpan = bitmapHeightContainer.querySelector(".value");
+        bitmapHeightSpan.innerText = command.bitmap.height;
+        bitmapHeightContainer.addEventListener("input", () => {
+          command.bitmap.height = Number(bitmapHeightInput.value);
+          updateBitmapPixels();
+          bitmapHeightSpan.innerText = command.bitmap.height;
+          drawSprite();
+        });
+
+        let selectedBitmapColorIndex = 1;
+        const bitmapSelectedColorIndexContainer =
+          spriteCommandContainer.querySelector(".bitmapSelectedColorIndex");
+        bitmapSelectedColorIndexContainer.removeAttribute("hidden");
+        const bitmapSelectedColorIndexInput =
+          bitmapSelectedColorIndexContainer.querySelector(".input");
+        const bitmapSelectedColorIndexColor =
+          bitmapSelectedColorIndexContainer.querySelector(".color");
+        bitmapSelectedColorIndexColor.updateBitmapPixels = updateBitmapPixels;
+        bitmapSelectedColorIndexInput.value = selectedBitmapColorIndex;
+        const bitmapSelectedColorIndexSpan =
+          bitmapSelectedColorIndexContainer.querySelector(".value");
+        bitmapSelectedColorIndexSpan.innerText = selectedBitmapColorIndex;
+        bitmapSelectedColorIndexContainer.addEventListener("input", () => {
+          const newSelectedBitmapColorIndex = Number(
+            bitmapSelectedColorIndexInput.value
+          );
+          setBitmapSelectedColorIndex(newSelectedBitmapColorIndex);
+        });
+        const setBitmapSelectedColorIndex = (newSelectedBitmapColorIndex) => {
+          selectedBitmapColorIndex = newSelectedBitmapColorIndex;
+          console.log({ selectedBitmapColorIndex });
+          bitmapSelectedColorIndexInput.value = selectedBitmapColorIndex;
+          bitmapSelectedColorIndexSpan.innerText = selectedBitmapColorIndex;
+          bitmapSelectedColorIndexColor.value =
+            displayCanvasHelper.spriteBitmapColors[selectedBitmapColorIndex];
+          bitmapSelectedColorIndexColor.dataset.colorIndex =
+            selectedBitmapColorIndex;
+        };
+        bitmapSelectedColorIndexColor.value =
+          displayCanvasHelper.spriteBitmapColors[selectedBitmapColorIndex];
+
+        const bitmapNumberOfColorsContainer =
+          spriteCommandContainer.querySelector(".bitmapNumberOfColors");
+        bitmapNumberOfColorsContainer.removeAttribute("hidden");
+        const bitmapNumberOfColorsInput =
+          bitmapNumberOfColorsContainer.querySelector("input");
+        bitmapNumberOfColorsInput.value = command.bitmap.numberOfColors;
+        const bitmapNumberOfColorsSpan =
+          bitmapNumberOfColorsContainer.querySelector(".value");
+        bitmapNumberOfColorsSpan.innerText = command.bitmap.numberOfColors;
+        bitmapNumberOfColorsContainer.addEventListener("input", () => {
+          const bitmapNumberOfColors = Number(bitmapNumberOfColorsInput.value);
+          console.log({ bitmapNumberOfColors });
+          bitmapNumberOfColorsSpan.innerText = bitmapNumberOfColors;
+          command.bitmap.numberOfColors = bitmapNumberOfColors;
+          command.bitmap.pixels.forEach((pixel, index) => {
+            command.bitmap.pixels[index] = Math.min(
+              pixel,
+              bitmapNumberOfColors - 1
+            );
+          });
+          setBitmapSelectedColorIndex(
+            Math.min(selectedBitmapColorIndex, bitmapNumberOfColors - 1)
+          );
+          bitmapSelectedColorIndexInput.max = command.bitmap.numberOfColors - 1;
+          updateBitmapPixels();
+          drawSprite();
+        });
+        bitmapSelectedColorIndexInput.max = command.bitmap.numberOfColors - 1;
+
+        const clearBitmapButton =
+          spriteCommandContainer.querySelector(".clearBitmap");
+        clearBitmapButton.addEventListener("click", () => {
+          command.bitmap.pixels.fill(0);
+          updateBitmapCanvasPixels();
+        });
+      }
+
+      const includeBitmapScale = "bitmapScale" in command;
+      if (includeBitmapScale) {
+        const bitmapScaleContainer =
+          spriteCommandContainer.querySelector(".bitmapScale");
+        const bitmapScaleInput = bitmapScaleContainer.querySelector("input");
+        bitmapScaleInput.value = command.bitmapScale;
+        const bitmapScaleSpan = bitmapScaleContainer.querySelector(".value");
+        bitmapScaleSpan.innerText = command.bitmapScale;
+        bitmapScaleContainer.removeAttribute("hidden");
+        bitmapScaleContainer.addEventListener("input", () => {
+          command.bitmapScale = Number(bitmapScaleInput.value);
+          bitmapScaleSpan.innerText = command.bitmapScale;
+          drawSprite();
+        });
+      }
+
+      const includeBitmapScaleX = "bitmapScaleX" in command;
+      if (includeBitmapScaleX) {
+        const bitmapScaleXContainer =
+          spriteCommandContainer.querySelector(".bitmapScaleX");
+        const bitmapScaleXInput = bitmapScaleXContainer.querySelector("input");
+        bitmapScaleXInput.value = command.bitmapScaleX;
+        const bitmapScaleXSpan = bitmapScaleXContainer.querySelector(".value");
+        bitmapScaleXSpan.innerText = command.bitmapScaleX;
+        bitmapScaleXContainer.removeAttribute("hidden");
+        bitmapScaleXContainer.addEventListener("input", () => {
+          command.bitmapScaleX = Number(bitmapScaleXInput.value);
+          bitmapScaleXSpan.innerText = command.bitmapScaleX;
+          drawSprite();
+        });
+      }
+
+      const includeBitmapScaleY = "bitmapScaleY" in command;
+      if (includeBitmapScaleY) {
+        const bitmapScaleYContainer =
+          spriteCommandContainer.querySelector(".bitmapScaleY");
+        const bitmapScaleYInput = bitmapScaleYContainer.querySelector("input");
+        bitmapScaleYInput.value = command.bitmapScaleY;
+        const bitmapScaleYSpan = bitmapScaleYContainer.querySelector(".value");
+        bitmapScaleYSpan.innerText = command.bitmapScaleY;
+        bitmapScaleYContainer.removeAttribute("hidden");
+        bitmapScaleYContainer.addEventListener("input", () => {
+          command.bitmapScaleY = Number(bitmapScaleYInput.value);
+          bitmapScaleYSpan.innerText = command.bitmapScaleY;
+          drawSprite();
+        });
+      }
+
+      const includeRotation = "rotation" in command;
+      if (includeRotation) {
+        const rotationContainer =
+          spriteCommandContainer.querySelector(".rotation");
+        const rotationInput = rotationContainer.querySelector("input");
+        rotationInput.value = command.rotation;
+        const rotationSpan = rotationContainer.querySelector(".value");
+        rotationSpan.innerText = command.rotation;
+        rotationContainer.removeAttribute("hidden");
+        rotationContainer.addEventListener("input", () => {
+          command.rotation = Number(rotationInput.value);
+          rotationSpan.innerText = command.rotation;
+          drawSprite();
+        });
+      }
+
+      const includeLineWidth = "lineWidth" in command;
+      if (includeLineWidth) {
+        const lineWidthContainer =
+          spriteCommandContainer.querySelector(".lineWidth");
+        const lineWidthInput = lineWidthContainer.querySelector("input");
+        lineWidthInput.value = command.lineWidth;
+        const lineWidthSpan = lineWidthContainer.querySelector(".value");
+        lineWidthSpan.innerText = command.lineWidth;
+        lineWidthContainer.removeAttribute("hidden");
+        lineWidthContainer.addEventListener("input", () => {
+          command.lineWidth = Number(lineWidthInput.value);
+          lineWidthSpan.innerText = command.lineWidth;
+          drawSprite();
+        });
+      }
+
       // FILL - colors
       // FILL - lineWidth
       // FILL - rotation
@@ -1687,6 +2032,18 @@ const updateSpriteCommands = () => {
       spriteCommandsContainer.appendChild(spriteCommandContainer);
     });
   }
+};
+
+const updateBitmapColorInputs = () => {
+  document
+    .querySelectorAll(".bitmapSelectedColorIndexColor")
+    .forEach((bitmapSelectedColorIndexColor) => {
+      bitmapSelectedColorIndexColor.value =
+        displayCanvasHelper.spriteBitmapColors[
+          bitmapSelectedColorIndexColor.dataset.colorIndex
+        ];
+      bitmapSelectedColorIndexColor.updateBitmapPixels();
+    });
 };
 
 /** @type {HTMLSelectElement} */
@@ -1703,3 +2060,11 @@ spriteCommandTypeSelect.addEventListener("input", () => {
   console.log({ spriteCommandType });
 });
 // console.log({ spriteCommandType });
+
+let isMouseDown = false;
+window.addEventListener("mousedown", () => {
+  isMouseDown = true;
+});
+window.addEventListener("mouseup", () => {
+  isMouseDown = false;
+});

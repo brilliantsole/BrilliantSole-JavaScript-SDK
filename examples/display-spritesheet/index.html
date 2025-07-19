@@ -7,6 +7,7 @@
   </head>
   <style>
     #display {
+      image-rendering: pixelated;
       background-color: black;
     }
     .verticalLabel {
@@ -34,6 +35,11 @@
     .spriteCommand {
       display: flex;
       flex-direction: column;
+    }
+    .bitmapCanvas {
+      image-rendering: pixelated;
+      background-color: black;
+      border: solid 1px black;
     }
   </style>
   <body>
@@ -394,6 +400,70 @@
               <span>numberOfPoints</span>
               <input type="range" min="2" max="10" step="1" value="2" />
               <span class="value">2</span>
+            </label>
+            <label class="bitmapWidth" hidden>
+              <span>bitmapWidth</span>
+              <input type="range" min="1" max="40" step="1" value="10" />
+              <span class="value">10</span>
+            </label>
+            <label class="bitmapHeight" hidden>
+              <span>bitmapHeight</span>
+              <input type="range" min="1" max="40" step="1" value="10" />
+              <span class="value">10</span>
+            </label>
+            <label class="bitmapNumberOfColors" hidden>
+              <span>bitmapNumberOfColors</span>
+              <input type="range" min="2" max="16" step="1" value="2" />
+              <span class="value">2</span>
+            </label>
+            <label class="bitmapSelectedColorIndex" hidden>
+              <span>bitmapSelectedColorIndex</span>
+              <input
+                type="range"
+                class="input"
+                min="0"
+                max="16"
+                step="1"
+                value="1"
+              />
+              <span class="value">2</span>
+              <input
+                type="color"
+                class="color bitmapSelectedColorIndexColor"
+                disabled
+              />
+            </label>
+            <button class="clearBitmap" hidden>clear bitmap</button>
+            <canvas
+              hidden
+              class="bitmapCanvas"
+              width="109"
+              height="109"
+            ></canvas>
+            <label class="bitmapScale" hidden>
+              <span>bitmapScale</span>
+              <input type="range" min="0.01" max="20" step="0.01" value="1.0" />
+              <span class="value">1</span>x
+            </label>
+            <label class="bitmapScaleX" hidden>
+              <span>bitmapScaleX</span>
+              <input type="range" min="0.01" max="20" step="0.01" value="1.0" />
+              <span class="value">1</span>x
+            </label>
+            <label class="bitmapScaleY" hidden>
+              <span>bitmapScaleY</span>
+              <input type="range" min="0.01" max="20" step="0.01" value="1.0" />
+              <span class="value">1</span>x
+            </label>
+            <label class="lineWidth" hidden>
+              <span>lineWidth</span>
+              <input type="range" min="0" max="50" step="1" value="0" />
+              <span class="value">0</span>px
+            </label>
+            <label class="rotation" hidden>
+              <span>rotation</span>
+              <input type="range" min="0" max="360" step="1" value="0" />
+              <span class="value">0</span>deg
             </label>
           </div>
         </template>
