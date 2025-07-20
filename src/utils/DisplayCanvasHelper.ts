@@ -462,6 +462,12 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
   }
   #resetContextState() {
     this.#contextStateHelper.reset();
+    this.contextState.bitmapColorIndices = new Array(this.numberOfColors).fill(
+      0
+    );
+    this.contextState.spriteColorIndices = new Array(this.numberOfColors)
+      .fill(0)
+      .map((_, index) => index);
   }
   #updateDeviceContextState(sendImmediately?: boolean) {
     if (!this.device?.isConnected) {
@@ -1278,8 +1284,16 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     };
   }
   #clearBoundingBoxOnDraw = true;
-  #clearBoundingBox({ x, y, width, height }: DisplayBoundingBox) {
-    this.#clearRectToCanvas(-width / 2, -height / 2, width, height);
+  #clearBoundingBox(
+    { x, y, width, height }: DisplayBoundingBox,
+    isCentered = true
+  ) {
+    this.#clearRectToCanvas(
+      isCentered ? -width / 2 : x,
+      isCentered ? -height / 2 : y,
+      width,
+      height
+    );
   }
   #getBoundingBox(
     centerX: number,
@@ -1434,6 +1448,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     sendImmediately?: boolean
   ) {
     const contextState = structuredClone(this.contextState);
+    //console.log("drawRect contextState", contextState);
     this.#rearDrawStack.push(() =>
       this.#drawRectToCanvas(centerX, centerY, width, height, contextState)
     );
@@ -1932,7 +1947,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
       contextState
     );
     if (this.#clearBoundingBoxOnDraw && clearBoundingBox) {
-      this.#clearBoundingBox(box);
+      this.#clearBoundingBox(box, false);
     }
 
     this.#applyClip(box, contextState);
@@ -2321,7 +2336,8 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
   ) {
     this.#updateContext(contextState);
 
-    // _console.log("drawBitmapToCanvas", { centerX, centerY, bitmap });
+    //_console.log("drawBitmapToCanvas", { centerX, centerY, bitmap }, this.#useSpriteColorIndices);
+    //_console.log("drawBitmapToCanvas", this.bitmapColorIndices);
 
     const { bitmapScaleX, bitmapScaleY } = contextState;
     const width = bitmap.width * bitmapScaleX;
@@ -2359,9 +2375,9 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     const x = -width / 2;
     const y = -height / 2;
     bitmap.pixels.forEach((pixel, pixelIndex) => {
-      let colorIndex = this.bitmapColorIndices[pixel];
+      let colorIndex = contextState.bitmapColorIndices[pixel];
       if (this.#useSpriteColorIndices) {
-        colorIndex = this.spriteColorIndices[colorIndex];
+        colorIndex = contextState.spriteColorIndices[colorIndex];
       }
       const color = hexToRGB(this.colors[colorIndex]);
       const opacity = this.#getColorOpacity(colorIndex, true);
@@ -2422,7 +2438,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     spriteName: string,
     sendImmediately?: boolean
   ) {
-    // FILL
+    // FILL - check if spritesheet is loaded, then send command
   }
 
   #brightness: DisplayBrightness = "medium";
@@ -2485,7 +2501,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     const scaleY = transform.d;
     return { x: scaleX, y: scaleY };
   }
-  setCanvasContextTransform(
+  _setCanvasContextTransform(
     centerX: number,
     centerY: number,
     width: number,
@@ -2543,14 +2559,14 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
       this.#context.clip();
     });
   }
-  resetCanvasContextTransform() {
+  _resetCanvasContextTransform() {
     this.#rearDrawStack.push(() => {
       _console.log("reset transform");
       this.#restore();
     });
   }
 
-  setClearCanvasBoundingBoxOnDraw(clearBoundingBoxOnDraw: boolean) {
+  _setClearCanvasBoundingBoxOnDraw(clearBoundingBoxOnDraw: boolean) {
     this.#rearDrawStack.push(() => {
       _console.log({ clearBoundingBoxOnDraw });
       this.#clearBoundingBoxOnDraw = clearBoundingBoxOnDraw;
@@ -2558,11 +2574,29 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
   }
 
   #useSpriteColorIndices = false;
-  setUseSpriteColorIndices(useSpriteColorIndices: boolean) {
+  _setUseSpriteColorIndices(useSpriteColorIndices: boolean) {
     this.#rearDrawStack.push(() => {
       _console.log({ useSpriteColorIndices });
       this.#useSpriteColorIndices = useSpriteColorIndices;
     });
+  }
+  #spriteContextStack: DisplayContextState[] = [];
+  _saveContextForSprite() {
+    const contextState = structuredClone(this.contextState);
+    const spriteColorIndices = contextState.spriteColorIndices.slice();
+    this.#spriteContextStack.push(contextState);
+    this.#resetContextState();
+    this.contextState.spriteColorIndices = spriteColorIndices;
+    _console.log("_saveContextForSprite", this.contextState);
+  }
+  _restoreContextForSprite() {
+    const contextState = this.#spriteContextStack.pop();
+    if (!contextState) {
+      _console.warn("#spriteContextStack empty");
+      return;
+    }
+    _console.log("_restoreContextForSprite", contextState);
+    this.#contextStateHelper.update(contextState);
   }
 
   #reset() {

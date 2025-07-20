@@ -876,7 +876,7 @@ let drawSprite = () => {
       rotationCropLeft,
     } = drawSpriteParams;
 
-    displayCanvasHelper.setCanvasContextTransform(
+    displayCanvasHelper._setCanvasContextTransform(
       x,
       y,
       selectedSprite.width,
@@ -892,12 +892,16 @@ let drawSprite = () => {
       rotation,
       false
     );
-    displayCanvasHelper.setClearCanvasBoundingBoxOnDraw(true);
-    displayCanvasHelper.setUseSpriteColorIndices(true);
-    displayCanvasHelper.runContextCommands(selectedSprite.commands);
-    displayCanvasHelper.setUseSpriteColorIndices(false);
-    displayCanvasHelper.setClearCanvasBoundingBoxOnDraw(false);
-    displayCanvasHelper.resetCanvasContextTransform();
+    displayCanvasHelper._setClearCanvasBoundingBoxOnDraw(false);
+    displayCanvasHelper._setUseSpriteColorIndices(true);
+    displayCanvasHelper._saveContextForSprite();
+    displayCanvasHelper.runContextCommands(
+      selectedSprite.commands.filter((command) => !command.hide)
+    );
+    displayCanvasHelper._restoreContextForSprite();
+    displayCanvasHelper._setUseSpriteColorIndices(false);
+    displayCanvasHelper._setClearCanvasBoundingBoxOnDraw(true);
+    displayCanvasHelper._resetCanvasContextTransform();
 
     displayCanvasHelper.show();
   } else {
@@ -1375,7 +1379,7 @@ const addSpriteCommand = () => {
       case "clearRotationCrop":
       case "resetBitmapScale":
         selectedSprite.commands.push({
-          type: command.type,
+          type: spriteCommandType,
         });
         break;
       case "selectLineColor":
@@ -1401,6 +1405,93 @@ const addSpriteCommand = () => {
         selectedSprite.commands.push({
           type: "selectBitmapColors",
           bitmapColorPairs: [{ bitmapColorIndex: 1, colorIndex: 1 }],
+        });
+        break;
+      case "setCropTop":
+        selectedSprite.commands.push({
+          type: "setCropTop",
+          cropTop: 0,
+        });
+        break;
+      case "setCropRight":
+        selectedSprite.commands.push({
+          type: "setCropRight",
+          cropTop: 0,
+        });
+        break;
+      case "setCropBottom":
+        selectedSprite.commands.push({
+          type: "setCropBottom",
+          cropTop: 0,
+        });
+        break;
+      case "setCropLeft":
+        selectedSprite.commands.push({
+          type: "setCropLeft",
+          cropTop: 0,
+        });
+        break;
+
+      case "setRotationCropTop":
+        selectedSprite.commands.push({
+          type: "setRotationCropTop",
+          rotationCropTop: 0,
+        });
+        break;
+      case "setRotationCropRight":
+        selectedSprite.commands.push({
+          type: "setRotationCropRight",
+          rotationCropTop: 0,
+        });
+        break;
+      case "setRotationCropBottom":
+        selectedSprite.commands.push({
+          type: "setRotationCropBottom",
+          rotationCropTop: 0,
+        });
+        break;
+      case "setRotationCropLeft":
+        selectedSprite.commands.push({
+          type: "setRotationCropLeft",
+          rotationCropTop: 0,
+        });
+        break;
+
+      case "setSegmentRadius":
+        selectedSprite.commands.push({
+          type: "setSegmentRadius",
+          segmentRadius: 1,
+        });
+        break;
+      case "setSegmentStartRadius":
+        selectedSprite.commands.push({
+          type: "setSegmentStartRadius",
+          segmentStartRadius: 1,
+        });
+        break;
+      case "setSegmentEndRadius":
+        selectedSprite.commands.push({
+          type: "setSegmentEndRadius",
+          segmentEndRadius: 1,
+        });
+        break;
+
+      case "setSegmentCap":
+        selectedSprite.commands.push({
+          type: "setSegmentCap",
+          segmentCap: "flat",
+        });
+        break;
+      case "setSegmentStartCap":
+        selectedSprite.commands.push({
+          type: "setSegmentStartCap",
+          segmentStartCap: "flat",
+        });
+        break;
+      case "setSegmentEndCap":
+        selectedSprite.commands.push({
+          type: "setSegmentEndCap",
+          segmentEndCap: "flat",
         });
         break;
     }
@@ -1458,6 +1549,14 @@ const updateSpriteCommands = () => {
         selectedSprite?.commands.splice(index, 1);
         drawSprite();
         updateSpriteCommands();
+      });
+
+      const toggleButton = spriteCommandContainer.querySelector(".toggle");
+      toggleButton.addEventListener("click", () => {
+        const command = selectedSprite?.commands[index];
+        command.hide = !command.hide;
+        toggleButton.innerText = command.hide ? "show" : "hide";
+        drawSprite();
       });
 
       const includeCenterPosition = "centerX" in command;
@@ -2184,7 +2283,6 @@ const updateSpriteCommands = () => {
 
       const includeBitmapColorPairs = "bitmapColorPairs" in command;
       if (includeBitmapColorPairs) {
-        // FILL
         const numberOfBitmapColorPairsContainer =
           spriteCommandContainer.querySelector(".numberOfBitmapColorPairs");
         const numberOfBitmapColorPairsInput =
@@ -2296,10 +2394,244 @@ const updateSpriteCommands = () => {
         }
       }
 
-      // FILL - crop
-      // FILL - rotationCrop
+      const includeCropTop = "cropTop" in command;
+      if (includeCropTop) {
+        const cropTopContainer =
+          spriteCommandContainer.querySelector(".cropTop");
+        const cropTopInput = cropTopContainer.querySelector("input");
+        cropTopInput.value = command.cropTop;
+        const cropTopSpan = cropTopContainer.querySelector(".value");
+        cropTopSpan.innerText = command.cropTop;
+        cropTopContainer.removeAttribute("hidden");
+        cropTopContainer.addEventListener("input", () => {
+          command.cropTop = Number(cropTopInput.value);
+          cropTopSpan.innerText = command.cropTop;
+          drawSprite();
+        });
+      }
+      const includeCropRight = "cropRight" in command;
+      if (includeCropRight) {
+        const cropRightContainer =
+          spriteCommandContainer.querySelector(".cropRight");
+        const cropRightInput = cropRightContainer.querySelector("input");
+        cropRightInput.value = command.cropRight;
+        const cropRightSpan = cropRightContainer.querySelector(".value");
+        cropRightSpan.innerText = command.cropRight;
+        cropRightContainer.removeAttribute("hidden");
+        cropRightContainer.addEventListener("input", () => {
+          command.cropRight = Number(cropRightInput.value);
+          cropRightSpan.innerText = command.cropRight;
+          drawSprite();
+        });
+      }
+      const includeCropBottom = "cropBottom" in command;
+      if (includeCropBottom) {
+        const cropBottomContainer =
+          spriteCommandContainer.querySelector(".cropBottom");
+        const cropBottomInput = cropBottomContainer.querySelector("input");
+        cropBottomInput.value = command.cropBottom;
+        const cropBottomSpan = cropBottomContainer.querySelector(".value");
+        cropBottomSpan.innerText = command.cropBottom;
+        cropBottomContainer.removeAttribute("hidden");
+        cropBottomContainer.addEventListener("input", () => {
+          command.cropBottom = Number(cropBottomInput.value);
+          cropBottomSpan.innerText = command.cropBottom;
+          drawSprite();
+        });
+      }
+      const includeCropLeft = "cropLeft" in command;
+      if (includeCropLeft) {
+        const cropLeftContainer =
+          spriteCommandContainer.querySelector(".cropLeft");
+        const cropLeftInput = cropLeftContainer.querySelector("input");
+        cropLeftInput.value = command.cropLeft;
+        const cropLeftSpan = cropLeftContainer.querySelector(".value");
+        cropLeftSpan.innerText = command.cropLeft;
+        cropLeftContainer.removeAttribute("hidden");
+        cropLeftContainer.addEventListener("input", () => {
+          command.cropLeft = Number(cropLeftInput.value);
+          cropLeftSpan.innerText = command.cropLeft;
+          drawSprite();
+        });
+      }
 
-      // FILL - segment cap/radius
+      const includeRotationCropTop = "rotationCropTop" in command;
+      if (includeRotationCropTop) {
+        const rotationCropTopContainer =
+          spriteCommandContainer.querySelector(".rotationCropTop");
+        const rotationCropTopInput =
+          rotationCropTopContainer.querySelector("input");
+        rotationCropTopInput.value = command.rotationCropTop;
+        const rotationCropTopSpan =
+          rotationCropTopContainer.querySelector(".value");
+        rotationCropTopSpan.innerText = command.rotationCropTop;
+        rotationCropTopContainer.removeAttribute("hidden");
+        rotationCropTopContainer.addEventListener("input", () => {
+          command.rotationCropTop = Number(rotationCropTopInput.value);
+          rotationCropTopSpan.innerText = command.rotationCropTop;
+          drawSprite();
+        });
+      }
+      const includeRotationCropRight = "rotationCropRight" in command;
+      if (includeRotationCropRight) {
+        const rotationCropRightContainer =
+          spriteCommandContainer.querySelector(".rotationCropRight");
+        const rotationCropRightInput =
+          rotationCropRightContainer.querySelector("input");
+        rotationCropRightInput.value = command.rotationCropRight;
+        const rotationCropRightSpan =
+          rotationCropRightContainer.querySelector(".value");
+        rotationCropRightSpan.innerText = command.rotationCropRight;
+        rotationCropRightContainer.removeAttribute("hidden");
+        rotationCropRightContainer.addEventListener("input", () => {
+          command.rotationCropRight = Number(rotationCropRightInput.value);
+          rotationCropRightSpan.innerText = command.rotationCropRight;
+          drawSprite();
+        });
+      }
+      const includeRotationCropBottom = "rotationCropBottom" in command;
+      if (includeRotationCropBottom) {
+        const rotationCropBottomContainer =
+          spriteCommandContainer.querySelector(".rotationCropBottom");
+        const rotationCropBottomInput =
+          rotationCropBottomContainer.querySelector("input");
+        rotationCropBottomInput.value = command.rotationCropBottom;
+        const rotationCropBottomSpan =
+          rotationCropBottomContainer.querySelector(".value");
+        rotationCropBottomSpan.innerText = command.rotationCropBottom;
+        rotationCropBottomContainer.removeAttribute("hidden");
+        rotationCropBottomContainer.addEventListener("input", () => {
+          command.rotationCropBottom = Number(rotationCropBottomInput.value);
+          rotationCropBottomSpan.innerText = command.rotationCropBottom;
+          drawSprite();
+        });
+      }
+      const includeRotationCropLeft = "rotationCropLeft" in command;
+      if (includeRotationCropLeft) {
+        const rotationCropLeftContainer =
+          spriteCommandContainer.querySelector(".rotationCropLeft");
+        const rotationCropLeftInput =
+          rotationCropLeftContainer.querySelector("input");
+        rotationCropLeftInput.value = command.rotationCropLeft;
+        const rotationCropLeftSpan =
+          rotationCropLeftContainer.querySelector(".value");
+        rotationCropLeftSpan.innerText = command.rotationCropLeft;
+        rotationCropLeftContainer.removeAttribute("hidden");
+        rotationCropLeftContainer.addEventListener("input", () => {
+          command.rotationCropLeft = Number(rotationCropLeftInput.value);
+          rotationCropLeftSpan.innerText = command.rotationCropLeft;
+          drawSprite();
+        });
+      }
+
+      const includeSegmentStartRadius = "segmentStartRadius" in command;
+      if (includeSegmentStartRadius) {
+        const segmentStartRadiusContainer =
+          spriteCommandContainer.querySelector(".segmentStartRadius");
+        const segmentStartRadiusInput =
+          segmentStartRadiusContainer.querySelector("input");
+        segmentStartRadiusInput.value = command.segmentStartRadius;
+        const segmentStartRadiusSpan =
+          segmentStartRadiusContainer.querySelector(".value");
+        segmentStartRadiusSpan.innerText = command.segmentStartRadius;
+        segmentStartRadiusContainer.removeAttribute("hidden");
+        segmentStartRadiusContainer.addEventListener("input", () => {
+          command.segmentStartRadius = Number(segmentStartRadiusInput.value);
+          segmentStartRadiusSpan.innerText = command.segmentStartRadius;
+          drawSprite();
+        });
+      }
+
+      const includeSegmentEndRadius = "segmentEndRadius" in command;
+      if (includeSegmentEndRadius) {
+        const segmentEndRadiusContainer =
+          spriteCommandContainer.querySelector(".segmentEndRadius");
+        const segmentEndRadiusInput =
+          segmentEndRadiusContainer.querySelector("input");
+        segmentEndRadiusInput.value = command.segmentEndRadius;
+        const segmentEndRadiusSpan =
+          segmentEndRadiusContainer.querySelector(".value");
+        segmentEndRadiusSpan.innerText = command.segmentEndRadius;
+        segmentEndRadiusContainer.removeAttribute("hidden");
+        segmentEndRadiusContainer.addEventListener("input", () => {
+          command.segmentEndRadius = Number(segmentEndRadiusInput.value);
+          segmentEndRadiusSpan.innerText = command.segmentEndRadius;
+          drawSprite();
+        });
+      }
+
+      const includeSegmentRadius = "segmentRadius" in command;
+      if (includeSegmentRadius) {
+        const segmentRadiusContainer =
+          spriteCommandContainer.querySelector(".segmentRadius");
+        const segmentRadiusInput =
+          segmentRadiusContainer.querySelector("input");
+        segmentRadiusInput.value = command.segmentRadius;
+        const segmentRadiusSpan =
+          segmentRadiusContainer.querySelector(".value");
+        segmentRadiusSpan.innerText = command.segmentRadius;
+        segmentRadiusContainer.removeAttribute("hidden");
+        segmentRadiusContainer.addEventListener("input", () => {
+          command.segmentRadius = Number(segmentRadiusInput.value);
+          segmentRadiusSpan.innerText = command.segmentRadius;
+          drawSprite();
+        });
+      }
+
+      const includeSegmentCap = "segmentCap" in command;
+      if (includeSegmentCap) {
+        const segmentCapContainer =
+          spriteCommandContainer.querySelector(".segmentCap");
+        segmentCapContainer.removeAttribute("hidden");
+        const segmentCapSelect = segmentCapContainer.querySelector("select");
+        const segmentCapOptgroup = segmentCapSelect.querySelector("optgroup");
+        BS.DisplaySegmentCaps.forEach((segmentCap) => {
+          segmentCapOptgroup.appendChild(new Option(segmentCap));
+        });
+        segmentCapSelect.value = command.segmentCap;
+        segmentCapContainer.addEventListener("input", () => {
+          command.segmentCap = segmentCapSelect.value;
+          drawSprite();
+        });
+      }
+
+      const includeSegmentEndCap = "segmentEndCap" in command;
+      if (includeSegmentEndCap) {
+        const segmentEndCapContainer =
+          spriteCommandContainer.querySelector(".segmentEndCap");
+        segmentEndCapContainer.removeAttribute("hidden");
+        const segmentEndCapSelect =
+          segmentEndCapContainer.querySelector("select");
+        const segmentEndCapOptgroup =
+          segmentEndCapSelect.querySelector("optgroup");
+        BS.DisplaySegmentCaps.forEach((segmentCap) => {
+          segmentEndCapOptgroup.appendChild(new Option(segmentCap));
+        });
+        segmentEndCapSelect.value = command.segmentEndCap;
+        segmentEndCapContainer.addEventListener("input", () => {
+          command.segmentEndCap = segmentEndCapSelect.value;
+          drawSprite();
+        });
+      }
+
+      const includeSegmentStartCap = "segmentStartCap" in command;
+      if (includeSegmentStartCap) {
+        const segmentStartCapContainer =
+          spriteCommandContainer.querySelector(".segmentStartCap");
+        segmentStartCapContainer.removeAttribute("hidden");
+        const segmentStartCapSelect =
+          segmentStartCapContainer.querySelector("select");
+        const segmentStartCapOptgroup =
+          segmentStartCapSelect.querySelector("optgroup");
+        BS.DisplaySegmentCaps.forEach((segmentCap) => {
+          segmentStartCapOptgroup.appendChild(new Option(segmentCap));
+        });
+        segmentStartCapSelect.value = command.segmentStartCap;
+        segmentStartCapContainer.addEventListener("input", () => {
+          command.segmentStartCap = segmentStartCapSelect.value;
+          drawSprite();
+        });
+      }
 
       spriteCommandsContainer.appendChild(spriteCommandContainer);
     });
@@ -2314,7 +2646,7 @@ const updateBitmapColorInputs = () => {
         displayCanvasHelper.spriteBitmapColors[
           bitmapSelectedColorIndexColor.dataset.bitmapColorIndex
         ];
-      bitmapSelectedColorIndexColor.updateBitmapPixels();
+      bitmapSelectedColorIndexColor.updateBitmapPixels?.();
     });
 
   document.querySelectorAll(".bitmapColor").forEach((bitmapColorIndexColor) => {

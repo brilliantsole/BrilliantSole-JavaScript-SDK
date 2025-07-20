@@ -628,7 +628,6 @@ export async function runDisplayContextCommand(
       break;
     case "drawSegment":
       {
-        // FILL - scale/rotate
         const { startX, startY, endX, endY } = command;
         await displayManager.drawSegment(
           startX,
@@ -641,7 +640,6 @@ export async function runDisplayContextCommand(
       break;
     case "drawSegments":
       {
-        // FIX - translate/rotate/scale points
         const { points } = command;
         await displayManager.drawSegments(
           points.map(({ x, y }) => ({ x: x, y: y })),

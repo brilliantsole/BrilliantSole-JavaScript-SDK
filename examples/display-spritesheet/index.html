@@ -309,6 +309,7 @@
               <button disabled class="moveUp">move up</button>
               <button disabled class="moveDown">move down</button>
               <button class="remove">remove</button>
+              <button class="toggle">hide</button>
             </div>
 
             <label class="centerX" hidden>
@@ -539,6 +540,83 @@
               <span>numberOfBitmapColorPairs</span>
               <input type="range" min="1" max="16" step="1" value="1" />
               <span class="value">1</span>
+            </label>
+
+            <label class="cropTop" hidden>
+              <span>cropTop</span>
+              <input type="range" min="0" max="200" step="1" value="0" />
+              <span class="value">0</span>px
+            </label>
+            <label class="cropRight" hidden>
+              <span>cropRight</span>
+              <input type="range" min="0" max="200" step="1" value="0" />
+              <span class="value">0</span>px
+            </label>
+            <label class="cropBottom" hidden>
+              <span>cropBottom</span>
+              <input type="range" min="0" max="200" step="1" value="0" />
+              <span class="value">0</span>px
+            </label>
+            <label class="cropLeft" hidden>
+              <span>cropLeft</span>
+              <input type="range" min="0" max="200" step="1" value="0" />
+              <span class="value">0</span>px
+            </label>
+
+            <label class="rotationCropTop" hidden>
+              <span>rotationCropTop</span>
+              <input type="range" min="0" max="200" step="1" value="0" />
+              <span class="value">0</span>px
+            </label>
+            <label class="rotationCropRight" hidden>
+              <span>rotationCropRight</span>
+              <input type="range" min="0" max="200" step="1" value="0" />
+              <span class="value">0</span>px
+            </label>
+            <label class="rotationCropBottom" hidden>
+              <span>rotationCropBottom</span>
+              <input type="range" min="0" max="200" step="1" value="0" />
+              <span class="value">0</span>px
+            </label>
+            <label class="rotationCropLeft" hidden>
+              <span>rotationCropLeft</span>
+              <input type="range" min="0" max="200" step="1" value="0" />
+              <span class="value">0</span>px
+            </label>
+
+            <label class="segmentStartRadius" hidden>
+              <span>segmentStartRadius</span>
+              <input type="range" min="0" max="200" step="1" value="1" />
+              <span class="value">1</span>px
+            </label>
+            <label class="segmentEndRadius" hidden>
+              <span>segmentEndRadius</span>
+              <input type="range" min="0" max="200" step="1" value="1" />
+              <span class="value">1</span>px
+            </label>
+            <label class="segmentRadius" hidden>
+              <span>segmentRadius</span>
+              <input type="range" min="0" max="200" step="1" value="1" />
+              <span class="value">1</span>px
+            </label>
+
+            <label class="segmentStartCap" hidden>
+              <span>segmentStartCap</span>
+              <select>
+                <optgroup label="start segment cap"></optgroup>
+              </select>
+            </label>
+            <label class="segmentEndCap" hidden>
+              <span>segmentEndCap</span>
+              <select>
+                <optgroup label="end segment cap"></optgroup>
+              </select>
+            </label>
+            <label class="segmentCap" hidden>
+              <span>segmentCap</span>
+              <select>
+                <optgroup label="segment cap"></optgroup>
+              </select>
             </label>
           </div>
         </template>

@@ -158,9 +158,11 @@ declare class DisplayCanvasHelper implements DisplayManagerInterface {
     setBrightness(newBrightness: DisplayBrightness, sendImmediately?: boolean): Promise<void>;
     runContextCommand(command: DisplayContextCommand, sendImmediately?: boolean): Promise<void>;
     runContextCommands(commands: DisplayContextCommand[], sendImmediately?: boolean): Promise<void>;
-    setCanvasContextTransform(centerX: number, centerY: number, width: number, height: number, scale: number, crop: Record<DisplayCropDirection, number>, rotationCrop: Record<DisplayCropDirection, number>, rotation: number, isRadians?: number): void;
-    resetCanvasContextTransform(): void;
-    setClearCanvasBoundingBoxOnDraw(clearBoundingBoxOnDraw: boolean): void;
-    setUseSpriteColorIndices(useSpriteColorIndices: boolean): void;
+    _setCanvasContextTransform(centerX: number, centerY: number, width: number, height: number, scale: number, crop: Record<DisplayCropDirection, number>, rotationCrop: Record<DisplayCropDirection, number>, rotation: number, isRadians?: number): void;
+    _resetCanvasContextTransform(): void;
+    _setClearCanvasBoundingBoxOnDraw(clearBoundingBoxOnDraw: boolean): void;
+    _setUseSpriteColorIndices(useSpriteColorIndices: boolean): void;
+    _saveContextForSprite(): void;
+    _restoreContextForSprite(): void;
 }
 export default DisplayCanvasHelper;
