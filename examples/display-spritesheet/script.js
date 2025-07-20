@@ -1944,7 +1944,7 @@ const updateSpriteCommands = () => {
           const canvasHeight = bitmapCanvas.height;
 
           bitmapContext.clearRect(0, 0, canvasWidth, canvasHeight);
-          bitmapContext.fillStyle = displayCanvasHelper.spriteBitmapColors[0];
+          bitmapContext.fillStyle = displayCanvasHelper.spriteColors[0];
           bitmapContext.fillRect(0, 0, canvasWidth, canvasHeight);
 
           pixels.forEach((pixel, pixelIndex) => {
@@ -1952,8 +1952,7 @@ const updateSpriteCommands = () => {
             const pixelY = Math.floor(pixelIndex / width);
             const x = pixelX * (pixelLength + 1);
             const y = pixelY * (pixelLength + 1);
-            bitmapContext.fillStyle =
-              displayCanvasHelper.spriteBitmapColors[pixel];
+            bitmapContext.fillStyle = displayCanvasHelper.spriteColors[pixel];
             bitmapContext.fillRect(x, y, pixelLength, pixelLength);
           });
 
@@ -2033,12 +2032,12 @@ const updateSpriteCommands = () => {
           bitmapSelectedColorIndexInput.value = selectedBitmapColorIndex;
           bitmapSelectedColorIndexSpan.innerText = selectedBitmapColorIndex;
           bitmapSelectedColorIndexColor.value =
-            displayCanvasHelper.spriteBitmapColors[selectedBitmapColorIndex];
+            displayCanvasHelper.spriteColors[selectedBitmapColorIndex];
           bitmapSelectedColorIndexColor.dataset.bitmapColorIndex =
             selectedBitmapColorIndex;
         };
         bitmapSelectedColorIndexColor.value =
-          displayCanvasHelper.spriteBitmapColors[selectedBitmapColorIndex];
+          displayCanvasHelper.spriteColors[selectedBitmapColorIndex];
 
         const bitmapNumberOfColorsContainer =
           spriteCommandContainer.querySelector(".bitmapNumberOfColors");
