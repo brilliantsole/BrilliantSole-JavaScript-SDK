@@ -4211,6 +4211,8 @@ const DisplaySpriteContextCommandTypes = [
     "setBitmapScaleY",
     "setBitmapScale",
     "resetBitmapScale",
+    "setSpriteScale",
+    "resetSpriteScale",
     "clearRect",
     "drawRect",
     "drawRoundRect",

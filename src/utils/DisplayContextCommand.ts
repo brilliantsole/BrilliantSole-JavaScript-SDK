@@ -117,6 +117,10 @@ export const DisplaySpriteContextCommandTypes = [
   "setBitmapScale",
   "resetBitmapScale",
 
+  // FILL - sprite colors
+  "setSpriteScale",
+  "resetSpriteScale",
+
   "clearRect",
 
   "drawRect",

@@ -2580,6 +2580,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     });
   }
   #spriteContextStack: DisplayContextState[] = [];
+  #spriteStack: DisplaySprite[] = [];
   _saveContextForSprite(
     centerX: number,
     centerY: number,
@@ -2592,6 +2593,11 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
       sprite.width,
       sprite.height,
       contextState
+    );
+
+    _console.assertWithError(
+      !this.#spriteStack.includes(sprite),
+      `cyclical sprite ${sprite.name} found in stack`
     );
 
     const spriteColorIndices = contextState.spriteColorIndices.slice();

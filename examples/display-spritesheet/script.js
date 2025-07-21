@@ -1400,6 +1400,7 @@ const addSpriteCommand = () => {
       case "clearCrop":
       case "clearRotationCrop":
       case "resetBitmapScale":
+      case "resetSpriteScale":
         selectedSprite.commands.push({
           type: spriteCommandType,
         });
@@ -1530,6 +1531,13 @@ const addSpriteCommand = () => {
             centerY: 0,
           });
         }
+        break;
+
+      case "setSpriteScale":
+        selectedSprite.commands.push({
+          type: "setSpriteScale",
+          spriteScale: 1,
+        });
         break;
       default:
         console.error(`uncaught spriteCommandType ${spriteCommandType}`);
@@ -2690,6 +2698,54 @@ const updateSpriteCommands = () => {
         spriteNameSelect.addEventListener("input", () => {
           command.spriteName = spriteNameSelect.value;
           spriteName();
+        });
+      }
+
+      const includeSpriteScale = "spriteScale" in command;
+      if (includeSpriteScale) {
+        const spriteScaleContainer =
+          spriteCommandContainer.querySelector(".spriteScale");
+        const spriteScaleInput = spriteScaleContainer.querySelector("input");
+        spriteScaleInput.value = command.spriteScale;
+        const spriteScaleSpan = spriteScaleContainer.querySelector(".value");
+        spriteScaleSpan.innerText = command.spriteScale;
+        spriteScaleContainer.removeAttribute("hidden");
+        spriteScaleContainer.addEventListener("input", () => {
+          command.spriteScale = Number(spriteScaleInput.value);
+          spriteScaleSpan.innerText = command.spriteScale;
+          drawSprite();
+        });
+      }
+
+      const includeSpriteScaleX = "spriteScaleX" in command;
+      if (includeSpriteScaleX) {
+        const spriteScaleXContainer =
+          spriteCommandContainer.querySelector(".spriteScaleX");
+        const spriteScaleXInput = spriteScaleXContainer.querySelector("input");
+        spriteScaleXInput.value = command.spriteScaleX;
+        const spriteScaleXSpan = spriteScaleXContainer.querySelector(".value");
+        spriteScaleXSpan.innerText = command.spriteScaleX;
+        spriteScaleXContainer.removeAttribute("hidden");
+        spriteScaleXContainer.addEventListener("input", () => {
+          command.spriteScaleX = Number(spriteScaleXInput.value);
+          spriteScaleXSpan.innerText = command.spriteScaleX;
+          drawSprite();
+        });
+      }
+
+      const includeSpriteScaleY = "spriteScaleY" in command;
+      if (includeSpriteScaleY) {
+        const spriteScaleYContainer =
+          spriteCommandContainer.querySelector(".spriteScaleY");
+        const spriteScaleYInput = spriteScaleYContainer.querySelector("input");
+        spriteScaleYInput.value = command.spriteScaleY;
+        const spriteScaleYSpan = spriteScaleYContainer.querySelector(".value");
+        spriteScaleYSpan.innerText = command.spriteScaleY;
+        spriteScaleYContainer.removeAttribute("hidden");
+        spriteScaleYContainer.addEventListener("input", () => {
+          command.spriteScaleY = Number(spriteScaleYInput.value);
+          spriteScaleYSpan.innerText = command.spriteScaleY;
+          drawSprite();
         });
       }
 
