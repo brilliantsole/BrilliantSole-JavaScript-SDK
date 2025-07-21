@@ -2182,9 +2182,8 @@ const updateSpriteCommands = () => {
             )
           );
 
-          console.log("colorIndices", colorIndices);
-
           command.bitmap.pixels = colorIndices;
+          updateBitmapCanvasPixels();
           drawSprite();
         });
       }
