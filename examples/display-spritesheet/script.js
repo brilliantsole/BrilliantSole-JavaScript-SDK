@@ -1347,9 +1347,9 @@ const addSpriteCommand = () => {
           ],
         });
         break;
-      case "drawBitmap":
+      case "drawSprite":
         selectedSprite.commands.push({
-          type: "drawBitmap",
+          type: "drawSprite",
           centerX: 0,
           centerY: 0,
           bitmap: {
@@ -2363,22 +2363,23 @@ const updateSpriteCommands = () => {
           const numberOfBitmapColorPairs = Number(
             numberOfBitmapColorPairsInput.value
           );
-          // console.log({ numberOfBitmapColorPairs });
+          //console.log({ numberOfBitmapColorPairs });
           for (let i = 0; i < numberOfBitmapColorPairs; i++) {
             let bitmapColorPair = command.bitmapColorPairs[i];
             if (!bitmapColorPair) {
               command.bitmapColorPairs[i] = {
                 bitmapColorIndex: i,
-                colorIndex: 0,
+                colorIndex: i,
               };
             }
           }
           command.bitmapColorPairs.length = numberOfBitmapColorPairs;
           bitmapColorPairContainers.forEach(
             (bitmapColorPairContainer, index) => {
-              // console.log("bitmapColorPairContainer", bitmapColorPairContainer);
+              console.log("bitmapColorPairContainer", bitmapColorPairContainer);
               bitmapColorPairContainer.hidden =
                 index >= command.bitmapColorPairs.length;
+              bitmapColorPairContainer._update();
             }
           );
           updateBitmapColorInputs();
@@ -2403,10 +2404,6 @@ const updateSpriteCommands = () => {
             bitmapColorIndexContainer.querySelector("input");
           const bitmapColorIndexSpan =
             bitmapColorIndexContainer.querySelector(".value");
-          if (bitmapColorPair) {
-            bitmapColorIndexInput.value = bitmapColorPair.bitmapColorIndex;
-            bitmapColorIndexSpan.innerText = bitmapColorPair.bitmapColorIndex;
-          }
           bitmapColorIndexContainer.addEventListener("input", () => {
             update();
           });
@@ -2416,10 +2413,6 @@ const updateSpriteCommands = () => {
           colorIndexContainer.removeAttribute("hidden");
           const colorIndexInput = colorIndexContainer.querySelector("input");
           const colorIndexSpan = colorIndexContainer.querySelector(".value");
-          if (bitmapColorPair) {
-            colorIndexInput.value = bitmapColorPair.colorIndex;
-            colorIndexSpan.innerText = bitmapColorPair.colorIndex;
-          }
           colorIndexContainer.addEventListener("input", () => {
             update();
           });
@@ -2433,21 +2426,14 @@ const updateSpriteCommands = () => {
             bitmapColorPair.bitmapColorIndex = Number(
               bitmapColorIndexInput.value
             );
-            bitmapColorIndexSpan.innerText = bitmapColorPair.bitmapColorIndex;
-
             bitmapColorPair.colorIndex = Number(colorIndexInput.value);
-            colorIndexSpan.innerText = bitmapColorPair.colorIndex;
 
-            updateBitmapColorIndexColor();
+            bitmapColorPairContainer._update();
             drawSprite();
           };
 
           const bitmapColorIndexColor =
             bitmapColorPairContainer.querySelector(".color");
-          if (bitmapColorPair) {
-            bitmapColorIndexColor.dataset.colorIndex =
-              bitmapColorPair.colorIndex;
-          }
           const updateBitmapColorIndexColor = () => {
             const bitmapColorPair = command.bitmapColorPairs[i];
             if (!bitmapColorPair) {
@@ -2459,6 +2445,21 @@ const updateSpriteCommands = () => {
               displayCanvasHelper.spriteColors[bitmapColorPair.colorIndex];
           };
           updateBitmapColorIndexColor();
+
+          bitmapColorPairContainer._update = () => {
+            const bitmapColorPair = command.bitmapColorPairs[i];
+            if (!bitmapColorPair) {
+              return;
+            }
+            colorIndexInput.value = bitmapColorPair.colorIndex;
+            colorIndexSpan.innerText = bitmapColorPair.colorIndex;
+
+            bitmapColorIndexInput.value = bitmapColorPair.bitmapColorIndex;
+            bitmapColorIndexSpan.innerText = bitmapColorPair.bitmapColorIndex;
+
+            updateBitmapColorIndexColor();
+          };
+          bitmapColorPairContainer._update();
 
           spriteCommandContainer.appendChild(bitmapColorPairContainer);
           bitmapColorPairContainers[i] = bitmapColorPairContainer;
