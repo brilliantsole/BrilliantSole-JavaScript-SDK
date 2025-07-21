@@ -649,7 +649,12 @@
                 />
               </label>
 
-              <input type="color" class="color lineColor" disabled />
+              <input type="color" class="color spriteColor" disabled />
+            </label>
+            <label class="numberOfSpriteColorPairs" hidden>
+              <span>numberOfSpriteColorPairs</span>
+              <input type="range" min="1" max="16" step="1" value="1" />
+              <span class="value">1</span>
             </label>
           </div>
         </template>
@@ -690,7 +695,35 @@
               />
             </label>
 
-            <input type="color" class="color lineColor" disabled />
+            <input type="color" class="color bitmapColor" disabled />
+          </div>
+        </template>
+        <template id="spriteColorPairTemplate">
+          <div class="spriteColorPair">
+            <label class="spriteColorIndex verticalLabel">
+              <span>spriteColorIndex <span class="value">1</span></span>
+              <input
+                type="range"
+                class="input"
+                min="0"
+                max="16"
+                step="1"
+                value="1"
+              />
+            </label>
+            <label class="colorIndex verticalLabel">
+              <span>colorIndex <span class="value">1</span></span>
+              <input
+                type="range"
+                class="input"
+                min="0"
+                max="16"
+                step="1"
+                value="1"
+              />
+            </label>
+
+            <input type="color" class="color spriteColor" disabled />
           </div>
         </template>
       </div>

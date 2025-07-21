@@ -891,7 +891,7 @@ let drawSprite = () => {
     displayCanvasHelper._saveContextForSprite(x, y, selectedSprite);
     /** @param {BS.DisplayContextCommand} command */
     const runCommand = (command) => {
-      console.log("runCommand", command);
+      //console.log("runCommand", command);
       if (command.hide) {
         return;
       }
@@ -900,7 +900,7 @@ let drawSprite = () => {
           (sprite) => sprite.name == command.spriteName
         );
         if (sprite) {
-          console.log("drawing sub sprite", sprite);
+          //console.log("drawing sub sprite", sprite);
           displayCanvasHelper._saveContextForSprite(
             command.centerX,
             command.centerY,
@@ -1569,6 +1569,10 @@ const pointTemplate = document.getElementById("pointTemplate");
 const bitmapColorPairTemplate = document.getElementById(
   "bitmapColorPairTemplate"
 );
+/** @type {HTMLTemplateElement} */
+const spriteColorPairTemplate = document.getElementById(
+  "spriteColorPairTemplate"
+);
 const updateSpriteCommands = () => {
   spriteCommandsContainer.innerHTML = "";
   if (selectedSprite) {
@@ -1621,7 +1625,7 @@ const updateSpriteCommands = () => {
       });
 
       const includeCenterPosition = "centerX" in command;
-      console.log("includeCenterPosition", includeCenterPosition, command);
+      // console.log("includeCenterPosition", includeCenterPosition, command);
       if (includeCenterPosition) {
         const centerXContainer =
           spriteCommandContainer.querySelector(".centerX");
@@ -2328,6 +2332,7 @@ const updateSpriteCommands = () => {
 
         const bitmapColorIndexColor =
           bitmapColorIndexContainer.querySelector(".color");
+        bitmapColorIndexColor.dataset.colorIndex = command.colorIndex;
         const updateBitmapColorIndexColor = () => {
           console.log(
             "bitmapColor",
@@ -2376,6 +2381,7 @@ const updateSpriteCommands = () => {
                 index >= command.bitmapColorPairs.length;
             }
           );
+          updateBitmapColorInputs();
           numberOfBitmapColorPairsSpan.innerText =
             command.bitmapColorPairs.length;
           drawSprite();
@@ -2438,6 +2444,10 @@ const updateSpriteCommands = () => {
 
           const bitmapColorIndexColor =
             bitmapColorPairContainer.querySelector(".color");
+          if (bitmapColorPair) {
+            bitmapColorIndexColor.dataset.colorIndex =
+              bitmapColorPair.colorIndex;
+          }
           const updateBitmapColorIndexColor = () => {
             const bitmapColorPair = command.bitmapColorPairs[i];
             if (!bitmapColorPair) {
@@ -2803,6 +2813,7 @@ const updateSpriteCommands = () => {
 
         const spriteColorIndexColor =
           spriteColorIndexContainer.querySelector(".color");
+        spriteColorIndexColor.dataset.colorIndex = command.colorIndex;
         const updateSpriteColorIndexColor = () => {
           console.log(
             "spriteColor",
@@ -2817,8 +2828,124 @@ const updateSpriteCommands = () => {
         updateSpriteColorIndexColor();
       }
 
-      // FILL - spriteColor
-      // FILL - spriteColors
+      const includeSpriteColorPairs = "spriteColorPairs" in command;
+      if (includeSpriteColorPairs) {
+        const numberOfSpriteColorPairsContainer =
+          spriteCommandContainer.querySelector(".numberOfSpriteColorPairs");
+        const numberOfSpriteColorPairsInput =
+          numberOfSpriteColorPairsContainer.querySelector("input");
+        numberOfSpriteColorPairsInput.value = command.spriteColorPairs.length;
+        const numberOfSpriteColorPairsSpan =
+          numberOfSpriteColorPairsContainer.querySelector(".value");
+        numberOfSpriteColorPairsSpan.innerText =
+          command.spriteColorPairs.length;
+        numberOfSpriteColorPairsContainer.removeAttribute("hidden");
+        numberOfSpriteColorPairsContainer.addEventListener("input", () => {
+          const numberOfSpriteColorPairs = Number(
+            numberOfSpriteColorPairsInput.value
+          );
+          //console.log({ numberOfSpriteColorPairs });
+          for (let i = 0; i < numberOfSpriteColorPairs; i++) {
+            let spriteColorPair = command.spriteColorPairs[i];
+            if (!spriteColorPair) {
+              command.spriteColorPairs[i] = {
+                spriteColorIndex: i,
+                colorIndex: i,
+              };
+            }
+          }
+          command.spriteColorPairs.length = numberOfSpriteColorPairs;
+          spriteColorPairContainers.forEach(
+            (spriteColorPairContainer, index) => {
+              console.log("spriteColorPairContainer", spriteColorPairContainer);
+              spriteColorPairContainer.hidden =
+                index >= command.spriteColorPairs.length;
+              spriteColorPairContainer._update();
+            }
+          );
+          updateBitmapColorInputs();
+          numberOfSpriteColorPairsSpan.innerText =
+            command.spriteColorPairs.length;
+          drawSprite();
+        });
+
+        const spriteColorPairContainers = [];
+        for (let i = 0; i < numberOfSpriteColorPairsInput.max; i++) {
+          const spriteColorPairContainer = spriteColorPairTemplate.content
+            .cloneNode(true)
+            .querySelector(".spriteColorPair");
+
+          const spriteColorPair = command.spriteColorPairs[i];
+          spriteColorPairContainer.hidden = !Boolean(spriteColorPair);
+
+          const spriteColorIndexContainer =
+            spriteColorPairContainer.querySelector(".spriteColorIndex");
+          spriteColorIndexContainer.removeAttribute("hidden");
+          const spriteColorIndexInput =
+            spriteColorIndexContainer.querySelector("input");
+          const spriteColorIndexSpan =
+            spriteColorIndexContainer.querySelector(".value");
+          spriteColorIndexContainer.addEventListener("input", () => {
+            update();
+          });
+
+          const colorIndexContainer =
+            spriteColorPairContainer.querySelector(".colorIndex");
+          colorIndexContainer.removeAttribute("hidden");
+          const colorIndexInput = colorIndexContainer.querySelector("input");
+          const colorIndexSpan = colorIndexContainer.querySelector(".value");
+          colorIndexContainer.addEventListener("input", () => {
+            update();
+          });
+
+          const update = () => {
+            const spriteColorPair = command.spriteColorPairs[i];
+            if (!spriteColorPair) {
+              return;
+            }
+
+            spriteColorPair.spriteColorIndex = Number(
+              spriteColorIndexInput.value
+            );
+            spriteColorPair.colorIndex = Number(colorIndexInput.value);
+
+            spriteColorPairContainer._update();
+            drawSprite();
+          };
+
+          const spriteColorIndexColor =
+            spriteColorPairContainer.querySelector(".color");
+          const updateSpriteColorIndexColor = () => {
+            const spriteColorPair = command.spriteColorPairs[i];
+            if (!spriteColorPair) {
+              return;
+            }
+            spriteColorIndexColor.dataset.colorIndex =
+              spriteColorPair.colorIndex;
+            spriteColorIndexColor.value =
+              displayCanvasHelper.spriteColors[spriteColorPair.colorIndex];
+          };
+          updateSpriteColorIndexColor();
+
+          spriteColorPairContainer._update = () => {
+            const spriteColorPair = command.spriteColorPairs[i];
+            if (!spriteColorPair) {
+              return;
+            }
+            colorIndexInput.value = spriteColorPair.colorIndex;
+            colorIndexSpan.innerText = spriteColorPair.colorIndex;
+
+            spriteColorIndexInput.value = spriteColorPair.spriteColorIndex;
+            spriteColorIndexSpan.innerText = spriteColorPair.spriteColorIndex;
+
+            updateSpriteColorIndexColor();
+          };
+          spriteColorPairContainer._update();
+
+          spriteCommandContainer.appendChild(spriteColorPairContainer);
+          spriteColorPairContainers[i] = spriteColorPairContainer;
+        }
+      }
 
       spriteCommandsContainer.appendChild(spriteCommandContainer);
     });

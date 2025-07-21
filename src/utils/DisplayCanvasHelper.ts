@@ -2513,13 +2513,13 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     contextState: DisplayContextState
   ) {
     this.#rearDrawStack.push(() => {
-      _console.log("setContextTransform", {
-        centerX,
-        centerY,
-        width,
-        height,
-        contextState,
-      });
+      // _console.log("setContextTransform", {
+      //   centerX,
+      //   centerY,
+      //   width,
+      //   height,
+      //   contextState,
+      // });
 
       this.#save();
       this.#context.translate(centerX, centerY);
@@ -2560,14 +2560,14 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
   }
   #resetCanvasContextTransform() {
     this.#rearDrawStack.push(() => {
-      _console.log("reset transform");
+      //_console.log("reset transform");
       this.#restore();
     });
   }
 
   _setClearCanvasBoundingBoxOnDraw(clearBoundingBoxOnDraw: boolean) {
     this.#rearDrawStack.push(() => {
-      _console.log({ clearBoundingBoxOnDraw });
+      //_console.log({ clearBoundingBoxOnDraw });
       this.#clearBoundingBoxOnDraw = clearBoundingBoxOnDraw;
     });
   }
@@ -2575,7 +2575,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
   #useSpriteColorIndices = false;
   _setUseSpriteColorIndices(useSpriteColorIndices: boolean) {
     this.#rearDrawStack.push(() => {
-      _console.log({ useSpriteColorIndices });
+      //_console.log({ useSpriteColorIndices });
       this.#useSpriteColorIndices = useSpriteColorIndices;
     });
   }
@@ -2604,7 +2604,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     this.#spriteContextStack.push(contextState);
     this.#resetContextState();
     this.contextState.spriteColorIndices = spriteColorIndices;
-    _console.log("_saveContextForSprite", this.contextState);
+    //_console.log("_saveContextForSprite", this.contextState);
   }
   _restoreContextForSprite() {
     this.#resetCanvasContextTransform();
@@ -2614,7 +2614,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
       _console.warn("#spriteContextStack empty");
       return;
     }
-    _console.log("_restoreContextForSprite", contextState);
+    //_console.log("_restoreContextForSprite", contextState);
     this.#contextStateHelper.update(contextState);
   }
 

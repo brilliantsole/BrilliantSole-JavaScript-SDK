@@ -10532,13 +10532,11 @@ class DisplayCanvasHelper {
     }
     _setClearCanvasBoundingBoxOnDraw(clearBoundingBoxOnDraw) {
         __classPrivateFieldGet(this, _DisplayCanvasHelper_rearDrawStack, "f").push(() => {
-            _console$6.log({ clearBoundingBoxOnDraw });
             __classPrivateFieldSet(this, _DisplayCanvasHelper_clearBoundingBoxOnDraw, clearBoundingBoxOnDraw, "f");
         });
     }
     _setUseSpriteColorIndices(useSpriteColorIndices) {
         __classPrivateFieldGet(this, _DisplayCanvasHelper_rearDrawStack, "f").push(() => {
-            _console$6.log({ useSpriteColorIndices });
             __classPrivateFieldSet(this, _DisplayCanvasHelper_useSpriteColorIndices, useSpriteColorIndices, "f");
         });
     }
@@ -10550,7 +10548,6 @@ class DisplayCanvasHelper {
         __classPrivateFieldGet(this, _DisplayCanvasHelper_spriteContextStack, "f").push(contextState);
         __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_resetContextState).call(this);
         this.contextState.spriteColorIndices = spriteColorIndices;
-        _console$6.log("_saveContextForSprite", this.contextState);
     }
     _restoreContextForSprite() {
         __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_resetCanvasContextTransform).call(this);
@@ -10559,7 +10556,6 @@ class DisplayCanvasHelper {
             _console$6.warn("#spriteContextStack empty");
             return;
         }
-        _console$6.log("_restoreContextForSprite", contextState);
         __classPrivateFieldGet(this, _DisplayCanvasHelper_contextStateHelper, "f").update(contextState);
     }
 }
@@ -11167,13 +11163,6 @@ _DisplayCanvasHelper_eventDispatcher = new WeakMap(), _DisplayCanvasHelper_canva
     await this.device?.setDisplayBrightness(this.brightness, sendImmediately);
 }, _DisplayCanvasHelper_setCanvasContextTransform = function _DisplayCanvasHelper_setCanvasContextTransform(centerX, centerY, width, height, contextState) {
     __classPrivateFieldGet(this, _DisplayCanvasHelper_rearDrawStack, "f").push(() => {
-        _console$6.log("setContextTransform", {
-            centerX,
-            centerY,
-            width,
-            height,
-            contextState,
-        });
         __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_save).call(this);
         __classPrivateFieldGet(this, _DisplayCanvasHelper_context, "f").translate(centerX, centerY);
         const box = __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_getBoundingBox).call(this, 0, 0, width * contextState.spriteScale, height * contextState.spriteScale);
@@ -11191,7 +11180,6 @@ _DisplayCanvasHelper_eventDispatcher = new WeakMap(), _DisplayCanvasHelper_canva
     });
 }, _DisplayCanvasHelper_resetCanvasContextTransform = function _DisplayCanvasHelper_resetCanvasContextTransform() {
     __classPrivateFieldGet(this, _DisplayCanvasHelper_rearDrawStack, "f").push(() => {
-        _console$6.log("reset transform");
         __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_restore).call(this);
     });
 };
