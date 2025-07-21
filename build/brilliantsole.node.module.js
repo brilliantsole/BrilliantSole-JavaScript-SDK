@@ -4166,7 +4166,7 @@ const DisplayContextCommandTypes = [
     "resetBitmapScale",
     "selectSpriteColor",
     "selectSpriteColors",
-    "reseSpriteColors",
+    "resetSpriteColors",
     "setSpriteScale",
     "resetSpriteScale",
     "clearRect",
@@ -4222,6 +4222,7 @@ const DisplaySpriteContextCommandTypes = [
     "drawArc",
     "drawArcEllipse",
     "drawBitmap",
+    "drawSprite",
 ];
 
 const _console$p = createConsole("DisplayManagerInterface", { log: true });
@@ -4501,9 +4502,12 @@ async function runDisplayContextCommand(displayManager, command, sendImmediately
             break;
         case "drawSprite":
             {
-                const { centerX, centerY, spriteName } = command;
-                await displayManager.drawSprite(centerX, centerY, spriteName, sendImmediately);
+                const { centerX, centerY, spriteSheetName, spriteName } = command;
+                await displayManager.drawSprite(centerX, centerY, spriteSheetName, spriteName, sendImmediately);
             }
+            break;
+        case "resetSpriteColors":
+            await displayManager.resetSpriteColors(sendImmediately);
             break;
     }
 }
@@ -5215,6 +5219,7 @@ class DisplayManager {
         if (differences.length == 0) {
             return;
         }
+        await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "resetSpriteColors", undefined, sendImmediately);
         __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_onContextStateUpdate).call(this, differences);
     }
     async setSpriteScale(spriteScale, sendImmediately) {
@@ -5368,7 +5373,7 @@ class DisplayManager {
         _console$o.log("drawArcEllipse data", dataView);
         await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "drawArcEllipse", dataView.buffer, sendImmediately);
     }
-    async drawSprite(centerX, centerY, spriteName, sendImmediately) {
+    async drawSprite(centerX, centerY, spriteSheetName, spriteName, sendImmediately) {
     }
     async drawBitmap(centerX, centerY, bitmap, sendImmediately) {
         __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_assertValidBitmap).call(this, bitmap, true);
@@ -8027,7 +8032,7 @@ _UDPConnectionManager_bluetoothId = new WeakMap(), _UDPConnectionManager_ipAddre
 };
 
 var _Device_instances, _a$3, _Device_DefaultConnectionManager, _Device_eventDispatcher, _Device_dispatchEvent_get, _Device_connectionManager, _Device_sendTxMessages, _Device_isConnected, _Device_assertIsConnected, _Device_didReceiveMessageTypes, _Device_hasRequiredInformation_get, _Device_requestRequiredInformation, _Device_assertCanReconnect, _Device_ReconnectOnDisconnection, _Device_reconnectOnDisconnection, _Device_reconnectIntervalId, _Device_onConnectionStatusUpdated, _Device_dispatchConnectionEvents, _Device_checkConnection, _Device_clear, _Device_clearConnection, _Device_onConnectionMessageReceived, _Device_onConnectionMessagesReceived, _Device_deviceInformationManager, _Device_batteryLevel, _Device_updateBatteryLevel, _Device_sensorConfigurationManager, _Device_ClearSensorConfigurationOnLeave, _Device_clearSensorConfigurationOnLeave, _Device_sensorDataManager, _Device_vibrationManager, _Device_fileTransferManager, _Device_tfliteManager, _Device_firmwareManager, _Device_assertCanUpdateFirmware, _Device_sendSmpMessage, _Device_isServerSide, _Device_wifiManager, _Device_cameraManager, _Device_assertHasCamera, _Device_microphoneManager, _Device_assertHasMicrophone, _Device_assertWebAudioSupport, _Device_displayManager, _Device_assertDisplayIsAvailable;
-const _console$b = createConsole("Device", { log: false });
+const _console$b = createConsole("Device", { log: true });
 const DeviceEventTypes = [
     "connectionMessage",
     ...ConnectionEventTypes,

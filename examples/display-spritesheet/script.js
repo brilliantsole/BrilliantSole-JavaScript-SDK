@@ -876,32 +876,54 @@ let drawSprite = () => {
       rotationCropLeft,
     } = drawSpriteParams;
 
-    displayCanvasHelper._setCanvasContextTransform(
-      x,
-      y,
-      selectedSprite.width,
-      selectedSprite.height,
-      scale,
-      { top: cropTop, right: cropRight, bottom: cropBottom, left: cropLeft },
-      {
-        top: rotationCropTop,
-        right: rotationCropRight,
-        bottom: rotationCropBottom,
-        left: rotationCropLeft,
-      },
-      rotation,
-      false
-    );
+    displayCanvasHelper.setRotation(rotation);
+    displayCanvasHelper.setSpriteScale(scale);
+    displayCanvasHelper.setCropTop(cropTop);
+    displayCanvasHelper.setCropRight(cropRight);
+    displayCanvasHelper.setCropBottom(cropBottom);
+    displayCanvasHelper.setCropLeft(cropLeft);
+    displayCanvasHelper.setRotationCropTop(rotationCropTop);
+    displayCanvasHelper.setRotationCropRight(rotationCropRight);
+    displayCanvasHelper.setRotationCropBottom(rotationCropBottom);
+    displayCanvasHelper.setRotationCropLeft(rotationCropLeft);
+
     displayCanvasHelper._setClearCanvasBoundingBoxOnDraw(false);
     displayCanvasHelper._setUseSpriteColorIndices(true);
-    displayCanvasHelper._saveContextForSprite();
-    displayCanvasHelper.runContextCommands(
-      selectedSprite.commands.filter((command) => !command.hide)
-    );
+    displayCanvasHelper._saveContextForSprite(x, y, selectedSprite);
+    /** @param {BS.DisplayContextCommand} command */
+    const runCommand = (command) => {
+      console.log("runCommand", command);
+      if (command.hide) {
+        return;
+      }
+      if (command.type == "drawSprite") {
+        const sprite = spriteSheet.sprites.find(
+          (sprite) => sprite.name == command.spriteName
+        );
+        if (sprite) {
+          console.log("drawing sub sprite", sprite);
+          displayCanvasHelper._saveContextForSprite(
+            command.centerX,
+            command.centerY,
+            sprite
+          );
+          sprite.commands.forEach((command) => {
+            runCommand(command);
+          });
+          displayCanvasHelper._restoreContextForSprite();
+        } else {
+          console.error(`sprite "${command.spriteName}" not found`);
+        }
+      } else {
+        displayCanvasHelper.runContextCommand(command);
+      }
+    };
+    selectedSprite.commands.forEach((command) => {
+      runCommand(command);
+    });
     displayCanvasHelper._restoreContextForSprite();
     displayCanvasHelper._setUseSpriteColorIndices(false);
     displayCanvasHelper._setClearCanvasBoundingBoxOnDraw(true);
-    displayCanvasHelper._resetCanvasContextTransform();
 
     displayCanvasHelper.show();
   } else {
@@ -1494,6 +1516,24 @@ const addSpriteCommand = () => {
           segmentEndCap: "flat",
         });
         break;
+
+      case "drawSprite":
+        const sprite = spriteSheet.sprites.find(
+          (sprite) => sprite != selectedSprite
+        );
+        if (sprite) {
+          selectedSprite.commands.push({
+            type: "drawSprite",
+            spriteSheetName: spriteSheet.name,
+            spriteName: sprite.name,
+            centerX: 0,
+            centerY: 0,
+          });
+        }
+        break;
+      default:
+        console.error(`uncaught spriteCommandType ${spriteCommandType}`);
+        break;
     }
   }
   updateSpriteCommands();
@@ -1512,7 +1552,6 @@ const updateSpriteCommands = () => {
   spriteCommandsContainer.innerHTML = "";
   if (selectedSprite) {
     selectedSprite?.commands.forEach((command, index) => {
-      console.log(index, command);
       const spriteCommandContainer = spriteCommandTemplate.content
         .cloneNode(true)
         .querySelector(".spriteCommand");
@@ -1552,6 +1591,7 @@ const updateSpriteCommands = () => {
       });
 
       const toggleButton = spriteCommandContainer.querySelector(".toggle");
+      toggleButton.innerText = command.hide ? "show" : "hide";
       toggleButton.addEventListener("click", () => {
         const command = selectedSprite?.commands[index];
         command.hide = !command.hide;
@@ -1560,6 +1600,7 @@ const updateSpriteCommands = () => {
       });
 
       const includeCenterPosition = "centerX" in command;
+      console.log("includeCenterPosition", includeCenterPosition, command);
       if (includeCenterPosition) {
         const centerXContainer =
           spriteCommandContainer.querySelector(".centerX");
@@ -2629,6 +2670,26 @@ const updateSpriteCommands = () => {
         segmentStartCapContainer.addEventListener("input", () => {
           command.segmentStartCap = segmentStartCapSelect.value;
           drawSprite();
+        });
+      }
+
+      const includeDrawSprite = "spriteName" in command;
+      if (includeDrawSprite) {
+        const drawSpriteContainer =
+          spriteCommandContainer.querySelector(".drawSprite");
+        drawSpriteContainer.removeAttribute("hidden");
+        const spriteNameSelect = drawSpriteContainer.querySelector("select");
+        const spriteNameOptgroup = spriteNameSelect.querySelector("optgroup");
+        spriteSheet.sprites.forEach((sprite) => {
+          if (selectedSprite == sprite) {
+            return;
+          }
+          spriteNameOptgroup.appendChild(new Option(sprite.name));
+        });
+        spriteNameSelect.value = command.spriteName;
+        spriteNameSelect.addEventListener("input", () => {
+          command.spriteName = spriteNameSelect.value;
+          spriteName();
         });
       }
 

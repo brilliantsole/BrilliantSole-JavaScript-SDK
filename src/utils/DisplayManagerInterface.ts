@@ -297,6 +297,7 @@ export interface DisplayManagerInterface {
   drawSprite(
     centerX: number,
     centerY: number,
+    spriteSheetName: string,
     spriteName: string,
     sendImmediately?: boolean
   ): Promise<void>;
@@ -704,14 +705,18 @@ export async function runDisplayContextCommand(
       break;
     case "drawSprite":
       {
-        const { centerX, centerY, spriteName } = command;
+        const { centerX, centerY, spriteSheetName, spriteName } = command;
         await displayManager.drawSprite(
           centerX,
           centerY,
+          spriteSheetName,
           spriteName,
           sendImmediately
         );
       }
+      break;
+    case "resetSpriteColors":
+      await displayManager.resetSpriteColors(sendImmediately);
       break;
   }
 }

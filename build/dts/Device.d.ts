@@ -275,7 +275,7 @@ declare class Device {
     get resetDisplaySpriteColors(): (sendImmediately?: boolean) => Promise<void>;
     get setDisplaySpriteScale(): (spriteScale: number, sendImmediately?: boolean) => Promise<void>;
     get resetDisplaySpriteScale(): (sendImmediately?: boolean) => Promise<void>;
-    get drawDisplaySprite(): (centerX: number, centerY: number, spriteName: string, sendImmediately?: boolean) => Promise<void>;
+    get drawDisplaySprite(): (centerX: number, centerY: number, spriteSheetName: string, spriteName: string, sendImmediately?: boolean) => Promise<void>;
     get displayManager(): DisplayManagerInterface;
 }
 export default Device;

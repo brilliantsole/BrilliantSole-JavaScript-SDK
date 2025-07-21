@@ -4878,7 +4878,7 @@ const DisplayContextCommandTypes = [
     "resetBitmapScale",
     "selectSpriteColor",
     "selectSpriteColors",
-    "reseSpriteColors",
+    "resetSpriteColors",
     "setSpriteScale",
     "resetSpriteScale",
     "clearRect",
@@ -4934,6 +4934,7 @@ const DisplaySpriteContextCommandTypes = [
     "drawArc",
     "drawArcEllipse",
     "drawBitmap",
+    "drawSprite",
 ];
 
 const _console$k = createConsole("DisplayManagerInterface", { log: true });
@@ -5213,9 +5214,12 @@ async function runDisplayContextCommand(displayManager, command, sendImmediately
             break;
         case "drawSprite":
             {
-                const { centerX, centerY, spriteName } = command;
-                await displayManager.drawSprite(centerX, centerY, spriteName, sendImmediately);
+                const { centerX, centerY, spriteSheetName, spriteName } = command;
+                await displayManager.drawSprite(centerX, centerY, spriteSheetName, spriteName, sendImmediately);
             }
+            break;
+        case "resetSpriteColors":
+            await displayManager.resetSpriteColors(sendImmediately);
             break;
     }
 }
@@ -5927,6 +5931,7 @@ class DisplayManager {
         if (differences.length == 0) {
             return;
         }
+        await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "resetSpriteColors", undefined, sendImmediately);
         __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_onContextStateUpdate).call(this, differences);
     }
     async setSpriteScale(spriteScale, sendImmediately) {
@@ -6080,7 +6085,7 @@ class DisplayManager {
         _console$j.log("drawArcEllipse data", dataView);
         await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "drawArcEllipse", dataView.buffer, sendImmediately);
     }
-    async drawSprite(centerX, centerY, spriteName, sendImmediately) {
+    async drawSprite(centerX, centerY, spriteSheetName, spriteName, sendImmediately) {
     }
     async drawBitmap(centerX, centerY, bitmap, sendImmediately) {
         __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_assertValidBitmap).call(this, bitmap, true);
@@ -8476,7 +8481,7 @@ _WebSocketConnectionManager_bluetoothId = new WeakMap(), _WebSocketConnectionMan
 };
 
 var _Device_instances, _a$2, _Device_DefaultConnectionManager, _Device_eventDispatcher, _Device_dispatchEvent_get, _Device_connectionManager, _Device_sendTxMessages, _Device_isConnected, _Device_assertIsConnected, _Device_didReceiveMessageTypes, _Device_hasRequiredInformation_get, _Device_requestRequiredInformation, _Device_assertCanReconnect, _Device_ReconnectOnDisconnection, _Device_reconnectOnDisconnection, _Device_reconnectIntervalId, _Device_onConnectionStatusUpdated, _Device_dispatchConnectionEvents, _Device_checkConnection, _Device_clear, _Device_clearConnection, _Device_onConnectionMessageReceived, _Device_onConnectionMessagesReceived, _Device_deviceInformationManager, _Device_batteryLevel, _Device_updateBatteryLevel, _Device_sensorConfigurationManager, _Device_ClearSensorConfigurationOnLeave, _Device_clearSensorConfigurationOnLeave, _Device_sensorDataManager, _Device_vibrationManager, _Device_fileTransferManager, _Device_tfliteManager, _Device_firmwareManager, _Device_assertCanUpdateFirmware, _Device_sendSmpMessage, _Device_isServerSide, _Device_wifiManager, _Device_cameraManager, _Device_assertHasCamera, _Device_microphoneManager, _Device_assertHasMicrophone, _Device_assertWebAudioSupport, _Device_displayManager, _Device_assertDisplayIsAvailable;
-const _console$7 = createConsole("Device", { log: false });
+const _console$7 = createConsole("Device", { log: true });
 const DeviceEventTypes = [
     "connectionMessage",
     ...ConnectionEventTypes,
@@ -9749,7 +9754,7 @@ _a$2 = Device, _Device_eventDispatcher = new WeakMap(), _Device_connectionManage
 _Device_ReconnectOnDisconnection = { value: false };
 _Device_ClearSensorConfigurationOnLeave = { value: true };
 
-var _DisplayCanvasHelper_instances, _DisplayCanvasHelper_eventDispatcher, _DisplayCanvasHelper_dispatchEvent_get, _DisplayCanvasHelper_canvas, _DisplayCanvasHelper_context, _DisplayCanvasHelper_updateCanvas, _DisplayCanvasHelper_frontDrawStack, _DisplayCanvasHelper_rearDrawStack, _DisplayCanvasHelper_drawFrontDrawStack, _DisplayCanvasHelper_applyTransparencyToCanvas, _DisplayCanvasHelper_drawBackground, _DisplayCanvasHelper_applyTransparency, _DisplayCanvasHelper_device, _DisplayCanvasHelper_boundDeviceEventListeners, _DisplayCanvasHelper_onDeviceConnected, _DisplayCanvasHelper_onDeviceNotConnected, _DisplayCanvasHelper_onDeviceDisplayReady, _DisplayCanvasHelper_updateDevice, _DisplayCanvasHelper_numberOfColors, _DisplayCanvasHelper_assertValidColorIndex, _DisplayCanvasHelper_colors, _DisplayCanvasHelper_updateDeviceColors, _DisplayCanvasHelper_opacities, _DisplayCanvasHelper_updateDeviceOpacity, _DisplayCanvasHelper_contextStateHelper, _DisplayCanvasHelper_onContextStateUpdate, _DisplayCanvasHelper_resetContextState, _DisplayCanvasHelper_updateDeviceContextState, _DisplayCanvasHelper_interval, _DisplayCanvasHelper_isReady, _DisplayCanvasHelper_assertValidLineWidth, _DisplayCanvasHelper_clearRectToCanvas, _DisplayCanvasHelper_save, _DisplayCanvasHelper_restore, _DisplayCanvasHelper_transformContext, _DisplayCanvasHelper_translateContext, _DisplayCanvasHelper_rotateContext, _DisplayCanvasHelper_rotateBoundingBox, _DisplayCanvasHelper_clearBoundingBoxOnDraw, _DisplayCanvasHelper_clearBoundingBox, _DisplayCanvasHelper_getBoundingBox, _DisplayCanvasHelper_getRectBoundingBox, _DisplayCanvasHelper_applyClip, _DisplayCanvasHelper_applyRotationClip, _DisplayCanvasHelper_hexToRgbWithOpacity, _DisplayCanvasHelper_hexToRgbStringWithOpacity, _DisplayCanvasHelper_getColorOpacity, _DisplayCanvasHelper_colorIndexToRgbString, _DisplayCanvasHelper_updateContext, _DisplayCanvasHelper_drawRectToCanvas, _DisplayCanvasHelper_drawRoundRectToCanvas, _DisplayCanvasHelper_getCircleBoundingBox, _DisplayCanvasHelper_drawCircleToCanvas, _DisplayCanvasHelper_getEllipseBoundingBox, _DisplayCanvasHelper_drawEllipseToCanvas, _DisplayCanvasHelper_getPolygonBoundingBox, _DisplayCanvasHelper_drawPolygonToCanvas, _DisplayCanvasHelper_getSegmentBoundingBox, _DisplayCanvasHelper_getSegmentMidpoint, _DisplayCanvasHelper_getOrientedSegmentBoundingBox, _DisplayCanvasHelper_applySegmentRotationClip, _DisplayCanvasHelper_drawSegmentToCanvas, _DisplayCanvasHelper_drawSegmentsToCanvas, _DisplayCanvasHelper_drawArcToCanvas, _DisplayCanvasHelper_drawArcEllipseToCanvas, _DisplayCanvasHelper_bitmapCanvas, _DisplayCanvasHelper_bitmapContext, _DisplayCanvasHelper_drawBitmapToCanvas, _DisplayCanvasHelper_assertValidNumberOfColors, _DisplayCanvasHelper_assertValidBitmap, _DisplayCanvasHelper_brightness, _DisplayCanvasHelper_brightnessOpacities, _DisplayCanvasHelper_brightnessOpacity_get, _DisplayCanvasHelper_updateDeviceBrightness, _DisplayCanvasHelper_useSpriteColorIndices, _DisplayCanvasHelper_spriteContextStack;
+var _DisplayCanvasHelper_instances, _DisplayCanvasHelper_eventDispatcher, _DisplayCanvasHelper_dispatchEvent_get, _DisplayCanvasHelper_canvas, _DisplayCanvasHelper_context, _DisplayCanvasHelper_updateCanvas, _DisplayCanvasHelper_frontDrawStack, _DisplayCanvasHelper_rearDrawStack, _DisplayCanvasHelper_drawFrontDrawStack, _DisplayCanvasHelper_applyTransparencyToCanvas, _DisplayCanvasHelper_drawBackground, _DisplayCanvasHelper_applyTransparency, _DisplayCanvasHelper_device, _DisplayCanvasHelper_boundDeviceEventListeners, _DisplayCanvasHelper_onDeviceConnected, _DisplayCanvasHelper_onDeviceNotConnected, _DisplayCanvasHelper_onDeviceDisplayReady, _DisplayCanvasHelper_updateDevice, _DisplayCanvasHelper_numberOfColors, _DisplayCanvasHelper_assertValidColorIndex, _DisplayCanvasHelper_colors, _DisplayCanvasHelper_updateDeviceColors, _DisplayCanvasHelper_opacities, _DisplayCanvasHelper_updateDeviceOpacity, _DisplayCanvasHelper_contextStateHelper, _DisplayCanvasHelper_onContextStateUpdate, _DisplayCanvasHelper_resetContextState, _DisplayCanvasHelper_updateDeviceContextState, _DisplayCanvasHelper_interval, _DisplayCanvasHelper_isReady, _DisplayCanvasHelper_assertValidLineWidth, _DisplayCanvasHelper_clearRectToCanvas, _DisplayCanvasHelper_save, _DisplayCanvasHelper_restore, _DisplayCanvasHelper_transformContext, _DisplayCanvasHelper_translateContext, _DisplayCanvasHelper_rotateContext, _DisplayCanvasHelper_rotateBoundingBox, _DisplayCanvasHelper_clearBoundingBoxOnDraw, _DisplayCanvasHelper_clearBoundingBox, _DisplayCanvasHelper_getBoundingBox, _DisplayCanvasHelper_getRectBoundingBox, _DisplayCanvasHelper_applyClip, _DisplayCanvasHelper_applyRotationClip, _DisplayCanvasHelper_hexToRgbWithOpacity, _DisplayCanvasHelper_hexToRgbStringWithOpacity, _DisplayCanvasHelper_getColorOpacity, _DisplayCanvasHelper_colorIndexToRgbString, _DisplayCanvasHelper_updateContext, _DisplayCanvasHelper_drawRectToCanvas, _DisplayCanvasHelper_drawRoundRectToCanvas, _DisplayCanvasHelper_getCircleBoundingBox, _DisplayCanvasHelper_drawCircleToCanvas, _DisplayCanvasHelper_getEllipseBoundingBox, _DisplayCanvasHelper_drawEllipseToCanvas, _DisplayCanvasHelper_getPolygonBoundingBox, _DisplayCanvasHelper_drawPolygonToCanvas, _DisplayCanvasHelper_getSegmentBoundingBox, _DisplayCanvasHelper_getSegmentMidpoint, _DisplayCanvasHelper_getOrientedSegmentBoundingBox, _DisplayCanvasHelper_applySegmentRotationClip, _DisplayCanvasHelper_drawSegmentToCanvas, _DisplayCanvasHelper_drawSegmentsToCanvas, _DisplayCanvasHelper_drawArcToCanvas, _DisplayCanvasHelper_drawArcEllipseToCanvas, _DisplayCanvasHelper_bitmapCanvas, _DisplayCanvasHelper_bitmapContext, _DisplayCanvasHelper_drawBitmapToCanvas, _DisplayCanvasHelper_assertValidNumberOfColors, _DisplayCanvasHelper_assertValidBitmap, _DisplayCanvasHelper_brightness, _DisplayCanvasHelper_brightnessOpacities, _DisplayCanvasHelper_brightnessOpacity_get, _DisplayCanvasHelper_updateDeviceBrightness, _DisplayCanvasHelper_setCanvasContextTransform, _DisplayCanvasHelper_resetCanvasContextTransform, _DisplayCanvasHelper_useSpriteColorIndices, _DisplayCanvasHelper_spriteContextStack;
 const _console$6 = createConsole("DisplayCanvasHelper", { log: true });
 const DisplayCanvasHelperEventTypes = [
     "contextState",
@@ -10497,7 +10502,7 @@ class DisplayCanvasHelper {
             await this.device.drawDisplayBitmap(centerX, centerY, bitmap, sendImmediately);
         }
     }
-    async drawSprite(centerX, centerY, spriteName, sendImmediately) {
+    async drawSprite(centerX, centerY, spriteSheetName, spriteName, sendImmediately) {
     }
     get brightness() {
         return __classPrivateFieldGet(this, _DisplayCanvasHelper_brightness, "f");
@@ -10519,41 +10524,6 @@ class DisplayCanvasHelper {
     async runContextCommands(commands, sendImmediately) {
         return runDisplayContextCommands(this, commands, sendImmediately);
     }
-    _setCanvasContextTransform(centerX, centerY, width, height, scale, crop, rotationCrop, rotation, isRadians) {
-        rotation = isRadians ? rotation : degToRad(rotation);
-        __classPrivateFieldGet(this, _DisplayCanvasHelper_rearDrawStack, "f").push(() => {
-            _console$6.log("setContextTransform", {
-                centerX,
-                centerY,
-                width,
-                height,
-                scale,
-                rotation,
-                isRadians,
-            });
-            __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_save).call(this);
-            __classPrivateFieldGet(this, _DisplayCanvasHelper_context, "f").translate(centerX, centerY);
-            const box = __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_getBoundingBox).call(this, 0, 0, width * scale, height * scale);
-            const rotatedBox = __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_rotateBoundingBox).call(this, box, rotation);
-            __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_applyClip).call(this, rotatedBox, {
-                cropBottom: crop.bottom,
-                cropTop: crop.top,
-                cropLeft: crop.left,
-                cropRight: crop.right,
-            });
-            __classPrivateFieldGet(this, _DisplayCanvasHelper_context, "f").scale(scale, scale);
-            __classPrivateFieldGet(this, _DisplayCanvasHelper_context, "f").rotate(rotation);
-            __classPrivateFieldGet(this, _DisplayCanvasHelper_context, "f").beginPath();
-            __classPrivateFieldGet(this, _DisplayCanvasHelper_context, "f").rect(-width / 2 + rotationCrop.left / scale, -height / 2 + rotationCrop.top / scale, width - rotationCrop.left / scale - rotationCrop.right / scale, height - rotationCrop.top / scale - rotationCrop.bottom / scale);
-            __classPrivateFieldGet(this, _DisplayCanvasHelper_context, "f").clip();
-        });
-    }
-    _resetCanvasContextTransform() {
-        __classPrivateFieldGet(this, _DisplayCanvasHelper_rearDrawStack, "f").push(() => {
-            _console$6.log("reset transform");
-            __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_restore).call(this);
-        });
-    }
     _setClearCanvasBoundingBoxOnDraw(clearBoundingBoxOnDraw) {
         __classPrivateFieldGet(this, _DisplayCanvasHelper_rearDrawStack, "f").push(() => {
             _console$6.log({ clearBoundingBoxOnDraw });
@@ -10566,8 +10536,9 @@ class DisplayCanvasHelper {
             __classPrivateFieldSet(this, _DisplayCanvasHelper_useSpriteColorIndices, useSpriteColorIndices, "f");
         });
     }
-    _saveContextForSprite() {
+    _saveContextForSprite(centerX, centerY, sprite) {
         const contextState = structuredClone(this.contextState);
+        __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_setCanvasContextTransform).call(this, centerX, centerY, sprite.width, sprite.height, contextState);
         const spriteColorIndices = contextState.spriteColorIndices.slice();
         __classPrivateFieldGet(this, _DisplayCanvasHelper_spriteContextStack, "f").push(contextState);
         __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_resetContextState).call(this);
@@ -10575,6 +10546,7 @@ class DisplayCanvasHelper {
         _console$6.log("_saveContextForSprite", this.contextState);
     }
     _restoreContextForSprite() {
+        __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_resetCanvasContextTransform).call(this);
         const contextState = __classPrivateFieldGet(this, _DisplayCanvasHelper_spriteContextStack, "f").pop();
         if (!contextState) {
             _console$6.warn("#spriteContextStack empty");
@@ -11186,6 +11158,35 @@ _DisplayCanvasHelper_eventDispatcher = new WeakMap(), _DisplayCanvasHelper_canva
         return;
     }
     await this.device?.setDisplayBrightness(this.brightness, sendImmediately);
+}, _DisplayCanvasHelper_setCanvasContextTransform = function _DisplayCanvasHelper_setCanvasContextTransform(centerX, centerY, width, height, contextState) {
+    __classPrivateFieldGet(this, _DisplayCanvasHelper_rearDrawStack, "f").push(() => {
+        _console$6.log("setContextTransform", {
+            centerX,
+            centerY,
+            width,
+            height,
+            contextState,
+        });
+        __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_save).call(this);
+        __classPrivateFieldGet(this, _DisplayCanvasHelper_context, "f").translate(centerX, centerY);
+        const box = __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_getBoundingBox).call(this, 0, 0, width * contextState.spriteScale, height * contextState.spriteScale);
+        const rotatedBox = __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_rotateBoundingBox).call(this, box, contextState.rotation);
+        __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_applyClip).call(this, rotatedBox, contextState);
+        __classPrivateFieldGet(this, _DisplayCanvasHelper_context, "f").scale(contextState.spriteScale, contextState.spriteScale);
+        __classPrivateFieldGet(this, _DisplayCanvasHelper_context, "f").rotate(contextState.rotation);
+        __classPrivateFieldGet(this, _DisplayCanvasHelper_context, "f").beginPath();
+        __classPrivateFieldGet(this, _DisplayCanvasHelper_context, "f").rect(-width / 2 + contextState.rotationCropLeft / contextState.spriteScale, -height / 2 + contextState.rotationCropTop / contextState.spriteScale, width -
+            contextState.rotationCropLeft / contextState.spriteScale -
+            contextState.rotationCropRight / contextState.spriteScale, height -
+            contextState.rotationCropTop / contextState.spriteScale -
+            contextState.rotationCropBottom / contextState.spriteScale);
+        __classPrivateFieldGet(this, _DisplayCanvasHelper_context, "f").clip();
+    });
+}, _DisplayCanvasHelper_resetCanvasContextTransform = function _DisplayCanvasHelper_resetCanvasContextTransform() {
+    __classPrivateFieldGet(this, _DisplayCanvasHelper_rearDrawStack, "f").push(() => {
+        _console$6.log("reset transform");
+        __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_restore).call(this);
+    });
 };
 
 var _DevicePairPressureSensorDataManager_instances, _DevicePairPressureSensorDataManager_rawPressure, _DevicePairPressureSensorDataManager_centerOfPressureHelper, _DevicePairPressureSensorDataManager_normalizedSumRangeHelper, _DevicePairPressureSensorDataManager_hasAllPressureData_get, _DevicePairPressureSensorDataManager_updatePressureData;

@@ -139,7 +139,7 @@ import UDPConnectionManager from "./connection/udp/UDPConnectionManager.ts";
 import { DisplayManagerInterface } from "./utils/DisplayManagerInterface.ts";
 /** NODE_END */
 
-const _console = createConsole("Device", { log: false });
+const _console = createConsole("Device", { log: true });
 
 export const DeviceEventTypes = [
   "connectionMessage",

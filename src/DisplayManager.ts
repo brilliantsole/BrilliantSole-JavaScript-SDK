@@ -1334,7 +1334,11 @@ class DisplayManager implements DisplayManagerInterface {
     if (differences.length == 0) {
       return;
     }
-
+    await this.#sendDisplayContextCommand(
+      "resetSpriteColors",
+      undefined,
+      sendImmediately
+    );
     this.#onContextStateUpdate(differences);
   }
 
@@ -1639,10 +1643,11 @@ class DisplayManager implements DisplayManagerInterface {
   async drawSprite(
     centerX: number,
     centerY: number,
+    spriteSheetName: string,
     spriteName: string,
     sendImmediately?: boolean
   ) {
-    // FILL
+    // FILL - check if spritesheet is loaded, then send command
   }
 
   #assertValidNumberOfColors(numberOfColors: number) {

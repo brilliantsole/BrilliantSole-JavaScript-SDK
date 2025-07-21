@@ -6,6 +6,7 @@ import { DisplayScaleDirection, DisplayColorRGB, DisplayCropDirection } from "./
 import EventDispatcher, { BoundEventListeners, Event, EventListenerMap, EventMap } from "./EventDispatcher.ts";
 import { Vector2 } from "./MathUtils.ts";
 import { DisplayContextCommand } from "./DisplayContextCommand.ts";
+import { DisplaySprite } from "./DisplaySpriteSheetUtils.ts";
 export declare const DisplayCanvasHelperEventTypes: readonly ["contextState", "numberOfColors", "brightness", "color", "colorOpacity", "opacity", "resize", "update", "ready"];
 export type DisplayCanvasHelperEventType = (typeof DisplayCanvasHelperEventTypes)[number];
 export interface DisplayCanvasHelperEventMessages {
@@ -153,16 +154,14 @@ declare class DisplayCanvasHelper implements DisplayManagerInterface {
     drawArc(centerX: number, centerY: number, radius: number, startAngle: number, angleOffset: number, isRadians?: boolean, sendImmediately?: boolean): Promise<void>;
     drawArcEllipse(centerX: number, centerY: number, radiusX: number, radiusY: number, startAngle: number, angleOffset: number, isRadians?: boolean, sendImmediately?: boolean): Promise<void>;
     drawBitmap(centerX: number, centerY: number, bitmap: DisplayBitmap, sendImmediately?: boolean): Promise<void>;
-    drawSprite(centerX: number, centerY: number, spriteName: string, sendImmediately?: boolean): Promise<void>;
+    drawSprite(centerX: number, centerY: number, spriteSheetName: string, spriteName: string, sendImmediately?: boolean): Promise<void>;
     get brightness(): "veryLow" | "low" | "medium" | "high" | "veryHigh";
     setBrightness(newBrightness: DisplayBrightness, sendImmediately?: boolean): Promise<void>;
     runContextCommand(command: DisplayContextCommand, sendImmediately?: boolean): Promise<void>;
     runContextCommands(commands: DisplayContextCommand[], sendImmediately?: boolean): Promise<void>;
-    _setCanvasContextTransform(centerX: number, centerY: number, width: number, height: number, scale: number, crop: Record<DisplayCropDirection, number>, rotationCrop: Record<DisplayCropDirection, number>, rotation: number, isRadians?: number): void;
-    _resetCanvasContextTransform(): void;
     _setClearCanvasBoundingBoxOnDraw(clearBoundingBoxOnDraw: boolean): void;
     _setUseSpriteColorIndices(useSpriteColorIndices: boolean): void;
-    _saveContextForSprite(): void;
+    _saveContextForSprite(centerX: number, centerY: number, sprite: DisplaySprite): void;
     _restoreContextForSprite(): void;
 }
 export default DisplayCanvasHelper;

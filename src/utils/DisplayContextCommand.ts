@@ -57,7 +57,7 @@ export const DisplayContextCommandTypes = [
 
   "selectSpriteColor",
   "selectSpriteColors",
-  "reseSpriteColors",
+  "resetSpriteColors",
   "setSpriteScale",
   "resetSpriteScale",
 
@@ -131,6 +131,7 @@ export const DisplaySpriteContextCommandTypes = [
   "drawArcEllipse",
 
   "drawBitmap",
+  "drawSprite",
 ] as const satisfies readonly DisplayContextCommandType[];
 export type DisplaySpriteContextCommandType =
   (typeof DisplaySpriteContextCommandTypes)[number];
@@ -149,7 +150,7 @@ interface SimpleDisplayCommand extends BaseDisplayContextCommand {
     | "clearCrop"
     | "clearRotationCrop"
     | "resetBitmapScale"
-    | "reseSpriteColors"
+    | "resetSpriteColors"
     | "resetSpriteScale";
 }
 
@@ -389,7 +390,7 @@ interface DrawDisplayBitmapCommand
 interface DrawDisplaySpriteCommand
   extends BaseCenterPositionDisplayContextCommand {
   type: "drawSprite";
-  spriteSheet: DisplaySpriteSheet;
+  spriteSheetName: string;
   spriteName: string;
 }
 

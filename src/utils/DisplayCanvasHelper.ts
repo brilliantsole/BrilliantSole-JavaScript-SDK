@@ -58,7 +58,10 @@ import {
 } from "./MathUtils.ts";
 import { wait } from "./Timer.ts";
 import { DisplayContextCommand } from "./DisplayContextCommand.ts";
-import { DisplaySpriteSheet } from "./DisplaySpriteSheetUtils.ts";
+import {
+  DisplaySprite,
+  DisplaySpriteSheet,
+} from "./DisplaySpriteSheetUtils.ts";
 
 const _console = createConsole("DisplayCanvasHelper", { log: true });
 
@@ -2435,6 +2438,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
   async drawSprite(
     centerX: number,
     centerY: number,
+    spriteSheetName: string,
     spriteName: string,
     sendImmediately?: boolean
   ) {
@@ -2501,44 +2505,35 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     const scaleY = transform.d;
     return { x: scaleX, y: scaleY };
   }
-  _setCanvasContextTransform(
+  #setCanvasContextTransform(
     centerX: number,
     centerY: number,
     width: number,
     height: number,
-    scale: number,
-    crop: Record<DisplayCropDirection, number>,
-    rotationCrop: Record<DisplayCropDirection, number>,
-    rotation: number,
-    isRadians?: number
+    contextState: DisplayContextState
   ) {
-    rotation = isRadians ? rotation : degToRad(rotation);
-
     this.#rearDrawStack.push(() => {
       _console.log("setContextTransform", {
         centerX,
         centerY,
         width,
         height,
-        scale,
-        rotation,
-        isRadians,
+        contextState,
       });
 
       this.#save();
       this.#context.translate(centerX, centerY);
-      const box = this.#getBoundingBox(0, 0, width * scale, height * scale);
-      const rotatedBox = this.#rotateBoundingBox(box, rotation);
+      const box = this.#getBoundingBox(
+        0,
+        0,
+        width * contextState.spriteScale,
+        height * contextState.spriteScale
+      );
+      const rotatedBox = this.#rotateBoundingBox(box, contextState.rotation);
       //_console.log("rotatedBox", rotatedBox);
-      // @ts-expect-error
-      this.#applyClip(rotatedBox, {
-        cropBottom: crop.bottom,
-        cropTop: crop.top,
-        cropLeft: crop.left,
-        cropRight: crop.right,
-      });
-      this.#context.scale(scale, scale);
-      this.#context.rotate(rotation);
+      this.#applyClip(rotatedBox, contextState);
+      this.#context.scale(contextState.spriteScale, contextState.spriteScale);
+      this.#context.rotate(contextState.rotation);
       // this.#context.beginPath();
       // this.#context.rect(
       //   -width / 2 + crop.left,
@@ -2551,15 +2546,19 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
       // Now define the clip in transformed space
       this.#context.beginPath();
       this.#context.rect(
-        -width / 2 + rotationCrop.left / scale,
-        -height / 2 + rotationCrop.top / scale,
-        width - rotationCrop.left / scale - rotationCrop.right / scale,
-        height - rotationCrop.top / scale - rotationCrop.bottom / scale
+        -width / 2 + contextState.rotationCropLeft / contextState.spriteScale,
+        -height / 2 + contextState.rotationCropTop / contextState.spriteScale,
+        width -
+          contextState.rotationCropLeft / contextState.spriteScale -
+          contextState.rotationCropRight / contextState.spriteScale,
+        height -
+          contextState.rotationCropTop / contextState.spriteScale -
+          contextState.rotationCropBottom / contextState.spriteScale
       );
       this.#context.clip();
     });
   }
-  _resetCanvasContextTransform() {
+  #resetCanvasContextTransform() {
     this.#rearDrawStack.push(() => {
       _console.log("reset transform");
       this.#restore();
@@ -2581,8 +2580,20 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     });
   }
   #spriteContextStack: DisplayContextState[] = [];
-  _saveContextForSprite() {
+  _saveContextForSprite(
+    centerX: number,
+    centerY: number,
+    sprite: DisplaySprite
+  ) {
     const contextState = structuredClone(this.contextState);
+    this.#setCanvasContextTransform(
+      centerX,
+      centerY,
+      sprite.width,
+      sprite.height,
+      contextState
+    );
+
     const spriteColorIndices = contextState.spriteColorIndices.slice();
     this.#spriteContextStack.push(contextState);
     this.#resetContextState();
@@ -2590,6 +2601,8 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     _console.log("_saveContextForSprite", this.contextState);
   }
   _restoreContextForSprite() {
+    this.#resetCanvasContextTransform();
+
     const contextState = this.#spriteContextStack.pop();
     if (!contextState) {
       _console.warn("#spriteContextStack empty");
