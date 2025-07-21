@@ -207,10 +207,10 @@ const setSpriteColorIndex = BS.ThrottleUtils.throttle(
   (spriteColorIndex, colorIndex) => {
     //console.log({ spriteColorIndex, colorIndex });
     displayCanvasHelper.selectSpriteColor(spriteColorIndex, colorIndex, true);
-    drawSprite();
     updateBitmapColorInputs();
     updateFillColorInputs();
     updateLineColorInputs();
+    drawSprite();
   },
   100,
   true
@@ -2039,7 +2039,10 @@ const updateSpriteCommands = () => {
         updateBitmapCanvasPixels();
         const updateBitmapPixels = () => {
           const { width, height } = command.bitmap;
-          command.bitmap.pixels = new Array(width * height).fill(0);
+          const numberOfPixels = width * height;
+          if (command.bitmap.pixels.length != numberOfPixels) {
+            command.bitmap.pixels = new Array(width * height).fill(0);
+          }
           updateBitmapCanvasSize();
           updateBitmapCanvasPixels();
         };
