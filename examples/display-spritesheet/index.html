@@ -434,7 +434,11 @@
                 disabled
               />
             </label>
-            <button class="clearBitmap" hidden>clear bitmap</button>
+            <div>
+              <button class="clearBitmap" hidden>clear bitmap</button>
+              <input type="file" class="bitmapImageInput" accept="image/*" />
+              <button class="quantizeBitmapImage">quantize</button>
+            </div>
             <canvas
               hidden
               class="bitmapCanvas"

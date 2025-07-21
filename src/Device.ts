@@ -1680,6 +1680,10 @@ class Device {
     this.#assertDisplayIsAvailable();
     return this.#displayManager.quantizeImage;
   }
+  get resizeAndQuantizeDisplayImage() {
+    this.#assertDisplayIsAvailable();
+    return this.#displayManager.resizeAndQuantizeImage;
+  }
 
   get setDisplayContextState() {
     this.#assertDisplayIsAvailable();

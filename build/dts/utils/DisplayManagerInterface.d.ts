@@ -84,6 +84,19 @@ export interface DisplayManagerInterface {
     drawSprite(centerX: number, centerY: number, spriteSheetName: string, spriteName: string, sendImmediately?: boolean): Promise<void>;
     runContextCommand(command: DisplayContextCommand, sendImmediately?: boolean): Promise<void>;
     runContextCommands(commands: DisplayContextCommand[], sendImmediately?: boolean): Promise<void>;
+    imageToBitmap(image: HTMLImageElement, width: number, height: number, numberOfColors?: number): Promise<{
+        blob: Blob;
+        bitmap: DisplayBitmap;
+    }>;
+    quantizeImage(image: HTMLImageElement, width: number, height: number, numberOfColors: number): Promise<{
+        blob: Blob;
+        colors: string[];
+        colorIndices: number[];
+    }>;
+    resizeAndQuantizeImage(image: HTMLImageElement, width: number, height: number, colors: string[]): Promise<{
+        blob: Blob;
+        colorIndices: number[];
+    }>;
 }
 export declare function runDisplayContextCommand(displayManager: DisplayManagerInterface, command: DisplayContextCommand, sendImmediately?: boolean): Promise<void>;
 export declare function runDisplayContextCommands(displayManager: DisplayManagerInterface, commands: DisplayContextCommand[], sendImmediately?: boolean): Promise<void>;

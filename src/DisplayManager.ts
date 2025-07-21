@@ -46,6 +46,7 @@ import {
   getBitmapNumberOfBytes,
   imageToBitmap,
   quantizeImage,
+  resizeAndQuantizeImage,
 } from "./utils/DisplayBitmapUtils.ts";
 import {
   DisplayContextState,
@@ -1745,6 +1746,14 @@ class DisplayManager implements DisplayManagerInterface {
     numberOfColors: number
   ) {
     return quantizeImage(image, width, height, numberOfColors);
+  }
+  async resizeAndQuantizeImage(
+    image: HTMLImageElement,
+    width: number,
+    height: number,
+    colors: string[]
+  ): Promise<{ blob: Blob; colorIndices: number[] }> {
+    return resizeAndQuantizeImage(image, width, height, colors);
   }
 
   // SPRITE SHEET

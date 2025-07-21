@@ -2144,6 +2144,49 @@ const updateSpriteCommands = () => {
           command.bitmap.pixels.fill(0);
           updateBitmapCanvasPixels();
         });
+
+        /** @type {HTMLInputElement} */
+        const bitmapImageInput =
+          spriteCommandContainer.querySelector(".bitmapImageInput");
+        bitmapImageInput.addEventListener("input", () => {
+          quantizeBitmapImage();
+        });
+        /** @type {HTMLButtonElement} */
+        const quantizeBitmapImageButton = spriteCommandContainer.querySelector(
+          ".quantizeBitmapImage"
+        );
+        quantizeBitmapImageButton.addEventListener("click", () => {
+          quantizeBitmapImage();
+        });
+        const quantizeBitmapImage = () => {
+          const file = bitmapImageInput.files[0];
+          if (!file) {
+            return;
+          }
+          const reader = new FileReader();
+          reader.onload = function (e) {
+            bitmapImage.style.display = "";
+            bitmapImage.src = e.target.result;
+          };
+          reader.readAsDataURL(file);
+        };
+        const bitmapImage = new Image();
+        bitmapImage.addEventListener("load", async () => {
+          const { colorIndices } = await BS.resizeAndQuantizeImage(
+            bitmapImage,
+            command.bitmap.width,
+            command.bitmap.height,
+            displayCanvasHelper.spriteColors.slice(
+              0,
+              command.bitmap.numberOfColors
+            )
+          );
+
+          console.log("colorIndices", colorIndices);
+
+          command.bitmap.pixels = colorIndices;
+          drawSprite();
+        });
       }
 
       const includeBitmapScale = "bitmapScale" in command;

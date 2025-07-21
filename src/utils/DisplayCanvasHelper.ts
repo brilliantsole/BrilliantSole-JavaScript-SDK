@@ -8,7 +8,12 @@ import {
   DisplayBrightness,
   DisplaySpriteColorPair,
 } from "../DisplayManager.ts";
-import { assertValidBitmapPixels } from "./DisplayBitmapUtils.ts";
+import {
+  assertValidBitmapPixels,
+  imageToBitmap,
+  quantizeImage,
+  resizeAndQuantizeImage,
+} from "./DisplayBitmapUtils.ts";
 import { hexToRGB, rgbToHex, stringToRGB } from "./ColorUtils.ts";
 import { createConsole } from "./Console.ts";
 import {
@@ -2625,6 +2630,39 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     this.#resetOpacities();
     this.#resetContextState();
     this.#resetBrightness();
+  }
+
+  async imageToBitmap(
+    image: HTMLImageElement,
+    width: number,
+    height: number,
+    numberOfColors?: number
+  ) {
+    return imageToBitmap(
+      image,
+      width,
+      height,
+      this.colors,
+      this.contextState,
+      numberOfColors
+    );
+  }
+  async quantizeImage(
+    image: HTMLImageElement,
+    width: number,
+    height: number,
+    numberOfColors: number
+  ) {
+    return quantizeImage(image, width, height, numberOfColors);
+  }
+
+  async resizeAndQuantizeImage(
+    image: HTMLImageElement,
+    width: number,
+    height: number,
+    colors: string[]
+  ): Promise<{ blob: Blob; colorIndices: number[] }> {
+    return resizeAndQuantizeImage(image, width, height, colors);
   }
 }
 export default DisplayCanvasHelper;

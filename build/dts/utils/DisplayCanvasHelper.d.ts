@@ -163,5 +163,18 @@ declare class DisplayCanvasHelper implements DisplayManagerInterface {
     _setUseSpriteColorIndices(useSpriteColorIndices: boolean): void;
     _saveContextForSprite(centerX: number, centerY: number, sprite: DisplaySprite): void;
     _restoreContextForSprite(): void;
+    imageToBitmap(image: HTMLImageElement, width: number, height: number, numberOfColors?: number): Promise<{
+        blob: Blob;
+        bitmap: DisplayBitmap;
+    }>;
+    quantizeImage(image: HTMLImageElement, width: number, height: number, numberOfColors: number): Promise<{
+        blob: Blob;
+        colors: string[];
+        colorIndices: number[];
+    }>;
+    resizeAndQuantizeImage(image: HTMLImageElement, width: number, height: number, colors: string[]): Promise<{
+        blob: Blob;
+        colorIndices: number[];
+    }>;
 }
 export default DisplayCanvasHelper;

@@ -5401,6 +5401,9 @@ class DisplayManager {
     async quantizeImage(image, width, height, numberOfColors) {
         return quantizeImage(image, width, height, numberOfColors);
     }
+    async resizeAndQuantizeImage(image, width, height, colors) {
+        return resizeAndQuantizeImage(image, width, height, colors);
+    }
     selectSpriteSheet(index, sendImmediately) {
     }
     async runContextCommand(command, sendImmediately) {
@@ -9032,6 +9035,10 @@ class Device {
     get quantizeDisplayImage() {
         __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertDisplayIsAvailable).call(this);
         return __classPrivateFieldGet(this, _Device_displayManager, "f").quantizeImage;
+    }
+    get resizeAndQuantizeDisplayImage() {
+        __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertDisplayIsAvailable).call(this);
+        return __classPrivateFieldGet(this, _Device_displayManager, "f").resizeAndQuantizeImage;
     }
     get setDisplayContextState() {
         __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertDisplayIsAvailable).call(this);
