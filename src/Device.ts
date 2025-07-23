@@ -57,6 +57,7 @@ import FileTransferManager, {
   FileType,
   FileTypes,
   RequiredFileTransferMessageTypes,
+  SendFileCallback,
 } from "./FileTransferManager.ts";
 import TfliteManager, {
   TfliteEventTypes,
@@ -286,6 +287,8 @@ class Device {
       .sendTxMessages as SendDisplayMessageCallback;
     this.#displayManager.eventDispatcher = this
       .#eventDispatcher as DisplayEventDispatcher;
+    this.#displayManager.sendFile = this.#fileTransferManager
+      .send as SendFileCallback;
 
     this.#firmwareManager.sendMessage = this
       .sendSmpMessage as SendSmpMessageCallback;

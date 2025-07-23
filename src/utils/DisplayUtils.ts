@@ -98,7 +98,7 @@ export const DisplayCropDirectionToStateKey: Record<
   bottom: "cropBottom",
   left: "cropLeft",
 };
-export const DisplayCropDirectionToCommand: Record<
+export const DisplayCropDirectionToCommandType: Record<
   DisplayCropDirection,
   DisplayContextCommandType
 > = {
@@ -117,7 +117,7 @@ export const DisplayRotationCropDirectionToStateKey: Record<
   bottom: "rotationCropBottom",
   left: "rotationCropLeft",
 };
-export const DisplayRotationCropDirectionToCommand: Record<
+export const DisplayRotationCropDirectionToCommandType: Record<
   DisplayCropDirection,
   DisplayContextCommandType
 > = {
@@ -145,7 +145,7 @@ export function numberOfColorsToPixelDepth(numberOfColors: number) {
 export const DisplayScaleDirections = ["x", "y", "all"] as const;
 export type DisplayScaleDirection = (typeof DisplayScaleDirections)[number];
 
-export const DisplayBitmapScaleDirectionToCommand: Record<
+export const DisplayBitmapScaleDirectionToCommandType: Record<
   DisplayScaleDirection,
   DisplayContextCommandType
 > = {

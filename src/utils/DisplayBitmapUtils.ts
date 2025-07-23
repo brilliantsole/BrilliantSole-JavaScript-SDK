@@ -1,16 +1,38 @@
 import RGBQuant from "rgbquant";
 import { createConsole } from "./Console.ts";
 import { hexToRGB, rgbToHex } from "./ColorUtils.ts";
-import { DisplayBitmap } from "../DisplayManager.ts";
 import { getVector3Length, Vector3 } from "./MathUtils.ts";
 import {
   DisplayColorRGB,
   numberOfColorsToPixelDepth,
+  pixelDepthToPixelBitWidth,
   pixelDepthToPixelsPerByte,
 } from "./DisplayUtils.ts";
 import { DisplayContextState } from "./DisplayContextState.ts";
+import { DisplayBitmap } from "../DisplayManager.ts";
 
 const _console = createConsole("DisplayBitmapUtils", { log: true });
+
+export const drawBitmapHeaderLength = 2 + 2 + 2 + 2 + 1 + 2; // x, y, width, numberOfPixels, numberOfColors, dataLength
+
+export function getBitmapData(bitmap: DisplayBitmap) {
+  const pixelDataLength = getBitmapNumberOfBytes(bitmap);
+  const dataView = new DataView(new ArrayBuffer(pixelDataLength));
+  const pixelDepth = numberOfColorsToPixelDepth(bitmap.numberOfColors)!;
+  const pixelsPerByte = pixelDepthToPixelsPerByte(pixelDepth);
+  bitmap.pixels.forEach((bitmapColorIndex, pixelIndex) => {
+    const byteIndex = Math.floor(pixelIndex / pixelsPerByte);
+    const byteSlot = pixelIndex % pixelsPerByte;
+    const pixelBitWidth = pixelDepthToPixelBitWidth(pixelDepth);
+    const bitOffset = pixelBitWidth * byteSlot;
+    const shift = 8 - pixelBitWidth - bitOffset;
+    let value = dataView.getUint8(byteIndex);
+    value |= bitmapColorIndex << shift;
+    dataView.setUint8(byteIndex, value);
+  });
+  _console.log("getBitmapData", bitmap, dataView);
+  return dataView;
+}
 
 export async function quantizeImage(
   image: HTMLImageElement,

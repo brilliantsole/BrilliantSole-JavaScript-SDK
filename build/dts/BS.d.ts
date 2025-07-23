@@ -16,9 +16,9 @@ export { FileType, FileTypes, FileTransferDirection, FileTransferDirections, } f
 export { TfliteSensorType, TfliteSensorTypes, TfliteTask, TfliteTasks, TfliteFileConfiguration as TfliteFileConfiguration, } from "./TfliteManager.ts";
 export { CameraConfiguration, CameraCommand, CameraCommands, CameraConfigurationType, CameraConfigurationTypes, } from "./CameraManager.ts";
 export { MicrophoneConfiguration, MicrophoneCommand, MicrophoneCommands, MicrophoneConfigurationType, MicrophoneConfigurationTypes, MicrophoneConfigurationValues, } from "./MicrophoneManager.ts";
-export { DisplayBrightness, DisplayBrightnesses, DisplaySize, DisplayBitmap, DisplayBitmapColorPair, DisplayPixelDepths, DefaultNumberOfDisplayColors, } from "./DisplayManager.ts";
+export { DisplayBrightness, DisplayBrightnesses, DisplaySize, DisplayBitmapColorPair, DisplayPixelDepths, DefaultNumberOfDisplayColors, MinSpriteSheetNameLength, MaxSpriteSheetNameLength, DisplayBitmap, } from "./DisplayManager.ts";
 export { DisplaySegmentCap, DisplaySegmentCaps, } from "./utils/DisplayContextState.ts";
-export { maxDisplayScale as maxDisplayBitmapScale, DisplayColorRGB, } from "./utils/DisplayUtils.ts";
+export { maxDisplayScale, DisplayColorRGB } from "./utils/DisplayUtils.ts";
 export { DisplayContextCommand, DisplayContextCommandType, DisplayContextCommandTypes, DisplaySpriteContextCommandType, DisplaySpriteContextCommandTypes, } from "./utils/DisplayContextCommand.ts";
 export { DisplaySprite, DisplaySpriteSheet, DisplaySpriteSheetPalette, DisplaySpritePaletteSwap, } from "./utils/DisplaySpriteSheetUtils.ts";
 /** BROWSER_START */

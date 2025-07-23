@@ -1,6 +1,7 @@
-import { DisplayBitmap, DisplayBitmapColorPair, DisplayBrightness, DisplaySpriteColorPair } from "../DisplayManager.ts";
+import { DisplayBitmapColorPair, DisplayBrightness, DisplaySpriteColorPair, DisplayBitmap } from "../DisplayManager.ts";
 import { DisplayContextCommand } from "./DisplayContextCommand.ts";
 import { DisplayContextState, DisplaySegmentCap } from "./DisplayContextState.ts";
+import { DisplaySpriteSheet } from "./DisplaySpriteSheetUtils.ts";
 import { DisplayScaleDirection, DisplayColorRGB, DisplayCropDirection } from "./DisplayUtils.ts";
 import { Vector2 } from "./MathUtils.ts";
 export type DisplayTransform = {
@@ -21,7 +22,12 @@ export interface DisplayManagerInterface {
     show(sendImmediately?: boolean): Promise<void>;
     clear(sendImmediately?: boolean): Promise<void>;
     get colors(): string[];
+    get numberOfColors(): number;
     setColor(colorIndex: number, color: DisplayColorRGB | string, sendImmediately?: boolean): Promise<void>;
+    assertValidColorIndex(colorIndex: number): void;
+    assertValidLineWidth(lineWidth: number): void;
+    assertValidNumberOfColors(numberOfColors: number): void;
+    assertValidBitmap(bitmap: DisplayBitmap): void;
     get opacities(): number[];
     setColorOpacity(colorIndex: number, opacity: number, sendImmediately?: boolean): Promise<void>;
     setOpacity(opacity: number, sendImmediately?: boolean): Promise<void>;
@@ -81,7 +87,6 @@ export interface DisplayManagerInterface {
     drawArc(centerX: number, centerY: number, radius: number, startAngle: number, angleOffset: number, isRadians?: boolean, sendImmediately?: boolean): Promise<void>;
     drawArcEllipse(centerX: number, centerY: number, radiusX: number, radiusY: number, startAngle: number, angleOffset: number, isRadians?: boolean, sendImmediately?: boolean): Promise<void>;
     drawBitmap(centerX: number, centerY: number, bitmap: DisplayBitmap, sendImmediately?: boolean): Promise<void>;
-    drawSprite(centerX: number, centerY: number, spriteSheetName: string, spriteName: string, sendImmediately?: boolean): Promise<void>;
     runContextCommand(command: DisplayContextCommand, sendImmediately?: boolean): Promise<void>;
     runContextCommands(commands: DisplayContextCommand[], sendImmediately?: boolean): Promise<void>;
     imageToBitmap(image: HTMLImageElement, width: number, height: number, numberOfColors?: number): Promise<{
@@ -97,6 +102,9 @@ export interface DisplayManagerInterface {
         blob: Blob;
         colorIndices: number[];
     }>;
+    sendSpriteSheet(spriteSheet: DisplaySpriteSheet): Promise<void>;
+    selectSpriteSheet(spriteSheetName: string, sendImmediately?: boolean): Promise<void>;
+    drawSprite(centerX: number, centerY: number, spriteSheetName: string, spriteName: string, sendImmediately?: boolean): Promise<void>;
 }
 export declare function runDisplayContextCommand(displayManager: DisplayManagerInterface, command: DisplayContextCommand, sendImmediately?: boolean): Promise<void>;
 export declare function runDisplayContextCommands(displayManager: DisplayManagerInterface, commands: DisplayContextCommand[], sendImmediately?: boolean): Promise<void>;

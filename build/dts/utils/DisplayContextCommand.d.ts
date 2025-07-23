@@ -1,5 +1,6 @@
 import { DisplayBitmap, DisplayBitmapColorPair, DisplaySpriteColorPair } from "../DisplayManager.ts";
 import { DisplaySegmentCap } from "./DisplayContextState.ts";
+import { DisplayManagerInterface } from "./DisplayManagerInterface.ts";
 import { DisplayColorRGB } from "./DisplayUtils.ts";
 import { Vector2 } from "./MathUtils.ts";
 export declare const DisplayContextCommandTypes: readonly ["show", "clear", "setColor", "setColorOpacity", "setOpacity", "saveContext", "restoreContext", "selectFillColor", "selectLineColor", "setLineWidth", "setRotation", "clearRotation", "setSegmentStartCap", "setSegmentEndCap", "setSegmentCap", "setSegmentStartRadius", "setSegmentEndRadius", "setSegmentRadius", "setCropTop", "setCropRight", "setCropBottom", "setCropLeft", "clearCrop", "setRotationCropTop", "setRotationCropRight", "setRotationCropBottom", "setRotationCropLeft", "clearRotationCrop", "selectBitmapColor", "selectBitmapColors", "setBitmapScaleX", "setBitmapScaleY", "setBitmapScale", "resetBitmapScale", "selectSpriteColor", "selectSpriteColors", "resetSpriteColors", "setSpriteScale", "resetSpriteScale", "clearRect", "drawRect", "drawRoundRect", "drawCircle", "drawEllipse", "drawPolygon", "drawSegment", "drawSegments", "drawArc", "drawArcEllipse", "drawBitmap", "selectSpriteSheet", "drawSprite"];
@@ -173,14 +174,14 @@ interface DrawDisplayPolygonCommand extends BaseCenterPositionDisplayContextComm
     radius: number;
     numberOfSides: number;
 }
-interface DrawDisplaySegmentCommand extends BaseCenterPositionDisplayContextCommand {
+interface DrawDisplaySegmentCommand {
     type: "drawSegment";
     startX: number;
     startY: number;
     endX: number;
     endY: number;
 }
-interface DrawDisplaySegmentsCommand extends BaseCenterPositionDisplayContextCommand {
+interface DrawDisplaySegmentsCommand {
     type: "drawSegments";
     points: Vector2[];
 }
@@ -209,4 +210,6 @@ interface DrawDisplaySpriteCommand extends BaseCenterPositionDisplayContextComma
     spriteName: string;
 }
 export type DisplayContextCommand = SimpleDisplayCommand | SetDisplayColorCommand | SetDisplayColorOpacityCommand | SetDisplayOpacityCommand | SelectDisplayFillColorCommand | SelectDisplayLineColorCommand | SetDisplayLineWidthCommand | SetDisplayRotationCommand | SetDisplaySegmentStartCapCommand | SetDisplaySegmentEndCapCommand | SetDisplaySegmentCapCommand | SetDisplaySegmentStartRadiusCommand | SetDisplaySegmentEndRadiusCommand | SetDisplaySegmentRadiusCommand | SetDisplayCropTopCommand | SetDisplayCropRightCommand | SetDisplayCropBottomCommand | SetDisplayCropLeftCommand | SetDisplayRotationCropTopCommand | SetDisplayRotationCropRightCommand | SetDisplayRotationCropBottomCommand | SetDisplayRotationCropLeftCommand | SelectDisplayBitmapColorIndexCommand | SelectDisplayBitmapColorIndicesCommand | SetDisplayBitmapScaleXCommand | SetDisplayBitmapScaleYCommand | SetDisplayBitmapScaleCommand | SelectDisplaySpriteColorIndexCommand | SelectDisplaySpriteColorIndicesCommand | SetDisplaySpriteScaleCommand | ClearDisplayRectCommand | DrawDisplayRectCommand | DrawDisplayRoundedRectCommand | DrawDisplayCircleCommand | DrawDisplayEllipseCommand | DrawDisplayPolygonCommand | DrawDisplaySegmentCommand | DrawDisplaySegmentsCommand | DrawDisplayArcCommand | DrawDisplayArcEllipseCommand | DrawDisplayBitmapCommand | DrawDisplaySpriteCommand;
+export declare function serializeContextCommand(displayManager: DisplayManagerInterface, command: DisplayContextCommand): DataView | undefined;
+export declare function serializeContextCommands(displayManager: DisplayManagerInterface, commands: DisplayContextCommand[]): ArrayBuffer;
 export {};

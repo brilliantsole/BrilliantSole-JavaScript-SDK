@@ -1,8 +1,8 @@
 import {
-  DisplayBitmap,
   DisplayBitmapColorPair,
   DisplayBrightness,
   DisplaySpriteColorPair,
+  DisplayBitmap,
 } from "../DisplayManager.ts";
 import { createConsole } from "./Console.ts";
 import { DisplayContextCommand } from "./DisplayContextCommand.ts";
@@ -10,6 +10,7 @@ import {
   DisplayContextState,
   DisplaySegmentCap,
 } from "./DisplayContextState.ts";
+import { DisplaySpriteSheet } from "./DisplaySpriteSheetUtils.ts";
 import {
   DisplayScaleDirection,
   DisplayColorRGB,
@@ -53,11 +54,17 @@ export interface DisplayManagerInterface {
   clear(sendImmediately?: boolean): Promise<void>;
 
   get colors(): string[];
+  get numberOfColors(): number;
   setColor(
     colorIndex: number,
     color: DisplayColorRGB | string,
     sendImmediately?: boolean
   ): Promise<void>;
+
+  assertValidColorIndex(colorIndex: number): void;
+  assertValidLineWidth(lineWidth: number): void;
+  assertValidNumberOfColors(numberOfColors: number): void;
+  assertValidBitmap(bitmap: DisplayBitmap): void;
 
   get opacities(): number[];
   setColorOpacity(
@@ -294,14 +301,6 @@ export interface DisplayManagerInterface {
     sendImmediately?: boolean
   ): Promise<void>;
 
-  drawSprite(
-    centerX: number,
-    centerY: number,
-    spriteSheetName: string,
-    spriteName: string,
-    sendImmediately?: boolean
-  ): Promise<void>;
-
   runContextCommand(
     command: DisplayContextCommand,
     sendImmediately?: boolean
@@ -342,6 +341,19 @@ export interface DisplayManagerInterface {
     blob: Blob;
     colorIndices: number[];
   }>;
+
+  sendSpriteSheet(spriteSheet: DisplaySpriteSheet): Promise<void>;
+  selectSpriteSheet(
+    spriteSheetName: string,
+    sendImmediately?: boolean
+  ): Promise<void>;
+  drawSprite(
+    centerX: number,
+    centerY: number,
+    spriteSheetName: string,
+    spriteName: string,
+    sendImmediately?: boolean
+  ): Promise<void>;
 }
 
 export async function runDisplayContextCommand(

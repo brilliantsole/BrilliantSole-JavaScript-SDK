@@ -105,10 +105,12 @@ export {
   DisplayBrightness,
   DisplayBrightnesses,
   DisplaySize,
-  DisplayBitmap,
   DisplayBitmapColorPair,
   DisplayPixelDepths,
   DefaultNumberOfDisplayColors,
+  MinSpriteSheetNameLength,
+  MaxSpriteSheetNameLength,
+  DisplayBitmap,
 } from "./DisplayManager.ts";
 
 export {
@@ -116,10 +118,7 @@ export {
   DisplaySegmentCaps,
 } from "./utils/DisplayContextState.ts";
 
-export {
-  maxDisplayScale as maxDisplayBitmapScale,
-  DisplayColorRGB,
-} from "./utils/DisplayUtils.ts";
+export { maxDisplayScale, DisplayColorRGB } from "./utils/DisplayUtils.ts";
 
 export {
   DisplayContextCommand,

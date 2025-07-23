@@ -3,10 +3,10 @@ import Device, {
   DeviceEventMap,
 } from "../Device.ts";
 import {
-  DisplayBitmap,
   DisplayBitmapColorPair,
   DisplayBrightness,
   DisplaySpriteColorPair,
+  DisplayBitmap,
 } from "../DisplayManager.ts";
 import {
   assertValidBitmapPixels,
@@ -38,9 +38,9 @@ import {
   DisplayColorRGB,
   DisplayCropDirection,
   DisplayCropDirections,
-  DisplayCropDirectionToCommand,
+  DisplayCropDirectionToCommandType,
   DisplayCropDirectionToStateKey,
-  DisplayRotationCropDirectionToCommand,
+  DisplayRotationCropDirectionToCommandType,
   DisplayRotationCropDirectionToStateKey,
   maxDisplayScale,
   roundScale,
@@ -409,7 +409,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
   }
 
   // COLORS
-  #assertValidColorIndex(colorIndex: number) {
+  assertValidColorIndex(colorIndex: number) {
     _console.assertRangeWithError(
       "colorIndex",
       colorIndex,
@@ -557,7 +557,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     }
 
     // _console.log(`setting color #${colorIndex}`, color);
-    this.#assertValidColorIndex(colorIndex);
+    this.assertValidColorIndex(colorIndex);
     assertValidColor(colorRGB);
 
     if (this.device?.isConnected) {
@@ -574,7 +574,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     opacity: number,
     sendImmediately?: boolean
   ) {
-    this.#assertValidColorIndex(colorIndex);
+    this.assertValidColorIndex(colorIndex);
     assertValidOpacity(opacity);
     if (
       Math.floor(255 * this.#opacities[colorIndex]) == Math.floor(255 * opacity)
@@ -620,7 +620,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     //this.#onDisplayContextStateUpdate(differences);
   }
   async selectFillColor(fillColorIndex: number, sendImmediately?: boolean) {
-    this.#assertValidColorIndex(fillColorIndex);
+    this.assertValidColorIndex(fillColorIndex);
     const differences = this.#contextStateHelper.update({
       fillColorIndex,
     });
@@ -633,7 +633,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     this.#onContextStateUpdate(differences);
   }
   async selectLineColor(lineColorIndex: number, sendImmediately?: boolean) {
-    this.#assertValidColorIndex(lineColorIndex);
+    this.assertValidColorIndex(lineColorIndex);
     const differences = this.#contextStateHelper.update({
       lineColorIndex,
     });
@@ -645,11 +645,11 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     }
     this.#onContextStateUpdate(differences);
   }
-  #assertValidLineWidth(lineWidth: number) {
+  assertValidLineWidth(lineWidth: number) {
     _console.assertRangeWithError("lineWidth", lineWidth, 0, this.width);
   }
   async setLineWidth(lineWidth: number, sendImmediately?: boolean) {
-    this.#assertValidLineWidth(lineWidth);
+    this.assertValidLineWidth(lineWidth);
     const differences = this.#contextStateHelper.update({
       lineWidth,
     });
@@ -810,7 +810,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
   ) {
     _console.assertEnumWithError(cropDirection, DisplayCropDirections);
     crop = Math.max(0, crop);
-    const cropCommand = DisplayCropDirectionToCommand[cropDirection];
+    const cropCommand = DisplayCropDirectionToCommandType[cropDirection];
     const cropKey = DisplayCropDirectionToStateKey[cropDirection];
     const differences = this.#contextStateHelper.update({
       [cropKey]: crop,
@@ -858,7 +858,8 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     sendImmediately?: boolean
   ) {
     _console.assertEnumWithError(cropDirection, DisplayCropDirections);
-    const cropCommand = DisplayRotationCropDirectionToCommand[cropDirection];
+    const cropCommand =
+      DisplayRotationCropDirectionToCommandType[cropDirection];
     const cropKey = DisplayRotationCropDirectionToStateKey[cropDirection];
     const differences = this.#contextStateHelper.update({
       [cropKey]: crop,
@@ -924,7 +925,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     colorIndex: number,
     sendImmediately?: boolean
   ) {
-    this.#assertValidColorIndex(bitmapColorIndex);
+    this.assertValidColorIndex(bitmapColorIndex);
     const bitmapColorIndices = this.contextState.bitmapColorIndices.slice();
     bitmapColorIndices[bitmapColorIndex] = colorIndex;
     const differences = this.#contextStateHelper.update({
@@ -957,8 +958,8 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     );
     const bitmapColorIndices = this.contextState.bitmapColorIndices.slice();
     bitmapColorPairs.forEach(({ bitmapColorIndex, colorIndex }) => {
-      this.#assertValidColorIndex(bitmapColorIndex);
-      this.#assertValidColorIndex(colorIndex);
+      this.assertValidColorIndex(bitmapColorIndex);
+      this.assertValidColorIndex(colorIndex);
       bitmapColorIndices[bitmapColorIndex] = colorIndex;
     });
 
@@ -1085,7 +1086,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     colorIndex: number,
     sendImmediately?: boolean
   ) {
-    this.#assertValidColorIndex(spriteColorIndex);
+    this.assertValidColorIndex(spriteColorIndex);
     const spriteColorIndices = this.contextState.spriteColorIndices.slice();
     spriteColorIndices[spriteColorIndex] = colorIndex;
     const differences = this.#contextStateHelper.update({
@@ -1118,8 +1119,8 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     );
     const spriteColorIndices = this.contextState.spriteColorIndices.slice();
     spriteColorPairs.forEach(({ spriteColorIndex, colorIndex }) => {
-      this.#assertValidColorIndex(spriteColorIndex);
-      this.#assertValidColorIndex(colorIndex);
+      this.assertValidColorIndex(spriteColorIndex);
+      this.assertValidColorIndex(colorIndex);
       spriteColorIndices[spriteColorIndex] = colorIndex;
     });
 
@@ -2406,7 +2407,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     this.#restore();
   }
 
-  #assertValidNumberOfColors(numberOfColors: number) {
+  assertValidNumberOfColors(numberOfColors: number) {
     _console.assertRangeWithError(
       "numberOfColors",
       numberOfColors,
@@ -2414,8 +2415,8 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
       this.numberOfColors
     );
   }
-  #assertValidBitmap(bitmap: DisplayBitmap) {
-    this.#assertValidNumberOfColors(bitmap.numberOfColors);
+  assertValidBitmap(bitmap: DisplayBitmap) {
+    this.assertValidNumberOfColors(bitmap.numberOfColors);
     assertValidBitmapPixels(bitmap);
   }
   async drawBitmap(
@@ -2424,7 +2425,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     bitmap: DisplayBitmap,
     sendImmediately?: boolean
   ) {
-    this.#assertValidBitmap(bitmap);
+    this.assertValidBitmap(bitmap);
     // _console.log("drawBitmap", { centerX, centerY, bitmap, sendImmediately });
     const contextState = structuredClone(this.contextState);
     this.#rearDrawStack.push(() =>
@@ -2440,6 +2441,13 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     }
   }
 
+  // SPRITES
+  async sendSpriteSheet(spriteSheet: DisplaySpriteSheet) {
+    // FILL
+  }
+  async selectSpriteSheet(spriteSheetName: string, sendImmediately?: boolean) {
+    // FILL
+  }
   async drawSprite(
     centerX: number,
     centerY: number,
@@ -2447,9 +2455,10 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     spriteName: string,
     sendImmediately?: boolean
   ) {
-    // FILL - check if spritesheet is loaded, then send command
+    // FILL
   }
 
+  // BRIGHTNESS
   #brightness: DisplayBrightness = "medium";
   get brightness() {
     return this.#brightness;

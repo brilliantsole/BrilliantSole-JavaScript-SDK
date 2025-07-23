@@ -22,3 +22,5 @@ export type DisplaySpriteSheet = {
     palettes: DisplaySpriteSheetPalette[];
     sprites: DisplaySprite[];
 };
+export declare function serializeSpriteSheet(spriteSheet: DisplaySpriteSheet): DataView;
+export declare function parseSpriteSheet(dataView: DataView): void;

@@ -1,12 +1,12 @@
 import Device from "../Device.ts";
-import { DisplayBitmap, DisplayBitmapColorPair, DisplayBrightness, DisplaySpriteColorPair } from "../DisplayManager.ts";
+import { DisplayBitmapColorPair, DisplayBrightness, DisplaySpriteColorPair, DisplayBitmap } from "../DisplayManager.ts";
 import { DisplayContextState, DisplayContextStateKey, DisplaySegmentCap } from "./DisplayContextState.ts";
 import { DisplayManagerInterface } from "./DisplayManagerInterface.ts";
 import { DisplayScaleDirection, DisplayColorRGB, DisplayCropDirection } from "./DisplayUtils.ts";
 import EventDispatcher, { BoundEventListeners, Event, EventListenerMap, EventMap } from "./EventDispatcher.ts";
 import { Vector2 } from "./MathUtils.ts";
 import { DisplayContextCommand } from "./DisplayContextCommand.ts";
-import { DisplaySprite } from "./DisplaySpriteSheetUtils.ts";
+import { DisplaySprite, DisplaySpriteSheet } from "./DisplaySpriteSheetUtils.ts";
 export declare const DisplayCanvasHelperEventTypes: readonly ["contextState", "numberOfColors", "brightness", "color", "colorOpacity", "opacity", "resize", "update", "ready"];
 export type DisplayCanvasHelperEventType = (typeof DisplayCanvasHelperEventTypes)[number];
 export interface DisplayCanvasHelperEventMessages {
@@ -85,6 +85,7 @@ declare class DisplayCanvasHelper implements DisplayManagerInterface {
     flushContextCommands(): Promise<void>;
     get numberOfColors(): number;
     set numberOfColors(newNumberOfColors: number);
+    assertValidColorIndex(colorIndex: number): void;
     get colors(): string[];
     get opacities(): number[];
     get contextState(): DisplayContextState;
@@ -100,6 +101,7 @@ declare class DisplayCanvasHelper implements DisplayManagerInterface {
     restoreContext(sendImmediately?: boolean): Promise<void>;
     selectFillColor(fillColorIndex: number, sendImmediately?: boolean): Promise<void>;
     selectLineColor(lineColorIndex: number, sendImmediately?: boolean): Promise<void>;
+    assertValidLineWidth(lineWidth: number): void;
     setLineWidth(lineWidth: number, sendImmediately?: boolean): Promise<void>;
     setRotation(rotation: number, isRadians: boolean, sendImmediately?: boolean): Promise<void>;
     clearRotation(sendImmediately?: boolean): Promise<void>;
@@ -153,7 +155,11 @@ declare class DisplayCanvasHelper implements DisplayManagerInterface {
     drawSegments(points: Vector2[], sendImmediately?: boolean): Promise<void>;
     drawArc(centerX: number, centerY: number, radius: number, startAngle: number, angleOffset: number, isRadians?: boolean, sendImmediately?: boolean): Promise<void>;
     drawArcEllipse(centerX: number, centerY: number, radiusX: number, radiusY: number, startAngle: number, angleOffset: number, isRadians?: boolean, sendImmediately?: boolean): Promise<void>;
+    assertValidNumberOfColors(numberOfColors: number): void;
+    assertValidBitmap(bitmap: DisplayBitmap): void;
     drawBitmap(centerX: number, centerY: number, bitmap: DisplayBitmap, sendImmediately?: boolean): Promise<void>;
+    sendSpriteSheet(spriteSheet: DisplaySpriteSheet): Promise<void>;
+    selectSpriteSheet(spriteSheetName: string, sendImmediately?: boolean): Promise<void>;
     drawSprite(centerX: number, centerY: number, spriteSheetName: string, spriteName: string, sendImmediately?: boolean): Promise<void>;
     get brightness(): "veryLow" | "low" | "medium" | "high" | "veryHigh";
     setBrightness(newBrightness: DisplayBrightness, sendImmediately?: boolean): Promise<void>;

@@ -25,7 +25,12 @@ export const FileTransferMessageTypes = [
 ] as const;
 export type FileTransferMessageType = (typeof FileTransferMessageTypes)[number];
 
-export const FileTypes = ["tflite", "wifiServerCert", "wifiServerKey"] as const;
+export const FileTypes = [
+  "tflite",
+  "wifiServerCert",
+  "wifiServerKey",
+  "spriteSheet",
+] as const;
 export type FileType = (typeof FileTypes)[number];
 
 export const FileTransferStatuses = ["idle", "sending", "receiving"] as const;
@@ -82,6 +87,11 @@ export type FileTransferEventDispatcher = EventDispatcher<
 >;
 export type SendFileTransferMessageCallback =
   SendMessageCallback<FileTransferMessageType>;
+
+export type SendFileCallback = (
+  type: FileType,
+  file: FileLike
+) => Promise<boolean>;
 
 class FileTransferManager {
   constructor() {
