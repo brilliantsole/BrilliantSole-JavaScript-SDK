@@ -529,7 +529,7 @@ function UInt8ByteBuffer(value) {
 }
 
 var _FileTransferManager_instances, _a$8, _FileTransferManager_dispatchEvent_get, _FileTransferManager_assertValidType, _FileTransferManager_assertValidTypeEnum, _FileTransferManager_assertValidStatusEnum, _FileTransferManager_assertValidCommand, _FileTransferManager_fileTypes, _FileTransferManager_parseFileTypes, _FileTransferManager_MaxLength, _FileTransferManager_maxLength, _FileTransferManager_parseMaxLength, _FileTransferManager_updateMaxLength, _FileTransferManager_assertValidLength, _FileTransferManager_type, _FileTransferManager_parseType, _FileTransferManager_updateType, _FileTransferManager_setType, _FileTransferManager_length, _FileTransferManager_parseLength, _FileTransferManager_updateLength, _FileTransferManager_setLength, _FileTransferManager_checksum, _FileTransferManager_parseChecksum, _FileTransferManager_updateChecksum, _FileTransferManager_setChecksum, _FileTransferManager_setCommand, _FileTransferManager_status, _FileTransferManager_parseStatus, _FileTransferManager_updateStatus, _FileTransferManager_assertIsIdle, _FileTransferManager_assertIsNotIdle, _FileTransferManager_receivedBlocks, _FileTransferManager_parseBlock, _FileTransferManager_buffer, _FileTransferManager_bytesTransferred, _FileTransferManager_send, _FileTransferManager_sendBlock, _FileTransferManager_parseBytesTransferred, _FileTransferManager_isCancelling, _FileTransferManager_isServerSide;
-const _console$K = createConsole("FileTransferManager", { log: false });
+const _console$K = createConsole("FileTransferManager", { log: true });
 const FileTransferMessageTypes = [
     "getFileTypes",
     "maxFileLength",
@@ -651,7 +651,7 @@ class FileTransferManager {
                 throw Error(`uncaught messageType ${messageType}`);
         }
     }
-    async send(type, file) {
+    async send(type, file, override) {
         {
             __classPrivateFieldGet(this, _FileTransferManager_instances, "m", _FileTransferManager_assertIsIdle).call(this);
             __classPrivateFieldGet(this, _FileTransferManager_instances, "m", _FileTransferManager_assertValidType).call(this, type);
@@ -659,18 +659,20 @@ class FileTransferManager {
         const fileBuffer = await getFileBuffer(file);
         const fileLength = fileBuffer.byteLength;
         const checksum = crc32(fileBuffer);
-        if (type != this.type) {
-            _console$K.log("different fileTypes - sending");
-        }
-        else if (fileLength != this.length) {
-            _console$K.log("different fileLengths - sending");
-        }
-        else if (checksum != this.checksum) {
-            _console$K.log("different fileChecksums - sending");
-        }
-        else {
-            _console$K.log("already sent file");
-            return false;
+        if (!override) {
+            if (type != this.type) {
+                _console$K.log("different fileTypes - sending");
+            }
+            else if (fileLength != this.length) {
+                _console$K.log("different fileLengths - sending");
+            }
+            else if (checksum != this.checksum) {
+                _console$K.log("different fileChecksums - sending");
+            }
+            else {
+                _console$K.log("already sent file");
+                return false;
+            }
         }
         const promises = [];
         promises.push(__classPrivateFieldGet(this, _FileTransferManager_instances, "m", _FileTransferManager_setType).call(this, type, false));
@@ -4711,6 +4713,9 @@ function serializeContextCommand(displayManager, command) {
     }
     return dataView;
 }
+function serializeContextCommands(displayManager, commands) {
+    return concatenateArrayBuffers(commands.map((command) => serializeContextCommand(displayManager, command)));
+}
 
 const _console$q = createConsole("DisplayManagerInterface", { log: true });
 async function runDisplayContextCommand(displayManager, command, sendImmediately) {
@@ -5007,18 +5012,33 @@ async function runDisplayContextCommands(displayManager, commands, sendImmediate
 }
 
 const _console$p = createConsole("DisplaySpriteSheetUtils", { log: true });
-function serializeSpriteSheet(spriteSheet) {
+function serializeSpriteSheet(displayManager, spriteSheet) {
     const { name, sprites } = spriteSheet;
     _console$p.log(`serializing ${name} spriteSheet`, spriteSheet);
     const numberOfSprites = sprites.length;
     const numberOfSpritesDataView = new DataView(new ArrayBuffer(2));
     numberOfSpritesDataView.setUint16(0, numberOfSprites, true);
-    sprites.forEach((sprite, index) => {
+    const spritePayloads = sprites.map((sprite, index) => {
+        const commandsData = serializeContextCommands(displayManager, sprite.commands);
+        const dataView = new DataView(new ArrayBuffer(3 * 2));
+        dataView.setUint16(0, sprite.width, true);
+        dataView.setUint16(2, sprite.height, true);
+        dataView.setUint16(4, commandsData.byteLength, true);
+        return concatenateArrayBuffers(dataView, commandsData);
     });
-    return new DataView(new ArrayBuffer(1));
+    const spriteOffsetsDataView = new DataView(new ArrayBuffer(sprites.length * 2));
+    let offset = numberOfSpritesDataView.byteLength + spriteOffsetsDataView.byteLength;
+    spritePayloads.forEach((spritePayload, index) => {
+        _console$p.log("spritePayloads", index, offset, spritePayload);
+        spriteOffsetsDataView.setUint16(index, offset, true);
+        offset += spritePayload.byteLength;
+    });
+    const serializedSpriteSheet = concatenateArrayBuffers(numberOfSpritesDataView, spriteOffsetsDataView, spritePayloads);
+    _console$p.log("serializedSpriteSheet", serializedSpriteSheet);
+    return serializedSpriteSheet;
 }
 
-var _DisplayManager_instances, _DisplayManager_dispatchEvent_get, _DisplayManager_isAvailable, _DisplayManager_assertDisplayIsAvailable, _DisplayManager_parseIsDisplayAvailable, _DisplayManager_contextStateHelper, _DisplayManager_onContextStateUpdate, _DisplayManager_displayStatus, _DisplayManager_parseDisplayStatus, _DisplayManager_updateDisplayStatus, _DisplayManager_sendDisplayCommand, _DisplayManager_assertIsAwake, _DisplayManager_assertIsNotAwake, _DisplayManager_displayInformation, _DisplayManager_parseDisplayInformation, _DisplayManager_brightness, _DisplayManager_parseDisplayBrightness, _DisplayManager_assertValidDisplayContextCommand, _DisplayManager_maxCommandDataLength_get, _DisplayManager_displayContextCommandBuffers, _DisplayManager_sendDisplayContextCommand, _DisplayManager_sendContextCommands, _DisplayManager_colors, _DisplayManager_opacities, _DisplayManager_assertValidBitmapSize, _DisplayManager_isReady, _DisplayManager_parseDisplayReady, _DisplayManager_setSpriteSheetName, _DisplayManager_mtu;
+var _DisplayManager_instances, _DisplayManager_dispatchEvent_get, _DisplayManager_isAvailable, _DisplayManager_assertDisplayIsAvailable, _DisplayManager_parseIsDisplayAvailable, _DisplayManager_contextStateHelper, _DisplayManager_onContextStateUpdate, _DisplayManager_displayStatus, _DisplayManager_parseDisplayStatus, _DisplayManager_updateDisplayStatus, _DisplayManager_sendDisplayCommand, _DisplayManager_assertIsAwake, _DisplayManager_assertIsNotAwake, _DisplayManager_displayInformation, _DisplayManager_parseDisplayInformation, _DisplayManager_brightness, _DisplayManager_parseDisplayBrightness, _DisplayManager_assertValidDisplayContextCommand, _DisplayManager_maxCommandDataLength_get, _DisplayManager_displayContextCommandBuffers, _DisplayManager_sendDisplayContextCommand, _DisplayManager_sendContextCommands, _DisplayManager_colors, _DisplayManager_opacities, _DisplayManager_assertValidBitmapSize, _DisplayManager_isReady, _DisplayManager_parseDisplayReady, _DisplayManager_spriteSheets, _DisplayManager_spriteSheetIndices, _DisplayManager_setSpriteSheetName, _DisplayManager_pendingSpriteSheet, _DisplayManager_pendingSpriteSheetName, _DisplayManager_updateSpriteSheetName, _DisplayManager_selectedSpriteSheet, _DisplayManager_parseSpriteSheetIndex, _DisplayManager_mtu;
 const _console$o = createConsole("DisplayManager", { log: true });
 const DefaultNumberOfDisplayColors = 16;
 const DisplayCommands = ["sleep", "wake"];
@@ -5073,6 +5093,7 @@ const DisplayEventTypes = [
     "displayColor",
     "displayColorOpacity",
     "displayOpacity",
+    "displaySpriteSheet",
 ];
 const MinSpriteSheetNameLength = 1;
 const MaxSpriteSheetNameLength = 30;
@@ -5088,6 +5109,11 @@ class DisplayManager {
         _DisplayManager_colors.set(this, []);
         _DisplayManager_opacities.set(this, []);
         _DisplayManager_isReady.set(this, true);
+        _DisplayManager_spriteSheets.set(this, {});
+        _DisplayManager_spriteSheetIndices.set(this, {});
+        _DisplayManager_pendingSpriteSheet.set(this, void 0);
+        _DisplayManager_pendingSpriteSheetName.set(this, void 0);
+        _DisplayManager_selectedSpriteSheet.set(this, void 0);
         _DisplayManager_mtu.set(this, void 0);
         autoBind$1(this);
     }
@@ -6058,12 +6084,34 @@ class DisplayManager {
     get isReady() {
         return this.isAvailable && __classPrivateFieldGet(this, _DisplayManager_isReady, "f");
     }
+    get spriteSheets() {
+        return __classPrivateFieldGet(this, _DisplayManager_spriteSheets, "f");
+    }
     async sendSpriteSheet(spriteSheet) {
-        const dataView = serializeSpriteSheet(spriteSheet);
-        await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_setSpriteSheetName).call(this, spriteSheet.name);
-        await this.sendFile("spriteSheet", dataView);
+        spriteSheet = structuredClone(spriteSheet);
+        __classPrivateFieldSet(this, _DisplayManager_pendingSpriteSheet, spriteSheet, "f");
+        const buffer = serializeSpriteSheet(this, __classPrivateFieldGet(this, _DisplayManager_pendingSpriteSheet, "f"));
+        await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_setSpriteSheetName).call(this, __classPrivateFieldGet(this, _DisplayManager_pendingSpriteSheet, "f").name);
+        const promise = this.waitForEvent("displaySpriteSheet");
+        this.sendFile("spriteSheet", buffer, true);
+        await promise;
+    }
+    async sendSpriteSheets(spriteSheets) {
+        for (const spriteSheet of spriteSheets) {
+            await this.sendSpriteSheet(spriteSheet);
+        }
+    }
+    assertLoadedSpriteSheet(spriteSheetName) {
+        _console$o.assertWithError(this.spriteSheets[spriteSheetName], `spriteSheet "${spriteSheetName}" not laded`);
+    }
+    get selectedSpriteSheet() {
+        return __classPrivateFieldGet(this, _DisplayManager_selectedSpriteSheet, "f");
+    }
+    get selectedSpriteSheetName() {
+        return this.selectedSpriteSheet?.name;
     }
     async selectSpriteSheet(spriteSheetName, sendImmediately) {
+        this.assertLoadedSpriteSheet(spriteSheetName);
     }
     async drawSprite(centerX, centerY, spriteSheetName, spriteName, sendImmediately) {
     }
@@ -6086,6 +6134,15 @@ class DisplayManager {
             case "displayReady":
                 __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_parseDisplayReady).call(this, dataView);
                 break;
+            case "getSpriteSheetName":
+            case "setSpriteSheetName":
+                const spriteSheetName = textDecoder.decode(dataView.buffer);
+                _console$o.log({ spriteSheetName });
+                __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_updateSpriteSheetName).call(this, spriteSheetName);
+                break;
+            case "spriteSheetIndex":
+                __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_parseSpriteSheetIndex).call(this, dataView);
+                break;
             default:
                 throw Error(`uncaught messageType ${messageType}`);
         }
@@ -6102,6 +6159,10 @@ class DisplayManager {
         __classPrivateFieldGet(this, _DisplayManager_colors, "f").length = 0;
         __classPrivateFieldGet(this, _DisplayManager_opacities, "f").length = 0;
         __classPrivateFieldSet(this, _DisplayManager_isReady, true, "f");
+        __classPrivateFieldSet(this, _DisplayManager_pendingSpriteSheet, undefined, "f");
+        __classPrivateFieldSet(this, _DisplayManager_pendingSpriteSheetName, undefined, "f");
+        Object.keys(__classPrivateFieldGet(this, _DisplayManager_spriteSheetIndices, "f")).forEach((spriteSheetName) => delete __classPrivateFieldGet(this, _DisplayManager_spriteSheetIndices, "f")[spriteSheetName]);
+        Object.keys(__classPrivateFieldGet(this, _DisplayManager_spriteSheets, "f")).forEach((spriteSheetName) => delete __classPrivateFieldGet(this, _DisplayManager_spriteSheets, "f")[spriteSheetName]);
     }
     get mtu() {
         return __classPrivateFieldGet(this, _DisplayManager_mtu, "f");
@@ -6110,7 +6171,7 @@ class DisplayManager {
         __classPrivateFieldSet(this, _DisplayManager_mtu, newMtu, "f");
     }
 }
-_DisplayManager_isAvailable = new WeakMap(), _DisplayManager_contextStateHelper = new WeakMap(), _DisplayManager_displayStatus = new WeakMap(), _DisplayManager_displayInformation = new WeakMap(), _DisplayManager_brightness = new WeakMap(), _DisplayManager_displayContextCommandBuffers = new WeakMap(), _DisplayManager_colors = new WeakMap(), _DisplayManager_opacities = new WeakMap(), _DisplayManager_isReady = new WeakMap(), _DisplayManager_mtu = new WeakMap(), _DisplayManager_instances = new WeakSet(), _DisplayManager_dispatchEvent_get = function _DisplayManager_dispatchEvent_get() {
+_DisplayManager_isAvailable = new WeakMap(), _DisplayManager_contextStateHelper = new WeakMap(), _DisplayManager_displayStatus = new WeakMap(), _DisplayManager_displayInformation = new WeakMap(), _DisplayManager_brightness = new WeakMap(), _DisplayManager_displayContextCommandBuffers = new WeakMap(), _DisplayManager_colors = new WeakMap(), _DisplayManager_opacities = new WeakMap(), _DisplayManager_isReady = new WeakMap(), _DisplayManager_spriteSheets = new WeakMap(), _DisplayManager_spriteSheetIndices = new WeakMap(), _DisplayManager_pendingSpriteSheet = new WeakMap(), _DisplayManager_pendingSpriteSheetName = new WeakMap(), _DisplayManager_selectedSpriteSheet = new WeakMap(), _DisplayManager_mtu = new WeakMap(), _DisplayManager_instances = new WeakSet(), _DisplayManager_dispatchEvent_get = function _DisplayManager_dispatchEvent_get() {
     return this.eventDispatcher.dispatchEvent;
 }, _DisplayManager_assertDisplayIsAvailable = function _DisplayManager_assertDisplayIsAvailable() {
     _console$o.assertWithError(__classPrivateFieldGet(this, _DisplayManager_isAvailable, "f"), "display is not available");
@@ -6244,8 +6305,7 @@ async function _DisplayManager_sendDisplayCommand(command, sendImmediately) {
 }, _DisplayManager_parseDisplayReady = function _DisplayManager_parseDisplayReady(dataView) {
     __classPrivateFieldSet(this, _DisplayManager_isReady, true, "f");
     __classPrivateFieldGet(this, _DisplayManager_instances, "a", _DisplayManager_dispatchEvent_get).call(this, "displayReady", {});
-}, _DisplayManager_setSpriteSheetName =
-async function _DisplayManager_setSpriteSheetName(spriteSheetName, sendImmediately) {
+}, _DisplayManager_setSpriteSheetName = async function _DisplayManager_setSpriteSheetName(spriteSheetName, sendImmediately) {
     _console$o.assertTypeWithError(spriteSheetName, "string");
     _console$o.assertRangeWithError("newName", spriteSheetName.length, MinSpriteSheetNameLength, MaxSpriteSheetNameLength);
     const setSpriteSheetNameData = textEncoder.encode(spriteSheetName);
@@ -6253,6 +6313,30 @@ async function _DisplayManager_setSpriteSheetName(spriteSheetName, sendImmediate
     const promise = this.waitForEvent("getSpriteSheetName");
     this.sendMessage([{ type: "setSpriteSheetName", data: setSpriteSheetNameData.buffer }], sendImmediately);
     await promise;
+}, _DisplayManager_updateSpriteSheetName = function _DisplayManager_updateSpriteSheetName(updatedSpriteSheetName) {
+    _console$o.assertTypeWithError(updatedSpriteSheetName, "string");
+    __classPrivateFieldSet(this, _DisplayManager_pendingSpriteSheetName, updatedSpriteSheetName, "f");
+    _console$o.log({ updatedSpriteSheetName: __classPrivateFieldGet(this, _DisplayManager_pendingSpriteSheetName, "f") });
+    __classPrivateFieldGet(this, _DisplayManager_instances, "a", _DisplayManager_dispatchEvent_get).call(this, "getSpriteSheetName", {
+        spriteSheetName: __classPrivateFieldGet(this, _DisplayManager_pendingSpriteSheetName, "f"),
+    });
+}, _DisplayManager_parseSpriteSheetIndex = function _DisplayManager_parseSpriteSheetIndex(dataView) {
+    const spriteSheetIndex = dataView.getUint8(0);
+    _console$o.log({
+        pendingSpriteSheet: __classPrivateFieldGet(this, _DisplayManager_pendingSpriteSheet, "f"),
+        spriteSheetName: __classPrivateFieldGet(this, _DisplayManager_pendingSpriteSheetName, "f"),
+        spriteSheetIndex,
+    });
+    _console$o.assertWithError(__classPrivateFieldGet(this, _DisplayManager_pendingSpriteSheetName, "f"), "expected spriteSheetName when receiving spriteSheetIndex");
+    _console$o.assertWithError(__classPrivateFieldGet(this, _DisplayManager_pendingSpriteSheet, "f"), "expected pendingSpriteSheet when receiving spriteSheetIndex");
+    __classPrivateFieldGet(this, _DisplayManager_spriteSheets, "f")[__classPrivateFieldGet(this, _DisplayManager_pendingSpriteSheetName, "f")] =
+        __classPrivateFieldGet(this, _DisplayManager_pendingSpriteSheet, "f");
+    __classPrivateFieldGet(this, _DisplayManager_spriteSheetIndices, "f")[__classPrivateFieldGet(this, _DisplayManager_pendingSpriteSheetName, "f")] = spriteSheetIndex;
+    __classPrivateFieldGet(this, _DisplayManager_instances, "a", _DisplayManager_dispatchEvent_get).call(this, "displaySpriteSheet", {
+        spriteSheetName: __classPrivateFieldGet(this, _DisplayManager_pendingSpriteSheetName, "f"),
+        spriteSheet: __classPrivateFieldGet(this, _DisplayManager_pendingSpriteSheet, "f"),
+    });
+    __classPrivateFieldSet(this, _DisplayManager_pendingSpriteSheet, undefined, "f");
 };
 
 var _BaseConnectionManager_instances, _a$4, _BaseConnectionManager_AssertValidTxRxMessageType, _BaseConnectionManager_assertIsSupported, _BaseConnectionManager_status, _BaseConnectionManager_assertIsNotConnecting, _BaseConnectionManager_assertIsNotDisconnecting, _BaseConnectionManager_pendingMessages, _BaseConnectionManager_isSendingMessages, _BaseConnectionManager_onRxMessage, _BaseConnectionManager_timer, _BaseConnectionManager_checkConnection;
@@ -9739,12 +9823,25 @@ class Device {
         __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertDisplayIsAvailable).call(this);
         return __classPrivateFieldGet(this, _Device_displayManager, "f").resetSpriteScale;
     }
+    get displayManager() {
+        __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertDisplayIsAvailable).call(this);
+        return __classPrivateFieldGet(this, _Device_displayManager, "f");
+    }
+    get sendDisplaySpriteSheet() {
+        __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertDisplayIsAvailable).call(this);
+        return __classPrivateFieldGet(this, _Device_displayManager, "f").sendSpriteSheet;
+    }
+    get sendDisplaySpriteSheets() {
+        __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertDisplayIsAvailable).call(this);
+        return __classPrivateFieldGet(this, _Device_displayManager, "f").sendSpriteSheets;
+    }
+    get selectDisplaySpriteSheet() {
+        __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertDisplayIsAvailable).call(this);
+        return __classPrivateFieldGet(this, _Device_displayManager, "f").selectSpriteSheet;
+    }
     get drawDisplaySprite() {
         __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertDisplayIsAvailable).call(this);
         return __classPrivateFieldGet(this, _Device_displayManager, "f").drawSprite;
-    }
-    get displayManager() {
-        return __classPrivateFieldGet(this, _Device_displayManager, "f");
     }
 }
 _a$3 = Device, _Device_eventDispatcher = new WeakMap(), _Device_connectionManager = new WeakMap(), _Device_isConnected = new WeakMap(), _Device_reconnectOnDisconnection = new WeakMap(), _Device_reconnectIntervalId = new WeakMap(), _Device_deviceInformationManager = new WeakMap(), _Device_batteryLevel = new WeakMap(), _Device_sensorConfigurationManager = new WeakMap(), _Device_clearSensorConfigurationOnLeave = new WeakMap(), _Device_sensorDataManager = new WeakMap(), _Device_vibrationManager = new WeakMap(), _Device_fileTransferManager = new WeakMap(), _Device_tfliteManager = new WeakMap(), _Device_firmwareManager = new WeakMap(), _Device_isServerSide = new WeakMap(), _Device_wifiManager = new WeakMap(), _Device_cameraManager = new WeakMap(), _Device_microphoneManager = new WeakMap(), _Device_displayManager = new WeakMap(), _Device_instances = new WeakSet(), _Device_DefaultConnectionManager = function _Device_DefaultConnectionManager() {

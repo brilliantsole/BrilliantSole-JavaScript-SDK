@@ -158,7 +158,12 @@ declare class DisplayCanvasHelper implements DisplayManagerInterface {
     assertValidNumberOfColors(numberOfColors: number): void;
     assertValidBitmap(bitmap: DisplayBitmap): void;
     drawBitmap(centerX: number, centerY: number, bitmap: DisplayBitmap, sendImmediately?: boolean): Promise<void>;
+    get spriteSheets(): Record<string, DisplaySpriteSheet>;
     sendSpriteSheet(spriteSheet: DisplaySpriteSheet): Promise<void>;
+    sendSpriteSheets(spriteSheets: DisplaySpriteSheet[]): Promise<void>;
+    assertLoadedSpriteSheet(spriteSheetName: string): void;
+    get selectedSpriteSheet(): DisplaySpriteSheet | undefined;
+    get selectedSpriteSheetName(): string | undefined;
     selectSpriteSheet(spriteSheetName: string, sendImmediately?: boolean): Promise<void>;
     drawSprite(centerX: number, centerY: number, spriteSheetName: string, spriteName: string, sendImmediately?: boolean): Promise<void>;
     get brightness(): "veryLow" | "low" | "medium" | "high" | "veryHigh";

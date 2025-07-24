@@ -1,4 +1,5 @@
 import { DisplayContextCommand } from "./DisplayContextCommand.ts";
+import { DisplayManagerInterface } from "./DisplayManagerInterface.ts";
 export type DisplaySpritePaletteSwap = {
     name: string;
     numberOfColors: number;
@@ -22,5 +23,5 @@ export type DisplaySpriteSheet = {
     palettes: DisplaySpriteSheetPalette[];
     sprites: DisplaySprite[];
 };
-export declare function serializeSpriteSheet(spriteSheet: DisplaySpriteSheet): DataView;
+export declare function serializeSpriteSheet(displayManager: DisplayManagerInterface, spriteSheet: DisplaySpriteSheet): ArrayBuffer;
 export declare function parseSpriteSheet(dataView: DataView): void;

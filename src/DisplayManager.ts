@@ -68,7 +68,7 @@ import {
   runDisplayContextCommands,
 } from "./utils/DisplayManagerInterface.ts";
 import { SendFileCallback } from "./FileTransferManager.ts";
-import { textEncoder } from "./utils/Text.ts";
+import { textDecoder, textEncoder } from "./utils/Text.ts";
 import { serializeSpriteSheet } from "./utils/DisplaySpriteSheetUtils.ts";
 
 const _console = createConsole("DisplayManager", { log: true });
@@ -164,6 +164,7 @@ export const DisplayEventTypes = [
   "displayColor",
   "displayColorOpacity",
   "displayOpacity",
+  "displaySpriteSheet",
 ] as const;
 export type DisplayEventType = (typeof DisplayEventTypes)[number];
 
@@ -196,6 +197,13 @@ export interface DisplayEventMessages {
     opacity: number;
   };
   displayReady: {};
+  getSpriteSheetName: {
+    spriteSheetName: string;
+  };
+  displaySpriteSheet: {
+    spriteSheetName: string;
+    spriteSheet: DisplaySpriteSheet;
+  };
 }
 
 export type DisplayEventDispatcher = EventDispatcher<
@@ -1853,6 +1861,11 @@ class DisplayManager implements DisplayManagerInterface {
   }
 
   // SPRITE SHEET
+  #spriteSheets: Record<string, DisplaySpriteSheet> = {};
+  #spriteSheetIndices: Record<string, number> = {};
+  get spriteSheets() {
+    return this.#spriteSheets;
+  }
   async #setSpriteSheetName(
     spriteSheetName: string,
     sendImmediately?: boolean
@@ -1874,13 +1887,46 @@ class DisplayManager implements DisplayManagerInterface {
     );
     await promise;
   }
+  #pendingSpriteSheet?: DisplaySpriteSheet;
+  #pendingSpriteSheetName?: string;
+  #updateSpriteSheetName(updatedSpriteSheetName: string) {
+    _console.assertTypeWithError(updatedSpriteSheetName, "string");
+    this.#pendingSpriteSheetName = updatedSpriteSheetName;
+    _console.log({ updatedSpriteSheetName: this.#pendingSpriteSheetName });
+    this.#dispatchEvent("getSpriteSheetName", {
+      spriteSheetName: this.#pendingSpriteSheetName,
+    });
+  }
   sendFile!: SendFileCallback;
   async sendSpriteSheet(spriteSheet: DisplaySpriteSheet) {
-    const dataView = serializeSpriteSheet(spriteSheet);
-    await this.#setSpriteSheetName(spriteSheet.name);
-    await this.sendFile("spriteSheet", dataView);
+    spriteSheet = structuredClone(spriteSheet);
+    this.#pendingSpriteSheet = spriteSheet;
+    const buffer = serializeSpriteSheet(this, this.#pendingSpriteSheet);
+    await this.#setSpriteSheetName(this.#pendingSpriteSheet.name);
+    const promise = this.waitForEvent("displaySpriteSheet");
+    this.sendFile("spriteSheet", buffer, true);
+    await promise;
+  }
+  async sendSpriteSheets(spriteSheets: DisplaySpriteSheet[]) {
+    for (const spriteSheet of spriteSheets) {
+      await this.sendSpriteSheet(spriteSheet);
+    }
+  }
+  assertLoadedSpriteSheet(spriteSheetName: string) {
+    _console.assertWithError(
+      this.spriteSheets[spriteSheetName],
+      `spriteSheet "${spriteSheetName}" not laded`
+    );
+  }
+  #selectedSpriteSheet?: DisplaySpriteSheet;
+  get selectedSpriteSheet() {
+    return this.#selectedSpriteSheet;
+  }
+  get selectedSpriteSheetName() {
+    return this.selectedSpriteSheet?.name;
   }
   async selectSpriteSheet(spriteSheetName: string, sendImmediately?: boolean) {
+    this.assertLoadedSpriteSheet(spriteSheetName);
     // FILL
   }
   async drawSprite(
@@ -1891,6 +1937,31 @@ class DisplayManager implements DisplayManagerInterface {
     sendImmediately?: boolean
   ) {
     // FILL - check if spritesheet is loaded, then send command
+  }
+
+  #parseSpriteSheetIndex(dataView: DataView) {
+    const spriteSheetIndex = dataView.getUint8(0);
+    _console.log({
+      pendingSpriteSheet: this.#pendingSpriteSheet,
+      spriteSheetName: this.#pendingSpriteSheetName,
+      spriteSheetIndex,
+    });
+    _console.assertWithError(
+      this.#pendingSpriteSheetName,
+      "expected spriteSheetName when receiving spriteSheetIndex"
+    );
+    _console.assertWithError(
+      this.#pendingSpriteSheet,
+      "expected pendingSpriteSheet when receiving spriteSheetIndex"
+    );
+    this.#spriteSheets[this.#pendingSpriteSheetName!] =
+      this.#pendingSpriteSheet!;
+    this.#spriteSheetIndices[this.#pendingSpriteSheetName!] = spriteSheetIndex;
+    this.#dispatchEvent("displaySpriteSheet", {
+      spriteSheetName: this.#pendingSpriteSheetName!,
+      spriteSheet: this.#pendingSpriteSheet!,
+    });
+    this.#pendingSpriteSheet = undefined;
   }
 
   // MESSAGE
@@ -1914,6 +1985,15 @@ class DisplayManager implements DisplayManagerInterface {
       case "displayReady":
         this.#parseDisplayReady(dataView);
         break;
+      case "getSpriteSheetName":
+      case "setSpriteSheetName":
+        const spriteSheetName = textDecoder.decode(dataView.buffer);
+        _console.log({ spriteSheetName });
+        this.#updateSpriteSheetName(spriteSheetName);
+        break;
+      case "spriteSheetIndex":
+        this.#parseSpriteSheetIndex(dataView);
+        break;
       default:
         throw Error(`uncaught messageType ${messageType}`);
     }
@@ -1935,6 +2015,15 @@ class DisplayManager implements DisplayManagerInterface {
     this.#opacities.length = 0;
 
     this.#isReady = true;
+    this.#pendingSpriteSheet = undefined;
+    this.#pendingSpriteSheetName = undefined;
+
+    Object.keys(this.#spriteSheetIndices).forEach(
+      (spriteSheetName) => delete this.#spriteSheetIndices[spriteSheetName]
+    );
+    Object.keys(this.#spriteSheets).forEach(
+      (spriteSheetName) => delete this.#spriteSheets[spriteSheetName]
+    );
   }
 
   // MTU

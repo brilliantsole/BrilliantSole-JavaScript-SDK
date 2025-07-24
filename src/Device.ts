@@ -1761,16 +1761,29 @@ class Device {
     return this.#displayManager.resetSpriteScale;
   }
 
+  get displayManager() {
+    this.#assertDisplayIsAvailable();
+    return this.#displayManager as DisplayManagerInterface;
+  }
+
+  get sendDisplaySpriteSheet() {
+    this.#assertDisplayIsAvailable();
+    return this.#displayManager.sendSpriteSheet;
+  }
+  get sendDisplaySpriteSheets() {
+    this.#assertDisplayIsAvailable();
+    return this.#displayManager.sendSpriteSheets;
+  }
+  get selectDisplaySpriteSheet() {
+    this.#assertDisplayIsAvailable();
+    return this.#displayManager.selectSpriteSheet;
+  }
   get drawDisplaySprite() {
     this.#assertDisplayIsAvailable();
     return this.#displayManager.drawSprite;
   }
 
-  get displayManager() {
-    return this.#displayManager as DisplayManagerInterface;
-  }
-
-  // FILL - spritesheet, text, etc
+  // FILL - text, etc
 }
 
 export default Device;

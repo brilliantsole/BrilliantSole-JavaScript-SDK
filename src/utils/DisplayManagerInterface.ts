@@ -343,6 +343,7 @@ export interface DisplayManagerInterface {
   }>;
 
   sendSpriteSheet(spriteSheet: DisplaySpriteSheet): Promise<void>;
+  sendSpriteSheets(spriteSheets: DisplaySpriteSheet[]): Promise<void>;
   selectSpriteSheet(
     spriteSheetName: string,
     sendImmediately?: boolean
@@ -354,6 +355,11 @@ export interface DisplayManagerInterface {
     spriteName: string,
     sendImmediately?: boolean
   ): Promise<void>;
+  assertLoadedSpriteSheet(spriteSheetName: string): void;
+  get selectedSpriteSheet(): DisplaySpriteSheet | undefined;
+  get selectedSpriteSheetName(): string | undefined;
+
+  spriteSheets: Record<string, DisplaySpriteSheet>;
 }
 
 export async function runDisplayContextCommand(

@@ -66,6 +66,7 @@ import { DisplayContextCommand } from "./DisplayContextCommand.ts";
 import {
   DisplaySprite,
   DisplaySpriteSheet,
+  serializeSpriteSheet,
 } from "./DisplaySpriteSheetUtils.ts";
 
 const _console = createConsole("DisplayCanvasHelper", { log: true });
@@ -379,6 +380,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     this.#updateDeviceOpacity(true);
     this.#updateDeviceContextState(true);
     this.#updateDeviceBrightness(true);
+    this.#updateDeviceSpriteSheets();
   }
 
   // NUMBER OF COLORS
@@ -2442,11 +2444,41 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
   }
 
   // SPRITES
+  #spriteSheets: Record<string, DisplaySpriteSheet> = {};
+  get spriteSheets() {
+    return this.#spriteSheets;
+  }
   async sendSpriteSheet(spriteSheet: DisplaySpriteSheet) {
-    // FILL
+    spriteSheet = structuredClone(spriteSheet);
+    this.spriteSheets[spriteSheet.name] = spriteSheet;
+    if (this.device?.isConnected) {
+      await this.device.sendDisplaySpriteSheet(spriteSheet);
+    }
+  }
+  async sendSpriteSheets(spriteSheets: DisplaySpriteSheet[]) {
+    for (const spriteSheet of spriteSheets) {
+      await this.sendSpriteSheet(spriteSheet);
+    }
+  }
+  assertLoadedSpriteSheet(spriteSheetName: string) {
+    _console.assertWithError(
+      this.spriteSheets[spriteSheetName],
+      `spriteSheet "${spriteSheetName}" not laded`
+    );
+  }
+  #selectedSpriteSheet?: DisplaySpriteSheet;
+  get selectedSpriteSheet() {
+    return this.#selectedSpriteSheet;
+  }
+  get selectedSpriteSheetName() {
+    return this.selectedSpriteSheet?.name;
   }
   async selectSpriteSheet(spriteSheetName: string, sendImmediately?: boolean) {
-    // FILL
+    this.assertLoadedSpriteSheet(spriteSheetName);
+    this.#selectedSpriteSheet = this.spriteSheets[spriteSheetName];
+    if (this.device?.isConnected) {
+      this.device.selectDisplaySpriteSheet(spriteSheetName, sendImmediately);
+    }
   }
   async drawSprite(
     centerX: number,
@@ -2455,7 +2487,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     spriteName: string,
     sendImmediately?: boolean
   ) {
-    // FILL
+    // FILL - check if spriteSheet is "loaded" and selected
   }
 
   // BRIGHTNESS
@@ -2498,6 +2530,13 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     }
     // _console.log("updateDeviceBrightness");
     await this.device?.setDisplayBrightness(this.brightness, sendImmediately);
+  }
+  async #updateDeviceSpriteSheets() {
+    if (!this.device?.isConnected) {
+      return;
+    }
+    _console.log("updateDeviceSpriteSheets");
+    await this.sendSpriteSheets(Object.values(this.spriteSheets));
   }
 
   async runContextCommand(
@@ -2639,6 +2678,9 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     this.#resetOpacities();
     this.#resetContextState();
     this.#resetBrightness();
+    Object.keys(this.#spriteSheets).forEach(
+      (spriteSheetName) => delete this.#spriteSheets[spriteSheetName]
+    );
   }
 
   async imageToBitmap(

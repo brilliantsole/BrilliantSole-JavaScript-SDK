@@ -52,7 +52,7 @@ export interface FileTransferEventMessages {
 }
 export type FileTransferEventDispatcher = EventDispatcher<Device, FileTransferEventType, FileTransferEventMessages>;
 export type SendFileTransferMessageCallback = SendMessageCallback<FileTransferMessageType>;
-export type SendFileCallback = (type: FileType, file: FileLike) => Promise<boolean>;
+export type SendFileCallback = (type: FileType, file: FileLike, override?: boolean) => Promise<boolean>;
 declare class FileTransferManager {
     #private;
     constructor();
@@ -84,7 +84,7 @@ declare class FileTransferManager {
     get checksum(): number;
     get status(): "idle" | "sending" | "receiving";
     parseMessage(messageType: FileTransferMessageType, dataView: DataView): void;
-    send(type: FileType, file: FileLike): Promise<boolean>;
+    send(type: FileType, file: FileLike, override?: boolean): Promise<boolean>;
     mtu: number;
     receive(type: FileType): Promise<void>;
     cancel(): Promise<void>;

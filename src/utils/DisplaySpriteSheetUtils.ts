@@ -1,5 +1,10 @@
+import { concatenateArrayBuffers } from "./ArrayBufferUtils.ts";
 import { createConsole } from "./Console.ts";
-import { DisplayContextCommand } from "./DisplayContextCommand.ts";
+import {
+  DisplayContextCommand,
+  serializeContextCommands,
+} from "./DisplayContextCommand.ts";
+import { DisplayManagerInterface } from "./DisplayManagerInterface.ts";
 
 const _console = createConsole("DisplaySpriteSheetUtils", { log: true });
 
@@ -27,8 +32,10 @@ export type DisplaySpriteSheet = {
   sprites: DisplaySprite[];
 };
 
-export function serializeSpriteSheet(spriteSheet: DisplaySpriteSheet) {
-  // numberOfSprites, ...offsets, ...commands
+export function serializeSpriteSheet(
+  displayManager: DisplayManagerInterface,
+  spriteSheet: DisplaySpriteSheet
+) {
   const { name, sprites } = spriteSheet;
   _console.log(`serializing ${name} spriteSheet`, spriteSheet);
 
@@ -36,10 +43,36 @@ export function serializeSpriteSheet(spriteSheet: DisplaySpriteSheet) {
   const numberOfSpritesDataView = new DataView(new ArrayBuffer(2));
   numberOfSpritesDataView.setUint16(0, numberOfSprites, true);
 
-  sprites.forEach((sprite, index) => {
-    // FILL
+  const spritePayloads = sprites.map((sprite, index) => {
+    const commandsData = serializeContextCommands(
+      displayManager,
+      sprite.commands
+    );
+    const dataView = new DataView(new ArrayBuffer(3 * 2));
+    dataView.setUint16(0, sprite.width, true);
+    dataView.setUint16(2, sprite.height, true);
+    dataView.setUint16(4, commandsData.byteLength, true);
+    return concatenateArrayBuffers(dataView, commandsData);
   });
-  return new DataView(new ArrayBuffer(1));
+  const spriteOffsetsDataView = new DataView(
+    new ArrayBuffer(sprites.length * 2)
+  );
+  let offset =
+    numberOfSpritesDataView.byteLength + spriteOffsetsDataView.byteLength;
+  spritePayloads.forEach((spritePayload, index) => {
+    _console.log("spritePayloads", index, offset, spritePayload);
+    spriteOffsetsDataView.setUint16(index, offset, true);
+    offset += spritePayload.byteLength;
+  });
+
+  // [numberOfSprites, ...spriteOffsets, ...[width, height, commands]]
+  const serializedSpriteSheet = concatenateArrayBuffers(
+    numberOfSpritesDataView,
+    spriteOffsetsDataView,
+    spritePayloads
+  );
+  _console.log("serializedSpriteSheet", serializedSpriteSheet);
+  return serializedSpriteSheet;
 }
 export function parseSpriteSheet(dataView: DataView) {
   // FILL

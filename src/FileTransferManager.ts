@@ -6,7 +6,7 @@ import Device, { SendMessageCallback } from "./Device.ts";
 import EventDispatcher from "./utils/EventDispatcher.ts";
 import autoBind from "auto-bind";
 
-const _console = createConsole("FileTransferManager", { log: false });
+const _console = createConsole("FileTransferManager", { log: true });
 
 export const FileTransferMessageTypes = [
   "getFileTypes",
@@ -90,7 +90,8 @@ export type SendFileTransferMessageCallback =
 
 export type SendFileCallback = (
   type: FileType,
-  file: FileLike
+  file: FileLike,
+  override?: boolean
 ) => Promise<boolean>;
 
 class FileTransferManager {
@@ -435,7 +436,7 @@ class FileTransferManager {
     }
   }
 
-  async send(type: FileType, file: FileLike) {
+  async send(type: FileType, file: FileLike, override?: boolean) {
     if (true) {
       this.#assertIsIdle();
       this.#assertValidType(type);
@@ -454,15 +455,17 @@ class FileTransferManager {
     const fileLength = fileBuffer.byteLength;
     const checksum = crc32(fileBuffer);
 
-    if (type != this.type) {
-      _console.log("different fileTypes - sending");
-    } else if (fileLength != this.length) {
-      _console.log("different fileLengths - sending");
-    } else if (checksum != this.checksum) {
-      _console.log("different fileChecksums - sending");
-    } else {
-      _console.log("already sent file");
-      return false;
+    if (!override) {
+      if (type != this.type) {
+        _console.log("different fileTypes - sending");
+      } else if (fileLength != this.length) {
+        _console.log("different fileLengths - sending");
+      } else if (checksum != this.checksum) {
+        _console.log("different fileChecksums - sending");
+      } else {
+        _console.log("already sent file");
+        return false;
+      }
     }
 
     const promises: Promise<any>[] = [];
