@@ -212,6 +212,7 @@ declare class DisplayManager implements DisplayManagerInterface {
     runContextCommands(commands: DisplayContextCommand[], sendImmediately?: boolean): Promise<void>;
     get isReady(): boolean;
     get spriteSheets(): Record<string, DisplaySpriteSheet>;
+    get spriteSheetIndices(): Record<string, number>;
     sendFile: SendFileCallback;
     sendSpriteSheet(spriteSheet: DisplaySpriteSheet): Promise<void>;
     sendSpriteSheets(spriteSheets: DisplaySpriteSheet[]): Promise<void>;
@@ -219,7 +220,7 @@ declare class DisplayManager implements DisplayManagerInterface {
     get selectedSpriteSheet(): DisplaySpriteSheet | undefined;
     get selectedSpriteSheetName(): string | undefined;
     selectSpriteSheet(spriteSheetName: string, sendImmediately?: boolean): Promise<void>;
-    drawSprite(centerX: number, centerY: number, spriteSheetName: string, spriteName: string, sendImmediately?: boolean): Promise<void>;
+    drawSprite(centerX: number, centerY: number, spriteName: string, sendImmediately?: boolean): Promise<void>;
     parseMessage(messageType: DisplayMessageType, dataView: DataView): void;
     reset(): void;
     get mtu(): number;

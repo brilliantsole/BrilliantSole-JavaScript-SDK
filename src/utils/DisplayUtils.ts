@@ -89,18 +89,37 @@ export const DisplayCropDirections = [
 ] as const;
 export type DisplayCropDirection = (typeof DisplayCropDirections)[number];
 
+export const DisplayContextCropStateKeys = [
+  "cropTop",
+  "cropRight",
+  "cropBottom",
+  "cropLeft",
+] as const satisfies readonly DisplayContextStateKey[];
+export type DisplayContextCropStateKey =
+  (typeof DisplayContextCropStateKeys)[number];
+
 export const DisplayCropDirectionToStateKey: Record<
   DisplayCropDirection,
-  DisplayContextStateKey
+  DisplayContextCropStateKey
 > = {
   top: "cropTop",
   right: "cropRight",
   bottom: "cropBottom",
   left: "cropLeft",
 };
+
+export const DisplayContextCropCommandTypes = [
+  "setCropTop",
+  "setCropRight",
+  "setCropBottom",
+  "setCropLeft",
+] as const satisfies readonly DisplayContextCommandType[];
+export type DisplayContextCropCommandType =
+  (typeof DisplayContextCropCommandTypes)[number];
+
 export const DisplayCropDirectionToCommandType: Record<
   DisplayCropDirection,
-  DisplayContextCommandType
+  DisplayContextCropCommandType
 > = {
   top: "setCropTop",
   right: "setCropRight",
@@ -108,18 +127,37 @@ export const DisplayCropDirectionToCommandType: Record<
   left: "setCropLeft",
 };
 
+export const DisplayContextRotationCropStateKeys = [
+  "rotationCropTop",
+  "rotationCropRight",
+  "rotationCropBottom",
+  "rotationCropLeft",
+] as const satisfies readonly DisplayContextStateKey[];
+export type DisplayContextRotationCropStateKey =
+  (typeof DisplayContextRotationCropStateKeys)[number];
+
 export const DisplayRotationCropDirectionToStateKey: Record<
   DisplayCropDirection,
-  DisplayContextStateKey
+  DisplayContextRotationCropStateKey
 > = {
   top: "rotationCropTop",
   right: "rotationCropRight",
   bottom: "rotationCropBottom",
   left: "rotationCropLeft",
 };
+
+export const DisplayContextRotationCropCommandTypes = [
+  "setRotationCropTop",
+  "setRotationCropRight",
+  "setRotationCropBottom",
+  "setRotationCropLeft",
+] as const satisfies readonly DisplayContextCommandType[];
+export type DisplayContextRotationCropCommandType =
+  (typeof DisplayContextRotationCropCommandTypes)[number];
+
 export const DisplayRotationCropDirectionToCommandType: Record<
   DisplayCropDirection,
-  DisplayContextCommandType
+  DisplayContextRotationCropCommandType
 > = {
   top: "setRotationCropTop",
   right: "setRotationCropRight",

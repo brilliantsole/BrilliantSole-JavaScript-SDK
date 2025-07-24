@@ -351,7 +351,6 @@ export interface DisplayManagerInterface {
   drawSprite(
     centerX: number,
     centerY: number,
-    spriteSheetName: string,
     spriteName: string,
     sendImmediately?: boolean
   ): Promise<void>;
@@ -360,6 +359,7 @@ export interface DisplayManagerInterface {
   get selectedSpriteSheetName(): string | undefined;
 
   spriteSheets: Record<string, DisplaySpriteSheet>;
+  spriteSheetIndices: Record<string, number>;
 }
 
 export async function runDisplayContextCommand(
@@ -754,12 +754,20 @@ export async function runDisplayContextCommand(
       break;
     case "drawSprite":
       {
-        const { centerX, centerY, spriteSheetName, spriteName } = command;
+        const { centerX, centerY, spriteName } = command;
         await displayManager.drawSprite(
           centerX,
           centerY,
-          spriteSheetName,
           spriteName,
+          sendImmediately
+        );
+      }
+      break;
+    case "selectSpriteSheet":
+      {
+        const { spriteSheetName } = command;
+        await displayManager.selectSpriteSheet(
+          spriteSheetName,
           sendImmediately
         );
       }

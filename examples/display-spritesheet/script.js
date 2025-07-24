@@ -886,6 +886,7 @@ let drawSprite = () => {
     displayCanvasHelper.setRotationCropBottom(rotationCropBottom);
     displayCanvasHelper.setRotationCropLeft(rotationCropLeft);
 
+    displayCanvasHelper._setIgnoreDevice(true);
     displayCanvasHelper._setClearCanvasBoundingBoxOnDraw(false);
     displayCanvasHelper._setUseSpriteColorIndices(true);
     displayCanvasHelper._saveContextForSprite(x, y, selectedSprite);
@@ -896,9 +897,7 @@ let drawSprite = () => {
         return;
       }
       if (command.type == "drawSprite") {
-        const sprite = spriteSheet.sprites.find(
-          (sprite) => sprite.name == command.spriteName
-        );
+        const sprite = spriteSheet.sprites[command.spriteIndex];
         if (sprite) {
           //console.log("drawing sub sprite", sprite);
           displayCanvasHelper._saveContextForSprite(
@@ -911,7 +910,9 @@ let drawSprite = () => {
           });
           displayCanvasHelper._restoreContextForSprite();
         } else {
-          console.error(`sprite "${command.spriteName}" not found`);
+          console.error(
+            `spriteIndex ${command.spriteIndex} not found in spriteSheet`
+          );
         }
       } else {
         displayCanvasHelper.runContextCommand(command);
@@ -920,6 +921,7 @@ let drawSprite = () => {
     selectedSprite.commands.forEach((command) => {
       runCommand(command);
     });
+    displayCanvasHelper._setIgnoreDevice(false);
     displayCanvasHelper._restoreContextForSprite();
     displayCanvasHelper._setUseSpriteColorIndices(false);
     displayCanvasHelper._setClearCanvasBoundingBoxOnDraw(true);
@@ -1347,9 +1349,9 @@ const addSpriteCommand = () => {
           ],
         });
         break;
-      case "drawSprite":
+      case "drawBitmap":
         selectedSprite.commands.push({
-          type: "drawSprite",
+          type: "drawBitmap",
           centerX: 0,
           centerY: 0,
           bitmap: {
@@ -1525,8 +1527,7 @@ const addSpriteCommand = () => {
         if (sprite) {
           selectedSprite.commands.push({
             type: "drawSprite",
-            spriteSheetName: spriteSheet.name,
-            spriteName: sprite.name,
+            spriteIndex: spriteSheet.sprites.indexOf(sprite),
             centerX: 0,
             centerY: 0,
           });

@@ -31,6 +31,8 @@ export type DisplayContextState = {
   spriteColorIndices: number[];
   spriteScale: number;
 
+  spriteSheetName?: string;
+
   // FILL - sprite spacing, direction, etc
 };
 export type DisplayContextStateKey = keyof DisplayContextState;
@@ -66,4 +68,6 @@ export const DefaultDisplayContextState: DisplayContextState = {
 
   spriteColorIndices: new Array(0).fill(0).map((_, index) => index),
   spriteScale: 1,
+
+  spriteSheetName: undefined,
 };

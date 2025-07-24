@@ -105,11 +105,12 @@ export interface DisplayManagerInterface {
     sendSpriteSheet(spriteSheet: DisplaySpriteSheet): Promise<void>;
     sendSpriteSheets(spriteSheets: DisplaySpriteSheet[]): Promise<void>;
     selectSpriteSheet(spriteSheetName: string, sendImmediately?: boolean): Promise<void>;
-    drawSprite(centerX: number, centerY: number, spriteSheetName: string, spriteName: string, sendImmediately?: boolean): Promise<void>;
+    drawSprite(centerX: number, centerY: number, spriteName: string, sendImmediately?: boolean): Promise<void>;
     assertLoadedSpriteSheet(spriteSheetName: string): void;
     get selectedSpriteSheet(): DisplaySpriteSheet | undefined;
     get selectedSpriteSheetName(): string | undefined;
     spriteSheets: Record<string, DisplaySpriteSheet>;
+    spriteSheetIndices: Record<string, number>;
 }
 export declare function runDisplayContextCommand(displayManager: DisplayManagerInterface, command: DisplayContextCommand, sendImmediately?: boolean): Promise<void>;
 export declare function runDisplayContextCommands(displayManager: DisplayManagerInterface, commands: DisplayContextCommand[], sendImmediately?: boolean): Promise<void>;

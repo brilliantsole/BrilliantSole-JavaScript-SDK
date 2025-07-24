@@ -188,9 +188,8 @@ class TfliteManager {
     const promise = this.waitForEvent("getTfliteTask");
 
     const taskEnum = TfliteTasks.indexOf(newTask);
-    ≈
     this.sendMessage(
-      [{ type: "setTfliteTask", data: UInt8ByteBuffer(commandEnum) }],
+      [{ type: "setTfliteTask", data: UInt8ByteBuffer(taskEnum) }],
       sendImmediately
     );
 
@@ -431,7 +430,7 @@ class TfliteManager {
       [
         {
           type: "setTfliteInferencingEnabled",
-          
+
           data: UInt8ByteBuffer(Number(newInferencingEnabled)),
         },
       ],

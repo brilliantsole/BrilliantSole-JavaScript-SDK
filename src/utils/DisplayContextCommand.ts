@@ -419,11 +419,15 @@ interface DrawDisplayBitmapCommand
   bitmap: DisplayBitmap;
 }
 
+interface SelectDisplaySpriteSheetCommand {
+  type: "selectSpriteSheet";
+  spriteSheetIndex: number;
+}
+
 interface DrawDisplaySpriteCommand
   extends BaseCenterPositionDisplayContextCommand {
   type: "drawSprite";
-  spriteSheetName: string;
-  spriteName: string;
+  spriteIndex: number;
 }
 
 export type DisplayContextCommand =
@@ -468,7 +472,8 @@ export type DisplayContextCommand =
   | DrawDisplayArcCommand
   | DrawDisplayArcEllipseCommand
   | DrawDisplayBitmapCommand
-  | DrawDisplaySpriteCommand;
+  | DrawDisplaySpriteCommand
+  | SelectDisplaySpriteSheetCommand;
 
 export function serializeContextCommand(
   displayManager: DisplayManagerInterface,
@@ -966,9 +971,23 @@ export function serializeContextCommand(
         dataView = new DataView(buffer);
       }
       break;
+    case "selectSpriteSheet":
+      {
+        const { spriteSheetIndex } = command;
+        dataView = new DataView(new ArrayBuffer(1));
+        dataView.setUint8(0, spriteSheetIndex);
+      }
+      break;
     case "drawSprite":
       {
-        // FILL
+        const { centerX, centerY, spriteIndex } = command;
+        dataView = new DataView(new ArrayBuffer(1 + 2 * 2));
+        let offset = 0;
+        dataView.setUint16(offset, centerX, true);
+        offset += 2;
+        dataView.setUint16(offset, centerY, true);
+        offset += 2;
+        dataView.setUint8(offset++, spriteIndex!);
       }
       break;
   }

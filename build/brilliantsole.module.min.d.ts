@@ -170,6 +170,7 @@ type DisplayContextState = {
     bitmapScaleY: number;
     spriteColorIndices: number[];
     spriteScale: number;
+    spriteSheetName?: string;
 };
 type DisplayContextStateKey = keyof DisplayContextState;
 type PartialDisplayContextState = Partial<DisplayContextState>;
@@ -290,11 +291,12 @@ interface DisplayManagerInterface {
     sendSpriteSheet(spriteSheet: DisplaySpriteSheet): Promise<void>;
     sendSpriteSheets(spriteSheets: DisplaySpriteSheet[]): Promise<void>;
     selectSpriteSheet(spriteSheetName: string, sendImmediately?: boolean): Promise<void>;
-    drawSprite(centerX: number, centerY: number, spriteSheetName: string, spriteName: string, sendImmediately?: boolean): Promise<void>;
+    drawSprite(centerX: number, centerY: number, spriteName: string, sendImmediately?: boolean): Promise<void>;
     assertLoadedSpriteSheet(spriteSheetName: string): void;
     get selectedSpriteSheet(): DisplaySpriteSheet | undefined;
     get selectedSpriteSheetName(): string | undefined;
     spriteSheets: Record<string, DisplaySpriteSheet>;
+    spriteSheetIndices: Record<string, number>;
 }
 
 declare const DisplayContextCommandTypes: readonly ["show", "clear", "setColor", "setColorOpacity", "setOpacity", "saveContext", "restoreContext", "selectFillColor", "selectLineColor", "setLineWidth", "setRotation", "clearRotation", "setSegmentStartCap", "setSegmentEndCap", "setSegmentCap", "setSegmentStartRadius", "setSegmentEndRadius", "setSegmentRadius", "setCropTop", "setCropRight", "setCropBottom", "setCropLeft", "clearCrop", "setRotationCropTop", "setRotationCropRight", "setRotationCropBottom", "setRotationCropLeft", "clearRotationCrop", "selectBitmapColor", "selectBitmapColors", "setBitmapScaleX", "setBitmapScaleY", "setBitmapScale", "resetBitmapScale", "selectSpriteColor", "selectSpriteColors", "resetSpriteColors", "setSpriteScale", "resetSpriteScale", "clearRect", "drawRect", "drawRoundRect", "drawCircle", "drawEllipse", "drawPolygon", "drawSegment", "drawSegments", "drawArc", "drawArcEllipse", "drawBitmap", "selectSpriteSheet", "drawSprite"];
@@ -498,12 +500,15 @@ interface DrawDisplayBitmapCommand extends BaseCenterPositionDisplayContextComma
     type: "drawBitmap";
     bitmap: DisplayBitmap;
 }
+interface SelectDisplaySpriteSheetCommand {
+    type: "selectSpriteSheet";
+    spriteSheetIndex: number;
+}
 interface DrawDisplaySpriteCommand extends BaseCenterPositionDisplayContextCommand {
     type: "drawSprite";
-    spriteSheetName: string;
-    spriteName: string;
+    spriteIndex: number;
 }
-type DisplayContextCommand = SimpleDisplayCommand | SetDisplayColorCommand | SetDisplayColorOpacityCommand | SetDisplayOpacityCommand | SelectDisplayFillColorCommand | SelectDisplayLineColorCommand | SetDisplayLineWidthCommand | SetDisplayRotationCommand | SetDisplaySegmentStartCapCommand | SetDisplaySegmentEndCapCommand | SetDisplaySegmentCapCommand | SetDisplaySegmentStartRadiusCommand | SetDisplaySegmentEndRadiusCommand | SetDisplaySegmentRadiusCommand | SetDisplayCropTopCommand | SetDisplayCropRightCommand | SetDisplayCropBottomCommand | SetDisplayCropLeftCommand | SetDisplayRotationCropTopCommand | SetDisplayRotationCropRightCommand | SetDisplayRotationCropBottomCommand | SetDisplayRotationCropLeftCommand | SelectDisplayBitmapColorIndexCommand | SelectDisplayBitmapColorIndicesCommand | SetDisplayBitmapScaleXCommand | SetDisplayBitmapScaleYCommand | SetDisplayBitmapScaleCommand | SelectDisplaySpriteColorIndexCommand | SelectDisplaySpriteColorIndicesCommand | SetDisplaySpriteScaleCommand | ClearDisplayRectCommand | DrawDisplayRectCommand | DrawDisplayRoundedRectCommand | DrawDisplayCircleCommand | DrawDisplayEllipseCommand | DrawDisplayPolygonCommand | DrawDisplaySegmentCommand | DrawDisplaySegmentsCommand | DrawDisplayArcCommand | DrawDisplayArcEllipseCommand | DrawDisplayBitmapCommand | DrawDisplaySpriteCommand;
+type DisplayContextCommand = SimpleDisplayCommand | SetDisplayColorCommand | SetDisplayColorOpacityCommand | SetDisplayOpacityCommand | SelectDisplayFillColorCommand | SelectDisplayLineColorCommand | SetDisplayLineWidthCommand | SetDisplayRotationCommand | SetDisplaySegmentStartCapCommand | SetDisplaySegmentEndCapCommand | SetDisplaySegmentCapCommand | SetDisplaySegmentStartRadiusCommand | SetDisplaySegmentEndRadiusCommand | SetDisplaySegmentRadiusCommand | SetDisplayCropTopCommand | SetDisplayCropRightCommand | SetDisplayCropBottomCommand | SetDisplayCropLeftCommand | SetDisplayRotationCropTopCommand | SetDisplayRotationCropRightCommand | SetDisplayRotationCropBottomCommand | SetDisplayRotationCropLeftCommand | SelectDisplayBitmapColorIndexCommand | SelectDisplayBitmapColorIndicesCommand | SetDisplayBitmapScaleXCommand | SetDisplayBitmapScaleYCommand | SetDisplayBitmapScaleCommand | SelectDisplaySpriteColorIndexCommand | SelectDisplaySpriteColorIndicesCommand | SetDisplaySpriteScaleCommand | ClearDisplayRectCommand | DrawDisplayRectCommand | DrawDisplayRoundedRectCommand | DrawDisplayCircleCommand | DrawDisplayEllipseCommand | DrawDisplayPolygonCommand | DrawDisplaySegmentCommand | DrawDisplaySegmentsCommand | DrawDisplayArcCommand | DrawDisplayArcEllipseCommand | DrawDisplayBitmapCommand | DrawDisplaySpriteCommand | SelectDisplaySpriteSheetCommand;
 
 type FileLike = number[] | ArrayBuffer | DataView | URL | string | File;
 
@@ -1420,7 +1425,7 @@ declare class Device {
     get sendDisplaySpriteSheet(): (spriteSheet: DisplaySpriteSheet) => Promise<void>;
     get sendDisplaySpriteSheets(): (spriteSheets: DisplaySpriteSheet[]) => Promise<void>;
     get selectDisplaySpriteSheet(): (spriteSheetName: string, sendImmediately?: boolean) => Promise<void>;
-    get drawDisplaySprite(): (centerX: number, centerY: number, spriteSheetName: string, spriteName: string, sendImmediately?: boolean) => Promise<void>;
+    get drawDisplaySprite(): (centerX: number, centerY: number, spriteName: string, sendImmediately?: boolean) => Promise<void>;
 }
 
 declare const DeviceManagerEventTypes: readonly ["deviceConnected", "deviceDisconnected", "deviceIsConnected", "availableDevices", "connectedDevices"];
@@ -1625,18 +1630,20 @@ declare class DisplayCanvasHelper implements DisplayManagerInterface {
     assertValidBitmap(bitmap: DisplayBitmap): void;
     drawBitmap(centerX: number, centerY: number, bitmap: DisplayBitmap, sendImmediately?: boolean): Promise<void>;
     get spriteSheets(): Record<string, DisplaySpriteSheet>;
+    get spriteSheetIndices(): Record<string, number>;
     sendSpriteSheet(spriteSheet: DisplaySpriteSheet): Promise<void>;
     sendSpriteSheets(spriteSheets: DisplaySpriteSheet[]): Promise<void>;
     assertLoadedSpriteSheet(spriteSheetName: string): void;
     get selectedSpriteSheet(): DisplaySpriteSheet | undefined;
     get selectedSpriteSheetName(): string | undefined;
     selectSpriteSheet(spriteSheetName: string, sendImmediately?: boolean): Promise<void>;
-    drawSprite(centerX: number, centerY: number, spriteSheetName: string, spriteName: string, sendImmediately?: boolean): Promise<void>;
+    drawSprite(centerX: number, centerY: number, spriteName: string, sendImmediately?: boolean): Promise<void>;
     get brightness(): "veryLow" | "low" | "medium" | "high" | "veryHigh";
     setBrightness(newBrightness: DisplayBrightness, sendImmediately?: boolean): Promise<void>;
     runContextCommand(command: DisplayContextCommand, sendImmediately?: boolean): Promise<void>;
     runContextCommands(commands: DisplayContextCommand[], sendImmediately?: boolean): Promise<void>;
     _setClearCanvasBoundingBoxOnDraw(clearBoundingBoxOnDraw: boolean): void;
+    _setIgnoreDevice(ignoreDevice: boolean): void;
     _setUseSpriteColorIndices(useSpriteColorIndices: boolean): void;
     _saveContextForSprite(centerX: number, centerY: number, sprite: DisplaySprite): void;
     _restoreContextForSprite(): void;

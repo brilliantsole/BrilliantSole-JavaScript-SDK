@@ -747,23 +747,17 @@ class DisplayManager implements DisplayManagerInterface {
 
   async saveContext(sendImmediately?: boolean) {
     const dataView = serializeContextCommand(this, { type: "saveContext" });
-    if (!dataView) {
-      return;
-    }
     await this.#sendDisplayContextCommand(
       "saveContext",
-      dataView.buffer,
+      dataView?.buffer,
       sendImmediately
     );
   }
   async restoreContext(sendImmediately?: boolean) {
     const dataView = serializeContextCommand(this, { type: "restoreContext" });
-    if (!dataView) {
-      return;
-    }
     await this.#sendDisplayContextCommand(
       "restoreContext",
-      dataView.buffer,
+      dataView?.buffer,
       sendImmediately
     );
   }
@@ -1050,8 +1044,8 @@ class DisplayManager implements DisplayManagerInterface {
     if (differences.length == 0) {
       return;
     }
+    // @ts-ignore
     const dataView = serializeContextCommand(this, {
-      // @ts-expect-error
       type: cropCommand,
       [cropKey]: crop,
     });
@@ -1088,12 +1082,9 @@ class DisplayManager implements DisplayManagerInterface {
       return;
     }
     const dataView = serializeContextCommand(this, { type: "clearCrop" });
-    if (!dataView) {
-      return;
-    }
     await this.#sendDisplayContextCommand(
       "clearCrop",
-      dataView.buffer,
+      dataView?.buffer,
       sendImmediately
     );
     this.#onContextStateUpdate(differences);
@@ -1114,8 +1105,8 @@ class DisplayManager implements DisplayManagerInterface {
     if (differences.length == 0) {
       return;
     }
+    // @ts-ignore
     const dataView = serializeContextCommand(this, {
-      // @ts-expect-error
       type: cropCommand,
       [cropKey]: crop,
     });
@@ -1163,12 +1154,9 @@ class DisplayManager implements DisplayManagerInterface {
     const dataView = serializeContextCommand(this, {
       type: "clearRotationCrop",
     });
-    if (!dataView) {
-      return;
-    }
     await this.#sendDisplayContextCommand(
       "clearRotationCrop",
-      dataView.buffer,
+      dataView?.buffer,
       sendImmediately
     );
     this.#onContextStateUpdate(differences);
@@ -1333,12 +1321,9 @@ class DisplayManager implements DisplayManagerInterface {
     const dataView = serializeContextCommand(this, {
       type: "resetBitmapScale",
     });
-    if (!dataView) {
-      return;
-    }
     await this.#sendDisplayContextCommand(
       "resetBitmapScale",
-      dataView.buffer,
+      dataView?.buffer,
       sendImmediately
     );
     this.#onContextStateUpdate(differences);
@@ -1453,12 +1438,9 @@ class DisplayManager implements DisplayManagerInterface {
     const dataView = serializeContextCommand(this, {
       type: "resetSpriteColors",
     });
-    if (!dataView) {
-      return;
-    }
     await this.#sendDisplayContextCommand(
       "resetSpriteColors",
-      dataView.buffer,
+      dataView?.buffer,
       sendImmediately
     );
     this.#onContextStateUpdate(differences);
@@ -1498,12 +1480,9 @@ class DisplayManager implements DisplayManagerInterface {
     const dataView = serializeContextCommand(this, {
       type: "resetSpriteScale",
     });
-    if (!dataView) {
-      return;
-    }
     await this.#sendDisplayContextCommand(
       "resetSpriteScale",
-      dataView.buffer,
+      dataView?.buffer,
       sendImmediately
     );
 
@@ -1866,6 +1845,9 @@ class DisplayManager implements DisplayManagerInterface {
   get spriteSheets() {
     return this.#spriteSheets;
   }
+  get spriteSheetIndices() {
+    return this.#spriteSheetIndices;
+  }
   async #setSpriteSheetName(
     spriteSheetName: string,
     sendImmediately?: boolean
@@ -1914,7 +1896,8 @@ class DisplayManager implements DisplayManagerInterface {
   }
   assertLoadedSpriteSheet(spriteSheetName: string) {
     _console.assertWithError(
-      this.spriteSheets[spriteSheetName],
+      spriteSheetName in this.spriteSheets &&
+        spriteSheetName in this.#spriteSheetIndices,
       `spriteSheet "${spriteSheetName}" not laded`
     );
   }
@@ -1927,16 +1910,59 @@ class DisplayManager implements DisplayManagerInterface {
   }
   async selectSpriteSheet(spriteSheetName: string, sendImmediately?: boolean) {
     this.assertLoadedSpriteSheet(spriteSheetName);
-    // FILL
+    const differences = this.#contextStateHelper.update({
+      spriteSheetName,
+    });
+    if (differences.length == 0) {
+      return;
+    }
+    const spriteSheetIndex = this.spriteSheetIndices[spriteSheetName];
+    const dataView = serializeContextCommand(this, {
+      type: "selectSpriteSheet",
+      spriteSheetIndex,
+    });
+    if (!dataView) {
+      return;
+    }
+    await this.#sendDisplayContextCommand(
+      "selectSpriteSheet",
+      dataView.buffer,
+      sendImmediately
+    );
+    this.#onContextStateUpdate(differences);
   }
   async drawSprite(
     centerX: number,
     centerY: number,
-    spriteSheetName: string,
     spriteName: string,
     sendImmediately?: boolean
   ) {
-    // FILL - check if spritesheet is loaded, then send command
+    _console.assertWithError(
+      this.selectedSpriteSheet,
+      "no spriteSheet selected"
+    );
+    let spriteIndex = this.selectedSpriteSheet?.sprites.findIndex(
+      (sprite) => sprite.name == spriteName
+    );
+    _console.assertWithError(
+      spriteIndex != -1,
+      `sprite "${spriteName}" not found`
+    );
+    spriteIndex = spriteIndex!;
+    const dataView = serializeContextCommand(this, {
+      type: "drawSprite",
+      centerX,
+      centerY,
+      spriteIndex,
+    });
+    if (!dataView) {
+      return;
+    }
+    await this.#sendDisplayContextCommand(
+      "drawSprite",
+      dataView.buffer,
+      sendImmediately
+    );
   }
 
   #parseSpriteSheetIndex(dataView: DataView) {

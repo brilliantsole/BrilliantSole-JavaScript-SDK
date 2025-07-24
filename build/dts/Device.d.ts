@@ -283,6 +283,6 @@ declare class Device {
     get sendDisplaySpriteSheet(): (spriteSheet: import("./BS.ts").DisplaySpriteSheet) => Promise<void>;
     get sendDisplaySpriteSheets(): (spriteSheets: import("./BS.ts").DisplaySpriteSheet[]) => Promise<void>;
     get selectDisplaySpriteSheet(): (spriteSheetName: string, sendImmediately?: boolean) => Promise<void>;
-    get drawDisplaySprite(): (centerX: number, centerY: number, spriteSheetName: string, spriteName: string, sendImmediately?: boolean) => Promise<void>;
+    get drawDisplaySprite(): (centerX: number, centerY: number, spriteName: string, sendImmediately?: boolean) => Promise<void>;
 }
 export default Device;

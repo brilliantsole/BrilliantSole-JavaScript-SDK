@@ -2440,8 +2440,8 @@ class TfliteManager {
             return;
         }
         const promise = this.waitForEvent("getTfliteTask");
-        TfliteTasks.indexOf(newTask);
-        this.sendMessage([{ type: "setTfliteTask", data: UInt8ByteBuffer(commandEnum) }], sendImmediately);
+        const taskEnum = TfliteTasks.indexOf(newTask);
+        this.sendMessage([{ type: "setTfliteTask", data: UInt8ByteBuffer(taskEnum) }], sendImmediately);
         await promise;
     }
     get sampleRate() {
@@ -3757,6 +3757,7 @@ const DefaultDisplayContextState = {
     bitmapScaleY: 1,
     spriteColorIndices: new Array(0).fill(0).map((_, index) => index),
     spriteScale: 1,
+    spriteSheetName: undefined,
 };
 
 function deepEqual(obj1, obj2) {
@@ -4710,6 +4711,25 @@ function serializeContextCommand(displayManager, command) {
                 dataView = new DataView(buffer);
             }
             break;
+        case "selectSpriteSheet":
+            {
+                const { spriteSheetIndex } = command;
+                dataView = new DataView(new ArrayBuffer(1));
+                dataView.setUint8(0, spriteSheetIndex);
+            }
+            break;
+        case "drawSprite":
+            {
+                const { centerX, centerY, spriteIndex } = command;
+                dataView = new DataView(new ArrayBuffer(1 + 2 * 2));
+                let offset = 0;
+                dataView.setUint16(offset, centerX, true);
+                offset += 2;
+                dataView.setUint16(offset, centerY, true);
+                offset += 2;
+                dataView.setUint8(offset++, spriteIndex);
+            }
+            break;
     }
     return dataView;
 }
@@ -4994,8 +5014,14 @@ async function runDisplayContextCommand(displayManager, command, sendImmediately
             break;
         case "drawSprite":
             {
-                const { centerX, centerY, spriteSheetName, spriteName } = command;
-                await displayManager.drawSprite(centerX, centerY, spriteSheetName, spriteName, sendImmediately);
+                const { centerX, centerY, spriteName } = command;
+                await displayManager.drawSprite(centerX, centerY, spriteName, sendImmediately);
+            }
+            break;
+        case "selectSpriteSheet":
+            {
+                const { spriteSheetName } = command;
+                await displayManager.selectSpriteSheet(spriteSheetName, sendImmediately);
             }
             break;
         case "resetSpriteColors":
@@ -5359,17 +5385,11 @@ class DisplayManager {
     }
     async saveContext(sendImmediately) {
         const dataView = serializeContextCommand(this, { type: "saveContext" });
-        if (!dataView) {
-            return;
-        }
-        await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "saveContext", dataView.buffer, sendImmediately);
+        await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "saveContext", dataView?.buffer, sendImmediately);
     }
     async restoreContext(sendImmediately) {
         const dataView = serializeContextCommand(this, { type: "restoreContext" });
-        if (!dataView) {
-            return;
-        }
-        await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "restoreContext", dataView.buffer, sendImmediately);
+        await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "restoreContext", dataView?.buffer, sendImmediately);
     }
     async selectFillColor(fillColorIndex, sendImmediately) {
         this.assertValidColorIndex(fillColorIndex);
@@ -5614,10 +5634,7 @@ class DisplayManager {
             return;
         }
         const dataView = serializeContextCommand(this, { type: "clearCrop" });
-        if (!dataView) {
-            return;
-        }
-        await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "clearCrop", dataView.buffer, sendImmediately);
+        await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "clearCrop", dataView?.buffer, sendImmediately);
         __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_onContextStateUpdate).call(this, differences);
     }
     async setRotationCrop(cropDirection, crop, sendImmediately) {
@@ -5665,10 +5682,7 @@ class DisplayManager {
         const dataView = serializeContextCommand(this, {
             type: "clearRotationCrop",
         });
-        if (!dataView) {
-            return;
-        }
-        await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "clearRotationCrop", dataView.buffer, sendImmediately);
+        await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "clearRotationCrop", dataView?.buffer, sendImmediately);
         __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_onContextStateUpdate).call(this, differences);
     }
     async selectBitmapColor(bitmapColorIndex, colorIndex, sendImmediately) {
@@ -5782,10 +5796,7 @@ class DisplayManager {
         const dataView = serializeContextCommand(this, {
             type: "resetBitmapScale",
         });
-        if (!dataView) {
-            return;
-        }
-        await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "resetBitmapScale", dataView.buffer, sendImmediately);
+        await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "resetBitmapScale", dataView?.buffer, sendImmediately);
         __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_onContextStateUpdate).call(this, differences);
     }
     async selectSpriteColor(spriteColorIndex, colorIndex, sendImmediately) {
@@ -5859,10 +5870,7 @@ class DisplayManager {
         const dataView = serializeContextCommand(this, {
             type: "resetSpriteColors",
         });
-        if (!dataView) {
-            return;
-        }
-        await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "resetSpriteColors", dataView.buffer, sendImmediately);
+        await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "resetSpriteColors", dataView?.buffer, sendImmediately);
         __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_onContextStateUpdate).call(this, differences);
     }
     async setSpriteScale(spriteScale, sendImmediately) {
@@ -5894,10 +5902,7 @@ class DisplayManager {
         const dataView = serializeContextCommand(this, {
             type: "resetSpriteScale",
         });
-        if (!dataView) {
-            return;
-        }
-        await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "resetSpriteScale", dataView.buffer, sendImmediately);
+        await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "resetSpriteScale", dataView?.buffer, sendImmediately);
         __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_onContextStateUpdate).call(this, differences);
     }
     async clearRect(x, y, width, height, sendImmediately) {
@@ -6087,6 +6092,9 @@ class DisplayManager {
     get spriteSheets() {
         return __classPrivateFieldGet(this, _DisplayManager_spriteSheets, "f");
     }
+    get spriteSheetIndices() {
+        return __classPrivateFieldGet(this, _DisplayManager_spriteSheetIndices, "f");
+    }
     async sendSpriteSheet(spriteSheet) {
         spriteSheet = structuredClone(spriteSheet);
         __classPrivateFieldSet(this, _DisplayManager_pendingSpriteSheet, spriteSheet, "f");
@@ -6102,7 +6110,8 @@ class DisplayManager {
         }
     }
     assertLoadedSpriteSheet(spriteSheetName) {
-        _console$o.assertWithError(this.spriteSheets[spriteSheetName], `spriteSheet "${spriteSheetName}" not laded`);
+        _console$o.assertWithError(spriteSheetName in this.spriteSheets &&
+            spriteSheetName in __classPrivateFieldGet(this, _DisplayManager_spriteSheetIndices, "f"), `spriteSheet "${spriteSheetName}" not laded`);
     }
     get selectedSpriteSheet() {
         return __classPrivateFieldGet(this, _DisplayManager_selectedSpriteSheet, "f");
@@ -6112,8 +6121,38 @@ class DisplayManager {
     }
     async selectSpriteSheet(spriteSheetName, sendImmediately) {
         this.assertLoadedSpriteSheet(spriteSheetName);
+        const differences = __classPrivateFieldGet(this, _DisplayManager_contextStateHelper, "f").update({
+            spriteSheetName,
+        });
+        if (differences.length == 0) {
+            return;
+        }
+        const spriteSheetIndex = this.spriteSheetIndices[spriteSheetName];
+        const dataView = serializeContextCommand(this, {
+            type: "selectSpriteSheet",
+            spriteSheetIndex,
+        });
+        if (!dataView) {
+            return;
+        }
+        await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "selectSpriteSheet", dataView.buffer, sendImmediately);
+        __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_onContextStateUpdate).call(this, differences);
     }
-    async drawSprite(centerX, centerY, spriteSheetName, spriteName, sendImmediately) {
+    async drawSprite(centerX, centerY, spriteName, sendImmediately) {
+        _console$o.assertWithError(this.selectedSpriteSheet, "no spriteSheet selected");
+        let spriteIndex = this.selectedSpriteSheet?.sprites.findIndex((sprite) => sprite.name == spriteName);
+        _console$o.assertWithError(spriteIndex != -1, `sprite "${spriteName}" not found`);
+        spriteIndex = spriteIndex;
+        const dataView = serializeContextCommand(this, {
+            type: "drawSprite",
+            centerX,
+            centerY,
+            spriteIndex,
+        });
+        if (!dataView) {
+            return;
+        }
+        await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "drawSprite", dataView.buffer, sendImmediately);
     }
     parseMessage(messageType, dataView) {
         _console$o.log({ messageType, dataView });
