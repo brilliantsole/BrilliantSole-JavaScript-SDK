@@ -754,7 +754,9 @@ export async function runDisplayContextCommand(
       break;
     case "drawSprite":
       {
-        const { centerX, centerY, spriteName } = command;
+        const { centerX, centerY, spriteIndex } = command;
+        const spriteName =
+          displayManager.selectedSpriteSheet?.sprites[spriteIndex].name!;
         await displayManager.drawSprite(
           centerX,
           centerY,
@@ -765,9 +767,12 @@ export async function runDisplayContextCommand(
       break;
     case "selectSpriteSheet":
       {
-        const { spriteSheetName } = command;
+        const { spriteSheetIndex } = command;
+        const spriteSheetName = Object.entries(
+          displayManager.spriteSheetIndices
+        ).find((entry) => entry[1] == spriteSheetIndex)?.[0];
         await displayManager.selectSpriteSheet(
-          spriteSheetName,
+          spriteSheetName!,
           sendImmediately
         );
       }

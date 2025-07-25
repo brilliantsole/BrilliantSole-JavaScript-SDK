@@ -428,6 +428,7 @@ interface DrawDisplaySpriteCommand
   extends BaseCenterPositionDisplayContextCommand {
   type: "drawSprite";
   spriteIndex: number;
+  use2Bytes: boolean;
 }
 
 export type DisplayContextCommand =
@@ -980,14 +981,19 @@ export function serializeContextCommand(
       break;
     case "drawSprite":
       {
-        const { centerX, centerY, spriteIndex } = command;
+        const { centerX, centerY, spriteIndex, use2Bytes } = command;
         dataView = new DataView(new ArrayBuffer(1 + 2 * 2));
         let offset = 0;
         dataView.setUint16(offset, centerX, true);
         offset += 2;
         dataView.setUint16(offset, centerY, true);
         offset += 2;
-        dataView.setUint8(offset++, spriteIndex!);
+        if (use2Bytes) {
+          dataView.setUint16(offset, spriteIndex, true);
+          offset += 2;
+        } else {
+          dataView.setUint8(offset++, spriteIndex!);
+        }
       }
       break;
   }

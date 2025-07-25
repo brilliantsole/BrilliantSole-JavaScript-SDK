@@ -1898,12 +1898,13 @@ class DisplayManager implements DisplayManagerInterface {
     _console.assertWithError(
       spriteSheetName in this.spriteSheets &&
         spriteSheetName in this.#spriteSheetIndices,
-      `spriteSheet "${spriteSheetName}" not laded`
+      `spriteSheet "${spriteSheetName}" not loaded`
     );
   }
-  #selectedSpriteSheet?: DisplaySpriteSheet;
   get selectedSpriteSheet() {
-    return this.#selectedSpriteSheet;
+    if (this.contextState.spriteSheetName) {
+      return this.#spriteSheets[this.contextState.spriteSheetName];
+    }
   }
   get selectedSpriteSheetName() {
     return this.selectedSpriteSheet?.name;
@@ -1941,7 +1942,7 @@ class DisplayManager implements DisplayManagerInterface {
       this.selectedSpriteSheet,
       "no spriteSheet selected"
     );
-    let spriteIndex = this.selectedSpriteSheet?.sprites.findIndex(
+    let spriteIndex = this.selectedSpriteSheet!.sprites.findIndex(
       (sprite) => sprite.name == spriteName
     );
     _console.assertWithError(
@@ -1954,6 +1955,7 @@ class DisplayManager implements DisplayManagerInterface {
       centerX,
       centerY,
       spriteIndex,
+      use2Bytes: this.selectedSpriteSheet!.sprites.length > 255,
     });
     if (!dataView) {
       return;

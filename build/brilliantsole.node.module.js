@@ -4720,14 +4720,20 @@ function serializeContextCommand(displayManager, command) {
             break;
         case "drawSprite":
             {
-                const { centerX, centerY, spriteIndex } = command;
+                const { centerX, centerY, spriteIndex, use2Bytes } = command;
                 dataView = new DataView(new ArrayBuffer(1 + 2 * 2));
                 let offset = 0;
                 dataView.setUint16(offset, centerX, true);
                 offset += 2;
                 dataView.setUint16(offset, centerY, true);
                 offset += 2;
-                dataView.setUint8(offset++, spriteIndex);
+                if (use2Bytes) {
+                    dataView.setUint16(offset, spriteIndex, true);
+                    offset += 2;
+                }
+                else {
+                    dataView.setUint8(offset++, spriteIndex);
+                }
             }
             break;
     }
@@ -5014,13 +5020,15 @@ async function runDisplayContextCommand(displayManager, command, sendImmediately
             break;
         case "drawSprite":
             {
-                const { centerX, centerY, spriteName } = command;
+                const { centerX, centerY, spriteIndex } = command;
+                const spriteName = displayManager.selectedSpriteSheet?.sprites[spriteIndex].name;
                 await displayManager.drawSprite(centerX, centerY, spriteName, sendImmediately);
             }
             break;
         case "selectSpriteSheet":
             {
-                const { spriteSheetName } = command;
+                const { spriteSheetIndex } = command;
+                const spriteSheetName = Object.entries(displayManager.spriteSheetIndices).find((entry) => entry[1] == spriteSheetIndex)?.[0];
                 await displayManager.selectSpriteSheet(spriteSheetName, sendImmediately);
             }
             break;
@@ -5056,7 +5064,7 @@ function serializeSpriteSheet(displayManager, spriteSheet) {
     let offset = numberOfSpritesDataView.byteLength + spriteOffsetsDataView.byteLength;
     spritePayloads.forEach((spritePayload, index) => {
         _console$p.log("spritePayloads", index, offset, spritePayload);
-        spriteOffsetsDataView.setUint16(index, offset, true);
+        spriteOffsetsDataView.setUint16(index * 2, offset, true);
         offset += spritePayload.byteLength;
     });
     const serializedSpriteSheet = concatenateArrayBuffers(numberOfSpritesDataView, spriteOffsetsDataView, spritePayloads);
@@ -5064,7 +5072,7 @@ function serializeSpriteSheet(displayManager, spriteSheet) {
     return serializedSpriteSheet;
 }
 
-var _DisplayManager_instances, _DisplayManager_dispatchEvent_get, _DisplayManager_isAvailable, _DisplayManager_assertDisplayIsAvailable, _DisplayManager_parseIsDisplayAvailable, _DisplayManager_contextStateHelper, _DisplayManager_onContextStateUpdate, _DisplayManager_displayStatus, _DisplayManager_parseDisplayStatus, _DisplayManager_updateDisplayStatus, _DisplayManager_sendDisplayCommand, _DisplayManager_assertIsAwake, _DisplayManager_assertIsNotAwake, _DisplayManager_displayInformation, _DisplayManager_parseDisplayInformation, _DisplayManager_brightness, _DisplayManager_parseDisplayBrightness, _DisplayManager_assertValidDisplayContextCommand, _DisplayManager_maxCommandDataLength_get, _DisplayManager_displayContextCommandBuffers, _DisplayManager_sendDisplayContextCommand, _DisplayManager_sendContextCommands, _DisplayManager_colors, _DisplayManager_opacities, _DisplayManager_assertValidBitmapSize, _DisplayManager_isReady, _DisplayManager_parseDisplayReady, _DisplayManager_spriteSheets, _DisplayManager_spriteSheetIndices, _DisplayManager_setSpriteSheetName, _DisplayManager_pendingSpriteSheet, _DisplayManager_pendingSpriteSheetName, _DisplayManager_updateSpriteSheetName, _DisplayManager_selectedSpriteSheet, _DisplayManager_parseSpriteSheetIndex, _DisplayManager_mtu;
+var _DisplayManager_instances, _DisplayManager_dispatchEvent_get, _DisplayManager_isAvailable, _DisplayManager_assertDisplayIsAvailable, _DisplayManager_parseIsDisplayAvailable, _DisplayManager_contextStateHelper, _DisplayManager_onContextStateUpdate, _DisplayManager_displayStatus, _DisplayManager_parseDisplayStatus, _DisplayManager_updateDisplayStatus, _DisplayManager_sendDisplayCommand, _DisplayManager_assertIsAwake, _DisplayManager_assertIsNotAwake, _DisplayManager_displayInformation, _DisplayManager_parseDisplayInformation, _DisplayManager_brightness, _DisplayManager_parseDisplayBrightness, _DisplayManager_assertValidDisplayContextCommand, _DisplayManager_maxCommandDataLength_get, _DisplayManager_displayContextCommandBuffers, _DisplayManager_sendDisplayContextCommand, _DisplayManager_sendContextCommands, _DisplayManager_colors, _DisplayManager_opacities, _DisplayManager_assertValidBitmapSize, _DisplayManager_isReady, _DisplayManager_parseDisplayReady, _DisplayManager_spriteSheets, _DisplayManager_spriteSheetIndices, _DisplayManager_setSpriteSheetName, _DisplayManager_pendingSpriteSheet, _DisplayManager_pendingSpriteSheetName, _DisplayManager_updateSpriteSheetName, _DisplayManager_parseSpriteSheetIndex, _DisplayManager_mtu;
 const _console$o = createConsole("DisplayManager", { log: true });
 const DefaultNumberOfDisplayColors = 16;
 const DisplayCommands = ["sleep", "wake"];
@@ -5139,7 +5147,6 @@ class DisplayManager {
         _DisplayManager_spriteSheetIndices.set(this, {});
         _DisplayManager_pendingSpriteSheet.set(this, void 0);
         _DisplayManager_pendingSpriteSheetName.set(this, void 0);
-        _DisplayManager_selectedSpriteSheet.set(this, void 0);
         _DisplayManager_mtu.set(this, void 0);
         autoBind$1(this);
     }
@@ -6111,10 +6118,12 @@ class DisplayManager {
     }
     assertLoadedSpriteSheet(spriteSheetName) {
         _console$o.assertWithError(spriteSheetName in this.spriteSheets &&
-            spriteSheetName in __classPrivateFieldGet(this, _DisplayManager_spriteSheetIndices, "f"), `spriteSheet "${spriteSheetName}" not laded`);
+            spriteSheetName in __classPrivateFieldGet(this, _DisplayManager_spriteSheetIndices, "f"), `spriteSheet "${spriteSheetName}" not loaded`);
     }
     get selectedSpriteSheet() {
-        return __classPrivateFieldGet(this, _DisplayManager_selectedSpriteSheet, "f");
+        if (this.contextState.spriteSheetName) {
+            return __classPrivateFieldGet(this, _DisplayManager_spriteSheets, "f")[this.contextState.spriteSheetName];
+        }
     }
     get selectedSpriteSheetName() {
         return this.selectedSpriteSheet?.name;
@@ -6140,7 +6149,7 @@ class DisplayManager {
     }
     async drawSprite(centerX, centerY, spriteName, sendImmediately) {
         _console$o.assertWithError(this.selectedSpriteSheet, "no spriteSheet selected");
-        let spriteIndex = this.selectedSpriteSheet?.sprites.findIndex((sprite) => sprite.name == spriteName);
+        let spriteIndex = this.selectedSpriteSheet.sprites.findIndex((sprite) => sprite.name == spriteName);
         _console$o.assertWithError(spriteIndex != -1, `sprite "${spriteName}" not found`);
         spriteIndex = spriteIndex;
         const dataView = serializeContextCommand(this, {
@@ -6148,6 +6157,7 @@ class DisplayManager {
             centerX,
             centerY,
             spriteIndex,
+            use2Bytes: this.selectedSpriteSheet.sprites.length > 255,
         });
         if (!dataView) {
             return;
@@ -6210,7 +6220,7 @@ class DisplayManager {
         __classPrivateFieldSet(this, _DisplayManager_mtu, newMtu, "f");
     }
 }
-_DisplayManager_isAvailable = new WeakMap(), _DisplayManager_contextStateHelper = new WeakMap(), _DisplayManager_displayStatus = new WeakMap(), _DisplayManager_displayInformation = new WeakMap(), _DisplayManager_brightness = new WeakMap(), _DisplayManager_displayContextCommandBuffers = new WeakMap(), _DisplayManager_colors = new WeakMap(), _DisplayManager_opacities = new WeakMap(), _DisplayManager_isReady = new WeakMap(), _DisplayManager_spriteSheets = new WeakMap(), _DisplayManager_spriteSheetIndices = new WeakMap(), _DisplayManager_pendingSpriteSheet = new WeakMap(), _DisplayManager_pendingSpriteSheetName = new WeakMap(), _DisplayManager_selectedSpriteSheet = new WeakMap(), _DisplayManager_mtu = new WeakMap(), _DisplayManager_instances = new WeakSet(), _DisplayManager_dispatchEvent_get = function _DisplayManager_dispatchEvent_get() {
+_DisplayManager_isAvailable = new WeakMap(), _DisplayManager_contextStateHelper = new WeakMap(), _DisplayManager_displayStatus = new WeakMap(), _DisplayManager_displayInformation = new WeakMap(), _DisplayManager_brightness = new WeakMap(), _DisplayManager_displayContextCommandBuffers = new WeakMap(), _DisplayManager_colors = new WeakMap(), _DisplayManager_opacities = new WeakMap(), _DisplayManager_isReady = new WeakMap(), _DisplayManager_spriteSheets = new WeakMap(), _DisplayManager_spriteSheetIndices = new WeakMap(), _DisplayManager_pendingSpriteSheet = new WeakMap(), _DisplayManager_pendingSpriteSheetName = new WeakMap(), _DisplayManager_mtu = new WeakMap(), _DisplayManager_instances = new WeakSet(), _DisplayManager_dispatchEvent_get = function _DisplayManager_dispatchEvent_get() {
     return this.eventDispatcher.dispatchEvent;
 }, _DisplayManager_assertDisplayIsAvailable = function _DisplayManager_assertDisplayIsAvailable() {
     _console$o.assertWithError(__classPrivateFieldGet(this, _DisplayManager_isAvailable, "f"), "display is not available");

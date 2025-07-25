@@ -2472,7 +2472,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
   assertLoadedSpriteSheet(spriteSheetName: string) {
     _console.assertWithError(
       this.spriteSheets[spriteSheetName],
-      `spriteSheet "${spriteSheetName}" not laded`
+      `spriteSheet "${spriteSheetName}" not loaded`
     );
   }
   get selectedSpriteSheet() {
@@ -2496,15 +2496,19 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     }
     this.#onContextStateUpdate(differences);
   }
-  #runSpriteCommand(command: DisplayContextCommand) {
+  #runSpriteCommand(
+    command: DisplayContextCommand,
+    contextState: DisplayContextState
+  ) {
     _console.log("runSpriteCommand", command);
     if (command.type == "drawSprite") {
-      const sprite = this.selectedSpriteSheet?.sprites[command.spriteIndex];
+      const spriteSheet = this.spriteSheets[contextState.spriteSheetName!];
+      const sprite = spriteSheet.sprites[command.spriteIndex];
       if (sprite) {
         _console.log("drawing sub sprite", sprite);
         this._saveContextForSprite(command.centerX, command.centerY, sprite);
         sprite.commands.forEach((command) => {
-          this.#runSpriteCommand(command);
+          this.#runSpriteCommand(command, contextState);
         });
         this._restoreContextForSprite();
       } else {
@@ -2516,16 +2520,23 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
       this.runContextCommand(command);
     }
   }
-  #drawSpriteToCanvas(centerX: number, centerY: number, sprite: DisplaySprite) {
+  #drawSpriteToCanvas(
+    centerX: number,
+    centerY: number,
+    sprite: DisplaySprite,
+    contextState: DisplayContextState
+  ) {
     this._setIgnoreDevice(true);
+    this.#ignoreDevice = true; // necessary?
     this._setClearCanvasBoundingBoxOnDraw(false);
     this._setUseSpriteColorIndices(true);
-    this._saveContextForSprite(centerX, centerX, sprite);
+    this._saveContextForSprite(centerX, centerY, sprite);
 
     sprite.commands.forEach((command) => {
-      this.#runSpriteCommand(command);
+      this.#runSpriteCommand(command, contextState);
     });
 
+    this.#ignoreDevice = false; // necessary?
     this._setIgnoreDevice(false);
     this._restoreContextForSprite();
     this._setUseSpriteColorIndices(false);
@@ -2546,7 +2557,8 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     );
     _console.assertWithError(sprite, `sprite "${spriteName}" not found`);
 
-    this.#drawSpriteToCanvas(centerX, centerY, sprite!);
+    const contextState = structuredClone(this.contextState);
+    this.#drawSpriteToCanvas(centerX, centerY, sprite!, contextState);
 
     if (this.device?.isConnected && !this.#ignoreDevice) {
       await this.device.drawDisplaySprite(

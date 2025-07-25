@@ -61,7 +61,7 @@ export function serializeSpriteSheet(
     numberOfSpritesDataView.byteLength + spriteOffsetsDataView.byteLength;
   spritePayloads.forEach((spritePayload, index) => {
     _console.log("spritePayloads", index, offset, spritePayload);
-    spriteOffsetsDataView.setUint16(index, offset, true);
+    spriteOffsetsDataView.setUint16(index * 2, offset, true);
     offset += spritePayload.byteLength;
   });
 
