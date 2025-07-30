@@ -4740,7 +4740,14 @@ function serializeContextCommand(displayManager, command) {
     return dataView;
 }
 function serializeContextCommands(displayManager, commands) {
-    return concatenateArrayBuffers(commands.map((command) => serializeContextCommand(displayManager, command)));
+    const serializedContextCommandArray = commands.map((command) => {
+        const displayContextCommandEnum = DisplayContextCommandTypes.indexOf(command.type);
+        const serializedContextCommand = serializeContextCommand(displayManager, command);
+        return concatenateArrayBuffers(UInt8ByteBuffer(displayContextCommandEnum), serializedContextCommand);
+    });
+    const serializedContextCommands = concatenateArrayBuffers(serializedContextCommandArray);
+    _console$r.log("serializedContextCommands", commands, serializedContextCommandArray, serializedContextCommands);
+    return serializedContextCommands;
 }
 
 const _console$q = createConsole("DisplayManagerInterface", { log: true });
@@ -5058,7 +5065,9 @@ function serializeSpriteSheet(displayManager, spriteSheet) {
         dataView.setUint16(0, sprite.width, true);
         dataView.setUint16(2, sprite.height, true);
         dataView.setUint16(4, commandsData.byteLength, true);
-        return concatenateArrayBuffers(dataView, commandsData);
+        const serializedSprite = concatenateArrayBuffers(dataView, commandsData);
+        _console$p.log("serializedSprite", sprite, serializedSprite);
+        return serializedSprite;
     });
     const spriteOffsetsDataView = new DataView(new ArrayBuffer(sprites.length * 2));
     let offset = numberOfSpritesDataView.byteLength + spriteOffsetsDataView.byteLength;
@@ -6330,7 +6339,7 @@ async function _DisplayManager_sendDisplayCommand(command, sendImmediately) {
     __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_assertValidDisplayContextCommand).call(this, displayContextCommand);
     _console$o.log("sendDisplayContextCommand", { displayContextCommand, sendImmediately }, arrayBuffer);
     const displayContextCommandEnum = DisplayContextCommandTypes.indexOf(displayContextCommand);
-    const _arrayBuffer = concatenateArrayBuffers(displayContextCommandEnum, arrayBuffer);
+    const _arrayBuffer = concatenateArrayBuffers(UInt8ByteBuffer(displayContextCommandEnum), arrayBuffer);
     const newLength = __classPrivateFieldGet(this, _DisplayManager_displayContextCommandBuffers, "f").reduce((sum, buffer) => sum + buffer.byteLength, _arrayBuffer.byteLength);
     if (newLength > __classPrivateFieldGet(this, _DisplayManager_instances, "a", _DisplayManager_maxCommandDataLength_get)) {
         _console$o.log("displayContextCommandBuffers too full - sending now");
@@ -8802,7 +8811,7 @@ _UDPConnectionManager_bluetoothId = new WeakMap(), _UDPConnectionManager_ipAddre
 };
 
 var _Device_instances, _a$3, _Device_DefaultConnectionManager, _Device_eventDispatcher, _Device_dispatchEvent_get, _Device_connectionManager, _Device_sendTxMessages, _Device_isConnected, _Device_assertIsConnected, _Device_didReceiveMessageTypes, _Device_hasRequiredInformation_get, _Device_requestRequiredInformation, _Device_assertCanReconnect, _Device_ReconnectOnDisconnection, _Device_reconnectOnDisconnection, _Device_reconnectIntervalId, _Device_onConnectionStatusUpdated, _Device_dispatchConnectionEvents, _Device_checkConnection, _Device_clear, _Device_clearConnection, _Device_onConnectionMessageReceived, _Device_onConnectionMessagesReceived, _Device_deviceInformationManager, _Device_batteryLevel, _Device_updateBatteryLevel, _Device_sensorConfigurationManager, _Device_ClearSensorConfigurationOnLeave, _Device_clearSensorConfigurationOnLeave, _Device_sensorDataManager, _Device_vibrationManager, _Device_fileTransferManager, _Device_tfliteManager, _Device_firmwareManager, _Device_assertCanUpdateFirmware, _Device_sendSmpMessage, _Device_isServerSide, _Device_wifiManager, _Device_cameraManager, _Device_assertHasCamera, _Device_microphoneManager, _Device_assertHasMicrophone, _Device_assertWebAudioSupport, _Device_displayManager, _Device_assertDisplayIsAvailable;
-const _console$b = createConsole("Device", { log: true });
+const _console$b = createConsole("Device", { log: false });
 const DeviceEventTypes = [
     "connectionMessage",
     ...ConnectionEventTypes,

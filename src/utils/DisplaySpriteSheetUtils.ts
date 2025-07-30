@@ -52,7 +52,9 @@ export function serializeSpriteSheet(
     dataView.setUint16(0, sprite.width, true);
     dataView.setUint16(2, sprite.height, true);
     dataView.setUint16(4, commandsData.byteLength, true);
-    return concatenateArrayBuffers(dataView, commandsData);
+    const serializedSprite = concatenateArrayBuffers(dataView, commandsData);
+    _console.log("serializedSprite", sprite, serializedSprite);
+    return serializedSprite;
   });
   const spriteOffsetsDataView = new DataView(
     new ArrayBuffer(sprites.length * 2)

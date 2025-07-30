@@ -8,17 +8,19 @@ await classifier.init();
 window.classifier = classifier;
 
 let project = classifier.getProjectInfo();
-document.querySelector("#title").textContent =
-  project.owner +
-  " / " +
-  project.name +
-  " (version " +
-  project.deploy_version +
-  ")";
+if (false) {
+  document.querySelector("#title").textContent =
+    project.owner +
+    " / " +
+    project.name +
+    " (version " +
+    project.deploy_version +
+    ")";
+}
 
 const gestureTitle = document.getElementById("gesture");
 
-let threshold = 0.5;
+let threshold = 0.6;
 /** @param {number[]} features */
 function classify(features) {
   try {

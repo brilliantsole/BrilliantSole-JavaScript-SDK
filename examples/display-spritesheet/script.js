@@ -1441,19 +1441,19 @@ const addSpriteCommand = () => {
       case "setCropRight":
         selectedSprite.commands.push({
           type: "setCropRight",
-          cropTop: 0,
+          cropRight: 0,
         });
         break;
       case "setCropBottom":
         selectedSprite.commands.push({
           type: "setCropBottom",
-          cropTop: 0,
+          cropBottom: 0,
         });
         break;
       case "setCropLeft":
         selectedSprite.commands.push({
           type: "setCropLeft",
-          cropTop: 0,
+          cropLeft: 0,
         });
         break;
 
@@ -1466,19 +1466,19 @@ const addSpriteCommand = () => {
       case "setRotationCropRight":
         selectedSprite.commands.push({
           type: "setRotationCropRight",
-          rotationCropTop: 0,
+          rotationCropRight: 0,
         });
         break;
       case "setRotationCropBottom":
         selectedSprite.commands.push({
           type: "setRotationCropBottom",
-          rotationCropTop: 0,
+          rotationCropBottom: 0,
         });
         break;
       case "setRotationCropLeft":
         selectedSprite.commands.push({
           type: "setRotationCropLeft",
-          rotationCropTop: 0,
+          rotationCropLeft: 0,
         });
         break;
 

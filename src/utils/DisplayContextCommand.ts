@@ -3,7 +3,10 @@ import {
   DisplayBitmapColorPair,
   DisplaySpriteColorPair,
 } from "../DisplayManager.ts";
-import { concatenateArrayBuffers } from "./ArrayBufferUtils.ts";
+import {
+  concatenateArrayBuffers,
+  UInt8ByteBuffer,
+} from "./ArrayBufferUtils.ts";
 import { rgbToHex, stringToRGB } from "./ColorUtils.ts";
 import { createConsole } from "./Console.ts";
 import { drawBitmapHeaderLength, getBitmapData } from "./DisplayBitmapUtils.ts";
@@ -1004,7 +1007,27 @@ export function serializeContextCommands(
   displayManager: DisplayManagerInterface,
   commands: DisplayContextCommand[]
 ) {
-  return concatenateArrayBuffers(
-    commands.map((command) => serializeContextCommand(displayManager, command))
+  const serializedContextCommandArray = commands.map((command) => {
+    const displayContextCommandEnum = DisplayContextCommandTypes.indexOf(
+      command.type
+    );
+    const serializedContextCommand = serializeContextCommand(
+      displayManager,
+      command
+    );
+    return concatenateArrayBuffers(
+      UInt8ByteBuffer(displayContextCommandEnum),
+      serializedContextCommand
+    );
+  });
+  const serializedContextCommands = concatenateArrayBuffers(
+    serializedContextCommandArray
   );
+  _console.log(
+    "serializedContextCommands",
+    commands,
+    serializedContextCommandArray,
+    serializedContextCommands
+  );
+  return serializedContextCommands;
 }

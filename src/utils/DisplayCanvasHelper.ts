@@ -1909,8 +1909,6 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     endY: number,
     contextState: DisplayContextState
   ) {
-    this.#save();
-
     const vector: Vector2 = {
       x: endX - startX,
       y: endY - startY,
@@ -1935,7 +1933,8 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
       contextState
     );
     this.#applyRotationClip(box, contextState);
-    this.#restore();
+    this.context.rotate(-rotation);
+    this.context.translate(-midpoint.x, -midpoint.y);
   }
   #drawSegmentToCanvas(
     startX: number,
@@ -2526,8 +2525,8 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     sprite: DisplaySprite,
     contextState: DisplayContextState
   ) {
-    this._setIgnoreDevice(true);
     this.#ignoreDevice = true; // necessary?
+    this._setIgnoreDevice(true);
     this._setClearCanvasBoundingBoxOnDraw(false);
     this._setUseSpriteColorIndices(true);
     this._saveContextForSprite(centerX, centerY, sprite);

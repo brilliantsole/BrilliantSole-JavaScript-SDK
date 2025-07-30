@@ -611,7 +611,7 @@ class DisplayManager implements DisplayManagerInterface {
       displayContextCommand
     );
     const _arrayBuffer = concatenateArrayBuffers(
-      displayContextCommandEnum,
+      UInt8ByteBuffer(displayContextCommandEnum),
       arrayBuffer
     );
     const newLength = this.#displayContextCommandBuffers.reduce(
