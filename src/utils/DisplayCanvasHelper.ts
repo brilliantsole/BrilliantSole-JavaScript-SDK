@@ -1407,10 +1407,11 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     lineWidth,
     fillColorIndex,
     lineColorIndex,
+    spriteColorIndices,
   }: DisplayContextState) {
     if (this.#useSpriteColorIndices) {
-      fillColorIndex = this.spriteColorIndices[fillColorIndex];
-      lineColorIndex = this.spriteColorIndices[lineColorIndex];
+      fillColorIndex = spriteColorIndices[fillColorIndex];
+      lineColorIndex = spriteColorIndices[lineColorIndex];
     }
     this.context.fillStyle = this.#colorIndexToRgbString(fillColorIndex);
     this.context.strokeStyle = this.#colorIndexToRgbString(lineColorIndex);
@@ -1463,7 +1464,6 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     this.#rearDrawStack.push(() =>
       this.#drawRectToCanvas(centerX, centerY, width, height, contextState)
     );
-
     if (this.device?.isConnected && !this.#ignoreDevice) {
       await this.device.drawDisplayRect(
         centerX,
@@ -2525,7 +2525,6 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     sprite: DisplaySprite,
     contextState: DisplayContextState
   ) {
-    this.#ignoreDevice = true; // necessary?
     this._setIgnoreDevice(true);
     this._setClearCanvasBoundingBoxOnDraw(false);
     this._setUseSpriteColorIndices(true);
@@ -2535,7 +2534,6 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
       this.#runSpriteCommand(command, contextState);
     });
 
-    this.#ignoreDevice = false; // necessary?
     this._setIgnoreDevice(false);
     this._restoreContextForSprite();
     this._setUseSpriteColorIndices(false);
@@ -2705,6 +2703,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
   }
   #ignoreDevice = false;
   _setIgnoreDevice(ignoreDevice: boolean) {
+    this.#ignoreDevice = ignoreDevice;
     this.#rearDrawStack.push(() => {
       //_console.log({ ignoreDevice });
       this.#ignoreDevice = ignoreDevice;
@@ -2714,7 +2713,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
   #useSpriteColorIndices = false;
   _setUseSpriteColorIndices(useSpriteColorIndices: boolean) {
     this.#rearDrawStack.push(() => {
-      //_console.log({ useSpriteColorIndices });
+      _console.log({ useSpriteColorIndices });
       this.#useSpriteColorIndices = useSpriteColorIndices;
     });
   }

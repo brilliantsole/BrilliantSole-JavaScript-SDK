@@ -743,6 +743,9 @@ class FileTransferManager {
         }));
         this.sendMessage(messages, false);
     }
+    clear() {
+        __classPrivateFieldSet(this, _FileTransferManager_status, "idle", "f");
+    }
 }
 _a$7 = FileTransferManager, _FileTransferManager_fileTypes = new WeakMap(), _FileTransferManager_maxLength = new WeakMap(), _FileTransferManager_type = new WeakMap(), _FileTransferManager_length = new WeakMap(), _FileTransferManager_checksum = new WeakMap(), _FileTransferManager_status = new WeakMap(), _FileTransferManager_receivedBlocks = new WeakMap(), _FileTransferManager_buffer = new WeakMap(), _FileTransferManager_bytesTransferred = new WeakMap(), _FileTransferManager_isCancelling = new WeakMap(), _FileTransferManager_isServerSide = new WeakMap(), _FileTransferManager_instances = new WeakSet(), _FileTransferManager_dispatchEvent_get = function _FileTransferManager_dispatchEvent_get() {
     return this.eventDispatcher.dispatchEvent;
@@ -10455,6 +10458,7 @@ _a$2 = Device, _Device_eventDispatcher = new WeakMap(), _Device_connectionManage
     this._informationManager.clear();
     __classPrivateFieldGet(this, _Device_deviceInformationManager, "f").clear();
     __classPrivateFieldGet(this, _Device_tfliteManager, "f").clear();
+    __classPrivateFieldGet(this, _Device_fileTransferManager, "f").clear();
     __classPrivateFieldGet(this, _Device_wifiManager, "f").clear();
     __classPrivateFieldGet(this, _Device_cameraManager, "f").clear();
     __classPrivateFieldGet(this, _Device_microphoneManager, "f").clear();
@@ -11398,12 +11402,14 @@ class DisplayCanvasHelper {
         });
     }
     _setIgnoreDevice(ignoreDevice) {
+        __classPrivateFieldSet(this, _DisplayCanvasHelper_ignoreDevice, ignoreDevice, "f");
         __classPrivateFieldGet(this, _DisplayCanvasHelper_rearDrawStack, "f").push(() => {
             __classPrivateFieldSet(this, _DisplayCanvasHelper_ignoreDevice, ignoreDevice, "f");
         });
     }
     _setUseSpriteColorIndices(useSpriteColorIndices) {
         __classPrivateFieldGet(this, _DisplayCanvasHelper_rearDrawStack, "f").push(() => {
+            _console$6.log({ useSpriteColorIndices });
             __classPrivateFieldSet(this, _DisplayCanvasHelper_useSpriteColorIndices, useSpriteColorIndices, "f");
         });
     }
@@ -11636,10 +11642,10 @@ _DisplayCanvasHelper_eventDispatcher = new WeakMap(), _DisplayCanvasHelper_canva
     return this.opacities[colorIndex] * __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "a", _DisplayCanvasHelper_brightnessOpacity_get);
 }, _DisplayCanvasHelper_colorIndexToRgbString = function _DisplayCanvasHelper_colorIndexToRgbString(colorIndex) {
     return __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_hexToRgbStringWithOpacity).call(this, this.colors[colorIndex], __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_getColorOpacity).call(this, colorIndex, true));
-}, _DisplayCanvasHelper_updateContext = function _DisplayCanvasHelper_updateContext({ lineWidth, fillColorIndex, lineColorIndex, }) {
+}, _DisplayCanvasHelper_updateContext = function _DisplayCanvasHelper_updateContext({ lineWidth, fillColorIndex, lineColorIndex, spriteColorIndices, }) {
     if (__classPrivateFieldGet(this, _DisplayCanvasHelper_useSpriteColorIndices, "f")) {
-        fillColorIndex = this.spriteColorIndices[fillColorIndex];
-        lineColorIndex = this.spriteColorIndices[lineColorIndex];
+        fillColorIndex = spriteColorIndices[fillColorIndex];
+        lineColorIndex = spriteColorIndices[lineColorIndex];
     }
     this.context.fillStyle = __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_colorIndexToRgbString).call(this, fillColorIndex);
     this.context.strokeStyle = __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_colorIndexToRgbString).call(this, lineColorIndex);
@@ -12043,7 +12049,6 @@ _DisplayCanvasHelper_eventDispatcher = new WeakMap(), _DisplayCanvasHelper_canva
         this.runContextCommand(command);
     }
 }, _DisplayCanvasHelper_drawSpriteToCanvas = function _DisplayCanvasHelper_drawSpriteToCanvas(centerX, centerY, sprite, contextState) {
-    __classPrivateFieldSet(this, _DisplayCanvasHelper_ignoreDevice, true, "f");
     this._setIgnoreDevice(true);
     this._setClearCanvasBoundingBoxOnDraw(false);
     this._setUseSpriteColorIndices(true);
@@ -12051,7 +12056,6 @@ _DisplayCanvasHelper_eventDispatcher = new WeakMap(), _DisplayCanvasHelper_canva
     sprite.commands.forEach((command) => {
         __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_runSpriteCommand).call(this, command, contextState);
     });
-    __classPrivateFieldSet(this, _DisplayCanvasHelper_ignoreDevice, false, "f");
     this._setIgnoreDevice(false);
     this._restoreContextForSprite();
     this._setUseSpriteColorIndices(false);

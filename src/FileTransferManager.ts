@@ -590,6 +590,10 @@ class FileTransferManager {
     }));
     this.sendMessage(messages, false);
   }
+
+  clear() {
+    this.#status = "idle";
+  }
 }
 
 export default FileTransferManager;

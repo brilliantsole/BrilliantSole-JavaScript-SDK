@@ -91,5 +91,6 @@ declare class FileTransferManager {
     get isServerSide(): boolean;
     set isServerSide(newIsServerSide: boolean);
     requestRequiredInformation(): void;
+    clear(): void;
 }
 export default FileTransferManager;

@@ -714,6 +714,9 @@ class FileTransferManager {
         }));
         this.sendMessage(messages, false);
     }
+    clear() {
+        __classPrivateFieldSet(this, _FileTransferManager_status, "idle", "f");
+    }
 }
 _a$8 = FileTransferManager, _FileTransferManager_fileTypes = new WeakMap(), _FileTransferManager_maxLength = new WeakMap(), _FileTransferManager_type = new WeakMap(), _FileTransferManager_length = new WeakMap(), _FileTransferManager_checksum = new WeakMap(), _FileTransferManager_status = new WeakMap(), _FileTransferManager_receivedBlocks = new WeakMap(), _FileTransferManager_buffer = new WeakMap(), _FileTransferManager_bytesTransferred = new WeakMap(), _FileTransferManager_isCancelling = new WeakMap(), _FileTransferManager_isServerSide = new WeakMap(), _FileTransferManager_instances = new WeakSet(), _FileTransferManager_dispatchEvent_get = function _FileTransferManager_dispatchEvent_get() {
     return this.eventDispatcher.dispatchEvent;
@@ -10006,6 +10009,7 @@ _a$3 = Device, _Device_eventDispatcher = new WeakMap(), _Device_connectionManage
     this._informationManager.clear();
     __classPrivateFieldGet(this, _Device_deviceInformationManager, "f").clear();
     __classPrivateFieldGet(this, _Device_tfliteManager, "f").clear();
+    __classPrivateFieldGet(this, _Device_fileTransferManager, "f").clear();
     __classPrivateFieldGet(this, _Device_wifiManager, "f").clear();
     __classPrivateFieldGet(this, _Device_cameraManager, "f").clear();
     __classPrivateFieldGet(this, _Device_microphoneManager, "f").clear();

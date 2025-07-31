@@ -748,6 +748,7 @@ class Device {
     this._informationManager.clear();
     this.#deviceInformationManager.clear();
     this.#tfliteManager.clear();
+    this.#fileTransferManager.clear();
     this.#wifiManager.clear();
     this.#cameraManager.clear();
     this.#microphoneManager.clear();
