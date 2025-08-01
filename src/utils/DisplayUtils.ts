@@ -192,6 +192,15 @@ export const DisplayBitmapScaleDirectionToCommandType: Record<
   all: "setBitmapScale",
 };
 
+export const DisplaySpriteScaleDirectionToCommandType: Record<
+  DisplayScaleDirection,
+  DisplayContextCommandType
+> = {
+  x: "setSpriteScaleX",
+  y: "setSpriteScaleY",
+  all: "setSpriteScale",
+};
+
 export type DisplayColorRGB = {
   r: number;
   g: number;

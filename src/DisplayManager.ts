@@ -39,6 +39,7 @@ import {
   pixelDepthToPixelBitWidth,
   pixelDepthToPixelsPerByte,
   roundScale,
+  DisplaySpriteScaleDirectionToCommandType,
 } from "./utils/DisplayUtils.ts";
 import { DisplaySegmentCaps, DisplaySpriteSheet } from "./BS.ts";
 import {
@@ -359,8 +360,11 @@ class DisplayManager implements DisplayManagerInterface {
           );
           this.selectSpriteColors(spriteColors);
           break;
-        case "spriteScale":
-          this.setSpriteScale(newState.spriteScale!);
+        case "spriteScaleX":
+          this.setSpriteScaleX(newState.spriteScaleX!);
+          break;
+        case "spriteScaleY":
+          this.setSpriteScaleY(newState.spriteScaleY!);
           break;
       }
     });
@@ -1446,33 +1450,63 @@ class DisplayManager implements DisplayManagerInterface {
     this.#onContextStateUpdate(differences);
   }
 
-  async setSpriteScale(spriteScale: number, sendImmediately?: boolean) {
+  async setSpriteScaleDirection(
+    direction: DisplayScaleDirection,
+    spriteScale: number,
+    sendImmediately?: boolean
+  ) {
     spriteScale = clamp(spriteScale, displayScaleStep, maxDisplayScale);
     spriteScale = roundScale(spriteScale);
-    const differences = this.#contextStateHelper.update({
-      spriteScale,
-    });
+    const commandType = DisplaySpriteScaleDirectionToCommandType[direction];
+    _console.log({ [commandType]: spriteScale });
+    const newState: PartialDisplayContextState = {};
+    let command: DisplayContextCommand;
+    switch (direction) {
+      case "all":
+        newState.spriteScaleX = spriteScale;
+        newState.spriteScaleY = spriteScale;
+        command = { type: "setSpriteScale", spriteScale };
+        break;
+      case "x":
+        newState.spriteScaleX = spriteScale;
+        command = { type: "setSpriteScaleX", spriteScaleX: spriteScale };
+        break;
+      case "y":
+        newState.spriteScaleY = spriteScale;
+        command = { type: "setSpriteScaleY", spriteScaleY: spriteScale };
+        break;
+    }
+    const differences = this.#contextStateHelper.update(newState);
     if (differences.length == 0) {
       return;
     }
-    const dataView = serializeContextCommand(this, {
-      type: "setSpriteScale",
-      spriteScale,
-    });
+    const dataView = serializeContextCommand(this, command);
     if (!dataView) {
       return;
     }
     await this.#sendDisplayContextCommand(
-      "setSpriteScale",
+      commandType,
       dataView.buffer,
       sendImmediately
     );
 
     this.#onContextStateUpdate(differences);
   }
+  async setSpriteScaleX(spriteScaleX: number, sendImmediately?: boolean) {
+    return this.setSpriteScaleDirection("x", spriteScaleX, sendImmediately);
+  }
+  async setSpriteScaleY(spriteScaleY: number, sendImmediately?: boolean) {
+    return this.setSpriteScaleDirection("y", spriteScaleY, sendImmediately);
+  }
+  async setSpriteScale(spriteScale: number, sendImmediately?: boolean) {
+    return this.setSpriteScaleDirection("all", spriteScale, sendImmediately);
+  }
   async resetSpriteScale(sendImmediately?: boolean) {
+    //return this.setSpriteScaleDirection("all", 1, sendImmediately);
+
     const differences = this.#contextStateHelper.update({
-      spriteScale: 1,
+      spriteScaleX: 1,
+      spriteScaleY: 1,
     });
     if (differences.length == 0) {
       return;
@@ -1485,7 +1519,6 @@ class DisplayManager implements DisplayManagerInterface {
       dataView?.buffer,
       sendImmediately
     );
-
     this.#onContextStateUpdate(differences);
   }
 

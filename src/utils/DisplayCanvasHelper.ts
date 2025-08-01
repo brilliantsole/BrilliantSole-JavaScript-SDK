@@ -1182,24 +1182,57 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     this.#onContextStateUpdate(differences);
   }
 
-  async setSpriteScale(spriteScale: number, sendImmediately?: boolean) {
+  async setSpriteScaleDirection(
+    direction: DisplayScaleDirection,
+    spriteScale: number,
+    sendImmediately?: boolean
+  ) {
     spriteScale = clamp(spriteScale, displayScaleStep, maxDisplayScale);
     spriteScale = roundScale(spriteScale);
-    const differences = this.#contextStateHelper.update({ spriteScale });
+    const newState: PartialDisplayContextState = {};
+    switch (direction) {
+      case "all":
+        newState.spriteScaleX = spriteScale;
+        newState.spriteScaleY = spriteScale;
+        break;
+      case "x":
+        newState.spriteScaleX = spriteScale;
+        break;
+      case "y":
+        newState.spriteScaleY = spriteScale;
+        break;
+    }
+    const differences = this.#contextStateHelper.update(newState);
     if (differences.length == 0) {
       return;
     }
 
     if (this.device?.isConnected && !this.#ignoreDevice) {
-      await this.device.setDisplaySpriteScale(spriteScale, sendImmediately);
+      await this.device.setDisplaySpriteScaleDirection(
+        direction,
+        spriteScale,
+        sendImmediately
+      );
     }
 
     this.#onContextStateUpdate(differences);
   }
 
+  async setSpriteScaleX(spriteScaleX: number, sendImmediately?: boolean) {
+    return this.setSpriteScaleDirection("x", spriteScaleX, sendImmediately);
+  }
+  async setSpriteScaleY(spriteScaleY: number, sendImmediately?: boolean) {
+    return this.setSpriteScaleDirection("y", spriteScaleY, sendImmediately);
+  }
+  async setSpriteScale(spriteScale: number, sendImmediately?: boolean) {
+    return this.setSpriteScaleDirection("all", spriteScale, sendImmediately);
+  }
   async resetSpriteScale(sendImmediately?: boolean) {
+    //return this.setSpriteScaleDirection("all", 1, sendImmediately);
+
     const differences = this.#contextStateHelper.update({
-      spriteScale: 1,
+      spriteScaleX: 1,
+      spriteScaleY: 1,
     });
     if (differences.length == 0) {
       return;
@@ -2656,14 +2689,14 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
       const box = this.#getBoundingBox(
         0,
         0,
-        width * contextState.spriteScale,
-        height * contextState.spriteScale
+        width * contextState.spriteScaleX,
+        height * contextState.spriteScaleY
       );
       const rotatedBox = this.#rotateBoundingBox(box, contextState.rotation);
       //_console.log("rotatedBox", rotatedBox);
       this.#applyClip(rotatedBox, contextState);
-      this.#context.scale(contextState.spriteScale, contextState.spriteScale);
       this.#context.rotate(contextState.rotation);
+      this.#context.scale(contextState.spriteScaleX, contextState.spriteScaleY);
       // this.#context.beginPath();
       // this.#context.rect(
       //   -width / 2 + crop.left,
@@ -2676,14 +2709,14 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
       // Now define the clip in transformed space
       this.#context.beginPath();
       this.#context.rect(
-        -width / 2 + contextState.rotationCropLeft / contextState.spriteScale,
-        -height / 2 + contextState.rotationCropTop / contextState.spriteScale,
+        -width / 2 + contextState.rotationCropLeft / contextState.spriteScaleX,
+        -height / 2 + contextState.rotationCropTop / contextState.spriteScaleY,
         width -
-          contextState.rotationCropLeft / contextState.spriteScale -
-          contextState.rotationCropRight / contextState.spriteScale,
+          contextState.rotationCropLeft / contextState.spriteScaleX -
+          contextState.rotationCropRight / contextState.spriteScaleX,
         height -
-          contextState.rotationCropTop / contextState.spriteScale -
-          contextState.rotationCropBottom / contextState.spriteScale
+          contextState.rotationCropTop / contextState.spriteScaleY -
+          contextState.rotationCropBottom / contextState.spriteScaleY
       );
       this.#context.clip();
     });

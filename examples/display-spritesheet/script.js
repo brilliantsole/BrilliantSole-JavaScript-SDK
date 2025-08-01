@@ -864,7 +864,8 @@ let drawSprite = () => {
       x,
       y,
       rotation,
-      scale,
+      scaleX,
+      scaleY,
       cropTop,
       cropRight,
       cropBottom,
@@ -876,7 +877,8 @@ let drawSprite = () => {
     } = drawSpriteParams;
 
     displayCanvasHelper.setRotation(rotation);
-    displayCanvasHelper.setSpriteScale(scale);
+    displayCanvasHelper.setSpriteScaleX(scaleX);
+    displayCanvasHelper.setSpriteScaleY(scaleY);
     displayCanvasHelper.setCropTop(cropTop);
     displayCanvasHelper.setCropRight(cropRight);
     displayCanvasHelper.setCropBottom(cropBottom);
@@ -944,7 +946,8 @@ const drawSpriteParams = {
 
   rotation: 0,
 
-  scale: 1,
+  scaleX: 1,
+  scaleY: 1,
 
   cropTop: 0,
   cropRight: 0,
@@ -999,13 +1002,47 @@ drawSpriteRotationInput.addEventListener("input", () => {
   setSpriteDrawRotation(Number(drawSpriteRotationInput.value));
 });
 
+const drawSpriteScaleXContainer = document.getElementById("drawSpriteScaleX");
+const drawSpriteScaleXInput = drawSpriteScaleXContainer.querySelector("input");
+const drawSpriteScaleXSpan = drawSpriteScaleXContainer.querySelector(".value");
+const setSpriteDrawScaleX = (drawSpriteScaleX) => {
+  drawSpriteScaleXInput.value = drawSpriteScaleX;
+  drawSpriteScaleXSpan.innerText = drawSpriteScaleX;
+  drawSpriteParams.scaleX = drawSpriteScaleX;
+  drawSprite();
+};
+drawSpriteScaleXInput.addEventListener("input", () => {
+  setSpriteDrawScaleX(Number(drawSpriteScaleXInput.value));
+});
+
+const drawSpriteScaleYContainer = document.getElementById("drawSpriteScaleY");
+const drawSpriteScaleYInput = drawSpriteScaleYContainer.querySelector("input");
+const drawSpriteScaleYSpan = drawSpriteScaleYContainer.querySelector(".value");
+const setSpriteDrawScaleY = (drawSpriteScaleY) => {
+  drawSpriteScaleYInput.value = drawSpriteScaleY;
+  drawSpriteScaleYSpan.innerText = drawSpriteScaleY;
+  drawSpriteParams.scaleY = drawSpriteScaleY;
+  drawSprite();
+};
+drawSpriteScaleYInput.addEventListener("input", () => {
+  setSpriteDrawScaleY(Number(drawSpriteScaleYInput.value));
+});
+
 const drawSpriteScaleContainer = document.getElementById("drawSpriteScale");
 const drawSpriteScaleInput = drawSpriteScaleContainer.querySelector("input");
 const drawSpriteScaleSpan = drawSpriteScaleContainer.querySelector(".value");
 const setSpriteDrawScale = (drawSpriteScale) => {
   drawSpriteScaleInput.value = drawSpriteScale;
   drawSpriteScaleSpan.innerText = drawSpriteScale;
-  drawSpriteParams.scale = drawSpriteScale;
+
+  drawSpriteScaleXInput.value = drawSpriteScale;
+  drawSpriteScaleXSpan.innerText = drawSpriteScale;
+
+  drawSpriteScaleYInput.value = drawSpriteScale;
+  drawSpriteScaleYSpan.innerText = drawSpriteScale;
+
+  drawSpriteParams.scaleX = drawSpriteScale;
+  drawSpriteParams.scaleY = drawSpriteScale;
   drawSprite();
 };
 drawSpriteScaleInput.addEventListener("input", () => {
@@ -1538,6 +1575,18 @@ const addSpriteCommand = () => {
         selectedSprite.commands.push({
           type: "setSpriteScale",
           spriteScale: 1,
+        });
+        break;
+      case "setSpriteScaleX":
+        selectedSprite.commands.push({
+          type: "setSpriteScaleX",
+          spriteScaleX: 1,
+        });
+        break;
+      case "setSpriteScaleY":
+        selectedSprite.commands.push({
+          type: "setSpriteScaleY",
+          spriteScaleY: 1,
         });
         break;
       case "selectSpriteColor":

@@ -110,7 +110,7 @@ declare class DisplayManager implements DisplayManagerInterface {
     get isAvailable(): boolean;
     get contextState(): DisplayContextState;
     setContextState(newState: PartialDisplayContextState, sendImmediately?: boolean): Promise<void>;
-    get displayStatus(): "asleep" | "awake";
+    get displayStatus(): "awake" | "asleep";
     get isDisplayAwake(): boolean;
     wake(): Promise<void>;
     sleep(): Promise<void>;
@@ -124,7 +124,7 @@ declare class DisplayManager implements DisplayManagerInterface {
         width: number;
         height: number;
     };
-    get type(): "generic" | "none" | "monocularLeft" | "monocularRight" | "binocular";
+    get type(): "none" | "generic" | "monocularLeft" | "monocularRight" | "binocular";
     get brightness(): "veryLow" | "low" | "medium" | "high" | "veryHigh";
     setBrightness(newDisplayBrightness: DisplayBrightness, sendImmediately?: boolean): Promise<void>;
     flushContextCommands(): Promise<void>;
@@ -180,6 +180,9 @@ declare class DisplayManager implements DisplayManagerInterface {
     setSpriteColor(spriteColorIndex: number, color: DisplayColorRGB | string, sendImmediately?: boolean): Promise<void>;
     setSpriteColorOpacity(spriteColorIndex: number, opacity: number, sendImmediately?: boolean): Promise<void>;
     resetSpriteColors(sendImmediately?: boolean): Promise<void>;
+    setSpriteScaleDirection(direction: DisplayScaleDirection, spriteScale: number, sendImmediately?: boolean): Promise<void>;
+    setSpriteScaleX(spriteScaleX: number, sendImmediately?: boolean): Promise<void>;
+    setSpriteScaleY(spriteScaleY: number, sendImmediately?: boolean): Promise<void>;
     setSpriteScale(spriteScale: number, sendImmediately?: boolean): Promise<void>;
     resetSpriteScale(sendImmediately?: boolean): Promise<void>;
     clearRect(x: number, y: number, width: number, height: number, sendImmediately?: boolean): Promise<void>;

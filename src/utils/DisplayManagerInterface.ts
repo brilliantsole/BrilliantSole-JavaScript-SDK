@@ -219,6 +219,14 @@ export interface DisplayManagerInterface {
     sendImmediately?: boolean
   ): Promise<void>;
 
+  setSpriteScaleX(
+    spriteScaleX: number,
+    sendImmediately?: boolean
+  ): Promise<void>;
+  setSpriteScaleY(
+    spriteScaleY: number,
+    sendImmediately?: boolean
+  ): Promise<void>;
   setSpriteScale(spriteScale: number, sendImmediately?: boolean): Promise<void>;
   resetSpriteScale(sendImmediately?: boolean): Promise<void>;
 
@@ -602,6 +610,18 @@ export async function runDisplayContextCommand(
           spriteColorPairs,
           sendImmediately
         );
+      }
+      break;
+    case "setSpriteScaleX":
+      {
+        const { spriteScaleX } = command;
+        await displayManager.setSpriteScaleX(spriteScaleX, sendImmediately);
+      }
+      break;
+    case "setSpriteScaleY":
+      {
+        const { spriteScaleY } = command;
+        await displayManager.setSpriteScaleY(spriteScaleY, sendImmediately);
       }
       break;
     case "setSpriteScale":

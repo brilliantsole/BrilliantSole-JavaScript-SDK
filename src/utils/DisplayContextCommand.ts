@@ -87,6 +87,8 @@ export const DisplayContextCommandTypes = [
   "selectSpriteColor",
   "selectSpriteColors",
   "resetSpriteColors",
+  "setSpriteScaleX",
+  "setSpriteScaleY",
   "setSpriteScale",
   "resetSpriteScale",
 
@@ -149,8 +151,8 @@ export const DisplaySpriteContextCommandTypes = [
   "selectSpriteColor",
   "selectSpriteColors",
   "resetSpriteColors",
-  // "setSpriteScaleX",
-  // "setSpriteScaleY",
+  "setSpriteScaleX",
+  "setSpriteScaleY",
   "setSpriteScale",
   "resetSpriteScale",
 
@@ -323,6 +325,14 @@ interface SelectDisplaySpriteColorIndicesCommand
   spriteColorPairs: DisplaySpriteColorPair[];
 }
 
+interface SetDisplaySpriteScaleXCommand extends BaseDisplayContextCommand {
+  type: "setSpriteScaleX";
+  spriteScaleX: number;
+}
+interface SetDisplaySpriteScaleYCommand extends BaseDisplayContextCommand {
+  type: "setSpriteScaleY";
+  spriteScaleY: number;
+}
 interface SetDisplaySpriteScaleCommand extends BaseDisplayContextCommand {
   type: "setSpriteScale";
   spriteScale: number;
@@ -464,6 +474,8 @@ export type DisplayContextCommand =
   | SetDisplayBitmapScaleCommand
   | SelectDisplaySpriteColorIndexCommand
   | SelectDisplaySpriteColorIndicesCommand
+  | SetDisplaySpriteScaleXCommand
+  | SetDisplaySpriteScaleYCommand
   | SetDisplaySpriteScaleCommand
   | ClearDisplayRectCommand
   | DrawDisplayRectCommand
@@ -805,6 +817,24 @@ export function serializeContextCommand(
           dataView!.setUint8(offset + 1, colorIndex);
           offset += 2;
         });
+      }
+      break;
+    case "setSpriteScaleX":
+      {
+        let { spriteScaleX } = command;
+        spriteScaleX = clamp(spriteScaleX, displayScaleStep, maxDisplayScale);
+        spriteScaleX = roundScale(spriteScaleX);
+        dataView = new DataView(new ArrayBuffer(2));
+        dataView.setUint16(0, formatScale(spriteScaleX), true);
+      }
+      break;
+    case "setSpriteScaleY":
+      {
+        let { spriteScaleY } = command;
+        spriteScaleY = clamp(spriteScaleY, displayScaleStep, maxDisplayScale);
+        spriteScaleY = roundScale(spriteScaleY);
+        dataView = new DataView(new ArrayBuffer(2));
+        dataView.setUint16(0, formatScale(spriteScaleY), true);
       }
       break;
     case "setSpriteScale":

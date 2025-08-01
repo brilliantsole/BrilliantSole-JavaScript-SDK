@@ -21,7 +21,8 @@ export type DisplayContextState = {
     bitmapScaleX: number;
     bitmapScaleY: number;
     spriteColorIndices: number[];
-    spriteScale: number;
+    spriteScaleX: number;
+    spriteScaleY: number;
     spriteSheetName?: string;
 };
 export type DisplayContextStateKey = keyof DisplayContextState;

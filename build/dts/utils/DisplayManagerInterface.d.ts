@@ -74,6 +74,8 @@ export interface DisplayManagerInterface {
     resetSpriteColors(sendImmediately?: boolean): Promise<void>;
     setSpriteColor(spriteColorIndex: number, color: DisplayColorRGB | string, sendImmediately?: boolean): Promise<void>;
     setSpriteColorOpacity(spriteColorIndex: number, opacity: number, sendImmediately?: boolean): Promise<void>;
+    setSpriteScaleX(spriteScaleX: number, sendImmediately?: boolean): Promise<void>;
+    setSpriteScaleY(spriteScaleY: number, sendImmediately?: boolean): Promise<void>;
     setSpriteScale(spriteScale: number, sendImmediately?: boolean): Promise<void>;
     resetSpriteScale(sendImmediately?: boolean): Promise<void>;
     clearRect(x: number, y: number, width: number, height: number, sendImmediately?: boolean): Promise<void>;

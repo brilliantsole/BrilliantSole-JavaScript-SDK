@@ -3773,7 +3773,8 @@ const DefaultDisplayContextState = {
     bitmapScaleX: 1,
     bitmapScaleY: 1,
     spriteColorIndices: new Array(0).fill(0).map((_, index) => index),
-    spriteScale: 1,
+    spriteScaleX: 1,
+    spriteScaleY: 1,
     spriteSheetName: undefined,
 };
 
@@ -3936,6 +3937,11 @@ const DisplayBitmapScaleDirectionToCommandType = {
     x: "setBitmapScaleX",
     y: "setBitmapScaleY",
     all: "setBitmapScale",
+};
+const DisplaySpriteScaleDirectionToCommandType = {
+    x: "setSpriteScaleX",
+    y: "setSpriteScaleY",
+    all: "setSpriteScale",
 };
 
 var commonjsGlobal = typeof globalThis !== 'undefined' ? globalThis : typeof window !== 'undefined' ? window : typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : {};
@@ -4915,6 +4921,8 @@ const DisplayContextCommandTypes = [
     "selectSpriteColor",
     "selectSpriteColors",
     "resetSpriteColors",
+    "setSpriteScaleX",
+    "setSpriteScaleY",
     "setSpriteScale",
     "resetSpriteScale",
     "clearRect",
@@ -4962,6 +4970,8 @@ const DisplaySpriteContextCommandTypes = [
     "selectSpriteColor",
     "selectSpriteColors",
     "resetSpriteColors",
+    "setSpriteScaleX",
+    "setSpriteScaleY",
     "setSpriteScale",
     "resetSpriteScale",
     "clearRect",
@@ -5276,6 +5286,24 @@ function serializeContextCommand(displayManager, command) {
                     dataView.setUint8(offset + 1, colorIndex);
                     offset += 2;
                 });
+            }
+            break;
+        case "setSpriteScaleX":
+            {
+                let { spriteScaleX } = command;
+                spriteScaleX = clamp(spriteScaleX, displayScaleStep, maxDisplayScale);
+                spriteScaleX = roundScale(spriteScaleX);
+                dataView = new DataView(new ArrayBuffer(2));
+                dataView.setUint16(0, formatScale(spriteScaleX), true);
+            }
+            break;
+        case "setSpriteScaleY":
+            {
+                let { spriteScaleY } = command;
+                spriteScaleY = clamp(spriteScaleY, displayScaleStep, maxDisplayScale);
+                spriteScaleY = roundScale(spriteScaleY);
+                dataView = new DataView(new ArrayBuffer(2));
+                dataView.setUint16(0, formatScale(spriteScaleY), true);
             }
             break;
         case "setSpriteScale":
@@ -5664,6 +5692,18 @@ async function runDisplayContextCommand(displayManager, command, sendImmediately
                 await displayManager.selectSpriteColors(spriteColorPairs, sendImmediately);
             }
             break;
+        case "setSpriteScaleX":
+            {
+                const { spriteScaleX } = command;
+                await displayManager.setSpriteScaleX(spriteScaleX, sendImmediately);
+            }
+            break;
+        case "setSpriteScaleY":
+            {
+                const { spriteScaleY } = command;
+                await displayManager.setSpriteScaleY(spriteScaleY, sendImmediately);
+            }
+            break;
         case "setSpriteScale":
             {
                 const { spriteScale } = command;
@@ -5965,8 +6005,11 @@ class DisplayManager {
                     });
                     this.selectSpriteColors(spriteColors);
                     break;
-                case "spriteScale":
-                    this.setSpriteScale(newState.spriteScale);
+                case "spriteScaleX":
+                    this.setSpriteScaleX(newState.spriteScaleX);
+                    break;
+                case "spriteScaleY":
+                    this.setSpriteScaleY(newState.spriteScaleY);
                     break;
             }
         });
@@ -6604,28 +6647,52 @@ class DisplayManager {
         await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "resetSpriteColors", dataView?.buffer, sendImmediately);
         __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_onContextStateUpdate).call(this, differences);
     }
-    async setSpriteScale(spriteScale, sendImmediately) {
+    async setSpriteScaleDirection(direction, spriteScale, sendImmediately) {
         spriteScale = clamp(spriteScale, displayScaleStep, maxDisplayScale);
         spriteScale = roundScale(spriteScale);
-        const differences = __classPrivateFieldGet(this, _DisplayManager_contextStateHelper, "f").update({
-            spriteScale,
-        });
+        const commandType = DisplaySpriteScaleDirectionToCommandType[direction];
+        _console$j.log({ [commandType]: spriteScale });
+        const newState = {};
+        let command;
+        switch (direction) {
+            case "all":
+                newState.spriteScaleX = spriteScale;
+                newState.spriteScaleY = spriteScale;
+                command = { type: "setSpriteScale", spriteScale };
+                break;
+            case "x":
+                newState.spriteScaleX = spriteScale;
+                command = { type: "setSpriteScaleX", spriteScaleX: spriteScale };
+                break;
+            case "y":
+                newState.spriteScaleY = spriteScale;
+                command = { type: "setSpriteScaleY", spriteScaleY: spriteScale };
+                break;
+        }
+        const differences = __classPrivateFieldGet(this, _DisplayManager_contextStateHelper, "f").update(newState);
         if (differences.length == 0) {
             return;
         }
-        const dataView = serializeContextCommand(this, {
-            type: "setSpriteScale",
-            spriteScale,
-        });
+        const dataView = serializeContextCommand(this, command);
         if (!dataView) {
             return;
         }
-        await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "setSpriteScale", dataView.buffer, sendImmediately);
+        await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, commandType, dataView.buffer, sendImmediately);
         __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_onContextStateUpdate).call(this, differences);
+    }
+    async setSpriteScaleX(spriteScaleX, sendImmediately) {
+        return this.setSpriteScaleDirection("x", spriteScaleX, sendImmediately);
+    }
+    async setSpriteScaleY(spriteScaleY, sendImmediately) {
+        return this.setSpriteScaleDirection("y", spriteScaleY, sendImmediately);
+    }
+    async setSpriteScale(spriteScale, sendImmediately) {
+        return this.setSpriteScaleDirection("all", spriteScale, sendImmediately);
     }
     async resetSpriteScale(sendImmediately) {
         const differences = __classPrivateFieldGet(this, _DisplayManager_contextStateHelper, "f").update({
-            spriteScale: 1,
+            spriteScaleX: 1,
+            spriteScaleY: 1,
         });
         if (differences.length == 0) {
             return;
@@ -10325,6 +10392,18 @@ class Device {
         __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertDisplayIsAvailable).call(this);
         return __classPrivateFieldGet(this, _Device_displayManager, "f").resetSpriteColors;
     }
+    get setDisplaySpriteScaleDirection() {
+        __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertDisplayIsAvailable).call(this);
+        return __classPrivateFieldGet(this, _Device_displayManager, "f").setSpriteScaleDirection;
+    }
+    get setDisplaySpriteScaleX() {
+        __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertDisplayIsAvailable).call(this);
+        return __classPrivateFieldGet(this, _Device_displayManager, "f").setSpriteScaleX;
+    }
+    get setDisplaySpriteScaleY() {
+        __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertDisplayIsAvailable).call(this);
+        return __classPrivateFieldGet(this, _Device_displayManager, "f").setSpriteScaleY;
+    }
     get setDisplaySpriteScale() {
         __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertDisplayIsAvailable).call(this);
         return __classPrivateFieldGet(this, _Device_displayManager, "f").setSpriteScale;
@@ -11200,21 +11279,44 @@ class DisplayCanvasHelper {
         }
         __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_onContextStateUpdate).call(this, differences);
     }
-    async setSpriteScale(spriteScale, sendImmediately) {
+    async setSpriteScaleDirection(direction, spriteScale, sendImmediately) {
         spriteScale = clamp(spriteScale, displayScaleStep, maxDisplayScale);
         spriteScale = roundScale(spriteScale);
-        const differences = __classPrivateFieldGet(this, _DisplayCanvasHelper_contextStateHelper, "f").update({ spriteScale });
+        const newState = {};
+        switch (direction) {
+            case "all":
+                newState.spriteScaleX = spriteScale;
+                newState.spriteScaleY = spriteScale;
+                break;
+            case "x":
+                newState.spriteScaleX = spriteScale;
+                break;
+            case "y":
+                newState.spriteScaleY = spriteScale;
+                break;
+        }
+        const differences = __classPrivateFieldGet(this, _DisplayCanvasHelper_contextStateHelper, "f").update(newState);
         if (differences.length == 0) {
             return;
         }
         if (this.device?.isConnected && !__classPrivateFieldGet(this, _DisplayCanvasHelper_ignoreDevice, "f")) {
-            await this.device.setDisplaySpriteScale(spriteScale, sendImmediately);
+            await this.device.setDisplaySpriteScaleDirection(direction, spriteScale, sendImmediately);
         }
         __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_onContextStateUpdate).call(this, differences);
     }
+    async setSpriteScaleX(spriteScaleX, sendImmediately) {
+        return this.setSpriteScaleDirection("x", spriteScaleX, sendImmediately);
+    }
+    async setSpriteScaleY(spriteScaleY, sendImmediately) {
+        return this.setSpriteScaleDirection("y", spriteScaleY, sendImmediately);
+    }
+    async setSpriteScale(spriteScale, sendImmediately) {
+        return this.setSpriteScaleDirection("all", spriteScale, sendImmediately);
+    }
     async resetSpriteScale(sendImmediately) {
         const differences = __classPrivateFieldGet(this, _DisplayCanvasHelper_contextStateHelper, "f").update({
-            spriteScale: 1,
+            spriteScaleX: 1,
+            spriteScaleY: 1,
         });
         if (differences.length == 0) {
             return;
@@ -12077,17 +12179,17 @@ _DisplayCanvasHelper_eventDispatcher = new WeakMap(), _DisplayCanvasHelper_canva
     __classPrivateFieldGet(this, _DisplayCanvasHelper_rearDrawStack, "f").push(() => {
         __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_save).call(this);
         __classPrivateFieldGet(this, _DisplayCanvasHelper_context, "f").translate(centerX, centerY);
-        const box = __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_getBoundingBox).call(this, 0, 0, width * contextState.spriteScale, height * contextState.spriteScale);
+        const box = __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_getBoundingBox).call(this, 0, 0, width * contextState.spriteScaleX, height * contextState.spriteScaleY);
         const rotatedBox = __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_rotateBoundingBox).call(this, box, contextState.rotation);
         __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_applyClip).call(this, rotatedBox, contextState);
-        __classPrivateFieldGet(this, _DisplayCanvasHelper_context, "f").scale(contextState.spriteScale, contextState.spriteScale);
         __classPrivateFieldGet(this, _DisplayCanvasHelper_context, "f").rotate(contextState.rotation);
+        __classPrivateFieldGet(this, _DisplayCanvasHelper_context, "f").scale(contextState.spriteScaleX, contextState.spriteScaleY);
         __classPrivateFieldGet(this, _DisplayCanvasHelper_context, "f").beginPath();
-        __classPrivateFieldGet(this, _DisplayCanvasHelper_context, "f").rect(-width / 2 + contextState.rotationCropLeft / contextState.spriteScale, -height / 2 + contextState.rotationCropTop / contextState.spriteScale, width -
-            contextState.rotationCropLeft / contextState.spriteScale -
-            contextState.rotationCropRight / contextState.spriteScale, height -
-            contextState.rotationCropTop / contextState.spriteScale -
-            contextState.rotationCropBottom / contextState.spriteScale);
+        __classPrivateFieldGet(this, _DisplayCanvasHelper_context, "f").rect(-width / 2 + contextState.rotationCropLeft / contextState.spriteScaleX, -height / 2 + contextState.rotationCropTop / contextState.spriteScaleY, width -
+            contextState.rotationCropLeft / contextState.spriteScaleX -
+            contextState.rotationCropRight / contextState.spriteScaleX, height -
+            contextState.rotationCropTop / contextState.spriteScaleY -
+            contextState.rotationCropBottom / contextState.spriteScaleY);
         __classPrivateFieldGet(this, _DisplayCanvasHelper_context, "f").clip();
     });
 }, _DisplayCanvasHelper_resetCanvasContextTransform = function _DisplayCanvasHelper_resetCanvasContextTransform() {

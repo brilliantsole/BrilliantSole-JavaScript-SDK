@@ -1753,6 +1753,18 @@ class Device {
     return this.#displayManager.resetSpriteColors;
   }
 
+  get setDisplaySpriteScaleDirection() {
+    this.#assertDisplayIsAvailable();
+    return this.#displayManager.setSpriteScaleDirection;
+  }
+  get setDisplaySpriteScaleX() {
+    this.#assertDisplayIsAvailable();
+    return this.#displayManager.setSpriteScaleX;
+  }
+  get setDisplaySpriteScaleY() {
+    this.#assertDisplayIsAvailable();
+    return this.#displayManager.setSpriteScaleY;
+  }
   get setDisplaySpriteScale() {
     this.#assertDisplayIsAvailable();
     return this.#displayManager.setSpriteScale;
