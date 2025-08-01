@@ -376,12 +376,13 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     this.#dispatchEvent("ready", {});
   }
 
-  #updateDevice() {
-    this.#updateDeviceColors(true);
-    this.#updateDeviceOpacity(true);
-    this.#updateDeviceContextState(true);
-    this.#updateDeviceBrightness(true);
-    this.#updateDeviceSpriteSheets();
+  async #updateDevice() {
+    await this.#updateDeviceColors(true);
+    await this.#updateDeviceOpacity(true);
+    await this.#updateDeviceContextState(true);
+    await this.#updateDeviceBrightness(true);
+    await this.#updateDeviceSpriteSheets();
+    await this.#updateDeviceSelectedSpriteSheet(true);
   }
 
   // NUMBER OF COLORS
@@ -480,12 +481,15 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
       .fill(0)
       .map((_, index) => index);
   }
-  #updateDeviceContextState(sendImmediately?: boolean) {
+  async #updateDeviceContextState(sendImmediately?: boolean) {
     if (!this.device?.isConnected) {
       return;
     }
     // _console.log("updateDeviceContextState");
-    this.device?.setDisplayContextState(this.contextState, sendImmediately);
+    await this.device?.setDisplayContextState(
+      this.contextState,
+      sendImmediately
+    );
   }
 
   async show(sendImmediately = true) {
@@ -2384,8 +2388,8 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     //_console.log("drawBitmapToCanvas", this.bitmapColorIndices);
 
     const { bitmapScaleX, bitmapScaleY } = contextState;
-    const width = bitmap.width * bitmapScaleX;
-    const height = bitmap.height * bitmapScaleY;
+    const width = bitmap.width * Math.abs(bitmapScaleX);
+    const height = bitmap.height * Math.abs(bitmapScaleY);
 
     // _console.log({ width, height });
 
@@ -2649,6 +2653,19 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     _console.log("updateDeviceSpriteSheets");
     await this.sendSpriteSheets(Object.values(this.spriteSheets));
   }
+  async #updateDeviceSelectedSpriteSheet(sendImmediately?: boolean) {
+    if (!this.device?.isConnected) {
+      return;
+    }
+    if (!this.selectedSpriteSheetName) {
+      return;
+    }
+    _console.log("updateDeviceSelectedSpriteSheet");
+    await this.device?.selectDisplaySpriteSheet(
+      this.selectedSpriteSheetName,
+      sendImmediately
+    );
+  }
 
   async runContextCommand(
     command: DisplayContextCommand,
@@ -2690,8 +2707,8 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
       const box = this.#getBoundingBox(
         0,
         0,
-        width * contextState.spriteScaleX,
-        height * contextState.spriteScaleY
+        width * Math.abs(contextState.spriteScaleX),
+        height * Math.abs(contextState.spriteScaleY)
       );
       const rotatedBox = this.#rotateBoundingBox(box, contextState.rotation);
       //_console.log("rotatedBox", rotatedBox);
@@ -2710,14 +2727,16 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
       // Now define the clip in transformed space
       this.#context.beginPath();
       this.#context.rect(
-        -width / 2 + contextState.rotationCropLeft / contextState.spriteScaleX,
-        -height / 2 + contextState.rotationCropTop / contextState.spriteScaleY,
+        -width / 2 +
+          contextState.rotationCropLeft / Math.abs(contextState.spriteScaleX),
+        -height / 2 +
+          contextState.rotationCropTop / Math.abs(contextState.spriteScaleY),
         width -
-          contextState.rotationCropLeft / contextState.spriteScaleX -
-          contextState.rotationCropRight / contextState.spriteScaleX,
+          contextState.rotationCropLeft / Math.abs(contextState.spriteScaleX) -
+          contextState.rotationCropRight / Math.abs(contextState.spriteScaleX),
         height -
-          contextState.rotationCropTop / contextState.spriteScaleY -
-          contextState.rotationCropBottom / contextState.spriteScaleY
+          contextState.rotationCropTop / Math.abs(contextState.spriteScaleY) -
+          contextState.rotationCropBottom / Math.abs(contextState.spriteScaleY)
       );
       this.#context.clip();
     });
