@@ -1627,6 +1627,7 @@ const updateSpriteCommands = () => {
   spriteCommandsContainer.innerHTML = "";
   if (selectedSprite) {
     selectedSprite?.commands.forEach((command, index) => {
+      /** @type {HTMLElement} */
       const spriteCommandContainer = spriteCommandTemplate.content
         .cloneNode(true)
         .querySelector(".spriteCommand");
@@ -2864,6 +2865,23 @@ const updateSpriteCommands = () => {
         spriteScaleYContainer.addEventListener("input", () => {
           command.spriteScaleY = Number(spriteScaleYInput.value);
           spriteScaleYSpan.innerText = command.spriteScaleY;
+          drawSprite();
+        });
+      }
+
+      const includeSpriteIndex = "spriteIndex" in command;
+      if (includeSpriteIndex) {
+        const spriteIndexContainer =
+          spriteCommandContainer.querySelector(".spriteIndex");
+        const spriteIndexSelect = spriteIndexContainer.querySelector("select");
+        const spriteIndexOptgroup = spriteIndexSelect.querySelector("optgroup");
+        spriteSheet.sprites.forEach((sprite, index) => {
+          spriteIndexOptgroup.appendChild(new Option(sprite.name, index));
+        });
+        spriteIndexSelect.value = command.spriteIndex;
+        spriteIndexContainer.removeAttribute("hidden");
+        spriteIndexContainer.addEventListener("input", () => {
+          command.spriteIndex = Number(spriteIndexSelect.value);
           drawSprite();
         });
       }
