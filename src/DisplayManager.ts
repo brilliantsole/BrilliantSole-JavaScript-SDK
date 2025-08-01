@@ -40,6 +40,7 @@ import {
   pixelDepthToPixelsPerByte,
   roundScale,
   DisplaySpriteScaleDirectionToCommandType,
+  minDisplayScale,
 } from "./utils/DisplayUtils.ts";
 import { DisplaySegmentCaps, DisplaySpriteSheet } from "./BS.ts";
 import {
@@ -1266,7 +1267,7 @@ class DisplayManager implements DisplayManagerInterface {
     bitmapScale: number,
     sendImmediately?: boolean
   ) {
-    bitmapScale = clamp(bitmapScale, displayScaleStep, maxDisplayScale);
+    bitmapScale = clamp(bitmapScale, minDisplayScale, maxDisplayScale);
     bitmapScale = roundScale(bitmapScale);
     const commandType = DisplayBitmapScaleDirectionToCommandType[direction];
     _console.log({ [commandType]: bitmapScale });
@@ -1455,7 +1456,7 @@ class DisplayManager implements DisplayManagerInterface {
     spriteScale: number,
     sendImmediately?: boolean
   ) {
-    spriteScale = clamp(spriteScale, displayScaleStep, maxDisplayScale);
+    spriteScale = clamp(spriteScale, minDisplayScale, maxDisplayScale);
     spriteScale = roundScale(spriteScale);
     const commandType = DisplaySpriteScaleDirectionToCommandType[direction];
     _console.log({ [commandType]: spriteScale });

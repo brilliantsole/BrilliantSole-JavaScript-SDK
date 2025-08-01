@@ -44,6 +44,7 @@ import {
   DisplayRotationCropDirectionToStateKey,
   maxDisplayScale,
   roundScale,
+  minDisplayScale,
 } from "./DisplayUtils.ts";
 import EventDispatcher, {
   BoundEventListeners,
@@ -1009,7 +1010,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     bitmapScale: number,
     sendImmediately?: boolean
   ) {
-    bitmapScale = clamp(bitmapScale, displayScaleStep, maxDisplayScale);
+    bitmapScale = clamp(bitmapScale, minDisplayScale, maxDisplayScale);
     bitmapScale = roundScale(bitmapScale);
     const newState: PartialDisplayContextState = {};
     switch (direction) {
@@ -1187,7 +1188,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     spriteScale: number,
     sendImmediately?: boolean
   ) {
-    spriteScale = clamp(spriteScale, displayScaleStep, maxDisplayScale);
+    spriteScale = clamp(spriteScale, minDisplayScale, maxDisplayScale);
     spriteScale = roundScale(spriteScale);
     const newState: PartialDisplayContextState = {};
     switch (direction) {

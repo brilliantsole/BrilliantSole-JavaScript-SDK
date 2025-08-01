@@ -26,6 +26,7 @@ import {
   formatRotation,
   formatScale,
   maxDisplayScale,
+  minDisplayScale,
   roundScale,
 } from "./DisplayUtils.ts";
 import {
@@ -756,28 +757,28 @@ export function serializeContextCommand(
     case "setBitmapScaleX":
       {
         let { bitmapScaleX } = command;
-        bitmapScaleX = clamp(bitmapScaleX, displayScaleStep, maxDisplayScale);
+        bitmapScaleX = clamp(bitmapScaleX, minDisplayScale, maxDisplayScale);
         bitmapScaleX = roundScale(bitmapScaleX);
         dataView = new DataView(new ArrayBuffer(2));
-        dataView.setUint16(0, formatScale(bitmapScaleX), true);
+        dataView.setInt16(0, formatScale(bitmapScaleX), true);
       }
       break;
     case "setBitmapScaleY":
       {
         let { bitmapScaleY } = command;
-        bitmapScaleY = clamp(bitmapScaleY, displayScaleStep, maxDisplayScale);
+        bitmapScaleY = clamp(bitmapScaleY, minDisplayScale, maxDisplayScale);
         bitmapScaleY = roundScale(bitmapScaleY);
         dataView = new DataView(new ArrayBuffer(2));
-        dataView.setUint16(0, formatScale(bitmapScaleY), true);
+        dataView.setInt16(0, formatScale(bitmapScaleY), true);
       }
       break;
     case "setBitmapScale":
       {
         let { bitmapScale } = command;
-        bitmapScale = clamp(bitmapScale, displayScaleStep, maxDisplayScale);
+        bitmapScale = clamp(bitmapScale, minDisplayScale, maxDisplayScale);
         bitmapScale = roundScale(bitmapScale);
         dataView = new DataView(new ArrayBuffer(2));
-        dataView.setUint16(0, formatScale(bitmapScale), true);
+        dataView.setInt16(0, formatScale(bitmapScale), true);
       }
       break;
     case "selectSpriteColor":
@@ -822,28 +823,28 @@ export function serializeContextCommand(
     case "setSpriteScaleX":
       {
         let { spriteScaleX } = command;
-        spriteScaleX = clamp(spriteScaleX, displayScaleStep, maxDisplayScale);
+        spriteScaleX = clamp(spriteScaleX, minDisplayScale, maxDisplayScale);
         spriteScaleX = roundScale(spriteScaleX);
         dataView = new DataView(new ArrayBuffer(2));
-        dataView.setUint16(0, formatScale(spriteScaleX), true);
+        dataView.setInt16(0, formatScale(spriteScaleX), true);
       }
       break;
     case "setSpriteScaleY":
       {
         let { spriteScaleY } = command;
-        spriteScaleY = clamp(spriteScaleY, displayScaleStep, maxDisplayScale);
+        spriteScaleY = clamp(spriteScaleY, minDisplayScale, maxDisplayScale);
         spriteScaleY = roundScale(spriteScaleY);
         dataView = new DataView(new ArrayBuffer(2));
-        dataView.setUint16(0, formatScale(spriteScaleY), true);
+        dataView.setInt16(0, formatScale(spriteScaleY), true);
       }
       break;
     case "setSpriteScale":
       {
         let { spriteScale } = command;
-        spriteScale = clamp(spriteScale, displayScaleStep, maxDisplayScale);
+        spriteScale = clamp(spriteScale, minDisplayScale, maxDisplayScale);
         spriteScale = roundScale(spriteScale);
         dataView = new DataView(new ArrayBuffer(2));
-        dataView.setUint16(0, formatScale(spriteScale), true);
+        dataView.setInt16(0, formatScale(spriteScale), true);
       }
       break;
     case "clearRect":

@@ -645,7 +645,7 @@ type DisplayBitmap = {
     pixels: number[];
 };
 
-declare const maxDisplayScale = 100;
+declare const maxDisplayScale = 50;
 declare const DisplayCropDirections: readonly ["top", "right", "bottom", "left"];
 type DisplayCropDirection = (typeof DisplayCropDirections)[number];
 declare const DisplayScaleDirections: readonly ["x", "y", "all"];

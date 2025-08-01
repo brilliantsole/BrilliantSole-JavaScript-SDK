@@ -3860,11 +3860,12 @@ function formatRotation(rotation, isRadians, isSigned) {
     return rotation;
 }
 function roundToStep(value, step) {
-    const roundedValue = Math.floor(value / step) * step;
+    const roundedValue = Math.round(value / step) * step;
     _console$o.log(value, step, roundedValue);
     return roundedValue;
 }
-const maxDisplayScale = 100;
+const minDisplayScale = -50;
+const maxDisplayScale = 50;
 const displayScaleStep = 0.002;
 function formatScale(bitmapScale) {
     bitmapScale /= displayScaleStep;
@@ -5234,28 +5235,28 @@ function serializeContextCommand(displayManager, command) {
         case "setBitmapScaleX":
             {
                 let { bitmapScaleX } = command;
-                bitmapScaleX = clamp(bitmapScaleX, displayScaleStep, maxDisplayScale);
+                bitmapScaleX = clamp(bitmapScaleX, minDisplayScale, maxDisplayScale);
                 bitmapScaleX = roundScale(bitmapScaleX);
                 dataView = new DataView(new ArrayBuffer(2));
-                dataView.setUint16(0, formatScale(bitmapScaleX), true);
+                dataView.setInt16(0, formatScale(bitmapScaleX), true);
             }
             break;
         case "setBitmapScaleY":
             {
                 let { bitmapScaleY } = command;
-                bitmapScaleY = clamp(bitmapScaleY, displayScaleStep, maxDisplayScale);
+                bitmapScaleY = clamp(bitmapScaleY, minDisplayScale, maxDisplayScale);
                 bitmapScaleY = roundScale(bitmapScaleY);
                 dataView = new DataView(new ArrayBuffer(2));
-                dataView.setUint16(0, formatScale(bitmapScaleY), true);
+                dataView.setInt16(0, formatScale(bitmapScaleY), true);
             }
             break;
         case "setBitmapScale":
             {
                 let { bitmapScale } = command;
-                bitmapScale = clamp(bitmapScale, displayScaleStep, maxDisplayScale);
+                bitmapScale = clamp(bitmapScale, minDisplayScale, maxDisplayScale);
                 bitmapScale = roundScale(bitmapScale);
                 dataView = new DataView(new ArrayBuffer(2));
-                dataView.setUint16(0, formatScale(bitmapScale), true);
+                dataView.setInt16(0, formatScale(bitmapScale), true);
             }
             break;
         case "selectSpriteColor":
@@ -5291,28 +5292,28 @@ function serializeContextCommand(displayManager, command) {
         case "setSpriteScaleX":
             {
                 let { spriteScaleX } = command;
-                spriteScaleX = clamp(spriteScaleX, displayScaleStep, maxDisplayScale);
+                spriteScaleX = clamp(spriteScaleX, minDisplayScale, maxDisplayScale);
                 spriteScaleX = roundScale(spriteScaleX);
                 dataView = new DataView(new ArrayBuffer(2));
-                dataView.setUint16(0, formatScale(spriteScaleX), true);
+                dataView.setInt16(0, formatScale(spriteScaleX), true);
             }
             break;
         case "setSpriteScaleY":
             {
                 let { spriteScaleY } = command;
-                spriteScaleY = clamp(spriteScaleY, displayScaleStep, maxDisplayScale);
+                spriteScaleY = clamp(spriteScaleY, minDisplayScale, maxDisplayScale);
                 spriteScaleY = roundScale(spriteScaleY);
                 dataView = new DataView(new ArrayBuffer(2));
-                dataView.setUint16(0, formatScale(spriteScaleY), true);
+                dataView.setInt16(0, formatScale(spriteScaleY), true);
             }
             break;
         case "setSpriteScale":
             {
                 let { spriteScale } = command;
-                spriteScale = clamp(spriteScale, displayScaleStep, maxDisplayScale);
+                spriteScale = clamp(spriteScale, minDisplayScale, maxDisplayScale);
                 spriteScale = roundScale(spriteScale);
                 dataView = new DataView(new ArrayBuffer(2));
-                dataView.setUint16(0, formatScale(spriteScale), true);
+                dataView.setInt16(0, formatScale(spriteScale), true);
             }
             break;
         case "clearRect":
@@ -6518,7 +6519,7 @@ class DisplayManager {
         return this.setColorOpacity(this.bitmapColorIndices[bitmapColorIndex], opacity, sendImmediately);
     }
     async setBitmapScaleDirection(direction, bitmapScale, sendImmediately) {
-        bitmapScale = clamp(bitmapScale, displayScaleStep, maxDisplayScale);
+        bitmapScale = clamp(bitmapScale, minDisplayScale, maxDisplayScale);
         bitmapScale = roundScale(bitmapScale);
         const commandType = DisplayBitmapScaleDirectionToCommandType[direction];
         _console$j.log({ [commandType]: bitmapScale });
@@ -6648,7 +6649,7 @@ class DisplayManager {
         __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_onContextStateUpdate).call(this, differences);
     }
     async setSpriteScaleDirection(direction, spriteScale, sendImmediately) {
-        spriteScale = clamp(spriteScale, displayScaleStep, maxDisplayScale);
+        spriteScale = clamp(spriteScale, minDisplayScale, maxDisplayScale);
         spriteScale = roundScale(spriteScale);
         const commandType = DisplaySpriteScaleDirectionToCommandType[direction];
         _console$j.log({ [commandType]: spriteScale });
@@ -11166,7 +11167,7 @@ class DisplayCanvasHelper {
         return this.setColorOpacity(this.bitmapColorIndices[bitmapColorIndex], opacity, sendImmediately);
     }
     async setBitmapScaleDirection(direction, bitmapScale, sendImmediately) {
-        bitmapScale = clamp(bitmapScale, displayScaleStep, maxDisplayScale);
+        bitmapScale = clamp(bitmapScale, minDisplayScale, maxDisplayScale);
         bitmapScale = roundScale(bitmapScale);
         const newState = {};
         switch (direction) {
@@ -11280,7 +11281,7 @@ class DisplayCanvasHelper {
         __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_onContextStateUpdate).call(this, differences);
     }
     async setSpriteScaleDirection(direction, spriteScale, sendImmediately) {
-        spriteScale = clamp(spriteScale, displayScaleStep, maxDisplayScale);
+        spriteScale = clamp(spriteScale, minDisplayScale, maxDisplayScale);
         spriteScale = roundScale(spriteScale);
         const newState = {};
         switch (direction) {

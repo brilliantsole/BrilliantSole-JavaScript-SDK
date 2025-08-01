@@ -42,12 +42,13 @@ export function formatRotation(
 }
 
 export function roundToStep(value: number, step: number) {
-  const roundedValue = Math.floor(value / step) * step;
+  const roundedValue = Math.round(value / step) * step;
   _console.log(value, step, roundedValue);
   return roundedValue;
 }
 
-export const maxDisplayScale = 100;
+export const minDisplayScale = -50;
+export const maxDisplayScale = 50;
 export const displayScaleStep = 0.002;
 export function formatScale(bitmapScale: number) {
   bitmapScale /= displayScaleStep;
