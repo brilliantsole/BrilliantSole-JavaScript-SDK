@@ -210,7 +210,7 @@ const setSpriteColorIndex = BS.ThrottleUtils.throttle(
     updateBitmapColorInputs();
     updateFillColorInputs();
     updateLineColorInputs();
-    drawSprite();
+    draw();
   },
   100,
   true
@@ -589,7 +589,7 @@ const setSpriteIndex = (spriteIndex) => {
 
   updateSelectSpritePaletteSwapSelect();
 
-  drawSprite();
+  draw();
 };
 
 /** @type {HTMLSelectElement} */
@@ -630,7 +630,7 @@ const deleteSelectedSprite = () => {
   spriteSheet.sprites.splice(selectedSpriteIndex, 1);
   setSpriteIndex(-1);
   updateSelectSpriteSelect();
-  drawSprite();
+  draw();
 };
 
 const spriteWidthContainer = document.getElementById("spriteWidth");
@@ -646,7 +646,7 @@ const setSpriteWidth = (spriteWidth) => {
   }
   spriteWidthInput.value = spriteWidth;
   spriteWidthSpan.innerText = spriteWidth;
-  drawSprite();
+  draw();
 };
 
 const spriteHeightContainer = document.getElementById("spriteHeight");
@@ -662,7 +662,7 @@ const setSpriteHeight = (spriteHeight) => {
   }
   spriteHeightInput.value = spriteHeight;
   spriteHeightSpan.innerText = spriteHeight;
-  drawSprite();
+  draw();
 };
 
 // SPRITE PALETTE SWAP
@@ -699,7 +699,7 @@ const setSpritePaletteSwapIndex = (spritePaletteSwapIndex) => {
 
   updateNumberOfSpritePaletteSwapColorsSelect();
 
-  drawSprite();
+  draw();
 };
 
 /** @type {HTMLSelectElement} */
@@ -843,22 +843,112 @@ const deleteSelectedSpritePaletteSwap = () => {
   selectedSprite.paletteSwaps.splice(selectedSpritePaletteSwapIndex, 1);
   setSpritePaletteSwapIndex(-1);
   updateSelectSpritePaletteSwapSelect();
-  drawSprite();
+  draw();
 };
 
 // DRAW SPRITE
 const drawSpriteButton = document.getElementById("drawSprite");
 drawSpriteButton.addEventListener("click", () => {
-  drawSprite();
+  draw();
 });
+let shouldDrawAllSprites = false;
+const setShouldDrawAllSprites = (newShouldDrawAllSprites) => {
+  shouldDrawAllSprites = newShouldDrawAllSprites;
+  console.log({ shouldDrawAllSprites });
+  draw();
+};
+const toggleDrawAllSpritesCheckbox = document.getElementById(
+  "toggleDrawAllSprites"
+);
+toggleDrawAllSpritesCheckbox.addEventListener("input", () => {
+  setShouldDrawAllSprites(toggleDrawAllSpritesCheckbox.checked);
+});
+
 let drawWhenReady = false;
-let drawSprite = () => {
+let draw = () => {
   if (!displayCanvasHelper.isReady) {
     drawWhenReady = true;
     return;
   }
   console.log("drawSprite");
 
+  // FILL
+
+  if (shouldDrawAllSprites) {
+    drawSprites();
+  } else {
+    drawSprite();
+  }
+};
+/** @param {BS.DisplayContextCommand} command */
+const runCommand = (command) => {
+  //console.log("runCommand", command);
+  if (command.hide) {
+    return;
+  }
+  if (command.type == "drawSprite") {
+    const sprite = spriteSheet.sprites[command.spriteIndex];
+    if (sprite) {
+      //console.log("drawing sub sprite", sprite);
+      displayCanvasHelper._saveContextForSprite(
+        command.centerX,
+        command.centerY,
+        sprite
+      );
+      sprite.commands.forEach((command) => {
+        runCommand(command);
+      });
+      displayCanvasHelper._restoreContextForSprite();
+    } else {
+      console.error(
+        `spriteIndex ${command.spriteIndex} not found in spriteSheet`
+      );
+    }
+  } else {
+    displayCanvasHelper.runContextCommand(command);
+  }
+};
+let xSpacing = 0;
+let ySpacing = 0;
+const drawSprites = () => {
+  let x = 0;
+  let y = 0;
+  let maxHeight = 0;
+
+  displayCanvasHelper._setIgnoreDevice(true);
+  displayCanvasHelper._setClearCanvasBoundingBoxOnDraw(false);
+  displayCanvasHelper._setUseSpriteColorIndices(true);
+
+  spriteSheet.sprites.forEach((sprite) => {
+    if (x + sprite.width + xSpacing > displayCanvasHelper.width) {
+      maxHeight = 0;
+      x = 0;
+      y += maxHeight;
+      y += ySpacing;
+    }
+
+    displayCanvasHelper._saveContextForSprite(
+      x + sprite.width / 2,
+      y + sprite.height / 2,
+      sprite
+    );
+
+    sprite.commands.forEach((command) => {
+      runCommand(command);
+    });
+    x += sprite.width;
+    x += xSpacing;
+    maxHeight = Math.max(sprite.height, maxHeight);
+
+    displayCanvasHelper._restoreContextForSprite();
+  });
+
+  displayCanvasHelper._setIgnoreDevice(false);
+  displayCanvasHelper._setUseSpriteColorIndices(false);
+  displayCanvasHelper._setClearCanvasBoundingBoxOnDraw(true);
+  displayCanvasHelper.show();
+};
+const drawSprite = () => {
   if (selectedSprite) {
     const {
       x,
@@ -892,37 +982,11 @@ let drawSprite = () => {
     displayCanvasHelper._setClearCanvasBoundingBoxOnDraw(false);
     displayCanvasHelper._setUseSpriteColorIndices(true);
     displayCanvasHelper._saveContextForSprite(x, y, selectedSprite);
-    /** @param {BS.DisplayContextCommand} command */
-    const runCommand = (command) => {
-      //console.log("runCommand", command);
-      if (command.hide) {
-        return;
-      }
-      if (command.type == "drawSprite") {
-        const sprite = spriteSheet.sprites[command.spriteIndex];
-        if (sprite) {
-          //console.log("drawing sub sprite", sprite);
-          displayCanvasHelper._saveContextForSprite(
-            command.centerX,
-            command.centerY,
-            sprite
-          );
-          sprite.commands.forEach((command) => {
-            runCommand(command);
-          });
-          displayCanvasHelper._restoreContextForSprite();
-        } else {
-          console.error(
-            `spriteIndex ${command.spriteIndex} not found in spriteSheet`
-          );
-        }
-      } else {
-        displayCanvasHelper.runContextCommand(command);
-      }
-    };
+
     selectedSprite.commands.forEach((command) => {
       runCommand(command);
     });
+
     displayCanvasHelper._setIgnoreDevice(false);
     displayCanvasHelper._restoreContextForSprite();
     displayCanvasHelper._setUseSpriteColorIndices(false);
@@ -936,7 +1000,7 @@ let drawSprite = () => {
 displayCanvasHelper.addEventListener("ready", () => {
   if (drawWhenReady) {
     drawWhenReady = false;
-    drawSprite();
+    draw();
   }
 });
 
@@ -967,7 +1031,7 @@ const setSpriteDrawX = (drawSpriteX) => {
   drawSpriteXInput.value = drawSpriteX;
   drawSpriteXSpan.innerText = drawSpriteX;
   drawSpriteParams.x = drawSpriteX;
-  drawSprite();
+  draw();
 };
 drawSpriteXInput.addEventListener("input", () => {
   setSpriteDrawX(Number(drawSpriteXInput.value));
@@ -980,7 +1044,7 @@ const setSpriteDrawY = (drawSpriteY) => {
   drawSpriteYInput.value = drawSpriteY;
   drawSpriteYSpan.innerText = drawSpriteY;
   drawSpriteParams.y = drawSpriteY;
-  drawSprite();
+  draw();
 };
 drawSpriteYInput.addEventListener("input", () => {
   setSpriteDrawY(Number(drawSpriteYInput.value));
@@ -996,7 +1060,7 @@ const setSpriteDrawRotation = (drawSpriteRotation) => {
   drawSpriteRotationInput.value = drawSpriteRotation;
   drawSpriteRotationSpan.innerText = drawSpriteRotation;
   drawSpriteParams.rotation = drawSpriteRotation;
-  drawSprite();
+  draw();
 };
 drawSpriteRotationInput.addEventListener("input", () => {
   setSpriteDrawRotation(Number(drawSpriteRotationInput.value));
@@ -1009,7 +1073,7 @@ const setSpriteDrawScaleX = (drawSpriteScaleX) => {
   drawSpriteScaleXInput.value = drawSpriteScaleX;
   drawSpriteScaleXSpan.innerText = drawSpriteScaleX;
   drawSpriteParams.scaleX = drawSpriteScaleX;
-  drawSprite();
+  draw();
 };
 drawSpriteScaleXInput.addEventListener("input", () => {
   setSpriteDrawScaleX(Number(drawSpriteScaleXInput.value));
@@ -1022,7 +1086,7 @@ const setSpriteDrawScaleY = (drawSpriteScaleY) => {
   drawSpriteScaleYInput.value = drawSpriteScaleY;
   drawSpriteScaleYSpan.innerText = drawSpriteScaleY;
   drawSpriteParams.scaleY = drawSpriteScaleY;
-  drawSprite();
+  draw();
 };
 drawSpriteScaleYInput.addEventListener("input", () => {
   setSpriteDrawScaleY(Number(drawSpriteScaleYInput.value));
@@ -1043,7 +1107,7 @@ const setSpriteDrawScale = (drawSpriteScale) => {
 
   drawSpriteParams.scaleX = drawSpriteScale;
   drawSpriteParams.scaleY = drawSpriteScale;
-  drawSprite();
+  draw();
 };
 drawSpriteScaleInput.addEventListener("input", () => {
   setSpriteDrawScale(Number(drawSpriteScaleInput.value));
@@ -1058,7 +1122,7 @@ const setSpriteDrawCropTop = (drawSpriteCropTop) => {
   drawSpriteCropTopInput.value = drawSpriteCropTop;
   drawSpriteCropTopSpan.innerText = drawSpriteCropTop;
   drawSpriteParams.cropTop = drawSpriteCropTop;
-  drawSprite();
+  draw();
 };
 drawSpriteCropTopInput.addEventListener("input", () => {
   setSpriteDrawCropTop(Number(drawSpriteCropTopInput.value));
@@ -1075,7 +1139,7 @@ const setSpriteDrawCropRight = (drawSpriteCropRight) => {
   drawSpriteCropRightInput.value = drawSpriteCropRight;
   drawSpriteCropRightSpan.innerText = drawSpriteCropRight;
   drawSpriteParams.cropRight = drawSpriteCropRight;
-  drawSprite();
+  draw();
 };
 drawSpriteCropRightInput.addEventListener("input", () => {
   setSpriteDrawCropRight(Number(drawSpriteCropRightInput.value));
@@ -1092,7 +1156,7 @@ const setSpriteDrawCropBottom = (drawSpriteCropBottom) => {
   drawSpriteCropBottomInput.value = drawSpriteCropBottom;
   drawSpriteCropBottomSpan.innerText = drawSpriteCropBottom;
   drawSpriteParams.cropBottom = drawSpriteCropBottom;
-  drawSprite();
+  draw();
 };
 drawSpriteCropBottomInput.addEventListener("input", () => {
   setSpriteDrawCropBottom(Number(drawSpriteCropBottomInput.value));
@@ -1108,7 +1172,7 @@ const setSpriteDrawCropLeft = (drawSpriteCropLeft) => {
   drawSpriteCropLeftInput.value = drawSpriteCropLeft;
   drawSpriteCropLeftSpan.innerText = drawSpriteCropLeft;
   drawSpriteParams.cropLeft = drawSpriteCropLeft;
-  drawSprite();
+  draw();
 };
 drawSpriteCropLeftInput.addEventListener("input", () => {
   setSpriteDrawCropLeft(Number(drawSpriteCropLeftInput.value));
@@ -1125,7 +1189,7 @@ const setSpriteDrawRotationCropTop = (drawSpriteRotationCropTop) => {
   drawSpriteRotationCropTopInput.value = drawSpriteRotationCropTop;
   drawSpriteRotationCropTopSpan.innerText = drawSpriteRotationCropTop;
   drawSpriteParams.rotationCropTop = drawSpriteRotationCropTop;
-  drawSprite();
+  draw();
 };
 drawSpriteRotationCropTopInput.addEventListener("input", () => {
   setSpriteDrawRotationCropTop(Number(drawSpriteRotationCropTopInput.value));
@@ -1142,7 +1206,7 @@ const setSpriteDrawRotationCropRight = (drawSpriteRotationCropRight) => {
   drawSpriteRotationCropRightInput.value = drawSpriteRotationCropRight;
   drawSpriteRotationCropRightSpan.innerText = drawSpriteRotationCropRight;
   drawSpriteParams.rotationCropRight = drawSpriteRotationCropRight;
-  drawSprite();
+  draw();
 };
 drawSpriteRotationCropRightInput.addEventListener("input", () => {
   setSpriteDrawRotationCropRight(
@@ -1161,7 +1225,7 @@ const setSpriteDrawRotationCropBottom = (drawSpriteRotationCropBottom) => {
   drawSpriteRotationCropBottomInput.value = drawSpriteRotationCropBottom;
   drawSpriteRotationCropBottomSpan.innerText = drawSpriteRotationCropBottom;
   drawSpriteParams.rotationCropBottom = drawSpriteRotationCropBottom;
-  drawSprite();
+  draw();
 };
 drawSpriteRotationCropBottomInput.addEventListener("input", () => {
   setSpriteDrawRotationCropBottom(
@@ -1180,7 +1244,7 @@ const setSpriteDrawRotationCropLeft = (drawSpriteRotationCropLeft) => {
   drawSpriteRotationCropLeftInput.value = drawSpriteRotationCropLeft;
   drawSpriteRotationCropLeftSpan.innerText = drawSpriteRotationCropLeft;
   drawSpriteParams.rotationCropLeft = drawSpriteRotationCropLeft;
-  drawSprite();
+  draw();
 };
 drawSpriteRotationCropLeftInput.addEventListener("input", () => {
   setSpriteDrawRotationCropLeft(Number(drawSpriteRotationCropLeftInput.value));
@@ -1608,7 +1672,7 @@ const addSpriteCommand = () => {
     }
   }
   updateSpriteCommands();
-  drawSprite();
+  draw();
 };
 const spriteCommandsContainer = document.getElementById("spriteCommands");
 /** @type {HTMLTemplateElement} */
@@ -1642,7 +1706,7 @@ const updateSpriteCommands = () => {
           const temp = selectedSprite.commands[newIndex];
           selectedSprite.commands[newIndex] = command;
           selectedSprite.commands[index] = temp;
-          drawSprite();
+          draw();
           updateSpriteCommands();
         });
       }
@@ -1655,14 +1719,14 @@ const updateSpriteCommands = () => {
           const temp = selectedSprite.commands[newIndex];
           selectedSprite.commands[newIndex] = command;
           selectedSprite.commands[index] = temp;
-          drawSprite();
+          draw();
           updateSpriteCommands();
         });
       }
       const removeButton = spriteCommandContainer.querySelector(".remove");
       removeButton.addEventListener("click", () => {
         selectedSprite?.commands.splice(index, 1);
-        drawSprite();
+        draw();
         updateSpriteCommands();
       });
 
@@ -1672,7 +1736,7 @@ const updateSpriteCommands = () => {
         const command = selectedSprite?.commands[index];
         command.hide = !command.hide;
         toggleButton.innerText = command.hide ? "show" : "hide";
-        drawSprite();
+        draw();
       });
 
       const includeCenterPosition = "centerX" in command;
@@ -1688,7 +1752,7 @@ const updateSpriteCommands = () => {
         centerXContainer.addEventListener("input", () => {
           command.centerX = Number(centerXInput.value);
           centerXSpan.innerText = command.centerX;
-          drawSprite();
+          draw();
         });
 
         const centerYContainer =
@@ -1701,7 +1765,7 @@ const updateSpriteCommands = () => {
         centerYContainer.addEventListener("input", () => {
           command.centerY = Number(centerYInput.value);
           centerYSpan.innerText = command.centerY;
-          drawSprite();
+          draw();
         });
       }
 
@@ -1716,7 +1780,7 @@ const updateSpriteCommands = () => {
         xContainer.addEventListener("input", () => {
           command.x = Number(xInput.value);
           xSpan.innerText = command.x;
-          drawSprite();
+          draw();
         });
 
         const yContainer = spriteCommandContainer.querySelector(".y");
@@ -1728,7 +1792,7 @@ const updateSpriteCommands = () => {
         yContainer.addEventListener("input", () => {
           command.y = Number(yInput.value);
           ySpan.innerText = command.y;
-          drawSprite();
+          draw();
         });
       }
 
@@ -1743,7 +1807,7 @@ const updateSpriteCommands = () => {
         widthContainer.addEventListener("input", () => {
           command.width = Number(widthInput.value);
           widthSpan.innerText = command.width;
-          drawSprite();
+          draw();
         });
 
         const heightContainer = spriteCommandContainer.querySelector(".height");
@@ -1755,7 +1819,7 @@ const updateSpriteCommands = () => {
         heightContainer.addEventListener("input", () => {
           command.height = Number(heightInput.value);
           heightSpan.innerText = command.height;
-          drawSprite();
+          draw();
         });
       }
 
@@ -1770,7 +1834,7 @@ const updateSpriteCommands = () => {
         radiusContainer.addEventListener("input", () => {
           command.radius = Number(radiusInput.value);
           radiusSpan.innerText = command.radius;
-          drawSprite();
+          draw();
         });
       }
 
@@ -1786,7 +1850,7 @@ const updateSpriteCommands = () => {
         radiusXContainer.addEventListener("input", () => {
           command.radiusX = Number(radiusXInput.value);
           radiusXSpan.innerText = command.radiusX;
-          drawSprite();
+          draw();
         });
 
         const radiusYContainer =
@@ -1799,7 +1863,7 @@ const updateSpriteCommands = () => {
         radiusYContainer.addEventListener("input", () => {
           command.radiusY = Number(radiusYInput.value);
           radiusYSpan.innerText = command.radiusY;
-          drawSprite();
+          draw();
         });
       }
 
@@ -1815,7 +1879,7 @@ const updateSpriteCommands = () => {
         borderRadiusContainer.addEventListener("input", () => {
           command.borderRadius = Number(borderRadiusInput.value);
           borderRadiusSpan.innerText = command.borderRadius;
-          drawSprite();
+          draw();
         });
       }
 
@@ -1831,7 +1895,7 @@ const updateSpriteCommands = () => {
         startAngleContainer.addEventListener("input", () => {
           command.startAngle = Number(startAngleInput.value);
           startAngleSpan.innerText = command.startAngle;
-          drawSprite();
+          draw();
         });
 
         const angleOffsetContainer =
@@ -1844,7 +1908,7 @@ const updateSpriteCommands = () => {
         angleOffsetContainer.addEventListener("input", () => {
           command.angleOffset = Number(angleOffsetInput.value);
           angleOffsetSpan.innerText = command.angleOffset;
-          drawSprite();
+          draw();
         });
       }
 
@@ -1862,7 +1926,7 @@ const updateSpriteCommands = () => {
         numberOfSidesContainer.addEventListener("input", () => {
           command.numberOfSides = Number(numberOfSidesInput.value);
           numberOfSidesSpan.innerText = command.numberOfSides;
-          drawSprite();
+          draw();
         });
       }
 
@@ -1877,7 +1941,7 @@ const updateSpriteCommands = () => {
         startXContainer.addEventListener("input", () => {
           command.startX = Number(startXInput.value);
           startXSpan.innerText = command.startX;
-          drawSprite();
+          draw();
         });
 
         const startYContainer = spriteCommandContainer.querySelector(".startY");
@@ -1889,7 +1953,7 @@ const updateSpriteCommands = () => {
         startYContainer.addEventListener("input", () => {
           command.startY = Number(startYInput.value);
           startYSpan.innerText = command.startY;
-          drawSprite();
+          draw();
         });
 
         const endXContainer = spriteCommandContainer.querySelector(".endX");
@@ -1901,7 +1965,7 @@ const updateSpriteCommands = () => {
         endXContainer.addEventListener("input", () => {
           command.endX = Number(endXInput.value);
           endXSpan.innerText = command.endX;
-          drawSprite();
+          draw();
         });
 
         const endYContainer = spriteCommandContainer.querySelector(".endY");
@@ -1913,7 +1977,7 @@ const updateSpriteCommands = () => {
         endYContainer.addEventListener("input", () => {
           command.endY = Number(endYInput.value);
           endYSpan.innerText = command.endY;
-          drawSprite();
+          draw();
         });
       }
 
@@ -1943,7 +2007,7 @@ const updateSpriteCommands = () => {
             pointContainer.hidden = index >= command.points.length;
           });
           numberOfPointsSpan.innerText = command.points.length;
-          drawSprite();
+          draw();
         });
 
         const pointContainers = [];
@@ -1967,7 +2031,7 @@ const updateSpriteCommands = () => {
             const point = command.points[i];
             point.x = Number(xInput.value);
             xSpan.innerText = point.x;
-            drawSprite();
+            draw();
           });
 
           const yContainer = pointContainer.querySelector(".y");
@@ -1982,7 +2046,7 @@ const updateSpriteCommands = () => {
             const point = command.points[i];
             point.y = Number(yInput.value);
             ySpan.innerText = point.y;
-            drawSprite();
+            draw();
           });
 
           spriteCommandContainer.appendChild(pointContainer);
@@ -2083,7 +2147,7 @@ const updateSpriteCommands = () => {
             const x = col * (pixelLength + 1) - 1;
             bitmapContext.fillRect(x, 0, 1, canvasHeight);
           }
-          drawSprite();
+          draw();
         };
 
         updateBitmapCanvasSize();
@@ -2108,7 +2172,7 @@ const updateSpriteCommands = () => {
           command.bitmap.width = Number(bitmapWidthInput.value);
           updateBitmapPixels();
           bitmapWidthSpan.innerText = command.bitmap.width;
-          drawSprite();
+          draw();
         });
 
         const bitmapHeightContainer =
@@ -2122,7 +2186,7 @@ const updateSpriteCommands = () => {
           command.bitmap.height = Number(bitmapHeightInput.value);
           updateBitmapPixels();
           bitmapHeightSpan.innerText = command.bitmap.height;
-          drawSprite();
+          draw();
         });
 
         let selectedBitmapColorIndex = 1;
@@ -2184,7 +2248,7 @@ const updateSpriteCommands = () => {
           );
           bitmapSelectedColorIndexInput.max = command.bitmap.numberOfColors - 1;
           updateBitmapPixels();
-          drawSprite();
+          draw();
         });
         bitmapSelectedColorIndexInput.max = command.bitmap.numberOfColors - 1;
 
@@ -2235,7 +2299,7 @@ const updateSpriteCommands = () => {
 
           command.bitmap.pixels = colorIndices;
           updateBitmapCanvasPixels();
-          drawSprite();
+          draw();
         });
       }
 
@@ -2251,7 +2315,7 @@ const updateSpriteCommands = () => {
         bitmapScaleContainer.addEventListener("input", () => {
           command.bitmapScale = Number(bitmapScaleInput.value);
           bitmapScaleSpan.innerText = command.bitmapScale;
-          drawSprite();
+          draw();
         });
       }
 
@@ -2267,7 +2331,7 @@ const updateSpriteCommands = () => {
         bitmapScaleXContainer.addEventListener("input", () => {
           command.bitmapScaleX = Number(bitmapScaleXInput.value);
           bitmapScaleXSpan.innerText = command.bitmapScaleX;
-          drawSprite();
+          draw();
         });
       }
 
@@ -2283,7 +2347,7 @@ const updateSpriteCommands = () => {
         bitmapScaleYContainer.addEventListener("input", () => {
           command.bitmapScaleY = Number(bitmapScaleYInput.value);
           bitmapScaleYSpan.innerText = command.bitmapScaleY;
-          drawSprite();
+          draw();
         });
       }
 
@@ -2299,7 +2363,7 @@ const updateSpriteCommands = () => {
         rotationContainer.addEventListener("input", () => {
           command.rotation = Number(rotationInput.value);
           rotationSpan.innerText = command.rotation;
-          drawSprite();
+          draw();
         });
       }
 
@@ -2315,7 +2379,7 @@ const updateSpriteCommands = () => {
         lineWidthContainer.addEventListener("input", () => {
           command.lineWidth = Number(lineWidthInput.value);
           lineWidthSpan.innerText = command.lineWidth;
-          drawSprite();
+          draw();
         });
       }
 
@@ -2334,7 +2398,7 @@ const updateSpriteCommands = () => {
           command.fillColorIndex = Number(fillColorIndexInput.value);
           fillColorIndexSpan.innerText = command.fillColorIndex;
           updateFillColorIndexColor();
-          drawSprite();
+          draw();
         });
 
         const fillColorIndexColor =
@@ -2368,7 +2432,7 @@ const updateSpriteCommands = () => {
           command.lineColorIndex = Number(lineColorIndexInput.value);
           lineColorIndexSpan.innerText = command.lineColorIndex;
           updateFillColorIndexColor();
-          drawSprite();
+          draw();
         });
 
         const lineColorIndexColor =
@@ -2423,7 +2487,7 @@ const updateSpriteCommands = () => {
           colorIndexSpan.innerText = command.colorIndex;
 
           updateBitmapColorIndexColor();
-          drawSprite();
+          draw();
         };
 
         const bitmapColorIndexColor =
@@ -2481,7 +2545,7 @@ const updateSpriteCommands = () => {
           updateBitmapColorInputs();
           numberOfBitmapColorPairsSpan.innerText =
             command.bitmapColorPairs.length;
-          drawSprite();
+          draw();
         });
 
         const bitmapColorPairContainers = [];
@@ -2525,7 +2589,7 @@ const updateSpriteCommands = () => {
             bitmapColorPair.colorIndex = Number(colorIndexInput.value);
 
             bitmapColorPairContainer._update();
-            drawSprite();
+            draw();
           };
 
           const bitmapColorIndexColor =
@@ -2574,7 +2638,7 @@ const updateSpriteCommands = () => {
         cropTopContainer.addEventListener("input", () => {
           command.cropTop = Number(cropTopInput.value);
           cropTopSpan.innerText = command.cropTop;
-          drawSprite();
+          draw();
         });
       }
       const includeCropRight = "cropRight" in command;
@@ -2589,7 +2653,7 @@ const updateSpriteCommands = () => {
         cropRightContainer.addEventListener("input", () => {
           command.cropRight = Number(cropRightInput.value);
           cropRightSpan.innerText = command.cropRight;
-          drawSprite();
+          draw();
         });
       }
       const includeCropBottom = "cropBottom" in command;
@@ -2604,7 +2668,7 @@ const updateSpriteCommands = () => {
         cropBottomContainer.addEventListener("input", () => {
           command.cropBottom = Number(cropBottomInput.value);
           cropBottomSpan.innerText = command.cropBottom;
-          drawSprite();
+          draw();
         });
       }
       const includeCropLeft = "cropLeft" in command;
@@ -2619,7 +2683,7 @@ const updateSpriteCommands = () => {
         cropLeftContainer.addEventListener("input", () => {
           command.cropLeft = Number(cropLeftInput.value);
           cropLeftSpan.innerText = command.cropLeft;
-          drawSprite();
+          draw();
         });
       }
 
@@ -2637,7 +2701,7 @@ const updateSpriteCommands = () => {
         rotationCropTopContainer.addEventListener("input", () => {
           command.rotationCropTop = Number(rotationCropTopInput.value);
           rotationCropTopSpan.innerText = command.rotationCropTop;
-          drawSprite();
+          draw();
         });
       }
       const includeRotationCropRight = "rotationCropRight" in command;
@@ -2654,7 +2718,7 @@ const updateSpriteCommands = () => {
         rotationCropRightContainer.addEventListener("input", () => {
           command.rotationCropRight = Number(rotationCropRightInput.value);
           rotationCropRightSpan.innerText = command.rotationCropRight;
-          drawSprite();
+          draw();
         });
       }
       const includeRotationCropBottom = "rotationCropBottom" in command;
@@ -2671,7 +2735,7 @@ const updateSpriteCommands = () => {
         rotationCropBottomContainer.addEventListener("input", () => {
           command.rotationCropBottom = Number(rotationCropBottomInput.value);
           rotationCropBottomSpan.innerText = command.rotationCropBottom;
-          drawSprite();
+          draw();
         });
       }
       const includeRotationCropLeft = "rotationCropLeft" in command;
@@ -2688,7 +2752,7 @@ const updateSpriteCommands = () => {
         rotationCropLeftContainer.addEventListener("input", () => {
           command.rotationCropLeft = Number(rotationCropLeftInput.value);
           rotationCropLeftSpan.innerText = command.rotationCropLeft;
-          drawSprite();
+          draw();
         });
       }
 
@@ -2706,7 +2770,7 @@ const updateSpriteCommands = () => {
         segmentStartRadiusContainer.addEventListener("input", () => {
           command.segmentStartRadius = Number(segmentStartRadiusInput.value);
           segmentStartRadiusSpan.innerText = command.segmentStartRadius;
-          drawSprite();
+          draw();
         });
       }
 
@@ -2724,7 +2788,7 @@ const updateSpriteCommands = () => {
         segmentEndRadiusContainer.addEventListener("input", () => {
           command.segmentEndRadius = Number(segmentEndRadiusInput.value);
           segmentEndRadiusSpan.innerText = command.segmentEndRadius;
-          drawSprite();
+          draw();
         });
       }
 
@@ -2742,7 +2806,7 @@ const updateSpriteCommands = () => {
         segmentRadiusContainer.addEventListener("input", () => {
           command.segmentRadius = Number(segmentRadiusInput.value);
           segmentRadiusSpan.innerText = command.segmentRadius;
-          drawSprite();
+          draw();
         });
       }
 
@@ -2759,7 +2823,7 @@ const updateSpriteCommands = () => {
         segmentCapSelect.value = command.segmentCap;
         segmentCapContainer.addEventListener("input", () => {
           command.segmentCap = segmentCapSelect.value;
-          drawSprite();
+          draw();
         });
       }
 
@@ -2778,7 +2842,7 @@ const updateSpriteCommands = () => {
         segmentEndCapSelect.value = command.segmentEndCap;
         segmentEndCapContainer.addEventListener("input", () => {
           command.segmentEndCap = segmentEndCapSelect.value;
-          drawSprite();
+          draw();
         });
       }
 
@@ -2797,7 +2861,7 @@ const updateSpriteCommands = () => {
         segmentStartCapSelect.value = command.segmentStartCap;
         segmentStartCapContainer.addEventListener("input", () => {
           command.segmentStartCap = segmentStartCapSelect.value;
-          drawSprite();
+          draw();
         });
       }
 
@@ -2833,7 +2897,7 @@ const updateSpriteCommands = () => {
         spriteScaleContainer.addEventListener("input", () => {
           command.spriteScale = Number(spriteScaleInput.value);
           spriteScaleSpan.innerText = command.spriteScale;
-          drawSprite();
+          draw();
         });
       }
 
@@ -2849,7 +2913,7 @@ const updateSpriteCommands = () => {
         spriteScaleXContainer.addEventListener("input", () => {
           command.spriteScaleX = Number(spriteScaleXInput.value);
           spriteScaleXSpan.innerText = command.spriteScaleX;
-          drawSprite();
+          draw();
         });
       }
 
@@ -2865,7 +2929,7 @@ const updateSpriteCommands = () => {
         spriteScaleYContainer.addEventListener("input", () => {
           command.spriteScaleY = Number(spriteScaleYInput.value);
           spriteScaleYSpan.innerText = command.spriteScaleY;
-          drawSprite();
+          draw();
         });
       }
 
@@ -2882,7 +2946,7 @@ const updateSpriteCommands = () => {
         spriteIndexContainer.removeAttribute("hidden");
         spriteIndexContainer.addEventListener("input", () => {
           command.spriteIndex = Number(spriteIndexSelect.value);
-          drawSprite();
+          draw();
         });
       }
 
@@ -2922,7 +2986,7 @@ const updateSpriteCommands = () => {
           colorIndexSpan.innerText = command.colorIndex;
 
           updateSpriteColorIndexColor();
-          drawSprite();
+          draw();
         };
 
         const spriteColorIndexColor =
@@ -2980,7 +3044,7 @@ const updateSpriteCommands = () => {
           updateBitmapColorInputs();
           numberOfSpriteColorPairsSpan.innerText =
             command.spriteColorPairs.length;
-          drawSprite();
+          draw();
         });
 
         const spriteColorPairContainers = [];
@@ -3024,7 +3088,7 @@ const updateSpriteCommands = () => {
             spriteColorPair.colorIndex = Number(colorIndexInput.value);
 
             spriteColorPairContainer._update();
-            drawSprite();
+            draw();
           };
 
           const spriteColorIndexColor =
@@ -3123,3 +3187,45 @@ window.addEventListener("mousedown", () => {
 window.addEventListener("mouseup", () => {
   isMouseDown = false;
 });
+
+const uploadSpriteSheetButton = document.getElementById("uploadSpriteSheet");
+displayCanvasHelper.addEventListener("deviceIsConnected", (event) => {
+  updateUploadSpriteSheetButton();
+});
+displayCanvasHelper.addEventListener("device", (event) => {
+  updateUploadSpriteSheetButton();
+});
+const updateUploadSpriteSheetButton = () => {
+  uploadSpriteSheetButton.disabled = !(
+    displayCanvasHelper.device?.isConnected == true
+  );
+};
+displayCanvasHelper.addEventListener(
+  "deviceSpriteSheetUploadStart",
+  (event) => {
+    uploadSpriteSheetButton.innerText = "uploading spritesheet";
+  }
+);
+displayCanvasHelper.addEventListener(
+  "deviceSpriteSheetUploadProgress",
+  (event) => {
+    const { progress } = event.message;
+    uploadSpriteSheetProgress.value = progress;
+    uploadSpriteSheetButton.innerText = `uploading spritesheet ${Math.round(
+      progress * 100
+    )}%`;
+  }
+);
+displayCanvasHelper.addEventListener(
+  "deviceSpriteSheetUploadComplete",
+  (event) => {
+    uploadSpriteSheetProgress.value = 0;
+    uploadSpriteSheetButton.innerText = "upload spritesheet";
+  }
+);
+uploadSpriteSheetButton.addEventListener("click", () => {
+  displayCanvasHelper.sendSpriteSheet(spriteSheet);
+});
+const uploadSpriteSheetProgress = document.getElementById(
+  "uploadSpriteSheetProgress"
+);

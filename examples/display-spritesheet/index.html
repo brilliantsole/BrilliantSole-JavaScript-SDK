@@ -225,7 +225,10 @@
     <hr />
 
     <div>
-      <button id="drawSprite" disabled>draw sprite</button>
+      <button id="drawSprite" disabled>draw</button>
+      <label>
+        draw all <input type="checkbox" id="toggleDrawAllSprites" />
+      </label>
 
       <label id="drawSpriteX" class="verticalLabel">
         <span>x (<span class="value">50</span>px)</span>
@@ -287,6 +290,18 @@
       <label id="drawSpriteRotationCropLeft" class="verticalLabel">
         <span>rot crop left (<span class="value">0</span>px)</span>
         <input type="range" min="0" max="200" step="1" value="0" />
+      </label>
+    </div>
+
+    <hr />
+
+    <div>
+      <button disabled id="uploadSpriteSheet">upload spritesheet</button>
+      <progress id="uploadSpriteSheetProgress" value="0"></progress>
+
+      <label>
+        draw on device
+        <input disabled id="toggleDrawOnDevice" type="checkbox" />
       </label>
     </div>
 

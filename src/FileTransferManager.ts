@@ -73,11 +73,17 @@ export interface FileTransferEventMessages {
   getFileType: { fileType: FileType };
   getFileLength: { fileLength: number };
   getFileChecksum: { fileChecksum: number };
-  fileTransferStatus: { fileTransferStatus: FileTransferStatus };
+  fileTransferStatus: {
+    fileType: FileType;
+    fileTransferStatus: FileTransferStatus;
+  };
   getFileBlock: { fileTransferBlock: DataView };
-  fileTransferProgress: { progress: number };
-  fileTransferComplete: { direction: FileTransferDirection };
-  fileReceived: { file: File | Blob };
+  fileTransferProgress: { fileType: FileType; progress: number };
+  fileTransferComplete: {
+    fileType: FileType;
+    direction: FileTransferDirection;
+  };
+  fileReceived: { fileType: FileType; file: File | Blob };
 }
 
 export type FileTransferEventDispatcher = EventDispatcher<
@@ -316,9 +322,14 @@ class FileTransferManager {
   #updateStatus(status: FileTransferStatus) {
     _console.log({ status });
     this.#status = status;
-    this.#dispatchEvent("fileTransferStatus", { fileTransferStatus: status });
     this.#receivedBlocks.length = 0;
     this.#isCancelling = false;
+    this.#buffer = undefined;
+    this.#bytesTransferred = 0;
+    this.#dispatchEvent("fileTransferStatus", {
+      fileTransferStatus: status,
+      fileType: this.type!,
+    });
   }
   #assertIsIdle() {
     _console.assertWithError(this.#status == "idle", "status is not idle");
@@ -345,7 +356,10 @@ class FileTransferManager {
       `received ${bytesReceived} of ${this.#length} bytes (${progress * 100}%)`
     );
 
-    this.#dispatchEvent("fileTransferProgress", { progress });
+    this.#dispatchEvent("fileTransferProgress", {
+      progress,
+      fileType: this.type!,
+    });
 
     if (bytesReceived != this.#length) {
       const dataView = new DataView(new ArrayBuffer(4));
@@ -396,8 +410,11 @@ class FileTransferManager {
     _console.log("received file", file);
 
     this.#dispatchEvent("getFileBlock", { fileTransferBlock: dataView });
-    this.#dispatchEvent("fileTransferComplete", { direction: "receiving" });
-    this.#dispatchEvent("fileReceived", { file });
+    this.#dispatchEvent("fileTransferComplete", {
+      direction: "receiving",
+      fileType: this.type!,
+    });
+    this.#dispatchEvent("fileReceived", { file, fileType: this.type! });
   }
 
   parseMessage(messageType: FileTransferMessageType, dataView: DataView) {
@@ -479,6 +496,16 @@ class FileTransferManager {
 
     await Promise.all(promises);
 
+    if (this.#buffer) {
+      return false;
+    }
+    if (this.#length != fileLength) {
+      return false;
+    }
+    if (this.#checksum != checksum) {
+      return false;
+    }
+
     await this.#send(fileBuffer);
 
     return true;
@@ -488,7 +515,6 @@ class FileTransferManager {
   #bytesTransferred = 0;
   async #send(buffer: ArrayBuffer) {
     this.#buffer = buffer;
-    this.#bytesTransferred = 0;
     return this.#sendBlock();
   }
 
@@ -521,10 +547,16 @@ class FileTransferManager {
         buffer.byteLength
       } bytes (${progress * 100}%)`
     );
-    this.#dispatchEvent("fileTransferProgress", { progress });
+    this.#dispatchEvent("fileTransferProgress", {
+      progress,
+      fileType: this.type!,
+    });
     if (slicedBuffer.byteLength == 0) {
       _console.log("finished sending buffer");
-      this.#dispatchEvent("fileTransferComplete", { direction: "sending" });
+      this.#dispatchEvent("fileTransferComplete", {
+        direction: "sending",
+        fileType: this.type!,
+      });
     } else {
       await this.sendMessage([{ type: "setFileBlock", data: slicedBuffer }]);
       this.#bytesTransferred = offset + slicedBuffer.byteLength;

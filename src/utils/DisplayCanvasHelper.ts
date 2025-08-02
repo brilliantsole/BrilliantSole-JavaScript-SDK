@@ -67,7 +67,6 @@ import { DisplayContextCommand } from "./DisplayContextCommand.ts";
 import {
   DisplaySprite,
   DisplaySpriteSheet,
-  serializeSpriteSheet,
 } from "./DisplaySpriteSheetUtils.ts";
 
 const _console = createConsole("DisplayCanvasHelper", { log: true });
@@ -82,6 +81,13 @@ export const DisplayCanvasHelperEventTypes = [
   "resize",
   "update",
   "ready",
+  "device",
+  "deviceIsConnected",
+  "deviceConnected",
+  "deviceNotConnected",
+  "deviceSpriteSheetUploadStart",
+  "deviceSpriteSheetUploadProgress",
+  "deviceSpriteSheetUploadComplete",
 ] as const;
 export type DisplayCanvasHelperEventType =
   (typeof DisplayCanvasHelperEventTypes)[number];
@@ -115,6 +121,37 @@ export interface DisplayCanvasHelperEventMessages {
   };
   update: {};
   ready: {};
+
+  device: {
+    device?: Device;
+  };
+  deviceIsConnected: {
+    device: Device;
+    isConnected: boolean;
+  };
+  deviceConnected: {
+    device: Device;
+  };
+  deviceNotConnected: {
+    device: Device;
+  };
+
+  deviceSpriteSheetUploadStart: {
+    device: Device;
+    spriteSheet: DisplaySpriteSheet;
+    spriteSheetName: string;
+  };
+  deviceSpriteSheetUploadProgress: {
+    device: Device;
+    spriteSheet: DisplaySpriteSheet;
+    spriteSheetName: string;
+    progress: number;
+  };
+  deviceSpriteSheetUploadComplete: {
+    device: Device;
+    spriteSheet: DisplaySpriteSheet;
+    spriteSheetName: string;
+  };
 }
 
 export type DisplayCanvasHelperEventDispatcher = EventDispatcher<
@@ -345,7 +382,21 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
       this.#updateCanvas();
       this.#updateDevice();
       this.#isReady = this.device.isDisplayReady;
+
+      this.#dispatchEvent("deviceIsConnected", {
+        device: this.device,
+        isConnected: this.device!.isConnected,
+      });
+      this.#dispatchEvent(
+        this.device.isConnected ? "deviceConnected" : "deviceNotConnected",
+        {
+          device: this.device,
+        }
+      );
     }
+    this.#dispatchEvent("device", {
+      device: this.device,
+    });
   }
 
   async flushContextCommands() {
@@ -356,24 +407,79 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
 
   // DEVICE EVENTLISTENERS
   #boundDeviceEventListeners: BoundDeviceEventListeners = {
-    connected: this.#onDeviceConnected.bind(this),
-    notConnected: this.#onDeviceNotConnected.bind(this),
+    isConnected: this.#onDeviceIsConnected.bind(this),
     displayReady: this.#onDeviceDisplayReady.bind(this),
+    displaySpriteSheetUploadStart:
+      this.#onDeviceDisplaySpriteSheetUploadStart.bind(this),
+    displaySpriteSheetUploadProgress:
+      this.#onDeviceDisplaySpriteSheetUploadProgress.bind(this),
+    displaySpriteSheetUploadComplete:
+      this.#onDeviceDisplaySpriteSheetUploadComplete.bind(this),
   };
-  #onDeviceConnected(event: DeviceEventMap["connected"]) {
+  #onDeviceIsConnected(event: DeviceEventMap["isConnected"]) {
+    const { isConnected } = event.message;
+    this.#dispatchEvent("deviceIsConnected", {
+      device: this.device!,
+      isConnected,
+    });
+
+    if (isConnected) {
+      this.#onDeviceConnected();
+    } else {
+      this.#onDeviceNotConnected();
+    }
+  }
+  #onDeviceConnected() {
     // _console.log("device connected");
     this.#updateCanvas();
     this.#updateDevice();
+    this.#dispatchEvent("deviceConnected", { device: this.device! });
     // FIX - messages flushed properly?
   }
-  #onDeviceNotConnected(event: DeviceEventMap["notConnected"]) {
+  #onDeviceNotConnected() {
     // _console.log("device not connected");
+    this.#dispatchEvent("deviceNotConnected", { device: this.device! });
   }
   async #onDeviceDisplayReady(event: DeviceEventMap["displayReady"]) {
     // _console.log("device display ready");
     this.#isReady = true;
     // await wait(5); // we need to wait for some reason
     this.#dispatchEvent("ready", {});
+  }
+
+  #onDeviceDisplaySpriteSheetUploadStart(
+    event: DeviceEventMap["displaySpriteSheetUploadStart"]
+  ) {
+    const device = event.target;
+    const { spriteSheet, spriteSheetName } = event.message;
+    this.#dispatchEvent("deviceSpriteSheetUploadStart", {
+      device,
+      spriteSheet,
+      spriteSheetName,
+    });
+  }
+  #onDeviceDisplaySpriteSheetUploadProgress(
+    event: DeviceEventMap["displaySpriteSheetUploadProgress"]
+  ) {
+    const device = event.target;
+    const { spriteSheet, spriteSheetName, progress } = event.message;
+    this.#dispatchEvent("deviceSpriteSheetUploadProgress", {
+      device,
+      spriteSheet,
+      spriteSheetName,
+      progress,
+    });
+  }
+  #onDeviceDisplaySpriteSheetUploadComplete(
+    event: DeviceEventMap["displaySpriteSheetUploadComplete"]
+  ) {
+    const device = event.target;
+    const { spriteSheet, spriteSheetName } = event.message;
+    this.#dispatchEvent("deviceSpriteSheetUploadComplete", {
+      device,
+      spriteSheet,
+      spriteSheetName,
+    });
   }
 
   async #updateDevice() {

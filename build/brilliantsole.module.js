@@ -710,6 +710,15 @@ class FileTransferManager {
         promises.push(__classPrivateFieldGet(this, _FileTransferManager_instances, "m", _FileTransferManager_setCommand).call(this, "startSend", false));
         this.sendMessage();
         await Promise.all(promises);
+        if (__classPrivateFieldGet(this, _FileTransferManager_buffer, "f")) {
+            return false;
+        }
+        if (__classPrivateFieldGet(this, _FileTransferManager_length, "f") != fileLength) {
+            return false;
+        }
+        if (__classPrivateFieldGet(this, _FileTransferManager_checksum, "f") != checksum) {
+            return false;
+        }
         await __classPrivateFieldGet(this, _FileTransferManager_instances, "m", _FileTransferManager_send).call(this, fileBuffer);
         return true;
     }
@@ -857,9 +866,14 @@ _a$7 = FileTransferManager, _FileTransferManager_fileTypes = new WeakMap(), _Fil
 }, _FileTransferManager_updateStatus = function _FileTransferManager_updateStatus(status) {
     _console$F.log({ status });
     __classPrivateFieldSet(this, _FileTransferManager_status, status, "f");
-    __classPrivateFieldGet(this, _FileTransferManager_instances, "a", _FileTransferManager_dispatchEvent_get).call(this, "fileTransferStatus", { fileTransferStatus: status });
     __classPrivateFieldGet(this, _FileTransferManager_receivedBlocks, "f").length = 0;
     __classPrivateFieldSet(this, _FileTransferManager_isCancelling, false, "f");
+    __classPrivateFieldSet(this, _FileTransferManager_buffer, undefined, "f");
+    __classPrivateFieldSet(this, _FileTransferManager_bytesTransferred, 0, "f");
+    __classPrivateFieldGet(this, _FileTransferManager_instances, "a", _FileTransferManager_dispatchEvent_get).call(this, "fileTransferStatus", {
+        fileTransferStatus: status,
+        fileType: this.type,
+    });
 }, _FileTransferManager_assertIsIdle = function _FileTransferManager_assertIsIdle() {
     _console$F.assertWithError(__classPrivateFieldGet(this, _FileTransferManager_status, "f") == "idle", "status is not idle");
 }, _FileTransferManager_assertIsNotIdle = function _FileTransferManager_assertIsNotIdle() {
@@ -870,7 +884,10 @@ _a$7 = FileTransferManager, _FileTransferManager_fileTypes = new WeakMap(), _Fil
     const bytesReceived = __classPrivateFieldGet(this, _FileTransferManager_receivedBlocks, "f").reduce((sum, arrayBuffer) => (sum += arrayBuffer.byteLength), 0);
     const progress = bytesReceived / __classPrivateFieldGet(this, _FileTransferManager_length, "f");
     _console$F.log(`received ${bytesReceived} of ${__classPrivateFieldGet(this, _FileTransferManager_length, "f")} bytes (${progress * 100}%)`);
-    __classPrivateFieldGet(this, _FileTransferManager_instances, "a", _FileTransferManager_dispatchEvent_get).call(this, "fileTransferProgress", { progress });
+    __classPrivateFieldGet(this, _FileTransferManager_instances, "a", _FileTransferManager_dispatchEvent_get).call(this, "fileTransferProgress", {
+        progress,
+        fileType: this.type,
+    });
     if (bytesReceived != __classPrivateFieldGet(this, _FileTransferManager_length, "f")) {
         const dataView = new DataView(new ArrayBuffer(4));
         dataView.setUint32(0, bytesReceived, true);
@@ -911,11 +928,13 @@ _a$7 = FileTransferManager, _FileTransferManager_fileTypes = new WeakMap(), _Fil
     }
     _console$F.log("received file", file);
     __classPrivateFieldGet(this, _FileTransferManager_instances, "a", _FileTransferManager_dispatchEvent_get).call(this, "getFileBlock", { fileTransferBlock: dataView });
-    __classPrivateFieldGet(this, _FileTransferManager_instances, "a", _FileTransferManager_dispatchEvent_get).call(this, "fileTransferComplete", { direction: "receiving" });
-    __classPrivateFieldGet(this, _FileTransferManager_instances, "a", _FileTransferManager_dispatchEvent_get).call(this, "fileReceived", { file });
+    __classPrivateFieldGet(this, _FileTransferManager_instances, "a", _FileTransferManager_dispatchEvent_get).call(this, "fileTransferComplete", {
+        direction: "receiving",
+        fileType: this.type,
+    });
+    __classPrivateFieldGet(this, _FileTransferManager_instances, "a", _FileTransferManager_dispatchEvent_get).call(this, "fileReceived", { file, fileType: this.type });
 }, _FileTransferManager_send = async function _FileTransferManager_send(buffer) {
     __classPrivateFieldSet(this, _FileTransferManager_buffer, buffer, "f");
-    __classPrivateFieldSet(this, _FileTransferManager_bytesTransferred, 0, "f");
     return __classPrivateFieldGet(this, _FileTransferManager_instances, "m", _FileTransferManager_sendBlock).call(this);
 }, _FileTransferManager_sendBlock = async function _FileTransferManager_sendBlock() {
     if (this.status != "sending") {
@@ -938,10 +957,16 @@ _a$7 = FileTransferManager, _FileTransferManager_fileTypes = new WeakMap(), _Fil
     const bytesLeft = buffer.byteLength - offset;
     const progress = 1 - bytesLeft / buffer.byteLength;
     _console$F.log(`sending bytes ${offset}-${offset + slicedBuffer.byteLength} of ${buffer.byteLength} bytes (${progress * 100}%)`);
-    __classPrivateFieldGet(this, _FileTransferManager_instances, "a", _FileTransferManager_dispatchEvent_get).call(this, "fileTransferProgress", { progress });
+    __classPrivateFieldGet(this, _FileTransferManager_instances, "a", _FileTransferManager_dispatchEvent_get).call(this, "fileTransferProgress", {
+        progress,
+        fileType: this.type,
+    });
     if (slicedBuffer.byteLength == 0) {
         _console$F.log("finished sending buffer");
-        __classPrivateFieldGet(this, _FileTransferManager_instances, "a", _FileTransferManager_dispatchEvent_get).call(this, "fileTransferComplete", { direction: "sending" });
+        __classPrivateFieldGet(this, _FileTransferManager_instances, "a", _FileTransferManager_dispatchEvent_get).call(this, "fileTransferComplete", {
+            direction: "sending",
+            fileType: this.type,
+        });
     }
     else {
         await this.sendMessage([{ type: "setFileBlock", data: slicedBuffer }]);
@@ -5892,7 +5917,9 @@ const DisplayEventTypes = [
     "displayColor",
     "displayColorOpacity",
     "displayOpacity",
-    "displaySpriteSheet",
+    "displaySpriteSheetUploadStart",
+    "displaySpriteSheetUploadProgress",
+    "displaySpriteSheetUploadComplete",
 ];
 const MinSpriteSheetNameLength = 1;
 const MaxSpriteSheetNameLength = 30;
@@ -6894,12 +6921,18 @@ class DisplayManager {
     get spriteSheetIndices() {
         return __classPrivateFieldGet(this, _DisplayManager_spriteSheetIndices, "f");
     }
+    get pendingSpriteSheet() {
+        return __classPrivateFieldGet(this, _DisplayManager_pendingSpriteSheet, "f");
+    }
+    get pendingSpriteSheetName() {
+        return __classPrivateFieldGet(this, _DisplayManager_pendingSpriteSheetName, "f");
+    }
     async sendSpriteSheet(spriteSheet) {
         spriteSheet = structuredClone(spriteSheet);
         __classPrivateFieldSet(this, _DisplayManager_pendingSpriteSheet, spriteSheet, "f");
         const buffer = serializeSpriteSheet(this, __classPrivateFieldGet(this, _DisplayManager_pendingSpriteSheet, "f"));
         await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_setSpriteSheetName).call(this, __classPrivateFieldGet(this, _DisplayManager_pendingSpriteSheet, "f").name);
-        const promise = this.waitForEvent("displaySpriteSheet");
+        const promise = this.waitForEvent("displaySpriteSheetUploadComplete");
         this.sendFile("spriteSheet", buffer, true);
         await promise;
     }
@@ -7173,7 +7206,7 @@ async function _DisplayManager_sendDisplayCommand(command, sendImmediately) {
     __classPrivateFieldGet(this, _DisplayManager_spriteSheets, "f")[__classPrivateFieldGet(this, _DisplayManager_pendingSpriteSheetName, "f")] =
         __classPrivateFieldGet(this, _DisplayManager_pendingSpriteSheet, "f");
     __classPrivateFieldGet(this, _DisplayManager_spriteSheetIndices, "f")[__classPrivateFieldGet(this, _DisplayManager_pendingSpriteSheetName, "f")] = spriteSheetIndex;
-    __classPrivateFieldGet(this, _DisplayManager_instances, "a", _DisplayManager_dispatchEvent_get).call(this, "displaySpriteSheet", {
+    __classPrivateFieldGet(this, _DisplayManager_instances, "a", _DisplayManager_dispatchEvent_get).call(this, "displaySpriteSheetUploadComplete", {
         spriteSheetName: __classPrivateFieldGet(this, _DisplayManager_pendingSpriteSheetName, "f"),
         spriteSheet: __classPrivateFieldGet(this, _DisplayManager_pendingSpriteSheet, "f"),
     });
@@ -9503,6 +9536,31 @@ class Device {
                 __classPrivateFieldGet(this, _Device_displayManager, "f").requestRequiredInformation();
             }
         });
+        this.addEventListener("fileTransferProgress", (event) => {
+            const { fileType, progress } = event.message;
+            switch (fileType) {
+                case "spriteSheet":
+                    __classPrivateFieldGet(this, _Device_instances, "a", _Device_dispatchEvent_get).call(this, "displaySpriteSheetUploadProgress", {
+                        spriteSheet: __classPrivateFieldGet(this, _Device_displayManager, "f").pendingSpriteSheet,
+                        spriteSheetName: __classPrivateFieldGet(this, _Device_displayManager, "f").pendingSpriteSheetName,
+                        progress,
+                    });
+                    break;
+            }
+        });
+        this.addEventListener("fileTransferStatus", (event) => {
+            const { fileType, fileTransferStatus } = event.message;
+            switch (fileType) {
+                case "spriteSheet":
+                    if (fileTransferStatus == "sending") {
+                        __classPrivateFieldGet(this, _Device_instances, "a", _Device_dispatchEvent_get).call(this, "displaySpriteSheetUploadStart", {
+                            spriteSheet: __classPrivateFieldGet(this, _Device_displayManager, "f").pendingSpriteSheet,
+                            spriteSheetName: __classPrivateFieldGet(this, _Device_displayManager, "f").pendingSpriteSheetName,
+                        });
+                    }
+                    break;
+            }
+        });
         DeviceManager$1.onDevice(this);
         if (isInBrowser) {
             window.addEventListener("beforeunload", () => {
@@ -10636,7 +10694,7 @@ _a$2 = Device, _Device_eventDispatcher = new WeakMap(), _Device_connectionManage
 _Device_ReconnectOnDisconnection = { value: false };
 _Device_ClearSensorConfigurationOnLeave = { value: true };
 
-var _DisplayCanvasHelper_instances, _DisplayCanvasHelper_eventDispatcher, _DisplayCanvasHelper_dispatchEvent_get, _DisplayCanvasHelper_canvas, _DisplayCanvasHelper_context, _DisplayCanvasHelper_updateCanvas, _DisplayCanvasHelper_frontDrawStack, _DisplayCanvasHelper_rearDrawStack, _DisplayCanvasHelper_drawFrontDrawStack, _DisplayCanvasHelper_applyTransparencyToCanvas, _DisplayCanvasHelper_drawBackground, _DisplayCanvasHelper_applyTransparency, _DisplayCanvasHelper_device, _DisplayCanvasHelper_boundDeviceEventListeners, _DisplayCanvasHelper_onDeviceConnected, _DisplayCanvasHelper_onDeviceNotConnected, _DisplayCanvasHelper_onDeviceDisplayReady, _DisplayCanvasHelper_updateDevice, _DisplayCanvasHelper_numberOfColors, _DisplayCanvasHelper_colors, _DisplayCanvasHelper_updateDeviceColors, _DisplayCanvasHelper_opacities, _DisplayCanvasHelper_updateDeviceOpacity, _DisplayCanvasHelper_contextStateHelper, _DisplayCanvasHelper_onContextStateUpdate, _DisplayCanvasHelper_resetContextState, _DisplayCanvasHelper_updateDeviceContextState, _DisplayCanvasHelper_interval, _DisplayCanvasHelper_isReady, _DisplayCanvasHelper_clearRectToCanvas, _DisplayCanvasHelper_save, _DisplayCanvasHelper_restore, _DisplayCanvasHelper_transformContext, _DisplayCanvasHelper_translateContext, _DisplayCanvasHelper_rotateContext, _DisplayCanvasHelper_rotateBoundingBox, _DisplayCanvasHelper_clearBoundingBoxOnDraw, _DisplayCanvasHelper_clearBoundingBox, _DisplayCanvasHelper_getBoundingBox, _DisplayCanvasHelper_getRectBoundingBox, _DisplayCanvasHelper_applyClip, _DisplayCanvasHelper_applyRotationClip, _DisplayCanvasHelper_hexToRgbWithOpacity, _DisplayCanvasHelper_hexToRgbStringWithOpacity, _DisplayCanvasHelper_getColorOpacity, _DisplayCanvasHelper_colorIndexToRgbString, _DisplayCanvasHelper_updateContext, _DisplayCanvasHelper_drawRectToCanvas, _DisplayCanvasHelper_drawRoundRectToCanvas, _DisplayCanvasHelper_getCircleBoundingBox, _DisplayCanvasHelper_drawCircleToCanvas, _DisplayCanvasHelper_getEllipseBoundingBox, _DisplayCanvasHelper_drawEllipseToCanvas, _DisplayCanvasHelper_getPolygonBoundingBox, _DisplayCanvasHelper_drawPolygonToCanvas, _DisplayCanvasHelper_getSegmentBoundingBox, _DisplayCanvasHelper_getSegmentMidpoint, _DisplayCanvasHelper_getOrientedSegmentBoundingBox, _DisplayCanvasHelper_applySegmentRotationClip, _DisplayCanvasHelper_drawSegmentToCanvas, _DisplayCanvasHelper_drawSegmentsToCanvas, _DisplayCanvasHelper_drawArcToCanvas, _DisplayCanvasHelper_drawArcEllipseToCanvas, _DisplayCanvasHelper_bitmapCanvas, _DisplayCanvasHelper_bitmapContext, _DisplayCanvasHelper_drawBitmapToCanvas, _DisplayCanvasHelper_spriteSheets, _DisplayCanvasHelper_spriteSheetIndices, _DisplayCanvasHelper_runSpriteCommand, _DisplayCanvasHelper_drawSpriteToCanvas, _DisplayCanvasHelper_brightness, _DisplayCanvasHelper_brightnessOpacities, _DisplayCanvasHelper_brightnessOpacity_get, _DisplayCanvasHelper_updateDeviceBrightness, _DisplayCanvasHelper_updateDeviceSpriteSheets, _DisplayCanvasHelper_updateDeviceSelectedSpriteSheet, _DisplayCanvasHelper_setCanvasContextTransform, _DisplayCanvasHelper_resetCanvasContextTransform, _DisplayCanvasHelper_ignoreDevice, _DisplayCanvasHelper_useSpriteColorIndices, _DisplayCanvasHelper_spriteContextStack, _DisplayCanvasHelper_spriteStack;
+var _DisplayCanvasHelper_instances, _DisplayCanvasHelper_eventDispatcher, _DisplayCanvasHelper_dispatchEvent_get, _DisplayCanvasHelper_canvas, _DisplayCanvasHelper_context, _DisplayCanvasHelper_updateCanvas, _DisplayCanvasHelper_frontDrawStack, _DisplayCanvasHelper_rearDrawStack, _DisplayCanvasHelper_drawFrontDrawStack, _DisplayCanvasHelper_applyTransparencyToCanvas, _DisplayCanvasHelper_drawBackground, _DisplayCanvasHelper_applyTransparency, _DisplayCanvasHelper_device, _DisplayCanvasHelper_boundDeviceEventListeners, _DisplayCanvasHelper_onDeviceIsConnected, _DisplayCanvasHelper_onDeviceConnected, _DisplayCanvasHelper_onDeviceNotConnected, _DisplayCanvasHelper_onDeviceDisplayReady, _DisplayCanvasHelper_onDeviceDisplaySpriteSheetUploadStart, _DisplayCanvasHelper_onDeviceDisplaySpriteSheetUploadProgress, _DisplayCanvasHelper_onDeviceDisplaySpriteSheetUploadComplete, _DisplayCanvasHelper_updateDevice, _DisplayCanvasHelper_numberOfColors, _DisplayCanvasHelper_colors, _DisplayCanvasHelper_updateDeviceColors, _DisplayCanvasHelper_opacities, _DisplayCanvasHelper_updateDeviceOpacity, _DisplayCanvasHelper_contextStateHelper, _DisplayCanvasHelper_onContextStateUpdate, _DisplayCanvasHelper_resetContextState, _DisplayCanvasHelper_updateDeviceContextState, _DisplayCanvasHelper_interval, _DisplayCanvasHelper_isReady, _DisplayCanvasHelper_clearRectToCanvas, _DisplayCanvasHelper_save, _DisplayCanvasHelper_restore, _DisplayCanvasHelper_transformContext, _DisplayCanvasHelper_translateContext, _DisplayCanvasHelper_rotateContext, _DisplayCanvasHelper_rotateBoundingBox, _DisplayCanvasHelper_clearBoundingBoxOnDraw, _DisplayCanvasHelper_clearBoundingBox, _DisplayCanvasHelper_getBoundingBox, _DisplayCanvasHelper_getRectBoundingBox, _DisplayCanvasHelper_applyClip, _DisplayCanvasHelper_applyRotationClip, _DisplayCanvasHelper_hexToRgbWithOpacity, _DisplayCanvasHelper_hexToRgbStringWithOpacity, _DisplayCanvasHelper_getColorOpacity, _DisplayCanvasHelper_colorIndexToRgbString, _DisplayCanvasHelper_updateContext, _DisplayCanvasHelper_drawRectToCanvas, _DisplayCanvasHelper_drawRoundRectToCanvas, _DisplayCanvasHelper_getCircleBoundingBox, _DisplayCanvasHelper_drawCircleToCanvas, _DisplayCanvasHelper_getEllipseBoundingBox, _DisplayCanvasHelper_drawEllipseToCanvas, _DisplayCanvasHelper_getPolygonBoundingBox, _DisplayCanvasHelper_drawPolygonToCanvas, _DisplayCanvasHelper_getSegmentBoundingBox, _DisplayCanvasHelper_getSegmentMidpoint, _DisplayCanvasHelper_getOrientedSegmentBoundingBox, _DisplayCanvasHelper_applySegmentRotationClip, _DisplayCanvasHelper_drawSegmentToCanvas, _DisplayCanvasHelper_drawSegmentsToCanvas, _DisplayCanvasHelper_drawArcToCanvas, _DisplayCanvasHelper_drawArcEllipseToCanvas, _DisplayCanvasHelper_bitmapCanvas, _DisplayCanvasHelper_bitmapContext, _DisplayCanvasHelper_drawBitmapToCanvas, _DisplayCanvasHelper_spriteSheets, _DisplayCanvasHelper_spriteSheetIndices, _DisplayCanvasHelper_runSpriteCommand, _DisplayCanvasHelper_drawSpriteToCanvas, _DisplayCanvasHelper_brightness, _DisplayCanvasHelper_brightnessOpacities, _DisplayCanvasHelper_brightnessOpacity_get, _DisplayCanvasHelper_updateDeviceBrightness, _DisplayCanvasHelper_updateDeviceSpriteSheets, _DisplayCanvasHelper_updateDeviceSelectedSpriteSheet, _DisplayCanvasHelper_setCanvasContextTransform, _DisplayCanvasHelper_resetCanvasContextTransform, _DisplayCanvasHelper_ignoreDevice, _DisplayCanvasHelper_useSpriteColorIndices, _DisplayCanvasHelper_spriteContextStack, _DisplayCanvasHelper_spriteStack;
 const _console$6 = createConsole("DisplayCanvasHelper", { log: true });
 const DisplayCanvasHelperEventTypes = [
     "contextState",
@@ -10648,6 +10706,13 @@ const DisplayCanvasHelperEventTypes = [
     "resize",
     "update",
     "ready",
+    "device",
+    "deviceIsConnected",
+    "deviceConnected",
+    "deviceNotConnected",
+    "deviceSpriteSheetUploadStart",
+    "deviceSpriteSheetUploadProgress",
+    "deviceSpriteSheetUploadComplete",
 ];
 class DisplayCanvasHelper {
     constructor() {
@@ -10660,9 +10725,11 @@ class DisplayCanvasHelper {
         _DisplayCanvasHelper_applyTransparency.set(this, false);
         _DisplayCanvasHelper_device.set(this, void 0);
         _DisplayCanvasHelper_boundDeviceEventListeners.set(this, {
-            connected: __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_onDeviceConnected).bind(this),
-            notConnected: __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_onDeviceNotConnected).bind(this),
+            isConnected: __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_onDeviceIsConnected).bind(this),
             displayReady: __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_onDeviceDisplayReady).bind(this),
+            displaySpriteSheetUploadStart: __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_onDeviceDisplaySpriteSheetUploadStart).bind(this),
+            displaySpriteSheetUploadProgress: __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_onDeviceDisplaySpriteSheetUploadProgress).bind(this),
+            displaySpriteSheetUploadComplete: __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_onDeviceDisplaySpriteSheetUploadComplete).bind(this),
         });
         _DisplayCanvasHelper_numberOfColors.set(this, 0);
         _DisplayCanvasHelper_colors.set(this, []);
@@ -10761,7 +10828,17 @@ class DisplayCanvasHelper {
             __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_updateCanvas).call(this);
             __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_updateDevice).call(this);
             __classPrivateFieldSet(this, _DisplayCanvasHelper_isReady, this.device.isDisplayReady, "f");
+            __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "a", _DisplayCanvasHelper_dispatchEvent_get).call(this, "deviceIsConnected", {
+                device: this.device,
+                isConnected: this.device.isConnected,
+            });
+            __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "a", _DisplayCanvasHelper_dispatchEvent_get).call(this, this.device.isConnected ? "deviceConnected" : "deviceNotConnected", {
+                device: this.device,
+            });
         }
+        __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "a", _DisplayCanvasHelper_dispatchEvent_get).call(this, "device", {
+            device: this.device,
+        });
     }
     async flushContextCommands() {
         if (__classPrivateFieldGet(this, _DisplayCanvasHelper_device, "f")?.isConnected) {
@@ -11599,13 +11676,52 @@ _DisplayCanvasHelper_eventDispatcher = new WeakMap(), _DisplayCanvasHelper_canva
     __classPrivateFieldGet(this, _DisplayCanvasHelper_context, "f").fillStyle = __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_colorIndexToRgbString).call(this, 0);
     __classPrivateFieldGet(this, _DisplayCanvasHelper_context, "f").fillRect(0, 0, this.width, this.height);
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_restore).call(this);
-}, _DisplayCanvasHelper_onDeviceConnected = function _DisplayCanvasHelper_onDeviceConnected(event) {
+}, _DisplayCanvasHelper_onDeviceIsConnected = function _DisplayCanvasHelper_onDeviceIsConnected(event) {
+    const { isConnected } = event.message;
+    __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "a", _DisplayCanvasHelper_dispatchEvent_get).call(this, "deviceIsConnected", {
+        device: this.device,
+        isConnected,
+    });
+    if (isConnected) {
+        __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_onDeviceConnected).call(this);
+    }
+    else {
+        __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_onDeviceNotConnected).call(this);
+    }
+}, _DisplayCanvasHelper_onDeviceConnected = function _DisplayCanvasHelper_onDeviceConnected() {
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_updateCanvas).call(this);
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_updateDevice).call(this);
-}, _DisplayCanvasHelper_onDeviceNotConnected = function _DisplayCanvasHelper_onDeviceNotConnected(event) {
+    __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "a", _DisplayCanvasHelper_dispatchEvent_get).call(this, "deviceConnected", { device: this.device });
+}, _DisplayCanvasHelper_onDeviceNotConnected = function _DisplayCanvasHelper_onDeviceNotConnected() {
+    __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "a", _DisplayCanvasHelper_dispatchEvent_get).call(this, "deviceNotConnected", { device: this.device });
 }, _DisplayCanvasHelper_onDeviceDisplayReady = async function _DisplayCanvasHelper_onDeviceDisplayReady(event) {
     __classPrivateFieldSet(this, _DisplayCanvasHelper_isReady, true, "f");
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "a", _DisplayCanvasHelper_dispatchEvent_get).call(this, "ready", {});
+}, _DisplayCanvasHelper_onDeviceDisplaySpriteSheetUploadStart = function _DisplayCanvasHelper_onDeviceDisplaySpriteSheetUploadStart(event) {
+    const device = event.target;
+    const { spriteSheet, spriteSheetName } = event.message;
+    __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "a", _DisplayCanvasHelper_dispatchEvent_get).call(this, "deviceSpriteSheetUploadStart", {
+        device,
+        spriteSheet,
+        spriteSheetName,
+    });
+}, _DisplayCanvasHelper_onDeviceDisplaySpriteSheetUploadProgress = function _DisplayCanvasHelper_onDeviceDisplaySpriteSheetUploadProgress(event) {
+    const device = event.target;
+    const { spriteSheet, spriteSheetName, progress } = event.message;
+    __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "a", _DisplayCanvasHelper_dispatchEvent_get).call(this, "deviceSpriteSheetUploadProgress", {
+        device,
+        spriteSheet,
+        spriteSheetName,
+        progress,
+    });
+}, _DisplayCanvasHelper_onDeviceDisplaySpriteSheetUploadComplete = function _DisplayCanvasHelper_onDeviceDisplaySpriteSheetUploadComplete(event) {
+    const device = event.target;
+    const { spriteSheet, spriteSheetName } = event.message;
+    __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "a", _DisplayCanvasHelper_dispatchEvent_get).call(this, "deviceSpriteSheetUploadComplete", {
+        device,
+        spriteSheet,
+        spriteSheetName,
+    });
 }, _DisplayCanvasHelper_updateDevice = async function _DisplayCanvasHelper_updateDevice() {
     await __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_updateDeviceColors).call(this, true);
     await __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_updateDeviceOpacity).call(this, true);

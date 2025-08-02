@@ -35,18 +35,22 @@ export interface FileTransferEventMessages {
         fileChecksum: number;
     };
     fileTransferStatus: {
+        fileType: FileType;
         fileTransferStatus: FileTransferStatus;
     };
     getFileBlock: {
         fileTransferBlock: DataView;
     };
     fileTransferProgress: {
+        fileType: FileType;
         progress: number;
     };
     fileTransferComplete: {
+        fileType: FileType;
         direction: FileTransferDirection;
     };
     fileReceived: {
+        fileType: FileType;
         file: File | Blob;
     };
 }

@@ -367,6 +367,35 @@ class Device {
         this.#displayManager.requestRequiredInformation();
       }
     });
+    this.addEventListener("fileTransferProgress", (event) => {
+      const { fileType, progress } = event.message;
+      switch (fileType) {
+        case "spriteSheet":
+          this.#dispatchEvent("displaySpriteSheetUploadProgress", {
+            spriteSheet: this.#displayManager.pendingSpriteSheet!,
+            spriteSheetName: this.#displayManager.pendingSpriteSheetName!,
+            progress,
+          });
+          break;
+        default:
+          break;
+      }
+    });
+    this.addEventListener("fileTransferStatus", (event) => {
+      const { fileType, fileTransferStatus } = event.message;
+      switch (fileType) {
+        case "spriteSheet":
+          if (fileTransferStatus == "sending") {
+            this.#dispatchEvent("displaySpriteSheetUploadStart", {
+              spriteSheet: this.#displayManager.pendingSpriteSheet!,
+              spriteSheetName: this.#displayManager.pendingSpriteSheetName!,
+            });
+          }
+          break;
+        default:
+          break;
+      }
+    });
     DeviceManager.onDevice(this);
     if (isInBrowser) {
       window.addEventListener("beforeunload", () => {

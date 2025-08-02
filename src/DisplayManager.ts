@@ -32,21 +32,15 @@ import {
   DisplayCropDirectionToStateKey,
   DisplayRotationCropDirectionToCommandType,
   DisplayRotationCropDirectionToStateKey,
-  formatScale,
-  formatRotation,
   maxDisplayScale,
-  numberOfColorsToPixelDepth,
-  pixelDepthToPixelBitWidth,
-  pixelDepthToPixelsPerByte,
   roundScale,
   DisplaySpriteScaleDirectionToCommandType,
   minDisplayScale,
 } from "./utils/DisplayUtils.ts";
-import { DisplaySegmentCaps, DisplaySpriteSheet } from "./BS.ts";
+import { DisplaySpriteSheet } from "./BS.ts";
 import {
   assertValidBitmapPixels,
   drawBitmapHeaderLength,
-  getBitmapData,
   getBitmapNumberOfBytes,
   imageToBitmap,
   quantizeImage,
@@ -166,7 +160,9 @@ export const DisplayEventTypes = [
   "displayColor",
   "displayColorOpacity",
   "displayOpacity",
-  "displaySpriteSheet",
+  "displaySpriteSheetUploadStart",
+  "displaySpriteSheetUploadProgress",
+  "displaySpriteSheetUploadComplete",
 ] as const;
 export type DisplayEventType = (typeof DisplayEventTypes)[number];
 
@@ -202,7 +198,17 @@ export interface DisplayEventMessages {
   getSpriteSheetName: {
     spriteSheetName: string;
   };
-  displaySpriteSheet: {
+
+  displaySpriteSheetUploadStart: {
+    spriteSheetName: string;
+    spriteSheet: DisplaySpriteSheet;
+  };
+  displaySpriteSheetUploadProgress: {
+    spriteSheetName: string;
+    spriteSheet: DisplaySpriteSheet;
+    progress: number;
+  };
+  displaySpriteSheetUploadComplete: {
     spriteSheetName: string;
     spriteSheet: DisplaySpriteSheet;
   };
@@ -1904,7 +1910,13 @@ class DisplayManager implements DisplayManagerInterface {
     await promise;
   }
   #pendingSpriteSheet?: DisplaySpriteSheet;
+  get pendingSpriteSheet() {
+    return this.#pendingSpriteSheet;
+  }
   #pendingSpriteSheetName?: string;
+  get pendingSpriteSheetName() {
+    return this.#pendingSpriteSheetName;
+  }
   #updateSpriteSheetName(updatedSpriteSheetName: string) {
     _console.assertTypeWithError(updatedSpriteSheetName, "string");
     this.#pendingSpriteSheetName = updatedSpriteSheetName;
@@ -1919,7 +1931,7 @@ class DisplayManager implements DisplayManagerInterface {
     this.#pendingSpriteSheet = spriteSheet;
     const buffer = serializeSpriteSheet(this, this.#pendingSpriteSheet);
     await this.#setSpriteSheetName(this.#pendingSpriteSheet.name);
-    const promise = this.waitForEvent("displaySpriteSheet");
+    const promise = this.waitForEvent("displaySpriteSheetUploadComplete");
     this.sendFile("spriteSheet", buffer, true);
     await promise;
   }
@@ -2019,7 +2031,7 @@ class DisplayManager implements DisplayManagerInterface {
     this.#spriteSheets[this.#pendingSpriteSheetName!] =
       this.#pendingSpriteSheet!;
     this.#spriteSheetIndices[this.#pendingSpriteSheetName!] = spriteSheetIndex;
-    this.#dispatchEvent("displaySpriteSheet", {
+    this.#dispatchEvent("displaySpriteSheetUploadComplete", {
       spriteSheetName: this.#pendingSpriteSheetName!,
       spriteSheet: this.#pendingSpriteSheet!,
     });

@@ -681,6 +681,15 @@ class FileTransferManager {
         promises.push(__classPrivateFieldGet(this, _FileTransferManager_instances, "m", _FileTransferManager_setCommand).call(this, "startSend", false));
         this.sendMessage();
         await Promise.all(promises);
+        if (__classPrivateFieldGet(this, _FileTransferManager_buffer, "f")) {
+            return false;
+        }
+        if (__classPrivateFieldGet(this, _FileTransferManager_length, "f") != fileLength) {
+            return false;
+        }
+        if (__classPrivateFieldGet(this, _FileTransferManager_checksum, "f") != checksum) {
+            return false;
+        }
         await __classPrivateFieldGet(this, _FileTransferManager_instances, "m", _FileTransferManager_send).call(this, fileBuffer);
         return true;
     }
@@ -828,9 +837,14 @@ _a$8 = FileTransferManager, _FileTransferManager_fileTypes = new WeakMap(), _Fil
 }, _FileTransferManager_updateStatus = function _FileTransferManager_updateStatus(status) {
     _console$K.log({ status });
     __classPrivateFieldSet(this, _FileTransferManager_status, status, "f");
-    __classPrivateFieldGet(this, _FileTransferManager_instances, "a", _FileTransferManager_dispatchEvent_get).call(this, "fileTransferStatus", { fileTransferStatus: status });
     __classPrivateFieldGet(this, _FileTransferManager_receivedBlocks, "f").length = 0;
     __classPrivateFieldSet(this, _FileTransferManager_isCancelling, false, "f");
+    __classPrivateFieldSet(this, _FileTransferManager_buffer, undefined, "f");
+    __classPrivateFieldSet(this, _FileTransferManager_bytesTransferred, 0, "f");
+    __classPrivateFieldGet(this, _FileTransferManager_instances, "a", _FileTransferManager_dispatchEvent_get).call(this, "fileTransferStatus", {
+        fileTransferStatus: status,
+        fileType: this.type,
+    });
 }, _FileTransferManager_assertIsIdle = function _FileTransferManager_assertIsIdle() {
     _console$K.assertWithError(__classPrivateFieldGet(this, _FileTransferManager_status, "f") == "idle", "status is not idle");
 }, _FileTransferManager_assertIsNotIdle = function _FileTransferManager_assertIsNotIdle() {
@@ -841,7 +855,10 @@ _a$8 = FileTransferManager, _FileTransferManager_fileTypes = new WeakMap(), _Fil
     const bytesReceived = __classPrivateFieldGet(this, _FileTransferManager_receivedBlocks, "f").reduce((sum, arrayBuffer) => (sum += arrayBuffer.byteLength), 0);
     const progress = bytesReceived / __classPrivateFieldGet(this, _FileTransferManager_length, "f");
     _console$K.log(`received ${bytesReceived} of ${__classPrivateFieldGet(this, _FileTransferManager_length, "f")} bytes (${progress * 100}%)`);
-    __classPrivateFieldGet(this, _FileTransferManager_instances, "a", _FileTransferManager_dispatchEvent_get).call(this, "fileTransferProgress", { progress });
+    __classPrivateFieldGet(this, _FileTransferManager_instances, "a", _FileTransferManager_dispatchEvent_get).call(this, "fileTransferProgress", {
+        progress,
+        fileType: this.type,
+    });
     if (bytesReceived != __classPrivateFieldGet(this, _FileTransferManager_length, "f")) {
         const dataView = new DataView(new ArrayBuffer(4));
         dataView.setUint32(0, bytesReceived, true);
@@ -882,11 +899,13 @@ _a$8 = FileTransferManager, _FileTransferManager_fileTypes = new WeakMap(), _Fil
     }
     _console$K.log("received file", file);
     __classPrivateFieldGet(this, _FileTransferManager_instances, "a", _FileTransferManager_dispatchEvent_get).call(this, "getFileBlock", { fileTransferBlock: dataView });
-    __classPrivateFieldGet(this, _FileTransferManager_instances, "a", _FileTransferManager_dispatchEvent_get).call(this, "fileTransferComplete", { direction: "receiving" });
-    __classPrivateFieldGet(this, _FileTransferManager_instances, "a", _FileTransferManager_dispatchEvent_get).call(this, "fileReceived", { file });
+    __classPrivateFieldGet(this, _FileTransferManager_instances, "a", _FileTransferManager_dispatchEvent_get).call(this, "fileTransferComplete", {
+        direction: "receiving",
+        fileType: this.type,
+    });
+    __classPrivateFieldGet(this, _FileTransferManager_instances, "a", _FileTransferManager_dispatchEvent_get).call(this, "fileReceived", { file, fileType: this.type });
 }, _FileTransferManager_send = async function _FileTransferManager_send(buffer) {
     __classPrivateFieldSet(this, _FileTransferManager_buffer, buffer, "f");
-    __classPrivateFieldSet(this, _FileTransferManager_bytesTransferred, 0, "f");
     return __classPrivateFieldGet(this, _FileTransferManager_instances, "m", _FileTransferManager_sendBlock).call(this);
 }, _FileTransferManager_sendBlock = async function _FileTransferManager_sendBlock() {
     if (this.status != "sending") {
@@ -909,10 +928,16 @@ _a$8 = FileTransferManager, _FileTransferManager_fileTypes = new WeakMap(), _Fil
     const bytesLeft = buffer.byteLength - offset;
     const progress = 1 - bytesLeft / buffer.byteLength;
     _console$K.log(`sending bytes ${offset}-${offset + slicedBuffer.byteLength} of ${buffer.byteLength} bytes (${progress * 100}%)`);
-    __classPrivateFieldGet(this, _FileTransferManager_instances, "a", _FileTransferManager_dispatchEvent_get).call(this, "fileTransferProgress", { progress });
+    __classPrivateFieldGet(this, _FileTransferManager_instances, "a", _FileTransferManager_dispatchEvent_get).call(this, "fileTransferProgress", {
+        progress,
+        fileType: this.type,
+    });
     if (slicedBuffer.byteLength == 0) {
         _console$K.log("finished sending buffer");
-        __classPrivateFieldGet(this, _FileTransferManager_instances, "a", _FileTransferManager_dispatchEvent_get).call(this, "fileTransferComplete", { direction: "sending" });
+        __classPrivateFieldGet(this, _FileTransferManager_instances, "a", _FileTransferManager_dispatchEvent_get).call(this, "fileTransferComplete", {
+            direction: "sending",
+            fileType: this.type,
+        });
     }
     else {
         await this.sendMessage([{ type: "setFileBlock", data: slicedBuffer }]);
@@ -5180,7 +5205,9 @@ const DisplayEventTypes = [
     "displayColor",
     "displayColorOpacity",
     "displayOpacity",
-    "displaySpriteSheet",
+    "displaySpriteSheetUploadStart",
+    "displaySpriteSheetUploadProgress",
+    "displaySpriteSheetUploadComplete",
 ];
 const MinSpriteSheetNameLength = 1;
 const MaxSpriteSheetNameLength = 30;
@@ -6182,12 +6209,18 @@ class DisplayManager {
     get spriteSheetIndices() {
         return __classPrivateFieldGet(this, _DisplayManager_spriteSheetIndices, "f");
     }
+    get pendingSpriteSheet() {
+        return __classPrivateFieldGet(this, _DisplayManager_pendingSpriteSheet, "f");
+    }
+    get pendingSpriteSheetName() {
+        return __classPrivateFieldGet(this, _DisplayManager_pendingSpriteSheetName, "f");
+    }
     async sendSpriteSheet(spriteSheet) {
         spriteSheet = structuredClone(spriteSheet);
         __classPrivateFieldSet(this, _DisplayManager_pendingSpriteSheet, spriteSheet, "f");
         const buffer = serializeSpriteSheet(this, __classPrivateFieldGet(this, _DisplayManager_pendingSpriteSheet, "f"));
         await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_setSpriteSheetName).call(this, __classPrivateFieldGet(this, _DisplayManager_pendingSpriteSheet, "f").name);
-        const promise = this.waitForEvent("displaySpriteSheet");
+        const promise = this.waitForEvent("displaySpriteSheetUploadComplete");
         this.sendFile("spriteSheet", buffer, true);
         await promise;
     }
@@ -6461,7 +6494,7 @@ async function _DisplayManager_sendDisplayCommand(command, sendImmediately) {
     __classPrivateFieldGet(this, _DisplayManager_spriteSheets, "f")[__classPrivateFieldGet(this, _DisplayManager_pendingSpriteSheetName, "f")] =
         __classPrivateFieldGet(this, _DisplayManager_pendingSpriteSheet, "f");
     __classPrivateFieldGet(this, _DisplayManager_spriteSheetIndices, "f")[__classPrivateFieldGet(this, _DisplayManager_pendingSpriteSheetName, "f")] = spriteSheetIndex;
-    __classPrivateFieldGet(this, _DisplayManager_instances, "a", _DisplayManager_dispatchEvent_get).call(this, "displaySpriteSheet", {
+    __classPrivateFieldGet(this, _DisplayManager_instances, "a", _DisplayManager_dispatchEvent_get).call(this, "displaySpriteSheetUploadComplete", {
         spriteSheetName: __classPrivateFieldGet(this, _DisplayManager_pendingSpriteSheetName, "f"),
         spriteSheet: __classPrivateFieldGet(this, _DisplayManager_pendingSpriteSheet, "f"),
     });
@@ -9052,6 +9085,31 @@ class Device {
             }
             if (this.type == "glasses") {
                 __classPrivateFieldGet(this, _Device_displayManager, "f").requestRequiredInformation();
+            }
+        });
+        this.addEventListener("fileTransferProgress", (event) => {
+            const { fileType, progress } = event.message;
+            switch (fileType) {
+                case "spriteSheet":
+                    __classPrivateFieldGet(this, _Device_instances, "a", _Device_dispatchEvent_get).call(this, "displaySpriteSheetUploadProgress", {
+                        spriteSheet: __classPrivateFieldGet(this, _Device_displayManager, "f").pendingSpriteSheet,
+                        spriteSheetName: __classPrivateFieldGet(this, _Device_displayManager, "f").pendingSpriteSheetName,
+                        progress,
+                    });
+                    break;
+            }
+        });
+        this.addEventListener("fileTransferStatus", (event) => {
+            const { fileType, fileTransferStatus } = event.message;
+            switch (fileType) {
+                case "spriteSheet":
+                    if (fileTransferStatus == "sending") {
+                        __classPrivateFieldGet(this, _Device_instances, "a", _Device_dispatchEvent_get).call(this, "displaySpriteSheetUploadStart", {
+                            spriteSheet: __classPrivateFieldGet(this, _Device_displayManager, "f").pendingSpriteSheet,
+                            spriteSheetName: __classPrivateFieldGet(this, _Device_displayManager, "f").pendingSpriteSheetName,
+                        });
+                    }
+                    break;
             }
         });
         DeviceManager$1.onDevice(this);

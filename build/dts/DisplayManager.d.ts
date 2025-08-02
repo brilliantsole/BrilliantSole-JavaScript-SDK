@@ -45,7 +45,7 @@ export declare const DisplayInformationValues: {
     pixelDepth: readonly ["1", "2", "4"];
 };
 export declare const RequiredDisplayMessageTypes: DisplayMessageType[];
-export declare const DisplayEventTypes: readonly ["isDisplayAvailable", "displayStatus", "displayInformation", "displayCommand", "getDisplayBrightness", "setDisplayBrightness", "displayContextCommands", "displayReady", "getSpriteSheetName", "setSpriteSheetName", "spriteSheetIndex", "displayContextState", "displayColor", "displayColorOpacity", "displayOpacity", "displaySpriteSheet"];
+export declare const DisplayEventTypes: readonly ["isDisplayAvailable", "displayStatus", "displayInformation", "displayCommand", "getDisplayBrightness", "setDisplayBrightness", "displayContextCommands", "displayReady", "getSpriteSheetName", "setSpriteSheetName", "spriteSheetIndex", "displayContextState", "displayColor", "displayColorOpacity", "displayOpacity", "displaySpriteSheetUploadStart", "displaySpriteSheetUploadProgress", "displaySpriteSheetUploadComplete"];
 export type DisplayEventType = (typeof DisplayEventTypes)[number];
 export interface DisplayEventMessages {
     isDisplayAvailable: {
@@ -81,7 +81,16 @@ export interface DisplayEventMessages {
     getSpriteSheetName: {
         spriteSheetName: string;
     };
-    displaySpriteSheet: {
+    displaySpriteSheetUploadStart: {
+        spriteSheetName: string;
+        spriteSheet: DisplaySpriteSheet;
+    };
+    displaySpriteSheetUploadProgress: {
+        spriteSheetName: string;
+        spriteSheet: DisplaySpriteSheet;
+        progress: number;
+    };
+    displaySpriteSheetUploadComplete: {
         spriteSheetName: string;
         spriteSheet: DisplaySpriteSheet;
     };
@@ -101,7 +110,7 @@ declare class DisplayManager implements DisplayManagerInterface {
     constructor();
     sendMessage: SendDisplayMessageCallback;
     eventDispatcher: DisplayEventDispatcher;
-    get waitForEvent(): <T extends "isDisplayAvailable" | "displayStatus" | "displayInformation" | "displayCommand" | "getDisplayBrightness" | "setDisplayBrightness" | "displayContextCommands" | "displayReady" | "getSpriteSheetName" | "setSpriteSheetName" | "spriteSheetIndex" | "displayContextState" | "displayColor" | "displayColorOpacity" | "displayOpacity" | "displaySpriteSheet">(type: T) => Promise<{
+    get waitForEvent(): <T extends "isDisplayAvailable" | "displayStatus" | "displayInformation" | "displayCommand" | "getDisplayBrightness" | "setDisplayBrightness" | "displayContextCommands" | "displayReady" | "getSpriteSheetName" | "setSpriteSheetName" | "spriteSheetIndex" | "displayContextState" | "displayColor" | "displayColorOpacity" | "displayOpacity" | "displaySpriteSheetUploadStart" | "displaySpriteSheetUploadProgress" | "displaySpriteSheetUploadComplete">(type: T) => Promise<{
         type: T;
         target: Device;
         message: DisplayEventMessages[T];
@@ -110,7 +119,7 @@ declare class DisplayManager implements DisplayManagerInterface {
     get isAvailable(): boolean;
     get contextState(): DisplayContextState;
     setContextState(newState: PartialDisplayContextState, sendImmediately?: boolean): Promise<void>;
-    get displayStatus(): "awake" | "asleep";
+    get displayStatus(): "asleep" | "awake";
     get isDisplayAwake(): boolean;
     wake(): Promise<void>;
     sleep(): Promise<void>;
@@ -124,7 +133,7 @@ declare class DisplayManager implements DisplayManagerInterface {
         width: number;
         height: number;
     };
-    get type(): "none" | "generic" | "monocularLeft" | "monocularRight" | "binocular";
+    get type(): "generic" | "none" | "monocularLeft" | "monocularRight" | "binocular";
     get brightness(): "veryLow" | "low" | "medium" | "high" | "veryHigh";
     setBrightness(newDisplayBrightness: DisplayBrightness, sendImmediately?: boolean): Promise<void>;
     flushContextCommands(): Promise<void>;
@@ -216,6 +225,8 @@ declare class DisplayManager implements DisplayManagerInterface {
     get isReady(): boolean;
     get spriteSheets(): Record<string, DisplaySpriteSheet>;
     get spriteSheetIndices(): Record<string, number>;
+    get pendingSpriteSheet(): DisplaySpriteSheet | undefined;
+    get pendingSpriteSheetName(): string | undefined;
     sendFile: SendFileCallback;
     sendSpriteSheet(spriteSheet: DisplaySpriteSheet): Promise<void>;
     sendSpriteSheets(spriteSheets: DisplaySpriteSheet[]): Promise<void>;
