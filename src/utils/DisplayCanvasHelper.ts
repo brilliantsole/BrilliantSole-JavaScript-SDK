@@ -1122,6 +1122,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
   ) {
     bitmapScale = clamp(bitmapScale, minDisplayScale, maxDisplayScale);
     bitmapScale = roundScale(bitmapScale);
+    _console.log({ bitmapScale });
     const newState: PartialDisplayContextState = {};
     switch (direction) {
       case "all":
@@ -2497,6 +2498,8 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     const width = bitmap.width * Math.abs(bitmapScaleX);
     const height = bitmap.height * Math.abs(bitmapScaleY);
 
+    _console.log({ bitmapScaleX, bitmapScaleY });
+
     // _console.log({ width, height });
 
     this.#save();
@@ -2547,6 +2550,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     // _console.log("rawBitmapImageData", rawBitmapImageData);
 
     this.#bitmapContext.putImageData(bitmapImageData, 0, 0);
+    this.#context.scale(Math.sign(bitmapScaleX), Math.sign(bitmapScaleY));
     this.#context.drawImage(this.#bitmapCanvas, x, y, width, height);
 
     this.#restore();

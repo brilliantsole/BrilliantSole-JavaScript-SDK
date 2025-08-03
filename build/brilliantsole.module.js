@@ -11256,6 +11256,7 @@ class DisplayCanvasHelper {
     async setBitmapScaleDirection(direction, bitmapScale, sendImmediately) {
         bitmapScale = clamp(bitmapScale, minDisplayScale, maxDisplayScale);
         bitmapScale = roundScale(bitmapScale);
+        _console$6.log({ bitmapScale });
         const newState = {};
         switch (direction) {
             case "all":
@@ -12205,6 +12206,7 @@ _DisplayCanvasHelper_eventDispatcher = new WeakMap(), _DisplayCanvasHelper_canva
     const { bitmapScaleX, bitmapScaleY } = contextState;
     const width = bitmap.width * Math.abs(bitmapScaleX);
     const height = bitmap.height * Math.abs(bitmapScaleY);
+    _console$6.log({ bitmapScaleX, bitmapScaleY });
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_save).call(this);
     const box = __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_getRectBoundingBox).call(this, centerX, centerY, width, height, contextState);
     const rotatedBox = __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_rotateBoundingBox).call(this, box, contextState.rotation);
@@ -12234,6 +12236,7 @@ _DisplayCanvasHelper_eventDispatcher = new WeakMap(), _DisplayCanvasHelper_canva
         rawBitmapImageData[imageDataOffset + 3] = Math.floor(opacity * 255);
     });
     __classPrivateFieldGet(this, _DisplayCanvasHelper_bitmapContext, "f").putImageData(bitmapImageData, 0, 0);
+    __classPrivateFieldGet(this, _DisplayCanvasHelper_context, "f").scale(Math.sign(bitmapScaleX), Math.sign(bitmapScaleY));
     __classPrivateFieldGet(this, _DisplayCanvasHelper_context, "f").drawImage(__classPrivateFieldGet(this, _DisplayCanvasHelper_bitmapCanvas, "f"), x, y, width, height);
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_restore).call(this);
 }, _DisplayCanvasHelper_runSpriteCommand = function _DisplayCanvasHelper_runSpriteCommand(command, contextState) {
