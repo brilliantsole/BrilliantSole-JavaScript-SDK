@@ -24,10 +24,24 @@ import {
 } from "./DisplayContextState.ts";
 import DisplayContextStateHelper from "./DisplayContextStateHelper.ts";
 import {
+  assertAnySelectedSpriteSheet,
+  assertLoadedSpriteSheet,
+  assertSelectedSpriteSheet,
+  assertSprite,
+  assertSpritePaletteSwap,
+  assertSpriteSheetPalette,
+  assertSpriteSheetPaletteSwap,
   DisplayManagerInterface,
   DisplayTransform,
+  getSprite,
+  getSpritePaletteSwap,
+  getSpriteSheetPalette,
+  getSpriteSheetPaletteSwap,
   runDisplayContextCommand,
   runDisplayContextCommands,
+  selectSpritePaletteSwap,
+  selectSpriteSheetPalette,
+  selectSpriteSheetPaletteSwap,
 } from "./DisplayManagerInterface.ts";
 import {
   assertValidColor,
@@ -66,7 +80,10 @@ import { wait } from "./Timer.ts";
 import { DisplayContextCommand } from "./DisplayContextCommand.ts";
 import {
   DisplaySprite,
+  DisplaySpritePaletteSwap,
   DisplaySpriteSheet,
+  DisplaySpriteSheetPalette,
+  DisplaySpriteSheetPaletteSwap,
 } from "./DisplaySpriteSheetUtils.ts";
 
 const _console = createConsole("DisplayCanvasHelper", { log: true });
@@ -2617,10 +2634,35 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     }
   }
   assertLoadedSpriteSheet(spriteSheetName: string) {
-    _console.assertWithError(
-      this.spriteSheets[spriteSheetName],
-      `spriteSheet "${spriteSheetName}" not loaded`
-    );
+    assertLoadedSpriteSheet(this, spriteSheetName);
+  }
+  assertSelectedSpriteSheet(spriteSheetName: string) {
+    assertSelectedSpriteSheet(this, spriteSheetName);
+  }
+  assertAnySelectedSpriteSheet() {
+    assertAnySelectedSpriteSheet(this);
+  }
+  assertSprite(spriteName: string) {
+    return assertSprite(this, spriteName);
+  }
+  getSprite(spriteName: string): DisplaySprite | undefined {
+    return getSprite(this, spriteName);
+  }
+  getSpriteSheetPalette(
+    paletteName: string
+  ): DisplaySpriteSheetPalette | undefined {
+    return getSpriteSheetPalette(this, paletteName);
+  }
+  getSpriteSheetPaletteSwap(
+    paletteSwapName: string
+  ): DisplaySpriteSheetPaletteSwap | undefined {
+    return getSpriteSheetPaletteSwap(this, paletteSwapName);
+  }
+  getSpritePaletteSwap(
+    spriteName: string,
+    paletteSwapName: string
+  ): DisplaySpritePaletteSwap | undefined {
+    return getSpritePaletteSwap(this, spriteName, paletteSwapName);
   }
   get selectedSpriteSheet() {
     if (this.contextState.spriteSheetName) {
@@ -2961,6 +3003,51 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     this.#restoreContextForSprite();
     this.#setUseSpriteColorIndices(false);
     this.#setClearCanvasBoundingBoxOnDraw(true);
+  }
+
+  // SPRITE SHEET PALETTES
+
+  assertSpriteSheetPalette(paletteName: string) {
+    assertSpriteSheetPalette(this, paletteName);
+  }
+  assertSpriteSheetPaletteSwap(paletteSwapName: string) {
+    assertSpriteSheetPaletteSwap(this, paletteSwapName);
+  }
+  assertSpritePaletteSwap(spriteName: string, paletteSwapName: string) {
+    assertSpritePaletteSwap(this, spriteName, paletteSwapName);
+  }
+  async selectSpriteSheetPalette(
+    paletteName: string,
+    offset?: number,
+    sendImmediately?: boolean
+  ) {
+    await selectSpriteSheetPalette(this, paletteName, offset, sendImmediately);
+  }
+  async selectSpriteSheetPaletteSwap(
+    paletteSwapName: string,
+    offset?: number,
+    sendImmediately?: boolean
+  ) {
+    await selectSpriteSheetPaletteSwap(
+      this,
+      paletteSwapName,
+      offset,
+      sendImmediately
+    );
+  }
+  async selectSpritePaletteSwap(
+    spriteName: string,
+    paletteSwapName: string,
+    offset?: number,
+    sendImmediately?: boolean
+  ) {
+    await selectSpritePaletteSwap(
+      this,
+      spriteName,
+      paletteSwapName,
+      offset,
+      sendImmediately
+    );
   }
 
   #reset() {

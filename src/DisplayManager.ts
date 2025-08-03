@@ -9,10 +9,7 @@ import autoBind from "auto-bind";
 import {
   clamp,
   degToRad,
-  Int16Max,
-  Int16Min,
   normalizeRadians,
-  twoPi,
   Vector2,
 } from "./utils/MathUtils.ts";
 import { rgbToHex, stringToRGB } from "./utils/ColorUtils.ts";
@@ -20,11 +17,9 @@ import DisplayContextStateHelper from "./utils/DisplayContextStateHelper.ts";
 import {
   assertValidColor,
   assertValidDisplayBrightness,
-  assertValidOpacity,
   assertValidSegmentCap,
   DisplayScaleDirection,
   DisplayBitmapScaleDirectionToCommandType,
-  displayScaleStep as displayScaleStep,
   DisplayColorRGB,
   DisplayCropDirection,
   DisplayCropDirections,
@@ -59,13 +54,33 @@ import {
   serializeContextCommand,
 } from "./utils/DisplayContextCommand.ts";
 import {
+  assertAnySelectedSpriteSheet,
+  assertLoadedSpriteSheet,
+  assertSelectedSpriteSheet,
+  assertSprite,
+  assertSpritePaletteSwap,
+  assertSpriteSheetPalette,
+  assertSpriteSheetPaletteSwap,
   DisplayManagerInterface,
+  getSprite,
+  getSpritePaletteSwap,
+  getSpriteSheetPalette,
+  getSpriteSheetPaletteSwap,
   runDisplayContextCommand,
   runDisplayContextCommands,
+  selectSpritePaletteSwap,
+  selectSpriteSheetPalette,
+  selectSpriteSheetPaletteSwap,
 } from "./utils/DisplayManagerInterface.ts";
 import { SendFileCallback } from "./FileTransferManager.ts";
 import { textDecoder, textEncoder } from "./utils/Text.ts";
-import { serializeSpriteSheet } from "./utils/DisplaySpriteSheetUtils.ts";
+import {
+  DisplaySprite,
+  DisplaySpritePaletteSwap,
+  DisplaySpriteSheetPalette,
+  DisplaySpriteSheetPaletteSwap,
+  serializeSpriteSheet,
+} from "./utils/DisplaySpriteSheetUtils.ts";
 
 const _console = createConsole("DisplayManager", { log: true });
 
@@ -1785,10 +1800,12 @@ class DisplayManager implements DisplayManagerInterface {
     );
   }
 
-  assertValidBitmap(bitmap: DisplayBitmap) {
+  assertValidBitmap(bitmap: DisplayBitmap, checkSize?: boolean) {
     this.assertValidNumberOfColors(bitmap.numberOfColors);
     assertValidBitmapPixels(bitmap);
-    this.#assertValidBitmapSize(bitmap);
+    if (checkSize) {
+      this.#assertValidBitmapSize(bitmap);
+    }
   }
   #assertValidBitmapSize(bitmap: DisplayBitmap) {
     const pixelDataLength = getBitmapNumberOfBytes(bitmap);
@@ -1805,7 +1822,7 @@ class DisplayManager implements DisplayManagerInterface {
     bitmap: DisplayBitmap,
     sendImmediately?: boolean
   ) {
-    this.assertValidBitmap(bitmap);
+    this.assertValidBitmap(bitmap, true);
 
     const dataView = serializeContextCommand(this, {
       type: "drawBitmap",
@@ -1941,12 +1958,37 @@ class DisplayManager implements DisplayManagerInterface {
     }
   }
   assertLoadedSpriteSheet(spriteSheetName: string) {
-    _console.assertWithError(
-      spriteSheetName in this.spriteSheets &&
-        spriteSheetName in this.#spriteSheetIndices,
-      `spriteSheet "${spriteSheetName}" not loaded`
-    );
+    assertLoadedSpriteSheet(this, spriteSheetName);
   }
+  assertSelectedSpriteSheet(spriteSheetName: string) {
+    assertSelectedSpriteSheet(this, spriteSheetName);
+  }
+  assertAnySelectedSpriteSheet() {
+    assertAnySelectedSpriteSheet(this);
+  }
+  assertSprite(spriteName: string) {
+    return assertSprite(this, spriteName);
+  }
+  getSprite(spriteName: string): DisplaySprite | undefined {
+    return getSprite(this, spriteName);
+  }
+  getSpriteSheetPalette(
+    paletteName: string
+  ): DisplaySpriteSheetPalette | undefined {
+    return getSpriteSheetPalette(this, paletteName);
+  }
+  getSpriteSheetPaletteSwap(
+    paletteSwapName: string
+  ): DisplaySpriteSheetPaletteSwap | undefined {
+    return getSpriteSheetPaletteSwap(this, paletteSwapName);
+  }
+  getSpritePaletteSwap(
+    spriteName: string,
+    paletteSwapName: string
+  ): DisplaySpritePaletteSwap | undefined {
+    return getSpritePaletteSwap(this, spriteName, paletteSwapName);
+  }
+
   get selectedSpriteSheet() {
     if (this.contextState.spriteSheetName) {
       return this.#spriteSheets[this.contextState.spriteSheetName];
@@ -2071,6 +2113,51 @@ class DisplayManager implements DisplayManagerInterface {
       default:
         throw Error(`uncaught messageType ${messageType}`);
     }
+  }
+
+  // SPRITE SHEET PALETTES
+
+  assertSpriteSheetPalette(paletteName: string) {
+    assertSpriteSheetPalette(this, paletteName);
+  }
+  assertSpriteSheetPaletteSwap(paletteSwapName: string) {
+    assertSpriteSheetPaletteSwap(this, paletteSwapName);
+  }
+  assertSpritePaletteSwap(spriteName: string, paletteSwapName: string) {
+    assertSpritePaletteSwap(this, spriteName, paletteSwapName);
+  }
+  async selectSpriteSheetPalette(
+    paletteName: string,
+    offset?: number,
+    sendImmediately?: boolean
+  ) {
+    await selectSpriteSheetPalette(this, paletteName, offset, sendImmediately);
+  }
+  async selectSpriteSheetPaletteSwap(
+    paletteSwapName: string,
+    offset?: number,
+    sendImmediately?: boolean
+  ) {
+    await selectSpriteSheetPaletteSwap(
+      this,
+      paletteSwapName,
+      offset,
+      sendImmediately
+    );
+  }
+  async selectSpritePaletteSwap(
+    spriteName: string,
+    paletteSwapName: string,
+    offset?: number,
+    sendImmediately?: boolean
+  ) {
+    await selectSpritePaletteSwap(
+      this,
+      spriteName,
+      paletteSwapName,
+      offset,
+      sendImmediately
+    );
   }
 
   reset() {

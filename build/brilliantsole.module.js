@@ -5467,7 +5467,7 @@ function serializeContextCommand(displayManager, command) {
         case "drawBitmap":
             {
                 const { bitmap, centerX, centerY } = command;
-                displayManager.assertValidBitmap(bitmap);
+                displayManager.assertValidBitmap(bitmap, false);
                 dataView = new DataView(new ArrayBuffer(drawBitmapHeaderLength));
                 dataView.setInt16(0, centerX, true);
                 dataView.setInt16(2, centerY, true);
@@ -5834,10 +5834,108 @@ async function runDisplayContextCommands(displayManager, commands, sendImmediate
     _console$l.log("runDisplayContextCommands", commands);
     commands
         .filter((command) => !command.hide)
-        .forEach((command, index) => {
-        const isLast = index == commands.length - 1;
-        runDisplayContextCommand(displayManager, command, sendImmediately && isLast);
+        .forEach((command) => {
+        runDisplayContextCommand(displayManager, command, false);
     });
+    if (sendImmediately) {
+        displayManager.flushContextCommands();
+    }
+}
+function assertLoadedSpriteSheet(displayManager, spriteSheetName) {
+    _console$l.assertWithError(displayManager.spriteSheets[spriteSheetName], `spriteSheet "${spriteSheetName}" not loaded`);
+}
+function assertSelectedSpriteSheet(displayManager, spriteSheetName) {
+    displayManager.assertLoadedSpriteSheet(spriteSheetName);
+    _console$l.assertWithError(displayManager.selectedSpriteSheetName == spriteSheetName, `spriteSheet "${spriteSheetName}" not selected`);
+}
+function assertAnySelectedSpriteSheet(displayManager) {
+    _console$l.assertWithError(displayManager.selectedSpriteSheet, "no spriteSheet selected");
+}
+function getSprite(displayManager, spriteName) {
+    displayManager.assertAnySelectedSpriteSheet();
+    return displayManager.selectedSpriteSheet.sprites.find((sprite) => sprite.name == spriteName);
+}
+function assertSprite(displayManager, spriteName) {
+    displayManager.assertAnySelectedSpriteSheet();
+    const sprite = displayManager.getSprite(spriteName);
+    _console$l.assertWithError(sprite, `no sprite found with name "${spriteName}"`);
+}
+function getSpriteSheetPalette(displayManager, paletteName) {
+    return displayManager.selectedSpriteSheet?.palettes.find((palette) => palette.name == paletteName);
+}
+function getSpriteSheetPaletteSwap(displayManager, paletteSwapName) {
+    return displayManager.selectedSpriteSheet?.paletteSwaps.find((paletteSwap) => paletteSwap.name == paletteSwapName);
+}
+function getSpritePaletteSwap(displayManager, spriteName, paletteSwapName) {
+    return displayManager
+        .getSprite(spriteName)
+        ?.paletteSwaps.find((paletteSwap) => paletteSwap.name == paletteSwapName);
+}
+function assertSpriteSheetPalette(displayManagerInterface, paletteName) {
+    const spriteSheetPalette = displayManagerInterface.getSpriteSheetPalette(paletteName);
+    _console$l.assertWithError(spriteSheetPalette, `no spriteSheetPalette found with name "${paletteName}"`);
+}
+function assertSpriteSheetPaletteSwap(displayManagerInterface, paletteSwapName) {
+    const spriteSheetPaletteSwap = displayManagerInterface.getSpriteSheetPaletteSwap(paletteSwapName);
+    _console$l.assertWithError(spriteSheetPaletteSwap, `no paletteSwapName found with name "${paletteSwapName}"`);
+}
+function assertSpritePaletteSwap(displayManagerInterface, spriteName, paletteSwapName) {
+    const spritePaletteSwap = displayManagerInterface.getSpritePaletteSwap(spriteName, paletteSwapName);
+    _console$l.assertWithError(spritePaletteSwap, `no spritePaletteSwap found for sprite "${spriteName}" name "${paletteSwapName}"`);
+}
+async function selectSpriteSheetPalette(displayManagerInterface, paletteName, offset, sendImmediately) {
+    offset = offset || 0;
+    displayManagerInterface.assertAnySelectedSpriteSheet();
+    displayManagerInterface.assertSpriteSheetPalette(paletteName);
+    const palette = displayManagerInterface.getSpriteSheetPalette(paletteName);
+    _console$l.assertWithError(palette.numberOfColors + offset <= displayManagerInterface.numberOfColors, `invalid offset ${offset} and palette.numberOfColors ${palette.numberOfColors} (max ${displayManagerInterface.numberOfColors})`);
+    for (let index = 0; index < palette.numberOfColors; index++) {
+        const color = palette.colors[index];
+        let opacity = palette.opacities[index];
+        if (opacity == undefined) {
+            opacity = 1;
+        }
+        displayManagerInterface.setColor(index + offset, color, false);
+        displayManagerInterface.setColorOpacity(index + offset, opacity, false);
+    }
+    if (sendImmediately) {
+        displayManagerInterface.flushContextCommands();
+    }
+}
+async function selectSpriteSheetPaletteSwap(displayManagerInterface, paletteSwapName, offset, sendImmediately) {
+    offset = offset || 0;
+    displayManagerInterface.assertAnySelectedSpriteSheet();
+    displayManagerInterface.assertSpriteSheetPaletteSwap(paletteSwapName);
+    const paletteSwap = displayManagerInterface.getSpriteSheetPaletteSwap(paletteSwapName);
+    const spriteColorPairs = [];
+    for (let spriteColorIndex = 0; spriteColorIndex < paletteSwap.numberOfColors; spriteColorIndex++) {
+        const colorIndex = paletteSwap.spriteColorIndices[spriteColorIndex];
+        spriteColorPairs.push({
+            spriteColorIndex: spriteColorIndex + offset,
+            colorIndex,
+        });
+    }
+    displayManagerInterface.selectSpriteColors(spriteColorPairs, false);
+    if (sendImmediately) {
+        displayManagerInterface.flushContextCommands();
+    }
+}
+async function selectSpritePaletteSwap(displayManagerInterface, spriteName, paletteSwapName, offset, sendImmediately) {
+    offset = offset || 0;
+    displayManagerInterface.assertAnySelectedSpriteSheet();
+    const paletteSwap = displayManagerInterface.getSpritePaletteSwap(spriteName, paletteSwapName);
+    const spriteColorPairs = [];
+    for (let spriteColorIndex = 0; spriteColorIndex < paletteSwap.numberOfColors; spriteColorIndex++) {
+        const colorIndex = paletteSwap.spriteColorIndices[spriteColorIndex];
+        spriteColorPairs.push({
+            spriteColorIndex: spriteColorIndex + offset,
+            colorIndex,
+        });
+    }
+    displayManagerInterface.selectSpriteColors(spriteColorPairs, false);
+    if (sendImmediately) {
+        displayManagerInterface.flushContextCommands();
+    }
 }
 
 const _console$k = createConsole("DisplaySpriteSheetUtils", { log: true });
@@ -6886,13 +6984,15 @@ class DisplayManager {
     assertValidNumberOfColors(numberOfColors) {
         _console$j.assertRangeWithError("numberOfColors", numberOfColors, 2, this.numberOfColors);
     }
-    assertValidBitmap(bitmap) {
+    assertValidBitmap(bitmap, checkSize) {
         this.assertValidNumberOfColors(bitmap.numberOfColors);
         assertValidBitmapPixels(bitmap);
-        __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_assertValidBitmapSize).call(this, bitmap);
+        if (checkSize) {
+            __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_assertValidBitmapSize).call(this, bitmap);
+        }
     }
     async drawBitmap(centerX, centerY, bitmap, sendImmediately) {
-        this.assertValidBitmap(bitmap);
+        this.assertValidBitmap(bitmap, true);
         const dataView = serializeContextCommand(this, {
             type: "drawBitmap",
             centerX,
@@ -6949,8 +7049,28 @@ class DisplayManager {
         }
     }
     assertLoadedSpriteSheet(spriteSheetName) {
-        _console$j.assertWithError(spriteSheetName in this.spriteSheets &&
-            spriteSheetName in __classPrivateFieldGet(this, _DisplayManager_spriteSheetIndices, "f"), `spriteSheet "${spriteSheetName}" not loaded`);
+        assertLoadedSpriteSheet(this, spriteSheetName);
+    }
+    assertSelectedSpriteSheet(spriteSheetName) {
+        assertSelectedSpriteSheet(this, spriteSheetName);
+    }
+    assertAnySelectedSpriteSheet() {
+        assertAnySelectedSpriteSheet(this);
+    }
+    assertSprite(spriteName) {
+        return assertSprite(this, spriteName);
+    }
+    getSprite(spriteName) {
+        return getSprite(this, spriteName);
+    }
+    getSpriteSheetPalette(paletteName) {
+        return getSpriteSheetPalette(this, paletteName);
+    }
+    getSpriteSheetPaletteSwap(paletteSwapName) {
+        return getSpriteSheetPaletteSwap(this, paletteSwapName);
+    }
+    getSpritePaletteSwap(spriteName, paletteSwapName) {
+        return getSpritePaletteSwap(this, spriteName, paletteSwapName);
     }
     get selectedSpriteSheet() {
         if (this.contextState.spriteSheetName) {
@@ -7027,6 +7147,24 @@ class DisplayManager {
             default:
                 throw Error(`uncaught messageType ${messageType}`);
         }
+    }
+    assertSpriteSheetPalette(paletteName) {
+        assertSpriteSheetPalette(this, paletteName);
+    }
+    assertSpriteSheetPaletteSwap(paletteSwapName) {
+        assertSpriteSheetPaletteSwap(this, paletteSwapName);
+    }
+    assertSpritePaletteSwap(spriteName, paletteSwapName) {
+        assertSpritePaletteSwap(this, spriteName, paletteSwapName);
+    }
+    async selectSpriteSheetPalette(paletteName, offset, sendImmediately) {
+        await selectSpriteSheetPalette(this, paletteName, offset, sendImmediately);
+    }
+    async selectSpriteSheetPaletteSwap(paletteSwapName, offset, sendImmediately) {
+        await selectSpriteSheetPaletteSwap(this, paletteSwapName, offset, sendImmediately);
+    }
+    async selectSpritePaletteSwap(spriteName, paletteSwapName, offset, sendImmediately) {
+        await selectSpritePaletteSwap(this, spriteName, paletteSwapName, offset, sendImmediately);
     }
     reset() {
         _console$j.log("clearing displayManager");
@@ -11534,7 +11672,28 @@ class DisplayCanvasHelper {
         }
     }
     assertLoadedSpriteSheet(spriteSheetName) {
-        _console$6.assertWithError(this.spriteSheets[spriteSheetName], `spriteSheet "${spriteSheetName}" not loaded`);
+        assertLoadedSpriteSheet(this, spriteSheetName);
+    }
+    assertSelectedSpriteSheet(spriteSheetName) {
+        assertSelectedSpriteSheet(this, spriteSheetName);
+    }
+    assertAnySelectedSpriteSheet() {
+        assertAnySelectedSpriteSheet(this);
+    }
+    assertSprite(spriteName) {
+        return assertSprite(this, spriteName);
+    }
+    getSprite(spriteName) {
+        return getSprite(this, spriteName);
+    }
+    getSpriteSheetPalette(paletteName) {
+        return getSpriteSheetPalette(this, paletteName);
+    }
+    getSpriteSheetPaletteSwap(paletteSwapName) {
+        return getSpriteSheetPaletteSwap(this, paletteSwapName);
+    }
+    getSpritePaletteSwap(spriteName, paletteSwapName) {
+        return getSpritePaletteSwap(this, spriteName, paletteSwapName);
     }
     get selectedSpriteSheet() {
         if (this.contextState.spriteSheetName) {
@@ -11599,6 +11758,24 @@ class DisplayCanvasHelper {
         __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_restoreContextForSprite).call(this);
         __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_setUseSpriteColorIndices).call(this, false);
         __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_setClearCanvasBoundingBoxOnDraw).call(this, true);
+    }
+    assertSpriteSheetPalette(paletteName) {
+        assertSpriteSheetPalette(this, paletteName);
+    }
+    assertSpriteSheetPaletteSwap(paletteSwapName) {
+        assertSpriteSheetPaletteSwap(this, paletteSwapName);
+    }
+    assertSpritePaletteSwap(spriteName, paletteSwapName) {
+        assertSpritePaletteSwap(this, spriteName, paletteSwapName);
+    }
+    async selectSpriteSheetPalette(paletteName, offset, sendImmediately) {
+        await selectSpriteSheetPalette(this, paletteName, offset, sendImmediately);
+    }
+    async selectSpriteSheetPaletteSwap(paletteSwapName, offset, sendImmediately) {
+        await selectSpriteSheetPaletteSwap(this, paletteSwapName, offset, sendImmediately);
+    }
+    async selectSpritePaletteSwap(spriteName, paletteSwapName, offset, sendImmediately) {
+        await selectSpritePaletteSwap(this, spriteName, paletteSwapName, offset, sendImmediately);
     }
     async imageToBitmap(image, width, height, numberOfColors) {
         return imageToBitmap(image, width, height, this.colors, this.contextState, numberOfColors);

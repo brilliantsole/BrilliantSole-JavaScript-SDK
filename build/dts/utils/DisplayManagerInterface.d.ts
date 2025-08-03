@@ -1,7 +1,7 @@
 import { DisplayBitmapColorPair, DisplayBrightness, DisplaySpriteColorPair, DisplayBitmap } from "../DisplayManager.ts";
 import { DisplayContextCommand } from "./DisplayContextCommand.ts";
 import { DisplayContextState, DisplaySegmentCap } from "./DisplayContextState.ts";
-import { DisplaySpriteSheet } from "./DisplaySpriteSheetUtils.ts";
+import { DisplaySprite, DisplaySpritePaletteSwap, DisplaySpriteSheet, DisplaySpriteSheetPalette, DisplaySpriteSheetPaletteSwap } from "./DisplaySpriteSheetUtils.ts";
 import { DisplayScaleDirection, DisplayColorRGB, DisplayCropDirection } from "./DisplayUtils.ts";
 import { Vector2 } from "./MathUtils.ts";
 export type DisplayTransform = {
@@ -27,7 +27,7 @@ export interface DisplayManagerInterface {
     assertValidColorIndex(colorIndex: number): void;
     assertValidLineWidth(lineWidth: number): void;
     assertValidNumberOfColors(numberOfColors: number): void;
-    assertValidBitmap(bitmap: DisplayBitmap): void;
+    assertValidBitmap(bitmap: DisplayBitmap, checkSize?: boolean): void;
     get opacities(): number[];
     setColorOpacity(colorIndex: number, opacity: number, sendImmediately?: boolean): Promise<void>;
     setOpacity(opacity: number, sendImmediately?: boolean): Promise<void>;
@@ -109,10 +109,37 @@ export interface DisplayManagerInterface {
     selectSpriteSheet(spriteSheetName: string, sendImmediately?: boolean): Promise<void>;
     drawSprite(centerX: number, centerY: number, spriteName: string, sendImmediately?: boolean): Promise<void>;
     assertLoadedSpriteSheet(spriteSheetName: string): void;
+    assertSelectedSpriteSheet(spriteSheetName: string): void;
+    assertAnySelectedSpriteSheet(): void;
+    assertSprite(spriteName: string): void;
+    getSprite(spriteName: string): DisplaySprite | undefined;
+    getSpriteSheetPalette(paletteName: string): DisplaySpriteSheetPalette | undefined;
+    getSpriteSheetPaletteSwap(paletteSwapName: string): DisplaySpriteSheetPaletteSwap | undefined;
+    getSpritePaletteSwap(spriteName: string, paletteSwapName: string): DisplaySpritePaletteSwap | undefined;
     get selectedSpriteSheet(): DisplaySpriteSheet | undefined;
     get selectedSpriteSheetName(): string | undefined;
     spriteSheets: Record<string, DisplaySpriteSheet>;
     spriteSheetIndices: Record<string, number>;
+    assertSpriteSheetPalette(paletteName: string): void;
+    assertSpriteSheetPaletteSwap(paletteSwapName: string): void;
+    assertSpritePaletteSwap(spriteName: string, paletteSwapName: string): void;
+    selectSpriteSheetPalette(paletteName: string, offset?: number, sendImmediately?: boolean): Promise<void>;
+    selectSpriteSheetPaletteSwap(paletteSwapName: string, offset?: number, sendImmediately?: boolean): Promise<void>;
+    selectSpritePaletteSwap(spriteName: string, paletteSwapName: string, offset?: number, sendImmediately?: boolean): Promise<void>;
 }
 export declare function runDisplayContextCommand(displayManager: DisplayManagerInterface, command: DisplayContextCommand, sendImmediately?: boolean): Promise<void>;
 export declare function runDisplayContextCommands(displayManager: DisplayManagerInterface, commands: DisplayContextCommand[], sendImmediately?: boolean): Promise<void>;
+export declare function assertLoadedSpriteSheet(displayManager: DisplayManagerInterface, spriteSheetName: string): void;
+export declare function assertSelectedSpriteSheet(displayManager: DisplayManagerInterface, spriteSheetName: string): void;
+export declare function assertAnySelectedSpriteSheet(displayManager: DisplayManagerInterface): void;
+export declare function getSprite(displayManager: DisplayManagerInterface, spriteName: string): DisplaySprite | undefined;
+export declare function assertSprite(displayManager: DisplayManagerInterface, spriteName: string): void;
+export declare function getSpriteSheetPalette(displayManager: DisplayManagerInterface, paletteName: string): DisplaySpriteSheetPalette | undefined;
+export declare function getSpriteSheetPaletteSwap(displayManager: DisplayManagerInterface, paletteSwapName: string): DisplaySpriteSheetPaletteSwap | undefined;
+export declare function getSpritePaletteSwap(displayManager: DisplayManagerInterface, spriteName: string, paletteSwapName: string): DisplaySpritePaletteSwap | undefined;
+export declare function assertSpriteSheetPalette(displayManagerInterface: DisplayManagerInterface, paletteName: string): void;
+export declare function assertSpriteSheetPaletteSwap(displayManagerInterface: DisplayManagerInterface, paletteSwapName: string): void;
+export declare function assertSpritePaletteSwap(displayManagerInterface: DisplayManagerInterface, spriteName: string, paletteSwapName: string): void;
+export declare function selectSpriteSheetPalette(displayManagerInterface: DisplayManagerInterface, paletteName: string, offset?: number, sendImmediately?: boolean): Promise<void>;
+export declare function selectSpriteSheetPaletteSwap(displayManagerInterface: DisplayManagerInterface, paletteSwapName: string, offset?: number, sendImmediately?: boolean): Promise<void>;
+export declare function selectSpritePaletteSwap(displayManagerInterface: DisplayManagerInterface, spriteName: string, paletteSwapName: string, offset?: number, sendImmediately?: boolean): Promise<void>;

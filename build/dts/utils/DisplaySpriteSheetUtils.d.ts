@@ -12,6 +12,11 @@ export type DisplaySprite = {
     paletteSwaps: DisplaySpritePaletteSwap[];
     commands: DisplayContextCommand[];
 };
+export type DisplaySpriteSheetPaletteSwap = {
+    name: string;
+    numberOfColors: number;
+    spriteColorIndices: number[];
+};
 export type DisplaySpriteSheetPalette = {
     name: string;
     numberOfColors: number;
@@ -21,6 +26,7 @@ export type DisplaySpriteSheetPalette = {
 export type DisplaySpriteSheet = {
     name: string;
     palettes: DisplaySpriteSheetPalette[];
+    paletteSwaps: DisplaySpriteSheetPaletteSwap[];
     sprites: DisplaySprite[];
 };
 export declare function serializeSpriteSheet(displayManager: DisplayManagerInterface, spriteSheet: DisplaySpriteSheet): ArrayBuffer;

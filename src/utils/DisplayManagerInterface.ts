@@ -10,7 +10,13 @@ import {
   DisplayContextState,
   DisplaySegmentCap,
 } from "./DisplayContextState.ts";
-import { DisplaySpriteSheet } from "./DisplaySpriteSheetUtils.ts";
+import {
+  DisplaySprite,
+  DisplaySpritePaletteSwap,
+  DisplaySpriteSheet,
+  DisplaySpriteSheetPalette,
+  DisplaySpriteSheetPaletteSwap,
+} from "./DisplaySpriteSheetUtils.ts";
 import {
   DisplayScaleDirection,
   DisplayColorRGB,
@@ -64,7 +70,7 @@ export interface DisplayManagerInterface {
   assertValidColorIndex(colorIndex: number): void;
   assertValidLineWidth(lineWidth: number): void;
   assertValidNumberOfColors(numberOfColors: number): void;
-  assertValidBitmap(bitmap: DisplayBitmap): void;
+  assertValidBitmap(bitmap: DisplayBitmap, checkSize?: boolean): void;
 
   get opacities(): number[];
   setColorOpacity(
@@ -363,11 +369,46 @@ export interface DisplayManagerInterface {
     sendImmediately?: boolean
   ): Promise<void>;
   assertLoadedSpriteSheet(spriteSheetName: string): void;
+  assertSelectedSpriteSheet(spriteSheetName: string): void;
+  assertAnySelectedSpriteSheet(): void;
+  assertSprite(spriteName: string): void;
+  getSprite(spriteName: string): DisplaySprite | undefined;
+  getSpriteSheetPalette(
+    paletteName: string
+  ): DisplaySpriteSheetPalette | undefined;
+  getSpriteSheetPaletteSwap(
+    paletteSwapName: string
+  ): DisplaySpriteSheetPaletteSwap | undefined;
+  getSpritePaletteSwap(
+    spriteName: string,
+    paletteSwapName: string
+  ): DisplaySpritePaletteSwap | undefined;
+
   get selectedSpriteSheet(): DisplaySpriteSheet | undefined;
   get selectedSpriteSheetName(): string | undefined;
 
   spriteSheets: Record<string, DisplaySpriteSheet>;
   spriteSheetIndices: Record<string, number>;
+
+  assertSpriteSheetPalette(paletteName: string): void;
+  assertSpriteSheetPaletteSwap(paletteSwapName: string): void;
+  assertSpritePaletteSwap(spriteName: string, paletteSwapName: string): void;
+  selectSpriteSheetPalette(
+    paletteName: string,
+    offset?: number,
+    sendImmediately?: boolean
+  ): Promise<void>;
+  selectSpriteSheetPaletteSwap(
+    paletteSwapName: string,
+    offset?: number,
+    sendImmediately?: boolean
+  ): Promise<void>;
+  selectSpritePaletteSwap(
+    spriteName: string,
+    paletteSwapName: string,
+    offset?: number,
+    sendImmediately?: boolean
+  ): Promise<void>;
 }
 
 export async function runDisplayContextCommand(
@@ -814,12 +855,212 @@ export async function runDisplayContextCommands(
   _console.log("runDisplayContextCommands", commands);
   commands
     .filter((command) => !command.hide)
-    .forEach((command, index) => {
-      const isLast = index == commands.length - 1;
-      runDisplayContextCommand(
-        displayManager,
-        command,
-        sendImmediately && isLast
-      );
+    .forEach((command) => {
+      runDisplayContextCommand(displayManager, command, false);
     });
+  if (sendImmediately) {
+    displayManager.flushContextCommands();
+  }
+}
+
+export function assertLoadedSpriteSheet(
+  displayManager: DisplayManagerInterface,
+  spriteSheetName: string
+) {
+  _console.assertWithError(
+    displayManager.spriteSheets[spriteSheetName],
+    `spriteSheet "${spriteSheetName}" not loaded`
+  );
+}
+export function assertSelectedSpriteSheet(
+  displayManager: DisplayManagerInterface,
+  spriteSheetName: string
+) {
+  displayManager.assertLoadedSpriteSheet(spriteSheetName);
+  _console.assertWithError(
+    displayManager.selectedSpriteSheetName == spriteSheetName,
+    `spriteSheet "${spriteSheetName}" not selected`
+  );
+}
+export function assertAnySelectedSpriteSheet(
+  displayManager: DisplayManagerInterface
+) {
+  _console.assertWithError(
+    displayManager.selectedSpriteSheet,
+    "no spriteSheet selected"
+  );
+}
+export function getSprite(
+  displayManager: DisplayManagerInterface,
+  spriteName: string
+): DisplaySprite | undefined {
+  displayManager.assertAnySelectedSpriteSheet();
+  return displayManager.selectedSpriteSheet!.sprites.find(
+    (sprite) => sprite.name == spriteName
+  );
+}
+export function assertSprite(
+  displayManager: DisplayManagerInterface,
+  spriteName: string
+) {
+  displayManager.assertAnySelectedSpriteSheet();
+  const sprite = displayManager.getSprite(spriteName);
+  _console.assertWithError(sprite, `no sprite found with name "${spriteName}"`);
+}
+export function getSpriteSheetPalette(
+  displayManager: DisplayManagerInterface,
+  paletteName: string
+): DisplaySpriteSheetPalette | undefined {
+  return displayManager.selectedSpriteSheet?.palettes.find(
+    (palette) => palette.name == paletteName
+  );
+}
+export function getSpriteSheetPaletteSwap(
+  displayManager: DisplayManagerInterface,
+  paletteSwapName: string
+): DisplaySpriteSheetPaletteSwap | undefined {
+  return displayManager.selectedSpriteSheet?.paletteSwaps.find(
+    (paletteSwap) => paletteSwap.name == paletteSwapName
+  );
+}
+export function getSpritePaletteSwap(
+  displayManager: DisplayManagerInterface,
+  spriteName: string,
+  paletteSwapName: string
+): DisplaySpritePaletteSwap | undefined {
+  return displayManager
+    .getSprite(spriteName)
+    ?.paletteSwaps.find((paletteSwap) => paletteSwap.name == paletteSwapName);
+}
+
+export function assertSpriteSheetPalette(
+  displayManagerInterface: DisplayManagerInterface,
+  paletteName: string
+) {
+  const spriteSheetPalette =
+    displayManagerInterface.getSpriteSheetPalette(paletteName);
+  _console.assertWithError(
+    spriteSheetPalette,
+    `no spriteSheetPalette found with name "${paletteName}"`
+  );
+}
+export function assertSpriteSheetPaletteSwap(
+  displayManagerInterface: DisplayManagerInterface,
+  paletteSwapName: string
+) {
+  const spriteSheetPaletteSwap =
+    displayManagerInterface.getSpriteSheetPaletteSwap(paletteSwapName);
+  _console.assertWithError(
+    spriteSheetPaletteSwap,
+    `no paletteSwapName found with name "${paletteSwapName}"`
+  );
+}
+export function assertSpritePaletteSwap(
+  displayManagerInterface: DisplayManagerInterface,
+  spriteName: string,
+  paletteSwapName: string
+) {
+  const spritePaletteSwap = displayManagerInterface.getSpritePaletteSwap(
+    spriteName,
+    paletteSwapName
+  );
+  _console.assertWithError(
+    spritePaletteSwap,
+    `no spritePaletteSwap found for sprite "${spriteName}" name "${paletteSwapName}"`
+  );
+}
+export async function selectSpriteSheetPalette(
+  displayManagerInterface: DisplayManagerInterface,
+  paletteName: string,
+  offset?: number,
+  sendImmediately?: boolean
+) {
+  offset = offset || 0;
+
+  displayManagerInterface.assertAnySelectedSpriteSheet();
+  displayManagerInterface.assertSpriteSheetPalette(paletteName);
+  const palette = displayManagerInterface.getSpriteSheetPalette(paletteName)!;
+
+  _console.assertWithError(
+    palette.numberOfColors + offset <= displayManagerInterface.numberOfColors,
+    `invalid offset ${offset} and palette.numberOfColors ${palette.numberOfColors} (max ${displayManagerInterface.numberOfColors})`
+  );
+
+  for (let index = 0; index < palette.numberOfColors; index++) {
+    const color = palette.colors[index];
+    let opacity = palette.opacities[index];
+    if (opacity == undefined) {
+      opacity = 1;
+    }
+    displayManagerInterface.setColor(index + offset, color, false);
+    displayManagerInterface.setColorOpacity(index + offset, opacity, false);
+  }
+
+  if (sendImmediately) {
+    displayManagerInterface.flushContextCommands();
+  }
+}
+export async function selectSpriteSheetPaletteSwap(
+  displayManagerInterface: DisplayManagerInterface,
+  paletteSwapName: string,
+  offset?: number,
+  sendImmediately?: boolean
+) {
+  offset = offset || 0;
+  displayManagerInterface.assertAnySelectedSpriteSheet();
+  displayManagerInterface.assertSpriteSheetPaletteSwap(paletteSwapName);
+
+  const paletteSwap =
+    displayManagerInterface.getSpriteSheetPaletteSwap(paletteSwapName)!;
+
+  const spriteColorPairs: DisplaySpriteColorPair[] = [];
+  for (
+    let spriteColorIndex = 0;
+    spriteColorIndex < paletteSwap.numberOfColors;
+    spriteColorIndex++
+  ) {
+    const colorIndex = paletteSwap.spriteColorIndices[spriteColorIndex];
+    spriteColorPairs.push({
+      spriteColorIndex: spriteColorIndex + offset,
+      colorIndex,
+    });
+  }
+  displayManagerInterface.selectSpriteColors(spriteColorPairs, false);
+
+  if (sendImmediately) {
+    displayManagerInterface.flushContextCommands();
+  }
+}
+export async function selectSpritePaletteSwap(
+  displayManagerInterface: DisplayManagerInterface,
+  spriteName: string,
+  paletteSwapName: string,
+  offset?: number,
+  sendImmediately?: boolean
+) {
+  offset = offset || 0;
+  displayManagerInterface.assertAnySelectedSpriteSheet();
+
+  const paletteSwap = displayManagerInterface.getSpritePaletteSwap(
+    spriteName,
+    paletteSwapName
+  )!;
+
+  const spriteColorPairs: DisplaySpriteColorPair[] = [];
+  for (
+    let spriteColorIndex = 0;
+    spriteColorIndex < paletteSwap.numberOfColors;
+    spriteColorIndex++
+  ) {
+    const colorIndex = paletteSwap.spriteColorIndices[spriteColorIndex];
+    spriteColorPairs.push({
+      spriteColorIndex: spriteColorIndex + offset,
+      colorIndex,
+    });
+  }
+  displayManagerInterface.selectSpriteColors(spriteColorPairs, false);
+
+  if (sendImmediately) {
+    displayManagerInterface.flushContextCommands();
+  }
 }

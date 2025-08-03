@@ -888,10 +888,10 @@ const drawSprites = () => {
 
   spriteSheet.sprites.forEach((sprite) => {
     if (x + sprite.width + xSpacing > displayCanvasHelper.width) {
-      maxHeight = 0;
       x = 0;
       y += maxHeight;
       y += ySpacing;
+      maxHeight = 0;
     }
 
     const centerX = x + sprite.width / 2;
@@ -2016,13 +2016,17 @@ const updateSpriteCommands = () => {
         const bitmapContext = bitmapCanvas.getContext("2d");
         const pixelLength = 10;
 
+        const maxBitmapWidth = 400;
         const updateBitmapCanvasSize = () => {
           const { width, height } = command.bitmap;
           bitmapCanvas.width = width * pixelLength + (width - 1);
           bitmapCanvas.height = height * pixelLength + (height - 1);
 
-          bitmapCanvas.style.height = `${bitmapCanvas.height}px`;
-          bitmapCanvas.style.width = `${bitmapCanvas.width}px`;
+          const aspectRatio = bitmapCanvas.width / bitmapCanvas.height;
+          const bitmapStyleWidth = Math.min(bitmapCanvas.width, maxBitmapWidth);
+
+          bitmapCanvas.style.width = `${bitmapStyleWidth}px`;
+          bitmapCanvas.style.height = `${bitmapStyleWidth / aspectRatio}px`;
         };
 
         bitmapCanvas.addEventListener("mousedown", (event) => {
@@ -2219,10 +2223,12 @@ const updateSpriteCommands = () => {
         bitmapImageInput.addEventListener("input", () => {
           quantizeBitmapImage();
         });
+        bitmapImageInput.removeAttribute("hidden");
         /** @type {HTMLButtonElement} */
         const quantizeBitmapImageButton = spriteCommandContainer.querySelector(
           ".quantizeBitmapImage"
         );
+        quantizeBitmapImageButton.removeAttribute("hidden");
         quantizeBitmapImageButton.addEventListener("click", () => {
           quantizeBitmapImage();
         });

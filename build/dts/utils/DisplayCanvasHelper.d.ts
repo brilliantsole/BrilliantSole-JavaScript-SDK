@@ -6,7 +6,7 @@ import { DisplayScaleDirection, DisplayColorRGB, DisplayCropDirection } from "./
 import EventDispatcher, { BoundEventListeners, Event, EventListenerMap, EventMap } from "./EventDispatcher.ts";
 import { Vector2 } from "./MathUtils.ts";
 import { DisplayContextCommand } from "./DisplayContextCommand.ts";
-import { DisplaySprite, DisplaySpriteSheet } from "./DisplaySpriteSheetUtils.ts";
+import { DisplaySprite, DisplaySpritePaletteSwap, DisplaySpriteSheet, DisplaySpriteSheetPalette, DisplaySpriteSheetPaletteSwap } from "./DisplaySpriteSheetUtils.ts";
 export declare const DisplayCanvasHelperEventTypes: readonly ["contextState", "numberOfColors", "brightness", "color", "colorOpacity", "opacity", "resize", "update", "ready", "device", "deviceIsConnected", "deviceConnected", "deviceNotConnected", "deviceSpriteSheetUploadStart", "deviceSpriteSheetUploadProgress", "deviceSpriteSheetUploadComplete"];
 export type DisplayCanvasHelperEventType = (typeof DisplayCanvasHelperEventTypes)[number];
 export interface DisplayCanvasHelperEventMessages {
@@ -195,6 +195,13 @@ declare class DisplayCanvasHelper implements DisplayManagerInterface {
     uploadSpriteSheet(spriteSheet: DisplaySpriteSheet): Promise<void>;
     uploadSpriteSheets(spriteSheets: DisplaySpriteSheet[]): Promise<void>;
     assertLoadedSpriteSheet(spriteSheetName: string): void;
+    assertSelectedSpriteSheet(spriteSheetName: string): void;
+    assertAnySelectedSpriteSheet(): void;
+    assertSprite(spriteName: string): void;
+    getSprite(spriteName: string): DisplaySprite | undefined;
+    getSpriteSheetPalette(paletteName: string): DisplaySpriteSheetPalette | undefined;
+    getSpriteSheetPaletteSwap(paletteSwapName: string): DisplaySpriteSheetPaletteSwap | undefined;
+    getSpritePaletteSwap(spriteName: string, paletteSwapName: string): DisplaySpritePaletteSwap | undefined;
     get selectedSpriteSheet(): DisplaySpriteSheet | undefined;
     get selectedSpriteSheetName(): string | undefined;
     selectSpriteSheet(spriteSheetName: string, sendImmediately?: boolean): Promise<void>;
@@ -204,6 +211,12 @@ declare class DisplayCanvasHelper implements DisplayManagerInterface {
     runContextCommand(command: DisplayContextCommand, sendImmediately?: boolean): Promise<void>;
     runContextCommands(commands: DisplayContextCommand[], sendImmediately?: boolean): Promise<void>;
     previewSprite(centerX: number, centerY: number, sprite: DisplaySprite, spriteSheet: DisplaySpriteSheet): void;
+    assertSpriteSheetPalette(paletteName: string): void;
+    assertSpriteSheetPaletteSwap(paletteSwapName: string): void;
+    assertSpritePaletteSwap(spriteName: string, paletteSwapName: string): void;
+    selectSpriteSheetPalette(paletteName: string, offset?: number, sendImmediately?: boolean): Promise<void>;
+    selectSpriteSheetPaletteSwap(paletteSwapName: string, offset?: number, sendImmediately?: boolean): Promise<void>;
+    selectSpritePaletteSwap(spriteName: string, paletteSwapName: string, offset?: number, sendImmediately?: boolean): Promise<void>;
     imageToBitmap(image: HTMLImageElement, width: number, height: number, numberOfColors?: number): Promise<{
         blob: Blob;
         bitmap: DisplayBitmap;

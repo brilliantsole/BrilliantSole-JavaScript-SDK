@@ -988,7 +988,7 @@ export function serializeContextCommand(
     case "drawBitmap":
       {
         const { bitmap, centerX, centerY } = command;
-        displayManager.assertValidBitmap(bitmap);
+        displayManager.assertValidBitmap(bitmap, false);
         dataView = new DataView(new ArrayBuffer(drawBitmapHeaderLength));
         dataView.setInt16(0, centerX, true);
         dataView.setInt16(2, centerY, true);

@@ -7,6 +7,7 @@ import { DisplayContextState, DisplayContextStateKey, DisplaySegmentCap, Partial
 import { DisplayContextCommand } from "./utils/DisplayContextCommand.ts";
 import { DisplayManagerInterface } from "./utils/DisplayManagerInterface.ts";
 import { SendFileCallback } from "./FileTransferManager.ts";
+import { DisplaySprite, DisplaySpritePaletteSwap, DisplaySpriteSheetPalette, DisplaySpriteSheetPaletteSwap } from "./utils/DisplaySpriteSheetUtils.ts";
 export declare const DefaultNumberOfDisplayColors = 16;
 export declare const DisplayCommands: readonly ["sleep", "wake"];
 export type DisplayCommand = (typeof DisplayCommands)[number];
@@ -205,7 +206,7 @@ declare class DisplayManager implements DisplayManagerInterface {
     drawArc(centerX: number, centerY: number, radius: number, startAngle: number, angleOffset: number, isRadians?: boolean, sendImmediately?: boolean): Promise<void>;
     drawArcEllipse(centerX: number, centerY: number, radiusX: number, radiusY: number, startAngle: number, angleOffset: number, isRadians?: boolean, sendImmediately?: boolean): Promise<void>;
     assertValidNumberOfColors(numberOfColors: number): void;
-    assertValidBitmap(bitmap: DisplayBitmap): void;
+    assertValidBitmap(bitmap: DisplayBitmap, checkSize?: boolean): void;
     drawBitmap(centerX: number, centerY: number, bitmap: DisplayBitmap, sendImmediately?: boolean): Promise<void>;
     imageToBitmap(image: HTMLImageElement, width: number, height: number, numberOfColors?: number): Promise<{
         blob: Blob;
@@ -231,11 +232,24 @@ declare class DisplayManager implements DisplayManagerInterface {
     uploadSpriteSheet(spriteSheet: DisplaySpriteSheet): Promise<void>;
     uploadSpriteSheets(spriteSheets: DisplaySpriteSheet[]): Promise<void>;
     assertLoadedSpriteSheet(spriteSheetName: string): void;
+    assertSelectedSpriteSheet(spriteSheetName: string): void;
+    assertAnySelectedSpriteSheet(): void;
+    assertSprite(spriteName: string): void;
+    getSprite(spriteName: string): DisplaySprite | undefined;
+    getSpriteSheetPalette(paletteName: string): DisplaySpriteSheetPalette | undefined;
+    getSpriteSheetPaletteSwap(paletteSwapName: string): DisplaySpriteSheetPaletteSwap | undefined;
+    getSpritePaletteSwap(spriteName: string, paletteSwapName: string): DisplaySpritePaletteSwap | undefined;
     get selectedSpriteSheet(): DisplaySpriteSheet | undefined;
     get selectedSpriteSheetName(): string | undefined;
     selectSpriteSheet(spriteSheetName: string, sendImmediately?: boolean): Promise<void>;
     drawSprite(centerX: number, centerY: number, spriteName: string, sendImmediately?: boolean): Promise<void>;
     parseMessage(messageType: DisplayMessageType, dataView: DataView): void;
+    assertSpriteSheetPalette(paletteName: string): void;
+    assertSpriteSheetPaletteSwap(paletteSwapName: string): void;
+    assertSpritePaletteSwap(spriteName: string, paletteSwapName: string): void;
+    selectSpriteSheetPalette(paletteName: string, offset?: number, sendImmediately?: boolean): Promise<void>;
+    selectSpriteSheetPaletteSwap(paletteSwapName: string, offset?: number, sendImmediately?: boolean): Promise<void>;
+    selectSpritePaletteSwap(spriteName: string, paletteSwapName: string, offset?: number, sendImmediately?: boolean): Promise<void>;
     reset(): void;
     get mtu(): number;
     set mtu(newMtu: number);
