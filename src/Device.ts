@@ -1808,13 +1808,13 @@ class Device {
     return this.#displayManager as DisplayManagerInterface;
   }
 
-  get sendDisplaySpriteSheet() {
+  get uploadDisplaySpriteSheet() {
     this.#assertDisplayIsAvailable();
-    return this.#displayManager.sendSpriteSheet;
+    return this.#displayManager.uploadSpriteSheet;
   }
-  get sendDisplaySpriteSheets() {
+  get uploadDisplaySpriteSheets() {
     this.#assertDisplayIsAvailable();
-    return this.#displayManager.sendSpriteSheets;
+    return this.#displayManager.uploadSpriteSheets;
   }
   get selectDisplaySpriteSheet() {
     this.#assertDisplayIsAvailable();
@@ -1823,6 +1823,10 @@ class Device {
   get drawDisplaySprite() {
     this.#assertDisplayIsAvailable();
     return this.#displayManager.drawSprite;
+  }
+
+  get displaySpriteSheets() {
+    return this.#displayManager.spriteSheets;
   }
 
   // FILL - text, etc

@@ -119,7 +119,7 @@ declare class DisplayManager implements DisplayManagerInterface {
     get isAvailable(): boolean;
     get contextState(): DisplayContextState;
     setContextState(newState: PartialDisplayContextState, sendImmediately?: boolean): Promise<void>;
-    get displayStatus(): "asleep" | "awake";
+    get displayStatus(): "awake" | "asleep";
     get isDisplayAwake(): boolean;
     wake(): Promise<void>;
     sleep(): Promise<void>;
@@ -133,7 +133,7 @@ declare class DisplayManager implements DisplayManagerInterface {
         width: number;
         height: number;
     };
-    get type(): "generic" | "none" | "monocularLeft" | "monocularRight" | "binocular";
+    get type(): "none" | "generic" | "monocularLeft" | "monocularRight" | "binocular";
     get brightness(): "veryLow" | "low" | "medium" | "high" | "veryHigh";
     setBrightness(newDisplayBrightness: DisplayBrightness, sendImmediately?: boolean): Promise<void>;
     flushContextCommands(): Promise<void>;
@@ -228,8 +228,8 @@ declare class DisplayManager implements DisplayManagerInterface {
     get pendingSpriteSheet(): DisplaySpriteSheet | undefined;
     get pendingSpriteSheetName(): string | undefined;
     sendFile: SendFileCallback;
-    sendSpriteSheet(spriteSheet: DisplaySpriteSheet): Promise<void>;
-    sendSpriteSheets(spriteSheets: DisplaySpriteSheet[]): Promise<void>;
+    uploadSpriteSheet(spriteSheet: DisplaySpriteSheet): Promise<void>;
+    uploadSpriteSheets(spriteSheets: DisplaySpriteSheet[]): Promise<void>;
     assertLoadedSpriteSheet(spriteSheetName: string): void;
     get selectedSpriteSheet(): DisplaySpriteSheet | undefined;
     get selectedSpriteSheetName(): string | undefined;

@@ -178,6 +178,7 @@ export type DisplaySpriteContextCommandType =
 
 interface BaseDisplayContextCommand {
   type: DisplayContextCommandType | "runDisplayContextCommands";
+  hide?: boolean;
 }
 
 interface SimpleDisplayCommand extends BaseDisplayContextCommand {
@@ -353,11 +354,6 @@ interface BaseSizeDisplayContextCommand extends BaseDisplayContextCommand {
   height: number;
 }
 
-interface BaseScaleDisplayContextCommand extends BaseDisplayContextCommand {
-  scaleX: number;
-  scaleY: number;
-}
-
 interface BaseDisplayRectCommand
   extends BasePositionDisplayContextCommand,
     BaseSizeDisplayContextCommand {}
@@ -397,14 +393,14 @@ interface DrawDisplayPolygonCommand
   radius: number;
   numberOfSides: number;
 }
-interface DrawDisplaySegmentCommand {
+interface DrawDisplaySegmentCommand extends BaseDisplayContextCommand {
   type: "drawSegment";
   startX: number;
   startY: number;
   endX: number;
   endY: number;
 }
-interface DrawDisplaySegmentsCommand {
+interface DrawDisplaySegmentsCommand extends BaseDisplayContextCommand {
   type: "drawSegments";
   points: Vector2[];
 }
@@ -433,7 +429,7 @@ interface DrawDisplayBitmapCommand
   bitmap: DisplayBitmap;
 }
 
-interface SelectDisplaySpriteSheetCommand {
+interface SelectDisplaySpriteSheetCommand extends BaseDisplayContextCommand {
   type: "selectSpriteSheet";
   spriteSheetIndex: number;
 }
@@ -1038,19 +1034,21 @@ export function serializeContextCommands(
   displayManager: DisplayManagerInterface,
   commands: DisplayContextCommand[]
 ) {
-  const serializedContextCommandArray = commands.map((command) => {
-    const displayContextCommandEnum = DisplayContextCommandTypes.indexOf(
-      command.type
-    );
-    const serializedContextCommand = serializeContextCommand(
-      displayManager,
-      command
-    );
-    return concatenateArrayBuffers(
-      UInt8ByteBuffer(displayContextCommandEnum),
-      serializedContextCommand
-    );
-  });
+  const serializedContextCommandArray = commands
+    .filter((command) => !command.hide)
+    .map((command) => {
+      const displayContextCommandEnum = DisplayContextCommandTypes.indexOf(
+        command.type
+      );
+      const serializedContextCommand = serializeContextCommand(
+        displayManager,
+        command
+      );
+      return concatenateArrayBuffers(
+        UInt8ByteBuffer(displayContextCommandEnum),
+        serializedContextCommand
+      );
+    });
   const serializedContextCommands = concatenateArrayBuffers(
     serializedContextCommandArray
   );

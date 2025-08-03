@@ -82,24 +82,24 @@ export type DisplayBoundingBox = {
 declare class DisplayCanvasHelper implements DisplayManagerInterface {
     #private;
     constructor();
-    get addEventListener(): <T extends "resize" | "numberOfColors" | "deviceConnected" | "deviceIsConnected" | "device" | "color" | "opacity" | "contextState" | "brightness" | "colorOpacity" | "update" | "ready" | "deviceNotConnected" | "deviceSpriteSheetUploadStart" | "deviceSpriteSheetUploadProgress" | "deviceSpriteSheetUploadComplete">(type: T, listener: (event: {
+    get addEventListener(): <T extends "contextState" | "numberOfColors" | "brightness" | "color" | "colorOpacity" | "opacity" | "resize" | "update" | "ready" | "device" | "deviceIsConnected" | "deviceConnected" | "deviceNotConnected" | "deviceSpriteSheetUploadStart" | "deviceSpriteSheetUploadProgress" | "deviceSpriteSheetUploadComplete">(type: T, listener: (event: {
         type: T;
         target: DisplayCanvasHelper;
         message: DisplayCanvasHelperEventMessages[T];
     }) => void, options?: {
         once?: boolean;
     }) => void;
-    get removeEventListener(): <T extends "resize" | "numberOfColors" | "deviceConnected" | "deviceIsConnected" | "device" | "color" | "opacity" | "contextState" | "brightness" | "colorOpacity" | "update" | "ready" | "deviceNotConnected" | "deviceSpriteSheetUploadStart" | "deviceSpriteSheetUploadProgress" | "deviceSpriteSheetUploadComplete">(type: T, listener: (event: {
+    get removeEventListener(): <T extends "contextState" | "numberOfColors" | "brightness" | "color" | "colorOpacity" | "opacity" | "resize" | "update" | "ready" | "device" | "deviceIsConnected" | "deviceConnected" | "deviceNotConnected" | "deviceSpriteSheetUploadStart" | "deviceSpriteSheetUploadProgress" | "deviceSpriteSheetUploadComplete">(type: T, listener: (event: {
         type: T;
         target: DisplayCanvasHelper;
         message: DisplayCanvasHelperEventMessages[T];
     }) => void) => void;
-    get waitForEvent(): <T extends "resize" | "numberOfColors" | "deviceConnected" | "deviceIsConnected" | "device" | "color" | "opacity" | "contextState" | "brightness" | "colorOpacity" | "update" | "ready" | "deviceNotConnected" | "deviceSpriteSheetUploadStart" | "deviceSpriteSheetUploadProgress" | "deviceSpriteSheetUploadComplete">(type: T) => Promise<{
+    get waitForEvent(): <T extends "contextState" | "numberOfColors" | "brightness" | "color" | "colorOpacity" | "opacity" | "resize" | "update" | "ready" | "device" | "deviceIsConnected" | "deviceConnected" | "deviceNotConnected" | "deviceSpriteSheetUploadStart" | "deviceSpriteSheetUploadProgress" | "deviceSpriteSheetUploadComplete">(type: T) => Promise<{
         type: T;
         target: DisplayCanvasHelper;
         message: DisplayCanvasHelperEventMessages[T];
     }>;
-    get removeEventListeners(): <T extends "resize" | "numberOfColors" | "deviceConnected" | "deviceIsConnected" | "device" | "color" | "opacity" | "contextState" | "brightness" | "colorOpacity" | "update" | "ready" | "deviceNotConnected" | "deviceSpriteSheetUploadStart" | "deviceSpriteSheetUploadProgress" | "deviceSpriteSheetUploadComplete">(type: T) => void;
+    get removeEventListeners(): <T extends "contextState" | "numberOfColors" | "brightness" | "color" | "colorOpacity" | "opacity" | "resize" | "update" | "ready" | "device" | "deviceIsConnected" | "deviceConnected" | "deviceNotConnected" | "deviceSpriteSheetUploadStart" | "deviceSpriteSheetUploadProgress" | "deviceSpriteSheetUploadComplete">(type: T) => void;
     get removeAllEventListeners(): () => void;
     get canvas(): HTMLCanvasElement | undefined;
     set canvas(newCanvas: HTMLCanvasElement | undefined);
@@ -192,8 +192,8 @@ declare class DisplayCanvasHelper implements DisplayManagerInterface {
     drawBitmap(centerX: number, centerY: number, bitmap: DisplayBitmap, sendImmediately?: boolean): Promise<void>;
     get spriteSheets(): Record<string, DisplaySpriteSheet>;
     get spriteSheetIndices(): Record<string, number>;
-    sendSpriteSheet(spriteSheet: DisplaySpriteSheet): Promise<void>;
-    sendSpriteSheets(spriteSheets: DisplaySpriteSheet[]): Promise<void>;
+    uploadSpriteSheet(spriteSheet: DisplaySpriteSheet): Promise<void>;
+    uploadSpriteSheets(spriteSheets: DisplaySpriteSheet[]): Promise<void>;
     assertLoadedSpriteSheet(spriteSheetName: string): void;
     get selectedSpriteSheet(): DisplaySpriteSheet | undefined;
     get selectedSpriteSheetName(): string | undefined;
@@ -203,11 +203,7 @@ declare class DisplayCanvasHelper implements DisplayManagerInterface {
     setBrightness(newBrightness: DisplayBrightness, sendImmediately?: boolean): Promise<void>;
     runContextCommand(command: DisplayContextCommand, sendImmediately?: boolean): Promise<void>;
     runContextCommands(commands: DisplayContextCommand[], sendImmediately?: boolean): Promise<void>;
-    _setClearCanvasBoundingBoxOnDraw(clearBoundingBoxOnDraw: boolean): void;
-    _setIgnoreDevice(ignoreDevice: boolean): void;
-    _setUseSpriteColorIndices(useSpriteColorIndices: boolean): void;
-    _saveContextForSprite(centerX: number, centerY: number, sprite: DisplaySprite): void;
-    _restoreContextForSprite(): void;
+    previewSprite(centerX: number, centerY: number, sprite: DisplaySprite, spriteSheet: DisplaySpriteSheet): void;
     imageToBitmap(image: HTMLImageElement, width: number, height: number, numberOfColors?: number): Promise<{
         blob: Blob;
         bitmap: DisplayBitmap;

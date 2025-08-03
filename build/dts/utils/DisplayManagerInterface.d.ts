@@ -104,8 +104,8 @@ export interface DisplayManagerInterface {
         blob: Blob;
         colorIndices: number[];
     }>;
-    sendSpriteSheet(spriteSheet: DisplaySpriteSheet): Promise<void>;
-    sendSpriteSheets(spriteSheets: DisplaySpriteSheet[]): Promise<void>;
+    uploadSpriteSheet(spriteSheet: DisplaySpriteSheet): Promise<void>;
+    uploadSpriteSheets(spriteSheets: DisplaySpriteSheet[]): Promise<void>;
     selectSpriteSheet(spriteSheetName: string, sendImmediately?: boolean): Promise<void>;
     drawSprite(centerX: number, centerY: number, spriteName: string, sendImmediately?: boolean): Promise<void>;
     assertLoadedSpriteSheet(spriteSheetName: string): void;

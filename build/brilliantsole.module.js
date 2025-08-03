@@ -5509,7 +5509,9 @@ function serializeContextCommand(displayManager, command) {
     return dataView;
 }
 function serializeContextCommands(displayManager, commands) {
-    const serializedContextCommandArray = commands.map((command) => {
+    const serializedContextCommandArray = commands
+        .filter((command) => !command.hide)
+        .map((command) => {
         const displayContextCommandEnum = DisplayContextCommandTypes.indexOf(command.type);
         const serializedContextCommand = serializeContextCommand(displayManager, command);
         return concatenateArrayBuffers(UInt8ByteBuffer(displayContextCommandEnum), serializedContextCommand);
@@ -5521,6 +5523,9 @@ function serializeContextCommands(displayManager, commands) {
 
 const _console$l = createConsole("DisplayManagerInterface", { log: true });
 async function runDisplayContextCommand(displayManager, command, sendImmediately) {
+    if (command.hide) {
+        return;
+    }
     switch (command.type) {
         case "show":
             await displayManager.show(sendImmediately);
@@ -5827,7 +5832,9 @@ async function runDisplayContextCommand(displayManager, command, sendImmediately
 }
 async function runDisplayContextCommands(displayManager, commands, sendImmediately) {
     _console$l.log("runDisplayContextCommands", commands);
-    commands.forEach((command, index) => {
+    commands
+        .filter((command) => !command.hide)
+        .forEach((command, index) => {
         const isLast = index == commands.length - 1;
         runDisplayContextCommand(displayManager, command, sendImmediately && isLast);
     });
@@ -6927,7 +6934,7 @@ class DisplayManager {
     get pendingSpriteSheetName() {
         return __classPrivateFieldGet(this, _DisplayManager_pendingSpriteSheetName, "f");
     }
-    async sendSpriteSheet(spriteSheet) {
+    async uploadSpriteSheet(spriteSheet) {
         spriteSheet = structuredClone(spriteSheet);
         __classPrivateFieldSet(this, _DisplayManager_pendingSpriteSheet, spriteSheet, "f");
         const buffer = serializeSpriteSheet(this, __classPrivateFieldGet(this, _DisplayManager_pendingSpriteSheet, "f"));
@@ -6936,9 +6943,9 @@ class DisplayManager {
         this.sendFile("spriteSheet", buffer, true);
         await promise;
     }
-    async sendSpriteSheets(spriteSheets) {
+    async uploadSpriteSheets(spriteSheets) {
         for (const spriteSheet of spriteSheets) {
-            await this.sendSpriteSheet(spriteSheet);
+            await this.uploadSpriteSheet(spriteSheet);
         }
     }
     assertLoadedSpriteSheet(spriteSheetName) {
@@ -10475,13 +10482,13 @@ class Device {
         __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertDisplayIsAvailable).call(this);
         return __classPrivateFieldGet(this, _Device_displayManager, "f");
     }
-    get sendDisplaySpriteSheet() {
+    get uploadDisplaySpriteSheet() {
         __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertDisplayIsAvailable).call(this);
-        return __classPrivateFieldGet(this, _Device_displayManager, "f").sendSpriteSheet;
+        return __classPrivateFieldGet(this, _Device_displayManager, "f").uploadSpriteSheet;
     }
-    get sendDisplaySpriteSheets() {
+    get uploadDisplaySpriteSheets() {
         __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertDisplayIsAvailable).call(this);
-        return __classPrivateFieldGet(this, _Device_displayManager, "f").sendSpriteSheets;
+        return __classPrivateFieldGet(this, _Device_displayManager, "f").uploadSpriteSheets;
     }
     get selectDisplaySpriteSheet() {
         __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertDisplayIsAvailable).call(this);
@@ -10490,6 +10497,9 @@ class Device {
     get drawDisplaySprite() {
         __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertDisplayIsAvailable).call(this);
         return __classPrivateFieldGet(this, _Device_displayManager, "f").drawSprite;
+    }
+    get displaySpriteSheets() {
+        return __classPrivateFieldGet(this, _Device_displayManager, "f").spriteSheets;
     }
 }
 _a$2 = Device, _Device_eventDispatcher = new WeakMap(), _Device_connectionManager = new WeakMap(), _Device_isConnected = new WeakMap(), _Device_reconnectOnDisconnection = new WeakMap(), _Device_reconnectIntervalId = new WeakMap(), _Device_deviceInformationManager = new WeakMap(), _Device_batteryLevel = new WeakMap(), _Device_sensorConfigurationManager = new WeakMap(), _Device_clearSensorConfigurationOnLeave = new WeakMap(), _Device_sensorDataManager = new WeakMap(), _Device_vibrationManager = new WeakMap(), _Device_fileTransferManager = new WeakMap(), _Device_tfliteManager = new WeakMap(), _Device_firmwareManager = new WeakMap(), _Device_isServerSide = new WeakMap(), _Device_wifiManager = new WeakMap(), _Device_cameraManager = new WeakMap(), _Device_microphoneManager = new WeakMap(), _Device_displayManager = new WeakMap(), _Device_instances = new WeakSet(), _Device_DefaultConnectionManager = function _Device_DefaultConnectionManager() {
@@ -10694,7 +10704,7 @@ _a$2 = Device, _Device_eventDispatcher = new WeakMap(), _Device_connectionManage
 _Device_ReconnectOnDisconnection = { value: false };
 _Device_ClearSensorConfigurationOnLeave = { value: true };
 
-var _DisplayCanvasHelper_instances, _DisplayCanvasHelper_eventDispatcher, _DisplayCanvasHelper_dispatchEvent_get, _DisplayCanvasHelper_canvas, _DisplayCanvasHelper_context, _DisplayCanvasHelper_updateCanvas, _DisplayCanvasHelper_frontDrawStack, _DisplayCanvasHelper_rearDrawStack, _DisplayCanvasHelper_drawFrontDrawStack, _DisplayCanvasHelper_applyTransparencyToCanvas, _DisplayCanvasHelper_drawBackground, _DisplayCanvasHelper_applyTransparency, _DisplayCanvasHelper_device, _DisplayCanvasHelper_boundDeviceEventListeners, _DisplayCanvasHelper_onDeviceIsConnected, _DisplayCanvasHelper_onDeviceConnected, _DisplayCanvasHelper_onDeviceNotConnected, _DisplayCanvasHelper_onDeviceDisplayReady, _DisplayCanvasHelper_onDeviceDisplaySpriteSheetUploadStart, _DisplayCanvasHelper_onDeviceDisplaySpriteSheetUploadProgress, _DisplayCanvasHelper_onDeviceDisplaySpriteSheetUploadComplete, _DisplayCanvasHelper_updateDevice, _DisplayCanvasHelper_numberOfColors, _DisplayCanvasHelper_colors, _DisplayCanvasHelper_updateDeviceColors, _DisplayCanvasHelper_opacities, _DisplayCanvasHelper_updateDeviceOpacity, _DisplayCanvasHelper_contextStateHelper, _DisplayCanvasHelper_onContextStateUpdate, _DisplayCanvasHelper_resetContextState, _DisplayCanvasHelper_updateDeviceContextState, _DisplayCanvasHelper_interval, _DisplayCanvasHelper_isReady, _DisplayCanvasHelper_clearRectToCanvas, _DisplayCanvasHelper_save, _DisplayCanvasHelper_restore, _DisplayCanvasHelper_transformContext, _DisplayCanvasHelper_translateContext, _DisplayCanvasHelper_rotateContext, _DisplayCanvasHelper_rotateBoundingBox, _DisplayCanvasHelper_clearBoundingBoxOnDraw, _DisplayCanvasHelper_clearBoundingBox, _DisplayCanvasHelper_getBoundingBox, _DisplayCanvasHelper_getRectBoundingBox, _DisplayCanvasHelper_applyClip, _DisplayCanvasHelper_applyRotationClip, _DisplayCanvasHelper_hexToRgbWithOpacity, _DisplayCanvasHelper_hexToRgbStringWithOpacity, _DisplayCanvasHelper_getColorOpacity, _DisplayCanvasHelper_colorIndexToRgbString, _DisplayCanvasHelper_updateContext, _DisplayCanvasHelper_drawRectToCanvas, _DisplayCanvasHelper_drawRoundRectToCanvas, _DisplayCanvasHelper_getCircleBoundingBox, _DisplayCanvasHelper_drawCircleToCanvas, _DisplayCanvasHelper_getEllipseBoundingBox, _DisplayCanvasHelper_drawEllipseToCanvas, _DisplayCanvasHelper_getPolygonBoundingBox, _DisplayCanvasHelper_drawPolygonToCanvas, _DisplayCanvasHelper_getSegmentBoundingBox, _DisplayCanvasHelper_getSegmentMidpoint, _DisplayCanvasHelper_getOrientedSegmentBoundingBox, _DisplayCanvasHelper_applySegmentRotationClip, _DisplayCanvasHelper_drawSegmentToCanvas, _DisplayCanvasHelper_drawSegmentsToCanvas, _DisplayCanvasHelper_drawArcToCanvas, _DisplayCanvasHelper_drawArcEllipseToCanvas, _DisplayCanvasHelper_bitmapCanvas, _DisplayCanvasHelper_bitmapContext, _DisplayCanvasHelper_drawBitmapToCanvas, _DisplayCanvasHelper_spriteSheets, _DisplayCanvasHelper_spriteSheetIndices, _DisplayCanvasHelper_runSpriteCommand, _DisplayCanvasHelper_drawSpriteToCanvas, _DisplayCanvasHelper_brightness, _DisplayCanvasHelper_brightnessOpacities, _DisplayCanvasHelper_brightnessOpacity_get, _DisplayCanvasHelper_updateDeviceBrightness, _DisplayCanvasHelper_updateDeviceSpriteSheets, _DisplayCanvasHelper_updateDeviceSelectedSpriteSheet, _DisplayCanvasHelper_setCanvasContextTransform, _DisplayCanvasHelper_resetCanvasContextTransform, _DisplayCanvasHelper_ignoreDevice, _DisplayCanvasHelper_useSpriteColorIndices, _DisplayCanvasHelper_spriteContextStack, _DisplayCanvasHelper_spriteStack;
+var _DisplayCanvasHelper_instances, _DisplayCanvasHelper_eventDispatcher, _DisplayCanvasHelper_dispatchEvent_get, _DisplayCanvasHelper_canvas, _DisplayCanvasHelper_context, _DisplayCanvasHelper_updateCanvas, _DisplayCanvasHelper_frontDrawStack, _DisplayCanvasHelper_rearDrawStack, _DisplayCanvasHelper_drawFrontDrawStack, _DisplayCanvasHelper_applyTransparencyToCanvas, _DisplayCanvasHelper_drawBackground, _DisplayCanvasHelper_applyTransparency, _DisplayCanvasHelper_device, _DisplayCanvasHelper_boundDeviceEventListeners, _DisplayCanvasHelper_onDeviceIsConnected, _DisplayCanvasHelper_onDeviceConnected, _DisplayCanvasHelper_onDeviceNotConnected, _DisplayCanvasHelper_onDeviceDisplayReady, _DisplayCanvasHelper_onDeviceDisplaySpriteSheetUploadStart, _DisplayCanvasHelper_onDeviceDisplaySpriteSheetUploadProgress, _DisplayCanvasHelper_onDeviceDisplaySpriteSheetUploadComplete, _DisplayCanvasHelper_updateDevice, _DisplayCanvasHelper_numberOfColors, _DisplayCanvasHelper_colors, _DisplayCanvasHelper_updateDeviceColors, _DisplayCanvasHelper_opacities, _DisplayCanvasHelper_updateDeviceOpacity, _DisplayCanvasHelper_contextStateHelper, _DisplayCanvasHelper_onContextStateUpdate, _DisplayCanvasHelper_resetContextState, _DisplayCanvasHelper_updateDeviceContextState, _DisplayCanvasHelper_interval, _DisplayCanvasHelper_isReady, _DisplayCanvasHelper_clearRectToCanvas, _DisplayCanvasHelper_save, _DisplayCanvasHelper_restore, _DisplayCanvasHelper_transformContext, _DisplayCanvasHelper_translateContext, _DisplayCanvasHelper_rotateContext, _DisplayCanvasHelper_rotateBoundingBox, _DisplayCanvasHelper_clearBoundingBoxOnDraw, _DisplayCanvasHelper_clearBoundingBox, _DisplayCanvasHelper_getBoundingBox, _DisplayCanvasHelper_getRectBoundingBox, _DisplayCanvasHelper_applyClip, _DisplayCanvasHelper_applyRotationClip, _DisplayCanvasHelper_hexToRgbWithOpacity, _DisplayCanvasHelper_hexToRgbStringWithOpacity, _DisplayCanvasHelper_getColorOpacity, _DisplayCanvasHelper_colorIndexToRgbString, _DisplayCanvasHelper_updateContext, _DisplayCanvasHelper_drawRectToCanvas, _DisplayCanvasHelper_drawRoundRectToCanvas, _DisplayCanvasHelper_getCircleBoundingBox, _DisplayCanvasHelper_drawCircleToCanvas, _DisplayCanvasHelper_getEllipseBoundingBox, _DisplayCanvasHelper_drawEllipseToCanvas, _DisplayCanvasHelper_getPolygonBoundingBox, _DisplayCanvasHelper_drawPolygonToCanvas, _DisplayCanvasHelper_getSegmentBoundingBox, _DisplayCanvasHelper_getSegmentMidpoint, _DisplayCanvasHelper_getOrientedSegmentBoundingBox, _DisplayCanvasHelper_applySegmentRotationClip, _DisplayCanvasHelper_drawSegmentToCanvas, _DisplayCanvasHelper_drawSegmentsToCanvas, _DisplayCanvasHelper_drawArcToCanvas, _DisplayCanvasHelper_drawArcEllipseToCanvas, _DisplayCanvasHelper_bitmapCanvas, _DisplayCanvasHelper_bitmapContext, _DisplayCanvasHelper_drawBitmapToCanvas, _DisplayCanvasHelper_spriteSheets, _DisplayCanvasHelper_spriteSheetIndices, _DisplayCanvasHelper_runSpriteCommand, _DisplayCanvasHelper_drawSpriteToCanvas, _DisplayCanvasHelper_brightness, _DisplayCanvasHelper_brightnessOpacities, _DisplayCanvasHelper_brightnessOpacity_get, _DisplayCanvasHelper_updateDeviceBrightness, _DisplayCanvasHelper_updateDeviceSpriteSheets, _DisplayCanvasHelper_updateDeviceSelectedSpriteSheet, _DisplayCanvasHelper_setCanvasContextTransform, _DisplayCanvasHelper_resetCanvasContextTransform, _DisplayCanvasHelper_setClearCanvasBoundingBoxOnDraw, _DisplayCanvasHelper_ignoreDevice, _DisplayCanvasHelper_setIgnoreDevice, _DisplayCanvasHelper_useSpriteColorIndices, _DisplayCanvasHelper_setUseSpriteColorIndices, _DisplayCanvasHelper_spriteContextStack, _DisplayCanvasHelper_spriteStack, _DisplayCanvasHelper_saveContextForSprite, _DisplayCanvasHelper_restoreContextForSprite, _DisplayCanvasHelper_runPreviewSpriteCommand;
 const _console$6 = createConsole("DisplayCanvasHelper", { log: true });
 const DisplayCanvasHelperEventTypes = [
     "contextState",
@@ -11507,19 +11517,19 @@ class DisplayCanvasHelper {
     get spriteSheetIndices() {
         return __classPrivateFieldGet(this, _DisplayCanvasHelper_spriteSheetIndices, "f");
     }
-    async sendSpriteSheet(spriteSheet) {
+    async uploadSpriteSheet(spriteSheet) {
         spriteSheet = structuredClone(spriteSheet);
         if (!__classPrivateFieldGet(this, _DisplayCanvasHelper_spriteSheets, "f")[spriteSheet.name]) {
             __classPrivateFieldGet(this, _DisplayCanvasHelper_spriteSheetIndices, "f")[spriteSheet.name] = Object.keys(__classPrivateFieldGet(this, _DisplayCanvasHelper_spriteSheets, "f")).length;
         }
         __classPrivateFieldGet(this, _DisplayCanvasHelper_spriteSheets, "f")[spriteSheet.name] = spriteSheet;
         if (this.device?.isConnected && !__classPrivateFieldGet(this, _DisplayCanvasHelper_ignoreDevice, "f")) {
-            await this.device.sendDisplaySpriteSheet(spriteSheet);
+            await this.device.uploadDisplaySpriteSheet(spriteSheet);
         }
     }
-    async sendSpriteSheets(spriteSheets) {
+    async uploadSpriteSheets(spriteSheets) {
         for (const spriteSheet of spriteSheets) {
-            await this.sendSpriteSheet(spriteSheet);
+            await this.uploadSpriteSheet(spriteSheet);
         }
     }
     assertLoadedSpriteSheet(spriteSheetName) {
@@ -11576,40 +11586,18 @@ class DisplayCanvasHelper {
     async runContextCommands(commands, sendImmediately) {
         return runDisplayContextCommands(this, commands, sendImmediately);
     }
-    _setClearCanvasBoundingBoxOnDraw(clearBoundingBoxOnDraw) {
-        __classPrivateFieldGet(this, _DisplayCanvasHelper_rearDrawStack, "f").push(() => {
-            __classPrivateFieldSet(this, _DisplayCanvasHelper_clearBoundingBoxOnDraw, clearBoundingBoxOnDraw, "f");
+    previewSprite(centerX, centerY, sprite, spriteSheet) {
+        __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_setIgnoreDevice).call(this, true);
+        __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_setClearCanvasBoundingBoxOnDraw).call(this, false);
+        __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_setUseSpriteColorIndices).call(this, true);
+        __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_saveContextForSprite).call(this, centerX, centerY, sprite);
+        sprite.commands.forEach((command) => {
+            __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_runPreviewSpriteCommand).call(this, command, spriteSheet);
         });
-    }
-    _setIgnoreDevice(ignoreDevice) {
-        __classPrivateFieldSet(this, _DisplayCanvasHelper_ignoreDevice, ignoreDevice, "f");
-        __classPrivateFieldGet(this, _DisplayCanvasHelper_rearDrawStack, "f").push(() => {
-            __classPrivateFieldSet(this, _DisplayCanvasHelper_ignoreDevice, ignoreDevice, "f");
-        });
-    }
-    _setUseSpriteColorIndices(useSpriteColorIndices) {
-        __classPrivateFieldGet(this, _DisplayCanvasHelper_rearDrawStack, "f").push(() => {
-            _console$6.log({ useSpriteColorIndices });
-            __classPrivateFieldSet(this, _DisplayCanvasHelper_useSpriteColorIndices, useSpriteColorIndices, "f");
-        });
-    }
-    _saveContextForSprite(centerX, centerY, sprite) {
-        const contextState = structuredClone(this.contextState);
-        __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_setCanvasContextTransform).call(this, centerX, centerY, sprite.width, sprite.height, contextState);
-        _console$6.assertWithError(!__classPrivateFieldGet(this, _DisplayCanvasHelper_spriteStack, "f").includes(sprite), `cyclical sprite ${sprite.name} found in stack`);
-        const spriteColorIndices = contextState.spriteColorIndices.slice();
-        __classPrivateFieldGet(this, _DisplayCanvasHelper_spriteContextStack, "f").push(contextState);
-        __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_resetContextState).call(this);
-        this.contextState.spriteColorIndices = spriteColorIndices;
-    }
-    _restoreContextForSprite() {
-        __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_resetCanvasContextTransform).call(this);
-        const contextState = __classPrivateFieldGet(this, _DisplayCanvasHelper_spriteContextStack, "f").pop();
-        if (!contextState) {
-            _console$6.warn("#spriteContextStack empty");
-            return;
-        }
-        __classPrivateFieldGet(this, _DisplayCanvasHelper_contextStateHelper, "f").update(contextState);
+        __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_setIgnoreDevice).call(this, false);
+        __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_restoreContextForSprite).call(this);
+        __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_setUseSpriteColorIndices).call(this, false);
+        __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_setClearCanvasBoundingBoxOnDraw).call(this, true);
     }
     async imageToBitmap(image, width, height, numberOfColors) {
         return imageToBitmap(image, width, height, this.colors, this.contextState, numberOfColors);
@@ -12255,11 +12243,11 @@ _DisplayCanvasHelper_eventDispatcher = new WeakMap(), _DisplayCanvasHelper_canva
         const sprite = spriteSheet.sprites[command.spriteIndex];
         if (sprite) {
             _console$6.log("drawing sub sprite", sprite);
-            this._saveContextForSprite(command.centerX, command.centerY, sprite);
+            __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_saveContextForSprite).call(this, command.centerX, command.centerY, sprite);
             sprite.commands.forEach((command) => {
                 __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_runSpriteCommand).call(this, command, contextState);
             });
-            this._restoreContextForSprite();
+            __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_restoreContextForSprite).call(this);
         }
         else {
             _console$6.error(`sprite index ${command.spriteIndex} not found in spriteSheet`);
@@ -12269,17 +12257,17 @@ _DisplayCanvasHelper_eventDispatcher = new WeakMap(), _DisplayCanvasHelper_canva
         this.runContextCommand(command);
     }
 }, _DisplayCanvasHelper_drawSpriteToCanvas = function _DisplayCanvasHelper_drawSpriteToCanvas(centerX, centerY, sprite, contextState) {
-    this._setIgnoreDevice(true);
-    this._setClearCanvasBoundingBoxOnDraw(false);
-    this._setUseSpriteColorIndices(true);
-    this._saveContextForSprite(centerX, centerY, sprite);
+    __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_setIgnoreDevice).call(this, true);
+    __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_setClearCanvasBoundingBoxOnDraw).call(this, false);
+    __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_setUseSpriteColorIndices).call(this, true);
+    __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_saveContextForSprite).call(this, centerX, centerY, sprite);
     sprite.commands.forEach((command) => {
         __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_runSpriteCommand).call(this, command, contextState);
     });
-    this._setIgnoreDevice(false);
-    this._restoreContextForSprite();
-    this._setUseSpriteColorIndices(false);
-    this._setClearCanvasBoundingBoxOnDraw(true);
+    __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_setIgnoreDevice).call(this, false);
+    __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_restoreContextForSprite).call(this);
+    __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_setUseSpriteColorIndices).call(this, false);
+    __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_setClearCanvasBoundingBoxOnDraw).call(this, true);
 }, _DisplayCanvasHelper_brightnessOpacity_get = function _DisplayCanvasHelper_brightnessOpacity_get() {
     return __classPrivateFieldGet(this, _DisplayCanvasHelper_brightnessOpacities, "f")[this.brightness];
 }, _DisplayCanvasHelper_updateDeviceBrightness = async function _DisplayCanvasHelper_updateDeviceBrightness(sendImmediately) {
@@ -12292,7 +12280,7 @@ _DisplayCanvasHelper_eventDispatcher = new WeakMap(), _DisplayCanvasHelper_canva
         return;
     }
     _console$6.log("updateDeviceSpriteSheets");
-    await this.sendSpriteSheets(Object.values(this.spriteSheets));
+    await this.uploadSpriteSheets(Object.values(this.spriteSheets));
 }, _DisplayCanvasHelper_updateDeviceSelectedSpriteSheet = async function _DisplayCanvasHelper_updateDeviceSelectedSpriteSheet(sendImmediately) {
     if (!this.device?.isConnected) {
         return;
@@ -12325,6 +12313,55 @@ _DisplayCanvasHelper_eventDispatcher = new WeakMap(), _DisplayCanvasHelper_canva
     __classPrivateFieldGet(this, _DisplayCanvasHelper_rearDrawStack, "f").push(() => {
         __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_restore).call(this);
     });
+}, _DisplayCanvasHelper_setClearCanvasBoundingBoxOnDraw = function _DisplayCanvasHelper_setClearCanvasBoundingBoxOnDraw(clearBoundingBoxOnDraw) {
+    __classPrivateFieldGet(this, _DisplayCanvasHelper_rearDrawStack, "f").push(() => {
+        __classPrivateFieldSet(this, _DisplayCanvasHelper_clearBoundingBoxOnDraw, clearBoundingBoxOnDraw, "f");
+    });
+}, _DisplayCanvasHelper_setIgnoreDevice = function _DisplayCanvasHelper_setIgnoreDevice(ignoreDevice) {
+    __classPrivateFieldSet(this, _DisplayCanvasHelper_ignoreDevice, ignoreDevice, "f");
+    __classPrivateFieldGet(this, _DisplayCanvasHelper_rearDrawStack, "f").push(() => {
+        __classPrivateFieldSet(this, _DisplayCanvasHelper_ignoreDevice, ignoreDevice, "f");
+    });
+}, _DisplayCanvasHelper_setUseSpriteColorIndices = function _DisplayCanvasHelper_setUseSpriteColorIndices(useSpriteColorIndices) {
+    __classPrivateFieldGet(this, _DisplayCanvasHelper_rearDrawStack, "f").push(() => {
+        _console$6.log({ useSpriteColorIndices });
+        __classPrivateFieldSet(this, _DisplayCanvasHelper_useSpriteColorIndices, useSpriteColorIndices, "f");
+    });
+}, _DisplayCanvasHelper_saveContextForSprite = function _DisplayCanvasHelper_saveContextForSprite(centerX, centerY, sprite) {
+    const contextState = structuredClone(this.contextState);
+    __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_setCanvasContextTransform).call(this, centerX, centerY, sprite.width, sprite.height, contextState);
+    _console$6.assertWithError(!__classPrivateFieldGet(this, _DisplayCanvasHelper_spriteStack, "f").includes(sprite), `cyclical sprite ${sprite.name} found in stack`);
+    const spriteColorIndices = contextState.spriteColorIndices.slice();
+    __classPrivateFieldGet(this, _DisplayCanvasHelper_spriteContextStack, "f").push(contextState);
+    __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_resetContextState).call(this);
+    this.contextState.spriteColorIndices = spriteColorIndices;
+}, _DisplayCanvasHelper_restoreContextForSprite = function _DisplayCanvasHelper_restoreContextForSprite() {
+    __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_resetCanvasContextTransform).call(this);
+    const contextState = __classPrivateFieldGet(this, _DisplayCanvasHelper_spriteContextStack, "f").pop();
+    if (!contextState) {
+        _console$6.warn("#spriteContextStack empty");
+        return;
+    }
+    __classPrivateFieldGet(this, _DisplayCanvasHelper_contextStateHelper, "f").update(contextState);
+}, _DisplayCanvasHelper_runPreviewSpriteCommand = function _DisplayCanvasHelper_runPreviewSpriteCommand(command, spriteSheet) {
+    _console$6.log("runPreviewSpriteCommand", command);
+    if (command.type == "drawSprite") {
+        const sprite = spriteSheet.sprites[command.spriteIndex];
+        if (sprite) {
+            _console$6.log("drawing sub sprite", sprite);
+            __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_saveContextForSprite).call(this, command.centerX, command.centerY, sprite);
+            sprite.commands.forEach((command) => {
+                __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_runPreviewSpriteCommand).call(this, command, spriteSheet);
+            });
+            __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_restoreContextForSprite).call(this);
+        }
+        else {
+            _console$6.error(`spriteIndex ${command.spriteIndex} not found in spriteSheet`);
+        }
+    }
+    else {
+        this.runContextCommand(command);
+    }
 };
 
 var _DevicePairPressureSensorDataManager_instances, _DevicePairPressureSensorDataManager_rawPressure, _DevicePairPressureSensorDataManager_centerOfPressureHelper, _DevicePairPressureSensorDataManager_normalizedSumRangeHelper, _DevicePairPressureSensorDataManager_hasAllPressureData_get, _DevicePairPressureSensorDataManager_updatePressureData;

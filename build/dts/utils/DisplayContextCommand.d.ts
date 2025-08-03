@@ -9,6 +9,7 @@ export declare const DisplaySpriteContextCommandTypes: readonly ["selectFillColo
 export type DisplaySpriteContextCommandType = (typeof DisplaySpriteContextCommandTypes)[number];
 interface BaseDisplayContextCommand {
     type: DisplayContextCommandType | "runDisplayContextCommands";
+    hide?: boolean;
 }
 interface SimpleDisplayCommand extends BaseDisplayContextCommand {
     type: "show" | "clear" | "saveContext" | "restoreContext" | "clearRotation" | "clearCrop" | "clearRotationCrop" | "resetBitmapScale" | "resetSpriteColors" | "resetSpriteScale";
@@ -182,14 +183,14 @@ interface DrawDisplayPolygonCommand extends BaseCenterPositionDisplayContextComm
     radius: number;
     numberOfSides: number;
 }
-interface DrawDisplaySegmentCommand {
+interface DrawDisplaySegmentCommand extends BaseDisplayContextCommand {
     type: "drawSegment";
     startX: number;
     startY: number;
     endX: number;
     endY: number;
 }
-interface DrawDisplaySegmentsCommand {
+interface DrawDisplaySegmentsCommand extends BaseDisplayContextCommand {
     type: "drawSegments";
     points: Vector2[];
 }
@@ -212,7 +213,7 @@ interface DrawDisplayBitmapCommand extends BaseCenterPositionDisplayContextComma
     type: "drawBitmap";
     bitmap: DisplayBitmap;
 }
-interface SelectDisplaySpriteSheetCommand {
+interface SelectDisplaySpriteSheetCommand extends BaseDisplayContextCommand {
     type: "selectSpriteSheet";
     spriteSheetIndex: number;
 }

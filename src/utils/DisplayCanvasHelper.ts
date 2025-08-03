@@ -2595,7 +2595,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
   get spriteSheetIndices() {
     return this.#spriteSheetIndices;
   }
-  async sendSpriteSheet(spriteSheet: DisplaySpriteSheet) {
+  async uploadSpriteSheet(spriteSheet: DisplaySpriteSheet) {
     spriteSheet = structuredClone(spriteSheet);
     if (!this.#spriteSheets[spriteSheet.name]) {
       this.#spriteSheetIndices[spriteSheet.name] = Object.keys(
@@ -2604,12 +2604,12 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     }
     this.#spriteSheets[spriteSheet.name] = spriteSheet;
     if (this.device?.isConnected && !this.#ignoreDevice) {
-      await this.device.sendDisplaySpriteSheet(spriteSheet);
+      await this.device.uploadDisplaySpriteSheet(spriteSheet);
     }
   }
-  async sendSpriteSheets(spriteSheets: DisplaySpriteSheet[]) {
+  async uploadSpriteSheets(spriteSheets: DisplaySpriteSheet[]) {
     for (const spriteSheet of spriteSheets) {
-      await this.sendSpriteSheet(spriteSheet);
+      await this.uploadSpriteSheet(spriteSheet);
     }
   }
   assertLoadedSpriteSheet(spriteSheetName: string) {
@@ -2649,11 +2649,11 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
       const sprite = spriteSheet.sprites[command.spriteIndex];
       if (sprite) {
         _console.log("drawing sub sprite", sprite);
-        this._saveContextForSprite(command.centerX, command.centerY, sprite);
+        this.#saveContextForSprite(command.centerX, command.centerY, sprite);
         sprite.commands.forEach((command) => {
           this.#runSpriteCommand(command, contextState);
         });
-        this._restoreContextForSprite();
+        this.#restoreContextForSprite();
       } else {
         _console.error(
           `sprite index ${command.spriteIndex} not found in spriteSheet`
@@ -2669,19 +2669,19 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     sprite: DisplaySprite,
     contextState: DisplayContextState
   ) {
-    this._setIgnoreDevice(true);
-    this._setClearCanvasBoundingBoxOnDraw(false);
-    this._setUseSpriteColorIndices(true);
-    this._saveContextForSprite(centerX, centerY, sprite);
+    this.#setIgnoreDevice(true);
+    this.#setClearCanvasBoundingBoxOnDraw(false);
+    this.#setUseSpriteColorIndices(true);
+    this.#saveContextForSprite(centerX, centerY, sprite);
 
     sprite.commands.forEach((command) => {
       this.#runSpriteCommand(command, contextState);
     });
 
-    this._setIgnoreDevice(false);
-    this._restoreContextForSprite();
-    this._setUseSpriteColorIndices(false);
-    this._setClearCanvasBoundingBoxOnDraw(true);
+    this.#setIgnoreDevice(false);
+    this.#restoreContextForSprite();
+    this.#setUseSpriteColorIndices(false);
+    this.#setClearCanvasBoundingBoxOnDraw(true);
   }
   async drawSprite(
     centerX: number,
@@ -2757,7 +2757,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
       return;
     }
     _console.log("updateDeviceSpriteSheets");
-    await this.sendSpriteSheets(Object.values(this.spriteSheets));
+    await this.uploadSpriteSheets(Object.values(this.spriteSheets));
   }
   async #updateDeviceSelectedSpriteSheet(sendImmediately?: boolean) {
     if (!this.device?.isConnected) {
@@ -2854,14 +2854,14 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     });
   }
 
-  _setClearCanvasBoundingBoxOnDraw(clearBoundingBoxOnDraw: boolean) {
+  #setClearCanvasBoundingBoxOnDraw(clearBoundingBoxOnDraw: boolean) {
     this.#rearDrawStack.push(() => {
       //_console.log({ clearBoundingBoxOnDraw });
       this.#clearBoundingBoxOnDraw = clearBoundingBoxOnDraw;
     });
   }
   #ignoreDevice = false;
-  _setIgnoreDevice(ignoreDevice: boolean) {
+  #setIgnoreDevice(ignoreDevice: boolean) {
     this.#ignoreDevice = ignoreDevice;
     this.#rearDrawStack.push(() => {
       //_console.log({ ignoreDevice });
@@ -2870,7 +2870,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
   }
 
   #useSpriteColorIndices = false;
-  _setUseSpriteColorIndices(useSpriteColorIndices: boolean) {
+  #setUseSpriteColorIndices(useSpriteColorIndices: boolean) {
     this.#rearDrawStack.push(() => {
       _console.log({ useSpriteColorIndices });
       this.#useSpriteColorIndices = useSpriteColorIndices;
@@ -2878,7 +2878,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
   }
   #spriteContextStack: DisplayContextState[] = [];
   #spriteStack: DisplaySprite[] = [];
-  _saveContextForSprite(
+  #saveContextForSprite(
     centerX: number,
     centerY: number,
     sprite: DisplaySprite
@@ -2903,7 +2903,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     this.contextState.spriteColorIndices = spriteColorIndices;
     //_console.log("_saveContextForSprite", this.contextState);
   }
-  _restoreContextForSprite() {
+  #restoreContextForSprite() {
     this.#resetCanvasContextTransform();
 
     const contextState = this.#spriteContextStack.pop();
@@ -2913,6 +2913,50 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     }
     //_console.log("_restoreContextForSprite", contextState);
     this.#contextStateHelper.update(contextState);
+  }
+
+  #runPreviewSpriteCommand(
+    command: DisplayContextCommand,
+    spriteSheet: DisplaySpriteSheet
+  ) {
+    _console.log("runPreviewSpriteCommand", command);
+    if (command.type == "drawSprite") {
+      const sprite = spriteSheet.sprites[command.spriteIndex];
+      if (sprite) {
+        _console.log("drawing sub sprite", sprite);
+        this.#saveContextForSprite(command.centerX, command.centerY, sprite);
+        sprite.commands.forEach((command) => {
+          this.#runPreviewSpriteCommand(command, spriteSheet);
+        });
+        this.#restoreContextForSprite();
+      } else {
+        _console.error(
+          `spriteIndex ${command.spriteIndex} not found in spriteSheet`
+        );
+      }
+    } else {
+      this.runContextCommand(command);
+    }
+  }
+  previewSprite(
+    centerX: number,
+    centerY: number,
+    sprite: DisplaySprite,
+    spriteSheet: DisplaySpriteSheet
+  ) {
+    this.#setIgnoreDevice(true);
+    this.#setClearCanvasBoundingBoxOnDraw(false);
+    this.#setUseSpriteColorIndices(true);
+    this.#saveContextForSprite(centerX, centerY, sprite);
+
+    sprite.commands.forEach((command) => {
+      this.#runPreviewSpriteCommand(command, spriteSheet);
+    });
+
+    this.#setIgnoreDevice(false);
+    this.#restoreContextForSprite();
+    this.#setUseSpriteColorIndices(false);
+    this.#setClearCanvasBoundingBoxOnDraw(true);
   }
 
   #reset() {

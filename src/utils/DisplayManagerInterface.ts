@@ -350,8 +350,8 @@ export interface DisplayManagerInterface {
     colorIndices: number[];
   }>;
 
-  sendSpriteSheet(spriteSheet: DisplaySpriteSheet): Promise<void>;
-  sendSpriteSheets(spriteSheets: DisplaySpriteSheet[]): Promise<void>;
+  uploadSpriteSheet(spriteSheet: DisplaySpriteSheet): Promise<void>;
+  uploadSpriteSheets(spriteSheets: DisplaySpriteSheet[]): Promise<void>;
   selectSpriteSheet(
     spriteSheetName: string,
     sendImmediately?: boolean
@@ -375,6 +375,9 @@ export async function runDisplayContextCommand(
   command: DisplayContextCommand,
   sendImmediately?: boolean
 ) {
+  if (command.hide) {
+    return;
+  }
   switch (command.type) {
     case "show":
       await displayManager.show(sendImmediately);
@@ -809,12 +812,14 @@ export async function runDisplayContextCommands(
   sendImmediately?: boolean
 ) {
   _console.log("runDisplayContextCommands", commands);
-  commands.forEach((command, index) => {
-    const isLast = index == commands.length - 1;
-    runDisplayContextCommand(
-      displayManager,
-      command,
-      sendImmediately && isLast
-    );
-  });
+  commands
+    .filter((command) => !command.hide)
+    .forEach((command, index) => {
+      const isLast = index == commands.length - 1;
+      runDisplayContextCommand(
+        displayManager,
+        command,
+        sendImmediately && isLast
+      );
+    });
 }

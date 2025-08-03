@@ -1926,7 +1926,7 @@ class DisplayManager implements DisplayManagerInterface {
     });
   }
   sendFile!: SendFileCallback;
-  async sendSpriteSheet(spriteSheet: DisplaySpriteSheet) {
+  async uploadSpriteSheet(spriteSheet: DisplaySpriteSheet) {
     spriteSheet = structuredClone(spriteSheet);
     this.#pendingSpriteSheet = spriteSheet;
     const buffer = serializeSpriteSheet(this, this.#pendingSpriteSheet);
@@ -1935,9 +1935,9 @@ class DisplayManager implements DisplayManagerInterface {
     this.sendFile("spriteSheet", buffer, true);
     await promise;
   }
-  async sendSpriteSheets(spriteSheets: DisplaySpriteSheet[]) {
+  async uploadSpriteSheets(spriteSheets: DisplaySpriteSheet[]) {
     for (const spriteSheet of spriteSheets) {
-      await this.sendSpriteSheet(spriteSheet);
+      await this.uploadSpriteSheet(spriteSheet);
     }
   }
   assertLoadedSpriteSheet(spriteSheetName: string) {

@@ -870,9 +870,7 @@ let draw = () => {
     drawWhenReady = true;
     return;
   }
-  console.log("drawSprite");
-
-  // FILL
+  console.log("draw");
 
   if (shouldDrawAllSprites) {
     drawSprites();
@@ -880,44 +878,13 @@ let draw = () => {
     drawSprite();
   }
 };
-/** @param {BS.DisplayContextCommand} command */
-const runCommand = (command) => {
-  //console.log("runCommand", command);
-  if (command.hide) {
-    return;
-  }
-  if (command.type == "drawSprite") {
-    const sprite = spriteSheet.sprites[command.spriteIndex];
-    if (sprite) {
-      //console.log("drawing sub sprite", sprite);
-      displayCanvasHelper._saveContextForSprite(
-        command.centerX,
-        command.centerY,
-        sprite
-      );
-      sprite.commands.forEach((command) => {
-        runCommand(command);
-      });
-      displayCanvasHelper._restoreContextForSprite();
-    } else {
-      console.error(
-        `spriteIndex ${command.spriteIndex} not found in spriteSheet`
-      );
-    }
-  } else {
-    displayCanvasHelper.runContextCommand(command);
-  }
-};
+
 let xSpacing = 0;
 let ySpacing = 0;
 const drawSprites = () => {
   let x = 0;
   let y = 0;
   let maxHeight = 0;
-
-  displayCanvasHelper._setIgnoreDevice(true);
-  displayCanvasHelper._setClearCanvasBoundingBoxOnDraw(false);
-  displayCanvasHelper._setUseSpriteColorIndices(true);
 
   spriteSheet.sprites.forEach((sprite) => {
     if (x + sprite.width + xSpacing > displayCanvasHelper.width) {
@@ -927,25 +894,20 @@ const drawSprites = () => {
       y += ySpacing;
     }
 
-    displayCanvasHelper._saveContextForSprite(
-      x + sprite.width / 2,
-      y + sprite.height / 2,
-      sprite
-    );
+    const centerX = x + sprite.width / 2;
+    const centerY = y + sprite.height / 2;
 
-    sprite.commands.forEach((command) => {
-      runCommand(command);
-    });
+    if (useUploadedSpriteSheet) {
+      displayCanvasHelper.drawSprite(centerX, centerY, sprite.name);
+    } else {
+      displayCanvasHelper.previewSprite(centerX, centerY, sprite, spriteSheet);
+    }
+
     x += sprite.width;
     x += xSpacing;
     maxHeight = Math.max(sprite.height, maxHeight);
-
-    displayCanvasHelper._restoreContextForSprite();
   });
 
-  displayCanvasHelper._setIgnoreDevice(false);
-  displayCanvasHelper._setUseSpriteColorIndices(false);
-  displayCanvasHelper._setClearCanvasBoundingBoxOnDraw(true);
   displayCanvasHelper.show();
 };
 const drawSprite = () => {
@@ -978,20 +940,11 @@ const drawSprite = () => {
     displayCanvasHelper.setRotationCropBottom(rotationCropBottom);
     displayCanvasHelper.setRotationCropLeft(rotationCropLeft);
 
-    displayCanvasHelper._setIgnoreDevice(true);
-    displayCanvasHelper._setClearCanvasBoundingBoxOnDraw(false);
-    displayCanvasHelper._setUseSpriteColorIndices(true);
-    displayCanvasHelper._saveContextForSprite(x, y, selectedSprite);
-
-    selectedSprite.commands.forEach((command) => {
-      runCommand(command);
-    });
-
-    displayCanvasHelper._setIgnoreDevice(false);
-    displayCanvasHelper._restoreContextForSprite();
-    displayCanvasHelper._setUseSpriteColorIndices(false);
-    displayCanvasHelper._setClearCanvasBoundingBoxOnDraw(true);
-
+    if (useUploadedSpriteSheet) {
+      displayCanvasHelper.drawSprite(x, y, selectedSprite.name);
+    } else {
+      displayCanvasHelper.previewSprite(x, y, selectedSprite, spriteSheet);
+    }
     displayCanvasHelper.show();
   } else {
     displayCanvasHelper.clear();
@@ -3200,12 +3153,9 @@ const updateUploadSpriteSheetButton = () => {
     displayCanvasHelper.device?.isConnected == true
   );
 };
-displayCanvasHelper.addEventListener(
-  "deviceSpriteSheetUploadStart",
-  (event) => {
-    uploadSpriteSheetButton.innerText = "uploading spritesheet";
-  }
-);
+displayCanvasHelper.addEventListener("deviceSpriteSheetUploadStart", () => {
+  uploadSpriteSheetButton.innerText = "uploading spritesheet";
+});
 displayCanvasHelper.addEventListener(
   "deviceSpriteSheetUploadProgress",
   (event) => {
@@ -3216,16 +3166,48 @@ displayCanvasHelper.addEventListener(
     )}%`;
   }
 );
-displayCanvasHelper.addEventListener(
-  "deviceSpriteSheetUploadComplete",
-  (event) => {
-    uploadSpriteSheetProgress.value = 0;
-    uploadSpriteSheetButton.innerText = "upload spritesheet";
-  }
-);
+displayCanvasHelper.addEventListener("deviceSpriteSheetUploadComplete", () => {
+  uploadSpriteSheetProgress.value = 0;
+  uploadSpriteSheetButton.innerText = "upload spritesheet";
+  displayCanvasHelper.selectSpriteSheet(spriteSheet.name, true);
+});
 uploadSpriteSheetButton.addEventListener("click", () => {
-  displayCanvasHelper.sendSpriteSheet(spriteSheet);
+  displayCanvasHelper.uploadSpriteSheet(spriteSheet);
+  updateToggleUseUploadedSpriteSheetButton();
 });
 const uploadSpriteSheetProgress = document.getElementById(
   "uploadSpriteSheetProgress"
 );
+
+let useUploadedSpriteSheet = false;
+const setUseUploadedSpriteSheet = (newUseUploadedSpriteSheet) => {
+  useUploadedSpriteSheet = newUseUploadedSpriteSheet;
+  console.log({ useUploadedSpriteSheet });
+  draw();
+};
+const toggleUseUploadedSpriteSheetButton = document.getElementById(
+  "toggleUseUploadedSpriteSheet"
+);
+toggleUseUploadedSpriteSheetButton.addEventListener("click", () => {
+  setUseUploadedSpriteSheet(!useUploadedSpriteSheet);
+});
+displayCanvasHelper.addEventListener("deviceSpriteSheetUploadComplete", () => {
+  updateToggleUseUploadedSpriteSheetButton();
+});
+displayCanvasHelper.addEventListener("deviceIsConnected", () => {
+  updateToggleUseUploadedSpriteSheetButton();
+});
+const updateToggleUseUploadedSpriteSheetButton = () => {
+  let enabled = true;
+  if (displayCanvasHelper.device) {
+    enabled =
+      !displayCanvasHelper.device.isConnected ||
+      spriteSheet.name in displayCanvasHelper.device.displaySpriteSheets;
+  }
+  toggleUseUploadedSpriteSheetButton.disabled = !enabled;
+  if (enabled) {
+    displayCanvasHelper.selectSpriteSheet(spriteSheet.name, true);
+  } else {
+    setUseUploadedSpriteSheet(false);
+  }
+};

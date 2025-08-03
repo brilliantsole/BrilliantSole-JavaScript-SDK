@@ -4797,7 +4797,9 @@ function serializeContextCommand(displayManager, command) {
     return dataView;
 }
 function serializeContextCommands(displayManager, commands) {
-    const serializedContextCommandArray = commands.map((command) => {
+    const serializedContextCommandArray = commands
+        .filter((command) => !command.hide)
+        .map((command) => {
         const displayContextCommandEnum = DisplayContextCommandTypes.indexOf(command.type);
         const serializedContextCommand = serializeContextCommand(displayManager, command);
         return concatenateArrayBuffers(UInt8ByteBuffer(displayContextCommandEnum), serializedContextCommand);
@@ -4809,6 +4811,9 @@ function serializeContextCommands(displayManager, commands) {
 
 const _console$q = createConsole("DisplayManagerInterface", { log: true });
 async function runDisplayContextCommand(displayManager, command, sendImmediately) {
+    if (command.hide) {
+        return;
+    }
     switch (command.type) {
         case "show":
             await displayManager.show(sendImmediately);
@@ -5115,7 +5120,9 @@ async function runDisplayContextCommand(displayManager, command, sendImmediately
 }
 async function runDisplayContextCommands(displayManager, commands, sendImmediately) {
     _console$q.log("runDisplayContextCommands", commands);
-    commands.forEach((command, index) => {
+    commands
+        .filter((command) => !command.hide)
+        .forEach((command, index) => {
         const isLast = index == commands.length - 1;
         runDisplayContextCommand(displayManager, command, sendImmediately && isLast);
     });
@@ -6215,7 +6222,7 @@ class DisplayManager {
     get pendingSpriteSheetName() {
         return __classPrivateFieldGet(this, _DisplayManager_pendingSpriteSheetName, "f");
     }
-    async sendSpriteSheet(spriteSheet) {
+    async uploadSpriteSheet(spriteSheet) {
         spriteSheet = structuredClone(spriteSheet);
         __classPrivateFieldSet(this, _DisplayManager_pendingSpriteSheet, spriteSheet, "f");
         const buffer = serializeSpriteSheet(this, __classPrivateFieldGet(this, _DisplayManager_pendingSpriteSheet, "f"));
@@ -6224,9 +6231,9 @@ class DisplayManager {
         this.sendFile("spriteSheet", buffer, true);
         await promise;
     }
-    async sendSpriteSheets(spriteSheets) {
+    async uploadSpriteSheets(spriteSheets) {
         for (const spriteSheet of spriteSheets) {
-            await this.sendSpriteSheet(spriteSheet);
+            await this.uploadSpriteSheet(spriteSheet);
         }
     }
     assertLoadedSpriteSheet(spriteSheetName) {
@@ -10026,13 +10033,13 @@ class Device {
         __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertDisplayIsAvailable).call(this);
         return __classPrivateFieldGet(this, _Device_displayManager, "f");
     }
-    get sendDisplaySpriteSheet() {
+    get uploadDisplaySpriteSheet() {
         __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertDisplayIsAvailable).call(this);
-        return __classPrivateFieldGet(this, _Device_displayManager, "f").sendSpriteSheet;
+        return __classPrivateFieldGet(this, _Device_displayManager, "f").uploadSpriteSheet;
     }
-    get sendDisplaySpriteSheets() {
+    get uploadDisplaySpriteSheets() {
         __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertDisplayIsAvailable).call(this);
-        return __classPrivateFieldGet(this, _Device_displayManager, "f").sendSpriteSheets;
+        return __classPrivateFieldGet(this, _Device_displayManager, "f").uploadSpriteSheets;
     }
     get selectDisplaySpriteSheet() {
         __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertDisplayIsAvailable).call(this);
@@ -10041,6 +10048,9 @@ class Device {
     get drawDisplaySprite() {
         __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertDisplayIsAvailable).call(this);
         return __classPrivateFieldGet(this, _Device_displayManager, "f").drawSprite;
+    }
+    get displaySpriteSheets() {
+        return __classPrivateFieldGet(this, _Device_displayManager, "f").spriteSheets;
     }
 }
 _a$3 = Device, _Device_eventDispatcher = new WeakMap(), _Device_connectionManager = new WeakMap(), _Device_isConnected = new WeakMap(), _Device_reconnectOnDisconnection = new WeakMap(), _Device_reconnectIntervalId = new WeakMap(), _Device_deviceInformationManager = new WeakMap(), _Device_batteryLevel = new WeakMap(), _Device_sensorConfigurationManager = new WeakMap(), _Device_clearSensorConfigurationOnLeave = new WeakMap(), _Device_sensorDataManager = new WeakMap(), _Device_vibrationManager = new WeakMap(), _Device_fileTransferManager = new WeakMap(), _Device_tfliteManager = new WeakMap(), _Device_firmwareManager = new WeakMap(), _Device_isServerSide = new WeakMap(), _Device_wifiManager = new WeakMap(), _Device_cameraManager = new WeakMap(), _Device_microphoneManager = new WeakMap(), _Device_displayManager = new WeakMap(), _Device_instances = new WeakSet(), _Device_DefaultConnectionManager = function _Device_DefaultConnectionManager() {
