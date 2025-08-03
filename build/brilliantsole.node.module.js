@@ -3783,7 +3783,7 @@ const DefaultDisplayContextState = {
     bitmapColorIndices: new Array(0).fill(0),
     bitmapScaleX: 1,
     bitmapScaleY: 1,
-    spriteColorIndices: new Array(0).fill(0).map((_, index) => index),
+    spriteColorIndices: new Array(0).fill(0),
     spriteScaleX: 1,
     spriteScaleY: 1,
     spriteSheetName: undefined,
@@ -6053,9 +6053,7 @@ class DisplayManager {
         return this.setColorOpacity(this.spriteColorIndices[spriteColorIndex], opacity, sendImmediately);
     }
     async resetSpriteColors(sendImmediately) {
-        const spriteColorIndices = new Array(this.numberOfColors)
-            .fill(0)
-            .map((_, index) => index);
+        const spriteColorIndices = new Array(this.numberOfColors).fill(0);
         const differences = __classPrivateFieldGet(this, _DisplayManager_contextStateHelper, "f").update({
             spriteColorIndices,
         });
@@ -6565,9 +6563,7 @@ async function _DisplayManager_sendDisplayCommand(command, sendImmediately) {
     __classPrivateFieldSet(this, _DisplayManager_colors, new Array(this.numberOfColors).fill("#000000"), "f");
     __classPrivateFieldSet(this, _DisplayManager_opacities, new Array(this.numberOfColors).fill(1), "f");
     this.contextState.bitmapColorIndices = new Array(this.numberOfColors).fill(0);
-    this.contextState.spriteColorIndices = new Array(this.numberOfColors)
-        .fill(0)
-        .map((_, index) => index);
+    this.contextState.spriteColorIndices = new Array(this.numberOfColors).fill(0);
     __classPrivateFieldGet(this, _DisplayManager_instances, "a", _DisplayManager_dispatchEvent_get).call(this, "displayInformation", {
         displayInformation: __classPrivateFieldGet(this, _DisplayManager_displayInformation, "f"),
     });

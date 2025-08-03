@@ -3797,7 +3797,7 @@ const DefaultDisplayContextState = {
     bitmapColorIndices: new Array(0).fill(0),
     bitmapScaleX: 1,
     bitmapScaleY: 1,
-    spriteColorIndices: new Array(0).fill(0).map((_, index) => index),
+    spriteColorIndices: new Array(0).fill(0),
     spriteScaleX: 1,
     spriteScaleY: 1,
     spriteSheetName: undefined,
@@ -7277,9 +7277,7 @@ async function _DisplayManager_sendDisplayCommand(command, sendImmediately) {
     __classPrivateFieldSet(this, _DisplayManager_colors, new Array(this.numberOfColors).fill("#000000"), "f");
     __classPrivateFieldSet(this, _DisplayManager_opacities, new Array(this.numberOfColors).fill(1), "f");
     this.contextState.bitmapColorIndices = new Array(this.numberOfColors).fill(0);
-    this.contextState.spriteColorIndices = new Array(this.numberOfColors)
-        .fill(0)
-        .map((_, index) => index);
+    this.contextState.spriteColorIndices = new Array(this.numberOfColors).fill(0);
     __classPrivateFieldGet(this, _DisplayManager_instances, "a", _DisplayManager_dispatchEvent_get).call(this, "displayInformation", {
         displayInformation: __classPrivateFieldGet(this, _DisplayManager_displayInformation, "f"),
     });
@@ -11004,9 +11002,7 @@ class DisplayCanvasHelper {
         __classPrivateFieldSet(this, _DisplayCanvasHelper_colors, new Array(this.numberOfColors).fill("#000000"), "f");
         __classPrivateFieldSet(this, _DisplayCanvasHelper_opacities, new Array(this.numberOfColors).fill(1), "f");
         this.contextState.bitmapColorIndices = new Array(this.numberOfColors).fill(0);
-        this.contextState.spriteColorIndices = new Array(this.numberOfColors)
-            .fill(0)
-            .map((_, index) => index);
+        this.contextState.spriteColorIndices = new Array(this.numberOfColors).fill(0);
         __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "a", _DisplayCanvasHelper_dispatchEvent_get).call(this, "numberOfColors", {
             numberOfColors: this.numberOfColors,
         });
@@ -11492,9 +11488,7 @@ class DisplayCanvasHelper {
         return this.setColorOpacity(this.spriteColorIndices[spriteColorIndex], opacity, sendImmediately);
     }
     async resetSpriteColors(sendImmediately) {
-        const spriteColorIndices = new Array(this.numberOfColors)
-            .fill(0)
-            .map((_, index) => index);
+        const spriteColorIndices = new Array(this.numberOfColors).fill(0);
         const differences = __classPrivateFieldGet(this, _DisplayCanvasHelper_contextStateHelper, "f").update({
             spriteColorIndices,
         });
@@ -11923,9 +11917,7 @@ _DisplayCanvasHelper_eventDispatcher = new WeakMap(), _DisplayCanvasHelper_canva
 }, _DisplayCanvasHelper_resetContextState = function _DisplayCanvasHelper_resetContextState() {
     __classPrivateFieldGet(this, _DisplayCanvasHelper_contextStateHelper, "f").reset();
     this.contextState.bitmapColorIndices = new Array(this.numberOfColors).fill(0);
-    this.contextState.spriteColorIndices = new Array(this.numberOfColors)
-        .fill(0)
-        .map((_, index) => index);
+    this.contextState.spriteColorIndices = new Array(this.numberOfColors).fill(0);
 }, _DisplayCanvasHelper_updateDeviceContextState = async function _DisplayCanvasHelper_updateDeviceContextState(sendImmediately) {
     if (!this.device?.isConnected) {
         return;

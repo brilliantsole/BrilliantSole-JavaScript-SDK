@@ -560,9 +560,9 @@ class DisplayManager implements DisplayManagerInterface {
     this.contextState.bitmapColorIndices = new Array(this.numberOfColors).fill(
       0
     );
-    this.contextState.spriteColorIndices = new Array(this.numberOfColors)
-      .fill(0)
-      .map((_, index) => index);
+    this.contextState.spriteColorIndices = new Array(this.numberOfColors).fill(
+      0
+    );
     this.#dispatchEvent("displayInformation", {
       displayInformation: this.#displayInformation,
     });
@@ -1452,9 +1452,7 @@ class DisplayManager implements DisplayManagerInterface {
   }
 
   async resetSpriteColors(sendImmediately?: boolean) {
-    const spriteColorIndices = new Array(this.numberOfColors)
-      .fill(0)
-      .map((_, index) => index);
+    const spriteColorIndices = new Array(this.numberOfColors).fill(0);
     const differences = this.#contextStateHelper.update({
       spriteColorIndices,
     });

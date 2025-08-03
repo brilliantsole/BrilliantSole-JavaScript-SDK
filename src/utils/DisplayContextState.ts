@@ -67,7 +67,7 @@ export const DefaultDisplayContextState: DisplayContextState = {
   bitmapScaleX: 1,
   bitmapScaleY: 1,
 
-  spriteColorIndices: new Array(0).fill(0).map((_, index) => index),
+  spriteColorIndices: new Array(0).fill(0),
   spriteScaleX: 1,
   spriteScaleY: 1,
 

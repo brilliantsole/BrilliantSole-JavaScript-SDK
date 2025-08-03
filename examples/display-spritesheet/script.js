@@ -505,7 +505,22 @@ const onNumberOfPaletteColorsUpdate = () => {
       colorIndex,
       selectedPalette?.opacities[colorIndex] ?? 1
     );
+    displayCanvasHelper.selectSpriteColor(colorIndex, colorIndex);
   }
+
+  for (
+    let spriteColorIndex = 0;
+    spriteColorIndex < displayCanvasHelper.numberOfColors;
+    spriteColorIndex++
+  ) {
+    let colorIndex = spriteColorIndex;
+    if (selectedPalette && spriteColorIndex >= selectedPalette.numberOfColors) {
+      colorIndex = 0;
+    }
+    displayCanvasHelper.selectSpriteColor(spriteColorIndex, colorIndex);
+  }
+
+  displayCanvasHelper.flushContextCommands();
 };
 updateSpriteColorIndices();
 
