@@ -471,6 +471,7 @@ class FileTransferManager {
     const fileBuffer = await getFileBuffer(file);
     const fileLength = fileBuffer.byteLength;
     const checksum = crc32(fileBuffer);
+    this.#assertValidLength(fileLength);
 
     if (!override) {
       if (type != this.type) {

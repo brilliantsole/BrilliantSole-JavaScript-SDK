@@ -116,6 +116,11 @@
 
     <button disabled id="deletePalette">delete</button>
 
+    <label>
+      set palette from image
+      <input id="paletteImageInput" type="file" accept="image/*" />
+    </label>
+
     <div id="displayColors">
       <template id="displayColorTemplate">
         <label class="displayColor">
@@ -177,6 +182,16 @@
         sprite height
         <input disabled type="range" min="1" max="200" step="1" value="20" />
         <span>20</span>px
+      </label>
+      <br />
+
+      <label>
+        create sprite from image
+        <input disabled id="spriteImageInput" type="file" accept="image/*" />
+      </label>
+      <label>
+        override palette
+        <input id="spriteImageOverridePalette" type="checkbox" />
       </label>
     </div>
 
@@ -303,6 +318,8 @@
         use uploaded spritesheet
         <input disabled id="toggleUseUploadedSpriteSheet" type="checkbox" />
       </label>
+
+      <button id="checkSpriteSheetSize">check spritesheet size</button>
     </div>
 
     <hr />

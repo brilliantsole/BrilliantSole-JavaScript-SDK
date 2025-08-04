@@ -10,6 +10,10 @@ import {
 } from "./DisplayUtils.ts";
 import { DisplayContextState } from "./DisplayContextState.ts";
 import { DisplayBitmap } from "../DisplayManager.ts";
+import {
+  DisplaySprite,
+  DisplaySpriteSheet,
+} from "./DisplaySpriteSheetUtils.ts";
 
 const _console = createConsole("DisplayBitmapUtils", { log: true });
 
@@ -290,20 +294,24 @@ export async function imageToBitmap(
   width: number,
   height: number,
   colors: string[],
-  contextState: DisplayContextState,
+  bitmapColorIndices: number[],
   numberOfColors?: number
 ) {
   if (numberOfColors == undefined) {
     numberOfColors = colors.length;
   }
-  const bitmapColors = contextState.bitmapColorIndices
+  const bitmapColors = bitmapColorIndices
     .map((bitmapColorIndex) => colors[bitmapColorIndex])
     .slice(0, numberOfColors);
-  const { blob, colorIndices: bitmapColorIndices } =
-    await resizeAndQuantizeImage(image, width, height, bitmapColors);
+  const { blob, colorIndices } = await resizeAndQuantizeImage(
+    image,
+    width,
+    height,
+    bitmapColors
+  );
   const bitmap: DisplayBitmap = {
     numberOfColors,
-    pixels: bitmapColorIndices,
+    pixels: colorIndices,
     width,
     height,
   };
@@ -338,4 +346,122 @@ export function assertValidBitmapPixels(bitmap: DisplayBitmap) {
       bitmap.numberOfColors - 1
     );
   });
+}
+
+export async function imageToSprite(
+  image: HTMLImageElement,
+  spriteName: string,
+  width: number,
+  height: number,
+  numberOfColors: number,
+  paletteName: string,
+  overridePalette: boolean,
+  spriteSheet: DisplaySpriteSheet,
+  paletteOffset: number
+) {
+  let palette = spriteSheet.palettes.find(
+    (palette) => palette.name == paletteName
+  );
+  if (!palette) {
+    palette = {
+      name: paletteName,
+      numberOfColors,
+      colors: new Array(numberOfColors).fill("#000000"),
+      opacities: new Array(numberOfColors).fill(1),
+    };
+    spriteSheet.palettes.push(palette);
+  }
+
+  _console.assertWithError(
+    numberOfColors + paletteOffset <= palette.numberOfColors,
+    `invalid numberOfColors ${numberOfColors} + offset ${paletteOffset} (max ${palette.numberOfColors})`
+  );
+
+  const sprite: DisplaySprite = {
+    name: spriteName,
+    width,
+    height,
+    paletteSwaps: [],
+    commands: [],
+  };
+
+  let blob: Blob;
+  let colorIndices: number[];
+  if (overridePalette) {
+    const results = await quantizeImage(
+      image,
+      width,
+      height,
+      palette.numberOfColors
+    );
+    blob = results.blob;
+    colorIndices = results.colorIndices;
+    results.colors.forEach((color, index) => {
+      palette.colors[index + paletteOffset] = color;
+    });
+  } else {
+    const results = await resizeAndQuantizeImage(
+      image,
+      width,
+      height,
+      palette.colors.slice(paletteOffset, numberOfColors)
+    );
+    blob = results.blob;
+    colorIndices = results.colorIndices;
+  }
+
+  sprite.commands.push({
+    type: "selectBitmapColors",
+    bitmapColorPairs: new Array(numberOfColors).fill(0).map((_, index) => ({
+      bitmapColorIndex: index,
+      colorIndex: index + paletteOffset,
+    })),
+  });
+  const bitmap: DisplayBitmap = {
+    numberOfColors,
+    pixels: colorIndices,
+    width,
+    height,
+  };
+  sprite.commands.push({ type: "drawBitmap", centerX: 0, centerY: 0, bitmap });
+
+  const spriteIndex = spriteSheet.sprites.findIndex(
+    (sprite) => sprite.name == spriteName
+  );
+  if (spriteIndex == -1) {
+    spriteSheet.sprites.push(sprite);
+  } else {
+    spriteSheet.sprites[spriteIndex] = sprite;
+  }
+
+  return { sprite, blob };
+}
+export async function imageToSpriteSheet(
+  image: HTMLImageElement,
+  name: string,
+  width: number,
+  height: number,
+  numberOfColors: number,
+  paletteName: string
+) {
+  const spriteSheet: DisplaySpriteSheet = {
+    name,
+    palettes: [],
+    paletteSwaps: [],
+    sprites: [],
+  };
+
+  await imageToSprite(
+    image,
+    "image",
+    width,
+    height,
+    numberOfColors,
+    paletteName,
+    true,
+    spriteSheet,
+    0
+  );
+
+  return spriteSheet;
 }

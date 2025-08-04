@@ -84,6 +84,7 @@ import {
   DisplaySpriteSheet,
   DisplaySpriteSheetPalette,
   DisplaySpriteSheetPaletteSwap,
+  serializeSpriteSheet,
 } from "./DisplaySpriteSheetUtils.ts";
 
 const _console = createConsole("DisplayCanvasHelper", { log: true });
@@ -3075,7 +3076,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
       width,
       height,
       this.colors,
-      this.contextState,
+      this.bitmapColorIndices,
       numberOfColors
     );
   }
@@ -3095,6 +3096,10 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     colors: string[]
   ): Promise<{ blob: Blob; colorIndices: number[] }> {
     return resizeAndQuantizeImage(image, width, height, colors);
+  }
+
+  serializeSpriteSheet(spriteSheet: DisplaySpriteSheet): ArrayBuffer {
+    return serializeSpriteSheet(this, spriteSheet);
   }
 }
 export default DisplayCanvasHelper;

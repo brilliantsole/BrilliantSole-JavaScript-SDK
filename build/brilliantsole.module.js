@@ -688,6 +688,7 @@ class FileTransferManager {
         const fileBuffer = await getFileBuffer(file);
         const fileLength = fileBuffer.byteLength;
         const checksum = crc32(fileBuffer);
+        __classPrivateFieldGet(this, _FileTransferManager_instances, "m", _FileTransferManager_assertValidLength).call(this, fileLength);
         if (!override) {
             if (type != this.type) {
                 _console$F.log("different fileTypes - sending");
@@ -4872,17 +4873,17 @@ async function resizeAndQuantizeImage(image, width, height, colors) {
         colorIndices: quantizedColorIndices,
     };
 }
-async function imageToBitmap(image, width, height, colors, contextState, numberOfColors) {
+async function imageToBitmap(image, width, height, colors, bitmapColorIndices, numberOfColors) {
     if (numberOfColors == undefined) {
         numberOfColors = colors.length;
     }
-    const bitmapColors = contextState.bitmapColorIndices
+    const bitmapColors = bitmapColorIndices
         .map((bitmapColorIndex) => colors[bitmapColorIndex])
         .slice(0, numberOfColors);
-    const { blob, colorIndices: bitmapColorIndices } = await resizeAndQuantizeImage(image, width, height, bitmapColors);
+    const { blob, colorIndices } = await resizeAndQuantizeImage(image, width, height, bitmapColors);
     const bitmap = {
         numberOfColors,
-        pixels: bitmapColorIndices,
+        pixels: colorIndices,
         width,
         height,
     };
@@ -4906,6 +4907,73 @@ function assertValidBitmapPixels(bitmap) {
     bitmap.pixels.forEach((pixel, index) => {
         _console$n.assertRangeWithError(`bitmap.pixels[${index}]`, pixel, 0, bitmap.numberOfColors - 1);
     });
+}
+async function imageToSprite(image, spriteName, width, height, numberOfColors, paletteName, overridePalette, spriteSheet, paletteOffset) {
+    let palette = spriteSheet.palettes.find((palette) => palette.name == paletteName);
+    if (!palette) {
+        palette = {
+            name: paletteName,
+            numberOfColors,
+            colors: new Array(numberOfColors).fill("#000000"),
+            opacities: new Array(numberOfColors).fill(1),
+        };
+        spriteSheet.palettes.push(palette);
+    }
+    _console$n.assertWithError(numberOfColors + paletteOffset <= palette.numberOfColors, `invalid numberOfColors ${numberOfColors} + offset ${paletteOffset} (max ${palette.numberOfColors})`);
+    const sprite = {
+        name: spriteName,
+        width,
+        height,
+        paletteSwaps: [],
+        commands: [],
+    };
+    let blob;
+    let colorIndices;
+    if (overridePalette) {
+        const results = await quantizeImage(image, width, height, palette.numberOfColors);
+        blob = results.blob;
+        colorIndices = results.colorIndices;
+        results.colors.forEach((color, index) => {
+            palette.colors[index + paletteOffset] = color;
+        });
+    }
+    else {
+        const results = await resizeAndQuantizeImage(image, width, height, palette.colors.slice(paletteOffset, numberOfColors));
+        blob = results.blob;
+        colorIndices = results.colorIndices;
+    }
+    sprite.commands.push({
+        type: "selectBitmapColors",
+        bitmapColorPairs: new Array(numberOfColors).fill(0).map((_, index) => ({
+            bitmapColorIndex: index,
+            colorIndex: index + paletteOffset,
+        })),
+    });
+    const bitmap = {
+        numberOfColors,
+        pixels: colorIndices,
+        width,
+        height,
+    };
+    sprite.commands.push({ type: "drawBitmap", centerX: 0, centerY: 0, bitmap });
+    const spriteIndex = spriteSheet.sprites.findIndex((sprite) => sprite.name == spriteName);
+    if (spriteIndex == -1) {
+        spriteSheet.sprites.push(sprite);
+    }
+    else {
+        spriteSheet.sprites[spriteIndex] = sprite;
+    }
+    return { sprite, blob };
+}
+async function imageToSpriteSheet(image, name, width, height, numberOfColors, paletteName) {
+    const spriteSheet = {
+        name,
+        palettes: [],
+        paletteSwaps: [],
+        sprites: [],
+    };
+    await imageToSprite(image, "image", width, height, numberOfColors, paletteName, true, spriteSheet, 0);
+    return spriteSheet;
 }
 
 const _console$m = createConsole("DisplayContextCommand", { log: true });
@@ -6765,9 +6833,7 @@ class DisplayManager {
         return this.setColorOpacity(this.spriteColorIndices[spriteColorIndex], opacity, sendImmediately);
     }
     async resetSpriteColors(sendImmediately) {
-        const spriteColorIndices = new Array(this.numberOfColors)
-            .fill(0)
-            .map((_, index) => index);
+        const spriteColorIndices = new Array(this.numberOfColors).fill(0);
         const differences = __classPrivateFieldGet(this, _DisplayManager_contextStateHelper, "f").update({
             spriteColorIndices,
         });
@@ -7005,7 +7071,7 @@ class DisplayManager {
         await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "drawBitmap", dataView.buffer, sendImmediately);
     }
     async imageToBitmap(image, width, height, numberOfColors) {
-        return imageToBitmap(image, width, height, this.colors, this.contextState, numberOfColors);
+        return imageToBitmap(image, width, height, this.colors, this.bitmapColorIndices, numberOfColors);
     }
     async quantizeImage(image, width, height, numberOfColors) {
         return quantizeImage(image, width, height, numberOfColors);
@@ -7034,10 +7100,13 @@ class DisplayManager {
     get pendingSpriteSheetName() {
         return __classPrivateFieldGet(this, _DisplayManager_pendingSpriteSheetName, "f");
     }
+    serializeSpriteSheet(spriteSheet) {
+        return serializeSpriteSheet(this, spriteSheet);
+    }
     async uploadSpriteSheet(spriteSheet) {
         spriteSheet = structuredClone(spriteSheet);
         __classPrivateFieldSet(this, _DisplayManager_pendingSpriteSheet, spriteSheet, "f");
-        const buffer = serializeSpriteSheet(this, __classPrivateFieldGet(this, _DisplayManager_pendingSpriteSheet, "f"));
+        const buffer = this.serializeSpriteSheet(__classPrivateFieldGet(this, _DisplayManager_pendingSpriteSheet, "f"));
         await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_setSpriteSheetName).call(this, __classPrivateFieldGet(this, _DisplayManager_pendingSpriteSheet, "f").name);
         const promise = this.waitForEvent("displaySpriteSheetUploadComplete");
         this.sendFile("spriteSheet", buffer, true);
@@ -10637,6 +10706,9 @@ class Device {
     get displaySpriteSheets() {
         return __classPrivateFieldGet(this, _Device_displayManager, "f").spriteSheets;
     }
+    get serializeDisplaySpriteSheet() {
+        return __classPrivateFieldGet(this, _Device_displayManager, "f").serializeSpriteSheet;
+    }
 }
 _a$2 = Device, _Device_eventDispatcher = new WeakMap(), _Device_connectionManager = new WeakMap(), _Device_isConnected = new WeakMap(), _Device_reconnectOnDisconnection = new WeakMap(), _Device_reconnectIntervalId = new WeakMap(), _Device_deviceInformationManager = new WeakMap(), _Device_batteryLevel = new WeakMap(), _Device_sensorConfigurationManager = new WeakMap(), _Device_clearSensorConfigurationOnLeave = new WeakMap(), _Device_sensorDataManager = new WeakMap(), _Device_vibrationManager = new WeakMap(), _Device_fileTransferManager = new WeakMap(), _Device_tfliteManager = new WeakMap(), _Device_firmwareManager = new WeakMap(), _Device_isServerSide = new WeakMap(), _Device_wifiManager = new WeakMap(), _Device_cameraManager = new WeakMap(), _Device_microphoneManager = new WeakMap(), _Device_displayManager = new WeakMap(), _Device_instances = new WeakSet(), _Device_DefaultConnectionManager = function _Device_DefaultConnectionManager() {
     return new WebBluetoothConnectionManager();
@@ -11772,13 +11844,16 @@ class DisplayCanvasHelper {
         await selectSpritePaletteSwap(this, spriteName, paletteSwapName, offset, sendImmediately);
     }
     async imageToBitmap(image, width, height, numberOfColors) {
-        return imageToBitmap(image, width, height, this.colors, this.contextState, numberOfColors);
+        return imageToBitmap(image, width, height, this.colors, this.bitmapColorIndices, numberOfColors);
     }
     async quantizeImage(image, width, height, numberOfColors) {
         return quantizeImage(image, width, height, numberOfColors);
     }
     async resizeAndQuantizeImage(image, width, height, colors) {
         return resizeAndQuantizeImage(image, width, height, colors);
+    }
+    serializeSpriteSheet(spriteSheet) {
+        return serializeSpriteSheet(this, spriteSheet);
     }
 }
 _DisplayCanvasHelper_eventDispatcher = new WeakMap(), _DisplayCanvasHelper_canvas = new WeakMap(), _DisplayCanvasHelper_context = new WeakMap(), _DisplayCanvasHelper_frontDrawStack = new WeakMap(), _DisplayCanvasHelper_rearDrawStack = new WeakMap(), _DisplayCanvasHelper_applyTransparency = new WeakMap(), _DisplayCanvasHelper_device = new WeakMap(), _DisplayCanvasHelper_boundDeviceEventListeners = new WeakMap(), _DisplayCanvasHelper_numberOfColors = new WeakMap(), _DisplayCanvasHelper_colors = new WeakMap(), _DisplayCanvasHelper_opacities = new WeakMap(), _DisplayCanvasHelper_contextStateHelper = new WeakMap(), _DisplayCanvasHelper_interval = new WeakMap(), _DisplayCanvasHelper_isReady = new WeakMap(), _DisplayCanvasHelper_clearBoundingBoxOnDraw = new WeakMap(), _DisplayCanvasHelper_bitmapCanvas = new WeakMap(), _DisplayCanvasHelper_bitmapContext = new WeakMap(), _DisplayCanvasHelper_spriteSheets = new WeakMap(), _DisplayCanvasHelper_spriteSheetIndices = new WeakMap(), _DisplayCanvasHelper_brightness = new WeakMap(), _DisplayCanvasHelper_brightnessOpacities = new WeakMap(), _DisplayCanvasHelper_ignoreDevice = new WeakMap(), _DisplayCanvasHelper_useSpriteColorIndices = new WeakMap(), _DisplayCanvasHelper_spriteContextStack = new WeakMap(), _DisplayCanvasHelper_spriteStack = new WeakMap(), _DisplayCanvasHelper_instances = new WeakSet(), _DisplayCanvasHelper_dispatchEvent_get = function _DisplayCanvasHelper_dispatchEvent_get() {
@@ -13508,5 +13583,5 @@ const ThrottleUtils = {
     debounce,
 };
 
-export { CameraCommands, CameraConfigurationTypes, ContinuousSensorTypes, DefaultNumberOfDisplayColors, DefaultNumberOfPressureSensors, Device, DeviceManager$1 as DeviceManager, DevicePair, DevicePairTypes, DeviceTypes, DisplayBrightnesses, DisplayCanvasHelper, DisplayContextCommandTypes, DisplayPixelDepths, DisplaySegmentCaps, DisplaySpriteContextCommandTypes, environment as Environment, EventUtils, FileTransferDirections, FileTypes, MaxNameLength, MaxNumberOfVibrationWaveformEffectSegments, MaxNumberOfVibrationWaveformSegments, MaxSensorRate, MaxSpriteSheetNameLength, MaxVibrationWaveformEffectSegmentDelay, MaxVibrationWaveformEffectSegmentLoopCount, MaxVibrationWaveformEffectSequenceLoopCount, MaxVibrationWaveformSegmentDuration, MaxWifiPasswordLength, MaxWifiSSIDLength, MicrophoneCommands, MicrophoneConfigurationTypes, MicrophoneConfigurationValues, MinNameLength, MinSpriteSheetNameLength, MinWifiPasswordLength, MinWifiSSIDLength, RangeHelper, SensorRateStep, SensorTypes, Sides, TfliteSensorTypes, TfliteTasks, ThrottleUtils, VibrationLocations, VibrationTypes, VibrationWaveformEffects, WebSocketClient, hexToRGB, maxDisplayScale, resizeAndQuantizeImage, rgbToHex, setAllConsoleLevelFlags, setConsoleLevelFlagsForType };
+export { CameraCommands, CameraConfigurationTypes, ContinuousSensorTypes, DefaultNumberOfDisplayColors, DefaultNumberOfPressureSensors, Device, DeviceManager$1 as DeviceManager, DevicePair, DevicePairTypes, DeviceTypes, DisplayBrightnesses, DisplayCanvasHelper, DisplayContextCommandTypes, DisplayPixelDepths, DisplaySegmentCaps, DisplaySpriteContextCommandTypes, environment as Environment, EventUtils, FileTransferDirections, FileTypes, MaxNameLength, MaxNumberOfVibrationWaveformEffectSegments, MaxNumberOfVibrationWaveformSegments, MaxSensorRate, MaxSpriteSheetNameLength, MaxVibrationWaveformEffectSegmentDelay, MaxVibrationWaveformEffectSegmentLoopCount, MaxVibrationWaveformEffectSequenceLoopCount, MaxVibrationWaveformSegmentDuration, MaxWifiPasswordLength, MaxWifiSSIDLength, MicrophoneCommands, MicrophoneConfigurationTypes, MicrophoneConfigurationValues, MinNameLength, MinSpriteSheetNameLength, MinWifiPasswordLength, MinWifiSSIDLength, RangeHelper, SensorRateStep, SensorTypes, Sides, TfliteSensorTypes, TfliteTasks, ThrottleUtils, VibrationLocations, VibrationTypes, VibrationWaveformEffects, WebSocketClient, hexToRGB, imageToSprite, imageToSpriteSheet, maxDisplayScale, quantizeImage, resizeAndQuantizeImage, rgbToHex, setAllConsoleLevelFlags, setConsoleLevelFlagsForType };
 //# sourceMappingURL=brilliantsole.module.js.map

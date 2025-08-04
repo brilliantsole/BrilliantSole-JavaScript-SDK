@@ -1829,6 +1829,10 @@ class Device {
     return this.#displayManager.spriteSheets;
   }
 
+  get serializeDisplaySpriteSheet() {
+    return this.#displayManager.serializeSpriteSheet;
+  }
+
   // FILL - text, etc
 }
 

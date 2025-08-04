@@ -409,6 +409,8 @@ export interface DisplayManagerInterface {
     offset?: number,
     sendImmediately?: boolean
   ): Promise<void>;
+
+  serializeSpriteSheet(spriteSheet: DisplaySpriteSheet): ArrayBuffer;
 }
 
 export async function runDisplayContextCommand(

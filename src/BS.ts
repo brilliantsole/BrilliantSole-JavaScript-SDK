@@ -145,7 +145,12 @@ export {
 /** BROWSER_END */
 
 /** BROWSER_START */
-export { resizeAndQuantizeImage } from "./utils/DisplayBitmapUtils.ts";
+export {
+  resizeAndQuantizeImage,
+  quantizeImage,
+  imageToSprite,
+  imageToSpriteSheet,
+} from "./utils/DisplayBitmapUtils.ts";
 /** BROWSER_END */
 
 export { rgbToHex, hexToRGB } from "./utils/ColorUtils.ts";

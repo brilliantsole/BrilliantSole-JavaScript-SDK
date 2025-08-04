@@ -355,6 +355,7 @@ const setPaletteIndex = (paletteIndex) => {
   displayCanvasHelper.flushContextCommands();
 
   onNumberOfPaletteColorsUpdate();
+  draw();
 };
 
 /** @type {HTMLSelectElement} */
@@ -601,6 +602,8 @@ const setSpriteIndex = (spriteIndex) => {
   }
 
   drawSpriteButton.disabled = !selectedSprite;
+
+  spriteImageInput.disabled = !selectedSprite;
 
   updateSelectSpritePaletteSwapSelect();
 
@@ -3232,3 +3235,102 @@ const updateToggleUseUploadedSpriteSheetButton = () => {
     setUseUploadedSpriteSheet(false);
   }
 };
+
+/** @type {HTMLInputElement} */
+const paletteImageInput = document.getElementById("paletteImageInput");
+paletteImageInput.addEventListener("input", () => {
+  const file = paletteImageInput.files[0];
+  if (!file) {
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = function (e) {
+    paletteImage.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+  paletteImageInput.value = "";
+});
+const paletteImage = new Image();
+paletteImage.addEventListener("load", async () => {
+  const { colors, colorIndices } = await BS.quantizeImage(
+    paletteImage,
+    paletteImage.naturalWidth,
+    paletteImage.naturalHeight,
+    selectedPalette?.numberOfColors || displayCanvasHelper.numberOfColors
+  );
+
+  colors.forEach((color, colorIndex) => {
+    displayCanvasHelper.setColor(colorIndex, color);
+    displayCanvasHelper.selectSpriteColor(colorIndex, colorIndex);
+  });
+  displayCanvasHelper.flushContextCommands();
+});
+
+/** @type {HTMLInputElement} */
+const spriteImageInput = document.getElementById("spriteImageInput");
+spriteImageInput.addEventListener("input", () => {
+  const file = spriteImageInput.files[0];
+  if (!file) {
+    return;
+  }
+  if (selectedSprite && selectedPalette) {
+    const reader = new FileReader();
+    reader.onload = function (e) {
+      spriteImage.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  }
+  spriteImageInput.value = "";
+});
+const spriteImage = new Image();
+spriteImage.addEventListener("load", async () => {
+  if (!selectedSprite) {
+    return;
+  }
+  if (!selectedPalette) {
+    return;
+  }
+  const { name, width, height } = selectedSprite;
+  await BS.imageToSprite(
+    spriteImage,
+    name,
+    width,
+    height,
+    selectedPalette.numberOfColors,
+    selectedPalette.name,
+    spriteImageOverridePalette,
+    spriteSheet,
+    0
+  );
+  setSpriteIndex(selectedSpriteIndex);
+  setPaletteIndex(selectedPaletteIndex);
+});
+
+let spriteImageOverridePalette = true;
+const setSpriteImageOverridePalette = (newSpriteImageOverridePalette) => {
+  spriteImageOverridePalette = newSpriteImageOverridePalette;
+  console.log({ spriteImageOverridePalette });
+  spriteImageOverridePaletteCheckbox.checked = spriteImageOverridePalette;
+};
+const spriteImageOverridePaletteCheckbox = document.getElementById(
+  "spriteImageOverridePalette"
+);
+spriteImageOverridePaletteCheckbox.addEventListener("input", () => {
+  setSpriteImageOverridePalette(spriteImageOverridePaletteCheckbox.checked);
+});
+setSpriteImageOverridePalette(spriteImageOverridePalette);
+
+const checkSpriteSheetSizeButton = document.getElementById(
+  "checkSpriteSheetSize"
+);
+checkSpriteSheetSizeButton.addEventListener("click", () => {
+  const arrayBuffer = displayCanvasHelper.serializeSpriteSheet(spriteSheet);
+  checkSpriteSheetSizeButton.innerText = `size: ${(
+    arrayBuffer.byteLength / 1024
+  ).toFixed(2)}kb`;
+  if (displayCanvasHelper.device?.isConnected) {
+    checkSpriteSheetSizeButton.innerText += ` (max ${(
+      displayCanvasHelper.device.maxFileLength / 1024
+    ).toFixed(2)}kb)`;
+  }
+});

@@ -230,5 +230,6 @@ declare class DisplayCanvasHelper implements DisplayManagerInterface {
         blob: Blob;
         colorIndices: number[];
     }>;
+    serializeSpriteSheet(spriteSheet: DisplaySpriteSheet): ArrayBuffer;
 }
 export default DisplayCanvasHelper;

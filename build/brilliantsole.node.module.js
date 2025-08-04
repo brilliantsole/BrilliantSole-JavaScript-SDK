@@ -659,6 +659,7 @@ class FileTransferManager {
         const fileBuffer = await getFileBuffer(file);
         const fileLength = fileBuffer.byteLength;
         const checksum = crc32(fileBuffer);
+        __classPrivateFieldGet(this, _FileTransferManager_instances, "m", _FileTransferManager_assertValidLength).call(this, fileLength);
         if (!override) {
             if (type != this.type) {
                 _console$K.log("different fileTypes - sending");
@@ -4160,17 +4161,17 @@ async function resizeAndQuantizeImage(image, width, height, colors) {
         colorIndices: quantizedColorIndices,
     };
 }
-async function imageToBitmap(image, width, height, colors, contextState, numberOfColors) {
+async function imageToBitmap(image, width, height, colors, bitmapColorIndices, numberOfColors) {
     if (numberOfColors == undefined) {
         numberOfColors = colors.length;
     }
-    const bitmapColors = contextState.bitmapColorIndices
+    const bitmapColors = bitmapColorIndices
         .map((bitmapColorIndex) => colors[bitmapColorIndex])
         .slice(0, numberOfColors);
-    const { blob, colorIndices: bitmapColorIndices } = await resizeAndQuantizeImage(image, width, height, bitmapColors);
+    const { blob, colorIndices } = await resizeAndQuantizeImage(image, width, height, bitmapColors);
     const bitmap = {
         numberOfColors,
-        pixels: bitmapColorIndices,
+        pixels: colorIndices,
         width,
         height,
     };
@@ -6291,7 +6292,7 @@ class DisplayManager {
         await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "drawBitmap", dataView.buffer, sendImmediately);
     }
     async imageToBitmap(image, width, height, numberOfColors) {
-        return imageToBitmap(image, width, height, this.colors, this.contextState, numberOfColors);
+        return imageToBitmap(image, width, height, this.colors, this.bitmapColorIndices, numberOfColors);
     }
     async quantizeImage(image, width, height, numberOfColors) {
         return quantizeImage(image, width, height, numberOfColors);
@@ -6320,10 +6321,13 @@ class DisplayManager {
     get pendingSpriteSheetName() {
         return __classPrivateFieldGet(this, _DisplayManager_pendingSpriteSheetName, "f");
     }
+    serializeSpriteSheet(spriteSheet) {
+        return serializeSpriteSheet(this, spriteSheet);
+    }
     async uploadSpriteSheet(spriteSheet) {
         spriteSheet = structuredClone(spriteSheet);
         __classPrivateFieldSet(this, _DisplayManager_pendingSpriteSheet, spriteSheet, "f");
-        const buffer = serializeSpriteSheet(this, __classPrivateFieldGet(this, _DisplayManager_pendingSpriteSheet, "f"));
+        const buffer = this.serializeSpriteSheet(__classPrivateFieldGet(this, _DisplayManager_pendingSpriteSheet, "f"));
         await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_setSpriteSheetName).call(this, __classPrivateFieldGet(this, _DisplayManager_pendingSpriteSheet, "f").name);
         const promise = this.waitForEvent("displaySpriteSheetUploadComplete");
         this.sendFile("spriteSheet", buffer, true);
@@ -10185,6 +10189,9 @@ class Device {
     }
     get displaySpriteSheets() {
         return __classPrivateFieldGet(this, _Device_displayManager, "f").spriteSheets;
+    }
+    get serializeDisplaySpriteSheet() {
+        return __classPrivateFieldGet(this, _Device_displayManager, "f").serializeSpriteSheet;
     }
 }
 _a$3 = Device, _Device_eventDispatcher = new WeakMap(), _Device_connectionManager = new WeakMap(), _Device_isConnected = new WeakMap(), _Device_reconnectOnDisconnection = new WeakMap(), _Device_reconnectIntervalId = new WeakMap(), _Device_deviceInformationManager = new WeakMap(), _Device_batteryLevel = new WeakMap(), _Device_sensorConfigurationManager = new WeakMap(), _Device_clearSensorConfigurationOnLeave = new WeakMap(), _Device_sensorDataManager = new WeakMap(), _Device_vibrationManager = new WeakMap(), _Device_fileTransferManager = new WeakMap(), _Device_tfliteManager = new WeakMap(), _Device_firmwareManager = new WeakMap(), _Device_isServerSide = new WeakMap(), _Device_wifiManager = new WeakMap(), _Device_cameraManager = new WeakMap(), _Device_microphoneManager = new WeakMap(), _Device_displayManager = new WeakMap(), _Device_instances = new WeakSet(), _Device_DefaultConnectionManager = function _Device_DefaultConnectionManager() {

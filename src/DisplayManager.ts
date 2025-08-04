@@ -1849,7 +1849,7 @@ class DisplayManager implements DisplayManagerInterface {
       width,
       height,
       this.colors,
-      this.contextState,
+      this.bitmapColorIndices,
       numberOfColors
     );
   }
@@ -1941,10 +1941,13 @@ class DisplayManager implements DisplayManagerInterface {
     });
   }
   sendFile!: SendFileCallback;
+  serializeSpriteSheet(spriteSheet: DisplaySpriteSheet): ArrayBuffer {
+    return serializeSpriteSheet(this, spriteSheet);
+  }
   async uploadSpriteSheet(spriteSheet: DisplaySpriteSheet) {
     spriteSheet = structuredClone(spriteSheet);
     this.#pendingSpriteSheet = spriteSheet;
-    const buffer = serializeSpriteSheet(this, this.#pendingSpriteSheet);
+    const buffer = this.serializeSpriteSheet(this.#pendingSpriteSheet);
     await this.#setSpriteSheetName(this.#pendingSpriteSheet.name);
     const promise = this.waitForEvent("displaySpriteSheetUploadComplete");
     this.sendFile("spriteSheet", buffer, true);

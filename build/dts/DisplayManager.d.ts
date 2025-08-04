@@ -229,6 +229,7 @@ declare class DisplayManager implements DisplayManagerInterface {
     get pendingSpriteSheet(): DisplaySpriteSheet | undefined;
     get pendingSpriteSheetName(): string | undefined;
     sendFile: SendFileCallback;
+    serializeSpriteSheet(spriteSheet: DisplaySpriteSheet): ArrayBuffer;
     uploadSpriteSheet(spriteSheet: DisplaySpriteSheet): Promise<void>;
     uploadSpriteSheets(spriteSheets: DisplaySpriteSheet[]): Promise<void>;
     assertLoadedSpriteSheet(spriteSheetName: string): void;

@@ -82,6 +82,7 @@ export function serializeSpriteSheet(
   _console.log("serializedSpriteSheet", serializedSpriteSheet);
   return serializedSpriteSheet;
 }
+
 export function parseSpriteSheet(dataView: DataView) {
   // FILL
 }
