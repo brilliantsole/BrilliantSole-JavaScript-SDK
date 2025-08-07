@@ -79,6 +79,7 @@ import {
   DisplaySpritePaletteSwap,
   DisplaySpriteSheetPalette,
   DisplaySpriteSheetPaletteSwap,
+  fontToSpriteSheet,
   serializeSpriteSheet,
 } from "./utils/DisplaySpriteSheetUtils.ts";
 
@@ -2186,6 +2187,15 @@ class DisplayManager implements DisplayManagerInterface {
     Object.keys(this.#spriteSheets).forEach(
       (spriteSheetName) => delete this.#spriteSheets[spriteSheetName]
     );
+  }
+
+  async fontToSpriteSheet(
+    arrayBuffer: ArrayBuffer,
+    fontSize: number,
+    spriteSheetName?: string
+  ) {
+    // FIX
+    return fontToSpriteSheet(this, arrayBuffer, fontSize, spriteSheetName);
   }
 
   // MTU

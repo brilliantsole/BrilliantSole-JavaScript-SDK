@@ -1,3 +1,4 @@
+// @ts-expect-error
 import RGBQuant from "rgbquant";
 import { createConsole } from "./Console.ts";
 import { hexToRGB, rgbToHex } from "./ColorUtils.ts";
@@ -38,10 +39,9 @@ export function getBitmapData(bitmap: DisplayBitmap) {
   return dataView;
 }
 
-export async function quantizeImage(
-  image: HTMLImageElement,
-  width: number,
-  height: number,
+export async function quantizeCanvas(
+  canvas: HTMLCanvasElement,
+  ctx: CanvasRenderingContext2D,
   numberOfColors: number
 ) {
   _console.assertWithError(
@@ -51,20 +51,7 @@ export async function quantizeImage(
 
   _console.log({ numberOfColors });
 
-  const canvas = document.createElement("canvas");
-  const ctx = canvas.getContext("2d")!;
-
-  let { naturalWidth: imageWidth, naturalHeight: imageHeight } = image;
-  _console.log({ imageWidth, imageHeight });
-
-  canvas.width = width;
-  canvas.height = height;
-
-  ctx.imageSmoothingEnabled = false;
-
-  ctx.drawImage(image, 0, 0, width, height);
-
-  const imageData = ctx.getImageData(0, 0, width, height);
+  const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
   const data = imageData.data;
 
   // turn any non-opaque pixel to black
@@ -98,8 +85,8 @@ export async function quantizeImage(
   const quantizedPixels = quantizer.reduce(imageData.data);
   const quantizedImageData = new ImageData(
     new Uint8ClampedArray(quantizedPixels.buffer),
-    width,
-    height
+    canvas.width,
+    canvas.height
   );
   ctx.putImageData(quantizedImageData, 0, 0);
 
@@ -177,6 +164,35 @@ export async function quantizeImage(
     colors: quantizedColors,
     colorIndices: quantizedColorIndices,
   };
+}
+
+export async function quantizeImage(
+  image: HTMLImageElement,
+  width: number,
+  height: number,
+  numberOfColors: number
+) {
+  _console.assertWithError(
+    numberOfColors > 1,
+    "numberOfColors must be greater than 1"
+  );
+
+  _console.log({ numberOfColors });
+
+  const canvas = document.createElement("canvas");
+  const ctx = canvas.getContext("2d", { willReadFrequently: true })!;
+
+  let { naturalWidth: imageWidth, naturalHeight: imageHeight } = image;
+  _console.log({ imageWidth, imageHeight });
+
+  canvas.width = width;
+  canvas.height = height;
+
+  ctx.imageSmoothingEnabled = false;
+
+  ctx.drawImage(image, 0, 0, width, height);
+
+  return quantizeCanvas(canvas, ctx, numberOfColors);
 }
 
 export async function resizeAndQuantizeImage(
@@ -359,7 +375,7 @@ export async function imageToSprite(
   spriteSheet: DisplaySpriteSheet,
   paletteOffset: number
 ) {
-  let palette = spriteSheet.palettes.find(
+  let palette = spriteSheet.palettes?.find(
     (palette) => palette.name == paletteName
   );
   if (!palette) {
@@ -369,7 +385,7 @@ export async function imageToSprite(
       colors: new Array(numberOfColors).fill("#000000"),
       opacities: new Array(numberOfColors).fill(1),
     };
-    spriteSheet.palettes.push(palette);
+    spriteSheet.palettes?.push(palette);
   }
 
   _console.assertWithError(

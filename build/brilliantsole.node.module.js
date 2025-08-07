@@ -4,6 +4,7 @@
  */
 import autoBind$1 from 'auto-bind';
 import RGBQuant from 'rgbquant';
+import opentype from 'opentype.js';
 import * as webbluetooth from 'webbluetooth';
 import * as dgram from 'dgram';
 import noble from '@abandonware/noble';
@@ -3977,18 +3978,10 @@ function getBitmapData(bitmap) {
     _console$s.log("getBitmapData", bitmap, dataView);
     return dataView;
 }
-async function quantizeImage(image, width, height, numberOfColors) {
+async function quantizeCanvas(canvas, ctx, numberOfColors) {
     _console$s.assertWithError(numberOfColors > 1, "numberOfColors must be greater than 1");
     _console$s.log({ numberOfColors });
-    const canvas = document.createElement("canvas");
-    const ctx = canvas.getContext("2d");
-    let { naturalWidth: imageWidth, naturalHeight: imageHeight } = image;
-    _console$s.log({ imageWidth, imageHeight });
-    canvas.width = width;
-    canvas.height = height;
-    ctx.imageSmoothingEnabled = false;
-    ctx.drawImage(image, 0, 0, width, height);
-    const imageData = ctx.getImageData(0, 0, width, height);
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
     const data = imageData.data;
     for (let i = 0; i < data.length; i += 4) {
         const alpha = data[i + 3];
@@ -4013,7 +4006,7 @@ async function quantizeImage(image, width, height, numberOfColors) {
     const quantizer = new RGBQuant(quantOptions);
     quantizer.sample(imageData);
     const quantizedPixels = quantizer.reduce(imageData.data);
-    const quantizedImageData = new ImageData(new Uint8ClampedArray(quantizedPixels.buffer), width, height);
+    const quantizedImageData = new ImageData(new Uint8ClampedArray(quantizedPixels.buffer), canvas.width, canvas.height);
     ctx.putImageData(quantizedImageData, 0, 0);
     const pixels = quantizedImageData.data;
     const quantizedPaletteData = quantizer.palette();
@@ -4080,6 +4073,19 @@ async function quantizeImage(image, width, height, numberOfColors) {
         colors: quantizedColors,
         colorIndices: quantizedColorIndices,
     };
+}
+async function quantizeImage(image, width, height, numberOfColors) {
+    _console$s.assertWithError(numberOfColors > 1, "numberOfColors must be greater than 1");
+    _console$s.log({ numberOfColors });
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d", { willReadFrequently: true });
+    let { naturalWidth: imageWidth, naturalHeight: imageHeight } = image;
+    _console$s.log({ imageWidth, imageHeight });
+    canvas.width = width;
+    canvas.height = height;
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(image, 0, 0, width, height);
+    return quantizeCanvas(canvas, ctx, numberOfColors);
 }
 async function resizeAndQuantizeImage(image, width, height, colors) {
     _console$s.assertWithError(colors.length > 1, "colors.length must be greater than 1");
@@ -5150,15 +5156,15 @@ function assertSprite(displayManager, spriteName) {
     _console$q.assertWithError(sprite, `no sprite found with name "${spriteName}"`);
 }
 function getSpriteSheetPalette(displayManager, paletteName) {
-    return displayManager.selectedSpriteSheet?.palettes.find((palette) => palette.name == paletteName);
+    return displayManager.selectedSpriteSheet?.palettes?.find((palette) => palette.name == paletteName);
 }
 function getSpriteSheetPaletteSwap(displayManager, paletteSwapName) {
-    return displayManager.selectedSpriteSheet?.paletteSwaps.find((paletteSwap) => paletteSwap.name == paletteSwapName);
+    return displayManager.selectedSpriteSheet?.paletteSwaps?.find((paletteSwap) => paletteSwap.name == paletteSwapName);
 }
 function getSpritePaletteSwap(displayManager, spriteName, paletteSwapName) {
     return displayManager
         .getSprite(spriteName)
-        ?.paletteSwaps.find((paletteSwap) => paletteSwap.name == paletteSwapName);
+        ?.paletteSwaps?.find((paletteSwap) => paletteSwap.name == paletteSwapName);
 }
 function assertSpriteSheetPalette(displayManagerInterface, paletteName) {
     const spriteSheetPalette = displayManagerInterface.getSpriteSheetPalette(paletteName);
@@ -5180,7 +5186,7 @@ async function selectSpriteSheetPalette(displayManagerInterface, paletteName, of
     _console$q.assertWithError(palette.numberOfColors + offset <= displayManagerInterface.numberOfColors, `invalid offset ${offset} and palette.numberOfColors ${palette.numberOfColors} (max ${displayManagerInterface.numberOfColors})`);
     for (let index = 0; index < palette.numberOfColors; index++) {
         const color = palette.colors[index];
-        let opacity = palette.opacities[index];
+        let opacity = palette.opacities?.[index];
         if (opacity == undefined) {
             opacity = 1;
         }
@@ -5253,6 +5259,60 @@ function serializeSpriteSheet(displayManager, spriteSheet) {
     const serializedSpriteSheet = concatenateArrayBuffers(numberOfSpritesDataView, spriteOffsetsDataView, spritePayloads);
     _console$p.log("serializedSpriteSheet", serializedSpriteSheet);
     return serializedSpriteSheet;
+}
+async function fontToSpriteSheet(displayManager, arrayBuffer, fontSize, spriteSheetName) {
+    _console$p.assertTypeWithError(fontSize, "number");
+    const font = opentype.parse(arrayBuffer);
+    const fontScale = (1 / font.unitsPerEm) * fontSize;
+    _console$p.log("font", font);
+    spriteSheetName = spriteSheetName || font.getEnglishName("fullName");
+    const spriteSheet = {
+        name: spriteSheetName,
+        sprites: [],
+    };
+    for (let index = 0; index < font.glyphs.length; index++) {
+        const glyph = font.glyphs.get(index);
+        if (glyph.unicode == undefined) {
+            continue;
+        }
+        const name = String.fromCharCode(glyph.unicode);
+        const bbox = glyph.getBoundingBox();
+        const width = Math.round((bbox.x2 - bbox.x1) * fontScale);
+        const height = Math.round((bbox.y2 - bbox.y1) * fontScale);
+        const commands = [];
+        if (width > 0 && height > 0) {
+            const canvas = document.createElement("canvas");
+            const ctx = canvas.getContext("2d");
+            canvas.width = width;
+            canvas.height = height;
+            ctx.imageSmoothingEnabled = false;
+            const path = glyph.getPath(-bbox.x1 * fontScale, bbox.y2 * fontScale, fontSize);
+            path.fill = "white";
+            path.stroke = "white";
+            path.draw(ctx);
+            const { colorIndices, blob } = await quantizeCanvas(canvas, ctx, 2);
+            const bitmap = {
+                width,
+                height,
+                numberOfColors: 2,
+                pixels: colorIndices,
+            };
+            commands.push({
+                type: "selectBitmapColor",
+                bitmapColorIndex: 1,
+                colorIndex: 1,
+            });
+            commands.push({ type: "drawBitmap", centerX: 0, centerY: 0, bitmap });
+        }
+        const sprite = {
+            name,
+            commands,
+            width,
+            height,
+        };
+        spriteSheet.sprites.push(sprite);
+    }
+    return spriteSheet;
 }
 
 var _DisplayManager_instances, _DisplayManager_dispatchEvent_get, _DisplayManager_isAvailable, _DisplayManager_assertDisplayIsAvailable, _DisplayManager_parseIsDisplayAvailable, _DisplayManager_contextStateHelper, _DisplayManager_onContextStateUpdate, _DisplayManager_displayStatus, _DisplayManager_parseDisplayStatus, _DisplayManager_updateDisplayStatus, _DisplayManager_sendDisplayCommand, _DisplayManager_assertIsAwake, _DisplayManager_assertIsNotAwake, _DisplayManager_displayInformation, _DisplayManager_parseDisplayInformation, _DisplayManager_brightness, _DisplayManager_parseDisplayBrightness, _DisplayManager_assertValidDisplayContextCommand, _DisplayManager_maxCommandDataLength_get, _DisplayManager_displayContextCommandBuffers, _DisplayManager_sendDisplayContextCommand, _DisplayManager_sendContextCommands, _DisplayManager_colors, _DisplayManager_opacities, _DisplayManager_assertValidBitmapSize, _DisplayManager_isReady, _DisplayManager_parseDisplayReady, _DisplayManager_spriteSheets, _DisplayManager_spriteSheetIndices, _DisplayManager_setSpriteSheetName, _DisplayManager_pendingSpriteSheet, _DisplayManager_pendingSpriteSheetName, _DisplayManager_updateSpriteSheetName, _DisplayManager_parseSpriteSheetIndex, _DisplayManager_mtu;
@@ -6471,6 +6531,9 @@ class DisplayManager {
         __classPrivateFieldSet(this, _DisplayManager_pendingSpriteSheetName, undefined, "f");
         Object.keys(__classPrivateFieldGet(this, _DisplayManager_spriteSheetIndices, "f")).forEach((spriteSheetName) => delete __classPrivateFieldGet(this, _DisplayManager_spriteSheetIndices, "f")[spriteSheetName]);
         Object.keys(__classPrivateFieldGet(this, _DisplayManager_spriteSheets, "f")).forEach((spriteSheetName) => delete __classPrivateFieldGet(this, _DisplayManager_spriteSheets, "f")[spriteSheetName]);
+    }
+    async fontToSpriteSheet(arrayBuffer, fontSize, spriteSheetName) {
+        return fontToSpriteSheet(this, arrayBuffer, fontSize, spriteSheetName);
     }
     get mtu() {
         return __classPrivateFieldGet(this, _DisplayManager_mtu, "f");

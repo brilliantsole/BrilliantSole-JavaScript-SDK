@@ -9,7 +9,7 @@ export type DisplaySprite = {
     name: string;
     width: number;
     height: number;
-    paletteSwaps: DisplaySpritePaletteSwap[];
+    paletteSwaps?: DisplaySpritePaletteSwap[];
     commands: DisplayContextCommand[];
 };
 export type DisplaySpriteSheetPaletteSwap = {
@@ -21,13 +21,15 @@ export type DisplaySpriteSheetPalette = {
     name: string;
     numberOfColors: number;
     colors: string[];
-    opacities: number[];
+    opacities?: number[];
 };
 export type DisplaySpriteSheet = {
     name: string;
-    palettes: DisplaySpriteSheetPalette[];
-    paletteSwaps: DisplaySpriteSheetPaletteSwap[];
+    palettes?: DisplaySpriteSheetPalette[];
+    paletteSwaps?: DisplaySpriteSheetPaletteSwap[];
     sprites: DisplaySprite[];
 };
 export declare function serializeSpriteSheet(displayManager: DisplayManagerInterface, spriteSheet: DisplaySpriteSheet): ArrayBuffer;
 export declare function parseSpriteSheet(dataView: DataView): void;
+export declare function fontToSpriteSheet(displayManager: DisplayManagerInterface, arrayBuffer: ArrayBuffer, fontSize: number, spriteSheetName?: string): Promise<DisplaySpriteSheet>;
+export declare function reduceSpriteSheet(spriteSheet: DisplaySpriteSheet, newSpriteSheetName: string): void;

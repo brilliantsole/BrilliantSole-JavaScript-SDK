@@ -411,6 +411,12 @@ export interface DisplayManagerInterface {
   ): Promise<void>;
 
   serializeSpriteSheet(spriteSheet: DisplaySpriteSheet): ArrayBuffer;
+
+  fontToSpriteSheet(
+    arrayBuffer: ArrayBuffer,
+    fontSize: number,
+    spriteSheetName?: string
+  ): Promise<DisplaySpriteSheet>;
 }
 
 export async function runDisplayContextCommand(
@@ -913,7 +919,7 @@ export function getSpriteSheetPalette(
   displayManager: DisplayManagerInterface,
   paletteName: string
 ): DisplaySpriteSheetPalette | undefined {
-  return displayManager.selectedSpriteSheet?.palettes.find(
+  return displayManager.selectedSpriteSheet?.palettes?.find(
     (palette) => palette.name == paletteName
   );
 }
@@ -921,7 +927,7 @@ export function getSpriteSheetPaletteSwap(
   displayManager: DisplayManagerInterface,
   paletteSwapName: string
 ): DisplaySpriteSheetPaletteSwap | undefined {
-  return displayManager.selectedSpriteSheet?.paletteSwaps.find(
+  return displayManager.selectedSpriteSheet?.paletteSwaps?.find(
     (paletteSwap) => paletteSwap.name == paletteSwapName
   );
 }
@@ -932,7 +938,7 @@ export function getSpritePaletteSwap(
 ): DisplaySpritePaletteSwap | undefined {
   return displayManager
     .getSprite(spriteName)
-    ?.paletteSwaps.find((paletteSwap) => paletteSwap.name == paletteSwapName);
+    ?.paletteSwaps?.find((paletteSwap) => paletteSwap.name == paletteSwapName);
 }
 
 export function assertSpriteSheetPalette(
@@ -990,7 +996,7 @@ export async function selectSpriteSheetPalette(
 
   for (let index = 0; index < palette.numberOfColors; index++) {
     const color = palette.colors[index];
-    let opacity = palette.opacities[index];
+    let opacity = palette.opacities?.[index];
     if (opacity == undefined) {
       opacity = 1;
     }

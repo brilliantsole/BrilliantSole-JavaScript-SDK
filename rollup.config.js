@@ -78,6 +78,7 @@ const nodeExternal = [
   "auto-bind",
   "dgram",
   "rgbquant",
+  "opentype.js",
 ];
 
 const lensStudioPlugins = [

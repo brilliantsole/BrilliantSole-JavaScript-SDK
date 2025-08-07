@@ -735,7 +735,7 @@ selectSpritePaletteSwapSelect.addEventListener("input", () => {
 const updateSelectSpritePaletteSwapSelect = () => {
   selectSpritePaletteSwapOptgroup.innerHTML = "";
   selectSpritePaletteSwapOptgroup.appendChild(new Option("none", -1));
-  selectedSprite?.paletteSwaps.forEach((paletteSwap, index) => {
+  selectedSprite?.paletteSwaps?.forEach((paletteSwap, index) => {
     selectSpritePaletteSwapOptgroup.appendChild(
       new Option(paletteSwap.name, index)
     );
@@ -890,6 +890,34 @@ let draw = () => {
   }
   console.log("draw");
 
+  const {
+    x,
+    y,
+    rotation,
+    scaleX,
+    scaleY,
+    cropTop,
+    cropRight,
+    cropBottom,
+    cropLeft,
+    rotationCropTop,
+    rotationCropRight,
+    rotationCropBottom,
+    rotationCropLeft,
+  } = drawSpriteParams;
+
+  displayCanvasHelper.setRotation(rotation);
+  displayCanvasHelper.setSpriteScaleX(scaleX);
+  displayCanvasHelper.setSpriteScaleY(scaleY);
+  displayCanvasHelper.setCropTop(cropTop);
+  displayCanvasHelper.setCropRight(cropRight);
+  displayCanvasHelper.setCropBottom(cropBottom);
+  displayCanvasHelper.setCropLeft(cropLeft);
+  displayCanvasHelper.setRotationCropTop(rotationCropTop);
+  displayCanvasHelper.setRotationCropRight(rotationCropRight);
+  displayCanvasHelper.setRotationCropBottom(rotationCropBottom);
+  displayCanvasHelper.setRotationCropLeft(rotationCropLeft);
+
   if (shouldDrawAllSprites) {
     drawSprites();
   } else {
@@ -898,13 +926,14 @@ let draw = () => {
 };
 
 let xSpacing = 0;
-let ySpacing = 0;
-const drawSprites = () => {
+let ySpacing = 5;
+const drawSprites = async () => {
   let x = 0;
   let y = 0;
   let maxHeight = 0;
 
-  spriteSheet.sprites.forEach((sprite) => {
+  for (let i = 0; i < spriteSheet.sprites.length; i++) {
+    const sprite = spriteSheet.sprites[i];
     if (x + sprite.width + xSpacing > displayCanvasHelper.width) {
       x = 0;
       y += maxHeight;
@@ -912,52 +941,29 @@ const drawSprites = () => {
       maxHeight = 0;
     }
 
-    const centerX = x + sprite.width / 2;
-    const centerY = y + sprite.height / 2;
+    const spriteWidth =
+      sprite.width * displayCanvasHelper.contextState.spriteScaleX;
+    const spriteHeight =
+      sprite.height * displayCanvasHelper.contextState.spriteScaleY;
+
+    const centerX = x + spriteWidth / 2;
+    const centerY = y + spriteHeight / 2;
 
     if (useUploadedSpriteSheet) {
-      displayCanvasHelper.drawSprite(centerX, centerY, sprite.name);
+      await displayCanvasHelper.drawSprite(centerX, centerY, sprite.name);
     } else {
       displayCanvasHelper.previewSprite(centerX, centerY, sprite, spriteSheet);
     }
 
-    x += sprite.width;
+    x += spriteWidth;
     x += xSpacing;
-    maxHeight = Math.max(sprite.height, maxHeight);
-  });
+    maxHeight = Math.max(spriteHeight, maxHeight);
+  }
 
-  displayCanvasHelper.show();
+  await displayCanvasHelper.show();
 };
 const drawSprite = () => {
   if (selectedSprite) {
-    const {
-      x,
-      y,
-      rotation,
-      scaleX,
-      scaleY,
-      cropTop,
-      cropRight,
-      cropBottom,
-      cropLeft,
-      rotationCropTop,
-      rotationCropRight,
-      rotationCropBottom,
-      rotationCropLeft,
-    } = drawSpriteParams;
-
-    displayCanvasHelper.setRotation(rotation);
-    displayCanvasHelper.setSpriteScaleX(scaleX);
-    displayCanvasHelper.setSpriteScaleY(scaleY);
-    displayCanvasHelper.setCropTop(cropTop);
-    displayCanvasHelper.setCropRight(cropRight);
-    displayCanvasHelper.setCropBottom(cropBottom);
-    displayCanvasHelper.setCropLeft(cropLeft);
-    displayCanvasHelper.setRotationCropTop(rotationCropTop);
-    displayCanvasHelper.setRotationCropRight(rotationCropRight);
-    displayCanvasHelper.setRotationCropBottom(rotationCropBottom);
-    displayCanvasHelper.setRotationCropLeft(rotationCropLeft);
-
     if (useUploadedSpriteSheet) {
       displayCanvasHelper.drawSprite(x, y, selectedSprite.name);
     } else {
@@ -3333,4 +3339,20 @@ checkSpriteSheetSizeButton.addEventListener("click", () => {
       displayCanvasHelper.device.maxFileLength / 1024
     ).toFixed(2)}kb)`;
   }
+});
+
+/** @type {HTMLInputElement} */
+const loadFontInput = document.getElementById("loadFont");
+loadFontInput.addEventListener("input", async () => {
+  const file = loadFontInput.files[0];
+  if (!file) return;
+  const arrayBuffer = await file.arrayBuffer();
+  const fontSpriteSheet = await displayCanvasHelper.fontToSpriteSheet(
+    arrayBuffer,
+    16
+  );
+  setSpriteSheetName(fontSpriteSheet.name);
+  spriteSheet.sprites = fontSpriteSheet.sprites;
+  setSpriteIndex(0);
+  console.log("fontSpriteSheet", fontSpriteSheet);
 });

@@ -84,6 +84,7 @@ import {
   DisplaySpriteSheet,
   DisplaySpriteSheetPalette,
   DisplaySpriteSheetPaletteSwap,
+  fontToSpriteSheet,
   serializeSpriteSheet,
 } from "./DisplaySpriteSheetUtils.ts";
 
@@ -1140,7 +1141,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
   ) {
     bitmapScale = clamp(bitmapScale, minDisplayScale, maxDisplayScale);
     bitmapScale = roundScale(bitmapScale);
-    _console.log({ bitmapScale });
+    //_console.log({ bitmapScale });
     const newState: PartialDisplayContextState = {};
     switch (direction) {
       case "all":
@@ -2514,7 +2515,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     const width = bitmap.width * Math.abs(bitmapScaleX);
     const height = bitmap.height * Math.abs(bitmapScaleY);
 
-    _console.log({ bitmapScaleX, bitmapScaleY });
+    //_console.log({ bitmapScaleX, bitmapScaleY });
 
     // _console.log({ width, height });
 
@@ -2917,7 +2918,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
   #useSpriteColorIndices = false;
   #setUseSpriteColorIndices(useSpriteColorIndices: boolean) {
     this.#rearDrawStack.push(() => {
-      _console.log({ useSpriteColorIndices });
+      //_console.log({ useSpriteColorIndices });
       this.#useSpriteColorIndices = useSpriteColorIndices;
     });
   }
@@ -3100,6 +3101,15 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
 
   serializeSpriteSheet(spriteSheet: DisplaySpriteSheet): ArrayBuffer {
     return serializeSpriteSheet(this, spriteSheet);
+  }
+
+  async fontToSpriteSheet(
+    arrayBuffer: ArrayBuffer,
+    fontSize: number,
+    spriteSheetName?: string
+  ) {
+    // FIX
+    return fontToSpriteSheet(this, arrayBuffer, fontSize, spriteSheetName);
   }
 }
 export default DisplayCanvasHelper;
