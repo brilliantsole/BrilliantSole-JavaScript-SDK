@@ -4634,10 +4634,10 @@ function serializeContextCommand(displayManager, command) {
             {
                 const { x, y, width, height } = command;
                 dataView = new DataView(new ArrayBuffer(2 * 4));
-                dataView.setUint16(0, x, true);
-                dataView.setUint16(2, y, true);
-                dataView.setUint16(4, width, true);
-                dataView.setUint16(6, height, true);
+                dataView.setInt16(0, x, true);
+                dataView.setInt16(2, y, true);
+                dataView.setInt16(4, width, true);
+                dataView.setInt16(6, height, true);
             }
             break;
         case "drawRect":
@@ -4781,9 +4781,9 @@ function serializeContextCommand(displayManager, command) {
                 const { centerX, centerY, spriteIndex, use2Bytes } = command;
                 dataView = new DataView(new ArrayBuffer(1 + 2 * 2));
                 let offset = 0;
-                dataView.setUint16(offset, centerX, true);
+                dataView.setInt16(offset, centerX, true);
                 offset += 2;
-                dataView.setUint16(offset, centerY, true);
+                dataView.setInt16(offset, centerY, true);
                 offset += 2;
                 if (use2Bytes) {
                     dataView.setUint16(offset, spriteIndex, true);
@@ -5247,7 +5247,6 @@ function serializeSpriteSheet(displayManager, spriteSheet) {
     const spriteOffsetsDataView = new DataView(new ArrayBuffer(sprites.length * 2));
     let offset = numberOfSpritesDataView.byteLength + spriteOffsetsDataView.byteLength;
     spritePayloads.forEach((spritePayload, index) => {
-        _console$p.log("spritePayloads", index, offset, spritePayload);
         spriteOffsetsDataView.setUint16(index * 2, offset, true);
         offset += spritePayload.byteLength;
     });

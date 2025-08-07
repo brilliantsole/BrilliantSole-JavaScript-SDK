@@ -2262,7 +2262,11 @@ device.addEventListener("isConnected", () => {
 
 const drawShape = BS.ThrottleUtils.throttle(
   (updatedParams) => {
-    if (device.isConnected && device.isDisplayAvailable) {
+    if (
+      device.isConnected &&
+      device.isDisplayAvailable &&
+      device.isDisplayReady
+    ) {
       console.log("draw", {
         drawShapeType,
         drawWidth,
