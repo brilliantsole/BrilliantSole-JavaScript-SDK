@@ -883,12 +883,16 @@ toggleDrawAllSpritesCheckbox.addEventListener("input", () => {
 });
 
 let drawWhenReady = false;
+let lastDrawTime = 0;
 let draw = () => {
   if (!displayCanvasHelper.isReady) {
     drawWhenReady = true;
     return;
   }
-  console.log("draw");
+  const now = Date.now();
+  const timeSinceLastDraw = now - lastDrawTime;
+  lastDrawTime = now;
+  //console.log("draw", timeSinceLastDraw);
 
   const {
     rotation,
@@ -922,6 +926,7 @@ let draw = () => {
     drawSprite();
   }
 };
+draw = BS.ThrottleUtils.throttle(draw, 100, true);
 
 let xSpacing = 0;
 let ySpacing = 0;
@@ -2130,19 +2135,21 @@ const updateSpriteCommands = () => {
             const x = col * (pixelLength + 1) - 1;
             bitmapContext.fillRect(x, 0, 1, canvasHeight);
           }
-          draw();
+          if (!dontRedraw) {
+            draw();
+          }
         };
 
         updateBitmapCanvasSize();
         updateBitmapCanvasPixels();
-        const updateBitmapPixels = () => {
+        const updateBitmapPixels = (dontRedraw) => {
           const { width, height } = command.bitmap;
           const numberOfPixels = width * height;
           if (command.bitmap.pixels.length != numberOfPixels) {
             command.bitmap.pixels = new Array(width * height).fill(0);
           }
           updateBitmapCanvasSize();
-          updateBitmapCanvasPixels();
+          updateBitmapCanvasPixels(dontRedraw);
         };
         const bitmapWidthContainer =
           spriteCommandContainer.querySelector(".bitmapWidth");
@@ -3123,7 +3130,7 @@ const updateBitmapColorInputs = () => {
         displayCanvasHelper.spriteBitmapColors[
           bitmapSelectedColorIndexColor.dataset.bitmapColorIndex
         ];
-      bitmapSelectedColorIndexColor.updateBitmapPixels?.();
+      bitmapSelectedColorIndexColor.updateBitmapPixels?.(true);
     });
 
   document.querySelectorAll(".bitmapColor").forEach((bitmapColorIndexColor) => {
