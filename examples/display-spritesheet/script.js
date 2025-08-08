@@ -924,7 +924,7 @@ let draw = () => {
 };
 
 let xSpacing = 0;
-let ySpacing = 5;
+let ySpacing = 0;
 const drawSprites = async () => {
   let x = 0;
   let y = 0;
@@ -947,7 +947,7 @@ const drawSprites = async () => {
     );
 
     const offsetX = x + spriteWidth / 2;
-    const offsetY = y + spriteHeight / 2;
+    const offsetY = y + spriteHeight;
 
     if (useUploadedSpriteSheet) {
       await displayCanvasHelper.drawSprite(offsetX, offsetY, sprite.name);

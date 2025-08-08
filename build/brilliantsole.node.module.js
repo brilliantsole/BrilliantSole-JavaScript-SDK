@@ -5275,6 +5275,7 @@ function serializeSpriteSheet(displayManager, spriteSheet) {
 const defaultFontToSpriteSheetOptions = {
     stroke: false,
     strokeWidth: 1,
+    unicodeOnly: true,
 };
 async function fontToSpriteSheet(displayManager, arrayBuffer, fontSize, spriteSheetName, options = defaultFontToSpriteSheetOptions) {
     _console$p.assertTypeWithError(fontSize, "number");
@@ -5288,18 +5289,38 @@ async function fontToSpriteSheet(displayManager, arrayBuffer, fontSize, spriteSh
     };
     const canvas = document.createElement("canvas");
     const ctx = canvas.getContext("2d");
+    let minSpriteY = Infinity;
+    let maxSpriteY = -Infinity;
+    const glyphs = [];
     for (let index = 0; index < font.glyphs.length; index++) {
         const glyph = font.glyphs.get(index);
-        if (glyph.unicode == undefined) {
+        if (options.unicodeOnly) {
+            if (glyph.unicode == undefined) {
+                continue;
+            }
+        }
+        const bbox = glyph.getBoundingBox();
+        minSpriteY = Math.min(minSpriteY, bbox.y1 * fontScale);
+        maxSpriteY = Math.max(maxSpriteY, bbox.y2 * fontScale);
+        glyphs.push(glyph);
+    }
+    const maxSpriteHeight = maxSpriteY - minSpriteY;
+    _console$p.log({ minSpriteY, maxSpriteY, maxSpriteHeight });
+    for (let i = 0; i < glyphs.length; i++) {
+        const glyph = glyphs[i];
+        let name = glyph.name;
+        if (options.unicodeOnly) {
+            name = String.fromCharCode(glyph.unicode);
+        }
+        if (typeof name != "string") {
             continue;
         }
-        const name = String.fromCharCode(glyph.unicode);
         const bbox = glyph.getBoundingBox();
         const bitmapWidth = Math.round((bbox.x2 - bbox.x1) * fontScale);
         const bitmapHeight = Math.round((bbox.y2 - bbox.y1) * fontScale);
         const spriteWidth = Math.round(Math.max(Math.max(bbox.x2, bbox.x2 - bbox.x1), glyph.advanceWidth || 0) *
             fontScale);
-        const spriteHeight = Math.round(Math.max(bbox.y2, bbox.y2 - bbox.y1) * fontScale);
+        const spriteHeight = maxSpriteHeight;
         const commands = [];
         if (bitmapWidth > 0 && bitmapHeight > 0) {
             canvas.width = bitmapWidth;
@@ -5316,7 +5337,7 @@ async function fontToSpriteSheet(displayManager, arrayBuffer, fontSize, spriteSh
                 path.fill = "white";
             }
             path.draw(ctx);
-            const { colorIndices, blob } = await quantizeCanvas(canvas, ctx, 2, [
+            const { colorIndices } = await quantizeCanvas(canvas, ctx, 2, [
                 "#000000",
                 "#ffffff",
             ]);
@@ -5326,17 +5347,19 @@ async function fontToSpriteSheet(displayManager, arrayBuffer, fontSize, spriteSh
                 numberOfColors: 2,
                 pixels: colorIndices,
             };
-            if (name == ".") {
-                const image = new Image();
-                image.src = URL.createObjectURL(blob);
-                document.body.appendChild(image);
-            }
             commands.push({
                 type: "selectBitmapColor",
                 bitmapColorIndex: 1,
                 colorIndex: 1,
             });
-            commands.push({ type: "drawBitmap", offsetX: 0, offsetY: 0, bitmap });
+            let bitmapX = bbox.x1 * fontScale;
+            let bitmapY = (spriteHeight - bitmapHeight) / 2 - (bbox.y1 * fontScale - minSpriteY);
+            commands.push({
+                type: "drawBitmap",
+                offsetX: bitmapX,
+                offsetY: bitmapY,
+                bitmap,
+            });
         }
         const sprite = {
             name,

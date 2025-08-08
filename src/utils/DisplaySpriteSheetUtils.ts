@@ -3,11 +3,13 @@ import { concatenateArrayBuffers } from "./ArrayBufferUtils.ts";
 import { createConsole } from "./Console.ts";
 import { imageToBitmap, quantizeCanvas } from "./DisplayBitmapUtils.ts";
 import {
+  BaseOffsetPositionDisplayContextCommand,
   DisplayContextCommand,
+  DrawDisplayBitmapCommand,
   serializeContextCommands,
 } from "./DisplayContextCommand.ts";
 import { DisplayManagerInterface } from "./DisplayManagerInterface.ts";
-import opentype from "opentype.js";
+import opentype, { Glyph } from "opentype.js";
 
 const _console = createConsole("DisplaySpriteSheetUtils", { log: true });
 
@@ -93,10 +95,12 @@ export function parseSpriteSheet(dataView: DataView) {
 type FontToSpriteSheetOptions = {
   stroke?: boolean;
   strokeWidth?: number;
+  unicodeOnly?: boolean;
 };
 const defaultFontToSpriteSheetOptions: FontToSpriteSheetOptions = {
   stroke: false,
   strokeWidth: 1,
+  unicodeOnly: true,
 };
 export async function fontToSpriteSheet(
   displayManager: DisplayManagerInterface,
@@ -120,12 +124,39 @@ export async function fontToSpriteSheet(
   const canvas = document.createElement("canvas");
   const ctx = canvas.getContext("2d")!;
 
+  let minSpriteY = Infinity;
+  let maxSpriteY = -Infinity;
+
+  const glyphs: Glyph[] = [];
   for (let index = 0; index < font.glyphs.length; index++) {
     const glyph = font.glyphs.get(index);
-    if (glyph.unicode == undefined) {
+    if (options.unicodeOnly) {
+      if (glyph.unicode == undefined) {
+        continue;
+      }
+    }
+
+    const bbox = glyph.getBoundingBox();
+    minSpriteY = Math.min(minSpriteY, bbox.y1 * fontScale);
+    maxSpriteY = Math.max(maxSpriteY, bbox.y2 * fontScale);
+
+    glyphs.push(glyph);
+  }
+
+  const maxSpriteHeight = maxSpriteY - minSpriteY;
+
+  _console.log({ minSpriteY, maxSpriteY, maxSpriteHeight });
+
+  for (let i = 0; i < glyphs.length; i++) {
+    const glyph = glyphs[i];
+
+    let name = glyph.name;
+    if (options.unicodeOnly) {
+      name = String.fromCharCode(glyph.unicode!);
+    }
+    if (typeof name != "string") {
       continue;
     }
-    const name = String.fromCharCode(glyph.unicode);
 
     const bbox = glyph.getBoundingBox();
     const bitmapWidth = Math.round((bbox.x2 - bbox.x1) * fontScale);
@@ -135,9 +166,7 @@ export async function fontToSpriteSheet(
       Math.max(Math.max(bbox.x2, bbox.x2 - bbox.x1), glyph.advanceWidth || 0) *
         fontScale
     );
-    const spriteHeight = Math.round(
-      Math.max(bbox.y2, bbox.y2 - bbox.y1) * fontScale
-    );
+    const spriteHeight = maxSpriteHeight;
 
     const commands: DisplayContextCommand[] = [];
     if (bitmapWidth > 0 && bitmapHeight > 0) {
@@ -160,7 +189,7 @@ export async function fontToSpriteSheet(
         path.fill = "white";
       }
       path.draw(ctx);
-      const { colorIndices, blob } = await quantizeCanvas(canvas, ctx, 2, [
+      const { colorIndices } = await quantizeCanvas(canvas, ctx, 2, [
         "#000000",
         "#ffffff",
       ]);
@@ -171,18 +200,35 @@ export async function fontToSpriteSheet(
         pixels: colorIndices,
       };
 
-      if (name == ".") {
-        const image = new Image();
-        image.src = URL.createObjectURL(blob);
-        document.body.appendChild(image);
-      }
-
       commands.push({
         type: "selectBitmapColor",
         bitmapColorIndex: 1,
         colorIndex: 1,
       });
-      commands.push({ type: "drawBitmap", offsetX: 0, offsetY: 0, bitmap });
+      if (false) {
+        // debugging
+        commands.push({
+          type: "selectFillColor",
+          fillColorIndex: 2,
+        });
+        commands.push({
+          type: "drawRect",
+          offsetX: 0,
+          offsetY: 0,
+          width: spriteWidth,
+          height: spriteHeight,
+        });
+      }
+
+      let bitmapX = bbox.x1 * fontScale;
+      let bitmapY =
+        (spriteHeight - bitmapHeight) / 2 - (bbox.y1 * fontScale - minSpriteY);
+      commands.push({
+        type: "drawBitmap",
+        offsetX: bitmapX,
+        offsetY: bitmapY,
+        bitmap,
+      });
     }
 
     const sprite: DisplaySprite = {
@@ -194,6 +240,7 @@ export async function fontToSpriteSheet(
 
     spriteSheet.sprites.push(sprite);
   }
+
   return spriteSheet;
 }
 

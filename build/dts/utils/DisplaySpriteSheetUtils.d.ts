@@ -34,6 +34,7 @@ export declare function parseSpriteSheet(dataView: DataView): void;
 type FontToSpriteSheetOptions = {
     stroke?: boolean;
     strokeWidth?: number;
+    unicodeOnly?: boolean;
 };
 export declare function fontToSpriteSheet(displayManager: DisplayManagerInterface, arrayBuffer: ArrayBuffer, fontSize: number, spriteSheetName?: string, options?: FontToSpriteSheetOptions): Promise<DisplaySpriteSheet>;
 export declare function reduceSpriteSheet(spriteSheet: DisplaySpriteSheet, newSpriteSheetName: string): void;
