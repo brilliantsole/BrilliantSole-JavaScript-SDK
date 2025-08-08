@@ -196,18 +196,18 @@ declare class DisplayManager implements DisplayManagerInterface {
     setSpriteScale(spriteScale: number, sendImmediately?: boolean): Promise<void>;
     resetSpriteScale(sendImmediately?: boolean): Promise<void>;
     clearRect(x: number, y: number, width: number, height: number, sendImmediately?: boolean): Promise<void>;
-    drawRect(centerX: number, centerY: number, width: number, height: number, sendImmediately?: boolean): Promise<void>;
-    drawRoundRect(centerX: number, centerY: number, width: number, height: number, borderRadius: number, sendImmediately?: boolean): Promise<void>;
-    drawCircle(centerX: number, centerY: number, radius: number, sendImmediately?: boolean): Promise<void>;
-    drawEllipse(centerX: number, centerY: number, radiusX: number, radiusY: number, sendImmediately?: boolean): Promise<void>;
-    drawPolygon(centerX: number, centerY: number, radius: number, numberOfSides: number, sendImmediately?: boolean): Promise<void>;
+    drawRect(offsetX: number, offsetY: number, width: number, height: number, sendImmediately?: boolean): Promise<void>;
+    drawRoundRect(offsetX: number, offsetY: number, width: number, height: number, borderRadius: number, sendImmediately?: boolean): Promise<void>;
+    drawCircle(offsetX: number, offsetY: number, radius: number, sendImmediately?: boolean): Promise<void>;
+    drawEllipse(offsetX: number, offsetY: number, radiusX: number, radiusY: number, sendImmediately?: boolean): Promise<void>;
+    drawPolygon(offsetX: number, offsetY: number, radius: number, numberOfSides: number, sendImmediately?: boolean): Promise<void>;
     drawSegment(startX: number, startY: number, endX: number, endY: number, sendImmediately?: boolean): Promise<void>;
     drawSegments(points: Vector2[], sendImmediately?: boolean): Promise<void>;
-    drawArc(centerX: number, centerY: number, radius: number, startAngle: number, angleOffset: number, isRadians?: boolean, sendImmediately?: boolean): Promise<void>;
-    drawArcEllipse(centerX: number, centerY: number, radiusX: number, radiusY: number, startAngle: number, angleOffset: number, isRadians?: boolean, sendImmediately?: boolean): Promise<void>;
+    drawArc(offsetX: number, offsetY: number, radius: number, startAngle: number, angleOffset: number, isRadians?: boolean, sendImmediately?: boolean): Promise<void>;
+    drawArcEllipse(offsetX: number, offsetY: number, radiusX: number, radiusY: number, startAngle: number, angleOffset: number, isRadians?: boolean, sendImmediately?: boolean): Promise<void>;
     assertValidNumberOfColors(numberOfColors: number): void;
     assertValidBitmap(bitmap: DisplayBitmap, checkSize?: boolean): void;
-    drawBitmap(centerX: number, centerY: number, bitmap: DisplayBitmap, sendImmediately?: boolean): Promise<void>;
+    drawBitmap(offsetX: number, offsetY: number, bitmap: DisplayBitmap, sendImmediately?: boolean): Promise<void>;
     imageToBitmap(image: HTMLImageElement, width: number, height: number, numberOfColors?: number): Promise<{
         blob: Blob;
         bitmap: DisplayBitmap;
@@ -243,7 +243,7 @@ declare class DisplayManager implements DisplayManagerInterface {
     get selectedSpriteSheet(): DisplaySpriteSheet | undefined;
     get selectedSpriteSheetName(): string | undefined;
     selectSpriteSheet(spriteSheetName: string, sendImmediately?: boolean): Promise<void>;
-    drawSprite(centerX: number, centerY: number, spriteName: string, sendImmediately?: boolean): Promise<void>;
+    drawSprite(offsetX: number, offsetY: number, spriteName: string, sendImmediately?: boolean): Promise<void>;
     parseMessage(messageType: DisplayMessageType, dataView: DataView): void;
     assertSpriteSheetPalette(paletteName: string): void;
     assertSpriteSheetPaletteSwap(paletteSwapName: string): void;

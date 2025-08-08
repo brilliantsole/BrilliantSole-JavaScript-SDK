@@ -3958,7 +3958,7 @@ const DisplaySpriteScaleDirectionToCommandType = {
     all: "setSpriteScale",
 };
 
-const _console$s = createConsole("DisplayBitmapUtils", { log: true });
+const _console$s = createConsole("DisplayBitmapUtils", { log: false });
 const drawBitmapHeaderLength = 2 + 2 + 2 + 2 + 1 + 2;
 function getBitmapData(bitmap) {
     const pixelDataLength = getBitmapNumberOfBytes(bitmap);
@@ -3978,7 +3978,7 @@ function getBitmapData(bitmap) {
     _console$s.log("getBitmapData", bitmap, dataView);
     return dataView;
 }
-async function quantizeCanvas(canvas, ctx, numberOfColors) {
+async function quantizeCanvas(canvas, ctx, numberOfColors, colors) {
     _console$s.assertWithError(numberOfColors > 1, "numberOfColors must be greater than 1");
     _console$s.log({ numberOfColors });
     const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
@@ -3993,15 +3993,27 @@ async function quantizeCanvas(canvas, ctx, numberOfColors) {
         }
     }
     ctx.putImageData(imageData, 0, 0);
+    const isSmall = canvas.width * canvas.height < 4;
     const quantOptions = {
-        method: 0,
+        method: isSmall ? 1 : 2,
         colors: numberOfColors,
         dithKern: null,
         useCache: false,
         reIndex: true,
-        orDist: "manhattan",
     };
     _console$s.log("quantOptions", quantOptions);
+    if (colors) {
+        quantOptions.palette = colors.map((color) => {
+            const rgb = hexToRGB(color);
+            if (rgb) {
+                const { r, g, b } = rgb;
+                return [r, g, b];
+            }
+            else {
+                _console$s.error(`invalid rgb hex "${color}"`);
+            }
+        });
+    }
     _console$s.log("quantizeImage options", quantOptions);
     const quantizer = new RGBQuant(quantOptions);
     quantizer.sample(imageData);
@@ -4109,13 +4121,13 @@ async function resizeAndQuantizeImage(image, width, height, colors) {
         }
     }
     ctx.putImageData(imageData, 0, 0);
+    const isSmall = canvas.width * canvas.height < 4;
     const quantOptions = {
-        method: 0,
+        method: isSmall ? 1 : 2,
         colors: colors.length,
         dithKern: null,
         useCache: false,
         reIndex: true,
-        orDist: "manhattan",
     };
     _console$s.log("quantOptions", quantOptions);
     quantOptions.palette = colors.map((color) => {
@@ -4648,20 +4660,20 @@ function serializeContextCommand(displayManager, command) {
             break;
         case "drawRect":
             {
-                const { centerX, centerY, width, height } = command;
+                const { offsetX, offsetY, width, height } = command;
                 dataView = new DataView(new ArrayBuffer(2 * 4));
-                dataView.setInt16(0, centerX, true);
-                dataView.setInt16(2, centerY, true);
+                dataView.setInt16(0, offsetX, true);
+                dataView.setInt16(2, offsetY, true);
                 dataView.setUint16(4, width, true);
                 dataView.setUint16(6, height, true);
             }
             break;
         case "drawRoundRect":
             {
-                const { centerX, centerY, width, height, borderRadius } = command;
+                const { offsetX, offsetY, width, height, borderRadius } = command;
                 dataView = new DataView(new ArrayBuffer(2 * 4 + 1));
-                dataView.setInt16(0, centerX, true);
-                dataView.setInt16(2, centerY, true);
+                dataView.setInt16(0, offsetX, true);
+                dataView.setInt16(2, offsetY, true);
                 dataView.setUint16(4, width, true);
                 dataView.setUint16(6, height, true);
                 dataView.setUint8(8, borderRadius);
@@ -4669,29 +4681,29 @@ function serializeContextCommand(displayManager, command) {
             break;
         case "drawCircle":
             {
-                const { centerX, centerY, radius } = command;
+                const { offsetX, offsetY, radius } = command;
                 dataView = new DataView(new ArrayBuffer(2 * 3));
-                dataView.setInt16(0, centerX, true);
-                dataView.setInt16(2, centerY, true);
+                dataView.setInt16(0, offsetX, true);
+                dataView.setInt16(2, offsetY, true);
                 dataView.setUint16(4, radius, true);
             }
             break;
         case "drawEllipse":
             {
-                const { centerX, centerY, radiusX, radiusY } = command;
+                const { offsetX, offsetY, radiusX, radiusY } = command;
                 dataView = new DataView(new ArrayBuffer(2 * 4));
-                dataView.setInt16(0, centerX, true);
-                dataView.setInt16(2, centerY, true);
+                dataView.setInt16(0, offsetX, true);
+                dataView.setInt16(2, offsetY, true);
                 dataView.setUint16(4, radiusX, true);
                 dataView.setUint16(6, radiusY, true);
             }
             break;
         case "drawPolygon":
             {
-                const { centerX, centerY, radius, numberOfSides } = command;
+                const { offsetX, offsetY, radius, numberOfSides } = command;
                 dataView = new DataView(new ArrayBuffer(2 * 3 + 1));
-                dataView.setInt16(0, centerX, true);
-                dataView.setInt16(2, centerY, true);
+                dataView.setInt16(0, offsetX, true);
+                dataView.setInt16(2, offsetY, true);
                 dataView.setUint16(4, radius, true);
                 dataView.setUint8(6, numberOfSides);
             }
@@ -4724,7 +4736,7 @@ function serializeContextCommand(displayManager, command) {
             break;
         case "drawArc":
             {
-                let { centerX, centerY, radius, isRadians, startAngle, angleOffset } = command;
+                let { offsetX, offsetY, radius, isRadians, startAngle, angleOffset } = command;
                 startAngle = isRadians ? startAngle : degToRad(startAngle);
                 startAngle = normalizeRadians(startAngle);
                 angleOffset = isRadians ? angleOffset : degToRad(angleOffset);
@@ -4733,8 +4745,8 @@ function serializeContextCommand(displayManager, command) {
                 angleOffset *= (angleOffset > 0 ? Int16Max - 1 : -Int16Min) - 1;
                 isRadians = true;
                 dataView = new DataView(new ArrayBuffer(2 * 5));
-                dataView.setInt16(0, centerX, true);
-                dataView.setInt16(2, centerY, true);
+                dataView.setInt16(0, offsetX, true);
+                dataView.setInt16(2, offsetY, true);
                 dataView.setUint16(4, radius, true);
                 dataView.setUint16(6, formatRotation(startAngle, isRadians), true);
                 dataView.setInt16(8, angleOffset, true);
@@ -4742,7 +4754,7 @@ function serializeContextCommand(displayManager, command) {
             break;
         case "drawArcEllipse":
             {
-                let { centerX, centerY, radiusX, radiusY, isRadians, startAngle, angleOffset, } = command;
+                let { offsetX, offsetY, radiusX, radiusY, isRadians, startAngle, angleOffset, } = command;
                 startAngle = isRadians ? startAngle : degToRad(startAngle);
                 startAngle = normalizeRadians(startAngle);
                 angleOffset = isRadians ? angleOffset : degToRad(angleOffset);
@@ -4751,8 +4763,8 @@ function serializeContextCommand(displayManager, command) {
                 angleOffset *= (angleOffset > 0 ? Int16Max : -Int16Min) - 1;
                 isRadians = true;
                 dataView = new DataView(new ArrayBuffer(2 * 6));
-                dataView.setInt16(0, centerX, true);
-                dataView.setInt16(2, centerY, true);
+                dataView.setInt16(0, offsetX, true);
+                dataView.setInt16(2, offsetY, true);
                 dataView.setUint16(4, radiusX, true);
                 dataView.setUint16(6, radiusY, true);
                 dataView.setUint16(8, formatRotation(startAngle, isRadians), true);
@@ -4761,11 +4773,11 @@ function serializeContextCommand(displayManager, command) {
             break;
         case "drawBitmap":
             {
-                const { bitmap, centerX, centerY } = command;
+                const { bitmap, offsetX, offsetY } = command;
                 displayManager.assertValidBitmap(bitmap, false);
                 dataView = new DataView(new ArrayBuffer(drawBitmapHeaderLength));
-                dataView.setInt16(0, centerX, true);
-                dataView.setInt16(2, centerY, true);
+                dataView.setInt16(0, offsetX, true);
+                dataView.setInt16(2, offsetY, true);
                 dataView.setUint16(4, bitmap.width, true);
                 dataView.setUint16(6, bitmap.pixels.length, true);
                 dataView.setUint8(8, bitmap.numberOfColors);
@@ -4784,12 +4796,12 @@ function serializeContextCommand(displayManager, command) {
             break;
         case "drawSprite":
             {
-                const { centerX, centerY, spriteIndex, use2Bytes } = command;
+                const { offsetX, offsetY, spriteIndex, use2Bytes } = command;
                 dataView = new DataView(new ArrayBuffer(1 + 2 * 2));
                 let offset = 0;
-                dataView.setInt16(offset, centerX, true);
+                dataView.setInt16(offset, offsetX, true);
                 offset += 2;
-                dataView.setInt16(offset, centerY, true);
+                dataView.setInt16(offset, offsetY, true);
                 offset += 2;
                 if (use2Bytes) {
                     dataView.setUint16(offset, spriteIndex, true);
@@ -5044,32 +5056,32 @@ async function runDisplayContextCommand(displayManager, command, sendImmediately
             break;
         case "drawRect":
             {
-                const { centerX, centerY, width, height } = command;
-                await displayManager.drawRect(centerX, centerY, width, height, sendImmediately);
+                const { offsetX, offsetY, width, height } = command;
+                await displayManager.drawRect(offsetX, offsetY, width, height, sendImmediately);
             }
             break;
         case "drawRoundRect":
             {
-                const { centerX, centerY, width, height, borderRadius } = command;
-                await displayManager.drawRoundRect(centerX, centerY, width, height, borderRadius, sendImmediately);
+                const { offsetX, offsetY, width, height, borderRadius } = command;
+                await displayManager.drawRoundRect(offsetX, offsetY, width, height, borderRadius, sendImmediately);
             }
             break;
         case "drawCircle":
             {
-                const { centerX, centerY, radius } = command;
-                await displayManager.drawCircle(centerX, centerY, radius, sendImmediately);
+                const { offsetX, offsetY, radius } = command;
+                await displayManager.drawCircle(offsetX, offsetY, radius, sendImmediately);
             }
             break;
         case "drawEllipse":
             {
-                const { centerX, centerY, radiusX, radiusY } = command;
-                await displayManager.drawEllipse(centerX, centerY, radiusX, radiusY, sendImmediately);
+                const { offsetX, offsetY, radiusX, radiusY } = command;
+                await displayManager.drawEllipse(offsetX, offsetY, radiusX, radiusY, sendImmediately);
             }
             break;
         case "drawPolygon":
             {
-                const { centerX, centerY, radius, numberOfSides } = command;
-                await displayManager.drawPolygon(centerX, centerY, radius, numberOfSides, sendImmediately);
+                const { offsetX, offsetY, radius, numberOfSides } = command;
+                await displayManager.drawPolygon(offsetX, offsetY, radius, numberOfSides, sendImmediately);
             }
             break;
         case "drawSegment":
@@ -5086,31 +5098,31 @@ async function runDisplayContextCommand(displayManager, command, sendImmediately
             break;
         case "drawArc":
             {
-                let { centerX, centerY, radius, startAngle, angleOffset, isRadians } = command;
+                let { offsetX, offsetY, radius, startAngle, angleOffset, isRadians } = command;
                 startAngle = isRadians ? startAngle : degToRad(startAngle);
                 angleOffset = isRadians ? angleOffset : degToRad(angleOffset);
-                await displayManager.drawArc(centerX, centerY, radius, startAngle, angleOffset, true, sendImmediately);
+                await displayManager.drawArc(offsetX, offsetY, radius, startAngle, angleOffset, true, sendImmediately);
             }
             break;
         case "drawArcEllipse":
             {
-                let { centerX, centerY, radiusX, radiusY, startAngle, angleOffset, isRadians, } = command;
+                let { offsetX, offsetY, radiusX, radiusY, startAngle, angleOffset, isRadians, } = command;
                 startAngle = isRadians ? startAngle : degToRad(startAngle);
                 angleOffset = isRadians ? angleOffset : degToRad(angleOffset);
-                await displayManager.drawArcEllipse(centerX, centerY, radiusX, radiusY, startAngle, angleOffset, true, sendImmediately);
+                await displayManager.drawArcEllipse(offsetX, offsetY, radiusX, radiusY, startAngle, angleOffset, true, sendImmediately);
             }
             break;
         case "drawBitmap":
             {
-                const { centerX, centerY, bitmap } = command;
-                await displayManager.drawBitmap(centerX, centerY, bitmap, sendImmediately);
+                const { offsetX, offsetY, bitmap } = command;
+                await displayManager.drawBitmap(offsetX, offsetY, bitmap, sendImmediately);
             }
             break;
         case "drawSprite":
             {
-                const { centerX, centerY, spriteIndex } = command;
+                const { offsetX, offsetY, spriteIndex } = command;
                 const spriteName = displayManager.selectedSpriteSheet?.sprites[spriteIndex].name;
-                await displayManager.drawSprite(centerX, centerY, spriteName, sendImmediately);
+                await displayManager.drawSprite(offsetX, offsetY, spriteName, sendImmediately);
             }
             break;
         case "selectSpriteSheet":
@@ -5260,7 +5272,11 @@ function serializeSpriteSheet(displayManager, spriteSheet) {
     _console$p.log("serializedSpriteSheet", serializedSpriteSheet);
     return serializedSpriteSheet;
 }
-async function fontToSpriteSheet(displayManager, arrayBuffer, fontSize, spriteSheetName) {
+const defaultFontToSpriteSheetOptions = {
+    stroke: false,
+    strokeWidth: 1,
+};
+async function fontToSpriteSheet(displayManager, arrayBuffer, fontSize, spriteSheetName, options = defaultFontToSpriteSheetOptions) {
     _console$p.assertTypeWithError(fontSize, "number");
     const font = opentype.parse(arrayBuffer);
     const fontScale = (1 / font.unitsPerEm) * fontSize;
@@ -5270,6 +5286,8 @@ async function fontToSpriteSheet(displayManager, arrayBuffer, fontSize, spriteSh
         name: spriteSheetName,
         sprites: [],
     };
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
     for (let index = 0; index < font.glyphs.length; index++) {
         const glyph = font.glyphs.get(index);
         if (glyph.unicode == undefined) {
@@ -5277,38 +5295,54 @@ async function fontToSpriteSheet(displayManager, arrayBuffer, fontSize, spriteSh
         }
         const name = String.fromCharCode(glyph.unicode);
         const bbox = glyph.getBoundingBox();
-        const width = Math.round((bbox.x2 - bbox.x1) * fontScale);
-        const height = Math.round((bbox.y2 - bbox.y1) * fontScale);
+        const bitmapWidth = Math.round((bbox.x2 - bbox.x1) * fontScale);
+        const bitmapHeight = Math.round((bbox.y2 - bbox.y1) * fontScale);
+        const spriteWidth = Math.round(Math.max(Math.max(bbox.x2, bbox.x2 - bbox.x1), glyph.advanceWidth || 0) *
+            fontScale);
+        const spriteHeight = Math.round(Math.max(bbox.y2, bbox.y2 - bbox.y1) * fontScale);
         const commands = [];
-        if (width > 0 && height > 0) {
-            const canvas = document.createElement("canvas");
-            const ctx = canvas.getContext("2d");
-            canvas.width = width;
-            canvas.height = height;
+        if (bitmapWidth > 0 && bitmapHeight > 0) {
+            canvas.width = bitmapWidth;
+            canvas.height = bitmapHeight;
             ctx.imageSmoothingEnabled = false;
+            ctx.fillStyle = "black";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
             const path = glyph.getPath(-bbox.x1 * fontScale, bbox.y2 * fontScale, fontSize);
-            path.fill = "white";
-            path.stroke = "white";
+            if (options.stroke) {
+                path.stroke = "white";
+                path.strokeWidth = options.strokeWidth || 1;
+            }
+            else {
+                path.fill = "white";
+            }
             path.draw(ctx);
-            const { colorIndices, blob } = await quantizeCanvas(canvas, ctx, 2);
+            const { colorIndices, blob } = await quantizeCanvas(canvas, ctx, 2, [
+                "#000000",
+                "#ffffff",
+            ]);
             const bitmap = {
-                width,
-                height,
+                width: bitmapWidth,
+                height: bitmapHeight,
                 numberOfColors: 2,
                 pixels: colorIndices,
             };
+            if (name == ".") {
+                const image = new Image();
+                image.src = URL.createObjectURL(blob);
+                document.body.appendChild(image);
+            }
             commands.push({
                 type: "selectBitmapColor",
                 bitmapColorIndex: 1,
                 colorIndex: 1,
             });
-            commands.push({ type: "drawBitmap", centerX: 0, centerY: 0, bitmap });
+            commands.push({ type: "drawBitmap", offsetX: 0, offsetY: 0, bitmap });
         }
         const sprite = {
             name,
             commands,
-            width,
-            height,
+            width: spriteWidth,
+            height: spriteHeight,
         };
         spriteSheet.sprites.push(sprite);
     }
@@ -6195,11 +6229,11 @@ class DisplayManager {
         }
         await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "clearRect", dataView.buffer, sendImmediately);
     }
-    async drawRect(centerX, centerY, width, height, sendImmediately) {
+    async drawRect(offsetX, offsetY, width, height, sendImmediately) {
         const dataView = serializeContextCommand(this, {
             type: "drawRect",
-            centerX,
-            centerY,
+            offsetX,
+            offsetY,
             width,
             height,
         });
@@ -6208,11 +6242,11 @@ class DisplayManager {
         }
         await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "drawRect", dataView.buffer, sendImmediately);
     }
-    async drawRoundRect(centerX, centerY, width, height, borderRadius, sendImmediately) {
+    async drawRoundRect(offsetX, offsetY, width, height, borderRadius, sendImmediately) {
         const dataView = serializeContextCommand(this, {
             type: "drawRoundRect",
-            centerX,
-            centerY,
+            offsetX,
+            offsetY,
             width,
             height,
             borderRadius,
@@ -6222,11 +6256,11 @@ class DisplayManager {
         }
         await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "drawRoundRect", dataView.buffer, sendImmediately);
     }
-    async drawCircle(centerX, centerY, radius, sendImmediately) {
+    async drawCircle(offsetX, offsetY, radius, sendImmediately) {
         const dataView = serializeContextCommand(this, {
             type: "drawCircle",
-            centerX,
-            centerY,
+            offsetX,
+            offsetY,
             radius,
         });
         if (!dataView) {
@@ -6234,11 +6268,11 @@ class DisplayManager {
         }
         await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "drawCircle", dataView.buffer, sendImmediately);
     }
-    async drawEllipse(centerX, centerY, radiusX, radiusY, sendImmediately) {
+    async drawEllipse(offsetX, offsetY, radiusX, radiusY, sendImmediately) {
         const dataView = serializeContextCommand(this, {
             type: "drawEllipse",
-            centerX,
-            centerY,
+            offsetX,
+            offsetY,
             radiusX,
             radiusY,
         });
@@ -6247,11 +6281,11 @@ class DisplayManager {
         }
         await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "drawEllipse", dataView.buffer, sendImmediately);
     }
-    async drawPolygon(centerX, centerY, radius, numberOfSides, sendImmediately) {
+    async drawPolygon(offsetX, offsetY, radius, numberOfSides, sendImmediately) {
         const dataView = serializeContextCommand(this, {
             type: "drawPolygon",
-            centerX,
-            centerY,
+            offsetX,
+            offsetY,
             radius,
             numberOfSides,
         });
@@ -6296,11 +6330,11 @@ class DisplayManager {
         }
         await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "drawSegments", dataView.buffer, sendImmediately);
     }
-    async drawArc(centerX, centerY, radius, startAngle, angleOffset, isRadians, sendImmediately) {
+    async drawArc(offsetX, offsetY, radius, startAngle, angleOffset, isRadians, sendImmediately) {
         const dataView = serializeContextCommand(this, {
             type: "drawArc",
-            centerX,
-            centerY,
+            offsetX,
+            offsetY,
             radius,
             startAngle,
             angleOffset,
@@ -6311,11 +6345,11 @@ class DisplayManager {
         }
         await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "drawArc", dataView.buffer, sendImmediately);
     }
-    async drawArcEllipse(centerX, centerY, radiusX, radiusY, startAngle, angleOffset, isRadians, sendImmediately) {
+    async drawArcEllipse(offsetX, offsetY, radiusX, radiusY, startAngle, angleOffset, isRadians, sendImmediately) {
         const dataView = serializeContextCommand(this, {
             type: "drawArcEllipse",
-            centerX,
-            centerY,
+            offsetX,
+            offsetY,
             radiusX,
             radiusY,
             startAngle,
@@ -6337,12 +6371,12 @@ class DisplayManager {
             __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_assertValidBitmapSize).call(this, bitmap);
         }
     }
-    async drawBitmap(centerX, centerY, bitmap, sendImmediately) {
+    async drawBitmap(offsetX, offsetY, bitmap, sendImmediately) {
         this.assertValidBitmap(bitmap, true);
         const dataView = serializeContextCommand(this, {
             type: "drawBitmap",
-            centerX,
-            centerY,
+            offsetX,
+            offsetY,
             bitmap,
         });
         if (!dataView) {
@@ -6448,15 +6482,15 @@ class DisplayManager {
         await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "selectSpriteSheet", dataView.buffer, sendImmediately);
         __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_onContextStateUpdate).call(this, differences);
     }
-    async drawSprite(centerX, centerY, spriteName, sendImmediately) {
+    async drawSprite(offsetX, offsetY, spriteName, sendImmediately) {
         _console$o.assertWithError(this.selectedSpriteSheet, "no spriteSheet selected");
         let spriteIndex = this.selectedSpriteSheet.sprites.findIndex((sprite) => sprite.name == spriteName);
         _console$o.assertWithError(spriteIndex != -1, `sprite "${spriteName}" not found`);
         spriteIndex = spriteIndex;
         const dataView = serializeContextCommand(this, {
             type: "drawSprite",
-            centerX,
-            centerY,
+            offsetX,
+            offsetY,
             spriteIndex,
             use2Bytes: this.selectedSpriteSheet.sprites.length > 255,
         });

@@ -9,14 +9,13 @@ import {
   pixelDepthToPixelBitWidth,
   pixelDepthToPixelsPerByte,
 } from "./DisplayUtils.ts";
-import { DisplayContextState } from "./DisplayContextState.ts";
 import { DisplayBitmap } from "../DisplayManager.ts";
 import {
   DisplaySprite,
   DisplaySpriteSheet,
 } from "./DisplaySpriteSheetUtils.ts";
 
-const _console = createConsole("DisplayBitmapUtils", { log: true });
+const _console = createConsole("DisplayBitmapUtils", { log: false });
 
 export const drawBitmapHeaderLength = 2 + 2 + 2 + 2 + 1 + 2; // x, y, width, numberOfPixels, numberOfColors, dataLength
 
@@ -42,7 +41,8 @@ export function getBitmapData(bitmap: DisplayBitmap) {
 export async function quantizeCanvas(
   canvas: HTMLCanvasElement,
   ctx: CanvasRenderingContext2D,
-  numberOfColors: number
+  numberOfColors: number,
+  colors?: string[]
 ) {
   _console.assertWithError(
     numberOfColors > 1,
@@ -68,16 +68,30 @@ export async function quantizeCanvas(
 
   ctx.putImageData(imageData, 0, 0);
 
+  const isSmall = canvas.width * canvas.height < 4;
+
   const quantOptions = {
-    method: 0,
+    method: isSmall ? 1 : 2,
     colors: numberOfColors,
     dithKern: null, // Disable dithering
     useCache: false, // Disable color caching to force exact matches
     reIndex: true, // Ensure strict re-indexing to the palette
-    orDist: "manhattan",
+    //orDist: "manhattan",
   };
   _console.log("quantOptions", quantOptions);
 
+  if (colors) {
+    // @ts-ignore
+    quantOptions.palette = colors.map((color) => {
+      const rgb = hexToRGB(color);
+      if (rgb) {
+        const { r, g, b } = rgb;
+        return [r, g, b];
+      } else {
+        _console.error(`invalid rgb hex "${color}"`);
+      }
+    });
+  }
   _console.log("quantizeImage options", quantOptions);
   const quantizer = new RGBQuant(quantOptions);
   quantizer.sample(imageData);
@@ -236,14 +250,17 @@ export async function resizeAndQuantizeImage(
 
   ctx.putImageData(imageData, 0, 0);
 
+  const isSmall = canvas.width * canvas.height < 4;
+
   const quantOptions = {
-    method: 0,
+    method: isSmall ? 1 : 2,
     colors: colors.length,
     dithKern: null, // Disable dithering
     useCache: false, // Disable color caching to force exact matches
     reIndex: true, // Ensure strict re-indexing to the palette
-    orDist: "manhattan",
+    //orDist: "manhattan",
   };
+
   _console.log("quantOptions", quantOptions);
 
   // @ts-ignore
@@ -439,7 +456,7 @@ export async function imageToSprite(
     width,
     height,
   };
-  sprite.commands.push({ type: "drawBitmap", centerX: 0, centerY: 0, bitmap });
+  sprite.commands.push({ type: "drawBitmap", offsetX: 0, offsetY: 0, bitmap });
 
   const spriteIndex = spriteSheet.sprites.findIndex(
     (sprite) => sprite.name == spriteName

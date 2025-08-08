@@ -346,8 +346,8 @@ interface BasePositionDisplayContextCommand extends BaseDisplayContextCommand {
 }
 interface BaseCenterPositionDisplayContextCommand
   extends BaseDisplayContextCommand {
-  centerX: number;
-  centerY: number;
+  offsetX: number;
+  offsetY: number;
 }
 interface BaseSizeDisplayContextCommand extends BaseDisplayContextCommand {
   width: number;
@@ -855,20 +855,20 @@ export function serializeContextCommand(
       break;
     case "drawRect":
       {
-        const { centerX, centerY, width, height } = command;
+        const { offsetX, offsetY, width, height } = command;
         dataView = new DataView(new ArrayBuffer(2 * 4));
-        dataView.setInt16(0, centerX, true);
-        dataView.setInt16(2, centerY, true);
+        dataView.setInt16(0, offsetX, true);
+        dataView.setInt16(2, offsetY, true);
         dataView.setUint16(4, width, true);
         dataView.setUint16(6, height, true);
       }
       break;
     case "drawRoundRect":
       {
-        const { centerX, centerY, width, height, borderRadius } = command;
+        const { offsetX, offsetY, width, height, borderRadius } = command;
         dataView = new DataView(new ArrayBuffer(2 * 4 + 1));
-        dataView.setInt16(0, centerX, true);
-        dataView.setInt16(2, centerY, true);
+        dataView.setInt16(0, offsetX, true);
+        dataView.setInt16(2, offsetY, true);
         dataView.setUint16(4, width, true);
         dataView.setUint16(6, height, true);
         dataView.setUint8(8, borderRadius);
@@ -876,29 +876,29 @@ export function serializeContextCommand(
       break;
     case "drawCircle":
       {
-        const { centerX, centerY, radius } = command;
+        const { offsetX, offsetY, radius } = command;
         dataView = new DataView(new ArrayBuffer(2 * 3));
-        dataView.setInt16(0, centerX, true);
-        dataView.setInt16(2, centerY, true);
+        dataView.setInt16(0, offsetX, true);
+        dataView.setInt16(2, offsetY, true);
         dataView.setUint16(4, radius, true);
       }
       break;
     case "drawEllipse":
       {
-        const { centerX, centerY, radiusX, radiusY } = command;
+        const { offsetX, offsetY, radiusX, radiusY } = command;
         dataView = new DataView(new ArrayBuffer(2 * 4));
-        dataView.setInt16(0, centerX, true);
-        dataView.setInt16(2, centerY, true);
+        dataView.setInt16(0, offsetX, true);
+        dataView.setInt16(2, offsetY, true);
         dataView.setUint16(4, radiusX, true);
         dataView.setUint16(6, radiusY, true);
       }
       break;
     case "drawPolygon":
       {
-        const { centerX, centerY, radius, numberOfSides } = command;
+        const { offsetX, offsetY, radius, numberOfSides } = command;
         dataView = new DataView(new ArrayBuffer(2 * 3 + 1));
-        dataView.setInt16(0, centerX, true);
-        dataView.setInt16(2, centerY, true);
+        dataView.setInt16(0, offsetX, true);
+        dataView.setInt16(2, offsetY, true);
         dataView.setUint16(4, radius, true);
         dataView.setUint8(6, numberOfSides);
       }
@@ -931,7 +931,7 @@ export function serializeContextCommand(
       break;
     case "drawArc":
       {
-        let { centerX, centerY, radius, isRadians, startAngle, angleOffset } =
+        let { offsetX, offsetY, radius, isRadians, startAngle, angleOffset } =
           command;
 
         startAngle = isRadians ? startAngle : degToRad(startAngle);
@@ -946,8 +946,8 @@ export function serializeContextCommand(
         isRadians = true;
 
         dataView = new DataView(new ArrayBuffer(2 * 5));
-        dataView.setInt16(0, centerX, true);
-        dataView.setInt16(2, centerY, true);
+        dataView.setInt16(0, offsetX, true);
+        dataView.setInt16(2, offsetY, true);
         dataView.setUint16(4, radius, true);
         dataView.setUint16(6, formatRotation(startAngle, isRadians), true);
         dataView.setInt16(8, angleOffset, true);
@@ -956,8 +956,8 @@ export function serializeContextCommand(
     case "drawArcEllipse":
       {
         let {
-          centerX,
-          centerY,
+          offsetX,
+          offsetY,
           radiusX,
           radiusY,
           isRadians,
@@ -977,8 +977,8 @@ export function serializeContextCommand(
         isRadians = true;
 
         dataView = new DataView(new ArrayBuffer(2 * 6));
-        dataView.setInt16(0, centerX, true);
-        dataView.setInt16(2, centerY, true);
+        dataView.setInt16(0, offsetX, true);
+        dataView.setInt16(2, offsetY, true);
         dataView.setUint16(4, radiusX, true);
         dataView.setUint16(6, radiusY, true);
         dataView.setUint16(8, formatRotation(startAngle, isRadians), true);
@@ -987,11 +987,11 @@ export function serializeContextCommand(
       break;
     case "drawBitmap":
       {
-        const { bitmap, centerX, centerY } = command;
+        const { bitmap, offsetX, offsetY } = command;
         displayManager.assertValidBitmap(bitmap, false);
         dataView = new DataView(new ArrayBuffer(drawBitmapHeaderLength));
-        dataView.setInt16(0, centerX, true);
-        dataView.setInt16(2, centerY, true);
+        dataView.setInt16(0, offsetX, true);
+        dataView.setInt16(2, offsetY, true);
         dataView.setUint16(4, bitmap.width, true);
         dataView.setUint16(6, bitmap.pixels.length, true);
         dataView.setUint8(8, bitmap.numberOfColors);
@@ -1011,12 +1011,12 @@ export function serializeContextCommand(
       break;
     case "drawSprite":
       {
-        const { centerX, centerY, spriteIndex, use2Bytes } = command;
+        const { offsetX, offsetY, spriteIndex, use2Bytes } = command;
         dataView = new DataView(new ArrayBuffer(1 + 2 * 2));
         let offset = 0;
-        dataView.setInt16(offset, centerX, true);
+        dataView.setInt16(offset, offsetX, true);
         offset += 2;
-        dataView.setInt16(offset, centerY, true);
+        dataView.setInt16(offset, offsetY, true);
         offset += 2;
         if (use2Bytes) {
           dataView.setUint16(offset, spriteIndex, true);

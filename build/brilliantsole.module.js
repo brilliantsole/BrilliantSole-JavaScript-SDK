@@ -4669,7 +4669,7 @@ var rgbquant = {exports: {}};
 var rgbquantExports = rgbquant.exports;
 var RGBQuant = getDefaultExportFromCjs(rgbquantExports);
 
-const _console$n = createConsole("DisplayBitmapUtils", { log: true });
+const _console$n = createConsole("DisplayBitmapUtils", { log: false });
 const drawBitmapHeaderLength = 2 + 2 + 2 + 2 + 1 + 2;
 function getBitmapData(bitmap) {
     const pixelDataLength = getBitmapNumberOfBytes(bitmap);
@@ -4689,7 +4689,7 @@ function getBitmapData(bitmap) {
     _console$n.log("getBitmapData", bitmap, dataView);
     return dataView;
 }
-async function quantizeCanvas(canvas, ctx, numberOfColors) {
+async function quantizeCanvas(canvas, ctx, numberOfColors, colors) {
     _console$n.assertWithError(numberOfColors > 1, "numberOfColors must be greater than 1");
     _console$n.log({ numberOfColors });
     const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
@@ -4704,15 +4704,27 @@ async function quantizeCanvas(canvas, ctx, numberOfColors) {
         }
     }
     ctx.putImageData(imageData, 0, 0);
+    const isSmall = canvas.width * canvas.height < 4;
     const quantOptions = {
-        method: 0,
+        method: isSmall ? 1 : 2,
         colors: numberOfColors,
         dithKern: null,
         useCache: false,
         reIndex: true,
-        orDist: "manhattan",
     };
     _console$n.log("quantOptions", quantOptions);
+    if (colors) {
+        quantOptions.palette = colors.map((color) => {
+            const rgb = hexToRGB(color);
+            if (rgb) {
+                const { r, g, b } = rgb;
+                return [r, g, b];
+            }
+            else {
+                _console$n.error(`invalid rgb hex "${color}"`);
+            }
+        });
+    }
     _console$n.log("quantizeImage options", quantOptions);
     const quantizer = new RGBQuant(quantOptions);
     quantizer.sample(imageData);
@@ -4820,13 +4832,13 @@ async function resizeAndQuantizeImage(image, width, height, colors) {
         }
     }
     ctx.putImageData(imageData, 0, 0);
+    const isSmall = canvas.width * canvas.height < 4;
     const quantOptions = {
-        method: 0,
+        method: isSmall ? 1 : 2,
         colors: colors.length,
         dithKern: null,
         useCache: false,
         reIndex: true,
-        orDist: "manhattan",
     };
     _console$n.log("quantOptions", quantOptions);
     quantOptions.palette = colors.map((color) => {
@@ -4960,7 +4972,7 @@ async function imageToSprite(image, spriteName, width, height, numberOfColors, p
         width,
         height,
     };
-    sprite.commands.push({ type: "drawBitmap", centerX: 0, centerY: 0, bitmap });
+    sprite.commands.push({ type: "drawBitmap", offsetX: 0, offsetY: 0, bitmap });
     const spriteIndex = spriteSheet.sprites.findIndex((sprite) => sprite.name == spriteName);
     if (spriteIndex == -1) {
         spriteSheet.sprites.push(sprite);
@@ -5426,20 +5438,20 @@ function serializeContextCommand(displayManager, command) {
             break;
         case "drawRect":
             {
-                const { centerX, centerY, width, height } = command;
+                const { offsetX, offsetY, width, height } = command;
                 dataView = new DataView(new ArrayBuffer(2 * 4));
-                dataView.setInt16(0, centerX, true);
-                dataView.setInt16(2, centerY, true);
+                dataView.setInt16(0, offsetX, true);
+                dataView.setInt16(2, offsetY, true);
                 dataView.setUint16(4, width, true);
                 dataView.setUint16(6, height, true);
             }
             break;
         case "drawRoundRect":
             {
-                const { centerX, centerY, width, height, borderRadius } = command;
+                const { offsetX, offsetY, width, height, borderRadius } = command;
                 dataView = new DataView(new ArrayBuffer(2 * 4 + 1));
-                dataView.setInt16(0, centerX, true);
-                dataView.setInt16(2, centerY, true);
+                dataView.setInt16(0, offsetX, true);
+                dataView.setInt16(2, offsetY, true);
                 dataView.setUint16(4, width, true);
                 dataView.setUint16(6, height, true);
                 dataView.setUint8(8, borderRadius);
@@ -5447,29 +5459,29 @@ function serializeContextCommand(displayManager, command) {
             break;
         case "drawCircle":
             {
-                const { centerX, centerY, radius } = command;
+                const { offsetX, offsetY, radius } = command;
                 dataView = new DataView(new ArrayBuffer(2 * 3));
-                dataView.setInt16(0, centerX, true);
-                dataView.setInt16(2, centerY, true);
+                dataView.setInt16(0, offsetX, true);
+                dataView.setInt16(2, offsetY, true);
                 dataView.setUint16(4, radius, true);
             }
             break;
         case "drawEllipse":
             {
-                const { centerX, centerY, radiusX, radiusY } = command;
+                const { offsetX, offsetY, radiusX, radiusY } = command;
                 dataView = new DataView(new ArrayBuffer(2 * 4));
-                dataView.setInt16(0, centerX, true);
-                dataView.setInt16(2, centerY, true);
+                dataView.setInt16(0, offsetX, true);
+                dataView.setInt16(2, offsetY, true);
                 dataView.setUint16(4, radiusX, true);
                 dataView.setUint16(6, radiusY, true);
             }
             break;
         case "drawPolygon":
             {
-                const { centerX, centerY, radius, numberOfSides } = command;
+                const { offsetX, offsetY, radius, numberOfSides } = command;
                 dataView = new DataView(new ArrayBuffer(2 * 3 + 1));
-                dataView.setInt16(0, centerX, true);
-                dataView.setInt16(2, centerY, true);
+                dataView.setInt16(0, offsetX, true);
+                dataView.setInt16(2, offsetY, true);
                 dataView.setUint16(4, radius, true);
                 dataView.setUint8(6, numberOfSides);
             }
@@ -5502,7 +5514,7 @@ function serializeContextCommand(displayManager, command) {
             break;
         case "drawArc":
             {
-                let { centerX, centerY, radius, isRadians, startAngle, angleOffset } = command;
+                let { offsetX, offsetY, radius, isRadians, startAngle, angleOffset } = command;
                 startAngle = isRadians ? startAngle : degToRad(startAngle);
                 startAngle = normalizeRadians(startAngle);
                 angleOffset = isRadians ? angleOffset : degToRad(angleOffset);
@@ -5511,8 +5523,8 @@ function serializeContextCommand(displayManager, command) {
                 angleOffset *= (angleOffset > 0 ? Int16Max - 1 : -Int16Min) - 1;
                 isRadians = true;
                 dataView = new DataView(new ArrayBuffer(2 * 5));
-                dataView.setInt16(0, centerX, true);
-                dataView.setInt16(2, centerY, true);
+                dataView.setInt16(0, offsetX, true);
+                dataView.setInt16(2, offsetY, true);
                 dataView.setUint16(4, radius, true);
                 dataView.setUint16(6, formatRotation(startAngle, isRadians), true);
                 dataView.setInt16(8, angleOffset, true);
@@ -5520,7 +5532,7 @@ function serializeContextCommand(displayManager, command) {
             break;
         case "drawArcEllipse":
             {
-                let { centerX, centerY, radiusX, radiusY, isRadians, startAngle, angleOffset, } = command;
+                let { offsetX, offsetY, radiusX, radiusY, isRadians, startAngle, angleOffset, } = command;
                 startAngle = isRadians ? startAngle : degToRad(startAngle);
                 startAngle = normalizeRadians(startAngle);
                 angleOffset = isRadians ? angleOffset : degToRad(angleOffset);
@@ -5529,8 +5541,8 @@ function serializeContextCommand(displayManager, command) {
                 angleOffset *= (angleOffset > 0 ? Int16Max : -Int16Min) - 1;
                 isRadians = true;
                 dataView = new DataView(new ArrayBuffer(2 * 6));
-                dataView.setInt16(0, centerX, true);
-                dataView.setInt16(2, centerY, true);
+                dataView.setInt16(0, offsetX, true);
+                dataView.setInt16(2, offsetY, true);
                 dataView.setUint16(4, radiusX, true);
                 dataView.setUint16(6, radiusY, true);
                 dataView.setUint16(8, formatRotation(startAngle, isRadians), true);
@@ -5539,11 +5551,11 @@ function serializeContextCommand(displayManager, command) {
             break;
         case "drawBitmap":
             {
-                const { bitmap, centerX, centerY } = command;
+                const { bitmap, offsetX, offsetY } = command;
                 displayManager.assertValidBitmap(bitmap, false);
                 dataView = new DataView(new ArrayBuffer(drawBitmapHeaderLength));
-                dataView.setInt16(0, centerX, true);
-                dataView.setInt16(2, centerY, true);
+                dataView.setInt16(0, offsetX, true);
+                dataView.setInt16(2, offsetY, true);
                 dataView.setUint16(4, bitmap.width, true);
                 dataView.setUint16(6, bitmap.pixels.length, true);
                 dataView.setUint8(8, bitmap.numberOfColors);
@@ -5562,12 +5574,12 @@ function serializeContextCommand(displayManager, command) {
             break;
         case "drawSprite":
             {
-                const { centerX, centerY, spriteIndex, use2Bytes } = command;
+                const { offsetX, offsetY, spriteIndex, use2Bytes } = command;
                 dataView = new DataView(new ArrayBuffer(1 + 2 * 2));
                 let offset = 0;
-                dataView.setInt16(offset, centerX, true);
+                dataView.setInt16(offset, offsetX, true);
                 offset += 2;
-                dataView.setInt16(offset, centerY, true);
+                dataView.setInt16(offset, offsetY, true);
                 offset += 2;
                 if (use2Bytes) {
                     dataView.setUint16(offset, spriteIndex, true);
@@ -5822,32 +5834,32 @@ async function runDisplayContextCommand(displayManager, command, sendImmediately
             break;
         case "drawRect":
             {
-                const { centerX, centerY, width, height } = command;
-                await displayManager.drawRect(centerX, centerY, width, height, sendImmediately);
+                const { offsetX, offsetY, width, height } = command;
+                await displayManager.drawRect(offsetX, offsetY, width, height, sendImmediately);
             }
             break;
         case "drawRoundRect":
             {
-                const { centerX, centerY, width, height, borderRadius } = command;
-                await displayManager.drawRoundRect(centerX, centerY, width, height, borderRadius, sendImmediately);
+                const { offsetX, offsetY, width, height, borderRadius } = command;
+                await displayManager.drawRoundRect(offsetX, offsetY, width, height, borderRadius, sendImmediately);
             }
             break;
         case "drawCircle":
             {
-                const { centerX, centerY, radius } = command;
-                await displayManager.drawCircle(centerX, centerY, radius, sendImmediately);
+                const { offsetX, offsetY, radius } = command;
+                await displayManager.drawCircle(offsetX, offsetY, radius, sendImmediately);
             }
             break;
         case "drawEllipse":
             {
-                const { centerX, centerY, radiusX, radiusY } = command;
-                await displayManager.drawEllipse(centerX, centerY, radiusX, radiusY, sendImmediately);
+                const { offsetX, offsetY, radiusX, radiusY } = command;
+                await displayManager.drawEllipse(offsetX, offsetY, radiusX, radiusY, sendImmediately);
             }
             break;
         case "drawPolygon":
             {
-                const { centerX, centerY, radius, numberOfSides } = command;
-                await displayManager.drawPolygon(centerX, centerY, radius, numberOfSides, sendImmediately);
+                const { offsetX, offsetY, radius, numberOfSides } = command;
+                await displayManager.drawPolygon(offsetX, offsetY, radius, numberOfSides, sendImmediately);
             }
             break;
         case "drawSegment":
@@ -5864,31 +5876,31 @@ async function runDisplayContextCommand(displayManager, command, sendImmediately
             break;
         case "drawArc":
             {
-                let { centerX, centerY, radius, startAngle, angleOffset, isRadians } = command;
+                let { offsetX, offsetY, radius, startAngle, angleOffset, isRadians } = command;
                 startAngle = isRadians ? startAngle : degToRad(startAngle);
                 angleOffset = isRadians ? angleOffset : degToRad(angleOffset);
-                await displayManager.drawArc(centerX, centerY, radius, startAngle, angleOffset, true, sendImmediately);
+                await displayManager.drawArc(offsetX, offsetY, radius, startAngle, angleOffset, true, sendImmediately);
             }
             break;
         case "drawArcEllipse":
             {
-                let { centerX, centerY, radiusX, radiusY, startAngle, angleOffset, isRadians, } = command;
+                let { offsetX, offsetY, radiusX, radiusY, startAngle, angleOffset, isRadians, } = command;
                 startAngle = isRadians ? startAngle : degToRad(startAngle);
                 angleOffset = isRadians ? angleOffset : degToRad(angleOffset);
-                await displayManager.drawArcEllipse(centerX, centerY, radiusX, radiusY, startAngle, angleOffset, true, sendImmediately);
+                await displayManager.drawArcEllipse(offsetX, offsetY, radiusX, radiusY, startAngle, angleOffset, true, sendImmediately);
             }
             break;
         case "drawBitmap":
             {
-                const { centerX, centerY, bitmap } = command;
-                await displayManager.drawBitmap(centerX, centerY, bitmap, sendImmediately);
+                const { offsetX, offsetY, bitmap } = command;
+                await displayManager.drawBitmap(offsetX, offsetY, bitmap, sendImmediately);
             }
             break;
         case "drawSprite":
             {
-                const { centerX, centerY, spriteIndex } = command;
+                const { offsetX, offsetY, spriteIndex } = command;
                 const spriteName = displayManager.selectedSpriteSheet?.sprites[spriteIndex].name;
-                await displayManager.drawSprite(centerX, centerY, spriteName, sendImmediately);
+                await displayManager.drawSprite(offsetX, offsetY, spriteName, sendImmediately);
             }
             break;
         case "selectSpriteSheet":
@@ -15847,7 +15859,11 @@ function serializeSpriteSheet(displayManager, spriteSheet) {
     _console$k.log("serializedSpriteSheet", serializedSpriteSheet);
     return serializedSpriteSheet;
 }
-async function fontToSpriteSheet(displayManager, arrayBuffer, fontSize, spriteSheetName) {
+const defaultFontToSpriteSheetOptions = {
+    stroke: false,
+    strokeWidth: 1,
+};
+async function fontToSpriteSheet(displayManager, arrayBuffer, fontSize, spriteSheetName, options = defaultFontToSpriteSheetOptions) {
     _console$k.assertTypeWithError(fontSize, "number");
     const font = opentype.parse(arrayBuffer);
     const fontScale = (1 / font.unitsPerEm) * fontSize;
@@ -15857,6 +15873,8 @@ async function fontToSpriteSheet(displayManager, arrayBuffer, fontSize, spriteSh
         name: spriteSheetName,
         sprites: [],
     };
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
     for (let index = 0; index < font.glyphs.length; index++) {
         const glyph = font.glyphs.get(index);
         if (glyph.unicode == undefined) {
@@ -15864,38 +15882,54 @@ async function fontToSpriteSheet(displayManager, arrayBuffer, fontSize, spriteSh
         }
         const name = String.fromCharCode(glyph.unicode);
         const bbox = glyph.getBoundingBox();
-        const width = Math.round((bbox.x2 - bbox.x1) * fontScale);
-        const height = Math.round((bbox.y2 - bbox.y1) * fontScale);
+        const bitmapWidth = Math.round((bbox.x2 - bbox.x1) * fontScale);
+        const bitmapHeight = Math.round((bbox.y2 - bbox.y1) * fontScale);
+        const spriteWidth = Math.round(Math.max(Math.max(bbox.x2, bbox.x2 - bbox.x1), glyph.advanceWidth || 0) *
+            fontScale);
+        const spriteHeight = Math.round(Math.max(bbox.y2, bbox.y2 - bbox.y1) * fontScale);
         const commands = [];
-        if (width > 0 && height > 0) {
-            const canvas = document.createElement("canvas");
-            const ctx = canvas.getContext("2d");
-            canvas.width = width;
-            canvas.height = height;
+        if (bitmapWidth > 0 && bitmapHeight > 0) {
+            canvas.width = bitmapWidth;
+            canvas.height = bitmapHeight;
             ctx.imageSmoothingEnabled = false;
+            ctx.fillStyle = "black";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
             const path = glyph.getPath(-bbox.x1 * fontScale, bbox.y2 * fontScale, fontSize);
-            path.fill = "white";
-            path.stroke = "white";
+            if (options.stroke) {
+                path.stroke = "white";
+                path.strokeWidth = options.strokeWidth || 1;
+            }
+            else {
+                path.fill = "white";
+            }
             path.draw(ctx);
-            const { colorIndices, blob } = await quantizeCanvas(canvas, ctx, 2);
+            const { colorIndices, blob } = await quantizeCanvas(canvas, ctx, 2, [
+                "#000000",
+                "#ffffff",
+            ]);
             const bitmap = {
-                width,
-                height,
+                width: bitmapWidth,
+                height: bitmapHeight,
                 numberOfColors: 2,
                 pixels: colorIndices,
             };
+            if (name == ".") {
+                const image = new Image();
+                image.src = URL.createObjectURL(blob);
+                document.body.appendChild(image);
+            }
             commands.push({
                 type: "selectBitmapColor",
                 bitmapColorIndex: 1,
                 colorIndex: 1,
             });
-            commands.push({ type: "drawBitmap", centerX: 0, centerY: 0, bitmap });
+            commands.push({ type: "drawBitmap", offsetX: 0, offsetY: 0, bitmap });
         }
         const sprite = {
             name,
             commands,
-            width,
-            height,
+            width: spriteWidth,
+            height: spriteHeight,
         };
         spriteSheet.sprites.push(sprite);
     }
@@ -16782,11 +16816,11 @@ class DisplayManager {
         }
         await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "clearRect", dataView.buffer, sendImmediately);
     }
-    async drawRect(centerX, centerY, width, height, sendImmediately) {
+    async drawRect(offsetX, offsetY, width, height, sendImmediately) {
         const dataView = serializeContextCommand(this, {
             type: "drawRect",
-            centerX,
-            centerY,
+            offsetX,
+            offsetY,
             width,
             height,
         });
@@ -16795,11 +16829,11 @@ class DisplayManager {
         }
         await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "drawRect", dataView.buffer, sendImmediately);
     }
-    async drawRoundRect(centerX, centerY, width, height, borderRadius, sendImmediately) {
+    async drawRoundRect(offsetX, offsetY, width, height, borderRadius, sendImmediately) {
         const dataView = serializeContextCommand(this, {
             type: "drawRoundRect",
-            centerX,
-            centerY,
+            offsetX,
+            offsetY,
             width,
             height,
             borderRadius,
@@ -16809,11 +16843,11 @@ class DisplayManager {
         }
         await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "drawRoundRect", dataView.buffer, sendImmediately);
     }
-    async drawCircle(centerX, centerY, radius, sendImmediately) {
+    async drawCircle(offsetX, offsetY, radius, sendImmediately) {
         const dataView = serializeContextCommand(this, {
             type: "drawCircle",
-            centerX,
-            centerY,
+            offsetX,
+            offsetY,
             radius,
         });
         if (!dataView) {
@@ -16821,11 +16855,11 @@ class DisplayManager {
         }
         await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "drawCircle", dataView.buffer, sendImmediately);
     }
-    async drawEllipse(centerX, centerY, radiusX, radiusY, sendImmediately) {
+    async drawEllipse(offsetX, offsetY, radiusX, radiusY, sendImmediately) {
         const dataView = serializeContextCommand(this, {
             type: "drawEllipse",
-            centerX,
-            centerY,
+            offsetX,
+            offsetY,
             radiusX,
             radiusY,
         });
@@ -16834,11 +16868,11 @@ class DisplayManager {
         }
         await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "drawEllipse", dataView.buffer, sendImmediately);
     }
-    async drawPolygon(centerX, centerY, radius, numberOfSides, sendImmediately) {
+    async drawPolygon(offsetX, offsetY, radius, numberOfSides, sendImmediately) {
         const dataView = serializeContextCommand(this, {
             type: "drawPolygon",
-            centerX,
-            centerY,
+            offsetX,
+            offsetY,
             radius,
             numberOfSides,
         });
@@ -16883,11 +16917,11 @@ class DisplayManager {
         }
         await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "drawSegments", dataView.buffer, sendImmediately);
     }
-    async drawArc(centerX, centerY, radius, startAngle, angleOffset, isRadians, sendImmediately) {
+    async drawArc(offsetX, offsetY, radius, startAngle, angleOffset, isRadians, sendImmediately) {
         const dataView = serializeContextCommand(this, {
             type: "drawArc",
-            centerX,
-            centerY,
+            offsetX,
+            offsetY,
             radius,
             startAngle,
             angleOffset,
@@ -16898,11 +16932,11 @@ class DisplayManager {
         }
         await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "drawArc", dataView.buffer, sendImmediately);
     }
-    async drawArcEllipse(centerX, centerY, radiusX, radiusY, startAngle, angleOffset, isRadians, sendImmediately) {
+    async drawArcEllipse(offsetX, offsetY, radiusX, radiusY, startAngle, angleOffset, isRadians, sendImmediately) {
         const dataView = serializeContextCommand(this, {
             type: "drawArcEllipse",
-            centerX,
-            centerY,
+            offsetX,
+            offsetY,
             radiusX,
             radiusY,
             startAngle,
@@ -16924,12 +16958,12 @@ class DisplayManager {
             __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_assertValidBitmapSize).call(this, bitmap);
         }
     }
-    async drawBitmap(centerX, centerY, bitmap, sendImmediately) {
+    async drawBitmap(offsetX, offsetY, bitmap, sendImmediately) {
         this.assertValidBitmap(bitmap, true);
         const dataView = serializeContextCommand(this, {
             type: "drawBitmap",
-            centerX,
-            centerY,
+            offsetX,
+            offsetY,
             bitmap,
         });
         if (!dataView) {
@@ -17035,15 +17069,15 @@ class DisplayManager {
         await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "selectSpriteSheet", dataView.buffer, sendImmediately);
         __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_onContextStateUpdate).call(this, differences);
     }
-    async drawSprite(centerX, centerY, spriteName, sendImmediately) {
+    async drawSprite(offsetX, offsetY, spriteName, sendImmediately) {
         _console$j.assertWithError(this.selectedSpriteSheet, "no spriteSheet selected");
         let spriteIndex = this.selectedSpriteSheet.sprites.findIndex((sprite) => sprite.name == spriteName);
         _console$j.assertWithError(spriteIndex != -1, `sprite "${spriteName}" not found`);
         spriteIndex = spriteIndex;
         const dataView = serializeContextCommand(this, {
             type: "drawSprite",
-            centerX,
-            centerY,
+            offsetX,
+            offsetY,
             spriteIndex,
             use2Bytes: this.selectedSpriteSheet.sprites.length > 255,
         });
@@ -21494,43 +21528,43 @@ class DisplayCanvasHelper {
             await this.device.clearDisplayRect(x, y, width, height, sendImmediately);
         }
     }
-    async drawRect(centerX, centerY, width, height, sendImmediately) {
+    async drawRect(offsetX, offsetY, width, height, sendImmediately) {
         const contextState = structuredClone(this.contextState);
-        __classPrivateFieldGet(this, _DisplayCanvasHelper_rearDrawStack, "f").push(() => __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_drawRectToCanvas).call(this, centerX, centerY, width, height, contextState));
+        __classPrivateFieldGet(this, _DisplayCanvasHelper_rearDrawStack, "f").push(() => __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_drawRectToCanvas).call(this, offsetX, offsetY, width, height, contextState));
         if (this.device?.isConnected && !__classPrivateFieldGet(this, _DisplayCanvasHelper_ignoreDevice, "f")) {
-            await this.device.drawDisplayRect(centerX, centerY, width, height, sendImmediately);
+            await this.device.drawDisplayRect(offsetX, offsetY, width, height, sendImmediately);
         }
     }
-    async drawRoundRect(centerX, centerY, width, height, borderRadius, sendImmediately) {
+    async drawRoundRect(offsetX, offsetY, width, height, borderRadius, sendImmediately) {
         const contextState = structuredClone(this.contextState);
-        __classPrivateFieldGet(this, _DisplayCanvasHelper_rearDrawStack, "f").push(() => __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_drawRoundRectToCanvas).call(this, centerX, centerY, width, height, borderRadius, contextState));
+        __classPrivateFieldGet(this, _DisplayCanvasHelper_rearDrawStack, "f").push(() => __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_drawRoundRectToCanvas).call(this, offsetX, offsetY, width, height, borderRadius, contextState));
         if (this.device?.isConnected && !__classPrivateFieldGet(this, _DisplayCanvasHelper_ignoreDevice, "f")) {
-            await this.device.drawDisplayRoundRect(centerX, centerY, width, height, borderRadius, sendImmediately);
+            await this.device.drawDisplayRoundRect(offsetX, offsetY, width, height, borderRadius, sendImmediately);
         }
     }
-    async drawCircle(centerX, centerY, radius, sendImmediately) {
+    async drawCircle(offsetX, offsetY, radius, sendImmediately) {
         const contextState = structuredClone(this.contextState);
-        __classPrivateFieldGet(this, _DisplayCanvasHelper_rearDrawStack, "f").push(() => __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_drawCircleToCanvas).call(this, centerX, centerY, radius, contextState));
+        __classPrivateFieldGet(this, _DisplayCanvasHelper_rearDrawStack, "f").push(() => __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_drawCircleToCanvas).call(this, offsetX, offsetY, radius, contextState));
         if (this.device?.isConnected && !__classPrivateFieldGet(this, _DisplayCanvasHelper_ignoreDevice, "f")) {
-            await this.device.drawDisplayCircle(centerX, centerY, radius, sendImmediately);
+            await this.device.drawDisplayCircle(offsetX, offsetY, radius, sendImmediately);
         }
     }
-    async drawEllipse(centerX, centerY, radiusX, radiusY, sendImmediately) {
+    async drawEllipse(offsetX, offsetY, radiusX, radiusY, sendImmediately) {
         const contextState = structuredClone(this.contextState);
-        __classPrivateFieldGet(this, _DisplayCanvasHelper_rearDrawStack, "f").push(() => __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_drawEllipseToCanvas).call(this, centerX, centerY, radiusX, radiusY, contextState));
+        __classPrivateFieldGet(this, _DisplayCanvasHelper_rearDrawStack, "f").push(() => __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_drawEllipseToCanvas).call(this, offsetX, offsetY, radiusX, radiusY, contextState));
         if (this.device?.isConnected && !__classPrivateFieldGet(this, _DisplayCanvasHelper_ignoreDevice, "f")) {
-            await this.device.drawDisplayEllipse(centerX, centerY, radiusX, radiusY, sendImmediately);
+            await this.device.drawDisplayEllipse(offsetX, offsetY, radiusX, radiusY, sendImmediately);
         }
     }
-    async drawPolygon(centerX, centerY, radius, numberOfSides, sendImmediately) {
+    async drawPolygon(offsetX, offsetY, radius, numberOfSides, sendImmediately) {
         if (numberOfSides < 3) {
             _console$6.error(`invalid numberOfSides ${numberOfSides}`);
             return;
         }
         const contextState = structuredClone(this.contextState);
-        __classPrivateFieldGet(this, _DisplayCanvasHelper_rearDrawStack, "f").push(() => __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_drawPolygonToCanvas).call(this, centerX, centerY, radius, numberOfSides, contextState));
+        __classPrivateFieldGet(this, _DisplayCanvasHelper_rearDrawStack, "f").push(() => __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_drawPolygonToCanvas).call(this, offsetX, offsetY, radius, numberOfSides, contextState));
         if (this.device?.isConnected && !__classPrivateFieldGet(this, _DisplayCanvasHelper_ignoreDevice, "f")) {
-            await this.device.drawDisplayPolygon(centerX, centerY, radius, numberOfSides, sendImmediately);
+            await this.device.drawDisplayPolygon(offsetX, offsetY, radius, numberOfSides, sendImmediately);
         }
     }
     async drawSegment(startX, startY, endX, endY, sendImmediately) {
@@ -21552,22 +21586,22 @@ class DisplayCanvasHelper {
             await this.device.drawDisplaySegments(points, sendImmediately);
         }
     }
-    async drawArc(centerX, centerY, radius, startAngle, angleOffset, isRadians, sendImmediately) {
+    async drawArc(offsetX, offsetY, radius, startAngle, angleOffset, isRadians, sendImmediately) {
         startAngle = isRadians ? startAngle : degToRad(startAngle);
         angleOffset = isRadians ? angleOffset : degToRad(angleOffset);
         const contextState = structuredClone(this.contextState);
-        __classPrivateFieldGet(this, _DisplayCanvasHelper_rearDrawStack, "f").push(() => __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_drawArcToCanvas).call(this, centerX, centerY, radius, startAngle, angleOffset, true, contextState));
+        __classPrivateFieldGet(this, _DisplayCanvasHelper_rearDrawStack, "f").push(() => __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_drawArcToCanvas).call(this, offsetX, offsetY, radius, startAngle, angleOffset, true, contextState));
         if (this.device?.isConnected && !__classPrivateFieldGet(this, _DisplayCanvasHelper_ignoreDevice, "f")) {
-            await this.device.drawDisplayArc(centerX, centerY, radius, startAngle, angleOffset, true, sendImmediately);
+            await this.device.drawDisplayArc(offsetX, offsetY, radius, startAngle, angleOffset, true, sendImmediately);
         }
     }
-    async drawArcEllipse(centerX, centerY, radiusX, radiusY, startAngle, angleOffset, isRadians, sendImmediately) {
+    async drawArcEllipse(offsetX, offsetY, radiusX, radiusY, startAngle, angleOffset, isRadians, sendImmediately) {
         startAngle = isRadians ? startAngle : degToRad(startAngle);
         angleOffset = isRadians ? angleOffset : degToRad(angleOffset);
         const contextState = structuredClone(this.contextState);
-        __classPrivateFieldGet(this, _DisplayCanvasHelper_rearDrawStack, "f").push(() => __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_drawArcEllipseToCanvas).call(this, centerX, centerY, radiusX, radiusY, startAngle, angleOffset, true, contextState));
+        __classPrivateFieldGet(this, _DisplayCanvasHelper_rearDrawStack, "f").push(() => __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_drawArcEllipseToCanvas).call(this, offsetX, offsetY, radiusX, radiusY, startAngle, angleOffset, true, contextState));
         if (this.device?.isConnected && !__classPrivateFieldGet(this, _DisplayCanvasHelper_ignoreDevice, "f")) {
-            await this.device.drawDisplayArcEllipse(centerX, centerY, radiusX, radiusY, startAngle, angleOffset, true, sendImmediately);
+            await this.device.drawDisplayArcEllipse(offsetX, offsetY, radiusX, radiusY, startAngle, angleOffset, true, sendImmediately);
         }
     }
     assertValidNumberOfColors(numberOfColors) {
@@ -21577,12 +21611,12 @@ class DisplayCanvasHelper {
         this.assertValidNumberOfColors(bitmap.numberOfColors);
         assertValidBitmapPixels(bitmap);
     }
-    async drawBitmap(centerX, centerY, bitmap, sendImmediately) {
+    async drawBitmap(offsetX, offsetY, bitmap, sendImmediately) {
         this.assertValidBitmap(bitmap);
         const contextState = structuredClone(this.contextState);
-        __classPrivateFieldGet(this, _DisplayCanvasHelper_rearDrawStack, "f").push(() => __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_drawBitmapToCanvas).call(this, centerX, centerY, bitmap, contextState));
+        __classPrivateFieldGet(this, _DisplayCanvasHelper_rearDrawStack, "f").push(() => __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_drawBitmapToCanvas).call(this, offsetX, offsetY, bitmap, contextState));
         if (this.device?.isConnected && !__classPrivateFieldGet(this, _DisplayCanvasHelper_ignoreDevice, "f")) {
-            await this.device.drawDisplayBitmap(centerX, centerY, bitmap, sendImmediately);
+            await this.device.drawDisplayBitmap(offsetX, offsetY, bitmap, sendImmediately);
         }
     }
     get spriteSheets() {
@@ -21651,14 +21685,14 @@ class DisplayCanvasHelper {
         }
         __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_onContextStateUpdate).call(this, differences);
     }
-    async drawSprite(centerX, centerY, spriteName, sendImmediately) {
+    async drawSprite(offsetX, offsetY, spriteName, sendImmediately) {
         _console$6.assertWithError(this.selectedSpriteSheet, "no spriteSheet selected");
         let sprite = this.selectedSpriteSheet?.sprites.find((sprite) => sprite.name == spriteName);
         _console$6.assertWithError(sprite, `sprite "${spriteName}" not found`);
         const contextState = structuredClone(this.contextState);
-        __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_drawSpriteToCanvas).call(this, centerX, centerY, sprite, contextState);
+        __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_drawSpriteToCanvas).call(this, offsetX, offsetY, sprite, contextState);
         if (this.device?.isConnected && !__classPrivateFieldGet(this, _DisplayCanvasHelper_ignoreDevice, "f")) {
-            await this.device.drawDisplaySprite(centerX, centerY, spriteName, sendImmediately);
+            await this.device.drawDisplaySprite(offsetX, offsetY, spriteName, sendImmediately);
         }
     }
     get brightness() {
@@ -21681,11 +21715,11 @@ class DisplayCanvasHelper {
     async runContextCommands(commands, sendImmediately) {
         return runDisplayContextCommands(this, commands, sendImmediately);
     }
-    previewSprite(centerX, centerY, sprite, spriteSheet) {
+    previewSprite(offsetX, offsetY, sprite, spriteSheet) {
         __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_setIgnoreDevice).call(this, true);
         __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_setClearCanvasBoundingBoxOnDraw).call(this, false);
         __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_setUseSpriteColorIndices).call(this, true);
-        __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_saveContextForSprite).call(this, centerX, centerY, sprite);
+        __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_saveContextForSprite).call(this, offsetX, offsetY, sprite);
         sprite.commands.forEach((command) => {
             __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_runPreviewSpriteCommand).call(this, command, spriteSheet);
         });
@@ -21881,18 +21915,18 @@ _DisplayCanvasHelper_eventDispatcher = new WeakMap(), _DisplayCanvasHelper_canva
 }, _DisplayCanvasHelper_restore = function _DisplayCanvasHelper_restore() {
     const ctx = __classPrivateFieldGet(this, _DisplayCanvasHelper_context, "f");
     ctx.restore();
-}, _DisplayCanvasHelper_transformContext = function _DisplayCanvasHelper_transformContext(centerX, centerY, rotation) {
-    __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_translateContext).call(this, centerX, centerY);
+}, _DisplayCanvasHelper_transformContext = function _DisplayCanvasHelper_transformContext(offsetX, offsetY, rotation) {
+    __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_translateContext).call(this, offsetX, offsetY);
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_rotateContext).call(this, rotation);
-}, _DisplayCanvasHelper_translateContext = function _DisplayCanvasHelper_translateContext(centerX, centerY) {
+}, _DisplayCanvasHelper_translateContext = function _DisplayCanvasHelper_translateContext(offsetX, offsetY) {
     const ctx = this.context;
-    ctx.translate(centerX, centerY);
+    ctx.translate(offsetX, offsetY);
 }, _DisplayCanvasHelper_rotateContext = function _DisplayCanvasHelper_rotateContext(rotation) {
     const ctx = this.context;
     ctx.rotate(rotation);
 }, _DisplayCanvasHelper_rotateBoundingBox = function _DisplayCanvasHelper_rotateBoundingBox(box, rotation) {
-    const centerX = box.x + box.width / 2;
-    const centerY = box.y + box.height / 2;
+    const offsetX = box.x + box.width / 2;
+    const offsetY = box.y + box.height / 2;
     const hw = box.width / 2;
     const hh = box.height / 2;
     const cos = Math.cos(rotation);
@@ -21914,26 +21948,26 @@ _DisplayCanvasHelper_eventDispatcher = new WeakMap(), _DisplayCanvasHelper_canva
     const minY = Math.min(...ys);
     const maxY = Math.max(...ys);
     return {
-        x: centerX + minX,
-        y: centerY + minY,
+        x: offsetX + minX,
+        y: offsetY + minY,
         width: maxX - minX,
         height: maxY - minY,
     };
 }, _DisplayCanvasHelper_clearBoundingBox = function _DisplayCanvasHelper_clearBoundingBox({ x, y, width, height }, isCentered = true) {
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_clearRectToCanvas).call(this, isCentered ? -width / 2 : x, isCentered ? -height / 2 : y, width, height);
-}, _DisplayCanvasHelper_getBoundingBox = function _DisplayCanvasHelper_getBoundingBox(centerX, centerY, width, height) {
+}, _DisplayCanvasHelper_getBoundingBox = function _DisplayCanvasHelper_getBoundingBox(offsetX, offsetY, width, height) {
     const boundingBox = {
-        x: centerX - width / 2,
-        y: centerY - height / 2,
+        x: offsetX - width / 2,
+        y: offsetY - height / 2,
         width: width,
         height: height,
     };
     return boundingBox;
-}, _DisplayCanvasHelper_getRectBoundingBox = function _DisplayCanvasHelper_getRectBoundingBox(centerX, centerY, width, height, { lineWidth }) {
+}, _DisplayCanvasHelper_getRectBoundingBox = function _DisplayCanvasHelper_getRectBoundingBox(offsetX, offsetY, width, height, { lineWidth }) {
     const outerPadding = Math.ceil(lineWidth / 2);
     const boundingBox = {
-        x: centerX - width / 2 - outerPadding,
-        y: centerY - height / 2 - outerPadding,
+        x: offsetX - width / 2 - outerPadding,
+        y: offsetY - height / 2 - outerPadding,
         width: width + outerPadding * 2,
         height: height + outerPadding * 2,
     };
@@ -21975,13 +22009,13 @@ _DisplayCanvasHelper_eventDispatcher = new WeakMap(), _DisplayCanvasHelper_canva
     this.context.fillStyle = __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_colorIndexToRgbString).call(this, fillColorIndex);
     this.context.strokeStyle = __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_colorIndexToRgbString).call(this, lineColorIndex);
     this.context.lineWidth = lineWidth;
-}, _DisplayCanvasHelper_drawRectToCanvas = function _DisplayCanvasHelper_drawRectToCanvas(centerX, centerY, width, height, contextState) {
+}, _DisplayCanvasHelper_drawRectToCanvas = function _DisplayCanvasHelper_drawRectToCanvas(offsetX, offsetY, width, height, contextState) {
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_updateContext).call(this, contextState);
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_save).call(this);
-    const box = __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_getRectBoundingBox).call(this, centerX, centerY, width, height, contextState);
+    const box = __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_getRectBoundingBox).call(this, offsetX, offsetY, width, height, contextState);
     const rotatedBox = __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_rotateBoundingBox).call(this, box, contextState.rotation);
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_applyClip).call(this, rotatedBox, contextState);
-    __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_transformContext).call(this, centerX, centerY, contextState.rotation);
+    __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_transformContext).call(this, offsetX, offsetY, contextState.rotation);
     if (__classPrivateFieldGet(this, _DisplayCanvasHelper_clearBoundingBoxOnDraw, "f")) {
         __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_clearBoundingBox).call(this, box);
     }
@@ -21993,13 +22027,13 @@ _DisplayCanvasHelper_eventDispatcher = new WeakMap(), _DisplayCanvasHelper_canva
         this.context.strokeRect(x, y, width, height);
     }
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_restore).call(this);
-}, _DisplayCanvasHelper_drawRoundRectToCanvas = function _DisplayCanvasHelper_drawRoundRectToCanvas(centerX, centerY, width, height, borderRadius, contextState) {
+}, _DisplayCanvasHelper_drawRoundRectToCanvas = function _DisplayCanvasHelper_drawRoundRectToCanvas(offsetX, offsetY, width, height, borderRadius, contextState) {
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_updateContext).call(this, contextState);
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_save).call(this);
-    const box = __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_getRectBoundingBox).call(this, centerX, centerY, width, height, contextState);
+    const box = __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_getRectBoundingBox).call(this, offsetX, offsetY, width, height, contextState);
     const rotatedBox = __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_rotateBoundingBox).call(this, box, contextState.rotation);
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_applyClip).call(this, rotatedBox, contextState);
-    __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_transformContext).call(this, centerX, centerY, contextState.rotation);
+    __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_transformContext).call(this, offsetX, offsetY, contextState.rotation);
     if (__classPrivateFieldGet(this, _DisplayCanvasHelper_clearBoundingBoxOnDraw, "f")) {
         __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_clearBoundingBox).call(this, box);
     }
@@ -22013,15 +22047,15 @@ _DisplayCanvasHelper_eventDispatcher = new WeakMap(), _DisplayCanvasHelper_canva
         this.context.stroke();
     }
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_restore).call(this);
-}, _DisplayCanvasHelper_getCircleBoundingBox = function _DisplayCanvasHelper_getCircleBoundingBox(centerX, centerY, radius, contextState) {
+}, _DisplayCanvasHelper_getCircleBoundingBox = function _DisplayCanvasHelper_getCircleBoundingBox(offsetX, offsetY, radius, contextState) {
     const diameter = radius * 2;
-    return __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_getRectBoundingBox).call(this, centerX, centerY, diameter, diameter, contextState);
-}, _DisplayCanvasHelper_drawCircleToCanvas = function _DisplayCanvasHelper_drawCircleToCanvas(centerX, centerY, radius, contextState) {
+    return __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_getRectBoundingBox).call(this, offsetX, offsetY, diameter, diameter, contextState);
+}, _DisplayCanvasHelper_drawCircleToCanvas = function _DisplayCanvasHelper_drawCircleToCanvas(offsetX, offsetY, radius, contextState) {
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_updateContext).call(this, contextState);
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_save).call(this);
-    const box = __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_getCircleBoundingBox).call(this, centerX, centerY, radius, contextState);
+    const box = __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_getCircleBoundingBox).call(this, offsetX, offsetY, radius, contextState);
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_applyClip).call(this, box, contextState);
-    __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_transformContext).call(this, centerX, centerY, contextState.rotation);
+    __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_transformContext).call(this, offsetX, offsetY, contextState.rotation);
     if (__classPrivateFieldGet(this, _DisplayCanvasHelper_clearBoundingBoxOnDraw, "f")) {
         __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_clearBoundingBox).call(this, box);
     }
@@ -22033,17 +22067,17 @@ _DisplayCanvasHelper_eventDispatcher = new WeakMap(), _DisplayCanvasHelper_canva
         this.context.stroke();
     }
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_restore).call(this);
-}, _DisplayCanvasHelper_getEllipseBoundingBox = function _DisplayCanvasHelper_getEllipseBoundingBox(centerX, centerY, radiusX, radiusY, contextState) {
+}, _DisplayCanvasHelper_getEllipseBoundingBox = function _DisplayCanvasHelper_getEllipseBoundingBox(offsetX, offsetY, radiusX, radiusY, contextState) {
     const diameterX = radiusX * 2;
     const diameterY = radiusY * 2;
-    return __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_getRectBoundingBox).call(this, centerX, centerY, diameterX, diameterY, contextState);
-}, _DisplayCanvasHelper_drawEllipseToCanvas = function _DisplayCanvasHelper_drawEllipseToCanvas(centerX, centerY, radiusX, radiusY, contextState) {
+    return __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_getRectBoundingBox).call(this, offsetX, offsetY, diameterX, diameterY, contextState);
+}, _DisplayCanvasHelper_drawEllipseToCanvas = function _DisplayCanvasHelper_drawEllipseToCanvas(offsetX, offsetY, radiusX, radiusY, contextState) {
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_updateContext).call(this, contextState);
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_save).call(this);
-    const box = __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_getEllipseBoundingBox).call(this, centerX, centerY, radiusX, radiusY, contextState);
+    const box = __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_getEllipseBoundingBox).call(this, offsetX, offsetY, radiusX, radiusY, contextState);
     const rotatedBox = __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_rotateBoundingBox).call(this, box, contextState.rotation);
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_applyClip).call(this, rotatedBox, contextState);
-    __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_transformContext).call(this, centerX, centerY, contextState.rotation);
+    __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_transformContext).call(this, offsetX, offsetY, contextState.rotation);
     if (__classPrivateFieldGet(this, _DisplayCanvasHelper_clearBoundingBoxOnDraw, "f")) {
         __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_clearBoundingBox).call(this, box);
     }
@@ -22055,24 +22089,24 @@ _DisplayCanvasHelper_eventDispatcher = new WeakMap(), _DisplayCanvasHelper_canva
         this.context.stroke();
     }
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_restore).call(this);
-}, _DisplayCanvasHelper_getPolygonBoundingBox = function _DisplayCanvasHelper_getPolygonBoundingBox(centerX, centerY, radius, numberOfSides, { lineWidth }) {
+}, _DisplayCanvasHelper_getPolygonBoundingBox = function _DisplayCanvasHelper_getPolygonBoundingBox(offsetX, offsetY, radius, numberOfSides, { lineWidth }) {
     let outerPadding = Math.ceil(lineWidth / 2);
     const shapeFactor = 1 / Math.cos(Math.PI / numberOfSides);
     outerPadding = Math.ceil(outerPadding * shapeFactor);
     const diameter = radius * 2;
     const boundingBox = {
-        x: centerX - radius - outerPadding,
-        y: centerY - radius - outerPadding,
+        x: offsetX - radius - outerPadding,
+        y: offsetY - radius - outerPadding,
         width: diameter + outerPadding * 2,
         height: diameter + outerPadding * 2,
     };
     return boundingBox;
-}, _DisplayCanvasHelper_drawPolygonToCanvas = function _DisplayCanvasHelper_drawPolygonToCanvas(centerX, centerY, radius, numberOfSides, contextState) {
+}, _DisplayCanvasHelper_drawPolygonToCanvas = function _DisplayCanvasHelper_drawPolygonToCanvas(offsetX, offsetY, radius, numberOfSides, contextState) {
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_updateContext).call(this, contextState);
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_save).call(this);
-    const box = __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_getPolygonBoundingBox).call(this, centerX, centerY, radius, numberOfSides, contextState);
+    const box = __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_getPolygonBoundingBox).call(this, offsetX, offsetY, radius, numberOfSides, contextState);
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_applyClip).call(this, box, contextState);
-    __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_transformContext).call(this, centerX, centerY, contextState.rotation);
+    __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_transformContext).call(this, offsetX, offsetY, contextState.rotation);
     if (__classPrivateFieldGet(this, _DisplayCanvasHelper_clearBoundingBoxOnDraw, "f")) {
         __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_clearBoundingBox).call(this, box);
     }
@@ -22270,12 +22304,12 @@ _DisplayCanvasHelper_eventDispatcher = new WeakMap(), _DisplayCanvasHelper_canva
             __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_drawSegmentToCanvas).call(this, startX, startY, endX, endY, contextState, false);
         }
     });
-}, _DisplayCanvasHelper_drawArcToCanvas = function _DisplayCanvasHelper_drawArcToCanvas(centerX, centerY, radius, startAngle, angleOffset, isRadians, contextState) {
+}, _DisplayCanvasHelper_drawArcToCanvas = function _DisplayCanvasHelper_drawArcToCanvas(offsetX, offsetY, radius, startAngle, angleOffset, isRadians, contextState) {
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_updateContext).call(this, contextState);
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_save).call(this);
-    const box = __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_getCircleBoundingBox).call(this, centerX, centerY, radius, contextState);
+    const box = __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_getCircleBoundingBox).call(this, offsetX, offsetY, radius, contextState);
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_applyClip).call(this, box, contextState);
-    __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_transformContext).call(this, centerX, centerY, contextState.rotation);
+    __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_transformContext).call(this, offsetX, offsetY, contextState.rotation);
     if (__classPrivateFieldGet(this, _DisplayCanvasHelper_clearBoundingBoxOnDraw, "f")) {
         __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_clearBoundingBox).call(this, box);
     }
@@ -22293,13 +22327,13 @@ _DisplayCanvasHelper_eventDispatcher = new WeakMap(), _DisplayCanvasHelper_canva
         this.context.stroke();
     }
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_restore).call(this);
-}, _DisplayCanvasHelper_drawArcEllipseToCanvas = function _DisplayCanvasHelper_drawArcEllipseToCanvas(centerX, centerY, radiusX, radiusY, startAngle, angleOffset, isRadians, contextState) {
+}, _DisplayCanvasHelper_drawArcEllipseToCanvas = function _DisplayCanvasHelper_drawArcEllipseToCanvas(offsetX, offsetY, radiusX, radiusY, startAngle, angleOffset, isRadians, contextState) {
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_updateContext).call(this, contextState);
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_save).call(this);
-    const box = __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_getEllipseBoundingBox).call(this, centerX, centerY, radiusX, radiusY, contextState);
+    const box = __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_getEllipseBoundingBox).call(this, offsetX, offsetY, radiusX, radiusY, contextState);
     const rotatedBox = __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_rotateBoundingBox).call(this, box, contextState.rotation);
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_applyClip).call(this, rotatedBox, contextState);
-    __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_transformContext).call(this, centerX, centerY, contextState.rotation);
+    __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_transformContext).call(this, offsetX, offsetY, contextState.rotation);
     if (__classPrivateFieldGet(this, _DisplayCanvasHelper_clearBoundingBoxOnDraw, "f")) {
         __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_clearBoundingBox).call(this, box);
     }
@@ -22317,16 +22351,16 @@ _DisplayCanvasHelper_eventDispatcher = new WeakMap(), _DisplayCanvasHelper_canva
         this.context.stroke();
     }
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_restore).call(this);
-}, _DisplayCanvasHelper_drawBitmapToCanvas = async function _DisplayCanvasHelper_drawBitmapToCanvas(centerX, centerY, bitmap, contextState) {
+}, _DisplayCanvasHelper_drawBitmapToCanvas = async function _DisplayCanvasHelper_drawBitmapToCanvas(offsetX, offsetY, bitmap, contextState) {
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_updateContext).call(this, contextState);
     const { bitmapScaleX, bitmapScaleY } = contextState;
     const width = bitmap.width * Math.abs(bitmapScaleX);
     const height = bitmap.height * Math.abs(bitmapScaleY);
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_save).call(this);
-    const box = __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_getRectBoundingBox).call(this, centerX, centerY, width, height, contextState);
+    const box = __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_getRectBoundingBox).call(this, offsetX, offsetY, width, height, contextState);
     const rotatedBox = __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_rotateBoundingBox).call(this, box, contextState.rotation);
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_applyClip).call(this, rotatedBox, contextState);
-    __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_transformContext).call(this, centerX, centerY, contextState.rotation);
+    __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_transformContext).call(this, offsetX, offsetY, contextState.rotation);
     if (__classPrivateFieldGet(this, _DisplayCanvasHelper_clearBoundingBoxOnDraw, "f")) {
         __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_clearBoundingBox).call(this, box);
     }
@@ -22361,7 +22395,7 @@ _DisplayCanvasHelper_eventDispatcher = new WeakMap(), _DisplayCanvasHelper_canva
         const sprite = spriteSheet.sprites[command.spriteIndex];
         if (sprite) {
             _console$6.log("drawing sub sprite", sprite);
-            __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_saveContextForSprite).call(this, command.centerX, command.centerY, sprite);
+            __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_saveContextForSprite).call(this, command.offsetX, command.offsetY, sprite);
             sprite.commands.forEach((command) => {
                 __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_runSpriteCommand).call(this, command, contextState);
             });
@@ -22374,11 +22408,11 @@ _DisplayCanvasHelper_eventDispatcher = new WeakMap(), _DisplayCanvasHelper_canva
     else {
         this.runContextCommand(command);
     }
-}, _DisplayCanvasHelper_drawSpriteToCanvas = function _DisplayCanvasHelper_drawSpriteToCanvas(centerX, centerY, sprite, contextState) {
+}, _DisplayCanvasHelper_drawSpriteToCanvas = function _DisplayCanvasHelper_drawSpriteToCanvas(offsetX, offsetY, sprite, contextState) {
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_setIgnoreDevice).call(this, true);
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_setClearCanvasBoundingBoxOnDraw).call(this, false);
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_setUseSpriteColorIndices).call(this, true);
-    __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_saveContextForSprite).call(this, centerX, centerY, sprite);
+    __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_saveContextForSprite).call(this, offsetX, offsetY, sprite);
     sprite.commands.forEach((command) => {
         __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_runSpriteCommand).call(this, command, contextState);
     });
@@ -22408,10 +22442,10 @@ _DisplayCanvasHelper_eventDispatcher = new WeakMap(), _DisplayCanvasHelper_canva
     }
     _console$6.log("updateDeviceSelectedSpriteSheet");
     await this.device?.selectDisplaySpriteSheet(this.selectedSpriteSheetName, sendImmediately);
-}, _DisplayCanvasHelper_setCanvasContextTransform = function _DisplayCanvasHelper_setCanvasContextTransform(centerX, centerY, width, height, contextState) {
+}, _DisplayCanvasHelper_setCanvasContextTransform = function _DisplayCanvasHelper_setCanvasContextTransform(offsetX, offsetY, width, height, contextState) {
     __classPrivateFieldGet(this, _DisplayCanvasHelper_rearDrawStack, "f").push(() => {
         __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_save).call(this);
-        __classPrivateFieldGet(this, _DisplayCanvasHelper_context, "f").translate(centerX, centerY);
+        __classPrivateFieldGet(this, _DisplayCanvasHelper_context, "f").translate(offsetX, offsetY);
         const box = __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_getBoundingBox).call(this, 0, 0, width * Math.abs(contextState.spriteScaleX), height * Math.abs(contextState.spriteScaleY));
         const rotatedBox = __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_rotateBoundingBox).call(this, box, contextState.rotation);
         __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_applyClip).call(this, rotatedBox, contextState);
@@ -22444,9 +22478,9 @@ _DisplayCanvasHelper_eventDispatcher = new WeakMap(), _DisplayCanvasHelper_canva
     __classPrivateFieldGet(this, _DisplayCanvasHelper_rearDrawStack, "f").push(() => {
         __classPrivateFieldSet(this, _DisplayCanvasHelper_useSpriteColorIndices, useSpriteColorIndices, "f");
     });
-}, _DisplayCanvasHelper_saveContextForSprite = function _DisplayCanvasHelper_saveContextForSprite(centerX, centerY, sprite) {
+}, _DisplayCanvasHelper_saveContextForSprite = function _DisplayCanvasHelper_saveContextForSprite(offsetX, offsetY, sprite) {
     const contextState = structuredClone(this.contextState);
-    __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_setCanvasContextTransform).call(this, centerX, centerY, sprite.width, sprite.height, contextState);
+    __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_setCanvasContextTransform).call(this, offsetX, offsetY, sprite.width, sprite.height, contextState);
     _console$6.assertWithError(!__classPrivateFieldGet(this, _DisplayCanvasHelper_spriteStack, "f").includes(sprite), `cyclical sprite ${sprite.name} found in stack`);
     const spriteColorIndices = contextState.spriteColorIndices.slice();
     __classPrivateFieldGet(this, _DisplayCanvasHelper_spriteContextStack, "f").push(contextState);
@@ -22466,7 +22500,7 @@ _DisplayCanvasHelper_eventDispatcher = new WeakMap(), _DisplayCanvasHelper_canva
         const sprite = spriteSheet.sprites[command.spriteIndex];
         if (sprite) {
             _console$6.log("drawing sub sprite", sprite);
-            __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_saveContextForSprite).call(this, command.centerX, command.centerY, sprite);
+            __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_saveContextForSprite).call(this, command.offsetX, command.offsetY, sprite);
             sprite.commands.forEach((command) => {
                 __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_runPreviewSpriteCommand).call(this, command, spriteSheet);
             });

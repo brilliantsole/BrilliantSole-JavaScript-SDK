@@ -27,16 +27,16 @@ import { degToRad, Vector2 } from "./MathUtils.ts";
 export type DisplayTransform = {
   rotation: number;
   scale: number;
-  centerX: number;
-  centerY: number;
+  offsetX: number;
+  offsetY: number;
   width: number;
   height: number;
 };
 export const defaultDisplayTransform: DisplayTransform = {
   rotation: 0,
   scale: 1,
-  centerX: 0,
-  centerY: 0,
+  offsetX: 0,
+  offsetY: 0,
   width: 0,
   height: 0,
 };
@@ -244,36 +244,36 @@ export interface DisplayManagerInterface {
     sendImmediately?: boolean
   ): Promise<void>;
   drawRect(
-    centerX: number,
-    centerY: number,
+    offsetX: number,
+    offsetY: number,
     width: number,
     height: number,
     sendImmediately?: boolean
   ): Promise<void>;
   drawRoundRect(
-    centerX: number,
-    centerY: number,
+    offsetX: number,
+    offsetY: number,
     width: number,
     height: number,
     borderRadius: number,
     sendImmediately?: boolean
   ): Promise<void>;
   drawCircle(
-    centerX: number,
-    centerY: number,
+    offsetX: number,
+    offsetY: number,
     radius: number,
     sendImmediately?: boolean
   ): Promise<void>;
   drawEllipse(
-    centerX: number,
-    centerY: number,
+    offsetX: number,
+    offsetY: number,
     radiusX: number,
     radiusY: number,
     sendImmediately?: boolean
   ): Promise<void>;
   drawPolygon(
-    centerX: number,
-    centerY: number,
+    offsetX: number,
+    offsetY: number,
     radius: number,
     numberOfSides: number,
     sendImmediately?: boolean
@@ -289,8 +289,8 @@ export interface DisplayManagerInterface {
   drawSegments(points: Vector2[], sendImmediately?: boolean): Promise<void>;
 
   drawArc(
-    centerX: number,
-    centerY: number,
+    offsetX: number,
+    offsetY: number,
     radius: number,
     startAngle: number,
     angleOffset: number,
@@ -298,8 +298,8 @@ export interface DisplayManagerInterface {
     sendImmediately?: boolean
   ): Promise<void>;
   drawArcEllipse(
-    centerX: number,
-    centerY: number,
+    offsetX: number,
+    offsetY: number,
     radiusX: number,
     radiusY: number,
     startAngle: number,
@@ -309,8 +309,8 @@ export interface DisplayManagerInterface {
   ): Promise<void>;
 
   drawBitmap(
-    centerX: number,
-    centerY: number,
+    offsetX: number,
+    offsetY: number,
     bitmap: DisplayBitmap,
     sendImmediately?: boolean
   ): Promise<void>;
@@ -363,8 +363,8 @@ export interface DisplayManagerInterface {
     sendImmediately?: boolean
   ): Promise<void>;
   drawSprite(
-    centerX: number,
-    centerY: number,
+    offsetX: number,
+    offsetY: number,
     spriteName: string,
     sendImmediately?: boolean
   ): Promise<void>;
@@ -690,10 +690,10 @@ export async function runDisplayContextCommand(
       break;
     case "drawRect":
       {
-        const { centerX, centerY, width, height } = command;
+        const { offsetX, offsetY, width, height } = command;
         await displayManager.drawRect(
-          centerX,
-          centerY,
+          offsetX,
+          offsetY,
           width,
           height,
           sendImmediately
@@ -702,10 +702,10 @@ export async function runDisplayContextCommand(
       break;
     case "drawRoundRect":
       {
-        const { centerX, centerY, width, height, borderRadius } = command;
+        const { offsetX, offsetY, width, height, borderRadius } = command;
         await displayManager.drawRoundRect(
-          centerX,
-          centerY,
+          offsetX,
+          offsetY,
           width,
           height,
           borderRadius,
@@ -715,10 +715,10 @@ export async function runDisplayContextCommand(
       break;
     case "drawCircle":
       {
-        const { centerX, centerY, radius } = command;
+        const { offsetX, offsetY, radius } = command;
         await displayManager.drawCircle(
-          centerX,
-          centerY,
+          offsetX,
+          offsetY,
           radius,
           sendImmediately
         );
@@ -726,10 +726,10 @@ export async function runDisplayContextCommand(
       break;
     case "drawEllipse":
       {
-        const { centerX, centerY, radiusX, radiusY } = command;
+        const { offsetX, offsetY, radiusX, radiusY } = command;
         await displayManager.drawEllipse(
-          centerX,
-          centerY,
+          offsetX,
+          offsetY,
           radiusX,
           radiusY,
           sendImmediately
@@ -738,10 +738,10 @@ export async function runDisplayContextCommand(
       break;
     case "drawPolygon":
       {
-        const { centerX, centerY, radius, numberOfSides } = command;
+        const { offsetX, offsetY, radius, numberOfSides } = command;
         await displayManager.drawPolygon(
-          centerX,
-          centerY,
+          offsetX,
+          offsetY,
           radius,
           numberOfSides,
           sendImmediately
@@ -771,14 +771,14 @@ export async function runDisplayContextCommand(
       break;
     case "drawArc":
       {
-        let { centerX, centerY, radius, startAngle, angleOffset, isRadians } =
+        let { offsetX, offsetY, radius, startAngle, angleOffset, isRadians } =
           command;
         startAngle = isRadians ? startAngle : degToRad(startAngle);
         angleOffset = isRadians ? angleOffset : degToRad(angleOffset);
 
         await displayManager.drawArc(
-          centerX,
-          centerY,
+          offsetX,
+          offsetY,
           radius,
           startAngle,
           angleOffset,
@@ -790,8 +790,8 @@ export async function runDisplayContextCommand(
     case "drawArcEllipse":
       {
         let {
-          centerX,
-          centerY,
+          offsetX,
+          offsetY,
           radiusX,
           radiusY,
           startAngle,
@@ -802,8 +802,8 @@ export async function runDisplayContextCommand(
         angleOffset = isRadians ? angleOffset : degToRad(angleOffset);
 
         await displayManager.drawArcEllipse(
-          centerX,
-          centerY,
+          offsetX,
+          offsetY,
           radiusX,
           radiusY,
           startAngle,
@@ -815,10 +815,10 @@ export async function runDisplayContextCommand(
       break;
     case "drawBitmap":
       {
-        const { centerX, centerY, bitmap } = command;
+        const { offsetX, offsetY, bitmap } = command;
         await displayManager.drawBitmap(
-          centerX,
-          centerY,
+          offsetX,
+          offsetY,
           bitmap,
           sendImmediately
         );
@@ -826,12 +826,12 @@ export async function runDisplayContextCommand(
       break;
     case "drawSprite":
       {
-        const { centerX, centerY, spriteIndex } = command;
+        const { offsetX, offsetY, spriteIndex } = command;
         const spriteName =
           displayManager.selectedSpriteSheet?.sprites[spriteIndex].name!;
         await displayManager.drawSprite(
-          centerX,
-          centerY,
+          offsetX,
+          offsetY,
           spriteName,
           sendImmediately
         );

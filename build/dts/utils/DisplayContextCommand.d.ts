@@ -148,8 +148,8 @@ interface BasePositionDisplayContextCommand extends BaseDisplayContextCommand {
     y: number;
 }
 interface BaseCenterPositionDisplayContextCommand extends BaseDisplayContextCommand {
-    centerX: number;
-    centerY: number;
+    offsetX: number;
+    offsetY: number;
 }
 interface BaseSizeDisplayContextCommand extends BaseDisplayContextCommand {
     width: number;

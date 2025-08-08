@@ -645,7 +645,7 @@ setPreviewMode("none");
 
 // TEST
 
-window.test = (centerX, centerY, width, height) => {
+window.test = (offsetX, offsetY, width, height) => {
   displayCanvasHelper.setLineWidth(0);
   displayCanvasHelper.setColor(0, "black");
   displayCanvasHelper.setColor(1, "red");
@@ -665,10 +665,10 @@ window.test = (centerX, centerY, width, height) => {
   displayCanvasHelper.setSegmentStartCap("round");
   displayCanvasHelper.setSegmentEndCap("round");
   displayCanvasHelper.setRotation(30);
-  //displayCanvasHelper.drawCircle(centerX, centerY, 50);
+  //displayCanvasHelper.drawCircle(offsetX, offsetY, 50);
   //displayCanvasHelper.drawSegment(50, 50, 75, 100);
   displayCanvasHelper.drawSegment(50, 50, 300, 50);
-  //displayCanvasHelper.drawSegment(centerX, centerY, 300, 300);
+  //displayCanvasHelper.drawSegment(offsetX, offsetY, 300, 300);
   displayCanvasHelper.show();
 };
 

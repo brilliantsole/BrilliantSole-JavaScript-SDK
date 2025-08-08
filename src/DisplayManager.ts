@@ -1567,16 +1567,16 @@ class DisplayManager implements DisplayManagerInterface {
     );
   }
   async drawRect(
-    centerX: number,
-    centerY: number,
+    offsetX: number,
+    offsetY: number,
     width: number,
     height: number,
     sendImmediately?: boolean
   ) {
     const dataView = serializeContextCommand(this, {
       type: "drawRect",
-      centerX,
-      centerY,
+      offsetX,
+      offsetY,
       width,
       height,
     });
@@ -1590,8 +1590,8 @@ class DisplayManager implements DisplayManagerInterface {
     );
   }
   async drawRoundRect(
-    centerX: number,
-    centerY: number,
+    offsetX: number,
+    offsetY: number,
     width: number,
     height: number,
     borderRadius: number,
@@ -1599,8 +1599,8 @@ class DisplayManager implements DisplayManagerInterface {
   ) {
     const dataView = serializeContextCommand(this, {
       type: "drawRoundRect",
-      centerX,
-      centerY,
+      offsetX,
+      offsetY,
       width,
       height,
       borderRadius,
@@ -1615,15 +1615,15 @@ class DisplayManager implements DisplayManagerInterface {
     );
   }
   async drawCircle(
-    centerX: number,
-    centerY: number,
+    offsetX: number,
+    offsetY: number,
     radius: number,
     sendImmediately?: boolean
   ) {
     const dataView = serializeContextCommand(this, {
       type: "drawCircle",
-      centerX,
-      centerY,
+      offsetX,
+      offsetY,
       radius,
     });
     if (!dataView) {
@@ -1636,16 +1636,16 @@ class DisplayManager implements DisplayManagerInterface {
     );
   }
   async drawEllipse(
-    centerX: number,
-    centerY: number,
+    offsetX: number,
+    offsetY: number,
     radiusX: number,
     radiusY: number,
     sendImmediately?: boolean
   ) {
     const dataView = serializeContextCommand(this, {
       type: "drawEllipse",
-      centerX,
-      centerY,
+      offsetX,
+      offsetY,
       radiusX,
       radiusY,
     });
@@ -1659,16 +1659,16 @@ class DisplayManager implements DisplayManagerInterface {
     );
   }
   async drawPolygon(
-    centerX: number,
-    centerY: number,
+    offsetX: number,
+    offsetY: number,
     radius: number,
     numberOfSides: number,
     sendImmediately?: boolean
   ) {
     const dataView = serializeContextCommand(this, {
       type: "drawPolygon",
-      centerX,
-      centerY,
+      offsetX,
+      offsetY,
       radius,
       numberOfSides,
     });
@@ -1734,8 +1734,8 @@ class DisplayManager implements DisplayManagerInterface {
   }
 
   async drawArc(
-    centerX: number,
-    centerY: number,
+    offsetX: number,
+    offsetY: number,
     radius: number,
     startAngle: number,
     angleOffset: number,
@@ -1744,8 +1744,8 @@ class DisplayManager implements DisplayManagerInterface {
   ) {
     const dataView = serializeContextCommand(this, {
       type: "drawArc",
-      centerX,
-      centerY,
+      offsetX,
+      offsetY,
       radius,
       startAngle,
       angleOffset,
@@ -1761,8 +1761,8 @@ class DisplayManager implements DisplayManagerInterface {
     );
   }
   async drawArcEllipse(
-    centerX: number,
-    centerY: number,
+    offsetX: number,
+    offsetY: number,
     radiusX: number,
     radiusY: number,
     startAngle: number,
@@ -1772,8 +1772,8 @@ class DisplayManager implements DisplayManagerInterface {
   ) {
     const dataView = serializeContextCommand(this, {
       type: "drawArcEllipse",
-      centerX,
-      centerY,
+      offsetX,
+      offsetY,
       radiusX,
       radiusY,
       startAngle,
@@ -1816,8 +1816,8 @@ class DisplayManager implements DisplayManagerInterface {
     );
   }
   async drawBitmap(
-    centerX: number,
-    centerY: number,
+    offsetX: number,
+    offsetY: number,
     bitmap: DisplayBitmap,
     sendImmediately?: boolean
   ) {
@@ -1825,8 +1825,8 @@ class DisplayManager implements DisplayManagerInterface {
 
     const dataView = serializeContextCommand(this, {
       type: "drawBitmap",
-      centerX,
-      centerY,
+      offsetX,
+      offsetY,
       bitmap,
     });
     if (!dataView) {
@@ -2023,8 +2023,8 @@ class DisplayManager implements DisplayManagerInterface {
     this.#onContextStateUpdate(differences);
   }
   async drawSprite(
-    centerX: number,
-    centerY: number,
+    offsetX: number,
+    offsetY: number,
     spriteName: string,
     sendImmediately?: boolean
   ) {
@@ -2042,8 +2042,8 @@ class DisplayManager implements DisplayManagerInterface {
     spriteIndex = spriteIndex!;
     const dataView = serializeContextCommand(this, {
       type: "drawSprite",
-      centerX,
-      centerY,
+      offsetX,
+      offsetY,
       spriteIndex,
       use2Bytes: this.selectedSpriteSheet!.sprites.length > 255,
     });

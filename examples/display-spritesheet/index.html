@@ -85,6 +85,7 @@
         auto save?
         <input type="checkbox" id="autoSaveToLocalStorage" />
       </label>
+      <br />
       <label>
         create from font
         <input
@@ -93,6 +94,18 @@
           accept=".ttf,.otf,.woff"
           multiple="false"
         />
+      </label>
+      <label>
+        font size
+        <input
+          id="fontSize"
+          type="range"
+          value="48"
+          min="8"
+          max="72"
+          step="1"
+        />
+        <span id="fontSizeSpan">48</span>px
       </label>
     </div>
 
@@ -362,13 +375,13 @@
               <button class="toggle">hide</button>
             </div>
 
-            <label class="centerX" hidden>
-              <span>centerX</span>
+            <label class="offsetX" hidden>
+              <span>offsetX</span>
               <input type="range" min="-50" max="50" step="1" value="0" />
               <span class="value">50</span>px
             </label>
-            <label class="centerY" hidden>
-              <span>centerY</span>
+            <label class="offsetY" hidden>
+              <span>offsetY</span>
               <input type="range" min="-50" max="50" step="1" value="0" />
               <span class="value">50</span>px
             </label>

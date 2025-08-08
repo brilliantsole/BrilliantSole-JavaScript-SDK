@@ -891,8 +891,6 @@ let draw = () => {
   console.log("draw");
 
   const {
-    x,
-    y,
     rotation,
     scaleX,
     scaleY,
@@ -941,18 +939,20 @@ const drawSprites = async () => {
       maxHeight = 0;
     }
 
-    const spriteWidth =
-      sprite.width * displayCanvasHelper.contextState.spriteScaleX;
-    const spriteHeight =
-      sprite.height * displayCanvasHelper.contextState.spriteScaleY;
+    const spriteWidth = Math.abs(
+      sprite.width * displayCanvasHelper.contextState.spriteScaleX
+    );
+    const spriteHeight = Math.abs(
+      sprite.height * displayCanvasHelper.contextState.spriteScaleY
+    );
 
-    const centerX = x + spriteWidth / 2;
-    const centerY = y + spriteHeight / 2;
+    const offsetX = x + spriteWidth / 2;
+    const offsetY = y + spriteHeight / 2;
 
     if (useUploadedSpriteSheet) {
-      await displayCanvasHelper.drawSprite(centerX, centerY, sprite.name);
+      await displayCanvasHelper.drawSprite(offsetX, offsetY, sprite.name);
     } else {
-      displayCanvasHelper.previewSprite(centerX, centerY, sprite, spriteSheet);
+      displayCanvasHelper.previewSprite(offsetX, offsetY, sprite, spriteSheet);
     }
 
     x += spriteWidth;
@@ -963,6 +963,8 @@ const drawSprites = async () => {
   await displayCanvasHelper.show();
 };
 const drawSprite = () => {
+  const { x, y } = drawSpriteParams;
+
   if (selectedSprite) {
     if (useUploadedSpriteSheet) {
       displayCanvasHelper.drawSprite(x, y, selectedSprite.name);
@@ -1337,8 +1339,8 @@ const addSpriteCommand = () => {
       case "drawRect":
         selectedSprite.commands.push({
           type: "drawRect",
-          centerX: 0,
-          centerY: 0,
+          offsetX: 0,
+          offsetY: 0,
           width: 50,
           height: 25,
         });
@@ -1355,16 +1357,16 @@ const addSpriteCommand = () => {
       case "drawCircle":
         selectedSprite.commands.push({
           type: "drawCircle",
-          centerX: 0,
-          centerY: 0,
+          offsetX: 0,
+          offsetY: 0,
           radius: 25,
         });
         break;
       case "drawEllipse":
         selectedSprite.commands.push({
           type: "drawEllipse",
-          centerX: 0,
-          centerY: 0,
+          offsetX: 0,
+          offsetY: 0,
           radiusX: 50,
           radiusY: 25,
         });
@@ -1372,8 +1374,8 @@ const addSpriteCommand = () => {
       case "drawRoundRect":
         selectedSprite.commands.push({
           type: "drawRoundRect",
-          centerX: 0,
-          centerY: 0,
+          offsetX: 0,
+          offsetY: 0,
           borderRadius: 5,
           width: 50,
           height: 25,
@@ -1382,8 +1384,8 @@ const addSpriteCommand = () => {
       case "drawArc":
         selectedSprite.commands.push({
           type: "drawArc",
-          centerX: 0,
-          centerY: 0,
+          offsetX: 0,
+          offsetY: 0,
           radius: 25,
           startAngle: 0,
           angleOffset: 90,
@@ -1392,8 +1394,8 @@ const addSpriteCommand = () => {
       case "drawArcEllipse":
         selectedSprite.commands.push({
           type: "drawArcEllipse",
-          centerX: 0,
-          centerY: 0,
+          offsetX: 0,
+          offsetY: 0,
           radiusX: 50,
           radiusY: 25,
           startAngle: 0,
@@ -1403,8 +1405,8 @@ const addSpriteCommand = () => {
       case "drawPolygon":
         selectedSprite.commands.push({
           type: "drawPolygon",
-          centerX: 0,
-          centerY: 0,
+          offsetX: 0,
+          offsetY: 0,
           radius: 25,
           numberOfSides: 5,
         });
@@ -1430,8 +1432,8 @@ const addSpriteCommand = () => {
       case "drawBitmap":
         selectedSprite.commands.push({
           type: "drawBitmap",
-          centerX: 0,
-          centerY: 0,
+          offsetX: 0,
+          offsetY: 0,
           bitmap: {
             width: 10,
             height: 10,
@@ -1606,8 +1608,8 @@ const addSpriteCommand = () => {
           selectedSprite.commands.push({
             type: "drawSprite",
             spriteIndex: spriteSheet.sprites.indexOf(sprite),
-            centerX: 0,
-            centerY: 0,
+            offsetX: 0,
+            offsetY: 0,
           });
         }
         break;
@@ -1716,32 +1718,32 @@ const updateSpriteCommands = () => {
         draw();
       });
 
-      const includeCenterPosition = "centerX" in command;
+      const includeCenterPosition = "offsetX" in command;
       // console.log("includeCenterPosition", includeCenterPosition, command);
       if (includeCenterPosition) {
-        const centerXContainer =
-          spriteCommandContainer.querySelector(".centerX");
-        centerXContainer.removeAttribute("hidden");
-        const centerXInput = centerXContainer.querySelector("input");
-        centerXInput.value = command.centerX;
-        const centerXSpan = centerXContainer.querySelector(".value");
-        centerXSpan.innerText = command.centerX;
-        centerXContainer.addEventListener("input", () => {
-          command.centerX = Number(centerXInput.value);
-          centerXSpan.innerText = command.centerX;
+        const offsetXContainer =
+          spriteCommandContainer.querySelector(".offsetX");
+        offsetXContainer.removeAttribute("hidden");
+        const offsetXInput = offsetXContainer.querySelector("input");
+        offsetXInput.value = command.offsetX;
+        const offsetXSpan = offsetXContainer.querySelector(".value");
+        offsetXSpan.innerText = command.offsetX;
+        offsetXContainer.addEventListener("input", () => {
+          command.offsetX = Number(offsetXInput.value);
+          offsetXSpan.innerText = command.offsetX;
           draw();
         });
 
-        const centerYContainer =
-          spriteCommandContainer.querySelector(".centerY");
-        const centerYInput = centerYContainer.querySelector("input");
-        centerYInput.value = command.centerY;
-        const centerYSpan = centerYContainer.querySelector(".value");
-        centerYSpan.innerText = command.centerY;
-        centerYContainer.removeAttribute("hidden");
-        centerYContainer.addEventListener("input", () => {
-          command.centerY = Number(centerYInput.value);
-          centerYSpan.innerText = command.centerY;
+        const offsetYContainer =
+          spriteCommandContainer.querySelector(".offsetY");
+        const offsetYInput = offsetYContainer.querySelector("input");
+        offsetYInput.value = command.offsetY;
+        const offsetYSpan = offsetYContainer.querySelector(".value");
+        offsetYSpan.innerText = command.offsetY;
+        offsetYContainer.removeAttribute("hidden");
+        offsetYContainer.addEventListener("input", () => {
+          command.offsetY = Number(offsetYInput.value);
+          offsetYSpan.innerText = command.offsetY;
           draw();
         });
       }
@@ -3349,10 +3351,25 @@ loadFontInput.addEventListener("input", async () => {
   const arrayBuffer = await file.arrayBuffer();
   const fontSpriteSheet = await displayCanvasHelper.fontToSpriteSheet(
     arrayBuffer,
-    16
+    fontSize
   );
   setSpriteSheetName(fontSpriteSheet.name);
   spriteSheet.sprites = fontSpriteSheet.sprites;
   setSpriteIndex(0);
   console.log("fontSpriteSheet", fontSpriteSheet);
+  loadFontInput.value = "";
 });
+
+let fontSize = 36;
+const fontSizeInput = document.getElementById("fontSize");
+const fontSizeSpan = document.getElementById("fontSizeSpan");
+fontSizeInput.addEventListener("input", () => {
+  setFontSize(Number(fontSizeInput.value));
+});
+const setFontSize = (newFontSize) => {
+  fontSize = newFontSize;
+  // console.log({ fontSize });
+  fontSizeSpan.innerText = fontSize;
+  fontSizeInput.value = fontSize;
+};
+setFontSize(fontSize);

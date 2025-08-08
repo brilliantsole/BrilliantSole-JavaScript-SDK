@@ -31,5 +31,10 @@ export type DisplaySpriteSheet = {
 };
 export declare function serializeSpriteSheet(displayManager: DisplayManagerInterface, spriteSheet: DisplaySpriteSheet): ArrayBuffer;
 export declare function parseSpriteSheet(dataView: DataView): void;
-export declare function fontToSpriteSheet(displayManager: DisplayManagerInterface, arrayBuffer: ArrayBuffer, fontSize: number, spriteSheetName?: string): Promise<DisplaySpriteSheet>;
+type FontToSpriteSheetOptions = {
+    stroke?: boolean;
+    strokeWidth?: number;
+};
+export declare function fontToSpriteSheet(displayManager: DisplayManagerInterface, arrayBuffer: ArrayBuffer, fontSize: number, spriteSheetName?: string, options?: FontToSpriteSheetOptions): Promise<DisplaySpriteSheet>;
 export declare function reduceSpriteSheet(spriteSheet: DisplaySpriteSheet, newSpriteSheetName: string): void;
+export {};

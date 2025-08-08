@@ -90,11 +90,20 @@ export function parseSpriteSheet(dataView: DataView) {
   // FILL
 }
 
+type FontToSpriteSheetOptions = {
+  stroke?: boolean;
+  strokeWidth?: number;
+};
+const defaultFontToSpriteSheetOptions: FontToSpriteSheetOptions = {
+  stroke: false,
+  strokeWidth: 1,
+};
 export async function fontToSpriteSheet(
   displayManager: DisplayManagerInterface,
   arrayBuffer: ArrayBuffer,
   fontSize: number,
-  spriteSheetName?: string
+  spriteSheetName?: string,
+  options: FontToSpriteSheetOptions = defaultFontToSpriteSheetOptions
 ) {
   _console.assertTypeWithError(fontSize, "number");
 
@@ -108,6 +117,9 @@ export async function fontToSpriteSheet(
     name: spriteSheetName,
     sprites: [],
   };
+  const canvas = document.createElement("canvas");
+  const ctx = canvas.getContext("2d")!;
+
   for (let index = 0; index < font.glyphs.length; index++) {
     const glyph = font.glyphs.get(index);
     if (glyph.unicode == undefined) {
@@ -116,48 +128,68 @@ export async function fontToSpriteSheet(
     const name = String.fromCharCode(glyph.unicode);
 
     const bbox = glyph.getBoundingBox();
-    const width = Math.round((bbox.x2 - bbox.x1) * fontScale);
-    const height = Math.round((bbox.y2 - bbox.y1) * fontScale);
+    const bitmapWidth = Math.round((bbox.x2 - bbox.x1) * fontScale);
+    const bitmapHeight = Math.round((bbox.y2 - bbox.y1) * fontScale);
+
+    const spriteWidth = Math.round(
+      Math.max(Math.max(bbox.x2, bbox.x2 - bbox.x1), glyph.advanceWidth || 0) *
+        fontScale
+    );
+    const spriteHeight = Math.round(
+      Math.max(bbox.y2, bbox.y2 - bbox.y1) * fontScale
+    );
 
     const commands: DisplayContextCommand[] = [];
-    if (width > 0 && height > 0) {
-      const canvas = document.createElement("canvas");
-      const ctx = canvas.getContext("2d")!;
-
-      canvas.width = width;
-      canvas.height = height;
+    if (bitmapWidth > 0 && bitmapHeight > 0) {
+      canvas.width = bitmapWidth;
+      canvas.height = bitmapHeight;
       ctx.imageSmoothingEnabled = false;
+
+      ctx.fillStyle = "black";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
 
       const path = glyph.getPath(
         -bbox.x1 * fontScale,
         bbox.y2 * fontScale,
         fontSize
       );
-      path.fill = "white";
-      path.stroke = "white";
+      if (options.stroke) {
+        path.stroke = "white";
+        path.strokeWidth = options.strokeWidth || 1;
+      } else {
+        path.fill = "white";
+      }
       path.draw(ctx);
-
-      const { colorIndices, blob } = await quantizeCanvas(canvas, ctx, 2);
+      const { colorIndices, blob } = await quantizeCanvas(canvas, ctx, 2, [
+        "#000000",
+        "#ffffff",
+      ]);
       const bitmap: DisplayBitmap = {
-        width,
-        height,
+        width: bitmapWidth,
+        height: bitmapHeight,
         numberOfColors: 2,
         pixels: colorIndices,
       };
+
+      if (name == ".") {
+        const image = new Image();
+        image.src = URL.createObjectURL(blob);
+        document.body.appendChild(image);
+      }
 
       commands.push({
         type: "selectBitmapColor",
         bitmapColorIndex: 1,
         colorIndex: 1,
       });
-      commands.push({ type: "drawBitmap", centerX: 0, centerY: 0, bitmap });
+      commands.push({ type: "drawBitmap", offsetX: 0, offsetY: 0, bitmap });
     }
 
     const sprite: DisplaySprite = {
       name,
       commands,
-      width,
-      height,
+      width: spriteWidth,
+      height: spriteHeight,
     };
 
     spriteSheet.sprites.push(sprite);

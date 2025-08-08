@@ -1405,13 +1405,13 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     const ctx = this.#context;
     ctx.restore();
   }
-  #transformContext(centerX: number, centerY: number, rotation: number) {
-    this.#translateContext(centerX, centerY);
+  #transformContext(offsetX: number, offsetY: number, rotation: number) {
+    this.#translateContext(offsetX, offsetY);
     this.#rotateContext(rotation);
   }
-  #translateContext(centerX: number, centerY: number) {
+  #translateContext(offsetX: number, offsetY: number) {
     const ctx = this.context;
-    ctx.translate(centerX, centerY);
+    ctx.translate(offsetX, offsetY);
   }
   #rotateContext(rotation: number) {
     const ctx = this.context;
@@ -1421,8 +1421,8 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     box: DisplayBoundingBox,
     rotation: number
   ): DisplayBoundingBox {
-    const centerX = box.x + box.width / 2;
-    const centerY = box.y + box.height / 2;
+    const offsetX = box.x + box.width / 2;
+    const offsetY = box.y + box.height / 2;
     const hw = box.width / 2;
     const hh = box.height / 2;
 
@@ -1450,8 +1450,8 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     const maxY = Math.max(...ys);
 
     return {
-      x: centerX + minX,
-      y: centerY + minY,
+      x: offsetX + minX,
+      y: offsetY + minY,
       width: maxX - minX,
       height: maxY - minY,
     };
@@ -1469,30 +1469,30 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     );
   }
   #getBoundingBox(
-    centerX: number,
-    centerY: number,
+    offsetX: number,
+    offsetY: number,
     width: number,
     height: number
   ): DisplayBoundingBox {
     const boundingBox = {
-      x: centerX - width / 2,
-      y: centerY - height / 2,
+      x: offsetX - width / 2,
+      y: offsetY - height / 2,
       width: width,
       height: height,
     };
     return boundingBox;
   }
   #getRectBoundingBox(
-    centerX: number,
-    centerY: number,
+    offsetX: number,
+    offsetY: number,
     width: number,
     height: number,
     { lineWidth }: DisplayContextState
   ): DisplayBoundingBox {
     const outerPadding = Math.ceil(lineWidth / 2);
     const boundingBox = {
-      x: centerX - width / 2 - outerPadding,
-      y: centerY - height / 2 - outerPadding,
+      x: offsetX - width / 2 - outerPadding,
+      y: offsetY - height / 2 - outerPadding,
       width: width + outerPadding * 2,
       height: height + outerPadding * 2,
     };
@@ -1580,8 +1580,8 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     this.context.lineWidth = lineWidth;
   }
   #drawRectToCanvas(
-    centerX: number,
-    centerY: number,
+    offsetX: number,
+    offsetY: number,
     width: number,
     height: number,
     contextState: DisplayContextState
@@ -1590,8 +1590,8 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
 
     this.#save();
     const box = this.#getRectBoundingBox(
-      centerX,
-      centerY,
+      offsetX,
+      offsetY,
       width,
       height,
       contextState
@@ -1599,7 +1599,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     const rotatedBox = this.#rotateBoundingBox(box, contextState.rotation);
     this.#applyClip(rotatedBox, contextState);
 
-    this.#transformContext(centerX, centerY, contextState.rotation);
+    this.#transformContext(offsetX, offsetY, contextState.rotation);
     if (this.#clearBoundingBoxOnDraw) {
       this.#clearBoundingBox(box);
     }
@@ -1615,8 +1615,8 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     this.#restore();
   }
   async drawRect(
-    centerX: number,
-    centerY: number,
+    offsetX: number,
+    offsetY: number,
     width: number,
     height: number,
     sendImmediately?: boolean
@@ -1624,12 +1624,12 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     const contextState = structuredClone(this.contextState);
     //console.log("drawRect contextState", contextState);
     this.#rearDrawStack.push(() =>
-      this.#drawRectToCanvas(centerX, centerY, width, height, contextState)
+      this.#drawRectToCanvas(offsetX, offsetY, width, height, contextState)
     );
     if (this.device?.isConnected && !this.#ignoreDevice) {
       await this.device.drawDisplayRect(
-        centerX,
-        centerY,
+        offsetX,
+        offsetY,
         width,
         height,
         sendImmediately
@@ -1637,8 +1637,8 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     }
   }
   #drawRoundRectToCanvas(
-    centerX: number,
-    centerY: number,
+    offsetX: number,
+    offsetY: number,
     width: number,
     height: number,
     borderRadius: number,
@@ -1648,8 +1648,8 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
 
     this.#save();
     const box = this.#getRectBoundingBox(
-      centerX,
-      centerY,
+      offsetX,
+      offsetY,
       width,
       height,
       contextState
@@ -1658,7 +1658,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     const rotatedBox = this.#rotateBoundingBox(box, contextState.rotation);
     this.#applyClip(rotatedBox, contextState);
 
-    this.#transformContext(centerX, centerY, contextState.rotation);
+    this.#transformContext(offsetX, offsetY, contextState.rotation);
     if (this.#clearBoundingBoxOnDraw) {
       this.#clearBoundingBox(box);
     }
@@ -1677,8 +1677,8 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     this.#restore();
   }
   async drawRoundRect(
-    centerX: number,
-    centerY: number,
+    offsetX: number,
+    offsetY: number,
     width: number,
     height: number,
     borderRadius: number,
@@ -1687,8 +1687,8 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     const contextState = structuredClone(this.contextState);
     this.#rearDrawStack.push(() =>
       this.#drawRoundRectToCanvas(
-        centerX,
-        centerY,
+        offsetX,
+        offsetY,
         width,
         height,
         borderRadius,
@@ -1697,8 +1697,8 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     );
     if (this.device?.isConnected && !this.#ignoreDevice) {
       await this.device.drawDisplayRoundRect(
-        centerX,
-        centerY,
+        offsetX,
+        offsetY,
         width,
         height,
         borderRadius,
@@ -1707,23 +1707,23 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     }
   }
   #getCircleBoundingBox(
-    centerX: number,
-    centerY: number,
+    offsetX: number,
+    offsetY: number,
     radius: number,
     contextState: DisplayContextState
   ): DisplayBoundingBox {
     const diameter = radius * 2;
     return this.#getRectBoundingBox(
-      centerX,
-      centerY,
+      offsetX,
+      offsetY,
       diameter,
       diameter,
       contextState
     );
   }
   #drawCircleToCanvas(
-    centerX: number,
-    centerY: number,
+    offsetX: number,
+    offsetY: number,
     radius: number,
     contextState: DisplayContextState
   ) {
@@ -1731,14 +1731,14 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
 
     this.#save();
     const box = this.#getCircleBoundingBox(
-      centerX,
-      centerY,
+      offsetX,
+      offsetY,
       radius,
       contextState
     );
     this.#applyClip(box, contextState);
 
-    this.#transformContext(centerX, centerY, contextState.rotation);
+    this.#transformContext(offsetX, offsetY, contextState.rotation);
     if (this.#clearBoundingBoxOnDraw) {
       this.#clearBoundingBox(box);
     }
@@ -1754,27 +1754,27 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     this.#restore();
   }
   async drawCircle(
-    centerX: number,
-    centerY: number,
+    offsetX: number,
+    offsetY: number,
     radius: number,
     sendImmediately?: boolean
   ) {
     const contextState = structuredClone(this.contextState);
     this.#rearDrawStack.push(() =>
-      this.#drawCircleToCanvas(centerX, centerY, radius, contextState)
+      this.#drawCircleToCanvas(offsetX, offsetY, radius, contextState)
     );
     if (this.device?.isConnected && !this.#ignoreDevice) {
       await this.device.drawDisplayCircle(
-        centerX,
-        centerY,
+        offsetX,
+        offsetY,
         radius,
         sendImmediately
       );
     }
   }
   #getEllipseBoundingBox(
-    centerX: number,
-    centerY: number,
+    offsetX: number,
+    offsetY: number,
     radiusX: number,
     radiusY: number,
     contextState: DisplayContextState
@@ -1782,16 +1782,16 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     const diameterX = radiusX * 2;
     const diameterY = radiusY * 2;
     return this.#getRectBoundingBox(
-      centerX,
-      centerY,
+      offsetX,
+      offsetY,
       diameterX,
       diameterY,
       contextState
     );
   }
   #drawEllipseToCanvas(
-    centerX: number,
-    centerY: number,
+    offsetX: number,
+    offsetY: number,
     radiusX: number,
     radiusY: number,
     contextState: DisplayContextState
@@ -1800,8 +1800,8 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
 
     this.#save();
     const box = this.#getEllipseBoundingBox(
-      centerX,
-      centerY,
+      offsetX,
+      offsetY,
       radiusX,
       radiusY,
       contextState
@@ -1810,7 +1810,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     const rotatedBox = this.#rotateBoundingBox(box, contextState.rotation);
     this.#applyClip(rotatedBox, contextState);
 
-    this.#transformContext(centerX, centerY, contextState.rotation);
+    this.#transformContext(offsetX, offsetY, contextState.rotation);
     if (this.#clearBoundingBoxOnDraw) {
       this.#clearBoundingBox(box);
     }
@@ -1826,8 +1826,8 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     this.#restore();
   }
   async drawEllipse(
-    centerX: number,
-    centerY: number,
+    offsetX: number,
+    offsetY: number,
     radiusX: number,
     radiusY: number,
     sendImmediately?: boolean
@@ -1835,8 +1835,8 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     const contextState = structuredClone(this.contextState);
     this.#rearDrawStack.push(() =>
       this.#drawEllipseToCanvas(
-        centerX,
-        centerY,
+        offsetX,
+        offsetY,
         radiusX,
         radiusY,
         contextState
@@ -1844,8 +1844,8 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     );
     if (this.device?.isConnected && !this.#ignoreDevice) {
       await this.device.drawDisplayEllipse(
-        centerX,
-        centerY,
+        offsetX,
+        offsetY,
         radiusX,
         radiusY,
         sendImmediately
@@ -1853,8 +1853,8 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     }
   }
   #getPolygonBoundingBox(
-    centerX: number,
-    centerY: number,
+    offsetX: number,
+    offsetY: number,
     radius: number,
     numberOfSides: number,
     { lineWidth }: DisplayContextState
@@ -1865,16 +1865,16 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
 
     const diameter = radius * 2;
     const boundingBox = {
-      x: centerX - radius - outerPadding,
-      y: centerY - radius - outerPadding,
+      x: offsetX - radius - outerPadding,
+      y: offsetY - radius - outerPadding,
       width: diameter + outerPadding * 2,
       height: diameter + outerPadding * 2,
     };
     return boundingBox;
   }
   #drawPolygonToCanvas(
-    centerX: number,
-    centerY: number,
+    offsetX: number,
+    offsetY: number,
     radius: number,
     numberOfSides: number,
     contextState: DisplayContextState
@@ -1883,15 +1883,15 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
 
     this.#save();
     const box = this.#getPolygonBoundingBox(
-      centerX,
-      centerY,
+      offsetX,
+      offsetY,
       radius,
       numberOfSides,
       contextState
     );
     this.#applyClip(box, contextState);
 
-    this.#transformContext(centerX, centerY, contextState.rotation);
+    this.#transformContext(offsetX, offsetY, contextState.rotation);
     if (this.#clearBoundingBoxOnDraw) {
       this.#clearBoundingBox(box);
     }
@@ -1919,8 +1919,8 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     this.#restore();
   }
   async drawPolygon(
-    centerX: number,
-    centerY: number,
+    offsetX: number,
+    offsetY: number,
     radius: number,
     numberOfSides: number,
     sendImmediately?: boolean
@@ -1932,8 +1932,8 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     const contextState = structuredClone(this.contextState);
     this.#rearDrawStack.push(() =>
       this.#drawPolygonToCanvas(
-        centerX,
-        centerY,
+        offsetX,
+        offsetY,
         radius,
         numberOfSides,
         contextState
@@ -1941,8 +1941,8 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     );
     if (this.device?.isConnected && !this.#ignoreDevice) {
       await this.device.drawDisplayPolygon(
-        centerX,
-        centerY,
+        offsetX,
+        offsetY,
         radius,
         numberOfSides,
         sendImmediately
@@ -2309,8 +2309,8 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     }
   }
   #drawArcToCanvas(
-    centerX: number,
-    centerY: number,
+    offsetX: number,
+    offsetY: number,
     radius: number,
     startAngle: number,
     angleOffset: number,
@@ -2321,14 +2321,14 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
 
     this.#save();
     const box = this.#getCircleBoundingBox(
-      centerX,
-      centerY,
+      offsetX,
+      offsetY,
       radius,
       contextState
     );
     this.#applyClip(box, contextState);
 
-    this.#transformContext(centerX, centerY, contextState.rotation);
+    this.#transformContext(offsetX, offsetY, contextState.rotation);
     if (this.#clearBoundingBoxOnDraw) {
       this.#clearBoundingBox(box);
     }
@@ -2355,8 +2355,8 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     this.#restore();
   }
   async drawArc(
-    centerX: number,
-    centerY: number,
+    offsetX: number,
+    offsetY: number,
     radius: number,
     startAngle: number,
     angleOffset: number,
@@ -2369,8 +2369,8 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     const contextState = structuredClone(this.contextState);
     this.#rearDrawStack.push(() =>
       this.#drawArcToCanvas(
-        centerX,
-        centerY,
+        offsetX,
+        offsetY,
         radius,
         startAngle,
         angleOffset,
@@ -2380,8 +2380,8 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     );
     if (this.device?.isConnected && !this.#ignoreDevice) {
       await this.device.drawDisplayArc(
-        centerX,
-        centerY,
+        offsetX,
+        offsetY,
         radius,
         startAngle,
         angleOffset,
@@ -2391,8 +2391,8 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     }
   }
   #drawArcEllipseToCanvas(
-    centerX: number,
-    centerY: number,
+    offsetX: number,
+    offsetY: number,
     radiusX: number,
     radiusY: number,
     startAngle: number,
@@ -2404,8 +2404,8 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
 
     this.#save();
     const box = this.#getEllipseBoundingBox(
-      centerX,
-      centerY,
+      offsetX,
+      offsetY,
       radiusX,
       radiusY,
       contextState
@@ -2414,7 +2414,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     const rotatedBox = this.#rotateBoundingBox(box, contextState.rotation);
     this.#applyClip(rotatedBox, contextState);
 
-    this.#transformContext(centerX, centerY, contextState.rotation);
+    this.#transformContext(offsetX, offsetY, contextState.rotation);
     if (this.#clearBoundingBoxOnDraw) {
       this.#clearBoundingBox(box);
     }
@@ -2459,8 +2459,8 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     this.#restore();
   }
   async drawArcEllipse(
-    centerX: number,
-    centerY: number,
+    offsetX: number,
+    offsetY: number,
     radiusX: number,
     radiusY: number,
     startAngle: number,
@@ -2474,8 +2474,8 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     const contextState = structuredClone(this.contextState);
     this.#rearDrawStack.push(() =>
       this.#drawArcEllipseToCanvas(
-        centerX,
-        centerY,
+        offsetX,
+        offsetY,
         radiusX,
         radiusY,
         startAngle,
@@ -2486,8 +2486,8 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     );
     if (this.device?.isConnected && !this.#ignoreDevice) {
       await this.device.drawDisplayArcEllipse(
-        centerX,
-        centerY,
+        offsetX,
+        offsetY,
         radiusX,
         radiusY,
         startAngle,
@@ -2501,14 +2501,14 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
   #bitmapCanvas = document.createElement("canvas");
   #bitmapContext!: CanvasRenderingContext2D;
   async #drawBitmapToCanvas(
-    centerX: number,
-    centerY: number,
+    offsetX: number,
+    offsetY: number,
     bitmap: DisplayBitmap,
     contextState: DisplayContextState
   ) {
     this.#updateContext(contextState);
 
-    //_console.log("drawBitmapToCanvas", { centerX, centerY, bitmap }, this.#useSpriteColorIndices);
+    //_console.log("drawBitmapToCanvas", { offsetX, offsetY, bitmap }, this.#useSpriteColorIndices);
     //_console.log("drawBitmapToCanvas", this.bitmapColorIndices);
 
     const { bitmapScaleX, bitmapScaleY } = contextState;
@@ -2521,8 +2521,8 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
 
     this.#save();
     const box = this.#getRectBoundingBox(
-      centerX,
-      centerY,
+      offsetX,
+      offsetY,
       width,
       height,
       contextState
@@ -2530,7 +2530,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     const rotatedBox = this.#rotateBoundingBox(box, contextState.rotation);
     this.#applyClip(rotatedBox, contextState);
 
-    this.#transformContext(centerX, centerY, contextState.rotation);
+    this.#transformContext(offsetX, offsetY, contextState.rotation);
     if (this.#clearBoundingBoxOnDraw) {
       this.#clearBoundingBox(box);
     }
@@ -2586,21 +2586,21 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     assertValidBitmapPixels(bitmap);
   }
   async drawBitmap(
-    centerX: number,
-    centerY: number,
+    offsetX: number,
+    offsetY: number,
     bitmap: DisplayBitmap,
     sendImmediately?: boolean
   ) {
     this.assertValidBitmap(bitmap);
-    // _console.log("drawBitmap", { centerX, centerY, bitmap, sendImmediately });
+    // _console.log("drawBitmap", { offsetX, offsetY, bitmap, sendImmediately });
     const contextState = structuredClone(this.contextState);
     this.#rearDrawStack.push(() =>
-      this.#drawBitmapToCanvas(centerX, centerY, bitmap, contextState)
+      this.#drawBitmapToCanvas(offsetX, offsetY, bitmap, contextState)
     );
     if (this.device?.isConnected && !this.#ignoreDevice) {
       await this.device.drawDisplayBitmap(
-        centerX,
-        centerY,
+        offsetX,
+        offsetY,
         bitmap,
         sendImmediately
       );
@@ -2695,7 +2695,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
       const sprite = spriteSheet.sprites[command.spriteIndex];
       if (sprite) {
         _console.log("drawing sub sprite", sprite);
-        this.#saveContextForSprite(command.centerX, command.centerY, sprite);
+        this.#saveContextForSprite(command.offsetX, command.offsetY, sprite);
         sprite.commands.forEach((command) => {
           this.#runSpriteCommand(command, contextState);
         });
@@ -2710,15 +2710,15 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     }
   }
   #drawSpriteToCanvas(
-    centerX: number,
-    centerY: number,
+    offsetX: number,
+    offsetY: number,
     sprite: DisplaySprite,
     contextState: DisplayContextState
   ) {
     this.#setIgnoreDevice(true);
     this.#setClearCanvasBoundingBoxOnDraw(false);
     this.#setUseSpriteColorIndices(true);
-    this.#saveContextForSprite(centerX, centerY, sprite);
+    this.#saveContextForSprite(offsetX, offsetY, sprite);
 
     sprite.commands.forEach((command) => {
       this.#runSpriteCommand(command, contextState);
@@ -2730,8 +2730,8 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     this.#setClearCanvasBoundingBoxOnDraw(true);
   }
   async drawSprite(
-    centerX: number,
-    centerY: number,
+    offsetX: number,
+    offsetY: number,
     spriteName: string,
     sendImmediately?: boolean
   ) {
@@ -2745,12 +2745,12 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     _console.assertWithError(sprite, `sprite "${spriteName}" not found`);
 
     const contextState = structuredClone(this.contextState);
-    this.#drawSpriteToCanvas(centerX, centerY, sprite!, contextState);
+    this.#drawSpriteToCanvas(offsetX, offsetY, sprite!, contextState);
 
     if (this.device?.isConnected && !this.#ignoreDevice) {
       await this.device.drawDisplaySprite(
-        centerX,
-        centerY,
+        offsetX,
+        offsetY,
         spriteName,
         sendImmediately
       );
@@ -2839,23 +2839,23 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     return { x: scaleX, y: scaleY };
   }
   #setCanvasContextTransform(
-    centerX: number,
-    centerY: number,
+    offsetX: number,
+    offsetY: number,
     width: number,
     height: number,
     contextState: DisplayContextState
   ) {
     this.#rearDrawStack.push(() => {
       // _console.log("setContextTransform", {
-      //   centerX,
-      //   centerY,
+      //   offsetX,
+      //   offsetY,
       //   width,
       //   height,
       //   contextState,
       // });
 
       this.#save();
-      this.#context.translate(centerX, centerY);
+      this.#context.translate(offsetX, offsetY);
       const box = this.#getBoundingBox(
         0,
         0,
@@ -2925,14 +2925,14 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
   #spriteContextStack: DisplayContextState[] = [];
   #spriteStack: DisplaySprite[] = [];
   #saveContextForSprite(
-    centerX: number,
-    centerY: number,
+    offsetX: number,
+    offsetY: number,
     sprite: DisplaySprite
   ) {
     const contextState = structuredClone(this.contextState);
     this.#setCanvasContextTransform(
-      centerX,
-      centerY,
+      offsetX,
+      offsetY,
       sprite.width,
       sprite.height,
       contextState
@@ -2970,7 +2970,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
       const sprite = spriteSheet.sprites[command.spriteIndex];
       if (sprite) {
         _console.log("drawing sub sprite", sprite);
-        this.#saveContextForSprite(command.centerX, command.centerY, sprite);
+        this.#saveContextForSprite(command.offsetX, command.offsetY, sprite);
         sprite.commands.forEach((command) => {
           this.#runPreviewSpriteCommand(command, spriteSheet);
         });
@@ -2985,15 +2985,15 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     }
   }
   previewSprite(
-    centerX: number,
-    centerY: number,
+    offsetX: number,
+    offsetY: number,
     sprite: DisplaySprite,
     spriteSheet: DisplaySpriteSheet
   ) {
     this.#setIgnoreDevice(true);
     this.#setClearCanvasBoundingBoxOnDraw(false);
     this.#setUseSpriteColorIndices(true);
-    this.#saveContextForSprite(centerX, centerY, sprite);
+    this.#saveContextForSprite(offsetX, offsetY, sprite);
 
     sprite.commands.forEach((command) => {
       this.#runPreviewSpriteCommand(command, spriteSheet);
