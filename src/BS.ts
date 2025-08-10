@@ -111,14 +111,21 @@ export {
   MinSpriteSheetNameLength,
   MaxSpriteSheetNameLength,
   DisplayBitmap,
+  DisplaySpriteColorPair,
 } from "./DisplayManager.ts";
+
+export { wait } from "./utils/Timer.ts";
 
 export {
   DisplaySegmentCap,
   DisplaySegmentCaps,
 } from "./utils/DisplayContextState.ts";
 
-export { maxDisplayScale, DisplayColorRGB } from "./utils/DisplayUtils.ts";
+export {
+  maxDisplayScale,
+  DisplayColorRGB,
+  pixelDepthToNumberOfColors,
+} from "./utils/DisplayUtils.ts";
 
 export {
   DisplayContextCommand,

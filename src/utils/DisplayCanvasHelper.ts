@@ -33,6 +33,7 @@ import {
   assertSpriteSheetPaletteSwap,
   DisplayManagerInterface,
   DisplayTransform,
+  drawSpriteFromSpriteSheet,
   getSprite,
   getSpritePaletteSwap,
   getSpriteSheetPalette,
@@ -2756,6 +2757,22 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
       );
     }
   }
+  async drawSpriteFromSpriteSheet(
+    offsetX: number,
+    offsetY: number,
+    spriteName: string,
+    spriteSheet: DisplaySpriteSheet,
+    sendImmediately?: boolean
+  ) {
+    return drawSpriteFromSpriteSheet(
+      this,
+      offsetX,
+      offsetY,
+      spriteName,
+      spriteSheet,
+      sendImmediately
+    );
+  }
 
   // BRIGHTNESS
   #brightness: DisplayBrightness = "medium";
@@ -3094,9 +3111,10 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     image: HTMLImageElement,
     width: number,
     height: number,
-    colors: string[]
+    numberOfColors: number,
+    colors?: string[]
   ): Promise<{ blob: Blob; colorIndices: number[] }> {
-    return resizeAndQuantizeImage(image, width, height, colors);
+    return resizeAndQuantizeImage(image, width, height, numberOfColors, colors);
   }
 
   serializeSpriteSheet(spriteSheet: DisplaySpriteSheet): ArrayBuffer {

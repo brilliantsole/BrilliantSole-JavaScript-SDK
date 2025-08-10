@@ -62,6 +62,7 @@ import {
   assertSpriteSheetPalette,
   assertSpriteSheetPaletteSwap,
   DisplayManagerInterface,
+  drawSpriteFromSpriteSheet,
   getSprite,
   getSpritePaletteSwap,
   getSpriteSheetPalette,
@@ -487,7 +488,7 @@ class DisplayManager implements DisplayManagerInterface {
   // INFORMATION
   #displayInformation?: DisplayInformation;
   get displayInformation() {
-    return this.#displayInformation;
+    return this.#displayInformation!;
   }
 
   get pixelDepth() {
@@ -1866,9 +1867,10 @@ class DisplayManager implements DisplayManagerInterface {
     image: HTMLImageElement,
     width: number,
     height: number,
-    colors: string[]
+    numberOfColors: number,
+    colors?: string[]
   ): Promise<{ blob: Blob; colorIndices: number[] }> {
-    return resizeAndQuantizeImage(image, width, height, colors);
+    return resizeAndQuantizeImage(image, width, height, numberOfColors, colors);
   }
 
   // CONTEXT COMMANDS
@@ -2057,6 +2059,23 @@ class DisplayManager implements DisplayManagerInterface {
     );
   }
 
+  async drawSpriteFromSpriteSheet(
+    offsetX: number,
+    offsetY: number,
+    spriteName: string,
+    spriteSheet: DisplaySpriteSheet,
+    sendImmediately?: boolean
+  ) {
+    return drawSpriteFromSpriteSheet(
+      this,
+      offsetX,
+      offsetY,
+      spriteName,
+      spriteSheet,
+      sendImmediately
+    );
+  }
+
   #parseSpriteSheetIndex(dataView: DataView) {
     const spriteSheetIndex = dataView.getUint8(0);
     _console.log({
@@ -2064,6 +2083,9 @@ class DisplayManager implements DisplayManagerInterface {
       spriteSheetName: this.#pendingSpriteSheetName,
       spriteSheetIndex,
     });
+    if (this.isServerSide) {
+      return;
+    }
     _console.assertWithError(
       this.#pendingSpriteSheetName,
       "expected spriteSheetName when receiving spriteSheetIndex"
@@ -2205,6 +2227,20 @@ class DisplayManager implements DisplayManagerInterface {
   }
   set mtu(newMtu: number) {
     this.#mtu = newMtu;
+  }
+
+  // SERVER SIDE
+  #isServerSide = false;
+  get isServerSide() {
+    return this.#isServerSide;
+  }
+  set isServerSide(newIsServerSide) {
+    if (this.#isServerSide == newIsServerSide) {
+      _console.log("redundant isServerSide assignment");
+      return;
+    }
+    _console.log({ newIsServerSide });
+    this.#isServerSide = newIsServerSide;
   }
 }
 

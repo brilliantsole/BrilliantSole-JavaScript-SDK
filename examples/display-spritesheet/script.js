@@ -2104,7 +2104,7 @@ const updateSpriteCommands = () => {
           updateBitmapCanvasPixels();
         };
 
-        const updateBitmapCanvasPixels = () => {
+        const updateBitmapCanvasPixels = (dontRedraw) => {
           bitmapContext.imageSmoothingEnabled = false;
 
           const { width, height, pixels } = command.bitmap;

@@ -43,6 +43,11 @@ export type DisplaySpriteSheet = {
   sprites: DisplaySprite[];
 };
 
+export const spriteHeaderLength = 3 * 2; // width, height, commandsLength
+export function calculateSpriteSheetHeaderLength(numberOfSprites: number) {
+  // numberOfSprites, spriteOffsets, spriteHeader
+  return 2 + numberOfSprites * 2 + numberOfSprites * spriteHeaderLength;
+}
 export function serializeSpriteSheet(
   displayManager: DisplayManagerInterface,
   spriteSheet: DisplaySpriteSheet
@@ -59,7 +64,7 @@ export function serializeSpriteSheet(
       displayManager,
       sprite.commands
     );
-    const dataView = new DataView(new ArrayBuffer(3 * 2));
+    const dataView = new DataView(new ArrayBuffer(spriteHeaderLength));
     dataView.setUint16(0, sprite.width, true);
     dataView.setUint16(2, sprite.height, true);
     dataView.setUint16(4, commandsData.byteLength, true);
@@ -85,6 +90,7 @@ export function serializeSpriteSheet(
     spritePayloads
   );
   _console.log("serializedSpriteSheet", serializedSpriteSheet);
+
   return serializedSpriteSheet;
 }
 
@@ -189,7 +195,7 @@ export async function fontToSpriteSheet(
         path.fill = "white";
       }
       path.draw(ctx);
-      const { colorIndices } = await quantizeCanvas(canvas, ctx, 2, [
+      const { colorIndices } = await quantizeCanvas(canvas, 2, [
         "#000000",
         "#ffffff",
       ]);
@@ -246,7 +252,18 @@ export async function fontToSpriteSheet(
 
 export function reduceSpriteSheet(
   spriteSheet: DisplaySpriteSheet,
-  newSpriteSheetName: string
+  spriteNames: string | string[]
 ) {
-  // FILL - reduce sprites to just those included in spriteNames or spriteStrings (multiple names)
+  const reducedSpriteName = Object.assign({}, spriteSheet);
+  if (!(spriteNames instanceof Array)) {
+    // TODO - parseSpriteNames via prefixes (use for drawSprites)
+    spriteNames = [spriteNames];
+  }
+  _console.log("reduceSpriteSheet", spriteSheet, spriteNames);
+  reducedSpriteName.sprites = reducedSpriteName.sprites.filter((sprite) => {
+    // TODO - recursively iterate sprites' commands to see which sprites reference what
+    return spriteNames.includes(sprite.name);
+  });
+  _console.log("reducedSpriteName", reducedSpriteName);
+  return reducedSpriteName;
 }

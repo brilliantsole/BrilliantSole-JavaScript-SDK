@@ -4669,331 +4669,7 @@ var rgbquant = {exports: {}};
 var rgbquantExports = rgbquant.exports;
 var RGBQuant = getDefaultExportFromCjs(rgbquantExports);
 
-const _console$n = createConsole("DisplayBitmapUtils", { log: false });
-const drawBitmapHeaderLength = 2 + 2 + 2 + 2 + 1 + 2;
-function getBitmapData(bitmap) {
-    const pixelDataLength = getBitmapNumberOfBytes(bitmap);
-    const dataView = new DataView(new ArrayBuffer(pixelDataLength));
-    const pixelDepth = numberOfColorsToPixelDepth(bitmap.numberOfColors);
-    const pixelsPerByte = pixelDepthToPixelsPerByte(pixelDepth);
-    bitmap.pixels.forEach((bitmapColorIndex, pixelIndex) => {
-        const byteIndex = Math.floor(pixelIndex / pixelsPerByte);
-        const byteSlot = pixelIndex % pixelsPerByte;
-        const pixelBitWidth = pixelDepthToPixelBitWidth(pixelDepth);
-        const bitOffset = pixelBitWidth * byteSlot;
-        const shift = 8 - pixelBitWidth - bitOffset;
-        let value = dataView.getUint8(byteIndex);
-        value |= bitmapColorIndex << shift;
-        dataView.setUint8(byteIndex, value);
-    });
-    _console$n.log("getBitmapData", bitmap, dataView);
-    return dataView;
-}
-async function quantizeCanvas(canvas, ctx, numberOfColors, colors) {
-    _console$n.assertWithError(numberOfColors > 1, "numberOfColors must be greater than 1");
-    _console$n.log({ numberOfColors });
-    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-    const data = imageData.data;
-    for (let i = 0; i < data.length; i += 4) {
-        const alpha = data[i + 3];
-        if (alpha < 255) {
-            data[i] = 0;
-            data[i + 1] = 0;
-            data[i + 2] = 0;
-            data[i + 3] = 255;
-        }
-    }
-    ctx.putImageData(imageData, 0, 0);
-    const isSmall = canvas.width * canvas.height < 4;
-    const quantOptions = {
-        method: isSmall ? 1 : 2,
-        colors: numberOfColors,
-        dithKern: null,
-        useCache: false,
-        reIndex: true,
-    };
-    _console$n.log("quantOptions", quantOptions);
-    if (colors) {
-        quantOptions.palette = colors.map((color) => {
-            const rgb = hexToRGB(color);
-            if (rgb) {
-                const { r, g, b } = rgb;
-                return [r, g, b];
-            }
-            else {
-                _console$n.error(`invalid rgb hex "${color}"`);
-            }
-        });
-    }
-    _console$n.log("quantizeImage options", quantOptions);
-    const quantizer = new RGBQuant(quantOptions);
-    quantizer.sample(imageData);
-    const quantizedPixels = quantizer.reduce(imageData.data);
-    const quantizedImageData = new ImageData(new Uint8ClampedArray(quantizedPixels.buffer), canvas.width, canvas.height);
-    ctx.putImageData(quantizedImageData, 0, 0);
-    const pixels = quantizedImageData.data;
-    const quantizedPaletteData = quantizer.palette();
-    const numberOfQuantizedPaletteColors = quantizedPaletteData.byteLength / 4;
-    _console$n.log("quantized palette data", quantizedPaletteData);
-    const quantizedPaletteColors = [];
-    let closestColorIndexToBlack = 0;
-    let closestColorDistanceToBlack = Infinity;
-    const vector3 = { x: 0, y: 0, z: 0 };
-    for (let colorIndex = 0; colorIndex < numberOfQuantizedPaletteColors; colorIndex++) {
-        const rgb = {
-            r: quantizedPaletteData[colorIndex * 4],
-            g: quantizedPaletteData[colorIndex * 4 + 1],
-            b: quantizedPaletteData[colorIndex * 4 + 2],
-        };
-        quantizedPaletteColors.push(rgb);
-        vector3.x = rgb.r;
-        vector3.y = rgb.g;
-        vector3.z = rgb.b;
-        const distanceToBlack = getVector3Length(vector3);
-        if (distanceToBlack < closestColorDistanceToBlack) {
-            closestColorDistanceToBlack = distanceToBlack;
-            closestColorIndexToBlack = colorIndex;
-        }
-    }
-    _console$n.log({ closestColorIndexToBlack, closestColorDistanceToBlack });
-    if (closestColorIndexToBlack != 0) {
-        const [currentBlack, newBlack] = [
-            quantizedPaletteColors[0],
-            quantizedPaletteColors[closestColorIndexToBlack],
-        ];
-        quantizedPaletteColors[0] = newBlack;
-        quantizedPaletteColors[closestColorIndexToBlack] = currentBlack;
-    }
-    _console$n.log("quantizedPaletteColors", quantizedPaletteColors);
-    const quantizedColors = quantizedPaletteColors.map((rgb, index) => {
-        const hex = rgbToHex(rgb);
-        return hex;
-    });
-    _console$n.log("quantizedColors", quantizedColors);
-    const quantizedColorIndices = [];
-    for (let i = 0; i < pixels.length; i += 4) {
-        const r = pixels[i];
-        const g = pixels[i + 1];
-        const b = pixels[i + 2];
-        pixels[i + 3];
-        const hex = rgbToHex({ r, g, b });
-        quantizedColorIndices.push(quantizedColors.indexOf(hex));
-    }
-    _console$n.log("quantizedColorIndices", quantizedColorIndices);
-    const promise = new Promise((resolve, reject) => {
-        canvas.toBlob((blob) => {
-            if (blob) {
-                resolve(blob);
-            }
-            else {
-                reject();
-            }
-        }, "image/png");
-    });
-    const blob = await promise;
-    return {
-        blob,
-        colors: quantizedColors,
-        colorIndices: quantizedColorIndices,
-    };
-}
-async function quantizeImage(image, width, height, numberOfColors) {
-    _console$n.assertWithError(numberOfColors > 1, "numberOfColors must be greater than 1");
-    _console$n.log({ numberOfColors });
-    const canvas = document.createElement("canvas");
-    const ctx = canvas.getContext("2d", { willReadFrequently: true });
-    let { naturalWidth: imageWidth, naturalHeight: imageHeight } = image;
-    _console$n.log({ imageWidth, imageHeight });
-    canvas.width = width;
-    canvas.height = height;
-    ctx.imageSmoothingEnabled = false;
-    ctx.drawImage(image, 0, 0, width, height);
-    return quantizeCanvas(canvas, ctx, numberOfColors);
-}
-async function resizeAndQuantizeImage(image, width, height, colors) {
-    _console$n.assertWithError(colors.length > 1, "colors.length must be greater than 1");
-    const canvas = document.createElement("canvas");
-    const ctx = canvas.getContext("2d");
-    let { naturalWidth: imageWidth, naturalHeight: imageHeight } = image;
-    _console$n.log({ imageWidth, imageHeight });
-    canvas.width = width;
-    canvas.height = height;
-    ctx.imageSmoothingEnabled = false;
-    ctx.drawImage(image, 0, 0, width, height);
-    const imageData = ctx.getImageData(0, 0, width, height);
-    const data = imageData.data;
-    for (let i = 0; i < data.length; i += 4) {
-        const alpha = data[i + 3];
-        if (alpha < 255) {
-            data[i] = 0;
-            data[i + 1] = 0;
-            data[i + 2] = 0;
-            data[i + 3] = 255;
-        }
-    }
-    ctx.putImageData(imageData, 0, 0);
-    const isSmall = canvas.width * canvas.height < 4;
-    const quantOptions = {
-        method: isSmall ? 1 : 2,
-        colors: colors.length,
-        dithKern: null,
-        useCache: false,
-        reIndex: true,
-    };
-    _console$n.log("quantOptions", quantOptions);
-    quantOptions.palette = colors.map((color) => {
-        const rgb = hexToRGB(color);
-        if (rgb) {
-            const { r, g, b } = rgb;
-            return [r, g, b];
-        }
-        else {
-            _console$n.error(`invalid rgb hex "${color}"`);
-        }
-    });
-    _console$n.log("quantizeImage options", quantOptions);
-    const quantizer = new RGBQuant(quantOptions);
-    quantizer.sample(imageData);
-    const quantizedPixels = quantizer.reduce(imageData.data);
-    const quantizedImageData = new ImageData(new Uint8ClampedArray(quantizedPixels.buffer), width, height);
-    ctx.putImageData(quantizedImageData, 0, 0);
-    const pixels = quantizedImageData.data;
-    const quantizedColorIndices = [];
-    for (let i = 0; i < pixels.length; i += 4) {
-        const r = pixels[i];
-        const g = pixels[i + 1];
-        const b = pixels[i + 2];
-        pixels[i + 3];
-        const hex = rgbToHex({ r, g, b });
-        const colorIndex = colors.findIndex((color) => color == hex);
-        if (colorIndex == -1) {
-            _console$n.error(`no color found for ${hex}`);
-            quantizedColorIndices.push(0);
-            continue;
-        }
-        quantizedColorIndices.push(colorIndex);
-    }
-    _console$n.log("quantizedColorIndices", quantizedColorIndices);
-    const promise = new Promise((resolve, reject) => {
-        canvas.toBlob((blob) => {
-            if (blob) {
-                resolve(blob);
-            }
-            else {
-                reject();
-            }
-        }, "image/png");
-    });
-    const blob = await promise;
-    return {
-        blob,
-        colorIndices: quantizedColorIndices,
-    };
-}
-async function imageToBitmap(image, width, height, colors, bitmapColorIndices, numberOfColors) {
-    if (numberOfColors == undefined) {
-        numberOfColors = colors.length;
-    }
-    const bitmapColors = bitmapColorIndices
-        .map((bitmapColorIndex) => colors[bitmapColorIndex])
-        .slice(0, numberOfColors);
-    const { blob, colorIndices } = await resizeAndQuantizeImage(image, width, height, bitmapColors);
-    const bitmap = {
-        numberOfColors,
-        pixels: colorIndices,
-        width,
-        height,
-    };
-    return { blob, bitmap };
-}
-function getBitmapNumberOfBytes(bitmap) {
-    const pixelDepth = numberOfColorsToPixelDepth(bitmap.numberOfColors);
-    const pixelsPerByte = pixelDepthToPixelsPerByte(pixelDepth);
-    const numberOfPixels = bitmap.pixels.length;
-    const pixelDataLength = Math.ceil(numberOfPixels / pixelsPerByte);
-    _console$n.log({
-        pixelDepth,
-        pixelsPerByte,
-        numberOfPixels,
-        pixelDataLength,
-    });
-    return pixelDataLength;
-}
-function assertValidBitmapPixels(bitmap) {
-    _console$n.assertRangeWithError("bitmap.pixels.length", bitmap.pixels.length, bitmap.width * (bitmap.height - 1) + 1, bitmap.width * bitmap.height);
-    bitmap.pixels.forEach((pixel, index) => {
-        _console$n.assertRangeWithError(`bitmap.pixels[${index}]`, pixel, 0, bitmap.numberOfColors - 1);
-    });
-}
-async function imageToSprite(image, spriteName, width, height, numberOfColors, paletteName, overridePalette, spriteSheet, paletteOffset) {
-    let palette = spriteSheet.palettes?.find((palette) => palette.name == paletteName);
-    if (!palette) {
-        palette = {
-            name: paletteName,
-            numberOfColors,
-            colors: new Array(numberOfColors).fill("#000000"),
-            opacities: new Array(numberOfColors).fill(1),
-        };
-        spriteSheet.palettes?.push(palette);
-    }
-    _console$n.assertWithError(numberOfColors + paletteOffset <= palette.numberOfColors, `invalid numberOfColors ${numberOfColors} + offset ${paletteOffset} (max ${palette.numberOfColors})`);
-    const sprite = {
-        name: spriteName,
-        width,
-        height,
-        paletteSwaps: [],
-        commands: [],
-    };
-    let blob;
-    let colorIndices;
-    if (overridePalette) {
-        const results = await quantizeImage(image, width, height, palette.numberOfColors);
-        blob = results.blob;
-        colorIndices = results.colorIndices;
-        results.colors.forEach((color, index) => {
-            palette.colors[index + paletteOffset] = color;
-        });
-    }
-    else {
-        const results = await resizeAndQuantizeImage(image, width, height, palette.colors.slice(paletteOffset, numberOfColors));
-        blob = results.blob;
-        colorIndices = results.colorIndices;
-    }
-    sprite.commands.push({
-        type: "selectBitmapColors",
-        bitmapColorPairs: new Array(numberOfColors).fill(0).map((_, index) => ({
-            bitmapColorIndex: index,
-            colorIndex: index + paletteOffset,
-        })),
-    });
-    const bitmap = {
-        numberOfColors,
-        pixels: colorIndices,
-        width,
-        height,
-    };
-    sprite.commands.push({ type: "drawBitmap", offsetX: 0, offsetY: 0, bitmap });
-    const spriteIndex = spriteSheet.sprites.findIndex((sprite) => sprite.name == spriteName);
-    if (spriteIndex == -1) {
-        spriteSheet.sprites.push(sprite);
-    }
-    else {
-        spriteSheet.sprites[spriteIndex] = sprite;
-    }
-    return { sprite, blob };
-}
-async function imageToSpriteSheet(image, name, width, height, numberOfColors, paletteName) {
-    const spriteSheet = {
-        name,
-        palettes: [],
-        paletteSwaps: [],
-        sprites: [],
-    };
-    await imageToSprite(image, "image", width, height, numberOfColors, paletteName, true, spriteSheet, 0);
-    return spriteSheet;
-}
-
-const _console$m = createConsole("DisplayContextCommand", { log: true });
+const _console$n = createConsole("DisplayContextCommand", { log: true });
 const DisplayContextCommandTypes = [
     "show",
     "clear",
@@ -5124,10 +4800,10 @@ function serializeContextCommand(displayManager, command) {
                 }
                 const colorHex = rgbToHex(colorRGB);
                 if (displayManager.colors[colorIndex] == colorHex) {
-                    _console$m.log(`redundant color #${colorIndex} ${colorHex}`);
+                    _console$n.log(`redundant color #${colorIndex} ${colorHex}`);
                     return;
                 }
-                _console$m.log(`setting color #${colorIndex}`, colorRGB);
+                _console$n.log(`setting color #${colorIndex}`, colorRGB);
                 displayManager.assertValidColorIndex(colorIndex);
                 assertValidColor(colorRGB);
                 dataView = new DataView(new ArrayBuffer(4));
@@ -5144,7 +4820,7 @@ function serializeContextCommand(displayManager, command) {
                 assertValidOpacity(opacity);
                 if (Math.floor(255 * displayManager.opacities[colorIndex]) ==
                     Math.floor(255 * opacity)) {
-                    _console$m.log(`redundant opacity #${colorIndex} ${opacity}`);
+                    _console$n.log(`redundant opacity #${colorIndex} ${opacity}`);
                     return;
                 }
                 dataView = new DataView(new ArrayBuffer(2));
@@ -5198,7 +4874,7 @@ function serializeContextCommand(displayManager, command) {
             {
                 const { segmentStartCap } = command;
                 assertValidSegmentCap(segmentStartCap);
-                _console$m.log({ segmentStartCap });
+                _console$n.log({ segmentStartCap });
                 dataView = new DataView(new ArrayBuffer(1));
                 const segmentCapEnum = DisplaySegmentCaps.indexOf(segmentStartCap);
                 dataView.setUint8(0, segmentCapEnum);
@@ -5208,7 +4884,7 @@ function serializeContextCommand(displayManager, command) {
             {
                 const { segmentEndCap } = command;
                 assertValidSegmentCap(segmentEndCap);
-                _console$m.log({ segmentEndCap });
+                _console$n.log({ segmentEndCap });
                 dataView = new DataView(new ArrayBuffer(1));
                 const segmentCapEnum = DisplaySegmentCaps.indexOf(segmentEndCap);
                 dataView.setUint8(0, segmentCapEnum);
@@ -5218,7 +4894,7 @@ function serializeContextCommand(displayManager, command) {
             {
                 const { segmentCap } = command;
                 assertValidSegmentCap(segmentCap);
-                _console$m.log({ segmentCap });
+                _console$n.log({ segmentCap });
                 dataView = new DataView(new ArrayBuffer(1));
                 const segmentCapEnum = DisplaySegmentCaps.indexOf(segmentCap);
                 dataView.setUint8(0, segmentCapEnum);
@@ -5227,7 +4903,7 @@ function serializeContextCommand(displayManager, command) {
         case "setSegmentStartRadius":
             {
                 const { segmentStartRadius } = command;
-                _console$m.log({ segmentStartRadius });
+                _console$n.log({ segmentStartRadius });
                 dataView = new DataView(new ArrayBuffer(2));
                 dataView.setUint16(0, segmentStartRadius, true);
             }
@@ -5235,7 +4911,7 @@ function serializeContextCommand(displayManager, command) {
         case "setSegmentEndRadius":
             {
                 const { segmentEndRadius } = command;
-                _console$m.log({ segmentEndRadius });
+                _console$n.log({ segmentEndRadius });
                 dataView = new DataView(new ArrayBuffer(2));
                 dataView.setUint16(0, segmentEndRadius, true);
             }
@@ -5243,7 +4919,7 @@ function serializeContextCommand(displayManager, command) {
         case "setSegmentRadius":
             {
                 const { segmentRadius } = command;
-                _console$m.log({ segmentRadius });
+                _console$n.log({ segmentRadius });
                 dataView = new DataView(new ArrayBuffer(2));
                 dataView.setUint16(0, segmentRadius, true);
             }
@@ -5251,7 +4927,7 @@ function serializeContextCommand(displayManager, command) {
         case "setCropTop":
             {
                 const { cropTop } = command;
-                _console$m.log({ cropTop });
+                _console$n.log({ cropTop });
                 dataView = new DataView(new ArrayBuffer(2));
                 dataView.setUint16(0, cropTop, true);
             }
@@ -5259,7 +4935,7 @@ function serializeContextCommand(displayManager, command) {
         case "setCropRight":
             {
                 const { cropRight } = command;
-                _console$m.log({ cropRight });
+                _console$n.log({ cropRight });
                 dataView = new DataView(new ArrayBuffer(2));
                 dataView.setUint16(0, cropRight, true);
             }
@@ -5267,7 +4943,7 @@ function serializeContextCommand(displayManager, command) {
         case "setCropBottom":
             {
                 const { cropBottom } = command;
-                _console$m.log({ cropBottom });
+                _console$n.log({ cropBottom });
                 dataView = new DataView(new ArrayBuffer(2));
                 dataView.setUint16(0, cropBottom, true);
             }
@@ -5275,7 +4951,7 @@ function serializeContextCommand(displayManager, command) {
         case "setCropLeft":
             {
                 const { cropLeft } = command;
-                _console$m.log({ cropLeft });
+                _console$n.log({ cropLeft });
                 dataView = new DataView(new ArrayBuffer(2));
                 dataView.setUint16(0, cropLeft, true);
             }
@@ -5283,7 +4959,7 @@ function serializeContextCommand(displayManager, command) {
         case "setRotationCropTop":
             {
                 const { rotationCropTop } = command;
-                _console$m.log({ rotationCropTop });
+                _console$n.log({ rotationCropTop });
                 dataView = new DataView(new ArrayBuffer(2));
                 dataView.setUint16(0, rotationCropTop, true);
             }
@@ -5291,7 +4967,7 @@ function serializeContextCommand(displayManager, command) {
         case "setRotationCropRight":
             {
                 const { rotationCropRight } = command;
-                _console$m.log({ rotationCropRight });
+                _console$n.log({ rotationCropRight });
                 dataView = new DataView(new ArrayBuffer(2));
                 dataView.setUint16(0, rotationCropRight, true);
             }
@@ -5299,7 +4975,7 @@ function serializeContextCommand(displayManager, command) {
         case "setRotationCropBottom":
             {
                 const { rotationCropBottom } = command;
-                _console$m.log({ rotationCropBottom });
+                _console$n.log({ rotationCropBottom });
                 dataView = new DataView(new ArrayBuffer(2));
                 dataView.setUint16(0, rotationCropBottom, true);
             }
@@ -5307,7 +4983,7 @@ function serializeContextCommand(displayManager, command) {
         case "setRotationCropLeft":
             {
                 const { rotationCropLeft } = command;
-                _console$m.log({ rotationCropLeft });
+                _console$n.log({ rotationCropLeft });
                 dataView = new DataView(new ArrayBuffer(2));
                 dataView.setUint16(0, rotationCropLeft, true);
             }
@@ -5325,7 +5001,7 @@ function serializeContextCommand(displayManager, command) {
         case "selectBitmapColors":
             {
                 const { bitmapColorPairs } = command;
-                _console$m.assertRangeWithError("bitmapColors", bitmapColorPairs.length, 1, displayManager.numberOfColors);
+                _console$n.assertRangeWithError("bitmapColors", bitmapColorPairs.length, 1, displayManager.numberOfColors);
                 const bitmapColorIndices = displayManager.contextState.bitmapColorIndices.slice();
                 bitmapColorPairs.forEach(({ bitmapColorIndex, colorIndex }) => {
                     displayManager.assertValidColorIndex(bitmapColorIndex);
@@ -5382,7 +5058,7 @@ function serializeContextCommand(displayManager, command) {
         case "selectSpriteColors":
             {
                 const { spriteColorPairs } = command;
-                _console$m.assertRangeWithError("spriteColors", spriteColorPairs.length, 1, displayManager.numberOfColors);
+                _console$n.assertRangeWithError("spriteColors", spriteColorPairs.length, 1, displayManager.numberOfColors);
                 const spriteColorIndices = displayManager.contextState.spriteColorIndices.slice();
                 spriteColorPairs.forEach(({ spriteColorIndex, colorIndex }) => {
                     displayManager.assertValidColorIndex(spriteColorIndex);
@@ -5499,7 +5175,7 @@ function serializeContextCommand(displayManager, command) {
         case "drawSegments":
             {
                 const { points } = command;
-                _console$m.assertRangeWithError("numberOfPoints", points.length, 2, 255);
+                _console$n.assertRangeWithError("numberOfPoints", points.length, 2, 255);
                 const dataViewLength = 1 + points.length * 4;
                 dataView = new DataView(new ArrayBuffer(dataViewLength));
                 let offset = 0;
@@ -5602,425 +5278,8 @@ function serializeContextCommands(displayManager, commands) {
         return concatenateArrayBuffers(UInt8ByteBuffer(displayContextCommandEnum), serializedContextCommand);
     });
     const serializedContextCommands = concatenateArrayBuffers(serializedContextCommandArray);
-    _console$m.log("serializedContextCommands", commands, serializedContextCommandArray, serializedContextCommands);
+    _console$n.log("serializedContextCommands", commands, serializedContextCommandArray, serializedContextCommands);
     return serializedContextCommands;
-}
-
-const _console$l = createConsole("DisplayManagerInterface", { log: true });
-async function runDisplayContextCommand(displayManager, command, sendImmediately) {
-    if (command.hide) {
-        return;
-    }
-    switch (command.type) {
-        case "show":
-            await displayManager.show(sendImmediately);
-            break;
-        case "clear":
-            await displayManager.clear(sendImmediately);
-            break;
-        case "saveContext":
-            await displayManager.saveContext(sendImmediately);
-            break;
-        case "restoreContext":
-            await displayManager.restoreContext(sendImmediately);
-            break;
-        case "clearRotation":
-            await displayManager.clearRotation(sendImmediately);
-            break;
-        case "clearCrop":
-            await displayManager.clearCrop(sendImmediately);
-            break;
-        case "clearRotationCrop":
-            await displayManager.clearRotationCrop(sendImmediately);
-            break;
-        case "resetBitmapScale":
-            await displayManager.resetBitmapScale(sendImmediately);
-            break;
-        case "resetSpriteScale":
-            await displayManager.resetSpriteScale(sendImmediately);
-            break;
-        case "setColor":
-            {
-                const { colorIndex, color } = command;
-                await displayManager.setColor(colorIndex, color, sendImmediately);
-            }
-            break;
-        case "setColorOpacity":
-            {
-                const { colorIndex, opacity } = command;
-                await displayManager.setColorOpacity(colorIndex, opacity, sendImmediately);
-            }
-            break;
-        case "setOpacity":
-            {
-                const { opacity } = command;
-                await displayManager.setOpacity(opacity, sendImmediately);
-            }
-            break;
-        case "selectFillColor":
-            {
-                const { fillColorIndex } = command;
-                await displayManager.selectFillColor(fillColorIndex, sendImmediately);
-            }
-            break;
-        case "selectLineColor":
-            {
-                const { lineColorIndex } = command;
-                await displayManager.selectLineColor(lineColorIndex, sendImmediately);
-            }
-            break;
-        case "setLineWidth":
-            {
-                const { lineWidth } = command;
-                await displayManager.setLineWidth(lineWidth, sendImmediately);
-            }
-            break;
-        case "setRotation":
-            {
-                let { rotation, isRadians } = command;
-                rotation = isRadians ? rotation : degToRad(rotation);
-                await displayManager.setRotation(rotation, true, sendImmediately);
-            }
-            break;
-        case "setSegmentStartCap":
-            {
-                const { segmentStartCap } = command;
-                await displayManager.setSegmentStartCap(segmentStartCap, sendImmediately);
-            }
-            break;
-        case "setSegmentEndCap":
-            {
-                const { segmentEndCap } = command;
-                await displayManager.setSegmentEndCap(segmentEndCap, sendImmediately);
-            }
-            break;
-        case "setSegmentCap":
-            {
-                const { segmentCap } = command;
-                await displayManager.setSegmentCap(segmentCap, sendImmediately);
-            }
-            break;
-        case "setSegmentStartRadius":
-            {
-                const { segmentStartRadius } = command;
-                await displayManager.setSegmentStartRadius(segmentStartRadius, sendImmediately);
-            }
-            break;
-        case "setSegmentEndRadius":
-            {
-                const { segmentEndRadius } = command;
-                await displayManager.setSegmentEndRadius(segmentEndRadius, sendImmediately);
-            }
-            break;
-        case "setSegmentRadius":
-            {
-                const { segmentRadius } = command;
-                await displayManager.setSegmentRadius(segmentRadius, sendImmediately);
-            }
-            break;
-        case "setCropTop":
-            {
-                const { cropTop } = command;
-                await displayManager.setCropTop(cropTop, sendImmediately);
-            }
-            break;
-        case "setCropRight":
-            {
-                const { cropRight } = command;
-                await displayManager.setCropRight(cropRight, sendImmediately);
-            }
-            break;
-        case "setCropBottom":
-            {
-                const { cropBottom } = command;
-                await displayManager.setCropBottom(cropBottom, sendImmediately);
-            }
-            break;
-        case "setCropLeft":
-            {
-                const { cropLeft } = command;
-                await displayManager.setCropLeft(cropLeft, sendImmediately);
-            }
-            break;
-        case "setRotationCropTop":
-            {
-                const { rotationCropTop } = command;
-                await displayManager.setRotationCropTop(rotationCropTop, sendImmediately);
-            }
-            break;
-        case "setRotationCropRight":
-            {
-                const { rotationCropRight } = command;
-                await displayManager.setRotationCropRight(rotationCropRight, sendImmediately);
-            }
-            break;
-        case "setRotationCropBottom":
-            {
-                const { rotationCropBottom } = command;
-                await displayManager.setRotationCropBottom(rotationCropBottom, sendImmediately);
-            }
-            break;
-        case "setRotationCropLeft":
-            {
-                const { rotationCropLeft } = command;
-                await displayManager.setRotationCropLeft(rotationCropLeft, sendImmediately);
-            }
-            break;
-        case "selectBitmapColor":
-            {
-                const { bitmapColorIndex, colorIndex } = command;
-                await displayManager.selectBitmapColor(bitmapColorIndex, colorIndex, sendImmediately);
-            }
-            break;
-        case "selectBitmapColors":
-            {
-                const { bitmapColorPairs } = command;
-                await displayManager.selectBitmapColors(bitmapColorPairs, sendImmediately);
-            }
-            break;
-        case "setBitmapScaleX":
-            {
-                const { bitmapScaleX } = command;
-                await displayManager.setBitmapScaleX(bitmapScaleX, sendImmediately);
-            }
-            break;
-        case "setBitmapScaleY":
-            {
-                const { bitmapScaleY } = command;
-                await displayManager.setBitmapScaleY(bitmapScaleY, sendImmediately);
-            }
-            break;
-        case "setBitmapScale":
-            {
-                const { bitmapScale } = command;
-                await displayManager.setBitmapScale(bitmapScale, sendImmediately);
-            }
-            break;
-        case "selectSpriteColor":
-            {
-                const { spriteColorIndex, colorIndex } = command;
-                await displayManager.selectSpriteColor(spriteColorIndex, colorIndex, sendImmediately);
-            }
-            break;
-        case "selectSpriteColors":
-            {
-                const { spriteColorPairs } = command;
-                await displayManager.selectSpriteColors(spriteColorPairs, sendImmediately);
-            }
-            break;
-        case "setSpriteScaleX":
-            {
-                const { spriteScaleX } = command;
-                await displayManager.setSpriteScaleX(spriteScaleX, sendImmediately);
-            }
-            break;
-        case "setSpriteScaleY":
-            {
-                const { spriteScaleY } = command;
-                await displayManager.setSpriteScaleY(spriteScaleY, sendImmediately);
-            }
-            break;
-        case "setSpriteScale":
-            {
-                const { spriteScale } = command;
-                await displayManager.setSpriteScale(spriteScale, sendImmediately);
-            }
-            break;
-        case "clearRect":
-            {
-                const { x, y, width, height } = command;
-                await displayManager.clearRect(x, y, width, height, sendImmediately);
-            }
-            break;
-        case "drawRect":
-            {
-                const { offsetX, offsetY, width, height } = command;
-                await displayManager.drawRect(offsetX, offsetY, width, height, sendImmediately);
-            }
-            break;
-        case "drawRoundRect":
-            {
-                const { offsetX, offsetY, width, height, borderRadius } = command;
-                await displayManager.drawRoundRect(offsetX, offsetY, width, height, borderRadius, sendImmediately);
-            }
-            break;
-        case "drawCircle":
-            {
-                const { offsetX, offsetY, radius } = command;
-                await displayManager.drawCircle(offsetX, offsetY, radius, sendImmediately);
-            }
-            break;
-        case "drawEllipse":
-            {
-                const { offsetX, offsetY, radiusX, radiusY } = command;
-                await displayManager.drawEllipse(offsetX, offsetY, radiusX, radiusY, sendImmediately);
-            }
-            break;
-        case "drawPolygon":
-            {
-                const { offsetX, offsetY, radius, numberOfSides } = command;
-                await displayManager.drawPolygon(offsetX, offsetY, radius, numberOfSides, sendImmediately);
-            }
-            break;
-        case "drawSegment":
-            {
-                const { startX, startY, endX, endY } = command;
-                await displayManager.drawSegment(startX, startY, endX, endY, sendImmediately);
-            }
-            break;
-        case "drawSegments":
-            {
-                const { points } = command;
-                await displayManager.drawSegments(points.map(({ x, y }) => ({ x: x, y: y })), sendImmediately);
-            }
-            break;
-        case "drawArc":
-            {
-                let { offsetX, offsetY, radius, startAngle, angleOffset, isRadians } = command;
-                startAngle = isRadians ? startAngle : degToRad(startAngle);
-                angleOffset = isRadians ? angleOffset : degToRad(angleOffset);
-                await displayManager.drawArc(offsetX, offsetY, radius, startAngle, angleOffset, true, sendImmediately);
-            }
-            break;
-        case "drawArcEllipse":
-            {
-                let { offsetX, offsetY, radiusX, radiusY, startAngle, angleOffset, isRadians, } = command;
-                startAngle = isRadians ? startAngle : degToRad(startAngle);
-                angleOffset = isRadians ? angleOffset : degToRad(angleOffset);
-                await displayManager.drawArcEllipse(offsetX, offsetY, radiusX, radiusY, startAngle, angleOffset, true, sendImmediately);
-            }
-            break;
-        case "drawBitmap":
-            {
-                const { offsetX, offsetY, bitmap } = command;
-                await displayManager.drawBitmap(offsetX, offsetY, bitmap, sendImmediately);
-            }
-            break;
-        case "drawSprite":
-            {
-                const { offsetX, offsetY, spriteIndex } = command;
-                const spriteName = displayManager.selectedSpriteSheet?.sprites[spriteIndex].name;
-                await displayManager.drawSprite(offsetX, offsetY, spriteName, sendImmediately);
-            }
-            break;
-        case "selectSpriteSheet":
-            {
-                const { spriteSheetIndex } = command;
-                const spriteSheetName = Object.entries(displayManager.spriteSheetIndices).find((entry) => entry[1] == spriteSheetIndex)?.[0];
-                await displayManager.selectSpriteSheet(spriteSheetName, sendImmediately);
-            }
-            break;
-        case "resetSpriteColors":
-            await displayManager.resetSpriteColors(sendImmediately);
-            break;
-    }
-}
-async function runDisplayContextCommands(displayManager, commands, sendImmediately) {
-    _console$l.log("runDisplayContextCommands", commands);
-    commands
-        .filter((command) => !command.hide)
-        .forEach((command) => {
-        runDisplayContextCommand(displayManager, command, false);
-    });
-    if (sendImmediately) {
-        displayManager.flushContextCommands();
-    }
-}
-function assertLoadedSpriteSheet(displayManager, spriteSheetName) {
-    _console$l.assertWithError(displayManager.spriteSheets[spriteSheetName], `spriteSheet "${spriteSheetName}" not loaded`);
-}
-function assertSelectedSpriteSheet(displayManager, spriteSheetName) {
-    displayManager.assertLoadedSpriteSheet(spriteSheetName);
-    _console$l.assertWithError(displayManager.selectedSpriteSheetName == spriteSheetName, `spriteSheet "${spriteSheetName}" not selected`);
-}
-function assertAnySelectedSpriteSheet(displayManager) {
-    _console$l.assertWithError(displayManager.selectedSpriteSheet, "no spriteSheet selected");
-}
-function getSprite(displayManager, spriteName) {
-    displayManager.assertAnySelectedSpriteSheet();
-    return displayManager.selectedSpriteSheet.sprites.find((sprite) => sprite.name == spriteName);
-}
-function assertSprite(displayManager, spriteName) {
-    displayManager.assertAnySelectedSpriteSheet();
-    const sprite = displayManager.getSprite(spriteName);
-    _console$l.assertWithError(sprite, `no sprite found with name "${spriteName}"`);
-}
-function getSpriteSheetPalette(displayManager, paletteName) {
-    return displayManager.selectedSpriteSheet?.palettes?.find((palette) => palette.name == paletteName);
-}
-function getSpriteSheetPaletteSwap(displayManager, paletteSwapName) {
-    return displayManager.selectedSpriteSheet?.paletteSwaps?.find((paletteSwap) => paletteSwap.name == paletteSwapName);
-}
-function getSpritePaletteSwap(displayManager, spriteName, paletteSwapName) {
-    return displayManager
-        .getSprite(spriteName)
-        ?.paletteSwaps?.find((paletteSwap) => paletteSwap.name == paletteSwapName);
-}
-function assertSpriteSheetPalette(displayManagerInterface, paletteName) {
-    const spriteSheetPalette = displayManagerInterface.getSpriteSheetPalette(paletteName);
-    _console$l.assertWithError(spriteSheetPalette, `no spriteSheetPalette found with name "${paletteName}"`);
-}
-function assertSpriteSheetPaletteSwap(displayManagerInterface, paletteSwapName) {
-    const spriteSheetPaletteSwap = displayManagerInterface.getSpriteSheetPaletteSwap(paletteSwapName);
-    _console$l.assertWithError(spriteSheetPaletteSwap, `no paletteSwapName found with name "${paletteSwapName}"`);
-}
-function assertSpritePaletteSwap(displayManagerInterface, spriteName, paletteSwapName) {
-    const spritePaletteSwap = displayManagerInterface.getSpritePaletteSwap(spriteName, paletteSwapName);
-    _console$l.assertWithError(spritePaletteSwap, `no spritePaletteSwap found for sprite "${spriteName}" name "${paletteSwapName}"`);
-}
-async function selectSpriteSheetPalette(displayManagerInterface, paletteName, offset, sendImmediately) {
-    offset = offset || 0;
-    displayManagerInterface.assertAnySelectedSpriteSheet();
-    displayManagerInterface.assertSpriteSheetPalette(paletteName);
-    const palette = displayManagerInterface.getSpriteSheetPalette(paletteName);
-    _console$l.assertWithError(palette.numberOfColors + offset <= displayManagerInterface.numberOfColors, `invalid offset ${offset} and palette.numberOfColors ${palette.numberOfColors} (max ${displayManagerInterface.numberOfColors})`);
-    for (let index = 0; index < palette.numberOfColors; index++) {
-        const color = palette.colors[index];
-        let opacity = palette.opacities?.[index];
-        if (opacity == undefined) {
-            opacity = 1;
-        }
-        displayManagerInterface.setColor(index + offset, color, false);
-        displayManagerInterface.setColorOpacity(index + offset, opacity, false);
-    }
-    if (sendImmediately) {
-        displayManagerInterface.flushContextCommands();
-    }
-}
-async function selectSpriteSheetPaletteSwap(displayManagerInterface, paletteSwapName, offset, sendImmediately) {
-    offset = offset || 0;
-    displayManagerInterface.assertAnySelectedSpriteSheet();
-    displayManagerInterface.assertSpriteSheetPaletteSwap(paletteSwapName);
-    const paletteSwap = displayManagerInterface.getSpriteSheetPaletteSwap(paletteSwapName);
-    const spriteColorPairs = [];
-    for (let spriteColorIndex = 0; spriteColorIndex < paletteSwap.numberOfColors; spriteColorIndex++) {
-        const colorIndex = paletteSwap.spriteColorIndices[spriteColorIndex];
-        spriteColorPairs.push({
-            spriteColorIndex: spriteColorIndex + offset,
-            colorIndex,
-        });
-    }
-    displayManagerInterface.selectSpriteColors(spriteColorPairs, false);
-    if (sendImmediately) {
-        displayManagerInterface.flushContextCommands();
-    }
-}
-async function selectSpritePaletteSwap(displayManagerInterface, spriteName, paletteSwapName, offset, sendImmediately) {
-    offset = offset || 0;
-    displayManagerInterface.assertAnySelectedSpriteSheet();
-    const paletteSwap = displayManagerInterface.getSpritePaletteSwap(spriteName, paletteSwapName);
-    const spriteColorPairs = [];
-    for (let spriteColorIndex = 0; spriteColorIndex < paletteSwap.numberOfColors; spriteColorIndex++) {
-        const colorIndex = paletteSwap.spriteColorIndices[spriteColorIndex];
-        spriteColorPairs.push({
-            spriteColorIndex: spriteColorIndex + offset,
-            colorIndex,
-        });
-    }
-    displayManagerInterface.selectSpriteColors(spriteColorPairs, false);
-    if (sendImmediately) {
-        displayManagerInterface.flushContextCommands();
-    }
 }
 
 if (!String.prototype.codePointAt) {
@@ -15832,21 +15091,25 @@ var opentype = Object.freeze({
 	loadSync: loadSync
 });
 
-const _console$k = createConsole("DisplaySpriteSheetUtils", { log: true });
+const _console$m = createConsole("DisplaySpriteSheetUtils", { log: true });
+const spriteHeaderLength = 3 * 2;
+function calculateSpriteSheetHeaderLength(numberOfSprites) {
+    return 2 + numberOfSprites * 2 + numberOfSprites * spriteHeaderLength;
+}
 function serializeSpriteSheet(displayManager, spriteSheet) {
     const { name, sprites } = spriteSheet;
-    _console$k.log(`serializing ${name} spriteSheet`, spriteSheet);
+    _console$m.log(`serializing ${name} spriteSheet`, spriteSheet);
     const numberOfSprites = sprites.length;
     const numberOfSpritesDataView = new DataView(new ArrayBuffer(2));
     numberOfSpritesDataView.setUint16(0, numberOfSprites, true);
     const spritePayloads = sprites.map((sprite, index) => {
         const commandsData = serializeContextCommands(displayManager, sprite.commands);
-        const dataView = new DataView(new ArrayBuffer(3 * 2));
+        const dataView = new DataView(new ArrayBuffer(spriteHeaderLength));
         dataView.setUint16(0, sprite.width, true);
         dataView.setUint16(2, sprite.height, true);
         dataView.setUint16(4, commandsData.byteLength, true);
         const serializedSprite = concatenateArrayBuffers(dataView, commandsData);
-        _console$k.log("serializedSprite", sprite, serializedSprite);
+        _console$m.log("serializedSprite", sprite, serializedSprite);
         return serializedSprite;
     });
     const spriteOffsetsDataView = new DataView(new ArrayBuffer(sprites.length * 2));
@@ -15856,7 +15119,7 @@ function serializeSpriteSheet(displayManager, spriteSheet) {
         offset += spritePayload.byteLength;
     });
     const serializedSpriteSheet = concatenateArrayBuffers(numberOfSpritesDataView, spriteOffsetsDataView, spritePayloads);
-    _console$k.log("serializedSpriteSheet", serializedSpriteSheet);
+    _console$m.log("serializedSpriteSheet", serializedSpriteSheet);
     return serializedSpriteSheet;
 }
 const defaultFontToSpriteSheetOptions = {
@@ -15865,10 +15128,10 @@ const defaultFontToSpriteSheetOptions = {
     unicodeOnly: true,
 };
 async function fontToSpriteSheet(displayManager, arrayBuffer, fontSize, spriteSheetName, options = defaultFontToSpriteSheetOptions) {
-    _console$k.assertTypeWithError(fontSize, "number");
+    _console$m.assertTypeWithError(fontSize, "number");
     const font = opentype.parse(arrayBuffer);
     const fontScale = (1 / font.unitsPerEm) * fontSize;
-    _console$k.log("font", font);
+    _console$m.log("font", font);
     spriteSheetName = spriteSheetName || font.getEnglishName("fullName");
     const spriteSheet = {
         name: spriteSheetName,
@@ -15892,7 +15155,7 @@ async function fontToSpriteSheet(displayManager, arrayBuffer, fontSize, spriteSh
         glyphs.push(glyph);
     }
     const maxSpriteHeight = maxSpriteY - minSpriteY;
-    _console$k.log({ minSpriteY, maxSpriteY, maxSpriteHeight });
+    _console$m.log({ minSpriteY, maxSpriteY, maxSpriteHeight });
     for (let i = 0; i < glyphs.length; i++) {
         const glyph = glyphs[i];
         let name = glyph.name;
@@ -15924,7 +15187,7 @@ async function fontToSpriteSheet(displayManager, arrayBuffer, fontSize, spriteSh
                 path.fill = "white";
             }
             path.draw(ctx);
-            const { colorIndices } = await quantizeCanvas(canvas, ctx, 2, [
+            const { colorIndices } = await quantizeCanvas(canvas, 2, [
                 "#000000",
                 "#ffffff",
             ]);
@@ -15958,8 +15221,767 @@ async function fontToSpriteSheet(displayManager, arrayBuffer, fontSize, spriteSh
     }
     return spriteSheet;
 }
+function reduceSpriteSheet(spriteSheet, spriteNames) {
+    const reducedSpriteName = Object.assign({}, spriteSheet);
+    if (!(spriteNames instanceof Array)) {
+        spriteNames = [spriteNames];
+    }
+    _console$m.log("reduceSpriteSheet", spriteSheet, spriteNames);
+    reducedSpriteName.sprites = reducedSpriteName.sprites.filter((sprite) => {
+        return spriteNames.includes(sprite.name);
+    });
+    _console$m.log("reducedSpriteName", reducedSpriteName);
+    return reducedSpriteName;
+}
 
-var _DisplayManager_instances, _DisplayManager_dispatchEvent_get, _DisplayManager_isAvailable, _DisplayManager_assertDisplayIsAvailable, _DisplayManager_parseIsDisplayAvailable, _DisplayManager_contextStateHelper, _DisplayManager_onContextStateUpdate, _DisplayManager_displayStatus, _DisplayManager_parseDisplayStatus, _DisplayManager_updateDisplayStatus, _DisplayManager_sendDisplayCommand, _DisplayManager_assertIsAwake, _DisplayManager_assertIsNotAwake, _DisplayManager_displayInformation, _DisplayManager_parseDisplayInformation, _DisplayManager_brightness, _DisplayManager_parseDisplayBrightness, _DisplayManager_assertValidDisplayContextCommand, _DisplayManager_maxCommandDataLength_get, _DisplayManager_displayContextCommandBuffers, _DisplayManager_sendDisplayContextCommand, _DisplayManager_sendContextCommands, _DisplayManager_colors, _DisplayManager_opacities, _DisplayManager_assertValidBitmapSize, _DisplayManager_isReady, _DisplayManager_parseDisplayReady, _DisplayManager_spriteSheets, _DisplayManager_spriteSheetIndices, _DisplayManager_setSpriteSheetName, _DisplayManager_pendingSpriteSheet, _DisplayManager_pendingSpriteSheetName, _DisplayManager_updateSpriteSheetName, _DisplayManager_parseSpriteSheetIndex, _DisplayManager_mtu;
+const _console$l = createConsole("DisplayBitmapUtils", { log: true });
+const drawBitmapHeaderLength = 2 + 2 + 2 + 2 + 1 + 2;
+function getBitmapData(bitmap) {
+    const pixelDataLength = getBitmapNumberOfBytes(bitmap);
+    const dataView = new DataView(new ArrayBuffer(pixelDataLength));
+    const pixelDepth = numberOfColorsToPixelDepth(bitmap.numberOfColors);
+    const pixelsPerByte = pixelDepthToPixelsPerByte(pixelDepth);
+    bitmap.pixels.forEach((bitmapColorIndex, pixelIndex) => {
+        const byteIndex = Math.floor(pixelIndex / pixelsPerByte);
+        const byteSlot = pixelIndex % pixelsPerByte;
+        const pixelBitWidth = pixelDepthToPixelBitWidth(pixelDepth);
+        const bitOffset = pixelBitWidth * byteSlot;
+        const shift = 8 - pixelBitWidth - bitOffset;
+        let value = dataView.getUint8(byteIndex);
+        value |= bitmapColorIndex << shift;
+        dataView.setUint8(byteIndex, value);
+    });
+    _console$l.log("getBitmapData", bitmap, dataView);
+    return dataView;
+}
+async function quantizeCanvas(canvas, numberOfColors, colors) {
+    _console$l.assertWithError(numberOfColors > 1, "numberOfColors must be greater than 1");
+    const ctx = canvas.getContext("2d", { willReadFrequently: true });
+    removeAlphaFromCanvas(canvas);
+    const isSmall = canvas.width * canvas.height < 4;
+    const quantOptions = {
+        method: isSmall ? 1 : 2,
+        colors: numberOfColors,
+        dithKern: null,
+        useCache: false,
+        reIndex: true,
+    };
+    if (colors) {
+        quantOptions.palette = colors.map((color) => {
+            const rgb = hexToRGB(color);
+            if (rgb) {
+                const { r, g, b } = rgb;
+                return [r, g, b];
+            }
+            else {
+                _console$l.error(`invalid rgb hex "${color}"`);
+            }
+        });
+    }
+    _console$l.log("quantizeImage options", quantOptions);
+    const quantizer = new RGBQuant(quantOptions);
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    quantizer.sample(imageData);
+    const quantizedPixels = quantizer.reduce(imageData.data);
+    const quantizedImageData = new ImageData(new Uint8ClampedArray(quantizedPixels.buffer), canvas.width, canvas.height);
+    ctx.putImageData(quantizedImageData, 0, 0);
+    const pixels = quantizedImageData.data;
+    const quantizedPaletteData = quantizer.palette();
+    const numberOfQuantizedPaletteColors = quantizedPaletteData.byteLength / 4;
+    const quantizedPaletteColors = [];
+    let closestColorIndexToBlack = 0;
+    let closestColorDistanceToBlack = Infinity;
+    const vector3 = { x: 0, y: 0, z: 0 };
+    for (let colorIndex = 0; colorIndex < numberOfQuantizedPaletteColors; colorIndex++) {
+        const rgb = {
+            r: quantizedPaletteData[colorIndex * 4],
+            g: quantizedPaletteData[colorIndex * 4 + 1],
+            b: quantizedPaletteData[colorIndex * 4 + 2],
+        };
+        quantizedPaletteColors.push(rgb);
+        vector3.x = rgb.r;
+        vector3.y = rgb.g;
+        vector3.z = rgb.b;
+        const distanceToBlack = getVector3Length(vector3);
+        if (distanceToBlack < closestColorDistanceToBlack) {
+            closestColorDistanceToBlack = distanceToBlack;
+            closestColorIndexToBlack = colorIndex;
+        }
+    }
+    _console$l.log({ closestColorIndexToBlack, closestColorDistanceToBlack });
+    if (closestColorIndexToBlack != 0) {
+        const [currentBlack, newBlack] = [
+            quantizedPaletteColors[0],
+            quantizedPaletteColors[closestColorIndexToBlack],
+        ];
+        quantizedPaletteColors[0] = newBlack;
+        quantizedPaletteColors[closestColorIndexToBlack] = currentBlack;
+    }
+    const quantizedColors = quantizedPaletteColors.map((rgb, index) => {
+        const hex = rgbToHex(rgb);
+        return hex;
+    });
+    const quantizedColorIndices = [];
+    for (let i = 0; i < pixels.length; i += 4) {
+        const r = pixels[i];
+        const g = pixels[i + 1];
+        const b = pixels[i + 2];
+        pixels[i + 3];
+        const hex = rgbToHex({ r, g, b });
+        quantizedColorIndices.push(quantizedColors.indexOf(hex));
+    }
+    const promise = new Promise((resolve, reject) => {
+        canvas.toBlob((blob) => {
+            if (blob) {
+                resolve(blob);
+            }
+            else {
+                reject();
+            }
+        }, "image/png");
+    });
+    const blob = await promise;
+    return {
+        blob,
+        colors: quantizedColors,
+        colorIndices: quantizedColorIndices,
+    };
+}
+async function quantizeImage(image, width, height, numberOfColors, colors, canvas) {
+    canvas = canvas || document.createElement("canvas");
+    const ctx = canvas.getContext("2d", { willReadFrequently: true });
+    let { naturalWidth: imageWidth, naturalHeight: imageHeight } = image;
+    _console$l.log({ imageWidth, imageHeight });
+    canvas.width = width;
+    canvas.height = height;
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(image, 0, 0, width, height);
+    return quantizeCanvas(canvas, numberOfColors, colors);
+}
+function resizeImage(image, width, height, canvas) {
+    canvas = canvas || document.createElement("canvas");
+    const ctx = canvas.getContext("2d", { willReadFrequently: true });
+    let { naturalWidth: imageWidth, naturalHeight: imageHeight } = image;
+    _console$l.log({ imageWidth, imageHeight });
+    canvas.width = width;
+    canvas.height = height;
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(image, 0, 0, width, height);
+    return canvas;
+}
+function cropCanvas(canvas, x, y, width, height, targetCanvas) {
+    targetCanvas = targetCanvas || document.createElement("canvas");
+    const ctx = targetCanvas.getContext("2d", { willReadFrequently: true });
+    targetCanvas.width = width;
+    targetCanvas.height = height;
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(canvas, x, y, width, height, 0, 0, width, height);
+    return targetCanvas;
+}
+function removeAlphaFromCanvas(canvas) {
+    const ctx = canvas.getContext("2d", { willReadFrequently: true });
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const data = imageData.data;
+    for (let i = 0; i < data.length; i += 4) {
+        const alpha = data[i + 3];
+        if (alpha < 255) {
+            data[i] = 0;
+            data[i + 1] = 0;
+            data[i + 2] = 0;
+            data[i + 3] = 255;
+        }
+    }
+    ctx.putImageData(imageData, 0, 0);
+    return canvas;
+}
+async function resizeAndQuantizeImage(image, width, height, numberOfColors, colors, canvas) {
+    canvas = canvas || document.createElement("canvas");
+    resizeImage(image, width, height, canvas);
+    removeAlphaFromCanvas(canvas);
+    return quantizeCanvas(canvas, numberOfColors, colors);
+}
+async function imageToBitmap(image, width, height, colors, bitmapColorIndices, numberOfColors) {
+    if (numberOfColors == undefined) {
+        numberOfColors = colors.length;
+    }
+    const bitmapColors = bitmapColorIndices
+        .map((bitmapColorIndex) => colors[bitmapColorIndex])
+        .slice(0, numberOfColors);
+    const { blob, colorIndices } = await resizeAndQuantizeImage(image, width, height, numberOfColors, bitmapColors);
+    const bitmap = {
+        numberOfColors,
+        pixels: colorIndices,
+        width,
+        height,
+    };
+    return { blob, bitmap };
+}
+function getBitmapNumberOfBytes(bitmap) {
+    const pixelDepth = numberOfColorsToPixelDepth(bitmap.numberOfColors);
+    const pixelsPerByte = pixelDepthToPixelsPerByte(pixelDepth);
+    const numberOfPixels = bitmap.pixels.length;
+    const pixelDataLength = Math.ceil(numberOfPixels / pixelsPerByte);
+    _console$l.log({
+        pixelDepth,
+        pixelsPerByte,
+        numberOfPixels,
+        pixelDataLength,
+    });
+    return pixelDataLength;
+}
+function assertValidBitmapPixels(bitmap) {
+    _console$l.assertRangeWithError("bitmap.pixels.length", bitmap.pixels.length, bitmap.width * (bitmap.height - 1) + 1, bitmap.width * bitmap.height);
+    bitmap.pixels.forEach((pixel, index) => {
+        _console$l.assertRangeWithError(`bitmap.pixels[${index}]`, pixel, 0, bitmap.numberOfColors - 1);
+    });
+}
+async function canvasToSprite(canvas, spriteName, numberOfColors, paletteName, overridePalette, spriteSheet, paletteOffset) {
+    const { width, height } = canvas;
+    let palette = spriteSheet.palettes?.find((palette) => palette.name == paletteName);
+    console.log("pallete", palette);
+    if (!palette) {
+        palette = {
+            name: paletteName,
+            numberOfColors,
+            colors: new Array(numberOfColors).fill("#000000"),
+            opacities: new Array(numberOfColors).fill(1),
+        };
+        spriteSheet.palettes?.push(palette);
+    }
+    _console$l.assertWithError(numberOfColors + paletteOffset <= palette.numberOfColors, `invalid numberOfColors ${numberOfColors} + offset ${paletteOffset} (max ${palette.numberOfColors})`);
+    const sprite = {
+        name: spriteName,
+        width,
+        height,
+        paletteSwaps: [],
+        commands: [],
+    };
+    const results = await quantizeCanvas(canvas, numberOfColors, !overridePalette ? palette.colors : undefined);
+    const blob = results.blob;
+    const colorIndices = results.colorIndices;
+    if (overridePalette) {
+        results.colors.forEach((color, index) => {
+            palette.colors[index + paletteOffset] = color;
+        });
+    }
+    sprite.commands.push({
+        type: "selectBitmapColors",
+        bitmapColorPairs: new Array(numberOfColors).fill(0).map((_, index) => ({
+            bitmapColorIndex: index,
+            colorIndex: index + paletteOffset,
+        })),
+    });
+    const bitmap = {
+        numberOfColors,
+        pixels: colorIndices,
+        width,
+        height,
+    };
+    sprite.commands.push({ type: "drawBitmap", offsetX: 0, offsetY: 0, bitmap });
+    const spriteIndex = spriteSheet.sprites.findIndex((sprite) => sprite.name == spriteName);
+    if (spriteIndex == -1) {
+        spriteSheet.sprites.push(sprite);
+    }
+    else {
+        spriteSheet.sprites[spriteIndex] = sprite;
+    }
+    return { sprite, blob };
+}
+async function imageToSprite(image, spriteName, width, height, numberOfColors, paletteName, overridePalette, spriteSheet, paletteOffset) {
+    const canvas = resizeImage(image, width, height);
+    return canvasToSprite(canvas, spriteName, numberOfColors, paletteName, overridePalette, spriteSheet, paletteOffset);
+}
+const drawSpriteBitmapCommandHeaderLength = 1 + 2 + 2 + 2 + 2 + 1 + 2;
+const spriteSheetWithSingleBitmapCommandLength = calculateSpriteSheetHeaderLength(1) + drawSpriteBitmapCommandHeaderLength;
+function spriteSheetWithBitmapCommandAndSelectBitmapColorsLength(numberOfColors) {
+    return (spriteSheetWithSingleBitmapCommandLength + (1 + 1 + numberOfColors * 2));
+}
+async function canvasToSpriteSheet(canvas, spriteSheetName, numberOfColors, paletteName, maxFileLength) {
+    const spriteSheet = {
+        name: spriteSheetName,
+        palettes: [],
+        paletteSwaps: [],
+        sprites: [],
+    };
+    if (maxFileLength == undefined) {
+        await canvasToSprite(canvas, "image", numberOfColors, paletteName, true, spriteSheet, 0);
+    }
+    else {
+        const { width, height } = canvas;
+        const numberOfPixels = width * height;
+        const pixelDepth = DisplayPixelDepths.find((pixelDepth) => pixelDepthToNumberOfColors(pixelDepth) >= numberOfColors);
+        _console$l.assertWithError(pixelDepth, `no pixelDepth found that covers ${numberOfColors} colors`);
+        const pixelsPerByte = pixelDepthToPixelsPerByte(pixelDepth);
+        const numberOfBytes = Math.ceil(numberOfPixels / pixelsPerByte);
+        _console$l.log({
+            width,
+            height,
+            numberOfPixels,
+            pixelDepth,
+            pixelsPerByte,
+            numberOfBytes,
+            maxFileLength,
+        });
+        const maxPixelDataLength = maxFileLength -
+            (spriteSheetWithBitmapCommandAndSelectBitmapColorsLength(numberOfColors) +
+                5);
+        _console$l.log({ maxPixelDataLength });
+        const imageRowPixelDataLength = Math.ceil(width / pixelsPerByte);
+        const maxSpriteHeight = Math.floor(maxPixelDataLength / imageRowPixelDataLength);
+        _console$l.log({
+            maxPixelDataLength,
+            imageRowPixelDataLength,
+            maxSpriteHeight,
+        });
+        if (maxSpriteHeight >= height) {
+            await canvasToSprite(canvas, "image", numberOfColors, paletteName, true, spriteSheet, 0);
+        }
+        else {
+            const { colors } = await quantizeCanvas(canvas, numberOfColors);
+            spriteSheet.palettes?.push({ name: paletteName, numberOfColors, colors });
+            let yOffset = 0;
+            let imageIndex = 0;
+            const spriteCanvas = document.createElement("canvas");
+            while (yOffset < height) {
+                let spriteHeight = Math.min(maxSpriteHeight, height - yOffset);
+                cropCanvas(canvas, 0, yOffset, width, spriteHeight, spriteCanvas);
+                yOffset += spriteHeight;
+                await canvasToSprite(spriteCanvas, `image${imageIndex}`, numberOfColors, paletteName, false, spriteSheet, 0);
+                imageIndex++;
+            }
+        }
+    }
+    return spriteSheet;
+}
+async function imageToSpriteSheet(image, spriteSheetName, width, height, numberOfColors, paletteName, maxFileLength) {
+    const canvas = resizeImage(image, width, height);
+    return canvasToSpriteSheet(canvas, spriteSheetName, numberOfColors, paletteName, maxFileLength);
+}
+
+const _console$k = createConsole("DisplayManagerInterface", { log: true });
+async function runDisplayContextCommand(displayManager, command, sendImmediately) {
+    if (command.hide) {
+        return;
+    }
+    switch (command.type) {
+        case "show":
+            await displayManager.show(sendImmediately);
+            break;
+        case "clear":
+            await displayManager.clear(sendImmediately);
+            break;
+        case "saveContext":
+            await displayManager.saveContext(sendImmediately);
+            break;
+        case "restoreContext":
+            await displayManager.restoreContext(sendImmediately);
+            break;
+        case "clearRotation":
+            await displayManager.clearRotation(sendImmediately);
+            break;
+        case "clearCrop":
+            await displayManager.clearCrop(sendImmediately);
+            break;
+        case "clearRotationCrop":
+            await displayManager.clearRotationCrop(sendImmediately);
+            break;
+        case "resetBitmapScale":
+            await displayManager.resetBitmapScale(sendImmediately);
+            break;
+        case "resetSpriteScale":
+            await displayManager.resetSpriteScale(sendImmediately);
+            break;
+        case "setColor":
+            {
+                const { colorIndex, color } = command;
+                await displayManager.setColor(colorIndex, color, sendImmediately);
+            }
+            break;
+        case "setColorOpacity":
+            {
+                const { colorIndex, opacity } = command;
+                await displayManager.setColorOpacity(colorIndex, opacity, sendImmediately);
+            }
+            break;
+        case "setOpacity":
+            {
+                const { opacity } = command;
+                await displayManager.setOpacity(opacity, sendImmediately);
+            }
+            break;
+        case "selectFillColor":
+            {
+                const { fillColorIndex } = command;
+                await displayManager.selectFillColor(fillColorIndex, sendImmediately);
+            }
+            break;
+        case "selectLineColor":
+            {
+                const { lineColorIndex } = command;
+                await displayManager.selectLineColor(lineColorIndex, sendImmediately);
+            }
+            break;
+        case "setLineWidth":
+            {
+                const { lineWidth } = command;
+                await displayManager.setLineWidth(lineWidth, sendImmediately);
+            }
+            break;
+        case "setRotation":
+            {
+                let { rotation, isRadians } = command;
+                rotation = isRadians ? rotation : degToRad(rotation);
+                await displayManager.setRotation(rotation, true, sendImmediately);
+            }
+            break;
+        case "setSegmentStartCap":
+            {
+                const { segmentStartCap } = command;
+                await displayManager.setSegmentStartCap(segmentStartCap, sendImmediately);
+            }
+            break;
+        case "setSegmentEndCap":
+            {
+                const { segmentEndCap } = command;
+                await displayManager.setSegmentEndCap(segmentEndCap, sendImmediately);
+            }
+            break;
+        case "setSegmentCap":
+            {
+                const { segmentCap } = command;
+                await displayManager.setSegmentCap(segmentCap, sendImmediately);
+            }
+            break;
+        case "setSegmentStartRadius":
+            {
+                const { segmentStartRadius } = command;
+                await displayManager.setSegmentStartRadius(segmentStartRadius, sendImmediately);
+            }
+            break;
+        case "setSegmentEndRadius":
+            {
+                const { segmentEndRadius } = command;
+                await displayManager.setSegmentEndRadius(segmentEndRadius, sendImmediately);
+            }
+            break;
+        case "setSegmentRadius":
+            {
+                const { segmentRadius } = command;
+                await displayManager.setSegmentRadius(segmentRadius, sendImmediately);
+            }
+            break;
+        case "setCropTop":
+            {
+                const { cropTop } = command;
+                await displayManager.setCropTop(cropTop, sendImmediately);
+            }
+            break;
+        case "setCropRight":
+            {
+                const { cropRight } = command;
+                await displayManager.setCropRight(cropRight, sendImmediately);
+            }
+            break;
+        case "setCropBottom":
+            {
+                const { cropBottom } = command;
+                await displayManager.setCropBottom(cropBottom, sendImmediately);
+            }
+            break;
+        case "setCropLeft":
+            {
+                const { cropLeft } = command;
+                await displayManager.setCropLeft(cropLeft, sendImmediately);
+            }
+            break;
+        case "setRotationCropTop":
+            {
+                const { rotationCropTop } = command;
+                await displayManager.setRotationCropTop(rotationCropTop, sendImmediately);
+            }
+            break;
+        case "setRotationCropRight":
+            {
+                const { rotationCropRight } = command;
+                await displayManager.setRotationCropRight(rotationCropRight, sendImmediately);
+            }
+            break;
+        case "setRotationCropBottom":
+            {
+                const { rotationCropBottom } = command;
+                await displayManager.setRotationCropBottom(rotationCropBottom, sendImmediately);
+            }
+            break;
+        case "setRotationCropLeft":
+            {
+                const { rotationCropLeft } = command;
+                await displayManager.setRotationCropLeft(rotationCropLeft, sendImmediately);
+            }
+            break;
+        case "selectBitmapColor":
+            {
+                const { bitmapColorIndex, colorIndex } = command;
+                await displayManager.selectBitmapColor(bitmapColorIndex, colorIndex, sendImmediately);
+            }
+            break;
+        case "selectBitmapColors":
+            {
+                const { bitmapColorPairs } = command;
+                await displayManager.selectBitmapColors(bitmapColorPairs, sendImmediately);
+            }
+            break;
+        case "setBitmapScaleX":
+            {
+                const { bitmapScaleX } = command;
+                await displayManager.setBitmapScaleX(bitmapScaleX, sendImmediately);
+            }
+            break;
+        case "setBitmapScaleY":
+            {
+                const { bitmapScaleY } = command;
+                await displayManager.setBitmapScaleY(bitmapScaleY, sendImmediately);
+            }
+            break;
+        case "setBitmapScale":
+            {
+                const { bitmapScale } = command;
+                await displayManager.setBitmapScale(bitmapScale, sendImmediately);
+            }
+            break;
+        case "selectSpriteColor":
+            {
+                const { spriteColorIndex, colorIndex } = command;
+                await displayManager.selectSpriteColor(spriteColorIndex, colorIndex, sendImmediately);
+            }
+            break;
+        case "selectSpriteColors":
+            {
+                const { spriteColorPairs } = command;
+                await displayManager.selectSpriteColors(spriteColorPairs, sendImmediately);
+            }
+            break;
+        case "setSpriteScaleX":
+            {
+                const { spriteScaleX } = command;
+                await displayManager.setSpriteScaleX(spriteScaleX, sendImmediately);
+            }
+            break;
+        case "setSpriteScaleY":
+            {
+                const { spriteScaleY } = command;
+                await displayManager.setSpriteScaleY(spriteScaleY, sendImmediately);
+            }
+            break;
+        case "setSpriteScale":
+            {
+                const { spriteScale } = command;
+                await displayManager.setSpriteScale(spriteScale, sendImmediately);
+            }
+            break;
+        case "clearRect":
+            {
+                const { x, y, width, height } = command;
+                await displayManager.clearRect(x, y, width, height, sendImmediately);
+            }
+            break;
+        case "drawRect":
+            {
+                const { offsetX, offsetY, width, height } = command;
+                await displayManager.drawRect(offsetX, offsetY, width, height, sendImmediately);
+            }
+            break;
+        case "drawRoundRect":
+            {
+                const { offsetX, offsetY, width, height, borderRadius } = command;
+                await displayManager.drawRoundRect(offsetX, offsetY, width, height, borderRadius, sendImmediately);
+            }
+            break;
+        case "drawCircle":
+            {
+                const { offsetX, offsetY, radius } = command;
+                await displayManager.drawCircle(offsetX, offsetY, radius, sendImmediately);
+            }
+            break;
+        case "drawEllipse":
+            {
+                const { offsetX, offsetY, radiusX, radiusY } = command;
+                await displayManager.drawEllipse(offsetX, offsetY, radiusX, radiusY, sendImmediately);
+            }
+            break;
+        case "drawPolygon":
+            {
+                const { offsetX, offsetY, radius, numberOfSides } = command;
+                await displayManager.drawPolygon(offsetX, offsetY, radius, numberOfSides, sendImmediately);
+            }
+            break;
+        case "drawSegment":
+            {
+                const { startX, startY, endX, endY } = command;
+                await displayManager.drawSegment(startX, startY, endX, endY, sendImmediately);
+            }
+            break;
+        case "drawSegments":
+            {
+                const { points } = command;
+                await displayManager.drawSegments(points.map(({ x, y }) => ({ x: x, y: y })), sendImmediately);
+            }
+            break;
+        case "drawArc":
+            {
+                let { offsetX, offsetY, radius, startAngle, angleOffset, isRadians } = command;
+                startAngle = isRadians ? startAngle : degToRad(startAngle);
+                angleOffset = isRadians ? angleOffset : degToRad(angleOffset);
+                await displayManager.drawArc(offsetX, offsetY, radius, startAngle, angleOffset, true, sendImmediately);
+            }
+            break;
+        case "drawArcEllipse":
+            {
+                let { offsetX, offsetY, radiusX, radiusY, startAngle, angleOffset, isRadians, } = command;
+                startAngle = isRadians ? startAngle : degToRad(startAngle);
+                angleOffset = isRadians ? angleOffset : degToRad(angleOffset);
+                await displayManager.drawArcEllipse(offsetX, offsetY, radiusX, radiusY, startAngle, angleOffset, true, sendImmediately);
+            }
+            break;
+        case "drawBitmap":
+            {
+                const { offsetX, offsetY, bitmap } = command;
+                await displayManager.drawBitmap(offsetX, offsetY, bitmap, sendImmediately);
+            }
+            break;
+        case "drawSprite":
+            {
+                const { offsetX, offsetY, spriteIndex } = command;
+                const spriteName = displayManager.selectedSpriteSheet?.sprites[spriteIndex].name;
+                await displayManager.drawSprite(offsetX, offsetY, spriteName, sendImmediately);
+            }
+            break;
+        case "selectSpriteSheet":
+            {
+                const { spriteSheetIndex } = command;
+                const spriteSheetName = Object.entries(displayManager.spriteSheetIndices).find((entry) => entry[1] == spriteSheetIndex)?.[0];
+                await displayManager.selectSpriteSheet(spriteSheetName, sendImmediately);
+            }
+            break;
+        case "resetSpriteColors":
+            await displayManager.resetSpriteColors(sendImmediately);
+            break;
+    }
+}
+async function runDisplayContextCommands(displayManager, commands, sendImmediately) {
+    _console$k.log("runDisplayContextCommands", commands);
+    commands
+        .filter((command) => !command.hide)
+        .forEach((command) => {
+        runDisplayContextCommand(displayManager, command, false);
+    });
+    if (sendImmediately) {
+        displayManager.flushContextCommands();
+    }
+}
+function assertLoadedSpriteSheet(displayManager, spriteSheetName) {
+    _console$k.assertWithError(displayManager.spriteSheets[spriteSheetName], `spriteSheet "${spriteSheetName}" not loaded`);
+}
+function assertSelectedSpriteSheet(displayManager, spriteSheetName) {
+    displayManager.assertLoadedSpriteSheet(spriteSheetName);
+    _console$k.assertWithError(displayManager.selectedSpriteSheetName == spriteSheetName, `spriteSheet "${spriteSheetName}" not selected`);
+}
+function assertAnySelectedSpriteSheet(displayManager) {
+    _console$k.assertWithError(displayManager.selectedSpriteSheet, "no spriteSheet selected");
+}
+function getSprite(displayManager, spriteName) {
+    displayManager.assertAnySelectedSpriteSheet();
+    return displayManager.selectedSpriteSheet.sprites.find((sprite) => sprite.name == spriteName);
+}
+function assertSprite(displayManager, spriteName) {
+    displayManager.assertAnySelectedSpriteSheet();
+    const sprite = displayManager.getSprite(spriteName);
+    _console$k.assertWithError(sprite, `no sprite found with name "${spriteName}"`);
+}
+function getSpriteSheetPalette(displayManager, paletteName) {
+    return displayManager.selectedSpriteSheet?.palettes?.find((palette) => palette.name == paletteName);
+}
+function getSpriteSheetPaletteSwap(displayManager, paletteSwapName) {
+    return displayManager.selectedSpriteSheet?.paletteSwaps?.find((paletteSwap) => paletteSwap.name == paletteSwapName);
+}
+function getSpritePaletteSwap(displayManager, spriteName, paletteSwapName) {
+    return displayManager
+        .getSprite(spriteName)
+        ?.paletteSwaps?.find((paletteSwap) => paletteSwap.name == paletteSwapName);
+}
+function assertSpriteSheetPalette(displayManagerInterface, paletteName) {
+    const spriteSheetPalette = displayManagerInterface.getSpriteSheetPalette(paletteName);
+    _console$k.assertWithError(spriteSheetPalette, `no spriteSheetPalette found with name "${paletteName}"`);
+}
+function assertSpriteSheetPaletteSwap(displayManagerInterface, paletteSwapName) {
+    const spriteSheetPaletteSwap = displayManagerInterface.getSpriteSheetPaletteSwap(paletteSwapName);
+    _console$k.assertWithError(spriteSheetPaletteSwap, `no paletteSwapName found with name "${paletteSwapName}"`);
+}
+function assertSpritePaletteSwap(displayManagerInterface, spriteName, paletteSwapName) {
+    const spritePaletteSwap = displayManagerInterface.getSpritePaletteSwap(spriteName, paletteSwapName);
+    _console$k.assertWithError(spritePaletteSwap, `no spritePaletteSwap found for sprite "${spriteName}" name "${paletteSwapName}"`);
+}
+async function selectSpriteSheetPalette(displayManagerInterface, paletteName, offset, sendImmediately) {
+    offset = offset || 0;
+    displayManagerInterface.assertAnySelectedSpriteSheet();
+    displayManagerInterface.assertSpriteSheetPalette(paletteName);
+    const palette = displayManagerInterface.getSpriteSheetPalette(paletteName);
+    _console$k.assertWithError(palette.numberOfColors + offset <= displayManagerInterface.numberOfColors, `invalid offset ${offset} and palette.numberOfColors ${palette.numberOfColors} (max ${displayManagerInterface.numberOfColors})`);
+    for (let index = 0; index < palette.numberOfColors; index++) {
+        const color = palette.colors[index];
+        let opacity = palette.opacities?.[index];
+        if (opacity == undefined) {
+            opacity = 1;
+        }
+        displayManagerInterface.setColor(index + offset, color, false);
+        displayManagerInterface.setColorOpacity(index + offset, opacity, false);
+    }
+    if (sendImmediately) {
+        displayManagerInterface.flushContextCommands();
+    }
+}
+async function selectSpriteSheetPaletteSwap(displayManagerInterface, paletteSwapName, offset, sendImmediately) {
+    offset = offset || 0;
+    displayManagerInterface.assertAnySelectedSpriteSheet();
+    displayManagerInterface.assertSpriteSheetPaletteSwap(paletteSwapName);
+    const paletteSwap = displayManagerInterface.getSpriteSheetPaletteSwap(paletteSwapName);
+    const spriteColorPairs = [];
+    for (let spriteColorIndex = 0; spriteColorIndex < paletteSwap.numberOfColors; spriteColorIndex++) {
+        const colorIndex = paletteSwap.spriteColorIndices[spriteColorIndex];
+        spriteColorPairs.push({
+            spriteColorIndex: spriteColorIndex + offset,
+            colorIndex,
+        });
+    }
+    displayManagerInterface.selectSpriteColors(spriteColorPairs, false);
+    if (sendImmediately) {
+        displayManagerInterface.flushContextCommands();
+    }
+}
+async function selectSpritePaletteSwap(displayManagerInterface, spriteName, paletteSwapName, offset, sendImmediately) {
+    offset = offset || 0;
+    displayManagerInterface.assertAnySelectedSpriteSheet();
+    const paletteSwap = displayManagerInterface.getSpritePaletteSwap(spriteName, paletteSwapName);
+    const spriteColorPairs = [];
+    for (let spriteColorIndex = 0; spriteColorIndex < paletteSwap.numberOfColors; spriteColorIndex++) {
+        const colorIndex = paletteSwap.spriteColorIndices[spriteColorIndex];
+        spriteColorPairs.push({
+            spriteColorIndex: spriteColorIndex + offset,
+            colorIndex,
+        });
+    }
+    displayManagerInterface.selectSpriteColors(spriteColorPairs, false);
+    if (sendImmediately) {
+        displayManagerInterface.flushContextCommands();
+    }
+}
+async function drawSpriteFromSpriteSheet(displayManagerInterface, offsetX, offsetY, spriteName, spriteSheet, sendImmediately) {
+    const reducedSpriteSheet = reduceSpriteSheet(spriteSheet, [spriteName]);
+    await displayManagerInterface.uploadSpriteSheet(reducedSpriteSheet);
+    await displayManagerInterface.selectSpriteSheet(spriteSheet.name);
+    await displayManagerInterface.drawSprite(offsetX, offsetY, spriteName, sendImmediately);
+}
+
+var _DisplayManager_instances, _DisplayManager_dispatchEvent_get, _DisplayManager_isAvailable, _DisplayManager_assertDisplayIsAvailable, _DisplayManager_parseIsDisplayAvailable, _DisplayManager_contextStateHelper, _DisplayManager_onContextStateUpdate, _DisplayManager_displayStatus, _DisplayManager_parseDisplayStatus, _DisplayManager_updateDisplayStatus, _DisplayManager_sendDisplayCommand, _DisplayManager_assertIsAwake, _DisplayManager_assertIsNotAwake, _DisplayManager_displayInformation, _DisplayManager_parseDisplayInformation, _DisplayManager_brightness, _DisplayManager_parseDisplayBrightness, _DisplayManager_assertValidDisplayContextCommand, _DisplayManager_maxCommandDataLength_get, _DisplayManager_displayContextCommandBuffers, _DisplayManager_sendDisplayContextCommand, _DisplayManager_sendContextCommands, _DisplayManager_colors, _DisplayManager_opacities, _DisplayManager_assertValidBitmapSize, _DisplayManager_isReady, _DisplayManager_parseDisplayReady, _DisplayManager_spriteSheets, _DisplayManager_spriteSheetIndices, _DisplayManager_setSpriteSheetName, _DisplayManager_pendingSpriteSheet, _DisplayManager_pendingSpriteSheetName, _DisplayManager_updateSpriteSheetName, _DisplayManager_parseSpriteSheetIndex, _DisplayManager_mtu, _DisplayManager_isServerSide;
 const _console$j = createConsole("DisplayManager", { log: true });
 const DefaultNumberOfDisplayColors = 16;
 const DisplayCommands = ["sleep", "wake"];
@@ -16037,6 +16059,7 @@ class DisplayManager {
         _DisplayManager_pendingSpriteSheet.set(this, void 0);
         _DisplayManager_pendingSpriteSheetName.set(this, void 0);
         _DisplayManager_mtu.set(this, void 0);
+        _DisplayManager_isServerSide.set(this, false);
         autoBind(this);
     }
     get waitForEvent() {
@@ -17000,8 +17023,8 @@ class DisplayManager {
     async quantizeImage(image, width, height, numberOfColors) {
         return quantizeImage(image, width, height, numberOfColors);
     }
-    async resizeAndQuantizeImage(image, width, height, colors) {
-        return resizeAndQuantizeImage(image, width, height, colors);
+    async resizeAndQuantizeImage(image, width, height, numberOfColors, colors) {
+        return resizeAndQuantizeImage(image, width, height, numberOfColors, colors);
     }
     async runContextCommand(command, sendImmediately) {
         return runDisplayContextCommand(this, command, sendImmediately);
@@ -17109,6 +17132,9 @@ class DisplayManager {
         }
         await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "drawSprite", dataView.buffer, sendImmediately);
     }
+    async drawSpriteFromSpriteSheet(offsetX, offsetY, spriteName, spriteSheet, sendImmediately) {
+        return drawSpriteFromSpriteSheet(this, offsetX, offsetY, spriteName, spriteSheet, sendImmediately);
+    }
     parseMessage(messageType, dataView) {
         _console$j.log({ messageType, dataView });
         switch (messageType) {
@@ -17185,8 +17211,19 @@ class DisplayManager {
     set mtu(newMtu) {
         __classPrivateFieldSet(this, _DisplayManager_mtu, newMtu, "f");
     }
+    get isServerSide() {
+        return __classPrivateFieldGet(this, _DisplayManager_isServerSide, "f");
+    }
+    set isServerSide(newIsServerSide) {
+        if (__classPrivateFieldGet(this, _DisplayManager_isServerSide, "f") == newIsServerSide) {
+            _console$j.log("redundant isServerSide assignment");
+            return;
+        }
+        _console$j.log({ newIsServerSide });
+        __classPrivateFieldSet(this, _DisplayManager_isServerSide, newIsServerSide, "f");
+    }
 }
-_DisplayManager_isAvailable = new WeakMap(), _DisplayManager_contextStateHelper = new WeakMap(), _DisplayManager_displayStatus = new WeakMap(), _DisplayManager_displayInformation = new WeakMap(), _DisplayManager_brightness = new WeakMap(), _DisplayManager_displayContextCommandBuffers = new WeakMap(), _DisplayManager_colors = new WeakMap(), _DisplayManager_opacities = new WeakMap(), _DisplayManager_isReady = new WeakMap(), _DisplayManager_spriteSheets = new WeakMap(), _DisplayManager_spriteSheetIndices = new WeakMap(), _DisplayManager_pendingSpriteSheet = new WeakMap(), _DisplayManager_pendingSpriteSheetName = new WeakMap(), _DisplayManager_mtu = new WeakMap(), _DisplayManager_instances = new WeakSet(), _DisplayManager_dispatchEvent_get = function _DisplayManager_dispatchEvent_get() {
+_DisplayManager_isAvailable = new WeakMap(), _DisplayManager_contextStateHelper = new WeakMap(), _DisplayManager_displayStatus = new WeakMap(), _DisplayManager_displayInformation = new WeakMap(), _DisplayManager_brightness = new WeakMap(), _DisplayManager_displayContextCommandBuffers = new WeakMap(), _DisplayManager_colors = new WeakMap(), _DisplayManager_opacities = new WeakMap(), _DisplayManager_isReady = new WeakMap(), _DisplayManager_spriteSheets = new WeakMap(), _DisplayManager_spriteSheetIndices = new WeakMap(), _DisplayManager_pendingSpriteSheet = new WeakMap(), _DisplayManager_pendingSpriteSheetName = new WeakMap(), _DisplayManager_mtu = new WeakMap(), _DisplayManager_isServerSide = new WeakMap(), _DisplayManager_instances = new WeakSet(), _DisplayManager_dispatchEvent_get = function _DisplayManager_dispatchEvent_get() {
     return this.eventDispatcher.dispatchEvent;
 }, _DisplayManager_assertDisplayIsAvailable = function _DisplayManager_assertDisplayIsAvailable() {
     _console$j.assertWithError(__classPrivateFieldGet(this, _DisplayManager_isAvailable, "f"), "display is not available");
@@ -17340,6 +17377,9 @@ async function _DisplayManager_sendDisplayCommand(command, sendImmediately) {
         spriteSheetName: __classPrivateFieldGet(this, _DisplayManager_pendingSpriteSheetName, "f"),
         spriteSheetIndex,
     });
+    if (this.isServerSide) {
+        return;
+    }
     _console$j.assertWithError(__classPrivateFieldGet(this, _DisplayManager_pendingSpriteSheetName, "f"), "expected spriteSheetName when receiving spriteSheetIndex");
     _console$j.assertWithError(__classPrivateFieldGet(this, _DisplayManager_pendingSpriteSheet, "f"), "expected pendingSpriteSheet when receiving spriteSheetIndex");
     __classPrivateFieldGet(this, _DisplayManager_spriteSheets, "f")[__classPrivateFieldGet(this, _DisplayManager_pendingSpriteSheetName, "f")] =
@@ -20120,6 +20160,7 @@ class Device {
         _console$7.log({ newIsServerSide });
         __classPrivateFieldSet(this, _Device_isServerSide, newIsServerSide, "f");
         __classPrivateFieldGet(this, _Device_fileTransferManager, "f").isServerSide = this.isServerSide;
+        __classPrivateFieldGet(this, _Device_displayManager, "f").isServerSide = this.isServerSide;
     }
     get isUkaton() {
         return this.deviceInformation.modelNumber.includes("Ukaton");
@@ -21718,6 +21759,9 @@ class DisplayCanvasHelper {
             await this.device.drawDisplaySprite(offsetX, offsetY, spriteName, sendImmediately);
         }
     }
+    async drawSpriteFromSpriteSheet(offsetX, offsetY, spriteName, spriteSheet, sendImmediately) {
+        return drawSpriteFromSpriteSheet(this, offsetX, offsetY, spriteName, spriteSheet, sendImmediately);
+    }
     get brightness() {
         return __classPrivateFieldGet(this, _DisplayCanvasHelper_brightness, "f");
     }
@@ -21775,8 +21819,8 @@ class DisplayCanvasHelper {
     async quantizeImage(image, width, height, numberOfColors) {
         return quantizeImage(image, width, height, numberOfColors);
     }
-    async resizeAndQuantizeImage(image, width, height, colors) {
-        return resizeAndQuantizeImage(image, width, height, colors);
+    async resizeAndQuantizeImage(image, width, height, numberOfColors, colors) {
+        return resizeAndQuantizeImage(image, width, height, numberOfColors, colors);
     }
     serializeSpriteSheet(spriteSheet) {
         return serializeSpriteSheet(this, spriteSheet);
@@ -23510,5 +23554,5 @@ const ThrottleUtils = {
     debounce,
 };
 
-export { CameraCommands, CameraConfigurationTypes, ContinuousSensorTypes, DefaultNumberOfDisplayColors, DefaultNumberOfPressureSensors, Device, DeviceManager$1 as DeviceManager, DevicePair, DevicePairTypes, DeviceTypes, DisplayBrightnesses, DisplayCanvasHelper, DisplayContextCommandTypes, DisplayPixelDepths, DisplaySegmentCaps, DisplaySpriteContextCommandTypes, environment as Environment, EventUtils, FileTransferDirections, FileTypes, MaxNameLength, MaxNumberOfVibrationWaveformEffectSegments, MaxNumberOfVibrationWaveformSegments, MaxSensorRate, MaxSpriteSheetNameLength, MaxVibrationWaveformEffectSegmentDelay, MaxVibrationWaveformEffectSegmentLoopCount, MaxVibrationWaveformEffectSequenceLoopCount, MaxVibrationWaveformSegmentDuration, MaxWifiPasswordLength, MaxWifiSSIDLength, MicrophoneCommands, MicrophoneConfigurationTypes, MicrophoneConfigurationValues, MinNameLength, MinSpriteSheetNameLength, MinWifiPasswordLength, MinWifiSSIDLength, RangeHelper, SensorRateStep, SensorTypes, Sides, TfliteSensorTypes, TfliteTasks, ThrottleUtils, VibrationLocations, VibrationTypes, VibrationWaveformEffects, WebSocketClient, hexToRGB, imageToSprite, imageToSpriteSheet, maxDisplayScale, quantizeImage, resizeAndQuantizeImage, rgbToHex, setAllConsoleLevelFlags, setConsoleLevelFlagsForType };
+export { CameraCommands, CameraConfigurationTypes, ContinuousSensorTypes, DefaultNumberOfDisplayColors, DefaultNumberOfPressureSensors, Device, DeviceManager$1 as DeviceManager, DevicePair, DevicePairTypes, DeviceTypes, DisplayBrightnesses, DisplayCanvasHelper, DisplayContextCommandTypes, DisplayPixelDepths, DisplaySegmentCaps, DisplaySpriteContextCommandTypes, environment as Environment, EventUtils, FileTransferDirections, FileTypes, MaxNameLength, MaxNumberOfVibrationWaveformEffectSegments, MaxNumberOfVibrationWaveformSegments, MaxSensorRate, MaxSpriteSheetNameLength, MaxVibrationWaveformEffectSegmentDelay, MaxVibrationWaveformEffectSegmentLoopCount, MaxVibrationWaveformEffectSequenceLoopCount, MaxVibrationWaveformSegmentDuration, MaxWifiPasswordLength, MaxWifiSSIDLength, MicrophoneCommands, MicrophoneConfigurationTypes, MicrophoneConfigurationValues, MinNameLength, MinSpriteSheetNameLength, MinWifiPasswordLength, MinWifiSSIDLength, RangeHelper, SensorRateStep, SensorTypes, Sides, TfliteSensorTypes, TfliteTasks, ThrottleUtils, VibrationLocations, VibrationTypes, VibrationWaveformEffects, WebSocketClient, hexToRGB, imageToSprite, imageToSpriteSheet, maxDisplayScale, pixelDepthToNumberOfColors, quantizeImage, resizeAndQuantizeImage, rgbToHex, setAllConsoleLevelFlags, setConsoleLevelFlagsForType, wait };
 //# sourceMappingURL=brilliantsole.module.js.map

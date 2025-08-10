@@ -1253,6 +1253,7 @@ class Device {
     this.#isServerSide = newIsServerSide;
 
     this.#fileTransferManager.isServerSide = this.isServerSide;
+    this.#displayManager.isServerSide = this.isServerSide;
   }
 
   // UKATON

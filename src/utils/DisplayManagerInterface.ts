@@ -3,6 +3,7 @@ import {
   DisplayBrightness,
   DisplaySpriteColorPair,
   DisplayBitmap,
+  DisplayInformation,
 } from "../DisplayManager.ts";
 import { createConsole } from "./Console.ts";
 import { DisplayContextCommand } from "./DisplayContextCommand.ts";
@@ -16,6 +17,7 @@ import {
   DisplaySpriteSheet,
   DisplaySpriteSheetPalette,
   DisplaySpriteSheetPaletteSwap,
+  reduceSpriteSheet,
 } from "./DisplaySpriteSheetUtils.ts";
 import {
   DisplayScaleDirection,
@@ -334,23 +336,25 @@ export interface DisplayManagerInterface {
     blob: Blob;
     bitmap: DisplayBitmap;
   }>;
-
   quantizeImage(
     image: HTMLImageElement,
     width: number,
     height: number,
-    numberOfColors: number
+    numberOfColors: number,
+    colors?: string[],
+    canvas?: HTMLCanvasElement
   ): Promise<{
     blob: Blob;
     colors: string[];
     colorIndices: number[];
   }>;
-
   resizeAndQuantizeImage(
     image: HTMLImageElement,
     width: number,
     height: number,
-    colors: string[]
+    numberOfColors: number,
+    colors?: string[],
+    canvas?: HTMLCanvasElement
   ): Promise<{
     blob: Blob;
     colorIndices: number[];
@@ -383,6 +387,14 @@ export interface DisplayManagerInterface {
     spriteName: string,
     paletteSwapName: string
   ): DisplaySpritePaletteSwap | undefined;
+
+  drawSpriteFromSpriteSheet(
+    offsetX: number,
+    offsetY: number,
+    spriteName: string,
+    spriteSheet: DisplaySpriteSheet,
+    sendImmediately?: boolean
+  ): Promise<void>;
 
   get selectedSpriteSheet(): DisplaySpriteSheet | undefined;
   get selectedSpriteSheetName(): string | undefined;
@@ -1071,4 +1083,23 @@ export async function selectSpritePaletteSwap(
   if (sendImmediately) {
     displayManagerInterface.flushContextCommands();
   }
+}
+
+export async function drawSpriteFromSpriteSheet(
+  displayManagerInterface: DisplayManagerInterface,
+  offsetX: number,
+  offsetY: number,
+  spriteName: string,
+  spriteSheet: DisplaySpriteSheet,
+  sendImmediately?: boolean
+) {
+  const reducedSpriteSheet = reduceSpriteSheet(spriteSheet, [spriteName]);
+  await displayManagerInterface.uploadSpriteSheet(reducedSpriteSheet);
+  await displayManagerInterface.selectSpriteSheet(spriteSheet.name);
+  await displayManagerInterface.drawSprite(
+    offsetX,
+    offsetY,
+    spriteName,
+    sendImmediately
+  );
 }
