@@ -19,7 +19,7 @@ import {
 
 const _console = createConsole("DisplayBitmapUtils", { log: true });
 
-export const drawBitmapHeaderLength = 2 + 2 + 2 + 2 + 1 + 2; // x, y, width, numberOfPixels, numberOfColors, dataLength
+export const drawBitmapHeaderLength = 2 + 2 + 2 + 4 + 1 + 2; // x, y, width, numberOfPixels, numberOfColors, dataLength
 
 export function getBitmapData(bitmap: DisplayBitmap) {
   const pixelDataLength = getBitmapNumberOfBytes(bitmap);
@@ -362,16 +362,15 @@ export async function canvasToSprite(
   let palette = spriteSheet.palettes?.find(
     (palette) => palette.name == paletteName
   );
-  console.log("pallete", palette);
   if (!palette) {
     palette = {
       name: paletteName,
       numberOfColors,
       colors: new Array(numberOfColors).fill("#000000"),
-      opacities: new Array(numberOfColors).fill(1),
     };
     spriteSheet.palettes?.push(palette);
   }
+  console.log("pallete", palette);
 
   _console.assertWithError(
     numberOfColors + paletteOffset <= palette.numberOfColors,
@@ -420,6 +419,7 @@ export async function canvasToSprite(
   if (spriteIndex == -1) {
     spriteSheet.sprites.push(sprite);
   } else {
+    _console.log(`overwriting spriteInde ${spriteIndex}`);
     spriteSheet.sprites[spriteIndex] = sprite;
   }
 
@@ -509,7 +509,6 @@ export async function canvasToSpriteSheet(
       maxFileLength -
       (spriteSheetWithBitmapCommandAndSelectBitmapColorsLength(numberOfColors) +
         5);
-    _console.log({ maxPixelDataLength });
     const imageRowPixelDataLength = Math.ceil(width / pixelsPerByte);
     const maxSpriteHeight = Math.floor(
       maxPixelDataLength / imageRowPixelDataLength
@@ -521,6 +520,7 @@ export async function canvasToSpriteSheet(
     });
 
     if (maxSpriteHeight >= height) {
+      _console.log("image is small enough for a single sprite");
       await canvasToSprite(
         canvas,
         "image",
@@ -542,6 +542,11 @@ export async function canvasToSpriteSheet(
         let spriteHeight = Math.min(maxSpriteHeight, height - yOffset);
         cropCanvas(canvas, 0, yOffset, width, spriteHeight, spriteCanvas);
         yOffset += spriteHeight;
+        _console.log(`cropping sprite ${imageIndex}`, {
+          yOffset,
+          width,
+          spriteHeight,
+        });
         await canvasToSprite(
           spriteCanvas,
           `image${imageIndex}`,

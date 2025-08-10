@@ -558,7 +558,7 @@ function autoBind(self, {include, exclude} = {}) {
 }
 
 var _FileTransferManager_instances, _a$7, _FileTransferManager_dispatchEvent_get, _FileTransferManager_assertValidType, _FileTransferManager_assertValidTypeEnum, _FileTransferManager_assertValidStatusEnum, _FileTransferManager_assertValidCommand, _FileTransferManager_fileTypes, _FileTransferManager_parseFileTypes, _FileTransferManager_MaxLength, _FileTransferManager_maxLength, _FileTransferManager_parseMaxLength, _FileTransferManager_updateMaxLength, _FileTransferManager_assertValidLength, _FileTransferManager_type, _FileTransferManager_parseType, _FileTransferManager_updateType, _FileTransferManager_setType, _FileTransferManager_length, _FileTransferManager_parseLength, _FileTransferManager_updateLength, _FileTransferManager_setLength, _FileTransferManager_checksum, _FileTransferManager_parseChecksum, _FileTransferManager_updateChecksum, _FileTransferManager_setChecksum, _FileTransferManager_setCommand, _FileTransferManager_status, _FileTransferManager_parseStatus, _FileTransferManager_updateStatus, _FileTransferManager_assertIsIdle, _FileTransferManager_assertIsNotIdle, _FileTransferManager_receivedBlocks, _FileTransferManager_parseBlock, _FileTransferManager_buffer, _FileTransferManager_bytesTransferred, _FileTransferManager_send, _FileTransferManager_sendBlock, _FileTransferManager_parseBytesTransferred, _FileTransferManager_isCancelling, _FileTransferManager_isServerSide;
-const _console$F = createConsole("FileTransferManager", { log: true });
+const _console$F = createConsole("FileTransferManager", { log: false });
 const FileTransferMessageTypes = [
     "getFileTypes",
     "maxFileLength",
@@ -5233,10 +5233,10 @@ function serializeContextCommand(displayManager, command) {
                 dataView.setInt16(0, offsetX, true);
                 dataView.setInt16(2, offsetY, true);
                 dataView.setUint16(4, bitmap.width, true);
-                dataView.setUint16(6, bitmap.pixels.length, true);
-                dataView.setUint8(8, bitmap.numberOfColors);
+                dataView.setUint32(6, bitmap.pixels.length, true);
+                dataView.setUint8(10, bitmap.numberOfColors);
                 const bitmapData = getBitmapData(bitmap);
-                dataView.setUint16(9, bitmapData.byteLength, true);
+                dataView.setUint16(11, bitmapData.byteLength, true);
                 const buffer = concatenateArrayBuffers(dataView, bitmapData);
                 dataView = new DataView(buffer);
             }
@@ -15226,7 +15226,6 @@ function reduceSpriteSheet(spriteSheet, spriteNames) {
     if (!(spriteNames instanceof Array)) {
         spriteNames = [spriteNames];
     }
-    _console$m.log("reduceSpriteSheet", spriteSheet, spriteNames);
     reducedSpriteName.sprites = reducedSpriteName.sprites.filter((sprite) => {
         return spriteNames.includes(sprite.name);
     });
@@ -15235,7 +15234,7 @@ function reduceSpriteSheet(spriteSheet, spriteNames) {
 }
 
 const _console$l = createConsole("DisplayBitmapUtils", { log: true });
-const drawBitmapHeaderLength = 2 + 2 + 2 + 2 + 1 + 2;
+const drawBitmapHeaderLength = 2 + 2 + 2 + 4 + 1 + 2;
 function getBitmapData(bitmap) {
     const pixelDataLength = getBitmapNumberOfBytes(bitmap);
     const dataView = new DataView(new ArrayBuffer(pixelDataLength));
@@ -15438,16 +15437,15 @@ function assertValidBitmapPixels(bitmap) {
 async function canvasToSprite(canvas, spriteName, numberOfColors, paletteName, overridePalette, spriteSheet, paletteOffset) {
     const { width, height } = canvas;
     let palette = spriteSheet.palettes?.find((palette) => palette.name == paletteName);
-    console.log("pallete", palette);
     if (!palette) {
         palette = {
             name: paletteName,
             numberOfColors,
             colors: new Array(numberOfColors).fill("#000000"),
-            opacities: new Array(numberOfColors).fill(1),
         };
         spriteSheet.palettes?.push(palette);
     }
+    console.log("pallete", palette);
     _console$l.assertWithError(numberOfColors + paletteOffset <= palette.numberOfColors, `invalid numberOfColors ${numberOfColors} + offset ${paletteOffset} (max ${palette.numberOfColors})`);
     const sprite = {
         name: spriteName,
@@ -15483,6 +15481,7 @@ async function canvasToSprite(canvas, spriteName, numberOfColors, paletteName, o
         spriteSheet.sprites.push(sprite);
     }
     else {
+        _console$l.log(`overwriting spriteInde ${spriteIndex}`);
         spriteSheet.sprites[spriteIndex] = sprite;
     }
     return { sprite, blob };
@@ -15525,7 +15524,6 @@ async function canvasToSpriteSheet(canvas, spriteSheetName, numberOfColors, pale
         const maxPixelDataLength = maxFileLength -
             (spriteSheetWithBitmapCommandAndSelectBitmapColorsLength(numberOfColors) +
                 5);
-        _console$l.log({ maxPixelDataLength });
         const imageRowPixelDataLength = Math.ceil(width / pixelsPerByte);
         const maxSpriteHeight = Math.floor(maxPixelDataLength / imageRowPixelDataLength);
         _console$l.log({
@@ -15534,6 +15532,7 @@ async function canvasToSpriteSheet(canvas, spriteSheetName, numberOfColors, pale
             maxSpriteHeight,
         });
         if (maxSpriteHeight >= height) {
+            _console$l.log("image is small enough for a single sprite");
             await canvasToSprite(canvas, "image", numberOfColors, paletteName, true, spriteSheet, 0);
         }
         else {
@@ -15546,6 +15545,11 @@ async function canvasToSpriteSheet(canvas, spriteSheetName, numberOfColors, pale
                 let spriteHeight = Math.min(maxSpriteHeight, height - yOffset);
                 cropCanvas(canvas, 0, yOffset, width, spriteHeight, spriteCanvas);
                 yOffset += spriteHeight;
+                _console$l.log(`cropping sprite ${imageIndex}`, {
+                    yOffset,
+                    width,
+                    spriteHeight,
+                });
                 await canvasToSprite(spriteCanvas, `image${imageIndex}`, numberOfColors, paletteName, false, spriteSheet, 0);
                 imageIndex++;
             }

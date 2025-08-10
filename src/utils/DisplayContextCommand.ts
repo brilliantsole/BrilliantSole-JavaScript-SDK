@@ -1012,11 +1012,11 @@ export function serializeContextCommand(
         dataView.setInt16(0, offsetX, true);
         dataView.setInt16(2, offsetY, true);
         dataView.setUint16(4, bitmap.width, true);
-        dataView.setUint16(6, bitmap.pixels.length, true);
-        dataView.setUint8(8, bitmap.numberOfColors);
+        dataView.setUint32(6, bitmap.pixels.length, true);
+        dataView.setUint8(10, bitmap.numberOfColors);
 
         const bitmapData = getBitmapData(bitmap);
-        dataView.setUint16(9, bitmapData.byteLength, true);
+        dataView.setUint16(11, bitmapData.byteLength, true);
         const buffer = concatenateArrayBuffers(dataView, bitmapData);
         dataView = new DataView(buffer);
       }

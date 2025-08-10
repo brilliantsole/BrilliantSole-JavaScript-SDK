@@ -1,11 +1,9 @@
 import { DisplayBitmap } from "../DisplayManager.ts";
 import { concatenateArrayBuffers } from "./ArrayBufferUtils.ts";
 import { createConsole } from "./Console.ts";
-import { imageToBitmap, quantizeCanvas } from "./DisplayBitmapUtils.ts";
+import { quantizeCanvas } from "./DisplayBitmapUtils.ts";
 import {
-  BaseOffsetPositionDisplayContextCommand,
   DisplayContextCommand,
-  DrawDisplayBitmapCommand,
   serializeContextCommands,
 } from "./DisplayContextCommand.ts";
 import { DisplayManagerInterface } from "./DisplayManagerInterface.ts";
@@ -259,7 +257,7 @@ export function reduceSpriteSheet(
     // TODO - parseSpriteNames via prefixes (use for drawSprites)
     spriteNames = [spriteNames];
   }
-  _console.log("reduceSpriteSheet", spriteSheet, spriteNames);
+  //_console.log("reduceSpriteSheet", spriteSheet, spriteNames);
   reducedSpriteName.sprites = reducedSpriteName.sprites.filter((sprite) => {
     // TODO - recursively iterate sprites' commands to see which sprites reference what
     return spriteNames.includes(sprite.name);

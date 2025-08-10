@@ -4528,10 +4528,10 @@ function serializeContextCommand(displayManager, command) {
                 dataView.setInt16(0, offsetX, true);
                 dataView.setInt16(2, offsetY, true);
                 dataView.setUint16(4, bitmap.width, true);
-                dataView.setUint16(6, bitmap.pixels.length, true);
-                dataView.setUint8(8, bitmap.numberOfColors);
+                dataView.setUint32(6, bitmap.pixels.length, true);
+                dataView.setUint8(10, bitmap.numberOfColors);
                 const bitmapData = getBitmapData(bitmap);
-                dataView.setUint16(9, bitmapData.byteLength, true);
+                dataView.setUint16(11, bitmapData.byteLength, true);
                 const buffer = concatenateArrayBuffers(dataView, bitmapData);
                 dataView = new DataView(buffer);
             }
@@ -4709,7 +4709,6 @@ function reduceSpriteSheet(spriteSheet, spriteNames) {
     if (!(spriteNames instanceof Array)) {
         spriteNames = [spriteNames];
     }
-    _console$r.log("reduceSpriteSheet", spriteSheet, spriteNames);
     reducedSpriteName.sprites = reducedSpriteName.sprites.filter((sprite) => {
         return spriteNames.includes(sprite.name);
     });
@@ -4718,7 +4717,7 @@ function reduceSpriteSheet(spriteSheet, spriteNames) {
 }
 
 const _console$q = createConsole("DisplayBitmapUtils", { log: true });
-const drawBitmapHeaderLength = 2 + 2 + 2 + 2 + 1 + 2;
+const drawBitmapHeaderLength = 2 + 2 + 2 + 4 + 1 + 2;
 function getBitmapData(bitmap) {
     const pixelDataLength = getBitmapNumberOfBytes(bitmap);
     const dataView = new DataView(new ArrayBuffer(pixelDataLength));
