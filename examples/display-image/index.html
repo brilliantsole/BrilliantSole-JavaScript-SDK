@@ -128,6 +128,13 @@
 
     <br />
 
+    <button disabled id="focusCamera">focus camera</button>
+    <button disabled id="takePicture">take picture</button>
+    <progress value="0" id="cameraImageProgress"></progress>
+    <label>auto picture: <input type="checkbox" id="autoPicture" /> </label>
+
+    <br />
+
     <label>
       file transfer progress: <span></span>
       <progress value="0" id="fileTransferProgress"></progress>
@@ -144,5 +151,34 @@
     <canvas hidden id="canvas" width="640" height="400"></canvas>
     <image hidden id="image" width="640" height="400"></image>
     <video hidden id="cameraVideo" autoplay playsinline width="640"></video>
+
+    <br />
+
+    <div>
+      <label>
+        <b>camera configuration: </b>
+        <pre id="cameraConfigurationPre"></pre>
+      </label>
+
+      <label>
+        take picture after update?
+        <input type="checkbox" id="takePictureAfterUpdate" />
+      </label>
+
+      <div id="cameraConfiguration">
+        <template id="cameraConfigurationTypeTemplate">
+          <div class="cameraConfigurationType">
+            <label>
+              <input class="value" type="range" value="" disabled />
+              <b class="type"></b> <span></span>
+            </label>
+          </div>
+        </template>
+      </div>
+      <label>
+        <b>white balance</b>
+        <input type="color" id="cameraWhiteBalance" disabled />
+      </label>
+    </div>
   </body>
 </html>
