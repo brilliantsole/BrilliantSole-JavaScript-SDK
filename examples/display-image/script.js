@@ -246,6 +246,7 @@ imageInput.addEventListener("input", () => {
   const file = imageInput.files[0];
   if (!file) return;
   loadImage(file);
+  imageInput.value = "";
 });
 const loadImage = (file) => {
   const reader = new FileReader();
@@ -263,7 +264,9 @@ redrawImageButton.addEventListener("click", () => {
   drawImage();
 });
 
-const drawImage = () => {
+const tempCanvas = document.createElement("canvas");
+const tempCtx = tempCanvas.getContext("2d");
+const drawImage = async () => {
   let srcWidth, srcHeight, src;
   let useCameraVideo = cameraVideo.srcObject;
   if (useCameraVideo) {
@@ -294,6 +297,47 @@ const drawImage = () => {
     ctx.scale(-1, 1);
     ctx.translate(-canvas.width, 0);
   }
+
+  if (useImageSegmentation && imageSegmenter) {
+    tempCanvas.width = srcWidth;
+    tempCanvas.height = srcHeight;
+
+    tempCtx.drawImage(
+      src,
+      0,
+      0,
+      srcWidth,
+      srcHeight,
+      0,
+      0,
+      tempCanvas.width,
+      tempCanvas.height
+    );
+
+    const result = imageSegmenter.segmentForVideo(
+      tempCanvas,
+      performance.now()
+    );
+    console.log("imageSegmenter result", result);
+
+    const { width, height } = result.categoryMask;
+    let imageData = tempCtx.getImageData(0, 0, width, height).data;
+    tempCanvas.width = width;
+    tempCanvas.height = height;
+    const mask = result.categoryMask.getAsUint8Array();
+    for (let i in mask) {
+      const isPerson = mask[i] == 0 ? 1 : 0;
+      imageData[i * 4] *= isPerson;
+      imageData[i * 4 + 1] *= isPerson;
+      imageData[i * 4 + 2] *= isPerson;
+      //imageData[i * 4 + 3] = 255;
+    }
+    const uint8Array = new Uint8ClampedArray(imageData.buffer);
+    const dataNew = new ImageData(uint8Array, width, height);
+    tempCtx.putImageData(dataNew, 0, 0);
+    src = tempCanvas;
+  }
+
   ctx.drawImage(
     src,
     0,
@@ -305,6 +349,7 @@ const drawImage = () => {
     canvas.width,
     canvas.height
   );
+
   draw();
 };
 
@@ -447,8 +492,8 @@ const selectCameraInput = async (deviceId) => {
     cameraStream = await navigator.mediaDevices.getUserMedia({
       video: {
         deviceId: { exact: deviceId },
-        // width: { ideal: 1280 },
-        // height: { ideal: 720 },
+        width: { ideal: 1280 },
+        height: { ideal: 1280 },
       },
     });
 
@@ -462,6 +507,7 @@ const stopCameraStream = () => {
     cameraStream.getVideoTracks().forEach((track) => track.stop());
   }
   cameraStream = undefined;
+  cameraVideo.srcObject = undefined;
   cameraVideo.setAttribute("hidden", "");
 };
 navigator.mediaDevices.addEventListener("devicechange", () =>
@@ -629,7 +675,7 @@ const draw = async () => {
     await displayCanvasHelper.selectSpriteSheet(spriteSheet.name);
   }
   const offsetX = drawX;
-  let offsetYTop = drawY - drawOutputHeight / 2;
+  let offsetYTop = drawY - outputImageHeight / 2;
   drawProgress.value = 0;
 
   for (
@@ -935,3 +981,61 @@ device.addEventListener("connected", () => {
 device.addEventListener("getCameraConfiguration", () => {
   updateCameraWhiteBalanceInput();
 });
+
+// IMAGE SEGMENTATION
+
+import {
+  ImageSegmenter,
+  FilesetResolver,
+} from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.2";
+
+let imageSegmenter = undefined;
+let runningMode = "LIVE_STREAM";
+let labels;
+
+let useImageSegmentation = false;
+const useImageSegmentationInput = document.getElementById(
+  "useImageSegmentation"
+);
+useImageSegmentationInput.addEventListener("input", () => {
+  setUseImageSegmentation(useImageSegmentationInput.checked);
+});
+const setUseImageSegmentation = (newUseImageSegmentation) => {
+  useImageSegmentation = newUseImageSegmentation;
+  console.log({ useImageSegmentation });
+  useImageSegmentationInput.checked = useImageSegmentation;
+
+  if (!imageSegmenter) {
+    createImageSegmenter();
+  }
+};
+
+const modelAssetPaths = {
+  selfieMulticlass:
+    "https://storage.googleapis.com/mediapipe-models/image_segmenter/selfie_multiclass_256x256/float32/latest/selfie_multiclass_256x256.tflite",
+  hairSegmenter:
+    "https://storage.googleapis.com/mediapipe-models/image_segmenter/hair_segmenter/float32/latest/hair_segmenter.tflite",
+  selfieSegmenter:
+    "https://storage.googleapis.com/mediapipe-models/image_segmenter/selfie_segmenter/float16/latest/selfie_segmenter.tflite",
+  deeplab:
+    "https://storage.googleapis.com/mediapipe-models/image_segmenter/deeplab_v3/float32/latest/deeplab_v3.tflite",
+};
+const createImageSegmenter = async () => {
+  const vision = await FilesetResolver.forVisionTasks(
+    "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.2/wasm"
+  );
+
+  imageSegmenter = await ImageSegmenter.createFromOptions(vision, {
+    baseOptions: {
+      modelAssetPath: modelAssetPaths.selfieSegmenter,
+      delegate: "GPU",
+    },
+
+    runningMode: runningMode,
+    outputCategoryMask: true,
+    outputConfidenceMasks: false,
+  });
+  labels = imageSegmenter.getLabels();
+  console.log("created imageSegmenter", imageSegmenter, labels);
+};
+createImageSegmenter();
