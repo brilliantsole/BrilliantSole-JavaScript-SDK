@@ -157,6 +157,8 @@ export {
   quantizeImage,
   imageToSprite,
   imageToSpriteSheet,
+  canvasToSprite,
+  canvasToSpriteSheet,
 } from "./utils/DisplayBitmapUtils.ts";
 /** BROWSER_END */
 

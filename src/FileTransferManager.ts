@@ -626,6 +626,7 @@ class FileTransferManager {
 
   clear() {
     this.#status = "idle";
+    this.#isServerSide = false;
   }
 }
 

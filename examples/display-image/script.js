@@ -255,13 +255,58 @@ const loadImage = (file) => {
   reader.readAsDataURL(file);
 };
 image.addEventListener("load", () => {
-  drawImage(image);
+  drawImage();
 });
 
 const redrawImageButton = document.getElementById("redrawImage");
 redrawImageButton.addEventListener("click", () => {
-  drawImage(image);
+  drawImage();
 });
+
+const drawImage = () => {
+  let srcWidth, srcHeight, src;
+  let useCameraVideo = cameraVideo.srcObject;
+  if (useCameraVideo) {
+    srcWidth = cameraVideo.videoWidth;
+    srcHeight = cameraVideo.videoHeight;
+    src = cameraVideo;
+  } else {
+    srcWidth = image.naturalWidth;
+    srcHeight = image.naturalHeight;
+    src = image;
+  }
+
+  let inputImageScale = 1;
+  inputImageScale = drawInputHeight / srcHeight;
+  const inputImageWidth = Math.round(srcWidth * inputImageScale);
+  const inputImageHeight = Math.round(srcHeight * inputImageScale);
+
+  canvas.width = inputImageWidth;
+  canvas.height = inputImageHeight;
+
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  if (useGrayscale) {
+    ctx.filter = "grayscale(100%)";
+  }
+  ctx.resetTransform();
+  if (useCameraVideo && mirrorCamera) {
+    ctx.scale(-1, 1);
+    ctx.translate(-canvas.width, 0);
+  }
+  ctx.drawImage(
+    src,
+    0,
+    0,
+    srcWidth,
+    srcHeight,
+    0,
+    0,
+    canvas.width,
+    canvas.height
+  );
+  draw();
+};
 
 // DRAGOVER
 window.addEventListener("dragover", (e) => {
@@ -278,6 +323,45 @@ window.addEventListener("drop", (e) => {
     }
   }
 });
+
+// CONTEXT FILTER
+let useGrayscale = false;
+const useGrayscaleInput = document.getElementById("useGrayscale");
+useGrayscaleInput.addEventListener("input", () => {
+  setUseGrayscale(useGrayscaleInput.checked);
+});
+const setUseGrayscale = (newUseGrayscale) => {
+  useGrayscale = newUseGrayscale;
+  console.log({ useGrayscale });
+  useGrayscaleInput.checked = useGrayscale;
+  if (redrawOnChange) {
+    drawImage();
+  }
+};
+
+// REDRAW ON CHANGE
+let redrawOnChange = false;
+const redrawOnChangeInput = document.getElementById("redrawOnChange");
+redrawOnChangeInput.addEventListener("input", () => {
+  setRedrawOnChange(redrawOnChangeInput.checked);
+});
+const setRedrawOnChange = (newRedrawOnChange) => {
+  redrawOnChange = newRedrawOnChange;
+  console.log({ redrawOnChange });
+  redrawOnChangeInput.checked = redrawOnChange;
+};
+
+// AUTO DRAW VIDEO
+let autoDrawVideo = false;
+const autoDrawVideoInput = document.getElementById("autoDrawVideo");
+autoDrawVideoInput.addEventListener("input", () => {
+  setAutoDrawVideo(autoDrawVideoInput.checked);
+});
+const setAutoDrawVideo = (newAutoDrawVideo) => {
+  autoDrawVideo = newAutoDrawVideo;
+  console.log({ autoDrawVideo });
+  autoDrawVideoInput.checked = autoDrawVideo;
+};
 
 // PASTE
 function isValidUrl(string) {
@@ -315,8 +399,10 @@ window.addEventListener("paste", (event) => {
 // CAMERA
 /** @type {HTMLVideoElement} */
 const cameraVideo = document.getElementById("cameraVideo");
+cameraVideo.volume = 0.0001;
 cameraVideo.addEventListener("loadedmetadata", () => {
   const { videoWidth, videoHeight } = cameraVideo;
+  cameraVideo.removeAttribute("hidden");
 });
 const toggleMirrorCameraButton = document.getElementById("toggleMirrorCamera");
 let mirrorCamera = false;
@@ -332,12 +418,6 @@ toggleMirrorCameraButton.addEventListener("click", () => {
   setMirrorCamera(!mirrorCamera);
 });
 setMirrorCamera(true);
-
-const takeSnapshotButton = document.getElementById("takeSnapshot");
-takeSnapshotButton.addEventListener("click", () => takeSnapshot());
-const takeSnapshot = () => {
-  // FILL - grab frame from video
-};
 
 /** @type {HTMLSelectElement} */
 const cameraInput = document.getElementById("cameraInput");
@@ -382,6 +462,7 @@ const stopCameraStream = () => {
     cameraStream.getVideoTracks().forEach((track) => track.stop());
   }
   cameraStream = undefined;
+  cameraVideo.setAttribute("hidden", "");
 };
 navigator.mediaDevices.addEventListener("devicechange", () =>
   updateCameraSources()
@@ -397,8 +478,13 @@ let drawX = Number(drawXInput.value);
 
 drawXInput.addEventListener("input", () => {
   drawX = Number(drawXInput.value);
-  //console.log({ drawX });
+  // console.log({ drawX });
   drawXSpan.innerText = drawX;
+});
+drawXInput.addEventListener("change", () => {
+  if (redrawOnChange) {
+    drawImage();
+  }
 });
 
 const drawYContainer = document.getElementById("drawY");
@@ -410,6 +496,11 @@ drawYInput.addEventListener("input", () => {
   drawY = Number(drawYInput.value);
   //console.log({ drawY });
   drawYSpan.innerText = drawY;
+});
+drawYInput.addEventListener("change", () => {
+  if (redrawOnChange) {
+    drawImage();
+  }
 });
 
 const drawInputHeightContainer = document.getElementById("drawInputHeight");
@@ -423,6 +514,11 @@ drawInputHeightInput.addEventListener("input", () => {
   //console.log({ drawInputHeight });
   drawInputHeightSpan.innerText = drawInputHeight;
 });
+drawInputHeightInput.addEventListener("change", () => {
+  if (redrawOnChange) {
+    drawImage();
+  }
+});
 
 const drawOutputHeightContainer = document.getElementById("drawOutputHeight");
 const drawOutputHeightInput = drawOutputHeightContainer.querySelector("input");
@@ -435,6 +531,11 @@ drawOutputHeightInput.addEventListener("input", () => {
   //console.log({ drawOutputHeight });
   drawOutputHeightSpan.innerText = drawOutputHeight;
 });
+drawOutputHeightInput.addEventListener("change", () => {
+  if (redrawOnChange) {
+    drawImage();
+  }
+});
 
 // PIXEL DEPTH
 
@@ -442,6 +543,9 @@ let pixelDepth = BS.DisplayPixelDepths[2];
 const setPixelDepth = (newPixelDepth) => {
   pixelDepth = newPixelDepth;
   console.log({ pixelDepth });
+  if (redrawOnChange) {
+    drawImage();
+  }
 };
 const pixelDepthSelect = document.getElementById("pixelDepth");
 const pixelDepthOptgroup = pixelDepthSelect.querySelector("optgroup");
@@ -458,36 +562,40 @@ BS.DisplayPixelDepths.forEach((pixelDepth) => {
 });
 pixelDepthSelect.value = pixelDepth;
 
-// PICTURE
+// DRAW
 let defaultMaxFileLength = 10 * 1024; // 10kb
-let isDrawingImage = false;
+let currentSpriteIndexBeingDrawn = 0;
+let isDrawing = false;
+/** @type {BS.DisplaySpriteSheet} */
+let spriteSheet;
 let debugWholeImage = false;
-/** @param {HTMLImageElement} image */
-const drawImage = async (image) => {
-  if (!image.naturalHeight || !image.naturalWidth) {
+
+/** @type {HTMLCanvasElement} */
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
+
+const draw = async () => {
+  if (!canvas.height || !canvas.width) {
     return;
   }
-  if (isDrawingImage) {
-    console.warn("busy drawing image");
+  if (isDrawing) {
+    console.warn("busy drawing");
     return;
   }
-  isDrawingImage = true;
+  isDrawing = true;
 
-  console.log("drawImage", image);
+  console.log("drawing...");
 
-  const { naturalWidth, naturalHeight } = image;
-  let inputImageScale = 1;
-  inputImageScale = drawInputHeight / naturalHeight;
-  const inputImageWidth = Math.round(naturalWidth * inputImageScale);
-  const inputImageHeight = Math.round(naturalHeight * inputImageScale);
+  canvas.removeAttribute("hidden");
+  cameraVideo.setAttribute("hidden", "");
 
-  console.log({ inputImageScale, inputImageHeight, inputImageWidth });
+  const { width, height } = canvas;
 
   let spriteScale = 1;
-  spriteScale = drawOutputHeight / inputImageHeight;
+  spriteScale = drawOutputHeight / height;
 
-  const outputImageWidth = Math.round(inputImageWidth * spriteScale);
-  const outputImageHeight = Math.round(inputImageHeight * spriteScale);
+  const outputImageWidth = Math.round(width * spriteScale);
+  const outputImageHeight = Math.round(height * spriteScale);
 
   console.log({ spriteScale, outputImageHeight, outputImageWidth });
 
@@ -497,11 +605,9 @@ const drawImage = async (image) => {
     ? displayCanvasHelper.device.maxFileLength
     : defaultMaxFileLength;
 
-  const spriteSheet = await BS.imageToSpriteSheet(
-    image,
+  spriteSheet = await BS.canvasToSpriteSheet(
+    canvas,
     "image",
-    inputImageWidth,
-    inputImageHeight,
     numberOfColors,
     "image",
     maxFileLength
@@ -523,9 +629,15 @@ const drawImage = async (image) => {
     await displayCanvasHelper.selectSpriteSheet(spriteSheet.name);
   }
   const offsetX = drawX;
-  let offsetYTop = drawY - (spriteScale * inputImageHeight) / 2;
-  for (let i = 0; i < spriteSheet.sprites.length; i++) {
-    const sprite = spriteSheet.sprites[i];
+  let offsetYTop = drawY - drawOutputHeight / 2;
+  drawProgress.value = 0;
+
+  for (
+    currentSpriteIndexBeingDrawn = 0;
+    currentSpriteIndexBeingDrawn < spriteSheet.sprites.length;
+    currentSpriteIndexBeingDrawn++
+  ) {
+    const sprite = spriteSheet.sprites[currentSpriteIndexBeingDrawn];
     const scaledSpriteHeight = sprite.height * spriteScale;
     let offsetY = offsetYTop + scaledSpriteHeight / 2;
     console.log("drawing sprite", sprite, { offsetX, offsetY });
@@ -542,6 +654,7 @@ const drawImage = async (image) => {
     }
     offsetYTop += scaledSpriteHeight;
   }
+  drawProgress.value = 0;
 
   for (let i = 0; i < displayCanvasHelper.numberOfColors; i++) {
     if (i >= numberOfColors) {
@@ -551,5 +664,43 @@ const drawImage = async (image) => {
   await displayCanvasHelper.selectSpriteSheetPalette("image");
   await displayCanvasHelper.show();
 
-  isDrawingImage = false;
+  canvas.setAttribute("hidden", "");
+  if (cameraVideo.srcObject) {
+    cameraVideo.removeAttribute("hidden");
+  }
 };
+
+displayCanvasHelper.addEventListener("ready", () => {
+  isDrawing = false;
+  if (cameraVideo.srcObject && autoDrawVideo) {
+    console.log("redrawing video");
+    drawImage();
+  }
+});
+
+// PROGRESS
+
+/** @type {HTMLProgressElement} */
+const fileTransferProgress = document.getElementById("fileTransferProgress");
+
+device.addEventListener("fileTransferProgress", (event) => {
+  const progress = event.message.progress;
+  //console.log({ progress });
+  fileTransferProgress.value = progress == 1 ? 0 : progress;
+});
+device.addEventListener("fileTransferStatus", () => {
+  if (device.fileTransferStatus == "idle") {
+    fileTransferProgress.value = 0;
+  }
+});
+
+/** @type {HTMLProgressElement} */
+const drawProgress = document.getElementById("drawProgress");
+
+device.addEventListener("fileTransferProgress", (event) => {
+  const progress = event.message.progress;
+  console.log({ progress });
+  const baseProgress =
+    (currentSpriteIndexBeingDrawn + progress) / spriteSheet.sprites.length;
+  drawProgress.value = baseProgress;
+});

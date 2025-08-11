@@ -12,8 +12,9 @@
     }
 
     #cameraVideo,
-    #image {
-      max-height: 400;
+    #image,
+    #canvas {
+      height: 400;
       max-width: fit-content;
     }
 
@@ -63,7 +64,21 @@
     </label>
 
     <button id="toggleMirrorCamera">mirror camera</button>
-    <button id="takeSnapshot">take snapshot</button>
+
+    <label>
+      use grayscale
+      <input type="checkbox" id="useGrayscale" />
+    </label>
+
+    <label>
+      redraw on change
+      <input type="checkbox" id="redrawOnChange" />
+    </label>
+
+    <label>
+      autodraw video
+      <input type="checkbox" id="autoDrawVideo" />
+    </label>
 
     <br />
 
@@ -87,21 +102,21 @@
 
     <label id="drawX" class="verticalLabel">
       <span>x (<span class="value">320</span>px)</span>
-      <input type="range" min="0" max="640" step="1" value="320" />
+      <input type="range" min="0" max="640" step="5" value="320" />
     </label>
     <label id="drawY" class="verticalLabel">
       <span>y (<span class="value">200</span>px)</span>
-      <input type="range" min="0" max="400" step="1" value="200" />
+      <input type="range" min="0" max="400" step="5" value="200" />
     </label>
 
     <label id="drawInputHeight" class="verticalLabel">
       <span>input height (<span class="value">200</span>px)</span>
-      <input type="range" min="10" max="400" step="1" value="200" />
+      <input type="range" min="10" max="400" step="5" value="200" />
     </label>
 
     <label id="drawOutputHeight" class="verticalLabel">
       <span>output height (<span class="value">200</span>px)</span>
-      <input type="range" min="10" max="400" step="1" value="200" />
+      <input type="range" min="10" max="400" step="5" value="200" />
     </label>
 
     <label class="verticalLabel">
@@ -113,8 +128,21 @@
 
     <br />
 
+    <label>
+      file transfer progress: <span></span>
+      <progress value="0" id="fileTransferProgress"></progress>
+    </label>
+
+    <label>
+      draw progress: <span></span>
+      <progress value="0" id="drawProgress"></progress>
+    </label>
+
+    <br />
+
     <canvas id="display" width="640" height="400"></canvas>
-    <image id="image" width="640" height="400"></image>
-    <video id="cameraVideo" autoplay muted width="640"></video>
+    <canvas hidden id="canvas" width="640" height="400"></canvas>
+    <image hidden id="image" width="640" height="400"></image>
+    <video hidden id="cameraVideo" autoplay playsinline width="640"></video>
   </body>
 </html>

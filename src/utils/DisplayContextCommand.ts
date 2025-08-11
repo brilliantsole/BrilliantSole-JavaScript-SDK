@@ -541,7 +541,7 @@ export function serializeContextCommand(
           return;
         }
 
-        _console.log(`setting color #${colorIndex}`, colorRGB);
+        //_console.log(`setting color #${colorIndex}`, colorRGB);
         displayManager.assertValidColorIndex(colorIndex);
         assertValidColor(colorRGB);
         dataView = new DataView(new ArrayBuffer(4));

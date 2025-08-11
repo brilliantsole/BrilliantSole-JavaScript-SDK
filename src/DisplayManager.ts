@@ -711,7 +711,7 @@ class DisplayManager implements DisplayManagerInterface {
       return;
     }
 
-    _console.log(`setting color #${colorIndex}`, colorRGB);
+    //_console.log(`setting color #${colorIndex}`, colorRGB);
     this.assertValidColorIndex(colorIndex);
     assertValidColor(colorRGB);
     const dataView = new DataView(new ArrayBuffer(4));
@@ -2202,6 +2202,8 @@ class DisplayManager implements DisplayManagerInterface {
     this.#isReady = true;
     this.#pendingSpriteSheet = undefined;
     this.#pendingSpriteSheetName = undefined;
+
+    this.isServerSide = false;
 
     Object.keys(this.#spriteSheetIndices).forEach(
       (spriteSheetName) => delete this.#spriteSheetIndices[spriteSheetName]

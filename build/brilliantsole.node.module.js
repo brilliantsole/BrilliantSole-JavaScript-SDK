@@ -733,6 +733,7 @@ class FileTransferManager {
     }
     clear() {
         __classPrivateFieldSet(this, _FileTransferManager_status, "idle", "f");
+        __classPrivateFieldSet(this, _FileTransferManager_isServerSide, false, "f");
     }
 }
 _a$8 = FileTransferManager, _FileTransferManager_fileTypes = new WeakMap(), _FileTransferManager_maxLength = new WeakMap(), _FileTransferManager_type = new WeakMap(), _FileTransferManager_length = new WeakMap(), _FileTransferManager_checksum = new WeakMap(), _FileTransferManager_status = new WeakMap(), _FileTransferManager_receivedBlocks = new WeakMap(), _FileTransferManager_buffer = new WeakMap(), _FileTransferManager_bytesTransferred = new WeakMap(), _FileTransferManager_isCancelling = new WeakMap(), _FileTransferManager_isServerSide = new WeakMap(), _FileTransferManager_instances = new WeakSet(), _FileTransferManager_dispatchEvent_get = function _FileTransferManager_dispatchEvent_get() {
@@ -4098,7 +4099,6 @@ function serializeContextCommand(displayManager, command) {
                     _console$s.log(`redundant color #${colorIndex} ${colorHex}`);
                     return;
                 }
-                _console$s.log(`setting color #${colorIndex}`, colorRGB);
                 displayManager.assertValidColorIndex(colorIndex);
                 assertValidColor(colorRGB);
                 dataView = new DataView(new ArrayBuffer(4));
@@ -5612,7 +5612,6 @@ class DisplayManager {
             _console$o.log(`redundant color #${colorIndex} ${colorHex}`);
             return;
         }
-        _console$o.log(`setting color #${colorIndex}`, colorRGB);
         this.assertValidColorIndex(colorIndex);
         assertValidColor(colorRGB);
         const dataView = new DataView(new ArrayBuffer(4));
@@ -6550,6 +6549,7 @@ class DisplayManager {
         __classPrivateFieldSet(this, _DisplayManager_isReady, true, "f");
         __classPrivateFieldSet(this, _DisplayManager_pendingSpriteSheet, undefined, "f");
         __classPrivateFieldSet(this, _DisplayManager_pendingSpriteSheetName, undefined, "f");
+        this.isServerSide = false;
         Object.keys(__classPrivateFieldGet(this, _DisplayManager_spriteSheetIndices, "f")).forEach((spriteSheetName) => delete __classPrivateFieldGet(this, _DisplayManager_spriteSheetIndices, "f")[spriteSheetName]);
         Object.keys(__classPrivateFieldGet(this, _DisplayManager_spriteSheets, "f")).forEach((spriteSheetName) => delete __classPrivateFieldGet(this, _DisplayManager_spriteSheets, "f")[spriteSheetName]);
     }
