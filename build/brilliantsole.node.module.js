@@ -4008,7 +4008,6 @@ const DisplayContextCommandTypes = [
     "setSpriteScaleY",
     "setSpriteScale",
     "resetSpriteScale",
-    "clearRect",
     "drawRect",
     "drawRoundRect",
     "drawCircle",
@@ -4057,7 +4056,6 @@ const DisplaySpriteContextCommandTypes = [
     "setSpriteScaleY",
     "setSpriteScale",
     "resetSpriteScale",
-    "clearRect",
     "drawRect",
     "drawRoundRect",
     "drawCircle",
@@ -4395,16 +4393,6 @@ function serializeContextCommand(displayManager, command) {
                 spriteScale = roundScale(spriteScale);
                 dataView = new DataView(new ArrayBuffer(2));
                 dataView.setInt16(0, formatScale(spriteScale), true);
-            }
-            break;
-        case "clearRect":
-            {
-                const { x, y, width, height } = command;
-                dataView = new DataView(new ArrayBuffer(2 * 4));
-                dataView.setInt16(0, x, true);
-                dataView.setInt16(2, y, true);
-                dataView.setInt16(4, width, true);
-                dataView.setInt16(6, height, true);
             }
             break;
         case "drawRect":
@@ -5127,12 +5115,6 @@ async function runDisplayContextCommand(displayManager, command, sendImmediately
             {
                 const { spriteScale } = command;
                 await displayManager.setSpriteScale(spriteScale, sendImmediately);
-            }
-            break;
-        case "clearRect":
-            {
-                const { x, y, width, height } = command;
-                await displayManager.clearRect(x, y, width, height, sendImmediately);
             }
             break;
         case "drawRect":
