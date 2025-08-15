@@ -2260,148 +2260,154 @@ device.addEventListener("isConnected", () => {
   lineColorSelect.disabled = !enabled;
 });
 
-const drawShape = BS.ThrottleUtils.throttle(
-  (updatedParams) => {
-    if (
-      device.isConnected &&
-      device.isDisplayAvailable &&
-      device.isDisplayReady
-    ) {
-      console.log("draw", {
-        drawShapeType,
-        drawWidth,
-        drawHeight,
-        drawX,
-        drawY,
-        drawBorderRadius,
-        drawStartAngle,
-        drawAngleOffset,
-        drawBitmapScaleX,
-        drawBitmapScaleY,
-        drawBitmapScale,
-      });
-      if (updatedParams?.includes("lineWidth")) {
-        device.setDisplayLineWidth(lineWidth);
-      }
-      if (updatedParams?.includes("rotation")) {
-        device.setDisplayRotation(rotation);
-      }
-      if (updatedParams?.includes("segmentStartCap")) {
-        device.setDisplaySegmentStartCap(segmentStartCap);
-      }
-      if (updatedParams?.includes("segmentEndCap")) {
-        device.setDisplaySegmentEndCap(segmentEndCap);
-      }
-      if (updatedParams?.includes("segmentStartRadius")) {
-        device.setDisplaySegmentStartRadius(drawSegmentStartRadius);
-      }
-      if (updatedParams?.includes("segmentEndRadius")) {
-        device.setDisplaySegmentEndRadius(drawSegmentEndRadius);
-      }
-
-      if (updatedParams?.includes("cropTop")) {
-        device.setDisplayCropTop(drawCropTop);
-      }
-      if (updatedParams?.includes("cropRight")) {
-        device.setDisplayCropRight(drawCropRight);
-      }
-      if (updatedParams?.includes("cropBottom")) {
-        device.setDisplayCropBottom(drawCropBottom);
-      }
-      if (updatedParams?.includes("cropLeft")) {
-        device.setDisplayCropLeft(drawCropLeft);
-      }
-
-      if (updatedParams?.includes("rotationCropTop")) {
-        device.setDisplayRotationCropTop(drawRotationCropTop);
-      }
-      if (updatedParams?.includes("rotationCropRight")) {
-        device.setDisplayRotationCropRight(drawRotationCropRight);
-      }
-      if (updatedParams?.includes("rotationCropBottom")) {
-        device.setDisplayRotationCropBottom(drawRotationCropBottom);
-      }
-      if (updatedParams?.includes("rotationCropLeft")) {
-        device.setDisplayRotationCropLeft(drawRotationCropLeft);
-      }
-
-      if (updatedParams?.includes("bitmapScaleX")) {
-        device.setDisplayBitmapScaleX(drawBitmapScaleX);
-      }
-      if (updatedParams?.includes("bitmapScaleY")) {
-        device.setDisplayBitmapScaleY(drawBitmapScaleY);
-      }
-      if (updatedParams?.includes("bitmapScale")) {
-        device.setDisplayBitmapScale(drawBitmapScale);
-      }
-
-      switch (drawShapeType) {
-        case "drawRect":
-          device.drawDisplayRect(drawX, drawY, drawWidth, drawHeight);
-          break;
-        case "drawRoundRect":
-          device.drawDisplayRoundRect(
-            drawX,
-            drawY,
-            drawWidth,
-            drawHeight,
-            drawBorderRadius
-          );
-          break;
-        case "drawCircle":
-          device.drawDisplayCircle(drawX, drawY, drawRadius);
-          break;
-        case "drawEllipse":
-          device.drawDisplayEllipse(drawX, drawY, drawWidth, drawHeight);
-          break;
-        case "drawPolygon":
-          device.drawDisplayPolygon(
-            drawX,
-            drawY,
-            drawRadius,
-            drawNumberOfSides
-          );
-          break;
-        case "drawSegment":
-          device.drawDisplaySegment(drawX, drawY, drawEndX, drawEndY);
-          break;
-        case "drawArc":
-          device.drawDisplayArc(
-            drawX,
-            drawY,
-            drawRadius,
-            drawStartAngle,
-            drawAngleOffset
-          );
-          break;
-        case "drawArcEllipse":
-          device.drawDisplayArcEllipse(
-            drawX,
-            drawY,
-            drawWidth,
-            drawHeight,
-            drawStartAngle,
-            drawAngleOffset
-          );
-          break;
-        case "drawBitmap":
-          device.drawDisplayBitmap(drawX, drawY, {
-            numberOfColors: bitmapNumberOfColors,
-            pixels: bitmapPixels,
-            width: bitmapWidth,
-            height: bitmapHeight,
-          });
-          break;
-        default:
-          console.error(`uncaught drawShapeType ${drawShapeType}`);
-          break;
-      }
-      device.showDisplay();
+let drawWhenReady = false;
+let lastDrawTime = 0;
+let lastDrawReadyTime = 0;
+let pendingParams;
+device.addEventListener("displayReady", () => {
+  lastDrawReadyTime = Date.now();
+  // console.log("ready", lastDrawReadyTime - lastDrawTime);
+  if (drawWhenReady) {
+    drawWhenReady = false;
+    drawShape(pendingParams);
+  }
+});
+const drawShape = (updatedParams) => {
+  if (device.isConnected && device.isDisplayAvailable) {
+    if (!device.isDisplayReady) {
+      drawWhenReady = true;
+      pendingParams = updatedParams;
+      return;
     }
-  },
-  100,
-  true
-);
+    lastDrawTime = Date.now();
+
+    console.log("draw", {
+      drawShapeType,
+      drawWidth,
+      drawHeight,
+      drawX,
+      drawY,
+      drawBorderRadius,
+      drawStartAngle,
+      drawAngleOffset,
+      drawBitmapScaleX,
+      drawBitmapScaleY,
+      drawBitmapScale,
+    });
+    if (updatedParams?.includes("lineWidth")) {
+      device.setDisplayLineWidth(lineWidth);
+    }
+    if (updatedParams?.includes("rotation")) {
+      device.setDisplayRotation(rotation);
+    }
+    if (updatedParams?.includes("segmentStartCap")) {
+      device.setDisplaySegmentStartCap(segmentStartCap);
+    }
+    if (updatedParams?.includes("segmentEndCap")) {
+      device.setDisplaySegmentEndCap(segmentEndCap);
+    }
+    if (updatedParams?.includes("segmentStartRadius")) {
+      device.setDisplaySegmentStartRadius(drawSegmentStartRadius);
+    }
+    if (updatedParams?.includes("segmentEndRadius")) {
+      device.setDisplaySegmentEndRadius(drawSegmentEndRadius);
+    }
+
+    if (updatedParams?.includes("cropTop")) {
+      device.setDisplayCropTop(drawCropTop);
+    }
+    if (updatedParams?.includes("cropRight")) {
+      device.setDisplayCropRight(drawCropRight);
+    }
+    if (updatedParams?.includes("cropBottom")) {
+      device.setDisplayCropBottom(drawCropBottom);
+    }
+    if (updatedParams?.includes("cropLeft")) {
+      device.setDisplayCropLeft(drawCropLeft);
+    }
+
+    if (updatedParams?.includes("rotationCropTop")) {
+      device.setDisplayRotationCropTop(drawRotationCropTop);
+    }
+    if (updatedParams?.includes("rotationCropRight")) {
+      device.setDisplayRotationCropRight(drawRotationCropRight);
+    }
+    if (updatedParams?.includes("rotationCropBottom")) {
+      device.setDisplayRotationCropBottom(drawRotationCropBottom);
+    }
+    if (updatedParams?.includes("rotationCropLeft")) {
+      device.setDisplayRotationCropLeft(drawRotationCropLeft);
+    }
+
+    if (updatedParams?.includes("bitmapScaleX")) {
+      device.setDisplayBitmapScaleX(drawBitmapScaleX);
+    }
+    if (updatedParams?.includes("bitmapScaleY")) {
+      device.setDisplayBitmapScaleY(drawBitmapScaleY);
+    }
+    if (updatedParams?.includes("bitmapScale")) {
+      device.setDisplayBitmapScale(drawBitmapScale);
+    }
+
+    switch (drawShapeType) {
+      case "drawRect":
+        device.drawDisplayRect(drawX, drawY, drawWidth, drawHeight);
+        break;
+      case "drawRoundRect":
+        device.drawDisplayRoundRect(
+          drawX,
+          drawY,
+          drawWidth,
+          drawHeight,
+          drawBorderRadius
+        );
+        break;
+      case "drawCircle":
+        device.drawDisplayCircle(drawX, drawY, drawRadius);
+        break;
+      case "drawEllipse":
+        device.drawDisplayEllipse(drawX, drawY, drawWidth, drawHeight);
+        break;
+      case "drawPolygon":
+        device.drawDisplayPolygon(drawX, drawY, drawRadius, drawNumberOfSides);
+        break;
+      case "drawSegment":
+        device.drawDisplaySegment(drawX, drawY, drawEndX, drawEndY);
+        break;
+      case "drawArc":
+        device.drawDisplayArc(
+          drawX,
+          drawY,
+          drawRadius,
+          drawStartAngle,
+          drawAngleOffset
+        );
+        break;
+      case "drawArcEllipse":
+        device.drawDisplayArcEllipse(
+          drawX,
+          drawY,
+          drawWidth,
+          drawHeight,
+          drawStartAngle,
+          drawAngleOffset
+        );
+        break;
+      case "drawBitmap":
+        device.drawDisplayBitmap(drawX, drawY, {
+          numberOfColors: bitmapNumberOfColors,
+          pixels: bitmapPixels,
+          width: bitmapWidth,
+          height: bitmapHeight,
+        });
+        break;
+      default:
+        console.error(`uncaught drawShapeType ${drawShapeType}`);
+        break;
+    }
+    device.showDisplay();
+  }
+};
 
 const lineWidthContainer = document.getElementById("lineWidth");
 const lineWidthInput = lineWidthContainer.querySelector("input");
