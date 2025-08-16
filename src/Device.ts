@@ -1682,9 +1682,9 @@ class Device {
     this.#assertDisplayIsAvailable();
     return this.#displayManager.drawRoundRect;
   }
-  get drawDisplayPolygon() {
+  get drawDisplayRegularPolygon() {
     this.#assertDisplayIsAvailable();
-    return this.#displayManager.drawPolygon;
+    return this.#displayManager.drawRegularPolygon;
   }
   get drawDisplaySegment() {
     this.#assertDisplayIsAvailable();

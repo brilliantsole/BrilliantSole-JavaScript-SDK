@@ -3974,11 +3974,14 @@ const DisplayContextCommandTypes = [
     "setOpacity",
     "saveContext",
     "restoreContext",
+    "selectBackgroundColor",
     "selectFillColor",
     "selectLineColor",
     "setLineWidth",
     "setRotation",
     "clearRotation",
+    "setHorizontalAlign",
+    "setVerticalAlign",
     "setSegmentStartCap",
     "setSegmentEndCap",
     "setSegmentCap",
@@ -4008,18 +4011,31 @@ const DisplayContextCommandTypes = [
     "setSpriteScaleY",
     "setSpriteScale",
     "resetSpriteScale",
+    "setSpritesDirection",
+    "setSpritesAlign",
+    "setSpritesSpacing",
+    "setSpritesLineSpacing",
+    "clearRect",
     "drawRect",
     "drawRoundRect",
     "drawCircle",
+    "drawArc",
     "drawEllipse",
-    "drawPolygon",
+    "drawArcEllipse",
     "drawSegment",
     "drawSegments",
-    "drawArc",
-    "drawArcEllipse",
+    "drawRegularPolygon",
+    "drawPolygon",
+    "drawQuadraticCurve",
+    "drawQuadraticCurves",
+    "drawBezierCurve",
+    "drawBezierCurves",
+    "drawPath",
+    "drawClosedPath",
     "drawBitmap",
     "selectSpriteSheet",
     "drawSprite",
+    "drawSprites",
 ];
 const DisplaySpriteContextCommandTypes = [
     "selectFillColor",
@@ -4056,11 +4072,12 @@ const DisplaySpriteContextCommandTypes = [
     "setSpriteScaleY",
     "setSpriteScale",
     "resetSpriteScale",
+    "clearRect",
     "drawRect",
     "drawRoundRect",
     "drawCircle",
     "drawEllipse",
-    "drawPolygon",
+    "drawRegularPolygon",
     "drawSegment",
     "drawSegments",
     "drawArc",
@@ -4395,6 +4412,16 @@ function serializeContextCommand(displayManager, command) {
                 dataView.setInt16(0, formatScale(spriteScale), true);
             }
             break;
+        case "clearRect":
+            {
+                const { x, y, width, height } = command;
+                dataView = new DataView(new ArrayBuffer(2 * 4));
+                dataView.setInt16(0, x, true);
+                dataView.setInt16(2, y, true);
+                dataView.setInt16(4, width, true);
+                dataView.setInt16(6, height, true);
+            }
+            break;
         case "drawRect":
             {
                 const { offsetX, offsetY, width, height } = command;
@@ -4435,7 +4462,7 @@ function serializeContextCommand(displayManager, command) {
                 dataView.setUint16(6, radiusY, true);
             }
             break;
-        case "drawPolygon":
+        case "drawRegularPolygon":
             {
                 const { offsetX, offsetY, radius, numberOfSides } = command;
                 dataView = new DataView(new ArrayBuffer(2 * 3 + 1));
@@ -5117,6 +5144,12 @@ async function runDisplayContextCommand(displayManager, command, sendImmediately
                 await displayManager.setSpriteScale(spriteScale, sendImmediately);
             }
             break;
+        case "clearRect":
+            {
+                const { x, y, width, height } = command;
+                await displayManager.clearRect(x, y, width, height, sendImmediately);
+            }
+            break;
         case "drawRect":
             {
                 const { offsetX, offsetY, width, height } = command;
@@ -5141,10 +5174,10 @@ async function runDisplayContextCommand(displayManager, command, sendImmediately
                 await displayManager.drawEllipse(offsetX, offsetY, radiusX, radiusY, sendImmediately);
             }
             break;
-        case "drawPolygon":
+        case "drawRegularPolygon":
             {
                 const { offsetX, offsetY, radius, numberOfSides } = command;
-                await displayManager.drawPolygon(offsetX, offsetY, radius, numberOfSides, sendImmediately);
+                await displayManager.drawRegularPolygon(offsetX, offsetY, radius, numberOfSides, sendImmediately);
             }
             break;
         case "drawSegment":
@@ -6246,9 +6279,9 @@ class DisplayManager {
         }
         await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "drawEllipse", dataView.buffer, sendImmediately);
     }
-    async drawPolygon(offsetX, offsetY, radius, numberOfSides, sendImmediately) {
+    async drawRegularPolygon(offsetX, offsetY, radius, numberOfSides, sendImmediately) {
         const dataView = serializeContextCommand(this, {
-            type: "drawPolygon",
+            type: "drawRegularPolygon",
             offsetX,
             offsetY,
             radius,
@@ -6257,7 +6290,7 @@ class DisplayManager {
         if (!dataView) {
             return;
         }
-        await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "drawPolygon", dataView.buffer, sendImmediately);
+        await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "drawRegularPolygon", dataView.buffer, sendImmediately);
     }
     async drawSegment(startX, startY, endX, endY, sendImmediately) {
         const dataView = serializeContextCommand(this, {
@@ -10131,9 +10164,9 @@ class Device {
         __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertDisplayIsAvailable).call(this);
         return __classPrivateFieldGet(this, _Device_displayManager, "f").drawRoundRect;
     }
-    get drawDisplayPolygon() {
+    get drawDisplayRegularPolygon() {
         __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertDisplayIsAvailable).call(this);
-        return __classPrivateFieldGet(this, _Device_displayManager, "f").drawPolygon;
+        return __classPrivateFieldGet(this, _Device_displayManager, "f").drawRegularPolygon;
     }
     get drawDisplaySegment() {
         __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertDisplayIsAvailable).call(this);

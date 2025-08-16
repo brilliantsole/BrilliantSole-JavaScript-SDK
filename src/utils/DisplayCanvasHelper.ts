@@ -1873,7 +1873,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     };
     return boundingBox;
   }
-  #drawPolygonToCanvas(
+  #drawRegularPolygonToCanvas(
     offsetX: number,
     offsetY: number,
     radius: number,
@@ -1919,7 +1919,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     }
     this.#restore();
   }
-  async drawPolygon(
+  async drawRegularPolygon(
     offsetX: number,
     offsetY: number,
     radius: number,
@@ -1932,7 +1932,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     }
     const contextState = structuredClone(this.contextState);
     this.#rearDrawStack.push(() =>
-      this.#drawPolygonToCanvas(
+      this.#drawRegularPolygonToCanvas(
         offsetX,
         offsetY,
         radius,
@@ -1941,7 +1941,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
       )
     );
     if (this.device?.isConnected && !this.#ignoreDevice) {
-      await this.device.drawDisplayPolygon(
+      await this.device.drawDisplayRegularPolygon(
         offsetX,
         offsetY,
         radius,

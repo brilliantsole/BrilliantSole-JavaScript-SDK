@@ -273,7 +273,7 @@ export interface DisplayManagerInterface {
     radiusY: number,
     sendImmediately?: boolean
   ): Promise<void>;
-  drawPolygon(
+  drawRegularPolygon(
     offsetX: number,
     offsetY: number,
     radius: number,
@@ -748,10 +748,10 @@ export async function runDisplayContextCommand(
         );
       }
       break;
-    case "drawPolygon":
+    case "drawRegularPolygon":
       {
         const { offsetX, offsetY, radius, numberOfSides } = command;
-        await displayManager.drawPolygon(
+        await displayManager.drawRegularPolygon(
           offsetX,
           offsetY,
           radius,

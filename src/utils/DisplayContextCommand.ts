@@ -15,14 +15,11 @@ import {
   DisplaySegmentCaps,
 } from "./DisplayContextState.ts";
 import { DisplayManagerInterface } from "./DisplayManagerInterface.ts";
-import { DisplaySpriteSheet } from "./DisplaySpriteSheetUtils.ts";
 import {
   assertValidColor,
   assertValidOpacity,
   assertValidSegmentCap,
   DisplayColorRGB,
-  DisplayCropDirectionToCommandType,
-  displayScaleStep,
   formatRotation,
   formatScale,
   maxDisplayScale,
@@ -52,11 +49,15 @@ export const DisplayContextCommandTypes = [
   "saveContext",
   "restoreContext",
 
+  "selectBackgroundColor",
   "selectFillColor",
   "selectLineColor",
   "setLineWidth",
   "setRotation",
   "clearRotation",
+
+  "setHorizontalAlign",
+  "setVerticalAlign",
 
   "setSegmentStartCap",
   "setSegmentEndCap",
@@ -93,24 +94,41 @@ export const DisplayContextCommandTypes = [
   "setSpriteScale",
   "resetSpriteScale",
 
+  "setSpritesDirection",
+  "setSpritesAlign",
+  "setSpritesSpacing",
+  "setSpritesLineSpacing",
+
   "clearRect",
 
   "drawRect",
   "drawRoundRect",
+
   "drawCircle",
+  "drawArc",
+
   "drawEllipse",
-  "drawPolygon",
+  "drawArcEllipse",
+
   "drawSegment",
   "drawSegments",
 
-  "drawArc",
-  "drawArcEllipse",
+  "drawRegularPolygon",
+  "drawPolygon",
+
+  "drawQuadraticCurve",
+  "drawQuadraticCurves",
+  "drawBezierCurve",
+  "drawBezierCurves",
+
+  "drawPath",
+  "drawClosedPath",
 
   "drawBitmap",
 
   "selectSpriteSheet",
   "drawSprite",
-  //"drawSprites",
+  "drawSprites",
 ] as const;
 export type DisplayContextCommandType =
   (typeof DisplayContextCommandTypes)[number];
@@ -163,7 +181,7 @@ export const DisplaySpriteContextCommandTypes = [
   "drawRoundRect",
   "drawCircle",
   "drawEllipse",
-  "drawPolygon",
+  "drawRegularPolygon",
   "drawSegment",
   "drawSegments",
 
@@ -405,9 +423,9 @@ export interface DrawDisplayEllipseCommand
   radiusY: number;
 }
 
-export interface DrawDisplayPolygonCommand
+export interface DrawDisplayRegularPolygonCommand
   extends BaseOffsetPositionDisplayContextCommand {
-  type: "drawPolygon";
+  type: "drawRegularPolygon";
   radius: number;
   numberOfSides: number;
 }
@@ -498,7 +516,7 @@ export type DisplayContextCommand =
   | DrawDisplayRoundedRectCommand
   | DrawDisplayCircleCommand
   | DrawDisplayEllipseCommand
-  | DrawDisplayPolygonCommand
+  | DrawDisplayRegularPolygonCommand
   | DrawDisplaySegmentCommand
   | DrawDisplaySegmentsCommand
   | DrawDisplayArcCommand
@@ -912,7 +930,7 @@ export function serializeContextCommand(
         dataView.setUint16(6, radiusY, true);
       }
       break;
-    case "drawPolygon":
+    case "drawRegularPolygon":
       {
         const { offsetX, offsetY, radius, numberOfSides } = command;
         dataView = new DataView(new ArrayBuffer(2 * 3 + 1));

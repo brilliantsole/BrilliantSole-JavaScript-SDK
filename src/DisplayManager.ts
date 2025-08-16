@@ -1659,7 +1659,7 @@ class DisplayManager implements DisplayManagerInterface {
       sendImmediately
     );
   }
-  async drawPolygon(
+  async drawRegularPolygon(
     offsetX: number,
     offsetY: number,
     radius: number,
@@ -1667,7 +1667,7 @@ class DisplayManager implements DisplayManagerInterface {
     sendImmediately?: boolean
   ) {
     const dataView = serializeContextCommand(this, {
-      type: "drawPolygon",
+      type: "drawRegularPolygon",
       offsetX,
       offsetY,
       radius,
@@ -1677,7 +1677,7 @@ class DisplayManager implements DisplayManagerInterface {
       return;
     }
     await this.#sendDisplayContextCommand(
-      "drawPolygon",
+      "drawRegularPolygon",
       dataView.buffer,
       sendImmediately
     );

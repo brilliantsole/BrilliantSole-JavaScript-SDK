@@ -2368,8 +2368,13 @@ const drawShape = (updatedParams) => {
       case "drawEllipse":
         device.drawDisplayEllipse(drawX, drawY, drawWidth, drawHeight);
         break;
-      case "drawPolygon":
-        device.drawDisplayPolygon(drawX, drawY, drawRadius, drawNumberOfSides);
+      case "drawRegularPolygon":
+        device.drawDisplayRegularPolygon(
+          drawX,
+          drawY,
+          drawRadius,
+          drawNumberOfSides
+        );
         break;
       case "drawSegment":
         device.drawDisplaySegment(drawX, drawY, drawEndX, drawEndY);

@@ -1772,7 +1772,7 @@ const tickAndDraw = () => {
   tick();
   draw();
 };
-displayCanvasHelper.addEventListener("ready", () => {
+displayCanvasHelper.addEventListener("ready", async () => {
   console.log("ready");
   if (!isDrawing) {
     return;

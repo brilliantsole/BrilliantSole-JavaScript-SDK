@@ -1407,9 +1407,9 @@ const addSpriteCommand = () => {
           angleOffset: 90,
         });
         break;
-      case "drawPolygon":
+      case "drawRegularPolygon":
         selectedSprite.commands.push({
-          type: "drawPolygon",
+          type: "drawRegularPolygon",
           offsetX: 0,
           offsetY: 0,
           radius: 25,
