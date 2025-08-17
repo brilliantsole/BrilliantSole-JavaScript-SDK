@@ -7,7 +7,8 @@ import {
   serializeContextCommands,
 } from "./DisplayContextCommand.ts";
 import { DisplayManagerInterface } from "./DisplayManagerInterface.ts";
-import opentype, { Glyph } from "opentype.js";
+import opentype, { Glyph, Font } from "opentype.js";
+import { decompress } from "woff2-encoder";
 
 const _console = createConsole("DisplaySpriteSheetUtils", { log: true });
 
@@ -106,19 +107,40 @@ const defaultFontToSpriteSheetOptions: FontToSpriteSheetOptions = {
   strokeWidth: 1,
   unicodeOnly: true,
 };
+
+function isWoff2(arrayBuffer: ArrayBuffer) {
+  if (arrayBuffer.byteLength < 4) return false;
+
+  const header = new Uint8Array(arrayBuffer, 0, 4);
+  return (
+    header[0] === 0x77 && // 'w'
+    header[1] === 0x4f && // 'O'
+    header[2] === 0x46 && // 'F'
+    header[3] === 0x32 // '2'
+  );
+}
+export async function parseFont(
+  displayManager: DisplayManagerInterface,
+  arrayBuffer: ArrayBuffer
+) {
+  if (isWoff2(arrayBuffer)) {
+    const result = await decompress(arrayBuffer);
+    arrayBuffer = result.buffer;
+  }
+  const font = opentype.parse(arrayBuffer);
+  _console.log("font", font);
+  return font;
+}
 export async function fontToSpriteSheet(
   displayManager: DisplayManagerInterface,
-  arrayBuffer: ArrayBuffer,
+  font: Font,
   fontSize: number,
   spriteSheetName?: string,
   options: FontToSpriteSheetOptions = defaultFontToSpriteSheetOptions
 ) {
   _console.assertTypeWithError(fontSize, "number");
 
-  const font = opentype.parse(arrayBuffer);
   const fontScale = (1 / font.unitsPerEm) * fontSize;
-
-  _console.log("font", font);
 
   spriteSheetName = spriteSheetName || font.getEnglishName("fullName");
   const spriteSheet: DisplaySpriteSheet = {

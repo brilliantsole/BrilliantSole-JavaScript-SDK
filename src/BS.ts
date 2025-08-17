@@ -152,6 +152,10 @@ export {
 /** BROWSER_END */
 
 /** BROWSER_START */
+export { Font } from "opentype.js";
+/** BROWSER_END */
+
+/** BROWSER_START */
 export {
   resizeAndQuantizeImage,
   quantizeImage,

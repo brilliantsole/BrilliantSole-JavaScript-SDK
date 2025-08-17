@@ -1,0 +1,105 @@
+<html>
+  <head>
+    <title>Display Text | BrilliantSole JavaScript SDK</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico" />
+    <script type="module" src="./script.js"></script>
+  </head>
+  <style>
+    #display {
+      background-color: black;
+    }
+
+    #textarea {
+      height: 400;
+      width: 640;
+    }
+
+    .verticalLabel {
+      display: inline-flex;
+      flex-direction: column;
+      max-width: fit-content;
+    }
+
+    #displayColors {
+      display: inline-block;
+    }
+    .displayColor {
+      display: inline-block;
+      margin-right: 1rem;
+    }
+  </style>
+  <body>
+    <nav>
+      <a href="../../">home</a>
+    </nav>
+
+    <h1>Display Text | BrilliantSole JavaScript SDK</h1>
+
+    <button id="toggleConnection">connect</button>
+
+    <div id="displayColors">
+      <template id="displayColorTemplate">
+        <div class="displayColor">
+          <label>
+            <input class="radio" type="radio" name="selectedColor" />
+          </label>
+          <input class="color" type="color" value="#000000" />
+        </div>
+      </template>
+    </div>
+
+    <br />
+
+    <label class="verticalLabel">
+      <span>brightness</span>
+      <select id="setDisplayBrightnessSelect">
+        <optgroup label="select brightness"></optgroup>
+      </select>
+    </label>
+
+    <label id="drawX" class="verticalLabel">
+      <span>x (<span class="value">320</span>px)</span>
+      <input type="range" min="0" max="640" step="5" value="320" />
+    </label>
+    <label id="drawY" class="verticalLabel">
+      <span>y (<span class="value">200</span>px)</span>
+      <input type="range" min="0" max="400" step="5" value="200" />
+    </label>
+
+    <label id="drawFontSize" class="verticalLabel">
+      <span>font size (<span class="value">42</span>px)</span>
+      <input type="range" min="8" max="72" step="1" value="42" />
+    </label>
+
+    <label class="verticalLabel">
+      <span>select font</span>
+      <select id="selectFont">
+        <optgroup label="select font"></optgroup>
+      </select>
+    </label>
+
+    <label>
+      add font
+      <input
+        id="loadFont"
+        type="file"
+        accept=".ttf,.otf,.woff,.woff2"
+        multiple="true"
+      />
+    </label>
+
+    <br />
+
+    <label>
+      file transfer progress: <span></span>
+      <progress value="0" id="fileTransferProgress"></progress>
+    </label>
+
+    <br />
+
+    <canvas id="display" width="640" height="400"></canvas>
+
+    <textarea id="textarea"></textarea>
+  </body>
+</html>

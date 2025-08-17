@@ -32,7 +32,6 @@ import {
   DisplaySpriteScaleDirectionToCommandType,
   minDisplayScale,
 } from "./utils/DisplayUtils.ts";
-import { DisplaySpriteSheet } from "./BS.ts";
 import {
   assertValidBitmapPixels,
   drawBitmapHeaderLength,
@@ -82,7 +81,10 @@ import {
   DisplaySpriteSheetPaletteSwap,
   fontToSpriteSheet,
   serializeSpriteSheet,
+  DisplaySpriteSheet,
+  parseFont,
 } from "./utils/DisplaySpriteSheetUtils.ts";
+import { Font } from "opentype.js";
 
 const _console = createConsole("DisplayManager", { log: true });
 
@@ -2213,13 +2215,15 @@ class DisplayManager implements DisplayManagerInterface {
     );
   }
 
+  async parseFont(arrayBuffer: ArrayBuffer) {
+    return parseFont(this, arrayBuffer);
+  }
   async fontToSpriteSheet(
-    arrayBuffer: ArrayBuffer,
+    font: Font,
     fontSize: number,
     spriteSheetName?: string
   ) {
-    // FIX
-    return fontToSpriteSheet(this, arrayBuffer, fontSize, spriteSheetName);
+    return fontToSpriteSheet(this, font, fontSize, spriteSheetName);
   }
 
   // MTU

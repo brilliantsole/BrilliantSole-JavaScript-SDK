@@ -86,8 +86,10 @@ import {
   DisplaySpriteSheetPalette,
   DisplaySpriteSheetPaletteSwap,
   fontToSpriteSheet,
+  parseFont,
   serializeSpriteSheet,
 } from "./DisplaySpriteSheetUtils.ts";
+import { Font } from "opentype.js";
 
 const _console = createConsole("DisplayCanvasHelper", { log: true });
 
@@ -3121,13 +3123,15 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     return serializeSpriteSheet(this, spriteSheet);
   }
 
+  parseFont(arrayBuffer: ArrayBuffer) {
+    return parseFont(this, arrayBuffer);
+  }
   async fontToSpriteSheet(
-    arrayBuffer: ArrayBuffer,
+    font: Font,
     fontSize: number,
     spriteSheetName?: string
   ) {
-    // FIX
-    return fontToSpriteSheet(this, arrayBuffer, fontSize, spriteSheetName);
+    return fontToSpriteSheet(this, font, fontSize, spriteSheetName);
   }
 }
 export default DisplayCanvasHelper;

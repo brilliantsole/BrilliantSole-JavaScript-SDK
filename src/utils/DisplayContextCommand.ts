@@ -58,6 +58,7 @@ export const DisplayContextCommandTypes = [
 
   "setHorizontalAlign",
   "setVerticalAlign",
+  "resetAlign",
 
   "setSegmentStartCap",
   "setSegmentEndCap",
@@ -95,9 +96,10 @@ export const DisplayContextCommandTypes = [
   "resetSpriteScale",
 
   "setSpritesDirection",
-  "setSpritesAlign",
+  "setSpritesLineDirection",
   "setSpritesSpacing",
   "setSpritesLineSpacing",
+  "setSpritesAlign",
 
   "clearRect",
 
@@ -958,10 +960,10 @@ export function serializeContextCommand(
         dataView = new DataView(new ArrayBuffer(dataViewLength));
         let offset = 0;
         dataView.setUint8(offset++, points.length);
-        points.forEach((segment) => {
-          dataView!.setInt16(offset, segment.x, true);
+        points.forEach((point) => {
+          dataView!.setInt16(offset, point.x, true);
           offset += 2;
-          dataView!.setInt16(offset, segment.y, true);
+          dataView!.setInt16(offset, point.y, true);
           offset += 2;
         });
       }

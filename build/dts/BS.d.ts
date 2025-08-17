@@ -26,6 +26,9 @@ export { DisplaySprite, DisplaySpriteSheet, DisplaySpriteSheetPalette, DisplaySp
 export { default as DisplayCanvasHelper, DisplayCanvasHelperEvent, DisplayCanvasHelperEventMap, DisplayCanvasHelperEventListenerMap, } from "./utils/DisplayCanvasHelper.ts";
 /** BROWSER_END */
 /** BROWSER_START */
+export { Font } from "opentype.js";
+/** BROWSER_END */
+/** BROWSER_START */
 export { resizeAndQuantizeImage, quantizeImage, imageToSprite, imageToSpriteSheet, canvasToSprite, canvasToSpriteSheet, } from "./utils/DisplayBitmapUtils.ts";
 /** BROWSER_END */
 export { rgbToHex, hexToRGB } from "./utils/ColorUtils.ts";

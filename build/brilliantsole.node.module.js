@@ -5,6 +5,7 @@
 import autoBind$1 from 'auto-bind';
 import RGBQuant from 'rgbquant';
 import opentype from 'opentype.js';
+import { decompress } from 'woff2-encoder';
 import * as webbluetooth from 'webbluetooth';
 import * as dgram from 'dgram';
 import noble from '@abandonware/noble';
@@ -3982,6 +3983,7 @@ const DisplayContextCommandTypes = [
     "clearRotation",
     "setHorizontalAlign",
     "setVerticalAlign",
+    "resetAlign",
     "setSegmentStartCap",
     "setSegmentEndCap",
     "setSegmentCap",
@@ -4012,9 +4014,10 @@ const DisplayContextCommandTypes = [
     "setSpriteScale",
     "resetSpriteScale",
     "setSpritesDirection",
-    "setSpritesAlign",
+    "setSpritesLineDirection",
     "setSpritesSpacing",
     "setSpritesLineSpacing",
+    "setSpritesAlign",
     "clearRect",
     "drawRect",
     "drawRoundRect",
@@ -4490,10 +4493,10 @@ function serializeContextCommand(displayManager, command) {
                 dataView = new DataView(new ArrayBuffer(dataViewLength));
                 let offset = 0;
                 dataView.setUint8(offset++, points.length);
-                points.forEach((segment) => {
-                    dataView.setInt16(offset, segment.x, true);
+                points.forEach((point) => {
+                    dataView.setInt16(offset, point.x, true);
                     offset += 2;
-                    dataView.setInt16(offset, segment.y, true);
+                    dataView.setInt16(offset, point.y, true);
                     offset += 2;
                 });
             }
@@ -4625,11 +4628,28 @@ const defaultFontToSpriteSheetOptions = {
     strokeWidth: 1,
     unicodeOnly: true,
 };
-async function fontToSpriteSheet(displayManager, arrayBuffer, fontSize, spriteSheetName, options = defaultFontToSpriteSheetOptions) {
-    _console$r.assertTypeWithError(fontSize, "number");
+function isWoff2(arrayBuffer) {
+    if (arrayBuffer.byteLength < 4)
+        return false;
+    const header = new Uint8Array(arrayBuffer, 0, 4);
+    return (header[0] === 0x77 &&
+        header[1] === 0x4f &&
+        header[2] === 0x46 &&
+        header[3] === 0x32
+    );
+}
+async function parseFont(displayManager, arrayBuffer) {
+    if (isWoff2(arrayBuffer)) {
+        const result = await decompress(arrayBuffer);
+        arrayBuffer = result.buffer;
+    }
     const font = opentype.parse(arrayBuffer);
-    const fontScale = (1 / font.unitsPerEm) * fontSize;
     _console$r.log("font", font);
+    return font;
+}
+async function fontToSpriteSheet(displayManager, font, fontSize, spriteSheetName, options = defaultFontToSpriteSheetOptions) {
+    _console$r.assertTypeWithError(fontSize, "number");
+    const fontScale = (1 / font.unitsPerEm) * fontSize;
     spriteSheetName = spriteSheetName || font.getEnglishName("fullName");
     const spriteSheet = {
         name: spriteSheetName,
@@ -6568,8 +6588,11 @@ class DisplayManager {
         Object.keys(__classPrivateFieldGet(this, _DisplayManager_spriteSheetIndices, "f")).forEach((spriteSheetName) => delete __classPrivateFieldGet(this, _DisplayManager_spriteSheetIndices, "f")[spriteSheetName]);
         Object.keys(__classPrivateFieldGet(this, _DisplayManager_spriteSheets, "f")).forEach((spriteSheetName) => delete __classPrivateFieldGet(this, _DisplayManager_spriteSheets, "f")[spriteSheetName]);
     }
-    async fontToSpriteSheet(arrayBuffer, fontSize, spriteSheetName) {
-        return fontToSpriteSheet(this, arrayBuffer, fontSize, spriteSheetName);
+    async parseFont(arrayBuffer) {
+        return parseFont(this, arrayBuffer);
+    }
+    async fontToSpriteSheet(font, fontSize, spriteSheetName) {
+        return fontToSpriteSheet(this, font, fontSize, spriteSheetName);
     }
     get mtu() {
         return __classPrivateFieldGet(this, _DisplayManager_mtu, "f");

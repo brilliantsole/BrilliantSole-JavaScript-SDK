@@ -363,7 +363,6 @@ window.addEventListener("drop", (e) => {
   const file = e.dataTransfer.files[0];
   if (file) {
     if (file.type.startsWith("image/")) {
-      setPreviewMode("image");
       loadImage(file);
     }
   }
@@ -422,12 +421,7 @@ window.addEventListener("paste", (event) => {
   if (!isValidUrl(string)) {
     return;
   }
-
-  switch (previewMode) {
-    case "image":
-      image.src = string;
-      break;
-  }
+  image.src = string;
 });
 window.addEventListener("paste", (event) => {
   const items = event.clipboardData.items;

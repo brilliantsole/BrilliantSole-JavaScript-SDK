@@ -1,5 +1,6 @@
 import { DisplayContextCommand } from "./DisplayContextCommand.ts";
 import { DisplayManagerInterface } from "./DisplayManagerInterface.ts";
+import opentype, { Font } from "opentype.js";
 export type DisplaySpritePaletteSwap = {
     name: string;
     numberOfColors: number;
@@ -38,6 +39,7 @@ type FontToSpriteSheetOptions = {
     strokeWidth?: number;
     unicodeOnly?: boolean;
 };
-export declare function fontToSpriteSheet(displayManager: DisplayManagerInterface, arrayBuffer: ArrayBuffer, fontSize: number, spriteSheetName?: string, options?: FontToSpriteSheetOptions): Promise<DisplaySpriteSheet>;
+export declare function parseFont(displayManager: DisplayManagerInterface, arrayBuffer: ArrayBuffer): Promise<opentype.Font>;
+export declare function fontToSpriteSheet(displayManager: DisplayManagerInterface, font: Font, fontSize: number, spriteSheetName?: string, options?: FontToSpriteSheetOptions): Promise<DisplaySpriteSheet>;
 export declare function reduceSpriteSheet(spriteSheet: DisplaySpriteSheet, spriteNames: string | string[]): DisplaySpriteSheet;
 export {};

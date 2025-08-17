@@ -80,6 +80,7 @@
     "rollup-plugin-uglify": "^6.0.4",
     "tslib": "^2.6.3",
     "typescript": "^5.5.3",
+    "woff2-encoder": "^2.0.0",
     "ws": "^8.16.0"
   },
   "dependencies": {

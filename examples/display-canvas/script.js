@@ -1300,10 +1300,10 @@ const draw = async () => {
     await drawEye("right", center);
     await drawPupil("left", center);
     await drawPupil("right", center);
-    await drawEyebrow("left", center);
-    await drawEyebrow("right", center);
-    await drawCheek("left", center);
-    await drawCheek("right", center);
+    // await drawEyebrow("left", center);
+    // await drawEyebrow("right", center);
+    // await drawCheek("left", center);
+    // await drawCheek("right", center);
   }
 
   await ctx.show();

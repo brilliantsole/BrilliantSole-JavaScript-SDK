@@ -1,3 +1,4 @@
+import { Font } from "opentype.js";
 import {
   DisplayBitmapColorPair,
   DisplayBrightness,
@@ -424,8 +425,9 @@ export interface DisplayManagerInterface {
 
   serializeSpriteSheet(spriteSheet: DisplaySpriteSheet): ArrayBuffer;
 
+  parseFont(arrayBuffer: ArrayBuffer): Promise<Font>;
   fontToSpriteSheet(
-    arrayBuffer: ArrayBuffer,
+    font: Font,
     fontSize: number,
     spriteSheetName?: string
   ): Promise<DisplaySpriteSheet>;

@@ -5445,6 +5445,11 @@ widest-line@^3.1.0:
   dependencies:
     string-width "^4.0.0"
 
+woff2-encoder@^2.0.0:
+  version "2.0.0"
+  resolved "https://registry.yarnpkg.com/woff2-encoder/-/woff2-encoder-2.0.0.tgz#1f2cb19cddc95570ab0b4ed8a2a764c23b290f96"
+  integrity sha512-wH1rcskczCP5+BJABM88aM3hoEX1VUW6U+Ksx/7bmXvctWGqF+O/YQdC6vWQ7lJS7ny21a0MkAqcZyOP2O8CAg==
+
 word-wrap@~1.2.3:
   version "1.2.5"
   resolved "https://registry.yarnpkg.com/word-wrap/-/word-wrap-1.2.5.tgz#d2c45c6dd4fbce621a66f136cbe328afd0410b34"
