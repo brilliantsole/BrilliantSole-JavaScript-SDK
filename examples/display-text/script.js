@@ -333,14 +333,21 @@ const loadFont = async (arrayBuffer) => {
   }
 };
 
-/** @type {Object.<string, BS.Font>} */
-let fonts = {};
-
+/** @type {BS.Font[]} */
+let fonts = [];
 /** @param {BS.Font} font */
 const addFont = (font) => {
   const fullName = font.getEnglishName("fullName");
-  fonts[fullName] = font;
-  console.log(`added "${fullName}" font`);
+  const existingFont = fonts.find(
+    (_font) => _font.getEnglishName("fullName") == fullName
+  );
+  if (existingFont) {
+    console.log(`replacing "${fullName}" font`);
+    fonts[fonts.indexOf(existingFont)] = font;
+  } else {
+    fonts.push(font);
+    console.log(`added "${fullName}" font`);
+  }
   updateFontSelect();
 };
 
@@ -349,9 +356,9 @@ const selectFontSelect = document.getElementById("selectFont");
 const selectFontOptgroup = selectFontSelect.querySelector("optgroup");
 const updateFontSelect = () => {
   selectFontOptgroup.innerHTML = "";
-  for (const key in fonts) {
-    selectFontOptgroup.appendChild(new Option(key));
-  }
+  fonts.forEach((font) => {
+    selectFontOptgroup.appendChild(new Option(font.getEnglishName("fullName")));
+  });
   if (!selectedFont) {
     selectFont(selectFontSelect.value);
   }
@@ -395,3 +402,4 @@ textarea.addEventListener("mouseup", () => {
 loadFontUrl("https://fonts.googleapis.com/css2?family=Roboto");
 loadFontUrl("https://fonts.googleapis.com/css2?family=Mozilla+Text");
 loadFontUrl("https://fonts.googleapis.com/css2?family=Inter");
+loadFontUrl("https://fonts.googleapis.com/css2?family=Noto+Sans+JP");
