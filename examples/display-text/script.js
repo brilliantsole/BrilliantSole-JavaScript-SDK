@@ -410,11 +410,12 @@ device.addEventListener("fileTransferStatus", () => {
 /** @type {HTMLInputElement} */
 const loadFontInput = document.getElementById("loadFont");
 loadFontInput.addEventListener("input", async () => {
-  for (let i in loadFontInput.files) {
+  for (let i = 0; i < loadFontInput.files.length; i++) {
     const file = loadFontInput.files[i];
     if (!file) {
       continue;
     }
+    console.log(file, loadFontInput.files);
     const arrayBuffer = await file.arrayBuffer();
     await loadFont(arrayBuffer);
   }
@@ -542,7 +543,7 @@ const addFont = async (font) => {
 
   console.log(`added font "${fullName}"`, range);
 
-  const isEnglish = range.min <= 65 && range.max >= 382;
+  const isEnglish = range.min <= 65 && range.max >= 122;
   if (isEnglish) {
     7;
     englishFonts[fullName] = englishFonts[fullName] || [];

@@ -5466,7 +5466,7 @@ class DisplayManager {
         _DisplayManager_opacities.set(this, []);
         _DisplayManager_isReady.set(this, true);
         _DisplayManager_lastReadyTime.set(this, 0);
-        _DisplayManager_minReadyInterval.set(this, 120);
+        _DisplayManager_minReadyInterval.set(this, 100);
         _DisplayManager_spriteSheets.set(this, {});
         _DisplayManager_spriteSheetIndices.set(this, {});
         _DisplayManager_pendingSpriteSheet.set(this, void 0);
