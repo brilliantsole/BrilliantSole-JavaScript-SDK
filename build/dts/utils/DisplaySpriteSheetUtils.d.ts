@@ -38,8 +38,10 @@ type FontToSpriteSheetOptions = {
     stroke?: boolean;
     strokeWidth?: number;
     unicodeOnly?: boolean;
+    englishOnly?: boolean;
 };
-export declare function parseFont(displayManager: DisplayManagerInterface, arrayBuffer: ArrayBuffer): Promise<opentype.Font>;
+export declare function parseFont(arrayBuffer: ArrayBuffer): Promise<opentype.Font>;
+export declare function getFontUnicodeRange(font: Font): import("./RangeHelper.ts").Range | undefined;
 export declare function fontToSpriteSheet(displayManager: DisplayManagerInterface, font: Font, fontSize: number, spriteSheetName?: string, options?: FontToSpriteSheetOptions): Promise<DisplaySpriteSheet>;
 export declare function reduceSpriteSheet(spriteSheet: DisplaySpriteSheet, spriteNames: string | string[]): DisplaySpriteSheet;
 export {};

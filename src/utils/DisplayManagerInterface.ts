@@ -4,7 +4,6 @@ import {
   DisplayBrightness,
   DisplaySpriteColorPair,
   DisplayBitmap,
-  DisplayInformation,
 } from "../DisplayManager.ts";
 import { createConsole } from "./Console.ts";
 import { DisplayContextCommand } from "./DisplayContextCommand.ts";
@@ -425,7 +424,6 @@ export interface DisplayManagerInterface {
 
   serializeSpriteSheet(spriteSheet: DisplaySpriteSheet): ArrayBuffer;
 
-  parseFont(arrayBuffer: ArrayBuffer): Promise<Font>;
   fontToSpriteSheet(
     font: Font,
     fontSize: number,

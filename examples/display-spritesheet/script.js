@@ -3356,7 +3356,7 @@ loadFontInput.addEventListener("input", async () => {
   const file = loadFontInput.files[0];
   if (!file) return;
   const arrayBuffer = await file.arrayBuffer();
-  const font = await displayCanvasHelper.parseFont(arrayBuffer);
+  const font = await BS.parseFont(arrayBuffer);
   const fontSpriteSheet = await displayCanvasHelper.fontToSpriteSheet(
     font,
     fontSize

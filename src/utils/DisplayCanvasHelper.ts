@@ -86,7 +86,6 @@ import {
   DisplaySpriteSheetPalette,
   DisplaySpriteSheetPaletteSwap,
   fontToSpriteSheet,
-  parseFont,
   serializeSpriteSheet,
 } from "./DisplaySpriteSheetUtils.ts";
 import { Font } from "opentype.js";
@@ -3123,9 +3122,6 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     return serializeSpriteSheet(this, spriteSheet);
   }
 
-  parseFont(arrayBuffer: ArrayBuffer) {
-    return parseFont(this, arrayBuffer);
-  }
   async fontToSpriteSheet(
     font: Font,
     fontSize: number,

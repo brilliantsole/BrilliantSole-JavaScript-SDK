@@ -21,7 +21,7 @@ export { wait } from "./utils/Timer.ts";
 export { DisplaySegmentCap, DisplaySegmentCaps, } from "./utils/DisplayContextState.ts";
 export { maxDisplayScale, DisplayColorRGB, pixelDepthToNumberOfColors, } from "./utils/DisplayUtils.ts";
 export { DisplayContextCommand, DisplayContextCommandType, DisplayContextCommandTypes, DisplaySpriteContextCommandType, DisplaySpriteContextCommandTypes, } from "./utils/DisplayContextCommand.ts";
-export { DisplaySprite, DisplaySpriteSheet, DisplaySpriteSheetPalette, DisplaySpritePaletteSwap, } from "./utils/DisplaySpriteSheetUtils.ts";
+export { DisplaySprite, DisplaySpriteSheet, DisplaySpriteSheetPalette, DisplaySpritePaletteSwap, parseFont, getFontUnicodeRange, } from "./utils/DisplaySpriteSheetUtils.ts";
 /** BROWSER_START */
 export { default as DisplayCanvasHelper, DisplayCanvasHelperEvent, DisplayCanvasHelperEventMap, DisplayCanvasHelperEventListenerMap, } from "./utils/DisplayCanvasHelper.ts";
 /** BROWSER_END */
@@ -55,4 +55,4 @@ export { default as WebSocketClient } from "./server/websocket/WebSocketClient.t
 /** LS_START */
 export { default as WebSocketClient } from "./server/websocket/WebSocketClient.ts";
 /** LS_END */
-export { default as RangeHelper } from "./utils/RangeHelper.ts";
+export { default as RangeHelper, Range } from "./utils/RangeHelper.ts";

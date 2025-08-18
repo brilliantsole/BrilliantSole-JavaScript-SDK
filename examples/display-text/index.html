@@ -59,17 +59,41 @@
     </label>
 
     <label id="drawX" class="verticalLabel">
-      <span>x (<span class="value">320</span>px)</span>
-      <input type="range" min="0" max="640" step="5" value="320" />
+      <span>x (<span class="value">100</span>px)</span>
+      <input type="range" min="-640" max="800" step="5" value="200" />
     </label>
     <label id="drawY" class="verticalLabel">
-      <span>y (<span class="value">200</span>px)</span>
-      <input type="range" min="0" max="400" step="5" value="200" />
+      <span>y (<span class="value">100</span>px)</span>
+      <input type="range" min="-400" max="500" step="5" value="100" />
+    </label>
+    <label id="drawLineSpacing" class="verticalLabel">
+      <span>line spacing (<span class="value">40</span>px)</span>
+      <input type="range" min="0" max="100" step="1" value="40" />
     </label>
 
-    <label id="drawFontSize" class="verticalLabel">
-      <span>font size (<span class="value">42</span>px)</span>
-      <input type="range" min="8" max="72" step="1" value="42" />
+    <label id="drawScale" class="verticalLabel">
+      <span>scale (<span class="value">1</span>x)</span>
+      <input type="range" min="0.1" max="10" step="0.1" value="1" />
+    </label>
+    <label id="drawScaleX" class="verticalLabel">
+      <span>scaleX (<span class="value">1</span>x)</span>
+      <input type="range" min="0.1" max="10" step="0.1" value="1" />
+    </label>
+
+    <label id="drawScaleY" class="verticalLabel">
+      <span>scaleY (<span class="value">1</span>x)</span>
+      <input type="range" min="0.1" max="10" step="0.1" value="1" />
+    </label>
+
+    <label class="verticalLabel">
+      <span>text align</span>
+      <select id="textAlign">
+        <optgroup label="select alignment">
+          <option selected>left</option>
+          <option>center</option>
+          <option>right</option>
+        </optgroup>
+      </select>
     </label>
 
     <label class="verticalLabel">

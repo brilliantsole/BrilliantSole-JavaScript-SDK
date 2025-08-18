@@ -1054,13 +1054,19 @@ const initialRange = { min: Infinity, max: -Infinity, span: 0 };
 class RangeHelper {
     constructor() {
         _RangeHelper_instances.add(this);
-        _RangeHelper_range.set(this, Object.assign({}, initialRange));
+        _RangeHelper_range.set(this, structuredClone(initialRange));
     }
     get min() {
         return __classPrivateFieldGet(this, _RangeHelper_range, "f").min;
     }
     get max() {
         return __classPrivateFieldGet(this, _RangeHelper_range, "f").max;
+    }
+    get span() {
+        return __classPrivateFieldGet(this, _RangeHelper_range, "f").span;
+    }
+    get range() {
+        return structuredClone(__classPrivateFieldGet(this, _RangeHelper_range, "f"));
     }
     set min(newMin) {
         __classPrivateFieldGet(this, _RangeHelper_range, "f").min = newMin;
@@ -15150,6 +15156,7 @@ const defaultFontToSpriteSheetOptions = {
     stroke: false,
     strokeWidth: 1,
     unicodeOnly: true,
+    englishOnly: true,
 };
 function isWoff2(arrayBuffer) {
     if (arrayBuffer.byteLength < 4)
@@ -15161,15 +15168,30 @@ function isWoff2(arrayBuffer) {
         header[3] === 0x32
     );
 }
-async function parseFont(displayManager, arrayBuffer) {
+async function parseFont(arrayBuffer) {
     if (isWoff2(arrayBuffer)) {
         const result = await Q(arrayBuffer);
         arrayBuffer = result.buffer;
     }
     const font = opentype.parse(arrayBuffer);
-    _console$m.log("font", font);
     return font;
 }
+function getFontUnicodeRange(font) {
+    const rangeHelper = new RangeHelper();
+    for (let i = 0; i < font.glyphs.length; i++) {
+        const glyph = font.glyphs.get(i);
+        if (!glyph.unicodes || glyph.unicodes.length === 0)
+            continue;
+        glyph.unicodes
+            .filter((unicode) => {
+            const char = String.fromCodePoint(unicode);
+            return /\p{Letter}/u.test(char);
+        })
+            .forEach((unicode) => rangeHelper.update(unicode));
+    }
+    return rangeHelper.span > 0 ? rangeHelper.range : undefined;
+}
+const englishRegex = /^[A-Za-z0-9 !"#$%&'()*+,\-./:;?@[\]^_`{|}~\\]+$/;
 async function fontToSpriteSheet(displayManager, font, fontSize, spriteSheetName, options = defaultFontToSpriteSheetOptions) {
     _console$m.assertTypeWithError(fontSize, "number");
     const fontScale = (1 / font.unitsPerEm) * fontSize;
@@ -15185,8 +15207,13 @@ async function fontToSpriteSheet(displayManager, font, fontSize, spriteSheetName
     const glyphs = [];
     for (let index = 0; index < font.glyphs.length; index++) {
         const glyph = font.glyphs.get(index);
-        if (options.unicodeOnly) {
+        if (options.unicodeOnly || options.englishOnly) {
             if (glyph.unicode == undefined) {
+                continue;
+            }
+        }
+        if (options.englishOnly) {
+            if (!englishRegex.test(String.fromCharCode(glyph.unicode))) {
                 continue;
             }
         }
@@ -15196,7 +15223,6 @@ async function fontToSpriteSheet(displayManager, font, fontSize, spriteSheetName
         glyphs.push(glyph);
     }
     const maxSpriteHeight = maxSpriteY - minSpriteY;
-    _console$m.log({ minSpriteY, maxSpriteY, maxSpriteHeight });
     for (let i = 0; i < glyphs.length; i++) {
         const glyph = glyphs[i];
         let name = glyph.name;
@@ -15305,6 +15331,7 @@ async function quantizeCanvas(canvas, numberOfColors, colors) {
         dithKern: null,
         useCache: false,
         reIndex: true,
+        orDist: "manhattan",
     };
     if (colors) {
         quantOptions.palette = colors.map((color) => {
@@ -15318,7 +15345,6 @@ async function quantizeCanvas(canvas, numberOfColors, colors) {
             }
         });
     }
-    _console$l.log("quantizeImage options", quantOptions);
     const quantizer = new RGBQuant(quantOptions);
     const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
     quantizer.sample(imageData);
@@ -15348,7 +15374,6 @@ async function quantizeCanvas(canvas, numberOfColors, colors) {
             closestColorIndexToBlack = colorIndex;
         }
     }
-    _console$l.log({ closestColorIndexToBlack, closestColorDistanceToBlack });
     if (closestColorIndexToBlack != 0) {
         const [currentBlack, newBlack] = [
             quantizedPaletteColors[0],
@@ -17246,9 +17271,6 @@ class DisplayManager {
         this.isServerSide = false;
         Object.keys(__classPrivateFieldGet(this, _DisplayManager_spriteSheetIndices, "f")).forEach((spriteSheetName) => delete __classPrivateFieldGet(this, _DisplayManager_spriteSheetIndices, "f")[spriteSheetName]);
         Object.keys(__classPrivateFieldGet(this, _DisplayManager_spriteSheets, "f")).forEach((spriteSheetName) => delete __classPrivateFieldGet(this, _DisplayManager_spriteSheets, "f")[spriteSheetName]);
-    }
-    async parseFont(arrayBuffer) {
-        return parseFont(this, arrayBuffer);
     }
     async fontToSpriteSheet(font, fontSize, spriteSheetName) {
         return fontToSpriteSheet(this, font, fontSize, spriteSheetName);
@@ -21873,9 +21895,6 @@ class DisplayCanvasHelper {
     serializeSpriteSheet(spriteSheet) {
         return serializeSpriteSheet(this, spriteSheet);
     }
-    parseFont(arrayBuffer) {
-        return parseFont(this, arrayBuffer);
-    }
     async fontToSpriteSheet(font, fontSize, spriteSheetName) {
         return fontToSpriteSheet(this, font, fontSize, spriteSheetName);
     }
@@ -23605,5 +23624,5 @@ const ThrottleUtils = {
     debounce,
 };
 
-export { CameraCommands, CameraConfigurationTypes, ContinuousSensorTypes, DefaultNumberOfDisplayColors, DefaultNumberOfPressureSensors, Device, DeviceManager$1 as DeviceManager, DevicePair, DevicePairTypes, DeviceTypes, DisplayBrightnesses, DisplayCanvasHelper, DisplayContextCommandTypes, DisplayPixelDepths, DisplaySegmentCaps, DisplaySpriteContextCommandTypes, environment as Environment, EventUtils, FileTransferDirections, FileTypes, Font, MaxNameLength, MaxNumberOfVibrationWaveformEffectSegments, MaxNumberOfVibrationWaveformSegments, MaxSensorRate, MaxSpriteSheetNameLength, MaxVibrationWaveformEffectSegmentDelay, MaxVibrationWaveformEffectSegmentLoopCount, MaxVibrationWaveformEffectSequenceLoopCount, MaxVibrationWaveformSegmentDuration, MaxWifiPasswordLength, MaxWifiSSIDLength, MicrophoneCommands, MicrophoneConfigurationTypes, MicrophoneConfigurationValues, MinNameLength, MinSpriteSheetNameLength, MinWifiPasswordLength, MinWifiSSIDLength, RangeHelper, SensorRateStep, SensorTypes, Sides, TfliteSensorTypes, TfliteTasks, ThrottleUtils, VibrationLocations, VibrationTypes, VibrationWaveformEffects, WebSocketClient, canvasToSprite, canvasToSpriteSheet, hexToRGB, imageToSprite, imageToSpriteSheet, maxDisplayScale, pixelDepthToNumberOfColors, quantizeImage, resizeAndQuantizeImage, rgbToHex, setAllConsoleLevelFlags, setConsoleLevelFlagsForType, wait };
+export { CameraCommands, CameraConfigurationTypes, ContinuousSensorTypes, DefaultNumberOfDisplayColors, DefaultNumberOfPressureSensors, Device, DeviceManager$1 as DeviceManager, DevicePair, DevicePairTypes, DeviceTypes, DisplayBrightnesses, DisplayCanvasHelper, DisplayContextCommandTypes, DisplayPixelDepths, DisplaySegmentCaps, DisplaySpriteContextCommandTypes, environment as Environment, EventUtils, FileTransferDirections, FileTypes, Font, MaxNameLength, MaxNumberOfVibrationWaveformEffectSegments, MaxNumberOfVibrationWaveformSegments, MaxSensorRate, MaxSpriteSheetNameLength, MaxVibrationWaveformEffectSegmentDelay, MaxVibrationWaveformEffectSegmentLoopCount, MaxVibrationWaveformEffectSequenceLoopCount, MaxVibrationWaveformSegmentDuration, MaxWifiPasswordLength, MaxWifiSSIDLength, MicrophoneCommands, MicrophoneConfigurationTypes, MicrophoneConfigurationValues, MinNameLength, MinSpriteSheetNameLength, MinWifiPasswordLength, MinWifiSSIDLength, RangeHelper, SensorRateStep, SensorTypes, Sides, TfliteSensorTypes, TfliteTasks, ThrottleUtils, VibrationLocations, VibrationTypes, VibrationWaveformEffects, WebSocketClient, canvasToSprite, canvasToSpriteSheet, getFontUnicodeRange, hexToRGB, imageToSprite, imageToSpriteSheet, maxDisplayScale, parseFont, pixelDepthToNumberOfColors, quantizeImage, resizeAndQuantizeImage, rgbToHex, setAllConsoleLevelFlags, setConsoleLevelFlagsForType, wait };
 //# sourceMappingURL=brilliantsole.module.js.map

@@ -140,6 +140,8 @@ export {
   DisplaySpriteSheet,
   DisplaySpriteSheetPalette,
   DisplaySpritePaletteSwap,
+  parseFont,
+  getFontUnicodeRange,
 } from "./utils/DisplaySpriteSheetUtils.ts";
 
 /** BROWSER_START */
@@ -203,4 +205,4 @@ export { default as WebSocketClient } from "./server/websocket/WebSocketClient.t
 export { default as WebSocketClient } from "./server/websocket/WebSocketClient.ts";
 /** LS_END */
 
-export { default as RangeHelper } from "./utils/RangeHelper.ts";
+export { default as RangeHelper, Range } from "./utils/RangeHelper.ts";

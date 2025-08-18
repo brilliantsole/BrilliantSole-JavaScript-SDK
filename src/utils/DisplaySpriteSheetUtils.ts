@@ -9,6 +9,7 @@ import {
 import { DisplayManagerInterface } from "./DisplayManagerInterface.ts";
 import opentype, { Glyph, Font } from "opentype.js";
 import { decompress } from "woff2-encoder";
+import RangeHelper from "./RangeHelper.ts";
 
 const _console = createConsole("DisplaySpriteSheetUtils", { log: true });
 
@@ -101,11 +102,13 @@ type FontToSpriteSheetOptions = {
   stroke?: boolean;
   strokeWidth?: number;
   unicodeOnly?: boolean;
+  englishOnly?: boolean;
 };
 const defaultFontToSpriteSheetOptions: FontToSpriteSheetOptions = {
   stroke: false,
   strokeWidth: 1,
   unicodeOnly: true,
+  englishOnly: true,
 };
 
 function isWoff2(arrayBuffer: ArrayBuffer) {
@@ -119,18 +122,45 @@ function isWoff2(arrayBuffer: ArrayBuffer) {
     header[3] === 0x32 // '2'
   );
 }
-export async function parseFont(
-  displayManager: DisplayManagerInterface,
-  arrayBuffer: ArrayBuffer
-) {
+export async function parseFont(arrayBuffer: ArrayBuffer) {
   if (isWoff2(arrayBuffer)) {
     const result = await decompress(arrayBuffer);
     arrayBuffer = result.buffer;
   }
   const font = opentype.parse(arrayBuffer);
-  _console.log("font", font);
+  //_console.log("font", font);
   return font;
 }
+
+export function getFontUnicodeRange(font: Font) {
+  const rangeHelper = new RangeHelper();
+
+  for (let i = 0; i < font.glyphs.length; i++) {
+    const glyph = font.glyphs.get(i);
+    if (!glyph.unicodes || glyph.unicodes.length === 0) continue;
+
+    glyph.unicodes
+      .filter((unicode) => {
+        const char = String.fromCodePoint(unicode);
+        // Keep only letters (any language)
+        return /\p{Letter}/u.test(char);
+      })
+      .forEach((unicode) => rangeHelper.update(unicode));
+  }
+
+  //_console.log("range", rangeHelper.range);
+  return rangeHelper.span > 0 ? rangeHelper.range : undefined;
+}
+
+// Basic English letters A-Z and a-z
+function isEnglishLetter(unicode: number) {
+  return (
+    (unicode >= 0x41 && unicode <= 0x5a) || (unicode >= 0x61 && unicode <= 0x7a)
+  );
+}
+
+const englishRegex = /^[A-Za-z0-9 !"#$%&'()*+,\-./:;?@[\]^_`{|}~\\]+$/;
+
 export async function fontToSpriteSheet(
   displayManager: DisplayManagerInterface,
   font: Font,
@@ -156,8 +186,13 @@ export async function fontToSpriteSheet(
   const glyphs: Glyph[] = [];
   for (let index = 0; index < font.glyphs.length; index++) {
     const glyph = font.glyphs.get(index);
-    if (options.unicodeOnly) {
+    if (options.unicodeOnly || options.englishOnly) {
       if (glyph.unicode == undefined) {
+        continue;
+      }
+    }
+    if (options.englishOnly) {
+      if (!englishRegex.test(String.fromCharCode(glyph.unicode!))) {
         continue;
       }
     }
@@ -171,7 +206,7 @@ export async function fontToSpriteSheet(
 
   const maxSpriteHeight = maxSpriteY - minSpriteY;
 
-  _console.log({ minSpriteY, maxSpriteY, maxSpriteHeight });
+  //_console.log({ minSpriteY, maxSpriteY, maxSpriteHeight });
 
   for (let i = 0; i < glyphs.length; i++) {
     const glyph = glyphs[i];

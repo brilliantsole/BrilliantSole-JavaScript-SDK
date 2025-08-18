@@ -79,6 +79,7 @@ const nodeExternal = [
   "dgram",
   "rgbquant",
   "opentype.js",
+  "woff2-encoder",
 ];
 
 const lensStudioPlugins = [

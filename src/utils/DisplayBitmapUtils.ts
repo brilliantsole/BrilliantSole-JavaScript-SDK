@@ -61,7 +61,7 @@ export async function quantizeCanvas(
     dithKern: null, // Disable dithering
     useCache: false, // Disable color caching to force exact matches
     reIndex: true, // Ensure strict re-indexing to the palette
-    //orDist: "manhattan",
+    orDist: "manhattan",
   };
 
   if (colors) {
@@ -76,7 +76,7 @@ export async function quantizeCanvas(
       }
     });
   }
-  _console.log("quantizeImage options", quantOptions);
+  //_console.log("quantizeImage options", quantOptions);
   const quantizer = new RGBQuant(quantOptions);
   const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
   quantizer.sample(imageData);
@@ -119,7 +119,7 @@ export async function quantizeCanvas(
       closestColorIndexToBlack = colorIndex;
     }
   }
-  _console.log({ closestColorIndexToBlack, closestColorDistanceToBlack });
+  //_console.log({ closestColorIndexToBlack, closestColorDistanceToBlack });
   if (closestColorIndexToBlack != 0) {
     const [currentBlack, newBlack] = [
       quantizedPaletteColors[0],
