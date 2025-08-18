@@ -84,6 +84,7 @@ import {
   DisplaySpriteSheet,
 } from "./utils/DisplaySpriteSheetUtils.ts";
 import { Font } from "opentype.js";
+import { wait } from "./utils/Timer.ts";
 
 const _console = createConsole("DisplayManager", { log: true });
 
@@ -1893,8 +1894,18 @@ class DisplayManager implements DisplayManagerInterface {
   get isReady() {
     return this.isAvailable && this.#isReady;
   }
-  #parseDisplayReady(dataView: DataView) {
+  #lastReadyTime = 0;
+  #minReadyInterval = 120; //
+  async #parseDisplayReady(dataView: DataView) {
+    const now = Date.now();
+    const timeSinceLastReady = now - this.#lastReadyTime;
+    if (timeSinceLastReady < this.#minReadyInterval) {
+      const timeToWait = this.#minReadyInterval - timeSinceLastReady;
+      _console.log(`waiting ${timeToWait}ms`);
+      await wait(timeToWait);
+    }
     this.#isReady = true;
+    this.#lastReadyTime = Date.now();
     this.#dispatchEvent("displayReady", {});
   }
 

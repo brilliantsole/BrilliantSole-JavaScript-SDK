@@ -5392,7 +5392,7 @@ async function drawSpriteFromSpriteSheet(displayManagerInterface, offsetX, offse
     await displayManagerInterface.drawSprite(offsetX, offsetY, spriteName, sendImmediately);
 }
 
-var _DisplayManager_instances, _DisplayManager_dispatchEvent_get, _DisplayManager_isAvailable, _DisplayManager_assertDisplayIsAvailable, _DisplayManager_parseIsDisplayAvailable, _DisplayManager_contextStateHelper, _DisplayManager_onContextStateUpdate, _DisplayManager_displayStatus, _DisplayManager_parseDisplayStatus, _DisplayManager_updateDisplayStatus, _DisplayManager_sendDisplayCommand, _DisplayManager_assertIsAwake, _DisplayManager_assertIsNotAwake, _DisplayManager_displayInformation, _DisplayManager_parseDisplayInformation, _DisplayManager_brightness, _DisplayManager_parseDisplayBrightness, _DisplayManager_assertValidDisplayContextCommand, _DisplayManager_maxCommandDataLength_get, _DisplayManager_displayContextCommandBuffers, _DisplayManager_sendDisplayContextCommand, _DisplayManager_sendContextCommands, _DisplayManager_colors, _DisplayManager_opacities, _DisplayManager_assertValidBitmapSize, _DisplayManager_isReady, _DisplayManager_parseDisplayReady, _DisplayManager_spriteSheets, _DisplayManager_spriteSheetIndices, _DisplayManager_setSpriteSheetName, _DisplayManager_pendingSpriteSheet, _DisplayManager_pendingSpriteSheetName, _DisplayManager_updateSpriteSheetName, _DisplayManager_parseSpriteSheetIndex, _DisplayManager_mtu, _DisplayManager_isServerSide;
+var _DisplayManager_instances, _DisplayManager_dispatchEvent_get, _DisplayManager_isAvailable, _DisplayManager_assertDisplayIsAvailable, _DisplayManager_parseIsDisplayAvailable, _DisplayManager_contextStateHelper, _DisplayManager_onContextStateUpdate, _DisplayManager_displayStatus, _DisplayManager_parseDisplayStatus, _DisplayManager_updateDisplayStatus, _DisplayManager_sendDisplayCommand, _DisplayManager_assertIsAwake, _DisplayManager_assertIsNotAwake, _DisplayManager_displayInformation, _DisplayManager_parseDisplayInformation, _DisplayManager_brightness, _DisplayManager_parseDisplayBrightness, _DisplayManager_assertValidDisplayContextCommand, _DisplayManager_maxCommandDataLength_get, _DisplayManager_displayContextCommandBuffers, _DisplayManager_sendDisplayContextCommand, _DisplayManager_sendContextCommands, _DisplayManager_colors, _DisplayManager_opacities, _DisplayManager_assertValidBitmapSize, _DisplayManager_isReady, _DisplayManager_lastReadyTime, _DisplayManager_minReadyInterval, _DisplayManager_parseDisplayReady, _DisplayManager_spriteSheets, _DisplayManager_spriteSheetIndices, _DisplayManager_setSpriteSheetName, _DisplayManager_pendingSpriteSheet, _DisplayManager_pendingSpriteSheetName, _DisplayManager_updateSpriteSheetName, _DisplayManager_parseSpriteSheetIndex, _DisplayManager_mtu, _DisplayManager_isServerSide;
 const _console$o = createConsole("DisplayManager", { log: true });
 const DefaultNumberOfDisplayColors = 16;
 const DisplayCommands = ["sleep", "wake"];
@@ -5465,6 +5465,8 @@ class DisplayManager {
         _DisplayManager_colors.set(this, []);
         _DisplayManager_opacities.set(this, []);
         _DisplayManager_isReady.set(this, true);
+        _DisplayManager_lastReadyTime.set(this, 0);
+        _DisplayManager_minReadyInterval.set(this, 120);
         _DisplayManager_spriteSheets.set(this, {});
         _DisplayManager_spriteSheetIndices.set(this, {});
         _DisplayManager_pendingSpriteSheet.set(this, void 0);
@@ -6634,7 +6636,7 @@ class DisplayManager {
         __classPrivateFieldSet(this, _DisplayManager_isServerSide, newIsServerSide, "f");
     }
 }
-_DisplayManager_isAvailable = new WeakMap(), _DisplayManager_contextStateHelper = new WeakMap(), _DisplayManager_displayStatus = new WeakMap(), _DisplayManager_displayInformation = new WeakMap(), _DisplayManager_brightness = new WeakMap(), _DisplayManager_displayContextCommandBuffers = new WeakMap(), _DisplayManager_colors = new WeakMap(), _DisplayManager_opacities = new WeakMap(), _DisplayManager_isReady = new WeakMap(), _DisplayManager_spriteSheets = new WeakMap(), _DisplayManager_spriteSheetIndices = new WeakMap(), _DisplayManager_pendingSpriteSheet = new WeakMap(), _DisplayManager_pendingSpriteSheetName = new WeakMap(), _DisplayManager_mtu = new WeakMap(), _DisplayManager_isServerSide = new WeakMap(), _DisplayManager_instances = new WeakSet(), _DisplayManager_dispatchEvent_get = function _DisplayManager_dispatchEvent_get() {
+_DisplayManager_isAvailable = new WeakMap(), _DisplayManager_contextStateHelper = new WeakMap(), _DisplayManager_displayStatus = new WeakMap(), _DisplayManager_displayInformation = new WeakMap(), _DisplayManager_brightness = new WeakMap(), _DisplayManager_displayContextCommandBuffers = new WeakMap(), _DisplayManager_colors = new WeakMap(), _DisplayManager_opacities = new WeakMap(), _DisplayManager_isReady = new WeakMap(), _DisplayManager_lastReadyTime = new WeakMap(), _DisplayManager_minReadyInterval = new WeakMap(), _DisplayManager_spriteSheets = new WeakMap(), _DisplayManager_spriteSheetIndices = new WeakMap(), _DisplayManager_pendingSpriteSheet = new WeakMap(), _DisplayManager_pendingSpriteSheetName = new WeakMap(), _DisplayManager_mtu = new WeakMap(), _DisplayManager_isServerSide = new WeakMap(), _DisplayManager_instances = new WeakSet(), _DisplayManager_dispatchEvent_get = function _DisplayManager_dispatchEvent_get() {
     return this.eventDispatcher.dispatchEvent;
 }, _DisplayManager_assertDisplayIsAvailable = function _DisplayManager_assertDisplayIsAvailable() {
     _console$o.assertWithError(__classPrivateFieldGet(this, _DisplayManager_isAvailable, "f"), "display is not available");
@@ -6763,8 +6765,16 @@ async function _DisplayManager_sendDisplayCommand(command, sendImmediately) {
 }, _DisplayManager_assertValidBitmapSize = function _DisplayManager_assertValidBitmapSize(bitmap) {
     const pixelDataLength = getBitmapNumberOfBytes(bitmap);
     _console$o.assertRangeWithError("bitmap.pixels.length", pixelDataLength, 1, __classPrivateFieldGet(this, _DisplayManager_instances, "a", _DisplayManager_maxCommandDataLength_get) - drawBitmapHeaderLength);
-}, _DisplayManager_parseDisplayReady = function _DisplayManager_parseDisplayReady(dataView) {
+}, _DisplayManager_parseDisplayReady = async function _DisplayManager_parseDisplayReady(dataView) {
+    const now = Date.now();
+    const timeSinceLastReady = now - __classPrivateFieldGet(this, _DisplayManager_lastReadyTime, "f");
+    if (timeSinceLastReady < __classPrivateFieldGet(this, _DisplayManager_minReadyInterval, "f")) {
+        const timeToWait = __classPrivateFieldGet(this, _DisplayManager_minReadyInterval, "f") - timeSinceLastReady;
+        _console$o.log(`waiting ${timeToWait}ms`);
+        await wait(timeToWait);
+    }
     __classPrivateFieldSet(this, _DisplayManager_isReady, true, "f");
+    __classPrivateFieldSet(this, _DisplayManager_lastReadyTime, Date.now(), "f");
     __classPrivateFieldGet(this, _DisplayManager_instances, "a", _DisplayManager_dispatchEvent_get).call(this, "displayReady", {});
 }, _DisplayManager_setSpriteSheetName = async function _DisplayManager_setSpriteSheetName(spriteSheetName, sendImmediately) {
     _console$o.assertTypeWithError(spriteSheetName, "string");
