@@ -56,13 +56,13 @@ declare class MicrophoneManager {
     constructor();
     sendMessage: SendMicrophoneMessageCallback;
     eventDispatcher: MicrophoneEventDispatcher;
-    get waitForEvent(): <T extends "microphoneStatus" | "getMicrophoneConfiguration" | "microphoneData" | "isRecordingMicrophone" | "microphoneRecording" | "microphoneCommand" | "setMicrophoneConfiguration">(type: T) => Promise<{
+    get waitForEvent(): <T extends "microphoneStatus" | "microphoneCommand" | "getMicrophoneConfiguration" | "setMicrophoneConfiguration" | "microphoneData" | "isRecordingMicrophone" | "microphoneRecording">(type: T) => Promise<{
         type: T;
         target: Device;
         message: MicrophoneEventMessages[T];
     }>;
     requestRequiredInformation(): void;
-    get microphoneStatus(): "idle" | "streaming" | "vad";
+    get microphoneStatus(): "idle" | "vad" | "streaming";
     start(): Promise<void>;
     stop(): Promise<void>;
     vad(): Promise<void>;

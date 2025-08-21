@@ -1834,6 +1834,19 @@ class Device {
     return this.#displayManager.serializeSpriteSheet;
   }
 
+  get setDisplayAlignment() {
+    return this.#displayManager.setAlignment;
+  }
+  get setDisplayVerticalAlignment() {
+    return this.#displayManager.setVerticalAlignment;
+  }
+  get setDisplayHorizontalAlignment() {
+    return this.#displayManager.setHorizontalAlignment;
+  }
+  get resetDisplayAlignment() {
+    return this.#displayManager.resetAlignment;
+  }
+
   // FILL - text, etc
 }
 

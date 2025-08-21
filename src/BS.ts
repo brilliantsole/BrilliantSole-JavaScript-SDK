@@ -119,6 +119,10 @@ export { wait } from "./utils/Timer.ts";
 export {
   DisplaySegmentCap,
   DisplaySegmentCaps,
+  DisplayAlignment,
+  DisplayAlignments,
+  DisplayDirection,
+  DisplayDirections,
 } from "./utils/DisplayContextState.ts";
 
 export {

@@ -1,19 +1,10 @@
 import { Font } from "opentype.js";
 import { DisplayBitmapColorPair, DisplayBrightness, DisplaySpriteColorPair, DisplayBitmap } from "../DisplayManager.ts";
 import { DisplayContextCommand } from "./DisplayContextCommand.ts";
-import { DisplayContextState, DisplaySegmentCap } from "./DisplayContextState.ts";
+import { DisplayAlignment, DisplayAlignmentDirection, DisplayContextState, DisplaySegmentCap } from "./DisplayContextState.ts";
 import { DisplaySprite, DisplaySpritePaletteSwap, DisplaySpriteSheet, DisplaySpriteSheetPalette, DisplaySpriteSheetPaletteSwap } from "./DisplaySpriteSheetUtils.ts";
 import { DisplayScaleDirection, DisplayColorRGB, DisplayCropDirection } from "./DisplayUtils.ts";
 import { Vector2 } from "./MathUtils.ts";
-export type DisplayTransform = {
-    rotation: number;
-    scale: number;
-    offsetX: number;
-    offsetY: number;
-    width: number;
-    height: number;
-};
-export declare const defaultDisplayTransform: DisplayTransform;
 export interface DisplayManagerInterface {
     get isReady(): boolean;
     get contextState(): DisplayContextState;
@@ -37,6 +28,10 @@ export interface DisplayManagerInterface {
     selectFillColor(fillColorIndex: number, sendImmediately?: boolean): Promise<void>;
     selectLineColor(lineColorIndex: number, sendImmediately?: boolean): Promise<void>;
     setLineWidth(lineWidth: number, sendImmediately?: boolean): Promise<void>;
+    setAlignment(alignmentDirection: DisplayAlignmentDirection, alignment: DisplayAlignment, sendImmediately?: boolean): Promise<void>;
+    setHorizontalAlignment(horizontalAlignment: DisplayAlignment, sendImmediately?: boolean): Promise<void>;
+    setVerticalAlignment(verticalAlignment: DisplayAlignment, sendImmediately?: boolean): Promise<void>;
+    resetAlignment(sendImmediately?: boolean): Promise<void>;
     setRotation(rotation: number, isRadians?: boolean, sendImmediately?: boolean): Promise<void>;
     clearRotation(sendImmediately?: boolean): Promise<void>;
     setSegmentStartCap(segmentStartCap: DisplaySegmentCap, sendImmediately?: boolean): Promise<void>;

@@ -1,10 +1,18 @@
 export declare const DisplaySegmentCaps: readonly ["flat", "round"];
 export type DisplaySegmentCap = (typeof DisplaySegmentCaps)[number];
+export declare const DisplayAlignments: readonly ["start", "center", "end"];
+export type DisplayAlignment = (typeof DisplayAlignments)[number];
+export declare const DisplayAlignmentDirections: readonly ["horizontal", "vertical"];
+export type DisplayAlignmentDirection = (typeof DisplayAlignmentDirections)[number];
+export declare const DisplayDirections: readonly ["right", "left", "up", "down"];
+export type DisplayDirection = (typeof DisplayDirections)[number];
 export type DisplayContextState = {
     fillColorIndex: number;
     lineColorIndex: number;
     lineWidth: number;
     rotation: number;
+    horizontalAlignment: DisplayAlignment;
+    verticalAlignment: DisplayAlignment;
     segmentStartCap: DisplaySegmentCap;
     segmentEndCap: DisplaySegmentCap;
     segmentStartRadius: number;

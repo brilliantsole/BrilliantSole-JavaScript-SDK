@@ -31,6 +31,9 @@ import {
   roundScale,
   DisplaySpriteScaleDirectionToCommandType,
   minDisplayScale,
+  assertValidAlignment,
+  DisplayAlignmentDirectionToCommandType,
+  DisplayAlignmentDirectionToStateKey,
 } from "./utils/DisplayUtils.ts";
 import {
   assertValidBitmapPixels,
@@ -41,6 +44,10 @@ import {
   resizeAndQuantizeImage,
 } from "./utils/DisplayBitmapUtils.ts";
 import {
+  DefaultDisplayContextState,
+  DisplayAlignment,
+  DisplayAlignmentDirection,
+  DisplayAlignmentDirections,
   DisplayContextState,
   DisplayContextStateKey,
   DisplaySegmentCap,
@@ -322,6 +329,12 @@ class DisplayManager implements DisplayManagerInterface {
           break;
         case "lineWidth":
           this.setLineWidth(newState.lineWidth!);
+          break;
+        case "horizontalAlignment":
+          this.setHorizontalAlignment(newState.horizontalAlignment!);
+          break;
+        case "verticalAlignment":
+          this.setVerticalAlignment(newState.verticalAlignment!);
           break;
         case "rotation":
           this.setRotation(newState.rotation!, true);
@@ -857,6 +870,74 @@ class DisplayManager implements DisplayManagerInterface {
     await this.#sendDisplayContextCommand(
       "setLineWidth",
       dataView.buffer,
+      sendImmediately
+    );
+    this.#onContextStateUpdate(differences);
+  }
+
+  async setAlignment(
+    alignmentDirection: DisplayAlignmentDirection,
+    alignment: DisplayAlignment,
+    sendImmediately?: boolean
+  ) {
+    _console.assertEnumWithError(
+      alignmentDirection,
+      DisplayAlignmentDirections
+    );
+    const alignmentCommand =
+      DisplayAlignmentDirectionToCommandType[alignmentDirection];
+    const alignmentKey =
+      DisplayAlignmentDirectionToStateKey[alignmentDirection];
+    const differences = this.#contextStateHelper.update({
+      [alignmentKey]: alignment,
+    });
+    if (differences.length == 0) {
+      return;
+    }
+    // @ts-ignore
+    const dataView = serializeContextCommand(this, {
+      type: alignmentCommand,
+      [alignmentKey]: alignment,
+    });
+    if (!dataView) {
+      return;
+    }
+    await this.#sendDisplayContextCommand(
+      alignmentCommand,
+      dataView.buffer,
+      sendImmediately
+    );
+    this.#onContextStateUpdate(differences);
+  }
+  async setHorizontalAlignment(
+    horizontalAlignment: DisplayAlignment,
+    sendImmediately?: boolean
+  ) {
+    await this.setAlignment("horizontal", horizontalAlignment, sendImmediately);
+  }
+  async setVerticalAlignment(
+    verticalAlignment: DisplayAlignment,
+    sendImmediately?: boolean
+  ) {
+    await this.setAlignment("vertical", verticalAlignment, sendImmediately);
+  }
+  async resetAlignment(sendImmediately?: boolean) {
+    const differences = this.#contextStateHelper.update({
+      verticalAlignment: DefaultDisplayContextState.verticalAlignment,
+      horizontalAlignment: DefaultDisplayContextState.horizontalAlignment,
+    });
+    if (differences.length == 0) {
+      return;
+    }
+    const dataView = serializeContextCommand(this, {
+      type: "resetAlignment",
+    });
+    if (!dataView) {
+      return;
+    }
+    await this.#sendDisplayContextCommand(
+      "resetAlignment",
+      dataView?.buffer,
       sendImmediately
     );
     this.#onContextStateUpdate(differences);
@@ -1896,10 +1977,11 @@ class DisplayManager implements DisplayManagerInterface {
   }
   #lastReadyTime = 0;
   #minReadyInterval = 100; // Forced delay due to Frame's fpga timing...
+  #waitBeforeReady = false;
   async #parseDisplayReady(dataView: DataView) {
     const now = Date.now();
     const timeSinceLastReady = now - this.#lastReadyTime;
-    if (timeSinceLastReady < this.#minReadyInterval) {
+    if (this.#waitBeforeReady && timeSinceLastReady < this.#minReadyInterval) {
       const timeToWait = this.#minReadyInterval - timeSinceLastReady;
       _console.log(`waiting ${timeToWait}ms`);
       await wait(timeToWait);

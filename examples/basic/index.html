@@ -210,6 +210,20 @@
           <span>0</span>deg
         </label>
 
+        <label id="verticalAlignment">
+          <b>vertical alignment</b>
+          <select>
+            <optgroup label="set vertical alignment"></optgroup>
+          </select>
+        </label>
+
+        <label id="horizontalAlignment">
+          <b>horizontal alignment</b>
+          <select>
+            <optgroup label="set horizontal alignment"></optgroup>
+          </select>
+        </label>
+
         <label id="segmentStartCap">
           <b>segment start cap</b>
           <select>
@@ -276,17 +290,17 @@
         </label>
         <label id="drawBitmapScaleX">
           <b>bitmap scale x</b>
-          <input type="range" min="-5" max="6" step="0.01" value="1.0" />
+          <input type="range" min="-5" max="10" step="0.01" value="1.0" />
           <span>1</span>x
         </label>
         <label id="drawBitmapScaleY">
           <b>bitmap scale y</b>
-          <input type="range" min="-5" max="6" step="0.1" value="1.0" />
+          <input type="range" min="-5" max="10" step="0.1" value="1.0" />
           <span>1</span>x
         </label>
         <label id="drawBitmapScale">
           <b>bitmap scale</b>
-          <input type="range" min="-5" max="6" step="0.1" value="1.0" />
+          <input type="range" min="-5" max="10" step="0.1" value="1.0" />
           <span>1</span>x
         </label>
       </div>
@@ -353,9 +367,9 @@
             <optgroup label="draw shape">
               <option>drawRect</option>
               <option>drawCircle</option>
-              <option>drawRoundRect</option>
+              <option selected>drawRoundRect</option>
               <option>drawEllipse</option>
-              <option selected>drawRegularPolygon</option>
+              <option>drawRegularPolygon</option>
               <option>drawSegment</option>
               <option>drawArc</option>
               <option>drawArcEllipse</option>

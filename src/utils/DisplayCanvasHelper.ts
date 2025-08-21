@@ -17,6 +17,10 @@ import {
 import { hexToRGB, rgbToHex, stringToRGB } from "./ColorUtils.ts";
 import { createConsole } from "./Console.ts";
 import {
+  DefaultDisplayContextState,
+  DisplayAlignment,
+  DisplayAlignmentDirection,
+  DisplayAlignmentDirections,
   DisplayContextState,
   DisplayContextStateKey,
   DisplaySegmentCap,
@@ -32,7 +36,6 @@ import {
   assertSpriteSheetPalette,
   assertSpriteSheetPaletteSwap,
   DisplayManagerInterface,
-  DisplayTransform,
   drawSpriteFromSpriteSheet,
   getSprite,
   getSpritePaletteSwap,
@@ -49,7 +52,6 @@ import {
   assertValidOpacity,
   assertValidSegmentCap,
   DisplayScaleDirection,
-  displayScaleStep,
   DisplayColorRGB,
   DisplayCropDirection,
   DisplayCropDirections,
@@ -60,6 +62,8 @@ import {
   maxDisplayScale,
   roundScale,
   minDisplayScale,
+  DisplayAlignmentDirectionToCommandType,
+  DisplayAlignmentDirectionToStateKey,
 } from "./DisplayUtils.ts";
 import EventDispatcher, {
   BoundEventListeners,
@@ -795,6 +799,62 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     }
     this.#onContextStateUpdate(differences);
   }
+
+  async setAlignment(
+    alignmentDirection: DisplayAlignmentDirection,
+    alignment: DisplayAlignment,
+    sendImmediately?: boolean
+  ) {
+    _console.assertEnumWithError(
+      alignmentDirection,
+      DisplayAlignmentDirections
+    );
+    const alignmentCommand =
+      DisplayAlignmentDirectionToCommandType[alignmentDirection];
+    const alignmentKey =
+      DisplayAlignmentDirectionToStateKey[alignmentDirection];
+    const differences = this.#contextStateHelper.update({
+      [alignmentKey]: alignment,
+    });
+    if (differences.length == 0) {
+      return;
+    }
+    // _console.log({ [cropCommand]: crop });
+    if (this.device?.isConnected && !this.#ignoreDevice) {
+      await this.device.setDisplayAlignment(
+        alignmentDirection,
+        alignment,
+        sendImmediately
+      );
+    }
+    this.#onContextStateUpdate(differences);
+  }
+  async setHorizontalAlignment(
+    horizontalAlignment: DisplayAlignment,
+    sendImmediately?: boolean
+  ) {
+    await this.setAlignment("horizontal", horizontalAlignment, sendImmediately);
+  }
+  async setVerticalAlignment(
+    verticalAlignment: DisplayAlignment,
+    sendImmediately?: boolean
+  ) {
+    await this.setAlignment("vertical", verticalAlignment, sendImmediately);
+  }
+  async resetAlignment(sendImmediately?: boolean) {
+    const differences = this.#contextStateHelper.update({
+      verticalAlignment: DefaultDisplayContextState.verticalAlignment,
+      horizontalAlignment: DefaultDisplayContextState.horizontalAlignment,
+    });
+    if (differences.length == 0) {
+      return;
+    }
+    if (this.device?.isConnected && !this.#ignoreDevice) {
+      await this.device.resetDisplayAlignment(sendImmediately);
+    }
+    this.#onContextStateUpdate(differences);
+  }
+
   async setRotation(
     rotation: number,
     isRadians: boolean,
@@ -1552,19 +1612,22 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     const { r, g, b } = this.#hexToRgbWithOpacity(hex, opacity);
     return `rgb(${r}, ${g}, ${b})`;
   }
-  #getColorOpacity(colorIndex: number, includeBrightness = true) {
-    return this.opacities[colorIndex] * this.#brightnessOpacity;
+  #getColorOpacity(colorIndex: number, includeBrightness = false) {
+    return (
+      this.opacities[colorIndex] *
+      (includeBrightness ? this.#brightnessOpacity : 1)
+    );
   }
   #colorIndexToRgbString(colorIndex: number) {
     return this.#hexToRgbStringWithOpacity(
       this.colors[colorIndex],
-      this.#getColorOpacity(colorIndex, true)
+      this.#getColorOpacity(colorIndex)
     );
   }
   #colorIndexToRgb(colorIndex: number) {
     return this.#hexToRgbWithOpacity(
       this.colors[colorIndex],
-      this.#getColorOpacity(colorIndex, true)
+      this.#getColorOpacity(colorIndex)
     );
   }
   #updateContext({
@@ -2556,7 +2619,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
         colorIndex = contextState.spriteColorIndices[colorIndex];
       }
       const color = hexToRGB(this.colors[colorIndex]);
-      const opacity = this.#getColorOpacity(colorIndex, true);
+      const opacity = this.#getColorOpacity(colorIndex);
 
       const imageDataOffset = pixelIndex * 4;
 

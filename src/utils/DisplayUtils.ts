@@ -7,6 +7,9 @@ import {
 import { createConsole } from "./Console.ts";
 import { DisplayContextCommandType } from "./DisplayContextCommand.ts";
 import {
+  DisplayAlignment,
+  DisplayAlignmentDirection,
+  DisplayAlignments,
   DisplayContextStateKey,
   DisplaySegmentCap,
   DisplaySegmentCaps,
@@ -166,6 +169,35 @@ export const DisplayRotationCropDirectionToCommandType: Record<
   left: "setRotationCropLeft",
 };
 
+export const DisplayContextAlignmentCommandTypes = [
+  "setVerticalAlignment",
+  "setHorizontalAlignment",
+] as const satisfies readonly DisplayContextCommandType[];
+export type DisplayContextAlignmentCommandType =
+  (typeof DisplayContextAlignmentCommandTypes)[number];
+export const DisplayAlignmentDirectionToCommandType: Record<
+  DisplayAlignmentDirection,
+  DisplayContextAlignmentCommandType
+> = {
+  horizontal: "setHorizontalAlignment",
+  vertical: "setVerticalAlignment",
+};
+
+export const DisplayContextAlignmentStateKeys = [
+  "verticalAlignment",
+  "horizontalAlignment",
+] as const satisfies readonly DisplayContextStateKey[];
+export type DisplayContextAlignmentStateKey =
+  (typeof DisplayContextAlignmentStateKeys)[number];
+
+export const DisplayAlignmentDirectionToStateKey: Record<
+  DisplayAlignmentDirection,
+  DisplayContextAlignmentStateKey
+> = {
+  horizontal: "horizontalAlignment",
+  vertical: "verticalAlignment",
+};
+
 export function pixelDepthToNumberOfColors(pixelDepth: DisplayPixelDepth) {
   return 2 ** Number(pixelDepth);
 }
@@ -212,3 +244,7 @@ export type DisplayColorYCbCr = {
   cb: number;
   cr: number;
 };
+
+export function assertValidAlignment(alignment: DisplayAlignment) {
+  _console.assertEnumWithError(alignment, DisplayAlignments);
+}

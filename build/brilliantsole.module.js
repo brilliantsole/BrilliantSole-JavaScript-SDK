@@ -3785,11 +3785,16 @@ function rgbToHex({ r, g, b }) {
 }
 
 const DisplaySegmentCaps = ["flat", "round"];
+const DisplayAlignments = ["start", "center", "end"];
+const DisplayAlignmentDirections = ["horizontal", "vertical"];
+const DisplayDirections = ["right", "left", "up", "down"];
 const DefaultDisplayContextState = {
     fillColorIndex: 1,
     lineColorIndex: 1,
     lineWidth: 0,
     rotation: 0,
+    horizontalAlignment: "center",
+    verticalAlignment: "center",
     segmentStartCap: "flat",
     segmentEndCap: "flat",
     segmentStartRadius: 1,
@@ -3955,6 +3960,14 @@ const DisplayRotationCropDirectionToCommandType = {
     bottom: "setRotationCropBottom",
     left: "setRotationCropLeft",
 };
+const DisplayAlignmentDirectionToCommandType = {
+    horizontal: "setHorizontalAlignment",
+    vertical: "setVerticalAlignment",
+};
+const DisplayAlignmentDirectionToStateKey = {
+    horizontal: "horizontalAlignment",
+    vertical: "verticalAlignment",
+};
 function pixelDepthToNumberOfColors(pixelDepth) {
     return 2 ** Number(pixelDepth);
 }
@@ -3977,6 +3990,9 @@ const DisplaySpriteScaleDirectionToCommandType = {
     y: "setSpriteScaleY",
     all: "setSpriteScale",
 };
+function assertValidAlignment(alignment) {
+    _console$o.assertEnumWithError(alignment, DisplayAlignments);
+}
 
 var commonjsGlobal = typeof globalThis !== 'undefined' ? globalThis : typeof window !== 'undefined' ? window : typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : {};
 
@@ -4691,9 +4707,9 @@ const DisplayContextCommandTypes = [
     "setLineWidth",
     "setRotation",
     "clearRotation",
-    "setHorizontalAlign",
-    "setVerticalAlign",
-    "resetAlign",
+    "setHorizontalAlignment",
+    "setVerticalAlignment",
+    "resetAlignment",
     "setSegmentStartCap",
     "setSegmentEndCap",
     "setSegmentCap",
@@ -4756,6 +4772,9 @@ const DisplaySpriteContextCommandTypes = [
     "setLineWidth",
     "setRotation",
     "clearRotation",
+    "setVerticalAlignment",
+    "setHorizontalAlignment",
+    "resetAlignment",
     "setSegmentStartCap",
     "setSegmentEndCap",
     "setSegmentCap",
@@ -4811,6 +4830,7 @@ function serializeContextCommand(displayManager, command) {
         case "resetBitmapScale":
         case "resetSpriteColors":
         case "resetSpriteScale":
+        case "resetAlignment":
             break;
         case "setColor":
             {
@@ -4881,6 +4901,26 @@ function serializeContextCommand(displayManager, command) {
                 displayManager.assertValidLineWidth(lineWidth);
                 dataView = new DataView(new ArrayBuffer(2));
                 dataView.setUint16(0, lineWidth, true);
+            }
+            break;
+        case "setHorizontalAlignment":
+            {
+                const { horizontalAlignment } = command;
+                assertValidAlignment(horizontalAlignment);
+                _console$n.log({ horizontalAlignment });
+                dataView = new DataView(new ArrayBuffer(1));
+                const alignmentEnum = DisplayAlignments.indexOf(horizontalAlignment);
+                dataView.setUint8(0, alignmentEnum);
+            }
+            break;
+        case "setVerticalAlignment":
+            {
+                const { verticalAlignment } = command;
+                assertValidAlignment(verticalAlignment);
+                _console$n.log({ verticalAlignment });
+                dataView = new DataView(new ArrayBuffer(1));
+                const alignmentEnum = DisplayAlignments.indexOf(verticalAlignment);
+                dataView.setUint8(0, alignmentEnum);
             }
             break;
         case "setRotation":
@@ -16051,7 +16091,7 @@ async function drawSpriteFromSpriteSheet(displayManagerInterface, offsetX, offse
     await displayManagerInterface.drawSprite(offsetX, offsetY, spriteName, sendImmediately);
 }
 
-var _DisplayManager_instances, _DisplayManager_dispatchEvent_get, _DisplayManager_isAvailable, _DisplayManager_assertDisplayIsAvailable, _DisplayManager_parseIsDisplayAvailable, _DisplayManager_contextStateHelper, _DisplayManager_onContextStateUpdate, _DisplayManager_displayStatus, _DisplayManager_parseDisplayStatus, _DisplayManager_updateDisplayStatus, _DisplayManager_sendDisplayCommand, _DisplayManager_assertIsAwake, _DisplayManager_assertIsNotAwake, _DisplayManager_displayInformation, _DisplayManager_parseDisplayInformation, _DisplayManager_brightness, _DisplayManager_parseDisplayBrightness, _DisplayManager_assertValidDisplayContextCommand, _DisplayManager_maxCommandDataLength_get, _DisplayManager_displayContextCommandBuffers, _DisplayManager_sendDisplayContextCommand, _DisplayManager_sendContextCommands, _DisplayManager_colors, _DisplayManager_opacities, _DisplayManager_assertValidBitmapSize, _DisplayManager_isReady, _DisplayManager_lastReadyTime, _DisplayManager_minReadyInterval, _DisplayManager_parseDisplayReady, _DisplayManager_spriteSheets, _DisplayManager_spriteSheetIndices, _DisplayManager_setSpriteSheetName, _DisplayManager_pendingSpriteSheet, _DisplayManager_pendingSpriteSheetName, _DisplayManager_updateSpriteSheetName, _DisplayManager_parseSpriteSheetIndex, _DisplayManager_mtu, _DisplayManager_isServerSide;
+var _DisplayManager_instances, _DisplayManager_dispatchEvent_get, _DisplayManager_isAvailable, _DisplayManager_assertDisplayIsAvailable, _DisplayManager_parseIsDisplayAvailable, _DisplayManager_contextStateHelper, _DisplayManager_onContextStateUpdate, _DisplayManager_displayStatus, _DisplayManager_parseDisplayStatus, _DisplayManager_updateDisplayStatus, _DisplayManager_sendDisplayCommand, _DisplayManager_assertIsAwake, _DisplayManager_assertIsNotAwake, _DisplayManager_displayInformation, _DisplayManager_parseDisplayInformation, _DisplayManager_brightness, _DisplayManager_parseDisplayBrightness, _DisplayManager_assertValidDisplayContextCommand, _DisplayManager_maxCommandDataLength_get, _DisplayManager_displayContextCommandBuffers, _DisplayManager_sendDisplayContextCommand, _DisplayManager_sendContextCommands, _DisplayManager_colors, _DisplayManager_opacities, _DisplayManager_assertValidBitmapSize, _DisplayManager_isReady, _DisplayManager_lastReadyTime, _DisplayManager_minReadyInterval, _DisplayManager_waitBeforeReady, _DisplayManager_parseDisplayReady, _DisplayManager_spriteSheets, _DisplayManager_spriteSheetIndices, _DisplayManager_setSpriteSheetName, _DisplayManager_pendingSpriteSheet, _DisplayManager_pendingSpriteSheetName, _DisplayManager_updateSpriteSheetName, _DisplayManager_parseSpriteSheetIndex, _DisplayManager_mtu, _DisplayManager_isServerSide;
 const _console$j = createConsole("DisplayManager", { log: true });
 const DefaultNumberOfDisplayColors = 16;
 const DisplayCommands = ["sleep", "wake"];
@@ -16125,7 +16165,8 @@ class DisplayManager {
         _DisplayManager_opacities.set(this, []);
         _DisplayManager_isReady.set(this, true);
         _DisplayManager_lastReadyTime.set(this, 0);
-        _DisplayManager_minReadyInterval.set(this, 120);
+        _DisplayManager_minReadyInterval.set(this, 100);
+        _DisplayManager_waitBeforeReady.set(this, false);
         _DisplayManager_spriteSheets.set(this, {});
         _DisplayManager_spriteSheetIndices.set(this, {});
         _DisplayManager_pendingSpriteSheet.set(this, void 0);
@@ -16165,6 +16206,12 @@ class DisplayManager {
                     break;
                 case "lineWidth":
                     this.setLineWidth(newState.lineWidth);
+                    break;
+                case "horizontalAlignment":
+                    this.setHorizontalAlignment(newState.horizontalAlignment);
+                    break;
+                case "verticalAlignment":
+                    this.setVerticalAlignment(newState.verticalAlignment);
                     break;
                 case "rotation":
                     this.setRotation(newState.rotation, true);
@@ -16439,6 +16486,49 @@ class DisplayManager {
             return;
         }
         await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "setLineWidth", dataView.buffer, sendImmediately);
+        __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_onContextStateUpdate).call(this, differences);
+    }
+    async setAlignment(alignmentDirection, alignment, sendImmediately) {
+        _console$j.assertEnumWithError(alignmentDirection, DisplayAlignmentDirections);
+        const alignmentCommand = DisplayAlignmentDirectionToCommandType[alignmentDirection];
+        const alignmentKey = DisplayAlignmentDirectionToStateKey[alignmentDirection];
+        const differences = __classPrivateFieldGet(this, _DisplayManager_contextStateHelper, "f").update({
+            [alignmentKey]: alignment,
+        });
+        if (differences.length == 0) {
+            return;
+        }
+        const dataView = serializeContextCommand(this, {
+            type: alignmentCommand,
+            [alignmentKey]: alignment,
+        });
+        if (!dataView) {
+            return;
+        }
+        await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, alignmentCommand, dataView.buffer, sendImmediately);
+        __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_onContextStateUpdate).call(this, differences);
+    }
+    async setHorizontalAlignment(horizontalAlignment, sendImmediately) {
+        await this.setAlignment("horizontal", horizontalAlignment, sendImmediately);
+    }
+    async setVerticalAlignment(verticalAlignment, sendImmediately) {
+        await this.setAlignment("vertical", verticalAlignment, sendImmediately);
+    }
+    async resetAlignment(sendImmediately) {
+        const differences = __classPrivateFieldGet(this, _DisplayManager_contextStateHelper, "f").update({
+            verticalAlignment: DefaultDisplayContextState.verticalAlignment,
+            horizontalAlignment: DefaultDisplayContextState.horizontalAlignment,
+        });
+        if (differences.length == 0) {
+            return;
+        }
+        const dataView = serializeContextCommand(this, {
+            type: "resetAlignment",
+        });
+        if (!dataView) {
+            return;
+        }
+        await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "resetAlignment", dataView?.buffer, sendImmediately);
         __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_onContextStateUpdate).call(this, differences);
     }
     async setRotation(rotation, isRadians, sendImmediately) {
@@ -17295,7 +17385,7 @@ class DisplayManager {
         __classPrivateFieldSet(this, _DisplayManager_isServerSide, newIsServerSide, "f");
     }
 }
-_DisplayManager_isAvailable = new WeakMap(), _DisplayManager_contextStateHelper = new WeakMap(), _DisplayManager_displayStatus = new WeakMap(), _DisplayManager_displayInformation = new WeakMap(), _DisplayManager_brightness = new WeakMap(), _DisplayManager_displayContextCommandBuffers = new WeakMap(), _DisplayManager_colors = new WeakMap(), _DisplayManager_opacities = new WeakMap(), _DisplayManager_isReady = new WeakMap(), _DisplayManager_lastReadyTime = new WeakMap(), _DisplayManager_minReadyInterval = new WeakMap(), _DisplayManager_spriteSheets = new WeakMap(), _DisplayManager_spriteSheetIndices = new WeakMap(), _DisplayManager_pendingSpriteSheet = new WeakMap(), _DisplayManager_pendingSpriteSheetName = new WeakMap(), _DisplayManager_mtu = new WeakMap(), _DisplayManager_isServerSide = new WeakMap(), _DisplayManager_instances = new WeakSet(), _DisplayManager_dispatchEvent_get = function _DisplayManager_dispatchEvent_get() {
+_DisplayManager_isAvailable = new WeakMap(), _DisplayManager_contextStateHelper = new WeakMap(), _DisplayManager_displayStatus = new WeakMap(), _DisplayManager_displayInformation = new WeakMap(), _DisplayManager_brightness = new WeakMap(), _DisplayManager_displayContextCommandBuffers = new WeakMap(), _DisplayManager_colors = new WeakMap(), _DisplayManager_opacities = new WeakMap(), _DisplayManager_isReady = new WeakMap(), _DisplayManager_lastReadyTime = new WeakMap(), _DisplayManager_minReadyInterval = new WeakMap(), _DisplayManager_waitBeforeReady = new WeakMap(), _DisplayManager_spriteSheets = new WeakMap(), _DisplayManager_spriteSheetIndices = new WeakMap(), _DisplayManager_pendingSpriteSheet = new WeakMap(), _DisplayManager_pendingSpriteSheetName = new WeakMap(), _DisplayManager_mtu = new WeakMap(), _DisplayManager_isServerSide = new WeakMap(), _DisplayManager_instances = new WeakSet(), _DisplayManager_dispatchEvent_get = function _DisplayManager_dispatchEvent_get() {
     return this.eventDispatcher.dispatchEvent;
 }, _DisplayManager_assertDisplayIsAvailable = function _DisplayManager_assertDisplayIsAvailable() {
     _console$j.assertWithError(__classPrivateFieldGet(this, _DisplayManager_isAvailable, "f"), "display is not available");
@@ -17427,7 +17517,7 @@ async function _DisplayManager_sendDisplayCommand(command, sendImmediately) {
 }, _DisplayManager_parseDisplayReady = async function _DisplayManager_parseDisplayReady(dataView) {
     const now = Date.now();
     const timeSinceLastReady = now - __classPrivateFieldGet(this, _DisplayManager_lastReadyTime, "f");
-    if (timeSinceLastReady < __classPrivateFieldGet(this, _DisplayManager_minReadyInterval, "f")) {
+    if (__classPrivateFieldGet(this, _DisplayManager_waitBeforeReady, "f") && timeSinceLastReady < __classPrivateFieldGet(this, _DisplayManager_minReadyInterval, "f")) {
         const timeToWait = __classPrivateFieldGet(this, _DisplayManager_minReadyInterval, "f") - timeSinceLastReady;
         _console$j.log(`waiting ${timeToWait}ms`);
         await wait(timeToWait);
@@ -20757,6 +20847,18 @@ class Device {
     get serializeDisplaySpriteSheet() {
         return __classPrivateFieldGet(this, _Device_displayManager, "f").serializeSpriteSheet;
     }
+    get setDisplayAlignment() {
+        return __classPrivateFieldGet(this, _Device_displayManager, "f").setAlignment;
+    }
+    get setDisplayVerticalAlignment() {
+        return __classPrivateFieldGet(this, _Device_displayManager, "f").setVerticalAlignment;
+    }
+    get setDisplayHorizontalAlignment() {
+        return __classPrivateFieldGet(this, _Device_displayManager, "f").setHorizontalAlignment;
+    }
+    get resetDisplayAlignment() {
+        return __classPrivateFieldGet(this, _Device_displayManager, "f").resetAlignment;
+    }
 }
 _a$2 = Device, _Device_eventDispatcher = new WeakMap(), _Device_connectionManager = new WeakMap(), _Device_isConnected = new WeakMap(), _Device_reconnectOnDisconnection = new WeakMap(), _Device_reconnectIntervalId = new WeakMap(), _Device_deviceInformationManager = new WeakMap(), _Device_batteryLevel = new WeakMap(), _Device_sensorConfigurationManager = new WeakMap(), _Device_clearSensorConfigurationOnLeave = new WeakMap(), _Device_sensorDataManager = new WeakMap(), _Device_vibrationManager = new WeakMap(), _Device_fileTransferManager = new WeakMap(), _Device_tfliteManager = new WeakMap(), _Device_firmwareManager = new WeakMap(), _Device_isServerSide = new WeakMap(), _Device_wifiManager = new WeakMap(), _Device_cameraManager = new WeakMap(), _Device_microphoneManager = new WeakMap(), _Device_displayManager = new WeakMap(), _Device_instances = new WeakSet(), _Device_DefaultConnectionManager = function _Device_DefaultConnectionManager() {
     return new WebBluetoothConnectionManager();
@@ -21272,6 +21374,39 @@ class DisplayCanvasHelper {
         }
         if (this.device?.isConnected && !__classPrivateFieldGet(this, _DisplayCanvasHelper_ignoreDevice, "f")) {
             await this.device.setDisplayLineWidth(lineWidth, sendImmediately);
+        }
+        __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_onContextStateUpdate).call(this, differences);
+    }
+    async setAlignment(alignmentDirection, alignment, sendImmediately) {
+        _console$6.assertEnumWithError(alignmentDirection, DisplayAlignmentDirections);
+        const alignmentKey = DisplayAlignmentDirectionToStateKey[alignmentDirection];
+        const differences = __classPrivateFieldGet(this, _DisplayCanvasHelper_contextStateHelper, "f").update({
+            [alignmentKey]: alignment,
+        });
+        if (differences.length == 0) {
+            return;
+        }
+        if (this.device?.isConnected && !__classPrivateFieldGet(this, _DisplayCanvasHelper_ignoreDevice, "f")) {
+            await this.device.setDisplayAlignment(alignmentDirection, alignment, sendImmediately);
+        }
+        __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_onContextStateUpdate).call(this, differences);
+    }
+    async setHorizontalAlignment(horizontalAlignment, sendImmediately) {
+        await this.setAlignment("horizontal", horizontalAlignment, sendImmediately);
+    }
+    async setVerticalAlignment(verticalAlignment, sendImmediately) {
+        await this.setAlignment("vertical", verticalAlignment, sendImmediately);
+    }
+    async resetAlignment(sendImmediately) {
+        const differences = __classPrivateFieldGet(this, _DisplayCanvasHelper_contextStateHelper, "f").update({
+            verticalAlignment: DefaultDisplayContextState.verticalAlignment,
+            horizontalAlignment: DefaultDisplayContextState.horizontalAlignment,
+        });
+        if (differences.length == 0) {
+            return;
+        }
+        if (this.device?.isConnected && !__classPrivateFieldGet(this, _DisplayCanvasHelper_ignoreDevice, "f")) {
+            await this.device.resetDisplayAlignment(sendImmediately);
         }
         __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_onContextStateUpdate).call(this, differences);
     }
@@ -22144,10 +22279,11 @@ _DisplayCanvasHelper_eventDispatcher = new WeakMap(), _DisplayCanvasHelper_canva
 }, _DisplayCanvasHelper_hexToRgbStringWithOpacity = function _DisplayCanvasHelper_hexToRgbStringWithOpacity(hex, opacity) {
     const { r, g, b } = __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_hexToRgbWithOpacity).call(this, hex, opacity);
     return `rgb(${r}, ${g}, ${b})`;
-}, _DisplayCanvasHelper_getColorOpacity = function _DisplayCanvasHelper_getColorOpacity(colorIndex, includeBrightness = true) {
-    return this.opacities[colorIndex] * __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "a", _DisplayCanvasHelper_brightnessOpacity_get);
+}, _DisplayCanvasHelper_getColorOpacity = function _DisplayCanvasHelper_getColorOpacity(colorIndex, includeBrightness = false) {
+    return (this.opacities[colorIndex] *
+        (includeBrightness ? __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "a", _DisplayCanvasHelper_brightnessOpacity_get) : 1));
 }, _DisplayCanvasHelper_colorIndexToRgbString = function _DisplayCanvasHelper_colorIndexToRgbString(colorIndex) {
-    return __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_hexToRgbStringWithOpacity).call(this, this.colors[colorIndex], __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_getColorOpacity).call(this, colorIndex, true));
+    return __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_hexToRgbStringWithOpacity).call(this, this.colors[colorIndex], __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_getColorOpacity).call(this, colorIndex));
 }, _DisplayCanvasHelper_updateContext = function _DisplayCanvasHelper_updateContext({ lineWidth, fillColorIndex, lineColorIndex, spriteColorIndices, }) {
     if (__classPrivateFieldGet(this, _DisplayCanvasHelper_useSpriteColorIndices, "f")) {
         fillColorIndex = spriteColorIndices[fillColorIndex];
@@ -22524,7 +22660,7 @@ _DisplayCanvasHelper_eventDispatcher = new WeakMap(), _DisplayCanvasHelper_canva
             colorIndex = contextState.spriteColorIndices[colorIndex];
         }
         const color = hexToRGB(this.colors[colorIndex]);
-        const opacity = __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_getColorOpacity).call(this, colorIndex, true);
+        const opacity = __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_getColorOpacity).call(this, colorIndex);
         const imageDataOffset = pixelIndex * 4;
         rawBitmapImageData[imageDataOffset + 0] = color.r;
         rawBitmapImageData[imageDataOffset + 1] = color.g;
@@ -23634,5 +23770,5 @@ const ThrottleUtils = {
     debounce,
 };
 
-export { CameraCommands, CameraConfigurationTypes, ContinuousSensorTypes, DefaultNumberOfDisplayColors, DefaultNumberOfPressureSensors, Device, DeviceManager$1 as DeviceManager, DevicePair, DevicePairTypes, DeviceTypes, DisplayBrightnesses, DisplayCanvasHelper, DisplayContextCommandTypes, DisplayPixelDepths, DisplaySegmentCaps, DisplaySpriteContextCommandTypes, environment as Environment, EventUtils, FileTransferDirections, FileTypes, Font, MaxNameLength, MaxNumberOfVibrationWaveformEffectSegments, MaxNumberOfVibrationWaveformSegments, MaxSensorRate, MaxSpriteSheetNameLength, MaxVibrationWaveformEffectSegmentDelay, MaxVibrationWaveformEffectSegmentLoopCount, MaxVibrationWaveformEffectSequenceLoopCount, MaxVibrationWaveformSegmentDuration, MaxWifiPasswordLength, MaxWifiSSIDLength, MicrophoneCommands, MicrophoneConfigurationTypes, MicrophoneConfigurationValues, MinNameLength, MinSpriteSheetNameLength, MinWifiPasswordLength, MinWifiSSIDLength, RangeHelper, SensorRateStep, SensorTypes, Sides, TfliteSensorTypes, TfliteTasks, ThrottleUtils, VibrationLocations, VibrationTypes, VibrationWaveformEffects, WebSocketClient, canvasToSprite, canvasToSpriteSheet, getFontUnicodeRange, hexToRGB, imageToSprite, imageToSpriteSheet, maxDisplayScale, parseFont, pixelDepthToNumberOfColors, quantizeImage, resizeAndQuantizeImage, rgbToHex, setAllConsoleLevelFlags, setConsoleLevelFlagsForType, wait };
+export { CameraCommands, CameraConfigurationTypes, ContinuousSensorTypes, DefaultNumberOfDisplayColors, DefaultNumberOfPressureSensors, Device, DeviceManager$1 as DeviceManager, DevicePair, DevicePairTypes, DeviceTypes, DisplayAlignments, DisplayBrightnesses, DisplayCanvasHelper, DisplayContextCommandTypes, DisplayDirections, DisplayPixelDepths, DisplaySegmentCaps, DisplaySpriteContextCommandTypes, environment as Environment, EventUtils, FileTransferDirections, FileTypes, Font, MaxNameLength, MaxNumberOfVibrationWaveformEffectSegments, MaxNumberOfVibrationWaveformSegments, MaxSensorRate, MaxSpriteSheetNameLength, MaxVibrationWaveformEffectSegmentDelay, MaxVibrationWaveformEffectSegmentLoopCount, MaxVibrationWaveformEffectSequenceLoopCount, MaxVibrationWaveformSegmentDuration, MaxWifiPasswordLength, MaxWifiSSIDLength, MicrophoneCommands, MicrophoneConfigurationTypes, MicrophoneConfigurationValues, MinNameLength, MinSpriteSheetNameLength, MinWifiPasswordLength, MinWifiSSIDLength, RangeHelper, SensorRateStep, SensorTypes, Sides, TfliteSensorTypes, TfliteTasks, ThrottleUtils, VibrationLocations, VibrationTypes, VibrationWaveformEffects, WebSocketClient, canvasToSprite, canvasToSpriteSheet, getFontUnicodeRange, hexToRGB, imageToSprite, imageToSpriteSheet, maxDisplayScale, parseFont, pixelDepthToNumberOfColors, quantizeImage, resizeAndQuantizeImage, rgbToHex, setAllConsoleLevelFlags, setConsoleLevelFlagsForType, wait };
 //# sourceMappingURL=brilliantsole.module.js.map

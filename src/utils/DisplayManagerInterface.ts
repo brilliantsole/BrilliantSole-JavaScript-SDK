@@ -8,6 +8,8 @@ import {
 import { createConsole } from "./Console.ts";
 import { DisplayContextCommand } from "./DisplayContextCommand.ts";
 import {
+  DisplayAlignment,
+  DisplayAlignmentDirection,
   DisplayContextState,
   DisplaySegmentCap,
 } from "./DisplayContextState.ts";
@@ -25,23 +27,6 @@ import {
   DisplayCropDirection,
 } from "./DisplayUtils.ts";
 import { degToRad, Vector2 } from "./MathUtils.ts";
-
-export type DisplayTransform = {
-  rotation: number;
-  scale: number;
-  offsetX: number;
-  offsetY: number;
-  width: number;
-  height: number;
-};
-export const defaultDisplayTransform: DisplayTransform = {
-  rotation: 0,
-  scale: 1,
-  offsetX: 0,
-  offsetY: 0,
-  width: 0,
-  height: 0,
-};
 
 const _console = createConsole("DisplayManagerInterface", { log: true });
 
@@ -94,6 +79,21 @@ export interface DisplayManagerInterface {
     sendImmediately?: boolean
   ): Promise<void>;
   setLineWidth(lineWidth: number, sendImmediately?: boolean): Promise<void>;
+
+  setAlignment(
+    alignmentDirection: DisplayAlignmentDirection,
+    alignment: DisplayAlignment,
+    sendImmediately?: boolean
+  ): Promise<void>;
+  setHorizontalAlignment(
+    horizontalAlignment: DisplayAlignment,
+    sendImmediately?: boolean
+  ): Promise<void>;
+  setVerticalAlignment(
+    verticalAlignment: DisplayAlignment,
+    sendImmediately?: boolean
+  ): Promise<void>;
+  resetAlignment(sendImmediately?: boolean): Promise<void>;
 
   setRotation(
     rotation: number,

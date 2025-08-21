@@ -246,6 +246,7 @@ textAlignSelect.addEventListener("input", () => {
   textAlign = textAlignSelect.value;
   console.log({ textAlign });
   drawText();
+  textarea.style.textAlign = textAlign;
 });
 console.log({ textAlign });
 
@@ -406,7 +407,6 @@ device.addEventListener("fileTransferStatus", () => {
 });
 
 // FONTS
-
 /** @type {HTMLInputElement} */
 const loadFontInput = document.getElementById("loadFont");
 loadFontInput.addEventListener("input", async () => {
@@ -415,7 +415,6 @@ loadFontInput.addEventListener("input", async () => {
     if (!file) {
       continue;
     }
-    console.log(file, loadFontInput.files);
     const arrayBuffer = await file.arrayBuffer();
     await loadFont(arrayBuffer);
   }
@@ -557,7 +556,8 @@ const addFont = async (font) => {
     );
     englishFontSpriteSheets[fullName] = spriteSheet;
     console.log(`added english font spriteSheet "${fullName}"`, spriteSheet);
-    updateFontSelect();
+    await updateFontSelect();
+    await selectFont(fullName);
   }
 };
 
@@ -568,9 +568,6 @@ const updateFontSelect = async () => {
   selectFontOptgroup.innerHTML = "";
   for (const fullName in englishFonts) {
     selectFontOptgroup.appendChild(new Option(fullName));
-  }
-  if (!selectedFont) {
-    await selectFont(selectFontSelect.value);
   }
 };
 
@@ -585,12 +582,34 @@ const selectFont = async (newFontName) => {
   const newFont = englishFonts[newFontName][0];
   selectedFont = newFont;
   console.log(`selected font "${newFontName}"`, selectedFont);
+  selectFontSelect.value = newFontName;
   await displayCanvasHelper.uploadSpriteSheet(
     englishFontSpriteSheets[newFontName],
     true
   );
   await drawText();
 };
+
+// DRAGOVER
+window.addEventListener("dragover", (e) => {
+  e.preventDefault();
+});
+
+window.addEventListener("drop", async (e) => {
+  e.preventDefault();
+  const file = e.dataTransfer.files[0];
+  if (file) {
+    console.log(file.type);
+    if (
+      file.type.startsWith("font/") ||
+      file.type.includes("font") ||
+      file.name.endsWith("woff2")
+    ) {
+      const arrayBuffer = await file.arrayBuffer();
+      await loadFont(arrayBuffer);
+    }
+  }
+});
 
 // TEXTAREA
 

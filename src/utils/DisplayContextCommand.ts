@@ -11,11 +11,14 @@ import { rgbToHex, stringToRGB } from "./ColorUtils.ts";
 import { createConsole } from "./Console.ts";
 import { drawBitmapHeaderLength, getBitmapData } from "./DisplayBitmapUtils.ts";
 import {
+  DisplayAlignment,
+  DisplayAlignments,
   DisplaySegmentCap,
   DisplaySegmentCaps,
 } from "./DisplayContextState.ts";
 import { DisplayManagerInterface } from "./DisplayManagerInterface.ts";
 import {
+  assertValidAlignment,
   assertValidColor,
   assertValidOpacity,
   assertValidSegmentCap,
@@ -56,9 +59,9 @@ export const DisplayContextCommandTypes = [
   "setRotation",
   "clearRotation",
 
-  "setHorizontalAlign",
-  "setVerticalAlign",
-  "resetAlign",
+  "setHorizontalAlignment",
+  "setVerticalAlignment",
+  "resetAlignment",
 
   "setSegmentStartCap",
   "setSegmentEndCap",
@@ -142,6 +145,10 @@ export const DisplaySpriteContextCommandTypes = [
   "setRotation",
   "clearRotation",
 
+  "setVerticalAlignment",
+  "setHorizontalAlignment",
+  "resetAlignment",
+
   "setSegmentStartCap",
   "setSegmentEndCap",
   "setSegmentCap",
@@ -212,7 +219,8 @@ export interface SimpleDisplayCommand extends BaseDisplayContextCommand {
     | "clearRotationCrop"
     | "resetBitmapScale"
     | "resetSpriteColors"
-    | "resetSpriteScale";
+    | "resetSpriteScale"
+    | "resetAlignment";
 }
 
 export interface SetDisplayColorCommand extends BaseDisplayContextCommand {
@@ -229,6 +237,17 @@ export interface SetDisplayColorOpacityCommand
 export interface SetDisplayOpacityCommand extends BaseDisplayContextCommand {
   type: "setOpacity";
   opacity: number;
+}
+
+export interface SetDisplayHorizontalAlignmentCommand
+  extends BaseDisplayContextCommand {
+  type: "setHorizontalAlignment";
+  horizontalAlignment: DisplayAlignment;
+}
+export interface SetDisplayVerticalAlignmentCommand
+  extends BaseDisplayContextCommand {
+  type: "setVerticalAlignment";
+  verticalAlignment: DisplayAlignment;
 }
 
 export interface SelectDisplayFillColorCommand
@@ -525,7 +544,9 @@ export type DisplayContextCommand =
   | DrawDisplayArcEllipseCommand
   | DrawDisplayBitmapCommand
   | DrawDisplaySpriteCommand
-  | SelectDisplaySpriteSheetCommand;
+  | SelectDisplaySpriteSheetCommand
+  | SetDisplayHorizontalAlignmentCommand
+  | SetDisplayVerticalAlignmentCommand;
 
 export function serializeContextCommand(
   displayManager: DisplayManagerInterface,
@@ -544,6 +565,7 @@ export function serializeContextCommand(
     case "resetBitmapScale":
     case "resetSpriteColors":
     case "resetSpriteScale":
+    case "resetAlignment":
       break;
     case "setColor":
       {
@@ -618,6 +640,26 @@ export function serializeContextCommand(
         displayManager.assertValidLineWidth(lineWidth);
         dataView = new DataView(new ArrayBuffer(2));
         dataView.setUint16(0, lineWidth, true);
+      }
+      break;
+    case "setHorizontalAlignment":
+      {
+        const { horizontalAlignment } = command;
+        assertValidAlignment(horizontalAlignment);
+        _console.log({ horizontalAlignment });
+        dataView = new DataView(new ArrayBuffer(1));
+        const alignmentEnum = DisplayAlignments.indexOf(horizontalAlignment);
+        dataView.setUint8(0, alignmentEnum);
+      }
+      break;
+    case "setVerticalAlignment":
+      {
+        const { verticalAlignment } = command;
+        assertValidAlignment(verticalAlignment);
+        _console.log({ verticalAlignment });
+        dataView = new DataView(new ArrayBuffer(1));
+        const alignmentEnum = DisplayAlignments.indexOf(verticalAlignment);
+        dataView.setUint8(0, alignmentEnum);
       }
       break;
     case "setRotation":

@@ -2306,6 +2306,12 @@ const drawShape = (updatedParams) => {
     if (updatedParams?.includes("segmentEndCap")) {
       device.setDisplaySegmentEndCap(segmentEndCap);
     }
+    if (updatedParams?.includes("verticalAlignment")) {
+      device.setDisplayVerticalAlignment(verticalAlignment);
+    }
+    if (updatedParams?.includes("horizontalAlignment")) {
+      device.setDisplayHorizontalAlignment(horizontalAlignment);
+    }
     if (updatedParams?.includes("segmentStartRadius")) {
       device.setDisplaySegmentStartRadius(drawSegmentStartRadius);
     }
@@ -2438,6 +2444,46 @@ rotationInput.addEventListener("input", () => {
   rotationSpan.innerText = rotation;
 
   drawShape(["rotation"]);
+});
+
+const horizontalAlignmentContainer = document.getElementById(
+  "horizontalAlignment"
+);
+const horizontalAlignmentSelect =
+  horizontalAlignmentContainer.querySelector("select");
+const horizontalAlignmentOptgroup =
+  horizontalAlignmentSelect.querySelector("optgroup");
+
+BS.DisplayAlignments.forEach((horizontalAlignment) => {
+  horizontalAlignmentOptgroup.appendChild(new Option(horizontalAlignment));
+});
+horizontalAlignmentSelect.value = "center";
+let horizontalAlignment = horizontalAlignmentSelect.value;
+console.log({ horizontalAlignment });
+
+horizontalAlignmentSelect.addEventListener("input", () => {
+  horizontalAlignment = horizontalAlignmentSelect.value;
+  console.log({ horizontalAlignment });
+  drawShape(["horizontalAlignment"]);
+});
+
+const verticalAlignmentContainer = document.getElementById("verticalAlignment");
+const verticalAlignmentSelect =
+  verticalAlignmentContainer.querySelector("select");
+const verticalAlignmentOptgroup =
+  verticalAlignmentSelect.querySelector("optgroup");
+
+BS.DisplayAlignments.forEach((verticalAlignment) => {
+  verticalAlignmentOptgroup.appendChild(new Option(verticalAlignment));
+});
+verticalAlignmentSelect.value = "center";
+let verticalAlignment = verticalAlignmentSelect.value;
+console.log({ verticalAlignment });
+
+verticalAlignmentSelect.addEventListener("input", () => {
+  verticalAlignment = verticalAlignmentSelect.value;
+  console.log({ verticalAlignment });
+  drawShape(["verticalAlignment"]);
 });
 
 const segmentStartCapContainer = document.getElementById("segmentStartCap");

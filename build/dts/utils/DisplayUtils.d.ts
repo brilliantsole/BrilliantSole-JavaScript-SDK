@@ -1,6 +1,6 @@
 import { DisplayBrightness, DisplayPixelDepth } from "../DisplayManager.ts";
 import { DisplayContextCommandType } from "./DisplayContextCommand.ts";
-import { DisplaySegmentCap } from "./DisplayContextState.ts";
+import { DisplayAlignment, DisplayAlignmentDirection, DisplaySegmentCap } from "./DisplayContextState.ts";
 export declare function formatRotation(rotation: number, isRadians?: boolean, isSigned?: boolean): number;
 export declare function roundToStep(value: number, step: number): number;
 export declare const minDisplayScale = -50;
@@ -27,6 +27,12 @@ export declare const DisplayRotationCropDirectionToStateKey: Record<DisplayCropD
 export declare const DisplayContextRotationCropCommandTypes: readonly ["setRotationCropTop", "setRotationCropRight", "setRotationCropBottom", "setRotationCropLeft"];
 export type DisplayContextRotationCropCommandType = (typeof DisplayContextRotationCropCommandTypes)[number];
 export declare const DisplayRotationCropDirectionToCommandType: Record<DisplayCropDirection, DisplayContextRotationCropCommandType>;
+export declare const DisplayContextAlignmentCommandTypes: readonly ["setVerticalAlignment", "setHorizontalAlignment"];
+export type DisplayContextAlignmentCommandType = (typeof DisplayContextAlignmentCommandTypes)[number];
+export declare const DisplayAlignmentDirectionToCommandType: Record<DisplayAlignmentDirection, DisplayContextAlignmentCommandType>;
+export declare const DisplayContextAlignmentStateKeys: readonly ["verticalAlignment", "horizontalAlignment"];
+export type DisplayContextAlignmentStateKey = (typeof DisplayContextAlignmentStateKeys)[number];
+export declare const DisplayAlignmentDirectionToStateKey: Record<DisplayAlignmentDirection, DisplayContextAlignmentStateKey>;
 export declare function pixelDepthToNumberOfColors(pixelDepth: DisplayPixelDepth): number;
 export declare function pixelDepthToPixelsPerByte(pixelDepth: DisplayPixelDepth): number;
 export declare function pixelDepthToPixelBitWidth(pixelDepth: DisplayPixelDepth): number;
@@ -45,3 +51,4 @@ export type DisplayColorYCbCr = {
     cb: number;
     cr: number;
 };
+export declare function assertValidAlignment(alignment: DisplayAlignment): void;
