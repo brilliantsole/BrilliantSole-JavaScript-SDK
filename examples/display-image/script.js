@@ -978,14 +978,14 @@ device.addEventListener("getCameraConfiguration", () => {
 
 // IMAGE SEGMENTATION
 
+let imageSegmenter = undefined;
+let runningMode = "LIVE_STREAM";
+let labels;
+
 import {
   ImageSegmenter,
   FilesetResolver,
 } from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.2";
-
-let imageSegmenter = undefined;
-let runningMode = "LIVE_STREAM";
-let labels;
 
 let useImageSegmentation = false;
 const useImageSegmentationInput = document.getElementById(

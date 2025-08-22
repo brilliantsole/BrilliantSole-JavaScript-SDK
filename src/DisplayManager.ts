@@ -1981,6 +1981,7 @@ class DisplayManager implements DisplayManagerInterface {
   async #parseDisplayReady(dataView: DataView) {
     const now = Date.now();
     const timeSinceLastReady = now - this.#lastReadyTime;
+    _console.log(`${timeSinceLastReady}ms since last render`);
     if (this.#waitBeforeReady && timeSinceLastReady < this.#minReadyInterval) {
       const timeToWait = this.#minReadyInterval - timeSinceLastReady;
       _console.log(`waiting ${timeToWait}ms`);

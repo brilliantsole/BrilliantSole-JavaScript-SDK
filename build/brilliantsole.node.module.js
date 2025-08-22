@@ -6858,6 +6858,7 @@ async function _DisplayManager_sendDisplayCommand(command, sendImmediately) {
 }, _DisplayManager_parseDisplayReady = async function _DisplayManager_parseDisplayReady(dataView) {
     const now = Date.now();
     const timeSinceLastReady = now - __classPrivateFieldGet(this, _DisplayManager_lastReadyTime, "f");
+    _console$o.log(`${timeSinceLastReady}ms since last render`);
     if (__classPrivateFieldGet(this, _DisplayManager_waitBeforeReady, "f") && timeSinceLastReady < __classPrivateFieldGet(this, _DisplayManager_minReadyInterval, "f")) {
         const timeToWait = __classPrivateFieldGet(this, _DisplayManager_minReadyInterval, "f") - timeSinceLastReady;
         _console$o.log(`waiting ${timeToWait}ms`);

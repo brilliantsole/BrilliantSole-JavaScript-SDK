@@ -2243,13 +2243,18 @@ displayCanvasHelper.selectBitmapColor(1, 1);
 displayCanvasHelper.selectBitmapColor(2, 2);
 displayCanvasHelper.setBitmapScale(10);
 displayCanvasHelper.setRotation(45);
-displayCanvasHelper.drawBitmap(50, 50, {
-  pixels: [
-    ...new Array((10 * 10) / 2).fill(1),
-    ...new Array((10 * 10) / 2).fill(2),
-  ],
-  width: 10,
-  height: 10,
-  numberOfColors: 3,
-});
+displayCanvasHelper.setRotation(0);
+displayCanvasHelper.setLineWidth(10);
+displayCanvasHelper.selectFillColor(1);
+displayCanvasHelper.selectLineColor(2);
+displayCanvasHelper.drawRect(100, 100, 100, 100);
+// displayCanvasHelper.drawBitmap(50, 50, {
+//   pixels: [
+//     ...new Array((10 * 10) / 2).fill(1),
+//     ...new Array((10 * 10) / 2).fill(2),
+//   ],
+//   width: 10,
+//   height: 10,
+//   numberOfColors: 3,
+// });
 displayCanvasHelper.show();

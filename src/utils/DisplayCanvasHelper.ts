@@ -64,6 +64,7 @@ import {
   minDisplayScale,
   DisplayAlignmentDirectionToCommandType,
   DisplayAlignmentDirectionToStateKey,
+  assertValidAlignment,
 } from "./DisplayUtils.ts";
 import EventDispatcher, {
   BoundEventListeners,
@@ -1483,19 +1484,14 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     box: DisplayBoundingBox,
     rotation: number
   ): DisplayBoundingBox {
-    const offsetX = box.x + box.width / 2;
-    const offsetY = box.y + box.height / 2;
-    const hw = box.width / 2;
-    const hh = box.height / 2;
-
     const cos = Math.cos(rotation);
     const sin = Math.sin(rotation);
 
     const corners = [
-      { x: -hw, y: -hh },
-      { x: hw, y: -hh },
-      { x: hw, y: hh },
-      { x: -hw, y: hh },
+      { x: box.x, y: box.y },
+      { x: box.x, y: box.height + box.y },
+      { x: box.x + box.width, y: box.y },
+      { x: box.x + box.width, y: box.height + box.y },
     ];
 
     const rotated = corners.map(({ x, y }) => ({
@@ -1512,11 +1508,21 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     const maxY = Math.max(...ys);
 
     return {
-      x: offsetX + minX,
-      y: offsetY + minY,
+      x: minX,
+      y: minY,
       width: maxX - minX,
       height: maxY - minY,
     };
+  }
+  #offsetBoundingBox(
+    box: DisplayBoundingBox,
+    offsetX: number,
+    offsetY: number
+  ): DisplayBoundingBox {
+    const offsetBoundingBox = structuredClone(box);
+    offsetBoundingBox.x += offsetX;
+    offsetBoundingBox.y += offsetY;
+    return offsetBoundingBox;
   }
   #clearBoundingBoxOnDraw = true;
   #clearBoundingBox(
@@ -1544,20 +1550,43 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     };
     return boundingBox;
   }
+  #getOuterPadding(lineWidth: number) {
+    return Math.ceil(lineWidth / 2);
+  }
   #getRectBoundingBox(
-    offsetX: number,
-    offsetY: number,
     width: number,
     height: number,
-    { lineWidth }: DisplayContextState
+    { lineWidth, verticalAlignment, horizontalAlignment }: DisplayContextState
   ): DisplayBoundingBox {
-    const outerPadding = Math.ceil(lineWidth / 2);
+    const outerPadding = this.#getOuterPadding(lineWidth);
     const boundingBox = {
-      x: offsetX - width / 2 - outerPadding,
-      y: offsetY - height / 2 - outerPadding,
+      x: 0,
+      y: 0,
       width: width + outerPadding * 2,
       height: height + outerPadding * 2,
     };
+    assertValidAlignment(horizontalAlignment);
+    assertValidAlignment(verticalAlignment);
+    switch (horizontalAlignment) {
+      case "start":
+        break;
+      case "center":
+        boundingBox.x -= boundingBox.width / 2;
+        break;
+      case "end":
+        boundingBox.x -= boundingBox.width;
+        break;
+    }
+    switch (verticalAlignment) {
+      case "start":
+        break;
+      case "center":
+        boundingBox.y -= boundingBox.height / 2;
+        break;
+      case "end":
+        boundingBox.y -= boundingBox.height;
+        break;
+    }
     return boundingBox;
   }
   #applyClip(
@@ -1581,11 +1610,12 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     const ctx = this.context;
     ctx.beginPath();
     ctx.rect(
-      -width / 2 + rotationCropLeft,
-      -height / 2 + rotationCropTop,
-      width - rotationCropLeft - rotationCropRight,
-      height - rotationCropTop - rotationCropBottom
+      x + rotationCropLeft,
+      y + rotationCropTop,
+      width - rotationCropRight,
+      height - rotationCropBottom
     );
+
     ctx.clip();
   }
 
@@ -1654,28 +1684,30 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     this.#updateContext(contextState);
 
     this.#save();
-    const box = this.#getRectBoundingBox(
-      offsetX,
-      offsetY,
-      width,
-      height,
-      contextState
+    const localBox = this.#getRectBoundingBox(width, height, contextState);
+    const rotatedLocalBox = this.#rotateBoundingBox(
+      localBox,
+      contextState.rotation
     );
-    const rotatedBox = this.#rotateBoundingBox(box, contextState.rotation);
+    const rotatedBox = this.#offsetBoundingBox(
+      rotatedLocalBox,
+      offsetX,
+      offsetY
+    );
     this.#applyClip(rotatedBox, contextState);
 
     this.#transformContext(offsetX, offsetY, contextState.rotation);
     if (this.#clearBoundingBoxOnDraw) {
-      this.#clearBoundingBox(box);
+      this.#clearBoundingBox(rotatedBox);
     }
+    this.#applyRotationClip(localBox, contextState);
 
-    this.#applyRotationClip(box, contextState);
-
-    const x = -width / 2;
-    const y = -height / 2;
-    this.context.fillRect(x, y, width, height);
+    const outerPadding = this.#getOuterPadding(contextState.lineWidth);
+    const centerX = localBox.x + outerPadding;
+    const centerY = localBox.y + outerPadding;
+    this.context.fillRect(centerX, centerY, width, height);
     if (contextState.lineWidth > 0) {
-      this.context.strokeRect(x, y, width, height);
+      this.context.strokeRect(centerX, centerY, width, height);
     }
     this.#restore();
   }
@@ -2014,154 +2046,68 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
       );
     }
   }
+  #getLocalSegmentBoundingBox(
+    startX: number,
+    startY: number,
+    endX: number,
+    endY: number,
+    {
+      lineWidth,
+      segmentStartRadius,
+      segmentEndRadius,
+      segmentStartCap,
+      segmentEndCap,
+    }: DisplayContextState
+  ): DisplayBoundingBox {
+    const outerPadding = this.#getOuterPadding(lineWidth);
+    const dx = endX - startX;
+    const dy = endY - startY;
+    const length = Math.sqrt(dx * dx + dy * dy);
+    const maxRadius =
+      Math.max(segmentStartRadius, segmentEndRadius) + outerPadding;
+    const width = maxRadius * 2;
+    let height = length;
+    height += outerPadding * 2;
+    if (segmentStartCap == "round") {
+      height += segmentStartRadius;
+    }
+    if (segmentEndCap == "round") {
+      height += segmentEndRadius;
+    }
+
+    let y = -outerPadding;
+    if (segmentStartCap == "round") {
+      y -= segmentStartRadius;
+    }
+
+    const box: DisplayBoundingBox = {
+      x: -maxRadius,
+      y,
+      height,
+      width,
+    };
+    return box;
+  }
   #getSegmentBoundingBox(
     startX: number,
     startY: number,
     endX: number,
     endY: number,
-    { lineWidth, segmentStartRadius, segmentEndRadius }: DisplayContextState
-  ): DisplayBoundingBox {
-    const outerPadding = Math.ceil(lineWidth / 2);
-    const segmentStartFullRadius = segmentStartRadius + outerPadding;
-    const segmentEndFullRadius = segmentEndRadius + outerPadding;
-    // _console.log({ segmentStartFullRadius, segmentEndFullRadius });
-
-    const minX = Math.min(
-      startX - segmentStartFullRadius,
-      endX - segmentEndFullRadius
-    );
-    const maxX = Math.max(
-      startX + segmentStartFullRadius,
-      endX + segmentEndFullRadius
-    );
-    const minY = Math.min(
-      startY - segmentStartFullRadius,
-      endY - segmentEndFullRadius
-    );
-    const maxY = Math.max(
-      startY + segmentStartFullRadius,
-      endY + segmentEndFullRadius
-    );
-
-    // _console.log("segmentBounds", { minX, minY, maxX, maxY });
-
-    const boundingBox = {
-      x: minX,
-      y: minY,
-      width: maxX - minX,
-      height: maxY - minY,
-    };
-    // _console.log("getSegmentBoundingBox", boundingBox);
-    return boundingBox;
-  }
-  #getSegmentMidpoint(
-    startX: number,
-    startY: number,
-    endX: number,
-    endY: number,
-    {
-      lineWidth,
-      segmentStartRadius,
-      segmentEndRadius,
-      segmentEndCap,
-      segmentStartCap,
-    }: DisplayContextState
-  ): Vector2 {
-    const outerPadding = Math.ceil(lineWidth / 2);
-    const vector: Vector2 = {
-      x: endX - startX,
-      y: endY - startY,
-    };
-    const segmentStartLength =
-      segmentStartCap == "round"
-        ? segmentStartRadius + outerPadding
-        : outerPadding;
-    const segmentEndLength =
-      segmentEndCap == "round" ? segmentEndRadius + outerPadding : outerPadding;
-    const unitVector = normalizedVector2(vector);
-
-    const innerStartX = startX - unitVector.x * segmentStartLength;
-    const innerStartY = startY - unitVector.y * segmentStartLength;
-    const innerEndX = endX + unitVector.x * segmentEndLength;
-    const innerEndY = endY + unitVector.y * segmentEndLength;
-
-    const midpoint: Vector2 = {
-      x: (innerStartX + innerEndX) / 2,
-      y: (innerStartY + innerEndY) / 2,
-    };
-    //_console.log("midpoint", midpoint);
-    return midpoint;
-  }
-  #getOrientedSegmentBoundingBox(
-    startX: number,
-    startY: number,
-    endX: number,
-    endY: number,
-    {
-      lineWidth,
-      segmentStartRadius,
-      segmentEndRadius,
-      segmentEndCap,
-      segmentStartCap,
-    }: DisplayContextState
-  ): DisplayBoundingBox {
-    const outerPadding = Math.ceil(lineWidth / 2);
-    const vector: Vector2 = {
-      x: endX - startX,
-      y: endY - startY,
-    };
-    const segmentStartLength =
-      segmentStartCap == "round"
-        ? segmentStartRadius + outerPadding
-        : outerPadding;
-    const segmentEndLength =
-      segmentEndCap == "round" ? segmentEndRadius + outerPadding : outerPadding;
-    const length =
-      getVector2Length(vector) + segmentStartLength + segmentEndLength;
-    const width =
-      (Math.max(segmentStartRadius, segmentEndRadius) + outerPadding) * 2;
-
-    const boundingBox = {
-      x: -width / 2,
-      y: -length / 2,
-      width: width,
-      height: length,
-    };
-    return boundingBox;
-  }
-  #applySegmentRotationClip(
-    startX: number,
-    startY: number,
-    endX: number,
-    endY: number,
     contextState: DisplayContextState
-  ) {
-    const vector: Vector2 = {
-      x: endX - startX,
-      y: endY - startY,
-    };
-    let rotation = getVector2Angle(vector);
-    rotation -= Math.PI / 2;
-    // _console.log({ segmentRotation: rotation });
-    const midpoint: Vector2 = this.#getSegmentMidpoint(
+  ): DisplayBoundingBox {
+    const localBox = this.#getLocalSegmentBoundingBox(
       startX,
       startY,
       endX,
       endY,
       contextState
     );
-    this.context.translate(midpoint.x, midpoint.y);
-    this.context.rotate(rotation);
-    const box = this.#getOrientedSegmentBoundingBox(
-      startX,
-      startY,
-      endX,
-      endY,
-      contextState
-    );
-    this.#applyRotationClip(box, contextState);
-    this.context.rotate(-rotation);
-    this.context.translate(-midpoint.x, -midpoint.y);
+    const dx = endX - startX;
+    const dy = endY - startY;
+    const angle = Math.atan2(dy, dx) - Math.PI / 2;
+    const rotatedBox = this.#rotateBoundingBox(localBox, angle);
+    const offsetBox = this.#offsetBoundingBox(rotatedBox, startX, startY);
+    return offsetBox;
   }
   #drawSegmentToCanvas(
     startX: number,
@@ -2171,60 +2117,44 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     contextState: DisplayContextState,
     clearBoundingBox = true
   ) {
-    this.#updateContext(contextState);
-
     // _console.log("drawSegmentToCanvas", { startX, startY, endX, endY });
 
+    this.#updateContext(contextState);
+
+    const dx = endX - startX;
+    const dy = endY - startY;
+    const length = Math.sqrt(dx * dx + dy * dy);
+    const rotation = Math.atan2(dy, dx) - Math.PI / 2;
+
+    if (length == 0) {
+      return;
+    }
+
     this.#save();
-    const box = this.#getSegmentBoundingBox(
+    const localBox = this.#getLocalSegmentBoundingBox(
       startX,
       startY,
       endX,
       endY,
       contextState
     );
+    const rotatedLocalBox = this.#rotateBoundingBox(localBox, rotation);
+    const rotatedBox = this.#offsetBoundingBox(rotatedLocalBox, startX, startY);
+    this.#applyClip(rotatedBox, contextState);
+
+    this.#transformContext(startX, startY, rotation);
     if (this.#clearBoundingBoxOnDraw && clearBoundingBox) {
-      this.#clearBoundingBox(box, false);
+      this.#clearBoundingBox(rotatedBox);
     }
+    this.#applyRotationClip(localBox, contextState);
 
-    this.#applyClip(box, contextState);
-
-    this.#applySegmentRotationClip(startX, startY, endX, endY, contextState);
-
-    const x0 = startX;
-    const x1 = endX;
-    const y0 = startY;
-    const y1 = endY;
+    const x0 = 0;
+    const x1 = 0;
+    const y0 = 0;
+    const y1 = length;
 
     const r0 = contextState.segmentStartRadius;
     const r1 = contextState.segmentEndRadius;
-
-    const dx = x1 - x0;
-    const dy = y1 - y0;
-    const len = Math.sqrt(dx * dx + dy * dy);
-    if (len === 0) {
-      this.#restore();
-      return;
-    }
-
-    const ux = dx / len;
-    const uy = dy / len;
-
-    // Perpendicular vector
-    const px = -uy;
-    const py = ux;
-
-    // Start circle edge points
-    const sx1 = x0 + px * r0;
-    const sy1 = y0 + py * r0;
-    const sx2 = x0 - px * r0;
-    const sy2 = y0 - py * r0;
-
-    // End circle edge points
-    const ex1 = x1 + px * r1;
-    const ey1 = y1 + py * r1;
-    const ex2 = x1 - px * r1;
-    const ey2 = y1 - py * r1;
 
     if (contextState.segmentStartCap == "round") {
       this.context.beginPath();
@@ -2245,46 +2175,38 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
       }
     }
 
-    // full trapezoid
+    // full trapezoid (top right, clockwise)
     this.context.beginPath();
-    this.context.moveTo(sx1, sy1);
-    this.context.lineTo(ex1, ey1);
-    this.context.lineTo(ex2, ey2);
-    this.context.lineTo(sx2, sy2);
+    this.context.moveTo(r0, 0);
+    this.context.lineTo(-r0, 0);
+    this.context.lineTo(-r1, length);
+    this.context.lineTo(r1, length);
     this.context.closePath();
     this.context.fill();
 
-    // Stroke only the side edges
+    // Stroke only the side edges (top right, clockwise)
     if (contextState.lineWidth > 0) {
       this.context.beginPath();
 
-      // Start edge → end edge
-      this.context.moveTo(sx1, sy1);
-      this.context.lineTo(ex1, ey1);
-
-      // End cap (flat or not)
-      if (contextState.segmentEndCap === "flat") {
-        this.context.lineTo(ex2, ey2);
+      this.context.moveTo(r0, 0);
+      if (contextState.segmentStartCap === "flat") {
+        this.context.lineTo(-r0, 0);
       } else {
-        this.context.moveTo(ex2, ey2);
+        this.context.moveTo(-r0, 0);
       }
 
-      // Back to start side
-      this.context.lineTo(sx2, sy2);
+      this.context.lineTo(-r1, length);
 
-      // If both ends are flat, close the loop
-      if (
-        contextState.segmentStartCap === "flat" &&
-        contextState.segmentEndCap === "flat"
-      ) {
+      if (contextState.segmentEndCap === "flat") {
+        this.context.lineTo(r1, length);
+      } else {
+        this.context.moveTo(r1, length);
+      }
+
+      this.context.lineTo(r0, 0);
+      if (contextState.segmentStartCap === "flat") {
         this.context.closePath();
       }
-      // If only the start is flat, manually return to start to avoid gaps
-      else if (contextState.segmentStartCap === "flat") {
-        this.context.lineTo(sx1, sy1);
-        this.context.lineTo(ex1, ey1);
-      }
-
       this.context.stroke();
     }
 
