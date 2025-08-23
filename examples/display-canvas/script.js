@@ -2242,13 +2242,24 @@ function getIrisOffsetXy(
 displayCanvasHelper.selectBitmapColor(1, 1);
 displayCanvasHelper.selectBitmapColor(2, 2);
 displayCanvasHelper.setBitmapScale(10);
-displayCanvasHelper.setRotation(45);
 displayCanvasHelper.setRotation(0);
-displayCanvasHelper.setLineWidth(10);
+displayCanvasHelper.setLineWidth(0);
 displayCanvasHelper.selectFillColor(1);
 displayCanvasHelper.selectLineColor(2);
-displayCanvasHelper.drawRect(100, 100, 100, 100);
-// displayCanvasHelper.drawBitmap(50, 50, {
+//displayCanvasHelper.setRotationCropTop(10);
+//displayCanvasHelper.setCropTop(10);
+displayCanvasHelper.setVerticalAlignment("center");
+displayCanvasHelper.setHorizontalAlignment("center");
+// displayCanvasHelper.drawRoundRect(100, 100, 100, 100, 20);
+displayCanvasHelper.setSegmentStartCap("round");
+displayCanvasHelper.setSegmentStartRadius(2);
+displayCanvasHelper.setSegmentEndRadius(2);
+displayCanvasHelper.drawSegment(100, 100, 120, 200);
+// displayCanvasHelper.drawArc(100, 100, 50, 0, 360);
+// displayCanvasHelper.drawEllipse(100, 100, 100, 50);
+// displayCanvasHelper.drawCircle(100, 100, 50);
+//displayCanvasHelper.drawRect(100, 100, 100, 100);
+// displayCanvasHelper.drawBitmap(100, 100, {
 //   pixels: [
 //     ...new Array((10 * 10) / 2).fill(1),
 //     ...new Array((10 * 10) / 2).fill(2),
@@ -2257,4 +2268,11 @@ displayCanvasHelper.drawRect(100, 100, 100, 100);
 //   height: 10,
 //   numberOfColors: 3,
 // });
+// displayCanvasHelper.drawSegments([
+//   { x: 100, y: 100 },
+//   { x: 200, y: 100 },
+//   { x: 200, y: 200 },
+//   { x: 100, y: 200 },
+//   { x: 100, y: 100 },
+// ]);
 displayCanvasHelper.show();

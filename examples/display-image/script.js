@@ -521,7 +521,7 @@ drawXInput.addEventListener("input", () => {
   // console.log({ drawX });
   drawXSpan.innerText = drawX;
 });
-drawXInput.addEventListener("change", () => {
+drawXInput.addEventListener("input", () => {
   if (redrawOnChange) {
     drawImage();
   }
@@ -609,6 +609,7 @@ let isDrawing = false;
 /** @type {BS.DisplaySpriteSheet} */
 let spriteSheet;
 let debugWholeImage = false;
+let drawWhenReady = false;
 
 /** @type {HTMLCanvasElement} */
 const canvas = document.getElementById("canvas");
@@ -620,6 +621,7 @@ const draw = async () => {
   }
   if (isDrawing) {
     console.warn("busy drawing");
+    drawWhenReady = true;
     return;
   }
   isDrawing = true;
@@ -712,6 +714,9 @@ const draw = async () => {
 
 displayCanvasHelper.addEventListener("ready", () => {
   isDrawing = false;
+  if (drawWhenReady) {
+    //drawImage();
+  }
   if (cameraVideo.srcObject && autoDrawVideo) {
     console.log("redrawing video");
     drawImage();

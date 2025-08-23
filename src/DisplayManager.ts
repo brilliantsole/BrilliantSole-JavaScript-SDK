@@ -689,6 +689,7 @@ class DisplayManager implements DisplayManagerInterface {
   async show(sendImmediately = true) {
     _console.log("showDisplay");
     this.#isReady = false;
+    this.#lastShowRequestTime = Date.now();
     await this.#sendDisplayContextCommand("show", undefined, sendImmediately);
   }
   async clear(sendImmediately = true) {
@@ -1976,12 +1977,15 @@ class DisplayManager implements DisplayManagerInterface {
     return this.isAvailable && this.#isReady;
   }
   #lastReadyTime = 0;
+  #lastShowRequestTime = 0;
   #minReadyInterval = 100; // Forced delay due to Frame's fpga timing...
   #waitBeforeReady = false;
   async #parseDisplayReady(dataView: DataView) {
     const now = Date.now();
+    const timeSinceLastDraw = now - this.#lastShowRequestTime;
     const timeSinceLastReady = now - this.#lastReadyTime;
-    _console.log(`${timeSinceLastReady}ms since last render`);
+    //_console.log(`${timeSinceLastReady}ms since last render`);
+    _console.log(`${timeSinceLastDraw}ms draw time`);
     if (this.#waitBeforeReady && timeSinceLastReady < this.#minReadyInterval) {
       const timeToWait = this.#minReadyInterval - timeSinceLastReady;
       _console.log(`waiting ${timeToWait}ms`);

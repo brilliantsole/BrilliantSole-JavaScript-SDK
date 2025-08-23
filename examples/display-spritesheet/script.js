@@ -906,6 +906,8 @@ let draw = () => {
     rotationCropRight,
     rotationCropBottom,
     rotationCropLeft,
+    verticalAlignment,
+    horizontalAlignment,
   } = drawSpriteParams;
 
   displayCanvasHelper.setRotation(rotation);
@@ -919,6 +921,8 @@ let draw = () => {
   displayCanvasHelper.setRotationCropRight(rotationCropRight);
   displayCanvasHelper.setRotationCropBottom(rotationCropBottom);
   displayCanvasHelper.setRotationCropLeft(rotationCropLeft);
+  displayCanvasHelper.setVerticalAlignment(verticalAlignment);
+  displayCanvasHelper.setHorizontalAlignment(horizontalAlignment);
 
   if (shouldDrawAllSprites) {
     drawSprites();
@@ -994,6 +998,9 @@ const drawSpriteParams = {
 
   rotation: 0,
 
+  verticalAlignment: "center",
+  horizontalAlignment: "center",
+
   scaleX: 1,
   scaleY: 1,
 
@@ -1048,6 +1055,53 @@ const setSpriteDrawRotation = (drawSpriteRotation) => {
 };
 drawSpriteRotationInput.addEventListener("input", () => {
   setSpriteDrawRotation(Number(drawSpriteRotationInput.value));
+});
+
+const drawSpriteHorizontalAlignmentContainer = document.getElementById(
+  "drawSpriteHorizontalAlignment"
+);
+const drawSpriteHorizontalAlignmentSelect =
+  drawSpriteHorizontalAlignmentContainer.querySelector("select");
+const drawSpriteHorizontalAlignmentOptgroup =
+  drawSpriteHorizontalAlignmentContainer.querySelector("optgroup");
+BS.DisplayAlignments.forEach((horizontalAlignment) => {
+  drawSpriteHorizontalAlignmentOptgroup.appendChild(
+    new Option(horizontalAlignment)
+  );
+});
+drawSpriteHorizontalAlignmentSelect.value =
+  drawSpriteParams.horizontalAlignment;
+const setSpriteDrawHorizontalAlignment = (drawSpriteHorizontalAlignment) => {
+  console.log({ drawSpriteHorizontalAlignment });
+  drawSpriteHorizontalAlignmentSelect.value = drawSpriteHorizontalAlignment;
+  drawSpriteParams.horizontalAlignment = drawSpriteHorizontalAlignment;
+  draw();
+};
+drawSpriteHorizontalAlignmentSelect.addEventListener("input", () => {
+  setSpriteDrawHorizontalAlignment(drawSpriteHorizontalAlignmentSelect.value);
+});
+
+const drawSpriteVerticalAlignmentContainer = document.getElementById(
+  "drawSpriteVerticalAlignment"
+);
+const drawSpriteVerticalAlignmentSelect =
+  drawSpriteVerticalAlignmentContainer.querySelector("select");
+const drawSpriteVerticalAlignmentOptgroup =
+  drawSpriteVerticalAlignmentContainer.querySelector("optgroup");
+BS.DisplayAlignments.forEach((verticalAlignment) => {
+  drawSpriteVerticalAlignmentOptgroup.appendChild(
+    new Option(verticalAlignment)
+  );
+});
+drawSpriteVerticalAlignmentSelect.value = drawSpriteParams.verticalAlignment;
+const setSpriteDrawVerticalAlignment = (drawSpriteVerticalAlignment) => {
+  console.log({ drawSpriteVerticalAlignment });
+  drawSpriteVerticalAlignmentSelect.value = drawSpriteVerticalAlignment;
+  drawSpriteParams.verticalAlignment = drawSpriteVerticalAlignment;
+  draw();
+};
+drawSpriteVerticalAlignmentSelect.addEventListener("input", () => {
+  setSpriteDrawVerticalAlignment(drawSpriteVerticalAlignmentSelect.value);
 });
 
 const drawSpriteScaleXContainer = document.getElementById("drawSpriteScaleX");

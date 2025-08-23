@@ -1441,6 +1441,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     this.#save();
     //this.context.resetTransform();
     this.context.fillStyle = this.#colorIndexToRgbString(0);
+    this.context.fillStyle = "red"; // remove when done debugigng
     this.context.fillRect(x, y, width, height);
     this.#restore();
   }
@@ -1479,6 +1480,35 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
   #rotateContext(rotation: number) {
     const ctx = this.context;
     ctx.rotate(rotation);
+  }
+  #scaleContext(scaleX: number, scaleY: number) {
+    const ctx = this.context;
+    ctx.scale(scaleX, scaleY);
+  }
+  #correctAlignmentTranslation(
+    { width, height }: DisplayBoundingBox,
+    { verticalAlignment, horizontalAlignment }: DisplayContextState
+  ) {
+    switch (horizontalAlignment) {
+      case "start":
+        this.#translateContext(width / 2, 0);
+        break;
+      case "center":
+        break;
+      case "end":
+        this.#translateContext(-width / 2, 0);
+        break;
+    }
+    switch (verticalAlignment) {
+      case "start":
+        this.#translateContext(0, height / 2);
+        break;
+      case "center":
+        break;
+      case "end":
+        this.#translateContext(0, -height / 2);
+        break;
+    }
   }
   #rotateBoundingBox(
     box: DisplayBoundingBox,
@@ -1525,16 +1555,8 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     return offsetBoundingBox;
   }
   #clearBoundingBoxOnDraw = true;
-  #clearBoundingBox(
-    { x, y, width, height }: DisplayBoundingBox,
-    isCentered = true
-  ) {
-    this.#clearRectToCanvas(
-      isCentered ? -width / 2 : x,
-      isCentered ? -height / 2 : y,
-      width,
-      height
-    );
+  #clearBoundingBox({ x, y, width, height }: DisplayBoundingBox) {
+    this.#clearRectToCanvas(x, y, width, height);
   }
   #getBoundingBox(
     offsetX: number,
@@ -1556,9 +1578,10 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
   #getRectBoundingBox(
     width: number,
     height: number,
-    { lineWidth, verticalAlignment, horizontalAlignment }: DisplayContextState
+    { lineWidth, verticalAlignment, horizontalAlignment }: DisplayContextState,
+    applyLineWidth = true
   ): DisplayBoundingBox {
-    const outerPadding = this.#getOuterPadding(lineWidth);
+    const outerPadding = applyLineWidth ? this.#getOuterPadding(lineWidth) : 0;
     const boundingBox = {
       x: 0,
       y: 0,
@@ -1695,19 +1718,18 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
       offsetY
     );
     this.#applyClip(rotatedBox, contextState);
-
-    this.#transformContext(offsetX, offsetY, contextState.rotation);
     if (this.#clearBoundingBoxOnDraw) {
       this.#clearBoundingBox(rotatedBox);
     }
+    this.#transformContext(offsetX, offsetY, contextState.rotation);
     this.#applyRotationClip(localBox, contextState);
 
     const outerPadding = this.#getOuterPadding(contextState.lineWidth);
-    const centerX = localBox.x + outerPadding;
-    const centerY = localBox.y + outerPadding;
-    this.context.fillRect(centerX, centerY, width, height);
+    const startX = localBox.x + outerPadding;
+    const startY = localBox.y + outerPadding;
+    this.context.fillRect(startX, startY, width, height);
     if (contextState.lineWidth > 0) {
-      this.context.strokeRect(centerX, centerY, width, height);
+      this.context.strokeRect(startX, startY, width, height);
     }
     this.#restore();
   }
@@ -1743,30 +1765,33 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
   ) {
     this.#updateContext(contextState);
 
+    const maxBorderRadius = Math.min(width, height) / 2;
+    borderRadius = Math.min(borderRadius, maxBorderRadius);
+
     this.#save();
-    const box = this.#getRectBoundingBox(
-      offsetX,
-      offsetY,
-      width,
-      height,
-      contextState
+    const localBox = this.#getRectBoundingBox(width, height, contextState);
+    const rotatedLocalBox = this.#rotateBoundingBox(
+      localBox,
+      contextState.rotation
     );
-
-    const rotatedBox = this.#rotateBoundingBox(box, contextState.rotation);
+    const rotatedBox = this.#offsetBoundingBox(
+      rotatedLocalBox,
+      offsetX,
+      offsetY
+    );
     this.#applyClip(rotatedBox, contextState);
-
-    this.#transformContext(offsetX, offsetY, contextState.rotation);
     if (this.#clearBoundingBoxOnDraw) {
-      this.#clearBoundingBox(box);
+      this.#clearBoundingBox(rotatedBox);
     }
+    this.#transformContext(offsetX, offsetY, contextState.rotation);
+    this.#applyRotationClip(localBox, contextState);
 
-    this.#applyRotationClip(box, contextState);
-
-    const x = -width / 2;
-    const y = -height / 2;
+    const outerPadding = this.#getOuterPadding(contextState.lineWidth);
+    const startX = localBox.x + outerPadding;
+    const startY = localBox.y + outerPadding;
 
     this.context.beginPath();
-    this.context.roundRect(x, y, width, height, borderRadius);
+    this.context.roundRect(startX, startY, width, height, borderRadius);
     this.context.fill();
     if (contextState.lineWidth > 0) {
       this.context.stroke();
@@ -1804,19 +1829,11 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     }
   }
   #getCircleBoundingBox(
-    offsetX: number,
-    offsetY: number,
     radius: number,
     contextState: DisplayContextState
   ): DisplayBoundingBox {
     const diameter = radius * 2;
-    return this.#getRectBoundingBox(
-      offsetX,
-      offsetY,
-      diameter,
-      diameter,
-      contextState
-    );
+    return this.#getRectBoundingBox(diameter, diameter, contextState);
   }
   #drawCircleToCanvas(
     offsetX: number,
@@ -1824,31 +1841,15 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     radius: number,
     contextState: DisplayContextState
   ) {
-    this.#updateContext(contextState);
-
-    this.#save();
-    const box = this.#getCircleBoundingBox(
+    this.#drawArcToCanvas(
       offsetX,
       offsetY,
       radius,
+      0,
+      360,
+      false,
       contextState
     );
-    this.#applyClip(box, contextState);
-
-    this.#transformContext(offsetX, offsetY, contextState.rotation);
-    if (this.#clearBoundingBoxOnDraw) {
-      this.#clearBoundingBox(box);
-    }
-
-    this.#applyRotationClip(box, contextState);
-
-    this.context.beginPath();
-    this.context.arc(0, 0, radius, 0, 2 * Math.PI);
-    this.context.fill();
-    if (contextState.lineWidth) {
-      this.context.stroke();
-    }
-    this.#restore();
   }
   async drawCircle(
     offsetX: number,
@@ -1870,21 +1871,13 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     }
   }
   #getEllipseBoundingBox(
-    offsetX: number,
-    offsetY: number,
     radiusX: number,
     radiusY: number,
     contextState: DisplayContextState
   ): DisplayBoundingBox {
     const diameterX = radiusX * 2;
     const diameterY = radiusY * 2;
-    return this.#getRectBoundingBox(
-      offsetX,
-      offsetY,
-      diameterX,
-      diameterY,
-      contextState
-    );
+    return this.#getRectBoundingBox(diameterX, diameterY, contextState);
   }
   #drawEllipseToCanvas(
     offsetX: number,
@@ -1893,34 +1886,16 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     radiusY: number,
     contextState: DisplayContextState
   ) {
-    this.#updateContext(contextState);
-
-    this.#save();
-    const box = this.#getEllipseBoundingBox(
+    this.#drawArcEllipseToCanvas(
       offsetX,
       offsetY,
       radiusX,
       radiusY,
+      0,
+      360,
+      false,
       contextState
     );
-
-    const rotatedBox = this.#rotateBoundingBox(box, contextState.rotation);
-    this.#applyClip(rotatedBox, contextState);
-
-    this.#transformContext(offsetX, offsetY, contextState.rotation);
-    if (this.#clearBoundingBoxOnDraw) {
-      this.#clearBoundingBox(box);
-    }
-
-    this.#applyRotationClip(box, contextState);
-
-    this.context.beginPath();
-    this.context.ellipse(0, 0, radiusX, radiusY, 0, 0, 2 * Math.PI);
-    this.context.fill();
-    if (contextState.lineWidth > 0) {
-      this.context.stroke();
-    }
-    this.#restore();
   }
   async drawEllipse(
     offsetX: number,
@@ -2141,11 +2116,11 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     const rotatedLocalBox = this.#rotateBoundingBox(localBox, rotation);
     const rotatedBox = this.#offsetBoundingBox(rotatedLocalBox, startX, startY);
     this.#applyClip(rotatedBox, contextState);
-
-    this.#transformContext(startX, startY, rotation);
     if (this.#clearBoundingBoxOnDraw && clearBoundingBox) {
       this.#clearBoundingBox(rotatedBox);
     }
+    this.#translateContext(startX, startY);
+    this.#rotateContext(rotation);
     this.#applyRotationClip(localBox, contextState);
 
     const x0 = 0;
@@ -2307,35 +2282,57 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     this.#updateContext(contextState);
 
     this.#save();
-    const box = this.#getCircleBoundingBox(
-      offsetX,
-      offsetY,
-      radius,
-      contextState
+    const localBox = this.#getCircleBoundingBox(radius, contextState);
+    const rotatedLocalBox = this.#rotateBoundingBox(
+      localBox,
+      contextState.rotation
     );
-    this.#applyClip(box, contextState);
-
-    this.#transformContext(offsetX, offsetY, contextState.rotation);
+    const rotatedBox = this.#offsetBoundingBox(
+      rotatedLocalBox,
+      offsetX,
+      offsetY
+    );
+    this.#applyClip(rotatedBox, contextState);
     if (this.#clearBoundingBoxOnDraw) {
-      this.#clearBoundingBox(box);
+      this.#clearBoundingBox(rotatedBox);
     }
+    this.#transformContext(offsetX, offsetY, contextState.rotation);
+    this.#applyRotationClip(localBox, contextState);
 
-    this.#applyRotationClip(box, contextState);
+    const outerPadding = this.#getOuterPadding(contextState.lineWidth);
+    const startX = localBox.x + outerPadding;
+    const startY = localBox.y + outerPadding;
+    const centerX = startX + radius;
+    const centerY = startY + radius;
 
     // Draw the filled pie slice (includes radial lines)
     this.context.beginPath();
-    this.context.moveTo(0, 0);
+    this.context.moveTo(centerX, centerY);
     const clockwise = angleOffset > 0;
     const endAngle = startAngle + angleOffset;
 
-    this.context.arc(0, 0, radius, startAngle, endAngle, !clockwise);
+    this.context.arc(
+      centerX,
+      centerY,
+      radius,
+      startAngle,
+      endAngle,
+      !clockwise
+    );
     this.context.closePath();
     this.context.fill();
 
     // Stroke only the arc part
     if (contextState.lineWidth) {
       this.context.beginPath();
-      this.context.arc(0, 0, radius, startAngle, endAngle, !clockwise);
+      this.context.arc(
+        centerX,
+        centerY,
+        radius,
+        startAngle,
+        endAngle,
+        !clockwise
+      );
       this.context.stroke();
     }
 
@@ -2390,33 +2387,42 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     this.#updateContext(contextState);
 
     this.#save();
-    const box = this.#getEllipseBoundingBox(
-      offsetX,
-      offsetY,
+    const localBox = this.#getEllipseBoundingBox(
       radiusX,
       radiusY,
       contextState
     );
-
-    const rotatedBox = this.#rotateBoundingBox(box, contextState.rotation);
+    const rotatedLocalBox = this.#rotateBoundingBox(
+      localBox,
+      contextState.rotation
+    );
+    const rotatedBox = this.#offsetBoundingBox(
+      rotatedLocalBox,
+      offsetX,
+      offsetY
+    );
     this.#applyClip(rotatedBox, contextState);
-
-    this.#transformContext(offsetX, offsetY, contextState.rotation);
     if (this.#clearBoundingBoxOnDraw) {
-      this.#clearBoundingBox(box);
+      this.#clearBoundingBox(rotatedBox);
     }
+    this.#transformContext(offsetX, offsetY, contextState.rotation);
+    this.#applyRotationClip(localBox, contextState);
 
-    this.#applyRotationClip(box, contextState);
+    const outerPadding = this.#getOuterPadding(contextState.lineWidth);
+    const startX = localBox.x + outerPadding;
+    const startY = localBox.y + outerPadding;
+    const centerX = startX + radiusX;
+    const centerY = startY + radiusY;
 
     // draw elliptical pie slice (includes radial lines)
     this.context.beginPath();
-    this.context.moveTo(0, 0);
+    this.context.moveTo(centerX, centerY);
     const clockwise = angleOffset > 0;
     const endAngle = startAngle + angleOffset;
 
     this.context.ellipse(
-      0,
-      0,
+      centerX,
+      centerY,
       radiusX,
       radiusY,
       0,
@@ -2431,8 +2437,8 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     if (contextState.lineWidth > 0) {
       this.context.beginPath();
       this.context.ellipse(
-        0,
-        0,
+        centerX,
+        centerY,
         radiusX,
         radiusY,
         0,
@@ -2495,34 +2501,32 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
   ) {
     this.#updateContext(contextState);
 
-    //_console.log("drawBitmapToCanvas", { offsetX, offsetY, bitmap }, this.#useSpriteColorIndices);
-    //_console.log("drawBitmapToCanvas", this.bitmapColorIndices);
-
     const { bitmapScaleX, bitmapScaleY } = contextState;
     const width = bitmap.width * Math.abs(bitmapScaleX);
     const height = bitmap.height * Math.abs(bitmapScaleY);
 
-    //_console.log({ bitmapScaleX, bitmapScaleY });
-
-    // _console.log({ width, height });
-
     this.#save();
-    const box = this.#getRectBoundingBox(
-      offsetX,
-      offsetY,
+    const localBox = this.#getRectBoundingBox(
       width,
       height,
-      contextState
+      contextState,
+      false
     );
-    const rotatedBox = this.#rotateBoundingBox(box, contextState.rotation);
+    const rotatedLocalBox = this.#rotateBoundingBox(
+      localBox,
+      contextState.rotation
+    );
+    const rotatedBox = this.#offsetBoundingBox(
+      rotatedLocalBox,
+      offsetX,
+      offsetY
+    );
     this.#applyClip(rotatedBox, contextState);
-
-    this.#transformContext(offsetX, offsetY, contextState.rotation);
     if (this.#clearBoundingBoxOnDraw) {
-      this.#clearBoundingBox(box);
+      this.#clearBoundingBox(rotatedBox);
     }
-
-    this.#applyRotationClip(box, contextState);
+    this.#transformContext(offsetX, offsetY, contextState.rotation);
+    this.#applyRotationClip(localBox, contextState);
 
     this.#bitmapCanvas.width = bitmap.width;
     this.#bitmapCanvas.height = bitmap.height;
@@ -2533,8 +2537,8 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     );
     const rawBitmapImageData = bitmapImageData.data;
 
-    const x = -width / 2;
-    const y = -height / 2;
+    const startX = localBox.x;
+    const startY = localBox.y;
     bitmap.pixels.forEach((pixel, pixelIndex) => {
       let colorIndex = contextState.bitmapColorIndices[pixel];
       if (this.#useSpriteColorIndices) {
@@ -2555,7 +2559,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
 
     this.#bitmapContext.putImageData(bitmapImageData, 0, 0);
     this.#context.scale(Math.sign(bitmapScaleX), Math.sign(bitmapScaleY));
-    this.#context.drawImage(this.#bitmapCanvas, x, y, width, height);
+    this.#context.drawImage(this.#bitmapCanvas, startX, startY, width, height);
 
     this.#restore();
   }
@@ -2849,51 +2853,33 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     contextState: DisplayContextState
   ) {
     this.#rearDrawStack.push(() => {
-      // _console.log("setContextTransform", {
-      //   offsetX,
-      //   offsetY,
-      //   width,
-      //   height,
-      //   contextState,
-      // });
+      const scaledWidth = width * Math.abs(contextState.spriteScaleX);
+      const scaledHeight = height * Math.abs(contextState.spriteScaleY);
 
       this.#save();
-      this.#context.translate(offsetX, offsetY);
-      const box = this.#getBoundingBox(
-        0,
-        0,
-        width * Math.abs(contextState.spriteScaleX),
-        height * Math.abs(contextState.spriteScaleY)
+      const localBox = this.#getRectBoundingBox(
+        scaledWidth,
+        scaledHeight,
+        contextState
       );
-      const rotatedBox = this.#rotateBoundingBox(box, contextState.rotation);
-      //_console.log("rotatedBox", rotatedBox);
+      const rotatedLocalBox = this.#rotateBoundingBox(
+        localBox,
+        contextState.rotation
+      );
+      const rotatedBox = this.#offsetBoundingBox(
+        rotatedLocalBox,
+        offsetX,
+        offsetY
+      );
       this.#applyClip(rotatedBox, contextState);
-      this.#context.rotate(contextState.rotation);
-      this.#context.scale(contextState.spriteScaleX, contextState.spriteScaleY);
-      // this.#context.beginPath();
-      // this.#context.rect(
-      //   -width / 2 + crop.left,
-      //   -height / 2 + crop.top,
-      //   width - crop.left - crop.right,
-      //   height - crop.top - crop.bottom
-      // );
-      // this.#context.clip();
-
-      // Now define the clip in transformed space
-      this.#context.beginPath();
-      this.#context.rect(
-        -width / 2 +
-          contextState.rotationCropLeft / Math.abs(contextState.spriteScaleX),
-        -height / 2 +
-          contextState.rotationCropTop / Math.abs(contextState.spriteScaleY),
-        width -
-          contextState.rotationCropLeft / Math.abs(contextState.spriteScaleX) -
-          contextState.rotationCropRight / Math.abs(contextState.spriteScaleX),
-        height -
-          contextState.rotationCropTop / Math.abs(contextState.spriteScaleY) -
-          contextState.rotationCropBottom / Math.abs(contextState.spriteScaleY)
-      );
-      this.#context.clip();
+      if (this.#clearBoundingBoxOnDraw) {
+        this.#clearBoundingBox(rotatedBox);
+      }
+      this.#translateContext(offsetX, offsetY);
+      this.#rotateContext(contextState.rotation);
+      this.#scaleContext(contextState.spriteScaleX, contextState.spriteScaleY);
+      this.#applyRotationClip(localBox, contextState);
+      this.#correctAlignmentTranslation(localBox, contextState);
     });
   }
   #resetCanvasContextTransform() {
