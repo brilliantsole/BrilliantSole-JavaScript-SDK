@@ -15763,6 +15763,23 @@ async function runDisplayContextCommand(displayManager, command, sendImmediately
                 await displayManager.setSegmentRadius(segmentRadius, sendImmediately);
             }
             break;
+        case "setHorizontalAlignment":
+            {
+                const { horizontalAlignment } = command;
+                await displayManager.setHorizontalAlignment(horizontalAlignment, sendImmediately);
+            }
+            break;
+        case "setVerticalAlignment":
+            {
+                const { verticalAlignment } = command;
+                await displayManager.setVerticalAlignment(verticalAlignment, sendImmediately);
+            }
+            break;
+        case "resetAlignment":
+            {
+                await displayManager.resetAlignment(sendImmediately);
+            }
+            break;
         case "setCropTop":
             {
                 const { cropTop } = command;
@@ -22176,7 +22193,6 @@ _DisplayCanvasHelper_eventDispatcher = new WeakMap(), _DisplayCanvasHelper_canva
 }, _DisplayCanvasHelper_clearRectToCanvas = function _DisplayCanvasHelper_clearRectToCanvas(x, y, width, height) {
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_save).call(this);
     this.context.fillStyle = __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_colorIndexToRgbString).call(this, 0);
-    this.context.fillStyle = "red";
     this.context.fillRect(x, y, width, height);
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_restore).call(this);
 }, _DisplayCanvasHelper_save = function _DisplayCanvasHelper_save() {
@@ -22716,9 +22732,9 @@ _DisplayCanvasHelper_eventDispatcher = new WeakMap(), _DisplayCanvasHelper_canva
         }
         __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_translateContext).call(this, offsetX, offsetY);
         __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_rotateContext).call(this, contextState.rotation);
-        __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_scaleContext).call(this, contextState.spriteScaleX, contextState.spriteScaleY);
         __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_applyRotationClip).call(this, localBox, contextState);
         __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_correctAlignmentTranslation).call(this, localBox, contextState);
+        __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_scaleContext).call(this, contextState.spriteScaleX, contextState.spriteScaleY);
     });
 }, _DisplayCanvasHelper_resetCanvasContextTransform = function _DisplayCanvasHelper_resetCanvasContextTransform() {
     __classPrivateFieldGet(this, _DisplayCanvasHelper_rearDrawStack, "f").push(() => {

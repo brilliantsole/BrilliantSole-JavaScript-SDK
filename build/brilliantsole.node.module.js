@@ -5121,6 +5121,23 @@ async function runDisplayContextCommand(displayManager, command, sendImmediately
                 await displayManager.setSegmentRadius(segmentRadius, sendImmediately);
             }
             break;
+        case "setHorizontalAlignment":
+            {
+                const { horizontalAlignment } = command;
+                await displayManager.setHorizontalAlignment(horizontalAlignment, sendImmediately);
+            }
+            break;
+        case "setVerticalAlignment":
+            {
+                const { verticalAlignment } = command;
+                await displayManager.setVerticalAlignment(verticalAlignment, sendImmediately);
+            }
+            break;
+        case "resetAlignment":
+            {
+                await displayManager.resetAlignment(sendImmediately);
+            }
+            break;
         case "setCropTop":
             {
                 const { cropTop } = command;

@@ -1441,7 +1441,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     this.#save();
     //this.context.resetTransform();
     this.context.fillStyle = this.#colorIndexToRgbString(0);
-    this.context.fillStyle = "red"; // remove when done debugigng
+    //this.context.fillStyle = "red"; // remove when done debugigng
     this.context.fillRect(x, y, width, height);
     this.#restore();
   }
@@ -2877,9 +2877,9 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
       }
       this.#translateContext(offsetX, offsetY);
       this.#rotateContext(contextState.rotation);
-      this.#scaleContext(contextState.spriteScaleX, contextState.spriteScaleY);
       this.#applyRotationClip(localBox, contextState);
       this.#correctAlignmentTranslation(localBox, contextState);
+      this.#scaleContext(contextState.spriteScaleX, contextState.spriteScaleY);
     });
   }
   #resetCanvasContextTransform() {

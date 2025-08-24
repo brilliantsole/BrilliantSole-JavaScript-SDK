@@ -1659,6 +1659,19 @@ const addSpriteCommand = () => {
         });
         break;
 
+      case "setHorizontalAlignment":
+        selectedSprite.commands.push({
+          type: "setHorizontalAlignment",
+          horizontalAlignment: "center",
+        });
+        break;
+      case "setVerticalAlignment":
+        selectedSprite.commands.push({
+          type: "setVerticalAlignment",
+          verticalAlignment: "center",
+        });
+        break;
+
       case "drawSprite":
         const sprite = spriteSheet.sprites.find(
           (sprite) => sprite != selectedSprite
@@ -2928,6 +2941,44 @@ const updateSpriteCommands = () => {
         spriteNameSelect.addEventListener("input", () => {
           command.spriteName = spriteNameSelect.value;
           spriteName();
+        });
+      }
+
+      const includeHorizontalAlignment = "horizontalAlignment" in command;
+      if (includeHorizontalAlignment) {
+        const horizontalAlignmentContainer =
+          spriteCommandContainer.querySelector(".horizontalAlignment");
+        horizontalAlignmentContainer.removeAttribute("hidden");
+        const horizontalAlignmentSelect =
+          horizontalAlignmentContainer.querySelector("select");
+        const horizontalAlignmentOptgroup =
+          horizontalAlignmentSelect.querySelector("optgroup");
+        BS.DisplayAlignments.forEach((alignment) => {
+          horizontalAlignmentOptgroup.appendChild(new Option(alignment));
+        });
+        horizontalAlignmentSelect.value = command.horizontalAlignment;
+        horizontalAlignmentContainer.addEventListener("input", () => {
+          command.horizontalAlignment = horizontalAlignmentSelect.value;
+          draw();
+        });
+      }
+
+      const includeVerticalAlignment = "verticalAlignment" in command;
+      if (includeVerticalAlignment) {
+        const verticalAlignmentContainer =
+          spriteCommandContainer.querySelector(".verticalAlignment");
+        verticalAlignmentContainer.removeAttribute("hidden");
+        const verticalAlignmentSelect =
+          verticalAlignmentContainer.querySelector("select");
+        const verticalAlignmentOptgroup =
+          verticalAlignmentSelect.querySelector("optgroup");
+        BS.DisplayAlignments.forEach((alignment) => {
+          verticalAlignmentOptgroup.appendChild(new Option(alignment));
+        });
+        verticalAlignmentSelect.value = command.verticalAlignment;
+        verticalAlignmentContainer.addEventListener("input", () => {
+          command.verticalAlignment = verticalAlignmentSelect.value;
+          draw();
         });
       }
 
