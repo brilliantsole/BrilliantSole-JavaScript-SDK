@@ -248,7 +248,7 @@ declare class DisplayManager implements DisplayManagerInterface {
     get selectedSpriteSheetName(): string | undefined;
     selectSpriteSheet(spriteSheetName: string, sendImmediately?: boolean): Promise<void>;
     drawSprite(offsetX: number, offsetY: number, spriteName: string, sendImmediately?: boolean): Promise<void>;
-    drawSpriteFromSpriteSheet(offsetX: number, offsetY: number, spriteName: string, spriteSheet: DisplaySpriteSheet, sendImmediately?: boolean): Promise<void>;
+    drawSpriteFromSpriteSheet(offsetX: number, offsetY: number, spriteName: string, spriteSheet: DisplaySpriteSheet, paletteName?: string, sendImmediately?: boolean): Promise<void>;
     parseMessage(messageType: DisplayMessageType, dataView: DataView): void;
     assertSpriteSheetPalette(paletteName: string): void;
     assertSpriteSheetPaletteSwap(paletteSwapName: string): void;

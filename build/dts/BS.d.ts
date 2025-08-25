@@ -29,7 +29,7 @@ export { default as DisplayCanvasHelper, DisplayCanvasHelperEvent, DisplayCanvas
 export { Font } from "opentype.js";
 /** BROWSER_END */
 /** BROWSER_START */
-export { resizeAndQuantizeImage, quantizeImage, imageToSprite, imageToSpriteSheet, canvasToSprite, canvasToSpriteSheet, } from "./utils/DisplayBitmapUtils.ts";
+export { resizeAndQuantizeImage, quantizeImage, imageToSprite, imageToSpriteSheet, canvasToSprite, canvasToSpriteSheet, resizeImage, } from "./utils/DisplayBitmapUtils.ts";
 /** BROWSER_END */
 export { rgbToHex, hexToRGB } from "./utils/ColorUtils.ts";
 export { default as DevicePair, DevicePairEvent, DevicePairEventMap, DevicePairEventListenerMap, BoundDevicePairEventListeners, DevicePairType, DevicePairTypes, } from "./devicePair/DevicePair.ts";

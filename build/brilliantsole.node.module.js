@@ -3988,7 +3988,7 @@ function assertValidAlignment(alignment) {
     _console$t.assertEnumWithError(alignment, DisplayAlignments);
 }
 
-const _console$s = createConsole("DisplayContextCommand", { log: true });
+const _console$s = createConsole("DisplayContextCommand", { log: false });
 const DisplayContextCommandTypes = [
     "show",
     "clear",
@@ -4641,7 +4641,7 @@ function serializeContextCommands(displayManager, commands) {
     return serializedContextCommands;
 }
 
-const _console$r = createConsole("DisplaySpriteSheetUtils", { log: true });
+const _console$r = createConsole("DisplaySpriteSheetUtils", { log: false });
 const spriteHeaderLength = 3 * 2;
 function serializeSpriteSheet(displayManager, spriteSheet) {
     const { name, sprites } = spriteSheet;
@@ -4817,7 +4817,7 @@ function reduceSpriteSheet(spriteSheet, spriteNames) {
     return reducedSpriteName;
 }
 
-const _console$q = createConsole("DisplayBitmapUtils", { log: true });
+const _console$q = createConsole("DisplayBitmapUtils", { log: false });
 const drawBitmapHeaderLength = 2 + 2 + 2 + 4 + 1 + 2;
 function getBitmapData(bitmap) {
     const pixelDataLength = getBitmapNumberOfBytes(bitmap);
@@ -4943,8 +4943,6 @@ async function quantizeImage(image, width, height, numberOfColors, colors, canva
 function resizeImage(image, width, height, canvas) {
     canvas = canvas || document.createElement("canvas");
     const ctx = canvas.getContext("2d", { willReadFrequently: true });
-    let { naturalWidth: imageWidth, naturalHeight: imageHeight } = image;
-    _console$q.log({ imageWidth, imageHeight });
     canvas.width = width;
     canvas.height = height;
     ctx.imageSmoothingEnabled = false;
@@ -5009,7 +5007,7 @@ function assertValidBitmapPixels(bitmap) {
     });
 }
 
-const _console$p = createConsole("DisplayManagerInterface", { log: true });
+const _console$p = createConsole("DisplayManagerInterface", { log: false });
 async function runDisplayContextCommand(displayManager, command, sendImmediately) {
     if (command.hide) {
         return;
@@ -5402,6 +5400,7 @@ async function selectSpriteSheetPalette(displayManagerInterface, paletteName, of
         }
         displayManagerInterface.setColor(index + offset, color, false);
         displayManagerInterface.setColorOpacity(index + offset, opacity, false);
+        displayManagerInterface.selectSpriteColor(index, index + offset);
     }
     if (sendImmediately) {
         displayManagerInterface.flushContextCommands();
@@ -5442,15 +5441,18 @@ async function selectSpritePaletteSwap(displayManagerInterface, spriteName, pale
         displayManagerInterface.flushContextCommands();
     }
 }
-async function drawSpriteFromSpriteSheet(displayManagerInterface, offsetX, offsetY, spriteName, spriteSheet, sendImmediately) {
+async function drawSpriteFromSpriteSheet(displayManagerInterface, offsetX, offsetY, spriteName, spriteSheet, paletteName, sendImmediately) {
     const reducedSpriteSheet = reduceSpriteSheet(spriteSheet, [spriteName]);
     await displayManagerInterface.uploadSpriteSheet(reducedSpriteSheet);
     await displayManagerInterface.selectSpriteSheet(spriteSheet.name);
     await displayManagerInterface.drawSprite(offsetX, offsetY, spriteName, sendImmediately);
+    if (paletteName != undefined) {
+        await displayManagerInterface.selectSpriteSheetPalette(paletteName);
+    }
 }
 
 var _DisplayManager_instances, _DisplayManager_dispatchEvent_get, _DisplayManager_isAvailable, _DisplayManager_assertDisplayIsAvailable, _DisplayManager_parseIsDisplayAvailable, _DisplayManager_contextStateHelper, _DisplayManager_onContextStateUpdate, _DisplayManager_displayStatus, _DisplayManager_parseDisplayStatus, _DisplayManager_updateDisplayStatus, _DisplayManager_sendDisplayCommand, _DisplayManager_assertIsAwake, _DisplayManager_assertIsNotAwake, _DisplayManager_displayInformation, _DisplayManager_parseDisplayInformation, _DisplayManager_brightness, _DisplayManager_parseDisplayBrightness, _DisplayManager_assertValidDisplayContextCommand, _DisplayManager_maxCommandDataLength_get, _DisplayManager_displayContextCommandBuffers, _DisplayManager_sendDisplayContextCommand, _DisplayManager_sendContextCommands, _DisplayManager_colors, _DisplayManager_opacities, _DisplayManager_assertValidBitmapSize, _DisplayManager_isReady, _DisplayManager_lastReadyTime, _DisplayManager_lastShowRequestTime, _DisplayManager_minReadyInterval, _DisplayManager_waitBeforeReady, _DisplayManager_parseDisplayReady, _DisplayManager_spriteSheets, _DisplayManager_spriteSheetIndices, _DisplayManager_setSpriteSheetName, _DisplayManager_pendingSpriteSheet, _DisplayManager_pendingSpriteSheetName, _DisplayManager_updateSpriteSheetName, _DisplayManager_parseSpriteSheetIndex, _DisplayManager_mtu, _DisplayManager_isServerSide;
-const _console$o = createConsole("DisplayManager", { log: true });
+const _console$o = createConsole("DisplayManager", { log: false });
 const DefaultNumberOfDisplayColors = 16;
 const DisplayCommands = ["sleep", "wake"];
 const DisplayStatuses = ["awake", "asleep"];
@@ -6653,8 +6655,8 @@ class DisplayManager {
         }
         await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "drawSprite", dataView.buffer, sendImmediately);
     }
-    async drawSpriteFromSpriteSheet(offsetX, offsetY, spriteName, spriteSheet, sendImmediately) {
-        return drawSpriteFromSpriteSheet(this, offsetX, offsetY, spriteName, spriteSheet, sendImmediately);
+    async drawSpriteFromSpriteSheet(offsetX, offsetY, spriteName, spriteSheet, paletteName, sendImmediately) {
+        return drawSpriteFromSpriteSheet(this, offsetX, offsetY, spriteName, spriteSheet, paletteName, sendImmediately);
     }
     parseMessage(messageType, dataView) {
         _console$o.log({ messageType, dataView });

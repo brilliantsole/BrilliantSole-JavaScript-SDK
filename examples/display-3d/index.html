@@ -1,0 +1,210 @@
+<html>
+  <head>
+    <title>Display 3D | BrilliantSole JavaScript SDK</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico" />
+    <script type="module" src="./script.js"></script>
+    <script src="../utils/aframe/aframe-master.min.js"></script>
+  </head>
+  <style>
+    #display,
+    #cameraVideo {
+      background-color: black;
+    }
+
+    #cameraVideo,
+    #image,
+    #canvas {
+      height: 400;
+      max-width: fit-content;
+    }
+
+    .verticalLabel {
+      display: inline-flex;
+      flex-direction: column;
+      max-width: fit-content;
+    }
+
+    a-scene {
+      width: 640px;
+      height: 400px;
+      border: solid black;
+      box-sizing: border-box;
+      display: inline-block;
+    }
+
+    img.selected {
+      border: solid green 10px;
+    }
+  </style>
+  <body>
+    <nav>
+      <a href="../../">home</a>
+    </nav>
+
+    <h1>Display 3D | BrilliantSole JavaScript SDK</h1>
+
+    <br />
+
+    <button id="toggleConnection">connect</button>
+
+    <label>
+      select model
+      <input
+        type="file"
+        id="modelInput"
+        accept=".glb,.gltf,model/gltf-binary,model/gltf+json"
+      />
+    </label>
+
+    <button id="generateSpriteSheet">create spriteSheet</button>
+
+    <button id="draw">draw</button>
+
+    <label>
+      redraw on change
+      <input checked type="checkbox" id="redrawOnChange" />
+    </label>
+
+    <label>
+      auto draw
+      <input type="checkbox" id="autoDraw" />
+    </label>
+
+    <br />
+
+    <div id="displayColors">
+      <template id="displayColorTemplate">
+        <label class="displayColor">
+          <span hidden class="colorIndex"></span>
+          <input type="color" value="#000000" />
+        </label>
+      </template>
+    </div>
+
+    <br />
+
+    <label class="verticalLabel">
+      <span>brightness</span>
+      <select id="setDisplayBrightnessSelect">
+        <optgroup label="select brightness"></optgroup>
+      </select>
+    </label>
+
+    <label id="drawX" class="verticalLabel">
+      <span>x (<span class="value">320</span>px)</span>
+      <input type="range" min="0" max="640" step="5" value="320" />
+    </label>
+    <label id="drawY" class="verticalLabel">
+      <span>y (<span class="value">200</span>px)</span>
+      <input type="range" min="0" max="400" step="5" value="200" />
+    </label>
+    <label id="drawRotation" class="verticalLabel">
+      <span>rotation (<span class="value">0</span>deg)</span>
+      <input type="range" min="-360" max="360" step="5" value="0" />
+    </label>
+
+    <label id="drawInputHeight" class="verticalLabel">
+      <span>input height (<span class="value">50</span>px)</span>
+      <input type="range" min="10" max="400" step="5" value="50" />
+    </label>
+
+    <label id="drawOutputHeight" class="verticalLabel">
+      <span>output height (<span class="value">200</span>px)</span>
+      <input type="range" min="10" max="400" step="5" value="200" />
+    </label>
+
+    <label class="verticalLabel">
+      <span>pixel depth</span>
+      <select id="pixelDepth">
+        <optgroup label="pixel depth"></optgroup>
+      </select>
+    </label>
+
+    <br />
+
+    <label>
+      file transfer progress: <span></span>
+      <progress value="0" id="fileTransferProgress"></progress>
+    </label>
+
+    <button id="checkSpriteSheetSize">check spritesheet size</button>
+
+    <br />
+
+    <canvas id="display" width="640" height="400"></canvas>
+
+    <a-scene
+      id="scene"
+      embedded
+      xr-mode-ui="enabled: false;"
+      device-orientation-permission-ui="enabled: false"
+      renderer="colorManagement: true;"
+    >
+      <a-assets>
+        <a-asset-item
+          id="leftInsoleModel"
+          src="../../assets/3d/leftInsole.glb"
+        ></a-asset-item>
+        <a-asset-item
+          id="rightInsoleModel"
+          src="../../assets/3d/rightInsole.glb"
+        ></a-asset-item>
+        <a-asset-item
+          id="rightHandModel"
+          src="../../assets/3d/rightHand.glb"
+        ></a-asset-item>
+      </a-assets>
+      <a-light type="directional" position="2 2 -2" target=".target"></a-light>
+      <a-light type="directional" position="-2 2 2" target=".target"></a-light>
+      <a-light type="directional" position="2 -2 2" target=".target"></a-light>
+
+      <a-entity light="color: #BBB; type: ambient;"></a-entity>
+
+      <a-entity id="cameraRig" wasd-controls look-controls position="0 0 3">
+        <a-camera
+          id="camera"
+          position="0 0 0"
+          look-controls="enabled: false"
+          wasd-controls="enabled: false;"
+          camera="fov: 50"
+        >
+          <a-entity visible="false" position="0 0 -1">
+            <a-entity id="test"></a-entity>
+          </a-entity>
+        </a-camera>
+      </a-entity>
+
+      <a-entity id="model" position="0 0 0"></a-entity>
+      <a-entity id="lookAt"></a-entity>
+
+      <a-entity class="target">
+        <a-entity class="rotation">
+          <a-entity class="position" position="0 0 0.005">
+            <a-entity
+              gltf-model="#rightInsoleModel"
+              visible="false"
+              data-type="rightInsole"
+            ></a-entity>
+            <a-entity
+              gltf-model="#leftInsoleModel"
+              visible="false"
+              data-type="leftInsole"
+            ></a-entity>
+            <a-entity
+              gltf-model="#rightHandModel"
+              visible="false"
+              data-type="rightGlove"
+            ></a-entity>
+            <a-entity
+              gltf-model="#rightHandModel"
+              visible="false"
+              scale="-1 1 1"
+              data-type="leftGlove"
+            ></a-entity>
+          </a-entity>
+        </a-entity>
+      </a-entity>
+    </a-scene>
+  </body>
+</html>

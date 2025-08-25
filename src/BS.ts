@@ -169,6 +169,7 @@ export {
   imageToSpriteSheet,
   canvasToSprite,
   canvasToSpriteSheet,
+  resizeImage,
 } from "./utils/DisplayBitmapUtils.ts";
 /** BROWSER_END */
 

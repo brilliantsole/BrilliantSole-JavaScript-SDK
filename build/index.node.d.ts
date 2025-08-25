@@ -334,7 +334,7 @@ interface DisplayManagerInterface {
     getSpriteSheetPalette(paletteName: string): DisplaySpriteSheetPalette | undefined;
     getSpriteSheetPaletteSwap(paletteSwapName: string): DisplaySpriteSheetPaletteSwap | undefined;
     getSpritePaletteSwap(spriteName: string, paletteSwapName: string): DisplaySpritePaletteSwap | undefined;
-    drawSpriteFromSpriteSheet(offsetX: number, offsetY: number, spriteName: string, spriteSheet: DisplaySpriteSheet, sendImmediately?: boolean): Promise<void>;
+    drawSpriteFromSpriteSheet(offsetX: number, offsetY: number, spriteName: string, spriteSheet: DisplaySpriteSheet, paletteName?: string, sendImmediately?: boolean): Promise<void>;
     get selectedSpriteSheet(): DisplaySpriteSheet | undefined;
     get selectedSpriteSheetName(): string | undefined;
     spriteSheets: Record<string, DisplaySpriteSheet>;

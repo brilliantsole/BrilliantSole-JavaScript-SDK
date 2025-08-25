@@ -211,7 +211,7 @@ declare class DisplayCanvasHelper implements DisplayManagerInterface {
     get selectedSpriteSheetName(): string | undefined;
     selectSpriteSheet(spriteSheetName: string, sendImmediately?: boolean): Promise<void>;
     drawSprite(offsetX: number, offsetY: number, spriteName: string, sendImmediately?: boolean): Promise<void>;
-    drawSpriteFromSpriteSheet(offsetX: number, offsetY: number, spriteName: string, spriteSheet: DisplaySpriteSheet, sendImmediately?: boolean): Promise<void>;
+    drawSpriteFromSpriteSheet(offsetX: number, offsetY: number, spriteName: string, spriteSheet: DisplaySpriteSheet, paletteName?: string, sendImmediately?: boolean): Promise<void>;
     get brightness(): "veryLow" | "low" | "medium" | "high" | "veryHigh";
     setBrightness(newBrightness: DisplayBrightness, sendImmediately?: boolean): Promise<void>;
     runContextCommand(command: DisplayContextCommand, sendImmediately?: boolean): Promise<void>;

@@ -715,6 +715,7 @@ const draw = async () => {
 displayCanvasHelper.addEventListener("ready", () => {
   isDrawing = false;
   if (drawWhenReady) {
+    drawWhenReady = false;
     //drawImage();
   }
   if (cameraVideo.srcObject && autoDrawVideo) {

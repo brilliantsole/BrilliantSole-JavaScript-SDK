@@ -4675,7 +4675,7 @@ var rgbquant = {exports: {}};
 var rgbquantExports = rgbquant.exports;
 var RGBQuant = getDefaultExportFromCjs(rgbquantExports);
 
-const _console$n = createConsole("DisplayContextCommand", { log: true });
+const _console$n = createConsole("DisplayContextCommand", { log: false });
 const DisplayContextCommandTypes = [
     "show",
     "clear",
@@ -15144,7 +15144,7 @@ var A,g=(A="file:///build/woff2-wasm.js",function(g={}){g.ready=new Promise((A,g
         }`;D&&(Y+="var destructors = [];\n");var c=D?"destructors":"null",h=["throwBindingError","invoker","fn","runDestructors","retType","classParam"],F=[f,B,I,AD,g[0],g[1]];w&&(Y+="var thisWired = classParam.toWireType("+c+", this);\n");for(var G=0;G<E-2;++G)Y+="var arg"+G+"Wired = argType"+G+".toWireType("+c+", arg"+G+"); // "+g[G+2].name+"\n",h.push("argType"+G),F.push(g[G+2]);if(w&&(L="thisWired"+(L.length>0?", ":"")+L),Y+=(i||Q?"var rv = ":"")+"invoker(fn"+(L.length>0?", ":"")+L+");\n",D)Y+="runDestructors(destructors);\n";else for(var G=w?1:2;G<g.length;++G){var s=1===G?"thisWired":"arg"+(G-2)+"Wired";null!==g[G].destructorFunction&&(Y+=s+"_dtor("+s+"); // "+g[G].name+"\n",h.push(s+"_dtor"),F.push(g[G].destructorFunction));}return i&&(Y+="var ret = retType.fromWireType(rv);\nreturn ret;\n"),Y+="}\n",h.push(Y),(function(A,g){if(!(A instanceof Function))throw TypeError(`new_ called with constructor type ${typeof A} which is not a function`);var C=AG(A.name||"unknownFunctionName",function(){});C.prototype=A.prototype;var B=new C,I=A.apply(B,g);return I instanceof Object?I:B})(Function,h).apply(null,F)}(A,[C[0],null].concat(C.slice(1)),0,I,Q,E),g-1),[]});},b:(A,g,C,B,I)=>{g=P(g);var Q=A=>A;if(0===B){var E=32-8*C;Q=A=>A<<E>>>E;}var w=g.includes("unsigned"),D=(A,g)=>{};AA(A,{name:g,fromWireType:Q,toWireType:w?function(A,g){return D(g,this.name),g>>>0}:function(A,g){return D(g,this.name),g},argPackAdvance:8,readValueFromPointer:AH(g,C,0!==B),destructorFunction:null});},a:(A,g,C)=>{var B=[Int8Array,Uint8Array,Int16Array,Uint16Array,Int32Array,Uint32Array,Float32Array,Float64Array][g];function I(A){var g=L[A>>2],C=L[A+4>>2];return new B(w.buffer,C,g)}AA(A,{name:C=P(C),fromWireType:I,argPackAdvance:8,readValueFromPointer:I},{ignoreDuplicateRegistrations:!0});},g:(A,g)=>{var C="std::string"===(g=P(g));AA(A,{name:g,fromWireType(A){var g,B=L[A>>2],I=A+4;if(C)for(var Q=I,E=0;E<=B;++E){var w=I+E;if(E==B||0==D[w]){var G=w-Q,i=Ay(Q,G);void 0===g?g=i:g+="\x00"+i,Q=w+1;}}else {for(var o=Array(B),E=0;E<B;++E)o[E]=String.fromCharCode(D[I+E]);g=o.join("");}return AO(A),g},toWireType(A,g){g instanceof ArrayBuffer&&(g=new Uint8Array(g));var B,I="string"==typeof g;I||g instanceof Uint8Array||g instanceof Uint8ClampedArray||g instanceof Int8Array||f("Cannot pass non-string to std::string"),B=C&&I?AM(g):g.length;var Q=Av(4+B+1),E=Q+4;if(L[Q>>2]=B,C&&I)AZ(g,E,B+1);else if(I)for(var w=0;w<B;++w){var G=g.charCodeAt(w);G>255&&(AO(E),f("String has UTF-16 code units that do not fit in 8 bits")),D[E+w]=G;}else for(var w=0;w<B;++w)D[E+w]=g[w];return null!==A&&A.push(AO,Q),Q},argPackAdvance:8,readValueFromPointer:Ak,destructorFunction(A){AO(A);}});},d:(A,g,C)=>{var B,I,Q,E,w;C=P(C),2===g?(B=Ap,I=Ab,E=Al,Q=()=>i,w=1):4===g&&(B=AS,I=Am,E=Aq,Q=()=>L,w=2),AA(A,{name:C,fromWireType:A=>{for(var C,I=L[A>>2],E=Q(),D=A+4,G=0;G<=I;++G){var i=A+4+G*g;if(G==I||0==E[i>>w]){var o=i-D,Y=B(D,o);void 0===C?C=Y:C+="\x00"+Y,D=i+g;}}return AO(A),C},toWireType:(A,B)=>{"string"!=typeof B&&f(`Cannot pass non-string to C++ string type ${C}`);var Q=E(B),D=Av(4+Q+g);return L[D>>2]=Q>>w,I(B,D+4,Q+g),null!==A&&A.push(AO,D),D},argPackAdvance:8,readValueFromPointer:AQ,destructorFunction(A){AO(A);}});},j:(A,g)=>{AA(A,{isVoid:!0,name:g=P(g),argPackAdvance:0,fromWireType:()=>void 0,toWireType:(A,g)=>void 0});},l:AB,m:A=>{A>4&&(AC.get(A).refcount+=1);},h:(A,g)=>{var C=(A=At(A,"_emval_take_value")).readValueFromPointer(g);return AI.toHandle(C)},o:()=>{X("");},q:(A,g,C)=>D.copyWithin(A,g,g+C),p:A=>{var g=D.length;A>>>=0;var C=AV();if(A>C)return !1;for(var B=(A,g)=>A+(g-A%g)%g,I=1;I<=4;I*=2){var Q=g*(1+.2/I);if(Q=Math.min(Q,A+100663296),AX(Math.min(C,B(Math.max(A,Q),65536))))return !0}return !1},k:(A,g)=>{An(A);}},Aj=function(){var A,C={a:Ax};function w(A,C){var B;return E=(Aj=A.exports).s,b(),K=Aj.u,B=Aj.t,S.unshift(B),function(A){if(q--,g.monitorRunDependencies&&g.monitorRunDependencies(q),0==q&&(V)){var C=V;V=null,C();}}(),Aj}if(q++,g.monitorRunDependencies&&g.monitorRunDependencies(q),g.instantiateWasm)try{return g.instantiateWasm(C,w)}catch(A){y(`Module.instantiateWasm callback failed with error: ${A}`),B(A);}return (A=h,Promise.resolve().then(()=>(function(A){if(A==h&&Q)return new Uint8Array(Q);var g=function(A){if(n(A))return function(A){try{for(var g=atob(A),C=new Uint8Array(g.length),B=0;B<g.length;++B)C[B]=g.charCodeAt(B);return C}catch(A){throw Error("Converting base64 string to bytes failed.")}}(A.slice(u.length))}(A);if(g)return g;throw "both async and sync fetching of the wasm failed"})(A)).then(A=>WebAssembly.instantiate(A,C)).then(A=>A).then(function(A){w(A.instance);},A=>{y(`failed to asynchronously prepare wasm: ${A}`),X(A);})).catch(B),{}}(),Av=A=>(Av=Aj.v)(A),AO=A=>(AO=Aj.w)(A),Ar=A=>(Ar=Aj.x)(A),AP=(g.__embind_initialize_bindings=()=>(g.__embind_initialize_bindings=Aj.y)(),A=>(AP=Aj.z)(A));function Az(){!(q>0)&&(function(){if(g.preRun)for("function"==typeof g.preRun&&(g.preRun=[g.preRun]);g.preRun.length;){var A;A=g.preRun.shift(),l.unshift(A);}j(l);}(),q>0||(g.setStatus?(g.setStatus("Running..."),setTimeout(function(){setTimeout(function(){g.setStatus("");},1),A();},1)):A()));function A(){!R&&(R=!0,g.calledRun=!0,p||(j(S),C(g),g.onRuntimeInitialized&&g.onRuntimeInitialized(),function(){if(g.postRun)for("function"==typeof g.postRun&&(g.postRun=[g.postRun]);g.postRun.length;){var A;A=g.postRun.shift(),m.unshift(A);}j(m);}()));}}if(V=function A(){R||Az(),R||(V=A);},g.preInit)for("function"==typeof g.preInit&&(g.preInit=[g.preInit]);g.preInit.length>0;)g.preInit.pop()();return Az(),g.ready});let C=new Promise(A=>{g({onRuntimeInitialized(){A(this);}});});
 async function B(){let A=await C;return new Promise(g=>{setTimeout(()=>{g(A);},0);})}async function Q(A){let g=await B(),C=await g.decompress(A);if(!C)throw Error("Failed to decompress the font data.");return Uint8Array.from(C)}
 
-const _console$m = createConsole("DisplaySpriteSheetUtils", { log: true });
+const _console$m = createConsole("DisplaySpriteSheetUtils", { log: false });
 const spriteHeaderLength = 3 * 2;
 function calculateSpriteSheetHeaderLength(numberOfSprites) {
     return 2 + numberOfSprites * 2 + numberOfSprites * spriteHeaderLength;
@@ -15323,7 +15323,7 @@ function reduceSpriteSheet(spriteSheet, spriteNames) {
     return reducedSpriteName;
 }
 
-const _console$l = createConsole("DisplayBitmapUtils", { log: true });
+const _console$l = createConsole("DisplayBitmapUtils", { log: false });
 const drawBitmapHeaderLength = 2 + 2 + 2 + 4 + 1 + 2;
 function getBitmapData(bitmap) {
     const pixelDataLength = getBitmapNumberOfBytes(bitmap);
@@ -15449,8 +15449,6 @@ async function quantizeImage(image, width, height, numberOfColors, colors, canva
 function resizeImage(image, width, height, canvas) {
     canvas = canvas || document.createElement("canvas");
     const ctx = canvas.getContext("2d", { willReadFrequently: true });
-    let { naturalWidth: imageWidth, naturalHeight: imageHeight } = image;
-    _console$l.log({ imageWidth, imageHeight });
     canvas.width = width;
     canvas.height = height;
     ctx.imageSmoothingEnabled = false;
@@ -15523,7 +15521,7 @@ function assertValidBitmapPixels(bitmap) {
         _console$l.assertRangeWithError(`bitmap.pixels[${index}]`, pixel, 0, bitmap.numberOfColors - 1);
     });
 }
-async function canvasToSprite(canvas, spriteName, numberOfColors, paletteName, overridePalette, spriteSheet, paletteOffset) {
+async function canvasToSprite(canvas, spriteName, numberOfColors, paletteName, overridePalette, spriteSheet, paletteOffset = 0) {
     const { width, height } = canvas;
     let palette = spriteSheet.palettes?.find((palette) => palette.name == paletteName);
     if (!palette) {
@@ -15532,10 +15530,10 @@ async function canvasToSprite(canvas, spriteName, numberOfColors, paletteName, o
             numberOfColors,
             colors: new Array(numberOfColors).fill("#000000"),
         };
+        spriteSheet.palettes = spriteSheet.palettes || [];
         spriteSheet.palettes?.push(palette);
     }
-    console.log("pallete", palette);
-    _console$l.assertWithError(numberOfColors + paletteOffset <= palette.numberOfColors, `invalid numberOfColors ${numberOfColors} + offset ${paletteOffset} (max ${palette.numberOfColors})`);
+    _console$l.log("pallete", palette);
     const sprite = {
         name: spriteName,
         width,
@@ -15575,7 +15573,7 @@ async function canvasToSprite(canvas, spriteName, numberOfColors, paletteName, o
     }
     return { sprite, blob };
 }
-async function imageToSprite(image, spriteName, width, height, numberOfColors, paletteName, overridePalette, spriteSheet, paletteOffset) {
+async function imageToSprite(image, spriteName, width, height, numberOfColors, paletteName, overridePalette, spriteSheet, paletteOffset = 0) {
     const canvas = resizeImage(image, width, height);
     return canvasToSprite(canvas, spriteName, numberOfColors, paletteName, overridePalette, spriteSheet, paletteOffset);
 }
@@ -15592,7 +15590,7 @@ async function canvasToSpriteSheet(canvas, spriteSheetName, numberOfColors, pale
         sprites: [],
     };
     if (maxFileLength == undefined) {
-        await canvasToSprite(canvas, "image", numberOfColors, paletteName, true, spriteSheet, 0);
+        await canvasToSprite(canvas, "image", numberOfColors, paletteName, true, spriteSheet);
     }
     else {
         const { width, height } = canvas;
@@ -15622,7 +15620,7 @@ async function canvasToSpriteSheet(canvas, spriteSheetName, numberOfColors, pale
         });
         if (maxSpriteHeight >= height) {
             _console$l.log("image is small enough for a single sprite");
-            await canvasToSprite(canvas, "image", numberOfColors, paletteName, true, spriteSheet, 0);
+            await canvasToSprite(canvas, "image", numberOfColors, paletteName, true, spriteSheet);
         }
         else {
             const { colors } = await quantizeCanvas(canvas, numberOfColors);
@@ -15639,7 +15637,7 @@ async function canvasToSpriteSheet(canvas, spriteSheetName, numberOfColors, pale
                     width,
                     spriteHeight,
                 });
-                await canvasToSprite(spriteCanvas, `image${imageIndex}`, numberOfColors, paletteName, false, spriteSheet, 0);
+                await canvasToSprite(spriteCanvas, `image${imageIndex}`, numberOfColors, paletteName, false, spriteSheet);
                 imageIndex++;
             }
         }
@@ -15651,7 +15649,7 @@ async function imageToSpriteSheet(image, spriteSheetName, width, height, numberO
     return canvasToSpriteSheet(canvas, spriteSheetName, numberOfColors, paletteName, maxFileLength);
 }
 
-const _console$k = createConsole("DisplayManagerInterface", { log: true });
+const _console$k = createConsole("DisplayManagerInterface", { log: false });
 async function runDisplayContextCommand(displayManager, command, sendImmediately) {
     if (command.hide) {
         return;
@@ -16044,6 +16042,7 @@ async function selectSpriteSheetPalette(displayManagerInterface, paletteName, of
         }
         displayManagerInterface.setColor(index + offset, color, false);
         displayManagerInterface.setColorOpacity(index + offset, opacity, false);
+        displayManagerInterface.selectSpriteColor(index, index + offset);
     }
     if (sendImmediately) {
         displayManagerInterface.flushContextCommands();
@@ -16084,15 +16083,18 @@ async function selectSpritePaletteSwap(displayManagerInterface, spriteName, pale
         displayManagerInterface.flushContextCommands();
     }
 }
-async function drawSpriteFromSpriteSheet(displayManagerInterface, offsetX, offsetY, spriteName, spriteSheet, sendImmediately) {
+async function drawSpriteFromSpriteSheet(displayManagerInterface, offsetX, offsetY, spriteName, spriteSheet, paletteName, sendImmediately) {
     const reducedSpriteSheet = reduceSpriteSheet(spriteSheet, [spriteName]);
     await displayManagerInterface.uploadSpriteSheet(reducedSpriteSheet);
     await displayManagerInterface.selectSpriteSheet(spriteSheet.name);
     await displayManagerInterface.drawSprite(offsetX, offsetY, spriteName, sendImmediately);
+    if (paletteName != undefined) {
+        await displayManagerInterface.selectSpriteSheetPalette(paletteName);
+    }
 }
 
 var _DisplayManager_instances, _DisplayManager_dispatchEvent_get, _DisplayManager_isAvailable, _DisplayManager_assertDisplayIsAvailable, _DisplayManager_parseIsDisplayAvailable, _DisplayManager_contextStateHelper, _DisplayManager_onContextStateUpdate, _DisplayManager_displayStatus, _DisplayManager_parseDisplayStatus, _DisplayManager_updateDisplayStatus, _DisplayManager_sendDisplayCommand, _DisplayManager_assertIsAwake, _DisplayManager_assertIsNotAwake, _DisplayManager_displayInformation, _DisplayManager_parseDisplayInformation, _DisplayManager_brightness, _DisplayManager_parseDisplayBrightness, _DisplayManager_assertValidDisplayContextCommand, _DisplayManager_maxCommandDataLength_get, _DisplayManager_displayContextCommandBuffers, _DisplayManager_sendDisplayContextCommand, _DisplayManager_sendContextCommands, _DisplayManager_colors, _DisplayManager_opacities, _DisplayManager_assertValidBitmapSize, _DisplayManager_isReady, _DisplayManager_lastReadyTime, _DisplayManager_lastShowRequestTime, _DisplayManager_minReadyInterval, _DisplayManager_waitBeforeReady, _DisplayManager_parseDisplayReady, _DisplayManager_spriteSheets, _DisplayManager_spriteSheetIndices, _DisplayManager_setSpriteSheetName, _DisplayManager_pendingSpriteSheet, _DisplayManager_pendingSpriteSheetName, _DisplayManager_updateSpriteSheetName, _DisplayManager_parseSpriteSheetIndex, _DisplayManager_mtu, _DisplayManager_isServerSide;
-const _console$j = createConsole("DisplayManager", { log: true });
+const _console$j = createConsole("DisplayManager", { log: false });
 const DefaultNumberOfDisplayColors = 16;
 const DisplayCommands = ["sleep", "wake"];
 const DisplayStatuses = ["awake", "asleep"];
@@ -17295,8 +17297,8 @@ class DisplayManager {
         }
         await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "drawSprite", dataView.buffer, sendImmediately);
     }
-    async drawSpriteFromSpriteSheet(offsetX, offsetY, spriteName, spriteSheet, sendImmediately) {
-        return drawSpriteFromSpriteSheet(this, offsetX, offsetY, spriteName, spriteSheet, sendImmediately);
+    async drawSpriteFromSpriteSheet(offsetX, offsetY, spriteName, spriteSheet, paletteName, sendImmediately) {
+        return drawSpriteFromSpriteSheet(this, offsetX, offsetY, spriteName, spriteSheet, paletteName, sendImmediately);
     }
     parseMessage(messageType, dataView) {
         _console$j.log({ messageType, dataView });
@@ -21067,7 +21069,7 @@ _Device_ReconnectOnDisconnection = { value: false };
 _Device_ClearSensorConfigurationOnLeave = { value: true };
 
 var _DisplayCanvasHelper_instances, _DisplayCanvasHelper_eventDispatcher, _DisplayCanvasHelper_dispatchEvent_get, _DisplayCanvasHelper_canvas, _DisplayCanvasHelper_context, _DisplayCanvasHelper_updateCanvas, _DisplayCanvasHelper_frontDrawStack, _DisplayCanvasHelper_rearDrawStack, _DisplayCanvasHelper_drawFrontDrawStack, _DisplayCanvasHelper_applyTransparencyToCanvas, _DisplayCanvasHelper_drawBackground, _DisplayCanvasHelper_applyTransparency, _DisplayCanvasHelper_device, _DisplayCanvasHelper_boundDeviceEventListeners, _DisplayCanvasHelper_onDeviceIsConnected, _DisplayCanvasHelper_onDeviceConnected, _DisplayCanvasHelper_onDeviceNotConnected, _DisplayCanvasHelper_onDeviceDisplayReady, _DisplayCanvasHelper_onDeviceDisplaySpriteSheetUploadStart, _DisplayCanvasHelper_onDeviceDisplaySpriteSheetUploadProgress, _DisplayCanvasHelper_onDeviceDisplaySpriteSheetUploadComplete, _DisplayCanvasHelper_updateDevice, _DisplayCanvasHelper_numberOfColors, _DisplayCanvasHelper_colors, _DisplayCanvasHelper_updateDeviceColors, _DisplayCanvasHelper_opacities, _DisplayCanvasHelper_updateDeviceOpacity, _DisplayCanvasHelper_contextStateHelper, _DisplayCanvasHelper_onContextStateUpdate, _DisplayCanvasHelper_resetContextState, _DisplayCanvasHelper_updateDeviceContextState, _DisplayCanvasHelper_interval, _DisplayCanvasHelper_isReady, _DisplayCanvasHelper_clearRectToCanvas, _DisplayCanvasHelper_save, _DisplayCanvasHelper_restore, _DisplayCanvasHelper_transformContext, _DisplayCanvasHelper_translateContext, _DisplayCanvasHelper_rotateContext, _DisplayCanvasHelper_scaleContext, _DisplayCanvasHelper_correctAlignmentTranslation, _DisplayCanvasHelper_rotateBoundingBox, _DisplayCanvasHelper_offsetBoundingBox, _DisplayCanvasHelper_clearBoundingBoxOnDraw, _DisplayCanvasHelper_clearBoundingBox, _DisplayCanvasHelper_getOuterPadding, _DisplayCanvasHelper_getRectBoundingBox, _DisplayCanvasHelper_applyClip, _DisplayCanvasHelper_applyRotationClip, _DisplayCanvasHelper_hexToRgbWithOpacity, _DisplayCanvasHelper_hexToRgbStringWithOpacity, _DisplayCanvasHelper_getColorOpacity, _DisplayCanvasHelper_colorIndexToRgbString, _DisplayCanvasHelper_updateContext, _DisplayCanvasHelper_drawRectToCanvas, _DisplayCanvasHelper_drawRoundRectToCanvas, _DisplayCanvasHelper_getCircleBoundingBox, _DisplayCanvasHelper_drawCircleToCanvas, _DisplayCanvasHelper_getEllipseBoundingBox, _DisplayCanvasHelper_drawEllipseToCanvas, _DisplayCanvasHelper_getPolygonBoundingBox, _DisplayCanvasHelper_drawRegularPolygonToCanvas, _DisplayCanvasHelper_getLocalSegmentBoundingBox, _DisplayCanvasHelper_getSegmentBoundingBox, _DisplayCanvasHelper_drawSegmentToCanvas, _DisplayCanvasHelper_drawSegmentsToCanvas, _DisplayCanvasHelper_drawArcToCanvas, _DisplayCanvasHelper_drawArcEllipseToCanvas, _DisplayCanvasHelper_bitmapCanvas, _DisplayCanvasHelper_bitmapContext, _DisplayCanvasHelper_drawBitmapToCanvas, _DisplayCanvasHelper_spriteSheets, _DisplayCanvasHelper_spriteSheetIndices, _DisplayCanvasHelper_runSpriteCommand, _DisplayCanvasHelper_drawSpriteToCanvas, _DisplayCanvasHelper_brightness, _DisplayCanvasHelper_brightnessOpacities, _DisplayCanvasHelper_brightnessOpacity_get, _DisplayCanvasHelper_updateDeviceBrightness, _DisplayCanvasHelper_updateDeviceSpriteSheets, _DisplayCanvasHelper_updateDeviceSelectedSpriteSheet, _DisplayCanvasHelper_setCanvasContextTransform, _DisplayCanvasHelper_resetCanvasContextTransform, _DisplayCanvasHelper_setClearCanvasBoundingBoxOnDraw, _DisplayCanvasHelper_ignoreDevice, _DisplayCanvasHelper_setIgnoreDevice, _DisplayCanvasHelper_useSpriteColorIndices, _DisplayCanvasHelper_setUseSpriteColorIndices, _DisplayCanvasHelper_spriteContextStack, _DisplayCanvasHelper_spriteStack, _DisplayCanvasHelper_saveContextForSprite, _DisplayCanvasHelper_restoreContextForSprite, _DisplayCanvasHelper_runPreviewSpriteCommand;
-const _console$6 = createConsole("DisplayCanvasHelper", { log: true });
+const _console$6 = createConsole("DisplayCanvasHelper", { log: false });
 const DisplayCanvasHelperEventTypes = [
     "contextState",
     "numberOfColors",
@@ -21978,8 +21980,8 @@ class DisplayCanvasHelper {
             await this.device.drawDisplaySprite(offsetX, offsetY, spriteName, sendImmediately);
         }
     }
-    async drawSpriteFromSpriteSheet(offsetX, offsetY, spriteName, spriteSheet, sendImmediately) {
-        return drawSpriteFromSpriteSheet(this, offsetX, offsetY, spriteName, spriteSheet, sendImmediately);
+    async drawSpriteFromSpriteSheet(offsetX, offsetY, spriteName, spriteSheet, paletteName, sendImmediately) {
+        return drawSpriteFromSpriteSheet(this, offsetX, offsetY, spriteName, spriteSheet, paletteName, sendImmediately);
     }
     get brightness() {
         return __classPrivateFieldGet(this, _DisplayCanvasHelper_brightness, "f");
@@ -23762,5 +23764,5 @@ const ThrottleUtils = {
     debounce,
 };
 
-export { CameraCommands, CameraConfigurationTypes, ContinuousSensorTypes, DefaultNumberOfDisplayColors, DefaultNumberOfPressureSensors, Device, DeviceManager$1 as DeviceManager, DevicePair, DevicePairTypes, DeviceTypes, DisplayAlignments, DisplayBrightnesses, DisplayCanvasHelper, DisplayContextCommandTypes, DisplayDirections, DisplayPixelDepths, DisplaySegmentCaps, DisplaySpriteContextCommandTypes, environment as Environment, EventUtils, FileTransferDirections, FileTypes, Font, MaxNameLength, MaxNumberOfVibrationWaveformEffectSegments, MaxNumberOfVibrationWaveformSegments, MaxSensorRate, MaxSpriteSheetNameLength, MaxVibrationWaveformEffectSegmentDelay, MaxVibrationWaveformEffectSegmentLoopCount, MaxVibrationWaveformEffectSequenceLoopCount, MaxVibrationWaveformSegmentDuration, MaxWifiPasswordLength, MaxWifiSSIDLength, MicrophoneCommands, MicrophoneConfigurationTypes, MicrophoneConfigurationValues, MinNameLength, MinSpriteSheetNameLength, MinWifiPasswordLength, MinWifiSSIDLength, RangeHelper, SensorRateStep, SensorTypes, Sides, TfliteSensorTypes, TfliteTasks, ThrottleUtils, VibrationLocations, VibrationTypes, VibrationWaveformEffects, WebSocketClient, canvasToSprite, canvasToSpriteSheet, getFontUnicodeRange, hexToRGB, imageToSprite, imageToSpriteSheet, maxDisplayScale, parseFont, pixelDepthToNumberOfColors, quantizeImage, resizeAndQuantizeImage, rgbToHex, setAllConsoleLevelFlags, setConsoleLevelFlagsForType, wait };
+export { CameraCommands, CameraConfigurationTypes, ContinuousSensorTypes, DefaultNumberOfDisplayColors, DefaultNumberOfPressureSensors, Device, DeviceManager$1 as DeviceManager, DevicePair, DevicePairTypes, DeviceTypes, DisplayAlignments, DisplayBrightnesses, DisplayCanvasHelper, DisplayContextCommandTypes, DisplayDirections, DisplayPixelDepths, DisplaySegmentCaps, DisplaySpriteContextCommandTypes, environment as Environment, EventUtils, FileTransferDirections, FileTypes, Font, MaxNameLength, MaxNumberOfVibrationWaveformEffectSegments, MaxNumberOfVibrationWaveformSegments, MaxSensorRate, MaxSpriteSheetNameLength, MaxVibrationWaveformEffectSegmentDelay, MaxVibrationWaveformEffectSegmentLoopCount, MaxVibrationWaveformEffectSequenceLoopCount, MaxVibrationWaveformSegmentDuration, MaxWifiPasswordLength, MaxWifiSSIDLength, MicrophoneCommands, MicrophoneConfigurationTypes, MicrophoneConfigurationValues, MinNameLength, MinSpriteSheetNameLength, MinWifiPasswordLength, MinWifiSSIDLength, RangeHelper, SensorRateStep, SensorTypes, Sides, TfliteSensorTypes, TfliteTasks, ThrottleUtils, VibrationLocations, VibrationTypes, VibrationWaveformEffects, WebSocketClient, canvasToSprite, canvasToSpriteSheet, getFontUnicodeRange, hexToRGB, imageToSprite, imageToSpriteSheet, maxDisplayScale, parseFont, pixelDepthToNumberOfColors, quantizeImage, resizeAndQuantizeImage, resizeImage, rgbToHex, setAllConsoleLevelFlags, setConsoleLevelFlagsForType, wait };
 //# sourceMappingURL=brilliantsole.module.js.map

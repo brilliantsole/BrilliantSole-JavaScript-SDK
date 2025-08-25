@@ -17,7 +17,7 @@ import {
   DisplaySpriteSheet,
 } from "./DisplaySpriteSheetUtils.ts";
 
-const _console = createConsole("DisplayBitmapUtils", { log: true });
+const _console = createConsole("DisplayBitmapUtils", { log: false });
 
 export const drawBitmapHeaderLength = 2 + 2 + 2 + 4 + 1 + 2; // x, y, width, numberOfPixels, numberOfColors, dataLength
 
@@ -190,7 +190,7 @@ export async function quantizeImage(
 }
 
 export function resizeImage(
-  image: HTMLImageElement,
+  image: CanvasImageSource,
   width: number,
   height: number,
   canvas?: HTMLCanvasElement
@@ -198,9 +198,6 @@ export function resizeImage(
   canvas = canvas || document.createElement("canvas");
 
   const ctx = canvas.getContext("2d", { willReadFrequently: true })!;
-
-  let { naturalWidth: imageWidth, naturalHeight: imageHeight } = image;
-  _console.log({ imageWidth, imageHeight });
 
   canvas.width = width;
   canvas.height = height;
@@ -355,7 +352,7 @@ export async function canvasToSprite(
   paletteName: string,
   overridePalette: boolean,
   spriteSheet: DisplaySpriteSheet,
-  paletteOffset: number
+  paletteOffset = 0
 ) {
   const { width, height } = canvas;
 
@@ -368,14 +365,15 @@ export async function canvasToSprite(
       numberOfColors,
       colors: new Array(numberOfColors).fill("#000000"),
     };
+    spriteSheet.palettes = spriteSheet.palettes || [];
     spriteSheet.palettes?.push(palette);
   }
-  console.log("pallete", palette);
+  _console.log("pallete", palette);
 
-  _console.assertWithError(
-    numberOfColors + paletteOffset <= palette.numberOfColors,
-    `invalid numberOfColors ${numberOfColors} + offset ${paletteOffset} (max ${palette.numberOfColors})`
-  );
+  // _console.assertWithError(
+  //   numberOfColors + paletteOffset <= palette.numberOfColors,
+  //   `invalid numberOfColors ${numberOfColors} + offset ${paletteOffset} (max ${palette.numberOfColors})`
+  // );
 
   const sprite: DisplaySprite = {
     name: spriteName,
@@ -434,7 +432,7 @@ export async function imageToSprite(
   paletteName: string,
   overridePalette: boolean,
   spriteSheet: DisplaySpriteSheet,
-  paletteOffset: number
+  paletteOffset = 0
 ) {
   const canvas = resizeImage(image, width, height);
   return canvasToSprite(
@@ -480,8 +478,7 @@ export async function canvasToSpriteSheet(
       numberOfColors,
       paletteName,
       true,
-      spriteSheet,
-      0
+      spriteSheet
     );
   } else {
     const { width, height } = canvas;
@@ -527,8 +524,7 @@ export async function canvasToSpriteSheet(
         numberOfColors,
         paletteName,
         true,
-        spriteSheet,
-        0
+        spriteSheet
       );
     } else {
       const { colors } = await quantizeCanvas(canvas, numberOfColors);
@@ -553,8 +549,7 @@ export async function canvasToSpriteSheet(
           numberOfColors,
           paletteName,
           false,
-          spriteSheet,
-          0
+          spriteSheet
         );
         imageIndex++;
       }

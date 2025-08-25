@@ -28,7 +28,7 @@ import {
 } from "./DisplayUtils.ts";
 import { degToRad, Vector2 } from "./MathUtils.ts";
 
-const _console = createConsole("DisplayManagerInterface", { log: true });
+const _console = createConsole("DisplayManagerInterface", { log: false });
 
 export interface DisplayManagerInterface {
   get isReady(): boolean;
@@ -393,6 +393,7 @@ export interface DisplayManagerInterface {
     offsetY: number,
     spriteName: string,
     spriteSheet: DisplaySpriteSheet,
+    paletteName?: string,
     sendImmediately?: boolean
   ): Promise<void>;
 
@@ -1037,6 +1038,7 @@ export async function selectSpriteSheetPalette(
     }
     displayManagerInterface.setColor(index + offset, color, false);
     displayManagerInterface.setColorOpacity(index + offset, opacity, false);
+    displayManagerInterface.selectSpriteColor(index, index + offset);
   }
 
   if (sendImmediately) {
@@ -1114,6 +1116,7 @@ export async function drawSpriteFromSpriteSheet(
   offsetY: number,
   spriteName: string,
   spriteSheet: DisplaySpriteSheet,
+  paletteName?: string,
   sendImmediately?: boolean
 ) {
   const reducedSpriteSheet = reduceSpriteSheet(spriteSheet, [spriteName]);
@@ -1125,4 +1128,7 @@ export async function drawSpriteFromSpriteSheet(
     spriteName,
     sendImmediately
   );
+  if (paletteName != undefined) {
+    await displayManagerInterface.selectSpriteSheetPalette(paletteName);
+  }
 }

@@ -151,7 +151,7 @@ export function drawColorImage(uint8Array, width, height, canvas, context) {
 const resizeCanvas = document.createElement("canvas");
 const resizeContext = resizeCanvas.getContext("2d");
 /**
- * @param {HTMLImageElement} image
+ * @param {CanvasImageSource} image
  * @param {number} newWidth
  * @param {number} newHeight
  */

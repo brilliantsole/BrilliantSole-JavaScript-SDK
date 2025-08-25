@@ -11,7 +11,7 @@ import opentype, { Glyph, Font } from "opentype.js";
 import { decompress } from "woff2-encoder";
 import RangeHelper from "./RangeHelper.ts";
 
-const _console = createConsole("DisplaySpriteSheetUtils", { log: true });
+const _console = createConsole("DisplaySpriteSheetUtils", { log: false });
 
 export type DisplaySpritePaletteSwap = {
   name: string;

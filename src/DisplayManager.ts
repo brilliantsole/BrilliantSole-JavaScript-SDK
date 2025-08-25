@@ -93,7 +93,7 @@ import {
 import { Font } from "opentype.js";
 import { wait } from "./utils/Timer.ts";
 
-const _console = createConsole("DisplayManager", { log: true });
+const _console = createConsole("DisplayManager", { log: false });
 
 export const DefaultNumberOfDisplayColors = 16;
 
@@ -2163,6 +2163,7 @@ class DisplayManager implements DisplayManagerInterface {
     offsetY: number,
     spriteName: string,
     spriteSheet: DisplaySpriteSheet,
+    paletteName?: string,
     sendImmediately?: boolean
   ) {
     return drawSpriteFromSpriteSheet(
@@ -2171,6 +2172,7 @@ class DisplayManager implements DisplayManagerInterface {
       offsetY,
       spriteName,
       spriteSheet,
+      paletteName,
       sendImmediately
     );
   }

@@ -39,7 +39,7 @@ import {
   Vector2,
 } from "./MathUtils.ts";
 
-const _console = createConsole("DisplayContextCommand", { log: true });
+const _console = createConsole("DisplayContextCommand", { log: false });
 
 export const DisplayContextCommandTypes = [
   "show",

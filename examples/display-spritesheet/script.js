@@ -265,9 +265,6 @@ displayCanvasHelper.addEventListener("color", (event) => {
 const updateSpriteColorIndices = () => {
   displayCanvasHelper.spriteColorIndices.forEach(
     (colorIndex, spriteColorIndex) => {
-      if (selectedPalette) {
-        selectedPalette.spriteColorIndices[spriteColorIndex] = colorIndex;
-      }
       const spriteColorIndexContainer =
         spriteColorIndicesContainer.querySelectorAll(".spriteColorIndex")[
           spriteColorIndex
@@ -389,15 +386,6 @@ displayCanvasHelper.addEventListener("colorOpacity", (event) => {
   const { colorIndex, opacity } = event.message;
   selectedPalette.opacities[colorIndex] = opacity;
 });
-displayCanvasHelper.addEventListener("contextState", (event) => {
-  if (!selectedPalette) {
-    return;
-  }
-  const { differences, contextState } = event.message;
-  if (differences.includes("spriteColorIndices")) {
-    selectedPalette.spriteColorIndices = contextState.spriteColorIndices;
-  }
-});
 
 const paletteNameInput = document.getElementById("paletteName");
 paletteNameInput.addEventListener("input", () => {
@@ -504,7 +492,7 @@ const onNumberOfPaletteColorsUpdate = () => {
     );
     displayCanvasHelper.setColorOpacity(
       colorIndex,
-      selectedPalette?.opacities[colorIndex] ?? 1
+      selectedPalette?.opacities?.[colorIndex] ?? 1
     );
     displayCanvasHelper.selectSpriteColor(colorIndex, colorIndex);
   }

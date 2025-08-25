@@ -12,7 +12,7 @@ export declare function quantizeImage(image: HTMLImageElement, width: number, he
     colors: string[];
     colorIndices: number[];
 }>;
-export declare function resizeImage(image: HTMLImageElement, width: number, height: number, canvas?: HTMLCanvasElement): HTMLCanvasElement;
+export declare function resizeImage(image: CanvasImageSource, width: number, height: number, canvas?: HTMLCanvasElement): HTMLCanvasElement;
 export declare function cropCanvas(canvas: HTMLCanvasElement, x: number, y: number, width: number, height: number, targetCanvas?: HTMLCanvasElement): HTMLCanvasElement;
 export declare function removeAlphaFromCanvas(canvas: HTMLCanvasElement): HTMLCanvasElement;
 export declare function canvasToBlob(canvas: HTMLCanvasElement, type?: "image/png" | "image/jpeg", quality?: number): Promise<Blob>;
@@ -27,11 +27,11 @@ export declare function imageToBitmap(image: HTMLImageElement, width: number, he
 }>;
 export declare function getBitmapNumberOfBytes(bitmap: DisplayBitmap): number;
 export declare function assertValidBitmapPixels(bitmap: DisplayBitmap): void;
-export declare function canvasToSprite(canvas: HTMLCanvasElement, spriteName: string, numberOfColors: number, paletteName: string, overridePalette: boolean, spriteSheet: DisplaySpriteSheet, paletteOffset: number): Promise<{
+export declare function canvasToSprite(canvas: HTMLCanvasElement, spriteName: string, numberOfColors: number, paletteName: string, overridePalette: boolean, spriteSheet: DisplaySpriteSheet, paletteOffset?: number): Promise<{
     sprite: DisplaySprite;
     blob: Blob;
 }>;
-export declare function imageToSprite(image: HTMLImageElement, spriteName: string, width: number, height: number, numberOfColors: number, paletteName: string, overridePalette: boolean, spriteSheet: DisplaySpriteSheet, paletteOffset: number): Promise<{
+export declare function imageToSprite(image: HTMLImageElement, spriteName: string, width: number, height: number, numberOfColors: number, paletteName: string, overridePalette: boolean, spriteSheet: DisplaySpriteSheet, paletteOffset?: number): Promise<{
     sprite: DisplaySprite;
     blob: Blob;
 }>;

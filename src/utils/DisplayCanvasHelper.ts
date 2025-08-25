@@ -95,7 +95,7 @@ import {
 } from "./DisplaySpriteSheetUtils.ts";
 import { Font } from "opentype.js";
 
-const _console = createConsole("DisplayCanvasHelper", { log: true });
+const _console = createConsole("DisplayCanvasHelper", { log: false });
 
 export const DisplayCanvasHelperEventTypes = [
   "contextState",
@@ -2752,6 +2752,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     offsetY: number,
     spriteName: string,
     spriteSheet: DisplaySpriteSheet,
+    paletteName?: string,
     sendImmediately?: boolean
   ) {
     return drawSpriteFromSpriteSheet(
@@ -2760,6 +2761,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
       offsetY,
       spriteName,
       spriteSheet,
+      paletteName,
       sendImmediately
     );
   }
