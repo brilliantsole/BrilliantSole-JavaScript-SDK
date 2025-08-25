@@ -143,6 +143,7 @@ const normalizeEntity = (entity) => {
   const size = new THREE.Vector3();
   box.getSize(size);
   isTall = size.y >= size.x;
+  console.log({ isTall });
   const center = new THREE.Vector3();
   box.getCenter(center);
 
@@ -334,17 +335,21 @@ async function captureEntityRotations(
   const maxPitch = 80; // stop short of top pole
 
   //Single top pole (+90°)
-  modelEntity.object3D.rotation.set(THREE.MathUtils.degToRad(90), 0, 0);
+  if (isTall) {
+    modelEntity.object3D.rotation.set(THREE.MathUtils.degToRad(90), 0, 0);
+  } else {
+    modelEntity.object3D.rotation.set(Math.PI, 0, 0);
+  }
   if (!skipPicture) {
     await waitForFrame();
+    await BS.wait(waitTime);
+    const canvas = await captureModelSnapshot();
     captures.push({
-      euler: modelEntity.object3D.euler.clone(),
+      euler: modelEntity.object3D.rotation.clone(),
       quaternion: modelEntity.object3D.quaternion.clone(),
-      canvas: await captureModelSnapshot(),
+      canvas,
     });
   }
-
-  await BS.wait(waitTime);
 
   // Loop over pitch, skipping true poles
   for (let pitch = maxPitch; pitch >= minPitch; pitch -= step) {
@@ -352,12 +357,21 @@ async function captureEntityRotations(
       const yaw = i * step;
 
       // Rotate entity
-      modelEntity.object3D.rotation.set(
-        THREE.MathUtils.degToRad(pitch), // X = pitch
-        THREE.MathUtils.degToRad(yaw), // Y = yaw
-        THREE.MathUtils.degToRad(0), // Z = roll (upright),
-        "ZXY"
-      );
+      if (isTall) {
+        modelEntity.object3D.rotation.set(
+          THREE.MathUtils.degToRad(pitch), // X = pitch
+          THREE.MathUtils.degToRad(yaw), // Y = yaw
+          THREE.MathUtils.degToRad(0), // Z = roll (upright),
+          "ZXY"
+        );
+      } else {
+        modelEntity.object3D.rotation.set(
+          THREE.MathUtils.degToRad(pitch + 90), // X = pitch
+          THREE.MathUtils.degToRad(0), // Y = yaw
+          THREE.MathUtils.degToRad(yaw), // Z = roll (upright),
+          "XYZ"
+        );
+      }
 
       // Wait for next frame so rotation is applied
       await waitForFrame();
@@ -376,17 +390,21 @@ async function captureEntityRotations(
   }
 
   // Single bottom pole (-90°)
-  modelEntity.object3D.rotation.set(THREE.MathUtils.degToRad(-90), 0, 0);
+  if (isTall) {
+    modelEntity.object3D.rotation.set(THREE.MathUtils.degToRad(-90), 0, 0);
+  } else {
+    modelEntity.object3D.rotation.set(0, 0, 0);
+  }
   if (!skipPicture) {
     await waitForFrame();
+    await BS.wait(waitTime);
+    const canvas = await captureModelSnapshot();
     captures.push({
       euler: modelEntity.object3D.rotation.clone(),
       quaternion: modelEntity.object3D.quaternion.clone(),
-      canvas: await captureModelSnapshot(),
+      canvas,
     });
   }
-
-  await BS.wait(waitTime);
 
   modelEntity.object3D.rotation.set(0, 0, 0);
 
@@ -676,11 +694,18 @@ window.getModelScreenBoundingBox = getModelScreenBoundingBox;
 
 async function getClosestModelSprite() {
   const _quaternion = await getRelativeModelQuaternion();
-  const _euler = new THREE.Euler()
-    .setFromQuaternion(_quaternion)
-    .reorder("ZXY");
-  const roll = -THREE.MathUtils.radToDeg(_euler.z);
-  _euler.z = 0;
+  const _euler = new THREE.Euler().setFromQuaternion(_quaternion);
+  let rotation;
+  if (isTall) {
+    _euler.reorder("ZXY");
+    rotation = -THREE.MathUtils.radToDeg(_euler.z);
+    _euler.z = 0;
+  } else {
+    _euler.reorder("XYZ");
+    rotation = -THREE.MathUtils.radToDeg(_euler.y);
+    _euler.y = 0;
+  }
+
   _quaternion.setFromEuler(_euler);
   // console.log("euler", _euler);
 
@@ -708,7 +733,7 @@ async function getClosestModelSprite() {
 
   return {
     sprite,
-    roll,
+    rotation,
   };
 }
 let selectedImage;
@@ -966,8 +991,8 @@ const draw = async () => {
         "palette"
       );
     } else {
-      const { sprite, roll } = await getClosestModelSprite();
-      setDrawRotation(roll);
+      const { sprite, rotation } = await getClosestModelSprite();
+      setDrawRotation(rotation);
       await displayCanvasHelper.setRotation(drawRotation);
 
       if (uploadWholeSpriteSheet) {
