@@ -133,6 +133,7 @@ const cameraRigEntity = document.getElementById("cameraRig");
 // MODEL
 const modelEntity = document.getElementById("model");
 const testEntity = document.getElementById("test");
+let isTall = true;
 const normalizeEntity = (entity) => {
   const object3D = entity.getObject3D("mesh");
 
@@ -141,6 +142,7 @@ const normalizeEntity = (entity) => {
   const box = new THREE.Box3().setFromObject(object3D);
   const size = new THREE.Vector3();
   box.getSize(size);
+  isTall = size.y >= size.x;
   const center = new THREE.Vector3();
   box.getCenter(center);
 
@@ -331,18 +333,16 @@ async function captureEntityRotations(
   const minPitch = -80; // stop short of bottom pole
   const maxPitch = 80; // stop short of top pole
 
-  console.log({ step });
-
-  // Single top pole (+90°)
-  // modelEntity.object3D.rotation.set(THREE.MathUtils.degToRad(90), 0, 0);
-  // if (!skipPicture) {
-  //   await waitForFrame();
-  //   captures.push({
-  //     euler: modelEntity.object3D.euler.clone(),
-  //     quaternion: modelEntity.object3D.quaternion.clone(),
-  //     canvas: await captureModelSnapshot(),
-  //   });
-  // }
+  //Single top pole (+90°)
+  modelEntity.object3D.rotation.set(THREE.MathUtils.degToRad(90), 0, 0);
+  if (!skipPicture) {
+    await waitForFrame();
+    captures.push({
+      euler: modelEntity.object3D.euler.clone(),
+      quaternion: modelEntity.object3D.quaternion.clone(),
+      canvas: await captureModelSnapshot(),
+    });
+  }
 
   await BS.wait(waitTime);
 
@@ -376,15 +376,15 @@ async function captureEntityRotations(
   }
 
   // Single bottom pole (-90°)
-  // modelEntity.object3D.rotation.set(THREE.MathUtils.degToRad(-90), 0, 0);
-  // if (!skipPicture) {
-  //   await waitForFrame();
-  //   captures.push({
-  //     euler: modelEntity.object3D.rotation.clone(),
-  //     quaternion: modelEntity.object3D.quaternion.clone(),
-  //     canvas: await captureModelSnapshot(),
-  //   });
-  // }
+  modelEntity.object3D.rotation.set(THREE.MathUtils.degToRad(-90), 0, 0);
+  if (!skipPicture) {
+    await waitForFrame();
+    captures.push({
+      euler: modelEntity.object3D.rotation.clone(),
+      quaternion: modelEntity.object3D.quaternion.clone(),
+      canvas: await captureModelSnapshot(),
+    });
+  }
 
   await BS.wait(waitTime);
 
