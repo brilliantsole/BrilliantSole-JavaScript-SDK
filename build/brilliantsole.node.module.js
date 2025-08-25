@@ -6914,8 +6914,8 @@ async function _DisplayManager_sendDisplayCommand(command, sendImmediately) {
     if (this.isServerSide) {
         return;
     }
-    _console$o.assertWithError(__classPrivateFieldGet(this, _DisplayManager_pendingSpriteSheetName, "f"), "expected spriteSheetName when receiving spriteSheetIndex");
-    _console$o.assertWithError(__classPrivateFieldGet(this, _DisplayManager_pendingSpriteSheet, "f"), "expected pendingSpriteSheet when receiving spriteSheetIndex");
+    _console$o.assertWithError(__classPrivateFieldGet(this, _DisplayManager_pendingSpriteSheetName, "f") != undefined, "expected spriteSheetName when receiving spriteSheetIndex");
+    _console$o.assertWithError(__classPrivateFieldGet(this, _DisplayManager_pendingSpriteSheet, "f") != undefined, "expected pendingSpriteSheet when receiving spriteSheetIndex");
     __classPrivateFieldGet(this, _DisplayManager_spriteSheets, "f")[__classPrivateFieldGet(this, _DisplayManager_pendingSpriteSheetName, "f")] =
         __classPrivateFieldGet(this, _DisplayManager_pendingSpriteSheet, "f");
     __classPrivateFieldGet(this, _DisplayManager_spriteSheetIndices, "f")[__classPrivateFieldGet(this, _DisplayManager_pendingSpriteSheetName, "f")] = spriteSheetIndex;

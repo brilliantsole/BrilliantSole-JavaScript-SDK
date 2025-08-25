@@ -2188,11 +2188,11 @@ class DisplayManager implements DisplayManagerInterface {
       return;
     }
     _console.assertWithError(
-      this.#pendingSpriteSheetName,
+      this.#pendingSpriteSheetName != undefined,
       "expected spriteSheetName when receiving spriteSheetIndex"
     );
     _console.assertWithError(
-      this.#pendingSpriteSheet,
+      this.#pendingSpriteSheet != undefined,
       "expected pendingSpriteSheet when receiving spriteSheetIndex"
     );
     this.#spriteSheets[this.#pendingSpriteSheetName!] =

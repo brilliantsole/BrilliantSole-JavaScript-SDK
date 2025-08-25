@@ -497,7 +497,7 @@ const generateSpriteSheet = async (numberOfSteps, waitTime) => {
   }
   await draw();
 };
-let maxSpritePreviewHeight = 120;
+let maxSpritePreviewHeight = 50;
 window.generateSpriteSheet = generateSpriteSheet;
 
 const generateSpriteSheetButton = document.getElementById(
@@ -1038,11 +1038,11 @@ const draw = async () => {
       await displayCanvasHelper.setSpriteScale(spriteScale);
 
       if (uploadWholeSpriteSheet) {
+        console.log("drawing sprite");
+        await displayCanvasHelper.drawSprite(drawX, drawY, sprite.name);
         if (!createSinglePalette) {
           await displayCanvasHelper.selectSpriteSheetPalette(sprite.name);
         }
-        console.log("drawing sprite");
-        await displayCanvasHelper.drawSprite(drawX, drawY, sprite.name);
       } else {
         console.log("uploadng whole sprite");
         await displayCanvasHelper.drawSpriteFromSpriteSheet(
