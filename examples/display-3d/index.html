@@ -47,6 +47,7 @@
     <br />
 
     <button id="toggleConnection">connect</button>
+    <button id="toggleRotationConnection">connect to rotator</button>
 
     <label>
       select model
@@ -69,6 +70,11 @@
     <label>
       auto draw
       <input type="checkbox" id="autoDraw" />
+    </label>
+
+    <label>
+      enable rotation
+      <input type="checkbox" id="toggleRotation" />
     </label>
 
     <br />
@@ -176,36 +182,12 @@
         </a-camera>
       </a-entity>
 
-      <a-entity id="model" position="0 0 0"></a-entity>
-      <a-entity id="lookAt"></a-entity>
-
-      <a-entity class="target">
-        <a-entity class="rotation">
-          <a-entity class="position" position="0 0 0.005">
-            <a-entity
-              gltf-model="#rightInsoleModel"
-              visible="false"
-              data-type="rightInsole"
-            ></a-entity>
-            <a-entity
-              gltf-model="#leftInsoleModel"
-              visible="false"
-              data-type="leftInsole"
-            ></a-entity>
-            <a-entity
-              gltf-model="#rightHandModel"
-              visible="false"
-              data-type="rightGlove"
-            ></a-entity>
-            <a-entity
-              gltf-model="#rightHandModel"
-              visible="false"
-              scale="-1 1 1"
-              data-type="leftGlove"
-            ></a-entity>
-          </a-entity>
+      <a-entity id="rotation">
+        <a-entity id="position" position="0 0 0.005">
+          <a-entity id="model" position="0 0 0"></a-entity>
         </a-entity>
       </a-entity>
+      <a-entity id="lookAt"></a-entity>
     </a-scene>
   </body>
 </html>

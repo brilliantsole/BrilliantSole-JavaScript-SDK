@@ -9,6 +9,9 @@ const device = new BS.Device();
 window.device = device;
 window.BS = BS;
 
+const rotationDevice = new BS.Device();
+window.rotationDevice = rotationDevice;
+
 // CONNECT
 
 const toggleConnectionButton = document.getElementById("toggleConnection");
@@ -30,21 +33,25 @@ device.addEventListener("connectionStatus", () => {
   toggleConnectionButton.innerText = innerText;
 });
 
-// DEVICE
-BS.DeviceManager.AddEventListener("deviceConnected", (event) => {
-  if (event.message.device.connectionType != "client") {
-    return;
+const toggleRotationConnectionButton = document.getElementById(
+  "toggleRotationConnection"
+);
+toggleRotationConnectionButton.addEventListener("click", () =>
+  rotationDevice.toggleConnection()
+);
+rotationDevice.addEventListener("connectionStatus", () => {
+  let disabled = false;
+  let innerText = rotationDevice.connectionStatus;
+  switch (rotationDevice.connectionStatus) {
+    case "notConnected":
+      innerText = "connect to rotator";
+      break;
+    case "connected":
+      innerText = "disconnect from rotator";
+      break;
   }
-  if (event.message.device.isDisplayAvailable) {
-    clientDevice = event.message.device;
-    if (client.isScanning) {
-      client.stopScan();
-    }
-    displayCanvasHelper.device = clientDevice;
-  } else {
-    console.log("display not available");
-    // event.message.device.disconnect();
-  }
+  toggleRotationConnectionButton.disabled = disabled;
+  toggleRotationConnectionButton.innerText = innerText;
 });
 
 // CANVAS
@@ -547,7 +554,8 @@ async function getRelativeModelQuaternion() {
   const lookAtEntityQuaternion = lookAtEntity.object3D.quaternion
     .clone()
     .invert();
-  const modelEntityQuaternion = modelEntity.object3D.quaternion.clone();
+  const modelEntityQuaternion = new THREE.Quaternion();
+  modelEntity.object3D.getWorldQuaternion(modelEntityQuaternion);
 
   lookAtEntityQuaternion.multiply(modelEntityQuaternion);
   testEntity.object3D.quaternion.copy(lookAtEntityQuaternion);
@@ -1077,3 +1085,91 @@ const checkSpriteSheetSize = () => {
 checkSpriteSheetSizeButton.addEventListener("click", () => {
   checkSpriteSheetSize();
 });
+
+// ROTATOR
+const toggleRotationInput = document.getElementById("toggleRotation");
+toggleRotationInput.addEventListener("input", () => {
+  setToggleRotation(toggleRotationInput.checked);
+});
+let rotationEnabled = toggleRotationInput.checked;
+const setToggleRotation = (newRotationEnabled) => {
+  rotationEnabled = newRotationEnabled;
+  console.log({ rotationEnabled });
+  toggleRotationInput.checked = toggleRotation;
+  if (rotationDevice.isConnected) {
+    rotationDevice.setSensorConfiguration({
+      gameRotation: rotationEnabled ? 20 : 0,
+    });
+  }
+};
+rotationDevice.addEventListener("connected", () => {
+  rotationDevice.setSensorConfiguration({
+    gameRotation: rotationEnabled ? 20 : 0,
+  });
+});
+
+/** @type {TQuaternion} */
+const _quaternion = new THREE.Quaternion();
+/** @type {TQuaternion} */
+const targetQuaternion = new THREE.Quaternion();
+/**
+ * @param {BS.Quaternion} quaternion
+ * @param {boolean} applyOffset
+ */
+const updateQuaternion = (quaternion, applyOffset = false) => {
+  _quaternion.copy(quaternion);
+  targetQuaternion.copy(_quaternion);
+  if (applyOffset) {
+    targetQuaternion.premultiply(offsetQuaternion);
+  }
+  targetRotationEntity.object3D.quaternion.slerp(
+    targetQuaternion,
+    window.interpolationSmoothing
+  );
+};
+rotationDevice.addEventListener("gameRotation", (event) => {
+  let gameRotation = event.message.gameRotation;
+  updateQuaternion(gameRotation, true);
+});
+rotationDevice.addEventListener("rotation", (event) => {
+  const rotation = event.message.rotation;
+  updateQuaternion(rotation, true);
+});
+
+window.sensorRate = 20;
+window.interpolationSmoothing = 0.4;
+window.positionScalar = 0.1;
+
+/** @type {TVector3} */
+const _position = new THREE.Vector3();
+
+/** @param {BS.Vector3} position */
+const updatePosition = (position) => {
+  _position.copy(position).multiplyScalar(window.positionScalar);
+  targetPositionEntity.object3D.position.lerp(
+    _position,
+    window.interpolationSmoothing
+  );
+};
+
+device.addEventListener("acceleration", (event) => {
+  const acceleration = event.message.acceleration;
+  updatePosition(acceleration);
+});
+device.addEventListener("gravity", () => {
+  const gravity = event.message.gravity;
+  updatePosition(gravity);
+});
+device.addEventListener("linearAcceleration", (event) => {
+  const linearAcceleration = event.message.linearAcceleration;
+  updatePosition(linearAcceleration);
+});
+
+/** @type {TQuaternion} */
+const offsetQuaternion = new THREE.Quaternion();
+const resetOrientation = () => {
+  offsetQuaternion.copy(_quaternion).invert();
+};
+
+const targetPositionEntity = document.getElementById("position");
+const targetRotationEntity = document.getElementById("rotation");
