@@ -569,13 +569,20 @@ async function getModelScreenBoundingBox(alphaThreshold = 10) {
   const renderer = sceneEl.renderer;
   const canvas = renderer.domElement;
   const camera = sceneEl.camera;
-  const w = canvas.width,
-    h = canvas.height;
+
+  // drawing buffer (physical pixels)
+  const dbW = canvas.width,
+    dbH = canvas.height;
+
+  // CSS pixel size (use this for UI overlays)
+  const size = renderer.getSize(new THREE.Vector2());
+  const cssW = size.x,
+    cssH = size.y;
 
   const object3D = modelEntity.getObject3D("mesh");
   if (!object3D) return null;
 
-  // --- Project all 8 corners of AABB ---
+  // --- Project 8 corners of world-space AABB ---
   const box = new THREE.Box3().setFromObject(object3D);
   if (!isFinite(box.min.x)) return null;
 
@@ -594,29 +601,30 @@ async function getModelScreenBoundingBox(alphaThreshold = 10) {
     minY = Infinity;
   let maxX = -Infinity,
     maxY = -Infinity;
+
   for (const v of corners) {
-    v.project(camera);
-    const x = (v.x * 0.5 + 0.5) * w;
-    const y = (1 - (v.y * 0.5 + 0.5)) * h;
+    v.project(camera); // NDC
+    const x = (v.x * 0.5 + 0.5) * dbW; // -> drawing buffer pixels
+    const y = (1 - (v.y * 0.5 + 0.5)) * dbH;
     minX = Math.min(minX, x);
     minY = Math.min(minY, y);
     maxX = Math.max(maxX, x);
     maxY = Math.max(maxY, y);
   }
 
-  // --- Save unclamped (true) extents ---
+  // Unclamped AABB (may be <0 or >dbW/dbH)
   const unclamped = { minX, minY, maxX, maxY };
 
-  // --- Clamp for safe readPixels ---
+  // Clamp for safe readPixels (ROI)
   const sx0 = Math.max(0, Math.floor(minX));
   const sy0 = Math.max(0, Math.floor(minY));
-  const sx1 = Math.min(w, Math.ceil(maxX));
-  const sy1 = Math.min(h, Math.ceil(maxY));
+  const sx1 = Math.min(dbW, Math.ceil(maxX));
+  const sy1 = Math.min(dbH, Math.ceil(maxY));
   const roiW = Math.max(0, sx1 - sx0);
   const roiH = Math.max(0, sy1 - sy0);
   if (roiW === 0 || roiH === 0) return null;
 
-  // --- Transparent render pass ---
+  // Transparent render pass
   const prevClearColor = new THREE.Color();
   const prevClearAlpha = renderer.getClearAlpha();
   renderer.getClearColor(prevClearColor);
@@ -633,12 +641,12 @@ async function getModelScreenBoundingBox(alphaThreshold = 10) {
   if (typeof waitForFrame === "function") await waitForFrame();
   renderer.render(sceneEl.object3D, camera);
 
-  // --- Read pixel block ---
+  // Read pixels in ROI (WebGL is bottom-left origin)
   const gl = renderer.getContext();
   const pixels = new Uint8Array(roiW * roiH * 4);
-  gl.readPixels(sx0, h - sy1, roiW, roiH, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
+  gl.readPixels(sx0, dbH - sy1, roiW, roiH, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
 
-  // --- Alpha trim ---
+  // Alpha trim within ROI
   let left = roiW,
     right = -1,
     bottom = 0,
@@ -655,13 +663,14 @@ async function getModelScreenBoundingBox(alphaThreshold = 10) {
       }
     }
   }
-  if (right < left || bottom < topBL) {
-    renderer.setClearColor(prevClearColor, prevClearAlpha);
-    skies.forEach((sky, i) => (sky.object3D.visible = prevSkyVis[i]));
-    return null;
-  }
 
-  // Convert ROI coords to screen coords
+  // Restore renderer + skies ASAP
+  renderer.setClearColor(prevClearColor, prevClearAlpha);
+  skies.forEach((sky, i) => (sky.object3D.visible = prevSkyVis[i]));
+
+  if (right < left || bottom < topBL) return null;
+
+  // Convert ROI (bottom-left origin) to screen (top-left origin)
   const topRowTopOrigin = roiH - 1 - bottom;
   const bottomRowTopOrigin = roiH - 1 - topBL;
 
@@ -670,32 +679,38 @@ async function getModelScreenBoundingBox(alphaThreshold = 10) {
   const tightMinY = sy0 + topRowTopOrigin;
   const tightMaxY = sy0 + bottomRowTopOrigin;
 
-  const widthScalar = displayCanvasHelper.width / w;
-  const heightScalar = displayCanvasHelper.height / h;
+  // Helper: normalize a box
+  const toNorm = (box, denomW, denomH) => ({
+    minX: box.minX / denomW,
+    minY: box.minY / denomH,
+    maxX: box.maxX / denomW,
+    maxY: box.maxY / denomH,
+    // no +1: use continuous extents for normalized sizes
+    width: (box.maxX - box.minX) / denomW,
+    height: (box.maxY - box.minY) / denomH,
+  });
 
-  // --- Final output ---
-  const out = {
-    // minX: widthScalar * tightMinX,
-    // minY: heightScalar * tightMinY,
-    // maxX: widthScalar * tightMaxX,
-    // maxY: heightScalar * tightMaxY,
-    // width: widthScalar * (tightMaxX - tightMinX + 1),
-    // height: heightScalar * (tightMaxY - tightMinY + 1),
-
-    // Unclamped box (can go negative or > canvas)
-    minX: widthScalar * unclamped.minX,
-    minY: heightScalar * unclamped.minY,
-    maxX: widthScalar * unclamped.maxX,
-    maxY: heightScalar * unclamped.maxY,
-    width: widthScalar * (unclamped.maxX - unclamped.minX),
-    height: heightScalar * (unclamped.maxY - unclamped.minY),
+  // Build outputs in both spaces (choose 'css' for HTML overlays)
+  const tightBox = {
+    minX: tightMinX,
+    minY: tightMinY,
+    maxX: tightMaxX,
+    maxY: tightMaxY,
   };
+  const aabbBox = unclamped;
 
-  // --- Restore ---
-  renderer.setClearColor(prevClearColor, prevClearAlpha);
-  skies.forEach((sky, i) => (sky.object3D.visible = prevSkyVis[i]));
-
-  return out;
+  return {
+    // Normalized to CSS size (recommended for DOM overlays)
+    css: {
+      tight: toNorm(tightBox, cssW, cssH),
+      aabb: toNorm(aabbBox, cssW, cssH), // can go <0 or >1 if off-screen
+    },
+    // Normalized to drawing buffer (rarely what you want for UI)
+    buffer: {
+      tight: toNorm(tightBox, dbW, dbH),
+      aabb: toNorm(aabbBox, dbW, dbH),
+    },
+  };
 }
 
 window.getModelScreenBoundingBox = getModelScreenBoundingBox;
@@ -706,11 +721,11 @@ async function getClosestModelSprite() {
   let rotation;
   if (isTall) {
     _euler.reorder("ZXY");
-    rotation = -THREE.MathUtils.radToDeg(_euler.z);
+    rotation = -_euler.z;
     _euler.z = 0;
   } else {
     _euler.reorder("XYZ");
-    rotation = -THREE.MathUtils.radToDeg(_euler.y);
+    rotation = -_euler.y;
     _euler.y = 0;
   }
 
@@ -945,6 +960,7 @@ let uploadWholeSpriteSheet = true;
 let jitRender = false;
 let drawWhenReady = false;
 
+window.bbScalar = 1;
 const draw = async () => {
   if (isDrawing) {
     console.log("busy drawing");
@@ -959,17 +975,24 @@ const draw = async () => {
 
   const boundingBox = await getModelScreenBoundingBox();
   if (boundingBox) {
-    const { minX, maxX, maxY, minY, width, height } = boundingBox;
+    let { minX, maxX, maxY, minY, width, height } = boundingBox.buffer.aabb;
+    const widthScalar = displayCanvasHelper.width;
+    const heightScalar = displayCanvasHelper.height;
 
-    setDrawOutputHeight(height);
-    let spriteScale = drawOutputHeight / drawInputHeight;
+    height *= heightScalar * bbScalar;
+    width *= widthScalar * bbScalar;
 
-    setDrawX((minX + maxX) / 2);
-    setDrawY((minY + maxY) / 2);
+    setDrawX((widthScalar * (minX + maxX)) / 2);
+    setDrawY((heightScalar * (minY + maxY)) / 2);
 
-    await displayCanvasHelper.setSpriteScale(spriteScale);
+    // await displayCanvasHelper.setRotation(0);
+    // await displayCanvasHelper.drawRect(drawX, drawY, width, height);
 
     if (jitRender) {
+      setDrawOutputHeight(height);
+      let spriteScale = drawOutputHeight / drawInputHeight;
+      await displayCanvasHelper.setSpriteScale(spriteScale);
+
       const canvas = await captureModelSnapshot(10, false);
       const width = canvas.width * (drawInputHeight / canvas.height);
 
@@ -1000,8 +1023,19 @@ const draw = async () => {
       );
     } else {
       const { sprite, rotation } = await getClosestModelSprite();
+
       setDrawRotation(rotation);
-      await displayCanvasHelper.setRotation(drawRotation);
+      await displayCanvasHelper.setRotation(drawRotation, true);
+
+      const innerBox = innerBoxSize(
+        width,
+        height,
+        rotation,
+        sprite.height / sprite.width
+      );
+
+      let spriteScale = innerBox.height / sprite.height;
+      await displayCanvasHelper.setSpriteScale(spriteScale);
 
       if (uploadWholeSpriteSheet) {
         if (!createSinglePalette) {
@@ -1023,6 +1057,21 @@ const draw = async () => {
   }
   await displayCanvasHelper.show();
 };
+
+function innerBoxSize(W, H, theta, aspectRatio) {
+  const cos = Math.cos(theta);
+  const sin = Math.sin(theta);
+  const absCos = Math.abs(cos);
+  const absSin = Math.abs(sin);
+
+  const w1 = W / (absCos + aspectRatio * absSin);
+  const w2 = H / (absSin + aspectRatio * absCos);
+
+  const w = Math.min(w1, w2);
+  const h = aspectRatio * w;
+
+  return { width: w, height: h };
+}
 
 const saveSpriteSheet = () => {
   console.log("saveSpriteSheet");
@@ -1095,18 +1144,23 @@ let rotationEnabled = toggleRotationInput.checked;
 const setToggleRotation = (newRotationEnabled) => {
   rotationEnabled = newRotationEnabled;
   console.log({ rotationEnabled });
-  toggleRotationInput.checked = toggleRotation;
+  toggleRotationInput.checked = rotationEnabled;
   if (rotationDevice.isConnected) {
-    rotationDevice.setSensorConfiguration({
-      gameRotation: rotationEnabled ? 20 : 0,
-    });
+    updateSensorConfig();
   }
 };
 rotationDevice.addEventListener("connected", () => {
-  rotationDevice.setSensorConfiguration({
-    gameRotation: rotationEnabled ? 20 : 0,
-  });
+  updateSensorConfig();
 });
+const updateSensorConfig = () => {
+  if (rotationDevice.isConnected) {
+    let sensorRate = rotationEnabled ? 20 : 0;
+    rotationDevice.setSensorConfiguration({
+      gameRotation: sensorRate,
+      linearAcceleration: sensorRate,
+    });
+  }
+};
 
 /** @type {TQuaternion} */
 const _quaternion = new THREE.Quaternion();
@@ -1138,7 +1192,7 @@ rotationDevice.addEventListener("rotation", (event) => {
 
 window.sensorRate = 20;
 window.interpolationSmoothing = 0.4;
-window.positionScalar = 0.1;
+window.positionScalar = 0.2;
 
 /** @type {TVector3} */
 const _position = new THREE.Vector3();
@@ -1152,15 +1206,15 @@ const updatePosition = (position) => {
   );
 };
 
-device.addEventListener("acceleration", (event) => {
+rotationDevice.addEventListener("acceleration", (event) => {
   const acceleration = event.message.acceleration;
   updatePosition(acceleration);
 });
-device.addEventListener("gravity", () => {
+rotationDevice.addEventListener("gravity", () => {
   const gravity = event.message.gravity;
   updatePosition(gravity);
 });
-device.addEventListener("linearAcceleration", (event) => {
+rotationDevice.addEventListener("linearAcceleration", (event) => {
   const linearAcceleration = event.message.linearAcceleration;
   updatePosition(linearAcceleration);
 });
@@ -1173,3 +1227,9 @@ const resetOrientation = () => {
 
 const targetPositionEntity = document.getElementById("position");
 const targetRotationEntity = document.getElementById("rotation");
+
+/** @type {HTMLButtonElement} */
+const resetOrientationButton = document.getElementById("resetOrientation");
+resetOrientationButton.addEventListener("click", () => {
+  resetOrientation();
+});
