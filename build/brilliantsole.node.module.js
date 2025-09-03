@@ -3808,6 +3808,13 @@ const DefaultDisplayContextState = {
     spriteScaleX: 1,
     spriteScaleY: 1,
     spriteSheetName: undefined,
+    spritesLineHeight: 0,
+    spritesDirection: "right",
+    spritesLineDirection: "down",
+    spritesSpacing: 0,
+    spritesLineSpacing: 0,
+    spritesAlignment: "end",
+    spritesLineAlignment: "start",
 };
 
 function deepEqual(obj1, obj2) {
@@ -3987,6 +3994,12 @@ const DisplaySpriteScaleDirectionToCommandType = {
 function assertValidAlignment(alignment) {
     _console$t.assertEnumWithError(alignment, DisplayAlignments);
 }
+function assertValidDirection(direction) {
+    _console$t.assertEnumWithError(direction, DisplayDirections);
+}
+function assertValidAlignmentDirection(direction) {
+    _console$t.assertEnumWithError(direction, DisplayAlignmentDirections);
+}
 
 const _console$s = createConsole("DisplayContextCommand", { log: false });
 const DisplayContextCommandTypes = [
@@ -4035,11 +4048,13 @@ const DisplayContextCommandTypes = [
     "setSpriteScaleY",
     "setSpriteScale",
     "resetSpriteScale",
+    "setSpritesLineHeight",
     "setSpritesDirection",
     "setSpritesLineDirection",
     "setSpritesSpacing",
     "setSpritesLineSpacing",
-    "setSpritesAlign",
+    "setSpritesAlignment",
+    "setSpritesLineAlignment",
     "clearRect",
     "drawRect",
     "drawRoundRect",
@@ -4461,6 +4476,70 @@ function serializeContextCommand(displayManager, command) {
                 dataView.setInt16(0, formatScale(spriteScale), true);
             }
             break;
+        case "setSpritesLineHeight":
+            {
+                const { spritesLineHeight } = command;
+                displayManager.assertValidLineWidth(spritesLineHeight);
+                dataView = new DataView(new ArrayBuffer(2));
+                dataView.setUint16(0, spritesLineHeight, true);
+            }
+            break;
+        case "setSpritesDirection":
+            {
+                const { spritesDirection } = command;
+                assertValidDirection(spritesDirection);
+                _console$s.log({ spritesDirection });
+                dataView = new DataView(new ArrayBuffer(1));
+                const alignmentEnum = DisplayDirections.indexOf(spritesDirection);
+                dataView.setUint8(0, alignmentEnum);
+            }
+            break;
+        case "setSpritesLineDirection":
+            {
+                const { spritesLineDirection } = command;
+                assertValidDirection(spritesLineDirection);
+                _console$s.log({ spritesLineDirection });
+                dataView = new DataView(new ArrayBuffer(1));
+                const alignmentEnum = DisplayDirections.indexOf(spritesLineDirection);
+                dataView.setUint8(0, alignmentEnum);
+            }
+            break;
+        case "setSpritesSpacing":
+            {
+                const { spritesSpacing } = command;
+                displayManager.assertValidLineWidth(spritesSpacing);
+                dataView = new DataView(new ArrayBuffer(2));
+                dataView.setUint16(0, spritesSpacing, true);
+            }
+            break;
+        case "setSpritesLineSpacing":
+            {
+                const { spritesLineSpacing } = command;
+                displayManager.assertValidLineWidth(spritesLineSpacing);
+                dataView = new DataView(new ArrayBuffer(2));
+                dataView.setUint16(0, spritesLineSpacing, true);
+            }
+            break;
+        case "setSpritesAlignment":
+            {
+                const { spritesAlignment } = command;
+                assertValidAlignment(spritesAlignment);
+                _console$s.log({ spritesAlignment });
+                dataView = new DataView(new ArrayBuffer(1));
+                const alignmentEnum = DisplayAlignments.indexOf(spritesAlignment);
+                dataView.setUint8(0, alignmentEnum);
+            }
+            break;
+        case "setSpritesLineAlignment":
+            {
+                const { spritesLineAlignment } = command;
+                assertValidAlignment(spritesLineAlignment);
+                _console$s.log({ spritesLineAlignment });
+                dataView = new DataView(new ArrayBuffer(1));
+                const alignmentEnum = DisplayAlignments.indexOf(spritesLineAlignment);
+                dataView.setUint8(0, alignmentEnum);
+            }
+            break;
         case "clearRect":
             {
                 const { x, y, width, height } = command;
@@ -4610,7 +4689,7 @@ function serializeContextCommand(displayManager, command) {
         case "drawSprite":
             {
                 const { offsetX, offsetY, spriteIndex, use2Bytes } = command;
-                dataView = new DataView(new ArrayBuffer(1 + 2 * 2));
+                dataView = new DataView(new ArrayBuffer(2 * 2 + (use2Bytes ? 2 : 1)));
                 let offset = 0;
                 dataView.setInt16(offset, offsetX, true);
                 offset += 2;
@@ -4623,6 +4702,46 @@ function serializeContextCommand(displayManager, command) {
                 else {
                     dataView.setUint8(offset++, spriteIndex);
                 }
+            }
+            break;
+        case "drawSprites":
+            {
+                const { offsetX, offsetY, spriteSerializedLines } = command;
+                const lineArrayBuffers = [];
+                spriteSerializedLines.forEach((spriteLines) => {
+                    const subLineArrayBuffers = [];
+                    spriteLines.forEach((subSpriteLine) => {
+                        const { spriteSheetIndex, spriteIndices, use2Bytes } = subSpriteLine;
+                        const subLineSpriteIndicesDataView = new DataView(new ArrayBuffer(spriteIndices.length * (use2Bytes ? 2 : 1)));
+                        spriteIndices.forEach((spriteIndex, i) => {
+                            if (use2Bytes) {
+                                subLineSpriteIndicesDataView.setUint16(i * 2, spriteIndex, true);
+                            }
+                            else {
+                                subLineSpriteIndicesDataView.setUint8(i, spriteIndex);
+                            }
+                        });
+                        const subLineHeaderDataView = new DataView(new ArrayBuffer(2));
+                        subLineHeaderDataView.setUint8(0, spriteSheetIndex);
+                        subLineHeaderDataView.setUint8(1, spriteIndices.length);
+                        subLineArrayBuffers.push(concatenateArrayBuffers(subLineHeaderDataView, subLineSpriteIndicesDataView));
+                    });
+                    const lineArrayHeaderDataView = new DataView(new ArrayBuffer(2));
+                    const concatenatedSubLineArrayBuffers = concatenateArrayBuffers(...subLineArrayBuffers);
+                    lineArrayHeaderDataView.setUint16(0, concatenatedSubLineArrayBuffers.byteLength, true);
+                    lineArrayBuffers.push(concatenateArrayBuffers(lineArrayHeaderDataView, concatenatedSubLineArrayBuffers));
+                });
+                const concatenatedLineArrayBuffers = concatenateArrayBuffers(...lineArrayBuffers);
+                dataView = new DataView(new ArrayBuffer(2 * 3));
+                let offset = 0;
+                dataView.setInt16(offset, offsetX, true);
+                offset += 2;
+                dataView.setInt16(offset, offsetY, true);
+                offset += 2;
+                dataView.setUint16(offset, concatenatedLineArrayBuffers.byteLength, true);
+                offset += 2;
+                const buffer = concatenateArrayBuffers(dataView, concatenatedLineArrayBuffers);
+                dataView = new DataView(buffer);
             }
             break;
     }
@@ -4754,7 +4873,7 @@ async function fontToSpriteSheet(displayManager, font, fontSize, spriteSheetName
         const bitmapHeight = Math.round((bbox.y2 - bbox.y1) * fontScale);
         const spriteWidth = Math.round(Math.max(Math.max(bbox.x2, bbox.x2 - bbox.x1), glyph.advanceWidth || 0) *
             fontScale);
-        const spriteHeight = maxSpriteHeight;
+        const spriteHeight = Math.floor(maxSpriteHeight);
         const commands = [];
         if (bitmapWidth > 0 && bitmapHeight > 0) {
             canvas.width = bitmapWidth;
@@ -4786,8 +4905,8 @@ async function fontToSpriteSheet(displayManager, font, fontSize, spriteSheetName
                 bitmapColorIndex: 1,
                 colorIndex: 1,
             });
-            let bitmapX = bbox.x1 * fontScale;
-            let bitmapY = (spriteHeight - bitmapHeight) / 2 - (bbox.y1 * fontScale - minSpriteY);
+            let bitmapX = Math.round(bbox.x1 * fontScale);
+            let bitmapY = Math.round((spriteHeight - bitmapHeight) / 2 - (bbox.y1 * fontScale - minSpriteY));
             commands.push({
                 type: "drawBitmap",
                 offsetX: bitmapX,
@@ -5452,7 +5571,7 @@ async function drawSpriteFromSpriteSheet(displayManagerInterface, offsetX, offse
 }
 
 var _DisplayManager_instances, _DisplayManager_dispatchEvent_get, _DisplayManager_isAvailable, _DisplayManager_assertDisplayIsAvailable, _DisplayManager_parseIsDisplayAvailable, _DisplayManager_contextStateHelper, _DisplayManager_onContextStateUpdate, _DisplayManager_displayStatus, _DisplayManager_parseDisplayStatus, _DisplayManager_updateDisplayStatus, _DisplayManager_sendDisplayCommand, _DisplayManager_assertIsAwake, _DisplayManager_assertIsNotAwake, _DisplayManager_displayInformation, _DisplayManager_parseDisplayInformation, _DisplayManager_brightness, _DisplayManager_parseDisplayBrightness, _DisplayManager_assertValidDisplayContextCommand, _DisplayManager_maxCommandDataLength_get, _DisplayManager_displayContextCommandBuffers, _DisplayManager_sendDisplayContextCommand, _DisplayManager_sendContextCommands, _DisplayManager_colors, _DisplayManager_opacities, _DisplayManager_assertValidBitmapSize, _DisplayManager_isReady, _DisplayManager_lastReadyTime, _DisplayManager_lastShowRequestTime, _DisplayManager_minReadyInterval, _DisplayManager_waitBeforeReady, _DisplayManager_parseDisplayReady, _DisplayManager_spriteSheets, _DisplayManager_spriteSheetIndices, _DisplayManager_setSpriteSheetName, _DisplayManager_pendingSpriteSheet, _DisplayManager_pendingSpriteSheetName, _DisplayManager_updateSpriteSheetName, _DisplayManager_parseSpriteSheetIndex, _DisplayManager_mtu, _DisplayManager_isServerSide;
-const _console$o = createConsole("DisplayManager", { log: false });
+const _console$o = createConsole("DisplayManager", { log: true });
 const DefaultNumberOfDisplayColors = 16;
 const DisplayCommands = ["sleep", "wake"];
 const DisplayStatuses = ["awake", "asleep"];
@@ -5639,6 +5758,27 @@ class DisplayManager {
                 case "spriteScaleY":
                     this.setSpriteScaleY(newState.spriteScaleY);
                     break;
+                case "spritesLineHeight":
+                    this.setSpritesLineHeight(newState.spritesLineHeight);
+                    break;
+                case "spritesDirection":
+                    this.setSpritesDirection(newState.spritesDirection);
+                    break;
+                case "spritesLineDirection":
+                    this.setSpritesLineDirection(newState.spritesLineDirection);
+                    break;
+                case "spritesSpacing":
+                    this.setSpritesSpacing(newState.spritesSpacing);
+                    break;
+                case "spritesLineSpacing":
+                    this.setSpritesLineSpacing(newState.spritesLineSpacing);
+                    break;
+                case "spritesAlignment":
+                    this.setSpritesAlignment(newState.spritesAlignment);
+                    break;
+                case "spritesLineAlignment":
+                    this.setSpritesLineAlignment(newState.spritesLineAlignment);
+                    break;
             }
         });
         if (sendImmediately) {
@@ -5721,6 +5861,7 @@ class DisplayManager {
     async clear(sendImmediately = true) {
         _console$o.log("clearDisplay");
         __classPrivateFieldSet(this, _DisplayManager_isReady, false, "f");
+        __classPrivateFieldSet(this, _DisplayManager_lastShowRequestTime, Date.now(), "f");
         await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "clear", undefined, sendImmediately);
     }
     assertValidColorIndex(colorIndex) {
@@ -5830,7 +5971,7 @@ class DisplayManager {
         __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_onContextStateUpdate).call(this, differences);
     }
     assertValidLineWidth(lineWidth) {
-        _console$o.assertRangeWithError("lineWidth", lineWidth, 0, this.width);
+        _console$o.assertRangeWithError("lineWidth", lineWidth, 0, Math.max(this.width, this.height));
     }
     async setLineWidth(lineWidth, sendImmediately) {
         this.assertValidLineWidth(lineWidth);
@@ -5851,7 +5992,7 @@ class DisplayManager {
         __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_onContextStateUpdate).call(this, differences);
     }
     async setAlignment(alignmentDirection, alignment, sendImmediately) {
-        _console$o.assertEnumWithError(alignmentDirection, DisplayAlignmentDirections);
+        assertValidAlignmentDirection(alignmentDirection);
         const alignmentCommand = DisplayAlignmentDirectionToCommandType[alignmentDirection];
         const alignmentKey = DisplayAlignmentDirectionToStateKey[alignmentDirection];
         const differences = __classPrivateFieldGet(this, _DisplayManager_contextStateHelper, "f").update({
@@ -6372,6 +6513,114 @@ class DisplayManager {
         await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "resetSpriteScale", dataView?.buffer, sendImmediately);
         __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_onContextStateUpdate).call(this, differences);
     }
+    async setSpritesLineHeight(spritesLineHeight, sendImmediately) {
+        this.assertValidLineWidth(spritesLineHeight);
+        const differences = __classPrivateFieldGet(this, _DisplayManager_contextStateHelper, "f").update({
+            spritesLineHeight,
+        });
+        if (differences.length == 0) {
+            return;
+        }
+        const dataView = serializeContextCommand(this, {
+            type: "setSpritesLineHeight",
+            spritesLineHeight,
+        });
+        if (!dataView) {
+            return;
+        }
+        await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "setSpritesLineHeight", dataView.buffer, sendImmediately);
+        __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_onContextStateUpdate).call(this, differences);
+    }
+    async setSpritesDirectionGeneric(direction, isOrthogonal, sendImmediately) {
+        assertValidDirection(direction);
+        const stateKey = isOrthogonal
+            ? "spritesLineDirection"
+            : "spritesDirection";
+        const commandType = isOrthogonal
+            ? "setSpritesLineDirection"
+            : "setSpritesDirection";
+        const differences = __classPrivateFieldGet(this, _DisplayManager_contextStateHelper, "f").update({
+            [stateKey]: direction,
+        });
+        if (differences.length == 0) {
+            return;
+        }
+        const dataView = serializeContextCommand(this, {
+            type: commandType,
+            [stateKey]: direction,
+        });
+        if (!dataView) {
+            return;
+        }
+        await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, commandType, dataView.buffer, sendImmediately);
+        __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_onContextStateUpdate).call(this, differences);
+    }
+    async setSpritesDirection(spritesDirection, sendImmediately) {
+        await this.setSpritesDirectionGeneric(spritesDirection, false, sendImmediately);
+    }
+    async setSpritesLineDirection(spritesLineDirection, sendImmediately) {
+        await this.setSpritesDirectionGeneric(spritesLineDirection, true, sendImmediately);
+    }
+    async setSpritesSpacingGeneric(spacing, isOrthogonal, sendImmediately) {
+        this.assertValidLineWidth(spacing);
+        const stateKey = isOrthogonal
+            ? "spritesLineSpacing"
+            : "spritesSpacing";
+        const commandType = isOrthogonal
+            ? "setSpritesLineSpacing"
+            : "setSpritesSpacing";
+        const differences = __classPrivateFieldGet(this, _DisplayManager_contextStateHelper, "f").update({
+            [stateKey]: spacing,
+        });
+        if (differences.length == 0) {
+            return;
+        }
+        const dataView = serializeContextCommand(this, {
+            type: commandType,
+            [stateKey]: spacing,
+        });
+        if (!dataView) {
+            return;
+        }
+        await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, commandType, dataView.buffer, sendImmediately);
+        __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_onContextStateUpdate).call(this, differences);
+    }
+    async setSpritesSpacing(spritesSpacing, sendImmediately) {
+        await this.setSpritesSpacingGeneric(spritesSpacing, false, sendImmediately);
+    }
+    async setSpritesLineSpacing(spritesSpacing, sendImmediately) {
+        await this.setSpritesSpacingGeneric(spritesSpacing, true, sendImmediately);
+    }
+    async setSpritesAlignmentGeneric(alignment, isOrthogonal, sendImmediately) {
+        assertValidAlignment(alignment);
+        const stateKey = isOrthogonal
+            ? "spritesLineAlignment"
+            : "spritesAlignment";
+        const commandType = isOrthogonal
+            ? "setSpritesLineAlignment"
+            : "setSpritesAlignment";
+        const differences = __classPrivateFieldGet(this, _DisplayManager_contextStateHelper, "f").update({
+            [stateKey]: alignment,
+        });
+        if (differences.length == 0) {
+            return;
+        }
+        const dataView = serializeContextCommand(this, {
+            type: commandType,
+            [stateKey]: alignment,
+        });
+        if (!dataView) {
+            return;
+        }
+        await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, commandType, dataView.buffer, sendImmediately);
+        __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_onContextStateUpdate).call(this, differences);
+    }
+    async setSpritesAlignment(spritesAlignment, sendImmediately) {
+        await this.setSpritesAlignmentGeneric(spritesAlignment, false, sendImmediately);
+    }
+    async setSpritesLineAlignment(spritesLineAlignment, sendImmediately) {
+        await this.setSpritesAlignmentGeneric(spritesLineAlignment, true, sendImmediately);
+    }
     async clearRect(x, y, width, height, sendImmediately) {
         const dataView = serializeContextCommand(this, {
             type: "clearRect",
@@ -6654,6 +6903,41 @@ class DisplayManager {
             return;
         }
         await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "drawSprite", dataView.buffer, sendImmediately);
+    }
+    async drawSprites(offsetX, offsetY, spriteLines, sendImmediately) {
+        const spriteSerializedLines = [];
+        spriteLines.forEach((spriteLine) => {
+            const serializedLine = [];
+            spriteLine.forEach((spriteSubLine) => {
+                this.assertLoadedSpriteSheet(spriteSubLine.spriteSheetName);
+                const spriteSheet = this.spriteSheets[spriteSubLine.spriteSheetName];
+                const spriteSheetIndex = this.spriteSheetIndices[spriteSheet.name];
+                const serializedSubLine = {
+                    spriteSheetIndex,
+                    spriteIndices: [],
+                    use2Bytes: spriteSheet.sprites.length > 255,
+                };
+                spriteSubLine.spriteNames.forEach((spriteName) => {
+                    let spriteIndex = spriteSheet.sprites.findIndex((sprite) => sprite.name == spriteName);
+                    _console$o.assertWithError(spriteIndex != -1, `sprite "${spriteName}" not found`);
+                    spriteIndex = spriteIndex;
+                    serializedSubLine.spriteIndices.push(spriteIndex);
+                });
+                serializedLine.push(serializedSubLine);
+            });
+            spriteSerializedLines.push(serializedLine);
+        });
+        console.log("spriteSerializedLines", spriteSerializedLines);
+        const dataView = serializeContextCommand(this, {
+            type: "drawSprites",
+            offsetX,
+            offsetY,
+            spriteSerializedLines: spriteSerializedLines,
+        });
+        if (!dataView) {
+            return;
+        }
+        await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "drawSprites", dataView.buffer, sendImmediately);
     }
     async drawSpriteFromSpriteSheet(offsetX, offsetY, spriteName, spriteSheet, paletteName, sendImmediately) {
         return drawSpriteFromSpriteSheet(this, offsetX, offsetY, spriteName, spriteSheet, paletteName, sendImmediately);
@@ -10485,6 +10769,21 @@ class Device {
     }
     get resetDisplayAlignment() {
         return __classPrivateFieldGet(this, _Device_displayManager, "f").resetAlignment;
+    }
+    get setDisplaySpritesDirection() {
+        return __classPrivateFieldGet(this, _Device_displayManager, "f").setSpritesDirection;
+    }
+    get setDisplaySpritesLineDirection() {
+        return __classPrivateFieldGet(this, _Device_displayManager, "f").setSpritesLineDirection;
+    }
+    get setDisplaySpritesSpacing() {
+        return __classPrivateFieldGet(this, _Device_displayManager, "f").setSpritesSpacing;
+    }
+    get setDisplaySpritesLineSpacing() {
+        return __classPrivateFieldGet(this, _Device_displayManager, "f").setSpritesLineSpacing;
+    }
+    get setDisplaySpritesAlignment() {
+        return __classPrivateFieldGet(this, _Device_displayManager, "f").setSpritesAlignment;
     }
 }
 _a$3 = Device, _Device_eventDispatcher = new WeakMap(), _Device_connectionManager = new WeakMap(), _Device_isConnected = new WeakMap(), _Device_reconnectOnDisconnection = new WeakMap(), _Device_reconnectIntervalId = new WeakMap(), _Device_deviceInformationManager = new WeakMap(), _Device_batteryLevel = new WeakMap(), _Device_sensorConfigurationManager = new WeakMap(), _Device_clearSensorConfigurationOnLeave = new WeakMap(), _Device_sensorDataManager = new WeakMap(), _Device_vibrationManager = new WeakMap(), _Device_fileTransferManager = new WeakMap(), _Device_tfliteManager = new WeakMap(), _Device_firmwareManager = new WeakMap(), _Device_isServerSide = new WeakMap(), _Device_wifiManager = new WeakMap(), _Device_cameraManager = new WeakMap(), _Device_microphoneManager = new WeakMap(), _Device_displayManager = new WeakMap(), _Device_instances = new WeakSet(), _Device_DefaultConnectionManager = function _Device_DefaultConnectionManager() {

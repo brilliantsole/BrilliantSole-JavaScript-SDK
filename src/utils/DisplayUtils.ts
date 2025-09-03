@@ -9,8 +9,11 @@ import { DisplayContextCommandType } from "./DisplayContextCommand.ts";
 import {
   DisplayAlignment,
   DisplayAlignmentDirection,
+  DisplayAlignmentDirections,
   DisplayAlignments,
   DisplayContextStateKey,
+  DisplayDirection,
+  DisplayDirections,
   DisplaySegmentCap,
   DisplaySegmentCaps,
 } from "./DisplayContextState.ts";
@@ -247,4 +250,14 @@ export type DisplayColorYCbCr = {
 
 export function assertValidAlignment(alignment: DisplayAlignment) {
   _console.assertEnumWithError(alignment, DisplayAlignments);
+}
+
+export function assertValidDirection(direction: DisplayDirection) {
+  _console.assertEnumWithError(direction, DisplayDirections);
+}
+
+export function assertValidAlignmentDirection(
+  direction: DisplayAlignmentDirection
+) {
+  _console.assertEnumWithError(direction, DisplayAlignmentDirections);
 }

@@ -13,13 +13,19 @@ import { drawBitmapHeaderLength, getBitmapData } from "./DisplayBitmapUtils.ts";
 import {
   DisplayAlignment,
   DisplayAlignments,
+  DisplayDirection,
+  DisplayDirections,
   DisplaySegmentCap,
   DisplaySegmentCaps,
 } from "./DisplayContextState.ts";
-import { DisplayManagerInterface } from "./DisplayManagerInterface.ts";
+import {
+  DisplayManagerInterface,
+  DisplaySpriteSerializedLines,
+} from "./DisplayManagerInterface.ts";
 import {
   assertValidAlignment,
   assertValidColor,
+  assertValidDirection,
   assertValidOpacity,
   assertValidSegmentCap,
   DisplayColorRGB,
@@ -98,11 +104,13 @@ export const DisplayContextCommandTypes = [
   "setSpriteScale",
   "resetSpriteScale",
 
+  "setSpritesLineHeight",
   "setSpritesDirection",
   "setSpritesLineDirection",
   "setSpritesSpacing",
   "setSpritesLineSpacing",
-  "setSpritesAlign",
+  "setSpritesAlignment",
+  "setSpritesLineAlignment",
 
   "clearRect",
 
@@ -395,6 +403,45 @@ export interface SetDisplaySpriteScaleCommand
   spriteScale: number;
 }
 
+export interface SetDisplaySpritesLineHeightCommand
+  extends BaseDisplayContextCommand {
+  type: "setSpritesLineHeight";
+  spritesLineHeight: number;
+}
+
+export interface SetDisplaySpritesDirectionCommand
+  extends BaseDisplayContextCommand {
+  type: "setSpritesDirection";
+  spritesDirection: DisplayDirection;
+}
+export interface SetDisplaySpritesLineDirectionCommand
+  extends BaseDisplayContextCommand {
+  type: "setSpritesLineDirection";
+  spritesLineDirection: DisplayDirection;
+}
+
+export interface SetDisplaySpritesSpacingCommand
+  extends BaseDisplayContextCommand {
+  type: "setSpritesSpacing";
+  spritesSpacing: number;
+}
+export interface SetDisplaySpritesLineSpacingCommand
+  extends BaseDisplayContextCommand {
+  type: "setSpritesLineSpacing";
+  spritesLineSpacing: number;
+}
+
+export interface SetDisplaySpritesAlignmentCommand
+  extends BaseDisplayContextCommand {
+  type: "setSpritesAlignment";
+  spritesAlignment: DisplayAlignment;
+}
+export interface SetDisplaySpritesLineAlignmentCommand
+  extends BaseDisplayContextCommand {
+  type: "setSpritesLineAlignment";
+  spritesLineAlignment: DisplayAlignment;
+}
+
 export interface BasePositionDisplayContextCommand
   extends BaseDisplayContextCommand {
   x: number;
@@ -499,6 +546,12 @@ export interface DrawDisplaySpriteCommand
   use2Bytes: boolean;
 }
 
+export interface DrawDisplaySpritesCommand
+  extends BaseOffsetPositionDisplayContextCommand {
+  type: "drawSprites";
+  spriteSerializedLines: DisplaySpriteSerializedLines;
+}
+
 export type DisplayContextCommand =
   | SimpleDisplayCommand
   | SetDisplayColorCommand
@@ -544,9 +597,17 @@ export type DisplayContextCommand =
   | DrawDisplayArcEllipseCommand
   | DrawDisplayBitmapCommand
   | DrawDisplaySpriteCommand
+  | DrawDisplaySpritesCommand
   | SelectDisplaySpriteSheetCommand
   | SetDisplayHorizontalAlignmentCommand
-  | SetDisplayVerticalAlignmentCommand;
+  | SetDisplayVerticalAlignmentCommand
+  | SetDisplaySpritesDirectionCommand
+  | SetDisplaySpritesLineDirectionCommand
+  | SetDisplaySpritesSpacingCommand
+  | SetDisplaySpritesLineSpacingCommand
+  | SetDisplaySpritesAlignmentCommand
+  | SetDisplaySpritesLineAlignmentCommand
+  | SetDisplaySpritesLineHeightCommand;
 
 export function serializeContextCommand(
   displayManager: DisplayManagerInterface,
@@ -924,6 +985,70 @@ export function serializeContextCommand(
         dataView.setInt16(0, formatScale(spriteScale), true);
       }
       break;
+    case "setSpritesLineHeight":
+      {
+        const { spritesLineHeight } = command;
+        displayManager.assertValidLineWidth(spritesLineHeight);
+        dataView = new DataView(new ArrayBuffer(2));
+        dataView.setUint16(0, spritesLineHeight, true);
+      }
+      break;
+    case "setSpritesDirection":
+      {
+        const { spritesDirection } = command;
+        assertValidDirection(spritesDirection);
+        _console.log({ spritesDirection });
+        dataView = new DataView(new ArrayBuffer(1));
+        const alignmentEnum = DisplayDirections.indexOf(spritesDirection);
+        dataView.setUint8(0, alignmentEnum);
+      }
+      break;
+    case "setSpritesLineDirection":
+      {
+        const { spritesLineDirection } = command;
+        assertValidDirection(spritesLineDirection);
+        _console.log({ spritesLineDirection });
+        dataView = new DataView(new ArrayBuffer(1));
+        const alignmentEnum = DisplayDirections.indexOf(spritesLineDirection);
+        dataView.setUint8(0, alignmentEnum);
+      }
+      break;
+    case "setSpritesSpacing":
+      {
+        const { spritesSpacing } = command;
+        displayManager.assertValidLineWidth(spritesSpacing);
+        dataView = new DataView(new ArrayBuffer(2));
+        dataView.setUint16(0, spritesSpacing, true);
+      }
+      break;
+    case "setSpritesLineSpacing":
+      {
+        const { spritesLineSpacing } = command;
+        displayManager.assertValidLineWidth(spritesLineSpacing);
+        dataView = new DataView(new ArrayBuffer(2));
+        dataView.setUint16(0, spritesLineSpacing, true);
+      }
+      break;
+    case "setSpritesAlignment":
+      {
+        const { spritesAlignment } = command;
+        assertValidAlignment(spritesAlignment);
+        _console.log({ spritesAlignment });
+        dataView = new DataView(new ArrayBuffer(1));
+        const alignmentEnum = DisplayAlignments.indexOf(spritesAlignment);
+        dataView.setUint8(0, alignmentEnum);
+      }
+      break;
+    case "setSpritesLineAlignment":
+      {
+        const { spritesLineAlignment } = command;
+        assertValidAlignment(spritesLineAlignment);
+        _console.log({ spritesLineAlignment });
+        dataView = new DataView(new ArrayBuffer(1));
+        const alignmentEnum = DisplayAlignments.indexOf(spritesLineAlignment);
+        dataView.setUint8(0, alignmentEnum);
+      }
+      break;
     case "clearRect":
       {
         const { x, y, width, height } = command;
@@ -1093,7 +1218,7 @@ export function serializeContextCommand(
     case "drawSprite":
       {
         const { offsetX, offsetY, spriteIndex, use2Bytes } = command;
-        dataView = new DataView(new ArrayBuffer(1 + 2 * 2));
+        dataView = new DataView(new ArrayBuffer(2 * 2 + (use2Bytes ? 2 : 1)));
         let offset = 0;
         dataView.setInt16(offset, offsetX, true);
         offset += 2;
@@ -1105,6 +1230,80 @@ export function serializeContextCommand(
         } else {
           dataView.setUint8(offset++, spriteIndex!);
         }
+      }
+      break;
+    case "drawSprites":
+      {
+        const { offsetX, offsetY, spriteSerializedLines } = command;
+        const lineArrayBuffers: ArrayBuffer[] = [];
+        spriteSerializedLines.forEach((spriteLines) => {
+          const subLineArrayBuffers: ArrayBuffer[] = [];
+          spriteLines.forEach((subSpriteLine) => {
+            const { spriteSheetIndex, spriteIndices, use2Bytes } =
+              subSpriteLine;
+            const subLineSpriteIndicesDataView = new DataView(
+              new ArrayBuffer(spriteIndices.length * (use2Bytes ? 2 : 1))
+            );
+            spriteIndices.forEach((spriteIndex, i) => {
+              if (use2Bytes) {
+                subLineSpriteIndicesDataView.setUint16(
+                  i * 2,
+                  spriteIndex,
+                  true
+                );
+              } else {
+                subLineSpriteIndicesDataView.setUint8(i, spriteIndex);
+              }
+            });
+            const subLineHeaderDataView = new DataView(new ArrayBuffer(2));
+            subLineHeaderDataView.setUint8(0, spriteSheetIndex);
+            subLineHeaderDataView.setUint8(1, spriteIndices.length);
+            subLineArrayBuffers.push(
+              concatenateArrayBuffers(
+                subLineHeaderDataView,
+                subLineSpriteIndicesDataView
+              )
+            );
+          });
+          const lineArrayHeaderDataView = new DataView(new ArrayBuffer(2));
+          const concatenatedSubLineArrayBuffers = concatenateArrayBuffers(
+            ...subLineArrayBuffers
+          );
+          lineArrayHeaderDataView.setUint16(
+            0,
+            concatenatedSubLineArrayBuffers.byteLength,
+            true
+          );
+          lineArrayBuffers.push(
+            concatenateArrayBuffers(
+              lineArrayHeaderDataView,
+              concatenatedSubLineArrayBuffers
+            )
+          );
+        });
+
+        const concatenatedLineArrayBuffers = concatenateArrayBuffers(
+          ...lineArrayBuffers
+        );
+
+        dataView = new DataView(new ArrayBuffer(2 * 3));
+        let offset = 0;
+        dataView.setInt16(offset, offsetX, true);
+        offset += 2;
+        dataView.setInt16(offset, offsetY, true);
+        offset += 2;
+        dataView.setUint16(
+          offset,
+          concatenatedLineArrayBuffers.byteLength,
+          true
+        );
+        offset += 2;
+
+        const buffer = concatenateArrayBuffers(
+          dataView,
+          concatenatedLineArrayBuffers
+        );
+        dataView = new DataView(buffer);
       }
       break;
   }

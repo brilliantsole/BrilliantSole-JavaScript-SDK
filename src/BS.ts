@@ -114,6 +114,12 @@ export {
   DisplaySpriteColorPair,
 } from "./DisplayManager.ts";
 
+export {
+  DisplaySpriteSubLine,
+  DisplaySpriteLine,
+  DisplaySpriteLines,
+} from "./utils/DisplayManagerInterface.ts";
+
 export { wait } from "./utils/Timer.ts";
 
 export {

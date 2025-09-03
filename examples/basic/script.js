@@ -2281,19 +2281,20 @@ const drawShape = (updatedParams) => {
     }
     lastDrawTime = Date.now();
 
-    console.log("draw", {
-      drawShapeType,
-      drawWidth,
-      drawHeight,
-      drawX,
-      drawY,
-      drawBorderRadius,
-      drawStartAngle,
-      drawAngleOffset,
-      drawBitmapScaleX,
-      drawBitmapScaleY,
-      drawBitmapScale,
-    });
+    if (false)
+      console.log("draw", {
+        drawShapeType,
+        drawWidth,
+        drawHeight,
+        drawX,
+        drawY,
+        drawBorderRadius,
+        drawStartAngle,
+        drawAngleOffset,
+        drawBitmapScaleX,
+        drawBitmapScaleY,
+        drawBitmapScale,
+      });
     if (updatedParams?.includes("lineWidth")) {
       device.setDisplayLineWidth(lineWidth);
     }

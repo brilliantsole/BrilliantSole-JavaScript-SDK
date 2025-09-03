@@ -17,6 +17,7 @@ export { TfliteSensorType, TfliteSensorTypes, TfliteTask, TfliteTasks, TfliteFil
 export { CameraConfiguration, CameraCommand, CameraCommands, CameraConfigurationType, CameraConfigurationTypes, } from "./CameraManager.ts";
 export { MicrophoneConfiguration, MicrophoneCommand, MicrophoneCommands, MicrophoneConfigurationType, MicrophoneConfigurationTypes, MicrophoneConfigurationValues, } from "./MicrophoneManager.ts";
 export { DisplayBrightness, DisplayBrightnesses, DisplaySize, DisplayBitmapColorPair, DisplayPixelDepths, DefaultNumberOfDisplayColors, MinSpriteSheetNameLength, MaxSpriteSheetNameLength, DisplayBitmap, DisplaySpriteColorPair, } from "./DisplayManager.ts";
+export { DisplaySpriteSubLine, DisplaySpriteLine, DisplaySpriteLines, } from "./utils/DisplayManagerInterface.ts";
 export { wait } from "./utils/Timer.ts";
 export { DisplaySegmentCap, DisplaySegmentCaps, DisplayAlignment, DisplayAlignments, DisplayDirection, DisplayDirections, } from "./utils/DisplayContextState.ts";
 export { maxDisplayScale, DisplayColorRGB, pixelDepthToNumberOfColors, } from "./utils/DisplayUtils.ts";

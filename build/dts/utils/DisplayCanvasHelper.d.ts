@@ -1,7 +1,7 @@
 import Device from "../Device.ts";
 import { DisplayBitmapColorPair, DisplayBrightness, DisplaySpriteColorPair, DisplayBitmap } from "../DisplayManager.ts";
-import { DisplayAlignment, DisplayAlignmentDirection, DisplayContextState, DisplayContextStateKey, DisplaySegmentCap } from "./DisplayContextState.ts";
-import { DisplayManagerInterface } from "./DisplayManagerInterface.ts";
+import { DisplayAlignment, DisplayAlignmentDirection, DisplayContextState, DisplayContextStateKey, DisplayDirection, DisplaySegmentCap } from "./DisplayContextState.ts";
+import { DisplaySpriteLines, DisplayManagerInterface } from "./DisplayManagerInterface.ts";
 import { DisplayScaleDirection, DisplayColorRGB, DisplayCropDirection } from "./DisplayUtils.ts";
 import EventDispatcher, { BoundEventListeners, Event, EventListenerMap, EventMap } from "./EventDispatcher.ts";
 import { Vector2 } from "./MathUtils.ts";
@@ -111,6 +111,7 @@ declare class DisplayCanvasHelper implements DisplayManagerInterface {
     get applyTransparency(): boolean;
     set applyTransparency(newValue: boolean);
     get device(): Device | undefined;
+    get deviceDisplayManager(): DisplayManagerInterface | undefined;
     set device(newDevice: Device | undefined);
     flushContextCommands(): Promise<void>;
     get numberOfColors(): number;
@@ -182,6 +183,16 @@ declare class DisplayCanvasHelper implements DisplayManagerInterface {
     setSpriteScaleY(spriteScaleY: number, sendImmediately?: boolean): Promise<void>;
     setSpriteScale(spriteScale: number, sendImmediately?: boolean): Promise<void>;
     resetSpriteScale(sendImmediately?: boolean): Promise<void>;
+    setSpritesLineHeight(spritesLineHeight: number, sendImmediately?: boolean): Promise<void>;
+    setSpritesDirectionGeneric(direction: DisplayDirection, isOrthogonal: boolean, sendImmediately?: boolean): Promise<void>;
+    setSpritesDirection(spritesDirection: DisplayDirection, sendImmediately?: boolean): Promise<void>;
+    setSpritesLineDirection(spritesLineDirection: DisplayDirection, sendImmediately?: boolean): Promise<void>;
+    setSpritesSpacingGeneric(spacing: number, isOrthogonal: boolean, sendImmediately?: boolean): Promise<void>;
+    setSpritesSpacing(spritesSpacing: number, sendImmediately?: boolean): Promise<void>;
+    setSpritesLineSpacing(spritesSpacing: number, sendImmediately?: boolean): Promise<void>;
+    setSpritesAlignmentGeneric(alignment: DisplayAlignment, isOrthogonal: boolean, sendImmediately?: boolean): Promise<void>;
+    setSpritesAlignment(spritesAlignment: DisplayAlignment, sendImmediately?: boolean): Promise<void>;
+    setSpritesLineAlignment(spritesLineAlignment: DisplayAlignment, sendImmediately?: boolean): Promise<void>;
     clearRect(x: number, y: number, width: number, height: number, sendImmediately?: boolean): Promise<void>;
     drawRect(offsetX: number, offsetY: number, width: number, height: number, sendImmediately?: boolean): Promise<void>;
     drawRoundRect(offsetX: number, offsetY: number, width: number, height: number, borderRadius: number, sendImmediately?: boolean): Promise<void>;
@@ -211,6 +222,7 @@ declare class DisplayCanvasHelper implements DisplayManagerInterface {
     get selectedSpriteSheetName(): string | undefined;
     selectSpriteSheet(spriteSheetName: string, sendImmediately?: boolean): Promise<void>;
     drawSprite(offsetX: number, offsetY: number, spriteName: string, sendImmediately?: boolean): Promise<void>;
+    drawSprites(offsetX: number, offsetY: number, spriteLines: DisplaySpriteLines, sendImmediately?: boolean): Promise<void>;
     drawSpriteFromSpriteSheet(offsetX: number, offsetY: number, spriteName: string, spriteSheet: DisplaySpriteSheet, paletteName?: string, sendImmediately?: boolean): Promise<void>;
     get brightness(): "veryLow" | "low" | "medium" | "high" | "veryHigh";
     setBrightness(newBrightness: DisplayBrightness, sendImmediately?: boolean): Promise<void>;
@@ -234,6 +246,7 @@ declare class DisplayCanvasHelper implements DisplayManagerInterface {
     }>;
     resizeAndQuantizeImage(image: HTMLImageElement, width: number, height: number, numberOfColors: number, colors?: string[]): Promise<{
         blob: Blob;
+        colors: string[];
         colorIndices: number[];
     }>;
     serializeSpriteSheet(spriteSheet: DisplaySpriteSheet): ArrayBuffer;

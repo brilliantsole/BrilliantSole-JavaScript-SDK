@@ -896,6 +896,13 @@ let draw = () => {
     rotationCropLeft,
     verticalAlignment,
     horizontalAlignment,
+    spritesLineHeight,
+    spritesSpacing,
+    spritesLineSpacing,
+    spritesAlignment,
+    spritesLineAlignment,
+    spritesDirection,
+    spritesLineDirection,
   } = drawSpriteParams;
 
   displayCanvasHelper.setRotation(rotation);
@@ -912,8 +919,23 @@ let draw = () => {
   displayCanvasHelper.setVerticalAlignment(verticalAlignment);
   displayCanvasHelper.setHorizontalAlignment(horizontalAlignment);
 
+  displayCanvasHelper.setSpritesLineHeight(spritesLineHeight);
+
+  displayCanvasHelper.setSpritesSpacing(spritesSpacing);
+  displayCanvasHelper.setSpritesLineSpacing(spritesLineSpacing);
+
+  displayCanvasHelper.setSpritesDirection(spritesDirection);
+  displayCanvasHelper.setSpritesLineDirection(spritesLineDirection);
+
+  displayCanvasHelper.setSpritesAlignment(spritesAlignment);
+  displayCanvasHelper.setSpritesLineAlignment(spritesLineAlignment);
+
   if (shouldDrawAllSprites) {
-    drawSprites();
+    if (true) {
+      drawSprites();
+    } else {
+      drawSpritesManually();
+    }
   } else {
     drawSprite();
   }
@@ -922,7 +944,7 @@ draw = BS.ThrottleUtils.throttle(draw, 100, true);
 
 let xSpacing = 0;
 let ySpacing = 0;
-const drawSprites = async () => {
+const drawSpritesManually = async () => {
   let x = 0;
   let y = 0;
   let maxHeight = 0;
@@ -957,6 +979,34 @@ const drawSprites = async () => {
     maxHeight = Math.max(spriteHeight, maxHeight);
   }
 
+  await displayCanvasHelper.show();
+};
+let drawSpritesLineLength = 10;
+let drawSpritesMaxNumberOfSprites = 25;
+const drawSprites = async () => {
+  const { x, y } = drawSpriteParams;
+  /** @type {BS.DisplaySpriteLines} */
+  const spriteLines = [];
+  /** @type {BS.DisplaySpriteSubLine} */
+  let latestSpriteSubLines;
+  spriteSheet.sprites.forEach((sprite, index) => {
+    if (index >= drawSpritesMaxNumberOfSprites) {
+      return;
+    }
+    if (index % drawSpritesLineLength == 0) {
+      latestSpriteSubLines = {
+        spriteSheetName: spriteSheet.name,
+        spriteNames: [],
+      };
+      spriteLines.push([latestSpriteSubLines]);
+    }
+    if (index == 0) {
+      return;
+    }
+    latestSpriteSubLines.spriteNames.push(sprite.name);
+  });
+  console.log("spriteLines", spriteLines);
+  await displayCanvasHelper.drawSprites(x, y, spriteLines);
   await displayCanvasHelper.show();
 };
 const drawSprite = () => {
@@ -1001,6 +1051,17 @@ const drawSpriteParams = {
   rotationCropRight: 0,
   rotationCropBottom: 0,
   rotationCropLeft: 0,
+
+  spritesLineHeight: 0,
+
+  spritesSpacing: 0,
+  spritesLineSpacing: 0,
+
+  spritesAlignment: "end",
+  spritesLineAlignment: "start",
+
+  spritesDirection: "right",
+  spritesLineDirection: "down",
 };
 
 const drawSpriteXContainer = document.getElementById("drawSpriteX");
@@ -1012,6 +1073,7 @@ const setSpriteDrawX = (drawSpriteX) => {
   drawSpriteParams.x = drawSpriteX;
   draw();
 };
+setSpriteDrawX(Number(drawSpriteXInput.value));
 drawSpriteXInput.addEventListener("input", () => {
   setSpriteDrawX(Number(drawSpriteXInput.value));
 });
@@ -1028,6 +1090,7 @@ const setSpriteDrawY = (drawSpriteY) => {
 drawSpriteYInput.addEventListener("input", () => {
   setSpriteDrawY(Number(drawSpriteYInput.value));
 });
+setSpriteDrawY(Number(drawSpriteYInput.value));
 
 const drawSpriteRotationContainer =
   document.getElementById("drawSpriteRotation");
@@ -1274,6 +1337,157 @@ const setSpriteDrawRotationCropLeft = (drawSpriteRotationCropLeft) => {
 };
 drawSpriteRotationCropLeftInput.addEventListener("input", () => {
   setSpriteDrawRotationCropLeft(Number(drawSpriteRotationCropLeftInput.value));
+});
+
+const drawSpritesLineHeightContainer = document.getElementById(
+  "drawSpritesLineHeight"
+);
+const drawSpritesLineHeightInput =
+  drawSpritesLineHeightContainer.querySelector("input");
+const drawSpritesLineHeightSpan =
+  drawSpritesLineHeightContainer.querySelector(".value");
+const setSpritesLineHeight = (drawSpritesLineHeight) => {
+  drawSpritesLineHeightInput.value = drawSpritesLineHeight;
+  drawSpritesLineHeightSpan.innerText = drawSpritesLineHeight;
+  drawSpriteParams.spritesLineHeight = drawSpritesLineHeight;
+  console.log({ drawSpritesLineHeight });
+  if (shouldDrawAllSprites) {
+    draw();
+  }
+};
+drawSpritesLineHeightInput.addEventListener("input", () => {
+  setSpritesLineHeight(Number(drawSpritesLineHeightInput.value));
+});
+
+const drawSpritesDirectionContainer = document.getElementById(
+  "drawSpritesDirection"
+);
+const drawSpritesDirectionSelect =
+  drawSpritesDirectionContainer.querySelector("select");
+const drawSpritesDirectionOptgroup =
+  drawSpritesDirectionContainer.querySelector("optgroup");
+BS.DisplayDirections.forEach((horizontalAlignment) => {
+  drawSpritesDirectionOptgroup.appendChild(new Option(horizontalAlignment));
+});
+drawSpritesDirectionSelect.value = drawSpriteParams.spritesDirection;
+const setSpritesDirection = (drawSpritesDirection) => {
+  console.log({ drawSpritesDirection });
+  drawSpritesDirectionSelect.value = drawSpritesDirection;
+  drawSpriteParams.spritesDirection = drawSpritesDirection;
+  if (shouldDrawAllSprites) {
+    draw();
+  }
+};
+drawSpritesDirectionSelect.addEventListener("input", () => {
+  setSpritesDirection(drawSpritesDirectionSelect.value);
+});
+
+const drawSpritesLineDirectionContainer = document.getElementById(
+  "drawSpritesLineDirection"
+);
+const drawSpritesLineDirectionSelect =
+  drawSpritesLineDirectionContainer.querySelector("select");
+const drawSpritesLineDirectionOptgroup =
+  drawSpritesLineDirectionContainer.querySelector("optgroup");
+BS.DisplayDirections.forEach((horizontalAlignment) => {
+  drawSpritesLineDirectionOptgroup.appendChild(new Option(horizontalAlignment));
+});
+drawSpritesLineDirectionSelect.value = drawSpriteParams.spritesLineDirection;
+const setSpritesLineDirection = (drawSpritesLineDirection) => {
+  console.log({ drawSpritesLineDirection });
+  drawSpritesLineDirectionSelect.value = drawSpritesLineDirection;
+  drawSpriteParams.spritesLineDirection = drawSpritesLineDirection;
+  if (shouldDrawAllSprites) {
+    draw();
+  }
+};
+drawSpritesLineDirectionSelect.addEventListener("input", () => {
+  setSpritesLineDirection(drawSpritesLineDirectionSelect.value);
+});
+
+const drawSpritesAlignmentContainer = document.getElementById(
+  "drawSpritesAlignment"
+);
+const drawSpritesAlignmentSelect =
+  drawSpritesAlignmentContainer.querySelector("select");
+const drawSpritesAlignmentOptgroup =
+  drawSpritesAlignmentContainer.querySelector("optgroup");
+BS.DisplayAlignments.forEach((horizontalAlignment) => {
+  drawSpritesAlignmentOptgroup.appendChild(new Option(horizontalAlignment));
+});
+drawSpritesAlignmentSelect.value = drawSpriteParams.spritesAlignment;
+const setSpritesAlignment = (drawSpritesAlignment) => {
+  console.log({ drawSpritesAlignment });
+  drawSpritesAlignmentSelect.value = drawSpritesAlignment;
+  drawSpriteParams.spritesAlignment = drawSpritesAlignment;
+  if (shouldDrawAllSprites) {
+    draw();
+  }
+};
+drawSpritesAlignmentSelect.addEventListener("input", () => {
+  setSpritesAlignment(drawSpritesAlignmentSelect.value);
+});
+
+const drawSpritesLineAlignmentContainer = document.getElementById(
+  "drawSpritesLineAlignment"
+);
+const drawSpritesLineAlignmentSelect =
+  drawSpritesLineAlignmentContainer.querySelector("select");
+const drawSpritesLineAlignmentOptgroup =
+  drawSpritesLineAlignmentContainer.querySelector("optgroup");
+BS.DisplayAlignments.forEach((horizontalAlignment) => {
+  drawSpritesLineAlignmentOptgroup.appendChild(new Option(horizontalAlignment));
+});
+drawSpritesLineAlignmentSelect.value = drawSpriteParams.spritesLineAlignment;
+const setSpritesLineAlignment = (drawSpritesLineAlignment) => {
+  console.log({ drawSpritesLineAlignment });
+  drawSpritesLineAlignmentSelect.value = drawSpritesLineAlignment;
+  drawSpriteParams.spritesLineAlignment = drawSpritesLineAlignment;
+  if (shouldDrawAllSprites) {
+    draw();
+  }
+};
+drawSpritesLineAlignmentSelect.addEventListener("input", () => {
+  setSpritesLineAlignment(drawSpritesLineAlignmentSelect.value);
+});
+
+const drawSpritesSpacingContainer =
+  document.getElementById("drawSpritesSpacing");
+const drawSpritesSpacingInput =
+  drawSpritesSpacingContainer.querySelector("input");
+const drawSpritesSpacingSpan =
+  drawSpritesSpacingContainer.querySelector(".value");
+const setSpritesSpacing = (drawSpritesSpacing) => {
+  drawSpritesSpacingInput.value = drawSpritesSpacing;
+  drawSpritesSpacingSpan.innerText = drawSpritesSpacing;
+  drawSpriteParams.spritesSpacing = drawSpritesSpacing;
+  console.log({ drawSpritesSpacing });
+  if (shouldDrawAllSprites) {
+    draw();
+  }
+};
+drawSpritesSpacingInput.addEventListener("input", () => {
+  setSpritesSpacing(Number(drawSpritesSpacingInput.value));
+});
+
+const drawSpritesLineSpacingContainer = document.getElementById(
+  "drawSpritesLineSpacing"
+);
+const drawSpritesLineSpacingInput =
+  drawSpritesLineSpacingContainer.querySelector("input");
+const drawSpritesLineSpacingSpan =
+  drawSpritesLineSpacingContainer.querySelector(".value");
+const setSpritesLineSpacing = (drawSpritesLineSpacing) => {
+  drawSpritesLineSpacingInput.value = drawSpritesLineSpacing;
+  drawSpritesLineSpacingSpan.innerText = drawSpritesLineSpacing;
+  drawSpriteParams.spritesLineSpacing = drawSpritesLineSpacing;
+  console.log({ drawSpritesLineSpacing });
+  if (shouldDrawAllSprites) {
+    draw();
+  }
+};
+drawSpritesLineSpacingInput.addEventListener("input", () => {
+  setSpritesLineSpacing(Number(drawSpritesLineSpacingInput.value));
 });
 
 // LOAD/SAVE
@@ -3474,3 +3688,4 @@ const setFontSize = (newFontSize) => {
   fontSizeInput.value = fontSize;
 };
 setFontSize(fontSize);
+setSpritesLineHeight(fontSize);

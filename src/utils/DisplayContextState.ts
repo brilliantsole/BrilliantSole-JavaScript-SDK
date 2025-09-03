@@ -47,7 +47,13 @@ export type DisplayContextState = {
 
   spriteSheetName?: string;
 
-  // FILL - sprite spacing, direction, etc
+  spritesLineHeight: number;
+  spritesDirection: DisplayDirection;
+  spritesLineDirection: DisplayDirection;
+  spritesSpacing: number;
+  spritesLineSpacing: number;
+  spritesAlignment: DisplayAlignment;
+  spritesLineAlignment: DisplayAlignment;
 };
 export type DisplayContextStateKey = keyof DisplayContextState;
 export type PartialDisplayContextState = Partial<DisplayContextState>;
@@ -88,4 +94,36 @@ export const DefaultDisplayContextState: DisplayContextState = {
   spriteScaleY: 1,
 
   spriteSheetName: undefined,
+
+  spritesLineHeight: 0,
+
+  spritesDirection: "right",
+  spritesLineDirection: "down",
+
+  spritesSpacing: 0,
+  spritesLineSpacing: 0,
+
+  spritesAlignment: "end",
+  spritesLineAlignment: "start",
 };
+
+export function isDirectionPositive(direction: DisplayDirection) {
+  switch (direction) {
+    case "right":
+    case "down":
+      return true;
+    case "left":
+    case "up":
+      return false;
+  }
+}
+export function isDirectionHorizontal(direction: DisplayDirection) {
+  switch (direction) {
+    case "right":
+    case "left":
+      return true;
+    case "down":
+    case "up":
+      return false;
+  }
+}

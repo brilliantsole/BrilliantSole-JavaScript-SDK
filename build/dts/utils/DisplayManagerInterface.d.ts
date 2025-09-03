@@ -1,10 +1,23 @@
 import { Font } from "opentype.js";
 import { DisplayBitmapColorPair, DisplayBrightness, DisplaySpriteColorPair, DisplayBitmap } from "../DisplayManager.ts";
 import { DisplayContextCommand } from "./DisplayContextCommand.ts";
-import { DisplayAlignment, DisplayAlignmentDirection, DisplayContextState, DisplaySegmentCap } from "./DisplayContextState.ts";
+import { DisplayAlignment, DisplayAlignmentDirection, DisplayContextState, DisplayDirection, DisplaySegmentCap } from "./DisplayContextState.ts";
 import { DisplaySprite, DisplaySpritePaletteSwap, DisplaySpriteSheet, DisplaySpriteSheetPalette, DisplaySpriteSheetPaletteSwap } from "./DisplaySpriteSheetUtils.ts";
 import { DisplayScaleDirection, DisplayColorRGB, DisplayCropDirection } from "./DisplayUtils.ts";
 import { Vector2 } from "./MathUtils.ts";
+export type DisplaySpriteSubLine = {
+    spriteSheetName: string;
+    spriteNames: string[];
+};
+export type DisplaySpriteLine = DisplaySpriteSubLine[];
+export type DisplaySpriteLines = DisplaySpriteLine[];
+export type DisplaySpriteSerializedSubLine = {
+    spriteSheetIndex: number;
+    spriteIndices: number[];
+    use2Bytes: boolean;
+};
+export type DisplaySpriteSerializedLine = DisplaySpriteSerializedSubLine[];
+export type DisplaySpriteSerializedLines = DisplaySpriteSerializedLine[];
 export interface DisplayManagerInterface {
     get isReady(): boolean;
     get contextState(): DisplayContextState;
@@ -70,10 +83,21 @@ export interface DisplayManagerInterface {
     resetSpriteColors(sendImmediately?: boolean): Promise<void>;
     setSpriteColor(spriteColorIndex: number, color: DisplayColorRGB | string, sendImmediately?: boolean): Promise<void>;
     setSpriteColorOpacity(spriteColorIndex: number, opacity: number, sendImmediately?: boolean): Promise<void>;
+    setSpriteScaleDirection(direction: DisplayScaleDirection, spriteScale: number, sendImmediately?: boolean): Promise<void>;
     setSpriteScaleX(spriteScaleX: number, sendImmediately?: boolean): Promise<void>;
     setSpriteScaleY(spriteScaleY: number, sendImmediately?: boolean): Promise<void>;
     setSpriteScale(spriteScale: number, sendImmediately?: boolean): Promise<void>;
     resetSpriteScale(sendImmediately?: boolean): Promise<void>;
+    setSpritesLineHeight(spritesLineHeight: number, sendImmediately?: boolean): Promise<void>;
+    setSpritesDirectionGeneric(direction: DisplayDirection, isOrthogonal: boolean, sendImmediately?: boolean): Promise<void>;
+    setSpritesDirection(spritesDirection: DisplayDirection, sendImmediately?: boolean): Promise<void>;
+    setSpritesLineDirection(spritesLineDirection: DisplayDirection, sendImmediately?: boolean): Promise<void>;
+    setSpritesSpacingGeneric(spacing: number, isOrthogonal: boolean, sendImmediately?: boolean): Promise<void>;
+    setSpritesSpacing(spritesSpacing: number, sendImmediately?: boolean): Promise<void>;
+    setSpritesLineSpacing(spritesSpacing: number, sendImmediately?: boolean): Promise<void>;
+    setSpritesAlignmentGeneric(alignment: DisplayAlignment, isOrthogonal: boolean, sendImmediately?: boolean): Promise<void>;
+    setSpritesAlignment(spritesAlignment: DisplayAlignment, sendImmediately?: boolean): Promise<void>;
+    setSpritesLineAlignment(spritesLineAlignment: DisplayAlignment, sendImmediately?: boolean): Promise<void>;
     clearRect(x: number, y: number, width: number, height: number, sendImmediately?: boolean): Promise<void>;
     drawRect(offsetX: number, offsetY: number, width: number, height: number, sendImmediately?: boolean): Promise<void>;
     drawRoundRect(offsetX: number, offsetY: number, width: number, height: number, borderRadius: number, sendImmediately?: boolean): Promise<void>;
@@ -98,12 +122,14 @@ export interface DisplayManagerInterface {
     }>;
     resizeAndQuantizeImage(image: HTMLImageElement, width: number, height: number, numberOfColors: number, colors?: string[], canvas?: HTMLCanvasElement): Promise<{
         blob: Blob;
+        colors: string[];
         colorIndices: number[];
     }>;
     uploadSpriteSheet(spriteSheet: DisplaySpriteSheet): Promise<void>;
     uploadSpriteSheets(spriteSheets: DisplaySpriteSheet[]): Promise<void>;
     selectSpriteSheet(spriteSheetName: string, sendImmediately?: boolean): Promise<void>;
     drawSprite(offsetX: number, offsetY: number, spriteName: string, sendImmediately?: boolean): Promise<void>;
+    drawSprites(offsetX: number, offsetY: number, spriteLines: DisplaySpriteLines, sendImmediately?: boolean): Promise<void>;
     assertLoadedSpriteSheet(spriteSheetName: string): void;
     assertSelectedSpriteSheet(spriteSheetName: string): void;
     assertAnySelectedSpriteSheet(): void;

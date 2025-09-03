@@ -1,6 +1,6 @@
 import { DisplayBrightness, DisplayPixelDepth } from "../DisplayManager.ts";
 import { DisplayContextCommandType } from "./DisplayContextCommand.ts";
-import { DisplayAlignment, DisplayAlignmentDirection, DisplaySegmentCap } from "./DisplayContextState.ts";
+import { DisplayAlignment, DisplayAlignmentDirection, DisplayDirection, DisplaySegmentCap } from "./DisplayContextState.ts";
 export declare function formatRotation(rotation: number, isRadians?: boolean, isSigned?: boolean): number;
 export declare function roundToStep(value: number, step: number): number;
 export declare const minDisplayScale = -50;
@@ -52,3 +52,5 @@ export type DisplayColorYCbCr = {
     cr: number;
 };
 export declare function assertValidAlignment(alignment: DisplayAlignment): void;
+export declare function assertValidDirection(direction: DisplayDirection): void;
+export declare function assertValidAlignmentDirection(direction: DisplayAlignmentDirection): void;

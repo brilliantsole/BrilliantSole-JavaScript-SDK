@@ -34,6 +34,8 @@ import {
   assertValidAlignment,
   DisplayAlignmentDirectionToCommandType,
   DisplayAlignmentDirectionToStateKey,
+  assertValidDirection,
+  assertValidAlignmentDirection,
 } from "./utils/DisplayUtils.ts";
 import {
   assertValidBitmapPixels,
@@ -47,9 +49,9 @@ import {
   DefaultDisplayContextState,
   DisplayAlignment,
   DisplayAlignmentDirection,
-  DisplayAlignmentDirections,
   DisplayContextState,
   DisplayContextStateKey,
+  DisplayDirection,
   DisplaySegmentCap,
   PartialDisplayContextState,
 } from "./utils/DisplayContextState.ts";
@@ -67,6 +69,7 @@ import {
   assertSpritePaletteSwap,
   assertSpriteSheetPalette,
   assertSpriteSheetPaletteSwap,
+  DisplaySpriteLines,
   DisplayManagerInterface,
   drawSpriteFromSpriteSheet,
   getSprite,
@@ -78,6 +81,9 @@ import {
   selectSpritePaletteSwap,
   selectSpriteSheetPalette,
   selectSpriteSheetPaletteSwap,
+  DisplaySpriteSerializedLines,
+  DisplaySpriteSerializedLine,
+  DisplaySpriteSerializedSubLine,
 } from "./utils/DisplayManagerInterface.ts";
 import { SendFileCallback } from "./FileTransferManager.ts";
 import { textDecoder, textEncoder } from "./utils/Text.ts";
@@ -93,7 +99,7 @@ import {
 import { Font } from "opentype.js";
 import { wait } from "./utils/Timer.ts";
 
-const _console = createConsole("DisplayManager", { log: false });
+const _console = createConsole("DisplayManager", { log: true });
 
 export const DefaultNumberOfDisplayColors = 16;
 
@@ -405,6 +411,27 @@ class DisplayManager implements DisplayManagerInterface {
         case "spriteScaleY":
           this.setSpriteScaleY(newState.spriteScaleY!);
           break;
+        case "spritesLineHeight":
+          this.setSpritesLineHeight(newState.spritesLineHeight!);
+          break;
+        case "spritesDirection":
+          this.setSpritesDirection(newState.spritesDirection!);
+          break;
+        case "spritesLineDirection":
+          this.setSpritesLineDirection(newState.spritesLineDirection!);
+          break;
+        case "spritesSpacing":
+          this.setSpritesSpacing(newState.spritesSpacing!);
+          break;
+        case "spritesLineSpacing":
+          this.setSpritesLineSpacing(newState.spritesLineSpacing!);
+          break;
+        case "spritesAlignment":
+          this.setSpritesAlignment(newState.spritesAlignment!);
+          break;
+        case "spritesLineAlignment":
+          this.setSpritesLineAlignment(newState.spritesLineAlignment!);
+          break;
       }
     });
     if (sendImmediately) {
@@ -695,6 +722,7 @@ class DisplayManager implements DisplayManagerInterface {
   async clear(sendImmediately = true) {
     _console.log("clearDisplay");
     this.#isReady = false;
+    this.#lastShowRequestTime = Date.now();
     await this.#sendDisplayContextCommand("clear", undefined, sendImmediately);
   }
 
@@ -851,7 +879,12 @@ class DisplayManager implements DisplayManagerInterface {
     this.#onContextStateUpdate(differences);
   }
   assertValidLineWidth(lineWidth: number) {
-    _console.assertRangeWithError("lineWidth", lineWidth, 0, this.width);
+    _console.assertRangeWithError(
+      "lineWidth",
+      lineWidth,
+      0,
+      Math.max(this.width, this.height)
+    );
   }
   async setLineWidth(lineWidth: number, sendImmediately?: boolean) {
     this.assertValidLineWidth(lineWidth);
@@ -881,10 +914,7 @@ class DisplayManager implements DisplayManagerInterface {
     alignment: DisplayAlignment,
     sendImmediately?: boolean
   ) {
-    _console.assertEnumWithError(
-      alignmentDirection,
-      DisplayAlignmentDirections
-    );
+    assertValidAlignmentDirection(alignmentDirection);
     const alignmentCommand =
       DisplayAlignmentDirectionToCommandType[alignmentDirection];
     const alignmentKey =
@@ -1628,6 +1658,185 @@ class DisplayManager implements DisplayManagerInterface {
     this.#onContextStateUpdate(differences);
   }
 
+  async setSpritesLineHeight(
+    spritesLineHeight: number,
+    sendImmediately?: boolean
+  ) {
+    this.assertValidLineWidth(spritesLineHeight);
+    const differences = this.#contextStateHelper.update({
+      spritesLineHeight,
+    });
+    if (differences.length == 0) {
+      return;
+    }
+    const dataView = serializeContextCommand(this, {
+      type: "setSpritesLineHeight",
+      spritesLineHeight,
+    });
+    if (!dataView) {
+      return;
+    }
+    await this.#sendDisplayContextCommand(
+      "setSpritesLineHeight",
+      dataView.buffer,
+      sendImmediately
+    );
+    this.#onContextStateUpdate(differences);
+  }
+
+  async setSpritesDirectionGeneric(
+    direction: DisplayDirection,
+    isOrthogonal: boolean,
+    sendImmediately?: boolean
+  ) {
+    assertValidDirection(direction);
+    const stateKey: DisplayContextStateKey = isOrthogonal
+      ? "spritesLineDirection"
+      : "spritesDirection";
+    const commandType: DisplayContextCommandType = isOrthogonal
+      ? "setSpritesLineDirection"
+      : "setSpritesDirection";
+
+    const differences = this.#contextStateHelper.update({
+      [stateKey]: direction,
+    });
+    if (differences.length == 0) {
+      return;
+    }
+    // @ts-expect-error
+    const dataView = serializeContextCommand(this, {
+      type: commandType,
+      [stateKey]: direction,
+    });
+    if (!dataView) {
+      return;
+    }
+    await this.#sendDisplayContextCommand(
+      commandType,
+      dataView.buffer,
+      sendImmediately
+    );
+    this.#onContextStateUpdate(differences);
+  }
+  async setSpritesDirection(
+    spritesDirection: DisplayDirection,
+    sendImmediately?: boolean
+  ) {
+    await this.setSpritesDirectionGeneric(
+      spritesDirection,
+      false,
+      sendImmediately
+    );
+  }
+  async setSpritesLineDirection(
+    spritesLineDirection: DisplayDirection,
+    sendImmediately?: boolean
+  ) {
+    await this.setSpritesDirectionGeneric(
+      spritesLineDirection,
+      true,
+      sendImmediately
+    );
+  }
+
+  async setSpritesSpacingGeneric(
+    spacing: number,
+    isOrthogonal: boolean,
+    sendImmediately?: boolean
+  ) {
+    this.assertValidLineWidth(spacing);
+    const stateKey: DisplayContextStateKey = isOrthogonal
+      ? "spritesLineSpacing"
+      : "spritesSpacing";
+    const commandType: DisplayContextCommandType = isOrthogonal
+      ? "setSpritesLineSpacing"
+      : "setSpritesSpacing";
+
+    const differences = this.#contextStateHelper.update({
+      [stateKey]: spacing,
+    });
+    if (differences.length == 0) {
+      return;
+    }
+    // @ts-expect-error
+    const dataView = serializeContextCommand(this, {
+      type: commandType,
+      [stateKey]: spacing,
+    });
+    if (!dataView) {
+      return;
+    }
+    await this.#sendDisplayContextCommand(
+      commandType,
+      dataView.buffer,
+      sendImmediately
+    );
+    this.#onContextStateUpdate(differences);
+  }
+  async setSpritesSpacing(spritesSpacing: number, sendImmediately?: boolean) {
+    await this.setSpritesSpacingGeneric(spritesSpacing, false, sendImmediately);
+  }
+  async setSpritesLineSpacing(
+    spritesSpacing: number,
+    sendImmediately?: boolean
+  ) {
+    await this.setSpritesSpacingGeneric(spritesSpacing, true, sendImmediately);
+  }
+
+  async setSpritesAlignmentGeneric(
+    alignment: DisplayAlignment,
+    isOrthogonal: boolean,
+    sendImmediately?: boolean
+  ) {
+    assertValidAlignment(alignment);
+    const stateKey: DisplayContextStateKey = isOrthogonal
+      ? "spritesLineAlignment"
+      : "spritesAlignment";
+    const commandType: DisplayContextCommandType = isOrthogonal
+      ? "setSpritesLineAlignment"
+      : "setSpritesAlignment";
+    const differences = this.#contextStateHelper.update({
+      [stateKey]: alignment,
+    });
+    if (differences.length == 0) {
+      return;
+    }
+    // @ts-expect-error
+    const dataView = serializeContextCommand(this, {
+      type: commandType,
+      [stateKey]: alignment,
+    });
+    if (!dataView) {
+      return;
+    }
+    await this.#sendDisplayContextCommand(
+      commandType,
+      dataView.buffer,
+      sendImmediately
+    );
+    this.#onContextStateUpdate(differences);
+  }
+  async setSpritesAlignment(
+    spritesAlignment: DisplayAlignment,
+    sendImmediately?: boolean
+  ) {
+    await this.setSpritesAlignmentGeneric(
+      spritesAlignment,
+      false,
+      sendImmediately
+    );
+  }
+  async setSpritesLineAlignment(
+    spritesLineAlignment: DisplayAlignment,
+    sendImmediately?: boolean
+  ) {
+    await this.setSpritesAlignmentGeneric(
+      spritesLineAlignment,
+      true,
+      sendImmediately
+    );
+  }
+
   async clearRect(
     x: number,
     y: number,
@@ -1953,7 +2162,7 @@ class DisplayManager implements DisplayManagerInterface {
     height: number,
     numberOfColors: number,
     colors?: string[]
-  ): Promise<{ blob: Blob; colorIndices: number[] }> {
+  ) {
     return resizeAndQuantizeImage(image, width, height, numberOfColors, colors);
   }
 
@@ -2153,6 +2362,56 @@ class DisplayManager implements DisplayManagerInterface {
     }
     await this.#sendDisplayContextCommand(
       "drawSprite",
+      dataView.buffer,
+      sendImmediately
+    );
+  }
+
+  async drawSprites(
+    offsetX: number,
+    offsetY: number,
+    spriteLines: DisplaySpriteLines,
+    sendImmediately?: boolean
+  ) {
+    const spriteSerializedLines: DisplaySpriteSerializedLines = [];
+    spriteLines.forEach((spriteLine) => {
+      const serializedLine: DisplaySpriteSerializedLine = [];
+      spriteLine.forEach((spriteSubLine) => {
+        this.assertLoadedSpriteSheet(spriteSubLine.spriteSheetName);
+        const spriteSheet = this.spriteSheets[spriteSubLine.spriteSheetName];
+        const spriteSheetIndex = this.spriteSheetIndices[spriteSheet.name];
+        const serializedSubLine: DisplaySpriteSerializedSubLine = {
+          spriteSheetIndex,
+          spriteIndices: [],
+          use2Bytes: spriteSheet.sprites.length > 255,
+        };
+        spriteSubLine.spriteNames.forEach((spriteName) => {
+          let spriteIndex = spriteSheet.sprites.findIndex(
+            (sprite) => sprite.name == spriteName
+          );
+          _console.assertWithError(
+            spriteIndex != -1,
+            `sprite "${spriteName}" not found`
+          );
+          spriteIndex = spriteIndex!;
+          serializedSubLine.spriteIndices.push(spriteIndex);
+        });
+        serializedLine.push(serializedSubLine);
+      });
+      spriteSerializedLines.push(serializedLine);
+    });
+    console.log("spriteSerializedLines", spriteSerializedLines);
+    const dataView = serializeContextCommand(this, {
+      type: "drawSprites",
+      offsetX,
+      offsetY,
+      spriteSerializedLines: spriteSerializedLines,
+    });
+    if (!dataView) {
+      return;
+    }
+    await this.#sendDisplayContextCommand(
+      "drawSprites",
       dataView.buffer,
       sendImmediately
     );

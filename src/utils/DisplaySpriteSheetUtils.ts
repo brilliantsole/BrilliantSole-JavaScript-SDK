@@ -227,7 +227,7 @@ export async function fontToSpriteSheet(
       Math.max(Math.max(bbox.x2, bbox.x2 - bbox.x1), glyph.advanceWidth || 0) *
         fontScale
     );
-    const spriteHeight = maxSpriteHeight;
+    const spriteHeight = Math.floor(maxSpriteHeight);
 
     const commands: DisplayContextCommand[] = [];
     if (bitmapWidth > 0 && bitmapHeight > 0) {
@@ -281,9 +281,10 @@ export async function fontToSpriteSheet(
         });
       }
 
-      let bitmapX = bbox.x1 * fontScale;
-      let bitmapY =
-        (spriteHeight - bitmapHeight) / 2 - (bbox.y1 * fontScale - minSpriteY);
+      let bitmapX = Math.round(bbox.x1 * fontScale);
+      let bitmapY = Math.round(
+        (spriteHeight - bitmapHeight) / 2 - (bbox.y1 * fontScale - minSpriteY)
+      );
       commands.push({
         type: "drawBitmap",
         offsetX: bitmapX,

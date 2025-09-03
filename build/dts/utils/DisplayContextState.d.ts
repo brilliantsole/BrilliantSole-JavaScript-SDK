@@ -32,7 +32,16 @@ export type DisplayContextState = {
     spriteScaleX: number;
     spriteScaleY: number;
     spriteSheetName?: string;
+    spritesLineHeight: number;
+    spritesDirection: DisplayDirection;
+    spritesLineDirection: DisplayDirection;
+    spritesSpacing: number;
+    spritesLineSpacing: number;
+    spritesAlignment: DisplayAlignment;
+    spritesLineAlignment: DisplayAlignment;
 };
 export type DisplayContextStateKey = keyof DisplayContextState;
 export type PartialDisplayContextState = Partial<DisplayContextState>;
 export declare const DefaultDisplayContextState: DisplayContextState;
+export declare function isDirectionPositive(direction: DisplayDirection): boolean;
+export declare function isDirectionHorizontal(direction: DisplayDirection): boolean;

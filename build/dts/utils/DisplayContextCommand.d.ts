@@ -1,9 +1,9 @@
 import { DisplayBitmap, DisplayBitmapColorPair, DisplaySpriteColorPair } from "../DisplayManager.ts";
-import { DisplayAlignment, DisplaySegmentCap } from "./DisplayContextState.ts";
-import { DisplayManagerInterface } from "./DisplayManagerInterface.ts";
+import { DisplayAlignment, DisplayDirection, DisplaySegmentCap } from "./DisplayContextState.ts";
+import { DisplayManagerInterface, DisplaySpriteSerializedLines } from "./DisplayManagerInterface.ts";
 import { DisplayColorRGB } from "./DisplayUtils.ts";
 import { Vector2 } from "./MathUtils.ts";
-export declare const DisplayContextCommandTypes: readonly ["show", "clear", "setColor", "setColorOpacity", "setOpacity", "saveContext", "restoreContext", "selectBackgroundColor", "selectFillColor", "selectLineColor", "setLineWidth", "setRotation", "clearRotation", "setHorizontalAlignment", "setVerticalAlignment", "resetAlignment", "setSegmentStartCap", "setSegmentEndCap", "setSegmentCap", "setSegmentStartRadius", "setSegmentEndRadius", "setSegmentRadius", "setCropTop", "setCropRight", "setCropBottom", "setCropLeft", "clearCrop", "setRotationCropTop", "setRotationCropRight", "setRotationCropBottom", "setRotationCropLeft", "clearRotationCrop", "selectBitmapColor", "selectBitmapColors", "setBitmapScaleX", "setBitmapScaleY", "setBitmapScale", "resetBitmapScale", "selectSpriteColor", "selectSpriteColors", "resetSpriteColors", "setSpriteScaleX", "setSpriteScaleY", "setSpriteScale", "resetSpriteScale", "setSpritesDirection", "setSpritesLineDirection", "setSpritesSpacing", "setSpritesLineSpacing", "setSpritesAlign", "clearRect", "drawRect", "drawRoundRect", "drawCircle", "drawArc", "drawEllipse", "drawArcEllipse", "drawSegment", "drawSegments", "drawRegularPolygon", "drawPolygon", "drawQuadraticCurve", "drawQuadraticCurves", "drawBezierCurve", "drawBezierCurves", "drawPath", "drawClosedPath", "drawBitmap", "selectSpriteSheet", "drawSprite", "drawSprites"];
+export declare const DisplayContextCommandTypes: readonly ["show", "clear", "setColor", "setColorOpacity", "setOpacity", "saveContext", "restoreContext", "selectBackgroundColor", "selectFillColor", "selectLineColor", "setLineWidth", "setRotation", "clearRotation", "setHorizontalAlignment", "setVerticalAlignment", "resetAlignment", "setSegmentStartCap", "setSegmentEndCap", "setSegmentCap", "setSegmentStartRadius", "setSegmentEndRadius", "setSegmentRadius", "setCropTop", "setCropRight", "setCropBottom", "setCropLeft", "clearCrop", "setRotationCropTop", "setRotationCropRight", "setRotationCropBottom", "setRotationCropLeft", "clearRotationCrop", "selectBitmapColor", "selectBitmapColors", "setBitmapScaleX", "setBitmapScaleY", "setBitmapScale", "resetBitmapScale", "selectSpriteColor", "selectSpriteColors", "resetSpriteColors", "setSpriteScaleX", "setSpriteScaleY", "setSpriteScale", "resetSpriteScale", "setSpritesLineHeight", "setSpritesDirection", "setSpritesLineDirection", "setSpritesSpacing", "setSpritesLineSpacing", "setSpritesAlignment", "setSpritesLineAlignment", "clearRect", "drawRect", "drawRoundRect", "drawCircle", "drawArc", "drawEllipse", "drawArcEllipse", "drawSegment", "drawSegments", "drawRegularPolygon", "drawPolygon", "drawQuadraticCurve", "drawQuadraticCurves", "drawBezierCurve", "drawBezierCurves", "drawPath", "drawClosedPath", "drawBitmap", "selectSpriteSheet", "drawSprite", "drawSprites"];
 export type DisplayContextCommandType = (typeof DisplayContextCommandTypes)[number];
 export declare const DisplaySpriteContextCommandTypes: readonly ["selectFillColor", "selectLineColor", "setLineWidth", "setRotation", "clearRotation", "setVerticalAlignment", "setHorizontalAlignment", "resetAlignment", "setSegmentStartCap", "setSegmentEndCap", "setSegmentCap", "setSegmentStartRadius", "setSegmentEndRadius", "setSegmentRadius", "setCropTop", "setCropRight", "setCropBottom", "setCropLeft", "clearCrop", "setRotationCropTop", "setRotationCropRight", "setRotationCropBottom", "setRotationCropLeft", "clearRotationCrop", "selectBitmapColor", "selectBitmapColors", "setBitmapScaleX", "setBitmapScaleY", "setBitmapScale", "resetBitmapScale", "selectSpriteColor", "selectSpriteColors", "resetSpriteColors", "setSpriteScaleX", "setSpriteScaleY", "setSpriteScale", "resetSpriteScale", "clearRect", "drawRect", "drawRoundRect", "drawCircle", "drawEllipse", "drawRegularPolygon", "drawSegment", "drawSegments", "drawArc", "drawArcEllipse", "drawBitmap", "drawSprite"];
 export type DisplaySpriteContextCommandType = (typeof DisplaySpriteContextCommandTypes)[number];
@@ -151,6 +151,34 @@ export interface SetDisplaySpriteScaleCommand extends BaseDisplayContextCommand 
     type: "setSpriteScale";
     spriteScale: number;
 }
+export interface SetDisplaySpritesLineHeightCommand extends BaseDisplayContextCommand {
+    type: "setSpritesLineHeight";
+    spritesLineHeight: number;
+}
+export interface SetDisplaySpritesDirectionCommand extends BaseDisplayContextCommand {
+    type: "setSpritesDirection";
+    spritesDirection: DisplayDirection;
+}
+export interface SetDisplaySpritesLineDirectionCommand extends BaseDisplayContextCommand {
+    type: "setSpritesLineDirection";
+    spritesLineDirection: DisplayDirection;
+}
+export interface SetDisplaySpritesSpacingCommand extends BaseDisplayContextCommand {
+    type: "setSpritesSpacing";
+    spritesSpacing: number;
+}
+export interface SetDisplaySpritesLineSpacingCommand extends BaseDisplayContextCommand {
+    type: "setSpritesLineSpacing";
+    spritesLineSpacing: number;
+}
+export interface SetDisplaySpritesAlignmentCommand extends BaseDisplayContextCommand {
+    type: "setSpritesAlignment";
+    spritesAlignment: DisplayAlignment;
+}
+export interface SetDisplaySpritesLineAlignmentCommand extends BaseDisplayContextCommand {
+    type: "setSpritesLineAlignment";
+    spritesLineAlignment: DisplayAlignment;
+}
 export interface BasePositionDisplayContextCommand extends BaseDisplayContextCommand {
     x: number;
     y: number;
@@ -230,6 +258,10 @@ export interface DrawDisplaySpriteCommand extends BaseOffsetPositionDisplayConte
     spriteIndex: number;
     use2Bytes: boolean;
 }
-export type DisplayContextCommand = SimpleDisplayCommand | SetDisplayColorCommand | SetDisplayColorOpacityCommand | SetDisplayOpacityCommand | SelectDisplayFillColorCommand | SelectDisplayLineColorCommand | SetDisplayLineWidthCommand | SetDisplayRotationCommand | SetDisplaySegmentStartCapCommand | SetDisplaySegmentEndCapCommand | SetDisplaySegmentCapCommand | SetDisplaySegmentStartRadiusCommand | SetDisplaySegmentEndRadiusCommand | SetDisplaySegmentRadiusCommand | SetDisplayCropTopCommand | SetDisplayCropRightCommand | SetDisplayCropBottomCommand | SetDisplayCropLeftCommand | SetDisplayRotationCropTopCommand | SetDisplayRotationCropRightCommand | SetDisplayRotationCropBottomCommand | SetDisplayRotationCropLeftCommand | SelectDisplayBitmapColorIndexCommand | SelectDisplayBitmapColorIndicesCommand | SetDisplayBitmapScaleXCommand | SetDisplayBitmapScaleYCommand | SetDisplayBitmapScaleCommand | SelectDisplaySpriteColorIndexCommand | SelectDisplaySpriteColorIndicesCommand | SetDisplaySpriteScaleXCommand | SetDisplaySpriteScaleYCommand | SetDisplaySpriteScaleCommand | ClearDisplayRectCommand | DrawDisplayRectCommand | DrawDisplayRoundedRectCommand | DrawDisplayCircleCommand | DrawDisplayEllipseCommand | DrawDisplayRegularPolygonCommand | DrawDisplaySegmentCommand | DrawDisplaySegmentsCommand | DrawDisplayArcCommand | DrawDisplayArcEllipseCommand | DrawDisplayBitmapCommand | DrawDisplaySpriteCommand | SelectDisplaySpriteSheetCommand | SetDisplayHorizontalAlignmentCommand | SetDisplayVerticalAlignmentCommand;
+export interface DrawDisplaySpritesCommand extends BaseOffsetPositionDisplayContextCommand {
+    type: "drawSprites";
+    spriteSerializedLines: DisplaySpriteSerializedLines;
+}
+export type DisplayContextCommand = SimpleDisplayCommand | SetDisplayColorCommand | SetDisplayColorOpacityCommand | SetDisplayOpacityCommand | SelectDisplayFillColorCommand | SelectDisplayLineColorCommand | SetDisplayLineWidthCommand | SetDisplayRotationCommand | SetDisplaySegmentStartCapCommand | SetDisplaySegmentEndCapCommand | SetDisplaySegmentCapCommand | SetDisplaySegmentStartRadiusCommand | SetDisplaySegmentEndRadiusCommand | SetDisplaySegmentRadiusCommand | SetDisplayCropTopCommand | SetDisplayCropRightCommand | SetDisplayCropBottomCommand | SetDisplayCropLeftCommand | SetDisplayRotationCropTopCommand | SetDisplayRotationCropRightCommand | SetDisplayRotationCropBottomCommand | SetDisplayRotationCropLeftCommand | SelectDisplayBitmapColorIndexCommand | SelectDisplayBitmapColorIndicesCommand | SetDisplayBitmapScaleXCommand | SetDisplayBitmapScaleYCommand | SetDisplayBitmapScaleCommand | SelectDisplaySpriteColorIndexCommand | SelectDisplaySpriteColorIndicesCommand | SetDisplaySpriteScaleXCommand | SetDisplaySpriteScaleYCommand | SetDisplaySpriteScaleCommand | ClearDisplayRectCommand | DrawDisplayRectCommand | DrawDisplayRoundedRectCommand | DrawDisplayCircleCommand | DrawDisplayEllipseCommand | DrawDisplayRegularPolygonCommand | DrawDisplaySegmentCommand | DrawDisplaySegmentsCommand | DrawDisplayArcCommand | DrawDisplayArcEllipseCommand | DrawDisplayBitmapCommand | DrawDisplaySpriteCommand | DrawDisplaySpritesCommand | SelectDisplaySpriteSheetCommand | SetDisplayHorizontalAlignmentCommand | SetDisplayVerticalAlignmentCommand | SetDisplaySpritesDirectionCommand | SetDisplaySpritesLineDirectionCommand | SetDisplaySpritesSpacingCommand | SetDisplaySpritesLineSpacingCommand | SetDisplaySpritesAlignmentCommand | SetDisplaySpritesLineAlignmentCommand | SetDisplaySpritesLineHeightCommand;
 export declare function serializeContextCommand(displayManager: DisplayManagerInterface, command: DisplayContextCommand): DataView | undefined;
 export declare function serializeContextCommands(displayManager: DisplayManagerInterface, commands: DisplayContextCommand[]): ArrayBuffer;

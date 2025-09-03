@@ -608,7 +608,6 @@ let currentSpriteIndexBeingDrawn = 0;
 let isDrawing = false;
 /** @type {BS.DisplaySpriteSheet} */
 let spriteSheet;
-let debugWholeImage = false;
 let drawWhenReady = false;
 
 /** @type {HTMLCanvasElement} */
@@ -620,7 +619,7 @@ const draw = async () => {
     return;
   }
   if (isDrawing) {
-    console.warn("busy drawing");
+    //console.warn("busy drawing");
     drawWhenReady = true;
     return;
   }
@@ -666,10 +665,6 @@ const draw = async () => {
   }
   await displayCanvasHelper.selectSpriteColors(spriteColorPairs);
 
-  if (debugWholeImage) {
-    await displayCanvasHelper.uploadSpriteSheet(spriteSheet);
-    await displayCanvasHelper.selectSpriteSheet(spriteSheet.name);
-  }
   const offsetX = drawX;
   let offsetYTop = drawY - outputImageHeight / 2;
   drawProgress.value = 0;
@@ -682,18 +677,18 @@ const draw = async () => {
     const sprite = spriteSheet.sprites[currentSpriteIndexBeingDrawn];
     const scaledSpriteHeight = sprite.height * spriteScale;
     let offsetY = offsetYTop + scaledSpriteHeight / 2;
-    console.log("drawing sprite", sprite, { offsetX, offsetY });
-    if (debugWholeImage) {
-      await displayCanvasHelper.drawSprite(offsetX, offsetY, sprite.name);
-    } else {
-      await displayCanvasHelper.drawSpriteFromSpriteSheet(
-        offsetX,
-        offsetY,
-        sprite.name,
-        spriteSheet,
-        true
-      );
-    }
+    console.log(`drawing sprite "${sprite.name}"`, sprite, {
+      offsetX,
+      offsetY,
+    });
+    await displayCanvasHelper.drawSpriteFromSpriteSheet(
+      offsetX,
+      offsetY,
+      sprite.name,
+      spriteSheet,
+      undefined,
+      true
+    );
     offsetYTop += scaledSpriteHeight;
   }
   drawProgress.value = 0;
@@ -988,54 +983,54 @@ let imageSegmenter = undefined;
 let runningMode = "LIVE_STREAM";
 let labels;
 
-import {
-  ImageSegmenter,
-  FilesetResolver,
-} from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.2";
+// import {
+//   ImageSegmenter,
+//   FilesetResolver,
+// } from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.2";
 
-let useImageSegmentation = false;
-const useImageSegmentationInput = document.getElementById(
-  "useImageSegmentation"
-);
-useImageSegmentationInput.addEventListener("input", () => {
-  setUseImageSegmentation(useImageSegmentationInput.checked);
-});
-const setUseImageSegmentation = (newUseImageSegmentation) => {
-  useImageSegmentation = newUseImageSegmentation;
-  console.log({ useImageSegmentation });
-  useImageSegmentationInput.checked = useImageSegmentation;
+// let useImageSegmentation = false;
+// const useImageSegmentationInput = document.getElementById(
+//   "useImageSegmentation"
+// );
+// useImageSegmentationInput.addEventListener("input", () => {
+//   setUseImageSegmentation(useImageSegmentationInput.checked);
+// });
+// const setUseImageSegmentation = (newUseImageSegmentation) => {
+//   useImageSegmentation = newUseImageSegmentation;
+//   console.log({ useImageSegmentation });
+//   useImageSegmentationInput.checked = useImageSegmentation;
 
-  if (!imageSegmenter) {
-    createImageSegmenter();
-  }
-};
+//   if (!imageSegmenter) {
+//     createImageSegmenter();
+//   }
+// };
 
-const modelAssetPaths = {
-  selfieMulticlass:
-    "https://storage.googleapis.com/mediapipe-models/image_segmenter/selfie_multiclass_256x256/float32/latest/selfie_multiclass_256x256.tflite",
-  hairSegmenter:
-    "https://storage.googleapis.com/mediapipe-models/image_segmenter/hair_segmenter/float32/latest/hair_segmenter.tflite",
-  selfieSegmenter:
-    "https://storage.googleapis.com/mediapipe-models/image_segmenter/selfie_segmenter/float16/latest/selfie_segmenter.tflite",
-  deeplab:
-    "https://storage.googleapis.com/mediapipe-models/image_segmenter/deeplab_v3/float32/latest/deeplab_v3.tflite",
-};
-const createImageSegmenter = async () => {
-  const vision = await FilesetResolver.forVisionTasks(
-    "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.2/wasm"
-  );
+// const modelAssetPaths = {
+//   selfieMulticlass:
+//     "https://storage.googleapis.com/mediapipe-models/image_segmenter/selfie_multiclass_256x256/float32/latest/selfie_multiclass_256x256.tflite",
+//   hairSegmenter:
+//     "https://storage.googleapis.com/mediapipe-models/image_segmenter/hair_segmenter/float32/latest/hair_segmenter.tflite",
+//   selfieSegmenter:
+//     "https://storage.googleapis.com/mediapipe-models/image_segmenter/selfie_segmenter/float16/latest/selfie_segmenter.tflite",
+//   deeplab:
+//     "https://storage.googleapis.com/mediapipe-models/image_segmenter/deeplab_v3/float32/latest/deeplab_v3.tflite",
+// };
+// const createImageSegmenter = async () => {
+//   const vision = await FilesetResolver.forVisionTasks(
+//     "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.2/wasm"
+//   );
 
-  imageSegmenter = await ImageSegmenter.createFromOptions(vision, {
-    baseOptions: {
-      modelAssetPath: modelAssetPaths.selfieSegmenter,
-      delegate: "GPU",
-    },
+//   imageSegmenter = await ImageSegmenter.createFromOptions(vision, {
+//     baseOptions: {
+//       modelAssetPath: modelAssetPaths.selfieSegmenter,
+//       delegate: "GPU",
+//     },
 
-    runningMode: runningMode,
-    outputCategoryMask: true,
-    outputConfidenceMasks: false,
-  });
-  labels = imageSegmenter.getLabels();
-  console.log("created imageSegmenter", imageSegmenter, labels);
-};
-createImageSegmenter();
+//     runningMode: runningMode,
+//     outputCategoryMask: true,
+//     outputConfidenceMasks: false,
+//   });
+//   labels = imageSegmenter.getLabels();
+//   console.log("created imageSegmenter", imageSegmenter, labels);
+// };
+// createImageSegmenter();

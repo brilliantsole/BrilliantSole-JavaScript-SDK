@@ -1847,7 +1847,23 @@ class Device {
     return this.#displayManager.resetAlignment;
   }
 
-  // FILL - text, etc
+  get setDisplaySpritesDirection() {
+    return this.#displayManager.setSpritesDirection;
+  }
+  get setDisplaySpritesLineDirection() {
+    return this.#displayManager.setSpritesLineDirection;
+  }
+  get setDisplaySpritesSpacing() {
+    return this.#displayManager.setSpritesSpacing;
+  }
+  get setDisplaySpritesLineSpacing() {
+    return this.#displayManager.setSpritesLineSpacing;
+  }
+  get setDisplaySpritesAlignment() {
+    return this.#displayManager.setSpritesAlignment;
+  }
+
+  // FILL - curves, polygons, etc
 }
 
 export default Device;

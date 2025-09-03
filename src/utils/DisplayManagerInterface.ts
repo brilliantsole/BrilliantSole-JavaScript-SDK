@@ -11,6 +11,7 @@ import {
   DisplayAlignment,
   DisplayAlignmentDirection,
   DisplayContextState,
+  DisplayDirection,
   DisplaySegmentCap,
 } from "./DisplayContextState.ts";
 import {
@@ -29,6 +30,21 @@ import {
 import { degToRad, Vector2 } from "./MathUtils.ts";
 
 const _console = createConsole("DisplayManagerInterface", { log: false });
+
+export type DisplaySpriteSubLine = {
+  spriteSheetName: string;
+  spriteNames: string[];
+};
+export type DisplaySpriteLine = DisplaySpriteSubLine[];
+export type DisplaySpriteLines = DisplaySpriteLine[];
+
+export type DisplaySpriteSerializedSubLine = {
+  spriteSheetIndex: number;
+  spriteIndices: number[];
+  use2Bytes: boolean;
+};
+export type DisplaySpriteSerializedLine = DisplaySpriteSerializedSubLine[];
+export type DisplaySpriteSerializedLines = DisplaySpriteSerializedLine[];
 
 export interface DisplayManagerInterface {
   get isReady(): boolean;
@@ -227,6 +243,11 @@ export interface DisplayManagerInterface {
     sendImmediately?: boolean
   ): Promise<void>;
 
+  setSpriteScaleDirection(
+    direction: DisplayScaleDirection,
+    spriteScale: number,
+    sendImmediately?: boolean
+  ): Promise<void>;
   setSpriteScaleX(
     spriteScaleX: number,
     sendImmediately?: boolean
@@ -237,6 +258,53 @@ export interface DisplayManagerInterface {
   ): Promise<void>;
   setSpriteScale(spriteScale: number, sendImmediately?: boolean): Promise<void>;
   resetSpriteScale(sendImmediately?: boolean): Promise<void>;
+
+  setSpritesLineHeight(
+    spritesLineHeight: number,
+    sendImmediately?: boolean
+  ): Promise<void>;
+
+  setSpritesDirectionGeneric(
+    direction: DisplayDirection,
+    isOrthogonal: boolean,
+    sendImmediately?: boolean
+  ): Promise<void>;
+  setSpritesDirection(
+    spritesDirection: DisplayDirection,
+    sendImmediately?: boolean
+  ): Promise<void>;
+  setSpritesLineDirection(
+    spritesLineDirection: DisplayDirection,
+    sendImmediately?: boolean
+  ): Promise<void>;
+
+  setSpritesSpacingGeneric(
+    spacing: number,
+    isOrthogonal: boolean,
+    sendImmediately?: boolean
+  ): Promise<void>;
+  setSpritesSpacing(
+    spritesSpacing: number,
+    sendImmediately?: boolean
+  ): Promise<void>;
+  setSpritesLineSpacing(
+    spritesSpacing: number,
+    sendImmediately?: boolean
+  ): Promise<void>;
+
+  setSpritesAlignmentGeneric(
+    alignment: DisplayAlignment,
+    isOrthogonal: boolean,
+    sendImmediately?: boolean
+  ): Promise<void>;
+  setSpritesAlignment(
+    spritesAlignment: DisplayAlignment,
+    sendImmediately?: boolean
+  ): Promise<void>;
+  setSpritesLineAlignment(
+    spritesLineAlignment: DisplayAlignment,
+    sendImmediately?: boolean
+  ): Promise<void>;
 
   clearRect(
     x: number,
@@ -357,6 +425,7 @@ export interface DisplayManagerInterface {
     canvas?: HTMLCanvasElement
   ): Promise<{
     blob: Blob;
+    colors: string[];
     colorIndices: number[];
   }>;
 
@@ -370,6 +439,12 @@ export interface DisplayManagerInterface {
     offsetX: number,
     offsetY: number,
     spriteName: string,
+    sendImmediately?: boolean
+  ): Promise<void>;
+  drawSprites(
+    offsetX: number,
+    offsetY: number,
+    spriteLines: DisplaySpriteLines,
     sendImmediately?: boolean
   ): Promise<void>;
   assertLoadedSpriteSheet(spriteSheetName: string): void;
@@ -718,6 +793,7 @@ export async function runDisplayContextCommand(
         await displayManager.setSpriteScale(spriteScale, sendImmediately);
       }
       break;
+
     case "clearRect":
       {
         const { x, y, width, height } = command;

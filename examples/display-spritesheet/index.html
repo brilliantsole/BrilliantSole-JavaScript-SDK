@@ -268,12 +268,12 @@
       </label>
 
       <label id="drawSpriteX" class="verticalLabel">
-        <span>x (<span class="value">50</span>px)</span>
-        <input type="range" min="-50" max="640" step="1" value="50" />
+        <span>x (<span class="value">200</span>px)</span>
+        <input type="range" min="-50" max="640" step="1" value="200" />
       </label>
       <label id="drawSpriteY" class="verticalLabel">
-        <span>y (<span class="value">50</span>px)</span>
-        <input type="range" min="-50" max="400" step="1" value="50" />
+        <span>y (<span class="value">100</span>px)</span>
+        <input type="range" min="-50" max="400" step="1" value="100" />
       </label>
 
       <label id="drawSpriteRotation" class="verticalLabel">
@@ -341,6 +341,46 @@
       <label id="drawSpriteRotationCropLeft" class="verticalLabel">
         <span>rot crop left (<span class="value">0</span>px)</span>
         <input type="range" min="0" max="200" step="1" value="0" />
+      </label>
+
+      <label id="drawSpritesLineHeight" class="verticalLabel">
+        <span>sprites line height (<span class="value">0</span>px)</span>
+        <input type="range" min="0" max="200" step="1" value="0" />
+      </label>
+
+      <label id="drawSpritesDirection" class="verticalLabel">
+        <span>sprites direction</span>
+        <select>
+          <optgroup label="set sprites direction"></optgroup>
+        </select>
+      </label>
+      <label id="drawSpritesLineDirection" class="verticalLabel">
+        <span>sprites line direction</span>
+        <select>
+          <optgroup label="set sprites line direction"></optgroup>
+        </select>
+      </label>
+
+      <label id="drawSpritesSpacing" class="verticalLabel">
+        <span>sprites spacing (<span class="value">0</span>px)</span>
+        <input type="range" min="0" max="200" step="1" value="0" />
+      </label>
+      <label id="drawSpritesLineSpacing" class="verticalLabel">
+        <span>sprites line spacing (<span class="value">0</span>px)</span>
+        <input type="range" min="0" max="200" step="1" value="0" />
+      </label>
+
+      <label id="drawSpritesAlignment" class="verticalLabel">
+        <span>sprites alignment</span>
+        <select>
+          <optgroup label="set sprites alignment"></optgroup>
+        </select>
+      </label>
+      <label id="drawSpritesLineAlignment" class="verticalLabel">
+        <span>sprites line alignment</span>
+        <select>
+          <optgroup label="set sprites line alignment"></optgroup>
+        </select>
       </label>
     </div>
 
@@ -826,6 +866,11 @@
           </div>
         </template>
       </div>
+    </div>
+
+    <hr />
+    <div>
+      <textarea></textarea>
     </div>
   </body>
 </html>
