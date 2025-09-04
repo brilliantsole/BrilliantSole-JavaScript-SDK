@@ -59,44 +59,6 @@
       </select>
     </label>
 
-    <label id="drawX" class="verticalLabel">
-      <span>x (<span class="value">100</span>px)</span>
-      <input type="range" min="-640" max="800" step="5" value="200" />
-    </label>
-    <label id="drawY" class="verticalLabel">
-      <span>y (<span class="value">100</span>px)</span>
-      <input type="range" min="-400" max="500" step="5" value="100" />
-    </label>
-    <label id="drawLineSpacing" class="verticalLabel">
-      <span>line spacing (<span class="value">40</span>px)</span>
-      <input type="range" min="0" max="100" step="1" value="40" />
-    </label>
-
-    <label id="drawScale" class="verticalLabel">
-      <span>scale (<span class="value">1</span>x)</span>
-      <input type="range" min="0.1" max="10" step="0.1" value="1" />
-    </label>
-    <label id="drawScaleX" class="verticalLabel">
-      <span>scaleX (<span class="value">1</span>x)</span>
-      <input type="range" min="0.1" max="10" step="0.1" value="1" />
-    </label>
-
-    <label id="drawScaleY" class="verticalLabel">
-      <span>scaleY (<span class="value">1</span>x)</span>
-      <input type="range" min="0.1" max="10" step="0.1" value="1" />
-    </label>
-
-    <label class="verticalLabel">
-      <span>text align</span>
-      <select id="textAlign">
-        <optgroup label="select alignment">
-          <option selected>left</option>
-          <option>center</option>
-          <option>right</option>
-        </optgroup>
-      </select>
-    </label>
-
     <label class="verticalLabel">
       <span>select font</span>
       <select id="selectFont">
@@ -104,14 +66,86 @@
       </select>
     </label>
 
-    <label>
+    <label class="verticalLabel">
       add font
       <input
         id="loadFont"
         type="file"
         accept=".ttf,.otf,.woff,.woff2"
         multiple="true"
+        style="max-width: 100px"
       />
+    </label>
+
+    <label id="drawSpriteX" class="verticalLabel">
+      <span>x (<span class="value">200</span>px)</span>
+      <input type="range" min="-50" max="640" step="1" value="200" />
+    </label>
+    <label id="drawSpriteY" class="verticalLabel">
+      <span>y (<span class="value">100</span>px)</span>
+      <input type="range" min="-50" max="400" step="1" value="100" />
+    </label>
+
+    <label id="drawSpriteRotation" class="verticalLabel">
+      <span>rotation (<span class="value">0</span>deg)</span>
+      <input type="range" min="0" max="360" step="1" value="0" />
+    </label>
+
+    <label id="drawSpriteVerticalAlignment" class="verticalLabel">
+      <span>vertical alignment</span>
+      <select>
+        <optgroup label="set vertical alignment"></optgroup>
+      </select>
+    </label>
+
+    <label id="drawSpriteHorizontalAlignment" class="verticalLabel">
+      <span>horizontal alignment</span>
+      <select>
+        <optgroup label="set horizontal alignment"></optgroup>
+      </select>
+    </label>
+
+    <label id="drawSpriteScale" class="verticalLabel">
+      <span>scale (<span class="value">1</span>x)</span>
+      <input type="range" min="-2" max="3" step="0.01" value="1.0" />
+    </label>
+
+    <label id="drawSpriteScaleX" class="verticalLabel">
+      <span>scaleX (<span class="value">1</span>x)</span>
+      <input type="range" min="-2" max="3" step="0.01" value="1.0" />
+    </label>
+    <label id="drawSpriteScaleY" class="verticalLabel">
+      <span>scaleY (<span class="value">1</span>x)</span>
+      <input type="range" min="-2" max="3" step="0.01" value="1.0" />
+    </label>
+
+    <label id="drawSpritesDirection" class="verticalLabel">
+      <span>sprites direction</span>
+      <select>
+        <optgroup label="set sprites direction"></optgroup>
+      </select>
+    </label>
+    <label id="drawSpritesLineDirection" class="verticalLabel">
+      <span>sprites line direction</span>
+      <select>
+        <optgroup label="set sprites line direction"></optgroup>
+      </select>
+    </label>
+
+    <label id="drawSpritesSpacing" class="verticalLabel">
+      <span>sprites spacing (<span class="value">0</span>px)</span>
+      <input type="range" min="0" max="200" step="1" value="0" />
+    </label>
+    <label id="drawSpritesLineSpacing" class="verticalLabel">
+      <span>sprites line spacing (<span class="value">0</span>px)</span>
+      <input type="range" min="0" max="200" step="1" value="0" />
+    </label>
+
+    <label id="drawSpritesLineAlignment" class="verticalLabel">
+      <span>sprites line alignment</span>
+      <select>
+        <optgroup label="set sprites line alignment"></optgroup>
+      </select>
     </label>
 
     <br />

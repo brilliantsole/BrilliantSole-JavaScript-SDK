@@ -11,7 +11,7 @@ import opentype, { Glyph, Font } from "opentype.js";
 import { decompress } from "woff2-encoder";
 import RangeHelper from "./RangeHelper.ts";
 
-const _console = createConsole("DisplaySpriteSheetUtils", { log: false });
+const _console = createConsole("DisplaySpriteSheetUtils", { log: true });
 
 export type DisplaySpritePaletteSwap = {
   name: string;
@@ -306,20 +306,84 @@ export async function fontToSpriteSheet(
   return spriteSheet;
 }
 
+export function stringToSprites(
+  string: string,
+  spriteSheet: DisplaySpriteSheet,
+  requireAll = false
+) {
+  const sprites: DisplaySprite[] = [];
+  let substring = string;
+  while (substring.length > 0) {
+    let longestSprite: DisplaySprite | undefined;
+
+    spriteSheet.sprites.forEach((sprite) => {
+      if (substring.startsWith(sprite.name)) {
+        if (!longestSprite || sprite.name.length > longestSprite.name.length) {
+          longestSprite = sprite;
+        }
+      }
+    });
+
+    // _console.log("longestSprite", longestSprite);
+    if (requireAll) {
+      _console.assertWithError(
+        longestSprite,
+        `couldn't find sprite with name prefixing "${substring}"`
+      );
+    }
+
+    if (longestSprite) {
+      sprites.push(longestSprite);
+      substring = substring.substring(longestSprite!.name.length);
+    } else {
+      substring = substring.substring(1);
+    }
+    //_console.log("new substring", substring);
+  }
+
+  //_console.log(`string "${string}" to sprites`, sprites);
+  return sprites;
+}
+
+export function getReferencedSprites(
+  sprite: DisplaySprite,
+  spriteSheet: DisplaySpriteSheet
+) {
+  const sprites: DisplaySprite[] = [];
+  sprite.commands
+    .filter((command) => command.type == "drawSprite")
+    .map((command) => command.spriteIndex)
+    .map((spriteIndex) => spriteSheet.sprites[spriteIndex])
+    .forEach((_sprite) => {
+      if (!sprites.includes(_sprite)) {
+        sprites.push(_sprite);
+        sprites.push(...getReferencedSprites(_sprite, spriteSheet));
+      }
+    });
+  _console.log("referencedSprites", sprite, sprites);
+  return sprites;
+}
 export function reduceSpriteSheet(
   spriteSheet: DisplaySpriteSheet,
-  spriteNames: string | string[]
+  spriteNames: string | string[],
+  requireAll = false
 ) {
-  const reducedSpriteName = Object.assign({}, spriteSheet);
+  const reducedSpriteSheet = Object.assign({}, spriteSheet);
   if (!(spriteNames instanceof Array)) {
-    // TODO - parseSpriteNames via prefixes (use for drawSprites)
-    spriteNames = [spriteNames];
+    spriteNames = stringToSprites(spriteNames, spriteSheet, requireAll).map(
+      (sprite) => sprite.name
+    );
   }
-  //_console.log("reduceSpriteSheet", spriteSheet, spriteNames);
-  reducedSpriteName.sprites = reducedSpriteName.sprites.filter((sprite) => {
-    // TODO - recursively iterate sprites' commands to see which sprites reference what
-    return spriteNames.includes(sprite.name);
+  _console.log("reducingSpriteSheet", spriteSheet, spriteNames);
+  reducedSpriteSheet.sprites = [];
+  spriteSheet.sprites.forEach((sprite) => {
+    if (spriteNames.includes(sprite.name)) {
+      reducedSpriteSheet.sprites.push(sprite);
+      reducedSpriteSheet.sprites.push(
+        ...getReferencedSprites(sprite, spriteSheet)
+      );
+    }
   });
-  _console.log("reducedSpriteName", reducedSpriteName);
-  return reducedSpriteName;
+  _console.log("reducedSpriteSheet", reducedSpriteSheet);
+  return reducedSpriteSheet;
 }

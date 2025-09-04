@@ -84,6 +84,7 @@ import {
   DisplaySpriteSerializedLines,
   DisplaySpriteSerializedLine,
   DisplaySpriteSerializedSubLine,
+  stringToSpriteLines,
 } from "./utils/DisplayManagerInterface.ts";
 import { SendFileCallback } from "./FileTransferManager.ts";
 import { textDecoder, textEncoder } from "./utils/Text.ts";
@@ -922,6 +923,7 @@ class DisplayManager implements DisplayManagerInterface {
     const differences = this.#contextStateHelper.update({
       [alignmentKey]: alignment,
     });
+    _console.log({ alignmentKey, alignment, differences });
     if (differences.length == 0) {
       return;
     }
@@ -2415,6 +2417,23 @@ class DisplayManager implements DisplayManagerInterface {
       dataView.buffer,
       sendImmediately
     );
+  }
+
+  async drawSpritesString(
+    offsetX: number,
+    offsetY: number,
+    string: string,
+    requireAll?: boolean,
+    sendImmediately?: boolean
+  ) {
+    const spriteLines = this.stringToSpriteLines(string, requireAll);
+    await this.drawSprites(offsetX, offsetY, spriteLines, sendImmediately);
+  }
+  stringToSpriteLines(
+    string: string,
+    requireAll?: boolean
+  ): DisplaySpriteLines {
+    return stringToSpriteLines(string, this.spriteSheets, requireAll);
   }
 
   async drawSpriteFromSpriteSheet(

@@ -872,7 +872,7 @@ toggleDrawAllSpritesCheckbox.addEventListener("input", () => {
 
 let drawWhenReady = false;
 let lastDrawTime = 0;
-let draw = () => {
+let draw = async () => {
   if (!displayCanvasHelper.isReady) {
     drawWhenReady = true;
     return;
@@ -905,36 +905,36 @@ let draw = () => {
     spritesLineDirection,
   } = drawSpriteParams;
 
-  displayCanvasHelper.setRotation(rotation);
-  displayCanvasHelper.setSpriteScaleX(scaleX);
-  displayCanvasHelper.setSpriteScaleY(scaleY);
-  displayCanvasHelper.setCropTop(cropTop);
-  displayCanvasHelper.setCropRight(cropRight);
-  displayCanvasHelper.setCropBottom(cropBottom);
-  displayCanvasHelper.setCropLeft(cropLeft);
-  displayCanvasHelper.setRotationCropTop(rotationCropTop);
-  displayCanvasHelper.setRotationCropRight(rotationCropRight);
-  displayCanvasHelper.setRotationCropBottom(rotationCropBottom);
-  displayCanvasHelper.setRotationCropLeft(rotationCropLeft);
-  displayCanvasHelper.setVerticalAlignment(verticalAlignment);
-  displayCanvasHelper.setHorizontalAlignment(horizontalAlignment);
+  await displayCanvasHelper.setRotation(rotation);
+  await displayCanvasHelper.setSpriteScaleX(scaleX);
+  await displayCanvasHelper.setSpriteScaleY(scaleY);
+  await displayCanvasHelper.setCropTop(cropTop);
+  await displayCanvasHelper.setCropRight(cropRight);
+  await displayCanvasHelper.setCropBottom(cropBottom);
+  await displayCanvasHelper.setCropLeft(cropLeft);
+  await displayCanvasHelper.setRotationCropTop(rotationCropTop);
+  await displayCanvasHelper.setRotationCropRight(rotationCropRight);
+  await displayCanvasHelper.setRotationCropBottom(rotationCropBottom);
+  await displayCanvasHelper.setRotationCropLeft(rotationCropLeft);
+  await displayCanvasHelper.setVerticalAlignment(verticalAlignment);
+  await displayCanvasHelper.setHorizontalAlignment(horizontalAlignment);
 
-  displayCanvasHelper.setSpritesLineHeight(spritesLineHeight);
+  await displayCanvasHelper.setSpritesLineHeight(spritesLineHeight);
 
-  displayCanvasHelper.setSpritesSpacing(spritesSpacing);
-  displayCanvasHelper.setSpritesLineSpacing(spritesLineSpacing);
+  await displayCanvasHelper.setSpritesSpacing(spritesSpacing);
+  await displayCanvasHelper.setSpritesLineSpacing(spritesLineSpacing);
 
-  displayCanvasHelper.setSpritesDirection(spritesDirection);
-  displayCanvasHelper.setSpritesLineDirection(spritesLineDirection);
+  await displayCanvasHelper.setSpritesDirection(spritesDirection);
+  await displayCanvasHelper.setSpritesLineDirection(spritesLineDirection);
 
-  displayCanvasHelper.setSpritesAlignment(spritesAlignment);
-  displayCanvasHelper.setSpritesLineAlignment(spritesLineAlignment);
+  await displayCanvasHelper.setSpritesAlignment(spritesAlignment);
+  await displayCanvasHelper.setSpritesLineAlignment(spritesLineAlignment);
 
   if (shouldDrawAllSprites) {
     if (true) {
-      drawSprites();
+      await drawSprites();
     } else {
-      drawSpritesManually();
+      await drawSpritesManually();
     }
   } else {
     drawSprite();
@@ -981,46 +981,44 @@ const drawSpritesManually = async () => {
 
   await displayCanvasHelper.show();
 };
-let drawSpritesLineLength = 10;
-let drawSpritesMaxNumberOfSprites = 25;
+
 const drawSprites = async () => {
-  const { x, y } = drawSpriteParams;
-  /** @type {BS.DisplaySpriteLines} */
-  const spriteLines = [];
-  /** @type {BS.DisplaySpriteSubLine} */
-  let latestSpriteSubLines;
-  spriteSheet.sprites.forEach((sprite, index) => {
-    if (index >= drawSpritesMaxNumberOfSprites) {
-      return;
-    }
-    if (index % drawSpritesLineLength == 0) {
-      latestSpriteSubLines = {
-        spriteSheetName: spriteSheet.name,
-        spriteNames: [],
-      };
-      spriteLines.push([latestSpriteSubLines]);
-    }
-    if (index == 0) {
-      return;
-    }
-    latestSpriteSubLines.spriteNames.push(sprite.name);
-  });
-  console.log("spriteLines", spriteLines);
-  await displayCanvasHelper.drawSprites(x, y, spriteLines);
-  await displayCanvasHelper.show();
+  const { x, y, drawSpritesMaxNumberOfSprites, numberOfSpritesPerLine } =
+    drawSpriteParams;
+  if (drawSpritesText.length > 0) {
+    await displayCanvasHelper.drawSpritesString(x, y, drawSpritesText);
+    await displayCanvasHelper.show();
+  } else {
+    let _drawSpritesText = "";
+    spriteSheet.sprites.forEach((sprite, index) => {
+      if (
+        drawSpritesMaxNumberOfSprites > 0 &&
+        index >= drawSpritesMaxNumberOfSprites
+      ) {
+        return;
+      }
+      if (index % numberOfSpritesPerLine == 0) {
+        _drawSpritesText += "\n";
+      }
+      _drawSpritesText += sprite.name;
+    });
+    console.log("spriteLines", _drawSpritesText);
+    await displayCanvasHelper.drawSpritesString(x, y, _drawSpritesText, false);
+    await displayCanvasHelper.show();
+  }
 };
-const drawSprite = () => {
+const drawSprite = async () => {
   const { x, y } = drawSpriteParams;
 
   if (selectedSprite) {
     if (useUploadedSpriteSheet) {
-      displayCanvasHelper.drawSprite(x, y, selectedSprite.name);
+      await displayCanvasHelper.drawSprite(x, y, selectedSprite.name);
     } else {
       displayCanvasHelper.previewSprite(x, y, selectedSprite, spriteSheet);
     }
-    displayCanvasHelper.show();
+    await displayCanvasHelper.show();
   } else {
-    displayCanvasHelper.clear();
+    await displayCanvasHelper.clear();
   }
 };
 displayCanvasHelper.addEventListener("ready", () => {
@@ -1062,6 +1060,9 @@ const drawSpriteParams = {
 
   spritesDirection: "right",
   spritesLineDirection: "down",
+
+  numberOfSpritesPerLine: 10,
+  drawSpritesMaxNumberOfSprites: 50,
 };
 
 const drawSpriteXContainer = document.getElementById("drawSpriteX");
@@ -1488,6 +1489,55 @@ const setSpritesLineSpacing = (drawSpritesLineSpacing) => {
 };
 drawSpritesLineSpacingInput.addEventListener("input", () => {
   setSpritesLineSpacing(Number(drawSpritesLineSpacingInput.value));
+});
+
+const drawSpritesNumberOfSpritesPerLineContainer = document.getElementById(
+  "drawSpritesNumberOfSpritesPerLine"
+);
+const drawSpritesNumberOfSpritesPerLineInput =
+  drawSpritesNumberOfSpritesPerLineContainer.querySelector("input");
+const drawSpritesNumberOfSpritesPerLineSpan =
+  drawSpritesNumberOfSpritesPerLineContainer.querySelector(".value");
+const setSpritesNumberOfSpritesPerLine = (
+  drawSpritesNumberOfSpritesPerLine
+) => {
+  drawSpritesNumberOfSpritesPerLineInput.value =
+    drawSpritesNumberOfSpritesPerLine;
+  drawSpritesNumberOfSpritesPerLineSpan.innerText =
+    drawSpritesNumberOfSpritesPerLine;
+  drawSpriteParams.numberOfSpritesPerLine = drawSpritesNumberOfSpritesPerLine;
+  console.log({ drawSpritesNumberOfSpritesPerLine });
+  if (shouldDrawAllSprites) {
+    draw();
+  }
+};
+drawSpritesNumberOfSpritesPerLineInput.addEventListener("input", () => {
+  setSpritesNumberOfSpritesPerLine(
+    Number(drawSpritesNumberOfSpritesPerLineInput.value)
+  );
+});
+
+const drawSpritesMaxNumberOfSpritesContainer = document.getElementById(
+  "drawSpritesMaxNumberOfSprites"
+);
+const drawSpritesMaxNumberOfSpritesInput =
+  drawSpritesMaxNumberOfSpritesContainer.querySelector("input");
+const drawSpritesMaxNumberOfSpritesSpan =
+  drawSpritesMaxNumberOfSpritesContainer.querySelector(".value");
+const setSpritesMaxNumberOfSprites = (drawSpritesMaxNumberOfSprites) => {
+  drawSpritesMaxNumberOfSpritesInput.value = drawSpritesMaxNumberOfSprites;
+  drawSpritesMaxNumberOfSpritesSpan.innerText = drawSpritesMaxNumberOfSprites;
+  drawSpriteParams.drawSpritesMaxNumberOfSprites =
+    drawSpritesMaxNumberOfSprites;
+  console.log({ drawSpritesMaxNumberOfSprites });
+  if (shouldDrawAllSprites) {
+    draw();
+  }
+};
+drawSpritesMaxNumberOfSpritesInput.addEventListener("input", () => {
+  setSpritesMaxNumberOfSprites(
+    Number(drawSpritesMaxNumberOfSpritesInput.value)
+  );
 });
 
 // LOAD/SAVE
@@ -3689,3 +3739,15 @@ const setFontSize = (newFontSize) => {
 };
 setFontSize(fontSize);
 setSpritesLineHeight(fontSize);
+
+// DRAW SPRITES
+
+/** @type {HTMLTextAreaElement} */
+const drawSpritesTextArea = document.getElementById("drawSpritesText");
+let drawSpritesText = "";
+drawSpritesTextArea.addEventListener("input", () => {
+  drawSpritesText = drawSpritesTextArea.value;
+  if (shouldDrawAllSprites) {
+    draw();
+  }
+});

@@ -129,7 +129,9 @@ export interface DisplayManagerInterface {
     uploadSpriteSheets(spriteSheets: DisplaySpriteSheet[]): Promise<void>;
     selectSpriteSheet(spriteSheetName: string, sendImmediately?: boolean): Promise<void>;
     drawSprite(offsetX: number, offsetY: number, spriteName: string, sendImmediately?: boolean): Promise<void>;
+    stringToSpriteLines(string: string, requireAll?: boolean): DisplaySpriteLines;
     drawSprites(offsetX: number, offsetY: number, spriteLines: DisplaySpriteLines, sendImmediately?: boolean): Promise<void>;
+    drawSpritesString(offsetX: number, offsetY: number, string: string, sendImmediately?: boolean): Promise<void>;
     assertLoadedSpriteSheet(spriteSheetName: string): void;
     assertSelectedSpriteSheet(spriteSheetName: string): void;
     assertAnySelectedSpriteSheet(): void;
@@ -169,3 +171,4 @@ export declare function selectSpriteSheetPalette(displayManagerInterface: Displa
 export declare function selectSpriteSheetPaletteSwap(displayManagerInterface: DisplayManagerInterface, paletteSwapName: string, offset?: number, sendImmediately?: boolean): Promise<void>;
 export declare function selectSpritePaletteSwap(displayManagerInterface: DisplayManagerInterface, spriteName: string, paletteSwapName: string, offset?: number, sendImmediately?: boolean): Promise<void>;
 export declare function drawSpriteFromSpriteSheet(displayManagerInterface: DisplayManagerInterface, offsetX: number, offsetY: number, spriteName: string, spriteSheet: DisplaySpriteSheet, paletteName?: string, sendImmediately?: boolean): Promise<void>;
+export declare function stringToSpriteLines(string: string, spriteSheets: Record<string, DisplaySpriteSheet>, requireAll?: boolean): DisplaySpriteLines;

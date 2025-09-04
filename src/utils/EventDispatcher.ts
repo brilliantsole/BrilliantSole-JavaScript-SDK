@@ -1,5 +1,4 @@
 import { createConsole } from "./Console.ts";
-import { deepEqual } from "./ObjectUtils.ts";
 
 const _console = createConsole("EventDispatcher", { log: false });
 
@@ -181,7 +180,10 @@ class EventDispatcher<
 
     if (!this.listeners[type]) return;
 
-    this.listeners[type]!.forEach((listenerObj) => {
+    // Take a snapshot of listeners at this moment
+    const listenersSnapshot = [...this.listeners[type]!];
+
+    listenersSnapshot.forEach((listenerObj) => {
       if (listenerObj.shouldRemove) {
         return;
       }
@@ -198,6 +200,7 @@ class EventDispatcher<
         listenerObj.shouldRemove = true;
       }
     });
+
     this.updateEventListeners(type);
   }
 

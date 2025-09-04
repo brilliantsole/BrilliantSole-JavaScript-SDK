@@ -224,6 +224,8 @@ declare class DisplayCanvasHelper implements DisplayManagerInterface {
     drawSprite(offsetX: number, offsetY: number, spriteName: string, sendImmediately?: boolean): Promise<void>;
     drawSprites(offsetX: number, offsetY: number, spriteLines: DisplaySpriteLines, sendImmediately?: boolean): Promise<void>;
     drawSpriteFromSpriteSheet(offsetX: number, offsetY: number, spriteName: string, spriteSheet: DisplaySpriteSheet, paletteName?: string, sendImmediately?: boolean): Promise<void>;
+    drawSpritesString(offsetX: number, offsetY: number, string: string, requireAll?: boolean, sendImmediately?: boolean): Promise<void>;
+    stringToSpriteLines(string: string, requireAll?: boolean): DisplaySpriteLines;
     get brightness(): "veryLow" | "low" | "medium" | "high" | "veryHigh";
     setBrightness(newBrightness: DisplayBrightness, sendImmediately?: boolean): Promise<void>;
     runContextCommand(command: DisplayContextCommand, sendImmediately?: boolean): Promise<void>;

@@ -281,7 +281,8 @@ class EventDispatcher {
         }
         if (!this.listeners[type])
             return;
-        this.listeners[type].forEach((listenerObj) => {
+        const listenersSnapshot = [...this.listeners[type]];
+        listenersSnapshot.forEach((listenerObj) => {
             if (listenerObj.shouldRemove) {
                 return;
             }
@@ -15283,7 +15284,7 @@ var A,g=(A="file:///build/woff2-wasm.js",function(g={}){g.ready=new Promise((A,g
         }`;D&&(Y+="var destructors = [];\n");var c=D?"destructors":"null",h=["throwBindingError","invoker","fn","runDestructors","retType","classParam"],F=[f,B,I,AD,g[0],g[1]];w&&(Y+="var thisWired = classParam.toWireType("+c+", this);\n");for(var G=0;G<E-2;++G)Y+="var arg"+G+"Wired = argType"+G+".toWireType("+c+", arg"+G+"); // "+g[G+2].name+"\n",h.push("argType"+G),F.push(g[G+2]);if(w&&(L="thisWired"+(L.length>0?", ":"")+L),Y+=(i||Q?"var rv = ":"")+"invoker(fn"+(L.length>0?", ":"")+L+");\n",D)Y+="runDestructors(destructors);\n";else for(var G=w?1:2;G<g.length;++G){var s=1===G?"thisWired":"arg"+(G-2)+"Wired";null!==g[G].destructorFunction&&(Y+=s+"_dtor("+s+"); // "+g[G].name+"\n",h.push(s+"_dtor"),F.push(g[G].destructorFunction));}return i&&(Y+="var ret = retType.fromWireType(rv);\nreturn ret;\n"),Y+="}\n",h.push(Y),(function(A,g){if(!(A instanceof Function))throw TypeError(`new_ called with constructor type ${typeof A} which is not a function`);var C=AG(A.name||"unknownFunctionName",function(){});C.prototype=A.prototype;var B=new C,I=A.apply(B,g);return I instanceof Object?I:B})(Function,h).apply(null,F)}(A,[C[0],null].concat(C.slice(1)),0,I,Q,E),g-1),[]});},b:(A,g,C,B,I)=>{g=P(g);var Q=A=>A;if(0===B){var E=32-8*C;Q=A=>A<<E>>>E;}var w=g.includes("unsigned"),D=(A,g)=>{};AA(A,{name:g,fromWireType:Q,toWireType:w?function(A,g){return D(g,this.name),g>>>0}:function(A,g){return D(g,this.name),g},argPackAdvance:8,readValueFromPointer:AH(g,C,0!==B),destructorFunction:null});},a:(A,g,C)=>{var B=[Int8Array,Uint8Array,Int16Array,Uint16Array,Int32Array,Uint32Array,Float32Array,Float64Array][g];function I(A){var g=L[A>>2],C=L[A+4>>2];return new B(w.buffer,C,g)}AA(A,{name:C=P(C),fromWireType:I,argPackAdvance:8,readValueFromPointer:I},{ignoreDuplicateRegistrations:!0});},g:(A,g)=>{var C="std::string"===(g=P(g));AA(A,{name:g,fromWireType(A){var g,B=L[A>>2],I=A+4;if(C)for(var Q=I,E=0;E<=B;++E){var w=I+E;if(E==B||0==D[w]){var G=w-Q,i=Ay(Q,G);void 0===g?g=i:g+="\x00"+i,Q=w+1;}}else {for(var o=Array(B),E=0;E<B;++E)o[E]=String.fromCharCode(D[I+E]);g=o.join("");}return AO(A),g},toWireType(A,g){g instanceof ArrayBuffer&&(g=new Uint8Array(g));var B,I="string"==typeof g;I||g instanceof Uint8Array||g instanceof Uint8ClampedArray||g instanceof Int8Array||f("Cannot pass non-string to std::string"),B=C&&I?AM(g):g.length;var Q=Av(4+B+1),E=Q+4;if(L[Q>>2]=B,C&&I)AZ(g,E,B+1);else if(I)for(var w=0;w<B;++w){var G=g.charCodeAt(w);G>255&&(AO(E),f("String has UTF-16 code units that do not fit in 8 bits")),D[E+w]=G;}else for(var w=0;w<B;++w)D[E+w]=g[w];return null!==A&&A.push(AO,Q),Q},argPackAdvance:8,readValueFromPointer:Ak,destructorFunction(A){AO(A);}});},d:(A,g,C)=>{var B,I,Q,E,w;C=P(C),2===g?(B=Ap,I=Ab,E=Al,Q=()=>i,w=1):4===g&&(B=AS,I=Am,E=Aq,Q=()=>L,w=2),AA(A,{name:C,fromWireType:A=>{for(var C,I=L[A>>2],E=Q(),D=A+4,G=0;G<=I;++G){var i=A+4+G*g;if(G==I||0==E[i>>w]){var o=i-D,Y=B(D,o);void 0===C?C=Y:C+="\x00"+Y,D=i+g;}}return AO(A),C},toWireType:(A,B)=>{"string"!=typeof B&&f(`Cannot pass non-string to C++ string type ${C}`);var Q=E(B),D=Av(4+Q+g);return L[D>>2]=Q>>w,I(B,D+4,Q+g),null!==A&&A.push(AO,D),D},argPackAdvance:8,readValueFromPointer:AQ,destructorFunction(A){AO(A);}});},j:(A,g)=>{AA(A,{isVoid:!0,name:g=P(g),argPackAdvance:0,fromWireType:()=>void 0,toWireType:(A,g)=>void 0});},l:AB,m:A=>{A>4&&(AC.get(A).refcount+=1);},h:(A,g)=>{var C=(A=At(A,"_emval_take_value")).readValueFromPointer(g);return AI.toHandle(C)},o:()=>{X("");},q:(A,g,C)=>D.copyWithin(A,g,g+C),p:A=>{var g=D.length;A>>>=0;var C=AV();if(A>C)return !1;for(var B=(A,g)=>A+(g-A%g)%g,I=1;I<=4;I*=2){var Q=g*(1+.2/I);if(Q=Math.min(Q,A+100663296),AX(Math.min(C,B(Math.max(A,Q),65536))))return !0}return !1},k:(A,g)=>{An(A);}},Aj=function(){var A,C={a:Ax};function w(A,C){var B;return E=(Aj=A.exports).s,b(),K=Aj.u,B=Aj.t,S.unshift(B),function(A){if(q--,g.monitorRunDependencies&&g.monitorRunDependencies(q),0==q&&(V)){var C=V;V=null,C();}}(),Aj}if(q++,g.monitorRunDependencies&&g.monitorRunDependencies(q),g.instantiateWasm)try{return g.instantiateWasm(C,w)}catch(A){y(`Module.instantiateWasm callback failed with error: ${A}`),B(A);}return (A=h,Promise.resolve().then(()=>(function(A){if(A==h&&Q)return new Uint8Array(Q);var g=function(A){if(n(A))return function(A){try{for(var g=atob(A),C=new Uint8Array(g.length),B=0;B<g.length;++B)C[B]=g.charCodeAt(B);return C}catch(A){throw Error("Converting base64 string to bytes failed.")}}(A.slice(u.length))}(A);if(g)return g;throw "both async and sync fetching of the wasm failed"})(A)).then(A=>WebAssembly.instantiate(A,C)).then(A=>A).then(function(A){w(A.instance);},A=>{y(`failed to asynchronously prepare wasm: ${A}`),X(A);})).catch(B),{}}(),Av=A=>(Av=Aj.v)(A),AO=A=>(AO=Aj.w)(A),Ar=A=>(Ar=Aj.x)(A),AP=(g.__embind_initialize_bindings=()=>(g.__embind_initialize_bindings=Aj.y)(),A=>(AP=Aj.z)(A));function Az(){!(q>0)&&(function(){if(g.preRun)for("function"==typeof g.preRun&&(g.preRun=[g.preRun]);g.preRun.length;){var A;A=g.preRun.shift(),l.unshift(A);}j(l);}(),q>0||(g.setStatus?(g.setStatus("Running..."),setTimeout(function(){setTimeout(function(){g.setStatus("");},1),A();},1)):A()));function A(){!R&&(R=!0,g.calledRun=!0,p||(j(S),C(g),g.onRuntimeInitialized&&g.onRuntimeInitialized(),function(){if(g.postRun)for("function"==typeof g.postRun&&(g.postRun=[g.postRun]);g.postRun.length;){var A;A=g.postRun.shift(),m.unshift(A);}j(m);}()));}}if(V=function A(){R||Az(),R||(V=A);},g.preInit)for("function"==typeof g.preInit&&(g.preInit=[g.preInit]);g.preInit.length>0;)g.preInit.pop()();return Az(),g.ready});let C=new Promise(A=>{g({onRuntimeInitialized(){A(this);}});});
 async function B(){let A=await C;return new Promise(g=>{setTimeout(()=>{g(A);},0);})}async function Q(A){let g=await B(),C=await g.decompress(A);if(!C)throw Error("Failed to decompress the font data.");return Uint8Array.from(C)}
 
-const _console$m = createConsole("DisplaySpriteSheetUtils", { log: false });
+const _console$m = createConsole("DisplaySpriteSheetUtils", { log: true });
 const spriteHeaderLength = 3 * 2;
 function calculateSpriteSheetHeaderLength(numberOfSprites) {
     return 2 + numberOfSprites * 2 + numberOfSprites * spriteHeaderLength;
@@ -15450,16 +15451,61 @@ async function fontToSpriteSheet(displayManager, font, fontSize, spriteSheetName
     }
     return spriteSheet;
 }
-function reduceSpriteSheet(spriteSheet, spriteNames) {
-    const reducedSpriteName = Object.assign({}, spriteSheet);
-    if (!(spriteNames instanceof Array)) {
-        spriteNames = [spriteNames];
+function stringToSprites(string, spriteSheet, requireAll = false) {
+    const sprites = [];
+    let substring = string;
+    while (substring.length > 0) {
+        let longestSprite;
+        spriteSheet.sprites.forEach((sprite) => {
+            if (substring.startsWith(sprite.name)) {
+                if (!longestSprite || sprite.name.length > longestSprite.name.length) {
+                    longestSprite = sprite;
+                }
+            }
+        });
+        if (requireAll) {
+            _console$m.assertWithError(longestSprite, `couldn't find sprite with name prefixing "${substring}"`);
+        }
+        if (longestSprite) {
+            sprites.push(longestSprite);
+            substring = substring.substring(longestSprite.name.length);
+        }
+        else {
+            substring = substring.substring(1);
+        }
     }
-    reducedSpriteName.sprites = reducedSpriteName.sprites.filter((sprite) => {
-        return spriteNames.includes(sprite.name);
+    return sprites;
+}
+function getReferencedSprites(sprite, spriteSheet) {
+    const sprites = [];
+    sprite.commands
+        .filter((command) => command.type == "drawSprite")
+        .map((command) => command.spriteIndex)
+        .map((spriteIndex) => spriteSheet.sprites[spriteIndex])
+        .forEach((_sprite) => {
+        if (!sprites.includes(_sprite)) {
+            sprites.push(_sprite);
+            sprites.push(...getReferencedSprites(_sprite, spriteSheet));
+        }
     });
-    _console$m.log("reducedSpriteName", reducedSpriteName);
-    return reducedSpriteName;
+    _console$m.log("referencedSprites", sprite, sprites);
+    return sprites;
+}
+function reduceSpriteSheet(spriteSheet, spriteNames, requireAll = false) {
+    const reducedSpriteSheet = Object.assign({}, spriteSheet);
+    if (!(spriteNames instanceof Array)) {
+        spriteNames = stringToSprites(spriteNames, spriteSheet, requireAll).map((sprite) => sprite.name);
+    }
+    _console$m.log("reducingSpriteSheet", spriteSheet, spriteNames);
+    reducedSpriteSheet.sprites = [];
+    spriteSheet.sprites.forEach((sprite) => {
+        if (spriteNames.includes(sprite.name)) {
+            reducedSpriteSheet.sprites.push(sprite);
+            reducedSpriteSheet.sprites.push(...getReferencedSprites(sprite, spriteSheet));
+        }
+    });
+    _console$m.log("reducedSpriteSheet", reducedSpriteSheet);
+    return reducedSpriteSheet;
 }
 
 const _console$l = createConsole("DisplayBitmapUtils", { log: false });
@@ -15788,7 +15834,7 @@ async function imageToSpriteSheet(image, spriteSheetName, width, height, numberO
     return canvasToSpriteSheet(canvas, spriteSheetName, numberOfColors, paletteName, maxFileLength);
 }
 
-const _console$k = createConsole("DisplayManagerInterface", { log: false });
+const _console$k = createConsole("DisplayManagerInterface", { log: true });
 async function runDisplayContextCommand(displayManager, command, sendImmediately) {
     if (command.hide) {
         return;
@@ -16231,6 +16277,54 @@ async function drawSpriteFromSpriteSheet(displayManagerInterface, offsetX, offse
         await displayManagerInterface.selectSpriteSheetPalette(paletteName);
     }
 }
+function stringToSpriteLines(string, spriteSheets, requireAll = false) {
+    const lineStrings = string.split("\n");
+    const spriteLines = lineStrings.map((lineString) => {
+        const spriteLine = [];
+        let spriteSubLine;
+        let lineSubstring = lineString;
+        while (lineSubstring.length > 0) {
+            let longestSprite;
+            let longestSpriteSheet;
+            for (let spriteSheetName in spriteSheets) {
+                const spriteSheet = spriteSheets[spriteSheetName];
+                spriteSheet.sprites.forEach((sprite) => {
+                    if (lineSubstring.startsWith(sprite.name)) {
+                        if (!longestSprite ||
+                            sprite.name.length > longestSprite.name.length) {
+                            longestSprite = sprite;
+                            longestSpriteSheet = spriteSheet;
+                        }
+                    }
+                });
+            }
+            _console$k.log("longestSprite", longestSprite);
+            if (requireAll) {
+                _console$k.assertWithError(longestSprite, `couldn't find sprite with name prefixing "${lineSubstring}"`);
+            }
+            if (longestSprite && longestSpriteSheet) {
+                if (!spriteSubLine ||
+                    spriteSubLine.spriteSheetName != longestSpriteSheet.name) {
+                    spriteSubLine = {
+                        spriteSheetName: longestSpriteSheet.name,
+                        spriteNames: [],
+                    };
+                    spriteLine.push(spriteSubLine);
+                }
+                spriteSubLine.spriteNames.push(longestSprite.name);
+                lineSubstring = lineSubstring.substring(longestSprite.name.length);
+            }
+            else {
+                lineSubstring = lineSubstring.substring(1);
+            }
+            _console$k.log("new substring", lineSubstring);
+        }
+        _console$k.log("spriteLine", spriteLine);
+        return spriteLine;
+    });
+    _console$k.log(`spriteLines for "${string}"`, spriteLines);
+    return spriteLines;
+}
 
 var _DisplayManager_instances, _DisplayManager_dispatchEvent_get, _DisplayManager_isAvailable, _DisplayManager_assertDisplayIsAvailable, _DisplayManager_parseIsDisplayAvailable, _DisplayManager_contextStateHelper, _DisplayManager_onContextStateUpdate, _DisplayManager_displayStatus, _DisplayManager_parseDisplayStatus, _DisplayManager_updateDisplayStatus, _DisplayManager_sendDisplayCommand, _DisplayManager_assertIsAwake, _DisplayManager_assertIsNotAwake, _DisplayManager_displayInformation, _DisplayManager_parseDisplayInformation, _DisplayManager_brightness, _DisplayManager_parseDisplayBrightness, _DisplayManager_assertValidDisplayContextCommand, _DisplayManager_maxCommandDataLength_get, _DisplayManager_displayContextCommandBuffers, _DisplayManager_sendDisplayContextCommand, _DisplayManager_sendContextCommands, _DisplayManager_colors, _DisplayManager_opacities, _DisplayManager_assertValidBitmapSize, _DisplayManager_isReady, _DisplayManager_lastReadyTime, _DisplayManager_lastShowRequestTime, _DisplayManager_minReadyInterval, _DisplayManager_waitBeforeReady, _DisplayManager_parseDisplayReady, _DisplayManager_spriteSheets, _DisplayManager_spriteSheetIndices, _DisplayManager_setSpriteSheetName, _DisplayManager_pendingSpriteSheet, _DisplayManager_pendingSpriteSheetName, _DisplayManager_updateSpriteSheetName, _DisplayManager_parseSpriteSheetIndex, _DisplayManager_mtu, _DisplayManager_isServerSide;
 const _console$j = createConsole("DisplayManager", { log: true });
@@ -16660,6 +16754,7 @@ class DisplayManager {
         const differences = __classPrivateFieldGet(this, _DisplayManager_contextStateHelper, "f").update({
             [alignmentKey]: alignment,
         });
+        _console$j.log({ alignmentKey, alignment, differences });
         if (differences.length == 0) {
             return;
         }
@@ -17600,6 +17695,13 @@ class DisplayManager {
             return;
         }
         await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "drawSprites", dataView.buffer, sendImmediately);
+    }
+    async drawSpritesString(offsetX, offsetY, string, requireAll, sendImmediately) {
+        const spriteLines = this.stringToSpriteLines(string, requireAll);
+        await this.drawSprites(offsetX, offsetY, spriteLines, sendImmediately);
+    }
+    stringToSpriteLines(string, requireAll) {
+        return stringToSpriteLines(string, this.spriteSheets, requireAll);
     }
     async drawSpriteFromSpriteSheet(offsetX, offsetY, spriteName, spriteSheet, paletteName, sendImmediately) {
         return drawSpriteFromSpriteSheet(this, offsetX, offsetY, spriteName, spriteSheet, paletteName, sendImmediately);
@@ -21419,6 +21521,8 @@ class DisplayCanvasHelper {
         _DisplayCanvasHelper_device.set(this, void 0);
         _DisplayCanvasHelper_boundDeviceEventListeners.set(this, {
             isConnected: __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_onDeviceIsConnected).bind(this),
+            connected: __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_onDeviceConnected).bind(this),
+            notConnected: __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_onDeviceNotConnected).bind(this),
             displayReady: __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_onDeviceDisplayReady).bind(this),
             displaySpriteSheetUploadStart: __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_onDeviceDisplaySpriteSheetUploadStart).bind(this),
             displaySpriteSheetUploadProgress: __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_onDeviceDisplaySpriteSheetUploadProgress).bind(this),
@@ -21520,6 +21624,7 @@ class DisplayCanvasHelper {
         }
         __classPrivateFieldSet(this, _DisplayCanvasHelper_device, newDevice, "f");
         addEventListeners(__classPrivateFieldGet(this, _DisplayCanvasHelper_device, "f"), __classPrivateFieldGet(this, _DisplayCanvasHelper_boundDeviceEventListeners, "f"));
+        _console$6.log("assigned device", this.device);
         if (this.device) {
             this.numberOfColors = this.device.numberOfDisplayColors;
             __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_updateCanvas).call(this);
@@ -21671,9 +21776,6 @@ class DisplayCanvasHelper {
         const differences = __classPrivateFieldGet(this, _DisplayCanvasHelper_contextStateHelper, "f").update({
             fillColorIndex,
         });
-        if (differences.length == 0) {
-            return;
-        }
         if (this.device?.isConnected && !__classPrivateFieldGet(this, _DisplayCanvasHelper_ignoreDevice, "f")) {
             await this.deviceDisplayManager.selectFillColor(fillColorIndex, sendImmediately);
         }
@@ -21684,9 +21786,6 @@ class DisplayCanvasHelper {
         const differences = __classPrivateFieldGet(this, _DisplayCanvasHelper_contextStateHelper, "f").update({
             lineColorIndex,
         });
-        if (differences.length == 0) {
-            return;
-        }
         if (this.device?.isConnected && !__classPrivateFieldGet(this, _DisplayCanvasHelper_ignoreDevice, "f")) {
             await this.deviceDisplayManager.selectLineColor(lineColorIndex, sendImmediately);
         }
@@ -21700,9 +21799,6 @@ class DisplayCanvasHelper {
         const differences = __classPrivateFieldGet(this, _DisplayCanvasHelper_contextStateHelper, "f").update({
             lineWidth,
         });
-        if (differences.length == 0) {
-            return;
-        }
         if (this.device?.isConnected && !__classPrivateFieldGet(this, _DisplayCanvasHelper_ignoreDevice, "f")) {
             await this.deviceDisplayManager.setLineWidth(lineWidth, sendImmediately);
         }
@@ -21714,9 +21810,11 @@ class DisplayCanvasHelper {
         const differences = __classPrivateFieldGet(this, _DisplayCanvasHelper_contextStateHelper, "f").update({
             [alignmentKey]: alignment,
         });
-        if (differences.length == 0) {
-            return;
-        }
+        _console$6.log({
+            alignmentKey,
+            alignment,
+            differences,
+        });
         if (this.device?.isConnected && !__classPrivateFieldGet(this, _DisplayCanvasHelper_ignoreDevice, "f")) {
             await this.deviceDisplayManager.setAlignment(alignmentDirection, alignment, sendImmediately);
         }
@@ -21733,9 +21831,6 @@ class DisplayCanvasHelper {
             verticalAlignment: DefaultDisplayContextState.verticalAlignment,
             horizontalAlignment: DefaultDisplayContextState.horizontalAlignment,
         });
-        if (differences.length == 0) {
-            return;
-        }
         if (this.device?.isConnected && !__classPrivateFieldGet(this, _DisplayCanvasHelper_ignoreDevice, "f")) {
             await this.deviceDisplayManager.resetAlignment(sendImmediately);
         }
@@ -21747,9 +21842,6 @@ class DisplayCanvasHelper {
         const differences = __classPrivateFieldGet(this, _DisplayCanvasHelper_contextStateHelper, "f").update({
             rotation,
         });
-        if (differences.length == 0) {
-            return;
-        }
         if (this.device?.isConnected && !__classPrivateFieldGet(this, _DisplayCanvasHelper_ignoreDevice, "f")) {
             await this.deviceDisplayManager.setRotation(rotation, true, sendImmediately);
         }
@@ -21759,9 +21851,6 @@ class DisplayCanvasHelper {
         const differences = __classPrivateFieldGet(this, _DisplayCanvasHelper_contextStateHelper, "f").update({
             rotation: 0,
         });
-        if (differences.length == 0) {
-            return;
-        }
         if (this.device?.isConnected && !__classPrivateFieldGet(this, _DisplayCanvasHelper_ignoreDevice, "f")) {
             await this.deviceDisplayManager.clearRotation(sendImmediately);
         }
@@ -21772,9 +21861,6 @@ class DisplayCanvasHelper {
         const differences = __classPrivateFieldGet(this, _DisplayCanvasHelper_contextStateHelper, "f").update({
             segmentStartCap,
         });
-        if (differences.length == 0) {
-            return;
-        }
         if (this.device?.isConnected && !__classPrivateFieldGet(this, _DisplayCanvasHelper_ignoreDevice, "f")) {
             await this.deviceDisplayManager.setSegmentStartCap(segmentStartCap, sendImmediately);
         }
@@ -21785,9 +21871,6 @@ class DisplayCanvasHelper {
         const differences = __classPrivateFieldGet(this, _DisplayCanvasHelper_contextStateHelper, "f").update({
             segmentEndCap,
         });
-        if (differences.length == 0) {
-            return;
-        }
         if (this.device?.isConnected && !__classPrivateFieldGet(this, _DisplayCanvasHelper_ignoreDevice, "f")) {
             await this.deviceDisplayManager.setSegmentEndCap(segmentEndCap, sendImmediately);
         }
@@ -21799,9 +21882,6 @@ class DisplayCanvasHelper {
             segmentStartCap: segmentCap,
             segmentEndCap: segmentCap,
         });
-        if (differences.length == 0) {
-            return;
-        }
         if (this.device?.isConnected && !__classPrivateFieldGet(this, _DisplayCanvasHelper_ignoreDevice, "f")) {
             await this.deviceDisplayManager.setSegmentCap(segmentCap, sendImmediately);
         }
@@ -21811,9 +21891,6 @@ class DisplayCanvasHelper {
         const differences = __classPrivateFieldGet(this, _DisplayCanvasHelper_contextStateHelper, "f").update({
             segmentStartRadius,
         });
-        if (differences.length == 0) {
-            return;
-        }
         if (this.device?.isConnected && !__classPrivateFieldGet(this, _DisplayCanvasHelper_ignoreDevice, "f")) {
             await this.deviceDisplayManager.setSegmentStartRadius(segmentStartRadius, sendImmediately);
         }
@@ -21823,9 +21900,6 @@ class DisplayCanvasHelper {
         const differences = __classPrivateFieldGet(this, _DisplayCanvasHelper_contextStateHelper, "f").update({
             segmentEndRadius,
         });
-        if (differences.length == 0) {
-            return;
-        }
         if (this.device?.isConnected && !__classPrivateFieldGet(this, _DisplayCanvasHelper_ignoreDevice, "f")) {
             await this.deviceDisplayManager.setSegmentEndRadius(segmentEndRadius, sendImmediately);
         }
@@ -21836,9 +21910,6 @@ class DisplayCanvasHelper {
             segmentStartRadius: segmentRadius,
             segmentEndRadius: segmentRadius,
         });
-        if (differences.length == 0) {
-            return;
-        }
         if (this.device?.isConnected && !__classPrivateFieldGet(this, _DisplayCanvasHelper_ignoreDevice, "f")) {
             await this.deviceDisplayManager.setSegmentRadius(segmentRadius, sendImmediately);
         }
@@ -21851,9 +21922,6 @@ class DisplayCanvasHelper {
         const differences = __classPrivateFieldGet(this, _DisplayCanvasHelper_contextStateHelper, "f").update({
             [cropKey]: crop,
         });
-        if (differences.length == 0) {
-            return;
-        }
         if (this.device?.isConnected && !__classPrivateFieldGet(this, _DisplayCanvasHelper_ignoreDevice, "f")) {
             await this.deviceDisplayManager.setCrop(cropDirection, crop, sendImmediately);
         }
@@ -21878,9 +21946,6 @@ class DisplayCanvasHelper {
             cropBottom: 0,
             cropLeft: 0,
         });
-        if (differences.length == 0) {
-            return;
-        }
         if (this.device?.isConnected && !__classPrivateFieldGet(this, _DisplayCanvasHelper_ignoreDevice, "f")) {
             await this.deviceDisplayManager.clearCrop(sendImmediately);
         }
@@ -21892,9 +21957,6 @@ class DisplayCanvasHelper {
         const differences = __classPrivateFieldGet(this, _DisplayCanvasHelper_contextStateHelper, "f").update({
             [cropKey]: crop,
         });
-        if (differences.length == 0) {
-            return;
-        }
         if (this.device?.isConnected && !__classPrivateFieldGet(this, _DisplayCanvasHelper_ignoreDevice, "f")) {
             await this.deviceDisplayManager.setRotationCrop(cropDirection, crop, sendImmediately);
         }
@@ -21919,9 +21981,6 @@ class DisplayCanvasHelper {
             rotationCropBottom: 0,
             rotationCropLeft: 0,
         });
-        if (differences.length == 0) {
-            return;
-        }
         if (this.device?.isConnected && !__classPrivateFieldGet(this, _DisplayCanvasHelper_ignoreDevice, "f")) {
             await this.deviceDisplayManager.clearRotationCrop(sendImmediately);
         }
@@ -21940,9 +21999,6 @@ class DisplayCanvasHelper {
         const differences = __classPrivateFieldGet(this, _DisplayCanvasHelper_contextStateHelper, "f").update({
             bitmapColorIndices,
         });
-        if (differences.length == 0) {
-            return;
-        }
         if (this.device?.isConnected && !__classPrivateFieldGet(this, _DisplayCanvasHelper_ignoreDevice, "f")) {
             await this.deviceDisplayManager.selectBitmapColor(bitmapColorIndex, colorIndex, sendImmediately);
         }
@@ -21959,9 +22015,6 @@ class DisplayCanvasHelper {
         const differences = __classPrivateFieldGet(this, _DisplayCanvasHelper_contextStateHelper, "f").update({
             bitmapColorIndices,
         });
-        if (differences.length == 0) {
-            return;
-        }
         if (this.device?.isConnected && !__classPrivateFieldGet(this, _DisplayCanvasHelper_ignoreDevice, "f")) {
             await this.deviceDisplayManager.selectBitmapColors(bitmapColorPairs, sendImmediately);
         }
@@ -21990,9 +22043,6 @@ class DisplayCanvasHelper {
                 break;
         }
         const differences = __classPrivateFieldGet(this, _DisplayCanvasHelper_contextStateHelper, "f").update(newState);
-        if (differences.length == 0) {
-            return;
-        }
         if (this.device?.isConnected && !__classPrivateFieldGet(this, _DisplayCanvasHelper_ignoreDevice, "f")) {
             await this.deviceDisplayManager.setBitmapScaleDirection(direction, bitmapScale, sendImmediately);
         }
@@ -22012,9 +22062,6 @@ class DisplayCanvasHelper {
             bitmapScaleX: 1,
             bitmapScaleY: 1,
         });
-        if (differences.length == 0) {
-            return;
-        }
         if (this.device?.isConnected && !__classPrivateFieldGet(this, _DisplayCanvasHelper_ignoreDevice, "f")) {
             await this.deviceDisplayManager.resetBitmapScale(sendImmediately);
         }
@@ -22039,9 +22086,6 @@ class DisplayCanvasHelper {
         const differences = __classPrivateFieldGet(this, _DisplayCanvasHelper_contextStateHelper, "f").update({
             spriteColorIndices,
         });
-        if (differences.length == 0) {
-            return;
-        }
         if (this.device?.isConnected && !__classPrivateFieldGet(this, _DisplayCanvasHelper_ignoreDevice, "f")) {
             await this.deviceDisplayManager.selectSpriteColor(spriteColorIndex, colorIndex, sendImmediately);
         }
@@ -22058,9 +22102,6 @@ class DisplayCanvasHelper {
         const differences = __classPrivateFieldGet(this, _DisplayCanvasHelper_contextStateHelper, "f").update({
             spriteColorIndices,
         });
-        if (differences.length == 0) {
-            return;
-        }
         if (this.device?.isConnected && !__classPrivateFieldGet(this, _DisplayCanvasHelper_ignoreDevice, "f")) {
             await this.deviceDisplayManager.selectSpriteColors(spriteColorPairs, sendImmediately);
         }
@@ -22077,9 +22118,6 @@ class DisplayCanvasHelper {
         const differences = __classPrivateFieldGet(this, _DisplayCanvasHelper_contextStateHelper, "f").update({
             spriteColorIndices,
         });
-        if (differences.length == 0) {
-            return;
-        }
         if (this.device?.isConnected && !__classPrivateFieldGet(this, _DisplayCanvasHelper_ignoreDevice, "f")) {
             await this.deviceDisplayManager.resetSpriteColors(sendImmediately);
         }
@@ -22102,9 +22140,6 @@ class DisplayCanvasHelper {
                 break;
         }
         const differences = __classPrivateFieldGet(this, _DisplayCanvasHelper_contextStateHelper, "f").update(newState);
-        if (differences.length == 0) {
-            return;
-        }
         if (this.device?.isConnected && !__classPrivateFieldGet(this, _DisplayCanvasHelper_ignoreDevice, "f")) {
             await this.deviceDisplayManager.setSpriteScaleDirection(direction, spriteScale, sendImmediately);
         }
@@ -22124,9 +22159,6 @@ class DisplayCanvasHelper {
             spriteScaleX: 1,
             spriteScaleY: 1,
         });
-        if (differences.length == 0) {
-            return;
-        }
         if (this.device?.isConnected && !__classPrivateFieldGet(this, _DisplayCanvasHelper_ignoreDevice, "f")) {
             await this.deviceDisplayManager.resetSpriteScale(sendImmediately);
         }
@@ -22137,9 +22169,6 @@ class DisplayCanvasHelper {
         const differences = __classPrivateFieldGet(this, _DisplayCanvasHelper_contextStateHelper, "f").update({
             spritesLineHeight,
         });
-        if (differences.length == 0) {
-            return;
-        }
         if (this.device?.isConnected && !__classPrivateFieldGet(this, _DisplayCanvasHelper_ignoreDevice, "f")) {
             await this.deviceDisplayManager.setSpritesLineHeight(spritesLineHeight, sendImmediately);
         }
@@ -22153,9 +22182,6 @@ class DisplayCanvasHelper {
         const differences = __classPrivateFieldGet(this, _DisplayCanvasHelper_contextStateHelper, "f").update({
             [stateKey]: direction,
         });
-        if (differences.length == 0) {
-            return;
-        }
         if (this.device?.isConnected && !__classPrivateFieldGet(this, _DisplayCanvasHelper_ignoreDevice, "f")) {
             this.deviceDisplayManager.setSpritesDirectionGeneric(direction, isOrthogonal, sendImmediately);
         }
@@ -22175,9 +22201,6 @@ class DisplayCanvasHelper {
         const differences = __classPrivateFieldGet(this, _DisplayCanvasHelper_contextStateHelper, "f").update({
             [stateKey]: spacing,
         });
-        if (differences.length == 0) {
-            return;
-        }
         if (this.device?.isConnected && !__classPrivateFieldGet(this, _DisplayCanvasHelper_ignoreDevice, "f")) {
             this.deviceDisplayManager.setSpritesSpacingGeneric(spacing, isOrthogonal, sendImmediately);
         }
@@ -22197,9 +22220,6 @@ class DisplayCanvasHelper {
         const differences = __classPrivateFieldGet(this, _DisplayCanvasHelper_contextStateHelper, "f").update({
             [stateKey]: alignment,
         });
-        if (differences.length == 0) {
-            return;
-        }
         if (this.device?.isConnected && !__classPrivateFieldGet(this, _DisplayCanvasHelper_ignoreDevice, "f")) {
             this.deviceDisplayManager.setSpritesAlignmentGeneric(alignment, isOrthogonal, sendImmediately);
         }
@@ -22326,6 +22346,7 @@ class DisplayCanvasHelper {
     }
     async uploadSpriteSheets(spriteSheets) {
         for (const spriteSheet of spriteSheets) {
+            _console$6.log(`uploading spriteSheet "${spriteSheet.name}"...`);
             await this.uploadSpriteSheet(spriteSheet);
         }
     }
@@ -22366,9 +22387,6 @@ class DisplayCanvasHelper {
         const differences = __classPrivateFieldGet(this, _DisplayCanvasHelper_contextStateHelper, "f").update({
             spriteSheetName,
         });
-        if (differences.length == 0) {
-            return;
-        }
         if (this.device?.isConnected && !__classPrivateFieldGet(this, _DisplayCanvasHelper_ignoreDevice, "f")) {
             this.deviceDisplayManager.selectSpriteSheet(spriteSheetName, sendImmediately);
         }
@@ -22404,6 +22422,13 @@ class DisplayCanvasHelper {
     }
     async drawSpriteFromSpriteSheet(offsetX, offsetY, spriteName, spriteSheet, paletteName, sendImmediately) {
         return drawSpriteFromSpriteSheet(this, offsetX, offsetY, spriteName, spriteSheet, paletteName, sendImmediately);
+    }
+    async drawSpritesString(offsetX, offsetY, string, requireAll, sendImmediately) {
+        const spriteLines = this.stringToSpriteLines(string, requireAll);
+        await this.drawSprites(offsetX, offsetY, spriteLines, sendImmediately);
+    }
+    stringToSpriteLines(string, requireAll) {
+        return stringToSpriteLines(string, this.spriteSheets, requireAll);
     }
     get brightness() {
         return __classPrivateFieldGet(this, _DisplayCanvasHelper_brightness, "f");
@@ -22534,17 +22559,11 @@ _DisplayCanvasHelper_eventDispatcher = new WeakMap(), _DisplayCanvasHelper_canva
         device: this.device,
         isConnected,
     });
-    if (isConnected) {
-        __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_onDeviceConnected).call(this);
-    }
-    else {
-        __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_onDeviceNotConnected).call(this);
-    }
-}, _DisplayCanvasHelper_onDeviceConnected = function _DisplayCanvasHelper_onDeviceConnected() {
+}, _DisplayCanvasHelper_onDeviceConnected = function _DisplayCanvasHelper_onDeviceConnected(event) {
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_updateCanvas).call(this);
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_updateDevice).call(this);
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "a", _DisplayCanvasHelper_dispatchEvent_get).call(this, "deviceConnected", { device: this.device });
-}, _DisplayCanvasHelper_onDeviceNotConnected = function _DisplayCanvasHelper_onDeviceNotConnected() {
+}, _DisplayCanvasHelper_onDeviceNotConnected = function _DisplayCanvasHelper_onDeviceNotConnected(event) {
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "a", _DisplayCanvasHelper_dispatchEvent_get).call(this, "deviceNotConnected", { device: this.device });
 }, _DisplayCanvasHelper_onDeviceDisplayReady = async function _DisplayCanvasHelper_onDeviceDisplayReady(event) {
     __classPrivateFieldSet(this, _DisplayCanvasHelper_isReady, true, "f");
@@ -22575,6 +22594,7 @@ _DisplayCanvasHelper_eventDispatcher = new WeakMap(), _DisplayCanvasHelper_canva
         spriteSheetName,
     });
 }, _DisplayCanvasHelper_updateDevice = async function _DisplayCanvasHelper_updateDevice() {
+    console.trace("updateDevice");
     await __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_updateDeviceColors).call(this, true);
     await __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_updateDeviceOpacity).call(this, true);
     await __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_updateDeviceContextState).call(this, true);
@@ -23378,7 +23398,6 @@ _DisplayCanvasHelper_eventDispatcher = new WeakMap(), _DisplayCanvasHelper_canva
     if (!this.device?.isConnected) {
         return;
     }
-    _console$6.log("updateDeviceSpriteSheets");
     await this.uploadSpriteSheets(Object.values(this.spriteSheets));
 }, _DisplayCanvasHelper_updateDeviceSelectedSpriteSheet = async function _DisplayCanvasHelper_updateDeviceSelectedSpriteSheet(sendImmediately) {
     if (!this.device?.isConnected) {
@@ -24433,5 +24452,5 @@ const ThrottleUtils = {
     debounce,
 };
 
-export { CameraCommands, CameraConfigurationTypes, ContinuousSensorTypes, DefaultNumberOfDisplayColors, DefaultNumberOfPressureSensors, Device, DeviceManager$1 as DeviceManager, DevicePair, DevicePairTypes, DeviceTypes, DisplayAlignments, DisplayBrightnesses, DisplayCanvasHelper, DisplayContextCommandTypes, DisplayDirections, DisplayPixelDepths, DisplaySegmentCaps, DisplaySpriteContextCommandTypes, environment as Environment, EventUtils, FileTransferDirections, FileTypes, Font, MaxNameLength, MaxNumberOfVibrationWaveformEffectSegments, MaxNumberOfVibrationWaveformSegments, MaxSensorRate, MaxSpriteSheetNameLength, MaxVibrationWaveformEffectSegmentDelay, MaxVibrationWaveformEffectSegmentLoopCount, MaxVibrationWaveformEffectSequenceLoopCount, MaxVibrationWaveformSegmentDuration, MaxWifiPasswordLength, MaxWifiSSIDLength, MicrophoneCommands, MicrophoneConfigurationTypes, MicrophoneConfigurationValues, MinNameLength, MinSpriteSheetNameLength, MinWifiPasswordLength, MinWifiSSIDLength, RangeHelper, SensorRateStep, SensorTypes, Sides, TfliteSensorTypes, TfliteTasks, ThrottleUtils, VibrationLocations, VibrationTypes, VibrationWaveformEffects, WebSocketClient, canvasToSprite, canvasToSpriteSheet, getFontUnicodeRange, hexToRGB, imageToSprite, imageToSpriteSheet, maxDisplayScale, parseFont, pixelDepthToNumberOfColors, quantizeImage, resizeAndQuantizeImage, resizeImage, rgbToHex, setAllConsoleLevelFlags, setConsoleLevelFlagsForType, wait };
+export { CameraCommands, CameraConfigurationTypes, ContinuousSensorTypes, DefaultNumberOfDisplayColors, DefaultNumberOfPressureSensors, Device, DeviceManager$1 as DeviceManager, DevicePair, DevicePairTypes, DeviceTypes, DisplayAlignments, DisplayBrightnesses, DisplayCanvasHelper, DisplayContextCommandTypes, DisplayDirections, DisplayPixelDepths, DisplaySegmentCaps, DisplaySpriteContextCommandTypes, environment as Environment, EventUtils, FileTransferDirections, FileTypes, Font, MaxNameLength, MaxNumberOfVibrationWaveformEffectSegments, MaxNumberOfVibrationWaveformSegments, MaxSensorRate, MaxSpriteSheetNameLength, MaxVibrationWaveformEffectSegmentDelay, MaxVibrationWaveformEffectSegmentLoopCount, MaxVibrationWaveformEffectSequenceLoopCount, MaxVibrationWaveformSegmentDuration, MaxWifiPasswordLength, MaxWifiSSIDLength, MicrophoneCommands, MicrophoneConfigurationTypes, MicrophoneConfigurationValues, MinNameLength, MinSpriteSheetNameLength, MinWifiPasswordLength, MinWifiSSIDLength, RangeHelper, SensorRateStep, SensorTypes, Sides, TfliteSensorTypes, TfliteTasks, ThrottleUtils, VibrationLocations, VibrationTypes, VibrationWaveformEffects, WebSocketClient, canvasToSprite, canvasToSpriteSheet, getFontUnicodeRange, hexToRGB, imageToSprite, imageToSpriteSheet, maxDisplayScale, parseFont, pixelDepthToNumberOfColors, quantizeImage, resizeAndQuantizeImage, resizeImage, rgbToHex, setAllConsoleLevelFlags, setConsoleLevelFlagsForType, stringToSpriteLines, stringToSprites as stringToSpriteNames, wait };
 //# sourceMappingURL=brilliantsole.module.js.map

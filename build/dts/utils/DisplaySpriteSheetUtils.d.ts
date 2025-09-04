@@ -43,5 +43,7 @@ type FontToSpriteSheetOptions = {
 export declare function parseFont(arrayBuffer: ArrayBuffer): Promise<opentype.Font>;
 export declare function getFontUnicodeRange(font: Font): import("./RangeHelper.ts").Range | undefined;
 export declare function fontToSpriteSheet(displayManager: DisplayManagerInterface, font: Font, fontSize: number, spriteSheetName?: string, options?: FontToSpriteSheetOptions): Promise<DisplaySpriteSheet>;
-export declare function reduceSpriteSheet(spriteSheet: DisplaySpriteSheet, spriteNames: string | string[]): DisplaySpriteSheet;
+export declare function stringToSprites(string: string, spriteSheet: DisplaySpriteSheet, requireAll?: boolean): DisplaySprite[];
+export declare function getReferencedSprites(sprite: DisplaySprite, spriteSheet: DisplaySpriteSheet): DisplaySprite[];
+export declare function reduceSpriteSheet(spriteSheet: DisplaySpriteSheet, spriteNames: string | string[], requireAll?: boolean): DisplaySpriteSheet;
 export {};

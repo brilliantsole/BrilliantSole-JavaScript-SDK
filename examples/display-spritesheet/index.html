@@ -382,6 +382,15 @@
           <optgroup label="set sprites line alignment"></optgroup>
         </select>
       </label>
+
+      <label id="drawSpritesNumberOfSpritesPerLine" class="verticalLabel">
+        <span>sprites per line (<span class="value">10</span>)</span>
+        <input type="range" min="1" max="50" step="1" value="10" />
+      </label>
+      <label id="drawSpritesMaxNumberOfSprites" class="verticalLabel">
+        <span>max sprites (<span class="value">50</span>)</span>
+        <input type="range" min="1" max="200" step="1" value="50" />
+      </label>
     </div>
 
     <hr />
@@ -870,7 +879,12 @@
 
     <hr />
     <div>
-      <textarea></textarea>
+      <textarea
+        placeholder="draw sprites"
+        id="drawSpritesText"
+        cols="50"
+        rows="3"
+      ></textarea>
     </div>
   </body>
 </html>

@@ -111,7 +111,7 @@ declare class DisplayManager implements DisplayManagerInterface {
     constructor();
     sendMessage: SendDisplayMessageCallback;
     eventDispatcher: DisplayEventDispatcher;
-    get waitForEvent(): <T extends "isDisplayAvailable" | "displayStatus" | "displayInformation" | "getDisplayBrightness" | "displayContextState" | "displayColor" | "displayColorOpacity" | "displayOpacity" | "displayReady" | "getSpriteSheetName" | "displaySpriteSheetUploadStart" | "displaySpriteSheetUploadProgress" | "displaySpriteSheetUploadComplete" | "displayCommand" | "setDisplayBrightness" | "displayContextCommands" | "setSpriteSheetName" | "spriteSheetIndex">(type: T) => Promise<{
+    get waitForEvent(): <T extends "isDisplayAvailable" | "displayStatus" | "displayInformation" | "displayCommand" | "getDisplayBrightness" | "setDisplayBrightness" | "displayContextCommands" | "displayReady" | "getSpriteSheetName" | "setSpriteSheetName" | "spriteSheetIndex" | "displayContextState" | "displayColor" | "displayColorOpacity" | "displayOpacity" | "displaySpriteSheetUploadStart" | "displaySpriteSheetUploadProgress" | "displaySpriteSheetUploadComplete">(type: T) => Promise<{
         type: T;
         target: Device;
         message: DisplayEventMessages[T];
@@ -260,6 +260,8 @@ declare class DisplayManager implements DisplayManagerInterface {
     selectSpriteSheet(spriteSheetName: string, sendImmediately?: boolean): Promise<void>;
     drawSprite(offsetX: number, offsetY: number, spriteName: string, sendImmediately?: boolean): Promise<void>;
     drawSprites(offsetX: number, offsetY: number, spriteLines: DisplaySpriteLines, sendImmediately?: boolean): Promise<void>;
+    drawSpritesString(offsetX: number, offsetY: number, string: string, requireAll?: boolean, sendImmediately?: boolean): Promise<void>;
+    stringToSpriteLines(string: string, requireAll?: boolean): DisplaySpriteLines;
     drawSpriteFromSpriteSheet(offsetX: number, offsetY: number, spriteName: string, spriteSheet: DisplaySpriteSheet, paletteName?: string, sendImmediately?: boolean): Promise<void>;
     parseMessage(messageType: DisplayMessageType, dataView: DataView): void;
     assertSpriteSheetPalette(paletteName: string): void;

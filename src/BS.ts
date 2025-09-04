@@ -118,6 +118,7 @@ export {
   DisplaySpriteSubLine,
   DisplaySpriteLine,
   DisplaySpriteLines,
+  stringToSpriteLines,
 } from "./utils/DisplayManagerInterface.ts";
 
 export { wait } from "./utils/Timer.ts";
@@ -152,6 +153,7 @@ export {
   DisplaySpritePaletteSwap,
   parseFont,
   getFontUnicodeRange,
+  stringToSprites as stringToSpriteNames,
 } from "./utils/DisplaySpriteSheetUtils.ts";
 
 /** BROWSER_START */

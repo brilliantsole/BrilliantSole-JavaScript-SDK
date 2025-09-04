@@ -26,23 +26,6 @@ device.addEventListener("connectionStatus", () => {
   toggleConnectionButton.innerText = innerText;
 });
 
-// DEVICE
-BS.DeviceManager.AddEventListener("deviceConnected", (event) => {
-  if (event.message.device.connectionType != "client") {
-    return;
-  }
-  if (event.message.device.isDisplayAvailable) {
-    clientDevice = event.message.device;
-    if (client.isScanning) {
-      client.stopScan();
-    }
-    displayCanvasHelper.device = clientDevice;
-  } else {
-    console.log("display not available");
-    // event.message.device.disconnect();
-  }
-});
-
 // CANVAS
 /** @type {HTMLCanvasElement} */
 const displayCanvas = document.getElementById("display");
@@ -133,7 +116,7 @@ const selectColorIndex = async (newColorIndex) => {
   selectedColorIndex = newColorIndex;
   displayColorRadios[selectedColorIndex].checked = true;
   console.log({ selectedColorIndex });
-  drawText();
+  draw();
 };
 displayCanvasHelper.addEventListener("numberOfColors", () => setupColors());
 displayCanvasHelper.addEventListener("color", (event) => {
@@ -142,120 +125,35 @@ displayCanvasHelper.addEventListener("color", (event) => {
 });
 setupColors();
 
-// DRAW PARAMS
+// TEXTAREA
 
-const drawXContainer = document.getElementById("drawX");
-const drawXInput = drawXContainer.querySelector("input");
-const drawXSpan = drawXContainer.querySelector("span.value");
-let drawX = Number(drawXInput.value);
-
-drawXInput.addEventListener("input", () => {
-  drawX = Number(drawXInput.value);
-  // console.log({ drawX });
-  drawXSpan.innerText = drawX;
+/** @type {HTMLTextAreaElement} */
+const textarea = document.getElementById("textarea");
+textarea.addEventListener("input", () => {
+  draw();
 });
-drawXInput.addEventListener("input", () => {
-  drawText();
-});
-
-const drawYContainer = document.getElementById("drawY");
-const drawYInput = drawYContainer.querySelector("input");
-const drawYSpan = drawYContainer.querySelector("span.value");
-let drawY = Number(drawYInput.value);
-
-drawYInput.addEventListener("input", () => {
-  drawY = Number(drawYInput.value);
-  //console.log({ drawY });
-  drawYSpan.innerText = drawY;
-});
-drawYInput.addEventListener("input", () => {
-  drawText();
-});
-
-const drawLineSpacingContainer = document.getElementById("drawLineSpacing");
-const drawLineSpacingInput = drawLineSpacingContainer.querySelector("input");
-const drawLineSpacingSpan =
-  drawLineSpacingContainer.querySelector("span.value");
-let drawLineSpacing = Number(drawLineSpacingInput.value);
-
-drawLineSpacingInput.addEventListener("input", () => {
-  drawLineSpacing = Number(drawLineSpacingInput.value);
-  //console.log({ drawLineSpacing });
-  drawLineSpacingSpan.innerText = drawLineSpacing;
-});
-drawLineSpacingInput.addEventListener("input", () => {
-  drawText();
-});
-
-const drawScaleContainer = document.getElementById("drawScale");
-const drawScaleInput = drawScaleContainer.querySelector("input");
-const drawScaleSpan = drawScaleContainer.querySelector("span.value");
-
-drawScaleInput.addEventListener("input", () => {
-  const drawScale = Number(drawScaleInput.value);
-  //console.log({ drawScale });
-  drawScaleSpan.innerText = drawScale;
-
-  drawScaleYInput.value = drawScale;
-  drawScaleYSpan.innerText = drawScale;
-
-  drawScaleXInput.value = drawScale;
-  drawScaleXSpan.innerText = drawScale;
-
-  drawScaleX = drawScale;
-  drawScaleY = drawScale;
-
-  drawText();
-});
-drawScaleInput.addEventListener("input", () => {
-  drawText();
-});
-
-const drawScaleXContainer = document.getElementById("drawScaleX");
-const drawScaleXInput = drawScaleXContainer.querySelector("input");
-const drawScaleXSpan = drawScaleXContainer.querySelector("span.value");
-let drawScaleX = Number(drawScaleXInput.value);
-
-drawScaleXInput.addEventListener("input", () => {
-  drawScaleX = Number(drawScaleXInput.value);
-  //console.log({ drawScaleX });
-  drawScaleXSpan.innerText = drawScaleX;
-});
-drawScaleXInput.addEventListener("input", () => {
-  drawText();
-});
-
-const drawScaleYContainer = document.getElementById("drawScaleY");
-const drawScaleYInput = drawScaleYContainer.querySelector("input");
-const drawScaleYSpan = drawScaleYContainer.querySelector("span.value");
-let drawScaleY = Number(drawScaleYInput.value);
-
-drawScaleYInput.addEventListener("input", () => {
-  drawScaleY = Number(drawScaleYInput.value);
-  //console.log({ drawScaleY });
-  drawScaleYSpan.innerText = drawScaleY;
-});
-drawScaleYInput.addEventListener("input", () => {
-  drawText();
-});
-
-const textAlignSelect = document.getElementById("textAlign");
-let textAlign = textAlignSelect.value;
-
-textAlignSelect.addEventListener("input", () => {
-  textAlign = textAlignSelect.value;
-  console.log({ textAlign });
-  drawText();
-  textarea.style.textAlign = textAlign;
-});
-console.log({ textAlign });
 
 // DRAW
-let defaultMaxFileLength = 10 * 1024; // 10kb
 let isDrawing = false;
 let isWaitingToRedraw = false;
 
-const drawText = async () => {
+let isUploading = false;
+displayCanvasHelper.addEventListener("deviceSpriteSheetUploadStart", () => {
+  isUploading = true;
+});
+displayCanvasHelper.addEventListener("deviceSpriteSheetUploadComplete", () => {
+  isUploading = false;
+});
+
+let didLoad = false;
+const draw = async () => {
+  if (isUploading) {
+    return;
+  }
+  if (!didLoad) {
+    return;
+  }
+
   if (isDrawing) {
     //console.warn("busy drawing");
     isWaitingToRedraw = true;
@@ -266,119 +164,35 @@ const drawText = async () => {
   const text = textarea.value;
   console.log(`drawing "${text}"`);
 
-  let x = drawX;
-  let y = drawY;
-  let lineSpacing = drawLineSpacing;
-  let scaleX = drawScaleX;
-  let scaleY = drawScaleY;
+  const {
+    verticalAlignment,
+    horizontalAlignment,
+    scaleX,
+    scaleY,
+    spritesSpacing,
+    spritesLineSpacing,
+    x,
+    y,
+    spritesLineHeight,
+    rotation,
+    spritesDirection,
+    spritesLineDirection,
+    spritesLineAlignment,
+  } = drawSpriteParams;
 
+  await displayCanvasHelper.setSpritesLineAlignment(spritesLineAlignment);
+  await displayCanvasHelper.setSpritesDirection(spritesDirection);
+  await displayCanvasHelper.setSpritesLineDirection(spritesLineDirection);
+  await displayCanvasHelper.setVerticalAlignment(verticalAlignment);
+  await displayCanvasHelper.setHorizontalAlignment(horizontalAlignment);
   await displayCanvasHelper.setSpriteScaleX(scaleX);
   await displayCanvasHelper.setSpriteScaleY(scaleY);
+  await displayCanvasHelper.setRotation(rotation);
+  await displayCanvasHelper.setSpritesSpacing(spritesSpacing);
+  await displayCanvasHelper.setSpritesLineSpacing(spritesLineSpacing);
+  await displayCanvasHelper.setSpritesLineHeight(spritesLineHeight);
   await displayCanvasHelper.selectSpriteColor(1, selectedColorIndex);
-
-  /** @type {BS.DisplaySprite} */
-  const sprites = [];
-
-  const textLineWidths = [0];
-  let textLineIndex = 0;
-
-  for (let i in text) {
-    const char = text[i];
-    // console.log(char);
-
-    if (char == `\n`) {
-      textLineWidths.push(0);
-      textLineIndex++;
-      continue;
-    }
-
-    let sprite = displayCanvasHelper.spriteSheets["english"].sprites.find(
-      (sprite) => sprite.name == char
-    );
-    const isEnglish = sprite != undefined;
-
-    if (!isEnglish) {
-      // FILL - add to nonEnglish sprites
-    }
-
-    if (!sprite) {
-      console.error(`no sprite found for char "${char}"`);
-      continue;
-    }
-
-    textLineWidths[textLineIndex] += sprite.width * scaleX;
-
-    sprites[i] = sprite;
-  }
-
-  // console.log("textLineWidths", textLineWidths);
-  textLineIndex = 0;
-  let maxTextLineWidth = 0;
-  textLineWidths.forEach((textLineWidth) => {
-    maxTextLineWidth = Math.max(maxTextLineWidth, textLineWidth);
-  });
-
-  const textLineWidth = textLineWidths[0];
-  x = drawX;
-  switch (textAlign) {
-    case "left":
-      break;
-    case "center":
-      x -= textLineWidth / 2;
-      break;
-    case "right":
-      x -= textLineWidth;
-      break;
-  }
-
-  for (let i in text) {
-    const char = text[i];
-    if (char == `\n`) {
-      y += lineSpacing * scaleY;
-      textLineIndex++;
-      const textLineWidth = textLineWidths[textLineIndex];
-      x = drawX;
-      switch (textAlign) {
-        case "left":
-          break;
-        case "center":
-          x -= textLineWidth / 2;
-          break;
-        case "right":
-          x -= textLineWidth;
-          break;
-      }
-      continue;
-    }
-
-    const sprite = sprites[i];
-    if (!sprite) {
-      console.error(`no sprite found for char "${char}"`);
-      continue;
-    }
-
-    const isEnglish =
-      displayCanvasHelper.spriteSheets["english"].sprites.includes(sprite);
-
-    x += (sprite.width * scaleX) / 2;
-
-    if (isEnglish) {
-      await displayCanvasHelper.selectSpriteSheet("english");
-      await displayCanvasHelper.drawSprite(x, y, char, false);
-    } else {
-      // FILL - use other sprites
-      // await displayCanvasHelper.drawSpriteFromSpriteSheet(
-      //   x,
-      //   y,
-      //   char,
-      //   nonEnglishSpriteSheet,
-      //   false
-      // );
-    }
-
-    x += (sprite.width * scaleX) / 2;
-  }
-
+  await displayCanvasHelper.drawSpritesString(x, y, text);
   await displayCanvasHelper.show();
 };
 
@@ -386,8 +200,272 @@ displayCanvasHelper.addEventListener("ready", () => {
   isDrawing = false;
   if (isWaitingToRedraw) {
     isWaitingToRedraw = false;
-    drawText();
+    draw();
   }
+});
+
+// DRAW PARAMS
+
+const drawSpriteParams = {
+  x: 50,
+  y: 50,
+
+  rotation: 0,
+
+  verticalAlignment: "center",
+  horizontalAlignment: "center",
+
+  scaleX: 1,
+  scaleY: 1,
+
+  spritesLineHeight: 0,
+
+  spritesSpacing: 0,
+  spritesLineSpacing: 0,
+
+  spritesAlignment: "end",
+  spritesLineAlignment: "start",
+
+  spritesDirection: "right",
+  spritesLineDirection: "down",
+};
+
+const drawSpriteXContainer = document.getElementById("drawSpriteX");
+const drawSpriteXInput = drawSpriteXContainer.querySelector("input");
+const drawSpriteXSpan = drawSpriteXContainer.querySelector(".value");
+const setSpriteDrawX = (drawSpriteX) => {
+  drawSpriteXInput.value = drawSpriteX;
+  drawSpriteXSpan.innerText = drawSpriteX;
+  drawSpriteParams.x = drawSpriteX;
+  draw();
+};
+setSpriteDrawX(Number(drawSpriteXInput.value));
+drawSpriteXInput.addEventListener("input", () => {
+  setSpriteDrawX(Number(drawSpriteXInput.value));
+});
+
+const drawSpriteYContainer = document.getElementById("drawSpriteY");
+const drawSpriteYInput = drawSpriteYContainer.querySelector("input");
+const drawSpriteYSpan = drawSpriteYContainer.querySelector(".value");
+const setSpriteDrawY = (drawSpriteY) => {
+  drawSpriteYInput.value = drawSpriteY;
+  drawSpriteYSpan.innerText = drawSpriteY;
+  drawSpriteParams.y = drawSpriteY;
+  draw();
+};
+drawSpriteYInput.addEventListener("input", () => {
+  setSpriteDrawY(Number(drawSpriteYInput.value));
+});
+setSpriteDrawY(Number(drawSpriteYInput.value));
+
+const drawSpriteRotationContainer =
+  document.getElementById("drawSpriteRotation");
+const drawSpriteRotationInput =
+  drawSpriteRotationContainer.querySelector("input");
+const drawSpriteRotationSpan =
+  drawSpriteRotationContainer.querySelector(".value");
+const setSpriteDrawRotation = (drawSpriteRotation) => {
+  drawSpriteRotationInput.value = drawSpriteRotation;
+  drawSpriteRotationSpan.innerText = drawSpriteRotation;
+  drawSpriteParams.rotation = drawSpriteRotation;
+  draw();
+};
+drawSpriteRotationInput.addEventListener("input", () => {
+  setSpriteDrawRotation(Number(drawSpriteRotationInput.value));
+});
+
+const drawSpriteHorizontalAlignmentContainer = document.getElementById(
+  "drawSpriteHorizontalAlignment"
+);
+const drawSpriteHorizontalAlignmentSelect =
+  drawSpriteHorizontalAlignmentContainer.querySelector("select");
+const drawSpriteHorizontalAlignmentOptgroup =
+  drawSpriteHorizontalAlignmentContainer.querySelector("optgroup");
+BS.DisplayAlignments.forEach((horizontalAlignment) => {
+  drawSpriteHorizontalAlignmentOptgroup.appendChild(
+    new Option(horizontalAlignment)
+  );
+});
+drawSpriteHorizontalAlignmentSelect.value =
+  drawSpriteParams.horizontalAlignment;
+const setSpriteDrawHorizontalAlignment = (drawSpriteHorizontalAlignment) => {
+  console.log({ drawSpriteHorizontalAlignment });
+  drawSpriteHorizontalAlignmentSelect.value = drawSpriteHorizontalAlignment;
+  drawSpriteParams.horizontalAlignment = drawSpriteHorizontalAlignment;
+  draw();
+};
+drawSpriteHorizontalAlignmentSelect.addEventListener("input", () => {
+  setSpriteDrawHorizontalAlignment(drawSpriteHorizontalAlignmentSelect.value);
+});
+
+const drawSpriteVerticalAlignmentContainer = document.getElementById(
+  "drawSpriteVerticalAlignment"
+);
+const drawSpriteVerticalAlignmentSelect =
+  drawSpriteVerticalAlignmentContainer.querySelector("select");
+const drawSpriteVerticalAlignmentOptgroup =
+  drawSpriteVerticalAlignmentContainer.querySelector("optgroup");
+BS.DisplayAlignments.forEach((verticalAlignment) => {
+  drawSpriteVerticalAlignmentOptgroup.appendChild(
+    new Option(verticalAlignment)
+  );
+});
+drawSpriteVerticalAlignmentSelect.value = drawSpriteParams.verticalAlignment;
+const setSpriteDrawVerticalAlignment = (drawSpriteVerticalAlignment) => {
+  console.log({ drawSpriteVerticalAlignment });
+  drawSpriteVerticalAlignmentSelect.value = drawSpriteVerticalAlignment;
+  drawSpriteParams.verticalAlignment = drawSpriteVerticalAlignment;
+  draw();
+};
+drawSpriteVerticalAlignmentSelect.addEventListener("input", () => {
+  setSpriteDrawVerticalAlignment(drawSpriteVerticalAlignmentSelect.value);
+});
+
+const drawSpriteScaleXContainer = document.getElementById("drawSpriteScaleX");
+const drawSpriteScaleXInput = drawSpriteScaleXContainer.querySelector("input");
+const drawSpriteScaleXSpan = drawSpriteScaleXContainer.querySelector(".value");
+const setSpriteDrawScaleX = (drawSpriteScaleX) => {
+  drawSpriteScaleXInput.value = drawSpriteScaleX;
+  drawSpriteScaleXSpan.innerText = drawSpriteScaleX;
+  drawSpriteParams.scaleX = drawSpriteScaleX;
+  draw();
+};
+drawSpriteScaleXInput.addEventListener("input", () => {
+  setSpriteDrawScaleX(Number(drawSpriteScaleXInput.value));
+});
+
+const drawSpriteScaleYContainer = document.getElementById("drawSpriteScaleY");
+const drawSpriteScaleYInput = drawSpriteScaleYContainer.querySelector("input");
+const drawSpriteScaleYSpan = drawSpriteScaleYContainer.querySelector(".value");
+const setSpriteDrawScaleY = (drawSpriteScaleY) => {
+  drawSpriteScaleYInput.value = drawSpriteScaleY;
+  drawSpriteScaleYSpan.innerText = drawSpriteScaleY;
+  drawSpriteParams.scaleY = drawSpriteScaleY;
+  draw();
+};
+drawSpriteScaleYInput.addEventListener("input", () => {
+  setSpriteDrawScaleY(Number(drawSpriteScaleYInput.value));
+});
+
+const drawSpriteScaleContainer = document.getElementById("drawSpriteScale");
+const drawSpriteScaleInput = drawSpriteScaleContainer.querySelector("input");
+const drawSpriteScaleSpan = drawSpriteScaleContainer.querySelector(".value");
+const setSpriteDrawScale = (drawSpriteScale) => {
+  drawSpriteScaleInput.value = drawSpriteScale;
+  drawSpriteScaleSpan.innerText = drawSpriteScale;
+
+  drawSpriteScaleXInput.value = drawSpriteScale;
+  drawSpriteScaleXSpan.innerText = drawSpriteScale;
+
+  drawSpriteScaleYInput.value = drawSpriteScale;
+  drawSpriteScaleYSpan.innerText = drawSpriteScale;
+
+  drawSpriteParams.scaleX = drawSpriteScale;
+  drawSpriteParams.scaleY = drawSpriteScale;
+  draw();
+};
+drawSpriteScaleInput.addEventListener("input", () => {
+  setSpriteDrawScale(Number(drawSpriteScaleInput.value));
+});
+
+const drawSpritesDirectionContainer = document.getElementById(
+  "drawSpritesDirection"
+);
+const drawSpritesDirectionSelect =
+  drawSpritesDirectionContainer.querySelector("select");
+const drawSpritesDirectionOptgroup =
+  drawSpritesDirectionContainer.querySelector("optgroup");
+BS.DisplayDirections.forEach((horizontalAlignment) => {
+  drawSpritesDirectionOptgroup.appendChild(new Option(horizontalAlignment));
+});
+drawSpritesDirectionSelect.value = drawSpriteParams.spritesDirection;
+const setSpritesDirection = (drawSpritesDirection) => {
+  console.log({ drawSpritesDirection });
+  drawSpritesDirectionSelect.value = drawSpritesDirection;
+  drawSpriteParams.spritesDirection = drawSpritesDirection;
+  draw();
+};
+drawSpritesDirectionSelect.addEventListener("input", () => {
+  setSpritesDirection(drawSpritesDirectionSelect.value);
+});
+
+const drawSpritesLineDirectionContainer = document.getElementById(
+  "drawSpritesLineDirection"
+);
+const drawSpritesLineDirectionSelect =
+  drawSpritesLineDirectionContainer.querySelector("select");
+const drawSpritesLineDirectionOptgroup =
+  drawSpritesLineDirectionContainer.querySelector("optgroup");
+BS.DisplayDirections.forEach((horizontalAlignment) => {
+  drawSpritesLineDirectionOptgroup.appendChild(new Option(horizontalAlignment));
+});
+drawSpritesLineDirectionSelect.value = drawSpriteParams.spritesLineDirection;
+const setSpritesLineDirection = (drawSpritesLineDirection) => {
+  console.log({ drawSpritesLineDirection });
+  drawSpritesLineDirectionSelect.value = drawSpritesLineDirection;
+  drawSpriteParams.spritesLineDirection = drawSpritesLineDirection;
+  if (shouldDrawAllSprites) {
+    draw();
+  }
+};
+drawSpritesLineDirectionSelect.addEventListener("input", () => {
+  setSpritesLineDirection(drawSpritesLineDirectionSelect.value);
+});
+
+const drawSpritesLineAlignmentContainer = document.getElementById(
+  "drawSpritesLineAlignment"
+);
+const drawSpritesLineAlignmentSelect =
+  drawSpritesLineAlignmentContainer.querySelector("select");
+const drawSpritesLineAlignmentOptgroup =
+  drawSpritesLineAlignmentContainer.querySelector("optgroup");
+BS.DisplayAlignments.forEach((horizontalAlignment) => {
+  drawSpritesLineAlignmentOptgroup.appendChild(new Option(horizontalAlignment));
+});
+drawSpritesLineAlignmentSelect.value = drawSpriteParams.spritesLineAlignment;
+const setSpritesLineAlignment = (drawSpritesLineAlignment) => {
+  console.log({ drawSpritesLineAlignment });
+  drawSpritesLineAlignmentSelect.value = drawSpritesLineAlignment;
+  drawSpriteParams.spritesLineAlignment = drawSpritesLineAlignment;
+  draw();
+};
+drawSpritesLineAlignmentSelect.addEventListener("input", () => {
+  setSpritesLineAlignment(drawSpritesLineAlignmentSelect.value);
+});
+
+const drawSpritesSpacingContainer =
+  document.getElementById("drawSpritesSpacing");
+const drawSpritesSpacingInput =
+  drawSpritesSpacingContainer.querySelector("input");
+const drawSpritesSpacingSpan =
+  drawSpritesSpacingContainer.querySelector(".value");
+const setSpritesSpacing = (drawSpritesSpacing) => {
+  drawSpritesSpacingInput.value = drawSpritesSpacing;
+  drawSpritesSpacingSpan.innerText = drawSpritesSpacing;
+  drawSpriteParams.spritesSpacing = drawSpritesSpacing;
+  console.log({ drawSpritesSpacing });
+  draw();
+};
+drawSpritesSpacingInput.addEventListener("input", () => {
+  setSpritesSpacing(Number(drawSpritesSpacingInput.value));
+});
+
+const drawSpritesLineSpacingContainer = document.getElementById(
+  "drawSpritesLineSpacing"
+);
+const drawSpritesLineSpacingInput =
+  drawSpritesLineSpacingContainer.querySelector("input");
+const drawSpritesLineSpacingSpan =
+  drawSpritesLineSpacingContainer.querySelector(".value");
+const setSpritesLineSpacing = (drawSpritesLineSpacing) => {
+  drawSpritesLineSpacingInput.value = drawSpritesLineSpacing;
+  drawSpritesLineSpacingSpan.innerText = drawSpritesLineSpacing;
+  drawSpriteParams.spritesLineSpacing = drawSpritesLineSpacing;
+  console.log({ drawSpritesLineSpacing });
+  draw();
+};
+drawSpritesLineSpacingInput.addEventListener("input", () => {
+  setSpritesLineSpacing(Number(drawSpritesLineSpacingInput.value));
 });
 
 // PROGRESS
@@ -526,6 +604,7 @@ window.englishFontSpriteSheets = englishFontSpriteSheets;
 /** @type {Map.<BS.Font, {min: number, max: number}>} */
 const fontUnicodeRanges = new Map();
 const fontSize = 36;
+drawSpriteParams.spritesLineHeight = fontSize;
 window.fonts = fonts;
 /** @param {BS.Font} font */
 const addFont = async (font) => {
@@ -587,7 +666,7 @@ const selectFont = async (newFontName) => {
     englishFontSpriteSheets[newFontName],
     true
   );
-  await drawText();
+  await draw();
 };
 
 // DRAGOVER
@@ -611,26 +690,6 @@ window.addEventListener("drop", async (e) => {
   }
 });
 
-// TEXTAREA
-
-/** @type {HTMLTextAreaElement} */
-const textarea = document.getElementById("textarea");
-
-textarea.addEventListener("input", () => {
-  drawText();
-});
-
-const checkTextareaCursorPosition = () => {
-  const { selectionStart, selectionEnd, selectionDirection } = textarea;
-  console.log({ selectionStart, selectionEnd, selectionDirection });
-};
-textarea.addEventListener("keyup", () => {
-  checkTextareaCursorPosition();
-});
-textarea.addEventListener("mouseup", () => {
-  checkTextareaCursorPosition();
-});
-
 // INITIAL FONTS
 
 await loadFontUrl("https://fonts.googleapis.com/css2?family=Roboto");
@@ -648,3 +707,5 @@ await loadFontUrl("https://fonts.googleapis.com/css2?family=Inter");
 //   "https://fonts.googleapis.com/css2?family=Noto+Sans+SC",
 //   false
 // );
+
+didLoad = true;
