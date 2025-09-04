@@ -781,6 +781,7 @@ class Device {
     this.#wifiManager.clear();
     this.#cameraManager.clear();
     this.#microphoneManager.clear();
+    this.#sensorConfigurationManager.clear();
     this.#displayManager.reset();
   }
   #clearConnection() {
@@ -1399,8 +1400,11 @@ class Device {
     _console.assertWithError(this.hasMicrophone, "microphone not available");
   }
 
-  async startMicrophone() {
+  async startMicrophone(sensorRate: number = 10) {
     this.#assertHasMicrophone();
+    if (this.sensorConfiguration.microphone == 0) {
+      this.setSensorConfiguration({ microphone: sensorRate }, false, false);
+    }
     await this.#microphoneManager.start();
   }
   async stopMicrophone() {
@@ -1411,8 +1415,11 @@ class Device {
     this.#assertHasMicrophone();
     await this.#microphoneManager.vad();
   }
-  async toggleMicrophone() {
+  async toggleMicrophone(sensorRate: number = 10) {
     this.#assertHasMicrophone();
+    if (this.sensorConfiguration.microphone == 0) {
+      this.setSensorConfiguration({ microphone: sensorRate }, false, false);
+    }
     await this.#microphoneManager.toggle();
   }
 

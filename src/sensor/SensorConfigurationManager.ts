@@ -84,6 +84,10 @@ class SensorConfigurationManager {
     });
   }
 
+  clear() {
+    this.#updateConfiguration({});
+  }
+
   #isRedundant(sensorConfiguration: SensorConfiguration) {
     let sensorTypes = Object.keys(sensorConfiguration) as SensorType[];
     return sensorTypes.every((sensorType) => {

@@ -35,6 +35,7 @@ declare class SensorConfigurationManager {
         message: SensorConfigurationEventMessages[T];
     }>;
     get configuration(): SensorConfiguration;
+    clear(): void;
     setConfiguration(newSensorConfiguration: SensorConfiguration, clearRest?: boolean, sendImmediately?: boolean): Promise<void>;
     static get ZeroSensorConfiguration(): SensorConfiguration;
     get zeroSensorConfiguration(): SensorConfiguration;

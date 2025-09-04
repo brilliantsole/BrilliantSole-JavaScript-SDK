@@ -1468,10 +1468,10 @@ declare class Device {
     get setCameraConfiguration(): (newCameraConfiguration: CameraConfiguration) => Promise<void>;
     get hasMicrophone(): boolean;
     get microphoneStatus(): "idle" | "streaming" | "vad";
-    startMicrophone(): Promise<void>;
+    startMicrophone(sensorRate?: number): Promise<void>;
     stopMicrophone(): Promise<void>;
     enableMicrophoneVad(): Promise<void>;
-    toggleMicrophone(): Promise<void>;
+    toggleMicrophone(sensorRate?: number): Promise<void>;
     get microphoneConfiguration(): MicrophoneConfiguration;
     get availableMicrophoneConfigurationTypes(): ("sampleRate" | "bitDepth")[];
     get setMicrophoneConfiguration(): (newMicrophoneConfiguration: MicrophoneConfiguration) => Promise<void>;

@@ -188,7 +188,10 @@ class MicrophoneManager {
     await this.#sendMicrophoneCommand("start");
   }
   async stop() {
-    this.#assertIsNotIdle();
+    if (this.microphoneStatus == "idle") {
+      _console.log("microphone is already idle");
+      return;
+    }
     await this.#sendMicrophoneCommand("stop");
   }
   async vad() {

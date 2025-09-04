@@ -509,7 +509,6 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
   }
 
   async #updateDevice() {
-    console.trace("updateDevice");
     await this.#updateDeviceColors(true);
     await this.#updateDeviceOpacity(true);
     await this.#updateDeviceContextState(true);

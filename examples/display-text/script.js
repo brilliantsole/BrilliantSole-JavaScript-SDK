@@ -22,6 +22,7 @@ device.addEventListener("connectionStatus", () => {
       innerText = "disconnect";
       break;
   }
+  updateMicrophoneSources();
   toggleConnectionButton.disabled = disabled;
   toggleConnectionButton.innerText = innerText;
 });
@@ -208,12 +209,12 @@ displayCanvasHelper.addEventListener("ready", () => {
 
 const drawSpriteParams = {
   x: 50,
-  y: 50,
+  y: 400,
 
   rotation: 0,
 
-  verticalAlignment: "center",
-  horizontalAlignment: "center",
+  verticalAlignment: "end",
+  horizontalAlignment: "start",
 
   scaleX: 1,
   scaleY: 1,
@@ -468,6 +469,40 @@ drawSpritesLineSpacingInput.addEventListener("input", () => {
   setSpritesLineSpacing(Number(drawSpritesLineSpacingInput.value));
 });
 
+const drawCharactersPerLineContainer = document.getElementById(
+  "drawCharactersPerLine"
+);
+const drawCharactersPerLineInput =
+  drawCharactersPerLineContainer.querySelector("input");
+const drawCharactersPerLineSpan =
+  drawCharactersPerLineContainer.querySelector(".value");
+let drawCharactersPerLine;
+const setCharactersPerLine = (newDrawCharactersPerLine) => {
+  drawCharactersPerLine = newDrawCharactersPerLine;
+  console.log({ drawCharactersPerLine });
+  drawCharactersPerLineInput.value = drawCharactersPerLine;
+  drawCharactersPerLineSpan.innerText = drawCharactersPerLine;
+};
+drawCharactersPerLineInput.addEventListener("input", () => {
+  setCharactersPerLine(Number(drawCharactersPerLineInput.value));
+});
+setCharactersPerLine(Number(drawCharactersPerLineInput.value));
+
+const maxAudioLengthContainer = document.getElementById("maxAudioLength");
+const maxAudioLengthInput = maxAudioLengthContainer.querySelector("input");
+const maxAudioLengthSpan = maxAudioLengthContainer.querySelector(".value");
+let maxAudioLength;
+const setMaxAudioLength = (newMaxAudioLength) => {
+  maxAudioLength = newMaxAudioLength;
+  console.log({ maxAudioLength });
+  maxAudioLengthInput.value = maxAudioLength;
+  maxAudioLengthSpan.innerText = maxAudioLength;
+};
+maxAudioLengthInput.addEventListener("input", () => {
+  setMaxAudioLength(Number(maxAudioLengthInput.value));
+});
+setMaxAudioLength(Number(maxAudioLengthInput.value));
+
 // PROGRESS
 
 /** @type {HTMLProgressElement} */
@@ -709,3 +744,287 @@ await loadFontUrl("https://fonts.googleapis.com/css2?family=Inter");
 // );
 
 didLoad = true;
+
+// MICROPHONE
+
+/** @type {HTMLSelectElement} */
+const selectMicrophoneSelect = document.getElementById("selectMicrophone");
+/** @type {HTMLOptGroupElement} */
+const selectMicrophoneOptgroup =
+  selectMicrophoneSelect.querySelector("optgroup");
+selectMicrophoneSelect.addEventListener("input", () => {
+  selectMicrophone(selectMicrophoneSelect.value);
+});
+const updateMicrophoneSources = async () => {
+  const devices = await navigator.mediaDevices.enumerateDevices();
+  selectMicrophoneOptgroup.innerHTML = "";
+  selectMicrophoneOptgroup.appendChild(new Option("none"));
+  if (device.hasMicrophone) {
+    selectMicrophoneOptgroup.appendChild(new Option("device"));
+  }
+  devices
+    .filter((device) => device.kind == "audioinput")
+    .forEach((audioInputDevice) => {
+      selectMicrophoneOptgroup.appendChild(
+        new Option(audioInputDevice.label, audioInputDevice.deviceId)
+      );
+    });
+  selectMicrophone.value = "none";
+  selectMicrophone(selectMicrophone.value);
+};
+/** @type {MediaStream?} */
+let microphoneStream;
+const selectMicrophone = async (deviceId) => {
+  stopMicrophoneStream();
+  if (deviceId == "none") {
+    await stopTranscribing();
+    microphoneAudio.setAttribute("hidden", "");
+    if (device.hasMicrophone) {
+      await device.stopMicrophone();
+    }
+  } else {
+    await loadModel();
+
+    if (deviceId == "device") {
+      microphoneStream = device.microphoneMediaStreamDestination.stream;
+      console.log("starting microphone");
+      await device.startMicrophone(5);
+    } else {
+      microphoneStream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          deviceId: { exact: deviceId },
+          noiseSuppression: false,
+          echoCancellation: false,
+          autoGainControl: false,
+        },
+      });
+    }
+    microphoneAudio.srcObject = microphoneStream;
+    microphoneAudio.removeAttribute("hidden");
+    console.log("got microphoneStream", deviceId, microphoneStream);
+
+    await startTranscribing();
+  }
+};
+const stopMicrophoneStream = () => {
+  if (microphoneStream) {
+    console.log("stopping microphoneStream");
+    microphoneStream.getVideoTracks().forEach((track) => track.stop());
+  }
+  microphoneStream = undefined;
+  microphoneAudio.srcObject = undefined;
+  microphoneAudio.setAttribute("hidden", "");
+};
+navigator.mediaDevices.addEventListener("devicechange", () =>
+  updateMicrophoneSources()
+);
+updateMicrophoneSources();
+
+/** @type {HTMLAudioElement} */
+const microphoneAudio = document.getElementById("microphoneAudio");
+
+// WHISPER
+
+import {
+  AutoTokenizer,
+  AutoProcessor,
+  WhisperForConditionalGeneration,
+  TextStreamer,
+  full,
+} from "https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.2.4";
+
+const WHISPER_SAMPLING_RATE = 16_000;
+const MAX_NEW_TOKENS = 64;
+
+/** @type {MediaRecorder} */
+let mediaRecorder;
+
+let model_id = null;
+let tokenizer = null;
+let processor = null;
+let model = null;
+let loadedModel = false;
+let isProcessing = false;
+let chunks = [];
+let isRunning = false;
+
+const progress_callback = (progress) => {
+  //console.log("progress_callback", progress);
+};
+
+const loadModel = async () => {
+  console.log("creating model");
+  model_id = "onnx-community/whisper-base";
+
+  tokenizer = await AutoTokenizer.from_pretrained(model_id, {
+    progress_callback,
+  });
+  processor = await AutoProcessor.from_pretrained(model_id, {
+    progress_callback,
+  });
+
+  model = await WhisperForConditionalGeneration.from_pretrained(model_id, {
+    dtype: {
+      encoder_model: "fp32", // 'fp16' works too
+      decoder_model_merged: "q4", // or 'fp32' ('fp16' is broken)
+    },
+    device: "webgpu",
+    progress_callback,
+  });
+
+  console.log(model);
+
+  await model.generate({
+    input_features: full([1, 80, 3000], 0.0),
+    max_new_tokens: 1,
+  });
+  loadedModel = true;
+  console.log("created model", model);
+};
+
+const startTranscribing = async () => {
+  if (!loadedModel) {
+    await loadModel();
+  }
+  if (mediaRecorder) {
+    await stopTranscribing();
+  }
+  mediaRecorder = new MediaRecorder(microphoneStream);
+  mediaRecorder.ondataavailable = (e) => {
+    const MAX_SAMPLES = WHISPER_SAMPLING_RATE * maxAudioLength;
+
+    // console.log("ondataavailable", e);
+    if (e.data.size > 0) {
+      chunks = [...chunks, e.data];
+
+      if (chunks.length > 0) {
+        // Generate from data
+        const blob = new Blob(chunks, { type: "wav" });
+
+        const fileReader = new FileReader();
+
+        fileReader.onloadend = async () => {
+          const arrayBuffer = fileReader.result;
+          const decoded = await audioContext.decodeAudioData(arrayBuffer);
+          let audio = decoded.getChannelData(0);
+          if (audio.length > MAX_SAMPLES) {
+            // Get last MAX_SAMPLES
+            audio = audio.slice(-MAX_SAMPLES);
+          }
+
+          if (isProcessing) return;
+          isProcessing = true;
+
+          let startTime;
+          let numTokens = 0;
+          const callback_function = (output) => {
+            startTime ??= performance.now();
+
+            let tps;
+            if (numTokens++ > 0) {
+              tps = (numTokens / (performance.now() - startTime)) * 1000;
+            }
+            //console.log({ output, tps, numTokens });
+          };
+
+          const streamer = new TextStreamer(tokenizer, {
+            skip_prompt: true,
+            skip_special_tokens: true,
+            callback_function,
+          });
+
+          const inputs = await processor(audio);
+
+          const outputs = await model.generate({
+            ...inputs,
+            max_new_tokens: MAX_NEW_TOKENS,
+            language: "en",
+            streamer,
+          });
+
+          const outputText = tokenizer.batch_decode(outputs, {
+            skip_special_tokens: true,
+          });
+
+          console.log("outputText", outputText);
+
+          let textareaString = "";
+          let numberOfCharacters = 0;
+          outputText[outputText.length - 1]
+            .split(" ")
+            .filter((string) => string != " ")
+            .filter((string) => string.length > 0)
+            .forEach((word, index) => {
+              if (index > 0) {
+                if (numberOfCharacters > drawCharactersPerLine) {
+                  textareaString += `\n`;
+                  numberOfCharacters = 0;
+                } else {
+                  textareaString += " ";
+                  numberOfCharacters += 1;
+                }
+              }
+              textareaString += word;
+              numberOfCharacters += word.length;
+            });
+          if (textarea.value != textareaString) {
+            textarea.value = textareaString;
+            draw();
+          }
+
+          isProcessing = false;
+        };
+        fileReader.readAsArrayBuffer(blob);
+      } else {
+        mediaRecorder.requestData();
+      }
+    } else {
+      // Empty chunk received, so we request new data after a short timeout
+      setTimeout(() => {
+        mediaRecorder.requestData();
+      }, 25);
+    }
+  };
+  mediaRecorder.onstart = () => {
+    isRunning = true;
+    console.log({ isRunning });
+    chunks = [];
+  };
+  mediaRecorder.onstop = () => {
+    isRunning = false;
+    console.log({ isRunning });
+    mediaRecorder = undefined;
+  };
+  console.log("starting mediaRecorder", mediaRecorder);
+  mediaRecorder.start(500);
+};
+const stopTranscribing = async () => {
+  mediaRecorder?.stop();
+  mediaRecorder = undefined;
+};
+
+// AUDIO CONTEXT
+
+const audioContext = new (window.AudioContext || window.webkitAudioContext)({
+  sampleRate: 16_000,
+  latencyHint: "interactive",
+});
+device.audioContext = audioContext;
+device.microphoneGainNode.gain.value = 5;
+window.audioContext = audioContext;
+const checkAudioContextState = () => {
+  const { state } = audioContext;
+  console.log({ audioContextState: state });
+  if (state != "running") {
+    document.addEventListener("click", () => audioContext.resume(), {
+      once: true,
+    });
+  }
+};
+audioContext.addEventListener("statechange", () => {
+  checkAudioContextState();
+});
+checkAudioContextState();
+
+device.audioContext = audioContext;
+device.microphoneGainNode.gain.value = 10;

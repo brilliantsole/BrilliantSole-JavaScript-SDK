@@ -1715,7 +1715,7 @@ function writeString(view, offset, string) {
     }
 }
 
-var _MicrophoneManager_instances, _a$6, _MicrophoneManager_dispatchEvent_get, _MicrophoneManager_microphoneStatus, _MicrophoneManager_parseMicrophoneStatus, _MicrophoneManager_updateMicrophoneStatus, _MicrophoneManager_sendMicrophoneCommand, _MicrophoneManager_assertIsNotIdle, _MicrophoneManager_assertValidBitDepth, _MicrophoneManager_fadeDuration, _MicrophoneManager_playbackTime, _MicrophoneManager_parseMicrophoneData, _MicrophoneManager_bytesPerSample_get, _MicrophoneManager_microphoneConfiguration, _MicrophoneManager_availableMicrophoneConfigurationTypes, _MicrophoneManager_parseMicrophoneConfiguration, _MicrophoneManager_isMicrophoneConfigurationRedundant, _MicrophoneManager_assertAvailableMicrophoneConfigurationType, _MicrophoneManager_createData, _MicrophoneManager_audioContext, _MicrophoneManager_gainNode, _MicrophoneManager_mediaStreamDestination, _MicrophoneManager_isRecording, _MicrophoneManager_microphoneRecordingData;
+var _MicrophoneManager_instances, _a$6, _MicrophoneManager_dispatchEvent_get, _MicrophoneManager_microphoneStatus, _MicrophoneManager_parseMicrophoneStatus, _MicrophoneManager_updateMicrophoneStatus, _MicrophoneManager_sendMicrophoneCommand, _MicrophoneManager_assertValidBitDepth, _MicrophoneManager_fadeDuration, _MicrophoneManager_playbackTime, _MicrophoneManager_parseMicrophoneData, _MicrophoneManager_bytesPerSample_get, _MicrophoneManager_microphoneConfiguration, _MicrophoneManager_availableMicrophoneConfigurationTypes, _MicrophoneManager_parseMicrophoneConfiguration, _MicrophoneManager_isMicrophoneConfigurationRedundant, _MicrophoneManager_assertAvailableMicrophoneConfigurationType, _MicrophoneManager_createData, _MicrophoneManager_audioContext, _MicrophoneManager_gainNode, _MicrophoneManager_mediaStreamDestination, _MicrophoneManager_isRecording, _MicrophoneManager_microphoneRecordingData;
 const _console$D = createConsole("MicrophoneManager", { log: false });
 const MicrophoneSensorTypes = ["microphone"];
 const MicrophoneCommands = ["start", "stop", "vad"];
@@ -1775,7 +1775,10 @@ class MicrophoneManager {
         await __classPrivateFieldGet(this, _MicrophoneManager_instances, "m", _MicrophoneManager_sendMicrophoneCommand).call(this, "start");
     }
     async stop() {
-        __classPrivateFieldGet(this, _MicrophoneManager_instances, "m", _MicrophoneManager_assertIsNotIdle).call(this);
+        if (this.microphoneStatus == "idle") {
+            _console$D.log("microphone is already idle");
+            return;
+        }
         await __classPrivateFieldGet(this, _MicrophoneManager_instances, "m", _MicrophoneManager_sendMicrophoneCommand).call(this, "stop");
     }
     async vad() {
@@ -1976,8 +1979,6 @@ async function _MicrophoneManager_sendMicrophoneCommand(command, sendImmediately
         },
     ], sendImmediately);
     await promise;
-}, _MicrophoneManager_assertIsNotIdle = function _MicrophoneManager_assertIsNotIdle() {
-    _console$D.assertWithError(__classPrivateFieldGet(this, _MicrophoneManager_microphoneStatus, "f") != "idle", `microphone is idle`);
 }, _MicrophoneManager_assertValidBitDepth = function _MicrophoneManager_assertValidBitDepth() {
     _console$D.assertEnumWithError(this.bitDepth, MicrophoneBitDepths);
 }, _MicrophoneManager_parseMicrophoneData = function _MicrophoneManager_parseMicrophoneData(dataView) {
@@ -2290,6 +2291,9 @@ class SensorConfigurationManager {
     }
     get configuration() {
         return __classPrivateFieldGet(this, _SensorConfigurationManager_configuration, "f");
+    }
+    clear() {
+        __classPrivateFieldGet(this, _SensorConfigurationManager_instances, "m", _SensorConfigurationManager_updateConfiguration).call(this, {});
     }
     async setConfiguration(newSensorConfiguration, clearRest, sendImmediately) {
         if (clearRest) {
@@ -10461,8 +10465,11 @@ class Device {
     get microphoneStatus() {
         return __classPrivateFieldGet(this, _Device_microphoneManager, "f").microphoneStatus;
     }
-    async startMicrophone() {
+    async startMicrophone(sensorRate = 10) {
         __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertHasMicrophone).call(this);
+        if (this.sensorConfiguration.microphone == 0) {
+            this.setSensorConfiguration({ microphone: sensorRate }, false, false);
+        }
         await __classPrivateFieldGet(this, _Device_microphoneManager, "f").start();
     }
     async stopMicrophone() {
@@ -10473,8 +10480,11 @@ class Device {
         __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertHasMicrophone).call(this);
         await __classPrivateFieldGet(this, _Device_microphoneManager, "f").vad();
     }
-    async toggleMicrophone() {
+    async toggleMicrophone(sensorRate = 10) {
         __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertHasMicrophone).call(this);
+        if (this.sensorConfiguration.microphone == 0) {
+            this.setSensorConfiguration({ microphone: sensorRate }, false, false);
+        }
         await __classPrivateFieldGet(this, _Device_microphoneManager, "f").toggle();
     }
     get microphoneConfiguration() {
@@ -10996,6 +11006,7 @@ _a$3 = Device, _Device_eventDispatcher = new WeakMap(), _Device_connectionManage
     __classPrivateFieldGet(this, _Device_wifiManager, "f").clear();
     __classPrivateFieldGet(this, _Device_cameraManager, "f").clear();
     __classPrivateFieldGet(this, _Device_microphoneManager, "f").clear();
+    __classPrivateFieldGet(this, _Device_sensorConfigurationManager, "f").clear();
     __classPrivateFieldGet(this, _Device_displayManager, "f").reset();
 }, _Device_clearConnection = function _Device_clearConnection() {
     this.connectionManager?.clear();

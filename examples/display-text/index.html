@@ -12,8 +12,8 @@
 
     #textarea {
       height: 400;
-      width: 640;
-      font-size: 64px;
+      width: 700;
+      font-size: 36px;
     }
 
     .verticalLabel {
@@ -78,12 +78,12 @@
     </label>
 
     <label id="drawSpriteX" class="verticalLabel">
-      <span>x (<span class="value">200</span>px)</span>
-      <input type="range" min="-50" max="640" step="1" value="200" />
+      <span>x (<span class="value">0</span>px)</span>
+      <input type="range" min="-50" max="640" step="1" value="0" />
     </label>
     <label id="drawSpriteY" class="verticalLabel">
-      <span>y (<span class="value">100</span>px)</span>
-      <input type="range" min="-50" max="400" step="1" value="100" />
+      <span>y (<span class="value">400</span>px)</span>
+      <input type="range" min="-50" max="400" step="1" value="400" />
     </label>
 
     <label id="drawSpriteRotation" class="verticalLabel">
@@ -147,6 +147,32 @@
         <optgroup label="set sprites line alignment"></optgroup>
       </select>
     </label>
+
+    <label class="verticalLabel">
+      <span>microphone</span>
+      <select id="selectMicrophone">
+        <optgroup label="select microphone"></optgroup>
+      </select>
+    </label>
+
+    <label id="drawCharactersPerLine" class="verticalLabel">
+      <span>characters per line (<span class="value">30</span>)</span>
+      <input type="range" min="10" max="50" step="1" value="30" />
+    </label>
+
+    <label id="maxAudioLength" class="verticalLabel">
+      <span>audio length (<span class="value">20</span> sec)</span>
+      <input type="range" min="5" max="30" step="1" value="20" />
+    </label>
+
+    <audio
+      id="microphoneAudio"
+      style="position: absolute; height: 30px"
+      controls
+      autoplay
+      muted
+      hidden
+    ></audio>
 
     <br />
 
