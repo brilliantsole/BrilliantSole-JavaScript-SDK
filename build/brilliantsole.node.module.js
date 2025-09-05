@@ -4126,6 +4126,7 @@ const DisplaySpriteContextCommandTypes = [
     "drawCircle",
     "drawEllipse",
     "drawRegularPolygon",
+    "drawPolygon",
     "drawSegment",
     "drawSegments",
     "drawArc",
@@ -4605,6 +4606,26 @@ function serializeContextCommand(displayManager, command) {
                 dataView.setUint8(6, numberOfSides);
             }
             break;
+        case "drawPolygon":
+            {
+                const { offsetX, offsetY, points } = command;
+                _console$s.assertRangeWithError("numberOfPoints", points.length, 2, 255);
+                const dataViewLength = 2 * 2 + 1 + points.length * 4;
+                dataView = new DataView(new ArrayBuffer(dataViewLength));
+                let offset = 0;
+                dataView.setInt16(offset, offsetX, true);
+                offset += 2;
+                dataView.setInt16(offset, offsetY, true);
+                offset += 2;
+                dataView.setUint8(offset++, points.length);
+                points.forEach((point) => {
+                    dataView.setInt16(offset, point.x, true);
+                    offset += 2;
+                    dataView.setInt16(offset, point.y, true);
+                    offset += 2;
+                });
+            }
+            break;
         case "drawSegment":
             {
                 const { startX, startY, endX, endY } = command;
@@ -4986,7 +5007,7 @@ function reduceSpriteSheet(spriteSheet, spriteNames, requireAll = false) {
     return reducedSpriteSheet;
 }
 
-const _console$q = createConsole("DisplayBitmapUtils", { log: false });
+const _console$q = createConsole("DisplayBitmapUtils", { log: true });
 const drawBitmapHeaderLength = 2 + 2 + 2 + 4 + 1 + 2;
 function getBitmapData(bitmap) {
     const pixelDataLength = getBitmapNumberOfBytes(bitmap);
@@ -5441,6 +5462,12 @@ async function runDisplayContextCommand(displayManager, command, sendImmediately
             {
                 const { offsetX, offsetY, radiusX, radiusY } = command;
                 await displayManager.drawEllipse(offsetX, offsetY, radiusX, radiusY, sendImmediately);
+            }
+            break;
+        case "drawPolygon":
+            {
+                const { offsetX, offsetY, points } = command;
+                await displayManager.drawPolygon(offsetX, offsetY, points, sendImmediately);
             }
             break;
         case "drawRegularPolygon":
@@ -6797,6 +6824,19 @@ class DisplayManager {
             return;
         }
         await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "drawRegularPolygon", dataView.buffer, sendImmediately);
+    }
+    async drawPolygon(offsetX, offsetY, points, sendImmediately) {
+        _console$o.assertRangeWithError("numberOfPoints", points.length, 2, 255);
+        const dataView = serializeContextCommand(this, {
+            type: "drawPolygon",
+            offsetX,
+            offsetY,
+            points,
+        });
+        if (!dataView) {
+            return;
+        }
+        await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "drawPolygon", dataView.buffer, sendImmediately);
     }
     async drawSegment(startX, startY, endX, endY, sendImmediately) {
         const dataView = serializeContextCommand(this, {
@@ -10732,6 +10772,10 @@ class Device {
         __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertDisplayIsAvailable).call(this);
         return __classPrivateFieldGet(this, _Device_displayManager, "f").drawRegularPolygon;
     }
+    get drawDisplayPolygon() {
+        __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertDisplayIsAvailable).call(this);
+        return __classPrivateFieldGet(this, _Device_displayManager, "f").drawPolygon;
+    }
     get drawDisplaySegment() {
         __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertDisplayIsAvailable).call(this);
         return __classPrivateFieldGet(this, _Device_displayManager, "f").drawSegment;
@@ -12587,5 +12631,5 @@ const ThrottleUtils = {
     debounce,
 };
 
-export { CameraCommands, CameraConfigurationTypes, ContinuousSensorTypes, DefaultNumberOfDisplayColors, DefaultNumberOfPressureSensors, Device, DeviceManager$1 as DeviceManager, DevicePair, DevicePairTypes, DeviceTypes, DisplayAlignments, DisplayBrightnesses, DisplayContextCommandTypes, DisplayDirections, DisplayPixelDepths, DisplaySegmentCaps, DisplaySpriteContextCommandTypes, environment as Environment, EventUtils, FileTransferDirections, FileTypes, MaxNameLength, MaxNumberOfVibrationWaveformEffectSegments, MaxNumberOfVibrationWaveformSegments, MaxSensorRate, MaxSpriteSheetNameLength, MaxVibrationWaveformEffectSegmentDelay, MaxVibrationWaveformEffectSegmentLoopCount, MaxVibrationWaveformEffectSequenceLoopCount, MaxVibrationWaveformSegmentDuration, MaxWifiPasswordLength, MaxWifiSSIDLength, MicrophoneCommands, MicrophoneConfigurationTypes, MicrophoneConfigurationValues, MinNameLength, MinSpriteSheetNameLength, MinWifiPasswordLength, MinWifiSSIDLength, RangeHelper, scanner$1 as Scanner, SensorRateStep, SensorTypes, Sides, TfliteSensorTypes, TfliteTasks, ThrottleUtils, UDPServer, VibrationLocations, VibrationTypes, VibrationWaveformEffects, WebSocketServer, getFontUnicodeRange, hexToRGB, maxDisplayScale, parseFont, pixelDepthToNumberOfColors, rgbToHex, setAllConsoleLevelFlags, setConsoleLevelFlagsForType, stringToSpriteLines, stringToSprites as stringToSpriteNames, wait };
+export { CameraCommands, CameraConfigurationTypes, ContinuousSensorTypes, DefaultNumberOfDisplayColors, DefaultNumberOfPressureSensors, Device, DeviceManager$1 as DeviceManager, DevicePair, DevicePairTypes, DeviceTypes, DisplayAlignments, DisplayBrightnesses, DisplayContextCommandTypes, DisplayDirections, DisplayPixelDepths, DisplaySegmentCaps, DisplaySpriteContextCommandTypes, environment as Environment, EventUtils, FileTransferDirections, FileTypes, MaxNameLength, MaxNumberOfVibrationWaveformEffectSegments, MaxNumberOfVibrationWaveformSegments, MaxSensorRate, MaxSpriteSheetNameLength, MaxVibrationWaveformEffectSegmentDelay, MaxVibrationWaveformEffectSegmentLoopCount, MaxVibrationWaveformEffectSequenceLoopCount, MaxVibrationWaveformSegmentDuration, MaxWifiPasswordLength, MaxWifiSSIDLength, MicrophoneCommands, MicrophoneConfigurationTypes, MicrophoneConfigurationValues, MinNameLength, MinSpriteSheetNameLength, MinWifiPasswordLength, MinWifiSSIDLength, RangeHelper, scanner$1 as Scanner, SensorRateStep, SensorTypes, Sides, TfliteSensorTypes, TfliteTasks, ThrottleUtils, UDPServer, VibrationLocations, VibrationTypes, VibrationWaveformEffects, WebSocketServer, getFontUnicodeRange, hexToRGB, maxDisplayScale, parseFont, pixelDepthToNumberOfColors, rgbToHex, setAllConsoleLevelFlags, setConsoleLevelFlagsForType, stringToSpriteLines, stringToSprites, wait };
 //# sourceMappingURL=brilliantsole.node.module.js.map

@@ -153,7 +153,7 @@ export {
   DisplaySpritePaletteSwap,
   parseFont,
   getFontUnicodeRange,
-  stringToSprites as stringToSpriteNames,
+  stringToSprites,
 } from "./utils/DisplaySpriteSheetUtils.ts";
 
 /** BROWSER_START */
@@ -178,6 +178,8 @@ export {
   canvasToSprite,
   canvasToSpriteSheet,
   resizeImage,
+  imageToBitmaps,
+  canvasToBitmaps,
 } from "./utils/DisplayBitmapUtils.ts";
 /** BROWSER_END */
 

@@ -853,6 +853,9 @@ const progress_callback = (progress) => {
 };
 
 const loadModel = async () => {
+  if (loadedModel) {
+    return;
+  }
   console.log("creating model");
   model_id = "onnx-community/whisper-base";
 
@@ -956,7 +959,7 @@ const startTranscribing = async () => {
             .filter((string) => string.length > 0)
             .forEach((word, index) => {
               if (index > 0) {
-                if (numberOfCharacters > drawCharactersPerLine) {
+                if (numberOfCharacters + word.length > drawCharactersPerLine) {
                   textareaString += `\n`;
                   numberOfCharacters = 0;
                 } else {

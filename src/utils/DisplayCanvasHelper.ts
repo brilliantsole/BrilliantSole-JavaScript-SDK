@@ -1687,20 +1687,6 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
   #clearBoundingBox({ x, y, width, height }: DisplayBoundingBox) {
     this.#clearRectToCanvas(x, y, width, height);
   }
-  #getBoundingBox(
-    offsetX: number,
-    offsetY: number,
-    width: number,
-    height: number
-  ): DisplayBoundingBox {
-    const boundingBox = {
-      x: offsetX - width / 2,
-      y: offsetY - height / 2,
-      width: width,
-      height: height,
-    };
-    return boundingBox;
-  }
   #getOuterPadding(lineWidth: number) {
     return Math.ceil(lineWidth / 2);
   }
@@ -1970,9 +1956,10 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     radius: number,
     contextState: DisplayContextState
   ) {
-    this.#drawArcToCanvas(
+    this.#drawArcEllipseToCanvas(
       offsetX,
       offsetY,
+      radius,
       radius,
       0,
       360,
@@ -2053,9 +2040,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
       );
     }
   }
-  #getPolygonBoundingBox(
-    offsetX: number,
-    offsetY: number,
+  #getRegularPolygonBoundingBox(
     radius: number,
     numberOfSides: number,
     { lineWidth }: DisplayContextState
@@ -2065,13 +2050,14 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     outerPadding = Math.ceil(outerPadding * shapeFactor);
 
     const diameter = radius * 2;
-    const boundingBox = {
-      x: offsetX - radius - outerPadding,
-      y: offsetY - radius - outerPadding,
+    const regularPolygonBoundingBox = {
+      x: -radius - outerPadding,
+      y: -radius - outerPadding,
       width: diameter + outerPadding * 2,
       height: diameter + outerPadding * 2,
     };
-    return boundingBox;
+    //_console.log("regularPolygonBoundingBox", regularPolygonBoundingBox);
+    return regularPolygonBoundingBox;
   }
   #drawRegularPolygonToCanvas(
     offsetX: number,
@@ -2083,21 +2069,26 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     this.#updateContext(contextState);
 
     this.#save();
-    const box = this.#getPolygonBoundingBox(
-      offsetX,
-      offsetY,
+    const localBox = this.#getRegularPolygonBoundingBox(
       radius,
       numberOfSides,
       contextState
     );
-    this.#applyClip(box, contextState);
-
-    this.#transformContext(offsetX, offsetY, contextState.rotation);
+    const rotatedLocalBox = this.#rotateBoundingBox(
+      localBox,
+      contextState.rotation
+    );
+    const rotatedBox = this.#offsetBoundingBox(
+      rotatedLocalBox,
+      offsetX,
+      offsetY
+    );
+    this.#applyClip(rotatedBox, contextState);
     if (this.#clearBoundingBoxOnDraw) {
-      this.#clearBoundingBox(box);
+      this.#clearBoundingBox(rotatedBox);
     }
-
-    this.#applyRotationClip(box, contextState);
+    this.#transformContext(offsetX, offsetY, contextState.rotation);
+    this.#applyRotationClip(localBox, contextState);
 
     this.context.beginPath();
     const angleStep = (Math.PI * 2) / numberOfSides;
@@ -2146,6 +2137,101 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
         offsetY,
         radius,
         numberOfSides,
+        sendImmediately
+      );
+    }
+  }
+  #getPolygonBoundingBox(
+    points: Vector2[],
+    { lineWidth }: DisplayContextState
+  ): DisplayBoundingBox {
+    const outerPadding = Math.ceil(lineWidth / 2);
+
+    let minX = 0;
+    let maxX = 0;
+    let minY = 0;
+    let maxY = 0;
+    points.forEach((point, index) => {
+      if (index == 0) {
+        minX = maxX = point.x;
+        minY = maxY = point.y;
+      } else {
+        minX = Math.min(minX, point.x);
+        maxX = Math.max(maxX, point.x);
+
+        minY = Math.min(minY, point.y);
+        maxY = Math.max(maxY, point.y);
+      }
+    });
+
+    const polygonBoundingBox = {
+      x: minX - outerPadding,
+      y: minY - outerPadding,
+      width: maxX - minX + outerPadding * 2,
+      height: maxY - minY + outerPadding * 2,
+    };
+    //_console.log("polygonBoundingBox", polygonBoundingBox);
+    return polygonBoundingBox;
+  }
+  #drawPolygonToCanvas(
+    offsetX: number,
+    offsetY: number,
+    points: Vector2[],
+    contextState: DisplayContextState
+  ) {
+    _console.log("drawPolygonToCanvas", { offsetX, offsetY, points });
+    this.#updateContext(contextState);
+
+    this.#save();
+    const localBox = this.#getPolygonBoundingBox(points, contextState);
+    const rotatedLocalBox = this.#rotateBoundingBox(
+      localBox,
+      contextState.rotation
+    );
+    const rotatedBox = this.#offsetBoundingBox(
+      rotatedLocalBox,
+      offsetX,
+      offsetY
+    );
+    this.#applyClip(rotatedBox, contextState);
+    if (this.#clearBoundingBoxOnDraw) {
+      this.#clearBoundingBox(rotatedBox);
+    }
+    this.#transformContext(offsetX, offsetY, contextState.rotation);
+    this.#applyRotationClip(localBox, contextState);
+
+    this.context.beginPath();
+    points.forEach((point, index) => {
+      //_console.log(index, point);
+      if (index == 0) {
+        this.context.moveTo(point.x, point.y);
+      } else {
+        this.context.lineTo(point.x, point.y);
+      }
+    });
+    this.context.closePath();
+
+    this.context.fill();
+    if (contextState.lineWidth > 0) {
+      this.context.stroke();
+    }
+    this.#restore();
+  }
+  async drawPolygon(
+    offsetX: number,
+    offsetY: number,
+    points: Vector2[],
+    sendImmediately?: boolean
+  ) {
+    const contextState = structuredClone(this.contextState);
+    this.#rearDrawStack.push(() =>
+      this.#drawPolygonToCanvas(offsetX, offsetY, points, contextState)
+    );
+    if (this.device?.isConnected && !this.#ignoreDevice) {
+      await this.deviceDisplayManager!.drawPolygon(
+        offsetX,
+        offsetY,
+        points,
         sendImmediately
       );
     }
@@ -2408,65 +2494,18 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     isRadians: boolean,
     contextState: DisplayContextState
   ) {
-    this.#updateContext(contextState);
-
-    this.#save();
-    const localBox = this.#getCircleBoundingBox(radius, contextState);
-    const rotatedLocalBox = this.#rotateBoundingBox(
-      localBox,
-      contextState.rotation
-    );
-    const rotatedBox = this.#offsetBoundingBox(
-      rotatedLocalBox,
+    this.#drawArcEllipseToCanvas(
       offsetX,
-      offsetY
-    );
-    this.#applyClip(rotatedBox, contextState);
-    if (this.#clearBoundingBoxOnDraw) {
-      this.#clearBoundingBox(rotatedBox);
-    }
-    this.#transformContext(offsetX, offsetY, contextState.rotation);
-    this.#applyRotationClip(localBox, contextState);
-
-    const outerPadding = this.#getOuterPadding(contextState.lineWidth);
-    const startX = localBox.x + outerPadding;
-    const startY = localBox.y + outerPadding;
-    const centerX = startX + radius;
-    const centerY = startY + radius;
-
-    // Draw the filled pie slice (includes radial lines)
-    this.context.beginPath();
-    this.context.moveTo(centerX, centerY);
-    const clockwise = angleOffset > 0;
-    const endAngle = startAngle + angleOffset;
-
-    this.context.arc(
-      centerX,
-      centerY,
+      offsetY,
+      radius,
       radius,
       startAngle,
-      endAngle,
-      !clockwise
+      angleOffset,
+      isRadians,
+      contextState
     );
-    this.context.closePath();
-    this.context.fill();
-
-    // Stroke only the arc part
-    if (contextState.lineWidth) {
-      this.context.beginPath();
-      this.context.arc(
-        centerX,
-        centerY,
-        radius,
-        startAngle,
-        endAngle,
-        !clockwise
-      );
-      this.context.stroke();
-    }
-
-    this.#restore();
   }
+
   async drawArc(
     offsetX: number,
     offsetY: number,

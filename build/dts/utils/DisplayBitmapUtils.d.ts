@@ -16,14 +16,22 @@ export declare function resizeImage(image: CanvasImageSource, width: number, hei
 export declare function cropCanvas(canvas: HTMLCanvasElement, x: number, y: number, width: number, height: number, targetCanvas?: HTMLCanvasElement): HTMLCanvasElement;
 export declare function removeAlphaFromCanvas(canvas: HTMLCanvasElement): HTMLCanvasElement;
 export declare function canvasToBlob(canvas: HTMLCanvasElement, type?: "image/png" | "image/jpeg", quality?: number): Promise<Blob>;
-export declare function resizeAndQuantizeImage(image: HTMLImageElement, width: number, height: number, numberOfColors: number, colors?: string[], canvas?: HTMLCanvasElement): Promise<{
+export declare function resizeAndQuantizeImage(image: CanvasImageSource, width: number, height: number, numberOfColors: number, colors?: string[], canvas?: HTMLCanvasElement): Promise<{
     blob: Blob;
     colors: string[];
     colorIndices: number[];
 }>;
-export declare function imageToBitmap(image: HTMLImageElement, width: number, height: number, colors: string[], bitmapColorIndices: number[], numberOfColors?: number): Promise<{
+export declare function imageToBitmap(image: CanvasImageSource, width: number, height: number, colors: string[], bitmapColorIndices: number[], numberOfColors?: number): Promise<{
     blob: Blob;
     bitmap: DisplayBitmap;
+}>;
+export declare function canvasToBitmaps(canvas: HTMLCanvasElement, numberOfColors: number, mtu: number): Promise<{
+    bitmapRows: DisplayBitmap[][];
+    colors: string[];
+}>;
+export declare function imageToBitmaps(image: HTMLImageElement, width: number, height: number, numberOfColors: number, mtu: number): Promise<{
+    bitmapRows: DisplayBitmap[][];
+    colors: string[];
 }>;
 export declare function getBitmapNumberOfBytes(bitmap: DisplayBitmap): number;
 export declare function assertValidBitmapPixels(bitmap: DisplayBitmap): void;

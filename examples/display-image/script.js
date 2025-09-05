@@ -537,7 +537,7 @@ drawYInput.addEventListener("input", () => {
   //console.log({ drawY });
   drawYSpan.innerText = drawY;
 });
-drawYInput.addEventListener("change", () => {
+drawYInput.addEventListener("input", () => {
   if (redrawOnChange) {
     drawImage();
   }
@@ -604,6 +604,7 @@ pixelDepthSelect.value = pixelDepth;
 
 // DRAW
 let defaultMaxFileLength = 10 * 1024; // 10kb
+let defaultMtu = 247;
 let currentSpriteIndexBeingDrawn = 0;
 let isDrawing = false;
 /** @type {BS.DisplaySpriteSheet} */
@@ -613,6 +614,8 @@ let drawWhenReady = false;
 /** @type {HTMLCanvasElement} */
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
+
+let drawUsingBitmap = false;
 
 const draw = async () => {
   if (!canvas.height || !canvas.width) {
@@ -642,63 +645,102 @@ const draw = async () => {
 
   const numberOfColors = 2 ** pixelDepth;
 
-  const maxFileLength = displayCanvasHelper.device?.isConnected
-    ? displayCanvasHelper.device.maxFileLength
-    : defaultMaxFileLength;
+  if (drawUsingBitmap) {
+    const mtu = displayCanvasHelper.device?.isConnected
+      ? displayCanvasHelper.device.mtu
+      : defaultMtu;
 
-  spriteSheet = await BS.canvasToSpriteSheet(
-    canvas,
-    "image",
-    numberOfColors,
-    "image",
-    maxFileLength
-  );
-  console.log("spriteSheet", spriteSheet);
-
-  await displayCanvasHelper.setSpriteScale(spriteScale);
-
-  await displayCanvasHelper.resetSpriteColors();
-  /** @type {BS.DisplaySpriteColorPair[]} */
-  const spriteColorPairs = [];
-  for (let i = 0; i < numberOfColors; i++) {
-    spriteColorPairs.push({ colorIndex: i, spriteColorIndex: i });
-  }
-  await displayCanvasHelper.selectSpriteColors(spriteColorPairs);
-
-  const offsetX = drawX;
-  let offsetYTop = drawY - outputImageHeight / 2;
-  drawProgress.value = 0;
-
-  for (
-    currentSpriteIndexBeingDrawn = 0;
-    currentSpriteIndexBeingDrawn < spriteSheet.sprites.length;
-    currentSpriteIndexBeingDrawn++
-  ) {
-    const sprite = spriteSheet.sprites[currentSpriteIndexBeingDrawn];
-    const scaledSpriteHeight = sprite.height * spriteScale;
-    let offsetY = offsetYTop + scaledSpriteHeight / 2;
-    console.log(`drawing sprite "${sprite.name}"`, sprite, {
-      offsetX,
-      offsetY,
-    });
-    await displayCanvasHelper.drawSpriteFromSpriteSheet(
-      offsetX,
-      offsetY,
-      sprite.name,
-      spriteSheet,
-      undefined,
-      true
+    const resizedCanvas = BS.resizeImage(
+      canvas,
+      outputImageWidth,
+      outputImageHeight
     );
-    offsetYTop += scaledSpriteHeight;
-  }
-  drawProgress.value = 0;
 
-  for (let i = 0; i < displayCanvasHelper.numberOfColors; i++) {
-    if (i >= numberOfColors) {
-      await displayCanvasHelper.setColor(i, "black");
+    const { bitmapRows, colors } = await BS.canvasToBitmaps(
+      resizedCanvas,
+      numberOfColors,
+      mtu
+    );
+    console.log("bitmapRows", bitmapRows, colors);
+
+    let offsetX = drawX - outputImageWidth / 2;
+    let offsetY = drawY - outputImageHeight / 2;
+    await displayCanvasHelper.setHorizontalAlignment("start");
+    await displayCanvasHelper.setVerticalAlignment("start");
+    for (let bitmapRowIndex in bitmapRows) {
+      const bitmapRow = bitmapRows[bitmapRowIndex];
+      offsetX = drawX - outputImageWidth / 2;
+      for (let bitmapIndex in bitmapRow) {
+        const bitmap = bitmapRow[bitmapIndex];
+        //console.log("drawing bitmap", { offsetX, offsetY }, bitmap);
+        await displayCanvasHelper.drawBitmap(offsetX, offsetY, bitmap);
+        offsetX += bitmap.width;
+      }
+      offsetY += bitmapRow[0].height;
     }
+    for (let colorIndex in colors) {
+      await displayCanvasHelper.setColor(colorIndex, colors[colorIndex]);
+      await displayCanvasHelper.selectBitmapColor(colorIndex, colorIndex);
+    }
+  } else {
+    const maxFileLength = displayCanvasHelper.device?.isConnected
+      ? displayCanvasHelper.device.maxFileLength
+      : defaultMaxFileLength;
+
+    spriteSheet = await BS.canvasToSpriteSheet(
+      canvas,
+      "image",
+      numberOfColors,
+      "image",
+      maxFileLength
+    );
+    console.log("spriteSheet", spriteSheet);
+
+    await displayCanvasHelper.setSpriteScale(spriteScale);
+    await displayCanvasHelper.resetSpriteColors();
+    /** @type {BS.DisplaySpriteColorPair[]} */
+    const spriteColorPairs = [];
+    for (let i = 0; i < numberOfColors; i++) {
+      spriteColorPairs.push({ colorIndex: i, spriteColorIndex: i });
+    }
+    await displayCanvasHelper.selectSpriteColors(spriteColorPairs);
+
+    const offsetX = drawX;
+    let offsetYTop = drawY - outputImageHeight / 2;
+    drawProgress.value = 0;
+
+    for (
+      currentSpriteIndexBeingDrawn = 0;
+      currentSpriteIndexBeingDrawn < spriteSheet.sprites.length;
+      currentSpriteIndexBeingDrawn++
+    ) {
+      const sprite = spriteSheet.sprites[currentSpriteIndexBeingDrawn];
+      const scaledSpriteHeight = sprite.height * spriteScale;
+      let offsetY = offsetYTop + scaledSpriteHeight / 2;
+      console.log(`drawing sprite "${sprite.name}"`, sprite, {
+        offsetX,
+        offsetY,
+      });
+      await displayCanvasHelper.drawSpriteFromSpriteSheet(
+        offsetX,
+        offsetY,
+        sprite.name,
+        spriteSheet,
+        undefined,
+        true
+      );
+      offsetYTop += scaledSpriteHeight;
+    }
+    drawProgress.value = 0;
+
+    for (let i = 0; i < displayCanvasHelper.numberOfColors; i++) {
+      if (i >= numberOfColors) {
+        await displayCanvasHelper.setColor(i, "black");
+      }
+    }
+    await displayCanvasHelper.selectSpriteSheetPalette("image");
   }
-  await displayCanvasHelper.selectSpriteSheetPalette("image");
+
   await displayCanvasHelper.show();
 
   canvas.setAttribute("hidden", "");
@@ -983,54 +1025,54 @@ let imageSegmenter = undefined;
 let runningMode = "LIVE_STREAM";
 let labels;
 
-// import {
-//   ImageSegmenter,
-//   FilesetResolver,
-// } from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.2";
+import {
+  ImageSegmenter,
+  FilesetResolver,
+} from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.2";
 
-// let useImageSegmentation = false;
-// const useImageSegmentationInput = document.getElementById(
-//   "useImageSegmentation"
-// );
-// useImageSegmentationInput.addEventListener("input", () => {
-//   setUseImageSegmentation(useImageSegmentationInput.checked);
-// });
-// const setUseImageSegmentation = (newUseImageSegmentation) => {
-//   useImageSegmentation = newUseImageSegmentation;
-//   console.log({ useImageSegmentation });
-//   useImageSegmentationInput.checked = useImageSegmentation;
+let useImageSegmentation = false;
+const useImageSegmentationInput = document.getElementById(
+  "useImageSegmentation"
+);
+useImageSegmentationInput.addEventListener("input", () => {
+  setUseImageSegmentation(useImageSegmentationInput.checked);
+});
+const setUseImageSegmentation = (newUseImageSegmentation) => {
+  useImageSegmentation = newUseImageSegmentation;
+  console.log({ useImageSegmentation });
+  useImageSegmentationInput.checked = useImageSegmentation;
 
-//   if (!imageSegmenter) {
-//     createImageSegmenter();
-//   }
-// };
+  if (!imageSegmenter) {
+    createImageSegmenter();
+  }
+};
 
-// const modelAssetPaths = {
-//   selfieMulticlass:
-//     "https://storage.googleapis.com/mediapipe-models/image_segmenter/selfie_multiclass_256x256/float32/latest/selfie_multiclass_256x256.tflite",
-//   hairSegmenter:
-//     "https://storage.googleapis.com/mediapipe-models/image_segmenter/hair_segmenter/float32/latest/hair_segmenter.tflite",
-//   selfieSegmenter:
-//     "https://storage.googleapis.com/mediapipe-models/image_segmenter/selfie_segmenter/float16/latest/selfie_segmenter.tflite",
-//   deeplab:
-//     "https://storage.googleapis.com/mediapipe-models/image_segmenter/deeplab_v3/float32/latest/deeplab_v3.tflite",
-// };
-// const createImageSegmenter = async () => {
-//   const vision = await FilesetResolver.forVisionTasks(
-//     "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.2/wasm"
-//   );
+const modelAssetPaths = {
+  selfieMulticlass:
+    "https://storage.googleapis.com/mediapipe-models/image_segmenter/selfie_multiclass_256x256/float32/latest/selfie_multiclass_256x256.tflite",
+  hairSegmenter:
+    "https://storage.googleapis.com/mediapipe-models/image_segmenter/hair_segmenter/float32/latest/hair_segmenter.tflite",
+  selfieSegmenter:
+    "https://storage.googleapis.com/mediapipe-models/image_segmenter/selfie_segmenter/float16/latest/selfie_segmenter.tflite",
+  deeplab:
+    "https://storage.googleapis.com/mediapipe-models/image_segmenter/deeplab_v3/float32/latest/deeplab_v3.tflite",
+};
+const createImageSegmenter = async () => {
+  const vision = await FilesetResolver.forVisionTasks(
+    "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.2/wasm"
+  );
 
-//   imageSegmenter = await ImageSegmenter.createFromOptions(vision, {
-//     baseOptions: {
-//       modelAssetPath: modelAssetPaths.selfieSegmenter,
-//       delegate: "GPU",
-//     },
+  imageSegmenter = await ImageSegmenter.createFromOptions(vision, {
+    baseOptions: {
+      modelAssetPath: modelAssetPaths.selfieSegmenter,
+      delegate: "GPU",
+    },
 
-//     runningMode: runningMode,
-//     outputCategoryMask: true,
-//     outputConfidenceMasks: false,
-//   });
-//   labels = imageSegmenter.getLabels();
-//   console.log("created imageSegmenter", imageSegmenter, labels);
-// };
-// createImageSegmenter();
+    runningMode: runningMode,
+    outputCategoryMask: true,
+    outputConfidenceMasks: false,
+  });
+  labels = imageSegmenter.getLabels();
+  console.log("created imageSegmenter", imageSegmenter, labels);
+};
+createImageSegmenter();

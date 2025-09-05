@@ -54,7 +54,7 @@ declare class CameraManager {
         message: CameraEventMessages[T];
     }>;
     requestRequiredInformation(): void;
-    get cameraStatus(): "idle" | "focusing" | "takingPicture" | "asleep";
+    get cameraStatus(): "asleep" | "idle" | "focusing" | "takingPicture";
     focus(): Promise<void>;
     takePicture(): Promise<void>;
     stop(): Promise<void>;

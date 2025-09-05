@@ -4833,6 +4833,7 @@ const DisplaySpriteContextCommandTypes = [
     "drawCircle",
     "drawEllipse",
     "drawRegularPolygon",
+    "drawPolygon",
     "drawSegment",
     "drawSegments",
     "drawArc",
@@ -5310,6 +5311,26 @@ function serializeContextCommand(displayManager, command) {
                 dataView.setInt16(2, offsetY, true);
                 dataView.setUint16(4, radius, true);
                 dataView.setUint8(6, numberOfSides);
+            }
+            break;
+        case "drawPolygon":
+            {
+                const { offsetX, offsetY, points } = command;
+                _console$n.assertRangeWithError("numberOfPoints", points.length, 2, 255);
+                const dataViewLength = 2 * 2 + 1 + points.length * 4;
+                dataView = new DataView(new ArrayBuffer(dataViewLength));
+                let offset = 0;
+                dataView.setInt16(offset, offsetX, true);
+                offset += 2;
+                dataView.setInt16(offset, offsetY, true);
+                offset += 2;
+                dataView.setUint8(offset++, points.length);
+                points.forEach((point) => {
+                    dataView.setInt16(offset, point.x, true);
+                    offset += 2;
+                    dataView.setInt16(offset, point.y, true);
+                    offset += 2;
+                });
             }
             break;
         case "drawSegment":
@@ -15512,7 +15533,7 @@ function reduceSpriteSheet(spriteSheet, spriteNames, requireAll = false) {
     return reducedSpriteSheet;
 }
 
-const _console$l = createConsole("DisplayBitmapUtils", { log: false });
+const _console$l = createConsole("DisplayBitmapUtils", { log: true });
 const drawBitmapHeaderLength = 2 + 2 + 2 + 4 + 1 + 2;
 function getBitmapData(bitmap) {
     const pixelDataLength = getBitmapNumberOfBytes(bitmap);
@@ -15691,6 +15712,77 @@ async function imageToBitmap(image, width, height, colors, bitmapColorIndices, n
     };
     return { blob, bitmap };
 }
+const drawSpriteBitmapCommandHeaderLength = 1 + 2 + 2 + 2 + 2 + 1 + 2;
+async function canvasToBitmaps(canvas, numberOfColors, mtu) {
+    const { blob, colors, colorIndices } = await quantizeCanvas(canvas, numberOfColors);
+    const bitmapRows = [];
+    const { width, height } = canvas;
+    const numberOfPixels = width * height;
+    const pixelDepth = DisplayPixelDepths.find((pixelDepth) => pixelDepthToNumberOfColors(pixelDepth) >= numberOfColors);
+    _console$l.assertWithError(pixelDepth, `no pixelDepth found that covers ${numberOfColors} colors`);
+    const pixelsPerByte = pixelDepthToPixelsPerByte(pixelDepth);
+    const numberOfBytes = Math.ceil(numberOfPixels / pixelsPerByte);
+    _console$l.log({
+        width,
+        height,
+        numberOfPixels,
+        pixelDepth,
+        pixelsPerByte,
+        numberOfBytes,
+        mtu,
+    });
+    const maxPixelDataLength = mtu - (drawSpriteBitmapCommandHeaderLength + 5);
+    const maxPixels = Math.floor(maxPixelDataLength / pixelsPerByte);
+    const maxBitmapWidth = Math.min(maxPixels, width);
+    let maxBitmapHeight = 1;
+    if (maxBitmapWidth == width) {
+        const bitmapRowPixelDataLength = Math.ceil(width / pixelsPerByte);
+        maxBitmapHeight = Math.floor(maxPixelDataLength / bitmapRowPixelDataLength);
+    }
+    _console$l.log({
+        maxPixelDataLength,
+        maxPixels,
+        maxBitmapHeight,
+        maxBitmapWidth,
+    });
+    if (maxBitmapHeight >= height) {
+        _console$l.log("image is small enough for a single bitmap");
+        const bitmap = {
+            numberOfColors,
+            pixels: colorIndices,
+            width,
+            height,
+        };
+        bitmapRows.push([bitmap]);
+    }
+    else {
+        let offsetX = 0;
+        let offsetY = 0;
+        const bitmapCanvas = document.createElement("canvas");
+        const bitmapColorIndices = new Array(numberOfColors)
+            .fill(0)
+            .map((_, i) => i);
+        while (offsetY < height) {
+            const bitmapHeight = Math.min(maxBitmapHeight, height - offsetY);
+            offsetX = 0;
+            const bitmapRow = [];
+            bitmapRows.push(bitmapRow);
+            while (offsetX < width) {
+                const bitmapWidth = Math.min(maxBitmapWidth, width - offsetX);
+                cropCanvas(canvas, offsetX, offsetY, bitmapWidth, bitmapHeight, bitmapCanvas);
+                const { bitmap } = await imageToBitmap(bitmapCanvas, bitmapWidth, bitmapHeight, colors, bitmapColorIndices, numberOfColors);
+                bitmapRow.push(bitmap);
+                offsetX += bitmapWidth;
+            }
+            offsetY += bitmapHeight;
+        }
+    }
+    return { bitmapRows, colors };
+}
+async function imageToBitmaps(image, width, height, numberOfColors, mtu) {
+    const canvas = resizeImage(image, width, height);
+    return canvasToBitmaps(canvas, numberOfColors, mtu);
+}
 function getBitmapNumberOfBytes(bitmap) {
     const pixelDepth = numberOfColorsToPixelDepth(bitmap.numberOfColors);
     const pixelsPerByte = pixelDepthToPixelsPerByte(pixelDepth);
@@ -15766,7 +15858,6 @@ async function imageToSprite(image, spriteName, width, height, numberOfColors, p
     const canvas = resizeImage(image, width, height);
     return canvasToSprite(canvas, spriteName, numberOfColors, paletteName, overridePalette, spriteSheet, paletteOffset);
 }
-const drawSpriteBitmapCommandHeaderLength = 1 + 2 + 2 + 2 + 2 + 1 + 2;
 const spriteSheetWithSingleBitmapCommandLength = calculateSpriteSheetHeaderLength(1) + drawSpriteBitmapCommandHeaderLength;
 function spriteSheetWithBitmapCommandAndSelectBitmapColorsLength(numberOfColors) {
     return (spriteSheetWithSingleBitmapCommandLength + (1 + 1 + numberOfColors * 2));
@@ -15814,15 +15905,15 @@ async function canvasToSpriteSheet(canvas, spriteSheetName, numberOfColors, pale
         else {
             const { colors } = await quantizeCanvas(canvas, numberOfColors);
             spriteSheet.palettes?.push({ name: paletteName, numberOfColors, colors });
-            let yOffset = 0;
+            let offsetY = 0;
             let imageIndex = 0;
             const spriteCanvas = document.createElement("canvas");
-            while (yOffset < height) {
-                let spriteHeight = Math.min(maxSpriteHeight, height - yOffset);
-                cropCanvas(canvas, 0, yOffset, width, spriteHeight, spriteCanvas);
-                yOffset += spriteHeight;
+            while (offsetY < height) {
+                const spriteHeight = Math.min(maxSpriteHeight, height - offsetY);
+                cropCanvas(canvas, 0, offsetY, width, spriteHeight, spriteCanvas);
+                offsetY += spriteHeight;
                 _console$l.log(`cropping sprite ${imageIndex}`, {
-                    yOffset,
+                    offsetY,
                     width,
                     spriteHeight,
                 });
@@ -16103,6 +16194,12 @@ async function runDisplayContextCommand(displayManager, command, sendImmediately
             {
                 const { offsetX, offsetY, radiusX, radiusY } = command;
                 await displayManager.drawEllipse(offsetX, offsetY, radiusX, radiusY, sendImmediately);
+            }
+            break;
+        case "drawPolygon":
+            {
+                const { offsetX, offsetY, points } = command;
+                await displayManager.drawPolygon(offsetX, offsetY, points, sendImmediately);
             }
             break;
         case "drawRegularPolygon":
@@ -17459,6 +17556,19 @@ class DisplayManager {
             return;
         }
         await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "drawRegularPolygon", dataView.buffer, sendImmediately);
+    }
+    async drawPolygon(offsetX, offsetY, points, sendImmediately) {
+        _console$j.assertRangeWithError("numberOfPoints", points.length, 2, 255);
+        const dataView = serializeContextCommand(this, {
+            type: "drawPolygon",
+            offsetX,
+            offsetY,
+            points,
+        });
+        if (!dataView) {
+            return;
+        }
+        await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "drawPolygon", dataView.buffer, sendImmediately);
     }
     async drawSegment(startX, startY, endX, endY, sendImmediately) {
         const dataView = serializeContextCommand(this, {
@@ -21131,6 +21241,10 @@ class Device {
         __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertDisplayIsAvailable).call(this);
         return __classPrivateFieldGet(this, _Device_displayManager, "f").drawRegularPolygon;
     }
+    get drawDisplayPolygon() {
+        __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertDisplayIsAvailable).call(this);
+        return __classPrivateFieldGet(this, _Device_displayManager, "f").drawPolygon;
+    }
     get drawDisplaySegment() {
         __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertDisplayIsAvailable).call(this);
         return __classPrivateFieldGet(this, _Device_displayManager, "f").drawSegment;
@@ -21500,7 +21614,7 @@ _a$2 = Device, _Device_eventDispatcher = new WeakMap(), _Device_connectionManage
 _Device_ReconnectOnDisconnection = { value: false };
 _Device_ClearSensorConfigurationOnLeave = { value: true };
 
-var _DisplayCanvasHelper_instances, _DisplayCanvasHelper_eventDispatcher, _DisplayCanvasHelper_dispatchEvent_get, _DisplayCanvasHelper_canvas, _DisplayCanvasHelper_context, _DisplayCanvasHelper_updateCanvas, _DisplayCanvasHelper_frontDrawStack, _DisplayCanvasHelper_rearDrawStack, _DisplayCanvasHelper_drawFrontDrawStack, _DisplayCanvasHelper_applyTransparencyToCanvas, _DisplayCanvasHelper_drawBackground, _DisplayCanvasHelper_applyTransparency, _DisplayCanvasHelper_device, _DisplayCanvasHelper_boundDeviceEventListeners, _DisplayCanvasHelper_onDeviceIsConnected, _DisplayCanvasHelper_onDeviceConnected, _DisplayCanvasHelper_onDeviceNotConnected, _DisplayCanvasHelper_onDeviceDisplayReady, _DisplayCanvasHelper_onDeviceDisplaySpriteSheetUploadStart, _DisplayCanvasHelper_onDeviceDisplaySpriteSheetUploadProgress, _DisplayCanvasHelper_onDeviceDisplaySpriteSheetUploadComplete, _DisplayCanvasHelper_updateDevice, _DisplayCanvasHelper_numberOfColors, _DisplayCanvasHelper_colors, _DisplayCanvasHelper_updateDeviceColors, _DisplayCanvasHelper_opacities, _DisplayCanvasHelper_updateDeviceOpacity, _DisplayCanvasHelper_contextStateHelper, _DisplayCanvasHelper_onContextStateUpdate, _DisplayCanvasHelper_resetContextState, _DisplayCanvasHelper_updateDeviceContextState, _DisplayCanvasHelper_interval, _DisplayCanvasHelper_isReady, _DisplayCanvasHelper_contextStack, _DisplayCanvasHelper_saveContext, _DisplayCanvasHelper_restoreContext, _DisplayCanvasHelper_clearRectToCanvas, _DisplayCanvasHelper_save, _DisplayCanvasHelper_restore, _DisplayCanvasHelper_transformContext, _DisplayCanvasHelper_translateContext, _DisplayCanvasHelper_rotateContext, _DisplayCanvasHelper_scaleContext, _DisplayCanvasHelper_correctAlignmentTranslation, _DisplayCanvasHelper_rotateBoundingBox, _DisplayCanvasHelper_offsetBoundingBox, _DisplayCanvasHelper_clearBoundingBoxOnDraw, _DisplayCanvasHelper_clearBoundingBox, _DisplayCanvasHelper_getOuterPadding, _DisplayCanvasHelper_getRectBoundingBox, _DisplayCanvasHelper_applyClip, _DisplayCanvasHelper_applyRotationClip, _DisplayCanvasHelper_hexToRgbWithOpacity, _DisplayCanvasHelper_hexToRgbStringWithOpacity, _DisplayCanvasHelper_getColorOpacity, _DisplayCanvasHelper_colorIndexToRgbString, _DisplayCanvasHelper_updateContext, _DisplayCanvasHelper_drawRectToCanvas, _DisplayCanvasHelper_drawRoundRectToCanvas, _DisplayCanvasHelper_getCircleBoundingBox, _DisplayCanvasHelper_drawCircleToCanvas, _DisplayCanvasHelper_getEllipseBoundingBox, _DisplayCanvasHelper_drawEllipseToCanvas, _DisplayCanvasHelper_getPolygonBoundingBox, _DisplayCanvasHelper_drawRegularPolygonToCanvas, _DisplayCanvasHelper_getLocalSegmentBoundingBox, _DisplayCanvasHelper_getSegmentBoundingBox, _DisplayCanvasHelper_drawSegmentToCanvas, _DisplayCanvasHelper_drawSegmentsToCanvas, _DisplayCanvasHelper_drawArcToCanvas, _DisplayCanvasHelper_drawArcEllipseToCanvas, _DisplayCanvasHelper_bitmapCanvas, _DisplayCanvasHelper_bitmapContext, _DisplayCanvasHelper_drawBitmapToCanvas, _DisplayCanvasHelper_spriteSheets, _DisplayCanvasHelper_spriteSheetIndices, _DisplayCanvasHelper_runSpriteCommand, _DisplayCanvasHelper_drawSpriteToCanvas, _DisplayCanvasHelper_drawSpritesToCanvas, _DisplayCanvasHelper_brightness, _DisplayCanvasHelper_brightnessOpacities, _DisplayCanvasHelper_brightnessOpacity_get, _DisplayCanvasHelper_updateDeviceBrightness, _DisplayCanvasHelper_updateDeviceSpriteSheets, _DisplayCanvasHelper_updateDeviceSelectedSpriteSheet, _DisplayCanvasHelper_setCanvasContextTransform, _DisplayCanvasHelper_resetCanvasContextTransform, _DisplayCanvasHelper_setClearCanvasBoundingBoxOnDraw, _DisplayCanvasHelper_ignoreDevice, _DisplayCanvasHelper_setIgnoreDevice, _DisplayCanvasHelper_useSpriteColorIndices, _DisplayCanvasHelper_setUseSpriteColorIndices, _DisplayCanvasHelper_spriteContextStack, _DisplayCanvasHelper_spriteStack, _DisplayCanvasHelper_saveContextForSprite, _DisplayCanvasHelper_restoreContextForSprite, _DisplayCanvasHelper_runPreviewSpriteCommand;
+var _DisplayCanvasHelper_instances, _DisplayCanvasHelper_eventDispatcher, _DisplayCanvasHelper_dispatchEvent_get, _DisplayCanvasHelper_canvas, _DisplayCanvasHelper_context, _DisplayCanvasHelper_updateCanvas, _DisplayCanvasHelper_frontDrawStack, _DisplayCanvasHelper_rearDrawStack, _DisplayCanvasHelper_drawFrontDrawStack, _DisplayCanvasHelper_applyTransparencyToCanvas, _DisplayCanvasHelper_drawBackground, _DisplayCanvasHelper_applyTransparency, _DisplayCanvasHelper_device, _DisplayCanvasHelper_boundDeviceEventListeners, _DisplayCanvasHelper_onDeviceIsConnected, _DisplayCanvasHelper_onDeviceConnected, _DisplayCanvasHelper_onDeviceNotConnected, _DisplayCanvasHelper_onDeviceDisplayReady, _DisplayCanvasHelper_onDeviceDisplaySpriteSheetUploadStart, _DisplayCanvasHelper_onDeviceDisplaySpriteSheetUploadProgress, _DisplayCanvasHelper_onDeviceDisplaySpriteSheetUploadComplete, _DisplayCanvasHelper_updateDevice, _DisplayCanvasHelper_numberOfColors, _DisplayCanvasHelper_colors, _DisplayCanvasHelper_updateDeviceColors, _DisplayCanvasHelper_opacities, _DisplayCanvasHelper_updateDeviceOpacity, _DisplayCanvasHelper_contextStateHelper, _DisplayCanvasHelper_onContextStateUpdate, _DisplayCanvasHelper_resetContextState, _DisplayCanvasHelper_updateDeviceContextState, _DisplayCanvasHelper_interval, _DisplayCanvasHelper_isReady, _DisplayCanvasHelper_contextStack, _DisplayCanvasHelper_saveContext, _DisplayCanvasHelper_restoreContext, _DisplayCanvasHelper_clearRectToCanvas, _DisplayCanvasHelper_save, _DisplayCanvasHelper_restore, _DisplayCanvasHelper_transformContext, _DisplayCanvasHelper_translateContext, _DisplayCanvasHelper_rotateContext, _DisplayCanvasHelper_scaleContext, _DisplayCanvasHelper_correctAlignmentTranslation, _DisplayCanvasHelper_rotateBoundingBox, _DisplayCanvasHelper_offsetBoundingBox, _DisplayCanvasHelper_clearBoundingBoxOnDraw, _DisplayCanvasHelper_clearBoundingBox, _DisplayCanvasHelper_getOuterPadding, _DisplayCanvasHelper_getRectBoundingBox, _DisplayCanvasHelper_applyClip, _DisplayCanvasHelper_applyRotationClip, _DisplayCanvasHelper_hexToRgbWithOpacity, _DisplayCanvasHelper_hexToRgbStringWithOpacity, _DisplayCanvasHelper_getColorOpacity, _DisplayCanvasHelper_colorIndexToRgbString, _DisplayCanvasHelper_updateContext, _DisplayCanvasHelper_drawRectToCanvas, _DisplayCanvasHelper_drawRoundRectToCanvas, _DisplayCanvasHelper_drawCircleToCanvas, _DisplayCanvasHelper_getEllipseBoundingBox, _DisplayCanvasHelper_drawEllipseToCanvas, _DisplayCanvasHelper_getRegularPolygonBoundingBox, _DisplayCanvasHelper_drawRegularPolygonToCanvas, _DisplayCanvasHelper_getPolygonBoundingBox, _DisplayCanvasHelper_drawPolygonToCanvas, _DisplayCanvasHelper_getLocalSegmentBoundingBox, _DisplayCanvasHelper_getSegmentBoundingBox, _DisplayCanvasHelper_drawSegmentToCanvas, _DisplayCanvasHelper_drawSegmentsToCanvas, _DisplayCanvasHelper_drawArcToCanvas, _DisplayCanvasHelper_drawArcEllipseToCanvas, _DisplayCanvasHelper_bitmapCanvas, _DisplayCanvasHelper_bitmapContext, _DisplayCanvasHelper_drawBitmapToCanvas, _DisplayCanvasHelper_spriteSheets, _DisplayCanvasHelper_spriteSheetIndices, _DisplayCanvasHelper_runSpriteCommand, _DisplayCanvasHelper_drawSpriteToCanvas, _DisplayCanvasHelper_drawSpritesToCanvas, _DisplayCanvasHelper_brightness, _DisplayCanvasHelper_brightnessOpacities, _DisplayCanvasHelper_brightnessOpacity_get, _DisplayCanvasHelper_updateDeviceBrightness, _DisplayCanvasHelper_updateDeviceSpriteSheets, _DisplayCanvasHelper_updateDeviceSelectedSpriteSheet, _DisplayCanvasHelper_setCanvasContextTransform, _DisplayCanvasHelper_resetCanvasContextTransform, _DisplayCanvasHelper_setClearCanvasBoundingBoxOnDraw, _DisplayCanvasHelper_ignoreDevice, _DisplayCanvasHelper_setIgnoreDevice, _DisplayCanvasHelper_useSpriteColorIndices, _DisplayCanvasHelper_setUseSpriteColorIndices, _DisplayCanvasHelper_spriteContextStack, _DisplayCanvasHelper_spriteStack, _DisplayCanvasHelper_saveContextForSprite, _DisplayCanvasHelper_restoreContextForSprite, _DisplayCanvasHelper_runPreviewSpriteCommand;
 const _console$6 = createConsole("DisplayCanvasHelper", { log: true });
 const DisplayCanvasHelperEventTypes = [
     "contextState",
@@ -22287,6 +22401,13 @@ class DisplayCanvasHelper {
             await this.deviceDisplayManager.drawRegularPolygon(offsetX, offsetY, radius, numberOfSides, sendImmediately);
         }
     }
+    async drawPolygon(offsetX, offsetY, points, sendImmediately) {
+        const contextState = structuredClone(this.contextState);
+        __classPrivateFieldGet(this, _DisplayCanvasHelper_rearDrawStack, "f").push(() => __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_drawPolygonToCanvas).call(this, offsetX, offsetY, points, contextState));
+        if (this.device?.isConnected && !__classPrivateFieldGet(this, _DisplayCanvasHelper_ignoreDevice, "f")) {
+            await this.deviceDisplayManager.drawPolygon(offsetX, offsetY, points, sendImmediately);
+        }
+    }
     async drawSegment(startX, startY, endX, endY, sendImmediately) {
         if (startX == endX && startY == endY) {
             _console$6.error(`cannot draw segment of length 0`);
@@ -22605,7 +22726,6 @@ _DisplayCanvasHelper_eventDispatcher = new WeakMap(), _DisplayCanvasHelper_canva
         spriteSheetName,
     });
 }, _DisplayCanvasHelper_updateDevice = async function _DisplayCanvasHelper_updateDevice() {
-    console.trace("updateDevice");
     await __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_updateDeviceColors).call(this, true);
     await __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_updateDeviceOpacity).call(this, true);
     await __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_updateDeviceContextState).call(this, true);
@@ -22846,39 +22966,38 @@ _DisplayCanvasHelper_eventDispatcher = new WeakMap(), _DisplayCanvasHelper_canva
         this.context.stroke();
     }
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_restore).call(this);
-}, _DisplayCanvasHelper_getCircleBoundingBox = function _DisplayCanvasHelper_getCircleBoundingBox(radius, contextState) {
-    const diameter = radius * 2;
-    return __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_getRectBoundingBox).call(this, diameter, diameter, contextState);
 }, _DisplayCanvasHelper_drawCircleToCanvas = function _DisplayCanvasHelper_drawCircleToCanvas(offsetX, offsetY, radius, contextState) {
-    __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_drawArcToCanvas).call(this, offsetX, offsetY, radius, 0, 360, false, contextState);
+    __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_drawArcEllipseToCanvas).call(this, offsetX, offsetY, radius, radius, 0, 360, false, contextState);
 }, _DisplayCanvasHelper_getEllipseBoundingBox = function _DisplayCanvasHelper_getEllipseBoundingBox(radiusX, radiusY, contextState) {
     const diameterX = radiusX * 2;
     const diameterY = radiusY * 2;
     return __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_getRectBoundingBox).call(this, diameterX, diameterY, contextState);
 }, _DisplayCanvasHelper_drawEllipseToCanvas = function _DisplayCanvasHelper_drawEllipseToCanvas(offsetX, offsetY, radiusX, radiusY, contextState) {
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_drawArcEllipseToCanvas).call(this, offsetX, offsetY, radiusX, radiusY, 0, 360, false, contextState);
-}, _DisplayCanvasHelper_getPolygonBoundingBox = function _DisplayCanvasHelper_getPolygonBoundingBox(offsetX, offsetY, radius, numberOfSides, { lineWidth }) {
+}, _DisplayCanvasHelper_getRegularPolygonBoundingBox = function _DisplayCanvasHelper_getRegularPolygonBoundingBox(radius, numberOfSides, { lineWidth }) {
     let outerPadding = Math.ceil(lineWidth / 2);
     const shapeFactor = 1 / Math.cos(Math.PI / numberOfSides);
     outerPadding = Math.ceil(outerPadding * shapeFactor);
     const diameter = radius * 2;
-    const boundingBox = {
-        x: offsetX - radius - outerPadding,
-        y: offsetY - radius - outerPadding,
+    const regularPolygonBoundingBox = {
+        x: -radius - outerPadding,
+        y: -radius - outerPadding,
         width: diameter + outerPadding * 2,
         height: diameter + outerPadding * 2,
     };
-    return boundingBox;
+    return regularPolygonBoundingBox;
 }, _DisplayCanvasHelper_drawRegularPolygonToCanvas = function _DisplayCanvasHelper_drawRegularPolygonToCanvas(offsetX, offsetY, radius, numberOfSides, contextState) {
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_updateContext).call(this, contextState);
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_save).call(this);
-    const box = __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_getPolygonBoundingBox).call(this, offsetX, offsetY, radius, numberOfSides, contextState);
-    __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_applyClip).call(this, box, contextState);
-    __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_transformContext).call(this, offsetX, offsetY, contextState.rotation);
+    const localBox = __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_getRegularPolygonBoundingBox).call(this, radius, numberOfSides, contextState);
+    const rotatedLocalBox = __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_rotateBoundingBox).call(this, localBox, contextState.rotation);
+    const rotatedBox = __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_offsetBoundingBox).call(this, rotatedLocalBox, offsetX, offsetY);
+    __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_applyClip).call(this, rotatedBox, contextState);
     if (__classPrivateFieldGet(this, _DisplayCanvasHelper_clearBoundingBoxOnDraw, "f")) {
-        __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_clearBoundingBox).call(this, box);
+        __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_clearBoundingBox).call(this, rotatedBox);
     }
-    __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_applyRotationClip).call(this, box, contextState);
+    __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_transformContext).call(this, offsetX, offsetY, contextState.rotation);
+    __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_applyRotationClip).call(this, localBox, contextState);
     this.context.beginPath();
     const angleStep = (Math.PI * 2) / numberOfSides;
     for (let i = 0; i < numberOfSides; i++) {
@@ -22892,6 +23011,59 @@ _DisplayCanvasHelper_eventDispatcher = new WeakMap(), _DisplayCanvasHelper_canva
             this.context.lineTo(x, y);
         }
     }
+    this.context.closePath();
+    this.context.fill();
+    if (contextState.lineWidth > 0) {
+        this.context.stroke();
+    }
+    __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_restore).call(this);
+}, _DisplayCanvasHelper_getPolygonBoundingBox = function _DisplayCanvasHelper_getPolygonBoundingBox(points, { lineWidth }) {
+    const outerPadding = Math.ceil(lineWidth / 2);
+    let minX = 0;
+    let maxX = 0;
+    let minY = 0;
+    let maxY = 0;
+    points.forEach((point, index) => {
+        if (index == 0) {
+            minX = maxX = point.x;
+            minY = maxY = point.y;
+        }
+        else {
+            minX = Math.min(minX, point.x);
+            maxX = Math.max(maxX, point.x);
+            minY = Math.min(minY, point.y);
+            maxY = Math.max(maxY, point.y);
+        }
+    });
+    const polygonBoundingBox = {
+        x: minX - outerPadding,
+        y: minY - outerPadding,
+        width: maxX - minX + outerPadding * 2,
+        height: maxY - minY + outerPadding * 2,
+    };
+    return polygonBoundingBox;
+}, _DisplayCanvasHelper_drawPolygonToCanvas = function _DisplayCanvasHelper_drawPolygonToCanvas(offsetX, offsetY, points, contextState) {
+    _console$6.log("drawPolygonToCanvas", { offsetX, offsetY, points });
+    __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_updateContext).call(this, contextState);
+    __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_save).call(this);
+    const localBox = __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_getPolygonBoundingBox).call(this, points, contextState);
+    const rotatedLocalBox = __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_rotateBoundingBox).call(this, localBox, contextState.rotation);
+    const rotatedBox = __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_offsetBoundingBox).call(this, rotatedLocalBox, offsetX, offsetY);
+    __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_applyClip).call(this, rotatedBox, contextState);
+    if (__classPrivateFieldGet(this, _DisplayCanvasHelper_clearBoundingBoxOnDraw, "f")) {
+        __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_clearBoundingBox).call(this, rotatedBox);
+    }
+    __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_transformContext).call(this, offsetX, offsetY, contextState.rotation);
+    __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_applyRotationClip).call(this, localBox, contextState);
+    this.context.beginPath();
+    points.forEach((point, index) => {
+        if (index == 0) {
+            this.context.moveTo(point.x, point.y);
+        }
+        else {
+            this.context.lineTo(point.x, point.y);
+        }
+    });
     this.context.closePath();
     this.context.fill();
     if (contextState.lineWidth > 0) {
@@ -23032,35 +23204,7 @@ _DisplayCanvasHelper_eventDispatcher = new WeakMap(), _DisplayCanvasHelper_canva
         }
     });
 }, _DisplayCanvasHelper_drawArcToCanvas = function _DisplayCanvasHelper_drawArcToCanvas(offsetX, offsetY, radius, startAngle, angleOffset, isRadians, contextState) {
-    __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_updateContext).call(this, contextState);
-    __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_save).call(this);
-    const localBox = __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_getCircleBoundingBox).call(this, radius, contextState);
-    const rotatedLocalBox = __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_rotateBoundingBox).call(this, localBox, contextState.rotation);
-    const rotatedBox = __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_offsetBoundingBox).call(this, rotatedLocalBox, offsetX, offsetY);
-    __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_applyClip).call(this, rotatedBox, contextState);
-    if (__classPrivateFieldGet(this, _DisplayCanvasHelper_clearBoundingBoxOnDraw, "f")) {
-        __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_clearBoundingBox).call(this, rotatedBox);
-    }
-    __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_transformContext).call(this, offsetX, offsetY, contextState.rotation);
-    __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_applyRotationClip).call(this, localBox, contextState);
-    const outerPadding = __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_getOuterPadding).call(this, contextState.lineWidth);
-    const startX = localBox.x + outerPadding;
-    const startY = localBox.y + outerPadding;
-    const centerX = startX + radius;
-    const centerY = startY + radius;
-    this.context.beginPath();
-    this.context.moveTo(centerX, centerY);
-    const clockwise = angleOffset > 0;
-    const endAngle = startAngle + angleOffset;
-    this.context.arc(centerX, centerY, radius, startAngle, endAngle, !clockwise);
-    this.context.closePath();
-    this.context.fill();
-    if (contextState.lineWidth) {
-        this.context.beginPath();
-        this.context.arc(centerX, centerY, radius, startAngle, endAngle, !clockwise);
-        this.context.stroke();
-    }
-    __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_restore).call(this);
+    __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_drawArcEllipseToCanvas).call(this, offsetX, offsetY, radius, radius, startAngle, angleOffset, isRadians, contextState);
 }, _DisplayCanvasHelper_drawArcEllipseToCanvas = function _DisplayCanvasHelper_drawArcEllipseToCanvas(offsetX, offsetY, radiusX, radiusY, startAngle, angleOffset, isRadians, contextState) {
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_updateContext).call(this, contextState);
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_save).call(this);
@@ -24463,5 +24607,5 @@ const ThrottleUtils = {
     debounce,
 };
 
-export { CameraCommands, CameraConfigurationTypes, ContinuousSensorTypes, DefaultNumberOfDisplayColors, DefaultNumberOfPressureSensors, Device, DeviceManager$1 as DeviceManager, DevicePair, DevicePairTypes, DeviceTypes, DisplayAlignments, DisplayBrightnesses, DisplayCanvasHelper, DisplayContextCommandTypes, DisplayDirections, DisplayPixelDepths, DisplaySegmentCaps, DisplaySpriteContextCommandTypes, environment as Environment, EventUtils, FileTransferDirections, FileTypes, Font, MaxNameLength, MaxNumberOfVibrationWaveformEffectSegments, MaxNumberOfVibrationWaveformSegments, MaxSensorRate, MaxSpriteSheetNameLength, MaxVibrationWaveformEffectSegmentDelay, MaxVibrationWaveformEffectSegmentLoopCount, MaxVibrationWaveformEffectSequenceLoopCount, MaxVibrationWaveformSegmentDuration, MaxWifiPasswordLength, MaxWifiSSIDLength, MicrophoneCommands, MicrophoneConfigurationTypes, MicrophoneConfigurationValues, MinNameLength, MinSpriteSheetNameLength, MinWifiPasswordLength, MinWifiSSIDLength, RangeHelper, SensorRateStep, SensorTypes, Sides, TfliteSensorTypes, TfliteTasks, ThrottleUtils, VibrationLocations, VibrationTypes, VibrationWaveformEffects, WebSocketClient, canvasToSprite, canvasToSpriteSheet, getFontUnicodeRange, hexToRGB, imageToSprite, imageToSpriteSheet, maxDisplayScale, parseFont, pixelDepthToNumberOfColors, quantizeImage, resizeAndQuantizeImage, resizeImage, rgbToHex, setAllConsoleLevelFlags, setConsoleLevelFlagsForType, stringToSpriteLines, stringToSprites as stringToSpriteNames, wait };
+export { CameraCommands, CameraConfigurationTypes, ContinuousSensorTypes, DefaultNumberOfDisplayColors, DefaultNumberOfPressureSensors, Device, DeviceManager$1 as DeviceManager, DevicePair, DevicePairTypes, DeviceTypes, DisplayAlignments, DisplayBrightnesses, DisplayCanvasHelper, DisplayContextCommandTypes, DisplayDirections, DisplayPixelDepths, DisplaySegmentCaps, DisplaySpriteContextCommandTypes, environment as Environment, EventUtils, FileTransferDirections, FileTypes, Font, MaxNameLength, MaxNumberOfVibrationWaveformEffectSegments, MaxNumberOfVibrationWaveformSegments, MaxSensorRate, MaxSpriteSheetNameLength, MaxVibrationWaveformEffectSegmentDelay, MaxVibrationWaveformEffectSegmentLoopCount, MaxVibrationWaveformEffectSequenceLoopCount, MaxVibrationWaveformSegmentDuration, MaxWifiPasswordLength, MaxWifiSSIDLength, MicrophoneCommands, MicrophoneConfigurationTypes, MicrophoneConfigurationValues, MinNameLength, MinSpriteSheetNameLength, MinWifiPasswordLength, MinWifiSSIDLength, RangeHelper, SensorRateStep, SensorTypes, Sides, TfliteSensorTypes, TfliteTasks, ThrottleUtils, VibrationLocations, VibrationTypes, VibrationWaveformEffects, WebSocketClient, canvasToBitmaps, canvasToSprite, canvasToSpriteSheet, getFontUnicodeRange, hexToRGB, imageToBitmaps, imageToSprite, imageToSpriteSheet, maxDisplayScale, parseFont, pixelDepthToNumberOfColors, quantizeImage, resizeAndQuantizeImage, resizeImage, rgbToHex, setAllConsoleLevelFlags, setConsoleLevelFlagsForType, stringToSpriteLines, stringToSprites, wait };
 //# sourceMappingURL=brilliantsole.module.js.map

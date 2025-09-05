@@ -1977,6 +1977,28 @@ class DisplayManager implements DisplayManagerInterface {
       sendImmediately
     );
   }
+  async drawPolygon(
+    offsetX: number,
+    offsetY: number,
+    points: Vector2[],
+    sendImmediately?: boolean
+  ) {
+    _console.assertRangeWithError("numberOfPoints", points.length, 2, 255);
+    const dataView = serializeContextCommand(this, {
+      type: "drawPolygon",
+      offsetX,
+      offsetY,
+      points,
+    });
+    if (!dataView) {
+      return;
+    }
+    await this.#sendDisplayContextCommand(
+      "drawPolygon",
+      dataView.buffer,
+      sendImmediately
+    );
+  }
 
   async drawSegment(
     startX: number,

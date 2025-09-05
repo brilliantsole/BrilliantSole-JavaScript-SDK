@@ -348,6 +348,12 @@ export interface DisplayManagerInterface {
     numberOfSides: number,
     sendImmediately?: boolean
   ): Promise<void>;
+  drawPolygon(
+    offsetX: number,
+    offsetY: number,
+    points: Vector2[],
+    sendImmediately?: boolean
+  ): Promise<void>;
 
   drawSegment(
     startX: number,
@@ -851,6 +857,17 @@ export async function runDisplayContextCommand(
           offsetY,
           radiusX,
           radiusY,
+          sendImmediately
+        );
+      }
+      break;
+    case "drawPolygon":
+      {
+        const { offsetX, offsetY, points } = command;
+        await displayManager.drawPolygon(
+          offsetX,
+          offsetY,
+          points,
           sendImmediately
         );
       }

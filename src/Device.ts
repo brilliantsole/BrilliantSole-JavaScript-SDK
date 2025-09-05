@@ -1693,6 +1693,10 @@ class Device {
     this.#assertDisplayIsAvailable();
     return this.#displayManager.drawRegularPolygon;
   }
+  get drawDisplayPolygon() {
+    this.#assertDisplayIsAvailable();
+    return this.#displayManager.drawPolygon;
+  }
   get drawDisplaySegment() {
     this.#assertDisplayIsAvailable();
     return this.#displayManager.drawSegment;

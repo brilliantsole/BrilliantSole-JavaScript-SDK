@@ -1797,8 +1797,8 @@ window.stopDrawing = stopDrawing;
 
 // FACE TRACKING
 
-import vision from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3";
-const { FaceLandmarker, FilesetResolver, DrawingUtils } = vision;
+// import vision from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3";
+// const { FaceLandmarker, FilesetResolver, DrawingUtils } = vision;
 
 let faceLandmarker;
 const createFaceLandmarker = async () => {
@@ -2243,7 +2243,7 @@ displayCanvasHelper.selectBitmapColor(1, 1);
 displayCanvasHelper.selectBitmapColor(2, 2);
 displayCanvasHelper.setBitmapScale(10);
 displayCanvasHelper.setRotation(0);
-displayCanvasHelper.setLineWidth(0);
+displayCanvasHelper.setLineWidth(3);
 displayCanvasHelper.selectFillColor(1);
 displayCanvasHelper.selectLineColor(2);
 //displayCanvasHelper.setRotationCropTop(10);
@@ -2254,7 +2254,14 @@ displayCanvasHelper.setHorizontalAlignment("center");
 displayCanvasHelper.setSegmentStartCap("round");
 displayCanvasHelper.setSegmentStartRadius(2);
 displayCanvasHelper.setSegmentEndRadius(2);
-displayCanvasHelper.drawSegment(100, 100, 120, 200);
+displayCanvasHelper.drawPolygon(200, 100, [
+  { x: -10, y: -50 },
+  { x: 50, y: -50 },
+  { x: 50, y: 50 },
+  { x: -50, y: 50 },
+]);
+//displayCanvasHelper.drawRegularPolygon(100, 100, 50, 5);
+//displayCanvasHelper.drawSegment(100, 100, 120, 200);
 // displayCanvasHelper.drawArc(100, 100, 50, 0, 360);
 // displayCanvasHelper.drawEllipse(100, 100, 100, 50);
 // displayCanvasHelper.drawCircle(100, 100, 50);

@@ -17,7 +17,7 @@ import {
   DisplaySpriteSheet,
 } from "./DisplaySpriteSheetUtils.ts";
 
-const _console = createConsole("DisplayBitmapUtils", { log: false });
+const _console = createConsole("DisplayBitmapUtils", { log: true });
 
 export const drawBitmapHeaderLength = 2 + 2 + 2 + 4 + 1 + 2; // x, y, width, numberOfPixels, numberOfColors, dataLength
 
@@ -272,7 +272,7 @@ export async function canvasToBlob(
 }
 
 export async function resizeAndQuantizeImage(
-  image: HTMLImageElement,
+  image: CanvasImageSource,
   width: number,
   height: number,
   numberOfColors: number,
@@ -286,7 +286,7 @@ export async function resizeAndQuantizeImage(
 }
 
 export async function imageToBitmap(
-  image: HTMLImageElement,
+  image: CanvasImageSource,
   width: number,
   height: number,
   colors: string[],
@@ -313,6 +313,123 @@ export async function imageToBitmap(
     height,
   };
   return { blob, bitmap };
+}
+
+const drawSpriteBitmapCommandHeaderLength = 1 + 2 + 2 + 2 + 2 + 1 + 2; // command, offetXY, width, numberOfPixels, numberOfColors, pixelDataLength
+export async function canvasToBitmaps(
+  canvas: HTMLCanvasElement,
+  numberOfColors: number,
+  mtu: number
+) {
+  const { blob, colors, colorIndices } = await quantizeCanvas(
+    canvas,
+    numberOfColors
+  );
+  const bitmapRows: DisplayBitmap[][] = [];
+
+  const { width, height } = canvas;
+
+  const numberOfPixels = width * height;
+  const pixelDepth = DisplayPixelDepths.find(
+    (pixelDepth) => pixelDepthToNumberOfColors(pixelDepth) >= numberOfColors
+  )!;
+  _console.assertWithError(
+    pixelDepth,
+    `no pixelDepth found that covers ${numberOfColors} colors`
+  );
+  const pixelsPerByte = pixelDepthToPixelsPerByte(pixelDepth);
+  const numberOfBytes = Math.ceil(numberOfPixels / pixelsPerByte);
+  _console.log({
+    width,
+    height,
+    numberOfPixels,
+    pixelDepth,
+    pixelsPerByte,
+    numberOfBytes,
+    mtu,
+  });
+
+  const maxPixelDataLength = mtu - (drawSpriteBitmapCommandHeaderLength + 5);
+  const maxPixels = Math.floor(maxPixelDataLength / pixelsPerByte);
+  const maxBitmapWidth = Math.min(maxPixels, width);
+  let maxBitmapHeight = 1;
+  if (maxBitmapWidth == width) {
+    const bitmapRowPixelDataLength = Math.ceil(width / pixelsPerByte);
+    maxBitmapHeight = Math.floor(maxPixelDataLength / bitmapRowPixelDataLength);
+  }
+  _console.log({
+    maxPixelDataLength,
+    maxPixels,
+    maxBitmapHeight,
+    maxBitmapWidth,
+  });
+
+  if (maxBitmapHeight >= height) {
+    _console.log("image is small enough for a single bitmap");
+
+    const bitmap: DisplayBitmap = {
+      numberOfColors,
+      pixels: colorIndices,
+      width,
+      height,
+    };
+    bitmapRows.push([bitmap]);
+  } else {
+    let offsetX = 0;
+    let offsetY = 0;
+    const bitmapCanvas: HTMLCanvasElement = document.createElement("canvas");
+    const bitmapColorIndices: number[] = new Array(numberOfColors)
+      .fill(0)
+      .map((_, i) => i);
+    while (offsetY < height) {
+      const bitmapHeight = Math.min(maxBitmapHeight, height - offsetY);
+      offsetX = 0;
+      const bitmapRow: DisplayBitmap[] = [];
+      bitmapRows.push(bitmapRow);
+
+      while (offsetX < width) {
+        const bitmapWidth = Math.min(maxBitmapWidth, width - offsetX);
+        cropCanvas(
+          canvas,
+          offsetX,
+          offsetY,
+          bitmapWidth,
+          bitmapHeight,
+          bitmapCanvas
+        );
+        // _console.log(`cropping bitmap`, {
+        //   bitmapWidth,
+        //   bitmapHeight,
+        //   offsetX,
+        //   offsetY,
+        // });
+        const { bitmap } = await imageToBitmap(
+          bitmapCanvas,
+          bitmapWidth,
+          bitmapHeight,
+          colors,
+          bitmapColorIndices,
+          numberOfColors
+        );
+        // _console.log("bitmap", bitmap);
+        bitmapRow.push(bitmap);
+        offsetX += bitmapWidth;
+      }
+      offsetY += bitmapHeight;
+    }
+  }
+
+  return { bitmapRows, colors };
+}
+export async function imageToBitmaps(
+  image: HTMLImageElement,
+  width: number,
+  height: number,
+  numberOfColors: number,
+  mtu: number
+) {
+  const canvas = resizeImage(image, width, height);
+  return canvasToBitmaps(canvas, numberOfColors, mtu);
 }
 
 export function getBitmapNumberOfBytes(bitmap: DisplayBitmap) {
@@ -446,7 +563,6 @@ export async function imageToSprite(
   );
 }
 
-const drawSpriteBitmapCommandHeaderLength = 1 + 2 + 2 + 2 + 2 + 1 + 2; // command, offetXY, width, numberOfPixels, numberOfColors, pixelDataLength
 const spriteSheetWithSingleBitmapCommandLength =
   calculateSpriteSheetHeaderLength(1) + drawSpriteBitmapCommandHeaderLength;
 function spriteSheetWithBitmapCommandAndSelectBitmapColorsLength(
@@ -530,16 +646,16 @@ export async function canvasToSpriteSheet(
       const { colors } = await quantizeCanvas(canvas, numberOfColors);
       spriteSheet.palettes?.push({ name: paletteName, numberOfColors, colors });
 
-      let yOffset = 0;
+      let offsetY = 0;
       let imageIndex = 0;
       const spriteCanvas: HTMLCanvasElement = document.createElement("canvas");
 
-      while (yOffset < height) {
-        let spriteHeight = Math.min(maxSpriteHeight, height - yOffset);
-        cropCanvas(canvas, 0, yOffset, width, spriteHeight, spriteCanvas);
-        yOffset += spriteHeight;
+      while (offsetY < height) {
+        const spriteHeight = Math.min(maxSpriteHeight, height - offsetY);
+        cropCanvas(canvas, 0, offsetY, width, spriteHeight, spriteCanvas);
+        offsetY += spriteHeight;
         _console.log(`cropping sprite ${imageIndex}`, {
-          yOffset,
+          offsetY,
           width,
           spriteHeight,
         });

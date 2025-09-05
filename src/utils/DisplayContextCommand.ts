@@ -199,6 +199,7 @@ export const DisplaySpriteContextCommandTypes = [
   "drawCircle",
   "drawEllipse",
   "drawRegularPolygon",
+  "drawPolygon",
   "drawSegment",
   "drawSegments",
 
@@ -497,6 +498,11 @@ export interface DrawDisplayRegularPolygonCommand
   radius: number;
   numberOfSides: number;
 }
+export interface DrawDisplayPolygonCommand
+  extends BaseOffsetPositionDisplayContextCommand {
+  type: "drawPolygon";
+  points: Vector2[];
+}
 export interface DrawDisplaySegmentCommand extends BaseDisplayContextCommand {
   type: "drawSegment";
   startX: number;
@@ -591,6 +597,7 @@ export type DisplayContextCommand =
   | DrawDisplayCircleCommand
   | DrawDisplayEllipseCommand
   | DrawDisplayRegularPolygonCommand
+  | DrawDisplayPolygonCommand
   | DrawDisplaySegmentCommand
   | DrawDisplaySegmentsCommand
   | DrawDisplayArcCommand
@@ -1107,6 +1114,26 @@ export function serializeContextCommand(
         dataView.setInt16(2, offsetY, true);
         dataView.setUint16(4, radius, true);
         dataView.setUint8(6, numberOfSides);
+      }
+      break;
+    case "drawPolygon":
+      {
+        const { offsetX, offsetY, points } = command;
+        _console.assertRangeWithError("numberOfPoints", points.length, 2, 255);
+        const dataViewLength = 2 * 2 + 1 + points.length * 4; // [offsetX, offsetY, numberOfPoints, ...points]
+        dataView = new DataView(new ArrayBuffer(dataViewLength));
+        let offset = 0;
+        dataView.setInt16(offset, offsetX, true);
+        offset += 2;
+        dataView.setInt16(offset, offsetY, true);
+        offset += 2;
+        dataView.setUint8(offset++, points.length);
+        points.forEach((point) => {
+          dataView!.setInt16(offset, point.x, true);
+          offset += 2;
+          dataView!.setInt16(offset, point.y, true);
+          offset += 2;
+        });
       }
       break;
     case "drawSegment":

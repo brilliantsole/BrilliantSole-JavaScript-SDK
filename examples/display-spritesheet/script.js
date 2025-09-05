@@ -931,7 +931,7 @@ let draw = async () => {
   await displayCanvasHelper.setSpritesLineAlignment(spritesLineAlignment);
 
   if (shouldDrawAllSprites) {
-    if (true) {
+    if (useUploadedSpriteSheet) {
       await drawSprites();
     } else {
       await drawSpritesManually();
@@ -1711,6 +1711,19 @@ const addSpriteCommand = () => {
           radiusY: 25,
           startAngle: 0,
           angleOffset: 90,
+        });
+        break;
+      case "drawPolygon":
+        selectedSprite.commands.push({
+          type: "drawPolygon",
+          offsetX: 0,
+          offsetY: 0,
+          points: [
+            { x: 0, y: 0 },
+            { x: 0, y: 25 },
+            { x: 25, y: 25 },
+            { x: 25, y: 0 },
+          ],
         });
         break;
       case "drawRegularPolygon":
