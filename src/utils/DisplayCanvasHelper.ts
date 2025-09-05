@@ -2141,7 +2141,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
       );
     }
   }
-  #getPolygonBoundingBox(
+  #getPointsBoundingBox(
     points: Vector2[],
     { lineWidth }: DisplayContextState
   ): DisplayBoundingBox {
@@ -2164,14 +2164,14 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
       }
     });
 
-    const polygonBoundingBox = {
+    const pointsBoundingBox = {
       x: minX - outerPadding,
       y: minY - outerPadding,
       width: maxX - minX + outerPadding * 2,
       height: maxY - minY + outerPadding * 2,
     };
-    //_console.log("polygonBoundingBox", polygonBoundingBox);
-    return polygonBoundingBox;
+    _console.log("pointsBoundingBox", pointsBoundingBox);
+    return pointsBoundingBox;
   }
   #drawPolygonToCanvas(
     offsetX: number,
@@ -2183,7 +2183,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     this.#updateContext(contextState);
 
     this.#save();
-    const localBox = this.#getPolygonBoundingBox(points, contextState);
+    const localBox = this.#getPointsBoundingBox(points, contextState);
     const rotatedLocalBox = this.#rotateBoundingBox(
       localBox,
       contextState.rotation
@@ -2430,30 +2430,13 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
   #drawSegmentsToCanvas(points: Vector2[], contextState: DisplayContextState) {
     this.#updateContext(contextState);
 
-    // _console.log("drawSegmentsToCanvas", { segments: points });
+    this.#save();
+    const box = this.#getPointsBoundingBox(points, contextState);
+    if (this.#clearBoundingBoxOnDraw) {
+      this.#clearBoundingBox(box);
+    }
 
-    points.forEach((segment, index) => {
-      if (index > 0) {
-        const previousPoint = points[index - 1];
-
-        const startX = previousPoint.x;
-        const startY = previousPoint.y;
-        const endX = segment.x;
-        const endY = segment.y;
-
-        const box = this.#getSegmentBoundingBox(
-          startX,
-          startY,
-          endX,
-          endY,
-          contextState
-        );
-        if (this.#clearBoundingBoxOnDraw) {
-          this.#clearBoundingBox(box);
-        }
-      }
-    });
-
+    this.#clearBoundingBoxOnDraw = false;
     points.forEach((segment, index) => {
       if (index > 0) {
         const previousPoint = points[index - 1];
@@ -2473,6 +2456,9 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
         );
       }
     });
+    this.#clearBoundingBoxOnDraw = true;
+
+    this.#restore();
   }
   async drawSegments(points: Vector2[], sendImmediately?: boolean) {
     _console.assertRangeWithError("numberOfPoints", points.length, 2, 255);
