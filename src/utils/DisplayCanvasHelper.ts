@@ -60,7 +60,6 @@ import {
   DisplayColorRGB,
   DisplayCropDirection,
   DisplayCropDirections,
-  DisplayCropDirectionToCommandType,
   DisplayCropDirectionToStateKey,
   DisplayRotationCropDirectionToCommandType,
   DisplayRotationCropDirectionToStateKey,
@@ -79,19 +78,9 @@ import EventDispatcher, {
   EventMap,
 } from "./EventDispatcher.ts";
 import { addEventListeners, removeEventListeners } from "./EventUtils.ts";
-import {
-  clamp,
-  degToRad,
-  isAngleInRange,
-  normalizeRadians,
-  twoPi,
-  Vector2,
-} from "./MathUtils.ts";
+import { clamp, degToRad, normalizeRadians, Vector2 } from "./MathUtils.ts";
 import { wait } from "./Timer.ts";
-import {
-  DisplayContextCommand,
-  DisplayContextCommandType,
-} from "./DisplayContextCommand.ts";
+import { DisplayContextCommand } from "./DisplayContextCommand.ts";
 import {
   DisplaySprite,
   DisplaySpritePaletteSwap,
