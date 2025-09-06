@@ -528,6 +528,11 @@
               <input type="range" min="2" max="10" step="1" value="2" />
               <span class="value">2</span>
             </label>
+            <label class="numberOfEdges" hidden>
+              <span>numberOfEdges</span>
+              <input type="range" min="1" max="20" step="1" value="1" />
+              <span class="value">1</span>
+            </label>
             <label class="bitmapWidth" hidden>
               <span>bitmapWidth</span>
               <input type="range" min="1" max="200" step="1" value="10" />
@@ -815,6 +820,18 @@
             <label class="y verticalLabel">
               <span>y (<span class="value">50</span>px)</span>
               <input type="range" min="-50" max="50" step="1" value="0" />
+            </label>
+          </div>
+        </template>
+        <template id="edgeTemplate">
+          <div class="edge" hidden>
+            <label class="startIndex verticalLabel">
+              <span>startIndex (<span class="value">0</span>)</span>
+              <input type="range" min="0" max="50" step="1" value="0" />
+            </label>
+            <label class="endIndex verticalLabel">
+              <span>endIndex (<span class="value">1</span>)</span>
+              <input type="range" min="0" max="50" step="1" value="1" />
             </label>
           </div>
         </template>

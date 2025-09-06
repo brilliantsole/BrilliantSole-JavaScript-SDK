@@ -550,8 +550,8 @@ const addSprite = () => {
   //console.log("addSprite");
   spriteSheet.sprites.push({
     name: `mySprite ${Object.keys(spriteSheet.sprites).length}`,
-    width: 40,
-    height: 40,
+    width: 50,
+    height: 50,
     commands: [],
     paletteSwaps: [],
   });
@@ -2012,6 +2012,8 @@ const spriteCommandTemplate = document.getElementById("spriteCommandTemplate");
 /** @type {HTMLTemplateElement} */
 const pointTemplate = document.getElementById("pointTemplate");
 /** @type {HTMLTemplateElement} */
+const edgeTemplate = document.getElementById("edgeTemplate");
+/** @type {HTMLTemplateElement} */
 const bitmapColorPairTemplate = document.getElementById(
   "bitmapColorPairTemplate"
 );
@@ -2383,6 +2385,82 @@ const updateSpriteCommands = () => {
 
           spriteCommandContainer.appendChild(pointContainer);
           pointContainers[i] = pointContainer;
+        }
+      }
+
+      const includeEdges = "edges" in command;
+      if (includeEdges) {
+        const numberOfEdgesContainer =
+          spriteCommandContainer.querySelector(".numberOfEdges");
+        const numberOfEdgesInput =
+          numberOfEdgesContainer.querySelector("input");
+        numberOfEdgesInput.value = command.edges.length;
+        const numberOfEdgesSpan =
+          numberOfEdgesContainer.querySelector(".value");
+        numberOfEdgesSpan.innerText = command.edges.length;
+        numberOfEdgesContainer.removeAttribute("hidden");
+        numberOfEdgesContainer.addEventListener("input", () => {
+          const numberOfEdges = Number(numberOfEdgesInput.value);
+          // console.log({ numberOfEdges });
+          for (let i = 0; i < numberOfEdges; i++) {
+            let edge = command.edges[i];
+            if (!edge) {
+              command.edges[i] = { startIndex: 0, endIndex: 1 };
+            }
+          }
+          command.edges.length = numberOfEdges;
+          edgeContainers.forEach((edgeContainer, index) => {
+            // console.log("edgeContainer", edgeContainer);
+            edgeContainer.hidden = index >= command.edges.length;
+          });
+          numberOfEdgesSpan.innerText = command.edges.length;
+          draw();
+        });
+
+        const edgeContainers = [];
+        for (let i = 0; i < numberOfEdgesInput.max; i++) {
+          const edgeContainer = edgeTemplate.content
+            .cloneNode(true)
+            .querySelector(".edge");
+
+          const edge = command.edges[i];
+          edgeContainer.hidden = !Boolean(edge);
+
+          const startIndexContainer =
+            edgeContainer.querySelector(".startIndex");
+          startIndexContainer.removeAttribute("hidden");
+          const startIndexInput = startIndexContainer.querySelector("input");
+          startIndexInput.max = command.points.length - 1;
+          const startIndexSpan = startIndexContainer.querySelector(".value");
+          if (edge) {
+            startIndexInput.value = edge.startIndex;
+            startIndexSpan.innerText = edge.startIndex;
+          }
+          startIndexContainer.addEventListener("input", () => {
+            const edge = command.edges[i];
+            edge.startIndex = Number(startIndexInput.value);
+            startIndexSpan.innerText = edge.startIndex;
+            draw();
+          });
+
+          const endIndexContainer = edgeContainer.querySelector(".endIndex");
+          const endIndexInput = endIndexContainer.querySelector("input");
+          endIndexInput.max = command.points.length - 1;
+          const endIndexSpan = endIndexContainer.querySelector(".value");
+          if (edge) {
+            endIndexInput.value = edge.endIndex;
+            endIndexSpan.innerText = edge.endIndex;
+          }
+          endIndexContainer.removeAttribute("hidden");
+          endIndexContainer.addEventListener("input", () => {
+            const edge = command.edges[i];
+            edge.endIndex = Number(endIndexInput.value);
+            endIndexSpan.innerText = edge.endIndex;
+            draw();
+          });
+
+          spriteCommandContainer.appendChild(edgeContainer);
+          edgeContainers[i] = edgeContainer;
         }
       }
 
