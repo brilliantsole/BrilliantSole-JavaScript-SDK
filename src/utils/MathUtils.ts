@@ -136,3 +136,24 @@ export const twoPi = Math.PI * 2;
 export function normalizeRadians(rad: number): number {
   return ((rad % twoPi) + twoPi) % twoPi;
 }
+
+export function isAngleInRange(
+  angle: number,
+  start: number,
+  end: number,
+  isPositive: boolean
+): boolean {
+  angle = normalizeRadians(angle);
+  start = normalizeRadians(start);
+  end = normalizeRadians(end);
+
+  if (isPositive) {
+    if (end < start) end += twoPi;
+    if (angle < start) angle += twoPi;
+    return angle >= start && angle <= end;
+  } else {
+    if (start < end) start += twoPi;
+    if (angle > start) angle -= twoPi;
+    return angle <= start && angle >= end;
+  }
+}

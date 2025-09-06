@@ -79,7 +79,14 @@ import EventDispatcher, {
   EventMap,
 } from "./EventDispatcher.ts";
 import { addEventListeners, removeEventListeners } from "./EventUtils.ts";
-import { clamp, degToRad, normalizeRadians, Vector2 } from "./MathUtils.ts";
+import {
+  clamp,
+  degToRad,
+  isAngleInRange,
+  normalizeRadians,
+  twoPi,
+  Vector2,
+} from "./MathUtils.ts";
 import { wait } from "./Timer.ts";
 import {
   DisplayContextCommand,
@@ -1989,11 +1996,67 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
   #getEllipseBoundingBox(
     radiusX: number,
     radiusY: number,
+    startAngle: number,
+    angleOffset: number,
+    isRadians: boolean,
     contextState: DisplayContextState
   ): DisplayBoundingBox {
-    const diameterX = radiusX * 2;
-    const diameterY = radiusY * 2;
-    return this.#getRectBoundingBox(diameterX, diameterY, contextState);
+    if (Math.abs(angleOffset) >= twoPi - 1e-6) {
+      const diameterX = radiusX * 2;
+      const diameterY = radiusY * 2;
+      return this.#getRectBoundingBox(diameterX, diameterY, contextState);
+    }
+
+    startAngle = isRadians ? startAngle : degToRad(startAngle);
+    angleOffset = isRadians ? angleOffset : degToRad(angleOffset);
+    isRadians = true;
+
+    const endAngle = startAngle + angleOffset;
+    const isPositive = angleOffset > 0;
+
+    _console.log({ startAngle, angleOffset, endAngle, radiusX, radiusY });
+
+    const outerPadding = this.#getOuterPadding(contextState.lineWidth);
+    radiusX += outerPadding;
+    radiusY += outerPadding;
+
+    let min_x = Number.POSITIVE_INFINITY;
+    let min_y = Number.POSITIVE_INFINITY;
+    let max_x = Number.NEGATIVE_INFINITY;
+    let max_y = Number.NEGATIVE_INFINITY;
+
+    const addPoint = (x: number, y: number) => {
+      _console.log("add point", x, y);
+      if (x < min_x) min_x = x;
+      if (y < min_y) min_y = y;
+      if (x > max_x) max_x = x;
+      if (y > max_y) max_y = y;
+    };
+    const addAngle = (theta: number) => {
+      const x = Math.cos(theta) * radiusX;
+      const y = Math.sin(theta) * radiusY;
+      addPoint(x, y);
+    };
+
+    addPoint(0, 0);
+    addAngle(startAngle);
+    addAngle(endAngle);
+
+    const extrema = [0, Math.PI / 2, Math.PI, (3 * Math.PI) / 2];
+    for (const a of extrema) {
+      if (isAngleInRange(a, startAngle, endAngle, isPositive)) {
+        addAngle(a);
+      }
+    }
+
+    const ellipseBoundingBox: DisplayBoundingBox = {
+      x: min_x,
+      y: min_y,
+      width: max_x - min_x,
+      height: max_y - min_y,
+    };
+    _console.log("ellipseBoundingBox", ellipseBoundingBox);
+    return ellipseBoundingBox;
   }
   #drawEllipseToCanvas(
     offsetX: number,
@@ -2538,12 +2601,16 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     isRadians: boolean,
     contextState: DisplayContextState
   ) {
+    startAngle = isRadians ? startAngle : degToRad(startAngle);
+    angleOffset = isRadians ? angleOffset : degToRad(angleOffset);
+    isRadians = true;
+
     this.#updateContext(contextState);
 
     this.#save();
-    const localBox = this.#getEllipseBoundingBox(
-      radiusX,
-      radiusY,
+    const localBox = this.#getRectBoundingBox(
+      radiusX * 2,
+      radiusY * 2,
       contextState
     );
     const rotatedLocalBox = this.#rotateBoundingBox(
@@ -2617,6 +2684,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
   ) {
     startAngle = isRadians ? startAngle : degToRad(startAngle);
     angleOffset = isRadians ? angleOffset : degToRad(angleOffset);
+    isRadians = true;
 
     const contextState = structuredClone(this.contextState);
     this.#rearDrawStack.push(() =>

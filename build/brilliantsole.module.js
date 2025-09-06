@@ -1032,6 +1032,25 @@ const twoPi = Math.PI * 2;
 function normalizeRadians(rad) {
     return ((rad % twoPi) + twoPi) % twoPi;
 }
+function isAngleInRange(angle, start, end, isPositive) {
+    angle = normalizeRadians(angle);
+    start = normalizeRadians(start);
+    end = normalizeRadians(end);
+    if (isPositive) {
+        if (end < start)
+            end += twoPi;
+        if (angle < start)
+            angle += twoPi;
+        return angle >= start && angle <= end;
+    }
+    else {
+        if (start < end)
+            start += twoPi;
+        if (angle > start)
+            angle -= twoPi;
+        return angle <= start && angle >= end;
+    }
+}
 
 var _RangeHelper_instances, _RangeHelper_range, _RangeHelper_updateSpan;
 const initialRange = { min: Infinity, max: -Infinity, span: 0 };
@@ -22439,6 +22458,7 @@ class DisplayCanvasHelper {
     async drawArcEllipse(offsetX, offsetY, radiusX, radiusY, startAngle, angleOffset, isRadians, sendImmediately) {
         startAngle = isRadians ? startAngle : degToRad(startAngle);
         angleOffset = isRadians ? angleOffset : degToRad(angleOffset);
+        isRadians = true;
         const contextState = structuredClone(this.contextState);
         __classPrivateFieldGet(this, _DisplayCanvasHelper_rearDrawStack, "f").push(() => __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_drawArcEllipseToCanvas).call(this, offsetX, offsetY, radiusX, radiusY, startAngle, angleOffset, true, contextState));
         if (this.device?.isConnected && !__classPrivateFieldGet(this, _DisplayCanvasHelper_ignoreDevice, "f")) {
@@ -22968,10 +22988,58 @@ _DisplayCanvasHelper_eventDispatcher = new WeakMap(), _DisplayCanvasHelper_canva
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_restore).call(this);
 }, _DisplayCanvasHelper_drawCircleToCanvas = function _DisplayCanvasHelper_drawCircleToCanvas(offsetX, offsetY, radius, contextState) {
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_drawArcEllipseToCanvas).call(this, offsetX, offsetY, radius, radius, 0, 360, false, contextState);
-}, _DisplayCanvasHelper_getEllipseBoundingBox = function _DisplayCanvasHelper_getEllipseBoundingBox(radiusX, radiusY, contextState) {
-    const diameterX = radiusX * 2;
-    const diameterY = radiusY * 2;
-    return __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_getRectBoundingBox).call(this, diameterX, diameterY, contextState);
+}, _DisplayCanvasHelper_getEllipseBoundingBox = function _DisplayCanvasHelper_getEllipseBoundingBox(radiusX, radiusY, startAngle, angleOffset, isRadians, contextState) {
+    if (Math.abs(angleOffset) >= twoPi - 1e-6) {
+        const diameterX = radiusX * 2;
+        const diameterY = radiusY * 2;
+        return __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_getRectBoundingBox).call(this, diameterX, diameterY, contextState);
+    }
+    startAngle = isRadians ? startAngle : degToRad(startAngle);
+    angleOffset = isRadians ? angleOffset : degToRad(angleOffset);
+    isRadians = true;
+    const endAngle = startAngle + angleOffset;
+    const isPositive = angleOffset > 0;
+    _console$6.log({ startAngle, angleOffset, endAngle, radiusX, radiusY });
+    const outerPadding = __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_getOuterPadding).call(this, contextState.lineWidth);
+    radiusX += outerPadding;
+    radiusY += outerPadding;
+    let min_x = Number.POSITIVE_INFINITY;
+    let min_y = Number.POSITIVE_INFINITY;
+    let max_x = Number.NEGATIVE_INFINITY;
+    let max_y = Number.NEGATIVE_INFINITY;
+    const addPoint = (x, y) => {
+        _console$6.log("add point", x, y);
+        if (x < min_x)
+            min_x = x;
+        if (y < min_y)
+            min_y = y;
+        if (x > max_x)
+            max_x = x;
+        if (y > max_y)
+            max_y = y;
+    };
+    const addAngle = (theta) => {
+        const x = Math.cos(theta) * radiusX;
+        const y = Math.sin(theta) * radiusY;
+        addPoint(x, y);
+    };
+    addPoint(0, 0);
+    addAngle(startAngle);
+    addAngle(endAngle);
+    const extrema = [0, Math.PI / 2, Math.PI, (3 * Math.PI) / 2];
+    for (const a of extrema) {
+        if (isAngleInRange(a, startAngle, endAngle, isPositive)) {
+            addAngle(a);
+        }
+    }
+    const ellipseBoundingBox = {
+        x: min_x,
+        y: min_y,
+        width: max_x - min_x,
+        height: max_y - min_y,
+    };
+    _console$6.log("ellipseBoundingBox", ellipseBoundingBox);
+    return ellipseBoundingBox;
 }, _DisplayCanvasHelper_drawEllipseToCanvas = function _DisplayCanvasHelper_drawEllipseToCanvas(offsetX, offsetY, radiusX, radiusY, contextState) {
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_drawArcEllipseToCanvas).call(this, offsetX, offsetY, radiusX, radiusY, 0, 360, false, contextState);
 }, _DisplayCanvasHelper_getRegularPolygonBoundingBox = function _DisplayCanvasHelper_getRegularPolygonBoundingBox(radius, numberOfSides, { lineWidth }) {
@@ -23194,9 +23262,13 @@ _DisplayCanvasHelper_eventDispatcher = new WeakMap(), _DisplayCanvasHelper_canva
 }, _DisplayCanvasHelper_drawArcToCanvas = function _DisplayCanvasHelper_drawArcToCanvas(offsetX, offsetY, radius, startAngle, angleOffset, isRadians, contextState) {
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_drawArcEllipseToCanvas).call(this, offsetX, offsetY, radius, radius, startAngle, angleOffset, isRadians, contextState);
 }, _DisplayCanvasHelper_drawArcEllipseToCanvas = function _DisplayCanvasHelper_drawArcEllipseToCanvas(offsetX, offsetY, radiusX, radiusY, startAngle, angleOffset, isRadians, contextState) {
+    startAngle = isRadians ? startAngle : degToRad(startAngle);
+    angleOffset = isRadians ? angleOffset : degToRad(angleOffset);
+    isRadians = true;
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_updateContext).call(this, contextState);
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_save).call(this);
-    const localBox = __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_getEllipseBoundingBox).call(this, radiusX, radiusY, contextState);
+    __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_getEllipseBoundingBox).call(this, radiusX, radiusY, startAngle, angleOffset, isRadians, contextState);
+    const localBox = __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_getRectBoundingBox).call(this, radiusX * 2, radiusY * 2, contextState);
     const rotatedLocalBox = __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_rotateBoundingBox).call(this, localBox, contextState.rotation);
     const rotatedBox = __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_offsetBoundingBox).call(this, rotatedLocalBox, offsetX, offsetY);
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_applyClip).call(this, rotatedBox, contextState);

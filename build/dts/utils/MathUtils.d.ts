@@ -33,3 +33,4 @@ export declare function degToRad(deg: number): number;
 export declare function radToDeg(rad: number): number;
 export declare const twoPi: number;
 export declare function normalizeRadians(rad: number): number;
+export declare function isAngleInRange(angle: number, start: number, end: number, isPositive: boolean): boolean;

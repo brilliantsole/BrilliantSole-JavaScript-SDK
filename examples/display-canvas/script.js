@@ -1797,8 +1797,8 @@ window.stopDrawing = stopDrawing;
 
 // FACE TRACKING
 
-// import vision from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3";
-// const { FaceLandmarker, FilesetResolver, DrawingUtils } = vision;
+import vision from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3";
+const { FaceLandmarker, FilesetResolver, DrawingUtils } = vision;
 
 let faceLandmarker;
 const createFaceLandmarker = async () => {
