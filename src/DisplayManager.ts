@@ -36,6 +36,7 @@ import {
   DisplayAlignmentDirectionToStateKey,
   assertValidDirection,
   assertValidAlignmentDirection,
+  assertValidWireframe,
 } from "./utils/DisplayUtils.ts";
 import {
   assertValidBitmapPixels,
@@ -173,6 +174,15 @@ export type DisplayBitmapColorPair = {
 export type DisplaySpriteColorPair = {
   spriteColorIndex: number;
   colorIndex: number;
+};
+
+export type DisplayWireframeEdge = {
+  startIndex: number;
+  endIndex: number;
+};
+export type DisplaySegment = {
+  start: Vector2;
+  end: Vector2;
 };
 
 export const DisplayInformationValues = {
@@ -1995,6 +2005,27 @@ class DisplayManager implements DisplayManagerInterface {
     }
     await this.#sendDisplayContextCommand(
       "drawPolygon",
+      dataView.buffer,
+      sendImmediately
+    );
+  }
+
+  async drawWireframe(
+    points: Vector2[],
+    edges: DisplayWireframeEdge[],
+    sendImmediately?: boolean
+  ) {
+    assertValidWireframe(points, edges);
+    const dataView = serializeContextCommand(this, {
+      type: "drawWireframe",
+      points,
+      edges,
+    });
+    if (!dataView) {
+      return;
+    }
+    await this.#sendDisplayContextCommand(
+      "drawWireframe",
       dataView.buffer,
       sendImmediately
     );

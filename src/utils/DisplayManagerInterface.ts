@@ -4,6 +4,7 @@ import {
   DisplayBrightness,
   DisplaySpriteColorPair,
   DisplayBitmap,
+  DisplayWireframeEdge,
 } from "../DisplayManager.ts";
 import { createConsole } from "./Console.ts";
 import { DisplayContextCommand } from "./DisplayContextCommand.ts";
@@ -352,6 +353,12 @@ export interface DisplayManagerInterface {
     offsetX: number,
     offsetY: number,
     points: Vector2[],
+    sendImmediately?: boolean
+  ): Promise<void>;
+
+  drawWireframe(
+    points: Vector2[],
+    edges: DisplayWireframeEdge[],
     sendImmediately?: boolean
   ): Promise<void>;
 
@@ -882,6 +889,12 @@ export async function runDisplayContextCommand(
           numberOfSides,
           sendImmediately
         );
+      }
+      break;
+    case "drawWireframe":
+      {
+        const { points, edges } = command;
+        await displayManager.drawWireframe(points, edges, sendImmediately);
       }
       break;
     case "drawSegment":

@@ -112,6 +112,7 @@ export {
   MaxSpriteSheetNameLength,
   DisplayBitmap,
   DisplaySpriteColorPair,
+  DisplayWireframeEdge,
 } from "./DisplayManager.ts";
 
 export {

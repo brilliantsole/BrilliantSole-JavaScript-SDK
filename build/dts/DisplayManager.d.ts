@@ -41,6 +41,14 @@ export type DisplaySpriteColorPair = {
     spriteColorIndex: number;
     colorIndex: number;
 };
+export type DisplayWireframeEdge = {
+    startIndex: number;
+    endIndex: number;
+};
+export type DisplaySegment = {
+    start: Vector2;
+    end: Vector2;
+};
 export declare const DisplayInformationValues: {
     type: readonly ["none", "generic", "monocularLeft", "monocularRight", "binocular"];
     pixelDepth: readonly ["1", "2", "4"];
@@ -216,6 +224,7 @@ declare class DisplayManager implements DisplayManagerInterface {
     drawEllipse(offsetX: number, offsetY: number, radiusX: number, radiusY: number, sendImmediately?: boolean): Promise<void>;
     drawRegularPolygon(offsetX: number, offsetY: number, radius: number, numberOfSides: number, sendImmediately?: boolean): Promise<void>;
     drawPolygon(offsetX: number, offsetY: number, points: Vector2[], sendImmediately?: boolean): Promise<void>;
+    drawWireframe(points: Vector2[], edges: DisplayWireframeEdge[], sendImmediately?: boolean): Promise<void>;
     drawSegment(startX: number, startY: number, endX: number, endY: number, sendImmediately?: boolean): Promise<void>;
     drawSegments(points: Vector2[], sendImmediately?: boolean): Promise<void>;
     drawArc(offsetX: number, offsetY: number, radius: number, startAngle: number, angleOffset: number, isRadians?: boolean, sendImmediately?: boolean): Promise<void>;

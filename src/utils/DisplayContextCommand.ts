@@ -2,6 +2,7 @@ import {
   DisplayBitmap,
   DisplayBitmapColorPair,
   DisplaySpriteColorPair,
+  DisplayWireframeEdge,
 } from "../DisplayManager.ts";
 import {
   concatenateArrayBuffers,
@@ -28,6 +29,7 @@ import {
   assertValidDirection,
   assertValidOpacity,
   assertValidSegmentCap,
+  assertValidWireframe,
   DisplayColorRGB,
   formatRotation,
   formatScale,
@@ -129,6 +131,8 @@ export const DisplayContextCommandTypes = [
   "drawRegularPolygon",
   "drawPolygon",
 
+  "drawWireframe",
+
   "drawQuadraticCurve",
   "drawQuadraticCurves",
   "drawBezierCurve",
@@ -198,8 +202,20 @@ export const DisplaySpriteContextCommandTypes = [
   "drawRoundRect",
   "drawCircle",
   "drawEllipse",
+
   "drawRegularPolygon",
   "drawPolygon",
+
+  "drawWireframe",
+
+  "drawQuadraticCurve",
+  "drawQuadraticCurves",
+  "drawBezierCurve",
+  "drawBezierCurves",
+
+  "drawPath",
+  "drawClosedPath",
+
   "drawSegment",
   "drawSegments",
 
@@ -515,6 +531,12 @@ export interface DrawDisplaySegmentsCommand extends BaseDisplayContextCommand {
   points: Vector2[];
 }
 
+export interface DrawDisplayWireframeCommand extends BaseDisplayContextCommand {
+  type: "drawWireframe";
+  points: Vector2[];
+  edges: DisplayWireframeEdge[];
+}
+
 export interface DrawDisplayArcCommand
   extends BaseOffsetPositionDisplayContextCommand {
   type: "drawArc";
@@ -614,7 +636,8 @@ export type DisplayContextCommand =
   | SetDisplaySpritesLineSpacingCommand
   | SetDisplaySpritesAlignmentCommand
   | SetDisplaySpritesLineAlignmentCommand
-  | SetDisplaySpritesLineHeightCommand;
+  | SetDisplaySpritesLineHeightCommand
+  | DrawDisplayWireframeCommand;
 
 export function serializeContextCommand(
   displayManager: DisplayManagerInterface,
@@ -1133,6 +1156,29 @@ export function serializeContextCommand(
           offset += 2;
           dataView!.setInt16(offset, point.y, true);
           offset += 2;
+        });
+      }
+      break;
+    case "drawWireframe":
+      {
+        const { points, edges } = command;
+        assertValidWireframe(points, edges);
+        // [numberOfPoints, ...points, numberOfEdges, ...edges]
+        dataView = new DataView(
+          new ArrayBuffer(1 + 4 * points.length + 1 + 2 * edges.length)
+        );
+        let offset = 0;
+        dataView.setUint8(offset++, points.length);
+        points.forEach((point) => {
+          dataView!.setInt16(offset, point.x, true);
+          offset += 2;
+          dataView!.setInt16(offset, point.y, true);
+          offset += 2;
+        });
+        dataView.setUint8(offset++, edges.length);
+        edges.forEach((edge) => {
+          dataView!.setUint8(offset++, edge.startIndex);
+          dataView!.setUint8(offset++, edge.endIndex);
         });
       }
       break;

@@ -3,6 +3,7 @@ import {
   DisplayBrightnesses,
   DisplayPixelDepth,
   DisplayPixelDepths,
+  DisplayWireframeEdge,
 } from "../DisplayManager.ts";
 import { createConsole } from "./Console.ts";
 import { DisplayContextCommandType } from "./DisplayContextCommand.ts";
@@ -17,7 +18,7 @@ import {
   DisplaySegmentCap,
   DisplaySegmentCaps,
 } from "./DisplayContextState.ts";
-import { Int16Max, Uint16Max } from "./MathUtils.ts";
+import { Int16Max, Uint16Max, Vector2 } from "./MathUtils.ts";
 
 const _console = createConsole("DisplayUtils", { log: false });
 
@@ -260,4 +261,27 @@ export function assertValidAlignmentDirection(
   direction: DisplayAlignmentDirection
 ) {
   _console.assertEnumWithError(direction, DisplayAlignmentDirections);
+}
+
+export function assertValidWireframe(
+  points: Vector2[],
+  edges: DisplayWireframeEdge[]
+) {
+  _console.assertRangeWithError("numberOfPoints", points.length, 2, 255);
+  _console.assertRangeWithError("numberOfEdges", edges.length, 1, 255);
+
+  edges.forEach((edge, index) => {
+    _console.assertRangeWithError(
+      `edgeStartIndex.${index}`,
+      edge.startIndex,
+      0,
+      points.length
+    );
+    _console.assertRangeWithError(
+      `edgeEndIndex.${index}`,
+      edge.endIndex,
+      0,
+      points.length
+    );
+  });
 }

@@ -4014,6 +4014,14 @@ function assertValidDirection(direction) {
 function assertValidAlignmentDirection(direction) {
     _console$o.assertEnumWithError(direction, DisplayAlignmentDirections);
 }
+function assertValidWireframe(points, edges) {
+    _console$o.assertRangeWithError("numberOfPoints", points.length, 2, 255);
+    _console$o.assertRangeWithError("numberOfEdges", edges.length, 1, 255);
+    edges.forEach((edge, index) => {
+        _console$o.assertRangeWithError(`edgeStartIndex.${index}`, edge.startIndex, 0, points.length);
+        _console$o.assertRangeWithError(`edgeEndIndex.${index}`, edge.endIndex, 0, points.length);
+    });
+}
 
 var commonjsGlobal = typeof globalThis !== 'undefined' ? globalThis : typeof window !== 'undefined' ? window : typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : {};
 
@@ -4778,6 +4786,7 @@ const DisplayContextCommandTypes = [
     "drawSegments",
     "drawRegularPolygon",
     "drawPolygon",
+    "drawWireframe",
     "drawQuadraticCurve",
     "drawQuadraticCurves",
     "drawBezierCurve",
@@ -4834,6 +4843,13 @@ const DisplaySpriteContextCommandTypes = [
     "drawEllipse",
     "drawRegularPolygon",
     "drawPolygon",
+    "drawWireframe",
+    "drawQuadraticCurve",
+    "drawQuadraticCurves",
+    "drawBezierCurve",
+    "drawBezierCurves",
+    "drawPath",
+    "drawClosedPath",
     "drawSegment",
     "drawSegments",
     "drawArc",
@@ -5330,6 +5346,26 @@ function serializeContextCommand(displayManager, command) {
                     offset += 2;
                     dataView.setInt16(offset, point.y, true);
                     offset += 2;
+                });
+            }
+            break;
+        case "drawWireframe":
+            {
+                const { points, edges } = command;
+                assertValidWireframe(points, edges);
+                dataView = new DataView(new ArrayBuffer(1 + 4 * points.length + 1 + 2 * edges.length));
+                let offset = 0;
+                dataView.setUint8(offset++, points.length);
+                points.forEach((point) => {
+                    dataView.setInt16(offset, point.x, true);
+                    offset += 2;
+                    dataView.setInt16(offset, point.y, true);
+                    offset += 2;
+                });
+                dataView.setUint8(offset++, edges.length);
+                edges.forEach((edge) => {
+                    dataView.setUint8(offset++, edge.startIndex);
+                    dataView.setUint8(offset++, edge.endIndex);
                 });
             }
             break;
@@ -16208,6 +16244,12 @@ async function runDisplayContextCommand(displayManager, command, sendImmediately
                 await displayManager.drawRegularPolygon(offsetX, offsetY, radius, numberOfSides, sendImmediately);
             }
             break;
+        case "drawWireframe":
+            {
+                const { points, edges } = command;
+                await displayManager.drawWireframe(points, edges, sendImmediately);
+            }
+            break;
         case "drawSegment":
             {
                 const { startX, startY, endX, endY } = command;
@@ -17569,6 +17611,18 @@ class DisplayManager {
             return;
         }
         await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "drawPolygon", dataView.buffer, sendImmediately);
+    }
+    async drawWireframe(points, edges, sendImmediately) {
+        assertValidWireframe(points, edges);
+        const dataView = serializeContextCommand(this, {
+            type: "drawWireframe",
+            points,
+            edges,
+        });
+        if (!dataView) {
+            return;
+        }
+        await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "drawWireframe", dataView.buffer, sendImmediately);
     }
     async drawSegment(startX, startY, endX, endY, sendImmediately) {
         const dataView = serializeContextCommand(this, {
@@ -21614,7 +21668,7 @@ _a$2 = Device, _Device_eventDispatcher = new WeakMap(), _Device_connectionManage
 _Device_ReconnectOnDisconnection = { value: false };
 _Device_ClearSensorConfigurationOnLeave = { value: true };
 
-var _DisplayCanvasHelper_instances, _DisplayCanvasHelper_eventDispatcher, _DisplayCanvasHelper_dispatchEvent_get, _DisplayCanvasHelper_canvas, _DisplayCanvasHelper_context, _DisplayCanvasHelper_updateCanvas, _DisplayCanvasHelper_frontDrawStack, _DisplayCanvasHelper_rearDrawStack, _DisplayCanvasHelper_drawFrontDrawStack, _DisplayCanvasHelper_applyTransparencyToCanvas, _DisplayCanvasHelper_drawBackground, _DisplayCanvasHelper_applyTransparency, _DisplayCanvasHelper_device, _DisplayCanvasHelper_boundDeviceEventListeners, _DisplayCanvasHelper_onDeviceIsConnected, _DisplayCanvasHelper_onDeviceConnected, _DisplayCanvasHelper_onDeviceNotConnected, _DisplayCanvasHelper_onDeviceDisplayReady, _DisplayCanvasHelper_onDeviceDisplaySpriteSheetUploadStart, _DisplayCanvasHelper_onDeviceDisplaySpriteSheetUploadProgress, _DisplayCanvasHelper_onDeviceDisplaySpriteSheetUploadComplete, _DisplayCanvasHelper_updateDevice, _DisplayCanvasHelper_numberOfColors, _DisplayCanvasHelper_colors, _DisplayCanvasHelper_updateDeviceColors, _DisplayCanvasHelper_opacities, _DisplayCanvasHelper_updateDeviceOpacity, _DisplayCanvasHelper_contextStateHelper, _DisplayCanvasHelper_onContextStateUpdate, _DisplayCanvasHelper_resetContextState, _DisplayCanvasHelper_updateDeviceContextState, _DisplayCanvasHelper_interval, _DisplayCanvasHelper_isReady, _DisplayCanvasHelper_contextStack, _DisplayCanvasHelper_saveContext, _DisplayCanvasHelper_restoreContext, _DisplayCanvasHelper_clearRectToCanvas, _DisplayCanvasHelper_save, _DisplayCanvasHelper_restore, _DisplayCanvasHelper_transformContext, _DisplayCanvasHelper_translateContext, _DisplayCanvasHelper_rotateContext, _DisplayCanvasHelper_scaleContext, _DisplayCanvasHelper_correctAlignmentTranslation, _DisplayCanvasHelper_rotateBoundingBox, _DisplayCanvasHelper_offsetBoundingBox, _DisplayCanvasHelper_clearBoundingBoxOnDraw, _DisplayCanvasHelper_clearBoundingBox, _DisplayCanvasHelper_getOuterPadding, _DisplayCanvasHelper_getRectBoundingBox, _DisplayCanvasHelper_applyClip, _DisplayCanvasHelper_applyRotationClip, _DisplayCanvasHelper_hexToRgbWithOpacity, _DisplayCanvasHelper_hexToRgbStringWithOpacity, _DisplayCanvasHelper_getColorOpacity, _DisplayCanvasHelper_colorIndexToRgbString, _DisplayCanvasHelper_updateContext, _DisplayCanvasHelper_drawRectToCanvas, _DisplayCanvasHelper_drawRoundRectToCanvas, _DisplayCanvasHelper_drawCircleToCanvas, _DisplayCanvasHelper_drawEllipseToCanvas, _DisplayCanvasHelper_getRegularPolygonBoundingBox, _DisplayCanvasHelper_drawRegularPolygonToCanvas, _DisplayCanvasHelper_getPointsBoundingBox, _DisplayCanvasHelper_drawPolygonToCanvas, _DisplayCanvasHelper_getLocalSegmentBoundingBox, _DisplayCanvasHelper_drawSegmentToCanvas, _DisplayCanvasHelper_drawSegmentsToCanvas, _DisplayCanvasHelper_drawArcToCanvas, _DisplayCanvasHelper_drawArcEllipseToCanvas, _DisplayCanvasHelper_bitmapCanvas, _DisplayCanvasHelper_bitmapContext, _DisplayCanvasHelper_drawBitmapToCanvas, _DisplayCanvasHelper_spriteSheets, _DisplayCanvasHelper_spriteSheetIndices, _DisplayCanvasHelper_runSpriteCommand, _DisplayCanvasHelper_drawSpriteToCanvas, _DisplayCanvasHelper_drawSpritesToCanvas, _DisplayCanvasHelper_brightness, _DisplayCanvasHelper_brightnessOpacities, _DisplayCanvasHelper_brightnessOpacity_get, _DisplayCanvasHelper_updateDeviceBrightness, _DisplayCanvasHelper_updateDeviceSpriteSheets, _DisplayCanvasHelper_updateDeviceSelectedSpriteSheet, _DisplayCanvasHelper_setCanvasContextTransform, _DisplayCanvasHelper_resetCanvasContextTransform, _DisplayCanvasHelper_setClearCanvasBoundingBoxOnDraw, _DisplayCanvasHelper_ignoreDevice, _DisplayCanvasHelper_setIgnoreDevice, _DisplayCanvasHelper_useSpriteColorIndices, _DisplayCanvasHelper_setUseSpriteColorIndices, _DisplayCanvasHelper_spriteContextStack, _DisplayCanvasHelper_spriteStack, _DisplayCanvasHelper_saveContextForSprite, _DisplayCanvasHelper_restoreContextForSprite, _DisplayCanvasHelper_runPreviewSpriteCommand;
+var _DisplayCanvasHelper_instances, _DisplayCanvasHelper_eventDispatcher, _DisplayCanvasHelper_dispatchEvent_get, _DisplayCanvasHelper_canvas, _DisplayCanvasHelper_context, _DisplayCanvasHelper_updateCanvas, _DisplayCanvasHelper_frontDrawStack, _DisplayCanvasHelper_rearDrawStack, _DisplayCanvasHelper_drawFrontDrawStack, _DisplayCanvasHelper_applyTransparencyToCanvas, _DisplayCanvasHelper_drawBackground, _DisplayCanvasHelper_applyTransparency, _DisplayCanvasHelper_device, _DisplayCanvasHelper_boundDeviceEventListeners, _DisplayCanvasHelper_onDeviceIsConnected, _DisplayCanvasHelper_onDeviceConnected, _DisplayCanvasHelper_onDeviceNotConnected, _DisplayCanvasHelper_onDeviceDisplayReady, _DisplayCanvasHelper_onDeviceDisplaySpriteSheetUploadStart, _DisplayCanvasHelper_onDeviceDisplaySpriteSheetUploadProgress, _DisplayCanvasHelper_onDeviceDisplaySpriteSheetUploadComplete, _DisplayCanvasHelper_updateDevice, _DisplayCanvasHelper_numberOfColors, _DisplayCanvasHelper_colors, _DisplayCanvasHelper_updateDeviceColors, _DisplayCanvasHelper_opacities, _DisplayCanvasHelper_updateDeviceOpacity, _DisplayCanvasHelper_contextStateHelper, _DisplayCanvasHelper_onContextStateUpdate, _DisplayCanvasHelper_resetContextState, _DisplayCanvasHelper_updateDeviceContextState, _DisplayCanvasHelper_interval, _DisplayCanvasHelper_isReady, _DisplayCanvasHelper_contextStack, _DisplayCanvasHelper_saveContext, _DisplayCanvasHelper_restoreContext, _DisplayCanvasHelper_clearRectToCanvas, _DisplayCanvasHelper_save, _DisplayCanvasHelper_restore, _DisplayCanvasHelper_transformContext, _DisplayCanvasHelper_translateContext, _DisplayCanvasHelper_rotateContext, _DisplayCanvasHelper_scaleContext, _DisplayCanvasHelper_correctAlignmentTranslation, _DisplayCanvasHelper_rotateBoundingBox, _DisplayCanvasHelper_offsetBoundingBox, _DisplayCanvasHelper_clearBoundingBoxOnDraw, _DisplayCanvasHelper_clearBoundingBox, _DisplayCanvasHelper_getOuterPadding, _DisplayCanvasHelper_getRectBoundingBox, _DisplayCanvasHelper_applyClip, _DisplayCanvasHelper_applyRotationClip, _DisplayCanvasHelper_hexToRgbWithOpacity, _DisplayCanvasHelper_hexToRgbStringWithOpacity, _DisplayCanvasHelper_getColorOpacity, _DisplayCanvasHelper_colorIndexToRgbString, _DisplayCanvasHelper_updateContext, _DisplayCanvasHelper_drawRectToCanvas, _DisplayCanvasHelper_drawRoundRectToCanvas, _DisplayCanvasHelper_drawCircleToCanvas, _DisplayCanvasHelper_drawEllipseToCanvas, _DisplayCanvasHelper_getRegularPolygonBoundingBox, _DisplayCanvasHelper_drawRegularPolygonToCanvas, _DisplayCanvasHelper_getPointsBoundingBox, _DisplayCanvasHelper_drawPolygonToCanvas, _DisplayCanvasHelper_getWireframeBoundingBox, _DisplayCanvasHelper_drawWireframeToCanvas, _DisplayCanvasHelper_getLocalSegmentBoundingBox, _DisplayCanvasHelper_drawSegmentToCanvas, _DisplayCanvasHelper_getSegmentsBoundingBox, _DisplayCanvasHelper__getSegmentsBoundingBox, _DisplayCanvasHelper_drawSegmentsToCanvas, _DisplayCanvasHelper_drawArcToCanvas, _DisplayCanvasHelper_drawArcEllipseToCanvas, _DisplayCanvasHelper_bitmapCanvas, _DisplayCanvasHelper_bitmapContext, _DisplayCanvasHelper_drawBitmapToCanvas, _DisplayCanvasHelper_spriteSheets, _DisplayCanvasHelper_spriteSheetIndices, _DisplayCanvasHelper_runSpriteCommand, _DisplayCanvasHelper_drawSpriteToCanvas, _DisplayCanvasHelper_drawSpritesToCanvas, _DisplayCanvasHelper_brightness, _DisplayCanvasHelper_brightnessOpacities, _DisplayCanvasHelper_brightnessOpacity_get, _DisplayCanvasHelper_updateDeviceBrightness, _DisplayCanvasHelper_updateDeviceSpriteSheets, _DisplayCanvasHelper_updateDeviceSelectedSpriteSheet, _DisplayCanvasHelper_setCanvasContextTransform, _DisplayCanvasHelper_resetCanvasContextTransform, _DisplayCanvasHelper_setClearCanvasBoundingBoxOnDraw, _DisplayCanvasHelper_ignoreDevice, _DisplayCanvasHelper_setIgnoreDevice, _DisplayCanvasHelper_useSpriteColorIndices, _DisplayCanvasHelper_setUseSpriteColorIndices, _DisplayCanvasHelper_spriteContextStack, _DisplayCanvasHelper_spriteStack, _DisplayCanvasHelper_saveContextForSprite, _DisplayCanvasHelper_restoreContextForSprite, _DisplayCanvasHelper_runPreviewSpriteCommand;
 const _console$6 = createConsole("DisplayCanvasHelper", { log: true });
 const DisplayCanvasHelperEventTypes = [
     "contextState",
@@ -22408,6 +22462,14 @@ class DisplayCanvasHelper {
             await this.deviceDisplayManager.drawPolygon(offsetX, offsetY, points, sendImmediately);
         }
     }
+    async drawWireframe(points, edges, sendImmediately) {
+        assertValidWireframe(points, edges);
+        const contextState = structuredClone(this.contextState);
+        __classPrivateFieldGet(this, _DisplayCanvasHelper_rearDrawStack, "f").push(() => __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_drawWireframeToCanvas).call(this, points, edges, contextState));
+        if (this.device?.isConnected && !__classPrivateFieldGet(this, _DisplayCanvasHelper_ignoreDevice, "f")) {
+            await this.deviceDisplayManager.drawWireframe(points, edges, sendImmediately);
+        }
+    }
     async drawSegment(startX, startY, endX, endY, sendImmediately) {
         if (startX == endX && startY == endY) {
             _console$6.error(`cannot draw segment of length 0`);
@@ -22779,6 +22841,7 @@ _DisplayCanvasHelper_eventDispatcher = new WeakMap(), _DisplayCanvasHelper_canva
 }, _DisplayCanvasHelper_clearRectToCanvas = function _DisplayCanvasHelper_clearRectToCanvas(x, y, width, height) {
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_save).call(this);
     this.context.fillStyle = __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_colorIndexToRgbString).call(this, 0);
+    this.context.fillStyle = "red";
     this.context.fillRect(x, y, width, height);
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_restore).call(this);
 }, _DisplayCanvasHelper_save = function _DisplayCanvasHelper_save() {
@@ -23068,6 +23131,32 @@ _DisplayCanvasHelper_eventDispatcher = new WeakMap(), _DisplayCanvasHelper_canva
         this.context.stroke();
     }
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_restore).call(this);
+}, _DisplayCanvasHelper_getWireframeBoundingBox = function _DisplayCanvasHelper_getWireframeBoundingBox(points, edges, contextState) {
+    const segments = [];
+    edges.forEach((edge) => {
+        const { startIndex, endIndex } = edge;
+        const point = points[startIndex];
+        const nextPoint = points[endIndex];
+        segments.push({ start: point, end: nextPoint });
+    });
+    return __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper__getSegmentsBoundingBox).call(this, segments, contextState);
+}, _DisplayCanvasHelper_drawWireframeToCanvas = function _DisplayCanvasHelper_drawWireframeToCanvas(points, edges, contextState) {
+    _console$6.log("drawWireframeToCanvas", { points, edges });
+    __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_updateContext).call(this, contextState);
+    __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_save).call(this);
+    const box = __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_getWireframeBoundingBox).call(this, points, edges, contextState);
+    if (__classPrivateFieldGet(this, _DisplayCanvasHelper_clearBoundingBoxOnDraw, "f")) {
+        __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_clearBoundingBox).call(this, box);
+    }
+    __classPrivateFieldSet(this, _DisplayCanvasHelper_clearBoundingBoxOnDraw, false, "f");
+    edges.forEach((edge) => {
+        const { startIndex, endIndex } = edge;
+        const startPoint = points[startIndex];
+        const endPoint = points[endIndex];
+        __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_drawSegmentToCanvas).call(this, startPoint.x, startPoint.y, endPoint.x, endPoint.y, contextState, false);
+    });
+    __classPrivateFieldSet(this, _DisplayCanvasHelper_clearBoundingBoxOnDraw, true, "f");
+    __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_restore).call(this);
 }, _DisplayCanvasHelper_getLocalSegmentBoundingBox = function _DisplayCanvasHelper_getLocalSegmentBoundingBox(startX, startY, endX, endY, { lineWidth, segmentStartRadius, segmentEndRadius, segmentStartCap, segmentEndCap, }) {
     const outerPadding = __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_getOuterPadding).call(this, lineWidth);
     const dx = endX - startX;
@@ -23168,21 +23257,63 @@ _DisplayCanvasHelper_eventDispatcher = new WeakMap(), _DisplayCanvasHelper_canva
         this.context.stroke();
     }
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_restore).call(this);
+}, _DisplayCanvasHelper_getSegmentsBoundingBox = function _DisplayCanvasHelper_getSegmentsBoundingBox(points, contextState) {
+    const segments = [];
+    points.forEach((point, index) => {
+        if (index == points.length - 1) {
+            return;
+        }
+        const nextPoint = points[index + 1];
+        segments.push({ start: point, end: nextPoint });
+    });
+    return __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper__getSegmentsBoundingBox).call(this, segments, contextState);
+}, _DisplayCanvasHelper__getSegmentsBoundingBox = function _DisplayCanvasHelper__getSegmentsBoundingBox(segments, { lineWidth, segmentStartRadius, segmentEndRadius }) {
+    const outerPadding = Math.ceil(lineWidth / 2);
+    let minX = Infinity;
+    let maxX = -Infinity;
+    let minY = Infinity;
+    let maxY = -Infinity;
+    segments.forEach((segment, index) => {
+        const startX = segment.start.x;
+        const startY = segment.start.y;
+        const endX = segment.end.x;
+        const endY = segment.end.y;
+        if (index == 0) {
+            minX = Math.min(startX - segmentStartRadius, endX - segmentEndRadius);
+            maxX = Math.max(startX + segmentStartRadius, endX + segmentEndRadius);
+            minY = Math.min(startY - segmentStartRadius, endY - segmentEndRadius);
+            maxY = Math.max(endY + segmentStartRadius, endY + segmentEndRadius);
+        }
+        else {
+            minX = Math.min(minX, Math.min(startX - segmentStartRadius, endX - segmentEndRadius));
+            maxX = Math.max(maxX, Math.max(startX + segmentStartRadius, endX + segmentEndRadius));
+            minY = Math.min(minY, Math.min(startY - segmentStartRadius, endY - segmentEndRadius));
+            maxY = Math.max(maxY, Math.max(endY + segmentStartRadius, endY + segmentEndRadius));
+        }
+    });
+    const segmentsBoundingBox = {
+        x: minX - outerPadding,
+        y: minY - outerPadding,
+        width: maxX - minX + outerPadding * 2,
+        height: maxY - minY + outerPadding * 2,
+    };
+    _console$6.log("segmentsBoundingBox", segmentsBoundingBox);
+    return segmentsBoundingBox;
 }, _DisplayCanvasHelper_drawSegmentsToCanvas = function _DisplayCanvasHelper_drawSegmentsToCanvas(points, contextState) {
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_updateContext).call(this, contextState);
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_save).call(this);
-    const box = __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_getPointsBoundingBox).call(this, points, contextState);
+    const box = __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_getSegmentsBoundingBox).call(this, points, contextState);
     if (__classPrivateFieldGet(this, _DisplayCanvasHelper_clearBoundingBoxOnDraw, "f")) {
         __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_clearBoundingBox).call(this, box);
     }
     __classPrivateFieldSet(this, _DisplayCanvasHelper_clearBoundingBoxOnDraw, false, "f");
-    points.forEach((segment, index) => {
+    points.forEach((point, index) => {
         if (index > 0) {
             const previousPoint = points[index - 1];
             const startX = previousPoint.x;
             const startY = previousPoint.y;
-            const endX = segment.x;
-            const endY = segment.y;
+            const endX = point.x;
+            const endY = point.y;
             __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_drawSegmentToCanvas).call(this, startX, startY, endX, endY, contextState, false);
         }
     });

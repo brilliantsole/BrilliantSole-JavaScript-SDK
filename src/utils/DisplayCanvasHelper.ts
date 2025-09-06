@@ -7,6 +7,8 @@ import {
   DisplayBrightness,
   DisplaySpriteColorPair,
   DisplayBitmap,
+  DisplayWireframeEdge,
+  DisplaySegment,
 } from "../DisplayManager.ts";
 import {
   assertValidBitmapPixels,
@@ -70,6 +72,7 @@ import {
   DisplayAlignmentDirectionToStateKey,
   assertValidAlignment,
   assertValidDirection,
+  assertValidWireframe,
 } from "./DisplayUtils.ts";
 import EventDispatcher, {
   BoundEventListeners,
@@ -1560,7 +1563,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     this.#save();
     //this.context.resetTransform();
     this.context.fillStyle = this.#colorIndexToRgbString(0);
-    //this.context.fillStyle = "red"; // remove when done debugigng
+    this.context.fillStyle = "red"; // remove when done debugigng
     this.context.fillRect(x, y, width, height);
     this.#restore();
   }
@@ -2223,6 +2226,71 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
       );
     }
   }
+  #getWireframeBoundingBox(
+    points: Vector2[],
+    edges: DisplayWireframeEdge[],
+    contextState: DisplayContextState
+  ): DisplayBoundingBox {
+    const segments: DisplaySegment[] = [];
+    edges.forEach((edge) => {
+      const { startIndex, endIndex } = edge;
+      const point = points[startIndex];
+      const nextPoint = points[endIndex];
+      segments.push({ start: point, end: nextPoint });
+    });
+    return this.#_getSegmentsBoundingBox(segments, contextState);
+  }
+  #drawWireframeToCanvas(
+    points: Vector2[],
+    edges: DisplayWireframeEdge[],
+    contextState: DisplayContextState
+  ) {
+    _console.log("drawWireframeToCanvas", { points, edges });
+    this.#updateContext(contextState);
+
+    this.#save();
+    const box = this.#getWireframeBoundingBox(points, edges, contextState);
+    if (this.#clearBoundingBoxOnDraw) {
+      this.#clearBoundingBox(box);
+    }
+
+    this.#clearBoundingBoxOnDraw = false;
+    edges.forEach((edge) => {
+      const { startIndex, endIndex } = edge;
+      const startPoint = points[startIndex];
+      const endPoint = points[endIndex];
+
+      this.#drawSegmentToCanvas(
+        startPoint.x,
+        startPoint.y,
+        endPoint.x,
+        endPoint.y,
+        contextState,
+        false
+      );
+    });
+    this.#clearBoundingBoxOnDraw = true;
+
+    this.#restore();
+  }
+  async drawWireframe(
+    points: Vector2[],
+    edges: DisplayWireframeEdge[],
+    sendImmediately?: boolean
+  ) {
+    assertValidWireframe(points, edges);
+    const contextState = structuredClone(this.contextState);
+    this.#rearDrawStack.push(() =>
+      this.#drawWireframeToCanvas(points, edges, contextState)
+    );
+    if (this.device?.isConnected && !this.#ignoreDevice) {
+      await this.deviceDisplayManager!.drawWireframe(
+        points,
+        edges,
+        sendImmediately
+      );
+    }
+  }
   #getLocalSegmentBoundingBox(
     startX: number,
     startY: number,
@@ -2414,24 +2482,89 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
       );
     }
   }
+  #getSegmentsBoundingBox(
+    points: Vector2[],
+    contextState: DisplayContextState
+  ): DisplayBoundingBox {
+    const segments: DisplaySegment[] = [];
+    points.forEach((point, index) => {
+      if (index == points.length - 1) {
+        return;
+      }
+      const nextPoint = points[index + 1];
+      segments.push({ start: point, end: nextPoint });
+    });
+    return this.#_getSegmentsBoundingBox(segments, contextState);
+  }
+  #_getSegmentsBoundingBox(
+    segments: DisplaySegment[],
+    { lineWidth, segmentStartRadius, segmentEndRadius }: DisplayContextState
+  ): DisplayBoundingBox {
+    const outerPadding = Math.ceil(lineWidth / 2);
+
+    let minX = Infinity;
+    let maxX = -Infinity;
+    let minY = Infinity;
+    let maxY = -Infinity;
+
+    segments.forEach((segment, index) => {
+      const startX = segment.start.x;
+      const startY = segment.start.y;
+      const endX = segment.end.x;
+      const endY = segment.end.y;
+
+      if (index == 0) {
+        minX = Math.min(startX - segmentStartRadius, endX - segmentEndRadius);
+        maxX = Math.max(startX + segmentStartRadius, endX + segmentEndRadius);
+        minY = Math.min(startY - segmentStartRadius, endY - segmentEndRadius);
+        maxY = Math.max(endY + segmentStartRadius, endY + segmentEndRadius);
+      } else {
+        minX = Math.min(
+          minX,
+          Math.min(startX - segmentStartRadius, endX - segmentEndRadius)
+        );
+        maxX = Math.max(
+          maxX,
+          Math.max(startX + segmentStartRadius, endX + segmentEndRadius)
+        );
+        minY = Math.min(
+          minY,
+          Math.min(startY - segmentStartRadius, endY - segmentEndRadius)
+        );
+        maxY = Math.max(
+          maxY,
+          Math.max(endY + segmentStartRadius, endY + segmentEndRadius)
+        );
+      }
+    });
+
+    const segmentsBoundingBox = {
+      x: minX - outerPadding,
+      y: minY - outerPadding,
+      width: maxX - minX + outerPadding * 2,
+      height: maxY - minY + outerPadding * 2,
+    };
+    _console.log("segmentsBoundingBox", segmentsBoundingBox);
+    return segmentsBoundingBox;
+  }
   #drawSegmentsToCanvas(points: Vector2[], contextState: DisplayContextState) {
     this.#updateContext(contextState);
 
     this.#save();
-    const box = this.#getPointsBoundingBox(points, contextState);
+    const box = this.#getSegmentsBoundingBox(points, contextState);
     if (this.#clearBoundingBoxOnDraw) {
       this.#clearBoundingBox(box);
     }
 
     this.#clearBoundingBoxOnDraw = false;
-    points.forEach((segment, index) => {
+    points.forEach((point, index) => {
       if (index > 0) {
         const previousPoint = points[index - 1];
 
         const startX = previousPoint.x;
         const startY = previousPoint.y;
-        const endX = segment.x;
-        const endY = segment.y;
+        const endX = point.x;
+        const endY = point.y;
 
         this.#drawSegmentToCanvas(
           startX,

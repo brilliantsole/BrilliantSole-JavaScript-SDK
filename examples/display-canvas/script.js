@@ -1279,7 +1279,7 @@ const draw = async () => {
     return;
   }
 
-  if (false) {
+  if (true) {
     await displayCanvasHelper.drawSegments(
       generateSineSegments(
         90,
@@ -2254,14 +2254,37 @@ displayCanvasHelper.setHorizontalAlignment("center");
 displayCanvasHelper.setSegmentStartCap("round");
 displayCanvasHelper.setSegmentStartRadius(2);
 displayCanvasHelper.setSegmentEndRadius(2);
-displayCanvasHelper.drawPolygon(200, 100, [
-  { x: -10, y: -50 },
-  { x: 50, y: -50 },
-  { x: 50, y: 50 },
-  { x: -50, y: 50 },
-]);
-//displayCanvasHelper.drawRegularPolygon(100, 100, 50, 5);
-//displayCanvasHelper.drawSegment(100, 100, 120, 200);
+// displayCanvasHelper.drawPolygon(200, 100, [
+//   { x: -10, y: -50 },
+//   { x: 50, y: -50 },
+//   { x: 50, y: 50 },
+//   { x: -50, y: 50 },
+// ]);
+displayCanvasHelper.drawWireframe(
+  [
+    { x: 100, y: 100 },
+    { x: 150, y: 100 },
+    { x: 50, y: 100 },
+    { x: 100, y: 150 },
+    { x: 100, y: 50 },
+  ],
+  [
+    { startIndex: 0, endIndex: 1 },
+    { startIndex: 0, endIndex: 2 },
+    { startIndex: 0, endIndex: 3 },
+    { startIndex: 0, endIndex: 4 },
+    { startIndex: 1, endIndex: 2 },
+    { startIndex: 2, endIndex: 3 },
+    { startIndex: 4, endIndex: 1 },
+  ]
+);
+// displayCanvasHelper.drawRegularPolygon(100, 100, 50, 5);
+// displayCanvasHelper.drawSegment(100, 100, 120, 200);
+// displayCanvasHelper.drawSegments([
+//   { x: 100, y: 100 },
+//   { x: 120, y: 200 },
+//   { x: 100, y: 200 },
+// ]);
 // displayCanvasHelper.drawArc(100, 100, 50, 0, 360);
 // displayCanvasHelper.drawEllipse(100, 100, 100, 50);
 // displayCanvasHelper.drawCircle(100, 100, 50);

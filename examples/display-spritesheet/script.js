@@ -1735,6 +1735,22 @@ const addSpriteCommand = () => {
           numberOfSides: 5,
         });
         break;
+      case "drawWireframe":
+        selectedSprite.commands.push({
+          type: "drawWireframe",
+          points: [
+            { x: 0, y: 0 },
+            { x: 0, y: -25 },
+            { x: 25, y: 25 },
+            { x: -25, y: 25 },
+          ],
+          edges: [
+            { startIndex: 0, endIndex: 1 },
+            { startIndex: 0, endIndex: 2 },
+            { startIndex: 0, endIndex: 3 },
+          ],
+        });
+        break;
       case "drawSegment":
         selectedSprite.commands.push({
           type: "drawSegment",

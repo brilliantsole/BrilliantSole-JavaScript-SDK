@@ -4005,6 +4005,14 @@ function assertValidDirection(direction) {
 function assertValidAlignmentDirection(direction) {
     _console$t.assertEnumWithError(direction, DisplayAlignmentDirections);
 }
+function assertValidWireframe(points, edges) {
+    _console$t.assertRangeWithError("numberOfPoints", points.length, 2, 255);
+    _console$t.assertRangeWithError("numberOfEdges", edges.length, 1, 255);
+    edges.forEach((edge, index) => {
+        _console$t.assertRangeWithError(`edgeStartIndex.${index}`, edge.startIndex, 0, points.length);
+        _console$t.assertRangeWithError(`edgeEndIndex.${index}`, edge.endIndex, 0, points.length);
+    });
+}
 
 const _console$s = createConsole("DisplayContextCommand", { log: false });
 const DisplayContextCommandTypes = [
@@ -4071,6 +4079,7 @@ const DisplayContextCommandTypes = [
     "drawSegments",
     "drawRegularPolygon",
     "drawPolygon",
+    "drawWireframe",
     "drawQuadraticCurve",
     "drawQuadraticCurves",
     "drawBezierCurve",
@@ -4127,6 +4136,13 @@ const DisplaySpriteContextCommandTypes = [
     "drawEllipse",
     "drawRegularPolygon",
     "drawPolygon",
+    "drawWireframe",
+    "drawQuadraticCurve",
+    "drawQuadraticCurves",
+    "drawBezierCurve",
+    "drawBezierCurves",
+    "drawPath",
+    "drawClosedPath",
     "drawSegment",
     "drawSegments",
     "drawArc",
@@ -4623,6 +4639,26 @@ function serializeContextCommand(displayManager, command) {
                     offset += 2;
                     dataView.setInt16(offset, point.y, true);
                     offset += 2;
+                });
+            }
+            break;
+        case "drawWireframe":
+            {
+                const { points, edges } = command;
+                assertValidWireframe(points, edges);
+                dataView = new DataView(new ArrayBuffer(1 + 4 * points.length + 1 + 2 * edges.length));
+                let offset = 0;
+                dataView.setUint8(offset++, points.length);
+                points.forEach((point) => {
+                    dataView.setInt16(offset, point.x, true);
+                    offset += 2;
+                    dataView.setInt16(offset, point.y, true);
+                    offset += 2;
+                });
+                dataView.setUint8(offset++, edges.length);
+                edges.forEach((edge) => {
+                    dataView.setUint8(offset++, edge.startIndex);
+                    dataView.setUint8(offset++, edge.endIndex);
                 });
             }
             break;
@@ -5474,6 +5510,12 @@ async function runDisplayContextCommand(displayManager, command, sendImmediately
             {
                 const { offsetX, offsetY, radius, numberOfSides } = command;
                 await displayManager.drawRegularPolygon(offsetX, offsetY, radius, numberOfSides, sendImmediately);
+            }
+            break;
+        case "drawWireframe":
+            {
+                const { points, edges } = command;
+                await displayManager.drawWireframe(points, edges, sendImmediately);
             }
             break;
         case "drawSegment":
@@ -6837,6 +6879,18 @@ class DisplayManager {
             return;
         }
         await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "drawPolygon", dataView.buffer, sendImmediately);
+    }
+    async drawWireframe(points, edges, sendImmediately) {
+        assertValidWireframe(points, edges);
+        const dataView = serializeContextCommand(this, {
+            type: "drawWireframe",
+            points,
+            edges,
+        });
+        if (!dataView) {
+            return;
+        }
+        await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "drawWireframe", dataView.buffer, sendImmediately);
     }
     async drawSegment(startX, startY, endX, endY, sendImmediately) {
         const dataView = serializeContextCommand(this, {
