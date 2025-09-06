@@ -285,3 +285,50 @@ export function assertValidWireframe(
     );
   });
 }
+
+export function trimWireframe(
+  points: Vector2[],
+  edges: DisplayWireframeEdge[]
+) {
+  const trimmedPoints: Vector2[] = [];
+  const trimmedEdges: DisplayWireframeEdge[] = [];
+  edges.forEach((edge) => {
+    const { startIndex, endIndex } = edge;
+    let startPoint = points[startIndex];
+    let endPoint = points[endIndex];
+
+    let trimmedStartIndex = trimmedPoints.findIndex(
+      ({ x, y }) => startPoint.x == x && startPoint.y == y
+    );
+    if (trimmedStartIndex == -1) {
+      _console.log("adding startPoint", startPoint);
+      trimmedPoints.push(startPoint);
+      trimmedStartIndex = trimmedPoints.length - 1;
+    }
+
+    let trimmedEndIndex = trimmedPoints.findIndex(
+      ({ x, y }) => endPoint.x == x && endPoint.y == y
+    );
+    if (trimmedEndIndex == -1) {
+      _console.log("adding endPoint", endPoint);
+      trimmedPoints.push(endPoint);
+      trimmedEndIndex = trimmedPoints.length - 1;
+    }
+
+    const trimmedEdge: DisplayWireframeEdge = {
+      startIndex: trimmedStartIndex,
+      endIndex: trimmedEndIndex,
+    };
+    let trimmedEdgeIndex = trimmedEdges.findIndex(
+      ({ startIndex, endIndex }) =>
+        startIndex == trimmedEdge.startIndex && endIndex == trimmedEdge.endIndex
+    );
+    if (trimmedEdgeIndex == -1) {
+      _console.log("adding edge", trimmedEdge);
+      trimmedEdges.push(trimmedEdge);
+      trimmedEdgeIndex = trimmedEdges.length - 1;
+    }
+  });
+  _console.log("trimmedWireframe", trimmedPoints, trimmedEdges);
+  return { trimmedPoints, trimmedEdges };
+}

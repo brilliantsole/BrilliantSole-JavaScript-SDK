@@ -37,6 +37,7 @@ import {
   assertValidDirection,
   assertValidAlignmentDirection,
   assertValidWireframe,
+  trimWireframe,
 } from "./utils/DisplayUtils.ts";
 import {
   assertValidBitmapPixels,
@@ -2016,10 +2017,11 @@ class DisplayManager implements DisplayManagerInterface {
     sendImmediately?: boolean
   ) {
     assertValidWireframe(points, edges);
+    const { trimmedPoints, trimmedEdges } = trimWireframe(points, edges);
     const dataView = serializeContextCommand(this, {
       type: "drawWireframe",
-      points,
-      edges,
+      points: trimmedPoints,
+      edges: trimmedEdges,
     });
     if (!dataView) {
       return;

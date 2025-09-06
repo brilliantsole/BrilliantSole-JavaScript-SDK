@@ -4013,6 +4013,39 @@ function assertValidWireframe(points, edges) {
         _console$t.assertRangeWithError(`edgeEndIndex.${index}`, edge.endIndex, 0, points.length);
     });
 }
+function trimWireframe(points, edges) {
+    const trimmedPoints = [];
+    const trimmedEdges = [];
+    edges.forEach((edge) => {
+        const { startIndex, endIndex } = edge;
+        let startPoint = points[startIndex];
+        let endPoint = points[endIndex];
+        let trimmedStartIndex = trimmedPoints.findIndex(({ x, y }) => startPoint.x == x && startPoint.y == y);
+        if (trimmedStartIndex == -1) {
+            _console$t.log("adding startPoint", startPoint);
+            trimmedPoints.push(startPoint);
+            trimmedStartIndex = trimmedPoints.length - 1;
+        }
+        let trimmedEndIndex = trimmedPoints.findIndex(({ x, y }) => endPoint.x == x && endPoint.y == y);
+        if (trimmedEndIndex == -1) {
+            _console$t.log("adding endPoint", endPoint);
+            trimmedPoints.push(endPoint);
+            trimmedEndIndex = trimmedPoints.length - 1;
+        }
+        const trimmedEdge = {
+            startIndex: trimmedStartIndex,
+            endIndex: trimmedEndIndex,
+        };
+        let trimmedEdgeIndex = trimmedEdges.findIndex(({ startIndex, endIndex }) => startIndex == trimmedEdge.startIndex && endIndex == trimmedEdge.endIndex);
+        if (trimmedEdgeIndex == -1) {
+            _console$t.log("adding edge", trimmedEdge);
+            trimmedEdges.push(trimmedEdge);
+            trimmedEdgeIndex = trimmedEdges.length - 1;
+        }
+    });
+    _console$t.log("trimmedWireframe", trimmedPoints, trimmedEdges);
+    return { trimmedPoints, trimmedEdges };
+}
 
 const _console$s = createConsole("DisplayContextCommand", { log: false });
 const DisplayContextCommandTypes = [
@@ -6882,10 +6915,11 @@ class DisplayManager {
     }
     async drawWireframe(points, edges, sendImmediately) {
         assertValidWireframe(points, edges);
+        const { trimmedPoints, trimmedEdges } = trimWireframe(points, edges);
         const dataView = serializeContextCommand(this, {
             type: "drawWireframe",
-            points,
-            edges,
+            points: trimmedPoints,
+            edges: trimmedEdges,
         });
         if (!dataView) {
             return;
@@ -10832,6 +10866,10 @@ class Device {
     get drawDisplayPolygon() {
         __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertDisplayIsAvailable).call(this);
         return __classPrivateFieldGet(this, _Device_displayManager, "f").drawPolygon;
+    }
+    get drawDisplayWireframe() {
+        __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertDisplayIsAvailable).call(this);
+        return __classPrivateFieldGet(this, _Device_displayManager, "f").drawWireframe;
     }
     get drawDisplaySegment() {
         __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertDisplayIsAvailable).call(this);

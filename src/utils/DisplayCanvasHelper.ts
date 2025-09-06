@@ -73,6 +73,7 @@ import {
   assertValidAlignment,
   assertValidDirection,
   assertValidWireframe,
+  trimWireframe,
 } from "./DisplayUtils.ts";
 import EventDispatcher, {
   BoundEventListeners,
@@ -2279,14 +2280,15 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     sendImmediately?: boolean
   ) {
     assertValidWireframe(points, edges);
+    const { trimmedPoints, trimmedEdges } = trimWireframe(points, edges);
     const contextState = structuredClone(this.contextState);
     this.#rearDrawStack.push(() =>
-      this.#drawWireframeToCanvas(points, edges, contextState)
+      this.#drawWireframeToCanvas(trimmedPoints, trimmedEdges, contextState)
     );
     if (this.device?.isConnected && !this.#ignoreDevice) {
       await this.deviceDisplayManager!.drawWireframe(
-        points,
-        edges,
+        trimmedPoints,
+        trimmedEdges,
         sendImmediately
       );
     }
@@ -2967,14 +2969,15 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
       const sprite = spriteSheet.sprites[command.spriteIndex];
       if (sprite) {
         _console.log("drawing sub sprite", sprite);
+        const _contextState = structuredClone(this.contextState);
         this.#saveContextForSprite(
           command.offsetX,
           command.offsetY,
           sprite,
-          contextState
+          _contextState
         );
         sprite.commands.forEach((command) => {
-          this.#runSpriteCommand(command, contextState);
+          this.#runSpriteCommand(command, _contextState);
         });
         this.#restoreContextForSprite();
       } else {
@@ -2993,8 +2996,8 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     contextState: DisplayContextState
   ) {
     this.#setIgnoreDevice(true);
-    this.#setClearCanvasBoundingBoxOnDraw(false);
     this.#setUseSpriteColorIndices(true);
+    this.#setClearCanvasBoundingBoxOnDraw(false);
     this.#saveContextForSprite(offsetX, offsetY, sprite, contextState);
 
     sprite.commands.forEach((command) => {
@@ -3524,9 +3527,9 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
       if (this.#clearBoundingBoxOnDraw) {
         this.#clearBoundingBox(rotatedBox);
       }
-      this.#translateContext(offsetX, offsetY);
-      this.#rotateContext(contextState.rotation);
+      this.#transformContext(offsetX, offsetY, contextState.rotation);
       this.#applyRotationClip(localBox, contextState);
+
       this.#correctAlignmentTranslation(localBox, contextState);
       this.#scaleContext(contextState.spriteScaleX, contextState.spriteScaleY);
     });
@@ -3603,7 +3606,7 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     command: DisplayContextCommand,
     spriteSheet: DisplaySpriteSheet
   ) {
-    _console.log("runPreviewSpriteCommand", command);
+    // _console.log("runPreviewSpriteCommand", command);
     if (command.type == "drawSprite") {
       const sprite = spriteSheet.sprites[command.spriteIndex];
       if (sprite) {

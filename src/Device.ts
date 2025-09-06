@@ -1697,6 +1697,10 @@ class Device {
     this.#assertDisplayIsAvailable();
     return this.#displayManager.drawPolygon;
   }
+  get drawDisplayWireframe() {
+    this.#assertDisplayIsAvailable();
+    return this.#displayManager.drawWireframe;
+  }
   get drawDisplaySegment() {
     this.#assertDisplayIsAvailable();
     return this.#displayManager.drawSegment;

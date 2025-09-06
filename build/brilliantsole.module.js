@@ -4022,6 +4022,39 @@ function assertValidWireframe(points, edges) {
         _console$o.assertRangeWithError(`edgeEndIndex.${index}`, edge.endIndex, 0, points.length);
     });
 }
+function trimWireframe(points, edges) {
+    const trimmedPoints = [];
+    const trimmedEdges = [];
+    edges.forEach((edge) => {
+        const { startIndex, endIndex } = edge;
+        let startPoint = points[startIndex];
+        let endPoint = points[endIndex];
+        let trimmedStartIndex = trimmedPoints.findIndex(({ x, y }) => startPoint.x == x && startPoint.y == y);
+        if (trimmedStartIndex == -1) {
+            _console$o.log("adding startPoint", startPoint);
+            trimmedPoints.push(startPoint);
+            trimmedStartIndex = trimmedPoints.length - 1;
+        }
+        let trimmedEndIndex = trimmedPoints.findIndex(({ x, y }) => endPoint.x == x && endPoint.y == y);
+        if (trimmedEndIndex == -1) {
+            _console$o.log("adding endPoint", endPoint);
+            trimmedPoints.push(endPoint);
+            trimmedEndIndex = trimmedPoints.length - 1;
+        }
+        const trimmedEdge = {
+            startIndex: trimmedStartIndex,
+            endIndex: trimmedEndIndex,
+        };
+        let trimmedEdgeIndex = trimmedEdges.findIndex(({ startIndex, endIndex }) => startIndex == trimmedEdge.startIndex && endIndex == trimmedEdge.endIndex);
+        if (trimmedEdgeIndex == -1) {
+            _console$o.log("adding edge", trimmedEdge);
+            trimmedEdges.push(trimmedEdge);
+            trimmedEdgeIndex = trimmedEdges.length - 1;
+        }
+    });
+    _console$o.log("trimmedWireframe", trimmedPoints, trimmedEdges);
+    return { trimmedPoints, trimmedEdges };
+}
 
 var commonjsGlobal = typeof globalThis !== 'undefined' ? globalThis : typeof window !== 'undefined' ? window : typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : {};
 
@@ -17614,10 +17647,11 @@ class DisplayManager {
     }
     async drawWireframe(points, edges, sendImmediately) {
         assertValidWireframe(points, edges);
+        const { trimmedPoints, trimmedEdges } = trimWireframe(points, edges);
         const dataView = serializeContextCommand(this, {
             type: "drawWireframe",
-            points,
-            edges,
+            points: trimmedPoints,
+            edges: trimmedEdges,
         });
         if (!dataView) {
             return;
@@ -21302,6 +21336,10 @@ class Device {
         __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertDisplayIsAvailable).call(this);
         return __classPrivateFieldGet(this, _Device_displayManager, "f").drawPolygon;
     }
+    get drawDisplayWireframe() {
+        __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertDisplayIsAvailable).call(this);
+        return __classPrivateFieldGet(this, _Device_displayManager, "f").drawWireframe;
+    }
     get drawDisplaySegment() {
         __classPrivateFieldGet(this, _Device_instances, "m", _Device_assertDisplayIsAvailable).call(this);
         return __classPrivateFieldGet(this, _Device_displayManager, "f").drawSegment;
@@ -22467,10 +22505,11 @@ class DisplayCanvasHelper {
     }
     async drawWireframe(points, edges, sendImmediately) {
         assertValidWireframe(points, edges);
+        const { trimmedPoints, trimmedEdges } = trimWireframe(points, edges);
         const contextState = structuredClone(this.contextState);
-        __classPrivateFieldGet(this, _DisplayCanvasHelper_rearDrawStack, "f").push(() => __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_drawWireframeToCanvas).call(this, points, edges, contextState));
+        __classPrivateFieldGet(this, _DisplayCanvasHelper_rearDrawStack, "f").push(() => __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_drawWireframeToCanvas).call(this, trimmedPoints, trimmedEdges, contextState));
         if (this.device?.isConnected && !__classPrivateFieldGet(this, _DisplayCanvasHelper_ignoreDevice, "f")) {
-            await this.deviceDisplayManager.drawWireframe(points, edges, sendImmediately);
+            await this.deviceDisplayManager.drawWireframe(trimmedPoints, trimmedEdges, sendImmediately);
         }
     }
     async drawSegment(startX, startY, endX, endY, sendImmediately) {
@@ -22844,7 +22883,6 @@ _DisplayCanvasHelper_eventDispatcher = new WeakMap(), _DisplayCanvasHelper_canva
 }, _DisplayCanvasHelper_clearRectToCanvas = function _DisplayCanvasHelper_clearRectToCanvas(x, y, width, height) {
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_save).call(this);
     this.context.fillStyle = __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_colorIndexToRgbString).call(this, 0);
-    this.context.fillStyle = "red";
     this.context.fillRect(x, y, width, height);
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_restore).call(this);
 }, _DisplayCanvasHelper_save = function _DisplayCanvasHelper_save() {
@@ -23401,9 +23439,10 @@ _DisplayCanvasHelper_eventDispatcher = new WeakMap(), _DisplayCanvasHelper_canva
         const sprite = spriteSheet.sprites[command.spriteIndex];
         if (sprite) {
             _console$6.log("drawing sub sprite", sprite);
-            __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_saveContextForSprite).call(this, command.offsetX, command.offsetY, sprite, contextState);
+            const _contextState = structuredClone(this.contextState);
+            __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_saveContextForSprite).call(this, command.offsetX, command.offsetY, sprite, _contextState);
             sprite.commands.forEach((command) => {
-                __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_runSpriteCommand).call(this, command, contextState);
+                __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_runSpriteCommand).call(this, command, _contextState);
             });
             __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_restoreContextForSprite).call(this);
         }
@@ -23416,8 +23455,8 @@ _DisplayCanvasHelper_eventDispatcher = new WeakMap(), _DisplayCanvasHelper_canva
     }
 }, _DisplayCanvasHelper_drawSpriteToCanvas = function _DisplayCanvasHelper_drawSpriteToCanvas(offsetX, offsetY, sprite, contextState) {
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_setIgnoreDevice).call(this, true);
-    __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_setClearCanvasBoundingBoxOnDraw).call(this, false);
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_setUseSpriteColorIndices).call(this, true);
+    __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_setClearCanvasBoundingBoxOnDraw).call(this, false);
     __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_saveContextForSprite).call(this, offsetX, offsetY, sprite, contextState);
     sprite.commands.forEach((command) => {
         __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_runSpriteCommand).call(this, command, contextState);
@@ -23697,8 +23736,7 @@ _DisplayCanvasHelper_eventDispatcher = new WeakMap(), _DisplayCanvasHelper_canva
         if (__classPrivateFieldGet(this, _DisplayCanvasHelper_clearBoundingBoxOnDraw, "f")) {
             __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_clearBoundingBox).call(this, rotatedBox);
         }
-        __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_translateContext).call(this, offsetX, offsetY);
-        __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_rotateContext).call(this, contextState.rotation);
+        __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_transformContext).call(this, offsetX, offsetY, contextState.rotation);
         __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_applyRotationClip).call(this, localBox, contextState);
         __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_correctAlignmentTranslation).call(this, localBox, contextState);
         __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_scaleContext).call(this, contextState.spriteScaleX, contextState.spriteScaleY);
@@ -23736,7 +23774,6 @@ _DisplayCanvasHelper_eventDispatcher = new WeakMap(), _DisplayCanvasHelper_canva
     }
     __classPrivateFieldGet(this, _DisplayCanvasHelper_contextStateHelper, "f").update(contextState);
 }, _DisplayCanvasHelper_runPreviewSpriteCommand = function _DisplayCanvasHelper_runPreviewSpriteCommand(command, spriteSheet) {
-    _console$6.log("runPreviewSpriteCommand", command);
     if (command.type == "drawSprite") {
         const sprite = spriteSheet.sprites[command.spriteIndex];
         if (sprite) {

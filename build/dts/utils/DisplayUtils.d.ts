@@ -56,3 +56,7 @@ export declare function assertValidAlignment(alignment: DisplayAlignment): void;
 export declare function assertValidDirection(direction: DisplayDirection): void;
 export declare function assertValidAlignmentDirection(direction: DisplayAlignmentDirection): void;
 export declare function assertValidWireframe(points: Vector2[], edges: DisplayWireframeEdge[]): void;
+export declare function trimWireframe(points: Vector2[], edges: DisplayWireframeEdge[]): {
+    trimmedPoints: Vector2[];
+    trimmedEdges: DisplayWireframeEdge[];
+};
