@@ -21775,6 +21775,9 @@ class DisplayCanvasHelper {
         this.numberOfColors = 16;
         __classPrivateFieldSet(this, _DisplayCanvasHelper_bitmapContext, __classPrivateFieldGet(this, _DisplayCanvasHelper_bitmapCanvas, "f").getContext("2d"), "f");
         __classPrivateFieldGet(this, _DisplayCanvasHelper_bitmapContext, "f").imageSmoothingEnabled = false;
+        this.addEventListener("ready", () => {
+            __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_drawFrontDrawStack).call(this);
+        });
     }
     get addEventListener() {
         return __classPrivateFieldGet(this, _DisplayCanvasHelper_eventDispatcher, "f").addEventListener;
@@ -21898,7 +21901,6 @@ class DisplayCanvasHelper {
     async show(sendImmediately = true) {
         __classPrivateFieldSet(this, _DisplayCanvasHelper_frontDrawStack, __classPrivateFieldGet(this, _DisplayCanvasHelper_rearDrawStack, "f").slice(), "f");
         __classPrivateFieldGet(this, _DisplayCanvasHelper_rearDrawStack, "f").length = 0;
-        __classPrivateFieldGet(this, _DisplayCanvasHelper_instances, "m", _DisplayCanvasHelper_drawFrontDrawStack).call(this);
         __classPrivateFieldSet(this, _DisplayCanvasHelper_isReady, false, "f");
         if (this.device?.isConnected && !__classPrivateFieldGet(this, _DisplayCanvasHelper_ignoreDevice, "f")) {
             await this.deviceDisplayManager.show(sendImmediately);

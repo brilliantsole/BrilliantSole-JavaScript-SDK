@@ -219,6 +219,9 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
     this.numberOfColors = 16;
     this.#bitmapContext = this.#bitmapCanvas.getContext("2d")!;
     this.#bitmapContext.imageSmoothingEnabled = false;
+    this.addEventListener("ready", () => {
+      this.#drawFrontDrawStack();
+    });
   }
 
   // EVENT DISPATCHER
@@ -629,8 +632,6 @@ class DisplayCanvasHelper implements DisplayManagerInterface {
 
     this.#frontDrawStack = this.#rearDrawStack.slice();
     this.#rearDrawStack.length = 0;
-
-    this.#drawFrontDrawStack();
 
     this.#isReady = false;
 
