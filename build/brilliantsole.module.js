@@ -17622,6 +17622,10 @@ class DisplayManager {
         if (!dataView) {
             return;
         }
+        if (dataView.byteLength > __classPrivateFieldGet(this, _DisplayManager_instances, "a", _DisplayManager_maxCommandDataLength_get)) {
+            _console$j.error(`wireframe data ${dataView.byteLength} too large (max ${__classPrivateFieldGet(this, _DisplayManager_instances, "a", _DisplayManager_maxCommandDataLength_get)})`);
+            return;
+        }
         await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "drawWireframe", dataView.buffer, sendImmediately);
     }
     async drawSegment(startX, startY, endX, endY, sendImmediately) {
@@ -17639,8 +17643,14 @@ class DisplayManager {
     }
     async drawSegments(points, sendImmediately) {
         _console$j.assertRangeWithError("numberOfPoints", points.length, 2, 255);
-        const dataViewLength = 1 + points.length * 4;
-        if (dataViewLength > __classPrivateFieldGet(this, _DisplayManager_instances, "a", _DisplayManager_maxCommandDataLength_get)) {
+        const dataView = serializeContextCommand(this, {
+            type: "drawSegments",
+            points,
+        });
+        if (!dataView) {
+            return;
+        }
+        if (dataView.byteLength > __classPrivateFieldGet(this, _DisplayManager_instances, "a", _DisplayManager_maxCommandDataLength_get)) {
             const mid = Math.floor(points.length / 2);
             const firstHalf = points.slice(0, mid + 1);
             const secondHalf = points.slice(mid);
@@ -17649,13 +17659,6 @@ class DisplayManager {
             await this.drawSegments(firstHalf, false);
             _console$j.log("sending second half", secondHalf);
             await this.drawSegments(secondHalf, sendImmediately);
-            return;
-        }
-        const dataView = serializeContextCommand(this, {
-            type: "drawSegments",
-            points,
-        });
-        if (!dataView) {
             return;
         }
         await __classPrivateFieldGet(this, _DisplayManager_instances, "m", _DisplayManager_sendDisplayContextCommand).call(this, "drawSegments", dataView.buffer, sendImmediately);

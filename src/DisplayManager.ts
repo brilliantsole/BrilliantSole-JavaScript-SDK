@@ -2024,6 +2024,14 @@ class DisplayManager implements DisplayManagerInterface {
     if (!dataView) {
       return;
     }
+    if (dataView.byteLength > this.#maxCommandDataLength) {
+      _console.error(
+        `wireframe data ${dataView.byteLength} too large (max ${
+          this.#maxCommandDataLength
+        })`
+      );
+      return;
+    }
     await this.#sendDisplayContextCommand(
       "drawWireframe",
       dataView.buffer,
@@ -2056,8 +2064,14 @@ class DisplayManager implements DisplayManagerInterface {
   }
   async drawSegments(points: Vector2[], sendImmediately?: boolean) {
     _console.assertRangeWithError("numberOfPoints", points.length, 2, 255);
-    const dataViewLength = 1 + points.length * 4;
-    if (dataViewLength > this.#maxCommandDataLength) {
+    const dataView = serializeContextCommand(this, {
+      type: "drawSegments",
+      points,
+    });
+    if (!dataView) {
+      return;
+    }
+    if (dataView.byteLength > this.#maxCommandDataLength) {
       const mid = Math.floor(points.length / 2);
       const firstHalf = points.slice(0, mid + 1);
       const secondHalf = points.slice(mid);
@@ -2066,13 +2080,6 @@ class DisplayManager implements DisplayManagerInterface {
       await this.drawSegments(firstHalf, false);
       _console.log("sending second half", secondHalf);
       await this.drawSegments(secondHalf, sendImmediately);
-      return;
-    }
-    const dataView = serializeContextCommand(this, {
-      type: "drawSegments",
-      points,
-    });
-    if (!dataView) {
       return;
     }
     await this.#sendDisplayContextCommand(
