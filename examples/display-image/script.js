@@ -464,6 +464,21 @@ const cameraInputOptgroup = cameraInput.querySelector("optgroup");
 cameraInput.addEventListener("input", () => {
   selectCameraInput(cameraInput.value);
 });
+
+cameraInput.addEventListener("click", async () => {
+  const devices = await navigator.mediaDevices.enumerateDevices();
+  const videoDevices = devices.filter((device) => device.kind == "videoinput");
+  console.log("videoDevices", videoDevices);
+  if (videoDevices.length == 1 && videoDevices[0].deviceId == "") {
+    console.log("getting camera");
+    const cameraStream = await navigator.mediaDevices.getUserMedia({
+      video: true,
+    });
+    cameraStream.getVideoTracks().forEach((track) => track.stop());
+    updateCameraSources();
+  }
+});
+
 const updateCameraSources = async () => {
   const devices = await navigator.mediaDevices.enumerateDevices();
   cameraInputOptgroup.innerHTML = "";
