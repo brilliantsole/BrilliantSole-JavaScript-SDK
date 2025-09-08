@@ -931,7 +931,7 @@ const setDrawOutputHeight = (newDrawOutputHeight) => {
 
 // PIXEL DEPTH
 
-let pixelDepth = BS.DisplayPixelDepths[2];
+let pixelDepth = BS.DisplayPixelDepths[1];
 const setPixelDepth = (newPixelDepth) => {
   pixelDepth = newPixelDepth;
   // console.log({ pixelDepth });
