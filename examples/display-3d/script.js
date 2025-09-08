@@ -149,7 +149,7 @@ const normalizeEntity = (entity) => {
   const box = new THREE.Box3().setFromObject(object3D);
   const size = new THREE.Vector3();
   box.getSize(size);
-  isTall = size.y >= size.x;
+  // isTall = size.y >= size.x;
   console.log({ isTall });
   const center = new THREE.Vector3();
   box.getCenter(center);
